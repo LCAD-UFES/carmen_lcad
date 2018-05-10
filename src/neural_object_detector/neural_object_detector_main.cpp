@@ -13,11 +13,6 @@
 #include <cstdlib>
 #include <fstream>
 #include "Darknet.hpp"
-#include "image.h"
-#include "box.h"
-
-//#include "../../sharedlib/darknet/src/image.h"
-//#include "../../sharedlib/darknet/src/yolo_v2_class.hpp"
 
 #include "neural_object_detector.hpp"
 
@@ -586,30 +581,53 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 }
 
 
-image
-convert_image_msg_to_darknet_image(carmen_bumblebee_basic_stereoimage_message *image_msg, char stereo_image_side)
+unsigned char *
+crop_raw_image(int image_width, int image_height, unsigned char *raw_image, int displacement_x, int displacement_y, int crop_width, int crop_height)
 {
-	unsigned char *side;
+	unsigned char *cropped_image = (unsigned char *) malloc (crop_width * crop_height * 3 * sizeof(unsigned char));  // Only works for 3 channels image
 
-	if (stereo_image_side == 'l')
-		side = image_msg->raw_left;
-	else if (stereo_image_side == 'r')
-		side = image_msg->raw_right;
-	else
+	displacement_x = (displacement_x - 2) * 3;
+	displacement_y = (displacement_y - 2) * image_width * 3;
+	crop_width     = displacement_x + ((crop_width + 1) * 3);
+	crop_height    = displacement_y + ((crop_height + 1) * image_width * 3);
+	image_height   = image_height * image_width * 3;
+	image_width   *= 3;
+
+	for (int line = 0, index = 0; line < image_height; line += image_width)
 	{
-		printf("Invalid image side in module: neural_object_detector Function: image_handler!");
-		exit(0);
+		for (int column = 0; column < image_width; column += 3)
+		{
+			if (column > displacement_x && column < crop_width && line > displacement_y && line < crop_height)
+			{
+				cropped_image[index]     = raw_image[line + column];
+				cropped_image[index + 1] = raw_image[line + column + 1];
+				cropped_image[index + 2] = raw_image[line + column + 2];
+
+				index += 3;
+			}
+			//else if (line >= crop_height)
+			//	return cropped_image;
+		}
 	}
 
-	image converted_image;
-	converted_image.w = image_msg->width;
-	converted_image.h = image_msg->height;
-	converted_image.c = 3;                    // Number of channels
-	converted_image.data = (float *) malloc (image_msg->image_size * sizeof (float));
+	return cropped_image;
+}
 
-	for (int i = 0; i < image_msg->image_size; i++)
+
+image_t
+convert_image_msg_to_darknet_image(int image_width, int image_height, unsigned char *raw_image)
+{
+	image_t converted_image;
+	int image_size = image_width * image_height * 3;
+
+	converted_image.w = image_width;
+	converted_image.h = image_height;
+	converted_image.c = 3;                                      // 3 is the Number of Channels
+	converted_image.data = (float *) malloc (image_size * sizeof (float));
+
+	for (int i = 0; i < image_size; i++)
 	{
-		converted_image.data[i] = ((float) side[i]) / 255;
+		converted_image.data[i] = ((float) raw_image[i]) / 255;
 	}
 
 	return (converted_image);
@@ -617,19 +635,43 @@ convert_image_msg_to_darknet_image(carmen_bumblebee_basic_stereoimage_message *i
 
 
 void
-image_handler_new2(carmen_bumblebee_basic_stereoimage_message *image_msg)
+image_handler_crop(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
-	image image = convert_image_msg_to_darknet_image(image_msg, 'r');
-
-	//image = crop_image(image, 280, 70, 720, 480);
-
-	cv::Mat src_image = cv::Mat(cv::Size(image.w, image.h), CV_32FC3); // CV_32FC3 float 32 bit 3 channels
-	memcpy(src_image.data, image.data, (image.w * image.h * image.c) * sizeof(int));
+	unsigned char *img, *cropped_image;
+	double fps, start_time = carmen_get_time();
 
 
-	cv::cvtColor(src_image, src_image, cv::COLOR_RGB2BGR);
+	if (camera_side == 0)
+		img = image_msg->raw_left;
+	else
+		img = image_msg->raw_right;
 
-	cv::imshow("Neural Object Detector", src_image);
+	int image_width = 720, image_height = 480;
+
+	cropped_image = crop_raw_image(image_msg->width, image_msg->height, img, 280, 70, image_width, image_height);
+
+	image_t darknet_img = convert_image_msg_to_darknet_image(image_width, image_height, cropped_image);
+
+	vector<bbox_t> predictions = darknet->detect(darknet_img, 0.2);  // Arguments (img, threshold)
+
+	// predictions = darknet->tracking(predictions); // Coment this line if object tracking is not necessary
+
+	carmen_velodyne_partial_scan_message  velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp); // TODO Eliminar!!!!!!!!!
+
+	// Removes the ground, Removes points outside cameras field of view and Returns the points that reach obstacles  TODO TODO TODO TODO TODO TODO TODO Modificar essa funcao
+	vector<velodyne_camera_points> points = velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(&velodyne_sync_with_cam,
+			camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
+
+	cv::Mat open_cv_image = cv::Mat(cv::Size(image_width, image_height), CV_32FC3);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+	memcpy(open_cv_image.data, darknet_img.data, (image_width * image_height * 3 * sizeof(float)));
+	cv::cvtColor(open_cv_image, open_cv_image, cv::COLOR_RGB2BGR);
+
+
+	fps = 1.0 / (carmen_get_time() - start_time);
+
+	//show_detections(open_cv_image, laser_points_in_camera_box_list, predictions, bouding_boxes_list, hood_removal_percentage, fps);
+
+	cv::imshow("Neural Object Detector", open_cv_image);
 	cv::waitKey(1);
 }
 
@@ -765,9 +807,9 @@ main(int argc, char **argv)
     darknet = new Detector(cfg_filename, weight_filename, device_id);
     carmen_test_alloc(darknet);
 
-#ifdef SHOW_DETECTIONS
-    cv::namedWindow("Neural Object Detector", cv::WINDOW_AUTOSIZE);
-#endif
+//#ifdef SHOW_DETECTIONS
+//    cv::namedWindow("Neural Object Detector", cv::WINDOW_AUTOSIZE);
+//#endif
 
     setlocale(LC_ALL, "C");
 
