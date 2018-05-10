@@ -19,134 +19,24 @@ string g_window_name4 = "blended images";
 bool g_ipc_required = false;
 int g_img_channels = 3;
 int g_class_bits = 0;
-char *g_remission_map_dir = NULL;
+char *g_road_map_dir = NULL;
+char *g_road_map_folder = NULL;
 int g_road_map_index = 1;
+string str_g_road_map_folder;
+char g_map_type;
+double g_x_origin;
+double g_y_origin;
 
-void
-blend_images_vertical_and_horizontal(carmen_map_p road_map, cv::Mat *image_vertical, cv::Mat *image_horizontal)
-{
-	//source: https://docs.opencv.org/2.4/doc/tutorials/core/adding_images/adding_images.html
+#define LOCAL_MAP_SIZE (210)
+#define GLOBAL_MAP_SIZE (1800)
 
-	double alpha = 0.5; double beta;
-	cv::Mat blended_image;
-	beta = 1-alpha;
-	cv::addWeighted( *image_vertical, alpha, *image_horizontal, beta, 0.0, blended_image);
-	cv::namedWindow(g_window_name4, cv::WINDOW_AUTOSIZE);
-	cv::moveWindow(g_window_name4, (78*3) + 2*road_map->config.x_size, 50+road_map->config.y_size);
-	cv::imshow(g_window_name4, blended_image);
-	//cv::waitKey(0);
-	while((cv::waitKey() & 0xff) != 27);
-
-
-}
-
-
-void
-road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_class_bits)
-{
-	//road_prob *cell_prob;
-	cv::namedWindow("road_map", cv::WINDOW_AUTOSIZE);
-
-
-
-	cv::Mat image1;
-	cv::Mat imageCenterVertical; //imagem que guarda apenas o ponto de centro de pista verticalmente
-	cv::Mat imageCenterHorizontal; //imagem que guarda apenas o ponto de centro de pista verticalmente
-	if (img_channels == 1)
-	{
-		image1 = cv::Mat(road_map->config.y_size, road_map->config.x_size, CV_8UC1);
-		road_map_to_image_black_and_white(road_map, &image1, img_class_bits);
-	}
-	else
-	{
-		image1 = cv::Mat(road_map->config.y_size, road_map->config.x_size, CV_8UC3, cv::Scalar::all(0));
-		imageCenterVertical = cv::Mat(road_map->config.y_size, road_map->config.x_size, CV_8UC3, cv::Scalar::all(255));
-		imageCenterHorizontal = cv::Mat(road_map->config.y_size, road_map->config.x_size, CV_8UC3, cv::Scalar::all(255));
-		road_map_to_image(road_map, &image1);
-	}
-
-	printf("IMSIZE: %d X %d: \n",road_map->config.x_size, road_map->config.y_size);
-	cv::Point p;
-	cv::Point pAnt;
-	cv::Point pPos;
-	cv::Mat imgPaint = image1;
-	cv::Vec3b pixelChannelAnt; //pegar cada canal de cor em separado
-	cv::Vec3b pixelChannel; //pegar cada canal de cor em separado
-	cv::Vec3b pixelChannelPos; //pegar cada canal de cor em separado
-
-	cv::Point pAntV;
-	cv::Point pPosV;
-	cv::Vec3b pixelChannelAntV; //pegar cada canal de cor em separado
-	cv::Vec3b pixelChannelPosV; //pegar cada canal de cor em separado
-	int thickness = -1;
-	int lineType = 8;
-	/*for (int y = 2; y < road_map->config.y_size-2; y+=1)
-		{
-			for (int x = 2; x < road_map->config.x_size-2; x+=1)
-			{
-				//cell_prob = road_mapper_double_to_prob(&road_map->map[x][road_map->config.y_size - 1 - y]);
-				//printf("%d X %d %hu\n",x,y,cell_prob->lane_center);
-				imgPaint = image1.clone();
-				p.x = x;
-				p.y = y;
-				pAnt.x = x-2;
-				pAnt.y = y;
-				pPos.x = x+2;
-				pPos.y = y;
-				pixelChannelAnt = image1.at<cv::Vec3b>(pAnt);
-				pixelChannel = image1.at<cv::Vec3b>(p);
-				pixelChannelPos = image1.at<cv::Vec3b>(pPos);
-
-				//src1.at<Vec3b>(i,j)[0]
-
-				pAntV.x = x;
-				pAntV.y = y-2;
-				pPosV.x = x;
-				pPosV.y = y+2;
-				pixelChannelAntV = image1.at<cv::Vec3b>(pAntV);
-				pixelChannelPosV = image1.at<cv::Vec3b>(pPosV);
-
-				if(pixelChannel.val[0]==255 && pixelChannel.val[1]==255 && pixelChannel.val[2]==255)
-					continue;
-				else{
-					cv::circle(imgPaint, p, 1,cv::Scalar( 0, 0, 0 ),thickness,lineType);
-					if(
-						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y,x-2)[1])&&
-						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y,x-1)[1])&&
-						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y,x+2)[1])&&
-						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y,x+1)[1])||
-						(pixelChannel.val[0]==0 && pixelChannel.val[1]==255 && pixelChannel.val[2]==0)
-					){
-
-					if(((pixelChannel.val[1]>pixelChannelAnt.val[1])&&(pixelChannel.val[1]>pixelChannelPos.val[1]))||(pixelChannel.val[0]==0 && pixelChannel.val[1]==255 && pixelChannel.val[2]==0)){
-						//printf("Pixel Color at %dX%d: b: %d g: %d r: %d %hu CENTER!!!\n",x,y,pixelChannel.val[0],pixelChannel.val[1],pixelChannel.val[2], cell_prob->lane_center);
-						cv::circle(imageCenterHorizontal, p, 1,cv::Scalar( 255, 0, 0 ),thickness,lineType);
-					}
-					//else{
-						//printf("Pixel Color at %dX%d: b: %d g: %d r: %d %hu\n",x,y,pixelChannel.val[0],pixelChannel.val[1],pixelChannel.val[2], cell_prob->lane_center);
-					//}
-					if(
-						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y-2,x)[1])&&
-						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y-1,x)[1])&&
-						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y+2,x)[1])&&
-						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y+1,x)[1])||
-						(pixelChannel.val[0]==0 && pixelChannel.val[1]==255 && pixelChannel.val[2]==0)
-					){
-					if(((pixelChannel.val[1]>pixelChannelAntV.val[1])&&(pixelChannel.val[1]>pixelChannelPosV.val[1]))||(pixelChannel.val[0]==0 && pixelChannel.val[1]==255 && pixelChannel.val[2]==0)){
-						//printf("Pixel Color at %dX%d: b: %d g: %d r: %d  CENTER!!!\n",x,y,pixelChannel.val[0],pixelChannel.val[1],pixelChannel.val[2]);
-						cv::circle(imageCenterVertical, p, 1,cv::Scalar( 0, 0, 255 ),thickness,lineType);
-					}
-				}
-
-				cv::imshow(g_window_name1, imgPaint);
-				cv::imshow(g_window_name2, imageCenterVertical);
-				cv::imshow(g_window_name3, imageCenterHorizontal);
-				cv::waitKey(1);
-				//while((cv::waitKey() & 0xff) != 27);
-
-			}
-		}*/
-}
+static double global_gridmap_resolution = 0.6;
+static double local_gridmap_resolution = 0.2;
+static double local_gridmap_size = LOCAL_MAP_SIZE;
+static int local_gridmap_count = LOCAL_MAP_SIZE / 0.2;
+static int local_gridmap_count_3 = (LOCAL_MAP_SIZE/3) / 0.2;
+static int global_gridmap_count = GLOBAL_MAP_SIZE / 0.6;
+static int map_quadrant;
 
 
 static void
@@ -171,34 +61,152 @@ shutdown_module(int signo)
 }
 
 
+static double*
+get_cell_pointer(double *map, int cell_number)
+{
+	switch (cell_number)
+	{
+	case 0:
+		return map;
+		break;
+	case 1:
+		return &map[local_gridmap_count * local_gridmap_count_3];
+		break;
+	case 2:
+		return &map[local_gridmap_count * 2 * local_gridmap_count_3];
+		break;
+	case 3:
+		return &map[local_gridmap_count_3];
+		break;
+	case 4:
+		return &map[local_gridmap_count * local_gridmap_count_3 + local_gridmap_count_3];
+		break;
+	case 5:
+		return &map[local_gridmap_count * 2 * local_gridmap_count_3 + local_gridmap_count_3];
+		break;
+	case 6:
+		return &map[2 * local_gridmap_count_3];
+		break;
+	case 7:
+		return &map[2 * local_gridmap_count_3 + local_gridmap_count * local_gridmap_count_3];
+		break;
+	case 8:
+		return &map[2 * local_gridmap_count_3 + local_gridmap_count * local_gridmap_count_3 * 2];
+		break;
+	}
+	return NULL;
+}
+
+
+static void
+copy_cell_to_map(carmen_map_t *map, double **cell, int cell_number)
+{
+	int i;
+
+	double *map_cell;
+	map_cell = get_cell_pointer(map->complete_map, cell_number);
+
+	for (i = 0; i < local_gridmap_count_3; i++)
+	{
+		memcpy(map_cell + i * local_gridmap_count, cell[i], local_gridmap_count_3 * sizeof(double));
+	}
+}
+
+
+int
+grid_mapping_get_block_map_by_origin_x_y(char *map_path, char map_type, double x_origin, double y_origin, carmen_map_t *new_map)
+{
+	carmen_map_t unk_map;
+	char full_map_path[1024];
+	double local_x_origin, local_y_origin;
+	int block_map_exists_on_file = 1;
+	int count_maps_on_file = 0;
+	int i, j, k;
+
+	if (new_map->complete_map == NULL)
+		carmen_grid_mapping_initialize_map(new_map, local_gridmap_count, local_gridmap_resolution, map_type);
+	else
+		carmen_grid_mapping_set_unknown_value(new_map, map_type);
+
+
+	for (i = 0, k = 0; i < 3; i++)
+	{
+		for (j = 0; j < 3; j++, k++)
+		{
+			local_x_origin = x_origin + j * (local_gridmap_size / 3.0);
+			local_y_origin = y_origin + i * (local_gridmap_size / 3.0);
+
+			sprintf(full_map_path, "%s/%c%d_%d.map", map_path, map_type, (int)local_x_origin, (int)local_y_origin);
+
+			block_map_exists_on_file = carmen_map_read_gridmap_chunk(full_map_path, &unk_map) != -1;
+
+			if (block_map_exists_on_file)
+			{
+				copy_cell_to_map(new_map, unk_map.map, k);
+				free(unk_map.map);
+				free(unk_map.complete_map);
+				free(unk_map.config.map_name);
+				count_maps_on_file++;
+			}
+		}
+	}
+
+	strcpy(new_map->config.origin, "from grid_mapping (built from blocks in files)");
+	new_map->config.x_origin = x_origin;
+	new_map->config.y_origin = y_origin;
+
+	return count_maps_on_file > 0;
+
+}
+
+void
+parse_road_map_dir_type_and_origin(string str_road_map_filename)
+{
+	string x_origin;
+	string y_origin;
+	string map_type;
+	int l;
+	int last_bar_position;
+	int last_trace_position=0;
+	int last_underline_position=0;
+	int last_dot_position=0;
+	string file_name;
+
+	for(l=0; l<str_road_map_filename.length();l++)
+	{
+		if(str_road_map_filename[l] == '/')
+			last_bar_position = l;
+		if(str_road_map_filename[l] == '.')
+			last_dot_position = l;
+		if(str_road_map_filename[l] == '_')
+			last_underline_position = l;
+		if(str_road_map_filename[l] == '-')
+			last_trace_position = l;
+
+	}
+	str_g_road_map_folder = str_road_map_filename.substr(0, last_bar_position);
+	map_type = str_road_map_filename.substr(last_bar_position+1, 1);
+	x_origin = str_road_map_filename.substr(last_bar_position+2,last_underline_position-last_bar_position-2);
+	y_origin = str_road_map_filename.substr(last_trace_position,last_dot_position-last_trace_position);
+	g_x_origin = atof(x_origin.c_str());
+	g_y_origin = atof(y_origin.c_str());
+
+
+}
+
+
 static void
 read_parameters(int argc, char **argv)
 //read_parameters(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused)))
 {
-	const char usage[] = "[-c <img_channels>] [-b <class_bits>] [-r <remission_map_dir>] <road_map_1>.map [...]";
-	for(int i = 1; i < argc; i++)
-	{
-		if(strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--road_maps") == 0)
-		{
-			g_road_map_index++;
-			if ((i + 1) < argc)
-			{
-				i++, g_road_map_index++;
-			}
-			else
-				printf("Remission map directory expected following -r option.\nUsage:\n%s %s\n", argv[0], usage);
-		}
-		else
-			break;
-	}
-	if (g_road_map_index == argc)
-		exit(printf("At least one road map file expected\nUsage:\n%s %s\n", argv[0], usage));
-	printf("Image channels set to %d.\n", g_img_channels);
-	if (g_img_channels == 1)
-		printf("Class bits set to %d.\n", g_class_bits);
-	if (g_remission_map_dir)
-		printf("Remission map directory: %s.\n", g_remission_map_dir);
+	const char usage[] = "[<road_map_dir>/<road_map>.map]";
+	if(argc!=2)
+		printf("Incorrect Input!.\nUsage:\n%s %s\n", argv[0], usage);
+	else
+		g_road_map_dir = argv[1];
 }
+
+
 
 int
 main(int argc, char **argv)
@@ -217,25 +225,49 @@ main(int argc, char **argv)
 	signal(SIGINT, shutdown_module);
 
 	carmen_map_t road_map;
+	road_map.complete_map = NULL;
 	//printf("%d \t %d\n",g_road_map_index, argc);
 		//getchar();
-	for (int i = g_road_map_index; i < argc; i++)
-	{
-		char *road_map_filename = argv[i];
-		string str_road_map_filename(road_map_filename);
-		bool valid_map_on_file = (carmen_map_read_gridmap_chunk(road_map_filename, &road_map) == 0);
-		parse_world_origin_to_road_map(str_road_map_filename, &road_map);
-		if (valid_map_on_file)
-		{
-			cout << "File " << str_road_map_filename << " being displayed... ("
-					<< (i - g_road_map_index + 1) << " of " << (argc - g_road_map_index) << ")" << endl;
-			//road_mapper_display_road_map(&road_map, g_img_channels, g_class_bits);
-			generate_road_map_graph(&road_map, str_road_map_filename);
+	//for (int i = g_road_map_index; i < argc; i++)
+	//{
+		//char *road_map_filename = argv[i];
+		//string str_road_map_filename(road_map_filename);
+		//int c = grid_mapping_get_block_map_by_origin_x_y("../../data/road_mapper_map_voltadaufes_20180122",'r',7756420,-363930,&road_map);
+		//cout<<road_map.config.x_size<<"\t"<<road_map.config.y_size<<"\t"<<endl;getchar();
+		//show_road_map(&road_map);
+		//parse_world_origin_to_road_map(str_road_map_filename);
+		//bool valid_map_on_file = (carmen_map_read_gridmap_chunk(road_map_filename, &road_map) == 0);
+
+		//set_world_origin_to_road_map(&road_map);
+		//if (valid_map_on_file)
+		//{
+		//	cout << "File " << str_road_map_filename << " being displayed... ("
+		//			<< (i - g_road_map_index + 1) << " of " << (argc - g_road_map_index) << ")" << endl;
+		//	//road_mapper_display_road_map(&road_map, g_img_channels, g_class_bits);
+		//	generate_road_map_graph(&road_map, str_road_map_filename);
 			//print_map_in_terminal(&road_map);getchar();
-		}
-		else
-			cout << "road_mapper_display_map: could not read offline map from file named: " << road_map_filename << endl;
+		//}
+		//else
+		//	cout << "road_mapper_display_map: could not read offline map from file named: " << road_map_filename << endl;
+	//}
+
+	string str_road_map_filename(g_road_map_dir);
+	parse_road_map_dir_type_and_origin(str_road_map_filename);
+	g_road_map_folder = &str_g_road_map_folder[0u];
+	int count_maps = grid_mapping_get_block_map_by_origin_x_y(g_road_map_folder,'r',g_x_origin,g_y_origin,&road_map);
+	//cout<<road_map.config.x_size<<"\t"<<road_map.config.y_size<<"\t"<<road_map.config.x_origin<<"\t"<<road_map.config.y_origin<<"\t"<<endl;getchar();
+	if(count_maps>0)
+	{
+		show_road_map(&road_map);
+
+		//parse_world_origin_to_road_map(str_road_map_filename);
+		generate_road_map_graph(&road_map, str_road_map_filename);
+		//print_map_in_terminal(&road_map);getchar();
 	}
+	else
+		cout << "rddf_graph_main: could not read offline map from file named: " << g_road_map_dir << endl;
+
+
 	if (g_ipc_required)
 	{
 		register_handlers();
