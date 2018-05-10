@@ -194,11 +194,14 @@ typedef struct
 } simulated_moving_object_initial_state_t;
 
 
-virtual_scan_extended_t *
+carmen_mapper_virtual_scan_message *
 sort_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan);
 
 void
 virtual_scan_free_extended(virtual_scan_extended_t *virtual_scan_extended);
+
+carmen_mapper_virtual_scan_message *
+filter_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan_extended);
 
 virtual_scan_box_models_t *
 virtual_scan_new_box_models(void);
@@ -213,10 +216,13 @@ virtual_scan_box_models_t *
 virtual_scan_get_box_models(virtual_scan_box_model_hypotheses_t *hypotheses, int i);
 
 virtual_scan_segment_classes_t *
-virtual_scan_extract_segments(virtual_scan_extended_t *virtual_scan_extended);
+virtual_scan_extract_segments(carmen_mapper_virtual_scan_message *virtual_scan_extended);
+
+carmen_mapper_virtual_scan_message *
+copy_virtual_scan_message(carmen_mapper_virtual_scan_message *virtual_scan);
 
 void
-virtual_scan_free_scan_extended(virtual_scan_extended_t *virtual_scan_extended);
+virtual_scan_free_scan_extended(carmen_mapper_virtual_scan_message *virtual_scan_extended);
 
 void
 virtual_scan_free_segment_classes(virtual_scan_segment_classes_t *virtual_scan_segment_classes);

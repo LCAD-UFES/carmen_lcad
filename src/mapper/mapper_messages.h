@@ -59,16 +59,25 @@ typedef struct
 typedef struct
 {
 	int num_points;
-	carmen_position_t *points;
-	carmen_point_t globalpos;
+	carmen_point_t *points;
+	carmen_point_t sensor_pos;
+	int sensor_id;
 	double v;
 	double phi;
+	double timestamp;
+} carmen_virtual_scan_sensor_t;
+
+typedef struct
+{
+	int num_sensors;
+	carmen_virtual_scan_sensor_t *virtual_scan_sensor;
 	double timestamp;
 	char *host;
 } carmen_mapper_virtual_scan_message;
 
 #define CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_NAME		"carmen_mapper_virtual_scan_message"
-#define CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_FMT		"{int,<{double,double}:1>,{double,double,double}, double, double, double, string}"
+//#define CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_FMT		"{int,<{double,double}:1>,{double,double,double}, double, double, double, string}"
+#define CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_FMT		"{int,<{int,<{double,double,double}:1>,{double,double,double}, int, double, double, double}:1>,double, string}"
 
 
 #ifdef __cplusplus

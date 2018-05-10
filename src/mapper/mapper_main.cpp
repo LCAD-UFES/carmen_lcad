@@ -156,6 +156,22 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
 	}
 }
+
+
+void
+free_virtual_scan_message()
+{
+	if (virtual_scan_message.num_sensors != 0)
+	{
+		for (int i = 0; i < virtual_scan_message.num_sensors; i++)
+		{
+			free(virtual_scan_message.virtual_scan_sensor[i].points);
+			free(virtual_scan_message.virtual_scan_sensor);
+			virtual_scan_message.virtual_scan_sensor = NULL;
+			virtual_scan_message.num_sensors = 0;
+		}
+	}
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -174,12 +190,8 @@ publish_map(double timestamp)
 
 
 void
-publish_virtual_scan(carmen_point_t globalpos, double v, double phi, double timestamp)
+publish_virtual_scan(double timestamp)
 {
-//	printf("%d\n", virtual_scan_message.num_points);
-	virtual_scan_message.globalpos = globalpos;
-	virtual_scan_message.v = v;
-	virtual_scan_message.phi = phi;
 	carmen_mapper_publish_virtual_scan_message(&virtual_scan_message, timestamp);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -228,7 +240,8 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	if (ok_to_publish)
 	{
-		virtual_scan_message.num_points = 0;
+		free_virtual_scan_message();
+
 		// A ordem é importante
 		if (sensors_params[VELODYNE].alive)
 			include_sensor_data_into_map(VELODYNE, globalpos_message);
@@ -236,7 +249,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 			include_sensor_data_into_map(LASER_LDMRS, globalpos_message);
 
 		publish_map(globalpos_message->timestamp);
-		publish_virtual_scan(globalpos_message->globalpos, globalpos_message->v, globalpos_message->phi, globalpos_message->timestamp);
+		publish_virtual_scan(globalpos_message->timestamp);
 	}
 }
 

@@ -13,7 +13,7 @@
 
 #include "virtual_scan.h"
 
-#define SIMULATE_LATERAL_MOVING_OBSTACLE
+//#define SIMULATE_LATERAL_MOVING_OBSTACLE
 #define NUM_COLORS 4
 #define NMC	250
 #define T 10
@@ -31,7 +31,7 @@ int necessary_maps_available = 0;
 
 int g_zi = 0;
 
-virtual_scan_extended_t *g_virtual_scan_extended[NUMBER_OF_FRAMES_T];
+carmen_mapper_virtual_scan_message *g_virtual_scan_extended[NUMBER_OF_FRAMES_T];
 virtual_scan_segment_classes_t *g_virtual_scan_segment_classes[NUMBER_OF_FRAMES_T];
 
 virtual_scan_neighborhood_graph_t *g_neighborhood_graph = NULL;
@@ -78,9 +78,9 @@ fill_in_moving_objects_message_element(int k, carmen_moving_objects_point_clouds
 			break;
 		case BIKE:
 			model_features.model_name = (char *) ("Bike");
-			model_features.red = 1.0;
-			model_features.green = 1.0;
-			model_features.blue = 1.0;
+			model_features.red = 0.5;
+			model_features.green = 0.5;
+			model_features.blue = 0.5;
 			break;
 		case PEDESTRIAN:
 			model_features.model_name = (char *) ("Pedestrian");
@@ -107,14 +107,14 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 
 	int num_moving_objects = 0;
 	for (int i = 0; i < best_track_set->size; i++)
-//		if (best_track_set->tracks[i]->size > 2)
+		if (best_track_set->tracks[i]->size > 2)
 			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
 //				if (best_track_set->tracks[i]->box_model_hypothesis[j].zi == g_zi)
 					num_moving_objects++;
 
 	if (virtual_scan_box_model_hypotheses != NULL)
 		for (int i = 0; i < virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i++)
-			for (int j = 0; j< virtual_scan_box_model_hypotheses->box_model_hypotheses[i].num_boxes; j++)
+			for (int j = 0; j < virtual_scan_box_model_hypotheses->box_model_hypotheses[i].num_boxes; j++)
 				num_moving_objects++;
 
 	message->point_clouds = (t_point_cloud_struct *) malloc(sizeof(t_point_cloud_struct) * num_moving_objects);
@@ -123,7 +123,7 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 	int k = 0;
 	for (int i = 0; i < best_track_set->size; i++)
 	{
-//		if (best_track_set->tracks[i]->size > 2)
+		if (best_track_set->tracks[i]->size > 2)
 		{
 			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
 			{
@@ -315,33 +315,55 @@ virtual_scan_publish_moving_objects(virtual_scan_track_set_t *track_set, virtual
 
 
 //void
-//publish_virtual_scan(virtual_scan_segments_t *virtual_scan_segments)
+//publish_virtual_scan_extended(virtual_scan_extended_t *virtual_scan_extendend)
 //{
 //	virtual_laser_message.host = carmen_get_host();
-//	virtual_laser_message.num_positions = 0;
-//	for (int i = 0; i < virtual_scan_segments->num_segments; i++)
-//		virtual_laser_message.num_positions += virtual_scan_segments->segment[i].num_points;
+//	virtual_laser_message.num_positions = virtual_scan_extendend->num_points;
 //	virtual_laser_message.positions = (carmen_position_t *) malloc(virtual_laser_message.num_positions * sizeof(carmen_position_t));
 //	virtual_laser_message.colors = (char *) malloc(virtual_laser_message.num_positions * sizeof(char));
-//	int k = 0;
-//	for (int i = 0; i < virtual_scan_segments->num_segments; i++)
+//
+//	for (int i = 0; i < virtual_scan_extendend->num_points; i++)
 //	{
-//		char color = colors[i % NUM_COLORS];
-//		for (int j = 0; j < virtual_scan_segments->segment[i].num_points; j++)
-//		{
-//			virtual_laser_message.positions[k].x = virtual_scan_segments->segment[i].point[j].x;
-//			virtual_laser_message.positions[k].y = virtual_scan_segments->segment[i].point[j].y;
-//			virtual_laser_message.colors[k] = color;
-//			k++;
-//		}
+//		char color = CARMEN_ORANGE;
+//		virtual_laser_message.positions[i].x = virtual_scan_extendend->points[i].x;
+//		virtual_laser_message.positions[i].y = virtual_scan_extendend->points[i].y;
+//		virtual_laser_message.colors[i] = color;
 //	}
 //	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 //
 //	free(virtual_laser_message.positions);
 //	free(virtual_laser_message.colors);
-//	free(virtual_scan_segments->segment);
-//	free(virtual_scan_segments);
 //}
+
+
+void
+publish_virtual_scan_extended(carmen_mapper_virtual_scan_message *virtual_scan_extended)
+{
+	virtual_laser_message.host = carmen_get_host();
+	virtual_laser_message.num_positions = 0;
+	for (int s = 0; s < virtual_scan_extended->num_sensors; s++)
+		virtual_laser_message.num_positions += virtual_scan_extended->virtual_scan_sensor[s].num_points;
+
+	virtual_laser_message.positions = (carmen_position_t *) malloc(virtual_laser_message.num_positions * sizeof(carmen_position_t));
+	virtual_laser_message.colors = (char *) malloc(virtual_laser_message.num_positions * sizeof(char));
+
+	int j = 0;
+	for (int s = 0; s < virtual_scan_extended->num_sensors; s++)
+	{
+		for (int i = 0; i < virtual_scan_extended->virtual_scan_sensor[s].num_points; i++)
+		{
+			char color = CARMEN_ORANGE;
+			virtual_laser_message.positions[j].x = virtual_scan_extended->virtual_scan_sensor[s].points[i].x;
+			virtual_laser_message.positions[j].y = virtual_scan_extended->virtual_scan_sensor[s].points[i].y;
+			virtual_laser_message.colors[j] = color;
+			j++;
+		}
+	}
+	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
+
+	free(virtual_laser_message.positions);
+	free(virtual_laser_message.colors);
+}
 
 
 void
@@ -403,6 +425,7 @@ virtual_scan_publish_segments(virtual_scan_segment_classes_t *virtual_scan_segme
 }
 
 
+#ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
 void
 publish_simulated_objects(carmen_rectangle_t *simulated_moving_objects, int num_moving_objects, carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
@@ -420,6 +443,7 @@ publish_simulated_objects(carmen_rectangle_t *simulated_moving_objects, int num_
 
 	free(simulated_scan.points);
 }
+#endif
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -436,11 +460,16 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 //	double t_ini = carmen_get_time();
 	if (necessary_maps_available)
 	{
+//		publish_virtual_scan_extended(message);
+
 		virtual_scan_free_scan_extended(g_virtual_scan_extended[g_zi]);
 		g_virtual_scan_extended[g_zi] = sort_virtual_scan(message);
 
+		carmen_mapper_virtual_scan_message *virtual_scan_extended_filtered = filter_virtual_scan(g_virtual_scan_extended[g_zi]);
+//		publish_virtual_scan_extended(virtual_scan_extended_filtered);
+
 		virtual_scan_free_segment_classes(g_virtual_scan_segment_classes[g_zi]);
-		g_virtual_scan_segment_classes[g_zi] = virtual_scan_extract_segments(g_virtual_scan_extended[g_zi]);
+		g_virtual_scan_segment_classes[g_zi] = virtual_scan_extract_segments(virtual_scan_extended_filtered);
 		virtual_scan_publish_segments(g_virtual_scan_segment_classes[g_zi]);
 
 		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_zi]);
