@@ -78,7 +78,7 @@ sum_of_variances(virtual_scan_track_set_t *track_set)
 			{
 				double distance_travelled = DIST2D(track_set->tracks[i]->box_model_hypothesis[j].hypothesis, track_set->tracks[i]->box_model_hypothesis[j - 1].hypothesis);
 				double delta_theta = carmen_normalize_theta(track_set->tracks[i]->box_model_hypothesis[j].hypothesis.theta - track_set->tracks[i]->box_model_hypothesis[j - 1].hypothesis.theta);
-				double delta_t = track_set->tracks[i]->box_model_hypothesis[j].timestamp - track_set->tracks[i]->box_model_hypothesis[j - 1].timestamp;
+				double delta_t = track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.precise_timestamp - track_set->tracks[i]->box_model_hypothesis[j - 1].hypothesis_points.precise_timestamp;
 				double v = distance_travelled / delta_t;
 				double d_theta = delta_theta / delta_t;
 				track_set->tracks[i]->box_model_hypothesis[j].v = v;

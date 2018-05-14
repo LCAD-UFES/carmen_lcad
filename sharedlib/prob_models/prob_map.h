@@ -72,14 +72,6 @@ typedef struct log_odds_param
 } log_odds_param;
 
 
-typedef enum
-{	// A ordem da numeração é importante
-	VELODYNE = 0,
-	LASER_LDMRS = 1,
-	CAMERA = 2
-} SENSOR_TYPE;
-
-
 typedef struct _sensor_parameters
 {
 	int alive;

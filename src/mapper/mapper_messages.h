@@ -56,6 +56,14 @@ typedef struct
 #define CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_FMT		"{int,<{double,double}:1>, <byte:1>, double, string}"
 
 
+typedef enum
+{	// A ordem da numeração é importante
+	VELODYNE = 0,
+	LASER_LDMRS = 1,
+	CAMERA = 2
+} SENSOR_TYPE;
+
+
 typedef struct
 {
 	int num_points;
