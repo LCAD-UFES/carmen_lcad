@@ -44,10 +44,12 @@ define_messages()
 {
 }
 
+
 static void
 register_handlers()
 {
 }
+
 
 void
 shutdown_module(int signo)
@@ -60,104 +62,6 @@ shutdown_module(int signo)
 	}
 }
 
-
-static double*
-get_cell_pointer(double *map, int cell_number)
-{
-	switch (cell_number)
-	{
-	case 0:
-		return map;
-		break;
-	case 1:
-		return &map[local_gridmap_count * local_gridmap_count_3];
-		break;
-	case 2:
-		return &map[local_gridmap_count * 2 * local_gridmap_count_3];
-		break;
-	case 3:
-		return &map[local_gridmap_count_3];
-		break;
-	case 4:
-		return &map[local_gridmap_count * local_gridmap_count_3 + local_gridmap_count_3];
-		break;
-	case 5:
-		return &map[local_gridmap_count * 2 * local_gridmap_count_3 + local_gridmap_count_3];
-		break;
-	case 6:
-		return &map[2 * local_gridmap_count_3];
-		break;
-	case 7:
-		return &map[2 * local_gridmap_count_3 + local_gridmap_count * local_gridmap_count_3];
-		break;
-	case 8:
-		return &map[2 * local_gridmap_count_3 + local_gridmap_count * local_gridmap_count_3 * 2];
-		break;
-	}
-	return NULL;
-}
-
-
-static void
-copy_cell_to_map(carmen_map_t *map, double **cell, int cell_number)
-{
-	int i;
-
-	double *map_cell;
-	map_cell = get_cell_pointer(map->complete_map, cell_number);
-
-	for (i = 0; i < local_gridmap_count_3; i++)
-	{
-		memcpy(map_cell + i * local_gridmap_count, cell[i], local_gridmap_count_3 * sizeof(double));
-	}
-}
-
-
-int
-grid_mapping_get_block_map_by_origin_x_y(char *map_path, char map_type, double x_origin, double y_origin, carmen_map_t *new_map)
-{
-	carmen_map_t unk_map;
-	char full_map_path[1024];
-	double local_x_origin, local_y_origin;
-	int block_map_exists_on_file = 1;
-	int count_maps_on_file = 0;
-	int i, j, k;
-
-	if (new_map->complete_map == NULL)
-		carmen_grid_mapping_initialize_map(new_map, local_gridmap_count, local_gridmap_resolution, map_type);
-	else
-		carmen_grid_mapping_set_unknown_value(new_map, map_type);
-
-
-	for (i = 0, k = 0; i < 3; i++)
-	{
-		for (j = 0; j < 3; j++, k++)
-		{
-			local_x_origin = x_origin + j * (local_gridmap_size / 3.0);
-			local_y_origin = y_origin + i * (local_gridmap_size / 3.0);
-
-			sprintf(full_map_path, "%s/%c%d_%d.map", map_path, map_type, (int)local_x_origin, (int)local_y_origin);
-
-			block_map_exists_on_file = carmen_map_read_gridmap_chunk(full_map_path, &unk_map) != -1;
-
-			if (block_map_exists_on_file)
-			{
-				copy_cell_to_map(new_map, unk_map.map, k);
-				free(unk_map.map);
-				free(unk_map.complete_map);
-				free(unk_map.config.map_name);
-				count_maps_on_file++;
-			}
-		}
-	}
-
-	strcpy(new_map->config.origin, "from grid_mapping (built from blocks in files)");
-	new_map->config.x_origin = x_origin;
-	new_map->config.y_origin = y_origin;
-
-	return count_maps_on_file > 0;
-
-}
 
 void
 parse_road_map_dir_type_and_origin(string str_road_map_filename)
@@ -190,8 +94,6 @@ parse_road_map_dir_type_and_origin(string str_road_map_filename)
 	y_origin = str_road_map_filename.substr(last_trace_position,last_dot_position-last_trace_position);
 	g_x_origin = atof(x_origin.c_str());
 	g_y_origin = atof(y_origin.c_str());
-
-
 }
 
 
@@ -207,11 +109,11 @@ read_parameters(int argc, char **argv)
 }
 
 
-
 int
 main(int argc, char **argv)
 {
 	read_parameters(argc, argv);
+	carmen_grid_mapping_init_parameters(0.2,210);
 	system("rm -f already_visited/*.*");
 
 
@@ -226,39 +128,17 @@ main(int argc, char **argv)
 
 	carmen_map_t road_map;
 	road_map.complete_map = NULL;
-	//printf("%d \t %d\n",g_road_map_index, argc);
-		//getchar();
-	//for (int i = g_road_map_index; i < argc; i++)
-	//{
-		//char *road_map_filename = argv[i];
-		//string str_road_map_filename(road_map_filename);
-		//int c = grid_mapping_get_block_map_by_origin_x_y("../../data/road_mapper_map_voltadaufes_20180122",'r',7756420,-363930,&road_map);
-		//cout<<road_map.config.x_size<<"\t"<<road_map.config.y_size<<"\t"<<endl;getchar();
-		//show_road_map(&road_map);
-		//parse_world_origin_to_road_map(str_road_map_filename);
-		//bool valid_map_on_file = (carmen_map_read_gridmap_chunk(road_map_filename, &road_map) == 0);
-
-		//set_world_origin_to_road_map(&road_map);
-		//if (valid_map_on_file)
-		//{
-		//	cout << "File " << str_road_map_filename << " being displayed... ("
-		//			<< (i - g_road_map_index + 1) << " of " << (argc - g_road_map_index) << ")" << endl;
-		//	//road_mapper_display_road_map(&road_map, g_img_channels, g_class_bits);
-		//	generate_road_map_graph(&road_map, str_road_map_filename);
-			//print_map_in_terminal(&road_map);getchar();
-		//}
-		//else
-		//	cout << "road_mapper_display_map: could not read offline map from file named: " << road_map_filename << endl;
-	//}
 
 	string str_road_map_filename(g_road_map_dir);
 	parse_road_map_dir_type_and_origin(str_road_map_filename);
 	g_road_map_folder = &str_g_road_map_folder[0u];
-	int count_maps = grid_mapping_get_block_map_by_origin_x_y(g_road_map_folder,'r',g_x_origin,g_y_origin,&road_map);
+
+	int count_maps = carmen_grid_mapping_get_block_map_by_origin_x_y(g_road_map_folder,'r',g_x_origin,g_y_origin,&road_map);
+	carmen_grid_mapping_update_map_buffer(&road_map,'r');
 	//cout<<road_map.config.x_size<<"\t"<<road_map.config.y_size<<"\t"<<road_map.config.x_origin<<"\t"<<road_map.config.y_origin<<"\t"<<endl;getchar();
 	if(count_maps>0)
 	{
-		show_road_map(&road_map);
+		//show_road_map(&road_map,0,0);
 
 		//parse_world_origin_to_road_map(str_road_map_filename);
 		generate_road_map_graph(&road_map, str_road_map_filename);
