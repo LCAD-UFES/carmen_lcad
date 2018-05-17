@@ -255,7 +255,7 @@ draw_moving_objects_in_scan(carmen_virtual_scan_sensor_t *simulated_scan, carmen
 	int num_points = 0;
 	for (double angle = -M_PI; angle < M_PI; angle += M_PI / (360 * 4.0))
 		num_points++;
-	simulated_scan->num_points = num_points;
+//	simulated_scan->num_points = num_points;
 	simulated_scan->points = (carmen_point_t *) malloc(num_points * sizeof(carmen_point_t));
 
 	int i = 0;
@@ -285,11 +285,15 @@ draw_moving_objects_in_scan(carmen_virtual_scan_sensor_t *simulated_scan, carmen
 			}
 		}
 		if (hit_obstacle)
+		{
 			simulated_scan->points[i] = {nearest_intersection.x, nearest_intersection.y, 0.0};
-		else
-			simulated_scan->points[i] = {target.x, target.y, 0.0};
-		i++;
+			i++;
+		}
+//		else
+//			simulated_scan->points[i] = {target.x, target.y, 0.0};
+//		i++;
 	}
+	simulated_scan->num_points = i;
 }
 #endif
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -452,7 +456,7 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 
 		virtual_scan_free_segment_classes(g_virtual_scan_segment_classes[g_zi]);
 		g_virtual_scan_segment_classes[g_zi] = virtual_scan_extract_segments(virtual_scan_extended_filtered);
-		virtual_scan_publish_segments(g_virtual_scan_segment_classes[g_zi]);
+//		virtual_scan_publish_segments(g_virtual_scan_segment_classes[g_zi]);
 
 		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_zi], message->timestamp);
 //		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
@@ -460,8 +464,8 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 		g_neighborhood_graph = virtual_scan_update_neighborhood_graph(g_neighborhood_graph, virtual_scan_box_model_hypotheses);
 
 		virtual_scan_track_set_t *track_set = virtual_scan_infer_moving_objects(g_neighborhood_graph);
-//		virtual_scan_publish_moving_objects(track_set, NULL);
-		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);
+		virtual_scan_publish_moving_objects(track_set, NULL);
+//		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);
 
 		virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
 
@@ -506,7 +510,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
 	static simulated_moving_object_initial_state_t simulated_moving_objects_initial_state[2] =
-		{{{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, 0.0, 0.0,   0.0, -12.0, 4.5, 1.5},
+		{{{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, 0.0, 0.0,   0.0, 12.0, 4.5, 1.5},
 		 {{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, 0.0, 0.0,   0.0, 12.0, 4.5, 1.5}};
 	carmen_rectangle_t simulated_objects[2];
 	carmen_ackerman_traj_point_t *simulated_object_pose;
@@ -517,11 +521,11 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 		simulated_objects[num_moving_objects] = {simulated_object_pose->x, simulated_object_pose->y, simulated_object_pose->theta,
 								simulated_moving_objects_initial_state[num_moving_objects].length, simulated_moving_objects_initial_state[num_moving_objects].width};
 
-	num_moving_objects++;
-	simulated_object_pose = compute_simulated_lateral_objects(&(simulated_moving_objects_initial_state[num_moving_objects]), current_robot_pose_v_and_phi, msg->timestamp);
-	if (simulated_object_pose)
-		simulated_objects[num_moving_objects] = {simulated_object_pose->x, simulated_object_pose->y, simulated_object_pose->theta,
-								simulated_moving_objects_initial_state[num_moving_objects].length, simulated_moving_objects_initial_state[num_moving_objects].width};
+//	num_moving_objects++;
+//	simulated_object_pose = compute_simulated_lateral_objects(&(simulated_moving_objects_initial_state[num_moving_objects]), current_robot_pose_v_and_phi, msg->timestamp);
+//	if (simulated_object_pose)
+//		simulated_objects[num_moving_objects] = {simulated_object_pose->x, simulated_object_pose->y, simulated_object_pose->theta,
+//								simulated_moving_objects_initial_state[num_moving_objects].length, simulated_moving_objects_initial_state[num_moving_objects].width};
 
 	if (simulated_object_pose)
 		publish_simulated_objects(simulated_objects, num_moving_objects + 1, msg);

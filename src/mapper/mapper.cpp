@@ -199,7 +199,8 @@ build_virtual_scan_message_velodyne(int tid, sensor_parameters_t *sensor_params,
 
 
 void
-initialize_virtual_scan_message_update(int sensor_id, carmen_pose_3D_t robot_pose, carmen_pose_3D_t robot_interpolated_position, double v, double phi,
+initialize_virtual_scan_message_update(int sensor_id, carmen_pose_3D_t robot_pose, carmen_pose_3D_t robot_interpolated_position,
+		double time_spent_in_the_entire_sensor_sweep, double last_sensor_angle, double v, double phi,
 		int num_points, int point_cloud_index, rotation_matrix *r_matrix_robot_to_global, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
 {
 	r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_pose.orientation);
@@ -212,6 +213,8 @@ initialize_virtual_scan_message_update(int sensor_id, carmen_pose_3D_t robot_pos
 	carmen_point_t sensor_pos = {sensor_position_in_the_world.x, sensor_position_in_the_world.y, robot_interpolated_position.orientation.yaw};
 	virtual_scan_message.virtual_scan_sensor[n].sensor_pos = sensor_pos;
 	virtual_scan_message.virtual_scan_sensor[n].sensor_id = sensor_id;
+	virtual_scan_message.virtual_scan_sensor[n].time_spent_in_the_entire_sensor_sweep = time_spent_in_the_entire_sensor_sweep;
+	virtual_scan_message.virtual_scan_sensor[n].last_sensor_angle = last_sensor_angle;
 	virtual_scan_message.virtual_scan_sensor[n].v = v;
 	virtual_scan_message.virtual_scan_sensor[n].phi = phi;
 	virtual_scan_message.virtual_scan_sensor[n].num_points = 0; // O total de pontos alocados abaixo pode nao ser totalmente alocado, pois os pontos realmente usados sao preenchidos sob demanda;
@@ -680,7 +683,8 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 //	robot_pose.orientation.pitch = 0.0;
 //	robot_pose.orientation.roll = 0.0;
 
-	initialize_virtual_scan_message_update(VELODYNE, robot_pose, robot_interpolated_position, v, phi, N, point_cloud_index, r_matrix_robot_to_global, sensor_params, sensor_data);
+	initialize_virtual_scan_message_update(VELODYNE, robot_pose, robot_interpolated_position, dt * (double) N, v_zt.sphere_points[sensor_params->vertical_resolution * (N - 1)].horizontal_angle,
+			v, phi, N, point_cloud_index, r_matrix_robot_to_global, sensor_params, sensor_data);
 	for (int j = 0; j < N; j += 1)
 	{
 		i = j * sensor_params->vertical_resolution;
@@ -807,7 +811,8 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_o
 	robot_pose.orientation.pitch = 0.0;
 	robot_pose.orientation.roll = 0.0;
 
-	initialize_virtual_scan_message_update(LASER_LDMRS, robot_pose, robot_interpolated_position, v, phi, N, point_cloud_index, r_matrix_robot_to_global, sensor_params, sensor_data);
+	initialize_virtual_scan_message_update(LASER_LDMRS, robot_pose, robot_interpolated_position, dt * (double) N, v_zt.sphere_points[sensor_params->vertical_resolution * (N - 1)].horizontal_angle,
+			v, phi, N, point_cloud_index, r_matrix_robot_to_global, sensor_params, sensor_data);
 	for (int j = 0; j < N; j += 1)
 	{
 		i = j * sensor_params->vertical_resolution;

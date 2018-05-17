@@ -19,6 +19,8 @@
 #define	BIKE		'b' // Width: 1,20 m; Length: 2,20 m
 #define	PEDESTRIAN	'P'
 
+#define GET_MIN_V_PER_OBJECT_CLASS(c) ((c == BUS)? 0.5: (c == CAR)? 0.5: (c == BIKE)? 0.5: (c == PEDESTRIAN)? 0.2: 0.5)
+
 #define CHILD_EDGE 		'C'
 #define PARENT_EDGE 	'P'
 #define SIBLING_EDGE 	'S'

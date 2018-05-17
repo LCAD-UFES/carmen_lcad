@@ -6,6 +6,8 @@
  */
 
 #include "laser_ldmrs_utils.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 
 void
@@ -143,32 +145,52 @@ carmen_laser_ldmrs_new_convert_laser_scan_to_partial_velodyne_message(carmen_las
 	carmen_velodyne_partial_scan_message velodyne_message;
 
 	double delta_angle = carmen_degrees_to_radians(0.25);
-	int number_of_shots = (int) ceil((msg->start_angle - msg->end_angle) / delta_angle);
-	if (number_of_shots <= 0)
+	if (((msg->start_angle - msg->end_angle) / delta_angle) <= 0)
 	{
 		velodyne_message.number_of_32_laser_shots = 0;
 		return (velodyne_message);
 	}
 
-	velodyne_message.number_of_32_laser_shots = number_of_shots;
-	velodyne_message.partial_scan = (carmen_velodyne_32_laser_shot *) calloc (velodyne_message.number_of_32_laser_shots, sizeof(carmen_velodyne_32_laser_shot));
+	velodyne_message.number_of_32_laser_shots = (int) ceil((msg->start_angle - msg->end_angle) / delta_angle);
+	velodyne_message.partial_scan = (carmen_velodyne_32_laser_shot *) calloc(velodyne_message.number_of_32_laser_shots, sizeof(carmen_velodyne_32_laser_shot));
 	velodyne_message.timestamp = laserscan_timestamp;
 	velodyne_message.host = carmen_get_host();
 
+	int index = 0;
+	int layer = msg->arraypoints[0].layer;
+	if (layer != 0)
+	{
+		for (int j = 0; j < layer; j++)
+		{
+			velodyne_message.partial_scan[index].distance[j] = 0;
+			velodyne_message.partial_scan[index].intensity[j] = 255;
+			velodyne_message.partial_scan[index].angle = -carmen_radians_to_degrees(msg->arraypoints[0].horizontal_angle);
+		}
+	}
 	for (int i = 0; i < msg->scan_points; i++)
 	{
+		double distance = msg->arraypoints[i].radial_distance;
+//		distance = (distance > 130.0) ? 0.0: distance;
 		int flags = msg->arraypoints[i].flags;
 		if ((flags & SLDMRS_POINT_FLAG_NOISE) || (flags & SLDMRS_POINT_FLAG_GROUND) || (flags & SLDMRS_POINT_FLAG_DIRT))
-			continue;
-		int index = round((msg->arraypoints[i].horizontal_angle - msg->end_angle) / delta_angle);
-		int layer = msg->arraypoints[i].layer;
-		double distance = msg->arraypoints[i].radial_distance;
-		distance = (distance > 130.0) ? 0.0: distance;
+			distance = 0.0;
+
+		layer = msg->arraypoints[i].layer;
 		velodyne_message.partial_scan[index].distance[layer] = (unsigned short) (round(distance * 500.0));
 		velodyne_message.partial_scan[index].intensity[layer] = 255;
 		velodyne_message.partial_scan[index].angle = -carmen_radians_to_degrees(msg->arraypoints[i].horizontal_angle);
-//		printf("echo %d\n", msg->arraypoints[i].echo);
+		if (((i + 1) < msg->scan_points) && (msg->arraypoints[i + 1].layer < msg->arraypoints[i].layer))
+		{
+			for (layer = msg->arraypoints[i].layer + 1; layer < 4; layer++)
+			{
+				velodyne_message.partial_scan[index].distance[layer] = 0;
+				velodyne_message.partial_scan[index].intensity[layer] = 255;
+				velodyne_message.partial_scan[index].angle = -carmen_radians_to_degrees(msg->arraypoints[i].horizontal_angle);
+			}
+			index++;
+		}
 	}
+	velodyne_message.number_of_32_laser_shots = index;
 
 	return (velodyne_message);
 }

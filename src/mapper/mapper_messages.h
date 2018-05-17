@@ -69,6 +69,8 @@ typedef struct
 	int num_points;
 	carmen_point_t *points;
 	carmen_point_t sensor_pos;
+	double time_spent_in_the_entire_sensor_sweep;
+	double last_sensor_angle;
 	int sensor_id;
 	double v;
 	double phi;
@@ -85,7 +87,7 @@ typedef struct
 
 #define CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_NAME		"carmen_mapper_virtual_scan_message"
 //#define CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_FMT		"{int,<{double,double}:1>,{double,double,double}, double, double, double, string}"
-#define CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_FMT		"{int,<{int,<{double,double,double}:1>,{double,double,double}, int, double, double, double}:1>,double, string}"
+#define CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_FMT		"{int,<{int,<{double,double,double}:1>,{double,double,double}, double, double, int, double, double, double}:1>,double, string}"
 
 
 #ifdef __cplusplus

@@ -60,9 +60,9 @@ print_track_set(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_g
 	{
 		fprintf(track_sets, "track %d: ", i);
 		for (int j = 0; j < track_set->tracks[i]->size; j++)
-			fprintf(track_sets, "h %d - %c, index %d, zi %d;  ", j, track_set->tracks[i]->box_model_hypothesis[j].hypothesis.c,
+			fprintf(track_sets, "h %d - %c, index %d, zi %d, v %lf;  ", j, track_set->tracks[i]->box_model_hypothesis[j].hypothesis.c,
 					track_set->tracks[i]->box_model_hypothesis[j].index,
-					track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi);
+					track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi, track_set->tracks[i]->box_model_hypothesis[j].v);
 		fprintf(track_sets, "\n");
 	}
 
@@ -256,14 +256,22 @@ segment_virtual_scan(carmen_mapper_virtual_scan_message *extended_virtual_scan)
 					virtual_scan_segments->segment[current_segment].points[i] = cluster[i];
 
 				virtual_scan_segments->segment[current_segment].centroid = compute_segment_centroid(virtual_scan_segments->segment[current_segment]);
-//				double centroid_angle = atan2(virtual_scan_segments->segment[current_segment].centroid.y - virtual_scan_segments->segment[current_segment].sensor_pos.y,
-//						virtual_scan_segments->segment[current_segment].centroid.x - virtual_scan_segments->segment[current_segment].sensor_pos.x);
-				if (virtual_scan_segments->segment[current_segment].sensor_id == VELODYNE)
-					virtual_scan_segments->segment[current_segment].precise_timestamp = extended_virtual_scan->virtual_scan_sensor[s].timestamp; // @@@ Alberto: rever -> colocar o timestamp preciso
-				else if (virtual_scan_segments->segment[current_segment].sensor_id == LASER_LDMRS)
-					virtual_scan_segments->segment[current_segment].precise_timestamp = extended_virtual_scan->virtual_scan_sensor[s].timestamp; // @@@ Alberto: rever -> colocar o timestamp preciso
-				else
-					virtual_scan_segments->segment[current_segment].precise_timestamp = extended_virtual_scan->virtual_scan_sensor[s].timestamp; // @@@ Alberto: rever -> colocar o timestamp preciso
+				double centroid_angle = atan2(virtual_scan_segments->segment[current_segment].centroid.y - virtual_scan_segments->segment[current_segment].sensor_pos.y,
+						virtual_scan_segments->segment[current_segment].centroid.x - virtual_scan_segments->segment[current_segment].sensor_pos.x);
+
+				double angular_distance_to_timestamp = carmen_normalize_theta(centroid_angle - virtual_scan_segments->segment[current_segment].sensor_pos.theta) -
+						extended_virtual_scan->virtual_scan_sensor[s].last_sensor_angle;
+				double delta_t = (angular_distance_to_timestamp / (2 * M_PI)) * extended_virtual_scan->virtual_scan_sensor[s].time_spent_in_the_entire_sensor_sweep;
+				virtual_scan_segments->segment[current_segment].precise_timestamp = extended_virtual_scan->virtual_scan_sensor[s].timestamp - delta_t;
+
+//				printf("sensor_id %d, sensor_tess %lf, sensor_lsa %lf, sensor_dist %lf, segment_id %d, centroid_angle %lf, sensor_angle %lf, delta_t %lf\n",
+//						virtual_scan_segments->segment[current_segment].sensor_id,
+//						extended_virtual_scan->virtual_scan_sensor[s].time_spent_in_the_entire_sensor_sweep,
+//						carmen_radians_to_degrees(extended_virtual_scan->virtual_scan_sensor[s].last_sensor_angle),
+//						DIST2D(virtual_scan_segments->segment[current_segment].sensor_pos, virtual_scan_segments->segment[current_segment].centroid),
+//						segment_id,
+//						carmen_radians_to_degrees(centroid_angle), carmen_radians_to_degrees(virtual_scan_segments->segment[current_segment].sensor_pos.theta),
+//						delta_t);
 
 				sort_segment_points_by_angle(&(virtual_scan_segments->segment[current_segment]), extended_virtual_scan->virtual_scan_sensor[s].sensor_pos);
 			}
@@ -1786,6 +1794,26 @@ track_death(virtual_scan_track_set_t *track_set, int victim)
 }
 
 
+virtual_scan_track_set_t *
+track_removal(virtual_scan_track_set_t *track_set, int victim)
+{
+	if (track_set->size > 1)
+	{
+		free_track(track_set->tracks[victim]);
+		memmove((void *) &(track_set->tracks[victim]), &(track_set->tracks[victim + 1]), (track_set->size - (victim + 1)) * sizeof(virtual_scan_track_t *));
+		// Tinha que fazer um realloc do track_set aqui...
+		track_set->size -= 1;
+	}
+	else
+	{
+		free_track_set(track_set);
+		track_set = NULL;
+	}
+
+	return (track_set);
+}
+
+
 void
 track_split(virtual_scan_track_set_t *track_set, int track_id)
 {
@@ -2052,6 +2080,87 @@ stop_condition(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_gr
 }
 
 
+void
+compute_tracks_velocities(virtual_scan_track_set_t *track_set)
+{
+	if (track_set == NULL)
+		return;
+
+	for (int i = 0; i < track_set->size; i++)
+	{
+		if (track_set->tracks[i]->size >= 2)
+		{
+			for (int j = 1; j < track_set->tracks[i]->size; j++)
+			{
+				double delta_t = track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.precise_timestamp - track_set->tracks[i]->box_model_hypothesis[j - 1].hypothesis_points.precise_timestamp;
+				double distance_travelled = DIST2D(track_set->tracks[i]->box_model_hypothesis[j].hypothesis, track_set->tracks[i]->box_model_hypothesis[j - 1].hypothesis);
+				double angle_in_the_distance_travelled = ANGLE2D(track_set->tracks[i]->box_model_hypothesis[j].hypothesis, track_set->tracks[i]->box_model_hypothesis[j - 1].hypothesis);
+				double v = (cos(track_set->tracks[i]->box_model_hypothesis[j].hypothesis.theta - angle_in_the_distance_travelled) * distance_travelled) / delta_t;
+				double delta_theta = carmen_normalize_theta(track_set->tracks[i]->box_model_hypothesis[j].hypothesis.theta - track_set->tracks[i]->box_model_hypothesis[j - 1].hypothesis.theta);
+				double d_theta = delta_theta / delta_t;
+				track_set->tracks[i]->box_model_hypothesis[j].v = v;
+				track_set->tracks[i]->box_model_hypothesis[j].d_theta = d_theta;
+			}
+		}
+	}
+}
+
+
+double
+average_track_velocity(virtual_scan_track_t *track)
+{
+	if (track->size < 3)
+		return (-1.0); // velocidade invalida - velocidades sao sempre positivas e orientadas por um angulo que nao eh considerado aqui
+
+	double average_v = 0.0;
+	for (int i = 0; i < track->size; i++)
+		average_v += track->box_model_hypothesis[i].v;
+
+	average_v = fabs(average_v / (double) track->size);
+
+	return (average_v);
+}
+
+
+bool
+too_slow(virtual_scan_track_t *track, double v)
+{
+	if (v < 0.0)
+		return (false); // velocidade invalida - velocidades sao sempre positivas e orientadas por um angulo que nao eh considerado aqui
+
+	double min_v = GET_MIN_V_PER_OBJECT_CLASS(track->box_model_hypothesis[0].hypothesis.c);
+	if (v < min_v)
+		return (true);
+
+	return (false);
+}
+
+
+virtual_scan_track_set_t *
+filter_track_set(virtual_scan_track_set_t *track_set)
+{
+	if (track_set == NULL)
+		return (NULL);
+
+	int i = 0;
+	while (i < track_set->size)
+	{
+		int previous_track_set_size = track_set->size;
+
+		if (too_slow(track_set->tracks[i], average_track_velocity(track_set->tracks[i])))
+			track_set = track_removal(track_set, i);
+
+		if (track_set == NULL)
+			return (NULL);
+
+		if (previous_track_set_size == track_set->size)
+			i++;
+	}
+
+	return (track_set);
+}
+
+
 virtual_scan_track_set_t *
 propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_track_set_t *track_set_n_1)
 {
@@ -2069,15 +2178,15 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 
 	virtual_scan_track_set_t *track_set = copy_track_set(track_set_n_1, neighborhood_graph);
 
-	if (neighborhood_graph->graph_id == 7)
-	{
-		char *move[] = {(char *) "Birth", (char *) "Extension", (char *) "reduction", (char *) "Death", (char *) "Split",
-				(char *) "Merge", (char *) "Switch", (char *) "Diffusion"};
-		print_track_set(track_set, neighborhood_graph, 777);
-		FILE *track_sets = fopen("track_sets.txt", "a");
-		fprintf(track_sets, "\nrand_move %s, rand_track %d\n", move[rand_move], rand_track);
-		fclose(track_sets);
-	}
+//	if (neighborhood_graph->graph_id == 7)
+//	{
+//		char *move[] = {(char *) "Birth", (char *) "Extension", (char *) "reduction", (char *) "Death", (char *) "Split",
+//				(char *) "Merge", (char *) "Switch", (char *) "Diffusion"};
+//		print_track_set(track_set, neighborhood_graph, 777);
+//		FILE *track_sets = fopen("track_sets.txt", "a");
+//		fprintf(track_sets, "\nrand_move %s, rand_track %d\n", move[rand_move], rand_track);
+//		fclose(track_sets);
+//	}
 
 	switch (rand_move)
 	{
@@ -2116,10 +2225,10 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 //			break;
 	}
 
-	if (neighborhood_graph->graph_id == 7)
-		print_track_set(track_set, neighborhood_graph, 888);
-//	if (stop_condition(track_set, neighborhood_graph))
-//		printf("stop condition\n");
+	compute_tracks_velocities(track_set);
+
+//	if (neighborhood_graph->graph_id == 7)
+//		print_track_set(track_set, neighborhood_graph, 888);
 
 	return (track_set);
 }
@@ -2224,7 +2333,9 @@ virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhoo
 
 	best_track_set = filter_best_track_set(best_track_set);
 
-	double best_track_prob = probability_of_track_set_given_measurements(best_track_set);
+	best_track_set = filter_track_set(best_track_set);
+
+	double best_track_prob = probability_of_track_set_given_measurements(best_track_set, true);
 	printf("num_tracks %d, largest track %d, prob %lf\n", (best_track_set)? best_track_set->size: 0, largest_track_size(best_track_set), best_track_prob);
 	print_track_set(best_track_set, neighborhood_graph, 0);
 
