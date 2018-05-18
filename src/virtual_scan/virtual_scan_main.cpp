@@ -98,12 +98,17 @@ fill_in_moving_objects_message_element(int k, carmen_moving_objects_point_clouds
 carmen_moving_objects_point_clouds_message *
 fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = NULL)
 {
-	if (best_track_set == NULL)
-		return (NULL);
-
 	carmen_moving_objects_point_clouds_message *message = (carmen_moving_objects_point_clouds_message *) malloc(sizeof(carmen_moving_objects_point_clouds_message));
 	message->host = carmen_get_host();
 	message->timestamp = carmen_get_time();
+
+	if (best_track_set == NULL)
+	{
+		message->num_point_clouds = 0;
+		message->point_clouds = NULL;
+
+		return (message);
+	}
 
 	int num_moving_objects = 0;
 	for (int i = 0; i < best_track_set->size; i++)
@@ -131,8 +136,8 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 				{
 					virtual_scan_box_model_t box = best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis;
 
-					box.length = (j == best_track_set->tracks[i]->size - 1) ? box.length : 0.3;
-					box.width = (j == best_track_set->tracks[i]->size - 1) ? box.width : 0.3;
+//					box.length = (j == best_track_set->tracks[i]->size - 1) ? box.length : 0.3;
+//					box.width = (j == best_track_set->tracks[i]->size - 1) ? box.width : 0.3;
 					fill_in_moving_objects_message_element(k, message, &box);
 
 					k++;
@@ -310,10 +315,7 @@ void
 virtual_scan_publish_moving_objects(virtual_scan_track_set_t *track_set, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = NULL)
 {
 	carmen_moving_objects_point_clouds_message *moving_objects = fill_in_moving_objects_message(track_set, virtual_scan_box_model_hypotheses);
-
-	if (moving_objects != NULL)
-		carmen_moving_objects_point_clouds_publish_message(moving_objects);
-
+	carmen_moving_objects_point_clouds_publish_message(moving_objects);
 	virtual_scan_free_moving_objects(moving_objects);
 }
 

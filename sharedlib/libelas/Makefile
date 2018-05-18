@@ -5,6 +5,7 @@ MODULE_COMMENT = Disparity Map
 
 LINK = g++
 CXXFLAGS += -w -msse3 -O3 -fopenmp
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libviso2.3/src
 LFLAGS += -lipc -lglobal -fopenmp -lm
  
 SOURCES = descriptor.cpp elas.cpp filter.cpp main.cpp matrix.cpp triangle.cpp

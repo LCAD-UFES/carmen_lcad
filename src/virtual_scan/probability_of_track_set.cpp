@@ -170,7 +170,7 @@ double
 probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set, bool print)
 {
 #define lambda_L	8.0
-#define lambda_T	108.5 // 0.1
+#define lambda_T	0.5 // 0.1
 #define lambda_1	0.1
 #define lambda_2	0.1
 #define lambda_3	0.0

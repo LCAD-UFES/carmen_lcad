@@ -245,4 +245,7 @@ virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhoo
 double
 probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set, bool print = false);
 
+void
+compute_track_state(virtual_scan_track_t *track);
+
 #endif /* SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_H_ */

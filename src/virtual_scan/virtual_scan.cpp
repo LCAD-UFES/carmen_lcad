@@ -1735,6 +1735,8 @@ track_extension(virtual_scan_track_set_t *track_set, int track_id, virtual_scan_
 		else
 			break;
 	} while (carmen_uniform_random(0.0, 1.0) > GAMMA);
+
+	compute_track_state(track_set->tracks[track_id]);
 }
 
 
@@ -1767,6 +1769,8 @@ track_reduction(virtual_scan_track_set_t *track_set, int track_id)
 
 		track->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) realloc(track->box_model_hypothesis,
 				track->size * sizeof(virtual_scan_box_model_hypothesis_t));
+
+		compute_track_state(track);
 	}
 }
 
@@ -1839,6 +1843,9 @@ track_split(virtual_scan_track_set_t *track_set, int track_id)
 				old_track->size * sizeof(virtual_scan_box_model_hypothesis_t));
 
 		track_set->size += 1;
+
+		compute_track_state(new_track);
+		compute_track_state(old_track);
 	}
 }
 
@@ -1912,6 +1919,8 @@ track_merge(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_graph
 				(track_set->size - (idx_track2 + 1)) * sizeof(virtual_scan_track_t *));
 		// Tinha que fazer um realloc do track_set aqui...
 		track_set->size -= 1;
+
+		compute_track_state(track1);
 	}
 }
 
@@ -2013,6 +2022,9 @@ track_switch(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_grap
 			track2->box_model_hypothesis[i] = box_model_hypothesis_copy[i - (q + 1)];
 
 		free(box_model_hypothesis_copy);
+
+		compute_track_state(track1);
+		compute_track_state(track2);
 	}
 }
 
@@ -2090,6 +2102,18 @@ compute_tracks_velocities(virtual_scan_track_set_t *track_set)
 	{
 		if (track_set->tracks[i]->size >= 2)
 		{
+//			double delta_t = track_set->tracks[i]->box_model_hypothesis[track_set->tracks[i]->size - 1].hypothesis_points.precise_timestamp - track_set->tracks[i]->box_model_hypothesis[0].hypothesis_points.precise_timestamp;
+//			double distance_travelled = DIST2D(track_set->tracks[i]->box_model_hypothesis[track_set->tracks[i]->size - 1].hypothesis, track_set->tracks[i]->box_model_hypothesis[0].hypothesis);
+//			double angle_in_the_distance_travelled = ANGLE2D(track_set->tracks[i]->box_model_hypothesis[track_set->tracks[i]->size - 1].hypothesis, track_set->tracks[i]->box_model_hypothesis[0].hypothesis);
+//			double v = (cos(track_set->tracks[i]->box_model_hypothesis[track_set->tracks[i]->size - 1].hypothesis.theta - angle_in_the_distance_travelled) * distance_travelled) / delta_t;
+//			double delta_theta = carmen_normalize_theta(track_set->tracks[i]->box_model_hypothesis[track_set->tracks[i]->size - 1].hypothesis.theta - track_set->tracks[i]->box_model_hypothesis[0].hypothesis.theta);
+//			double d_theta = delta_theta / delta_t;
+//			for (int j = 0; j < track_set->tracks[i]->size; j++)
+//			{
+//				track_set->tracks[i]->box_model_hypothesis[j].v = v;
+//				track_set->tracks[i]->box_model_hypothesis[j].d_theta = d_theta;
+//			}
+
 			for (int j = 1; j < track_set->tracks[i]->size; j++)
 			{
 				double delta_t = track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.precise_timestamp - track_set->tracks[i]->box_model_hypothesis[j - 1].hypothesis_points.precise_timestamp;

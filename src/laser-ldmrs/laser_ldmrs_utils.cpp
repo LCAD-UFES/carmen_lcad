@@ -170,7 +170,8 @@ carmen_laser_ldmrs_new_convert_laser_scan_to_partial_velodyne_message(carmen_las
 	for (int i = 0; i < msg->scan_points; i++)
 	{
 		double distance = msg->arraypoints[i].radial_distance;
-//		distance = (distance > 130.0) ? 0.0: distance;
+		distance = (distance > 130.0) ? 0.0: distance; // Sem esta linha aparecem echos de laser que sujam o mapa. Deve estar excedendo o limite do short int que eh usado para codificar a distancia no Velodyne.
+
 		int flags = msg->arraypoints[i].flags;
 		if ((flags & SLDMRS_POINT_FLAG_NOISE) || (flags & SLDMRS_POINT_FLAG_GROUND) || (flags & SLDMRS_POINT_FLAG_DIRT))
 			distance = 0.0;
