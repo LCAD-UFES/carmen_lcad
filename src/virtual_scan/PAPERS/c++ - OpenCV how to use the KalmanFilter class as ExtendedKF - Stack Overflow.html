@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html itemscope="" itemtype="http://schema.org/QAPage" class=""><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+        <title>c++ - OpenCV how to use the KalmanFilter class as ExtendedKF - Stack Overflow</title>
+        <link rel="shortcut icon" href="https://cdn.sstatic.net/Sites/stackoverflow/img/favicon.ico?v=4f32ecc8f43d">
+        <link rel="apple-touch-icon image_src" href="https://cdn.sstatic.net/Sites/stackoverflow/img/apple-touch-icon.png?v=c78bd457575a">
+        <link rel="search" type="application/opensearchdescription+xml" title="Stack Overflow" href="https://stackoverflow.com/opensearch.xml">
+
+
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://stackoverflow.com/questions/21533093/opencv-how-to-use-the-kalmanfilter-class-as-extendedkf">
+        <meta property="og:site_name" content="Stack Overflow">
+        <meta property="og:image" itemprop="image primaryImageOfPage" content="https://cdn.sstatic.net/Sites/stackoverflow/img/apple-touch-icon@2.png?v=73d79a89bded">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:domain" content="stackoverflow.com">
+        <meta name="twitter:title" property="og:title" itemprop="title name" content="OpenCV how to use the KalmanFilter class as ExtendedKF">
+        <meta name="twitter:description" property="og:description" itemprop="description" content="As written in the docs, it is possible to use the cv::KalmanFilter class as an Extended-Kalman-Filter (EKF). Can someone explain me how?
+
+All the matrices involved are declared as public so I can e...">
+        <script src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/ads"></script><script src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/pubads_impl_rendering_206.js"></script><script src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/rules-p-c1rF4kxgLUzNc.js" async=""></script><script async="" src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/quant.js"></script><script async="" src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/beacon.js"></script><script async="" src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/analytics.js"></script><script src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/jquery.js"></script>
+        <script src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/stub.js"></script>
+    
+    <link rel="stylesheet" type="text/css" href="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/stacks.css">
+        <link rel="stylesheet" type="text/css" href="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/primary.css">
+    
+            <link rel="alternate" type="application/atom+xml" title="Feed for question 'OpenCV how to use the KalmanFilter class as ExtendedKF'" href="https://stackoverflow.com/feeds/question/21533093">
+            <meta name="twitter:app:country" content="US">
+            <meta name="twitter:app:name:iphone" content="Stack Exchange iOS">
+            <meta name="twitter:app:id:iphone" content="871299723">
+            <meta name="twitter:app:url:iphone" content="se-zaphod://stackoverflow.com/questions/21533093/opencv-how-to-use-the-kalmanfilter-class-as-extendedkf">
+            <meta name="twitter:app:name:ipad" content="Stack Exchange iOS">
+            <meta name="twitter:app:id:ipad" content="871299723">
+            <meta name="twitter:app:url:ipad" content="se-zaphod://stackoverflow.com/questions/21533093/opencv-how-to-use-the-kalmanfilter-class-as-extendedkf">
+            <meta name="twitter:app:name:googleplay" content="Stack Exchange Android">
+            <meta name="twitter:app:url:googleplay" content="http://stackoverflow.com/questions/21533093/opencv-how-to-use-the-kalmanfilter-class-as-extendedkf">
+            <meta name="twitter:app:id:googleplay" content="com.stackexchange.marvin">
+        <script>
+
+            StackExchange.ready(function () {
+                                    
+                    StackExchange.using("snippets", function () {
+                        StackExchange.snippets.initSnippetRenderer();
+                    });
+                    
+
+                StackExchange.using("postValidation", function () {
+                    StackExchange.postValidation.initOnBlurAndSubmit($('#post-form'), 2, 'answer');
+                });
+
+                
+                StackExchange.question.init({showAnswerHelp:true,totalCommentCount:1,shownCommentCount:1,highlightColor:'#F4A83D',backgroundColor:'#FFF',questionId:21533093});
+
+                styleCode();
+
+                    StackExchange.realtime.subscribeToQuestion('1', '21533093');
+                // TODO: There's a CR for replacing this with inline info on the question for moderators
+                // https://trello.com/c/ynDHhvrB/158-cr-move-the-mod-info-out-of-the-margin-and-into-the-post-estimate-needed
+                // Before we roll out the sidebar everywhere (or at least shortly after that?), we should implement it.
+                                                    StackExchange.using("gps", function () { StackExchange.gps.trackOutboundClicks('#content', '.post-text'); });
+
+            });
+        </script>
+
+        
+        
+        
+        
+        
+        
+                <script>
+        StackExchange.init({"locale":"en","serverTime":1526580515,"routeName":"Questions/Show","stackAuthUrl":"https://stackauth.com","networkMetaHostname":"meta.stackexchange.com","site":{"name":"Stack Overflow","description":"Q&A for professional and enthusiast programmers","isNoticesTabEnabled":true,"enableNewTagCreationWarning":true,"insertSpaceAfterNameTabCompletion":false,"id":1,"childUrl":"https://meta.stackoverflow.com","enableSocialMediaInSharePopup":true,"protocol":"https"},"user":{"fkey":"4d5a51c77d607d0b56ba0365e77c15fcefa49d14377a679a53294ba458332a7f","tid":"2dc462c3-ab65-122e-1fc5-4ac3aeffee5b","rep":0,"isAnonymous":true,"isAnonymousNetworkWide":true,"ab":{"search_improvements":{"v":"questions_index_2","g":1}}},"events":{"postType":{"question":1},"postEditionSection":{"title":1,"body":2,"tags":3}},"story":{"minCompleteBodyLength":75,"likedTagsMaxLength":300,"dislikedTagsMaxLength":300},"jobPreferences":{"maxNumDeveloperRoles":2,"maxNumIndustries":4}}, {"site":{"allowImageUploads":true,"commentHighlightingWithCSS":true,"enableUserHovercards":true,"styleCode":true,"enableImgurHttps":true,"forceHttpsImages":true},"userMessaging":{"showNewFeatureNotice":true},"comments":{},"userProfile":{"openGraphAPIKey":"58740831ad23540e00c58987"},"tags":{},"accounts":{"currentPasswordRequiredForChangingStackIdPassword":true},"flags":{"allowRetractingFlags":true},"snippets":{"snippetsEnabled":true,"renderDomain":"stacksnippets.net"},"paths":{},"markdown":{"asteriskIntraWordEmphasis":true},"monitoring":{"clientTimingsAbsoluteTimeout":30000,"clientTimingsDebounceTimeout":1000},"slack":{"sidebarAdDismissCookie":"slack-sidebar-ad"}});
+        StackExchange.using.setCacheBreakers({"js/prettify-full.en.js":"f53b7ab3bbe2","js/moderator.en.js":"5bbd53752086","js/full-anon.en.js":"0774520abb04","js/full.en.js":"2d4a6bd568a8","js/wmd.en.js":"15a052665ac3","js/third-party/jquery.autocomplete.min.js":"bdb258e949a8","js/third-party/jquery.autocomplete.min.en.js":"","js/mobile.en.js":"c7a7fdd3897d","js/help.en.js":"292011d3c2af","js/tageditor.en.js":"12a13d68689a","js/tageditornew.en.js":"b9a0786d3a3a","js/inline-tag-editing.en.js":"abb80c38106c","js/revisions.en.js":"8f22ba768cac","js/review.en.js":"c6820e352f99","js/tagsuggestions.en.js":"505ddd862f8f","js/post-validation.en.js":"6804ee11adab","js/explore-qlist.en.js":"ad4c7afc1df4","js/events.en.js":"4d46b9dfdb2b","js/keyboard-shortcuts.en.js":"6f191472a10a","js/external-editor.en.js":"43fc5e42a913","js/adops.en.js":"22a9bd59b1e9","js/external-editor.en.js":"43fc5e42a913","js/snippet-javascript.en.js":"8aa55caabff7","js/snippet-javascript-codemirror.en.js":"d081f76ff668"});
+        StackExchange.using("gps", function() {
+             StackExchange.gps.init(true);
+        });
+    </script>
+    <noscript id="noscript-css"><style>body,.top-bar{margin-top:1.9em}</style></noscript>
+    <script async="" src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/full-anon.js"></script><link rel="stylesheet" href="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/clc.css" type="text/css"><script async="" src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/snippet-javascript.js"></script><script async="" src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/post-validation.js"></script><script async="" src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/external-editor.js"></script><link rel="preload" href="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/integrator.js" as="script"><script type="text/javascript" src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/integrator.js"></script><link rel="preload" href="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/integrator_002.js" as="script"><script type="text/javascript" src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/integrator_002.js"></script><script src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/pubads_impl_206.js" async=""></script><link rel="prefetch" href="https://tpc.googlesyndication.com/safeframe/1-0-27/html/container.html"></head>
+        <body class="question-page new-topbar">
+    <div id="notify-container"></div>
+    <div id="custom-header"></div>
+
+
+
+
+<header class="top-bar js-top-bar _fixed">
+    <div class="-container">
+        <div class="-main">
+                                <a href="https://stackoverflow.com/" class="-logo js-gps-track" data-gps-track="top_nav.click({is_current:false, location:2, destination:8})">
+                        <span class="-img">Stack Overflow</span>
+                    </a>
+
+                    <a class="-feature-notice
+                       unread-feature-notice
+                       " href="#" data-unread-class="unread-feature-notice" data-campaign="2018-05-03.teams landing" data-cookie="notice-sot" data-location="2" data-autopopup="false" data-expire-date="1529064000000">
+                        <span>new</span>
+                    </a>
+                    <div class="topbar-dialog feature-notice-dialog js-feature-notice-dialog dno">
+                        <div class="dialog-content">
+                            <h4 class="bold">Stack Overflow for Teams</h4>
+                            <p>A private, secure home for your team's questions and answers.</p>
+                            <a class="btn-secondary js-cta-button js-gps-track" href="https://stackoverflow.com/teams" data-ga="[&quot;teams landing&quot;,&quot;New Feature Notification&quot;,&quot;https://stackoverflow.com/teams&quot;,null,{&quot;dimension4&quot;:&quot;teams landing&quot;}]" data-gps-track="new_feature.click({campaign: '2018-05-03.teams landing', location: 2, action: 2})">Learn more</a>
+                            <a class="icon-close js-close-button js-gps-track" title="Close and permanently remove this popup" data-gps-track="new_feature.click({campaign: '2018-05-03.teams landing', location: 2, action: 1})"><svg aria-hidden="true" class="svg-icon iconClear" width="18" height="18" viewBox="0 0 18 18"><path d="M15 4.41L13.59 3 9 7.59 4.41 3 3 4.41 7.59 9 3 13.59 4.41 15 9 10.41 13.59 15 15 13.59 10.41 9z"></path></svg></a>
+                        </div>
+                    </div>
+
+                <nav class="navigation" role="navigation" aria-label="site navigation">
+                    <ol class="-list">
+        <li class="-item _current">
+            <a id="nav-questions" href="https://stackoverflow.com/questions" class="-link js-gps-track" data-gps-track="top_nav.click({is_current:true, location:2, destination:1})">Questions</a>
+        </li>
+        <li class="-item">
+            <a id="nav-jobs" href="https://stackoverflow.com/jobs?med=site-ui&amp;ref=jobs-tab" class="-link js-gps-track" data-gps-track="top_nav.click({is_current:false, location:2, destination:6})">Developer Jobs</a>
+        </li>
+        <li class="-item">
+            <a id="nav-tags" href="https://stackoverflow.com/tags" class="-link js-gps-track" data-gps-track="top_nav.click({is_current:false, location:2, destination:2})">Tags</a>
+        </li>
+        <li class="-item">
+            <a id="nav-users" href="https://stackoverflow.com/users" class="-link js-gps-track" data-gps-track="top_nav.click({is_current:false, location:2, destination:3})">Users</a>
+        </li>
+                    </ol>
+                </nav>
+
+        </div>
+
+            <form id="search" action="/search" method="get" class="searchbar js-searchbar " autocomplete="off" role="search">
+                    <div class="ps-relative">
+                        <input name="q" placeholder="Search…" autocomplete="off" maxlength="240" class="f-input js-search-field" type="text">
+                        <button type="submit" aria-label="Search..." class="btn-topbar-primary js-search-submit"><svg aria-hidden="true" class="svg-icon iconSearch" width="18" height="18" viewBox="0 0 18 18"><path d="M12.86 11.32L18 16.5 16.5 18l-5.18-5.14v-.35a7 7 0 1 1 1.19-1.19h.35zM7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10z"></path></svg></button>
+                    </div>
+            </form>
+
+        
+
+
+
+
+<ol class="-secondary">
+        <li class="-item searchbar-trigger js-searchbar-trigger"><a href="#" class="-link"><svg aria-hidden="true" class="svg-icon iconSearch" width="18" height="18" viewBox="0 0 18 18"><path d="M12.86 11.32L18 16.5 16.5 18l-5.18-5.14v-.35a7 7 0 1 1 1.19-1.19h.35zM7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10z"></path></svg></a></li>
+            <li class="-item">
+        <a href="https://stackexchange.com/users/?tab=inbox" class="-link js-inbox-button" title="Recent inbox messages">
+            <svg aria-hidden="true" class="svg-icon iconInbox" width="20" height="18" viewBox="0 0 20 18"><path d="M15.19 1H4.63c-.85 0-1.6.54-1.85 1.35L0 10.79V15c0 1.1.9 2 2 2h16a2 2 0 0 0 2-2v-4.21l-2.87-8.44A2 2 0 0 0 15.19 1zm-.28 10l-2 2h-6l-2-2H1.96L4.4 3.68A1 1 0 0 1 5.35 3h9.12a1 1 0 0 1 .95.68L17.86 11h-2.95z"></path></svg>
+            <span class="indicator-badge js-unread-count _important" style="display: none;"></span>
+        </a>
+    </li>
+    <li class="-item">
+        <a href="https://stackexchange.com/users/?tab=reputation" class="-link js-achievements-button" title="Recent achievements: reputation, badges, and privileges earned" data-unread-class="_highlighted-positive">
+            <svg aria-hidden="true" class="svg-icon iconAchievements" width="18" height="18" viewBox="0 0 18 18"><path d="M15 2V1H3v1H0v4c0 1.6 1.4 3 3 3v1c.4 1.5 3 2.6 5 3v2H5s-1 1.5-1 2h10c0-.4-1-2-1-2h-3v-2c2-.4 4.6-1.5 5-3V9c1.6-.2 3-1.4 3-3V2h-3zM3 7c-.5 0-1-.5-1-1V4h1v3zm8.4 2.5L9 8 6.6 9.4l1-2.7L5 5h3l1-2.7L10 5h2.8l-2.3 1.8 1 2.7h-.1zM16 6c0 .5-.5 1-1 1V4h1v2z"></path></svg>
+            <span class="indicator-badge js-unread-count _positive" style="display: none;"></span>
+        </a>
+    </li>
+
+    <li class="-item"><a href="#" class="-link js-help-button" title="Help Center and other resources">
+        <svg aria-hidden="true" class="svg-icon iconHelp" width="18" height="18" viewBox="0 0 18 18"><path d="M9 1a8 8 0 1 0 0 16A8 8 0 0 0 9 1zm.81 12.13c-.02.71-.55 1.15-1.24 1.13-.66-.02-1.17-.49-1.15-1.2.02-.72.56-1.18 1.22-1.16.7.03 1.2.51 1.17 1.23zM11.77 8a5.8 5.8 0 0 1-1.02.91l-.53.37c-.26.2-.42.43-.5.69a4 4 0 0 0-.09.75c0 .05-.03.16-.18.16H7.88c-.16 0-.18-.1-.18-.15.03-.66.12-1.21.4-1.66a5.29 5.29 0 0 1 1.43-1.22c.16-.12.28-.25.38-.39a1.34 1.34 0 0 0 .02-1.71c-.24-.31-.51-.46-1.03-.46-.51 0-.8.26-1.02.6-.21.33-.18.73-.18 1.1H5.75c0-1.38.35-2.25 1.1-2.76.52-.35 1.17-.5 1.93-.5 1 0 1.79.18 2.49.71.64.5.98 1.18.98 2.12 0 .57-.2 1.05-.48 1.44z"></path></svg>
+    </a></li>
+
+    <li class="-item">
+        <a href="https://stackexchange.com/" class="-link js-site-switcher-button js-gps-track" data-gps-track="site_switcher.show" title="A list of all 173 Stack Exchange sites">
+            <svg aria-hidden="true" class="svg-icon iconStackExchange" width="18" height="18" viewBox="0 0 18 18"><path d="M1 13c0 1.1.9 2 2 2h8v3l3-3h1a2 2 0 0 0 2-2v-2H1v2zM15 1H3a2 2 0 0 0-2 2v2h16V3a2 2 0 0 0-2-2zM1 6h16v4H1V6z"></path></svg>
+        </a>
+    </li>
+
+            <li class="-ctas">
+                        <a href="https://stackoverflow.com/users/login?ssrc=head&amp;returnurl=https%3a%2f%2fstackoverflow.com%2fquestions%2f21533093%2fopencv-how-to-use-the-kalmanfilter-class-as-extendedkf" class="login-link btn-clear" rel="nofollow">Log In</a>
+                        <a href="https://stackoverflow.com/users/signup?ssrc=head&amp;returnurl=%2fusers%2fstory%2fcurrent" class="login-link btn-topbar-primary" rel="nofollow" data-ga="[&quot;sign up&quot;,&quot;Sign Up Navigation&quot;,&quot;Header&quot;,null,null]">Sign Up</a>
+
+            </li>
+
+    <li class="-dialog-container js-topbar-dialog-corral">
+
+
+    <div class="topbar-dialog siteSwitcher-dialog dno">
+        <div class="header">
+            <h3><a href="https://stackoverflow.com/">current community</a>
+            </h3>
+        </div>
+        <div class="modal-content current-site-container">
+            <ul class="current-site">
+                    <li class="grid">
+                            <div class="fl1">
+            <a href="https://stackoverflow.com/" class="current-site-link site-link js-gps-track grid gs8 gsx" data-id="1" data-gps-track="site_switcher.click({ item_type:3 })">
+        <div class="favicon favicon-stackoverflow site-icon grid--cell" title="Stack Overflow"></div>
+        <span class="grid--cell fl1">
+            Stack Overflow
+        </span>
+    </a>
+
+    </div>
+    <div class="related-links">
+            <a href="https://stackoverflow.com/help" class="js-gps-track" data-gps-track="site_switcher.click({ item_type:14 })">help</a>
+                    <a href="https://chat.stackoverflow.com/" class="js-gps-track" data-gps-track="site_switcher.click({ item_type:6 })">chat</a>
+            </div>
+
+                    </li>
+                    <li class="related-site grid">
+                            <div class="L-shaped-icon-container">
+        <span class="L-shaped-icon"></span>
+    </div>
+
+                            <a href="https://meta.stackoverflow.com/" class="site-link js-gps-track grid gs8 gsx" data-id="552" data-gps-track="site.switch({ target_site:552, item_type:3 }),site_switcher.click({ item_type:4 })">
+        <div class="favicon favicon-stackoverflowmeta site-icon grid--cell" title="Meta Stack Overflow"></div>
+        <span class="grid--cell fl1">
+            Meta Stack Overflow
+        </span>
+    </a>
+
+                    </li>
+            </ul>
+        </div>
+
+        <div class="header" id="your-communities-header">
+            <h3>
+your communities            </h3>
+
+        </div>
+        <div class="modal-content" id="your-communities-section">
+
+                <div class="call-to-login">
+<a href="https://stackoverflow.com/users/signup?ssrc=site_switcher&amp;returnurl=%2fusers%2fstory%2fcurrent" class="login-link js-gps-track" data-gps-track="site_switcher.click({ item_type:10 })">Sign up</a> or <a href="https://stackoverflow.com/users/login?ssrc=site_switcher&amp;returnurl=https%3a%2f%2fstackoverflow.com%2fquestions%2f21533093%2fopencv-how-to-use-the-kalmanfilter-class-as-extendedkf" class="login-link js-gps-track" data-gps-track="site_switcher.click({ item_type:11 })">log in</a> to customize your list.
+                </div>
+        </div>
+
+        <div class="header">
+            <h3><a href="https://stackexchange.com/sites">more stack exchange communities</a>
+            </h3>
+            <a href="https://stackoverflow.blog/" class="fr">company blog</a>
+        </div>
+        <div class="modal-content">
+                <div class="child-content"></div>
+        </div>        
+    </div>
+            <div class="topbar-dialog help-dialog js-help-dialog dno">
+        <div class="modal-content">
+            <ul>
+                                    <li>
+                        <a href="https://stackoverflow.com/tour" class="js-gps-track" data-gps-track="help_popup.click({ item_type:1 })">
+                            Tour
+                            <span class="item-summary">
+                                Start here for a quick overview of the site
+                            </span>
+                        </a>
+                    </li>
+                <li>
+                    <a href="https://stackoverflow.com/help" class="js-gps-track" data-gps-track="help_popup.click({ item_type:4 })">
+                        Help Center
+                        <span class="item-summary">
+                            Detailed answers to any questions you might have
+                        </span>
+                    </a>
+                </li>
+                        <li>
+                            <a href="https://meta.stackoverflow.com/" class="js-gps-track" data-gps-track="help_popup.click({ item_type:2 })">
+                                Meta
+                                <span class="item-summary">
+                                    Discuss the workings and policies of this site
+                                </span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://stackoverflow.com/company/about" class="js-gps-track" data-gps-track="help_popup.click({ item_type:6 })">
+                                About Us
+                                <span class="item-summary">
+                                    Learn more about Stack Overflow the company
+                                </span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.stackoverflowbusiness.com/?ref=topbar_help" class="js-gps-track" data-gps-track="help_popup.click({ item_type:7 })">
+                                Business
+                                <span class="item-summary">
+                                    Learn more about hiring developers or posting ads with us
+                                </span>
+                            </a>
+                        </li>
+            </ul>
+        </div>
+    </div>
+    </li>
+</ol>
+
+    </div>
+</header>
+
+    <script>
+        StackExchange.ready(function() { StackExchange.topbar.init(); });
+        StackExchange.scrollPadding.setPaddingTop(60, 10);     </script>
+
+
+    
+
+
+    <div class="container _full ">
+                
+        <div id="content" class="snippet-hidden">
+
+
+            
+
+
+<div itemscope="" itemtype="http://schema.org/Question">
+    <link itemprop="image" href="https://cdn.sstatic.net/Sites/stackoverflow/img/apple-touch-icon.png?v=c78bd457575a">
+
+
+
+
+
+
+
+
+<div class="s-hero hero-container _fixed js-dismissable-hero" data-campaign-name="stk">
+    <div class="-container g-row jc-sp-between ai-center">
+        <div class="g-col6">
+            <p class="-title"><strong>Join Stack Overflow</strong> to learn, share knowledge, and build your career.</p>
+        </div>
+
+        <div class="s-signup _hero g-col6">
+            <div id="openid-buttons" class="-social">
+                <a class="btn-outlined -white _medium _block" href="https://stackoverflow.com/users/signup?ssrc=hero&amp;returnurl=https%3a%2f%2fstackoverflow.com%2fquestions%2f21533093%2fopencv-how-to-use-the-kalmanfilter-class-as-extendedkf" rel="nofollow" data-ga="[&quot;sign up&quot;,&quot;Sign Up Navigation&quot;,&quot;Question Hero&quot;,null,null]">Email Sign Up</a>
+                <span class="-or">or sign in with</span>
+                    <div class="major-provider btn _block _medium _google" data-provider="google" data-oauthserver="https://accounts.google.com/o/oauth2/auth" data-oauthversion="2.0" data-ga="[&quot;sign up&quot;,&quot;Sign Up Started - Google&quot;,&quot;Question Hero&quot;,null,null]">
+<svg aria-hidden="true" class="svg-icon native iconGoogle" width="18" height="18" viewBox="0 0 18 18"><g><path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"></path><path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z" fill="#34A853"></path><path d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z" fill="#FBBC05"></path><path d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z" fill="#EA4335"></path></g></svg>                                                Google
+                    </div>
+                    <div class="major-provider btn _block _medium _facebook" data-provider="facebook" data-oauthserver="https://www.facebook.com/v2.0/dialog/oauth" data-oauthversion="2.0" data-ga="[&quot;sign up&quot;,&quot;Sign Up Started - Facebook&quot;,&quot;Question Hero&quot;,null,null]">
+                        <svg aria-hidden="true" class="svg-icon iconFacebook" width="18" height="18" viewBox="0 0 18 18"><path d="M1.88 1C1.4 1 1 1.4 1 1.88v14.24c0 .48.4.88.88.88h7.67v-6.2H7.46V8.4h2.09V6.61c0-2.07 1.26-3.2 3.1-3.2.88 0 1.64.07 1.87.1v2.16h-1.29c-1 0-1.19.48-1.19 1.18V8.4h2.39l-.31 2.42h-2.08V17h4.08c.48 0 .88-.4.88-.88V1.88c0-.48-.4-.88-.88-.88H1.88z" fill="#3C5A96"></path></svg>                        Facebook
+                    </div>
+                                    <a id="close" href="#" class="js-dismiss js-hero-mini-disabled -dismiss" title="dismiss"><svg aria-hidden="true" class="svg-icon iconClear" width="18" height="18" viewBox="0 0 18 18"><path d="M15 4.41L13.59 3 9 7.59 4.41 3 3 4.41 7.59 9 3 13.59 4.41 15 9 10.41 13.59 15 15 13.59 10.41 9z"></path></svg></a>
+            </div>
+
+            <form id="login-form" action="/users/signup?ssrc=hero&amp;returnurl=https%3a%2f%2fstackoverflow.com%2fquestions%2f21533093%2fopencv-how-to-use-the-kalmanfilter-class-as-extendedkf" method="POST">
+
+                <input name="fkey" value="4d5a51c77d607d0b56ba0365e77c15fcefa49d14377a679a53294ba458332a7f" type="hidden">
+
+                <input name="ssrc" value="" type="hidden">
+
+                <input id="oauth_version" name="oauth_version" value="" type="hidden">
+                <input id="oauth_server" name="oauth_server" value="" type="hidden">
+
+                <div id="se-login-fields">
+                    <input name="legalLinksShown" value="0" type="hidden">
+                </div>
+            </form>
+            <script>
+                StackExchange.ready(function () {
+                    StackExchange.InlineAuth.init();
+                })
+            </script>
+        </div>
+    </div>
+</div><script>
+    StackExchange.ready(function () {
+
+        StackExchange.Hero.init("stk", "a");
+
+        var location = 0;
+        if ($("body").hasClass("questions-page")) {
+            location = 1;
+        } else if ($("body").hasClass("question-page")) {
+            location = 1;
+        } else if ($("body").hasClass("faq-page")) {
+            location = 5;
+        } else if ($("body").hasClass("home-page")) {
+            location = 3;
+        }
+
+        $('#tell-me-more').click(function () {
+            StackExchange.using("gps", function () {
+                StackExchange.gps.track("hero.action", { hero_action_type: 'cta', location: location }, true);
+            });
+        });
+
+        $('.js-dismissable-hero #close').click(function () {
+            StackExchange.using("gps", function () {
+                StackExchange.gps.track("hero.action", { hero_action_type: "minimize", location: location }, true);
+              });
+
+            StackExchange.Hero.dismiss();
+
+            $.ajax({
+                url: "/hero-mini",
+                success: function (data) {
+                    $(".js-dismissable-hero").fadeOut("fast", function () {
+                        $(".js-dismissable-hero").replaceWith(data);
+                        $("#herobox-mini").fadeIn("fast");
+                    });
+                }
+            });
+            return false;
+        });
+    });
+</script>    <div class="inner-content clearfix">
+            <div id="question-header">
+                    <h1 itemprop="name"><a href="https://stackoverflow.com/questions/21533093/opencv-how-to-use-the-kalmanfilter-class-as-extendedkf" class="question-hyperlink">OpenCV how to use the KalmanFilter class as ExtendedKF</a></h1>
+
+            
+<div class="pl8 aside-cta" role="navigation" aria-label="ask new question">
+        <a href="https://stackoverflow.com/questions/ask" class="ws-nowrap btn-outlined">Ask Question</a>
+</div>
+
+        </div>
+            <div id="mainbar" role="main" aria-label="question and answers">
+
+            
+
+<div class="question" data-questionid="21533093" id="question">
+
+    <style>.everyoneloves__top-leaderboard:empty,.everyoneloves__mid-leaderboard:empty{                height:90px;width:728px;box-sizing:border-box;
+}</style>
+    <div id="dfp-tlb" class="everyonelovesstackoverflow everyoneloves__top-leaderboard" style="min-height: auto; height: auto; display: none;"></div>
+    <div class="post-layout">
+            <div class="votecell post-layout--left">
+                
+
+<div class="vote">
+        <input name="_id_" value="21533093" type="hidden">
+        <a class="vote-up-off" title="This question shows research effort; it is useful and clear">up vote</a>
+        <span itemprop="upvoteCount" class="vote-count-post ">9</span>
+        <a class="vote-down-off" title="This question does not show any research effort; it is unclear or not useful">down vote</a>
+
+        <a class="star-off" href="#">favorite</a>
+        <div class="favoritecount"><b>1</b></div>
+
+
+</div>
+
+            </div>
+
+            
+<div class="postcell post-layout--right">
+    <div class="post-text" itemprop="text">
+
+<p>As written in the <a href="http://docs.opencv.org/modules/video/doc/motion_analysis_and_object_tracking.html?highlight=kalman%20filter#KalmanFilter">docs</a>, it is possible to use the cv::KalmanFilter class as an Extended-Kalman-Filter (EKF). Can someone explain me how?</p>
+
+<p>All the matrices involved <a href="https://github.com/Itseez/opencv/blob/master/modules/video/include/opencv2/video/tracking.hpp">are declared as public</a> so I can edit all of them.
+The <a href="https://github.com/Itseez/opencv/blob/master/modules/video/src/kalman.cpp">source code</a> is for the normal (linear) Kalman-Filter.</p>
+
+<p>I think that I should edit the <code>transitionMatrix</code> with my non linear system, namely <code>G</code>.
+This matrix is the one of my non linear system with as input variables both the <code>statePost</code> and the <code>control</code>; and ControlMatrix should be all 0. Right?</p>
+
+<p>But where should I put the Jacobian of G?</p>
+
+<p>I have the same doubt for the update process, I have my non linear system <code>H</code> for the measurementMatrix.</p>
+
+<p>Maybe I'm a bit confused, can someone help me please?</p>
+    </div>
+    <div class="post-taglist">
+        <a href="https://stackoverflow.com/questions/tagged/c%2b%2b" class="post-tag js-gps-track" title="show questions tagged 'c++'" rel="tag">c++</a> <a href="https://stackoverflow.com/questions/tagged/opencv" class="post-tag js-gps-track" title="show questions tagged 'opencv'" rel="tag">opencv</a> <a href="https://stackoverflow.com/questions/tagged/kalman-filter" class="post-tag js-gps-track" title="show questions tagged 'kalman-filter'" rel="tag">kalman-filter</a> 
+    </div>
+    <div class="grid mb0 fw-wrap ai-start jc-end gs8 gsy">
+    <div class="grid--cell mr16" style="flex: 1 1 100px;">
+<div class="post-menu"><a href="https://stackoverflow.com/q/21533093" title="short permalink to this question" class="short-link" id="link-post-21533093">share</a><span class="lsep">|</span><a href="https://stackoverflow.com/posts/21533093/edit" class="suggest-edit-post" title="">improve this question</a></div>        
+    </div>
+
+    <div class="post-signature owner grid--cell fl0">
+        <div class="user-info user-hover">
+    <div class="user-action-time">
+        asked <span title="2014-02-03 16:57:52Z" class="relativetime">Feb 3 '14 at 16:57</span>
+    </div>
+    <div class="user-gravatar32">
+        <a href="https://stackoverflow.com/users/1121245/michele"><div class="gravatar-wrapper-32"><img src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/b9b01fb3b20f21cebcc7784fb4809abd.jpeg" alt="" width="32" height="32"></div></a>
+    </div>
+    <div class="user-details">
+        <a href="https://stackoverflow.com/users/1121245/michele">Michele</a>
+        <div class="-flair">
+            <span class="reputation-score" title="reputation score " dir="ltr">1,018</span><span title="1 gold badge"><span class="badge1"></span><span class="badgecount">1</span></span><span title="14 silver badges"><span class="badge2"></span><span class="badgecount">14</span></span><span title="28 bronze badges"><span class="badge3"></span><span class="badgecount">28</span></span>
+        </div>
+    </div>
+</div>
+    </div>
+    </div>
+</div>
+
+                
+    <div class="post-layout--right">
+	    <div id="comments-21533093" class="comments js-comments-container ">
+            <ul class="comments-list js-comments-list" data-remaining-comments-count="0" data-canpost="false" data-cansee="true" data-comments-unavailable="false" data-addlink-disabled="true">
+
+
+
+    <li id="comment-32571739" class="comment js-comment " data-comment-id="32571739">
+        <div class="js-comment-actions comment-actions">
+            <div class="comment-score">
+            </div>
+                    </div>
+        <div class="comment-text js-comment-text-and-form">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">I need to substitutie G and H with their Jacobians computed in the statePost right?</span>
+                    –&nbsp;<a href="https://stackoverflow.com/users/1121245/michele" title="1,018 reputation" class="comment-user owner">Michele</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="#comment32571739_21533093"><span title="2014-02-04 22:40:24Z" class="relativetime-clean">Feb 4 '14 at 22:40</span></a></span>
+                                                                            </div>
+        </div>
+    </li>
+            </ul>
+	    </div>
+
+        <div id="comments-link-21533093" data-rep="50" data-anon="true">
+
+                <a class="js-add-link comments-link disabled-link " title="Use comments to ask for more information or suggest improvements. Avoid answering questions in comments.">add a comment</a><span class="js-link-separator dno">&nbsp;|&nbsp;</span>
+            <a class="js-show-link comments-link dno" title="expand to show all comments on this post" href="#" onclick=""></a>
+        </div>         
+    </div>        </div>
+</div>
+
+
+
+        <div id="answers">
+
+                <a name="tab-top"></a>
+                <div id="answers-header">
+                    <div class="subheader answers-subheader">
+                        <h2 data-answercount="1">
+                                1 Answer
+                                <span style="display:none;" itemprop="answerCount">1</span>
+                        </h2>
+                        <div>
+                            
+<div id="tabs">
+        <a href="https://stackoverflow.com/questions/21533093/opencv-how-to-use-the-kalmanfilter-class-as-extendedkf?answertab=active#tab-top" data-nav-xhref="" title="Answers with the latest activity first" data-value="active" data-shortcut="A">
+            active</a>
+        <a href="https://stackoverflow.com/questions/21533093/opencv-how-to-use-the-kalmanfilter-class-as-extendedkf?answertab=oldest#tab-top" data-nav-xhref="" title="Answers in the order they were provided" data-value="oldest" data-shortcut="O">
+            oldest</a>
+        <a class="youarehere " href="https://stackoverflow.com/questions/21533093/opencv-how-to-use-the-kalmanfilter-class-as-extendedkf?answertab=votes#tab-top" data-nav-xhref="" title="Answers with the highest score first" data-value="votes" data-shortcut="V">
+            votes</a>
+    </div>
+                        </div>
+                    </div>
+
+
+<div class="question-status" id="mfnes-container">
+    <div class="g-row">
+        <div class="-content g-col">
+            <p style="font-size: 120%">
+                Não encontrou uma resposta? <a id="mfnes-link" class="js-dismiss mfnes-link" href="http://pt.stackoverflow.com/questions/ask?fromen=14891a5015d26">Pergunte em Stack Overflow em Português.</a>
+            </p>
+        </div>
+        <div class="-actions g-col1">
+            <a id="mfnes-dismiss" href="#" class="js-dismiss">✕</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document)
+        .ready(function () {
+            var notification = $('#mfnes-container'),
+                link = notification.find('#mfnes-link'),
+                dismiss = notification.find('#mfnes-dismiss');
+            dismiss.on('click',
+                function () {
+                    notification.slideUp();
+                    $.ajax("/mfnes/dismiss/21533093/pt/1");
+                    return false;
+                });
+            link.on('click',
+                function () {
+                    $.ajax("/mfnes/click/21533093/pt/1");
+                });
+        });
+</script>                </div>
+
+
+
+
+  
+<a name="21607023"></a>
+<div id="answer-21607023" class="answer accepted-answer" data-answerid="21607023" itemscope="" itemtype="http://schema.org/Answer" itemprop="acceptedAnswer">
+    <div class="post-layout">
+            <div class="votecell post-layout--left">
+                
+
+<div class="vote">
+        <input name="_id_" value="21607023" type="hidden">
+        <a class="vote-up-off" title="This answer is useful">up vote</a>
+        <span itemprop="upvoteCount" class="vote-count-post ">10</span>
+        <a class="vote-down-off" title="This answer is not useful">down vote</a>
+
+
+
+        <span class="vote-accepted-on load-accepted-answer-date" title="loading when this answer was accepted...">accepted</span>
+
+</div>
+
+            </div>
+            
+
+
+<div class="answercell post-layout--right">
+    <div class="post-text" itemprop="text">
+<p>So, I think that I figured out how to use the <code>cv::KalmanFilter</code> class as an EKF.
+This is how I made it:</p>
+
+<ol>
+<li><p>save in a temp variable the <code>kf.statePost</code>: <code>temp = kf.statePost</code></p></li>
+<li><p>put in the <code>kf.transitionMatrix</code> the Jacobian of the transition function</p></li>
+<li><p>do the prediction step of the KF</p></li>
+<li><p>change the <code>kf.statePre</code> with the correct value using the transition function: <code>kf.statePre = f(temp, control)</code></p></li>
+<li><p>put in the <code>kf.measurementMatrix</code> the Jacobian of the measurement (or correction) function</p></li>
+<li><p>do the correction step of the KF</p></li>
+<li><p>change the <code>kf.temp5</code> matrix with the correct value: <code>kf.temp5 = measurement - h(statePre)</code> where <code>h()</code> is the measurement (or correction) function</p></li>
+<li><p>change the <code>kf.statePost</code> with the correct value: <code>kf.statePost = kf.statePre + kf.gain * kf.temp5</code></p></li>
+</ol>
+
+<p>And finally you have the estimated state of the system in <code>kf.statePost</code>!</p>
+    </div>
+    <div class="grid mb0 fw-wrap ai-start jc-end gs8 gsy">
+    <div class="grid--cell mr16" style="flex: 1 1 100px;">
+<div class="post-menu"><a href="https://stackoverflow.com/a/21607023" title="short permalink to this answer" class="short-link" id="link-post-21607023">share</a><span class="lsep">|</span><a href="https://stackoverflow.com/posts/21607023/edit" class="suggest-edit-post" title="">improve this answer</a></div>                    </div>
+    <div class="post-signature grid--cell fl0">
+<div class="user-info ">
+    <div class="user-action-time">
+        <a href="https://stackoverflow.com/posts/21607023/revisions" title="show all edits to this post">edited <span title="2014-07-17 15:17:27Z" class="relativetime">Jul 17 '14 at 15:17</span></a>
+    </div>
+    <div class="user-gravatar32">
+        
+    </div>
+    <div class="user-details">
+        
+        <div class="-flair">
+            
+        </div>
+    </div>
+</div>    </div>
+            
+
+
+    <div class="post-signature owner grid--cell fl0">
+       
+
+    <div class="user-info user-hover">
+    <div class="user-action-time">
+        answered <span title="2014-02-06 15:27:47Z" class="relativetime">Feb 6 '14 at 15:27</span>
+    </div>
+    <div class="user-gravatar32">
+        <a href="https://stackoverflow.com/users/1121245/michele"><div class="gravatar-wrapper-32"><img src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/b9b01fb3b20f21cebcc7784fb4809abd.jpeg" alt="" width="32" height="32"></div></a>
+    </div>
+    <div class="user-details">
+        <a href="https://stackoverflow.com/users/1121245/michele">Michele</a>
+        <div class="-flair">
+            <span class="reputation-score" title="reputation score " dir="ltr">1,018</span><span title="1 gold badge"><span class="badge1"></span><span class="badgecount">1</span></span><span title="14 silver badges"><span class="badge2"></span><span class="badgecount">14</span></span><span title="28 bronze badges"><span class="badge3"></span><span class="badgecount">28</span></span>
+        </div>
+    </div>
+</div>
+    </div>
+    </div>
+</div>
+    
+    <div class="post-layout--right">
+	    <div id="comments-21607023" class="comments js-comments-container ">
+            <ul class="comments-list js-comments-list" data-remaining-comments-count="0" data-canpost="false" data-cansee="true" data-comments-unavailable="false" data-addlink-disabled="true">
+
+
+
+    <li id="comment-38435121" class="comment js-comment " data-comment-id="38435121">
+        <div class="js-comment-actions comment-actions">
+            <div class="comment-score">
+                    <span title="number of 'useful comment' votes received" class="cool">1</span>
+            </div>
+                    </div>
+        <div class="comment-text js-comment-text-and-form">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy"><a href="http://stackoverflow.com/a/24769194/456814">This person</a> (10k+ rep users only) asks you if your 8th step should be <code>kf.statePost = kf.statePre + kf.gain * kf.temp5</code>?</span>
+		            –&nbsp;<span class="comment-user">user456814</span>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="#comment38435121_21607023"><span title="2014-07-15 22:48:16Z" class="relativetime-clean">Jul 15 '14 at 22:48</span></a></span>
+                                                                            </div>
+        </div>
+    </li>
+    <li id="comment-55512953" class="comment js-comment " data-comment-id="55512953">
+        <div class="js-comment-actions comment-actions">
+            <div class="comment-score">
+            </div>
+                    </div>
+        <div class="comment-text js-comment-text-and-form">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">@Michele - I am trying to do 
+the same thing. Would you be me a little advice please (I don't know how
+ to initiate "Chat" on here except to keep adding comments!</span>
+                    –&nbsp;<a href="https://stackoverflow.com/users/439497/maninmoon" title="2,404 reputation" class="comment-user">ManInMoon</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="#comment55512953_21607023"><span title="2015-11-23 15:31:38Z" class="relativetime-clean">Nov 23 '15 at 15:31</span></a></span>
+                                                                            </div>
+        </div>
+    </li>
+    <li id="comment-55518328" class="comment js-comment " data-comment-id="55518328">
+        <div class="js-comment-actions comment-actions">
+            <div class="comment-score">
+            </div>
+                    </div>
+        <div class="comment-text js-comment-text-and-form">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">I don't think that there is a chat, can you explain your dubts?</span>
+                    –&nbsp;<a href="https://stackoverflow.com/users/1121245/michele" title="1,018 reputation" class="comment-user owner">Michele</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="#comment55518328_21607023"><span title="2015-11-23 17:46:38Z" class="relativetime-clean">Nov 23 '15 at 17:46</span></a></span>
+                                                                            </div>
+        </div>
+    </li>
+    <li id="comment-55541909" class="comment js-comment " data-comment-id="55541909">
+        <div class="js-comment-actions comment-actions">
+            <div class="comment-score">
+            </div>
+                    </div>
+        <div class="comment-text js-comment-text-and-form">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">@Michele I am not sure what f
+ + h functions are. ALso where does temp5 come from? I sent you an email
+ with a portion of my code to your gmail address</span>
+                    –&nbsp;<a href="https://stackoverflow.com/users/439497/maninmoon" title="2,404 reputation" class="comment-user">ManInMoon</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="#comment55541909_21607023"><span title="2015-11-24 08:59:32Z" class="relativetime-clean">Nov 24 '15 at 8:59</span></a></span>
+                                                                            </div>
+        </div>
+    </li>
+    <li id="comment-55554914" class="comment js-comment " data-comment-id="55554914">
+        <div class="js-comment-actions comment-actions">
+            <div class="comment-score">
+            </div>
+                    </div>
+        <div class="comment-text js-comment-text-and-form">
+            <div style="display: block;" class="comment-body">
+                <span class="comment-copy">you can find the temp5 matrix
+ looking at the source code of the kalman filter in the OpenCV library, 
+the other two functions depends on the system you are estimating. Since 
+your question about f and h is quite general (about the Kalman Filter) I
+ suggest you to ask a new question about that. PS: I won't do the work 
+for you for free.</span>
+                    –&nbsp;<a href="https://stackoverflow.com/users/1121245/michele" title="1,018 reputation" class="comment-user owner">Michele</a>
+                <span class="comment-date" dir="ltr"><a class="comment-link" href="#comment55554914_21607023"><span title="2015-11-24 14:28:07Z" class="relativetime-clean">Nov 24 '15 at 14:28</span></a></span>
+                        <span class="edited-yes" title="this comment was edited 1 time"></span>
+                                                                            </div>
+        </div>
+    </li>
+            </ul>
+	    </div>
+
+        <div id="comments-link-21607023" data-rep="50" data-anon="true">
+
+                <a class="js-add-link comments-link disabled-link " title="Use comments to ask for more information or suggest improvements. Avoid comments like “+1” or “thanks”.">add a comment</a><span class="js-link-separator dno">&nbsp;|&nbsp;</span>
+            <a class="js-show-link comments-link dno" title="expand to show all comments on this post" href="#" onclick=""></a>
+        </div>         
+    </div>    </div>
+</div>
+                                    <a name="new-answer"></a>
+                        <form id="post-form" action="/questions/21533093/answer/submit" method="post" class="post-form">
+                            <input id="post-id" value="21533093" type="hidden">
+                            <input id="qualityBanWarningShown" name="qualityBanWarningShown" value="false" type="hidden">
+                            <input name="referrer" value="https://www.google.com/" type="hidden">
+                            <h2 class="space">Your Answer</h2>
+
+
+            <script>
+            StackExchange.ifUsing("editor", function () {
+                StackExchange.using("externalEditor", function () {
+                    StackExchange.using("snippets", function () {
+                        StackExchange.snippets.init();
+                    });
+                });
+            }, "code-snippets");
+        </script>
+    
+
+<script>
+    StackExchange.ready(function() {
+        var channelOptions = {
+            tags: "".split(" "),
+            id: "1"
+        };
+        initTagRenderer("".split(" "), "".split(" "), channelOptions);
+       
+        StackExchange.using("externalEditor", function() {
+                // Have to fire editor after snippets, if snippets enabled
+                if (StackExchange.settings.snippets.snippetsEnabled) {
+                    StackExchange.using("snippets", function() {
+                        createEditor();
+                    });
+                }
+                else {
+                    createEditor();
+                }
+            });
+
+            function createEditor() {
+                StackExchange.prepareEditor({
+                    heartbeatType: 'answer',
+                convertImagesToLinks: true,
+                showLowRepImageUploadWarning: true,
+                reputationToPostImages: 10,
+                bindNavPrevention: true,
+                postfix: "",
+                    onDemand: true,
+                    discardSelector: ".discard-answer"
+                    ,immediatelyShowMarkdownHelp:true
+                    });
+                
+
+        }
+    });
+</script>
+
+
+<div id="post-editor" class="post-editor js-post-editor">
+
+    <div style="position: relative;"> 
+        <div class="wmd-container">
+            <div id="wmd-button-bar" class="wmd-button-bar"><ul id="wmd-button-row" class="wmd-button-row"><li id="wmd-bold-button" class="wmd-button" style="left: 0px;"><span style="background-position: 0px -20px;"></span></li><li id="wmd-italic-button" class="wmd-button" style="left: 25px;"><span style="background-position: -20px -20px;"></span></li><li id="wmd-spacer1" class="wmd-spacer" style="left: 50px;"><span style="background-position: -40px -20px;"></span></li><li id="wmd-link-button" class="wmd-button" style="left: 75px;"><span style="background-position: -40px -20px;"></span></li><li id="wmd-quote-button" class="wmd-button" style="left: 100px;"><span style="background-position: -60px -20px;"></span></li><li id="wmd-code-button" class="wmd-button" style="left: 125px;"><span style="background-position: -80px -20px;"></span></li><li id="wmd-image-button" class="wmd-button" style="left: 150px;"><span style="background-position: -100px -20px;"></span></li><li id="wmd-spacer2" class="wmd-spacer" style="left: 175px;"><span style="background-position: -120px -20px;"></span></li><li id="wmd-olist-button" class="wmd-button" style="left: 200px;"><span style="background-position: -120px -20px;"></span></li><li id="wmd-ulist-button" class="wmd-button" style="left: 225px;"><span style="background-position: -140px -20px;"></span></li><li id="wmd-heading-button" class="wmd-button" style="left: 250px;"><span style="background-position: -160px -20px;"></span></li><li id="wmd-hr-button" class="wmd-button" style="left: 275px;"><span style="background-position: -180px -20px;"></span></li><li id="wmd-spacer3" class="wmd-spacer" style="left: 300px;"><span style="background-position: -200px -20px;"></span></li><li id="wmd-undo-button" class="wmd-button" style="left: 325px;"><span style="background-position: -200px -20px;"></span></li><li id="wmd-redo-button" class="wmd-button" style="left: 350px;"><span style="background-position: -220px -20px;"></span></li><li class="wmd-spacer wmd-spacer-max"></li></ul></div>
+            <textarea id="wmd-input" class="wmd-input" name="post-text" cols="92" rows="15" tabindex="101" data-min-length=""></textarea>
+        </div>
+    </div>
+
+    <div class="fl" style="margin-top: 8px; height:24px;">&nbsp;</div>
+    <div id="draft-saved" class="draft-saved community-option fl" style="margin-top: 8px; height:24px; display:none;">draft saved</div>
+
+    <div id="draft-discarded" class="draft-discarded community-option fl" style="margin-top: 8px; height:24px; display:none;">draft discarded</div>
+
+
+
+    <div id="wmd-preview" class="wmd-preview"></div>
+    <div></div>
+    <div class="edit-block">
+        <input id="fkey" name="fkey" value="4d5a51c77d607d0b56ba0365e77c15fcefa49d14377a679a53294ba458332a7f" type="hidden">
+        <input id="author" name="author" type="text">
+    </div>
+
+
+
+</div>
+
+                            <div style="position: relative;">
+                                
+                                            <div class="form-item new-post-login">
+        
+                <div class="new-login-form">
+                    <div class="new-login-left">
+                        <h3>Sign up or <a id="login-link" href="https://stackoverflow.com/users/login?ssrc=question_page&amp;returnurl=https%3a%2f%2fstackoverflow.com%2fquestions%2f21533093%2fopencv-how-to-use-the-kalmanfilter-class-as-extendedkf%23new-answer">log in</a></h3>
+                        <script>
+                            StackExchange.ready(function () {
+                                StackExchange.helpers.onClickDraftSave('#login-link');
+                            });
+                        </script>
+                        <div class="preferred-login google-login" data-ga="[&quot;sign up&quot;,&quot;Sign Up Started - Google&quot;,&quot;New Post&quot;,null,null]">
+                            <svg aria-hidden="true" class="svg-icon native iconGoogle" width="18" height="18" viewBox="0 0 18 18"><g><path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"></path><path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z" fill="#34A853"></path><path d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z" fill="#FBBC05"></path><path d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z" fill="#EA4335"></path></g></svg> Sign up using Google
+                        </div>
+                        <div class="preferred-login facebook-login" data-ga="[&quot;sign up&quot;,&quot;Sign Up Started - Facebook&quot;,&quot;New Post&quot;,null,null]">
+                            <svg aria-hidden="true" class="svg-icon iconFacebook" width="18" height="18" viewBox="0 0 18 18"><path d="M1.88 1C1.4 1 1 1.4 1 1.88v14.24c0 .48.4.88.88.88h7.67v-6.2H7.46V8.4h2.09V6.61c0-2.07 1.26-3.2 3.1-3.2.88 0 1.64.07 1.87.1v2.16h-1.29c-1 0-1.19.48-1.19 1.18V8.4h2.39l-.31 2.42h-2.08V17h4.08c.48 0 .88-.4.88-.88V1.88c0-.48-.4-.88-.88-.88H1.88z" fill="#3C5A96"></path></svg> Sign up using Facebook
+                        </div>
+                        <div class="preferred-login stackexchange-login" data-ga="[&quot;sign up&quot;,&quot;Sign Up Navigation&quot;,&quot;New Post&quot;,null,null]">
+                            <svg aria-hidden="true" class="svg-icon native iconLogoGlyphXSm" width="18" height="18" viewBox="0 0 18 18"><g><path fill="#BCBBBB" d="M14 16v-5h2v7H2v-7h2v5z"></path><path d="M5 15v-2h8v2H5zM12.09.72l4.5 6.06-1.2.9-4.51-6.06 1.21-.9zM8.34 4.3l.97-1.16 5.8 4.83-.96 1.16-5.8-4.83zm-1.9 3.36l.64-1.37 6.85 3.19-.63 1.37-6.85-3.2zM5.4 11.39l.38-1.67 7.42 1.48-.22 1.46-7.58-1.27z" fill="#F48024"></path></g></svg> Sign up using Email and Password
+                        </div>
+                    </div>
+                    <input name="manual-openid" class="manual-openid" type="hidden">
+                    <input name="use-facebook" class="use-facebook" value="false" type="hidden">
+                    <input name="use-google" class="use-google" value="false" type="hidden">
+                    <input class="submit-openid" value="Submit" style="display:none" type="button">
+                    <div class="new-login-right">
+                                <h3>Post as a guest</h3>
+    <div class="form-item">
+        <table>
+        <tbody><tr>
+                    <td class="vm">
+                <div>
+                    <label for="display-name">Name</label>
+                    <input id="display-name" name="display-name" size="30" maxlength="30" tabindex="105" type="text">
+                </div>
+                <div>
+                    <label for="m-address">Email</label>
+                    <input id="m-address" name="m-address" size="30" maxlength="100" tabindex="106" placeholder="required, but never shown" type="email">
+                </div>
+            </td>
+        </tr>
+        </tbody></table>
+    </div>
+
+                    </div>
+                </div>
+            </div>
+            <script>
+                StackExchange.ready(
+                    function () {
+                        
+StackExchange.openid.initPostLogin('.new-post-login', 
+'https%3a%2f%2fstackoverflow.com%2fquestions%2f21533093%2fopencv-how-to-use-the-kalmanfilter-class-as-extendedkf%23new-answer',
+ 'question_page');
+                    }
+                );
+            </script>
+            <noscript>
+                        <h3>Post as a guest</h3>
+    <div class="form-item">
+        <table>
+        <tr>
+                    <td class="vm">
+                <div>
+                    <label for="display-name">Name</label>
+                    <input id="display-name" name="display-name" 
+type="text" size="30" maxlength="30" value="" tabindex="105">
+                </div>
+                <div>
+                    <label for="m-address">Email</label>
+                    <input id="m-address" name="m-address" type="email" 
+size="30" maxlength="100" value="" tabindex="106" placeholder="required,
+ but never shown" />
+                </div>
+            </td>
+        </tr>
+        </table>
+    </div>
+
+            </noscript>
+
+                            </div>
+
+                                                            <div class="form-submit cbt">
+                                        <input id="submit-button" value="Post Your Answer" tabindex="110" type="submit">
+                                    <a href="#" class="btn-clear discard-answer dno">discard</a>
+
+<p class="privacy-policy-agreement">
+By posting your answer, you agree to the <a href="https://stackexchange.com/legal/privacy-policy" name="privacy" target="_blank">privacy policy</a> and <a href="https://stackexchange.com/legal/terms-of-service/public" name="tos" target="_blank">terms of service</a>.</p>
+<input name="legalLinksShown" value="1" type="hidden">                                </div>
+                        </form>
+
+
+
+                        <h2 class="bottom-notice" data-loc="1">
+Not the answer you're looking for?                            Browse other questions tagged <a href="https://stackoverflow.com/questions/tagged/c%2b%2b" class="post-tag" title="show questions tagged 'c++'" rel="tag">c++</a> <a href="https://stackoverflow.com/questions/tagged/opencv" class="post-tag" title="show questions tagged 'opencv'" rel="tag">opencv</a> <a href="https://stackoverflow.com/questions/tagged/kalman-filter" class="post-tag" title="show questions tagged 'kalman-filter'" rel="tag">kalman-filter</a>  or <a href="https://stackoverflow.com/questions/ask">ask your own question</a>.                        </h2>
+            </div>
+        </div>
+                <div id="sidebar" class="show-votes" role="complementary" aria-label="sidebar">
+                            <div class="module question-stats">
+                    <table id="qinfo">
+                        <tbody><tr>
+                            <td>
+                                <p class="label-key">asked</p>
+                            </td>
+                            <td style="padding-left: 10px">
+                                <p class="label-key" title="2014-02-03 16:57:52Z"><b>4 years, 3 months ago</b></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <p class="label-key">viewed</p>
+                            </td>
+
+                            <td style="padding-left: 10px">
+                                <p class="label-key">
+                                    <b>3,917 times</b>
+                                </p>
+                            </td>
+                        </tr>
+                            <tr>
+                                <td>
+                                    <p class="label-key">active</p>
+                                </td>
+                                <td style="padding-left: 10px">
+                                    <p class="label-key"><b><a href="https://stackoverflow.com/questions/21533093/opencv-how-to-use-the-kalmanfilter-class-as-extendedkf?lastactivity" class="lastactivity-link" title="2014-07-17 15:17:27Z">3 years, 10 months ago</a></b></p>
+                                </td>
+                            </tr>
+                    </tbody></table>
+                </div>
+            <div class="module community-bulletin" data-tracker="cb=1">
+    <div class="related">
+                <div class="bulletin-title">
+                    Blog
+                </div>
+                <hr>
+    <div class="spacer">
+        <div class="bulletin-item-type">
+                <a href="https://stackoverflow.blog/2018/05/16/helping-teams-get-started/?cb=1" class="question-hyperlink" data-ga="[&quot;community bulletin board&quot;,&quot;Blog&quot;,&quot;https://stackoverflow.blog/2018/05/16/helping-teams-get-started/&quot;,null,null]">
+<div class="favicon favicon-stackexchangemeta" title="Meta Stack Exchange"></div>                </a>
+        </div>
+        <div class="bulletin-item-content">
+            <a href="https://stackoverflow.blog/2018/05/16/helping-teams-get-started/?cb=1" class="question-hyperlink" data-ga="[&quot;community bulletin board&quot;,&quot;Blog&quot;,&quot;https://stackoverflow.blog/2018/05/16/helping-teams-get-started/&quot;,null,null]">Helping Teams Get Started</a>
+        </div>
+        <br class="cbt">
+    </div>
+    </div>
+</div>
+            
+<div id="dfp-tsb" class="everyonelovesstackoverflow everyoneloves__top-sidebar" style="display: none;"></div>
+            <div id="hireme" class="tag-themed cpp tagged tex2jax_ignore clc-jobs-multi"><a class="top " href="https://stackoverflow.com/jobs" target="_blank" data-clc-click="https://clc.stackoverflow.com/click?an=4_q84LCV4p6rHqqOK4KcmJhYli5exHXCes7G_TM-m2YzfvS7HXA8kIGHoWcDA0ODPSMjA8tspsm3OPde5-44LgIUTzlwkmWj5Y-7NvaMzMna2rOZZpzhvHeCe9UOiKRDyWJLWy5TmGTnLc4p17nvH4NIzl65zlIp3BImOe0W54Hr3N1QYyWEF1qWs6lAJBn-PNx7cGX605fTrAE&amp;cr=10439&amp;ct=1&amp;url=https%3A%2F%2Fstackoverflow.com%2Fjobs%3Fmed=clc&amp;sig=8OQVFxsjcNmB4w"><span>Want a <span class="header-tag">c++</span> job?</span></a><div class="middle"><ul class="jobs"><li class="clc-dismissable"><div class="job-wrap"><a class="job" title="Chief Software Architect at Crossover. Click to learn more." href="https://stackoverflow.com/jobs/185303/chief-software-architect-crossover" target="_blank" data-clc-click="https://clc.stackoverflow.com/click?an=4_q84LCV4p6rHqqOK4KcmJhYli5exHXCes7G_TM-m2YzfvS7HXA8kIGHoWcDA0ODPSMjA8tspsm3OPde5-44LgIUTzlwkmWj5Y-7NvaMzMna2rOZZpzhvHeCe9UOiKRDyWJLWy5TmGTnLc4p17nvH4NIzl65zlIp3BImOe0W54Hr3N1QYyWEF1qWs6lAJBn-PNx7cGX605fTrAE&amp;cr=336776&amp;ct=0&amp;url=https%3A%2F%2Fstackoverflow.com%2Fjobs%2F185303%2Fchief-software-architect-crossover%3Fmed=clc&amp;sig=nc22HJ_oRyGt5w"><div class="title">Chief Software Architect</div><div><span class="company">Crossover</span><span class="location"><svg viewBox="0 0 12 12"><path d="M6 5.7c.4 0 .7-.1.9-.4.3-.3.4-.6.4-.9 0-.4-.1-.7-.4-.9-.2-.3-.5-.4-.9-.4s-.7.1-.9.4c-.3.2-.4.5-.4.9s.1.7.4.9c.2.3.5.4.9.4zm0-5c1 0 1.9.4 2.6 1.1.7.7 1.1 1.6 1.1 2.6 0 .5-.1 1.1-.4 1.8s-.5 1.3-.9 1.9c-.4.5-.7 1.1-1.1 1.6-.4.5-.7.9-.9 1.2l-.4.4c-.1-.1-.2-.3-.4-.5s-.5-.6-.9-1.2c-.4-.5-.8-1-1.1-1.6s-.7-1.1-.9-1.8c-.3-.7-.4-1.3-.4-1.8 0-1 .4-1.9 1.1-2.6S5 .7 6 .7z"></path></svg><span>No office location</span></span></div><div class="opts"><span class="opt salary"><span>$100k - $100k</span></span><span class="opt remote"><svg viewBox="0 0 12 12"><path d="M6 9.8L3.9 7.7c1.3-.9 3-.9 4.2 0L6 9.8zm3-3a4.81 4.81 0 0 0-6 0L2.2 6c2.2-1.8 5.5-1.8 7.7 0l-.9.8zm1.7-1.7a7.27 7.27 0 0 0-9.4 0l-.9-.8c3.2-2.8 7.9-2.8 11.1 0l-.8.8z"></path></svg><span>Remote</span></span></div><span class="post-tag highlight">c++</span><span class="post-tag">java</span><div></div></a></div><a class="clc-dismiss" data-clc-click="https://clc.stackoverflow.com/click?an=4_q84LCV4p6rHqqOK4KcmJhYli5exHXCes7G_TM-m2YzfvS7HXA8kIGHoWcDA0ODPSMjA8tspsm3OPde5-44LgIUTzlwkmWj5Y-7NvaMzMna2rOZZpzhvHeCe9UOiKRDyWJLWy5TmGTnLc4p17nvH4NIzl65zlIp3BImOe0W54Hr3N1QYyWEF1qWs6lAJBn-PNx7cGX605fTrAE&amp;cr=336776&amp;ct=-1&amp;sig=zAvjU5upsrRsBg" data-clc-meta-target="-1"><svg viewBox="0 0 13.6 13.6"><path d="M11.4 2.3C8.9-.2 4.8-.2 2.3 2.3s-2.5 6.6 0 9.1 6.6 2.5 9.1 0 2.5-6.6 0-9.1zM8.6 9.5L6.8 7.7 5 9.5l-.9-.9 1.8-1.8L4.1 5l.9-.9 1.8 1.8 1.8-1.8.9.9-1.8 1.8 1.8 1.8-.9.9z"></path></svg><span class="clc-tooltip above-left">dismiss this job</span></a></li><li class="clc-dismissable"><div class="job-wrap"><a class="job" title="ROS Platform Engineer at Aeolus Robotics. Click to learn more." href="https://stackoverflow.com/jobs/183487/ros-platform-engineer-aeolus-robotics" target="_blank" data-clc-click="https://clc.stackoverflow.com/click?an=4_q84LCV4p6rHqqOK4KcmJhYli5exHXCes7G_TM-m2YzfvS7HXA8kIGHoWcDA0ODPSMjA8tspsm3OPde5-44LgIUTzlwkmWj5Y-7NvaMzMna2rOZZpzhvHeCe9UOiKRDyWJLWy5TmGTnLc4p17nvH4NIzl65zlIp3BImOe0W54Hr3N1QYyWEF1qWs6lAJBn-PNx7cGX605fTrAE&amp;cr=334890&amp;ct=0&amp;url=https%3A%2F%2Fstackoverflow.com%2Fjobs%2F183487%2Fros-platform-engineer-aeolus-robotics%3Fmed=clc&amp;sig=2W7SSWCXJtn9HQ"><div class="title">ROS Platform Engineer</div><div><span class="company">Aeolus Robotics</span><span class="location"><svg viewBox="0 0 12 12"><path d="M6 5.7c.4 0 .7-.1.9-.4.3-.3.4-.6.4-.9 0-.4-.1-.7-.4-.9-.2-.3-.5-.4-.9-.4s-.7.1-.9.4c-.3.2-.4.5-.4.9s.1.7.4.9c.2.3.5.4.9.4zm0-5c1 0 1.9.4 2.6 1.1.7.7 1.1 1.6 1.1 2.6 0 .5-.1 1.1-.4 1.8s-.5 1.3-.9 1.9c-.4.5-.7 1.1-1.1 1.6-.4.5-.7.9-.9 1.2l-.4.4c-.1-.1-.2-.3-.4-.5s-.5-.6-.9-1.2c-.4-.5-.8-1-1.1-1.6s-.7-1.1-.9-1.8c-.3-.7-.4-1.3-.4-1.8 0-1 .4-1.9 1.1-2.6S5 .7 6 .7z"></path></svg><span>No office location</span></span></div><div class="opts"><span class="opt remote"><svg viewBox="0 0 12 12"><path d="M6 9.8L3.9 7.7c1.3-.9 3-.9 4.2 0L6 9.8zm3-3a4.81 4.81 0 0 0-6 0L2.2 6c2.2-1.8 5.5-1.8 7.7 0l-.9.8zm1.7-1.7a7.27 7.27 0 0 0-9.4 0l-.9-.8c3.2-2.8 7.9-2.8 11.1 0l-.8.8z"></path></svg><span>Remote</span></span></div><span class="post-tag highlight">c++</span><span class="post-tag">robotics</span><div></div></a></div><a class="clc-dismiss" data-clc-click="https://clc.stackoverflow.com/click?an=4_q84LCV4p6rHqqOK4KcmJhYli5exHXCes7G_TM-m2YzfvS7HXA8kIGHoWcDA0ODPSMjA8tspsm3OPde5-44LgIUTzlwkmWj5Y-7NvaMzMna2rOZZpzhvHeCe9UOiKRDyWJLWy5TmGTnLc4p17nvH4NIzl65zlIp3BImOe0W54Hr3N1QYyWEF1qWs6lAJBn-PNx7cGX605fTrAE&amp;cr=334890&amp;ct=-1&amp;sig=LcVPrylOyHLtJQ" data-clc-meta-target="-1"><svg viewBox="0 0 13.6 13.6"><path d="M11.4 2.3C8.9-.2 4.8-.2 2.3 2.3s-2.5 6.6 0 9.1 6.6 2.5 9.1 0 2.5-6.6 0-9.1zM8.6 9.5L6.8 7.7 5 9.5l-.9-.9 1.8-1.8L4.1 5l.9-.9 1.8 1.8 1.8-1.8.9.9-1.8 1.8 1.8 1.8-.9.9z"></path></svg><span class="clc-tooltip above-left">dismiss this job</span></a></li><li class="clc-dismissable"><div class="job-wrap"><a class="job" title="Software Architect at Crossover. Click to learn more." href="https://stackoverflow.com/jobs/185293/software-architect-crossover" target="_blank" data-clc-click="https://clc.stackoverflow.com/click?an=4_q84LCV4p6rHqqOK4KcmJhYli5exHXCes7G_TM-m2YzfvS7HXA8kIGHoWcDA0ODPSMjA8tspsm3OPde5-44LgIUTzlwkmWj5Y-7NvaMzMna2rOZZpzhvHeCe9UOiKRDyWJLWy5TmGTnLc4p17nvH4NIzl65zlIp3BImOe0W54Hr3N1QYyWEF1qWs6lAJBn-PNx7cGX605fTrAE&amp;cr=336735&amp;ct=0&amp;url=https%3A%2F%2Fstackoverflow.com%2Fjobs%2F185293%2Fsoftware-architect-crossover%3Fmed=clc&amp;sig=j7DnjHw1ZFYXaQ"><div class="title">Software Architect</div><div><span class="company">Crossover</span><span class="location"><svg viewBox="0 0 12 12"><path d="M6 5.7c.4 0 .7-.1.9-.4.3-.3.4-.6.4-.9 0-.4-.1-.7-.4-.9-.2-.3-.5-.4-.9-.4s-.7.1-.9.4c-.3.2-.4.5-.4.9s.1.7.4.9c.2.3.5.4.9.4zm0-5c1 0 1.9.4 2.6 1.1.7.7 1.1 1.6 1.1 2.6 0 .5-.1 1.1-.4 1.8s-.5 1.3-.9 1.9c-.4.5-.7 1.1-1.1 1.6-.4.5-.7.9-.9 1.2l-.4.4c-.1-.1-.2-.3-.4-.5s-.5-.6-.9-1.2c-.4-.5-.8-1-1.1-1.6s-.7-1.1-.9-1.8c-.3-.7-.4-1.3-.4-1.8 0-1 .4-1.9 1.1-2.6S5 .7 6 .7z"></path></svg><span>No office location</span></span></div><div class="opts"><span class="opt salary"><span>$60k - $60k</span></span><span class="opt remote"><svg viewBox="0 0 12 12"><path d="M6 9.8L3.9 7.7c1.3-.9 3-.9 4.2 0L6 9.8zm3-3a4.81 4.81 0 0 0-6 0L2.2 6c2.2-1.8 5.5-1.8 7.7 0l-.9.8zm1.7-1.7a7.27 7.27 0 0 0-9.4 0l-.9-.8c3.2-2.8 7.9-2.8 11.1 0l-.8.8z"></path></svg><span>Remote</span></span></div><span class="post-tag highlight">c++</span><span class="post-tag">java</span><div></div></a></div><a class="clc-dismiss" data-clc-click="https://clc.stackoverflow.com/click?an=4_q84LCV4p6rHqqOK4KcmJhYli5exHXCes7G_TM-m2YzfvS7HXA8kIGHoWcDA0ODPSMjA8tspsm3OPde5-44LgIUTzlwkmWj5Y-7NvaMzMna2rOZZpzhvHeCe9UOiKRDyWJLWy5TmGTnLc4p17nvH4NIzl65zlIp3BImOe0W54Hr3N1QYyWEF1qWs6lAJBn-PNx7cGX605fTrAE&amp;cr=336735&amp;ct=-1&amp;sig=giCqsTtV-uPRVQ" data-clc-meta-target="-1"><svg viewBox="0 0 13.6 13.6"><path d="M11.4 2.3C8.9-.2 4.8-.2 2.3 2.3s-2.5 6.6 0 9.1 6.6 2.5 9.1 0 2.5-6.6 0-9.1zM8.6 9.5L6.8 7.7 5 9.5l-.9-.9 1.8-1.8L4.1 5l.9-.9 1.8 1.8 1.8-1.8.9.9-1.8 1.8 1.8 1.8-.9.9z"></path></svg><span class="clc-tooltip above-left">dismiss this job</span></a></li><li class="clc-dismissable"><div class="job-wrap"><a class="job" title="Senior Presales Engineer at Crossover. Click to learn more." href="https://stackoverflow.com/jobs/185307/senior-presales-engineer-crossover" target="_blank" data-clc-click="https://clc.stackoverflow.com/click?an=4_q84LCV4p6rHqqOK4KcmJhYli5exHXCes7G_TM-m2YzfvS7HXA8kIGHoWcDA0ODPSMjA8tspsm3OPde5-44LgIUTzlwkmWj5Y-7NvaMzMna2rOZZpzhvHeCe9UOiKRDyWJLWy5TmGTnLc4p17nvH4NIzl65zlIp3BImOe0W54Hr3N1QYyWEF1qWs6lAJBn-PNx7cGX605fTrAE&amp;cr=336779&amp;ct=0&amp;url=https%3A%2F%2Fstackoverflow.com%2Fjobs%2F185307%2Fsenior-presales-engineer-crossover%3Fmed=clc&amp;sig=L-LIbDdNBpnhJg"><div class="title">Senior Presales Engineer</div><div><span class="company">Crossover</span><span class="location"><svg viewBox="0 0 12 12"><path d="M6 5.7c.4 0 .7-.1.9-.4.3-.3.4-.6.4-.9 0-.4-.1-.7-.4-.9-.2-.3-.5-.4-.9-.4s-.7.1-.9.4c-.3.2-.4.5-.4.9s.1.7.4.9c.2.3.5.4.9.4zm0-5c1 0 1.9.4 2.6 1.1.7.7 1.1 1.6 1.1 2.6 0 .5-.1 1.1-.4 1.8s-.5 1.3-.9 1.9c-.4.5-.7 1.1-1.1 1.6-.4.5-.7.9-.9 1.2l-.4.4c-.1-.1-.2-.3-.4-.5s-.5-.6-.9-1.2c-.4-.5-.8-1-1.1-1.6s-.7-1.1-.9-1.8c-.3-.7-.4-1.3-.4-1.8 0-1 .4-1.9 1.1-2.6S5 .7 6 .7z"></path></svg><span>No office location</span></span></div><div class="opts"><span class="opt salary"><span>$200k - $200k</span></span><span class="opt remote"><svg viewBox="0 0 12 12"><path d="M6 9.8L3.9 7.7c1.3-.9 3-.9 4.2 0L6 9.8zm3-3a4.81 4.81 0 0 0-6 0L2.2 6c2.2-1.8 5.5-1.8 7.7 0l-.9.8zm1.7-1.7a7.27 7.27 0 0 0-9.4 0l-.9-.8c3.2-2.8 7.9-2.8 11.1 0l-.8.8z"></path></svg><span>Remote</span></span></div><span class="post-tag">java</span><span class="post-tag highlight">c++</span><div></div></a></div><a class="clc-dismiss" data-clc-click="https://clc.stackoverflow.com/click?an=4_q84LCV4p6rHqqOK4KcmJhYli5exHXCes7G_TM-m2YzfvS7HXA8kIGHoWcDA0ODPSMjA8tspsm3OPde5-44LgIUTzlwkmWj5Y-7NvaMzMna2rOZZpzhvHeCe9UOiKRDyWJLWy5TmGTnLc4p17nvH4NIzl65zlIp3BImOe0W54Hr3N1QYyWEF1qWs6lAJBn-PNx7cGX605fTrAE&amp;cr=336779&amp;ct=-1&amp;sig=yu3nD3qSpuWs3w" data-clc-meta-target="-1"><svg viewBox="0 0 13.6 13.6"><path d="M11.4 2.3C8.9-.2 4.8-.2 2.3 2.3s-2.5 6.6 0 9.1 6.6 2.5 9.1 0 2.5-6.6 0-9.1zM8.6 9.5L6.8 7.7 5 9.5l-.9-.9 1.8-1.8L4.1 5l.9-.9 1.8 1.8 1.8-1.8.9.9-1.8 1.8 1.8 1.8-.9.9z"></path></svg><span class="clc-tooltip above-left">dismiss this job</span></a></li></ul></div><img src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/impression.gif" class="impression" style="display: none;"></div>
+<script>;try{(function(a){function b(a){return 
+document.getElementById(a)}function c(a){return a='string'==typeof 
+a?b(a):a,!!a&&'none'===getComputedStyle(a).display}function 
+d(a){return!c(a)}function e(a){return!!a}function f(a){var 
+b=a.style;b.height=b.maxHeight=b.minHeight='auto',b.display='none',[].forEach.call(a.children,f)}function
+ g(){try{return!new Function('return 
+async()=>{};')}catch(a){return!0}}function h(){'function'==typeof 
+clc.load?clc.load():q.push(function(a){return a.load()})}function 
+i(){if(r.allowed&&new 
+RegExp(r.allowed).test(location.hostname)&&!c('hireme')){var 
+a=r.wv;if(document.hidden&&a){var 
+b=function(){document.hidden||(i(),document.removeEventListener('visibilitychange',b))};return
+ void 
+document.addEventListener('visibilitychange',b)}if(r.al&&h(),'function'!=typeof
+ clc.load){var 
+d=g()?r.lib.replace(/(\.min)?\.js(\?v=[0-9a-fA-F]+)?$/,'.ie$1.js$2'):r.lib,e=document.createElement('script');e.src=d,document.body.appendChild(e)}}}function
+ j(){return Object.keys(v.ids)}function k(a){var 
+b=v.ids[a],c=v.slots[b];'function'==typeof 
+c&&(c=c(a));return{path:'/'+s+'/'+u+'/'+b+'/'+t,sizes:c,zone:b}}function
+ l(){var 
+a=document.createElement('div');a.className='adsbox',a.id='clc-abd',a.style.position='absolute',a.style.pointerEvents='none',a.innerHTML='&nbsp;',document.body.appendChild(a)}function
+ m(a){var b=a.serviceName,c=a.slot,d=a.lineItemId;try{var 
+e=c.getSlotElementId(),g=[];e||g.push('id=0');var 
+h=document.getElementById(e);if(!e||h?h.hasAttribute('data-clc-stalled')&&g.push('st=1'):g.push('el=0'),0!==g.length)return
+ void 
+w(g.join('&'));-1===r.dh.indexOf(d)?h.setAttribute('data-clc-prefilled','true'):f(h),h.setAttribute('data-clc-ready','true')}catch(a){var
+ i=document.querySelector('#dfp-tsb, #dfp-isb, 
+#clc-tsb');i&&i.setAttribute('data-clc-ready','true'),w('e=1')}}function
+ n(a){if(!!clc.collapse)return 
+clc.collapse[a];return'lb'!==a&&'mlb'!==a||!!clc.collapse_leaderboards}function
+ 
+o(a,b){'dfp-isb'===a&&b.setTargeting('Sidebar',['Inline']),'dfp-tsb'===a&&b.setTargeting('Sidebar',['Right']);var
+ 
+c=k(a),d=c.path,e=c.sizes,f=c.zone,g=googletag.defineSlot(d,e,a);n(f)&&g.setCollapseEmptyDiv(!0,!0),g.addService(b),!1}function
+ p(b){return function(){l(),googletag.destroySlots();var 
+c=googletag.pubads();c.enableSingleRequest(),a.sreEvent||(c.addEventListener('slotRenderEnded',m),a.sreEvent=!0),'object'==typeof
+ 
+dfp_targeting&&Object.keys(dfp_targeting).forEach(function(a){c.setTargeting(a,dfp_targeting[a])}),b.forEach(function(a){return
+ 
+o(a,c)}),googletag.enableServices(),b.forEach(function(a){googletag.display(a)})}}var
+ r=function(a){for(var 
+b=[],c=1;c<arguments.length;c++)b[c-1]=arguments[c];for(var 
+d,e=0,f=b;e<f.length;e++)for(var g in d=f[e],d)a[g]=d[g];return 
+a}({"lib":"https://cdn.sstatic.net/clc/clc.min.js?v=8d2ce55e5023","style":"https://cdn.sstatic.net/clc/styles/clc.min.css?v=8a0a093a431f","u":"https://clc.stackoverflow.com/markup.js","wa":true,"kt":2000,"tto":true,"h":"clc.stackoverflow.com","allowed":"^(((talent\\.)?stackoverflow)|(blog\\.codinghorror)|(serverfault|askubuntu)|([^\\.]+\\.stackexchange))\\.com$","wv":true,"al":false,"dh":[4385506061,4386578282,4386579572]},a.options||{}),q=a.cmd||[],s='248424177',t=/^\/tags\//.test(location.pathname)||/^\/questions\/tagged\//.test(location.pathname)?'tag-pages':'question-pages',u=location.hostname;var
+ 
+v={slots:{lb:[[728,90]],mlb:[[728,90]],sb:function(a){return'dfp-tsb'===a?[[300,250],[300,600]]:[[300,250]]},"tag-sponsorship":[[730,135]],"mobile-below-question":[[320,50],[300,250]]},ids:{"dfp-tlb":'lb',"dfp-mlb":'mlb',"dfp-tsb":'sb',"dfp-isb":'sb',"dfp-tag":'tag-sponsorship',"dfp-m-aq":'mobile-below-question',"clc-tlb":'lb',"clc-mlb":'mlb',"clc-tsb":'sb'}},w=function(a){new
+ 
+Image().src='https://'+r.h+'/stalled.gif?'+a};i(),a.autoload=h,a.cmd=q,a.options=r,a.loadDisplayAds=function(a){a=a&&0<a.length?a:j();var
+ g=a.map(b).filter(e).filter(function(a){return 
+/^\s*$/.test(a.innerHTML)}).filter(d).map(function(a){return 
+a.id});if(j().map(b).filter(e).filter(c).forEach(f),0!==g.length){var 
+h='undefined'==typeof googletag;if(h){googletag={cmd:[]};var 
+i=document.createElement('script');i.src='https://www.googletagservices.com/tag/js/gpt.js',document.body.appendChild(i)}googletag.cmd.push(p(g))}}})(this.clc=this.clc||{})}catch(a){window.console.error(a)}</script>            <script>
+                var clc = clc || {};
+                    
+                    clc.cmd = clc.cmd || [];
+                    clc.cmd.push(function () { 
+window.clc_request='AoDYGjUhvNUIAAAAAKWRSAECAAAAAgAAAAAaAAAAfGMrK3xvcGVuY3Z8a2FsbWFuLWZpbHRlcnwAGa6Jd31zs1naLA';
+ clc.load(); });
+                    (typeof clc.init === 'function' && clc.init());
+                    
+                var 
+dfp_targeting={Registered:['false'],'so-tag':['c_plus_plus','opencv','kalman-filter']};
+                    
+                    clc.collapse = { sb: 
+!0,'tag-sponsorship':!0,lb:!1,ml:!1,'mobile-below-question':!0};
+                    clc.loadDisplayAds();
+                    
+            </script>
+            
+
+                <div class="module sidebar-related">
+                    <h4 id="h-related">Related</h4>
+                    <div class="related js-gps-related-questions" data-tracker="rq=1">
+                        <div class="spacer js-gps-track"><a href="https://stackoverflow.com/q/47981?rq=1" title="Vote score (upvotes - downvotes)"><div class="answer-votes answered-accepted extra-large">1984</div></a><a href="https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-single-bit?rq=1" class="question-hyperlink">How do you set, clear, and toggle a single bit?</a></div><div class="spacer js-gps-track"><a href="https://stackoverflow.com/q/375913?rq=1" title="Vote score (upvotes - downvotes)"><div class="answer-votes answered-accepted extra-large">1463</div></a><a href="https://stackoverflow.com/questions/375913/how-can-i-profile-c-code-running-in-linux?rq=1" class="question-hyperlink">How can I profile C++ code running in Linux?</a></div><div class="spacer js-gps-track"><a href="https://stackoverflow.com/q/10877375?rq=1" title="Vote score (upvotes - downvotes)"><div class="answer-votes default">2</div></a><a href="https://stackoverflow.com/questions/10877375/kalman-filter-with-opencl?rq=1" class="question-hyperlink">Kalman Filter with OpenCL</a></div><div class="spacer js-gps-track"><a href="https://stackoverflow.com/q/25078285?rq=1" title="Vote score (upvotes - downvotes)"><div class="answer-votes answered-accepted extra-large">1041</div></a><a href="https://stackoverflow.com/questions/25078285/replacing-a-32-bit-loop-count-variable-with-64-bit-introduces-crazy-performance?rq=1" class="question-hyperlink">Replacing a 32-bit loop count variable with 64-bit introduces crazy performance deviations</a></div><div class="spacer js-gps-track"><a href="https://stackoverflow.com/q/30409677?rq=1" title="Vote score (upvotes - downvotes)"><div class="answer-votes default">1</div></a><a href="https://stackoverflow.com/questions/30409677/how-to-apply-kalman-filter-on-rotation-matrix?rq=1" class="question-hyperlink">How to apply kalman filter on rotation matrix?</a></div><div class="spacer js-gps-track"><a href="https://stackoverflow.com/q/31263495?rq=1" title="Vote score (upvotes - downvotes)"><div class="answer-votes answered-accepted default">3</div></a><a href="https://stackoverflow.com/questions/31263495/implementation-of-data-fusion-through-extended-kalman-filter-in-opencv-c?rq=1" class="question-hyperlink">Implementation of Data Fusion through (Extended) Kalman-Filter in OpenCV/C++</a></div><div class="spacer js-gps-track"><a href="https://stackoverflow.com/q/32529091?rq=1" title="Vote score (upvotes - downvotes)"><div class="answer-votes answered-accepted default">0</div></a><a href="https://stackoverflow.com/questions/32529091/matlab-kalman-filter-how-to-mitigate-the-warning-matrix-is-singular-or-badl?rq=1" class="question-hyperlink">Matlab: Kalman Filter — How to mitigate the Warning: Matrix is singular or badly scaled</a></div><div class="spacer js-gps-track"><a href="https://stackoverflow.com/q/36425142?rq=1" title="Vote score (upvotes - downvotes)"><div class="answer-votes default">3</div></a><a href="https://stackoverflow.com/questions/36425142/how-to-configure-kalman-filter-matrices-to-track-objects-on-a-moving-conveyor?rq=1" class="question-hyperlink">How to configure Kalman filter matrices to track objects on a moving conveyor</a></div><div class="spacer js-gps-track"><a href="https://stackoverflow.com/q/39616649?rq=1" title="Vote score (upvotes - downvotes)"><div class="answer-votes default">0</div></a><a href="https://stackoverflow.com/questions/39616649/extended-kalman-filter-for-vehicle-tracking?rq=1" class="question-hyperlink">Extended Kalman filter for vehicle tracking</a></div><div class="spacer js-gps-track"><a href="https://stackoverflow.com/q/49296216?rq=1" title="Vote score (upvotes - downvotes)"><div class="answer-votes default">0</div></a><a href="https://stackoverflow.com/questions/49296216/extended-kalman-filter-simulink-block?rq=1" class="question-hyperlink">Extended Kalman Filter simulink block</a></div>
+                    </div>
+                </div>
+
+<div id="hot-network-questions" class="module tex2jax_ignore">
+    <h4>
+        <a href="https://stackexchange.com/questions?tab=hot" class="js-gps-track" data-gps-track="posts_hot_network.click({ item_type:1, location:11 })">
+            Hot Network Questions
+        </a>
+    </h4>
+    <ul>
+            <li>
+                <div class="favicon favicon-rpg" title="Role-playing Games Stack Exchange"></div><a href="https://rpg.stackexchange.com/questions/122804/can-i-cast-blade-ward-and-then-make-my-monk-unarmed-strike-with-a-bonus-action" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:122 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Can I cast Blade Ward and then make my monk unarmed strike with a bonus action?
+                </a>
+
+            </li>
+            <li>
+                <div class="favicon favicon-english" title="English Language &amp; Usage Stack Exchange"></div><a href="https://english.stackexchange.com/questions/446351/what-does-the-term-hot-dog-lawyer-mean" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:97 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    What does the term "hot-dog lawyer" mean?
+                </a>
+
+            </li>
+            <li>
+                <div class="favicon favicon-history" title="History Stack Exchange"></div><a href="https://history.stackexchange.com/questions/46161/is-it-really-true-that-medieval-scholars-believe-that-earth-was-round" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:324 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Is it really true that medieval scholars believe that Earth was round?
+                </a>
+
+            </li>
+            <li>
+                <div class="favicon favicon-security" title="Information Security Stack Exchange"></div><a href="https://security.stackexchange.com/questions/185889/does-password-protecting-a-database-living-next-to-the-application-add-any-secur" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:162 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Does password-protecting a database living next to the application add any security?
+                </a>
+
+            </li>
+            <li>
+                <div class="favicon favicon-stats" title="Cross Validated"></div><a href="https://stats.stackexchange.com/questions/346748/rolling-6-sided-dice" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:65 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Rolling 6 Sided Dice
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-worldbuilding" title="Worldbuilding Stack Exchange"></div><a href="https://worldbuilding.stackexchange.com/questions/112513/how-would-a-speedster-communicate" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:579 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    How Would A Speedster Communicate?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-workplace" title="The Workplace Stack Exchange"></div><a href="https://workplace.stackexchange.com/questions/112253/forged-letters-of-commitment" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:423 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Forged Letters of Commitment
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-tex" title="TeX - LaTeX Stack Exchange"></div><a href="https://tex.stackexchange.com/questions/432003/how-to-draw-a-curve-from-a-previously-calculated-list-of-points" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:85 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    How to draw a curve from a previously calculated list of points
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-stackoverflow" title="Stack Overflow"></div><a href="https://stackoverflow.com/questions/50378884/when-catch-doesnt-actually-catch-anything" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:1 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    When catch doesn't actually catch anything
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-unix" title="Unix &amp; Linux Stack Exchange"></div><a href="https://unix.stackexchange.com/questions/444351/determine-in-which-groups-a-running-process-is-in" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:106 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Determine in which group(s) a running process is in?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-academia" title="Academia Stack Exchange"></div><a href="https://academia.stackexchange.com/questions/109882/should-professors-pay-undergraduate-students-doing-research-in-their-labs" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:415 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Should professors pay undergraduate students doing research in their labs?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-worldbuilding" title="Worldbuilding Stack Exchange"></div><a href="https://worldbuilding.stackexchange.com/questions/112390/on-a-speedsters-perception-of-time-and-ability-to-function-in-civilian-life" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:579 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    On a Speedster's perception of time and ability to function in civilian life
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-english" title="English Language &amp; Usage Stack Exchange"></div><a href="https://english.stackexchange.com/questions/446497/is-there-a-more-general-term-for-googling-that-doesnt-imply-a-particular-sear" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:97 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Is there a more general term for "googling" that doesn't imply a particular search engine?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-puzzling" title="Puzzling Stack Exchange"></div><a href="https://puzzling.stackexchange.com/questions/65940/%ef%b8%8fscrambled-emoji-tale%ef%b8%8f-1%ef%b8%8f%e2%83%a3" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:559 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    ❤️🐖🤯Scrambled emoji tale☠️💰😊 #1️⃣
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-politics" title="Politics Stack Exchange"></div><a href="https://politics.stackexchange.com/questions/31017/what-is-the-proper-non-gerrymandering-purpose-of-political-districting" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:475 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    What is the proper (non-"Gerrymandering") purpose of political districting?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-worldbuilding" title="Worldbuilding Stack Exchange"></div><a href="https://worldbuilding.stackexchange.com/questions/112460/armor-for-giant-crabs-to-defeat-explosive-bites-from-predators" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:579 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Armor for Giant Crabs to Defeat Explosive Bites from Predators
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-interpersonal" title="Interpersonal Skills Stack Exchange"></div><a href="https://interpersonal.stackexchange.com/questions/14535/how-to-introduce-metamours-without-causing-awkwardness" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:680 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    How to introduce metamours without causing awkwardness?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-codegolf" title="Programming Puzzles &amp; Code Golf Stack Exchange"></div><a href="https://codegolf.stackexchange.com/questions/164760/orthodiagonal-steps" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:200 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Orthodiagonal steps
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-bicycles" title="Bicycles Stack Exchange"></div><a href="https://bicycles.stackexchange.com/questions/54695/are-quick-change-pedals-a-thing" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:126 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Are quick-change pedals a thing?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-electronics" title="Electrical Engineering Stack Exchange"></div><a href="https://electronics.stackexchange.com/questions/374884/can-aluminum-solder-paste-be-used-in-electronic-circuits" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:135 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Can aluminum solder paste be used in electronic circuits?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-travel" title="Travel Stack Exchange"></div><a href="https://travel.stackexchange.com/questions/115142/compensation-in-the-eu-after-technical-problem-after-take-off" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:273 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Compensation in the EU after technical problem after take off
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-physics" title="Physics Stack Exchange"></div><a href="https://physics.stackexchange.com/questions/406384/inertia-on-a-rotating-disc" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:151 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Inertia on a rotating disc?
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-writing" title="Writing Stack Exchange"></div><a href="https://writing.stackexchange.com/questions/36176/alternative-sources-of-drama-tension-when-the-setting-is-low-violence" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:166 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    Alternative sources of drama/tension when the setting is low-violence
+                </a>
+
+            </li>
+            <li class="dno js-hidden" style="display: list-item;">
+                <div class="favicon favicon-dba" title="Database Administrators Stack Exchange"></div><a href="https://dba.stackexchange.com/questions/207068/how-do-i-fix-uneven-tempdb-files" class="js-gps-track" data-gps-track="site.switch({ item_type:11, target_site:182 }); posts_hot_network.click({ item_type:2, location:11 })">
+                    How do I fix Uneven TempDB Files?
+                </a>
+
+            </li>
+    </ul>
+
+        
+</div>
+
+<div id="feed-link">
+    <a href="https://stackoverflow.com/feeds/question/21533093" title="feed of this question and its answers">
+        <svg aria-hidden="true" class="svg-icon fc-orange-400 iconRss" width="18" height="18" viewBox="0 0 18 18"><path d="M1 3c0-1.1.9-2 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3zm14.5 12C15.5 8.1 9.9 2.5 3 2.5V5a10 10 0 0 1 10 10h2.5zm-5 0A7.5 7.5 0 0 0 3 7.5V10a5 5 0 0 1 5 5h2.5zm-5 0A2.5 2.5 0 0 0 3 12.5V15h2.5z"></path></svg>
+        question feed
+    </a>
+</div>
+        </div>
+    </div>
+<script>StackExchange.ready(function(){$.get('/posts/21533093/ivc/370c');});</script>
+<noscript><div><img src="/posts/21533093/ivc/370c" class="dno" alt="" width="0" height="0"></div></noscript><div style="display:none" id="prettify-lang">lang-cpp</div></div>
+
+
+        </div>
+    </div><script src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/clc.js"></script><script src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/gpt.js"></script>
+
+    <footer id="footer" class="site-footer js-footer" role="contentinfo">
+        <div class="site-footer--container">
+                <div class="site-footer--logo">
+
+                    <a href="https://stackoverflow.com/"><svg aria-hidden="true" class="svg-icon native iconLogoGlyphMd" width="32" height="37" viewBox="0 0 32 37"><g><path fill="#BCBBBB" d="M26 33v-9h4v13H0V24h4v9z"></path><path d="M23.1 25.99l.68-2.95-16.1-3.35L7 23l16.1 2.99zM9.1 15.2l15 7 1.4-3-15-7-1.4 3zm4.2-7.4L26 18.4l2.1-2.5L15.4 5.3l-2.1 2.5zM21.5 0l-2.7 2 9.9 13.3 2.7-2L21.5 0zM7 30h16v-3H7v3z" fill="#F48024"></path></g></svg></a>
+                </div>
+            
+            <nav class="site-footer--nav">
+                    <div class="site-footer--col site-footer--col__visible js-footer-col" data-name="default">
+                        <h5 class="-title"><a href="https://stackoverflow.com/" class="js-gps-track" data-gps-track="footer.click({ location: 2, link: 15})">Stack Overflow</a></h5>
+                        <ul class="-list js-primary-footer-links">
+                            <li class="-item"><a href="https://stackoverflow.com/questions" class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 16})">Questions</a></li>
+                                <li class="-item"><a href="https://stackoverflow.com/jobs" class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 17})">Jobs</a></li>
+                                <li class="-item"><a href="https://stackoverflow.com/jobs/directory/developer-jobs" class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 11})">Developer Jobs Directory</a></li>
+                                     <li class="-item"><a href="https://stackoverflow.com/jobs/salary" class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 28})">Salary Calculator</a></li>
+                                                            <li class="-item"><a href="https://stackoverflow.com/help" class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 3 })">Help</a></li>
+                                <li class="-item"><a onclick='StackExchange.switchMobile("on")' class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 12 })">Mobile</a></li>
+                        </ul>
+                    </div>
+                    <div class="site-footer--col site-footer--col__visible js-footer-col" data-name="default">
+                        <h5 class="-title"><a href="https://www.stackoverflowbusiness.com/" class="js-gps-track" data-gps-track="footer.click({ location: 2, link: 19 })">Products</a></h5>
+                        <ul class="-list">
+                            <li class="-item"><a href="https://stackoverflow.com/teams" class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 29 })">Teams</a></li>
+                            <li class="-item"><a href="https://www.stackoverflowbusiness.com/talent" class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 20 })">Talent</a></li>
+                            <li class="-item"><a href="https://www.stackoverflowbusiness.com/advertise" class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 21 })">Engagement</a></li>
+                            <li class="-item"><a href="https://stackoverflow.com/enterprise" class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 22 })">Enterprise</a></li>
+                        </ul>
+                    </div>
+                <div class="site-footer--col site-footer--col__visible js-footer-col" data-name="default">
+                    <h5 class="-title"><a class="js-gps-track" data-gps-track="footer.click({ location: 2, link: 1 })" href="https://stackoverflow.com/company/about">Company</a></h5>
+                    <ul class="-list">
+                            <li class="-item"><a class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 1 })" href="https://stackoverflow.com/company/about">About</a></li>
+                                                <li class="-item"><a class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 27 })" href="https://stackoverflow.com/company/press">Press</a></li>
+                            <li class="-item"><a class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 9 })" href="https://stackoverflow.com/company/work-here">Work Here</a></li>
+                        <li class="-item"><a class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 7 })" href="https://stackexchange.com/legal">Legal</a></li>
+                        <li class="-item"><a class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 8 })" href="https://stackexchange.com/legal/privacy-policy">Privacy Policy</a></li>
+                            <li class="-item"><a class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link: 13 })" href="https://stackoverflow.com/company/contact">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div class="site-footer--col site-footer--categories-nav site-footer--col__visible">
+                    <a href="#" class="site-footer--back js-footer-back"><svg aria-hidden="true" class="svg-icon iconArrowLeftAlt" width="18" height="18" viewBox="0 0 18 18"><path d="M10.58 16L12 14.59 6.4 9 12 3.41 10.57 2l-7 7z"></path></svg></a>
+                    <div>
+                        <h5 class="-title"><a href="https://stackexchange.com/">Stack Exchange<br> Network</a></h5>
+                        <ul class="-list">
+                            <li class="-item"><a href="#" class="-link _expandable js-footer-category-trigger js-gps-track" data-gps-track="footer.click({ location: 2, link: 24 })" data-target="Technology">Technology</a></li>
+                            <li class="-item"><a href="#" class="-link _expandable js-footer-category-trigger js-gps-track" data-gps-track="footer.click({ location: 2, link: 24 })" data-target="Life / Arts">Life / Arts</a></li>
+                            <li class="-item"><a href="#" class="-link _expandable js-footer-category-trigger js-gps-track" data-gps-track="footer.click({ location: 2, link: 24 })" data-target="Culture / Recreation">Culture / Recreation</a></li>
+                            <li class="-item"><a href="#" class="-link _expandable js-footer-category-trigger js-gps-track" data-gps-track="footer.click({ location: 2, link: 24 })" data-target="Science">Science</a></li>
+                            <li class="-item"><a href="#" class="-link _expandable js-footer-category-trigger js-gps-track" data-gps-track="footer.click({ location: 2, link: 24 })" data-target="Other">Other</a></li>
+
+                        </ul>
+                    </div>
+                </div>
+                <div class="site-footer--categories">
+                    <div class="site-footer--col site-footer--category js-footer-col" data-name="Technology">
+        <ul class="-list">
+                <li class="-item"><a href="https://stackoverflow.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="professional and enthusiast programmers">Stack Overflow</a></li>
+                <li class="-item"><a href="https://serverfault.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="system and network administrators">Server Fault</a></li>
+                <li class="-item"><a href="https://superuser.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="computer enthusiasts and power users">Super User</a></li>
+                <li class="-item"><a href="https://webapps.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="power users of web applications">Web Applications</a></li>
+                <li class="-item"><a href="https://askubuntu.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="Ubuntu users and developers">Ask Ubuntu</a></li>
+                <li class="-item"><a href="https://webmasters.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="pro webmasters">Webmasters</a></li>
+                <li class="-item"><a href="https://gamedev.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="professional and independent game developers">Game Development</a></li>
+                    </ul></div><div class="site-footer--col site-footer--category js-footer-col" data-name="Technology"><ul class="-list">
+                <li class="-item"><a href="https://tex.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="users of TeX, LaTeX, ConTeXt, and related typesetting systems">TeX - LaTeX</a></li>
+                <li class="-item"><a href="https://softwareengineering.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="professionals, academics, and students working within the systems development life cycle">Software Engineering</a></li>
+                <li class="-item"><a href="https://unix.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="users of Linux, FreeBSD and other Un*x-like operating systems">Unix &amp; Linux</a></li>
+                <li class="-item"><a href="https://apple.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="power users of Apple hardware and software">Ask Different (Apple)</a></li>
+                <li class="-item"><a href="https://wordpress.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="WordPress developers and administrators">WordPress Development</a></li>
+                <li class="-item"><a href="https://gis.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="cartographers, geographers and GIS professionals">Geographic Information Systems</a></li>
+                <li class="-item"><a href="https://electronics.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="electronics and electrical engineering professionals, students, and enthusiasts">Electrical Engineering</a></li>
+                    </ul></div><div class="site-footer--col site-footer--category js-footer-col" data-name="Technology"><ul class="-list">
+                <li class="-item"><a href="https://android.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="enthusiasts and power users of the Android operating system">Android Enthusiasts</a></li>
+                <li class="-item"><a href="https://security.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="information security professionals">Information Security</a></li>
+                <li class="-item"><a href="https://dba.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="database professionals who wish to improve their database skills and learn from others in the community">Database Administrators</a></li>
+                <li class="-item"><a href="https://drupal.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="Drupal developers and administrators">Drupal Answers</a></li>
+                <li class="-item"><a href="https://sharepoint.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="SharePoint enthusiasts">SharePoint</a></li>
+                <li class="-item"><a href="https://ux.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="user experience researchers and experts">User Experience</a></li>
+                <li class="-item"><a href="https://mathematica.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="users of Wolfram Mathematica">Mathematica</a></li>
+                    </ul></div><div class="site-footer--col site-footer--category js-footer-col" data-name="Technology"><ul class="-list">
+                <li class="-item"><a href="https://salesforce.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="Salesforce administrators, implementation experts, developers and anybody in-between">Salesforce</a></li>
+                <li class="-item"><a href="https://expressionengine.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="administrators, end users, developers and designers for ExpressionEngine® CMS">ExpressionEngine® Answers</a></li>
+                <li class="-item"><a href="https://pt.stackoverflow.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="programadores profissionais e entusiastas">Stack Overflow em Português</a></li>
+                <li class="-item"><a href="https://blender.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="people who use Blender to create 3D graphics, animations, or games">Blender</a></li>
+                <li class="-item"><a href="https://networkengineering.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="network engineers">Network Engineering</a></li>
+                <li class="-item"><a href="https://crypto.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="software developers, mathematicians and others interested in cryptography">Cryptography</a></li>
+                <li class="-item"><a href="https://codereview.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="peer programmer code reviews">Code Review</a></li>
+                    </ul></div><div class="site-footer--col site-footer--category js-footer-col" data-name="Technology"><ul class="-list">
+                <li class="-item"><a href="https://magento.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="users of the Magento e-Commerce platform">Magento</a></li>
+                <li class="-item"><a href="https://softwarerecs.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="people seeking specific software recommendations">Software Recommendations</a></li>
+                <li class="-item"><a href="https://dsp.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="practitioners of the art and science of signal, image and video processing">Signal Processing</a></li>
+                <li class="-item"><a href="https://emacs.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="those using, extending or developing Emacs">Emacs</a></li>
+                <li class="-item"><a href="https://raspberrypi.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="users and developers of hardware and software for Raspberry Pi">Raspberry Pi</a></li>
+                <li class="-item"><a href="https://ru.stackoverflow.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="программистов">Stack Overflow на русском</a></li>
+                <li class="-item"><a href="https://codegolf.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="programming puzzle enthusiasts and code golfers">Programming Puzzles &amp; Code Golf</a></li>
+                    </ul></div><div class="site-footer--col site-footer--category js-footer-col" data-name="Technology"><ul class="-list">
+                <li class="-item"><a href="https://es.stackoverflow.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="programadores y profesionales de la informática">Stack Overflow en español</a></li>
+                <li class="-item"><a href="https://ethereum.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="users of Ethereum, the decentralized application platform and smart contract enabled blockchain">Ethereum</a></li>
+                <li class="-item"><a href="https://datascience.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="Data science professionals, Machine Learning specialists, and those interested in learning more about the field">Data Science</a></li>
+                <li class="-item"><a href="https://arduino.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="developers of open-source hardware and software that is compatible with Arduino">Arduino</a></li>
+                <li class="-item"><a href="https://bitcoin.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="Bitcoin crypto-currency enthusiasts">Bitcoin</a></li>
+                            <li class="-item">
+                    <a href="https://stackexchange.com/sites#technology" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 26 })">
+                        <strong>
+                            more (29)
+                        </strong>
+                    </a>
+                </li>
+        </ul>
+    </div>
+    <div class="site-footer--col site-footer--category js-footer-col" data-name="Life / Arts">
+        <ul class="-list">
+                <li class="-item"><a href="https://photo.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="professional, enthusiast and amateur photographers">Photography</a></li>
+                <li class="-item"><a href="https://scifi.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="science fiction and fantasy enthusiasts">Science Fiction &amp; Fantasy</a></li>
+                <li class="-item"><a href="https://graphicdesign.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="Graphic Design professionals, students, and enthusiasts">Graphic Design</a></li>
+                <li class="-item"><a href="https://movies.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="movie and tv enthusiasts">Movies &amp; TV</a></li>
+                <li class="-item"><a href="https://music.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="musicians, students, and enthusiasts">Music: Practice &amp; Theory</a></li>
+                <li class="-item"><a href="https://worldbuilding.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="writers/artists using science, geography and culture to construct imaginary worlds and settings">Worldbuilding</a></li>
+                <li class="-item"><a href="https://cooking.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="professional and amateur chefs">Seasoned Advice (cooking)</a></li>
+                    </ul></div><div class="site-footer--col site-footer--category js-footer-col" data-name="Life / Arts"><ul class="-list">
+                <li class="-item"><a href="https://diy.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="contractors and serious DIYers">Home Improvement</a></li>
+                <li class="-item"><a href="https://money.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="people who want to be financially literate">Personal Finance &amp; Money</a></li>
+                <li class="-item"><a href="https://academia.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="academics and those enrolled in higher education">Academia</a></li>
+                <li class="-item"><a href="https://law.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="legal professionals, students, and others with experience or interest in law">Law</a></li>
+                            <li class="-item">
+                    <a href="https://stackexchange.com/sites#lifearts" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 26 })">
+                        <strong>
+                            more (15)
+                        </strong>
+                    </a>
+                </li>
+        </ul>
+    </div>
+    <div class="site-footer--col site-footer--category js-footer-col" data-name="Culture / Recreation">
+        <ul class="-list">
+                <li class="-item"><a href="https://english.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="linguists, etymologists, and serious English language enthusiasts">English Language &amp; Usage</a></li>
+                <li class="-item"><a href="https://skeptics.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="scientific skepticism">Skeptics</a></li>
+                <li class="-item"><a href="https://judaism.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="those who base their lives on Jewish law and tradition and anyone interested in learning more">Mi Yodeya (Judaism)</a></li>
+                <li class="-item"><a href="https://travel.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="road warriors and seasoned travelers">Travel</a></li>
+                <li class="-item"><a href="https://christianity.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="committed Christians, experts in Christianity and those interested in learning more">Christianity</a></li>
+                <li class="-item"><a href="https://ell.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="speakers of other languages learning English">English Language Learners</a></li>
+                <li class="-item"><a href="https://japanese.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="students, teachers, and linguists wanting to discuss the finer points of the Japanese language">Japanese Language</a></li>
+                    </ul></div><div class="site-footer--col site-footer--category js-footer-col" data-name="Culture / Recreation"><ul class="-list">
+                <li class="-item"><a href="https://gaming.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="passionate videogamers on all platforms">Arqade (gaming)</a></li>
+                <li class="-item"><a href="https://bicycles.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="people who build and repair bicycles, people who train cycling, or commute on bicycles">Bicycles</a></li>
+                <li class="-item"><a href="https://rpg.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="gamemasters and players of tabletop, paper-and-pencil role-playing games">Role-playing Games</a></li>
+                <li class="-item"><a href="https://anime.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="anime and manga fans">Anime &amp; Manga</a></li>
+                <li class="-item"><a href="https://puzzling.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="those who create, solve, and study puzzles">Puzzling</a></li>
+                <li class="-item"><a href="https://mechanics.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="mechanics and DIY enthusiast owners of cars, trucks, and motorcycles">Motor Vehicle Maintenance &amp; Repair</a></li>
+                            <li class="-item">
+                    <a href="https://stackexchange.com/sites#culturerecreation" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 26 })">
+                        <strong>
+                            more (33)
+                        </strong>
+                    </a>
+                </li>
+        </ul>
+    </div>
+    <div class="site-footer--col site-footer--category js-footer-col" data-name="Science">
+        <ul class="-list">
+                <li class="-item"><a href="https://mathoverflow.net/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="professional mathematicians">MathOverflow</a></li>
+                <li class="-item"><a href="https://math.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="people studying math at any level and professionals in related fields">Mathematics</a></li>
+                <li class="-item"><a href="https://stats.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="people interested in statistics, machine learning, data analysis, data mining, and data visualization">Cross Validated (stats)</a></li>
+                <li class="-item"><a href="https://cstheory.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="theoretical computer scientists and researchers in related fields">Theoretical Computer Science</a></li>
+                <li class="-item"><a href="https://physics.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="active researchers, academics and students of physics">Physics</a></li>
+                <li class="-item"><a href="https://chemistry.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="scientists, academics, teachers and students">Chemistry</a></li>
+                <li class="-item"><a href="https://biology.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="biology researchers, academics, and students">Biology</a></li>
+                    </ul></div><div class="site-footer--col site-footer--category js-footer-col" data-name="Science"><ul class="-list">
+                <li class="-item"><a href="https://cs.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="students, researchers and practitioners of computer science">Computer Science</a></li>
+                <li class="-item"><a href="https://philosophy.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="those interested in the study of the fundamental nature of knowledge, reality, and existence">Philosophy</a></li>
+                            <li class="-item">
+                    <a href="https://stackexchange.com/sites#science" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 26 })">
+                        <strong>
+                            more (10)
+                        </strong>
+                    </a>
+                </li>
+        </ul>
+    </div>
+    <div class="site-footer--col site-footer--category js-footer-col" data-name="Other">
+        <ul class="-list">
+                <li class="-item"><a href="https://meta.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="meta-discussion of the Stack Exchange family of Q&amp;A websites">Meta Stack Exchange</a></li>
+                <li class="-item"><a href="https://stackapps.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="apps, scripts, and development with the Stack Exchange API">Stack Apps</a></li>
+                <li class="-item"><a href="https://api.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="programmatic interaction with Stack Exchange sites">API</a></li>
+                <li class="-item"><a href="https://data.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="querying Stack Exchange data using SQL">Data</a></li>
+                <li class="-item"><a href="https://area51.stackexchange.com/" class="-link js-gps-track" data-gps-track="footer.click({ location: 2, link: 25 })" title="proposing new sites in the Stack Exchange network">Area 51</a></li>
+                    </ul>
+    </div>
+                </div>
+            </nav>
+            <div class="site-footer--copyright fs-fine">
+                <ul class="-list">
+                    <li class="-item"><a class="js-gps-track -link" data-gps-track="footer.click({ location: 2, link:4 })" href="https://stackoverflow.blog/?blb=1">Blog</a></li>
+                    <li class="-item"><a href="https://www.facebook.com/officialstackoverflow/" class="-link">Facebook</a></li>
+                    <li class="-item"><a href="https://twitter.com/stackoverflow" class="-link">Twitter</a></li>
+                    <li class="-item"><a href="https://linkedin.com/company/stack-overflow" class="-link">LinkedIn</a></li>
+                </ul>
+
+                <p class="mt-auto mb24">
+site design / logo © 2018 Stack Exchange Inc; user contributions licensed under <a href="https://creativecommons.org/licenses/by-sa/3.0/" rel="license">cc by-sa 3.0</a>
+                            with <a href="https://stackoverflow.blog/2009/06/25/attribution-required/" rel="license">attribution required</a>.
+                    <span id="svnrev">rev&nbsp;2018.5.17.30408</span>
+                </p>
+            </div>
+        </div>
+
+            </footer>
+    <noscript>
+        <div id="noscript-warning">Stack Overflow works best with JavaScript enabled
+            <img src="https://pixel.quantserve.com/pixel/p-c1rF4kxgLUzNc.gif" alt="" class="dno">
+        </div>
+    </noscript>
+
+<script>
+            (function(i, s, o, g, r, a, m) {
+                i['GoogleAnalyticsObject'] = r; i[r] = i[r] || 
+function() { (i[r].q = i[r].q || []).push(arguments) }, i[r].l = 1 * new
+ Date(); a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = 
+g; m.parentNode.insertBefore(a, m);
+            })(window, document, 'script', 
+'https://www.google-analytics.com/analytics.js', 'ga');
+
+            StackExchange.ready(function () {
+
+                var trackingCodes = [
+                    'UA-108242619-1'
+                ];
+
+
+                StackExchange.ga.init({
+                    sendTitles: true,
+                    tracker: window.ga,
+                    trackingCodes: trackingCodes
+                });
+
+
+
+                    StackExchange.ga.setDimension('dimension2', 
+'|c++|opencv|kalman-filter|');
+
+                    StackExchange.ga.setDimension('dimension3', 
+'Questions/Show');
+
+
+                StackExchange.ga.trackPageView();
+            });
+            
+/**/
+            
+            var _qevents = _qevents || [],
+            _comscore = _comscore || [];
+            (function() {
+                var ssl = 'https:' == document.location.protocol,
+                    s = document.getElementsByTagName('script')[0],
+                    qc = document.createElement('script');
+                 qc.async = true;
+                    qc.src = (ssl ? 'https://secure' : 'http://edge') + 
+'.quantserve.com/quant.js';
+                    s.parentNode.insertBefore(qc, s);
+                    _qevents.push({ qacct: "p-c1rF4kxgLUzNc" });
+/**/
+                 var sc = document.createElement('script');
+                    sc.async = true;
+                    sc.src = (ssl ? 'https://sb' : 'http://b') + 
+'.scorecardresearch.com/beacon.js';
+                    s.parentNode.insertBefore(sc, s);
+                    _comscore.push({ c1: "2", c2: "17440561" });
+            })();
+            
+
+</script>
+            
+    
+    
+<div class="adsbox" id="clc-abd" style="position: absolute; pointer-events: none;">&nbsp;</div><script src="c++%20-%20OpenCV%20how%20to%20use%20the%20KalmanFilter%20class%20as%20ExtendedKF%20-%20Stack%20Overflow_files/markup.js"></script></body></html>

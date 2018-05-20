@@ -134,12 +134,22 @@ typedef struct
 
 typedef struct
 {
+	double x;
+	double y;
+	double theta;
+	double v;
+	double a;
+	double d_theta;
+	bool initialized;
+} virtual_scan_hypothesis_state_t;
+
+
+typedef struct
+{
 	int index;
 	virtual_scan_box_model_t hypothesis;
 	virtual_scan_segment_t hypothesis_points;
-
-	double v;
-	double d_theta;
+	virtual_scan_hypothesis_state_t hypothesis_state;
 
 	double dn;
 	double c2;
@@ -246,6 +256,6 @@ double
 probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set, bool print = false);
 
 void
-compute_track_state(virtual_scan_track_t *track);
+update_hypotheses_state(virtual_scan_track_t *track);
 
 #endif /* SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_H_ */
