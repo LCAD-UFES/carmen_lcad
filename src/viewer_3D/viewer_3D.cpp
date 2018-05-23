@@ -279,6 +279,7 @@ static double lastDisplayTime;
 static double time_spent_by_each_scan;
 static double distance_between_front_and_rear_axles;
 
+static int force_velodyne_flag = 0;
 
 static carmen_vector_3D_t
 get_position_offset(void)
@@ -416,7 +417,6 @@ carmen_localize_ackerman_particle_prediction_handler(carmen_localize_ackerman_pa
 		}
     }
 }
-
 
 static void
 carmen_localize_ackerman_particle_correction_handler(carmen_localize_ackerman_particle_message *message)
@@ -714,8 +714,9 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 
     static double last_timestamp = 0.0;
 
-    if (!odometry_initialized || !draw_velodyne_flag)
-        return;
+    if (!force_velodyne_flag)
+		if (!odometry_initialized || !draw_velodyne_flag)
+			return;
 
     if (last_timestamp == 0.0)
     {
@@ -3407,6 +3408,17 @@ keyRelease(int code)
     code = code; // just to make gcc happy
 }
 
+void read_parameters(int argc, char **argv)
+{
+	carmen_param_t param_list[] =
+	{
+		{(char *) "commandline",	(char *) "fv_flag",		CARMEN_PARAM_ONOFF,	&(force_velodyne_flag),		0, NULL},
+	};
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+}
+
 int
 main(int argc, char** argv)
 {
@@ -3418,6 +3430,8 @@ main(int argc, char** argv)
 
     carmen_ipc_initialize(argc_g, argv_g);
     carmen_param_check_version(argv[0]);
+
+    read_parameters(argc, argv);
 
     init_stuff(argc_g, argv_g);
 
