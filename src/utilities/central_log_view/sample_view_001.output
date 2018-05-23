@@ -1,0 +1,55 @@
+Commandline: central_log_view sample_central.log 
+
+Central Log View Utility
+Log file: sample_central.log
+Log start time: Fri Apr 20 10:59:02 2018
+
+
+Selected log period:  from 10:59:02 to 11:02:38.36
+Handle time summary:  Messaging: 98.95%  Waiting: 1.05%  Average size: 248558 bytes
+
+==========================================
+General Summary
+==========================================
+Log Record Class          Count      Lines
+--------------------  ---------  ---------
+Connection                   28         84
+Registration                149        149
+Broadcast                229796     229796
+Inform                      680        680
+Done                     132479     132479
+Query                      1634       1634
+Reply                      1142       1142
+Deleted                   25032      25032
+Data                     134657     410371
+Handle Summary           223928     223928
+Other                         6          6
+Unknown Message               0          0
+Unknown                       0          0
+
+Totals:                            1025301
+==========================================
+
+
+Usage: central_log_view <logfile> [args]
+ args:
+    -t <t1> <t2>   : time filter: from <t1> to <t2>, format hh:mm:ss.cc
+                     (default: 00:00 23:59:59.99)
+    -c <classes>   : class filter: c = Connection, r = Registration,
+                     b = Broadcast, i = Inform, d = Done, q = Query, p = Reply,
+                     x = Deleted, h = Handle, o = Other, u = Unknown,
+                     \* = crbidqpxhou (default = \*)
+    -msg <msgs>    : message filter: separated by spaces, escaped wildcards
+                     \* and \? allowed (default: \*)
+    -mod <modules> : module filter: separated by spaces, escaped wildcards
+                     \* and \? allowed (default: \*)
+    -mod <m1>:<m2> : module filter: origin module <m1>, destination module <m2>,
+                     separated by spaces, escaped wildcards (default: \*:\*)
+    -k <keywords>  : keyword filter: separated by spaces, escaped wildcards
+                     \* and \? allowed (default: \*)
+    -s <summaries> : summary option: c = Connection, r = Registration,
+                     o = Message by Origin, d = Message by Destination,
+                     \* = crod (default: general summary)
+    -v <verbose>   : verbose option: 0 = summary only,
+                     1 = all except data lines, 2 = all (default: 0)
+
