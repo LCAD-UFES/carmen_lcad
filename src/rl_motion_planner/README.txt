@@ -22,6 +22,21 @@ Desired behavior that should be encouraged using rewards:
 Additional considerations
 - Train recovery strategies in case things go wrong.
 
+Install IARA:
+ sudo apt-get install python-pip
+ sudo pip install --upgrade pip
+ sudo pip install tensorflow==1.4.1
+If erro in gym:
+ sudo pip install gym
+
+Temporary run:
+modo navigate, basta rodar: 
+
+./proccontrol process-filipe-enjoy.ini 
+
+Para rodar na IARA: 
+
+./proccontrol process-filipe-voltadaufes.ini 
 
 TODO
 
