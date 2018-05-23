@@ -13,7 +13,7 @@
 
 #include "virtual_scan.h"
 
-#define SIMULATE_LATERAL_MOVING_OBSTACLE
+//#define SIMULATE_LATERAL_MOVING_OBSTACLE
 #define NUM_COLORS 4
 #define NMC	250
 #define T 10
@@ -31,7 +31,7 @@ int necessary_maps_available = 0;
 
 int g_zi = 0;
 
-virtual_scan_extended_t *g_virtual_scan_extended[NUMBER_OF_FRAMES_T];
+carmen_mapper_virtual_scan_message *g_virtual_scan_extended[NUMBER_OF_FRAMES_T];
 virtual_scan_segment_classes_t *g_virtual_scan_segment_classes[NUMBER_OF_FRAMES_T];
 
 virtual_scan_neighborhood_graph_t *g_neighborhood_graph = NULL;
@@ -78,9 +78,9 @@ fill_in_moving_objects_message_element(int k, carmen_moving_objects_point_clouds
 			break;
 		case BIKE:
 			model_features.model_name = (char *) ("Bike");
-			model_features.red = 1.0;
-			model_features.green = 1.0;
-			model_features.blue = 1.0;
+			model_features.red = 0.5;
+			model_features.green = 0.5;
+			model_features.blue = 0.5;
 			break;
 		case PEDESTRIAN:
 			model_features.model_name = (char *) ("Pedestrian");
@@ -98,23 +98,28 @@ fill_in_moving_objects_message_element(int k, carmen_moving_objects_point_clouds
 carmen_moving_objects_point_clouds_message *
 fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = NULL)
 {
-	if (best_track_set == NULL)
-		return (NULL);
-
 	carmen_moving_objects_point_clouds_message *message = (carmen_moving_objects_point_clouds_message *) malloc(sizeof(carmen_moving_objects_point_clouds_message));
 	message->host = carmen_get_host();
 	message->timestamp = carmen_get_time();
 
+	if (best_track_set == NULL)
+	{
+		message->num_point_clouds = 0;
+		message->point_clouds = NULL;
+
+		return (message);
+	}
+
 	int num_moving_objects = 0;
 	for (int i = 0; i < best_track_set->size; i++)
-//		if (best_track_set->tracks[i]->size > 2)
+		if (best_track_set->tracks[i]->size > 2)
 			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
 //				if (best_track_set->tracks[i]->box_model_hypothesis[j].zi == g_zi)
 					num_moving_objects++;
 
 	if (virtual_scan_box_model_hypotheses != NULL)
 		for (int i = 0; i < virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i++)
-			for (int j = 0; j< virtual_scan_box_model_hypotheses->box_model_hypotheses[i].num_boxes; j++)
+			for (int j = 0; j < virtual_scan_box_model_hypotheses->box_model_hypotheses[i].num_boxes; j++)
 				num_moving_objects++;
 
 	message->point_clouds = (t_point_cloud_struct *) malloc(sizeof(t_point_cloud_struct) * num_moving_objects);
@@ -123,7 +128,7 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 	int k = 0;
 	for (int i = 0; i < best_track_set->size; i++)
 	{
-//		if (best_track_set->tracks[i]->size > 2)
+		if (best_track_set->tracks[i]->size > 2)
 		{
 			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
 			{
@@ -131,8 +136,8 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 				{
 					virtual_scan_box_model_t box = best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis;
 
-					box.length = (j == best_track_set->tracks[i]->size - 1) ? box.length : 0.3;
-					box.width = (j == best_track_set->tracks[i]->size - 1) ? box.width : 0.3;
+//					box.length = (j == best_track_set->tracks[i]->size - 1) ? box.length : 0.3;
+//					box.width = (j == best_track_set->tracks[i]->size - 1) ? box.width : 0.3;
 					fill_in_moving_objects_message_element(k, message, &box);
 
 					k++;
@@ -244,10 +249,10 @@ compute_simulated_lateral_objects(simulated_moving_object_initial_state_t *movin
 
 
 void
-draw_moving_objects_in_scan(carmen_mapper_virtual_scan_message *simulated_scan, carmen_rectangle_t *moving_objects, int num_moving_objects)
+draw_moving_objects_in_scan(carmen_virtual_scan_sensor_t *simulated_scan, carmen_rectangle_t *moving_objects, int num_moving_objects, carmen_pose_3D_t robot_pose)
 {
-	carmen_pose_3D_t world_pose = {{simulated_scan->globalpos.x, simulated_scan->globalpos.y, 0.0}, {0.0, 0.0, simulated_scan->globalpos.theta}};
-	world_pose = get_world_pose_with_velodyne_offset(world_pose);
+	carmen_pose_3D_t world_pose = get_world_pose_with_velodyne_offset(robot_pose);
+	simulated_scan->sensor_pos = {world_pose.position.x, world_pose.position.y, world_pose.orientation.yaw};
 	carmen_position_t velodyne_pos = {world_pose.position.x, world_pose.position.y};
 
 	double initial_angle = world_pose.orientation.yaw;
@@ -255,8 +260,8 @@ draw_moving_objects_in_scan(carmen_mapper_virtual_scan_message *simulated_scan, 
 	int num_points = 0;
 	for (double angle = -M_PI; angle < M_PI; angle += M_PI / (360 * 4.0))
 		num_points++;
-	simulated_scan->num_points = num_points;
-	simulated_scan->points = (carmen_position_t *) malloc(num_points * sizeof(carmen_position_t));
+//	simulated_scan->num_points = num_points;
+	simulated_scan->points = (carmen_point_t *) malloc(num_points * sizeof(carmen_point_t));
 
 	int i = 0;
 	for (double angle = -M_PI; angle < M_PI; angle += M_PI / (360 * 2.0))
@@ -285,11 +290,15 @@ draw_moving_objects_in_scan(carmen_mapper_virtual_scan_message *simulated_scan, 
 			}
 		}
 		if (hit_obstacle)
-			simulated_scan->points[i] = nearest_intersection;
-		else
-			simulated_scan->points[i] = target;
-		i++;
+		{
+			simulated_scan->points[i] = {nearest_intersection.x, nearest_intersection.y, 0.0};
+			i++;
+		}
+//		else
+//			simulated_scan->points[i] = {target.x, target.y, 0.0};
+//		i++;
 	}
+	simulated_scan->num_points = i;
 }
 #endif
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -306,42 +315,39 @@ void
 virtual_scan_publish_moving_objects(virtual_scan_track_set_t *track_set, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = NULL)
 {
 	carmen_moving_objects_point_clouds_message *moving_objects = fill_in_moving_objects_message(track_set, virtual_scan_box_model_hypotheses);
-
-	if (moving_objects != NULL)
-		carmen_moving_objects_point_clouds_publish_message(moving_objects);
-
+	carmen_moving_objects_point_clouds_publish_message(moving_objects);
 	virtual_scan_free_moving_objects(moving_objects);
 }
 
 
-//void
-//publish_virtual_scan(virtual_scan_segments_t *virtual_scan_segments)
-//{
-//	virtual_laser_message.host = carmen_get_host();
-//	virtual_laser_message.num_positions = 0;
-//	for (int i = 0; i < virtual_scan_segments->num_segments; i++)
-//		virtual_laser_message.num_positions += virtual_scan_segments->segment[i].num_points;
-//	virtual_laser_message.positions = (carmen_position_t *) malloc(virtual_laser_message.num_positions * sizeof(carmen_position_t));
-//	virtual_laser_message.colors = (char *) malloc(virtual_laser_message.num_positions * sizeof(char));
-//	int k = 0;
-//	for (int i = 0; i < virtual_scan_segments->num_segments; i++)
-//	{
-//		char color = colors[i % NUM_COLORS];
-//		for (int j = 0; j < virtual_scan_segments->segment[i].num_points; j++)
-//		{
-//			virtual_laser_message.positions[k].x = virtual_scan_segments->segment[i].point[j].x;
-//			virtual_laser_message.positions[k].y = virtual_scan_segments->segment[i].point[j].y;
-//			virtual_laser_message.colors[k] = color;
-//			k++;
-//		}
-//	}
-//	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
-//
-//	free(virtual_laser_message.positions);
-//	free(virtual_laser_message.colors);
-//	free(virtual_scan_segments->segment);
-//	free(virtual_scan_segments);
-//}
+void
+publish_virtual_scan_extended(carmen_mapper_virtual_scan_message *virtual_scan_extended)
+{
+	virtual_laser_message.host = carmen_get_host();
+	virtual_laser_message.num_positions = 0;
+	for (int s = 0; s < virtual_scan_extended->num_sensors; s++)
+		virtual_laser_message.num_positions += virtual_scan_extended->virtual_scan_sensor[s].num_points;
+
+	virtual_laser_message.positions = (carmen_position_t *) malloc(virtual_laser_message.num_positions * sizeof(carmen_position_t));
+	virtual_laser_message.colors = (char *) malloc(virtual_laser_message.num_positions * sizeof(char));
+
+	int j = 0;
+	for (int s = 0; s < virtual_scan_extended->num_sensors; s++)
+	{
+		for (int i = 0; i < virtual_scan_extended->virtual_scan_sensor[s].num_points; i++)
+		{
+			char color = CARMEN_ORANGE;
+			virtual_laser_message.positions[j].x = virtual_scan_extended->virtual_scan_sensor[s].points[i].x;
+			virtual_laser_message.positions[j].y = virtual_scan_extended->virtual_scan_sensor[s].points[i].y;
+			virtual_laser_message.colors[j] = color;
+			j++;
+		}
+	}
+	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
+
+	free(virtual_laser_message.positions);
+	free(virtual_laser_message.colors);
+}
 
 
 void
@@ -403,23 +409,29 @@ virtual_scan_publish_segments(virtual_scan_segment_classes_t *virtual_scan_segme
 }
 
 
+#ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
 void
 publish_simulated_objects(carmen_rectangle_t *simulated_moving_objects, int num_moving_objects, carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
 	carmen_mapper_virtual_scan_message simulated_scan;
 
 	simulated_scan.host = carmen_get_host();
-	simulated_scan.globalpos = globalpos_message->globalpos;
-	simulated_scan.v = globalpos_message->v;
-	simulated_scan.phi = globalpos_message->phi;
 	simulated_scan.timestamp = globalpos_message->timestamp;
+	simulated_scan.num_sensors = 1;
 
-	draw_moving_objects_in_scan(&simulated_scan, simulated_moving_objects, num_moving_objects);
+	carmen_virtual_scan_sensor_t virtual_scan_sensor;
+	virtual_scan_sensor.sensor_id = 0;
+	virtual_scan_sensor.v = globalpos_message->v;
+	virtual_scan_sensor.phi = globalpos_message->phi;
+	virtual_scan_sensor.timestamp = globalpos_message->timestamp;
+	draw_moving_objects_in_scan(&virtual_scan_sensor, simulated_moving_objects, num_moving_objects, globalpos_message->pose);
 
+	simulated_scan.virtual_scan_sensor = &virtual_scan_sensor;
 	carmen_mapper_publish_virtual_scan_message(&simulated_scan, simulated_scan.timestamp);
 
-	free(simulated_scan.points);
+	free(virtual_scan_sensor.points);
 }
+#endif
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -436,21 +448,26 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 //	double t_ini = carmen_get_time();
 	if (necessary_maps_available)
 	{
+//		publish_virtual_scan_extended(message);
+
 		virtual_scan_free_scan_extended(g_virtual_scan_extended[g_zi]);
 		g_virtual_scan_extended[g_zi] = sort_virtual_scan(message);
 
-		virtual_scan_free_segment_classes(g_virtual_scan_segment_classes[g_zi]);
-		g_virtual_scan_segment_classes[g_zi] = virtual_scan_extract_segments(g_virtual_scan_extended[g_zi]);
-		virtual_scan_publish_segments(g_virtual_scan_segment_classes[g_zi]);
+		carmen_mapper_virtual_scan_message *virtual_scan_extended_filtered = filter_virtual_scan(g_virtual_scan_extended[g_zi]);
+//		publish_virtual_scan_extended(virtual_scan_extended_filtered);
 
-		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_zi]);
+		virtual_scan_free_segment_classes(g_virtual_scan_segment_classes[g_zi]);
+		g_virtual_scan_segment_classes[g_zi] = virtual_scan_extract_segments(virtual_scan_extended_filtered);
+//		virtual_scan_publish_segments(g_virtual_scan_segment_classes[g_zi]);
+
+		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_zi], message->timestamp);
 //		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
 		g_neighborhood_graph = virtual_scan_update_neighborhood_graph(g_neighborhood_graph, virtual_scan_box_model_hypotheses);
 
 		virtual_scan_track_set_t *track_set = virtual_scan_infer_moving_objects(g_neighborhood_graph);
-//		virtual_scan_publish_moving_objects(track_set, NULL);
-		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);
+		virtual_scan_publish_moving_objects(track_set, NULL);
+//		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);
 
 		virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
 
@@ -495,7 +512,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
 	static simulated_moving_object_initial_state_t simulated_moving_objects_initial_state[2] =
-		{{{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, 0.0, 0.0,   0.0, -12.0, 4.5, 1.5},
+		{{{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, 0.0, 0.0,   0.0, 12.0, 4.5, 1.5},
 		 {{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, 0.0, 0.0,   0.0, 12.0, 4.5, 1.5}};
 	carmen_rectangle_t simulated_objects[2];
 	carmen_ackerman_traj_point_t *simulated_object_pose;
@@ -506,11 +523,11 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 		simulated_objects[num_moving_objects] = {simulated_object_pose->x, simulated_object_pose->y, simulated_object_pose->theta,
 								simulated_moving_objects_initial_state[num_moving_objects].length, simulated_moving_objects_initial_state[num_moving_objects].width};
 
-	num_moving_objects++;
-	simulated_object_pose = compute_simulated_lateral_objects(&(simulated_moving_objects_initial_state[num_moving_objects]), current_robot_pose_v_and_phi, msg->timestamp);
-	if (simulated_object_pose)
-		simulated_objects[num_moving_objects] = {simulated_object_pose->x, simulated_object_pose->y, simulated_object_pose->theta,
-								simulated_moving_objects_initial_state[num_moving_objects].length, simulated_moving_objects_initial_state[num_moving_objects].width};
+//	num_moving_objects++;
+//	simulated_object_pose = compute_simulated_lateral_objects(&(simulated_moving_objects_initial_state[num_moving_objects]), current_robot_pose_v_and_phi, msg->timestamp);
+//	if (simulated_object_pose)
+//		simulated_objects[num_moving_objects] = {simulated_object_pose->x, simulated_object_pose->y, simulated_object_pose->theta,
+//								simulated_moving_objects_initial_state[num_moving_objects].length, simulated_moving_objects_initial_state[num_moving_objects].width};
 
 	if (simulated_object_pose)
 		publish_simulated_objects(simulated_objects, num_moving_objects + 1, msg);
@@ -592,7 +609,7 @@ main(int argc, char **argv)
 
 	get_world_pose_with_velodyne_offset_initialize(argc, argv);
 
-	memset(g_virtual_scan_extended, 0, sizeof(virtual_scan_extended_t *) * NUMBER_OF_FRAMES_T);
+	memset(g_virtual_scan_extended, 0, sizeof(carmen_mapper_virtual_scan_message *) * NUMBER_OF_FRAMES_T);
 	memset(g_virtual_scan_segment_classes, 0, sizeof(virtual_scan_segment_classes_t *) * NUMBER_OF_FRAMES_T);
 
 	signal(SIGINT, shutdown_module);

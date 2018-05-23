@@ -1,0 +1,599 @@
+<!-- HTML header for doxygen 1.8.6-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+<meta content="IE=9" http-equiv="X-UA-Compatible">
+<meta content="Doxygen 1.8.12" name="generator">
+<title>OpenCV: cv::KalmanFilter Class Reference</title>
+<link href="https://docs.opencv.org/3.4/opencv.ico" rel="shortcut icon" type="image/x-icon">
+<link href="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/tabs.css" rel="stylesheet" type="text/css">
+<script async="" src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/async-ads.js"></script><script type="text/javascript" async="" src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/cse.js"></script><script src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/jquery.js" type="text/javascript"></script>
+<script src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/dynsections.js" type="text/javascript"></script>
+<script src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/tutorial-utils.js" type="text/javascript"></script>
+<link href="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/search.css" rel="stylesheet" type="text/css">
+<script src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/searchdata.js" type="text/javascript"></script>
+<script src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/search.js" type="text/javascript"></script>
+<script type="text/x-mathjax-config;executed=true">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js", "TeX/AMSmath.js", "TeX/AMSsymbols.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+});
+//<![CDATA[
+MathJax.Hub.Config(
+{
+  TeX: {
+      Macros: {
+          matTT: [ "\\[ \\left|\\begin{array}{ccc} #1 & #2 & #3\\\\ #4 & #5 & #6\\\\ #7 & #8 & #9 \\end{array}\\right| \\]", 9],
+          fork: ["\\left\\{ \\begin{array}{l l} #1 & \\mbox{#2}\\\\ #3 & \\mbox{#4}\\\\ \\end{array} \\right.", 4],
+          forkthree: ["\\left\\{ \\begin{array}{l l} #1 & \\mbox{#2}\\\\ #3 & \\mbox{#4}\\\\ #5 & \\mbox{#6}\\\\ \\end{array} \\right.", 6],
+          forkfour: ["\\left\\{ \\begin{array}{l l} #1 & \\mbox{#2}\\\\ #3 & \\mbox{#4}\\\\ #5 & \\mbox{#6}\\\\ #7 & \\mbox{#8}\\\\ \\end{array} \\right.", 8],
+          vecthree: ["\\begin{bmatrix} #1\\\\ #2\\\\ #3 \\end{bmatrix}", 3],
+          vecthreethree: ["\\begin{bmatrix} #1 & #2 & #3\\\\ #4 & #5 & #6\\\\ #7 & #8 & #9 \\end{bmatrix}", 9],
+          hdotsfor: ["\\dots", 1],
+          mathbbm: ["\\mathbb{#1}", 1],
+          bordermatrix: ["\\matrix{#1}", 1]
+      }
+  }
+}
+);
+//]]>
+</script><script src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/MathJax.js" type="text/javascript"></script><style type="text/css">.MathJax_Preview {color: #888}
+#MathJax_Message {position: fixed; left: 1px; bottom: 2px; background-color: #E6E6E6; border: 1px solid #959595; margin: 0px; padding: 2px 8px; z-index: 102; color: black; font-size: 80%; width: auto; white-space: nowrap}
+#MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
+.MathJax_Error {color: #CC0000; font-style: italic}
+</style>
+<link href="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/doxygen.css" rel="stylesheet" type="text/css">
+<link href="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/stylesheet.css" rel="stylesheet" type="text/css">
+<script src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/jsapi" type="text/javascript"></script><link type="text/css" href="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/defaulten.css" rel="stylesheet"><link type="text/css" href="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/default.css" rel="stylesheet"><script type="text/javascript" src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/defaulten.js"></script><style type="text/css">.gsc-control-cse{font-family:Arial, sans-serif;border-color:#FFFFFF;background-color:#FFFFFF}.gsc-control-cse .gsc-table-result{font-family:Arial, sans-serif}input.gsc-input,.gsc-input-box,.gsc-input-box-hover,.gsc-input-box-focus{border-color:#D9D9D9}.gsc-search-button-v2,.gsc-search-button-v2:hover,.gsc-search-button-v2:focus{border-color:#666666;background-color:#CECECE;background-image:none;filter:none}.gsc-search-button-v2 svg{fill:#FFFFFF}.gsc-tabHeader.gsc-tabhInactive{border-color:#E9E9E9;background-color:#E9E9E9}.gsc-tabHeader.gsc-tabhActive{border-color:#FF9900;border-bottom-color:#FFFFFF;background-color:#FFFFFF}.gsc-tabsArea{border-color:#FF9900}.gsc-webResult.gsc-result,.gsc-results .gsc-imageResult{border-color:#FFFFFF;background-color:#FFFFFF}.gsc-webResult.gsc-result:hover,.gsc-imageResult:hover{border-color:#FFFFFF;background-color:#FFFFFF}.gs-webResult.gs-result a.gs-title:link,.gs-webResult.gs-result a.gs-title:link b,.gs-imageResult a.gs-title:link,.gs-imageResult a.gs-title:link b{color:#0000CC}.gs-webResult.gs-result a.gs-title:visited,.gs-webResult.gs-result a.gs-title:visited b,.gs-imageResult a.gs-title:visited,.gs-imageResult a.gs-title:visited b{color:#0000CC}.gs-webResult.gs-result a.gs-title:hover,.gs-webResult.gs-result a.gs-title:hover b,.gs-imageResult a.gs-title:hover,.gs-imageResult a.gs-title:hover b{color:#0000CC}.gs-webResult.gs-result a.gs-title:active,.gs-webResult.gs-result a.gs-title:active b,.gs-imageResult a.gs-title:active,.gs-imageResult a.gs-title:active b{color:#0000CC}.gsc-cursor-page{color:#0000CC}a.gsc-trailing-more-results:link{color:#0000CC}.gs-webResult .gs-snippet,.gs-imageResult .gs-snippet,.gs-fileFormatType{color:#000000}.gs-webResult div.gs-visibleUrl,.gs-imageResult div.gs-visibleUrl{color:#008000}.gs-webResult div.gs-visibleUrl-short{color:#008000}.gs-webResult div.gs-visibleUrl-short{display:none}.gs-webResult div.gs-visibleUrl-long{display:block}.gs-promotion div.gs-visibleUrl-short{display:none}.gs-promotion div.gs-visibleUrl-long{display:block}.gsc-cursor-box{border-color:#FFFFFF}.gsc-results .gsc-cursor-box .gsc-cursor-page{border-color:#E9E9E9;background-color:#FFFFFF;color:#0000CC}.gsc-results .gsc-cursor-box .gsc-cursor-current-page{border-color:#FF9900;background-color:#FFFFFF;color:#0000CC}.gsc-webResult.gsc-result.gsc-promotion{border-color:#336699;background-color:#FFFFFF}.gsc-completion-title{color:#0000CC}.gsc-completion-snippet{color:#000000}.gs-promotion a.gs-title:link,.gs-promotion a.gs-title:link *,.gs-promotion .gs-snippet a:link{color:#0000CC}.gs-promotion a.gs-title:visited,.gs-promotion a.gs-title:visited *,.gs-promotion .gs-snippet a:visited{color:#0000CC}.gs-promotion a.gs-title:hover,.gs-promotion a.gs-title:hover *,.gs-promotion .gs-snippet a:hover{color:#0000CC}.gs-promotion a.gs-title:active,.gs-promotion a.gs-title:active *,.gs-promotion .gs-snippet a:active{color:#0000CC}.gs-promotion .gs-snippet,.gs-promotion .gs-title .gs-promotion-title-right,.gs-promotion .gs-title .gs-promotion-title-right *{color:#000000}.gs-promotion .gs-visibleUrl,.gs-promotion .gs-visibleUrl-short{color:#008000}</style><style type="text/css">.gscb_a{display:inline-block;font:27px/13px arial,sans-serif}.gsst_a .gscb_a{color:#a1b9ed;cursor:pointer}.gsst_a:hover .gscb_a,.gsst_a:focus .gscb_a{color:#36c}.gsst_a{display:inline-block}.gsst_a{cursor:pointer;padding:0 4px}.gsst_a:hover{text-decoration:none!important}.gsst_b{font-size:16px;padding:0 2px;position:relative;user-select:none;-moz-user-select:none;white-space:nowrap}.gsst_e{opacity:0.55;}.gsst_a:hover .gsst_e,.gsst_a:focus .gsst_e{opacity:0.72;}.gsst_a:active .gsst_e{opacity:1;}.gsst_f{background:white;text-align:left}.gsst_g{background-color:white;border:1px solid #ccc;border-top-color:#d9d9d9;box-shadow:0 2px 4px rgba(0,0,0,0.2);-moz-box-shadow:0 2px 4px rgba(0,0,0,0.2);margin:-1px -3px;padding:0 6px}.gsst_h{background-color:white;height:1px;margin-bottom:-1px;position:relative;top:-1px}.gsib_a{width:100%;padding:4px 6px 0}.gsib_a,.gsib_b{vertical-align:top}.gssb_c{border:0;position:absolute;z-index:989}.gssb_e{border:1px solid #ccc;border-top-color:#d9d9d9;box-shadow:0 2px 4px rgba(0,0,0,0.2);-moz-box-shadow:0 2px 4px rgba(0,0,0,0.2);cursor:default}.gssb_f{visibility:hidden;white-space:nowrap}.gssb_k{border:0;display:block;position:absolute;top:0;z-index:988}.gsdd_a{border:none!important}.gsq_a{padding:0}.gsq_a{padding:0}.gscsep_a{display:none}.gssb_a{padding:0 7px}.gssb_a,.gssb_a td{white-space:nowrap;overflow:hidden;line-height:22px}#gssb_b{font-size:11px;color:#36c;text-decoration:none}#gssb_b:hover{font-size:11px;color:#36c;text-decoration:underline}.gssb_g{text-align:center;padding:8px 0 7px;position:relative}.gssb_h{font-size:15px;height:28px;margin:0.2em}.gssb_i{background:#eee}.gss_ifl{visibility:hidden;padding-left:5px}.gssb_i .gss_ifl{visibility:visible}a.gssb_j{font-size:13px;color:#36c;text-decoration:none;line-height:100%}a.gssb_j:hover{text-decoration:underline}.gssb_l{height:1px;background-color:#e5e5e5}.gssb_m{color:#000;background:#fff}.gsfe_a{border:1px solid #b9b9b9;border-top-color:#a0a0a0;box-shadow:inset 0px 1px 2px rgba(0,0,0,0.1);-moz-box-shadow:inset 0px 1px 2px rgba(0,0,0,0.1);-webkit-box-shadow:inset 0px 1px 2px rgba(0,0,0,0.1);}.gsfe_b{border:1px solid #4d90fe;outline:none;box-shadow:inset 0px 1px 2px rgba(0,0,0,0.3);-moz-box-shadow:inset 0px 1px 2px rgba(0,0,0,0.3);-webkit-box-shadow:inset 0px 1px 2px rgba(0,0,0,0.3);}.gssb_a{padding:0 9px}.gsib_a{padding-right:8px;padding-left:8px}.gsst_a{padding-top:5.5px}.gssb_e{border:0}.gssb_l{margin:5px 0}input.gsc-input::-webkit-input-placeholder{font-size:14px}input.gsc-input:-moz-placeholder{font-size:14px}input.gsc-input::-moz-placeholder{font-size:14px}input.gsc-input:-ms-input-placeholder{font-size:14px}input.gsc-input:focus::-webkit-input-placeholder{color:transparent}input.gsc-input:focus:-moz-placeholder{color:transparent}input.gsc-input:focus::-moz-placeholder{color:transparent}input.gsc-input:focus:-ms-input-placeholder{color:transparent}.gssb_c .gsc-completion-container{position:static}.gssb_c{z-index:5000}.gsc-completion-container table{background:transparent;font-size:inherit;font-family:inherit}.gssb_c > tbody > tr,.gssb_c > tbody > tr > td,.gssb_d,.gssb_d > tbody > tr,.gssb_d > tbody > tr > td,.gssb_e,.gssb_e > tbody > tr,.gssb_e > tbody > tr > td{padding:0;margin:0;border:0}.gssb_a table,.gssb_a table tr,.gssb_a table tr td{padding:0;margin:0;border:0}</style><style type="text/css">#MathJax_About {position: fixed; left: 50%; width: auto; text-align: center; border: 3px outset; padding: 1em 2em; background-color: #DDDDDD; color: black; cursor: default; font-family: message-box; font-size: 120%; font-style: normal; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 15px; -webkit-border-radius: 15px; -moz-border-radius: 15px; -khtml-border-radius: 15px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_About.MathJax_MousePost {outline: none}
+.MathJax_Menu {position: absolute; background-color: white; color: black; width: auto; padding: 5px 0px; border: 1px solid #CCCCCC; margin: 0; cursor: default; font: menu; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 5px; -webkit-border-radius: 5px; -moz-border-radius: 5px; -khtml-border-radius: 5px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+.MathJax_MenuItem {padding: 1px 2em; background: transparent}
+.MathJax_MenuArrow {position: absolute; right: .5em; padding-top: .25em; color: #666666; font-size: .75em}
+.MathJax_MenuActive .MathJax_MenuArrow {color: white}
+.MathJax_MenuArrow.RTL {left: .5em; right: auto}
+.MathJax_MenuCheck {position: absolute; left: .7em}
+.MathJax_MenuCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuRadioCheck {position: absolute; left: .7em}
+.MathJax_MenuRadioCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuLabel {padding: 1px 2em 3px 1.33em; font-style: italic}
+.MathJax_MenuRule {border-top: 1px solid #DDDDDD; margin: 4px 3px}
+.MathJax_MenuDisabled {color: GrayText}
+.MathJax_MenuActive {background-color: #606872; color: white}
+.MathJax_MenuDisabled:focus, .MathJax_MenuLabel:focus {background-color: #E8E8E8}
+.MathJax_ContextMenu:focus {outline: none}
+.MathJax_ContextMenu .MathJax_MenuItem:focus {outline: none}
+#MathJax_AboutClose {top: .2em; right: .2em}
+.MathJax_Menu .MathJax_MenuClose {top: -10px; left: -10px}
+.MathJax_MenuClose {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; font-family: 'Courier New',Courier; font-size: 24px; color: #F0F0F0}
+.MathJax_MenuClose span {display: block; background-color: #AAA; border: 1.5px solid; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; line-height: 0; padding: 8px 0 6px}
+.MathJax_MenuClose:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_MenuClose:hover span {background-color: #CCC!important}
+.MathJax_MenuClose:hover:focus {outline: none}
+</style><style type="text/css">#MathJax_Zoom {position: absolute; background-color: #F0F0F0; overflow: auto; display: block; z-index: 301; padding: .5em; border: 1px solid black; margin: 0; font-weight: normal; font-style: normal; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; -webkit-box-sizing: content-box; -moz-box-sizing: content-box; box-sizing: content-box; box-shadow: 5px 5px 15px #AAAAAA; -webkit-box-shadow: 5px 5px 15px #AAAAAA; -moz-box-shadow: 5px 5px 15px #AAAAAA; -khtml-box-shadow: 5px 5px 15px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_ZoomOverlay {position: absolute; left: 0; top: 0; z-index: 300; display: inline-block; width: 100%; height: 100%; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+#MathJax_ZoomFrame {position: relative; display: inline-block; height: 0; width: 0}
+#MathJax_ZoomEventTrap {position: absolute; left: 0; top: 0; z-index: 302; display: inline-block; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+</style></head>
+<body><div id="MathJax_Message" style="display: none;"></div>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<script>
+  (function() {
+    var cx = '002541620211387084530:kaexgxg7oxu';
+    var gcse = document.createElement('script');
+    gcse.type = 'text/javascript';
+    gcse.async = true;
+    gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(gcse, s);
+  })();
+</script>
+<div id="___gcse_0"><div class="gsc-control-cse gsc-control-cse-en"><div class="gsc-control-wrapper-cse" dir="ltr"><form class="gsc-search-box gsc-search-box-tools" accept-charset="utf-8"><table class="gsc-search-box" cellspacing="0" cellpadding="0"><tbody><tr><td class="gsc-input"><div class="gsc-input-box " id="gsc-iw-id1"><table style="width: 100%; padding: 0px;" id="gs_id50" class="gstl_50 " cellspacing="0" cellpadding="0"><tbody><tr><td id="gs_tti50" class="gsib_a"><input autocomplete="off" size="10" class="gsc-input" name="search" title="search" style="width: 100%; padding: 0px; border: medium none; margin: 0px; height: auto; outline: medium none currentcolor; background: rgb(255, 255, 255) url(&quot;https://www.google.com/cse/static/images/1x/googlelogo_lightgrey_46x16dp.png&quot;) no-repeat scroll left center; text-indent: 48px;" id="gsc-i-id1" x-webkit-speech="" x-webkit-grammar="builtin:search" dir="ltr" spellcheck="false" placeholder="Custom Search" type="text" lang="en"></td><td class="gsib_b"><div class="gsst_b" id="gs_st50" dir="ltr"><a class="gsst_a" href="javascript:void(0)" style="display: none;"><span class="gscb_a" id="gs_cb50">×</span></a></div></td></tr></tbody></table></div></td><td class="gsc-search-button"><button class="gsc-search-button gsc-search-button-v2"><svg width="13" height="13" viewBox="0 0 13 13"><title>search</title><path d="m4.8495 7.8226c0.82666 0 1.5262-0.29146 2.0985-0.87438 0.57232-0.58292 0.86378-1.2877 0.87438-2.1144 0.010599-0.82666-0.28086-1.5262-0.87438-2.0985-0.59352-0.57232-1.293-0.86378-2.0985-0.87438-0.8055-0.010599-1.5103 0.28086-2.1144 0.87438-0.60414 0.59352-0.8956 1.293-0.87438 2.0985 0.021197 0.8055 0.31266 1.5103 0.87438 2.1144 0.56172 0.60414 1.2665 0.8956 2.1144 0.87438zm4.4695 0.2115 3.681 3.6819-1.259 1.284-3.6817-3.7 0.0019784-0.69479-0.090043-0.098846c-0.87973 0.76087-1.92 1.1413-3.1207 1.1413-1.3553 0-2.5025-0.46363-3.4417-1.3909s-1.4088-2.0686-1.4088-3.4239c0-1.3553 0.4696-2.4966 1.4088-3.4239 0.9392-0.92727 2.0864-1.3969 3.4417-1.4088 1.3553-0.011889 2.4906 0.45771 3.406 1.4088 0.9154 0.95107 1.379 2.0924 1.3909 3.4239 0 1.2126-0.38043 2.2588-1.1413 3.1385l0.098834 0.090049z"></path></svg></button></td><td class="gsc-clear-button"><div class="gsc-clear-button" title="clear results">&nbsp;</div></td></tr></tbody></table></form><div class="gsc-results-wrapper-overlay"><div class="gsc-results-close-btn" tabindex="0"></div><div class="gsc-tabsAreaInvisible"><div class="gsc-tabHeader gsc-inline-block gsc-tabhActive">Custom Search</div><span class="gs-spacer"> </span></div><div class="gsc-tabsAreaInvisible"></div><div class="gsc-above-wrapper-area-invisible"><table class="gsc-above-wrapper-area-container" cellspacing="0" cellpadding="0"><tbody><tr><td class="gsc-result-info-container"><div class="gsc-result-info-invisible"></div></td><td class="gsc-orderby-container"><div class="gsc-orderby-invisible"><div class="gsc-orderby-label gsc-inline-block">Sort by:</div><div class="gsc-option-menu-container gsc-inline-block"><div class="gsc-selected-option-container gsc-inline-block"><div class="gsc-selected-option">Relevance</div><div class="gsc-option-selector"></div></div><div class="gsc-option-menu-invisible"><div class="gsc-option-menu-item gsc-option-menu-item-highlighted"><div class="gsc-option">Relevance</div></div><div class="gsc-option-menu-item"><div class="gsc-option">Date</div></div></div></div></div></td></tr></tbody></table></div><div class="gsc-adBlockInvisible"></div><div class="gsc-wrapper"><div class="gsc-adBlockInvisible"></div><div class="gsc-resultsbox-invisible"><div class="gsc-resultsRoot gsc-tabData gsc-tabdActive"><table class="gsc-resultsHeader" cellspacing="0" cellpadding="0"><tbody><tr><td class="gsc-twiddleRegionCell"><div class="gsc-twiddle"><div class="gsc-title">Web</div></div><div class="gsc-stats"></div><div class="gsc-results-selector gsc-all-results-active"><div class="gsc-result-selector gsc-one-result" title="show one result">&nbsp;</div><div class="gsc-result-selector gsc-more-results" title="show more results">&nbsp;</div><div class="gsc-result-selector gsc-all-results" title="show all results">&nbsp;</div></div></td><td class="gsc-configLabelCell"></td></tr></tbody></table><div><div class="gsc-expansionArea"></div></div></div></div></div></div><div class="gsc-modal-background-image" tabindex="0"></div></div></div></div>
+<script type="text/javascript" src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/version.js"></script>
+
+<table cellspacing="0" cellpadding="0">
+<tbody>
+<tr style="height: 56px;">
+<td id="projectlogo"><img alt="Logo" src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/opencv-logo-small.png"></td>
+<td style="padding-left: 0.5em;">
+<div id="projectname">OpenCV
+   &nbsp;<span id="projectnumber"><select><option value="4.0.0-pre">4.0.0-pre</option><option value="3.4.1-dev" selected="selected">3.4.1-dev</option><option value="3.4.1">3.4.1</option><option value="3.3.1">3.3.1</option><option value="3.3.0">3.3.0</option><option value="3.2.0">3.2.0</option><option value="3.1.0">3.1.0</option><option value="3.0.0">3.0.0</option></select></span>
+</div>
+<div id="projectbrief">Open Source Computer Vision</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Generated by Doxygen 1.8.12 -->
+<script type="text/javascript">
+var searchBox = new SearchBox("searchBox", "../../search",false,'Search');
+</script>
+<script src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/menudata.js" type="text/javascript"></script>
+<script src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/menu.js" type="text/javascript"></script>
+<script type="text/javascript">
+$(function() {
+  initMenu('../../',true,false,'search.php','Search');
+  $(document).ready(function() { init_search(); });
+});
+</script>
+<div id="main-nav"><ul class="sm sm-dox" id="main-menu" data-smartmenus-id="15265806976170513"><li><a href="https://docs.opencv.org/3.4/index.html">Main Page</a></li><li><a href="https://docs.opencv.org/3.4/pages.html">Related Pages</a></li><li><a href="https://docs.opencv.org/3.4/modules.html">Modules</a></li><li><a href="https://docs.opencv.org/3.4/namespaces.html" class="has-submenu" id="sm-15265806976170513-1" aria-haspopup="true" aria-controls="sm-15265806976170513-2" aria-expanded="false"><span class="sub-arrow">+</span>Namespaces</a><ul id="sm-15265806976170513-2" role="group" aria-hidden="true" aria-labelledby="sm-15265806976170513-1" aria-expanded="false"><li><a href="https://docs.opencv.org/3.4/namespaces.html">Namespace List</a></li></ul></li><li><a href="https://docs.opencv.org/3.4/annotated.html" class="has-submenu" id="sm-15265806976170513-3" aria-haspopup="true" aria-controls="sm-15265806976170513-4" aria-expanded="false"><span class="sub-arrow">+</span>Classes</a><ul id="sm-15265806976170513-4" role="group" aria-hidden="true" aria-labelledby="sm-15265806976170513-3" aria-expanded="false"><li><a href="https://docs.opencv.org/3.4/annotated.html">Class List</a></li><li><a href="https://docs.opencv.org/3.4/classes.html">Class Index</a></li></ul></li><li><a href="https://docs.opencv.org/3.4/files.html" class="has-submenu" id="sm-15265806976170513-5" aria-haspopup="true" aria-controls="sm-15265806976170513-6" aria-expanded="false"><span class="sub-arrow">+</span>Files</a><ul id="sm-15265806976170513-6" role="group" aria-hidden="true" aria-labelledby="sm-15265806976170513-5" aria-expanded="false"><li><a href="https://docs.opencv.org/3.4/files.html">Files index</a></li><li><a href="https://docs.opencv.org/3.4/globals.html" class="has-submenu" id="sm-15265806976170513-7" aria-haspopup="true" aria-controls="sm-15265806976170513-8" aria-expanded="false"><span class="sub-arrow">+</span>Global objects</a><ul id="sm-15265806976170513-8" role="group" aria-hidden="true" aria-labelledby="sm-15265806976170513-7" aria-expanded="false"><li><a href="https://docs.opencv.org/3.4/globals.html" class="has-submenu" id="sm-15265806976170513-9" aria-haspopup="true" aria-controls="sm-15265806976170513-10" aria-expanded="false"><span class="sub-arrow">+</span>All</a><ul id="sm-15265806976170513-10" role="group" aria-hidden="true" aria-labelledby="sm-15265806976170513-9" aria-expanded="false"><li><a href="https://docs.opencv.org/3.4/globals.html#index__">_</a></li><li><a href="https://docs.opencv.org/3.4/globals_a.html#index_a">a</a></li><li><a href="https://docs.opencv.org/3.4/globals_c.html#index_c">c</a></li><li><a href="https://docs.opencv.org/3.4/globals_d.html#index_d">d</a></li><li><a href="https://docs.opencv.org/3.4/globals_f.html#index_f">f</a></li><li><a href="https://docs.opencv.org/3.4/globals_g.html#index_g">g</a></li><li><a href="https://docs.opencv.org/3.4/globals_h.html#index_h">h</a></li><li><a href="https://docs.opencv.org/3.4/globals_i.html#index_i">i</a></li><li><a href="https://docs.opencv.org/3.4/globals_k.html#index_k">k</a></li><li><a href="https://docs.opencv.org/3.4/globals_l.html#index_l">l</a></li><li><a href="https://docs.opencv.org/3.4/globals_m.html#index_m">m</a></li><li><a href="https://docs.opencv.org/3.4/globals_n.html#index_n">n</a></li><li><a href="https://docs.opencv.org/3.4/globals_o.html#index_o">o</a></li><li><a href="https://docs.opencv.org/3.4/globals_p.html#index_p">p</a></li><li><a href="https://docs.opencv.org/3.4/globals_r.html#index_r">r</a></li><li><a href="https://docs.opencv.org/3.4/globals_s.html#index_s">s</a></li><li><a href="https://docs.opencv.org/3.4/globals_t.html#index_t">t</a></li><li><a href="https://docs.opencv.org/3.4/globals_u.html#index_u">u</a></li><li><a href="https://docs.opencv.org/3.4/globals_v.html#index_v">v</a></li></ul></li><li><a href="https://docs.opencv.org/3.4/globals_func.html" class="has-submenu" id="sm-15265806976170513-11" aria-haspopup="true" aria-controls="sm-15265806976170513-12" aria-expanded="false"><span class="sub-arrow">+</span>Functions</a><ul id="sm-15265806976170513-12" role="group" aria-hidden="true" aria-labelledby="sm-15265806976170513-11" aria-expanded="false"><li><a href="https://docs.opencv.org/3.4/globals_func.html#index__">_</a></li><li><a href="https://docs.opencv.org/3.4/globals_func_a.html#index_a">a</a></li><li><a href="https://docs.opencv.org/3.4/globals_func_c.html#index_c">c</a></li><li><a href="https://docs.opencv.org/3.4/globals_func_g.html#index_g">g</a></li><li><a href="https://docs.opencv.org/3.4/globals_func_h.html#index_h">h</a></li><li><a href="https://docs.opencv.org/3.4/globals_func_m.html#index_m">m</a></li><li><a href="https://docs.opencv.org/3.4/globals_func_n.html#index_n">n</a></li><li><a href="https://docs.opencv.org/3.4/globals_func_p.html#index_p">p</a></li><li><a href="https://docs.opencv.org/3.4/globals_func_t.html#index_t">t</a></li><li><a href="https://docs.opencv.org/3.4/globals_func_u.html#index_u">u</a></li></ul></li><li><a href="https://docs.opencv.org/3.4/globals_vars.html">Variables</a></li><li><a href="https://docs.opencv.org/3.4/globals_type.html" class="has-submenu" id="sm-15265806976170513-13" aria-haspopup="true" aria-controls="sm-15265806976170513-14" aria-expanded="false"><span class="sub-arrow">+</span>Typedefs</a><ul id="sm-15265806976170513-14" role="group" aria-hidden="true" aria-labelledby="sm-15265806976170513-13" aria-expanded="false"><li><a href="https://docs.opencv.org/3.4/globals_type.html#index_c">c</a></li><li><a href="https://docs.opencv.org/3.4/globals_type.html#index_i">i</a></li><li><a href="https://docs.opencv.org/3.4/globals_type.html#index_n">n</a></li><li><a href="https://docs.opencv.org/3.4/globals_type.html#index_s">s</a></li><li><a href="https://docs.opencv.org/3.4/globals_type.html#index_u">u</a></li><li><a href="https://docs.opencv.org/3.4/globals_type.html#index_v">v</a></li></ul></li><li><a href="https://docs.opencv.org/3.4/globals_enum.html">Enumerations</a></li><li><a href="https://docs.opencv.org/3.4/globals_eval.html" class="has-submenu" id="sm-15265806976170513-15" aria-haspopup="true" aria-controls="sm-15265806976170513-16" aria-expanded="false"><span class="sub-arrow">+</span>Enumerator</a><ul id="sm-15265806976170513-16" role="group" aria-hidden="true" aria-labelledby="sm-15265806976170513-15" aria-expanded="false"><li><a href="https://docs.opencv.org/3.4/globals_eval.html#index_c">c</a></li><li><a href="https://docs.opencv.org/3.4/globals_eval_n.html#index_n">n</a></li></ul></li><li><a href="https://docs.opencv.org/3.4/globals_defs.html" class="has-submenu" id="sm-15265806976170513-17" aria-haspopup="true" aria-controls="sm-15265806976170513-18" aria-expanded="false"><span class="sub-arrow">+</span>Macros</a><ul id="sm-15265806976170513-18" role="group" aria-hidden="true" aria-labelledby="sm-15265806976170513-17" aria-expanded="false"><li><a href="https://docs.opencv.org/3.4/globals_defs.html#index__">_</a></li><li><a href="https://docs.opencv.org/3.4/globals_defs_c.html#index_c">c</a></li><li><a href="https://docs.opencv.org/3.4/globals_defs_d.html#index_d">d</a></li><li><a href="https://docs.opencv.org/3.4/globals_defs_f.html#index_f">f</a></li><li><a href="https://docs.opencv.org/3.4/globals_defs_h.html#index_h">h</a></li><li><a href="https://docs.opencv.org/3.4/globals_defs_i.html#index_i">i</a></li><li><a href="https://docs.opencv.org/3.4/globals_defs_l.html#index_l">l</a></li><li><a href="https://docs.opencv.org/3.4/globals_defs_m.html#index_m">m</a></li><li><a href="https://docs.opencv.org/3.4/globals_defs_n.html#index_n">n</a></li><li><a href="https://docs.opencv.org/3.4/globals_defs_o.html#index_o">o</a></li><li><a href="https://docs.opencv.org/3.4/globals_defs_r.html#index_r">r</a></li><li><a href="https://docs.opencv.org/3.4/globals_defs_s.html#index_s">s</a></li><li><a href="https://docs.opencv.org/3.4/globals_defs_t.html#index_t">t</a></li><li><a href="https://docs.opencv.org/3.4/globals_defs_u.html#index_u">u</a></li><li><a href="https://docs.opencv.org/3.4/globals_defs_v.html#index_v">v</a></li></ul></li></ul></li></ul></li><li><a href="https://docs.opencv.org/3.4/examples.html">Examples</a></li><li><a href="https://docs.opencv.org/3.4/javadoc/index.html">Java documentation</a></li><li style="float:right"><div id="MSearchBox" class="MSearchBoxInactive"><span class="left"><img id="MSearchSelect" src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/mag_sel.png" onmouseover="return searchBox.OnSearchSelectShow()" onmouseout="return searchBox.OnSearchSelectHide()" alt=""><input id="MSearchField" value="Search" accesskey="S" onfocus="searchBox.OnSearchFieldFocus(true)" onblur="searchBox.OnSearchFieldFocus(false)" onkeyup="searchBox.OnSearchFieldChange(event)" type="text"></span><span class="right"><a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/close.png" alt="" border="0"></a></span></div></li></ul></div>
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow" onkeydown="return searchBox.OnSearchSelectKey(event)" onmouseout="return searchBox.OnSearchSelectHide()" onmouseover="return searchBox.OnSearchSelectShow()">
+<a class="SelectItem" onclick="searchBox.OnSelectItem(0)" href="javascript:void(0)"><span class="SelectionMark">•</span>All</a><a class="SelectItem" onclick="searchBox.OnSelectItem(1)" href="javascript:void(0)"><span class="SelectionMark">&nbsp;</span>Classes</a><a class="SelectItem" onclick="searchBox.OnSelectItem(2)" href="javascript:void(0)"><span class="SelectionMark">&nbsp;</span>Namespaces</a><a class="SelectItem" onclick="searchBox.OnSelectItem(3)" href="javascript:void(0)"><span class="SelectionMark">&nbsp;</span>Files</a><a class="SelectItem" onclick="searchBox.OnSelectItem(4)" href="javascript:void(0)"><span class="SelectionMark">&nbsp;</span>Functions</a><a class="SelectItem" onclick="searchBox.OnSelectItem(5)" href="javascript:void(0)"><span class="SelectionMark">&nbsp;</span>Variables</a><a class="SelectItem" onclick="searchBox.OnSelectItem(6)" href="javascript:void(0)"><span class="SelectionMark">&nbsp;</span>Typedefs</a><a class="SelectItem" onclick="searchBox.OnSelectItem(7)" href="javascript:void(0)"><span class="SelectionMark">&nbsp;</span>Enumerations</a><a class="SelectItem" onclick="searchBox.OnSelectItem(8)" href="javascript:void(0)"><span class="SelectionMark">&nbsp;</span>Enumerator</a><a class="SelectItem" onclick="searchBox.OnSelectItem(9)" href="javascript:void(0)"><span class="SelectionMark">&nbsp;</span>Properties</a><a class="SelectItem" onclick="searchBox.OnSelectItem(10)" href="javascript:void(0)"><span class="SelectionMark">&nbsp;</span>Friends</a><a class="SelectItem" onclick="searchBox.OnSelectItem(11)" href="javascript:void(0)"><span class="SelectionMark">&nbsp;</span>Macros</a><a class="SelectItem" onclick="searchBox.OnSelectItem(12)" href="javascript:void(0)"><span class="SelectionMark">&nbsp;</span>Modules</a><a class="SelectItem" onclick="searchBox.OnSelectItem(13)" href="javascript:void(0)"><span class="SelectionMark">&nbsp;</span>Pages</a></div>
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<iframe id="MSearchResults" name="MSearchResults" src="javascript:void(0)" frameborder="0">
+</iframe>
+</div>
+<div class="navpath" id="nav-path">
+<ul>
+<li class="navelem"><a class="el" href="https://docs.opencv.org/3.4/d2/d75/namespacecv.html">cv</a></li><li class="navelem"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html">KalmanFilter</a></li> </ul>
+</div>
+</div><!-- top -->
+<div class="header">
+<div class="summary">
+<a href="#pub-methods">Public Member Functions</a> |
+<a href="#pub-attribs">Public Attributes</a> |
+<a href="https://docs.opencv.org/3.4/d8/ddc/classcv_1_1KalmanFilter-members.html">List of all members</a> </div>
+<div class="headertitle">
+<div class="title">cv::KalmanFilter Class Reference<div class="ingroups"><a class="el" href="https://docs.opencv.org/3.4/d7/de9/group__video.html">Video Analysis</a> » <a class="el" href="https://docs.opencv.org/3.4/dc/d6b/group__video__track.html">Object Tracking</a></div></div> </div>
+</div><!--header-->
+<div class="contents">
+<p>Kalman filter class.  
+ <a href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#details">More...</a></p>
+<p><code>#include "tracking.hpp"</code></p>
+<table class="memberdecls">
+<tbody><tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:ac0799f0611baee9e7e558f016e4a7b40"><td class="memItemLeft" valign="top" align="right">&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#ac0799f0611baee9e7e558f016e4a7b40">KalmanFilter</a> ()</td></tr>
+<tr class="separator:ac0799f0611baee9e7e558f016e4a7b40"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:abac82ecfa530611a163255bc7d91c088"><td class="memItemLeft" valign="top" align="right">&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#abac82ecfa530611a163255bc7d91c088">KalmanFilter</a> (int dynamParams, int measureParams, int controlParams=0, int type=<a class="el" href="https://docs.opencv.org/3.4/d1/d1b/group__core__hal__interface.html#ga4a3def5d72b74bed31f5f8ab7676099c">CV_32F</a>)</td></tr>
+<tr class="separator:abac82ecfa530611a163255bc7d91c088"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:a60eb7feb569222ad0657ef1875884b5e"><td class="memItemLeft" valign="top" align="right">const <a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> &amp;&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#a60eb7feb569222ad0657ef1875884b5e">correct</a> (const <a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> &amp;measurement)</td></tr>
+<tr class="memdesc:a60eb7feb569222ad0657ef1875884b5e"><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Updates the predicted state from the measurement.  <a href="#a60eb7feb569222ad0657ef1875884b5e">More...</a><br></td></tr>
+<tr class="separator:a60eb7feb569222ad0657ef1875884b5e"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:a4f136c39c016d3530c7c5801dd1ddb3b"><td class="memItemLeft" valign="top" align="right">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#a4f136c39c016d3530c7c5801dd1ddb3b">init</a> (int dynamParams, int measureParams, int controlParams=0, int type=<a class="el" href="https://docs.opencv.org/3.4/d1/d1b/group__core__hal__interface.html#ga4a3def5d72b74bed31f5f8ab7676099c">CV_32F</a>)</td></tr>
+<tr class="memdesc:a4f136c39c016d3530c7c5801dd1ddb3b"><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Re-initializes Kalman filter. The previous content is destroyed.  <a href="#a4f136c39c016d3530c7c5801dd1ddb3b">More...</a><br></td></tr>
+<tr class="separator:a4f136c39c016d3530c7c5801dd1ddb3b"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:aa710d2255566bec8d6ce608d103d4fa7"><td class="memItemLeft" valign="top" align="right">const <a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> &amp;&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#aa710d2255566bec8d6ce608d103d4fa7">predict</a> (const <a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> &amp;control=<a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>())</td></tr>
+<tr class="memdesc:aa710d2255566bec8d6ce608d103d4fa7"><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Computes a predicted state.  <a href="#aa710d2255566bec8d6ce608d103d4fa7">More...</a><br></td></tr>
+<tr class="separator:aa710d2255566bec8d6ce608d103d4fa7"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+</tbody></table><table class="memberdecls">
+<tbody><tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a6486e7287114810636fb33953280ed52"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#a6486e7287114810636fb33953280ed52">controlMatrix</a></td></tr>
+<tr class="memdesc:a6486e7287114810636fb33953280ed52"><td class="mdescLeft">&nbsp;</td><td class="mdescRight">control matrix (B) (not used if there is no control)  <a href="#a6486e7287114810636fb33953280ed52">More...</a><br></td></tr>
+<tr class="separator:a6486e7287114810636fb33953280ed52"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:a446d8e9a0105b0aa35cd66119c529803"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#a446d8e9a0105b0aa35cd66119c529803">errorCovPost</a></td></tr>
+<tr class="memdesc:a446d8e9a0105b0aa35cd66119c529803"><td class="mdescLeft">&nbsp;</td><td class="mdescRight">posteriori error estimate covariance matrix (P(k)): P(k)=(I-K(k)*H)*P'(k)  <a href="#a446d8e9a0105b0aa35cd66119c529803">More...</a><br></td></tr>
+<tr class="separator:a446d8e9a0105b0aa35cd66119c529803"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:ae1bd3a86f10753d723e7174d570d9ac1"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#ae1bd3a86f10753d723e7174d570d9ac1">errorCovPre</a></td></tr>
+<tr class="memdesc:ae1bd3a86f10753d723e7174d570d9ac1"><td class="mdescLeft">&nbsp;</td><td class="mdescRight">priori error estimate covariance matrix (P'(k)): P'(k)=A*P(k-1)*At + Q)*/  <a href="#ae1bd3a86f10753d723e7174d570d9ac1">More...</a><br></td></tr>
+<tr class="separator:ae1bd3a86f10753d723e7174d570d9ac1"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:a077d73eb075b00779dc009a9057c27c3"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#a077d73eb075b00779dc009a9057c27c3">gain</a></td></tr>
+<tr class="memdesc:a077d73eb075b00779dc009a9057c27c3"><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Kalman gain matrix (K(k)): K(k)=P'(k)*Ht*inv(H*P'(k)*Ht+R)  <a href="#a077d73eb075b00779dc009a9057c27c3">More...</a><br></td></tr>
+<tr class="separator:a077d73eb075b00779dc009a9057c27c3"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:a0f60b78726d8eccf74a1f2479c2d1f97"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#a0f60b78726d8eccf74a1f2479c2d1f97">measurementMatrix</a></td></tr>
+<tr class="memdesc:a0f60b78726d8eccf74a1f2479c2d1f97"><td class="mdescLeft">&nbsp;</td><td class="mdescRight">measurement matrix (H)  <a href="#a0f60b78726d8eccf74a1f2479c2d1f97">More...</a><br></td></tr>
+<tr class="separator:a0f60b78726d8eccf74a1f2479c2d1f97"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:a828d051035ba807966ad65edf288a08e"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#a828d051035ba807966ad65edf288a08e">measurementNoiseCov</a></td></tr>
+<tr class="memdesc:a828d051035ba807966ad65edf288a08e"><td class="mdescLeft">&nbsp;</td><td class="mdescRight">measurement noise covariance matrix (R)  <a href="#a828d051035ba807966ad65edf288a08e">More...</a><br></td></tr>
+<tr class="separator:a828d051035ba807966ad65edf288a08e"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:af19be9c0630d0f658bdbaea409a35cda"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#af19be9c0630d0f658bdbaea409a35cda">processNoiseCov</a></td></tr>
+<tr class="memdesc:af19be9c0630d0f658bdbaea409a35cda"><td class="mdescLeft">&nbsp;</td><td class="mdescRight">process noise covariance matrix (Q)  <a href="#af19be9c0630d0f658bdbaea409a35cda">More...</a><br></td></tr>
+<tr class="separator:af19be9c0630d0f658bdbaea409a35cda"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:add8fb5ac9c04b4600b679698dcb0447d"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#add8fb5ac9c04b4600b679698dcb0447d">statePost</a></td></tr>
+<tr class="memdesc:add8fb5ac9c04b4600b679698dcb0447d"><td class="mdescLeft">&nbsp;</td><td class="mdescRight">corrected state (x(k)): x(k)=x'(k)+K(k)*(z(k)-H*x'(k))  <a href="#add8fb5ac9c04b4600b679698dcb0447d">More...</a><br></td></tr>
+<tr class="separator:add8fb5ac9c04b4600b679698dcb0447d"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:a926dece64b4e0e28c3f58af8b7793669"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#a926dece64b4e0e28c3f58af8b7793669">statePre</a></td></tr>
+<tr class="memdesc:a926dece64b4e0e28c3f58af8b7793669"><td class="mdescLeft">&nbsp;</td><td class="mdescRight">predicted state (x'(k)): x(k)=A*x(k-1)+B*u(k)  <a href="#a926dece64b4e0e28c3f58af8b7793669">More...</a><br></td></tr>
+<tr class="separator:a926dece64b4e0e28c3f58af8b7793669"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:aa3d064a9194c2815dbe19c056b6dc763"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#aa3d064a9194c2815dbe19c056b6dc763">temp1</a></td></tr>
+<tr class="separator:aa3d064a9194c2815dbe19c056b6dc763"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:a14866bd506668eb0ed57b3974b3a1ee7"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#a14866bd506668eb0ed57b3974b3a1ee7">temp2</a></td></tr>
+<tr class="separator:a14866bd506668eb0ed57b3974b3a1ee7"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:afdbe36066a7d7f560aa02abe6be114d8"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#afdbe36066a7d7f560aa02abe6be114d8">temp3</a></td></tr>
+<tr class="separator:afdbe36066a7d7f560aa02abe6be114d8"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:a84342f2d9dec1e6389025ad229401809"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#a84342f2d9dec1e6389025ad229401809">temp4</a></td></tr>
+<tr class="separator:a84342f2d9dec1e6389025ad229401809"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:a846c2a6222c6e5d8b1385dfbccc83ae0"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#a846c2a6222c6e5d8b1385dfbccc83ae0">temp5</a></td></tr>
+<tr class="separator:a846c2a6222c6e5d8b1385dfbccc83ae0"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+<tr class="memitem:a0657173e411acbf40d2d3c6b46e03b19"><td class="memItemLeft" valign="top" align="right"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="https://docs.opencv.org/3.4/dd/d6a/classcv_1_1KalmanFilter.html#a0657173e411acbf40d2d3c6b46e03b19">transitionMatrix</a></td></tr>
+<tr class="memdesc:a0657173e411acbf40d2d3c6b46e03b19"><td class="mdescLeft">&nbsp;</td><td class="mdescRight">state transition matrix (A)  <a href="#a0657173e411acbf40d2d3c6b46e03b19">More...</a><br></td></tr>
+<tr class="separator:a0657173e411acbf40d2d3c6b46e03b19"><td class="memSeparator" colspan="2">&nbsp;</td></tr>
+</tbody></table>
+<a id="details" name="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Kalman filter class. </p>
+<p>The class implements a standard Kalman filter <a href="http://en.wikipedia.org/wiki/Kalman_filter">http://en.wikipedia.org/wiki/Kalman_filter</a>, <a class="el" href="https://docs.opencv.org/3.4/d0/de3/citelist.html#CITEREF_Welch95">[201]</a>
+ . However, you can modify transitionMatrix, controlMatrix, and 
+measurementMatrix to get an extended Kalman filter functionality. </p><dl class="section note"><dt>Note</dt><dd>In
+ C API when CvKalman* kalmanFilter structure is not needed anymore, it 
+should be released with cvReleaseKalman(&amp;kalmanFilter) </dd></dl>
+<dl><dt><b>Examples: </b></dt><dd><a class="el" href="https://docs.opencv.org/3.4/d1/da2/kalman_8cpp-example.html#_a7">kalman.cpp</a>.</dd>
+</dl></div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="ac0799f0611baee9e7e558f016e4a7b40"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac0799f0611baee9e7e558f016e4a7b40">§&nbsp;</a></span>KalmanFilter() <span class="overload">[1/2]</span></h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname">cv::KalmanFilter::KalmanFilter </td>
+<td>(</td>
+<td class="paramname"></td><td>)</td>
+<td></td>
+</tr>
+</tbody></table><table class="python_language"><tbody><tr><th colspan="999" style="text-align:left">Python:</th></tr><tr><td style="width: 20px;"></td><td>&lt;KalmanFilter object&gt;</td><td>=</td><td>cv.KalmanFilter(</td><td class="paramname"></td><td>)</td></tr><tr><td style="width: 20px;"></td><td>&lt;KalmanFilter object&gt;</td><td>=</td><td>cv.KalmanFilter(</td><td class="paramname">dynamParams, measureParams[, controlParams[, type]]</td><td>)</td></tr></tbody></table>
+</div><div class="memdoc">
+</div>
+</div>
+<a id="abac82ecfa530611a163255bc7d91c088"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abac82ecfa530611a163255bc7d91c088">§&nbsp;</a></span>KalmanFilter() <span class="overload">[2/2]</span></h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname">cv::KalmanFilter::KalmanFilter </td>
+<td>(</td>
+<td class="paramtype">int&nbsp;</td>
+<td class="paramname"><em>dynamParams</em>, </td>
+</tr>
+<tr>
+<td class="paramkey"></td>
+<td></td>
+<td class="paramtype">int&nbsp;</td>
+<td class="paramname"><em>measureParams</em>, </td>
+</tr>
+<tr>
+<td class="paramkey"></td>
+<td></td>
+<td class="paramtype">int&nbsp;</td>
+<td class="paramname"><em>controlParams</em> = <code>0</code>, </td>
+</tr>
+<tr>
+<td class="paramkey"></td>
+<td></td>
+<td class="paramtype">int&nbsp;</td>
+<td class="paramname"><em>type</em> = <code><a class="el" href="https://docs.opencv.org/3.4/d1/d1b/group__core__hal__interface.html#ga4a3def5d72b74bed31f5f8ab7676099c">CV_32F</a></code>&nbsp;</td>
+</tr>
+<tr>
+<td></td>
+<td>)</td>
+<td></td><td></td>
+</tr>
+</tbody></table><table class="python_language"><tbody><tr><th colspan="999" style="text-align:left">Python:</th></tr><tr><td style="width: 20px;"></td><td>&lt;KalmanFilter object&gt;</td><td>=</td><td>cv.KalmanFilter(</td><td class="paramname"></td><td>)</td></tr><tr><td style="width: 20px;"></td><td>&lt;KalmanFilter object&gt;</td><td>=</td><td>cv.KalmanFilter(</td><td class="paramname">dynamParams, measureParams[, controlParams[, type]]</td><td>)</td></tr></tbody></table>
+</div><div class="memdoc">
+<p>This is an overloaded member function, provided for convenience. It 
+differs from the above function only in what argument(s) it accepts. </p><dl class="params"><dt>Parameters</dt><dd>
+<table class="params">
+<tbody><tr><td class="paramname">dynamParams</td><td>Dimensionality of the state. </td></tr>
+<tr><td class="paramname">measureParams</td><td>Dimensionality of the measurement. </td></tr>
+<tr><td class="paramname">controlParams</td><td>Dimensionality of the control vector. </td></tr>
+<tr><td class="paramname">type</td><td>Type of the created matrices that should be CV_32F or CV_64F. </td></tr>
+</tbody></table>
+</dd>
+</dl>
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a60eb7feb569222ad0657ef1875884b5e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a60eb7feb569222ad0657ef1875884b5e">§&nbsp;</a></span>correct()</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname">const <a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&amp; cv::KalmanFilter::correct </td>
+<td>(</td>
+<td class="paramtype">const <a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> &amp;&nbsp;</td>
+<td class="paramname"><em>measurement</em></td><td>)</td>
+<td></td>
+</tr>
+</tbody></table><table class="python_language"><tbody><tr><th colspan="999" style="text-align:left">Python:</th></tr><tr><td style="width: 20px;"></td><td>retval</td><td>=</td><td>cv.KalmanFilter.correct(</td><td class="paramname">measurement</td><td>)</td></tr></tbody></table>
+</div><div class="memdoc">
+<p>Updates the predicted state from the measurement. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+<table class="params">
+<tbody><tr><td class="paramname">measurement</td><td>The measured system parameters </td></tr>
+</tbody></table>
+</dd>
+</dl>
+<dl><dt><b>Examples: </b></dt><dd><a class="el" href="https://docs.opencv.org/3.4/d1/da2/kalman_8cpp-example.html#a28">kalman.cpp</a>.</dd>
+</dl>
+</div>
+</div>
+<a id="a4f136c39c016d3530c7c5801dd1ddb3b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4f136c39c016d3530c7c5801dd1ddb3b">§&nbsp;</a></span>init()</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname">void cv::KalmanFilter::init </td>
+<td>(</td>
+<td class="paramtype">int&nbsp;</td>
+<td class="paramname"><em>dynamParams</em>, </td>
+</tr>
+<tr>
+<td class="paramkey"></td>
+<td></td>
+<td class="paramtype">int&nbsp;</td>
+<td class="paramname"><em>measureParams</em>, </td>
+</tr>
+<tr>
+<td class="paramkey"></td>
+<td></td>
+<td class="paramtype">int&nbsp;</td>
+<td class="paramname"><em>controlParams</em> = <code>0</code>, </td>
+</tr>
+<tr>
+<td class="paramkey"></td>
+<td></td>
+<td class="paramtype">int&nbsp;</td>
+<td class="paramname"><em>type</em> = <code><a class="el" href="https://docs.opencv.org/3.4/d1/d1b/group__core__hal__interface.html#ga4a3def5d72b74bed31f5f8ab7676099c">CV_32F</a></code>&nbsp;</td>
+</tr>
+<tr>
+<td></td>
+<td>)</td>
+<td></td><td></td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+<p>Re-initializes Kalman filter. The previous content is destroyed. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+<table class="params">
+<tbody><tr><td class="paramname">dynamParams</td><td>Dimensionality of the state. </td></tr>
+<tr><td class="paramname">measureParams</td><td>Dimensionality of the measurement. </td></tr>
+<tr><td class="paramname">controlParams</td><td>Dimensionality of the control vector. </td></tr>
+<tr><td class="paramname">type</td><td>Type of the created matrices that should be CV_32F or CV_64F. </td></tr>
+</tbody></table>
+</dd>
+</dl>
+</div>
+</div>
+<a id="aa710d2255566bec8d6ce608d103d4fa7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa710d2255566bec8d6ce608d103d4fa7">§&nbsp;</a></span>predict()</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname">const <a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>&amp; cv::KalmanFilter::predict </td>
+<td>(</td>
+<td class="paramtype">const <a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> &amp;&nbsp;</td>
+<td class="paramname"><em>control</em> = <code><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a>()</code></td><td>)</td>
+<td></td>
+</tr>
+</tbody></table><table class="python_language"><tbody><tr><th colspan="999" style="text-align:left">Python:</th></tr><tr><td style="width: 20px;"></td><td>retval</td><td>=</td><td>cv.KalmanFilter.predict(</td><td class="paramname">[, control]</td><td>)</td></tr></tbody></table>
+</div><div class="memdoc">
+<p>Computes a predicted state. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+<table class="params">
+<tbody><tr><td class="paramname">control</td><td>The optional input control </td></tr>
+</tbody></table>
+</dd>
+</dl>
+<dl><dt><b>Examples: </b></dt><dd><a class="el" href="https://docs.opencv.org/3.4/d1/da2/kalman_8cpp-example.html#a23">kalman.cpp</a>.</dd>
+</dl>
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a6486e7287114810636fb33953280ed52"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6486e7287114810636fb33953280ed52">§&nbsp;</a></span>controlMatrix</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::controlMatrix</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+<p>control matrix (B) (not used if there is no control) </p>
+</div>
+</div>
+<a id="a446d8e9a0105b0aa35cd66119c529803"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a446d8e9a0105b0aa35cd66119c529803">§&nbsp;</a></span>errorCovPost</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::errorCovPost</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+<p>posteriori error estimate covariance matrix (P(k)): P(k)=(I-K(k)*H)*P'(k) </p>
+<dl><dt><b>Examples: </b></dt><dd><a class="el" href="https://docs.opencv.org/3.4/d1/da2/kalman_8cpp-example.html#a18">kalman.cpp</a>.</dd>
+</dl>
+</div>
+</div>
+<a id="ae1bd3a86f10753d723e7174d570d9ac1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae1bd3a86f10753d723e7174d570d9ac1">§&nbsp;</a></span>errorCovPre</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::errorCovPre</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+<p>priori error estimate covariance matrix (P'(k)): P'(k)=A*P(k-1)*At + Q)*/ </p>
+</div>
+</div>
+<a id="a077d73eb075b00779dc009a9057c27c3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a077d73eb075b00779dc009a9057c27c3">§&nbsp;</a></span>gain</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::gain</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+<p>Kalman gain matrix (K(k)): K(k)=P'(k)*Ht*inv(H*P'(k)*Ht+R) </p>
+</div>
+</div>
+<a id="a0f60b78726d8eccf74a1f2479c2d1f97"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0f60b78726d8eccf74a1f2479c2d1f97">§&nbsp;</a></span>measurementMatrix</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::measurementMatrix</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+<p>measurement matrix (H) </p>
+<dl><dt><b>Examples: </b></dt><dd><a class="el" href="https://docs.opencv.org/3.4/d1/da2/kalman_8cpp-example.html#a15">kalman.cpp</a>.</dd>
+</dl>
+</div>
+</div>
+<a id="a828d051035ba807966ad65edf288a08e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a828d051035ba807966ad65edf288a08e">§&nbsp;</a></span>measurementNoiseCov</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::measurementNoiseCov</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+<p>measurement noise covariance matrix (R) </p>
+<dl><dt><b>Examples: </b></dt><dd><a class="el" href="https://docs.opencv.org/3.4/d1/da2/kalman_8cpp-example.html#a17">kalman.cpp</a>.</dd>
+</dl>
+</div>
+</div>
+<a id="af19be9c0630d0f658bdbaea409a35cda"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af19be9c0630d0f658bdbaea409a35cda">§&nbsp;</a></span>processNoiseCov</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::processNoiseCov</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+<p>process noise covariance matrix (Q) </p>
+<dl><dt><b>Examples: </b></dt><dd><a class="el" href="https://docs.opencv.org/3.4/d1/da2/kalman_8cpp-example.html#a16">kalman.cpp</a>.</dd>
+</dl>
+</div>
+</div>
+<a id="add8fb5ac9c04b4600b679698dcb0447d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#add8fb5ac9c04b4600b679698dcb0447d">§&nbsp;</a></span>statePost</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::statePost</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+<p>corrected state (x(k)): x(k)=x'(k)+K(k)*(z(k)-H*x'(k)) </p>
+<dl><dt><b>Examples: </b></dt><dd><a class="el" href="https://docs.opencv.org/3.4/d1/da2/kalman_8cpp-example.html#a19">kalman.cpp</a>.</dd>
+</dl>
+</div>
+</div>
+<a id="a926dece64b4e0e28c3f58af8b7793669"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a926dece64b4e0e28c3f58af8b7793669">§&nbsp;</a></span>statePre</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::statePre</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+<p>predicted state (x'(k)): x(k)=A*x(k-1)+B*u(k) </p>
+</div>
+</div>
+<a id="aa3d064a9194c2815dbe19c056b6dc763"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa3d064a9194c2815dbe19c056b6dc763">§&nbsp;</a></span>temp1</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::temp1</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+</div>
+</div>
+<a id="a14866bd506668eb0ed57b3974b3a1ee7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a14866bd506668eb0ed57b3974b3a1ee7">§&nbsp;</a></span>temp2</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::temp2</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+</div>
+</div>
+<a id="afdbe36066a7d7f560aa02abe6be114d8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afdbe36066a7d7f560aa02abe6be114d8">§&nbsp;</a></span>temp3</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::temp3</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+</div>
+</div>
+<a id="a84342f2d9dec1e6389025ad229401809"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a84342f2d9dec1e6389025ad229401809">§&nbsp;</a></span>temp4</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::temp4</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+</div>
+</div>
+<a id="a846c2a6222c6e5d8b1385dfbccc83ae0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a846c2a6222c6e5d8b1385dfbccc83ae0">§&nbsp;</a></span>temp5</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::temp5</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+</div>
+</div>
+<a id="a0657173e411acbf40d2d3c6b46e03b19"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0657173e411acbf40d2d3c6b46e03b19">§&nbsp;</a></span>transitionMatrix</h2>
+<div class="memitem">
+<div class="memproto">
+<table class="memname">
+<tbody><tr>
+<td class="memname"><a class="el" href="https://docs.opencv.org/3.4/d3/d63/classcv_1_1Mat.html">Mat</a> cv::KalmanFilter::transitionMatrix</td>
+</tr>
+</tbody></table>
+</div><div class="memdoc">
+<p>state transition matrix (A) </p>
+<dl><dt><b>Examples: </b></dt><dd><a class="el" href="https://docs.opencv.org/3.4/d1/da2/kalman_8cpp-example.html#a12">kalman.cpp</a>.</dd>
+</dl>
+</div>
+</div>
+<hr>The documentation for this class was generated from the following file:<ul>
+<li>video/include/opencv2/video/<a class="el" href="https://docs.opencv.org/3.4/d4/dc2/modules_2video_2include_2opencv2_2video_2tracking_8hpp.html">tracking.hpp</a></li>
+</ul>
+</div><!-- contents -->
+<!-- HTML footer for doxygen 1.8.6-->
+<!-- start footer part -->
+<hr class="footer"><address class="footer"><small>
+Generated on Mon May 14 2018 00:37:24 for OpenCV by &nbsp;<a href="http://www.doxygen.org/index.html">
+<img alt="doxygen" class="footer" src="OpenCV:%20cv::KalmanFilter%20Class%20Reference_files/doxygen.png">
+</a> 1.8.12
+</small></address>
+<script type="text/javascript">
+//<![CDATA[
+addTutorialsButtons();
+//]]>
+</script>
+
+
+<table style="width: 1796px; display: none; top: 42px; position: absolute; left: 14px;" class="gstl_50 gssb_c" cellspacing="0" cellpadding="0"><tbody><tr><td class="gssb_f"></td><td class="gssb_e" style="width: 100%;"></td></tr></tbody></table></body></html>

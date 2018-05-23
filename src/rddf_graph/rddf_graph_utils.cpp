@@ -59,24 +59,27 @@ road_map_to_image_black_and_white(carmen_map_p map, cv::Mat *road_map_img, const
 
 
 void
-show_road_map(carmen_map_p road_map, rddf_graph_t *graph)
+show_road_map(carmen_map_p road_map, int x, int y)
 {
 	//road_prob *cell_prob;
 	cv::namedWindow("road_map", cv::WINDOW_AUTOSIZE);
 	cv::Mat image1;
 	int thickness = -1;
-		int lineType = 8;
-		cv::Point p;
-		//p.x = (int) x;
-		//p.y = (int) 350-1-y;
-		//p.y=(int) y;
+	int lineType = 8;
+	cv::Point p;
+	//p.x = road_map->config.x_size/2;
+	//p.y = road_map->config.y_size/2;
+
+	p.x = x;
+	p.y = road_map->config.y_size - 1 -  y;
+
 	image1 = cv::Mat(road_map->config.y_size, road_map->config.x_size, CV_8UC3, cv::Scalar::all(0));
 	road_map_to_image(road_map, &image1);
-	cv::circle(image1, p, 1,cv::Scalar( 255, 0, 0 ),thickness,lineType);
+	cv::circle(image1, p, 5,cv::Scalar( 255, 0, 0 ),thickness,lineType);
 	//while((cv::waitKey() & 0xff) != 27);
 	cv::imshow("road_map", image1);
-	cv::waitKey();
-	cv::destroyWindow("road_map");
+	cv::waitKey(1);
+	//cv::destroyWindow("road_map");
 }
 
 
@@ -228,6 +231,9 @@ display_graph_over_map(carmen_map_p map, rddf_graph_t *graph, int** already_visi
 			//p.x = aux->x;
 			//p.y = aux->y;
 			cv::circle(image, p, 0.4,cv::Scalar( blue, green, red ),thickness,lineType);
+			//cv::imshow(file_name, image);
+			//cv::imshow("already_visited", image_already_visited);
+			//cv::waitKey(1);
 		}
 
 		cv::imshow(file_name, image);
@@ -357,7 +363,7 @@ parse_filename(string str_road_map_filename)
 }
 
 
-void parse_world_origin_to_road_map(string road_map_filename, carmen_map_p road_map)
+void parse_world_origin_to_road_map(string road_map_filename)
 {
 	string x_origin;
 	string y_origin;
@@ -381,8 +387,9 @@ void parse_world_origin_to_road_map(string road_map_filename, carmen_map_p road_
 	x_origin = road_map_filename.substr(last_bar_position+2,last_underline_position-last_bar_position-2);
 	y_origin = road_map_filename.substr(last_trace_position,last_dot_position-last_trace_position);
 
-	road_map->config.x_origin = atof(x_origin.c_str());
-	road_map->config.y_origin = atof(y_origin.c_str());
+
+	g_x_origin = atof(x_origin.c_str());
+	g_y_origin = atof(y_origin.c_str());
 
 }
 
@@ -394,7 +401,7 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 	cell_prob = road_mapper_double_to_prob(&map->map[x][y]);
 	double center = cell_prob->lane_center;
 
-	//0 X 0
+	/*//0 X 0
 	if(x == 0 && y == 0)
 	{
 		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
@@ -409,78 +416,34 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 			return false;
 	}
 
-	//349 X 0
-	else if(x == map->config.x_size-1 && y == 0)
-	{
-		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
-		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
-		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
-		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
-
-		if( (center > center_y_plus_2 && center > center_y_plus_1) ||
-			(center > center_x_minus_2 && center > center_x_minus_1) )
-			return true;
-		else
-			return false;
-	}
-
-	//0 X 349
-	else if (x == 0 && y == map->config.y_size-1)
-	{
-		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
-		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
-		double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
-		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
-
-		if( (center > center_y_minus_2 && center > center_y_minus_1) ||
-			(center > center_x_plus_2 && center > center_x_plus_1) )
-			return true;
-		else
-			return false;
-	}
-
-	//349 X 349
-	else if (x == map->config.x_size-1 && y == map->config.y_size-1)
-	{
-		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
-		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
-		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
-		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
-
-		if( (center > center_y_minus_2 && center > center_y_minus_1) ||
-			(center > center_x_minus_2 && center > center_x_minus_1) )
-			return true;
-		else
-			return false;
-	}
-
 	// 0 X 1
-	else if(x == 0 && y == 1)
+		else if(x == 0 && y == 1)
+		{
+			double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
+			double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
+			double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
+			double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
+			double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
+
+			if( (center > center_y_minus_1 && (center > center_y_plus_2 && center > center_y_plus_1)) ||
+				(center > center_x_plus_2 && center > center_x_plus_1) )
+				return true;
+			else
+				return false;
+		}
+
+	// 0 X 2 ~ 347
+	else if(x == 0 && (y >= 2 && y <= 347))
 	{
-		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
 		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
 		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
+		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
+		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
 		double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
 		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
 
-		if( (center > center_y_minus_1 && (center > center_y_plus_2 && center > center_y_plus_1)) ||
+		if( ((center > center_y_minus_2 && center > center_y_minus_1) && (center > center_y_plus_2 && center > center_y_plus_1)) && //se ponto x,y for menor que os dois y a frente
 			(center > center_x_plus_2 && center > center_x_plus_1) )
-			return true;
-		else
-			return false;
-	}
-
-	// 349 X 1
-	else if(x == map->config.x_size-1 && y == 1)
-	{
-		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
-		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
-		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
-		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
-		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
-
-		if( (center > center_y_minus_1 && (center > center_y_plus_2 && center > center_y_plus_1)) ||
-			(center > center_x_minus_2 && center > center_x_minus_1) )
 			return true;
 		else
 			return false;
@@ -502,83 +465,89 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 			return false;
 	}
 
-	// 349 X 348
-	else if(x == map->config.x_size-1 && y == map->config.y_size-2)
-	{
-		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
-		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
-		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
-		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
-		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
+	//0 X 349
+		else if (x == 0 && y == map->config.y_size-1)
+		{
+			double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
+			double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
+			double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
+			double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
 
-		if( (center > center_y_plus_1 && (center > center_y_minus_2 && center > center_y_minus_1)) ||
-			(center > center_x_minus_2 && center > center_x_minus_1) )
-			return true;
-		else
-			return false;
-	}
-
-	// 0 X 2 ~ 347
-	else if(x == 0 && (y >= 2 && y <= 347))
-	{
-		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
-		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
-		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
-		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
-		double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
-		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
-
-		if( ((center > center_y_minus_2 && center > center_y_minus_1) && (center > center_y_plus_2 && center > center_y_plus_1)) || //se ponto x,y for menor que os dois y a frente
-			(center > center_x_plus_2 && center > center_x_plus_1) )
-			return true;
-		else
-			return false;
-	}
-
-	// 349 X 2 ~ 347
-	else if(x == map->config.x_size-1 && (y >= 2 && y <= 347))
-	{
-		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
-		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
-		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
-		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
-		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
-		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
-
-		if( ((center > center_y_minus_2 && center > center_y_minus_1) && (center > center_y_plus_2 && center > center_y_plus_1)) || //se ponto x,y for menor que os dois y a frente
-			(center > center_x_minus_2 && center > center_x_minus_1) )
-			return true;
-		else
-			return false;
-	}
+			if( (center > center_y_minus_2 && center > center_y_minus_1) ||
+				(center > center_x_plus_2 && center > center_x_plus_1) )
+				return true;
+			else
+				return false;
+		}
 
 	// 1 X 0
-	else if(x == 1 && y == 0)
+		else if(x == 1 && y == 0)
+		{
+			double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
+			double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
+			double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
+			double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
+			double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
+
+			if( ((center > center_y_plus_2 && center > center_y_plus_1)) ||
+				(center > center_x_minus_1 && (center > center_x_plus_2 && center > center_x_plus_1)) )
+				return true;
+			else
+				return false;
+		}
+
+	// 1 X 1
+	else if(x == 1 && y == 1)
 	{
+		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
 		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
 		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
 		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
 		double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
 		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
 
-		if( ((center > center_y_plus_2 && center > center_y_plus_1)) ||
+		if( (center > center_y_minus_1 && (center > center_y_plus_2 && center > center_y_plus_1)) ||
 			(center > center_x_minus_1 && (center > center_x_plus_2 && center > center_x_plus_1)) )
 			return true;
 		else
 			return false;
 	}
 
-	// 348 X 0
-	else if(x == map->config.x_size-1 && y == 0)
-	{
-		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
-		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
-		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
-		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
-		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
+	// 1 X 2 ~ 347
+		else if((y >= 2 && y<= map->config.x_size-3) && x == 1)
+		{
+			double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
+			double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
+			double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
+			double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
+			double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
+			double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
+			double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
+			if(x==1 && y==122){
+					printf("%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf",center_y_minus_2,center_y_minus_1,center,center_y_plus_1,center_y_plus_2,center_x_plus_1,center_x_plus_2,center_x_minus_1);getchar();
+												}
 
-		if( ((center > center_y_plus_2 && center > center_y_plus_1)) ||
-			(center > center_x_plus_1 && (center > center_x_minus_2 && center > center_x_minus_1)) )
+			if( ((center > center_y_minus_2 && center > center_y_minus_1) && (center > center_y_plus_2 && center > center_y_plus_1)) &&
+				(center > center_x_minus_1 && (center > center_x_plus_2 && center > center_x_plus_1)) )
+			{
+				return true;
+			}
+			else
+				return false;
+		}
+
+	// 1 X 348
+	else if(x == 1 && y == map->config.y_size-2)
+	{
+		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
+		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
+		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
+		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
+		double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
+		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
+
+		if( (center > center_y_plus_1 && (center > center_y_minus_2 && center > center_y_minus_1)) ||
+			(center > center_x_minus_1 && (center > center_x_plus_2 && center > center_x_plus_1)) )
 			return true;
 		else
 			return false;
@@ -600,34 +569,87 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 			return false;
 	}
 
-	// 348 X 349
-	else if(x == map->config.x_size-1 && y == 0)
+	// 2 ~ 347 X 0
+	else if((x >= 2 && x<= map->config.x_size-3) && y == 0)
 	{
-		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
-		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
+		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
+		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
+		double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
 		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
 		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
 		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
 
-		if( ((center > center_y_minus_2 && center > center_y_minus_1)) ||
-			(center > center_x_plus_1 && (center > center_x_minus_2 && center > center_x_minus_1)) )
+		if( (center > center_y_plus_2 && center > center_y_plus_1) ||
+			((center > center_x_minus_2 && center > center_x_minus_1) && (center > center_x_plus_2 && center > center_x_plus_1)) )
 			return true;
 		else
 			return false;
 	}
 
-	// 1 X 1
-	else if(x == 1 && y == 1)
+	// 2 ~ 347 X 1
+	else if((x >= 2 && x<= map->config.x_size-3) && y == 1)
 	{
 		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
 		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
 		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
-		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
 		double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
 		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
+		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
+		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
 
 		if( (center > center_y_minus_1 && (center > center_y_plus_2 && center > center_y_plus_1)) ||
-			(center > center_x_minus_1 && (center > center_x_plus_2 && center > center_x_plus_1)) )
+			((center > center_x_minus_2 && center > center_x_minus_1) && (center > center_x_plus_2 && center > center_x_plus_1)) )
+			return true;
+		else
+			return false;
+	}
+
+	// 2 ~ 347 X 348
+	else if((x >= 2 && x<= map->config.x_size-3) && y == map->config.y_size-2)
+	{
+		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
+		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
+		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
+		double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
+		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
+		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
+		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
+
+		if( (center > center_y_plus_1 && (center > center_y_minus_2 && center > center_y_minus_1)) ||
+			((center > center_x_minus_2 && center > center_x_minus_1) && (center > center_x_plus_2 && center > center_x_plus_1)) )
+			return true;
+		else
+			return false;
+	}
+
+	// 2 ~ 347 X 349
+	else if((x >= 2 && x<= map->config.x_size-3) && y == map->config.y_size-1)
+	{
+		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
+		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
+		double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
+		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
+		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
+		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
+
+		if( (center > center_y_minus_2 && center > center_y_minus_1) ||
+			((center > center_x_minus_2 && center > center_x_minus_1) && (center > center_x_plus_2 && center > center_x_plus_1)) )
+			return true;
+		else
+			return false;
+	}
+
+	// 348 X 0
+	else if(x == map->config.x_size-1 && y == 0)
+	{
+		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
+		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
+		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
+		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
+		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
+
+		if( ((center > center_y_plus_2 && center > center_y_plus_1)) ||
+			(center > center_x_plus_1 && (center > center_x_minus_2 && center > center_x_minus_1)) )
 			return true;
 		else
 			return false;
@@ -650,111 +672,138 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 			return false;
 	}
 
-	// 1 X 348
-	else if(x == 1 && y == map->config.y_size-2)
-	{
-		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
-		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
-		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
-		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
-		double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
-		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
+	// 348 X 2 ~ 347
+		else if(x == map->config.x_size-2 && (y >= 2 && y <= 347))
+		{
+			double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
+			double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
+			double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
+			double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
+			double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
+			double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
+			double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
 
-		if( (center > center_y_plus_1 && (center > center_y_minus_2 && center > center_y_minus_1)) ||
-			(center > center_x_minus_1 && (center > center_x_plus_2 && center > center_x_plus_1)) )
-			return true;
-		else
-			return false;
-	}
+			if( ((center > center_y_minus_2 && center > center_y_minus_1) && (center > center_y_plus_2 && center > center_y_plus_1)) || //se ponto x,y for menor que os dois y a frente
+				((center > center_x_minus_2 && center > center_x_minus_1) && center > center_x_plus_1) )
+				return true;
+			else
+				return false;
+		}
 
 	// 348 X 348
-	else if(x == map->config.x_size-2 && y == map->config.y_size-2)
+		else if(x == map->config.x_size-2 && y == map->config.y_size-2)
+		{
+			double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
+			double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
+			double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
+			double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
+			double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
+			double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
+
+			if( (center > center_y_plus_1 && (center > center_y_minus_2 && center > center_y_minus_1)) ||
+				(center > center_x_plus_1 && (center > center_x_minus_2 && center > center_x_minus_1)) )
+				return true;
+			else
+				return false;
+		}
+
+	// 348 X 349
+	else if(x == map->config.x_size-1 && y == 0)
 	{
-		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
 		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
 		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
 		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
 		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
 		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
 
-		if( (center > center_y_plus_1 && (center > center_y_minus_2 && center > center_y_minus_1)) ||
+		if( ((center > center_y_minus_2 && center > center_y_minus_1)) ||
 			(center > center_x_plus_1 && (center > center_x_minus_2 && center > center_x_minus_1)) )
 			return true;
 		else
 			return false;
 	}
 
-	// 2 ~ 347 X 0
-	else if((x == 2 && x<= map->config.x_size-3) && y == 0)
+	//349 X 0
+	else if(x == map->config.x_size-1 && y == 0)
 	{
 		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
 		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
-		double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
-		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
 		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
 		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
 
 		if( (center > center_y_plus_2 && center > center_y_plus_1) ||
-			((center > center_x_minus_2 && center > center_x_minus_1) && (center > center_x_plus_2 && center > center_x_plus_1)) )
+			(center > center_x_minus_2 && center > center_x_minus_1) )
 			return true;
 		else
 			return false;
 	}
 
-	// 2 ~ 347 X 349
-	else if((x == 2 && x<= map->config.x_size-3) && y == map->config.y_size-1)
+	// 349 X 1
+		else if(x == map->config.x_size-1 && y == 1)
+		{
+			double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
+			double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
+			double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
+			double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
+			double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
+
+			if( (center > center_y_minus_1 && (center > center_y_plus_2 && center > center_y_plus_1)) ||
+				(center > center_x_minus_2 && center > center_x_minus_1) )
+				return true;
+			else
+				return false;
+		}
+
+	// 349 X 2 ~ 347
+		else if(x == map->config.x_size-1 && (y >= 2 && y <= 347))
+		{
+			double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
+			double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
+			double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
+			double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
+			double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
+			double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
+
+			if( ((center > center_y_minus_2 && center > center_y_minus_1) && (center > center_y_plus_2 && center > center_y_plus_1)) || //se ponto x,y for menor que os dois y a frente
+				(center > center_x_minus_2 && center > center_x_minus_1) )
+				return true;
+			else
+				return false;
+		}
+
+	// 349 X 348
+		else if(x == map->config.x_size-1 && y == map->config.y_size-2)
+		{
+			double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
+			double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
+			double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
+			double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
+			double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
+
+			if( (center > center_y_plus_1 && (center > center_y_minus_2 && center > center_y_minus_1)) ||
+				(center > center_x_minus_2 && center > center_x_minus_1) )
+				return true;
+			else
+				return false;
+		}
+
+	//349 X 349
+	else if (x == map->config.x_size-1 && y == map->config.y_size-1)
 	{
 		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
 		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
-		double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
-		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
 		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
 		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
 
 		if( (center > center_y_minus_2 && center > center_y_minus_1) ||
-			((center > center_x_minus_2 && center > center_x_minus_1) && (center > center_x_plus_2 && center > center_x_plus_1)) )
+			(center > center_x_minus_2 && center > center_x_minus_1) )
 			return true;
 		else
 			return false;
 	}
 
-	// 2 ~ 347 X 1
-	else if((x == 2 && x<= map->config.x_size-3) && y == 1)
-	{
-		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
-		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
-		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
-		double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
-		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
-		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
-		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
-
-		if( (center > center_y_minus_1 && (center > center_y_plus_2 && center > center_y_plus_1)) ||
-			((center > center_x_minus_2 && center > center_x_minus_1) && (center > center_x_plus_2 && center > center_x_plus_1)) )
-			return true;
-		else
-			return false;
-	}
-
-	// 2 ~ 347 X 348
-	else if((x == 2 && x<= map->config.x_size-3) && y == map->config.y_size-2)
-	{
-		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
-		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
-		double center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y-1])->lane_center;
-		double center_x_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y])->lane_center;
-		double center_x_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y])->lane_center;
-		double center_x_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y])->lane_center;
-		double center_x_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y])->lane_center;
-
-		if( (center > center_y_plus_1 && (center > center_y_minus_2 && center > center_y_minus_1)) ||
-			((center > center_x_minus_2 && center > center_x_minus_1) && (center > center_x_plus_2 && center > center_x_plus_1)) )
-			return true;
-		else
-			return false;
-	}
-
-	else if((x >= 2 && x <= map->config.x_size-3) && (y >= 2 && x <= map->config.y_size-3))//if(point_is_in_map(map, x-2,y+2) && point_is_in_map(map, x+2,y-2) && point_is_in_map(map, x-1,y+1) && point_is_in_map(map, x+1,y-1))
+	else if((x >= 2 && x <= map->config.x_size-3) && (y >= 2 && x <= map->config.y_size-3))//*/
+	if(point_is_in_map(map, x-2,y+2) && point_is_in_map(map, x+2,y-2) && point_is_in_map(map, x-1,y+1) && point_is_in_map(map, x+1,y-1))
 	{
 		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
 		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
@@ -858,6 +907,13 @@ save_current_already_visited (int **already_visited, carmen_map_p map, string pa
 }
 
 
+void set_world_origin_to_road_map(carmen_map_p road_map)
+{
+	road_map->config.x_origin = g_x_origin;
+	road_map->config.y_origin = g_y_origin;
+}
+
+
 void
 get_next_road_map (carmen_map_p *map, string &str_road_map_filename, int op)
 {
@@ -868,7 +924,8 @@ get_next_road_map (carmen_map_p *map, string &str_road_map_filename, int op)
 
 	road_map_filename = strdup(str_road_map_filename.c_str());
 	bool valid_map_on_file = (carmen_map_read_gridmap_chunk(road_map_filename, *map) == 0);
-	parse_world_origin_to_road_map(str_road_map_filename, *map);
+	parse_world_origin_to_road_map(str_road_map_filename);
+	set_world_origin_to_road_map(*map);
 	if(!valid_map_on_file)
 	{
 		printf("mapa eh invalido!\n");getchar();
@@ -912,24 +969,29 @@ point_is_already_visited(int **already_visited, int x, int y)
 bool
 get_neighbour(carmen_position_t *neighbour, carmen_position_t current, int ** already_visited, carmen_map_p map)
 {
+	//aqui é o ponto!
+
 	for (int x = current.x - 1; x <= current.x + 1; x++)
 	{
 		for (int y = current.y - 1; y <= current.y + 1; y++)
 		{
+			//cout<<"x y for "<<x<<"\t"<<y<<endl;getchar();
 			if (point_is_in_map(map, x, y) && !point_is_already_visited(already_visited,x,y)) //só pode processar o ponto caso ele esteja entre 0 e tam_max
 			{
+				//cout<<"x y if "<<x<<"\t"<<y<<endl;getchar();
 				already_visited[x][y] = 1;
-
 				if (point_is_lane_center(map, x, y))
 				{
+					//cout<<"x y if lane center "<<x<<"\t"<<y<<endl;getchar();
 					neighbour->x = x;
 					neighbour->y = y;
-					return true;
+					return (true);
 				}
 			}
 		}
 	}
-	return false;
+	return (false);
+
 }
 
 
@@ -992,7 +1054,7 @@ A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, int **already_visite
 	int num_iter = 0;
 
 	//graph = NULL;
-
+	//cout<<x<<"\t"<<y<<endl;getchar();
 	graph = add_point_to_graph(map,graph, x, y);
 
 	if(graph->size == 1)
@@ -1020,6 +1082,7 @@ A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, int **already_visite
 					cout<<neighbour.x<<"\t"<<neighbour.y<<endl;getchar();
 				}*/
 				graph = add_point_to_graph(map, graph, neighbour.x, neighbour.y);
+				//display_graph_over_map(map, graph, already_visited, "oi", 0);
 				branch_node = graph->size - 1;
 			//}
 
@@ -1028,7 +1091,7 @@ A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, int **already_visite
 				//graph = add_point_to_graph_branch(graph, neighbour.x, neighbour.y, branch_node);
 		}
 	}
-	cout<<graph->size<<endl;getchar();
+	//cout<<graph->size<<endl;getchar();
 	return (graph);
 }
 
@@ -1057,6 +1120,63 @@ add_graph_to_graph_list(rddf_graphs_of_map_t * rddf_graphs, rddf_graph_t *graph)
 }
 
 
+int
+get_already_visited_by_origin_x_y(char *map_path, char map_type, double x_origin, double y_origin, int **already_visited)
+{
+	int ** unk_already_visited;
+
+	char full_map_path[1024];
+	double local_x_origin, local_y_origin;
+	int block_map_exists_on_file = 1;
+	int count_maps_on_file = 0;
+	int i, j, k;
+
+	if (already_visited == NULL)
+		already_visited = alloc_matrix(210/0.2, 210/0.2);
+	else
+		already_visited = set_zero_to_matrix(210/0.2, 210/0.2);
+
+	for (i = 0, k = 0; i < 3; i++)
+	{
+		for (j = 0; j < 3; j++, k++)
+		{
+			local_x_origin = x_origin + j * (210 / 3.0);
+			local_y_origin = y_origin + i * (210 / 3.0);
+
+			sprintf(full_map_path, "%s/%c%d_%d.txt", map_path, map_type, (int)local_x_origin, (int)local_y_origin);
+
+			if(already_visited_exists(full_map_path))
+			{
+				//copiar do arquivo para unk_already_visited
+			}
+			else
+			{
+				//criar novo unk_already_visited zerado
+			}
+
+			//criar bloco de already_visited (copiar unk_already_visited para already_visited)
+
+			block_map_exists_on_file = carmen_map_read_gridmap_chunk(full_map_path, &unk_map) != -1;
+
+			if (block_map_exists_on_file)
+			{
+				copy_cell_to_map(new_map, unk_map.map, k);
+				free(unk_map.map);
+				free(unk_map.complete_map);
+				free(unk_map.config.map_name);
+				count_maps_on_file++;
+			}
+		}
+	}
+
+	strcpy(new_map->config.origin, "from grid_mapping (built from blocks in files)");
+	new_map->config.x_origin = x_origin;
+	new_map->config.y_origin = y_origin;
+
+	return count_maps_on_file > 0;
+}
+
+
 void
 generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 {
@@ -1071,14 +1191,32 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 	parsed_filename = parse_filename(str_road_map_filename);
 	road_map_filenames.push_back(str_road_map_filename);
 
+	already_visited = NULL;
 	already_visited = alloc_matrix(map->config.x_size, map->config.y_size);
 
-
-	for (int x = 0; x < map->config.x_size; x++)
+	for (int x = (map->config.x_size/2) - 1; x < map->config.x_size; x++)
 	{
-		for (int y = 0; y < map->config.y_size; y++)
+		for (int y = (map->config.y_size/2) - 1; y <= (map->config.y_size/2)-1; y++)
 		{
-			if (point_is_already_visited(already_visited, x, y))
+			show_road_map(map,x,y);
+			if(x==701)
+			{
+				carmen_map_t new_map;
+				new_map.complete_map = NULL;
+				carmen_point_t pose;
+				pose.x = (x*0.2)+map->config.x_origin;
+				pose.y = (y*0.2)+map->config.y_origin;
+				int count_maps = carmen_grid_mapping_get_block_map_by_origin(g_road_map_folder,'r',pose,&new_map);
+				carmen_grid_mapping_switch_maps(map,&new_map);
+				//carmen_grid_mapping_create_new_map(new_map, 210,210,0.2,'r');
+				//carmen_grid_mapping_change_blocks_map_by_origin(pose, map, new_map);
+				show_road_map(map,x,y);
+				x = (map->config.x_size/2) - 1;
+				//cout<<new_map->config.x_origin<<"\t"<<new_map->config.y_origin;
+				//getchar();
+			}
+
+			/*if (point_is_already_visited(already_visited, x, y))
 				continue;
 			else
 			{
@@ -1092,17 +1230,19 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 						last_y = y;
 						road_begin = false;
 					}
-					if(graph == NULL)
+					if (graph == NULL)
 						last_graph_size = 0;
 					else
 						last_graph_size = graph->size;
-					graph = A_star(graph, x, y, map, already_visited);
+
+					//graph = A_star(graph, x, y, map, already_visited);
 					cout<<graph->size<<endl;
 					cout<<"graph begin\t"<<graph->point[0].x<<"\t"<<graph->point[0].y<<endl;
 					cout<<"graph end\t"<<graph->point[graph->size-1].x<<"\t"<<graph->point[graph->size-1].y<<endl;
-					display_graph_over_map(map, graph, already_visited, parsed_filename, last_graph_size);
+					//display_graph_over_map(map, graph, already_visited, parsed_filename, last_graph_size);
+					show_road_map(map,x,y);
 
-					if(graph->point[graph->size-1].x == 0 || graph->point[graph->size-1].x == map->config.x_size-1)
+					/*if (graph->point[graph->size-1].x == 2 || graph->point[graph->size-1].x == map->config.x_size-3)
 					{
 						cout<<"entrei em X"<<endl;
 						save_current_already_visited (already_visited, map, parsed_filename);
@@ -1112,14 +1252,14 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 						parsed_filename = parse_filename(str_road_map_filename);
 						clear_already_visited (already_visited, map->config.y_size);
 						already_visited = alloc_matrix(map->config.x_size, map->config.y_size);
-						if(already_visited_exists(parsed_filename))
+						if (already_visited_exists(parsed_filename))
 						{
 							already_visited = open_and_fill_road_map_already_visited(map, already_visited, parsed_filename);
 						}
-						x = 0;
-						y = graph->point[graph->size-1].y;
+						x = 2;
+						//y = graph->point[graph->size-1].y;
 					}
-					else if(graph->point[graph->size-1].y  == 0 || graph->point[graph->size-1].y  == map->config.y_size-1)
+					else if (graph->point[graph->size-1].y  == 2 || graph->point[graph->size-1].y  == map->config.y_size-3)
 					//else if(map->config.y_size - 1 - graph->point[graph->size-1].y  == map->config.y_size-3)
 					{
 						cout<<"entrei em Y"<<endl;
@@ -1134,8 +1274,8 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 						{
 							already_visited = open_and_fill_road_map_already_visited(map, already_visited, parsed_filename);
 						}
-						x = graph->point[graph->size-1].x;
-						y = 0;
+						//x = graph->point[graph->size-1].x;
+						y = 2;
 						printf("point \t %d X %d\n",x,y);
 					}
 					else
@@ -1155,10 +1295,10 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 						y = last_y;
 						road_begin = true;
 
-					}
+					}*/
 					//rddf_graphs = add_graph_to_graph_list(rddf_graphs, graph);
-				}
-			}
+				//}
+			//}
 		}
 	}
 

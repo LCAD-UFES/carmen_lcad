@@ -8,6 +8,9 @@ CXXFLAGS += -msse3 -Wno-unused-parameter -Wno-unused-but-set-variable
 LFLAGS += -lipc -lglobal
  
 SOURCES = matrix.cpp triangle.cpp filter.cpp matcher.cpp reconstruction.cpp viso.cpp viso_mono.cpp viso_stereo.cpp
+
+PUBLIC_INCLUDES = matrix.h
+
 TARGETS = libviso.a
 
 ifndef NO_PYTHON

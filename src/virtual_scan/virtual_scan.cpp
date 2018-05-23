@@ -31,7 +31,7 @@ typedef struct {
 
 
 extern int g_zi;
-extern virtual_scan_extended_t *g_virtual_scan_extended[NUMBER_OF_FRAMES_T];
+extern carmen_mapper_virtual_scan_message *g_virtual_scan_extended[NUMBER_OF_FRAMES_T];
 
 virtual_scan_track_set_t *best_track_set = NULL;
 
@@ -60,9 +60,9 @@ print_track_set(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_g
 	{
 		fprintf(track_sets, "track %d: ", i);
 		for (int j = 0; j < track_set->tracks[i]->size; j++)
-			fprintf(track_sets, "h %d - %c, index %d, zi %d;  ", j, track_set->tracks[i]->box_model_hypothesis[j].hypothesis.c,
+			fprintf(track_sets, "h %d - %c, index %d, zi %d, v %lf;  ", j, track_set->tracks[i]->box_model_hypothesis[j].hypothesis.c,
 					track_set->tracks[i]->box_model_hypothesis[j].index,
-					track_set->tracks[i]->box_model_hypothesis[j].zi);
+					track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi, track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.v);
 		fprintf(track_sets, "\n");
 	}
 
@@ -87,28 +87,43 @@ compare_angles(const void *a, const void *b)
 }
 
 
-virtual_scan_extended_t *
-sort_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan) // Verify if rays are unordered according to theta
+carmen_mapper_virtual_scan_message *
+copy_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan)
 {
-	virtual_scan_extended_t *extended_virtual_scan = (virtual_scan_extended_t *) malloc(sizeof(virtual_scan_extended_t));
-	extended_virtual_scan->points = (carmen_point_t *) malloc(virtual_scan->num_points * sizeof(carmen_point_t));
-	extended_virtual_scan->num_points = virtual_scan->num_points;
-
-	carmen_pose_3D_t world_pose = {{virtual_scan->globalpos.x, virtual_scan->globalpos.y, 0.0}, {0.0, 0.0, virtual_scan->globalpos.theta}};
-	world_pose = get_world_pose_with_velodyne_offset(world_pose);
-	extended_virtual_scan->velodyne_pos = {world_pose.position.x, world_pose.position.y, world_pose.orientation.yaw};
-
-	extended_virtual_scan->timestamp = virtual_scan->timestamp;
-	for (int i = 0; i < virtual_scan->num_points; i++)
+	carmen_mapper_virtual_scan_message *extended_virtual_scan = (carmen_mapper_virtual_scan_message *) malloc(sizeof(carmen_mapper_virtual_scan_message));
+	*extended_virtual_scan = *virtual_scan;
+	extended_virtual_scan->virtual_scan_sensor = (carmen_virtual_scan_sensor_t *) malloc(virtual_scan->num_sensors * sizeof(carmen_virtual_scan_sensor_t));
+	for (int i = 0; i < virtual_scan->num_sensors; i++)
 	{
-		extended_virtual_scan->points[i].x = virtual_scan->points[i].x;
-		extended_virtual_scan->points[i].y = virtual_scan->points[i].y;
-		double theta = atan2(virtual_scan->points[i].y - extended_virtual_scan->velodyne_pos.y, virtual_scan->points[i].x - extended_virtual_scan->velodyne_pos.x);
-		theta = carmen_normalize_theta(theta - extended_virtual_scan->velodyne_pos.theta);
-		extended_virtual_scan->points[i].theta = theta;
+		extended_virtual_scan->virtual_scan_sensor[i] = virtual_scan->virtual_scan_sensor[i];
+		extended_virtual_scan->virtual_scan_sensor[i].points = (carmen_point_t *) malloc(virtual_scan->virtual_scan_sensor[i].num_points * sizeof(carmen_point_t));
+		memcpy((void *) extended_virtual_scan->virtual_scan_sensor[i].points, (void *) virtual_scan->virtual_scan_sensor[i].points, virtual_scan->virtual_scan_sensor[i].num_points * sizeof(carmen_point_t));
 	}
-	qsort((void *) (extended_virtual_scan->points), (size_t) extended_virtual_scan->num_points, sizeof(carmen_point_t), compare_angles);
 
+	return (extended_virtual_scan);
+}
+
+
+carmen_mapper_virtual_scan_message *
+sort_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan) // Sort rays according to theta
+{
+	carmen_mapper_virtual_scan_message *extended_virtual_scan = copy_virtual_scan(virtual_scan);
+
+//	carmen_pose_3D_t world_pose = {{virtual_scan->globalpos.x, virtual_scan->globalpos.y, 0.0}, {0.0, 0.0, virtual_scan->globalpos.theta}};
+//	world_pose = get_world_pose_with_velodyne_offset(world_pose);
+//	extended_virtual_scan->velodyne_pos = {world_pose.position.x, world_pose.position.y, world_pose.orientation.yaw};
+
+	for (int s = 0; s < extended_virtual_scan->num_sensors; s++)
+	{
+		for (int i = 0; i < extended_virtual_scan->virtual_scan_sensor[s].num_points; i++)
+		{
+			double theta = atan2(extended_virtual_scan->virtual_scan_sensor[s].points[i].y - extended_virtual_scan->virtual_scan_sensor[s].sensor_pos.y,
+					extended_virtual_scan->virtual_scan_sensor[s].points[i].x - extended_virtual_scan->virtual_scan_sensor[s].sensor_pos.x);
+			theta = carmen_normalize_theta(theta - extended_virtual_scan->virtual_scan_sensor[s].sensor_pos.theta);
+			extended_virtual_scan->virtual_scan_sensor[s].points[i].theta = theta;
+		}
+		qsort((void *) (extended_virtual_scan->virtual_scan_sensor[s].points), (size_t) extended_virtual_scan->virtual_scan_sensor[s].num_points, sizeof(carmen_point_t), compare_angles);
+	}
 	return (extended_virtual_scan);
 }
 
@@ -126,46 +141,48 @@ sort_segment_points_by_angle(virtual_scan_segment_t *segment, carmen_point_t vel
 }
 
 
-virtual_scan_extended_t *
-filter_virtual_scan(virtual_scan_extended_t *virtual_scan_extended)
+carmen_mapper_virtual_scan_message *
+filter_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan_extended)
 {
-	virtual_scan_extended_t *virtual_scan_extended_filtered;
-	virtual_scan_extended_filtered = (virtual_scan_extended_t *) calloc(1, sizeof(virtual_scan_extended_t));
+	carmen_mapper_virtual_scan_message *virtual_scan_extended_filtered;
+	virtual_scan_extended_filtered = (carmen_mapper_virtual_scan_message *) calloc(1, sizeof(carmen_mapper_virtual_scan_message));
 
-	int num_points = 0;
-	for (int i = 0; i < virtual_scan_extended->num_points; i++)
+	*virtual_scan_extended_filtered = *virtual_scan_extended;
+	virtual_scan_extended_filtered->virtual_scan_sensor = (carmen_virtual_scan_sensor_t *) calloc(virtual_scan_extended->num_sensors, sizeof(carmen_virtual_scan_sensor_t));
+	for (int s = 0; s < virtual_scan_extended->num_sensors; s++)
 	{
-		if (DIST2D(virtual_scan_extended->velodyne_pos, virtual_scan_extended->points[i]) < 30.0)
+		virtual_scan_extended_filtered->virtual_scan_sensor[s] = virtual_scan_extended->virtual_scan_sensor[s];
+		int num_points = 0;
+		virtual_scan_extended_filtered->virtual_scan_sensor[s].num_points = num_points;
+		virtual_scan_extended_filtered->virtual_scan_sensor[s].points = NULL;
+		for (int i = 0; i < virtual_scan_extended->virtual_scan_sensor[s].num_points; i++)
 		{
-			int x_index_map = (int) round((virtual_scan_extended->points[i].x - x_origin) / map_resolution);
-			int y_index_map = (int) round((virtual_scan_extended->points[i].y - y_origin) / map_resolution);
-			if ((x_index_map > 0) && (x_index_map < localize_map.config.x_size) &&
-				(y_index_map > 0) && (y_index_map < localize_map.config.y_size))
+	//		if (DIST2D(virtual_scan_extended->velodyne_pos, virtual_scan_extended->points[i]) < 30.0)
 			{
-//				if (localize_map.prob[x_index_map][y_index_map] < PROB_THRESHOLD)
+				int x_index_map = (int) round((virtual_scan_extended->virtual_scan_sensor[s].points[i].x - x_origin) / map_resolution);
+				int y_index_map = (int) round((virtual_scan_extended->virtual_scan_sensor[s].points[i].y - y_origin) / map_resolution);
+				if ((x_index_map > 0) && (x_index_map < localize_map.config.x_size) &&
+					(y_index_map > 0) && (y_index_map < localize_map.config.y_size))
 				{
-					virtual_scan_extended_filtered->points = (carmen_point_t *) realloc(virtual_scan_extended_filtered->points,
+					if (localize_map.prob[x_index_map][y_index_map] < PROB_THRESHOLD)
+					{
+						virtual_scan_extended_filtered->virtual_scan_sensor[s].points = (carmen_point_t *) realloc(virtual_scan_extended_filtered->virtual_scan_sensor[s].points,
+											sizeof(carmen_point_t) * (num_points + 1));
+						virtual_scan_extended_filtered->virtual_scan_sensor[s].points[num_points] = virtual_scan_extended->virtual_scan_sensor[s].points[i];
+						num_points++;
+					}
+				}
+				else // Inclui (nao filtra) pontos fora do mapa pois o mapa pode estar simplesmente atrasado.
+				{
+					virtual_scan_extended_filtered->virtual_scan_sensor[s].points = (carmen_point_t *) realloc(virtual_scan_extended_filtered->virtual_scan_sensor[s].points,
 										sizeof(carmen_point_t) * (num_points + 1));
-					virtual_scan_extended_filtered->points[num_points] = virtual_scan_extended->points[i];
+					virtual_scan_extended_filtered->virtual_scan_sensor[s].points[num_points] = virtual_scan_extended->virtual_scan_sensor[s].points[i];
 					num_points++;
 				}
 			}
-			else // Inclui (nao filtra) pontos fora do mapa pois o mapa pode estar simplesmente atrasado.
-			{
-				virtual_scan_extended_filtered->points = (carmen_point_t *) realloc(virtual_scan_extended_filtered->points,
-									sizeof(carmen_point_t) * (num_points + 1));
-				virtual_scan_extended_filtered->points[num_points] = virtual_scan_extended->points[i];
-				num_points++;
-			}
 		}
+		virtual_scan_extended_filtered->virtual_scan_sensor[s].num_points = num_points;
 	}
-	virtual_scan_extended_filtered->num_points = num_points;
-	virtual_scan_extended_filtered->velodyne_pos = virtual_scan_extended->velodyne_pos;
-	virtual_scan_extended_filtered->timestamp = virtual_scan_extended->timestamp;
-
-//	fprintf(stdout,"virtual_scan_extended->num_points = %d\n", virtual_scan_extended->num_points);
-//	fprintf(stdout,"virtual_scan_extended_filtered->num_points = %d\n\n", virtual_scan_extended_filtered->num_points);
-//	fflush(stdout);
 
 	return (virtual_scan_extended_filtered);
 }
@@ -186,37 +203,81 @@ generate_cluster_with_all_points(carmen_point_t *points, int size)
 }
 
 
+carmen_point_t
+compute_segment_centroid(virtual_scan_segment_t virtual_scan_segment)
+{
+	carmen_point_t centroid = {0.0, 0.0, 0.0};
+
+	for (int i = 0; i < virtual_scan_segment.num_points; i++)
+	{
+		centroid.x += virtual_scan_segment.points[i].x;
+		centroid.y += virtual_scan_segment.points[i].y;
+	}
+	centroid.x /= (double) virtual_scan_segment.num_points;
+	centroid.y /= (double) virtual_scan_segment.num_points;
+
+	return (centroid);
+}
+
+
 virtual_scan_segment_classes_t *
-segment_virtual_scan(virtual_scan_extended_t *extended_virtual_scan)
+segment_virtual_scan(carmen_mapper_virtual_scan_message *extended_virtual_scan)
 {
 	virtual_scan_segment_classes_t *virtual_scan_segments = (virtual_scan_segment_classes_t *) malloc(sizeof(virtual_scan_segment_classes_t));
 	virtual_scan_segments->segment = NULL;
+	virtual_scan_segments->segment_features = NULL;
 	virtual_scan_segments->num_segments = 0;
-	virtual_scan_segments->timestamp = extended_virtual_scan->timestamp;
 
-	dbscan::Cluster single_cluster = generate_cluster_with_all_points(extended_virtual_scan->points, extended_virtual_scan->num_points);
-	dbscan::Clusters clusters = dbscan::dbscan(8.0 * PEDESTRIAN_RADIUS * PEDESTRIAN_RADIUS, MINIMUN_CLUSTER_SIZE, single_cluster);
-
-	int p_in_c = 0;
-	if (clusters.size() > 0)
+	for (int s = 0; s < extended_virtual_scan->num_sensors; s++)
 	{
-		virtual_scan_segments->segment = (virtual_scan_segment_t *) malloc(sizeof(virtual_scan_segment_t) * clusters.size());
-		virtual_scan_segments->num_segments = clusters.size();
+		dbscan::Cluster single_cluster = generate_cluster_with_all_points(extended_virtual_scan->virtual_scan_sensor[s].points, extended_virtual_scan->virtual_scan_sensor[s].num_points);
+		dbscan::Clusters clusters = dbscan::dbscan(8.0 * PEDESTRIAN_RADIUS * PEDESTRIAN_RADIUS, MINIMUN_CLUSTER_SIZE, single_cluster);
 
-		for (unsigned int segment_id = 0; segment_id < clusters.size(); segment_id++)
+		if (clusters.size() > 0)
 		{
-			dbscan::Cluster cluster = clusters[segment_id];
-			p_in_c += cluster.size();
-			virtual_scan_segments->segment[segment_id].points = (carmen_point_t *) malloc(sizeof(carmen_point_t) * cluster.size());
-			virtual_scan_segments->segment[segment_id].num_points = cluster.size();
-			for (unsigned int i = 0; i < cluster.size(); i++)
-				virtual_scan_segments->segment[segment_id].points[i] = cluster[i];
+			virtual_scan_segments->num_segments += clusters.size();
+			virtual_scan_segments->segment = (virtual_scan_segment_t *) realloc(virtual_scan_segments->segment,
+					sizeof(virtual_scan_segment_t) * virtual_scan_segments->num_segments);
+			virtual_scan_segments->segment_features = (virtual_scan_segment_features_t *) realloc(virtual_scan_segments->segment_features,
+					sizeof(virtual_scan_segment_features_t) * virtual_scan_segments->num_segments);
 
-			sort_segment_points_by_angle(&(virtual_scan_segments->segment[segment_id]), extended_virtual_scan->velodyne_pos);
+			for (unsigned int segment_id = 0; segment_id < clusters.size(); segment_id++)
+			{
+				int current_segment = virtual_scan_segments->num_segments - clusters.size() + segment_id;
+				virtual_scan_segments->segment[current_segment].zi = g_zi;
+				virtual_scan_segments->segment[current_segment].sensor = s;
+				virtual_scan_segments->segment[current_segment].sensor_id = extended_virtual_scan->virtual_scan_sensor[s].sensor_id;
+				virtual_scan_segments->segment[current_segment].sensor_pos = extended_virtual_scan->virtual_scan_sensor[s].sensor_pos;
+
+				dbscan::Cluster cluster = clusters[segment_id];
+				virtual_scan_segments->segment[current_segment].points = (carmen_point_t *) malloc(sizeof(carmen_point_t) * cluster.size());
+				virtual_scan_segments->segment[current_segment].num_points = cluster.size();
+				for (unsigned int i = 0; i < cluster.size(); i++)
+					virtual_scan_segments->segment[current_segment].points[i] = cluster[i];
+
+				virtual_scan_segments->segment[current_segment].centroid = compute_segment_centroid(virtual_scan_segments->segment[current_segment]);
+				double centroid_angle = atan2(virtual_scan_segments->segment[current_segment].centroid.y - virtual_scan_segments->segment[current_segment].sensor_pos.y,
+						virtual_scan_segments->segment[current_segment].centroid.x - virtual_scan_segments->segment[current_segment].sensor_pos.x);
+
+				double angular_distance_to_timestamp = carmen_normalize_theta(centroid_angle - virtual_scan_segments->segment[current_segment].sensor_pos.theta) -
+						extended_virtual_scan->virtual_scan_sensor[s].last_sensor_angle;
+				double delta_t = (angular_distance_to_timestamp / (2 * M_PI)) * extended_virtual_scan->virtual_scan_sensor[s].time_spent_in_the_entire_sensor_sweep;
+				virtual_scan_segments->segment[current_segment].precise_timestamp = extended_virtual_scan->virtual_scan_sensor[s].timestamp - delta_t;
+
+//				printf("sensor_id %d, sensor_tess %lf, sensor_lsa %lf, sensor_dist %lf, segment_id %d, centroid_angle %lf, sensor_angle %lf, delta_t %lf\n",
+//						virtual_scan_segments->segment[current_segment].sensor_id,
+//						extended_virtual_scan->virtual_scan_sensor[s].time_spent_in_the_entire_sensor_sweep,
+//						carmen_radians_to_degrees(extended_virtual_scan->virtual_scan_sensor[s].last_sensor_angle),
+//						DIST2D(virtual_scan_segments->segment[current_segment].sensor_pos, virtual_scan_segments->segment[current_segment].centroid),
+//						segment_id,
+//						carmen_radians_to_degrees(centroid_angle), carmen_radians_to_degrees(virtual_scan_segments->segment[current_segment].sensor_pos.theta),
+//						delta_t);
+
+				sort_segment_points_by_angle(&(virtual_scan_segments->segment[current_segment]), extended_virtual_scan->virtual_scan_sensor[s].sensor_pos);
+			}
 		}
 	}
 
-//	printf("points %d, clusters %ld, points in clusters %d\n", extended_virtual_scan->num_points, clusters.size(), p_in_c);
 	return (virtual_scan_segments);
 }
 
@@ -307,30 +368,10 @@ distance_from_point_to_line_segment_vw(carmen_position_t v, carmen_position_t w,
 }
 
 
-carmen_point_t
-compute_segment_centroid(virtual_scan_segment_t virtual_scan_segment)
-{
-	carmen_point_t centroid = {0.0, 0.0, 0.0};
-
-	for (int i = 0; i < virtual_scan_segment.num_points; i++)
-	{
-		centroid.x += virtual_scan_segment.points[i].x;
-		centroid.y += virtual_scan_segment.points[i].y;
-	}
-	centroid.x /= (double) virtual_scan_segment.num_points;
-	centroid.y /= (double) virtual_scan_segment.num_points;
-
-	return (centroid);
-}
-
-
 void
 set_segment_features(virtual_scan_segment_classes_t *virtual_scan_segment_classes, int segment, carmen_point_t first_point,
-		carmen_point_t last_point, carmen_point_t farthest_point, double width, double length,
-		int segment_class, carmen_point_t centroid)
+		carmen_point_t last_point, carmen_point_t farthest_point, double width, double length, int segment_class)
 {
-	virtual_scan_segment_classes->segment_features[segment].centroid = centroid;
-
 	virtual_scan_segment_classes->segment_features[segment].first_point = first_point;
 	virtual_scan_segment_classes->segment_features[segment].last_point = last_point;
 	virtual_scan_segment_classes->segment_features[segment].farthest_point = farthest_point;
@@ -408,26 +449,48 @@ segment_is_i_shaped(carmen_point_t first_point, carmen_point_t last_point, carme
 
 
 void
+remove_segment(virtual_scan_segment_classes_t *virtual_scan_segments, int victim)
+{
+	free(virtual_scan_segments->segment[victim].points);
+	for (int j = victim; j < virtual_scan_segments->num_segments - 1; j++)
+	{
+		virtual_scan_segments->segment[j] = virtual_scan_segments->segment[j + 1];
+		virtual_scan_segments->segment_features[j] = virtual_scan_segments->segment_features[j + 1];
+	}
+	virtual_scan_segments->num_segments--;
+	virtual_scan_segments->segment = (virtual_scan_segment_t *) realloc(virtual_scan_segments->segment,
+			sizeof(virtual_scan_segment_t) * virtual_scan_segments->num_segments);
+	virtual_scan_segments->segment_features = (virtual_scan_segment_features_t *) realloc(virtual_scan_segments->segment_features,
+			sizeof(virtual_scan_segment_features_t) * virtual_scan_segments->num_segments);
+}
+
+
+void
 classify_segments(virtual_scan_segment_classes_t *virtual_scan_segments)
 {
 	virtual_scan_segment_classes_t *virtual_scan_segment_classes = virtual_scan_segments;
-	virtual_scan_segment_classes->segment_features = (virtual_scan_segment_features_t *) malloc(sizeof(virtual_scan_segment_features_t) *
-			virtual_scan_segment_classes->num_segments);
 
 	double width = PEDESTRIAN_RADIUS, length = PEDESTRIAN_RADIUS;
-	for (int i = 0; i < virtual_scan_segments->num_segments; i++)
+	for (int i = 0; i < virtual_scan_segment_classes->num_segments; i++)
 	{
 		virtual_scan_segment_t segment = virtual_scan_segment_classes->segment[i];
 
 		carmen_point_t first_point = segment.points[0];
 		carmen_point_t last_point = segment.points[segment.num_points - 1];
-		carmen_point_t centroid = compute_segment_centroid(segment);
+		double distance_centroid_to_sensor_pos = DIST2D(segment.centroid, segment.sensor_pos);
+		if (((segment.sensor_id == VELODYNE) && (distance_centroid_to_sensor_pos > MAX_VELODYNE_SEGMENT_DISTANCE)) ||
+			((segment.sensor_id == LASER_LDMRS) && (distance_centroid_to_sensor_pos <= MAX_VELODYNE_SEGMENT_DISTANCE)))
+		{
+			remove_segment(virtual_scan_segment_classes, i);
+			i--;
+			continue;
+		}
 		double maximum_distance_to_line_segment = 0.0;
 		carmen_point_t farthest_point = get_point_farthest_to_the_line_that_connects_the_first_to_the_last_point(segment, first_point, last_point,
 				maximum_distance_to_line_segment);
 
 		int segment_class;
-		if (segment_is_mass_point(segment, centroid))
+		if (segment_is_mass_point(segment, segment.centroid))
 			segment_class = MASS_POINT;
 		else if (segment_is_i_shaped(first_point, last_point, farthest_point, maximum_distance_to_line_segment, width, length))
 			segment_class = I_SHAPED;
@@ -435,7 +498,7 @@ classify_segments(virtual_scan_segment_classes_t *virtual_scan_segments)
 			segment_class = L_SHAPED;
 
 		set_segment_features(virtual_scan_segment_classes, i, first_point, last_point,
-				farthest_point, width, length, segment_class, centroid);
+				farthest_point, width, length, segment_class);
 	}
 }
 
@@ -478,10 +541,12 @@ virtual_scan_box_model_hypotheses_t *
 virtual_scan_new_box_model_hypotheses(int length)
 {
 	virtual_scan_box_model_hypotheses_t *hypotheses = (virtual_scan_box_model_hypotheses_t *) malloc(sizeof(virtual_scan_box_model_hypotheses_t));
+
 	hypotheses->num_box_model_hypotheses = length;
 	hypotheses->box_model_hypotheses = (virtual_scan_box_models_t *) calloc(length, sizeof(virtual_scan_box_models_t));
 	hypotheses->last_box_model_hypotheses = 0;
-	return hypotheses;
+
+	return (hypotheses);
 }
 
 
@@ -627,13 +692,13 @@ append_i_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 
 
 virtual_scan_box_model_hypotheses_t *
-virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
+virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes, double frame_timestamp)
 {
 	virtual_scan_category_t categories[] = {{BUS, 2.5, 15.0}, {CAR, 1.5, 4.5}, {BIKE, 0.5, 2.1}}; // Trung-Dung Vu Thesis
 
 	int num_segments = virtual_scan_segment_classes->num_segments;
 	virtual_scan_box_model_hypotheses_t *box_model_hypotheses = virtual_scan_new_box_model_hypotheses(num_segments);
-	box_model_hypotheses->timestamp = virtual_scan_segment_classes->timestamp;
+	box_model_hypotheses->frame_timestamp = frame_timestamp;
 	for (int i = 0; i < num_segments; i++)
 	{
 		int segment_class = virtual_scan_segment_classes->segment_features[i].segment_class;
@@ -697,40 +762,39 @@ virtual_scan_free_segment_classes(virtual_scan_segment_classes_t *virtual_scan_s
 
 
 void
-virtual_scan_free_scan_extended(virtual_scan_extended_t *virtual_scan_extended)
+virtual_scan_free_scan_extended(carmen_mapper_virtual_scan_message *virtual_scan_extended)
 {
 	if (virtual_scan_extended != NULL)
 	{
-		free(virtual_scan_extended->points);
+		for (int i = 0; i < virtual_scan_extended->num_sensors; i++)
+			free(virtual_scan_extended->virtual_scan_sensor[i].points);
+
+		free(virtual_scan_extended->virtual_scan_sensor);
 		free(virtual_scan_extended);
 	}
 }
 
 
 virtual_scan_segment_classes_t *
-virtual_scan_extract_segments(virtual_scan_extended_t *virtual_scan_extended)
+virtual_scan_extract_segments(carmen_mapper_virtual_scan_message *virtual_scan_extended)
 {
-	virtual_scan_extended_t *virtual_scan_extended_filtered = filter_virtual_scan(virtual_scan_extended);
-	virtual_scan_segment_classes_t *virtual_scan_segments = segment_virtual_scan(virtual_scan_extended_filtered);
+	virtual_scan_segment_classes_t *virtual_scan_segments = segment_virtual_scan(virtual_scan_extended);
 	classify_segments(virtual_scan_segments);
-
-	virtual_scan_free_scan_extended(virtual_scan_extended_filtered);
 
 	return (virtual_scan_segments);
 }
 
 
 void 
-create_hypothesis_vertex(int h, int i, int j, virtual_scan_neighborhood_graph_t* neighborhood_graph,
-		virtual_scan_box_model_hypotheses_t* virtual_scan_box_model_hypotheses)
+create_hypothesis_vertex(int h, int i, int j, virtual_scan_neighborhood_graph_t *neighborhood_graph,
+		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
 {
 	neighborhood_graph->box_model_hypothesis[h] = (virtual_scan_box_model_hypothesis_t *) calloc(1, sizeof(virtual_scan_box_model_hypothesis_t));
 	neighborhood_graph->box_model_hypothesis[h]->hypothesis = virtual_scan_box_model_hypotheses->box_model_hypotheses[i].box[j];
 	neighborhood_graph->box_model_hypothesis[h]->hypothesis_points = virtual_scan_box_model_hypotheses->box_model_hypotheses[i].box_points[j];
-	neighborhood_graph->box_model_hypothesis[h]->zi = g_zi;
+	neighborhood_graph->box_model_hypothesis[h]->frame_timestamp = virtual_scan_box_model_hypotheses->frame_timestamp;
 	neighborhood_graph->box_model_hypothesis[h]->index = h;
 	neighborhood_graph->box_model_hypothesis[h]->already_examined = false;
-	neighborhood_graph->box_model_hypothesis[h]->timestamp = virtual_scan_box_model_hypotheses->timestamp;
 }
 
 
@@ -770,8 +834,8 @@ is_parent(int candidate_parent, int child, virtual_scan_neighborhood_graph_t *ne
 	if (neighborhood_graph->box_model_hypothesis[candidate_parent]->hypothesis.c == neighborhood_graph->box_model_hypothesis[child]->hypothesis.c)
 	{
 		double distance = DIST2D(neighborhood_graph->box_model_hypothesis[candidate_parent]->hypothesis, neighborhood_graph->box_model_hypothesis[child]->hypothesis);
-		double delta_t = neighborhood_graph->box_model_hypothesis[child]->timestamp - neighborhood_graph->box_model_hypothesis[candidate_parent]->timestamp;
-		int delta_zi = neighborhood_graph->box_model_hypothesis[child]->zi - neighborhood_graph->box_model_hypothesis[candidate_parent]->zi;
+		double delta_t = neighborhood_graph->box_model_hypothesis[child]->hypothesis_points.precise_timestamp - neighborhood_graph->box_model_hypothesis[candidate_parent]->hypothesis_points.precise_timestamp;
+		int delta_zi = neighborhood_graph->box_model_hypothesis[child]->hypothesis_points.zi - neighborhood_graph->box_model_hypothesis[candidate_parent]->hypothesis_points.zi;
 		if (delta_zi < 0)
 			delta_zi += NUMBER_OF_FRAMES_T;
 
@@ -786,8 +850,8 @@ is_parent(int candidate_parent, int child, virtual_scan_neighborhood_graph_t *ne
 void
 create_hypothesis_parent_child_edges(int child, virtual_scan_neighborhood_graph_t *neighborhood_graph, double current_timestamp)
 {
-	int num_candidate_parent = 0;
-	while ((num_candidate_parent < neighborhood_graph->size) && (neighborhood_graph->box_model_hypothesis[num_candidate_parent]->timestamp != current_timestamp))
+	int num_candidate_parent = 0; // @@@ Alberto: rever o uso do timestamp aqui. Nao da para usar o zi?
+	while ((num_candidate_parent < neighborhood_graph->size) && (neighborhood_graph->box_model_hypothesis[num_candidate_parent]->frame_timestamp != current_timestamp))
 		num_candidate_parent++;
 
 	for (int candidate_parent = 0; candidate_parent < num_candidate_parent; candidate_parent++)
@@ -889,7 +953,7 @@ int
 remove_graph_vertexes_of_victim_timestamp(double victim_timestamp, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 	int vextexes_to_remove = 0;
-	while ((vextexes_to_remove < neighborhood_graph->size) && (neighborhood_graph->box_model_hypothesis[vextexes_to_remove]->timestamp == victim_timestamp))
+	while ((vextexes_to_remove < neighborhood_graph->size) && (neighborhood_graph->box_model_hypothesis[vextexes_to_remove]->frame_timestamp == victim_timestamp))
 		vextexes_to_remove++;
 
 	free_neighborhood_graph_vextexes(neighborhood_graph, vextexes_to_remove);
@@ -1017,7 +1081,7 @@ first_neighborhood_graph_update(virtual_scan_box_model_hypotheses_t *virtual_sca
 	neighborhood_graph->size = num_hypotheses;
 
 	neighborhood_graph->number_of_frames_filled = 0;
-	neighborhood_graph->last_frames_timetamps[neighborhood_graph->number_of_frames_filled] = virtual_scan_box_model_hypotheses->timestamp;
+	neighborhood_graph->last_frames_timetamps[neighborhood_graph->number_of_frames_filled] = virtual_scan_box_model_hypotheses->frame_timestamp;
 	neighborhood_graph->number_of_frames_filled = 1;
 
 	return (neighborhood_graph);
@@ -1053,7 +1117,7 @@ neighborhood_graph_update(virtual_scan_box_model_hypotheses_t *virtual_scan_box_
 		for (int j = 0; j < num_boxes; j++, h++)
 		{
 			create_hypothesis_sibling_edges(h, previous_h, num_boxes, neighborhood_graph);
-			create_hypothesis_parent_child_edges(h, neighborhood_graph, virtual_scan_box_model_hypotheses->timestamp);
+			create_hypothesis_parent_child_edges(h, neighborhood_graph, virtual_scan_box_model_hypotheses->frame_timestamp);
 		}
 	}
 	neighborhood_graph->size += num_hypotheses;
@@ -1070,7 +1134,7 @@ neighborhood_graph_update(virtual_scan_box_model_hypotheses_t *virtual_scan_box_
 		neighborhood_graph->number_of_frames_filled -= 1;
 	}
 
-	neighborhood_graph->last_frames_timetamps[neighborhood_graph->number_of_frames_filled] = virtual_scan_box_model_hypotheses->timestamp;
+	neighborhood_graph->last_frames_timetamps[neighborhood_graph->number_of_frames_filled] = virtual_scan_box_model_hypotheses->frame_timestamp;
 	neighborhood_graph->number_of_frames_filled += 1;
 
 	return (neighborhood_graph);
@@ -1287,16 +1351,17 @@ get_points_inside_and_outside_scaled_rectangle(carmen_point_t *&points_inside_re
 		int &num_points_inside_rectangle, int &num_points_outside_rectangle,
 		virtual_scan_box_model_hypothesis_t *box_model_hypothesis, double scale)
 {
-	int num_points = g_virtual_scan_extended[box_model_hypothesis->zi]->num_points;
-	carmen_point_t *point = g_virtual_scan_extended[box_model_hypothesis->zi]->points;
-	carmen_position_t velodyne_pos = {g_virtual_scan_extended[box_model_hypothesis->zi]->velodyne_pos.x, g_virtual_scan_extended[box_model_hypothesis->zi]->velodyne_pos.y};
+	int num_points = g_virtual_scan_extended[box_model_hypothesis->hypothesis_points.zi]->virtual_scan_sensor[box_model_hypothesis->hypothesis_points.sensor].num_points;
+	carmen_point_t *point = g_virtual_scan_extended[box_model_hypothesis->hypothesis_points.zi]->virtual_scan_sensor[box_model_hypothesis->hypothesis_points.sensor].points;
+	carmen_position_t sensor_pos = {g_virtual_scan_extended[box_model_hypothesis->hypothesis_points.zi]->virtual_scan_sensor[box_model_hypothesis->hypothesis_points.sensor].sensor_pos.x,
+			g_virtual_scan_extended[box_model_hypothesis->hypothesis_points.zi]->virtual_scan_sensor[box_model_hypothesis->hypothesis_points.sensor].sensor_pos.y};
 
 	points_inside_rectangle = (carmen_point_t *) malloc(sizeof(carmen_point_t) * num_points);
 	points_outside_rectangle = (carmen_point_t *) malloc(sizeof(carmen_point_t) * num_points);
 	num_points_inside_rectangle = num_points_outside_rectangle = 0;
 	for (int i = 0; i < num_points; i++)
 	{
-		double velodyne_to_point_angle = atan2(velodyne_pos.y - point[i].y, velodyne_pos.x - point[i].x);
+		double velodyne_to_point_angle = atan2(sensor_pos.y - point[i].y, sensor_pos.x - point[i].x);
 		bool acceptable_angle_diff = carmen_normalize_theta(velodyne_to_point_angle - point[i].theta) < (M_PI / 1.5);
 		if (acceptable_angle_diff && point_inside_scaled_rectangle(point[i], box_model_hypothesis->hypothesis, scale))
 		{
@@ -1317,14 +1382,15 @@ get_points_inside_and_outside_scaled_rectangle(carmen_point_t *&points_inside_re
 		int &num_points_inside_rectangle, int &num_points_outside_rectangle, carmen_point_t *point, int num_points,
 		virtual_scan_box_model_hypothesis_t *box_model_hypothesis, double scale)
 {
-	carmen_position_t velodyne_pos = {g_virtual_scan_extended[box_model_hypothesis->zi]->velodyne_pos.x, g_virtual_scan_extended[box_model_hypothesis->zi]->velodyne_pos.y};
+	carmen_position_t sensor_pos = {g_virtual_scan_extended[box_model_hypothesis->hypothesis_points.zi]->virtual_scan_sensor[box_model_hypothesis->hypothesis_points.sensor].sensor_pos.x,
+			g_virtual_scan_extended[box_model_hypothesis->hypothesis_points.zi]->virtual_scan_sensor[box_model_hypothesis->hypothesis_points.sensor].sensor_pos.y};
 
 	points_inside_rectangle = (carmen_point_t *) malloc(sizeof(carmen_point_t) * num_points);
 	points_outside_rectangle = (carmen_point_t *) malloc(sizeof(carmen_point_t) * num_points);
 	num_points_inside_rectangle = num_points_outside_rectangle = 0;
 	for (int i = 0; i < num_points; i++)
 	{
-		double velodyne_to_point_angle = atan2(velodyne_pos.y - point[i].y, velodyne_pos.x - point[i].x);
+		double velodyne_to_point_angle = atan2(sensor_pos.y - point[i].y, sensor_pos.x - point[i].x);
 		bool acceptable_angle_diff = carmen_normalize_theta(velodyne_to_point_angle - point[i].theta) < (M_PI / 1.5);
 		if (acceptable_angle_diff && point_inside_scaled_rectangle(point[i], box_model_hypothesis->hypothesis, scale))
 		{
@@ -1416,7 +1482,9 @@ PM1(carmen_point_t *Zd, int Zd_size, virtual_scan_box_model_hypothesis_t *box_mo
 double
 PM2(carmen_point_t *Zs_out, int Zs_out_size, virtual_scan_box_model_hypothesis_t *box_model_hypothesis)
 {
-	carmen_position_t velodyne_pos = {g_virtual_scan_extended[box_model_hypothesis->zi]->velodyne_pos.x, g_virtual_scan_extended[box_model_hypothesis->zi]->velodyne_pos.y};
+	carmen_position_t sensor_pos = {g_virtual_scan_extended[box_model_hypothesis->hypothesis_points.zi]->virtual_scan_sensor[box_model_hypothesis->hypothesis_points.sensor].sensor_pos.x,
+			g_virtual_scan_extended[box_model_hypothesis->hypothesis_points.zi]->virtual_scan_sensor[box_model_hypothesis->hypothesis_points.sensor].sensor_pos.y};
+
 	carmen_rectangle_t rectangle = {box_model_hypothesis->hypothesis.x, box_model_hypothesis->hypothesis.y, box_model_hypothesis->hypothesis.theta,
 			box_model_hypothesis->hypothesis.length, box_model_hypothesis->hypothesis.width};
 	carmen_position_t nearest_intersection;
@@ -1425,10 +1493,10 @@ PM2(carmen_point_t *Zs_out, int Zs_out_size, virtual_scan_box_model_hypothesis_t
 	for (int i = 0; i < Zs_out_size; i++)
 	{
 		carmen_position_t point = {Zs_out[i].x, Zs_out[i].y};
-		double velodyne_to_point_angle = atan2(velodyne_pos.y - point.y, velodyne_pos.x - point.x);
+		double velodyne_to_point_angle = atan2(sensor_pos.y - point.y, sensor_pos.x - point.x);
 		bool acceptable_angle_diff = carmen_normalize_theta(velodyne_to_point_angle - Zs_out[i].theta) < (M_PI / 1.5);
 		if (acceptable_angle_diff)
-			sum += (double) carmen_line_to_point_crossed_rectangle(&nearest_intersection, velodyne_pos, point, rectangle);
+			sum += (double) carmen_line_to_point_crossed_rectangle(&nearest_intersection, sensor_pos, point, rectangle);
 	}
 
 	return (sum);
@@ -1667,6 +1735,8 @@ track_extension(virtual_scan_track_set_t *track_set, int track_id, virtual_scan_
 		else
 			break;
 	} while (carmen_uniform_random(0.0, 1.0) > GAMMA);
+
+	update_hypotheses_state(track_set->tracks[track_id]);
 }
 
 
@@ -1699,6 +1769,8 @@ track_reduction(virtual_scan_track_set_t *track_set, int track_id)
 
 		track->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) realloc(track->box_model_hypothesis,
 				track->size * sizeof(virtual_scan_box_model_hypothesis_t));
+
+		update_hypotheses_state(track);
 	}
 }
 
@@ -1709,6 +1781,26 @@ track_death(virtual_scan_track_set_t *track_set, int victim)
 	for (int i = 0; i < track_set->tracks[victim]->size; i++)
 		track_set->vertex_selected[track_set->tracks[victim]->box_model_hypothesis[i].index] = false;
 
+	if (track_set->size > 1)
+	{
+		free_track(track_set->tracks[victim]);
+		memmove((void *) &(track_set->tracks[victim]), &(track_set->tracks[victim + 1]), (track_set->size - (victim + 1)) * sizeof(virtual_scan_track_t *));
+		// Tinha que fazer um realloc do track_set aqui...
+		track_set->size -= 1;
+	}
+	else
+	{
+		free_track_set(track_set);
+		track_set = NULL;
+	}
+
+	return (track_set);
+}
+
+
+virtual_scan_track_set_t *
+track_removal(virtual_scan_track_set_t *track_set, int victim)
+{
 	if (track_set->size > 1)
 	{
 		free_track(track_set->tracks[victim]);
@@ -1751,6 +1843,9 @@ track_split(virtual_scan_track_set_t *track_set, int track_id)
 				old_track->size * sizeof(virtual_scan_box_model_hypothesis_t));
 
 		track_set->size += 1;
+
+		update_hypotheses_state(new_track);
+		update_hypotheses_state(old_track);
 	}
 }
 
@@ -1824,6 +1919,8 @@ track_merge(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_graph
 				(track_set->size - (idx_track2 + 1)) * sizeof(virtual_scan_track_t *));
 		// Tinha que fazer um realloc do track_set aqui...
 		track_set->size -= 1;
+
+		update_hypotheses_state(track1);
 	}
 }
 
@@ -1910,6 +2007,7 @@ track_switch(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_grap
 
 		virtual_scan_box_model_hypothesis_t *box_model_hypothesis_copy =
 				(virtual_scan_box_model_hypothesis_t *) malloc((track1->size - p - 1) * sizeof(virtual_scan_box_model_hypothesis_t));
+
 		for (int i = p + 1; i < track1->size; i++)
 			box_model_hypothesis_copy[i - (p + 1)] = track1->box_model_hypothesis[i];
 
@@ -1922,6 +2020,11 @@ track_switch(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_grap
 							(q + 1 + (track1->size - p - 1)) * sizeof(virtual_scan_box_model_hypothesis_t));
 		for (int i = q + 1; (i - (q + 1)) < (track1->size - p - 1); i++)
 			track2->box_model_hypothesis[i] = box_model_hypothesis_copy[i - (q + 1)];
+
+		free(box_model_hypothesis_copy);
+
+		update_hypotheses_state(track1);
+		update_hypotheses_state(track2);
 	}
 }
 
@@ -1989,6 +2092,61 @@ stop_condition(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_gr
 }
 
 
+double
+average_track_velocity(virtual_scan_track_t *track)
+{
+	if (track->size < 3)
+		return (-1.0); // velocidade invalida - velocidades sao sempre positivas e orientadas por um angulo que nao eh considerado aqui
+
+	double average_v = 0.0;
+	for (int i = 0; i < track->size; i++)
+		average_v += track->box_model_hypothesis[i].hypothesis_state.v;
+
+	average_v = fabs(average_v / (double) track->size);
+
+	return (average_v);
+}
+
+
+bool
+too_slow(virtual_scan_track_t *track, double v)
+{
+	if (v < 0.0)
+		return (false); // velocidade invalida - velocidades sao sempre positivas e orientadas por um angulo que nao eh considerado aqui
+
+	double min_v = GET_MIN_V_PER_OBJECT_CLASS(track->box_model_hypothesis[0].hypothesis.c);
+	if (v < min_v)
+		return (true);
+
+	return (false);
+}
+
+
+virtual_scan_track_set_t *
+filter_track_set(virtual_scan_track_set_t *track_set)
+{
+	if (track_set == NULL)
+		return (NULL);
+
+	int i = 0;
+	while (i < track_set->size)
+	{
+		int previous_track_set_size = track_set->size;
+
+		if (too_slow(track_set->tracks[i], average_track_velocity(track_set->tracks[i])))
+			track_set = track_removal(track_set, i);
+
+		if (track_set == NULL)
+			return (NULL);
+
+		if (previous_track_set_size == track_set->size)
+			i++;
+	}
+
+	return (track_set);
+}
+
+
 virtual_scan_track_set_t *
 propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_track_set_t *track_set_n_1)
 {
@@ -2006,11 +2164,13 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 
 	virtual_scan_track_set_t *track_set = copy_track_set(track_set_n_1, neighborhood_graph);
 
-//	print_track_set(track_set, neighborhood_graph, num_proposal);
-//	if (track_set != NULL)
+//	if (neighborhood_graph->graph_id == 7)
 //	{
+//		char *move[] = {(char *) "Birth", (char *) "Extension", (char *) "reduction", (char *) "Death", (char *) "Split",
+//				(char *) "Merge", (char *) "Switch", (char *) "Diffusion"};
+//		print_track_set(track_set, neighborhood_graph, 777);
 //		FILE *track_sets = fopen("track_sets.txt", "a");
-//		fprintf(track_sets, "rand_move %d, rand_track %d\n", rand_move, rand_track);
+//		fprintf(track_sets, "\nrand_move %s, rand_track %d\n", move[rand_move], rand_track);
 //		fclose(track_sets);
 //	}
 
@@ -2051,9 +2211,8 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 //			break;
 	}
 
-//	print_track_set(track_set, neighborhood_graph, num_proposal++);
-//	if (stop_condition(track_set, neighborhood_graph))
-//		printf("stop condition\n");
+//	if (neighborhood_graph->graph_id == 7)
+//		print_track_set(track_set, neighborhood_graph, 888);
 
 	return (track_set);
 }
@@ -2105,16 +2264,40 @@ largest_track_size(virtual_scan_track_set_t *track_set)
 
 
 virtual_scan_track_set_t *
+filter_best_track_set(virtual_scan_track_set_t *best_track_set)
+{
+	if (best_track_set == NULL)
+		return (NULL);
+
+	int i = 0;
+	while (i < best_track_set->size)
+	{
+		int previous_track_set_size = best_track_set->size;
+
+		virtual_scan_box_model_hypothesis_t last_hypothesis = best_track_set->tracks[i]->box_model_hypothesis[best_track_set->tracks[i]->size - 1];
+		int delta_frames = g_zi - last_hypothesis.hypothesis_points.zi;
+		if (delta_frames < 0)
+			delta_frames += NUMBER_OF_FRAMES_T;
+		if ((best_track_set->tracks[i]->size < 3) || (delta_frames >= 3) || (fabs(last_hypothesis.hypothesis_state.v) < 0.1))
+			best_track_set = track_death(best_track_set, i);
+
+		if (best_track_set == NULL)
+			return (NULL);
+
+		if (previous_track_set_size == best_track_set->size)
+			i++;
+	}
+
+	return (best_track_set);
+}
+
+
+virtual_scan_track_set_t *
 virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 	virtual_scan_track_set_t *track_set_n = copy_track_set(best_track_set, neighborhood_graph);
 	for (int n = 0; n < MCMC_MAX_ITERATIONS; n++)
 	{
-//		if (neighborhood_graph->graph_id == 7)
-//		{
-//			print_track_set(track_set_n, neighborhood_graph, 999);
-//			printf("pare\n");
-//		}
 		virtual_scan_track_set_t *track_set_prime = propose_track_set_according_to_q(neighborhood_graph, track_set_n);
 		virtual_scan_track_set_t *track_set_victim = track_set_prime;
 		double U = carmen_uniform_random(0.0, 1.0);
@@ -2132,7 +2315,11 @@ virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhoo
 	}
 	free_track_set(track_set_n);
 
-	double best_track_prob = probability_of_track_set_given_measurements(best_track_set);
+	best_track_set = filter_best_track_set(best_track_set);
+
+	best_track_set = filter_track_set(best_track_set);
+
+	double best_track_prob = probability_of_track_set_given_measurements(best_track_set, true);
 	printf("num_tracks %d, largest track %d, prob %lf\n", (best_track_set)? best_track_set->size: 0, largest_track_size(best_track_set), best_track_prob);
 	print_track_set(best_track_set, neighborhood_graph, 0);
 

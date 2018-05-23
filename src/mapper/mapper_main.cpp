@@ -90,6 +90,12 @@ bool offline_map_available = false;
 int ok_to_publish = 0;
 int number_of_threads = 1;
 
+/******variables for neural_mapper dataset*****/
+int generate_neural_mapper_dataset = 0;
+int neural_mapper_max_distance_meters = 0;
+int neural_mapper_data_pace = 0;
+/**********************/
+
 rotation_matrix *r_matrix_car_to_global = NULL;
 
 int use_truepos = 0;
@@ -156,6 +162,22 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
 	}
 }
+
+
+void
+free_virtual_scan_message()
+{
+	if (virtual_scan_message.num_sensors != 0)
+	{
+		for (int i = 0; i < virtual_scan_message.num_sensors; i++)
+		{
+			free(virtual_scan_message.virtual_scan_sensor[i].points);
+			free(virtual_scan_message.virtual_scan_sensor);
+			virtual_scan_message.virtual_scan_sensor = NULL;
+			virtual_scan_message.num_sensors = 0;
+		}
+	}
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -174,12 +196,8 @@ publish_map(double timestamp)
 
 
 void
-publish_virtual_scan(carmen_point_t globalpos, double v, double phi, double timestamp)
+publish_virtual_scan(double timestamp)
 {
-//	printf("%d\n", virtual_scan_message.num_points);
-	virtual_scan_message.globalpos = globalpos;
-	virtual_scan_message.v = v;
-	virtual_scan_message.phi = phi;
 	carmen_mapper_publish_virtual_scan_message(&virtual_scan_message, timestamp);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -228,7 +246,8 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	if (ok_to_publish)
 	{
-		virtual_scan_message.num_points = 0;
+		free_virtual_scan_message();
+
 		// A ordem é importante
 		if (sensors_params[VELODYNE].alive)
 			include_sensor_data_into_map(VELODYNE, globalpos_message);
@@ -236,7 +255,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 			include_sensor_data_into_map(LASER_LDMRS, globalpos_message);
 
 		publish_map(globalpos_message->timestamp);
-		publish_virtual_scan(globalpos_message->globalpos, globalpos_message->v, globalpos_message->phi, globalpos_message->timestamp);
+		publish_virtual_scan(globalpos_message->timestamp);
 	}
 }
 
@@ -260,56 +279,9 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 
 
 static void
-laser_ldrms_message_handler(carmen_laser_ldmrs_message *laser)
+laser_ldrms_message_handler(carmen_laser_ldmrs_message *laser) // old handler not used anymore
 {
-//	FILE *f = fopen("scan.txt", "w");
-//	fprintf(f, "%d %f %f %d %f %f %d \n",
-//			laser->scan_number,
-//			laser->scan_start_time,
-//			laser->scan_end_time,
-//			laser->angle_ticks_per_rotation,
-//			laser->start_angle,
-//			laser->end_angle,
-//			laser->scan_points);
-
-//	for (int i = 0; i < laser->scan_points; i++)
-//	{
-//		fprintf(f, "%f %f %f %d \n",
-//					laser->arraypoints[i].horizontal_angle,
-//					laser->arraypoints[i].vertical_angle,
-//					laser->arraypoints[i].radial_distance,
-//					laser->arraypoints[i].flags);
-//	}
-//	fflush(f);
-//	fclose(f);
-//
-//	FILE *f1 = fopen("scan1.txt", "w");
-//	for (int i = 0; i < laser->scan_points; i++)
-//	{
-//		double distance = laser->arraypoints[i].radial_distance;
-//		double angle = laser->arraypoints[i].horizontal_angle;
-//		fprintf(f1, "%f %f %f \n",
-//					cos(carmen_degrees_to_radians(angle)) * distance,
-//					sin(carmen_degrees_to_radians(angle)) * distance,
-//					distance);
-//	}
-//	fflush(f1);
-//	fclose(f1);
-
 	carmen_velodyne_partial_scan_message partial_scan_message = carmen_laser_ldmrs_convert_laser_scan_to_partial_velodyne_message(laser, laser->timestamp);
-
-//	FILE *f2 = fopen("scan2.txt", "w");
-//	for (int i = 0; i < partial_scan_message.number_of_32_laser_shots; i++)
-//	{
-//		double distance = (double) partial_scan_message.partial_scan[i].distance[1] / 500.0;
-//		double angle = partial_scan_message.partial_scan[i].angle;
-//		fprintf(f2, "%f %f %f \n",
-//					cos(carmen_degrees_to_radians(angle)) * distance,
-//					sin(carmen_degrees_to_radians(angle)) * distance,
-//					distance);
-//	}
-//	fflush(f2);
-//	fclose(f2);
 
 	if (partial_scan_message.number_of_32_laser_shots > 0)
 	{
@@ -322,7 +294,49 @@ laser_ldrms_message_handler(carmen_laser_ldmrs_message *laser)
 static void
 laser_ldrms_new_message_handler(carmen_laser_ldmrs_new_message *laser)
 {
+//	FILE *f = fopen("scan.txt", "a");
+//	fprintf(f, "\n\n%d %lf %lf %d %f %f %d \n\n",
+//			laser->scan_number,
+//			laser->scan_start_time,
+//			laser->scan_end_time,
+//			laser->angle_ticks_per_rotation,
+//			laser->start_angle,
+//			laser->end_angle,
+//			laser->scan_points);
+//
+//	for (int i = 0; i < laser->scan_points; i++)
+//	{
+//		fprintf(f, "index %d, layer %d, ha %f, va %f, d %f, flags %d \n", i, laser->arraypoints[i].layer,
+//					carmen_radians_to_degrees(laser->arraypoints[i].horizontal_angle),
+//					carmen_radians_to_degrees(laser->arraypoints[i].vertical_angle),
+//					laser->arraypoints[i].radial_distance,
+//					laser->arraypoints[i].flags);
+//	}
+//	fflush(f);
+//	fclose(f);
+
 	carmen_velodyne_partial_scan_message partial_scan_message = carmen_laser_ldmrs_new_convert_laser_scan_to_partial_velodyne_message(laser, laser->timestamp);
+
+//	f = fopen("scan.txt", "a");
+//	fprintf(f, "\n\n%d %lf %lf %d %f %f %d \n\n",
+//			laser->scan_number,
+//			laser->scan_start_time,
+//			laser->scan_end_time,
+//			laser->angle_ticks_per_rotation,
+//			laser->start_angle,
+//			laser->end_angle,
+//			laser->scan_points);
+//
+//	for (int i = 0; i < partial_scan_message.number_of_32_laser_shots; i++)
+//	{
+//		for (int j = 0; j < 4; j++)
+//			fprintf(f, "index %d, ha %lf, d %lf\n", i,
+//						partial_scan_message.partial_scan[i].angle,
+//						(double) partial_scan_message.partial_scan[i].distance[j] / 500.0);
+//	}
+//	fflush(f);
+//	fclose(f);
+
 	if (partial_scan_message.number_of_32_laser_shots > 0)
 	{
 		mapper_velodyne_partial_scan(1, &partial_scan_message);
@@ -1064,6 +1078,10 @@ read_parameters(int argc, char **argv,
 	{
 		{(char *) "commandline", (char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
 		{(char *) "commandline", (char *) "save_calibration_file", CARMEN_PARAM_STRING, &save_calibration_file, 0, NULL},
+		{(char *) "commandline", (char *) "generate_neural_mapper_dataset", CARMEN_PARAM_ONOFF, &generate_neural_mapper_dataset, 0, NULL},
+		{(char *) "commandline", (char *) "neural_mapper_max_distance_meters", CARMEN_PARAM_INT, &neural_mapper_max_distance_meters, 0, NULL},
+		{(char *) "commandline", (char *) "neural_mapper_data_pace", CARMEN_PARAM_INT, &neural_mapper_data_pace, 0, NULL}
+
 	};
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));

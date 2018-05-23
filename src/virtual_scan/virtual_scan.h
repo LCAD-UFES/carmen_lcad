@@ -19,6 +19,8 @@
 #define	BIKE		'b' // Width: 1,20 m; Length: 2,20 m
 #define	PEDESTRIAN	'P'
 
+#define GET_MIN_V_PER_OBJECT_CLASS(c) ((c == BUS)? 0.5: (c == CAR)? 0.5: (c == BIKE)? 0.5: (c == PEDESTRIAN)? 0.2: 0.5)
+
 #define CHILD_EDGE 		'C'
 #define PARENT_EDGE 	'P'
 #define SIBLING_EDGE 	'S'
@@ -43,18 +45,18 @@
 
 #define NUMBER_OF_FRAMES_T 10
 
-
-typedef struct
-{
-	int num_points;
-	carmen_point_t *points;
-	carmen_point_t velodyne_pos;
-	double timestamp;
-} virtual_scan_extended_t;
+#define MAX_VELODYNE_SEGMENT_DISTANCE 25.0
 
 
 typedef struct
 {
+	int zi;
+	int sensor;
+	int sensor_id;
+	carmen_point_t sensor_pos;
+	carmen_point_t centroid;
+	double precise_timestamp;
+
 	int num_points;
 	carmen_point_t *points;
 } virtual_scan_segment_t;
@@ -64,7 +66,6 @@ typedef struct
 {
 	int num_segments;
 	virtual_scan_segment_t *segment;
-	double timestamp;
 } virtual_scan_segments_t;
 
 
@@ -76,7 +77,6 @@ typedef struct
 	double width;
 	double length;
 	int segment_class;
-	carmen_point_t centroid;
 } virtual_scan_segment_features_t;
 
 
@@ -85,7 +85,6 @@ typedef struct
 	int num_segments;
 	virtual_scan_segment_t *segment;
 	virtual_scan_segment_features_t *segment_features;
-	double timestamp;
 } virtual_scan_segment_classes_t;
 
 
@@ -113,7 +112,7 @@ typedef struct
 	int num_box_model_hypotheses;
 	virtual_scan_box_models_t *box_model_hypotheses; // Varios boxes por segmento do scan
 	int last_box_model_hypotheses;
-	double timestamp;
+	double frame_timestamp;
 } virtual_scan_box_model_hypotheses_t;
 
 
@@ -135,21 +134,29 @@ typedef struct
 
 typedef struct
 {
+	double x;
+	double y;
+	double theta;
+	double v;
+	double a;
+	double d_theta;
+	bool initialized;
+} virtual_scan_hypothesis_state_t;
+
+
+typedef struct
+{
 	int index;
 	virtual_scan_box_model_t hypothesis;
 	virtual_scan_segment_t hypothesis_points;
-	int zi;
-
-	double v;
-	double d_theta;
+	virtual_scan_hypothesis_state_t hypothesis_state;
 
 	double dn;
 	double c2;
 	double c3;
 
 	bool already_examined;
-
-	double timestamp;
+	double frame_timestamp;
 } virtual_scan_box_model_hypothesis_t;
 
 
@@ -194,11 +201,11 @@ typedef struct
 } simulated_moving_object_initial_state_t;
 
 
-virtual_scan_extended_t *
+carmen_mapper_virtual_scan_message *
 sort_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan);
 
-void
-virtual_scan_free_extended(virtual_scan_extended_t *virtual_scan_extended);
+carmen_mapper_virtual_scan_message *
+filter_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan_extended);
 
 virtual_scan_box_models_t *
 virtual_scan_new_box_models(void);
@@ -213,16 +220,19 @@ virtual_scan_box_models_t *
 virtual_scan_get_box_models(virtual_scan_box_model_hypotheses_t *hypotheses, int i);
 
 virtual_scan_segment_classes_t *
-virtual_scan_extract_segments(virtual_scan_extended_t *virtual_scan_extended);
+virtual_scan_extract_segments(carmen_mapper_virtual_scan_message *virtual_scan_extended);
+
+carmen_mapper_virtual_scan_message *
+copy_virtual_scan_message(carmen_mapper_virtual_scan_message *virtual_scan);
 
 void
-virtual_scan_free_scan_extended(virtual_scan_extended_t *virtual_scan_extended);
+virtual_scan_free_scan_extended(carmen_mapper_virtual_scan_message *virtual_scan_extended);
 
 void
 virtual_scan_free_segment_classes(virtual_scan_segment_classes_t *virtual_scan_segment_classes);
 
 virtual_scan_box_model_hypotheses_t *
-virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes);
+virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes, double frame_timestamp);
 
 void
 virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
@@ -244,5 +254,8 @@ virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhoo
 
 double
 probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set, bool print = false);
+
+void
+update_hypotheses_state(virtual_scan_track_t *track);
 
 #endif /* SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_H_ */

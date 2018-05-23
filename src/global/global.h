@@ -117,6 +117,8 @@ extern "C" {
 #define DIST2D(x1,x2) (sqrt(((x1).x - (x2).x) * ((x1).x - (x2).x) + \
 							((x1).y - (x2).y) * ((x1).y - (x2).y)))
 
+#define ANGLE2D(x1,x2) (atan2(((x2).y - (x1).y), ((x2).x - (x1).x)))
+
 #define DIST2D_P(x1,x2) (sqrt(((x1)->x - (x2)->x) * ((x1)->x - (x2)->x) + \
 							((x1)->y - (x2)->y) * ((x1)->y - (x2)->y)))
 

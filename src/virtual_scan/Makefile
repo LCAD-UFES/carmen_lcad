@@ -8,20 +8,25 @@ CFLAGS += -Wall -std=c++0x
 CXXFLAGS += -Wall -std=c++0x
 LINK = g++
 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libviso2.3/src 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libclustering
+
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libelas
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libclustering
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 LFLAGS += \
 	-lgrid_mapping -lmap_io -lmap_interface -lmapper_interface -lparam_interface -lipc -lglobal -lmap_server_interface \
 	-lmoving_objects_interface -lvelodyne_interface -ltf -lboost_thread-mt -lboost_signals -lboost_system -ldbscan \
-	-llocalize_ackerman_interface -lrddf_interface -lcollision_detection
+	-llocalize_ackerman_interface -lrddf_interface -lcollision_detection -lelas
 
 SOURCES = \
 	virtual_scan_main.cpp \
 	virtual_scan.cpp \
 	probability_of_track_set.cpp \
-	virtual_scan_interface.cpp
+	virtual_scan_interface.cpp \
+	imm.cpp \
+	kalman_filter_and_imm_tests.cpp
 
 PUBLIC_INCLUDES = \
 	virtual_scan_interface.h \
@@ -31,10 +36,11 @@ PUBLIC_LIBRARIES = \
 	libvirtual_scan_interface.a
 
 PUBLIC_BINARIES = \
+	kalman_filter_and_imm_tests \
 	virtual_scan 
 	
 TARGETS = \
-	libvirtual_scan_interface.a libclustering \
+	libvirtual_scan_interface.a libclustering kalman_filter_and_imm_tests \
 	virtual_scan 
 	
 # If you set graphics support in configure.
@@ -64,6 +70,11 @@ virtual_scan: \
 	virtual_scan_main.o \
 	virtual_scan.o \
 	probability_of_track_set.o \
-	virtual_scan_interface.o
+	virtual_scan_interface.o \
+	imm.o
+
+kalman_filter_and_imm_tests: \
+	kalman_filter_and_imm_tests.o
+
 
 include ../Makefile.rules

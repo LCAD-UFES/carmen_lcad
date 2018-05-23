@@ -24,14 +24,16 @@
 //#include "DetectNet.hpp"
 #include "Darknet.hpp" /*< Yolo V2 */
 #include "lane_detector.hpp"
-#include "lane_detector_messages.h"
+
+#include <carmen/lane_detector_messages.h>
+#include <carmen/lane_detector_interface.h>
 
 #include <cstdlib> /*< std::getenv */
 #include <fstream>
 #include <math.h>
 
 #define SHOW_DETECTIONS
-#define SHOW_BBOX true
+#define SHOW_BBOX false
 // camera number and side
 int camera;
 int camera_side;
@@ -45,7 +47,7 @@ const unsigned int maxPositions = 50;
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
 std::vector<carmen_velodyne_partial_scan_message> velodyne_vector;
 
-#define USE_YOLO_V2 	1
+#define USE_YOLO_V2 publish	1
 #define USE_DETECTNET 	0
 
 
@@ -66,8 +68,10 @@ find_velodyne_most_sync_with_cam(double bumblebee_timestamp)
     carmen_velodyne_partial_scan_message velodyne;
     double minTimestampDiff = DBL_MAX;
     int minTimestampIndex = -1;
-    for (unsigned int i = 0; i < velodyne_vector.size(); i++) {
-        if (fabs(velodyne_vector[i].timestamp - bumblebee_timestamp) < minTimestampDiff) {
+    for (unsigned int i = 0; i < velodyne_vector.size(); i++)
+    {
+        if (fabs(velodyne_vector[i].timestamp - bumblebee_timestamp) < minTimestampDiff)
+        {
             minTimestampIndex = i;
             minTimestampDiff = fabs(velodyne_vector[i].timestamp - bumblebee_timestamp);
         }
@@ -86,41 +90,150 @@ find_velodyne_most_sync_with_cam(double bumblebee_timestamp)
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-static void register_ipc_messages(void) {
+static void
+register_ipc_messages(void)
+{
 	IPC_RETURN_TYPE err;
 	err = IPC_defineMsg(CARMEN_LANE_NAME, IPC_VARIABLE_LENGTH, CARMEN_LANE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_LANE_NAME);
 }
 
-IPC_RETURN_TYPE carmen_lane_publish_message(carmen_lane_message * message) {
-	IPC_RETURN_TYPE err;
-    err = IPC_publishData(CARMEN_LANE_NAME, message);
-    carmen_test_ipc_exit(err, "Could not publish!", CARMEN_LANE_NAME);
-    return err;
-}
-
-void lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > *laser_points_in_camera_box_list) {
+void
+lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > &laser_points_in_camera_box_list,
+		std::vector<bool> &left_or_right)
+{
 	// stamps the message
-	carmen_lane_message message;
+	carmen_lane_detector_lane_message_t message;
 	message.host = carmen_get_host();
 	message.timestamp = _timestamp;
-	message.lane_vector_size = 0;
-	for (int i = 0; i < laser_points_in_camera_box_list->size(); i++)
-		message.lane_vector_size += laser_points_in_camera_box_list[i].size();
-	message.lane_vector = (lane*) malloc ( message.lane_vector_size * sizeof (lane) );
-	/*for (int i = 0; i < laser_points_in_camera_box_list->size(); i++)
+	message.lane_vector_size = laser_points_in_camera_box_list.size();
+	if (laser_points_in_camera_box_list.size() == 0)
+		return ;
+	message.lane_vector = (carmen_lane_detector_lane_t*) malloc ( message.lane_vector_size * sizeof (carmen_lane_detector_lane_t) );
+
+	for (int i = 0; i < laser_points_in_camera_box_list.size(); i++)
+	{
+		unsigned int idx_pt1, idx_pt2;
+
 		for(int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
 		{
-			messa
-		}*/
+			unsigned int x_min = 10000, x_max = 0, y_min = 10000, y_max = 0;
+			if (left_or_right[i] == true)
+			{
+				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx < x_min)
+					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy < y_min)
+					{
+						x_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
+						y_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy;
+						idx_pt1 = j;
+					}
+				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx > x_max)
+					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy > y_max)
+					{
+						x_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
+						y_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy;
+						idx_pt2 = j;
+					}
+			}else
+			{
+				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx > x_max)
+					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy < y_min)
+					{
+						x_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
+						y_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy;
+						idx_pt2 = j;
+					}
+				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx < x_min)
+					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy > y_max)
+					{
+						x_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
+						y_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy;
+						idx_pt1 = j;
+					}
+			}
+		}
+		carmen_vector_3D_t p1, p2;
+		carmen_vector_3D_t offset;
+		p1 = carmen_covert_sphere_to_cartesian_coord(laser_points_in_camera_box_list[i][idx_pt1].velodyne_points_in_cam.laser_polar);
+		p2 = carmen_covert_sphere_to_cartesian_coord(laser_points_in_camera_box_list[i][idx_pt2].velodyne_points_in_cam.laser_polar);
+
+        offset.x = 0.572;
+        offset.y = 0.0;
+        offset.z = 2.154;
+
+        p1 = translate_point(p1, offset);
+        p2 = translate_point(p2, offset);
+
+        p1 = rotate_point(p1, globalpos.theta);
+        p2 = rotate_point(p2, globalpos.theta);
+
+        offset.x = globalpos.x;
+        offset.y = globalpos.y;
+        offset.z = 0.0;
+
+
+        p1 = translate_point(p1, offset);
+        p2 = translate_point(p2, offset);
+
+		message.lane_vector[i].lane_segment_position1.x = p1.x;
+		message.lane_vector[i].lane_segment_position1.y = p1.y;
+		message.lane_vector[i].lane_segment_position1.x = p2.x;
+		message.lane_vector[i].lane_segment_position1.y = p2.y;
+		message.lane_vector[i].lane_class = 0;
+	}
+	message.theta = globalpos.theta;
 	// publish!
 	carmen_lane_publish_message(&message);
+	free(message.lane_vector);
+
+}
+
+
+std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> >
+velodyne_points_in_lane_bboxes(std::vector<bounding_box> bouding_boxes_list,
+		carmen_velodyne_partial_scan_message *velodyne_sync_with_cam,
+        carmen_camera_parameters camera_parameters,
+		carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
+		unsigned int width, unsigned int height, std::vector<bool> *left_or_right)
+{
+
+	std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> points_lasers_in_cam_with_obstacle;
+
+	// Removes the ground, Removes points outside cameras field of view and Returns the points that are obstacles
+	points_lasers_in_cam_with_obstacle = carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_display(
+				velodyne_sync_with_cam,camera_parameters, velodyne_pose,camera_pose, width, height);
+
+	std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list;
+	for (unsigned int i = 0; i < bouding_boxes_list.size(); i++)
+	{
+		std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> laser_points_in_camera_box;
+		for (unsigned int j = 0; j < points_lasers_in_cam_with_obstacle.size(); j++)
+		{
+			if (points_lasers_in_cam_with_obstacle[j].velodyne_points_in_cam.ipx > bouding_boxes_list[i].pt1.x
+					&& points_lasers_in_cam_with_obstacle[j].velodyne_points_in_cam.ipx < bouding_boxes_list[i].pt2.x)
+			{
+				if (left_or_right[0][i] == false)
+				{
+					if (points_lasers_in_cam_with_obstacle[j].velodyne_points_in_cam.ipy > bouding_boxes_list[i].pt1.y
+						&& points_lasers_in_cam_with_obstacle[j].velodyne_points_in_cam.ipy < bouding_boxes_list[i].pt2.y)
+							laser_points_in_camera_box.push_back(points_lasers_in_cam_with_obstacle[j]);
+				}else
+				{
+					if (points_lasers_in_cam_with_obstacle[j].velodyne_points_in_cam.ipy < bouding_boxes_list[i].pt1.y
+						&& points_lasers_in_cam_with_obstacle[j].velodyne_points_in_cam.ipy > bouding_boxes_list[i].pt2.y)
+							laser_points_in_camera_box.push_back(points_lasers_in_cam_with_obstacle[j]);
+				}
+			}
+		}
+
+		laser_points_in_camera_box_list.push_back(laser_points_in_camera_box);
+	}
+	return (laser_points_in_camera_box_list);
 }
 
 void
 put_the_lane_dectections_in_image(std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list,
-	const cv::Mat& rgb_image, std::vector<bbox_t> predictions, std::vector<bounding_box> bouding_boxes_list,
-	double hood_removal_percentage, int end_time, int start_time) {
+	const cv::Mat& rgb_image, std::vector<bbox_t> predictions, std::vector<bounding_box> bouding_boxes_list, int end_time, int start_time) {
 	double fps;
 	int delta_t = end_time - start_time;
 	fps = 1.0 / delta_t;
@@ -128,22 +241,30 @@ put_the_lane_dectections_in_image(std::vector< std::vector<carmen_velodyne_point
 	char frame_rate[25];
 	sprintf(frame_rate, "FPS = %.2f", fps);
 	cv::putText(rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
+	if(SHOW_BBOX)
+	{
+		for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
+		{
+			cv::rectangle(rgb_image, cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
+			cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y), cvScalar(0, 255, 0), 3);
+		}
+	}else
+	{
+		for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
+		{
+			cv::line(rgb_image, cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
+			cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y), cvScalar(0, 255, 0), 3);
+		}
+	}
 	for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
 	{
-		cv::Scalar object_color;
-		sprintf(confianca, "%d", i);
-		int obj_id = predictions.at(i).obj_id;
-		std::string obj_name;
-		if (obj_names.size() > obj_id)
-			obj_name = obj_names[obj_id];
-		//if (SHOW_BBOX)
-
-		cv::line(rgb_image,	cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y), cv::Point(bouding_boxes_list[i].pt1.x,
-				bouding_boxes_list[i].pt1.y), cv::Scalar(0, 255, 0), 3, 0);
-		cv::putText(rgb_image, obj_name, cv::Point(bouding_boxes_list[i].pt2.x + 1, bouding_boxes_list[i].pt1.y - 3),
-				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
+		for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
+		{
+			cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
+			laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1, cv::Scalar(255, 0, 0), 3, 0);
+		}
 	}
-	cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
+	cv::Mat resized_image(cv::Size(640, 480), CV_8UC3);
 	cv::resize(rgb_image, resized_image, resized_image.size());
 	cv::imshow("Lane detector", resized_image);
 	cv::waitKey(1);
@@ -151,11 +272,9 @@ put_the_lane_dectections_in_image(std::vector< std::vector<carmen_velodyne_point
 }
 
 std::vector<bbox_t>
-detection_of_the_lanes(std::vector<bounding_box>* bouding_boxes_list, cv::Mat& rgb_image) {
+detection_of_the_lanes(std::vector<bounding_box> *bouding_boxes_list, cv::Mat& rgb_image, std::vector<bool> *left_or_right) {
 	// detect the objects in image
-	std::vector<bbox_t> predictions = darknet->detect(rgb_image, 0.2, false);
-	predictions = darknet->tracking(predictions);
-	//find x min and x max for orientation of the lines
+	std::vector<bbox_t> predictions = darknet->detect(rgb_image, 0.3);	//find x min and x max for orientation of the lines
 	unsigned int x_min = 10000, x_max = 0;
 	for (int i = 0; i < predictions.size(); i++)
 	{
@@ -163,7 +282,7 @@ detection_of_the_lanes(std::vector<bounding_box>* bouding_boxes_list, cv::Mat& r
 			x_min = predictions[i].x;
 
 		if ((predictions[i].x + predictions[i].w) > x_max)
-			x_max = (predictions[i].x);
+			x_max = (predictions[i].x + predictions[i].w);
 	}
 	//Conversion from yolo format to bounding_box format
 	for (const auto& box : predictions)
@@ -175,14 +294,16 @@ detection_of_the_lanes(std::vector<bounding_box>* bouding_boxes_list, cv::Mat& r
 		{
 			bbox.pt1.y = box.y;
 			bbox.pt2.y = box.y + box.h;
+			left_or_right->push_back(false);
 		} else
 		{
 			bbox.pt2.y = box.y;
 			bbox.pt1.y = box.y + box.h;
+			left_or_right->push_back(true);
 		}
 		bouding_boxes_list->push_back(bbox);
 	}
-	return predictions;
+	return (predictions);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -197,17 +318,18 @@ detection_of_the_lanes(std::vector<bounding_box>* bouding_boxes_list, cv::Mat& r
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
-	double hood_removal_percentage = 0.2;
-    cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
-    cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
-    double start_time, end_time, delta_t;
-    start_time = carmen_get_time();
+	cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
+	cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
 
-	 if (camera_side == 0)
-	        memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char));
-	    else
-	        memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char));
+	double start_time, end_time, delta_t, fps;
 
+	start_time = carmen_get_time();
+
+	if (camera_side == 0) {
+		memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char));
+	} else {
+		memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char));
+	}
     carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
 
     if (velodyne_vector.size() > 0)
@@ -216,14 +338,15 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         return;
     cv::cvtColor(src_image, rgb_image, cv::COLOR_RGB2BGR);
     std::vector<bounding_box> bouding_boxes_list;
+    //left = true e right = false
+    std::vector<bool> left_or_right;
     // detect the objects in image
-	std::vector<bbox_t> predictions = detection_of_the_lanes(&bouding_boxes_list, rgb_image);
-    std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list,
-    		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
+	std::vector<bbox_t> predictions = detection_of_the_lanes(&bouding_boxes_list, src_image, &left_or_right);
+    std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list = velodyne_points_in_lane_bboxes(bouding_boxes_list,
+    		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height, &left_or_right);
     end_time = carmen_get_time();
-	put_the_lane_dectections_in_image(laser_points_in_camera_box_list, rgb_image, predictions, bouding_boxes_list,
-			hood_removal_percentage, end_time, start_time);
-	lane_publish_messages(image_msg-> timestamp, &laser_points_in_camera_box_list);
+	put_the_lane_dectections_in_image(laser_points_in_camera_box_list, rgb_image, predictions, bouding_boxes_list, end_time, start_time);
+	lane_publish_messages(image_msg-> timestamp, laser_points_in_camera_box_list, left_or_right);
 }
 
 
@@ -276,9 +399,16 @@ objects_names_from_file(std::string const filename)
     for (std::string line; getline(file, line);) file_lines.push_back(line);
     std::cout << "object names loaded \n";
 
-    return file_lines;
+    return (file_lines);
 }
 
+void
+localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
+{
+    globalpos.theta = globalpos_message->globalpos.theta;
+    globalpos.x = globalpos_message->globalpos.x;
+    globalpos.y = globalpos_message->globalpos.y;
+}
 
 void
 subscribe_messages()
@@ -288,6 +418,8 @@ subscribe_messages()
 
     carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler,
           CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 }
 
@@ -370,6 +502,9 @@ main(int argc, char **argv)
     signal(SIGINT, shutdown_module);
 
     read_parameters(argc, argv);
+
+    // define the messages
+    register_ipc_messages();
 
     subscribe_messages();
     carmen_ipc_dispatch();
