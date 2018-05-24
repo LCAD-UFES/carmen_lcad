@@ -78,7 +78,7 @@ show_road_map(carmen_map_p road_map, int x, int y)
 	cv::circle(image1, p, 5,cv::Scalar( 255, 0, 0 ),thickness,lineType);
 	//while((cv::waitKey() & 0xff) != 27);
 	cv::imshow("road_map", image1);
-	cv::waitKey(1);
+	cv::waitKey();
 	//cv::destroyWindow("road_map");
 }
 
@@ -303,10 +303,9 @@ point_is_bigger(carmen_map_p map, int x, int y)
 
 
 bool
-already_visited_exists(string parsed_filename)
+already_visited_exists(string full_path)
 {
-	string already_visited_filename = "already_visited/" + parsed_filename + "txt";
-	if( access( already_visited_filename.c_str(), F_OK ) != -1 )
+	if( access( full_path.c_str(), F_OK ) != -1 )
 		return true;
 	else
 		return false;
@@ -803,8 +802,8 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 	}
 
 	else if((x >= 2 && x <= map->config.x_size-3) && (y >= 2 && x <= map->config.y_size-3))//*/
-	if(point_is_in_map(map, x-2,y+2) && point_is_in_map(map, x+2,y-2) && point_is_in_map(map, x-1,y+1) && point_is_in_map(map, x+1,y-1))
-	{
+	//if(point_is_in_map(map, x-2,y+2) && point_is_in_map(map, x+2,y-2) && point_is_in_map(map, x-1,y+1) && point_is_in_map(map, x+1,y-1))
+	//{
 		double center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y+2])->lane_center;
 		double center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y+1])->lane_center;
 		double center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y-2])->lane_center;
@@ -825,7 +824,7 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 			return false;
 
 
-	}
+	//}
 	//else
 		//return false;
 
@@ -957,29 +956,85 @@ point_is_in_map(carmen_map_p map, int x, int y)
 
 
 bool
-point_is_already_visited(int **already_visited, int x, int y)
+point_is_already_visited(carmen_map_p already_visited, int x, int y)
 {
-	if(already_visited[x][y] == 1)
+	if(already_visited->map[x][y] == 1)
 		return true;
 	else
 		return false;
+
+}
+
+
+void
+get_new_already_visited_map(carmen_map_p already_visited, carmen_map_p map, carmen_point_t pose)
+{
+	carmen_map_t new_already_visited;
+	new_already_visited.complete_map = NULL;
+	double x_origin, y_origin;
+	carmen_grid_mapping_get_map_origin(&pose, &x_origin, &y_origin);
+	get_already_visited_by_origin_x_y("already_visited",'a',x_origin,y_origin,&new_already_visited,map);
+	carmen_grid_mapping_switch_maps(already_visited,&new_already_visited);
+}
+
+
+void
+get_new_map(carmen_map_p map, carmen_point_t pose)
+{
+	carmen_map_t new_map;
+	new_map.complete_map = NULL;
+	int count_maps = carmen_grid_mapping_get_block_map_by_origin(g_road_map_folder,'r',pose,&new_map);
+	carmen_grid_mapping_switch_maps(map,&new_map);
 }
 
 
 bool
-get_neighbour(carmen_position_t *neighbour, carmen_position_t current, int ** already_visited, carmen_map_p map)
+check_limits_of_central_road_map(int x, int y)
 {
-	//aqui é o ponto!
+	/* Limits:
+	 4 * * 3
+	 * * * *
+	 * * * *
+	 1 * * 2
+	 */
+				    /*x1  y1  x2  y2  x3  y3  x4  y4*/
+	int limits[8] = {350,350,700,350,700,700,350,700};
+	for(int i=1; i<8; i=i+2)
+	{
+		if(x == limits[i-1]+1)
+			return true;
+		if(y == limits[i]+1)
+			return true;
+	}
+	return false;
+}
 
+
+bool
+get_neighbour(carmen_position_t *neighbour, carmen_position_t current, carmen_map_p already_visited, carmen_map_p map)
+{
 	for (int x = current.x - 1; x <= current.x + 1; x++)
 	{
 		for (int y = current.y - 1; y <= current.y + 1; y++)
 		{
-			//cout<<"x y for "<<x<<"\t"<<y<<endl;getchar();
 			if (point_is_in_map(map, x, y) && !point_is_already_visited(already_visited,x,y)) //só pode processar o ponto caso ele esteja entre 0 e tam_max
 			{
-				//cout<<"x y if "<<x<<"\t"<<y<<endl;getchar();
-				already_visited[x][y] = 1;
+				if(check_limits_of_central_road_map(x,y))
+				{
+					carmen_point_t pose;
+					pose.x = (x*0.2)+map->config.x_origin;
+					pose.y = (y*0.2)+map->config.y_origin;
+					get_new_map(map,pose);
+					carmen_grid_mapping_save_block_map_by_origin("already_visited",'a',already_visited);
+					get_new_already_visited_map(already_visited,map,pose);
+					cout<<x<<"\t"<<y-350<<endl;
+					show_road_map(map,x,y-350);
+					y -=349;
+				}
+
+
+
+				already_visited->map[x][y] = 1;
 				if (point_is_lane_center(map, x, y))
 				{
 					//cout<<"x y if lane center "<<x<<"\t"<<y<<endl;getchar();
@@ -1046,7 +1101,7 @@ add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y)
 
 
 rddf_graph_t *
-A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, int **already_visited)
+A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already_visited)
 {
 	vector<carmen_position_t> open_set;
 	carmen_position_t current;
@@ -1054,7 +1109,6 @@ A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, int **already_visite
 	int num_iter = 0;
 
 	//graph = NULL;
-	//cout<<x<<"\t"<<y<<endl;getchar();
 	graph = add_point_to_graph(map,graph, x, y);
 
 	if(graph->size == 1)
@@ -1082,6 +1136,8 @@ A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, int **already_visite
 					cout<<neighbour.x<<"\t"<<neighbour.y<<endl;getchar();
 				}*/
 				graph = add_point_to_graph(map, graph, neighbour.x, neighbour.y);
+				show_road_map(map,neighbour.x,neighbour.y);
+				cout<<"center!"<<neighbour.x<<"\t"<<neighbour.y<<endl;
 				//display_graph_over_map(map, graph, already_visited, "oi", 0);
 				branch_node = graph->size - 1;
 			//}
@@ -1120,21 +1176,90 @@ add_graph_to_graph_list(rddf_graphs_of_map_t * rddf_graphs, rddf_graph_t *graph)
 }
 
 
-int
-get_already_visited_by_origin_x_y(char *map_path, char map_type, double x_origin, double y_origin, int **already_visited)
+static double*
+get_cell_pointer(double *map, int cell_number)
 {
-	int ** unk_already_visited;
+	switch (cell_number)
+	{
+	case 0:
+		return map;
+		break;
+	case 1:
+		return &map[local_gridmap_count * local_gridmap_count_3];
+		break;
+	case 2:
+		return &map[local_gridmap_count * 2 * local_gridmap_count_3];
+		break;
+	case 3:
+		return &map[local_gridmap_count_3];
+		break;
+	case 4:
+		return &map[local_gridmap_count * local_gridmap_count_3 + local_gridmap_count_3];
+		break;
+	case 5:
+		return &map[local_gridmap_count * 2 * local_gridmap_count_3 + local_gridmap_count_3];
+		break;
+	case 6:
+		return &map[2 * local_gridmap_count_3];
+		break;
+	case 7:
+		return &map[2 * local_gridmap_count_3 + local_gridmap_count * local_gridmap_count_3];
+		break;
+	case 8:
+		return &map[2 * local_gridmap_count_3 + local_gridmap_count * local_gridmap_count_3 * 2];
+		break;
+	}
+	return NULL;
+}
+
+//################### Matrix Organization ######################
+/*
+ Interface
+ | 6 | 7 | 8 |
+ | 3 | 4 | 5 |
+ | 0 | 1 | 2 |
+
+ Memory
+ | 0 | 3 | 6 |
+ | 1 | 4 | 7 |
+ | 2 | 5 | 8 |
+ */
+//##############################################################
+
+
+static void
+copy_cell_to_map(carmen_map_t *map, double **cell, int cell_number)
+{
+	int i;
+
+	double *map_cell;
+	map_cell = get_cell_pointer(map->complete_map, cell_number);
+
+	for (i = 0; i < local_gridmap_count_3; i++)
+	{
+		memcpy(map_cell + i * local_gridmap_count, cell[i], local_gridmap_count_3 * sizeof(double));
+	}
+}
+
+
+int
+get_already_visited_by_origin_x_y(char *map_path, char map_type, double x_origin, double y_origin, carmen_map_t *already_visited, carmen_map_p map)
+{
+	carmen_map_t unk_already_visited;
 
 	char full_map_path[1024];
 	double local_x_origin, local_y_origin;
-	int block_map_exists_on_file = 1;
+	int block_already_visited_exists_on_file = 1;
 	int count_maps_on_file = 0;
 	int i, j, k;
+	int block_map_exists_on_file = 1;
 
-	if (already_visited == NULL)
-		already_visited = alloc_matrix(210/0.2, 210/0.2);
+	if (already_visited->complete_map == NULL)
+	{
+		carmen_grid_mapping_initialize_map(already_visited, 210/0.2, 0.2, map_type);
+	}
 	else
-		already_visited = set_zero_to_matrix(210/0.2, 210/0.2);
+		carmen_grid_mapping_set_unknown_value(already_visited, map_type);
 
 	for (i = 0, k = 0; i < 3; i++)
 	{
@@ -1143,35 +1268,24 @@ get_already_visited_by_origin_x_y(char *map_path, char map_type, double x_origin
 			local_x_origin = x_origin + j * (210 / 3.0);
 			local_y_origin = y_origin + i * (210 / 3.0);
 
-			sprintf(full_map_path, "%s/%c%d_%d.txt", map_path, map_type, (int)local_x_origin, (int)local_y_origin);
+			sprintf(full_map_path, "%s/%c%d_%d.map", map_path, map_type, (int)local_x_origin, (int)local_y_origin);
 
-			if(already_visited_exists(full_map_path))
-			{
-				//copiar do arquivo para unk_already_visited
-			}
-			else
-			{
-				//criar novo unk_already_visited zerado
-			}
-
-			//criar bloco de already_visited (copiar unk_already_visited para already_visited)
-
-			block_map_exists_on_file = carmen_map_read_gridmap_chunk(full_map_path, &unk_map) != -1;
+			block_map_exists_on_file = carmen_map_read_gridmap_chunk(full_map_path, &unk_already_visited) != -1;
 
 			if (block_map_exists_on_file)
 			{
-				copy_cell_to_map(new_map, unk_map.map, k);
-				free(unk_map.map);
-				free(unk_map.complete_map);
-				free(unk_map.config.map_name);
+				copy_cell_to_map(already_visited, unk_already_visited.map, k);
+				free(unk_already_visited.map);
+				free(unk_already_visited.complete_map);
+				free(unk_already_visited.config.map_name);
 				count_maps_on_file++;
 			}
 		}
 	}
 
-	strcpy(new_map->config.origin, "from grid_mapping (built from blocks in files)");
-	new_map->config.x_origin = x_origin;
-	new_map->config.y_origin = y_origin;
+	strcpy(already_visited->config.origin, "from grid_mapping (built from blocks in files)");
+	already_visited->config.x_origin = x_origin;
+	already_visited->config.y_origin = y_origin;
 
 	return count_maps_on_file > 0;
 }
@@ -1180,7 +1294,7 @@ get_already_visited_by_origin_x_y(char *map_path, char map_type, double x_origin
 void
 generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 {
-	int **already_visited;
+	carmen_map_t already_visited;
 	vector <string> road_map_filenames;
 	string parsed_filename;
 	rddf_graphs_of_map_t *rddf_graphs = NULL;
@@ -1191,15 +1305,15 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 	parsed_filename = parse_filename(str_road_map_filename);
 	road_map_filenames.push_back(str_road_map_filename);
 
-	already_visited = NULL;
-	already_visited = alloc_matrix(map->config.x_size, map->config.y_size);
+	already_visited.complete_map = NULL;
+	get_already_visited_by_origin_x_y("already_visited",'a',g_x_origin,g_y_origin,&already_visited,map);
 
 	for (int x = (map->config.x_size/2) - 1; x < map->config.x_size; x++)
 	{
-		for (int y = (map->config.y_size/2) - 1; y <= (map->config.y_size/2)-1; y++)
+		for (int y = (map->config.y_size/2) - 1; y <= map->config.y_size; y++)
 		{
-			show_road_map(map,x,y);
-			if(x==701)
+			//show_road_map(map,x,y);
+			/*if(x==701)
 			{
 				carmen_map_t new_map;
 				new_map.complete_map = NULL;
@@ -1214,16 +1328,18 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 				x = (map->config.x_size/2) - 1;
 				//cout<<new_map->config.x_origin<<"\t"<<new_map->config.y_origin;
 				//getchar();
-			}
+			}*/
 
-			/*if (point_is_already_visited(already_visited, x, y))
+			if (point_is_already_visited(&already_visited, x, y))
 				continue;
+
 			else
 			{
-				already_visited[x][y] = 1;
+				already_visited.map[x][y] = 1;
 
 				if (point_is_lane_center(map, x, y))
 				{
+					cout<<"center!"<<x<<"\t"<<y<<endl;
 					if (road_begin)
 					{
 						last_x = x;
@@ -1235,14 +1351,26 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 					else
 						last_graph_size = graph->size;
 
-					//graph = A_star(graph, x, y, map, already_visited);
+					graph = A_star(graph, x, y, map, &already_visited);
 					cout<<graph->size<<endl;
 					cout<<"graph begin\t"<<graph->point[0].x<<"\t"<<graph->point[0].y<<endl;
 					cout<<"graph end\t"<<graph->point[graph->size-1].x<<"\t"<<graph->point[graph->size-1].y<<endl;
 					//display_graph_over_map(map, graph, already_visited, parsed_filename, last_graph_size);
 					show_road_map(map,x,y);
 
-					/*if (graph->point[graph->size-1].x == 2 || graph->point[graph->size-1].x == map->config.x_size-3)
+
+					//rddf_graphs = add_graph_to_graph_list(rddf_graphs, graph);
+				}
+			}
+		}
+	}
+
+	//printf("Graphs in map: %d\n", rddf_graphs.size());
+	//display_graph_over_map(map, rddf_graphs, parsed_filename);
+}
+
+
+/*if (graph->point[graph->size-1].x == 2 || graph->point[graph->size-1].x == map->config.x_size-3)
 					{
 						cout<<"entrei em X"<<endl;
 						save_current_already_visited (already_visited, map, parsed_filename);
@@ -1296,12 +1424,3 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 						road_begin = true;
 
 					}*/
-					//rddf_graphs = add_graph_to_graph_list(rddf_graphs, graph);
-				//}
-			//}
-		}
-	}
-
-	//printf("Graphs in map: %d\n", rddf_graphs.size());
-	//display_graph_over_map(map, rddf_graphs, parsed_filename);
-}

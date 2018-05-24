@@ -23,6 +23,16 @@
 extern "C" {
 #endif
 
+#define LOCAL_MAP_SIZE (210)
+#define GLOBAL_MAP_SIZE (1800)
+
+static double global_gridmap_resolution = 0.6;
+static double local_gridmap_resolution = 0.2;
+static double local_gridmap_size = LOCAL_MAP_SIZE;
+static int local_gridmap_count = LOCAL_MAP_SIZE / 0.2;
+static int local_gridmap_count_3 = (LOCAL_MAP_SIZE/3) / 0.2;
+static int global_gridmap_count = GLOBAL_MAP_SIZE / 0.6;
+static int map_quadrant;
 extern double g_x_origin;
 extern double g_y_origin;
 extern char *g_road_map_folder;
@@ -49,6 +59,7 @@ typedef struct
 	rddf_graph_t *graph;
 } rddf_graphs_of_map_t;
 
+
 using namespace std;
 
 cv::Mat rotate(cv::Mat src, cv::Point pt, double angle);
@@ -65,8 +76,9 @@ int** alloc_matrix(int r, int c);
 bool point_is_lane_center (carmen_map_p map, int x, int y);
 //void print_open_set(std::vector<rddf_graph_node*> &open_set);
 bool point_is_in_map(carmen_map_p map, int x, int y);
-rddf_graph_t * A_star(int x, int y, carmen_map_p map, int **already_visited);
+//rddf_graph_t * A_star(int x, int y, carmen_map_p map, int **already_visited);
 //void A_star(carmen_map_p map, rddf_graph_node* p, vector<rddf_graph_node*> &closed_set, int **already_visited, int *called_expand);
+int get_already_visited_by_origin_x_y(char *map_path, char map_type, double x_origin, double y_origin, carmen_map_t *already_visited, carmen_map_p map);
 void generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename);
 void parse_world_origin_to_road_map(string road_map_filename);
 
