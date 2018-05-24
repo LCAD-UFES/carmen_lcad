@@ -132,6 +132,7 @@ namespace View
 			GtkCheckMenuItem* menuDisplay_ShowDynamicObjects;
 			GtkCheckMenuItem* menuDisplay_ShowDynamicPoints;
 			GtkCheckMenuItem* menuDisplay_ShowAnnotations;
+			GtkCheckMenuItem* menuDisplay_ShowLaneMarkings;
 			GtkCheckMenuItem* menuSimulatorShowTruePosition;
 			GtkCheckMenuItem* menuSimulator_ShowObjects;
 			GtkCheckMenuItem* menuGoals_EditRddfGoals;

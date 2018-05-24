@@ -516,7 +516,19 @@ void on_menuDisplay_ShowAnnotations_toggled (GtkCheckMenuItem* togglebutton __at
 	global_gui->nav_panel_config->show_annotations = gtk_check_menu_item_get_active(togglebutton);
 
 	if (global_gui->nav_panel_config->show_annotations)
-		carmen_rddf_subscribe_annotation_message(&global_gui->rddf_annotation_msg, NULL, CARMEN_SUBSCRIBE_ALL);
+		carmen_rddf_subscribe_annotation_message(&global_gui->rddf_annotation_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+	else
+		carmen_rddf_subscribe_annotation_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuDisplay_ShowLaneMarkings_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui __attribute__ ((unused)))
+{
+	global_gui->nav_panel_config->show_lane_markings = gtk_check_menu_item_get_active(togglebutton);
+
+	if (global_gui->nav_panel_config->show_lane_markings)
+		carmen_rddf_subscribe_annotation_message(&global_gui->rddf_annotation_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 	else
 		carmen_rddf_subscribe_annotation_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
 }
