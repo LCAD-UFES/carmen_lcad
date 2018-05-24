@@ -749,8 +749,8 @@ odometry_handler(carmen_base_ackerman_odometry_message *msg)
 	last_phi = msg->phi;
 	last_v = msg->v;
 }
-
-/*static void
+/*
+static void
 lane_detector_handler(carmen_lane_detector_lane_message_t *msg)
 {
 	if (msg->lane_vector_size == 0)
@@ -764,6 +764,16 @@ lane_detector_handler(carmen_lane_detector_lane_message_t *msg)
 	std::cout << "y p1 " << p1.y << '\n';
 	std::cout << "x p2 " << p2.x << '\n';
 	std::cout << "y p2 " << p2.y << '\n';
+	carmen_ackerman_traj_point_t* point = (carmen_ackerman_traj_point_t*) malloc (2 * sizeof (carmen_ackerman_traj_point_t) );
+
+	point[0].x = p1.x;
+	point[0].y = p1.y;
+	point[0].theta = msg->theta;
+	point[1].x = p2.x;
+	point[1].y = p2.y;
+	point[1].theta = msg->theta;
+
+	gui->navigator_graphics_update_goal_list(point,2);
 }
 */
 

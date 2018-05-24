@@ -1,0 +1,46 @@
+Commandline: central_log_view sample_central.log -msg carmen_obstacle_avoider_path -k 7757717.57 7757718.69 -v 2 
+
+Central Log View Utility
+Log file: sample_central.log
+Log start time: Fri Apr 20 10:59:02 2018
+
+Logline:    878108  Class: Broadcast   Message: carmen_obstacle_avoider_path  Id: 14  Origin: obstacle_avoider-10685  Destination: navigator_gui2-10686  Status: pending-->sent  Logtime: 11:01:47.46
+Logline:    878109  Class: Data        Logtime: 11:01:47.46  Text:     {<{7757719.73, -363871.85, -2.49, 4.42, 0.00}, {7757719.41, -363872.09, 
+Logline:    878110  Class: Data        Logtime: 11:01:47.46  Text:      -2.49, 4.42, 0.00}, {7757719.09, -363872.33, -2.49, 4.42, 0.00}, 
+Logline:    878111  Class: Data        Logtime: 11:01:47.46  Text:      {7757718.78, -363872.57, -2.49, 4.42, 0.00}, {7757718.46, -363872.81, 
+Logline:    878112  Class: Data        Logtime: 11:01:47.46  Text:      -2.49, 4.42, 0.00}, {7757718.14, -363873.05, -2.49, 4.42, 0.00}, 
+Logline:    878113  Class: Data        Logtime: 11:01:47.46  Text:      {7757717.82, -363873.29, -2.49, 4.48, 0.00}, {7757717.57, -363873.48, 
+Logline:    878114  Class: Data        Logtime: 11:01:47.46  Text:      ...
+Logline:    880052  Class: Broadcast   Message: carmen_obstacle_avoider_path  Id: 60  Origin: obstacle_avoider-10685  Destination: navigator_gui2-10686  Status: pending-->sent  Logtime: 11:01:47.72
+Logline:    880053  Class: Data        Logtime: 11:01:47.72  Text:     {<{7757719.01, -363872.37, -2.50, 4.53, 0.00}, {7757718.69, -363872.62, 
+Logline:    880054  Class: Data        Logtime: 11:01:47.72  Text:      -2.49, 4.53, 0.00}, {7757718.36, -363872.86, -2.49, 4.53, 0.00}, 
+Logline:    880055  Class: Data        Logtime: 11:01:47.72  Text:      {7757718.04, -363873.11, -2.49, 4.53, 0.00}, {7757717.71, -363873.35, 
+Logline:    880056  Class: Data        Logtime: 11:01:47.72  Text:      -2.49, 4.53, 0.00}, {7757717.64, -363873.41, -2.49, 4.53, 0.00}, 
+Logline:    880057  Class: Data        Logtime: 11:01:47.72  Text:      {7757717.31, -363873.66, -2.49, 4.62, 0.00}, {7757717.05, -363873.85, 
+Logline:    880058  Class: Data        Logtime: 11:01:47.72  Text:      ...
+
+Selected log period:  from 11:01:47.46 to 11:01:47.72
+Handle time summary:  Messaging: 99.04%  Waiting: 0.96%  Average size: 260184 bytes
+
+==========================================
+General Summary
+==========================================
+Log Record Class          Count      Lines
+--------------------  ---------  ---------
+Connection                    0          0
+Registration                  0          0
+Broadcast                     2          2
+Inform                        0          0
+Done                          0          0
+Query                         0          0
+Reply                         0          0
+Deleted                       0          0
+Data                          2         12
+Handle Summary                0          0
+Other                         0          0
+Unknown Message               0          0
+Unknown                       0          0
+
+Totals:                                 14
+==========================================
+

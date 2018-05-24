@@ -1,0 +1,1643 @@
+Commandline: ./central_log_view sample_central.log -s cro 
+
+Central Log View Utility
+Log file: sample_central.log
+Log start time: Fri Apr 20 10:59:02 2018
+
+
+Selected log period:  from 10:59:02 to 11:02:38.36
+Handle time summary:  Messaging: 98.95%  Waiting: 1.05%  Average size: 248558 bytes
+
+==========================================
+General Summary
+==========================================
+Log Record Class          Count      Lines
+--------------------  ---------  ---------
+Connection                   28         84
+Registration                149        149
+Broadcast                229796     229796
+Inform                      680        680
+Done                     132479     132479
+Query                      1634       1634
+Reply                      1142       1142
+Deleted                   25032      25032
+Data                     134657     410371
+Handle Summary           223928     223928
+Other                         6          6
+Unknown Message               0          0
+Unknown                       0          0
+
+Totals:                            1025301
+==========================================
+
+
+==============================================================
+Module Connection Summary
+==============================================================
+Module                                      Connect      Close
+----------------------------------------  ---------  ---------
+behavior_selector-10682                           1          1
+localize_ackerman-10678                           1          1
+map_server-10676                                  1          1
+mapper-10679                                      1          1
+model_predictive_planner-10683                    1          1
+navigator_gui2-10686                              1          1
+obstacle_avoider-10685                            1          1
+obstacle_distance_mapper-10680                    1          1
+param_daemon-10674                                1          1
+proccontrol-10673                                 1          1
+proccontrol_gui-10675                             1          1
+rddf_play-10681                                   1          1
+rrt_path_follower-10684                           1          1
+simulator_ackerman-10687                          1          1
+
+Totals:                               14         14         14
+==============================================================
+
+
+================================================================================
+Message Registration Summary
+================================================================================
+Message                                                             Registration
+------------------------------------------------------------------  ------------
+carmen_base_ackerman_motion_command                                            2
+carmen_base_ackerman_odometry                                                  5
+carmen_behavior_selector_current_state_name                                    4
+carmen_behavior_selector_goal_list                                             3
+carmen_behavior_selector_road_profile_message                                  1
+carmen_behavior_selector_set_algorithm                                         1
+carmen_behavior_selector_set_goal_source                                       1
+carmen_behaviour_selector_compact_lane_contents_message                        3
+carmen_fused_odometry_message                                                  1
+carmen_heartbeat                                                               1
+carmen_laser_laser1                                                            1
+carmen_localize_ackerman_globalpos                                             9
+carmen_localize_ackerman_initialize                                            4
+carmen_map_server_compact_cost_map_message                                     1
+carmen_map_server_compact_lane_map_message                                     2
+carmen_map_server_localize_map_name                                           15
+carmen_map_server_offline_map_message                                          3
+carmen_map_server_road_map_message                                             1
+carmen_mapper_map_message                                                      2
+carmen_mapper_map_moving_objects_raw_map_message_name                          1
+carmen_mapper_virtual_laser_message                                            3
+carmen_moving_objects_point_clouds_message_name                                1
+carmen_navigator_ackerman_go                                                   3
+carmen_navigator_ackerman_plan                                                 2
+carmen_navigator_ackerman_plan_tree                                            1
+carmen_navigator_ackerman_status                                               2
+carmen_navigator_ackerman_stop                                                 3
+carmen_obstacle_avoider_motion_planner_path                                    1
+carmen_obstacle_avoider_path                                                   1
+carmen_obstacle_avoider_robot_hit_obstacle                                     1
+carmen_obstacle_distance_mapper_compact_lane_contents_message                  2
+carmen_obstacle_distance_mapper_compact_map_message                            3
+carmen_param_query_double                                                     11
+carmen_param_query_int                                                         7
+carmen_param_query_onoff                                                      10
+carmen_param_query_string                                                      4
+carmen_param_query_version                                                    10
+carmen_proccontrol_groupset                                                    2
+carmen_proccontrol_moduleset                                                   2
+carmen_proccontrol_pidtable                                                    1
+carmen_rddf_annotation_message                                                 3
+carmen_rddf_dynamic_annotation_message                                         2
+carmen_rddf_end_point_message                                                  2
+carmen_rddf_road_profile_message                                               1
+carmen_rddf_waypoints_around_end_point_message                                 1
+carmen_robot_ackerman_motion_command                                           3
+carmen_simulator_ackerman_objects                                              1
+carmen_simulator_ackerman_truepos                                              2
+carmen_velodyne_partial_scan_message                                           2
+rrt_path_message_name                                                          1
+
+Totals:                                                         50           149
+================================================================================
+
+
+================================================================================================================================================
+Message Summary by Origin
+================================================================================================================================================
+Message: V_get_CENTRAL_FILE_LOG_VAR
+	Origin: X_IPC Server
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                           1          1          0          0          0          0          0          0
+		localize_ackerman-10678                           1          1          0          0          0          0          0          0
+		map_server-10676                                  1          1          0          0          0          0          0          0
+		mapper-10679                                      1          1          0          0          0          0          0          0
+		model_predictive_planner-10683                    1          1          0          0          0          0          0          0
+		navigator_gui2-10686                              1          1          0          0          0          0          0          0
+		obstacle_avoider-10685                            1          1          0          0          0          0          0          0
+		obstacle_distance_mapper-10680                    1          1          0          0          0          0          0          0
+		param_daemon-10674                                1          1          0          0          0          0          0          0
+		proccontrol-10673                                 1          1          0          0          0          0          0          0
+		proccontrol_gui-10675                             1          1          0          0          0          0          0          0
+		rddf_play-10681                                   1          1          0          0          0          0          0          0
+		rrt_path_follower-10684                           1          1          0          0          0          0          0          0
+		simulator_ackerman-10687                          1          1          0          0          0          0          0          0
+	Origin Subtotals:                             14         14         14          0          0          0          0          0          0
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: proccontrol-10673
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: proccontrol_gui-10675
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+Message Subtotals:                                    28         28         28          0          0          0          0          0          0
+Message: V_get_CENTRAL_TERMINAL_LOG_VAR
+	Origin: X_IPC Server
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                           1          1          0          0          0          0          0          0
+		localize_ackerman-10678                           1          1          0          0          0          0          0          0
+		map_server-10676                                  1          1          0          0          0          0          0          0
+		mapper-10679                                      1          1          0          0          0          0          0          0
+		model_predictive_planner-10683                    1          1          0          0          0          0          0          0
+		navigator_gui2-10686                              1          1          0          0          0          0          0          0
+		obstacle_avoider-10685                            1          1          0          0          0          0          0          0
+		obstacle_distance_mapper-10680                    1          1          0          0          0          0          0          0
+		param_daemon-10674                                1          1          0          0          0          0          0          0
+		proccontrol-10673                                 1          1          0          0          0          0          0          0
+		proccontrol_gui-10675                             1          1          0          0          0          0          0          0
+		rddf_play-10681                                   1          1          0          0          0          0          0          0
+		rrt_path_follower-10684                           1          1          0          0          0          0          0          0
+		simulator_ackerman-10687                          1          1          0          0          0          0          0          0
+	Origin Subtotals:                             14         14         14          0          0          0          0          0          0
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: proccontrol-10673
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: proccontrol_gui-10675
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+Message Subtotals:                                    28         28         28          0          0          0          0          0          0
+Message: V_get_X_IPC_BROADCAST_MSG_VAR
+	Origin: X_IPC Server
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                           1          1          0          0          0          0          0          0
+		localize_ackerman-10678                           1          1          0          0          0          0          0          0
+		map_server-10676                                  1          1          0          0          0          0          0          0
+		mapper-10679                                      1          1          0          0          0          0          0          0
+		model_predictive_planner-10683                    1          1          0          0          0          0          0          0
+		navigator_gui2-10686                              1          1          0          0          0          0          0          0
+		obstacle_avoider-10685                            1          1          0          0          0          0          0          0
+		obstacle_distance_mapper-10680                    1          1          0          0          0          0          0          0
+		param_daemon-10674                                1          1          0          0          0          0          0          0
+		proccontrol-10673                                 1          1          0          0          0          0          0          0
+		proccontrol_gui-10675                             1          1          0          0          0          0          0          0
+		rddf_play-10681                                   1          1          0          0          0          0          0          0
+		rrt_path_follower-10684                           1          1          0          0          0          0          0          0
+		simulator_ackerman-10687                          1          1          0          0          0          0          0          0
+	Origin Subtotals:                             14         14         14          0          0          0          0          0          0
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: proccontrol-10673
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: proccontrol_gui-10675
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+Message Subtotals:                                    28         28         28          0          0          0          0          0          0
+Message: V_get_X_IPC_TAPPED_MSG_VAR
+	Origin: X_IPC Server
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                           1          1          0          0          0          0          0          0
+		localize_ackerman-10678                           1          1          0          0          0          0          0          0
+		map_server-10676                                  1          1          0          0          0          0          0          0
+		mapper-10679                                      1          1          0          0          0          0          0          0
+		model_predictive_planner-10683                    1          1          0          0          0          0          0          0
+		navigator_gui2-10686                              1          1          0          0          0          0          0          0
+		obstacle_avoider-10685                            1          1          0          0          0          0          0          0
+		obstacle_distance_mapper-10680                    1          1          0          0          0          0          0          0
+		param_daemon-10674                                1          1          0          0          0          0          0          0
+		proccontrol-10673                                 1          1          0          0          0          0          0          0
+		proccontrol_gui-10675                             1          1          0          0          0          0          0          0
+		rddf_play-10681                                   1          1          0          0          0          0          0          0
+		rrt_path_follower-10684                           1          1          0          0          0          0          0          0
+		simulator_ackerman-10687                          1          1          0          0          0          0          0          0
+	Origin Subtotals:                             14         14         14          0          0          0          0          0          0
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: proccontrol-10673
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: proccontrol_gui-10675
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+Message Subtotals:                                    28         28         28          0          0          0          0          0          0
+Message: V_set_X_IPC_BROADCAST_MSG_VAR
+	Origin: X_IPC Server
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                    152        152          0          0          0          0          0          0
+	Origin Subtotals:                              1        152        152          0          0          0          0          0          0
+Message Subtotals:                                     1        152        152          0          0          0          0          0          0
+Message: carmen_base_ackerman_motion_command
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		simulator_ackerman-10687                       4318       3646        672          0          0        867          0          0
+	Origin Subtotals:                              1       4318       3646        672          0          0        867          0          0
+Message Subtotals:                                     1       4318       3646        672          0          0        867          0          0
+Message: carmen_base_ackerman_odometry
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		localize_ackerman-10678                        6629       6357        272          0          0        947          0          0
+		model_predictive_planner-10683                 6339       5017       1322          0          0       2497          0          0
+		navigator_gui2-10686                           7587       5726       1861          0          0       2840          0          0
+		rrt_path_follower-10684                        6340       6110        230          0          0       1254          0          0
+	Origin Subtotals:                              4      26895      23210       3685          0          0       7538          0          0
+Message Subtotals:                                     4      26895      23210       3685          0          0       7538          0          0
+Message: carmen_behavior_selector_current_state_name
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		model_predictive_planner-10683                 2193       1794        399          0          0       1794          0          0
+		navigator_gui2-10686                           2193       1614        579          0          0       1598          0          0
+		obstacle_avoider-10685                         2108       2063         45          0          0       2063          0          0
+		rrt_path_follower-10684                        2193       2175         18          0          0       1210          0          0
+	Origin Subtotals:                              4       8687       7646       1041          0          0       6665          0          0
+Message Subtotals:                                     4       8687       7646       1041          0          0       6665          0          0
+Message: carmen_behavior_selector_goal_list
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		model_predictive_planner-10683                 2193       1820        373          0          0       1818          0          0
+		navigator_gui2-10686                           2193       1684        509          0          0       1665          0          0
+		rrt_path_follower-10684                        2193       2174         19          0          0       1321          0          0
+	Origin Subtotals:                              3       6579       5678        901          0          0       4804          0          0
+Message Subtotals:                                     3       6579       5678        901          0          0       4804          0          0
+Message: carmen_behavior_selector_road_profile_message
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		map_server-10676                               2156       1746        410          0          0        253          0          0
+		model_predictive_planner-10683                 2156       1789        367          0          0       1787          0          0
+	Origin Subtotals:                              2       4312       3535        777          0          0       2040          0          0
+Message Subtotals:                                     2       4312       3535        777          0          0       2040          0          0
+Message: carmen_behavior_selector_set_algorithm
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                           2          1          1          0          0          1          0          0
+	Origin Subtotals:                              1          2          1          1          0          0          1          0          0
+Message Subtotals:                                     1          2          1          1          0          0          1          0          0
+Message: carmen_behavior_selector_set_goal_source
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                           1          1          0          0          0          1          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          1          0          0
+Message Subtotals:                                     1          1          1          0          0          0          1          0          0
+Message: carmen_behaviour_selector_compact_lane_contents_message
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		model_predictive_planner-10683                 2193       1812        381          0          0       1810          0          0
+		obstacle_avoider-10685                         2108       2072         36          0          0        847          0          0
+		obstacle_distance_mapper-10680                 2193        686       1507          0          0        685          0          0
+	Origin Subtotals:                              3       6494       4570       1924          0          0       3342          0          0
+Message Subtotals:                                     3       6494       4570       1924          0          0       3342          0          0
+Message: carmen_heartbeat
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		proccontrol-10673                              7828       7828          0          0          0        121          0          0
+	Origin Subtotals:                              1       7828       7828          0          0          0        121          0          0
+Message Subtotals:                                     1       7828       7828          0          0          0        121          0          0
+Message: carmen_laser_laser1
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		localize_ackerman-10678                        3315       3287         28          0          0        194          0          0
+	Origin Subtotals:                              1       3315       3287         28          0          0        194          0          0
+Message Subtotals:                                     1       3315       3287         28          0          0        194          0          0
+Message: carmen_localize_ackerman_globalpos
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                        2243       2194         49          0          0        587          0          0
+		map_server-10676                               2390       1955        435          0          0        263          0          0
+		mapper-10679                                   2326       1802        524          0          0       1802          0          0
+		model_predictive_planner-10683                 2244       2046        198          0          0        994          0          0
+		navigator_gui2-10686                           2390       1886        504          0          0       1499          0          0
+		obstacle_avoider-10685                         2158       2096         62          0          0        438          0          0
+		rddf_play-10681                                2242       2242          0          0          0         29          0          0
+		rrt_path_follower-10684                        2245       2223         22          0          0        334          0          0
+		simulator_ackerman-10687                       2390       2221        169          0          0        457          0          0
+	Origin Subtotals:                              9      20628      18665       1963          0          0       6403          0          0
+Message Subtotals:                                     9      20628      18665       1963          0          0       6403          0          0
+Message: carmen_localize_ackerman_initialize
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		localize_ackerman-10678                           1          1          0          0          0          0          0          0
+		map_server-10676                                  1          1          0          0          0          0          0          0
+		simulator_ackerman-10687                          1          1          0          0          0          0          0          0
+	Origin Subtotals:                              3          3          3          0          0          0          0          0          0
+Message Subtotals:                                     3          3          3          0          0          0          0          0          0
+Message: carmen_localize_ackerman_particle_correction
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		navigator_gui2-10686                           2389       1846        543          0          0       1846          0          0
+	Origin Subtotals:                              1       2389       1846        543          0          0       1846          0          0
+Message Subtotals:                                     1       2389       1846        543          0          0       1846          0          0
+Message: carmen_map_server_compact_cost_map_message
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		navigator_gui2-10686                           1638       1556         82          0          0        870          0          0
+	Origin Subtotals:                              1       1638       1556         82          0          0        870          0          0
+Message Subtotals:                                     1       1638       1556         82          0          0        870          0          0
+Message: carmen_map_server_compact_lane_map_message
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		navigator_gui2-10686                            436        389         47          0          0        333          0          0
+		obstacle_distance_mapper-10680                  436        305        131          0          0        305          0          0
+	Origin Subtotals:                              2        872        694        178          0          0        638          0          0
+Message Subtotals:                                     2        872        694        178          0          0        638          0          0
+Message: carmen_map_server_localize_map_name
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		localize_ackerman-10678                          14         14          0          0          0          8          0          0
+		navigator_gui2-10686                             14         14          0          0          0         13          0          0
+	Origin Subtotals:                              2         28         28          0          0          0         21          0          0
+Message Subtotals:                                     2         28         28          0          0          0         21          0          0
+Message: carmen_map_server_offline_map_message
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		mapper-10679                                     15         15          0          0          0         14          0          0
+		navigator_gui2-10686                             15         15          0          0          0         12          0          0
+		simulator_ackerman-10687                         15         15          0          0          0          1          0          0
+	Origin Subtotals:                              3         45         45          0          0          0         27          0          0
+Message Subtotals:                                     3         45         45          0          0          0         27          0          0
+Message: carmen_map_server_road_map_message
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		navigator_gui2-10686                             14         14          0          0          0         14          0          0
+	Origin Subtotals:                              1         14         14          0          0          0         14          0          0
+Message Subtotals:                                     1         14         14          0          0          0         14          0          0
+Message: carmen_mapper_map_message
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		obstacle_distance_mapper-10680                 4953       1639       3314          0          0       1637          0          0
+	Origin Subtotals:                              1       4953       1639       3314          0          0       1637          0          0
+Message Subtotals:                                     1       4953       1639       3314          0          0       1637          0          0
+Message: carmen_navigator_ackerman_go
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		model_predictive_planner-10683                    1          1          0          0          0          0          0          0
+		navigator_gui2-10686                              1          1          0          0          0          1          0          0
+		rrt_path_follower-10684                           1          1          0          0          0          0          0          0
+	Origin Subtotals:                              3          3          3          0          0          0          1          0          0
+Message Subtotals:                                     3          3          3          0          0          0          1          0          0
+Message: carmen_navigator_ackerman_plan
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		navigator_gui2-10686                           2040       1541        499          0          0       1073          0          0
+	Origin Subtotals:                              1       2040       1541        499          0          0       1073          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		navigator_gui2-10686                           2214       1069       1145          0          0       1069          0          0
+	Origin Subtotals:                              1       2214       1069       1145          0          0       1069          0          0
+Message Subtotals:                                     2       4254       2610       1644          0          0       2142          0          0
+Message: carmen_navigator_ackerman_plan_tree
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		navigator_gui2-10686                           2040       1810        230          0          0       1451          0          0
+	Origin Subtotals:                              1       2040       1810        230          0          0       1451          0          0
+Message Subtotals:                                     1       2040       1810        230          0          0       1451          0          0
+Message: carmen_navigator_ackerman_status
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                        2039       2026         13          0          0        686          0          0
+		navigator_gui2-10686                           2040       1679        361          0          0       1679          0          0
+	Origin Subtotals:                              2       4079       3705        374          0          0       2365          0          0
+Message Subtotals:                                     2       4079       3705        374          0          0       2365          0          0
+Message: carmen_navigator_ackerman_stop
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		model_predictive_planner-10683                    1          1          0          0          0          1          0          0
+		navigator_gui2-10686                              1          1          0          0          0          1          0          0
+		rrt_path_follower-10684                           1          1          0          0          0          0          0          0
+	Origin Subtotals:                              3          3          3          0          0          0          2          0          0
+Message Subtotals:                                     3          3          3          0          0          0          2          0          0
+Message: carmen_obstacle_avoider_motion_planner_path
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		navigator_gui2-10686                            398        380         18          0          0        378          0          0
+	Origin Subtotals:                              1        398        380         18          0          0        378          0          0
+Message Subtotals:                                     1        398        380         18          0          0        378          0          0
+Message: carmen_obstacle_avoider_path
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		navigator_gui2-10686                            510        472         38          0          0        447          0          0
+	Origin Subtotals:                              1        510        472         38          0          0        447          0          0
+Message Subtotals:                                     1        510        472         38          0          0        447          0          0
+Message: carmen_obstacle_avoider_robot_hit_obstacle
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                        4120       3536        584          0          0       1462          0          0
+	Origin Subtotals:                              1       4120       3536        584          0          0       1462          0          0
+Message Subtotals:                                     1       4120       3536        584          0          0       1462          0          0
+Message: carmen_obstacle_distance_mapper_compact_lane_contents_message
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                        1572       1568          4          0          0       1060          0          0
+		obstacle_avoider-10685                         1518       1508         10          0          0       1505          0          0
+	Origin Subtotals:                              2       3090       3076         14          0          0       2565          0          0
+Message Subtotals:                                     2       3090       3076         14          0          0       2565          0          0
+Message: carmen_obstacle_distance_mapper_compact_map_message
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                        1572       1571          1          0          0        259          0          0
+		model_predictive_planner-10683                 1573       1554         19          0          0        704          0          0
+		obstacle_avoider-10685                         1518       1514          4          0          0        177          0          0
+	Origin Subtotals:                              3       4663       4639         24          0          0       1140          0          0
+Message Subtotals:                                     3       4663       4639         24          0          0       1140          0          0
+Message: carmen_param_query_double
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                               22         22          0          0          0         22          0          0
+	Origin Subtotals:                              1         22         22          0          0          0         22          0          0
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                              113        113          0          0          0         93          0          0
+	Origin Subtotals:                              1        113        113          0          0          0         93          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                               26         26          0          0          0         26          0          0
+	Origin Subtotals:                              1         26         26          0          0          0         26          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                              118        118          0          0          0         95          0          0
+	Origin Subtotals:                              1        118        118          0          0          0         95          0          0
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                               20         20          0          0          0         20          0          0
+	Origin Subtotals:                              1         20         20          0          0          0         20          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                               13         13          0          0          0         13          0          0
+	Origin Subtotals:                              1         13         13          0          0          0         13          0          0
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                               19         19          0          0          0         19          0          0
+	Origin Subtotals:                              1         19         19          0          0          0         19          0          0
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                2          2          0          0          0          2          0          0
+	Origin Subtotals:                              1          2          2          0          0          0          2          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                          22         22          0          0          0          0          0          0
+		localize_ackerman-10678                         113        113          0          0          0          0          0          0
+		map_server-10676                                 26         26          0          0          0          0          0          0
+		mapper-10679                                    118        118          0          0          0          0          0          0
+		model_predictive_planner-10683                   20         20          0          0          0          0          0          0
+		navigator_gui2-10686                             13         13          0          0          0          0          0          0
+		obstacle_avoider-10685                           19         19          0          0          0          0          0          0
+		obstacle_distance_mapper-10680                    2          2          0          0          0          0          0          0
+		rddf_play-10681                                   3          3          0          0          0          0          0          0
+		rrt_path_follower-10684                          17         17          0          0          0          0          0          0
+		simulator_ackerman-10687                         47         47          0          0          0          0          0          0
+	Origin Subtotals:                             11        400        400          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                3          3          0          0          0          3          0          0
+	Origin Subtotals:                              1          3          3          0          0          0          3          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                               17         17          0          0          0         17          0          0
+	Origin Subtotals:                              1         17         17          0          0          0         17          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                               47         47          0          0          0         47          0          0
+	Origin Subtotals:                              1         47         47          0          0          0         47          0          0
+Message Subtotals:                                    22        800        800          0          0          0        357          0          0
+Message: carmen_param_query_int
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                4          4          0          0          0          4          0          0
+	Origin Subtotals:                              1          4          4          0          0          0          4          0          0
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                               13         13          0          0          0         11          0          0
+	Origin Subtotals:                              1         13         13          0          0          0         11          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                2          2          0          0          0          2          0          0
+	Origin Subtotals:                              1          2          2          0          0          0          2          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                6          6          0          0          0          4          0          0
+	Origin Subtotals:                              1          6          6          0          0          0          4          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                1          1          0          0          0          1          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          1          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                           4          4          0          0          0          0          0          0
+		localize_ackerman-10678                          13         13          0          0          0          0          0          0
+		map_server-10676                                  2          2          0          0          0          0          0          0
+		mapper-10679                                      6          6          0          0          0          0          0          0
+		navigator_gui2-10686                              1          1          0          0          0          0          0          0
+		rddf_play-10681                                   2          2          0          0          0          0          0          0
+		simulator_ackerman-10687                          2          2          0          0          0          0          0          0
+	Origin Subtotals:                              7         30         30          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                2          2          0          0          0          2          0          0
+	Origin Subtotals:                              1          2          2          0          0          0          2          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                2          2          0          0          0          2          0          0
+	Origin Subtotals:                              1          2          2          0          0          0          2          0          0
+Message Subtotals:                                    14         60         60          0          0          0         26          0          0
+Message: carmen_param_query_onoff
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                4          4          0          0          0          4          0          0
+	Origin Subtotals:                              1          4          4          0          0          0          4          0          0
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                               16         16          0          0          0         15          0          0
+	Origin Subtotals:                              1         16         16          0          0          0         15          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                               10         10          0          0          0         10          0          0
+	Origin Subtotals:                              1         10         10          0          0          0         10          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                               21         21          0          0          0         20          0          0
+	Origin Subtotals:                              1         21         21          0          0          0         20          0          0
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                9          9          0          0          0          9          0          0
+	Origin Subtotals:                              1          9          9          0          0          0          9          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                               18         18          0          0          0         18          0          0
+	Origin Subtotals:                              1         18         18          0          0          0         18          0          0
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                5          5          0          0          0          5          0          0
+	Origin Subtotals:                              1          5          5          0          0          0          5          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                           4          4          0          0          0          0          0          0
+		localize_ackerman-10678                          16         16          0          0          0          0          0          0
+		map_server-10676                                 10         10          0          0          0          0          0          0
+		mapper-10679                                     21         21          0          0          0          0          0          0
+		model_predictive_planner-10683                    9          9          0          0          0          0          0          0
+		navigator_gui2-10686                             18         18          0          0          0          0          0          0
+		obstacle_avoider-10685                            5          5          0          0          0          0          0          0
+		rddf_play-10681                                   2          2          0          0          0          0          0          0
+		rrt_path_follower-10684                           5          5          0          0          0          0          0          0
+		simulator_ackerman-10687                          8          8          0          0          0          0          0          0
+	Origin Subtotals:                             10         98         98          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                2          2          0          0          0          2          0          0
+	Origin Subtotals:                              1          2          2          0          0          0          2          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                5          5          0          0          0          5          0          0
+	Origin Subtotals:                              1          5          5          0          0          0          5          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                8          8          0          0          0          8          0          0
+	Origin Subtotals:                              1          8          8          0          0          0          8          0          0
+Message Subtotals:                                    20        196        196          0          0          0         96          0          0
+Message: carmen_param_query_string
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                1          1          0          0          0          1          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          1          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                2          2          0          0          0          0          0          0
+	Origin Subtotals:                              1          2          2          0          0          0          0          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                2          2          0          0          0          2          0          0
+	Origin Subtotals:                              1          2          2          0          0          0          2          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		localize_ackerman-10678                           1          1          0          0          0          0          0          0
+		map_server-10676                                  1          1          0          0          0          0          0          0
+		mapper-10679                                      2          2          0          0          0          0          0          0
+		navigator_gui2-10686                              2          2          0          0          0          0          0          0
+	Origin Subtotals:                              4          6          6          0          0          0          0          0          0
+Message Subtotals:                                     8         12         12          0          0          0          3          0          0
+Message: carmen_param_query_version
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                1          1          0          0          0          1          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          1          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                1          1          0          0          0          1          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          1          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                1          1          0          0          0          1          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          1          0          0
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                1          1          0          0          0          1          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          1          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                2          2          0          0          0          2          0          0
+	Origin Subtotals:                              1          2          2          0          0          0          2          0          0
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                1          1          0          0          0          1          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          1          0          0
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                1          1          0          0          0          1          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          1          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		localize_ackerman-10678                           1          1          0          0          0          0          0          0
+		map_server-10676                                  1          1          0          0          0          0          0          0
+		mapper-10679                                      1          1          0          0          0          0          0          0
+		model_predictive_planner-10683                    1          1          0          0          0          0          0          0
+		navigator_gui2-10686                              2          2          0          0          0          0          0          0
+		obstacle_avoider-10685                            1          1          0          0          0          0          0          0
+		obstacle_distance_mapper-10680                    1          1          0          0          0          0          0          0
+		rddf_play-10681                                   1          1          0          0          0          0          0          0
+		rrt_path_follower-10684                           1          1          0          0          0          0          0          0
+		simulator_ackerman-10687                          1          1          0          0          0          0          0          0
+	Origin Subtotals:                             10         11         11          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                1          1          0          0          0          1          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          1          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		param_daemon-10674                                1          1          0          0          0          1          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          1          0          0
+Message Subtotals:                                    20         22         22          0          0          0         10          0          0
+Message: carmen_proccontrol_groupset
+	Origin: proccontrol_gui-10675
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		proccontrol-10673                                 3          3          0          0          0          0          0          0
+	Origin Subtotals:                              1          3          3          0          0          0          0          0          0
+Message Subtotals:                                     1          3          3          0          0          0          0          0          0
+Message: carmen_proccontrol_moduleset
+	Origin: proccontrol_gui-10675
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		proccontrol-10673                                 6          6          0          0          0          0          0          0
+	Origin Subtotals:                              1          6          6          0          0          0          0          0          0
+Message Subtotals:                                     1          6          6          0          0          0          0          0          0
+Message: carmen_proccontrol_pidtable
+	Origin: proccontrol-10673
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		proccontrol_gui-10675                            96         96          0          0          0          0          0          0
+	Origin Subtotals:                              1         96         96          0          0          0          0          0          0
+Message Subtotals:                                     1         96         96          0          0          0          0          0          0
+Message: carmen_rddf_annotation_message
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                        2242       2129        113          0          0       2125          0          0
+		mapper-10679                                   2242       1650        592          0          0       1630          0          0
+		navigator_gui2-10686                           2242       1641        601          0          0       1624          0          0
+	Origin Subtotals:                              3       6726       5420       1306          0          0       5379          0          0
+Message Subtotals:                                     3       6726       5420       1306          0          0       5379          0          0
+Message: carmen_rddf_road_profile_message
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                        2242       2156         86          0          0       1944          0          0
+	Origin Subtotals:                              1       2242       2156         86          0          0       1944          0          0
+Message Subtotals:                                     1       2242       2156         86          0          0       1944          0          0
+Message: carmen_robot_ackerman_motion_command
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		obstacle_avoider-10685                            1          1          0          0          0          1          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          1          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		obstacle_avoider-10685                         1883       1832         51          0          0        795          0          0
+	Origin Subtotals:                              1       1883       1832         51          0          0        795          0          0
+Message Subtotals:                                     2       1884       1833         51          0          0        796          0          0
+Message: carmen_simulator_ackerman_objects
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		navigator_gui2-10686                           7587       5601       1986          0          0       5601          0          0
+	Origin Subtotals:                              1       7587       5601       1986          0          0       5601          0          0
+Message Subtotals:                                     1       7587       5601       1986          0          0       5601          0          0
+Message: carmen_simulator_ackerman_truepos
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		mapper-10679                                   6502       5080       1422          0          0       3963          0          0
+		navigator_gui2-10686                           7587       5442       2145          0          0       5442          0          0
+	Origin Subtotals:                              2      14089      10522       3567          0          0       9405          0          0
+Message Subtotals:                                     2      14089      10522       3567          0          0       9405          0          0
+Message: rrt_path_message_name
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		rrt_path_follower-10684                        2040       2039          1          0          0        855          0          0
+	Origin Subtotals:                              1       2040       2039          1          0          0        855          0          0
+Message Subtotals:                                     1       2040       2039          1          0          0        855          0          0
+Message: x_ipc_CloseMsg
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+Message Subtotals:                                     9          9          9          0          0          0          0          0          0
+Message: x_ipc_classInfoMsg
+	Origin: **NEWMOD**
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                    140        140          0          0          0          0          0          0
+	Origin Subtotals:                              1        140        140          0          0          0          0          0          0
+	Origin: X_IPC Server
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		**NEWMOD**                                      140        140          0          0          0          0          0          0
+	Origin Subtotals:                              1        140        140          0          0          0          0          0          0
+Message Subtotals:                                     2        280        280          0          0          0          0          0          0
+Message: x_ipc_limitPendingMsg
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     15         15          0          0          0          0          0          0
+	Origin Subtotals:                              1         15         15          0          0          0          0          0          0
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      9          9          0          0          0          0          0          0
+	Origin Subtotals:                              1          9          9          0          0          0          0          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      5          5          0          0          0          0          0          0
+	Origin Subtotals:                              1          5          5          0          0          0          0          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      9          9          0          0          0          0          0          0
+	Origin Subtotals:                              1          9          9          0          0          0          0          0          0
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     12         12          0          0          0          0          0          0
+	Origin Subtotals:                              1         12         12          0          0          0          0          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     30         30          0          0          0          0          0          0
+	Origin Subtotals:                              1         30         30          0          0          0          0          0          0
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      7          7          0          0          0          0          0          0
+	Origin Subtotals:                              1          7          7          0          0          0          0          0          0
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      4          4          0          0          0          0          0          0
+	Origin Subtotals:                              1          4          4          0          0          0          0          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      9          9          0          0          0          0          0          0
+	Origin Subtotals:                              1          9          9          0          0          0          0          0          0
+	Origin: proccontrol-10673
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      3          3          0          0          0          0          0          0
+	Origin Subtotals:                              1          3          3          0          0          0          0          0          0
+	Origin: proccontrol_gui-10675
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      6          6          0          0          0          0          0          0
+	Origin Subtotals:                              1          6          6          0          0          0          0          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      8          8          0          0          0          0          0          0
+	Origin Subtotals:                              1          8          8          0          0          0          0          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      8          8          0          0          0          0          0          0
+	Origin Subtotals:                              1          8          8          0          0          0          0          0          0
+Message Subtotals:                                    14        126        126          0          0          0          0          0          0
+Message: x_ipc_msgInfoMsg
+	Origin: **NEWMOD**
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     28         28          0          0          0          0          0          0
+	Origin Subtotals:                              1         28         28          0          0          0          0          0          0
+	Origin: X_IPC Server
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		**NEWMOD**                                       28         28          0          0          0          0          0          0
+		behavior_selector-10682                          30         30          0          0          0          0          0          0
+		localize_ackerman-10678                          26         26          0          0          0          0          0          0
+		map_server-10676                                 26         26          0          0          0          0          0          0
+		mapper-10679                                     25         25          0          0          0          0          0          0
+		model_predictive_planner-10683                   30         30          0          0          0          0          0          0
+		navigator_gui2-10686                             43         43          0          0          0          0          0          0
+		obstacle_avoider-10685                           26         26          0          0          0          0          0          0
+		obstacle_distance_mapper-10680                   20         20          0          0          0          0          0          0
+		param_daemon-10674                               21         21          0          0          0          0          0          0
+		proccontrol-10673                                14         14          0          0          0          0          0          0
+		proccontrol_gui-10675                            12         12          0          0          0          0          0          0
+		rddf_play-10681                                  21         21          0          0          0          0          0          0
+		rrt_path_follower-10684                          24         24          0          0          0          0          0          0
+		simulator_ackerman-10687                         27         27          0          0          0          0          0          0
+	Origin Subtotals:                             15        373        373          0          0          0          0          0          0
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     30         30          0          0          0          0          0          0
+	Origin Subtotals:                              1         30         30          0          0          0          0          0          0
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     26         26          0          0          0          0          0          0
+	Origin Subtotals:                              1         26         26          0          0          0          0          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     26         26          0          0          0          0          0          0
+	Origin Subtotals:                              1         26         26          0          0          0          0          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     25         25          0          0          0          0          0          0
+	Origin Subtotals:                              1         25         25          0          0          0          0          0          0
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     30         30          0          0          0          0          0          0
+	Origin Subtotals:                              1         30         30          0          0          0          0          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     43         43          0          0          0          0          0          0
+	Origin Subtotals:                              1         43         43          0          0          0          0          0          0
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     26         26          0          0          0          0          0          0
+	Origin Subtotals:                              1         26         26          0          0          0          0          0          0
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     20         20          0          0          0          0          0          0
+	Origin Subtotals:                              1         20         20          0          0          0          0          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     21         21          0          0          0          0          0          0
+	Origin Subtotals:                              1         21         21          0          0          0          0          0          0
+	Origin: proccontrol-10673
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     14         14          0          0          0          0          0          0
+	Origin Subtotals:                              1         14         14          0          0          0          0          0          0
+	Origin: proccontrol_gui-10675
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     12         12          0          0          0          0          0          0
+	Origin Subtotals:                              1         12         12          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     21         21          0          0          0          0          0          0
+	Origin Subtotals:                              1         21         21          0          0          0          0          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     24         24          0          0          0          0          0          0
+	Origin Subtotals:                              1         24         24          0          0          0          0          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     27         27          0          0          0          0          0          0
+	Origin Subtotals:                              1         27         27          0          0          0          0          0          0
+Message Subtotals:                                    30        746        746          0          0          0          0          0          0
+Message: x_ipc_newModuleConnectMsg
+	Origin: **NEWMOD**
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     14         14          0          0          0          0          0          0
+	Origin Subtotals:                              1         14         14          0          0          0          0          0          0
+	Origin: X_IPC Server
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                           1          1          0          0          0          0          0          0
+		localize_ackerman-10678                           1          1          0          0          0          0          0          0
+		map_server-10676                                  1          1          0          0          0          0          0          0
+		mapper-10679                                      1          1          0          0          0          0          0          0
+		model_predictive_planner-10683                    1          1          0          0          0          0          0          0
+		navigator_gui2-10686                              1          1          0          0          0          0          0          0
+		obstacle_avoider-10685                            1          1          0          0          0          0          0          0
+		obstacle_distance_mapper-10680                    1          1          0          0          0          0          0          0
+		param_daemon-10674                                1          1          0          0          0          0          0          0
+		proccontrol-10673                                 1          1          0          0          0          0          0          0
+		proccontrol_gui-10675                             1          1          0          0          0          0          0          0
+		rddf_play-10681                                   1          1          0          0          0          0          0          0
+		rrt_path_follower-10684                           1          1          0          0          0          0          0          0
+		simulator_ackerman-10687                          1          1          0          0          0          0          0          0
+	Origin Subtotals:                             14         14         14          0          0          0          0          0          0
+Message Subtotals:                                    15         28         28          0          0          0          0          0          0
+Message: x_ipc_registerHandlerMsg
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     15         15          0          0          0          0          0          0
+	Origin Subtotals:                              1         15         15          0          0          0          0          0          0
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      9          9          0          0          0          0          0          0
+	Origin Subtotals:                              1          9          9          0          0          0          0          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      5          5          0          0          0          0          0          0
+	Origin Subtotals:                              1          5          5          0          0          0          0          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      9          9          0          0          0          0          0          0
+	Origin Subtotals:                              1          9          9          0          0          0          0          0          0
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     12         12          0          0          0          0          0          0
+	Origin Subtotals:                              1         12         12          0          0          0          0          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     31         31          0          0          0          0          0          0
+	Origin Subtotals:                              1         31         31          0          0          0          0          0          0
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      7          7          0          0          0          0          0          0
+	Origin Subtotals:                              1          7          7          0          0          0          0          0          0
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      4          4          0          0          0          0          0          0
+	Origin Subtotals:                              1          4          4          0          0          0          0          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     10         10          0          0          0          0          0          0
+	Origin Subtotals:                              1         10         10          0          0          0          0          0          0
+	Origin: proccontrol-10673
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      3          3          0          0          0          0          0          0
+	Origin Subtotals:                              1          3          3          0          0          0          0          0          0
+	Origin: proccontrol_gui-10675
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      6          6          0          0          0          0          0          0
+	Origin Subtotals:                              1          6          6          0          0          0          0          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      8          8          0          0          0          0          0          0
+	Origin Subtotals:                              1          8          8          0          0          0          0          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      9          9          0          0          0          0          0          0
+	Origin Subtotals:                              1          9          9          0          0          0          0          0          0
+Message Subtotals:                                    14        129        129          0          0          0          0          0          0
+Message: x_ipc_registerMessageMsg
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     22         22          0          0          0          0          0          0
+	Origin Subtotals:                              1         22         22          0          0          0          0          0          0
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     22         22          0          0          0          0          0          0
+	Origin Subtotals:                              1         22         22          0          0          0          0          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     30         30          0          0          0          0          0          0
+	Origin Subtotals:                              1         30         30          0          0          0          0          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     18         18          0          0          0          0          0          0
+	Origin Subtotals:                              1         18         18          0          0          0          0          0          0
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     19         19          0          0          0          0          0          0
+	Origin Subtotals:                              1         19         19          0          0          0          0          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     41         41          0          0          0          0          0          0
+	Origin Subtotals:                              1         41         41          0          0          0          0          0          0
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     14         14          0          0          0          0          0          0
+	Origin Subtotals:                              1         14         14          0          0          0          0          0          0
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      7          7          0          0          0          0          0          0
+	Origin Subtotals:                              1          7          7          0          0          0          0          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     20         20          0          0          0          0          0          0
+	Origin Subtotals:                              1         20         20          0          0          0          0          0          0
+	Origin: proccontrol-10673
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      7          7          0          0          0          0          0          0
+	Origin Subtotals:                              1          7          7          0          0          0          0          0          0
+	Origin: proccontrol_gui-10675
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      3          3          0          0          0          0          0          0
+	Origin Subtotals:                              1          3          3          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     15         15          0          0          0          0          0          0
+	Origin Subtotals:                              1         15         15          0          0          0          0          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     12         12          0          0          0          0          0          0
+	Origin Subtotals:                              1         12         12          0          0          0          0          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                     20         20          0          0          0          0          0          0
+	Origin Subtotals:                              1         20         20          0          0          0          0          0          0
+Message Subtotals:                                    14        250        250          0          0          0          0          0          0
+Message: x_ipc_registerResourceMsg
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: proccontrol-10673
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: proccontrol_gui-10675
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+Message Subtotals:                                    14         14         14          0          0          0          0          0          0
+Message: x_ipc_waitMsg
+	Origin: X_IPC Server
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                           1          1          0          0          0          0          0          0
+		localize_ackerman-10678                           1          1          0          0          0          0          0          0
+		map_server-10676                                  1          1          0          0          0          0          0          0
+		mapper-10679                                      1          1          0          0          0          0          0          0
+		model_predictive_planner-10683                    1          1          0          0          0          0          0          0
+		navigator_gui2-10686                              1          1          0          0          0          0          0          0
+		obstacle_avoider-10685                            1          1          0          0          0          0          0          0
+		obstacle_distance_mapper-10680                    1          1          0          0          0          0          0          0
+		param_daemon-10674                                1          1          0          0          0          0          0          0
+		proccontrol-10673                                 1          1          0          0          0          0          0          0
+		proccontrol_gui-10675                             1          1          0          0          0          0          0          0
+		rddf_play-10681                                   1          1          0          0          0          0          0          0
+		rrt_path_follower-10684                           1          1          0          0          0          0          0          0
+		simulator_ackerman-10687                          1          1          0          0          0          0          0          0
+	Origin Subtotals:                             14         14         14          0          0          0          0          0          0
+	Origin: behavior_selector-10682
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: map_server-10676
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: mapper-10679
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: model_predictive_planner-10683
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: obstacle_distance_mapper-10680
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: param_daemon-10674
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: proccontrol-10673
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: proccontrol_gui-10675
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rddf_play-10681
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: rrt_path_follower-10684
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+	Origin: simulator_ackerman-10687
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		X_IPC Server                                      1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+Message Subtotals:                                    28         28         28          0          0          0          0          0          0
+
+Grand Totals:                                        413     159798     134766      25032          0          0      73454          0          0
+================================================================================================================================================
+

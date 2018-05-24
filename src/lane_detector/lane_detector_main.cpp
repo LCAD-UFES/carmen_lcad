@@ -47,7 +47,7 @@ const unsigned int maxPositions = 50;
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
 std::vector<carmen_velodyne_partial_scan_message> velodyne_vector;
 
-#define USE_YOLO_V2 	1
+#define USE_YOLO_V2 publish	1
 #define USE_DETECTNET 	0
 
 
@@ -97,7 +97,6 @@ register_ipc_messages(void)
 	err = IPC_defineMsg(CARMEN_LANE_NAME, IPC_VARIABLE_LENGTH, CARMEN_LANE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_LANE_NAME);
 }
-
 
 void
 lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > &laser_points_in_camera_box_list,
@@ -154,16 +153,38 @@ lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyn
 			}
 		}
 		carmen_vector_3D_t p1, p2;
+		carmen_vector_3D_t offset;
 		p1 = carmen_covert_sphere_to_cartesian_coord(laser_points_in_camera_box_list[i][idx_pt1].velodyne_points_in_cam.laser_polar);
 		p2 = carmen_covert_sphere_to_cartesian_coord(laser_points_in_camera_box_list[i][idx_pt2].velodyne_points_in_cam.laser_polar);
+
+        offset.x = 0.572;
+        offset.y = 0.0;
+        offset.z = 2.154;
+
+        p1 = translate_point(p1, offset);
+        p2 = translate_point(p2, offset);
+
+        p1 = rotate_point(p1, globalpos.theta);
+        p2 = rotate_point(p2, globalpos.theta);
+
+        offset.x = globalpos.x;
+        offset.y = globalpos.y;
+        offset.z = 0.0;
+
+
+        p1 = translate_point(p1, offset);
+        p2 = translate_point(p2, offset);
+
 		message.lane_vector[i].lane_segment_position1.x = p1.x;
 		message.lane_vector[i].lane_segment_position1.y = p1.y;
 		message.lane_vector[i].lane_segment_position1.x = p2.x;
 		message.lane_vector[i].lane_segment_position1.y = p2.y;
 		message.lane_vector[i].lane_class = 0;
 	}
+	message.theta = globalpos.theta;
 	// publish!
 	carmen_lane_publish_message(&message);
+	free(message.lane_vector);
 
 }
 
@@ -381,6 +402,13 @@ objects_names_from_file(std::string const filename)
     return (file_lines);
 }
 
+void
+localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
+{
+    globalpos.theta = globalpos_message->globalpos.theta;
+    globalpos.x = globalpos_message->globalpos.x;
+    globalpos.y = globalpos_message->globalpos.y;
+}
 
 void
 subscribe_messages()
@@ -390,6 +418,8 @@ subscribe_messages()
 
     carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler,
           CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 }
 
