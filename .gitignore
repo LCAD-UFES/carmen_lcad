@@ -322,6 +322,8 @@ src/param_daemon/param_tool
 src/parking_assistant/parking_assistant
 src/parking_assistant/parking_assistant_viewer
 src/path_interpolator_planner/path_interpolator
+src/PiCamera/camera/build
+src/PiCamera/raspicam/build
 src/proccontrol/Makefile.qmake-qt4
 src/proccontrol/moc_proccontrol_gui.cpp
 src/proccontrol/proccontrol
