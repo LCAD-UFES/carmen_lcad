@@ -114,10 +114,10 @@ lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyn
 	for (int i = 0; i < laser_points_in_camera_box_list.size(); i++)
 	{
 		unsigned int idx_pt1, idx_pt2;
+		unsigned int x_min = 10000, x_max = 0, y_min = 10000, y_max = 0;
 
 		for(int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
 		{
-			unsigned int x_min = 10000, x_max = 0, y_min = 10000, y_max = 0;
 			if (left_or_right[i] == true)
 			{
 				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx < x_min)
@@ -181,7 +181,6 @@ lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyn
 		message.lane_vector[i].lane_segment_position1.y = p2.y;
 		message.lane_vector[i].lane_class = 0;
 	}
-	message.theta = globalpos.theta;
 	// publish!
 	carmen_lane_publish_message(&message);
 	free(message.lane_vector);

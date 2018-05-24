@@ -27,6 +27,7 @@
 #include <carmen/obstacle_avoider_interface.h>
 #include <carmen/dynamic_object_detector_interface.h>
 #include <carmen/moving_objects_interface.h>
+#include <carmen/lane_detector_interface.h>
 #include <car_panel.h>
 
 #include <carmen/rddf_util.h>
@@ -261,6 +262,8 @@ namespace View
 
 		carmen_rddf_annotation_message rddf_annotation_msg;
 
+		carmen_lane_detector_lane_message_t lane_markings_msg;
+
 		GdkImage *annotation_image[NUM_RDDF_ANNOTATION_TYPES][NUM_RDDF_ANNOTATION_CODES];
 
 		carmen_robot_ackerman_road_velocity_control_message road_velocity_control;
@@ -365,6 +368,7 @@ namespace View
 		void draw_simulated_objects(GtkMapViewer *the_map_view);
 		void draw_moving_objects(GtkMapViewer *the_map_view);
 		void draw_moving_points(GtkMapViewer *the_map_view, double pixel_size);
+		void draw_lane_lines(GtkMapViewer *the_map_view, double pixel_size);
 		void draw_annotations(GtkMapViewer *the_map_view, double pixel_size);
 		void draw_placing_animation(GtkMapViewer *the_map_view);
 		void draw_path(carmen_world_point_t *path, int num_path_points, GdkColor path_colour, GdkColor robot_color, GtkMapViewer *the_map_view);
