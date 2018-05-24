@@ -63,13 +63,28 @@ Optional arguments:
 
 Please refer to the sample files in this directory.
 
-Sample #1: general summary of log record classes
+Sample #1 - Read all records and generate summaries by classes (default), by module connections, by message registrations and by message origins/destinations:
 ```
- ./central_log_view sample.log
+ ./central_log_view sample_central.log -s cro
 ```
 
+Sample #2 - Filter records related to any message whose name contains "avoider", then generate a summary of these messages by origin:
+```
+ ./central_log_view sample_central.log -msg \*avoider\* -s o
+```
 
+Sample #3 - Filter records related to message "carmen_obstacle_avoider_path" which contains the keys "7757717.57" or "7757718.69" within the text, then print the details of these records, including the data lines:
+```
+ ./central_log_view sample_central.log -msg carmen_obstacle_avoider_path -k 7757717.57 7757718.69 -v 2
+```
 
- 
+Sample #4 - Filter records related to all messages originated from any module whose name starts with "localize" or "navigator", and destinated to any module whose name starts with "map", then generate a summary of connections and closures of these modules, and a summary of these messages by origin:
+```
+ ./central_log_view sample_central.log -mod localize\*:map\* navigator\*:map\* -s co
+```
 
+Sample #5 - Filter records of classes "Broadcast" or "Deleted", logged in a time interval of 1 second starting at 11:01, containing simultaneously the keys "mapper" and "PEDESTRIAN" within the text, then print the short details:
+```
+ ./central_log_view sample_central.log -c bx -t 11:01 11:01:01 -k mapper\*PEDESTRIAN -v 1
+```
 

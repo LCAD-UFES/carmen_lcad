@@ -1,0 +1,61 @@
+Commandline: central_log_view sample_central.log -msg *avoider* -s o 
+
+Central Log View Utility
+Log file: sample_central.log
+Log start time: Fri Apr 20 10:59:02 2018
+
+
+Selected log period:  from 11:00:11.06 to 11:01:56.69
+Handle time summary:  Messaging: 99.03%  Waiting: 0.97%  Average size: 257016 bytes
+
+==========================================
+General Summary
+==========================================
+Log Record Class          Count      Lines
+--------------------  ---------  ---------
+Connection                    0          0
+Registration                  3          3
+Broadcast                  7315       7315
+Inform                        0          0
+Done                       4388       4388
+Query                         0          0
+Reply                         0          0
+Deleted                     640        640
+Data                       4388       8476
+Handle Summary                0          0
+Other                         0          0
+Unknown Message               0          0
+Unknown                       0          0
+
+Totals:                              20822
+==========================================
+
+
+================================================================================================================================================
+Message Summary by Origin
+================================================================================================================================================
+Message: carmen_obstacle_avoider_motion_planner_path
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		navigator_gui2-10686                            398        380         18          0          0        378          0          0
+	Origin Subtotals:                              1        398        380         18          0          0        378          0          0
+Message Subtotals:                                     1        398        380         18          0          0        378          0          0
+Message: carmen_obstacle_avoider_path
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		navigator_gui2-10686                            510        472         38          0          0        447          0          0
+	Origin Subtotals:                              1        510        472         38          0          0        447          0          0
+Message Subtotals:                                     1        510        472         38          0          0        447          0          0
+Message: carmen_obstacle_avoider_robot_hit_obstacle
+	Origin: obstacle_avoider-10685
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		behavior_selector-10682                        4120       3536        584          0          0       1462          0          0
+	Origin Subtotals:                              1       4120       3536        584          0          0       1462          0          0
+Message Subtotals:                                     1       4120       3536        584          0          0       1462          0          0
+
+Grand Totals:                                          3       5028       4388        640          0          0       2287          0          0
+================================================================================================================================================
+

@@ -453,12 +453,11 @@ is_time_summary_line(char *line_c)
 
 
 int
-get_data(char *line_c, long *linecount, int *buffersize, string &line_data, bool *filtered)
+get_data(char *line_c, long *linecount, int *buffersize, string &line_data)
 {
 	char single_line_data[2000];
 	int lines = 0;
 	long textstart = ftell(g_logfile);
-	*filtered = g_filter_keyword_all;
 
 	while (read_line(g_logfile, line_c, buffersize))
 	{
@@ -473,7 +472,6 @@ get_data(char *line_c, long *linecount, int *buffersize, string &line_data, bool
 		lines++;
 		*linecount += 1;
 		textstart = ftell(g_logfile);
-		*filtered |= filter_keyword(string(line_c));
 		sprintf(single_line_data, "Logline: %9ld  Class: %-10s  Logtime: %s  Text: %s\n", *linecount,
 				g_log_record_class_name[DATA_CLASS], g_logtime, line_c);
 		line_data += single_line_data;
@@ -763,10 +761,8 @@ message_log(char *line_c, long *linecount, int *buffersize)
 	get_dest_module_from_message_log(dest_module, g_logtime, status, &sent_count, &pending_count, &on_hold_count, line_c, pos);
 	filtered &= filter_time(g_logtime);
 
-	bool filtered_key_line = filter_keyword(line);
-	bool filtered_key_data = false;
-	int lines = get_data(line_c, linecount, buffersize, line_data, &filtered_key_data);
-	filtered &= (filtered_key_line || filtered_key_data);
+	int lines = get_data(line_c, linecount, buffersize, line_data);
+	filtered &= filter_keyword(line + '\n' + line_data);
 
 	if (orig_module == "???" || dest_module == "???")
 	{
@@ -775,7 +771,10 @@ message_log(char *line_c, long *linecount, int *buffersize)
 	}
 
 	if (msg_class_num == REPLY_CLASS && sent_count == 1)
-		delete_pending_vec(msg_name, loc_id, orig_module, dest_module, status);
+	{
+		string orig_query, dest_query, status_query;
+		delete_pending_vec(msg_name, loc_id, orig_query, dest_query, status_query);
+	}
 	else
 		update_pending_vec(msg_name, loc_id, orig_module, dest_module, status);
 
@@ -1252,6 +1251,9 @@ process_analysis()
 		int c_id = -1;
 		module_c[0] = host_c[0] = 0;
 		linecount++;
+
+		if (linecount == 156851)
+			c_id = -1;
 
 		if (sscanf(line_c, " Broadcast %s {%d}:", msg_name_c, &id) == 2)
 			broadcast_log(line_c, &linecount, &buffersize);

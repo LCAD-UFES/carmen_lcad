@@ -1,0 +1,69 @@
+Commandline: ./central_log_view sample_central.log -mod localize*:map* navigator*:map* -s co 
+
+Central Log View Utility
+Log file: sample_central.log
+Log start time: Fri Apr 20 10:59:02 2018
+
+
+Selected log period:  from 10:59:21.82 to 11:02:32.29
+Handle time summary:  Messaging: 98.97%  Waiting: 1.03%  Average size: 250050 bytes
+
+==========================================
+General Summary
+==========================================
+Log Record Class          Count      Lines
+--------------------  ---------  ---------
+Connection                    8         24
+Registration                  0          0
+Broadcast                  6782       6782
+Inform                        0          0
+Done                       3758       3758
+Query                         0          0
+Reply                         0          0
+Deleted                     959        959
+Data                       3758      11273
+Handle Summary                0          0
+Other                         0          0
+Unknown Message               0          0
+Unknown                       0          0
+
+Totals:                              22796
+==========================================
+
+
+==============================================================
+Module Connection Summary
+==============================================================
+Module                                      Connect      Close
+----------------------------------------  ---------  ---------
+localize_ackerman-10678                           1          1
+map_server-10676                                  1          1
+mapper-10679                                      1          1
+navigator_gui2-10686                              1          1
+
+Totals:                                4          4          4
+==============================================================
+
+
+================================================================================================================================================
+Message Summary by Origin
+================================================================================================================================================
+Message: carmen_localize_ackerman_globalpos
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		map_server-10676                               2390       1955        435          0          0        263          0          0
+		mapper-10679                                   2326       1802        524          0          0       1802          0          0
+	Origin Subtotals:                              2       4716       3757        959          0          0       2065          0          0
+Message Subtotals:                                     2       4716       3757        959          0          0       2065          0          0
+Message: carmen_localize_ackerman_initialize
+	Origin: navigator_gui2-10686
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		map_server-10676                                  1          1          0          0          0          0          0          0
+	Origin Subtotals:                              1          1          1          0          0          0          0          0          0
+Message Subtotals:                                     1          1          1          0          0          0          0          0          0
+
+Grand Totals:                                          3       4717       3758        959          0          0       2065          0          0
+================================================================================================================================================
+

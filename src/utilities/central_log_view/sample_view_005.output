@@ -1,0 +1,34 @@
+Commandline: ./central_log_view sample_central.log -c bx -k mapper*PEDESTRIAN -t 11:01 11:01:01 -v 1 
+
+Central Log View Utility
+Log file: sample_central.log
+Log start time: Fri Apr 20 10:59:02 2018
+
+Logline:    512614  Class: Broadcast   Message: carmen_rddf_annotation_message  Id: 3  Origin: rddf_play-10681  Destination: mapper-10679  Status: pending-->sent  Logtime: 11:01:00.07
+Logline:    512853  Class: Broadcast   Message: carmen_rddf_annotation_message  Id: 51  Origin: rddf_play-10681  Destination: mapper-10679  Status: pending-->sent  Logtime: 11:01:00.13
+Logline:    513676  Class: Broadcast   Message: carmen_rddf_annotation_message  Id: 12  Origin: rddf_play-10681  Destination: mapper-10679  Status: pending-->sent  Logtime: 11:01:00.19
+Logline:    514445  Class: Broadcast   Message: carmen_rddf_annotation_message  Id: 49  Origin: rddf_play-10681  Destination: mapper-10679  Status: pending-->sent  Logtime: 11:01:00.28
+Logline:    515167  Class: Broadcast   Message: carmen_rddf_annotation_message  Id: 22  Origin: rddf_play-10681  Destination: mapper-10679  Status: pending-->sent  Logtime: 11:01:00.40
+Logline:    515482  Class: Broadcast   Message: carmen_rddf_annotation_message  Id: 1  Origin: rddf_play-10681  Destination: mapper-10679  Status: pending-->sent  Logtime: 11:01:00.53
+Logline:    516260  Class: Broadcast   Message: carmen_rddf_annotation_message  Id: 10  Origin: rddf_play-10681  Destination: mapper-10679  Status: pending-->sent  Logtime: 11:01:00.58
+Logline:    516727  Class: Broadcast   Message: carmen_rddf_annotation_message  Id: 29  Origin: rddf_play-10681  Destination: mapper-10679  Status: pending-->sent  Logtime: 11:01:00.65
+Logline:    517505  Class: Broadcast   Message: carmen_rddf_annotation_message  Id: 1  Origin: rddf_play-10681  Destination: mapper-10679  Status: pending-->sent  Logtime: 11:01:00.75
+Logline:    517888  Class: Broadcast   Message: carmen_rddf_annotation_message  Id: 60  Origin: rddf_play-10681  Destination: mapper-10679  Status: pending-->sent  Logtime: 11:01:00.84
+Logline:    518571  Class: Broadcast   Message: carmen_rddf_annotation_message  Id: 10  Origin: rddf_play-10681  Destination: mapper-10679  Status: pending-->sent  Logtime: 11:01:00.90
+Logline:    519133  Class: Broadcast   Message: carmen_rddf_annotation_message  Id: 7  Origin: rddf_play-10681  Destination: mapper-10679  Status: pending-->sent  Logtime: 11:01:00.96
+
+Selected log period:  from 11:01:00.07 to 11:01:00.96
+Handle time summary:  Messaging: 99.12%  Waiting: 0.87%  Average size: 292980 bytes
+
+==========================================
+General Summary
+==========================================
+Log Record Class          Count      Lines
+--------------------  ---------  ---------
+Broadcast                    12         12
+Deleted                       0          0
+Data                         12         36
+
+Totals:                                 48
+==========================================
+
