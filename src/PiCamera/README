@@ -1,7 +1,22 @@
+Para criar o modulo "PiCamera" no carmen_lcad soi usado o seguinte procedimento:
+- Foi criado o diretorio src/rpi_camera e incluindo um arquivo texto README apenas para ter um arquivo no diretorio
+- Foi feito o commit e push deste diretorio no github
+- Foi baixado o diretorio PiCamera no Raspberry Pi do github do LCAD usando o procedimento https://stackoverflow.com/questions/7106012/download-a-single-folder-or-directory-from-a-github-repo , que basicamente consistiu de:
+ sudo apt-get install subversion
+- svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/PiCamera
+- A partir deste ponto podemos usar o svn para manter o modulo rpi_camera do Raspberry Pi atualizado no github do LCAD
+
+Observações importantes:
+Nao upar as pastas do scrpit "rpi_camera" com as pastas build
+Caso ainda exista uma pasta ".git" dentro da pasta "camera" ou "raspicam", proveninente de outras interacoes com o git hub, delete essa pasta usando "rm -rf .git" 
+Os comandos para upar novos arquivos sao 
+svn add nova                        (Para "cancelar" o comando add usar: svn revert --recursive example_folder)
+svn commit -m "Descricao da modificacao"
+
 
 Abaixo estao as instrucoes para a utilizacao do raspberry pi 3 e para compilar e executar o script "rpi_camera".
 
-== Instruções para formatar o SSD card com o Raspbian ==
+== Instrucoes para formatar o SSD card com o Raspbian ==
 
 - Baixe o arquivo imagem do sistema operacional "Raspbian" no site do raspberry (https://www.raspberrypi.org/downloads/raspbian/)
 Obs: Nao baixe o arquivo LITE, e sim a versao completa.
@@ -13,7 +28,7 @@ Link: (https://etcher.io/)
 
 No final do processo o cartao vai estar pronto para ser inserido no Raspberry pi 3, e o mesmo estara pronto para utilizacao.
 
-== Instrucoes iniciais para a utilizaçao do Raspberry pi 3 (Usando a camera)
+== Instrucoes iniciais para a utilizacao do Raspberry pi 3 (Usando a camera)
 
 -Conecte seu Raspberry pi 3 em uma rede Wireless ou Wired(A internet sera um recurso necessario para, eventualmente, baixar-
 mos pacotes e programas necessarios para a devida utilizacao do Script "rpi_camera" e de outras ocasionais funcionalidades)
