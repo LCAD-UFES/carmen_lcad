@@ -53,19 +53,28 @@ compute_error_ellipse(double &angle, double &major_axis, double &minor_axis,
 	 corresponding radii */
 	if (eigval1 < 0 || eigval2 < 0)
 	{
-		eigval1 = 1.0;
-		eigval2 = 1.0;
+		eigval1 = 0.001;
+		eigval2 = 0.001;
 	}
 	eigval1 = sqrt(eigval1) * k;
 	eigval2 = sqrt(eigval2) * k;
-	if (eigval1 < 1)
-		eigval1 = 1;
-	if (eigval2 < 1)
-		eigval2 = 1;
+	if (eigval1 < 0.001)
+		eigval1 = 0.001;
+	if (eigval2 < 0.001)
+		eigval2 = 0.001;
 
-	angle = atan2(eigvec1y, eigvec1x);
-	major_axis = eigval1;
-	minor_axis = eigval2;
+	if (eigval1 >= eigval2)
+	{
+		angle = atan2(eigvec1y, eigvec1x);
+		major_axis = eigval1;
+		minor_axis = eigval2;
+	}
+	else
+	{
+		angle = atan2(eigvec2y, eigvec2x);
+		major_axis = eigval2;
+		minor_axis = eigval1;
+	}
 }
 
 
@@ -168,6 +177,98 @@ constant_acceleration_system_setup(double &x, double &y, double &phi, double &v,
 
 
 void
+set_constant_angular_velocity_system_matrixes(Matrix &F_k_1, Matrix &Q_k_1, Matrix &H_k, Matrix &R_p_k,
+		double delta_t, double w, double sigma_x, double sigma_y, double sigma_r, double sigma_theta)
+{
+	double aux_data1[4 * 4] =
+	{
+		1.0,			sin(w*delta_t)/w, 		0.0, 			-(1.0-cos(w*delta_t))/w,
+		0.0, 			cos(w*delta_t),	 		0.0, 			-sin(w*delta_t),
+		0.0, 			(1.0-cos(w*delta_t))/w,	1.0,			sin(w*delta_t)/w,
+		0.0, 			sin(w*delta_t), 		0.0, 			cos(w*delta_t),
+	};
+	Matrix aux_matrix1(4, 4, aux_data1);
+	F_k_1 = aux_matrix1;  // eq. 2.17, pg 11
+
+	double aux_data22[2 * 2] =
+	{
+		sigma_x*sigma_x, 	0.0,
+		0.0, 				sigma_y*sigma_y,
+	};
+	Matrix aux_matrix22(2, 2, aux_data22);
+	double aux_data23[4 * 2] =
+	{
+		(delta_t*delta_t)/2.0,	0.0,
+		delta_t, 				0.0,
+		0.0, 					(delta_t*delta_t)/2.0,
+		0.0,					delta_t,
+	};
+	Matrix aux_matrix23(4, 2, aux_data23);
+	Q_k_1 = aux_matrix23 * aux_matrix22 * ~aux_matrix23;
+
+	double aux_data3[2 * 4] =
+	{
+		1.0,			0.0, 			0.0, 			0.0,
+		0.0, 			0.0,	 		1.0, 			0.0,
+	};
+	Matrix aux_matrix3(2, 4, aux_data3);
+	H_k = aux_matrix3;  // eq. 2.38, pg 15
+
+	double aux_data4[2 * 2] =
+	{
+		sigma_r,		0.0,
+		0.0, 			sigma_theta,
+	};
+	Matrix aux_matrix4(2, 2, aux_data4);
+	R_p_k = aux_matrix4;  // eq. 2.34, pg 15
+}
+
+
+void
+constant_angular_velocity_system_setup(double &x, double &y, double &phi, double &v, double &w, Matrix &x_k_k, Matrix &P_k_k,
+		Matrix &F_k_1, Matrix &Q_k_1, Matrix &H_k, Matrix &R_p_k,
+		double &delta_t, double &sigma_x, double &sigma_y, double &sigma_r, double &sigma_theta)
+{
+	x = -170.0;
+	y = -150.0;
+	phi = carmen_degrees_to_radians(45.0);
+	v = 5.0;
+	w = -0.01;
+
+	delta_t = 1.0;
+	sigma_x = 2.0;
+	sigma_y = 2.0;
+	sigma_r = 2.0;
+	sigma_theta = carmen_degrees_to_radians(1.0);
+
+// Initial state
+	double X[4 * 1] =
+	{
+		x - 5.0,		// x + adicao de erro inicial
+		v * cos(phi),	// x' (v_x)
+		y + 10.0,		// y + adicao de erro inicial
+		v * sin(phi)	// y' (v_y)
+	};
+	Matrix aux_matrix1(4, 1, X);
+	x_k_k = aux_matrix1; // eq. 3.27, pg 24
+
+
+	double P[4 * 4] =
+	{
+		10.0 * 10.0,	0.0, 			0.0, 			0.0,
+		0.0, 			0.2 * 0.2, 		0.0, 			0.0,
+		0.0, 			0.0, 			10.0 * 10.0,	0.0,
+		0.0, 			0.0, 			0.0, 			0.2 * 0.2
+	};
+	Matrix aux_matrix2(4, 4, P);
+	P_k_k = aux_matrix2;  // eq. 3.33, pg 25
+
+	// Constant Velocity System setup
+	set_constant_angular_velocity_system_matrixes(F_k_1, Q_k_1, H_k, R_p_k, delta_t, w, sigma_x, sigma_y, sigma_r, sigma_theta);
+}
+
+
+void
 set_constant_velocity_system_matrixes(Matrix &F_k_1, Matrix &Q_k_1, Matrix &H_k, Matrix &R_p_k,
 		double delta_t, double sigma_x, double sigma_y, double sigma_r, double sigma_theta)
 {
@@ -226,8 +327,8 @@ constant_velocity_system_setup(double &x, double &y, double &phi, double &v, Mat
 	v = 5.0;
 
 	delta_t = 1.0;
-	sigma_x = 0.001;
-	sigma_y = 0.001;
+	sigma_x = 0.2;
+	sigma_y = 0.2;
 	sigma_r = 2.0;
 	sigma_theta = carmen_degrees_to_radians(1.0);
 
@@ -298,7 +399,7 @@ kalman_filter(Matrix &x_k_k, Matrix &P_k_k, Matrix z_k,
 	Matrix P_k_1_k_1 = P_k_k;
 
 	// Prediction
-	Matrix x_k_k_1 = F_k_1 * x_k_1_k_1;
+	Matrix x_k_k_1 = F_k_1 * x_k_1_k_1; // Traget tracking nao tem entrada de controle
 	Matrix P_k_k_1 = F_k_1 * P_k_1_k_1 * ~F_k_1 + Q_k_1;
 
 	// Correction
@@ -306,9 +407,9 @@ kalman_filter(Matrix &x_k_k, Matrix &P_k_k, Matrix z_k,
 	Matrix K_k = P_k_k_1 * ~H_k * Matrix::inv(S_k);
 	x_k_k = x_k_k_1 + K_k * (z_k - H_k * x_k_k_1); // pequena mudancca aqui para evitar a necessidade da variavel ~zk
 //	P_k_k = P_k_k_1 - K_k * S_k * ~K_k;
-//	P_k_k = (Matrix::eye(4) - K_k * H_k) * P_k_k_1;
-	Matrix aux = (Matrix::eye(x_k_k.m) - K_k * H_k);
-	P_k_k = aux * P_k_k_1 * ~aux + K_k * R_k * ~K_k;
+	P_k_k = (Matrix::eye(x_k_k.m) - K_k * H_k) * P_k_k_1;
+//	Matrix aux = Matrix::eye(x_k_k.m) - K_k * H_k;
+//	P_k_k = aux * P_k_k_1 * ~aux + K_k * R_k * ~K_k;
 }
 
 
@@ -318,13 +419,19 @@ main()
 	double angle, major_axis, minor_axis;
 	Matrix x_k_k, P_k_k, F_k_1, Q_k_1, H_k, R_p_k;
 
-	double x, y, phi, v, delta_t, sigma_x, sigma_y, sigma_r, sigma_theta;
-	constant_velocity_system_setup(x, y, phi, v, x_k_k, P_k_k, F_k_1, Q_k_1, H_k, R_p_k, delta_t, sigma_x, sigma_y, sigma_r, sigma_theta);
+//	double x, y, phi, v, delta_t, sigma_x, sigma_y, sigma_r, sigma_theta;
+//	constant_velocity_system_setup(x, y, phi, v, x_k_k, P_k_k, F_k_1, Q_k_1, H_k, R_p_k, delta_t, sigma_x, sigma_y, sigma_r, sigma_theta);
+//	compute_error_ellipse(angle, major_axis, minor_axis,
+//			P_k_k.val[0][0], P_k_k.val[0][2], P_k_k.val[2][2], 2.4477);
+//	printf("%lf %lf %lf %lf %lf %lf %lf\n", x, y, x_k_k.val[0][0], x_k_k.val[2][0], major_axis, minor_axis, angle * 180.0 / M_PI);
+
+	double x, y, phi, v, w, delta_t, sigma_x, sigma_y, sigma_r, sigma_theta;
+	constant_angular_velocity_system_setup(x, y, phi, v, w, x_k_k, P_k_k, F_k_1, Q_k_1, H_k, R_p_k, delta_t, sigma_x, sigma_y, sigma_r, sigma_theta);
 	compute_error_ellipse(angle, major_axis, minor_axis,
 			P_k_k.val[0][0], P_k_k.val[0][2], P_k_k.val[2][2], 2.4477);
 	printf("%lf %lf %lf %lf %lf %lf %lf\n", x, y, x_k_k.val[0][0], x_k_k.val[2][0], major_axis, minor_axis, angle * 180.0 / M_PI);
 
-//	double x, y, phi, v, delta_t, sigma_vx, sigma_vy, sigma_r, sigma_theta;
+	//	double x, y, phi, v, delta_t, sigma_vx, sigma_vy, sigma_r, sigma_theta;
 //	constant_acceleration_system_setup(x, y, phi, v, x_k_k, P_k_k, F_k_1, Q_k_1, H_k, R_p_k, delta_t, sigma_vx, sigma_vy, sigma_r, sigma_theta);
 //	compute_error_ellipse(angle, major_axis, minor_axis,
 //			P_k_k.val[0][0], P_k_k.val[0][3], P_k_k.val[3][3], 2.4477);
@@ -334,9 +441,6 @@ main()
 	double t = 0.0;
 	do
 	{
-		x = x + v * cos(phi) * delta_t;	// true position update
-		y = y + v * sin(phi) * delta_t;	// true position update
-
 		true_position_observation(z_k, R_k, R_p_k, x, y, sigma_r, sigma_theta);
 
 		kalman_filter(x_k_k, P_k_k, z_k, F_k_1, Q_k_1, H_k, R_k);
@@ -349,7 +453,10 @@ main()
 //				P_k_k.val[0][0], P_k_k.val[0][3], P_k_k.val[3][3], 2.4477);
 //		printf("%lf %lf %lf %lf %lf %lf %lf\n", x, y, x_k_k.val[0][0], x_k_k.val[3][0], major_axis, minor_axis, angle * 180.0 / M_PI);
 
+		x = x + v * cos(phi) * delta_t;	// true position update
+		y = y + v * sin(phi) * delta_t;	// true position update
+
 		t += delta_t;
-//		phi -= 0.01;
+		phi += 0.02;
 	} while (t < 100.0);
 }
