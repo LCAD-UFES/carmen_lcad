@@ -1545,8 +1545,9 @@ read_message_filter(vector<string> &msg_vec, vector<string> &inv_msg_vec, int *a
 	if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
 		terminate((char *) "arg[%d]: Message parameter expected after -msg\n", *arg_num);
 
-	bool inv_filter = (argv[*arg_num][1] == 'i');
-
+	char *filter = argv[*arg_num];
+	bool inv_filter = (filter[1] == 'i');
+	bool msg_all = false;
 	static bool first_time = true;
 	if (first_time)
 		g_filter_msg_all = false;
@@ -1560,14 +1561,14 @@ read_message_filter(vector<string> &msg_vec, vector<string> &inv_msg_vec, int *a
 
 		if (string(param) == "*")
 		{
-			g_filter_msg_all = true;
-			if (inv_filter)
-				terminate((char *) "arg[%d]: Inverted filter -imsg does not accept '%s' parameter\n", *arg_num, param);
+			printf("arg[%d]: Warning: using parameter '%s' in filter %s\n", *arg_num, param, filter);
+			msg_all |= !inv_filter;
 		}
 
 		if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
 			break;
 	}
+	g_filter_msg_all = (g_filter_msg_all || msg_all) && inv_msg_vec.empty();
 }
 
 
@@ -1578,8 +1579,9 @@ read_module_filter(vector<string> &orig_vec, vector<string> &dest_vec, vector<st
 	if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
 		terminate((char *) "arg[%d]: Module parameter expected after -mod\n", *arg_num);
 
-	bool inv_filter = (argv[*arg_num][1] == 'i');
-
+	char *filter = argv[*arg_num];
+	bool inv_filter = (filter[1] == 'i');
+	bool mod_all = false;
 	static bool first_time = true;
 	if (first_time)
 		g_filter_mod_all = false;
@@ -1606,14 +1608,14 @@ read_module_filter(vector<string> &orig_vec, vector<string> &dest_vec, vector<st
 
 		if (string(param) == "*:*" || string(param) == "*")
 		{
-			g_filter_mod_all = true;
-			if (inv_filter)
-				terminate((char *) "arg[%d]: Inverted filter -imod does not accept '%s' parameter\n", *arg_num, param);
+			printf("arg[%d]: Warning: using parameter '%s' in filter %s\n", *arg_num, param, filter);
+			mod_all |= !inv_filter;
 		}
 
 		if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
 			break;
 	}
+	g_filter_mod_all = (g_filter_mod_all || mod_all) && inv_orig_vec.empty();
 }
 
 
@@ -1623,8 +1625,9 @@ read_keyword_filter(vector<string> &key_vec, vector<string> &inv_key_vec, int *a
 	if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
 		terminate((char *) "arg[%d]: Keyword parameter expected after -k\n", *arg_num);
 
-	bool inv_filter = (argv[*arg_num][1] == 'i');
-
+	char *filter = argv[*arg_num];
+	bool inv_filter = (filter[1] == 'i');
+	bool keyword_all = false;
 	static bool first_time = true;
 	if (first_time)
 		g_filter_keyword_all = false;
@@ -1638,14 +1641,14 @@ read_keyword_filter(vector<string> &key_vec, vector<string> &inv_key_vec, int *a
 
 		if (string(param) == "*")
 		{
-			g_filter_keyword_all = true;
-			if (inv_filter)
-				terminate((char *) "arg[%d]: Inverted filter -ik does not accept '%s' parameter\n", *arg_num, param);
+			printf("arg[%d]: Warning: using parameter '%s' in filter %s\n", *arg_num, param, filter);
+			keyword_all |= !inv_filter;
 		}
 
 		if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
 			break;
 	}
+	g_filter_keyword_all = (g_filter_keyword_all || keyword_all) && inv_key_vec.empty();
 }
 
 
