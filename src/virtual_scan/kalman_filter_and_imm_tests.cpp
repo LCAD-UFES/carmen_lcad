@@ -363,7 +363,7 @@ constant_velocity_system_setup(double &x, double &y, double &phi, double &v, Mat
 		v * sin(phi)	// y' (v_y)
 	};
 	Matrix aux_matrix1(4, 1, X);
-	x_k_k = aux_matrix1; // eq. 3.27, pg 24
+	x_k_k = aux_matrix1; // [1] eq. 3.27, pg 24
 
 	double P[4 * 4] =
 	{
@@ -373,7 +373,7 @@ constant_velocity_system_setup(double &x, double &y, double &phi, double &v, Mat
 		0.0, 			0.0, 			0.0, 			0.2 * 0.2
 	};
 	Matrix aux_matrix2(4, 4, P);
-	P_k_k = aux_matrix2;  // eq. 3.33, pg 25
+	P_k_k = aux_matrix2;  // [1] eq. 3.33, pg 25
 
 	// Constant Velocity System setup
 	set_constant_velocity_system_matrixes(F_k_1, Q_k_1, H_k, R_p_k, delta_t, sigma_x, sigma_y, sigma_r, sigma_theta);
@@ -388,7 +388,7 @@ true_position_observation_new(Matrix &z_k, Matrix &R_k, Matrix R_p_k, double x, 
 		carmen_gaussian_random(0.0, sigma_r),
 		carmen_gaussian_random(0.0, sigma_theta),
 	};
-	Matrix v_p_k(2, 1, v_p_k_);  // eqs. 2.33, 2.34, pg 14
+	Matrix v_p_k(2, 1, v_p_k_);  // [1] eqs. 2.33, 2.34, pg 14
 
 	double r = sqrt(x * x + y * y) + v_p_k.val[0][0]; 	// perfect observation + noise
 	double theta = atan2(y, x) +  + v_p_k.val[1][0]; 	// perfect observation + noise
@@ -398,7 +398,7 @@ true_position_observation_new(Matrix &z_k, Matrix &R_k, Matrix R_p_k, double x, 
 		r * cos(theta),
 		r * sin(theta),
 	};
-	Matrix z_k_(2, 1, _z_k);	// eq. 2.37, 2.38, pg 15
+	Matrix z_k_(2, 1, _z_k);	// [1] eq. 2.37, 2.38, pg 15
 	z_k = z_k_;
 
 	double j_z_p_k[2 * 2] =
@@ -406,9 +406,9 @@ true_position_observation_new(Matrix &z_k, Matrix &R_k, Matrix R_p_k, double x, 
 		cos(theta), -r * sin(theta),
 		sin(theta), r * cos(theta),
 	};
-	Matrix J_z_p_k(2, 2, j_z_p_k);  // eq. 2.40, pg 15
+	Matrix J_z_p_k(2, 2, j_z_p_k);  // [1] eq. 2.40, pg 15
 
-	R_k = J_z_p_k * R_p_k * ~J_z_p_k;		// eq. 2.42, pg 15
+	R_k = J_z_p_k * R_p_k * ~J_z_p_k;	// [1] eq. 2.42, pg 15
 }
 
 
@@ -423,25 +423,25 @@ true_position_observation(Matrix &z_k, Matrix &R_k, Matrix R_p_k, double x, doub
 		r * cos(theta),
 		r * sin(theta),
 	};
-	Matrix z_k_perfect(2, 1, _z_k_perfect);	// eq. 2.37, 2.38, pg 15
+	Matrix z_k_perfect(2, 1, _z_k_perfect);	// [1] eq. 2.37, 2.38, pg 15
 
 	double v_p_k_[2 * 1] =
 	{
 		carmen_gaussian_random(0.0, sigma_r),
 		carmen_gaussian_random(0.0, sigma_theta),
 	};
-	Matrix v_p_k(2, 1, v_p_k_);  // eqs. 2.33, 2.34, pg 14
+	Matrix v_p_k(2, 1, v_p_k_);  // [1] eqs. 2.33, 2.34, pg 14
 
 	double j_z_p_k[2 * 2] =
 	{
 		cos(theta), -r * sin(theta),
 		sin(theta), r * cos(theta),
 	};
-	Matrix J_z_p_k(2, 2, j_z_p_k);  // eq. 2.40, pg 15
+	Matrix J_z_p_k(2, 2, j_z_p_k);  // [1] eq. 2.40, pg 15
 
-	z_k = z_k_perfect + J_z_p_k * v_p_k;	// eq. 2.43, pg 16, observation + error
+	z_k = z_k_perfect + J_z_p_k * v_p_k;	// [1] eq. 2.43, pg 16, observation + error
 
-	R_k = J_z_p_k * R_p_k * ~J_z_p_k;	// eq. 2.42, pg 15
+	R_k = J_z_p_k * R_p_k * ~J_z_p_k;	// [1] eq. 2.42, pg 15
 }
 
 
