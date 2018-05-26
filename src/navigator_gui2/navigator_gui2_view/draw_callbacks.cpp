@@ -528,9 +528,9 @@ void on_menuDisplay_ShowLaneMarkings_toggled (GtkCheckMenuItem* togglebutton __a
 	global_gui->nav_panel_config->show_lane_markings = gtk_check_menu_item_get_active(togglebutton);
 
 	if (global_gui->nav_panel_config->show_lane_markings)
-		carmen_rddf_subscribe_annotation_message(&global_gui->rddf_annotation_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+		carmen_lane_subscribe(&global_gui->lane_markings_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 	else
-		carmen_rddf_subscribe_annotation_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+		carmen_lane_subscribe(NULL, NULL, CARMEN_UNSUBSCRIBE);
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -1150,6 +1150,9 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 	if (global_gui->nav_panel_config->show_annotations)
 		global_gui->draw_annotations(the_map_view, pixel_size);
+
+	if (global_gui->nav_panel_config->show_lane_markings)
+		global_gui->draw_lane_lines(the_map_view, pixel_size);
 
 	global_gui->draw_path_vector(the_map_view);
 }

@@ -29,6 +29,10 @@ vector<string> g_filter_msg_vec;
 vector<string> g_filter_orig_vec;
 vector<string> g_filter_dest_vec;
 vector<string> g_filter_key_vec;
+vector<string> g_filter_inv_msg_vec;
+vector<string> g_filter_inv_orig_vec;
+vector<string> g_filter_inv_dest_vec;
+vector<string> g_filter_inv_key_vec;
 bool    g_summary_connection = false;
 bool    g_summary_registration = false;
 bool    g_summary_orig_message = false;
@@ -135,6 +139,15 @@ filter_message(string msg)
 	if (g_filter_msg_all)
 		return (true);
 
+	for (int i = 0; i < (int) g_filter_inv_msg_vec.size(); i++)
+	{
+		bool filtered = wildcard_strcmp(g_filter_inv_msg_vec[i].c_str(), msg.c_str());
+		if (filtered)
+			return (false);
+	}
+	if (g_filter_msg_vec.empty())
+		return (true);
+
 	for (int i = 0; i < (int) g_filter_msg_vec.size(); i++)
 	{
 		bool filtered = wildcard_strcmp(g_filter_msg_vec[i].c_str(), msg.c_str());
@@ -150,6 +163,15 @@ bool
 filter_module(string mod)
 {
 	if (g_filter_mod_all)
+		return (true);
+
+	for (int i = 0; i < (int) g_filter_inv_orig_vec.size(); i++)
+	{
+		bool filtered = (wildcard_strcmp(g_filter_inv_orig_vec[i].c_str(), mod.c_str()) || wildcard_strcmp(g_filter_inv_dest_vec[i].c_str(), mod.c_str()));
+		if (filtered)
+			return (false);
+	}
+	if (g_filter_orig_vec.empty())
 		return (true);
 
 	for (int i = 0; i < (int) g_filter_orig_vec.size(); i++)
@@ -169,6 +191,15 @@ filter_module(string orig, string dest)
 	if (g_filter_mod_all)
 		return (true);
 
+	for (int i = 0; i < (int) g_filter_inv_orig_vec.size(); i++)
+	{
+		bool filtered = (wildcard_strcmp(g_filter_inv_orig_vec[i].c_str(), orig.c_str()) && wildcard_strcmp(g_filter_inv_dest_vec[i].c_str(), dest.c_str()));
+		if (filtered)
+			return (false);
+	}
+	if (g_filter_orig_vec.empty())
+		return (true);
+
 	for (int i = 0; i < (int) g_filter_orig_vec.size(); i++)
 	{
 		bool filtered = (wildcard_strcmp(g_filter_orig_vec[i].c_str(), orig.c_str()) && wildcard_strcmp(g_filter_dest_vec[i].c_str(), dest.c_str()));
@@ -184,6 +215,16 @@ bool
 filter_keyword(string text)
 {
 	if (g_filter_keyword_all)
+		return (true);
+
+	for (int i = 0; i < (int) g_filter_inv_key_vec.size(); i++)
+	{
+		string wildcard = '*' + g_filter_inv_key_vec[i] + '*';
+		bool filtered = wildcard_strcmp(wildcard.c_str(), text.c_str());
+		if (filtered)
+			return (false);
+	}
+	if (g_filter_key_vec.empty())
 		return (true);
 
 	for (int i = 0; i < (int) g_filter_key_vec.size(); i++)
@@ -795,12 +836,21 @@ message_log(char *line_c, long *linecount, int *buffersize)
 }
 
 
+int
+message_total_count (ipc_t msg_rec)
+{
+	int total_count = msg_rec.sent_count + msg_rec.deleted_count + msg_rec.pending_count + msg_rec.on_hold_count;
+
+	return (total_count);
+}
+
+
 void
 accum_stats(int *count, int *total, int *sent_sum, int *pend_sent_sum, int *del_sum, int *pend_sum,
 		int *on_hold_sent_sum, int *on_hold_pend_sum, int *on_hold_sum, ipc_t rec)
 {
 	*count            += 1;
-	*total            += rec.sent_count + rec.deleted_count + rec.pending_count + rec.on_hold_count;
+	*total            += message_total_count(rec);
 	*sent_sum         += rec.sent_count;
 	*del_sum          += rec.deleted_count;
 	*pend_sum         += rec.pending_count;
@@ -854,8 +904,7 @@ print_message_summary(int sort_option = 0)
 			printf("\t\t%-40s      total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend\n", sort_title[1 - so]);
 			printf("\t\t----------------------------------------" "  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------\n");
 		}
-		int current_total = (g_msg_vec[i].sent_count + g_msg_vec[i].deleted_count + g_msg_vec[i].pending_count + g_msg_vec[i].on_hold_count);
-		printf("\t\t%-40s  %9d  %9d  %9d  %9d  %9d  %9d  %9d  %9d\n", current_detail.c_str(), current_total,
+		printf("\t\t%-40s  %9d  %9d  %9d  %9d  %9d  %9d  %9d  %9d\n", current_detail.c_str(), message_total_count(g_msg_vec[i]),
 				g_msg_vec[i].sent_count, g_msg_vec[i].deleted_count, g_msg_vec[i].pending_count, g_msg_vec[i].on_hold_count,
 				g_msg_vec[i].pending_sent_count, g_msg_vec[i].on_hold_sent_count, g_msg_vec[i].on_hold_pending_count);
 		accum_stats(&count,  &total,  &sent_sum,  &pend_sent_sum,  &del_sum,  &pend_sum,  &on_hold_sent_sum,  &on_hold_pend_sum,  &on_hold_sum,  g_msg_vec[i]);
@@ -940,7 +989,7 @@ unknown_log(char *line_c, long linecount)
 
 
 bool
-done_log(char *line_c, long linecount)
+done_log(char *line_c, long linecount, string full_line = "")
 {
 	char msg_name_c[2000] = {0};
 	int loc_id;
@@ -956,7 +1005,7 @@ done_log(char *line_c, long linecount)
 	string orig_module, dest_module, status, line = line_c, msg_name = msg_name_c;
 	bool filtered = filter_class(DONE_CLASS);
 	filtered &= filter_time(g_logtime);
-	filtered &= filter_keyword(line);
+	filtered &= (filter_keyword(line) || filter_keyword(full_line));
 	filtered &= filter_message(msg_name);
 
 	delete_pending_vec(msg_name, loc_id, orig_module, dest_module, status);
@@ -1001,7 +1050,7 @@ transfer_log(char *line_c, long linecount)
 		unknown_log(line_c, linecount);
 		return;
 	}
-	if (!done_log(&line_c[pos], linecount))
+	if (!done_log(&line_c[pos], linecount, string(line_c)))
 		return;
 
 	pos = 0;
@@ -1012,29 +1061,29 @@ transfer_log(char *line_c, long linecount)
 		filtered &= filter_message(msg_name);
 		pos += pos_scan;
 
-		int i0 = locate_pending(msg_name, loc_id);
-		if (i0 >= 0)
+		int p = locate_pending(msg_name, loc_id);
+		if (p >= 0)
 		{
-			orig_module = g_pending_vec[i0].orig_module;
-			old_dest_module = g_pending_vec[i0].dest_module;
+			orig_module = g_pending_vec[p].orig_module;
+			old_dest_module = g_pending_vec[p].dest_module;
+			g_pending_vec[p].dest_module = new_dest_module;
 
-			int i1 = locate_message(msg_name, orig_module, old_dest_module);
-			if (i1 >= 0)
+			int i_old = locate_message(msg_name, orig_module, old_dest_module);
+			if (i_old >= 0)
 			{
-				g_msg_vec[i1].pending_count--;
-				if ((g_msg_vec[i1].sent_count + g_msg_vec[i1].deleted_count + g_msg_vec[i1].pending_count + g_msg_vec[i1].on_hold_count) == 0)
-					g_msg_vec.erase(g_msg_vec.begin() + i1);
+				g_msg_vec[i_old].pending_count--;
+				if (message_total_count(g_msg_vec[i_old]) == 0)
+					g_msg_vec.erase(g_msg_vec.begin() + i_old);
 			}
 
-			int i2 = locate_message(msg_name, orig_module, new_dest_module);
-			if (i2 < 0)
+			int i_new = locate_message(msg_name, orig_module, new_dest_module);
+			if (i_new < 0)
 			{
 				ipc_t message = {msg_name, orig_module, new_dest_module, 0, 0, 0, 0, 0, 0, 0};
 				g_msg_vec.push_back(message);
-				i2 = g_msg_vec.size() - 1;
+				i_new = g_msg_vec.size() - 1;
 			}
-			g_msg_vec[i2].pending_count++;
-			g_pending_vec[i0].dest_module = new_dest_module;
+			g_msg_vec[i_new].pending_count++;
 		}
 
 		filtered &= (filter_module(orig_module, old_dest_module) || filter_module(orig_module, new_dest_module));
@@ -1240,20 +1289,16 @@ abort_log(char *line_c, long linecount)
 void
 process_analysis()
 {
-	long linecount = 0, count;
+	long linecount = 0;
 	int buffersize = 2000;
 	char *line_c = (char *) malloc(buffersize + 1);
 	char msg_name_c[2000], module_c[2000], host_c[2000], rest[2000];
-	int id;
 
 	while (read_line(g_logfile, line_c, &buffersize))
 	{
-		int c_id = -1;
+		int id = -1, conn_id = -1;
 		module_c[0] = host_c[0] = 0;
 		linecount++;
-
-		if (linecount == 156851)
-			c_id = -1;
 
 		if (sscanf(line_c, " Broadcast %s {%d}:", msg_name_c, &id) == 2)
 			broadcast_log(line_c, &linecount, &buffersize);
@@ -1273,12 +1318,12 @@ process_analysis()
 			clear_log(line_c, linecount, msg_name_c, id);
 		else if (sscanf(line_c, " Registration: Message %s Found. Updating.", msg_name_c) == 1)
 			registration_log(line_c, linecount, msg_name_c);
-		else if (sscanf(line_c, " Received a new connection: %d", &c_id) == 1)
-			connection_log(line_c, &linecount, &buffersize, c_id);
-		else if (sscanf(line_c, " Closed Connection %*s %*s %*s %d", &c_id) == 1 || sscanf(line_c, " %*s Closed Connection %*s %*s %*s %d", &c_id) == 1 ||
+		else if (sscanf(line_c, " Received a new connection: %d", &conn_id) == 1)
+			connection_log(line_c, &linecount, &buffersize, conn_id);
+		else if (sscanf(line_c, " Closed Connection %*s %*s %*s %d", &conn_id) == 1 || sscanf(line_c, " %*s Closed Connection %*s %*s %*s %d", &conn_id) == 1 ||
 				 sscanf(line_c, " Closing %s on %s", module_c, host_c) == 2 || sscanf(line_c, " %*s Closing %s on %s", module_c, host_c) == 2)
-			close_log(line_c, &linecount, &buffersize, c_id, module_c, host_c);
-		else if (sscanf(line_c, " %ld: Msg: %s", &count, rest) == 2)
+			close_log(line_c, &linecount, &buffersize, conn_id, module_c, host_c);
+		else if (sscanf(line_c, " %*d: Msg: %s", rest) == 1)
 			handle_summary_log(line_c, linecount);
 		else if (sscanf(line_c, " Logging Task Control Server %*s %*s on %[^\n]", g_logstarttime) == 1)
 			start_log(line_c, linecount, g_logstarttime);
@@ -1297,25 +1342,28 @@ void
 usage()
 {
 	fprintf(stderr, "\nUsage: central_log_view <logfile> [args]\n" " args:\n"
+		"    -v <verbose>   : verbose option: 0 = summary only,\n"
+		"                     1 = all except data lines, 2 = all (default: 0)\n"
+		"    -s <summaries> : summary option: c = Connection, r = Registration,\n"
+		"                     o = Message by Origin, d = Message by Destination,\n"
+		"                     * = crod (default: general summary)\n"
 		"    -t <t1> <t2>   : time filter: from <t1> to <t2>, format hh:mm:ss.cc\n"
 		"                     (default: 00:00 23:59:59.99)\n"
 		"    -c <classes>   : class filter: c = Connection, r = Registration,\n"
 		"                     b = Broadcast, i = Inform, d = Done, q = Query, p = Reply,\n"
 		"                     x = Deleted, h = Handle, o = Other, u = Unknown,\n"
-		"                     \\* = crbidqpxhou (default = \\*)\n"
-		"    -msg <msgs>    : message filter: separated by spaces, escaped wildcards\n"
-		"                     \\* and \\? allowed (default: \\*)\n"
-		"    -mod <modules> : module filter: separated by spaces, escaped wildcards\n"
-		"                     \\* and \\? allowed (default: \\*)\n"
-		"    -mod <m1>:<m2> : module filter: origin module <m1>, destination module <m2>,\n"
-		"                     separated by spaces, escaped wildcards (default: \\*:\\*)\n"
-		"    -k <keywords>  : keyword filter: separated by spaces, escaped wildcards\n"
-		"                     \\* and \\? allowed (default: \\*)\n"
-		"    -s <summaries> : summary option: c = Connection, r = Registration,\n"
-		"                     o = Message by Origin, d = Message by Destination,\n"
-		"                     \\* = crod (default: general summary)\n"
-		"    -v <verbose>   : verbose option: 0 = summary only,\n"
-		"                     1 = all except data lines, 2 = all (default: 0)\n\n");
+		"                     * = crbidqpxhou (default = *)\n"
+		"    -msg <msgs>    : message filter: list of tokens separated by spaces\n"
+		"                     wildcards allowed (default: *)\n"
+		"    -mod <modules> : module filter: list of tokens separated by spaces\n"
+		"                     wildcards allowed (default: *)\n"
+		"    -mod <m1>:<m2> : module filter: origin module <m1>, destination module <m2>\n"
+		"                     list separated by spaces, wildcards allowed (default: *:*)\n"
+		"    -k <keywords>  : keyword filter: list of tokens separated by spaces\n"
+		"                     wildcards allowed (default: *)\n"
+		"    -i<filter>     : inverted filters: -imsg, -imod, -ik\n\n"
+		"    Warning: tokens that include special characters *?-#&;~()|<>`\\\"'<space>\n"
+		"             might require to be escaped with either \\ or \"\" or ''\n\n");
 }
 
 
@@ -1350,8 +1398,66 @@ terminate(char *fmt, ...)
 
 
 void
+read_verbose_option(int *verbose, int *arg_num, int argc, char **argv)
+{
+	static bool first_time = true;
+	if (!first_time)
+		terminate((char *) "arg[%d]: Only one verbose option -v is allowed\n", *arg_num);
+	first_time = false;
+
+	if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
+		terminate((char *) "arg[%d]: Verbose option expected after -v\n", *arg_num);
+	*arg_num += 1;
+	char *param = argv[*arg_num];
+	int pos = 0;
+
+	if ((sscanf(param, "%d %n", verbose, &pos) != 1) || (param[pos] != 0))
+		terminate((char *) "arg[%d]: Invalid verbose option: %s\n", *arg_num, param);
+
+	if (*verbose < 0 || *verbose > 2)
+		terminate((char *) "arg[%d]: Invalid verbose option: %s\n", *arg_num, param);
+}
+
+
+void
+read_summary_option(bool *connection, bool *registration, bool *orig_message, bool *dest_message, int *arg_num, int argc, char **argv)
+{
+	if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
+		terminate((char *) "arg[%d]: Summary option expected after -s\n", *arg_num);
+	*arg_num += 1;
+	char *param = argv[*arg_num];
+
+	static bool first_time = true;
+	if (first_time)
+		*connection = *registration = *orig_message = *dest_message = false;
+	first_time = false;
+
+	for (int i = 0; param[i] != 0; i++)
+	{
+		if (param[i] == 'c')
+			*connection = true;
+		else if (param[i] == 'r')
+			*registration = true;
+		else if (param[i] == 'o')
+			*orig_message = true;
+		else if (param[i] == 'd')
+			*dest_message = true;
+		else if (param[i] == '*')
+			*connection = *registration = *orig_message = *dest_message = true;
+		else
+			terminate((char *) "arg[%d]: Invalid summary option: %s\n", *arg_num, param);
+	}
+}
+
+
+void
 read_time_filter(double *time_initial, double *time_final, int *arg_num, int argc, char **argv)
 {
+	static bool first_time = true;
+	if (!first_time)
+		terminate((char *) "arg[%d]: Only one time filter -t is allowed\n", *arg_num);
+	first_time = false;
+
 	if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
 		terminate((char *) "arg[%d]: Time parameter expected after -t\n", *arg_num);
 	*arg_num += 1;
@@ -1385,9 +1491,14 @@ read_class_filter(bool *class_array, int class_size, int *arg_num, int argc, cha
 	*arg_num += 1;
 	char *param = argv[*arg_num];
 
-	g_filter_class_all = false;
-	for (int k = 0; k < class_size; k++)
-		class_array[k] = false;
+	static bool first_time = true;
+	if (first_time)
+	{
+		g_filter_class_all = false;
+		for (int k = 0; k < class_size; k++)
+			class_array[k] = false;
+	}
+	first_time = false;
 
 	for (int i = 0; param[i] != 0; i++)
 	{
@@ -1419,130 +1530,125 @@ read_class_filter(bool *class_array, int class_size, int *arg_num, int argc, cha
 			terminate((char *) "arg[%d]: Invalid class parameter: %s\n", *arg_num, param);
 	}
 
-	bool check_all = true;
-	for (int k = 0; k < class_size; k++)
-		check_all &= class_array[k];
-	g_filter_class_all |= check_all;
+	if (!g_filter_class_all)
+	{
+		g_filter_class_all = true;
+		for (int k = 0; k < class_size; k++)
+			g_filter_class_all &= class_array[k];
+	}
 }
 
 
 void
-read_message_filter(vector<string> &msg_vec, int *arg_num, int argc, char **argv)
+read_message_filter(vector<string> &msg_vec, vector<string> &inv_msg_vec, int *arg_num, int argc, char **argv)
 {
 	if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
 		terminate((char *) "arg[%d]: Message parameter expected after -msg\n", *arg_num);
 
-	g_filter_msg_all = false;
+	char *filter = argv[*arg_num];
+	bool inv_filter = (filter[1] == 'i');
+	bool msg_all = false;
+	static bool first_time = true;
+	if (first_time)
+		g_filter_msg_all = false;
+	first_time = false;
 
 	for (*arg_num += 1; *arg_num < argc; *arg_num += 1)
 	{
-		string param = argv[*arg_num];
-		msg_vec.push_back(param);
-		if (param == "*")
-			g_filter_msg_all = true;
+		char *param = argv[*arg_num];
+		vector<string> &token_vec = (inv_filter) ? inv_msg_vec : msg_vec;
+		token_vec.push_back(param);
+
+		if (string(param) == "*")
+		{
+			printf("arg[%d]: Warning: using parameter '%s' in filter %s\n", *arg_num, param, filter);
+			msg_all |= !inv_filter;
+		}
 
 		if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
 			break;
 	}
+	g_filter_msg_all = (g_filter_msg_all || msg_all) && inv_msg_vec.empty();
 }
 
 
 void
-read_module_filter(vector<string> &orig_vec, vector<string> &dest_vec, int *arg_num, int argc, char **argv)
+read_module_filter(vector<string> &orig_vec, vector<string> &dest_vec, vector<string> &inv_orig_vec, vector<string> &inv_dest_vec,
+		int *arg_num, int argc, char **argv)
 {
 	if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
 		terminate((char *) "arg[%d]: Module parameter expected after -mod\n", *arg_num);
 
-	g_filter_mod_all = false;
+	char *filter = argv[*arg_num];
+	bool inv_filter = (filter[1] == 'i');
+	bool mod_all = false;
+	static bool first_time = true;
+	if (first_time)
+		g_filter_mod_all = false;
+	first_time = false;
 
 	for (*arg_num += 1; *arg_num < argc; *arg_num += 1)
 	{
-		char orig_module[2000] = {0}, dest_module[2000] = {0}, *param = argv[*arg_num];
+		char *param = argv[*arg_num], orig_module[2000] = {0}, dest_module[2000] = {0};
+		vector<string> &token1_vec = (inv_filter) ? inv_orig_vec : orig_vec;
+		vector<string> &token2_vec = (inv_filter) ? inv_dest_vec : dest_vec;
 
-		if (string(param) == "*:*" || string(param) == "*")
-			g_filter_mod_all = true;
-		else if (sscanf(param, "%[^:]:%s", orig_module, dest_module) == 2)
+		if (sscanf(param, "%[^:]:%[^:]", orig_module, dest_module) == 2)
 		{
-			orig_vec.push_back(orig_module);
-			dest_vec.push_back(dest_module);
+			token1_vec.push_back(orig_module);
+			token2_vec.push_back(dest_module);
 		}
 		else
 		{
-			orig_vec.push_back(param);
-			dest_vec.push_back("*");
-			orig_vec.push_back("*");
-			dest_vec.push_back(param);
+			token1_vec.push_back(param);
+			token2_vec.push_back("*");
+			token1_vec.push_back("*");
+			token2_vec.push_back(param);
+		}
+
+		if (string(param) == "*:*" || string(param) == "*")
+		{
+			printf("arg[%d]: Warning: using parameter '%s' in filter %s\n", *arg_num, param, filter);
+			mod_all |= !inv_filter;
 		}
 
 		if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
 			break;
 	}
+	g_filter_mod_all = (g_filter_mod_all || mod_all) && inv_orig_vec.empty();
 }
 
 
 void
-read_keyword_filter(vector<string> &key_vec, int *arg_num, int argc, char **argv)
+read_keyword_filter(vector<string> &key_vec, vector<string> &inv_key_vec, int *arg_num, int argc, char **argv)
 {
 	if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
 		terminate((char *) "arg[%d]: Keyword parameter expected after -k\n", *arg_num);
 
-	g_filter_keyword_all = false;
+	char *filter = argv[*arg_num];
+	bool inv_filter = (filter[1] == 'i');
+	bool keyword_all = false;
+	static bool first_time = true;
+	if (first_time)
+		g_filter_keyword_all = false;
+	first_time = false;
 
 	for (*arg_num += 1; *arg_num < argc; *arg_num += 1)
 	{
-		string param = argv[*arg_num];
-		key_vec.push_back(param);
-		if (param == "*")
-			g_filter_keyword_all = true;
+		char *param = argv[*arg_num];
+		vector<string> &token_vec = (inv_filter) ? inv_key_vec : key_vec;
+		token_vec.push_back(param);
+
+		if (string(param) == "*")
+		{
+			printf("arg[%d]: Warning: using parameter '%s' in filter %s\n", *arg_num, param, filter);
+			keyword_all |= !inv_filter;
+		}
 
 		if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
 			break;
 	}
-}
-
-
-void
-read_summary_option(bool *connection, bool *registration, bool *orig_message, bool *dest_message, int *arg_num, int argc, char **argv)
-{
-	if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
-		terminate((char *) "arg[%d]: Summary option expected after -s\n", *arg_num);
-	*arg_num += 1;
-	char *param = argv[*arg_num];
-
-	*connection = *registration = *orig_message = *dest_message = false;
-
-	for (int i = 0; param[i] != 0; i++)
-	{
-		if (param[i] == 'c')
-			*connection = true;
-		else if (param[i] == 'r')
-			*registration = true;
-		else if (param[i] == 'o')
-			*orig_message = true;
-		else if (param[i] == 'd')
-			*dest_message = true;
-		else if (param[i] == '*')
-			*connection = *registration = *orig_message = *dest_message = true;
-		else
-			terminate((char *) "arg[%d]: Invalid summary option: %s\n", *arg_num, param);
-	}
-}
-
-
-void
-read_verbose_option(int *verbose, int *arg_num, int argc, char **argv)
-{
-	if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
-		terminate((char *) "arg[%d]: Verbose option expected after -v\n", *arg_num);
-	*arg_num += 1;
-	char *param = argv[*arg_num];
-	int pos = 0;
-
-	if ((sscanf(param, "%d %n", verbose, &pos) != 1) || (param[pos] != 0))
-		terminate((char *) "arg[%d]: Invalid verbose option: %s\n", *arg_num, param);
-
-	if (*verbose < 0 || *verbose > 2)
-		terminate((char *) "arg[%d]: Invalid verbose option: %s\n", *arg_num, param);
+	g_filter_keyword_all = (g_filter_keyword_all || keyword_all) && inv_key_vec.empty();
 }
 
 
@@ -1556,20 +1662,20 @@ read_parameters(int argc, char **argv)
 
 	for (int i = 2; i < argc; i++)
 	{
-		if (strcmp(argv[i], "-t") == 0)
+		if (strcmp(argv[i], "-v") == 0)
+			read_verbose_option(&g_verbose, &i, argc, argv);
+		else if (strcmp(argv[i], "-s") == 0)
+			read_summary_option(&g_summary_connection, &g_summary_registration, &g_summary_orig_message, &g_summary_dest_message, &i, argc, argv);
+		else if (strcmp(argv[i], "-t") == 0)
 			read_time_filter(&g_filter_time_initial, &g_filter_time_final, &i, argc, argv);
 		else if (strcmp(argv[i], "-c") == 0)
 			read_class_filter(g_filter_class, LOG_RECORD_CLASS_SIZE, &i, argc, argv);
-		else if (strcmp(argv[i], "-msg") == 0)
-			read_message_filter(g_filter_msg_vec, &i, argc, argv);
-		else if (strcmp(argv[i], "-mod") == 0)
-			read_module_filter(g_filter_orig_vec, g_filter_dest_vec, &i, argc, argv);
-		else if (strcmp(argv[i], "-k") == 0)
-			read_keyword_filter(g_filter_key_vec, &i, argc, argv);
-		else if (strcmp(argv[i], "-s") == 0)
-			read_summary_option(&g_summary_connection, &g_summary_registration, &g_summary_orig_message, &g_summary_dest_message, &i, argc, argv);
-		else if (strcmp(argv[i], "-v") == 0)
-			read_verbose_option(&g_verbose, &i, argc, argv);
+		else if (strcmp(argv[i], "-msg") == 0 || strcmp(argv[i], "-imsg") == 0)
+			read_message_filter(g_filter_msg_vec, g_filter_inv_msg_vec, &i, argc, argv);
+		else if (strcmp(argv[i], "-mod") == 0 || strcmp(argv[i], "-imod") == 0)
+			read_module_filter(g_filter_orig_vec, g_filter_dest_vec, g_filter_inv_orig_vec, g_filter_inv_dest_vec, &i, argc, argv);
+		else if (strcmp(argv[i], "-k") == 0 || strcmp(argv[i], "-ik") == 0)
+			read_keyword_filter(g_filter_key_vec, g_filter_inv_key_vec, &i, argc, argv);
 		else
 			terminate((char *) "arg[%d]: Invalid command line argument: %s\n", i, argv[i]);
 	}

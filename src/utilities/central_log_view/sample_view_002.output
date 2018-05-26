@@ -1,4 +1,4 @@
-Commandline: central_log_view sample_central.log -msg *avoider* -s o 
+Commandline: ./central_log_view sample_central.log -msg *avoider* -s o 
 
 Central Log View Utility
 Log file: sample_central.log

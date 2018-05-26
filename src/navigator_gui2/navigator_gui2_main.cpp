@@ -643,6 +643,16 @@ navigator_rddf_waypoints_handler(carmen_rddf_waypoints_around_end_point_message 
 }
 
 
+
+static void
+lane_detector_handler(carmen_lane_detector_lane_message_t *msg)
+{
+	gui->lane_markings_msg = msg[0];
+}
+
+
+
+
 static void
 navigator_plan_handler(carmen_navigator_ackerman_plan_message *plan)
 {
@@ -749,33 +759,7 @@ odometry_handler(carmen_base_ackerman_odometry_message *msg)
 	last_phi = msg->phi;
 	last_v = msg->v;
 }
-/*
-static void
-lane_detector_handler(carmen_lane_detector_lane_message_t *msg)
-{
-	if (msg->lane_vector_size == 0)
-		return;
-	carmen_position_t p1, p2;
-	p1.x = msg->lane_vector->lane_segment_position1.x;
-	p1.y = msg->lane_vector->lane_segment_position1.y;
-	p2.x = msg->lane_vector->lane_segment_position2.x;
-	p2.y = msg->lane_vector->lane_segment_position2.y;
-	std::cout << "x p1 " << p1.x << '\n';
-	std::cout << "y p1 " << p1.y << '\n';
-	std::cout << "x p2 " << p2.x << '\n';
-	std::cout << "y p2 " << p2.y << '\n';
-	carmen_ackerman_traj_point_t* point = (carmen_ackerman_traj_point_t*) malloc (2 * sizeof (carmen_ackerman_traj_point_t) );
 
-	point[0].x = p1.x;
-	point[0].y = p1.y;
-	point[0].theta = msg->theta;
-	point[1].x = p2.x;
-	point[1].y = p2.y;
-	point[1].theta = msg->theta;
-
-	gui->navigator_graphics_update_goal_list(point,2);
-}
-*/
 
 static void
 display_config_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
@@ -887,6 +871,7 @@ read_parameters(int argc, char *argv[],
 		{(char *) "navigator_panel", (char *) "show_dynamic_points",	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_dynamic_points),	1, NULL},
 		{(char *) "navigator_panel", (char *) "show_dynamic_objects",	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_dynamic_objects),	1, NULL},
 		{(char *) "navigator_panel", (char *) "show_annotations",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_annotations),	1, NULL},
+		{(char *) "navigator_panel", (char *) "show_lane_markings",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_lane_markings),	1, NULL},
 		{(char *) "navigator_panel", (char *) "use_ackerman",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->use_ackerman),		1, NULL},
 		{(char *) "navigator_panel", (char *) "localize_std_x",			CARMEN_PARAM_DOUBLE, &localize_std.x,								1, NULL},
 		{(char *) "navigator_panel", (char *) "localize_std_y",			CARMEN_PARAM_DOUBLE, &localize_std.y,								1, NULL},
@@ -973,7 +958,7 @@ subscribe_ipc_messages()
 
 	carmen_rddf_subscribe_waypoints_around_end_point_message(NULL, (carmen_handler_t) navigator_rddf_waypoints_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	//carmen_elas_lane_analysis_subscribe(NULL, (carmen_handler_t) lane_detector_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_lane_subscribe(NULL, (carmen_handler_t) lane_detector_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	err = IPC_defineMsg(CARMEN_RDDF_END_POINT_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_RDDF_END_POINT_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_END_POINT_MESSAGE_NAME);
