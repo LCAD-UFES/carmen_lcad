@@ -47,16 +47,25 @@ To analyze a log file, run:
  ./central_log_view <logfile> [args]
 ```
 
-Optional arguments:
+Optional parameters:
 ```
- -t <t1> <t2>   : time filter: from <t1> to <t2>, format hh:mm:ss.cc (default: 00:00 23:59:59.99)
- -c <classes>   : class filter: c = Connection, r = Registration, b = Broadcast, i = Inform, d = Done, q = Query, p = Reply, x = Deleted, h = Handle, o = Other, u = Unknown, \* = crbidqpxhou (default = \*)
- -msg <msgs>    : message filter: separated by spaces, escaped wildcards \* and \? allowed (default: \*)
- -mod <modules> : module filter: separated by spaces, escaped wildcards \* and \? allowed (default: \*)
- -mod <m1>:<m2> : module filter: origin module <m1>, destination module <m2>, separated by spaces, escaped wildcards (default: \*:\*)
- -k <keywords>  : keyword filter: separated by spaces, escaped wildcards \* and \? allowed (default: \*)
- -s <summaries> : summary option: c = Connection, r = Registration, o = Message by Origin, d = Message by Destination, \* = crod (default: general summary)
  -v <verbose>   : verbose option: 0 = summary only, 1 = all except data lines, 2 = all (default: 0)
+ -s <summaries> : summary option: c = Connection, r = Registration, o = Message by Origin, d = Message by Destination, \* = crod (default: general summary)
+ -t <t1> <t2>   : time filter: from <t1> to <t2>, format hh:mm:ss.cc (default: 00:00 23:59:59.99)
+ -c <classes>   : class filter: c = Connection, r = Registration, b = Broadcast, i = Inform, d = Done, q = Query, p = Reply, x = Deleted, h = Handle, o = Other, u = Unknown, * = crbidqpxhou (default = *)
+ -msg <msgs>    : message filter: list of tokens separated by spaces, wildcards allowed (default: *)
+ -mod <modules> : module filter:  list of tokens separated by spaces, wildcards allowed (default: *)
+ -mod <m1>:<m2> : module filter:  origin module <m1>, destination module <m2>, list of tokens separated by spaces, wildcards allowed (default: *:*)
+ -k <keywords>  : keyword filter: list of tokens separated by spaces, wildcards allowed (default: *)
+ -i<filter>     : inverted filters: -imsg, -imod, -ik
+ 
+ Warning: tokens that include special characters *?-#&;~()|<>`\"'<space> might require to be escaped with either \ or "" or ''
+```
+
+The -h parameter displays the help text above:
+
+```
+ ./central_log_view -h
 ```
 
 ## Examples
@@ -65,16 +74,16 @@ Please refer to the sample files in this directory.
 
 [**Sample #1**](./sample_view_001.output)
 
-Read all records, then generate summaries by classes (default), by module connections, by message registrations and by message origins/destinations:
+Read all records, then print summaries by classes (default), by module connections, by message registrations and by message origins/destinations:
 ```
  ./central_log_view sample_central.log -s cro
 ```
 
 [**Sample #2**](./sample_view_002.output)
 
-Filter records related to any message whose name contains "_avoider_", then generate a summary of these messages by origin:
+Filter records related to any message whose name contains "_avoider_", then print a summary of these messages by origin:
 ```
- ./central_log_view sample_central.log -msg \*avoider\* -s o
+ ./central_log_view sample_central.log -msg '*avoider*' -s o
 ```
 
 [**Sample #3**](./sample_view_003.output)
@@ -86,15 +95,21 @@ Filter records related to message "_carmen_obstacle_avoider_path_" which contain
 
 [**Sample #4**](./sample_view_004.output)
 
-Filter records related to all messages originated from any module whose name starts with "_localize_" or "_navigator_", and destinated to any module whose name starts with "_map_", then generate a summary of connections and closures of these modules, and a summary of these messages by origin:
+Filter records related to all messages originated from any module whose name starts with "_localize_" or "_navigator_", and destinated to any module whose name starts with "_map_", then print a summary of connections and closures of these modules, and a summary of these messages by origin/destination:
 ```
- ./central_log_view sample_central.log -mod localize\*:map\* navigator\*:map\* -s co
+ ./central_log_view sample_central.log -mod 'localize*:map*' 'navigator*:map*' -s co
 ```
 
 [**Sample #5**](./sample_view_005.output)
 
 Filter records of classes "_Broadcast_" or "_Deleted_", logged in a time interval of 1 second starting at 11:01, containing simultaneously the keywords "_mapper_" and "_PEDESTRIAN_" within the text, then print the short details:
 ```
- ./central_log_view sample_central.log -c bx -t 11:01 11:01:01 -k mapper\*PEDESTRIAN -v 1
+ ./central_log_view sample_central.log -c bx -t 11:01 11:01:01 -k 'mapper*PEDESTRIAN' -v 1
 ```
 
+[**Sample #6**](./sample_view_006.output)
+
+Filter records related to all messages whose name contains "_nav_", originated from any module except those whose name starts with "_nav_", or involving the IPC server as either origin or destination, then print a summary of these messages by destination/origin:
+```
+ ./central_log_view sample_central.log -msg '*nav*' -imod 'nav*:*' '*IPC*' -s d
+```

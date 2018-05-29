@@ -1,4 +1,4 @@
-Commandline: ./central_log_view sample_central.log -c bx -k mapper*PEDESTRIAN -t 11:01 11:01:01 -v 1 
+Commandline: ./central_log_view sample_central.log -c bx -t 11:01 11:01:01 -k mapper*PEDESTRIAN -v 1 
 
 Central Log View Utility
 Log file: sample_central.log

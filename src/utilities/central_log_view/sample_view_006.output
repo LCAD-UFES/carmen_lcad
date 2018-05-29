@@ -1,0 +1,67 @@
+Commandline: ./central_log_view sample_central.log -msg *nav* -imod nav*:* *IPC* -s d 
+
+Central Log View Utility
+Log file: sample_central.log
+Log start time: Fri Apr 20 10:59:02 2018
+
+
+Selected log period:  from 10:59:21.87 to 11:02:01.02
+Handle time summary:  Messaging: 99.02%  Waiting: 0.97%  Average size: 257468 bytes
+
+==========================================
+General Summary
+==========================================
+Log Record Class          Count      Lines
+--------------------  ---------  ---------
+Connection                    0          0
+Registration                 11         11
+Broadcast                 16331      16331
+Inform                        0          0
+Done                       8125       8125
+Query                         0          0
+Reply                         0          0
+Deleted                    2248       2248
+Data                       8125      33930
+Handle Summary                0          0
+Other                         0          0
+Unknown Message               0          0
+Unknown                       0          0
+
+Totals:                              60645
+==========================================
+
+
+================================================================================================================================================
+Message Summary by Destination
+================================================================================================================================================
+Message: carmen_navigator_ackerman_plan
+	Destination: navigator_gui2-10686
+		Origin                                        total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		model_predictive_planner-10683                 2040       1541        499          0          0       1073          0          0
+		rrt_path_follower-10684                        2214       1069       1145          0          0       1069          0          0
+	Destination Subtotals:                         2       4254       2610       1644          0          0       2142          0          0
+Message Subtotals:                                     2       4254       2610       1644          0          0       2142          0          0
+Message: carmen_navigator_ackerman_plan_tree
+	Destination: navigator_gui2-10686
+		Origin                                        total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		model_predictive_planner-10683                 2040       1810        230          0          0       1451          0          0
+	Destination Subtotals:                         1       2040       1810        230          0          0       1451          0          0
+Message Subtotals:                                     1       2040       1810        230          0          0       1451          0          0
+Message: carmen_navigator_ackerman_status
+	Destination: behavior_selector-10682
+		Origin                                        total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		model_predictive_planner-10683                 2039       2026         13          0          0        686          0          0
+	Destination Subtotals:                         1       2039       2026         13          0          0        686          0          0
+	Destination: navigator_gui2-10686
+		Origin                                        total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		model_predictive_planner-10683                 2040       1679        361          0          0       1679          0          0
+	Destination Subtotals:                         1       2040       1679        361          0          0       1679          0          0
+Message Subtotals:                                     2       4079       3705        374          0          0       2365          0          0
+
+Grand Totals:                                          5      10373       8125       2248          0          0       5958          0          0
+================================================================================================================================================
+
