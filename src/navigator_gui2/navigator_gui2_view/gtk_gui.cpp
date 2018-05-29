@@ -2407,9 +2407,9 @@ namespace View
 	void
 	GtkGui::draw_lane_lines(GtkMapViewer *the_map_view, double pixel_size)
 	{
-		double theta, deltax, deltay;
 		if (lane_markings_msg->lane_vector_size == 0 && lane_markings_msg == NULL)
 			return;
+		std::vector<carmen_lane_detector_lane_t> left, right;
 		if (nav_panel_config->show_lane_markings)
 		{
 			int i;
@@ -2421,39 +2421,48 @@ namespace View
 				start.pose.y = lane_markings_msg->lane_vector[i].lane_segment_position1.y;
 				end.pose.x = lane_markings_msg->lane_vector[i].lane_segment_position2.x;
 				end.pose.y = lane_markings_msg->lane_vector[i].lane_segment_position2.y;
-				deltax = end.pose.x - start.pose.x;
-				deltay = end.pose.y - start.pose.y;
-				theta = atan2(deltay, deltax);
-				start.pose.theta = end.pose.theta = M_PI / 2.0;
 				start.map = end.map = the_map_view->internal_map;
-
 				//carmen_map_graphics_draw_line(the_map_view, &carmen_red, &start, &end);
 				carmen_map_graphics_draw_circle(the_map_view, &carmen_green, TRUE, &start, pixel_size * 2.0);
 				carmen_map_graphics_draw_circle(the_map_view, &carmen_green, TRUE, &end, pixel_size * 2.0);
+				if (lane_markings_msg->lane_vector[i].left == 1)
+				{
+					left.push_back(lane_markings_msg->lane_vector[i]);
+				}else
+				{
+					right.push_back(lane_markings_msg->lane_vector[i]);
+				}
 			}
-			if (lane_markings_msg->lane_vector_size != 0 && lane_markings_msg->lane_vector_size != 1)
-			{
-				for (i = 0; i < lane_markings_msg->lane_vector_size - 2; i++)
+
+			if (left.size()!= 0 && left.size()!= 1)
+				for (i = 0; i < left.size() -1; i++)
 				{
 					carmen_world_point_t start, end;
-					start.pose.x = lane_markings_msg->lane_vector[i].lane_segment_position1.x;
+					start.pose.x = left[i].lane_segment_position1.x;
 					std::cout <<start.pose.x << "\n";
-					start.pose.y = lane_markings_msg->lane_vector[i].lane_segment_position1.y;
-					end.pose.x = lane_markings_msg->lane_vector[i+2].lane_segment_position1.x;
-					end.pose.y = lane_markings_msg->lane_vector[i+2].lane_segment_position1.y;
-					deltax = end.pose.x - start.pose.x;
-					deltay = end.pose.y - start.pose.y;
-					theta = atan2(deltay, deltax);
-					start.pose.theta = end.pose.theta = M_PI / 2.0;
+					start.pose.y = left[i].lane_segment_position1.y;
+					end.pose.x = left[i+1].lane_segment_position1.x;
+					end.pose.y = left[i+1].lane_segment_position1.y;
 					start.map = end.map = the_map_view->internal_map;
 					carmen_map_graphics_draw_line(the_map_view, &carmen_red, &start, &end);
 
 				}
-			}
+			if (right.size()!= 0 && right.size()!= 1)
+				for (i = 0; i < right.size() -1; i++)
+				{
+					carmen_world_point_t start, end;
+					start.pose.x = right[i].lane_segment_position1.x;
+					std::cout <<start.pose.x << "\n";
+					start.pose.y = right[i].lane_segment_position1.y;
+					end.pose.x = right[i+1].lane_segment_position1.x;
+					end.pose.y = right[i+1].lane_segment_position1.y;
+					start.map = end.map = the_map_view->internal_map;
+					carmen_map_graphics_draw_line(the_map_view, &carmen_red, &start, &end);
+				}
 			if (i != 0)
 				display_needs_updating = 1;
+			}
 		}
-	}
 
 	void
 	GtkGui::draw_annotations(GtkMapViewer *the_map_view, double pixel_size)

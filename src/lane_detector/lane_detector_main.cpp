@@ -180,6 +180,14 @@ lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyn
 		message.lane_vector[i].lane_segment_position1.x = p2.x;
 		message.lane_vector[i].lane_segment_position1.y = p2.y;
 		message.lane_vector[i].lane_class = 0;
+
+		if (left_or_right[i] == true)
+		{
+			message.lane_vector[i].left = 1;
+		}else
+		{
+			message.lane_vector[i].left = 0;
+		}
 	}
 	// publish!
 	carmen_lane_publish_message(&message);
