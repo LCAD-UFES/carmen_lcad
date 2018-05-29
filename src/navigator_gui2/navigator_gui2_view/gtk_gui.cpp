@@ -2408,19 +2408,19 @@ namespace View
 	GtkGui::draw_lane_lines(GtkMapViewer *the_map_view, double pixel_size)
 	{
 		double theta, deltax, deltay;
-		if (lane_markings_msg.lane_vector_size == 0)
+		if (lane_markings_msg->lane_vector_size == 0 && lane_markings_msg == NULL)
 			return;
 		if (nav_panel_config->show_lane_markings)
 		{
 			int i;
-			for (i = 0; i < lane_markings_msg.lane_vector_size; i++)
+			for (i = 0; i < lane_markings_msg->lane_vector_size; i++)
 			{
 				carmen_world_point_t start, end;
-				start.pose.x = lane_markings_msg.lane_vector[i].lane_segment_position1.x;
+				start.pose.x = lane_markings_msg->lane_vector[i].lane_segment_position1.x;
 				std::cout <<start.pose.x << "\n";
-				start.pose.y = lane_markings_msg.lane_vector[i].lane_segment_position1.y;
-				end.pose.x = lane_markings_msg.lane_vector[i].lane_segment_position2.x;
-				end.pose.y = lane_markings_msg.lane_vector[i].lane_segment_position2.y;
+				start.pose.y = lane_markings_msg->lane_vector[i].lane_segment_position1.y;
+				end.pose.x = lane_markings_msg->lane_vector[i].lane_segment_position2.x;
+				end.pose.y = lane_markings_msg->lane_vector[i].lane_segment_position2.y;
 				deltax = end.pose.x - start.pose.x;
 				deltay = end.pose.y - start.pose.y;
 				theta = atan2(deltay, deltax);
@@ -2431,22 +2431,21 @@ namespace View
 				carmen_map_graphics_draw_circle(the_map_view, &carmen_green, TRUE, &start, pixel_size * 2.0);
 				carmen_map_graphics_draw_circle(the_map_view, &carmen_green, TRUE, &end, pixel_size * 2.0);
 			}
-			if (lane_markings_msg.lane_vector_size != 0 && lane_markings_msg.lane_vector_size != 1)
+			if (lane_markings_msg->lane_vector_size != 0 && lane_markings_msg->lane_vector_size != 1)
 			{
-				for (i = 0; i < lane_markings_msg.lane_vector_size - 2; i++)
+				for (i = 0; i < lane_markings_msg->lane_vector_size - 2; i++)
 				{
 					carmen_world_point_t start, end;
-					start.pose.x = lane_markings_msg.lane_vector[i].lane_segment_position1.x;
+					start.pose.x = lane_markings_msg->lane_vector[i].lane_segment_position1.x;
 					std::cout <<start.pose.x << "\n";
-					start.pose.y = lane_markings_msg.lane_vector[i].lane_segment_position1.y;
-					end.pose.x = lane_markings_msg.lane_vector[i+2].lane_segment_position1.x;
-					end.pose.y = lane_markings_msg.lane_vector[i+2].lane_segment_position1.y;
+					start.pose.y = lane_markings_msg->lane_vector[i].lane_segment_position1.y;
+					end.pose.x = lane_markings_msg->lane_vector[i+2].lane_segment_position1.x;
+					end.pose.y = lane_markings_msg->lane_vector[i+2].lane_segment_position1.y;
 					deltax = end.pose.x - start.pose.x;
 					deltay = end.pose.y - start.pose.y;
 					theta = atan2(deltay, deltax);
 					start.pose.theta = end.pose.theta = M_PI / 2.0;
 					start.map = end.map = the_map_view->internal_map;
-
 					carmen_map_graphics_draw_line(the_map_view, &carmen_red, &start, &end);
 
 				}

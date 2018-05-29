@@ -528,7 +528,7 @@ void on_menuDisplay_ShowLaneMarkings_toggled (GtkCheckMenuItem* togglebutton __a
 	global_gui->nav_panel_config->show_lane_markings = gtk_check_menu_item_get_active(togglebutton);
 
 	if (global_gui->nav_panel_config->show_lane_markings)
-		carmen_lane_subscribe(&global_gui->lane_markings_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+		carmen_lane_subscribe(global_gui->lane_markings_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 	else
 		carmen_lane_subscribe(NULL, NULL, CARMEN_UNSUBSCRIBE);
 }

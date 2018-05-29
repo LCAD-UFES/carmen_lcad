@@ -262,7 +262,7 @@ namespace View
 
 		carmen_rddf_annotation_message rddf_annotation_msg;
 
-		carmen_lane_detector_lane_message_t lane_markings_msg;
+		carmen_lane_detector_lane_message_t *lane_markings_msg = NULL;
 
 		GdkImage *annotation_image[NUM_RDDF_ANNOTATION_TYPES][NUM_RDDF_ANNOTATION_CODES];
 
