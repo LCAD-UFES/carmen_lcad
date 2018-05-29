@@ -2412,12 +2412,11 @@ namespace View
 		std::vector<carmen_lane_detector_lane_t> left, right;
 		if (nav_panel_config->show_lane_markings)
 		{
-			int i;
-			for (i = 0; i < lane_markings_msg->lane_vector_size; i++)
+			unsigned int i;
+			for (int i = 0; i < lane_markings_msg->lane_vector_size; i++)
 			{
 				carmen_world_point_t start, end;
 				start.pose.x = lane_markings_msg->lane_vector[i].lane_segment_position1.x;
-				std::cout <<start.pose.x << "\n";
 				start.pose.y = lane_markings_msg->lane_vector[i].lane_segment_position1.y;
 				end.pose.x = lane_markings_msg->lane_vector[i].lane_segment_position2.x;
 				end.pose.y = lane_markings_msg->lane_vector[i].lane_segment_position2.y;
@@ -2434,12 +2433,11 @@ namespace View
 				}
 			}
 
-			if (left.size()!= 0 && left.size()!= 1)
+			if (left.size() > 1)
 				for (i = 0; i < left.size() -1; i++)
 				{
 					carmen_world_point_t start, end;
 					start.pose.x = left[i].lane_segment_position1.x;
-					std::cout <<start.pose.x << "\n";
 					start.pose.y = left[i].lane_segment_position1.y;
 					end.pose.x = left[i+1].lane_segment_position1.x;
 					end.pose.y = left[i+1].lane_segment_position1.y;
@@ -2447,20 +2445,18 @@ namespace View
 					carmen_map_graphics_draw_line(the_map_view, &carmen_red, &start, &end);
 
 				}
-			if (right.size()!= 0 && right.size()!= 1)
+			if (right.size() > 1)
 				for (i = 0; i < right.size() -1; i++)
 				{
 					carmen_world_point_t start, end;
 					start.pose.x = right[i].lane_segment_position1.x;
-					std::cout <<start.pose.x << "\n";
 					start.pose.y = right[i].lane_segment_position1.y;
 					end.pose.x = right[i+1].lane_segment_position1.x;
 					end.pose.y = right[i+1].lane_segment_position1.y;
 					start.map = end.map = the_map_view->internal_map;
 					carmen_map_graphics_draw_line(the_map_view, &carmen_red, &start, &end);
 				}
-			if (i != 0)
-				display_needs_updating = 1;
+			display_needs_updating = 1;
 			}
 		}
 
