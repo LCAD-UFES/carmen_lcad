@@ -108,8 +108,8 @@ set_constant_angular_velocity_system_matrixes(Matrix &F_k_1, Matrix &fx_k_1, Mat
 	{
 		SW = T;
 		CW = 0.0;
-		DSW = T * T * vx / 2.0;
-		DCW = T * T * vy / 2.0;
+		DSW = T * T * vx / 2.0; // checar se o limite de DSW quando w tende a zero eh isso mesmo
+		DCW = T * T * vy / 2.0; // checar se o limite de DCW quando w tende a zero eh isso mesmo
 	}
 
 	double aux_data1[5 * 5] =

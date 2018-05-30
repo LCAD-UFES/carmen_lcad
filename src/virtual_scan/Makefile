@@ -26,7 +26,8 @@ SOURCES = \
 	probability_of_track_set.cpp \
 	virtual_scan_interface.cpp \
 	imm.cpp \
-	kalman_filter_and_imm_tests.cpp
+	kalman_and_extended_kalman_filter_tests.cpp \
+	imm_filter_tests.cpp
 
 PUBLIC_INCLUDES = \
 	virtual_scan_interface.h \
@@ -36,11 +37,12 @@ PUBLIC_LIBRARIES = \
 	libvirtual_scan_interface.a
 
 PUBLIC_BINARIES = \
-	kalman_filter_and_imm_tests \
+	kalman_and_extended_kalman_filter_tests \
+	imm_filter_tests \
 	virtual_scan 
 	
 TARGETS = \
-	libvirtual_scan_interface.a libclustering kalman_filter_and_imm_tests \
+	libvirtual_scan_interface.a libclustering kalman_and_extended_kalman_filter_tests imm_filter_tests \
 	virtual_scan 
 	
 # If you set graphics support in configure.
@@ -73,8 +75,11 @@ virtual_scan: \
 	virtual_scan_interface.o \
 	imm.o
 
-kalman_filter_and_imm_tests: \
-	kalman_filter_and_imm_tests.o
+kalman_and_extended_kalman_filter_tests: \
+	kalman_and_extended_kalman_filter_tests.o
+
+imm_filter_tests: \
+	imm_filter_tests.o
 
 
 include ../Makefile.rules
