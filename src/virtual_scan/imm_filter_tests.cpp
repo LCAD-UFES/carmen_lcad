@@ -574,7 +574,9 @@ mode_matched_filtering(double A[r], vector<Matrix> &x_k_k_1, vector<Matrix> &P_k
 	{
 		Matrix aux = S_k[j] * 2 * M_PI;
 		Matrix exponent = ~delta_zk[j] * Matrix::inv(S_k[j]) * delta_zk[j];
-		A[j] = exp(-0.5 * exponent.val[0][0]) / sqrt(aux.det()); // [3] eq. 11.6.6-12, ou [4] Section Model Probability Update
+		double exponent_double = exponent.val[0][0];
+		double denominator = sqrt(aux.det());
+		A[j] = exp(-0.5 * exponent_double) / denominator; // [3] eq. 11.6.6-12, ou [4] Section Model Probability Update
 	}
 }
 
