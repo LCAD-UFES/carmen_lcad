@@ -2,11 +2,11 @@ include ../Makefile.conf
 
 CFLAGS += `pkg-config --cflags opencv` -Wall
 IFLAGS += 
-LFLAGS += -lstdc++ -lglobal -lipc -lparam_interface `pkg-config --libs opencv` -lvelodyne_interface \
-	-lbumblebee_basic_interface -lvisual_tracker_interface -ltf 
-
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+
+LFLAGS += -lstdc++ -lglobal -lipc -lparam_interface `pkg-config --libs opencv` -lvelodyne_interface \
+	-lbumblebee_basic_interface -lvisual_tracker_interface -ltf -lpthread 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 MODULE_NAME = VELODYNE CAMERA CALIBRATION
 MODULE_COMMENT = Velodyne Camera Calibration

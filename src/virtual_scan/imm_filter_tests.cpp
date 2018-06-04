@@ -21,11 +21,19 @@ using namespace std;
 
 #ifdef IMM_FILTER
 #define r 3 // Numero de modelos
-double u_k[r] = {1.0, 1.0, 1.0};
+double u_k[r] = {1.0/3.0, 1.0/3.0, 1.0/3.0};
+//static double p[r][r] = {
+//		{0.950, 0.050, 0.001},
+//		{0.050, 0.950, 0.001},
+//		{0.500, 0.500, 0.001}};
 static double p[r][r] = {
-		{0.90, 0.08, 0.02},
-		{0.15, 0.70, 0.15},
-		{0.04, 0.16, 0.80}};
+		{0.950, 0.010, 0.040},
+		{0.010, 0.950, 0.040},
+		{0.025, 0.025, 0.950}};
+//static double p[r][r] = {
+//		{0.800, 0.050, 0.150},
+//		{0.050, 0.800, 0.150},
+//		{0.025, 0.025, 0.950}};
 #endif
 
 
@@ -190,7 +198,7 @@ set_constant_angular_velocity_system_matrixes(Matrix &F_k_1, Matrix &fx_k_1, Mat
 void
 constant_angular_velocity_system_setup(double &x, double &y, double &phi, double &v, double &w, Matrix &x_k_k, Matrix &P_k_k,
 		Matrix &F_k_1, Matrix &fx_k_1, Matrix &Q_k_1, Matrix &H_k, Matrix &R_p_k,
-		double &T, double &sigma_w, double &sigma_v, double &sigma_r, double &sigma_theta)
+		double T, double &sigma_w, double &sigma_v, double &sigma_r, double &sigma_theta)
 {
 	x = -170.0;
 	y = -150.0;
@@ -198,7 +206,6 @@ constant_angular_velocity_system_setup(double &x, double &y, double &phi, double
 	v = 5.0;
 	w = 0.0;
 
-	T = 1.0;
 	sigma_w = 0.05;	// 3 graus por segundo
 	sigma_v = 0.5;
 	sigma_r = 2.0;
@@ -289,16 +296,15 @@ set_constant_acceleration_system_matrixes(Matrix &F_k_1, Matrix &Q_k_1, Matrix &
 void
 constant_acceleration_system_setup(double &x, double &y, double &phi, double &v, Matrix &x_k_k, Matrix &P_k_k,
 		Matrix &F_k_1, Matrix &Q_k_1, Matrix &H_k, Matrix &R_p_k,
-		double &T, double &sigma_vx, double &sigma_vy, double &sigma_r, double &sigma_theta)
+		double T, double &sigma_vx, double &sigma_vy, double &sigma_r, double &sigma_theta)
 {
 	x = -170.0;
 	y = -150.0;
 	phi = carmen_degrees_to_radians(45.0);
 	v = 5.0;
 
-	T = 1.0;
-	sigma_vx = 0.5;
-	sigma_vy = 0.5;
+	sigma_vx = 0.05;
+	sigma_vy = 0.05;
 	sigma_r = 2.0;
 	sigma_theta = carmen_degrees_to_radians(1.0);
 
@@ -384,14 +390,13 @@ set_constant_velocity_system_matrixes(Matrix &F_k_1, Matrix &Q_k_1, Matrix &H_k,
 void
 constant_velocity_system_setup(double &x, double &y, double &phi, double &v, Matrix &x_k_k, Matrix &P_k_k,
 		Matrix &F_k_1, Matrix &Q_k_1, Matrix &H_k, Matrix &R_p_k,
-		double &T, double &sigma_x, double &sigma_y, double &sigma_r, double &sigma_theta)
+		double T, double &sigma_x, double &sigma_y, double &sigma_r, double &sigma_theta)
 {
 	x = -170.0;
 	y = -150.0;
 	phi = carmen_degrees_to_radians(45.0);
 	v = 5.0;
 
-	T = 1.0;
 	sigma_x = 0.001;
 	sigma_y = 0.001;
 	sigma_r = 2.0;
@@ -757,8 +762,9 @@ main()
 	double angle, major_axis, minor_axis;
 
 	double max_a = 3.0, max_w = carmen_degrees_to_radians(20.0);
+	double delta_t = 1.0;
 
-	double x, y, phi, v, delta_t, sigma_x, sigma_y, sigma_r, sigma_theta;
+	double x, y, phi, v, sigma_x, sigma_y, sigma_r, sigma_theta;
 	constant_velocity_system_setup(x, y, phi, v, x_k_k, P_k_k, F_k_1, Q_k_1, H_k, R_p_k, delta_t, sigma_x, sigma_y, sigma_r, sigma_theta);
 	x_k_1_k_1.push_back(x_k_k); P_k_1_k_1.push_back(P_k_k); F_k_1_m.push_back(F_k_1); Q_k_1_m.push_back(Q_k_1); H_k_m.push_back(H_k);
 
@@ -770,11 +776,13 @@ main()
 	constant_angular_velocity_system_setup(x, y, phi, v, w, x_k_k, P_k_k, F_k_1, fx_k_1, Q_k_1, H_k, R_p_k, delta_t, sigma_w, sigma_v, sigma_r, sigma_theta);
 	x_k_1_k_1.push_back(x_k_k); P_k_1_k_1.push_back(P_k_k); F_k_1_m.push_back(F_k_1); Q_k_1_m.push_back(Q_k_1); H_k_m.push_back(H_k);
 
-	compute_error_ellipse(angle, major_axis, minor_axis,
-			P_k_k.val[0][0], P_k_k.val[0][1], P_k_k.val[1][1], 2.4477);
-	printf("%lf %lf %lf %lf %lf %lf %lf\n", x, y, x_k_k.val[0][0], x_k_k.val[1][0], major_axis, minor_axis, angle * 180.0 / M_PI);
-
 	Matrix imm_x_k_k(7, 1), imm_P_k_k(7, 7);
+	mode_estimate_and_covariance_combination(imm_x_k_k, imm_P_k_k, extend_vector_dimensions(x_k_1_k_1), extend_matrix_dimensions(P_k_1_k_1, max_a, max_w), u_k);
+	compute_error_ellipse(angle, major_axis, minor_axis,
+			imm_P_k_k.val[0][0], imm_P_k_k.val[0][1], imm_P_k_k.val[1][1], 2.4477);
+	printf("%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", x, y, imm_x_k_k.val[0][0], imm_x_k_k.val[1][0], major_axis, minor_axis, angle * 180.0 / M_PI,
+			u_k[0], u_k[1], u_k[2]);
+
 	double t = 0.0;
 	do
 	{
@@ -787,13 +795,14 @@ main()
 
 		compute_error_ellipse(angle, major_axis, minor_axis,
 				imm_P_k_k.val[0][0], imm_P_k_k.val[0][1], imm_P_k_k.val[1][1], 2.4477);
-		printf("%lf %lf %lf %lf %lf %lf %lf\n", x, y, imm_x_k_k.val[0][0], imm_x_k_k.val[1][0], major_axis, minor_axis, angle * 180.0 / M_PI);
+		printf("%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", x, y, imm_x_k_k.val[0][0], imm_x_k_k.val[1][0], major_axis, minor_axis, angle * 180.0 / M_PI,
+				u_k[0], u_k[1], u_k[2]);
 
 		x = x + v * cos(phi) * delta_t;	// true position update
 		y = y + v * sin(phi) * delta_t;	// true position update
 
-		if ((t > 55.0) && (t < 75.0))
-			phi += 0.1;
+		if ((t > 40.0) && (t < 60.0))
+			phi += 0.3 * delta_t;
 
 		t += delta_t;
 	} while (t < 100.0);
@@ -804,44 +813,22 @@ main()
 int
 main()
 {
-#ifdef IMM_FILTER
-	vector<Matrix> x_0;
-	Matrix aux(7, 1);
-	x_0.push_back(aux);
-	x_0.push_back(aux);
-	x_0.push_back(aux);
-	x_0[2].val[0][0] = 1.0;
-	x_0[1].val[2][0] = 1.0;
-
-	vector<Matrix> P_0;
-	Matrix aux2(7, 7);
-	P_0.push_back(aux2);
-	P_0.push_back(aux2);
-	P_0.push_back(aux2);
-	P_0[2].val[0][0] = 1.0;
-	P_0[1].val[2][0] = 1.0;
-
-//	true_position_observation(z_k, R_k, R_p_k, x, y, sigma_r, sigma_theta);
-//	imm_filter(x_0, P_0);
-
-//	return (0);
-#endif
-
 	double angle, major_axis, minor_axis;
 	Matrix x_k_k, P_k_k, F_k_1, Q_k_1, H_k, R_p_k;
 
+	double delta_t = 1.0;
 #ifdef CV_MODEL
-	double x, y, phi, v, delta_t, sigma_x, sigma_y, sigma_r, sigma_theta;
+	double x, y, phi, v, sigma_x, sigma_y, sigma_r, sigma_theta;
 	constant_velocity_system_setup(x, y, phi, v, x_k_k, P_k_k, F_k_1, Q_k_1, H_k, R_p_k, delta_t, sigma_x, sigma_y, sigma_r, sigma_theta);
 #endif
 
 #ifdef CA_MODEL
-	double x, y, phi, v, delta_t, sigma_vx, sigma_vy, sigma_r, sigma_theta;
+	double x, y, phi, v, sigma_vx, sigma_vy, sigma_r, sigma_theta;
 	constant_acceleration_system_setup(x, y, phi, v, x_k_k, P_k_k, F_k_1, Q_k_1, H_k, R_p_k, delta_t, sigma_vx, sigma_vy, sigma_r, sigma_theta);
 #endif
 
 #ifdef CT_MODEL
-	double x, y, phi, v, w, delta_t, sigma_w, sigma_v, sigma_r, sigma_theta;
+	double x, y, phi, v, w, sigma_w, sigma_v, sigma_r, sigma_theta;
 	Matrix fx_k_1;
 	constant_angular_velocity_system_setup(x, y, phi, v, w, x_k_k, P_k_k, F_k_1, fx_k_1, Q_k_1, H_k, R_p_k, delta_t, sigma_w, sigma_v, sigma_r, sigma_theta);
 #endif
@@ -873,7 +860,7 @@ main()
 		y = y + v * sin(phi) * delta_t;	// true position update
 
 		if ((t > 55.0) && (t < 75.0))
-			phi += 0.1;
+			phi += 0.3 * delta_t;
 
 		t += delta_t;
 	} while (t < 100.0);
