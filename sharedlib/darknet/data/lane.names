@@ -1,1 +1,7 @@
-lane
+without_lane
+continuos_white_lane
+dashed_white_lane
+continuous_yellow_lane
+dashed_yellow_lane
+two_contiuous_yellow_lane
+dashed_and_continuos_lane
