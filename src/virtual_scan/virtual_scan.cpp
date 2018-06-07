@@ -192,13 +192,10 @@ dbscan::Cluster
 generate_cluster_with_all_points(carmen_point_t *points, int size)
 {
 	dbscan::Cluster cluster;
+
 	for (int i = 0; i < size; i++)
-	{
-		carmen_point_t point;
-		point.x = points[i].x;
-		point.y = points[i].y;
-		cluster.push_back(point);
-	}
+		cluster.push_back(points[i]);
+
 	return (cluster);
 }
 
