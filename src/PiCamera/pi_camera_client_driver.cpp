@@ -1,7 +1,7 @@
 /*******************GENERATE_GT***********************
 
  Compile:
- g++ -std=c++0x -o pi_camera_client_driver rasp_cam_client_driver.cpp -W -Wall `pkg-config --cflags opencv` -O4 `pkg-config --libs opencv`
+ g++ -std=c++0x -o pi_camera_client_driver pi_camera_client_driver.cpp -W -Wall `pkg-config --cflags opencv` -O4 `pkg-config --libs opencv`
 
  *************************************************/
 
@@ -14,10 +14,10 @@
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/legacy/legacy.hpp>
+//#include <opencv2/legacy/legacy.hpp>
 
 #define PORT "3457"
-#define TCP_IP_ADDRESS			"10.42.0.28"
+#define TCP_IP_ADDRESS			"192.168.0.15"
 
 
 using namespace std;
@@ -71,10 +71,9 @@ main()
 	
 	//raw_image[640*480*3-1] = '\0';
 	
-	printf("dddd\n\n\n");
+	//printf("dddd\n\n\n");
 	
 	//open_cv_image = Mat(480, 640, CV_8UC3, raw_image, 3 * 640);
-	
 	//imshow("Neural Object Detector", open_cv_image);
 	//waitKey(1);
     }    
