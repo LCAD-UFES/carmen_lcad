@@ -10,7 +10,7 @@
 #include <cmath>
 #include <carmen/moving_objects_messages.h>
 #include <carmen/velodyne_interface.h>
-#include <dbscan.h>
+#include <carmen/dbscan.h>
 #include <vector>
 #include "virtual_scan.h"
 

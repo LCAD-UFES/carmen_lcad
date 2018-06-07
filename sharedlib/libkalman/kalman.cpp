@@ -1,8 +1,5 @@
 #include <carmen/carmen.h>
-#include <carmen/moving_objects_messages.h>
-#include <carmen/velodyne_interface.h>
 #include <carmen/matrix.h>
-#include <iostream>
 #include <fenv.h>
 #include "kalman.h"
 
