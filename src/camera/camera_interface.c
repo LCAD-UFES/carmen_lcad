@@ -30,8 +30,10 @@
 #include "camera_messages.h"
 #include "camera_interface.h"
 
+
 static carmen_camera_image_message *image_message_pointer_external = NULL;
 static carmen_handler_t image_message_handler_external = NULL;
+
 
 static void 
 image_interface_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
@@ -57,6 +59,7 @@ image_interface_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
   if(image_message_handler_external)
     image_message_handler_external(image_message_pointer_external);
 }
+
 
 void
 carmen_camera_subscribe_images(carmen_camera_image_message *image,
@@ -92,4 +95,18 @@ carmen_camera_subscribe_images(carmen_camera_image_message *image,
   else
     IPC_setMsgQueueLength(CARMEN_CAMERA_IMAGE_NAME, 100);
   carmen_test_ipc(err, "Could not subscribe", CARMEN_CAMERA_IMAGE_NAME);
+}
+
+
+
+IPC_RETURN_TYPE
+carmen_camera_publish_message(carmen_camera_image_t *msg)
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_publishData(CARMEN_CAMERA_IMAGE_NAME, &msg);
+
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_CAMERA_IMAGE_NAME);
+
+	return (err);
 }
