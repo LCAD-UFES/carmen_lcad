@@ -53,9 +53,9 @@ typedef struct {
   int    height;                   /**<The y dimension of the image in pixels. */
   int    bytes_per_pixel;          /**<Usually 3 (RGB). */
   int    image_size;               /**<width*height*bytes_per_pixel. */
-  char  *image;
+  char   *image;
   double timestamp;
-  char  *host;
+  char   *host;
 } carmen_camera_image_message;
 
 

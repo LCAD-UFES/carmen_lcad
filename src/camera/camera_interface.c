@@ -98,9 +98,8 @@ carmen_camera_subscribe_images(carmen_camera_image_message *image,
 }
 
 
-
 IPC_RETURN_TYPE
-carmen_camera_publish_message(carmen_camera_image_t *msg)
+carmen_camera_publish_message(carmen_camera_image_message *msg)
 {
 	IPC_RETURN_TYPE err;
 
