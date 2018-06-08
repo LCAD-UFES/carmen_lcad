@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <netdb.h>
 #include <string.h>
-#include "main.h"
+#include "pi_camera_driver.h"
 
 using namespace cv;
 using namespace std;
@@ -26,7 +26,6 @@ stablished_connection_with_client()
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
-      
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
     {
         perror("setsockopt");
@@ -36,7 +35,7 @@ stablished_connection_with_client()
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons( PORT );
       
-    // Forcefully attaching socket to the port 8080
+    // Forcefully attaching socket to the port defined
     if (bind(server_fd, (struct sockaddr*) &address, sizeof(address)) < 0)
     {
         perror("bind failed");
@@ -52,7 +51,6 @@ stablished_connection_with_client()
         perror("accept");
         exit(EXIT_FAILURE);
     }
-    
     printf("Connection stablished sucessfully!\n");	
 	
     return (new_socket);
@@ -77,6 +75,7 @@ undistort_image(Mat input_frame, CameraParameters cam_pam)
 
 	return output_frame;
 }
+
 
 int
 main()
