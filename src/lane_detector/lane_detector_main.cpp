@@ -33,7 +33,7 @@
 #include <math.h>
 
 #define SHOW_DETECTIONS
-#define SHOW_BBOX false
+#define SHOW_BBOX true
 // camera number and side
 int camera;
 int camera_side;
@@ -156,7 +156,9 @@ lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyn
 		carmen_vector_3D_t offset;
 		p1 = carmen_covert_sphere_to_cartesian_coord(laser_points_in_camera_box_list[i][idx_pt1].velodyne_points_in_cam.laser_polar);
 		p2 = carmen_covert_sphere_to_cartesian_coord(laser_points_in_camera_box_list[i][idx_pt2].velodyne_points_in_cam.laser_polar);
-
+		std:: cout <<"i " << i << '\n';
+		std:: cout <<"p1 x " << laser_points_in_camera_box_list[i][idx_pt1].velodyne_points_in_cam.ipx << " y " << laser_points_in_camera_box_list[i][idx_pt1].velodyne_points_in_cam.ipy << '\n';
+		std:: cout <<"p2 x " << laser_points_in_camera_box_list[i][idx_pt2].velodyne_points_in_cam.ipx << " y " << laser_points_in_camera_box_list[i][idx_pt2].velodyne_points_in_cam.ipy << '\n';
         offset.x = 0.572;
         offset.y = 0.0;
         offset.z = 2.154;
@@ -171,14 +173,13 @@ lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyn
         offset.y = globalpos.y;
         offset.z = 0.0;
 
-
         p1 = translate_point(p1, offset);
         p2 = translate_point(p2, offset);
 
 		message.lane_vector[i].lane_segment_position1.x = p1.x;
 		message.lane_vector[i].lane_segment_position1.y = p1.y;
-		message.lane_vector[i].lane_segment_position1.x = p2.x;
-		message.lane_vector[i].lane_segment_position1.y = p2.y;
+		message.lane_vector[i].lane_segment_position2.x = p2.x;
+		message.lane_vector[i].lane_segment_position2.y = p2.y;
 		message.lane_vector[i].lane_class = 0;
 
 		if (left_or_right[i] == true)
