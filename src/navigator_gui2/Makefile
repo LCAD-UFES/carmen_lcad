@@ -7,6 +7,8 @@ SUBDIRS = navigator_gui2_view
 
 LINK = g++
 
+CFLAGS += -fopenmp
+
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src
 

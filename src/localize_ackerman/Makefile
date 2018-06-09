@@ -2,7 +2,7 @@ include ../Makefile.conf
 
 SUBDIRS = model_learn_ackerman
 
-CFLAGS += -std=c99
+CFLAGS += -std=c99 -fopenmp
 LFLAGS += 
 
 LINK = g++

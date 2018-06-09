@@ -1,20 +1,12 @@
 include ../Makefile.conf
 
-ifdef CARMEN_DEBUG
-CFLAGS += -DDEBUG
-endif
-
-ifndef CARMEN_DEBUG
-CFLAGS += -O3 -fopenmp -pg
-endif
-
-
 LINK = g++
-CFLAGS += -Wall
+CFLAGS += -Wall -fopenmp
+CXXFLAGS += -fopenmp
 IFLAGS += -I/usr/local/include
 LFLAGS += -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 	  -lstereo_interface -lbumblebee_basic_interface \
-	 `pkg-config --libs opencv`
+	  `pkg-config --libs opencv`
 
 MODULE_NAME = V_DISPARITY
 MODULE_COMMENT = V-Disparity Library and Viewer

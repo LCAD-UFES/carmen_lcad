@@ -497,37 +497,37 @@ extended_kalman_filter(Matrix &x_k_k, Matrix &P_k_k, Matrix &delta_zk, Matrix &S
 
 
 void
-compute_mixing_probabilities(double c_bar[r], double u_k_1_k_1[r][r], double p[r][r], double *u_k_1)
+compute_mixing_probabilities(double c_bar[NUM_MODELS], double u_k_1_k_1[NUM_MODELS][NUM_MODELS], double p[NUM_MODELS][NUM_MODELS], double *u_k_1)
 {
-	for (int j = 0; j < r; j++)
+	for (int j = 0; j < NUM_MODELS; j++)
 	{
 		c_bar[j] = 0.0;
-		for (int i = 0; i < r; i++)
+		for (int i = 0; i < NUM_MODELS; i++)
 			c_bar[j] += p[i][j] * u_k_1[i]; // [3] eq. 11.6.6-8, pg. 455
 	}
-	for (int i = 0; i < r; i++)
-		for (int j = 0; j < r; j++)
+	for (int i = 0; i < NUM_MODELS; i++)
+		for (int j = 0; j < NUM_MODELS; j++)
 			u_k_1_k_1[i][j] = p[i][j] * u_k_1[i] / c_bar[j]; // [3] eq. 11.6.6-7, pg. 455
 }
 
 
 void
-mix_modes(vector<Matrix> &x_0_k_1_k_1, vector<Matrix> &P_0_k_1_k_1, double u_k_1_k_1[r][r], vector<Matrix> x_k_1_k_1, vector<Matrix> P_k_1_k_1)
+mix_modes(vector<Matrix> &x_0_k_1_k_1, vector<Matrix> &P_0_k_1_k_1, double u_k_1_k_1[NUM_MODELS][NUM_MODELS], vector<Matrix> x_k_1_k_1, vector<Matrix> P_k_1_k_1)
 {
-	for (int j = 0; j < r; j++)
+	for (int j = 0; j < NUM_MODELS; j++)
 	{
 		Matrix sum(x_k_1_k_1[0].m, 1);
 		sum.zero();
-		for (int i = 0; i < r; i++)
+		for (int i = 0; i < NUM_MODELS; i++)
 			sum = sum + x_k_1_k_1[i] * u_k_1_k_1[i][j];
 		x_0_k_1_k_1.push_back(sum); // [3] eq. 11.6.6-9, pg. 455
 	}
 
-	for (int j = 0; j < r; j++)
+	for (int j = 0; j < NUM_MODELS; j++)
 	{
 		Matrix sum(P_k_1_k_1[0].m, P_k_1_k_1[0].n);
 		sum.zero();
-		for (int i = 0; i < r; i++)
+		for (int i = 0; i < NUM_MODELS; i++)
 		{
 			Matrix x_x_0 = x_k_1_k_1[i] - x_0_k_1_k_1[i];
 			sum = sum + (P_k_1_k_1[i] + x_x_0 * ~x_x_0) * u_k_1_k_1[i][j];
@@ -538,7 +538,7 @@ mix_modes(vector<Matrix> &x_0_k_1_k_1, vector<Matrix> &P_0_k_1_k_1, double u_k_1
 
 
 void
-mode_matched_filtering(double A[r], vector<Matrix> &x_k_k_1, vector<Matrix> &P_k_k_1, Matrix z_k, vector<Matrix> &F_k_1, Matrix &fx_k_1,
+mode_matched_filtering(double A[NUM_MODELS], vector<Matrix> &x_k_k_1, vector<Matrix> &P_k_k_1, Matrix z_k, vector<Matrix> &F_k_1,
 		vector<Matrix> &H_k, vector<Matrix> &Q_k_1, Matrix R_k, double T, double sigma_w, double sigma_vct)
 {
 	vector<Matrix> delta_zk, S_k;
@@ -552,11 +552,12 @@ mode_matched_filtering(double A[r], vector<Matrix> &x_k_k_1, vector<Matrix> &P_k
 	kalman_filter(x_k_k_1[1], P_k_k_1[1], delta_zk[1], S_k[1], z_k, F_k_1[1], Q_k_1[1], H_k[1], R_k);
 
 	// CT_MODEL
+	Matrix fx_k_1;
 	set_CT_system_matrixes(F_k_1[2], fx_k_1, Q_k_1[2], T, x_k_k_1[2].val[4][0], x_k_k_1[2].val[2][0],
 			x_k_k_1[2].val[3][0], sigma_w, sigma_vct);
 	extended_kalman_filter(x_k_k_1[2], P_k_k_1[2], delta_zk[2], S_k[2], z_k, F_k_1[2], fx_k_1, Q_k_1[2], H_k[2], R_k);
 
-	for (int j = 0; j < r; j++)
+	for (int j = 0; j < NUM_MODELS; j++)
 	{
 		Matrix aux = S_k[j] * 2 * M_PI;
 		Matrix exponent = ~delta_zk[j] * Matrix::inv(S_k[j]) * delta_zk[j];
@@ -569,34 +570,34 @@ mode_matched_filtering(double A[r], vector<Matrix> &x_k_k_1, vector<Matrix> &P_k
 
 
 void
-mode_probability_update(double u_k[r], double A[r], double c_bar[r])
+mode_probability_update(double u_k[NUM_MODELS], double A[NUM_MODELS], double c_bar[NUM_MODELS])
 {
 	double c = 0.0;
-	for (int j = 0; j < r; j++)
+	for (int j = 0; j < NUM_MODELS; j++)
 		c += A[j] * c_bar[j]; // [3] eq. 11.6.6-16, pg. 456
 
 	if (c != 0.0)
 	{
-		for (int j = 0; j < r; j++)
+		for (int j = 0; j < NUM_MODELS; j++)
 			u_k[j] = A[j] * c_bar[j] / c; // [3] eq. 11.6.6-15, pg. 456
 	}
 	else
 	{
-		for (int j = 0; j < r; j++)
-			u_k[j] = 1.0 / (double) r;
+		for (int j = 0; j < NUM_MODELS; j++)
+			u_k[j] = 1.0 / (double) NUM_MODELS;
 	}
 }
 
 
 void
-mode_estimate_and_covariance_combination(Matrix &x_k_k, Matrix &P_k_k, vector<Matrix> x_k_k_1, vector<Matrix> P_k_k_1, double u_k[r])
+mode_estimate_and_covariance_combination(Matrix &x_k_k, Matrix &P_k_k, vector<Matrix> x_k_k_1, vector<Matrix> P_k_k_1, double u_k[NUM_MODELS])
 {
 	x_k_k.zero();
-	for (int j = 0; j < r; j++)
+	for (int j = 0; j < NUM_MODELS; j++)
 		x_k_k = x_k_k + x_k_k_1[j] * u_k[j]; // [3] eq. 11.6.6-17, pg. 457
 
 	P_k_k.zero();
-	for (int j = 0; j < r; j++)
+	for (int j = 0; j < NUM_MODELS; j++)
 	{
 		Matrix x_x = x_k_k_1[j] - x_k_k;
 		P_k_k = P_k_k + (P_k_k_1[j] + x_x * ~x_x) * u_k[j];
@@ -718,13 +719,13 @@ void
 imm_filter(Matrix &x_k_k, Matrix &P_k_k, vector<Matrix> &x_k_1_k_1, vector<Matrix> &P_k_1_k_1,
 		Matrix z_k, Matrix R_k,
 		vector<Matrix> F_k_1, vector<Matrix> Q_k_1, vector<Matrix> H_k,
-		Matrix fx_k_1, double T, double sigma_w, double sigma_vct, double max_a, double max_w,
-		double p[r][r], double u_k[r])
+		double T, double sigma_w, double sigma_vct, double max_a, double max_w,
+		double p[NUM_MODELS][NUM_MODELS], double u_k[NUM_MODELS])
 {
 	// [3] pg. 455, Section The Algorithm (IMM)
 	double *u_k_1 = u_k;
-	double c_bar[r];
-	double u_k_1_k_1[r][r];
+	double c_bar[NUM_MODELS];
+	double u_k_1_k_1[NUM_MODELS][NUM_MODELS];
 	compute_mixing_probabilities(c_bar, u_k_1_k_1, p, u_k_1);
 
 	vector<Matrix> x_0_k_1_k_1;
@@ -732,10 +733,10 @@ imm_filter(Matrix &x_k_k, Matrix &P_k_k, vector<Matrix> &x_k_1_k_1, vector<Matri
 
 	mix_modes(x_0_k_1_k_1, P_0_k_1_k_1, u_k_1_k_1, extend_vector_dimensions(x_k_1_k_1), extend_matrix_dimensions(P_k_1_k_1, max_a, max_w));
 
-	double A[r];
+	double A[NUM_MODELS];
 	vector<Matrix> x_k_k_1 = restore_vector_dimensions(x_0_k_1_k_1);
 	vector<Matrix> P_k_k_1 = restore_matrix_dimensions(P_0_k_1_k_1);
-	mode_matched_filtering(A, x_k_k_1, P_k_k_1, z_k, F_k_1, fx_k_1, H_k, Q_k_1, R_k, T, sigma_w, sigma_vct);
+	mode_matched_filtering(A, x_k_k_1, P_k_k_1, z_k, F_k_1, H_k, Q_k_1, R_k, T, sigma_w, sigma_vct);
 	x_k_1_k_1 = x_k_k_1; // Aqui eu retorno os estados para a proxima iteracao [5]
 	P_k_1_k_1 = P_k_k_1;
 

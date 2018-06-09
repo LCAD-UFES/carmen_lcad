@@ -17,7 +17,7 @@ LFLAGS +=  -lgrid_mapping -lprob_models -lz -lmap_io -lmap_util -lmap_interface 
 	-lrotation_geometry -ldownload_map -lrddf_interface -ltracker_interface -lnavigator_astar_interface \
 	-lsimulator_ackerman_interface
 		
-CFLAGS += -std=c99 
+CFLAGS += -fopenmp -std=c99 
 CXXFLAGS += -Wno-write-strings
 
 IFLAGS += `pkg-config --cflags opencv` 

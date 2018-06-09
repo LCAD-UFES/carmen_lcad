@@ -1,6 +1,6 @@
 include ../Makefile.conf
 
-####
+#### 
 # To use Caffe Net read the README_USAR_SQUEEZENET.txt
 #####
 MODULE_NAME = TRAFFIC_LIGHT 

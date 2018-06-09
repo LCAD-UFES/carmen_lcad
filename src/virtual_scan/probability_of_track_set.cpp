@@ -1,5 +1,7 @@
 #include <carmen/carmen.h>
 #include <carmen/moving_objects_messages.h>
+#include <carmen/matrix.h>
+#include <carmen/kalman.h>
 #include "virtual_scan.h"
 
 

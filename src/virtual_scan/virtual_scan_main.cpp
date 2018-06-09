@@ -10,6 +10,8 @@
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/collision_detection.h>
+#include <carmen/matrix.h>
+#include <carmen/kalman.h>
 
 #include "virtual_scan.h"
 
