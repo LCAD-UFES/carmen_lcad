@@ -147,7 +147,7 @@ typedef struct
 	double theta;
 	double v;
 	double a;
-	double d_theta;
+	double w;
 	imm_state_t *imm;
 } virtual_scan_hypothesis_state_t;
 

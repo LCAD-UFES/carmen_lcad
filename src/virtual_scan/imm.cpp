@@ -32,9 +32,9 @@ fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
 		double angle_in_the_distance_travelled = ANGLE2D(track->box_model_hypothesis[j].hypothesis, track->box_model_hypothesis[j - 1].hypothesis);
 		double v = (cos(track->box_model_hypothesis[j].hypothesis.theta - angle_in_the_distance_travelled) * distance_travelled) / delta_t;
 		double delta_theta = carmen_normalize_theta(track->box_model_hypothesis[j].hypothesis.theta - track->box_model_hypothesis[j - 1].hypothesis.theta);
-		double d_theta = delta_theta / delta_t;
+		double w = delta_theta / delta_t;
 		track->box_model_hypothesis[j].hypothesis_state.v = v;
-		track->box_model_hypothesis[j].hypothesis_state.d_theta = d_theta;
+		track->box_model_hypothesis[j].hypothesis_state.w = w;
 
 		double x = track->box_model_hypothesis[j].hypothesis.x - track->box_model_hypothesis[j].hypothesis_points.sensor_pos.x;
 		double y = track->box_model_hypothesis[j].hypothesis.y - track->box_model_hypothesis[j].hypothesis_points.sensor_pos.y;
@@ -43,7 +43,6 @@ fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
 		double radius = sqrt(x * x + y * y);
 		double theta = atan2(y, x);
 		double yaw = atan2(y - y_1, x - x_1);
-		double w = 0.0;
 
 		if (track->box_model_hypothesis[j].hypothesis_state.imm == NULL)
 		{
@@ -91,6 +90,11 @@ fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
 					delta_t, carmen_degrees_to_radians(SIGMA_W), SIGMA_VCT, MAX_A, carmen_degrees_to_radians(MAX_W),
 					p, imm->u_k);
 		}
+
+//		double vx = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[2][0];
+//		double vy = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[3][0];
+//		track->box_model_hypothesis[j].hypothesis_state.v = sqrt(vx * vx + vy + vy);
+//		track->box_model_hypothesis[j].hypothesis_state.w = 0.0;//track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[6][0];
 	}
 }
 
