@@ -1,7 +1,7 @@
 
 //#define EKF_SENSING
 
-#define r 3 // Numero de modelos
+#define NUM_MODELS 3
 
 using namespace std;
 
@@ -36,6 +36,9 @@ CV_system_setup(double x, double y, double yaw, double v, Matrix &x_k_k, Matrix 
 		double T, double sigma_s, double sigma_r, double sigma_theta);
 
 void
+set_R_p_k_matriz(Matrix &R_p_k, double sigma_r, double sigma_theta);
+
+void
 position_observation(Matrix &z_k, Matrix &R_k, Matrix R_p_k, double radius, double theta, double sigma_r, double sigma_theta);
 
 void
@@ -53,11 +56,11 @@ vector<Matrix>
 extend_matrix_dimensions(vector<Matrix> x, double max_a, double max_w);
 
 void
-mode_estimate_and_covariance_combination(Matrix &x_k_k, Matrix &P_k_k, vector<Matrix> x_k_k_1, vector<Matrix> P_k_k_1, double u_k[r]);
+mode_estimate_and_covariance_combination(Matrix &x_k_k, Matrix &P_k_k, vector<Matrix> x_k_k_1, vector<Matrix> P_k_k_1, double u_k[NUM_MODELS]);
 
 void
 imm_filter(Matrix &x_k_k, Matrix &P_k_k, vector<Matrix> &x_k_1_k_1, vector<Matrix> &P_k_1_k_1,
 		Matrix z_k, Matrix R_k,
 		vector<Matrix> F_k_1, vector<Matrix> Q_k_1, vector<Matrix> H_k,
-		Matrix fx_k_1, double T, double sigma_w, double sigma_vct, double max_a, double max_w,
-		double p[r][r], double u_k[r]);
+		double T, double sigma_w, double sigma_vct, double max_a, double max_w,
+		double p[NUM_MODELS][NUM_MODELS], double u_k[NUM_MODELS]);

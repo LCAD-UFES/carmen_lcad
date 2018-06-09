@@ -1,7 +1,8 @@
 include ../../src/Makefile.conf
 
 LINK = g++
-CPPFLAGS += -std=c99 -fopenmp
+CFLAGS += -Wall -fopenmp
+CXXFLAGS += -fopenmp
 IFLAGS +=
 LFLAGS += -lglobal
 

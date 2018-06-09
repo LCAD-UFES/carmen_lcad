@@ -11,6 +11,8 @@ SOURCES = matrix.cpp triangle.cpp filter.cpp matcher.cpp reconstruction.cpp viso
 
 PUBLIC_INCLUDES = matrix.h
 
+PUBLIC_LIBRARIES = libviso.a
+
 TARGETS = libviso.a
 
 ifndef NO_PYTHON

@@ -134,13 +134,21 @@ typedef struct
 
 typedef struct
 {
+	vector<Matrix> x_k_1_k_1, P_k_1_k_1, F_k_1_m, Q_k_1_m, H_k_m;
+	Matrix imm_x_k_k, imm_P_k_k;
+	double u_k[NUM_MODELS];
+} imm_state_t;
+
+
+typedef struct
+{
 	double x;
 	double y;
 	double theta;
 	double v;
 	double a;
 	double d_theta;
-	bool initialized;
+	imm_state_t *imm;
 } virtual_scan_hypothesis_state_t;
 
 
@@ -257,5 +265,11 @@ probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set,
 
 void
 update_hypotheses_state(virtual_scan_track_t *track);
+
+carmen_point_t
+distance_from_point_to_line_segment_vw(int *point_in_trajectory_is, carmen_point_t v, carmen_point_t w, carmen_point_t p);
+
+double
+distance_from_point_to_line_segment_vw(carmen_position_t v, carmen_position_t w, carmen_point_t p);
 
 #endif /* SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_H_ */

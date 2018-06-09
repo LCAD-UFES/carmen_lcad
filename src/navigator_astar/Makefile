@@ -12,7 +12,7 @@ LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc \
 	-llocalize_ackerman_interface  -lmap_io -lprob_models \
 	-lsimulator_ackerman_interface -lobstacle_avoider_interface -lrddf_interface -lrobot_ackerman_interface \
 	-lmotion_planner_interface -lcollision_detection -lmap_server_interface -lbehavior_selector_interface -lrotation_geometry 
-CFLAGS += #-pg 
+CFLAGS += -fopenmp #-pg 
 CXXFLAGS += -std=c++0x #-pg 
 
 MODULE_NAME = NAVIGATOR A*

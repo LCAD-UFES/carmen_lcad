@@ -1,6 +1,7 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK = g++
+CFLAGS += -fopenmp
 CXXFLAGS += -std=c++0x
 
 MODULE_NAME = CAR MODEL
