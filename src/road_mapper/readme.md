@@ -325,10 +325,10 @@ max_iter = (epochs * dataset_train_size) / batch_size
 Now you are ready to start the training. 
 If you wish to use some handy scripts to save your training parameters, monitor the training progress, and plot the accuracy chart, [click here](../../sharedlib/ENet/results). Otherwise, run the following:
 ```bash
- $ ENet/caffe-enet/build/tools/caffe train -solver ENet/prototxts/enet_solver_encoder.prototxt
+ $ ENet/caffe-enet/build/tools/caffe train -solver ENet/prototxts/enet_solver_encoder.prototxt -gpu 0
 ```
 
-If the GPU memory is not enough (error == cudasuccess), reduce the batch_size in `ENet/prototxt/enet_train_encoder.prototxt` file.
+If the GPU memory is not enough (error == cudasuccess), reduce the batch_size in `ENet/prototxt/enet_train_encoder.prototxt` file. The number following -gpu is the selected gpu id. 
 
 ##### After the Encoder-Training is Finished you can Continue with the Training of Encoder + Decoder
 
@@ -342,10 +342,10 @@ Copy the **class_weightings** from `enet_train_encoder.prototxt` to `enet_train_
 Start the training of the encoder + decoder and use the pretrained weights as initialization of the encoder.
 Again, if you wish to use some handy scripts to save your training parameters, monitor the training progress, and plot the accuracy chart, [click here](../../sharedlib/ENet/results). Otherwise, run the following:
 ```bash
- $ ENet/caffe-enet/build/tools/caffe train -solver ENet/prototxts/enet_solver_encoder_decoder.prototxt -weights ENet/weights/snapshots_encoder/NAME.caffemodel
+ $ ENet/caffe-enet/build/tools/caffe train -solver ENet/prototxts/enet_solver_encoder_decoder.prototxt -weights ENet/weights/snapshots_encoder/NAME.caffemodel -gpu 0
 ```
 
-Replace the place holder **NAME** to the name of your weights.
+Replace the place holder **NAME** to the name of your weights. The number following -gpu is the selected gpu id.
 
 #### Testing ENet
 
@@ -422,7 +422,7 @@ Then, run the following:
    -weights $CARMEN_HOME/src/road_mapper/data/bn_conv_merged_weights.caffemodel \
    -iterations NUM_ITER -gpu 0 &> results_test.txt
 ```
-In the above command, replace NUM_ITER by (dataset_test_size / batch_size)
+In the above command, replace NUM_ITER by (dataset_test_size / batch_size). The number following -gpu is the selected gpu id.
 
 Or, in a single line:
 ```

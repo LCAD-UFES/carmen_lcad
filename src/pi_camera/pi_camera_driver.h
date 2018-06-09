@@ -1,6 +1,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+
 #include <raspicam/raspicam.h>
+
 #include <iostream>
 #include <unistd.h>
 
