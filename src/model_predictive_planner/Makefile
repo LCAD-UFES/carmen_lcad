@@ -5,8 +5,8 @@ MODULE_NAME = Model-Predictive Motion Planner
 MODULE_COMMENT = Model-predictive motion planner
 
 LINK = g++
-CFLAGS += 
-CXXFLAGS += -std=c++0x
+CFLAGS += -fopenmp
+CXXFLAGS += -fopenmp -std=c++0x
 #CXXFLAGS += -DDEBUG_OBJECTS_PLOT
 #CFLAGS += -msse3 -O4 -fopenmp
 #CXXFLAGS += -std=c++0x -msse3 -O4 -fopenmp

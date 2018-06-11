@@ -647,7 +647,7 @@ navigator_rddf_waypoints_handler(carmen_rddf_waypoints_around_end_point_message 
 static void
 lane_detector_handler(carmen_lane_detector_lane_message_t *msg)
 {
-	gui->lane_markings_msg = msg[0];
+	gui->lane_markings_msg = msg;
 }
 
 

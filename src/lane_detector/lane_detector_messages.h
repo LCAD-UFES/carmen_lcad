@@ -29,6 +29,8 @@ enum LMT
 typedef struct
 {
 	int lane_class;
+	//left_lane_segment = 1 and right_lane_segment = 0
+	int left;
 	carmen_position_t lane_segment_position1;  // Lane Segment position on the map
 	carmen_position_t lane_segment_position2;  // Lane Segment position on the map
 } carmen_lane_detector_lane_t;
@@ -43,7 +45,7 @@ typedef struct
 } carmen_lane_detector_lane_message_t;
 
 #define CARMEN_LANE_NAME 	"carmen_lane_detector_lane_message"
-#define CARMEN_LANE_FMT 	"{int,<{int,{double,double},{double,double}}:1>,double,string}"
+#define CARMEN_LANE_FMT 	"{int,<{int,int,{double,double},{double,double}}:1>,double,string}"
 
 
 #ifdef __cplusplus

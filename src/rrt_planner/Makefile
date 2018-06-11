@@ -5,7 +5,7 @@ MODULE_NAME = RRT Planner
 MODULE_COMMENT = Rapidly-exploring Random Trees Planner
 
 LINK = g++
-CFLAGS += 
+CFLAGS += -fopenmp
 CXXFLAGS += -std=c++0x
 
 # Application specific include directories.

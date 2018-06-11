@@ -2,7 +2,7 @@ include ../Makefile.conf
 
 LINK = g++
 
-CFLAGS += -std=c99 
+CFLAGS += -std=c99 -fopenmp
 CXXFLAGS += -Wno-write-strings
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include

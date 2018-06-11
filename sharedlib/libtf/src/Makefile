@@ -16,6 +16,10 @@ CFLAGS += -Wall
 # Source code files (.c, .cpp) 
 SOURCES = tf_rate.cpp tf_duration.cpp tf_time.cpp tf.cpp cache.cpp main.cpp  
 
+PUBLIC_INCLUDES = tf.h
+
+PUBLIC_LIBRARIES = libtf.a
+
 TARGETS = libtf.a test
 
 libtf.a: tf_rate.o tf_duration.o tf_time.o tf.o cache.o 

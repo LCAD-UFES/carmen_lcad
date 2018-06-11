@@ -30,13 +30,17 @@
 #include "camera_hw_interface.h"
 #include "camera_messages.h"
 
-void shutdown_module(int signo __attribute__ ((unused)))
+
+void
+shutdown_module(int signo __attribute__ ((unused)))
 {
 	carmen_camera_shutdown();
 	exit(0);
 }
 
-void carmen_camera_publish_image_message(carmen_camera_image_t *image)
+
+void
+carmen_camera_publish_image_message(carmen_camera_image_t *image)
 {
 	static carmen_camera_image_message msg;
 
@@ -52,11 +56,12 @@ void carmen_camera_publish_image_message(carmen_camera_image_t *image)
 	msg.image = image->image;
 
 	err = IPC_publishData(CARMEN_CAMERA_IMAGE_NAME, &msg);
-	carmen_test_ipc_exit(err, "Could not publish",
-			CARMEN_CAMERA_IMAGE_NAME);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_CAMERA_IMAGE_NAME);
 }
 
-int main(int argc, char **argv) 
+
+int
+main(int argc, char **argv)
 {
 	carmen_camera_image_t *image;
 	IPC_RETURN_TYPE err;
@@ -67,19 +72,21 @@ int main(int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 
-	err = IPC_defineMsg(CARMEN_CAMERA_IMAGE_NAME, IPC_VARIABLE_LENGTH,
-			CARMEN_CAMERA_IMAGE_FMT);
+	err = IPC_defineMsg(CARMEN_CAMERA_IMAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_CAMERA_IMAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_CAMERA_IMAGE_NAME);
 
 	carmen_param_allow_unfound_variables(0);
 	param_err = carmen_param_get_int("camera_fps", &fps, NULL);
+
 	if (param_err < 0 || fps <= 0)
 		carmen_die("Could not find valid parameter in carmen.ini file: camera_fps\n");
 
 	interframe_sleep = 1.0/(double)fps;
 	image = carmen_camera_start(argc, argv);
+
 	if (image == NULL)
 		exit(-1);
+
 	signal(SIGINT, shutdown_module);
 
 	while(1)

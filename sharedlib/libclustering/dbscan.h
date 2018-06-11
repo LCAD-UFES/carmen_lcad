@@ -3,8 +3,14 @@
 
 #include <vector>
 
+using namespace std;
+
 namespace dbscan
 {
+
+// We use carmen_point_t {x, y, theta} but theta is not considered during the clustering process.
+// However, it cannot be removed (by using carmen_point_t, for instance) because there are uses were the theta must be preserved
+// during clustering.
 
 typedef std::vector<carmen_point_t> Cluster;
 
