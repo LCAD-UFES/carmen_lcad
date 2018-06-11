@@ -26,13 +26,6 @@ extern "C" {
 #define LOCAL_MAP_SIZE (210)
 #define GLOBAL_MAP_SIZE (1800)
 
-static double global_gridmap_resolution = 0.6;
-static double local_gridmap_resolution = 0.2;
-static double local_gridmap_size = LOCAL_MAP_SIZE;
-static int local_gridmap_count = LOCAL_MAP_SIZE / 0.2;
-static int local_gridmap_count_3 = (LOCAL_MAP_SIZE/3) / 0.2;
-static int global_gridmap_count = GLOBAL_MAP_SIZE / 0.6;
-static int map_quadrant;
 extern double g_x_origin;
 extern double g_y_origin;
 extern char *g_road_map_folder;
