@@ -10,6 +10,7 @@ using namespace cv;
 using namespace std;
 
 #define PORT 3457
+//#define DISPLAY_IMAGE
 
 
 int
@@ -76,16 +77,29 @@ undistort_image(Mat input_frame, CameraParameters cam_pam)
 	return output_frame;
 }
 
-
-int
-main()
+raspicam::RaspiCam
+set_camera_configurations()
 {
-	Mat frame;
 	raspicam::RaspiCam RpiCamera;
-	unsigned char *rpi_cam_data = NULL;
 
-	//set camera intrinsics parameters
+	RpiCamera.setBrightness(55);
+	RpiCamera.setContrast(10);
+	RpiCamera.setFormat(raspicam::RASPICAM_FORMAT_RGB);
+	RpiCamera.setMetering(raspicam::RASPICAM_METERING_MATRIX);
+	RpiCamera.setWidth(640);
+	RpiCamera.setHeight(480);
+	RpiCamera.setFrameRate(30);
+	RpiCamera.setHorizontalFlip(true);
+	RpiCamera.setVerticalFlip(true);
+
+	return (RpiCamera);
+}
+
+CameraParameters
+set_camera_parameters()
+{
 	CameraParameters cam_pam;
+
 	cam_pam.width = 2592;
 	cam_pam.height = 1944;		
 	cam_pam.fx = (1167.265655 / 2592.0) * cam_pam.width;
@@ -98,49 +112,41 @@ main()
 	cam_pam.p1 = -0.000730;
 	cam_pam.p2 = -0.001853;
 
-	//set camera options
-	RpiCamera.setBrightness(55);
-	RpiCamera.setContrast(10);
-	RpiCamera.setFormat(raspicam::RASPICAM_FORMAT_RGB);
-	RpiCamera.setMetering(raspicam::RASPICAM_METERING_MATRIX);
-	RpiCamera.setWidth(640);
-	RpiCamera.setHeight(480);
-	RpiCamera.setFrameRate(30);
-	RpiCamera.setHorizontalFlip(true);
-	RpiCamera.setVerticalFlip(true);
+	return (cam_pam);
+}
 
 
-	//open rpi camera
-	if (!RpiCamera.open()) {cerr<<"Error opening the camera"<<endl;return -1;}
-	sleep(3);
+int
+main()
+{
+	raspicam::RaspiCam RpiCamera = set_camera_configurations();
 
-	rpi_cam_data = (unsigned char* )calloc (640 * 480 * 3, sizeof(unsigned char));
+
+	if (!RpiCamera.open())
+	{
+		cerr << "Error while opening the camera!\n" << endl;
+		return -1;
+	}
+
+	unsigned char *rpi_cam_data = (unsigned char*) calloc (640 * 480 * 3, sizeof(unsigned char));
 	
 	int new_socket = stablished_connection_with_client();
 
-	int t = 0;
 	while (1)
 	{
-
-		//capture frame
-		RpiCamera.grab();
+		RpiCamera.grab();     // Capture frame
 		RpiCamera.retrieve (rpi_cam_data, raspicam::RASPICAM_FORMAT_RGB);
-		send(new_socket, rpi_cam_data, 640 * 480 * 3 , MSG_OOB );
-	
-		//rpi_cam_data[640*480-1] = '\0';
-		//printf("%sdddd\n\n\n", rpi_cam_data);
-		
-/*		if(rpi_cam_data != NULL)
-			frame = cv::Mat(480, 640, CV_8UC3, rpi_cam_data, 3 * 640);
 
-		
-	#ifdef ENABLE_GUI
-		imshow("frame", frame);
-		waitKey(1);
-	#endif
-*/
-		printf("s %d\n", t++);
+		send(new_socket, rpi_cam_data, 640 * 480 * 3, MSG_NOSIGNAL);
+
+		#ifdef DISPLAY_IMAGE
+		if (rpi_cam_data != NULL)
+		{
+			imshow("Pi Cam Server", Mat(480, 640, CV_8UC3, rpi_cam_data, 3 * 640));
+			waitKey(1);
+		}
+   	   	#endif
 	}
 
-   return 0;
+   return (0);
 }

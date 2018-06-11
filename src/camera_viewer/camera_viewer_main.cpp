@@ -54,8 +54,9 @@ camera_image_handler(carmen_camera_image_message *image_msg)
 {
 	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, image_msg->image, 3 * 640);
 
-	imshow("Camera Viewer", open_cv_image);
-	waitKey(1);
+	printf ("%d  %d %d  %d %lf %s\n", image_msg->width, image_msg->height, image_msg->bytes_per_pixel, image_msg->image_size, image_msg->timestamp, image_msg->host);
+	//imshow("Camera Viewer", open_cv_image);
+	//waitKey(1);
 }
 
 

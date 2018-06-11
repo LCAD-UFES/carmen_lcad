@@ -63,6 +63,8 @@ initialize_message(carmen_camera_image_message *msg)
 	msg->height = image_height;
 	msg->bytes_per_pixel = 3;
 	msg->image_size = image_width * image_height * 3;
+
+	printf ("%d  %d %d  %d\n", msg->width, msg->height, msg->bytes_per_pixel, msg->image_size);
 }
 
 
@@ -138,6 +140,20 @@ define_messages(int camera_number)
 
 
 int
+trying_to_reconnect(int socket)
+{
+	socket = stablished_connection_with_server();
+	while (socket == -1)
+	{
+		printf("Server down... Trying to reconnect\n");
+		sleep(1);
+		socket = stablished_connection_with_server();
+	}
+	return (socket);
+}
+
+
+int
 main(int argc, char **argv)
 {
 	int valread;
@@ -160,9 +176,9 @@ main(int argc, char **argv)
 	int socket = stablished_connection_with_server();
 
 	image_size = image_width * image_height * 3;
-	unsigned char* raw_image = (unsigned char*) calloc (image_size, sizeof(unsigned char));;
-	carmen_camera_image_message* msg = (carmen_camera_image_message*) malloc (sizeof(carmen_camera_image_message));
-	initialize_message(msg);
+	unsigned char *raw_image = (unsigned char *) calloc(image_size, sizeof(unsigned char));
+	carmen_camera_image_message msg;
+	initialize_message(&msg);
 
 	while (1)
 	{
@@ -170,14 +186,19 @@ main(int argc, char **argv)
 
 		if (valread == 0)
 		{
-			printf("-- Message not Received! ---\n");
+			// Connection lost gracefully due to ordelly server shutdown.
+			// Try to reconnect
+			socket = trying_to_reconnect(socket);
 			continue;
 		}
-		msg->image = (char*) raw_image;
-		msg->timestamp = carmen_get_time();
-		msg->host = carmen_get_host();
+		else if ((valread == -1) || (valread != image_size))
+			continue;
 
-		carmen_camera_publish_message(msg);
+		msg.image = (char *) raw_image;
+		msg.timestamp = carmen_get_time();
+		msg.host = carmen_get_host();
+
+		carmen_camera_publish_message(&msg);
 
 		Mat open_cv_image = Mat(image_height, image_width, CV_8UC3, raw_image, 3 * 640);
 		imshow("Pi Camera Driver", open_cv_image);
