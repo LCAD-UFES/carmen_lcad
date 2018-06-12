@@ -1,6 +1,7 @@
 #include <carmen/carmen.h>
 #include <carmen/camera_messages.h>
 #include <carmen/camera_interface.h>
+#include <carmen/bumblebee_basic_interface.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <opencv2/highgui/highgui.hpp>
@@ -123,22 +124,6 @@ read_parameters(int argc, char **argv, int camera_number)
 }
 
 
-void
-define_messages(int camera_number)
-{
-  IPC_RETURN_TYPE err;
-
-  char *message_name = (char*) malloc(128 * sizeof(char));
-  sprintf(message_name, "carmen_pi_cameraimage%d", camera_number);
-
-  err = IPC_defineMsg(CARMEN_CAMERA_IMAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_CAMERA_IMAGE_FMT);
-
-  carmen_test_ipc_exit(err, "Could not define", CARMEN_CAMERA_IMAGE_NAME);
-
-  free(message_name);
-}
-
-
 int
 trying_to_reconnect(int socket)
 {
@@ -169,7 +154,7 @@ main(int argc, char **argv)
 
 	read_parameters(argc, argv, camera_number);
 
-	define_messages(camera_number);
+	carmen_bumblebee_basic_define_messages(3);
 
 	// printf("%d %d %s %s\n", image_width, image_height, tcp_ip_address, port);
 
@@ -177,10 +162,21 @@ main(int argc, char **argv)
 
 	image_size = image_width * image_height * 3;
 	unsigned char *raw_image = (unsigned char *) calloc(image_size + 10, sizeof(unsigned char));
-	carmen_camera_image_message msg;
+
+
+	/*carmen_camera_image_message msg;
 	initialize_message(&msg);
 	msg.image = (char *) raw_image;
+	msg.host = carmen_get_host();*/
+
+	carmen_bumblebee_basic_stereoimage_message msg;
 	msg.host = carmen_get_host();
+	msg.image_size = image_width * image_height * 3;
+	msg.width = image_width;
+	msg.isRectified = 1;
+	msg.height = image_height;
+	msg.raw_left = raw_image;
+	msg.raw_right = raw_image;
 
 	while (1)
 	{
@@ -197,7 +193,10 @@ main(int argc, char **argv)
 			continue;
 
 		msg.timestamp = carmen_get_time();
-		carmen_camera_publish_message(&msg);
+
+		//carmen_camera_publish_message(&msg);
+		carmen_bumblebee_basic_publish_message(3, &msg);
+
 
 		Mat open_cv_image = Mat(image_height, image_width, CV_8UC3, raw_image, 3 * 640);
 		imshow("Pi Camera Driver", open_cv_image);
