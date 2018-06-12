@@ -38,12 +38,11 @@ bumblebee_basic_image_handler(carmen_bumblebee_basic_stereoimage_message *bumble
 
     static bool first_time = true;
 
-    if(first_time)
+    if (first_time)
     {
         first_time = false;
         namedWindow("Camera Viewer", WINDOW_AUTOSIZE);
     }
-
 
     imshow("camera_viewer", image);
     waitKey(1);
@@ -52,7 +51,7 @@ bumblebee_basic_image_handler(carmen_bumblebee_basic_stereoimage_message *bumble
 void
 camera_image_handler(carmen_camera_image_message *image_msg)
 {
-	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, image_msg->image, 3 * 640);
+//	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, image_msg->image, 3 * 640);
 
 	printf ("%d  %d %d  %d %lf %s\n", image_msg->width, image_msg->height, image_msg->bytes_per_pixel, image_msg->image_size, image_msg->timestamp, image_msg->host);
 	//imshow("Camera Viewer", open_cv_image);

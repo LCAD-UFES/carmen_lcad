@@ -179,6 +179,8 @@ main(int argc, char **argv)
 	unsigned char *raw_image = (unsigned char *) calloc(image_size + 10, sizeof(unsigned char));
 	carmen_camera_image_message msg;
 	initialize_message(&msg);
+	msg.image = (char *) raw_image;
+	msg.host = carmen_get_host();
 
 	while (1)
 	{
@@ -194,10 +196,7 @@ main(int argc, char **argv)
 		else if ((valread == -1) || (valread != image_size))
 			continue;
 
-		msg.image = (char *) raw_image;
 		msg.timestamp = carmen_get_time();
-		msg.host = carmen_get_host();
-
 		carmen_camera_publish_message(&msg);
 
 		Mat open_cv_image = Mat(image_height, image_width, CV_8UC3, raw_image, 3 * 640);
