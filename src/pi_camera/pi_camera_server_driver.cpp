@@ -1,5 +1,6 @@
 #include "pi_camera_driver.h"
 
+#define PORT 3457
 
 int
 stablished_connection_with_client()
@@ -71,6 +72,12 @@ set_camera_configurations()
 {
 	raspicam::RaspiCam RpiCamera;
 
+	if (!RpiCamera.open())
+	{
+		cerr << "Error while opening the camera!\n" << endl;
+		return -1;
+	}
+
 	RpiCamera.setWidth(640);
 	RpiCamera.setHeight(480);
 	RpiCamera.setFrameRate(30);
@@ -112,19 +119,21 @@ main()
 	raspicam::RaspiCam RpiCamera = set_camera_configurations();
 	char cam_config[64];
 
-	if (!RpiCamera.open())
-	{
-		cerr << "Error while opening the camera!\n" << endl;
-		return -1;
-	}
-
 	unsigned char *rpi_cam_data = (unsigned char*) calloc (640 * 480 * 3 + 10, sizeof(unsigned char));
 	
 	int pi_socket = stablished_connection_with_client();
 
 	recv(pi_socket, cam_config, 64, MSG_WAITALL);
 
-	printf("---%s\n", cam_config);
+	printf("%s\n", cam_config);
+
+	char *token;
+	token = strtok (str,"*");
+	while (token != NULL)
+	{
+		printf ("%s\n",token);
+		token = strtok (NULL, "*");
+	}
 
 	while (1)
 	{

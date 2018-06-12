@@ -1,10 +1,10 @@
 #include <unistd.h>
 #include <stdio.h>
-#include <sys/socket.h>
 #include <stdlib.h>
-#include <netdb.h>
 #include <string.h>
 #include <iostream>
+#include <sys/socket.h>
+#include <netdb.h>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
