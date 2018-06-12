@@ -176,7 +176,7 @@ main(int argc, char **argv)
 	int socket = stablished_connection_with_server();
 
 	image_size = image_width * image_height * 3;
-	unsigned char *raw_image = (unsigned char *) calloc(image_size, sizeof(unsigned char));
+	unsigned char *raw_image = (unsigned char *) calloc(image_size + 10, sizeof(unsigned char));
 	carmen_camera_image_message msg;
 	initialize_message(&msg);
 

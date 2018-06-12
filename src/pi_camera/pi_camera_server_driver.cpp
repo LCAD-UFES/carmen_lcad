@@ -128,7 +128,7 @@ main()
 		return -1;
 	}
 
-	unsigned char *rpi_cam_data = (unsigned char*) calloc (640 * 480 * 3, sizeof(unsigned char));
+	unsigned char *rpi_cam_data = (unsigned char*) calloc (640 * 480 * 3 + 10, sizeof(unsigned char));
 	
 	int new_socket = stablished_connection_with_client();
 
