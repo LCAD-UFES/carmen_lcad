@@ -147,7 +147,7 @@ main()
 	char cam_config[64];
 	int image_width = 0, image_height = 0, frame_rate = 0, brightness = 0, contrast = 0, image_size = 0;
 
-	int pi_socket = stablished_connection_with_client();
+	int result, pi_socket = stablished_connection_with_client();
 
 	recv(pi_socket, cam_config, 64, MSG_WAITALL);
 
@@ -163,8 +163,9 @@ main()
 		RpiCamera.grab();     // Capture frame
 		RpiCamera.retrieve (rpi_cam_data, raspicam::RASPICAM_FORMAT_RGB);
 
-		int send_result = send(pi_socket, rpi_cam_data, image_size, MSG_NOSIGNAL);
-		if (send_result == -1)
+		result = send(pi_socket, rpi_cam_data, image_size, MSG_NOSIGNAL);
+
+		if (result == -1)
 		{
 			// Possibly disconnected. Trying to reconnect...
 			pi_socket = stablished_connection_with_client();
