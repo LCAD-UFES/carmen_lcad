@@ -25,12 +25,12 @@ stablished_connection_with_client()
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
     {
         perror("socket failed");
-        exit(EXIT_FAILURE);
+        return (-1);
     }
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
     {
         perror("setsockopt");
-        exit(EXIT_FAILURE);
+        return (-1);
     }
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
@@ -40,17 +40,17 @@ stablished_connection_with_client()
     if (bind(server_fd, (struct sockaddr*) &address, sizeof(address)) < 0)
     {
         perror("bind failed");
-        exit(EXIT_FAILURE);
+        return (-1);
     }
     if (listen(server_fd, 3) < 0)
     {
         perror("listen");
-        exit(EXIT_FAILURE);
+        return (-1);
     }
     if ((new_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &addrlen)) < 0)
     {
         perror("accept");
-        exit(EXIT_FAILURE);
+        return (-1);
     }
     printf("Connection stablished sucessfully!\n");	
 	
@@ -137,7 +137,18 @@ main()
 		RpiCamera.grab();     // Capture frame
 		RpiCamera.retrieve (rpi_cam_data, raspicam::RASPICAM_FORMAT_RGB);
 
-		send(new_socket, rpi_cam_data, 640 * 480 * 3, MSG_NOSIGNAL);
+		int send_result = send(new_socket, rpi_cam_data, 640 * 480 * 3, MSG_NOSIGNAL);
+		if (send_result == -1)
+		{
+			// Possibly disconnected. Trying to reconnect...
+			new_socket = stablished_connection_with_client();
+			while (new_socket == -1)
+			{
+				printf("Lost connection... Trying to reconnect\n");
+				sleep(1);
+				new_socket = stablished_connection_with_client();
+			}
+		}
 
 		#ifdef DISPLAY_IMAGE
 		if (rpi_cam_data != NULL)
