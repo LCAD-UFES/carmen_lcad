@@ -1,16 +1,4 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <sys/socket.h>
-#include <stdlib.h>
-#include <netdb.h>
-#include <string.h>
 #include "pi_camera_driver.h"
-
-using namespace cv;
-using namespace std;
-
-#define PORT 3457
-//#define DISPLAY_IMAGE
 
 
 int
@@ -77,23 +65,25 @@ undistort_image(Mat input_frame, CameraParameters cam_pam)
 	return output_frame;
 }
 
+
 raspicam::RaspiCam
 set_camera_configurations()
 {
 	raspicam::RaspiCam RpiCamera;
 
+	RpiCamera.setWidth(640);
+	RpiCamera.setHeight(480);
+	RpiCamera.setFrameRate(30);
 	RpiCamera.setBrightness(55);
 	RpiCamera.setContrast(10);
 	RpiCamera.setFormat(raspicam::RASPICAM_FORMAT_RGB);
 	RpiCamera.setMetering(raspicam::RASPICAM_METERING_MATRIX);
-	RpiCamera.setWidth(640);
-	RpiCamera.setHeight(480);
-	RpiCamera.setFrameRate(30);
 	RpiCamera.setHorizontalFlip(true);
 	RpiCamera.setVerticalFlip(true);
 
 	return (RpiCamera);
 }
+
 
 CameraParameters
 set_camera_parameters()
@@ -120,7 +110,7 @@ int
 main()
 {
 	raspicam::RaspiCam RpiCamera = set_camera_configurations();
-
+	char cam_config[64];
 
 	if (!RpiCamera.open())
 	{
@@ -130,33 +120,32 @@ main()
 
 	unsigned char *rpi_cam_data = (unsigned char*) calloc (640 * 480 * 3 + 10, sizeof(unsigned char));
 	
-	int new_socket = stablished_connection_with_client();
+	int pi_socket = stablished_connection_with_client();
+
+	recv(pi_socket, cam_config, 64, MSG_WAITALL);
+
+	printf("---%s\n", cam_config);
 
 	while (1)
 	{
 		RpiCamera.grab();     // Capture frame
 		RpiCamera.retrieve (rpi_cam_data, raspicam::RASPICAM_FORMAT_RGB);
 
-		int send_result = send(new_socket, rpi_cam_data, 640 * 480 * 3, MSG_NOSIGNAL);
+		int send_result = send(pi_socket, rpi_cam_data, 640 * 480 * 3, MSG_NOSIGNAL);
 		if (send_result == -1)
 		{
 			// Possibly disconnected. Trying to reconnect...
-			new_socket = stablished_connection_with_client();
-			while (new_socket == -1)
+			pi_socket = stablished_connection_with_client();
+			while (pi_socket == -1)
 			{
 				printf("Lost connection... Trying to reconnect\n");
 				sleep(1);
-				new_socket = stablished_connection_with_client();
+				pi_socket = stablished_connection_with_client();
 			}
 		}
 
-		#ifdef DISPLAY_IMAGE
-		if (rpi_cam_data != NULL)
-		{
-			imshow("Pi Cam Server", Mat(480, 640, CV_8UC3, rpi_cam_data, 3 * 640));
-			waitKey(1);
-		}
-   	   	#endif
+		//imshow("Pi Cam Server", Mat(480, 640, CV_8UC3, rpi_cam_data, 3 * 640));
+		//waitKey(1);
 	}
 
    return (0);

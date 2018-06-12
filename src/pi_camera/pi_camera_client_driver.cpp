@@ -8,11 +8,9 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 
-int image_width;    // These variables will be read from the carmen_fordscape.ini file
-int image_height;
 char* tcp_ip_address;
 char* port;
-int image_size; // Image size in bites
+
 
 using namespace std;
 using namespace cv;
@@ -57,16 +55,19 @@ stablished_connection_with_server()
 }
 
 
-void
-initialize_message(carmen_camera_image_message *msg)
+int
+trying_to_reconnect(int socket)
 {
-	msg->width = image_width;
-	msg->height = image_height;
-	msg->bytes_per_pixel = 3;
-	msg->image_size = image_width * image_height * 3;
-
-	printf ("%d  %d %d  %d\n", msg->width, msg->height, msg->bytes_per_pixel, msg->image_size);
+	socket = stablished_connection_with_server();
+	while (socket == -1)
+	{
+		printf("Server down... Trying to reconnect\n");
+		sleep(1);
+		socket = stablished_connection_with_server();
+	}
+	return (socket);
 }
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,6 +77,33 @@ initialize_message(carmen_camera_image_message *msg)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
+void
+publish_image_message(int pi_socket, int camera_number, carmen_bumblebee_basic_stereoimage_message msg)
+{
+	int valread;
+
+	while (1)
+	{
+		// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
+		valread = recv(pi_socket, msg.raw_left, msg.image_size, MSG_WAITALL);
+
+		if (valread == 0)
+		{
+			// Connection lost due to server shutdown.
+			pi_socket = trying_to_reconnect(pi_socket);
+			continue;
+		}
+		else if ((valread == -1) || (valread != msg.image_size))
+			continue;
+
+		msg.timestamp = carmen_get_time();
+		carmen_bumblebee_basic_publish_message(camera_number, &msg);
+
+		//imshow("Pi Camera Driver", Mat(image_height, image_width, CV_8UC3, msg.raw_left, 3 * 640));
+		//waitKey(1);
+	}
+}
 
 
 
@@ -104,103 +132,69 @@ signal_handler(int sig)
 
 
 
-void
-read_parameters(int argc, char **argv, int camera_number)
+int
+read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_message *msg, char *cam_config)
 {
+	if (argc != 2)
+		carmen_die("--- Wrong number of parameters. ---\nUsage: %s <camera_number>\n", argv[0]);
+
+	int frame_rate, brightness, contrast, camera_number = atoi(argv[1]);
+
 	char pi_camera_number[256];
 
-	sprintf(pi_camera_number, "%s%d", "pi_camera", camera_number);
+	sprintf(pi_camera_number, "%s%d", "camera", camera_number);
 
 	carmen_param_t param_list[] =
 	{
-		{pi_camera_number, (char*)"width",  CARMEN_PARAM_INT,    &image_width,    0, NULL},
-		{pi_camera_number, (char*)"height", CARMEN_PARAM_INT,    &image_height,   0, NULL},
-		{pi_camera_number, (char*)"ip",     CARMEN_PARAM_STRING, &tcp_ip_address, 0, NULL},
-		{pi_camera_number, (char*)"port",   CARMEN_PARAM_STRING, &port,           0, NULL},
+		{pi_camera_number, (char*)"width",      CARMEN_PARAM_INT,    &msg->width,     0, NULL},
+		{pi_camera_number, (char*)"height",     CARMEN_PARAM_INT,    &msg->height,    0, NULL},
+		{pi_camera_number, (char*)"frame_rate", CARMEN_PARAM_INT,    &frame_rate,     0, NULL},
+		{pi_camera_number, (char*)"brightness", CARMEN_PARAM_INT,    &brightness,     0, NULL},
+		{pi_camera_number, (char*)"contrast",   CARMEN_PARAM_INT,    &contrast,       0, NULL},
+		{pi_camera_number, (char*)"ip",         CARMEN_PARAM_STRING, &tcp_ip_address, 0, NULL},
+		{pi_camera_number, (char*)"port",       CARMEN_PARAM_STRING, &port,           0, NULL},
 	};
 
 	int num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	sprintf(cam_config, "%d*%d*%d*%d*%d*", msg->width, msg->height, frame_rate, brightness, contrast);
+
+	return (camera_number);
 }
 
 
-int
-trying_to_reconnect(int socket)
+void
+initialize_message(carmen_bumblebee_basic_stereoimage_message *msg)
 {
-	socket = stablished_connection_with_server();
-	while (socket == -1)
-	{
-		printf("Server down... Trying to reconnect\n");
-		sleep(1);
-		socket = stablished_connection_with_server();
-	}
-	return (socket);
+	msg->image_size = msg->width * msg->height * 3; // 3 channels RGB
+	msg->isRectified = 1;
+	msg->raw_left = (unsigned char *) calloc(msg->image_size + 10, sizeof(unsigned char));
+	msg->raw_right = msg->raw_left;  // This is a monocular camera, both pointers point to the same image
+	msg->host = carmen_get_host();
+
+	printf("\nWidth %d Height %d Image Size %d Is Rectified %d Host %s\n\n", msg->width, msg->height, msg->image_size, msg->isRectified, msg->host);
 }
 
 
 int
 main(int argc, char **argv)
 {
-	int valread;
+	carmen_bumblebee_basic_stereoimage_message msg;
+	char cam_config[64];
 
 	carmen_ipc_initialize(argc, argv);
 
 	carmen_param_check_version(argv[0]);
 
-	if (argc != 2)
-	    carmen_die("--- Wrong number of parameters. ---\nUsage: %s <camera_number>\n", argv[0]);
-
-	int camera_number = atoi(argv[1]);
-
-	read_parameters(argc, argv, camera_number);
-
-	carmen_bumblebee_basic_define_messages(3);
-
-	// printf("%d %d %s %s\n", image_width, image_height, tcp_ip_address, port);
-
-	int socket = stablished_connection_with_server();
-
-	image_size = image_width * image_height * 3;
-	unsigned char *raw_image = (unsigned char *) calloc(image_size + 10, sizeof(unsigned char));
-
-
-	/*carmen_camera_image_message msg;
+	int camera_number = read_parameters(argc, argv, &msg, cam_config);
 	initialize_message(&msg);
-	msg.image = (char *) raw_image;
-	msg.host = carmen_get_host();*/
 
-	carmen_bumblebee_basic_stereoimage_message msg;
-	msg.host = carmen_get_host();
-	msg.image_size = image_width * image_height * 3;
-	msg.width = image_width;
-	msg.isRectified = 1;
-	msg.height = image_height;
-	msg.raw_left = raw_image;
-	msg.raw_right = raw_image;
+	carmen_bumblebee_basic_define_messages(camera_number);
 
-	while (1)
-	{
-		valread = recv(socket, raw_image, image_size, MSG_WAITALL);
+	int pi_socket = stablished_connection_with_server();
 
-		if (valread == 0)
-		{
-			// Connection lost gracefully due to ordelly server shutdown.
-			// Try to reconnect
-			socket = trying_to_reconnect(socket);
-			continue;
-		}
-		else if ((valread == -1) || (valread != image_size))
-			continue;
+	send(pi_socket, cam_config, 64, MSG_NOSIGNAL);
 
-		msg.timestamp = carmen_get_time();
-
-		//carmen_camera_publish_message(&msg);
-		carmen_bumblebee_basic_publish_message(3, &msg);
-
-
-		Mat open_cv_image = Mat(image_height, image_width, CV_8UC3, raw_image, 3 * 640);
-		imshow("Pi Camera Driver", open_cv_image);
-		waitKey(1);
-	}
-	//carmen_ipc_dispatch();
+	publish_image_message(pi_socket, camera_number, msg);
 }
