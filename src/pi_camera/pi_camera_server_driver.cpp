@@ -67,26 +67,54 @@ undistort_image(Mat input_frame, CameraParameters cam_pam)
 }
 
 
+void
+extract_camera_configuration(char *cam_config, int &image_width, int &image_height, int &frame_rate, int &brightness, int &contrast)
+{
+	char *token;
+
+	token = strtok(cam_config, "*");
+
+	printf ("Widith %s\n", token);
+	image_width = atoi(token);
+
+	token = strtok (NULL, "*");
+	printf ("Height %s\n", token);
+	image_height = atoi(token);
+
+	token = strtok (NULL, "*");
+	printf ("Frame Rate %s\n", token);
+	frame_rate = atoi(token);
+
+	token = strtok (NULL, "*");
+	printf ("Brightness %s\n", token);
+	brightness = atoi(token);
+
+	token = strtok (NULL, "*");
+	printf ("Contrast %s\n", token);
+	contrast = atoi(token);
+}
+
+
 raspicam::RaspiCam
-set_camera_configurations()
+set_camera_configurations(int image_width, int image_height, int frame_rate, int brightness, int contrast)
 {
 	raspicam::RaspiCam RpiCamera;
-
-	if (!RpiCamera.open())
-	{
-		cerr << "Error while opening the camera!\n" << endl;
-		return -1;
-	}
-
-	RpiCamera.setWidth(640);
-	RpiCamera.setHeight(480);
-	RpiCamera.setFrameRate(30);
-	RpiCamera.setBrightness(55);
-	RpiCamera.setContrast(10);
+	
+	RpiCamera.setWidth(image_width);
+	RpiCamera.setHeight(image_height);
+	RpiCamera.setFrameRate(frame_rate);
+	RpiCamera.setBrightness(brightness);
+	RpiCamera.setContrast(contrast);
 	RpiCamera.setFormat(raspicam::RASPICAM_FORMAT_RGB);
 	RpiCamera.setMetering(raspicam::RASPICAM_METERING_MATRIX);
 	RpiCamera.setHorizontalFlip(true);
 	RpiCamera.setVerticalFlip(true);
+
+	if (!RpiCamera.open())
+	{
+		cerr << "Error while opening the camera!\n" << endl;
+		exit(0);
+	}
 
 	return (RpiCamera);
 }
@@ -116,31 +144,26 @@ set_camera_parameters()
 int
 main()
 {
-	raspicam::RaspiCam RpiCamera = set_camera_configurations();
 	char cam_config[64];
+	int image_width = 0, image_height = 0, frame_rate = 0, brightness = 0, contrast = 0, image_size = 0;
 
-	unsigned char *rpi_cam_data = (unsigned char*) calloc (640 * 480 * 3 + 10, sizeof(unsigned char));
-	
 	int pi_socket = stablished_connection_with_client();
 
 	recv(pi_socket, cam_config, 64, MSG_WAITALL);
 
-	printf("%s\n", cam_config);
+	extract_camera_configuration(cam_config, image_width, image_height, frame_rate, brightness, contrast);
+	
+	raspicam::RaspiCam RpiCamera = set_camera_configurations(image_width, image_height, frame_rate, brightness, contrast);
+	image_size = image_width * image_height * 3;
 
-	char *token;
-	token = strtok (str,"*");
-	while (token != NULL)
-	{
-		printf ("%s\n",token);
-		token = strtok (NULL, "*");
-	}
-
+	unsigned char *rpi_cam_data = (unsigned char*) calloc (image_size, sizeof(unsigned char));
+	
 	while (1)
 	{
 		RpiCamera.grab();     // Capture frame
 		RpiCamera.retrieve (rpi_cam_data, raspicam::RASPICAM_FORMAT_RGB);
 
-		int send_result = send(pi_socket, rpi_cam_data, 640 * 480 * 3, MSG_NOSIGNAL);
+		int send_result = send(pi_socket, rpi_cam_data, image_size, MSG_NOSIGNAL);
 		if (send_result == -1)
 		{
 			// Possibly disconnected. Trying to reconnect...
@@ -153,7 +176,7 @@ main()
 			}
 		}
 
-		//imshow("Pi Cam Server", Mat(480, 640, CV_8UC3, rpi_cam_data, 3 * 640));
+		//imshow("Pi Cam Server", Mat(image_height, image_width, CV_8UC3, rpi_cam_data, 3 * image_width));
 		//waitKey(1);
 	}
 
