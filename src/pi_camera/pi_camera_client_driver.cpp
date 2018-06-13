@@ -64,7 +64,7 @@ trying_to_reconnect(char *cam_config, int cam_config_size)
 
 	while (pi_socket == -1)
 	{
-		sleep(3);
+		sleep(5);
 		pi_socket = stablished_connection_with_server(cam_config, cam_config_size);
 	}
 	return (pi_socket);
@@ -103,8 +103,8 @@ publish_image_message(int pi_socket, int camera_number, carmen_bumblebee_basic_s
 		msg.timestamp = carmen_get_time();
 		carmen_bumblebee_basic_publish_message(camera_number, &msg);
 
-		imshow("Pi Camera Driver", Mat(msg.height, msg.width, CV_8UC3, msg.raw_left, 3 * 640));
-		waitKey(1);
+		//imshow("Pi Camera Driver", Mat(msg.height, msg.width, CV_8UC3, msg.raw_left, 3 * 640));
+		//waitKey(1);
 	}
 }
 
@@ -171,7 +171,7 @@ initialize_message(carmen_bumblebee_basic_stereoimage_message *msg)
 {
 	msg->image_size = msg->width * msg->height * 3; // 3 channels RGB
 	msg->isRectified = 1;
-	msg->raw_left = (unsigned char *) calloc(msg->image_size + 10, sizeof(unsigned char));
+	msg->raw_left = (unsigned char *) calloc(msg->image_size, sizeof(unsigned char));
 	msg->raw_right = msg->raw_left;  // This is a monocular camera, both pointers point to the same image
 	msg->host = carmen_get_host();
 

@@ -2,8 +2,10 @@
 
 #define PORT 3457
 
+
 int
-stablished_connection_with_client()
+stablished_connection_with_client(raspicam::RaspiCam &RpiCamera, char* cam_config, int &image_width, int &image_height,
+		int &image_size, int &frame_rate, int &brightness, int &contrast)
 {
     int server_fd, new_socket;
     struct sockaddr_in address;
@@ -13,12 +15,12 @@ stablished_connection_with_client()
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
     {
-        perror("socket failed");
+        perror("--- Socket Failed ---\n");
         return (-1);
     }
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
     {
-        perror("setsockopt");
+        perror("--- Setsockopt Failed ---\n");
         return (-1);
     }
     address.sin_family = AF_INET;
@@ -28,20 +30,28 @@ stablished_connection_with_client()
     // Forcefully attaching socket to the port defined
     if (bind(server_fd, (struct sockaddr*) &address, sizeof(address)) < 0)
     {
-        perror("bind failed");
+        perror("--- Bind Failed ---\n");
         return (-1);
     }
     if (listen(server_fd, 3) < 0)
     {
-        perror("listen");
+        perror("-- Listen Failed ---\n");
         return (-1);
     }
     if ((new_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &addrlen)) < 0)
     {
-        perror("accept");
+        perror("--- Accept Failed ---\n");
         return (-1);
     }
-    printf("Connection stablished sucessfully!\n");	
+    printf("--- Connection established successfully! ---\n");
+
+	recv(new_socket, cam_config, 64, MSG_WAITALL);
+
+	extract_camera_configuration(cam_config, image_width, image_height, frame_rate, brightness, contrast);
+
+	RpiCamera = set_camera_configurations(image_width, image_height, frame_rate, brightness, contrast);
+
+	image_size = image_width * image_height * 3;
 	
     return (new_socket);
 }
@@ -144,39 +154,38 @@ set_camera_parameters()
 int
 main()
 {
+	raspicam::RaspiCam RpiCamera;
 	char cam_config[64];
-	int image_width = 0, image_height = 0, frame_rate = 0, brightness = 0, contrast = 0, image_size = 0;
-
-	int result, pi_socket = stablished_connection_with_client();
-
-	recv(pi_socket, cam_config, 64, MSG_WAITALL);
-
-	extract_camera_configuration(cam_config, image_width, image_height, frame_rate, brightness, contrast);
-	
-	raspicam::RaspiCam RpiCamera = set_camera_configurations(image_width, image_height, frame_rate, brightness, contrast);
-	image_size = image_width * image_height * 3;
+	int result = 0, image_width = 0, image_height = 0, frame_rate = 0, brightness = 0, contrast = 0, image_size = 0;
 
 	unsigned char *rpi_cam_data = (unsigned char*) calloc (image_size, sizeof(unsigned char));
 	
+
+	int pi_socket = stablished_connection_with_client(RpiCamera, cam_config, image_width, image_height,
+			image_size, frame_rate, brightness, contrast);
+
 	while (1)
 	{
 		RpiCamera.grab();     // Capture frame
 		RpiCamera.retrieve (rpi_cam_data, raspicam::RASPICAM_FORMAT_RGB);
 
+		// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
 		result = send(pi_socket, rpi_cam_data, image_size, MSG_NOSIGNAL);
 
 		if (result == -1)
 		{
-			// Possibly disconnected. Trying to reconnect...
-			pi_socket = stablished_connection_with_client();
+			// Possibly disconnected
+			pi_socket = pi_socket = stablished_connection_with_client(RpiCamera, cam_config, image_width, image_height,
+					image_size, frame_rate, brightness, contrast);
+
 			while (pi_socket == -1)
 			{
-				printf("Lost connection... Trying to reconnect\n");
-				sleep(1);
-				pi_socket = stablished_connection_with_client();
+				printf("--- Connection Lost ---\n");
+				sleep(5);
+				pi_socket = pi_socket = stablished_connection_with_client(RpiCamera, cam_config, image_width, image_height,
+						image_size, frame_rate, brightness, contrast);
 			}
 		}
-
 		//imshow("Pi Cam Server", Mat(image_height, image_width, CV_8UC3, rpi_cam_data, 3 * image_width));
 		//waitKey(1);
 	}
