@@ -1,22 +1,4 @@
-Para criar o modulo "PiCamera" no carmen_lcad soi usado o seguinte procedimento:
-- Foi criado o diretorio src/rpi_camera e incluindo um arquivo texto README apenas para ter um arquivo no diretorio
-- Foi feito o commit e push deste diretorio no github
-- Foi baixado o diretorio PiCamera no Raspberry Pi do github do LCAD usando o procedimento https://stackoverflow.com/questions/7106012/download-a-single-folder-or-directory-from-a-github-repo , que basicamente consistiu de:
- sudo apt-get install subversion
-- svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/PiCamera
-- A partir deste ponto podemos usar o svn para manter o modulo rpi_camera do Raspberry Pi atualizado no github do LCAD
-
-Observações importantes:
-Nao upar as pastas do scrpit "rpi_camera" com as pastas build
-Caso ainda exista uma pasta ".git" dentro da pasta "camera" ou "raspicam", proveninente de outras interacoes com o git hub, delete essa pasta usando "rm -rf .git" 
-Os comandos para upar novos arquivos sao 
-svn add nova                        (Para "cancelar" o comando add usar: svn revert --recursive example_folder)
-svn commit -m "Descricao da modificacao"
-
-
-Abaixo estao as instrucoes para a utilizacao do raspberry pi 3 e para compilar e executar o script "rpi_camera".
-
-== Instrucoes para formatar o SSD card com o Raspbian ==
+# Istall Raspbian on the Raspberry PI
 
 - Baixe o arquivo imagem do sistema operacional "Raspbian" no site do raspberry (https://www.raspberrypi.org/downloads/raspbian/)
 Obs: Nao baixe o arquivo LITE, e sim a versao completa.
@@ -33,7 +15,8 @@ No final do processo o cartao vai estar pronto para ser inserido no Raspberry pi
 -Conecte seu Raspberry pi 3 em uma rede Wireless ou Wired(A internet sera um recurso necessario para, eventualmente, baixar-
 mos pacotes e programas necessarios para a devida utilizacao do Script "rpi_camera" e de outras ocasionais funcionalidades)
 
-- Habilite a camera seguindo os passos abaixo:
+
+# Enable the Camera
 
 1º-  Clique no menu inicar do Raspiberry pi 3(Canto superior esquerdo da tela inicial) e acesse a secao "Preferencias". Selecione
 "Raspiberry Pi Configuration"
@@ -50,42 +33,76 @@ Caso queira testar se a camera ja esta pronta pra uso, teste o seguinte comando 
 
 "raspivid -o teste.h264 -t 10000"
 
-Se tudo estiver funcionando corretamente a camera sera ativada e gravara um video de 10 segundos que sera salvo na pasta
+Se tudo estiver funcionando corretamente a camera sera ativada e gravara um video de 10 segundos que sera salvo na pasta:
 "home/pi"
 
 Obs: Para consultar os comandos no terminal utilizados pela Pi Camera consulte a documentacao no link: https://www.raspberrypi.org/documentation/raspbian/applications/camera.md
 
-== Instalando os pacotes necessarios para compilar o codigo "rpi_camera" ==
 
-- O primeiro programa a ser baixado sera o "Cmake", necessario para a compilacao dos arquivos do "rpi_camera". Para instalar o Cmake, utilize o comando "sudo apt-get install cmake"
-no teminal.
+# Install Dependencies anf Download the pi_camera file from git
 
-- Apos a intalacao do Cmake, precisaremos dos pacotes do OpenCV. Utilize o comando "sudo apt-get install libopencv-dev python-opencv" para instalar estes pacotes
-
-== Compilando e executando o "rpi_camera" ==
-
-- Baixe o arquivo rpi_camera.zip e siga as linhas de comando abaixo para a compilacao e execucao do arquivo
-
-cd Downloads
-unzip rpi_camera.zip
-cd rpi_camera
-cd raspicam
-mkdir build
-cd build
-cmake ..
-make
-sudo make install                      Obs:Nao funciona sem o "sudo"
-cd ..
-cd ..
-cd camera
-mkdir build
-cd build
-cmake ..
-make
-./rpi_camera
-
-Apos o ultimo comando o codigo ja estara compilado e sendo executado.
+```bash
+ $ sudo apt-get install cmake
+ $ sudo apt-get install libopencv-dev python-opencv
+ $ sudo apt-get install subversion
+ $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/pi_amera
+```
 
 
+# Compile and test the pi_camera module on the Raspberry PI
+
+```bash
+ $ cd pi_camera/raspicam
+ $ mkdir build
+ $ cd build
+ $ cmake ..
+ $ make
+ $ sudo make install
+ $ cd ../..
+ $ mkdir build
+ $ cd build
+ $ cmake ..
+ $ make
+ $ ./pi_camera_test
+```
+
+ The pi_camera_test program will run the camera and display the image captured using OpenCv
 
 
+# Configure an Static IP to the Raspberry PI on IARA's network
+ 
+ Start by editing the dhcpcd.conf file
+ 
+```bash
+ $ sudo nano /etc/dhcpcd.conf
+```
+
+ Add at the end of the file the following configuration:
+ eth0 = wired
+ For the first pi_camera we use the IP adress 192.168.0.15
+ Replace the 15 with the IP number desired
+ 
+```ini
+ interface eth0
+
+ static ip_address=192.168.0.15
+ static routers=192.168.0.1
+ static domain_name_servers=192.168.0.1
+``` 
+
+ To exit the editor, press ctrl+x
+ To save your changes press the letter “Y” then hit enter
+ 
+ Reboot the Raspberry PI
+ 
+```bash
+ $ sudo reboot
+```
+
+ You can double check by typing:
+ 
+```bash
+ $ ifconfig
+```
+
+ The eth0 inet addr must be 192.168.0.15
