@@ -27,7 +27,6 @@ int main(int argc, char* argv[])
 {
 	raspicam::RaspiCam RpiCamera;
 	unsigned char *rpi_cam_data = NULL;
-	time_t raw_time, raw_time_2;
 
 	CameraParameters cam_pam;
 	cam_pam.width = 2592;
@@ -55,19 +54,19 @@ int main(int argc, char* argv[])
 	if (!RpiCamera.open()) {cerr<<"Error opening the camera"<<endl;return -1;}
 	sleep(3);
 
-	rpi_cam_data = (unsigned char* )calloc (640 * 480 * 3, sizeof(unsigned char));
+	rpi_cam_data = (unsigned char* )calloc (1920 * 1080 * 3, sizeof(unsigned char));
 
     while (1)
     {
-    	clock_t tic = clock();
+    		clock_t tic = clock();
 		//capture frame
 		RpiCamera.grab();
 		RpiCamera.retrieve (rpi_cam_data, raspicam::RASPICAM_FORMAT_RGB);
 		clock_t toc = clock();
 
-		printf("FPS: %lf\n", 1 / (double)(toc - tic));
+		printf("FPS: %lf\n", 1 / ((double)(toc - tic) / CLOCKS_PER_SEC));
 
-		imshow("frame", Mat(480, 640, CV_8UC3, rpi_cam_data, 3 * 640));
+		imshow("frame", Mat(1080, 1920, CV_8UC3, rpi_cam_data, 3 * 1920));
 		waitKey(1);
 	}
 

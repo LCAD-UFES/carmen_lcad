@@ -22,4 +22,4 @@ target_link_libraries(pi_camera_server_driver ${OpenCV_LIBRARIES} ${raspicam_CV_
 
 set(SOURCE_FILES pi_camera_test.cpp)
 add_executable(pi_camera_test ${SOURCE_FILES})
-target_link_libraries(pi_camera_server_driver ${OpenCV_LIBRARIES} ${raspicam_CV_LIBS})
+target_link_libraries(pi_camera_test ${OpenCV_LIBRARIES} ${raspicam_CV_LIBS})
