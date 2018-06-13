@@ -28,7 +28,6 @@ stablished_connection_with_server(char *cam_config, int cam_config_size)
 		printf("--- Socket creation error! ---\n");
 		return -1;
 	}
-
 	memset(&host_info, 0, sizeof host_info);
 
 	host_info.ai_family = AF_UNSPEC;     // IP version not specified. Can be both.
@@ -91,9 +90,9 @@ publish_image_message(int pi_socket, int camera_number, carmen_bumblebee_basic_s
 		// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
 		valread = recv(pi_socket, msg.raw_left, msg.image_size, MSG_WAITALL);
 
-		if (valread == 0)
+		if (valread == 0) // Connection lost due to server shutdown.
 		{
-			// Connection lost due to server shutdown.
+			close(pi_socket);
 			pi_socket = trying_to_reconnect(cam_config, cam_config_size);
 			continue;
 		}
@@ -103,8 +102,7 @@ publish_image_message(int pi_socket, int camera_number, carmen_bumblebee_basic_s
 		msg.timestamp = carmen_get_time();
 		carmen_bumblebee_basic_publish_message(camera_number, &msg);
 
-		//imshow("Pi Camera Driver", Mat(msg.height, msg.width, CV_8UC3, msg.raw_left, 3 * 640));
-		//waitKey(1);
+		//imshow("Pi Camera Driver", Mat(msg.height, msg.width, CV_8UC3, msg.raw_left, 3 * 640));  waitKey(1);
 	}
 }
 
