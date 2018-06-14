@@ -2415,21 +2415,63 @@ namespace View
 			unsigned int i;
 			for (int i = 0; i < lane_markings_msg->lane_vector_size; i++)
 			{
-				carmen_world_point_t start, end;
-				start.pose.x = lane_markings_msg->lane_vector[i].lane_segment_position1.x;
-				start.pose.y = lane_markings_msg->lane_vector[i].lane_segment_position1.y;
-				end.pose.x = lane_markings_msg->lane_vector[i].lane_segment_position2.x;
-				end.pose.y = lane_markings_msg->lane_vector[i].lane_segment_position2.y;
-				start.map = end.map = the_map_view->internal_map;
-				carmen_map_graphics_draw_circle(the_map_view, &carmen_green, TRUE, &start, pixel_size * 2.0);
-				carmen_map_graphics_draw_circle(the_map_view, &carmen_green, TRUE, &end, pixel_size * 2.0);
-
 				if (lane_markings_msg->lane_vector[i].left == 1)
 				{
 					left.push_back(lane_markings_msg->lane_vector[i]);
 				}else
 				{
 					right.push_back(lane_markings_msg->lane_vector[i]);
+				}
+			}
+
+			for (int i = 0; i< left.size(); i++)
+			{
+				if (i%2 != 0 && i != left.size() - 1)
+				{
+					left[i].lane_segment_position1.x = (left[i].lane_segment_position1.x + left[i - 1].lane_segment_position1.x) / 2;
+					left[i].lane_segment_position1.y = (left[i].lane_segment_position1.y + left[i - 1].lane_segment_position1.y) / 2;
+					left[i].lane_segment_position2.x = (left[i].lane_segment_position2.x + left[i + 1].lane_segment_position2.x) / 2;
+					left[i].lane_segment_position2.x = (left[i].lane_segment_position2.x + left[i + 1].lane_segment_position2.x) / 2;
+				}
+			}
+			for (int i = 0; i < left.size(); i++)
+			{
+				if (i%2 == 0 && i != left.size() - 1 && i!=0)
+				{
+					left[i].lane_segment_position1 = left[i - 1].lane_segment_position2;
+					left[i].lane_segment_position2 = left[i + 1].lane_segment_position1;
+				}else{
+					if ( i == 0)
+					{
+						left[i].lane_segment_position2 = left[i + 1].lane_segment_position1;
+					}else{
+						left[i].lane_segment_position1 = left[i - 1].lane_segment_position2;
+					}
+				}
+			}
+			for (int i = 0; i< right.size(); i++)
+			{
+				if (i%2 != 0 && i != right.size() - 1)
+				{
+					right[i].lane_segment_position1.x = (right[i].lane_segment_position1.x + right[i - 1].lane_segment_position1.x) / 2;
+					right[i].lane_segment_position1.y = (right[i].lane_segment_position1.y + right[i - 1].lane_segment_position1.y) / 2;
+					right[i].lane_segment_position2.x = (right[i].lane_segment_position2.x + right[i + 1].lane_segment_position2.x) / 2;
+					right[i].lane_segment_position2.x = (right[i].lane_segment_position2.x + right[i + 1].lane_segment_position2.x) / 2;
+				}
+			}
+			for (int i = 0; i < right.size(); i++)
+			{
+				if (i%2 == 0 && i != right.size() - 1 && i!=0)
+				{
+					right[i].lane_segment_position1 = right[i - 1].lane_segment_position2;
+					right[i].lane_segment_position2 = right[i + 1].lane_segment_position1;
+				}else{
+					if ( i == 0)
+					{
+						right[i].lane_segment_position2 = right[i + 1].lane_segment_position1;
+					}else{
+						right[i].lane_segment_position1 = right[i - 1].lane_segment_position2;
+					}
 				}
 			}
 			carmen_lane_detector_lane_t anterior_left;
@@ -2444,6 +2486,8 @@ namespace View
 					end.pose.y = left[i].lane_segment_position2.y;
 					start.map = end.map = the_map_view->internal_map;
 					carmen_map_graphics_draw_line(the_map_view, &carmen_red, &start, &end);
+					carmen_map_graphics_draw_circle(the_map_view, &carmen_green, TRUE, &start, pixel_size * 2.0);
+					carmen_map_graphics_draw_circle(the_map_view, &carmen_green, TRUE, &end, pixel_size * 2.0);
 					if (i != 0)
 					{
 						start.pose.x = anterior_left.lane_segment_position2.x;
@@ -2461,16 +2505,25 @@ namespace View
 					carmen_world_point_t start, end;
 					start.pose.x = right[i].lane_segment_position1.x;
 					start.pose.y = right[i].lane_segment_position1.y;
-					end.pose.x = right[i].lane_segment_position1.x;
-					end.pose.y = right[i].lane_segment_position1.y;
+					end.pose.x = right[i].lane_segment_position2.x;
+					end.pose.y = right[i].lane_segment_position2.y;
 					start.map = end.map = the_map_view->internal_map;
-					carmen_map_graphics_draw_line(the_map_view, &carmen_red, &start, &end);
+					carmen_map_graphics_draw_line(the_map_view, &carmen_red, &end, &start);
+					carmen_map_graphics_draw_circle(the_map_view, &carmen_green, TRUE, &start, pixel_size * 2.0);
+					carmen_map_graphics_draw_circle(the_map_view, &carmen_green, TRUE, &end, pixel_size * 2.0);
 					if (i != 0)
 					{
 						start.pose.x = anterior_right.lane_segment_position2.x;
 						start.pose.y = anterior_right.lane_segment_position2.y;
-						end.pose.x = right[i].lane_segment_position1.x;
-						end.pose.y = right[i].lane_segment_position1.y;
+						if (i == right.size() - 1)
+						{
+							end.pose.x = right[i].lane_segment_position1.x;
+							end.pose.y = right[i].lane_segment_position1.y;
+						}else
+						{
+							end.pose.x = right[i].lane_segment_position2.x;
+							end.pose.y = right[i].lane_segment_position2.y;
+						}
 						carmen_map_graphics_draw_line(the_map_view, &carmen_red, &start, &end);
 					}
 					anterior_right = right[i];
