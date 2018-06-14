@@ -1,19 +1,11 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <sys/socket.h>
-#include <stdlib.h>
-#include <netdb.h>
-#include <string.h>
 #include "pi_camera_driver.h"
-
-using namespace cv;
-using namespace std;
 
 #define PORT 3457
 
 
 int
-stablished_connection_with_client()
+stablished_connection_with_client(raspicam::RaspiCam &RpiCamera, char* cam_config, int &image_width, int &image_height,
+		int &image_size, int &frame_rate, int &brightness, int &contrast)
 {
     int server_fd, new_socket;
     struct sockaddr_in address;
@@ -23,13 +15,13 @@ stablished_connection_with_client()
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
     {
-        perror("socket failed");
-        exit(EXIT_FAILURE);
+        perror("--- Socket Failed ---\n");
+        return (-1);
     }
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
     {
-        perror("setsockopt");
-        exit(EXIT_FAILURE);
+        perror("--- Setsockopt Failed ---\n");
+        return (-1);
     }
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
@@ -38,20 +30,28 @@ stablished_connection_with_client()
     // Forcefully attaching socket to the port defined
     if (bind(server_fd, (struct sockaddr*) &address, sizeof(address)) < 0)
     {
-        perror("bind failed");
-        exit(EXIT_FAILURE);
+        perror("--- Bind Failed ---\n");
+        return (-1);
     }
     if (listen(server_fd, 3) < 0)
     {
-        perror("listen");
-        exit(EXIT_FAILURE);
+        perror("-- Listen Failed ---\n");
+        return (-1);
     }
     if ((new_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &addrlen)) < 0)
     {
-        perror("accept");
-        exit(EXIT_FAILURE);
+        perror("--- Accept Failed ---\n");
+        return (-1);
     }
-    printf("Connection stablished sucessfully!\n");	
+    printf("--- Connection established successfully! ---\n");
+
+	recv(new_socket, cam_config, 64, MSG_WAITALL);
+
+	extract_camera_configuration(cam_config, image_width, image_height, frame_rate, brightness, contrast);
+
+	RpiCamera = set_camera_configurations(image_width, image_height, frame_rate, brightness, contrast);
+
+	image_size = image_width * image_height * 3;
 	
     return (new_socket);
 }
@@ -77,15 +77,64 @@ undistort_image(Mat input_frame, CameraParameters cam_pam)
 }
 
 
-int
-main()
+void
+extract_camera_configuration(char *cam_config, int &image_width, int &image_height, int &frame_rate, int &brightness, int &contrast)
 {
-	Mat frame;
-	raspicam::RaspiCam RpiCamera;
-	unsigned char *rpi_cam_data = NULL;
+	char *token;
 
-	//set camera intrinsics parameters
+	token = strtok(cam_config, "*");
+
+	printf ("Widith %s\n", token);
+	image_width = atoi(token);
+
+	token = strtok (NULL, "*");
+	printf ("Height %s\n", token);
+	image_height = atoi(token);
+
+	token = strtok (NULL, "*");
+	printf ("Frame Rate %s\n", token);
+	frame_rate = atoi(token);
+
+	token = strtok (NULL, "*");
+	printf ("Brightness %s\n", token);
+	brightness = atoi(token);
+
+	token = strtok (NULL, "*");
+	printf ("Contrast %s\n", token);
+	contrast = atoi(token);
+}
+
+
+raspicam::RaspiCam
+set_camera_configurations(int image_width, int image_height, int frame_rate, int brightness, int contrast)
+{
+	raspicam::RaspiCam RpiCamera;
+	
+	RpiCamera.setWidth(image_width);
+	RpiCamera.setHeight(image_height);
+	RpiCamera.setFrameRate(frame_rate);
+	RpiCamera.setBrightness(brightness);
+	RpiCamera.setContrast(contrast);
+	RpiCamera.setFormat(raspicam::RASPICAM_FORMAT_RGB);
+	RpiCamera.setMetering(raspicam::RASPICAM_METERING_MATRIX);
+	RpiCamera.setHorizontalFlip(true);
+	RpiCamera.setVerticalFlip(true);
+
+	if (!RpiCamera.open())
+	{
+		cerr << "Error while opening the camera!\n" << endl;
+		exit(0);
+	}
+
+	return (RpiCamera);
+}
+
+
+CameraParameters
+set_camera_parameters()
+{
 	CameraParameters cam_pam;
+
 	cam_pam.width = 2592;
 	cam_pam.height = 1944;		
 	cam_pam.fx = (1167.265655 / 2592.0) * cam_pam.width;
@@ -98,49 +147,48 @@ main()
 	cam_pam.p1 = -0.000730;
 	cam_pam.p2 = -0.001853;
 
-	//set camera options
-	RpiCamera.setBrightness(55);
-	RpiCamera.setContrast(10);
-	RpiCamera.setFormat(raspicam::RASPICAM_FORMAT_RGB);
-	RpiCamera.setMetering(raspicam::RASPICAM_METERING_MATRIX);
-	RpiCamera.setWidth(640);
-	RpiCamera.setHeight(480);
-	RpiCamera.setFrameRate(30);
-	RpiCamera.setHorizontalFlip(true);
-	RpiCamera.setVerticalFlip(true);
+	return (cam_pam);
+}
 
 
-	//open rpi camera
-	if (!RpiCamera.open()) {cerr<<"Error opening the camera"<<endl;return -1;}
-	sleep(3);
+int
+main()
+{
+	raspicam::RaspiCam RpiCamera;
+	char cam_config[64];
+	int result = 0, image_width = 0, image_height = 0, frame_rate = 0, brightness = 0, contrast = 0, image_size = 0;
 
-	rpi_cam_data = (unsigned char* )calloc (640 * 480 * 3, sizeof(unsigned char));
+	unsigned char *rpi_cam_data = (unsigned char*) calloc (image_size, sizeof(unsigned char));
 	
-	int new_socket = stablished_connection_with_client();
 
-	int t = 0;
+	int pi_socket = stablished_connection_with_client(RpiCamera, cam_config, image_width, image_height,
+			image_size, frame_rate, brightness, contrast);
+
 	while (1)
 	{
-
-		//capture frame
-		RpiCamera.grab();
+		RpiCamera.grab();     // Capture frame
 		RpiCamera.retrieve (rpi_cam_data, raspicam::RASPICAM_FORMAT_RGB);
-		send(new_socket, rpi_cam_data, 640 * 480 * 3 , MSG_OOB );
-	
-		//rpi_cam_data[640*480-1] = '\0';
-		//printf("%sdddd\n\n\n", rpi_cam_data);
-		
-/*		if(rpi_cam_data != NULL)
-			frame = cv::Mat(480, 640, CV_8UC3, rpi_cam_data, 3 * 640);
 
-		
-	#ifdef ENABLE_GUI
-		imshow("frame", frame);
-		waitKey(1);
-	#endif
-*/
-		printf("s %d\n", t++);
+		// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
+		result = send(pi_socket, rpi_cam_data, image_size, MSG_NOSIGNAL);
+
+		if (result == -1)
+		{
+			// Possibly disconnected
+			pi_socket = pi_socket = stablished_connection_with_client(RpiCamera, cam_config, image_width, image_height,
+					image_size, frame_rate, brightness, contrast);
+
+			while (pi_socket == -1)
+			{
+				printf("--- Connection Lost ---\n");
+				sleep(5);
+				pi_socket = pi_socket = stablished_connection_with_client(RpiCamera, cam_config, image_width, image_height,
+						image_size, frame_rate, brightness, contrast);
+			}
+		}
+		//imshow("Pi Cam Server", Mat(image_height, image_width, CV_8UC3, rpi_cam_data, 3 * image_width));
+		//waitKey(1);
 	}
 
-   return 0;
+   return (0);
 }

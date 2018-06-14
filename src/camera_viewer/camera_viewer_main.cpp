@@ -4,19 +4,18 @@
 
 #include "camera_viewer.h"
 
-/* number of the camera that will be used */
-static int camera;
+using namespace std;
+using namespace cv;
+
+static int camera;    // Number of the camera that will be used
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Publishers                                                                                //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-
 
 
 
@@ -28,68 +27,77 @@ static int camera;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
 void
 bumblebee_basic_image_handler(carmen_bumblebee_basic_stereoimage_message *bumblebee_basic_message)
 {
 
-    cv::Mat image = cv::Mat(bumblebee_basic_message->height, bumblebee_basic_message->width, CV_8UC3,
-                                 bumblebee_basic_message->raw_right);
+    Mat image = Mat(bumblebee_basic_message->height, bumblebee_basic_message->width, CV_8UC3, bumblebee_basic_message->raw_right);
 
-    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+    cvtColor(image, image, COLOR_BGR2RGB);
 
     static bool first_time = true;
 
-    if(first_time)
+    if (first_time)
     {
         first_time = false;
-        cv::namedWindow("camera_viewer", cv::WINDOW_AUTOSIZE);
+        namedWindow("Camera Viewer", WINDOW_AUTOSIZE);
     }
 
-
-    cv::imshow("camera_viewer", image);
-    cv::waitKey(5);
-
-
-
+    imshow("camera_viewer", image);
+    waitKey(1);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+void
+camera_image_handler(carmen_camera_image_message *image_msg)
+{
+//	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, image_msg->image, 3 * 640);
+
+	printf ("%d  %d %d  %d %lf %s\n", image_msg->width, image_msg->height, image_msg->bytes_per_pixel, image_msg->image_size, image_msg->timestamp, image_msg->host);
+	//imshow("Camera Viewer", open_cv_image);
+	//waitKey(1);
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//																						     //
+// Initializations																		     //
+//																						     //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 void
 subscribe_ipc_messages()
 {
-    carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL,
-                                                 (carmen_handler_t) bumblebee_basic_image_handler,
-                                                 CARMEN_SUBSCRIBE_LATEST);
+    //carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) bumblebee_basic_image_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_camera_subscribe_images(NULL, (carmen_handler_t)camera_image_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
 void
 read_parameters(int argc, char** argv)
 {
-    if ((argc != 2))
-        carmen_die("%s: Wrong number of parameters. This module requires 1 parameter and received %d parameter(s). \nUsage:\n %s <camera_number>",
-                   argv[0], argc - 1, argv[0]);
+    if (argc != 2)
+        carmen_die("Wrong number of parameters. This module requires 1 parameter and received %d parameter(s). \nUsage: %s <camera_number>", argc - 1, argv[0]);
 
-    /* defining the camera to be used */
-    camera = atoi(argv[1]);
+    camera = atoi(argv[1]);     // Defining the camera to be used
 }
+
 
 int
 main(int argc, char **argv)
 {
-    /* Read the parameters from command line and .ini if necessary */
     read_parameters(argc, argv);
 
-    /* Connect to IPC server */
     carmen_ipc_initialize(argc, argv);
 
-    /* Check the param server version */
     carmen_param_check_version(argv[0]);
 
     subscribe_ipc_messages();
 
-    /* Loop forever waiting for messages */
     carmen_ipc_dispatch();
 
     return 0;

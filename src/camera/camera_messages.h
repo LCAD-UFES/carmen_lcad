@@ -60,7 +60,7 @@ typedef struct {
 
 
 #define      CARMEN_CAMERA_IMAGE_NAME       "carmen_camera_image"
-#define      CARMEN_CAMERA_IMAGE_FMT        "{int,int,int,int,<char:4>,double,string}"
+#define      CARMEN_CAMERA_IMAGE_FMT        "{int,int,int,int,<ubyte:4>,double,string}"
 
 #ifdef __cplusplus
 }
