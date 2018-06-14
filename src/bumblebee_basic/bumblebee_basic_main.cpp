@@ -101,6 +101,38 @@ void InterpolateTriclopsStereoImage(unsigned char* outImageLeft, TriclopsColorIm
      }
 }
 
+
+unsigned char *
+crop_raw_image(int image_width, int image_height, unsigned char *raw_image, int displacement_x, int displacement_y, int crop_width, int crop_height)
+{
+	unsigned char *cropped_image = (unsigned char *) malloc (crop_width * crop_height * 3 * sizeof(unsigned char));  // Only works for 3 channels image
+
+	displacement_x = (displacement_x - 2) * 3;
+	displacement_y = (displacement_y - 2) * image_width * 3;
+	crop_width     = displacement_x + ((crop_width + 1) * 3);
+	crop_height    = displacement_y + ((crop_height + 1) * image_width * 3);
+	image_height   = image_height * image_width * 3;
+	image_width   *= 3;
+
+	for (int line = 0, index = 0; line < image_height; line += image_width)
+	{
+		for (int column = 0; column < image_width; column += 3)
+		{
+			if (column > displacement_x && column < crop_width && line > displacement_y && line < crop_height)
+			{
+				cropped_image[index]     = raw_image[line + column];
+				cropped_image[index + 1] = raw_image[line + column + 1];
+				cropped_image[index + 2] = raw_image[line + column + 2];
+
+				index += 3;
+			}
+		}
+	}
+
+	return (cropped_image);
+}
+
+
 static int
 read_parameters(int argc, char **argv, int camera)
 {

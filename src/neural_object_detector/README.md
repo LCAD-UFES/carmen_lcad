@@ -1,6 +1,6 @@
-# Neural Car Detector
+# Neural Object Detector
 
-Detect vehicles using convolutional neural networks.
+Detect objects using convolutional neural networks.
 
 ## Building
 ### Dependencies

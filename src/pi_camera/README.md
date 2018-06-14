@@ -3,16 +3,16 @@
 - Baixe o arquivo imagem do sistema operacional "Raspbian" no site do raspberry (https://www.raspberrypi.org/downloads/raspbian/)
 Obs: Nao baixe o arquivo LITE, e sim a versao completa.
 
--Baixe o Etcher para formatar o cartao de memoria utilizando o arquivo imagem citado na instrucao acima.
+- Baixe o Etcher para formatar o cartao de memoria utilizando o arquivo imagem citado na instrucao acima.
 Link: (https://etcher.io/)
 
--Execute o Etcher e selecione o cartao de memoria e o arquivo imagem baixado no site do Raspberry pi
+- Execute o Etcher e selecione o cartao de memoria e o arquivo imagem baixado no site do Raspberry pi
 
 No final do processo o cartao vai estar pronto para ser inserido no Raspberry pi 3, e o mesmo estara pronto para utilizacao.
 
 == Instrucoes iniciais para a utilizacao do Raspberry pi 3 (Usando a camera)
 
--Conecte seu Raspberry pi 3 em uma rede Wireless ou Wired(A internet sera um recurso necessario para, eventualmente, baixar-
+- Conecte seu Raspberry pi 3 em uma rede Wireless ou Wired(A internet sera um recurso necessario para, eventualmente, baixar-
 mos pacotes e programas necessarios para a devida utilizacao do Script "rpi_camera" e de outras ocasionais funcionalidades)
 
 
@@ -36,7 +36,8 @@ Caso queira testar se a camera ja esta pronta pra uso, teste o seguinte comando 
 Se tudo estiver funcionando corretamente a camera sera ativada e gravara um video de 10 segundos que sera salvo na pasta:
 "home/pi"
 
-Obs: Para consultar os comandos no terminal utilizados pela Pi Camera consulte a documentacao no link: https://www.raspberrypi.org/documentation/raspbian/applications/camera.md
+Obs: Para consultar os comandos no terminal utilizados pela Pi Camera consulte a documentacao no link:
+https://www.raspberrypi.org/documentation/raspbian/applications/camera.md
 
 
 # Install Dependencies anf Download the pi_camera file from git
@@ -45,7 +46,7 @@ Obs: Para consultar os comandos no terminal utilizados pela Pi Camera consulte a
  $ sudo apt-get install cmake
  $ sudo apt-get install libopencv-dev python-opencv
  $ sudo apt-get install subversion
- $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/pi_amera
+ $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/pi_camera
 ```
 
 
@@ -78,14 +79,15 @@ Obs: Para consultar os comandos no terminal utilizados pela Pi Camera consulte a
 ```
 
  Add at the end of the file the following configuration:
- eth0 = wired
- For the first pi_camera we use the IP adress 192.168.0.15
+ eth0 = wired connection
+ For the first pi_camera we used the IP adress 192.168.0.15/24
  Replace the 15 with the IP number desired
+ Make sure you leave the /24 at the end of the adress
  
 ```ini
  interface eth0
 
- static ip_address=192.168.0.15
+ static ip_address=192.168.0.15/24
  static routers=192.168.0.1
  static domain_name_servers=192.168.0.1
 ``` 
