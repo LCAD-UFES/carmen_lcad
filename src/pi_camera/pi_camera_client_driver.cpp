@@ -5,7 +5,6 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 
 
 char* tcp_ip_address;
