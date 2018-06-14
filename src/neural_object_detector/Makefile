@@ -18,17 +18,19 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
 		-lmoving_objects_interface -llocalize_ackerman_interface -lvelodyne_camera_calibration \
 		-lcamera_boxes_to_world -lDbscan -ldarknet
 
-SOURCES = dbscan.cpp neural_object_detector.cpp neural_object_detector_main.cpp
+SOURCES = dbscan.cpp neural_object_detector.cpp neural_object_detector_main.cpp neural_object_detector_test.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = neural_object_detector
 
-TARGETS = darknet velodyne_camera_calibration camera_boxes_to_world libDbscan.a neural_object_detector
+TARGETS = darknet velodyne_camera_calibration camera_boxes_to_world libDbscan.a neural_object_detector neural_object_detector_test
 
 libDbscan.a: dbscan.o
 
 neural_object_detector: neural_object_detector_main.o neural_object_detector.o
+
+neural_object_detector_test: neural_object_detector_test.o
 
 darknet:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet

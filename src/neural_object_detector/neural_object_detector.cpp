@@ -1,10 +1,3 @@
-/*
- * neural_car_detector.cpp
- *
- *  Created on: 28 de jul de 2017
- *      Author: luan
- */
-
 #include "neural_object_detector.hpp"
 
 

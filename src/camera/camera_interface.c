@@ -30,8 +30,10 @@
 #include "camera_messages.h"
 #include "camera_interface.h"
 
+
 static carmen_camera_image_message *image_message_pointer_external = NULL;
 static carmen_handler_t image_message_handler_external = NULL;
+
 
 static void 
 image_interface_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
@@ -58,38 +60,52 @@ image_interface_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
     image_message_handler_external(image_message_pointer_external);
 }
 
+
 void
-carmen_camera_subscribe_images(carmen_camera_image_message *image,
-			       carmen_handler_t handler,
-			       carmen_subscribe_t subscribe_how)
+carmen_camera_subscribe_images(carmen_camera_image_message *image, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
 {
-  IPC_RETURN_TYPE err = IPC_OK;
-  
-  err = IPC_defineMsg(CARMEN_CAMERA_IMAGE_NAME, IPC_VARIABLE_LENGTH, 
-		      CARMEN_CAMERA_IMAGE_FMT);
-  carmen_test_ipc_exit(err, "Could not define message", 
-		       CARMEN_CAMERA_IMAGE_NAME);
+	IPC_RETURN_TYPE err = IPC_OK;
 
-  if(subscribe_how == CARMEN_UNSUBSCRIBE) {
-    IPC_unsubscribe(CARMEN_CAMERA_IMAGE_NAME, image_interface_handler);
-    return;
-  }
+	err = IPC_defineMsg(CARMEN_CAMERA_IMAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_CAMERA_IMAGE_FMT);
 
-  if (image) {
-    image_message_pointer_external = image;
-    memset(image_message_pointer_external, 0, 
-	   sizeof(carmen_camera_image_message));
-  } else if (image_message_pointer_external == NULL) {
-    image_message_pointer_external = (carmen_camera_image_message *)
-      calloc(1, sizeof(carmen_camera_image_message));
-    carmen_test_alloc(image_message_pointer_external);
-  }
-  
-  image_message_handler_external = handler;
-  err = IPC_subscribe(CARMEN_CAMERA_IMAGE_NAME, image_interface_handler, NULL);
-  if (subscribe_how == CARMEN_SUBSCRIBE_LATEST)
-    IPC_setMsgQueueLength(CARMEN_CAMERA_IMAGE_NAME, 1);
-  else
-    IPC_setMsgQueueLength(CARMEN_CAMERA_IMAGE_NAME, 100);
-  carmen_test_ipc(err, "Could not subscribe", CARMEN_CAMERA_IMAGE_NAME);
+	carmen_test_ipc_exit(err, "Could not define message", CARMEN_CAMERA_IMAGE_NAME);
+
+	if(subscribe_how == CARMEN_UNSUBSCRIBE)
+	{
+		IPC_unsubscribe(CARMEN_CAMERA_IMAGE_NAME, image_interface_handler);
+		return;
+	}
+	if (image)
+	{
+		image_message_pointer_external = image;
+		memset(image_message_pointer_external, 0, sizeof(carmen_camera_image_message));
+	}
+	else if (image_message_pointer_external == NULL)
+	{
+		image_message_pointer_external = (carmen_camera_image_message *) calloc(1, sizeof(carmen_camera_image_message));
+		carmen_test_alloc(image_message_pointer_external);
+	}
+
+	image_message_handler_external = handler;
+	err = IPC_subscribe(CARMEN_CAMERA_IMAGE_NAME, image_interface_handler, NULL);
+
+	if (subscribe_how == CARMEN_SUBSCRIBE_LATEST)
+		IPC_setMsgQueueLength(CARMEN_CAMERA_IMAGE_NAME, 1);
+	else
+		IPC_setMsgQueueLength(CARMEN_CAMERA_IMAGE_NAME, 100);
+
+	carmen_test_ipc(err, "Could not subscribe", CARMEN_CAMERA_IMAGE_NAME);
+}
+
+
+IPC_RETURN_TYPE
+carmen_camera_publish_message(carmen_camera_image_message *msg)
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_publishData(CARMEN_CAMERA_IMAGE_NAME, &msg);
+
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_CAMERA_IMAGE_NAME);
+
+	return (err);
 }

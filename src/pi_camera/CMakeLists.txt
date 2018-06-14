@@ -16,6 +16,10 @@ include_directories (${OpenCV_INCLUDE_DIRS})
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(SOURCE_FILES pi_camera_server_main.cpp)
-add_executable(rpi_camera ${SOURCE_FILES})
-target_link_libraries(rpi_camera ${OpenCV_LIBRARIES} ${raspicam_CV_LIBS})
+set(SOURCE_FILES pi_camera_server_driver.cpp)
+add_executable(pi_camera_server_driver ${SOURCE_FILES})
+target_link_libraries(pi_camera_server_driver ${OpenCV_LIBRARIES} ${raspicam_CV_LIBS})
+
+set(SOURCE_FILES pi_camera_test.cpp)
+add_executable(pi_camera_test ${SOURCE_FILES})
+target_link_libraries(pi_camera_test ${OpenCV_LIBRARIES} ${raspicam_CV_LIBS})

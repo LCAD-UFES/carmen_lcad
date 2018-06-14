@@ -32,28 +32,28 @@ using namespace std;
 #define SIGMA_THETA_SIMULATION	(SIGMA_THETA / 2.0)		// degrees
 
 #ifdef IMM_FILTER
-double u_k[r] = {1.0/3.0, 1.0/3.0, 1.0/3.0};
-static double p[r][r] = {
+double u_k[NUM_MODELS] = {1.0/3.0, 1.0/3.0, 1.0/3.0};
+double p[NUM_MODELS][NUM_MODELS] = {
 		{0.998, 0.001, 0.001},
 		{0.001, 0.998, 0.001},
 		{0.001, 0.001, 0.998}};
-//static double p[r][r] = {
+//static double p[NUM_MODELS][NUM_MODELS] = {
 //		{0.980, 0.020, 0.001},
 //		{0.030, 0.970, 0.001},
 //		{0.300, 0.600, 0.200}};
-//static double p[r][r] = {
+//static double p[NUM_MODELS][NUM_MODELS] = {
 //		{0.950, 0.001, 0.050},
 //		{0.050, 0.001, 0.950},
 //		{0.030, 0.001, 0.970}};
-//static double p[r][r] = {
+//static double p[NUM_MODELS][NUM_MODELS] = {
 //		{0.998, 0.001, 0.001},
 //		{0.998, 0.001, 0.001},
 //		{0.998, 0.001, 0.001}};
-//static double p[r][r] = {
+//static double p[NUM_MODELS][NUM_MODELS] = {
 //		{0.001, 0.998, 0.001},
 //		{0.001, 0.998, 0.001},
 //		{0.001, 0.998, 0.001}};
-//static double p[r][r] = {
+//static double p[NUM_MODELS][NUM_MODELS] = {
 //		{0.001, 0.001, 0.998},
 //		{0.001, 0.001, 0.998},
 //		{0.001, 0.001, 0.998}};
@@ -64,18 +64,14 @@ main()
 {
 //	feenableexcept(FE_UNDERFLOW);
 
-	Matrix x_k_k, P_k_k, z_k, R_k, R_p_k, fx_k_1, delta_zk, S_k;
-	vector<Matrix> x_k_1_k_1, P_k_1_k_1, F_k_1_m, Q_k_1_m, H_k_m;
-	Matrix F_k_1, Q_k_1, H_k;
-
 	double angle, major_axis, minor_axis;
 
 	double delta_t = DELTA_T;
 	double true_x = -170.0;
 	double true_y = -150.0;
-	double yaw = carmen_degrees_to_radians(45.0);
-	double v = 5.0;
-	double w = 0.0;
+	double true_yaw = carmen_degrees_to_radians(45.0);
+	double true_v = 5.0;
+	double true_w = 0.0;
 
 	double max_a = MAX_A;
 	double max_w = carmen_degrees_to_radians(MAX_W);
@@ -88,8 +84,16 @@ main()
 	double sigma_r = SIGMA_R;
 	double sigma_theta = carmen_degrees_to_radians(SIGMA_THETA);
 
+	// True world state + error
 	double x = true_x - 5.0;
 	double y = true_y + 10.0;
+	double v = true_v + 1.0;
+	double yaw = true_yaw + carmen_degrees_to_radians(-5.0);
+	double w = true_w + carmen_degrees_to_radians(5.0);
+
+	Matrix x_k_k, P_k_k, z_k, R_k, R_p_k, fx_k_1;
+	vector<Matrix> x_k_1_k_1, P_k_1_k_1, F_k_1_m, Q_k_1_m, H_k_m;
+	Matrix F_k_1, Q_k_1, H_k;
 
 	CV_system_setup(x, y, yaw, v, x_k_k, P_k_k, F_k_1, Q_k_1, H_k, R_p_k, delta_t, sigma_s, sigma_r, sigma_theta);
 	x_k_1_k_1.push_back(x_k_k); P_k_1_k_1.push_back(P_k_k); F_k_1_m.push_back(F_k_1); Q_k_1_m.push_back(Q_k_1); H_k_m.push_back(H_k);
@@ -126,7 +130,7 @@ main()
 		imm_filter(imm_x_k_k, imm_P_k_k, x_k_1_k_1, P_k_1_k_1,
 				z_k, R_k,
 				F_k_1_m, Q_k_1_m, H_k_m,
-				fx_k_1, delta_t, sigma_w, sigma_vct, max_a, max_w,
+				delta_t, sigma_w, sigma_vct, max_a, max_w,
 				p, u_k);
 
 		compute_error_ellipse(angle, major_axis, minor_axis, imm_P_k_k.val[0][0], imm_P_k_k.val[0][1], imm_P_k_k.val[1][1], 2.4477);
@@ -134,11 +138,11 @@ main()
 				z_k.val[0][0], z_k.val[1][0],
 				u_k[0], u_k[1], u_k[2]);
 
-		true_x = true_x + v * cos(yaw) * delta_t;	// true position update
-		true_y = true_y + v * sin(yaw) * delta_t;	// true position update
+		true_x = true_x + true_v * cos(true_yaw) * delta_t;	// true position update
+		true_y = true_y + true_v * sin(true_yaw) * delta_t;	// true position update
 
 		if ((t > 55.0) && (t < 75.0))
-			yaw += 0.3 * delta_t;
+			true_yaw += 0.3 * delta_t;
 
 		t += delta_t;
 	} while (t < 100.0);

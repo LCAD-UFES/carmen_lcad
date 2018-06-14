@@ -40,29 +40,30 @@
 #ifndef CARMEN_CAMERA_MESSAGES_H
 #define CARMEN_CAMERA_MESSAGES_H
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-  /** This message is published by all the camera_xxxxxcam modules. */
+
+// This message is published by all the camera_xxxxxcam modules
 
 typedef struct {
-  int width;                    /**<The x dimension of the image in pixels. */
-  int height;                   /**<The y dimension of the image in pixels. */
-  int bytes_per_pixel;          /**<Usually 3 (RGB). */ 
-  int image_size;               /**<width*height*bytes_per_pixel. */ 
-  char *image;                
+  int    width;                    /**<The x dimension of the image in pixels. */
+  int    height;                   /**<The y dimension of the image in pixels. */
+  int    bytes_per_pixel;          /**<Usually 3 (RGB). */
+  int    image_size;               /**<width*height*bytes_per_pixel. */
+  char   *image;
   double timestamp;
-  char *host;
+  char   *host;
 } carmen_camera_image_message;
 
+
 #define      CARMEN_CAMERA_IMAGE_NAME       "carmen_camera_image"
-#define      CARMEN_CAMERA_IMAGE_FMT        "{int,int,int,int,<char:4>,double,string}"
+#define      CARMEN_CAMERA_IMAGE_FMT        "{int,int,int,int,<ubyte:4>,double,string}"
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-
-// @}

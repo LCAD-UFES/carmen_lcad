@@ -177,8 +177,7 @@ main(int argc, char **argv)
   carmen_ipc_initialize(argc, argv);
   carmen_param_check_version(argv[0]);
 
-  carmen_camera_subscribe_images
-    (NULL, (carmen_handler_t)image_handler, CARMEN_SUBSCRIBE_LATEST);
+  carmen_camera_subscribe_images(NULL, (carmen_handler_t)image_handler, CARMEN_SUBSCRIBE_LATEST);
 
   signal(SIGINT, shutdown_camera_view);  
 

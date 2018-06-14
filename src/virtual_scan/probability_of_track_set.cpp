@@ -1,5 +1,7 @@
 #include <carmen/carmen.h>
 #include <carmen/moving_objects_messages.h>
+#include <carmen/matrix.h>
+#include <carmen/kalman.h>
 #include "virtual_scan.h"
 
 
@@ -80,11 +82,11 @@ sum_of_variances_old(virtual_scan_track_set_t *track_set)
 				double delta_theta = carmen_normalize_theta(track_set->tracks[i]->box_model_hypothesis[j].hypothesis.theta - track_set->tracks[i]->box_model_hypothesis[j - 1].hypothesis.theta);
 				double delta_t = track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.precise_timestamp - track_set->tracks[i]->box_model_hypothesis[j - 1].hypothesis_points.precise_timestamp;
 				double v = distance_travelled / delta_t;
-				double d_theta = delta_theta / delta_t;
+				double w = delta_theta / delta_t;
 				track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.v = v;
-				track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.d_theta = d_theta;
+				track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.w = w;
 				average_v += v;
-				average_d_theta += d_theta;
+				average_d_theta += w;
 			}
 			average_v /= (double) (track_set->tracks[i]->size - 1);
 			average_d_theta /= (double) (track_set->tracks[i]->size - 1);
@@ -92,7 +94,7 @@ sum_of_variances_old(virtual_scan_track_set_t *track_set)
 			for (int j = 1; j < track_set->tracks[i]->size; j++)
 			{
 				variance_of_v[i] += carmen_square(track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.v - average_v);
-				variance_of_d_theta[i] += carmen_square(track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.d_theta - average_d_theta);
+				variance_of_d_theta[i] += carmen_square(track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.w - average_d_theta);
 			}
 			variance_of_v[i] /= (double) (track_set->tracks[i]->size - 1);
 			variance_of_d_theta[i] /= (double) (track_set->tracks[i]->size - 1);
@@ -128,20 +130,20 @@ sum_of_variances(virtual_scan_track_set_t *track_set)
 		if ((track_set->tracks[i]->size - 1) > 1)
 		{
 			double average_v = 0.0;
-			double average_d_theta = 0.0;
+			double average_w = 0.0;
 
 			for (int j = 1; j < track_set->tracks[i]->size; j++)
 			{
 				average_v += track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.v;
-				average_d_theta += track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.d_theta;
+				average_w += track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.w;
 			}
 			average_v /= (double) (track_set->tracks[i]->size - 1);
-			average_d_theta /= (double) (track_set->tracks[i]->size - 1);
+			average_w /= (double) (track_set->tracks[i]->size - 1);
 
 			for (int j = 1; j < track_set->tracks[i]->size; j++)
 			{
 				variance_of_v[i] += carmen_square(track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.v - average_v);
-				variance_of_d_theta[i] += carmen_square(track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.d_theta - average_d_theta);
+				variance_of_d_theta[i] += carmen_square(track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.w - average_w);
 			}
 			variance_of_v[i] /= (double) (track_set->tracks[i]->size - 1);
 			variance_of_d_theta[i] /= (double) (track_set->tracks[i]->size - 1);
