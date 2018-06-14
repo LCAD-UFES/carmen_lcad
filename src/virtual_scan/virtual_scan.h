@@ -54,6 +54,7 @@ typedef struct
 	int sensor;
 	int sensor_id;
 	carmen_point_t sensor_pos;
+	carmen_point_t global_pos;
 	carmen_point_t centroid;
 	double precise_timestamp;
 
@@ -184,6 +185,7 @@ typedef struct
 {
 	int size;
 	virtual_scan_box_model_hypothesis_t *box_model_hypothesis;
+	int track_id;
 } virtual_scan_track_t;
 
 

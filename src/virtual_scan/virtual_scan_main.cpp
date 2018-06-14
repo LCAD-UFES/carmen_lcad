@@ -38,6 +38,8 @@ virtual_scan_segment_classes_t *g_virtual_scan_segment_classes[NUMBER_OF_FRAMES_
 
 virtual_scan_neighborhood_graph_t *g_neighborhood_graph = NULL;
 
+carmen_point_t g_initial_pos;
+
 #ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
 #define MAX_VIRTUAL_LASER_SAMPLES 10000
 static carmen_rddf_road_profile_message *last_rddf_message = NULL;
@@ -447,8 +449,15 @@ publish_simulated_objects(carmen_rectangle_t *simulated_moving_objects, int num_
 void
 carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *message)
 {
-//	double t_ini = carmen_get_time();
-	if (necessary_maps_available)
+	static double t_ini = 0.0;
+	if (t_ini == 0.0)
+		t_ini = carmen_get_time();
+
+	bool warming_up = (carmen_get_time() - t_ini) < 4.0;
+	if (warming_up)
+		g_initial_pos = message->virtual_scan_sensor->global_pos;
+
+	if (necessary_maps_available && !warming_up)
 	{
 //		publish_virtual_scan_extended(message);
 
