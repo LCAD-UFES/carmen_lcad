@@ -10,23 +10,23 @@ extract_camera_configuration(char *cam_config, int &image_width, int &image_heig
 
 	token = strtok(cam_config, "*");
 
-	printf ("CONFIGURATION Widith %s ", token);
+	printf ("--- Connected! Widith: %s ", token);
 	image_width = atoi(token);
 
 	token = strtok (NULL, "*");
-	printf ("Height %s ", token);
+	printf ("Height: %s ", token);
 	image_height = atoi(token);
 
 	token = strtok (NULL, "*");
-	printf ("Frame Rate %s ", token);
+	printf ("Frame Rate: %s ", token);
 	frame_rate = atoi(token);
 
 	token = strtok (NULL, "*");
-	printf ("Brightness %s ", token);
+	printf ("Brightness: %s ", token);
 	brightness = atoi(token);
 
 	token = strtok (NULL, "*");
-	printf ("Contrast %s\n", token);
+	printf ("Contrast: %s ---\n", token);
 	contrast = atoi(token);
 }
 
@@ -34,7 +34,8 @@ extract_camera_configuration(char *cam_config, int &image_width, int &image_heig
 void
 set_camera_configurations(raspicam::RaspiCam &RpiCamera, int image_width, int image_height, int frame_rate, int brightness, int contrast)
 {
-    //printf("\nWidth %d Height %d Frame Rate %d Breightness %d Contrast %d\n\n", image_width, image_height, frame_rate, brightness, contrast);
+    if (RpiCamera.isOpened())
+            RpiCamera.release();
     
 	RpiCamera.setWidth(image_width);
 	RpiCamera.setHeight(image_height);
@@ -119,6 +120,7 @@ int
 main()
 {
 	raspicam::RaspiCam RpiCamera;
+    raspicam::RaspiCam *aux;
 	char cam_config[64];
 	int result = 0, image_width = 0, image_height = 0, frame_rate = 0, brightness = 0, contrast = 0, image_size = 0;
 
@@ -133,8 +135,6 @@ main()
 		RpiCamera.grab();     // Capture frame
 		RpiCamera.retrieve (rpi_cam_data, raspicam::RASPICAM_FORMAT_RGB);
 
-		imshow("Pi Cam Server", Mat(image_height, image_width, CV_8UC3, rpi_cam_data, 3 * image_width));   waitKey(1);
-        
 		result = send(pi_socket, rpi_cam_data, image_size, MSG_NOSIGNAL);  // Returns number of bytes read, 0 in case of connection lost, -1 in case of error
 
 		if (result == -1)
@@ -142,13 +142,14 @@ main()
 			printf("--- Disconnected\n");
             //shutdown(server_fd, 2);
             close(server_fd);
-            RpiCamera.release();
             sleep(3);
             
             pi_socket = stablished_connection_with_client(RpiCamera, cam_config, image_width, image_height, image_size, 
                                                           frame_rate, brightness, contrast);
 		}
-	}
+        
+        //imshow("Pi Cam Server", Mat(image_height, image_width, CV_8UC3, rpi_cam_data, 3 * image_width));   waitKey(1);
+    }
 
    return (0);
 }
