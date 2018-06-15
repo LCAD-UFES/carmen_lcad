@@ -286,10 +286,10 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 }
 
 
-#define CAMERA_FOV 0.44 // In radians ~ 25 degrees
+#define CAMERA_FOV 0.44 // In radians ~ 25 degrees TODO por no carmen.ini
 
 std::vector<velodyne_camera_points>
-velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(carmen_velodyne_partial_scan_message *velodyne_message,
+velodyne_camera_calibration_remove_points_out_of_FOV_and_that_hit_ground(carmen_velodyne_partial_scan_message *velodyne_message,
                                                                          carmen_camera_parameters camera_parameters,
                                                                          carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
                                                                          int image_width, int image_height)
@@ -304,7 +304,7 @@ velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(carmen_velodyne_
 
 	double horizontal_angle = 0.0, vertical_angle = 0.0, previous_vertical_angle = 0.0, range = 0.0, previous_range = 0.0;
 
-	int point_x_on_img =0, point_y_on_img = 0;
+	unsigned int point_x_on_img = 0, point_y_on_img = 0;
 
 	for (int j = 0; j < velodyne_message->number_of_32_laser_shots; j++)
 	{
@@ -345,8 +345,8 @@ velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(carmen_velodyne_
 
 				tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference, velodyne_pose, camera_pose);
 
-				point_x_on_img = (int) (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
-                point_y_on_img = (int) (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
+				point_x_on_img = (unsigned int) (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
+                point_y_on_img = (unsigned int) (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
 
                 // TODO Need spherical coordinates???
                 velodyne_camera_points point = {point_x_on_img, point_y_on_img, {horizontal_angle, vertical_angle, range},

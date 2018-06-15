@@ -113,7 +113,7 @@ lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyn
 
 	for (int i = 0; i < laser_points_in_camera_box_list.size(); i++)
 	{
-		unsigned int idx_pt1, idx_pt2;
+		unsigned int idx_pt1 = 0, idx_pt2 = 0;
 		unsigned int x_min = 10000, x_max = 0, y_min = 10000, y_max = 0;
 
 		for(int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
@@ -136,17 +136,17 @@ lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyn
 					}
 			}else
 			{
-				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx > x_max)
+				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx < x_min)
 					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy < y_min)
 					{
-						x_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
+						x_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
 						y_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy;
 						idx_pt2 = j;
 					}
-				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx < x_min)
+				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx > x_max)
 					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy > y_max)
 					{
-						x_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
+						x_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
 						y_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy;
 						idx_pt1 = j;
 					}
@@ -156,9 +156,9 @@ lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyn
 		carmen_vector_3D_t offset;
 		p1 = carmen_covert_sphere_to_cartesian_coord(laser_points_in_camera_box_list[i][idx_pt1].velodyne_points_in_cam.laser_polar);
 		p2 = carmen_covert_sphere_to_cartesian_coord(laser_points_in_camera_box_list[i][idx_pt2].velodyne_points_in_cam.laser_polar);
-		std:: cout <<"i " << i << '\n';
+	/*	std:: cout <<"i " << i << '\n';
 		std:: cout <<"p1 x " << laser_points_in_camera_box_list[i][idx_pt1].velodyne_points_in_cam.ipx << " y " << laser_points_in_camera_box_list[i][idx_pt1].velodyne_points_in_cam.ipy << '\n';
-		std:: cout <<"p2 x " << laser_points_in_camera_box_list[i][idx_pt2].velodyne_points_in_cam.ipx << " y " << laser_points_in_camera_box_list[i][idx_pt2].velodyne_points_in_cam.ipy << '\n';
+		std:: cout <<"p2 x " << laser_points_in_camera_box_list[i][idx_pt2].velodyne_points_in_cam.ipx << " y " << laser_points_in_camera_box_list[i][idx_pt2].velodyne_points_in_cam.ipy << '\n';*/
         offset.x = 0.572;
         offset.y = 0.0;
         offset.z = 2.154;
