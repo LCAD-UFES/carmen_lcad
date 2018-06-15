@@ -5,7 +5,6 @@
 #include <carmen/camera_boxes_to_world.h>
 #include <carmen/moving_objects_messages.h>
 #include <carmen/moving_objects_interface.h>
-//#include <vector>
 #include <string>
 #include <cstdlib>
 #include <fstream>
@@ -121,28 +120,6 @@ publish_moving_objects_message(double timestamp)
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-#define crop_x 0.0
-#define crop_y 1.0
-
-image_t
-convert_image_msg_to_darknet_image(int image_width, int image_height, unsigned char *raw_image)
-{
-	image_t converted_image;
-	int image_size = image_width * image_height * 3;
-
-	converted_image.w = image_width;
-	converted_image.h = image_height;
-	converted_image.c = 3;                                      // 3 is the Number of Channels
-	converted_image.data = (float *) malloc (image_size * sizeof (float));
-
-	for (int i = 0; i < image_size; i++)
-	{
-		converted_image.data[i] = (float) raw_image[i] / 255;
-	}
-
-	return (converted_image);
-}
-
 
 vector< vector<velodyne_camera_points> >
 velodyne_points_inside_bounding_boxes(vector<bbox_t> &bouding_box_vector, vector<velodyne_camera_points> &velodyne_points_vector)
@@ -167,6 +144,63 @@ velodyne_points_inside_bounding_boxes(vector<bbox_t> &bouding_box_vector, vector
 	}
 
 	return laser_list_inside_each_bounding_box;
+}
+
+
+dbscan::Cluster
+convert_to_dbscan_type(vector<velodyne_camera_points> points_list)
+{
+	dbscan::Cluster initial_cluster;
+	carmen_point_t aux;
+
+	for (unsigned int i = 0; i < points_list.size(); i++)
+	{
+		aux.x = points_list[i].cartesian.x;
+		aux.y = points_list[i].cartesian.y;
+		aux.theta = 0.0;                // The theta value is not used for clustering, although dbscan Cluster type has a theta field
+		initial_cluster.push_back(aux);
+	}
+	return (initial_cluster);
+}
+
+
+dbscan::Cluster
+get_biggest_cluster(dbscan::Clusters clusters)
+{
+	unsigned int max_size = 0, max_index = 0;
+
+	for (unsigned int i = 0; i < clusters.size(); i++)
+	{
+		if (clusters[i].size() > max_size)
+		{
+			max_size = clusters[i].size();
+			max_index = i;
+		}
+	}
+	return (clusters[max_index]);
+}
+
+
+dbscan::Clusters
+filter_object_points_using_dbscan(vector<vector<velodyne_camera_points>> &points_lists)
+{
+	dbscan::Clusters filtered_points;
+
+	for (unsigned int i = 0; i < points_lists.size(); i++)
+	{
+		if (points_lists[i].size() > 0)
+		{
+			dbscan::Cluster points = convert_to_dbscan_type(points_lists[i]);  // Create vector in dbscan point type
+
+			dbscan::Clusters clusters = dbscan::dbscan(0.5, 5, points);       // Compute clusters using dbscan
+
+			if (clusters.size() > 1)                                           // If dbscan returned more then one cluster
+			{
+				filtered_points.push_back(get_biggest_cluster(clusters));      // get the biggest, the biggest cluster will always better represent the object
+			}
+		}
+	}
+	return (filtered_points);
 }
 
 
@@ -197,6 +231,56 @@ show_object_detections(Mat rgb_image, vector<bbox_t> predictions, double fps)
 }
 
 
+vector<carmen_point_t>
+compute_detected_objects_poses(dbscan::Clusters filtered_points)
+{
+	vector<carmen_point_t> objects_positions;
+	carmen_point_t point;
+	point.x = 0.0;
+	point.y = 0.0;
+	point.theta = 0.0;    // The theta value is not used
+
+	for(unsigned int i = 0; i < filtered_points.size(); i++)
+	{
+		for(unsigned int j = 0; j < filtered_points[i].size(); j++)
+		{
+			point.x = filtered_points[i][j].x;
+			point.y = filtered_points[i][j].y;
+		}
+		objects_positions.push_back(point);
+	}
+	return (objects_positions);
+}
+
+void
+carmen_translte_2d(double *x, double *y, double *offset_x, double *offset_y)
+{
+	*x += *offset_x;
+	*y += *offset_y;
+}
+
+
+carmen_moving_objects_point_clouds_message
+build_detected_objects_message(vector<bbox_t> predictions, vector<carmen_point_t> objects_poses)
+{
+	carmen_moving_objects_point_clouds_message msg;
+
+	printf ("Predictions %d Poses %d\n", (int) predictions.size(), (int) objects_poses.size());
+
+	msg.num_point_clouds = objects_poses.size();
+	msg.point_clouds = (t_point_cloud_struct *) malloc (msg.num_point_clouds * sizeof(t_point_cloud_struct));
+
+	for (int i = 0; i < msg.num_point_clouds; i++)
+	{
+		//carmen_translte_2d()
+		//carmen_rotate_2d(x, y, the)
+
+	}
+
+	return (msg);
+}
+
+
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
@@ -219,7 +303,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	vector<velodyne_camera_points> velodyne_points_vector = velodyne_camera_calibration_remove_points_out_of_FOV_and_that_hit_ground(velodyne_msg,
 			camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
 
-	vector<vector<velodyne_camera_points>> points_list_inside_bounding_boxes = velodyne_points_inside_bounding_boxes(predictions, velodyne_points_vector);
+	vector<vector<velodyne_camera_points>> points_lists = velodyne_points_inside_bounding_boxes(predictions, velodyne_points_vector);
+
+	dbscan::Clusters filtered_points_lists = filter_object_points_using_dbscan(points_lists);
+
+	vector<carmen_point_t> objects_poses = compute_detected_objects_poses(filtered_points_lists);
 
 
 
