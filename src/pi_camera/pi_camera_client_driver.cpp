@@ -188,6 +188,6 @@ main(int argc, char **argv)
 			continue;
 
 		publish_image_message(camera_number, &msg);
-		//imshow("Pi Camera Driver", Mat(msg.height, msg.width, CV_8UC3, msg.raw_left, 3 * 640));  waitKey(1);
+		imshow("Pi Camera Driver", Mat(msg.height, msg.width, CV_8UC3, msg.raw_left, 3 * 640));  waitKey(1);
 	}
 }

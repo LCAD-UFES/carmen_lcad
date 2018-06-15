@@ -134,7 +134,7 @@ main()
 	while (1)
 	{
 		RpiCamera.grab();     // Capture frame
-		RpiCamera.retrieve (rpi_cam_data, raspicam::RASPICAM_FORMAT_BGR);
+		RpiCamera.retrieve (rpi_cam_data, raspicam::RASPICAM_FORMAT_RGB);
 
 		result = send(pi_socket, rpi_cam_data, image_size, MSG_NOSIGNAL);  // Returns number of bytes read, 0 in case of connection lost, -1 in case of error
 
@@ -146,6 +146,7 @@ main()
             
             pi_socket = connect_with_client(RpiCamera, cam_config, image_width, image_height, image_size, frame_rate, brightness, contrast);
         }
+
         //imshow("Pi Cam Server", Mat(image_height, image_width, CV_8UC3, rpi_cam_data, 3 * image_width));   waitKey(1);
     }
 
