@@ -2,15 +2,21 @@
 #include <carmen/carmen.h>
 #include <carmen/moving_objects_messages.h>
 #include <vector>
+#include <list>
 #include <carmen/matrix.h>
 #include <carmen/kalman.h>
 #include "virtual_scan.h"
 
+#define	MAX_MOVING_OBJECTS 10
 
 using namespace std;
 
 extern carmen_mapper_virtual_scan_message *g_virtual_scan_extended[NUMBER_OF_FRAMES_T];
 extern int g_zi;
+
+extern carmen_point_t g_initial_pos;
+extern double x_origin;
+extern double y_origin;
 
 virtual_scan_track_set_t *best_track_set = NULL;
 virtual_scan_track_set_t *global_track_set = NULL;
@@ -511,6 +517,15 @@ add_hypothesis_at_the_end(virtual_scan_track_t *track, virtual_scan_box_model_hy
 
 
 void
+add_hypothesis_at_the_end_inccluding_imm(virtual_scan_track_t *track, virtual_scan_box_model_hypothesis_t *hypothesis)
+{
+	add_hypothesis_at_the_end(track, hypothesis);
+	if (track->box_model_hypothesis[track->size - 1].hypothesis_state.imm != NULL)
+		track->box_model_hypothesis[track->size - 1].hypothesis_state.imm = new imm_state_t(*(hypothesis->hypothesis_state.imm));
+}
+
+
+void
 add_hypothesis_at_the_end(virtual_scan_track_set_t *track_set, int track_id, virtual_scan_box_model_hypothesis_t *hypothesis)
 {
 	if (hypothesis == NULL)
@@ -983,13 +998,13 @@ track_switch(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_grap
 
 
 void
-add_track_to_track_set(virtual_scan_track_set_t *track_set, virtual_scan_track_t *track)
+add_track_to_track_set(virtual_scan_track_set_t *track_set, virtual_scan_track_t *track, int this_track_id = -1)
 {
 	int i = track_set->size;
 	track_set->tracks = (virtual_scan_track_t **) realloc(track_set->tracks, (i + 1) * sizeof(virtual_scan_track_t *));
 	track_set->tracks[i] = (virtual_scan_track_t *) malloc(sizeof(virtual_scan_track_t));
 	track_set->tracks[i]->size = track->size;
-	track_set->tracks[i]->track_id = track->track_id;
+	track_set->tracks[i]->track_id = (this_track_id == -1)? track->track_id: this_track_id;
 	track_set->tracks[i]->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) malloc(track->size * sizeof(virtual_scan_box_model_hypothesis_t));
 
 	for (int j = 0; j < track->size; j++)
@@ -1287,13 +1302,14 @@ find_nearest_hypothesis_in_track(virtual_scan_track_t *track, virtual_scan_box_m
 bool
 has_superposition(virtual_scan_track_t *global_track, virtual_scan_track_t *track)
 {
+#define	DISTANCE_FOR_SAME_HYPOTHESIS	1.5
 	int hypotheses_considered = 0;
 	double sum = 0.0;
 	for (int i = 0; i < global_track->size; i++)
 	{
 		int nearest_hypothesis = find_nearest_hypothesis_in_track(track, global_track->box_model_hypothesis[i].hypothesis);
 		double distance = DIST2D(track->box_model_hypothesis[nearest_hypothesis].hypothesis, global_track->box_model_hypothesis[i].hypothesis);
-		if (distance < 0.5)
+		if (distance < DISTANCE_FOR_SAME_HYPOTHESIS)
 		{
 			sum += distance;
 			hypotheses_considered++;
@@ -1302,7 +1318,7 @@ has_superposition(virtual_scan_track_t *global_track, virtual_scan_track_t *trac
 
 	double average_distance = sum / (double) hypotheses_considered;
 
-	if ((hypotheses_considered > 1) && (average_distance < 0.5))
+	if ((hypotheses_considered > 1) && (average_distance < DISTANCE_FOR_SAME_HYPOTHESIS))
 		return (true);
 	else
 		return (false);
@@ -1315,7 +1331,42 @@ merge_tracks(virtual_scan_track_t *global_track, virtual_scan_track_t *track)
 	virtual_scan_box_model_t last_hypothesis_of_global_track = global_track->box_model_hypothesis[global_track->size - 1].hypothesis;
 	int nearest_hypothesis_in_track = find_nearest_hypothesis_in_track(track, last_hypothesis_of_global_track);
 	for (int i = nearest_hypothesis_in_track; i < track->size; i++)
-		add_hypothesis_at_the_end(global_track, &(track->box_model_hypothesis[i]));
+		add_hypothesis_at_the_end_inccluding_imm(global_track, &(track->box_model_hypothesis[i]));
+}
+
+
+int
+remove_one_track_from_global_track_set(virtual_scan_track_set_t *global_track_set)
+{
+//	int min_size = global_track_set->tracks[0]->size;
+	double current_age = global_track_set->tracks[0]->box_model_hypothesis[global_track_set->tracks[0]->size - 1].frame_timestamp;
+	int victim = 0;
+	for (int i = 1; i < global_track_set->size; i++)
+	{
+		if (global_track_set->tracks[i]->box_model_hypothesis[global_track_set->tracks[i]->size - 1].frame_timestamp < current_age)
+		{
+			current_age = global_track_set->tracks[i]->box_model_hypothesis[global_track_set->tracks[i]->size - 1].frame_timestamp;
+			victim = i;
+		}
+//		if (global_track_set->tracks[i]->size < min_size)
+//		{
+//			min_size = global_track_set->tracks[i]->size;
+//			current_age = global_track_set->tracks[i]->box_model_hypothesis[global_track_set->tracks[i]->size - 1].frame_timestamp;
+//			victim = i;
+//		}
+//		else if ((global_track_set->tracks[i]->size == min_size) &&
+//				 (global_track_set->tracks[i]->box_model_hypothesis[global_track_set->tracks[i]->size - 1].frame_timestamp > current_age))
+//		{
+//			current_age = global_track_set->tracks[i]->box_model_hypothesis[global_track_set->tracks[i]->size - 1].frame_timestamp;
+//			victim = i;
+//		}
+	}
+
+	int removed_track_id = global_track_set->tracks[victim]->track_id;
+
+	track_removal(global_track_set, victim);
+
+	return (removed_track_id);
 }
 
 
@@ -1338,9 +1389,56 @@ merge_track_with_global_track_set(virtual_scan_track_set_t *global_track_set, vi
 
 	if (!track_has_being_merged)
 	{
-		add_track_to_track_set(global_track_set, track);
-		if (global_track_set->size > 100)
-			track_removal(global_track_set, 0);
+		if (global_track_set->size < MAX_MOVING_OBJECTS)
+			add_track_to_track_set(global_track_set, track, global_track_set->size);
+		else
+		{
+			int victim_track = remove_one_track_from_global_track_set(global_track_set);
+			add_track_to_track_set(global_track_set, track, victim_track);
+		}
+	}
+}
+
+
+void
+plot_track_set(virtual_scan_track_set_t *global_track_set)
+{
+#define PAST_SIZE 300
+
+	static bool first_time = true;
+	static FILE *gnuplot_pipe;
+
+	if (first_time)
+	{
+		gnuplot_pipe = popen("gnuplot", "w"); //("gnuplot -persist", "w") to keep last plot after program closes
+		fprintf(gnuplot_pipe, "set xrange [0:210]\n set yrange [0:210]\n");
+
+		first_time = false;
+	}
+
+	for (int i = 0; i < global_track_set->size; i++)
+	{
+		char file_name[256];
+		sprintf(file_name, "./imm_data_%d.txt", i);
+		FILE *gnuplot_data_file = fopen(file_name, "w");
+
+		virtual_scan_track_t *track = global_track_set->tracks[i];
+		for (int j = 0; j < track->size; j++)
+		{
+			double x = track->box_model_hypothesis[j].hypothesis.x - x_origin;
+			double y = track->box_model_hypothesis[j].hypothesis.y - y_origin;
+			fprintf(gnuplot_data_file, "%lf %lf\n", x, y);
+		}
+		fclose(gnuplot_data_file);
+
+		if (i == 0)
+			fprintf(gnuplot_pipe, "plot "
+					"'%s' using 1:2 pt 7 ps 0.4 linecolor %d t '%d'\n", file_name, track->track_id, track->track_id);
+		else
+			fprintf(gnuplot_pipe, "replot "
+					"'%s' using 1:2 pt 7 ps 0.4 linecolor %d t '%d'\n", file_name, track->track_id, track->track_id);
+
+		fflush(gnuplot_pipe);
 	}
 }
 
@@ -1354,11 +1452,16 @@ update_global_track_set(virtual_scan_track_set_t *best_track_set)
 	if (global_track_set == NULL)
 	{
 		global_track_set = copy_track_set(best_track_set);
+		for (int i = 0; i < global_track_set->size; i++)
+			global_track_set->tracks[i]->track_id = i;
+
 		return;
 	}
 
 	for (int i = 0; i < best_track_set->size; i++)
 		merge_track_with_global_track_set(global_track_set, best_track_set->tracks[i]);
+
+	plot_track_set(global_track_set);
 }
 
 

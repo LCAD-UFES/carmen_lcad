@@ -43,7 +43,7 @@
 #define GAMMA	0.15
 #define VMAX	(120.0 / 3.6)
 
-#define NUMBER_OF_FRAMES_T 10
+#define NUMBER_OF_FRAMES_T 20
 
 #define MAX_VELODYNE_SEGMENT_DISTANCE 25.0
 

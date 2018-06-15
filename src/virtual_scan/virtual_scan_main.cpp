@@ -453,7 +453,7 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 	if (t_ini == 0.0)
 		t_ini = carmen_get_time();
 
-	bool warming_up = (carmen_get_time() - t_ini) < 4.0;
+	bool warming_up = (carmen_get_time() - t_ini) < 2.0;
 	if (warming_up)
 		g_initial_pos = message->virtual_scan_sensor->global_pos;
 
