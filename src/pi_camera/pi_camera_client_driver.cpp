@@ -67,6 +67,7 @@ trying_to_reconnect(char *cam_config, int cam_config_size)
 	}
 	return (pi_socket);
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -77,34 +78,13 @@ trying_to_reconnect(char *cam_config, int cam_config_size)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
 void
-publish_image_message(int pi_socket, int camera_number, carmen_bumblebee_basic_stereoimage_message msg,
-		char *cam_config, int cam_config_size)
+publish_image_message(int camera_number, carmen_bumblebee_basic_stereoimage_message *msg)
 {
-	int valread;
-
-	while (1)
-	{
-		// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
-		valread = recv(pi_socket, msg.raw_left, msg.image_size, MSG_WAITALL);
-
-		if (valread == 0) // Connection lost due to server shutdown.
-		{
-			close(pi_socket);
-			pi_socket = trying_to_reconnect(cam_config, cam_config_size);
-			continue;
-		}
-		else if ((valread == -1) || (valread != msg.image_size))
-			continue;
-
-		msg.timestamp = carmen_get_time();
-		carmen_bumblebee_basic_publish_message(camera_number, &msg);
-
-		//imshow("Pi Camera Driver", Mat(msg.height, msg.width, CV_8UC3, msg.raw_left, 3 * 640));  waitKey(1);
-	}
+	msg->timestamp = carmen_get_time();
+	carmen_bumblebee_basic_publish_message(camera_number, msg);
 }
-
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -114,13 +94,13 @@ publish_image_message(int pi_socket, int camera_number, carmen_bumblebee_basic_s
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
 void
 signal_handler(int sig)
 {
 	printf("Signal %d received, exiting program ...\n", sig);
 	exit(1);
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -129,7 +109,6 @@ signal_handler(int sig)
 // Initializations																		     //
 //																						     //
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
 
 
 int
@@ -193,5 +172,22 @@ main(int argc, char **argv)
 
 	int pi_socket = stablished_connection_with_server(cam_config, 64);
 
-	publish_image_message(pi_socket, camera_number, msg, cam_config, 64);
+	int valread;
+	while (1)
+	{
+		// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
+		valread = recv(pi_socket, msg.raw_left, msg.image_size, MSG_WAITALL);
+
+		if (valread == 0) // Connection lost due to server shutdown.
+		{
+			close(pi_socket);
+			pi_socket = trying_to_reconnect(cam_config, 64);
+			continue;
+		}
+		else if ((valread == -1) || (valread != msg.image_size))
+			continue;
+
+		publish_image_message(camera_number, &msg);
+		imshow("Pi Camera Driver", Mat(msg.height, msg.width, CV_8UC3, msg.raw_left, 3 * 640));  waitKey(1);
+	}
 }
