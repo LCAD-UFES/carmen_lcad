@@ -5,7 +5,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <opencv2/highgui/highgui.hpp>
-
+#include <opencv2/imgproc/imgproc.hpp>
 
 char* tcp_ip_address;
 
@@ -187,7 +187,12 @@ main(int argc, char **argv)
 		else if ((valread == -1) || (valread != msg.image_size))
 			continue;
 
+		Mat cv_image = Mat(msg.height, msg.width, CV_8UC3, msg.raw_left, 3 * 640);
+		cvtColor(cv_image, cv_image, CV_RGB2BGR);
+
+
 		publish_image_message(camera_number, &msg);
-		imshow("Pi Camera Driver", Mat(msg.height, msg.width, CV_8UC3, msg.raw_left, 3 * 640));  waitKey(1);
+
+		//imshow("Pi Camera Driver", cv_image);  waitKey(1);
 	}
 }

@@ -134,7 +134,7 @@ main()
 	while (1)
 	{
 		RpiCamera.grab();     // Capture frame
-		RpiCamera.retrieve (rpi_cam_data, raspicam::RASPICAM_FORMAT_GRAY);
+		RpiCamera.retrieve (rpi_cam_data, raspicam::RASPICAM_FORMAT_RGB);
 
 		result = send(pi_socket, rpi_cam_data, image_size, MSG_NOSIGNAL);  // Returns number of bytes read, 0 in case of connection lost, -1 in case of error
 
