@@ -22,16 +22,11 @@ carmen_camera_parameters camera_parameters;
 carmen_pose_3D_t velodyne_pose;
 carmen_pose_3D_t camera_pose;
 
-const unsigned int maxPositions = 50;
-carmen_velodyne_partial_scan_message *velodyne_msg;
-vector<carmen_velodyne_partial_scan_message> velodyne_vector;
-
-
 Detector *darknet;
 vector<string> obj_names_vector;
 vector<Scalar> obj_colours_vector;
 
-carmen_moving_objects_point_clouds_message moving_objects_point_clouds_message;
+carmen_velodyne_partial_scan_message *velodyne_msg;
 carmen_point_t globalpos;
 
 
@@ -58,32 +53,33 @@ compute_objects_3D_position(vector<carmen_vector_3D_t> points_inside_box)
 }
 
 
-vector<string>
+void
 objects_names_from_file(string const class_names_file)
 {
     ifstream file(class_names_file);
-    vector<string> file_lines;
 
     if (!file.is_open())
-    	return file_lines;
+    	return;
 
     for (string line; getline(file, line);)
-    	file_lines.push_back(line);
+    	obj_names_vector.push_back(line);
 
     cout << "Object names loaded!\n\n";
-
-    return file_lines;
 }
 
 
-Scalar
+void
 set_object_vector_color()
 {
 	for (unsigned int i = 0; i < obj_names_vector.size(); i++)
 	{
-		if (i == 2 || i == 3 || i == 5 || i == 6 || i == 7)
+		if (i == 2 ||                                         // car
+			i == 3 ||                                         // motorbike
+			i == 5 ||                                         // bus
+			i == 6 ||                                         // train
+			i == 7)                                           // truck
 			obj_colours_vector.push_back(Scalar(0, 0, 255));
-		else if (i == 0 || i == 1)
+		else if (i == 0 || i == 1)                            // person or bicycle
 			obj_colours_vector.push_back(Scalar(255, 0, 0));
 		else
 			obj_colours_vector.push_back(Scalar(230, 230, 230));
@@ -99,18 +95,16 @@ set_object_vector_color()
 
 
 void
-publish_moving_objects_message(double timestamp)
+publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clouds_message *msg)
 {
+	printf("Entrou\n");
 
-    moving_objects_point_clouds_message.timestamp = timestamp;
-    moving_objects_point_clouds_message.host = carmen_get_host();
+	msg->timestamp = timestamp;
+	msg->host = carmen_get_host();
 
-    carmen_moving_objects_point_clouds_publish_message(&moving_objects_point_clouds_message);
+	printf("Size %d\n", msg->num_point_clouds);
 
-    for (int i = 0; i < moving_objects_point_clouds_message.num_point_clouds; i++) {
-        free(moving_objects_point_clouds_message.point_clouds[i].points);
-    }
-    free(moving_objects_point_clouds_message.point_clouds);
+    carmen_moving_objects_point_clouds_publish_message(msg);
 }
 
 
@@ -122,27 +116,27 @@ publish_moving_objects_message(double timestamp)
 
 
 vector< vector<velodyne_camera_points> >
-velodyne_points_inside_bounding_boxes(vector<bbox_t> &bouding_box_vector, vector<velodyne_camera_points> &velodyne_points_vector)
+velodyne_points_inside_bounding_boxes(vector<bbox_t> &predictions, vector<velodyne_camera_points> &velodyne_points_vector)
 {
-	vector< vector<velodyne_camera_points> > laser_list_inside_each_bounding_box; //each_bounding_box_laser_list
+	vector<vector<velodyne_camera_points>> laser_list_inside_each_bounding_box; //each_bounding_box_laser_list
 
-	for (unsigned int i = 0; i < bouding_box_vector.size(); i++)
+	for (unsigned int i = 0; i < predictions.size(); i++)
 	{
 		vector<velodyne_camera_points> lasers_points_inside_bounding_box;
 
 		for (unsigned int j = 0; j < velodyne_points_vector.size(); j++)
 		{
-			if (velodyne_points_vector[j].image_x >  bouding_box_vector[i].x &&
-				velodyne_points_vector[j].image_x < (bouding_box_vector[i].x + bouding_box_vector[i].w) &&
-				velodyne_points_vector[j].image_y >  bouding_box_vector[i].y &&
-				velodyne_points_vector[j].image_y < (bouding_box_vector[i].y + bouding_box_vector[i].h))
+			if (velodyne_points_vector[j].image_x >  predictions[i].x &&
+				velodyne_points_vector[j].image_x < (predictions[i].x + predictions[i].w) &&
+				velodyne_points_vector[j].image_y >  predictions[i].y &&
+				velodyne_points_vector[j].image_y < (predictions[i].y + predictions[i].h))
 			{
 				lasers_points_inside_bounding_box.push_back(velodyne_points_vector[j]);
 			}
 		}
+		//printf("Num points %d\n", (int) lasers_points_inside_bounding_box.size());
 		laser_list_inside_each_bounding_box.push_back(lasers_points_inside_bounding_box);
 	}
-
 	return laser_list_inside_each_bounding_box;
 }
 
@@ -186,26 +180,58 @@ filter_object_points_using_dbscan(vector<vector<velodyne_camera_points>> &points
 {
 	dbscan::Clusters filtered_points;
 
+	//printf("Cluster %d ", (int) points_lists.size());
+
 	for (unsigned int i = 0; i < points_lists.size(); i++)
 	{
 		if (points_lists[i].size() > 0)
 		{
 			dbscan::Cluster points = convert_to_dbscan_type(points_lists[i]);  // Create vector in dbscan point type
 
-			dbscan::Clusters clusters = dbscan::dbscan(0.5, 5, points);       // Compute clusters using dbscan
+			dbscan::Clusters clusters = dbscan::dbscan(0.5, 5, points);        // Compute clusters using dbscan
 
-			if (clusters.size() > 1)                                           // If dbscan returned more then one cluster
+			//printf("Cluster size %d\n", (int) clusters.size());
+
+			if (clusters.size() == 1)
+			{
+				filtered_points.push_back(clusters[0]);
+			}
+			else if (clusters.size() == 0)                                     // If dbscan returned zero clusters
+			{
+				dbscan::Cluster empty;
+				filtered_points.push_back(empty);                                  // An empty cluster is added to the clusters vector
+			}
+			else                                                               // dbscan returned more than one cluster
 			{
 				filtered_points.push_back(get_biggest_cluster(clusters));      // get the biggest, the biggest cluster will always better represent the object
 			}
 		}
+		else
+		{
+			dbscan::Cluster empty;
+			filtered_points.push_back(empty);
+		}
 	}
+	//printf(" %d\n", (int) filtered_points.size());
 	return (filtered_points);
 }
 
 
 void
-show_object_detections(Mat rgb_image, vector<bbox_t> predictions, double fps)
+show_LIDAR_points(Mat &rgb_image, vector<vector<velodyne_camera_points>> points_lists)
+{
+	for (unsigned int i = 0; i < points_lists.size(); i++)
+	{
+		for (unsigned int j = 0; j < points_lists[i].size(); j++)
+		{
+			circle(rgb_image, Point(points_lists[i][j].image_x, points_lists[i][j].image_y), 1, cvScalar(0, 255, 0), 1, 8, 0);
+		}
+	}
+}
+
+
+void
+show_object_detections(Mat rgb_image, vector<bbox_t> predictions, vector<vector<velodyne_camera_points>> points_lists, double fps)
 {
 	char object_info[25];
     char frame_rate[25];
@@ -226,6 +252,8 @@ show_object_detections(Mat rgb_image, vector<bbox_t> predictions, double fps)
         putText(rgb_image, object_info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
     }
 
+    show_LIDAR_points(rgb_image, points_lists);
+
     imshow("Neural Object Detector", rgb_image);
     waitKey(1);
 }
@@ -242,42 +270,172 @@ compute_detected_objects_poses(dbscan::Clusters filtered_points)
 
 	for(unsigned int i = 0; i < filtered_points.size(); i++)
 	{
-		for(unsigned int j = 0; j < filtered_points[i].size(); j++)
+		if (filtered_points[i].size() == 0)
 		{
-			point.x = filtered_points[i][j].x;
-			point.y = filtered_points[i][j].y;
+			point.x = -999;    // This error code is set, probably the object is out of the LiDAR's range
+			point.y = -999;
+		}
+		else
+		{
+			for(unsigned int j = 0; j < filtered_points[i].size(); j++)
+			{
+				point.x = filtered_points[i][j].x;
+				point.y = filtered_points[i][j].y;
+			}
 		}
 		objects_positions.push_back(point);
 	}
 	return (objects_positions);
 }
 
+
 void
-carmen_translte_2d(double *x, double *y, double *offset_x, double *offset_y)
+carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
 {
-	*x += *offset_x;
-	*y += *offset_y;
+	*x += offset_x;
+	*y += offset_y;
+}
+
+
+int
+compute_num_measured_objects(vector<carmen_point_t> objects_poses)
+{
+	int num_objects = 0;
+
+	for (int i = 0; i < objects_poses.size(); i++)
+	{
+		if (objects_poses[i].x > 0.0 || objects_poses[i].y > 0.0)
+			num_objects++;
+	}
+	return (num_objects);
 }
 
 
 carmen_moving_objects_point_clouds_message
-build_detected_objects_message(vector<bbox_t> predictions, vector<carmen_point_t> objects_poses)
+build_detected_objects_message(vector<bbox_t> predictions, vector<carmen_point_t> objects_poses, vector<vector<velodyne_camera_points>> points_lists)
 {
 	carmen_moving_objects_point_clouds_message msg;
+	int num_objects = compute_num_measured_objects(objects_poses);
 
-	printf ("Predictions %d Poses %d\n", (int) predictions.size(), (int) objects_poses.size());
+	printf ("Predictions %d Poses %d, Points %d\n", (int) predictions.size(), (int) objects_poses.size(), (int) points_lists.size());
 
-	msg.num_point_clouds = objects_poses.size();
-	msg.point_clouds = (t_point_cloud_struct *) malloc (msg.num_point_clouds * sizeof(t_point_cloud_struct));
+	msg.num_point_clouds = num_objects;
+	msg.point_clouds = (t_point_cloud_struct *) malloc (num_objects * sizeof(t_point_cloud_struct));
 
-	for (int i = 0; i < msg.num_point_clouds; i++)
+	carmen_vector_3D_t box_centroid;
+	carmen_vector_3D_t offset; // TODO ler do carmen ini
+	offset.x = 0.572;
+	offset.y = 0.0;
+	offset.z = 2.154;
+
+	for (int i = 0; i < objects_poses.size(); i++)
 	{
-		//carmen_translte_2d()
-		//carmen_rotate_2d(x, y, the)
+		if (objects_poses[i].x > 0.0 || objects_poses[i].y > 0.0)
+		{
 
+		box_centroid.x = objects_poses[i].x;
+		box_centroid.y = objects_poses[i].y;
+
+		carmen_translte_2d(&box_centroid.x, &box_centroid.y, offset.x, offset.y);
+		carmen_rotate_2d(&box_centroid.x, &box_centroid.y, globalpos.theta);
+		carmen_translte_2d(&box_centroid.x, &box_centroid.y, globalpos.x, globalpos.y);
+
+		msg.point_clouds[i].r = 1.0;
+		msg.point_clouds[i].g = 1.0;
+		msg.point_clouds[i].b = 0.0;
+
+		msg.point_clouds[i].linear_velocity = 0;
+		msg.point_clouds[i].orientation = globalpos.theta;
+
+		msg.point_clouds[i].length = 4.5;
+		msg.point_clouds[i].height = 1.8;
+		msg.point_clouds[i].width  = 1.6;
+
+		msg.point_clouds[i].object_pose.x = box_centroid.x;
+		msg.point_clouds[i].object_pose.y = box_centroid.y;
+		msg.point_clouds[i].object_pose.z = 0.0;
+
+		switch (predictions[i].obj_id)
+		{
+			case 0:
+				msg.point_clouds[i].geometric_model = 0;
+				msg.point_clouds[i].model_features.geometry.height = 1.8;
+				msg.point_clouds[i].model_features.geometry.length = 1.0;
+				msg.point_clouds[i].model_features.geometry.width = 1.0;
+				msg.point_clouds[i].model_features.red = 1.0;
+				msg.point_clouds[i].model_features.green = 1.0;
+				msg.point_clouds[i].model_features.blue = 0.8;
+				msg.point_clouds[i].model_features.model_name = (char *) "pedestrian";
+				break;
+			case 2:
+				msg.point_clouds[i].geometric_model = 0;
+				msg.point_clouds[i].model_features.geometry.height = 1.8;
+				msg.point_clouds[i].model_features.geometry.length = 4.5;
+				msg.point_clouds[i].model_features.geometry.width = 1.6;
+				msg.point_clouds[i].model_features.red = 1.0;
+				msg.point_clouds[i].model_features.green = 0.0;
+				msg.point_clouds[i].model_features.blue = 0.8;
+				msg.point_clouds[i].model_features.model_name = (char *) "car";
+				break;
+			default:
+				msg.point_clouds[i].geometric_model = 0;
+				msg.point_clouds[i].model_features.geometry.height = 1.8;
+				msg.point_clouds[i].model_features.geometry.length = 4.5;
+				msg.point_clouds[i].model_features.geometry.width = 1.6;
+				msg.point_clouds[i].model_features.red = 1.0;
+				msg.point_clouds[i].model_features.green = 1.0;
+				msg.point_clouds[i].model_features.blue = 0.0;
+				msg.point_clouds[i].model_features.model_name = (char *) "other";
+				break;
+		}
+		msg.point_clouds[i].num_associated = 0;
+
+		msg.point_clouds[i].point_size = points_lists[i].size();
+
+		msg.point_clouds[i].points = (carmen_vector_3D_t *) malloc (msg.point_clouds[i].point_size * sizeof(carmen_vector_3D_t));
+
+		for (int j = 0; j < points_lists[i].size(); j++)
+		{
+			carmen_vector_3D_t p;
+
+			p.x = points_lists[i][j].cartesian.x;
+			p.y = points_lists[i][j].cartesian.y;
+			p.z = points_lists[i][j].cartesian.z;
+
+			carmen_translte_2d(&p.x, &p.y, offset.x, offset.y);
+
+			carmen_rotate_2d(&p.x, &p.y, globalpos.theta);
+
+			carmen_translte_2d(&p.x, &p.y, globalpos.x, globalpos.y);
+
+			msg.point_clouds[i].points[j] = p;
+		}
 	}
-
+	}
 	return (msg);
+}
+
+
+vector<bbox_t>
+filter_for_predictions_of_interest(vector<bbox_t> &predictions)
+{
+	vector<bbox_t> filtered_predictions;
+
+	for (unsigned int i = 0; i < predictions.size(); i++)
+	{
+		if (i == 0 ||  // person
+			i == 1 ||  // bicycle
+			i == 2 ||  // car
+			i == 3 ||  // motorbike
+			i == 5 ||  // bus
+			i == 6 ||  // train
+			i == 7 ||  // truck
+			i == 9)    // traffic light
+		{
+			filtered_predictions.push_back(predictions[i]);
+		}
+	}
+	return (filtered_predictions);
 }
 
 
@@ -299,21 +457,31 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 	vector<bbox_t> predictions = darknet->detect(cropped_image, 0.2);  // Arguments (image, threshold)
 
-	// Removes the ground, Removes points outside cameras field of view and Returns the points that reach obstacles  TODO TODO TODO TODO TODO TODO TODO Modificar essa funcao
-	vector<velodyne_camera_points> velodyne_points_vector = velodyne_camera_calibration_remove_points_out_of_FOV_and_that_hit_ground(velodyne_msg,
-			camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
+	predictions = filter_for_predictions_of_interest(predictions);
 
-	vector<vector<velodyne_camera_points>> points_lists = velodyne_points_inside_bounding_boxes(predictions, velodyne_points_vector);
+	if (predictions.size() > 0 && velodyne_msg != NULL)
+	{
+		// Removes the ground, Removes points outside cameras field of view and Returns the points that reach obstacles
+		vector<velodyne_camera_points> velodyne_points_vector = velodyne_camera_calibration_remove_points_out_of_FOV_and_that_hit_ground(velodyne_msg,
+				camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
 
-	dbscan::Clusters filtered_points_lists = filter_object_points_using_dbscan(points_lists);
+		vector<vector<velodyne_camera_points>> points_lists = velodyne_points_inside_bounding_boxes(predictions, velodyne_points_vector);
+		//printf("points size %d\n", (int) points_lists.size());
 
-	vector<carmen_point_t> objects_poses = compute_detected_objects_poses(filtered_points_lists);
+		dbscan::Clusters filtered_points_lists = filter_object_points_using_dbscan(points_lists);
+		//printf("Cluster size %d\n", (int) filtered_points_lists.size());
 
+		vector<carmen_point_t> objects_poses = compute_detected_objects_poses(filtered_points_lists);
 
+		carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, objects_poses, points_lists);
+		printf("Builded Size %d\n", msg.num_point_clouds);
 
-	fps = 1.0 / (carmen_get_time() - start_time);
+		publish_moving_objects_message(image_msg->timestamp, &msg);
 
-	show_object_detections(cropped_image, predictions, fps);
+		fps = 1.0 / (carmen_get_time() - start_time);
+
+		show_object_detections(cropped_image, predictions, points_lists, fps);
+	}
 }
 
 
@@ -329,9 +497,9 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
-    globalpos.theta = globalpos_message->globalpos.theta;
-    globalpos.x = globalpos_message->globalpos.x;
-    globalpos.y = globalpos_message->globalpos.y;
+	globalpos.theta = globalpos_message->globalpos.theta;
+	globalpos.x = globalpos_message->globalpos.x;
+	globalpos.y = globalpos_message->globalpos.y;
 }
 
 
@@ -360,10 +528,13 @@ subscribe_messages()
 }
 
 
-int
+void
 read_parameters(int argc, char **argv)
 {
-    camera = atoi(argv[1]);             // Define the camera to be used
+	if ((argc != 3))
+		carmen_die("%s: Wrong number of parameters. neural_object_detector requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>", argv[0], argc - 1, argv[0]);
+
+	camera = atoi(argv[1]);             // Define the camera to be used
     camera_side = atoi(argv[2]);        // 0 For left image 1 for right image
 
     int num_items;
@@ -397,47 +568,49 @@ read_parameters(int argc, char **argv)
 		{camera_string, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL }
     };
 
-
     num_items = sizeof(param_list) / sizeof(param_list[0]);
     carmen_param_install_params(argc, argv, param_list, num_items);
+}
 
-    return 0;
+
+void
+initialize_yolo_DRKNET()
+{
+	string darknet_home = getenv("DARKNET_HOME");  // Get environment variable pointing path of DARKNET_HOME
+
+	if (darknet_home.empty())
+		printf("Cannot find darknet path. Check if you have correctly set DARKNET_HOME environment variable.\n");
+
+	string cfg_filename = darknet_home + "/cfg/neural_object_detector_yolo.cfg";
+	string weight_filename = darknet_home + "/yolo.weights";
+	string class_names_file = darknet_home + "/data/coco.names";
+
+	darknet = new Detector(cfg_filename, weight_filename, 0);   // (cfg_filename, weight_filename, GPU ID)
+
+	carmen_test_alloc(darknet);
+
+	objects_names_from_file(class_names_file);
+
+	set_object_vector_color();
+
+	velodyne_msg = NULL;
 }
 
 
 int
 main(int argc, char **argv)
 {
-    if ((argc != 3))
-        carmen_die("%s: Wrong number of parameters. neural_object_detector requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>",
-                   argv[0], argc - 1, argv[0]);
-
-    int gpu = 1;
-    int device_id = 0;
-
-    string darknet_home = getenv("DARKNET_HOME");  // Get environment variable pointing path of darknet
-
-    if (darknet_home.empty())
-        printf("Cannot find darknet path. Check if you have correctly set DARKNET_HOME environment variable.\n");
-
-    string cfg_filename = darknet_home + "/cfg/neural_object_detector_yolo.cfg";
-    string weight_filename = darknet_home + "/yolo.weights";
-    string class_names_file = darknet_home + "/data/coco.names";
-    obj_names_vector = objects_names_from_file(class_names_file);
-    set_object_vector_color();
-
-    darknet = new Detector(cfg_filename, weight_filename, device_id);
-    carmen_test_alloc(darknet);
-
-    setlocale(LC_ALL, "C");
-
     carmen_ipc_initialize(argc, argv);
-
-    signal(SIGINT, shutdown_module);
 
     read_parameters(argc, argv);
 
     subscribe_messages();
+
+    signal(SIGINT, shutdown_module);
+
+    initialize_yolo_DRKNET();
+
+	setlocale(LC_ALL, "C");
 
     carmen_ipc_dispatch();
 
