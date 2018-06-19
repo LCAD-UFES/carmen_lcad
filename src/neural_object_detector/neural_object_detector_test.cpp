@@ -69,7 +69,7 @@ run_yolo_on_dataset(Detector *darknet, FILE* image_list)
 	Mat image;
 	FILE* results = fopen("results.txt", "w");
 
-	fscanf (image_list, "%s", line);
+	int a = fscanf (image_list, "%s", line);
 
 	while (!feof(image_list))
 	{
@@ -88,7 +88,7 @@ run_yolo_on_dataset(Detector *darknet, FILE* image_list)
 
 		save_predictions_to_file(predictions, line, results);
 
-		fscanf (image_list, "%s", line);
+		a = fscanf (image_list, "%s", line);
 	}
 	fclose (results);
 }

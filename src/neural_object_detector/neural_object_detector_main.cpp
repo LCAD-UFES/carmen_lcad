@@ -225,6 +225,10 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
     for (unsigned int i = 0; i < bouding_boxes_list.size(); i++)
     {
 
+		for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
+			cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
+					laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1, cv::Scalar(0, 0, 255), 1);
+
         cv::Scalar object_color;
 
         sprintf(confianca, "%d  %.3f", predictions.at(i).obj_id, predictions.at(i).prob);
@@ -388,9 +392,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
     cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
 
-    double start_time, fps;
-
-    start_time = carmen_get_time();
+    static double start_time = 0.0;
+	double fps;
 
     if (camera_side == 0)
         memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char) - image_msg->image_size * hood_removal_percentage * sizeof(char));
@@ -412,7 +415,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     vector<bbox_t> predictions = darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
 
-    predictions = darknet->tracking(predictions); // Coment this line if object tracking is not necessary
+//    predictions = darknet->tracking(predictions); // Coment this line if object tracking is not necessary
 
     for (const auto &box : predictions) // Covert Darknet bounding box to neural_object_deddtector bounding box
     {
@@ -464,6 +467,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     publish_moving_objects_message(image_msg->timestamp);
 
     fps = 1.0 / (carmen_get_time() - start_time);
+    start_time = carmen_get_time();
 
 #ifdef SHOW_DETECTIONS
     show_detections(rgb_image, laser_points_in_camera_box_list, predictions, bouding_boxes_list,

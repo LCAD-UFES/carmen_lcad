@@ -3,8 +3,8 @@ include ../Makefile.conf
 MODULE_NAME = Neural Object Detector
 MODULE_COMMENT = Detect vehicles using convolutional neural networks.
 
-LINK = g++
-CXXFLAGS = -std=c++11 
+LINK = g++ -O3
+CXXFLAGS = -std=c++11 -O3 
 
 IFLAGS += -DUSE_OPENCV -DNO_NVML
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet/lib
