@@ -424,12 +424,3 @@ compute_points_coordinates_in_image_plane(carmen_velodyne_partial_scan_message *
 	}
 	return laser_points_in_camera;
 }
-
-
-void
-carmen_spherical_to_cartesian(double *x, double *y, double *z, double horizontal_angle, double vertical_vangle, double range)
-{
-	*x = range * cos(vertical_vangle) * cos(horizontal_angle);
-	*y = range * cos(vertical_vangle) * sin(horizontal_angle);
-	*z = range * sin(vertical_vangle);
-}
