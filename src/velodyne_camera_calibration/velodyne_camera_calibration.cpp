@@ -286,7 +286,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 }
 
 
-#define CAMERA_FOV 0.44 // In radians ~ 25 degrees TODO por no carmen.ini
+#define CAMERA_FOV 0.87 // In radians ~ 25 degrees TODO por no carmen.ini
 
 std::vector<velodyne_camera_points>
 velodyne_camera_calibration_remove_points_out_of_FOV_and_that_hit_ground(carmen_velodyne_partial_scan_message *velodyne_message,

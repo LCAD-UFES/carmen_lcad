@@ -212,11 +212,12 @@ initialize_virtual_scan_message_update(int sensor_id, carmen_pose_3D_t robot_pos
 
 	carmen_point_t sensor_pos = {sensor_position_in_the_world.x, sensor_position_in_the_world.y, robot_interpolated_position.orientation.yaw};
 	virtual_scan_message.virtual_scan_sensor[n].sensor_pos = sensor_pos;
+	virtual_scan_message.virtual_scan_sensor[n].global_pos = {robot_pose.position.x, robot_pose.position.y, robot_pose.orientation.yaw};
 	virtual_scan_message.virtual_scan_sensor[n].sensor_id = sensor_id;
 	virtual_scan_message.virtual_scan_sensor[n].time_spent_in_the_entire_sensor_sweep = time_spent_in_the_entire_sensor_sweep;
 	virtual_scan_message.virtual_scan_sensor[n].last_sensor_angle = last_sensor_angle;
 	virtual_scan_message.virtual_scan_sensor[n].v = v;
-	virtual_scan_message.virtual_scan_sensor[n].phi = phi;
+	virtual_scan_message.virtual_scan_sensor[n].w = tan(phi) * (v / car_config.distance_between_front_and_rear_axles);
 	virtual_scan_message.virtual_scan_sensor[n].num_points = 0; // O total de pontos alocados abaixo pode nao ser totalmente alocado, pois os pontos realmente usados sao preenchidos sob demanda;
 	virtual_scan_message.virtual_scan_sensor[n].points = (carmen_point_t *) malloc(num_points * sizeof(carmen_point_t));
 	virtual_scan_message.virtual_scan_sensor[n].timestamp = sensor_data->points_timestamp[point_cloud_index];

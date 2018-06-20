@@ -21,6 +21,8 @@ double p[NUM_MODELS][NUM_MODELS] = {
 		{0.001, 0.998, 0.001},
 		{0.001, 0.001, 0.998}};
 
+extern carmen_point_t g_initial_pos;
+
 
 void
 fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
@@ -36,15 +38,35 @@ fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
 		track->box_model_hypothesis[j].hypothesis_state.v = v;
 		track->box_model_hypothesis[j].hypothesis_state.w = w;
 
-		double x = track->box_model_hypothesis[j].hypothesis.x - track->box_model_hypothesis[j].hypothesis_points.sensor_pos.x;
-		double y = track->box_model_hypothesis[j].hypothesis.y - track->box_model_hypothesis[j].hypothesis_points.sensor_pos.y;
-		double x_1 = track->box_model_hypothesis[j - 1].hypothesis.x - track->box_model_hypothesis[j - 1].hypothesis_points.sensor_pos.x;
-		double y_1 = track->box_model_hypothesis[j - 1].hypothesis.y - track->box_model_hypothesis[j - 1].hypothesis_points.sensor_pos.y;
+		// Precisa passar o delta_t para o imm e mudar este para ele recalcular as matrizes que dependem de delta_t.
+		//
+		// O imm calculando tudo com relacao ao robo, exige que se passe tudo, depois, para a posicao no mundo (x, y, x', y', x", y" e w).
+		// Vamos, primeiro, calcular tudo com relacao ao robo e testar no gnuplot.
+		double x = track->box_model_hypothesis[j].hypothesis.x - track->box_model_hypothesis[j].hypothesis_points.global_pos.x;
+		double y = track->box_model_hypothesis[j].hypothesis.y - track->box_model_hypothesis[j].hypothesis_points.global_pos.y;
+		double x_1 = track->box_model_hypothesis[j - 1].hypothesis.x - track->box_model_hypothesis[j - 1].hypothesis_points.global_pos.x;
+		double y_1 = track->box_model_hypothesis[j - 1].hypothesis.y - track->box_model_hypothesis[j - 1].hypothesis_points.global_pos.y;
 		double radius = sqrt(x * x + y * y);
 		double theta = atan2(y, x);
 		double yaw = atan2(y - y_1, x - x_1);
 
-		if (track->box_model_hypothesis[j].hypothesis_state.imm == NULL)
+		if ((track->box_model_hypothesis[j - 1].hypothesis_state.imm != NULL) && (track->box_model_hypothesis[j].hypothesis_state.imm == NULL))
+		{
+			imm_state_t *imm = new imm_state_t(*(track->box_model_hypothesis[j - 1].hypothesis_state.imm));	// deep copy
+
+			Matrix z_k, R_k, R_p_k;
+			set_R_p_k_matriz(R_p_k, SIGMA_R, carmen_degrees_to_radians(SIGMA_THETA));
+			position_observation(z_k, R_k, R_p_k, radius, theta, SIGMA_R, carmen_degrees_to_radians(SIGMA_THETA));
+
+			imm_filter(imm->imm_x_k_k, imm->imm_P_k_k, imm->x_k_1_k_1, imm->P_k_1_k_1,
+					z_k, R_k,
+					imm->F_k_1_m, imm->Q_k_1_m, imm->H_k_m,
+					delta_t, carmen_degrees_to_radians(SIGMA_W), SIGMA_VCT, MAX_A, carmen_degrees_to_radians(MAX_W),
+					p, imm->u_k);
+
+			track->box_model_hypothesis[j].hypothesis_state.imm = imm;
+		}
+		else if ((track->box_model_hypothesis[j - 1].hypothesis_state.imm == NULL) && (track->box_model_hypothesis[j].hypothesis_state.imm == NULL))
 		{
 			imm_state_t *imm = new imm_state_t;
 
@@ -75,20 +97,6 @@ fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
 					p, imm->u_k);
 
 			track->box_model_hypothesis[j].hypothesis_state.imm = imm;
-		}
-		else
-		{
-			imm_state_t *imm = track->box_model_hypothesis[j].hypothesis_state.imm;
-
-			Matrix z_k, R_k, R_p_k;
-			set_R_p_k_matriz(R_p_k, SIGMA_R, carmen_degrees_to_radians(SIGMA_THETA));
-			position_observation(z_k, R_k, R_p_k, radius, theta, SIGMA_R, carmen_degrees_to_radians(SIGMA_THETA));
-
-			imm_filter(imm->imm_x_k_k, imm->imm_P_k_k, imm->x_k_1_k_1, imm->P_k_1_k_1,
-					z_k, R_k,
-					imm->F_k_1_m, imm->Q_k_1_m, imm->H_k_m,
-					delta_t, carmen_degrees_to_radians(SIGMA_W), SIGMA_VCT, MAX_A, carmen_degrees_to_radians(MAX_W),
-					p, imm->u_k);
 		}
 
 //		double vx = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[2][0];

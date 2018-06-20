@@ -201,6 +201,7 @@ segment_virtual_scan(carmen_mapper_virtual_scan_message *extended_virtual_scan)
 				virtual_scan_segments->segment[current_segment].sensor = s;
 				virtual_scan_segments->segment[current_segment].sensor_id = extended_virtual_scan->virtual_scan_sensor[s].sensor_id;
 				virtual_scan_segments->segment[current_segment].sensor_pos = extended_virtual_scan->virtual_scan_sensor[s].sensor_pos;
+				virtual_scan_segments->segment[current_segment].global_pos = extended_virtual_scan->virtual_scan_sensor[s].global_pos;
 
 				dbscan::Cluster cluster = clusters[segment_id];
 				virtual_scan_segments->segment[current_segment].points = (carmen_point_t *) malloc(sizeof(carmen_point_t) * cluster.size());

@@ -118,7 +118,10 @@ free_neighborhood_graph_vextexes(virtual_scan_neighborhood_graph_t *neighborhood
 	for (int i = 0; i < vextexes_to_remove; i++)
 	{
 		if (neighborhood_graph->box_model_hypothesis[i]->hypothesis_state.imm != NULL)
+		{
 			delete neighborhood_graph->box_model_hypothesis[i]->hypothesis_state.imm;
+			neighborhood_graph->box_model_hypothesis[i]->hypothesis_state.imm = NULL;
+		}
 		free(neighborhood_graph->box_model_hypothesis[i]);
 		free(neighborhood_graph->box_model_hypothesis_edges[i]->edge);
 		free(neighborhood_graph->box_model_hypothesis_edges[i]->edge_type);
@@ -208,7 +211,10 @@ update_track_according_to_new_graph(virtual_scan_track_t *track, int vextexes_re
 		if (track->box_model_hypothesis[i].index < 0) // Remove hypothesis
 		{
 			if (track->box_model_hypothesis[i].hypothesis_state.imm != NULL)
+			{
 				delete track->box_model_hypothesis[i].hypothesis_state.imm;
+				track->box_model_hypothesis[i].hypothesis_state.imm = NULL;
+			}
 
 			for (int j = i; j < track->size - 1; j++)
 				track->box_model_hypothesis[j] = track->box_model_hypothesis[j + 1];

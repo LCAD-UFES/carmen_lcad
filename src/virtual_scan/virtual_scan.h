@@ -43,7 +43,7 @@
 #define GAMMA	0.15
 #define VMAX	(120.0 / 3.6)
 
-#define NUMBER_OF_FRAMES_T 10
+#define NUMBER_OF_FRAMES_T 20
 
 #define MAX_VELODYNE_SEGMENT_DISTANCE 25.0
 
@@ -54,6 +54,7 @@ typedef struct
 	int sensor;
 	int sensor_id;
 	carmen_point_t sensor_pos;
+	carmen_point_t global_pos;
 	carmen_point_t centroid;
 	double precise_timestamp;
 
@@ -184,6 +185,7 @@ typedef struct
 {
 	int size;
 	virtual_scan_box_model_hypothesis_t *box_model_hypothesis;
+	int track_id;
 } virtual_scan_track_t;
 
 

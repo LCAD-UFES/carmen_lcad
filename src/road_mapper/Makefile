@@ -3,20 +3,14 @@ include ../Makefile.conf
 MODULE_NAME = Road Mapper
 MODULE_COMMENT = Create, view, learn and predict *road maps*
 
-LINK = g++
+LINK = g++ -O3
 CFLAGS += -Wall
-
-#CXXFLAGS += -std=c++11
-CXXFLAGS += -Wno-ignored-qualifiers
+CXXFLAGS += -Wno-ignored-qualifiers -O3
 
 IFLAGS += \
-	`pkg-config --cflags opencv` \
-	-I /usr/local/cuda/include \
-	-I$(CAFFE_ENET_HOME)/include \
-	-I$(CAFFE_ENET_HOME)/build/include 
+	`pkg-config --cflags opencv`
 
 LFLAGS += \
-	-L$(CAFFE_ENET_HOME)/build/lib \
 	`pkg-config --libs opencv` \
 	-lparam_interface \
 	-lipc \
@@ -29,11 +23,8 @@ LFLAGS += \
 	-lpng \
 	-lreadlog \
 	-lkinect_interface \
-	-lglog \
-	-lprotobuf \
 	-lboost_signals \
-	-lboost_system \
-	-lcaffe 
+	-lboost_system
 
 SOURCES = \
 	road_mapper_main.cpp \
@@ -42,10 +33,7 @@ SOURCES = \
 	road_mapper_save_remission_map_images.cpp \
 	road_mapper_image_splitter.cpp \
 	road_mapper_display_map.cpp \
-	road_mapper_display_map2.cpp \
-	road_mapper_display_map3.cpp \
 	road_mapper_sampling.cpp \
-	road_mapper_road_inference_main.cpp \
 	road_mapper_log_tracker.cpp
 
 PUBLIC_INCLUDES = \
@@ -61,7 +49,6 @@ PUBLIC_BINARIES = \
 	road_mapper \
 	road_mapper_save_remission_map_images \
 	road_mapper_sampling \
-	road_mapper_road_inference_main \
 	road_mapper_image_splitter \
 	road_mapper_display_map
 
@@ -71,12 +58,35 @@ TARGETS = \
 	road_mapper \
 	road_mapper_save_remission_map_images \
 	road_mapper_sampling \
-	road_mapper_road_inference_main \
 	road_mapper_image_splitter \
 	road_mapper_display_map \
-	road_mapper_display_map2 \
-	road_mapper_display_map3 \
 	road_mapper_log_tracker
+
+ifdef CAFFE_ENET_HOME
+
+CXXFLAGS += -DUSE_CAFFE
+
+IFLAGS += \
+	-I /usr/local/cuda/include \
+	-I$(CAFFE_ENET_HOME)/include \
+	-I$(CAFFE_ENET_HOME)/build/include 
+
+LFLAGS += \
+	-L$(CAFFE_ENET_HOME)/build/lib \
+	-lglog \
+	-lprotobuf \
+	-lcaffe 
+
+SOURCES += \
+	road_mapper_road_inference_main.cpp
+
+PUBLIC_BINARIES += \
+	road_mapper_road_inference_main
+
+TARGETS += \
+	road_mapper_road_inference_main
+
+endif
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -95,11 +105,12 @@ libroad_mapper.a: road_mapper.o
 road_mapper: road_mapper_main.o road_mapper_interface.o
 road_mapper_save_remission_map_images: road_mapper_save_remission_map_images.o road_mapper.o road_mapper_utils.o
 road_mapper_sampling: road_mapper_sampling.o road_mapper.o road_mapper_utils.o
-road_mapper_road_inference_main: road_mapper_road_inference_main.o road_mapper.o road_mapper_utils.o
 road_mapper_image_splitter: road_mapper_image_splitter.o
 road_mapper_display_map: road_mapper_display_map.o road_mapper.o road_mapper_utils.o
-road_mapper_display_map2: road_mapper_display_map2.o
-road_mapper_display_map3: road_mapper_display_map3.o road_mapper.o road_mapper_utils.o
 road_mapper_log_tracker: road_mapper_log_tracker.o
+
+ifdef CAFFE_ENET_HOME
+road_mapper_road_inference_main: road_mapper_road_inference_main.o road_mapper.o road_mapper_utils.o
+endif
 
 include ../Makefile.rules
