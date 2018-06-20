@@ -2443,7 +2443,7 @@ namespace View
 				}else{
 					if ( i == 0)
 					{
-						left[i].lane_segment_position2 = left[i + 1].lane_segment_position1;
+						left[i].lane_segment_position1 = left[i + 1].lane_segment_position2;
 					}else{
 						left[i].lane_segment_position1 = left[i - 1].lane_segment_position2;
 					}
