@@ -360,3 +360,67 @@ velodyne_camera_calibration_remove_points_out_of_FOV_and_that_hit_ground(carmen_
 	}
 	return points;
 }
+
+
+std::vector<image_cartesian>
+compute_points_coordinates_in_image_plane(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
+														   carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
+														   int image_width, int image_height, int crop_x, int crop_y, int crop_width, int crop_height)
+{
+	std::vector<image_cartesian> laser_points_in_camera;
+	int max_x = crop_x + crop_width;
+	int max_y = crop_y + crop_height;
+
+    double fx_meters = camera_parameters.fx_factor * image_width * camera_parameters.pixel_size;
+    double fy_meters = camera_parameters.fy_factor * image_height * camera_parameters.pixel_size;
+
+    double cu = camera_parameters.cu_factor * (double) image_width;
+    double cv = camera_parameters.cv_factor * (double) image_height;
+
+	for (int i = 0; i < 32; i++)
+	{
+		double v_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[i]));
+
+		for (int j = 0; j < velodyne_message->number_of_32_laser_shots; j++)
+		{
+			double range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
+
+            double h_angle = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
+
+			if (range <= MIN_RANGE)
+				range = MAX_RANGE;
+
+			if (range > MAX_RANGE)
+				range = MAX_RANGE;
+
+			if (range >= MAX_RANGE)
+				continue;
+
+			tf::Point p3d_velodyne_reference = spherical_to_cartesian(h_angle, v_angle, range);
+
+			if (p3d_velodyne_reference.x() > 0)
+			{
+                tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference,velodyne_pose,camera_pose);
+
+                double px = (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
+                double py = (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
+
+                int ipx = (int) px;
+                int ipy = (int) py;
+
+				if (ipx >= crop_x && ipx <= max_x && ipy >= crop_y && ipy <= max_y)
+				{
+					image_cartesian point;
+					point.shot_number = velodyne_message->number_of_32_laser_shots;
+					point.ray_number = i;
+					point.image_x = ipx - crop_x;
+					point.image_y = ipy - crop_y;
+
+					laser_points_in_camera.push_back(point);
+				}
+
+			}
+		}
+	}
+	return laser_points_in_camera;
+}

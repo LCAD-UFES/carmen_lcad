@@ -115,7 +115,7 @@ publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clo
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-vector< vector<velodyne_camera_points> >
+vector<vector<velodyne_camera_points>>
 velodyne_points_inside_bounding_boxes(vector<bbox_t> &predictions, vector<velodyne_camera_points> &velodyne_points_vector)
 {
 	vector<vector<velodyne_camera_points>> laser_list_inside_each_bounding_box; //each_bounding_box_laser_list
@@ -123,6 +123,32 @@ velodyne_points_inside_bounding_boxes(vector<bbox_t> &predictions, vector<velody
 	for (unsigned int i = 0; i < predictions.size(); i++)
 	{
 		vector<velodyne_camera_points> lasers_points_inside_bounding_box;
+
+		for (unsigned int j = 0; j < velodyne_points_vector.size(); j++)
+		{
+			if (velodyne_points_vector[j].image_x >  predictions[i].x &&
+				velodyne_points_vector[j].image_x < (predictions[i].x + predictions[i].w) &&
+				velodyne_points_vector[j].image_y >  predictions[i].y &&
+				velodyne_points_vector[j].image_y < (predictions[i].y + predictions[i].h))
+			{
+				lasers_points_inside_bounding_box.push_back(velodyne_points_vector[j]);
+			}
+		}
+		//printf("Num points %d\n", (int) lasers_points_inside_bounding_box.size());
+		laser_list_inside_each_bounding_box.push_back(lasers_points_inside_bounding_box);
+	}
+	return laser_list_inside_each_bounding_box;
+}
+
+
+vector<vector<image_cartesian>>
+filter_points_inside_bounding_boxes(vector<bbox_t> &predictions, vector<image_cartesian> &velodyne_points_vector)
+{
+	vector<vector<image_cartesian>> laser_list_inside_each_bounding_box; //each_bounding_box_laser_list
+
+	for (unsigned int i = 0; i < predictions.size(); i++)
+	{
+		vector<image_cartesian> lasers_points_inside_bounding_box;
 
 		for (unsigned int j = 0; j < velodyne_points_vector.size(); j++)
 		{
@@ -218,20 +244,31 @@ filter_object_points_using_dbscan(vector<vector<velodyne_camera_points>> &points
 
 
 void
-show_LIDAR_points(Mat &rgb_image, vector<vector<velodyne_camera_points>> points_lists)
+show_LIDAR_points(Mat &rgb_image)
+{
+	//vector<carmen_velodyne_points_in_cam_t> points_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera(velodyne_msg, camera_parameters, velodyne_pose, camera_pose, 1280, 720);
+
+	vector<image_cartesian> all_points = compute_points_coordinates_in_image_plane(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
+															   1280, 720, 280, 70, 720, 480);
+
+	for (unsigned int i = 0; i < all_points.size(); i++)
+		circle(rgb_image, Point(all_points[i].image_x, all_points[i].image_y), 1, cvScalar(255, 0, 0), 1, 8, 0);
+}
+
+
+void
+show_LIDAR_no_ground_points(Mat &rgb_image, vector<vector<image_cartesian>> points_lists)
 {
 	for (unsigned int i = 0; i < points_lists.size(); i++)
 	{
 		for (unsigned int j = 0; j < points_lists[i].size(); j++)
-		{
 			circle(rgb_image, Point(points_lists[i][j].image_x, points_lists[i][j].image_y), 1, cvScalar(0, 255, 0), 1, 8, 0);
-		}
 	}
 }
 
 
 void
-show_object_detections(Mat rgb_image, vector<bbox_t> predictions, vector<vector<velodyne_camera_points>> points_lists, double fps)
+show_object_detections(Mat rgb_image, vector<bbox_t> predictions, vector<vector<image_cartesian>> points_lists, double fps)
 {
 	char object_info[25];
     char frame_rate[25];
@@ -252,7 +289,8 @@ show_object_detections(Mat rgb_image, vector<bbox_t> predictions, vector<vector<
         putText(rgb_image, object_info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
     }
 
-    show_LIDAR_points(rgb_image, points_lists);
+    show_LIDAR_points(rgb_image);
+    show_LIDAR_no_ground_points(rgb_image, points_lists);
 
     imshow("Neural Object Detector", rgb_image);
     waitKey(1);
@@ -294,6 +332,15 @@ carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
 {
 	*x += offset_x;
 	*y += offset_y;
+}
+
+
+void
+carmen_spherical_to_cartesian(double *x, double *y, double *z, double horizontal_angle, double vertical_vangle, double range)
+{
+	*x = range * cos(vertical_vangle) * cos(horizontal_angle);
+	*y = range * cos(vertical_vangle) * sin(horizontal_angle);
+	*z = range * sin(vertical_vangle);
 }
 
 
@@ -417,7 +464,7 @@ build_detected_objects_message(vector<bbox_t> predictions, vector<carmen_point_t
 
 
 vector<bbox_t>
-filter_for_predictions_of_interest(vector<bbox_t> &predictions)
+filter_predictions_of_interest(vector<bbox_t> &predictions)
 {
 	vector<bbox_t> filtered_predictions;
 
@@ -453,36 +500,70 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 
 	Rect myROI(280, 70, 720, 480);     // TODO put this in the .ini file
-	Mat cropped_image = open_cv_image(myROI);
+	open_cv_image = open_cv_image(myROI);
 
-	vector<bbox_t> predictions = darknet->detect(cropped_image, 0.2);  // Arguments (image, threshold)
-
-	predictions = filter_for_predictions_of_interest(predictions);
+	vector<bbox_t> predictions = darknet->detect(open_cv_image, 0.2);  // Arguments (image, threshold)
+	predictions = filter_predictions_of_interest(predictions);
 
 	if (predictions.size() > 0 && velodyne_msg != NULL)
 	{
-		// Removes the ground, Removes points outside cameras field of view and Returns the points that reach obstacles
-		vector<velodyne_camera_points> velodyne_points_vector = velodyne_camera_calibration_remove_points_out_of_FOV_and_that_hit_ground(velodyne_msg,
-				camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
+		vector<image_cartesian> points =	compute_points_coordinates_in_image_plane(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
+				image_msg->width, image_msg->height, 280, 70, 720, 480);
 
-		vector<vector<velodyne_camera_points>> points_lists = velodyne_points_inside_bounding_boxes(predictions, velodyne_points_vector);
-		//printf("points size %d\n", (int) points_lists.size());
+		vector<vector<image_cartesian>> points_lists = filter_points_inside_bounding_boxes(predictions, points);
 
-		dbscan::Clusters filtered_points_lists = filter_object_points_using_dbscan(points_lists);
-		//printf("Cluster size %d\n", (int) filtered_points_lists.size());
-
-		vector<carmen_point_t> objects_poses = compute_detected_objects_poses(filtered_points_lists);
-
-		carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, objects_poses, points_lists);
-		printf("Builded Size %d\n", msg.num_point_clouds);
-
-		publish_moving_objects_message(image_msg->timestamp, &msg);
+		//compute_cartesian_coordinates(points_lists);
 
 		fps = 1.0 / (carmen_get_time() - start_time);
 
-		show_object_detections(cropped_image, predictions, points_lists, fps);
+		show_object_detections(open_cv_image, predictions, points_lists, fps);
 	}
 }
+
+
+//void
+//image_handler_old(carmen_bumblebee_basic_stereoimage_message *image_msg)
+//{
+//	unsigned char *img;
+//	double fps, start_time = carmen_get_time();
+//
+//	if (camera_side == 0)
+//		img = image_msg->raw_left;
+//	else
+//		img = image_msg->raw_right;
+//
+//	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+//
+//	Rect myROI(280, 70, 720, 480);     // TODO put this in the .ini file
+//	open_cv_image = open_cv_image(myROI);
+//
+//	vector<bbox_t> predictions = darknet->detect(open_cv_image, 0.2);  // Arguments (image, threshold)
+//
+//	predictions = filter_predictions_of_interest(predictions);
+//
+//	if (predictions.size() > 0 && velodyne_msg != NULL)
+//	{
+//		// Removes the ground, Removes points outside cameras field of view and Returns the points that reach obstacles
+//		vector<velodyne_camera_points> velodyne_points_vector = velodyne_camera_calibration_remove_points_out_of_FOV_and_that_hit_ground(velodyne_msg,
+//				camera_parameters, velodyne_pose, camera_pose, open_cv_image.cols, open_cv_image.rows);
+//
+//		vector<vector<velodyne_camera_points>> points_lists = velodyne_points_inside_bounding_boxes(predictions, velodyne_points_vector);
+//		//printf("points size %d\n", (int) points_lists.size());
+//
+//		dbscan::Clusters filtered_points_lists = filter_object_points_using_dbscan(points_lists);
+//		//printf("Cluster size %d\n", (int) filtered_points_lists.size());
+//
+//		vector<carmen_point_t> objects_poses = compute_detected_objects_poses(filtered_points_lists);
+//
+//		//carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, objects_poses, points_lists);
+//		//printf("Builded Size %d\n", msg.num_point_clouds);
+//		//publish_moving_objects_message(image_msg->timestamp, &msg);
+//
+//		fps = 1.0 / (carmen_get_time() - start_time);
+//
+//		show_object_detections(open_cv_image, predictions, points_lists, fps);
+//	}
+//}
 
 
 void

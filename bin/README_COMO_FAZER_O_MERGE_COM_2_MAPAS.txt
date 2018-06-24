@@ -1,6 +1,11 @@
+O processo descrito abaixo funciona quando se deseja refazer um trecho de um mapa usando um novo log.
+Para que ele funcione, o localizer tem que conseguir se localizar no mapa velho, pois o novo mapa,
+produzido com o log, vai ser um merge do mapa antigo com o mapa gerado pelo mapper dinamicamente,
+sendo que o mapper vai usar a pose do localizer, que localizara usando o mapa velho e sua versao 
+atualizada a partir do log (merge). A versao atualizada eh salva a cada troca de mapas.
 
-1- mude os parametros do carmen-ford-escape.ini para construção dos mapas
--Descomente essas linhas e comente as mesmas acima.
+1- Mude os parametros do carmen-ford-escape.ini para construção de mapas
+ - Para isso, descomente essas linhas e comente as equivalentes que ficam acima no arquivo.
 
 ## Use the parameters below for building maps
 #mapper_update_and_merge_with_snapshot_map	off
@@ -17,14 +22,17 @@
 
 
 2- Altere o caminho do mapa no process-volta_da_ufes_playback_viewer_3D.ini
+ - Pode ser uma boa ideia criar um diretorio /dados/mapper_teste2 e fazer um link para ../data/mapper_teste2
 
 	map_server		support		1		0			./map_server -map_path ../data/mapper_teste2 ...
 	mapper			SLAM		1		0			./mapper -map_path ../data/mapper_teste2 ...
 	navigator_gui		interface	1		0			./navigator_gui2 -map_path ../data/mapper_teste2 ...
 
-3- copie o mapa que queria juntar para a pasta ../data/mapper_teste2
+3- Copie o mapa velho para a pasta ../data/mapper_teste2
+ - Poder ser uma boa ideia copiar apenas os mapas m*.map (mapas usados na localizacao; os mapas de remission velho e novo sao acumulados
+   estatisticamente).
 
-4- Rode o process-volta_da_ufes_playback_viewer_3D.ini com o log que queria fazer o merge
+4- Rode o process-volta_da_ufes_playback_viewer_3D.ini com o log novo com o qual se deseja fazer o merge
+ - Pronto, vai ser feito o merge do log novo com o mapa antigo.
 
-Pronto, vai ser feito o merge do log novo com o mapa antigo.
-	
+5- Copie o mapa atualizado para a pasta definitiva desejada.

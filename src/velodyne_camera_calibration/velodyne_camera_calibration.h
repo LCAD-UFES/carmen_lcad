@@ -65,4 +65,21 @@ velodyne_camera_calibration_remove_points_out_of_FOV_and_that_hit_ground(carmen_
                                                                          carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
                                                                          int image_width, int image_height);
 
+typedef struct
+{
+	int shot_number;
+	int ray_number;
+    int image_x;
+    int image_y;
+    double cartesian_x;
+    double cartesian_y;
+    //double cartesian_z; TODO precisa???
+}image_cartesian;
+
+
+std::vector<image_cartesian>
+compute_points_coordinates_in_image_plane(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
+														   carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
+														   int image_width, int image_height, int crop_x, int crop_y, int crop_width, int crop_height);
+
 #endif // SRC_VELODYNE_CAMERA_CALIBRATION_VELODYNE_CAMERA_CALIBRATION_H_
