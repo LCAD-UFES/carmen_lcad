@@ -3,6 +3,7 @@
 #include <carmen/moving_objects_messages.h>
 #include <vector>
 #include <list>
+#include <limits>
 #include <carmen/matrix.h>
 #include <carmen/kalman.h>
 #include "virtual_scan.h"
@@ -1330,7 +1331,7 @@ merge_tracks(virtual_scan_track_t *global_track, virtual_scan_track_t *track)
 {
 	virtual_scan_box_model_t last_hypothesis_of_global_track = global_track->box_model_hypothesis[global_track->size - 1].hypothesis;
 	int nearest_hypothesis_in_track = find_nearest_hypothesis_in_track(track, last_hypothesis_of_global_track);
-	for (int i = nearest_hypothesis_in_track; i < track->size; i++)
+	for (int i = nearest_hypothesis_in_track + 1; i < track->size; i++)
 		add_hypothesis_at_the_end_inccluding_imm(global_track, &(track->box_model_hypothesis[i]));
 }
 
@@ -1411,7 +1412,7 @@ plot_track_set(virtual_scan_track_set_t *global_track_set)
 	if (first_time)
 	{
 		gnuplot_pipe = popen("gnuplot", "w"); //("gnuplot -persist", "w") to keep last plot after program closes
-		fprintf(gnuplot_pipe, "set xrange [0:210]\n set yrange [0:210]\n");
+		fprintf(gnuplot_pipe, "set xrange [-50:210]\n set yrange [-50:210]\n");
 
 		first_time = false;
 	}
@@ -1423,20 +1424,37 @@ plot_track_set(virtual_scan_track_set_t *global_track_set)
 		FILE *gnuplot_data_file = fopen(file_name, "w");
 
 		virtual_scan_track_t *track = global_track_set->tracks[i];
-		for (int j = 0; j < track->size; j++)
+		for (int j = 1; j < track->size; j++)
 		{
+			double delta_t = track->box_model_hypothesis[j].hypothesis_points.precise_timestamp - track->box_model_hypothesis[j - 1].hypothesis_points.precise_timestamp;
 			double x = track->box_model_hypothesis[j].hypothesis.x - x_origin;
 			double y = track->box_model_hypothesis[j].hypothesis.y - y_origin;
-			fprintf(gnuplot_data_file, "%lf %lf\n", x, y);
+			double x_imm, y_imm;
+			if (track->box_model_hypothesis[j].hypothesis_state.imm != NULL)
+			{
+				x_imm = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[0][0];
+				y_imm = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[1][0];
+//				x_imm += track->box_model_hypothesis[j].hypothesis_points.global_pos.x - x_origin;
+//				y_imm += track->box_model_hypothesis[j].hypothesis_points.global_pos.y - y_origin;
+				x = track->box_model_hypothesis[j].hypothesis.x - track->box_model_hypothesis[j].hypothesis_points.sensor_pos.x;
+				y = track->box_model_hypothesis[j].hypothesis.y - track->box_model_hypothesis[j].hypothesis_points.sensor_pos.y;
+			}
+			else
+				x_imm = y_imm = std::numeric_limits<double>::quiet_NaN(); // NaN is ignored by gnuplot
+			fprintf(gnuplot_data_file, "%lf %lf %lf %lf %lf %lf\n", x, y, x_imm, y_imm, delta_t,
+					atan2(y - (track->box_model_hypothesis[j - 1].hypothesis.y - track->box_model_hypothesis[j - 1].hypothesis_points.sensor_pos.y),
+						  x - (track->box_model_hypothesis[j - 1].hypothesis.x - track->box_model_hypothesis[j - 1].hypothesis_points.sensor_pos.x)));
 		}
 		fclose(gnuplot_data_file);
 
 		if (i == 0)
 			fprintf(gnuplot_pipe, "plot "
-					"'%s' using 1:2 pt 7 ps 0.4 linecolor %d t '%d'\n", file_name, track->track_id, track->track_id);
+					"'%s' using 1:2 pt 7 ps 0.4 linecolor %d t '%d', "
+					"'%s' using 3:4 w lp linecolor %d t '%d'\n", file_name, track->track_id, track->track_id, file_name, track->track_id, track->track_id);
 		else
 			fprintf(gnuplot_pipe, "replot "
-					"'%s' using 1:2 pt 7 ps 0.4 linecolor %d t '%d'\n", file_name, track->track_id, track->track_id);
+					"'%s' using 1:2 pt 7 ps 0.4 linecolor %d t '%d', "
+					"'%s' using 3:4 w lp linecolor %d t '%d'\n", file_name, track->track_id, track->track_id, file_name, track->track_id, track->track_id);
 
 		fflush(gnuplot_pipe);
 	}

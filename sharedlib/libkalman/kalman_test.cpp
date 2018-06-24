@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <carmen/carmen.h>
 #include <carmen/matrix.h>
 #include <fenv.h>
@@ -9,6 +10,8 @@
 // plot "caco.txt" u 10 w l, "caco.txt" u 11 w l,"caco.txt" u 12 w l
 
 using namespace std;
+
+#define	READ_DATA_FROM_FILE
 
 #define IMM_FILTER
 
@@ -70,7 +73,7 @@ main()
 	double true_x = -170.0;
 	double true_y = -150.0;
 	double true_yaw = carmen_degrees_to_radians(45.0);
-	double true_v = 5.0;
+	double true_v = 15.0;
 	double true_w = 0.0;
 
 	double max_a = MAX_A;
@@ -91,6 +94,15 @@ main()
 	double yaw = true_yaw + carmen_degrees_to_radians(-5.0);
 	double w = true_w + carmen_degrees_to_radians(5.0);
 
+#ifdef READ_DATA_FROM_FILE
+	double imm_datmo_x, imm_datmo_y;
+	FILE *data = fopen("../../bin/imm_data_5_filtered.txt", "r");
+	int num_items_read = fscanf(data, "%lf %lf %lf %lf %lf %lf\n", &true_x, &true_y, &imm_datmo_x, &imm_datmo_y, &delta_t, &true_yaw);
+	x = true_x;
+	y = true_y;
+	yaw = true_yaw;
+#endif
+
 	Matrix x_k_k, P_k_k, z_k, R_k, R_p_k, fx_k_1;
 	vector<Matrix> x_k_1_k_1, P_k_1_k_1, F_k_1_m, Q_k_1_m, H_k_m;
 	Matrix F_k_1, Q_k_1, H_k;
@@ -108,9 +120,11 @@ main()
 	mode_estimate_and_covariance_combination(imm_x_k_k, imm_P_k_k, extend_vector_dimensions(x_k_1_k_1), extend_matrix_dimensions(P_k_1_k_1, max_a, max_w), u_k);
 
 	compute_error_ellipse(angle, major_axis, minor_axis, imm_P_k_k.val[0][0], imm_P_k_k.val[0][1], imm_P_k_k.val[1][1], 2.4477);
-	printf("%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", x, y, imm_x_k_k.val[0][0], imm_x_k_k.val[1][0], major_axis, minor_axis, angle * 180.0 / M_PI,
+	printf("%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", x, y, imm_x_k_k.val[0][0], imm_x_k_k.val[1][0], major_axis, minor_axis, angle * 180.0 / M_PI,
 			x, y,
-			u_k[0], u_k[1], u_k[2]);
+			u_k[0], u_k[1], u_k[2],
+			sqrt(imm_x_k_k.val[2][0] * imm_x_k_k.val[2][0] + imm_x_k_k.val[3][0] * imm_x_k_k.val[3][0]));
+
 
 	double t = 0.0;
 	do
@@ -134,18 +148,27 @@ main()
 				p, u_k);
 
 		compute_error_ellipse(angle, major_axis, minor_axis, imm_P_k_k.val[0][0], imm_P_k_k.val[0][1], imm_P_k_k.val[1][1], 2.4477);
-		printf("%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", true_x, true_y, imm_x_k_k.val[0][0], imm_x_k_k.val[1][0], major_axis, minor_axis, angle * 180.0 / M_PI,
+		printf("%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", true_x, true_y, imm_x_k_k.val[0][0], imm_x_k_k.val[1][0], major_axis, minor_axis, angle * 180.0 / M_PI,
 				z_k.val[0][0], z_k.val[1][0],
-				u_k[0], u_k[1], u_k[2]);
+				u_k[0], u_k[1], u_k[2],
+				sqrt(imm_x_k_k.val[2][0] * imm_x_k_k.val[2][0] + imm_x_k_k.val[3][0] * imm_x_k_k.val[3][0]));
 
+#ifdef READ_DATA_FROM_FILE
+		num_items_read = fscanf(data, "%lf %lf %lf %lf %lf %lf\n", &true_x, &true_y, &imm_datmo_x, &imm_datmo_y, &delta_t, &true_yaw);
+#else
 		true_x = true_x + true_v * cos(true_yaw) * delta_t;	// true position update
 		true_y = true_y + true_v * sin(true_yaw) * delta_t;	// true position update
 
 		if ((t > 55.0) && (t < 75.0))
 			true_yaw += 0.3 * delta_t;
+#endif
 
 		t += delta_t;
-	} while (t < 100.0);
+#ifdef READ_DATA_FROM_FILE
+		} while (num_items_read == 6);
+#else
+		} while (t < 100.0);
+#endif
 }
 
 #else
