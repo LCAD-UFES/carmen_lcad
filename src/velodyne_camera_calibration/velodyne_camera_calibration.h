@@ -8,6 +8,9 @@
 #ifndef SRC_VELODYNE_CAMERA_CALIBRATION_VELODYNE_CAMERA_CALIBRATION_H_
 #define SRC_VELODYNE_CAMERA_CALIBRATION_VELODYNE_CAMERA_CALIBRATION_H_
 
+
+using namespace std;
+
 #include <vector>
 
 typedef struct
@@ -57,14 +60,6 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
                                                                                      carmen_camera_parameters camera_parameters,
                                                                                      carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
                                                                                      int image_width, int image_height);
-
-
-std::vector<velodyne_camera_points>
-velodyne_camera_calibration_remove_points_out_of_FOV_and_that_hit_ground(carmen_velodyne_partial_scan_message *velodyne_message,
-                                                                         carmen_camera_parameters camera_parameters,
-                                                                         carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
-                                                                         int image_width, int image_height);
-
 typedef struct
 {
 	int shot_number;
@@ -73,13 +68,14 @@ typedef struct
     int image_y;
     double cartesian_x;
     double cartesian_y;
-    //double cartesian_z; TODO precisa???
+    double cartesian_z;
 }image_cartesian;
 
 
-std::vector<image_cartesian>
-compute_points_coordinates_in_image_plane(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
-														   carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
-														   int image_width, int image_height, int crop_x, int crop_y, int crop_width, int crop_height);
+vector<image_cartesian>
+velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
+                                                                         carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
+																		 unsigned int image_width, unsigned int image_height, unsigned int crop_x,
+																		 unsigned int crop_y, unsigned int crop_width, unsigned int crop_height);
 
 #endif // SRC_VELODYNE_CAMERA_CALIBRATION_VELODYNE_CAMERA_CALIBRATION_H_
