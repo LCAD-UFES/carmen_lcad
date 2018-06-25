@@ -13,7 +13,7 @@ SUBDIRS += TLightStateRecog
 
 IFLAGS +=  -std=c++11 -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
 
-LFLAGS += -L/usr/local/cuda-9.1/targets/x86_64-linux/lib/ 
+LFLAGS += -L$(CUDA_LIBS)
 LFLAGS += -lpthread -fopenmp -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 	 -ltime_profile -lbumblebee_basic_interface -lstereo_interface \
 	 -llocalize_ackerman_interface -lrddf_interface -lwnn 
