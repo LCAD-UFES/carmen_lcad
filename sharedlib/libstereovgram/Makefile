@@ -28,7 +28,7 @@ vg_ram.o: vg_ram.c
 	gcc $(CFLAGS) vg_ram.c  -I$(CUDAINCLUDE) -L$(CUDALIB64) $(FLAGSLINKER)
 	
 vg_ram_GPU.o: vg_ram_GPU.cu
-	nvcc -arch=sm_20 -c vg_ram_GPU.cu
+	nvcc -arch=sm_50 -c vg_ram_GPU.cu
 	
 else
 

@@ -9,7 +9,7 @@ CXXFLAGS +=
 CFLAGS += 
 IFLAGS += `pkg-config --cflags opencv` -I 3rdparty/cvblobs -I libopentld/mftracker -I libopentld/tld -I libopentld/imacq -I main_utils -I 3rdparty/libconfig
 LFLAGS += `pkg-config --libs opencv` -lopentld  -l3rdparty -lopencv_video -lparam_interface -lipc -lglobal \
-	 -lbumblebee_basic_interface -lvisual_tracker_interface
+	 -lbumblebee_basic_interface -lvisual_tracker_interface -fopenmp
 SUBDIRS += libopentld 3rdparty
 
 SOURCES = tracker_opentld_main.cpp \
