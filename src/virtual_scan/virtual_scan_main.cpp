@@ -118,7 +118,7 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 	for (int i = 0; i < best_track_set->size; i++)
 		if (best_track_set->tracks[i]->size > 2)
 			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
-//				if (best_track_set->tracks[i]->box_model_hypothesis[j].zi == g_zi)
+				if (best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi == g_zi)
 					num_moving_objects++;
 
 	if (virtual_scan_box_model_hypotheses != NULL)
@@ -136,7 +136,7 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 		{
 			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
 			{
-	//			if (best_track_set->tracks[i]->box_model_hypothesis[j].zi == g_zi)
+				if (best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi == g_zi)
 				{
 					virtual_scan_box_model_t box = best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis;
 
@@ -477,8 +477,8 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 		g_neighborhood_graph = virtual_scan_update_neighborhood_graph(g_neighborhood_graph, virtual_scan_box_model_hypotheses);
 
 		virtual_scan_track_set_t *track_set = virtual_scan_infer_moving_objects(g_neighborhood_graph);
-		virtual_scan_publish_moving_objects(track_set, NULL);
-//		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);
+//		virtual_scan_publish_moving_objects(track_set, NULL);
+		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);
 
 		virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
 

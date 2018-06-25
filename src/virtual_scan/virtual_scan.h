@@ -55,6 +55,8 @@ typedef struct
 	int sensor_id;
 	carmen_point_t sensor_pos;
 	carmen_point_t global_pos;
+	double sensor_v;
+	double sensor_w;
 	carmen_point_t centroid;
 	double precise_timestamp;
 

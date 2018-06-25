@@ -103,6 +103,14 @@ fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
 		double vy = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[3][0];
 		track->box_model_hypothesis[j].hypothesis_state.v = sqrt(vx * vx + vy + vy);
 //		track->box_model_hypothesis[j].hypothesis_state.w = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[6][0];
+
+		// Linhas abaixo erradas: tem que rodar vx e vy para as coordenadas do mundo antes de somar com a velocidade do robo.
+//		double vx = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[2][0] +
+//				track->box_model_hypothesis[j].hypothesis_points.sensor_v * cos(track->box_model_hypothesis[j].hypothesis_points.global_pos.theta);
+//		double vy = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[3][0] +
+//				track->box_model_hypothesis[j].hypothesis_points.sensor_v * sin(track->box_model_hypothesis[j].hypothesis_points.global_pos.theta);
+//		track->box_model_hypothesis[j].hypothesis_state.v = sqrt(vx * vx + vy + vy);
+
 	}
 }
 

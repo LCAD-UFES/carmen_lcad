@@ -202,6 +202,9 @@ segment_virtual_scan(carmen_mapper_virtual_scan_message *extended_virtual_scan)
 				virtual_scan_segments->segment[current_segment].sensor_id = extended_virtual_scan->virtual_scan_sensor[s].sensor_id;
 				virtual_scan_segments->segment[current_segment].sensor_pos = extended_virtual_scan->virtual_scan_sensor[s].sensor_pos;
 				virtual_scan_segments->segment[current_segment].global_pos = extended_virtual_scan->virtual_scan_sensor[s].global_pos;
+				virtual_scan_segments->segment[current_segment].sensor_v = extended_virtual_scan->virtual_scan_sensor[s].v;
+				virtual_scan_segments->segment[current_segment].sensor_w = extended_virtual_scan->virtual_scan_sensor[s].w;
+				virtual_scan_segments->segment[current_segment].global_pos = extended_virtual_scan->virtual_scan_sensor[s].global_pos;
 
 				dbscan::Cluster cluster = clusters[segment_id];
 				virtual_scan_segments->segment[current_segment].points = (carmen_point_t *) malloc(sizeof(carmen_point_t) * cluster.size());
@@ -602,8 +605,8 @@ append_l_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t bo
 
 	virtual_scan_box_model_t *box = virtual_scan_append_box(box_models, box_points);
 	box->c = categories[category].category;
-	box->width = categories[category].width;
-	box->length = categories[category].length;
+	box->width = w;
+	box->length = l;
 	box->x = length_center_position.x;
 	box->y = length_center_position.y;
 	box->theta = theta;
@@ -646,8 +649,8 @@ append_i_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t bo
 
 	virtual_scan_box_model_t *box = virtual_scan_append_box(box_models, box_points);
 	box->c = categories[category].category;
-	box->width = categories[category].width;
-	box->length = categories[category].length;
+	box->width = w;
+	box->length = l;
 	box->x = length_center_position.x;
 	box->y = length_center_position.y;
 	box->theta = theta;
@@ -673,8 +676,10 @@ append_l_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 		{
 			theta = atan2(first_point.y - farthest_point.y, first_point.x - farthest_point.x);
 			theta2 = atan2(last_point.y - farthest_point.y, last_point.x - farthest_point.x);
-//			append_l_object(box_models, box_points, farthest_point, category, categories, theta, theta2);
-			append_l_object(box_models, box_points, farthest_point, category, categories, theta, theta2, l, w);
+			if (box_points.num_points < 20)
+				append_l_object(box_models, box_points, farthest_point, category, categories, theta, theta2);
+			else
+				append_l_object(box_models, box_points, farthest_point, category, categories, theta, theta2, l, w);
 		}
 
 		l = DIST2D(farthest_point, last_point);
@@ -684,8 +689,10 @@ append_l_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 		{
 			theta = atan2(last_point.y - farthest_point.y, last_point.x - farthest_point.x);
 			theta2 = atan2(first_point.y - farthest_point.y, first_point.x - farthest_point.x);
-//			append_l_object(box_models, box_points, farthest_point, category, categories, theta, theta2);
-			append_l_object(box_models, box_points, farthest_point, category, categories, theta, theta2, l, w);
+			if (box_points.num_points < 20)
+				append_l_object(box_models, box_points, farthest_point, category, categories, theta, theta2);
+			else
+				append_l_object(box_models, box_points, farthest_point, category, categories, theta, theta2, l, w);
 		}
 	}
 }
@@ -707,24 +714,32 @@ append_i_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 		{
 			theta = atan2(last_point.y - first_point.y, last_point.x - first_point.x);
 			theta2 = carmen_normalize_theta(theta - M_PI / 2.0);
-//			append_i_object(box_models, box_points, first_point, category, categories, theta, theta2);
-			append_i_object(box_models, box_points, first_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
+			if (box_points.num_points < 20)
+				append_i_object(box_models, box_points, first_point, category, categories, theta, theta2);
+			else
+				append_i_object(box_models, box_points, first_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
 
 			theta = atan2(first_point.y - last_point.y, first_point.x - last_point.x);
 			theta2 = carmen_normalize_theta(theta + M_PI / 2.0);
-//			append_i_object(box_models, box_points, last_point, category, categories, theta, theta2);
-			append_i_object(box_models, box_points, last_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
+			if (box_points.num_points < 20)
+				append_i_object(box_models, box_points, last_point, category, categories, theta, theta2);
+			else
+				append_i_object(box_models, box_points, last_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
 		}
 		else if (l <= categories[category].width * 1.5)
 		{
 			theta = carmen_normalize_theta(atan2(last_point.y - first_point.y, last_point.x - first_point.x) - M_PI / 2.0);
 			theta2 = carmen_normalize_theta(theta + M_PI / 2.0);
-//			append_i_object(box_models, box_points, first_point, category, categories, theta, theta2);
-			append_i_object(box_models, box_points, first_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
+			if (box_points.num_points < 20)
+				append_i_object(box_models, box_points, first_point, category, categories, theta, theta2);
+			else
+				append_i_object(box_models, box_points, first_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
 
 			theta2 = carmen_normalize_theta(theta - M_PI / 2.0);
-//			append_i_object(box_models, box_points, last_point, category, categories, theta, theta2);
-			append_i_object(box_models, box_points, last_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
+			if (box_points.num_points < 20)
+				append_i_object(box_models, box_points, last_point, category, categories, theta, theta2);
+			else
+				append_i_object(box_models, box_points, last_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
 		}
 	}
 }
