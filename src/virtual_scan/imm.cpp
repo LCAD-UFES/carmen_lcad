@@ -31,8 +31,8 @@ fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
 	{
 		double delta_t = track->box_model_hypothesis[j].hypothesis_points.precise_timestamp - track->box_model_hypothesis[j - 1].hypothesis_points.precise_timestamp;
 		double distance_travelled = DIST2D(track->box_model_hypothesis[j].hypothesis, track->box_model_hypothesis[j - 1].hypothesis);
-		double angle_in_the_distance_travelled = ANGLE2D(track->box_model_hypothesis[j].hypothesis, track->box_model_hypothesis[j - 1].hypothesis);
-		double v = (cos(track->box_model_hypothesis[j].hypothesis.theta - angle_in_the_distance_travelled) * distance_travelled) / delta_t;
+//		double angle_in_the_distance_travelled = ANGLE2D(track->box_model_hypothesis[j].hypothesis, track->box_model_hypothesis[j - 1].hypothesis);
+		double v = distance_travelled / delta_t;
 		double delta_theta = carmen_normalize_theta(track->box_model_hypothesis[j].hypothesis.theta - track->box_model_hypothesis[j - 1].hypothesis.theta);
 		double w = delta_theta / delta_t;
 		track->box_model_hypothesis[j].hypothesis_state.v = v;
@@ -99,10 +99,10 @@ fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
 			track->box_model_hypothesis[j].hypothesis_state.imm = imm;
 		}
 
-//		double vx = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[2][0];
-//		double vy = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[3][0];
-//		track->box_model_hypothesis[j].hypothesis_state.v = sqrt(vx * vx + vy + vy);
-//		track->box_model_hypothesis[j].hypothesis_state.w = 0.0;//track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[6][0];
+		double vx = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[2][0];
+		double vy = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[3][0];
+		track->box_model_hypothesis[j].hypothesis_state.v = sqrt(vx * vx + vy + vy);
+//		track->box_model_hypothesis[j].hypothesis_state.w = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[6][0];
 	}
 }
 
