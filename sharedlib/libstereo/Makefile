@@ -51,7 +51,7 @@ qx_csbp_OMP.o: qx_csbp_OMP.c
 
 	
 qx_csbp_GPU.o: qx_csbp_GPU.cu
-	nvcc -O -arch=sm_20 -c  qx_csbp_GPU.cu 
+	nvcc -O -arch=sm_50 -c  qx_csbp_GPU.cu 
 
 
 

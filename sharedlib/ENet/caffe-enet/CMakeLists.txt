@@ -4,7 +4,7 @@ if(POLICY CMP0046)
 endif()
 if(POLICY CMP0054)
   cmake_policy(SET CMP0054 NEW)
-endif()
+endif() 
 
 # ---[ Caffe project
 project(Caffe C CXX)

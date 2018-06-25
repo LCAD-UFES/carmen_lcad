@@ -11,11 +11,14 @@ CXXFLAGS += -Wno-ignored-qualifiers -fopenmp
 CFLAGS += -Wall -fopenmp 
 SUBDIRS += TLightStateRecog
 
-IFLAGS +=  -std=c++11 -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
+IFLAGS +=  -std=c++11 -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
 
+LFLAGS += -L/usr/local/cuda-9.1/targets/x86_64-linux/lib/ 
 LFLAGS += -lpthread -fopenmp -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 	 -ltime_profile -lbumblebee_basic_interface -lstereo_interface \
 	 -llocalize_ackerman_interface -lrddf_interface -lwnn 
+
+LFLAGS += -ldlib -lboost_system  -lgomp -lcudart -lcuda -lcurand -lcublas -lcudnn -lcusolver
 
 IFLAGS += `pkg-config opencv --cflags`
 LFLAGS += `pkg-config opencv --libs`
@@ -31,7 +34,7 @@ TARGETS += libsqueezenet_tlight.a
 CXXFLAGS += -DUSE_CAFFE
 endif
 
-LFLAGS += -lboost_system -ldlib -lgomp 
+
 
 #SOURCES = traffic_light_main.cpp traffic_light_interface.cpp traffic_light.cpp mapping_traffic_light_main.cpp log_generate_images.cpp
 SOURCES = traffic_light_main.cpp traffic_light_interface.cpp traffic_light.cpp log_generate_images.cpp #tlight_train.cpp tlight_evaluate_train.cpp 
