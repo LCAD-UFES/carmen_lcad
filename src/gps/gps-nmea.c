@@ -233,6 +233,10 @@ carmen_gps_parse_data( char * line, int num_chars )
     {
       return(gps_parse_gga(line, num_chars));
     }
+    else if (strncmp("$GNHDT", line, 6) == 0)
+    {
+      return(gps_parse_hdt(line, num_chars));
+    }
     else if (strncmp("$GPHDT", line, 6) == 0)
     {
       return(gps_parse_hdt(line, num_chars));
