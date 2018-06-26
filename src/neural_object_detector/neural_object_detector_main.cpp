@@ -592,7 +592,6 @@ main(int argc, char **argv)
         carmen_die("%s: Wrong number of parameters. neural_object_detector requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>",
                    argv[0], argc - 1, argv[0]);
 
-    int gpu = 1;
     int device_id = 0;
 
     string darknet_home = getenv("DARKNET_HOME");  // Get environment variable pointing path of darknet
