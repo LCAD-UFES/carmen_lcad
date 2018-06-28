@@ -527,6 +527,18 @@ add_hypothesis_at_the_end_inccluding_imm(virtual_scan_track_t *track, virtual_sc
 
 
 void
+align_last_hypothesis(virtual_scan_track_t *track)
+{
+	if (track->size > 1)
+	{
+		double angle_in_the_distance_travelled = ANGLE2D(track->box_model_hypothesis[track->size - 1].hypothesis_points.centroid, track->box_model_hypothesis[track->size - 2].hypothesis_points.centroid);
+		track->box_model_hypothesis[track->size - 1].hypothesis.theta = angle_in_the_distance_travelled;
+		track->box_model_hypothesis[track->size - 2].hypothesis.theta = angle_in_the_distance_travelled;
+	}
+}
+
+
+void
 add_hypothesis_at_the_end(virtual_scan_track_set_t *track_set, int track_id, virtual_scan_box_model_hypothesis_t *hypothesis)
 {
 	if (hypothesis == NULL)
@@ -534,6 +546,7 @@ add_hypothesis_at_the_end(virtual_scan_track_set_t *track_set, int track_id, vir
 
 	virtual_scan_track_t *track = track_set->tracks[track_id];
 	add_hypothesis_at_the_end(track, hypothesis);
+//	align_last_hypothesis(track);
 
 	track_set->vertex_selected[hypothesis->index] = true;
 }
@@ -1479,7 +1492,7 @@ update_global_track_set(virtual_scan_track_set_t *best_track_set)
 	for (int i = 0; i < best_track_set->size; i++)
 		merge_track_with_global_track_set(global_track_set, best_track_set->tracks[i]);
 
-	plot_track_set(global_track_set);
+//	plot_track_set(global_track_set);
 }
 
 
