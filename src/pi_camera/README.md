@@ -50,26 +50,20 @@ Para testar: O comando raspistill grava uma imgem e raspivid grava um video
 # Install Dependencies anf Download the pi_camera file from git
 
 ```bash
- $ sudo apt-get install cmake
  $ sudo apt-get install libopencv-dev python-opencv
- $ sudo apt-get install subversion
  $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/pi_camera
+ $ sudo apt-get install cmake
+ $ sudo apt-get install subversion
 ```
 
 
 # Compile and test the pi_camera module on the Raspberry PI
 
 ```bash
- $ cd pi_camera/raspicam
- $ mkdir build
- $ cd build
- $ cmake ..
+ $ cd pi_camera/raspicam && mkdir build && cd build && cmake ..
  $ make
  $ sudo make install
- $ cd ../..
- $ mkdir build
- $ cd build
- $ cmake ..
+ $ cd ../.. && mkdir build && cd build && cmake ..
  $ make
  $ ./pi_camera_test
 ```
