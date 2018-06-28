@@ -29,9 +29,10 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
 
 # Enable the Camera
 
+- Não execute upgrade
+
 ```bash
  $ sudo apt-get update
- $ sudo apt-get upgrade
  $ sudo raspi-config
 ```
 - Acesse e habilite a camera:
