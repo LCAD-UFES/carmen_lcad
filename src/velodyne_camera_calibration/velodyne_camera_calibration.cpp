@@ -288,27 +288,27 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 
 #define CAMERA_FOV 0.87 // In radians ~ 25 degrees TODO por no carmen.ini
 
-std::vector<velodyne_camera_points>
-velodyne_camera_calibration_remove_points_out_of_FOV_and_that_hit_ground(carmen_velodyne_partial_scan_message *velodyne_message,
-                                                                         carmen_camera_parameters camera_parameters,
+vector<image_cartesian>
+velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
                                                                          carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
-                                                                         int image_width, int image_height)
+																		 unsigned int image_width, unsigned int image_height, unsigned int crop_x,
+																		 unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
 {
-	std::vector<velodyne_camera_points> points;
+	std::vector<image_cartesian> points;
+	double horizontal_angle = 0.0, vertical_angle = 0.0, previous_vertical_angle = 0.0, range = 0.0, previous_range = 0.0;
+	unsigned int image_x = 0, image_y = 0;
 
-	double fx_meters = camera_parameters.fx_factor * image_width * camera_parameters.pixel_size;
-	double fy_meters = camera_parameters.fy_factor * image_height * camera_parameters.pixel_size;
+	unsigned int max_x = crop_x + crop_width;
+	unsigned int max_y = crop_y + crop_height;
+
+	double fx_meters = camera_parameters.fx_factor * camera_parameters.pixel_size * image_width;
+	double fy_meters = camera_parameters.fy_factor * camera_parameters.pixel_size * image_height;
 
 	double cu = camera_parameters.cu_factor * (double) image_width;
 	double cv = camera_parameters.cv_factor * (double) image_height;
 
-	double horizontal_angle = 0.0, vertical_angle = 0.0, previous_vertical_angle = 0.0, range = 0.0, previous_range = 0.0;
-
-	unsigned int point_x_on_img = 0, point_y_on_img = 0;
-
 	for (int j = 0; j < velodyne_message->number_of_32_laser_shots; j++)
 	{
-		// TODO use the angle from measure velodyne_message->partial_scan[j].angle
 		horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
 
 		if (horizontal_angle < -CAMERA_FOV || horizontal_angle > CAMERA_FOV) // Discharge measures out of the camera field of view
@@ -321,11 +321,8 @@ velodyne_camera_calibration_remove_points_out_of_FOV_and_that_hit_ground(carmen_
 		{
 			range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
 
-			if (range >= MAX_RANGE)
+			if (range <= MIN_RANGE || range >= MAX_RANGE)
 				continue;
-
-			if (range <= MIN_RANGE || range > MAX_RANGE)
-				range = MAX_RANGE;
 
 			vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[i]));
 
@@ -336,7 +333,7 @@ velodyne_camera_calibration_remove_points_out_of_FOV_and_that_hit_ground(carmen_
 			{
 				// Jose's method check if a point is obstacle
 				double delta_x = p3d_velodyne_reference.x() - p3d_velodyne_reference_1.x();
-				double delta_z = (p3d_velodyne_reference.z()) - (p3d_velodyne_reference_1.z()); // TODO verificar calculo do z no mapper
+				double delta_z = p3d_velodyne_reference.z() - p3d_velodyne_reference_1.z(); // TODO verificar calculo do z no mapper
 
 				double line_angle = carmen_radians_to_degrees(fabs(atan2(delta_z, delta_x)));
 
@@ -345,82 +342,26 @@ velodyne_camera_calibration_remove_points_out_of_FOV_and_that_hit_ground(carmen_
 
 				tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference, velodyne_pose, camera_pose);
 
-				point_x_on_img = (unsigned int) (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
-                point_y_on_img = (unsigned int) (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
+				image_x = (unsigned int) (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
+                image_y = (unsigned int) (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
 
-                // TODO Need spherical coordinates???
-                velodyne_camera_points point = {point_x_on_img, point_y_on_img, {horizontal_angle, vertical_angle, range},
-                		{p3d_camera_reference.x(), p3d_camera_reference.y(), p3d_camera_reference.z()}};
+                if (image_x >= crop_x && image_x <= max_x && image_y >= crop_y && image_y <= max_y)
+                {
+                	image_cartesian point;
+                	point.shot_number = j;
+                	point.ray_number  = i;
+                	point.image_x     = image_x - crop_x;
+                	point.image_y     = image_y - crop_y;
+                	point.cartesian_x = p3d_camera_reference.x();
+                	point.cartesian_y = p3d_camera_reference.y();
+                	point.cartesian_z = p3d_camera_reference.z();
 
-                points.push_back(point);
+                	points.push_back(point);
+                }
 			}
 			previous_range = range;
 			previous_vertical_angle = vertical_angle;
 		}
 	}
 	return points;
-}
-
-
-std::vector<image_cartesian>
-compute_points_coordinates_in_image_plane(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
-														   carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
-														   int image_width, int image_height, int crop_x, int crop_y, int crop_width, int crop_height)
-{
-	std::vector<image_cartesian> laser_points_in_camera;
-	int max_x = crop_x + crop_width;
-	int max_y = crop_y + crop_height;
-
-    double fx_meters = camera_parameters.fx_factor * image_width * camera_parameters.pixel_size;
-    double fy_meters = camera_parameters.fy_factor * image_height * camera_parameters.pixel_size;
-
-    double cu = camera_parameters.cu_factor * (double) image_width;
-    double cv = camera_parameters.cv_factor * (double) image_height;
-
-	for (int i = 0; i < 32; i++)
-	{
-		double v_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[i]));
-
-		for (int j = 0; j < velodyne_message->number_of_32_laser_shots; j++)
-		{
-			double range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
-
-            double h_angle = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
-
-			if (range <= MIN_RANGE)
-				range = MAX_RANGE;
-
-			if (range > MAX_RANGE)
-				range = MAX_RANGE;
-
-			if (range >= MAX_RANGE)
-				continue;
-
-			tf::Point p3d_velodyne_reference = spherical_to_cartesian(h_angle, v_angle, range);
-
-			if (p3d_velodyne_reference.x() > 0)
-			{
-                tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference,velodyne_pose,camera_pose);
-
-                double px = (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
-                double py = (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
-
-                int ipx = (int) px;
-                int ipy = (int) py;
-
-				if (ipx >= crop_x && ipx <= max_x && ipy >= crop_y && ipy <= max_y)
-				{
-					image_cartesian point;
-					point.shot_number = velodyne_message->number_of_32_laser_shots;
-					point.ray_number = i;
-					point.image_x = ipx - crop_x;
-					point.image_y = ipy - crop_y;
-
-					laser_points_in_camera.push_back(point);
-				}
-
-			}
-		}
-	}
-	return laser_points_in_camera;
 }
