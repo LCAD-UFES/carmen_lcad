@@ -33,10 +33,10 @@
 #define	POINT_AFTER_SEGMENT			3
 
 #define DISTANCE_BETWEEN_SEGMENTS	1.0
-#define	L_SMALL_SEGMENT_AS_A_PROPORTION_OF_THE_LARGE	0.15
+#define	L_SMALL_SEGMENT_AS_A_PROPORTION_OF_THE_LARGE	0.3
 #define PEDESTRIAN_RADIUS			0.5 	// pedestrian approximate radius (from the top) in meters
 #define MINIMUN_CLUSTER_SIZE		1		// in points
-
+#define	MIN_SEGMENT_SIZE			7
 #define	MCMC_MAX_ITERATIONS	300
 
 //#define GAMMA	0.75
@@ -77,6 +77,8 @@ typedef struct
 	carmen_point_t first_point;
 	carmen_point_t last_point;
 	carmen_point_t farthest_point;
+	carmen_point_t main_line_first_point;
+	carmen_point_t main_line_last_point;
 	double width;
 	double length;
 	int segment_class;

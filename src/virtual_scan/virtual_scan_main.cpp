@@ -118,7 +118,7 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 	for (int i = 0; i < best_track_set->size; i++)
 		if (best_track_set->tracks[i]->size > 2)
 			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
-				if (best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi == g_zi)
+//				if (best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi == g_zi)
 					num_moving_objects++;
 
 	if (virtual_scan_box_model_hypotheses != NULL)
@@ -136,7 +136,7 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 		{
 			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
 			{
-				if (best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi == g_zi)
+//				if (best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi == g_zi)
 				{
 					virtual_scan_box_model_t box = best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis;
 
@@ -469,7 +469,7 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 
 		virtual_scan_free_segment_classes(g_virtual_scan_segment_classes[g_zi]);
 		g_virtual_scan_segment_classes[g_zi] = virtual_scan_extract_segments(virtual_scan_extended_filtered);
-//		virtual_scan_publish_segments(g_virtual_scan_segment_classes[g_zi]);
+		virtual_scan_publish_segments(g_virtual_scan_segment_classes[g_zi]);
 
 		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_zi], message->timestamp);
 //		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);

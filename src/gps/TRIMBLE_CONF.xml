@@ -1,0 +1,1985 @@
+<CloneConfigData>
+<SrcReceiverInfo>
+	<ProductName>BD982</ProductName>
+	<SerialNumber>5311K89027</SerialNumber>
+	<FirmwareVersion>4.81</FirmwareVersion>
+	<FirmwareDate>2013-06-20</FirmwareDate>
+	<HdrStingerAPI_ID>8</HdrStingerAPI_ID>
+</SrcReceiverInfo>
+<APP_RECORD id="7" len="14" name="CommOutput">
+7 c 6 14 d 0 48 0 0 0 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="7" len="14" name="CommOutput">
+7 c 1f 14 d 0 48 0 0 0 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="62" len="32" name="NtripCaster">
+3e 1e 80 20 8 35 0 42 0 0 0 0 0 74 65 73 
+74 0 0 0 55 53 41 0 54 72 69 6d 62 6c 65 0 
+
+</APP_RECORD>
+<APP_RECORD id="62" len="32" name="NtripCaster">
+3e 1e 80 21 8 36 0 42 0 0 0 0 0 74 65 73 
+74 0 0 0 55 53 41 0 54 72 69 6d 62 6c 65 0 
+
+</APP_RECORD>
+<APP_RECORD id="62" len="32" name="NtripCaster">
+3e 1e 80 22 8 37 0 42 0 0 0 0 0 74 65 73 
+74 0 0 0 55 53 41 0 54 72 69 6d 62 6c 65 0 
+
+</APP_RECORD>
+<APP_RECORD id="52" len="33" name="NtripServer">
+34 1f 80 0 8 35 0 20 0 0 0 0 35 33 31 31 
+4b 38 39 30 32 37 0 0 8 e7 b1 48 97 4 a0 8a 
+48 
+</APP_RECORD>
+<NV_RECORD id="32" len="356" name="EthBootControl">
+0 0 0 1 0 0 5 dc c0 a8 0 67 ff ff ff 0 
+c0 a8 0 ff c0 a8 0 1 c0 a8 1 1 0 0 0 0 
+0 5 0 0 42 44 39 38 32 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 75 6e 64 65 66 69 6e 65 64 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 
+</NV_RECORD>
+<APP_RECORD id="44" len="7" name="HTTPDControl">
+2c 5 0 0 0 65 6e 
+</APP_RECORD>
+<APP_RECORD id="48" len="31" name="FTPPush">
+30 1d 80 0 0 0 0 0 0 0 0 0 61 6e 6f 6e 
+79 6d 6f 75 73 0 8 e7 b1 48 97 4 a0 8a 48 
+</APP_RECORD>
+<APP_RECORD id="49" len="18" name="EmailControl">
+31 10 80 0 19 0 0 0 0 8 e7 b1 48 97 4 a0 
+8a 48 
+</APP_RECORD>
+<APP_RECORD id="49" len="32" name="EmailControl">
+31 1e c1 0 3 6e 96 61 6c 62 65 72 74 6f 40 6c 
+63 61 64 2e 69 6e 66 2e 75 66 65 73 2e 62 72 0 
+
+</APP_RECORD>
+<APP_RECORD id="57" len="250" name="NTPServers">
+39 f8 77 77 76 2e 6e 69 73 74 2e 67 6f 76 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 7b 6e 74 70 31 2e 6e 70 6c 2e 63 6f 2e 
+75 6b 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 7b 70 6f 6f 6c 2e 6e 74 70 2e 6f 
+72 67 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 7b 1 0 
+</APP_RECORD>
+<APP_RECORD id="85" len="7" name="NTPTimeServer">
+55 5 1 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="58" len="5" name="FTPDControl">
+3a 3 1 0 15 
+</APP_RECORD>
+<GpsAlmSV id="1" len="92">
+3b ff 64 0 48 f6 0 0 3f 78 af 5c b2 7 16 a7 
+45 a1 c ef c0 28 6 58 3f 20 c5 91 3f 27 5 39 
+b8 54 0 0 ac 80 0 0 4b ca a2 8b 39 18 f1 ab 
+c2 1d 74 60 b8 98 f1 78 3f 7f fe 2 41 f1 8c f 
+48 9f ae c0 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 27 83 
+</GpsAlmSV>
+<GpsAlmSV id="2" len="92">
+3c 92 7a 0 48 f6 0 0 3f 73 54 d7 b2 b 3 f6 
+45 a1 d 7c c0 2b ee fa bf ed 9a 4b 3f 7c 9a 79 
+38 dc 0 0 ad 40 0 0 4b ca a3 ed 39 18 f0 1a 
+c2 1d b2 ea b8 98 f1 97 3f 7f f5 86 42 8a 88 f0 
+48 9f b2 80 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 2b e0 
+</GpsAlmSV>
+<GpsAlmSV id="3" len="92">
+3a b6 90 0 48 f6 0 0 3f 75 e8 93 b2 9 d6 5f 
+45 a1 d 8d bf ca 8e df 3e d9 7e 4d be 5d aa b0 
+38 a2 0 0 2d 0 0 0 4b ca a4 18 39 18 ef e9 
+c2 19 48 71 b8 98 f1 8e 3f 7f ff ef 40 ac a9 ff 
+48 9f b6 40 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 2b 67 
+</GpsAlmSV>
+<GpsAlmSV id="5" len="92">
+3b af f0 0 48 f6 0 0 3f 72 8d 59 b2 c c8 5a 
+45 a1 d 2c bf cd 59 9c 3f 1c 3f 8b c0 28 56 3d 
+b7 0 0 0 0 0 0 0 4b ca a3 24 39 18 f0 fd 
+c2 19 5e c7 b8 98 f1 a5 3f 7f ff e 41 a6 66 59 
+48 9f bd c0 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 27 97 
+</GpsAlmSV>
+<GpsAlmSV id="6" len="92">
+3a 99 f0 0 48 f6 0 0 3f 78 9c 82 b2 7 ad 73 
+45 a1 c 9f c0 28 8e c7 bf 89 75 ea 3f 4e e6 26 
+39 d2 0 0 ac 80 0 0 4b ca a1 c1 39 18 f2 8f 
+c2 1d 7c e6 b8 98 f1 7c 3f 7f ff f4 40 91 98 28 
+48 9f c1 80 7 d2 7 d2 0 3 7b 6 0 0 be ef 
+de ad be ef de ad be ef 0 0 2a f8 
+</GpsAlmSV>
+<GpsAlmSV id="7" len="92">
+3c 3e 52 0 48 f6 0 0 3f 75 7b 67 b2 a d1 b2 
+45 a1 c e4 3f 7 60 c6 c0 21 f3 9e bd c b1 f8 
+39 43 0 0 ad 0 0 0 4b ca a2 6f 39 18 f1 ca 
+c2 10 d6 77 b8 98 f1 96 3f 7f fb 94 42 34 1 d 
+48 9f c5 40 7 d2 7 d2 0 16 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 28 62 
+</GpsAlmSV>
+<GpsAlmSV id="8" len="92">
+3b 63 e0 0 48 f6 0 0 3f 78 2a a0 b2 4 56 f0 
+45 a1 c 3c 40 25 fb a8 be dd 7e da 40 47 c3 e4 
+b8 d6 0 0 0 0 0 0 4b ca a0 c8 39 18 f3 a9 
+c2 8 94 40 b8 98 f1 62 3f 7f ff 9a 41 57 86 d0 
+48 9f c9 0 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 29 fa 
+</GpsAlmSV>
+<GpsAlmSV id="9" len="92">
+3a 75 40 0 48 f6 0 0 3f 73 ee 62 b2 5 b6 cb 
+45 a1 c 94 bf c 65 f5 3f ed 6a 4c 40 3f ec dc 
+3a 6 c0 0 0 0 0 0 4b ca a1 a6 39 18 f2 ae 
+c2 15 25 92 b8 98 f1 6d 3f 7f ff f8 40 67 f5 48 
+48 9f cc c0 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 2a c 
+</GpsAlmSV>
+<GpsAlmSV id="10" len="92">
+3b 67 50 0 48 f6 0 0 3f 75 ee 12 b2 a 8 a3 
+45 a1 c db bf cb 0 31 c0 2f 84 3b bf ba db 3e 
+39 43 0 0 0 0 0 0 4b ca a2 58 39 18 f1 e4 
+c2 19 4b fc b8 98 f1 8f 3f 7f ff 97 41 5a c6 48 
+48 9f d0 80 7 d2 7 d2 0 3 7b 6 0 0 be ef 
+de ad be ef de ad be ef 0 0 27 3d 
+</GpsAlmSV>
+<GpsAlmSV id="11" len="92">
+3c 89 cb 0 48 f6 0 0 3f 67 d9 18 b2 f 88 12 
+45 a1 c 93 c0 43 54 86 3f e1 a1 fd bd 22 af b4 
+ba 40 c0 0 0 0 0 0 4b ca a1 a3 39 18 f2 b1 
+c2 1f 29 42 b8 98 f1 bb 3f 7f f6 ba 42 82 53 33 
+48 9f d4 40 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 29 60 
+</GpsAlmSV>
+<GpsAlmSV id="12" len="92">
+3b ec 54 0 48 f6 0 0 3f 7c 81 92 b2 7 ad 73 
+45 a1 c 51 3f cf 90 c4 3f 7c 17 c0 bf 21 a7 d5 
+39 ae 0 0 ac 80 0 0 4b ca a0 fd 39 18 f3 6d 
+c2 c 77 74 b8 98 f1 7c 3f 7f fe 4b 41 df 85 6f 
+48 9f d8 0 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 29 f5 
+</GpsAlmSV>
+<GpsAlmSV id="13" len="92">
+3b 5d 58 0 48 f6 0 0 3f 77 fd 13 b2 2 c4 d0 
+45 a1 c f4 be d5 67 77 3f c9 a9 a9 3f ba 2a d2 
+b8 c6 0 0 0 0 0 0 4b ca a2 97 39 18 f1 9d 
+c2 14 9e c9 b8 98 f1 55 3f 7f ff a0 41 51 58 7c 
+48 9f db c0 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 2a e1 
+</GpsAlmSV>
+<GpsAlmSV id="14" len="92">
+3c 21 ec 0 48 f6 0 0 3f 76 12 97 b2 3 f2 68 
+45 a1 c 5c be ea d6 8d bf f9 dd 97 40 1d 4b 3e 
+b8 cc 0 0 0 0 0 0 4b ca a1 19 39 18 f3 4e 
+c2 14 c9 a7 b8 98 f1 5f 3f 7f fc cc 42 19 25 a0 
+48 9f df 80 7 d2 7 d2 0 3 7b 6 0 0 be ef 
+de ad be ef de ad be ef 0 0 28 69 
+</GpsAlmSV>
+<GpsAlmSV id="15" len="92">
+3c 28 34 0 48 f6 0 0 3f 6d a7 da b2 9 d6 5f 
+45 a1 d 89 bf 1e 7d 3a 3f 2d 67 a3 3f fa 28 37 
+b9 b9 80 0 0 0 0 0 4b ca a4 e 39 18 ef f4 
+c2 15 6d ef b8 98 f1 8e 3f 7f fc 8c 42 1f 15 53 
+48 9f e3 40 7 d2 7 d2 0 3 7b 6 0 0 16 88 
+2 29 70 90 0 2a bf b4 0 0 21 b5 
+</GpsAlmSV>
+<GpsAlmSV id="16" len="92">
+3c 24 66 0 48 f6 0 0 3f 7c 9d 10 b2 7 df b7 
+45 a1 c b7 3f d1 fc 6e 3f 4 78 c c0 21 8b 61 
+37 c8 0 0 0 0 0 0 4b ca a1 fe 39 18 f2 4a 
+c2 c 64 17 b8 98 f1 7e 3f 7f fc b3 42 1b 7c ec 
+48 9f e7 0 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 26 f6 
+</GpsAlmSV>
+<GpsAlmSV id="17" len="92">
+3c 4a 56 0 48 f6 0 0 3f 7b 9f c5 b2 1 c9 7c 
+45 a1 c 33 40 29 fb 43 bf e3 a1 9d 40 2d b3 fa 
+b8 c6 0 0 2c 80 0 0 4b ca a0 b1 39 18 f3 c3 
+c2 8 54 46 b8 98 f1 4d 3f 7f fb 0 42 3f 5f 25 
+48 9f ea c0 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 29 a 
+</GpsAlmSV>
+<GpsAlmSV id="18" len="92">
+3c 6e 2e 0 48 f6 0 0 3f 73 27 49 b2 a 9f 6e 
+45 a1 c c8 c0 2b 9 d2 3f a7 29 f1 3e c1 1d 2f 
+37 60 0 0 2c 80 0 0 4b ca a2 28 39 18 f2 1b 
+c2 1d a4 97 b8 98 f1 94 3f 7f f9 13 42 61 45 19 
+48 9f ee 80 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 25 97 
+</GpsAlmSV>
+<GpsAlmSV id="19" len="92">
+3c 21 f2 0 48 f6 0 0 3f 7a fe 5f b2 1 64 f4 
+45 a1 d 6a 40 2c fc fd 3f 97 d3 b0 bf 1b 15 9c 
+b9 e3 80 0 2c 80 0 0 4b ca a3 c0 39 18 f0 4d 
+c2 8 24 2a b8 98 f1 4a 3f 7f fc cc 42 19 2a 4d 
+48 9f f2 40 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 29 72 
+</GpsAlmSV>
+<GpsAlmSV id="20" len="92">
+3b 8b 84 0 48 f6 0 0 3f 6d 8d ef b2 10 1e dd 
+45 a1 16 34 bf d8 92 3a 3f f9 91 58 3f 58 2c 3c 
+3a 5 80 0 0 0 0 0 4b ca b9 df 39 18 d7 45 
+c2 19 b8 8c b8 98 f1 c0 3f 7f ff 68 41 83 ec 69 
+48 9f f6 0 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 28 70 
+</GpsAlmSV>
+<GpsAlmSV id="21" len="92">
+3c c7 de 0 48 f6 0 0 3f 71 ad e7 b2 b 68 7e 
+45 a1 d 26 c0 2b 7e 27 bf c7 2d 5a bf 93 97 f9 
+b9 cc 80 0 2c 80 0 0 4b ca a3 15 39 18 f1 e 
+c2 1d ab dc b8 98 f1 9a 3f 7f ec 7e 42 bd 8 47 
+48 9f 9c 0 7 d2 7 d2 0 3 7b d 0 0 16 88 
+2 29 70 90 0 2a bf b4 0 0 24 49 
+</GpsAlmSV>
+<GpsAlmSV id="22" len="92">
+3b f2 4 0 48 f6 0 0 3f 6c b7 85 b2 10 e7 ed 
+45 a1 d e5 bf d2 2d a4 bf c4 ba 23 40 9 95 b7 
+b9 d4 0 0 ad 80 0 0 4b ca a4 f6 39 18 ee ee 
+c2 19 85 67 b8 98 f1 c6 3f 7f fe 36 41 e4 e4 4a 
+48 9f 9f c0 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 2d 46 
+</GpsAlmSV>
+<GpsAlmSV id="23" len="92">
+3c 4d 34 0 48 f6 0 0 3f 71 95 29 b2 6 e4 63 
+45 a1 d f7 bf c cf 8b c0 17 28 6f 3f c0 e1 3f 
+b9 63 0 0 0 0 0 0 4b ca a5 23 39 18 ee bb 
+c2 15 27 38 b8 98 f1 76 3f 7f fa dc 42 42 13 3f 
+48 9f a3 80 7 d2 7 d2 0 3 7b 8 0 0 16 88 
+2 29 70 90 0 2a bf b4 0 0 20 f6 
+</GpsAlmSV>
+<GpsAlmSV id="24" len="92">
+3b e3 4c 0 48 f6 0 0 3f 71 27 99 b2 d 91 6a 
+45 a1 c ba 3e f0 31 db 3f b 0 3b 3f 6a 2a 28 
+b8 54 0 0 0 0 0 0 4b ca a2 5 39 18 f2 42 
+c2 11 13 96 b8 98 f1 ac 3f 7f fe 6c 41 d6 fa 2d 
+48 9f a7 40 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 25 5e 
+</GpsAlmSV>
+<GpsAlmSV id="25" len="92">
+3b f5 c4 0 48 f6 0 0 3f 79 58 38 b2 a 3a e7 
+45 a1 c bc 3f c7 ea b 3f 5c c0 58 bf 8c bf 6b 
+ba 1a c0 0 ad 0 0 0 4b ca a2 a 39 18 f2 3d 
+c2 c b4 aa b8 98 f1 91 3f 7f fe 28 41 e8 71 e9 
+48 9f b1 c0 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 2a a3 
+</GpsAlmSV>
+<GpsAlmSV id="26" len="92">
+3b 36 b8 0 48 f6 0 0 3f 74 9d ec b2 e 28 36 
+45 a1 c d9 3f c5 1b 25 3e 4 4f de bf d1 9b 30 
+b9 10 0 0 2d 40 0 0 4b ca a2 53 39 18 f1 ea 
+c2 c cb 21 b8 98 f1 b0 3f 7f ff bf 41 2c d0 96 
+48 9f b5 80 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 28 58 
+</GpsAlmSV>
+<GpsAlmSV id="27" len="92">
+3b c3 38 0 48 f6 0 0 3f 7a 43 d7 b2 2 92 8c 
+45 a1 d 29 40 26 85 f7 3e d8 42 6c 40 35 60 96 
+39 c1 0 0 0 0 0 0 4b ca a3 1c 39 18 f1 6 
+c2 8 8b 9b b8 98 f1 54 3f 7f fe d6 41 b8 a2 c6 
+48 9f b9 40 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 26 f0 
+</GpsAlmSV>
+<GpsAlmSV id="28" len="92">
+3c 9f 92 0 48 f6 0 0 3f 7c 53 3c b2 7 ad 73 
+45 a1 d 10 3f d2 87 98 bf c2 a4 3d c0 24 68 7c 
+3a 3c 40 0 2c 80 0 0 4b ca a2 de 39 18 f1 4d 
+c2 c 5f bd b8 98 f1 7c 3f 7f f3 91 42 96 eb 98 
+48 9f bd 0 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 28 d5 
+</GpsAlmSV>
+<GpsAlmSV id="29" len="92">
+3a 4a e0 0 48 f6 0 0 3f 7b f3 cf b2 1 64 f4 
+45 a1 d 3a 40 2a a8 e1 3f 92 ac c2 c0 1d a1 12 
+39 e8 80 0 ad 0 0 0 4b ca a3 47 39 18 f0 d5 
+c2 8 49 6c b8 98 f1 4a 3f 7f ff fb 40 3f e0 71 
+48 9f c4 80 7 d2 7 d2 0 16 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 2a 87 
+</GpsAlmSV>
+<GpsAlmSV id="30" len="92">
+3b 5f 78 0 48 f6 0 0 3f 71 ca 2d b2 d f5 f2 
+45 a1 d 70 3f f fa b0 c0 45 4c 3d 3d 7d f3 ba 
+38 94 0 0 ac 80 0 0 4b ca a3 cf 39 18 f0 3c 
+c2 10 b4 f b8 98 f1 af 3f 7f ff 9e 41 53 5a 5c 
+48 9f c8 40 7 d2 7 d2 0 3 7b 6 0 0 be ef 
+de ad be ef de ad be ef 0 0 28 55 
+</GpsAlmSV>
+<GpsAlmSV id="31" len="92">
+3c f 78 0 48 f6 0 0 3f 76 ab bf b2 a 9f 6e 
+45 a1 c e7 3f a 93 42 be 4 af 19 be 61 e3 7e 
+38 fa 0 0 ac 80 0 0 4b ca a2 76 39 18 f1 c2 
+c2 10 c9 ad b8 98 f1 94 3f 7f fd 7d 42 7 b1 2c 
+48 9f cc 0 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 28 e3 
+</GpsAlmSV>
+<GpsAlmSV id="32" len="92">
+3b b a0 0 48 f6 0 0 3f 75 d 72 b2 4 bb 78 
+45 a1 c fd bf b 21 5e c0 23 bf 34 c0 2f c2 10 
+ba 4 40 0 2d 0 0 0 4b ca a2 ae 39 18 f1 83 
+c2 15 20 7f b8 98 f1 65 3f 7f ff da 41 4 e 70 
+48 9f cf c0 7 d2 7 d2 0 3 7b ef 0 0 be ef 
+de ad be ef de ad be ef 0 0 26 8c 
+</GpsAlmSV>
+<WaasAlmSV id="1" len="60">
+41 83 60 b1 80 0 0 0 c1 65 72 b9 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 5 21 0 7 d2 1 11 0 0 5 b7 
+</WaasAlmSV>
+<WaasAlmSV id="4" len="60">
+41 81 23 d1 40 0 0 0 41 75 6 2d 80 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 5 21 0 7 d2 1 11 0 0 4 70 
+</WaasAlmSV>
+<WaasAlmSV id="14" len="60">
+c1 56 76 fa 0 0 0 0 c1 83 e4 b9 80 0 0 0 
+c1 33 70 90 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 c0 54 7a e1 47 ae 14 7b 
+0 4 ef 40 7 b6 1 0 0 0 d c0 
+</WaasAlmSV>
+<WaasAlmSV id="16" len="60">
+c1 7b 71 96 0 0 0 0 c1 7d 63 3e 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 7 6c c0 7 bd 1 0 0 0 6 1a 
+</WaasAlmSV>
+<WaasAlmSV id="17" len="60">
+41 84 7 51 c0 0 0 0 41 4c 7 64 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 8 10 40 7 94 1 11 0 0 3 da 
+</WaasAlmSV>
+<WaasAlmSV id="19" len="60">
+c1 67 f7 a5 0 0 0 0 c1 83 31 16 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 7 6c c0 7 bd 1 0 0 0 6 47 
+</WaasAlmSV>
+<GlonassAlmSV id="1" len="76">
+3f 40 58 0 0 0 0 0 bf e4 62 2f 76 37 cb 13 
+40 e3 cb f7 20 0 0 0 bf 44 0 0 0 0 0 0 
+be f8 0 0 0 0 0 0 bf e1 14 49 7a ec df 74 
+40 9a 95 c0 0 0 0 0 3f f1 eb 7e 55 7a da 55 
+3 6a 1 0 0 1 be 70 0 0 17 6d 
+</GlonassAlmSV>
+<GlonassAlmSV id="2" len="76">
+3f 5d c8 0 0 0 0 0 c0 0 f3 e9 f5 71 14 a3 
+40 e3 cb ff 60 0 0 0 bf 4a 0 0 0 0 0 0 
+bf 34 40 0 0 0 0 0 bf ed e8 5b 17 17 9c f5 
+40 bc ef 80 0 0 0 0 3f f2 d 53 b4 71 2a 9c 
+3 6a 2 0 0 fc be 70 0 0 18 d4 
+</GlonassAlmSV>
+<GlonassAlmSV id="3" len="76">
+3f 5d 30 0 0 0 0 0 c0 0 3a c1 9b da 46 5f 
+40 e3 cb fe 50 0 0 0 bf 40 0 0 0 0 0 0 
+bf 21 0 0 0 0 0 0 bf f4 e1 65 36 13 8f 26 
+40 c8 56 ec 0 0 0 0 3f f2 1 36 f3 f1 6e 41 
+3 6a 3 0 0 5 be 70 0 0 15 9b 
+</GlonassAlmSV>
+<GlonassAlmSV id="4" len="76">
+3f 4a e8 0 0 0 0 0 bf fe 18 c1 88 18 e4 40 
+40 e3 cb fe c0 0 0 0 bf 40 0 0 0 0 0 0 
+bf 31 0 0 0 0 0 0 bf fa f5 d2 44 11 e5 ad 
+40 d1 3e 50 0 0 0 0 3f f2 2 a6 84 ed 1e a6 
+3 6a 4 0 0 6 be 70 0 0 18 1f 
+</GlonassAlmSV>
+<GlonassAlmSV id="5" len="76">
+3f 31 f0 0 0 0 0 0 3f cd 1b db 97 18 f6 3a 
+40 e3 cc 1c 10 0 0 0 bf 34 0 0 0 0 0 0 
+3e e8 0 0 0 0 0 0 c0 0 6d 5d 89 72 75 a7 
+40 d5 fe 34 0 0 0 0 3f f1 ea 98 ff 65 79 67 
+3 6a 5 0 0 1 be 70 0 0 15 f4 
+</GlonassAlmSV>
+<GlonassAlmSV id="6" len="76">
+3f 40 d8 0 0 0 0 0 40 7 3a 3f de e8 e2 d 
+40 e3 cb fe f0 0 0 0 bf 38 0 0 0 0 0 0 
+bf 21 0 0 0 0 0 0 c0 3 98 45 44 5e 3d 9a 
+40 db 4a e0 0 0 0 0 3f f1 ea 31 53 38 bd cd 
+3 6a 6 0 0 fc be 70 0 0 16 da 
+</GlonassAlmSV>
+<GlonassAlmSV id="7" len="76">
+3f 59 80 0 0 0 0 0 bf ff f2 be 68 2 1a 2 
+40 e3 cb ff 10 0 0 0 bf 34 0 0 0 0 0 0 
+3f 4 0 0 0 0 0 0 c0 6 55 72 72 4e 8e 24 
+40 e0 b 64 0 0 0 0 3f f2 1 cd bf d5 67 da 
+3 6a 7 0 0 5 be 70 0 0 14 48 
+</GlonassAlmSV>
+<GlonassAlmSV id="8" len="76">
+3f 60 a2 0 0 0 0 0 bf f8 f9 24 1b db 3e 4f 
+40 e3 cb fd 70 0 0 0 bf 3c 0 0 0 0 0 0 
+be f8 0 0 0 0 0 0 40 9 16 e1 c2 34 45 bc 
+40 e2 6c 33 0 0 0 0 3f f2 2 54 d6 7c 4c c8 
+3 6a 8 0 0 6 be 70 0 0 16 32 
+</GlonassAlmSV>
+<GlonassAlmSV id="9" len="76">
+3f 57 8 0 0 0 0 0 c0 7 32 32 fc 67 e4 36 
+40 e3 cc 13 60 0 0 0 3f 58 0 0 0 0 0 0 
+be fc 0 0 0 0 0 0 3f fa 74 af 49 51 cb e0 
+40 88 28 0 0 0 0 0 3f f1 f0 5 94 e3 69 1d 
+3 6a 9 0 0 fe be 70 0 0 15 4e 
+</GlonassAlmSV>
+<GlonassAlmSV id="10" len="76">
+3f 5f 88 0 0 0 0 0 40 5 43 ca 80 4a 37 f 
+40 e3 cb fd 70 0 0 0 3f 59 0 0 0 0 0 0 
+be f8 0 0 0 0 0 0 3f f4 ae 22 c7 5a 51 99 
+40 b6 6b c0 0 0 0 0 3f f2 3c ce 86 de 3b e8 
+3 6a a 0 0 f9 be 70 0 0 16 c0 
+</GlonassAlmSV>
+<GlonassAlmSV id="11" len="76">
+3f 50 30 0 0 0 0 0 c0 6 75 1d 53 8b eb 4b 
+40 e3 cc 1 f0 0 0 0 3f 55 0 0 0 0 0 0 
+3e fc 0 0 0 0 0 0 3f ed 35 e6 c c2 5 de 
+40 c5 47 88 0 0 0 0 3f f1 ff ca 87 35 28 64 
+3 6a b 0 0 0 be 70 0 0 14 8c 
+</GlonassAlmSV>
+<GlonassAlmSV id="12" len="76">
+3f 59 e4 0 0 0 0 0 3f d2 5 6d c6 9c 22 96 
+40 e3 cb f3 90 0 0 0 3f 55 0 0 0 0 0 0 
+3f 0 0 0 0 0 0 0 3f e2 2c ac 96 d0 f8 b 
+40 ce 1e 98 0 0 0 0 3f f2 20 c3 fc d4 57 57 
+3 6a c 0 0 ff be 70 0 0 16 bb 
+</GlonassAlmSV>
+<GlonassAlmSV id="13" len="76">
+3f 4a 90 0 0 0 0 0 3f fb c7 63 3e 5f 6a a7 
+40 e3 cb fc 10 0 0 0 3f 54 0 0 0 0 0 0 
+3e e0 0 0 0 0 0 0 3f c3 96 14 7e 26 75 68 
+40 d4 9a b8 0 0 0 0 3f f2 20 10 ea b5 9e f1 
+3 6a d 0 0 fe be 70 0 0 16 9e 
+</GlonassAlmSV>
+<GlonassAlmSV id="14" len="76">
+3f 37 80 0 0 0 0 0 c0 3 35 60 be 1f 3b 17 
+40 e3 cc 1 e0 0 0 0 3f 55 0 0 0 0 0 0 
+be fc 0 0 0 0 0 0 bf c7 af c3 c3 11 e4 d4 
+40 d9 54 e4 0 0 0 0 3f f2 10 42 8b a5 a0 11 
+3 6a e 0 0 f9 be 70 0 0 16 76 
+</GlonassAlmSV>
+<GlonassAlmSV id="15" len="76">
+3f 61 a 0 0 0 0 0 bf a5 e4 99 ee 67 63 48 
+40 e3 cb f1 70 0 0 0 3f 55 0 0 0 0 0 0 
+3e e0 0 0 0 0 0 0 bf de d5 a4 ec fe 34 a3 
+40 dd 57 80 0 0 0 0 3f f2 3b 87 cd 1a f4 71 
+3 6a f 0 0 0 be 70 0 0 18 40 
+</GlonassAlmSV>
+<GlonassAlmSV id="16" len="76">
+3f 64 7c 0 0 0 0 0 3f d8 4d ec 9b ad 2d dc 
+40 e3 cb fc 10 0 0 0 3f 52 0 0 0 0 0 0 
+bf 18 0 0 0 0 0 0 bf ed f4 9a 66 50 ed 2e 
+40 e1 92 ae 0 0 0 0 3f f2 3 b1 8d fb 7d fa 
+3 6a 10 0 0 ff be 70 0 0 19 1c 
+</GlonassAlmSV>
+<GlonassAlmSV id="17" len="76">
+3f 43 68 0 0 0 0 0 c0 5 8c a2 fe c0 74 aa 
+40 e3 cc 3 a0 0 0 0 bf 51 0 0 0 0 0 0 
+bf 21 80 0 0 0 0 0 3f ee 21 2c aa 8 5e 16 
+40 e3 22 dc 0 0 0 0 3f f2 36 86 8 9 2a dc 
+3 6a 11 0 0 4 be 70 0 0 14 30 
+</GlonassAlmSV>
+<GlonassAlmSV id="18" len="76">
+3f 59 14 0 0 0 0 0 bf d2 47 66 fa 59 55 8c 
+40 e3 cc 3 80 0 0 0 bf 4a 0 0 0 0 0 0 
+bf 29 80 0 0 0 0 0 c0 5 ea bf de 82 e0 75 
+40 ab 60 90 0 0 0 0 3f f2 48 e1 da 9f b8 a9 
+3 6a 12 0 0 fd be 70 0 0 18 dd 
+</GlonassAlmSV>
+<GlonassAlmSV id="19" len="76">
+3f 29 20 0 0 0 0 0 3f c6 e6 36 3e 87 1e 16 
+40 e3 cb fd c0 0 0 0 bf 4a 0 0 0 0 0 0 
+3f a 0 0 0 0 0 0 c0 8 ac 75 dd fb 75 d 
+40 c0 96 a0 0 0 0 0 3f f2 58 81 19 f8 79 8a 
+3 6a 13 0 0 3 be 70 0 0 14 e7 
+</GlonassAlmSV>
+<GlonassAlmSV id="20" len="76">
+3f 54 4c 0 0 0 0 0 bf c3 d7 f4 8f e8 54 1b 
+40 e3 cc 1 0 0 0 0 bf 4e 0 0 0 0 0 0 
+3f 36 0 0 0 0 0 0 40 6 73 a7 7a 11 65 d5 
+40 cb 22 dc 0 0 0 0 3f f2 59 5d 3 4f 9a de 
+3 6a 14 0 0 2 be 70 0 0 14 14 
+</GlonassAlmSV>
+<GlonassAlmSV id="21" len="76">
+3f 34 0 0 0 0 0 0 40 8 7e 9e 72 a0 71 f3 
+40 e3 cc 6 f0 0 0 0 bf 4e 0 0 0 0 0 0 
+be e8 0 0 0 0 0 0 40 3 4b 67 e6 c7 36 58 
+40 d2 92 6 0 0 0 0 3f f2 44 ac 49 a7 fb be 
+3 6a 15 0 0 4 be 70 0 0 15 3d 
+</GlonassAlmSV>
+<GlonassAlmSV id="22" len="76">
+3f 67 8e 0 0 0 0 0 bf 9e 6f 26 58 a 8e 9b 
+40 e3 cc b 60 0 0 0 bf 51 0 0 0 0 0 0 
+3f 6 0 0 0 0 0 0 40 0 34 ea 35 f0 30 86 
+40 d7 c8 ea 0 0 0 0 3f f2 51 fc ea 6e 80 5d 
+3 6a 16 0 0 fd be 70 0 0 15 c3 
+</GlonassAlmSV>
+<GlonassAlmSV id="23" len="76">
+3f 39 30 0 0 0 0 0 3f ed 22 24 15 ee 7 46 
+40 e3 cc f 40 0 0 0 bf 51 0 0 0 0 0 0 
+bf 24 0 0 0 0 0 0 3f f9 fc f9 c d1 4b a3 
+40 dd 26 2a 0 0 0 0 3f f2 50 c9 a 27 b8 19 
+3 6a 17 0 0 3 be 70 0 0 13 1 
+</GlonassAlmSV>
+<GlonassAlmSV id="24" len="76">
+3f 50 fc 0 0 0 0 0 3f f1 45 ca aa 39 9a be 
+40 e3 cc b 40 0 0 0 bf 51 0 0 0 0 0 0 
+3f 25 80 0 0 0 0 0 3f f4 a4 38 5f 32 12 b4 
+40 e0 d0 cd 0 0 0 0 3f f2 51 7f 40 85 db 8 
+3 6a 18 0 0 2 be 70 0 0 15 b4 
+</GlonassAlmSV>
+<WaasActiveSys len="5">
+0 0 0 0 0 
+</WaasActiveSys>
+<WaasIono id="0" len="868">
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 
+0 0 d4 cb 
+</WaasIono>
+<WaasIono id="1" len="868">
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 
+0 0 d4 cb 
+</WaasIono>
+<WaasIono id="2" len="868">
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 
+0 0 d4 cb 
+</WaasIono>
+<WaasIono id="3" len="868">
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 
+0 0 d4 cb 
+</WaasIono>
+<WaasIono id="4" len="868">
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 
+0 0 d4 cb 
+</WaasIono>
+<WaasIono id="5" len="868">
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 
+0 0 d4 cb 
+</WaasIono>
+<WaasIono id="6" len="868">
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 
+0 0 d4 cb 
+</WaasIono>
+<WaasIono id="9" len="868">
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 1 ff 
+1 ff 1 ff 1 ff 1 ff 1 ff f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f f f f f f f f f f f f f f 
+f f f 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 
+0 0 d4 cb 
+</WaasIono>
+<StingerAPI_ID len="6">
+0 8 0 0 0 8 
+</StingerAPI_ID>
+<UTC len="36">
+be 20 0 0 0 0 0 0 a7 40 0 0 48 f6 0 0 
+0 12 7 d2 7 89 0 7 0 12 1 0 c9 0 0 0 
+0 0 5 61 
+</UTC>
+<Iono len="40">
+31 e0 0 0 32 c0 0 0 b3 80 0 0 b4 0 0 0 
+47 a8 0 0 47 c0 0 0 c7 80 0 0 c9 0 0 0 
+1 ad be ef 0 0 a 4b 
+</Iono>
+<AlmHealth len="38">
+d2 0 0 0 3f 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 7b 0 0 1 8c 
+</AlmHealth>
+<AlhConf len="38">
+d2 7b b 9 b a a b a b b b 9 a 9 9 
+a 9 a 9 9 9 9 9 9 b b b b 9 a b 
+a b 0 0 2 8d 
+</AlhConf>
+<HpConf len="4858">
+9c 76 47 68 68 45 76 2a 4e e6 69 c4 6b 93 76 9e 
+68 45 77 85 41 b8 55 c6 6b fa 76 9e 68 45 77 b8 
+42 d6 68 90 6b ae 76 9e 68 45 77 ae 42 8d 57 96 
+6c 47 76 9e 68 45 76 ed 4b 8c 5c bc 6b 84 76 9e 
+68 45 77 4a 58 ae 5b a1 6c c 76 9e 68 45 76 5c 
+4e 9a 55 8e 6b a0 76 9e 68 45 77 9d 7e b2 58 e7 
+6f fe 76 9e 68 45 74 8b 65 5c 50 55 6c 40 76 9e 
+68 45 76 67 41 71 6b c9 6b b3 76 9e 68 45 74 9f 
+65 d8 5d f0 6b a8 76 9e 68 45 76 90 4c 8 51 1c 
+6b 8f 76 9e 68 45 76 ca 75 50 45 a 6c 59 76 9e 
+68 45 77 f 46 c2 53 1a 6c 62 76 9e 68 45 77 24 
+47 a2 5f f9 6c 42 76 9e 68 45 76 7d 7f 90 46 39 
+6c 57 76 9e 68 45 74 fe 5d 87 7c 29 6c 43 76 9e 
+68 45 76 51 70 83 47 31 6c 62 76 9e 68 45 76 e2 
+73 24 44 d2 6c 6d 76 9e 68 45 77 45 59 48 62 10 
+6c 53 76 9e 68 45 77 d1 44 47 60 c5 6d 31 76 9e 
+68 45 77 c6 7b e7 5a bc 6b ab 76 9e 68 45 76 99 
+77 b7 52 8b 67 75 76 9e 68 45 76 8d 77 39 58 59 
+6b 9b 76 9e 68 45 76 4e 4f d1 71 47 6c 54 76 9e 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 c6 2f bc 80 62 68 47 76 9a 68 47 76 9d 
+68 36 77 85 69 63 76 7d 69 46 76 51 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+69 67 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 c5 2f bc 8e 51 68 47 76 85 68 47 76 9d 
+68 87 77 85 69 d4 76 2a 6a 50 76 99 68 36 77 4a 
+69 ff 76 ca 68 56 77 d1 69 75 76 7d 69 46 74 9f 
+69 63 76 90 68 bc 74 fe 68 8a 76 e2 69 9e 77 c6 
+68 95 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+69 67 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 c4 2f bc 80 68 68 47 76 8b 68 47 76 9d 
+68 f1 77 85 69 63 77 ae 68 36 77 4a 68 87 77 9d 
+6a 50 76 67 68 4b 76 ca 69 d4 77 24 68 a6 76 51 
+68 39 77 45 69 a 77 c6 6a 44 76 8d 68 95 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+69 67 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 cf 2f 16 3b bd 68 47 76 8e 68 47 76 9d 
+69 1d 76 e2 6a 44 76 ca 68 56 76 99 6a 50 76 ed 
+69 63 76 2a 69 5e 77 ae 69 91 77 24 69 d4 76 7d 
+69 46 76 51 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+69 67 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 ca 2f 16 3a 6e 68 47 76 99 68 47 76 9d 
+68 36 77 b8 68 a6 77 9d 68 8a 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+69 67 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 c9 2f 16 3b eb 68 47 76 8d 68 47 76 9d 
+69 1d 74 9f 6a 50 77 b8 68 11 76 8d 69 5e 77 9d 
+68 4b 76 5c 69 91 77 24 69 d4 76 7d 68 36 76 51 
+68 39 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+69 67 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 77 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 77 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 77 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 77 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+68 47 76 9c 68 47 76 9c 68 47 76 9c 68 47 76 9c 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 1 
+</HpConf>
+<HpData len="202">
+cd e0 94 88 88 b4 e0 cd 37 42 45 bf fb f f3 83 
+37 72 62 a2 1d a3 60 51 48 98 65 6d b6 a8 2c f9 
+c0 a4 42 44 88 94 e0 cd b6 a8 e0 cd 88 94 e0 cd 
+b6 cc e0 cd 88 94 e0 cd 36 e4 e0 cd 88 94 e0 cd 
+36 14 e0 cd 88 94 e0 cd c8 61 e0 cd 88 94 e0 cd 
+c8 6c e0 cd 88 94 e0 cd 48 64 e0 cd 88 94 e0 cd 
+49 b4 e0 cd 88 94 e0 cd 88 94 e0 cd 88 94 e0 cd 
+8b 14 e2 cd 88 94 e0 cd 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 1 
+</HpData>
+<VbsAlm len="3001">
+79 c7 37 b4 0 0 0 0 3e 3c 0 0 0 0 0 0 
+3e 58 0 0 0 0 0 0 be 70 0 0 0 0 0 0 
+be 80 0 0 0 0 0 0 40 f5 0 0 0 0 0 0 
+40 f8 0 0 0 0 0 0 c0 f0 0 0 0 0 0 0 
+c1 20 0 0 0 0 0 0 0 7 0 12 0 12 7 89 
+0 1 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 9d e0 0 0 0 3f 7f ec 80 0 0 0 0 
+3f e4 e0 a7 25 16 e1 f0 3f ef 15 eb 54 d9 2 ab 
+3f e4 18 b2 8 c0 34 85 c0 5 0 ca f9 dd c4 9f 
+be 40 e2 d4 dc 9d ce 57 0 2 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 21 af 80 0 0 0 
+3f 92 4f 40 0 0 0 0 3f ef 93 4f 6 8e 97 55 
+3f ee 6a 9a b2 af 9d f3 bf fd b3 49 45 d4 7d d3 
+c0 5 7d df 44 36 e7 db be 41 60 7e c5 43 23 39 
+0 3 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 b1 a0 0 0 0 3f 56 d2 0 0 0 0 0 
+bf cb b5 55 f5 fa 44 41 3f ee bd 12 33 5c 1d a7 
+3f db 2f c9 94 2c f bc bf f9 51 db dc 36 57 78 
+be 41 3a cb cc 44 bc f5 0 4 7 5e 0 0 0 0 
+41 18 c0 0 0 0 0 0 40 b4 21 95 40 0 0 0 
+3f 88 a0 80 0 0 0 0 c0 8 be 1d d5 63 6f e2 
+3f ee 18 94 4a ee 19 72 3f f1 dc 54 30 77 89 54 
+3f f7 26 be 4f 28 eb 72 be 41 8c 7a 3d 16 9a 88 
+0 5 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 a5 80 0 0 0 3f 75 fe 0 0 0 0 0 
+c0 5 a c7 a4 b6 9e be 3f ee 51 aa fb 52 2 4e 
+3f e3 87 f1 60 c7 f 1b bf f9 ab 33 70 ab bc 72 
+be 41 99 b 3a c0 bc 9e 0 6 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 21 93 e0 0 0 0 
+3f 53 3e 0 0 0 0 0 3f e9 dc c4 b9 bd 79 b8 
+3f ef 13 90 25 49 1c 47 bf f1 2e bd 2e e2 60 0 
+c0 5 11 d8 ce de 64 9a be 40 f5 ae 59 1d 1 79 
+0 7 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 9c 80 0 0 0 3f 87 ca 40 0 0 0 0 
+bf a1 96 3e f2 45 db 7 3f ee af 6c bf e5 5c a3 
+c0 4 3e 73 bb a7 de 29 3f e0 ec 18 c3 a4 fe f9 
+be 41 5a 36 46 6e 12 2d 0 8 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 21 87 80 0 0 0 
+3f 6c 7c 0 0 0 0 0 40 8 f8 7c 6d 22 68 28 
+3f ef 5 53 e5 ee 61 a9 bf db af db 3d 5e f5 24 
+40 4 bf 74 f0 be 3e bb be 40 8a dd ec f6 df b9 
+0 9 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 92 80 0 0 0 3f 4e a8 0 0 0 0 0 
+40 7 fd 9b 79 26 65 84 3f ee 7d cc 26 1e 78 4 
+3f fd ad 49 6d 39 ec 5c bf e1 8c be 91 79 e7 a1 
+be 40 b6 d9 64 ca 57 8 0 a 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 21 9b 60 0 0 0 
+3f 6c ea 0 0 0 0 0 bf f7 5b 67 ab 2f 74 6c 
+3f ee bd c2 21 3b 6b 85 c0 5 f0 87 5c eb eb 9 
+bf f9 60 6 b 24 6d 84 be 41 41 14 4b 19 ce 0 
+0 b 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 92 60 0 0 0 3f 91 39 60 0 0 0 0 
+bf a4 55 f6 6f 7d 4f f8 3f ec fb 22 d8 fa 8d 23 
+3f fc 34 3f 86 d4 30 e6 c0 8 6a 90 b1 52 89 4c 
+be 41 f1 2 2a 67 ab 3c 0 c 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 21 8a 20 0 0 0 
+3f 7d 8a 80 0 0 0 0 bf e4 34 fa 9e ae 91 1e 
+3f ef 90 32 29 1f 7c 5d 3f ef 82 f7 fe b7 fe 42 
+3f f9 f2 18 6b be cf 42 be 40 f5 ae 59 1d 1 79 
+0 d 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 9e 80 0 0 0 3f 6b ab 0 0 0 0 0 
+3f f7 45 5a 3a 8 a4 1a 3f ee ff a2 32 fd 4a 37 
+3f f9 35 35 6 d9 7e df bf da ac ee c6 bd b3 45 
+be 40 58 99 f6 4e 57 5f 0 e 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 21 8b 80 0 0 0 
+3f 84 3d 80 0 0 0 0 40 3 a9 67 b7 3f 8 c1 
+3f ee c2 52 cd 62 39 e7 bf ff 3b b2 cd 8e cc dd 
+bf dd 5a d1 88 5 7f 57 be 40 7e 4c ef 4c bd a2 
+0 f 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 b1 20 0 0 0 3f 85 6 80 0 0 0 0 
+3f ff 45 6 ce 5a ff 7b 3f ed b4 fb 20 70 a9 45 
+3f e5 ac f4 61 1e e0 23 bf e3 cf a7 46 53 4e 62 
+be 41 3a cb cc 44 bc f5 0 10 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 21 96 e0 0 0 0 
+3f 84 8c c0 0 0 0 0 c0 4 31 6c 25 a3 c6 71 
+3f ef 93 a1 ce 7c 1 af 3f e0 8f 1 6d 81 f8 13 
+3f fa 3f 8d c2 d1 98 10 be 40 fb f6 d7 f2 12 84 
+0 11 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 86 60 0 0 0 3f 89 4a c0 0 0 0 0 
+40 5 b6 7f 29 fc e4 6d 3f ef 73 f8 7f 5e 59 cc 
+bf fc 74 33 8b 49 81 d2 40 5 3f 68 5d e c2 c1 
+be 40 39 2f 7c 25 2 26 0 12 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 21 99 0 0 0 0 
+3f 8d c5 c0 0 0 0 0 3f d8 23 a5 d2 48 8e bd 
+3f ee 64 e8 ff be 86 81 3f f4 e5 3e 19 bc 85 63 
+c0 5 61 3a 33 3d bb 2f be 41 53 ed c7 99 1 22 
+0 13 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 ad 40 0 0 0 3f 84 3e 40 0 0 0 0 
+bf e3 62 b3 6e 2 e9 35 3f ef 5f cb b8 1e 35 12 
+3f f2 fa 75 f4 d2 50 d1 40 5 9f 9f a0 c5 1f b1 
+be 40 2c 9e 7e 7a e0 f 0 14 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 22 c6 80 0 0 0 
+3f 71 70 80 0 0 0 0 3f eb 5 87 81 26 90 5a 
+3f ed b1 bd bf a cc 7b 3f ff 32 2a f6 ac 3c 73 
+bf fb 12 47 3a 0 3 20 be 42 3 db a6 e6 de 5e 
+0 15 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 a4 c0 0 0 0 3f 98 fb c0 0 0 0 0 
+bf f2 72 ff 17 d7 43 c9 3f ee 35 bc b7 82 dc 8a 
+bf f8 e5 ab 2f c9 ac ac c0 5 6f c4 ca 85 e6 79 
+be 41 6d f c2 ed 45 4f 0 16 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 21 bc a0 0 0 0 
+3f 7e 40 80 0 0 0 0 40 1 32 b6 dc e1 3e 21 
+3f ed 96 f0 82 5 ef c7 bf f8 97 44 56 2b c6 1f 
+bf fa 45 b4 7b fc ef e0 be 42 1c fd a2 3b 22 8b 
+0 17 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 be e0 0 0 0 3f 89 a6 80 0 0 0 0 
+3f f8 1c 27 e1 d 0 2a 3f ee 32 a5 9 15 fe 27 
+c0 2 e5 d d7 34 c6 cf bf e1 99 f1 59 e5 f8 2e 
+be 40 dc 8c 5d c8 bd 4c 0 18 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 21 97 40 0 0 0 
+3f 7c 69 80 0 0 0 0 3f ed 45 44 e5 6 be e2 
+3f ee 24 f3 4 a1 93 0 3f e1 60 7 63 d9 52 f5 
+3f de 6 3b 4c 2a 38 53 be 41 b2 2d 36 15 0 cb 
+0 19 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 97 80 0 0 0 3f 7e b8 80 0 0 0 0 
+bf f1 97 ed 58 35 de 17 3f ef 2b 6 de ec c7 ed 
+3f eb 98 a fa ab ed 4b 3f f8 fd 41 53 e7 81 a8 
+be 41 47 5c c9 ee df c 0 1a 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 21 9b 20 0 0 0 
+3f 66 d7 0 0 0 0 0 bf fa 33 66 3 73 e6 d7 
+3f ee 93 bd 51 a 89 89 3f c0 89 fb bb 20 e9 53 
+3f f8 a3 64 9f 72 da 54 be 41 c5 6 b2 94 33 ed 
+0 1b 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 a5 20 0 0 0 3f 78 67 0 0 0 0 0 
+40 6 ac 12 c0 b1 2a 7 3f ef 48 7a b1 73 87 d2 
+3f db 8 4d 81 22 9c e0 40 4 d0 be da fb b4 29 
+be 40 52 51 77 79 46 53 0 1c 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 21 a2 0 0 0 0 
+3f 93 f2 40 0 0 0 0 c0 4 8d f 98 f3 ea 76 
+3f ef 8a 67 54 33 10 a6 bf f8 54 87 92 2 eb 76 
+3f fa 50 f2 f7 f5 fb 0 be 40 f5 ae 59 1d 1 79 
+0 1d 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 a7 40 0 0 0 3f 49 5c 0 0 0 0 0 
+c0 3 b4 22 40 d0 99 7b 3f ef 7e 79 b3 6a 92 4b 
+3f f2 55 98 3a d6 1b 57 40 5 55 1c 12 e2 40 38 
+be 40 2c 9e 7e 7a e0 f 0 1e 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 21 ae 0 0 0 0 
+3f 6b ef 0 0 0 0 0 3f af be 77 38 b9 52 47 
+3f ee 39 45 7e da b6 21 c0 8 a9 87 9d 92 e3 a1 
+3f e1 ff 55 f9 9e 4 da be 41 be be 33 bf 22 e2 
+0 1f 7 d2 0 0 0 0 41 1e c0 0 0 0 0 0 
+40 b4 21 9c e0 0 0 0 3f 81 ef 0 0 0 0 0 
+bf cc 3c 6f c1 1e 9d 3c 3f ee d5 77 af d3 69 d5 
+bf c0 95 e3 13 6a 92 9e 3f e1 52 68 38 e1 67 1 
+be 41 53 ed c7 99 1 22 0 20 7 d2 0 0 0 0 
+41 1e c0 0 0 0 0 0 40 b4 21 9f a0 0 0 0 
+3f 61 74 0 0 0 0 0 c0 5 f8 41 fa 30 33 8 
+3f ee a1 ae 2a 73 47 5a c0 4 77 e6 82 8e a9 c7 
+bf e1 64 2b ad 74 45 f1 be 40 97 6e ea a1 1 cf 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 1 
+</VbsAlm>
+<VbsConf len="1501">
+6a 90 e9 89 89 5f 91 73 88 cd 91 58 89 98 91 bc 
+89 29 91 6b 8b fe 90 91 8b ea 90 66 89 bf 91 f9 
+88 51 90 8b 8b 8b 90 a7 89 97 91 b3 88 a4 91 30 
+89 ec 90 7b 89 3b 90 6a 89 e9 90 6a 89 e9 90 6a 
+89 e9 90 6a 89 e9 90 6a 48 ee 54 a5 62 2b 10 84 
+48 be 9c ab 4d 3f e8 37 c8 d7 7a 45 96 54 23 6a 
+c8 c5 b3 a 1f e8 7b 57 48 bc bf f9 e2 17 2d 55 
+c8 af 5b 55 89 6f 91 1c 48 c9 a2 64 d5 b8 4a 16 
+48 bc 9d 61 c5 7b 49 2b c8 ae 6b 5c 6b c0 e2 87 
+c8 f8 b4 f2 ad 10 c4 1c 48 bd 6d 6a 20 99 5d 8 
+c8 a1 e0 f4 e4 87 10 9d c8 af 5d c8 dd 6 f6 b0 
+48 bc 95 60 d8 31 e1 d9 c8 d8 75 c2 1d 5c 76 30 
+c8 aa 77 d6 73 db 77 21 48 a3 a1 18 88 a0 ee 29 
+c8 b8 4e 26 aa f2 ba 51 c8 c2 7 fa 17 b5 e0 21 
+48 bf 26 68 a2 e5 50 fa c8 d6 67 d4 31 b9 cf 2 
+c8 a5 21 d7 75 70 4a d1 48 b9 3a 4e ad 5a 26 7b 
+48 ad 56 2a ba 9a 37 76 c8 da b0 db 21 80 48 98 
+48 a2 35 72 84 96 2b 77 48 ba f0 9b 5f 99 91 39 
+48 cf 71 7b 3 3f f7 e5 48 bc 26 36 f0 fc 2 f1 
+c8 ac b1 e7 ab 91 1c e5 c8 a9 82 8d 23 9b c6 67 
+48 a0 9 f7 e8 84 7a 3a 48 ba 90 a5 d7 72 fd ec 
+c8 a8 b0 65 42 16 f7 b5 48 bf a2 ca dc 8a d a2 
+c8 dd db 87 ff ec 1 a c8 ba 2f 83 79 de 8c 95 
+48 a2 1 87 dd 5a a4 d 48 c2 17 7c 6d d8 a3 b3 
+c8 da 2f d0 a4 4e 4c ea 48 b8 52 8d 5f 33 a0 f8 
+c8 a6 36 94 d3 38 d2 3a c8 d7 44 96 9d d f5 ef 
+48 a6 96 1e 71 e8 b5 6b c8 b8 97 e a5 51 74 e4 
+c8 b9 c8 75 bc ae 89 d8 48 a7 3e a7 d8 89 59 fa 
+48 ab 4b ef 4a 91 7d b3 48 ad c9 1b e3 af 4c b 
+48 de a 8d cf 29 56 c8 c8 bc aa 50 a6 3a 79 90 
+c8 b8 f8 d0 b1 54 2a 6e 48 a4 13 cf 22 48 56 d9 
+48 a9 40 5e 8b 26 cd fa c8 bb 1d ba 3b 2e 20 25 
+48 a4 19 57 b1 9c 6e 82 48 dc 25 10 71 69 ba cc 
+48 a8 f5 ec 3d 2f 5 23 48 a2 c bb 4b 4c e0 59 
+c8 b8 6c d3 f6 ef 9f 60 48 ab eb 2d 23 1a a9 e5 
+48 bb 95 16 12 52 19 31 c8 a3 72 4d 20 4f 77 e5 
+c8 af fd 49 2a cc 36 22 48 b9 1f fa c 52 71 6f 
+48 a2 e e2 d9 5e 38 2d c8 da fa f7 65 53 aa d7 
+48 be 4a a ae 9e 5f 23 49 3b 6d ea f1 70 2f 5d 
+c8 b9 b1 43 80 9 78 44 48 bb a4 d2 d8 f3 e6 5e 
+48 ea d6 cd 14 91 41 98 48 bc 92 59 d6 d5 e3 81 
+48 a8 9e 27 b8 e8 67 58 c8 a8 8 69 bc b8 76 7d 
+c8 b1 c4 cc c9 e9 90 6a 89 e9 90 6a 89 e9 90 6a 
+89 e9 90 6a 89 e9 90 6a c8 b1 c4 cc c9 e9 90 6a 
+89 e9 90 6a 89 e9 90 6a 89 e9 90 6a 89 e9 90 6a 
+c8 b1 c4 cc c9 e9 90 6a 89 e9 90 6a 89 e9 90 6a 
+89 e9 90 6a 89 e9 90 6a c8 b1 c4 cc c9 e9 90 6a 
+89 e9 90 6a 89 e9 90 6a 89 e9 90 6a 89 e9 90 6a 
+c8 b1 c4 cc c9 e9 90 6a 89 e9 90 6a 89 e9 90 6a 
+89 e9 90 6a 89 e9 90 6a c8 b1 c4 cc c9 e9 90 6a 
+89 e9 90 6a 89 e9 90 6a 89 e9 90 6a 89 e9 90 6a 
+c8 b1 c4 cc c9 e9 90 6a 89 e9 90 6a 89 e9 90 6a 
+89 e9 90 6a 89 e9 90 6a 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 1 
+</VbsConf>
+<APP_RECORD id="1" len="38" name="GeneralControls">
+1 24 5 2 63 0 0 1 0 ff ff ff ff ff ff ff 
+3e 99 99 9a 3e 99 99 9a 1 0 0 3c 0 3c 0 3c 
+0 3c 0 0 0 2 
+</APP_RECORD>
+<APP_RECORD id="10" len="3" name="StaticKin">
+a 1 0 
+</APP_RECORD>
+<APP_RECORD id="40" len="8" name="RtkSolutionType">
+28 6 0 0 0 0 0 0 
+</APP_RECORD>
+<NV_RECORD id="4" len="128" name="old EthBootControl">
+0 69 7 80 c0 a8 0 67 ff ff ff 0 c0 a8 0 ff 
+c0 a8 0 1 42 44 39 38 32 0 7 a8 de ad be ef 
+3 69 7 c0 0 0 0 0 3 69 9 20 1 52 8f 78 
+3 69 7 c0 0 2a bf b4 0 0 0 0 0 0 1 64 
+3 69 9 20 1 52 f 68 3 69 7 c8 0 2a 6f a8 
+3 69 7 e0 5 2a 7a 34 c0 a8 1 1 75 6e 64 65 
+66 69 6e 65 64 0 f 68 3 69 7 f0 0 0 0 5 
+3 69 9 25 3 69 9 44 3 69 8 8 0 2c d7 e8 
+
+</NV_RECORD>
+<NV_RECORD id="23" len="8" name="old EthBootControlExt">
+0 0 5 dc 0 de f4 0 
+</NV_RECORD>
+<APP_RECORD id="0" len="15" name="FileStorage">
+0 d 43 55 52 52 45 4e 54 0 71 6 14 0 0 
+</APP_RECORD>
+<APP_RECORD id="2" len="6" name="BaudFormat">
+2 4 0 5 0 0 
+</APP_RECORD>
+<APP_RECORD id="2" len="6" name="BaudFormat">
+2 4 1 5 0 0 
+</APP_RECORD>
+<APP_RECORD id="2" len="6" name="BaudFormat">
+2 4 2 5 0 0 
+</APP_RECORD>
+<APP_RECORD id="2" len="6" name="BaudFormat">
+2 4 3 7 0 0 
+</APP_RECORD>
+<APP_RECORD id="3" len="91" name="RefNode">
+3 59 0 0 43 52 45 46 30 30 30 31 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 40 41 43 52 45 46 30 30 30 
+31 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 
+20 20 20 20 20 20 20 20 20 20 20 20 20 20 44 41 
+4e 5d 47 57 20 20 20 20 40 0 0 
+</APP_RECORD>
+<APP_RECORD id="6" len="34" name="SvEnable">
+6 20 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 
+</APP_RECORD>
+<APP_RECORD id="8" len="82" name="Antenna">
+8 50 3f af fd 60 e0 0 0 0 1 96 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 
+</APP_RECORD>
+<APP_RECORD id="9" len="7" name="DeviceControl">
+9 5 1 0 0 1 1 
+</APP_RECORD>
+<APP_RECORD id="9" len="5" name="DeviceControl">
+9 3 2 0 0 
+</APP_RECORD>
+<APP_RECORD id="9" len="8" name="DeviceControl">
+9 6 7 0 0 da 0 0 
+</APP_RECORD>
+<APP_RECORD id="9" len="8" name="DeviceControl">
+9 6 7 1 0 d0 0 0 
+</APP_RECORD>
+<APP_RECORD id="9" len="6" name="DeviceControl">
+9 4 a 1 0 0 
+</APP_RECORD>
+<APP_RECORD id="9" len="6" name="DeviceControl">
+9 4 b 1 0 23 
+</APP_RECORD>
+<APP_RECORD id="14" len="10" name="TimedActivation">
+e 8 0 70 1 1 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="15" len="2" name="CSIB">
+f 0 
+</APP_RECORD>
+<APP_RECORD id="16" len="26" name="RTCMInput">
+10 18 0 3 d 40 ff ff 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="22" len="46" name="WAASControl">
+16 2c 3 0 0 0 0 3 0 0 0 3 0 3 0 0 
+3 0 0 0 3 0 3 0 3 3 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="23" len="7" name="DisplayControls">
+17 5 0 0 0 0 1 
+</APP_RECORD>
+<APP_RECORD id="25" len="7" name="TDMABaseSet">
+19 5 ff 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="26" len="22" name="GPSHeading">
+1a 14 42 b4 0 0 3 0 0 0 0 0 0 0 0 0 
+0 0 0 1 b 0 
+</APP_RECORD>
+<APP_RECORD id="27" len="188" name="StingerDiagnostic">
+1b ba 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 40 a4 cc cd 
+</APP_RECORD>
+<APP_RECORD id="28" len="8" name="DiagnosticControls">
+1c 6 0 df ff 0 ff ff 
+</APP_RECORD>
+<APP_RECORD id="29" len="146" name="MetControls">
+1d 90 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 24 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 
+</APP_RECORD>
+<APP_RECORD id="30" len="9" name="RTKNetworkControls">
+1e 7 ff 0 0 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="35" len="197" name="AntPhaseCenterModel">
+23 c3 0 0 ff 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ff 
+ff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="35" len="197" name="AntPhaseCenterModel">
+23 c3 1 0 ff 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ff 
+ff 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="41" len="34" name="GenStingerControls">
+29 20 1 0 1 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 
+</APP_RECORD>
+<APP_RECORD id="43" len="3" name="PPPControl">
+2b 1 0 
+</APP_RECORD>
+<APP_RECORD id="43" len="3" name="PPPControl">
+2b 1 1 
+</APP_RECORD>
+<APP_RECORD id="43" len="3" name="PPPControl">
+2b 1 2 
+</APP_RECORD>
+<APP_RECORD id="43" len="3" name="PPPControl">
+2b 1 3 
+</APP_RECORD>
+<APP_RECORD id="43" len="3" name="PPPControl">
+2b 1 f 
+</APP_RECORD>
+<APP_RECORD id="46" len="17" name="SpotControl">
+2e f 2 6e 40 5c 79 d7 e8 4 b0 6e 1 0 0 1 
+0 
+</APP_RECORD>
+<APP_RECORD id="51" len="44" name="NtripClient">
+33 2a 81 0 8 35 31 38 36 2e 32 32 38 2e 35 31 
+2e 35 32 0 43 45 46 45 30 0 61 64 65 73 6f 75 
+7a 61 0 8 1c 4a 2c a6 10 68 f 3b 
+</APP_RECORD>
+<APP_RECORD id="53" len="65" name="ProxyControl">
+35 3f 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 
+</APP_RECORD>
+<APP_RECORD id="55" len="26" name="SvGLNEnable">
+37 18 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="59" len="65" name="FWCheckControl">
+3b 3f 1 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 
+</APP_RECORD>
+<APP_RECORD id="60" len="130" name="SamplingControl">
+3c 80 0 0 0 0 0 0 0 0 0 0 0 a 3c f5 
+c2 8f 0 0 0 a 3c f5 c2 8f 0 0 0 a 3c f5 
+c2 8f 0 0 0 a 3c f5 c2 8f 0 0 0 a 3c f5 
+c2 8f 0 0 0 a 3c f5 c2 8f 0 0 0 a 3c f5 
+c2 8f 0 0 0 a 3c f5 c2 8f 0 0 0 a 3c f5 
+c2 8f 0 0 0 a 3c f5 c2 8f 0 0 0 a 3c f5 
+c2 8f 0 0 0 a 3c f5 c2 8f 0 0 0 a 3c f5 
+c2 8f 0 0 0 a 3c f5 c2 8f 0 0 0 a 3c f5 
+c2 8f 
+</APP_RECORD>
+<APP_RECORD id="65" len="6" name="NatControl">
+41 4 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="66" len="31" name="SpoofingCheckControl">
+42 1d 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="67" len="204" name="HelpLinkControl">
+43 ca 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="68" len="202" name="GoogleEarthHTMLControl">
+44 c8 3c 69 6d 67 20 73 72 63 3d 27 68 74 74 70 
+3a 2f 2f 77 77 77 2e 74 72 69 6d 62 6c 65 2e 63 
+6f 6d 2f 67 72 61 70 68 69 63 73 2f 63 6f 6e 5f 
+73 70 73 35 35 30 2e 6a 70 67 27 3e 3c 2f 69 6d 
+67 3e 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="70" len="11" name="DdnsClientControl">
+46 9 80 1 0 20 f5 80 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="71" len="5" name="AutoDelete">
+47 3 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="76" len="52" name="StingerTracking">
+4c 32 0 1 0 6 0 0 0 1 0 7 0 6 0 1 
+0 1 0 1 0 0 0 6 0 6 0 6 0 6 0 0 
+0 0 0 0 0 0 0 0 0 6 0 6 0 6 0 0 
+0 6 0 6 
+</APP_RECORD>
+<APP_RECORD id="77" len="8" name="FileProtection">
+4d 6 0 0 0 3c 0 3c 
+</APP_RECORD>
+<APP_RECORD id="78" len="52" name="VectorAntenna">
+4e 32 0 0 3f af fd 60 e0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 1 96 0 0 
+0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="79" len="38" name="SvGalileoEnable">
+4f 24 1 1 1 1 1 1 1 1 1 1 1 1 1 1 
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 
+1 1 1 1 1 1 
+</APP_RECORD>
+<APP_RECORD id="80" len="32" name="SvCompassEnable">
+50 1e 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+
+</APP_RECORD>
+<APP_RECORD id="82" len="181" name="ScrambledCMRUAC">
+52 b3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 
+</APP_RECORD>
+<APP_RECORD id="83" len="3" name="PortMux">
+53 1 2 
+</APP_RECORD>
+<APP_RECORD id="88" len="4" name="Zeroconf">
+58 2 1 1 
+</APP_RECORD>
+<APP_RECORD id="92" len="10" name="AutoCSIBOperation">
+5c 8 0 0 0 ff 0 0 c3 50 
+</APP_RECORD>
+<APP_RECORD id="93" len="4" name="CorrMgr">
+5d 2 0 ff 
+</APP_RECORD>
+<APP_RECORD id="93" len="4" name="CorrMgr">
+5d 2 2 ff 
+</APP_RECORD>
+<APP_RECORD id="93" len="4" name="CorrMgr">
+5d 2 1 ff 
+</APP_RECORD>
+<APP_RECORD id="94" len="26" name="KeyValue">
+5e 18 50 6f 77 65 72 53 61 76 65 0 30 2c 31 2c 
+33 30 30 2c 32 38 38 30 30 0 
+</APP_RECORD>
+<APP_RECORD id="94" len="11" name="KeyValue">
+5e 9 49 70 46 69 6c 74 0 30 0 
+</APP_RECORD>
+<APP_RECORD id="94" len="16" name="KeyValue">
+5e e 6f 62 73 65 72 76 65 72 4e 61 6d 65 0 0 
+
+</APP_RECORD>
+<APP_RECORD id="94" len="14" name="KeyValue">
+5e c 61 67 65 6e 63 79 4e 61 6d 65 0 0 
+</APP_RECORD>
+<APP_RECORD id="94" len="14" name="KeyValue">
+5e c 47 4d 54 4f 66 66 73 65 74 0 30 0 
+</APP_RECORD>
+<APP_RECORD id="95" len="7" name="SvQZSSEnable">
+5f 5 0 1 1 1 1 
+</APP_RECORD>
+</CloneConfigData>
