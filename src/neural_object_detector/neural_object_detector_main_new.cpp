@@ -235,7 +235,7 @@ show_LIDAR_points(Mat &image, vector<image_cartesian> all_points)
 
 
 void
-show_LIDAR_filtered(Mat &image, vector<vector<image_cartesian>> points_lists, int b, int g, int r)
+show_LIDAR(Mat &image, vector<vector<image_cartesian>> points_lists, int r, int g, int b)
 {
 	for (unsigned int i = 0; i < points_lists.size(); i++)
 	{
@@ -268,11 +268,12 @@ show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> p
     }
 
     show_LIDAR_points(image, points);
-    show_LIDAR_filtered(image, points_lists, 0, 0, 255);
-    show_LIDAR_filtered(image, filtered_points, 0, 255, 0);
+    show_LIDAR(image, points_lists,    0, 0, 255);
+    show_LIDAR(image, filtered_points, 0, 255, 0);
 
+    resize(image, image, Size(640, 480));
     imshow("Neural Object Detector", image);
-    imwrite("Image.jpg", image);
+    //imwrite("Image.jpg", image);
     waitKey(1);
 }
 
@@ -439,7 +440,6 @@ build_detected_objects_message(vector<bbox_t> predictions, vector<image_cartesia
 		l++;
 	}
 	}
-	printf("\n");
 	return (msg);
 }
 
