@@ -1522,6 +1522,7 @@ virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhoo
 			{
 				free_track_set(best_track_set);
 				best_track_set = copy_track_set(track_set_n, neighborhood_graph);
+				// Update neighborhood_graph com melhorias feitas nas hipotheses.
 			}
 		}
 		else if ((track_set_prime != NULL) && (track_set_n != NULL) && (track_set_prime->size > track_set_n->size))
