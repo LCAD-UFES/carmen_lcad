@@ -1,68 +1,69 @@
 # Istall Raspbian on the Raspberry PI
 
-- Baixe o arquivo imagem do sistema operacional "Raspbian" no site do raspberry (https://www.raspberrypi.org/downloads/raspbian/)
-Obs: Nao baixe o arquivo LITE, e sim a versao completa.
+- Baixe a imagem do sistema RASPBIAN STRETCH WITH DESKTOP no site do raspberry (https://www.raspberrypi.org/downloads/raspbian/)
+Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de comando.
 
-- Baixe o Etcher para formatar o cartao de memoria utilizando o arquivo imagem citado na instrucao acima.
-Link: (https://etcher.io/)
+- Será necessário identificar o nome do dispositivo do cartão SD. Para isto, antes de inserir o cartão de memória execute o seguinte comando para ver as unidades de disco presentes.
 
-- Execute o Etcher e selecione o cartao de memoria e o arquivo imagem baixado no site do Raspberry pi
+```bash
+ $ sudo fdisk -l
+ ou
+ $ ls -la /dev/sd*
+```
+- Insira o cartão e execute novamente o comando de forma a identificar o nome do cartao de SD que irá aparecer. Será algo do tipo /dev/sd...
 
-No final do processo o cartao vai estar pronto para ser inserido no Raspberry pi 3, e o mesmo estara pronto para utilizacao.
+```bash
+ $ sudo fdisk -l
+```
 
-== Instrucoes iniciais para a utilizacao do Raspberry pi 3 (Usando a camera)
+- Caso o cartão SD apareça como por exemplo /dev/sde1 ou /dev/sde2, eliminar o numero e considerar apenas /dev/sde 
 
-- Conecte seu Raspberry pi 3 em uma rede Wireless ou Wired(A internet sera um recurso necessario para, eventualmente, baixar-
-mos pacotes e programas necessarios para a devida utilizacao do Script "rpi_camera" e de outras ocasionais funcionalidades)
+- Execute o seguinte comando para copiar a imagem do Raspibian para o cartão SD fazendo as alterações de caminho necessárias.
+
+```bash
+ $ sudo dd if=/home/usr/Downloads/2018-04-18-raspbian-stretch.img of=/dev/sd...
+```
+
+- O cartão esta formatado e pode ser inserido no Raspberry para utilização.
 
 
 # Enable the Camera
 
-1º-  Clique no menu inicar do Raspiberry pi 3(Canto superior esquerdo da tela inicial) e acesse a secao "Preferencias". Selecione
-"Raspiberry Pi Configuration"
+- Não execute upgrade
 
-2º- Na janela que se abrira selecione a aba "Interfaces"
+```bash
+ $ sudo apt-get update
+ $ sudo raspi-config
+```
+- Acesse e habilite a camera:
+->Interfacing Options
+       ->Camera
 
-3º- Habilite a Camera e o SSH.
+Para testar: O comando raspistill grava uma imgem e raspivid grava um video 
 
-Sua camera esta habilitada e pronta pra uso.
-
-Obs: Sera necessario reiniciar o sistema apos este passo.
-
-Caso queira testar se a camera ja esta pronta pra uso, teste o seguinte comando no terminal:
-
-"raspivid -o teste.h264 -t 10000"
-
-Se tudo estiver funcionando corretamente a camera sera ativada e gravara um video de 10 segundos que sera salvo na pasta:
-"home/pi"
-
-Obs: Para consultar os comandos no terminal utilizados pela Pi Camera consulte a documentacao no link:
-https://www.raspberrypi.org/documentation/raspbian/applications/camera.md
+```bash
+ $ raspistill -v -o test.jpg
+ $ raspivid -o teste.h264 -t 10000
+```
 
 
 # Install Dependencies anf Download the pi_camera file from git
 
 ```bash
- $ sudo apt-get install cmake
  $ sudo apt-get install libopencv-dev python-opencv
- $ sudo apt-get install subversion
  $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/pi_camera
+ $ sudo apt-get install cmake
+ $ sudo apt-get install subversion
 ```
 
 
 # Compile and test the pi_camera module on the Raspberry PI
 
 ```bash
- $ cd pi_camera/raspicam
- $ mkdir build
- $ cd build
- $ cmake ..
+ $ cd pi_camera/raspicam && mkdir build && cd build && cmake ..
  $ make
  $ sudo make install
- $ cd ../..
- $ mkdir build
- $ cd build
- $ cmake ..
+ $ cd ../.. && mkdir build && cd build && cmake ..
  $ make
  $ ./pi_camera_test
 ```
