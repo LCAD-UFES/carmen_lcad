@@ -98,6 +98,21 @@ fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
 
 			track->box_model_hypothesis[j].hypothesis_state.imm = imm;
 		}
+		else
+		{
+			imm_state_t *imm = track->box_model_hypothesis[j].hypothesis_state.imm;
+
+			Matrix z_k, R_k, R_p_k;
+			set_R_p_k_matriz(R_p_k, SIGMA_R, carmen_degrees_to_radians(SIGMA_THETA));
+			position_observation(z_k, R_k, R_p_k, radius, theta, SIGMA_R, carmen_degrees_to_radians(SIGMA_THETA));
+
+			imm_filter(imm->imm_x_k_k, imm->imm_P_k_k, imm->x_k_1_k_1, imm->P_k_1_k_1,
+					z_k, R_k,
+					imm->F_k_1_m, imm->Q_k_1_m, imm->H_k_m,
+					delta_t, carmen_degrees_to_radians(SIGMA_W), SIGMA_VCT, MAX_A, carmen_degrees_to_radians(MAX_W),
+					p, imm->u_k);
+		}
+
 
 		double vx = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[2][0];
 		double vy = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[3][0];

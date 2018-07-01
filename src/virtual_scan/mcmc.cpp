@@ -1004,11 +1004,20 @@ track_switch(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_grap
 	}
 }
 
-//void
-//track_diffusion(virtual_scan_track_t *track, int track_id)
-//{
-//
-//}
+
+void
+track_diffusion(virtual_scan_track_set_t *track_set, int track_id)
+{
+	virtual_scan_track_t *track = track_set->tracks[track_id];
+	int d = carmen_int_random(track->size);
+	virtual_scan_box_model_t *hypothesis = &(track->box_model_hypothesis[d].hypothesis);
+
+	double random_distance = carmen_double_random(0.7);
+	hypothesis->x += random_distance * cos(hypothesis->theta);
+	hypothesis->y += random_distance * sin(hypothesis->theta);
+
+	update_hypotheses_state(track);
+}
 
 
 void
@@ -1153,7 +1162,7 @@ filter_track_set(virtual_scan_track_set_t *track_set)
 virtual_scan_track_set_t *
 propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_track_set_t *track_set_n_1)
 {
-#define NUMBER_OF_TYPES_OF_MOVES	7
+#define NUMBER_OF_TYPES_OF_MOVES	8
 
 //	static int num_proposal = 0;
 
@@ -1208,10 +1217,10 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 			if (rand_track != -1)
 				track_switch(track_set, neighborhood_graph);
 			break;
-//		case 7:	// Diffusion
-//			if (rand_track != -1)
-//				track_diffusion(track_set, rand_track);
-//			break;
+		case 7:	// Diffusion
+			if (rand_track != -1)
+				track_diffusion(track_set, rand_track);
+			break;
 	}
 
 //	if (neighborhood_graph->graph_id == 7)
@@ -1281,7 +1290,7 @@ filter_best_track_set(virtual_scan_track_set_t *best_track_set)
 		int delta_frames = g_zi - last_hypothesis.hypothesis_points.zi;
 		if (delta_frames < 0)
 			delta_frames += NUMBER_OF_FRAMES_T;
-		if ((best_track_set->tracks[i]->size < 3) || (delta_frames >= 3) || (fabs(last_hypothesis.hypothesis_state.v) < 0.1))
+		if ((best_track_set->tracks[i]->size < 3) || (delta_frames >= 5) || (fabs(last_hypothesis.hypothesis_state.v) < 0.1))
 			best_track_set = track_death(best_track_set, i);
 
 		if (best_track_set == NULL)
@@ -1492,7 +1501,7 @@ update_global_track_set(virtual_scan_track_set_t *best_track_set)
 	for (int i = 0; i < best_track_set->size; i++)
 		merge_track_with_global_track_set(global_track_set, best_track_set->tracks[i]);
 
-//	plot_track_set(global_track_set);
+	plot_track_set(global_track_set);
 }
 
 
