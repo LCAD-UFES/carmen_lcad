@@ -49,9 +49,11 @@ print_track_set(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_g
 	{
 		fprintf(track_sets, "track %d, id %d: ", i, track_set->tracks[i]->track_id);
 		for (int j = 0; j < track_set->tracks[i]->size; j++)
-			fprintf(track_sets, "h %d - %c, index %d, zi %d, v %lf;  ", j, track_set->tracks[i]->box_model_hypothesis[j].hypothesis.c,
-					track_set->tracks[i]->box_model_hypothesis[j].index,
-					track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi, track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.v);
+//			fprintf(track_sets, "h %d - %c, index %d, zi %d, v %lf;  ", j, track_set->tracks[i]->box_model_hypothesis[j].hypothesis.c,
+//					track_set->tracks[i]->box_model_hypothesis[j].index,
+//					track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi, track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.v);
+			fprintf(track_sets, "h %d - %c, v %lf;  ", j, track_set->tracks[i]->box_model_hypothesis[j].hypothesis.c,
+					track_set->tracks[i]->box_model_hypothesis[j].hypothesis_state.v);
 		fprintf(track_sets, "\n");
 	}
 
@@ -1012,7 +1014,7 @@ track_diffusion(virtual_scan_track_set_t *track_set, int track_id)
 	int d = carmen_int_random(track->size);
 	virtual_scan_box_model_t *hypothesis = &(track->box_model_hypothesis[d].hypothesis);
 
-	double random_distance = carmen_double_random(0.7);
+	double random_distance = carmen_double_random(1.0);
 	hypothesis->x += random_distance * cos(hypothesis->theta);
 	hypothesis->y += random_distance * sin(hypothesis->theta);
 

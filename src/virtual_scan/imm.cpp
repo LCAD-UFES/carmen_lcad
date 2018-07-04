@@ -5,23 +5,21 @@
 #include <carmen/kalman.h>
 #include "virtual_scan.h"
 
-#define MAX_A		2.0		// m/s^2
+#define MAX_A		3.0		// m/s^2
 #define MAX_W 		5.0		// degrees/s
 
-#define SIGMA_S		(1.0)	// m
-#define SIGMA_VCA	(1.0)	// m/s
+#define SIGMA_S		(5.0)	// m
+#define SIGMA_VCA	(3.0)	// m/s
 #define SIGMA_VCT	(2.0)	// m/s
 #define SIGMA_W		(5.5)	// degrees/s
 
-#define SIGMA_R		1.0		// m
-#define SIGMA_THETA	1.0		// degrees
+#define SIGMA_R		0.3		// m
+#define SIGMA_THETA	2.0		// degrees
 
 double p[NUM_MODELS][NUM_MODELS] = {
 		{0.998, 0.001, 0.001},
 		{0.001, 0.998, 0.001},
 		{0.001, 0.001, 0.998}};
-
-extern carmen_point_t g_initial_pos;
 
 
 void
@@ -40,12 +38,12 @@ fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
 
 		// Precisa passar o delta_t para o imm e mudar este para ele recalcular as matrizes que dependem de delta_t.
 		//
-		// O imm calculando tudo com relacao ao robo, exige que se passe tudo, depois, para a posicao no mundo (x, y, x', y', x", y" e w).
+		// O imm esta calculando tudo com relacao ao robo. Isso exige que se passe tudo, depois, para a posicao no mundo (x, y, x', y', x", y" e w).
 		// Vamos, primeiro, calcular tudo com relacao ao robo e testar no gnuplot.
-		double x = track->box_model_hypothesis[j].hypothesis.x - track->box_model_hypothesis[j].hypothesis_points.global_pos.x;
-		double y = track->box_model_hypothesis[j].hypothesis.y - track->box_model_hypothesis[j].hypothesis_points.global_pos.y;
-		double x_1 = track->box_model_hypothesis[j - 1].hypothesis.x - track->box_model_hypothesis[j - 1].hypothesis_points.global_pos.x;
-		double y_1 = track->box_model_hypothesis[j - 1].hypothesis.y - track->box_model_hypothesis[j - 1].hypothesis_points.global_pos.y;
+		double x = track->box_model_hypothesis[j].hypothesis.x - track->box_model_hypothesis[j].hypothesis_points.sensor_pos.x;
+		double y = track->box_model_hypothesis[j].hypothesis.y - track->box_model_hypothesis[j].hypothesis_points.sensor_pos.y;
+		double x_1 = track->box_model_hypothesis[j - 1].hypothesis.x - track->box_model_hypothesis[j - 1].hypothesis_points.sensor_pos.x;
+		double y_1 = track->box_model_hypothesis[j - 1].hypothesis.y - track->box_model_hypothesis[j - 1].hypothesis_points.sensor_pos.y;
 		double radius = sqrt(x * x + y * y);
 		double theta = atan2(y, x);
 		double yaw = atan2(y - y_1, x - x_1);
@@ -61,7 +59,7 @@ fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
 			imm_filter(imm->imm_x_k_k, imm->imm_P_k_k, imm->x_k_1_k_1, imm->P_k_1_k_1,
 					z_k, R_k,
 					imm->F_k_1_m, imm->Q_k_1_m, imm->H_k_m,
-					delta_t, carmen_degrees_to_radians(SIGMA_W), SIGMA_VCT, MAX_A, carmen_degrees_to_radians(MAX_W),
+					delta_t, SIGMA_S, carmen_degrees_to_radians(SIGMA_W), SIGMA_VCA, SIGMA_VCT, MAX_A, carmen_degrees_to_radians(MAX_W),
 					p, imm->u_k);
 
 			track->box_model_hypothesis[j].hypothesis_state.imm = imm;
@@ -93,7 +91,7 @@ fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
 			imm_filter(imm->imm_x_k_k, imm->imm_P_k_k, imm->x_k_1_k_1, imm->P_k_1_k_1,
 					z_k, R_k,
 					imm->F_k_1_m, imm->Q_k_1_m, imm->H_k_m,
-					delta_t, carmen_degrees_to_radians(SIGMA_W), SIGMA_VCT, MAX_A, carmen_degrees_to_radians(MAX_W),
+					delta_t, SIGMA_S, carmen_degrees_to_radians(SIGMA_W), SIGMA_VCA, SIGMA_VCT, MAX_A, carmen_degrees_to_radians(MAX_W),
 					p, imm->u_k);
 
 			track->box_model_hypothesis[j].hypothesis_state.imm = imm;
@@ -109,7 +107,7 @@ fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
 			imm_filter(imm->imm_x_k_k, imm->imm_P_k_k, imm->x_k_1_k_1, imm->P_k_1_k_1,
 					z_k, R_k,
 					imm->F_k_1_m, imm->Q_k_1_m, imm->H_k_m,
-					delta_t, carmen_degrees_to_radians(SIGMA_W), SIGMA_VCT, MAX_A, carmen_degrees_to_radians(MAX_W),
+					delta_t, SIGMA_S, carmen_degrees_to_radians(SIGMA_W), SIGMA_VCA, SIGMA_VCT, MAX_A, carmen_degrees_to_radians(MAX_W),
 					p, imm->u_k);
 		}
 

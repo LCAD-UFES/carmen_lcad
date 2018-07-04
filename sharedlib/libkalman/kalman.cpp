@@ -284,8 +284,8 @@ CA_system_setup(double x, double y, double yaw, double v, Matrix &x_k_k, Matrix 
 
 	double P[6 * 6] =
 	{
-		10.0 * 10.0,	0.0,			0.0, 			0.0,			0.0, 			0.0,
-		0.0, 			10.0 * 10.0,	0.0, 			0.0,			0.0,			0.0,
+		5.0 * 5.0,		0.0,			0.0, 			0.0,			0.0, 			0.0,
+		0.0, 			5.0 * 5.0,		0.0, 			0.0,			0.0,			0.0,
 		0.0, 			0.0,			0.2 * 0.2, 		0.0,			0.0, 			0.0,
 		0.0, 			0.0,			0.0, 			0.2 * 0.2,		0.0, 			0.0,
 		0.0, 			0.0,			0.0, 			0.0,			1.0 * 1.0,		0.0,
@@ -365,8 +365,8 @@ CV_system_setup(double x, double y, double yaw, double v, Matrix &x_k_k, Matrix 
 
 	double P[4 * 4] =
 	{
-		10.0 * 10.0,	0.0, 			0.0, 			0.0,
-		0.0, 			10.0 * 10.0,	0.0, 			0.0,
+		5.0 * 5.0,		0.0, 			0.0, 			0.0,
+		0.0, 			5.0 * 5.0,		0.0, 			0.0,
 		0.0, 			0.0, 			0.2 * 0.2, 		0.0,
 		0.0, 			0.0, 			0.0, 			0.2 * 0.2
 	};
@@ -539,16 +539,18 @@ mix_modes(vector<Matrix> &x_0_k_1_k_1, vector<Matrix> &P_0_k_1_k_1, double u_k_1
 
 void
 mode_matched_filtering(double A[NUM_MODELS], vector<Matrix> &x_k_k_1, vector<Matrix> &P_k_k_1, Matrix z_k, vector<Matrix> &F_k_1,
-		vector<Matrix> &H_k, vector<Matrix> &Q_k_1, Matrix R_k, double T, double sigma_w, double sigma_vct)
+		vector<Matrix> &H_k, vector<Matrix> &Q_k_1, Matrix R_k, double T, double sigma_s, double sigma_w, double sigma_vca, double sigma_vct)
 {
 	vector<Matrix> delta_zk, S_k;
 	Matrix aux(z_k.m, z_k.n); delta_zk.push_back(aux); delta_zk.push_back(aux); delta_zk.push_back(aux);
 	Matrix aux2(R_k.m, R_k.n); S_k.push_back(aux2); S_k.push_back(aux2); S_k.push_back(aux2);
 
 	// CV_MODEL filter
+	set_CV_system_matrixes(F_k_1[0], Q_k_1[0], T, sigma_s);
 	kalman_filter(x_k_k_1[0], P_k_k_1[0], delta_zk[0], S_k[0], z_k, F_k_1[0], Q_k_1[0], H_k[0], R_k);
 
 	// CA_MODEL filter
+	set_CA_system_matrixes(F_k_1[1], Q_k_1[1], T, sigma_vca);
 	kalman_filter(x_k_k_1[1], P_k_k_1[1], delta_zk[1], S_k[1], z_k, F_k_1[1], Q_k_1[1], H_k[1], R_k);
 
 	// CT_MODEL
@@ -719,7 +721,7 @@ void
 imm_filter(Matrix &x_k_k, Matrix &P_k_k, vector<Matrix> &x_k_1_k_1, vector<Matrix> &P_k_1_k_1,
 		Matrix z_k, Matrix R_k,
 		vector<Matrix> F_k_1, vector<Matrix> Q_k_1, vector<Matrix> H_k,
-		double T, double sigma_w, double sigma_vct, double max_a, double max_w,
+		double T, double sigma_s, double sigma_w, double sigma_vca, double sigma_vct, double max_a, double max_w,
 		double p[NUM_MODELS][NUM_MODELS], double u_k[NUM_MODELS])
 {
 	// [3] pg. 455, Section The Algorithm (IMM)
@@ -736,7 +738,7 @@ imm_filter(Matrix &x_k_k, Matrix &P_k_k, vector<Matrix> &x_k_1_k_1, vector<Matri
 	double A[NUM_MODELS];
 	vector<Matrix> x_k_k_1 = restore_vector_dimensions(x_0_k_1_k_1);
 	vector<Matrix> P_k_k_1 = restore_matrix_dimensions(P_0_k_1_k_1);
-	mode_matched_filtering(A, x_k_k_1, P_k_k_1, z_k, F_k_1, H_k, Q_k_1, R_k, T, sigma_w, sigma_vct);
+	mode_matched_filtering(A, x_k_k_1, P_k_k_1, z_k, F_k_1, H_k, Q_k_1, R_k, T, sigma_s, sigma_w, sigma_vca, sigma_vct);
 	x_k_1_k_1 = x_k_k_1; // Aqui eu retorno os estados para a proxima iteracao [5]
 	P_k_1_k_1 = P_k_k_1;
 

@@ -62,5 +62,5 @@ void
 imm_filter(Matrix &x_k_k, Matrix &P_k_k, vector<Matrix> &x_k_1_k_1, vector<Matrix> &P_k_1_k_1,
 		Matrix z_k, Matrix R_k,
 		vector<Matrix> F_k_1, vector<Matrix> Q_k_1, vector<Matrix> H_k,
-		double T, double sigma_w, double sigma_vct, double max_a, double max_w,
+		double T, double sigma_s, double sigma_w, double sigma_vca, double sigma_vct, double max_a, double max_w,
 		double p[NUM_MODELS][NUM_MODELS], double u_k[NUM_MODELS]);
