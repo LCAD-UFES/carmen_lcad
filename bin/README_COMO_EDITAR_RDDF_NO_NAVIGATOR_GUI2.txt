@@ -33,7 +33,7 @@ para desmarcar o que estiver editando
  - Copie-o para o lugar desejado
  cp rddf_edited.txt ../data/rndf/rddf-log_voltadaufes-20160513.txt
 
- - Nao se esqueca de remover os indices do rddf anterior
+ - NAO SE ESQUECA DE REMOVER OS INDICES DO RDDF ANTERIOR
  rm ../data/rndf/rddf-log_voltadaufes-20160513.txt.*
 
 
