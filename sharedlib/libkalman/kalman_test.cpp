@@ -21,21 +21,26 @@ using namespace std;
 
 #define	DELTA_T		0.05	// s
 
-#define MAX_A		2.0		// m/s^2
+#define SIGMA_R_SIMULATION		0.0001 // (SIGMA_R / 2.0)			// m
+#define SIGMA_THETA_SIMULATION	0.0001 // (SIGMA_THETA / 2.0)		// degrees
+
+#define MAX_A		3.0		// m/s^2
 #define MAX_W 		5.0		// degrees/s
 
-#define SIGMA_S		(1.0)	// m
-#define SIGMA_VCA	(1.0)	// m/s
+#define SIGMA_S		(5.0)	// m
+#define SIGMA_VCA	(3.0)	// m/s
 #define SIGMA_VCT	(2.0)	// m/s
 #define SIGMA_W		(5.5)	// degrees/s
 
-#define SIGMA_R		1.0		// m
-#define SIGMA_THETA	1.0		// degrees
-#define SIGMA_R_SIMULATION		(SIGMA_R / 2.0)			// m
-#define SIGMA_THETA_SIMULATION	(SIGMA_THETA / 2.0)		// degrees
+#define SIGMA_R		0.3		// m
+#define SIGMA_THETA	2.0		// degrees
 
 #ifdef IMM_FILTER
 double u_k[NUM_MODELS] = {1.0/3.0, 1.0/3.0, 1.0/3.0};
+//double p[NUM_MODELS][NUM_MODELS] = {
+//		{1.0, 0.001, 0.001},
+//		{0.001, 0.001, 0.001},
+//		{0.001, 0.001, 0.001}};
 double p[NUM_MODELS][NUM_MODELS] = {
 		{0.998, 0.001, 0.001},
 		{0.001, 0.998, 0.001},
@@ -96,7 +101,7 @@ main()
 
 #ifdef READ_DATA_FROM_FILE
 	double imm_datmo_x, imm_datmo_y;
-	FILE *data = fopen("../../bin/imm_data_5_filtered.txt", "r");
+	FILE *data = fopen("../../bin/imm_data_1.txt", "r");
 	int num_items_read = fscanf(data, "%lf %lf %lf %lf %lf %lf\n", &true_x, &true_y, &imm_datmo_x, &imm_datmo_y, &delta_t, &true_yaw);
 	x = true_x;
 	y = true_y;
@@ -144,7 +149,7 @@ main()
 		imm_filter(imm_x_k_k, imm_P_k_k, x_k_1_k_1, P_k_1_k_1,
 				z_k, R_k,
 				F_k_1_m, Q_k_1_m, H_k_m,
-				delta_t, sigma_w, sigma_vct, max_a, max_w,
+				delta_t, sigma_s, sigma_w, sigma_vca, sigma_vct, max_a, max_w,
 				p, u_k);
 
 		compute_error_ellipse(angle, major_axis, minor_axis, imm_P_k_k.val[0][0], imm_P_k_k.val[0][1], imm_P_k_k.val[1][1], 2.4477);
@@ -180,19 +185,38 @@ main()
 	Matrix x_k_k, P_k_k, F_k_1, Q_k_1, H_k, R_p_k;
 
 	double delta_t = DELTA_T;
-	double true_x = -170.0;
-	double true_y = -150.0;
-	double true_yaw = carmen_degrees_to_radians(45.0);
-	double true_v = 5.0;
+//	double true_x = -170.0;
+//	double true_y = -150.0;
+//	double true_yaw = carmen_degrees_to_radians(45.0);
+
+	double true_x = 22.006322;
+	double true_y = -13.397749;
+	double true_yaw = carmen_degrees_to_radians(45.0 + 90.0);
+
+	double true_v = 18.0;
 
 	double sigma_r = SIGMA_R;
 	double sigma_theta = carmen_degrees_to_radians(SIGMA_THETA);
 
 	// True world state + error
-	double x = true_x - 5.0;
-	double y = true_y + 10.0;
-	double v = true_v + 1.0;
-	double yaw = true_yaw + carmen_degrees_to_radians(-5.0);
+//	double x = true_x - 5.0;
+//	double y = true_y + 10.0;
+//	double v = true_v + 1.0;
+//	double yaw = true_yaw + carmen_degrees_to_radians(-5.0);
+
+	double x = true_x;
+	double y = true_y;
+	double v = true_v;
+	double yaw = true_yaw;
+
+#ifdef READ_DATA_FROM_FILE
+	double imm_datmo_x, imm_datmo_y;
+	FILE *data = fopen("../../bin/imm_data_1.txt", "r");
+	int num_items_read = fscanf(data, "%lf %lf %lf %lf %lf %lf\n", &true_x, &true_y, &imm_datmo_x, &imm_datmo_y, &delta_t, &true_yaw);
+	x = true_x;
+	y = true_y;
+	yaw = true_yaw;
+#endif
 
 #ifdef CV_MODEL
 	double sigma_s = SIGMA_S;
@@ -233,7 +257,13 @@ main()
 
 		position_observation(z_k, R_k, R_p_k, radius, theta, sigma_r, sigma_theta);
 
-#if defined(CV_MODEL) || defined(CA_MODEL)
+#ifdef CV_MODEL
+		set_CV_system_matrixes(F_k_1, Q_k_1, delta_t, sigma_s);
+		kalman_filter(x_k_k, P_k_k, delta_zk, S_k, z_k, F_k_1, Q_k_1, H_k, R_k);
+#endif
+
+#ifdef CA_MODEL
+		set_CA_system_matrixes(F_k_1, Q_k_1, delta_t, sigma_vca);
 		kalman_filter(x_k_k, P_k_k, delta_zk, S_k, z_k, F_k_1, Q_k_1, H_k, R_k);
 #endif
 
@@ -246,13 +276,22 @@ main()
 		printf("%lf %lf %lf %lf %lf %lf %lf %lf %lf\n", true_x, true_y, x_k_k.val[0][0], x_k_k.val[1][0], major_axis, minor_axis, angle * 180.0 / M_PI,
 				z_k.val[0][0], z_k.val[1][0]);
 
+#ifdef READ_DATA_FROM_FILE
+		num_items_read = fscanf(data, "%lf %lf %lf %lf %lf %lf\n", &true_x, &true_y, &imm_datmo_x, &imm_datmo_y, &delta_t, &true_yaw);
+#else
 		true_x = true_x + true_v * cos(true_yaw) * delta_t;	// true position update
 		true_y = true_y + true_v * sin(true_yaw) * delta_t;	// true position update
 
 		if ((t > 55.0) && (t < 75.0))
 			true_yaw += 0.3 * delta_t;
+#endif
 
 		t += delta_t;
-	} while (t < 100.0);
+#ifdef READ_DATA_FROM_FILE
+	} while (num_items_read == 6);
+#else
+//	} while (t < 100.0);
+	} while (t < 36.0 * 0.05);
+#endif
 }
 #endif
