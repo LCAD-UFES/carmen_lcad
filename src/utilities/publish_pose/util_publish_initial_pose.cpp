@@ -2,6 +2,7 @@
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/fused_odometry_interface.h>
 
+
 carmen_point_t
 publish_starting_pose(carmen_point_t pose)
 {

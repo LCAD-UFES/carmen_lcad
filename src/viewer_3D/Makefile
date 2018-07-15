@@ -2,8 +2,8 @@ include ../Makefile.conf
 
 LINK = g++
 
-CFLAGS += -std=c99 -fopenmp
-CXXFLAGS += -Wno-write-strings
+CFLAGS += -fopenmp
+CXXFLAGS += -std=c++11 -Wno-write-strings
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models

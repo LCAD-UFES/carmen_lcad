@@ -405,12 +405,12 @@ build_and_follow_path(double timestamp)
 				publish_model_predictive_rrt_path_message(path_follower_path, timestamp);
 				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 
-				FILE *caco = fopen("caco2.txt", "a");
-				fprintf(caco, "%lf %lf %lf %d\n", GlobalState::last_odometry.v, GlobalState::robot_config.max_v,
-						path_follower_path.begin()->command.v,
-						GlobalState::behavior_selector_low_level_state);
-				fflush(caco);
-				fclose(caco);
+//				FILE *caco = fopen("caco2.txt", "a");
+//				fprintf(caco, "%lf %lf %lf %d\n", GlobalState::last_odometry.v, GlobalState::robot_config.max_v,
+//						path_follower_path.begin()->command.v,
+//						GlobalState::behavior_selector_low_level_state);
+//				fflush(caco);
+//				fclose(caco);
 			}
 			//		else
 				//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
