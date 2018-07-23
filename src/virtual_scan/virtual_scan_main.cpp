@@ -106,20 +106,13 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 	message->host = carmen_get_host();
 	message->timestamp = carmen_get_time();
 
-	if (best_track_set == NULL)
-	{
-		message->num_point_clouds = 0;
-		message->point_clouds = NULL;
-
-		return (message);
-	}
-
 	int num_moving_objects = 0;
-	for (int i = 0; i < best_track_set->size; i++)
-		if (best_track_set->tracks[i]->size > 2)
-			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
-//				if (best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi == g_zi)
-					num_moving_objects++;
+	if (best_track_set != NULL)
+		for (int i = 0; i < best_track_set->size; i++)
+			if (best_track_set->tracks[i]->size > 2)
+				for (int j = 0; j < best_track_set->tracks[i]->size; j++)
+	//				if (best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi == g_zi)
+						num_moving_objects++;
 
 	if (virtual_scan_box_model_hypotheses != NULL)
 		for (int i = 0; i < virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i++)
@@ -130,21 +123,24 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 	message->num_point_clouds = num_moving_objects;
 
 	int k = 0;
-	for (int i = 0; i < best_track_set->size; i++)
+	if (best_track_set != NULL)
 	{
-		if (best_track_set->tracks[i]->size > 2)
+		for (int i = 0; i < best_track_set->size; i++)
 		{
-			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
+			if (best_track_set->tracks[i]->size > 2)
 			{
-//				if (best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi == g_zi)
+				for (int j = 0; j < best_track_set->tracks[i]->size; j++)
 				{
-					virtual_scan_box_model_t box = best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis;
+	//				if (best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis_points.zi == g_zi)
+					{
+						virtual_scan_box_model_t box = best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis;
 
-//					box.length = (j == best_track_set->tracks[i]->size - 1) ? box.length : 0.3;
-//					box.width = (j == best_track_set->tracks[i]->size - 1) ? box.width : 0.3;
-					fill_in_moving_objects_message_element(k, message, &box);
+	//					box.length = (j == best_track_set->tracks[i]->size - 1) ? box.length : 0.3;
+	//					box.width = (j == best_track_set->tracks[i]->size - 1) ? box.width : 0.3;
+						fill_in_moving_objects_message_element(k, message, &box);
 
-					k++;
+						k++;
+					}
 				}
 			}
 		}
@@ -478,6 +474,7 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 
 		virtual_scan_track_set_t *track_set = virtual_scan_infer_moving_objects(g_neighborhood_graph);
 //		virtual_scan_publish_moving_objects(track_set, NULL);
+//		virtual_scan_publish_moving_objects(NULL, virtual_scan_box_model_hypotheses);
 		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);
 
 		virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);

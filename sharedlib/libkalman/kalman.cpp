@@ -566,12 +566,12 @@ mode_matched_filtering(double A[NUM_MODELS], vector<Matrix> &x_k_k_1, vector<Mat
 		double exponent_double = exponent.val[0][0];
 		double numerator = exp(-0.5 * exponent_double);
 		double denominator = sqrt(aux.det());
-		A[j] = numerator / denominator; // [3] eq. 11.6.6-12, ou [4] Section Model Probability Update
+		A[j] = numerator / denominator; // [3] eq. 11.6.6-12, pg. 456; ou [4] Section Model Probability Update
 	}
 }
 
 
-void
+double
 mode_probability_update(double u_k[NUM_MODELS], double A[NUM_MODELS], double c_bar[NUM_MODELS])
 {
 	double c = 0.0;
@@ -588,6 +588,8 @@ mode_probability_update(double u_k[NUM_MODELS], double A[NUM_MODELS], double c_b
 		for (int j = 0; j < NUM_MODELS; j++)
 			u_k[j] = 1.0 / (double) NUM_MODELS;
 	}
+
+	return (c);
 }
 
 
@@ -717,7 +719,7 @@ extend_matrix_dimensions(vector<Matrix> x, double max_a, double max_w)
 }
 
 
-void
+double
 imm_filter(Matrix &x_k_k, Matrix &P_k_k, vector<Matrix> &x_k_1_k_1, vector<Matrix> &P_k_1_k_1,
 		Matrix z_k, Matrix R_k,
 		vector<Matrix> F_k_1, vector<Matrix> Q_k_1, vector<Matrix> H_k,
@@ -742,7 +744,9 @@ imm_filter(Matrix &x_k_k, Matrix &P_k_k, vector<Matrix> &x_k_1_k_1, vector<Matri
 	x_k_1_k_1 = x_k_k_1; // Aqui eu retorno os estados para a proxima iteracao [5]
 	P_k_1_k_1 = P_k_k_1;
 
-	mode_probability_update(u_k, A, c_bar);
+	double state_probability = mode_probability_update(u_k, A, c_bar);
 
 	mode_estimate_and_covariance_combination(x_k_k, P_k_k, extend_vector_dimensions(x_k_k_1), extend_matrix_dimensions(P_k_k_1, max_a, max_w), u_k);
+
+	return (state_probability);
 }

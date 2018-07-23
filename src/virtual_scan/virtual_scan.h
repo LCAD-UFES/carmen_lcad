@@ -101,6 +101,15 @@ typedef struct
 	double theta;
 	double width;
 	double length;
+
+	carmen_point_t side0;
+	bool side0_valid;
+	carmen_point_t side1;
+	bool side1_valid;
+	carmen_point_t side2;
+	bool side2_valid;
+	carmen_point_t side3;
+	bool side3_valid;
 } virtual_scan_box_model_t;
 
 
@@ -154,6 +163,7 @@ typedef struct
 	double a;
 	double w;
 	imm_state_t *imm;
+	double imm_confidence;
 } virtual_scan_hypothesis_state_t;
 
 

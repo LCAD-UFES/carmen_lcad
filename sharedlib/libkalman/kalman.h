@@ -58,7 +58,7 @@ extend_matrix_dimensions(vector<Matrix> x, double max_a, double max_w);
 void
 mode_estimate_and_covariance_combination(Matrix &x_k_k, Matrix &P_k_k, vector<Matrix> x_k_k_1, vector<Matrix> P_k_k_1, double u_k[NUM_MODELS]);
 
-void
+double
 imm_filter(Matrix &x_k_k, Matrix &P_k_k, vector<Matrix> &x_k_1_k_1, vector<Matrix> &P_k_1_k_1,
 		Matrix z_k, Matrix R_k,
 		vector<Matrix> F_k_1, vector<Matrix> Q_k_1, vector<Matrix> H_k,

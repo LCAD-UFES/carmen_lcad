@@ -65,7 +65,7 @@ is_parent(int candidate_parent, int child, virtual_scan_neighborhood_graph_t *ne
 		if (delta_zi < 0)
 			delta_zi += NUMBER_OF_FRAMES_T;
 
-		if ((distance < delta_t * VMAX) && (delta_zi <= 2))
+		if ((distance < delta_t * VMAX) && (delta_zi < 4))
 			return (true);
 	}
 

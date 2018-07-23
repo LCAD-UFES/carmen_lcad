@@ -19,7 +19,7 @@ using namespace std;
 #define CA_MODEL
 #define CT_MODEL
 
-#define	DELTA_T		0.05	// s
+#define	DELTA_T		1.05	// s
 
 #define SIGMA_R_SIMULATION		0.0001 // (SIGMA_R / 2.0)			// m
 #define SIGMA_THETA_SIMULATION	0.0001 // (SIGMA_THETA / 2.0)		// degrees
@@ -27,13 +27,13 @@ using namespace std;
 #define MAX_A		3.0		// m/s^2
 #define MAX_W 		5.0		// degrees/s
 
-#define SIGMA_S		(5.0)	// m
-#define SIGMA_VCA	(3.0)	// m/s
-#define SIGMA_VCT	(2.0)	// m/s
+#define SIGMA_S		(0.5)	// m
+#define SIGMA_VCA	(0.3)	// m/s
+#define SIGMA_VCT	(0.2)	// m/s
 #define SIGMA_W		(5.5)	// degrees/s
 
 #define SIGMA_R		0.3		// m
-#define SIGMA_THETA	2.0		// degrees
+#define SIGMA_THETA	1.0		// degrees
 
 #ifdef IMM_FILTER
 double u_k[NUM_MODELS] = {1.0/3.0, 1.0/3.0, 1.0/3.0};
@@ -75,11 +75,18 @@ main()
 	double angle, major_axis, minor_axis;
 
 	double delta_t = DELTA_T;
+
 	double true_x = -170.0;
 	double true_y = -150.0;
 	double true_yaw = carmen_degrees_to_radians(45.0);
-	double true_v = 15.0;
+	double true_v = 5.0;
 	double true_w = 0.0;
+
+//	double true_x = 22.006322;
+//	double true_y = -13.397749;
+//	double true_yaw = carmen_degrees_to_radians(45.0 + 90.0);
+//	double true_v = 18.0;
+//	double true_w = 0.0;
 
 	double max_a = MAX_A;
 	double max_w = carmen_degrees_to_radians(MAX_W);
@@ -98,6 +105,12 @@ main()
 	double v = true_v + 1.0;
 	double yaw = true_yaw + carmen_degrees_to_radians(-5.0);
 	double w = true_w + carmen_degrees_to_radians(5.0);
+
+//	double x = true_x;
+//	double y = true_y;
+//	double v = true_v;
+//	double yaw = true_yaw;
+//	double w = true_w;
 
 #ifdef READ_DATA_FROM_FILE
 	double imm_datmo_x, imm_datmo_y;
@@ -146,17 +159,18 @@ main()
 
 		position_observation(z_k, R_k, R_p_k, radius, theta, sigma_r, sigma_theta);
 
-		imm_filter(imm_x_k_k, imm_P_k_k, x_k_1_k_1, P_k_1_k_1,
+		double state_probability = imm_filter(imm_x_k_k, imm_P_k_k, x_k_1_k_1, P_k_1_k_1,
 				z_k, R_k,
 				F_k_1_m, Q_k_1_m, H_k_m,
 				delta_t, sigma_s, sigma_w, sigma_vca, sigma_vct, max_a, max_w,
 				p, u_k);
 
 		compute_error_ellipse(angle, major_axis, minor_axis, imm_P_k_k.val[0][0], imm_P_k_k.val[0][1], imm_P_k_k.val[1][1], 2.4477);
-		printf("%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", true_x, true_y, imm_x_k_k.val[0][0], imm_x_k_k.val[1][0], major_axis, minor_axis, angle * 180.0 / M_PI,
+		printf("%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", true_x, true_y, imm_x_k_k.val[0][0], imm_x_k_k.val[1][0], major_axis, minor_axis, angle * 180.0 / M_PI,
 				z_k.val[0][0], z_k.val[1][0],
 				u_k[0], u_k[1], u_k[2],
-				sqrt(imm_x_k_k.val[2][0] * imm_x_k_k.val[2][0] + imm_x_k_k.val[3][0] * imm_x_k_k.val[3][0]));
+				sqrt(imm_x_k_k.val[2][0] * imm_x_k_k.val[2][0] + imm_x_k_k.val[3][0] * imm_x_k_k.val[3][0]),
+				state_probability);
 
 #ifdef READ_DATA_FROM_FILE
 		num_items_read = fscanf(data, "%lf %lf %lf %lf %lf %lf\n", &true_x, &true_y, &imm_datmo_x, &imm_datmo_y, &delta_t, &true_yaw);
@@ -170,9 +184,10 @@ main()
 
 		t += delta_t;
 #ifdef READ_DATA_FROM_FILE
-		} while (num_items_read == 6);
+	} while (num_items_read == 6);
 #else
-		} while (t < 100.0);
+	} while (t < 100.0);
+//	} while (t < 36.0 * 0.05);
 #endif
 }
 

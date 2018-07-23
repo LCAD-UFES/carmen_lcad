@@ -14,6 +14,7 @@ sum_of_tracks_lengths(virtual_scan_track_set_t *track_set)
 		sum += track_set->tracks[i]->size;
 
 	return ((sum > 0.0)? sum / sqrt((double) track_set->size): 0.0);
+//	return ((sum > 0.0)? sum / (1.0 + log((double) track_set->size)): 0.0);
 //	return (sum);
 }
 
@@ -169,13 +170,31 @@ sum_of_variances(virtual_scan_track_set_t *track_set)
 
 
 double
+sum_of_confidences(virtual_scan_track_set_t *track_set)
+{
+	double sum = 0.0;
+
+	for (int i = 0; i < track_set->size; i++)
+	{
+		if (track_set->tracks[i]->box_model_hypothesis->hypothesis_state.imm != NULL)
+			sum += track_set->tracks[i]->box_model_hypothesis->hypothesis_state.imm_confidence;
+	}
+
+//	sum /= (double) track_set->size;
+
+	return (sum);
+}
+
+
+double
 probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set, bool print)
 {
-#define lambda_L	8.0
-#define lambda_T	0.01 // 0.75 // 0.1
-#define lambda_1	0.1
-#define lambda_2	0.1
+#define lambda_L	0.8
+#define lambda_T	0.0 // 0.75 // 0.1
+#define lambda_1	1.0
+#define lambda_2	1.0
 #define lambda_3	0.0
+#define lambda_alberto	0.0 // 5.0
 
 	if (track_set == NULL)
 		return (0.0);
@@ -186,10 +205,13 @@ probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set,
 	double Sms2 = sum_of_number_of_non_maximal_measurements_that_fall_behind_the_object_model(track_set);
 	double Sms3 = sum_of_measurements_that_fall_inside_object_models_in_track_set(track_set);
 
-	if (print)
-		printf("Slen = %lf, Smot = %lf, Sms1 = %lf, Sms2 = %lf, Sms3 = %lf\n", Slen, Smot, Sms1, Sms2, Sms3);
+	double Salb = sum_of_confidences(track_set);
 
-	double p_w_z = exp(lambda_L * Slen - lambda_T * Smot - lambda_1 * Sms1 - lambda_2 * Sms2 - lambda_3 * Sms3 - 70.0);
+	if (print)
+		printf("Slen = %lf, Smot = %lf, Sms1 = %lf, Sms2 = %lf, Sms3 = %lf, Salb = %lf\n",
+				Slen * lambda_L, Smot * lambda_T, Sms1 * lambda_1, Sms2 * lambda_2, Sms3 * lambda_3, Salb * lambda_alberto);
+
+	double p_w_z = exp(lambda_L * Slen - lambda_T * Smot - lambda_1 * Sms1 - lambda_2 * Sms2 - lambda_3 * Sms3 + lambda_alberto * Salb);
 
 	return (p_w_z);
 }

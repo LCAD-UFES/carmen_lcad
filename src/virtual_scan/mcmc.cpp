@@ -658,6 +658,33 @@ get_parent_hypothesis_in_v_star_and_at_the_beginning_of_track(virtual_scan_track
 
 
 void
+align_hipotheses_poses(virtual_scan_track_t *track)
+{
+	if (track->size >= 3)
+	{
+		for (int i = 0; i < track->size - 2; i++)
+		{
+			double delta_t1 = track->box_model_hypothesis[i + 1].hypothesis_points.precise_timestamp - track->box_model_hypothesis[i].hypothesis_points.precise_timestamp;
+			double delta_t2 = track->box_model_hypothesis[i + 2].hypothesis_points.precise_timestamp - track->box_model_hypothesis[i + 1].hypothesis_points.precise_timestamp;
+			if ((fabs(delta_t1) > 0.035))// && (fabs(delta_t2) > 0.01))
+			{
+				double v1 = DIST2D(track->box_model_hypothesis[i + 1].hypothesis, track->box_model_hypothesis[i].hypothesis) / delta_t1;
+				double v2 = DIST2D(track->box_model_hypothesis[i + 2].hypothesis, track->box_model_hypothesis[i + 1].hypothesis) / delta_t2;
+				double v = (v2 + v1) / 2.0;
+				double distance = v * delta_t1;
+				double estimated_theta = atan2(track->box_model_hypothesis[i + 1].hypothesis.y - track->box_model_hypothesis[i].hypothesis.y,
+						track->box_model_hypothesis[i + 1].hypothesis.x - track->box_model_hypothesis[i].hypothesis.x);
+
+//				track->box_model_hypothesis[i + 1].hypothesis.x = track->box_model_hypothesis[i].hypothesis.x + distance * cos(track->box_model_hypothesis[i].hypothesis.theta);
+//				track->box_model_hypothesis[i + 1].hypothesis.y = track->box_model_hypothesis[i].hypothesis.y + distance * sin(track->box_model_hypothesis[i].hypothesis.theta);
+				track->box_model_hypothesis[i + 1].hypothesis.theta = estimated_theta;
+			}
+		}
+	}
+}
+
+
+void
 track_extension(virtual_scan_track_set_t *track_set, int track_id, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 	if (track_set == NULL)
@@ -695,6 +722,8 @@ track_extension(virtual_scan_track_set_t *track_set, int track_id, virtual_scan_
 		else
 			break;
 	} while (carmen_uniform_random(0.0, 1.0) > GAMMA);
+
+//	align_hipotheses_poses(track);
 
 	update_hypotheses_state(track);
 }
@@ -1010,11 +1039,14 @@ track_switch(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_grap
 void
 track_diffusion(virtual_scan_track_set_t *track_set, int track_id)
 {
+//	return;
+
+//	double angle_in_the_distance_travelled = ANGLE2D(track->box_model_hypothesis[j].hypothesis, track->box_model_hypothesis[j - 1].hypothesis);
 	virtual_scan_track_t *track = track_set->tracks[track_id];
 	int d = carmen_int_random(track->size);
 	virtual_scan_box_model_t *hypothesis = &(track->box_model_hypothesis[d].hypothesis);
 
-	double random_distance = carmen_double_random(1.0);
+	double random_distance = carmen_double_random(0.4);
 	hypothesis->x += random_distance * cos(hypothesis->theta);
 	hypothesis->y += random_distance * sin(hypothesis->theta);
 
@@ -1503,7 +1535,7 @@ update_global_track_set(virtual_scan_track_set_t *best_track_set)
 	for (int i = 0; i < best_track_set->size; i++)
 		merge_track_with_global_track_set(global_track_set, best_track_set->tracks[i]);
 
-	plot_track_set(global_track_set);
+//	plot_track_set(global_track_set);
 }
 
 
@@ -1542,6 +1574,8 @@ virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhoo
 
 	double best_track_prob = probability_of_track_set_given_measurements(best_track_set, true);
 	printf("num_tracks %d, largest track %d, prob %lf\n", (best_track_set)? best_track_set->size: 0, largest_track_size(best_track_set), best_track_prob);
+	fflush(stdout);
+
 	print_track_set(best_track_set, neighborhood_graph, 0);
 
 	print_track_set(global_track_set, neighborhood_graph);

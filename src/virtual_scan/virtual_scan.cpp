@@ -773,6 +773,7 @@ append_i_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 	else
 		first_point = farthest_point;
 
+//	for (int category = 0; category < 3; category++)
 	for (int category = 1; category < 2; category++)
 	{
 		double theta, theta2;
@@ -795,7 +796,8 @@ append_i_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 			else
 				append_i_object(box_models, box_points, last_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
 		}
-		else //if (l <= categories[category].width * 1.5)
+
+		if (l <= categories[category].width * 1.5)
 		{
 			theta = carmen_normalize_theta(atan2(last_point.y - first_point.y, last_point.x - first_point.x) - M_PI / 2.0);
 			theta2 = carmen_normalize_theta(theta + M_PI / 2.0);
@@ -931,12 +933,12 @@ virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment
 //			append_pedestrian_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i].centroid);
 		if (segment_class == L_SHAPED) // L-shape segments segments will generate bus and car hypotheses
 		{
-			plot_segment(box_points, segment_features, 30);
+//			plot_segment(box_points, segment_features, 30);
 			append_l_shaped_objects_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i], categories);
 		}
 		if (segment_class == I_SHAPED) // I-shape segments segments will generate bus, car and bike hypotheses
 		{
-			plot_segment(box_points, segment_features, 30);
+//			plot_segment(box_points, segment_features, 30);
 			append_i_shaped_objects_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i], categories);
 		}
 
