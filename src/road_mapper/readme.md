@@ -2,7 +2,7 @@
 
 Raphael V. Carneiro, Rafael C. Nascimento, Rânik Guidolini, Vinicius B. Cardoso, Thiago Oliveira-Santos, Claudine Badue and Alberto F. De Souza,
 “Mapping road lanes using laser remission and deep neural networks,”
-unpublished, accepted by IEEE 2018 International Joint Conference on Neural Networks (IJCNN).
+IEEE 2018 International Joint Conference on Neural Networks (IJCNN).
 
 | AVAILABLE DOWNLOADS |
 | :------------------: |
@@ -218,7 +218,9 @@ Please compile the carmen_lcad version of the modified Caffe framework **caffe-e
  $ cd $CARMEN_HOME/sharedlib/ENet/caffe-enet
  $ mkdir build && cd build
  $ cmake ..
- $ make all -j 20 && make pycaffe
+ $ make all -j 20
+ $ make pycaffe
+ $ sudo apt-get install python-matplotlib python-numpy python-pil python-scipy build-essential cython python-skimage python-protobuf
 ```
 
 You can also consult the generic [Caffe installation guide](http://caffe.berkeleyvision.org/installation.html) for further help. If you like to compile with **make**, please uncomment the following line in the Makefile.config 

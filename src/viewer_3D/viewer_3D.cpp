@@ -1576,6 +1576,15 @@ carmen_localize_neural_curr_message_handler(carmen_localize_neural_imagepos_mess
     memcpy(localize_imagepos_curr_message.image_data, message->image_data, message->size * sizeof(char));
 }
 
+
+static void
+carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_initialize_message *initialize_msg)
+{
+	gps_position_at_turn_on = {initialize_msg->mean->x, initialize_msg->mean->y, 0.0};
+    odometry_initialized = 1;
+}
+
+
 #ifdef TEST_LANE_ANALYSIS
 static void lane_analysis_handler(carmen_elas_lane_analysis_message * message) {
 	carmen_vector_3D_t position_offset = get_position_offset();
@@ -2861,6 +2870,9 @@ subscribe_ipc_messages(void)
 			(carmen_handler_t) carmen_localize_ackerman_particle_prediction_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_localize_ackerman_subscribe_particle_correction_message(NULL,
 			(carmen_handler_t) carmen_localize_ackerman_particle_correction_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_localize_ackerman_subscribe_initialize_message(NULL,
+			(carmen_handler_t) carmen_localize_ackerman_initialize_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
