@@ -27,12 +27,13 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
 - O cartão esta formatado e pode ser inserido no Raspberry para utilização.
 
 
-# Enable the Camera
+# Enable the IMU
 
 - Não execute upgrade
 
 ```bash
  $ sudo apt-get update
+ $ sudo apt-get install i2c-tools libi2c-dev python-smbus
  $ sudo raspi-config
 ```
 - Acesse e habilite a camera:
@@ -47,17 +48,15 @@ Para testar: O comando raspistill grava uma imgem e raspivid grava um video
 ```
 
 
-# Install Dependencies anf Download the pi_camera file from git
+# Install Dependencies anf Download the pi_imu file from git
 
 ```bash
- $ sudo apt-get install libopencv-dev python-opencv
- $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/pi_camera
- $ sudo apt-get install cmake
  $ sudo apt-get install subversion
+ $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/pi_imu
 ```
 
 
-# Compile and test the pi_camera module on the Raspberry PI
+# Compile and test the pi_imu module on the Raspberry PI
 
 ```bash
  $ cd pi_camera/raspicam && mkdir build && cd build && cmake ..

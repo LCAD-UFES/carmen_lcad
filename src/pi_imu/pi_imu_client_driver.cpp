@@ -10,13 +10,14 @@
 char* tcp_ip_address;
 
 #define PORT "3457"
+#define SOCKET_DATA_PACKET_SIZE	2048
 
 using namespace std;
 using namespace cv;
 
 
 int
-stablished_connection_with_server(char *cam_config, int cam_config_size)
+stablished_connection_with_server()
 {
 	struct addrinfo host_info;       // The struct that getaddrinfo() fills up with data.
 	struct addrinfo *host_info_list; // Pointer to the to the linked list of host_info's.
@@ -49,21 +50,19 @@ stablished_connection_with_server(char *cam_config, int cam_config_size)
 
 	printf("--- Connection established successfully! ---\n");
 
-	send(pi_socket, cam_config, cam_config_size, MSG_NOSIGNAL);
-
 	return (pi_socket);
 }
 
 
 int
-trying_to_reconnect(char *cam_config, int cam_config_size)
+trying_to_reconnect()
 {
-	int pi_socket = stablished_connection_with_server(cam_config, cam_config_size);
+	int pi_socket = stablished_connection_with_server();
 
 	while (pi_socket == -1)
 	{
-		sleep(5);
-		pi_socket = stablished_connection_with_server(cam_config, cam_config_size);
+		sleep((unsigned int) 5);
+		pi_socket = stablished_connection_with_server();
 	}
 	return (pi_socket);
 }
@@ -158,25 +157,25 @@ initialize_message(carmen_bumblebee_basic_stereoimage_message *msg)
 int
 main(int argc, char **argv)
 {
-	carmen_bumblebee_basic_stereoimage_message msg;
-	char cam_config[64];
+//	carmen_bumblebee_basic_stereoimage_message msg;
 
-	carmen_ipc_initialize(argc, argv);
+//	carmen_ipc_initialize(argc, argv);
 
-	carmen_param_check_version(argv[0]);
+//	carmen_param_check_version(argv[0]);
 
-	int camera_number = read_parameters(argc, argv, &msg, cam_config);
-	initialize_message(&msg);
+//	int camera_number = read_parameters(argc, argv, &msg, cam_config);
+//	initialize_message(&msg);
 
-	carmen_bumblebee_basic_define_messages(camera_number);
+//	carmen_bumblebee_basic_define_messages(camera_number);
 
-	int pi_socket = stablished_connection_with_server(cam_config, 64);
+	int pi_socket = stablished_connection_with_server();
 
 	int valread;
 	while (1)
 	{
+		unsigned char rpi_imu_data[SOCKET_DATA_PACKET_SIZE];
 		// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
-		valread = recv(pi_socket, msg.raw_left, msg.image_size, MSG_WAITALL);
+		valread = recv(pi_socket, rpi_imu_data, SOCKET_DATA_PACKET_SIZE, MSG_WAITALL);
 
 		if (valread == 0) // Connection lost due to server shutdown.
 		{
@@ -187,11 +186,8 @@ main(int argc, char **argv)
 		else if ((valread == -1) || (valread != msg.image_size))
 			continue;
 
-		Mat cv_image = Mat(msg.height, msg.width, CV_8UC3, msg.raw_left, 3 * 640);
-		cvtColor(cv_image, cv_image, CV_RGB2BGR);
-
-
-		publish_image_message(camera_number, &msg);
+		printf("%s", rpi_imu_data);
+//		publish_image_message(camera_number, &msg);
 
 		//imshow("Pi Camera Driver", cv_image);  waitKey(1);
 	}

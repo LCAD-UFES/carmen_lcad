@@ -1,6 +1,18 @@
-#include "pi_camera_driver.h"
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <iostream>
+#include <sys/socket.h>
+#include <netdb.h>
+#include "imu.c"
 
 #define PORT 3457
+#define SOCKET_DATA_PACKET_SIZE	2048
+
+int server_fd;
 
 
 void
@@ -32,34 +44,15 @@ extract_camera_configuration(char *cam_config, int &image_width, int &image_heig
 
 
 void
-set_camera_configurations(raspicam::RaspiCam &RpiCamera, int image_width, int image_height, int frame_rate, int brightness, int contrast)
+set_imu_configurations()
 {
-    if (RpiCamera.isOpened())
-            RpiCamera.release();
-    
-	RpiCamera.setWidth(image_width);
-	RpiCamera.setHeight(image_height);
-	RpiCamera.setFrameRate(frame_rate);
-	RpiCamera.setBrightness(brightness);
-	RpiCamera.setContrast(contrast);
-	RpiCamera.setFormat(raspicam::RASPICAM_FORMAT_RGB);
-	RpiCamera.setMetering(raspicam::RASPICAM_METERING_MATRIX);
-	RpiCamera.setHorizontalFlip(true);
-	RpiCamera.setVerticalFlip(true);
-
-	if (!RpiCamera.open())
-	{
-		cerr << "Could not open the camera!\n" << endl;
-		exit(0);
-	}
+	detectIMU();
+	enableIMU();
 }
 
 
-int server_fd;
-
 int
-connect_with_client(raspicam::RaspiCam &RpiCamera, char* cam_config, int &image_width, int &image_height,
-		int &image_size, int &frame_rate, int &brightness, int &contrast)
+connect_with_client()
 {
     int new_socket;
     struct sockaddr_in address;
@@ -84,7 +77,7 @@ connect_with_client(raspicam::RaspiCam &RpiCamera, char* cam_config, int &image_
     
     //printf("--- BIND\n");
     // Forcefully attaching socket to the port defined
-    if (bind(server_fd, (struct sockaddr*) &address, sizeof(address)) < 0)
+    if (bind(server_fd, (struct sockaddr *) &address, sizeof(address)) < 0)
     {
         perror("--- Bind Failed ---\n");
         return (-1);
@@ -97,21 +90,13 @@ connect_with_client(raspicam::RaspiCam &RpiCamera, char* cam_config, int &image_
     }
     
     printf("--- Waiting for connection! --\n");
-    if ((new_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &addrlen)) < 0)
+    if ((new_socket = accept(server_fd, (struct sockaddr *) &address, (socklen_t *) &addrlen)) < 0)
     {
         perror("--- Accept Failed ---\n");
         return (-1);
     }
     printf("--- Connection established successfully! ---\n");
 
-	recv(new_socket, cam_config, 64, MSG_WAITALL);
-
-	extract_camera_configuration(cam_config, image_width, image_height, frame_rate, brightness, contrast);
-
-    //set_camera_configurations(RpiCamera, image_width, image_height, frame_rate, brightness, contrast);
-
-	image_size = image_width * image_height * 3;
-	
     return (new_socket);
 }
 
@@ -119,35 +104,35 @@ connect_with_client(raspicam::RaspiCam &RpiCamera, char* cam_config, int &image_
 int
 main()
 {
-	raspicam::RaspiCam RpiCamera;
-    raspicam::RaspiCam *aux;
-	char cam_config[64];
-	int result = 0, image_width = 0, image_height = 0, frame_rate = 0, brightness = 0, contrast = 0, image_size = 0;
+	int pi_socket = connect_with_client();
 
-	int pi_socket = connect_with_client(RpiCamera, cam_config, image_width, image_height, image_size, frame_rate, brightness, contrast);
+	set_imu_configurations();
 
-
-	unsigned char *rpi_cam_data = (unsigned char*) calloc (image_size, sizeof(unsigned char)); // TODO deve ficar apos a leitura do cam config
-	
-	set_camera_configurations(RpiCamera, image_width, image_height, frame_rate, brightness, contrast);
+	int magRaw[3];
+	int accRaw[3];
+	int gyrRaw[3];
 
 	while (1)
 	{
-		RpiCamera.grab();     // Capture frame
-		RpiCamera.retrieve (rpi_cam_data, raspicam::RASPICAM_FORMAT_RGB);
+		unsigned char rpi_imu_data[SOCKET_DATA_PACKET_SIZE];
 
-		result = send(pi_socket, rpi_cam_data, image_size, MSG_NOSIGNAL);  // Returns number of bytes read, 0 in case of connection lost, -1 in case of error
+		readACC(accRaw);
+		readGYR(gyrRaw);
+		readMAG(magRaw);
 
+		sprintf((char *) rpi_imu_data, "%d %d %d %d %d %d %d %d %d *\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2], magRaw[0], magRaw[1], magRaw[2]);
+
+		int result = send(pi_socket, rpi_imu_data, SOCKET_DATA_PACKET_SIZE, MSG_NOSIGNAL);  // Returns number of bytes read, 0 in case of connection lost, -1 in case of error
 		if (result == -1)
 		{
 			printf("--- Disconnected ---\n");
             close(server_fd);
             sleep(3);
             
-            pi_socket = connect_with_client(RpiCamera, cam_config, image_width, image_height, image_size, frame_rate, brightness, contrast);
+            pi_socket = connect_with_client();
         }
 
-        //imshow("Pi Cam Server", Mat(image_height, image_width, CV_8UC3, rpi_cam_data, 3 * image_width));   waitKey(1);
+		usleep(10000);
     }
 
    return (0);
