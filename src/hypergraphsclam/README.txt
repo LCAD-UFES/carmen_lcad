@@ -1,3 +1,7 @@
+Informações dos arquivos gerados pelo HYPERGRAPHSCLAM:
+
+
+
 Como fazer o mapa com o HYPERGRAPHSCLAM
 
 ==============================================================================
@@ -60,21 +64,47 @@ Este processo demora pois tem que processar o log.
     ```
 
 O parser gera 7 arquivos:
-    as poses do GPS: gps.txt
-    a odometria com calibração inicial: odometry.txt
-    a odometria sem calibração: raw_odometry.txt
-    poses do ICP do velodyne: velodyne.txt
-    poses do ICP do sick: sick.txt
-    poses da câmera: bumblebee.txt
-    o arquivo de saída <output> contendo o hipergrafo.
+    1. as poses do GPS: gps.txt
+    2. a odometria com calibração inicial: odometry.txt
+    3. a odometria sem calibração: raw_odometry.txt
+    4. poses do ICP do velodyne: velodyne.txt
+    5. poses do ICP do sick: sick.txt
+    6. poses da câmera: bumblebee.txt
+    7. o arquivo de saída <output> contendo o hipergrafo.
+
+Os arquivos acima estão no seguinte formato:
+
+    1. x y theta cos(theta) sin(theta)
+    2. x y theta cos(theta) sin(theta)
+    3. x y theta cos(theta) sin(theta)
+    4. x y theta cos(theta) sin(theta)
+    5. x y theta cos(theta) sin(theta)
+    6. x y theta cos(theta) sin(theta)
+    7. VERTEX_ID x y theta timeStamp vertexType -> nó do grafo
+        ...
+       ODOM_EDGE VERTEX_ID VERTEX_ID dX dY dTheta velocityWithBias phiWithBias dt -> aresta de odometria
+        ...
+       GPS_EDGE VERTEX_ID x y theta GPSQuality -> aresta do GPS
+        ...
+       VELODYNE_SEQ VERTEX_ID VERTEX_ID dX dY dTheta  -> aresta de estimativa de movimento do Velodyne
+        ...
+       VELODYNE_LOOP VERTEX_ID VERTEX_ID dX dY dTheta -> aresta de estimativa de fechamento de loop do Velodyne
+        ...
+       SICK_SEQ VERTEX_ID VERTEX_ID dX dY dTheta  -> aresta de estimativa de movimento do sick
+        ...
+       SICK_LOOP VERTEX_ID VERTEX_ID dX dY dTheta -> aresta de estimativa de fechamento de loop do sick
+        ...
+       BUMBLEBEE_SEQ VERTEX_ID VERTEX_ID dX dY dTheta  -> aresta de estimativa de movimento da bumblebee
+        ...
+       BUMBLEBEE_LOOP VERTEX_ID VERTEX_ID dX dY dTheta -> aresta de estimativa de fechamento de loop da bumblebee
+
 
 ## OBS 3: o parser gera muitos arquivos nas pastas /dados/tmp/*.
 ## As nuvens de pontos do velodyne, por exemplo, estão na pasta /dados/tmp/velodyne.
 ## As nuvens de pontos do velodyne acumuladas no ICP estão na pasta /dados/tmp/lgm/velodyne.
 ## Portanto, é bom remover esses dados ao terminar de construir o mapa
 
-3. Execute o hypergraphsclam dentro da pasta src/hypergraphsclam (voce pode rodar o hypergraphsclam varias vezes com diferentes parametros
-sem ter que rodar o parser novamente):
+3. Execute o hypergraphsclam dentro da pasta src/hypergraphsclam (voce pode rodar o hypergraphsclam varias vezes com diferentes parametros sem ter que rodar o parser novamente):
 
     ```
     cd src/hypergraphsclam
@@ -85,7 +115,7 @@ sem ter que rodar o parser novamente):
 
     ```
     cd src/hypergraphsclam
-    ./hypergraphsclam sync-log_volta_da_ufes-20171106.txt poses-opt-log_volta_da_ufes-20171106.txt
+    ./hypergraphsclam sync-log_volta_da_ufes-20171106.txt poses-opt-log_volta_da_ufes-20171106
     ```
 
 ## OBS 1: Nos prints do programa hypergraphsclam, chi2 representa o erro do graphslam.
@@ -101,6 +131,14 @@ sem ter que rodar o parser novamente):
     ```
     ./hypergraphsclam sync-log_volta_da_ufes-20171106.txt poses-opt-log_volta_da_ufes-20171106.txt minha_configuração.txt
     ```
+O otimizador gera 4 arquivos:
+    1. Poses do carro no mundo
+    2. Poses do velodyne no mundo
+    3. Poses da bumblebee no mundo
+    4. Poses do sick no mundo
+
+Os quatro arquivos acima estão no seguinte formato:
+    x y theta timeStamp cos(theta) sin(theta)
 
 Após a otimização, os dados podem ser visualizados pelo gnuplot:
     Exemplo:
