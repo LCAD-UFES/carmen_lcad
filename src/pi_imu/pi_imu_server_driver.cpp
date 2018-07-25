@@ -7,7 +7,7 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <netdb.h>
-#include "imu.c"
+#include "imu.h"
 
 #define PORT 3457
 #define SOCKET_DATA_PACKET_SIZE	2048
