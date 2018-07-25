@@ -155,7 +155,7 @@ initialize_message(carmen_bumblebee_basic_stereoimage_message *msg)
 
 
 int
-main(int argc, char **argv)
+main()
 {
 //	carmen_bumblebee_basic_stereoimage_message msg;
 
@@ -180,10 +180,10 @@ main(int argc, char **argv)
 		if (valread == 0) // Connection lost due to server shutdown.
 		{
 			close(pi_socket);
-			pi_socket = trying_to_reconnect(cam_config, 64);
+			pi_socket = trying_to_reconnect();
 			continue;
 		}
-		else if ((valread == -1) || (valread != msg.image_size))
+		else if ((valread == -1) || (valread != SOCKET_DATA_PACKET_SIZE))
 			continue;
 
 		printf("%s", rpi_imu_data);
