@@ -33,7 +33,7 @@ stablished_connection_with_server()
 	host_info.ai_family = AF_UNSPEC;     // IP version not specified. Can be both.
 	host_info.ai_socktype = SOCK_STREAM; // Use SOCK_STREAM for TCP or SOCK_DGRAM for UDP.
 
-	status = getaddrinfo(tcp_ip_address, PORT, &host_info, &host_info_list);
+	status = getaddrinfo("10.42.0.28", PORT, &host_info, &host_info_list);
 
 	if (status != 0)
 	{
@@ -191,4 +191,5 @@ main()
 
 		//imshow("Pi Camera Driver", cv_image);  waitKey(1);
 	}
+	return 0;
 }

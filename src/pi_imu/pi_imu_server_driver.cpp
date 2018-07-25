@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <sys/time.h>
 #include "imu.h"
 
 #define PORT 3457
@@ -100,6 +101,17 @@ connect_with_client()
     return (new_socket);
 }
 
+double
+get_time(void)
+{
+  struct timeval tv;
+  double t;
+
+  if (gettimeofday(&tv, NULL) < 0)
+    printf("time error\n");
+  t = tv.tv_sec + tv.tv_usec/1000000.0;
+  return t;
+}
 
 int
 main()
@@ -108,12 +120,15 @@ main()
 
 	set_imu_configurations();
 
+	double start, end;
+
 	int magRaw[3];
 	int accRaw[3];
 	int gyrRaw[3];
 
 	while (1)
 	{
+		start = get_time();
 		unsigned char rpi_imu_data[SOCKET_DATA_PACKET_SIZE];
 
 		readACC(accRaw);
@@ -133,6 +148,8 @@ main()
         }
 
 		usleep(10000);
+		end = get_time();
+		printf("%f Hz\n", 1 / (end - start));
     }
 
    return (0);
