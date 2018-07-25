@@ -170,6 +170,11 @@ main()
 
 	int pi_socket = stablished_connection_with_server();
 
+	double AccY = 0.0;
+	double AccX = 0.0;
+	double AccZ = 0.0;
+
+
 	int valread;
 	while (1)
 	{
@@ -186,8 +191,19 @@ main()
 		else if ((valread == -1) || (valread != SOCKET_DATA_PACKET_SIZE))
 			continue;
 
-		printf("%s", rpi_imu_data);
-//		publish_image_message(camera_number, &msg);
+		int magRaw[3];
+		int accRaw[3];
+		int gyrRaw[3];
+		sscanf((char *) rpi_imu_data, "%d %d %d %d %d %d %d %d %d *\n", &(accRaw[0]), &(accRaw[1]), &(accRaw[2]), &(gyrRaw[0]), &(gyrRaw[1]), &(gyrRaw[2]), &(magRaw[0]), &(magRaw[1]), &(magRaw[2]));
+
+		printf("%d %d %d %d %d %d %d %d %d **\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2], magRaw[0], magRaw[1], magRaw[2]);
+
+		AccX = accRaw[0] * 0.0001;
+		AccY = accRaw[1] * 0.0001;
+		AccZ = accRaw[2] * 0.0001;
+
+		printf("%f %f %f\n", AccX, AccY, AccZ);
+		//		publish_image_message(camera_number, &msg);
 
 		//imshow("Pi Camera Driver", cv_image);  waitKey(1);
 	}
