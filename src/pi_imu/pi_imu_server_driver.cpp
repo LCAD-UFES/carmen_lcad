@@ -147,7 +147,7 @@ main()
             pi_socket = connect_with_client();
         }
 
-		usleep(10000);
+		usleep(7000);
 		end = get_time();
 		printf("%f Hz\n", 1 / (end - start));
     }
