@@ -174,6 +174,13 @@ main()
 	double AccX = 0.0;
 	double AccZ = 0.0;
 
+	double GyrX = 0.0;
+	double GyrY = 0.0;
+	double GyrZ = 0.0;
+
+	double MagX = 0.0;
+	double MagY = 0.0;
+	double MagZ = 0.0;
 
 	int valread;
 	while (1)
@@ -198,11 +205,22 @@ main()
 
 		printf("%d %d %d %d %d %d %d %d %d **\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2], magRaw[0], magRaw[1], magRaw[2]);
 
-		AccX = accRaw[0] * 0.0001;
-		AccY = accRaw[1] * 0.0001;
-		AccZ = accRaw[2] * 0.0001;
+		AccX = accRaw[0] * 0.00012207;
+		AccY = accRaw[1] * 0.00012207;
+		AccZ = accRaw[2] * 0.00012207;
 
-		printf("%f %f %f\n", AccX, AccY, AccZ);
+		GyrX = gyrRaw[0] * 0.015258789;
+		GyrY = gyrRaw[1] * 0.015258789;
+		GyrZ = gyrRaw[2] * 0.015258789;
+
+		MagX = magRaw[0] * 0.244141;
+		MagY = magRaw[1] * 0.244141;
+		MagZ = magRaw[2] * 0.244141;
+
+		printf("ACELEROMETRO = X:%f g Y:%f g Z:%f g\n", AccX, AccY, AccZ);
+		printf("GIROSCÓPIO = X:%f dps Y:%f dps Z:%f dps\n", GyrX, GyrY, GyrZ);
+		printf("MAGNETOMETRO = X:%f mgauss Y:%f mgauss Z:%f mgauss\n", MagX, MagY, MagZ);
+
 		//		publish_image_message(camera_number, &msg);
 
 		//imshow("Pi Camera Driver", cv_image);  waitKey(1);
