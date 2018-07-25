@@ -1062,7 +1062,7 @@ void GrabData::BuildRawLidarOdometryEstimates(StampedLidarPtrVector &lidar_messa
                 {
                     // hack
                     next_lidar->lidar_estimate = previous_lidar->lidar_estimate * (previous_lidar->est.inverse() * next_lidar->est);
-                   previous_lidar = next_lidar;
+                    previous_lidar = next_lidar;
                     ++next;
                     next_lidar = *next;
                 }
@@ -1913,7 +1913,7 @@ bool GrabData::ParseLogFile(const std::string &input_filename)
             // build a new GPS orientation message
             msg = new StampedGPSOrientation(msg_id);
         }
-        else if ("LASER_LDMRS_NEW_" == tag)
+        else if ("LASER_LDMRS_NEW" == tag)
         {
             // build a new sick message
             msg = new StampedSICK(msg_id);
