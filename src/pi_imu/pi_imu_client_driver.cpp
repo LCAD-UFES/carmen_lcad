@@ -138,7 +138,7 @@ read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_messag
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
 	sprintf(cam_config, "%d*%d*%d*%d*%d*", msg->width, msg->height, frame_rate, brightness, contrast);
-
+	carmen_bumblebee_basic_stereoimage_message msg;
 	return (camera_number);
 }
 
