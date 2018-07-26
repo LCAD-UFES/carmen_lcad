@@ -1,6 +1,7 @@
 #include <carmen/carmen.h>
 #include <carmen/camera_messages.h>
 #include <carmen/camera_interface.h>
+#include <carmen/xsens_messages.h>
 #include <carmen/bumblebee_basic_interface.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -37,6 +38,7 @@ stablished_connection_with_server()
 
 	if (status != 0)
 	{
+
 		printf("--- Get_Addrinfo ERROR! ---\n");
 		return (-1);
 	}
@@ -155,13 +157,14 @@ initialize_message(carmen_bumblebee_basic_stereoimage_message *msg)
 
 
 int
-main()
+main(int argc, char **argv)
 {
-//	carmen_bumblebee_basic_stereoimage_message msg;
+	carmen_xsens_global_quat_message xsens_quat_message;
 
-//	carmen_ipc_initialize(argc, argv);
 
-//	carmen_param_check_version(argv[0]);
+	carmen_ipc_initialize(argc, argv);
+
+	carmen_param_check_version(argv[0]);
 
 //	int camera_number = read_parameters(argc, argv, &msg, cam_config);
 //	initialize_message(&msg);
@@ -182,10 +185,13 @@ main()
 	double MagY = 0.0;
 	double MagZ = 0.0;
 
-	double pressure;
-	double temperature;
+	/*double pressure;
+	double temperature;*/
 
 	int valread;
+
+	IPC_RETURN_TYPE err;
+
 	while (1)
 	{
 		unsigned char rpi_imu_data[SOCKET_DATA_PACKET_SIZE];
@@ -205,29 +211,65 @@ main()
 		int accRaw[3];
 		int gyrRaw[3];
 
-		sscanf((char *) rpi_imu_data, "%d %d %d %d %d %d %d %d %d %lf %lf *\n", &(accRaw[0]), &(accRaw[1]), &(accRaw[2]), &(gyrRaw[0]), &(gyrRaw[1]), &(gyrRaw[2]),
-				&(magRaw[0]), &(magRaw[1]), &(magRaw[2]), &temperature, &pressure);
+		sscanf((char *) rpi_imu_data, "%d %d %d %d %d %d %d %d %d *\n", &(accRaw[0]), &(accRaw[1]), &(accRaw[2]), &(gyrRaw[0]), &(gyrRaw[1]), &(gyrRaw[2]),
+				&(magRaw[0]), &(magRaw[1]), &(magRaw[2]));
 
-		printf("%d %d %d %d %d %d %d %d %d %f %f **\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2],
-				magRaw[0], magRaw[1], magRaw[2], temperature, pressure);
+		printf("%d %d %d %d %d %d %d %d %d **\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2],
+				magRaw[0], magRaw[1], magRaw[2]);
 
-		AccX = accRaw[0] * 0.00012207;
-		AccY = accRaw[1] * 0.00012207;
-		AccZ = accRaw[2] * 0.00012207;
+		AccX = accRaw[0] * 0.00012207 * 9.80665;
+		AccY = accRaw[1] * 0.00012207 * 9.80665;
+		AccZ = accRaw[2] * 0.00012207 * 9.80665;
 
-		GyrX = gyrRaw[0] * 0.015258789;
-		GyrY = gyrRaw[1] * 0.015258789;
-		GyrZ = gyrRaw[2] * 0.015258789;
+		GyrX = (gyrRaw[0] * 0.015258789 * 3.14159265) / 180.0;
+		GyrY = (gyrRaw[1] * 0.015258789 * 3.14159265) / 180.0;
+		GyrZ = (gyrRaw[2] * 0.015258789 * 3.14159265) / 180.0;
 
 		MagX = magRaw[0] * 0.244141;
 		MagY = magRaw[1] * 0.244141;
 		MagZ = magRaw[2] * 0.244141;
 
-		printf("ACELEROMETRO = X:%f g Y:%f g Z:%f g\n", AccX, AccY, AccZ);
-		printf("GIROSCÓPIO = X:%f dps Y:%f dps Z:%f dps\n", GyrX, GyrY, GyrZ);
+		printf("ACELEROMETRO = X:%f m/s^2 Y:%f m/s^2 Z:%f m/s^2\n", AccX, AccY, AccZ);
+		printf("GIROSCÓPIO = X:%f radps Y:%f radps Z:%f radps\n", GyrX, GyrY, GyrZ);
 		printf("MAGNETOMETRO = X:%f mgauss Y:%f mgauss Z:%f mgauss\n", MagX, MagY, MagZ);
-		printf("TEMPERATURA =  %f C\n", temperature);
-		printf("PRESSÃO = %f mb\n", pressure);
+
+		// publishing  carmen_xsens_global_quat_message
+
+		 //Acceleration
+		xsens_quat_message.m_acc.x = AccX;
+		xsens_quat_message.m_acc.y = AccY;
+		xsens_quat_message.m_acc.z = AccZ;
+
+		//Gyro
+		xsens_quat_message.m_gyr.x = GyrX;
+		xsens_quat_message.m_gyr.y = GyrY;
+		xsens_quat_message.m_gyr.z = GyrZ;
+
+		//Magnetism
+		xsens_quat_message.m_mag.x = MagX;
+		xsens_quat_message.m_mag.y = MagY;
+		xsens_quat_message.m_mag.z = MagZ;
+
+		xsens_quat_message.quat_data.m_data[0] = 0.0;
+		xsens_quat_message.quat_data.m_data[1] = 0.0;
+		xsens_quat_message.quat_data.m_data[2] = 0.0;
+		xsens_quat_message.quat_data.m_data[3] = 0.0;
+
+
+		xsens_quat_message.m_temp = 0.0;
+		xsens_quat_message.m_count = 0;
+
+		//Timestamp
+		xsens_quat_message.timestamp = carmen_get_time();
+
+		//Host
+		xsens_quat_message.host = carmen_get_host();
+
+		err = IPC_publishData(CARMEN_XSENS_GLOBAL_QUAT_NAME, &xsens_quat_message);
+		carmen_test_ipc_exit(err, "Could not publish", CARMEN_XSENS_GLOBAL_QUAT_NAME);
+
+		/*printf("TEMPERATURA =  %f C\n", temperature);
+		printf("PRESSÃO = %f mb\n", pressure);*/
 		//		publish_image_message(camera_number, &msg);
 
 		//imshow("Pi Camera Driver", cv_image);  waitKey(1);

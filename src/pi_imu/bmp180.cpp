@@ -1,8 +1,6 @@
 #include "bmp180.h"
-#include "linux/i2c-dev.h"
-#include <stdio.h>
 #include <math.h>
-#include <stdlib.h>
+#include "imu.h"
 
 char _error;
 uint8_t buff[6];
@@ -13,21 +11,24 @@ uint8_t block[6];
 // Write to I2C
 
 
-void writeTo(uint8_t reg, uint8_t value, int device, int file ) {
+int writeTo(uint8_t reg, uint8_t value, int device, int file ) 
+{
 	selectDevice(file, device);
 	int result = i2c_smbus_write_byte_data(file, reg, value);
 	if (result == -1)
 	{
 		printf("Failed to write byte to I2C Acc.");
-		exit(1);
+		return (0);
 	}
+	return 1;
 }
 
 // Read from I2C
-void readFrom(int device, uint8_t address, uint8_t  block[], int file) {
-
+int readFrom(int device, uint8_t address, uint8_t  block[], int file) 
+{
 	selectDevice(file,device);
-	readBlock(0x80 |  address, sizeof(block), block);
+	readBlock(0x80 |  address, 6, block);
+	return 1;
 }
 
 
@@ -66,7 +67,7 @@ char startPressure(char oversampling, int file)
     break;
   }
 
-result = writeTo(BMP180_ADDR,BMP180_REG_CONTROL,data[1], file);
+  result = writeTo(BMP180_ADDR,BMP180_REG_CONTROL,data[1], file);
   if (result) // good write?
     return(delay); // return the delay in ms (rounded up) to wait before retrieving data
   else
@@ -152,8 +153,9 @@ char getPressure(double &P, double &T, int file)
 
 
 
-void readCalBMP180(int file){
-double c3,c4,b1;
+void readCalBMP180(int file)
+{
+  double c3,c4,b1;
 
 
 

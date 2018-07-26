@@ -141,8 +141,9 @@ main()
 		readACC(accRaw);
 		readGYR(gyrRaw);
 		readMAG(magRaw);
+		//readCalBMP180(file);
 
-		status = startTemperature(file);
+		/*status = startTemperature(file);
 		if (status != 0)
 		{
 			usleep(status * 1000);
@@ -156,9 +157,9 @@ main()
 			usleep(status * 1000);
 			status = getPressure(pressure, temperature, file);
 		}
-
-		sprintf((char *) rpi_imu_data, "%d %d %d %d %d %d %d %d %d %f %f *\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2],
-				magRaw[0], magRaw[1], magRaw[2], temperature, pressure);
+*/
+		sprintf((char *) rpi_imu_data, "%d %d %d %d %d %d %d %d %d *\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2],
+				magRaw[0], magRaw[1], magRaw[2]);
 
 		int result = send(pi_socket, rpi_imu_data, SOCKET_DATA_PACKET_SIZE, MSG_NOSIGNAL);  // Returns number of bytes read, 0 in case of connection lost, -1 in case of error
 		if (result == -1)

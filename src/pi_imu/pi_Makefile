@@ -1,7 +1,7 @@
 
 all: imu_
 
-imu_: imu.o pi_imu_server_driver.o bmp180.o
+imu_: imu.o pi_imu_server_driver.o 
 	g++ -o imu_server imu.o pi_imu_server_driver.o -lm
 
 pi_imu_server_driver.o: pi_imu_server_driver.cpp
