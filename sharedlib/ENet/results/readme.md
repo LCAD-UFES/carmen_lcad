@@ -20,9 +20,9 @@ Start ENet Caffe training procedure immune to hangup signal:
 ```bash
  $ cd $CARMEN_HOME/sharedlib/ENet/results
  $ # Start the encoder training:
- $ nohup ../caffe-enet/build/tools/caffe train -solver ../prototxts/enet_solver_encoder.prototxt -gpu 0 &> results_<timestamp>.txt &
+ $ nohup env GLOG_minloglevel=0 ../caffe-enet/build/tools/caffe train -solver ../prototxts/enet_solver_encoder.prototxt -gpu 0 &> results_<timestamp>.txt &
  $ # Start the encoder+decoder training (after the encoder training is finished):
- $ nohup ../caffe-enet/build/tools/caffe train -solver ../prototxts/enet_solver_encoder_decoder.prototxt -weights ../weights/snapshots_encoder/<NAME>.caffemodel -gpu 0 &> results_<timestamp>.txt &
+ $ nohup env GLOG_minloglevel=0 ../caffe-enet/build/tools/caffe train -solver ../prototxts/enet_solver_encoder_decoder.prototxt -weights ../weights/snapshots_encoder/<NAME>.caffemodel -gpu 0 &> results_<timestamp>.txt &
 
 ```
 
