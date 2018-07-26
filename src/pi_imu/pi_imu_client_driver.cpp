@@ -170,6 +170,21 @@ main()
 
 	int pi_socket = stablished_connection_with_server();
 
+	double AccY = 0.0;
+	double AccX = 0.0;
+	double AccZ = 0.0;
+
+	double GyrX = 0.0;
+	double GyrY = 0.0;
+	double GyrZ = 0.0;
+
+	double MagX = 0.0;
+	double MagY = 0.0;
+	double MagZ = 0.0;
+
+	double pressure;
+	double temperature;
+
 	int valread;
 	while (1)
 	{
@@ -186,8 +201,34 @@ main()
 		else if ((valread == -1) || (valread != SOCKET_DATA_PACKET_SIZE))
 			continue;
 
-		printf("%s", rpi_imu_data);
-//		publish_image_message(camera_number, &msg);
+		int magRaw[3];
+		int accRaw[3];
+		int gyrRaw[3];
+
+		sscanf((char *) rpi_imu_data, "%d %d %d %d %d %d %d %d %d %lf %lf *\n", &(accRaw[0]), &(accRaw[1]), &(accRaw[2]), &(gyrRaw[0]), &(gyrRaw[1]), &(gyrRaw[2]),
+				&(magRaw[0]), &(magRaw[1]), &(magRaw[2]), &temperature, &pressure);
+
+		printf("%d %d %d %d %d %d %d %d %d %f %f **\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2],
+				magRaw[0], magRaw[1], magRaw[2], temperature, pressure);
+
+		AccX = accRaw[0] * 0.00012207;
+		AccY = accRaw[1] * 0.00012207;
+		AccZ = accRaw[2] * 0.00012207;
+
+		GyrX = gyrRaw[0] * 0.015258789;
+		GyrY = gyrRaw[1] * 0.015258789;
+		GyrZ = gyrRaw[2] * 0.015258789;
+
+		MagX = magRaw[0] * 0.244141;
+		MagY = magRaw[1] * 0.244141;
+		MagZ = magRaw[2] * 0.244141;
+
+		printf("ACELEROMETRO = X:%f g Y:%f g Z:%f g\n", AccX, AccY, AccZ);
+		printf("GIROSCÓPIO = X:%f dps Y:%f dps Z:%f dps\n", GyrX, GyrY, GyrZ);
+		printf("MAGNETOMETRO = X:%f mgauss Y:%f mgauss Z:%f mgauss\n", MagX, MagY, MagZ);
+		printf("TEMPERATURA =  %f C\n", temperature);
+		printf("PRESSÃO = %f mb\n", pressure);
+		//		publish_image_message(camera_number, &msg);
 
 		//imshow("Pi Camera Driver", cv_image);  waitKey(1);
 	}
