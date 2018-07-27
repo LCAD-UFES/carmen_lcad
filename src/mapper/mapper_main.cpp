@@ -90,6 +90,8 @@ bool offline_map_available = false;
 int ok_to_publish = 0;
 int number_of_threads = 1;
 
+int camera3_ready = 0;
+
 /******variables for neural_mapper dataset*****/
 int generate_neural_mapper_dataset = 0;
 int neural_mapper_max_distance_meters = 0;
@@ -253,8 +255,10 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 			include_sensor_data_into_map(VELODYNE, globalpos_message);
 		if (sensors_params[LASER_LDMRS].alive && !robot_near_strong_slow_down_annotation)
 			include_sensor_data_into_map(LASER_LDMRS, globalpos_message);
-		if (sensors_params[3].alive)	// camera 3
+		if (sensors_params[3].alive && camera3_ready)	// camera 3
 			include_sensor_data_into_map(3, globalpos_message);
+
+		camera3_ready = 0;
 
 		publish_map(globalpos_message->timestamp);
 		publish_virtual_scan(globalpos_message->timestamp);
@@ -365,7 +369,7 @@ static void
 velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *message)
 {
 	//sensors_params[3].log_odds.log_odds_free = sensors_params[3].log_odds.log_odds_occ = sensors_params[3].log_odds.log_odds_l0 = -10.0;
-	mapper_velodyne_variable_scan(3, message);
+	camera3_ready = mapper_velodyne_variable_scan(3, message);
 }
 
 

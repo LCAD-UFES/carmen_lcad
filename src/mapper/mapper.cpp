@@ -1300,13 +1300,11 @@ mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_m
 	sensors_data[sensor_number].robot_velocity[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].velocity;
 	sensors_data[sensor_number].robot_timestamp[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].timestamp;
 	sensors_data[sensor_number].robot_phi[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].phi;
+	sensors_data[sensor_number].points_timestamp[sensors_data[sensor_number].point_cloud_index] = message->timestamp;
 
 	if (message_id >= 0)
 	{
-		if (build_snapshot_map)
-			ok_to_publish = 1;
-		else
-			ok_to_publish = run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+		ok_to_publish = 1;
 
 		if (message_id > 1000000)
 			message_id = 0;
