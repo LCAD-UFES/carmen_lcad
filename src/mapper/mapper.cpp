@@ -210,9 +210,10 @@ initialize_virtual_scan_message_update(int sensor_id, carmen_pose_3D_t robot_pos
 	int n = virtual_scan_message.num_sensors;
 	virtual_scan_message.virtual_scan_sensor = (carmen_virtual_scan_sensor_t *) realloc(virtual_scan_message.virtual_scan_sensor, (n + 1) * sizeof(carmen_virtual_scan_sensor_t));
 
+	carmen_point_t global_pos = {robot_pose.position.x, robot_pose.position.y, robot_pose.orientation.yaw};
 	carmen_point_t sensor_pos = {sensor_position_in_the_world.x, sensor_position_in_the_world.y, robot_interpolated_position.orientation.yaw};
 	virtual_scan_message.virtual_scan_sensor[n].sensor_pos = sensor_pos;
-	virtual_scan_message.virtual_scan_sensor[n].global_pos = {robot_pose.position.x, robot_pose.position.y, robot_pose.orientation.yaw};
+	virtual_scan_message.virtual_scan_sensor[n].global_pos = global_pos;
 	virtual_scan_message.virtual_scan_sensor[n].sensor_id = sensor_id;
 	virtual_scan_message.virtual_scan_sensor[n].time_spent_in_the_entire_sensor_sweep = time_spent_in_the_entire_sensor_sweep;
 	virtual_scan_message.virtual_scan_sensor[n].last_sensor_angle = last_sensor_angle;
@@ -1228,7 +1229,7 @@ mapper_velodyne_partial_scan(int sensor_number, carmen_velodyne_partial_scan_mes
 	if (sensors_data[sensor_number].last_timestamp == 0.0)
 	{
 		sensors_data[sensor_number].last_timestamp = velodyne_message->timestamp;
-		velodyne_message_id = -2;		// correntemente sao necessarias pelo menos 2 mensagens para ter uma volta completa de velodyne
+		velodyne_message_id = -2;		// antigamente eram necessarias pelo menos 2 mensagens para ter uma volta completa de velodyne
 
 		return (ok_to_publish);
 	}
@@ -1280,7 +1281,7 @@ mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_m
 	if (sensors_data[sensor_number].last_timestamp == 0.0)
 	{
 		sensors_data[sensor_number].last_timestamp = message->timestamp;
-		message_id = -2;		// correntemente sďż˝o necessďż˝rias pelo menos 2 mensagens para ter uma volta completa de velodyne
+		message_id = -2;		// antigamente eram necessarias pelo menos 2 mensagens para ter uma volta completa de velodyne
 
 		return (ok_to_publish);
 	}
