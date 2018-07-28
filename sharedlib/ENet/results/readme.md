@@ -26,7 +26,7 @@ Start ENet Caffe training procedure immune to hangup signal:
 
 ```
 
-If the training was manually stopped (Ctrl+C or kill -s SIGINT <pid>) or reached the maximum number of iterations or the system crashed, the training may be resumed using any solverstate file: 
+If the training was manually stopped (Ctrl+C or kill -s SIGINT {pid}) or reached the maximum number of iterations or the system crashed, the training may be resumed using any solverstate file: 
 ```bash
  $ cd $CARMEN_HOME/sharedlib/ENet/results
  $ # To resume the encoder training:
