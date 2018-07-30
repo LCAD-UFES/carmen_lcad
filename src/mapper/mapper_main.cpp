@@ -250,7 +250,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	{
 		free_virtual_scan_message();
 
-		// A ordem é importante
+		// A ordem eh importante
 		if (sensors_params[VELODYNE].alive)
 			include_sensor_data_into_map(VELODYNE, globalpos_message);
 		if (sensors_params[LASER_LDMRS].alive && !robot_near_strong_slow_down_annotation)
@@ -609,6 +609,39 @@ init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char 
 }
 
 
+void
+sensors_params_handler(char *module, char *variable, __attribute__((unused)) char *value)
+{
+	if (strcmp(module, "mapper") == 0)
+	{
+		int i = number_of_sensors;
+
+		if (strcmp(variable, "unsafe_height_above_ground") == 0)
+		{
+			for (i = 1; i < number_of_sensors; i++)
+			{
+				sensors_params[i].unsafe_height_above_ground = sensors_params[0].unsafe_height_above_ground;
+			}
+			return;
+		}
+
+		if (strcmp(variable, "velodyne") == 0)
+			i = 0;
+		else if (strcmp(variable, "laser_ldmrs") == 0)
+			i = 1;
+		else if (strncmp(variable, "stereo_velodyne", 15) == 0 && strlen(variable) == 16)
+			i = variable[15] - '0';
+
+		if (i < number_of_sensors && sensors_params[i].alive && sensors_params[i].name == NULL)
+		{
+			sensors_params[i].name = (char *) calloc(strlen(variable) + 1, sizeof(char));
+			strcpy(sensors_params[i].name, variable);
+			return;
+		}
+	}
+}
+
+
 static void
 get_alive_sensors(int argc, char **argv)
 {
@@ -622,74 +655,72 @@ get_alive_sensors(int argc, char **argv)
 
 	carmen_param_t param_list[] =
 	{
-			{(char *) "mapper", (char *) "velodyne", CARMEN_PARAM_ONOFF, &sensors_params[0].alive, 0, NULL},
-			{(char *) "mapper", (char *) "laser_ldmrs", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 0, NULL},
-//			{(char *) "mapper", (char *) "stereo_velodyne1", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne2", CARMEN_PARAM_ONOFF, &sensors_params[2].alive, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne3", CARMEN_PARAM_ONOFF, &sensors_params[3].alive, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne4", CARMEN_PARAM_ONOFF, &sensors_params[4].alive, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne5", CARMEN_PARAM_ONOFF, &sensors_params[5].alive, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne6", CARMEN_PARAM_ONOFF, &sensors_params[6].alive, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne7", CARMEN_PARAM_ONOFF, &sensors_params[7].alive, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne8", CARMEN_PARAM_ONOFF, &sensors_params[8].alive, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne9", CARMEN_PARAM_ONOFF, &sensors_params[9].alive, 0, NULL},
-//			{(char *) "mapper", (char *) "stereo_mapping", CARMEN_PARAM_ONOFF, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].alive, 0, NULL},
+		{(char *) "mapper", (char *) "velodyne", CARMEN_PARAM_ONOFF, &sensors_params[0].alive, 1, sensors_params_handler},
+		{(char *) "mapper", (char *) "laser_ldmrs", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 1, sensors_params_handler},
+//			{(char *) "mapper", (char *) "stereo_velodyne1", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 1, sensors_params_handler},
+		{(char *) "mapper", (char *) "stereo_velodyne2", CARMEN_PARAM_ONOFF, &sensors_params[2].alive, 1, sensors_params_handler},
+		{(char *) "mapper", (char *) "stereo_velodyne3", CARMEN_PARAM_ONOFF, &sensors_params[3].alive, 1, sensors_params_handler},
+		{(char *) "mapper", (char *) "stereo_velodyne4", CARMEN_PARAM_ONOFF, &sensors_params[4].alive, 1, sensors_params_handler},
+		{(char *) "mapper", (char *) "stereo_velodyne5", CARMEN_PARAM_ONOFF, &sensors_params[5].alive, 1, sensors_params_handler},
+		{(char *) "mapper", (char *) "stereo_velodyne6", CARMEN_PARAM_ONOFF, &sensors_params[6].alive, 1, sensors_params_handler},
+		{(char *) "mapper", (char *) "stereo_velodyne7", CARMEN_PARAM_ONOFF, &sensors_params[7].alive, 1, sensors_params_handler},
+		{(char *) "mapper", (char *) "stereo_velodyne8", CARMEN_PARAM_ONOFF, &sensors_params[8].alive, 1, sensors_params_handler},
+		{(char *) "mapper", (char *) "stereo_velodyne9", CARMEN_PARAM_ONOFF, &sensors_params[9].alive, 1, sensors_params_handler},
+//			{(char *) "mapper", (char *) "stereo_mapping", CARMEN_PARAM_ONOFF, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].alive, 1, sensors_params_handler},
 
-			{(char *) "mapper", (char *) "velodyne_locc", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_occ, 0, NULL},
-			{(char *) "mapper", (char *) "laser_ldmrs_locc", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_occ, 0, NULL},
-//			{(char *) "mapper", (char *) "stereo_velodyne1_locc", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_occ, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne2_locc", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_occ, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne3_locc", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_occ, 1, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne4_locc", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_occ, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne5_locc", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_occ, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne6_locc", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_occ, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne7_locc", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_occ, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne8_locc", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_occ, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne9_locc", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_occ, 0, NULL},
-//			{(char *) "mapper", (char *) "stereo_mapping_locc", CARMEN_PARAM_DOUBLE, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].log_odds.log_odds_occ, 0, NULL},
+		{(char *) "mapper", (char *) "velodyne_locc", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_occ, 1, NULL},
+		{(char *) "mapper", (char *) "laser_ldmrs_locc", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_occ, 1, NULL},
+//			{(char *) "mapper", (char *) "stereo_velodyne1_locc", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_occ, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne2_locc", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_occ, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne3_locc", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_occ, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne4_locc", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_occ, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne5_locc", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_occ, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne6_locc", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_occ, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne7_locc", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_occ, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne8_locc", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_occ, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne9_locc", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_occ, 1, NULL},
+//			{(char *) "mapper", (char *) "stereo_mapping_locc", CARMEN_PARAM_DOUBLE, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].log_odds.log_odds_occ, 1, NULL},
 
-			{(char *) "mapper", (char *) "velodyne_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_free, 0, NULL},
-			{(char *) "mapper", (char *) "laser_ldmrs_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_free, 0, NULL},
-//			{(char *) "mapper", (char *) "stereo_velodyne1_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_free, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne2_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_free, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne3_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_free, 1, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne4_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_free, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne5_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_free, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne6_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_free, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne7_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_free, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne8_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_free, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne9_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_free, 0, NULL},
-//			{(char *) "mapper", (char *) "stereo_mapping_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].log_odds.log_odds_free, 0, NULL},
+		{(char *) "mapper", (char *) "velodyne_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_free, 1, NULL},
+		{(char *) "mapper", (char *) "laser_ldmrs_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_free, 1, NULL},
+//			{(char *) "mapper", (char *) "stereo_velodyne1_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_free, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne2_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_free, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne3_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_free, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne4_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_free, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne5_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_free, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne6_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_free, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne7_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_free, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne8_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_free, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne9_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_free, 1, NULL},
+//			{(char *) "mapper", (char *) "stereo_mapping_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].log_odds.log_odds_free, 1, NULL},
 
-			{(char *) "mapper", (char *) "velodyne_l0", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_l0, 0, NULL},
-			{(char *) "mapper", (char *) "laser_ldmrs_l0", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_l0, 0, NULL},
-//			{(char *) "mapper", (char *) "stereo_velodyne1_l0", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_l0, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne2_l0", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_l0, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne3_l0", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_l0, 1, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne4_l0", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_l0, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne5_l0", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_l0, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne6_l0", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_l0, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne7_l0", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_l0, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne8_l0", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_l0, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne9_l0", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_l0, 0, NULL},
+		{(char *) "mapper", (char *) "velodyne_l0", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_l0, 1, NULL},
+		{(char *) "mapper", (char *) "laser_ldmrs_l0", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_l0, 1, NULL},
+//			{(char *) "mapper", (char *) "stereo_velodyne1_l0", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_l0, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne2_l0", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_l0, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne3_l0", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_l0, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne4_l0", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_l0, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne5_l0", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_l0, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne6_l0", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_l0, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne7_l0", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_l0, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne8_l0", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_l0, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne9_l0", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_l0, 1, NULL},
 
-			{(char *) "mapper", (char *) "velodyne_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[0].unexpeted_delta_range_sigma, 0, NULL},
-			{(char *) "mapper", (char *) "laser_ldmrs_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[1].unexpeted_delta_range_sigma, 0, NULL},
-//			{(char *) "mapper", (char *) "stereo_velodyne1_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[1].unexpeted_delta_range_sigma, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne2_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[2].unexpeted_delta_range_sigma, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne3_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[3].unexpeted_delta_range_sigma, 1, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne4_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[4].unexpeted_delta_range_sigma, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne5_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[5].unexpeted_delta_range_sigma, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne6_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[6].unexpeted_delta_range_sigma, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne7_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[7].unexpeted_delta_range_sigma, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[8].unexpeted_delta_range_sigma, 0, NULL},
-			{(char *) "mapper", (char *) "stereo_velodyne9_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[9].unexpeted_delta_range_sigma, 0, NULL},
+		{(char *) "mapper", (char *) "velodyne_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[0].unexpeted_delta_range_sigma, 1, NULL},
+		{(char *) "mapper", (char *) "laser_ldmrs_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[1].unexpeted_delta_range_sigma, 1, NULL},
+//			{(char *) "mapper", (char *) "stereo_velodyne1_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[1].unexpeted_delta_range_sigma, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne2_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[2].unexpeted_delta_range_sigma, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne3_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[3].unexpeted_delta_range_sigma, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne4_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[4].unexpeted_delta_range_sigma, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne5_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[5].unexpeted_delta_range_sigma, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne6_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[6].unexpeted_delta_range_sigma, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne7_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[7].unexpeted_delta_range_sigma, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[8].unexpeted_delta_range_sigma, 1, NULL},
+		{(char *) "mapper", (char *) "stereo_velodyne9_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[9].unexpeted_delta_range_sigma, 1, NULL},
 
-			{(char *) "mapper", (char *) "unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &sensors_params[0].unsafe_height_above_ground, 0, NULL},
+		{(char *) "mapper", (char *) "unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &sensors_params[0].unsafe_height_above_ground, 1, sensors_params_handler},
 
-			{(char *) "mapper",  (char *) "velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max_factor, 0, NULL}
-
-
+		{(char *) "mapper",  (char *) "velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max_factor, 1, NULL}
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
