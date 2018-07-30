@@ -336,10 +336,14 @@ compute_depth_map(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 			rgb_to_gray(right_roi_image, gray_right_roi, ROI_width, ROI_height);
 
 			const int32_t dims[3] = { ROI_width, ROI_height, ROI_width };
-			Elas::parameters param(Elas::MIDDLEBURY);
+			Elas::parameters param;
 			param.postprocess_only_left = false;
 			Elas elas(param);
 			elas.process(gray_left_roi, gray_right_roi, left_disparity, right_disparity, dims);
+
+//			FILE *disp_right = fopen("/home/alberto/carmen_lcad/sharedlib/libelas/disp_rigth.bin", "r");
+//			fread(right_disparity, sizeof(float), ROI_width*ROI_height, disp_right);
+//			fclose(disp_right);
 
 			int i, j, x, y;
 			for (i = 0, y = vertical_ROI_ini; y < vertical_ROI_end; y++, i++)
@@ -347,7 +351,7 @@ compute_depth_map(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 				for (j = 0, x = horizontal_ROI_ini; x < horizontal_ROI_end; x++, j++)
 				{
 //					float disparity = right_disparity[i * ROI_width + j];
-					float disparity = somooth_filter(right_disparity, i, j, ROI_width, vertical_ROI_ini, vertical_ROI_end, horizontal_ROI_ini, horizontal_ROI_end, 20);
+					float disparity = somooth_filter(right_disparity, i, j, ROI_width, vertical_ROI_ini, vertical_ROI_end, horizontal_ROI_ini, horizontal_ROI_end, 15);
 					disparity_message.disparity[y * bumblebee_basic_width + x] = MAX(disparity, 0.0);
 				}
 			}
