@@ -107,8 +107,6 @@ stereo_message_handler(carmen_simple_stereo_disparity_message *disparity_message
 			}
 		}
 
-		int image_size = bumblebee_basic_width * bumblebee_basic_height * 3;
-
 		for (i = 0; i< disparity_message->reference_image_size; i++)
 			left_image_data[i] = (guchar) disparity_message->reference_image[i];
 	}
@@ -131,8 +129,6 @@ stereo_message_handler(carmen_simple_stereo_disparity_message *disparity_message
 				depth_image->imageData[3 * (i * bumblebee_basic_width + j) + 2] = scaled_disparity_value;
 			}
 		}
-
-		int image_size = bumblebee_basic_width * bumblebee_basic_height * 3;
 
 		for (i = 0; i< disparity_message->reference_image_size; i++)
 			reference_image->imageData[i] = (guchar) disparity_message->reference_image[i];

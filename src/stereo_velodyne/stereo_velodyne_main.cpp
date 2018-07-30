@@ -152,16 +152,16 @@ int read_parameters(int argc, char **argv)
 	sprintf(camera_string, "%s%d", "bumblebee_basic", atoi(argv[1]));
 
 	carmen_param_t param_list[] = {
-			{(char*)stereo_velodyne_string, (char*)"vertical_resolution", CARMEN_PARAM_INT, &vertical_resolution, 0, NULL},
-			{(char*)stereo_velodyne_string, (char*)"horizontal_resolution", CARMEN_PARAM_INT, &horizontal_resolution, 0, NULL},
-			{(char*)stereo_velodyne_string, (char*)"range_max", CARMEN_PARAM_DOUBLE, &range_max, 0, NULL},
-			{(char*)stereo_velodyne_string, (char*)"flipped", CARMEN_PARAM_ONOFF, &flipped, 0, NULL},
-			{(char*)stereo_velodyne_string, (char*) "vertical_roi_ini", CARMEN_PARAM_INT, &vertical_roi_ini, 0, NULL },
-			{(char*)stereo_velodyne_string, (char*) "vertical_roi_end", CARMEN_PARAM_INT, &vertical_roi_end, 0, NULL },
-			{(char*)stereo_velodyne_string, (char*) "horizontal_roi_ini", CARMEN_PARAM_INT, &horizontal_roi_ini, 0, NULL },
-			{(char*)stereo_velodyne_string, (char*) "horizontal_roi_end", CARMEN_PARAM_INT, &horizontal_roi_end, 0, NULL },
-			{(char*)camera_string, (char*) "width", CARMEN_PARAM_INT, &bumblebee_basic_width, 0, NULL },
-			{(char*)camera_string, (char*) "height", CARMEN_PARAM_INT, &bumblebee_basic_height, 0, NULL }
+			{(char*)stereo_velodyne_string, (char*)"vertical_resolution", CARMEN_PARAM_INT, &vertical_resolution, 1, NULL},
+			{(char*)stereo_velodyne_string, (char*)"horizontal_resolution", CARMEN_PARAM_INT, &horizontal_resolution, 1, NULL},
+			{(char*)stereo_velodyne_string, (char*)"range_max", CARMEN_PARAM_DOUBLE, &range_max, 1, NULL},
+			{(char*)stereo_velodyne_string, (char*)"flipped", CARMEN_PARAM_ONOFF, &flipped, 1, NULL},
+			{(char*)stereo_velodyne_string, (char*) "vertical_roi_ini", CARMEN_PARAM_INT, &vertical_roi_ini, 1, NULL },
+			{(char*)stereo_velodyne_string, (char*) "vertical_roi_end", CARMEN_PARAM_INT, &vertical_roi_end, 1, NULL },
+			{(char*)stereo_velodyne_string, (char*) "horizontal_roi_ini", CARMEN_PARAM_INT, &horizontal_roi_ini, 1, NULL },
+			{(char*)stereo_velodyne_string, (char*) "horizontal_roi_end", CARMEN_PARAM_INT, &horizontal_roi_end, 1, NULL },
+			{(char*)camera_string, (char*) "width", CARMEN_PARAM_INT, &bumblebee_basic_width, 1, NULL },
+			{(char*)camera_string, (char*) "height", CARMEN_PARAM_INT, &bumblebee_basic_height, 1, NULL }
 	};
 
 	if (vertical_resolution > vertical_roi_end - vertical_roi_ini)
