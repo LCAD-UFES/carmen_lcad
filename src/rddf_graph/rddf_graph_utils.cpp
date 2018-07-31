@@ -468,7 +468,9 @@ bool check_limits_of_central_road_map(int x, int y)
 	return false;
 }
 
-bool get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_map_p already_visited, carmen_map_p map)
+
+bool
+get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_map_p already_visited, carmen_map_p map)
 {
 	double x_origin, y_origin;
 	char already_visited_folder[] = "already_visited";
@@ -478,6 +480,8 @@ bool get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, car
 		{
 			if (point_is_in_map(map, x, y) && !point_is_already_visited(already_visited, x, y))
 			{
+				already_visited->map[x][y] = 1;
+
 				if (check_limits_of_central_road_map(current->x, current->y))
 				{
 					carmen_point_t pose;
@@ -491,7 +495,6 @@ bool get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, car
 					get_new_currents_and_x_y(current, &x, &y);
 				}
 
-				already_visited->map[x][y] = 1;
 				if (point_is_lane_center(map, x, y))
 				{
 					neighbour->x = x;
@@ -641,7 +644,9 @@ add_graph_to_graph_list(rddf_graphs_of_map_t * rddf_graphs, rddf_graph_t *graph)
 	return (rddf_graphs);
 }
 
-void generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
+
+void
+generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 {
 	char already_visited_folder[] = "already_visited";
 	carmen_map_t already_visited;
@@ -649,8 +654,6 @@ void generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename
 	string parsed_filename;
 	rddf_graphs_of_map_t *rddf_graphs = NULL;
 	rddf_graph_t *graph = NULL;
-	int last_x, last_y, last_graph_size;
-	bool road_begin = true;
 
 	road_map_filenames.push_back(str_road_map_filename);
 
@@ -662,7 +665,9 @@ void generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename
 		for (int y = 0; y < map->config.y_size; y++)
 		{
 			if (point_is_already_visited(&already_visited, x, y))
+			{
 				continue;
+			}
 			else
 			{
 				already_visited.map[x][y] = 1;
@@ -670,22 +675,14 @@ void generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename
 				if (point_is_lane_center(map, x, y))
 				{
 					cout << "center!" << x << "\t" << y << endl;
-					if (road_begin)
-					{
-						last_x = x;
-						last_y = y;
-						road_begin = false;
-					}
 
 					graph = A_star(graph, x, y, map, &already_visited);
 					carmen_point_t pose;
 					pose.x = g_x_origin;
 					pose.y = g_y_origin;
 					get_new_map_block(g_road_map_folder, 'r', map, pose);
+					carmen_grid_mapping_save_block_map_by_origin(already_visited_folder, 'a', &already_visited);
 					get_new_map_block(already_visited_folder, 'a', &already_visited, pose);
-					x = last_x;
-					y = last_y;
-					road_begin = true;
 					//display_graph_over_map(map, graph, already_visited, parsed_filename, last_graph_size);
 					//show_road_map(map,x,y);
 
@@ -694,7 +691,9 @@ void generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename
 			}
 		}
 	}
-
+	show_road_map(map, 524, 524);
+	show_already_visited(&already_visited);
+	getchar();
 	//printf("Graphs in map: %d\n", rddf_graphs.size());
 	//display_graph_over_map(map, rddf_graphs, parsed_filename);
 }
