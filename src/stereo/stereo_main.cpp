@@ -296,7 +296,13 @@ somooth_filter(float *right_disparity, int i, int j,
 		}
 	}
 
-	return (sum / count);
+	if (count != 0.0)
+	{
+		float filtered_disparity = sum / count;
+		return (filtered_disparity);
+	}
+	else
+		return (0.0);
 }
 
 
@@ -541,7 +547,7 @@ read_parameters(int argc, char **argv)
 	carmen_param_t param_list[] = {
 		{ stereo_string, (char*) "width", CARMEN_PARAM_INT, &stereo_width, 0, NULL },
 		{ stereo_string, (char*) "height", CARMEN_PARAM_INT, &stereo_height, 0, NULL },
-		{ stereo_string, (char*) "disparity", CARMEN_PARAM_INT, &max_disparity, 0, NULL },
+		{ stereo_string, (char*) "max_disparity", CARMEN_PARAM_INT, &max_disparity, 0, NULL },
 		{ stereo_string, (char*) "algorithm", CARMEN_PARAM_STRING, &algorithm, 0, NULL },
 		{ stereo_string, (char*) "gaussian_radius", CARMEN_PARAM_DOUBLE, &gaussian_radius, 0, NULL },
 		{ stereo_string, (char*) "synapses", CARMEN_PARAM_INT, &synapses, 0, NULL },

@@ -296,7 +296,7 @@ read_parameters(int argc, char **argv)
 			{bumblebee_string, "width", CARMEN_PARAM_INT, &bumblebee_basic_width, 0, NULL},
 			{bumblebee_string, "height", CARMEN_PARAM_INT, &bumblebee_basic_height, 0, NULL},
 			{stereo_string, (char*)"height", CARMEN_PARAM_INT, &stereo_height, 0, NULL},
-			{stereo_string, (char*)"disparity", CARMEN_PARAM_INT, &stereo_disparity, 0, NULL}
+			{stereo_string, (char*)"max_disparity", CARMEN_PARAM_INT, &stereo_disparity, 0, NULL}
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
