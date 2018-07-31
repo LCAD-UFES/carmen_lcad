@@ -30,30 +30,54 @@ static carmen_velodyne_variable_scan_message velodyne_partial_scan;
 static IplImage *reference_image;
 static IplImage *reference_image_gray;
 
+
 void
 copy_channel(IplImage *src, IplImage *dst, int channel)
 {
 	int i;
 
-	for(i = 0; i < reference_image->width * reference_image->height; i++)
-	{
+	for (i = 0; i < reference_image->width * reference_image->height; i++)
 		dst->imageData[3 * i + channel] = src->imageData[i];
-	}
 }
+
 
 void
 copy_one_channel(IplImage *src, IplImage *dst, int channel)
 {
 	int i;
 
-	for(i = 0; i < reference_image->width * reference_image->height; i++)
-	{
+	for (i = 0; i < reference_image->width * reference_image->height; i++)
 		dst->imageData[i] = src->imageData[3 * i + channel];
-	}
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+publish_point_cloud()
+{
+	carmen_stereo_velodyne_publish_message(camera, &velodyne_partial_scan);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 
 static void
-stereo_message_handler(carmen_simple_stereo_disparity_message *message)
+carmen_simple_stereo_disparity_message_handler(carmen_simple_stereo_disparity_message *message)
 {
 	memcpy(reference_image->imageData, message->reference_image, message->reference_image_size);
 
@@ -81,15 +105,15 @@ stereo_message_handler(carmen_simple_stereo_disparity_message *message)
 
 	if (!flipped)
 	{
-		convert_stereo_depth_map_to_velodyne_beams(instance, message->disparity, vertical_resolution,
-				horizontal_resolution, scan, range_max, vertical_roi_ini, vertical_roi_end, horizontal_roi_ini, horizontal_roi_end, (unsigned char*)reference_image_gray->imageData);
+		convert_stereo_depth_map_to_velodyne_beams(instance, message->disparity, vertical_resolution, horizontal_resolution, scan, range_max, vertical_roi_ini,
+				vertical_roi_end, horizontal_roi_ini, horizontal_roi_end, (unsigned char *) reference_image_gray->imageData);
 
 		velodyne_partial_scan.number_of_shots = horizontal_resolution;
 	}
 	else
 	{
-		convert_stereo_depth_map_to_velodyne_beams_and_flip(instance, message->disparity, vertical_resolution,
-				horizontal_resolution, scan, range_max, vertical_roi_ini, vertical_roi_end, horizontal_roi_ini, horizontal_roi_end);
+		convert_stereo_depth_map_to_velodyne_beams_and_flip(instance, message->disparity, vertical_resolution, horizontal_resolution, scan, range_max,
+				vertical_roi_ini, vertical_roi_end, horizontal_roi_ini, horizontal_roi_end);
 
 		velodyne_partial_scan.number_of_shots = vertical_resolution;
 	}
@@ -98,11 +122,20 @@ stereo_message_handler(carmen_simple_stereo_disparity_message *message)
 	velodyne_partial_scan.host = carmen_get_host();
 	velodyne_partial_scan.timestamp = message->timestamp;
 
-	carmen_stereo_velodyne_publish_message(camera, &velodyne_partial_scan);
+	publish_point_cloud();
 
 	scan->angle = 0.0;
 	memset(scan->distance, 0, scan->shot_size * sizeof(unsigned short));
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Initializations                                                                              //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 carmen_velodyne_shot *
@@ -110,19 +143,19 @@ alloc_velodyne_shot_scan_vector(int horizontal_resolution_l, int vertical_resolu
 {
 	int i;
 
-	carmen_velodyne_shot *vector = (carmen_velodyne_shot *)malloc(horizontal_resolution_l * sizeof(carmen_velodyne_shot));
+	carmen_velodyne_shot *vector = (carmen_velodyne_shot *) malloc(horizontal_resolution_l * sizeof(carmen_velodyne_shot));
 	carmen_test_alloc(vector);
 
 	for (i = 0; i < horizontal_resolution_l; i++)
 	{
-		vector[i].distance = (unsigned short *)calloc(vertical_resolution_l, sizeof(unsigned short));
+		vector[i].distance = (unsigned short *) calloc(vertical_resolution_l, sizeof(unsigned short));
 		carmen_test_alloc(vector[i].distance);
-		vector[i].intensity = (unsigned char *)calloc(vertical_resolution_l, sizeof(unsigned char));
+		vector[i].intensity = (unsigned char *) calloc(vertical_resolution_l, sizeof(unsigned char));
 		carmen_test_alloc(vector[i].distance);
 		vector[i].shot_size = vertical_resolution_l;
 	}
 
-	return vector;
+	return (vector);
 }
 
 
@@ -139,7 +172,8 @@ init_stereo_velodyne()
 }
 
 
-int read_parameters(int argc, char **argv)
+int
+read_parameters(int argc, char **argv)
 {
 	int num_items;
 
@@ -152,27 +186,25 @@ int read_parameters(int argc, char **argv)
 	sprintf(camera_string, "%s%d", "bumblebee_basic", atoi(argv[1]));
 
 	carmen_param_t param_list[] = {
-			{(char*)stereo_velodyne_string, (char*)"vertical_resolution", CARMEN_PARAM_INT, &vertical_resolution, 1, NULL},
-			{(char*)stereo_velodyne_string, (char*)"horizontal_resolution", CARMEN_PARAM_INT, &horizontal_resolution, 1, NULL},
-			{(char*)stereo_velodyne_string, (char*)"range_max", CARMEN_PARAM_DOUBLE, &range_max, 1, NULL},
-			{(char*)stereo_velodyne_string, (char*)"flipped", CARMEN_PARAM_ONOFF, &flipped, 1, NULL},
-			{(char*)stereo_velodyne_string, (char*) "vertical_roi_ini", CARMEN_PARAM_INT, &vertical_roi_ini, 1, NULL },
-			{(char*)stereo_velodyne_string, (char*) "vertical_roi_end", CARMEN_PARAM_INT, &vertical_roi_end, 1, NULL },
-			{(char*)stereo_velodyne_string, (char*) "horizontal_roi_ini", CARMEN_PARAM_INT, &horizontal_roi_ini, 1, NULL },
-			{(char*)stereo_velodyne_string, (char*) "horizontal_roi_end", CARMEN_PARAM_INT, &horizontal_roi_end, 1, NULL },
-			{(char*)camera_string, (char*) "width", CARMEN_PARAM_INT, &bumblebee_basic_width, 1, NULL },
-			{(char*)camera_string, (char*) "height", CARMEN_PARAM_INT, &bumblebee_basic_height, 1, NULL }
+		{ (char *) stereo_velodyne_string, (char *) "vertical_resolution", CARMEN_PARAM_INT, &vertical_resolution, 1, NULL },
+		{ (char *) stereo_velodyne_string, (char *) "horizontal_resolution", CARMEN_PARAM_INT, &horizontal_resolution, 1, NULL },
+		{ (char *) stereo_velodyne_string, (char *) "range_max", CARMEN_PARAM_DOUBLE, &range_max, 1, NULL },
+		{ (char *) stereo_velodyne_string, (char *) "flipped", CARMEN_PARAM_ONOFF, &flipped, 1, NULL },
+		{ (char *) stereo_velodyne_string, (char *) "vertical_roi_ini", CARMEN_PARAM_INT, &vertical_roi_ini, 1, NULL },
+		{ (char *) stereo_velodyne_string, (char *) "vertical_roi_end", CARMEN_PARAM_INT, &vertical_roi_end, 1, NULL },
+		{ (char *) stereo_velodyne_string, (char *) "horizontal_roi_ini", CARMEN_PARAM_INT, &horizontal_roi_ini, 1, NULL },
+		{ (char *) stereo_velodyne_string, (char *) "horizontal_roi_end", CARMEN_PARAM_INT, &horizontal_roi_end, 1, NULL },
+		{ (char *) camera_string, (char *) "width", CARMEN_PARAM_INT, &bumblebee_basic_width, 1, NULL },
+		{ (char *) camera_string, (char *) "height", CARMEN_PARAM_INT, &bumblebee_basic_height, 1, NULL }
 	};
 
 	if (vertical_resolution > vertical_roi_end - vertical_roi_ini)
-	{
 		carmen_die("The stereo_velodyne_vertical_resolution is bigger than stereo point cloud height");
-	}
 
-	num_items = sizeof(param_list)/sizeof(param_list[0]);
+	num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
-	return 0;
+	return (0);
 }
 
 
@@ -183,7 +215,8 @@ main(int argc, char **argv)
 	carmen_param_check_version(argv[0]);
 
 	if ((argc != 2))
-		carmen_die("%s: Wrong number of parameters. stereo requires either 1 or 2 parameters and received %d parameter(s). \nUsage:\n %s <camera_number>", argv[0], argc-1, argv[0]);
+		carmen_die("%s: Wrong number of parameters. stereo requires either 1 or 2 parameters and received %d parameter(s). \nUsage:\n %s <camera_number>",
+				argv[0], argc - 1, argv[0]);
 
 	camera = atoi(argv[1]);
 	read_parameters(argc, argv);
@@ -193,7 +226,7 @@ main(int argc, char **argv)
 	init_stereo_velodyne();
 	carmen_stereo_velodyne_define_messages(camera);
 
-	carmen_stereo_subscribe(camera, NULL, (carmen_handler_t) stereo_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_stereo_subscribe(camera, NULL, (carmen_handler_t) carmen_simple_stereo_disparity_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_ipc_dispatch();
 
 	return 0;
