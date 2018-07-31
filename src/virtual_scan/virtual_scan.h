@@ -102,13 +102,94 @@ typedef struct
 	double width;
 	double length;
 
+	// O Velodyne roda no sentido horario
+
+	// Uma extremidade eh a primeira do segmento (angulo) e a outra eh a ultima (I)
+	// 	IARA
+	//
+	//   --
+	//
+
+	// Uma extremidade eh a ultima do segmento (angulo) e a outra eh a intermediaria (L)
+	// 	IARA
+	//
+	// --
+	//  |
+	//
+
+	// Uma extremidade eh a primeia do segmento (angulo) e a outra eh a intermediaria (L)
+	// 	IARA
+	//
+	//     --
+	//     |
+	//
 	carmen_point_t side0;
 	bool side0_valid;
+
+	// Uma extremidade eh a primeira do segmento e a outra eh a intermediaria (L)
+	// 	IARA
+	//
+	// --
+	//  |
+	//
+
+	// Uma extremidade eh a primeira do segmento e a outra eh a ultima (I)
+	// 	|   IARA
+	//
+
+	// Uma extremidade eh a ultima do segmento e a outra eh a intermediaria (L)
+	//  |
+	// --
+	//
+	// 	IARA
+	//
 	carmen_point_t side1;
 	bool side1_valid;
+
+	// Uma extremidade eh a primeira do segmento e a outra eh a intermediaria (L)
+	//  |
+	// --
+	//
+	// 	IARA
+	//
+
+	// Uma extremidade eh a primeira do segmento e a outra eh a ultima (I)
+	//
+	//   --
+	//
+	// 	IARA
+	//
+
+	// Uma extremidade eh a ultima do segmento e a outra eh a intermediaria (L)
+	//
+	//     |
+	//	   --
+	//
+	// 	IARA
+	//
 	carmen_point_t side2;
 	bool side2_valid;
-	carmen_point_t side3;
+
+	// Uma extremidade eh a primeira do segmento e a outra eh a intermediaria (L)
+	//
+	//     |
+	//	   --
+	//
+	// 	IARA
+	//
+
+	// Uma extremidade eh a primeira do segmento e a outra eh a ultima (I)
+	//
+	// 	IARA  |
+	//
+
+	// Uma extremidade eh a ultima do segmento (angulo) e a outra eh a intermediaria (L)
+	// 	IARA
+	//
+	//     --
+	//     |
+	//
+	carmen_point_t side3;	// lateral do carro do lado direito - uma extremidade eh a primeira do segmento e a outra eh a ultima (I) ou a intermediaria (L)
 	bool side3_valid;
 } virtual_scan_box_model_t;
 

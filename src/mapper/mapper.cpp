@@ -210,9 +210,10 @@ initialize_virtual_scan_message_update(int sensor_id, carmen_pose_3D_t robot_pos
 	int n = virtual_scan_message.num_sensors;
 	virtual_scan_message.virtual_scan_sensor = (carmen_virtual_scan_sensor_t *) realloc(virtual_scan_message.virtual_scan_sensor, (n + 1) * sizeof(carmen_virtual_scan_sensor_t));
 
+	carmen_point_t global_pos = {robot_pose.position.x, robot_pose.position.y, robot_pose.orientation.yaw};
 	carmen_point_t sensor_pos = {sensor_position_in_the_world.x, sensor_position_in_the_world.y, robot_interpolated_position.orientation.yaw};
 	virtual_scan_message.virtual_scan_sensor[n].sensor_pos = sensor_pos;
-	virtual_scan_message.virtual_scan_sensor[n].global_pos = {robot_pose.position.x, robot_pose.position.y, robot_pose.orientation.yaw};
+	virtual_scan_message.virtual_scan_sensor[n].global_pos = global_pos;
 	virtual_scan_message.virtual_scan_sensor[n].sensor_id = sensor_id;
 	virtual_scan_message.virtual_scan_sensor[n].time_spent_in_the_entire_sensor_sweep = time_spent_in_the_entire_sensor_sweep;
 	virtual_scan_message.virtual_scan_sensor[n].last_sensor_angle = last_sensor_angle;
@@ -915,9 +916,6 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 		//set_map_equal_offline_map(&map);
 		//add_offline_map_over_unknown(&map);
 
-		if (decay_to_offline_map && (sensor_params->sensor_type == VELODYNE))
-			map_decay_to_offline_map(&map);
-
 		if (sensor_params->sensor_type == LASER_LDMRS)
 		{
 			update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(log_odds_snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
@@ -928,6 +926,9 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 		}
 		else // Velodyne and others
 		{
+			if (decay_to_offline_map)
+				map_decay_to_offline_map(&map);
+
 /****************posicao do carro em relacao ao mapa para neural mapper */
 			carmen_pose_3D_t robot_pose_for_neural_mapper = sensor_data->robot_pose[sensor_data->point_cloud_index];
 
@@ -1228,7 +1229,7 @@ mapper_velodyne_partial_scan(int sensor_number, carmen_velodyne_partial_scan_mes
 	if (sensors_data[sensor_number].last_timestamp == 0.0)
 	{
 		sensors_data[sensor_number].last_timestamp = velodyne_message->timestamp;
-		velodyne_message_id = -2;		// correntemente sao necessarias pelo menos 2 mensagens para ter uma volta completa de velodyne
+		velodyne_message_id = -2;		// antigamente eram necessarias pelo menos 2 mensagens para ter uma volta completa de velodyne
 
 		return (ok_to_publish);
 	}
@@ -1280,7 +1281,7 @@ mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_m
 	if (sensors_data[sensor_number].last_timestamp == 0.0)
 	{
 		sensors_data[sensor_number].last_timestamp = message->timestamp;
-		message_id = -2;		// correntemente sďż˝o necessďż˝rias pelo menos 2 mensagens para ter uma volta completa de velodyne
+		message_id = -2;		// antigamente eram necessarias pelo menos 2 mensagens para ter uma volta completa de velodyne
 
 		return (ok_to_publish);
 	}
@@ -1299,13 +1300,11 @@ mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_m
 	sensors_data[sensor_number].robot_velocity[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].velocity;
 	sensors_data[sensor_number].robot_timestamp[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].timestamp;
 	sensors_data[sensor_number].robot_phi[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].phi;
+	sensors_data[sensor_number].points_timestamp[sensors_data[sensor_number].point_cloud_index] = message->timestamp;
 
 	if (message_id >= 0)
 	{
-		if (build_snapshot_map)
-			ok_to_publish = 1;
-		else
-			ok_to_publish = run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+		ok_to_publish = 1;
 
 		if (message_id > 1000000)
 			message_id = 0;

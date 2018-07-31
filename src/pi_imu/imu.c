@@ -128,7 +128,7 @@ void writeGyrReg(uint8_t reg, uint8_t value)
 	}
 }
 
-void detectIMU()
+int detectIMU()
 {
 	__u16 block[I2C_SMBUS_BLOCK_MAX];
 
@@ -178,6 +178,7 @@ void detectIMU()
 		printf("NO IMU DETECTED\n");
 		exit(1);
 	}
+	return file;
 }
 
 void enableIMU()
@@ -202,16 +203,16 @@ void enableIMU()
 	{ //For BerryIMUv2
 		// Enable the gyroscope
 		writeGyrReg(LSM9DS1_CTRL_REG4, 0b00111000); // z, y, x axis enabled for gyro
-		writeGyrReg(LSM9DS1_CTRL_REG1_G, 0b10111000); // Gyro ODR = 476Hz, 2000 dps
+		writeGyrReg(LSM9DS1_CTRL_REG1_G, 0b10101000); // Gyro ODR = 476Hz, 500 dps
 		writeGyrReg(LSM9DS1_ORIENT_CFG_G, 0b10111000);   // Swap orientation
 
 		// Enable the accelerometer
 		writeAccReg(LSM9DS1_CTRL_REG5_XL, 0b00111000); // z, y, x axis enabled for accelerometer
-		writeAccReg(LSM9DS1_CTRL_REG6_XL, 0b00101000);   // +/- 16g
+		writeAccReg(LSM9DS1_CTRL_REG6_XL, 0b00110000);   // +/- 4g
 
 		//Enable the magnetometer
 		writeMagReg(LSM9DS1_CTRL_REG1_M, 0b10011100); // Temp compensation enabled,Low power mode mode,80Hz ODR
-		writeMagReg(LSM9DS1_CTRL_REG2_M, 0b01000000);   // +/-12gauss
+		writeMagReg(LSM9DS1_CTRL_REG2_M, 0b00100000);   // +/-8gauss
 		writeMagReg(LSM9DS1_CTRL_REG3_M, 0b00000000);   // continuos update
 		writeMagReg(LSM9DS1_CTRL_REG4_M, 0b00000000); // lower power mode for Z axis
 	}
