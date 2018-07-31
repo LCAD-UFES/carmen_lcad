@@ -916,9 +916,6 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 		//set_map_equal_offline_map(&map);
 		//add_offline_map_over_unknown(&map);
 
-		if (decay_to_offline_map && (sensor_params->sensor_type == VELODYNE))
-			map_decay_to_offline_map(&map);
-
 		if (sensor_params->sensor_type == LASER_LDMRS)
 		{
 			update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(log_odds_snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
@@ -929,6 +926,9 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 		}
 		else // Velodyne and others
 		{
+			if (decay_to_offline_map)
+				map_decay_to_offline_map(&map);
+
 /****************posicao do carro em relacao ao mapa para neural mapper */
 			carmen_pose_3D_t robot_pose_for_neural_mapper = sensor_data->robot_pose[sensor_data->point_cloud_index];
 
