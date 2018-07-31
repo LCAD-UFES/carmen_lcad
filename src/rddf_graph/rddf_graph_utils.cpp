@@ -702,15 +702,15 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 						last_y = y;
 						road_begin = false;
 					}
-					if (graph == NULL)
-						last_graph_size = 0;
-					else
-						last_graph_size = graph->size;
 
 					graph = A_star(graph, x, y, map, &already_visited);
-					//cout<<graph->size<<endl;
-					//cout<<"graph begin\t"<<graph->point[0].x<<"\t"<<graph->point[0].y<<endl;
-					//cout<<"graph end\t"<<graph->point[graph->size-1].x<<"\t"<<graph->point[graph->size-1].y<<endl;
+					carmen_point_t pose;
+					pose.x = g_x_origin;
+					pose.y = g_y_origin;
+					get_new_map_block(g_road_map_folder,'r', map, pose);
+					x = last_x;
+					y = last_y;
+					road_begin = true;
 					//display_graph_over_map(map, graph, already_visited, parsed_filename, last_graph_size);
 					//show_road_map(map,x,y);
 
