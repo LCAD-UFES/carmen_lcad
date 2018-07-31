@@ -105,7 +105,6 @@ main(int argc, char **argv)
 	carmen_grid_mapping_init_parameters(0.2,210);
 	system("rm -f already_visited/*.*");
 
-
 	if (g_ipc_required)
 	{
 		carmen_ipc_initialize(argc, argv);
@@ -122,10 +121,10 @@ main(int argc, char **argv)
 	parse_road_map_dir_type_and_origin(str_road_map_filename);
 	g_road_map_folder = &str_g_road_map_folder[0u];
 
-	int count_maps = carmen_grid_mapping_get_block_map_by_origin_x_y(g_road_map_folder,'r',g_x_origin,g_y_origin,&road_map);
+	int count_maps = carmen_grid_mapping_get_block_map_by_origin_x_y(g_road_map_folder, 'r', g_x_origin, g_y_origin, &road_map);
 	carmen_grid_mapping_update_map_buffer(&road_map,'r');
 	//cout<<road_map.config.x_size<<"\t"<<road_map.config.y_size<<"\t"<<road_map.config.x_origin<<"\t"<<road_map.config.y_origin<<"\t"<<endl;getchar();
-	if(count_maps>0)
+	if (count_maps > 0)
 	{
 		//show_road_map(&road_map,0,0);
 
