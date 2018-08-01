@@ -16,6 +16,21 @@ char* tcp_ip_address;
 using namespace std;
 using namespace cv;
 
+void
+carmen_xsens_define_messages()
+{
+    IPC_RETURN_TYPE err;
+
+    /* register xsens's global message */
+    err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_QUAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_QUAT_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_QUAT_NAME);
+
+    err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_EULER_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_EULER_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_EULER_NAME);
+
+    err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_MATRIX_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_MATRIX_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_MATRIX_NAME);
+}
 
 int
 stablished_connection_with_server()
@@ -42,6 +57,7 @@ stablished_connection_with_server()
 		printf("--- Get_Addrinfo ERROR! ---\n");
 		return (-1);
 	}
+
 	status = connect(pi_socket, host_info_list->ai_addr, host_info_list->ai_addrlen);
 
 	if(status < 0)
@@ -105,56 +121,6 @@ signal_handler(int sig)
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//																						     //
-// Initializations																		     //
-//																						     //
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-int
-read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_message *msg, char *cam_config)
-{
-	if (argc != 2)
-		carmen_die("--- Wrong number of parameters. ---\nUsage: %s <camera_number>\n", argv[0]);
-
-	int frame_rate, brightness, contrast, camera_number = atoi(argv[1]);
-
-	char pi_camera_number[256];
-
-	sprintf(pi_camera_number, "%s%d", "camera", camera_number);
-
-	carmen_param_t param_list[] =
-	{
-		{pi_camera_number, (char*)"width",      CARMEN_PARAM_INT,    &msg->width,     0, NULL},
-		{pi_camera_number, (char*)"height",     CARMEN_PARAM_INT,    &msg->height,    0, NULL},
-		{pi_camera_number, (char*)"frame_rate", CARMEN_PARAM_INT,    &frame_rate,     0, NULL},
-		{pi_camera_number, (char*)"brightness", CARMEN_PARAM_INT,    &brightness,     0, NULL},
-		{pi_camera_number, (char*)"contrast",   CARMEN_PARAM_INT,    &contrast,       0, NULL},
-		{pi_camera_number, (char*)"ip",         CARMEN_PARAM_STRING, &tcp_ip_address, 0, NULL},
-	};
-
-	int num_items = sizeof(param_list)/sizeof(param_list[0]);
-	carmen_param_install_params(argc, argv, param_list, num_items);
-
-	sprintf(cam_config, "%d*%d*%d*%d*%d*", msg->width, msg->height, frame_rate, brightness, contrast);
-	carmen_bumblebee_basic_stereoimage_message msg;
-	return (camera_number);
-}
-
-
-void
-initialize_message(carmen_bumblebee_basic_stereoimage_message *msg)
-{
-	msg->image_size = msg->width * msg->height * 3; // 3 channels RGB
-	msg->isRectified = 1;
-	msg->raw_left = (unsigned char *) calloc(msg->image_size, sizeof(unsigned char));
-	msg->raw_right = msg->raw_left;  // This is a monocular camera, both pointers point to the same image
-	msg->host = carmen_get_host();
-
-	//printf("\nWidth %d Height %d Image Size %d Is Rectified %d Host %s\n\n", msg->width, msg->height, msg->image_size, msg->isRectified, msg->host);
-}
-
 
 int
 main(int argc, char **argv)
@@ -192,6 +158,8 @@ main(int argc, char **argv)
 
 	IPC_RETURN_TYPE err;
 
+	carmen_xsens_define_messages();
+
 	while (1)
 	{
 		unsigned char rpi_imu_data[SOCKET_DATA_PACKET_SIZE];
@@ -211,11 +179,11 @@ main(int argc, char **argv)
 		int accRaw[3];
 		int gyrRaw[3];
 
-		sscanf((char *) rpi_imu_data, "%d %d %d %d %d %d %d %d %d *\n", &(accRaw[0]), &(accRaw[1]), &(accRaw[2]), &(gyrRaw[0]), &(gyrRaw[1]), &(gyrRaw[2]),
+		sscanf((char *) rpi_imu_data, "%d %d %d %d %d %d %d %d %d *\n", &(accRaw[0]), &(accRaw[1]), &(accRaw[2]), &(gyrRaw[0]), &(gyrRaw[1]),  &(gyrRaw[2]),
 				&(magRaw[0]), &(magRaw[1]), &(magRaw[2]));
 
-		printf("%d %d %d %d %d %d %d %d %d **\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2],
-				magRaw[0], magRaw[1], magRaw[2]);
+		//printf("%d %d %d %d %d %d %d %d %d **\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2],
+				//magRaw[0], magRaw[1], magRaw[2]);
 
 		AccX = accRaw[0] * 0.00012207 * 9.80665;
 		AccY = accRaw[1] * 0.00012207 * 9.80665;
