@@ -26,6 +26,7 @@ static double lambda = 1024;
 static int stereo_width;
 static int stereo_height;
 static int max_disparity;
+static int smoothing_kernel_size = 0;
 static int stereo_scalew;
 static int stereo_scaleh;
 static char *algorithm;
@@ -276,7 +277,7 @@ rgb_to_gray(unsigned char *src, unsigned char *dst, int width, int height)
 
 
 float
-somooth_filter(float *right_disparity, int i, int j,
+smooth_filter(float *right_disparity, int i, int j,
 		int ROI_width, int vertical_ROI_ini, int vertical_ROI_end, int horizontal_ROI_ini, int horizontal_ROI_end,
 		int kernel_size)
 {
@@ -351,13 +352,18 @@ compute_depth_map(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 //			fread(right_disparity, sizeof(float), ROI_width*ROI_height, disp_right);
 //			fclose(disp_right);
 
+			float disparity;
 			int i, j, x, y;
 			for (i = 0, y = vertical_ROI_ini; y < vertical_ROI_end; y++, i++)
 			{
 				for (j = 0, x = horizontal_ROI_ini; x < horizontal_ROI_end; x++, j++)
 				{
-//					float disparity = right_disparity[i * ROI_width + j];
-					float disparity = somooth_filter(right_disparity, i, j, ROI_width, vertical_ROI_ini, vertical_ROI_end, horizontal_ROI_ini, horizontal_ROI_end, 15);
+					if (smoothing_kernel_size  == 0)
+						disparity = right_disparity[i * ROI_width + j];
+					else
+						disparity = smooth_filter(right_disparity, i, j, ROI_width, vertical_ROI_ini, vertical_ROI_end, horizontal_ROI_ini, horizontal_ROI_end,
+								smoothing_kernel_size);
+
 					disparity_message.disparity[y * bumblebee_basic_width + x] = MAX(disparity, 0.0);
 				}
 			}
@@ -548,6 +554,7 @@ read_parameters(int argc, char **argv)
 		{ stereo_string, (char*) "width", CARMEN_PARAM_INT, &stereo_width, 0, NULL },
 		{ stereo_string, (char*) "height", CARMEN_PARAM_INT, &stereo_height, 0, NULL },
 		{ stereo_string, (char*) "max_disparity", CARMEN_PARAM_INT, &max_disparity, 0, NULL },
+		{ stereo_string, (char*) "smoothing_kernel_size", CARMEN_PARAM_INT, &smoothing_kernel_size, 0, NULL },
 		{ stereo_string, (char*) "algorithm", CARMEN_PARAM_STRING, &algorithm, 0, NULL },
 		{ stereo_string, (char*) "gaussian_radius", CARMEN_PARAM_DOUBLE, &gaussian_radius, 0, NULL },
 		{ stereo_string, (char*) "synapses", CARMEN_PARAM_INT, &synapses, 0, NULL },
