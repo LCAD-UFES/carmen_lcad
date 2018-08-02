@@ -23,7 +23,10 @@ LFLAGS += -lgrid_mapping -lprob_models -lm -lz -lmap_io -lmap_util -llocalize_ac
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 # Application specific include directories.
-IFLAGS += -I/usr/include/eigen3 -I/usr/local/include/pcl-1.7/  -I/usr/include/vtk-5.8/
+PCL_INC = `ls /usr/local/include/pcl-* -d`
+VTK_INC = `ls /usr/include/vtk-* -d`
+IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+
 LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 	
