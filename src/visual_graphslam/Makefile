@@ -8,7 +8,11 @@ LINK = g++
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/  
 IFLAGS += -I/usr/include/eigen3 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
-IFLAGS += -I/usr/include/eigen3 -I/usr/local/include/pcl-1.7/ -I/usr/include/pcl-1.7/  -I/usr/include/vtk-5.8/
+
+PCL_INC = `ls /usr/local/include/pcl-* -d`
+VTK_INC = `ls /usr/include/vtk-* -d`
+IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
 IFLAGS += `pkg-config --cflags opencv`
 

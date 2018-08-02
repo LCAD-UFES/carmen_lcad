@@ -286,20 +286,20 @@ EOF
 }
   print "found, version $gtk_major.$gtk_minor.$revision\n";
   
-  print "Searching for libgdk_imlib.a...";
-  if (-e "/usr/lib/libgdk_imlib.a" or 
-      -e "/usr/lib64/libgdk_imlib.a" or
-      -e "/usr/local/lib/libgdk_imlib.a" or
-      -e "/opt/gnome/lib/libgdk_imlib.a") {
-      print " found\n";
-  } else {
-
-      print " ${red}not found ${normal}\n\n";
-      print "Could not find libgdk_imlib.a in /usr/lib,\n";
-      print "/usr/local/lib, nor in /opt/gnome/lib/\n";
-      print "Please install libgdk_imlib.a or\n${red}re-run $PROGRAM_NAME with --nographics${normal}\n";
-      die "\n";
-  }
+#  print "Searching for libgdk_imlib.a...";
+#  if (-e "/usr/lib/libgdk_imlib.a" or 
+#      -e "/usr/lib64/libgdk_imlib.a" or
+#      -e "/usr/local/lib/libgdk_imlib.a" or
+#      -e "/opt/gnome/lib/libgdk_imlib.a") {
+#      print " found\n";
+#  } else {
+#
+#      print " ${red}not found ${normal}\n\n";
+#      print "Could not find libgdk_imlib.a in /usr/lib,\n";
+#      print "/usr/local/lib, nor in /opt/gnome/lib/\n";
+#      print "Please install libgdk_imlib.a or\n${red}re-run $PROGRAM_NAME with --nographics${normal}\n";
+#      die "\n";
+#  }
   
   return $gtk_config;
 }

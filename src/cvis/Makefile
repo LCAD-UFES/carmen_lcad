@@ -9,10 +9,13 @@ LINK = g++
 
 # Application specific include directories.
 IFLAGS += -I/usr/local/include/bullet/ -I/usr/include/eigen3 -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/cuda/include -I/home/lcad/NVIDIA_GPU_Computing_SDK/C/common/inc
-IFLAGS += -I/home/lcad/tplib/pcl/build/include -I/home/lcad/tplib/pcl/trunk/common/include 
+
+PCL_INC = `ls /usr/local/include/pcl-* -d`
+VTK_INC = `ls /usr/include/vtk-* -d`
+IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
 # Required default libraries to comunicate with Carmen Core
-LFLAGS += -L/usr/local/lib -L/home/lcad/tplib/pcl/build/lib -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/cuda/lib64/lib
+LFLAGS += -L/usr/local/lib -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/cuda/lib64/lib
 LFLAGS += -lparam_interface -lipc -lglobal -lcvis_interface -lstereo_interface -lvelodyne_interface -lkinect_interface -lfused_odometry_interface -ljoystick_interface -lGL -lGLU -lglut\
 		  -ltf -lBulletDynamics -lBulletCollision -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system \
 		  `pkg-config --libs opencv`
