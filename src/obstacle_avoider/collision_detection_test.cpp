@@ -49,7 +49,6 @@ TEST_CASE("OBB collision using SAT", "[COLLISION]")
     obb5.object_pose.x = 0.86;
     obb5.object_pose.y = 0.86;
 
-
     REQUIRE(compute_collision_obb_obb(obb1, obb2) == Approx(0.0));
     REQUIRE(compute_collision_obb_obb(obb1, obb3) == Approx(1.25));
     REQUIRE(compute_collision_obb_obb(obb1, obb4) == Approx(1.0));
@@ -59,7 +58,6 @@ TEST_CASE("OBB collision using SAT", "[COLLISION]")
     REQUIRE(compute_collision_obb_obb(obb3, obb1) == Approx(1.25));
     REQUIRE(compute_collision_obb_obb(obb4, obb1) == Approx(1.0 + sqrt(2.0)/2.0));
     REQUIRE(compute_collision_obb_obb(obb5, obb1) == Approx(0.0));
-
 }
 
 TEST_CASE("Collision between lines", "[COLLISION]")
@@ -107,9 +105,16 @@ TEST_CASE("Collision between lines", "[COLLISION]")
     line1.theta = 0;
     line2.theta = M_PI / 2.0;
     REQUIRE(has_collision_between_lines(line1, line2) != 0);
-
-
 }
+
+
+TEST_CASE("Index test", "[COLLISION]")
+{
+  for (uint32_t i = 0; i < 32; i++) {
+    REQUIRE(GetBitIndex(pow(2, i)) == i);
+  }
+}
+
 
 TEST_CASE("Spatial Hashing", "[COLLISION]")
 {

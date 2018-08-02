@@ -200,10 +200,14 @@ has_collision_between_lines(carmen_point_t line1, carmen_point_t line2)
  * @param x
  * @return int32_t log_2(v), i.e. n such that 2 ∧ n = v
  */
-int32_t
-GetBitIndex(int32_t x)
+uint32_t
+GetBitIndex(uint32_t x)
 {
-	return (int32_t)log2((double)x);
+  double input = (double)x;
+  double answer = log2(input);
+  uint32_t converted = (uint32_t)floorf(answer);
+
+  return converted;
 }
 
 int
@@ -232,10 +236,10 @@ InsertObjectIntoGrid(carmen_oriented_bounding_box pObject,
   int y1 = (int)floorf((pObject.object_pose.y - radius) * ooCellWidth);
   int y2 = (int)floorf((pObject.object_pose.y + radius) * ooCellWidth);
 
-  x1 = clamp(x1, 0, grid->grid_width);
-  x2 = clamp(x2, 0, grid->grid_width);
-  y1 = clamp(y1, 0, grid->grid_height);
-  y2 = clamp(y2, 0, grid->grid_height);
+  x1 = clamp(x1, 0, grid->grid_width-1);
+  x2 = clamp(x2, 0, grid->grid_width-1);
+  y1 = clamp(y1, 0, grid->grid_height-1);
+  y2 = clamp(y2, 0, grid->grid_height-1);
 
   int i = object_index / 32;
   // Compute the merged (bitwise-or) bit array of all overlapped grid rows.
@@ -266,9 +270,9 @@ construct_uniform_collision_grid(int num_objects, carmen_oriented_bounding_box *
 	for (int i = 0; i < grid_width; i++)
 		grid.columnBitArray[i] = (int32_t *)calloc(grid.num_objects_div_32, sizeof(int32_t));
 
-	grid.objects = (carmen_oriented_bounding_box *)malloc(num_objects * sizeof(carmen_oriented_bounding_box));
-	for (int i = 0; i < num_objects; i++)
-	{
+  grid.objects = (carmen_oriented_bounding_box *)malloc(num_objects * sizeof(carmen_oriented_bounding_box));
+  for (int i = 0; i < num_objects; i++) 
+  {
 		grid.objects[i] = objects[i];
 		InsertObjectIntoGrid(objects[i], i, &grid);
 	}
@@ -293,10 +297,10 @@ TestObjectAgainstGrid(carmen_oriented_bounding_box pObject, carmen_uniform_colli
 	int y1 = (int)floorf((pObject.object_pose.y - radius) * ooCellWidth);
 	int y2 = (int)floorf((pObject.object_pose.y + radius) * ooCellWidth);
 
-	x1 = clamp(x1, 0, grid->grid_width);
-	x2 = clamp(x2, 0, grid->grid_width);
-	y1 = clamp(y1, 0, grid->grid_height);
-	y2 = clamp(y2, 0, grid->grid_height);
+  x1 = clamp(x1, 0, grid->grid_width-1);
+  x2 = clamp(x2, 0, grid->grid_width-1);
+  y1 = clamp(y1, 0, grid->grid_height-1);
+  y2 = clamp(y2, 0, grid->grid_height-1);
 
 	// Compute the merged (bitwise-or’ed) bit array of all overlapped grid rows.
 	// Ditto for all overlapped grid columns
@@ -321,7 +325,7 @@ TestObjectAgainstGrid(carmen_oriented_bounding_box pObject, carmen_uniform_colli
 
 			// Get index number of set bit, test against corresponding object
 			// (GetBitIndex(v) returns log_2(v), i.e. n such that 2 ∧ n = v)
-			int32_t objectIndex = GetBitIndex(singleObjectMask) + i * 32;
+      uint32_t objectIndex = GetBitIndex(singleObjectMask) + i * 32;
 
 			sum += compute_collision_obb_obb(pObject, grid->objects[objectIndex]);
 			// Mask out tested object, and continue with any remaining objects

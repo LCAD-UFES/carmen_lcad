@@ -38,15 +38,14 @@ double compute_collision_obb_obb(const carmen_oriented_bounding_box carmen_orien
 
 int has_collision_between_lines(carmen_point_t line1, carmen_point_t line2);
 
-void InsertObjectIntoGrid(carmen_oriented_bounding_box pObject,
-                          int object_index,
-                          carmen_uniform_collision_grid* grid);
+uint32_t GetBitIndex(uint32_t x);
+
+void InsertObjectIntoGrid(carmen_oriented_bounding_box pObject, int object_index, carmen_uniform_collision_grid* grid);
 
 carmen_uniform_collision_grid construct_uniform_collision_grid( int num_objects, carmen_oriented_bounding_box* objects,
   																int grid_width,int grid_height,double cell_width);
 
-double TestObjectAgainstGrid(carmen_oriented_bounding_box pObject,
-                             carmen_uniform_collision_grid* grid);
+double TestObjectAgainstGrid(carmen_oriented_bounding_box pObject, carmen_uniform_collision_grid* grid);
 
   void set_variable_map_config(double map_config);
 
