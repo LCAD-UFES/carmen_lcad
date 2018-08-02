@@ -27,21 +27,15 @@ char g_map_type;
 double g_x_origin;
 double g_y_origin;
 
-
-static void
-define_messages()
+static void define_messages()
 {
 }
 
-
-static void
-register_handlers()
+static void register_handlers()
 {
 }
 
-
-void
-shutdown_module(int signo)
+void shutdown_module(int signo)
 {
 	if (signo == SIGINT)
 	{
@@ -51,60 +45,53 @@ shutdown_module(int signo)
 	}
 }
 
-
-void
-parse_road_map_dir_type_and_origin(string str_road_map_filename)
+void parse_road_map_dir_type_and_origin(string str_road_map_filename)
 {
 	string x_origin;
 	string y_origin;
 	string map_type;
-	int l;
-	int last_bar_position;
-	int last_trace_position=0;
-	int last_underline_position=0;
-	int last_dot_position=0;
+	unsigned int l;
+	int last_bar_position = 0;
+	int last_trace_position = 0;
+	int last_underline_position = 0;
+	int last_dot_position = 0;
 	string file_name;
 
-	for(l=0; l<str_road_map_filename.length();l++)
+	for (l = 0; l < str_road_map_filename.length(); l++)
 	{
-		if(str_road_map_filename[l] == '/')
+		if (str_road_map_filename[l] == '/')
 			last_bar_position = l;
-		if(str_road_map_filename[l] == '.')
+		if (str_road_map_filename[l] == '.')
 			last_dot_position = l;
-		if(str_road_map_filename[l] == '_')
+		if (str_road_map_filename[l] == '_')
 			last_underline_position = l;
-		if(str_road_map_filename[l] == '-')
+		if (str_road_map_filename[l] == '-')
 			last_trace_position = l;
 
 	}
 	str_g_road_map_folder = str_road_map_filename.substr(0, last_bar_position);
-	map_type = str_road_map_filename.substr(last_bar_position+1, 1);
-	x_origin = str_road_map_filename.substr(last_bar_position+2,last_underline_position-last_bar_position-2);
-	y_origin = str_road_map_filename.substr(last_trace_position,last_dot_position-last_trace_position);
+	map_type = str_road_map_filename.substr(last_bar_position + 1, 1);
+	x_origin = str_road_map_filename.substr(last_bar_position + 2, last_underline_position - last_bar_position - 2);
+	y_origin = str_road_map_filename.substr(last_trace_position, last_dot_position - last_trace_position);
 	g_x_origin = atof(x_origin.c_str());
 	g_y_origin = atof(y_origin.c_str());
 }
 
-
-static void
-read_parameters(int argc, char **argv)
+static void read_parameters(int argc, char **argv)
 //read_parameters(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused)))
 {
 	const char usage[] = "[<road_map_dir>/<road_map>.map]";
-	if(argc!=2)
+	if (argc != 2)
 		printf("Incorrect Input!.\nUsage:\n%s %s\n", argv[0], usage);
 	else
 		g_road_map_dir = argv[1];
 }
 
-
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	read_parameters(argc, argv);
-	carmen_grid_mapping_init_parameters(0.2,210);
+	carmen_grid_mapping_init_parameters(0.2, 210);
 	system("rm -f already_visited/*.*");
-
 
 	if (g_ipc_required)
 	{
@@ -122,10 +109,10 @@ main(int argc, char **argv)
 	parse_road_map_dir_type_and_origin(str_road_map_filename);
 	g_road_map_folder = &str_g_road_map_folder[0u];
 
-	int count_maps = carmen_grid_mapping_get_block_map_by_origin_x_y(g_road_map_folder,'r',g_x_origin,g_y_origin,&road_map);
-	carmen_grid_mapping_update_map_buffer(&road_map,'r');
+	int count_maps = carmen_grid_mapping_get_block_map_by_origin_x_y(g_road_map_folder, 'r', g_x_origin, g_y_origin, &road_map);
+	carmen_grid_mapping_update_map_buffer(&road_map, 'r');
 	//cout<<road_map.config.x_size<<"\t"<<road_map.config.y_size<<"\t"<<road_map.config.x_origin<<"\t"<<road_map.config.y_origin<<"\t"<<endl;getchar();
-	if(count_maps>0)
+	if (count_maps > 0)
 	{
 		//show_road_map(&road_map,0,0);
 
@@ -135,7 +122,6 @@ main(int argc, char **argv)
 	}
 	else
 		cout << "rddf_graph_main: could not read offline map from file named: " << g_road_map_dir << endl;
-
 
 	if (g_ipc_required)
 	{

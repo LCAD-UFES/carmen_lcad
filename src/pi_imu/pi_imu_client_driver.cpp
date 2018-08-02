@@ -1,6 +1,7 @@
 #include <carmen/carmen.h>
 #include <carmen/camera_messages.h>
 #include <carmen/camera_interface.h>
+#include <carmen/xsens_messages.h>
 #include <carmen/bumblebee_basic_interface.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -15,6 +16,21 @@ char* tcp_ip_address;
 using namespace std;
 using namespace cv;
 
+void
+carmen_xsens_define_messages()
+{
+    IPC_RETURN_TYPE err;
+
+    /* register xsens's global message */
+    err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_QUAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_QUAT_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_QUAT_NAME);
+
+    err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_EULER_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_EULER_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_EULER_NAME);
+
+    err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_MATRIX_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_MATRIX_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_MATRIX_NAME);
+}
 
 int
 stablished_connection_with_server()
@@ -37,9 +53,11 @@ stablished_connection_with_server()
 
 	if (status != 0)
 	{
+
 		printf("--- Get_Addrinfo ERROR! ---\n");
 		return (-1);
 	}
+
 	status = connect(pi_socket, host_info_list->ai_addr, host_info_list->ai_addrlen);
 
 	if(status < 0)
@@ -103,65 +121,16 @@ signal_handler(int sig)
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//																						     //
-// Initializations																		     //
-//																						     //
-///////////////////////////////////////////////////////////////////////////////////////////////
-
 
 int
-read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_message *msg, char *cam_config)
+main(int argc, char **argv)
 {
-	if (argc != 2)
-		carmen_die("--- Wrong number of parameters. ---\nUsage: %s <camera_number>\n", argv[0]);
-
-	int frame_rate, brightness, contrast, camera_number = atoi(argv[1]);
-
-	char pi_camera_number[256];
-
-	sprintf(pi_camera_number, "%s%d", "camera", camera_number);
-
-	carmen_param_t param_list[] =
-	{
-		{pi_camera_number, (char*)"width",      CARMEN_PARAM_INT,    &msg->width,     0, NULL},
-		{pi_camera_number, (char*)"height",     CARMEN_PARAM_INT,    &msg->height,    0, NULL},
-		{pi_camera_number, (char*)"frame_rate", CARMEN_PARAM_INT,    &frame_rate,     0, NULL},
-		{pi_camera_number, (char*)"brightness", CARMEN_PARAM_INT,    &brightness,     0, NULL},
-		{pi_camera_number, (char*)"contrast",   CARMEN_PARAM_INT,    &contrast,       0, NULL},
-		{pi_camera_number, (char*)"ip",         CARMEN_PARAM_STRING, &tcp_ip_address, 0, NULL},
-	};
-
-	int num_items = sizeof(param_list)/sizeof(param_list[0]);
-	carmen_param_install_params(argc, argv, param_list, num_items);
-
-	sprintf(cam_config, "%d*%d*%d*%d*%d*", msg->width, msg->height, frame_rate, brightness, contrast);
-
-	return (camera_number);
-}
+	carmen_xsens_global_quat_message xsens_quat_message;
 
 
-void
-initialize_message(carmen_bumblebee_basic_stereoimage_message *msg)
-{
-	msg->image_size = msg->width * msg->height * 3; // 3 channels RGB
-	msg->isRectified = 1;
-	msg->raw_left = (unsigned char *) calloc(msg->image_size, sizeof(unsigned char));
-	msg->raw_right = msg->raw_left;  // This is a monocular camera, both pointers point to the same image
-	msg->host = carmen_get_host();
+	carmen_ipc_initialize(argc, argv);
 
-	//printf("\nWidth %d Height %d Image Size %d Is Rectified %d Host %s\n\n", msg->width, msg->height, msg->image_size, msg->isRectified, msg->host);
-}
-
-
-int
-main()
-{
-//	carmen_bumblebee_basic_stereoimage_message msg;
-
-//	carmen_ipc_initialize(argc, argv);
-
-//	carmen_param_check_version(argv[0]);
+	carmen_param_check_version(argv[0]);
 
 //	int camera_number = read_parameters(argc, argv, &msg, cam_config);
 //	initialize_message(&msg);
@@ -170,7 +139,27 @@ main()
 
 	int pi_socket = stablished_connection_with_server();
 
+	double AccY = 0.0;
+	double AccX = 0.0;
+	double AccZ = 0.0;
+
+	double GyrX = 0.0;
+	double GyrY = 0.0;
+	double GyrZ = 0.0;
+
+	double MagX = 0.0;
+	double MagY = 0.0;
+	double MagZ = 0.0;
+
+	/*double pressure;
+	double temperature;*/
+
 	int valread;
+
+	IPC_RETURN_TYPE err;
+
+	carmen_xsens_define_messages();
+
 	while (1)
 	{
 		unsigned char rpi_imu_data[SOCKET_DATA_PACKET_SIZE];
@@ -186,8 +175,70 @@ main()
 		else if ((valread == -1) || (valread != SOCKET_DATA_PACKET_SIZE))
 			continue;
 
-		printf("%s", rpi_imu_data);
-//		publish_image_message(camera_number, &msg);
+		int magRaw[3];
+		int accRaw[3];
+		int gyrRaw[3];
+
+		sscanf((char *) rpi_imu_data, "%d %d %d %d %d %d %d %d %d *\n", &(accRaw[0]), &(accRaw[1]), &(accRaw[2]), &(gyrRaw[0]), &(gyrRaw[1]),  &(gyrRaw[2]),
+				&(magRaw[0]), &(magRaw[1]), &(magRaw[2]));
+
+		//printf("%d %d %d %d %d %d %d %d %d **\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2],
+				//magRaw[0], magRaw[1], magRaw[2]);
+
+		AccX = accRaw[0] * 0.00012207 * 9.80665;
+		AccY = accRaw[1] * 0.00012207 * 9.80665;
+		AccZ = accRaw[2] * 0.00012207 * 9.80665;
+
+		GyrX = (gyrRaw[0] * 0.015258789 * 3.14159265) / 180.0;
+		GyrY = (gyrRaw[1] * 0.015258789 * 3.14159265) / 180.0;
+		GyrZ = (gyrRaw[2] * 0.015258789 * 3.14159265) / 180.0;
+
+		MagX = magRaw[0] * 0.244141;
+		MagY = magRaw[1] * 0.244141;
+		MagZ = magRaw[2] * 0.244141;
+
+		printf("ACELEROMETRO = X:%f m/s^2 Y:%f m/s^2 Z:%f m/s^2\n", AccX, AccY, AccZ);
+		printf("GIROSCÓPIO = X:%f radps Y:%f radps Z:%f radps\n", GyrX, GyrY, GyrZ);
+		printf("MAGNETOMETRO = X:%f mgauss Y:%f mgauss Z:%f mgauss\n", MagX, MagY, MagZ);
+
+		// publishing  carmen_xsens_global_quat_message
+
+		 //Acceleration
+		xsens_quat_message.m_acc.x = AccX;
+		xsens_quat_message.m_acc.y = AccY;
+		xsens_quat_message.m_acc.z = AccZ;
+
+		//Gyro
+		xsens_quat_message.m_gyr.x = GyrX;
+		xsens_quat_message.m_gyr.y = GyrY;
+		xsens_quat_message.m_gyr.z = GyrZ;
+
+		//Magnetism
+		xsens_quat_message.m_mag.x = MagX;
+		xsens_quat_message.m_mag.y = MagY;
+		xsens_quat_message.m_mag.z = MagZ;
+
+		xsens_quat_message.quat_data.m_data[0] = 0.0;
+		xsens_quat_message.quat_data.m_data[1] = 0.0;
+		xsens_quat_message.quat_data.m_data[2] = 0.0;
+		xsens_quat_message.quat_data.m_data[3] = 0.0;
+
+
+		xsens_quat_message.m_temp = 0.0;
+		xsens_quat_message.m_count = 0;
+
+		//Timestamp
+		xsens_quat_message.timestamp = carmen_get_time();
+
+		//Host
+		xsens_quat_message.host = carmen_get_host();
+
+		err = IPC_publishData(CARMEN_XSENS_GLOBAL_QUAT_NAME, &xsens_quat_message);
+		carmen_test_ipc_exit(err, "Could not publish", CARMEN_XSENS_GLOBAL_QUAT_NAME);
+
+		/*printf("TEMPERATURA =  %f C\n", temperature);
+		printf("PRESSÃO = %f mb\n", pressure);*/
+		//		publish_image_message(camera_number, &msg);
 
 		//imshow("Pi Camera Driver", cv_image);  waitKey(1);
 	}

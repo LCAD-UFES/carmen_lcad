@@ -167,6 +167,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* msg)
     int window_height;
     static char msg_fps_string[256];
     static char disp_fps_string[256];
+    static char img_resol_string[256];
 
 	static int first = 1;
     static Mat *resized_image_left = NULL;
@@ -197,9 +198,13 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* msg)
 
     sprintf(msg_fps_string, "MSG_FPS: %d", msg_last_fps);
     sprintf(disp_fps_string, "DISP_FPS: %d", disp_last_fps);
+    sprintf(img_resol_string, "%dx%d", msg->width, msg->height);
 
-    putText(*resized_image_left, msg_fps_string, cvPoint(10, 30), CV_FONT_HERSHEY_SIMPLEX, 0.7, Scalar(255, 255, 0));
-    putText(*resized_image_right, disp_fps_string, cvPoint(10, 30), CV_FONT_HERSHEY_SIMPLEX, 0.7, cvScalar(255, 255, 0));
+//    putText(*resized_image_left, msg_fps_string, cvPoint(10, 30), CV_FONT_HERSHEY_SIMPLEX, 0.7, Scalar(255, 255, 0));
+//    putText(*resized_image_right, disp_fps_string, cvPoint(10, 30), CV_FONT_HERSHEY_SIMPLEX, 0.7, cvScalar(255, 255, 0));
+    putText(*resized_image_left, msg_fps_string, cvPoint(7, 20), CV_FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 255, 0));
+    putText(*resized_image_left, disp_fps_string, cvPoint(7, 42), CV_FONT_HERSHEY_SIMPLEX, 0.5, cvScalar(255, 255, 0));
+    putText(*resized_image_left, img_resol_string, cvPoint(7, 64), CV_FONT_HERSHEY_SIMPLEX, 0.5, cvScalar(255, 255, 0));
 
     hconcat(*resized_image_left, *resized_image_right, concat);
     cvtColor(concat, bgr, CV_RGB2BGR);

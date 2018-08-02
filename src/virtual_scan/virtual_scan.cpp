@@ -933,12 +933,12 @@ virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment
 //			append_pedestrian_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i].centroid);
 		if (segment_class == L_SHAPED) // L-shape segments segments will generate bus and car hypotheses
 		{
-//			plot_segment(box_points, segment_features, 30);
+			plot_segment(box_points, segment_features, 30);
 			append_l_shaped_objects_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i], categories);
 		}
 		if (segment_class == I_SHAPED) // I-shape segments segments will generate bus, car and bike hypotheses
 		{
-//			plot_segment(box_points, segment_features, 30);
+			plot_segment(box_points, segment_features, 30);
 			append_i_shaped_objects_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i], categories);
 		}
 

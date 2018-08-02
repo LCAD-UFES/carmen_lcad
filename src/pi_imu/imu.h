@@ -21,7 +21,7 @@ void readGYR(int g[]);
 void writeAccReg(uint8_t reg, uint8_t value);
 void writeMagReg(uint8_t reg, uint8_t value);
 void writeGyrReg(uint8_t reg, uint8_t value);
-void detectIMU();
+int detectIMU();
 void enableIMU();
 
 #ifdef __cplusplus

@@ -9,13 +9,13 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libviso2.3/src
 LFLAGS += -lipc -lglobal -fopenmp -lm
  
 SOURCES = descriptor.cpp elas.cpp filter.cpp main.cpp matrix.cpp triangle.cpp
-TARGETS = libelas.a test
+TARGETS = libelas.a elas
 
 ifndef NO_PYTHON
 TARGETS += libelas.so.1
 endif
 
-test: main.o libelas.a
+elas: main.o libelas.a
 
 libelas.a: descriptor.o elas.o filter.o matrix.o triangle.o
 
