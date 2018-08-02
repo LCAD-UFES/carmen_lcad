@@ -24,12 +24,6 @@ carmen_xsens_define_messages()
     /* register xsens's global message */
     err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_QUAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_QUAT_FMT);
     carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_QUAT_NAME);
-
-    err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_EULER_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_EULER_FMT);
-    carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_EULER_NAME);
-
-    err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_MATRIX_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_MATRIX_FMT);
-    carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_MATRIX_NAME);
 }
 
 int
@@ -88,19 +82,7 @@ trying_to_reconnect()
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//																							 //
-// Publishers																			     //
-//																						     //
-///////////////////////////////////////////////////////////////////////////////////////////////
 
-
-void
-publish_image_message(int camera_number, carmen_bumblebee_basic_stereoimage_message *msg)
-{
-	msg->timestamp = carmen_get_time();
-	carmen_bumblebee_basic_publish_message(camera_number, msg);
-}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
