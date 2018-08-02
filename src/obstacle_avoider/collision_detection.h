@@ -6,6 +6,8 @@
 #include <carmen/ipc_wrapper.h>
 #include <carmen/obstacle_distance_mapper_messages.h>
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,12 +21,33 @@ typedef struct _carmen_oriented_bounding_box
 	double linear_velocity;
 } carmen_oriented_bounding_box;
 
+typedef struct _carmen_uniform_collision_grid
+{
+	int num_objects;
+	double cell_width;
+	int grid_width;
+	int grid_height;
+	int num_objects_div_32;
+	int32_t **rowBitArray;
+	int32_t **columnBitArray;
+	carmen_oriented_bounding_box *objects;
+} carmen_uniform_collision_grid;
+
 double compute_collision_obb_obb(const carmen_oriented_bounding_box carmen_oriented_bounding_box1,
 								 const carmen_oriented_bounding_box carmen_oriented_bounding_box2);
 
 int has_collision_between_lines(carmen_point_t line1, carmen_point_t line2);
 
-void set_variable_map_config(double map_config);
+uint32_t GetBitIndex(uint32_t x);
+
+void InsertObjectIntoGrid(carmen_oriented_bounding_box pObject, int object_index, carmen_uniform_collision_grid* grid);
+
+carmen_uniform_collision_grid construct_uniform_collision_grid( int num_objects, carmen_oriented_bounding_box* objects,
+  																int grid_width,int grid_height,double cell_width);
+
+double TestObjectAgainstGrid(carmen_oriented_bounding_box pObject, carmen_uniform_collision_grid* grid);
+
+  void set_variable_map_config(double map_config);
 
 carmen_point_t to_carmen_point_t (carmen_ackerman_traj_point_t *p);
 carmen_point_t to_map_pose(carmen_point_t world_pose, carmen_map_config_t *map_config);
