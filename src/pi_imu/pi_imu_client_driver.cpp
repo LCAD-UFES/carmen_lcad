@@ -5,16 +5,12 @@
 #include <carmen/bumblebee_basic_interface.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 
 char* tcp_ip_address;
 
 #define PORT "3457"
 #define SOCKET_DATA_PACKET_SIZE	2048
 
-using namespace std;
-using namespace cv;
 
 void
 carmen_xsens_define_messages()
