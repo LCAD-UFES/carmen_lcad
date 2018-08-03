@@ -16,7 +16,7 @@
 
 carmen_xsens_global_quat_message *xsens_quat_message;
 xsens_global data;
-float matCol[] = {1,0,0,0};
+GLfloat angle, fAspect;
 
 void
 shutdown_module(int signo)
@@ -45,10 +45,10 @@ xsens_message_handler(carmen_xsens_global_quat_message *xsens_quat_message)
 	data.mag.x = xsens_quat_message->m_mag.x;
 	data.mag.y = xsens_quat_message->m_mag.y;
 	data.mag.z = xsens_quat_message->m_mag.z;
-
+/*
 	printf("ACELEROMETRO = X:%f m/s^2 Y:%f m/s^2 Z:%f m/s^2\n", data.acc.x, data.acc.y, data.acc.z);
 	printf("GIROSCÓPIO = X:%f radps Y:%f radps Z:%f radps\n", data.gyr.x, data.gyr.y, data.gyr.z);
-	printf("MAGNETOMETRO = X:%f mgauss Y:%f mgauss Z:%f mgauss\n", data.mag.x, data.mag.y, data.mag.z);
+	printf("MAGNETOMETRO = X:%f mgauss Y:%f mgauss Z:%f mgauss\n", data.mag.x, data.mag.y, data.mag.z);*/
 }
 
 
@@ -82,80 +82,145 @@ display (void)
 	float CFangleX = 0.0;
 	float CFangleY = 0.0;
 	float CFangleZ = 0.0;
-
 	//Convert Accelerometer values to degrees
 	AccXangle = (float) (atan2(data.acc.y, data.acc.z)) * RAD_TO_DEG;
 	AccYangle = (float) (atan2(data.acc.z, data.acc.x)) * RAD_TO_DEG;
 	AccZangle = (float) (atan2(data.acc.x, data.acc.y)) * RAD_TO_DEG;
 
-	if (AccXangle >180)
-		AccXangle -= (float)360.0;
-	AccYangle -= 90;
-	if (AccYangle >180)
-		AccYangle -= (float)360.0;
+	printf ("X : %f\n", AccXangle);
+	printf ("Y : %f\n", AccYangle);
+	printf ("Z: %f\n", AccZangle);
+	/*
+	AccXangle -= (float)180.0;
+	if (AccYangle > 90)
+		AccYangle -= (float)270;
+	else
+		AccYangle += (float)90;
+
+*/
 
 	//Complementary filter used to combine the accelerometer and gyro values.
 	CFangleX=AA*(CFangleX + data.gyr.x) + (1 - AA) * AccXangle;
 	CFangleY=AA*(CFangleY + data.gyr.y) + (1 - AA) * AccYangle;
 	CFangleZ=AA*(CFangleZ + data.gyr.z) + (1 - AA) * AccZangle;
 
-	//glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // Clear the background of our window to red
-
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glColor3f(0.0f, 0.0f, 1.0f);
 	glPushMatrix();
-
-		glLoadIdentity(); // Load the Identity Matrix to reset our drawing locations
-
-		glColor3f(0.0, 1.0, 0.0);
-
-		glRotatef(CFangleX, 1.0f, 0.0f, 0.0f); // Rotate our object around the x axis
-
-		glRotatef(CFangleY, 0.0f, 1.0f, 0.0f); // Rotate our object around the y axis
-
-		glRotatef(CFangleZ, 0.0f, 0.0f, 1.0f); // Rotate our object around the z axis
-
-		glBegin(GL_QUADS);
-
-			glVertex3f(-0.5, 0.0, -0.5);
-
-			glVertex3f (-0.5, 0.0, 0.5);
-
-			glVertex3f(0.5, 0.0, 0.5);
-
-			glVertex3f(0.5, 0.0, -0.5);
-
-		glEnd();
-
+		glRotatef(AccXangle, 1.0, 0.0, 0.0);
+		glRotatef(AccYangle, 0.0, 1.0, 0.0);
+		glRotatef(AccZangle, 0.0, 0.0, 1.0);
+		// Desenha o teapot com a cor corrente (wire-frame)
+		glutSolidCube(50.0f);
 	glPopMatrix();
-
-	glFlush();
-
+	// Executa os comandos OpenGL
 	glutSwapBuffers();
 }
+
 
 void
 sleep_ipc()
 {
 	carmen_ipc_sleep(0.033333333);
-
 	glutPostRedisplay();
 }
 
-void init(){
-	glClearColor(0.0, 0.0, 0.0, 1.0);
 
+// Inicializa parâmetros de rendering
+void Inicializa (void)
+{
+	GLfloat luzAmbiente[4]={0.2,0.2,0.2,1.0};
+	GLfloat luzDifusa[4]={0.7,0.7,0.7,1.0};	   // "cor"
+	GLfloat luzEspecular[4]={1.0, 1.0, 1.0, 1.0};// "brilho"
+	GLfloat posicaoLuz[4]={0.0, 50.0, 50.0, 1.0};
+
+	// Capacidade de brilho do material
+	GLfloat especularidade[4]={1.0,1.0,1.0,1.0};
+	GLint especMaterial = 80;
+
+	// Especifica que a cor de fundo da janela será preta
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+	// Habilita o modelo de colorização de Gouraud
+	glShadeModel(GL_SMOOTH);
+
+	// Define a refletância do material
+	glMaterialfv(GL_FRONT,GL_SPECULAR, especularidade);
+	// Define a concentração do brilho
+	glMateriali(GL_FRONT,GL_SHININESS,especMaterial);
+
+	// Ativa o uso da luz ambiente
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzAmbiente);
+
+	// Define os parâmetros da luz de número 0
+	glLightfv(GL_LIGHT0, GL_AMBIENT, luzAmbiente);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, luzDifusa );
+	glLightfv(GL_LIGHT0, GL_SPECULAR, luzEspecular );
+	glLightfv(GL_LIGHT0, GL_POSITION, posicaoLuz );
+
+	// Habilita a definição da cor do material a partir da cor corrente
+	glEnable(GL_COLOR_MATERIAL);
+	//Habilita o uso de iluminação
+	glEnable(GL_LIGHTING);
+	// Habilita a luz de número 0
+	glEnable(GL_LIGHT0);
+	// Habilita o depth-bufferingt
 	glEnable(GL_DEPTH_TEST);
 
-	glMatrixMode(GL_PROJECTION);
-
-	gluPerspective(60.0, 1.0, 1.0, 20.0);
-
-	gluLookAt(7.0, 7.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
-
-	glMatrixMode(GL_MODELVIEW);
+	angle=45;
 }
 
+// Função usada para especificar o volume de visualização
+void EspecificaParametrosVisualizacao(void)
+{
+	// Especifica sistema de coordenadas de projeção
+	glMatrixMode(GL_PROJECTION);
+	// Inicializa sistema de coordenadas de projeção
+	glLoadIdentity();
+	// Especifica a projeção perspectiva
+	gluPerspective(angle,fAspect,0.1,500);
+	// Especifica sistema de coordenadas do modelo
+	glMatrixMode(GL_MODELVIEW);
+	// Inicializa sistema de coordenadas do modelo
+	glLoadIdentity();
+	// Especifica posição do observador e do alvo
+	gluLookAt(0,80,200, 0,0,0, 0,1,0);
+}
+
+
+// Função callback chamada quando o tamanho da janela é alterado
+void
+AlteraTamanhoJanela(GLsizei w, GLsizei h)
+{
+	// Para previnir uy = 0;ma divisão por zero
+	if ( h == 0 ) h = 1;
+	// Especifica o tamanho da viewport
+	glViewport(0, 0, w, h);
+	// Calcula a correção de aspecto
+	fAspect = (GLfloat)w / (GLfloat)h;
+	EspecificaParametrosVisualizacao();
+}
+
+
+// Função callback chamada para gerenciar eventos do mouse
+void
+GerenciaMouse(int button, int state, int x, int y)
+{
+	x += 0;
+	y += 0;
+	if (button == GLUT_LEFT_BUTTON)
+		if (state == GLUT_DOWN)
+		{  // Zoom-in
+			if (angle >= 10) angle -= 5;
+		}
+	if (button == GLUT_RIGHT_BUTTON)
+		if (state == GLUT_DOWN)
+		{  // Zoom-out
+			if (angle <= 130) angle += 5;
+		}
+	EspecificaParametrosVisualizacao();
+	glutPostRedisplay();
+}
 
 int
 main(int argc, char *argv[])
@@ -169,26 +234,15 @@ main(int argc, char *argv[])
 	carmen_xsens_subscribe_xsens_global_quat_message(xsens_quat_message, (carmen_handler_t) xsens_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	glutInit(&argc, argv); // Initialize GLUT
-
-	glutInitDisplayMode (GLUT_SINGLE); // Set up a basic display buffer (only single buffered for now)
-
-	glutInitWindowSize (600, 500); // Set the width and height of the window
-
-	glutInitWindowPosition (100, 100); // Set the position of the window
-
-	glutCreateWindow ("Your first OpenGL Window"); // Set the title for the window
-
-	glutDisplayFunc(display); // Tell GLUT to use the method "display" for rendering
-
-	//glutReshapeFunc(reshape); // Tell GLUT to use the method "reshape" for reshaping
-
-	glutIdleFunc(sleep_ipc); // Tell GLUT t#include <carmen/Window.h>
-
-	init();
-
-	glutMainLoop(); // Enter GLUT's main loop
-
-	//carmen_ipc_dispatch();
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+	glutInitWindowSize(800, 800);
+	glutCreateWindow("Visualizacao 3D");
+	glutDisplayFunc(display);
+	glutReshapeFunc(AlteraTamanhoJanela);
+	glutMouseFunc(GerenciaMouse);
+	Inicializa();
+	glutIdleFunc(sleep_ipc);
+	glutMainLoop();
 
 	return (0);
 }
