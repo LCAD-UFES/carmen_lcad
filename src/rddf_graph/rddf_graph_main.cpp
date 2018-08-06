@@ -27,15 +27,20 @@ char g_map_type;
 double g_x_origin;
 double g_y_origin;
 
-static void define_messages()
+static void
+define_messages()
 {
 }
 
-static void register_handlers()
+
+static void
+register_handlers()
 {
 }
 
-void shutdown_module(int signo)
+
+void
+shutdown_module(int signo)
 {
 	if (signo == SIGINT)
 	{
@@ -45,7 +50,9 @@ void shutdown_module(int signo)
 	}
 }
 
-void parse_road_map_dir_type_and_origin(string str_road_map_filename)
+
+void
+parse_road_map_dir_type_and_origin(string str_road_map_filename)
 {
 	string x_origin;
 	string y_origin;
@@ -77,7 +84,9 @@ void parse_road_map_dir_type_and_origin(string str_road_map_filename)
 	g_y_origin = atof(y_origin.c_str());
 }
 
-static void read_parameters(int argc, char **argv)
+
+static void
+read_parameters(int argc, char **argv)
 //read_parameters(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused)))
 {
 	const char usage[] = "[<road_map_dir>/<road_map>.map]";
@@ -87,11 +96,18 @@ static void read_parameters(int argc, char **argv)
 		g_road_map_dir = argv[1];
 }
 
-int main(int argc, char **argv)
+
+int
+main(int argc, char **argv)
 {
 	read_parameters(argc, argv);
 	carmen_grid_mapping_init_parameters(0.2, 210);
-	system("rm -f already_visited/*.*");
+
+	if (access("already_visited/", F_OK) == 0)
+		system("rm -f already_visited/*.*");
+	else
+		system("mkdir already_visited/");
+
 
 	if (g_ipc_required)
 	{
@@ -111,13 +127,13 @@ int main(int argc, char **argv)
 
 	int count_maps = carmen_grid_mapping_get_block_map_by_origin_x_y(g_road_map_folder, 'r', g_x_origin, g_y_origin, &road_map);
 	carmen_grid_mapping_update_map_buffer(&road_map, 'r');
-	//cout<<road_map.config.x_size<<"\t"<<road_map.config.y_size<<"\t"<<road_map.config.x_origin<<"\t"<<road_map.config.y_origin<<"\t"<<endl;getchar();
+
 	if (count_maps > 0)
 	{
 		//show_road_map(&road_map,0,0);
 
 		//parse_world_origin_to_road_map(str_road_map_filename);
-		generate_road_map_graph(&road_map, str_road_map_filename);
+		generate_road_map_graph(&road_map);
 		//print_map_in_terminal(&road_map);getchar();
 	}
 	else

@@ -72,7 +72,7 @@ bool point_is_in_map(carmen_map_p map, int x, int y);
 //rddf_graph_t * A_star(int x, int y, carmen_map_p map, int **already_visited);
 //void A_star(carmen_map_p map, rddf_graph_node* p, vector<rddf_graph_node*> &closed_set, int **already_visited, int *called_expand);
 int get_already_visited_by_origin_x_y(char *map_path, char map_type, double x_origin, double y_origin, carmen_map_t *already_visited, carmen_map_p map);
-void generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename);
+void generate_road_map_graph(carmen_map_p map);
 void parse_world_origin_to_road_map(string road_map_filename);
 
 #ifdef __cplusplus

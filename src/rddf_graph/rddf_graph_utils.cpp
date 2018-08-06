@@ -2,7 +2,8 @@
 
 using namespace std;
 
-cv::Mat rotate(cv::Mat src, cv::Point pt, double angle)
+cv::Mat
+rotate(cv::Mat src, cv::Point pt, double angle)
 {
 	cv::Mat dst;
 	cv::Mat r = getRotationMatrix2D(pt, angle, 1.0);
@@ -10,7 +11,9 @@ cv::Mat rotate(cv::Mat src, cv::Point pt, double angle)
 	return dst;
 }
 
-void road_map_to_image(carmen_map_p map, cv::Mat *road_map_img)
+
+void
+road_map_to_image(carmen_map_p map, cv::Mat *road_map_img)
 {
 	road_prob *cell_prob;
 	cv::Vec3b color;
@@ -34,7 +37,9 @@ void road_map_to_image(carmen_map_p map, cv::Mat *road_map_img)
 //	*road_map_img = rotate(*road_map_img, pt, 90);
 }
 
-void already_visited_to_image(carmen_map_p map, cv::Mat *road_map_img)
+
+void
+already_visited_to_image(carmen_map_p map, cv::Mat *road_map_img)
 {
 	cv::Vec3b color;
 
@@ -62,7 +67,48 @@ void already_visited_to_image(carmen_map_p map, cv::Mat *road_map_img)
 //	*road_map_img = rotate(*road_map_img, pt, 90);
 }
 
-void show_road_map(carmen_map_p map, int x, int y)
+
+void
+draw_lines (carmen_map_p map, cv::Mat *image){
+
+	cv::Point line_1_begin;
+	line_1_begin.x = 0;
+	line_1_begin.y = 350;
+	cv::Point line_1_end;
+	line_1_end.x = map->config.x_size-1;
+	line_1_end.y = 350;
+
+	cv::Point line_2_begin;
+	line_2_begin.x = 0;
+	line_2_begin.y = 700;
+	cv::Point line_2_end;
+	line_2_end.x = map->config.x_size-1;
+	line_2_end.y = 700;
+
+	cv::Point line_3_begin;
+	line_3_begin.x = 350;
+	line_3_begin.y = 0;
+	cv::Point line_3_end;
+	line_3_end.x = 350;
+	line_3_end.y = map->config.y_size-1;
+
+	cv::Point line_4_begin;
+	line_4_begin.x = 700;
+	line_4_begin.y = 0;
+	cv::Point line_4_end;
+	line_4_end.x = 700;
+	line_4_end.y = map->config.y_size-1;
+
+	cv::line(*image,line_1_begin,line_1_end,cv::Scalar(255, 0, 0));
+	cv::line(*image,line_2_begin,line_2_end,cv::Scalar(255, 0, 0));
+	cv::line(*image,line_3_begin,line_3_end,cv::Scalar(255, 0, 0));
+	cv::line(*image,line_4_begin,line_4_end,cv::Scalar(255, 0, 0));
+
+}
+
+
+void
+show_road_map(carmen_map_p map, int x, int y)
 {
 	//road_prob *cell_prob;
 	cv::namedWindow("road_map", cv::WINDOW_AUTOSIZE);
@@ -71,43 +117,51 @@ void show_road_map(carmen_map_p map, int x, int y)
 	int thickness = -1;
 	int lineType = 8;
 	cv::Point p;
+
 	//p.x = road_map->config.x_size/2;
 	//p.y = road_map->config.y_size/2;
-	cv::Size size(525, 525);
+	cv::Size size(map->config.x_size * 0.5, map->config.y_size * 0.5);
 
 	p.x = x / 2;
 	p.y = (map->config.y_size - 1 - y) / 2;
 
 	image1 = cv::Mat(map->config.y_size, map->config.x_size, CV_8UC3, cv::Scalar::all(0));
 	road_map_to_image(map, &image1);
+	draw_lines(map, &image1);
 	cv::resize(image1, image1, size);
 	cv::circle(image1, p, 2.5, cv::Scalar(255, 0, 0), thickness, lineType);
+
 	//while((cv::waitKey() & 0xff) != 27);
 	cv::imshow("road_map", image1);
 	cv::waitKey(1);
 	//cv::destroyWindow("road_map");
 }
 
-void show_already_visited(carmen_map_p map)
+
+void
+show_already_visited(carmen_map_p map)
 {
 	//road_prob *cell_prob;
-	cv::namedWindow("already_visted", cv::WINDOW_AUTOSIZE);
-	cv::moveWindow("already_visted", (map->config.x_size / 2) * 2, 10);
+	cv::namedWindow("already_visited", cv::WINDOW_AUTOSIZE);
+	cv::moveWindow("already_visited", (map->config.x_size / 2) * 2.05, 10);
 	cv::Mat image1;
 	//int thickness = -1;
 	//int lineType = 8;
-	cv::Size size(525, 525);
+	cv::Size size(map->config.x_size * 0.5, map->config.y_size * 0.5);
 
 	image1 = cv::Mat(map->config.y_size, map->config.x_size, CV_8UC3, cv::Scalar::all(0));
 	already_visited_to_image(map, &image1);
+	draw_lines(map, &image1);
 	cv::resize(image1, image1, size);
 	//while((cv::waitKey() & 0xff) != 27);
-	cv::imshow("already_visted", image1);
+	cv::imshow("already_visited", image1);
 	cv::waitKey(1);
 	//cv::destroyWindow("road_map");
 }
 
-void print_map_in_terminal(carmen_map_p map)
+
+void
+print_map_in_terminal(carmen_map_p map)
 {
 	road_prob *cell_prob;
 
@@ -181,7 +235,9 @@ void print_map_in_terminal(carmen_map_p map)
  }*/
 //}
 
-void fade_image(cv::Mat *road_map_img)
+
+void
+fade_image(cv::Mat *road_map_img)
 {
 	double alpha = 0.6;
 	double beta;
@@ -191,7 +247,9 @@ void fade_image(cv::Mat *road_map_img)
 	cv::addWeighted(copy, alpha, *road_map_img, beta, 0.0, *road_map_img);
 }
 
-void display_graph_over_map(carmen_map_p map, rddf_graph_t *graph, int** already_visited, string file_name, int begin)
+
+void
+display_graph_over_map(carmen_map_p map, rddf_graph_t *graph, int** already_visited, string file_name, int begin)
 {
 
 	cv::Point p;
@@ -273,6 +331,7 @@ void display_graph_over_map(carmen_map_p map, rddf_graph_t *graph, int** already
 	 }*/
 }
 
+
 int**
 alloc_matrix(int r, int c)
 {
@@ -296,7 +355,9 @@ alloc_matrix(int r, int c)
 	return matrix;
 }
 
-bool already_visited_exists(string full_path)
+
+bool
+already_visited_exists(string full_path)
 {
 	if (access(full_path.c_str(), F_OK) != -1)
 		return true;
@@ -304,7 +365,9 @@ bool already_visited_exists(string full_path)
 		return false;
 }
 
-void parse_world_origin_to_road_map(string road_map_filename)
+
+void
+parse_world_origin_to_road_map(string road_map_filename)
 {
 	string x_origin;
 	string y_origin;
@@ -341,15 +404,14 @@ point_is_lane_center(carmen_map_p map, int x, int y)
 	cell_prob = road_mapper_double_to_prob(&map->map[x][y]);
 	double center = cell_prob->lane_center;
 
-	/*double diag_x_y_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y-2])->lane_center;
-	 double diag_x_y_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y-1])->lane_center;
-	 double diag_x_y_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y+2])->lane_center;
-	 double diag_x_y_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y+1])->lane_center;
-	 double diag_x_plus_1_y_minus_1 = road_mapper_double_to_prob(&map->map[x+1][y-1])->lane_center;
-	 double diag_x_plus_2_y_minus_2 = road_mapper_double_to_prob(&map->map[x+2][y-2])->lane_center;
-	 double diag_x_minus_1_y_plus_1 = road_mapper_double_to_prob(&map->map[x-1][y+1])->lane_center;
-	 double diag_x_minus_2_y_plus_2 = road_mapper_double_to_prob(&map->map[x-2][y+2])->lane_center;*/
-
+	double diag_x_y_minus_2 = 0.0;
+	double diag_x_y_minus_1 = 0.0;
+	double diag_x_y_plus_2 = 0.0;
+	double diag_x_y_plus_1 = 0.0;
+	double diag_x_plus_1_y_minus_1 = 0.0;
+	double diag_x_plus_2_y_minus_2 = 0.0;
+	double diag_x_minus_1_y_plus_1 = 0.0;
+	double diag_x_minus_2_y_plus_2 = 0.0;
 	double center_y_plus_2 = 0.0;
 	double center_y_plus_1 = 0.0;
 	double center_y_minus_2 = 0.0;
@@ -359,27 +421,44 @@ point_is_lane_center(carmen_map_p map, int x, int y)
 	double center_x_minus_2 = 0.0;
 	double center_x_minus_1 = 0.0;
 
-	if ((y + 2) < map->config.y_size)
+
+	if (point_is_in_map(map, x-2, y-2))
+		diag_x_y_minus_2 = road_mapper_double_to_prob(&map->map[x-2][y-2])->lane_center;
+	if (point_is_in_map(map, x-1, y-1))
+		diag_x_y_minus_1 = road_mapper_double_to_prob(&map->map[x-1][y-1])->lane_center;
+	if (point_is_in_map(map, x+2, y+2))
+		diag_x_y_plus_2 = road_mapper_double_to_prob(&map->map[x+2][y+2])->lane_center;
+	if (point_is_in_map(map, x+1, y+1))
+		diag_x_y_plus_1 = road_mapper_double_to_prob(&map->map[x+1][y+1])->lane_center;
+	if (point_is_in_map(map, x+1, y-1))
+		diag_x_plus_1_y_minus_1 = road_mapper_double_to_prob(&map->map[x+1][y-1])->lane_center;
+	if (point_is_in_map(map, x+2, y-2))
+		diag_x_plus_2_y_minus_2 = road_mapper_double_to_prob(&map->map[x+2][y-2])->lane_center;
+	if (point_is_in_map(map, x-1, y+1))
+		diag_x_minus_1_y_plus_1 = road_mapper_double_to_prob(&map->map[x-1][y+1])->lane_center;
+	if (point_is_in_map(map, x-2, y+2))
+		diag_x_minus_2_y_plus_2 = road_mapper_double_to_prob(&map->map[x-2][y+2])->lane_center;
+	if (point_is_in_map(map, x, y+2))
 		center_y_plus_2 = road_mapper_double_to_prob(&map->map[x][y + 2])->lane_center;
-	if ((y + 1) < map->config.y_size)
+	if (point_is_in_map(map, x, y+1))
 		center_y_plus_1 = road_mapper_double_to_prob(&map->map[x][y + 1])->lane_center;
-	if ((y - 2) >= 0)
+	if (point_is_in_map(map, x, y-2))
 		center_y_minus_2 = road_mapper_double_to_prob(&map->map[x][y - 2])->lane_center;
-	if ((y - 1) >= 0)
+	if (point_is_in_map(map, x, y-1))
 		center_y_minus_1 = road_mapper_double_to_prob(&map->map[x][y - 1])->lane_center;
-	if ((x + 2) < map->config.x_size)
+	if (point_is_in_map(map, x+2, y))
 		center_x_plus_2 = road_mapper_double_to_prob(&map->map[x + 2][y])->lane_center;
-	if ((x + 1) < map->config.x_size)
+	if (point_is_in_map(map, x+1, y))
 		center_x_plus_1 = road_mapper_double_to_prob(&map->map[x + 1][y])->lane_center;
-	if ((x - 2) >= 0)
+	if (point_is_in_map(map, x-2, y))
 		center_x_minus_2 = road_mapper_double_to_prob(&map->map[x - 2][y])->lane_center;
-	if ((x - 1) >= 0)
+	if (point_is_in_map(map, x-1, y))
 		center_x_minus_1 = road_mapper_double_to_prob(&map->map[x - 1][y])->lane_center;
 
 	if (((center > center_y_minus_2 && center > center_y_minus_1) && (center > center_y_plus_2 && center > center_y_plus_1)) ||
-		((center > center_x_minus_2 && center > center_x_minus_1) && (center > center_x_plus_2 && center > center_x_plus_1)) //||
-			//((center > diag_x_y_minus_2 && center > diag_x_y_minus_1) && (center > diag_x_y_plus_2 && center > diag_x_y_plus_1)) ||
-			//((center > diag_x_minus_2_y_plus_2 && center > diag_x_minus_1_y_plus_1) && (center > diag_x_plus_2_y_minus_2 && center > diag_x_plus_1_y_minus_1))
+		((center > center_x_minus_2 && center > center_x_minus_1) && (center > center_x_plus_2 && center > center_x_plus_1)) ||
+			((center > diag_x_y_minus_2 && center > diag_x_y_minus_1) && (center > diag_x_y_plus_2 && center > diag_x_y_plus_1)) ||
+			((center > diag_x_minus_2_y_plus_2 && center > diag_x_minus_1_y_plus_1) && (center > diag_x_plus_2_y_minus_2 && center > diag_x_plus_1_y_minus_1))
 			)
 		return true;
 	else
@@ -488,10 +567,11 @@ get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_m
 					pose.x = (x * 0.2) + map->config.x_origin;
 					pose.y = (y * 0.2) + map->config.y_origin;
 					carmen_grid_mapping_get_map_origin(&pose, &x_origin, &y_origin);
-					printf("Map Origin: %lf\t%lf\n", x_origin, y_origin);
 					get_new_map_block(g_road_map_folder, 'r', map, pose);
+					//printf("RoadMap Origin: %lf\t%lf\n", map->config.x_origin, map->config.y_origin);
 					carmen_grid_mapping_save_block_map_by_origin(already_visited_folder, 'a', already_visited);
 					get_new_map_block(already_visited_folder, 'a', already_visited, pose);
+					//printf("AlredyV Origin: %lf\t%lf\n", already_visited->config.x_origin, already_visited->config.y_origin);
 					get_new_currents_and_x_y(current, &x, &y);
 				}
 
@@ -576,15 +656,12 @@ add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y)
 rddf_graph_t *
 A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already_visited)
 {
+	cout<<"aStar!"<<endl;
 	vector<carmen_position_t> open_set;
 	carmen_position_t current;
 
 	graph = add_point_to_graph(map, graph, x, y);
-
-	if (graph->size == 1)
-		open_set.push_back(graph->point[0]);
-	else
-		open_set.push_back(graph->point[graph->size - 1]);
+	open_set.push_back(graph->point[0]);
 
 	while (!open_set.empty())
 	{
@@ -610,13 +687,12 @@ A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already
 			else
 			{
 				graph = add_point_to_graph_branch(map, graph, neighbour.x, neighbour.y, branch_node);
-				cout << "branch node!" << endl;
+				//cout << "branch node!" << endl;
 			}
 			number_of_neighbours++;
-			//cout<<"Number of neighbours:\t"<<number_of_neighbours<<endl; if(number_of_neighbours>1)getchar();
 		}
 	}
-	cout << graph->size << endl;
+	cout <<"Finished a graph with size: "<< graph->size << endl;
 //	getchar();
 	return (graph);
 }
@@ -646,16 +722,13 @@ add_graph_to_graph_list(rddf_graphs_of_map_t * rddf_graphs, rddf_graph_t *graph)
 
 
 void
-generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
+generate_road_map_graph(carmen_map_p map)
 {
 	char already_visited_folder[] = "already_visited";
 	carmen_map_t already_visited;
-	vector<string> road_map_filenames;
 	string parsed_filename;
 	rddf_graphs_of_map_t *rddf_graphs = NULL;
-	rddf_graph_t *graph = NULL;
-
-	road_map_filenames.push_back(str_road_map_filename);
+	rddf_graph_t *graph;
 
 	already_visited.complete_map = NULL;
 	carmen_grid_mapping_get_block_map_by_origin_x_y(already_visited_folder, 'a', g_x_origin, g_y_origin, &already_visited);
@@ -664,6 +737,12 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 	{
 		for (int y = 0; y < map->config.y_size; y++)
 		{
+			//if(y == map->config.y_size - 1)
+				//y = 0;
+
+			//show_road_map(map, x, y);
+			//show_already_visited(&already_visited);
+
 			if (point_is_already_visited(&already_visited, x, y))
 			{
 				continue;
@@ -674,8 +753,11 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 
 				if (point_is_lane_center(map, x, y))
 				{
+					show_road_map(map, x, y);
+					show_already_visited(&already_visited);
+					getchar();
 					cout << "center!" << x << "\t" << y << endl;
-
+					graph = NULL;
 					graph = A_star(graph, x, y, map, &already_visited);
 					carmen_point_t pose;
 					pose.x = g_x_origin;
@@ -685,10 +767,11 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 					get_new_map_block(already_visited_folder, 'a', &already_visited, pose);
 					//display_graph_over_map(map, graph, already_visited, parsed_filename, last_graph_size);
 					//show_road_map(map,x,y);
-
 					rddf_graphs = add_graph_to_graph_list(rddf_graphs, graph);
+					free(graph);
 				}
 			}
+
 		}
 	}
 	show_road_map(map, 524, 524);
