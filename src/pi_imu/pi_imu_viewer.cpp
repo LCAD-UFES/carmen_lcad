@@ -10,13 +10,17 @@
 #include <GL/glut.h>
 #include <math.h>
 
-#define RAD_TO_DEG 57.29578
-#define M_PI 3.14159265358979323846
+#define G 9.80665
+#define RAD_TO_DEG (180.0 / M_PI)
 #define AA 0.97 // complementary filter constant
+
 
 carmen_xsens_global_quat_message *xsens_quat_message;
 xsens_global data;
 GLfloat angle, fAspect;
+float AccYangle = 0.0;
+float AccXangle = 0.0;
+float AccZangle = 0.0;
 
 void
 shutdown_module(int signo)
@@ -36,7 +40,7 @@ xsens_message_handler(carmen_xsens_global_quat_message *xsens_quat_message)
 {
 	data.acc.x = xsens_quat_message->m_acc.x;
 	data.acc.y = xsens_quat_message->m_acc.y;
-	data.acc.z = xsens_quat_message->m_acc.z;
+	data.acc.z = xsens_quat_message->m_acc.z ;
 
 	data.gyr.x = xsens_quat_message->m_gyr.x;
 	data.gyr.y = xsens_quat_message->m_gyr.y;
@@ -75,41 +79,36 @@ carmen_xsens_unsubscribe_xsens_global_quat_message(carmen_handler_t handler)
 void
 display (void)
 {
-	float AccYangle = 0.0;
-	float AccXangle = 0.0;
-	float AccZangle = 0.0;
-
 	float CFangleX = 0.0;
 	float CFangleY = 0.0;
 	float CFangleZ = 0.0;
+
+	static float acc_x = 0.0;
+	static float acc_y = 0.0;
+	static float acc_z = 0.0;
+
+	acc_x = acc_x + 0.2 * (data.acc.x - acc_x);
+	acc_y = acc_y + 0.2 * (data.acc.y - acc_y);
+	acc_z = acc_z + 0.2 * (data.acc.z - acc_z);
+
+	AccZangle = (float) (atan2(data.mag.y, data.mag.z) * RAD_TO_DEG);
 	//Convert Accelerometer values to degrees
-	AccXangle = (float) (atan2(data.acc.y, data.acc.z)) * RAD_TO_DEG;
-	AccYangle = (float) (atan2(data.acc.z, data.acc.x)) * RAD_TO_DEG;
-	AccZangle = (float) (atan2(data.acc.x, data.acc.y)) * RAD_TO_DEG;
+	//AccXangle = (float) (atan2(acc_y, acc_z) * RAD_TO_DEG);
+	//AccYangle = (float) (atan2(acc_z, acc_x) * RAD_TO_DEG);
+
+	AccXangle = (acc_x / G) * 90.0;
+	AccYangle = (acc_y / G) * 90.0;
 
 	printf ("X : %f\n", AccXangle);
 	printf ("Y : %f\n", AccYangle);
-	printf ("Z: %f\n", AccZangle);
-	/*
-	AccXangle -= (float)180.0;
-	if (AccYangle > 90)
-		AccYangle -= (float)270;
-	else
-		AccYangle += (float)90;
-
-*/
-
-	//Complementary filter used to combine the accelerometer and gyro values.
-	CFangleX=AA*(CFangleX + data.gyr.x) + (1 - AA) * AccXangle;
-	CFangleY=AA*(CFangleY + data.gyr.y) + (1 - AA) * AccYangle;
-	CFangleZ=AA*(CFangleZ + data.gyr.z) + (1 - AA) * AccZangle;
+	printf ("Z : %f\n", AccZangle);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glColor3f(0.0f, 0.0f, 1.0f);
 	glPushMatrix();
 		glRotatef(AccXangle, 1.0, 0.0, 0.0);
-		glRotatef(AccYangle, 0.0, 1.0, 0.0);
-		glRotatef(AccZangle, 0.0, 0.0, 1.0);
+		glRotatef(AccYangle, 0.0, 0.0, 1.0);
+	    glRotatef(AccZangle, 0.0, 1.0, 0.0);
 		// Desenha o teapot com a cor corrente (wire-frame)
 		glutSolidCube(50.0f);
 	glPopMatrix();
@@ -127,7 +126,8 @@ sleep_ipc()
 
 
 // Inicializa parâmetros de rendering
-void Inicializa (void)
+void
+Inicializa (void)
 {
 	GLfloat luzAmbiente[4]={0.2,0.2,0.2,1.0};
 	GLfloat luzDifusa[4]={0.7,0.7,0.7,1.0};	   // "cor"
@@ -182,7 +182,9 @@ void EspecificaParametrosVisualizacao(void)
 	// Especifica sistema de coordenadas do modelo
 	glMatrixMode(GL_MODELVIEW);
 	// Inicializa sistema de coordenadas do modelo
-	glLoadIdentity();
+	glLoadIdentity();if (AccZangle < ( ( (float) (atan2(data.acc.x, data.acc.y)) * RAD_TO_DEG) - 3) ||
+			AccZangle > ( ( (float) (atan2(data.acc.x, data.acc.y)) * RAD_TO_DEG) + 3) )
+			AccZangle = (float) (atan2(data.acc.x, data.acc.y)) * RAD_TO_DEG;
 	// Especifica posição do observador e do alvo
 	gluLookAt(0,80,200, 0,0,0, 0,1,0);
 }
