@@ -596,7 +596,7 @@ get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_m
 				//printf("Esta no mapa e nao foi visitado\n");getchar();
 				already_visited->map[x][y] = 1;
 
-				if (check_limits_of_central_road_map(current->x, current->y) && !neighbour_pixels_is_not_zero(current, map))
+				if (check_limits_of_central_road_map(current->x, current->y))// && !neighbour_pixels_is_not_zero(current, map))
 				{
 					//printf("Esta fora dos limites do centro!\n");getchar();
 					carmen_point_t pose;
@@ -608,8 +608,9 @@ get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_m
 					carmen_grid_mapping_save_block_map_by_origin(already_visited_folder, 'a', already_visited);
 					get_new_map_block(already_visited_folder, 'a', already_visited, pose);
 					//printf("AlredyV Origin: %lf\t%lf\n", already_visited->config.x_origin, already_visited->config.y_origin);
+					//getchar();
 					get_new_currents_and_x_y(current, &x, &y);
-					printf("%lf X %lf", current->x, current->y);
+					//printf("%lf X %lf", current->x, current->y);
 					show_road_map(map, current->x, current->y);
 					show_already_visited(already_visited);
 					//getchar();
@@ -697,6 +698,7 @@ rddf_graph_t *
 A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already_visited)
 {
 	cout<<"Building graph..."<<endl;
+	char already_visited_folder[] = "already_visited";
 	vector<carmen_position_t> open_set;
 	carmen_position_t current;
 
@@ -705,13 +707,16 @@ A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already
 
 	while (!open_set.empty())
 	{
-		/*printf("Openset:\n");
-		for(int i=0;i<open_set.size();i++){
+		//printf("Openset size: %d:\n", open_set.size());
+		//carmen_grid_mapping_save_block_map_by_origin(already_visited_folder, 'a', already_visited);
+		/*for(int i=0;i<open_set.size();i++){
 			printf("\t%lf X %lf\n", open_set[i].x, open_set[i].y);
-		}
-		getchar();*/
+		}*/
+		//getchar();
 		current = open_set.back();
-		open_set.pop_back();
+		//open_set.pop_back();
+		open_set.erase(open_set.begin(), open_set.end()); //não está correto pois apaga o vetor, porém, it works!
+		//MOSTRAR AO ALBERTO O MAPA SOBRESCREVENDO NA HORA EM QUE O MAPA DESEMPILHA
 
 		carmen_position_t neighbour;
 		int number_of_neighbours = 0;
@@ -785,10 +790,6 @@ generate_road_map_graph(carmen_map_p map)
 			//if(y == map->config.y_size - 1)
 				//y = 0;
 
-			//if(x>37){
-			//show_road_map(map, x, y);
-			//show_already_visited(&already_visited);}
-
 			if (point_is_already_visited(&already_visited, x, y))
 			{
 				continue;
@@ -803,7 +804,10 @@ generate_road_map_graph(carmen_map_p map)
 					show_already_visited(&already_visited);
 					//cout << "center!" << x << "\t" << y << endl;
 					graph = NULL;
+					//getchar();
 					graph = A_star(graph, x, y, map, &already_visited);
+					rddf_graphs = add_graph_to_graph_list(rddf_graphs, graph);
+					free(graph);
 					carmen_point_t pose;
 					pose.x = g_x_origin;
 					pose.y = g_y_origin;
@@ -812,8 +816,7 @@ generate_road_map_graph(carmen_map_p map)
 					get_new_map_block(already_visited_folder, 'a', &already_visited, pose);
 					//display_graph_over_map(map, graph, already_visited, parsed_filename, last_graph_size);
 					//show_road_map(map,x,y);
-					rddf_graphs = add_graph_to_graph_list(rddf_graphs, graph);
-					free(graph);
+
 				}
 			}
 
