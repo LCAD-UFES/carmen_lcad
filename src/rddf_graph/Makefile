@@ -26,16 +26,20 @@ LFLAGS += \
 SOURCES = \
 	rddf_graph_main.cpp \
 	rddf_graph_utils.cpp \
+	already_visited_display.cpp
 
 
 PUBLIC_INCLUDES = \
 	rddf_graph.h	
 
 PUBLIC_BINARIES = \
-	rddf_graph_main
+	rddf_graph_main\
+	already_visited_display
 
-TARGETS = rddf_graph_main
+TARGETS = rddf_graph_main\
+		  already_visited_display
 
 rddf_graph_main: rddf_graph_main.o rddf_graph.o rddf_graph_utils.o
+already_visited_display: already_visited_display.o
 
 include ../Makefile.rules
