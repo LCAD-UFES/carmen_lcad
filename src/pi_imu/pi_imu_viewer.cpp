@@ -12,7 +12,6 @@
 
 #define G 9.80665
 #define RAD_TO_DEG (180.0 / M_PI)
-#define AA 0.97 // complementary filter constant
 
 
 carmen_xsens_global_quat_message *xsens_quat_message;
@@ -21,6 +20,10 @@ GLfloat angle, fAspect;
 float AccYangle = 0.0;
 float AccXangle = 0.0;
 float AccZangle = 0.0;
+
+float MagYangle = 0.0;
+float MagXangle = 0.0;
+float MagZangle = 0.0;
 
 void
 shutdown_module(int signo)
@@ -79,36 +82,48 @@ carmen_xsens_unsubscribe_xsens_global_quat_message(carmen_handler_t handler)
 void
 display (void)
 {
+	/*
 	float CFangleX = 0.0;
 	float CFangleY = 0.0;
 	float CFangleZ = 0.0;
-
+*/
 	static float acc_x = 0.0;
 	static float acc_y = 0.0;
 	static float acc_z = 0.0;
+
+	static float mag_x = 0.0;
+	static float mag_y = 0.0;
+	static float mag_z = 0.0;
 
 	acc_x = acc_x + 0.2 * (data.acc.x - acc_x);
 	acc_y = acc_y + 0.2 * (data.acc.y - acc_y);
 	acc_z = acc_z + 0.2 * (data.acc.z - acc_z);
 
-	AccZangle = (float) (atan2(data.mag.y, data.mag.z) * RAD_TO_DEG);
-	//Convert Accelerometer values to degrees
-	//AccXangle = (float) (atan2(acc_y, acc_z) * RAD_TO_DEG);
-	//AccYangle = (float) (atan2(acc_z, acc_x) * RAD_TO_DEG);
+//	mag_x = mag_x + 0.15 * (data.mag.x - mag_x);
+//	mag_y = mag_y + 0.15 * (data.mag.y - mag_y);
+//	mag_z = mag_z + 0.15 * (data.mag.z - mag_z);
 
-	AccXangle = (acc_x / G) * 90.0;
-	AccYangle = (acc_y / G) * 90.0;
+	MagXangle = MagXangle + 0.15 * (float) (atan2(data.mag.y, data.mag.z) * RAD_TO_DEG - MagXangle);
+	MagYangle = MagYangle + 0.15 * (float) (atan2(data.mag.z, data.mag.x) * RAD_TO_DEG - MagYangle);
+	MagZangle = MagZangle + 0.15 * (float) (atan2(data.mag.x, data.mag.y) * RAD_TO_DEG - MagZangle);
 
-	printf ("X : %f\n", AccXangle);
-	printf ("Y : %f\n", AccYangle);
-	printf ("Z : %f\n", AccZangle);
+	//AccXangle = (acc_x / G) * 90.0;
+	//AccYangle = (acc_y / G) * 90.0;
+
+//	MagXangle = mag_x * 45.0;
+//	MagYangle = mag_y * 45.0;
+//	MagZangle = mag_z * 45.0;
+
+	printf ("X : %f\n", MagXangle);
+	printf ("Y : %f\n", MagYangle);
+	printf ("Z : %f\n", MagZangle);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glColor3f(0.0f, 0.0f, 1.0f);
 	glPushMatrix();
-		glRotatef(AccXangle, 1.0, 0.0, 0.0);
-		glRotatef(AccYangle, 0.0, 0.0, 1.0);
-	    glRotatef(AccZangle, 0.0, 1.0, 0.0);
+		glRotatef(MagXangle, 1.0, 0.0, 0.0);
+		glRotatef(MagYangle, 0.0, 0.0, 1.0);
+	    glRotatef(MagZangle, 0.0, 1.0, 0.0);
 		// Desenha o teapot com a cor corrente (wire-frame)
 		glutSolidCube(50.0f);
 	glPopMatrix();
@@ -182,9 +197,7 @@ void EspecificaParametrosVisualizacao(void)
 	// Especifica sistema de coordenadas do modelo
 	glMatrixMode(GL_MODELVIEW);
 	// Inicializa sistema de coordenadas do modelo
-	glLoadIdentity();if (AccZangle < ( ( (float) (atan2(data.acc.x, data.acc.y)) * RAD_TO_DEG) - 3) ||
-			AccZangle > ( ( (float) (atan2(data.acc.x, data.acc.y)) * RAD_TO_DEG) + 3) )
-			AccZangle = (float) (atan2(data.acc.x, data.acc.y)) * RAD_TO_DEG;
+	glLoadIdentity();
 	// Especifica posição do observador e do alvo
 	gluLookAt(0,80,200, 0,0,0, 0,1,0);
 }
