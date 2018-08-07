@@ -2,6 +2,8 @@
 
 using namespace std;
 
+
+
 cv::Mat
 rotate(cv::Mat src, cv::Point pt, double angle)
 {
@@ -455,12 +457,17 @@ point_is_lane_center(carmen_map_p map, int x, int y)
 	if (point_is_in_map(map, x-1, y))
 		center_x_minus_1 = road_mapper_double_to_prob(&map->map[x - 1][y])->lane_center;
 
-	if (((center > center_y_minus_2 && center > center_y_minus_1) && (center > center_y_plus_2 && center > center_y_plus_1)) ||
-		((center > center_x_minus_2 && center > center_x_minus_1) && (center > center_x_plus_2 && center > center_x_plus_1)) ||
-			((center > diag_x_y_minus_2 && center > diag_x_y_minus_1) && (center > diag_x_y_plus_2 && center > diag_x_y_plus_1)) ||
-			((center > diag_x_minus_2_y_plus_2 && center > diag_x_minus_1_y_plus_1) && (center > diag_x_plus_2_y_minus_2 && center > diag_x_plus_1_y_minus_1))
-			)
-		return true;
+	if(center > 50000)
+	{
+		if (((center > center_y_minus_2 && center > center_y_minus_1) && (center > center_y_plus_2 && center > center_y_plus_1)) ||
+			((center > center_x_minus_2 && center > center_x_minus_1) && (center > center_x_plus_2 && center > center_x_plus_1)) ||
+				((center > diag_x_y_minus_2 && center > diag_x_y_minus_1) && (center > diag_x_y_plus_2 && center > diag_x_y_plus_1)) ||
+				((center > diag_x_minus_2_y_plus_2 && center > diag_x_minus_1_y_plus_1) && (center > diag_x_plus_2_y_minus_2 && center > diag_x_plus_1_y_minus_1))
+				)
+			return true;
+		else
+			return false;
+	}
 	else
 		return false;
 }
@@ -509,7 +516,8 @@ get_new_currents_and_x_y(carmen_position_t *current, int *x, int *y)
 		*x = current->x - 1;
 		*y = current->y - 1;
 	}
-	else if (current->y < 350)
+
+	if (current->y < 350)
 	{
 		current->y += 350;
 		*x = current->x - 1;
@@ -521,10 +529,14 @@ get_new_currents_and_x_y(carmen_position_t *current, int *x, int *y)
 		*x = current->x - 1;
 		*y = current->y - 1;
 	}
+
+	//cout<<current->x<<"  "<<current->y<<endl;
+	//getchar();
 }
 
 void get_new_map_block(char *folder, char map_type, carmen_map_p map, carmen_point_t pose)
 {
+	//printf("Carreguei novo mapa!\n");getchar();
 	carmen_map_t new_map;
 	new_map.complete_map = NULL;
 	carmen_grid_mapping_get_block_map_by_origin(folder, map_type, pose, &new_map);
@@ -549,20 +561,44 @@ bool check_limits_of_central_road_map(int x, int y)
 
 
 bool
+neighbour_pixels_is_not_zero (carmen_position_t *current, carmen_map_p map)
+{
+	road_prob *cell_prob;
+	for (int x = current->x - 1; x <= current->x + 1; x++)
+	{
+		for (int y = current->y - 1; y <= current->y + 1; y++)
+		{
+			cell_prob = road_mapper_double_to_prob(&map->map[x][y]);
+			//cout<<cell_prob->lane_center<<endl;
+			if(cell_prob->lane_center == 0)
+				return (true);
+		}
+	}
+	return (false);
+
+
+}
+
+
+bool
 get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_map_p already_visited, carmen_map_p map)
 {
 	double x_origin, y_origin;
 	char already_visited_folder[] = "already_visited";
+	//printf("%lf X %lf", current->x, current->y);
+	//getchar();
 	for (int x = current->x - 1; x <= current->x + 1; x++)
 	{
 		for (int y = current->y - 1; y <= current->y + 1; y++)
 		{
 			if (point_is_in_map(map, x, y) && !point_is_already_visited(already_visited, x, y))
 			{
+				//printf("Esta no mapa e nao foi visitado\n");getchar();
 				already_visited->map[x][y] = 1;
 
-				if (check_limits_of_central_road_map(current->x, current->y))
+				if (check_limits_of_central_road_map(current->x, current->y) && !neighbour_pixels_is_not_zero(current, map))
 				{
+					//printf("Esta fora dos limites do centro!\n");getchar();
 					carmen_point_t pose;
 					pose.x = (x * 0.2) + map->config.x_origin;
 					pose.y = (y * 0.2) + map->config.y_origin;
@@ -573,6 +609,10 @@ get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_m
 					get_new_map_block(already_visited_folder, 'a', already_visited, pose);
 					//printf("AlredyV Origin: %lf\t%lf\n", already_visited->config.x_origin, already_visited->config.y_origin);
 					get_new_currents_and_x_y(current, &x, &y);
+					printf("%lf X %lf", current->x, current->y);
+					show_road_map(map, current->x, current->y);
+					show_already_visited(already_visited);
+					//getchar();
 				}
 
 				if (point_is_lane_center(map, x, y))
@@ -656,7 +696,7 @@ add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y)
 rddf_graph_t *
 A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already_visited)
 {
-	cout<<"aStar!"<<endl;
+	cout<<"Building graph..."<<endl;
 	vector<carmen_position_t> open_set;
 	carmen_position_t current;
 
@@ -665,6 +705,11 @@ A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already
 
 	while (!open_set.empty())
 	{
+		/*printf("Openset:\n");
+		for(int i=0;i<open_set.size();i++){
+			printf("\t%lf X %lf\n", open_set[i].x, open_set[i].y);
+		}
+		getchar();*/
 		current = open_set.back();
 		open_set.pop_back();
 
@@ -692,7 +737,7 @@ A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already
 			number_of_neighbours++;
 		}
 	}
-	cout <<"Finished a graph with size: "<< graph->size << endl;
+	cout <<"Finished a graph with size: "<< graph->size << endl<<endl;
 //	getchar();
 	return (graph);
 }
@@ -740,8 +785,9 @@ generate_road_map_graph(carmen_map_p map)
 			//if(y == map->config.y_size - 1)
 				//y = 0;
 
+			//if(x>37){
 			//show_road_map(map, x, y);
-			//show_already_visited(&already_visited);
+			//show_already_visited(&already_visited);}
 
 			if (point_is_already_visited(&already_visited, x, y))
 			{
@@ -755,8 +801,7 @@ generate_road_map_graph(carmen_map_p map)
 				{
 					show_road_map(map, x, y);
 					show_already_visited(&already_visited);
-					getchar();
-					cout << "center!" << x << "\t" << y << endl;
+					//cout << "center!" << x << "\t" << y << endl;
 					graph = NULL;
 					graph = A_star(graph, x, y, map, &already_visited);
 					carmen_point_t pose;

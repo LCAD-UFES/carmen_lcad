@@ -1,11 +1,12 @@
 
-#ifndef ROAD_MAPPER_UTILS_H_
-#define ROAD_MAPPER_UTILS_H_
+#ifndef RDDF_GRAPH_UTILS_H_
+#define RDDF_GRAPH_UTILS_H_
 
 #include <carmen/carmen.h>
 #include <carmen/grid_mapping.h>
 #include <iostream>
 #include <string>
+#include <string.h>
 #include "rddf_graph.h"
 
 #include <opencv2/core/version.hpp>
@@ -25,6 +26,7 @@ extern "C" {
 
 #define LOCAL_MAP_SIZE (210)
 #define GLOBAL_MAP_SIZE (1800)
+
 
 extern double g_x_origin;
 extern double g_y_origin;
@@ -63,6 +65,7 @@ int **alloc_matrix(int r, int c);
 void print_map_in_terminal (carmen_map_p map);
 void set_world_origin_to_road_map(carmen_map_p road_map);
 void show_road_map(carmen_map_p road_map, int x, int y);
+void already_visited_to_image(carmen_map_p map, cv::Mat *road_map_img);
 //int count_graph_nodes(rddf_graph_node *graph);
 //void display_graph_in_image(carmen_map_p map, vector<rddf_graph_node*> &closed_set);
 int** alloc_matrix(int r, int c);
@@ -79,5 +82,5 @@ void parse_world_origin_to_road_map(string road_map_filename);
 }
 #endif
 
-#endif /* ROAD_MAPPER_UTILS_H_ */
+#endif /* RDDF_GRAPH_UTILS_H_ */
 
