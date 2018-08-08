@@ -43,8 +43,8 @@ LFLAGS += -std=c++11
 IFLAGS += `pkg-config --cflags opencv`
 LFLAGS += `pkg-config --libs opencv`
 
-PCL_INC = `ls /usr/local/include/pcl-* -d`
-VTK_INC = `ls /usr/include/vtk-* -d`
+PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
+VTK_INC = $(wildcard /usr/local/include/vtk-* /usr/include/vtk-*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
 #LFLAGS += -lpcl_common -lpcl_kdtree -lpcl_search -lpcl_segmentation
