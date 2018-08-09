@@ -334,30 +334,6 @@ display_graph_over_map(carmen_map_p map, rddf_graph_t *graph, int** already_visi
 }
 
 
-int**
-alloc_matrix(int r, int c)
-{
-	int **matrix;
-	matrix = (int **) calloc(r, sizeof(int*));
-	if (matrix == NULL)
-	{
-		printf("** Error: Unsuficient Memory **alloc_matrix **");
-		return (NULL);
-	}
-
-	for (int i = 0; i < r; i++)
-	{
-		matrix[i] = (int *) calloc(c, sizeof(int));
-		if (matrix[i] == NULL)
-		{
-			printf("** Error: Unsuficient Memory **alloc_matrix **");
-			return (NULL);
-		}
-	}
-	return matrix;
-}
-
-
 bool
 already_visited_exists(string full_path)
 {
@@ -457,7 +433,7 @@ point_is_lane_center(carmen_map_p map, int x, int y)
 	if (point_is_in_map(map, x-1, y))
 		center_x_minus_1 = road_mapper_double_to_prob(&map->map[x - 1][y])->lane_center;
 
-	if(center > 50000)
+	if(center > 55555)
 	{
 		if (((center > center_y_minus_2 && center > center_y_minus_1) && (center > center_y_plus_2 && center > center_y_plus_1)) ||
 			((center > center_x_minus_2 && center > center_x_minus_1) && (center > center_x_plus_2 && center > center_x_plus_1)) ||
@@ -581,7 +557,7 @@ neighbour_pixels_is_not_zero (carmen_position_t *current, carmen_map_p map)
 
 
 bool
-get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_map_p already_visited, carmen_map_p map)
+get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_map_p already_visited, carmen_map_p map, vector<carmen_position_t> &open_set)
 {
 	double x_origin, y_origin;
 	char already_visited_folder[] = "already_visited";
@@ -596,8 +572,9 @@ get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_m
 				//printf("Esta no mapa e nao foi visitado\n");getchar();
 				already_visited->map[x][y] = 1;
 
-				if (check_limits_of_central_road_map(current->x, current->y))// && !neighbour_pixels_is_not_zero(current, map))
+				if (check_limits_of_central_road_map(current->x, current->y))//&& !neighbour_pixels_is_not_zero(current, map))
 				{
+					open_set.erase(open_set.begin(), open_set.end());
 					//printf("Esta fora dos limites do centro!\n");getchar();
 					carmen_point_t pose;
 					pose.x = (x * 0.2) + map->config.x_origin;
@@ -629,6 +606,7 @@ get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_m
 
 }
 
+
 rddf_graph_t *
 add_point_to_graph_branch(carmen_map_p map, rddf_graph_t * graph, int x, int y, int branch_node)
 {
@@ -648,6 +626,7 @@ add_point_to_graph_branch(carmen_map_p map, rddf_graph_t * graph, int x, int y, 
 
 	return (graph);
 }
+
 
 rddf_graph_t *
 add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y)
@@ -694,36 +673,55 @@ add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y)
 	return (graph);
 }
 
+
 rddf_graph_t *
 A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already_visited)
 {
 	cout<<"Building graph..."<<endl;
-	char already_visited_folder[] = "already_visited";
 	vector<carmen_position_t> open_set;
 	carmen_position_t current;
 
 	graph = add_point_to_graph(map, graph, x, y);
 	open_set.push_back(graph->point[0]);
+	//open_set.push_back(graph->world_coordinate[0]);
 
 	while (!open_set.empty())
 	{
 		//printf("Openset size: %d:\n", open_set.size());
 		//carmen_grid_mapping_save_block_map_by_origin(already_visited_folder, 'a', already_visited);
-		/*for(int i=0;i<open_set.size();i++){
+		/*cout<<"Openset:"<<endl;
+		for(int i=0;i<open_set.size();i++){
 			printf("\t%lf X %lf\n", open_set[i].x, open_set[i].y);
 		}*/
 		//getchar();
 		current = open_set.back();
-		//open_set.pop_back();
-		open_set.erase(open_set.begin(), open_set.end()); //não está correto pois apaga o vetor, porém, it works!
+		//current.x = (current.x - map->config.x_origin) / map->config.resolution;
+		//current.y = (current.y - map->config.y_origin) / map->config.resolution;
+		open_set.pop_back();
+
+		//printf("\tCurrent: %lf X %lf\n", current.x, current.y);
+
+		//carmen_point_t pose;
+		//pose.x = current.x;
+		//pose.y = current.y;
+		//get_new_map_block(g_road_map_folder, 'r', map, pose);
+		//printf("RoadMap Origin: %lf\t%lf\n", map->config.x_origin, map->config.y_origin);
+		//carmen_grid_mapping_save_block_map_by_origin(already_visited_folder, 'a', already_visited);
+		//get_new_map_block(already_visited_folder, 'a', already_visited, pose);
+		//open_set.erase(open_set.begin(), open_set.end()); //não está correto pois apaga o vetor, porém, it works!
 		//MOSTRAR AO ALBERTO O MAPA SOBRESCREVENDO NA HORA EM QUE O MAPA DESEMPILHA
 
 		carmen_position_t neighbour;
+		//carmen_position_t neighbour_global_pos;
 		int number_of_neighbours = 0;
 		int branch_node;
-		while (get_neighbour(&neighbour, &current, already_visited, map))
+		while (get_neighbour(&neighbour, &current, already_visited, map, open_set))
 		{
+			//neighbour_global_pos.x = (neighbour.x * map->config.resolution) + map->config.x_origin;
+			//neighbour_global_pos.y = (neighbour.y * map->config.resolution) + map->config.y_origin;
 			open_set.push_back(neighbour);
+			//open_set.push_back(neighbour_global_pos);
+			//printf("\tNeighbour: %lf X %lf\tNeighbourGlobal: %lf X %lf\n", neighbour.x, neighbour.y, neighbour_global_pos.x, neighbour_global_pos.y);
 
 			if (number_of_neighbours == 0)
 			{
@@ -741,11 +739,13 @@ A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already
 			}
 			number_of_neighbours++;
 		}
+		//getchar();
 	}
 	cout <<"Finished a graph with size: "<< graph->size << endl<<endl;
 //	getchar();
 	return (graph);
 }
+
 
 rddf_graphs_of_map_t *
 add_graph_to_graph_list(rddf_graphs_of_map_t * rddf_graphs, rddf_graph_t *graph)
@@ -768,6 +768,19 @@ add_graph_to_graph_list(rddf_graphs_of_map_t * rddf_graphs, rddf_graph_t *graph)
 	}
 
 	return (rddf_graphs);
+}
+
+
+void
+write_graphs_on_file(rddf_graphs_of_map_t *rddf_graphs)
+{
+	FILE *f;
+	if ((f = fopen("data.bin", "wb")) == NULL )
+	{
+		printf("Error opening file\n");
+	}
+	fwrite(&rddf_graphs, sizeof(rddf_graphs_of_map_t) * rddf_graphs->size, 1, f);
+	fclose(f);
 }
 
 
@@ -825,6 +838,7 @@ generate_road_map_graph(carmen_map_p map)
 	show_road_map(map, 524, 524);
 	show_already_visited(&already_visited);
 	getchar();
+	write_graphs_on_file(rddf_graphs);
 	//printf("Graphs in map: %d\n", rddf_graphs.size());
 	//display_graph_over_map(map, rddf_graphs, parsed_filename);
 }
