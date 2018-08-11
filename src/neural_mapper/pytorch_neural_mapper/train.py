@@ -20,8 +20,8 @@ import model as M
 n_imgs = 79
 #n_train = 60
 #n_test = 19
-n_train = 10
-n_test = 1
+n_train = 60
+n_test = 19
 
 train_start_index = 0
 test_start_index = n_train
@@ -33,6 +33,7 @@ data_dim = 5
 
 data_path = '/dados/neural_mapper/60mts/data/'
 target_path = '/dados/neural_mapper/60mts/labels/'
+debug_img_path = 'debug_imgs/'
 
 def png2tensor(file_name):
     img2tensor = transforms.ToTensor()
@@ -117,8 +118,8 @@ def train(args, model, device, train_loader, optimizer, epoch):
             imgTarget = torch.FloatTensor(1, 424, 424)
             imgTarget[0] = target[0]
             imgTarget = imgTarget.cpu().float()
-            saveImage(imgPred, 'prediction.png')
-            saveImage(imgTarget, 'target.png')
+            #saveImage(imgPred, debug_img_path + '/predic_epoch' + str(epoch) + '.png')
+            #saveImage(imgTarget, debug_img_path + '/target_epoch' + str(epoch) + '.png')
             #showOutput(imgPred)
             #showOutput(imgTarget)
 
@@ -181,6 +182,8 @@ if __name__ == '__main__':
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
         test(args, model, device, test_loader)
+        if(epoch % 10 == 0):
+            torch.save(model.state_dict(), 'saved_models/' + str(epoch)+'.model')
 
 '''
     data = train_loader[0][0]
