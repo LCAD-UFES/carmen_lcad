@@ -10,16 +10,22 @@ g_count_lines = 0
 g_count_poses = 0
 
 
-def isfloat(text):
-    try:
-        float(text)
-    except ValueError:
-        return False
+def isfloat(var):
+    if type(var).__name__ in ('list', 'tuple'):
+        for element in var:
+            if not isfloat(element):
+                return False
+    else:
+        try:
+            float(var)
+        except ValueError:
+            return False
     return True
 
 
 def distance(coord1, coord2):
-    dist = np.sqrt(np.square(coord1[0] - coord2[0]) + np.square(coord1[1] - coord2[1]))
+    (x1, y1), (x2, y2) = (coord1, coord2)
+    dist = np.sqrt(np.square(x2 - x1) + np.square(y2 - y1))
     return dist
 
 
@@ -27,17 +33,15 @@ def process_line(line, min_distance, outfile):
     global g_count_lines, g_count_poses
     g_count_lines += 1
     fields = line.split()
-    if len(fields) < 4 or not isfloat(fields[0]) or not isfloat(fields[1]):
+    if len(fields) < 4 or not isfloat(fields):
         sys.stderr.write('Line: %d  Expected format: <lat> <lon> <theta> <timestamp>   Error: %s' %
                          (g_count_lines, line))
         return
-    lat = np.fabs(float(fields[0]))
-    lon = np.fabs(float(fields[1]))
+    lat, lon = (np.fabs(float(fields[i])) for i in range(2))
     if distance((lat, lon), (process_line.last_lat, process_line.last_lon)) >= min_distance:
         outfile.write('%f,%f\n' % (lon, lat))
         g_count_poses += 1
-        process_line.last_lat = lat
-        process_line.last_lon = lon
+        process_line.last_lat, process_line.last_lon = (lat, lon)
     return
 
 
@@ -51,12 +55,11 @@ def main():
     parser.add_argument('-o', '--outfile', help='text file formatted for to be imported by Google Earth',
                         nargs='?', type=argparse.FileType('w'), default=sys.stdout)
     parser.add_argument('-d', '--distance', help='minimum distance between coordinates (meters)',
-                        nargs='?', type=float, default=0.5)
+                        nargs='?', type=float, default=5.0)
     args = parser.parse_args()
     if args.infile == sys.stdin:
-        sys.stderr.write('Keyboard input <<<\n')
-    process_line.last_lat = 0.0
-    process_line.last_lon = 0.0
+        sys.stderr.write('Standard input <<<\n')
+    process_line.last_lat, process_line.last_lon = (0.0, 0.0)
     for line in args.infile:
         process_line(line, args.distance, args.outfile)
     global g_count_lines, g_count_poses
