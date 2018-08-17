@@ -6,6 +6,7 @@
 #include <carmen/grid_mapping.h>
 #include <iostream>
 #include <string>
+#include <queue>
 #include <string.h>
 #include "rddf_graph.h"
 
@@ -32,6 +33,12 @@ extern double g_x_origin;
 extern double g_y_origin;
 extern char *g_road_map_folder;
 
+typedef struct
+{
+	carmen_position_t point;
+	carmen_position_t point_world_origin;
+
+} open_set_t;
 
 typedef struct
 {

@@ -126,6 +126,7 @@ main(int argc, char **argv)
 	g_road_map_folder = &str_g_road_map_folder[0u];
 
 	int count_maps = carmen_grid_mapping_get_block_map_by_origin_x_y(g_road_map_folder, 'r', g_x_origin, g_y_origin, &road_map);
+
 	carmen_grid_mapping_update_map_buffer(&road_map, 'r');
 
 	if (count_maps > 0)
