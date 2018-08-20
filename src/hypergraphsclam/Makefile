@@ -19,7 +19,7 @@ IFLAGS += 	-I$(CARMEN_HOME)/src/hypergraphsclam \
 IFLAGS += -I/usr/include/
 
 # eigen and PCL includes
-PCL_INC = `ls /usr/local/include/pcl-* -d`
+PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC)
 
 # the suitesparse includes

@@ -7,8 +7,8 @@ MODULE_COMMENT = A Visual Odometry Based 6D SLAM
 
 IFLAGS += -I../../sharedlib/libtf/src -I../../sharedlib/libviso2.3/src -I/usr/local/include/bullet/ -I/usr/local/cuda/include -I/home/lcad/NVIDIA_GPU_Computing_SDK/C/common/inc `pkg-config --cflags opencv`
 		  
-PCL_INC = `ls /usr/local/include/pcl-* -d`
-VTK_INC = `ls /usr/include/vtk-* -d`
+PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
+VTK_INC = $(wildcard /usr/local/include/vtk-* /usr/include/vtk-*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
 

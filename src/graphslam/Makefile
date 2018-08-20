@@ -7,8 +7,8 @@ LINK = g++
 
 CXXFLAGS += -Wno-deprecated -Wno-deprecated-declarations -std=c++11
 
-PCL_INC = `ls /usr/local/include/pcl-* -d`
-VTK_INC = `ls /usr/include/vtk-* -d`
+PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
+VTK_INC = $(wildcard /usr/local/include/vtk-* /usr/include/vtk-*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/  
