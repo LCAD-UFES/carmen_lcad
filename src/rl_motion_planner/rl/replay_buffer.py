@@ -1,6 +1,7 @@
 
 import numpy as np
 from collections import deque
+from rl.util import relative_pose
 
 
 class ReplayBuffer:
@@ -37,11 +38,12 @@ class ReplayBuffer:
         for i in range(self.n_trad):
             e = e_ids[i]
             t = np.random.randint(0, len(self.stack[e]))
+            goal = relative_pose(self.stack[e][t][0]['pose'], self.stack[e][t][3]) + [self.stack[e][t][3][3]]
             batch['laser'].append(self.stack[e][t][0]['laser'])
             batch['state'].append([self.stack[e][t][0]['pose'][3]])
             batch['act'].append(self.stack[e][t][1])
             batch['rew'].append(self.stack[e][t][2])
-            batch['goal'].append(self.stack[e][t][3])
+            batch['goal'].append(goal)
 
             t_ids.append(t)
 
@@ -49,7 +51,7 @@ class ReplayBuffer:
             if t < len(self.stack[e]) - 1:
                 transitions_not_final.append([e, t])
                 batch['next_laser'].append(self.stack[e][t + 1][0]['laser'])
-                batch['next_state'].append([self.stack[e][t + 1][0][3]])
+                batch['next_state'].append([self.stack[e][t + 1][0]['pose'][3]])
                 batch['is_final'].append(0.0)
             else:
                 # If the transition is the last one, we don't have a next observation. In this case, we copy the
@@ -64,16 +66,19 @@ class ReplayBuffer:
             Os caras da OpenAI usaram transicoes dos mesmos episodios acima para escolher novos goals. 
             Eh errado escolher transicoes de outros episodios?
             """
-            for _ in range(n_her):
-                e, t = np.random.choice(transitions_not_final)
-                future_t = np.random.randint(t, len(self.stack[e]))
+            for _ in range(self.n_her):
+                e, t = transitions_not_final[np.random.randint(len(transitions_not_final))]
+
+                future_t = np.random.randint(t + 1, len(self.stack[e]))
                 her_episode_size = future_t - t
-                rew = (max_episode_size - her_episode_size) / (max_episode_size * her_episode_size)
+                rew = (self.max_episode_size - her_episode_size) / (self.max_episode_size * her_episode_size)
                 batch['laser'].append(self.stack[e][t][0]['laser'])
                 batch['state'].append([self.stack[e][t][0]['pose'][3]])
                 batch['act'].append(self.stack[e][t][1])
                 batch['rew'].append(rew)
-                batch['goal'].append(self.stack[e][future_t][3])
+                her_goal = self.stack[e][future_t][0]['pose'][:4]
+                goal = relative_pose(self.stack[e][t][0]['pose'], her_goal) + [her_goal[3]]
+                batch['goal'].append(goal)
                 batch['next_laser'].append(self.stack[e][t + 1][0]['laser'])
                 batch['next_state'].append([self.stack[e][t + 1][0]['pose'][3]])
                 batch['is_final'].append(0.0)

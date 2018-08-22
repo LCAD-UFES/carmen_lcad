@@ -13,7 +13,7 @@ void publish_goal_list(std::vector<double> x, std::vector<double> y,
 		std::vector<double> th, std::vector<double> v, std::vector<double> phi,
 		double timestamp);
 
-void handle_messages(double how_long = 5e-2);
+void handle_messages(double how_long = 1e-3);
 
 void reset_without_initial_pose();
 void reset_initial_pose(double x, double y, double th);

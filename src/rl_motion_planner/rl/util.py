@@ -47,3 +47,9 @@ class Transform2d:
     def __repr__(self):
         return '[%f, %f, %f]' % (self.x, self.y, self.th)
 
+
+def relative_pose(x, y):
+    a = Transform2d(y[0] - x[0], y[1] - x[1], y[2])
+    b = Transform2d(0., 0., x[2])
+    c = b.inverse().transform(a)
+    return [c.x, c.y, c.th]

@@ -12,6 +12,7 @@ from sacred.observers import FileStorageObserver
 
 import carmen_comm.carmen_comm as carmen
 from rl.ddpg import DDPG
+from rl.util import relative_pose
 
 
 results_dir = 'results/'
@@ -36,32 +37,41 @@ def save_policy(policy, path):
 def read_state():
     carmen.handle_messages()
 
+    laser = carmen.read_laser()
+    laser = np.clip(laser, 0.0, 30.0).reshape(len(laser), 1)
+    laser = (laser / 30.0) * 2.0 - 1.0
+
     state = {
         'pose': carmen.read_pose(),
-        'laser': carmen.read_laser(),
+        'laser': laser,
     }
 
     return state
 
 
 def reset(rddf):
-    init_pos_id = np.random.randint(30, len(rddf) - 30)
+    carmen.publish_stop_command()
+
+    init_pos_id = np.random.randint(50, len(rddf) - 50)
     init_pos = rddf[init_pos_id]
 
     carmen.reset_initial_pose(init_pos[0], init_pos[1], init_pos[2])
 
     forw_or_back = np.random.randint(2) * 2 - 1
-    goal_id = init_pos_id + np.random.randint(10, 30) * forw_or_back
+    goal_id = init_pos_id + 20 # np.random.randint(10, 50) * forw_or_back
     goal = rddf[goal_id]
 
-    carmen.publish_goal_list([goal[0]], [goal[1]], [goal[2]], [goal[3]], [goal[4]], time.time())
+    carmen.publish_goal_list([goal[0]], [goal[1]], [goal[2]], [goal[3]], [0.0], time.time())
 
     return read_state(), goal[:4]
 
 
 def step(cmd, goal, n_steps, params):
-    carmen.publish_goal_list([goal[0]], [goal[1]], [goal[2]], [goal[3]], [goal[4]], time.time())
-    carmen.publish_command([cmd[0]], [cmd[1]], [0.1], True)
+    carmen.publish_goal_list([goal[0]], [goal[1]], [goal[2]], [goal[3]], [0.0], time.time())
+
+    v = cmd[0] * 10.0
+    phi = cmd[1] * np.deg2rad(28.0)
+    carmen.publish_command([v] * 10, [phi] * 10, [0.1] * 10, True)
 
     state = read_state()
 
@@ -70,7 +80,7 @@ def step(cmd, goal, n_steps, params):
 
     hit_obstacle = carmen.hit_obstacle()
     starved = n_steps >= params['n_steps_episode']
-    success = achieved_goal and vel_is_correct
+    success = achieved_goal # and vel_is_correct
 
     done = success or hit_obstacle or starved
     info = {'success': success, 'hit_obstacle': hit_obstacle, 'starved': starved}
@@ -79,7 +89,7 @@ def step(cmd, goal, n_steps, params):
 
 
 def update_rewards(params, episode, info):
-    rw = 0.0
+    rw = -1.0
 
     if info['success']:
         rw = float(params['n_steps_episode'] - len(episode)) / float(params['n_steps_episode'])
@@ -98,14 +108,17 @@ def generate_rollouts(policy, n_rollouts, params, rddf, exploit, use_target_net=
     n_successes = 0
     n_collisions = 0
 
-    for t in range(n_rollouts):
+    while len(episodes) < n_rollouts:
         obs, goal = reset(rddf)
+        print('Episode', len(episodes), 'pose:', obs['pose'], 'goal:', goal)
         episode = []
         done = False
         info = None
 
         while not done:
-            cmd, q = policy.get_actions(obs, goal, noise_eps=params['noise_eps'] if not exploit else 0.,
+            g = relative_pose(obs['pose'], goal)
+
+            cmd, q = policy.get_actions(obs, g + [goal[3]], noise_eps=params['noise_eps'] if not exploit else 0.,
                                         random_eps=params['random_eps'] if not exploit else 0.,
                                         use_target_net=use_target_net)
 
@@ -114,10 +127,18 @@ def generate_rollouts(policy, n_rollouts, params, rddf, exploit, use_target_net=
 
             new_obs, done, info = step(cmd, goal, len(episode), params)
 
-            episode.append([obs, cmd, 0.0, goal])
+            g_after = relative_pose(new_obs['pose'], goal)
+            rw = (g[0] ** 2 + g[1] ** 2) - (g_after[0] ** 2 + g_after[1] ** 2)
+
+            episode.append([obs, cmd, rw, goal])
             obs = new_obs
 
-        update_rewards(params, episode, info)
+        carmen.publish_stop_command()
+        if len(episode) == 0:
+            continue
+
+        print('done. info:', info)
+        # update_rewards(params, episode, info)
         episodes.append(episode)
 
         if info['success']: n_successes += 1
@@ -165,35 +186,43 @@ def launch(params, n_epochs, seed, policy_save_interval, clip_return, path_rddf,
     best_policy_path = os.path.join(experiment_dir, 'policy_best.pkl')
     periodic_policy_path = os.path.join(experiment_dir, 'policy_{}.pkl')
 
-    print("Training...")
     best_success_rate = -1
 
     for epoch in range(n_epochs):
+        print("Training...")
         # train
         episodes, n_successes, n_collisions = generate_rollouts(policy, params['n_train_rollouts'],
                                                                 params, rddf=rddf, exploit=False)
         policy.store_episode(episodes)
-        for _ in range(params['n_batches']):
-            policy.train()
+        for b in range(params['n_batches']):
+            cl, pl = policy.train()
+            if b % 50 == 0:
+                print('Training batch', b, 'Critic loss:', cl, 'Policy loss:', pl)
+
+        print('Updating target net.')
         policy.update_target_net()
 
         # test
-        episodes, n_successes, n_collisions = generate_rollouts(policy, params['n_test_rollouts'],
-                                                                params, rddf=rddf, exploit=True)
-        print_evaluation_report(episodes, n_successes, n_collisions)
-        success_rate = float(n_successes) / float(len(episodes))
+        if params['n_test_rollouts'] > 0:
+            print('Testing...')
+            episodes, n_successes, n_collisions = generate_rollouts(policy, params['n_test_rollouts'],
+                                                                    params, rddf=rddf, exploit=True)
+            print_evaluation_report(episodes, n_successes, n_collisions)
+            success_rate = float(n_successes) / float(len(episodes))
+            collision_rate = float(n_collisions) / float(len(episodes))
+            print('Evaluation success rate:', success_rate, 'collision_rate:', collision_rate)
 
-        # save the policy if it's better than the previous ones
-        if success_rate >= best_success_rate:
-            best_success_rate = success_rate
-            print('New best success rate: {}. Saving policy to {} ...'.format(best_success_rate, best_policy_path))
-            save_policy(policy, best_policy_path)
-            save_policy(policy, latest_policy_path)
+            # save the policy if it's better than the previous ones
+            if success_rate >= best_success_rate:
+                best_success_rate = success_rate
+                print('New best success rate: {}. Saving policy to {} ...'.format(best_success_rate, best_policy_path))
+                save_policy(policy, best_policy_path)
+                save_policy(policy, latest_policy_path)
 
-        if policy_save_interval > 0 and epoch % policy_save_interval == 0 and save_policies:
-            policy_path = periodic_policy_path.format(epoch)
-            print('Saving periodic policy to {} ...'.format(policy_path))
-            save_policy(policy, policy_path)
+            if policy_save_interval > 0 and epoch % policy_save_interval == 0 and save_policies:
+                policy_path = periodic_policy_path.format(epoch)
+                print('Saving periodic policy to {} ...'.format(policy_path))
+                save_policy(policy, policy_path)
 
 
 @ex.config
@@ -211,15 +240,17 @@ def config():
 
     params = {
         # env
-        'n_steps_episode': 1000,
+        'n_steps_episode': 200,
+        'goal_achievement_dist': 1.0,
+        'vel_achievement_dist': 0.5,
         # training
-        'n_train_rollouts': 50,  # per epoch
-        'n_batches': 40,  # training batches per cycle
+        'n_train_rollouts': 1,  # per epoch
+        'n_batches': 400,  # training batches per cycle
         'batch_size': 256,  # per mpi thread, measured in transitions and reduced to even multiple of chunk_length.
-        'n_test_rollouts': 10,  # number of test rollouts per epoch, each consists of rollout_batch_size rollouts
+        'n_test_rollouts': 0,  # number of test rollouts per epoch, each consists of rollout_batch_size rollouts
         # exploration
-        'random_eps': 0.3,  # percentage of time a random action is taken
-        'noise_eps': 0.2,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
+        'random_eps': 0.0,  # percentage of time a random action is taken
+        'noise_eps': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
     }
 
     params['gamma'] = 1. - 1. / params['n_steps_episode']

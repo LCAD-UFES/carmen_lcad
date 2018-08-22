@@ -649,7 +649,7 @@ reset_initial_pose(double x, double y, double th)
 	{
 		publish_stop_command();
 		carmen_localize_ackerman_initialize_gaussian_command(pose, std);
-		carmen_ipc_sleep(0.1);
+		carmen_ipc_sleep(0.5);
 
 		// If the messages are taking too long to arrive, warn the user.
 		double curr_time = carmen_get_time();
@@ -662,9 +662,9 @@ reset_initial_pose(double x, double y, double th)
 	} while (pose_is_invalid(&global_localize_ackerman_message, x, y) ||
 			obstacle_distance_map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, x, y) ||
 			laser_reading_is_invalid(&global_front_laser_message) ||
-			map_is_invalid(&global_mapper_map_message, x, y) ||
-			goal_list_is_invalid(&global_goal_list_message, x, y, th) ||
-			rddf_is_invalid(&global_rddf_message, x, y, th));
+			map_is_invalid(&global_mapper_map_message, x, y)); // ||
+			//goal_list_is_invalid(&global_goal_list_message, x, y, th) ||
+			//rddf_is_invalid(&global_rddf_message, x, y, th));
 }
 
 
