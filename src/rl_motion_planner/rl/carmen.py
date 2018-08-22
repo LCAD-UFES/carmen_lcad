@@ -22,8 +22,6 @@ class CarmenEnv:
         goal_id = init_pos_id + np.random.randint(10, 30) * forw_or_back
         goal = rddf[goal_id]
 
-
-
         return obs, goal
 
     def step(self, cmd):

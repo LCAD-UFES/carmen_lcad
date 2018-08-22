@@ -1,86 +1,111 @@
 
-from collections import OrderedDict
-
 import numpy as np
 import tensorflow as tf
-from tensorflow.contrib.staging import StagingArea
-
-from baselines import logger
-from baselines.her.util import (
-    import_function, store_args, flatten_grads, transitions_in_episode_batch)
-from baselines.her.replay_buffer import ReplayBuffer
-from baselines.common.mpi_adam import MpiAdam
+from rl.replay_buffer import ReplayBuffer
 
 
 class ActorCritic:
-    def __init__(self):
-        self.o_tf = inputs_tf['o']
-        self.g_tf = inputs_tf['g']
-        self.u_tf = inputs_tf['u']
+    def __init__(self, n_laser_readings):
+        self.action_size = 2
 
-        # Prepare inputs for actor and critic.
-        o = self.o_stats.normalize(self.o_tf)
-        g = self.g_stats.normalize(self.g_tf)
-        input_pi = tf.concat(axis=1, values=[o, g])  # for actor
+        # goal: (x, y, th, desired_v) - pose in car reference
+        self.placeholder_goal = tf.placeholder(dtype=tf.float32, shape=[None, 4], name='placeholder_goal')
+        # laser: (range0, range1, ...)
+        self.placeholder_laser = tf.placeholder(dtype=tf.float32, shape=[None, n_laser_readings], name='placeholder_laser')
+        # state: (current_v) - current velocity
+        self.placeholder_state = tf.placeholder(dtype=tf.float32, shape=[None, 1], name='placeholder_state')
+        # performed action (for critic): (v, phi) - commands produced by the actor
+        self.placeholder_action = tf.placeholder(dtype=tf.float32, shape=[None, self.action_size], name='placeholder_action')
+        # reward (for training the critic)
+        self.placeholder_reward = tf.placeholder(dtype=tf.float32, shape=[None], name='placeholder_reward')
+        # flag used when computing the target q: 1 if is final, 0 otherwise.
+        self.placeholder_is_final = tf.placeholder(dtype=tf.float32, shape=[None], name='placeholder_is_final')
 
-        # Networks.
-        with tf.variable_scope('pi'):
-            self.pi_tf = self.max_u * tf.tanh(nn(
-                input_pi, [self.hidden] * self.layers + [self.dimu]))
-        with tf.variable_scope('Q'):
-            # for policy training
-            input_Q = tf.concat(axis=1, values=[o, g, self.pi_tf / self.max_u])
-            self.Q_pi_tf = nn(input_Q, [self.hidden] * self.layers + [1])
-            # for critic training
-            input_Q = tf.concat(axis=1, values=[o, g, self.u_tf / self.max_u])
-            self._input_Q = input_Q  # exposed for tests
-            self.Q_tf = nn(input_Q, [self.hidden] * self.layers + [1], reuse=True)
+        activation_fn = tf.nn.leaky_relu
+
+        with tf.variable_scope("preprocessing"):
+            # laser pre-processing
+            laser_c1 = tf.layers.conv1d(self.placeholder_laser, filters=16, kernel_size=4, strides=4, padding='valid', activation=activation_fn)
+            laser_c2 = tf.layers.conv1d(laser_c1, filters=32, kernel_size=4, strides=4, padding='valid', activation=activation_fn)
+            laser_c3 = tf.layers.conv1d(laser_c2, filters=32, kernel_size=4, strides=4, padding='valid', activation=activation_fn)
+            laser_fl = tf.layers.flatten(laser_c3)
+            laser_fc = tf.layers.dense(laser_fl, units=64, activation=activation_fn)
+
+            # goal, state, and action pre-processing
+            goal_fc = tf.laser.dense(self.placeholder_goal, units=64, activation=activation_fn)
+            state_fc = tf.laser.dense(self.placeholder_state, units=64, activation=activation_fn)
+            action_fc = tf.laser.dense(self.placeholder_action, units=64, activation=activation_fn)
+
+        # actor network
+        with tf.variable_scope("policy"):
+            actor_input = tf.concat(axis=-1, values=[state_fc, goal_fc, laser_fc])
+            actor_fc1 = tf.layers.dense(actor_input, units=128, activation=activation_fn)
+            actor_fc2 = tf.layers.dense(actor_fc1, units=128, activation=activation_fn)
+            self.actor_command = tf.layers.dense(actor_fc2, units=self.action_size, activation=None, name="actor_command")
+
+        # critic network
+        # TODO: esses caras estavam dentro dos variable scopes no codigo da openAI. Precisa? Eles nao tem variaveis...
+        critic_input_for_policy_training = tf.concat(axis=-1, values=[actor_input, self.actor_command])
+        critic_input_for_critic_training = tf.concat(axis=-1, values=[actor_input, action_fc])
+
+        def critic_net(critic_input):
+            critic_fc1 = tf.layers.dense(critic_input, units=128, activation=activation_fn)
+            critic_fc2 = tf.layers.dense(critic_fc1, units=128, activation=activation_fn)
+            critic_q = tf.layers.dense(critic_fc2, units=1, activation=None)
+            return critic_q
+
+        with tf.variable_scope("critic"):
+            self.q_from_policy = critic_net(critic_input_for_policy_training)
+
+        with tf.variable_scope("critic", reuse=True):
+            self.q_from_action_placeholder = critic_net(critic_input_for_critic_training)
+
+        # Attribute names to the tensor to allow loading
+        # TODO: esses caras precisam estar dentro dos variable scopes?
+        self.q_from_policy = tf.identity(self.q_from_policy, name="q_from_policy")
+        self.q_from_action_placeholder = tf.identity(self.q_from_action_placeholder, name="q_from_action")
 
 
 class DDPG(object):
-    def __init__(self, params):
-        # Create network. TODO.
-        with tf.variable_scope("ddpg"):
-            self._create_network()
+    def __init__(self, params, n_laser_readings):
+        self.gamma = params['gamma']
+        self._create_network(n_laser_readings)
+        self.buffer = ReplayBuffer(capacity=100000, n__trad=16, n_her=48, max_episode_size=params['n_steps_episode'])
 
-        # Create replay buffer.
-        self.buffer = ReplayBuffer(capacity=100000, n__trad=16, n_her=48)
-
-    def _create_network(self):
+    def _create_network(self, n_laser_readings):
         self.sess = tf.get_default_session()
+
         if self.sess is None:
             self.sess = tf.Session()
 
         # Networks
         with tf.variable_scope('main') as vs:
-            self.main = ActorCritic()
+            self.main = ActorCritic(n_laser_readings)
 
         with tf.variable_scope('target') as vs:
-            self.target = ActorCritic()
+            self.target = ActorCritic(n_laser_readings)
 
         assert len(self._vars("main")) == len(self._vars("target"))
 
-        # Critic loss function
-        target_Q = batch_tf['r'] + self.gamma * self.target.Q_pi_tf
+        # Critic loss function (TODO: make sure this is correct!)
+        discounted_next_q = self.gamma * self.target.q_from_policy * (1. - self.main.placeholder_is_final)
+        target_Q = self.main.placeholder_reward + discounted_next_q
         clipped_target_Q = tf.clip_by_value(target_Q, clip_value_min=-100, clip_value_max=100)
-        self.Q_loss_tf = tf.reduce_mean(tf.square(tf.stop_gradient(clipped_target_Q) - self.main.Q_tf))
+        # The stop gradient prevents the target net from being trained.
+        self.critic_loss = tf.reduce_mean(tf.square(tf.stop_gradient(clipped_target_Q) - self.main.q_from_action_placeholder))
 
-        # Policy loss function
-        self.pi_loss_tf = -tf.reduce_mean(self.main.Q_pi_tf)
+        # Policy loss function (TODO: checar se essa loss esta certa. Ela parece diferente do DDPG do paper).
+        self.policy_loss = -tf.reduce_mean(self.main.q_from_policy)
         # TODO: checar se o componente abaixo eh necessario e o que ele significa.
-        self.pi_loss_tf += self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf))
+        self.policy_loss += self.action_l2 * tf.reduce_mean(tf.square(self.main.actor_command))
 
-        # Optimizers
-        # TODO: only train self._vars('main/Q')
-        self.Q_adam = tf.train.AdamOptimizer(learning_rate=0.001)
-        # TODO: only train self._vars('main/pi')
-        self.pi_adam = tf.train.AdamOptimizer(learning_rate=0.0001)
-
-        # Gradients
+        # Training
         # TODO: MAKE SURE THESE ARE EQUIVALENT!!!!!
         # TODO: CHECAR FUNCAO DE TREINO MAIS EMBAIXO!!!!!
-        self.Q_update = self.Q_adam.minimize(loss=self.Q_loss_tf, var_list=self._vars('main/Q'))
-        self.pi_update = self.pi_adam.minimize(loss=self.pi_loss_tf, var_list=self._vars('main/pi'))
+        v_critic = self._vars("main/preprocessing") + self._vars("main/critic")
+        v_policy = self._vars("main/preprocessing") + self._vars("main/policy")
+        self.critic_train = tf.train.AdamOptimizer(learning_rate=0.001).minimize(loss=self.critic_loss, var_list=v_critic)
+        self.policy_train = tf.train.AdamOptimizer(learning_rate=0.0001).minimize(loss=self.policy_loss, var_list=v_policy)
         """
         Q_grads_tf = tf.gradients(self.Q_loss_tf, self._vars('main/Q'))
         pi_grads_tf = tf.gradients(self.pi_loss_tf, self._vars('main/pi'))
@@ -93,12 +118,12 @@ class DDPG(object):
         """
 
         # Additional operations
-        self.main_vars = self._vars('main/Q') + self._vars('main/pi')
-        self.target_vars = self._vars('target/Q') + self._vars('target/pi')
-        self.copy_main_to_target_op = list(
-            map(lambda v: v[0].assign(v[1]), zip(self.target_vars, self.main_vars)))
+        self.main_vars = self._vars('main/preprocessing') + self._vars('main/policy') + self._vars('main/critic')
+        self.target_vars = self._vars('target/preprocessing') + self._vars('target/policy') + self._vars('target/critic')
+
+        self.copy_main_to_target = list(map(lambda v: v[0].assign(v[1]), zip(self.target_vars, self.main_vars)))
         self.target_update_rate = 0.95  # rate used for soft update of the target net.
-        self.update_target_net_op = list(
+        self.soft_update_target_net = list(
             map(lambda v: v[0].assign(self.target_update_rate * v[0] + (1. - self.target_update_rate) * v[1]),
                 zip(self.target_vars, self.main_vars)))
 
@@ -106,7 +131,7 @@ class DDPG(object):
         self.sess.run(tf.global_variables_initializer())
 
         # Update the target net to be equals to the main net
-        self.sess.run(self.copy_main_to_target_op)
+        self.sess.run(self.copy_main_to_target)
 
     def _vars(self, scope):
         res = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.scope + '/' + scope)
@@ -116,10 +141,6 @@ class DDPG(object):
     def update_target_net(self):
         self.sess.run(self.update_target_net_op)
 
-    def _global_vars(self, scope):
-        res = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.scope + '/' + scope)
-        return res
-
     def _random_action(self, n):
         return np.random.uniform(low=-self.max_u, high=self.max_u, size=(n, self.dimu))
 
@@ -127,7 +148,7 @@ class DDPG(object):
         policy = self.target if use_target_net else self.main
 
         # values to compute
-        vals = [policy.pi_tf]
+        vals = [policy.cr]
         if compute_Q:
             vals += [policy.Q_pi_tf]
 
@@ -169,9 +190,38 @@ class DDPG(object):
     ####
     def train(self):
         self.batch_size = 64
-        batch = self.buffer.sample(self.batch_size)
+
         # TODO: feed batch
-        self.sess.run([self.Q_update, self.pi_update])
+        batch = self.buffer.sample(self.batch_size)
+
+        self.placeholder_goal = tf.placeholder(dtype=tf.float32, shape=[None, 4], name='placeholder_goal')
+        self.placeholder_laser = tf.placeholder(dtype=tf.float32, shape=[None, n_laser_readings], name='placeholder_laser')
+        self.placeholder_state = tf.placeholder(dtype=tf.float32, shape=[None, 1], name='placeholder_state')
+        self.placeholder_action = tf.placeholder(dtype=tf.float32, shape=[None, self.action_size], name='placeholder_action')
+        self.placeholder_reward = tf.placeholder(dtype=tf.float32, shape=[None], name='placeholder_reward')
+        self.placeholder_is_final = tf.placeholder(dtype=tf.float32, shape=[None], name='placeholder_is_final')
+
+        feed = {
+            self.main.placeholder_goal: batch['goal'],
+            self.main.placeholder_laser: batch['laser'],
+            self.main.placeholder_state: batch['state'],
+            self.main.placeholer_action: batch['act'],
+            self.main.placeholder_reward: batch['rew'],
+            self.main.placeholder_is_final: batch['is_final'],
+            self.target.placeholder_goal: batch['goal'],
+            self.target.placeholder_laser: batch['next_laser'],
+            self.target.placeholder_state: batch['next_state'],
+        }
+
+        # TODO: Diferente do caso da OpenAI em que os gradients sao computados e aplicados separadamente, aqui os
+        # TODO: gradients sao aplicados "ao mesmo tempo" nas variaveis de pre-processamento. Checar em qual ordem isso
+        # TODO: eh realizado, e se nao da problema treinar os dois ao msm tempo.
+        out = self.sess.run([self.critic_loss, self.policy_loss, self.critic_train, self.policy_train], feed_dict=feed)
+
+        critic_loss = out[0]
+        policy_loss = out[1]
+
+        return critic_loss, policy_loss
 
     """
     def train(self, stage=True):
