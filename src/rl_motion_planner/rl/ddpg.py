@@ -97,6 +97,7 @@ class DDPG(object):
         # Policy loss function (TODO: checar se essa loss esta certa. Ela parece diferente do DDPG do paper).
         self.policy_loss = -tf.reduce_mean(self.main.q_from_policy)
         # TODO: checar se o componente abaixo eh necessario e o que ele significa.
+        self.action_l2 = 1.0
         self.policy_loss += self.action_l2 * tf.reduce_mean(tf.square(self.main.actor_command))
 
         # Training
@@ -134,30 +135,26 @@ class DDPG(object):
         self.sess.run(self.copy_main_to_target)
 
     def _vars(self, scope):
-        res = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.scope + '/' + scope)
+        res = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope)
         assert len(res) > 0
         return res
 
     def update_target_net(self):
-        self.sess.run(self.update_target_net_op)
+        self.sess.run(self.soft_update_target_net)
 
-    def _random_action(self, n):
-        return np.random.uniform(low=-self.max_u, high=self.max_u, size=(n, self.dimu))
-
-    def get_actions(self, o, g, noise_eps=0., random_eps=0., use_target_net=False, compute_Q=False):
+    def get_actions(self, obs, goal, noise_eps=0., random_eps=0., use_target_net=False):
         policy = self.target if use_target_net else self.main
 
         # values to compute
-        vals = [policy.cr]
-        if compute_Q:
-            vals += [policy.Q_pi_tf]
+        vals = [policy.actor_command, policy.q_from_policy]
 
         # forward
         feed = {
-            policy.o_tf: o.reshape(-1, self.dimo),
-            policy.g_tf: g.reshape(-1, self.dimg),
-            policy.u_tf: np.zeros((o.size // self.dimo, self.dimu), dtype=np.float32)
+            self.main.placeholder_laser: [obs['laser']],
+            self.main.placeholder_state: [[obs['pose'][3]]],
+            self.main.placeholder_goal: [goal],
         }
+
         ret = self.sess.run(vals, feed_dict=feed)
 
         # action postprocessing
@@ -165,25 +162,13 @@ class DDPG(object):
         u += noise_eps * np.random.randn(*u.shape)  # gaussian noise
         u = np.clip(u, -1., 1.)
 
-        # TODO: checar o que isto esta fazendo e se eh necessario.
-        u += np.random.binomial(1, random_eps, u.shape[0]).reshape(-1, 1) * (self._random_action(u.shape[0]) - u)  # eps-greedy
+        if np.random.random() < random_eps:
+            u = np.random.uniform(-1.0, 1.0, len(u))
 
-        # TODO: wtf????? Estranho esse final...
-        if u.shape[0] == 1:
-            u = u[0]
-        u = u.copy()
-        ret[0] = u
-
-        if len(ret) == 1:
-            return ret[0]
-        else:
-            return ret
+        return u, ret[1][0]
 
     def store_episode(self, episode_batch):
         self.buffer.store_episode(episode_batch)
-
-    def get_current_buffer_size(self):
-        return self.buffer.get_current_size()
 
     ####
     # TRAIN
@@ -191,21 +176,13 @@ class DDPG(object):
     def train(self):
         self.batch_size = 64
 
-        # TODO: feed batch
         batch = self.buffer.sample(self.batch_size)
-
-        self.placeholder_goal = tf.placeholder(dtype=tf.float32, shape=[None, 4], name='placeholder_goal')
-        self.placeholder_laser = tf.placeholder(dtype=tf.float32, shape=[None, n_laser_readings], name='placeholder_laser')
-        self.placeholder_state = tf.placeholder(dtype=tf.float32, shape=[None, 1], name='placeholder_state')
-        self.placeholder_action = tf.placeholder(dtype=tf.float32, shape=[None, self.action_size], name='placeholder_action')
-        self.placeholder_reward = tf.placeholder(dtype=tf.float32, shape=[None], name='placeholder_reward')
-        self.placeholder_is_final = tf.placeholder(dtype=tf.float32, shape=[None], name='placeholder_is_final')
 
         feed = {
             self.main.placeholder_goal: batch['goal'],
             self.main.placeholder_laser: batch['laser'],
             self.main.placeholder_state: batch['state'],
-            self.main.placeholer_action: batch['act'],
+            self.main.placeholder_action: batch['act'],
             self.main.placeholder_reward: batch['rew'],
             self.main.placeholder_is_final: batch['is_final'],
             self.target.placeholder_goal: batch['goal'],

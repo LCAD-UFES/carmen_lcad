@@ -173,9 +173,9 @@ publish_behavior_selector_state()
 	msg.parking_algorithm = CARMEN_BEHAVIOR_SELECTOR_RRT;
 
 	msg.goal_source = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
-	msg.low_level_state = Stopped;
+	msg.low_level_state = Free_Running;
 
-	msg.behaviour_seletor_mode = stopped;
+	msg.behaviour_seletor_mode = none;
 
 	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME, &msg);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME);
@@ -355,11 +355,13 @@ publish_command(std::vector<double> v, std::vector<double> phi, std::vector<doub
 
 		if (autonomous_mode)
 		{
+		    //printf("AUTONOMOUS MODE ON.\n");
 			motion_commands[i].v = v[i];
 			motion_commands[i].phi = phi[i];
 		}
 		else
 		{
+		    //printf("AUTONOMOUS MODE OFF.\n");
 			motion_commands[i].v = 0.0;
 			motion_commands[i].phi = 0.0;
 		}
@@ -472,7 +474,7 @@ handle_messages(double how_long)
 	}
 	while (global_localize_ackerman_message.timestamp == time_previous_globalpos);
 
-	// carmen_navigator_ackerman_go();
+	carmen_navigator_ackerman_go();
 	process_map_message(&global_obstacle_distance_mapper_compact_map_message);
 
 	carmen_mapper_copy_map_from_message(&(simulator_config.map), &global_mapper_map_message);
