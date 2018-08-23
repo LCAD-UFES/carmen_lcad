@@ -1,7 +1,7 @@
 include ../src/Makefile.conf
 
-PACKAGES = alglib darknet gl_plotter libbee libclustering libcontrol libelas libkinfu libminorucalib libsickldmrs2 libstereovgram libvelodyne libvoice OpenJAUS pso \
-	   libcarmodel libcmt libkalman libminoru libsickldmrs libstereo prob_models
+PACKAGES = alglib darknet gl_plotter libbee libclustering libcontrol libelas libkinfu libminorucalib libsickldmrs2 libstereovgram \
+	   libtf/src libvelodyne libvoice OpenJAUS pso libcarmodel libcmt libkalman libminoru libsickldmrs libstereo prob_models
 
 RECURSE = $(SILENT) \
 	for i in $(PACKAGES) xxxx ; do \
@@ -13,7 +13,6 @@ RECURSE = $(SILENT) \
 	done
 
 clean:
-	$(ECHO) $(PACKAGES)
 	$(ECHO)
 	$(ECHO) "       *********"
 	$(ECHO) "       C L E A N"
