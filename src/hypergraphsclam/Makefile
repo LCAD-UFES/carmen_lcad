@@ -74,9 +74,12 @@ SOURCES = 	Helpers/StringHelper.cpp \
 #PUBLIC_LIBRARIES =
 #PUBLIC_BINARIES = hypergraphsclam parser
 
-TARGETS = hypergraphsclam parser
+TARGETS = libviso hypergraphsclam parser
 
-hypergraphsclam: src/VehicleModel.o Helpers/StringHelper.o src/HyperGraphSclamOptimizer.o hypergraphsclam.o
+libviso:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libviso2.3/src
+
+hypergraphsclam: $(CARMEN_HOME)/sharedlib/libviso2.3/src/libviso.a src/VehicleModel.o Helpers/StringHelper.o src/HyperGraphSclamOptimizer.o hypergraphsclam.o
 
 parser:	Helpers/StringHelper.o \
 		Helpers/SimpleLidarSegmentation.o \

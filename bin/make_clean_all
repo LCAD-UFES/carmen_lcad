@@ -2,7 +2,6 @@ make_clean_module()
 {
 	cd $CARMEN_HOME/src/$1
 	make clean
-	return $?
 }
 
 
@@ -17,14 +16,14 @@ rm $CARMEN_HOME/include/carmen/*
 
 for mod in $MODULES
 do
+	ERROR_MODULE=1
 	if [ -d $CARMEN_HOME/src/$mod ]
 	then
 		make_clean_module $mod
-		if [ ! $? -eq 0 ]
-		then
-			ERRORS="$ERRORS $mod"
-		fi
-	else
+		ERROR_MODULE=$?
+	fi
+	if [ ! $ERROR_MODULE -eq 0 ]
+	then
 		ERRORS="$ERRORS $mod"
 	fi
 done

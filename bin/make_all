@@ -6,35 +6,31 @@ make_module()
 
 make_list_of_modules()
 {
-	RESULT=0
 	for mod in $1
 	do
+		ERROR=1
 		if [ -d $CARMEN_HOME/src/$mod ]
 		then
 			make_module $mod
-			RESULT=$?
+			ERROR=$?
 		fi
-		if [ ! $RESULT -eq 0 ] && [ "$2" = "EXIT_ON_ERROR" ]
+		if [ ! $ERROR -eq 0 ] && [ "$2" != "-ignore_errors" ]
 		then
 			exit 1
 		fi
 	done
-	return $RESULT
 }
 
 
 $CARMEN_HOME/bin/make_clean_all
 
-MODULES="web_cam tracker lane_detector path_planner . camera velodyne_camera_calibration 
-	 camera_boxes_to_world ../sharedlib/libclustering web_cam laser-ldmrs tracker 
-	 lane_detector dynamic_object_detector ."
+PREPARATION="web_cam tracker lane_detector path_planner camera . camera velodyne_camera_calibration 
+	     camera_boxes_to_world ../sharedlib/libclustering web_cam laser-ldmrs tracker 
+	     lane_detector dynamic_object_detector"
 
-ADDITIONAL_MODULES="graphslam"
+MODULES="." # May include other modules separated by spaces
+
+make_list_of_modules "$PREPARATION" -ignore_errors
 
 make_list_of_modules "$MODULES"
-
-if [ $? -eq 0 ]
-then
-	make_list_of_modules "$ADDITIONAL_MODULES" EXIT_ON_ERROR
-fi
 
