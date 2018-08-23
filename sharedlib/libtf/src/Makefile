@@ -6,6 +6,8 @@ MODULE_COMMENT = Transformation Coordinate Library
 
 LINK = g++
 
+CFLAGS += -std=c11 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING
+CXXFLAGS += -std=c++11 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING
 # Application specific include directories.
 IFLAGS += -I/usr/local/include/bullet/
 IFLAGS += -Iinclude/tf/

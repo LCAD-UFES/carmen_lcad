@@ -5,7 +5,7 @@ MODULE_COMMENT = Sensor Calibration
 
 LINK = g++
 
-CXXFLAGS += -std=c++11 -O2
+CXXFLAGS += -std=c++11 -O2 -Wno-deprecated-declarations
 
 #cheating
 IFLAGS += -std=c++11 -O2

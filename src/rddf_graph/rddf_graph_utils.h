@@ -32,6 +32,7 @@ extern "C" {
 extern double g_x_origin;
 extern double g_y_origin;
 extern char *g_road_map_folder;
+extern bool g_view_graph_construction;
 
 typedef struct
 {
@@ -54,12 +55,6 @@ typedef struct
 	carmen_position_t *world_coordinate;
 	rddf_graph_edges_t *edge;
 } rddf_graph_t;
-
-typedef struct
-{
-	int size;
-	rddf_graph_t *graph;
-} rddf_graphs_of_map_t;
 
 
 using namespace std;

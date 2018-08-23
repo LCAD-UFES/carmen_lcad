@@ -7,8 +7,8 @@ MODULE_COMMENT = Mapper Maps using Velodyne!
 #CFLAGS += # -Wall -std=c99  -O3 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops -Wno-unused-but-set-variable
 #CFLAGS += -Wall -std=c99 -O4 -mfpmath=sse -msse2 -msse4.2
 #CXXFLAGS += -Wall -O4 -mfpmath=sse -msse2 -msse4.2
-CFLAGS += 
-CXXFLAGS += 
+CFLAGS += -std=c11
+CXXFLAGS += -std=c++11
 #CFLAGS += -g -pg
 LINK = g++
 
@@ -37,7 +37,7 @@ LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath 
 
 # Application specific include directories.
 PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
-VTK_INC = $(wildcard /usr/local/include/vtk-* /usr/include/vtk-*)
+VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
 LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system

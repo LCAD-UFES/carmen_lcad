@@ -82,7 +82,7 @@ class EdgeGPS : public BaseUnaryEdge<3, SE2, VertexSE2> {
             fake_angle = std::atan2(xip1_xi[1], xip1_xi[0]);
 
             // set the fake measurement
-            _fakeMeasurement.setRotation(fake_angle);
+            _fakeMeasurement.setRotation(Eigen::Rotation2Dd(fake_angle));
 
             // set the fake translation
             _fakeMeasurement.setTranslation(_measurement.translation());
@@ -105,7 +105,7 @@ class EdgeGPS : public BaseUnaryEdge<3, SE2, VertexSE2> {
             fake_angle = std::atan2(xip1_xim1[1], xip1_xim1[0]);
 
             // set the fake measurement
-            _fakeMeasurement.setRotation(fake_angle);
+            _fakeMeasurement.setRotation(Eigen::Rotation2Dd(fake_angle));
 
             // set the fake translation
             _fakeMeasurement.setTranslation(_measurement.translation());
@@ -145,7 +145,7 @@ class EdgeGPS : public BaseUnaryEdge<3, SE2, VertexSE2> {
 
                 fake_angle = real_diff < fake_diff && max_angle_diff > current_diff ? real_angle : prev_fa;
 
-                _fakeMeasurement.setRotation(fake_angle);
+                _fakeMeasurement.setRotation(Eigen::Rotation2Dd(fake_angle));
 
                 _inverseFakeMeasurement = _fakeMeasurement.inverse();
 

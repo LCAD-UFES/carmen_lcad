@@ -5,10 +5,16 @@ MODULE_COMMENT = teste_grab_data
 
 LINK = g++ 
 
-CXXFLAGS += -Wno-deprecated -Wno-deprecated-declarations -std=c++11
+CXXFLAGS += -Wno-deprecated -Wno-deprecated-declarations
+
+CFLAGS += -std=c11
+CXXFLAGS += -std=c++11
+
+# Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11
+IFLAGS += -std=c++11
 
 PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
-VTK_INC = $(wildcard /usr/local/include/vtk-* /usr/include/vtk-*)
+VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/  
@@ -18,7 +24,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_p
 IFLAGS += `pkg-config --cflags opencv`
 
 LFLAGS += -lglobal -lipc -llocalize_ackerman_interface -lfused_odometry_interface -lvelodyne_interface -lparam_interface -lGL -lglut -lGLU \
-		-lrt -lboost_signals # -ltf_util    
+		-lrt -lboost_signals -std=c++11 # -ltf_util    
 LFLAGS += -lrobot_ackerman_interface -lobstacle_avoider_interface \
 		-lmap_io -lmap_util -llaser_interface -lfused_odometry_interface -lvelodyne_interface \
 		-lGLEW -lGL -lGLU -lglut -lX11 -lmap_interface -lbase_ackerman_interface \

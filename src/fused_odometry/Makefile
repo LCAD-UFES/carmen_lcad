@@ -6,6 +6,9 @@ MODULE_COMMENT = This module implements a particle filter that uses IMU, GPS, an
 LINK = g++
 CXXFLAGS += -Wall -msse3
 
+CFLAGS += -std=c11
+CXXFLAGS += -std=c++11
+
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
