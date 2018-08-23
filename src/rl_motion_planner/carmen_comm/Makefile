@@ -38,6 +38,6 @@ pycarmen_comm:
 	g++ -shared carmen_comm_wrap.o libcarmen_comm_cpp.a -o _carmen_comm.so $(PY_LIB) $(LFLAGS)
 
 pycarmen_comm_clean:
-	rm carmen_comm.py carmen_comm_wrap.cxx
+	rm -rf carmen_comm.py carmen_comm_wrap.cxx
 
 include $(CARMEN_HOME)/src/Makefile.rules

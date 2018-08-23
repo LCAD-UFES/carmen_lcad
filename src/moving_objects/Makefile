@@ -27,6 +27,9 @@ LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lelas -l
 CFLAGS += -g -pg -Wall -fopenmp
 CFLAGS += -w -msse3
 
+CFLAGS += -std=c11
+CXXFLAGS += -std=c++11
+
 # Required for debugging:
 CXXFLAGS += -g -pg -Wall -fopenmp
 CXXFLAGS += -w -msse3
@@ -44,7 +47,7 @@ IFLAGS += `pkg-config --cflags opencv`
 LFLAGS += `pkg-config --libs opencv`
 
 PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
-VTK_INC = $(wildcard /usr/local/include/vtk-* /usr/include/vtk-*)
+VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
 #LFLAGS += -lpcl_common -lpcl_kdtree -lpcl_search -lpcl_segmentation

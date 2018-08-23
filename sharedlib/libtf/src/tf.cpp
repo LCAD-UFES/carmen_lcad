@@ -7,7 +7,7 @@ using namespace tf;
 // Must provide storage for non-integral static const class members.
 // Otherwise you get undefined symbol errors on OS X (why not on Linux?).
 // Thanks to Rob for pointing out the right way to do this.
-const double tf::Transformer::DEFAULT_CACHE_TIME;
+constexpr double tf::Transformer::DEFAULT_CACHE_TIME;
 
 
 enum WalkEnding

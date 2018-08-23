@@ -5,6 +5,10 @@ MODULE_COMMENT = Visual Odometry Library
 
 LINK = g++
 CXXFLAGS += -msse3 -Wno-unused-parameter -Wno-unused-but-set-variable
+
+CFLAGS += -std=c11
+CXXFLAGS += -std=c++11
+
 LFLAGS += -lipc -lglobal
  
 SOURCES = matrix.cpp triangle.cpp filter.cpp matcher.cpp reconstruction.cpp viso.cpp viso_mono.cpp viso_stereo.cpp

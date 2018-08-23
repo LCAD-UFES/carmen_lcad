@@ -1,5 +1,8 @@
 include ../Makefile.conf
 
+CFLAGS += -std=c11
+CXXFLAGS += -std=c++11
+
 CFLAGS += `pkg-config --cflags opencv` -Wall
 IFLAGS += 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 

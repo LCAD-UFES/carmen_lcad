@@ -6,6 +6,9 @@ MODULE_COMMENT = Visual Odometry Package
 LINK = g++
 CXXFLAGS += -Wall -msse3
 
+CFLAGS += -std=c11
+CXXFLAGS += -std=c++11
+
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libviso2.3/src -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libviso2.3/src -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lvisual_odometry_interface -lstereo_interface -lviso

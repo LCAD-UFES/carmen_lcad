@@ -3,6 +3,9 @@ include ../Makefile.conf
 MODULE_NAME = "LOG FILTER"
 MODULE_COMMENT = "LOG FILTER Module"
 
+CFLAGS += -std=c11
+CXXFLAGS += -std=c++11
+
 CFLAGS += #-DPARSE_DEBUG
 IFLAGS += 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/

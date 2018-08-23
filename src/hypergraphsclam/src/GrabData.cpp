@@ -339,7 +339,7 @@ void GrabData::BuildGPSMeasures()
                 gps_pose->gps_measurement.setTranslation(gps_pose->gps_measurement.translation() - gps_origin);
 
                 // update the orientation
-                gps_pose->gps_measurement.setRotation(GetGPSOrientation(begin, it, end, gps_pose->timestamp));
+                gps_pose->gps_measurement.setRotation(Eigen::Rotation2Dd(GetGPSOrientation(begin, it, end, gps_pose->timestamp)));
 
                 // let's take an advantage here
                 // gps_pose->est = gps_pose->gps_measurement;

@@ -27,7 +27,7 @@ class EdgeXSENS : public BaseUnaryEdge<1, double, VertexSE2> {
             SE2 m(v->estimate());
 
             // update the rotation
-            m.setRotation(_measurement);
+            m.setRotation(Eigen::Rotation2Dd(_measurement));
 
             SE2 delta = m.inverse() * (v->estimate());
 
