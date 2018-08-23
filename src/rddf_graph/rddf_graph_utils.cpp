@@ -608,8 +608,8 @@ get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_m
 					{
 						map_queue.push_back(map_origin);
 					}
-					show_road_map(map, current->x, current->y);
-					show_already_visited(already_visited);
+					//show_road_map(map, current->x, current->y);
+					//show_already_visited(already_visited);
 				}
 
 				if (point_is_lane_center(map, x, y))
@@ -632,16 +632,25 @@ add_point_to_graph_branch(carmen_map_p map, rddf_graph_t * graph, int x, int y, 
 	graph->point = (carmen_position_t *) realloc(graph->point, (graph->size + 1) * sizeof(carmen_position_t));
 	graph->point[graph->size].x = x;
 	graph->point[graph->size].y = y;
+	//cout<<"\tPonto "<<graph->point[graph->size].x<<" "<<graph->point[graph->size].y<<endl;
 
 	graph->world_coordinate = (carmen_position_t *) realloc(graph->world_coordinate, (graph->size + 1) * sizeof(carmen_position_t));
 	graph->world_coordinate[graph->size].x = (x * map->config.resolution) + map->config.x_origin;
 	graph->world_coordinate[graph->size].y = (y * map->config.resolution) + map->config.y_origin;
 
+	graph->edge = (rddf_graph_edges_t *) realloc(graph->edge, (graph->size + 1) * sizeof(rddf_graph_edges_t));
+	graph->edge[graph->size].point = (int *) malloc(sizeof(int));
+	graph->edge[graph->size].point[0] = graph->size -1;
+	graph->edge[graph->size].size = 1;
+
 	graph->edge[branch_node].point = (int *) realloc(graph->edge[branch_node].point, (graph->edge[branch_node].size + 1) * sizeof(int));
 	graph->edge[branch_node].point[graph->edge[branch_node].size] = graph->size + 1;
+	//cout<<"\tAresta "<<graph->edge[branch_node].point[graph->edge[branch_node].size]<<endl;
 	graph->edge[branch_node].size += 1;
+	//cout<<"\tArestas do ponto "<<branch_node<<" "<<graph->edge[branch_node].size<<endl;
 
 	graph->size += 1;
+	//getchar();
 
 	return (graph);
 }
@@ -657,6 +666,8 @@ add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y)
 		graph->point[0].x = x;
 		graph->point[0].y = y;
 
+		//cout<<"\tPonto "<<graph->point[0].x<<" "<<graph->point[0].y<<endl;
+
 		graph->world_coordinate = (carmen_position_t *) malloc(sizeof(carmen_position_t));
 		graph->world_coordinate[0].x = (x * map->config.resolution) + map->config.x_origin;
 		graph->world_coordinate[0].y = (y * map->config.resolution) + map->config.y_origin;
@@ -664,7 +675,8 @@ add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y)
 		graph->edge = (rddf_graph_edges_t *) malloc(sizeof(rddf_graph_edges_t));
 		graph->edge[0].point = (int *) malloc(sizeof(int));
 		graph->edge[0].point[0] = 0; //usando zero ao invês de NULL para evitar warning;
-		graph->edge[0].size = 0;
+		//cout<<"\tAresta "<<graph->edge[0].point[0]<<endl;
+		graph->edge[0].size = 1;
 
 		graph->size = 1;
 	}
@@ -674,6 +686,8 @@ add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y)
 		graph->point[graph->size].x = x;
 		graph->point[graph->size].y = y;
 
+		//cout<<"\tPonto "<<graph->point[graph->size].x<<" "<<graph->point[graph->size].y<<endl;
+
 		graph->world_coordinate = (carmen_position_t *) realloc(graph->world_coordinate, (graph->size + 1) * sizeof(carmen_position_t));
 		graph->world_coordinate[graph->size].x = (x * map->config.resolution) + map->config.x_origin;
 		graph->world_coordinate[graph->size].y = (y * map->config.resolution) + map->config.y_origin;
@@ -682,12 +696,15 @@ add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y)
 		//graph->edge[graph->size].point = (int *) realloc(graph->edge[graph->size].point, (graph->edge[graph->size].size + 1) * sizeof(int)); //alberto way
 		graph->edge[graph->size].point = (int *) malloc(sizeof(int));
 		//graph->edge[graph->size].point[graph->edge[graph->size].size] = graph->size + 1;//alberto way
-		graph->edge[graph->size].point[0] = graph->size + 1;
+		graph->edge[graph->size].point[0] = graph->size -1;
+		//cout<<"\tAresta "<<graph->edge[graph->size].point[0]<<endl;
 		//graph->edge[graph->size].size  += 1;
 		graph->edge[graph->size].size = 1;
+		//cout<<"\tArestas do ponto "<<graph->size<<" "<<graph->edge[graph->size].size<<endl;
 
 		graph->size += 1;
 	}
+	//getchar();
 
 	return (graph);
 }
@@ -796,39 +813,21 @@ A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already
 rddf_graph_t *
 A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already_visited, vector <carmen_point_t> &map_queue)
 {
-	cout<<"Building graph..."<<endl;
+	cout<<"\tBuilding graph..."<<endl;
 	vector<carmen_position_t> open_set;
 	carmen_position_t current;
 
 	graph = add_point_to_graph(map, graph, x, y);
-	open_set.push_back(graph->point[0]);
+	if(graph->size == 1)
+		open_set.push_back(graph->point[0]);
+	else
+		open_set.push_back(graph->point[graph->size-1]);
 	//open_set.push_back(graph->world_coordinate[0]);
 
 	while (!open_set.empty())
 	{
-		//printf("Openset size: %d:\n", open_set.size());
-		//carmen_grid_mapping_save_block_map_by_origin(already_visited_folder, 'a', already_visited);
-		//cout<<"Openset:"<<endl;
-		//for(int i=0;i<open_set.size();i++){
-		//	printf("\t%lf X %lf\n", open_set[i].x, open_set[i].y);
-		//}
-		//getchar();
 		current = open_set.back();
-		//current.x = (current.x - map->config.x_origin) / map->config.resolution;
-		//current.y = (current.y - map->config.y_origin) / map->config.resolution;
 		open_set.pop_back();
-
-		//printf("\tCurrent: %lf X %lf\n", current.x, current.y);
-
-		//carmen_point_t pose;
-		//pose.x = current.x;
-		//pose.y = current.y;
-		//get_new_map_block(g_road_map_folder, 'r', map, pose);
-		//printf("RoadMap Origin: %lf\t%lf\n", map->config.x_origin, map->config.y_origin);
-		//carmen_grid_mapping_save_block_map_by_origin(already_visited_folder, 'a', already_visited);
-		//get_new_map_block(already_visited_folder, 'a', already_visited, pose);
-		//open_set.erase(open_set.begin(), open_set.end()); //não está correto pois apaga o vetor, porém, it works!
-		//MOSTRAR AO ALBERTO O MAPA SOBRESCREVENDO NA HORA EM QUE O MAPA DESEMPILHA
 
 		carmen_position_t neighbour;
 		//carmen_position_t neighbour_global_pos;
@@ -836,72 +835,113 @@ A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already
 		int branch_node;
 		while (get_neighbour(&neighbour, &current, already_visited, map, open_set, map_queue))
 		{
-			//neighbour_global_pos.x = (neighbour.x * map->config.resolution) + map->config.x_origin;
-			//neighbour_global_pos.y = (neighbour.y * map->config.resolution) + map->config.y_origin;
 			open_set.push_back(neighbour);
-			//open_set.push_back(neighbour_global_pos);
-			//printf("\tNeighbour: %lf X %lf\tNeighbourGlobal: %lf X %lf\n", neighbour.x, neighbour.y, neighbour_global_pos.x, neighbour_global_pos.y);
 
 			if (number_of_neighbours == 0)
 			{
 				graph = add_point_to_graph(map, graph, neighbour.x, neighbour.y);
-				show_road_map(map, neighbour.x, neighbour.y);
-				show_already_visited(already_visited);
-				//cout<<"GRAPH!"<<neighbour.x<<"\t"<<neighbour.y<<endl;
-				//display_graph_over_map(map, graph, already_visited, "oi", 0);
+				if(g_view_graph_construction)
+				{
+					show_road_map(map, neighbour.x, neighbour.y);
+					show_already_visited(already_visited);
+				}
 				branch_node = graph->size - 1;
 			}
 			else
 			{
 				graph = add_point_to_graph_branch(map, graph, neighbour.x, neighbour.y, branch_node);
-				//current = open_set.back();
-				//open_set.pop_back();
-				//cout << "branch node!" << endl;
 			}
 			number_of_neighbours++;
 		}
 		//getchar();
 	}
-	cout <<"Finished a graph with size: "<< graph->size << endl<<endl;
+	cout <<"\tFinished a road"<< endl<<endl;
 //	getchar();
+
 	return (graph);
 }
 
 
-rddf_graphs_of_map_t *
-add_graph_to_graph_list(rddf_graphs_of_map_t * rddf_graphs, rddf_graph_t *graph)
+void
+write_graphs_for_gnuplot (rddf_graph_t * graph)
 {
-	//rddf_graphs.push_back(graph);
-	if (rddf_graphs == NULL)
+	FILE *f;
+	if ((f = fopen("graphs.txt", "w")) == NULL )
 	{
-		rddf_graphs = (rddf_graphs_of_map_t *) malloc(sizeof(rddf_graphs_of_map_t));
-		rddf_graphs[0].graph = (rddf_graph_t *) malloc(sizeof(rddf_graph_t));
-		rddf_graphs[0].graph = graph;
-		rddf_graphs->size = 1;
-	}
-	else
-	{
-		rddf_graphs = (rddf_graphs_of_map_t *) realloc(rddf_graphs, (rddf_graphs->size + 1) * sizeof(rddf_graphs_of_map_t));
-		rddf_graphs[rddf_graphs->size].graph = (rddf_graph_t *) malloc(sizeof(rddf_graph_t));
-		rddf_graphs[rddf_graphs->size].graph = graph;
-		rddf_graphs->size += 1;
-
+		printf("Error opening file\n");
 	}
 
-	return (rddf_graphs);
+	for (int i = 0; i < graph->size; i++)
+	{
+		fprintf (f, "%lf %lf\n", graph->world_coordinate[i].x, graph->world_coordinate[i].y);
+		//printf ("%lf %lf\n", graph->world_coordinate[i].x, graph->world_coordinate[i].y);
+
+	}
+	fclose(f);
 }
 
 
 void
-write_graphs_on_file(rddf_graphs_of_map_t *rddf_graphs)
+write_graphs_on_file(rddf_graph_t *graph)
 {
+	/*
+	 File template:
+	 number_of_vertexes
+	 number_of_edges
+	 VERTEXES:
+	 coordX_vertex_1 coordY_vertex_1
+	 coordX_vertex_2 coordY_vertex_2
+	 .
+	 .
+	 .
+	 coordX_vertex_n coordY_vertex_n
+	 CONECTIONS:
+	 vertex_1 vertex_2
+	 vertex_1 vertex_3
+	 .
+	 .
+	 .
+	 vertex_a vertex_b
+	 */
 	FILE *f;
+	int total_number_of_edges = 0;
 	if ((f = fopen("graphs.bin", "wb")) == NULL )
 	{
 		printf("Error opening file\n");
 	}
-	fwrite(&rddf_graphs, sizeof(rddf_graphs_of_map_t) * rddf_graphs->size, 1, f);
+	for (int i = 0; i < graph->size; i++)
+	{
+		total_number_of_edges += graph->edge[i].size;
+	}
+
+	fprintf (f, "%d\n", graph->size);
+	fprintf (f, "%d\n", total_number_of_edges);
+	fprintf (f, "%s\n", "VERTEXES:");
+
+	for (int i = 0; i < graph->size; i++)
+	{
+		fprintf (f, "%lf %lf\n", graph->world_coordinate[i].x, graph->world_coordinate[i].y);
+
+	}
+
+	fprintf (f, "%s\n", "CONECTIONS:");
+
+	for (int i = 0; i < graph->size; i++)
+	{
+		for (int j = 0; j < graph->edge[i].size; j++)
+		{
+			fprintf (f, "%d %d\n", i, graph->edge[i].point[j]);
+		}
+	}
 	fclose(f);
+}
+
+
+void
+read_from_graph()
+{
+
+
 }
 
 
@@ -911,8 +951,7 @@ generate_road_map_graph(carmen_map_p map)
 	char already_visited_folder[] = "already_visited";
 	carmen_map_t already_visited;
 	string parsed_filename;
-	rddf_graphs_of_map_t *rddf_graphs = NULL;
-	rddf_graph_t *graph;
+	rddf_graph_t *graph = NULL;
 	vector <carmen_point_t> map_queue;
 	carmen_point_t map_origin;
 	carmen_point_t pose;
@@ -922,33 +961,21 @@ generate_road_map_graph(carmen_map_p map)
 	map_origin.x = map->config.x_origin;
 	map_origin.y = map->config.y_origin;
 	map_queue.push_back(map_origin);
-	int flag = 0;
 	int x,y;
 	while(!map_queue.empty())
 	{
-		cout<<"Fila nao esta vazia! "<<x<<"\t"<<y<<endl;
+		cout<<"Finding Lane Center..."<<endl;
 		for (x = 0; x < map->config.x_size; x++)
 		{
 			for (y = 0; y < map->config.y_size; y++)
 			{
-				//if(y == map->config.y_size - 1)
-					//y = 0;
-				if( flag == 1 && x%500==0){
-					show_already_visited(&already_visited);
-					show_road_map(map,524,524);
-				}
 				if(x == map->config.x_size - 1 && y == map->config.y_size - 1)
 				{
-					cout<<"x = "<<x<<" y = "<<y<<endl;
-					printf("Origem era:\t%lf X %lf\n", map_queue[0].x, map_queue[0].y);
 					map_queue.erase(map_queue.begin(), map_queue.begin()+1);
-					printf("Nova origem eh:\t%lf X %lf\n", map_queue[0].x, map_queue[0].y);
 					pose = map_queue[0];
 					get_new_map_block(g_road_map_folder, 'r', map, pose, 2);
 					carmen_grid_mapping_save_block_map_by_origin(already_visited_folder, 'a', &already_visited);
 					get_new_map_block(already_visited_folder, 'a', &already_visited, pose, 2);
-					flag = 1;
-
 				}
 				if (point_is_already_visited(&already_visited, x, y))
 				{
@@ -960,36 +987,20 @@ generate_road_map_graph(carmen_map_p map)
 
 					if (point_is_lane_center(map, x, y))
 					{
-						show_road_map(map, x, y);
-						show_already_visited(&already_visited);
-						//cout << "center!" << x << "\t" << y << endl;
-						graph = NULL;
-						//getchar();
 						graph = A_star(graph, x, y, map, &already_visited, map_queue);
-						rddf_graphs = add_graph_to_graph_list(rddf_graphs, graph);
-						free(graph);
 						pose = map_origin;
 						get_new_map_block(g_road_map_folder, 'r', map, pose, 2);
 						carmen_grid_mapping_save_block_map_by_origin(already_visited_folder, 'a', &already_visited);
 						get_new_map_block(already_visited_folder, 'a', &already_visited, pose, 2);
-						//display_graph_over_map(map, graph, already_visited, parsed_filename, last_graph_size);
-						//show_road_map(map,x,y);
-
 					}
 				}
-				//cout<<"Map queue size: "<<map_queue.size()<<endl;
-				//show_road_map(map,x,y);
-				//if(x >= 999 && y >= 999)
-				//cout<<"x = "<<x<<" y = "<<y<<endl;
-				//if(x == 1049 && y == 1049)
-
 			}
 		}
 	}
-	show_road_map(map, 524, 524);
-	show_already_visited(&already_visited);
-	getchar();
-	write_graphs_on_file(rddf_graphs);
-	//printf("Graphs in map: %d\n", rddf_graphs.size());
-	//display_graph_over_map(map, rddf_graphs, parsed_filename);
+	cout<<"All graphs are generated!"<<endl;
+	//show_road_map(map, 524, 524);
+	//show_already_visited(&already_visited);
+	//getchar();
+	write_graphs_for_gnuplot (graph);
+	write_graphs_on_file(graph);
 }

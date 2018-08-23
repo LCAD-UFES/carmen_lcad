@@ -17,6 +17,7 @@ string g_window_name4 = "blended images";
 #define MAX_PROB (pow(2.0, 16) - 1.0)
 
 bool g_ipc_required = false;
+bool g_view_graph_construction;
 int g_img_channels = 3;
 int g_class_bits = 0;
 char *g_road_map_dir = NULL;
@@ -89,11 +90,32 @@ static void
 read_parameters(int argc, char **argv)
 //read_parameters(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused)))
 {
-	const char usage[] = "[<road_map_dir>/<road_map>.map]";
-	if (argc != 2)
+	const char usage[] = "<road_map_dir>/<road_map>.map -v(to view graph construction)";
+	if (argc < 2){
 		printf("Incorrect Input!.\nUsage:\n%s %s\n", argv[0], usage);
-	else
+		exit(1);
+	}
+	else{
 		g_road_map_dir = argv[1];
+		if(argc == 2)
+		{
+			g_view_graph_construction = false;
+		}
+		else if(argc == 3)
+		{
+			if (strcmp (argv[2], "-v") == 0)
+			{
+				g_view_graph_construction = true;
+			}
+			else
+			{
+				g_view_graph_construction = false;
+				printf("Ignoring graph construction view.\n");
+				printf("To view graph construction:\n\t%s %s\n\n\n", argv[0], usage);
+			}
+
+		}
+	}
 }
 
 
