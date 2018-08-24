@@ -29,11 +29,6 @@ extern "C" {
 #define GLOBAL_MAP_SIZE (1800)
 
 
-extern double g_x_origin;
-extern double g_y_origin;
-extern char *g_road_map_folder;
-extern bool g_view_graph_construction;
-
 typedef struct
 {
 	carmen_position_t point;
@@ -61,24 +56,24 @@ using namespace std;
 
 cv::Mat rotate(cv::Mat src, cv::Point pt, double angle);
 void road_map_to_image(carmen_map_p map, cv::Mat *road_map_img);
-void road_map_to_image_black_and_white(carmen_map_p map, cv::Mat *road_map_img, const int class_bits);
-//void road_map_find_center(carmen_map_p map);
-int **alloc_matrix(int r, int c);
-void print_map_in_terminal (carmen_map_p map);
-void set_world_origin_to_road_map(carmen_map_p road_map);
-void show_road_map(carmen_map_p road_map, int x, int y);
 void already_visited_to_image(carmen_map_p map, cv::Mat *road_map_img);
-//int count_graph_nodes(rddf_graph_node *graph);
-//void display_graph_in_image(carmen_map_p map, vector<rddf_graph_node*> &closed_set);
-int** alloc_matrix(int r, int c);
+void draw_lines (carmen_map_p map, cv::Mat *image);
+void show_road_map(carmen_map_p map, int x, int y);
+void show_already_visited(carmen_map_p map);
 bool point_is_lane_center (carmen_map_p map, int x, int y);
-//void print_open_set(std::vector<rddf_graph_node*> &open_set);
 bool point_is_in_map(carmen_map_p map, int x, int y);
-//rddf_graph_t * A_star(int x, int y, carmen_map_p map, int **already_visited);
-//void A_star(carmen_map_p map, rddf_graph_node* p, vector<rddf_graph_node*> &closed_set, int **already_visited, int *called_expand);
-int get_already_visited_by_origin_x_y(char *map_path, char map_type, double x_origin, double y_origin, carmen_map_t *already_visited, carmen_map_p map);
-void generate_road_map_graph(carmen_map_p map);
-void parse_world_origin_to_road_map(string road_map_filename);
+bool point_is_already_visited(carmen_map_p already_visited, int x, int y);
+void get_new_currents_and_x_y(carmen_position_t *current, int *x, int *y);
+void get_new_map_block(char *folder, char map_type, carmen_map_p map, carmen_point_t pose, int op);
+bool check_limits_of_central_road_map(int x, int y);
+bool map_is_not_in_queue(carmen_point_t map_origin, vector <carmen_point_t> &map_queue);
+bool get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_map_p already_visited, carmen_map_p map, vector<carmen_position_t> &open_set, vector <carmen_point_t> &map_queue, char *road_map_folder);
+rddf_graph_t * add_point_to_graph_branch(carmen_map_p map, rddf_graph_t * graph, int x, int y, int branch_node);
+rddf_graph_t * add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y);
+rddf_graph_t * A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already_visited, vector <carmen_point_t> &map_queue, char *road_map_folder);
+void write_graph_for_gnuplot (rddf_graph_t * graph);
+void write_graph_on_file(rddf_graph_t *graph);
+void generate_road_map_graph(carmen_map_p map, char *road_map_folder, bool view_graph_construction);
 
 #ifdef __cplusplus
 }

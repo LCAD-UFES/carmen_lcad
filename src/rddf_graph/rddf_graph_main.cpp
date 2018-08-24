@@ -9,10 +9,6 @@
 
 using namespace std;
 
-string g_window_name1 = "road map";
-string g_window_name2 = "road center vertical";
-string g_window_name3 = "road center horizontal";
-string g_window_name4 = "blended images";
 
 #define MAX_PROB (pow(2.0, 16) - 1.0)
 
@@ -20,13 +16,12 @@ bool g_ipc_required = false;
 bool g_view_graph_construction;
 int g_img_channels = 3;
 int g_class_bits = 0;
+
 char *g_road_map_dir = NULL;
-char *g_road_map_folder = NULL;
+
 int g_road_map_index = 1;
-string str_g_road_map_folder;
 char g_map_type;
-double g_x_origin;
-double g_y_origin;
+
 
 static void
 define_messages()
@@ -53,7 +48,7 @@ shutdown_module(int signo)
 
 
 void
-parse_road_map_dir_type_and_origin(string str_road_map_filename)
+parse_road_map_dir_type_and_origin(string str_road_map_filename, string &str_road_map_folder, carmen_point_p road_map_origin)
 {
 	string x_origin;
 	string y_origin;
@@ -77,12 +72,12 @@ parse_road_map_dir_type_and_origin(string str_road_map_filename)
 			last_trace_position = l;
 
 	}
-	str_g_road_map_folder = str_road_map_filename.substr(0, last_bar_position);
+	str_road_map_folder = str_road_map_filename.substr(0, last_bar_position);
 	map_type = str_road_map_filename.substr(last_bar_position + 1, 1);
 	x_origin = str_road_map_filename.substr(last_bar_position + 2, last_underline_position - last_bar_position - 2);
 	y_origin = str_road_map_filename.substr(last_trace_position, last_dot_position - last_trace_position);
-	g_x_origin = atof(x_origin.c_str());
-	g_y_origin = atof(y_origin.c_str());
+	road_map_origin->x = atof(x_origin.c_str());
+	road_map_origin->y = atof(y_origin.c_str());
 }
 
 
@@ -141,13 +136,16 @@ main(int argc, char **argv)
 	signal(SIGINT, shutdown_module);
 
 	carmen_map_t road_map;
+	carmen_point_t road_map_origin;
+	char *road_map_folder = NULL;
+	string str_road_map_folder;
 	road_map.complete_map = NULL;
 
 	string str_road_map_filename(g_road_map_dir);
-	parse_road_map_dir_type_and_origin(str_road_map_filename);
-	g_road_map_folder = &str_g_road_map_folder[0u];
+	parse_road_map_dir_type_and_origin(str_road_map_filename, str_road_map_folder, &road_map_origin);
+	road_map_folder = &str_road_map_folder[0u];
 
-	int count_maps = carmen_grid_mapping_get_block_map_by_origin_x_y(g_road_map_folder, 'r', g_x_origin, g_y_origin, &road_map);
+	int count_maps = carmen_grid_mapping_get_block_map_by_origin_x_y(road_map_folder, 'r', road_map_origin.x, road_map_origin.y, &road_map);
 
 	carmen_grid_mapping_update_map_buffer(&road_map, 'r');
 
@@ -156,7 +154,7 @@ main(int argc, char **argv)
 		//show_road_map(&road_map,0,0);
 
 		//parse_world_origin_to_road_map(str_road_map_filename);
-		generate_road_map_graph(&road_map);
+		generate_road_map_graph(&road_map, road_map_folder, g_view_graph_construction);
 		//print_map_in_terminal(&road_map);getchar();
 	}
 	else
