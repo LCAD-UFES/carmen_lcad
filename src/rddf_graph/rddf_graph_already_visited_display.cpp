@@ -24,7 +24,7 @@ shutdown_module(int signo)
 	{
 		if (g_ipc_required)
 			carmen_ipc_disconnect();
-		exit(printf("road_mapper_display_map: disconnected.\n"));
+		exit(printf("rddf_graph_already_visited_display: disconnected.\n"));
 	}
 }
 

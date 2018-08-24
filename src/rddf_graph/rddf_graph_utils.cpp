@@ -797,14 +797,14 @@ write_graph_on_file(rddf_graph_t *graph)
 	 File template:
 	 number_of_vertexes
 	 number_of_edges
-	 VERTEXES:
+	 VERTEXES: //ESSA LINHA NÃO EXISTE!!!!!!!!!!!
 	 coordX_vertex_1 coordY_vertex_1
 	 coordX_vertex_2 coordY_vertex_2
 	 .
 	 .
 	 .
 	 coordX_vertex_n coordY_vertex_n
-	 CONECTIONS:
+	 CONECTIONS: //ESSA LINHA NÃO EXISTE!!!!!!!!!!!
 	 vertex_1 vertex_2
 	 vertex_1 vertex_3
 	 .
@@ -825,7 +825,7 @@ write_graph_on_file(rddf_graph_t *graph)
 
 	fprintf (f, "%d\n", graph->size);
 	fprintf (f, "%d\n", total_number_of_edges);
-	fprintf (f, "%s\n", "VERTEXES:");
+	//fprintf (f, "%s\n", "VERTEXES:");
 
 	for (int i = 0; i < graph->size; i++)
 	{
@@ -833,7 +833,7 @@ write_graph_on_file(rddf_graph_t *graph)
 
 	}
 
-	fprintf (f, "%s\n", "CONECTIONS:");
+	//fprintf (f, "%s\n", "CONECTIONS:");
 
 	for (int i = 0; i < graph->size; i++)
 	{
@@ -843,14 +843,6 @@ write_graph_on_file(rddf_graph_t *graph)
 		}
 	}
 	fclose(f);
-}
-
-
-void
-read_from_graph()
-{
-
-
 }
 
 
