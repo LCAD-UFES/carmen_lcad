@@ -18,14 +18,15 @@
 #define BMP180_COMMAND_PRESSURE2 0xB4
 #define BMP180_COMMAND_PRESSURE3 0xF4
 
-void readCalBMP180();
-char getTemperature(double &T);
-char startTemperature(void);
-char startPressure(char oversampling);
-char getPressure(double &P, double &T);
-void readCalBMP180();
+void readCalBMP180(int file);
+char getTemperature(double &T, int file);
+char startTemperature(int file);
+char startPressure(char oversampling, int file);
+char getPressure(double &P, double &T, int file);
+void readCalBMP180(int file);
 double sealevel(double P, double A);
 double altitude(double P, double P0);
-
+int writeTo(uint8_t reg, uint8_t value, int device, int file );
+int readFrom(int device, uint8_t address, uint8_t  block[], int file);
 
 #endif

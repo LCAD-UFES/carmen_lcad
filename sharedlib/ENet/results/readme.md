@@ -26,6 +26,16 @@ Start ENet Caffe training procedure immune to hangup signal:
 
 ```
 
+If the training was manually stopped (Ctrl+C or kill -s SIGINT {pid}) or reached the maximum number of iterations or the system crashed, the training may be resumed using any solverstate file: 
+```bash
+ $ cd $CARMEN_HOME/sharedlib/ENet/results
+ $ # To resume the encoder training:
+ $ nohup env GLOG_minloglevel=0 ../caffe-enet/build/tools/caffe train -solver ../prototxts/enet_solver_encoder.prototxt -snapshot ../weights/snapshots_encoder/<NAME>.solverstate -gpu 0 &> results_<timestamp>_<NAME>.txt &
+ $ # To resume the encoder+decoder training:
+ $ nohup env GLOG_minloglevel=0 ../caffe-enet/build/tools/caffe train -solver ../prototxts/enet_solver_encoder_decoder.prototxt -snapshot ../weights/snapshots_decoder/<NAME>.solverstate -gpu 0 &> results_<timestamp>_<NAME>.txt &
+
+```
+
 Monitor ENet Caffe training progress during the procedure or afterwards: 
 ```bash
  $ cd $CARMEN_HOME/sharedlib/ENet/results

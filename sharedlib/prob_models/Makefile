@@ -1,8 +1,8 @@
 include ../../src/Makefile.conf
 
 LINK = g++
-CFLAGS += -fopenmp -std=c99
-CXXFLAGS += -fopenmp
+CFLAGS += -fopenmp -std=c11
+CXXFLAGS += -fopenmp -std=c++11
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src 

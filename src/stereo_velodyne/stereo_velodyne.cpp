@@ -127,7 +127,7 @@ convert_stereo_depth_map_to_velodyne_beams(stereo_util interface, float *dispari
 			p.y = y;
 			point = reproject_single_point_to_3D(&interface, p, disparity[y * interface.width + x]);
 
-			if(point != NULL)
+			if (point != NULL)
 			{
 				double range = sqrt(DOT3D((*point), (*point)));
 				range = range > range_max ? 0.0 : range;

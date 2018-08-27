@@ -1,0 +1,27 @@
+
+TODO
+
+[ ] read the rddf in python to: 
+	- reset the initial position to a random pose in the rddf
+		- at least 5m before the last pose
+	- swith goals when one is achieved
+[ ] implement reward mechanisms:
+	- diff distance to the goal
+	- reward when dist to goal is smaller than a threshold
+	- punishment for collisions
+	- some way of rewarding achiving the goal with the right speed, phi, etc.
+[ ] how to limit episode size?
+[ ] is it possible to speed up the simulation?
+[ ] add a ddpg implementation
+[ ] investigate if it's possible to use hindsight experience replay
+
+Questões
+- Que recompensa?
+	- Problemas com (Distância p/ goal + diferença da velocidade):
+		- Pode ser conveniente andar um pouco em direção ao goal e bater se o carro 
+			tiver que pagar um preço negativo antes de atingir o goal (ex.: curvas).
+		- O ângulo está em uma escala muito diferente das demais coordenadas.
+	- Problema com (Max_steps - n_steps):
+		- Como punir colisões? Como premiar goals atingidos?
+
+		 

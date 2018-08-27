@@ -30,7 +30,6 @@ Street, Fifth Floor, Boston, MA 02110-1301, USA
 #include <stdlib.h>
 #include <vector>
 #include <emmintrin.h>
-//#define PROFILE 1
 
 // define fixed-width datatypes for Visual Studio projects
 #ifndef _MSC_VER
@@ -92,14 +91,14 @@ public:
       //  and are a bit more robust towards lighting etc.)
       if (s==ROBOTICS) {
         disp_min              = 0;
-        disp_max              = 255;
+        disp_max              = 48;
         support_threshold     = 0.85;
         support_texture       = 10;
         candidate_stepsize    = 5;
         incon_window_size     = 5;
         incon_threshold       = 5;
         incon_min_support     = 5;
-        add_corners           = 1;
+        add_corners           = 0;
         grid_size             = 20;
         beta                  = 0.02;
         gamma                 = 3;
@@ -110,7 +109,7 @@ public:
         speckle_sim_threshold = 1;
         speckle_size          = 200;
         ipol_gap_width        = 3;
-        filter_median         = 1;
+        filter_median         = 0;
         filter_adaptive_mean  = 1;
         postprocess_only_left = 1;
         subsampling           = 0;
@@ -119,7 +118,7 @@ public:
       // (interpolate all missing disparities)
       } else {
         disp_min              = 0;
-        disp_max              = 255;
+        disp_max              = 48;
         support_threshold     = 0.95;
         support_texture       = 10;
         candidate_stepsize    = 5;

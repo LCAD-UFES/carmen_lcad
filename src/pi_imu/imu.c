@@ -128,7 +128,7 @@ void writeGyrReg(uint8_t reg, uint8_t value)
 	}
 }
 
-void detectIMU()
+int detectIMU()
 {
 	__u16 block[I2C_SMBUS_BLOCK_MAX];
 
@@ -178,6 +178,7 @@ void detectIMU()
 		printf("NO IMU DETECTED\n");
 		exit(1);
 	}
+	return file;
 }
 
 void enableIMU()

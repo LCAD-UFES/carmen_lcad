@@ -1,8 +1,6 @@
 #include "bmp180.h"
-#include "linux/i2c-dev.h"
-#include <stdio.h>
 #include <math.h>
-#include <stdlib.h>
+#include "imu.h"
 
 char _error;
 uint8_t buff[6];
@@ -13,21 +11,24 @@ uint8_t block[6];
 // Write to I2C
 
 
-void writeTo(uint8_t reg, uint8_t value, int device, int file ) {
+int writeTo(uint8_t reg, uint8_t value, int device, int file ) 
+{
 	selectDevice(file, device);
 	int result = i2c_smbus_write_byte_data(file, reg, value);
 	if (result == -1)
 	{
 		printf("Failed to write byte to I2C Acc.");
-		exit(1);
+		return (0);
 	}
+	return 1;
 }
 
 // Read from I2C
-void readFrom(int device, uint8_t address, int num, uint8_t  block[], int file) {
-
+int readFrom(int device, uint8_t address, uint8_t  block[], int file) 
+{
 	selectDevice(file,device);
-	readBlock(0x80 |  address, sizeof(block), block);
+	readBlock(0x80 |  address, 6, block);
+	return 1;
 }
 
 
@@ -66,7 +67,7 @@ char startPressure(char oversampling, int file)
     break;
   }
 
-result = writeTo(BMP180_ADDR,BMP180_REG_CONTROL,data[1], file);
+  result = writeTo(BMP180_ADDR,BMP180_REG_CONTROL,data[1], file);
   if (result) // good write?
     return(delay); // return the delay in ms (rounded up) to wait before retrieving data
   else
@@ -121,7 +122,7 @@ char getPressure(double &P, double &T, int file)
   data[0] = BMP180_REG_RESULT;
 
   //result = readBytes(data, 3);
-  readFrom(BMP180_ADDR,BMP180_REG_RESULT,2,data, file);
+  readFrom(BMP180_ADDR,BMP180_REG_RESULT,data, file);
 
   if (result) // good read, calculate pressure
   {
@@ -152,46 +153,47 @@ char getPressure(double &P, double &T, int file)
 
 
 
-void readCalBMP180(int file){
-double c3,c4,b1;
+void readCalBMP180(int file)
+{
+  double c3,c4,b1;
 
 
 
   //Signed two'scomplement calibration values
-  readFrom(BMP180_ADDR,0xAA,2,buff, file);
+  readFrom(BMP180_ADDR,0xAA,buff, file);
   AC1 = (int16_t)((buff[0]<<8)|buff[1]);
 
-  readFrom(BMP180_ADDR,0xAC,2,buff, file);
+  readFrom(BMP180_ADDR,0xAC,buff, file);
   AC2 = (int16_t)((buff[0]<<8)|buff[1]);
 
-  readFrom(BMP180_ADDR,0xAE,2,buff, file);
+  readFrom(BMP180_ADDR,0xAE,buff, file);
   AC3 = (int16_t)((buff[0]<<8)|buff[1]);
 
 
   //Unsigned two'scomplement calibration values
-  readFrom(BMP180_ADDR,0xB0,2,buff, file);
+  readFrom(BMP180_ADDR,0xB0,buff, file);
   AC4 = (uint16_t)((buff[0]<<8)|buff[1]);
 
-  readFrom(BMP180_ADDR,0xB2,2,buff, file);
+  readFrom(BMP180_ADDR,0xB2,buff, file);
   AC5 = (uint16_t)((buff[0]<<8)|buff[1]);
 
-  readFrom(BMP180_ADDR,0xB4,2,buff, file);
+  readFrom(BMP180_ADDR,0xB4,buff, file);
   AC6 = (uint16_t)((buff[0]<<8)|buff[1]);
 
   //Signed two'scomplement calibration values
-  readFrom(BMP180_ADDR,0xB6,2,buff, file);
+  readFrom(BMP180_ADDR,0xB6,buff, file);
   VB1 = (int16_t)((buff[0]<<8)|buff[1]);
 
-  readFrom(BMP180_ADDR,0xB8,2,buff, file);
+  readFrom(BMP180_ADDR,0xB8,buff, file);
   VB2 = (int16_t)((buff[0]<<8)|buff[1]);
 
-  readFrom(BMP180_ADDR,0xBA,2,buff, file);
+  readFrom(BMP180_ADDR,0xBA,buff, file);
   MB = (int16_t)((buff[0]<<8)|buff[1]);
 
-  readFrom(BMP180_ADDR,0xBC,2,buff, file);
+  readFrom(BMP180_ADDR,0xBC,buff, file);
   MC = (int16_t)((buff[0]<<8)|buff[1]);
 
-  readFrom(BMP180_ADDR,0xBE,2,buff, file);
+  readFrom(BMP180_ADDR,0xBE,buff, file);
   MD = (int16_t)((buff[0]<<8)|buff[1]);
 
     // Compute floating-point polynominals:
@@ -229,7 +231,7 @@ char getTemperature(double &T, int file)
 
   data[0] = BMP180_REG_RESULT;
 
-  result = readFrom(BMP180_ADDR,BMP180_REG_RESULT,2,data, file);
+  result = readFrom(BMP180_ADDR,BMP180_REG_RESULT,data, file);
   if (result) // good read, calculate temperature
   {
     tu = (data[0] * 256.0) + data[1];

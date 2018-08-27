@@ -9,12 +9,14 @@
 #include <netdb.h>
 #include <sys/time.h>
 #include "imu.h"
+#include "bmp180.h"
+#include <time.h>
 
 #define PORT 3457
 #define SOCKET_DATA_PACKET_SIZE	2048
 
 int server_fd;
-
+int file;
 
 void
 extract_camera_configuration(char *cam_config, int &image_width, int &image_height, int &frame_rate, int &brightness, int &contrast)
@@ -47,7 +49,7 @@ extract_camera_configuration(char *cam_config, int &image_width, int &image_heig
 void
 set_imu_configurations()
 {
-	detectIMU();
+	file = detectIMU();
 	enableIMU();
 }
 
@@ -126,6 +128,11 @@ main()
 	int accRaw[3];
 	int gyrRaw[3];
 
+	char status;
+
+	double temperature = 0.0;
+	double pressure = 0.0;
+
 	while (1)
 	{
 		start = get_time();
@@ -134,8 +141,25 @@ main()
 		readACC(accRaw);
 		readGYR(gyrRaw);
 		readMAG(magRaw);
+		//readCalBMP180(file);
 
-		sprintf((char *) rpi_imu_data, "%d %d %d %d %d %d %d %d %d *\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2], magRaw[0], magRaw[1], magRaw[2]);
+		/*status = startTemperature(file);
+		if (status != 0)
+		{
+			usleep(status * 1000);
+			getTemperature(temperature, file);
+		}
+
+		status = startPressure(3, file);
+		if (status != 0)
+		{
+			// Wait for the measurement to complete:
+			usleep(status * 1000);
+			status = getPressure(pressure, temperature, file);
+		}
+*/
+		sprintf((char *) rpi_imu_data, "%d %d %d %d %d %d %d %d %d *\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2],
+				magRaw[0], magRaw[1], magRaw[2]);
 
 		int result = send(pi_socket, rpi_imu_data, SOCKET_DATA_PACKET_SIZE, MSG_NOSIGNAL);  // Returns number of bytes read, 0 in case of connection lost, -1 in case of error
 		if (result == -1)

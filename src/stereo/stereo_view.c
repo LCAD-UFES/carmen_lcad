@@ -91,7 +91,7 @@ static void redraw()
 static void
 stereo_message_handler(carmen_simple_stereo_disparity_message *disparity_message)
 {
-	int i, j, disparity_value, scaled_disparity_value;
+	int i, j, scaled_disparity_value;
 
 	if (bumblebee_basic_width <= STEREO_VIEW_MAX_WINDOW_WIDTH)
 	{
@@ -99,15 +99,13 @@ stereo_message_handler(carmen_simple_stereo_disparity_message *disparity_message
 		{
 			for(j = 0; j < stereo_width; j++)
 			{
-				disparity_value = disparity_message->disparity[i * stereo_width + j];
-				scaled_disparity_value = (unsigned char) (255.0 * ((double) disparity_value) / ((double) stereo_disparity));
+				double disparity_value = disparity_message->disparity[i * stereo_width + j];
+				scaled_disparity_value = (unsigned char) (255.0 * (disparity_value) / ((double) stereo_disparity));
 				disparity_data[3 * (i * bumblebee_basic_width + j) + 0] = scaled_disparity_value;
 				disparity_data[3 * (i * bumblebee_basic_width + j) + 1] = scaled_disparity_value;
 				disparity_data[3 * (i * bumblebee_basic_width + j) + 2] = scaled_disparity_value;
 			}
 		}
-
-		int image_size = bumblebee_basic_width * bumblebee_basic_height * 3;
 
 		for (i = 0; i< disparity_message->reference_image_size; i++)
 			left_image_data[i] = (guchar) disparity_message->reference_image[i];
@@ -124,15 +122,13 @@ stereo_message_handler(carmen_simple_stereo_disparity_message *disparity_message
 		{
 			for(j = 0; j < stereo_width; j++)
 			{
-				disparity_value = disparity_message->disparity[i * stereo_width + j];
+				double disparity_value = disparity_message->disparity[i * stereo_width + j];
 				scaled_disparity_value = (unsigned char) (255.0 * ((double) disparity_value) / ((double) stereo_disparity));
 				depth_image->imageData[3 * (i * bumblebee_basic_width + j) + 0] = scaled_disparity_value;
 				depth_image->imageData[3 * (i * bumblebee_basic_width + j) + 1] = scaled_disparity_value;
 				depth_image->imageData[3 * (i * bumblebee_basic_width + j) + 2] = scaled_disparity_value;
 			}
 		}
-
-		int image_size = bumblebee_basic_width * bumblebee_basic_height * 3;
 
 		for (i = 0; i< disparity_message->reference_image_size; i++)
 			reference_image->imageData[i] = (guchar) disparity_message->reference_image[i];
@@ -300,7 +296,7 @@ read_parameters(int argc, char **argv)
 			{bumblebee_string, "width", CARMEN_PARAM_INT, &bumblebee_basic_width, 0, NULL},
 			{bumblebee_string, "height", CARMEN_PARAM_INT, &bumblebee_basic_height, 0, NULL},
 			{stereo_string, (char*)"height", CARMEN_PARAM_INT, &stereo_height, 0, NULL},
-			{stereo_string, (char*)"disparity", CARMEN_PARAM_INT, &stereo_disparity, 0, NULL}
+			{stereo_string, (char*)"max_disparity", CARMEN_PARAM_INT, &stereo_disparity, 0, NULL}
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);

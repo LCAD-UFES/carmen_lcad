@@ -7,7 +7,10 @@ MODULE_COMMENT = Moving objects simulator
 LINK = g++
 
 # Application specific include directories.
-IFLAGS += -I/usr/include/eigen3 -I/usr/include/pcl-1.7/  -I/usr/include/vtk-5.8/
+PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
+VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
+IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter
 

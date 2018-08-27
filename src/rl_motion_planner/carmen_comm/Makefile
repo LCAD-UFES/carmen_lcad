@@ -28,7 +28,8 @@ libcarmen_comm_cpp.a: carmen_comm.o util.o
 clean: pycarmen_comm_clean
 
 PY_INC = -I `python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"`
-PY_LIB = -L `python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"` 
+# PY_LIB = -L `python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"` 
+PY_LIB = -L /usr/lib/x86_64-linux-gnu/
 PY_LIB += `python3-config --libs`
 
 pycarmen_comm:
@@ -37,6 +38,6 @@ pycarmen_comm:
 	g++ -shared carmen_comm_wrap.o libcarmen_comm_cpp.a -o _carmen_comm.so $(PY_LIB) $(LFLAGS)
 
 pycarmen_comm_clean:
-	rm carmen_comm.py carmen_comm_wrap.cxx
+	rm -rf carmen_comm.py carmen_comm_wrap.cxx
 
 include $(CARMEN_HOME)/src/Makefile.rules

@@ -3,10 +3,11 @@ include ../../Makefile.conf
 MODULE_NAME = Neural Mapper
 MODULE_COMMENT = Creates a map based on velodyne sensor with a neural network
 
+CC = g++
 LINK = g++
 
 CFLAGS += #-Wall
-CXXFLAGS = -Wno-sign-compare -Wno-write-strings -DUSE_OPENCV 
+CXXFLAGS += -Wno-sign-compare -Wno-write-strings -DUSE_OPENCV 
 
 IFLAGS += `pkg-config opencv --cflags` -std=c++11 -DNO_NVML
 LFLAGS += `pkg-config opencv --libs` -std=c++11

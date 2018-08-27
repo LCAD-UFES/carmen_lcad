@@ -28,15 +28,9 @@ Street, Fifth Floor, Boston, MA 02110-1301, USA
 using namespace std;
 
 // compute disparities of pgm image input pair file_1, file_2
-
-void elas(uchar *left, uchar *right, float *disp_out)
-{
-  
-  
-}
-
 void process (const char* file_1,const char* file_2) {
 
+  cout << "Processing: " << file_1 << ", " << file_2 << endl;
 
   // load images
   image<uchar> *I1,*I2;
@@ -68,6 +62,10 @@ void process (const char* file_1,const char* file_2) {
   param.postprocess_only_left = false;
   Elas elas(param);
   elas.process(I1->data,I2->data,D1_data,D2_data,dims);
+
+//  FILE *disp_right = fopen("disp_rigth.bin", "w");
+//  fwrite(D2_data, sizeof(float), width*height, disp_right);
+//  fclose(disp_right);
 
   // find maximum disparity for scaling output disparity images to [0..255]
   float disp_max = 0;

@@ -173,9 +173,9 @@ publish_behavior_selector_state()
 	msg.parking_algorithm = CARMEN_BEHAVIOR_SELECTOR_RRT;
 
 	msg.goal_source = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
-	msg.low_level_state = Stopped;
+	msg.low_level_state = Free_Running;
 
-	msg.behaviour_seletor_mode = stopped;
+	msg.behaviour_seletor_mode = none;
 
 	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME, &msg);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME);
@@ -355,11 +355,13 @@ publish_command(std::vector<double> v, std::vector<double> phi, std::vector<doub
 
 		if (autonomous_mode)
 		{
+		    //printf("AUTONOMOUS MODE ON.\n");
 			motion_commands[i].v = v[i];
 			motion_commands[i].phi = phi[i];
 		}
 		else
 		{
+		    //printf("AUTONOMOUS MODE OFF.\n");
 			motion_commands[i].v = 0.0;
 			motion_commands[i].phi = 0.0;
 		}
@@ -472,7 +474,7 @@ handle_messages(double how_long)
 	}
 	while (global_localize_ackerman_message.timestamp == time_previous_globalpos);
 
-	// carmen_navigator_ackerman_go();
+	carmen_navigator_ackerman_go();
 	process_map_message(&global_obstacle_distance_mapper_compact_map_message);
 
 	carmen_mapper_copy_map_from_message(&(simulator_config.map), &global_mapper_map_message);
@@ -647,7 +649,7 @@ reset_initial_pose(double x, double y, double th)
 	{
 		publish_stop_command();
 		carmen_localize_ackerman_initialize_gaussian_command(pose, std);
-		carmen_ipc_sleep(0.1);
+		carmen_ipc_sleep(0.5);
 
 		// If the messages are taking too long to arrive, warn the user.
 		double curr_time = carmen_get_time();
@@ -660,9 +662,9 @@ reset_initial_pose(double x, double y, double th)
 	} while (pose_is_invalid(&global_localize_ackerman_message, x, y) ||
 			obstacle_distance_map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, x, y) ||
 			laser_reading_is_invalid(&global_front_laser_message) ||
-			map_is_invalid(&global_mapper_map_message, x, y) ||
-			goal_list_is_invalid(&global_goal_list_message, x, y, th) ||
-			rddf_is_invalid(&global_rddf_message, x, y, th));
+			map_is_invalid(&global_mapper_map_message, x, y)); // ||
+			//goal_list_is_invalid(&global_goal_list_message, x, y, th) ||
+			//rddf_is_invalid(&global_rddf_message, x, y, th));
 }
 
 

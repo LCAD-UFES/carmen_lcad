@@ -1,0 +1,58 @@
+
+-------------------------
+Motion planner neural
+-------------------------
+
+Entrada:
+- virtual laser scan
+- [opções:] rddf para frente e para tras ou próximo goal.
+- pose, e odometria atuais.
+- parâmetros adicionais
+	- velocidade máxima
+	- aceleração máxima
+	- aceleração máxima do volante
+- [talvez] comandos anteriores (p/ tratar latência). Alternativa: usar RNNs. Alternativa: Andar em velocidades baixas o suficiente de forma que a latência não seja um problema.
+
+Saída
+- Sequência de comandos de movimento (v, phi, e t)
+
+-------------------------
+Comportamento desejado
+-------------------------
+
+- O carro deve tentar chegar na posição dada pelo goal com a velocidade correta.
+- Isso deve ser feito evitando obstáculos.
+- Quando um goal for atingido, o carro deve tentar atingir o goal seguinte.
+- O carro deve ser capaz de se recuperar de situações em que as coisas vão errado. Ex.: sair da pista, entrar mal em uma curva, etc.
+
+-------------------------
+Métrica de Qualidade
+-------------------------
+
+- Velocidade na direção do rddf para garantir que o carro está andando. 
+- Número de colisões na simulação.
+- Distância média para o rddf.
+- Suavidade. Como medir?
+
+-------------------------
+Como será feito
+-------------------------
+- O simulador será usado para treinar uma rede neural para produzir comandos dadas as entradas.
+
+- Rede Neural
+	- entrada: mesmas do método
+	- saída: comando instantâneo (uma trinca v, phi, e t).
+
+- Diferentes formas de treinamentos serão avaliadas: immitation learning, RL/DDPG, RL/DDPG+HER, RL/DDPG+HER+SparseRewards. 
+	- Problema com immitation learning: MPP não faz recovery bem.
+	- Ainda tenho que avaliar o quão bem o ddpg vai funcionar.
+
+- Para produzir a sequência de comandos, o seguinte procedimento será usado a cada passo de planejamento:
+	- Repita por n passos (onde n é o número de comandos desejados):
+		- Compute o comando usando o estado.
+		- Use o simulador para estimar qual será o estado após a execução do comando. 
+			- Problema: predizer a posição de objetos móveis. 
+
+- Após o treinamento, a rede será testada no carro.
+
+

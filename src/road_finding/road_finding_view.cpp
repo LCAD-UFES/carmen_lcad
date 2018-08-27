@@ -222,7 +222,7 @@ read_parameters(int argc, char **argv)
   carmen_param_t param_list[] = {
       {stereo_string, (char*)"width", CARMEN_PARAM_INT, &stereo_width, 0, NULL},
       {stereo_string, (char*)"height", CARMEN_PARAM_INT, &stereo_height, 0, NULL},
-      {stereo_string, (char*)"disparity", CARMEN_PARAM_INT, &stereo_disparity, 0, NULL},
+      {stereo_string, (char*)"max_disparity", CARMEN_PARAM_INT, &stereo_disparity, 0, NULL},
       {(char*)"road_finding", (char*)"number_of_gaussians", CARMEN_PARAM_INT, &number_of_gaussians, 5, NULL},
       {(char*) "v_disparity", (char*) "slope_threshould", CARMEN_PARAM_DOUBLE, &v_disparity_slope_threshould, 0, NULL}
   };

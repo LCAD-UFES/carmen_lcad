@@ -8,9 +8,9 @@ ifndef NO_CUDA
 CUDALIB64 :=/usr/local/cuda/lib64/
 CUDAINCLUDE :=/usr/local/cuda/include/
 
-CFLAGS += -lcuda -lcudart
+CFLAGS += 
 IFLAGS += -I$(CUDAINCLUDE)
-LFLAGS += -L$(CUDALIB64)
+LFLAGS += -L$(CUDALIB64) -lcuda -lcudart -lcublas
 
 endif
 
@@ -28,8 +28,8 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libstereovgram
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libelas
 LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lelas -lstereovgram -lstereo -lstdc++ -fopenmp -lm
 
-CFLAGS += -Wall -fopenmp
-CFLAGS += -w -msse3 -O3 -fopenmp
+CFLAGS += -O3 -fopenmp
+CXXFLAGS += -O3 -fopenmp
 
 SOURCES = stereo_main.cpp  stereo_interface.c \
 stereo_util.c test_bias_reduction.cpp test_bias_reduction_with_check_board.cpp stereo_test.cpp
@@ -49,14 +49,6 @@ LFLAGS += -lparam_interface -lipc -lglobal -lglobal_graphics -lstereo_interface 
 SOURCES += stereo_view.c
 PUBLIC_BINARIES += stereo_view test_bias_reduction
 TARGETS += stereo_view test_bias_reduction test_bias_reduction_with_check_board 
-endif
-
-ifndef CARMEN_DEBUG
-CFLAGS += -fopenmp
-CXXFLAGS += -O3 -fopenmp
-else
-CFLAGS += -DDEBUG
-CXXFLAGS += -DDEBUG
 endif
 
 libelas.a:

@@ -6,18 +6,20 @@ MODULE_COMMENT = Raspberry Pi Imu Driver Module
 LINK = g++
 CXXFLAGS += -std=c++0x
 
-IFLAGS +=
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcmt/
 LFLAGS +=
 
-LFLAGS += -lbumblebee_basic_interface -lcamera_interface -lparam_interface -lipc -lglobal -lm `pkg-config --cflags opencv` `pkg-config --libs opencv` 
+LFLAGS +=  -lparam_interface -lipc -lglobal -lm  -lglut -lGL -lGLU 
 
-SOURCES = pi_imu_client_driver.cpp
+SOURCES = pi_imu_client_driver.cpp pi_imu_viewer.cpp
 
-PUBLIC_BINARIES = pi_imu_client_driver
+PUBLIC_BINARIES = pi_imu_client_driver pi_imu_viewer
 PUBLIC_LIBRARIES =
 
-TARGETS = pi_imu_client_driver
+TARGETS = pi_imu_client_driver pi_imu_viewer
 
-pi_imu_client_driver: pi_imu_client_driver.o
+pi_imu_client_driver: pi_imu_client_driver.o  
+
+pi_imu_viewer: pi_imu_viewer.o
 
 include ../Makefile.rules

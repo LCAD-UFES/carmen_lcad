@@ -20,6 +20,7 @@ Street, Fifth Floor, Boston, MA 02110-1301, USA
 */
 
 #include "matrix.h"
+#include <algorithm>
 #include <math.h>
 
 #define SWAP(a,b) {temp=a;a=b;b=temp;}
@@ -408,7 +409,6 @@ FLOAT Matrix::det () {
   for( int32_t i=0; i<m; i++)
     d *= A.val[i][i];
   free(idx);
-  return d;
 }
 
 bool Matrix::solve (const Matrix &M, FLOAT eps) {
