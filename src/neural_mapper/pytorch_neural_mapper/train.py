@@ -16,6 +16,7 @@ from torchvision import datasets, transforms
 from PIL import Image
 import math
 import model as M
+from random import shuffle
 
 n_imgs = 79
 #n_train = 60
@@ -29,11 +30,12 @@ test_start_index = n_train
 img_x_dim = 424
 img_y_dim = 424
 
-data_dim = 5
-
 data_path = '/dados/neural_mapper/60mts/data/'
 target_path = '/dados/neural_mapper/60mts/labels/'
 debug_img_path = 'debug_imgs/'
+
+input_dimensions = 5
+n_classes = 2
 
 def png2tensor(file_name):
     img2tensor = transforms.ToTensor()
@@ -52,12 +54,34 @@ def saveImage(tensor, file_name):
     img = tensor2png(tensor)
     img.save(file_name)
 
+def load_data(batch_size, dataset_size):
+    dataset = []
+
+    n = math.floor(dataset_size/batch_size)
+    for i in range(n):
+        data = torch.zeros(batch_size, input_dimensions, img_x_dim, img_y_dim)
+        target = torch.zeros(batch_size, img_x_dim, img_y_dim)
+
+        for j in range(batch_size):
+            data[j][0] = png2tensor(data_path + str(batch_size*i + j + train_start_index + 1) + '_max.png')
+            data[j][1] = png2tensor(data_path + str(batch_size*i + j + train_start_index + 1) + '_mean.png')
+            data[j][2] = png2tensor(data_path + str(batch_size*i + j + train_start_index + 1) + '_min.png')
+            data[j][3] = png2tensor(data_path + str(batch_size*i + j + train_start_index + 1) + '_numb.png')
+            data[j][4] = png2tensor(data_path + str(batch_size*i + j + train_start_index + 1) + '_std.png')
+            target[j] = png2tensor(target_path + str(batch_size*i + j + train_start_index) + '_view.png')
+
+        row = []
+        row.append(data)
+        row.append(target)
+        dataset.append(row)
+    return dataset
+
 def load_train_data(batch_size, train_data_size):
     dataset = []
 
     n = math.floor(train_data_size/batch_size)
     for i in range(n):
-        data = torch.zeros(batch_size, data_dim, img_x_dim, img_y_dim)
+        data = torch.zeros(batch_size, input_dimensions, img_x_dim, img_y_dim)
         target = torch.zeros(batch_size, img_x_dim, img_y_dim)
 
         for j in range(batch_size):
@@ -80,7 +104,7 @@ def load_test_data(batch_size, test_data_size):
 
     n = math.floor(test_data_size/batch_size)
     for i in range(n):
-        data = torch.zeros(batch_size, data_dim, img_x_dim, img_y_dim)
+        data = torch.zeros(batch_size, input_dimensions, img_x_dim, img_y_dim)
         target = torch.zeros(batch_size, img_x_dim, img_y_dim)
 
         for j in range(batch_size):
@@ -112,12 +136,12 @@ def train(args, model, device, train_loader, optimizer, epoch):
                 epoch, batch_idx * len(data), len(train_loader)*args.batch_size,
                 100. * batch_idx / len(train_loader), loss.item()))
 
-            pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
-            imgPred = pred[0]
-            imgPred = imgPred.cpu().float()
-            imgTarget = torch.FloatTensor(1, 424, 424)
-            imgTarget[0] = target[0]
-            imgTarget = imgTarget.cpu().float()
+            #pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
+            #imgPred = pred[0]
+            #imgPred = imgPred.cpu().float()
+            #imgTarget = torch.FloatTensor(1, 424, 424)
+            #imgTarget[0] = target[0]
+            #imgTarget = imgTarget.cpu().float()
             #saveImage(imgPred, debug_img_path + '/predic_epoch' + str(epoch) + '.png')
             #saveImage(imgTarget, debug_img_path + '/target_epoch' + str(epoch) + '.png')
             #showOutput(imgPred)
@@ -171,11 +195,22 @@ if __name__ == '__main__':
 
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
 
-    train_loader = load_train_data(args.batch_size, n_train)
-    test_loader = load_test_data(args.test_batch_size, n_test)
-    print("Train loader data: " + str(train_loader[0][0].size()), "Train loader target: " + str(train_loader[0][1].size()))
+    #train_loader = load_train_data(args.batch_size, n_train)
+    #test_loader = load_test_data(args.test_batch_size, n_test)
 
-    model = M.FCNN().to(device)
+    dataset_loader = load_data(args.batch_size, n_imgs)
+    shuffle(dataset_loader)
+    n_train_batches = math.floor(n_train/args.batch_size)
+    train_loader = dataset_loader[:n_train_batches]    
+    test_loader = dataset_loader[n_train_batches:]
+
+    print("Train loader dataset size: " + str(len(train_loader)))
+    print("Train loader data dimensions: " + str(train_loader[0][0].size()), "Train loader target dimensions: " + str(train_loader[0][1].size()))
+
+    print("Test loader dataset size: " + str(len(test_loader)))    
+    print("Test loader data dimensions: " + str(test_loader[0][0].size()), "Test loader target dimensions: " + str(test_loader[0][1].size()))
+
+    model = M.FCNN(n_input=input_dimensions, n_output=n_classes).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
