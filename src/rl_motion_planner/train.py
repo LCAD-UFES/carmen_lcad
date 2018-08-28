@@ -20,6 +20,28 @@ ex = Experiment('rl_motion_planner')
 ex.observers.append(FileStorageObserver.create(results_dir))
 
 
+class SimpleEnv:
+    def reset(self):
+        self.pose = np.zeros(4)
+        self.laser = np.zeros(100)
+        self.goal  = (np.random.random(3) * 10.).append(0.)
+
+        return {'pose': self.pose, 'laser': self.laser}, self.goal
+
+    def step(self, cmd):
+        self.pose[0] += cmd[0] * 0.1
+        self.pose[1] += cmd[1] * 0.1
+
+        success = True if dist(self.pose, self.goal) < 0.1 else False
+        info = {'success': success, 'hit_obstacle': False, 'starved': False}
+
+        return {'pose': self.pose, 'laser': self.laser}, self.goal
+
+    def view(self):
+        # TODO!!
+        pass
+
+
 def dist(a, b):
     return np.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
 
@@ -35,6 +57,7 @@ def save_policy(policy, path):
 
 
 def read_state():
+    """
     carmen.handle_messages()
 
     laser = carmen.read_laser()
@@ -45,6 +68,7 @@ def read_state():
         'pose': carmen.read_pose(),
         'laser': laser,
     }
+    """
 
     return state
 
