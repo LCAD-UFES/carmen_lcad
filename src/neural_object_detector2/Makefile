@@ -6,11 +6,11 @@ MODULE_COMMENT = Detect vehicles using convolutional neural networks.
 LINK = g++ -O3
 CXXFLAGS = -std=c++11 -O3 
 
-IFLAGS += -DUSE_OPENCV -DNO_NVML
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -DUSE_OPENCV -DNO_NVML
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet/lib
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
-LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lbehavior_selector_interface -lparam_interface -ltf -lrt -lLinearMath -lboost_thread-mt \
+LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lbehavior_selector_interface -lrddf_interface -lparam_interface -ltf -lrt -lLinearMath -lboost_thread-mt \
           -lboost_signals -lboost_system -lmoving_objects_interface -llocalize_ackerman_interface -lvelodyne_camera_calibration \
           -lcamera_boxes_to_world -ldarknet `pkg-config opencv --libs` -ldbscan `pkg-config --cflags opencv` `pkg-config --libs opencv`
 

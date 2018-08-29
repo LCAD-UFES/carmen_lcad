@@ -29,7 +29,53 @@ bool goal_ready, use_rddf;
 carmen_behavior_selector_road_profile_message goal_list_message;
 
 carmen_rddf_annotation_message last_rddf_annotation_message;
+carmen_behavior_selector_road_profile_message last_rddf_poses;
+
 bool last_rddf_annotation_message_valid = false;
+
+
+tf::Point
+move_point_to_camera_reference (tf::Point point, carmen_pose_3D_t camera_pose)
+{
+	tf::Transform pose_camera_in_board(
+			tf::Quaternion(camera_pose.orientation.yaw, camera_pose.orientation.pitch, camera_pose.orientation.roll),
+			tf::Vector3(camera_pose.position.x, camera_pose.position.y, camera_pose.position.z));
+
+	tf::Transform board_frame_to_camera_frame = pose_camera_in_board.inverse();
+	return board_frame_to_camera_frame * point;
+
+}
+
+
+carmen_position_t
+convert_rddf_pose_to_point_in_image(carmen_ackerman_traj_point_t pose,
+									carmen_camera_parameters camera_parameters,
+									carmen_pose_3D_t camera_pose,
+									int image_width, int image_height)
+{
+	carmen_position_t point;
+	tf::Point point_tf;
+	tf::Point point_in_camera;
+
+	point_tf (pose.x, pose.y, 0);
+
+	// fx and fy are the focal lengths
+	double fx_meters = camera_parameters.fx_factor * image_width * camera_parameters.pixel_size;
+	double fy_meters = camera_parameters.fy_factor * image_height * camera_parameters.pixel_size;
+
+	//cu, cv represent the camera principal point
+	double cu = camera_parameters.cu_factor * (double) image_width;
+	double cv = camera_parameters.cv_factor * (double) image_height;
+
+	point_in_camera = move_point_to_camera_reference(point_tf, camera_pose);
+
+	printf("Pose in global: %lf X %lf\n", pose.x, pose.y);
+	printf("Pose in camera: %lf X %lf\n", point_in_camera.x(), point_in_camera.y());
+	getchar();
+
+	return (point);
+
+}
 
 
 // This function find the closest velodyne message with the camera message
@@ -199,7 +245,6 @@ objects_names_from_file(string const class_names_file)
 void
 publish_moving_objects_message(double timestamp)
 {
-
     moving_objects_point_clouds_message.timestamp = timestamp;
     moving_objects_point_clouds_message.host = carmen_get_host();
 
@@ -222,13 +267,14 @@ publish_moving_objects_message(double timestamp)
 void
 rddf_handler(carmen_behavior_selector_road_profile_message *message)
 {
-	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
+	last_rddf_poses = *message;
+	/*printf("RDDF NUM POSES: %d \n", message->number_of_poses);
 
 	for (int i = 0; i < message->number_of_poses; i++)
 	{
-		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, message->poses[i].x, message->poses[i].y, message->poses[i].theta);
-		getchar();
-	}
+		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, last_rddf_poses.poses[i].theta);
+
+	}*/
 }
 
 
@@ -237,38 +283,14 @@ rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
 {
 	last_rddf_annotation_message = *message;
 	last_rddf_annotation_message_valid = true;
-}
 
+	/*printf("RDDF NUM OF ANNOTATIONS: %d \n", last_rddf_annotation_message.num_annotations);
 
-static void
-behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_message *msg)
-{
-	if ((msg->size <= 0) || !msg->goal_list)  // Precisa? || !GlobalState::localizer_pose)
+	for (int i = 0; i < message->num_annotations; i++)
 	{
-		printf("Empty goal list or localize not received\n");
-		return;
-	}
+		printf("ANNOTATION %d: x  = %d\n", i, last_rddf_annotation_message.annotations->annotation_type);
 
-	rddf_msg = msg->goal_list[0];
-
-	rddf_msg.phi = msg->goal_list->phi;
-
-	rddf_msg.theta = carmen_normalize_theta(msg->goal_list->theta);
-
-	//rddf_msg.v = fmin(msg->goal_list->v, stehs_planner.robot_config.max_v);
-
-	rddf_msg.v = msg->goal_list->v; //acho que é assim! VER COM O RANIK!
-
-	rddf_msg.x = msg->goal_list->x;
-
-	rddf_msg.y = msg->goal_list->y;
-
-	printf("%lf %lf\n", rddf_msg.x, rddf_msg.y);
-
-	goal_ready = true;
-
-	use_rddf = true;
-
+	}*/
 }
 
 
@@ -496,6 +518,18 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list,
     		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
 
+    //std::vector<carmen_velodyne_points_in_cam_t> test;
+    //test = carmen_velodyne_camera_calibration_lasers_points_in_camera(velodyne_message_arrange, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
+    //printf("Image has %d X %d and has %lu points", image_msg->width, image_msg->height, test.size());getchar();
+    //for(int i=0; i<test.size();i++){
+    //	printf("%d X %d\n", test[i].ipx, test[i].ipy);
+    //	if(i%30==0)
+    //		getchar();
+    //}
+    carmen_point_t p;
+    p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[10],camera_parameters, camera_pose,image_msg->width, image_msg->height);
+
+
     // Removes the ground, Removes points outside cameras field of view and Returns the points that reach obstacles
     //vector<velodyne_camera_points> points = velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(
     //		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
@@ -603,10 +637,12 @@ subscribe_messages()
 
     //carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
-    			NULL, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
+
 
     carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
+        			NULL, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
