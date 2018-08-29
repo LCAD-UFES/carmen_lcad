@@ -1,4 +1,4 @@
-#include "neural_object_detector.hpp"
+#include "neural_object_detector2.hpp"
 
 #define SHOW_DETECTIONS
 
@@ -22,6 +22,14 @@ vector<string> obj_names;
 
 carmen_moving_objects_point_clouds_message moving_objects_point_clouds_message;
 carmen_point_t globalpos;
+
+carmen_ackerman_traj_point_t rddf_msg;
+bool goal_ready, use_rddf;
+
+carmen_behavior_selector_road_profile_message goal_list_message;
+
+carmen_rddf_annotation_message last_rddf_annotation_message;
+bool last_rddf_annotation_message_valid = false;
 
 
 // This function find the closest velodyne message with the camera message
@@ -209,6 +217,59 @@ publish_moving_objects_message(double timestamp)
 // Handlers                                                                                  //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+rddf_handler(carmen_behavior_selector_road_profile_message *message)
+{
+	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
+
+	for (int i = 0; i < message->number_of_poses; i++)
+	{
+		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, message->poses[i].x, message->poses[i].y, message->poses[i].theta);
+		getchar();
+	}
+}
+
+
+static void
+rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
+{
+	last_rddf_annotation_message = *message;
+	last_rddf_annotation_message_valid = true;
+}
+
+
+static void
+behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_message *msg)
+{
+	if ((msg->size <= 0) || !msg->goal_list)  // Precisa? || !GlobalState::localizer_pose)
+	{
+		printf("Empty goal list or localize not received\n");
+		return;
+	}
+
+	rddf_msg = msg->goal_list[0];
+
+	rddf_msg.phi = msg->goal_list->phi;
+
+	rddf_msg.theta = carmen_normalize_theta(msg->goal_list->theta);
+
+	//rddf_msg.v = fmin(msg->goal_list->v, stehs_planner.robot_config.max_v);
+
+	rddf_msg.v = msg->goal_list->v; //acho que é assim! VER COM O RANIK!
+
+	rddf_msg.x = msg->goal_list->x;
+
+	rddf_msg.y = msg->goal_list->y;
+
+	printf("%lf %lf\n", rddf_msg.x, rddf_msg.y);
+
+	goal_ready = true;
+
+	use_rddf = true;
+
+}
 
 
 void
@@ -417,7 +478,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     vector<bbox_t> predictions = darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
 
 //    predictions = darknet->tracking(predictions); // Coment this line if object tracking is not necessary
-
+    //INSERIR FUNÇÃO PARA FOVEADO: receber alguns pontos do rddf (função que converte da posição do mundo para a posição na imagem) recortar a área em volta do ponto
+    //na imagem, passar essa imagem para a rede, receber a detecção e reprojetar na imagem original
     for (const auto &box : predictions) // Covert Darknet bounding box to neural_object_deddtector bounding box
     {
         bounding_box bbox;
@@ -523,7 +585,7 @@ shutdown_module(int signo)
         carmen_ipc_disconnect();
         cvDestroyAllWindows();
 
-        printf("Neural Object Detector: disconnected.\n");
+        printf("Neural Object Detector 2: disconnected.\n");
         exit(0);
     }
 }
@@ -538,6 +600,13 @@ subscribe_messages()
     carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    //carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
+    			NULL, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -620,6 +689,8 @@ main(int argc, char **argv)
     read_parameters(argc, argv);
 
     subscribe_messages();
+
+    //printf("%lf %lf\n", rddf_msg.x, rddf_msg.y);
 
     carmen_ipc_dispatch();
 
