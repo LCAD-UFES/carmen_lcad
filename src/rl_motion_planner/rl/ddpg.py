@@ -5,7 +5,8 @@ from rl.replay_buffer import ReplayBuffer
 
 
 class ActorCritic:
-    def __init__(self, n_laser_readings, n_hidden_neurons, n_hidden_layers, use_conv_layer, activation_fn_name):
+    def __init__(self, n_laser_readings, n_hidden_neurons, n_hidden_layers, use_conv_layer, activation_fn_name,
+                 allow_negative_commands):
         self.action_size = 2
 
         # goal: (x, y, th, desired_v) - pose in car reference
@@ -25,12 +26,15 @@ class ActorCritic:
         elif activation_fn_name == 'elu': activation_fn = tf.nn.elu
         else: raise Exception("Invalid non-linearity '{}'".format(activation_fn_name))
 
+        if allow_negative_commands: cmd_activation_fn = tf.nn.tanh
+        else: cmd_activation_fn = tf.nn.sigmoid
+
         with tf.variable_scope("preprocessing"):
             # laser pre-processing
             if use_conv_layer:
-                laser_c1 = tf.layers.conv1d(self.placeholder_laser, filters=16, kernel_size=4, strides=4, padding='valid', activation=activation_fn)
-                laser_c2 = tf.layers.conv1d(laser_c1, filters=32, kernel_size=4, strides=4, padding='valid', activation=activation_fn)
-                laser_c3 = tf.layers.conv1d(laser_c2, filters=32, kernel_size=4, strides=4, padding='valid', activation=activation_fn)
+                laser_c1 = tf.layers.conv1d(self.placeholder_laser, filters=32, kernel_size=6, strides=3, padding='valid', activation=activation_fn)
+                laser_c2 = tf.layers.conv1d(laser_c1, filters=32, kernel_size=6, strides=3, padding='valid', activation=activation_fn)
+                laser_c3 = tf.layers.conv1d(laser_c2, filters=32, kernel_size=6, strides=3, padding='valid', activation=activation_fn)
                 laser_fl = tf.layers.flatten(laser_c3)
                 laser_fc = tf.layers.dense(laser_fl, units=n_hidden_neurons, activation=activation_fn)
             else:
@@ -50,7 +54,7 @@ class ActorCritic:
                 in_tensor = tf.layers.dense(in_tensor, units=n_hidden_neurons, activation=activation_fn)
 
             self.actor_command = tf.layers.dense(in_tensor, units=self.action_size,
-                                                 activation=tf.nn.tanh, name="actor_command")
+                                                 activation=cmd_activation_fn, name="actor_command")
 
         def action_preprocessing(cmd):
             return tf.layers.dense(cmd, units=n_hidden_neurons, activation=activation_fn)
@@ -107,14 +111,16 @@ class DDPG(object):
                              params['n_hidden_neurons'],
                              params['n_hidden_layers'],
                              params['use_conv_layer'],
-                             params['activation_fn'])
+                             params['activation_fn'],
+                             params['allow_negative_commands'])
 
         with tf.variable_scope('target'):
             self.target = ActorCritic(n_laser_readings,
                              params['n_hidden_neurons'],
                              params['n_hidden_layers'],
                              params['use_conv_layer'],
-                             params['activation_fn'])
+                             params['activation_fn'],
+                             params['allow_negative_commands'])
 
         assert len(self._vars("main")) == len(self._vars("target"))
 

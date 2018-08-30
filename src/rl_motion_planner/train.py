@@ -39,12 +39,18 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, episode_id, use_
     episodes = []
     n_successes = 0
     n_collisions = 0
+    q0 = 0.
 
     while len(episodes) < n_rollouts:
         obs, goal = env.reset()
         episode = []
         done = False
         info = None
+
+        g = relative_pose(obs['pose'], goal)
+        _, q0 = policy.get_actions(obs, g + [goal[3]], noise_eps=0.,
+                                   random_eps=0.,
+                                   use_target_net=False)
 
         while not done:
             g = relative_pose(obs['pose'], goal)
@@ -67,6 +73,7 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, episode_id, use_
             episode.append([obs, cmd, rw, goal])
             obs = new_obs
 
+        env.finalize()
         if len(episode) == 0:
             continue
 
@@ -76,7 +83,7 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, episode_id, use_
         if info['success']: n_successes += 1
         elif info['hit_obstacle']: n_collisions += 1
 
-    return episodes, n_successes, n_collisions
+    return episodes, n_successes, n_collisions, q0
 
 
 def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
@@ -102,18 +109,12 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
     elif params['env'] == 'carmen': env = CarmenEnv(params)
     else: raise Exception("Env '{}' not implemented.".format(params['env']))
 
-    print('Reset')
     state, goal = env.reset()
     n_laser_readings = len(state['laser'])
 
-    print(state, goal, n_laser_readings)
-
-    print('Creating net')
     policy = DDPG(params, n_laser_readings=n_laser_readings)
     if len(checkpoint) > 0:
         policy.load(checkpoint)
-
-    print('Net created!')
 
     # Path to some log files
     experiment_dir = os.path.join(results_dir, str(ex.current_run._id))
@@ -129,8 +130,7 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
     # Training loop
     for epoch in range(n_epochs):
         # rollouts
-        print('Generating rollouts!')
-        episodes, n_successes, n_collisions = generate_rollouts(policy, env, params['n_train_rollouts'],
+        episodes, n_successes, n_collisions, q0 = generate_rollouts(policy, env, params['n_train_rollouts'],
                                                                 params, exploit=False,
                                                                 episode_id=len(policy.buffer.stack))
 
@@ -142,11 +142,6 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
         if len(last_collision_flags) > 30: last_collision_flags.pop(0)
 
         last_episode = episodes[-1]
-        obs, goal = env.reset()
-        g = relative_pose(obs['pose'], goal)
-        _, q0 = policy.get_actions(obs, g + [goal[3]], noise_eps=0.,
-                                   random_eps=0.,
-                                   use_target_net=False)
 
         print('** Episode', epoch * params['n_train_rollouts'],
               'Return:', np.sum([t[2] for t in last_episode]),
@@ -178,8 +173,8 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
         # test
         if params['n_test_rollouts'] > 0:
             print('Testing...')
-            episodes, n_successes, n_collisions = generate_rollouts(policy, env, params['n_test_rollouts'],
-                                                                    params, exploit=True)
+            episodes, n_successes, n_collisions, _ = generate_rollouts(policy, env, params['n_test_rollouts'],
+                                                                        params, exploit=True)
             print_evaluation_report(episodes, n_successes, n_collisions)
             success_rate = float(n_successes) / float(len(episodes))
             collision_rate = float(n_collisions) / float(len(episodes))
@@ -210,8 +205,9 @@ def config():
         'rddf': 'rddf-voltadaufes-20170809.txt',
         'n_hidden_neurons': 64,
         'n_hidden_layers': 1,
-        'use_conv_layer': False,
-        'activation_fn': 'leaky_relu',
+        'use_conv_layer': True,
+        'activation_fn': 'elu',
+        'allow_negative_commands': False,
         # env
         'env': 'simple',
         'n_steps_episode': 200,
