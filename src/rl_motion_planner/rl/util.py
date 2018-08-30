@@ -1,6 +1,11 @@
 
 import numpy as np
 
+
+def dist(a, b):
+    return np.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
+
+
 def normalize_theta(theta):
     if theta >= -np.pi and theta < np.pi:
         return theta

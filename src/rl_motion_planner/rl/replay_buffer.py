@@ -22,7 +22,7 @@ class ReplayBuffer:
         for e in episodes:
             self.stack.append(e)
             if len(self.stack) > self.capacity:
-                self.stack.pop(0)
+                self.stack.popleft()
 
     def sample(self):
         batch = {'laser': [], 'state': [], 'goal': [], 'rew': [], 'act': [],
@@ -42,7 +42,7 @@ class ReplayBuffer:
             batch['laser'].append(self.stack[e][t][0]['laser'])
             batch['state'].append([self.stack[e][t][0]['pose'][3]])
             batch['act'].append(self.stack[e][t][1])
-            batch['rew'].append(self.stack[e][t][2])
+            batch['rew'].append([self.stack[e][t][2]])
             batch['goal'].append(goal)
 
             t_ids.append(t)
@@ -52,13 +52,13 @@ class ReplayBuffer:
                 transitions_not_final.append([e, t])
                 batch['next_laser'].append(self.stack[e][t + 1][0]['laser'])
                 batch['next_state'].append([self.stack[e][t + 1][0]['pose'][3]])
-                batch['is_final'].append(0.0)
+                batch['is_final'].append([0.0])
             else:
                 # If the transition is the last one, we don't have a next observation. In this case, we copy the
                 # current observation as next one. This value will be ignored when computing the target q.
                 batch['next_laser'].append(self.stack[e][t][0]['laser'])
                 batch['next_state'].append([self.stack[e][t][0]['pose'][3]])
-                batch['is_final'].append(1.0)
+                batch['is_final'].append([1.0])
 
         # generate additional training data using her
         if len(transitions_not_final) > 0:
@@ -72,16 +72,19 @@ class ReplayBuffer:
                 future_t = np.random.randint(t + 1, len(self.stack[e]))
                 her_episode_size = future_t - t
                 rew = (self.max_episode_size - her_episode_size) / (self.max_episode_size * her_episode_size)
+
                 batch['laser'].append(self.stack[e][t][0]['laser'])
                 batch['state'].append([self.stack[e][t][0]['pose'][3]])
                 batch['act'].append(self.stack[e][t][1])
-                batch['rew'].append(rew)
+                batch['rew'].append([rew])
+
                 her_goal = self.stack[e][future_t][0]['pose'][:4]
                 goal = relative_pose(self.stack[e][t][0]['pose'], her_goal) + [her_goal[3]]
+
                 batch['goal'].append(goal)
                 batch['next_laser'].append(self.stack[e][t + 1][0]['laser'])
                 batch['next_state'].append([self.stack[e][t + 1][0]['pose'][3]])
-                batch['is_final'].append(0.0)
+                batch['is_final'].append([0.0])
 
         return batch
 

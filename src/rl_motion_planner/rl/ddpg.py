@@ -5,7 +5,7 @@ from rl.replay_buffer import ReplayBuffer
 
 
 class ActorCritic:
-    def __init__(self, n_laser_readings):
+    def __init__(self, n_laser_readings, n_hidden_neurons, n_hidden_layers, use_conv_layer, activation_fn_name):
         self.action_size = 2
 
         # goal: (x, y, th, desired_v) - pose in car reference
@@ -17,36 +17,43 @@ class ActorCritic:
         # performed action (for critic): (v, phi) - commands produced by the actor
         self.placeholder_action = tf.placeholder(dtype=tf.float32, shape=[None, self.action_size], name='placeholder_action')
         # reward (for training the critic)
-        self.placeholder_reward = tf.placeholder(dtype=tf.float32, shape=[None], name='placeholder_reward')
+        self.placeholder_reward = tf.placeholder(dtype=tf.float32, shape=[None, 1], name='placeholder_reward')
         # flag used when computing the target q: 1 if is final, 0 otherwise.
-        self.placeholder_is_final = tf.placeholder(dtype=tf.float32, shape=[None], name='placeholder_is_final')
+        self.placeholder_is_final = tf.placeholder(dtype=tf.float32, shape=[None, 1], name='placeholder_is_final')
 
-        activation_fn = tf.nn.leaky_relu
+        if activation_fn_name == 'leaky_relu': activation_fn = tf.nn.leaky_relu
+        elif activation_fn_name == 'elu': activation_fn = tf.nn.elu
+        else: raise Exception("Invalid non-linearity '{}'".format(activation_fn_name))
 
         with tf.variable_scope("preprocessing"):
             # laser pre-processing
-            #laser_c1 = tf.layers.conv1d(self.placeholder_laser, filters=16, kernel_size=4, strides=4, padding='valid', activation=activation_fn)
-            #laser_c2 = tf.layers.conv1d(laser_c1, filters=32, kernel_size=4, strides=4, padding='valid', activation=activation_fn)
-            #laser_c3 = tf.layers.conv1d(laser_c2, filters=32, kernel_size=4, strides=4, padding='valid', activation=activation_fn)
-            #laser_fl = tf.layers.flatten(laser_c3)
-            #laser_fc = tf.layers.dense(laser_fl, units=64, activation=activation_fn)
-            laser_fl = tf.layers.flatten(self.placeholder_laser)
-            laser_fc = tf.layers.dense(laser_fl, units=32, activation=activation_fn)
+            if use_conv_layer:
+                laser_c1 = tf.layers.conv1d(self.placeholder_laser, filters=16, kernel_size=4, strides=4, padding='valid', activation=activation_fn)
+                laser_c2 = tf.layers.conv1d(laser_c1, filters=32, kernel_size=4, strides=4, padding='valid', activation=activation_fn)
+                laser_c3 = tf.layers.conv1d(laser_c2, filters=32, kernel_size=4, strides=4, padding='valid', activation=activation_fn)
+                laser_fl = tf.layers.flatten(laser_c3)
+                laser_fc = tf.layers.dense(laser_fl, units=n_hidden_neurons, activation=activation_fn)
+            else:
+                laser_fl = tf.layers.flatten(self.placeholder_laser)
+                laser_fc = tf.layers.dense(laser_fl, units=n_hidden_neurons, activation=activation_fn)
 
             # goal, state, and action pre-processing
-            goal_fc = tf.layers.dense(self.placeholder_goal, units=32, activation=activation_fn)
-            state_fc = tf.layers.dense(self.placeholder_state, units=32, activation=activation_fn)
+            goal_fc = tf.layers.dense(self.placeholder_goal, units=n_hidden_neurons, activation=activation_fn)
+            state_fc = tf.layers.dense(self.placeholder_state, units=n_hidden_neurons, activation=activation_fn)
 
         # actor network
         with tf.variable_scope("policy"):
             actor_input = tf.concat(axis=-1, values=[state_fc, goal_fc, laser_fc])
-            actor_fc1 = tf.layers.dense(actor_input, units=32, activation=activation_fn)
-            # actor_fc2 = tf.layers.dense(actor_fc1, units=128, activation=activation_fn)
-            self.actor_command = tf.layers.dense(actor_fc1, units=self.action_size,
-                                                 activation=tf.nn.sigmoid, name="actor_command")
+
+            in_tensor = actor_input
+            for _ in range(n_hidden_layers):
+                in_tensor = tf.layers.dense(in_tensor, units=n_hidden_neurons, activation=activation_fn)
+
+            self.actor_command = tf.layers.dense(in_tensor, units=self.action_size,
+                                                 activation=tf.nn.tanh, name="actor_command")
 
         def action_preprocessing(cmd):
-            return tf.layers.dense(cmd, units=32, activation=activation_fn)
+            return tf.layers.dense(cmd, units=n_hidden_neurons, activation=activation_fn)
 
         with tf.variable_scope("action_preprocessing"):
             input_action_fc = action_preprocessing(self.placeholder_action)
@@ -60,9 +67,11 @@ class ActorCritic:
         critic_input_for_critic_training = tf.concat(axis=-1, values=[actor_input, input_action_fc])
 
         def critic_net(critic_input):
-            critic_fc1 = tf.layers.dense(critic_input, units=32, activation=activation_fn)
-            # critic_fc2 = tf.layers.dense(critic_fc1, units=128, activation=activation_fn)
-            critic_q = tf.layers.dense(critic_fc1, units=1, activation=None)
+            in_tensor = critic_input
+            for _ in range(n_hidden_layers):
+                in_tensor = tf.layers.dense(in_tensor, units=n_hidden_neurons, activation=activation_fn)
+
+            critic_q = tf.layers.dense(in_tensor, units=1, activation=None)
             return critic_q
 
         with tf.variable_scope("critic"):
@@ -80,10 +89,13 @@ class ActorCritic:
 class DDPG(object):
     def __init__(self, params, n_laser_readings):
         self.gamma = params['gamma']
-        self._create_network(n_laser_readings)
-        self.buffer = ReplayBuffer(capacity=100000, n_trad=64, n_her=0, max_episode_size=params['n_steps_episode'])
 
-    def _create_network(self, n_laser_readings):
+        self._create_network(n_laser_readings, params)
+
+        self.buffer = ReplayBuffer(capacity=500, n_trad=256, n_her=0, max_episode_size=params['n_steps_episode'])
+        self.saver = tf.train.Saver()
+
+    def _create_network(self, n_laser_readings, params):
         self.sess = tf.get_default_session()
 
         if self.sess is None:
@@ -91,10 +103,18 @@ class DDPG(object):
 
         # Networks
         with tf.variable_scope('main'):
-            self.main = ActorCritic(n_laser_readings)
+            self.main = ActorCritic(n_laser_readings,
+                             params['n_hidden_neurons'],
+                             params['n_hidden_layers'],
+                             params['use_conv_layer'],
+                             params['activation_fn'])
 
         with tf.variable_scope('target'):
-            self.target = ActorCritic(n_laser_readings)
+            self.target = ActorCritic(n_laser_readings,
+                             params['n_hidden_neurons'],
+                             params['n_hidden_layers'],
+                             params['use_conv_layer'],
+                             params['activation_fn'])
 
         assert len(self._vars("main")) == len(self._vars("target"))
 
@@ -108,7 +128,7 @@ class DDPG(object):
         # Policy loss function (TODO: checar se essa loss esta certa. Ela parece diferente do DDPG do paper).
         self.policy_loss = -tf.reduce_mean(self.main.q_from_policy)
         # TODO: checar se o componente abaixo eh necessario e o que ele significa.
-        self.action_l2 = 1.0
+        self.action_l2 = 0.0
         self.policy_loss += self.action_l2 * tf.reduce_mean(tf.square(self.main.actor_command))
 
         # Training
@@ -171,7 +191,7 @@ class DDPG(object):
         # action postprocessing
         u = ret[0][0]
         u += noise_eps * np.random.randn(*u.shape)  # gaussian noise
-        u = np.clip(u, 0.0, 1.0)
+        u = np.clip(u, -1.0, 1.0)
 
         if np.random.random() < random_eps:
             u = np.random.uniform(-1.0, 1.0, len(u))
@@ -180,6 +200,13 @@ class DDPG(object):
 
     def store_episode(self, episode_batch):
         self.buffer.add(episode_batch)
+
+    def save(self, path):
+        save_path = self.saver.save(self.sess, path)
+        print("Model saved in path: %s" % save_path)
+
+    def load(self, path):
+        self.saver.restore(self.sess, path)
 
     ####
     # TRAIN
