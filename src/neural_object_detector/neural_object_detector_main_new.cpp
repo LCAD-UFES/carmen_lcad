@@ -230,7 +230,7 @@ void
 show_LIDAR_points(Mat &image, vector<image_cartesian> all_points)
 {
 	for (unsigned int i = 0; i < all_points.size(); i++)
-		circle(image, Point(all_points[i].image_x, all_points[i].image_y), 1, cvScalar(255, 0, 0), 1, 8, 0);
+		circle(image, Point(all_points[i].image_x, all_points[i].image_y), 1, cvScalar(0, 0, 255), 1, 8, 0);
 }
 
 
@@ -246,7 +246,22 @@ show_LIDAR(Mat &image, vector<vector<image_cartesian>> points_lists, int r, int 
 
 
 void
-show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_lists, vector<vector<image_cartesian>> filtered_points, double fps)
+show_all_points(Mat &image, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
+{
+	vector<carmen_velodyne_points_in_cam_t> all_points = carmen_velodyne_camera_calibration_lasers_points_in_camera(
+					velodyne_msg, camera_parameters, velodyne_pose, camera_pose, 640, 480);
+
+	int max_x = crop_x + crop_width, max_y = crop_y + crop_height;
+
+	for (unsigned int i = 0; i < all_points.size(); i++)
+		if (all_points[i].ipx >= crop_x && all_points[i].ipx <= max_x && all_points[i].ipy >= crop_y && all_points[i].ipy <= max_y)
+			circle(image, Point(all_points[i].ipx - crop_x, all_points[i].ipy - crop_y), 1, cvScalar(0, 0, 255), 1, 8, 0);
+}
+
+
+void
+show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
+		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
 {
 	char object_info[25];
     char frame_rate[25];
@@ -267,9 +282,9 @@ show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> p
         putText(image, object_info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
     }
 
-    show_LIDAR_points(image, points);
-    show_LIDAR(image, points_lists,    0, 0, 255);
-    show_LIDAR(image, filtered_points, 0, 255, 0);
+	show_all_points(image, crop_x, crop_y, crop_width, crop_height);
+    show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
+    show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
     resize(image, image, Size(640, 480));
     imshow("Neural Object Detector", image);
@@ -404,6 +419,9 @@ build_detected_objects_message(vector<bbox_t> predictions, vector<image_cartesia
 				msg.point_clouds[l].model_features.blue = 0.8;
 				msg.point_clouds[l].model_features.model_name = (char *) "car";
 				break;
+			case 9:
+				printf("Traffic Light %lf, %lf", objects_poses[i].cartesian_x, objects_poses[i].cartesian_y);
+				break;
 			default:
 				msg.point_clouds[l].geometric_model = 0;
 				msg.point_clouds[l].model_features.geometry.height = 1.8;
@@ -474,40 +492,60 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	double fps;
 	static double start_time = 0.0;
 
+//	int crop_x = image_msg->width * 0.2;
+//	int crop_y = image_msg->height * 0.07;
+//	int crop_w = image_msg->width * 0.55;
+//	int crop_h = image_msg->height * 0.5;
+
+	int crop_x = 0;
+	int crop_y = 0;
+	int crop_w = image_msg->width;
+	int crop_h = image_msg->height;
+
 	if (camera_side == 0)
 		img = image_msg->raw_left;
 	else
 		img = image_msg->raw_right;
 
 	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+	//printf("%d %d\n", image_msg->width, image_msg->height);
+	//printf("%d %d %d %d\n", crop_x, crop_y, crop_w, crop_h);
 
-	Rect myROI(280, 70, 720, 480);     // TODO put this in the .ini file
+	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
+
+	cvtColor(open_cv_image, open_cv_image, COLOR_RGB2BGR);
+
+	//imshow("NOD", open_cv_image);
+	//waitKey(1);
 
 	vector<bbox_t> predictions = darknet->detect(open_cv_image, 0.2);  // Arguments (image, threshold)
 	predictions = filter_predictions_of_interest(predictions);
 
 	if (predictions.size() > 0 && velodyne_msg != NULL)
 	{
+		//vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
+		//		image_msg->width, image_msg->height, 280, 70, 720, 480);
+
 		vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
-				image_msg->width, image_msg->height, 280, 70, 720, 480);
+						image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 
-		vector<vector<image_cartesian>> points_lists = filter_points_inside_bounding_boxes(predictions, points);
+		vector<vector<image_cartesian>> points_inside_bbox = filter_points_inside_bounding_boxes(predictions, points);
 
-		vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_lists);
+		vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
 
 		vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
 
-		carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
+		//carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
 
-		publish_moving_objects_message(image_msg->timestamp, &msg);
+		//publish_moving_objects_message(image_msg->timestamp, &msg);
 
 		fps = 1.0 / (carmen_get_time() - start_time);
 		start_time = carmen_get_time();
 
-		//printf("%d %d %d\n", (int) predictions.size(), (int) points_lists.size(), (int) filtered_points.size());
+		//printf("%d %d %d\n", (int) predictions.size(), (int) points_inside_bbox.size(), (int) filtered_points.size());
 
-		show_detections(open_cv_image, predictions, points, points_lists, filtered_points, fps);
+		show_detections(open_cv_image, predictions, points, points_inside_bbox, filtered_points, fps, crop_x, crop_y, crop_w, crop_h);
 	}
 }
 
