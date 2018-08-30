@@ -6,6 +6,9 @@ MODULE_COMMENT = Velodyne LIDAR Module
 
 LINK = g++
 
+CFLAGS += -std=c11
+CXXFLAGS += -std=c++11
+
 # Application specific include directories.
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvelodyne

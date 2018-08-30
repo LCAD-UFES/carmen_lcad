@@ -7,3 +7,4 @@ max_gy 10.0
 max_range 50.0
 n_rddf_poses 50
 laser_subsample 4
+

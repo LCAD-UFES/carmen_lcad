@@ -1,20 +1,18 @@
 #include <carmen/carmen.h>
-#include <carmen/camera_messages.h>
-#include <carmen/camera_interface.h>
 #include <carmen/xsens_messages.h>
-#include <carmen/bumblebee_basic_interface.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+#include <math.h>
+
 
 char* tcp_ip_address;
 
 #define PORT "3457"
 #define SOCKET_DATA_PACKET_SIZE	2048
-
-using namespace std;
-using namespace cv;
+#define G 9.80665
+#define ACCELEROMETER_CONSTANT (4.0 / 32768.0/*2^15*/)
+#define MAGNETOMETER_CONSTANT (8.0 / 32768.0/*2^15*/)
+#define GYROSCOPE_CONSTANT (500.0 / 32768.0/*2^15*/)
 
 void
 carmen_xsens_define_messages()
@@ -24,12 +22,6 @@ carmen_xsens_define_messages()
     /* register xsens's global message */
     err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_QUAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_QUAT_FMT);
     carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_QUAT_NAME);
-
-    err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_EULER_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_EULER_FMT);
-    carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_EULER_NAME);
-
-    err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_MATRIX_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_MATRIX_FMT);
-    carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_MATRIX_NAME);
 }
 
 int
@@ -67,7 +59,6 @@ stablished_connection_with_server()
 	}
 
 	printf("--- Connection established successfully! ---\n");
-
 	return (pi_socket);
 }
 
@@ -88,19 +79,7 @@ trying_to_reconnect()
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//																							 //
-// Publishers																			     //
-//																						     //
-///////////////////////////////////////////////////////////////////////////////////////////////
 
-
-void
-publish_image_message(int camera_number, carmen_bumblebee_basic_stereoimage_message *msg)
-{
-	msg->timestamp = carmen_get_time();
-	carmen_bumblebee_basic_publish_message(camera_number, msg);
-}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -185,17 +164,17 @@ main(int argc, char **argv)
 		//printf("%d %d %d %d %d %d %d %d %d **\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2],
 				//magRaw[0], magRaw[1], magRaw[2]);
 
-		AccX = accRaw[0] * 0.00012207 * 9.80665;
-		AccY = accRaw[1] * 0.00012207 * 9.80665;
-		AccZ = accRaw[2] * 0.00012207 * 9.80665;
+		AccX = accRaw[0] * ACCELEROMETER_CONSTANT * G;
+		AccY = accRaw[1] * ACCELEROMETER_CONSTANT * G;
+		AccZ = accRaw[2] * ACCELEROMETER_CONSTANT * G;
 
-		GyrX = (gyrRaw[0] * 0.015258789 * 3.14159265) / 180.0;
-		GyrY = (gyrRaw[1] * 0.015258789 * 3.14159265) / 180.0;
-		GyrZ = (gyrRaw[2] * 0.015258789 * 3.14159265) / 180.0;
+		GyrX = (gyrRaw[0] * GYROSCOPE_CONSTANT * M_PI) / 180.0;
+		GyrY = (gyrRaw[1] * GYROSCOPE_CONSTANT * M_PI) / 180.0;
+		GyrZ = (gyrRaw[2] * GYROSCOPE_CONSTANT * M_PI) / 180.0;
 
-		MagX = magRaw[0] * 0.244141;
-		MagY = magRaw[1] * 0.244141;
-		MagZ = magRaw[2] * 0.244141;
+		MagX = magRaw[0] * MAGNETOMETER_CONSTANT * 1000;
+		MagY = magRaw[1] * MAGNETOMETER_CONSTANT * 1000;
+		MagZ = magRaw[2] * MAGNETOMETER_CONSTANT * 1000;
 
 		printf("ACELEROMETRO = X:%f m/s^2 Y:%f m/s^2 Z:%f m/s^2\n", AccX, AccY, AccZ);
 		printf("GIROSCÓPIO = X:%f radps Y:%f radps Z:%f radps\n", GyrX, GyrY, GyrZ);

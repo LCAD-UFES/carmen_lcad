@@ -87,9 +87,9 @@ class Transformer
 {
 public:
   /************* Constants ***********************/
-  static const unsigned int MAX_GRAPH_DEPTH = 100UL;   //!< The maximum number of time to recurse before assuming the tree has a loop.
-  static const double DEFAULT_CACHE_TIME = 10.0;  //!< The default amount of time to cache data in seconds
-  static const int64_t DEFAULT_MAX_EXTRAPOLATION_DISTANCE = 0ULL; //!< The default amount of time to extrapolate
+  static constexpr unsigned int MAX_GRAPH_DEPTH = 100UL;   //!< The maximum number of time to recurse before assuming the tree has a loop.
+  static constexpr double DEFAULT_CACHE_TIME = 10.0;  //!< The default amount of time to cache data in seconds
+  static constexpr int64_t DEFAULT_MAX_EXTRAPOLATION_DISTANCE = 0ULL; //!< The default amount of time to extrapolate
 
 
   /** Constructor

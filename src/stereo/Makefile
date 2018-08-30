@@ -8,9 +8,9 @@ ifndef NO_CUDA
 CUDALIB64 :=/usr/local/cuda/lib64/
 CUDAINCLUDE :=/usr/local/cuda/include/
 
-CFLAGS += -lcuda -lcudart
+CFLAGS += 
 IFLAGS += -I$(CUDAINCLUDE)
-LFLAGS += -L$(CUDALIB64)
+LFLAGS += -L$(CUDALIB64) -lcuda -lcudart -lcublas
 
 endif
 

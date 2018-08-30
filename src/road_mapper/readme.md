@@ -419,7 +419,7 @@ For estimating the accuracy using the test filelist `road_mapper_test.txt`, copy
 
 Then, run the following:
 ```
- $ ENet/caffe-enet/build/tools/caffe test \
+ $ env GLOG_minloglevel=0 ENet/caffe-enet/build/tools/caffe test \
    -model $CARMEN_HOME/src/road_mapper/data/bn_conv_merged_model_test.prototxt \
    -weights $CARMEN_HOME/src/road_mapper/data/bn_conv_merged_weights.caffemodel \
    -iterations NUM_ITER -gpu 0 &> results_test.txt
@@ -428,7 +428,7 @@ In the above command, replace NUM_ITER by (dataset_test_size / batch_size). The 
 
 Or, in a single line:
 ```
- $ ENet/caffe-enet/build/tools/caffe test -model $CARMEN_HOME/src/road_mapper/data/bn_conv_merged_model_test.prototxt -weights $CARMEN_HOME/src/road_mapper/data/bn_conv_merged_weights.caffemodel -iterations NUM_ITER -gpu 0 &> results_test.txt
+ $ env GLOG_minloglevel=0 ENet/caffe-enet/build/tools/caffe test -model $CARMEN_HOME/src/road_mapper/data/bn_conv_merged_model_test.prototxt -weights $CARMEN_HOME/src/road_mapper/data/bn_conv_merged_weights.caffemodel -iterations NUM_ITER -gpu 0 &> results_test.txt
 ```
 The final lines of `results_test.txt` show the mean accuracy and the accuracy per classes.  
 

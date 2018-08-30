@@ -5,6 +5,7 @@ MODULE_COMMENT = Change path planner algorithms and speed limits
 
 LINK=g++
 CFLAGS += -std=c99
+CXXFLAGS += -std=c++11
 
 IFLAGS += \
 	-I$(CARMEN_HOME)/sharedlib/prob_models \

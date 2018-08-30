@@ -1,0 +1,36 @@
+make_module()
+{
+	cd $CARMEN_HOME/src/$1
+	make
+}
+
+make_list_of_modules()
+{
+	for mod in $1
+	do
+		ERROR=1
+		if [ -d $CARMEN_HOME/src/$mod ]
+		then
+			make_module $mod
+			ERROR=$?
+		fi
+		if [ ! $ERROR -eq 0 ] && [ "$2" != "-ignore_errors" ]
+		then
+			exit 1
+		fi
+	done
+}
+
+
+$CARMEN_HOME/bin/make_clean_all
+
+PREPARATION="web_cam tracker lane_detector path_planner camera . camera velodyne_camera_calibration 
+	     camera_boxes_to_world ../sharedlib/libclustering web_cam laser-ldmrs tracker 
+	     lane_detector dynamic_object_detector"
+
+MODULES="." # May include other modules separated by spaces
+
+make_list_of_modules "$PREPARATION" -ignore_errors
+
+make_list_of_modules "$MODULES"
+

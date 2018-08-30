@@ -11,9 +11,9 @@ IFLAGS += `pkg-config --cflags opencv`
 IFLAGS += -I$(MAEHOME)/include
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -L$(MAEHOME)/lib -L/usr/local/lib -L/usr/X11R6/lib
+LFLAGS += -L$(MAEHOME)/lib -L/usr/local/lib -L/usr/X11R6/lib 
 LFLAGS += -lnet_conn -lforms -lGA -lX11 -lglut -lGLU -lGL -lm -lfl -lrt -lz -lparam_interface -lipc -lglobal -fopenmp
-LFLAGS += -lbumblebee_basic_interface -lstereo_interface
+LFLAGS += -lbumblebee_basic_interface -lstereo_interface 
 LFLAGS +=`pkg-config --libs opencv` -fopenmp
 CFLAGS += -O4 -Wall -fopenmp
 CXXFLAGS += -O4 -Wall -fopenmp

@@ -5,7 +5,7 @@ MODULE_COMMENT = Sensor Calibration
 
 LINK = g++
 
-CXXFLAGS += -std=c++11 -O2
+CXXFLAGS += -std=c++11 -O2 -Wno-deprecated-declarations
 
 #cheating
 IFLAGS += -std=c++11 -O2
@@ -18,11 +18,9 @@ IFLAGS += 	-I$(CARMEN_HOME)/src/hypergraphsclam \
 
 IFLAGS += -I/usr/include/
 
-# the eigen includes
-IFLAGS += -I/usr/include/eigen3
-
-# PCL includes
-IFLAGS += -I/usr/include/pcl-1.7/
+# eigen and PCL includes
+PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
+IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC)
 
 # the suitesparse includes
 IFLAGS += -I/usr/include/suitesparse
@@ -76,9 +74,12 @@ SOURCES = 	Helpers/StringHelper.cpp \
 #PUBLIC_LIBRARIES =
 #PUBLIC_BINARIES = hypergraphsclam parser
 
-TARGETS = hypergraphsclam parser
+TARGETS = libviso hypergraphsclam parser
 
-hypergraphsclam: src/VehicleModel.o Helpers/StringHelper.o src/HyperGraphSclamOptimizer.o hypergraphsclam.o
+libviso:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libviso2.3/src
+
+hypergraphsclam: $(CARMEN_HOME)/sharedlib/libviso2.3/src/libviso.a src/VehicleModel.o Helpers/StringHelper.o src/HyperGraphSclamOptimizer.o hypergraphsclam.o
 
 parser:	Helpers/StringHelper.o \
 		Helpers/SimpleLidarSegmentation.o \

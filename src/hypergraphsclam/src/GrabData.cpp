@@ -339,7 +339,7 @@ void GrabData::BuildGPSMeasures()
                 gps_pose->gps_measurement.setTranslation(gps_pose->gps_measurement.translation() - gps_origin);
 
                 // update the orientation
-                gps_pose->gps_measurement.setRotation(GetGPSOrientation(begin, it, end, gps_pose->timestamp));
+                gps_pose->gps_measurement.setRotation(Eigen::Rotation2Dd(GetGPSOrientation(begin, it, end, gps_pose->timestamp)));
 
                 // let's take an advantage here
                 // gps_pose->est = gps_pose->gps_measurement;
@@ -1918,7 +1918,7 @@ bool GrabData::ParseLogFile(const std::string &input_filename)
             // build a new sick message
             msg = new StampedSICK(msg_id);
         }
-        else if ("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE4" == tag)
+        else if ("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3" == tag)   // ZED eh FILE4
         {
             // parse the Bumblebee stereo image message
             msg = new StampedBumblebee(msg_id);

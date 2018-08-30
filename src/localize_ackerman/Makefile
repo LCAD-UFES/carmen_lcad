@@ -2,7 +2,9 @@ include ../Makefile.conf
 
 SUBDIRS = model_learn_ackerman
 
-CFLAGS += -std=c99 -fopenmp
+CFLAGS += -std=c11 -fopenmp
+CXXFLAGS += -std=c++11 -fopenmp
+
 LFLAGS += 
 
 LINK = g++
@@ -25,7 +27,10 @@ LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath 
 IFLAGS += `pkg-config --cflags opencv`
 LFLAGS += `pkg-config --libs opencv`
 
-IFLAGS += -I/usr/include/eigen3 -I/usr/local/include/pcl-1.7/  -I/usr/include/vtk-5.8/
+PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
+VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
+IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+
 LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization
 
 MODULE_NAME = LOCALIZE ACKERMAN

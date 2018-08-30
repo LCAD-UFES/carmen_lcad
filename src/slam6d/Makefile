@@ -5,7 +5,11 @@ LINK = g++
 MODULE_NAME = SLAM6D
 MODULE_COMMENT = SLAM6D Based on Kinect Fusion
 
-IFLAGS += -I../../sharedlib/libkinfu -I/usr/local/include/pcl-1.7/   \
+PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
+VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
+IFLAGS += -I $(PCL_INC) -I $(VTK_INC)
+
+IFLAGS += -I../../sharedlib/libkinfu \
 			   -I/usr/local/cuda/include -I/home/lcad12/NVIDIA_GPU_Computing_SDK/C/common/inc
 IFLAGS += -I/usr/local/cuda/include -I/usr/include/eigen3  `pkg-config --cflags opencv` -I/usr/local/cuda/lib64/
 LFLAGS += -L/usr/local/lib/ -L/usr/lib64 -L../../sharedlib/libkinfu -L../../sharedlib/libsiftgpu -L/usr/local/cuda/lib64/

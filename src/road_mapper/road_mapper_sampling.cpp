@@ -465,15 +465,15 @@ register_handlers()
 {
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
 															(carmen_handler_t) global_pos_handler,
-															CARMEN_SUBSCRIBE_ALL);
+															CARMEN_SUBSCRIBE_LATEST); // CARMEN_SUBSCRIBE_ALL);
 
 	carmen_map_server_subscribe_localize_map_message(NULL,
 														(carmen_handler_t) localize_map_handler,
-														CARMEN_SUBSCRIBE_ALL);
+														CARMEN_SUBSCRIBE_LATEST); // CARMEN_SUBSCRIBE_ALL);
 
 	carmen_map_server_subscribe_road_map(NULL,
 												(carmen_handler_t) road_map_handler,
-												CARMEN_SUBSCRIBE_ALL);
+												CARMEN_SUBSCRIBE_LATEST); // CARMEN_SUBSCRIBE_ALL);
 }
 
 

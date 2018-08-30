@@ -5,7 +5,7 @@ LINK = g++
 MODULE_NAME = HYPERGRAPHSCLAM GRAB DATA
 MODULE_COMMENT =
 
-CXXFLAGS += -std=c++11 -O2
+CXXFLAGS += -std=c++11 -O2 -Wno-deprecated-declarations
 
 IFLAGS += -I$(CARMEN_HOME)/src/hypergraphsclam/src \
 			-I$(CARMEN_HOME)/src/hypergraphsclam/Helpers \
@@ -15,6 +15,9 @@ IFLAGS += -I$(CARMEN_HOME)/src/hypergraphsclam/src \
 
 #cheating
 IFLAGS += -std=c++11 -O2
+
+PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
+IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC)
 
 # the eigen includes
 IFLAGS += -I/usr/include/eigen3

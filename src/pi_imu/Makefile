@@ -9,7 +9,7 @@ CXXFLAGS += -std=c++0x
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcmt/
 LFLAGS +=
 
-LFLAGS += -lbumblebee_basic_interface -lcamera_interface -lparam_interface -lipc -lglobal -lm `pkg-config --cflags opencv` `pkg-config --libs opencv` 
+LFLAGS +=  -lparam_interface -lipc -lglobal -lm  -lglut -lGL -lGLU 
 
 SOURCES = pi_imu_client_driver.cpp pi_imu_viewer.cpp
 
