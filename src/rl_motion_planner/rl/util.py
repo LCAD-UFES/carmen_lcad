@@ -58,3 +58,12 @@ def relative_pose(x, y):
     b = Transform2d(0., 0., x[2])
     c = b.inverse().transform(a)
     return [c.x, c.y, c.th]
+
+
+def ackerman_motion_model(pose, v, phi, dt, L=2.625):
+    new_pose = np.copy(pose)
+    new_pose[0] += v * dt * np.cos(pose[2])
+    new_pose[1] += v * dt * np.sin(pose[2])
+    new_pose[2] += v * dt * np.tan(phi) / L
+    new_pose[2] = normalize_theta(new_pose[2])
+    return new_pose
