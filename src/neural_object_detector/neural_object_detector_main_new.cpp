@@ -419,9 +419,6 @@ build_detected_objects_message(vector<bbox_t> predictions, vector<image_cartesia
 				msg.point_clouds[l].model_features.blue = 0.8;
 				msg.point_clouds[l].model_features.model_name = (char *) "car";
 				break;
-			case 9:
-				printf("Traffic Light %lf, %lf", objects_poses[i].cartesian_x, objects_poses[i].cartesian_y);
-				break;
 			default:
 				msg.point_clouds[l].geometric_model = 0;
 				msg.point_clouds[l].model_features.geometry.height = 1.8;
@@ -498,8 +495,17 @@ compute_annotation_specifications(vector<vector<image_cartesian>> traffic_light_
 				mean_y += traffic_light_clusters[i][j].cartesian_y;
 				mean_z += traffic_light_clusters[i][j].cartesian_z;
 			}
-			printf("%lf, %lf, %lf", mean_x, mean_y, mean_z);
+			printf("TL %lf, %lf, %lf\n", mean_x, mean_y, mean_z);
 	}
+}
+
+
+void
+carmen_translte_3d(double *x, double *y, double *z, double offset_x, double offset_y, double offset_z)
+{
+	*x += offset_x;
+	*y += offset_y;
+	*z += offset_z;
 }
 
 
@@ -514,11 +520,22 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 	{
 		if (predictions[i].obj_id == 9)
 		{
-			printf("%s\n", obj_names_vector[predictions[i].obj_id].c_str());
+			//printf("%s\n", obj_names_vector[predictions[i].obj_id].c_str());
 			for (int j = 0; j < points_inside_bbox[i].size(); j++)
 			{
+				carmen_vector_3D_t offset; // TODO ler do carmen ini
+				offset.x = 0.572;
+				offset.y = 0.0;
+				offset.z = 2.154;
+
+				carmen_translte_3d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, &points_inside_bbox[i][j].cartesian_z,
+						offset.x, offset.y, offset.z);
+				carmen_rotate_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos.theta);
+				carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos.x, globalpos.y);
+
 				traffic_light_points.push_back(points_inside_bbox[i][j]);
 			}
+			count = 0;
 			traffic_light_found = 0;
 		}
 	}
@@ -530,7 +547,9 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 		compute_annotation_specifications(traffic_light_clusters);
 		traffic_light_points.clear();
 		count = 0;
+		printf("GP %lf %lf\n", globalpos.x, globalpos.y);
 	}
+	printf("Cont %d\n", count);
 }
 
 
@@ -563,7 +582,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
 
-	cvtColor(open_cv_image, open_cv_image, COLOR_RGB2BGR);
+	//cvtColor(open_cv_image, open_cv_image, COLOR_RGB2BGR);
 
 	//imshow("NOD", open_cv_image);
 	//waitKey(1);
