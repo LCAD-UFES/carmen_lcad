@@ -179,7 +179,7 @@ publish_particles_name(carmen_localize_ackerman_particle_filter_p filter, carmen
 	pmsg.particles = filter->particles;
 
 	err = IPC_publishData(message_name, &pmsg);
-	carmen_test_ipc_exit(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_PARTICLE_NAME);
+	carmen_test_ipc_exit(err, "Could not publish", message_name);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1256,7 +1256,10 @@ register_ipc_messages(void)
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_LOCALIZE_ACKERMAN_PARTICLE_NAME);
 
 	err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_PARTICLE_PREDICTION_NAME, IPC_VARIABLE_LENGTH, CARMEN_LOCALIZE_ACKERMAN_PARTICLE_FMT);
-	carmen_test_ipc_exit(err, "Could not define", CARMEN_LOCALIZE_ACKERMAN_PARTICLE_NAME);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_LOCALIZE_ACKERMAN_PARTICLE_PREDICTION_NAME);
+
+	err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_PARTICLE_CORRECTION_NAME, IPC_VARIABLE_LENGTH, CARMEN_LOCALIZE_ACKERMAN_PARTICLE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_LOCALIZE_ACKERMAN_PARTICLE_CORRECTION_NAME);
 
 	err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_SENSOR_NAME, IPC_VARIABLE_LENGTH, CARMEN_LOCALIZE_ACKERMAN_SENSOR_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_LOCALIZE_ACKERMAN_SENSOR_NAME);
