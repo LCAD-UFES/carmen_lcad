@@ -1,4 +1,5 @@
 #include "neural_object_detector2.hpp"
+#include <tf.h>
 
 #define SHOW_DETECTIONS
 
@@ -47,6 +48,26 @@ move_point_to_camera_reference (tf::Point point, carmen_pose_3D_t camera_pose)
 }
 
 
+carmen_ackerman_traj_point_t
+convert_rddf_pose_to_car_reference (carmen_ackerman_traj_point_t pose)
+{
+	carmen_ackerman_traj_point_t p;
+	double cos_theta = cos(-globalpos.theta);
+	double sin_theta = sin(-globalpos.theta);
+
+	p.x = pose.x - globalpos.x;
+	p.y = pose.y - globalpos.y;
+
+	carmen_rotate_2d(&pose.x, &pose.y, pose.theta);
+
+	//p.x = (cos_theta * p.x) - (sin_theta * p.y);
+	//p.y = (sin_theta * p.x) + (cos_theta * p.y);
+	printf("Pose in car reference: %lf X %lf\n", p.x, p.y);
+	return (p);
+}
+
+
+
 carmen_position_t
 convert_rddf_pose_to_point_in_image(carmen_ackerman_traj_point_t pose,
 									carmen_camera_parameters camera_parameters,
@@ -54,25 +75,43 @@ convert_rddf_pose_to_point_in_image(carmen_ackerman_traj_point_t pose,
 									int image_width, int image_height)
 {
 	carmen_position_t point;
+	carmen_ackerman_traj_point_t pose_in_car_reference;
+
 	tf::Point point_tf;
 	tf::Point point_in_camera;
+	printf("Pose in global: %lf X %lf\n", pose.x, pose.y);
+	pose_in_car_reference = convert_rddf_pose_to_car_reference (pose);
 
-	point_tf (pose.x, pose.y, 0);
+	point_tf[0] = pose_in_car_reference.x;
+	point_tf[1] = pose_in_car_reference.y;
+	point_tf[2] = 0.0;//(pose.x, pose.y, 0.0);
+
 
 	// fx and fy are the focal lengths
 	double fx_meters = camera_parameters.fx_factor * image_width * camera_parameters.pixel_size;
 	double fy_meters = camera_parameters.fy_factor * image_height * camera_parameters.pixel_size;
 
+	//printf("Focal Lenght: %lf X %lf\n", fx_meters, fy_meters);
+
 	//cu, cv represent the camera principal point
 	double cu = camera_parameters.cu_factor * (double) image_width;
 	double cv = camera_parameters.cv_factor * (double) image_height;
 
+	//printf("Principal Point: %lf X %lf\n", cu, cv);
+
 	point_in_camera = move_point_to_camera_reference(point_tf, camera_pose);
 
+	printf("Pose in camera: %lf X %lf\n", point_in_camera.x(), point_in_camera.y());
+
+	double px = (fx_meters * (point_in_camera.y() / point_in_camera.x()) / camera_parameters.pixel_size + cu);
+	double py = (fy_meters * (-point_in_camera.z() / point_in_camera.x()) / camera_parameters.pixel_size + cv);
+	printf("Pose in image: %lf X %lf\n\n\n\n", px, py);
+
+	/*printf("Image Size: %d X %d\n", image_width, image_height);
 	printf("Pose in global: %lf X %lf\n", pose.x, pose.y);
 	printf("Pose in camera: %lf X %lf\n", point_in_camera.x(), point_in_camera.y());
-	getchar();
-
+	printf("Pose in image: %lf X %lf\n", point.x, point.y);
+	getchar();*/
 	return (point);
 
 }
@@ -491,6 +530,44 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     cv::Mat src_image_copy = src_image.clone();
 
+    for(int i = 0; i < last_rddf_poses.number_of_poses; i++){
+    	carmen_position_t p;
+    	if(i%15==0)
+    	{
+    		cout<<i<<endl;
+    		p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[i],camera_parameters, camera_pose,image_msg->width, image_msg->height);
+    	}
+
+    	//printf("Point in World %d: %lf X %lf\tPoint in Camera: %d X %d\n",i, last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, (int)p.x, (int)p.y);
+    }
+    getchar();
+
+    /*carmen_position_t p;
+    carmen_position_t p2;
+    carmen_position_t p3;
+    p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[2],camera_parameters, camera_pose,image_msg->width, image_msg->height);
+    p2 = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[5],camera_parameters, camera_pose,image_msg->width, image_msg->height);
+    p3 = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[8],camera_parameters, camera_pose,image_msg->width, image_msg->height);
+
+    cv::Point pIm;
+    cv::Point pIm2;
+    cv::Point pIm3;
+
+    pIm.x = (int)p.x; pIm.y = (int)p.y;
+    pIm2.x = (int)p2.x; pIm2.y = (int)p2.y;
+    pIm3.x = (int)p3.x; pIm3.y = (int)p3.y;
+    int thickness = -1;
+    int lineType = 8;
+    cv::circle(src_image, pIm, 10.5, cv::Scalar(255, 0, 0), thickness, lineType);
+    cout<<pIm.x<<" "<<pIm.y<<endl;
+    cv::circle(src_image, pIm2, 10.5, cv::Scalar(0, 255, 0), thickness, lineType);
+    cout<<pIm2.x<<" "<<pIm2.y<<endl;
+    cv::circle(src_image, pIm3, 10.5, cv::Scalar(0, 0, 255), thickness, lineType);
+    cout<<pIm3.x<<" "<<pIm3.y<<endl;
+
+    cv::imwrite("test.jpg", src_image);
+    cout<<"writen!"<<endl;*/
+
     cv::Mat pRoi = src_image_copy(cv::Rect(src_image_copy.cols * crop_x / 2.0, 0,
     		src_image_copy.cols - src_image_copy.cols * crop_x, src_image_copy.rows));
     src_image = pRoi;
@@ -526,8 +603,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     //	if(i%30==0)
     //		getchar();
     //}
-    carmen_point_t p;
-    p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[10],camera_parameters, camera_pose,image_msg->width, image_msg->height);
+
 
 
     // Removes the ground, Removes points outside cameras field of view and Returns the points that reach obstacles
