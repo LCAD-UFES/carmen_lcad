@@ -25,16 +25,18 @@ def update_rewards(params, episode, info):
 
     if info['success']:
         rw = float(params['n_steps_episode'] - len(episode)) / float(params['n_steps_episode'])
+        print("updated rewards:", rw)
     elif info['hit_obstacle']:
         rw = -1.0
 
     rw /= len(episode)
+    print('rw:', rw)
 
     for transition in episode:
         transition[2] = rw
 
 
-def generate_rollouts(policy, env, n_rollouts, params, exploit, episode_id, use_target_net=False):
+def generate_rollouts(policy, env, n_rollouts, params, exploit, use_her, use_target_net=False):
     # generate episodes
     episodes = []
     n_successes = 0
@@ -77,7 +79,9 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, episode_id, use_
         if len(episode) == 0:
             continue
 
-        # update_rewards(params, episode, info)
+        if params['use_her']:
+            update_rewards(params, episode, info)
+
         episodes.append(episode)
 
         if info['success']: n_successes += 1
@@ -112,7 +116,7 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
     state, goal = env.reset()
     n_laser_readings = len(state['laser'])
 
-    policy = DDPG(params, n_laser_readings=n_laser_readings)
+    policy = DDPG(params, n_laser_readings=n_laser_readings, use_her=params['use_her'])
     if len(checkpoint) > 0:
         policy.load(checkpoint)
 
@@ -132,7 +136,7 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
         # rollouts
         episodes, n_successes, n_collisions, q0 = generate_rollouts(policy, env, params['n_train_rollouts'],
                                                                 params, exploit=False,
-                                                                episode_id=len(policy.buffer.stack))
+                                                                use_her=params['use_her'])
 
         # report
         last_success_flags.append(n_successes / float(len(episodes)))
@@ -158,23 +162,25 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
         # Train
         policy.store_episode(episodes)
 
-        for b in range(params['n_batches']):
-            cl, pl = policy.train()
-            # if b % 50 == 0:
-                # print('Training batch', b, 'Critic loss:', cl, 'Policy loss:', pl)
+        if len(policy.buffer.stack) > 1:
+            for b in range(params['n_batches']):
+                cl, pl = policy.train()
+                # if b % 50 == 0:
+                    # print('Training batch', b, 'Critic loss:', cl, 'Policy loss:', pl)
 
-        # Save
-        if epoch % 20 == 0:
-            policy_path = periodic_policy_path.format(epoch)
-            policy.save(policy_path)
+            # Save
+            if epoch % 20 == 0:
+                policy_path = periodic_policy_path.format(epoch)
+                policy.save(policy_path)
 
-        policy.update_target_net()
+            policy.update_target_net()
 
         # test
         if params['n_test_rollouts'] > 0:
             print('Testing...')
             episodes, n_successes, n_collisions, _ = generate_rollouts(policy, env, params['n_test_rollouts'],
-                                                                        params, exploit=True)
+                                                                       params, exploit=True,
+                                                                       use_her=params['use_her'])
             print_evaluation_report(episodes, n_successes, n_collisions)
             success_rate = float(n_successes) / float(len(episodes))
             collision_rate = float(n_collisions) / float(len(episodes))
@@ -208,8 +214,10 @@ def config():
         'use_conv_layer': True,
         'activation_fn': 'elu',
         'allow_negative_commands': False,
+        'use_her': True,
         # env
         'env': 'simple',
+        'model': 'ackerman',
         'n_steps_episode': 200,
         'goal_achievement_dist': 1.0,
         'vel_achievement_dist': 0.5,

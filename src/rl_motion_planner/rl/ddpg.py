@@ -91,12 +91,17 @@ class ActorCritic:
 
 
 class DDPG(object):
-    def __init__(self, params, n_laser_readings):
+    def __init__(self, params, n_laser_readings, use_her):
         self.gamma = params['gamma']
 
-        self._create_network(n_laser_readings, params)
+        # n_trad = 128 if use_her else 256
+        # n_her = 256 if use_her else 0
+        n_trad = 0
+        n_her = 256
 
-        self.buffer = ReplayBuffer(capacity=500, n_trad=256, n_her=0, max_episode_size=params['n_steps_episode'])
+        self.allow_negative_commands = params['allow_negative_commands']
+        self._create_network(n_laser_readings, params)
+        self.buffer = ReplayBuffer(capacity=500, n_trad=n_trad, n_her=n_her, max_episode_size=params['n_steps_episode'])
         self.saver = tf.train.Saver()
 
     def _create_network(self, n_laser_readings, params):
@@ -197,7 +202,7 @@ class DDPG(object):
         # action postprocessing
         u = ret[0][0]
         u += noise_eps * np.random.randn(*u.shape)  # gaussian noise
-        u = np.clip(u, -1.0, 1.0)
+        u = np.clip(u, -1.0, 1.0) if self.allow_negative_commands else np.clip(u, 0.0, 1.0)
 
         if np.random.random() < random_eps:
             u = np.random.uniform(-1.0, 1.0, len(u))
