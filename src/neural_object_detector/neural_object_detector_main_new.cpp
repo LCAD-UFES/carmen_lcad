@@ -486,6 +486,55 @@ filter_predictions_of_interest(vector<bbox_t> &predictions)
 
 
 void
+compute_annotation_specifications(vector<vector<image_cartesian>> traffic_light_clusters)
+{
+	double mean_x = 0.0, mean_y = 0.0, mean_z = 0.0;
+
+	for (int i = 0; i < traffic_light_clusters.size(); i++)
+	{
+			for (int j = 0; j < traffic_light_clusters[i].size(); j++)
+			{
+				mean_x += traffic_light_clusters[i][j].cartesian_x;
+				mean_y += traffic_light_clusters[i][j].cartesian_y;
+				mean_z += traffic_light_clusters[i][j].cartesian_z;
+			}
+			printf("%lf, %lf, %lf", mean_x, mean_y, mean_z);
+	}
+}
+
+
+void
+generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<image_cartesian>> points_inside_bbox)
+{
+	static vector<image_cartesian> traffic_light_points;
+	static int count = 0;
+	int traffic_light_found = 1;
+
+	for (int i = 0; i < predictions.size(); i++)
+	{
+		if (predictions[i].obj_id == 9)
+		{
+			printf("%s\n", obj_names_vector[predictions[i].obj_id].c_str());
+			for (int j = 0; j < points_inside_bbox[i].size(); j++)
+			{
+				traffic_light_points.push_back(points_inside_bbox[i][j]);
+			}
+			traffic_light_found = 0;
+		}
+	}
+	count += traffic_light_found;
+
+	if (count >= 20)                // If stays without see a traffic light for more than 20 frames
+	{                              // Compute traffic light positions and generate annotations
+		vector<vector<image_cartesian>> traffic_light_clusters = dbscan_compute_clusters(0.5, 3, traffic_light_points);
+		compute_annotation_specifications(traffic_light_clusters);
+		traffic_light_points.clear();
+		count = 0;
+	}
+}
+
+
+void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	unsigned char *img;
@@ -535,6 +584,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 		vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
 
 		vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
+
+		generate_traffic_light_annotations(predictions, points_inside_bbox);
 
 		//carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
 
