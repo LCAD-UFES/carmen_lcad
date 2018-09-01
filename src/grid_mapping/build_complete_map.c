@@ -76,8 +76,8 @@ build_complete_map(carmen_map_t *block_map, carmen_map_t *complete_map)
 			local_y = y + (int)((double)(block_map->config.y_origin - complete_map->config.y_origin) / complete_map->config.resolution);//((((double)y * block_map->config.resolution) + block_map->config.y_origin) - complete_map->config.y_origin) / complete_map->config.resolution;
 
 
-			if (local_x < 0 || local_x > complete_map->config.x_size ||
-					local_y < 0 || local_y > complete_map->config.y_size)
+			if (local_x < 0 || local_x >= complete_map->config.x_size ||
+					local_y < 0 || local_y >= complete_map->config.y_size)
 				continue;
 
 		//	if (val > 0.5 || complete_map->map[local_x][local_y] == -1.0)
@@ -179,8 +179,10 @@ main(int argc, char **argv)
 	complete_map.config.y_origin = min_pose.y;
 	complete_map.config.x_size = (max_pose.x - min_pose.x) / complete_map.config.resolution;
 	complete_map.config.y_size = (max_pose.y - min_pose.y) / complete_map.config.resolution;
-	complete_map.complete_map = (double*) malloc(sizeof(double) * complete_map.config.x_size * complete_map.config.y_size);
-	complete_map.map = (double**)malloc(sizeof(double*) * complete_map.config.x_size);
+	complete_map.complete_map = (double *) malloc(sizeof(double) * complete_map.config.x_size * complete_map.config.y_size);
+	carmen_test_alloc(complete_map.complete_map);
+	complete_map.map = (double **)malloc(sizeof(double*) * complete_map.config.x_size);
+	carmen_test_alloc(complete_map.map);
 
 
 	for (int x = 0; x < complete_map.config.x_size; x++)
