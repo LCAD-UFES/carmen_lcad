@@ -94,9 +94,23 @@ class DDPG(object):
     def __init__(self, params, n_laser_readings):
         self.gamma = params['gamma']
 
+        if params['use_her']:
+            if params['her_rate'] < 0 or params['her_rate'] > 1.0:
+                raise Exception('The param "her_rate" should be in the interval [0., 1.]')
+
+            n_trad = int(params['batch_size'] * (1. - params['her_rate']))
+            n_her = int(params['batch_size'] * params['her_rate'])
+        else:
+            n_trad = params['batch_size']
+            n_her = 0
+
+        self.allow_negative_commands = params['allow_negative_commands']
         self._create_network(n_laser_readings, params)
 
-        self.buffer = ReplayBuffer(capacity=500, n_trad=256, n_her=0, max_episode_size=params['n_steps_episode'])
+        self.buffer = ReplayBuffer(capacity=params['replay_memory_capacity'],
+                                   n_trad=n_trad, n_her=n_her,
+                                   max_episode_size=params['n_steps_episode'])
+
         self.saver = tf.train.Saver()
 
     def _create_network(self, n_laser_readings, params):
@@ -197,7 +211,7 @@ class DDPG(object):
         # action postprocessing
         u = ret[0][0]
         u += noise_eps * np.random.randn(*u.shape)  # gaussian noise
-        u = np.clip(u, -1.0, 1.0)
+        u = np.clip(u, -1.0, 1.0) if self.allow_negative_commands else np.clip(u, 0.0, 1.0)
 
         if np.random.random() < random_eps:
             u = np.random.uniform(-1.0, 1.0, len(u))
