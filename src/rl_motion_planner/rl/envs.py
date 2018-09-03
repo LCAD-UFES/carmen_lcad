@@ -44,7 +44,8 @@ class SimpleEnv:
             self.pose[0] += cmd[0] * self.dt
             self.pose[1] += cmd[1] * self.dt
 
-        self.pose = np.clip(self.pose, -self.env_size, self.env_size)
+        limit = self.env_size - 0.1 * self.env_size
+        self.pose = np.clip(self.pose, -limit, limit)
 
         success = True if dist(self.pose, self.goal) < self.goal_radius else False
         starved = True if self.n_steps > self.params['n_steps_episode'] else False

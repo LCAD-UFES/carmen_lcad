@@ -91,17 +91,26 @@ class ActorCritic:
 
 
 class DDPG(object):
-    def __init__(self, params, n_laser_readings, use_her):
+    def __init__(self, params, n_laser_readings):
         self.gamma = params['gamma']
 
-        # n_trad = 128 if use_her else 256
-        # n_her = 256 if use_her else 0
-        n_trad = 0
-        n_her = 256
+        if params['use_her']:
+            if params['her_rate'] < 0 or params['her_rate'] > 1.0:
+                raise Exception('The param "her_rate" should be in the interval [0., 1.]')
+
+            n_trad = int(params['batch_size'] * (1. - params['her_rate']))
+            n_her = int(params['batch_size'] * params['her_rate'])
+        else:
+            n_trad = params['batch_size']
+            n_her = 0
 
         self.allow_negative_commands = params['allow_negative_commands']
         self._create_network(n_laser_readings, params)
-        self.buffer = ReplayBuffer(capacity=500, n_trad=n_trad, n_her=n_her, max_episode_size=params['n_steps_episode'])
+
+        self.buffer = ReplayBuffer(capacity=params['replay_memory_capacity'],
+                                   n_trad=n_trad, n_her=n_her,
+                                   max_episode_size=params['n_steps_episode'])
+
         self.saver = tf.train.Saver()
 
     def _create_network(self, n_laser_readings, params):

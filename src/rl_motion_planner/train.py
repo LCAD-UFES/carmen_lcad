@@ -36,7 +36,7 @@ def update_rewards(params, episode, info):
         transition[2] = rw
 
 
-def generate_rollouts(policy, env, n_rollouts, params, exploit, use_her, use_target_net=False):
+def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=False):
     # generate episodes
     episodes = []
     n_successes = 0
@@ -60,9 +60,6 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_her, use_tar
             cmd, q = policy.get_actions(obs, g + [goal[3]], noise_eps=params['noise_eps'] if not exploit else 0.,
                                         random_eps=params['random_eps'] if not exploit else 0.,
                                         use_target_net=use_target_net)
-
-            # if len(episode) % 20 == 0:
-                # print('Step', len(episode), 'Cmd:', cmd, 'Q:', q)
 
             new_obs, done, info = env.step(cmd)
 
@@ -116,7 +113,7 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
     state, goal = env.reset()
     n_laser_readings = len(state['laser'])
 
-    policy = DDPG(params, n_laser_readings=n_laser_readings, use_her=params['use_her'])
+    policy = DDPG(params, n_laser_readings=n_laser_readings)
     if len(checkpoint) > 0:
         policy.load(checkpoint)
 
@@ -134,9 +131,8 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
     # Training loop
     for epoch in range(n_epochs):
         # rollouts
-        episodes, n_successes, n_collisions, q0 = generate_rollouts(policy, env, params['n_train_rollouts'],
-                                                                params, exploit=False,
-                                                                use_her=params['use_her'])
+        episodes, n_successes, n_collisions, q0 = generate_rollouts(policy, env, params['n_rollouts'],
+                                                                    params, exploit=False)
 
         # report
         last_success_flags.append(n_successes / float(len(episodes)))
@@ -147,7 +143,7 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
 
         last_episode = episodes[-1]
 
-        print('** Episode', epoch * params['n_train_rollouts'],
+        print('** Episode', epoch * params['n_rollouts'],
               'Return:', np.sum([t[2] for t in last_episode]),
               'n_successes:', n_successes,
               'n_collisions:', n_collisions,
@@ -164,9 +160,7 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
 
         if len(policy.buffer.stack) > 1:
             for b in range(params['n_batches']):
-                cl, pl = policy.train()
-                # if b % 50 == 0:
-                    # print('Training batch', b, 'Critic loss:', cl, 'Policy loss:', pl)
+                policy.train()
 
             # Save
             if epoch % 20 == 0:
@@ -174,29 +168,6 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
                 policy.save(policy_path)
 
             policy.update_target_net()
-
-        # test
-        if params['n_test_rollouts'] > 0:
-            print('Testing...')
-            episodes, n_successes, n_collisions, _ = generate_rollouts(policy, env, params['n_test_rollouts'],
-                                                                       params, exploit=True,
-                                                                       use_her=params['use_her'])
-            print_evaluation_report(episodes, n_successes, n_collisions)
-            success_rate = float(n_successes) / float(len(episodes))
-            collision_rate = float(n_collisions) / float(len(episodes))
-            print('Evaluation success rate:', success_rate, 'collision_rate:', collision_rate)
-
-            # save the policy if it's better than the previous ones
-            if success_rate >= best_success_rate:
-                best_success_rate = success_rate
-                print('New best success rate: {}. Saving policy to {} ...'.format(best_success_rate, best_policy_path))
-                policy.save(best_policy_path)
-                policy.save(latest_policy_path)
-
-            if policy_save_interval > 0 and epoch % policy_save_interval == 0 and save_policies:
-                policy_path = periodic_policy_path.format(epoch)
-                print('Saving periodic policy to {} ...'.format(policy_path))
-                policy.save(policy_path)
 
 
 @ex.config
@@ -208,13 +179,6 @@ def config():
     policy_save_interval = 0
 
     params = {
-        'rddf': 'rddf-voltadaufes-20170809.txt',
-        'n_hidden_neurons': 64,
-        'n_hidden_layers': 1,
-        'use_conv_layer': True,
-        'activation_fn': 'elu',
-        'allow_negative_commands': False,
-        'use_her': True,
         # env
         'env': 'simple',
         'model': 'ackerman',
@@ -222,13 +186,23 @@ def config():
         'goal_achievement_dist': 1.0,
         'vel_achievement_dist': 0.5,
         'view': False,
+        'rddf': 'rddf-voltadaufes-20170809.txt',
+        # net
+        'n_hidden_neurons': 64,
+        'n_hidden_layers': 1,
+        'use_conv_layer': True,
+        'activation_fn': 'elu',
+        'allow_negative_commands': True,
         # training
-        'n_train_rollouts': 1,  # per epoch
-        'n_batches': 50,  # training batches per cycle
-        'batch_size': 256,  # per mpi thread, measured in transitions and reduced to even multiple of chunk_length.
-        'n_test_rollouts': 0,  # number of test rollouts per epoch, each consists of rollout_batch_size rollouts
+        'n_rollouts': 1,
+        'n_batches': 50,
+        'batch_size': 256,
+        'use_her': True,
+        'her_rate': 1.0,
+        'n_test_rollouts': 0,
+        'replay_memory_capacity': 500,  # episodes
         # exploration
-        'random_eps': 0.0,  # percentage of time a random action is taken
+        'random_eps': 0.05,  # percentage of time a random action is taken
         'noise_eps': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
     }
 
