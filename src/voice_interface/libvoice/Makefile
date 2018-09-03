@@ -1,4 +1,5 @@
-include ../../src/Makefile.conf
+
+include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK=g++
 CFLAGS += -std=c99 -Wno-write-strings  
@@ -6,8 +7,8 @@ CXXFLAGS += -std=c++0x -Wno-write-strings
 
 LFLAGS += -lespeak 
 	  
-MODULE_NAME = CARMEN VOICE
-MODULE_COMMENT = Carmen Voice Synthesizer 
+MODULE_NAME = LIB VOICE
+MODULE_COMMENT = Library to Synthesize Voice
 
 SOURCES = voice.cpp voice_test.cpp
 #PUBLIC_INCLUDES = voice.h
@@ -22,4 +23,4 @@ endif
 libvoice.a: voice.o
 voice_test: voice_test.o voice.o
 
-include ../../src/Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules
