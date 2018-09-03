@@ -85,12 +85,12 @@ sort_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan) // Sort rays
 
 
 void
-sort_segment_points_by_angle(virtual_scan_segment_t *segment, carmen_point_t velodyne_pos)
+sort_segment_points_by_angle(virtual_scan_segment_t *segment, carmen_point_t sensor_pos)
 {
 	for (int i = 0; i < segment->num_points; i++)
 	{
-		double theta = atan2(segment->points[i].y - velodyne_pos.y, segment->points[i].x - velodyne_pos.x);
-		theta = carmen_normalize_theta(theta + velodyne_pos.theta);
+		double theta = atan2(segment->points[i].y - sensor_pos.y, segment->points[i].x - sensor_pos.x);
+		theta = carmen_normalize_theta(theta + sensor_pos.theta);
 		segment->points[i].theta = theta;
 	}
 	qsort((void *) (segment->points), (size_t) segment->num_points, sizeof(carmen_point_t), compare_angles);
@@ -499,7 +499,9 @@ find_principal_line_defining_points(carmen_point_t &first_point, carmen_point_t 
 	}
 
 	first_point = projection_of_point_into_line_segment_vw(segment.points[best_i], segment.points[best_j], segment.points[0]);
+	first_point.theta = segment.points[best_i].theta;
 	last_point = projection_of_point_into_line_segment_vw(segment.points[best_i], segment.points[best_j], segment.points[segment.num_points - 1]);
+	last_point.theta = segment.points[best_j].theta;
 }
 
 
@@ -513,17 +515,18 @@ classify_segments(virtual_scan_segment_classes_t *virtual_scan_segments)
 	{
 		virtual_scan_segment_t segment = virtual_scan_segment_classes->segment[i];
 
+//		double distance_centroid_to_sensor_pos = DIST2D(segment.centroid, segment.sensor_pos);
+//		if (((segment.sensor_id == VELODYNE) && (distance_centroid_to_sensor_pos > MAX_VELODYNE_SEGMENT_DISTANCE)) ||
+//			((segment.sensor_id == LASER_LDMRS) && (distance_centroid_to_sensor_pos <= MAX_VELODYNE_SEGMENT_DISTANCE)))
+//		{
+//			remove_segment(virtual_scan_segment_classes, i);
+//			i--;
+//			continue;
+//		}
+
 		carmen_point_t first_point = segment.points[segment.num_points / 150]; // O termo (segment.num_points / 150) remove os primeiros e ultimos ~1% do segmento para remover ruido
 		carmen_point_t last_point = segment.points[segment.num_points - (1 + segment.num_points / 150)];
 
-		double distance_centroid_to_sensor_pos = DIST2D(segment.centroid, segment.sensor_pos);
-		if (((segment.sensor_id == VELODYNE) && (distance_centroid_to_sensor_pos > MAX_VELODYNE_SEGMENT_DISTANCE)) ||
-			((segment.sensor_id == LASER_LDMRS) && (distance_centroid_to_sensor_pos <= MAX_VELODYNE_SEGMENT_DISTANCE)))
-		{
-			remove_segment(virtual_scan_segment_classes, i);
-			i--;
-			continue;
-		}
 		carmen_point_t main_line_first_point = first_point;
 		carmen_point_t main_line_last_point = last_point;
 		carmen_point_t farthest_point = first_point;
@@ -564,7 +567,7 @@ is_last_box_model_hypotheses_empty(virtual_scan_box_model_hypotheses_t *box_mode
 
 
 virtual_scan_box_model_t *
-virtual_scan_append_box(virtual_scan_box_models_t *models, virtual_scan_segment_t box_points)
+virtual_scan_append_box(virtual_scan_box_models_t *models, virtual_scan_segment_t segment)
 {
 	int n = models->num_boxes + 1;
 	models->num_boxes = n;
@@ -580,7 +583,7 @@ virtual_scan_append_box(virtual_scan_box_models_t *models, virtual_scan_segment_
 		models->box_points = (virtual_scan_segment_t *) realloc(models->box_points, sizeof(virtual_scan_segment_t) * n);
 	}
 
-	models->box_points[n - 1] = box_points;
+	models->box_points[n - 1] = segment;
 
 	virtual_scan_box_model_t *box = (models->box + n - 1);
 	memset(box, '\0', sizeof(virtual_scan_box_model_t));
@@ -617,9 +620,9 @@ virtual_scan_get_box_models(virtual_scan_box_model_hypotheses_t *hypotheses, int
 
 
 void
-append_pedestrian_to_box_models(virtual_scan_box_models_t *box_models, virtual_scan_segment_t box_points, carmen_point_t centroid)
+append_pedestrian_to_box_models(virtual_scan_box_models_t *box_models, virtual_scan_segment_t segment, carmen_point_t centroid)
 {
-	virtual_scan_box_model_t *box = virtual_scan_append_box(box_models, box_points);
+	virtual_scan_box_model_t *box = virtual_scan_append_box(box_models, segment);
 	box->c = PEDESTRIAN;
 	box->x = centroid.x;
 	box->y = centroid.y;
@@ -630,7 +633,7 @@ append_pedestrian_to_box_models(virtual_scan_box_models_t *box_models, virtual_s
 
 
 void
-append_l_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t box_points, carmen_point_t farthest_point,
+append_l_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t segment, carmen_point_t farthest_point,
 		int category, virtual_scan_category_t categories[], double theta, double theta2)
 {
 	carmen_position_t p1 = {farthest_point.x + categories[category].length * cos(theta),
@@ -641,7 +644,7 @@ append_l_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t bo
 	length_center_position.x = (p1.x + p2.x) / 2.0;
 	length_center_position.y = (p1.y + p2.y) / 2.0;
 
-	virtual_scan_box_model_t *box = virtual_scan_append_box(box_models, box_points);
+	virtual_scan_box_model_t *box = virtual_scan_append_box(box_models, segment);
 	box->c = categories[category].category;
 	box->width = categories[category].width;
 	box->length = categories[category].length;
@@ -652,7 +655,7 @@ append_l_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t bo
 
 
 void
-append_l_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t box_points, carmen_point_t farthest_point,
+append_l_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t segment, carmen_point_t farthest_point,
 		int category, virtual_scan_category_t categories[], double theta, double theta2, double l, double w)
 {
 	carmen_position_t p1 = {farthest_point.x + l * cos(theta),
@@ -663,7 +666,7 @@ append_l_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t bo
 	length_center_position.x = (p1.x + p2.x) / 2.0;
 	length_center_position.y = (p1.y + p2.y) / 2.0;
 
-	virtual_scan_box_model_t *box = virtual_scan_append_box(box_models, box_points);
+	virtual_scan_box_model_t *box = virtual_scan_append_box(box_models, segment);
 	box->c = categories[category].category;
 	box->width = w;
 	box->length = l;
@@ -674,7 +677,7 @@ append_l_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t bo
 
 
 void
-append_i_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t box_points, carmen_point_t first_point,
+append_i_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t segment, carmen_point_t first_point,
 		int category, virtual_scan_category_t categories[], double theta, double theta2)
 {
 	carmen_position_t p1 = {first_point.x + categories[category].length * cos(theta),
@@ -685,7 +688,7 @@ append_i_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t bo
 	length_center_position.x = (p1.x + p2.x) / 2.0;
 	length_center_position.y = (p1.y + p2.y) / 2.0;
 
-	virtual_scan_box_model_t *box = virtual_scan_append_box(box_models, box_points);
+	virtual_scan_box_model_t *box = virtual_scan_append_box(box_models, segment);
 	box->c = categories[category].category;
 	box->width = categories[category].width;
 	box->length = categories[category].length;
@@ -696,7 +699,7 @@ append_i_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t bo
 
 
 void
-append_i_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t box_points, carmen_point_t first_point,
+append_i_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t segment, carmen_point_t first_point,
 		int category, virtual_scan_category_t categories[], double theta, double theta2, double l, double w)
 {
 	carmen_position_t p1 = {first_point.x + l * cos(theta),
@@ -707,7 +710,7 @@ append_i_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t bo
 	length_center_position.x = (p1.x + p2.x) / 2.0;
 	length_center_position.y = (p1.y + p2.y) / 2.0;
 
-	virtual_scan_box_model_t *box = virtual_scan_append_box(box_models, box_points);
+	virtual_scan_box_model_t *box = virtual_scan_append_box(box_models, segment);
 	box->c = categories[category].category;
 	box->width = w;
 	box->length = l;
@@ -718,7 +721,7 @@ append_i_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t bo
 
 
 void
-append_l_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, virtual_scan_segment_t box_points,
+append_l_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, virtual_scan_segment_t segment,
 		virtual_scan_segment_features_t segment_features, virtual_scan_category_t categories[])
 {
 	carmen_point_t first_point = segment_features.first_point;
@@ -736,10 +739,10 @@ append_l_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 		{
 			theta = atan2(first_point.y - farthest_point.y, first_point.x - farthest_point.x);
 			theta2 = atan2(last_point.y - farthest_point.y, last_point.x - farthest_point.x);
-			if (true) //box_points.num_points < 20)
-				append_l_object(box_models, box_points, farthest_point, category, categories, theta, theta2);
+			if (true) //segment.num_points < 20)
+				append_l_object(box_models, segment, farthest_point, category, categories, theta, theta2);
 			else
-				append_l_object(box_models, box_points, farthest_point, category, categories, theta, theta2, l, w);
+				append_l_object(box_models, segment, farthest_point, category, categories, theta, theta2, l, w);
 		}
 		else
 		{
@@ -750,10 +753,10 @@ append_l_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 			{
 				theta = atan2(last_point.y - farthest_point.y, last_point.x - farthest_point.x);
 				theta2 = atan2(first_point.y - farthest_point.y, first_point.x - farthest_point.x);
-				if (true) //box_points.num_points < 20)
-					append_l_object(box_models, box_points, farthest_point, category, categories, theta, theta2);
+				if (true) //segment.num_points < 20)
+					append_l_object(box_models, segment, farthest_point, category, categories, theta, theta2);
 				else
-					append_l_object(box_models, box_points, farthest_point, category, categories, theta, theta2, l, w);
+					append_l_object(box_models, segment, farthest_point, category, categories, theta, theta2, l, w);
 			}
 		}
 	}
@@ -761,7 +764,7 @@ append_l_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 
 
 void
-append_i_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, virtual_scan_segment_t box_points,
+append_i_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, virtual_scan_segment_t segment,
 		virtual_scan_segment_features_t segment_features, virtual_scan_category_t categories[])
 {
 	carmen_point_t first_point = segment_features.first_point;
@@ -784,33 +787,33 @@ append_i_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 		{
 			theta = atan2(last_point.y - first_point.y, last_point.x - first_point.x);
 			theta2 = carmen_normalize_theta(theta - M_PI / 2.0);
-			if (true) //box_points.num_points < 20)
-				append_i_object(box_models, box_points, first_point, category, categories, theta, theta2);
+			if (true) //segment.num_points < 20)
+				append_i_object(box_models, segment, first_point, category, categories, theta, theta2);
 			else
-				append_i_object(box_models, box_points, first_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
+				append_i_object(box_models, segment, first_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
 
 			theta = atan2(first_point.y - last_point.y, first_point.x - last_point.x);
 			theta2 = carmen_normalize_theta(theta + M_PI / 2.0);
-			if (true) //box_points.num_points < 20)
-				append_i_object(box_models, box_points, last_point, category, categories, theta, theta2);
+			if (true) //segment.num_points < 20)
+				append_i_object(box_models, segment, last_point, category, categories, theta, theta2);
 			else
-				append_i_object(box_models, box_points, last_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
+				append_i_object(box_models, segment, last_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
 		}
 
 		if (l <= categories[category].width * 1.5)
 		{
 			theta = carmen_normalize_theta(atan2(last_point.y - first_point.y, last_point.x - first_point.x) - M_PI / 2.0);
 			theta2 = carmen_normalize_theta(theta + M_PI / 2.0);
-			if (true) //box_points.num_points < 20)
-				append_i_object(box_models, box_points, first_point, category, categories, theta, theta2);
+			if (true) //segment.num_points < 20)
+				append_i_object(box_models, segment, first_point, category, categories, theta, theta2);
 			else
-				append_i_object(box_models, box_points, first_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
+				append_i_object(box_models, segment, first_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
 
 			theta2 = carmen_normalize_theta(theta - M_PI / 2.0);
-			if (true) //box_points.num_points < 20)
-				append_i_object(box_models, box_points, last_point, category, categories, theta, theta2);
+			if (true) //segment.num_points < 20)
+				append_i_object(box_models, segment, last_point, category, categories, theta, theta2);
 			else
-				append_i_object(box_models, box_points, last_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
+				append_i_object(box_models, segment, last_point, category, categories, theta, theta2, l, l * (categories[category].width / categories[category].length));
 		}
 	}
 }
@@ -905,9 +908,21 @@ plot_segment(virtual_scan_segment_t segment, virtual_scan_segment_features_t seg
 					segment.points[i].y - segment.points[0].y);
 		fclose(arq);
 
-		fprintf(gnuplot_pipe, "plot 'caco_.txt' u 1:2 w lp, \"< echo '%lf %lf'\", \"< echo '%lf %lf'\"\n",
-				segment_features.main_line_first_point.x - segment.points[0].x, segment_features.main_line_first_point.y - segment.points[0].y,
-				segment_features.main_line_last_point.x - segment.points[0].x, segment_features.main_line_last_point.y - segment.points[0].y);
+		arq = fopen("caco__.txt", "w");
+		fprintf(arq, "%lf %lf %.2lf\n",
+				segment_features.main_line_first_point.x - segment.points[0].x,
+				segment_features.main_line_first_point.y - segment.points[0].y,
+				carmen_radians_to_degrees(carmen_normalize_theta(atan2(segment_features.main_line_first_point.y - segment.sensor_pos.y, segment_features.main_line_first_point.x - segment.sensor_pos.x) - segment.global_pos.theta)));
+//				180.0 * ((segment_features.main_line_first_point.theta - segment.sensor_pos.theta) / M_PI));
+		fprintf(arq, "%lf %lf %.2lf\n",
+				segment_features.main_line_last_point.x - segment.points[0].x,
+				segment_features.main_line_last_point.y - segment.points[0].y,
+				carmen_radians_to_degrees(carmen_normalize_theta(atan2(segment_features.main_line_last_point.y - segment.sensor_pos.y, segment_features.main_line_last_point.x - segment.sensor_pos.x) - segment.global_pos.theta)));
+//				180.0 * ((segment_features.main_line_last_point.theta - segment.sensor_pos.theta) / M_PI));
+		fclose(arq);
+
+		fprintf(gnuplot_pipe, "plot 'caco_.txt' u 1:2 w lp\n");
+		fprintf(gnuplot_pipe, "replot 'caco__.txt' u 1:2 w p, 'caco__.txt' u 1:2:3 w labels offset 3\n");
 
 		fflush(gnuplot_pipe);
 	}
@@ -926,20 +941,20 @@ virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment
 	{
 		virtual_scan_segment_features_t segment_features = virtual_scan_segment_classes->segment_features[i];
 		int segment_class = segment_features.segment_class;
-		virtual_scan_segment_t box_points = virtual_scan_segment_classes->segment[i];
+		virtual_scan_segment_t segment = virtual_scan_segment_classes->segment[i];
 
 		virtual_scan_box_models_t *box_models = virtual_scan_get_empty_box_models(box_model_hypotheses);
 //		if (segment_class == MASS_POINT)
-//			append_pedestrian_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i].centroid);
+//			append_pedestrian_to_box_models(box_models, segment, virtual_scan_segment_classes->segment_features[i].centroid);
 		if (segment_class == L_SHAPED) // L-shape segments segments will generate bus and car hypotheses
 		{
-			plot_segment(box_points, segment_features, 30);
-			append_l_shaped_objects_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i], categories);
+			plot_segment(segment, segment_features, 30);
+			append_l_shaped_objects_to_box_models(box_models, segment, virtual_scan_segment_classes->segment_features[i], categories);
 		}
 		if (segment_class == I_SHAPED) // I-shape segments segments will generate bus, car and bike hypotheses
 		{
-			plot_segment(box_points, segment_features, 30);
-			append_i_shaped_objects_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i], categories);
+			plot_segment(segment, segment_features, 30);
+			append_i_shaped_objects_to_box_models(box_models, segment, virtual_scan_segment_classes->segment_features[i], categories);
 		}
 
 		if (!is_last_box_model_hypotheses_empty(box_model_hypotheses))

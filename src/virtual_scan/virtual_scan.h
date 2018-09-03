@@ -36,7 +36,7 @@
 #define	L_SMALL_SEGMENT_AS_A_PROPORTION_OF_THE_LARGE	0.3
 #define PEDESTRIAN_RADIUS			0.5 	// pedestrian approximate radius (from the top) in meters
 #define MINIMUN_CLUSTER_SIZE		1		// in points
-#define	MIN_SEGMENT_SIZE			7
+#define	MIN_SEGMENT_SIZE			5
 #define	MCMC_MAX_ITERATIONS	300
 
 //#define GAMMA	0.75
@@ -45,7 +45,7 @@
 
 #define NUMBER_OF_FRAMES_T 20
 
-#define MAX_VELODYNE_SEGMENT_DISTANCE 25.0
+//#define MAX_VELODYNE_SEGMENT_DISTANCE 15.0
 
 
 typedef struct
@@ -105,63 +105,64 @@ typedef struct
 	// O Velodyne roda no sentido horario
 	//
 	// Numeracao dos cantos de um objeto movel
-	// 3--0
+	// 1--0
 	//  ||
-	// 2--1
+	// 2--3
 	//
 
 	// Uma extremidade eh a primeira do segmento (angulo) e a outra eh a ultima (I)
 	// 	IARA
 	//
-	//  3--0
+	//  1--0
 	//
 
 	// Uma extremidade eh a ultima do segmento (angulo) e a outra eh a intermediaria (L)
 	//    IARA
 	//
-	//  3--0
+	//  1--0
 	//    |
-	//     1
+	//     3
 
 	// Uma extremidade eh a primeira do segmento e a outra eh a ultima (I)
 	//   0
 	// 	|   IARA
-	//   1
+	//   3
 
 	// Uma extremidade eh a ultima do segmento e a outra eh a intermediaria (L)
 	//     0
 	//    |
 	//   --
-	//  2  1
+	//  2  3
 	//
 	// 	  IARA
 	//
 
 	// Uma extremidade eh a primeira do segmento e a outra eh a ultima (I)
 	//
-	//   2--1
+	//
+	//   2--3
 	//
 	// 	 IARA
 	//
 
 	// Uma extremidade eh a primeira do segmento e a outra eh a intermediaria (L)
-	//    3
+	//    1
 	//     |
-	//	  2--1
+	//	  2--3
 	//
 	// 	IARA
 	//
 
 	// Uma extremidade eh a primeira do segmento e a outra eh a ultima (I)
 	//
-	//       3
+	//       1
 	// 	IARA  |
 	//       2
 
 	// Uma extremidade eh a ultima do segmento (angulo) e a outra eh a intermediaria (L)
 	// 	IARA
 	//
-	//    3--0
+	//    1--0
 	//     |
 	//    2
 	//
@@ -172,7 +173,7 @@ typedef struct
 	bool point1_valid;
 	carmen_point_t point2;
 	bool point2_valid;
-	carmen_point_t point3;	// lateral do carro do lado direito - uma extremidade eh a primeira do segmento e a outra eh a ultima (I) ou a intermediaria (L)
+	carmen_point_t point3;
 	bool point3_valid;
 } virtual_scan_box_model_t;
 
