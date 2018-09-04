@@ -5,7 +5,7 @@
 TEMPLATE = app
 TARGET = proccontrol_gui
 DEPENDPATH += .
-INCLUDEPATH += ../../include $(CARMEN_HOME)/sharedlib/libvoice
+INCLUDEPATH += ../../include 
 LIBS += -L../../lib -lcarmenserial -lglobal -lipc -lz -L ./ -lvoice -lespeak
 QMAKE_CXXFLAGS += -Wno-write-strings
 QMAKE_CFLAGS += -Wno-write-strings

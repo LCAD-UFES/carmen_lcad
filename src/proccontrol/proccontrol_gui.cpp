@@ -20,7 +20,7 @@ extern "C" {
 }
 #endif
 
-#include <voice.h>
+#include <carmen/voice.h>
 #include "proccontrol_gui.h"
 
 QDisplay                             * qdisplay;

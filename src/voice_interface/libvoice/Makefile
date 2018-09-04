@@ -11,8 +11,8 @@ MODULE_NAME = LIB VOICE
 MODULE_COMMENT = Library to Synthesize Voice
 
 SOURCES = voice.cpp voice_test.cpp
-#PUBLIC_INCLUDES = voice.h
-#PUBLIC_LIBRARIES = libvoice.a
+PUBLIC_INCLUDES = voice.h
+PUBLIC_LIBRARIES = libvoice.a
 
 TARGETS = libvoice.a voice_test
 
