@@ -193,7 +193,7 @@ class DDPG(object):
     def update_target_net(self):
         self.sess.run(self.soft_update_target_net)
 
-    def get_actions(self, obs, goal, noise_eps=0., random_eps=0., use_target_net=False):
+    def get_actions(self, obs, goal, noise_eps=0., random_eps=0., use_target_net=False, view=False):
         policy = self.target if use_target_net else self.main
 
         # values to compute

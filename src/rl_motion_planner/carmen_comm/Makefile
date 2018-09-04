@@ -1,7 +1,7 @@
 
 include $(CARMEN_HOME)/src/Makefile.conf
 
-CXXFLAGS += -Wno-write-strings -std=c++0x -Wno-sign-compare
+CXXFLAGS += -Wno-write-strings -std=c++0x -Wno-sign-compare `pkg-config --cflags opencv`
 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ \
 	 -I/usr/local/include/ -I$(CARMEN_HOME)/sharedlib/prob_models $(G2O_IFLAGS)
@@ -41,3 +41,5 @@ pycarmen_comm_clean:
 	rm -rf carmen_comm.py carmen_comm_wrap.cxx
 
 include $(CARMEN_HOME)/src/Makefile.rules
+
+
