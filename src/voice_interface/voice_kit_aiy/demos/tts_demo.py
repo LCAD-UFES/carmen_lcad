@@ -1,3 +1,6 @@
+#!/usr/local/bin/python
+# -*- coding: latin-1 -*-
+
 import logging
 import platform
 import sys

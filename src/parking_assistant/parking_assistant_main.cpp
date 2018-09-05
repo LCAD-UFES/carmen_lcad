@@ -16,7 +16,7 @@
 #include <carmen/playback_interface.h>
 #include <carmen/navigator_gui2_interface.h>
 #include <carmen/global_graphics.h>
-#include <voice.h>
+#include <carmen/voice.h>
 
 #include "message_interpolation.cpp"
 

@@ -19,11 +19,6 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I$(
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/alglib/
 
-#VOICE
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvoice -Wno-write-strings
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvoice -lvoice
-LFLAGS += -lespeak
-
 #G2O
 IFLAGS += -I/usr/include/eigen3 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
@@ -63,7 +58,7 @@ SOURCES = goturn_main.cpp \
 PUBLIC_INCLUDES = 
     
 PUBLIC_LIBRARIES =
-TARGETS = alglib libvoice.a velodyne_camera_calibration libsmoother goturn_tracker
+TARGETS = alglib velodyne_camera_calibration libsmoother goturn_tracker
 PUBLIC_BINARIES = 
 
 goturn_tracker: goturn_main.o \
@@ -87,10 +82,6 @@ goturn_tracker: goturn_main.o \
 		helper/image_proc.o \
 		gsl_smooth_points.o
 
-# rules
-libvoice.a:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libvoice
-	
 alglib:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/alglib
 

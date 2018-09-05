@@ -7,7 +7,6 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/Catch
 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvoice -lvoice -lespeak
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 
 LFLAGS += -lglobal -lgeometry -lparam_interface -lipc -llocalize_ackerman_interface -lmap_interface -lrobot_ackerman_interface \
@@ -28,7 +27,7 @@ PUBLIC_INCLUDES = obstacle_avoider_interface.h obstacle_avoider_messages.h colli
 PUBLIC_LIBRARIES = libobstacle_avoider_interface.a libobstacle_avoider.a libcollision_detection.a
 PUBLIC_BINARIES = obstacle_avoider obstacle_avoider_test
 
-TARGETS = libcarmodel libvoice.a libobstacle_avoider.a obstacle_avoider libobstacle_avoider_interface.a libcollision_detection.a obstacle_avoider_test collision_detection_test
+TARGETS = libcarmodel libobstacle_avoider.a obstacle_avoider libobstacle_avoider_interface.a libcollision_detection.a obstacle_avoider_test collision_detection_test
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -48,9 +47,6 @@ clean: clean_libcarmodel
 clean_libcarmodel:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcarmodel
 
-libvoice.a:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libvoice
-	
 obstacle_avoider:obstacle_avoider.o libobstacle_avoider.a libobstacle_avoider_interface.a libcollision_detection.a
 
 libobstacle_avoider.a: obstacle_avoider_main.o 

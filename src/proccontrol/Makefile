@@ -14,13 +14,9 @@ PUBLIC_LIBRARIES = 	proccontrol_interface.a
 PUBLIC_BINARIES = 	proccontrol proccontrol_setmodule \
 	                proccontrol_setgroup proccontrol_viewoutput proccontrol_gui
 
-TARGETS = 	libvoice.a watchdog libproccontrol_interface.a proccontrol \
+TARGETS = 	watchdog libproccontrol_interface.a proccontrol \
 			proccontrol_setmodule proccontrol_setgroup \
 	 		proccontrol_viewoutput proccontrol_gui proccontrol_gui 
-
-# rules
-libvoice.a:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libvoice
 
 watchdog:			watchdog.o
 
