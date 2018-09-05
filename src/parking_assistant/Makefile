@@ -6,9 +6,6 @@ MODULE_COMMENT = Parking Assistant Package
 
 LINK = g++
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvoice/
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvoice/
-
 # Application specific include directories.
 IFLAGS += 
 
@@ -36,7 +33,7 @@ PUBLIC_LIBRARIES = libparking_assistant_interface.a
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = parking_assistant parking_assistant_viewer
 
-TARGETS = libparking_assistant_interface.a libvoice.a parking_assistant parking_assistant_viewer
+TARGETS = libparking_assistant_interface.a parking_assistant parking_assistant_viewer
 PUBLIC_LIBRARIES_SO = libparking_assistant_interface.so
 
 ifndef NO_PYTHON
@@ -54,9 +51,6 @@ SOURCES +=
 endif
 
 libparking_assistant_interface.a:	parking_assistant_interface.o
-
-libvoice.a:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libvoice
 
 libparking_assistant_interface.so.1:	parking_assistant_interface.o
 

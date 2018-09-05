@@ -2,8 +2,8 @@
 #include <cmath>
 #include <carmen/carmen.h>
 #include <carmen/laser_interface.h>
-// #include <opencv/cv.h>
-// #include <opencv/highgui.h>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
 #include <vector>
 #include "g2o/types/slam2d/se2.h"
 
@@ -20,9 +20,9 @@ laser_to_vec(carmen_laser_laser_message &laser_message, double theta, int view)
     // Uncomment the following lines to enable the laser viewer. I left it commented to 
     // avoid having opencv as a dependency of the module. The following two are just to
     // pretend we're using the variables so the compiler does not send warnings.
-    (void) view;
+    // (void) view;
     (void) theta;
-	/*
+
 	if (view)
 	{
 		int px, py;
@@ -39,8 +39,8 @@ laser_to_vec(carmen_laser_laser_message &laser_message, double theta, int view)
 		{
 			a += laser_message.config.angular_resolution;
 
-			x = cos(theta + a) * laser_message.range[i];
-			y = sin(theta + a) * laser_message.range[i];
+			x = cos(a) * laser_message.range[i];
+			y = sin(a) * laser_message.range[i];
 
 			px = x * 5 + m.cols / 2.0;
 			py = m.rows - (y * 5 + m.rows / 2.0);
@@ -51,8 +51,7 @@ laser_to_vec(carmen_laser_laser_message &laser_message, double theta, int view)
 		cv::imshow("laser", m);
 		cv::waitKey(1);
 	}
-	*/
-	
+
 	return readings;
 }
 
