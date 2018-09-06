@@ -62,20 +62,25 @@ To begin to use a Google Cloud API, you must have a Google account.
         export GOOGLE_APPLICATION_CREDENTIALS=/home/user/path/project-name-key.json)
         ```
       - To set the variable in a inderteminate time: set the variable at *~/.bashrc*:
-  ```sh
-  nano ~/.bashrc 
-  ```
+      ```sh
+      nano ~/.bashrc 
+      ```
+
   Adicione no final do arquivo:
   ```sh
   GOOGLE_APPLICATION_CREDENTIALS=/home/user/path/project-name-key.json
   ```
   > Ctrl+X to exit
+
   > Press Y to save it
+
   > And, at last, Enter
 
   ```sh
   bash
-  ```
+  ``` 
+
+
   - Install and initialize [Google Cloud SDK](https://cloud.google.com/sdk/docs/#deb)
     ```sh
     export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)"
@@ -129,14 +134,4 @@ python assistant_library_demo.py
 - Teste as demais demos
 
 
-
 ***
-
-#### 5. Baixe o Voice-Kit-Aiy (apenas) do github do LCAD:
-
-[Download a SIngle Folder or Directory from a GitHub Repo](https://stackoverflow.com/questions/7106012/download-a-single-folder-or-directory-from-a-github-repo)
-
-  ```sh
-  sudo apt-get install subversion`
-  svn checkout https://github.com/LCAD-UFES/carmen_lcad/trun/src/voice_kit_aiy
-  ```
