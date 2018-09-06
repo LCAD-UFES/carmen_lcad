@@ -25,7 +25,7 @@
 #include <assert.h>
 
 // Flags
-const int VIEW_LASER = 1;
+const int VIEW_LASER = 0;
 const int VIEW_SIMULATED_LASER = 0;
 
 // Parameters

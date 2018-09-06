@@ -1,7 +1,7 @@
 
 import time
 import os
-from rl.util import dist, ackerman_motion_model
+from rl.util import dist, ackerman_motion_model, draw_rectangle
 import numpy as np
 import cv2
 import carmen_comm.carmen_comm as carmen
@@ -65,38 +65,6 @@ class SimpleEnv:
 
         return list(zip(ms, bs))
 
-    def draw_rectangle(self, img, pose, height, width, zoom):
-        vertices = [
-            [-width / 2., -height / 2.],
-            [-width / 2., height / 2.],
-            [width / 2., height / 2.],
-            [width / 2., -height / 2.],
-        ]
-
-        x, y = pose[0], pose[1]
-        angle = pose[2]
-
-        polar = [[np.math.atan2(v[1], v[0]), (v[0] ** 2 + v[1] ** 2) ** 0.5] for v in vertices]
-        polar_rotated = [[a + angle, r] for a, r in polar]
-
-        vertices = [[r * np.math.cos(a), r * np.math.sin(a)] for a, r in polar_rotated]
-        vertices = np.array(vertices)
-        vertices[:, 0] += x
-        vertices[:, 1] += y
-
-        vs = vertices
-        vs *= zoom
-        vs[:, 0] += img.shape[0] / 2.
-        vs[:, 1] += img.shape[1] / 2.
-        vs = vs.astype(int)
-
-        for i in range(vs.shape[0]):
-            p1 = tuple(vs[i])
-            p2 = tuple(vs[i + 1]) if i < (vs.shape[0] - 1) else tuple(vs[0])
-            img = cv2.line(img, p1, p2, (0, 0, 0), 1)
-
-        return img
-
     def view(self):
         goal = self.goal
         ob = self.pose
@@ -132,8 +100,8 @@ class SimpleEnv:
         cv2.line(img, (x, y), (x1, y1), (0, 0, 1 ), 1)
 
         if self.params['model'] == 'ackerman':
-            self.draw_rectangle(img, self.pose, 1.5, 5.0, self.zoom)
-            self.draw_rectangle(img, self.previous_p, 1.5, 5.0, self.zoom)
+            draw_rectangle(img, self.pose, 1.5, 5.0, self.zoom)
+            draw_rectangle(img, self.previous_p, 1.5, 5.0, self.zoom)
 
         cv2.imshow('img', img)
         cv2.waitKey(10)
@@ -145,20 +113,16 @@ class CarmenEnv:
         carmen_path = os.environ['CARMEN_HOME']
         rddf_path = carmen_path + '/data/rndf/' + params['rddf']
         self.rddf = [[float(field) for field in line.rstrip().rsplit(' ')] for line in open(rddf_path, 'r').readlines()]
+        print('Connecting to carmen')
         carmen.init()
 
     def _read_state(self):
-        laser_max_range = 30.
-
         carmen.handle_messages()
-
         laser = carmen.read_laser()
-        laser = np.clip(laser, 0.0, laser_max_range).reshape(len(laser), 1)
-        laser = (laser / laser_max_range) * 2.0 - 1.0
 
         state = {
             'pose': np.copy(carmen.read_pose()),
-            'laser': np.zeros_like(laser), # np.copy(laser),
+            'laser': np.copy(laser),
         }
 
         return state
@@ -199,7 +163,7 @@ class CarmenEnv:
         achieved_goal = dist(state['pose'], self.goal) < self.params['goal_achievement_dist']
         vel_is_correct = np.abs(state['pose'][3] - self.goal[3]) < self.params['vel_achievement_dist']
 
-        hit_obstacle = False  # carmen.hit_obstacle()
+        hit_obstacle = carmen.hit_obstacle()
         starved = self.n_steps >= self.params['n_steps_episode']
         success = achieved_goal  # and vel_is_correct
 
