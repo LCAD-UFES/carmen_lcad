@@ -81,22 +81,6 @@ def view_data(obs, g):
     cv2.waitKey(1)
 
 
-def normalize_input(obs, g):
-    laser = obs['laser']
-
-    laser_max_range = 30.
-    laser = np.clip(laser, 0.0, laser_max_range).reshape(len(laser), 1)
-    laser = (laser / laser_max_range) * 2.0 - 1.0
-
-    g[0] /= 50.0
-    g[1] /= 50.0
-    g[2] /= np.deg2rad(30.)
-
-    obs['laser'] = laser
-
-    return obs, g
-
-
 def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=False):
     # generate episodes
     episodes = []
@@ -106,19 +90,19 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
 
     while len(episodes) < n_rollouts:
         obs, goal = env.reset()
-        episode = []
-        done = False
-        info = None
 
         g = relative_pose(obs['pose'], goal)
-        obs, g = normalize_input(obs, g)
         _, q0 = policy.get_actions(obs, g + [goal[3]], noise_eps=0.,
                                    random_eps=0.,
                                    use_target_net=False)
 
+        obs, goal = env.reset()
+        episode = []
+        done = False
+        info = None
+
         while not done:
             g = relative_pose(obs['pose'], goal)
-            obs, g = normalize_input(obs, g)
 
             cmd, q = policy.get_actions(obs, g + [goal[3]], noise_eps=params['noise_eps'] if not exploit else 0.,
                                         random_eps=params['random_eps'] if not exploit else 0.,
@@ -246,16 +230,16 @@ def config():
         # env
         'env': 'simple',
         'model': 'simple',
-        'n_steps_episode': 50,
-        'goal_achievement_dist': 1.0,
+        'n_steps_episode': 20,
+        'goal_achievement_dist': 0.5,
         'vel_achievement_dist': 0.5,
         'view': True,
         'rddf': 'rddf-voltadaufes-20170809.txt',
         # net
         'n_hidden_neurons': 32,
         'n_hidden_layers': 1,
-        'use_conv_layer': True,
-        'activation_fn': 'leaky_relu',
+        'use_conv_layer': False,
+        'activation_fn': 'elu',
         'allow_negative_commands': True,
         # training
         'n_rollouts': 1,
@@ -266,7 +250,7 @@ def config():
         'n_test_rollouts': 0,
         'replay_memory_capacity': 500,  # episodes
         # exploration
-        'random_eps': 0.0,  # percentage of time a random action is taken
+        'random_eps': 0.05,  # percentage of time a random action is taken
         'noise_eps': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
     }
 

@@ -28,8 +28,8 @@ class SimpleEnv:
         self.pose = self.previous_p = np.zeros(4)
         self.laser = np.zeros(100).reshape(100, 1)
 
-        max_g = int(self.env_size - 0.1 * self.env_size)
-        self.goal  = np.array(list((np.random.random(2) * 2.0 - 1.0) * max_g) + [0., 0.])
+        self.env_border = int(self.env_size - 0.1 * self.env_size)
+        self.goal  = np.array(list((np.random.random(2) * 2.0 - 1.0) * self.env_border) + [0., 0.])
         self.obstacles = []
         self.n_steps = 0
 
@@ -44,8 +44,7 @@ class SimpleEnv:
             self.pose[0] += cmd[0] * self.dt
             self.pose[1] += cmd[1] * self.dt
 
-        limit = self.env_size - 0.1 * self.env_size
-        self.pose = np.clip(self.pose, -limit, limit)
+        self.pose = np.clip(self.pose, -self.env_border, self.env_border)
 
         success = True if dist(self.pose, self.goal) < self.goal_radius else False
         starved = True if self.n_steps > self.params['n_steps_episode'] else False
