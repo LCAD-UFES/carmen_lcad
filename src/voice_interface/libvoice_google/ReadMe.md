@@ -65,7 +65,7 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
   - If it is possible to change the language online, add an option to do so.
   - Make sure the packages required by vlc and python-pyaudio don't break stuff like the nvidia driver (some 'mesa' related packages are installed).
   - Change the speak function to send the audio to the speakers without having to save the file in the disk.
-  - Make the speak function synchronous: the function should only finish after the speakers played the .
+  - Make the speak function synchronous: the function should only finish after the speakers played the sentence.
 
 ### See more about Google Cloud APIS
 
