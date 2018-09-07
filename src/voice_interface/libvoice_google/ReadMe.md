@@ -60,6 +60,10 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
   - Billing account? The same json can be used for everybody?
   - When you run "gcloud init", it asks the user to login. Will it work in a different machine? Can we upload the config file (the .boto saved at ~/.boto)? Is this enough? In the end of the process, it says "You can create additional configurations if you work with multiple accounts and/or projects. Run "gcloud topic configurations" to learn more.". Will we have one account for the whole IARA project, or one for each developer?
   - Try to make the system work with Python3.
+  - Add a timeout to the listen function.
+  - If possible, check if there is a working microphone.
+  - If it is possible to change the language online, add an option to do so.
+  - Make sure the packages required by vlc and python-pyaudio don't break stuff like the nvidia driver (some 'mesa' related packages are installed).
 
 ### See more about Google Cloud APIS
 
