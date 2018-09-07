@@ -55,6 +55,11 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
   ```
 ***
 
+### 5. Problems to be solved
+
+  - Billing account? The same json can be used for everybody?
+  - When you run "gcloud init", it asks the user to login. Will it work in a different machine? Can we upload the config file (the .boto saved at ~/.boto)? Is this enough? In the end of the process, it says "You can create additional configurations if you work with multiple accounts and/or projects. Run "gcloud topic configurations" to learn more.". Will we have one account for the whole IARA project, or one for each developer?
+
 ### See more about Google Cloud APIS
 
 > Google Cloud APIs are a key part of Google Cloud Platform, allowing you to
