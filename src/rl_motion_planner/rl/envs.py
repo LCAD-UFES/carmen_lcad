@@ -13,7 +13,7 @@ class SimpleEnv:
 
         if self.params['model'] == 'ackerman':
             self.env_size = 100.0
-            self.zoom = 4.0
+            self.zoom = 3.0
             self.max_speed = 10.0
             self.wheel_angle = np.deg2rad(28.)
             self.goal_radius = 2.0
