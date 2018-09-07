@@ -6,7 +6,7 @@ To begin to use a Google Cloud API, you must have a Google account.
 
   - Make sure that billing is enabled for your project. [Learn how to enable Billing](https://cloud.google.com/billing/docs/how-to/modify-project)
 
-  - Enable the APIs. In this case, "Cloud Text-to-Speech API" and "Cloud Speech API" (for Speech-to-Text features). [Search the API and enable it](https://console.cloud.google.com/apis/library?project=voice-iara&folder&organizationId)
+  - Enable the APIs. First, access the [search page]((https://console.cloud.google.com/apis/library?project=voice-iara&folder&organizationId), select the project in the top bar, and search for "Cloud Text-to-Speech API". Click the banner and select activate in the next page. Repeat the process, but this time search for "Cloud Speech API" to activate the  Speech-to-Text API. 
 
   - Set up authentication:
   -- Go to the [Create Service Account Key](https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.62067500.-1617484999.1535991245) page in the GCP Console. (*Menu(≡) ->  API&Services -> Credentials*)
