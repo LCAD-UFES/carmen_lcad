@@ -39,8 +39,8 @@ To begin to use a Google Cloud API, you must have a Google account.
 Examples of the Text-to-Speech and Speech-to-Text APIs:
 
 ```sh
-pip install --upgrade google-cloud-texttospeech
-pip install --upgrade google-cloud-speech
+sudo apt-get install python-pyaudio vlc
+pip install --upgrade google-cloud-texttospeech google-cloud-speech python-vlc
 ```
 
 ### 3. Some Python Samples
