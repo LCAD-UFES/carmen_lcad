@@ -1,7 +1,7 @@
 
 import time
 import os
-from rl.util import dist, ackerman_motion_model
+from rl.util import dist, ackerman_motion_model, draw_rectangle
 import numpy as np
 import cv2
 import carmen_comm.carmen_comm as carmen
@@ -13,7 +13,7 @@ class SimpleEnv:
 
         if self.params['model'] == 'ackerman':
             self.env_size = 100.0
-            self.zoom = 4.0
+            self.zoom = 3.0
             self.max_speed = 10.0
             self.wheel_angle = np.deg2rad(28.)
             self.goal_radius = 2.0
@@ -28,8 +28,8 @@ class SimpleEnv:
         self.pose = self.previous_p = np.zeros(4)
         self.laser = np.zeros(100).reshape(100, 1)
 
-        max_g = int(self.env_size - 0.1 * self.env_size)
-        self.goal  = np.array(list((np.random.random(2) * 2.0 - 1.0) * max_g) + [0., 0.])
+        self.env_border = int(self.env_size - 0.1 * self.env_size)
+        self.goal  = np.array(list((np.random.random(2) * 2.0 - 1.0) * self.env_border) + [0., 0.])
         self.obstacles = []
         self.n_steps = 0
 
@@ -44,8 +44,7 @@ class SimpleEnv:
             self.pose[0] += cmd[0] * self.dt
             self.pose[1] += cmd[1] * self.dt
 
-        limit = self.env_size - 0.1 * self.env_size
-        self.pose = np.clip(self.pose, -limit, limit)
+        self.pose = np.clip(self.pose, -self.env_border, self.env_border)
 
         success = True if dist(self.pose, self.goal) < self.goal_radius else False
         starved = True if self.n_steps > self.params['n_steps_episode'] else False
@@ -64,38 +63,6 @@ class SimpleEnv:
         bs = [line_vs[i][0][1] - ms[i] * line_vs[i][0][0] for i in range(len(ms))]
 
         return list(zip(ms, bs))
-
-    def draw_rectangle(self, img, pose, height, width, zoom):
-        vertices = [
-            [-width / 2., -height / 2.],
-            [-width / 2., height / 2.],
-            [width / 2., height / 2.],
-            [width / 2., -height / 2.],
-        ]
-
-        x, y = pose[0], pose[1]
-        angle = pose[2]
-
-        polar = [[np.math.atan2(v[1], v[0]), (v[0] ** 2 + v[1] ** 2) ** 0.5] for v in vertices]
-        polar_rotated = [[a + angle, r] for a, r in polar]
-
-        vertices = [[r * np.math.cos(a), r * np.math.sin(a)] for a, r in polar_rotated]
-        vertices = np.array(vertices)
-        vertices[:, 0] += x
-        vertices[:, 1] += y
-
-        vs = vertices
-        vs *= zoom
-        vs[:, 0] += img.shape[0] / 2.
-        vs[:, 1] += img.shape[1] / 2.
-        vs = vs.astype(int)
-
-        for i in range(vs.shape[0]):
-            p1 = tuple(vs[i])
-            p2 = tuple(vs[i + 1]) if i < (vs.shape[0] - 1) else tuple(vs[0])
-            img = cv2.line(img, p1, p2, (0, 0, 0), 1)
-
-        return img
 
     def view(self):
         goal = self.goal
@@ -132,8 +99,8 @@ class SimpleEnv:
         cv2.line(img, (x, y), (x1, y1), (0, 0, 1 ), 1)
 
         if self.params['model'] == 'ackerman':
-            self.draw_rectangle(img, self.pose, 1.5, 5.0, self.zoom)
-            self.draw_rectangle(img, self.previous_p, 1.5, 5.0, self.zoom)
+            draw_rectangle(img, self.pose, 1.5, 5.0, self.zoom)
+            draw_rectangle(img, self.previous_p, 1.5, 5.0, self.zoom)
 
         cv2.imshow('img', img)
         cv2.waitKey(10)
@@ -145,20 +112,16 @@ class CarmenEnv:
         carmen_path = os.environ['CARMEN_HOME']
         rddf_path = carmen_path + '/data/rndf/' + params['rddf']
         self.rddf = [[float(field) for field in line.rstrip().rsplit(' ')] for line in open(rddf_path, 'r').readlines()]
+        print('Connecting to carmen')
         carmen.init()
 
     def _read_state(self):
-        laser_max_range = 30.
-
         carmen.handle_messages()
-
         laser = carmen.read_laser()
-        laser = np.clip(laser, 0.0, laser_max_range).reshape(len(laser), 1)
-        laser = (laser / laser_max_range) * 2.0 - 1.0
 
         state = {
             'pose': np.copy(carmen.read_pose()),
-            'laser': np.zeros_like(laser), # np.copy(laser),
+            'laser': np.copy(laser),
         }
 
         return state
@@ -199,7 +162,7 @@ class CarmenEnv:
         achieved_goal = dist(state['pose'], self.goal) < self.params['goal_achievement_dist']
         vel_is_correct = np.abs(state['pose'][3] - self.goal[3]) < self.params['vel_achievement_dist']
 
-        hit_obstacle = False  # carmen.hit_obstacle()
+        hit_obstacle = carmen.hit_obstacle()
         starved = self.n_steps >= self.params['n_steps_episode']
         success = achieved_goal  # and vel_is_correct
 

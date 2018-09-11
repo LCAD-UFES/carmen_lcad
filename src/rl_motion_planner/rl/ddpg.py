@@ -6,7 +6,7 @@ from rl.replay_buffer import ReplayBuffer
 
 class ActorCritic:
     def __init__(self, n_laser_readings, n_hidden_neurons, n_hidden_layers, use_conv_layer, activation_fn_name,
-                 allow_negative_commands):
+                 allow_negative_commands, laser_max_range=30.):
         self.action_size = 2
 
         # goal: (x, y, th, desired_v) - pose in car reference
@@ -30,20 +30,28 @@ class ActorCritic:
         else: cmd_activation_fn = tf.nn.sigmoid
 
         with tf.variable_scope("preprocessing"):
+            # normalize laser to be in [-1., 1.]
+            norm_laser = tf.clip_by_value(self.placeholder_laser, 0., laser_max_range)
+            norm_laser = (norm_laser / laser_max_range)
+            # normalize goal
+            norm_goal = self.placeholder_goal # / [10., 10., 1.0, 10.]
+            # normalize state
+            norm_state = self.placeholder_state # / 10.
+
             # laser pre-processing
             if use_conv_layer:
-                laser_c1 = tf.layers.conv1d(self.placeholder_laser, filters=32, kernel_size=6, strides=3, padding='valid', activation=activation_fn)
+                laser_c1 = tf.layers.conv1d(norm_laser, filters=32, kernel_size=6, strides=3, padding='valid', activation=activation_fn)
                 laser_c2 = tf.layers.conv1d(laser_c1, filters=32, kernel_size=6, strides=3, padding='valid', activation=activation_fn)
                 laser_c3 = tf.layers.conv1d(laser_c2, filters=32, kernel_size=6, strides=3, padding='valid', activation=activation_fn)
                 laser_fl = tf.layers.flatten(laser_c3)
                 laser_fc = tf.layers.dense(laser_fl, units=n_hidden_neurons, activation=activation_fn)
             else:
-                laser_fl = tf.layers.flatten(self.placeholder_laser)
+                laser_fl = tf.layers.flatten(norm_laser)
                 laser_fc = tf.layers.dense(laser_fl, units=n_hidden_neurons, activation=activation_fn)
 
             # goal, state, and action pre-processing
-            goal_fc = tf.layers.dense(self.placeholder_goal, units=n_hidden_neurons, activation=activation_fn)
-            state_fc = tf.layers.dense(self.placeholder_state, units=n_hidden_neurons, activation=activation_fn)
+            goal_fc = tf.layers.dense(norm_goal, units=n_hidden_neurons, activation=activation_fn)
+            state_fc = tf.layers.dense(norm_state, units=n_hidden_neurons, activation=activation_fn)
 
         # actor network
         with tf.variable_scope("policy"):
@@ -85,7 +93,6 @@ class ActorCritic:
             self.q_from_action_placeholder = critic_net(critic_input_for_critic_training)
 
         # Attribute names to the tensor to allow loading
-        # TODO: esses caras precisam estar dentro dos variable scopes?
         self.q_from_policy = tf.identity(self.q_from_policy, name="q_from_policy")
         self.q_from_action_placeholder = tf.identity(self.q_from_action_placeholder, name="q_from_action")
 
@@ -148,8 +155,8 @@ class DDPG(object):
         # Policy loss function (TODO: checar se essa loss esta certa. Ela parece diferente do DDPG do paper).
         self.policy_loss = -tf.reduce_mean(self.main.q_from_policy)
         # TODO: checar se o componente abaixo eh necessario e o que ele significa.
-        self.action_l2 = 0.0
-        self.policy_loss += self.action_l2 * tf.reduce_mean(tf.square(self.main.actor_command))
+        # self.action_l2 = 0.0
+        # self.policy_loss += self.action_l2 * tf.reduce_mean(tf.square(self.main.actor_command))
 
         # Training
         # TODO: MAKE SURE THESE ARE EQUIVALENT!!!!!

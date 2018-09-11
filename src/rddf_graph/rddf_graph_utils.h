@@ -16,6 +16,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgcodecs/imgcodecs.hpp>
+#include <opencv2/tracking.hpp>
 #else
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
@@ -25,8 +26,9 @@
 extern "C" {
 #endif
 
-#define LOCAL_MAP_SIZE (210)
+#define local_gridmap_size (210)
 #define GLOBAL_MAP_SIZE (1800)
+#define new_node (t_graph*)malloc(sizeof(t_graph))
 
 
 typedef struct
@@ -35,6 +37,7 @@ typedef struct
 	carmen_position_t point_world_origin;
 
 } open_set_t;
+
 
 typedef struct
 {
@@ -50,6 +53,15 @@ typedef struct
 	carmen_position_t *world_coordinate;
 	rddf_graph_edges_t *edge;
 } rddf_graph_t;
+
+
+struct type_graph
+{
+    int vertex;
+    carmen_position_t world_coordinate;
+    struct type_graph *prox;
+};
+typedef struct type_graph t_graph;
 
 
 using namespace std;

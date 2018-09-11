@@ -1,5 +1,6 @@
 
 import os
+import cv2
 import sys
 import random
 import time
@@ -11,7 +12,7 @@ from sacred import Experiment
 from sacred.observers import FileStorageObserver
 
 from rl.ddpg import DDPG
-from rl.util import relative_pose, dist
+from rl.util import relative_pose, dist, draw_rectangle
 from rl.envs import SimpleEnv, CarmenEnv
 
 
@@ -36,6 +37,50 @@ def update_rewards(params, episode, info):
         transition[2] = rw
 
 
+def view_data(obs, g):
+    view = np.zeros((500, 500, 3)) + 255
+
+    mult = view.shape[0] / 2.0
+    mult -= 0.1 * mult
+
+    # read from params file
+    init = -np.pi / 2.
+    resolution = np.pi / float(len(obs['laser']))
+
+    angle = init
+
+    for range in obs['laser']:
+        range = (range[0] + 1.0) / 2.0
+        range *= (30. / 50.)
+
+        x = range * mult * np.cos(angle)
+        y = range * mult * np.sin(angle)
+
+        px = int(x + view.shape[1] / 2.0)
+        py = view.shape[0] - int(y + view.shape[0] / 2.0) - 1
+
+        cv2.circle(view, (px, py), 2, (0, 0, 0), -1)
+        angle += resolution
+
+    cv2.circle(view, (view.shape[0] // 2, view.shape[1] // 2), 2, (0, 0, 255), -1)
+    # draw_rectangle(img, pose, height, width, zoom)
+    draw_rectangle(view, (0., 0., 0.), 2.0, 4.0, 4)
+
+    # PAREI AQUI!!
+    g[0] *= mult
+    g[1] *= mult
+    g[1] = view.shape[0] - g[1] - 1
+
+    px = int(g[0] + view.shape[1] / 2.0)
+    py = int(g[1] + view.shape[0] / 2.0)
+
+    cv2.circle(view, (px, py), 2, (0, 255, 0), -1)
+    draw_rectangle(view, (g[0] * mult, g[1] * mult, g[2]), 2.0, 4.0, 4, color=(0, 255, 0))
+
+    cv2.imshow("input_data", view)
+    cv2.waitKey(1)
+
+
 def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=False):
     # generate episodes
     episodes = []
@@ -45,14 +90,16 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
 
     while len(episodes) < n_rollouts:
         obs, goal = env.reset()
-        episode = []
-        done = False
-        info = None
 
         g = relative_pose(obs['pose'], goal)
         _, q0 = policy.get_actions(obs, g + [goal[3]], noise_eps=0.,
                                    random_eps=0.,
                                    use_target_net=False)
+
+        obs, goal = env.reset()
+        episode = []
+        done = False
+        info = None
 
         while not done:
             g = relative_pose(obs['pose'], goal)
@@ -63,7 +110,9 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
 
             new_obs, done, info = env.step(cmd)
 
-            if params['view']:
+            if params['env'] == 'carmen' and params['view']:
+                view_data(obs, g)
+            elif params['view']:
                 env.view()
 
             g_after = relative_pose(new_obs['pose'], goal)
@@ -105,7 +154,6 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
     np.random.seed(seed)
     random.seed(seed)
 
-    print('Connecting to carmen')
     if params['env'] == 'simple': env = SimpleEnv(params)
     elif params['env'] == 'carmen': env = CarmenEnv(params)
     else: raise Exception("Env '{}' not implemented.".format(params['env']))
@@ -181,16 +229,16 @@ def config():
     params = {
         # env
         'env': 'simple',
-        'model': 'ackerman',
-        'n_steps_episode': 200,
-        'goal_achievement_dist': 1.0,
+        'model': 'simple',
+        'n_steps_episode': 20,
+        'goal_achievement_dist': 0.5,
         'vel_achievement_dist': 0.5,
-        'view': False,
+        'view': True,
         'rddf': 'rddf-voltadaufes-20170809.txt',
         # net
-        'n_hidden_neurons': 64,
+        'n_hidden_neurons': 32,
         'n_hidden_layers': 1,
-        'use_conv_layer': True,
+        'use_conv_layer': False,
         'activation_fn': 'elu',
         'allow_negative_commands': True,
         # training
