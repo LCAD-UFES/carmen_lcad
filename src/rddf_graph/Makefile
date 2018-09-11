@@ -26,7 +26,8 @@ LFLAGS += \
 SOURCES = \
 	rddf_graph_main.cpp \
 	rddf_graph_utils.cpp \
-	rddf_graph_already_visited_display.cpp
+	rddf_graph_already_visited_display.cpp \
+	rddf_graph_operations_on_graph_main.cpp
 
 
 PUBLIC_INCLUDES = \
@@ -34,13 +35,17 @@ PUBLIC_INCLUDES = \
 
 PUBLIC_BINARIES = \
 	rddf_graph_main\
-	rddf_graph_already_visited_display
+	rddf_graph_already_visited_display\
+	rddf_graph_operations_on_graph_main
 
 TARGETS = rddf_graph_main\
-		  rddf_graph_already_visited_display
+		  rddf_graph_already_visited_display\
+		  rddf_graph_operations_on_graph_main
 
 rddf_graph_main: rddf_graph_main.o rddf_graph.o rddf_graph_utils.o
 
 rddf_graph_already_visited_display: rddf_graph_already_visited_display.o rddf_graph.o rddf_graph_utils.o
+
+rddf_graph_operations_on_graph_main: rddf_graph_operations_on_graph_main.o rddf_graph.o rddf_graph_utils.o
 
 include ../Makefile.rules

@@ -814,7 +814,7 @@ write_graph_on_file(rddf_graph_t *graph)
 	 */
 	FILE *f;
 	int total_number_of_edges = 0;
-	if ((f = fopen("graphs.bin", "wb")) == NULL )
+	if ((f = fopen("graphs.gr", "wb")) == NULL )
 	{
 		printf("Error opening file\n");
 	}
@@ -834,11 +834,13 @@ write_graph_on_file(rddf_graph_t *graph)
 	}
 
 	//fprintf (f, "%s\n", "CONECTIONS:");
-
+	int cont = 1;
 	for (int i = 0; i < graph->size; i++)
 	{
 		for (int j = 0; j < graph->edge[i].size; j++)
 		{
+			cout<<cont<<endl;
+			cont++;
 			fprintf (f, "%d %d\n", i, graph->edge[i].point[j]);
 		}
 	}

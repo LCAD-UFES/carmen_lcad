@@ -1,4 +1,5 @@
 
+import cv2
 import numpy as np
 
 
@@ -67,3 +68,36 @@ def ackerman_motion_model(pose, v, phi, dt, L=2.625):
     new_pose[2] += v * dt * np.tan(phi) / L
     new_pose[2] = normalize_theta(new_pose[2])
     return new_pose
+
+
+def draw_rectangle(img, pose, height, width, zoom, color=(0, 0, 0)):
+    vertices = [
+        [-width / 2., -height / 2.],
+        [-width / 2., height / 2.],
+        [width / 2., height / 2.],
+        [width / 2., -height / 2.],
+    ]
+
+    x, y = pose[0], pose[1]
+    angle = pose[2]
+
+    polar = [[np.math.atan2(v[1], v[0]), (v[0] ** 2 + v[1] ** 2) ** 0.5] for v in vertices]
+    polar_rotated = [[a + angle, r] for a, r in polar]
+
+    vertices = [[r * np.math.cos(a), r * np.math.sin(a)] for a, r in polar_rotated]
+    vertices = np.array(vertices)
+    vertices[:, 0] += x
+    vertices[:, 1] += y
+
+    vs = vertices
+    vs *= zoom
+    vs[:, 0] += img.shape[0] / 2.
+    vs[:, 1] += img.shape[1] / 2.
+    vs = vs.astype(int)
+
+    for i in range(vs.shape[0]):
+        p1 = tuple(vs[i])
+        p2 = tuple(vs[i + 1]) if i < (vs.shape[0] - 1) else tuple(vs[0])
+        img = cv2.line(img, p1, p2, color, 1)
+
+    return img

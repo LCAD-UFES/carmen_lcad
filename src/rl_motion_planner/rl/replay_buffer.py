@@ -71,7 +71,8 @@ class ReplayBuffer:
 
             future_t = np.random.randint(t + 1, len(self.stack[e]))
             her_episode_size = future_t - t
-            rew = (self.max_episode_size - her_episode_size) / (self.max_episode_size * her_episode_size)
+            her_return = (self.max_episode_size - her_episode_size) / self.max_episode_size
+            rew = her_return / her_episode_size
 
             batch['laser'].append(self.stack[e][t][0]['laser'])
             batch['state'].append([self.stack[e][t][0]['pose'][3]])
