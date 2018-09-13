@@ -535,6 +535,15 @@ get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_m
 }
 
 
+double
+convert_image_coordinate_to_world_coordinate(int p, double map_resolution, double map_origin)
+{
+	double world_coordinate;
+	world_coordinate = (p*map_resolution) + map_origin;
+	return (world_coordinate);
+}
+
+
 rddf_graph_t *
 add_point_to_graph_branch(carmen_map_p map, rddf_graph_t * graph, int x, int y, int branch_node)
 {
@@ -544,8 +553,8 @@ add_point_to_graph_branch(carmen_map_p map, rddf_graph_t * graph, int x, int y, 
 	//cout<<"\tPonto "<<graph->point[graph->size].x<<" "<<graph->point[graph->size].y<<endl;
 
 	graph->world_coordinate = (carmen_position_t *) realloc(graph->world_coordinate, (graph->size + 1) * sizeof(carmen_position_t));
-	graph->world_coordinate[graph->size].x = (x * map->config.resolution) + map->config.x_origin;
-	graph->world_coordinate[graph->size].y = (y * map->config.resolution) + map->config.y_origin;
+	graph->world_coordinate[graph->size].x = convert_image_coordinate_to_world_coordinate(x, map->config.resolution, map->config.x_origin);
+	graph->world_coordinate[graph->size].y = convert_image_coordinate_to_world_coordinate(y, map->config.resolution, map->config.y_origin);
 
 	graph->edge = (rddf_graph_edges_t *) realloc(graph->edge, (graph->size + 1) * sizeof(rddf_graph_edges_t));
 	graph->edge[graph->size].point = (int *) malloc(sizeof(int));
@@ -578,8 +587,8 @@ add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y)
 		//cout<<"\tPonto "<<graph->point[0].x<<" "<<graph->point[0].y<<endl;
 
 		graph->world_coordinate = (carmen_position_t *) malloc(sizeof(carmen_position_t));
-		graph->world_coordinate[0].x = (x * map->config.resolution) + map->config.x_origin;
-		graph->world_coordinate[0].y = (y * map->config.resolution) + map->config.y_origin;
+		graph->world_coordinate[0].x = convert_image_coordinate_to_world_coordinate(x, map->config.resolution, map->config.x_origin);
+		graph->world_coordinate[0].y = convert_image_coordinate_to_world_coordinate(y, map->config.resolution, map->config.y_origin);
 
 		graph->edge = (rddf_graph_edges_t *) malloc(sizeof(rddf_graph_edges_t));
 		graph->edge[0].point = (int *) malloc(sizeof(int));
@@ -598,8 +607,8 @@ add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y)
 		//cout<<"\tPonto "<<graph->point[graph->size].x<<" "<<graph->point[graph->size].y<<endl;
 
 		graph->world_coordinate = (carmen_position_t *) realloc(graph->world_coordinate, (graph->size + 1) * sizeof(carmen_position_t));
-		graph->world_coordinate[graph->size].x = (x * map->config.resolution) + map->config.x_origin;
-		graph->world_coordinate[graph->size].y = (y * map->config.resolution) + map->config.y_origin;
+		graph->world_coordinate[graph->size].x = convert_image_coordinate_to_world_coordinate(x, map->config.resolution, map->config.x_origin);
+		graph->world_coordinate[graph->size].y = convert_image_coordinate_to_world_coordinate(y, map->config.resolution, map->config.y_origin);
 
 		graph->edge = (rddf_graph_edges_t *) realloc(graph->edge, (graph->size + 1) * sizeof(rddf_graph_edges_t));
 		//graph->edge[graph->size].point = (int *) realloc(graph->edge[graph->size].point, (graph->edge[graph->size].size + 1) * sizeof(int)); //alberto way

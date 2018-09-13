@@ -80,6 +80,7 @@ void get_new_map_block(char *folder, char map_type, carmen_map_p map, carmen_poi
 bool check_limits_of_central_road_map(int x, int y);
 bool map_is_not_in_queue(carmen_point_t map_origin, vector <carmen_point_t> &map_queue);
 bool get_neighbour(carmen_position_t *neighbour, carmen_position_t *current, carmen_map_p already_visited, carmen_map_p map, vector<carmen_position_t> &open_set, vector <carmen_point_t> &map_queue, char *road_map_folder);
+double convert_image_coordinate_to_world_coordinate(int p, double map_resolution, double map_origin);
 rddf_graph_t * add_point_to_graph_branch(carmen_map_p map, rddf_graph_t * graph, int x, int y, int branch_node);
 rddf_graph_t * add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y);
 rddf_graph_t * A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already_visited, vector <carmen_point_t> &map_queue, char *road_map_folder);
