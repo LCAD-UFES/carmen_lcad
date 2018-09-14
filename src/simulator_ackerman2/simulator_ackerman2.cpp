@@ -355,7 +355,8 @@ clear_objects_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 			sizeof(carmen_default_message));
 	IPC_freeByteArray(callData);
 
-	carmen_simulator_ackerman_clear_objects();
+	// carmen_simulator_ackerman_clear_objects();
+	carmen_simulator_objects_clear_objects();
 }
 
 

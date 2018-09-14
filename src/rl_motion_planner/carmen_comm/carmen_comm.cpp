@@ -469,15 +469,13 @@ process_map_message(carmen_obstacle_distance_mapper_compact_map_message *message
 void
 handle_messages(double how_long)
 {
-	double time_previous_globalpos = global_localize_ackerman_message.timestamp;
+	double time_previous_globalpos = global_truepos_message.timestamp;
 
-	// PARE AQUI !!!!!
-	// TRATAR TRUEPOS !!
 	do
 	{
 		carmen_ipc_sleep(how_long);
 	}
-	while (global_localize_ackerman_message.timestamp == time_previous_globalpos);
+	while (global_truepos_message.timestamp == time_previous_globalpos);
 
 	carmen_navigator_ackerman_go();
 	process_map_message(&global_obstacle_distance_mapper_compact_map_message);
@@ -533,6 +531,18 @@ pose_is_invalid(carmen_localize_ackerman_globalpos_message *msg, double pos_x, d
 	if (msg->timestamp == 0 ||
 		fabs(msg->globalpos.x - pos_x) > 5.0 ||
 		fabs(msg->globalpos.y != pos_y) > 5.0)
+		return 1;
+
+	return 0;
+}
+
+
+int
+truepos_is_invalid(carmen_simulator_ackerman_truepos_message *msg, double pos_x, double pos_y)
+{
+	if (msg->timestamp == 0 ||
+		fabs(msg->truepose.x - pos_x) > 5.0 ||
+		fabs(msg->truepose.y != pos_y) > 5.0)
 		return 1;
 
 	return 0;
@@ -664,7 +674,7 @@ reset_initial_pose(double x, double y, double th)
 			time_last_message = curr_time;
 		}
 
-	} while (pose_is_invalid(&global_localize_ackerman_message, x, y) ||
+	} while (truepos_is_invalid(&global_truepos_message, x, y) ||
 			obstacle_distance_map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, x, y) ||
 			laser_reading_is_invalid(&global_front_laser_message) ||
 			map_is_invalid(&global_mapper_map_message, x, y)); // ||
@@ -710,9 +720,9 @@ read_truepos()
 std::vector<double>
 read_goal()
 {
-	double x = global_localize_ackerman_message.globalpos.x;
-	double y = global_localize_ackerman_message.globalpos.y;
-	double th = global_localize_ackerman_message.globalpos.theta;
+	double x = global_truepos_message.truepose.x;
+	double y = global_truepos_message.truepose.y;
+	double th = global_truepos_message.truepose.theta;
 
 	return next_goal_from_list(x, y, th, &global_goal_list_message);
 }
@@ -722,12 +732,19 @@ std::vector<double>
 read_laser()
 {
 	std::vector<double> ranges = laser_to_vec(global_front_laser_message,
-		global_localize_ackerman_message.globalpos.theta, VIEW_LASER);
+		global_truepos_message.truepose.theta, VIEW_LASER);
 
 	if (simulator_config.use_rear_laser)
 	{
+	    /*
+        printf("n_rear_laser_rays: %d\n", global_rear_laser_message.num_readings);
+        printf("start_angle: %lf\n", global_rear_laser_message.config.start_angle);
+        printf("fov: %lf\n", global_rear_laser_message.config.fov);
+        printf("angular_resolution: %lf\n", global_rear_laser_message.config.angular_resolution);
+        */
+
 		std::vector<double> rear_ranges = laser_to_vec(global_rear_laser_message,
-			global_localize_ackerman_message.globalpos.theta, VIEW_LASER);
+			global_truepos_message.truepose.theta, VIEW_LASER);
 
 		// append rear_ranges to the end of ranges
 		ranges.insert(ranges.end(), rear_ranges.begin(), rear_ranges.end());
@@ -783,17 +800,24 @@ hit_obstacle()
 {
 	carmen_ackerman_traj_point_t pose;
 
-	pose.x = global_localize_ackerman_message.globalpos.x;
-	pose.y = global_localize_ackerman_message.globalpos.y;
-	pose.theta = global_localize_ackerman_message.globalpos.theta;
-	pose.phi = global_localize_ackerman_message.phi;
-	pose.v = global_localize_ackerman_message.v;
+	pose.x = global_truepos_message.truepose.x;
+	pose.y = global_truepos_message.truepose.y;
+	pose.theta = global_truepos_message.truepose.theta;
+	pose.phi = global_truepos_message.phi;
+	pose.v = global_truepos_message.v;
 
 	int hit = trajectory_pose_hit_obstacle(pose,
 		global_robot_ackerman_config.obstacle_avoider_obstacles_safe_distance,
 		&global_obstacle_distance_map, &global_robot_ackerman_config);
 
 	return (hit == 1);
+}
+
+
+int
+config_rear_laser_is_active()
+{
+    return simulator_config.use_rear_laser;
 }
 
 

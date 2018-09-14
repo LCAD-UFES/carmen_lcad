@@ -13,7 +13,7 @@ class SimpleEnv:
 
         if self.params['model'] == 'ackerman':
             self.env_size = 100.0
-            self.zoom = 3.0
+            self.zoom = 4.0
             self.max_speed = 10.0
             self.wheel_angle = np.deg2rad(28.)
             self.goal_radius = 2.0
@@ -24,9 +24,10 @@ class SimpleEnv:
             self.goal_radius = 0.5
             self.dt = 1.0
 
+        self.laser = np.zeros(1).reshape(1, 1)
+
     def reset(self):
         self.pose = self.previous_p = np.zeros(4)
-        self.laser = np.zeros(100).reshape(100, 1)
 
         self.env_border = int(self.env_size - 0.1 * self.env_size)
         self.goal  = np.array(list((np.random.random(2) * 2.0 - 1.0) * self.env_border) + [0., 0.])
@@ -120,19 +121,22 @@ class CarmenEnv:
         laser = carmen.read_laser()
 
         state = {
-            'pose': np.copy(carmen.read_pose()),
+            'pose': np.copy(carmen.read_truepos()),
             'laser': np.copy(laser).reshape(len(laser), 1),
         }
 
         return state
 
+    def rear_laser_is_active(self):
+        return carmen.config_rear_laser_is_active()
+
     def reset(self):
         carmen.publish_stop_command()
 
-        pose_shift = 30
-        min_shift = 10
+        max_pose_shift = 30
+        min_pose_shift = 10
 
-        init_pos_id = np.random.randint(pose_shift, len(self.rddf) - (pose_shift + 1))
+        init_pos_id = np.random.randint(max_pose_shift, len(self.rddf) - (max_pose_shift + 1))
         init_pos = self.rddf[init_pos_id]
 
         carmen.reset_initial_pose(init_pos[0], init_pos[1], init_pos[2])
@@ -140,7 +144,7 @@ class CarmenEnv:
         if self.params['allow_negative_commands']: forw_or_back = np.random.randint(2) * 2 - 1
         else: forw_or_back = 1
 
-        goal_id = init_pos_id + np.random.randint(min_shift, pose_shift) * forw_or_back
+        goal_id = init_pos_id + np.random.randint(min_pose_shift, max_pose_shift) * forw_or_back
         goal = self.rddf[goal_id]
         goal = goal[:4]
         self.goal = goal
@@ -170,6 +174,13 @@ class CarmenEnv:
         info = {'success': success, 'hit_obstacle': hit_obstacle, 'starved': starved}
 
         self.n_steps += 1
+
+        """
+        if hit_obstacle:
+            print('\n\n** HIT OBSTACLE\n\nLaser [size: ' + str(len(state['laser'])) + ']:\n')
+            print(state['laser'])
+            print('\n\n')
+        """
 
         if done:
             carmen.publish_stop_command()

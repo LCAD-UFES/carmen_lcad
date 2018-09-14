@@ -402,7 +402,7 @@ carmen_simulator_ackerman_add_objects_to_laser(carmen_laser_laser_message * lase
 
 /* frees all objects */
 void 
-carmen_simulator_ackerman_clear_objects(void)
+carmen_simulator_objects_clear_objects(void)
 {
   num_objects = 0;
 }

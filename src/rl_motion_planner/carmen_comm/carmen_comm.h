@@ -24,7 +24,9 @@ std::vector<double> read_laser();
 std::vector<double> read_goal();
 std::vector<double> read_rddf();
 std::vector<double> read_commands();
+
 int hit_obstacle();
+int config_rear_laser_is_active();
 
 void init();
 

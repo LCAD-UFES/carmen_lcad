@@ -37,9 +37,15 @@ def update_rewards(params, episode, info):
         transition[2] = rw
 
 
-def view_data(obs, g):
-    # TODO!
-    return
+def view_data(obs, g, rear_laser_is_active):
+    car_angle = obs['pose'][2]
+    laser = np.copy(obs['laser'])
+    laser /= 30.0
+
+    g = np.copy(g)
+    g[0] /= 30.
+    g[1] /= 30.
+
     view = np.zeros((500, 500, 3)) + 255
 
     mult = view.shape[0] / 2.0
@@ -47,28 +53,42 @@ def view_data(obs, g):
 
     # read from params file
     init = -np.pi / 2.
-    resolution = np.pi / float(len(obs['laser']))
+
+    if rear_laser_is_active:
+        resolution = np.pi / float(len(laser) / 2.)
+    else:
+        resolution = np.pi / float(len(laser))
 
     angle = init
 
-    for range in obs['laser']:
-        range = (range[0] + 1.0) / 2.0
-        range *= (30. / 50.)
+    color = (0, 0, 0)
+    n = 0
 
-        x = range * mult * np.cos(angle)
-        y = range * mult * np.sin(angle)
+    for range in laser:
+        raw_range = range[0]
+        range = raw_range * (30. / 50.)
+
+        x = range * mult * np.cos(angle + car_angle)
+        y = range * mult * np.sin(angle + car_angle)
 
         px = int(x + view.shape[1] / 2.0)
         py = view.shape[0] - int(y + view.shape[0] / 2.0) - 1
 
-        cv2.circle(view, (px, py), 2, (0, 0, 0), -1)
         angle += resolution
+        n += 1
+
+        if abs(raw_range) >= 1.0:
+            continue
+
+        if n > len(laser) / 2:
+            color = (0, 0, 255)
+
+        cv2.circle(view, (px, py), 2, color, -1)
 
     cv2.circle(view, (view.shape[0] // 2, view.shape[1] // 2), 2, (0, 0, 255), -1)
     # draw_rectangle(img, pose, height, width, zoom)
-    draw_rectangle(view, (0., 0., 0.), 2.0, 4.0, 4)
+    draw_rectangle(view, (0., 0., obs['pose'][2]), 2.6, 5.0, 4)
 
-    # PAREI AQUI!!
     g[0] *= mult
     g[1] *= mult
     g[1] = view.shape[0] - g[1] - 1
@@ -106,16 +126,16 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
         while not done:
             g = relative_pose(obs['pose'], goal)
 
+            if params['env'] == 'carmen' and params['view']:
+                view_data(obs, g, rear_laser_is_active=env.rear_laser_is_active())
+            elif params['view']:
+                env.view()
+
             cmd, q = policy.get_actions(obs, g + [goal[3]], noise_eps=params['noise_eps'] if not exploit else 0.,
                                         random_eps=params['random_eps'] if not exploit else 0.,
                                         use_target_net=use_target_net)
 
             new_obs, done, info = env.step(cmd)
-
-            if params['env'] == 'carmen' and params['view']:
-                view_data(obs, g)
-            elif params['view']:
-                env.view()
 
             g_after = relative_pose(new_obs['pose'], goal)
             rw = ((g[0] ** 2 + g[1] ** 2) - (g_after[0] ** 2 + g_after[1] ** 2)) / 100.0
@@ -230,7 +250,7 @@ def config():
 
     params = {
         # env
-        'env': 'simple',
+        'env': 'carmen',
         'model': 'simple',
         'n_steps_episode': 100,
         'goal_achievement_dist': 0.5,
@@ -241,7 +261,7 @@ def config():
         'n_hidden_neurons': 32,
         'n_hidden_layers': 1,
         'use_conv_layer': False,
-        'activation_fn': 'elu',
+        'activation_fn': 'leaky_relu',
         'allow_negative_commands': True,
         # training
         'n_rollouts': 1,

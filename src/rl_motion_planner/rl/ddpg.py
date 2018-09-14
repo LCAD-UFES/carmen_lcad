@@ -200,7 +200,7 @@ class DDPG(object):
     def update_target_net(self):
         self.sess.run(self.soft_update_target_net)
 
-    def get_actions(self, obs, goal, noise_eps=0., random_eps=0., use_target_net=False, view=False):
+    def get_actions(self, obs, goal, noise_eps=0., random_eps=0., use_target_net=False):
         policy = self.target if use_target_net else self.main
 
         # values to compute
@@ -218,10 +218,16 @@ class DDPG(object):
         # action postprocessing
         u = ret[0][0]
         u += noise_eps * np.random.randn(*u.shape)  # gaussian noise
-        u = np.clip(u, -1.0, 1.0) if self.allow_negative_commands else np.clip(u, 0.0, 1.0)
 
+        # eps greedy
         if np.random.random() < random_eps:
-            u = np.random.uniform(-1.0, 1.0, len(u))
+            if self.allow_negative_commands:
+                u = np.random.uniform(-1.0, 1.0, len(u))
+            else:
+                u = np.array([np.random.uniform(0.0, 1.0), np.random.uniform(-1.0, 1.0)])
+
+        if self.allow_negative_commands: u[0] = np.clip(u[0], -1.0, 1.0)
+        else: u[0] = np.clip(u[0], 0.0, 1.0)
 
         return u, ret[1][0][0]
 
