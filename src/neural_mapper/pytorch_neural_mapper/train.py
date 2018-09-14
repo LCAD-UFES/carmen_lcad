@@ -41,7 +41,7 @@ def png2tensor(file_name):
     img2tensor = transforms.ToTensor()
     img = Image.open(file_name)
     return img2tensor(img)
-
+#usar funcao para converter para imagem rgb (np.where)
 def tensor2png(tensor):
     trans = transforms.ToPILImage()
     return trans(tensor)

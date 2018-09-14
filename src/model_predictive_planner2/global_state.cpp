@@ -46,6 +46,8 @@ std::vector<carmen_ackerman_traj_point_t*> GlobalState::moving_objects_trajector
 int    GlobalState::use_truepos 				= 0;
 bool   GlobalState::following_path		= false;
 
+int GlobalState::reverse_driving = 0;
+
 double GlobalState::obstacle_threshold	= 0.5;
 
 bool GlobalState::ford_escape_online = false;
