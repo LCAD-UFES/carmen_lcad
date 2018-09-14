@@ -21,11 +21,8 @@ img_y_dim = 424
 
 data_dim = 5
 
-data_path = '/dados/neural_mapper/60mts/data/'
-target_path = '/dados/neural_mapper/60mts/labels/'
-debug_img_path = 'debug_imgs/'
 
-def load_image(index):
+def load_image(index, data_path, target_path):
     data = torch.zeros(1, data_dim, img_x_dim, img_y_dim)
     target = torch.zeros(1, img_x_dim, img_y_dim)
 
@@ -43,16 +40,32 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch Neural Mapper test on images')
     parser.add_argument('--img-index', type=int, default=randint(0,78), metavar='N',
                         help='Image index on dataset')
+
     parser.add_argument('--save-img', type=bool, default=False, metavar='N',
                         help='Save image on disk')
+
     parser.add_argument('--model-name', type=str, default='10.model', metavar='N',
                         help='Save image on disk')
 
-    args = parser.parse_args()
-    model = M.FCNN()
-    model.load_state_dict(torch.load('saved_models/'+args.model_name))
+    parser.add_argument('--input-path', type=str, default='/dados/neural_mapper/60mts/data/', metavar='N',
+                        help='Input images path')
 
-    data, target = load_image(args.img_index)
+    parser.add_argument('--target-images', type=str, default='/dados/neural_mapper/60mts/labels/', metavar='N',
+                        help='Ground truth images path to compare with predicted')
+
+    parser.add_argument('--output-path', type=str, default='/dados/neural_mapper/60mts/debug_imgs/', metavar='N',
+                        help='Output path for predicted images and gt')
+
+    args = parser.parse_args()
+
+    data_path = args.input_path
+    target_path = args.target_images
+    debug_img_path = args.output_path
+
+    model = M.FCNN()
+    model.load_state_dict(torch.load(args.model_name))
+
+    data, target = load_image(args.img_index, data_path, target_path)
     output = model(data)
     pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
     imgPred = pred[0]
@@ -61,8 +74,8 @@ if __name__ == '__main__':
     imgTarget[0] = target[0]
     imgTarget = imgTarget.cpu().float()
     if(args.save_img):
-        train.saveImage(imgPred, debug_img_path + '/predic_epoch' + args.model_name.split('.')[0] + 'img' + str(args.img_index) + '.png')
-        train.saveImage(imgTarget, debug_img_path + '/target_epoch' + args.model_name.split('.')[0] + 'img' + str(args.img_index) + '.png')
+        train.saveImage(imgPred, debug_img_path + '/predic_epoch/' + 'img' + str(args.img_index) + '.png')
+        train.saveImage(imgTarget, debug_img_path + '/target_epoch/' + 'img' + str(args.img_index) + '.png')
     train.showOutput(imgPred)
     train.showOutput(imgTarget)
 
