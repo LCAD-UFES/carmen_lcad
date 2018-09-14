@@ -14,6 +14,8 @@ cv::Mat img, roiImg; /* roiImg - the part of the image in the bounding box */
 int select_flag = 0;
 int click = 0;
 int click2 = 0;
+bool zoom_in = false;
+bool zoom_out = false;
 
 static void
 define_messages()
@@ -111,14 +113,19 @@ scale_points(rddf_graph_t * vertexes, double scale_factor)
 }
 
 
-void
-translate_to_point (rddf_graph_t * vertexes, carmen_point_t point)
+rddf_graph_t *
+translate_to_point (rddf_graph_t *vertexes, carmen_point_t point)
 {
+	rddf_graph_t *vertexes_transformed = vertexes;
 	for (int i = 0; i < graph_size; i++)
 	{
-		vertexes->world_coordinate[i].x -= point.x;
-		vertexes->world_coordinate[i].y -= point.y;
+		//printf("Point was: %lf X %lf\n", vertexes->world_coordinate[i].x, vertexes->world_coordinate[i].y);
+		vertexes_transformed->world_coordinate[i].x -= point.x;
+		vertexes_transformed->world_coordinate[i].y -= point.y;
+		//printf("Point new: %lf X %lf\n", vertexes_transformed->world_coordinate[i].x, vertexes_transformed->world_coordinate[i].y);getchar();
 	}
+
+	return (vertexes_transformed);
 }
 
 
@@ -155,10 +162,24 @@ draw(t_graph **graph, rddf_graph_t *vertexes, double x_origin, double y_origin, 
 	{
 		//printf("%lf X %lf\n", vertexes->world_coordinate[i].x, vertexes->world_coordinate[i].y);
 		t_graph* p;
-		get_local_pos (vertexes->world_coordinate[i], x_origin, y_origin, &graph_index_x, &graph_index_y);
-		pt.x = graph_index_x;
-		pt.y = (1050 - 1 - graph_index_y);//map->config.y_size - 1 - y;
-		cv::circle(*image, pt, circle_size, cv::Scalar(255, 0, 0), thickness, lineType);
+
+		if(zoom_in == false)
+		{
+			get_local_pos (vertexes->world_coordinate[i], x_origin, y_origin, &graph_index_x, &graph_index_y);
+			pt.x = graph_index_x;
+			pt.y = (1050 - 1 - graph_index_y);//map->config.y_size - 1 - y;
+			cv::circle(*image, pt, circle_size, cv::Scalar(255, 0, 0), thickness, lineType);
+		}
+
+		else
+		{
+			pt.x = vertexes->world_coordinate[i].x;
+			pt.y = (1050 - 1 - vertexes->world_coordinate[i].y);//map->config.y_size - 1 - y;
+			cv::circle(*image, pt, circle_size, cv::Scalar(255, 0, 0), thickness, lineType);
+		}
+
+
+
 
 		/*for(p = graph[i]; p!=NULL; p = p->prox)
 		{
@@ -193,9 +214,10 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 	int thickness = -1;
 	int lineType = 8;
 	carmen_point_t first_graph_point;
-	rddf_graph_t * vertexes_transformed = vertexes;
+	rddf_graph_t* vertexes_transformed;
 
 	carmen_point_t center_point_in_world_coordinate;
+	carmen_point_t translation_factor;
 	double x_origin = 0;
 	double y_origin = 0;
 
@@ -214,7 +236,7 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 
 	draw (graph, vertexes, x_origin, y_origin, &image);
 
-	cv::resize(image, image, size);
+	//cv::resize(image, image, size);
 
 	int k;
 	while(1)
@@ -233,8 +255,8 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 			scale_factor = 0.2;
 			circle_size = 0.3;
 			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
-			draw (graph, vertexes_transformed, x_origin, y_origin, &image);
-			cv::resize(image, image, size);
+			draw (graph, vertexes, x_origin, y_origin, &image);
+			//cv::resize(image, image, size);
 		}
 
 		if (k == 99) //c
@@ -242,22 +264,35 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 			cv::Point center_point = point1;
 			center_point_in_world_coordinate.x = convert_image_coordinate_to_world_coordinate(center_point.x, 0.2, x_origin);
 			center_point_in_world_coordinate.y = convert_image_coordinate_to_world_coordinate(center_point.y, 0.2, y_origin);
-			//cout<<"Point centered in "<<point1.x<<" "<<point1.y<<endl;
-			//printf("Point in world coordinate %lf X %lf\n", center_point_in_world_coordinate.x,  center_point_in_world_coordinate.y);
+			translation_factor.x = center_point_in_world_coordinate.x - x_origin;
+			translation_factor.y = center_point_in_world_coordinate.y - y_origin;
+			cout<<"Point centered in "<<point1.x<<" "<<point1.y<<endl;
+			printf("Point in world coordinate %lf X %lf\n", center_point_in_world_coordinate.x,  center_point_in_world_coordinate.y);
+			printf("Difference to translate %lf X %lf\n", center_point_in_world_coordinate.x - x_origin,  center_point_in_world_coordinate.y - y_origin);
 		}
 
 		if (k == 122) //z
 		{
+			zoom_in = true;
+			carmen_position_t vertexes_transformed_local;
 			//cout<<"Zoom in"<<endl;
 			scale_factor -= 0.025;
 			circle_size += 0.2;
-			//translate_to_point(vertexes_transformed, center_point_in_world_coordinate);
+			vertexes_transformed = translate_to_point(vertexes, translation_factor);
+			for(int i = 0; i < graph_size; i++)
+			{
+				get_local_pos(vertexes_transformed->world_coordinate[i], center_point_in_world_coordinate.x, center_point_in_world_coordinate.y, &vertexes_transformed_local.x, &vertexes_transformed_local.y);
+				vertexes_transformed->world_coordinate[i] = vertexes_transformed_local;
+				printf("Point new: %lf X %lf\n", vertexes_transformed->world_coordinate[i].x, vertexes_transformed->world_coordinate[i].y);getchar();
+			}
+
 			//scale_points(vertexes_transformed, scale_factor);
-			//translate_back(vertexes_transformed, center_point_in_world_coordinate);
+			//translate_back(vertexes_transformed, translation_factor);
 			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
 			//draw (graph, vertexes_transformed, center_point_in_world_coordinate.x, center_point_in_world_coordinate.y, &image);
-			draw (graph, vertexes_transformed, x_origin, y_origin, &image);
-			cv::resize(image, image, size);
+			draw (graph, vertexes, x_origin, y_origin, &image);
+			//cv::resize(image, image, size);
+			//zoom_in = false;
 		}
 
 		if (k == 90) //Z
@@ -267,8 +302,8 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 			scale_factor += 0.025;
 			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
 			//draw (graph, vertexes, center_point_in_world_coordinate.x, center_point_in_world_coordinate.y, &image);
-			draw (graph, vertexes_transformed, x_origin, y_origin, &image);
-			cv::resize(image, image, size);
+			draw (graph, vertexes, x_origin, y_origin, &image);
+			//cv::resize(image, image, size);
 		}
 
 
