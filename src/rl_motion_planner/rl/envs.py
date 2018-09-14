@@ -121,7 +121,7 @@ class CarmenEnv:
 
         state = {
             'pose': np.copy(carmen.read_pose()),
-            'laser': np.copy(laser),
+            'laser': np.copy(laser).reshape(len(laser), 1),
         }
 
         return state

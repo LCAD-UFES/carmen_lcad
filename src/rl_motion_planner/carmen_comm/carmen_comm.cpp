@@ -16,6 +16,7 @@
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/simulator_ackerman_simulation.h>
+#include <carmen/simulator_ackerman_interface.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/navigator_ackerman_interface.h>
 #include <carmen/velodyne_interface.h>
@@ -33,9 +34,11 @@ carmen_robot_ackerman_config_t global_robot_ackerman_config;
 
 // Messages
 carmen_laser_laser_message global_front_laser_message;
+carmen_laser_laser_message global_rear_laser_message;
 carmen_mapper_map_message global_mapper_map_message;
 carmen_behavior_selector_goal_list_message global_goal_list_message;
 carmen_obstacle_distance_mapper_map_message global_obstacle_distance_map;
+carmen_simulator_ackerman_truepos_message global_truepos_message;
 carmen_localize_ackerman_globalpos_message global_localize_ackerman_message;
 carmen_obstacle_distance_mapper_compact_map_message global_obstacle_distance_mapper_compact_map_message;
 carmen_robot_ackerman_motion_command_message global_motion_command_message;
@@ -468,6 +471,8 @@ handle_messages(double how_long)
 {
 	double time_previous_globalpos = global_localize_ackerman_message.timestamp;
 
+	// PARE AQUI !!!!!
+	// TRATAR TRUEPOS !!
 	do
 	{
 		carmen_ipc_sleep(how_long);
@@ -686,6 +691,23 @@ read_pose()
 
 
 std::vector<double>
+read_truepos()
+{
+	std::vector<double> state;
+
+	carmen_simulator_ackerman_truepos_message truepos = global_truepos_message;
+
+	state.push_back(truepos.truepose.x);
+	state.push_back(truepos.truepose.y);
+	state.push_back(truepos.truepose.theta);
+	state.push_back(truepos.v);
+	state.push_back(truepos.phi);
+
+	return state;
+}
+
+
+std::vector<double>
 read_goal()
 {
 	double x = global_localize_ackerman_message.globalpos.x;
@@ -699,8 +721,19 @@ read_goal()
 std::vector<double>
 read_laser()
 {
-	return laser_to_vec(global_front_laser_message,
+	std::vector<double> ranges = laser_to_vec(global_front_laser_message,
 		global_localize_ackerman_message.globalpos.theta, VIEW_LASER);
+
+	if (simulator_config.use_rear_laser)
+	{
+		std::vector<double> rear_ranges = laser_to_vec(global_rear_laser_message,
+			global_localize_ackerman_message.globalpos.theta, VIEW_LASER);
+
+		// append rear_ranges to the end of ranges
+		ranges.insert(ranges.end(), rear_ranges.begin(), rear_ranges.end());
+	}
+
+	return ranges;
 }
 
 
@@ -982,8 +1015,10 @@ initialize_global_data()
 	memset(&global_obstacle_distance_mapper_compact_map_message, 0, sizeof(global_obstacle_distance_mapper_compact_map_message));
 	memset(&global_localize_ackerman_message, 0, sizeof(global_localize_ackerman_message));
 	memset(&global_front_laser_message, 0, sizeof(global_front_laser_message));
+	memset(&global_rear_laser_message, 0, sizeof(global_rear_laser_message));
 	memset(&global_mapper_map_message, 0, sizeof(global_mapper_map_message));
 	memset(&global_motion_command_message, 0, sizeof(global_motion_command_message));
+	memset(&global_truepos_message, 0, sizeof(global_truepos_message));
 }
 
 
@@ -1027,6 +1062,9 @@ init()
 	carmen_laser_subscribe_frontlaser_message(&global_front_laser_message,
 		NULL, CARMEN_SUBSCRIBE_LATEST);
 
+	carmen_laser_subscribe_rearlaser_message(&global_rear_laser_message,
+		NULL, CARMEN_SUBSCRIBE_LATEST);
+
 //	carmen_map_server_subscribe_offline_map(&global_offline_map_message,
 //		NULL, CARMEN_SUBSCRIBE_LATEST);
 
@@ -1052,6 +1090,9 @@ init()
 			NULL, sizeof(carmen_navigator_ackerman_stop_message),
 			(carmen_handler_t) stop_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_simulator_ackerman_subscribe_truepos_message(&global_truepos_message,
+		NULL, CARMEN_SUBSCRIBE_LATEST);
 
 	signal(SIGINT, signal_handler);
 }

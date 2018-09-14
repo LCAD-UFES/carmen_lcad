@@ -38,6 +38,8 @@ def update_rewards(params, episode, info):
 
 
 def view_data(obs, g):
+    # TODO!
+    return
     view = np.zeros((500, 500, 3)) + 255
 
     mult = view.shape[0] / 2.0
@@ -230,7 +232,7 @@ def config():
         # env
         'env': 'simple',
         'model': 'simple',
-        'n_steps_episode': 20,
+        'n_steps_episode': 100,
         'goal_achievement_dist': 0.5,
         'vel_achievement_dist': 0.5,
         'view': True,

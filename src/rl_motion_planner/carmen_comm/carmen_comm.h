@@ -19,6 +19,7 @@ void reset_without_initial_pose();
 void reset_initial_pose(double x, double y, double th);
 
 std::vector<double> read_pose();
+std::vector<double> read_truepos();
 std::vector<double> read_laser();
 std::vector<double> read_goal();
 std::vector<double> read_rddf();
