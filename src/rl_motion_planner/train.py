@@ -43,6 +43,7 @@ def view_data(obs, g, rear_laser_is_active):
     laser /= 30.0
 
     g = np.copy(g)
+    # g = relative_pose((0., 0., -obs['pose'][1]), g)
     g[0] /= 30.
     g[1] /= 30.
 
@@ -87,17 +88,21 @@ def view_data(obs, g, rear_laser_is_active):
 
     cv2.circle(view, (view.shape[0] // 2, view.shape[1] // 2), 2, (0, 0, 255), -1)
     # draw_rectangle(img, pose, height, width, zoom)
-    draw_rectangle(view, (0., 0., obs['pose'][2]), 2.6, 5.0, 4)
+    draw_rectangle(view, (0., 0., obs['pose'][2]), 2.0, 5.0, 4)
+
+    print('g1: ', g)
 
     g[0] *= mult
     g[1] *= mult
-    g[1] = view.shape[0] - g[1] - 1
 
     px = int(g[0] + view.shape[1] / 2.0)
     py = int(g[1] + view.shape[0] / 2.0)
+    py = view.shape[0] - py - 1
 
-    cv2.circle(view, (px, py), 2, (0, 255, 0), -1)
-    draw_rectangle(view, (g[0] * mult, g[1] * mult, g[2]), 2.0, 4.0, 4, color=(0, 255, 0))
+    print('g2: ', g, 'px: ', px, 'py: ', py)
+
+    cv2.circle(view, (px, py), 10, (0, 255, 0), -1)
+    # draw_rectangle(view, (px, py, g[2]), 2.0, 5.0, 4, color=(0, 255, 0))
 
     cv2.imshow("input_data", view)
     cv2.waitKey(1)
@@ -125,6 +130,8 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
 
         while not done:
             g = relative_pose(obs['pose'], goal)
+
+            print('pose:', obs['pose'], 'goal:', g)
 
             if params['env'] == 'carmen' and params['view']:
                 view_data(obs, g, rear_laser_is_active=env.rear_laser_is_active())
@@ -252,7 +259,7 @@ def config():
         # env
         'env': 'carmen',
         'model': 'simple',
-        'n_steps_episode': 100,
+        'n_steps_episode': 200,
         'goal_achievement_dist': 0.5,
         'vel_achievement_dist': 0.5,
         'view': True,
@@ -261,7 +268,7 @@ def config():
         'n_hidden_neurons': 32,
         'n_hidden_layers': 1,
         'use_conv_layer': False,
-        'activation_fn': 'leaky_relu',
+        'activation_fn': 'elu',
         'allow_negative_commands': True,
         # training
         'n_rollouts': 1,
@@ -272,7 +279,7 @@ def config():
         'n_test_rollouts': 0,
         'replay_memory_capacity': 500,  # episodes
         # exploration
-        'random_eps': 0.05,  # percentage of time a random action is taken
+        'random_eps': 0.01,  # percentage of time a random action is taken
         'noise_eps': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
     }
 

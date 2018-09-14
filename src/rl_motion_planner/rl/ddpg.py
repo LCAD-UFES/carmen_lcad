@@ -155,8 +155,8 @@ class DDPG(object):
         # Policy loss function (TODO: checar se essa loss esta certa. Ela parece diferente do DDPG do paper).
         self.policy_loss = -tf.reduce_mean(self.main.q_from_policy)
         # TODO: checar se o componente abaixo eh necessario e o que ele significa.
-        # self.action_l2 = 0.0
-        # self.policy_loss += self.action_l2 * tf.reduce_mean(tf.square(self.main.actor_command))
+        self.action_l2 = 0.0
+        self.policy_loss += self.action_l2 * tf.reduce_mean(tf.square(self.main.actor_command))
 
         # Training
         # TODO: MAKE SURE THESE ARE EQUIVALENT!!!!!
