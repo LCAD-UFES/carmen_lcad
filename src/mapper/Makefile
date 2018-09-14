@@ -19,6 +19,8 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
+IFLAGS += `pkg-config --cflags opencv`
+
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 # Required default libraries to comunicate with Carmen Core.
