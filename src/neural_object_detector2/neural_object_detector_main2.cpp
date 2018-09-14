@@ -11,6 +11,7 @@ int camera_side;
 carmen_camera_parameters camera_parameters;
 carmen_pose_3D_t velodyne_pose;
 carmen_pose_3D_t camera_pose;
+carmen_pose_3D_t board_pose;
 
 const unsigned int maxPositions = 50;
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
@@ -131,18 +132,32 @@ convert_rddf_pose_to_point_in_image(carmen_ackerman_traj_point_t pose,
 	world_ref.orientation.roll = 0.0;
 	world_ref.orientation.yaw = 0.0;
 
+
 	carmen_pose_3D_t car_pos;
 	car_pos.position.x = globalpos.x;
 	car_pos.position.y = globalpos.y;
 	car_pos.position.z = 0.0;
 	car_pos.orientation.pitch = 0.0;
 	car_pos.orientation.roll = 0.0;
-	car_pos.orientation.yaw = globalpos.theta;
+	car_pos.orientation.yaw = carmen_normalize_theta(globalpos.theta);
 
 
 	tf::Point point_tf;
 	tf::Point point_in_car;
 	tf::Point point_in_camera;
+	tf::Point point_in_board;
+
+	// fx and fy are the focal lengths
+	double fx_meters = camera_parameters.fx_factor * image_width * camera_parameters.pixel_size;
+	double fy_meters = camera_parameters.fy_factor * image_height * camera_parameters.pixel_size;
+
+	//printf("Focal Lenght: %lf X %lf\n", fx_meters, fy_meters);
+
+	//cu, cv represent the camera principal point
+	double cu = camera_parameters.cu_factor * (double) image_width;
+	double cv = camera_parameters.cv_factor * (double) image_height;
+
+	//printf("Principal Point: %lf X %lf\n", cu, cv);
 
 
 	printf("Global Pos: %lf X %lf\n", globalpos.x, globalpos.y);
@@ -160,22 +175,12 @@ convert_rddf_pose_to_point_in_image(carmen_ackerman_traj_point_t pose,
 	point_tf[1] = pose.y;
 	point_tf[2] = 0.0;//(pose.x, pose.y, 0.0);
 
+	//camera_pose.position.x += 0.572;
+	//camera_pose.position.y += 0.0;
+	//camera_pose.position.z += 1.394;
 
-	// fx and fy are the focal lengths
-	double fx_meters = camera_parameters.fx_factor * image_width * camera_parameters.pixel_size;
-	double fy_meters = camera_parameters.fy_factor * image_height * camera_parameters.pixel_size;
-
-	//printf("Focal Lenght: %lf X %lf\n", fx_meters, fy_meters);
-
-	//cu, cv represent the camera principal point
-	double cu = camera_parameters.cu_factor * (double) image_width;
-	double cv = camera_parameters.cv_factor * (double) image_height;
-
-	//printf("Principal Point: %lf X %lf\n", cu, cv);
-
-	camera_pose.position.x += 0.572;
-	camera_pose.position.y += 0.0;
-	camera_pose.position.z += 2.154;
+	//point_in_board = move_to_camera_reference2(point_in_car, world_ref, board_pose);
+	//printf("Pose in board reference: %lf X %lf\n", point_in_board.x(), point_in_car.y());
 
 	point_in_camera = move_to_camera_reference2(point_in_car, world_ref, camera_pose);
 	pose.x = point_in_camera[0];
@@ -191,7 +196,7 @@ convert_rddf_pose_to_point_in_image(carmen_ackerman_traj_point_t pose,
 	double px = (fx_meters * (pose.y / pose.x) / camera_parameters.pixel_size + cu);
 	double py = (fy_meters * (camera_pose.position.z / pose.x) / camera_parameters.pixel_size + cv);
 	printf("Pose in image: %lf X %lf\n\n", px, py);
-	point.x = px;
+	point.x = image_width - px;
 	point.y = py;
 
 	/*printf("Image Size: %d X %d\n", image_width, image_height);
@@ -527,17 +532,19 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     carmen_position_t p;
     vector<carmen_position_t> rddf_points ;
     cv::Mat out;
-    cv::flip(rgb_image, out, 1);
-    for(int i = 4; i < 50; i++){
+    //cv::flip(rgb_image, out, 1);
+    out = rgb_image;
+    for(int i = 4; i < last_rddf_poses.number_of_poses; i++){
     	cout<<i<<endl;
     	p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[i],camera_parameters, camera_pose,image_msg->width, image_msg->height);
     	rddf_points.push_back(p);
     	cv::circle(out, cv::Point(p.x, p.y), 3.5, cv::Scalar(0, 255, 255), thickness, lineType);
     }
 
-    cv::imwrite("test.jpg", out);
+    cv::imshow("test", out);
+    cv::waitKey(10);
 
-    vector<bbox_t> predictions = darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
+    vector<bbox_t> predictions;// = darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
 
 //    predictions = darknet->tracking(predictions); // Coment this line if object tracking is not necessary
     //INSERIR FUNÇÃO PARA FOVEADO: receber alguns pontos do rddf (função que converte da posição do mundo para a posição na imagem) recortar a área em volta do ponto
@@ -706,6 +713,13 @@ read_parameters(int argc, char **argv)
 		{bumblebee_string, (char*) "cu", CARMEN_PARAM_DOUBLE, &camera_parameters.cu_factor, 0, NULL },
 		{bumblebee_string, (char*) "cv", CARMEN_PARAM_DOUBLE, &camera_parameters.cv_factor, 0, NULL },
 		{bumblebee_string, (char*) "pixel_size", CARMEN_PARAM_DOUBLE, &camera_parameters.pixel_size, 0, NULL },
+
+		{"sensor_board_1", (char*) "x",     CARMEN_PARAM_DOUBLE, &board_pose.position.x, 0, NULL },
+		{"sensor_board_1", (char*) "y",     CARMEN_PARAM_DOUBLE, &board_pose.position.y, 0, NULL },
+		{"sensor_board_1", (char*) "z",     CARMEN_PARAM_DOUBLE, &board_pose.position.z, 0, NULL },
+		{"sensor_board_1", (char*) "roll",  CARMEN_PARAM_DOUBLE, &board_pose.orientation.roll, 0, NULL },
+		{"sensor_board_1", (char*) "pitch", CARMEN_PARAM_DOUBLE, &board_pose.orientation.pitch, 0, NULL },
+		{"sensor_board_1", (char*) "yaw",   CARMEN_PARAM_DOUBLE, &board_pose.orientation.yaw, 0, NULL },
 
 		{camera_string, (char*) "x",     CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL },
 		{camera_string, (char*) "y",     CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL },
