@@ -17,7 +17,8 @@ from PIL import Image
 import math
 import model as M
 from random import shuffle
-
+import cv2
+import numpy as np
 n_imgs = 79
 #n_train = 60
 #n_test = 19
@@ -46,12 +47,24 @@ def tensor2png(tensor):
     trans = transforms.ToPILImage()
     return trans(tensor)
 
+def tensor2rgbimage(tensor):
+    img = tensor.permute(1,2,0).numpy()
+    height, width = img.shape[:2]
+    img_map = np.zeros((width,height,3), np.uint8)
+    #print(np.where((img == [1]).all(axis = 2)))
+    img_map[np.where((img == [0]).all(axis = 2))] = np.array([255,120,0])
+    img_map[np.where((img == [1]).all(axis = 2))] = np.array([0,0,0])
+    img_map[np.where((img == [2]).all(axis = 2))] = np.array([255,255,255])
+
+    return img_map
+
 def showOutput(tensor):
     img = tensor2png(tensor)
     img.show()
 
 def saveImage(tensor, file_name):
     img = tensor2png(tensor)
+    # img = tensor2rgbimage(tensor)
     img.save(file_name)
 
 def load_data(batch_size, dataset_size):
@@ -191,7 +204,7 @@ if __name__ == '__main__':
 
     torch.manual_seed(args.seed)
 
-    device = torch.device("cuda" if use_cuda else "cpu")
+    device = torch.device("cuda:0" if use_cuda else "cpu")
 
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
 
@@ -218,7 +231,7 @@ if __name__ == '__main__':
         train(args, model, device, train_loader, optimizer, epoch)
         test(args, model, device, test_loader)
         if(epoch % 10 == 0):
-            torch.save(model.state_dict(), 'saved_models/' + str(epoch)+'.model')
+            torch.save(model.state_dict(), '/dados/neural_mapper/60mts/saved_models/' + str(epoch) + '.model')
 
 '''
     data = train_loader[0][0]
