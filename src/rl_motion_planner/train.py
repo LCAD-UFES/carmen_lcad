@@ -43,6 +43,12 @@ def view_data(obs, g, rear_laser_is_active):
     laser /= 30.0
 
     g = np.copy(g)
+    from rl.util import Transform2d
+    tr_g = Transform2d(g[0], g[1], g[2])
+    tr_r = Transform2d(0., 0., obs['pose'][2])
+    tr_g = tr_r.transform(tr_g)
+    g = np.array([tr_g.x, tr_g.y, tr_g.th])
+
     # g = relative_pose((0., 0., -obs['pose'][1]), g)
     g[0] /= 30.
     g[1] /= 30.
@@ -90,8 +96,6 @@ def view_data(obs, g, rear_laser_is_active):
     # draw_rectangle(img, pose, height, width, zoom)
     draw_rectangle(view, (0., 0., obs['pose'][2]), 2.0, 5.0, 4)
 
-    print('g1: ', g)
-
     g[0] *= mult
     g[1] *= mult
 
@@ -99,9 +103,7 @@ def view_data(obs, g, rear_laser_is_active):
     py = int(g[1] + view.shape[0] / 2.0)
     py = view.shape[0] - py - 1
 
-    print('g2: ', g, 'px: ', px, 'py: ', py)
-
-    cv2.circle(view, (px, py), 10, (0, 255, 0), -1)
+    cv2.circle(view, (px, py), 5, (0, 255, 0), -1)
     # draw_rectangle(view, (px, py, g[2]), 2.0, 5.0, 4, color=(0, 255, 0))
 
     cv2.imshow("input_data", view)
@@ -130,8 +132,6 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
 
         while not done:
             g = relative_pose(obs['pose'], goal)
-
-            print('pose:', obs['pose'], 'goal:', g)
 
             if params['env'] == 'carmen' and params['view']:
                 view_data(obs, g, rear_laser_is_active=env.rear_laser_is_active())
