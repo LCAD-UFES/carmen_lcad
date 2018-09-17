@@ -146,7 +146,9 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
                 env.view()
 
             g_after = relative_pose(new_obs['pose'], goal)
-            rw = ((g[0] ** 2 + g[1] ** 2) - (g_after[0] ** 2 + g_after[1] ** 2)) / 100.0
+            rw = 0.01 if not info['hit_obstacle'] else -1.0
+            # rw = (dist(obs['pose'], goal) - dist(goal, new_obs['pose'])) / 10.0
+            # rw = -dist(goal, obs['pose']) / 1000.0
 
             episode.append([obs, cmd, rw, goal])
             obs = new_obs
@@ -229,6 +231,7 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
               'SampleQ:', q0,
               'SuccessAvg30:', np.mean(last_success_flags),
               'CollisionsAvg30:', np.mean(last_collision_flags),
+              'EpSize:', len(last_episode)
               )
 
         sys.stdout.flush()
@@ -260,22 +263,23 @@ def config():
         # env
         'env': 'carmen',
         'model': 'simple',
-        'n_steps_episode': 100,
+        'n_steps_episode': 200,
         'goal_achievement_dist': 0.5,
         'vel_achievement_dist': 0.5,
         'view': True,
         'rddf': 'rddf-voltadaufes-20170809.txt',
         # net
-        'n_hidden_neurons': 32,
+        'n_hidden_neurons': 128,
         'n_hidden_layers': 1,
-        'use_conv_layer': False,
+        'soft_update_rate': 0.01,
+        'use_conv_layer': True,
         'activation_fn': 'leaky_relu',
         'allow_negative_commands': True,
         # training
         'n_rollouts': 1,
         'n_batches': 50,
         'batch_size': 256,
-        'use_her': True,
+        'use_her': False,
         'her_rate': 1.0,
         'n_test_rollouts': 0,
         'replay_memory_capacity': 500,  # episodes

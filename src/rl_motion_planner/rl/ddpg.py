@@ -7,7 +7,7 @@ from rl.replay_buffer import ReplayBuffer
 class ActorCritic:
     def __init__(self, n_laser_readings, n_hidden_neurons, n_hidden_layers, use_conv_layer, activation_fn_name,
                  allow_negative_commands, laser_max_range=30.):
-        self.action_size = 2
+        self.action_size = 1
 
         # goal: (x, y, th, desired_v) - pose in car reference
         self.placeholder_goal = tf.placeholder(dtype=tf.float32, shape=[None, 4], name='placeholder_goal')
@@ -148,7 +148,7 @@ class DDPG(object):
         # Critic loss function (TODO: make sure this is correct!)
         discounted_next_q = self.gamma * self.target.q_from_policy * (1. - self.main.placeholder_is_final)
         target_Q = self.main.placeholder_reward + discounted_next_q
-        clipped_target_Q = tf.clip_by_value(target_Q, clip_value_min=-100, clip_value_max=100)
+        clipped_target_Q = tf.clip_by_value(target_Q, clip_value_min=-100., clip_value_max=100.)
         # The stop gradient prevents the target net from being trained.
         self.critic_loss = tf.reduce_mean(tf.square(tf.stop_gradient(clipped_target_Q) - self.main.q_from_action_placeholder))
 
@@ -181,7 +181,7 @@ class DDPG(object):
         self.target_vars = self._vars('target/preprocessing') + self._vars("target/action_preprocessing") + self._vars('target/policy') + self._vars('target/critic')
 
         self.copy_main_to_target = list(map(lambda v: v[0].assign(v[1]), zip(self.target_vars, self.main_vars)))
-        self.target_update_rate = 0.75  # rate used for soft update of the target net.
+        self.target_update_rate = params['soft_update_rate']  # rate used for soft update of the target net.
         self.soft_update_target_net = list(
             map(lambda v: v[0].assign(self.target_update_rate * v[0] + (1. - self.target_update_rate) * v[1]),
                 zip(self.target_vars, self.main_vars)))

@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <unistd.h>
 #include <carmen/carmen.h>
 #include <carmen/control.h>
@@ -51,6 +52,9 @@ int autonomous_mode = 0;
 // Simulation
 carmen_simulator_ackerman_config_t simulator_config;
 carmen_laser_laser_message global_simulated_front_laser;
+
+int argc = 1;
+char **argv = NULL;
 
 
 /**
@@ -664,13 +668,14 @@ reset_initial_pose(double x, double y, double th)
 	{
 		publish_stop_command();
 		carmen_localize_ackerman_initialize_gaussian_command(pose, std);
-		carmen_ipc_sleep(0.5);
+		carmen_ipc_sleep(0.02);
 
 		// If the messages are taking too long to arrive, warn the user.
 		double curr_time = carmen_get_time();
 		if (curr_time - time_last_message > 1.0)
 		{
 			printf("Waiting for valid messages after reseting initial pose.\n");
+			fflush(stdout);
 			time_last_message = curr_time;
 		}
 
@@ -833,9 +838,9 @@ destroy()
 {
 	if (!global_destroy_already_requested)
 	{
+		global_destroy_already_requested = 1;
 		publish_stop_command();
 		simulation_destroy();
-		global_destroy_already_requested = 1;
 		carmen_ipc_disconnect();
 	}
 
@@ -858,6 +863,12 @@ define_messages()
 			CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_FMT);
 
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME);
+
+	err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME, IPC_VARIABLE_LENGTH,
+			CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_FMT);
+
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME);
+
 }
 
 
@@ -1063,9 +1074,16 @@ stop_message_handler()
 void
 init()
 {
-	int argc = 1;
-	char *argv[] = {"rl_motion_planner"};
-	carmen_ipc_initialize(1, argv);
+	argc = 1;
+
+	if (argv == NULL)
+	{
+		argv = (char **) calloc (1, sizeof(char*));
+		argv[0] = (char *) calloc (128, sizeof(char));
+		strcpy(argv[0], "rl_motion_planner");
+	}
+
+	carmen_ipc_initialize(argc, argv);
 
 	read_robot_ackerman_parameters(argc, argv);
 	read_simulator_parameters(argc, argv, &simulator_config);

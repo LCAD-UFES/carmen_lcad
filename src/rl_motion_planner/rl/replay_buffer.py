@@ -12,6 +12,7 @@ class ReplayBuffer:
         :param n_her: number of her transitions per batch
         :param: max_episode_size to compute the reward in goals chosen in hindsight
         """
+        print('ReplayBuffer with n_trad={} and n_her={}'.format(n_trad, n_her))
         self.capacity = capacity
         self.n_trad = n_trad
         self.n_her = n_her

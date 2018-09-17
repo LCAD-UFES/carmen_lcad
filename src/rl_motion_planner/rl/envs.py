@@ -46,7 +46,7 @@ class SimpleEnv:
             self.pose[0] += cmd[0] * self.dt
             self.pose[1] += cmd[1] * self.dt
 
-        self.pose = np.clip(self.pose, -self.env_border, self.env_border)
+        # self.pose = np.clip(self.pose, -self.env_border, self.env_border)
 
         success = True if dist(self.pose, self.goal) < self.goal_radius else False
         starved = True if self.n_steps > self.params['n_steps_episode'] else False
@@ -158,8 +158,11 @@ class CarmenEnv:
     def step(self, cmd):
         carmen.publish_goal_list([self.goal[0]], [self.goal[1]], [self.goal[2]], [self.goal[3]], [0.0], time.time())
 
-        v = cmd[0] * 10.0
-        phi = cmd[1] * np.deg2rad(28.0)
+        # v = cmd[0] * 10.0
+        # phi = cmd[1] * np.deg2rad(28.0)
+        v = 10.
+        phi = cmd[0] * np.deg2rad(28.0)
+        
         carmen.publish_command([v] * 10, [phi] * 10, [0.1] * 10, True)
 
         state = self._read_state()
@@ -169,7 +172,7 @@ class CarmenEnv:
 
         hit_obstacle = carmen.hit_obstacle()
         starved = self.n_steps >= self.params['n_steps_episode']
-        success = achieved_goal  # and vel_is_correct
+        success = False # achieved_goal  # and vel_is_correct
 
         done = success or hit_obstacle or starved
         info = {'success': success, 'hit_obstacle': hit_obstacle, 'starved': starved}
