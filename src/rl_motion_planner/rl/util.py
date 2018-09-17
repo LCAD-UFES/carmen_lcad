@@ -85,9 +85,9 @@ def draw_rectangle(img, pose, height, width, zoom, color=(0, 0, 0)):
     angle = pose[2]
 
     polar = [[np.math.atan2(v[1], v[0]), (v[0] ** 2 + v[1] ** 2) ** 0.5] for v in vertices]
-    polar_rotated = [[a, r] for a, r in polar]
+    polar_rotated = [[a + angle, r] for a, r in polar]
 
-    vertices = [[r * np.math.cos(a - angle), r * np.math.sin(a - angle)] for a, r in polar_rotated]
+    vertices = [[r * np.math.cos(a), r * np.math.sin(a)] for a, r in polar_rotated]
     vertices = np.array(vertices)
     vertices[:, 0] += x
     vertices[:, 1] += y

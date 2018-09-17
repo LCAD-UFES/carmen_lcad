@@ -13,7 +13,7 @@ class SimpleEnv:
 
         if self.params['model'] == 'ackerman':
             self.env_size = 100.0
-            self.zoom = 4.0
+            self.zoom = 3.5
             self.max_speed = 10.0
             self.wheel_angle = np.deg2rad(28.)
             self.goal_radius = 2.0
@@ -24,7 +24,8 @@ class SimpleEnv:
             self.goal_radius = 0.5
             self.dt = 1.0
 
-        self.laser = np.zeros(1).reshape(1, 1)
+        # 100 rays to support convolutional laser preprocessing
+        self.laser = np.zeros(100).reshape(100, 1)
 
     def reset(self):
         self.pose = self.previous_p = np.zeros(4)

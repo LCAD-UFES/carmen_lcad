@@ -73,6 +73,7 @@ class ReplayBuffer:
             her_episode_size = future_t - t
             her_return = (self.max_episode_size - her_episode_size) / self.max_episode_size
             rew = her_return / her_episode_size
+            #rew = (self.max_episode_size - her_episode_size) / (self.max_episode_size * her_episode_size)
 
             batch['laser'].append(self.stack[e][t][0]['laser'])
             batch['state'].append([self.stack[e][t][0]['pose'][3]])
