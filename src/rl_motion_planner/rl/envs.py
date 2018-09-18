@@ -41,7 +41,11 @@ class SimpleEnv:
         self.previous_p = np.copy(self.pose)
 
         if self.params['model'] == 'ackerman':
-            self.pose = ackerman_motion_model(self.pose, cmd[0] * self.max_speed, cmd[1] * self.wheel_angle, dt=self.dt)
+            # v = cmd[0] * self.max_speed
+            # phi = cmd[1] * self.wheel_angle
+            v = 5.
+            phi = cmd[0] * self.wheel_angle
+            self.pose = ackerman_motion_model(self.pose, v, phi, dt=self.dt)
         else:
             self.pose[0] += cmd[0] * self.dt
             self.pose[1] += cmd[1] * self.dt
@@ -159,10 +163,10 @@ class CarmenEnv:
         carmen.publish_goal_list([self.goal[0]], [self.goal[1]], [self.goal[2]], [self.goal[3]], [0.0], time.time())
 
         # v = cmd[0] * 10.0
-        # phi = cmd[1] * np.deg2rad(28.0)
+        # phi = cmd[1] * np.deg2rad(28.)
         v = 10.
         phi = cmd[0] * np.deg2rad(28.0)
-        
+
         carmen.publish_command([v] * 10, [phi] * 10, [0.1] * 10, True)
 
         state = self._read_state()

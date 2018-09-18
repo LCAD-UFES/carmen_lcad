@@ -15,11 +15,17 @@ from rl.ddpg import DDPG
 from rl.util import relative_pose, dist, draw_rectangle
 from rl.envs import SimpleEnv, CarmenEnv
 
+import matplotlib.pyplot as plt
+
 
 results_dir = 'results/'
 ex = Experiment('rl_motion_planner')
 ex.observers.append(FileStorageObserver.create(results_dir))
 
+"""
+plt.ion()
+plt.show()
+"""
 
 def update_rewards(params, episode, info):
     rw = -1.0
@@ -41,6 +47,14 @@ def view_data(obs, g, rear_laser_is_active):
     car_angle = obs['pose'][2]
     laser = np.copy(obs['laser'])
     laser /= 30.0
+
+    """
+    plt.clf()
+    plt.plot(range(361), laser[:361], '-b')
+    plt.plot(range(361, len(laser)), laser[361:], '-r')
+    plt.draw()
+    plt.pause(0.001)
+    """
 
     g = np.copy(g)
     from rl.util import Transform2d
@@ -71,12 +85,12 @@ def view_data(obs, g, rear_laser_is_active):
     color = (0, 0, 0)
     n = 0
 
-    for range in laser:
-        raw_range = range[0]
-        range = raw_range * (30. / 50.)
+    for distance in laser:
+        raw_distance = distance[0]
+        distance = raw_distance * (30. / 50.)
 
-        x = range * mult * np.cos(angle + car_angle)
-        y = range * mult * np.sin(angle + car_angle)
+        x = distance * mult * np.cos(angle + car_angle)
+        y = distance * mult * np.sin(angle + car_angle)
 
         px = int(x + view.shape[1] / 2.0)
         py = view.shape[0] - int(y + view.shape[0] / 2.0) - 1
@@ -84,7 +98,7 @@ def view_data(obs, g, rear_laser_is_active):
         angle += resolution
         n += 1
 
-        if abs(raw_range) >= 1.0:
+        if abs(raw_distance) >= 1.0:
             continue
 
         if n > len(laser) / 2:
@@ -145,8 +159,8 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
             if params['env'] == 'simple' and params['view']:
                 env.view()
 
-            g_after = relative_pose(new_obs['pose'], goal)
-            rw = 0.01 if not info['hit_obstacle'] else -1.0
+            # g_after = relative_pose(new_obs['pose'], goal)
+            rw = 0.1 if not info['hit_obstacle'] else -1.0
             # rw = (dist(obs['pose'], goal) - dist(goal, new_obs['pose'])) / 10.0
             # rw = -dist(goal, obs['pose']) / 1000.0
 
@@ -269,9 +283,9 @@ def config():
         'view': True,
         'rddf': 'rddf-voltadaufes-20170809.txt',
         # net
-        'n_hidden_neurons': 128,
+        'n_hidden_neurons': 64,
         'n_hidden_layers': 1,
-        'soft_update_rate': 0.01,
+        'soft_update_rate': 0.75,
         'use_conv_layer': True,
         'activation_fn': 'leaky_relu',
         'allow_negative_commands': True,
