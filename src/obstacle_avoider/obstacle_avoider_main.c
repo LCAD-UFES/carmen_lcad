@@ -120,6 +120,8 @@ publish_base_ackerman_motion_command_message_to_stop_robot()
 	{
 		for (j = 0; j < 2; j++)
 		{
+			motion_commands_vector[i][j].x = 0.0;
+			motion_commands_vector[i][j].y = 0.0;
 			motion_commands_vector[i][j].v = 0.0;
 			motion_commands_vector[i][j].time = 1.0;
 			motion_commands_vector[i][j].phi = get_current_pose().phi;

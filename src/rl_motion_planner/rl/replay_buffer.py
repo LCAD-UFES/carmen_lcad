@@ -28,7 +28,7 @@ class ReplayBuffer:
 
     def sample(self):
         batch = {'laser': [], 'state': [], 'goal': [], 'rew': [], 'act': [],
-                 'next_laser': [], 'next_state': [], 'is_final': []}
+                 'next_laser': [], 'next_state': [], 'next_goal': [], 'is_final': []}
 
         # sample a set of episodes
         n = len(self.stack)
@@ -40,6 +40,7 @@ class ReplayBuffer:
             e = e_ids[i]
             t = np.random.randint(0, len(self.stack[e]))
             goal = relative_pose(self.stack[e][t][0]['pose'], self.stack[e][t][3]) + [self.stack[e][t][3][3]]
+            
             batch['laser'].append(self.stack[e][t][0]['laser'])
             batch['state'].append([self.stack[e][t][0]['pose'][3]])
             batch['act'].append(self.stack[e][t][1])
@@ -49,14 +50,17 @@ class ReplayBuffer:
             # check if the transition is the last one in the episode
             if t < len(self.stack[e]) - 1:
                 transitions_not_final.append([e, t])
+                next_goal = relative_pose(self.stack[e][t + 1][0]['pose'], self.stack[e][t][3]) + [self.stack[e][t][3][3]]
                 batch['next_laser'].append(self.stack[e][t + 1][0]['laser'])
                 batch['next_state'].append([self.stack[e][t + 1][0]['pose'][3]])
+                batch['next_goal'].append(next_goal)
                 batch['is_final'].append([0.0])
             else:
                 # If the transition is the last one, we don't have a next observation. In this case, we copy the
                 # current observation as next one. This value will be ignored when computing the target q.
                 batch['next_laser'].append(self.stack[e][t][0]['laser'])
                 batch['next_state'].append([self.stack[e][t][0]['pose'][3]])
+                batch['next_goal'].append(goal)
                 batch['is_final'].append([1.0])
 
         # generate additional training data using her
@@ -71,10 +75,9 @@ class ReplayBuffer:
             t = np.random.randint(0, len(self.stack[e]) - 1)
 
             future_t = np.random.randint(t + 1, len(self.stack[e]))
-            her_episode_size = future_t - t
-            her_return = (self.max_episode_size - her_episode_size) / self.max_episode_size
+            her_episode_size = future_t + 1 - t
+            her_return = (self.max_episode_size + 1 - her_episode_size) / self.max_episode_size
             rew = her_return / her_episode_size
-            #rew = (self.max_episode_size - her_episode_size) / (self.max_episode_size * her_episode_size)
 
             batch['laser'].append(self.stack[e][t][0]['laser'])
             batch['state'].append([self.stack[e][t][0]['pose'][3]])
@@ -83,10 +86,12 @@ class ReplayBuffer:
 
             her_goal = self.stack[e][future_t][0]['pose'][:4]
             goal = relative_pose(self.stack[e][t][0]['pose'], her_goal) + [her_goal[3]]
+            next_goal = relative_pose(self.stack[e][t + 1][0]['pose'], her_goal) + [her_goal[3]]
 
             batch['goal'].append(goal)
             batch['next_laser'].append(self.stack[e][t + 1][0]['laser'])
             batch['next_state'].append([self.stack[e][t + 1][0]['pose'][3]])
+            batch['next_goal'].append(next_goal)
             batch['is_final'].append([0.0])
 
             """

@@ -17,7 +17,7 @@ class SimpleEnv:
             self.max_speed = 10.0
             self.wheel_angle = np.deg2rad(28.)
             self.goal_radius = 2.0
-            self.dt = 0.1
+            self.dt = 0.2
         else:
             self.env_size = 9.0
             self.zoom = 20.0
@@ -38,27 +38,27 @@ class SimpleEnv:
         return {'pose': np.copy(self.pose), 'laser': self.laser}, self.goal
 
     def step(self, cmd):
+        self.n_steps += 1
         self.previous_p = np.copy(self.pose)
 
         if self.params['model'] == 'ackerman':
-            # v = cmd[0] * self.max_speed
-            # phi = cmd[1] * self.wheel_angle
-            v = 5.
-            phi = cmd[0] * self.wheel_angle
+            v = cmd[0] * self.max_speed
+            phi = cmd[1] * self.wheel_angle
+            # v = 5.
+            # phi = cmd[0] * self.wheel_angle
             self.pose = ackerman_motion_model(self.pose, v, phi, dt=self.dt)
         else:
             self.pose[0] += cmd[0] * self.dt
             self.pose[1] += cmd[1] * self.dt
 
-        # self.pose = np.clip(self.pose, -self.env_border, self.env_border)
+        self.pose = np.clip(self.pose, -self.env_border, self.env_border)
 
         success = True if dist(self.pose, self.goal) < self.goal_radius else False
-        starved = True if self.n_steps > self.params['n_steps_episode'] else False
+        starved = True if self.n_steps >= self.params['n_steps_episode'] else False
 
         info = {'success': success, 'hit_obstacle': False, 'starved': starved}
         done = success or starved
 
-        self.n_steps += 1
         return {'pose': np.copy(self.pose), 'laser': self.laser}, done, info
 
     def finalize(self):
@@ -162,10 +162,10 @@ class CarmenEnv:
     def step(self, cmd):
         carmen.publish_goal_list([self.goal[0]], [self.goal[1]], [self.goal[2]], [self.goal[3]], [0.0], time.time())
 
-        # v = cmd[0] * 10.0
-        # phi = cmd[1] * np.deg2rad(28.)
-        v = 10.
-        phi = cmd[0] * np.deg2rad(28.0)
+        v = cmd[0] * 10.0
+        phi = cmd[1] * np.deg2rad(28.)
+        # v = 10.
+        # phi = cmd[0] * np.deg2rad(28.0)
 
         carmen.publish_command([v] * 10, [phi] * 10, [0.1] * 10, True)
 
@@ -176,7 +176,7 @@ class CarmenEnv:
 
         hit_obstacle = carmen.hit_obstacle()
         starved = self.n_steps >= self.params['n_steps_episode']
-        success = False # achieved_goal  # and vel_is_correct
+        success = achieved_goal  # and vel_is_correct
 
         done = success or hit_obstacle or starved
         info = {'success': success, 'hit_obstacle': hit_obstacle, 'starved': starved}

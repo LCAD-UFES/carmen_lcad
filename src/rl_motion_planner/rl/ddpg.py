@@ -7,7 +7,7 @@ from rl.replay_buffer import ReplayBuffer
 class ActorCritic:
     def __init__(self, n_laser_readings, n_hidden_neurons, n_hidden_layers, use_conv_layer, activation_fn_name,
                  allow_negative_commands, laser_max_range=30.):
-        self.action_size = 1
+        self.action_size = 2
 
         # goal: (x, y, th, desired_v) - pose in car reference
         self.placeholder_goal = tf.placeholder(dtype=tf.float32, shape=[None, 4], name='placeholder_goal')
@@ -254,7 +254,7 @@ class DDPG(object):
             self.main.placeholder_action: batch['act'],
             self.main.placeholder_reward: batch['rew'],
             self.main.placeholder_is_final: batch['is_final'],
-            self.target.placeholder_goal: batch['goal'],
+            self.target.placeholder_goal: batch['next_goal'],
             self.target.placeholder_laser: batch['next_laser'],
             self.target.placeholder_state: batch['next_state'],
         }
@@ -262,12 +262,17 @@ class DDPG(object):
         # TODO: Diferente do caso da OpenAI em que os gradients sao computados e aplicados separadamente, aqui os
         # TODO: gradients sao aplicados "ao mesmo tempo" nas variaveis de pre-processamento. Checar em qual ordem isso
         # TODO: eh realizado, e se nao da problema treinar os dois ao msm tempo.
-        out = self.sess.run([self.critic_loss, self.policy_loss, self.critic_train, self.policy_train], feed_dict=feed)
+        out = self.sess.run([self.policy_loss, self.critic_loss, 
+                             self.target.q_from_policy, self.main.q_from_action_placeholder, 
+                             self.critic_train, self.policy_train], feed_dict=feed)
 
         critic_loss = out[0]
         policy_loss = out[1]
 
-        return critic_loss, policy_loss
+        target_next_q = out[2]
+        predicted_q = out[3]
+
+        return critic_loss, policy_loss, target_next_q, predicted_q
 
     """
     def train(self, stage=True):

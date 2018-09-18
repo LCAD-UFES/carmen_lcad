@@ -28,10 +28,10 @@ plt.show()
 """
 
 def update_rewards(params, episode, info):
-    rw = -1.0
+    rw = -1.
 
     if info['success']:
-        rw = float(params['n_steps_episode'] - len(episode)) / float(params['n_steps_episode'])
+        rw = float(params['n_steps_episode'] + 1. - len(episode)) / float(params['n_steps_episode'])
         print("updated rewards:", rw)
     elif info['hit_obstacle']:
         rw = -1.0
@@ -134,16 +134,11 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
     while len(episodes) < n_rollouts:
         obs, goal = env.reset()
 
-        g = relative_pose(obs['pose'], goal)
-        _, q0 = policy.get_actions(obs, g + [goal[3]], noise_eps=0.,
-                                   random_eps=0.,
-                                   use_target_net=False)
-
-        obs, goal = env.reset()
         episode = []
         done = False
         info = None
 
+        i = 0
         while not done:
             g = relative_pose(obs['pose'], goal)
 
@@ -154,14 +149,18 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
                                         random_eps=params['random_eps'] if not exploit else 0.,
                                         use_target_net=use_target_net)
 
-            new_obs, done, info = env.step(cmd)
+            if len(episode) == 0:
+                q0 = q
+
+            for _ in range(1):
+                new_obs, done, info = env.step(cmd)
 
             if params['env'] == 'simple' and params['view']:
                 env.view()
 
             # g_after = relative_pose(new_obs['pose'], goal)
-            rw = 0.1 if not info['hit_obstacle'] else -1.0
-            # rw = (dist(obs['pose'], goal) - dist(goal, new_obs['pose'])) / 10.0
+            # rw = 0.01 if not info['hit_obstacle'] else -1.0
+            rw = (dist(obs['pose'], goal) - dist(goal, new_obs['pose'])) / 10.0
             # rw = -dist(goal, obs['pose']) / 1000.0
 
             episode.append([obs, cmd, rw, goal])
@@ -180,6 +179,20 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
         elif info['hit_obstacle']: n_collisions += 1
 
     return episodes, n_successes, n_collisions, q0
+
+
+def print_episode(episode):
+    print('-----------------------------------------')
+    i = 0
+    for transition in episode:
+        obs, cmd, rw, goal = transition
+        print(i, end=' ')
+        for r in obs['laser']:
+            print('%.2f' % r[0], end=' ')
+        print(obs['pose'], cmd, rw, goal, '\n')
+        i += 1
+    print('-----------------------------------------')
+    input('Pressione enter para continuar:')
 
 
 def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
@@ -237,6 +250,8 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
 
         last_episode = episodes[-1]
 
+        # print_episode(last_episode)
+
         print('** Episode', epoch * params['n_rollouts'],
               'Return:', np.sum([t[2] for t in last_episode]),
               'n_successes:', n_successes,
@@ -253,9 +268,12 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
         # Train
         policy.store_episode(episodes)
 
-        if len(policy.buffer.stack) > 1:
+        if len(policy.buffer.stack) > 0:
             for b in range(params['n_batches']):
-                policy.train()
+                c_loss, p_loss, target_next_q, predicted_q = policy.train()
+                if b % 10 == 0:
+                    print('Batch', b, 'CriticLoss:', c_loss, 'PolicyLoss:', p_loss, 
+                          'target_next_q predicted_q:', np.concatenate([target_next_q[:5], predicted_q[:5]], axis=1))
 
             # Save
             if epoch % 20 == 0:
@@ -275,15 +293,15 @@ def config():
 
     params = {
         # env
-        'env': 'carmen',
+        'env': 'simple',
         'model': 'simple',
-        'n_steps_episode': 200,
+        'n_steps_episode': 20,
         'goal_achievement_dist': 0.5,
         'vel_achievement_dist': 0.5,
         'view': True,
         'rddf': 'rddf-voltadaufes-20170809.txt',
         # net
-        'n_hidden_neurons': 64,
+        'n_hidden_neurons': 32,
         'n_hidden_layers': 1,
         'soft_update_rate': 0.75,
         'use_conv_layer': True,
@@ -293,12 +311,12 @@ def config():
         'n_rollouts': 1,
         'n_batches': 50,
         'batch_size': 256,
-        'use_her': False,
+        'use_her': True,
         'her_rate': 1.0,
         'n_test_rollouts': 0,
         'replay_memory_capacity': 500,  # episodes
         # exploration
-        'random_eps': 0.0,  # percentage of time a random action is taken
+        'random_eps': 0.1,  # percentage of time a random action is taken
         'noise_eps': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
     }
 
