@@ -16,6 +16,7 @@ int click = 0;
 int click2 = 0;
 bool zoom_in = false;
 bool zoom_out = false;
+bool show_edges = false;
 
 static void
 define_messages()
@@ -178,28 +179,25 @@ draw(t_graph **graph, rddf_graph_t *vertexes, double x_origin, double y_origin, 
 			cv::circle(*image, pt, circle_size, cv::Scalar(255, 0, 0), thickness, lineType);
 		}
 
-
-
-
-		/*for(p = graph[i]; p!=NULL; p = p->prox)
-		{
-			get_local_pos (p->world_coordinate, x_origin, y_origin, &x_local, &y_local);
-			img_pose.x = x_local;
-			img_pose.y = y_local;
-			if (img_pose.x < image->cols && img_pose.y < image->rows)
+		if(show_edges == true){
+			for(p = graph[i]; p!=NULL; p = p->prox)
 			{
-				pt.x = img_pose.x;
-				pt.y = (1050 - 1 - img_pose.y);//map->config.y_size - 1 - y;
+				get_local_pos (p->world_coordinate, x_origin, y_origin, &x_local, &y_local);
+				img_pose.x = x_local;
+				img_pose.y = y_local;
+				//if (img_pose.x < image->cols && img_pose.y < image->rows)
+				//{
+					pt1.x = img_pose.x;
+					pt1.y = (1050 - 1 - img_pose.y);//map->config.y_size - 1 - y;
 
-				pt1.x = graph_index_x;
-				pt1.y = (1050 - 1 - graph_index_y);
+					//cv::circle(*image, pt, 0.7, cv::Scalar(255, 0, 0), thickness, lineType);
+					//if(pt != pt1)
+					cv::line(*image,pt, pt1, cv::Scalar(0, 0, 255), 1+(circle_size*0.5), 8);
 
-				cv::circle(*image, pt, 0.7, cv::Scalar(255, 0, 0), thickness, lineType);
-				//if(pt != pt1)
-					//cv::line(*image,pt, pt1, cv::Scalar(0, 255, 0), 1, 8);
-
+				//}
 			}
-		}*/
+
+		}
 	}
 }
 
@@ -239,6 +237,7 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 	//cv::resize(image, image, size);
 
 	int k;
+	cv::Point center_point;
 	while(1)
 	{
 		k = (char)cv::waitKey(10);
@@ -251,7 +250,6 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 
 		if (k == 111) //o
 		{
-			//cout<<"Original Image"<<endl;
 			scale_factor = 0.2;
 			circle_size = 0.3;
 			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
@@ -261,32 +259,35 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 
 		if (k == 99) //c
 		{
-			cv::Point center_point = point1;
+			center_point = point1;
+			center_point.y = 1050 - 1 - center_point.y;
 			center_point_in_world_coordinate.x = convert_image_coordinate_to_world_coordinate(center_point.x, 0.2, x_origin);
 			center_point_in_world_coordinate.y = convert_image_coordinate_to_world_coordinate(center_point.y, 0.2, y_origin);
-			translation_factor.x = center_point_in_world_coordinate.x - x_origin;
-			translation_factor.y = center_point_in_world_coordinate.y - y_origin;
+			translation_factor.x = (center_point_in_world_coordinate.x - x_origin);
+			translation_factor.y = (center_point_in_world_coordinate.y - y_origin);
 			cout<<"Point centered in "<<point1.x<<" "<<point1.y<<endl;
 			printf("Point in world coordinate %lf X %lf\n", center_point_in_world_coordinate.x,  center_point_in_world_coordinate.y);
-			printf("Difference to translate %lf X %lf\n", center_point_in_world_coordinate.x - x_origin,  center_point_in_world_coordinate.y - y_origin);
+			printf("Difference to translate %lf X %lf\n", translation_factor.x,  translation_factor.y);
 		}
 
 		if (k == 122) //z
 		{
-			zoom_in = true;
-			carmen_position_t vertexes_transformed_local;
+			//zoom_in = true;
+			//carmen_position_t vertexes_transformed_local;
 			//cout<<"Zoom in"<<endl;
 			scale_factor -= 0.025;
 			circle_size += 0.2;
-			vertexes_transformed = translate_to_point(vertexes, translation_factor);
+			/*vertexes_transformed = translate_to_point(vertexes, translation_factor);
 			for(int i = 0; i < graph_size; i++)
 			{
 				get_local_pos(vertexes_transformed->world_coordinate[i], center_point_in_world_coordinate.x, center_point_in_world_coordinate.y, &vertexes_transformed_local.x, &vertexes_transformed_local.y);
 				vertexes_transformed->world_coordinate[i] = vertexes_transformed_local;
-				printf("Point new: %lf X %lf\n", vertexes_transformed->world_coordinate[i].x, vertexes_transformed->world_coordinate[i].y);getchar();
-			}
+				//printf("Point new: %lf X %lf\n", vertexes_transformed->world_coordinate[i].x, vertexes_transformed->world_coordinate[i].y);getchar();
+			}*/
 
 			//scale_points(vertexes_transformed, scale_factor);
+			//translation_factor.x = center_point.x;
+			//translation_factor.y = center_point.y;
 			//translate_back(vertexes_transformed, translation_factor);
 			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
 			//draw (graph, vertexes_transformed, center_point_in_world_coordinate.x, center_point_in_world_coordinate.y, &image);
@@ -297,11 +298,20 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 
 		if (k == 90) //Z
 		{
-			//cout<<"Zoom out"<<endl;
 			circle_size -= 0.2;
 			scale_factor += 0.025;
 			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
-			//draw (graph, vertexes, center_point_in_world_coordinate.x, center_point_in_world_coordinate.y, &image);
+			draw (graph, vertexes, x_origin, y_origin, &image);
+			//cv::resize(image, image, size);
+		}
+
+		if (k == 101) //e
+		{
+			if(show_edges == true)
+				show_edges = false;
+			else
+				show_edges = true;
+			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
 			draw (graph, vertexes, x_origin, y_origin, &image);
 			//cv::resize(image, image, size);
 		}
@@ -315,19 +325,15 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 				click2 = 0;
 			}
 		}
-		cv::imshow("Graph", image);
-		/*if (select_flag == 1)
-		{
-			//cout<<"oi"<<endl;
-			imshow("ROI", roiImg);
-		}
-		rectangle(img, rect, CV_RGB(255, 0, 0), 3, 8, 0);
-		imshow("image", img);*/
 
-		if (k == 27)
+		if (k == 27) //esc
 		{
 			exit(1);
 		}
+
+		cv::imshow("Graph", image);
+
+
 
 	}
 
@@ -337,7 +343,7 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 	//cv::Rect2d r = cv::selectROI(image);
 	//cv::Mat imCrop = image(r);
 
-	    // Display Cropped Image
+	    // Display Cropped ImageZZ
 	    //imshow("Image", imCrop);
 //	cv::Rect2d r = cv::selectROI(image);
 
@@ -372,6 +378,27 @@ add_to_list_undir(t_graph **adjacent_list, int u, int v, rddf_graph_t *graph){
     }
 
     return (adjacent_list);
+}
+
+
+void
+print_graph (t_graph **graph)
+{
+	for (int i = 0; i < 200; i++)
+	{
+		printf ("[%d]: ", i);
+		t_graph *p;
+		for(p = graph[i]; p!=NULL; p = p->prox)
+		{
+			printf ("%d", p->vertex);
+			if (p->prox == NULL)
+				continue;
+			else
+				printf(" -> ");
+
+		}
+		printf("\n");
+	}
 }
 
 
@@ -446,7 +473,7 @@ main(int argc, char **argv)
 	read_parameters(argc,argv);
 
 	t_graph **graph = NULL;
-	rddf_graph_t * vertexes = NULL;
+	rddf_graph_t *vertexes = NULL;
 
 	FILE *f;
 	printf("* * * * Graph Editor Shortcuts * * * \n");
@@ -455,6 +482,7 @@ main(int argc, char **argv)
 	printf("* c: center in selected point       *\n");
 	printf("* z: zoom in                        *\n");
 	printf("* Z: zoom out                       *\n");
+	printf("* e: show edges / hide edges        *\n");
 	printf("* esc: exit program                 *\n");
 	printf("* * * * * * * * * * * * * * * * * * *\n");
 
@@ -468,6 +496,8 @@ main(int argc, char **argv)
 	vertexes = read_vertexes_from_file(vertexes, f);
 	graph = read_graph_from_file(graph, vertexes, f);
 	fclose (f);
+
+	//print_graph (graph);
 
 	edit_graph (graph, vertexes);
 

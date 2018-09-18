@@ -591,10 +591,10 @@ add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y)
 		graph->world_coordinate[0].y = convert_image_coordinate_to_world_coordinate(y, map->config.resolution, map->config.y_origin);
 
 		graph->edge = (rddf_graph_edges_t *) malloc(sizeof(rddf_graph_edges_t));
-		graph->edge[0].point = (int *) malloc(sizeof(int));
-		graph->edge[0].point[0] = 0; //usando zero ao invês de NULL para evitar warning;
+		//graph->edge[0].point = (int *) malloc(sizeof(int));
+		//graph->edge[0].point[0] = 0; //usando zero ao invês de NULL para evitar warning;
 		//cout<<"\tAresta "<<graph->edge[0].point[0]<<endl;
-		graph->edge[0].size = 1;
+		graph->edge[0].size = 0;
 
 		graph->size = 1;
 	}
@@ -848,12 +848,32 @@ write_graph_on_file(rddf_graph_t *graph)
 	{
 		for (int j = 0; j < graph->edge[i].size; j++)
 		{
-			cout<<cont<<endl;
-			cont++;
+			//cout<<cont<<endl;
+			//cont++;
 			fprintf (f, "%d %d\n", i, graph->edge[i].point[j]);
 		}
 	}
 	fclose(f);
+}
+
+
+void
+print_graph_in_screen (rddf_graph_t *graph)
+{
+	for (int i = 0; i < 200; i++)
+	{
+		printf ("[%d]: ", i);
+		for (int j = 0; j < graph->edge[i].size; j++)
+		{
+			printf ("%d", graph->edge[i].point[j]);
+			if (j+1 == graph->edge[i].size)
+				continue;
+			else
+				printf(" -> ");
+		}
+		printf ("\n");
+
+	}
 }
 
 
@@ -913,6 +933,8 @@ generate_road_map_graph(carmen_map_p map, char *road_map_folder, bool view_graph
 	//show_road_map(map, 524, 524);
 	//show_already_visited(&already_visited);
 	//getchar();
+
 	write_graph_for_gnuplot (graph);
+	//print_graph_in_screen (graph);
 	write_graph_on_file(graph);
 }
