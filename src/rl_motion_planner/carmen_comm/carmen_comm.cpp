@@ -641,7 +641,8 @@ reset_without_initial_pose()
 
 	} while (global_localize_ackerman_message.timestamp == 0 ||
 			obstacle_distance_map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, x, y) ||
-			// laser_reading_is_invalid(&global_front_laser_message) ||
+			laser_reading_is_invalid(&global_front_laser_message) ||
+			laser_reading_is_invalid(&global_rear_laser_message) ||
 			map_is_invalid(&global_mapper_map_message, x, y) ||
 			goal_list_is_invalid(&global_goal_list_message, x, y, th) ||
 			rddf_is_invalid(&global_rddf_message, x, y, th));
@@ -1074,26 +1075,8 @@ stop_message_handler()
 
 
 void
-init()
+subscribe_messages()
 {
-	argc = 1;
-
-	if (argv == NULL)
-	{
-		argv = (char **) calloc (1, sizeof(char*));
-		argv[0] = (char *) calloc (128, sizeof(char));
-		strcpy(argv[0], "rl_motion_planner");
-	}
-
-	carmen_ipc_initialize(argc, argv);
-
-	read_robot_ackerman_parameters(argc, argv);
-	read_simulator_parameters(argc, argv, &simulator_config);
-	carmen_libpid_read_PID_parameters(argc, argv);
-
-	initialize_global_data();
-	define_messages();
-
     carmen_localize_ackerman_subscribe_globalpos_message(&global_localize_ackerman_message,
     	NULL, CARMEN_SUBSCRIBE_LATEST);
 
@@ -1137,6 +1120,30 @@ init()
 
 	carmen_simulator_ackerman_subscribe_truepos_message(&global_truepos_message,
 		NULL, CARMEN_SUBSCRIBE_LATEST);
+}
+
+
+void
+init()
+{
+	argc = 1;
+
+	if (argv == NULL)
+	{
+		argv = (char **) calloc (1, sizeof(char*));
+		argv[0] = (char *) calloc (128, sizeof(char));
+		strcpy(argv[0], "rl_motion_planner");
+	}
+
+	carmen_ipc_initialize(argc, argv);
+
+	read_robot_ackerman_parameters(argc, argv);
+	read_simulator_parameters(argc, argv, &simulator_config);
+	carmen_libpid_read_PID_parameters(argc, argv);
+
+	initialize_global_data();
+	define_messages();
+	subscribe_messages();
 
 	signal(SIGINT, signal_handler);
 }

@@ -43,10 +43,17 @@ def update_rewards(params, episode, info):
         transition[2] = rw
 
 
-def view_data(obs, g, rear_laser_is_active):
+def view_data(obs, g, rear_laser_is_active, goal_achievemnt_dist):
+    pixels_by_meter = 5.
+    viewer_size_in_meters = 150.
+    viewer_size_in_pixels = int(viewer_size_in_meters * pixels_by_meter)
+    distance_between_front_and_rear_axles = 2.625
+    distance_between_rear_wheels = 1.535
+    distance_between_rear_car_and_rear_wheels = 0.96
+    distance_between_front_car_and_front_wheels = 0.85
+
     car_angle = obs['pose'][2]
     laser = np.copy(obs['laser'])
-    laser /= 30.0
 
     """
     plt.clf()
@@ -56,23 +63,9 @@ def view_data(obs, g, rear_laser_is_active):
     plt.pause(0.001)
     """
 
-    g = np.copy(g)
-    from rl.util import Transform2d
-    tr_g = Transform2d(g[0], g[1], g[2])
-    tr_r = Transform2d(0., 0., obs['pose'][2])
-    tr_g = tr_r.transform(tr_g)
-    g = np.array([tr_g.x, tr_g.y, tr_g.th])
+    view = np.zeros((viewer_size_in_pixels, viewer_size_in_pixels, 3)) + 255
 
-    # g = relative_pose((0., 0., -obs['pose'][1]), g)
-    g[0] /= 30.
-    g[1] /= 30.
-
-    view = np.zeros((500, 500, 3)) + 255
-
-    mult = view.shape[0] / 2.0
-    mult -= 0.1 * mult
-
-    # read from params file
+    # TODO: read from params file
     init = -np.pi / 2.
 
     if rear_laser_is_active:
@@ -86,41 +79,62 @@ def view_data(obs, g, rear_laser_is_active):
     n = 0
 
     for distance in laser:
-        raw_distance = distance[0]
-        distance = raw_distance * (30. / 50.)
+        distance = distance[0]
 
-        x = distance * mult * np.cos(angle + car_angle)
-        y = distance * mult * np.sin(angle + car_angle)
+        x = pixels_by_meter * distance * np.cos(angle + car_angle)
+        y = pixels_by_meter * distance * np.sin(angle + car_angle)
 
-        px = int(x + view.shape[1] / 2.0)
-        py = view.shape[0] - int(y + view.shape[0] / 2.0) - 1
+        x += view.shape[1] / 2.
+        y += view.shape[0] / 2.
 
         angle += resolution
         n += 1
 
-        if abs(raw_distance) >= 1.0:
+        # range max
+        if abs(distance) >= 30.:
             continue
 
         if n > len(laser) / 2:
             color = (0, 0, 255)
 
-        cv2.circle(view, (px, py), 2, color, -1)
+        cv2.circle(view, (int(x), int(y)), 2, color, -1)
 
     cv2.circle(view, (view.shape[0] // 2, view.shape[1] // 2), 2, (0, 0, 255), -1)
+
     # draw_rectangle(img, pose, height, width, zoom)
-    draw_rectangle(view, (0., 0., -obs['pose'][2]), 2.0, 5.0, 4)
+    car_length = pixels_by_meter * (distance_between_front_and_rear_axles + distance_between_rear_car_and_rear_wheels + distance_between_front_car_and_front_wheels)
+    car_width = pixels_by_meter * distance_between_rear_wheels
 
-    g[0] *= mult
-    g[1] *= mult
+    # draw car in the origin
+    center_to_rear_axis = ((car_length / 2.) - distance_between_rear_car_and_rear_wheels * pixels_by_meter)
+    shift_x = center_to_rear_axis * np.cos(obs['pose'][2])
+    shift_y = center_to_rear_axis * np.sin(obs['pose'][2])
 
-    px = int(g[0] + view.shape[1] / 2.0)
-    py = int(g[1] + view.shape[0] / 2.0)
-    py = view.shape[0] - py - 1
+    rectangle_pose = (shift_x, shift_y, obs['pose'][2])
+    draw_rectangle(view, rectangle_pose, height=car_width, width=car_length)
 
-    cv2.circle(view, (px, py), 5, (0, 255, 0), -1)
-    # draw_rectangle(view, (px, py, -g[2]), 2.0, 5.0, 4, color=(0, 255, 0))
+    # draw goal
+    from rl.util import Transform2d
+    tr_g = Transform2d(g[0], g[1], g[2])
+    tr_r = Transform2d(0., 0., obs['pose'][2])
+    tr_g = tr_r.transform(tr_g)
+    g = np.array([tr_g.x, tr_g.y, tr_g.th])
 
-    cv2.imshow("input_data", view)
+    # car_length - shft
+    x = pixels_by_meter * g[0]
+    y = pixels_by_meter * g[1]
+    th = g[2]
+
+    radius = int(goal_achievemnt_dist * pixels_by_meter)
+    cv2.circle(view, (int(x + view.shape[1] / 2.), int(y + view.shape[0] / 2.)), 2, (0, 128, 0), -1)
+    cv2.circle(view, (int(x + view.shape[1] / 2.), int(y + view.shape[0] / 2.)), radius, (0, 128, 0), 1)
+
+    x += center_to_rear_axis * np.cos(th)
+    y += center_to_rear_axis * np.sin(th)
+
+    draw_rectangle(view, (x, y, th), height=car_width, width=car_length, color=(0, 128, 0))
+
+    cv2.imshow("input_data", np.flip(view, axis=0))
     cv2.waitKey(1)
 
 
@@ -143,7 +157,8 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
             g = relative_pose(obs['pose'], goal)
 
             if params['env'] == 'carmen' and params['view']:
-                view_data(obs, g, rear_laser_is_active=env.rear_laser_is_active())
+                view_data(obs, g, rear_laser_is_active=env.rear_laser_is_active(),
+                          goal_achievemnt_dist=params['goal_achievement_dist'])
 
             cmd, q = policy.get_actions(obs, g + [goal[3]], noise_eps=params['noise_eps'] if not exploit else 0.,
                                         random_eps=params['random_eps'] if not exploit else 0.,
@@ -299,15 +314,15 @@ def config():
 
     params = {
         # env
-        'env': 'simple',
+        'env': 'carmen',
         'model': 'simple',
         'n_steps_episode': 100,
-        'goal_achievement_dist': 0.5,
+        'goal_achievement_dist': 1.0,
         'vel_achievement_dist': 0.5,
         'view': True,
         'rddf': 'rddf-voltadaufes-20170809.txt',
         # net
-        'n_hidden_neurons': 32,
+        'n_hidden_neurons': 64,
         'n_hidden_layers': 1,
         'soft_update_rate': 0.75,
         'use_conv_layer': False,
