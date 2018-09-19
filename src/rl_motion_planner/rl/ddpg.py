@@ -55,7 +55,7 @@ class ActorCritic:
         norm_laser = tf.clip_by_value(self.placeholder_laser, 0., laser_max_range)
         norm_laser = (norm_laser / laser_max_range)
         # normalize goal
-        norm_goal = self.placeholder_goal # / [10., 10., 1.0, 10.]
+        norm_goal = self.placeholder_goal / [10., 10., 1.0, 10.]
         # normalize state
         norm_state = self.placeholder_state # / 10.
 
@@ -182,8 +182,8 @@ class DDPG(object):
         print("Policy variables:")
         print(v_policy)
         """
-        self.critic_train = tf.train.AdamOptimizer(learning_rate=0.001).minimize(loss=self.critic_loss, var_list=v_critic)
-        self.policy_train = tf.train.AdamOptimizer(learning_rate=0.001).minimize(loss=self.policy_loss, var_list=v_policy)
+        self.critic_train = tf.train.AdamOptimizer(learning_rate=0.0001).minimize(loss=self.critic_loss, var_list=v_critic)
+        self.policy_train = tf.train.AdamOptimizer(learning_rate=0.0001).minimize(loss=self.policy_loss, var_list=v_policy)
         """
         Q_grads_tf = tf.gradients(self.Q_loss_tf, self._vars('main/Q'))
         pi_grads_tf = tf.gradients(self.pi_loss_tf, self._vars('main/pi'))
@@ -244,6 +244,11 @@ class DDPG(object):
 
         ret = self.sess.run(vals, feed_dict=feed)
 
+        #import pprint
+        #pprint.pprint(obs)
+        #pprint.pprint(goal)
+        #pprint.pprint(ret)
+
         # action postprocessing
         u = ret[0][0]
         u += noise_eps * np.random.randn(*u.shape)  # gaussian noise
@@ -292,16 +297,19 @@ class DDPG(object):
         # TODO: gradients sao aplicados "ao mesmo tempo" nas variaveis de pre-processamento. Checar em qual ordem isso
         # TODO: eh realizado, e se nao da problema treinar os dois ao msm tempo.
         out = self.sess.run([self.policy_loss, self.critic_loss, 
-                             self.target.q_from_policy, self.main.q_from_action_placeholder, 
+                             self.target.q_from_policy, self.main.q_from_action_placeholder,
+                             self.main.q_from_policy,
                              self.critic_train, self.policy_train], feed_dict=feed)
 
-        critic_loss = out[0]
-        policy_loss = out[1]
+        policy_loss = out[0]
+        critic_loss = out[1]
 
         target_next_q = out[2]
         predicted_q = out[3]
 
-        return critic_loss, policy_loss, target_next_q, predicted_q
+        main_q_policy = out[4]
+
+        return critic_loss, policy_loss, target_next_q, predicted_q, batch['rew'], main_q_policy
 
     """
     def train(self, stage=True):

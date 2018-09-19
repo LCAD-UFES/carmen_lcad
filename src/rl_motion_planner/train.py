@@ -31,7 +31,7 @@ def update_rewards(params, episode, info):
     rw = -1.
 
     if info['success']:
-        rw = float(params['n_steps_episode'] + 1. - len(episode)) / float(params['n_steps_episode'])
+        rw = (float(params['n_steps_episode'] + 1. - len(episode))) / float(params['n_steps_episode'])
         print("updated rewards:", rw)
     elif info['hit_obstacle']:
         rw = -1.0
@@ -270,12 +270,16 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
 
         if len(policy.buffer.stack) > 0:
             for b in range(params['n_batches']):
-                c_loss, p_loss, target_next_q, predicted_q = policy.train()
-                """
+                c_loss, p_loss, target_next_q, predicted_q, rew, main_q_policy = policy.train()
+                #"""
                 if b % 10 == 0:
                     print('Batch', b, 'CriticLoss:', c_loss, 'PolicyLoss:', p_loss,
-                          'target_next_q predicted_q:', np.concatenate([target_next_q[:5], predicted_q[:5]], axis=1))
-                """
+                          'target_next_q predicted_q:\n', np.concatenate([rew[:5],
+                                                                          target_next_q[:5],
+                                                                          rew[:5] + target_next_q[:5],
+                                                                          predicted_q[:5],
+                                                                          main_q_policy[:5]], axis=1))
+                #"""
 
             policy.update_target_net()
 
