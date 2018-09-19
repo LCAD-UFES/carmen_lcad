@@ -271,16 +271,18 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
         if len(policy.buffer.stack) > 0:
             for b in range(params['n_batches']):
                 c_loss, p_loss, target_next_q, predicted_q = policy.train()
+                """
                 if b % 10 == 0:
-                    print('Batch', b, 'CriticLoss:', c_loss, 'PolicyLoss:', p_loss, 
+                    print('Batch', b, 'CriticLoss:', c_loss, 'PolicyLoss:', p_loss,
                           'target_next_q predicted_q:', np.concatenate([target_next_q[:5], predicted_q[:5]], axis=1))
+                """
+
+            policy.update_target_net()
 
             # Save
             if epoch % 20 == 0:
                 policy_path = periodic_policy_path.format(epoch)
                 policy.save(policy_path)
-
-            policy.update_target_net()
 
 
 @ex.config
@@ -295,7 +297,7 @@ def config():
         # env
         'env': 'simple',
         'model': 'simple',
-        'n_steps_episode': 20,
+        'n_steps_episode': 100,
         'goal_achievement_dist': 0.5,
         'vel_achievement_dist': 0.5,
         'view': True,
@@ -304,7 +306,7 @@ def config():
         'n_hidden_neurons': 32,
         'n_hidden_layers': 1,
         'soft_update_rate': 0.75,
-        'use_conv_layer': True,
+        'use_conv_layer': False,
         'activation_fn': 'leaky_relu',
         'allow_negative_commands': True,
         # training

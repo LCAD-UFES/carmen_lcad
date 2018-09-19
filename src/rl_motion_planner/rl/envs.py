@@ -17,7 +17,7 @@ class SimpleEnv:
             self.max_speed = 10.0
             self.wheel_angle = np.deg2rad(28.)
             self.goal_radius = 2.0
-            self.dt = 0.2
+            self.dt = 0.1
         else:
             self.env_size = 9.0
             self.zoom = 20.0
@@ -25,7 +25,8 @@ class SimpleEnv:
             self.dt = 1.0
 
         # 100 rays to support convolutional laser preprocessing
-        self.laser = np.zeros(100).reshape(100, 1)
+        n_rays = 1
+        self.laser = np.zeros(n_rays).reshape(n_rays, 1)
 
     def reset(self):
         self.pose = self.previous_p = np.zeros(4)
