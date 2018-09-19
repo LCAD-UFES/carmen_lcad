@@ -304,7 +304,7 @@ print_general_summary()
 
 	printf("\n");
 	if (g_logtime_last[0] != 0)
-		printf("Selected log period:  from %s to %s\n", g_logtime_first, g_logtime_last);
+		printf("Selected log period:  from %s to %s (%.2lf secs)\n", g_logtime_first, g_logtime_last, (time_str2dbl(g_logtime_last) - time_str2dbl(g_logtime_first)));
 	if (g_avgSize_last >= 0)
 		printf("Handle time summary:  Messaging: %.2f%%  Waiting: %.2f%%  Average size: %ld bytes\n", g_msgPer_last, g_waitPer_last, g_avgSize_last);
 
