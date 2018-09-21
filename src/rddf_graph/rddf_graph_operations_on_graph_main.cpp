@@ -91,18 +91,20 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 
 
 void
-translate_back (rddf_graph_t * vertexes, carmen_point_t point)
+translate_back (rddf_graph_t *vertexes, carmen_point_t point)
 {
 	for (int i = 0; i < graph_size; i++)
 	{
+		//printf("Point was: %lf X %lf\n", vertexes->world_coordinate[i].x, vertexes->world_coordinate[i].y);
 		vertexes->world_coordinate[i].x += point.x;
 		vertexes->world_coordinate[i].y += point.y;
+		//printf("Point new: %lf X %lf\n", vertexes->world_coordinate[i].x, vertexes->world_coordinate[i].y);getchar();
 	}
 }
 
 
 void
-scale_points(rddf_graph_t * vertexes, double scale_factor)
+scale_points(rddf_graph_t *vertexes, double scale_factor)
 {
 	for (int i = 0; i < graph_size; i++)
 	{
@@ -114,19 +116,16 @@ scale_points(rddf_graph_t * vertexes, double scale_factor)
 }
 
 
-rddf_graph_t *
+void
 translate_to_point (rddf_graph_t *vertexes, carmen_point_t point)
 {
-	rddf_graph_t *vertexes_transformed = vertexes;
 	for (int i = 0; i < graph_size; i++)
 	{
 		//printf("Point was: %lf X %lf\n", vertexes->world_coordinate[i].x, vertexes->world_coordinate[i].y);
-		vertexes_transformed->world_coordinate[i].x -= point.x;
-		vertexes_transformed->world_coordinate[i].y -= point.y;
+		vertexes->world_coordinate[i].x -= point.x;
+		vertexes->world_coordinate[i].y -= point.y;
 		//printf("Point new: %lf X %lf\n", vertexes_transformed->world_coordinate[i].x, vertexes_transformed->world_coordinate[i].y);getchar();
 	}
-
-	return (vertexes_transformed);
 }
 
 
@@ -146,6 +145,15 @@ get_map_origin(carmen_point_t *global_pose, double *x_origin, double *y_origin)
 }
 
 
+string
+number_to_string (int Number)
+{
+	stringstream ss;
+	ss << Number;
+	return ss.str();
+}
+
+int o = 0;
 void
 draw(t_graph **graph, rddf_graph_t *vertexes, double x_origin, double y_origin, cv::Mat *image)
 {
@@ -159,11 +167,9 @@ draw(t_graph **graph, rddf_graph_t *vertexes, double x_origin, double y_origin, 
 	int lineType = 8;
 	carmen_point_t img_pose;
 
+
 	for (int i = 0; i < graph_size; i++)
 	{
-		//printf("%lf X %lf\n", vertexes->world_coordinate[i].x, vertexes->world_coordinate[i].y);
-		t_graph* p;
-
 		if(zoom_in == false)
 		{
 			get_local_pos (vertexes->world_coordinate[i], x_origin, y_origin, &graph_index_x, &graph_index_y);
@@ -176,28 +182,39 @@ draw(t_graph **graph, rddf_graph_t *vertexes, double x_origin, double y_origin, 
 		{
 			pt.x = vertexes->world_coordinate[i].x;
 			pt.y = (1050 - 1 - vertexes->world_coordinate[i].y);//map->config.y_size - 1 - y;
-			cv::circle(*image, pt, circle_size, cv::Scalar(255, 0, 0), thickness, lineType);
+			if(i<100)
+				cv::circle(*image, pt, circle_size, cv::Scalar(255, 0, 255), thickness, lineType);
+			else
+				cv::circle(*image, pt, circle_size, cv::Scalar(255, 0, 0), thickness, lineType);
 		}
 
 		if(show_edges == true){
+			t_graph* p;
 			for(p = graph[i]; p!=NULL; p = p->prox)
 			{
-				get_local_pos (p->world_coordinate, x_origin, y_origin, &x_local, &y_local);
-				img_pose.x = x_local;
-				img_pose.y = y_local;
-				//if (img_pose.x < image->cols && img_pose.y < image->rows)
-				//{
+				if(zoom_in == false){
+					get_local_pos (p->world_coordinate, x_origin, y_origin, &x_local, &y_local);
+					img_pose.x = x_local;
+					img_pose.y = y_local;
 					pt1.x = img_pose.x;
 					pt1.y = (1050 - 1 - img_pose.y);//map->config.y_size - 1 - y;
-
-					//cv::circle(*image, pt, 0.7, cv::Scalar(255, 0, 0), thickness, lineType);
-					//if(pt != pt1)
-					cv::line(*image,pt, pt1, cv::Scalar(0, 0, 255), 1+(circle_size*0.5), 8);
-
-				//}
+				}
+				else
+				{
+					img_pose.x = vertexes->world_coordinate[p->vertex].x;
+					img_pose.y = vertexes->world_coordinate[p->vertex].y;
+					pt1.x = img_pose.x;
+					pt1.y = (1050 - 1 - img_pose.y);//map->config.y_size - 1 - y;
+				}
+				cv::line(*image,pt, pt1, cv::Scalar(0, 0, 255), 1+(circle_size*0.5), 8);
 			}
 
 		}
+		/*if(show_edges == true)
+		{
+			cv::imwrite("out.jpg", *image);
+			getchar();
+		}*/
 	}
 }
 
@@ -213,6 +230,7 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 	int lineType = 8;
 	carmen_point_t first_graph_point;
 	rddf_graph_t* vertexes_transformed;
+	carmen_position_t vertexes_transformed_local;
 
 	carmen_point_t center_point_in_world_coordinate;
 	carmen_point_t translation_factor;
@@ -222,10 +240,12 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 
 	image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
 	cv::namedWindow("Graph", cv::WINDOW_AUTOSIZE);
-	cv::Size size(1050 * 0.72, 1050 * 0.72);
+	double map_scale = 0.72;
+	cv::Size size(1050 * map_scale, 1050 * map_scale);
 
-	first_graph_point.x = graph[0]->world_coordinate.x;
-	first_graph_point.y = graph[0]->world_coordinate.y;
+
+	first_graph_point.x = vertexes->world_coordinate[0].x;// graph[0]->world_coordinate.x;
+	first_graph_point.y = vertexes->world_coordinate[0].y;//graph[0]->world_coordinate.y;
 	get_map_origin(&first_graph_point, &x_origin, &y_origin);
 	x_origin+=70;
 	y_origin+=70;
@@ -234,10 +254,9 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 
 	draw (graph, vertexes, x_origin, y_origin, &image);
 
-	//cv::resize(image, image, size);
-
 	int k;
 	cv::Point center_point;
+	double scale_difference_between_real_map_size_and_image_size = 1050/(1050*map_scale);
 	while(1)
 	{
 		k = (char)cv::waitKey(10);
@@ -250,50 +269,62 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 
 		if (k == 111) //o
 		{
+			o = 1;
 			scale_factor = 0.2;
 			circle_size = 0.3;
 			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
+			/*for(int i = 0; i < graph_size; i++)
+						{
+							printf("%lf X %lf\n",vertexes->world_coordinate[i].x, vertexes->world_coordinate[i].y );getchar();
+						}*/
 			draw (graph, vertexes, x_origin, y_origin, &image);
-			//cv::resize(image, image, size);
+
 		}
 
 		if (k == 99) //c
 		{
 			center_point = point1;
+			center_point.x *= scale_difference_between_real_map_size_and_image_size;
+			center_point.y *= scale_difference_between_real_map_size_and_image_size;
 			center_point.y = 1050 - 1 - center_point.y;
 			center_point_in_world_coordinate.x = convert_image_coordinate_to_world_coordinate(center_point.x, 0.2, x_origin);
 			center_point_in_world_coordinate.y = convert_image_coordinate_to_world_coordinate(center_point.y, 0.2, y_origin);
 			translation_factor.x = (center_point_in_world_coordinate.x - x_origin);
 			translation_factor.y = (center_point_in_world_coordinate.y - y_origin);
-			cout<<"Point centered in "<<point1.x<<" "<<point1.y<<endl;
+			cout<<"Point centered in "<<center_point.x<<" "<<center_point.y<<endl;
 			printf("Point in world coordinate %lf X %lf\n", center_point_in_world_coordinate.x,  center_point_in_world_coordinate.y);
 			printf("Difference to translate %lf X %lf\n", translation_factor.x,  translation_factor.y);
 		}
 
 		if (k == 122) //z
 		{
-			//zoom_in = true;
-			//carmen_position_t vertexes_transformed_local;
-			//cout<<"Zoom in"<<endl;
-			scale_factor -= 0.025;
-			circle_size += 0.2;
-			/*vertexes_transformed = translate_to_point(vertexes, translation_factor);
+			zoom_in = true;
+			scale_factor -= 0.175;
+			circle_size += 0.99;
+			vertexes_transformed = (rddf_graph_t*)malloc(graph_size * sizeof(rddf_graph_t));
+			vertexes_transformed->world_coordinate = (carmen_position_t*)malloc(graph_size * sizeof(carmen_position_t));
 			for(int i = 0; i < graph_size; i++)
 			{
-				get_local_pos(vertexes_transformed->world_coordinate[i], center_point_in_world_coordinate.x, center_point_in_world_coordinate.y, &vertexes_transformed_local.x, &vertexes_transformed_local.y);
+				vertexes_transformed->world_coordinate[i] = vertexes->world_coordinate[i];
+			}
+			//cout<<"Zoom in"<<endl;
+
+			translate_to_point(vertexes_transformed, translation_factor);
+			for(int i = 0; i < graph_size; i++)
+			{
+				get_local_pos(vertexes_transformed->world_coordinate[i], x_origin, y_origin, &vertexes_transformed_local.x, &vertexes_transformed_local.y);
 				vertexes_transformed->world_coordinate[i] = vertexes_transformed_local;
 				//printf("Point new: %lf X %lf\n", vertexes_transformed->world_coordinate[i].x, vertexes_transformed->world_coordinate[i].y);getchar();
-			}*/
+			}
 
-			//scale_points(vertexes_transformed, scale_factor);
-			//translation_factor.x = center_point.x;
-			//translation_factor.y = center_point.y;
-			//translate_back(vertexes_transformed, translation_factor);
+			translation_factor.x = translation_factor.x/0.2;
+			translation_factor.y = translation_factor.y/0.2;
+			translate_back(vertexes_transformed, translation_factor);
 			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
-			//draw (graph, vertexes_transformed, center_point_in_world_coordinate.x, center_point_in_world_coordinate.y, &image);
-			draw (graph, vertexes, x_origin, y_origin, &image);
-			//cv::resize(image, image, size);
-			//zoom_in = false;
+			draw (graph, vertexes_transformed, x_origin, y_origin, &image);
+			//draw (graph, vertexes, x_origin, y_origin, &image);
+			zoom_in = false;
+
 		}
 
 		if (k == 90) //Z
@@ -302,35 +333,85 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 			scale_factor += 0.025;
 			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
 			draw (graph, vertexes, x_origin, y_origin, &image);
-			//cv::resize(image, image, size);
 		}
 
 		if (k == 101) //e
 		{
+			//print_graph_2(graph);
 			if(show_edges == true)
 				show_edges = false;
 			else
 				show_edges = true;
 			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
+			if(scale_factor == 0.2)
+				draw (graph, vertexes, x_origin, y_origin, &image);
+			else
+			{
+				zoom_in = true;
+				draw (graph, vertexes_transformed, x_origin, y_origin, &image);
+				zoom_in = false;
+			}
+
+
+		}
+
+		if (k == 113) //q
+		{
+			//print_graph_2(graph);
+			string filename;
+			cout<<"Graph name: "<<endl;
+			cin>>filename;
+			cv::imwrite(filename, image);
+		}
+
+		if (k == 100) //d
+		{
+			x_origin+=210;
+			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
 			draw (graph, vertexes, x_origin, y_origin, &image);
-			//cv::resize(image, image, size);
+		}
+
+		if (k == 97) //a
+		{
+			x_origin-=210;
+			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
+			draw (graph, vertexes, x_origin, y_origin, &image);
+		}
+
+		if (k == 119) //w
+		{
+			y_origin+=210;
+			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
+			draw (graph, vertexes, x_origin, y_origin, &image);
+		}
+
+		if (k == 115) //s
+		{
+			y_origin-=210;
+			image = cv::Mat(1050, 1050, CV_8UC3, cv::Scalar(255, 255, 255));
+			draw (graph, vertexes, x_origin, y_origin, &image);
 		}
 
 
-		if(k == 32)
-		{
+		//if(k == 32)
+		//{
 			if (click2 == 1)
 			{
-				cv::circle(image, point2, 2.1, cv::Scalar(255, 0, 0), thickness, lineType);
-				click2 = 0;
+				//cv::circle(image, point2, 2.1, cv::Scalar(255, 0, 0), thickness, lineType);
+				//click2 = 0;
+				bool fromCenter = false;
+				bool showCrosshair = false;
+				cv::Rect2d r = cv::selectROI("image",image, fromCenter, showCrosshair);
+				cout<<r.x<<" "<<r.y<<" "<<r.width<<" "<<r.height<<endl;
 			}
-		}
+		//}
 
 		if (k == 27) //esc
 		{
 			exit(1);
 		}
 
+		cv::resize(image, image, size);
 		cv::imshow("Graph", image);
 
 
@@ -382,9 +463,9 @@ add_to_list_undir(t_graph **adjacent_list, int u, int v, rddf_graph_t *graph){
 
 
 void
-print_graph (t_graph **graph)
+print_graph_2 (t_graph **graph)
 {
-	for (int i = 0; i < 200; i++)
+	for (int i = 0; i < 1050; i++)
 	{
 		printf ("[%d]: ", i);
 		t_graph *p;
@@ -417,6 +498,7 @@ read_graph_from_file(t_graph **graph, rddf_graph_t *vertexes, FILE *f)
 	{
 		graph = add_to_list_undir(graph, u, v, vertexes);
 	}
+	//cout<<vertexes->size<<endl;
 
 	return (graph);
 }
@@ -433,7 +515,7 @@ read_vertexes_from_file (rddf_graph_t *vertexes, FILE *f)
 	fscanf(f, "%d\n", &number_of_edges);
 	graph_size = vertexes->size;
 
-	//cout<<vertexes->size<<" "<<number_of_edges<<endl;
+
 
 	vertexes->world_coordinate = (carmen_position_t *) malloc (vertexes->size * sizeof(carmen_position_t));
 
@@ -441,6 +523,7 @@ read_vertexes_from_file (rddf_graph_t *vertexes, FILE *f)
 	{
 		fscanf(f, "%lf %lf\n", &vertexes->world_coordinate[i].x, &vertexes->world_coordinate[i].y);
 	}
+
 
 	return (vertexes);
 }
@@ -483,6 +566,8 @@ main(int argc, char **argv)
 	printf("* z: zoom in                        *\n");
 	printf("* Z: zoom out                       *\n");
 	printf("* e: show edges / hide edges        *\n");
+	printf("* q: save image                     *\n");
+	printf("* w/a/s/d: navigate on graph        *\n");
 	printf("* esc: exit program                 *\n");
 	printf("* * * * * * * * * * * * * * * * * * *\n");
 
@@ -497,7 +582,7 @@ main(int argc, char **argv)
 	graph = read_graph_from_file(graph, vertexes, f);
 	fclose (f);
 
-	//print_graph (graph);
+	//print_graph_2 (graph);
 
 	edit_graph (graph, vertexes);
 
