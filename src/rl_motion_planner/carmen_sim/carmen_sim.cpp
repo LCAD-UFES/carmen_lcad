@@ -90,7 +90,7 @@ CarmenSim::reset()
 	else
 		direction = 1;
 
-	int pose_id = 0; // M + rand() % (_rddf.size() - M);
+	int pose_id = M + rand() % (_rddf.size() - M);
 	int shift = m + (rand() % (M - m));  // shift is a random integer between m and M
 	int goal_id = pose_id + shift * direction;
 
@@ -116,7 +116,7 @@ CarmenSim::reset()
 	carmen_simulator_ackerman_calc_laser_msg(&_front_laser, &_simulator_config, 0);
 	carmen_simulator_ackerman_calc_laser_msg(&_rear_laser, &_simulator_config, 1);
 
-	_my_counter = 0;
+	//_my_counter = 0;
 }
 
 
@@ -211,10 +211,10 @@ CarmenSim::step(double v, double phi, double dt)
 		_simulator_config.delta_t,
 		_simulator_config.distance_between_front_and_rear_axles);
 
-	_my_counter++;
-	_simulator_config.true_pose.x = _rddf[_my_counter].x;
-	_simulator_config.true_pose.y = _rddf[_my_counter].y;
-	_simulator_config.true_pose.theta = _rddf[_my_counter].theta;
+	// _my_counter++;
+	// _simulator_config.true_pose.x = _rddf[_my_counter].x;
+	// _simulator_config.true_pose.y = _rddf[_my_counter].y;
+	// _simulator_config.true_pose.theta = _rddf[_my_counter].theta;
 
     _update_map();
 
@@ -317,7 +317,7 @@ CarmenSim::view()
 			_map_pixel_by_meter);
 
 	imshow("viewer", viewer);
-	waitKey(-1);
+	waitKey(1);
 }
 
 

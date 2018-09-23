@@ -44,8 +44,8 @@ def update_rewards(params, episode, info):
 
 
 def view_data(obs, g, rear_laser_is_active, goal_achievemnt_dist):
-    pixels_by_meter = 5.
-    viewer_size_in_meters = 150.
+    pixels_by_meter = 4.
+    viewer_size_in_meters = 50.
     viewer_size_in_pixels = int(viewer_size_in_meters * pixels_by_meter)
     distance_between_front_and_rear_axles = 2.625
     distance_between_rear_wheels = 1.535
@@ -97,7 +97,7 @@ def view_data(obs, g, rear_laser_is_active, goal_achievemnt_dist):
         if n > len(laser) / 2:
             color = (0, 0, 255)
 
-        cv2.circle(view, (int(x), int(y)), 2, color, -1)
+        cv2.circle(view, (int(x), int(y)), 1, color, -1)
 
     cv2.circle(view, (view.shape[0] // 2, view.shape[1] // 2), 2, (0, 0, 255), -1)
 
@@ -287,7 +287,7 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
         if len(policy.buffer.stack) > 0:
             for b in range(params['n_batches']):
                 c_loss, p_loss, target_next_q, predicted_q, rew, main_q_policy = policy.train()
-                #"""
+                """
                 if b % 10 == 0:
                     print('Batch', b, 'CriticLoss:', c_loss, 'PolicyLoss:', p_loss,
                           'target_next_q predicted_q:\n', np.concatenate([rew[:5],
@@ -295,7 +295,7 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
                                                                           rew[:5] + target_next_q[:5],
                                                                           predicted_q[:5],
                                                                           main_q_policy[:5]], axis=1))
-                #"""
+                """
 
             policy.update_target_net()
 
@@ -317,7 +317,7 @@ def config():
         # env
         'env': 'carmen',
         'model': 'simple',
-        'n_steps_episode': 10000,
+        'n_steps_episode': 100,
         'goal_achievement_dist': 1.0,
         'vel_achievement_dist': 0.5,
         'view': True,
