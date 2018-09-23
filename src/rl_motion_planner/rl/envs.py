@@ -241,7 +241,7 @@ class CarmenSimEnv:
 
         hit_obstacle = self.sim.hit_obstacle()
         starved = self.n_steps >= self.params['n_steps_episode']
-        success = False # achieved_goal  # and vel_is_correct
+        success = achieved_goal  # and vel_is_correct
 
         done = success or hit_obstacle or starved
         info = {'success': success, 'hit_obstacle': hit_obstacle, 'starved': starved}
