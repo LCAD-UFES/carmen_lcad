@@ -13,7 +13,7 @@ from sacred.observers import FileStorageObserver
 
 from rl.ddpg import DDPG
 from rl.util import relative_pose, dist, draw_rectangle
-from rl.envs import SimpleEnv, CarmenEnv
+from rl.envs import SimpleEnv, CarmenEnv, CarmenSimEnv
 
 import matplotlib.pyplot as plt
 
@@ -159,6 +159,7 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
             if params['env'] == 'carmen' and params['view']:
                 view_data(obs, g, rear_laser_is_active=env.rear_laser_is_active(),
                           goal_achievemnt_dist=params['goal_achievement_dist'])
+                env.view()
 
             cmd, q = policy.get_actions(obs, g + [goal[3]], noise_eps=params['noise_eps'] if not exploit else 0.,
                                         random_eps=params['random_eps'] if not exploit else 0.,
@@ -229,7 +230,7 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
     random.seed(seed)
 
     if params['env'] == 'simple': env = SimpleEnv(params)
-    elif params['env'] == 'carmen': env = CarmenEnv(params)
+    elif params['env'] == 'carmen': env = CarmenSimEnv(params)
     else: raise Exception("Env '{}' not implemented.".format(params['env']))
 
     state, goal = env.reset()

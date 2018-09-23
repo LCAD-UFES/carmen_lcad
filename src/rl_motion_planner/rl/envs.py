@@ -5,6 +5,7 @@ from rl.util import dist, ackerman_motion_model, draw_rectangle
 import numpy as np
 import cv2
 import carmen_comm.carmen_comm as carmen
+import carmen_sim.pycarmen_sim as pycarmen_sim 
 
 
 class SimpleEnv:
@@ -201,5 +202,58 @@ class CarmenEnv:
 
     def view(self):
         pass
+
+
+class CarmenSimEnv:
+    def __init__(self, params):
+        self.sim = pycarmen_sim.CarmenSim()
+        self.params = params
+
+    def _read_state(self):
+        laser = self.sim.laser()
+
+        state = {
+            'pose': np.copy(self.sim.pose()),
+            'laser': np.copy(laser).reshape(len(laser), 1),
+        }
+
+        return state
+
+    def rear_laser_is_active(self):
+        return True
+
+    def reset(self):
+        self.sim.reset()
+        self.n_steps = 0
+        return self._read_state(), self.sim.goal()
+
+    def step(self, cmd):
+        v = cmd[0] * 10.0
+        phi = cmd[1] * np.deg2rad(28.)
+
+        self.sim.step(v, phi, 0.1)
+
+        state = self._read_state()
+        goal = self.sim.goal()
+
+        achieved_goal = dist(state['pose'], goal) < self.params['goal_achievement_dist']
+        vel_is_correct = np.abs(state['pose'][3] - goal[3]) < self.params['vel_achievement_dist']
+
+        hit_obstacle = self.sim.hit_obstacle()
+        starved = self.n_steps >= self.params['n_steps_episode']
+        success = achieved_goal  # and vel_is_correct
+
+        done = success or hit_obstacle or starved
+        info = {'success': success, 'hit_obstacle': hit_obstacle, 'starved': starved}
+
+        self.n_steps += 1
+
+        return state, done, info
+
+    def finalize(self):
+        pass
+
+    def view(self):
+        self.sim.view()
 
 

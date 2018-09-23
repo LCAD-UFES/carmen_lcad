@@ -926,7 +926,7 @@ read_simulator_parameters(int argc, char *argv[], carmen_simulator_ackerman_conf
 	{
 			{"simulator", "time", CARMEN_PARAM_DOUBLE, &(config->real_time), 1, NULL},
 			{"simulator", "sync_mode", CARMEN_PARAM_ONOFF, &(config->sync_mode), 1, NULL},
-			{"simulator", "motion_timeout", CARMEN_PARAM_DOUBLE, &(config->motion_timeout),1, NULL},
+			{"simulator", "motion_timeout", CARMEN_PARAM_DOUBLE, &(config->motion_timeout), 1, NULL},
 			{"robot", "frontlaser_use", CARMEN_PARAM_ONOFF, &(config->use_front_laser), 1, NULL},
 			{"robot", "frontlaser_id", CARMEN_PARAM_INT, &(config->front_laser_config.id), 0, NULL},
 			{"robot", "rearlaser_use", CARMEN_PARAM_ONOFF, &(config->use_rear_laser), 1, NULL},
