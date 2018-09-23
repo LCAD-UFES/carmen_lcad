@@ -115,6 +115,8 @@ CarmenSim::reset()
 
 	carmen_simulator_ackerman_calc_laser_msg(&_front_laser, &_simulator_config, 0);
 	carmen_simulator_ackerman_calc_laser_msg(&_rear_laser, &_simulator_config, 1);
+
+	_my_counter = 0;
 }
 
 
@@ -208,6 +210,11 @@ CarmenSim::step(double v, double phi, double dt)
 		_simulator_config.phi,
 		_simulator_config.delta_t,
 		_simulator_config.distance_between_front_and_rear_axles);
+
+	_my_counter++;
+	_simulator_config.true_pose.x = _rddf[_my_counter].x;
+	_simulator_config.true_pose.y = _rddf[_my_counter].y;
+	_simulator_config.true_pose.theta = _rddf[_my_counter].theta;
 
     _update_map();
 
@@ -420,41 +427,41 @@ CarmenSim::_load_rddf(string path)
 void
 CarmenSim::_update_map()
 {
-	if (1) // _map.complete_map == NULL || pose_is_outside_map(_map, _pose))
+	carmen_point_t p;
+
+	p.x = _simulator_config.true_pose.x;
+	p.y = _simulator_config.true_pose.y;
+	p.theta = _simulator_config.true_pose.theta;
+
+	// check if there is map that contains the current pose.
+	double x_or, y_or;
+	carmen_grid_mapping_get_map_origin(&p, &x_or, &y_or);
+
+	if (x_or == _simulator_config.map.config.x_origin && y_or == _simulator_config.map.config.y_origin)
+		return;
+
+	static char map_path[1024];
+	sprintf(map_path, "%s/m%d_%d.map", _map_dir.c_str(), (int) x_or, (int) y_or);
+	FILE *fptr = fopen(map_path, "r");
+
+	if (fptr == NULL)
 	{
-		carmen_point_t p;
-
-		p.x = _simulator_config.true_pose.x;
-		p.y = _simulator_config.true_pose.y;
-		p.theta = _simulator_config.true_pose.theta;
-
-		// check if there is map that contains the current pose.
-		double x_or, y_or;
-		carmen_grid_mapping_get_map_origin(&p, &x_or, &y_or);
-
-		static char map_path[1024];
-		sprintf(map_path, "%s/m%d_%d.map", _map_dir.c_str(), (int) x_or, (int) y_or);
-		FILE *fptr = fopen(map_path, "r");
-
-		if (fptr == NULL)
-		{
-			_robot_is_on_map = false;
-			printf("Warning: There is not a map that contains the pose (%lf, %lf)\n", p.x, p.y);
-			return;
-		}
-		else
-			fclose(fptr);
-
-		carmen_grid_mapping_get_block_map_by_origin((char *) _map_dir.c_str(), 'm', p,
-													&_simulator_config.map);
-
-		// recompute obstacle distance map
-		if (_obstacle_distance_map.complete_distance == NULL)
-			carmen_prob_models_initialize_distance_map(&_obstacle_distance_map,
-														_simulator_config.map.config);
-
-		carmen_prob_models_create_distance_map(&_obstacle_distance_map, &_simulator_config.map, 0.5);
+		_robot_is_on_map = false;
+		printf("Warning: There is not a map that contains the pose (%lf, %lf)\n", p.x, p.y);
+		return;
 	}
+	else
+		fclose(fptr);
+
+	carmen_grid_mapping_get_block_map_by_origin((char *) _map_dir.c_str(), 'm', p,
+												&_simulator_config.map);
+
+	// recompute obstacle distance map
+	if (_obstacle_distance_map.complete_distance == NULL)
+		carmen_prob_models_initialize_distance_map(&_obstacle_distance_map,
+													_simulator_config.map.config);
+
+	carmen_prob_models_create_distance_map(&_obstacle_distance_map, &_simulator_config.map, 0.5);
 }
 
 
@@ -462,7 +469,7 @@ void
 fill_laser_config_data(carmen_simulator_ackerman_laser_config_t *lasercfg)
 {
 	lasercfg->num_lasers = 1 + carmen_round(lasercfg->fov / lasercfg->angular_resolution);
-	lasercfg->start_angle = -0.5*lasercfg->fov;
+	lasercfg->start_angle = -0.5 * lasercfg->fov;
 
 	/* give a warning if it is not a standard configuration */
 
@@ -559,11 +566,11 @@ CarmenSim::_load_params()
 
 
 int
-pose_is_outside_map(carmen_map_t &map, carmen_ackerman_motion_command_t &pose)
+pose_is_outside_map(carmen_map_t &map, double x, double y)
 {
 	bool map_is_empty = map.config.x_origin == 0 || map.config.y_origin == 0 || map.config.x_size == 0 || map.config.y_size == 0;
-	bool x_is_out = pose.x < map.config.x_origin || pose.x > (map.config.x_origin + map.config.x_size);
-	bool y_is_out = pose.y < map.config.y_origin || pose.y > (map.config.y_origin + map.config.y_size);
+	bool x_is_out = x < map.config.x_origin || x > (map.config.x_origin + map.config.x_size * map.config.resolution);
+	bool y_is_out = y < map.config.y_origin || y > (map.config.y_origin + map.config.y_size * map.config.resolution);
 
 	return (map_is_empty || x_is_out || y_is_out);
 }

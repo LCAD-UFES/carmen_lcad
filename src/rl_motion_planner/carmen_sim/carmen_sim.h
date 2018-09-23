@@ -70,6 +70,6 @@ private:
 };
 
 
-int pose_is_outside_map(carmen_map_t &map, carmen_ackerman_motion_command_t &pose);
+int pose_is_outside_map(carmen_map_t &map, double x, double y);
 
 #endif
