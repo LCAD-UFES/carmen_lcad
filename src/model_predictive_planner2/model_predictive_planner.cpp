@@ -210,11 +210,12 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_r
 	}
 }
 
-
+//This function is necessary because in some cases the nearest pose from localize is inside the poses_back list
 void
 move_poses_back_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_road_profile_message *goal_list_message,
 		vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
 {
+
 	vector<carmen_ackerman_path_point_t> poses_back;
 	carmen_ackerman_path_point_t local_reference_lane_point;
 
@@ -795,7 +796,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	}
 
 	// TODO: behide -> behind
-	if (goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
+	if (!GlobalState::reverse_driving && goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
 	{
 //		printf("goal is behide the car\n");
 		return;

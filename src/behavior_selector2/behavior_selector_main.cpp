@@ -55,6 +55,8 @@ double robot_max_centripetal_acceleration = 1.5;
 int use_truepos = 0;
 extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
+int reverse_driving = 0;
+
 static carmen_rddf_road_profile_message *last_rddf_message = NULL;
 static carmen_rddf_road_profile_message *last_rddf_message_copy = NULL;
 
@@ -1922,6 +1924,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector", (char *) "central_lane_obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_central_lane_obstacles_safe_distance, 0, NULL},
 		{(char *) "behavior_selector", (char *) "lateral_lane_obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_lateral_lane_obstacles_safe_distance, 0, NULL},
 		{(char *) "behavior_selector", (char *) "lateral_lane_displacement", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_lateral_lane_displacement, 0, NULL},
+		{(char *) "behavior_selector", (char *) "reverse_driving", CARMEN_PARAM_ONOFF, &reverse_driving, 0, NULL},
 		{(char *) "rrt",   			   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL},
 		{(char *) "obstacle_avoider", 		  (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.obstacle_avoider_obstacles_safe_distance, 	1, NULL},
 		{(char *) "model_predictive_planner", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.model_predictive_planner_obstacles_safe_distance, 	1, NULL},
