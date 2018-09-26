@@ -1182,7 +1182,7 @@ simulation_step(double v, double phi, double delta_t)
 	cmd.x = cmd.y = cmd.theta = 0.0;
 	cmd.v = v;
 	cmd.phi = phi;
-	cmd.time = base_time + 0.1;
+	cmd.time = base_time + delta_t;
 
 	simulator_config_ptr->current_motion_command_vector = &cmd;
 	simulator_config_ptr->nun_motion_commands = 1;

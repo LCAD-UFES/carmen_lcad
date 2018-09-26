@@ -206,7 +206,7 @@ class CarmenEnv:
 
 class CarmenSimEnv:
     def __init__(self, params):
-        self.sim = pycarmen_sim.CarmenSim()
+        self.sim = pycarmen_sim.CarmenSim(fix_initial_position=params['fix_initial_position'])
         self.params = params
 
     def _read_state(self):

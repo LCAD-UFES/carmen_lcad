@@ -18,8 +18,8 @@ public:
 			bool allow_negative_commands=true,
 			const char *rddf_name="rddf_ida_guarapari-20170403.txt",
 			const char *map_dir="map_ida_guarapari-20170403-2",
-			double min_dist_to_initial_goal=10.,
-			double max_dist_to_initial_goal=30.);
+			double min_dist_to_initial_goal=5.,
+			double max_dist_to_initial_goal=20.);
 
 	void set_seed(int seed);
 	void reset();

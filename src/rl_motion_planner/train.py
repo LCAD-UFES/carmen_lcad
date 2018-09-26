@@ -28,7 +28,7 @@ plt.show()
 """
 
 def update_rewards(params, episode, info):
-    rw = -1.
+    rw = 0.
 
     if info['success']:
         rw = (float(params['n_steps_episode'] + 1. - len(episode))) / float(params['n_steps_episode'])
@@ -176,7 +176,9 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
 
             # g_after = relative_pose(new_obs['pose'], goal)
             # rw = 0.01 if not info['hit_obstacle'] else -1.0
-            rw = (dist(obs['pose'], goal) - dist(goal, new_obs['pose'])) / 10.0
+            
+            if info['hit_obstacle']: rw = -5.0
+            else: rw = (dist(obs['pose'], goal) - dist(goal, new_obs['pose'])) / 10.0
             # rw = -dist(goal, obs['pose']) / 1000.0
 
             episode.append([obs, cmd, rw, goal])
@@ -322,11 +324,12 @@ def config():
         'vel_achievement_dist': 0.5,
         'view': True,
         'rddf': 'rddf-voltadaufes-20170809.txt',
+        'fix_initial_position': False,
         # net
-        'n_hidden_neurons': 64,
-        'n_hidden_layers': 1,
+        'n_hidden_neurons': 128,
+        'n_hidden_layers': 2,
         'soft_update_rate': 0.75,
-        'use_conv_layer': False,
+        'use_conv_layer': True,
         'activation_fn': 'leaky_relu',
         'allow_negative_commands': True,
         # training
@@ -334,8 +337,8 @@ def config():
         'n_batches': 50,
         'batch_size': 256,
         'use_her': True,
-        'her_rate': 1.0,
-        'n_test_rollouts': 0,
+        'her_rate': 0.5,
+        'n_test_rollouts': 0.5,
         'replay_memory_capacity': 500,  # episodes
         # exploration
         'random_eps': 0.1,  # percentage of time a random action is taken
