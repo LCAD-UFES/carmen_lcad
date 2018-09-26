@@ -23,7 +23,7 @@ class SimpleEnv:
             self.env_size = 9.0
             self.zoom = 20.0
             self.goal_radius = 0.5
-            self.dt = 1.0
+            self.dt = 0.5
 
         # 100 rays to support convolutional laser preprocessing
         n_rays = 1
@@ -53,7 +53,7 @@ class SimpleEnv:
             self.pose[0] += cmd[0] * self.dt
             self.pose[1] += cmd[1] * self.dt
 
-        #self.pose = np.clip(self.pose, -self.env_border, self.env_border)
+        self.pose = np.clip(self.pose, -self.env_border, self.env_border)
 
         success = True if dist(self.pose, self.goal) < self.goal_radius else False
         starved = True if self.n_steps >= self.params['n_steps_episode'] else False
@@ -206,15 +206,15 @@ class CarmenEnv:
 
 class CarmenSimEnv:
     def __init__(self, params):
-        self.sim = pycarmen_sim.CarmenSim(fix_initial_position=params['fix_initial_position'])
+        self.sim = pycarmen_sim.CarmenSim(params['fix_initial_position'])
         self.params = params
 
-    def _read_state(self):
+    def _state(self):
         laser = self.sim.laser()
 
         state = {
             'pose': np.copy(self.sim.pose()),
-            'laser': np.copy(laser).reshape(len(laser), 1),
+            'laser': np.copy(laser).reshape(1, len(laser), 1),
         }
 
         return state
@@ -225,7 +225,7 @@ class CarmenSimEnv:
     def reset(self):
         self.sim.reset()
         self.n_steps = 0
-        return self._read_state(), self.sim.goal()
+        return self._state(), self.sim.goal()
 
     def step(self, cmd):
         v = cmd[0] * 10.0
@@ -233,7 +233,7 @@ class CarmenSimEnv:
 
         self.sim.step(v, phi, 0.1)
 
-        state = self._read_state()
+        state = self._state()
         goal = self.sim.goal()
 
         achieved_goal = dist(state['pose'], goal) < self.params['goal_achievement_dist']

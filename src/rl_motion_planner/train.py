@@ -31,16 +31,20 @@ def update_rewards(params, episode, info):
     rw = 0.
 
     if info['success']:
-        rw = (float(params['n_steps_episode'] + 1. - len(episode))) / float(params['n_steps_episode'])
-        print("updated rewards:", rw)
+        # rw = (float(params['n_steps_episode'] + 1. - len(episode))) / float(params['n_steps_episode'])
+        # print("updated rewards:", rw)
+        rw = (float(params['n_steps_episode'] - len(episode))) / float(params['n_steps_episode'] - 1)
     elif info['hit_obstacle']:
-        rw = -1.0
+        # rw = -1.0
+        rw = -1.
+    elif info['starved']:
+        rw = -1.
 
     rw /= len(episode)
-    print('rw:', rw)
 
-    for transition in episode:
-        transition[2] = rw
+    # print('rw:', rw)
+    for i in range(len(episode)):
+        episode[i][2] = rw
 
 
 def view_data(obs, g, rear_laser_is_active, goal_achievemnt_dist):
@@ -177,15 +181,19 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
             # g_after = relative_pose(new_obs['pose'], goal)
             # rw = 0.01 if not info['hit_obstacle'] else -1.0
             
-            if info['hit_obstacle']: rw = -5.0
-            else: rw = (dist(obs['pose'], goal) - dist(goal, new_obs['pose'])) / 10.0
+            # if info['hit_obstacle']: rw = -5.0
+            # else: rw = (dist(obs['pose'], goal) - dist(goal, new_obs['pose'])) / 10.0
+            
             # rw = -dist(goal, obs['pose']) / 1000.0
+            # print("Travelled dist:", dist(obs['pose'], new_obs['pose']))
+            rw = 0.
 
             episode.append([obs, cmd, rw, goal])
             obs = new_obs
 
         env.finalize()
-        if len(episode) == 0:
+        if len(episode) <= 1:
+            print("Episode is too small. Trying again.")
             continue
 
         if params['use_her']:
@@ -236,7 +244,7 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
     else: raise Exception("Env '{}' not implemented.".format(params['env']))
 
     state, goal = env.reset()
-    n_laser_readings = len(state['laser'])
+    n_laser_readings = state['laser'].size
 
     policy = DDPG(params, n_laser_readings=n_laser_readings)
     if len(checkpoint) > 0:
@@ -319,7 +327,7 @@ def config():
         # env
         'env': 'carmen',
         'model': 'simple',
-        'n_steps_episode': 100,
+        'n_steps_episode': 300,
         'goal_achievement_dist': 1.0,
         'vel_achievement_dist': 0.5,
         'view': True,
@@ -327,10 +335,10 @@ def config():
         'fix_initial_position': False,
         # net
         'n_hidden_neurons': 128,
-        'n_hidden_layers': 2,
+        'n_hidden_layers': 1,
         'soft_update_rate': 0.75,
         'use_conv_layer': True,
-        'activation_fn': 'leaky_relu',
+        'activation_fn': 'elu',
         'allow_negative_commands': True,
         # training
         'n_rollouts': 1,

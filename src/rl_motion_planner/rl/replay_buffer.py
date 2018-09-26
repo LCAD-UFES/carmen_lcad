@@ -1,4 +1,5 @@
 
+import sys
 import numpy as np
 from collections import deque
 from rl.util import relative_pose
@@ -75,9 +76,21 @@ class ReplayBuffer:
             t = np.random.randint(0, len(self.stack[e]) - 1)
 
             future_t = np.random.randint(t + 1, len(self.stack[e]))
-            her_episode_size = future_t + 1 - t
-            her_return = (self.max_episode_size + 1 - her_episode_size) / self.max_episode_size
+            her_episode_size = future_t - t
+            her_return = (self.max_episode_size - her_episode_size) / (self.max_episode_size - 1)
             rew = (her_return / her_episode_size)
+            is_final = 0.0
+
+            """
+            if her_episode_size <= 1:
+                # her_return = (self.max_episode_size + 1 - her_episode_size) / self.max_episode_size
+                # rew = (her_return / her_episode_size)
+                rew = 1.0
+                is_final = 1.0
+            else:
+                rew = 0.
+                is_final = 0.0
+            """
 
             # rew = 1. / self.max_episode_size
 
@@ -94,7 +107,7 @@ class ReplayBuffer:
             batch['next_laser'].append(self.stack[e][t + 1][0]['laser'])
             batch['next_state'].append([self.stack[e][t + 1][0]['pose'][3]])
             batch['next_goal'].append(next_goal)
-            batch['is_final'].append([0.0])
+            batch['is_final'].append([is_final])
 
             """
             print("pose", self.stack[e][t][0]['pose'], "\n"
