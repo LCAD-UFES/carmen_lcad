@@ -404,6 +404,8 @@ namespace View
 		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN][RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_go_straight_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN][RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_GO_STRAIGHT] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_off_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN][RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_OFF] = get_annotation_image(annotation_image_filename);
 
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_5_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_5] = get_annotation_image(annotation_image_filename);
@@ -494,6 +496,7 @@ namespace View
 		controls_.labelValue = GTK_LABEL(gtk_builder_get_object(builder, "labelValue" ));
 		controls_.labelDistTraveled = GTK_LABEL(gtk_builder_get_object(builder, "labelDistTraveled" ));
 		controls_.labelLowLevelState = GTK_LABEL(gtk_builder_get_object(builder, "labelLowLevelState" ));
+		controls_.labelTrafficSignState = GTK_LABEL(gtk_builder_get_object(builder, "labelTrafficSignState" ));
 
 		controls_.labelNavConTimestamp = GTK_LABEL(gtk_builder_get_object(builder, "labelNavConTimestamp" ));
 		controls_.buttonSyncMode = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonSyncMode" ));
@@ -750,7 +753,7 @@ namespace View
 					carmen_radians_to_degrees(robot_traj.r_vel), (nav_panel_config->use_ackerman ? "deg" : "deg/s"));
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelVelocity), buffer);
 
-			sprintf(buffer, "Goal: %.2f, %.2f, (%.2lf Km/h)", goal.x, goal.y, 3.6 * goal.v);
+			sprintf(buffer, "Goal: %.2f, %.2f, %.3f (%.2f deg) (%.2lf Km/h)", goal.x, goal.y, goal.theta, carmen_radians_to_degrees(goal.theta), 3.6 * goal.v);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelGoal), buffer);
 
 			set_distance_traveled(robot.pose, robot_traj.t_vel);
@@ -1301,6 +1304,21 @@ namespace View
 		strcpy(buffer, "Low Level State: ");
 		strcat(buffer, get_low_level_state_name(msg.low_level_state));
 		gtk_label_set_text(GTK_LABEL(this->controls_.labelLowLevelState), buffer);
+	}
+
+	void
+	GtkGui::navigator_graphics_update_traffic_sign_state(carmen_rddf_traffic_sign_message msg)
+	{
+		char buffer[2048];
+		sprintf(buffer, "Traffic Sign State: %s", get_traffic_sign_state_name(msg.traffic_sign_state));
+		if (msg.traffic_sign_state != RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_OFF && msg.traffic_sign_data != 0.0)
+		{
+			int actual_state = (msg.traffic_sign_data > 0.0) ? RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT : RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_RIGHT;
+			if (msg.traffic_sign_state == RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_GO_STRAIGHT)
+				sprintf(buffer, "%s/%s", buffer, get_traffic_sign_state_name(actual_state));
+			sprintf(buffer, "%s   %.3lf (%.3lf deg/m)", buffer, msg.traffic_sign_data, carmen_radians_to_degrees(msg.traffic_sign_data));
+		}
+		gtk_label_set_text(GTK_LABEL(this->controls_.labelTrafficSignState), buffer);
 	}
 
 	void
@@ -2549,13 +2567,13 @@ namespace View
 //			printf("x %lf, y %lf, theta %lf\n", world_point.pose.x, world_point.pose.y, world_point.pose.theta);
 
 			carmen_world_point_t start, end;
-			double theta = world_point.pose.theta + M_PI / 2.0;
-			start.pose.x = world_point.pose.x + 10.0 * cos(theta);
-			start.pose.y = world_point.pose.y + 10.0 * sin(theta);
+			double theta_left = world_point.pose.theta + M_PI / 2.0;
+			start.pose.x = world_point.pose.x + 10.0 * cos(theta_left);
+			start.pose.y = world_point.pose.y + 10.0 * sin(theta_left);
 
-			theta = world_point.pose.theta - M_PI / 2.0;
-			end.pose.x = world_point.pose.x + 10.0 * cos(theta);
-			end.pose.y = world_point.pose.y + 10.0 * sin(theta);
+			double theta_right = world_point.pose.theta - M_PI / 2.0;
+			end.pose.x = world_point.pose.x + 10.0 * cos(theta_right);
+			end.pose.y = world_point.pose.y + 10.0 * sin(theta_right);
 
 			start.map = end.map = world_point.map;
 			start.pose.theta = end.pose.theta = world_point.pose.theta;
@@ -2568,6 +2586,26 @@ namespace View
 			if ((rddf_annotation_msg.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) &&
 				(rddf_annotation_msg.annotations[i].annotation_point.z > 0.0))
 				carmen_map_graphics_draw_circle(the_map_view, &carmen_red, FALSE, &world_point, rddf_annotation_msg.annotations[i].annotation_point.z);
+
+			if ((rddf_annotation_msg.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN) &&
+			    (rddf_annotation_msg.annotations[i].annotation_code != RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_OFF) &&
+				(rddf_annotation_msg.annotations[i].annotation_point.z != 0.0))
+			{
+				double radius = 1.0 / fabs(rddf_annotation_msg.annotations[i].annotation_point.z);
+				double theta = (rddf_annotation_msg.annotations[i].annotation_point.z > 0.0) ? theta_left : theta_right;
+				carmen_world_point_t center = world_point;
+				center.pose.x = world_point.pose.x + radius * cos(theta);
+				center.pose.y = world_point.pose.y + radius * sin(theta);
+				int delta_angle = 180 * 64; /* arbitrary angle in 1/64ths of a degree */
+				double max_curve_lenght = 25.0; /* arbitrary length in meters */
+				double curve_length = radius * (delta_angle / 64) * (M_PI / 180);
+				if (curve_length > max_curve_lenght)
+					delta_angle *= (max_curve_lenght / curve_length);
+				int start_angle = (theta - M_PI) * (180 / M_PI) * 64;
+				if (theta == theta_right)
+					start_angle -= delta_angle;
+				carmen_map_graphics_draw_arc(the_map_view, &carmen_blue, FALSE, &center, radius, start_angle, delta_angle);
+			}
 		}
 
 		display_needs_updating = 1;
