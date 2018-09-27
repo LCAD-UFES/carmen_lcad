@@ -138,7 +138,7 @@
 
 #define LINE_LENGTH  80  /* Number of characters per line. */
 #define PRINT_LENGTH  5  /* Maximum number of lines printed. */
-#define DEC_PLACES    2  /* Number of decimal places for floats and doubles. */
+#define DEC_PLACES    3  /* Number of decimal places for floats and doubles. */
 
 void printString(FILE *stream, Print_Data_Ptr printer,
 		 const char *pString, int32 keepWithNext);

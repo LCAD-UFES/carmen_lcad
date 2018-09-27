@@ -8,9 +8,9 @@ using namespace std;
 FILE   *g_logfile = NULL;
 char   *g_logfile_name = NULL;
 char    g_logstarttime[25] = {0};
-char    g_logtime[12] = {0};
-char    g_logtime_first[12] = {0};
-char    g_logtime_last[12] = {0};
+char    g_logtime[13] = {0};
+char    g_logtime_first[13] = {0};
+char    g_logtime_last[13] = {0};
 long    g_avgSize = -1;
 long    g_avgSize_last = -1;
 float   g_msgPer;
@@ -19,7 +19,7 @@ float   g_waitPer;
 float   g_waitPer_last;
 bool    g_filter_time_all = true;
 double  g_filter_time_initial = 0.0;
-double  g_filter_time_final = (24.0 * 60.0 * 60.0 - 0.01);
+double  g_filter_time_final = (24.0 * 60.0 * 60.0 - 0.001);
 bool    g_filter_class_all = true;
 bool    g_filter_class[] = {true, true, true, true, true, true, true, true, true, true, true, true, true};
 bool    g_filter_msg_all = true;
@@ -38,6 +38,7 @@ bool    g_summary_registration = false;
 bool    g_summary_orig_message = false;
 bool    g_summary_dest_message = false;
 int     g_verbose = 0;
+bool    g_tabular = false;
 bool    g_print_usage = false;
 
 
@@ -105,6 +106,18 @@ time_str2dbl(char *time_str)
 		}
 	}
 	return (-1.0);
+}
+
+
+double
+elapsed_time(char *time_str)
+{
+	if (g_logtime_first[0] == 0)
+		return (0.0);
+
+	double elapsed = (time_str2dbl(time_str) - time_str2dbl(g_logtime_first));
+
+	return (elapsed);
 }
 
 
@@ -243,7 +256,7 @@ enum g_log_record_class {CONNECTION_CLASS, REGISTRATION_CLASS, BROADCAST_CLASS, 
 	DATA_CLASS, HANDLE_SUMMARY_CLASS, OTHER_CLASS, UNKNOWN_MESSAGE_CLASS, UNKNOWN_CLASS};
 
 const char *g_log_record_class_name[] = {"Connection", "Registration", "Broadcast", "Inform", "Done", "Query", "Reply", "Deleted",
-	"Data", "Handle Summary", "Other", "Unknown Message", "Unknown"};
+	"Data", "Handle_Summary", "Other", "Unknown_Message", "Unknown_Class"};
 
 #define LOG_RECORD_CLASS_SIZE 13
 int g_log_record_class_count[LOG_RECORD_CLASS_SIZE] = {0};
@@ -304,9 +317,9 @@ print_general_summary()
 
 	printf("\n");
 	if (g_logtime_last[0] != 0)
-		printf("Selected log period:  from %s to %s (%.2lf secs)\n", g_logtime_first, g_logtime_last, (time_str2dbl(g_logtime_last) - time_str2dbl(g_logtime_first)));
+		printf("Selected log period:  from %s to %s (%.3lf secs)\n", g_logtime_first, g_logtime_last, elapsed_time(g_logtime_last));
 	if (g_avgSize_last >= 0)
-		printf("Handle time summary:  Messaging: %.2f%%  Waiting: %.2f%%  Average size: %ld bytes\n", g_msgPer_last, g_waitPer_last, g_avgSize_last);
+		printf("Handle time summary:  Messaging: %.3f%%  Waiting: %.3f%%  Average size: %ld bytes\n", g_msgPer_last, g_waitPer_last, g_avgSize_last);
 
 	printf("\n==========================================\n%s" "\n==========================================\n", "General Summary");
 	printf("Log Record Class          Count      Lines\n" "--------------------  ---------  ---------\n");
@@ -494,7 +507,7 @@ is_time_summary_line(char *line_c)
 
 
 int
-get_data(char *line_c, long *linecount, int *buffersize, string &line_data)
+get_data(char *line_c, long *linecount, int *buffersize, string &line_data, string &unsplit_data)
 {
 	char single_line_data[2000];
 	int lines = 0;
@@ -516,6 +529,7 @@ get_data(char *line_c, long *linecount, int *buffersize, string &line_data)
 		sprintf(single_line_data, "Logline: %9ld  Class: %-10s  Logtime: %s  Text: %s\n", *linecount,
 				g_log_record_class_name[DATA_CLASS], g_logtime, line_c);
 		line_data += single_line_data;
+		unsplit_data += (lines == 1) ? &line_c[4] : &line_c[5];
 	}
 	return (lines);
 }
@@ -694,7 +708,7 @@ get_orig_module_from_message_log(string &orig_module, string &status, int *pendi
 	if ((sscanf(line_c, " %*s %*s {%*d}: X_IPC Server {%*d} --> %n%s", pos, rest) == 1) ||
 		(sscanf(line_c, " %*s %*s {%*d}: X_IPC Server --> %n%s", pos, rest) == 1))
 	{
-		orig_module = "X_IPC Server";
+		orig_module = "X_IPC_Server";
 	}
 	else if ((sscanf(line_c, " %*s %*s {%*d}: %s {%*d} --> %n%s", orig_c, pos, rest) == 2) ||
 			 (sscanf(line_c, " %*s %*s {%*d}: %s --> %n%s", orig_c, pos, rest) == 2))
@@ -708,7 +722,7 @@ get_orig_module_from_message_log(string &orig_module, string &status, int *pendi
 	}
 	else if (sscanf(line_c, " %*s %*s {%*d}: ON HOLD --> %n%s", pos, rest) == 1)
 	{
-		status = "on hold-->";
+		status = "on_hold-->";
 		*on_hold_count = -1;
 	}
 	else
@@ -726,7 +740,7 @@ get_dest_module_from_message_log(string &dest_module, char *logtime, string &sta
 	{
 		status += "sent";
 		*sent_count = 1;
-		dest_module = "X_IPC Server";
+		dest_module = "X_IPC_Server";
 		sscanf(&line_c[pos], " X_IPC Server (Sent) %s", logtime);
 	}
 	else if (sscanf(&line_c[pos], " %s (Sent) %*d:%*d:%f", dest_c, &logtime_secs) == 2)
@@ -759,7 +773,7 @@ get_dest_module_from_message_log(string &dest_module, char *logtime, string &sta
 	}
 	else if (sscanf(&line_c[pos], " ON HOLD (Inactive) %*d:%*d:%f", &logtime_secs) == 1)
 	{
-		status += "on hold";
+		status += "on_hold";
 		*on_hold_count = 1;
 		sscanf(&line_c[pos], " ON HOLD (Inactive) %s", logtime);
 	}
@@ -785,6 +799,78 @@ unknown_message_log(string line, long linecount, string line_data, bool filtered
 }
 
 
+bool
+get_token(string &token, string &text)
+{
+	size_t pos;
+
+	if (text.length() == 0)
+		return (false);
+
+	if (text[0] == '*')
+		pos = text.length();
+	else if (strchr("{[<>]}", text[0]) != NULL)
+		pos = 1;
+	else if (text[0] == '"')
+	{
+		pos = text.find_first_of('"', 1);
+		if (pos < text.length())
+			pos++;
+		if (pos < text.length() && strchr(",>]}", text[pos]) == NULL)
+			return (false);
+	}
+	else
+		pos = text.find_first_of(",>]}", 1);
+
+	token = text.substr(0, pos);
+	if (pos < text.length() && text[pos] == ',')
+		pos = text.find_first_not_of(' ', pos + 1);
+	text = (pos < text.length()) ? text.substr(pos) : "";
+
+	return (true);
+}
+
+
+void
+print_message_log_data(string unsplit_data)
+{
+	string data_token, data_text = unsplit_data;
+
+	while(get_token(data_token, data_text))
+		printf("\t%s", data_token.c_str());
+
+	if (data_text.length())
+		printf("\tUNFORMATTED: %s", data_text.c_str());
+}
+
+
+void
+print_message_log(long linecount, char *msg_class_c, char *msg_name_c, int loc_id, string orig_module, string dest_module, string status, int lines, string line_data, string unsplit_data)
+{
+	if (g_tabular)
+	{
+		static bool first_time = true;
+		if (first_time)
+			printf("%9s  %-15s  %-35s  %3s  %-25s  %-25s  %-14s  %-13s %11s\t%s\n",
+					"Logline", "Class", "Message", "Id", "Origin", "Destination", "Status", "Logtime", "Elapsedtime", "Data");
+		first_time = false;
+
+		printf("%9ld  %-15s  %-35s  %3d  %-25s  %-25s  %-14s  %-13s %11.3lf",
+				linecount, msg_class_c, msg_name_c, loc_id, orig_module.c_str(), dest_module.c_str(), status.c_str(), g_logtime, elapsed_time(g_logtime));
+		if (g_verbose > 1 && lines > 0)
+			print_message_log_data(unsplit_data);
+		printf("\n");
+	}
+	else
+	{
+		printf("Logline: %9ld  Class: %-15s  Message: %s  Id: %d  Origin: %s  Destination: %s  Status: %s  Logtime: %s (%.3lf)\n",
+				linecount, msg_class_c, msg_name_c, loc_id, orig_module.c_str(), dest_module.c_str(), status.c_str(), g_logtime, elapsed_time(g_logtime));
+		if (g_verbose > 1 && lines > 0)
+			printf("%s", line_data.c_str());
+	}
+}
+
+
 void
 message_log(char *line_c, long *linecount, int *buffersize)
 {
@@ -794,7 +880,7 @@ message_log(char *line_c, long *linecount, int *buffersize)
 	int sent_count = 0, pending_count = 0, on_hold_count = 0;
 
 	sscanf(line_c, " %s %s {%d}:", msg_class_c, msg_name_c, &loc_id);
-	string orig_module, dest_module, status, line_data, msg_name = msg_name_c, line = line_c;
+	string orig_module, dest_module, status, line_data, unsplit_data, msg_name = msg_name_c, line = line_c;
 	int msg_class_num = get_log_record_class(msg_class_c);
 	bool filtered = filter_message(msg_name);
 
@@ -802,8 +888,8 @@ message_log(char *line_c, long *linecount, int *buffersize)
 	get_dest_module_from_message_log(dest_module, g_logtime, status, &sent_count, &pending_count, &on_hold_count, line_c, pos);
 	filtered &= filter_time(g_logtime);
 
-	int lines = get_data(line_c, linecount, buffersize, line_data);
-	filtered &= filter_keyword(line + '\n' + line_data);
+	int lines = get_data(line_c, linecount, buffersize, line_data, unsplit_data);
+	filtered &= filter_keyword(line + '\n' + unsplit_data);
 
 	if (orig_module == "???" || dest_module == "???")
 	{
@@ -824,10 +910,7 @@ message_log(char *line_c, long *linecount, int *buffersize)
 	if (filtered)
 	{
 		if (g_verbose)
-			printf("Logline: %9ld  Class: %-10s  Message: %s  Id: %d  Origin: %s  Destination: %s  Status: %s  Logtime: %s\n",
-					linecount_initial, msg_class_c, msg_name_c, loc_id, orig_module.c_str(), dest_module.c_str(), status.c_str(), g_logtime);
-		if (g_verbose > 1 && lines > 0)
-			printf("%s", line_data.c_str());
+			print_message_log(linecount_initial, msg_class_c, msg_name_c, loc_id, orig_module, dest_module, status, lines, line_data, unsplit_data);
 		update_message_vec(msg_name, orig_module, dest_module, sent_count, pending_count, on_hold_count);
 		update_logstats(msg_class_num, 1);
 		if (lines > 0)
@@ -974,7 +1057,7 @@ other_log(int msg_class_num, char *msg_subclass_c, char *line_c, long linecount)
 	if (filtered)
 	{
 		if (g_verbose)
-			printf("Logline: %9ld  Class: %s%-9s  Logtime: %-11s  Text: %s\n", linecount,
+			printf("Logline: %9ld  Class: %s%-9s  Logtime: %-12s  Text: %s\n", linecount,
 					g_log_record_class_name[msg_class_num], msg_subclass_c, g_logtime, line_c);
 		update_logstats(msg_class_num, 1);
 	}
@@ -1252,7 +1335,7 @@ handle_summary_log(char *line_c, long linecount)
 	if (filtered)
 	{
 		if (g_verbose)
-			printf("Logline: %9ld  Class: %-10s  Logtime: %-11s  Text: %s\n", linecount,
+			printf("Logline: %9ld  Class: %-10s  Logtime: %-12s  Text: %s\n", linecount,
 					g_log_record_class_name[HANDLE_SUMMARY_CLASS], g_logtime, line_c);
 		update_logstats(HANDLE_SUMMARY_CLASS, 1);
 	}
@@ -1344,6 +1427,7 @@ usage()
 	fprintf(stderr, "\nUsage: central_log_view <logfile> [args]\n" " args:\n"
 		"    -v <verbose>   : verbose option: 0 = summary only,\n"
 		"                     1 = all except data lines, 2 = all (default: 0)\n"
+		"    -vt <verbose>  : verbose option in tabular format\n"
 		"    -s <summaries> : summary option: c = Connection, r = Registration,\n"
 		"                     o = Message by Origin, d = Message by Destination,\n"
 		"                     * = crod (default: general summary)\n"
@@ -1398,15 +1482,18 @@ terminate(char *fmt, ...)
 
 
 void
-read_verbose_option(int *verbose, int *arg_num, int argc, char **argv)
+read_verbose_option(int *verbose, bool *tabular, int *arg_num, int argc, char **argv)
 {
+	char *option = argv[*arg_num];
+	*tabular = (option[2] == 't');
+
 	static bool first_time = true;
 	if (!first_time)
 		terminate((char *) "arg[%d]: Only one verbose option -v is allowed\n", *arg_num);
 	first_time = false;
 
 	if ((*arg_num == argc - 1) || (argv[*arg_num + 1][0] == '-'))
-		terminate((char *) "arg[%d]: Verbose option expected after -v\n", *arg_num);
+		terminate((char *) "arg[%d]: Verbose option expected after %s\n", *arg_num, option);
 	*arg_num += 1;
 	char *param = argv[*arg_num];
 	int pos = 0;
@@ -1662,8 +1749,8 @@ read_parameters(int argc, char **argv)
 
 	for (int i = 2; i < argc; i++)
 	{
-		if (strcmp(argv[i], "-v") == 0)
-			read_verbose_option(&g_verbose, &i, argc, argv);
+		if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "-vt") == 0)
+			read_verbose_option(&g_verbose, &g_tabular, &i, argc, argv);
 		else if (strcmp(argv[i], "-s") == 0)
 			read_summary_option(&g_summary_connection, &g_summary_registration, &g_summary_orig_message, &g_summary_dest_message, &i, argc, argv);
 		else if (strcmp(argv[i], "-t") == 0)
