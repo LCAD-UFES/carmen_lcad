@@ -23,6 +23,7 @@ using namespace cv;
 
 CarmenSim::CarmenSim(bool fix_initial_position, bool use_truepos,
 		bool allow_negative_commands,
+		bool enjoy_mode,
 		const char *rddf_name,
 		const char *map_dir,
 		double min_dist_to_initial_goal,
@@ -32,6 +33,7 @@ CarmenSim::CarmenSim(bool fix_initial_position, bool use_truepos,
 	_use_truepos = use_truepos;
     _rddf_name = rddf_name;
     _allow_negative_commands = allow_negative_commands;
+    _enjoy_mode = enjoy_mode;
 
 	_min_pose_skip_to_initial_goal = (int) (min_dist_to_initial_goal / 0.5);
 	_max_pose_skip_to_initial_goal = (int) (max_dist_to_initial_goal / 0.5);
@@ -92,10 +94,17 @@ CarmenSim::reset()
 
 	int pose_id;
 
-	if (_fix_initial_position) pose_id = M;
+	if (_fix_initial_position) pose_id = 200; //M;
 	else pose_id = M + rand() % (_rddf.size() - M);
 
 	int shift = m + (rand() % (M - m));  // shift is a random integer between m and M
+
+	if (_enjoy_mode)
+	{
+		shift = 10;
+		direction = 1;
+	}
+
 	int goal_id = pose_id + shift * direction;
 
 	carmen_ackerman_motion_command_t pose = _rddf[pose_id];
@@ -221,6 +230,9 @@ CarmenSim::step(double v, double phi, double dt)
 	// _simulator_config.true_pose.theta = _rddf[_my_counter].theta;
 
     _update_map();
+
+    if (_enjoy_mode)
+    	_goal = _rddf[_find_nearest_goal(_simulator_config.true_pose.x, _simulator_config.true_pose.y) + 10];
 
 	carmen_simulator_ackerman_calc_laser_msg(&_front_laser, &_simulator_config, 0);
 	carmen_simulator_ackerman_calc_laser_msg(&_rear_laser, &_simulator_config, 1);
@@ -483,6 +495,27 @@ CarmenSim::_update_map()
 													_simulator_config.map.config);
 
 	carmen_prob_models_create_distance_map(&_obstacle_distance_map, &_simulator_config.map, 0.5);
+}
+
+
+int
+CarmenSim::_find_nearest_goal(double x, double y)
+{
+	int p = -1;
+	double dist, min_dist = DBL_MAX;
+
+	for (int i = 0; i < _rddf.size(); i++)
+	{
+		dist = pow(x - _rddf[i].x, 2) + pow(y - _rddf[i].y, 2);
+
+		if (dist < min_dist)
+		{
+			min_dist = dist;
+			p = i;
+		}
+	}
+
+	return p;
 }
 
 

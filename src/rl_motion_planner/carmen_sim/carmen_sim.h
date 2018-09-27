@@ -16,6 +16,7 @@ class CarmenSim
 public:
 	CarmenSim(bool fix_initial_position=false, bool use_truepos=true,
 			bool allow_negative_commands=true,
+			bool enjoy_mode=false,
 			const char *rddf_name="rddf_ida_guarapari-20170403.txt",
 			const char *map_dir="map_ida_guarapari-20170403-2",
 			double min_dist_to_initial_goal=5.,
@@ -39,6 +40,7 @@ private:
 	bool _fix_initial_position;
 	bool _use_truepos;
 	bool _allow_negative_commands;
+	bool _enjoy_mode;
 	int _min_pose_skip_to_initial_goal;
 	int _max_pose_skip_to_initial_goal;
 
@@ -65,6 +67,7 @@ private:
 	// reload map if necessary, and recompute obstacle distance map
 	void _update_map();
 	void _update_simulator(double v, double phi, double dt);
+	int _find_nearest_goal(double x, double y);
 
 	int _my_counter;
 };

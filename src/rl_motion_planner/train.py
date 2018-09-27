@@ -158,12 +158,17 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
 
         i = 0
         while not done:
+            if not params['train']:
+                goal = env.sim.goal()
+            
             g = relative_pose(obs['pose'], goal)
 
             if params['env'] == 'carmen' and params['view']:
                 view_data(obs, g, rear_laser_is_active=env.rear_laser_is_active(),
                           goal_achievemnt_dist=params['goal_achievement_dist'])
                 env.view()
+                if not params['train']:
+                    time.sleep(0.01)
 
             cmd, q = policy.get_actions(obs, g + [goal[3]], noise_eps=params['noise_eps'] if not exploit else 0.,
                                         random_eps=params['random_eps'] if not exploit else 0.,
@@ -221,7 +226,7 @@ def print_episode(episode):
     input('Pressione enter para continuar:')
 
 
-def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
+def launch(params, n_epochs, seed, policy_save_interval):
     """
     ###############################################################################################
     TODO: Os caras da OpenAI treinaram no final de cada episodio. Tentar treinar a cada passo?
@@ -247,6 +252,8 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
     n_laser_readings = state['laser'].size
 
     policy = DDPG(params, n_laser_readings=n_laser_readings)
+    
+    checkpoint = params['checkpoint']
     if len(checkpoint) > 0:
         policy.load(checkpoint)
 
@@ -292,28 +299,29 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
         sys.stdout.flush()
 
         # Train
-        policy.store_episode(episodes)
+        if params['train']:
+            policy.store_episode(episodes)
+    
+            if len(policy.buffer.stack) > 0:
+                for b in range(params['n_batches']):
+                    c_loss, p_loss, target_next_q, predicted_q, rew, main_q_policy = policy.train()
+                    """
+                    if b % 10 == 0:
+                        print('Batch', b, 'CriticLoss:', c_loss, 'PolicyLoss:', p_loss,
+                              'target_next_q predicted_q:\n', np.concatenate([rew[:5],
+                                                                              target_next_q[:5],
+                                                                              rew[:5] + target_next_q[:5],
+                                                                              predicted_q[:5],
+                                                                              main_q_policy[:5]], axis=1))
+                    """
+    
+                policy.update_target_net()
 
-        if len(policy.buffer.stack) > 0:
-            for b in range(params['n_batches']):
-                c_loss, p_loss, target_next_q, predicted_q, rew, main_q_policy = policy.train()
-                """
-                if b % 10 == 0:
-                    print('Batch', b, 'CriticLoss:', c_loss, 'PolicyLoss:', p_loss,
-                          'target_next_q predicted_q:\n', np.concatenate([rew[:5],
-                                                                          target_next_q[:5],
-                                                                          rew[:5] + target_next_q[:5],
-                                                                          predicted_q[:5],
-                                                                          main_q_policy[:5]], axis=1))
-                """
-
-            policy.update_target_net()
-
-            # Save
-            if epoch % 20 == 0:
-                policy_path = periodic_policy_path.format(epoch)
-                policy.save(policy_path)
-
+                # Save
+                if epoch % 20 == 0:
+                    policy_path = periodic_policy_path.format(epoch)
+                    policy.save(policy_path)
+    
 
 @ex.config
 def config():
@@ -333,11 +341,13 @@ def config():
         'view': True,
         'rddf': 'rddf-voltadaufes-20170809.txt',
         'fix_initial_position': False,
+        'checkpoint': '',
+        'train': True,
         # net
         'n_hidden_neurons': 128,
         'n_hidden_layers': 1,
         'soft_update_rate': 0.75,
-        'use_conv_layer': True,
+        'use_conv_layer': False,
         'activation_fn': 'elu',
         'allow_negative_commands': True,
         # training
@@ -345,7 +355,7 @@ def config():
         'n_batches': 50,
         'batch_size': 256,
         'use_her': True,
-        'her_rate': 0.5,
+        'her_rate': 1.0,
         'n_test_rollouts': 0.5,
         'replay_memory_capacity': 500,  # episodes
         # exploration
@@ -355,9 +365,7 @@ def config():
 
     params['gamma'] = 1. - 1. / params['n_steps_episode']
 
-    checkpoint = ''
-
 
 @ex.automain
-def main(seed, n_epochs, policy_save_interval, params, checkpoint):
-    launch(params, n_epochs, seed, policy_save_interval, checkpoint)
+def main(seed, n_epochs, policy_save_interval, params):
+    launch(params, n_epochs, seed, policy_save_interval)

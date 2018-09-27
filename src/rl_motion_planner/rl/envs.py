@@ -206,7 +206,8 @@ class CarmenEnv:
 
 class CarmenSimEnv:
     def __init__(self, params):
-        self.sim = pycarmen_sim.CarmenSim(params['fix_initial_position'])
+        self.sim = pycarmen_sim.CarmenSim(params['fix_initial_position'],
+                                          True, True, not params['train'])
         self.params = params
 
     def _state(self):
@@ -214,7 +215,7 @@ class CarmenSimEnv:
 
         state = {
             'pose': np.copy(self.sim.pose()),
-            'laser': np.copy(laser).reshape(1, len(laser), 1),
+            'laser': np.copy(laser).reshape(len(laser), 1),
         }
 
         return state
@@ -240,7 +241,7 @@ class CarmenSimEnv:
         vel_is_correct = np.abs(state['pose'][3] - goal[3]) < self.params['vel_achievement_dist']
 
         hit_obstacle = self.sim.hit_obstacle()
-        starved = self.n_steps >= self.params['n_steps_episode']
+        starved = self.n_steps >= self.params['n_steps_episode'] and self.params['n_steps_episode'] > 0
         success = achieved_goal  # and vel_is_correct
 
         done = success or hit_obstacle or starved
