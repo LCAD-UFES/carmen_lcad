@@ -8,11 +8,11 @@ class ActorCritic:
     def encoder(self, norm_laser, norm_goal, norm_state, use_conv_layer, activation_fn, n_hidden_neurons):
         # laser pre-processing
         if use_conv_layer:
-            laser_c1 = tf.layers.conv1d(norm_laser, filters=32, kernel_size=6, strides=3, padding='valid',
+            laser_c1 = tf.layers.conv2d(norm_laser, filters=32, kernel_size=[1, 4], strides=[1, 4], padding='valid',
                                         activation=activation_fn)
-            laser_c2 = tf.layers.conv1d(laser_c1, filters=32, kernel_size=6, strides=3, padding='valid',
+            laser_c2 = tf.layers.conv2d(laser_c1, filters=32, kernel_size=[1, 4], strides=[1, 4], padding='valid',
                                         activation=activation_fn)
-            laser_c3 = tf.layers.conv1d(laser_c2, filters=32, kernel_size=6, strides=3, padding='valid',
+            laser_c3 = tf.layers.conv2d(laser_c2, filters=32, kernel_size=[1, 4], strides=[1, 4], padding='valid',
                                         activation=activation_fn)
             laser_fl = tf.layers.flatten(laser_c3)
             laser_fc = tf.layers.dense(laser_fl, units=n_hidden_neurons, activation=activation_fn)
@@ -34,7 +34,7 @@ class ActorCritic:
         # goal: (x, y, th, desired_v) - pose in car reference
         self.placeholder_goal = tf.placeholder(dtype=tf.float32, shape=[None, 4], name='placeholder_goal')
         # laser: (range0, range1, ...)
-        self.placeholder_laser = tf.placeholder(dtype=tf.float32, shape=[None, n_laser_readings, 1], name='placeholder_laser')
+        self.placeholder_laser = tf.placeholder(dtype=tf.float32, shape=[None, 1, n_laser_readings, 1], name='placeholder_laser')
         # state: (current_v) - current velocity
         self.placeholder_state = tf.placeholder(dtype=tf.float32, shape=[None, 1], name='placeholder_state')
         # performed action (for critic): (v, phi) - commands produced by the actor
@@ -55,7 +55,7 @@ class ActorCritic:
         norm_laser = tf.clip_by_value(self.placeholder_laser, 0., laser_max_range)
         norm_laser = (norm_laser / laser_max_range)
         # normalize goal
-        norm_goal = self.placeholder_goal / [10., 10., 1.0, 10.]
+        norm_goal = self.placeholder_goal # / [10., 10., 1.0, 10.]
         # normalize state
         norm_state = self.placeholder_state # / 10.
 
@@ -182,8 +182,8 @@ class DDPG(object):
         print("Policy variables:")
         print(v_policy)
         """
-        self.critic_train = tf.train.AdamOptimizer(learning_rate=0.0001).minimize(loss=self.critic_loss, var_list=v_critic)
-        self.policy_train = tf.train.AdamOptimizer(learning_rate=0.0001).minimize(loss=self.policy_loss, var_list=v_policy)
+        self.critic_train = tf.train.AdamOptimizer(learning_rate=1e-3).minimize(loss=self.critic_loss, var_list=v_critic)
+        self.policy_train = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(loss=self.policy_loss, var_list=v_policy)
         """
         Q_grads_tf = tf.gradients(self.Q_loss_tf, self._vars('main/Q'))
         pi_grads_tf = tf.gradients(self.pi_loss_tf, self._vars('main/pi'))
@@ -244,10 +244,10 @@ class DDPG(object):
 
         ret = self.sess.run(vals, feed_dict=feed)
 
-        #import pprint
-        #pprint.pprint(obs)
-        #pprint.pprint(goal)
-        #pprint.pprint(ret)
+        # import pprint
+        # pprint.pprint(obs)
+        # pprint.pprint(goal)
+        # pprint.pprint(ret)
 
         # action postprocessing
         u = ret[0][0]

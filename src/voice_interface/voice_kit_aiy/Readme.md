@@ -79,31 +79,22 @@ To begin to use a Google Cloud API, you must have a Google account.
   ```sh
   bash
   ``` 
-
-
-  - Install and initialize [Google Cloud SDK](https://cloud.google.com/sdk/docs/#deb)
-    ```sh
-    export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)"
-  
-    echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-  
-    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-  
-    sudo apt-get update && sudo apt-get install google-cloud-sdk
-    ```
-   - Run the SDK to set configurations:
-```sh
-    gcloud init
-```
     
 #### 3.2 Install the Client Library
 
-Examples of the Text-to-Speech and Speech-to-Text APIs:
+Para usar o cloud-texttospeech:
+- Atualize o pip:
+--sudo pip3 install --upgrade pip
+-Baixe a API:
+- pip3 install --upgrade google-cloud-texttospeech
 
-```sh
-pip install --upgrade google-cloud-texttospeech
-pip install --upgrade google-cloud-speech
-```
+- Para rodar o exemplo:
+-- cd /home/pi/python-docs-samples/texttospeech/cloud-client
+-- python3 quickstart.py
+- Para mudar para portugues, altere esse arquivo, na linha:
+-- language_code='en-US'
+-para
+--language_code='pt-BR'
 
 > For other APIs, look at its documentation.
 
@@ -111,6 +102,14 @@ pip install --upgrade google-cloud-speech
 ### 4. Testando demos
 
 *Também em [User Guide: Start the Assistant Library Demo App](https://aiyprojects.withgoogle.com/voice/#users-guide-3-1--start-the-assistant-library-demo-app)*
+
+
+Para mudar para portugues, altere o arquivo:
+- /opt/aiy/projects-python/src/aiy/i18n.py
+- Mude a linha 
+-- _DEFAULT_LANGUAGE_CODE = 'en-US'
+- Para
+-- _DEFAULT_LANGUAGE_CODE = 'pt-BR'
 
 Vá para a pasta com as demos:
 ```sh

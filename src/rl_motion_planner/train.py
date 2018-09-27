@@ -13,7 +13,7 @@ from sacred.observers import FileStorageObserver
 
 from rl.ddpg import DDPG
 from rl.util import relative_pose, dist, draw_rectangle
-from rl.envs import SimpleEnv, CarmenEnv
+from rl.envs import SimpleEnv, CarmenEnv, CarmenSimEnv
 
 import matplotlib.pyplot as plt
 
@@ -28,24 +28,28 @@ plt.show()
 """
 
 def update_rewards(params, episode, info):
-    rw = -1.
+    rw = 0.
 
     if info['success']:
-        rw = (float(params['n_steps_episode'] + 1. - len(episode))) / float(params['n_steps_episode'])
-        print("updated rewards:", rw)
+        # rw = (float(params['n_steps_episode'] + 1. - len(episode))) / float(params['n_steps_episode'])
+        # print("updated rewards:", rw)
+        rw = (float(params['n_steps_episode'] - len(episode))) / float(params['n_steps_episode'] - 1)
     elif info['hit_obstacle']:
-        rw = -1.0
+        # rw = -1.0
+        rw = -1.
+    elif info['starved']:
+        rw = -1.
 
     rw /= len(episode)
-    print('rw:', rw)
 
-    for transition in episode:
-        transition[2] = rw
+    # print('rw:', rw)
+    for i in range(len(episode)):
+        episode[i][2] = rw
 
 
 def view_data(obs, g, rear_laser_is_active, goal_achievemnt_dist):
-    pixels_by_meter = 5.
-    viewer_size_in_meters = 150.
+    pixels_by_meter = 4.
+    viewer_size_in_meters = 50.
     viewer_size_in_pixels = int(viewer_size_in_meters * pixels_by_meter)
     distance_between_front_and_rear_axles = 2.625
     distance_between_rear_wheels = 1.535
@@ -97,7 +101,7 @@ def view_data(obs, g, rear_laser_is_active, goal_achievemnt_dist):
         if n > len(laser) / 2:
             color = (0, 0, 255)
 
-        cv2.circle(view, (int(x), int(y)), 2, color, -1)
+        cv2.circle(view, (int(x), int(y)), 1, color, -1)
 
     cv2.circle(view, (view.shape[0] // 2, view.shape[1] // 2), 2, (0, 0, 255), -1)
 
@@ -159,6 +163,7 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
             if params['env'] == 'carmen' and params['view']:
                 view_data(obs, g, rear_laser_is_active=env.rear_laser_is_active(),
                           goal_achievemnt_dist=params['goal_achievement_dist'])
+                env.view()
 
             cmd, q = policy.get_actions(obs, g + [goal[3]], noise_eps=params['noise_eps'] if not exploit else 0.,
                                         random_eps=params['random_eps'] if not exploit else 0.,
@@ -175,14 +180,20 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
 
             # g_after = relative_pose(new_obs['pose'], goal)
             # rw = 0.01 if not info['hit_obstacle'] else -1.0
-            rw = (dist(obs['pose'], goal) - dist(goal, new_obs['pose'])) / 10.0
+            
+            # if info['hit_obstacle']: rw = -5.0
+            # else: rw = (dist(obs['pose'], goal) - dist(goal, new_obs['pose'])) / 10.0
+            
             # rw = -dist(goal, obs['pose']) / 1000.0
+            # print("Travelled dist:", dist(obs['pose'], new_obs['pose']))
+            rw = 0.
 
             episode.append([obs, cmd, rw, goal])
             obs = new_obs
 
         env.finalize()
-        if len(episode) == 0:
+        if len(episode) <= 1:
+            print("Episode is too small. Trying again.")
             continue
 
         if params['use_her']:
@@ -229,11 +240,11 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
     random.seed(seed)
 
     if params['env'] == 'simple': env = SimpleEnv(params)
-    elif params['env'] == 'carmen': env = CarmenEnv(params)
+    elif params['env'] == 'carmen': env = CarmenSimEnv(params)
     else: raise Exception("Env '{}' not implemented.".format(params['env']))
 
     state, goal = env.reset()
-    n_laser_readings = len(state['laser'])
+    n_laser_readings = state['laser'].size
 
     policy = DDPG(params, n_laser_readings=n_laser_readings)
     if len(checkpoint) > 0:
@@ -286,7 +297,7 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
         if len(policy.buffer.stack) > 0:
             for b in range(params['n_batches']):
                 c_loss, p_loss, target_next_q, predicted_q, rew, main_q_policy = policy.train()
-                #"""
+                """
                 if b % 10 == 0:
                     print('Batch', b, 'CriticLoss:', c_loss, 'PolicyLoss:', p_loss,
                           'target_next_q predicted_q:\n', np.concatenate([rew[:5],
@@ -294,7 +305,7 @@ def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
                                                                           rew[:5] + target_next_q[:5],
                                                                           predicted_q[:5],
                                                                           main_q_policy[:5]], axis=1))
-                #"""
+                """
 
             policy.update_target_net()
 
@@ -316,25 +327,26 @@ def config():
         # env
         'env': 'carmen',
         'model': 'simple',
-        'n_steps_episode': 100,
+        'n_steps_episode': 300,
         'goal_achievement_dist': 1.0,
         'vel_achievement_dist': 0.5,
         'view': True,
         'rddf': 'rddf-voltadaufes-20170809.txt',
+        'fix_initial_position': False,
         # net
-        'n_hidden_neurons': 64,
+        'n_hidden_neurons': 128,
         'n_hidden_layers': 1,
         'soft_update_rate': 0.75,
-        'use_conv_layer': False,
-        'activation_fn': 'leaky_relu',
+        'use_conv_layer': True,
+        'activation_fn': 'elu',
         'allow_negative_commands': True,
         # training
         'n_rollouts': 1,
         'n_batches': 50,
         'batch_size': 256,
         'use_her': True,
-        'her_rate': 1.0,
-        'n_test_rollouts': 0,
+        'her_rate': 0.5,
+        'n_test_rollouts': 0.5,
         'replay_memory_capacity': 500,  # episodes
         # exploration
         'random_eps': 0.1,  # percentage of time a random action is taken
