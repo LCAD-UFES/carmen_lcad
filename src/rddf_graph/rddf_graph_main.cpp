@@ -48,7 +48,7 @@ shutdown_module(int signo)
 
 
 void
-parse_road_map_dir_type_and_origin(string str_road_map_filename, string &str_road_map_folder, carmen_point_p road_map_origin)
+parse_road_map_dir_type_and_origin(string str_road_map_filename, string &str_road_map_folder, string &str_map_identification, carmen_point_p road_map_origin)
 {
 	//cout<<str_road_map_filename<<endl;
 	string x_origin;
@@ -80,6 +80,14 @@ parse_road_map_dir_type_and_origin(string str_road_map_filename, string &str_roa
 	y_origin = str_road_map_filename.substr(last_trace_position, last_dot_position - last_trace_position);
 	road_map_origin->x = atof(x_origin.c_str());
 	road_map_origin->y = atof(y_origin.c_str());
+
+	for (l = 0; l < str_road_map_folder.length(); l++)
+	{
+		if (str_road_map_filename[l] == '/')
+			last_bar_position = l;
+	}
+	str_map_identification = str_road_map_folder.substr(last_bar_position+1, str_road_map_folder.length());
+
 	//getchar();
 }
 
@@ -145,11 +153,13 @@ main(int argc, char **argv)
 	road_map.complete_map = NULL;
 
 	string str_road_map_filename(g_road_map_dir);
-	parse_road_map_dir_type_and_origin(str_road_map_filename, str_road_map_folder, &road_map_origin);
+	string str_map_identification;
+	parse_road_map_dir_type_and_origin(str_road_map_filename, str_road_map_folder, str_map_identification, &road_map_origin);
 	road_map_folder = &str_road_map_folder[0u];
 
-
+	printf("%s, %lf X %lf\n", road_map_folder, road_map_origin.x, road_map_origin.y);
 	int count_maps = carmen_grid_mapping_get_block_map_by_origin_x_y(road_map_folder, 'r', road_map_origin.x, road_map_origin.y, &road_map);
+	cout<<count_maps<<endl;getchar();
 
 	carmen_grid_mapping_update_map_buffer(&road_map, 'r');
 
@@ -158,7 +168,7 @@ main(int argc, char **argv)
 		//show_road_map(&road_map,0,0);
 
 		//parse_world_origin_to_road_map(str_road_map_filename);
-		generate_road_map_graph(&road_map, road_map_folder, g_view_graph_construction);
+		generate_road_map_graph(&road_map, road_map_folder, str_map_identification, g_view_graph_construction);
 		//print_map_in_terminal(&road_map);getchar();
 	}
 	else

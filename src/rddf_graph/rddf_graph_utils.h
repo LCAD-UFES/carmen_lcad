@@ -66,9 +66,13 @@ typedef struct type_graph t_graph;
 
 using namespace std;
 
-void print_graph_2 (t_graph **graph);
+void get_map_origin(carmen_point_t *global_pose, double *x_origin, double *y_origin);
 cv::Mat rotate(cv::Mat src, cv::Point pt, double angle);
 void road_map_to_image(carmen_map_p map, cv::Mat *road_map_img);
+t_graph** add_to_list_undir(t_graph **adjacent_list, int u, int v, rddf_graph_t *graph);
+void print_graph_2 (t_graph **graph);
+t_graph ** read_graph_from_file(t_graph **graph, rddf_graph_t *vertexes, FILE *f);
+rddf_graph_t * read_vertexes_from_file (rddf_graph_t *vertexes, FILE *f);
 void already_visited_to_image(carmen_map_p map, cv::Mat *road_map_img);
 void draw_lines (carmen_map_p map, cv::Mat *image);
 void show_road_map(carmen_map_p map, int x, int y);
@@ -87,8 +91,8 @@ rddf_graph_t * add_point_to_graph_branch(carmen_map_p map, rddf_graph_t * graph,
 rddf_graph_t * add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y, bool new_first_point);
 rddf_graph_t * A_star(rddf_graph_t *graph, int x, int y, carmen_map_p map, carmen_map_p already_visited, vector <carmen_point_t> &map_queue, char *road_map_folder);
 void write_graph_for_gnuplot (rddf_graph_t * graph);
-void write_graph_on_file(rddf_graph_t *graph);
-void generate_road_map_graph(carmen_map_p map, char *road_map_folder, bool view_graph_construction);
+void write_graph_on_file(rddf_graph_t *graph, string str_map_identification);
+void generate_road_map_graph(carmen_map_p map, char *road_map_folder, string str_map_identification, bool view_graph_construction);
 
 #ifdef __cplusplus
 }

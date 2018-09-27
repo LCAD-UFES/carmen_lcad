@@ -39,6 +39,102 @@ road_map_to_image(carmen_map_p map, cv::Mat *road_map_img)
 
 
 void
+get_map_origin(carmen_point_t *global_pose, double *x_origin, double *y_origin)
+{
+	*x_origin = floor((floor(global_pose->x / (local_gridmap_size / 3.0) ) - 1.0) * (local_gridmap_size / 3.0));
+	*y_origin = floor((floor(global_pose->y / (local_gridmap_size / 3.0) ) - 1.0) * (local_gridmap_size / 3.0));
+}
+
+
+t_graph**
+add_to_list_undir(t_graph **adjacent_list, int u, int v, rddf_graph_t *graph){
+    //printf("%d %d %d\n", u,v,w);
+    t_graph *c, *p;
+    c = new_node;
+    c->vertex = v;
+    c->world_coordinate = graph->world_coordinate[v];
+    c->prox = NULL;
+
+    if(adjacent_list[u] == NULL){
+        adjacent_list[u] = c;
+    }
+    else{
+        p = adjacent_list[u];
+        while ( p -> prox != NULL ){
+            p = p -> prox;
+        }
+        p -> prox = c;
+
+    }
+
+    return (adjacent_list);
+}
+
+
+void
+print_graph_2 (t_graph **graph)
+{
+	for (int i = 0; i < 1050; i++)
+	{
+		printf ("[%d]: ", i);
+		t_graph *p;
+		for(p = graph[i]; p!=NULL; p = p->prox)
+		{
+			printf ("%d", p->vertex);
+			if (p->prox == NULL)
+				continue;
+			else
+				printf(" -> ");
+
+		}
+		printf("\n");
+	}
+}
+
+
+t_graph **
+read_graph_from_file(t_graph **graph, rddf_graph_t *vertexes, FILE *f)
+{
+	int u, v;
+
+	graph = (t_graph**)malloc((vertexes->size)*sizeof(t_graph*));
+
+	for(int i=0; i<vertexes->size;i++){
+		graph[i] = NULL;
+	}
+
+	while (fscanf(f, "%d %d", &u, &v) != EOF)
+	{
+		graph = add_to_list_undir(graph, u, v, vertexes);
+	}
+	//cout<<vertexes->size<<endl;
+
+	return (graph);
+}
+
+
+rddf_graph_t *
+read_vertexes_from_file (rddf_graph_t *vertexes, FILE *f)
+{
+	int number_of_edges;
+
+	vertexes = (rddf_graph_t *) malloc (sizeof(rddf_graph_t));
+
+	fscanf(f, "%d\n", &vertexes->size);
+	fscanf(f, "%d\n", &number_of_edges);
+	vertexes->world_coordinate = (carmen_position_t *) malloc (vertexes->size * sizeof(carmen_position_t));
+
+	for (int i = 0; i < vertexes->size; i++)
+	{
+		fscanf(f, "%lf %lf\n", &vertexes->world_coordinate[i].x, &vertexes->world_coordinate[i].y);
+	}
+
+
+	return (vertexes);
+}
+
+
+void
 already_visited_to_image(carmen_map_p map, cv::Mat *road_map_img)
 {
 	cv::Vec3b color;
@@ -342,8 +438,8 @@ point_is_lane_center_1(carmen_map_p map, int x, int y)
 	if (point_is_in_map(map, x-1, y))
 		center_x_minus_1 = road_mapper_double_to_prob(&map->map[x - 1][y])->lane_center;
 
-	if(center > 55555)
-	{
+	//if(center > 55555)
+	//{
 		if (((center > center_y_minus_1) && (center > center_y_plus_1)) ||
 			((center > center_x_minus_1) && (center > center_x_plus_1))// ||
 				//((center > diag_x_y_minus_1) && (center > diag_x_y_plus_1)) ||
@@ -352,9 +448,9 @@ point_is_lane_center_1(carmen_map_p map, int x, int y)
 			return true;
 		else
 			return false;
-	}
-	else
-		return false;
+	//}
+	//else
+		//return false;
 }
 
 
@@ -862,7 +958,7 @@ write_graph_for_gnuplot (rddf_graph_t * graph)
 
 
 void
-write_graph_on_file(rddf_graph_t *graph)
+write_graph_on_file(rddf_graph_t *graph, string str_map_identification)
 {
 	/*
 	 File template:
@@ -884,10 +980,20 @@ write_graph_on_file(rddf_graph_t *graph)
 	 vertex_a vertex_b
 	 */
 	FILE *f;
+	char *map_id = NULL;
+	char *carmen_enviroment_folder = NULL;
+	carmen_enviroment_folder = getenv ("CARMEN_HOME");
+	str_map_identification = str_map_identification + ".gr";
+	map_id = &str_map_identification[0u];
+	char graph_name[100] = "/data/graphs/graph-";
+	strcat(carmen_enviroment_folder, graph_name);
+	strcat(carmen_enviroment_folder, map_id);
+
 	int total_number_of_edges = 0;
-	if ((f = fopen("graphs.gr", "wb")) == NULL )
+	if ((f = fopen(carmen_enviroment_folder, "wb")) == NULL )
 	{
-		printf("Error opening file\n");
+		printf("Error opening file %s\n", carmen_enviroment_folder);
+		exit(0);
 	}
 	for (int i = 0; i < graph->size; i++)
 	{
@@ -940,7 +1046,7 @@ print_graph_in_screen (rddf_graph_t *graph)
 
 
 void
-generate_road_map_graph(carmen_map_p map, char *road_map_folder, bool view_graph_construction)
+generate_road_map_graph(carmen_map_p map, char *road_map_folder, string str_map_identification, bool view_graph_construction)
 {
 	char already_visited_folder[] = "already_visited";
 	carmen_map_t already_visited;
@@ -996,7 +1102,7 @@ generate_road_map_graph(carmen_map_p map, char *road_map_folder, bool view_graph
 	//show_already_visited(&already_visited);
 	//getchar();
 
-	write_graph_for_gnuplot (graph);
+	//write_graph_for_gnuplot (graph);
 	//print_graph_in_screen (graph);
-	write_graph_on_file(graph);
+	write_graph_on_file(graph, str_map_identification);
 }
