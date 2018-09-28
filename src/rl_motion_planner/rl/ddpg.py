@@ -48,8 +48,8 @@ class ActorCritic:
         elif activation_fn_name == 'elu': activation_fn = tf.nn.elu
         else: raise Exception("Invalid non-linearity '{}'".format(activation_fn_name))
 
-        if allow_negative_commands: cmd_activation_fn = tf.nn.tanh
-        else: cmd_activation_fn = tf.nn.sigmoid
+        if allow_negative_commands: v_activation_fn = tf.nn.tanh
+        else: v_activation_fn = tf.nn.sigmoid
 
         # normalize laser to be in [-1., 1.]
         norm_laser = tf.clip_by_value(self.placeholder_laser, 0., laser_max_range)
@@ -69,8 +69,10 @@ class ActorCritic:
             for _ in range(n_hidden_layers):
                 in_tensor = tf.layers.dense(in_tensor, units=n_hidden_neurons, activation=activation_fn)
 
-            self.actor_command = tf.layers.dense(in_tensor, units=self.action_size,
-                                                 activation=cmd_activation_fn, name="actor_command")
+            self.command_phi = tf.layers.dense(in_tensor, units=1, activation=v_activation_fn, name="command_phi")
+            self.command_v = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_v")
+            
+            self.actor_command = tf.concat([self.command_v, self.command_phi], axis=-1)
 
         with tf.variable_scope("critic"):
             state_fc, goal_fc, laser_fc = self.encoder(norm_laser, norm_goal, norm_state,

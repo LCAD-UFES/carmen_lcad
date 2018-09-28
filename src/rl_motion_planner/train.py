@@ -174,6 +174,9 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
                                         random_eps=params['random_eps'] if not exploit else 0.,
                                         use_target_net=use_target_net)
 
+            if len(episode) % 50 == 0:
+                print('V: %.2f\tPHI: %.2f' % (cmd[0] * 10., cmd[1] * 28.))
+
             if len(episode) == 0:
                 q0 = q
 
