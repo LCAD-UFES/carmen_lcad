@@ -5,6 +5,7 @@
 #include <carmen/carmen.h>
 #include <carmen/grid_mapping.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
+#include <carmen/simulator_ackerman_simulation.h>
 #include <carmen/collision_detection.h>
 #include "carmen_sim.h"
 
@@ -24,6 +25,7 @@ using namespace cv;
 CarmenSim::CarmenSim(bool fix_initial_position, bool use_truepos,
 		bool allow_negative_commands,
 		bool enjoy_mode,
+		bool use_latency,
 		const char *rddf_name,
 		const char *map_dir,
 		double min_dist_to_initial_goal,
@@ -34,6 +36,7 @@ CarmenSim::CarmenSim(bool fix_initial_position, bool use_truepos,
     _rddf_name = rddf_name;
     _allow_negative_commands = allow_negative_commands;
     _enjoy_mode = enjoy_mode;
+    _use_latency = use_latency;
 
 	_min_pose_skip_to_initial_goal = (int) (min_dist_to_initial_goal / 0.5);
 	_max_pose_skip_to_initial_goal = (int) (max_dist_to_initial_goal / 0.5);
@@ -94,7 +97,7 @@ CarmenSim::reset()
 
 	int pose_id;
 
-	if (_fix_initial_position) pose_id = 200; //M;
+	if (_fix_initial_position) pose_id = 500; //M;
 	else pose_id = M + rand() % (_rddf.size() - M);
 
 	int shift = m + (rand() % (M - m));  // shift is a random integer between m and M
@@ -194,40 +197,44 @@ ackerman_motion_model(double *x, double *y, double *th, double v, double phi, do
 void
 CarmenSim::step(double v, double phi, double dt)
 {
-	double base_time = carmen_get_time();
+	static const int N_COMMANDS = 1;
+	static carmen_ackerman_motion_command_t *cmds = NULL;
 
-	carmen_ackerman_motion_command_t cmd;
+	if (cmds == NULL)
+		cmds = (carmen_ackerman_motion_command_t *) calloc (N_COMMANDS, sizeof(carmen_ackerman_motion_command_t));
 
-	cmd.x = cmd.y = cmd.theta = 0.0;
-	cmd.v = v;
-	cmd.phi = phi;
-	cmd.time = base_time + dt;
+	for (int i = 0; i < N_COMMANDS; i++)
+	{
+		cmds[i].x = 0.0;
+		cmds[i].y = 0.0;
+		cmds[i].theta = 0.0;
+		cmds[i].v = v;
+		cmds[i].phi = phi;
+		cmds[i].time = dt;
+	}
 
-	_simulator_config.current_motion_command_vector = &cmd;
-	_simulator_config.nun_motion_commands = 1;
-	_simulator_config.time_of_last_command = base_time;
-
-//	if (_simulator_config.use_mpc)
-//		_simulator_config.nun_motion_commands =
-//				apply_system_latencies(_simulator_config.current_motion_command_vector,
-//									_simulator_config.nun_motion_commands);
-
+	_simulator_config.current_motion_command_vector = cmds;
+	_simulator_config.nun_motion_commands = N_COMMANDS;
+	_simulator_config.time_of_last_command = carmen_get_time();
 	_simulator_config.delta_t = dt;
-	_simulator_config.v = cmd.v;
-	_simulator_config.phi = cmd.phi;
 
-	ackerman_motion_model(&(_simulator_config.true_pose.x),
-		&(_simulator_config.true_pose.y),
-		&(_simulator_config.true_pose.theta),
-		_simulator_config.v,
-		_simulator_config.phi,
-		_simulator_config.delta_t,
-		_simulator_config.distance_between_front_and_rear_axles);
+	if (_use_latency)
+	{
+		carmen_simulator_ackerman_recalc_pos(&_simulator_config);
+	}
+	else
+	{
+		_simulator_config.v = v;
+		_simulator_config.phi = phi;
 
-	// _my_counter++;
-	// _simulator_config.true_pose.x = _rddf[_my_counter].x;
-	// _simulator_config.true_pose.y = _rddf[_my_counter].y;
-	// _simulator_config.true_pose.theta = _rddf[_my_counter].theta;
+		ackerman_motion_model(&(_simulator_config.true_pose.x),
+			&(_simulator_config.true_pose.y),
+			&(_simulator_config.true_pose.theta),
+			_simulator_config.v,
+			_simulator_config.phi,
+			_simulator_config.delta_t,
+			_simulator_config.distance_between_front_and_rear_axles);
+	}
 
     _update_map();
 

@@ -36,7 +36,7 @@ class ActorCritic:
         # laser: (range0, range1, ...)
         self.placeholder_laser = tf.placeholder(dtype=tf.float32, shape=[None, n_laser_readings, 1], name='placeholder_laser')
         # state: (current_v) - current velocity
-        self.placeholder_state = tf.placeholder(dtype=tf.float32, shape=[None, 1], name='placeholder_state')
+        self.placeholder_state = tf.placeholder(dtype=tf.float32, shape=[None, 2], name='placeholder_state')
         # performed action (for critic): (v, phi) - commands produced by the actor
         self.placeholder_action = tf.placeholder(dtype=tf.float32, shape=[None, self.action_size], name='placeholder_action')
         # reward (for training the critic)
@@ -169,7 +169,7 @@ class DDPG(object):
         self.policy_loss = -tf.reduce_mean(self.main.q_from_policy)
         # TODO: checar se o componente abaixo eh necessario e o que ele significa.
         self.action_l2 = 0.0
-        self.policy_loss += self.action_l2 * tf.reduce_mean(tf.square(self.main.actor_command))
+        self.policy_loss += self.action_l2 * tf.reduce_mean(tf.square(self.main.command_phi))
 
         # Training
         # TODO: MAKE SURE THESE ARE EQUIVALENT!!!!!
@@ -240,7 +240,7 @@ class DDPG(object):
         # forward
         feed = {
             self.main.placeholder_laser: [obs['laser']],
-            self.main.placeholder_state: [[obs['pose'][3]]],
+            self.main.placeholder_state: [[obs['pose'][3], obs['pose'][4]]],
             self.main.placeholder_goal: [goal],
         }
 
@@ -264,6 +264,8 @@ class DDPG(object):
 
         if self.allow_negative_commands: u[0] = np.clip(u[0], -1.0, 1.0)
         else: u[0] = np.clip(u[0], 0.0, 1.0)
+        
+        u[1] = np.clip(u[1], -1., 1.)
 
         return u, ret[1][0][0]
 
