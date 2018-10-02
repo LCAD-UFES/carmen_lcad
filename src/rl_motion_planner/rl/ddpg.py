@@ -161,15 +161,15 @@ class DDPG(object):
         # Critic loss function (TODO: make sure this is correct!)
         discounted_next_q = self.gamma * self.target.q_from_policy * (1. - self.main.placeholder_is_final)
         target_Q = self.main.placeholder_reward + discounted_next_q
-        clipped_target_Q = tf.clip_by_value(target_Q, clip_value_min=-100., clip_value_max=100.)
+        clipped_target_Q = tf.clip_by_value(target_Q, clip_value_min=-200., clip_value_max=200.)
         # The stop gradient prevents the target net from being trained.
         self.critic_loss = tf.reduce_mean(tf.square(tf.stop_gradient(clipped_target_Q) - self.main.q_from_action_placeholder))
 
         # Policy loss function (TODO: checar se essa loss esta certa. Ela parece diferente do DDPG do paper).
         self.policy_loss = -tf.reduce_mean(self.main.q_from_policy)
         # TODO: checar se o componente abaixo eh necessario e o que ele significa.
-        self.action_l2 = 0.0
-        self.policy_loss += self.action_l2 * tf.reduce_mean(tf.square(self.main.command_phi))
+        self.action_l2 = 0.0 * tf.reduce_mean(tf.square(self.main.command_phi))
+        self.policy_loss += self.action_l2 
 
         # Training
         # TODO: MAKE SURE THESE ARE EQUIVALENT!!!!!
@@ -300,20 +300,22 @@ class DDPG(object):
         # TODO: Diferente do caso da OpenAI em que os gradients sao computados e aplicados separadamente, aqui os
         # TODO: gradients sao aplicados "ao mesmo tempo" nas variaveis de pre-processamento. Checar em qual ordem isso
         # TODO: eh realizado, e se nao da problema treinar os dois ao msm tempo.
-        out = self.sess.run([self.policy_loss, self.critic_loss, 
+        out = self.sess.run([self.policy_loss, self.critic_loss,  
                              self.target.q_from_policy, self.main.q_from_action_placeholder,
                              self.main.q_from_policy,
-                             self.critic_train, self.policy_train], feed_dict=feed)
+                             self.critic_train, self.policy_train, 
+                             self.action_l2], feed_dict=feed)
 
         policy_loss = out[0]
         critic_loss = out[1]
+        l2_loss = out[7]
 
         target_next_q = out[2]
         predicted_q = out[3]
 
         main_q_policy = out[4]
 
-        return critic_loss, policy_loss, target_next_q, predicted_q, batch['rew'], main_q_policy
+        return critic_loss, policy_loss, l2_loss, target_next_q, predicted_q, batch['rew'], main_q_policy
 
     """
     def train(self, stage=True):
