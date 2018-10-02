@@ -157,11 +157,9 @@ main(int argc, char **argv)
 	parse_road_map_dir_type_and_origin(str_road_map_filename, str_road_map_folder, str_map_identification, &road_map_origin);
 	road_map_folder = &str_road_map_folder[0u];
 
-	printf("%s, %lf X %lf\n", road_map_folder, road_map_origin.x, road_map_origin.y);
 	int count_maps = carmen_grid_mapping_get_block_map_by_origin_x_y(road_map_folder, 'r', road_map_origin.x, road_map_origin.y, &road_map);
-	cout<<count_maps<<endl;getchar();
-
-	carmen_grid_mapping_update_map_buffer(&road_map, 'r');
+	cout<<road_map.config.x_size<<" "<<road_map.config.y_size<<endl;
+	//carmen_grid_mapping_update_map_buffer(&road_map, 'r');
 
 	if (count_maps > 0)
 	{
