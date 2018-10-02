@@ -13,6 +13,7 @@
 #include <carmen/collision_detection.h>
 #include <carmen/mapper_interface.h>
 #include <carmen/robot_ackerman_interface.h>
+#include <carmen/base_ackerman_interface.h>
 #include <carmen/obstacle_avoider_interface.h>
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/behavior_selector_interface.h>
@@ -191,135 +192,135 @@ publish_behavior_selector_state()
 
 // TODO: copied from model_predictive_planner/publisher_util because model predictive doesn't
 // expose this function and the Tree type.
-void
-publish_navigator_ackerman_plan_message(std::vector<double> &vs, std::vector<double> &phis,
-		std::vector<double> &xs, std::vector<double> &ys, std::vector<double> &ths,
-		double timestamp)
-{
-	static int path_size = 0;
-	static carmen_ackerman_traj_point_t *path = NULL;
-	static carmen_navigator_ackerman_plan_message msg;
-
-	static bool first_time = true;
-	IPC_RETURN_TYPE err;
-
-	if (first_time)
-	{
-		err = IPC_defineMsg(CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME,
-				IPC_VARIABLE_LENGTH, CARMEN_NAVIGATOR_ACKERMAN_PLAN_FMT);
-
-		carmen_test_ipc_exit(err, "Could not define message",
-				CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME);
-
-		path = (carmen_ackerman_traj_point_t *) calloc (vs.size(), sizeof(carmen_ackerman_traj_point_t));
-		path_size = vs.size();
-
-		first_time = false;
-	}
-
-	if (path_size != vs.size())
-	{
-		path_size = vs.size();
-		path = (carmen_ackerman_traj_point_t *) realloc (path, vs.size() * sizeof(carmen_ackerman_traj_point_t));
-	}
-
-	// copy path and mask
-	for (int i = 0; i < vs.size(); i++)
-	{
-		path[i].x = xs[i];
-		path[i].y = ys[i];
-		path[i].theta = ths[i];
-		path[i].v = vs[i];
-		path[i].phi = phis[i];
-	}
-
-	msg.host = carmen_get_host();
-	msg.timestamp = timestamp;
-	msg.path_length = vs.size();
-	msg.path = path;
-
-	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME, &msg);
-	carmen_test_ipc(err, "Could not publish",
-			CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME);
-}
-
-
-void
-publish_plan_tree_message(std::vector<double> vs, std::vector<double> phis,
-	std::vector<double> xs, std::vector<double> ys, std::vector<double> ths)
-{
-	IPC_RETURN_TYPE err = IPC_OK;
-
-	carmen_navigator_ackerman_plan_tree_message plan_tree_msg;
-
-	int size = (int) vs.size();
-
-	if (size <= 0)
-		return;
-
-	memset(plan_tree_msg.path_size, 0, 500 * sizeof(int));
-	for (int i = 0; i < 500; i++)
-		for (int j = 0; j < 100; j++)
-			memset(&(plan_tree_msg.paths[i][j]), 0, sizeof(carmen_ackerman_traj_point_t));
-
-	plan_tree_msg.num_path = 1;
-	plan_tree_msg.path_size[0] = size;
-
-	// copy path and mask
-	printf("size: %d\n", size);
-	for (int i = 0; i < size; i++)
-	{
-		plan_tree_msg.paths[0][i].x = xs[i];
-		plan_tree_msg.paths[0][i].y = ys[i];
-		plan_tree_msg.paths[0][i].theta = ths[i];
-		plan_tree_msg.paths[0][i].v = vs[i];
-		plan_tree_msg.paths[0][i].phi = phis[i];
-		printf("%f %f %f\n", xs[i], ys[i], ths[i]);
-	}
-
-	plan_tree_msg.num_edges = 0;
-	plan_tree_msg.p1 = NULL;
-	plan_tree_msg.p2 = NULL;
-	plan_tree_msg.mask = NULL;
-
-	plan_tree_msg.timestamp = carmen_get_time();
-	plan_tree_msg.host = carmen_get_host();
-
-	printf("publishing!\n");
-	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, &plan_tree_msg);
-	carmen_test_ipc(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
-	printf("done.\n");
-}
+//void
+//publish_navigator_ackerman_plan_message(std::vector<double> &vs, std::vector<double> &phis,
+//		std::vector<double> &xs, std::vector<double> &ys, std::vector<double> &ths,
+//		double timestamp)
+//{
+//	static int path_size = 0;
+//	static carmen_ackerman_traj_point_t *path = NULL;
+//	static carmen_navigator_ackerman_plan_message msg;
+//
+//	static bool first_time = true;
+//	IPC_RETURN_TYPE err;
+//
+//	if (first_time)
+//	{
+//		err = IPC_defineMsg(CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME,
+//				IPC_VARIABLE_LENGTH, CARMEN_NAVIGATOR_ACKERMAN_PLAN_FMT);
+//
+//		carmen_test_ipc_exit(err, "Could not define message",
+//				CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME);
+//
+//		path = (carmen_ackerman_traj_point_t *) calloc (vs.size(), sizeof(carmen_ackerman_traj_point_t));
+//		path_size = vs.size();
+//
+//		first_time = false;
+//	}
+//
+//	if (path_size != vs.size())
+//	{
+//		path_size = vs.size();
+//		path = (carmen_ackerman_traj_point_t *) realloc (path, vs.size() * sizeof(carmen_ackerman_traj_point_t));
+//	}
+//
+//	// copy path and mask
+//	for (int i = 0; i < vs.size(); i++)
+//	{
+//		path[i].x = xs[i];
+//		path[i].y = ys[i];
+//		path[i].theta = ths[i];
+//		path[i].v = vs[i];
+//		path[i].phi = phis[i];
+//	}
+//
+//	msg.host = carmen_get_host();
+//	msg.timestamp = timestamp;
+//	msg.path_length = vs.size();
+//	msg.path = path;
+//
+//	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME, &msg);
+//	carmen_test_ipc(err, "Could not publish",
+//			CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME);
+//}
 
 
-void
-publish_path_to_draw(std::vector<double> vs, std::vector<double> phis,
-		std::vector<double> xs, std::vector<double> ys, std::vector<double> ths)
-{
-	carmen_navigator_ackerman_plan_to_draw_message  message;
-
-	int path_size = vs.size();
-	carmen_ackerman_traj_point_t *path = (carmen_ackerman_traj_point_t *) calloc (vs.size(), sizeof(carmen_ackerman_traj_point_t));
-
-	for (int i = 0; i < vs.size(); i++)
-	{
-		path[i].x = xs[i];
-		path[i].y = ys[i];
-		path[i].theta = ths[i];
-		path[i].v = vs[i];
-		path[i].phi = phis[i];
-	}
-
-	message.host = carmen_get_host();
-	message.timestamp = carmen_get_time();
-	message.path_size = path_size;
-	message.path = path;
-
-	IPC_RETURN_TYPE err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME, &message);
-	carmen_test_ipc_exit(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME);
-
-	free(path);
-}
+//void
+//publish_plan_tree_message(std::vector<double> vs, std::vector<double> phis,
+//	std::vector<double> xs, std::vector<double> ys, std::vector<double> ths)
+//{
+//	IPC_RETURN_TYPE err = IPC_OK;
+//
+//	carmen_navigator_ackerman_plan_tree_message plan_tree_msg;
+//
+//	int size = (int) vs.size();
+//
+//	if (size <= 0)
+//		return;
+//
+//	memset(plan_tree_msg.path_size, 0, 500 * sizeof(int));
+//	for (int i = 0; i < 500; i++)
+//		for (int j = 0; j < 100; j++)
+//			memset(&(plan_tree_msg.paths[i][j]), 0, sizeof(carmen_ackerman_traj_point_t));
+//
+//	plan_tree_msg.num_path = 1;
+//	plan_tree_msg.path_size[0] = size;
+//
+//	// copy path and mask
+//	printf("size: %d\n", size);
+//	for (int i = 0; i < size; i++)
+//	{
+//		plan_tree_msg.paths[0][i].x = xs[i];
+//		plan_tree_msg.paths[0][i].y = ys[i];
+//		plan_tree_msg.paths[0][i].theta = ths[i];
+//		plan_tree_msg.paths[0][i].v = vs[i];
+//		plan_tree_msg.paths[0][i].phi = phis[i];
+//		printf("%f %f %f\n", xs[i], ys[i], ths[i]);
+//	}
+//
+//	plan_tree_msg.num_edges = 0;
+//	plan_tree_msg.p1 = NULL;
+//	plan_tree_msg.p2 = NULL;
+//	plan_tree_msg.mask = NULL;
+//
+//	plan_tree_msg.timestamp = carmen_get_time();
+//	plan_tree_msg.host = carmen_get_host();
+//
+//	printf("publishing!\n");
+//	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, &plan_tree_msg);
+//	carmen_test_ipc(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
+//	printf("done.\n");
+//}
+//
+//
+//void
+//publish_path_to_draw(std::vector<double> vs, std::vector<double> phis,
+//		std::vector<double> xs, std::vector<double> ys, std::vector<double> ths)
+//{
+//	carmen_navigator_ackerman_plan_to_draw_message  message;
+//
+//	int path_size = vs.size();
+//	carmen_ackerman_traj_point_t *path = (carmen_ackerman_traj_point_t *) calloc (vs.size(), sizeof(carmen_ackerman_traj_point_t));
+//
+//	for (int i = 0; i < vs.size(); i++)
+//	{
+//		path[i].x = xs[i];
+//		path[i].y = ys[i];
+//		path[i].theta = ths[i];
+//		path[i].v = vs[i];
+//		path[i].phi = phis[i];
+//	}
+//
+//	message.host = carmen_get_host();
+//	message.timestamp = carmen_get_time();
+//	message.path_size = path_size;
+//	message.path = path;
+//
+//	IPC_RETURN_TYPE err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME, &message);
+//	carmen_test_ipc_exit(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME);
+//
+//	free(path);
+//}
 
 
 void
@@ -386,10 +387,11 @@ publish_command(std::vector<double> v, std::vector<double> phi, std::vector<doub
 	assert(v.size() == ys.size());
 	assert(v.size() == ths.size());
 
-	publish_path_to_draw(v, phi, xs, ys, ths);
+	//publish_path_to_draw(v, phi, xs, ys, ths);
 
-	carmen_robot_ackerman_publish_motion_command(motion_commands,
-		n_motion_commands, base_time);
+	// carmen_robot_ackerman_publish_motion_command(motion_commands, n_motion_commands, base_time);
+	carmen_base_ackerman_publish_motion_command(motion_commands, n_motion_commands, base_time);
+
 }
 
 
@@ -639,7 +641,8 @@ reset_without_initial_pose()
 
 	} while (global_localize_ackerman_message.timestamp == 0 ||
 			obstacle_distance_map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, x, y) ||
-			// laser_reading_is_invalid(&global_front_laser_message) ||
+			laser_reading_is_invalid(&global_front_laser_message) ||
+			laser_reading_is_invalid(&global_rear_laser_message) ||
 			map_is_invalid(&global_mapper_map_message, x, y) ||
 			goal_list_is_invalid(&global_goal_list_message, x, y, th) ||
 			rddf_is_invalid(&global_rddf_message, x, y, th));
@@ -923,7 +926,7 @@ read_simulator_parameters(int argc, char *argv[], carmen_simulator_ackerman_conf
 	{
 			{"simulator", "time", CARMEN_PARAM_DOUBLE, &(config->real_time), 1, NULL},
 			{"simulator", "sync_mode", CARMEN_PARAM_ONOFF, &(config->sync_mode), 1, NULL},
-			{"simulator", "motion_timeout", CARMEN_PARAM_DOUBLE, &(config->motion_timeout),1, NULL},
+			{"simulator", "motion_timeout", CARMEN_PARAM_DOUBLE, &(config->motion_timeout), 1, NULL},
 			{"robot", "frontlaser_use", CARMEN_PARAM_ONOFF, &(config->use_front_laser), 1, NULL},
 			{"robot", "frontlaser_id", CARMEN_PARAM_INT, &(config->front_laser_config.id), 0, NULL},
 			{"robot", "rearlaser_use", CARMEN_PARAM_ONOFF, &(config->use_rear_laser), 1, NULL},
@@ -1072,26 +1075,8 @@ stop_message_handler()
 
 
 void
-init()
+subscribe_messages()
 {
-	argc = 1;
-
-	if (argv == NULL)
-	{
-		argv = (char **) calloc (1, sizeof(char*));
-		argv[0] = (char *) calloc (128, sizeof(char));
-		strcpy(argv[0], "rl_motion_planner");
-	}
-
-	carmen_ipc_initialize(argc, argv);
-
-	read_robot_ackerman_parameters(argc, argv);
-	read_simulator_parameters(argc, argv, &simulator_config);
-	carmen_libpid_read_PID_parameters(argc, argv);
-
-	initialize_global_data();
-	define_messages();
-
     carmen_localize_ackerman_subscribe_globalpos_message(&global_localize_ackerman_message,
     	NULL, CARMEN_SUBSCRIBE_LATEST);
 
@@ -1135,6 +1120,30 @@ init()
 
 	carmen_simulator_ackerman_subscribe_truepos_message(&global_truepos_message,
 		NULL, CARMEN_SUBSCRIBE_LATEST);
+}
+
+
+void
+init()
+{
+	argc = 1;
+
+	if (argv == NULL)
+	{
+		argv = (char **) calloc (1, sizeof(char*));
+		argv[0] = (char *) calloc (128, sizeof(char));
+		strcpy(argv[0], "rl_motion_planner");
+	}
+
+	carmen_ipc_initialize(argc, argv);
+
+	read_robot_ackerman_parameters(argc, argv);
+	read_simulator_parameters(argc, argv, &simulator_config);
+	carmen_libpid_read_PID_parameters(argc, argv);
+
+	initialize_global_data();
+	define_messages();
+	subscribe_messages();
 
 	signal(SIGINT, signal_handler);
 }
@@ -1173,7 +1182,7 @@ simulation_step(double v, double phi, double delta_t)
 	cmd.x = cmd.y = cmd.theta = 0.0;
 	cmd.v = v;
 	cmd.phi = phi;
-	cmd.time = base_time + 0.1;
+	cmd.time = base_time + delta_t;
 
 	simulator_config_ptr->current_motion_command_vector = &cmd;
 	simulator_config_ptr->nun_motion_commands = 1;

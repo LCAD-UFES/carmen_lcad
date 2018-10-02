@@ -727,11 +727,17 @@ void carmen_map_graphics_draw_arc(GtkMapViewer *map_view, GdkColor *colour,
 		return;
 
 	radius /= (map_view->internal_map->config.resolution/map_view->rescale_size);
-	rect.x = point.x - radius;
-	rect.y = point.y - radius;
 
-	rect.width = 2*radius;
-	rect.height = 2*radius;
+	rect.x = carmen_round(point.x - radius);
+	rect.y = carmen_round(point.y - radius);
+
+	rect.width = carmen_round(2*radius);
+	rect.height = carmen_round(2*radius);
+
+	if (rect.width == 0)
+		rect.width = 2;
+	if (rect.height == 0)
+		rect.height = 2;
 
 	gdk_draw_arc(map_view->drawing_pixmap, map_view->drawing_gc,
 			filled, rect.x, rect.y, rect.width, rect.height, start, delta);

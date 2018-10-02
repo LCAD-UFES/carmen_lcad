@@ -50,7 +50,8 @@ To analyze a log file, run:
 Optional parameters:
 ```
  -v <verbose>   : verbose option: 0 = summary only, 1 = all except data lines, 2 = all (default: 0)
- -s <summaries> : summary option: c = Connection, r = Registration, o = Message by Origin, d = Message by Destination, \* = crod (default: general summary)
+ -vt <verbose>  : verbose option in tabular format
+ -s <summaries> : summary option: c = Connection, r = Registration, o = Message by Origin, d = Message by Destination, * = crod (default: general summary)
  -t <t1> <t2>   : time filter: from <t1> to <t2>, format hh:mm:ss.cc (default: 00:00 23:59:59.99)
  -c <classes>   : class filter: c = Connection, r = Registration, b = Broadcast, i = Inform, d = Done, q = Query, p = Reply, x = Deleted, h = Handle, o = Other, u = Unknown, * = crbidqpxhou (default = *)
  -msg <msgs>    : message filter: list of tokens separated by spaces, wildcards allowed (default: *)
@@ -112,4 +113,11 @@ Filter records of classes "_Broadcast_" or "_Deleted_", logged in a time interva
 Filter records related to all messages whose name contains "_nav_", originated from any module except those whose name starts with "_nav_", or involving the IPC server as either origin or destination, then print a summary of these messages by destination/origin:
 ```
  ./central_log_view sample_central.log -msg '*nav*' -imod 'nav*:*' '*IPC*' -s d
+```
+
+[**Sample #7**](./sample_view_007.output)
+
+Filter records of class "_Broadcast_" related to all messages whose name ends with "_globalpos_", destinated to module "_rddf_play_", containing simultaneously the keywords "_775794_" and "_-36369_" within the text, excluding records containing the keyword "_Pending_", then print a summary of these messages by origin/destination and the details of these records in tabular format, including the data lines:
+```
+ ./central_log_view sample_central.log -c b -msg '*globalpos' -mod '*:rddf_play*' -k '775794*-36369' -ik 'Pending' -s o -vt 2
 ```

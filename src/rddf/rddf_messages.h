@@ -26,7 +26,7 @@ extern "C"
 	#define RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP		12
 
 
-	#define NUM_RDDF_ANNOTATION_CODES						21
+	#define NUM_RDDF_ANNOTATION_CODES						22
 
 	#define RDDF_ANNOTATION_CODE_NONE		 				0
 
@@ -54,6 +54,8 @@ extern "C"
 	#define RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_BUSY		19
 
 	#define RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_GO_STRAIGHT	20
+	#define RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_OFF			21
+
 
 	typedef struct
     {
@@ -137,6 +139,17 @@ extern "C"
 
 	#define CARMEN_RDDF_ANNOTATION_MESSAGE_NAME "carmen_rddf_annotation_message"
 	#define CARMEN_RDDF_ANNOTATION_MESSAGE_FMT "{int, <{{double,double,double},double,string,int,int}:1>,double,string}"
+
+    typedef struct
+	{
+    	int traffic_sign_state;
+    	double traffic_sign_data;
+		double timestamp;
+		char *host;
+	} carmen_rddf_traffic_sign_message;
+
+	#define CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_NAME "carmen_rddf_traffic_sign_message"
+	#define CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_FMT "{int,double,double,string}"
 
 #ifdef __cplusplus
 }

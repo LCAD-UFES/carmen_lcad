@@ -5,6 +5,7 @@ from rl.util import dist, ackerman_motion_model, draw_rectangle
 import numpy as np
 import cv2
 import carmen_comm.carmen_comm as carmen
+import carmen_sim.pycarmen_sim as pycarmen_sim 
 
 
 class SimpleEnv:
@@ -22,10 +23,11 @@ class SimpleEnv:
             self.env_size = 9.0
             self.zoom = 20.0
             self.goal_radius = 0.5
-            self.dt = 1.0
+            self.dt = 0.5
 
         # 100 rays to support convolutional laser preprocessing
-        self.laser = np.zeros(100).reshape(100, 1)
+        n_rays = 1
+        self.laser = np.zeros(n_rays).reshape(n_rays, 1)
 
     def reset(self):
         self.pose = self.previous_p = np.zeros(4)
@@ -38,27 +40,27 @@ class SimpleEnv:
         return {'pose': np.copy(self.pose), 'laser': self.laser}, self.goal
 
     def step(self, cmd):
+        self.n_steps += 1
         self.previous_p = np.copy(self.pose)
 
         if self.params['model'] == 'ackerman':
-            # v = cmd[0] * self.max_speed
-            # phi = cmd[1] * self.wheel_angle
-            v = 5.
-            phi = cmd[0] * self.wheel_angle
+            v = cmd[0] * self.max_speed
+            phi = cmd[1] * self.wheel_angle
+            # v = 5.
+            # phi = cmd[0] * self.wheel_angle
             self.pose = ackerman_motion_model(self.pose, v, phi, dt=self.dt)
         else:
             self.pose[0] += cmd[0] * self.dt
             self.pose[1] += cmd[1] * self.dt
 
-        # self.pose = np.clip(self.pose, -self.env_border, self.env_border)
+        self.pose = np.clip(self.pose, -self.env_border, self.env_border)
 
         success = True if dist(self.pose, self.goal) < self.goal_radius else False
-        starved = True if self.n_steps > self.params['n_steps_episode'] else False
+        starved = True if self.n_steps >= self.params['n_steps_episode'] else False
 
         info = {'success': success, 'hit_obstacle': False, 'starved': starved}
         done = success or starved
 
-        self.n_steps += 1
         return {'pose': np.copy(self.pose), 'laser': self.laser}, done, info
 
     def finalize(self):
@@ -162,10 +164,10 @@ class CarmenEnv:
     def step(self, cmd):
         carmen.publish_goal_list([self.goal[0]], [self.goal[1]], [self.goal[2]], [self.goal[3]], [0.0], time.time())
 
-        # v = cmd[0] * 10.0
-        # phi = cmd[1] * np.deg2rad(28.)
-        v = 10.
-        phi = cmd[0] * np.deg2rad(28.0)
+        v = cmd[0] * 10.0
+        phi = cmd[1] * np.deg2rad(28.)
+        # v = 10.
+        # phi = cmd[0] * np.deg2rad(28.0)
 
         carmen.publish_command([v] * 10, [phi] * 10, [0.1] * 10, True)
 
@@ -176,7 +178,7 @@ class CarmenEnv:
 
         hit_obstacle = carmen.hit_obstacle()
         starved = self.n_steps >= self.params['n_steps_episode']
-        success = False # achieved_goal  # and vel_is_correct
+        success = achieved_goal  # and vel_is_correct
 
         done = success or hit_obstacle or starved
         info = {'success': success, 'hit_obstacle': hit_obstacle, 'starved': starved}
@@ -200,5 +202,60 @@ class CarmenEnv:
 
     def view(self):
         pass
+
+
+class CarmenSimEnv:
+    def __init__(self, params):
+        self.sim = pycarmen_sim.CarmenSim(params['fix_initial_position'],
+                                          True, True, not params['train'],
+                                          params['use_latency'])
+        self.params = params
+
+    def _state(self):
+        laser = self.sim.laser()
+
+        state = {
+            'pose': np.copy(self.sim.pose()),
+            'laser': np.copy(laser).reshape(len(laser), 1),
+        }
+
+        return state
+
+    def rear_laser_is_active(self):
+        return True
+
+    def reset(self):
+        self.sim.reset()
+        self.n_steps = 0
+        return self._state(), self.sim.goal()
+
+    def step(self, cmd):
+        v = cmd[0] * 10.0
+        phi = cmd[1] * np.deg2rad(28.)
+
+        self.sim.step(v, phi, 0.1)
+
+        state = self._state()
+        goal = self.sim.goal()
+
+        achieved_goal = dist(state['pose'], goal) < self.params['goal_achievement_dist']
+        vel_is_correct = np.abs(state['pose'][3] - goal[3]) < self.params['vel_achievement_dist']
+
+        hit_obstacle = self.sim.hit_obstacle()
+        starved = self.n_steps >= self.params['n_steps_episode'] and self.params['n_steps_episode'] > 0
+        success = achieved_goal  # and vel_is_correct
+
+        done = success or hit_obstacle or starved
+        info = {'success': success, 'hit_obstacle': hit_obstacle, 'starved': starved}
+
+        self.n_steps += 1
+
+        return state, done, info
+
+    def finalize(self):
+        pass
+
+    def view(self):
+        self.sim.view()
 
 

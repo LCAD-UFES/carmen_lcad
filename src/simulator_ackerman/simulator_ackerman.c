@@ -909,9 +909,15 @@ main(int argc, char **argv)
 	if (subscribe_to_relevant_messages() < 0)
 		carmen_die("Error subscribing to messages...\n");
 
-	carmen_ipc_addPeriodicTimer(simulator_conf.real_time, simulate_car_and_publish_readings, NULL);
+	// carmen_ipc_addPeriodicTimer(simulator_conf.real_time, simulate_car_and_publish_readings, NULL);
+	// carmen_ipc_dispatch();
+	//
+	while (1)
+	{
+		simulate_car_and_publish_readings(NULL, 0, 0);
+		carmen_ipc_sleep(simulator_conf.real_time);
+	}
 
-	carmen_ipc_dispatch();
 
 	exit(0);
 }
