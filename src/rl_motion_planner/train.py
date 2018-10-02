@@ -139,6 +139,24 @@ def view_data(obs, g, rear_laser_is_active, goal_achievemnt_dist):
     draw_rectangle(view, (x, y, th), height=car_width, width=car_length, color=(0, 128, 0))
 
     cv2.imshow("input_data", np.flip(view, axis=0))
+    
+    bars = np.zeros((300, 400, 3)) + 255
+    cv2.putText(bars, "Velocity", (150, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0))
+    cv2.rectangle(bars, (10, 50), (390, 100), (0, 0, 0))
+    v = int((obs['pose'][3] / 10.) * (380 / 2.) + bars.shape[1] / 2)
+    if obs['pose'][3] > 0: x1, x2 = bars.shape[1] // 2, v
+    else: x1, x2 = v, bars.shape[1] // 2
+    cv2.rectangle(bars, (x1, 60), (x2, 90), (0, 0, 255), -1)
+    
+    cv2.putText(bars, "Steering", (150, 130), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0))
+    cv2.rectangle(bars, (10, 150), (390, 200), (0, 0, 0))
+    phi = int((obs['pose'][4] / np.deg2rad(28.)) * (380 / 2.) + bars.shape[1] / 2)
+    if obs['pose'][3] > 0: x1, x2 = bars.shape[1] // 2, phi
+    else: x1, x2 = phi, bars.shape[1] // 2
+    cv2.rectangle(bars, (x1, 160), (x2, 190), (0, 255, 0), -1)
+
+    cv2.imshow("bars", bars)
+    
     cv2.waitKey(1)
 
 
@@ -168,11 +186,15 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
                           goal_achievemnt_dist=params['goal_achievement_dist'])
                 env.view()
                 if not params['train']:
-                    time.sleep(0.01)
+                    time.sleep(0.1)
 
             cmd, q = policy.get_actions(obs, g + [goal[3]], noise_eps=params['noise_eps'] if not exploit else 0.,
                                         random_eps=params['random_eps'] if not exploit else 0.,
                                         use_target_net=use_target_net)
+
+            if len(episode) % 1 == 0:
+                print('CMD V: %.2f\t CMD PHI: %.2f ODOM V: %.2f\tODOM PHI: %.2f' % (cmd[0] * 10., cmd[1] * 28., obs['pose'][3], 
+                                                                                    np.rad2deg(obs['pose'][4])))
 
             if len(episode) == 0:
                 q0 = q
@@ -343,6 +365,7 @@ def config():
         'fix_initial_position': False,
         'checkpoint': '',
         'train': True,
+        'use_latency': True,
         # net
         'n_hidden_neurons': 128,
         'n_hidden_layers': 1,

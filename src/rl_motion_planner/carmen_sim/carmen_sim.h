@@ -17,6 +17,7 @@ public:
 	CarmenSim(bool fix_initial_position=false, bool use_truepos=true,
 			bool allow_negative_commands=true,
 			bool enjoy_mode=false,
+			bool use_latency=false,
 			const char *rddf_name="rddf_ida_guarapari-20170403.txt",
 			const char *map_dir="map_ida_guarapari-20170403-2",
 			double min_dist_to_initial_goal=5.,
@@ -41,6 +42,7 @@ private:
 	bool _use_truepos;
 	bool _allow_negative_commands;
 	bool _enjoy_mode;
+	bool _use_latency;
 	int _min_pose_skip_to_initial_goal;
 	int _max_pose_skip_to_initial_goal;
 

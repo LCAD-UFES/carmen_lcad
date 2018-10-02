@@ -1,8 +1,6 @@
 #ifndef CHARACTER_H_
 #define CHARACTER_H_
 
-#include <GL/glew.h>
-
 typedef struct
 {
     float ax;

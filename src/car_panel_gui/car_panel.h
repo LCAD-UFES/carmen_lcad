@@ -8,13 +8,13 @@
 #ifndef CAR_PANEL_H_
 #define CAR_PANEL_H_
 
-#include "panel_interface.h"
 #include <stddef.h>
 
 class car_panel
 {
 	public:
 		void set_type_message(int);
+		void set_turn_signal(int);
 		void set_view(int, int);
 		void draw(void);
 

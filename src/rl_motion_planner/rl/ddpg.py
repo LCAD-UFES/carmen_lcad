@@ -36,7 +36,7 @@ class ActorCritic:
         # laser: (range0, range1, ...)
         self.placeholder_laser = tf.placeholder(dtype=tf.float32, shape=[None, n_laser_readings, 1], name='placeholder_laser')
         # state: (current_v) - current velocity
-        self.placeholder_state = tf.placeholder(dtype=tf.float32, shape=[None, 1], name='placeholder_state')
+        self.placeholder_state = tf.placeholder(dtype=tf.float32, shape=[None, 2], name='placeholder_state')
         # performed action (for critic): (v, phi) - commands produced by the actor
         self.placeholder_action = tf.placeholder(dtype=tf.float32, shape=[None, self.action_size], name='placeholder_action')
         # reward (for training the critic)
@@ -48,8 +48,8 @@ class ActorCritic:
         elif activation_fn_name == 'elu': activation_fn = tf.nn.elu
         else: raise Exception("Invalid non-linearity '{}'".format(activation_fn_name))
 
-        if allow_negative_commands: cmd_activation_fn = tf.nn.tanh
-        else: cmd_activation_fn = tf.nn.sigmoid
+        if allow_negative_commands: v_activation_fn = tf.nn.tanh
+        else: v_activation_fn = tf.nn.sigmoid
 
         # normalize laser to be in [-1., 1.]
         norm_laser = tf.clip_by_value(self.placeholder_laser, 0., laser_max_range)
@@ -69,8 +69,10 @@ class ActorCritic:
             for _ in range(n_hidden_layers):
                 in_tensor = tf.layers.dense(in_tensor, units=n_hidden_neurons, activation=activation_fn)
 
-            self.actor_command = tf.layers.dense(in_tensor, units=self.action_size,
-                                                 activation=cmd_activation_fn, name="actor_command")
+            self.command_phi = tf.layers.dense(in_tensor, units=1, activation=v_activation_fn, name="command_phi")
+            self.command_v = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_v")
+            
+            self.actor_command = tf.concat([self.command_v, self.command_phi], axis=-1)
 
         with tf.variable_scope("critic"):
             state_fc, goal_fc, laser_fc = self.encoder(norm_laser, norm_goal, norm_state,
@@ -167,7 +169,7 @@ class DDPG(object):
         self.policy_loss = -tf.reduce_mean(self.main.q_from_policy)
         # TODO: checar se o componente abaixo eh necessario e o que ele significa.
         self.action_l2 = 0.0
-        self.policy_loss += self.action_l2 * tf.reduce_mean(tf.square(self.main.actor_command))
+        self.policy_loss += self.action_l2 * tf.reduce_mean(tf.square(self.main.command_phi))
 
         # Training
         # TODO: MAKE SURE THESE ARE EQUIVALENT!!!!!
@@ -238,7 +240,7 @@ class DDPG(object):
         # forward
         feed = {
             self.main.placeholder_laser: [obs['laser']],
-            self.main.placeholder_state: [[obs['pose'][3]]],
+            self.main.placeholder_state: [[obs['pose'][3], obs['pose'][4]]],
             self.main.placeholder_goal: [goal],
         }
 
@@ -262,6 +264,8 @@ class DDPG(object):
 
         if self.allow_negative_commands: u[0] = np.clip(u[0], -1.0, 1.0)
         else: u[0] = np.clip(u[0], 0.0, 1.0)
+        
+        u[1] = np.clip(u[1], -1., 1.)
 
         return u, ret[1][0][0]
 

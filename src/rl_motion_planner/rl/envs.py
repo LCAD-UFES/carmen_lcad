@@ -207,7 +207,8 @@ class CarmenEnv:
 class CarmenSimEnv:
     def __init__(self, params):
         self.sim = pycarmen_sim.CarmenSim(params['fix_initial_position'],
-                                          True, True, not params['train'])
+                                          True, True, not params['train'],
+                                          params['use_latency'])
         self.params = params
 
     def _state(self):

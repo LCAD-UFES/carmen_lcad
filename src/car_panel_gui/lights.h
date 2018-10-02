@@ -1,7 +1,6 @@
 #ifndef LIGHTS_H
 #define LIGHTS_H
 
-#include <GL/glew.h>
 #include <math.h>
 
 class Lights

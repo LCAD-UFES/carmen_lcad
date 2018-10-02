@@ -260,7 +260,10 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 
 	if (velocity_ann == NULL)
 	{
-		velocity_ann = fann_create_from_file("velocity_ann.net");
+		char path[256];
+		sprintf(path, "%s/bin/velocity_ann.net", getenv("CARMEN_HOME"));
+
+		velocity_ann = fann_create_from_file(path); //"velocity_ann.net");
 		if (velocity_ann == NULL)
 		{
 			printf("Error: Could not create velocity_ann\n");
@@ -486,7 +489,10 @@ compute_steering_with_qlearning(double *steering_command, double atan_desired_cu
 
 	if (qlearning_ann == NULL)
 	{
-		qlearning_ann = fann_create_from_file("qlearning_ann.net");
+		char path[256];
+		sprintf(path, "%s/bin/qlearning_ann.net", getenv("CARMEN_HOME"));
+
+		qlearning_ann = fann_create_from_file(path); // "qlearning_ann.net");
 		if (qlearning_ann == NULL)
 			{printf("Error: Could not create qlearning_ann\n");exit(1);}
 		s = (state *) calloc(num_data, sizeof(state));
@@ -526,7 +532,10 @@ compute_new_phi_with_ann_old(carmen_simulator_ackerman_config_t *simulator_confi
 
 	if (steering_ann == NULL)
 	{
-		steering_ann = fann_create_from_file("steering_ann.net");
+		char path[256];
+		sprintf(path, "%s/bin/steering_ann.net", getenv("CARMEN_HOME"));
+
+		steering_ann = fann_create_from_file(path); //"steering_ann.net");
 		if (steering_ann == NULL)
 		{
 			printf("Error: Could not create steering_ann\n");
@@ -562,7 +571,10 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 
 	if (steering_ann == NULL)
 	{
-		steering_ann = fann_create_from_file("steering_ann.net");
+		char path[256];
+		sprintf(path, "%s/bin/steering_ann.net", getenv("CARMEN_HOME"));
+
+		steering_ann = fann_create_from_file(path); //"steering_ann.net");
 		if (steering_ann == NULL)
 		{
 			printf("Error: Could not create steering_ann compute_new_phi_with_ann()\n");
@@ -655,7 +667,7 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 	update_target_v_and_target_phi(simulator_config);
 
 	// Velocity must be calculated before phi
-//	v   = compute_new_velocity(simulator_config);
+	//v   = compute_new_velocity(simulator_config);
 	//phi = compute_new_phi(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
 
 	v   = compute_new_velocity_with_ann(simulator_config);

@@ -1,8 +1,6 @@
 #ifndef ARROW_H
 #define ARROW_H
 
-#include <GL/glew.h>
-
 class Arrow
 {
 public:
@@ -16,10 +14,8 @@ public:
     void blink(void);
 
 private:
-    static const int timer = 25;
-
+    double timer;
     float colorG;
-    int colorTime;
     bool isFire;
 
     void resetValues(void);

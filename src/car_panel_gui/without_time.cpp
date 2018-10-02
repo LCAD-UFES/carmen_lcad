@@ -7,9 +7,8 @@
 
 #include "without_time.h"
 
-withoutTime::withoutTime(double interval)
+withoutTime::withoutTime()
 {
-	this->interval = interval;
 	time = 0.0;
 }
 
@@ -23,7 +22,7 @@ withoutTime::update(double velocity, double time)
 	else
 		acceleration = 0.0;
 
-	this->acceleration = this->acceleration + (acceleration - this->acceleration) / 10.0; // Media para suavisar o display
+	this->acceleration = this->acceleration + (acceleration - this->acceleration) / 40.0; // Media para suavisar o display
 	this->velocity = velocity;
 	this->time = time;
 }

@@ -2,7 +2,6 @@
 #define STEERING_H
 
 #include <math.h>
-#include <GL/glew.h>
 #include "utils.h"
 #include "character.h"
 
