@@ -21,10 +21,9 @@ LFLAGS +=  -L$(CARMEN_HOME)/sharedlib/prob_models -lprob_models -llocalize_acker
 MODULE_NAME = carmen_comm
 MODULE_COMMENT = Infra-structure for communicating with carmen via Python 
 
-SOURCES = carmen_comm.cpp save_commands_dataset.cpp util.cpp test_carmen_comm.cpp preprocess_maps.cpp
-TARGETS =  libcarmen_comm_cpp.a pycarmen_comm save_commands_dataset test_carmen_comm preprocess_maps
+SOURCES = carmen_comm.cpp save_commands_dataset.cpp util.cpp test_carmen_comm.cpp 
+TARGETS =  libcarmen_comm_cpp.a pycarmen_comm save_commands_dataset test_carmen_comm
 
-preprocess_maps: preprocess_maps.o
 test_carmen_comm: test_carmen_comm.o carmen_comm.o util.o 
 save_commands_dataset: save_commands_dataset.o
 libcarmen_comm_cpp.a: carmen_comm.o util.o
