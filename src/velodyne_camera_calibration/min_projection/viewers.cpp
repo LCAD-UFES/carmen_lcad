@@ -93,8 +93,8 @@ main (int argc, char** argv)
 
     Eigen::Affine3f transform = Eigen::Affine3f::Identity();
     // theta radians around X axis
-    transform.rotate(Eigen::AngleAxisf(-M_PI / 2., Eigen::Vector3f::UnitX()));
-    transform.rotate(Eigen::AngleAxisf(M_PI / 2., Eigen::Vector3f::UnitZ()));
+    // transform.rotate(Eigen::AngleAxisf(-M_PI / 2., Eigen::Vector3f::UnitX()));
+    // transform.rotate(Eigen::AngleAxisf(M_PI / 2., Eigen::Vector3f::UnitZ()));
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::transformPointCloud(*cloud, *transformed_cloud, transform);
