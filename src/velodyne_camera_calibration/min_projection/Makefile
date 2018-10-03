@@ -6,5 +6,6 @@ LIB += -L /usr/lib -lvtkIO -lvtkFiltering -lvtkCommon -lvtkRendering -lvtkGraphi
 LIB += `pkg-config --libs opencv`
 
 all:
-	g++ -o viewers viewers.cpp $(CFLAGS) $(INC) $(LIB)
-
+	g++ -o point_annotation_tool point_annotation_tool.cpp $(CFLAGS) $(INC) $(LIB)
+clean:
+    rm -rf point_annotation_tool
