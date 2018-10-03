@@ -8,4 +8,4 @@ LIB += `pkg-config --libs opencv`
 all:
 	g++ -o point_annotation_tool point_annotation_tool.cpp $(CFLAGS) $(INC) $(LIB)
 clean:
-    rm -rf point_annotation_tool
+	rm -rf point_annotation_tool
