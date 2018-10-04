@@ -361,7 +361,7 @@ def config():
         # env
         'env': 'carmen',
         'model': 'simple',
-        'n_steps_episode': 100,
+        'n_steps_episode': 300,
         'goal_achievement_dist': 1.0,
         'vel_achievement_dist': 0.5,
         'view': True,
@@ -373,8 +373,8 @@ def config():
         'use_gpu': True,
         # net
         'n_hidden_neurons': 128,
-        'n_hidden_layers': 2,
-        'soft_update_rate': 0.95,
+        'n_hidden_layers': 1,
+        'soft_update_rate': 0.75,
         'use_conv_layer': False,
         'activation_fn': 'elu',
         'allow_negative_commands': True,

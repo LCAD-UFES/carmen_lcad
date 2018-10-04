@@ -46,6 +46,7 @@ class ActorCritic:
 
         if activation_fn_name == 'leaky_relu': activation_fn = tf.nn.leaky_relu
         elif activation_fn_name == 'elu': activation_fn = tf.nn.elu
+        elif activation_fn_name == 'tanh': activation_fn = tf.nn.tanh
         else: raise Exception("Invalid non-linearity '{}'".format(activation_fn_name))
 
         if allow_negative_commands: v_activation_fn = tf.nn.tanh
@@ -69,8 +70,8 @@ class ActorCritic:
             for _ in range(n_hidden_layers):
                 in_tensor = tf.layers.dense(in_tensor, units=n_hidden_neurons, activation=activation_fn)
 
-            self.command_phi = tf.layers.dense(in_tensor, units=1, activation=v_activation_fn, name="command_phi")
-            self.command_v = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_v")
+            self.command_phi = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_phi")
+            self.command_v = tf.layers.dense(in_tensor, units=1, activation=v_activation_fn, name="command_v")
             self.actor_command = tf.concat([self.command_v, self.command_phi], axis=-1)
             # self.actor_command = tf.layers.dense(in_tensor, units=2, activation=tf.nn.tanh, name="commands")
 
