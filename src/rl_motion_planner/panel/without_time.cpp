@@ -15,14 +15,16 @@ withoutTime::withoutTime()
 void
 withoutTime::update(double velocity, double time)
 {
-	double acceleration;
+	double new_acceleration;
 
 	if (this->time != 0.0)
-		acceleration = (velocity - this->velocity) / (time - this->time);
+		new_acceleration = (velocity - this->velocity) / (time - this->time);
 	else
-		acceleration = 0.0;
+		new_acceleration = 0.0;
 
-	this->acceleration = this->acceleration + (acceleration - this->acceleration) / 40.0; // Media para suavisar o display
+	//acceleration = this->acceleration + (new_acceleration - this->acceleration) / 40.0; // Media para suavisar o display
+	acceleration = new_acceleration;
+
 	this->velocity = velocity;
 	this->time = time;
 }

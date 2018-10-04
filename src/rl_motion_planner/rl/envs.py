@@ -31,7 +31,7 @@ class SimpleEnv:
         self.laser = np.zeros(n_rays).reshape(n_rays, 1)
 
     def reset(self):
-        self.pose = self.previous_p = np.zeros(4)
+        self.pose = self.previous_p = np.zeros(5)
 
         self.env_border = int(self.env_size - 0.1 * self.env_size)
         self.goal  = np.array(list((np.random.random(2) * 2.0 - 1.0) * self.env_border) + [0., 0.])

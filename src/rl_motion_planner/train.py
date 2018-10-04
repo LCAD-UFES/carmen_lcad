@@ -370,10 +370,11 @@ def config():
         'checkpoint': '',
         'train': True,
         'use_latency': False,
+        'use_gpu': True,
         # net
         'n_hidden_neurons': 128,
-        'n_hidden_layers': 1,
-        'soft_update_rate': 0.75,
+        'n_hidden_layers': 2,
+        'soft_update_rate': 0.95,
         'use_conv_layer': False,
         'activation_fn': 'elu',
         'allow_negative_commands': True,
