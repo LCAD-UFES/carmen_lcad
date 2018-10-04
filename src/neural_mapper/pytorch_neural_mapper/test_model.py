@@ -11,7 +11,7 @@ from PIL import Image
 import math
 import model as M
 from random import randint
-import trainCP as train
+import train as train
 
 img_index = 1
 
