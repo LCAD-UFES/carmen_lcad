@@ -17,13 +17,15 @@ from PIL import Image
 import math
 import model as M
 from random import shuffle
-import cv2
+import matplotlib.pyplot as plt
 import numpy as np
+import cv2
+
 n_imgs = 79
-#n_train = 60
-#n_test = 19
 n_train = 60
 n_test = 19
+#n_train = 10
+#n_test = 1
 
 train_start_index = 0
 test_start_index = n_train
@@ -36,13 +38,19 @@ target_path = '/dados/neural_mapper/60mts/labels/'
 debug_img_path = 'debug_imgs/'
 
 input_dimensions = 5
-n_classes = 2
+n_classes = 3
 
 def png2tensor(file_name):
     img2tensor = transforms.ToTensor()
     img = Image.open(file_name)
     return img2tensor(img)
-#usar funcao para converter para imagem rgb (np.where)
+
+def png2target(file_name):
+    img2tensor = transforms.ToTensor()
+    img = Image.open(file_name)
+    return (img2tensor(img)*255 - 1)
+    #return img2tensor(img)
+
 def tensor2png(tensor):
     trans = transforms.ToPILImage()
     return trans(tensor)
@@ -64,16 +72,14 @@ def showOutput(tensor):
 
 def saveImage(tensor, file_name):
     img = tensor2png(tensor)
-    # img = tensor2rgbimage(tensor)
     img.save(file_name)
 
 def load_data(batch_size, dataset_size):
     dataset = []
-
     n = math.floor(dataset_size/batch_size)
     for i in range(n):
         data = torch.zeros(batch_size, input_dimensions, img_x_dim, img_y_dim)
-        target = torch.zeros(batch_size, img_x_dim, img_y_dim)
+        target = torch.zeros(batch_size, img_x_dim, img_y_dim, dtype=torch.int64)
 
         for j in range(batch_size):
             data[j][0] = png2tensor(data_path + str(batch_size*i + j + train_start_index + 1) + '_max.png')
@@ -81,8 +87,8 @@ def load_data(batch_size, dataset_size):
             data[j][2] = png2tensor(data_path + str(batch_size*i + j + train_start_index + 1) + '_min.png')
             data[j][3] = png2tensor(data_path + str(batch_size*i + j + train_start_index + 1) + '_numb.png')
             data[j][4] = png2tensor(data_path + str(batch_size*i + j + train_start_index + 1) + '_std.png')
-            target[j] = png2tensor(target_path + str(batch_size*i + j + train_start_index) + '_view.png')
-
+            target[j] = png2target(target_path + str(batch_size*i + j + train_start_index) + '_label.png')
+            #print(target[j])
         row = []
         row.append(data)
         row.append(target)
@@ -149,7 +155,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
                 epoch, batch_idx * len(data), len(train_loader)*args.batch_size,
                 100. * batch_idx / len(train_loader), loss.item()))
 
-            #pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
+           # pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
             #imgPred = pred[0]
             #imgPred = imgPred.cpu().float()
             #imgTarget = torch.FloatTensor(1, 424, 424)
@@ -160,7 +166,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
             #showOutput(imgPred)
             #showOutput(imgTarget)
 
-def test(args, model, device, test_loader):
+def test(args, model, device, test_loader, epoch):
     model.eval()
     test_loss = 0
     correct = 0
@@ -178,6 +184,16 @@ def test(args, model, device, test_loader):
         test_loss, correct, len(test_loader)*test_loader[0][1].size(0)*test_loader[0][1].size(1)*test_loader[0][1].size(2),
         100. * correct / (len(test_loader)*test_loader[0][1].size(0)*test_loader[0][1].size(1)*test_loader[0][1].size(2))))
 
+'''
+    if(args.show_plots):
+        update_plot(test_loss_plot, epoch, test_loss)
+
+
+def update_plot(plot, epoch, new_loss):
+    plot.set_xdata(numpy.append(plot.get_xdata(), epoch))
+    plot.set_ydata(numpy.append(plot.get_ydata(), new_loss))
+    plt.show()
+'''
 
 if __name__ == '__main__':
     # Training settings
@@ -188,7 +204,7 @@ if __name__ == '__main__':
                         help='input batch size for testing (default: 1000)')
     parser.add_argument('--epochs', type=int, default=100, metavar='N',
                         help='number of epochs to train (default: 10)')
-    parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
+    parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
                         help='learning rate (default: 0.01)')
     parser.add_argument('--momentum', type=float, default=0.5, metavar='M',
                         help='SGD momentum (default: 0.5)')
@@ -198,15 +214,25 @@ if __name__ == '__main__':
                         help='random seed (default: 1)')
     parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                         help='how many batches to wait before logging training status')
+    parser.add_argument('--use-model', type=str, default=None, metavar='N',
+                        help='Enter the name of a trained model (.model file)')
+    parser.add_argument('--show-plots', action='store_true', default=False,
+                        help='Enables loss plots')
+    parser.add_argument('--training-logs', action='store_true', default=True,
+                        help='Enables loss plots')
 
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
 
     torch.manual_seed(args.seed)
 
-    device = torch.device("cuda:0" if use_cuda else "cpu")
+    device = torch.device("cuda" if use_cuda else "cpu")
 
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+
+    # Training and testing loss plots
+    #test_loss_plot, = plt.plot(range(1, args.epochs), [], 'bs')
+
 
     #train_loader = load_train_data(args.batch_size, n_train)
     #test_loader = load_test_data(args.test_batch_size, n_test)
@@ -224,14 +250,17 @@ if __name__ == '__main__':
     print("Test loader data dimensions: " + str(test_loader[0][0].size()), "Test loader target dimensions: " + str(test_loader[0][1].size()))
 
     model = M.FCNN(n_input=input_dimensions, n_output=n_classes).to(device)
-
+    if(args.use_model is not None):
+        model.load_state_dict(torch.load('saved_models/'+args.use_model))
+        print("Using model " + args.use_model)
+    
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
-        test(args, model, device, test_loader)
+        test(args, model, device, test_loader, epoch)
         if(epoch % 10 == 0):
-            torch.save(model.state_dict(), '/dados/neural_mapper/60mts/saved_models/' + str(epoch) + '.model')
+            torch.save(model.state_dict(), 'saved_models/' + str(n_imgs)  + "imgs_epoch" + str(epoch) + '.model')
 
 '''
     data = train_loader[0][0]
