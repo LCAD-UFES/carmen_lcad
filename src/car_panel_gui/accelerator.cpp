@@ -5,6 +5,7 @@
  *      Author: cayo
  */
 
+#include <GL/glew.h>
 #include "accelerator.h"
 
 Accelerator::Accelerator()
@@ -22,7 +23,6 @@ Accelerator::Accelerator()
 	velocity = 0.0;
 	time = 0.0;
 	acceleration = 0.0;
-	intervalAccumulation = 0.0;
 	floatPointAcceleration = 0;
 	hundredAcceleration = 0;
 	dozenAcceleration = 0;

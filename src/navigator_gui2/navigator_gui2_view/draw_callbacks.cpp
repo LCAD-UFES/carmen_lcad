@@ -618,7 +618,7 @@ void on_comboParking_changed(GtkWidget *widget __attribute__((unused)),
 void on_menuCarPanel_fused_odometry_message(GtkRadioMenuItem *togglebutton, GtkGui *gui)
 {
 	global_gui->car_panel_gl->set_type_message(0);
-
+//	global_gui->car_panel_gl->set_turn_signal(0);
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -637,6 +637,7 @@ void on_menuCarPanel_base_ackerman_motion_message(GtkRadioMenuItem *togglebutton
 void on_menuCarPanel_base_ackerman_odometry_message(GtkRadioMenuItem *togglebutton, GtkGui *gui)
 {
 	global_gui->car_panel_gl->set_type_message(3);
+//	global_gui->car_panel_gl->set_turn_signal(1);
 }
 
 //extern "C" G_MODULE_EXPORT

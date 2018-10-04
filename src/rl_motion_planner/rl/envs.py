@@ -6,6 +6,7 @@ import numpy as np
 import cv2
 import carmen_comm.carmen_comm as carmen
 import carmen_sim.pycarmen_sim as pycarmen_sim 
+import panel.pycarmen_panel as pycarmen_panel
 
 
 class SimpleEnv:
@@ -30,7 +31,7 @@ class SimpleEnv:
         self.laser = np.zeros(n_rays).reshape(n_rays, 1)
 
     def reset(self):
-        self.pose = self.previous_p = np.zeros(4)
+        self.pose = self.previous_p = np.zeros(5)
 
         self.env_border = int(self.env_size - 0.1 * self.env_size)
         self.goal  = np.array(list((np.random.random(2) * 2.0 - 1.0) * self.env_border) + [0., 0.])
@@ -207,8 +208,13 @@ class CarmenEnv:
 class CarmenSimEnv:
     def __init__(self, params):
         self.sim = pycarmen_sim.CarmenSim(params['fix_initial_position'],
-                                          True, True, not params['train'])
+                                          True, True, not params['train'],
+                                          params['use_latency'])
         self.params = params
+        self.sim_dt = 0.1  # add as a parameter
+        
+        if params['view']:
+            self.panel = pycarmen_panel.CarPanel()
 
     def _state(self):
         laser = self.sim.laser()
@@ -226,13 +232,14 @@ class CarmenSimEnv:
     def reset(self):
         self.sim.reset()
         self.n_steps = 0
+        self.sim_t = 0
         return self._state(), self.sim.goal()
 
     def step(self, cmd):
         v = cmd[0] * 10.0
         phi = cmd[1] * np.deg2rad(28.)
 
-        self.sim.step(v, phi, 0.1)
+        self.sim.step(v, phi, self.sim_dt)
 
         state = self._state()
         goal = self.sim.goal()
@@ -248,6 +255,7 @@ class CarmenSimEnv:
         info = {'success': success, 'hit_obstacle': hit_obstacle, 'starved': starved}
 
         self.n_steps += 1
+        self.sim_t += self.sim_dt
 
         return state, done, info
 
@@ -256,5 +264,7 @@ class CarmenSimEnv:
 
     def view(self):
         self.sim.view()
+        pose_data = self.sim.pose()
+        self.panel.draw(pose_data[3], pose_data[4], self.sim_t)
 
 

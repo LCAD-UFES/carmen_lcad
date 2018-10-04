@@ -79,6 +79,7 @@ class ReplayBuffer:
             her_episode_size = future_t - t
             her_return = (self.max_episode_size - her_episode_size) / (self.max_episode_size - 1)
             rew = (her_return / her_episode_size)
+            #is_final = 1.0 if (her_episode_size == 1) else 0.0
             is_final = 0.0
 
             """

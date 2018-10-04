@@ -1217,7 +1217,7 @@ simulation_step(double v, double phi, double delta_t)
 	 * Because of that, I'm just doing a simple Ackerman prediction here, and ignoring latency.
 	 * *************************************************************************************************
 	 */
-	// carmen_simulator_ackerman_recalc_pos(simulator_config_ptr);
+	// carmen_simulator_ackerman_recalc_pos(simulator_config_ptr, 0, 1);
 	simulator_config_ptr->v = cmd.v;
 	simulator_config_ptr->phi = cmd.phi;
 	// simulator_config_ptr->true_pose.x +=  simulator_config_ptr->v * simulator_config_ptr->delta_t * cos(simulator_config_ptr->true_pose.theta);

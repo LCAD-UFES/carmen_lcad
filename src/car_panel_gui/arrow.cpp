@@ -1,3 +1,5 @@
+#include <GL/glew.h>
+#include <carmen/carmen.h>
 #include "arrow.h"
 
 
@@ -14,12 +16,11 @@ Arrow::draw(void)
 {
     if (isFire)
     {
-        if (colorTime == 0)
-        {
+    	if ((carmen_get_time() - timer) > 0.5)
+    	{
             colorG = colorG == 1.0f ? 0.1f : 1.0f;
-            colorTime = timer;
-        }
-        colorTime--;
+            timer = carmen_get_time();
+    	}
     }
 
     glColor3f(0.0f, colorG, 0.0f);
@@ -53,5 +54,5 @@ void
 Arrow::resetValues(void)
 {
     colorG = 0.1f;
-    colorTime = 0;
+    timer = 0.0;
 }

@@ -13,7 +13,7 @@
 class withoutTime : public Accelerator
 {
 public:
-	withoutTime(double interval);
+	withoutTime();
 	void update(double velocity, double time);
 
 private:

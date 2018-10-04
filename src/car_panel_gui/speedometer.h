@@ -1,7 +1,6 @@
 #ifndef SPEEDOMETER_H
 #define SPEEDOMETER_H
 
-#include <GL/glew.h>
 #include "utils.h"
 #include "character.h"
 

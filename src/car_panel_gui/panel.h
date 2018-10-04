@@ -8,8 +8,6 @@
 #ifndef PANEL_H_
 #define PANEL_H_
 
-#include <GL/glew.h>
-#include <GL/glut.h>
 #include <math.h>
 
 #include <carmen/carmen.h>
@@ -33,20 +31,6 @@ typedef enum
 	localize_ackerman_globalpos_t
 } handler_message_t;
 
-static const float FarNear = 100.0f;
-
-float angleSteering = 0.0;
-float angleTireToSteering = 16.0;
-double interval = 1.0;
-
-Steering *steering;
-Arrow *arrowLeft;
-Arrow *arrowRight;
-Lights *lights;
-Speedometer *speedometer;
-Accelerator *accelerator = NULL;
-
-handler_message_t handler_message;
 
 int checkArguments(int argc, char *argv[]);
 
@@ -54,8 +38,12 @@ void display(void);
 
 void reshape(int w, int h);
 
-void subscribe_messages(int, double);
+void keypress(unsigned char key, int x __attribute__ ((unused)), int y __attribute__ ((unused)));
+
+void subscribe_messages(int);
 
 void setTypeMessage(int);
+
+void setTurnSignal(int turn_signal);
 
 #endif /* PANEL_H_ */

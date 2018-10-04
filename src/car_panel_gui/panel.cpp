@@ -1,7 +1,24 @@
+#include <GL/glew.h>
+#include <GL/glut.h>
 #include "panel.h"
 
 
 static int use_truepos_local = 0;
+
+static const float FarNear = 100.0f;
+
+float angleSteering = 0.0;
+float angleTireToSteering = 16.0;
+
+Steering *steering;
+Arrow *arrowLeft;
+Arrow *arrowRight;
+Lights *lights;
+Speedometer *speedometer;
+Accelerator *accelerator = NULL;
+
+handler_message_t handler_message;
+
 
 void 
 displayLights(void)
@@ -112,6 +129,29 @@ keypress(unsigned char key, int x __attribute__ ((unused)), int y __attribute__ 
 
 
 void
+set_turn_signal(int turn_signal)
+{
+	if (turn_signal == 0)
+	{
+		if (arrowRight->getIsFire())
+			arrowRight->blink();	// desliga se estiver ligado
+		if (arrowLeft->getIsFire())
+			arrowLeft->blink();		// desliga se estiver ligado
+	}
+	else if (turn_signal == 1)
+	{
+		if (!arrowLeft->getIsFire())
+			arrowLeft->blink();		// liga se estiver desligado
+	}
+	else if (turn_signal == 2)
+	{
+		if (!arrowRight->getIsFire())
+			arrowRight->blink();	// liga se estiver desligado
+	}
+}
+
+
+void
 reshape(GLsizei w, GLsizei h)
 {
 	GLfloat aspectRatio;
@@ -206,7 +246,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 
 
 void
-subscribe_messages(int msg_type, double interval)
+subscribe_messages(int msg_type)
 {
 	static bool not_subscribed_to_fused_odometry = true;
 	static bool not_subscribed_to_robot_ackerman = true;
@@ -219,7 +259,7 @@ subscribe_messages(int msg_type, double interval)
 		case 0:
 			handler_message = fused_odometry_t;
 			if (accelerator == NULL)
-				accelerator = new withoutTime(interval);
+				accelerator = new withoutTime();
 			if (not_subscribed_to_fused_odometry)
 			{
 				carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_dometry_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -229,7 +269,7 @@ subscribe_messages(int msg_type, double interval)
 		case 1:
 			handler_message = robot_ackerman_motion_command_t;
 			if (accelerator == NULL)
-				accelerator = new withoutTime(interval);
+				accelerator = new withoutTime();
 			if (not_subscribed_to_robot_ackerman)
 			{
 				carmen_robot_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) robot_ackerman_motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -239,7 +279,7 @@ subscribe_messages(int msg_type, double interval)
 		case 2:
 			handler_message = base_ackerman_motion_command_t;
 			if (accelerator == NULL)
-				accelerator = new withoutTime(interval);
+				accelerator = new withoutTime();
 			if (not_subscribed_to_motion_command)
 			{
 				carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) base_ackerman_motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -249,7 +289,7 @@ subscribe_messages(int msg_type, double interval)
 		case 3:
 			handler_message = base_ackerman_odometry_t;
 			if (accelerator == NULL)
-				accelerator = new withoutTime(interval);
+				accelerator = new withoutTime();
 			if (not_subscribed_to_odometry)
 			{
 				carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -259,7 +299,7 @@ subscribe_messages(int msg_type, double interval)
 		case 4:
 			handler_message = localize_ackerman_globalpos_t;
 			if (accelerator == NULL)
-				accelerator = new withoutTime(interval);
+				accelerator = new withoutTime();
 			if (not_subscribed_to_globalpos)
 			{
 				if (!use_truepos_local)
@@ -296,7 +336,14 @@ initializeComponents(void)
 void
 setTypeMessage(int type_message)
 {
-	subscribe_messages(type_message, interval);
+	subscribe_messages(type_message);
+}
+
+
+void
+setTurnSignal(int turn_signal)
+{
+	set_turn_signal(turn_signal);
 }
 
 
@@ -319,12 +366,10 @@ checkArguments(int argc, char *argv[])
 		initializeComponents();
 		for (i = 1; i < argc; i++)
 		{
-			if (strcmp(argv[i], "-interval_msg") == 0 && i < argc - 1 && argv[i + 1][0] != '-')
-				interval = atof(argv[i] + 1);
 			if (strcmp(argv[i], "-type_msg") == 0 && i < argc - 1 && argv[i + 1][0] != '-')
 			{
 				exist_msg = 1;
-				subscribe_messages(atoi(argv[i + 1]), interval);
+				subscribe_messages(atoi(argv[i + 1]));
 			}
 		}
 	}
