@@ -1,8 +1,8 @@
 /*
  * model_predictive_planner_main.cpp
  *
- *  Created on: 04/12/2012
- *      Author: romulo
+ *
+ *
  */
 
 #include <carmen/carmen.h>
