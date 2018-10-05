@@ -159,7 +159,7 @@ def view_data(obs, g, rear_laser_is_active, goal_achievemnt_dist):
     cv2.imshow("bars", bars)
     """
     
-    cv2.waitKey(20)
+    cv2.waitKey(1)
 
 
 def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=False):
@@ -188,7 +188,7 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
                           goal_achievemnt_dist=params['goal_achievement_dist'])
                 env.view()
                 if not params['train']:
-                    time.sleep(0.1)
+                    time.sleep(0.001)
 
             cmd, q = policy.get_actions(obs, g + [goal[3]], noise_eps=params['noise_eps'] if not exploit else 0.,
                                         random_eps=params['random_eps'] if not exploit else 0.,

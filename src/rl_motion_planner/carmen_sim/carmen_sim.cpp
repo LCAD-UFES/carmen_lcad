@@ -97,7 +97,7 @@ CarmenSim::reset()
 
 	int pose_id;
 
-	if (_fix_initial_position) pose_id = 500; //M;
+	if (_fix_initial_position) pose_id = 0; //M;
 	else pose_id = M + rand() % (_rddf.size() - M);
 
 	int shift = m + (rand() % (M - m));  // shift is a random integer between m and M
