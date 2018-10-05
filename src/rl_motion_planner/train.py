@@ -32,8 +32,9 @@ def update_rewards(params, episode, info):
 
     if info['success']:
         # rw = (float(params['n_steps_episode'] + 1. - len(episode))) / float(params['n_steps_episode'])
-        # print("updated rewards:", rw)
         rw = (float(params['n_steps_episode'] - len(episode))) / float(params['n_steps_episode'] - 1)
+        # print(episode)
+        # rw = dist(episode[0][0]['pose'], episode[0][3])
     elif info['hit_obstacle']:
         # rw = -1.0
         rw = -1.
@@ -213,9 +214,9 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
             # if info['hit_obstacle']: rw = -5.0
             # else: rw = (dist(obs['pose'], goal) - dist(goal, new_obs['pose'])) / 10.0
             
-            # rw = -dist(goal, obs['pose']) / 1000.0
+            rw = -dist(goal, obs['pose']) / 100.0
             # print("Travelled dist:", dist(obs['pose'], new_obs['pose']))
-            rw = 0.
+            # rw = 0.
 
             episode.append([obs, cmd, rw, goal])
             obs = new_obs
@@ -225,7 +226,7 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
             print("Episode is too small. Trying again.")
             continue
 
-        if params['use_her']:
+        if params['use_sparse']:
             update_rewards(params, episode, info)
 
         episodes.append(episode)
@@ -371,6 +372,7 @@ def config():
         'train': True,
         'use_latency': False,
         'use_gpu': True,
+        'use_acceleration': False,
         # net
         'n_hidden_neurons': 128,
         'n_hidden_layers': 1,
@@ -383,12 +385,14 @@ def config():
         'n_batches': 50,
         'batch_size': 256,
         'use_her': True,
+        'use_sparse': True,
         'her_rate': 1.0,
         'n_test_rollouts': 0.5,
         'replay_memory_capacity': 500,  # episodes
         # exploration
         'random_eps': 0.1,  # percentage of time a random action is taken
         'noise_eps': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
+        'l2_weight': 0.0,
     }
 
     params['gamma'] = 1. - 1. / params['n_steps_episode']

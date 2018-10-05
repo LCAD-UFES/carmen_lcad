@@ -2,7 +2,7 @@
 import sys
 import numpy as np
 from collections import deque
-from rl.util import relative_pose
+from rl.util import relative_pose, dist
 
 
 class ReplayBuffer:
@@ -43,7 +43,7 @@ class ReplayBuffer:
             goal = relative_pose(self.stack[e][t][0]['pose'], self.stack[e][t][3]) + [self.stack[e][t][3][3]]
             
             batch['laser'].append(self.stack[e][t][0]['laser'])
-            batch['state'].append([self.stack[e][t][0]['pose'][3]])
+            batch['state'].append([self.stack[e][t][0]['pose'][3], self.stack[e][t][0]['pose'][4]])
             batch['act'].append(self.stack[e][t][1])
             batch['rew'].append([self.stack[e][t][2]])
             batch['goal'].append(goal)
@@ -53,14 +53,14 @@ class ReplayBuffer:
                 transitions_not_final.append([e, t])
                 next_goal = relative_pose(self.stack[e][t + 1][0]['pose'], self.stack[e][t][3]) + [self.stack[e][t][3][3]]
                 batch['next_laser'].append(self.stack[e][t + 1][0]['laser'])
-                batch['next_state'].append([self.stack[e][t + 1][0]['pose'][3]])
+                batch['next_state'].append([self.stack[e][t + 1][0]['pose'][3], self.stack[e][t + 1][0]['pose'][4]])
                 batch['next_goal'].append(next_goal)
                 batch['is_final'].append([0.0])
             else:
                 # If the transition is the last one, we don't have a next observation. In this case, we copy the
                 # current observation as next one. This value will be ignored when computing the target q.
                 batch['next_laser'].append(self.stack[e][t][0]['laser'])
-                batch['next_state'].append([self.stack[e][t][0]['pose'][3]])
+                batch['next_state'].append([self.stack[e][t][0]['pose'][3], self.stack[e][t][0]['pose'][4]])
                 batch['next_goal'].append(goal)
                 batch['is_final'].append([1.0])
 
@@ -82,6 +82,9 @@ class ReplayBuffer:
             #is_final = 1.0 if (her_episode_size == 1) else 0.0
             is_final = 0.0
 
+            #rew = dist(self.stack[e][t][0]['pose'], self.stack[e][future_t][0]['pose'])
+            #rew /= her_episode_size
+
             """
             if her_episode_size <= 1:
                 # her_return = (self.max_episode_size + 1 - her_episode_size) / self.max_episode_size
@@ -96,7 +99,7 @@ class ReplayBuffer:
             # rew = 1. / self.max_episode_size
 
             batch['laser'].append(self.stack[e][t][0]['laser'])
-            batch['state'].append([self.stack[e][t][0]['pose'][3]])
+            batch['state'].append([self.stack[e][t][0]['pose'][3], self.stack[e][t][0]['pose'][4]])
             batch['act'].append(self.stack[e][t][1])
             batch['rew'].append([rew])
 
@@ -106,7 +109,7 @@ class ReplayBuffer:
 
             batch['goal'].append(goal)
             batch['next_laser'].append(self.stack[e][t + 1][0]['laser'])
-            batch['next_state'].append([self.stack[e][t + 1][0]['pose'][3]])
+            batch['next_state'].append([self.stack[e][t + 1][0]['pose'][3], self.stack[e][t + 1][0]['pose'][4]])
             batch['next_goal'].append(next_goal)
             batch['is_final'].append([is_final])
 

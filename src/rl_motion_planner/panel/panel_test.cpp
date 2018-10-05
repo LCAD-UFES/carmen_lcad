@@ -5,7 +5,7 @@
 int main()
 {
 	CarPanel panel;
-	double v = 10, phi = 0.45, time;
+	double v = 10, phi = 0.45;
 
 	while (1)
 	{
