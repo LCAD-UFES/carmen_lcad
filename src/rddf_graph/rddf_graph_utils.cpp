@@ -608,7 +608,7 @@ check_limits_of_central_road_map(int x, int y)
 	 */
 	/*x1  y1  x2  y2  x3  y3  x4  y4*/
 	//{350,350,700,350,700,700,350,700};
-	if (x < 350 || y < 350 || x > 700 || y > 700)
+	if (x <= 350 || y < 350 || x > 700 || y > 700)
 		return true;
 
 	return false;

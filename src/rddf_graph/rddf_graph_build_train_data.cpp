@@ -90,7 +90,13 @@ get_local_pos_2(carmen_position_t world_coordinate, double x_origin, double y_or
 void
 save_15_15_image(rddf_graph_t *vertexes, t_graph **graph, string str_road_map_folder)
 {
+	cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
+	cv::moveWindow("image", 15*20, 0);
 	cv::Mat image;
+	cv::Mat image_15_15;
+	cv::Mat image_15_15_scaled;
+	cv::Mat image_3_3;
+	cv::Mat image_3_3_scaled;
 	carmen_point_t first_graph_point;
 	carmen_map_t road_map;
 	double x_origin = 0;
@@ -112,7 +118,7 @@ save_15_15_image(rddf_graph_t *vertexes, t_graph **graph, string str_road_map_fo
 
 	road_map = read_road_map (road_map_folder, x_origin, y_origin);
 	road_map_to_image(&road_map, &image);
-
+	FILE *f = fopen("train_data/database.txt", "w");
 	int cont = 0;
 	cout<<"Generating train data..."<<endl;
 	for (int i = 0; i<vertexes->size; i++)
@@ -122,24 +128,10 @@ save_15_15_image(rddf_graph_t *vertexes, t_graph **graph, string str_road_map_fo
 		pose.x = vertexes->world_coordinate[i].x;
 		pose.y = vertexes->world_coordinate[i].y;
 		carmen_grid_mapping_get_map_origin(&pose, &x_origin, &y_origin);
+		get_new_map_block(road_map_folder, 'r', &road_map, pose, 1);
+		road_map_to_image(&road_map, &image);
 		get_local_pos_2(vertexes->world_coordinate[i], x_origin, y_origin, &x_local, &y_local);
 
-		if (check_limits_of_central_road_map(x_local, y_local))
-		{
-			carmen_point_t pose;
-			pose.x = (x_local * 0.2) + road_map.config.x_origin;
-			pose.y = (y_local * 0.2) + road_map.config.y_origin;
-			carmen_grid_mapping_get_map_origin(&pose, &x_origin, &y_origin);
-			get_new_map_block(road_map_folder, 'r', &road_map, pose, 1);
-			road_map_to_image(&road_map, &image);
-		}
-
-		//get_local_pos_2(vertexes->world_coordinate[i], x_origin, y_origin, &x_local, &y_local);
-
-		cv::Mat image_15_15;
-		cv::Mat image_15_15_scaled;
-		cv::Mat image_3_3;
-		cv::Mat image_3_3_scaled;
 		image_15_15 = cv::Mat(15, 15, CV_8UC3, cv::Scalar(255, 255, 255));
 		image_3_3 = cv::Mat(15, 15, CV_8UC3, cv::Scalar(255, 255, 255));
 		y_local = 1050 - 1 - y_local;
@@ -182,15 +174,18 @@ save_15_15_image(rddf_graph_t *vertexes, t_graph **graph, string str_road_map_fo
 			}
 		}
 
-
 		char filename[50];
 		string image_id;
 		image_id = get_image_id (image_3_3);
-		sprintf (filename, "train_data/%.6d_", i);
+		string folder = "train_data";
+		sprintf (filename, "%.6d_", i);
 		string str_filename(filename);
-		str_filename = str_filename + image_id + "_-1.jpg";
-		cout<<str_filename<<endl;
-		//cv::imwrite(str_filename, mini_image);
+		//str_filename = str_filename + image_id + "_-1.jpg";
+
+		str_filename = folder + "/" + str_filename + image_id + "_-1.jpg";
+		fprintf(f, "%d %s %s\n", i, str_filename.c_str(), image_id.c_str());
+		//cout<<str_filename<<endl;
+		//cv::imwrite(str_filename, image_15_15);
 		//cout<<i<<endl;
 		cont = i;
 		cv::resize(image_15_15, image_15_15_scaled, size);
@@ -201,13 +196,8 @@ save_15_15_image(rddf_graph_t *vertexes, t_graph **graph, string str_road_map_fo
 		//getchar();
 
 	}
+	fclose(f);
 	cout<<cont<<" train data generated!"<<endl;
-
-
-	//cv::imshow("image", image);
-	//cv::waitKey();
-
-
 
 }
 
