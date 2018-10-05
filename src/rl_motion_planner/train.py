@@ -140,6 +140,7 @@ def view_data(obs, g, rear_laser_is_active, goal_achievemnt_dist):
 
     cv2.imshow("input_data", np.flip(view, axis=0))
     
+    """
     bars = np.zeros((300, 400, 3)) + 255
     cv2.putText(bars, "Velocity", (150, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0))
     cv2.rectangle(bars, (10, 50), (390, 100), (0, 0, 0))
@@ -156,6 +157,7 @@ def view_data(obs, g, rear_laser_is_active, goal_achievemnt_dist):
     cv2.rectangle(bars, (x1, 160), (x2, 190), (0, 255, 0), -1)
 
     cv2.imshow("bars", bars)
+    """
     
     cv2.waitKey(1)
 
@@ -186,13 +188,13 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
                           goal_achievemnt_dist=params['goal_achievement_dist'])
                 env.view()
                 if not params['train']:
-                    time.sleep(0.1)
+                    time.sleep(0.001)
 
             cmd, q = policy.get_actions(obs, g + [goal[3]], noise_eps=params['noise_eps'] if not exploit else 0.,
                                         random_eps=params['random_eps'] if not exploit else 0.,
                                         use_target_net=use_target_net)
 
-            if len(episode) % 1 == 0:
+            if len(episode) % 25 == 0:
                 print('CMD V: %.2f\t CMD PHI: %.2f ODOM V: %.2f\tODOM PHI: %.2f' % (cmd[0] * 10., cmd[1] * 28., obs['pose'][3], 
                                                                                     np.rad2deg(obs['pose'][4])))
 
@@ -326,16 +328,18 @@ def launch(params, n_epochs, seed, policy_save_interval):
     
             if len(policy.buffer.stack) > 0:
                 for b in range(params['n_batches']):
-                    c_loss, p_loss, target_next_q, predicted_q, rew, main_q_policy = policy.train()
-                    """
-                    if b % 10 == 0:
+                    c_loss, p_loss, l2_loss, target_next_q, predicted_q, rew, main_q_policy = policy.train()
+                    #"""
+                    if b % 128 == 0:
                         print('Batch', b, 'CriticLoss:', c_loss, 'PolicyLoss:', p_loss,
+                              'L2 Loss:', l2_loss,
                               'target_next_q predicted_q:\n', np.concatenate([rew[:5],
                                                                               target_next_q[:5],
                                                                               rew[:5] + target_next_q[:5],
                                                                               predicted_q[:5],
                                                                               main_q_policy[:5]], axis=1))
-                    """
+                        print()
+                    #"""
     
                 policy.update_target_net()
 
@@ -365,7 +369,8 @@ def config():
         'fix_initial_position': False,
         'checkpoint': '',
         'train': True,
-        'use_latency': True,
+        'use_latency': False,
+        'use_gpu': True,
         # net
         'n_hidden_neurons': 128,
         'n_hidden_layers': 1,

@@ -97,7 +97,7 @@ CarmenSim::reset()
 
 	int pose_id;
 
-	if (_fix_initial_position) pose_id = 500; //M;
+	if (_fix_initial_position) pose_id = 0; //M;
 	else pose_id = M + rand() % (_rddf.size() - M);
 
 	int shift = m + (rand() % (M - m));  // shift is a random integer between m and M
@@ -220,7 +220,7 @@ CarmenSim::step(double v, double phi, double dt)
 
 	if (_use_latency)
 	{
-		carmen_simulator_ackerman_recalc_pos(&_simulator_config);
+		carmen_simulator_ackerman_recalc_pos(&_simulator_config, _use_velocity_nn, _use_phi_nn);
 	}
 	else
 	{
@@ -623,6 +623,9 @@ CarmenSim::_load_params()
 	fill_laser_config_data(&_simulator_config.rear_laser_config);
 
 	_simulator_config.robot_config = _robot_ackerman_config;
+
+	_use_velocity_nn = false;
+	_use_phi_nn = true;
 }
 
 

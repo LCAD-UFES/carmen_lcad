@@ -45,6 +45,8 @@ private:
 	bool _use_latency;
 	int _min_pose_skip_to_initial_goal;
 	int _max_pose_skip_to_initial_goal;
+	bool _use_velocity_nn;
+	bool _use_phi_nn;
 
 	vector<carmen_ackerman_motion_command_t> _rddf;
 
