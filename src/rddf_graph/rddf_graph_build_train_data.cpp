@@ -50,16 +50,6 @@ get_image_id (cv::Mat image)
 }
 
 
-void
-paint_image (int x, int y, cv::Vec3b pixel_color, cv::Mat *image)
-{
-	image->at<cv::Vec3b>(cv::Point(x, y))[0] = pixel_color[0];
-	image->at<cv::Vec3b>(cv::Point(x, y))[1] = pixel_color[1];
-	image->at<cv::Vec3b>(cv::Point(x, y))[2] = pixel_color[2];
-
-}
-
-
 carmen_map_t
 read_road_map (char *road_map_folder, double x_origin, double y_origin)
 {
