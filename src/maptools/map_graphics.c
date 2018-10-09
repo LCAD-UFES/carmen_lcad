@@ -825,16 +825,40 @@ carmen_map_graphics_draw_rectangle(GtkMapViewer *map_view, GdkColor *colour,
 
 }
 
-void 
-carmen_map_graphics_draw_string(GtkMapViewer *map_view, GdkColor *colour, 
-		GdkFont *font, int x, int y,
+//void
+//carmen_map_graphics_draw_string(GtkMapViewer *map_view, GdkColor *colour,
+//		GdkFont *font, int x, int y,
+//		const char *string)
+//{
+//	gdk_gc_set_foreground (map_view->drawing_gc, colour);
+//	gdk_draw_string (map_view->drawing_pixmap, font, map_view->drawing_gc,
+//			x, y, string);
+//	return;
+//}
+
+
+void
+carmen_map_graphics_draw_string(GtkMapViewer *map_view, GdkColor *colour,
+		GdkFont *font, carmen_world_point_p start,
 		const char *string)
 {
+	carmen_point_t screen_start;
+	int x, y;
+
+	if (start->map == NULL)
+		return;
+
+	if (world_to_screen(start, &screen_start, map_view) == -1)
+		return;
+
+	x = carmen_round(screen_start.x);
+	y = carmen_round(screen_start.y);
 	gdk_gc_set_foreground (map_view->drawing_gc, colour);
 	gdk_draw_string (map_view->drawing_pixmap, font, map_view->drawing_gc,
 			x, y, string);
 	return;
 }
+
 
 void
 carmen_map_graphics_draw_ellipse(GtkMapViewer *map_view, GdkColor *colour,
