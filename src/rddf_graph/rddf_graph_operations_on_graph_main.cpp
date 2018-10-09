@@ -433,7 +433,7 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 
 		//if(k == 32)
 		//{
-			if (click2 == 1)
+			/*if (click2 == 1)
 			{
 				//cv::circle(image, point2, 2.1, cv::Scalar(255, 0, 0), thickness, lineType);
 				//click2 = 0;
@@ -441,7 +441,7 @@ edit_graph(t_graph **graph, rddf_graph_t *vertexes)
 				bool showCrosshair = false;
 				cv::Rect2d r = cv::selectROI("image",image, fromCenter, showCrosshair);
 				cout<<r.x<<" "<<r.y<<" "<<r.width<<" "<<r.height<<endl;
-			}
+			}*/
 		//}
 
 		if (k == 27) //esc

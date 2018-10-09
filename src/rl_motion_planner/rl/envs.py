@@ -16,10 +16,15 @@ class SimpleEnv:
         if self.params['model'] == 'ackerman':
             self.env_size = 100.0
             self.zoom = 3.5
-            self.max_speed = 10.0
             self.wheel_angle = np.deg2rad(28.)
             self.goal_radius = 2.0
             self.dt = 0.1
+            self.max_speed_forward = 10.
+            self.max_speed_backward = -1.
+            self.panel = pycarmen_panel.CarPanel()
+            if self.params['use_acceleration']:
+                self.max_acceleration_v = 1.0  # m/s^2
+                self.max_velocity_phi = np.deg2rad(2.)  # rad/s 
         else:
             self.env_size = 9.0
             self.zoom = 20.0
@@ -34,9 +39,18 @@ class SimpleEnv:
         self.pose = self.previous_p = np.zeros(5)
 
         self.env_border = int(self.env_size - 0.1 * self.env_size)
-        self.goal  = np.array(list((np.random.random(2) * 2.0 - 1.0) * self.env_border) + [0., 0.])
+        self.goal = np.array(list((np.random.random(2) * 2.0 - 1.0) * self.env_border) + [0., 0.])
+        # self.goal = [self.env_border + 5., self.env_border + 5.]
+        # self.goal = np.random.randn(2) * 0.5 * self.env_border
+        # self.goal = np.clip(self.goal, -self.env_border, self.env_border)
+        self.goal = list(self.goal) + [0., 0., 0.]
+        
         self.obstacles = []
         self.n_steps = 0
+
+        if self.params['use_acceleration'] and self.params['model'] == 'ackerman':
+            self.v = 0
+            self.phi = 0
 
         return {'pose': np.copy(self.pose), 'laser': self.laser}, self.goal
 
@@ -45,11 +59,23 @@ class SimpleEnv:
         self.previous_p = np.copy(self.pose)
 
         if self.params['model'] == 'ackerman':
-            v = cmd[0] * self.max_speed
-            phi = cmd[1] * self.wheel_angle
-            # v = 5.
-            # phi = cmd[0] * self.wheel_angle
+            if self.params['use_acceleration']:
+                self.v += cmd[0] * self.max_acceleration_v * self.dt
+                self.phi += cmd[1] * self.max_velocity_phi * self.dt
+                
+                self.v = np.clip(self.v, a_min=self.max_speed_backward, a_max=self.max_speed_forward)
+                self.phi = np.clip(self.phi, a_min=-np.deg2rad(28.), a_max=np.deg2rad(28.))
+                
+                v = self.v
+                phi = self.phi
+            else:
+                if cmd[0] > 0: v = cmd[0] * self.max_speed_forward
+                else: v = cmd[0] * np.abs(self.max_speed_backward)
+                phi = cmd[1] * self.wheel_angle
+            
             self.pose = ackerman_motion_model(self.pose, v, phi, dt=self.dt)
+            self.pose[3] = v
+            self.pose[4] = phi
         else:
             self.pose[0] += cmd[0] * self.dt
             self.pose[1] += cmd[1] * self.dt
@@ -110,9 +136,10 @@ class SimpleEnv:
         if self.params['model'] == 'ackerman':
             draw_rectangle(img, self.pose, 1.5, 5.0, self.zoom)
             draw_rectangle(img, self.previous_p, 1.5, 5.0, self.zoom)
+            self.panel.draw(self.pose[3], self.pose[4], self.n_steps * self.dt)
 
         cv2.imshow('img', img)
-        cv2.waitKey(10)
+        cv2.waitKey(1)
 
 
 class CarmenEnv:
@@ -211,7 +238,15 @@ class CarmenSimEnv:
                                           True, True, not params['train'],
                                           params['use_latency'])
         self.params = params
-        self.sim_dt = 0.1  # add as a parameter
+        
+        # add as a parameter
+        self.sim_dt = 0.1  
+        self.max_speed_forward = 10.
+        self.max_speed_backward = -1.
+        
+        if self.params['use_acceleration']:
+            self.max_acceleration_v = 1.0  # m/s^2
+            self.max_velocity_phi = np.deg2rad(2.)  # rad/s 
         
         if params['view']:
             self.panel = pycarmen_panel.CarPanel()
@@ -233,11 +268,27 @@ class CarmenSimEnv:
         self.sim.reset()
         self.n_steps = 0
         self.sim_t = 0
+        
+        if self.params['use_acceleration']:
+            self.v = 0
+            self.phi = 0
+        
         return self._state(), self.sim.goal()
 
     def step(self, cmd):
-        v = cmd[0] * 10.0
-        phi = cmd[1] * np.deg2rad(28.)
+        if self.params['use_acceleration']:
+            self.v += cmd[0] * self.max_acceleration_v * self.sim_dt
+            self.phi += cmd[1] * self.max_velocity_phi * self.sim_dt
+            
+            self.v = np.clip(self.v, a_min=self.max_speed_backward, a_max=self.max_speed_forward)
+            self.phi = np.clip(self.phi, a_min=-np.deg2rad(28.), a_max=np.deg2rad(28.))
+            
+            v = self.v
+            phi = self.phi
+        else:
+            if cmd[0] > 0: v = cmd[0] * self.max_speed_forward
+            else: v = cmd[0] * np.abs(self.max_speed_backward)
+            phi = cmd[1] * np.deg2rad(28.)
 
         self.sim.step(v, phi, self.sim_dt)
 
