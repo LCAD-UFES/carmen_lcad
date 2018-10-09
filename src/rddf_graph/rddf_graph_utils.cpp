@@ -74,7 +74,7 @@ add_to_list_undir(t_graph **adjacent_list, int u, int v, rddf_graph_t *graph){
 void
 print_graph_2 (t_graph **graph)
 {
-	for (int i = 0; i < 1050; i++)
+	for (int i = 0; i < 100; i++)
 	{
 		printf ("[%d]: ", i);
 		t_graph *p;
@@ -106,6 +106,7 @@ read_graph_from_file(t_graph **graph, rddf_graph_t *vertexes, FILE *f)
 	while (fscanf(f, "%d %d", &u, &v) != EOF)
 	{
 		graph = add_to_list_undir(graph, u, v, vertexes);
+		graph = add_to_list_undir(graph, v, u, vertexes);
 	}
 	//cout<<vertexes->size<<endl;
 
@@ -438,8 +439,8 @@ point_is_lane_center_1(carmen_map_p map, int x, int y)
 	if (point_is_in_map(map, x-1, y))
 		center_x_minus_1 = road_mapper_double_to_prob(&map->map[x - 1][y])->lane_center;
 
-	//if(center > 55555)
-	//{
+	if(center > 55555)
+	{
 		if (((center > center_y_minus_1) && (center > center_y_plus_1)) ||
 			((center > center_x_minus_1) && (center > center_x_plus_1))// ||
 				//((center > diag_x_y_minus_1) && (center > diag_x_y_plus_1)) ||
@@ -448,9 +449,9 @@ point_is_lane_center_1(carmen_map_p map, int x, int y)
 			return true;
 		else
 			return false;
-	//}
-	//else
-		//return false;
+	}
+	else
+		return false;
 }
 
 
@@ -607,7 +608,7 @@ check_limits_of_central_road_map(int x, int y)
 	 */
 	/*x1  y1  x2  y2  x3  y3  x4  y4*/
 	//{350,350,700,350,700,700,350,700};
-	if (x < 350 || y < 350 || x > 700 || y > 700)
+	if (x <= 350 || y < 350 || x > 700 || y > 700)
 		return true;
 
 	return false;

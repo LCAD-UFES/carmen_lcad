@@ -802,7 +802,7 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 	// Se estou co velocidade vi e quero chagar a vt, sendo que vt < vi, a eh negativo. O tempo, tt, para
 	// ir de vi a vt pode ser derivado de dS/dt = Vo + a*t -> vt = vi + a*tt; a*tt = vt - vi; tt = (vt - vi) / a
 
-	if (target_v < 0.0)
+	if (!GlobalState::reverse_driving && target_v < 0.0)
 		target_v = 0.0;
 	params.optimize_time = OPTIMIZE_DISTANCE;
 //	params.optimize_time = OPTIMIZE_TIME;
@@ -869,7 +869,11 @@ get_optimization_params(double target_v,
 {
 	params.distance_by_index = fabs(get_distance_by_index(N_DIST - 1));
 	params.theta_by_index = fabs(get_theta_by_index(N_THETA - 1));
-	params.d_yaw_by_index = fabs(get_d_yaw_by_index(N_D_YAW - 1));
+
+	if (GlobalState::reverse_driving)
+		params.d_yaw_by_index = carmen_normalize_theta(fabs(get_d_yaw_by_index(N_D_YAW - 1)+M_PI));
+	else
+		params.d_yaw_by_index = fabs(get_d_yaw_by_index(N_D_YAW - 1));
 	params.target_td = &target_td;
 	params.tcp_seed = &tcp_seed;
 	params.target_v = target_v;
@@ -1321,7 +1325,10 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 {
 	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete, tcp_copy;
 	ObjectiveFunctionParams params;
-	params.detailed_lane = move_detailed_lane_to_front_axle(detailed_lane);
+	if (GlobalState::reverse_driving)
+		params.detailed_lane = detailed_lane;
+	else
+		params.detailed_lane = move_detailed_lane_to_front_axle(detailed_lane);
 	params.use_lane = use_lane;
 
 	bool optmize_time_and_acc = false;

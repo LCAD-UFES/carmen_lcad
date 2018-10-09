@@ -2,7 +2,7 @@
 import sys
 import numpy as np
 from collections import deque
-from rl.util import relative_pose
+from rl.util import relative_pose, dist
 
 
 class ReplayBuffer:
@@ -79,7 +79,11 @@ class ReplayBuffer:
             her_episode_size = future_t - t
             her_return = (self.max_episode_size - her_episode_size) / (self.max_episode_size - 1)
             rew = (her_return / her_episode_size)
+            #is_final = 1.0 if (her_episode_size == 1) else 0.0
             is_final = 0.0
+
+            #rew = dist(self.stack[e][t][0]['pose'], self.stack[e][future_t][0]['pose'])
+            #rew /= her_episode_size
 
             """
             if her_episode_size <= 1:

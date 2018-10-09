@@ -22,7 +22,7 @@ set_rl_control(double steering, double throttle, double brake);
 
 /* recalculates the actual position */
 
-void carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulator_config);
+void carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulator_config, int use_velocity_nn, int use_phi_nn);
 
 /* produce a laser message based upon the current
    position */

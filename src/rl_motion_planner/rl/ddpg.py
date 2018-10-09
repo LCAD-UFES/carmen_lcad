@@ -8,17 +8,17 @@ class ActorCritic:
     def encoder(self, norm_laser, norm_goal, norm_state, use_conv_layer, activation_fn, n_hidden_neurons):
         # laser pre-processing
         if use_conv_layer:
-            laser_c1 = tf.layers.conv1d(norm_laser, filters=32, kernel_size=4, strides=4, padding='valid',
-                                        activation=activation_fn)
-            laser_c2 = tf.layers.conv1d(laser_c1, filters=32, kernel_size=4, strides=4, padding='valid',
-                                        activation=activation_fn)
-            laser_c3 = tf.layers.conv1d(laser_c2, filters=32, kernel_size=4, strides=4, padding='valid',
-                                        activation=activation_fn)
-            laser_fl = tf.layers.flatten(laser_c3)
-            laser_fc = tf.layers.dense(laser_fl, units=n_hidden_neurons, activation=activation_fn)
+            laser_c1 = tf.layers.conv1d(norm_laser, filters=32, kernel_size=4, strides=1, padding='valid', activation=activation_fn)
+            laser_p1 = tf.layers.max_pooling1d(laser_c1, pool_size=4, strides=4)
+            laser_c2 = tf.layers.conv1d(laser_p1, filters=32, kernel_size=4, strides=1, padding='valid', activation=activation_fn)
+            laser_p2 = tf.layers.max_pooling1d(laser_c2, pool_size=4, strides=4)
+            laser_c3 = tf.layers.conv1d(laser_p2, filters=32, kernel_size=4, strides=1, padding='valid', activation=activation_fn)
+            laser_p3 = tf.layers.max_pooling1d(laser_c3, pool_size=4, strides=4)
+            laser_fl = tf.layers.flatten(laser_p3)
         else:
             laser_fl = tf.layers.flatten(norm_laser)
-            laser_fc = tf.layers.dense(laser_fl, units=n_hidden_neurons, activation=activation_fn)
+            
+        laser_fc = tf.layers.dense(laser_fl, units=n_hidden_neurons, activation=activation_fn)
 
         # goal, state, and action pre-processing
         goal_fc = tf.layers.dense(norm_goal, units=n_hidden_neurons, activation=activation_fn)
@@ -46,6 +46,7 @@ class ActorCritic:
 
         if activation_fn_name == 'leaky_relu': activation_fn = tf.nn.leaky_relu
         elif activation_fn_name == 'elu': activation_fn = tf.nn.elu
+        elif activation_fn_name == 'tanh': activation_fn = tf.nn.tanh
         else: raise Exception("Invalid non-linearity '{}'".format(activation_fn_name))
 
         if allow_negative_commands: v_activation_fn = tf.nn.tanh
@@ -69,10 +70,10 @@ class ActorCritic:
             for _ in range(n_hidden_layers):
                 in_tensor = tf.layers.dense(in_tensor, units=n_hidden_neurons, activation=activation_fn)
 
-            self.command_phi = tf.layers.dense(in_tensor, units=1, activation=v_activation_fn, name="command_phi")
-            self.command_v = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_v")
-            
+            self.command_phi = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_phi")
+            self.command_v = tf.layers.dense(in_tensor, units=1, activation=v_activation_fn, name="command_v")
             self.actor_command = tf.concat([self.command_v, self.command_phi], axis=-1)
+            # self.actor_command = tf.layers.dense(in_tensor, units=2, activation=tf.nn.tanh, name="commands")
 
         with tf.variable_scope("critic"):
             state_fc, goal_fc, laser_fc = self.encoder(norm_laser, norm_goal, norm_state,
@@ -135,9 +136,16 @@ class DDPG(object):
 
     def _create_network(self, n_laser_readings, params):
         self.sess = tf.get_default_session()
+        print('Default sess:', self.sess)
 
         if self.sess is None:
-            self.sess = tf.Session()
+            config = None
+            if not params['use_gpu']:
+                config = tf.ConfigProto(device_count={'GPU': 0},
+                                        inter_op_parallelism_threads=1,
+                                        intra_op_parallelism_threads=1)
+            print("config:", config)
+            self.sess = tf.Session(config=config)
 
         # Networks
         with tf.variable_scope('main'):
@@ -168,8 +176,13 @@ class DDPG(object):
         # Policy loss function (TODO: checar se essa loss esta certa. Ela parece diferente do DDPG do paper).
         self.policy_loss = -tf.reduce_mean(self.main.q_from_policy)
         # TODO: checar se o componente abaixo eh necessario e o que ele significa.
-        self.action_l2 = 0.0
-        self.policy_loss += self.action_l2 * tf.reduce_mean(tf.square(self.main.command_phi))
+        
+        if params['use_acceleration']:
+            self.action_l2 = params['l2_weight'] * tf.reduce_mean(tf.square(self.main.actor_command * 10.))
+        else:
+            self.action_l2 = params['l2_weight'] * tf.reduce_mean(tf.square(self.main.command_phi * 10.))
+            
+        self.policy_loss += self.action_l2 
 
         # Training
         # TODO: MAKE SURE THESE ARE EQUIVALENT!!!!!
@@ -184,7 +197,7 @@ class DDPG(object):
         print("Policy variables:")
         print(v_policy)
         """
-        self.critic_train = tf.train.AdamOptimizer(learning_rate=1e-3).minimize(loss=self.critic_loss, var_list=v_critic)
+        self.critic_train = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(loss=self.critic_loss, var_list=v_critic)
         self.policy_train = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(loss=self.policy_loss, var_list=v_policy)
         """
         Q_grads_tf = tf.gradients(self.Q_loss_tf, self._vars('main/Q'))
@@ -300,20 +313,22 @@ class DDPG(object):
         # TODO: Diferente do caso da OpenAI em que os gradients sao computados e aplicados separadamente, aqui os
         # TODO: gradients sao aplicados "ao mesmo tempo" nas variaveis de pre-processamento. Checar em qual ordem isso
         # TODO: eh realizado, e se nao da problema treinar os dois ao msm tempo.
-        out = self.sess.run([self.policy_loss, self.critic_loss, 
+        out = self.sess.run([self.policy_loss, self.critic_loss,  
                              self.target.q_from_policy, self.main.q_from_action_placeholder,
                              self.main.q_from_policy,
-                             self.critic_train, self.policy_train], feed_dict=feed)
+                             self.critic_train, self.policy_train, 
+                             self.action_l2], feed_dict=feed)
 
         policy_loss = out[0]
         critic_loss = out[1]
+        l2_loss = out[7]
 
         target_next_q = out[2]
         predicted_q = out[3]
 
         main_q_policy = out[4]
 
-        return critic_loss, policy_loss, target_next_q, predicted_q, batch['rew'], main_q_policy
+        return critic_loss, policy_loss, l2_loss, target_next_q, predicted_q, batch['rew'], main_q_policy
 
     """
     def train(self, stage=True):
