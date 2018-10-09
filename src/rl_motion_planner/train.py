@@ -32,7 +32,9 @@ def update_rewards(params, episode, info):
 
     if info['success']:
         # rw = (float(params['n_steps_episode'] + 1. - len(episode))) / float(params['n_steps_episode'])
+        
         rw = (float(params['n_steps_episode'] - len(episode))) / float(params['n_steps_episode'] - 1)
+        
         # print(episode)
         # rw = dist(episode[0][0]['pose'], episode[0][3])
     elif info['hit_obstacle']:
@@ -189,7 +191,7 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
                           goal_achievemnt_dist=params['goal_achievement_dist'])
                 env.view()
                 if not params['train']:
-                    time.sleep(0.001)
+                    time.sleep(params['view_sleep'])
 
             cmd, q = policy.get_actions(obs, g + [goal[3]], noise_eps=params['noise_eps'] if not exploit else 0.,
                                         random_eps=params['random_eps'] if not exploit else 0.,
@@ -220,6 +222,9 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
 
             episode.append([obs, cmd, rw, goal])
             obs = new_obs
+
+        for i in range(len(episode)):
+            episode[i][2] += 0.3
 
         env.finalize()
         if len(episode) <= 1:
@@ -269,6 +274,8 @@ def launch(params, n_epochs, seed, policy_save_interval):
     np.random.seed(seed)
     random.seed(seed)
 
+    init_time = time.time()
+
     if params['env'] == 'simple': env = SimpleEnv(params)
     elif params['env'] == 'carmen': env = CarmenSimEnv(params)
     else: raise Exception("Env '{}' not implemented.".format(params['env']))
@@ -292,6 +299,8 @@ def launch(params, n_epochs, seed, policy_save_interval):
 
     last_success_flags = []
     last_collision_flags = []
+
+    times = []
 
     # Training loop
     for epoch in range(n_epochs):
@@ -325,6 +334,8 @@ def launch(params, n_epochs, seed, policy_save_interval):
 
         # Train
         if params['train']:
+            init = time.time()
+            
             policy.store_episode(episodes)
     
             if len(policy.buffer.stack) > 0:
@@ -348,7 +359,12 @@ def launch(params, n_epochs, seed, policy_save_interval):
                 if epoch % 20 == 0:
                     policy_path = periodic_policy_path.format(epoch)
                     policy.save(policy_path)
-    
+            
+            times.append(time.time() - init)
+            print("\n** avg train time:", np.mean(times))
+            print("** overall train time:", time.time() - init_time)
+            print()
+
 
 @ex.config
 def config():
@@ -362,7 +378,7 @@ def config():
         # env
         'env': 'carmen',
         'model': 'simple',
-        'n_steps_episode': 300,
+        'n_steps_episode': 100,
         'goal_achievement_dist': 1.0,
         'vel_achievement_dist': 0.5,
         'view': True,
@@ -376,7 +392,7 @@ def config():
         # net
         'n_hidden_neurons': 128,
         'n_hidden_layers': 1,
-        'soft_update_rate': 0.75,
+        'soft_update_rate': 0.9,
         'use_conv_layer': False,
         'activation_fn': 'elu',
         'allow_negative_commands': True,
@@ -393,6 +409,9 @@ def config():
         'random_eps': 0.1,  # percentage of time a random action is taken
         'noise_eps': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
         'l2_weight': 0.0,
+        'critic_lr': 1e-4,
+        'actor_lr': 1e-4,
+        'view_sleep': 1e-4,
     }
 
     params['gamma'] = 1. - 1. / params['n_steps_episode']

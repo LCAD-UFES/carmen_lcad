@@ -39,10 +39,14 @@ class SimpleEnv:
         self.pose = self.previous_p = np.zeros(5)
 
         self.env_border = int(self.env_size - 0.1 * self.env_size)
-        self.goal = np.array(list((np.random.random(2) * 2.0 - 1.0) * self.env_border) + [0., 0.])
+        
+        # self.goal = np.array(list((np.random.random(2) * 2.0 - 1.0) * self.env_border) + [0., 0.])
+        
         # self.goal = [self.env_border + 5., self.env_border + 5.]
-        # self.goal = np.random.randn(2) * 0.5 * self.env_border
-        # self.goal = np.clip(self.goal, -self.env_border, self.env_border)
+        
+        self.goal = np.random.randn(2) * 0.3 * self.env_border
+        self.goal = np.clip(self.goal, -self.env_border, self.env_border)
+        
         self.goal = list(self.goal) + [0., 0., 0.]
         
         self.obstacles = []
@@ -235,19 +239,21 @@ class CarmenEnv:
 class CarmenSimEnv:
     def __init__(self, params):
         self.sim = pycarmen_sim.CarmenSim(params['fix_initial_position'],
-                                          True, True, not params['train'],
+                                          True, params['allow_negative_commands'], not params['train'],
                                           params['use_latency'])
         self.params = params
         
         # add as a parameter
         self.sim_dt = 0.1  
         self.max_speed_forward = 10.
-        self.max_speed_backward = -1.
-        
+        self.max_speed_backward = -10. if params['allow_negative_commands'] else 0.
+        self.phi_update_rate = 0.05
+        self.v_update_rate = 0.01
+
         if self.params['use_acceleration']:
             self.max_acceleration_v = 1.0  # m/s^2
-            self.max_velocity_phi = np.deg2rad(2.)  # rad/s 
-        
+            self.max_velocity_phi = np.deg2rad(5.)  # rad/s 
+
         if params['view']:
             self.panel = pycarmen_panel.CarPanel()
 
@@ -269,9 +275,8 @@ class CarmenSimEnv:
         self.n_steps = 0
         self.sim_t = 0
         
-        if self.params['use_acceleration']:
-            self.v = 0
-            self.phi = 0
+        self.v = 0
+        self.phi = 0
         
         return self._state(), self.sim.goal()
 
@@ -279,18 +284,18 @@ class CarmenSimEnv:
         if self.params['use_acceleration']:
             self.v += cmd[0] * self.max_acceleration_v * self.sim_dt
             self.phi += cmd[1] * self.max_velocity_phi * self.sim_dt
-            
-            self.v = np.clip(self.v, a_min=self.max_speed_backward, a_max=self.max_speed_forward)
-            self.phi = np.clip(self.phi, a_min=-np.deg2rad(28.), a_max=np.deg2rad(28.))
-            
-            v = self.v
-            phi = self.phi
         else:
-            if cmd[0] > 0: v = cmd[0] * self.max_speed_forward
-            else: v = cmd[0] * np.abs(self.max_speed_backward)
-            phi = cmd[1] * np.deg2rad(28.)
+            if cmd[0] > 0: d_v = cmd[0] * self.max_speed_forward
+            else: d_v = cmd[0] * np.abs(self.max_speed_backward)
+            d_phi = cmd[1] * np.deg2rad(28.)
 
-        self.sim.step(v, phi, self.sim_dt)
+            self.v = self.v * (1. - self.v_update_rate) + d_v * self.v_update_rate
+            self.phi = self.phi * (1. - self.phi_update_rate) + d_phi * self.phi_update_rate   
+
+        self.v = np.clip(self.v, a_min=self.max_speed_backward, a_max=self.max_speed_forward)
+        self.phi = np.clip(self.phi, a_min=-np.deg2rad(28.), a_max=np.deg2rad(28.))
+
+        self.sim.step(self.v, self.phi, self.sim_dt)
 
         state = self._state()
         goal = self.sim.goal()

@@ -8,11 +8,11 @@ class ActorCritic:
     def encoder(self, norm_laser, norm_goal, norm_state, use_conv_layer, activation_fn, n_hidden_neurons):
         # laser pre-processing
         if use_conv_layer:
-            laser_c1 = tf.layers.conv1d(norm_laser, filters=32, kernel_size=4, strides=1, padding='valid', activation=activation_fn)
+            laser_c1 = tf.layers.conv1d(norm_laser, filters=32, kernel_size=6, strides=1, padding='same', activation=activation_fn)
             laser_p1 = tf.layers.max_pooling1d(laser_c1, pool_size=4, strides=4)
-            laser_c2 = tf.layers.conv1d(laser_p1, filters=32, kernel_size=4, strides=1, padding='valid', activation=activation_fn)
+            laser_c2 = tf.layers.conv1d(laser_p1, filters=32, kernel_size=6, strides=1, padding='same', activation=activation_fn)
             laser_p2 = tf.layers.max_pooling1d(laser_c2, pool_size=4, strides=4)
-            laser_c3 = tf.layers.conv1d(laser_p2, filters=32, kernel_size=4, strides=1, padding='valid', activation=activation_fn)
+            laser_c3 = tf.layers.conv1d(laser_p2, filters=32, kernel_size=6, strides=1, padding='same', activation=activation_fn)
             laser_p3 = tf.layers.max_pooling1d(laser_c3, pool_size=4, strides=4)
             laser_fl = tf.layers.flatten(laser_p3)
         else:
@@ -180,7 +180,7 @@ class DDPG(object):
         if params['use_acceleration']:
             self.action_l2 = params['l2_weight'] * tf.reduce_mean(tf.square(self.main.actor_command * 10.))
         else:
-            self.action_l2 = params['l2_weight'] * tf.reduce_mean(tf.square(self.main.command_phi * 10.))
+            self.action_l2 = params['l2_weight'] * tf.reduce_mean(tf.square(self.main.actor_command * 10.))
             
         self.policy_loss += self.action_l2 
 
@@ -190,15 +190,8 @@ class DDPG(object):
         v_critic = self._vars("main/critic")
         v_policy = self._vars("main/actor")
 
-        """
-        print("Critic variables:")
-        print(v_critic)
-        print()
-        print("Policy variables:")
-        print(v_policy)
-        """
-        self.critic_train = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(loss=self.critic_loss, var_list=v_critic)
-        self.policy_train = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(loss=self.policy_loss, var_list=v_policy)
+        self.critic_train = tf.train.AdamOptimizer(learning_rate=params['critic_lr']).minimize(loss=self.critic_loss, var_list=v_critic)
+        self.policy_train = tf.train.AdamOptimizer(learning_rate=params['actor_lr']).minimize(loss=self.policy_loss, var_list=v_policy)
         """
         Q_grads_tf = tf.gradients(self.Q_loss_tf, self._vars('main/Q'))
         pi_grads_tf = tf.gradients(self.pi_loss_tf, self._vars('main/pi'))
@@ -213,14 +206,6 @@ class DDPG(object):
         # Additional operations
         self.main_vars = self._vars('main')
         self.target_vars = self._vars('target')
-
-        """
-        print("main:")
-        print(self.main_vars)
-        print()
-        print("target:")
-        print(self.target_vars)
-        """
 
         self.copy_main_to_target = list(map(lambda v: v[0].assign(v[1]), zip(self.target_vars, self.main_vars)))
         self.target_update_rate = params['soft_update_rate']  # rate used for soft update of the target net.
