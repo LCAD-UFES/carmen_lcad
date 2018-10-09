@@ -108,7 +108,7 @@ save_15_15_image(rddf_graph_t *vertexes, t_graph **graph, string str_road_map_fo
 
 	road_map = read_road_map (road_map_folder, x_origin, y_origin);
 	road_map_to_image(&road_map, &image);
-	FILE *f = fopen("train_data/database.txt", "w");
+	FILE *f = fopen("database/database.txt", "w");
 	int cont = 0;
 	cout<<"Generating train data..."<<endl;
 	for (int i = 0; i<vertexes->size; i++)
@@ -167,7 +167,7 @@ save_15_15_image(rddf_graph_t *vertexes, t_graph **graph, string str_road_map_fo
 		char filename[50];
 		string image_id;
 		image_id = get_image_id (image_3_3);
-		string folder = "train_data";
+		string folder = "database";
 		sprintf (filename, "%.6d_", i);
 		string str_filename(filename);
 		//str_filename = str_filename + image_id + "_-1.jpg";

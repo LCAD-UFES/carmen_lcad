@@ -3,6 +3,7 @@
 using namespace std;
 bool g_ipc_required = false;
 char *g_database_filename;
+char *g_database_classified_dir;
 bool first_classify;
 
 typedef struct{
@@ -81,7 +82,7 @@ convert_binary_to_decimal (int num)
 
 
 void
-classify_train_data(FILE *f_last_classified, vector < vector<t_pattern> > database_filenames, l_class last_classified)
+classify_train_data(FILE *f_last_classified, vector < vector<t_pattern> > database_filenames, l_class last_classified, string database_classified_dir)
 {
 	cv::namedWindow("z->valid | x->invalid | esc->exit", cv::WINDOW_AUTOSIZE);
 	cv::namedWindow("image 3x3", cv::WINDOW_AUTOSIZE);
@@ -94,13 +95,16 @@ classify_train_data(FILE *f_last_classified, vector < vector<t_pattern> > databa
 	int k;
 	l_class actual;
 
-	FILE *f_database_classified = fopen("train_data/database_classified.txt", "a+");
+	string filename = database_classified_dir + "/database_classified.txt";
+	FILE *f_database_classified = fopen(filename.c_str(), "a+");
 
 	for (unsigned int i = last_classified.file_index; i<database_filenames.size();i++)
 	{
-		for (unsigned int j = last_classified.pattern; i<database_filenames[i].size();j++)
+		for (unsigned int j = last_classified.pattern; j<database_filenames[i].size();j++)
 		{
-			if (database_filenames[i].size() != 0)
+			//if (database_filenames[i].size() != 0 )
+			//if (std::count(database_filenames[i][j].pattern.begin(), database_filenames[i][j].pattern.end(),'1') >= 3)
+			if(i==84)
 			{
 				actual.file_index = i;
 				actual.pattern = j;
@@ -114,22 +118,31 @@ classify_train_data(FILE *f_last_classified, vector < vector<t_pattern> > databa
 				}
 				create_image_3_3(&image_3_3, database_filenames[i][j].pattern);
 				//cv::resize(image_15_15, image_15_15_scaled, size, 0, 0, cv::INTER_NEAREST);
-				cv::resize(image_15_15, image_15_15_scaled, size);
-				cv::resize(image_3_3, image_3_3_scaled, size);
+				cv::resize(image_15_15, image_15_15_scaled, size, 0, 0, cv::INTER_NEAREST);
+				cv::resize(image_3_3, image_3_3_scaled, size, 0, 0, cv::INTER_NEAREST);
 				cv::imshow("z->valid | x->invalid | esc->exit", image_15_15_scaled);
 				cv::imshow("image 3x3", image_3_3_scaled);
 
 				k = (char)cv::waitKey();
 				if (k == 122) //z - valido!!!
 				{
-					fprintf(f_database_classified, "%s %s\n", database_filenames[i][j].filename.c_str(), database_filenames[i][j].pattern.c_str());
+					string new_filename = database_filenames[i][j].filename;
+					size_t found_bar = database_filenames[i][j].filename.find_last_of("/");
+					new_filename = database_filenames[i][j].filename.substr(found_bar+1, database_filenames[i][j].filename.size()-found_bar-1);
+					new_filename = database_classified_dir + "/" + new_filename;
+					fprintf(f_database_classified, "%s %s\n", new_filename.c_str(), database_filenames[i][j].pattern.c_str());
+					string command = "cp " + database_filenames[i][j].filename + " " + new_filename;
+					system(command.c_str());
 				}
 				if (k == 120) //x - invalido!!!!!!
 				{
-					string new_filename;
-					new_filename = database_filenames[i][j].filename.substr(0, database_filenames[i][j].filename.size()-6) + "0.jpg";
+					string new_filename = database_filenames[i][j].filename;
+					size_t found_bar = database_filenames[i][j].filename.find_last_of("/");
+					size_t found_underline = database_filenames[i][j].filename.find_last_of("_");
+					new_filename = database_filenames[i][j].filename.substr(found_bar+1, found_underline-found_bar) + "0.jpg";
+					new_filename = database_classified_dir + "/" + new_filename;
 					fprintf(f_database_classified, "%s %s\n", new_filename.c_str(), database_filenames[i][j].pattern.c_str());
-					string command = "mv " + database_filenames[i][j].filename + " " + new_filename;
+					string command = "cp " + database_filenames[i][j].filename + " " + new_filename;
 					system(command.c_str());
 				}
 				if (k == 27) //sair
@@ -169,25 +182,28 @@ fill_database_matrix(FILE *f_database_filenames, vector < vector<t_pattern> > &d
 		//getchar();
 	}
 
+	int sum = 0;
 	for (unsigned int i = 0; i<database_filenames.size();i++)
 	{
 		if (database_filenames[i].size() != 0)
 		{
+			//if(i!=16)
+				//sum+=database_filenames[i].size();
 			cont++;
-			//cout<<i<<" ";
-			//cout<<database_filenames[i][0]<<endl;
-			//cout<<database_filenames[i].size()<<endl;
+			cout<<i<<" ";
+			//cout<<database_filenames[i][0].filename<<endl;
+			cout<<database_filenames[i].size()<<endl;
 		}
 		//cout<<i<<" "<<database_filenames[i].size()<<endl;getchar();
 	}
-	cout<<"Database has "<<cont<<" different patterns"<<endl;
+	cout<<"Database has "<<cont<<" different patterns "<<sum<<endl;
 }
 
 
 static void
 read_parameters(int argc, char **argv)
 {
-	const char usage[] = "<database_dir>/<database_file>.txt -f(for first classification) or -c(continue classifying)";
+	const char usage[] = "<database_dir>/<database_file>.txt <database_classified_dir> < -f(for first classification) or -c(continue classifying)>";
 	if (argc < 3){
 		printf("Incorrect Input!.\nUsage:\n%s %s\n", argv[0], usage);
 		exit(1);
@@ -195,7 +211,8 @@ read_parameters(int argc, char **argv)
 	else
 	{
 		g_database_filename = argv[1];
-		if(strcmp(argv[2], "-f") == 0)
+		g_database_classified_dir = argv[2];
+		if(strcmp(argv[3], "-f") == 0)
 			first_classify = true;
 		else
 			first_classify = false;
@@ -230,20 +247,23 @@ main(int argc, char **argv)
 	fill_database_matrix(f_database_filenames, database_filenames);
 	fclose (f_database_filenames);
 
+	string database_classified_dir(g_database_classified_dir);
 	if(first_classify == true)
 	{
-		f_last_classified = fopen("train_data/last_classified.txt","w");
+		string filename = database_classified_dir + "/last_classified.txt";
+		f_last_classified = fopen(filename.c_str(),"w");
 		last_classified.file_index = 0;
 		last_classified.pattern = 0;
 	}
 	else
 	{
-		f_last_classified = fopen ("train_data/last_classified.txt","r+");
+		string filename = database_classified_dir + "/last_classified.txt";
+		f_last_classified = fopen (filename.c_str(),"r+");
 		fscanf(f_last_classified, "%d %d\n", &last_classified.file_index, &last_classified.pattern);
 	}
 
 
-	classify_train_data (f_last_classified, database_filenames, last_classified);
+	classify_train_data (f_last_classified, database_filenames, last_classified, database_classified_dir);
 
 	if (g_ipc_required)
 	{
