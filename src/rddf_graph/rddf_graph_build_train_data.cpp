@@ -185,14 +185,14 @@ save_15_15_image(rddf_graph_t *vertexes, t_graph **graph, string str_road_map_fo
 		str_filename = folder + "/" + str_filename + image_id + "_-1.jpg";
 		fprintf(f, "%d %s %s\n", i, str_filename.c_str(), image_id.c_str());
 		//cout<<str_filename<<endl;
-		//cv::imwrite(str_filename, image_15_15);
+		cv::imwrite(str_filename, image_15_15);
 		//cout<<i<<endl;
 		cont = i;
-		cv::resize(image_15_15, image_15_15_scaled, size);
-		cv::resize(image_3_3, image_3_3_scaled, size);
-		cv::imshow("image1", image_15_15_scaled);
-		cv::imshow("image", image_3_3_scaled);
-		cv::waitKey();
+		//cv::resize(image_15_15, image_15_15_scaled, size);
+		//cv::resize(image_3_3, image_3_3_scaled, size);
+		//cv::imshow("image1", image_15_15_scaled);
+		//cv::imshow("image", image_3_3_scaled);
+		//cv::waitKey();
 		//getchar();
 
 	}
