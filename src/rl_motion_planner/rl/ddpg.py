@@ -29,7 +29,16 @@ class ActorCritic:
 
     def __init__(self, n_laser_readings, n_hidden_neurons, n_hidden_layers, use_conv_layer, activation_fn_name,
                  allow_negative_commands, laser_max_range=30.):
-        self.action_size = 2
+
+        self.action_size = 3
+        
+        if activation_fn_name == 'leaky_relu': activation_fn = tf.nn.leaky_relu
+        elif activation_fn_name == 'elu': activation_fn = tf.nn.elu
+        elif activation_fn_name == 'tanh': activation_fn = tf.nn.tanh
+        else: raise Exception("Invalid non-linearity '{}'".format(activation_fn_name))
+
+        if allow_negative_commands: v_activation_fn = tf.nn.tanh
+        else: v_activation_fn = tf.nn.sigmoid
 
         # goal: (x, y, th, desired_v) - pose in car reference
         self.placeholder_goal = tf.placeholder(dtype=tf.float32, shape=[None, 4], name='placeholder_goal')
@@ -44,21 +53,13 @@ class ActorCritic:
         # flag used when computing the target q: 1 if is final, 0 otherwise.
         self.placeholder_is_final = tf.placeholder(dtype=tf.float32, shape=[None, 1], name='placeholder_is_final')
 
-        if activation_fn_name == 'leaky_relu': activation_fn = tf.nn.leaky_relu
-        elif activation_fn_name == 'elu': activation_fn = tf.nn.elu
-        elif activation_fn_name == 'tanh': activation_fn = tf.nn.tanh
-        else: raise Exception("Invalid non-linearity '{}'".format(activation_fn_name))
-
-        if allow_negative_commands: v_activation_fn = tf.nn.tanh
-        else: v_activation_fn = tf.nn.sigmoid
-
         # normalize laser to be in [-1., 1.]
         norm_laser = tf.clip_by_value(self.placeholder_laser, 0., laser_max_range)
         norm_laser = (norm_laser / laser_max_range)
         # normalize goal
-        norm_goal = self.placeholder_goal # / [10., 10., 1.0, 10.]
+        norm_goal = self.placeholder_goal # / [10., 10., 10.0, 1.0]
         # normalize state
-        norm_state = self.placeholder_state # / 10.
+        norm_state = self.placeholder_state  # / 10.
 
         with tf.variable_scope("actor"):
             state_fc, goal_fc, laser_fc = self.encoder(norm_laser, norm_goal, norm_state,
@@ -70,10 +71,10 @@ class ActorCritic:
             for _ in range(n_hidden_layers):
                 in_tensor = tf.layers.dense(in_tensor, units=n_hidden_neurons, activation=activation_fn)
 
-            self.command_phi = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_phi")
-            self.command_v = tf.layers.dense(in_tensor, units=1, activation=v_activation_fn, name="command_v")
-            self.actor_command = tf.concat([self.command_v, self.command_phi], axis=-1)
-            # self.actor_command = tf.layers.dense(in_tensor, units=2, activation=tf.nn.tanh, name="commands")
+            # self.command_phi = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_phi")
+            # self.command_v = tf.layers.dense(in_tensor, units=1, activation=v_activation_fn, name="command_v")
+            # self.actor_command = tf.concat([self.command_v, self.command_phi], axis=-1)
+            self.actor_command = tf.layers.dense(in_tensor, units=self.action_size, activation=tf.nn.tanh, name="commands")
 
         with tf.variable_scope("critic"):
             state_fc, goal_fc, laser_fc = self.encoder(norm_laser, norm_goal, norm_state,
@@ -132,6 +133,7 @@ class DDPG(object):
                                    n_trad=n_trad, n_her=n_her,
                                    max_episode_size=params['n_steps_episode'])
 
+        self.params = params
         self.saver = tf.train.Saver()
 
     def _create_network(self, n_laser_readings, params):
@@ -147,6 +149,9 @@ class DDPG(object):
             print("config:", config)
             self.sess = tf.Session(config=config)
 
+        neg = params['allow_negative_commands']
+        if params['use_spline']: neg = True
+
         # Networks
         with tf.variable_scope('main'):
             self.main = ActorCritic(n_laser_readings,
@@ -154,7 +159,7 @@ class DDPG(object):
                              params['n_hidden_layers'],
                              params['use_conv_layer'],
                              params['activation_fn'],
-                             params['allow_negative_commands'])
+                             neg)
 
         with tf.variable_scope('target'):
             self.target = ActorCritic(n_laser_readings,
@@ -162,7 +167,7 @@ class DDPG(object):
                              params['n_hidden_layers'],
                              params['use_conv_layer'],
                              params['activation_fn'],
-                             params['allow_negative_commands'])
+                             neg)
 
         assert len(self._vars("main")) == len(self._vars("target"))
 
@@ -181,7 +186,7 @@ class DDPG(object):
             self.action_l2 = params['l2_weight'] * tf.reduce_mean(tf.square(self.main.actor_command * 10.))
         else:
             self.action_l2 = params['l2_weight'] * tf.reduce_mean(tf.square(self.main.actor_command * 10.))
-            
+
         self.policy_loss += self.action_l2 
 
         # Training
@@ -243,29 +248,30 @@ class DDPG(object):
         }
 
         ret = self.sess.run(vals, feed_dict=feed)
-
+        
+        u = ret[0][0]
+        q = ret[1][0][0]
+        
         # import pprint
         # pprint.pprint(obs)
         # pprint.pprint(goal)
         # pprint.pprint(ret)
 
         # action postprocessing
-        u = ret[0][0]
         u += noise_eps * np.random.randn(*u.shape)  # gaussian noise
 
         # eps greedy
         if np.random.random() < random_eps:
-            if self.allow_negative_commands:
-                u = np.random.uniform(-1.0, 1.0, len(u))
-            else:
-                u = np.array([np.random.uniform(0.0, 1.0), np.random.uniform(-1.0, 1.0)])
+            u = np.random.uniform(-1.0, 1.0, len(u))
+
+        return u, q
 
         if self.allow_negative_commands: u[0] = np.clip(u[0], -1.0, 1.0)
         else: u[0] = np.clip(u[0], 0.0, 1.0)
         
         u[1] = np.clip(u[1], -1., 1.)
 
-        return u, ret[1][0][0]
+        return u, q
 
     def store_episode(self, episode_batch):
         self.buffer.add(episode_batch)

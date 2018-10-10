@@ -8,6 +8,11 @@ import carmen_comm.carmen_comm as carmen
 import carmen_sim.pycarmen_sim as pycarmen_sim 
 import panel.pycarmen_panel as pycarmen_panel
 
+from scipy.interpolate import CubicSpline
+import matplotlib.pyplot as plt
+plt.ion()
+plt.show()
+
 
 class SimpleEnv:
     def __init__(self, params):
@@ -247,8 +252,8 @@ class CarmenSimEnv:
         self.sim_dt = 0.1  
         self.max_speed_forward = 10.
         self.max_speed_backward = -10. if params['allow_negative_commands'] else 0.
-        self.phi_update_rate = 0.05
-        self.v_update_rate = 0.01
+        self.phi_update_rate = 1.0 # 0.05
+        self.v_update_rate = 1.0 # 0.01
 
         if self.params['use_acceleration']:
             self.max_acceleration_v = 1.0  # m/s^2
@@ -281,9 +286,38 @@ class CarmenSimEnv:
         return self._state(), self.sim.goal()
 
     def step(self, cmd):
-        if self.params['use_acceleration']:
+        if self.params['use_spline']:
+            state = self._state()
+        
+            max_phi = np.deg2rad(28)
+            curr_phi = state['pose'][4] / max_phi
+            
+            ts = np.arange(start=0., stop=5.5, step=5./3.)
+            phis = [curr_phi, cmd[0], cmd[1], cmd[2]]
+            
+            spl = CubicSpline(ts, phis)
+            phi = spl(0.15)
+            phi = np.clip(phi, -1., 1.)
+
+            # uncomment to visualize the spline
+            #"""
+            plt.clf()
+            plt.ylim(-1.2, 1.2)
+            detailed = np.arange(start=0., stop=5.1, step=0.1)
+            plt.plot(ts, phis, 'o')
+            plt.plot(detailed, np.clip(spl(detailed), -1.0, 1.0))
+            plt.draw()
+            plt.pause(0.001)
+            print("ts:", ts, "phis:", phis, "phi:", phi)
+            #"""
+            
+            self.v = 0.5 * self.max_speed_forward
+            self.phi = phi * np.deg2rad(28.)
+        
+        elif self.params['use_acceleration']:
             self.v += cmd[0] * self.max_acceleration_v * self.sim_dt
             self.phi += cmd[1] * self.max_velocity_phi * self.sim_dt
+        
         else:
             if cmd[0] > 0: d_v = cmd[0] * self.max_speed_forward
             else: d_v = cmd[0] * np.abs(self.max_speed_backward)

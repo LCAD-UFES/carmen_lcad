@@ -389,10 +389,11 @@ def config():
         'use_latency': False,
         'use_gpu': True,
         'use_acceleration': False,
+        'use_spline': True,
         # net
         'n_hidden_neurons': 128,
         'n_hidden_layers': 1,
-        'soft_update_rate': 0.9,
+        'soft_update_rate': 0.75,
         'use_conv_layer': False,
         'activation_fn': 'elu',
         'allow_negative_commands': True,
