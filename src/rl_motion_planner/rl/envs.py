@@ -25,7 +25,7 @@ class SimpleEnv:
             self.goal_radius = 2.0
             self.dt = 0.1
             self.max_speed_forward = 10.
-            self.max_speed_backward = -1.
+            self.max_speed_backward = -10.
             self.panel = pycarmen_panel.CarPanel()
             if self.params['use_acceleration']:
                 self.max_acceleration_v = 1.0  # m/s^2
@@ -251,7 +251,7 @@ class CarmenSimEnv:
         # add as a parameter
         self.sim_dt = 0.1  
         self.max_speed_forward = 10.
-        self.max_speed_backward = -10. if params['allow_negative_commands'] else 0.
+        self.max_speed_backward = -10. # if params['allow_negative_commands'] else 0.
         self.phi_update_rate = 1.0 # 0.05
         self.v_update_rate = 1.0 # 0.01
 
@@ -291,27 +291,42 @@ class CarmenSimEnv:
         
             max_phi = np.deg2rad(28)
             curr_phi = state['pose'][4] / max_phi
+            curr_v = state['pose'][3] / self.max_speed_forward
             
+            """
             ts = np.arange(start=0., stop=5.5, step=5./3.)
             phis = [curr_phi, cmd[0], cmd[1], cmd[2]]
             
             spl = CubicSpline(ts, phis)
             phi = spl(0.15)
             phi = np.clip(phi, -1., 1.)
+            
+            ts_plot = np.arange(start=0., stop=5.1, step=0.1)
+            phis_plot = np.clip(spl(ts_plot))
+            
+            """
+            ts = ts_plot = [0., 1.66]
+
+            v = (cmd[0] - curr_v) * (0.15 / 1.66) + curr_v
+            vs = vs_plot = [curr_v, cmd[0]]
+            
+            phi = (cmd[1] - curr_phi) * (0.15 / 1.66) + curr_phi
+            phis = phis_plot = [curr_phi, cmd[1]]
 
             # uncomment to visualize the spline
             #"""
             plt.clf()
             plt.ylim(-1.2, 1.2)
-            detailed = np.arange(start=0., stop=5.1, step=0.1)
             plt.plot(ts, phis, 'o')
-            plt.plot(detailed, np.clip(spl(detailed), -1.0, 1.0))
+            plt.plot(ts_plot, phis_plot, '-b')
+            plt.plot(ts, vs, 'o')
+            plt.plot(ts_plot, vs_plot, '-r')
             plt.draw()
             plt.pause(0.001)
-            print("ts:", ts, "phis:", phis, "phi:", phi)
+            print("ts:", ts, "phis:", phis, "phi:", phi, "vs:", vs, "v:", v)
             #"""
             
-            self.v = 0.5 * self.max_speed_forward
+            self.v = v * self.max_speed_forward
             self.phi = phi * np.deg2rad(28.)
         
         elif self.params['use_acceleration']:

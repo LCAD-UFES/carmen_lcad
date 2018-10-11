@@ -198,8 +198,7 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
                                         use_target_net=use_target_net)
 
             if len(episode) % 25 == 0:
-                print('CMD V: %.2f\t CMD PHI: %.2f ODOM V: %.2f\tODOM PHI: %.2f' % (cmd[0] * 10., cmd[1] * 28., obs['pose'][3], 
-                                                                                    np.rad2deg(obs['pose'][4])))
+                print('CMD:', cmd, 'ODOM V: %.2f\tODOM PHI: %.2f' % (obs['pose'][3], np.rad2deg(obs['pose'][4])))
 
             if len(episode) == 0:
                 q0 = q
@@ -378,7 +377,7 @@ def config():
         # env
         'env': 'carmen',
         'model': 'simple',
-        'n_steps_episode': 100,
+        'n_steps_episode': 300,
         'goal_achievement_dist': 1.0,
         'vel_achievement_dist': 0.5,
         'view': True,
@@ -389,11 +388,11 @@ def config():
         'use_latency': False,
         'use_gpu': True,
         'use_acceleration': False,
-        'use_spline': True,
+        'use_spline': False,
         # net
         'n_hidden_neurons': 128,
         'n_hidden_layers': 1,
-        'soft_update_rate': 0.75,
+        'soft_update_rate': 0.99,
         'use_conv_layer': False,
         'activation_fn': 'elu',
         'allow_negative_commands': True,
