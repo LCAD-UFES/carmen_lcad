@@ -25,8 +25,8 @@
 
 using namespace g2o;
 
-int print_to_debug = 0;
-int plot_to_debug = 0;
+int print_to_debug = 1;
+int plot_to_debug = 1;
 
 //-----------Funcoes para extrair dados do Experimento------------------------
 double
@@ -845,6 +845,8 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	//TODO:Getting a new GOAL in poses back to don't need to change the behaviour selector
 	if (GlobalState::reverse_driving)
 	{
+		//TODO:
+		target_v = -4.0;
 		printf("Goal antes: %lf", goalPoseVector[0].x);
 		int goal_behide = goal_list_message->number_of_poses_back -1;
 		if (goal_list_message->number_of_poses_back > 2)
@@ -1013,8 +1015,6 @@ compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometr
 	}
 
 	paths.resize(lastOdometryVector.size() * goalPoseVector.size());
-	//TODO:
-	target_v = (-1.0)*target_v;
 
 	compute_paths(lastOdometryVector, goalPoseVector, target_v, localizer_pose, paths, goal_list_message);
 
