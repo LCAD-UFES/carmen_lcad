@@ -179,7 +179,10 @@ get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_od
 
 	td.dist = sqrt((goal_pose->x - localizer_pose->x) * (goal_pose->x - localizer_pose->x) +
 			(goal_pose->y - localizer_pose->y) * (goal_pose->y - localizer_pose->y));
-	td.theta = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
+	if (GlobalState::reverse_driving)
+		td.theta = carmen_normalize_theta(atan2(localizer_pose->y - goal_pose->y,  localizer_pose->x - goal_pose->x) - localizer_pose->theta);
+	else
+		td.theta = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
 	td.d_yaw = carmen_normalize_theta(goal_pose->theta - localizer_pose->theta);
 	td.phi_i = last_odometry.phi;
 	td.v_i = last_odometry.v;
@@ -829,6 +832,19 @@ goal_is_behind_car(Pose *localizer_pose, Pose *goal_pose)
 	return false;
 }
 
+void
+simulate_goal_position(vector<Pose> &goalPoseVector, carmen_behavior_selector_road_profile_message *goal_list_message, int distance_back)
+{
+	//TODO:
+	int goal_behide = distance_back / 0.5;
+	if (goal_list_message->number_of_poses_back < 2 || goal_list_message->number_of_poses_back < goal_behide)
+		goal_behide = goal_list_message->number_of_poses_back - 1;
+
+	goalPoseVector[0].x = goal_list_message->poses_back[goal_behide].x;
+	goalPoseVector[0].y = goal_list_message->poses_back[goal_behide].y;
+	goalPoseVector[0].theta = goal_list_message->poses_back[goal_behide].theta;
+}
+
 
 void
 compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseVector, double target_v,
@@ -842,18 +858,12 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	static double last_timestamp = 0.0;
 	bool goal_in_lane = false;
 
-	//TODO:Getting a new GOAL in poses back to don't need to change the behaviour selector
+	//TODO:Delete after behavior selector reverse GOALs - Getting a new GOAL in poses back to don't need to change the behaviour selector
 	if (GlobalState::reverse_driving)
 	{
-		//TODO:
-		target_v = -4.0;
+		target_v = -2.0;
 		printf("Goal antes: %lf", goalPoseVector[0].x);
-		int goal_behide = goal_list_message->number_of_poses_back -1;
-		if (goal_list_message->number_of_poses_back > 2)
-			goal_behide = goal_list_message->number_of_poses_back/4;
-		goalPoseVector[0].x = goal_list_message->poses_back[goal_behide].x;
-		goalPoseVector[0].y = goal_list_message->poses_back[goal_behide].y;
-		goalPoseVector[0].theta = goal_list_message->poses_back[goal_behide].theta;
+		simulate_goal_position(goalPoseVector, goal_list_message, 10);
 		printf(" Goal depois: %lf\n", goalPoseVector[0].x);
 	}
 

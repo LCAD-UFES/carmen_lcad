@@ -60,35 +60,26 @@ compute_a_and_t_from_s_reverse(double s, double target_v,
 		ObjectiveFunctionParams *params)
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
-
+	if (fabs(target_td.v_i) == 0.0)
+		target_td.v_i = 0.0;
 	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
 	a = (-1)*a;
-	tcp_seed.tt = (target_td.v_i - target_v) / a;
+	tcp_seed.tt = (target_v - target_td.v_i) / a;
 	if (a > GlobalState::robot_config.maximum_acceleration_reverse)
 	{
 		a = GlobalState::robot_config.maximum_acceleration_reverse;
 		double v = fabs(target_td.v_i);
-		tcp_seed.tt = (sqrt(2.0 * a * s + v * v) + v) / a;
+		tcp_seed.tt = (sqrt(fabs(2.0 * a * s + v * v) + v)) / a;
 
 	}
 	else if (a < -GlobalState::robot_config.maximum_deceleration_reverse)
 	{
 		a = -GlobalState::robot_config.maximum_deceleration_reverse;
 		double v = fabs(target_td.v_i);
-		if (v > a)
-		{
-//			v = 10.0;
-			tcp_seed.tt = -(sqrt(fabs(2.0 * a * s + v * v)) + v) / a;
-		}
-		else
-			tcp_seed.tt = -(sqrt(2.0 * a * s + v * v) + v) / a;
+		tcp_seed.tt = -(sqrt(fabs(2.0 * a * s + v * v)) + v) / a;
 	}
-	else if (a == 0 and target_td.v_i != 0)
+	else if (a == 0.0 and target_td.v_i != 0.0)
 		tcp_seed.tt = s/target_td.v_i;
-
-
-		//	if ((target_v - target_td.v_i) < 0)
-//		a = (-1)*a;
 
 //	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
 	params->suitable_tt = tcp_seed.tt;
@@ -924,12 +915,14 @@ get_optimization_params(double target_v,
 		ObjectiveFunctionParams &params)
 {
 	params.distance_by_index = fabs(get_distance_by_index(N_DIST - 1));
-	params.theta_by_index = fabs(get_theta_by_index(N_THETA - 1));
 
 	if (GlobalState::reverse_driving)
-		params.d_yaw_by_index = carmen_normalize_theta(fabs(get_d_yaw_by_index(N_D_YAW - 1)+M_PI));
+		params.theta_by_index = carmen_normalize_theta(fabs(get_theta_by_index(N_THETA - 1)+M_PI));
 	else
-		params.d_yaw_by_index = fabs(get_d_yaw_by_index(N_D_YAW - 1));
+		params.theta_by_index = fabs(get_theta_by_index(N_THETA - 1));
+
+
+	params.d_yaw_by_index = fabs(get_d_yaw_by_index(N_D_YAW - 1));
 	params.target_td = &target_td;
 	params.tcp_seed = &tcp_seed;
 	params.target_v = target_v;
