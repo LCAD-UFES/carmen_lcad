@@ -51,7 +51,7 @@ PY_LIB += `python3-config --libs`
 
 pycarmen_panel:
 	swig -python -c++ pycarmen_panel.i
-	g++ -fPIC -c pycarmen_panel_wrap.cxx $(PY_INC) $(IFLAGS) $(CXXFLAGS)
+	g++ -fPIC -c pycarmen_panel_wrap.cxx $(PY_INC) $(IFLAGS) $(CXXFLAGS) -Wno-missing-field-initializers
 	g++ -shared pycarmen_panel_wrap.o libpanel.a -o _pycarmen_panel.so $(PY_LIB) $(LFLAGS) 
 
 pycarmen_panel_clean:

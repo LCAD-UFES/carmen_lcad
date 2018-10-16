@@ -9,9 +9,9 @@ import carmen_sim.pycarmen_sim as pycarmen_sim
 import panel.pycarmen_panel as pycarmen_panel
 
 from scipy.interpolate import CubicSpline
-import matplotlib.pyplot as plt
-plt.ion()
-plt.show()
+#import matplotlib.pyplot as plt
+#plt.ion()
+#plt.show()
 
 
 class SimpleEnv:
@@ -251,7 +251,7 @@ class CarmenSimEnv:
         # add as a parameter
         self.sim_dt = 0.1  
         self.max_speed_forward = 10.
-        self.max_speed_backward = -10. # if params['allow_negative_commands'] else 0.
+        self.max_speed_backward = -10. if params['allow_negative_commands'] else 0.
         self.phi_update_rate = 1.0 # 0.05
         self.v_update_rate = 1.0 # 0.01
 
@@ -368,8 +368,14 @@ class CarmenSimEnv:
         pass
 
     def view(self):
+        p = self.sim.pose()
+        g = self.sim.goal()
+        
+        self.sim.draw_occupancy_map()
+        self.sim.draw_pose(p[0], p[1], p[2], 0, 0, 0)
+        self.sim.draw_pose(g[0], g[1], g[2], 0, 200, 200)
+        
         self.sim.view()
-        pose_data = self.sim.pose()
-        self.panel.draw(pose_data[3], pose_data[4], self.sim_t)
+        self.panel.draw(p[3], p[4], self.sim_t)
 
 

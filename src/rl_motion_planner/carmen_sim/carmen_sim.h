@@ -8,6 +8,11 @@
 #include <prob_map.h>
 #include <carmen/simulator_ackerman_simulation.h>
 
+#include <opencv/cv.h>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+
+//using namespace cv;
 using namespace std;
 
 
@@ -26,13 +31,20 @@ public:
 	void set_seed(int seed);
 	void reset();
 	void step(double v, double phi, double dt);
-	void view();
+	void view(int time=1);
 
 	vector<double> laser();
 	vector<double> pose();
 	vector<double> goal();
 
 	bool hit_obstacle();
+
+	vector< vector<double> > rddf_forward();
+	vector< vector<double> > rddf_backward();
+
+	void draw_pose(double x, double y, double th, int b, int g, int r);
+	void draw_occupancy_map();
+	void draw_poses(vector< vector<double> > poses, int b, int g, int r);
 
 private:
 
@@ -45,8 +57,11 @@ private:
 	bool _use_latency;
 	int _min_pose_skip_to_initial_goal;
 	int _max_pose_skip_to_initial_goal;
+	int _current_rddf_pose;
 	bool _use_velocity_nn;
 	bool _use_phi_nn;
+
+	cv::Mat *_view;
 
 	vector<carmen_ackerman_motion_command_t> _rddf;
 
