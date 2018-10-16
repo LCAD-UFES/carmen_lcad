@@ -63,7 +63,7 @@ class ActorCritic:
 
         with tf.variable_scope("actor"):
             laser_fc, goal_fc, state_fc = self.encoder(norm_laser, norm_goal, norm_state,
-                                                       use_conv_layer, activation_fn, n_hidden_neurons)
+                                                       use_conv_layer, activation_fn, 32)
 
             actor_input =  tf.concat(axis=-1, values=[state_fc, goal_fc, laser_fc])
 
@@ -71,6 +71,7 @@ class ActorCritic:
             for _ in range(n_hidden_layers):
                 in_tensor = tf.layers.dense(in_tensor, units=n_hidden_neurons, activation=activation_fn)
 
+            """
             self.command_v = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_v")
 
             laser_fc2, goal_fc2, state_fc2 = self.encoder(norm_laser, norm_goal, norm_state,
@@ -84,11 +85,12 @@ class ActorCritic:
 
             self.command_phi = tf.layers.dense(in_tensor2, units=1, activation=tf.nn.tanh, name="command_phi")
             self.actor_command = tf.concat([self.command_v, self.command_phi], axis=-1)
-            
+            """
+                        
             # self.command_phi = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_phi")
             # self.command_v = tf.layers.dense(in_tensor, units=1, activation=v_activation_fn, name="command_v")
             # self.actor_command = tf.concat([self.command_v, self.command_phi], axis=-1)
-            # self.actor_command = tf.layers.dense(in_tensor, units=self.action_size, activation=tf.nn.tanh, name="commands")
+            self.actor_command = tf.layers.dense(in_tensor, units=self.action_size, activation=tf.nn.tanh, name="commands")
 
         with tf.variable_scope("critic"):
             laser_fc, goal_fc, state_fc = self.encoder(norm_laser, norm_goal, norm_state,
@@ -187,8 +189,8 @@ class DDPG(object):
 
         # Critic loss function (TODO: make sure this is correct!)
         discounted_next_q = self.gamma * self.target.q_from_policy * (1. - self.main.placeholder_is_final)
-        target_Q = self.main.placeholder_reward + discounted_next_q
-        clipped_target_Q = tf.clip_by_value(target_Q, clip_value_min=-100., clip_value_max=100.)
+        self.target_Q = self.main.placeholder_reward + discounted_next_q
+        clipped_target_Q = tf.clip_by_value(self.target_Q, clip_value_min=-100., clip_value_max=100.)
         # The stop gradient prevents the target net from being trained.
         self.critic_loss = tf.reduce_mean(tf.square(tf.stop_gradient(clipped_target_Q) - self.main.q_from_action_placeholder))
 
@@ -215,17 +217,17 @@ class DDPG(object):
         # self.critic_loss += 0.01 * critic_regularizer
         # self.policy_loss += 0.1 * policy_regularizer
 
-        # self.critic_train = tf.train.AdamOptimizer(learning_rate=params['critic_lr']).minimize(loss=self.critic_loss, var_list=v_critic)
-        # self.policy_train = tf.train.AdamOptimizer(learning_rate=params['actor_lr']).minimize(loss=self.policy_loss, var_list=v_policy)
+        self.critic_train = tf.train.AdamOptimizer(learning_rate=params['critic_lr']).minimize(loss=self.critic_loss, var_list=v_critic)
+        self.policy_train = tf.train.AdamOptimizer(learning_rate=params['actor_lr']).minimize(loss=self.policy_loss, var_list=v_policy)
         
-        policy_grads = tf.gradients(self.policy_loss, v_policy)
-        critic_grads = tf.gradients(self.critic_loss, v_critic)
+        #policy_grads = tf.gradients(self.policy_loss, v_policy)
+        #critic_grads = tf.gradients(self.critic_loss, v_critic)
         
-        policy_grads, _ = tf.clip_by_global_norm(policy_grads, 1.0)
+        #policy_grads, _ = tf.clip_by_global_norm(policy_grads, 1.0)
         # critic_grads, _ = tf.clip_by_global_norm(critic_grads, 10.0)
         
-        self.policy_train = tf.train.AdamOptimizer(learning_rate=params['actor_lr']).apply_gradients(zip(policy_grads, v_policy))
-        self.critic_train = tf.train.AdamOptimizer(learning_rate=params['critic_lr']).apply_gradients(zip(critic_grads, v_critic))
+        #self.policy_train = tf.train.AdamOptimizer(learning_rate=params['actor_lr']).apply_gradients(zip(policy_grads, v_policy))
+        #self.critic_train = tf.train.AdamOptimizer(learning_rate=params['critic_lr']).apply_gradients(zip(critic_grads, v_critic))
         
         """
         Q_grads_tf = tf.gradients(self.Q_loss_tf, self._vars('main/Q'))
@@ -337,7 +339,7 @@ class DDPG(object):
         # TODO: gradients sao aplicados "ao mesmo tempo" nas variaveis de pre-processamento. Checar em qual ordem isso
         # TODO: eh realizado, e se nao da problema treinar os dois ao msm tempo.
         out = self.sess.run([self.policy_loss, self.critic_loss,  
-                             self.target.q_from_policy, self.main.q_from_action_placeholder,
+                             self.target_Q, self.main.q_from_action_placeholder,
                              self.main.q_from_policy,
                              self.critic_train, self.policy_train, 
                              self.action_l2], feed_dict=feed)
@@ -346,12 +348,12 @@ class DDPG(object):
         critic_loss = out[1]
         l2_loss = out[7]
 
-        target_next_q = out[2]
+        target_q = out[2]
         predicted_q = out[3]
 
         main_q_policy = out[4]
 
-        return critic_loss, policy_loss, l2_loss, target_next_q, predicted_q, batch['rew'], main_q_policy
+        return critic_loss, policy_loss, l2_loss, target_q, predicted_q, batch['rew'], main_q_policy
 
     """
     def train(self, stage=True):

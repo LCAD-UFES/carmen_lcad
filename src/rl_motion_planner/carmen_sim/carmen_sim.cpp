@@ -302,8 +302,8 @@ CarmenSim::draw_pose(double x, double y, double th, int b, int g, int r)
 
     double center_to_rear_axis = _car_length / 2. - _robot_ackerman_config.distance_between_rear_car_and_rear_wheels;
 
-    double shift_x = center_to_rear_axis * cos(_simulator_config.true_pose.theta);
-    double shift_y = center_to_rear_axis * sin(_simulator_config.true_pose.theta);
+    double shift_x = center_to_rear_axis * cos(th);
+    double shift_y = center_to_rear_axis * sin(th);
 
     Point p;
     p.x = (int) ((x - _simulator_config.map.config.x_origin) * _map_pixel_by_meter);
@@ -365,66 +365,8 @@ CarmenSim::draw_poses(vector< vector<double> > poses, int b, int g, int r)
 
 
 void
-CarmenSim::view(int time)
+CarmenSim::show(int time)
 {
-	/*
-    double center_to_rear_axis = _car_length / 2. - _robot_ackerman_config.distance_between_rear_car_and_rear_wheels;
-
-    double shift_x;
-    double shift_y;
-
-    int init = _current_rddf_pose; // - 50;
-    int end = _current_rddf_pose + 50;
-
-    if (init < 0) init = 0;
-    if (end > _rddf.size()) end = _rddf.size();
-
-	carmen_ackerman_motion_command_t rddf_pose;
-
-    for (int i = init; i < end; i += 5)
-    {
-    	rddf_pose = _rddf[i];
-
-        shift_x = center_to_rear_axis * cos(rddf_pose.theta);
-        shift_y = center_to_rear_axis * sin(rddf_pose.theta);
-
-        draw_rectangle(viewer, rddf_pose.x + shift_x, rddf_pose.y + shift_y, rddf_pose.theta,
-    			_car_width, _car_length, Scalar(0, 200, 200),
-    			x_origin, y_origin,
-    			_map_pixel_by_meter);
-    }
-
-    shift_x = center_to_rear_axis * cos(_simulator_config.true_pose.theta);
-    shift_y = center_to_rear_axis * sin(_simulator_config.true_pose.theta);
-
-    Point p;
-    p.x = (int) ((_simulator_config.true_pose.x - _simulator_config.map.config.x_origin) * _map_pixel_by_meter);
-    p.y = viewer.rows - (int) ((_simulator_config.true_pose.y - _simulator_config.map.config.y_origin) * _map_pixel_by_meter);
-    circle(viewer, p, 3, Scalar(0, 0, 255), -1);
-
-	draw_rectangle(viewer,
-			_simulator_config.true_pose.x + shift_x,
-			_simulator_config.true_pose.y + shift_y,
-			_simulator_config.true_pose.theta,
-			_car_width, _car_length, Scalar(0, 0, 255),
-			x_origin, y_origin,
-			_map_pixel_by_meter);
-
-    p.x = (int) ((_goal.x - _simulator_config.map.config.x_origin) * _map_pixel_by_meter);
-    p.y = viewer.rows - (int) ((_goal.y - _simulator_config.map.config.y_origin) * _map_pixel_by_meter);
-    circle(viewer, p, 3, Scalar(0, 255, 0), -1);
-    circle(viewer, p, _map_pixel_by_meter, Scalar(0, 255, 0), 1);
-
-    shift_x = center_to_rear_axis * cos(_goal.theta);
-    shift_y = center_to_rear_axis * sin(_goal.theta);
-
-    draw_rectangle(viewer, _goal.x + shift_x, _goal.y + shift_y, _goal.theta,
-			_car_width, _car_length, Scalar(0, 128, 0),
-			x_origin, y_origin,
-			_map_pixel_by_meter);
-
-	*/
-
 	imshow("viewer", *_view);
 	waitKey(time);
 }

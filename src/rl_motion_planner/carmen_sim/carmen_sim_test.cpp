@@ -34,7 +34,10 @@ main()
 			printf("\n");
 			printf("Hit obstacle: %d\n", sim.hit_obstacle());
 
-			sim.view();
+			sim.draw_occupancy_map();
+			sim.draw_pose(sim.pose()[0], sim.pose()[1], sim.pose()[2], 0, 0, 0);
+			sim.draw_pose(sim.goal()[0], sim.goal()[1], sim.goal()[2], 0, 200, 200);
+			sim.show();
 		}
 	}
 

@@ -31,7 +31,7 @@ public:
 	void set_seed(int seed);
 	void reset();
 	void step(double v, double phi, double dt);
-	void view(int time=1);
+	void show(int time=1);
 
 	vector<double> laser();
 	vector<double> pose();

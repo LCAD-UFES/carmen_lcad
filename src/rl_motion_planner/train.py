@@ -339,16 +339,15 @@ def launch(params, n_epochs, seed, policy_save_interval):
     
             if len(policy.buffer.stack) > 0:
                 for b in range(params['n_batches']):
-                    c_loss, p_loss, l2_loss, target_next_q, predicted_q, rew, main_q_policy = policy.train()
+                    c_loss, p_loss, l2_loss, target_q, predicted_q, rew, main_q_policy = policy.train()
                     #"""
                     if b % 128 == 0:
                         print('Batch', b, 'CriticLoss:', c_loss, 'PolicyLoss:', p_loss,
                               'L2 Loss:', l2_loss,
-                              'target_next_q predicted_q:\n', np.concatenate([rew[:5],
-                                                                              target_next_q[:5],
-                                                                              rew[:5] + target_next_q[:5],
-                                                                              predicted_q[:5],
-                                                                              main_q_policy[:5]], axis=1))
+                              'target_q predicted_q:\n', np.concatenate([rew[:5],
+                                                                          target_q[:5],
+                                                                          predicted_q[:5],
+                                                                          main_q_policy[:5]], axis=1))
                         print()
                     #"""
     

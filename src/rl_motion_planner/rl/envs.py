@@ -45,11 +45,11 @@ class SimpleEnv:
 
         self.env_border = int(self.env_size - 0.1 * self.env_size)
         
-        # self.goal = np.array(list((np.random.random(2) * 2.0 - 1.0) * self.env_border) + [0., 0.])
+        self.goal = np.array(list((np.random.random(2) * 2.0 - 1.0) * self.env_border) + [0., 0.])
         
         # self.goal = [self.env_border + 5., self.env_border + 5.]
         
-        self.goal = np.random.randn(2) * 0.3 * self.env_border
+        # self.goal = np.random.randn(2) * 0.3 * self.env_border
         self.goal = np.clip(self.goal, -self.env_border, self.env_border)
         
         self.goal = list(self.goal) + [0., 0., 0.]
@@ -252,8 +252,8 @@ class CarmenSimEnv:
         self.sim_dt = 0.1  
         self.max_speed_forward = 10.
         self.max_speed_backward = -10. if params['allow_negative_commands'] else 0.
-        self.phi_update_rate = 1.0 # 0.05
-        self.v_update_rate = 1.0 # 0.01
+        self.phi_update_rate = 0.1
+        self.v_update_rate = 0.1
 
         if self.params['use_acceleration']:
             self.max_acceleration_v = 1.0  # m/s^2
@@ -375,7 +375,7 @@ class CarmenSimEnv:
         self.sim.draw_pose(p[0], p[1], p[2], 0, 0, 0)
         self.sim.draw_pose(g[0], g[1], g[2], 0, 200, 200)
         
-        self.sim.view()
+        self.sim.show()
         self.panel.draw(p[3], p[4], self.sim_t)
 
 

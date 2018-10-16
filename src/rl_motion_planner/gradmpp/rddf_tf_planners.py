@@ -5,8 +5,29 @@ import tensorflow as tf
 def rad2deg(x):
     return (180. * x) / np.pi
 
+
+class Poly:
+    def __init__(self, order=4):
+        self.order = order
+        self.coeffs = tf.Variable(np.zeros(self.order), dtype=tf.float32)
+
+    def _poly(self, x, coeffs):
+        y = 0.
+
+        for p in range(coeffs.shape[0]):
+            y += coeffs[p] * (x ** p)
+
+        return y
+
+    def evaluate(self, t):
+        return self._poly(t, self.coeffs)
+
+    def params(self):
+        return self.coeffs
+
+
 class MotionPlanner:
-    def __init__(self, l2_weight=0.):
+    def __init__(self, l2_weight=0., function_type='poly'):
         max_v = 12.0
         max_phi = np.deg2rad(28.)
         L = 2.625
@@ -25,14 +46,15 @@ class MotionPlanner:
         th = tf.constant(0, dtype=tf.float32)
         self.loss = tf.constant(0, dtype=tf.float32)
 
-        self.vorder = 4
-        self.porder = 4
-        self.vcoeffs = tf.Variable(np.zeros(self.vorder), dtype=tf.float32)
-        self.pcoeffs = tf.Variable(np.zeros(self.porder), dtype=tf.float32)
+        if function_type == 'poly':
+            Function = Poly
+        
+        self.vfunc = Function()
+        self.pfunc = Function()
 
         for i in range(self.n_steps):
-            v = max_v * self.compute_v(self.rddf_cumdt[i])
-            phi = max_phi * self.compute_phi(self.rddf_cumdt[i])
+            v = max_v * tf.tanh(self.vfunc.evaluate(self.rddf_cumdt[i]))
+            phi = max_phi * tf.tanh(self.pfunc.evaluate(self.rddf_cumdt[i]))
 
             dt = self.rddf_dt[i]
             dx = dt * v * tf.cos(th)
@@ -53,42 +75,33 @@ class MotionPlanner:
 
         self.loss /= self.n_steps
 
-        l2 = tf.reduce_sum(self.pcoeffs ** 2) + tf.reduce_sum(self.vcoeffs ** 2)
+        l2 = tf.reduce_sum(self.pfunc.params() ** 2) + tf.reduce_sum(self.vfunc.params() ** 2)
         self.loss += l2 * l2_weight
 
         self.optimize = tf.train.AdamOptimizer(learning_rate=lr).minimize(self.loss)
         self.sess = tf.Session()
-
-    def forward(self, rddf_p, rddf_dt, rddf_cumdt):
         self.sess.run(tf.global_variables_initializer())
+
+    def forward(self, rddf_p, rddf_dt, rddf_cumdt, reinit=True):
+        if reinit:
+            self.sess.run(tf.global_variables_initializer())
+            
+        loss = 0.
         poses, cmds, = [], []
         vcoeffs, pcoeffs = [], []
         feed = {self.rddf_p: rddf_p, self.rddf_dt: rddf_dt, self.rddf_cumdt: rddf_cumdt}
-        fetches = [self.optimize, self.loss, self.cmds, self.poses, self.vcoeffs, self.pcoeffs]
+        fetches = [self.optimize, self.loss, self.cmds, self.poses, self.vfunc.params(), self.pfunc.params()]
 
-        for i in range(300):
+        for i in range(25):
             out = self.sess.run(fetches, feed_dict=feed)
+            loss = out[1]
             cmds = out[2]
             poses = out[3]
-            vcoeffs = out[4]
-            pcoeffs = out[5]
-
+            vparams = out[4]
+            pparams = out[5]
             if i % 50 == 0:
                 print('\t', i, 'loss:', np.sqrt(out[1]))
 
-        return cmds, poses, vcoeffs, pcoeffs
+        return cmds, poses, vparams, pparams, loss
 
-    def _poly(self, x, coeffs):
-        y = 0.
-
-        for p in range(coeffs.shape[0]):
-            y += coeffs[p] * (x ** p)
-
-        return y
-
-    def compute_v(self, t):
-        return self._poly(t, self.vcoeffs)
-
-    def compute_phi(self, t):
-        return self._poly(t, self.pcoeffs)
 

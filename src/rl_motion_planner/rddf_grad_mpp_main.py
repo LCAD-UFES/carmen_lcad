@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 from rl.util import relative_pose, Transform2d
 from gradmpp.rddf_tf_planners import MotionPlanner
 from rl.envs import CarmenSimEnv
-
+plt.ion()
+plt.show()
 
 def read_rddf(rddf):
     carmen_path = os.environ['CARMEN_HOME']
@@ -60,14 +61,17 @@ params = {'fix_initial_position': True,
           'use_latency': False,
           'use_acceleration': False,
           'use_spline': False,
-          'view': False}
+          'view': False, 
+          'goal_achievement_dist': np.inf,
+          'vel_achievement_dist': np.inf,
+          'n_steps_episode': -1}
 
 carmen = CarmenSimEnv(params)
 
 init_pos_id = 450
+carmen.reset()
 
 while True:
-    carmen.reset()
     
     pose = carmen.sim.pose()
     rddf = carmen.sim.rddf_forward()
@@ -79,8 +83,16 @@ while True:
     diff = mmax - mmin
     max_diff = np.max(diff)
 
-    cmds, poses, vc, pc = planner.forward(rddf_p, rddf_dt, rddf_cumdt)
+    init = time.time()
+
+    l = np.inf
+    n_iters = 0
+    while l > 2.0 and n_iters < 100:
+        cmds, poses, vc, pc, l = planner.forward(rddf_p, rddf_dt, rddf_cumdt, reinit=False)
+        n_iters += 1 
     
+    print('n_iters:', n_iters)
+    print('forward time: ', time.time() - init)
     print('v coeffs:', vc)
     print('phi coeffs:', pc)
 
@@ -101,7 +113,8 @@ while True:
 
     #plt.xlim(mmin[0], mmin[0] + max_diff)
     #plt.ylim(mmin[1] - max_diff / 2., mmin[1] + max_diff / 2.)
-
+    plt.figure('paths')
+    plt.clf()
     plt.plot(rddf_p[:, 0], rddf_p[:, 1], 'ob')
     p1 = plt.plot(rddf_p[:, 0], rddf_p[:, 1], '-b')
 
@@ -109,12 +122,14 @@ while True:
     p2 = plt.plot(poses[:, 0], poses[:, 1], '-r')
     plt.legend((None, 'desired', None, 'achieved'))
 
-    plt.figure()
+    plt.figure('velocity')
+    plt.clf()
     plt.title('Velocity')
     plt.plot(rddf_cumdt, cmds[:, 0], '-g')
     plt.ylim(-13., 13.)
 
-    plt.figure()
+    plt.figure('phi')
+    plt.clf()
     plt.title('Phi')
     plt.plot(rddf_cumdt, np.rad2deg(cmds[:, 1]), '-g')
     plt.ylim(-30.0, 30.0)
@@ -129,13 +144,17 @@ while True:
     
     poses = np.array(poses).astype(np.float64)
 
+    plt.show()
+    plt.pause(0.001)
+    
     carmen.sim.draw_occupancy_map()
     carmen.sim.draw_poses(rddf, 0, 200, 200)
     carmen.sim.draw_poses(poses, 0, 0, 255)
     carmen.sim.draw_pose(pose[0], pose[1], pose[2], 0, 0, 0)
-    carmen.sim.view(20)
-
-    plt.show()
+    carmen.sim.show(1)
     
-    init_pos_id += n_steps * step_size
+    v = ((cmds[0][0] + pose[3]) / 2.0) / 10.
+    p = ((cmds[0][1] + pose[4]) / 2.0) / np.deg2rad(28.)
+    
+    carmen.step(np.array([v, p]))
 
