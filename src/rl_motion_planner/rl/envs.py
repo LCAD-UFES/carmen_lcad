@@ -252,8 +252,8 @@ class CarmenSimEnv:
         self.sim_dt = 0.1  
         self.max_speed_forward = 10.
         self.max_speed_backward = -10. if params['allow_negative_commands'] else 0.
-        self.phi_update_rate = 0.1
-        self.v_update_rate = 0.1
+        self.phi_update_rate = 1.0
+        self.v_update_rate = 1.0
 
         if self.params['use_acceleration']:
             self.max_acceleration_v = 1.0  # m/s^2

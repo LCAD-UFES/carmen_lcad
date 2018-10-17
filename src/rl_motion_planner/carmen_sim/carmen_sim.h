@@ -23,7 +23,7 @@ public:
 			bool allow_negative_commands=true,
 			bool enjoy_mode=false,
 			bool use_latency=false,
-			const char *rddf_name="rddf_ida_guarapari-20170403.txt",
+			const char *rddf_name="rddf-voltadaufes-20170809.txt",
 			const char *map_dir="map_ida_guarapari-20170403-2",
 			double min_dist_to_initial_goal=5.,
 			double max_dist_to_initial_goal=20.);
@@ -46,6 +46,8 @@ public:
 	void draw_occupancy_map();
 	void draw_poses(vector< vector<double> > poses, int b, int g, int r);
 
+	void set_initial_pose(int pose_id);
+
 private:
 
 	string _rddf_name;
@@ -60,6 +62,7 @@ private:
 	int _current_rddf_pose;
 	bool _use_velocity_nn;
 	bool _use_phi_nn;
+	int _initial_pos;
 
 	cv::Mat *_view;
 

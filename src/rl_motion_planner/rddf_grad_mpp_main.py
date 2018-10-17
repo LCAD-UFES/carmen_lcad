@@ -7,15 +7,10 @@ import matplotlib.pyplot as plt
 from rl.util import relative_pose, Transform2d
 from gradmpp.rddf_tf_planners import MotionPlanner
 from rl.envs import CarmenSimEnv
+import panel.pycarmen_panel as pycarmen_panel
+
 plt.ion()
 plt.show()
-
-def read_rddf(rddf):
-    carmen_path = os.environ['CARMEN_HOME']
-    # rddf_path = carmen_path + '/data/rndf/rddf-log_voltadaufes-20160513.txt'
-    rddf_path = carmen_path + '/data/rndf/' + rddf
-    rddf = [[float(field) for field in line.rstrip().rsplit(' ')] for line in open(rddf_path, 'r').readlines()]
-    return rddf
 
 
 def dist(pose, goal):
@@ -33,6 +28,7 @@ def prepare_rddf(pose, rddf):
     max_acceleration = 1.0
     total_time = 0
     dts, cdts = [], []
+    rddf[0] = pose
     
     for i in range(1, len(rddf)):
         d = dist(rddf[i], rddf[i-1])
@@ -43,22 +39,29 @@ def prepare_rddf(pose, rddf):
             vs[i] = (vs[i - 1] ** 2 + 2 * max_acceleration * d) ** 0.5
             a = max_acceleration
     
-        dt = d / ((vs[i] + vs[i-1]) / 2.)
+        if a != 0:
+            dt = (vs[i] - vs[i - 1]) / a
+        elif np.abs(vs[i]) > 0:
+            dt = d / np.abs(vs[i])
+        else:
+            dt = 0.1
+        
         total_time += dt
         dts.append(dt)
         cdts.append(total_time)
 
-    return np.array(ps[1:]), np.array(dts), np.array(cdts)
+    return np.array(ps[1:]), np.array(dts), np.array(cdts), np.array(vs[1:])
 
 
 n_steps = 50
 step_size = 2
-planner = MotionPlanner(l2_weight=0.)
+planner = MotionPlanner(l2_weight=0., use_acceleration=False)
+panel = pycarmen_panel.CarPanel()
 
 params = {'fix_initial_position': True,
           'allow_negative_commands': False,
           'train': False,
-          'use_latency': False,
+          'use_latency': True,
           'use_acceleration': False,
           'use_spline': False,
           'view': False, 
@@ -69,6 +72,8 @@ params = {'fix_initial_position': True,
 carmen = CarmenSimEnv(params)
 
 init_pos_id = 450
+
+carmen.sim.set_initial_pose(4100)
 carmen.reset()
 
 while True:
@@ -76,7 +81,7 @@ while True:
     pose = carmen.sim.pose()
     rddf = carmen.sim.rddf_forward()
     
-    rddf_p, rddf_dt, rddf_cumdt = prepare_rddf(pose, rddf)
+    rddf_p, rddf_dt, rddf_cumdt, des_vs = prepare_rddf(pose, list(rddf))
 
     mmin = np.min(rddf_p[:, :2], axis=0)
     mmax = np.max(rddf_p[:, :2], axis=0)
@@ -85,11 +90,20 @@ while True:
 
     init = time.time()
 
-    l = np.inf
+    l = [np.inf]
     n_iters = 0
-    while l > 2.0 and n_iters < 100:
-        cmds, poses, vc, pc, l = planner.forward(rddf_p, rddf_dt, rddf_cumdt, reinit=False)
+    while np.mean(l) > 0.5 and n_iters < 100:
+        cmds, poses, vc, pc, l, eff = planner.forward(rddf_p, rddf_dt, rddf_cumdt, reinit=False,
+                                                      desired_v=des_vs, pose=pose)
         n_iters += 1 
+
+    v = (pose[3] + ((cmds[0][0] - pose[3]) * (0.15 / rddf_cumdt[0]))) / 10.
+    p = (pose[4] + ((cmds[0][1] - pose[4]) * (0.15 / rddf_cumdt[0]))) / np.deg2rad(28.)
+    # 
+    # v = cmds[0][0] / 10.
+    # p = cmds[0][1] / np.deg2rad(28.)
+
+    sim_cmd = np.array([v, p])
     
     print('n_iters:', n_iters)
     print('forward time: ', time.time() - init)
@@ -98,6 +112,7 @@ while True:
 
     cmds = np.array(cmds)
     poses = np.array(poses)
+    eff = np.array(eff)
 
     print('RDDF:')
     for i in range(len(rddf_p)):
@@ -111,21 +126,23 @@ while True:
               (c[0], c[1], p[0], p[1], p[2]))
     print()
 
+    """
     #plt.xlim(mmin[0], mmin[0] + max_diff)
     #plt.ylim(mmin[1] - max_diff / 2., mmin[1] + max_diff / 2.)
     plt.figure('paths')
     plt.clf()
     plt.plot(rddf_p[:, 0], rddf_p[:, 1], 'ob')
     p1 = plt.plot(rddf_p[:, 0], rddf_p[:, 1], '-b')
-
     plt.plot(poses[:, 0], poses[:, 1], 'or')
     p2 = plt.plot(poses[:, 0], poses[:, 1], '-r')
-    plt.legend((None, 'desired', None, 'achieved'))
+    plt.legend(('', 'desired', '', 'achieved'))
 
     plt.figure('velocity')
     plt.clf()
     plt.title('Velocity')
+    plt.plot(rddf_cumdt, des_vs, '-c')
     plt.plot(rddf_cumdt, cmds[:, 0], '-g')
+    plt.legend(('desired', 'command'))
     plt.ylim(-13., 13.)
 
     plt.figure('phi')
@@ -133,6 +150,22 @@ while True:
     plt.title('Phi')
     plt.plot(rddf_cumdt, np.rad2deg(cmds[:, 1]), '-g')
     plt.ylim(-30.0, 30.0)
+
+    plt.figure('acc')
+    plt.clf()
+    plt.title('Acceleration')
+    plt.plot(rddf_cumdt, eff[:, 0], '-g')
+    plt.ylim(-1.0, 1.0)
+
+    plt.figure('phi_v')
+    plt.clf()
+    plt.title('Phi Velocity')
+    plt.plot(rddf_cumdt, np.rad2deg(eff[:, 1]), '-g')
+    plt.ylim(-30.0, 30.0)
+
+    plt.show()
+    plt.pause(0.001)
+    """
 
     for i in range(len(poses)):
         t1 = Transform2d(pose[0], pose[1], pose[2])
@@ -144,17 +177,18 @@ while True:
     
     poses = np.array(poses).astype(np.float64)
 
-    plt.show()
-    plt.pause(0.001)
-    
+    panel.draw(pose[3], pose[4], carmen.sim_t)
     carmen.sim.draw_occupancy_map()
-    carmen.sim.draw_poses(rddf, 0, 200, 200)
+    carmen.sim.draw_poses(rddf, 0, 255, 0)
     carmen.sim.draw_poses(poses, 0, 0, 255)
     carmen.sim.draw_pose(pose[0], pose[1], pose[2], 0, 0, 0)
-    carmen.sim.show(1)
+    carmen.sim.show(2)
+
+    _, _, info = carmen.step(sim_cmd)
     
-    v = ((cmds[0][0] + pose[3]) / 2.0) / 10.
-    p = ((cmds[0][1] + pose[4]) / 2.0) / np.deg2rad(28.)
-    
-    carmen.step(np.array([v, p]))
+    if (info['hit_obstacle']):
+        print()
+        print('** COLLISION DETECTED! **')
+        print()
+        carmen.sim.show(-1)
 

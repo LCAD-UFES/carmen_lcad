@@ -47,7 +47,7 @@ CarmenSim::CarmenSim(bool fix_initial_position, bool use_truepos,
 
     _map_dir = carmen_home + "/data/" + map_dir;
 	_map_resolution = 0.2;
-	_viewer_subsampling = 2;
+	_viewer_subsampling = 1;
 	_map_pixel_by_meter = 1. / (_map_resolution * _viewer_subsampling);
 
 	carmen_grid_mapping_init_parameters(_map_resolution, 210);
@@ -70,6 +70,8 @@ CarmenSim::CarmenSim(bool fix_initial_position, bool use_truepos,
 
 	_current_rddf_pose = 0;
 	_view = NULL;
+
+	_initial_pos = 100;
 }
 
 
@@ -95,7 +97,7 @@ CarmenSim::reset()
 
 	int pose_id;
 
-	if (_fix_initial_position) pose_id = 480; //M;
+	if (_fix_initial_position) pose_id = _initial_pos;
 	else pose_id = M + rand() % (_rddf.size() - M);
 
 	int shift = m + (rand() % (M - m));  // shift is a random integer between m and M
@@ -367,8 +369,26 @@ CarmenSim::draw_poses(vector< vector<double> > poses, int b, int g, int r)
 void
 CarmenSim::show(int time)
 {
-	imshow("viewer", *_view);
+	if (_viewer_subsampling > 1)
+		imshow("viewer", *_view);
+	else
+	{
+		Mat res(Size(900, 900), CV_8UC3);
+		resize(*_view, res, res.size());
+		imshow("viewer", res);
+	}
+
 	waitKey(time);
+}
+
+
+void
+CarmenSim::set_initial_pose(int pose_id)
+{
+	if (pose_id < 0 || pose_id >= _rddf.size())
+		exit(printf("Error: pose id (%d) outside valid interval [0, %ld].\n", pose_id, _rddf.size()));
+
+	_initial_pos = pose_id;
 }
 
 
@@ -688,7 +708,7 @@ CarmenSim::_load_params()
 	_simulator_config.robot_config = _robot_ackerman_config;
 
 	_use_velocity_nn = false;
-	_use_phi_nn = true;
+	_use_phi_nn = false;
 }
 
 
