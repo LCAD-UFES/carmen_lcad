@@ -63,7 +63,7 @@ class ActorCritic:
 
         with tf.variable_scope("actor"):
             laser_fc, goal_fc, state_fc = self.encoder(norm_laser, norm_goal, norm_state,
-                                                       use_conv_layer, activation_fn, 32)
+                                                       use_conv_layer, activation_fn, n_hidden_neurons)
 
             actor_input =  tf.concat(axis=-1, values=[state_fc, goal_fc, laser_fc])
 
@@ -87,9 +87,9 @@ class ActorCritic:
             self.actor_command = tf.concat([self.command_v, self.command_phi], axis=-1)
             """
                         
-            # self.command_phi = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_phi")
-            # self.command_v = tf.layers.dense(in_tensor, units=1, activation=v_activation_fn, name="command_v")
-            # self.actor_command = tf.concat([self.command_v, self.command_phi], axis=-1)
+            #self.command_phi = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_phi")
+            #self.command_v = tf.layers.dense(in_tensor, units=1, activation=v_activation_fn, name="command_v")
+            #self.actor_command = tf.concat([self.command_v, self.command_phi], axis=-1)
             self.actor_command = tf.layers.dense(in_tensor, units=self.action_size, activation=tf.nn.tanh, name="commands")
 
         with tf.variable_scope("critic"):
@@ -295,10 +295,6 @@ class DDPG(object):
         # eps greedy
         if np.random.random() < random_eps:
             u = np.random.uniform(-1.0, 1.0, len(u))
-
-        u = np.clip(u, -1., 1.)
-
-        return u, q
 
         if self.allow_negative_commands: u[0] = np.clip(u[0], -1.0, 1.0)
         else: u[0] = np.clip(u[0], 0.0, 1.0)

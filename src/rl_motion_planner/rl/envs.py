@@ -373,7 +373,7 @@ class CarmenSimEnv:
         
         self.sim.draw_occupancy_map()
         self.sim.draw_pose(p[0], p[1], p[2], 0, 0, 0)
-        self.sim.draw_pose(g[0], g[1], g[2], 0, 200, 200)
+        self.sim.draw_pose(g[0], g[1], g[2], 0, 255, 0)
         
         self.sim.show()
         self.panel.draw(p[3], p[4], self.sim_t)

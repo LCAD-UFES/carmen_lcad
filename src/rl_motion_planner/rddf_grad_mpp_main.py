@@ -73,7 +73,7 @@ carmen = CarmenSimEnv(params)
 
 init_pos_id = 450
 
-carmen.sim.set_initial_pose(4100)
+carmen.sim.set_initial_pose(100)
 carmen.reset()
 
 while True:

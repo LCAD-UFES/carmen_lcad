@@ -33,21 +33,25 @@ def update_rewards(params, episode, info):
     if info['success']:
         # rw = (float(params['n_steps_episode'] + 1. - len(episode))) / float(params['n_steps_episode'])
         
-        rw = (float(params['n_steps_episode'] - len(episode))) / float(params['n_steps_episode'] - 1)
+        # rw = (float(params['n_steps_episode'] - len(episode))) / float(params['n_steps_episode'] - 1)
         
         # print(episode)
         # rw = dist(episode[0][0]['pose'], episode[0][3])
+        
+        rw = 1.0
     elif info['hit_obstacle']:
         # rw = -1.0
         rw = -1.
     elif info['starved']:
         rw = -1.
 
-    rw /= len(episode)
+    # rw /= len(episode)
 
     # print('rw:', rw)
     for i in range(len(episode)):
-        episode[i][2] = rw
+        episode[i][2] = 0
+    
+    episode[-1][2] = rw
 
 
 def view_data(obs, g, rear_laser_is_active, goal_achievemnt_dist):
@@ -173,6 +177,10 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
     q0 = 0.
 
     while len(episodes) < n_rollouts:
+        if params['env'] == 'carmen':
+            x = int(np.random.choice([100])) #range(100, 3001, 500)))
+            env.sim.set_initial_pose(x) 
+        
         obs, goal = env.reset()
 
         episode = []
@@ -181,8 +189,8 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
 
         i = 0
         while not done:
-            if not params['train']:
-                goal = env.sim.goal()
+            #if not params['train']:
+                #goal = env.sim.goal()
             
             g = relative_pose(obs['pose'], goal)
 
@@ -208,6 +216,8 @@ def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=F
 
             if params['env'] == 'simple' and params['view']:
                 env.view()
+                if not params['train']:
+                    time.sleep(params['view_sleep'])
 
             # g_after = relative_pose(new_obs['pose'], goal)
             # rw = 0.01 if not info['hit_obstacle'] else -1.0
@@ -376,7 +386,7 @@ def config():
         # env
         'env': 'carmen',
         'model': 'simple',
-        'n_steps_episode': 300,
+        'n_steps_episode': 100,
         'goal_achievement_dist': 1.0,
         'vel_achievement_dist': 0.5,
         'view': True,

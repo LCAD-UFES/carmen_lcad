@@ -26,7 +26,7 @@ public:
 			const char *rddf_name="rddf-voltadaufes-20170809.txt",
 			const char *map_dir="map_ida_guarapari-20170403-2",
 			double min_dist_to_initial_goal=5.,
-			double max_dist_to_initial_goal=20.);
+			double max_dist_to_initial_goal=15.);
 
 	void set_seed(int seed);
 	void reset();
