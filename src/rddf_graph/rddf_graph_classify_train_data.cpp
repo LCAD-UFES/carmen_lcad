@@ -91,20 +91,25 @@ classify_train_data(FILE *f_last_classified, vector < vector<t_pattern> > databa
 	cv::Mat image_15_15_scaled;
 	cv::Mat image_3_3;
 	cv::Mat image_3_3_scaled;
-	cv::Size size(15 * 20, 15 * 20);
+	cv::Size size(15 * 10, 15 * 10);
 	int k;
 	l_class actual;
 
 	string filename = database_classified_dir + "/database_classified.txt";
 	FILE *f_database_classified = fopen(filename.c_str(), "a+");
 
+	vector <string> valids;
+	vector <string> invalids;
+	bool back_pressed = false;
+
 	for (unsigned int i = last_classified.file_index; i<database_filenames.size();i++)
 	{
 		for (unsigned int j = last_classified.pattern; j<database_filenames[i].size();j++)
+		//for (unsigned int j = last_classified.pattern; j<database_filenames[i].size();)
 		{
 			//if (database_filenames[i].size() != 0 )
-			//if (std::count(database_filenames[i][j].pattern.begin(), database_filenames[i][j].pattern.end(),'1') >= 3)
-			if(i==84)
+			if (std::count(database_filenames[i][j].pattern.begin(), database_filenames[i][j].pattern.end(),'1') >= 3)
+			//if(i==84)
 			{
 				actual.file_index = i;
 				actual.pattern = j;
@@ -118,14 +123,23 @@ classify_train_data(FILE *f_last_classified, vector < vector<t_pattern> > databa
 				}
 				create_image_3_3(&image_3_3, database_filenames[i][j].pattern);
 				//cv::resize(image_15_15, image_15_15_scaled, size, 0, 0, cv::INTER_NEAREST);
-				cv::resize(image_15_15, image_15_15_scaled, size, 0, 0, cv::INTER_NEAREST);
-				cv::resize(image_3_3, image_3_3_scaled, size, 0, 0, cv::INTER_NEAREST);
+				//cv::resize(image_15_15, image_15_15_scaled, size, 0, 0, cv::INTER_NEAREST);
+				cv::resize(image_15_15, image_15_15_scaled, size);
+				//cv::resize(image_3_3, image_3_3_scaled, size, 0, 0, cv::INTER_NEAREST);
+				cv::resize(image_3_3, image_3_3_scaled, size);
 				cv::imshow("z->valid | x->invalid | esc->exit", image_15_15_scaled);
 				cv::imshow("image 3x3", image_3_3_scaled);
 
 				k = (char)cv::waitKey();
 				if (k == 122) //z - valido!!!
 				{
+					/*if(database_filenames[i][j].filename.compare(invalids.back()) == 0)
+						invalids.pop_back();
+
+					valids.push_back(database_filenames[i][j].filename);
+					j++;*/
+
+
 					string new_filename = database_filenames[i][j].filename;
 					size_t found_bar = database_filenames[i][j].filename.find_last_of("/");
 					new_filename = database_filenames[i][j].filename.substr(found_bar+1, database_filenames[i][j].filename.size()-found_bar-1);
@@ -136,6 +150,12 @@ classify_train_data(FILE *f_last_classified, vector < vector<t_pattern> > databa
 				}
 				if (k == 120) //x - invalido!!!!!!
 				{
+					/*if(database_filenames[i][j].filename.compare(valids.back()) == 0)
+						valids.pop_back();
+
+					invalids.push_back(database_filenames[i][j].filename);
+					j++;*/
+
 					string new_filename = database_filenames[i][j].filename;
 					size_t found_bar = database_filenames[i][j].filename.find_last_of("/");
 					size_t found_underline = database_filenames[i][j].filename.find_last_of("_");
@@ -145,6 +165,12 @@ classify_train_data(FILE *f_last_classified, vector < vector<t_pattern> > databa
 					string command = "cp " + database_filenames[i][j].filename + " " + new_filename;
 					system(command.c_str());
 				}
+				if (k == 44) //traz - volta!!!!!!
+				{
+					j-=2;
+					back_pressed = true;
+				}
+
 				if (k == 27) //sair
 				{
 					fprintf(f_last_classified, "%d %d\n", actual.file_index, actual.pattern);
@@ -190,9 +216,9 @@ fill_database_matrix(FILE *f_database_filenames, vector < vector<t_pattern> > &d
 			//if(i!=16)
 				//sum+=database_filenames[i].size();
 			cont++;
-			cout<<i<<" ";
+			//cout<<i<<" ";
 			//cout<<database_filenames[i][0].filename<<endl;
-			cout<<database_filenames[i].size()<<endl;
+			//cout<<database_filenames[i].size()<<endl;
 		}
 		//cout<<i<<" "<<database_filenames[i].size()<<endl;getchar();
 	}
@@ -232,6 +258,12 @@ main(int argc, char **argv)
 		define_messages();
 	}
 	//signal(SIGINT, shutdown_module);
+
+	printf("* * * * Database Classifier * * * \n");
+	printf("* z: valid pattern               *\n");
+	printf("* x: invalid pattern             *\n");
+	printf("* esc: exit program              *\n");
+	printf("* * * * * * * * * *  * * * * * * *\n");
 
 	FILE *f_database_filenames;
 	FILE *f_last_classified;
