@@ -1502,6 +1502,7 @@ mapper_publish_map(double timestamp)
 	if (build_snapshot_map)
 	{
 		memcpy(map.complete_map, offline_map.complete_map, offline_map.config.x_size *  offline_map.config.y_size * sizeof(double));
+		// memset(map.complete_map, 0, offline_map.config.x_size *  offline_map.config.y_size * sizeof(double));         // Uncomment to see the snapshot_map on viewer 3D, on carmen-ford-scape.ini turn on mapper_build_snapshot_map an turn off mapper_decay_to_offline_map
 		run_snapshot_mapper();
 	}
 
