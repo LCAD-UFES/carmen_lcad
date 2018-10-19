@@ -88,7 +88,6 @@ public:
 	static void set_offline_map(carmen_map_t *new_map);
 
 	static void set_map(carmen_map_t *new_map);
-
 };
 
 #endif /* GLOBAL_STATE_H_ */

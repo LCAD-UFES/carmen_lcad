@@ -292,8 +292,10 @@ void
 save_trajectory_lookup_table()
 {
 	FILE *tlt_f;
-
-	tlt_f = fopen("trajectory_lookup_table.bin", "w");
+	if (GlobalState::reverse_driving)
+		tlt_f = fopen("trajectory_lookup_table_reverse.bin", "w");
+	else
+		tlt_f = fopen("trajectory_lookup_table.bin", "w");
 
 	for (int i = 0; i < N_DIST; i++)
 		for (int j = 0; j < N_THETA; j++)
@@ -311,11 +313,14 @@ TrajectoryLookupTable::load_trajectory_lookup_table_old()
 {
 	struct stat buffer;
 
-	if (stat("trajectory_lookup_table.bin", &buffer) == 0)
+	if (((!GlobalState::reverse_driving) && (stat("trajectory_lookup_table.bin", &buffer) == 0)) ||
+		((GlobalState::reverse_driving) && (stat("trajectory_lookup_table_reverse.bin", &buffer) == 0)))
 	{
 		FILE *tlt_f;
-
-		tlt_f = fopen("trajectory_lookup_table.bin", "r");
+		if (GlobalState::reverse_driving)
+			tlt_f = fopen("trajectory_lookup_table_reverse.bin", "r");
+		else
+			tlt_f = fopen("trajectory_lookup_table.bin", "r");
 
 		for (int i = 0; i < N_DIST; i++)
 			for (int j = 0; j < N_THETA; j++)
@@ -352,11 +357,14 @@ TrajectoryLookupTable::load_trajectory_lookup_table()
 {
 	struct stat buffer;
 
-	if (stat("trajectory_lookup_table.bin", &buffer) == 0)
+	if (((!GlobalState::reverse_driving) && (stat("trajectory_lookup_table.bin", &buffer) == 0)) ||
+		((GlobalState::reverse_driving) && (stat("trajectory_lookup_table_reverse.bin", &buffer) == 0)))
 	{
 		FILE *tlt_f;
-
-		tlt_f = fopen("trajectory_lookup_table.bin", "r");
+		if (GlobalState::reverse_driving)
+			tlt_f = fopen("trajectory_lookup_table_reverse.bin", "r");
+		else
+			tlt_f = fopen("trajectory_lookup_table.bin", "r");
 
 		for (int i = 0; i < N_DIST; i++)
 			for (int j = 0; j < N_THETA; j++)
