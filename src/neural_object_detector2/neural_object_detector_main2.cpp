@@ -373,8 +373,8 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
 
     //cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
     //cv::resize(rgb_image, resized_image, resized_image.size());
-
-    //cv::resize(rgb_image, rgb_image, Size(900, 600));
+    if (window_name.compare("NOD_FULL") == 0)
+    	cv::resize(rgb_image, rgb_image, Size(600, 300));
     cv::imshow(window_name, rgb_image);
     cv::waitKey(1);
 
@@ -502,8 +502,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     cv::Mat pRoi = src_image_copy(cv::Rect(src_image_copy.cols * crop_x / 2.0, 0,
     		src_image_copy.cols - src_image_copy.cols * crop_x, src_image_copy.rows));
     src_image = pRoi;
+    src_image_copy = src_image.clone();
 
     cv::cvtColor(src_image, rgb_image, cv::COLOR_RGB2BGR);
+
+    cv::Mat rgb_image_copy = rgb_image.clone();
 
     detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points, 1);
 
@@ -528,15 +531,24 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     rddf_points.push_back(p);
     	//}
 
-    cv::Rect rec(rddf_points[rddf_points.size()-1].x - 50, rddf_points[rddf_points.size()-1].y-30, 100, 100);
-    //cv::Rect rec(rddf_points[rddf_points.size()-1].x - 208, rddf_points[rddf_points.size()-1].y-200, 416, 416);
+    cv::Rect rec(rddf_points[rddf_points.size()-1].x - 208, rddf_points[rddf_points.size()-1].y-200, 416, 416);
     cv::Mat roi = rgb_image (rec);
-    cv::Size size (416, 416);
-    cv::resize(roi, roi, size);
-//    cv::imshow("cutted", roi);
     src_image = roi;
     rgb_image = roi;
     detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points, 2);
+
+    src_image = src_image_copy;
+    rgb_image = rgb_image_copy;
+
+    cv::Rect rec2(rddf_points[rddf_points.size()-1].x - 50, rddf_points[rddf_points.size()-1].y-50, 100, 100);
+    //cv::Rect rec(rddf_points[rddf_points.size()-1].x - 208, rddf_points[rddf_points.size()-1].y-200, 416, 416);
+    cv::Mat roi2 = rgb_image (rec2);
+    cv::Size size2 (416, 416);
+    cv::resize(roi2, roi2, size2);
+//    cv::imshow("cutted", roi);
+    src_image = roi2;
+    rgb_image = roi2;
+    detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points, 3);
 
     	//cv::circle(out, cv::Point(p.x, p.y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
     //}
