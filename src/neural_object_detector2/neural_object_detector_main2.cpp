@@ -315,7 +315,8 @@ rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
 
 void
 show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list,
-		vector<bbox_t> predictions, vector<bounding_box> bouding_boxes_list, double hood_removal_percentage, double fps, vector<carmen_position_t> rddf_points)
+		vector<bbox_t> predictions, vector<bounding_box> bouding_boxes_list, double hood_removal_percentage, double fps,
+                vector<carmen_position_t> rddf_points, string window_name)
 {
     char confianca[25];
     char frame_rate[25];
@@ -374,7 +375,7 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
     //cv::resize(rgb_image, resized_image, resized_image.size());
 
     //cv::resize(rgb_image, rgb_image, Size(900, 600));
-    cv::imshow("Neural Object Detector", rgb_image);
+    cv::imshow(window_name, rgb_image);
     cv::waitKey(1);
 
     //resized_image.release();
@@ -383,8 +384,21 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
 
 void
 detections(carmen_bumblebee_basic_stereoimage_message *image_msg, carmen_velodyne_partial_scan_message velodyne_sync_with_cam,
-		   cv::Mat src_image, cv::Mat rgb_image, double start_time, double fps, vector<carmen_position_t> rddf_points)
+		   cv::Mat src_image, cv::Mat rgb_image, double start_time, double fps, vector<carmen_position_t> rddf_points,
+		   int detection_type)
 {
+	/*Detection type:
+	1 - full
+	2 - 416 X 416
+	3 - specific size*/
+	string window_name;
+	if(detection_type == 1)
+		window_name = "NOD_FULL";
+	else if(detection_type == 2)
+		window_name = "NOD_416";
+	else
+		window_name = "NOD_SPECIFIC";
+
 	double hood_removal_percentage = 0.2;
 	vector<carmen_tracked_cluster_t> clusters;
 	vector<bounding_box> bouding_boxes_list;
@@ -452,7 +466,7 @@ detections(carmen_bumblebee_basic_stereoimage_message *image_msg, carmen_velodyn
 
 	#ifdef SHOW_DETECTIONS
 	    show_detections(rgb_image, laser_points_in_camera_box_list, predictions, bouding_boxes_list,
-	    		hood_removal_percentage, fps, rddf_points);
+	    		hood_removal_percentage, fps, rddf_points, window_name);
 	#endif
 }
 
@@ -491,7 +505,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     cv::cvtColor(src_image, rgb_image, cv::COLOR_RGB2BGR);
 
-    detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points);
+    detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points, 1);
 
     int thickness = -1;
     int lineType = 8;
@@ -522,7 +536,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 //    cv::imshow("cutted", roi);
     src_image = roi;
     rgb_image = roi;
-    detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points);
+    detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points, 2);
 
     	//cv::circle(out, cv::Point(p.x, p.y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
     //}
