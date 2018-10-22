@@ -40,7 +40,7 @@ velodyne_camera_calibration:
 camera_boxes_to_world:
 	$(MAKE) -C $(CARMEN_HOME)/src/camera_boxes_to_world
 
-clean: clean_velodyne_camera_calibration clean_camera_boxes_to_world clean_darknet clean_libclustering
+clean: clean_velodyne_camera_calibration clean_camera_boxes_to_world clean_libclustering
 
 clean_velodyne_camera_calibration:
 	$(MAKE) clean -C $(CARMEN_HOME)/src/velodyne_camera_calibration

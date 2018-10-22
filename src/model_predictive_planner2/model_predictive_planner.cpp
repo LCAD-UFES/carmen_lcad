@@ -175,6 +175,9 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 TrajectoryLookupTable::TrajectoryDimensions
 get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_odometry,	Pose *goal_pose)
 {
+	double theta_rev = carmen_normalize_theta(atan2(localizer_pose->y - goal_pose->y,  localizer_pose->x - goal_pose->x) - localizer_pose->theta);
+	double theta_2 = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
+	printf("Gol behind: %lf goal_in_front: %lf \n", theta_rev, theta_2);
 	TrajectoryLookupTable::TrajectoryDimensions td;
 
 	td.dist = sqrt((goal_pose->x - localizer_pose->x) * (goal_pose->x - localizer_pose->x) +
@@ -861,10 +864,10 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	//TODO:Delete after behavior selector reverse GOALs - Getting a new GOAL in poses back to don't need to change the behaviour selector
 	if (GlobalState::reverse_driving)
 	{
-		target_v = -2.0;
-		printf("Goal antes: %lf", goalPoseVector[0].x);
+		target_v = -8.0;
+//		printf("Goal antes: %lf", goalPoseVector[0].x);
 		simulate_goal_position(goalPoseVector, goal_list_message, 10);
-		printf(" Goal depois: %lf\n", goalPoseVector[0].x);
+//		printf(" Goal depois: %lf\n", goalPoseVector[0].x);
 	}
 
 
@@ -997,6 +1000,18 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 }
 
 
+double
+linear_progression_test(int n, double common, int index_of_element_zero)
+{
+	if (n == index_of_element_zero)
+		return (0.0);
+	else if (n > index_of_element_zero)
+		return (common * (n - index_of_element_zero));
+	else
+		return (-common * (index_of_element_zero - n));
+}
+
+
 vector<vector<carmen_ackerman_path_point_t> >
 compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometry,
 		double target_v, carmen_behavior_selector_road_profile_message *goal_list_message)
@@ -1023,6 +1038,11 @@ compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometr
 		newPose.y += 0.3 * (double) magicSignals[i] * sin(carmen_normalize_theta((goal_pose->theta) - carmen_degrees_to_radians(90.0)));
 		goalPoseVector.push_back(newPose);
 	}
+//	for(int i = 0; i < N_THETA; i++)
+//	{
+//		printf("")
+//		linear_progression_test(i);
+//	}
 
 	paths.resize(lastOdometryVector.size() * goalPoseVector.size());
 
