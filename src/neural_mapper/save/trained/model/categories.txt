@@ -1,3 +1,0 @@
-classes,targets
-not-road,1
-Road,1
