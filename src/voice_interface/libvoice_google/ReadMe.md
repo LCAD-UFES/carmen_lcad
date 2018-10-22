@@ -38,9 +38,21 @@ To begin to use a Google Cloud API, you must have a Google account.
 
 Examples of the Text-to-Speech and Speech-to-Text APIs:
 
+(Using Python 2.7.12)
 ```sh
 sudo apt-get install python-pyaudio vlc
-pip install --upgrade google-cloud-texttospeech google-cloud-speech python-vlc
+pip install --upgrade google-cloud-texttospeech google-cloud-speech python-vlc python-pyaudio
+```
+
+Using Python3 (3.5.2 or greater)
+```sh
+pip3 install --upgrade google-cloud-texttospeech google-cloud-speech python-vlc python-pyaudio
+```
+
+If you get problems installing 'pyaudio': "Failed building wheel for pyaudio"
+Try: 
+```sh
+sudo apt-get install portaudio19-dev
 ```
 
 ### 3. Some Python Samples
@@ -59,7 +71,7 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
 
   - Billing account? The same json can be used for everybody?
   - When you run "gcloud init", it asks the user to login. Will it work in a different machine? Can we upload the config file (the .boto saved at ~/.boto)? Is this enough? In the end of the process, it says "You can create additional configurations if you work with multiple accounts and/or projects. Run "gcloud topic configurations" to learn more.". Will we have one account for the whole IARA project, or one for each developer?
-  - Try to make the system work with Python3.
+  - Try to make the system work with Python3. (SOLVED)
   - Add a timeout to the listen function.
   - If possible, check if there is a working microphone.
   - If it is possible to change the language online, add an option to do so.
