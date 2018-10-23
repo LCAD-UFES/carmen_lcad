@@ -351,9 +351,9 @@ velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_messa
                 	point.ray_number  = i;
                 	point.image_x     = image_x - crop_x;
                 	point.image_y     = image_y - crop_y;
-                	point.cartesian_x = p3d_camera_reference.x();
-                	point.cartesian_y = p3d_camera_reference.y();
-                	point.cartesian_z = p3d_camera_reference.z();
+                	point.cartesian_x = p3d_velodyne_reference.x();
+                	point.cartesian_y = -p3d_velodyne_reference.y();             // Must be inverted because Velodyne angle is reversed with CARMEN angles
+                	point.cartesian_z = p3d_velodyne_reference.z();
 
                 	points.push_back(point);
                 }
