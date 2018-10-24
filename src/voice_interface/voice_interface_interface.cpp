@@ -13,7 +13,7 @@ void
 carmen_voice_interface_subscribe_can_line_message(carmen_voice_interface_can_line_message *message, carmen_handler_t handler,
 		carmen_subscribe_t subscribe_how)
 {
-	carmen_subscribe_message(CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME, CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_FMT, message,
+	carmen_subscribe_message((char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME, (char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_FMT, message,
 			sizeof(carmen_voice_interface_can_line_message), handler, subscribe_how);
 }
 
@@ -21,7 +21,7 @@ carmen_voice_interface_subscribe_can_line_message(carmen_voice_interface_can_lin
 void
 carmen_voice_interface_unsubscribe_can_line_message(carmen_handler_t handler)
 {
-	carmen_unsubscribe_message(CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME, handler);
+	carmen_unsubscribe_message((char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME, handler);
 }
 
 
@@ -30,8 +30,8 @@ carmen_voice_interface_publish_can_line_message(carmen_voice_interface_can_line_
 {
 	IPC_RETURN_TYPE err;
 
-	err = IPC_publishData(CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME, message);
-	carmen_test_ipc_exit(err, "Could not publish", CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_FMT);
+	err = IPC_publishData((char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME, message);
+	carmen_test_ipc_exit(err, "Could not publish", (char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_FMT);
 }
 
 
@@ -40,8 +40,8 @@ carmen_voice_interface_define_can_line_message()
 {
 	IPC_RETURN_TYPE err;
 
-	err = IPC_defineMsg(CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_FMT);
-	carmen_test_ipc_exit(err, "Could not define", CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME);
+	err = IPC_defineMsg((char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME, IPC_VARIABLE_LENGTH, (char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_FMT);
+	carmen_test_ipc_exit(err, (char *) "Could not define", (char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME);
 }
 
 
@@ -55,11 +55,11 @@ carmen_voice_interface_speak(char *speech)
 		if (voice_interface_error != NULL)
 			return (voice_interface_error);
 
-		char *speech_file_name = "speech00001.wav";
+		char *speech_file_name = (char *) "speech00001.wav";
 		if (speak(speech, speech_file_name) != 0)
 		{
 			finalize_voice();
-			return ("Error: Could not load SPEAK function.\n");
+			return ((char *) "Error: Could not load SPEAK function.\n");
 		}
 
 		list_of_speechs = fopen(LIST_OF_SPEECHS_FILE, "w");

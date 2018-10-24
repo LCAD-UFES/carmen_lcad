@@ -1,4 +1,4 @@
-#include "Python.h"
+#include <Python.h>
 #include <stdio.h>
 #include <iostream>
 
@@ -11,7 +11,7 @@ char *
 init_voice()
 {
 	Py_Initialize();
-	python_module_name = PyString_FromString("listen_speak");
+	python_module_name = PyString_FromString((char *) "listen_speak");
 
 	python_module = PyImport_Import(python_module_name);
 	Py_DECREF(python_module_name);
@@ -19,25 +19,25 @@ init_voice()
 	if (python_module == NULL)
 	{
 		Py_Finalize();
-		return ("Error: the module could not be loaded.\n");
+		return ((char *) "Error: The python_module could not be loaded.\n");
 	}
 
-	python_speak_function = PyObject_GetAttrString(python_module, "speak");
+	python_speak_function = PyObject_GetAttrString(python_module, (char *) "speak");
 
 	if (python_speak_function == NULL || !PyCallable_Check(python_speak_function))
 	{
 		Py_DECREF(python_module);
 		Py_Finalize();
-		return ("Error: Could not load SPEAK function.\n");
+		return ((char *) "Error: Could not load the python_module speak function.\n");
 	}
 
-	python_listen_function = PyObject_GetAttrString(python_module, "listen");
+	python_listen_function = PyObject_GetAttrString(python_module, (char *) "listen");
 
 	if (python_listen_function == NULL || !PyCallable_Check(python_listen_function))
 	{
 		Py_DECREF(python_module);
 		Py_Finalize();
-		return ("Error: Could not load LISTEN function.\n");
+		return ((char *) "Error: Could not load the python_module listen function.\n");
 	}
 
 	return (NULL); // OK

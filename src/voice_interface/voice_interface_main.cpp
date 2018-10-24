@@ -11,7 +11,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-static void
+void
 publish_voice_interface_can_line_message(char *can_line)
 {
 //	carmen_voice_interface_can_line_message message;
@@ -63,7 +63,9 @@ main (int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	voice_interface_initialize();
 
-	carmen_voice_interface_speak((char *) "Só alegria!");
+	char *voice_interface_error = carmen_voice_interface_speak((char *) "Só alegria!");
+	if (voice_interface_error)
+		printf("%s", voice_interface_error);
 
 	return (0);
 }
