@@ -45,7 +45,7 @@ clean: pycarmen_sim_clean
 
 PY_INC = -I `python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"`
 # PY_LIB = -L `python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"` 
-PY_LIB = -L /usr/lib/x86_64-linux-gnu/
+# PY_LIB = -L /usr/lib/x86_64-linux-gnu/
 PY_LIB += `python3-config --libs`
 
 pycarmen_sim:

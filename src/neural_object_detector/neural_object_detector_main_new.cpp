@@ -89,11 +89,13 @@ publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clo
 
 
 vector<vector<image_cartesian>>
-filter_points_inside_bounding_boxes(vector<bbox_t> &predictions, vector<image_cartesian> &velodyne_points_vector)
+get_points_inside_bounding_boxes(vector<bbox_t> &predictions, vector<image_cartesian> &velodyne_points_vector)
 {
 	vector<vector<image_cartesian>> laser_list_inside_each_bounding_box; //each_bounding_box_laser_list
 
-	for (unsigned int i = 0; i < predictions.size(); i++)
+	//cout << predictions.size() << endl;
+
+	for (unsigned int i = 0; i < predictions.size();)
 	{
 		vector<image_cartesian> lasers_points_inside_bounding_box;
 
@@ -107,7 +109,17 @@ filter_points_inside_bounding_boxes(vector<bbox_t> &predictions, vector<image_ca
 				lasers_points_inside_bounding_box.push_back(velodyne_points_vector[j]);
 			}
 		}
-		laser_list_inside_each_bounding_box.push_back(lasers_points_inside_bounding_box);
+		if (lasers_points_inside_bounding_box.size() > 0)
+		{
+			laser_list_inside_each_bounding_box.push_back(lasers_points_inside_bounding_box);
+			i++;
+		}
+		else
+		{
+			//cout << predictions.size() << endl;
+			predictions.erase(predictions.begin()+i);
+		}
+
 	}
 	return laser_list_inside_each_bounding_box;
 }
@@ -286,7 +298,7 @@ show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> p
     show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
     show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
-    resize(image, image, Size(640, 480));
+//    resize(image, image, Size(600, 300));
     imshow("Neural Object Detector", image);
     //imwrite("Image.jpg", image);
     waitKey(1);
@@ -308,6 +320,7 @@ compute_detected_objects_poses(vector<vector<image_cartesian>> filtered_points)
 			point.cartesian_x = -999.0;    // This error code is set, probably the object is out of the LiDAR's range
 			point.cartesian_y = -999.0;
 			point.cartesian_z = -999.0;
+			//printf("Empty Bbox\n");
 		}
 		else
 		{
@@ -383,7 +396,7 @@ build_detected_objects_message(vector<bbox_t> predictions, vector<image_cartesia
 		if (objects_poses[i].cartesian_x != -999.0 || objects_poses[i].cartesian_y != -999.0)                       // probably the object is out of the LiDAR's range
 		{
 			carmen_translte_2d(&objects_poses[i].cartesian_x, &objects_poses[i].cartesian_y, board_x, board_y);
-			carmen_rotate_2d  (&objects_poses[i].cartesian_x, &objects_poses[i].cartesian_y, globalpos.theta);
+			carmen_rotate_2d  (&objects_poses[i].cartesian_x, &objects_poses[i].cartesian_y, carmen_normalize_theta(globalpos.theta));
 			carmen_translte_2d(&objects_poses[i].cartesian_x, &objects_poses[i].cartesian_y, globalpos.x, globalpos.y);
 
 			msg.point_clouds[l].r = 1.0;
@@ -494,11 +507,13 @@ compute_annotation_specifications(vector<vector<image_cartesian>> traffic_light_
 	{
 		for (j = 0; j < traffic_light_clusters[i].size(); j++)
 		{
+			//printf("%lf %lf %lf\n", traffic_light_clusters[i][j].cartesian_x, traffic_light_clusters[i][j].cartesian_y, traffic_light_clusters[i][j].cartesian_z);
+
 			mean_x += traffic_light_clusters[i][j].cartesian_x;
 			mean_y += traffic_light_clusters[i][j].cartesian_y;
 			mean_z += traffic_light_clusters[i][j].cartesian_z;
 		}
-		printf("TL %lf %lf %lf %d\n", mean_x/j, mean_y/j, mean_z/j, (int)traffic_light_clusters[i].size());
+		printf("TL %lf %lf %lf\n", mean_x/j, mean_y/j, mean_z/j);
 
 		mean_x = 0.0;
 		mean_y = 0.0;
@@ -523,6 +538,8 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 	static int count = 0;
 	int traffic_light_found = 1;
 
+	//printf("--- %lf %lf\n", globalpos.x, globalpos.y);
+
 	for (int i = 0; i < predictions.size(); i++)
 	{
 		if (predictions[i].obj_id == 9)
@@ -530,13 +547,15 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 			//printf("%s\n", obj_names_vector[predictions[i].obj_id].c_str());
 			for (int j = 0; j < points_inside_bbox[i].size(); j++)
 			{
-				carmen_translte_3d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, &points_inside_bbox[i][j].cartesian_z,
-						board_x, board_y, board_z);
-				carmen_rotate_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos.theta);
+				//printf("%lf %lf\n", points_inside_bbox[i][j].cartesian_x, points_inside_bbox[i][j].cartesian_y);
+
+				//carmen_translte_3d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, &points_inside_bbox[i][j].cartesian_z, board_x, board_y, board_z);
+				carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, board_x, board_y);
+				carmen_rotate_2d  (&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos.theta);
 				carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos.x, globalpos.y);
 
 				traffic_light_points.push_back(points_inside_bbox[i][j]);
-				printf("%lf %lf\n", points_inside_bbox[i][j].cartesian_x, points_inside_bbox[i][j].cartesian_y);
+				//printf("%lf %lf\n", points_inside_bbox[i][j].cartesian_x, points_inside_bbox[i][j].cartesian_y);
 			}
 			count = 0;
 			traffic_light_found = 0;
@@ -545,12 +564,12 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 	count += traffic_light_found;
 
 	if (count >= 20)                // If stays without see a traffic light for more than 20 frames
-	{                              // Compute traffic light positions and generate annotations
+	{                               // Compute traffic light positions and generate annotations
 		vector<vector<image_cartesian>> traffic_light_clusters = dbscan_compute_clusters(0.5, 3, traffic_light_points);
+		printf("--- %d\n", (int)traffic_light_clusters.size());
 		compute_annotation_specifications(traffic_light_clusters);
 		traffic_light_points.clear();
 		count = 0;
-		//printf("GP %lf %lf\n", globalpos.x, globalpos.y);
 	}
 	//printf("Cont %d\n", count);
 }
@@ -563,15 +582,16 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	double fps;
 	static double start_time = 0.0;
 
-	int crop_x = image_msg->width * 0.2;
-	int crop_y = image_msg->height * 0.25;
-	int crop_w = image_msg->width * 0.55;
-	int crop_h = image_msg->height * 0.5;
+//	int crop_x = image_msg->width * 0.2;
+//	int crop_y = image_msg->height * 0.25;
+//	int crop_w = image_msg->width * 0.55;
+//	int crop_h = image_msg->height * 0.5;
 
-//	int crop_x = 0;
-//	int crop_y = 0;
-//	int crop_w = image_msg->width;
-//	int crop_h = image_msg->height;
+
+	int crop_x = 0;
+	int crop_y = 0;
+	int crop_w = image_msg->width; 1280;
+	int crop_h = 400; //image_msg->height; 500;
 
 	if (camera_side == 0)
 		img = image_msg->raw_left;
@@ -587,6 +607,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 	//cvtColor(open_cv_image, open_cv_image, COLOR_RGB2BGR);
 
+	//char image_name[256];
+	//sprintf(image_name, "%s%lf.png", "image", image_msg->timestamp);
+	//imwrite(image_name , open_cv_image);
 	//imshow("NOD", open_cv_image);
 	//waitKey(1);
 
@@ -598,13 +621,13 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 		vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
 						image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 
-		vector<vector<image_cartesian>> points_inside_bbox = filter_points_inside_bounding_boxes(predictions, points);
+		vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto
+
+		generate_traffic_light_annotations(predictions, points_inside_bbox);
 
 		vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
 
 		vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
-
-		generate_traffic_light_annotations(predictions, points_inside_bbox);
 
 		carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
 

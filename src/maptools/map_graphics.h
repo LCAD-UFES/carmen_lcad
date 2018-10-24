@@ -124,10 +124,10 @@ void carmen_map_graphics_draw_rectangle(GtkMapViewer *map_view,
 					int filled, carmen_world_point_p start,
 					carmen_world_point_p end);
 
-void carmen_map_graphics_draw_string(GtkMapViewer *map_view, GdkColor *colour, 
-				     GdkFont *font, int x, int y, 
-				     const char *string);
-  
+void carmen_map_graphics_draw_string(GtkMapViewer *map_view, GdkColor *colour,
+					GdkFont *font, carmen_world_point_p start,
+					const char *string);
+
 void carmen_map_graphics_add_motion_event(GtkMapViewer *internal_map_view, 
 					  carmen_graphics_mapview_callback_t 
 					  motion_handler);

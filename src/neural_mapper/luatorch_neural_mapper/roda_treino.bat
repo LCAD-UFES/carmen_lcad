@@ -1,0 +1,1 @@
+qlua ./run.lua --dataset neuralmap --model models/road_model.lua --imHeight 424 --imWidth 424 --labelHeight 424 --labelWidth 424 --batchSize 1 --channels 5 --learningRate 0.001 --lrDecayEvery 300 --maxepoch 5000

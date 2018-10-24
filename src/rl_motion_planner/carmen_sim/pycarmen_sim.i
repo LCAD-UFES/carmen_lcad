@@ -7,6 +7,7 @@
 namespace std
 {
     %template(FloatVector) vector<double>;
+    %template(FloatVVector) vector< vector<double> >;
 }
 
 %{

@@ -51,15 +51,17 @@ extern "C" {
 #define    CARMEN_PLAYBACK_COMMAND_FWD_SINGLE   	5
 #define    CARMEN_PLAYBACK_COMMAND_RWD_SINGLE   	6
 #define    CARMEN_PLAYBACK_COMMAND_SET_SPEED    	7
-#define    CARMEN_PLAYBACK_COMMAND_SET_INITIAL_TIME    	8
+#define    CARMEN_PLAYBACK_COMMAND_SET_MESSAGE    	8
 
 typedef struct {
-  int cmd, arg;
+  int cmd;
+  char *message;
+  int offset;
   float speed;
 } carmen_playback_command_message;
 
 #define CARMEN_PLAYBACK_COMMAND_NAME     "carmen_playback_command"
-#define CARMEN_PLAYBACK_COMMAND_FMT      "{int,int,float}"
+#define CARMEN_PLAYBACK_COMMAND_FMT      "{int,string,int,float}"
 
 typedef struct
 {

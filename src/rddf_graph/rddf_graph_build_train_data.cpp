@@ -2,7 +2,9 @@
 
 using namespace std;
 bool g_ipc_required = false;
+char *g_road_map_dir;
 char *g_graph_filename;
+bool view_save;
 
 
 static void
@@ -47,16 +49,6 @@ get_image_id (cv::Mat image)
 		}
 	}
 	return (image_id);
-}
-
-
-void
-paint_image (int x, int y, cv::Vec3b pixel_color, cv::Mat *image)
-{
-	image->at<cv::Vec3b>(cv::Point(x, y))[0] = pixel_color[0];
-	image->at<cv::Vec3b>(cv::Point(x, y))[1] = pixel_color[1];
-	image->at<cv::Vec3b>(cv::Point(x, y))[2] = pixel_color[2];
-
 }
 
 
@@ -118,7 +110,7 @@ save_15_15_image(rddf_graph_t *vertexes, t_graph **graph, string str_road_map_fo
 
 	road_map = read_road_map (road_map_folder, x_origin, y_origin);
 	road_map_to_image(&road_map, &image);
-	FILE *f = fopen("train_data/database.txt", "w");
+	FILE *f = fopen("database/database.txt", "w");
 	int cont = 0;
 	cout<<"Generating train data..."<<endl;
 	for (int i = 0; i<vertexes->size; i++)
@@ -177,22 +169,28 @@ save_15_15_image(rddf_graph_t *vertexes, t_graph **graph, string str_road_map_fo
 		char filename[50];
 		string image_id;
 		image_id = get_image_id (image_3_3);
-		string folder = "train_data";
+		string folder = "database";
 		sprintf (filename, "%.6d_", i);
 		string str_filename(filename);
 		//str_filename = str_filename + image_id + "_-1.jpg";
 
-		str_filename = folder + "/" + str_filename + image_id + "_-1.jpg";
-		fprintf(f, "%d %s %s\n", i, str_filename.c_str(), image_id.c_str());
-		//cout<<str_filename<<endl;
-		cv::imwrite(str_filename, image_15_15);
-		//cout<<i<<endl;
-		cont = i;
-		//cv::resize(image_15_15, image_15_15_scaled, size);
-		//cv::resize(image_3_3, image_3_3_scaled, size);
-		//cv::imshow("image1", image_15_15_scaled);
-		//cv::imshow("image", image_3_3_scaled);
-		//cv::waitKey();
+		if (view_save == false)
+		{
+			str_filename = folder + "/" + str_filename + image_id + "_-1.jpg";
+			fprintf(f, "%d %s %s\n", i, str_filename.c_str(), image_id.c_str());
+			cv::imwrite(str_filename, image_15_15);
+			cont = i;
+		}
+		else
+		{
+			cv::resize(image_15_15, image_15_15_scaled, size);
+			cv::resize(image_3_3, image_3_3_scaled, size);
+			cv::imshow("image1", image_15_15_scaled);
+			cv::imshow("image", image_3_3_scaled);
+			cv::waitKey();
+		}
+
+
 		//getchar();
 
 	}
@@ -202,56 +200,22 @@ save_15_15_image(rddf_graph_t *vertexes, t_graph **graph, string str_road_map_fo
 }
 
 
-void
-parse_graph_folder(string str_graph_filename, string &str_road_map_folder)
-{
-	int l;
-	int ant_last_bar_position = 0;
-	int last_bar_position = 0;
-	string folder;
-	int found_first = 0;
-
-	for (l = str_graph_filename.length()-1; l != 0; l--)
-	{
-		if (str_graph_filename[l] == '.' && found_first != 1)
-		{
-			last_bar_position = l;
-			found_first = 1;
-			continue;
-		}
-
-		if (found_first == 1)
-		{
-			if (str_graph_filename[l] == '-')
-			{
-				ant_last_bar_position = l;
-				break;
-			}
-		}
-
-
-	}
-
-	folder = str_graph_filename.substr(ant_last_bar_position+1, last_bar_position-ant_last_bar_position-1);
-	char *carmen_enviroment_folder;
-	carmen_enviroment_folder = getenv("CARMEN_HOME");
-	string str_carmen_enviroment_folder(carmen_enviroment_folder);
-
-	str_road_map_folder = str_carmen_enviroment_folder + "/data/" + folder;
-}
-
-
 static void
 read_parameters(int argc, char **argv)
 {
-	const char usage[] = "<graph_dir>/<graph>.gr";
-	if (argc < 2){
+	const char usage[] = "<road_map_dir> <graph_dir>/<graph>.gr -v to view or -s to save database";
+	if (argc < 4){
 		printf("Incorrect Input!.\nUsage:\n%s %s\n", argv[0], usage);
 		exit(1);
 	}
 	else
 	{
-		g_graph_filename = argv[1];
+		g_road_map_dir = argv[1];
+		g_graph_filename = argv[2];
+		if (strcmp(argv[3], "-v") == 0)
+			view_save = true;
+		else
+			view_save = false;
 	}
 }
 
@@ -273,8 +237,9 @@ main(int argc, char **argv)
 	//signal(SIGINT, shutdown_module);
 
 	string str_graph_filename (g_graph_filename);
-	string str_road_map_folder = "";
-	parse_graph_folder (str_graph_filename, str_road_map_folder);
+	string str_road_map_folder (g_road_map_dir);
+	//parse_graph_folder (str_graph_filename, str_road_map_folder);
+
 
 	t_graph **graph = NULL;
 	rddf_graph_t *vertexes = NULL;

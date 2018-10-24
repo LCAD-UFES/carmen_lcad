@@ -46,12 +46,12 @@ panel_test: $(OBJECTS) panel_test.o
 clean: pycarmen_panel_clean
 
 PY_INC = -I `python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"`
-PY_LIB = -L /usr/lib/x86_64-linux-gnu/
+# PY_LIB = -L /usr/lib/x86_64-linux-gnu/
 PY_LIB += `python3-config --libs`
 
 pycarmen_panel:
 	swig -python -c++ pycarmen_panel.i
-	g++ -fPIC -c pycarmen_panel_wrap.cxx $(PY_INC) $(IFLAGS) $(CXXFLAGS)
+	g++ -fPIC -c pycarmen_panel_wrap.cxx $(PY_INC) $(IFLAGS) $(CXXFLAGS) -Wno-missing-field-initializers
 	g++ -shared pycarmen_panel_wrap.o libpanel.a -o _pycarmen_panel.so $(PY_LIB) $(LFLAGS) 
 
 pycarmen_panel_clean:

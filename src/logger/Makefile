@@ -24,7 +24,7 @@ LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath 
 MODULE_NAME = LOGGER
 MODULE_COMMENT = Modules for logging, displaying, and playing back data.
 
-SOURCES = logger.c playback_interface.c playback.c \
+SOURCES = logger.c playback_interface.c playback.cpp \
 	  writelog.cpp readlog.cpp log_timestamp_repair.c \
 	  logger_interface.c #log_splitter.cpp
 

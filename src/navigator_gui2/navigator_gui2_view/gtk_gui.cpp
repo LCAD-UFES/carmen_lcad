@@ -431,6 +431,9 @@ namespace View
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/dynamic_stop_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_DYNAMIC][RDDF_ANNOTATION_CODE_DYNAMIC_STOP] = get_annotation_image(annotation_image_filename);
 
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/place_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_PLACE_OF_INTEREST][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+
 		controls_.main_window  = GTK_WIDGET(gtk_builder_get_object(builder, "mainWindow" ));
 		controls_.drawArea = GTK_WIDGET(gtk_builder_get_object(builder, "drawingArea"));
 		controls_.drawAreaCarPanel = GTK_WIDGET(gtk_builder_get_object(builder, "drawingAreaCarPanel"));
@@ -2552,10 +2555,29 @@ namespace View
 		}
 	}
 
+
+	void
+	format_annotation_description(char *dest_text, char *orig_text)
+	{
+		static const char *prefix = (char *) "RDDF_PLACE_";
+		char *start = orig_text;
+		if (strncmp(orig_text, prefix, strlen(prefix)) == 0)
+			start += strlen(prefix);
+		strcpy(dest_text, start);
+
+		for (char *dest = dest_text; (*dest) != 0; dest++)
+		{
+			if ((*dest) == '_')
+				(*dest) = ' ';
+		}
+	}
+
+
 	void
 	GtkGui::draw_annotations(GtkMapViewer *the_map_view, double pixel_size)
 	{
 		carmen_world_point_t world_point;
+		char text[2000];
 
 		for (int i = 0; i < rddf_annotation_msg.num_annotations; i++)
 		{
@@ -2605,6 +2627,13 @@ namespace View
 				if (theta == theta_right)
 					start_angle -= delta_angle;
 				carmen_map_graphics_draw_arc(the_map_view, &carmen_blue, FALSE, &center, radius, start_angle, delta_angle);
+			}
+
+			if (rddf_annotation_msg.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PLACE_OF_INTEREST)
+			{
+				format_annotation_description(text, rddf_annotation_msg.annotations[i].annotation_description);
+				GdkFont *text_font = gdk_font_load("-*-courier-bold-r-normal--0-0-0-0-p-0-iso8859-1");
+				carmen_map_graphics_draw_string(the_map_view, &carmen_red, text_font, &world_point, text);
 			}
 		}
 

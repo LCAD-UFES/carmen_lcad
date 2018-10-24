@@ -82,8 +82,15 @@ class ReplayBuffer:
             #is_final = 1.0 if (her_episode_size == 1) else 0.0
             is_final = 0.0
 
-            #rew = dist(self.stack[e][t][0]['pose'], self.stack[e][future_t][0]['pose'])
-            #rew /= her_episode_size
+            #"""
+            # rew = dist(self.stack[e][t][0]['pose'], self.stack[e][future_t][0]['pose']) / (her_episode_size * 10.0) 
+            # rew /= her_episode_size
+            if her_episode_size <= 1:
+                rew = 1.0 # (dist(self.stack[e][t][0]['pose'], self.stack[e][future_t][0]['pose']) / 10.)  
+                is_final = 1.0
+            else:
+                rew = 0.0
+            #"""
 
             """
             if her_episode_size <= 1:

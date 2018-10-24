@@ -8,6 +8,11 @@
 #include <prob_map.h>
 #include <carmen/simulator_ackerman_simulation.h>
 
+#include <opencv/cv.h>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+
+//using namespace cv;
 using namespace std;
 
 
@@ -18,21 +23,30 @@ public:
 			bool allow_negative_commands=true,
 			bool enjoy_mode=false,
 			bool use_latency=false,
-			const char *rddf_name="rddf_ida_guarapari-20170403.txt",
+			const char *rddf_name="rddf-voltadaufes-20170809.txt",
 			const char *map_dir="map_ida_guarapari-20170403-2",
 			double min_dist_to_initial_goal=5.,
-			double max_dist_to_initial_goal=20.);
+			double max_dist_to_initial_goal=15.);
 
 	void set_seed(int seed);
 	void reset();
 	void step(double v, double phi, double dt);
-	void view();
+	void show(int time=1);
 
 	vector<double> laser();
 	vector<double> pose();
 	vector<double> goal();
 
 	bool hit_obstacle();
+
+	vector< vector<double> > rddf_forward();
+	vector< vector<double> > rddf_backward();
+
+	void draw_pose(double x, double y, double th, int b, int g, int r);
+	void draw_occupancy_map();
+	void draw_poses(vector< vector<double> > poses, int b, int g, int r);
+
+	void set_initial_pose(int pose_id);
 
 private:
 
@@ -45,8 +59,12 @@ private:
 	bool _use_latency;
 	int _min_pose_skip_to_initial_goal;
 	int _max_pose_skip_to_initial_goal;
+	int _current_rddf_pose;
 	bool _use_velocity_nn;
 	bool _use_phi_nn;
+	int _initial_pos;
+
+	cv::Mat *_view;
 
 	vector<carmen_ackerman_motion_command_t> _rddf;
 

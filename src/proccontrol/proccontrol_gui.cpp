@@ -239,7 +239,12 @@ QDisplay::showStatus2(int group, int module, int status, char *module_name)
 			if (process_reinitialization_table[module_name].number_of_reinitializations > 3)
 			{
 				process_is_instable = 1;
-				carmen_voice_send_alert((char *) "Atenção! Alguns módulos estão instáveis!");
+				//carmen_voice_send_alert((char *) "Atenção! Alguns módulos estão instáveis!");
+				if (true)
+				{
+					system("aplay $CARMEN_HOME/src/voice_interface/libvoice_google/voice_sample.wav");
+
+				}
 			}
 		}
 	}

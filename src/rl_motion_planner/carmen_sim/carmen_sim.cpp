@@ -9,12 +9,7 @@
 #include <carmen/collision_detection.h>
 #include "carmen_sim.h"
 
-#include <opencv/cv.h>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui.hpp>
-
 using namespace cv;
-
 
 /*
  *********************************
@@ -52,7 +47,7 @@ CarmenSim::CarmenSim(bool fix_initial_position, bool use_truepos,
 
     _map_dir = carmen_home + "/data/" + map_dir;
 	_map_resolution = 0.2;
-	_viewer_subsampling = 2;
+	_viewer_subsampling = 1;
 	_map_pixel_by_meter = 1. / (_map_resolution * _viewer_subsampling);
 
 	carmen_grid_mapping_init_parameters(_map_resolution, 210);
@@ -72,6 +67,11 @@ CarmenSim::CarmenSim(bool fix_initial_position, bool use_truepos,
 	carmen_test_alloc(_rear_laser.range);
 	_rear_laser.num_remissions = 0;
 	_rear_laser.remission = 0;
+
+	_current_rddf_pose = 0;
+	_view = NULL;
+
+	_initial_pos = 100;
 }
 
 
@@ -97,7 +97,7 @@ CarmenSim::reset()
 
 	int pose_id;
 
-	if (_fix_initial_position) pose_id = 0; //M;
+	if (_fix_initial_position) pose_id = _initial_pos;
 	else pose_id = M + rand() % (_rddf.size() - M);
 
 	int shift = m + (rand() % (M - m));  // shift is a random integer between m and M
@@ -133,6 +133,8 @@ CarmenSim::reset()
 	carmen_simulator_ackerman_calc_laser_msg(&_rear_laser, &_simulator_config, 1);
 
 	//_my_counter = 0;
+
+	_current_rddf_pose = pose_id;
 }
 
 
@@ -243,6 +245,8 @@ CarmenSim::step(double v, double phi, double dt)
 
 	carmen_simulator_ackerman_calc_laser_msg(&_front_laser, &_simulator_config, 0);
 	carmen_simulator_ackerman_calc_laser_msg(&_rear_laser, &_simulator_config, 1);
+
+	_current_rddf_pose = _find_nearest_goal(_simulator_config.true_pose.x, _simulator_config.true_pose.y);
 }
 
 
@@ -293,15 +297,41 @@ draw_rectangle(Mat &img,
 
 
 void
-CarmenSim::view()
+CarmenSim::draw_pose(double x, double y, double th, int b, int g, int r)
+{
+	if (_view == NULL)
+		exit(printf("Error: Please, draw a map before drawing anything else\n"));
+
+    double center_to_rear_axis = _car_length / 2. - _robot_ackerman_config.distance_between_rear_car_and_rear_wheels;
+
+    double shift_x = center_to_rear_axis * cos(th);
+    double shift_y = center_to_rear_axis * sin(th);
+
+    Point p;
+    p.x = (int) ((x - _simulator_config.map.config.x_origin) * _map_pixel_by_meter);
+    p.y = _view->rows - (int) ((y - _simulator_config.map.config.y_origin) * _map_pixel_by_meter);
+    circle(*_view, p, 2, Scalar(b, g, r), -1);
+
+	draw_rectangle(*_view,
+			x + shift_x,
+			y + shift_y,
+			th,
+			_car_width, _car_length, Scalar((uchar) b, (uchar) g, (uchar) r),
+			_simulator_config.map.config.x_origin,
+			_simulator_config.map.config.y_origin,
+			_map_pixel_by_meter);
+}
+
+
+void
+CarmenSim::draw_occupancy_map()
 {
 	int x_size = _simulator_config.map.config.x_size;
 	int y_size = _simulator_config.map.config.y_size;
-	int x_origin = _simulator_config.map.config.x_origin;
-	int y_origin = _simulator_config.map.config.y_origin;
 	double **map = _simulator_config.map.map;
 
-	Mat viewer = Mat(Size(x_size / _viewer_subsampling, y_size / _viewer_subsampling), CV_8UC3);
+	if (_view == NULL)
+		_view = new Mat(Size(x_size / _viewer_subsampling, y_size / _viewer_subsampling), CV_8UC3);
 
 	for (int i = 0, pi = 0; i < y_size; i += _viewer_subsampling, pi++)
 	{
@@ -309,55 +339,56 @@ CarmenSim::view()
 		{
 			if (map[i][j] < 0.)
 			{
-				viewer.data[3 * (pi * viewer.cols + pj) + 0] = (uchar) 255;
-				viewer.data[3 * (pi * viewer.cols + pj) + 1] = (uchar) 0;
-				viewer.data[3 * (pi * viewer.cols + pj) + 2] = (uchar) 0;
+				_view->data[3 * (pi * _view->cols + pj) + 0] = (uchar) 255;
+				_view->data[3 * (pi * _view->cols + pj) + 1] = (uchar) 0;
+				_view->data[3 * (pi * _view->cols + pj) + 2] = (uchar) 0;
 			}
 			else
 			{
 				double free_prob = 1. - map[i][j];
-				viewer.data[3 * (pi * viewer.cols + pj) + 0] = (uchar) (255. * free_prob);
-				viewer.data[3 * (pi * viewer.cols + pj) + 1] = (uchar) (255. * free_prob);
-				viewer.data[3 * (pi * viewer.cols + pj) + 2] = (uchar) (255. * free_prob);
+				_view->data[3 * (pi * _view->cols + pj) + 0] = (uchar) (255. * free_prob);
+				_view->data[3 * (pi * _view->cols + pj) + 1] = (uchar) (255. * free_prob);
+				_view->data[3 * (pi * _view->cols + pj) + 2] = (uchar) (255. * free_prob);
 			}
 		}
 	}
 
-	cv::transpose(viewer, viewer);
-	flip(viewer, viewer, 0);
+	cv::transpose(*_view, *_view);
+	flip(*_view, *_view, 0);
+}
 
-    double center_to_rear_axis = _car_length / 2. - _robot_ackerman_config.distance_between_rear_car_and_rear_wheels;
-    double shift_x = center_to_rear_axis * cos(_simulator_config.true_pose.theta);
-    double shift_y = center_to_rear_axis * sin(_simulator_config.true_pose.theta);
 
-    Point p;
-    p.x = (int) ((_simulator_config.true_pose.x - _simulator_config.map.config.x_origin) * _map_pixel_by_meter);
-    p.y = viewer.rows - (int) ((_simulator_config.true_pose.y - _simulator_config.map.config.y_origin) * _map_pixel_by_meter);
-    circle(viewer, p, 3, Scalar(0, 0, 255), -1);
+void
+CarmenSim::draw_poses(vector< vector<double> > poses, int b, int g, int r)
+{
+	for (int i = 0; i < poses.size(); i++)
+		draw_pose(poses[i][0], poses[i][1], poses[i][2], b, g, r);
+}
 
-	draw_rectangle(viewer,
-			_simulator_config.true_pose.x + shift_x,
-			_simulator_config.true_pose.y + shift_y,
-			_simulator_config.true_pose.theta,
-			_car_width, _car_length, Scalar(0, 0, 255),
-			x_origin, y_origin,
-			_map_pixel_by_meter);
 
-    p.x = (int) ((_goal.x - _simulator_config.map.config.x_origin) * _map_pixel_by_meter);
-    p.y = viewer.rows - (int) ((_goal.y - _simulator_config.map.config.y_origin) * _map_pixel_by_meter);
-    circle(viewer, p, 3, Scalar(0, 255, 0), -1);
-    circle(viewer, p, _map_pixel_by_meter, Scalar(0, 255, 0), 1);
+void
+CarmenSim::show(int time)
+{
+	if (_viewer_subsampling > 1)
+		imshow("viewer", *_view);
+	else
+	{
+		Mat res(Size(900, 900), CV_8UC3);
+		resize(*_view, res, res.size());
+		imshow("viewer", res);
+	}
 
-    shift_x = center_to_rear_axis * cos(_goal.theta);
-    shift_y = center_to_rear_axis * sin(_goal.theta);
+	waitKey(time);
+}
 
-    draw_rectangle(viewer, _goal.x + shift_x, _goal.y + shift_y, _goal.theta,
-			_car_width, _car_length, Scalar(0, 128, 0),
-			x_origin, y_origin,
-			_map_pixel_by_meter);
 
-	imshow("viewer", viewer);
-	waitKey(1);
+void
+CarmenSim::set_initial_pose(int pose_id)
+{
+	if (pose_id < 0 || pose_id >= _rddf.size())
+		exit(printf("Error: pose id (%d) outside valid interval [0, %ld].\n", pose_id, _rddf.size()));
+
+	_initial_pos = pose_id;
 }
 
 
@@ -431,6 +462,58 @@ CarmenSim::hit_obstacle()
 		&mess, &_robot_ackerman_config);
 
 	return (hit == 1);
+}
+
+
+vector< vector<double> >
+CarmenSim::rddf_forward()
+{
+	vector< vector<double> > r;
+
+	int end = _current_rddf_pose + 50;
+	if (end > _rddf.size()) end = _rddf.size();
+
+	for (int i = _current_rddf_pose; i < end; i += 5)
+	{
+		vector<double> p;
+
+		p.push_back(_rddf[i].x);
+		p.push_back(_rddf[i].y);
+		p.push_back(_rddf[i].theta);
+		p.push_back(_rddf[i].v);
+		p.push_back(_rddf[i].phi);
+		p.push_back(_rddf[i].time);
+
+		r.push_back(p);
+	}
+
+	return r;
+}
+
+
+vector< vector<double> >
+CarmenSim::rddf_backward()
+{
+	vector< vector<double> > r;
+
+	int begin = _current_rddf_pose - 50;
+	if (begin < 0) begin = 0;
+
+	for (int i = begin; i < _current_rddf_pose; i += 5)
+	{
+		vector<double> p;
+
+		p.push_back(_rddf[i].x);
+		p.push_back(_rddf[i].y);
+		p.push_back(_rddf[i].theta);
+		p.push_back(_rddf[i].v);
+		p.push_back(_rddf[i].phi);
+		p.push_back(_rddf[i].time);
+
+		r.push_back(p);
+	}
+
+	return r;
 }
 
 
@@ -625,7 +708,7 @@ CarmenSim::_load_params()
 	_simulator_config.robot_config = _robot_ackerman_config;
 
 	_use_velocity_nn = false;
-	_use_phi_nn = true;
+	_use_phi_nn = false;
 }
 
 

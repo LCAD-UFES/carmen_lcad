@@ -8,11 +8,11 @@ class ActorCritic:
     def encoder(self, norm_laser, norm_goal, norm_state, use_conv_layer, activation_fn, n_hidden_neurons):
         # laser pre-processing
         if use_conv_layer:
-            laser_c1 = tf.layers.conv1d(norm_laser, filters=32, kernel_size=4, strides=1, padding='valid', activation=activation_fn)
+            laser_c1 = tf.layers.conv1d(norm_laser, filters=32, kernel_size=6, strides=1, padding='same', activation=activation_fn)
             laser_p1 = tf.layers.max_pooling1d(laser_c1, pool_size=4, strides=4)
-            laser_c2 = tf.layers.conv1d(laser_p1, filters=32, kernel_size=4, strides=1, padding='valid', activation=activation_fn)
+            laser_c2 = tf.layers.conv1d(laser_p1, filters=32, kernel_size=6, strides=1, padding='same', activation=activation_fn)
             laser_p2 = tf.layers.max_pooling1d(laser_c2, pool_size=4, strides=4)
-            laser_c3 = tf.layers.conv1d(laser_p2, filters=32, kernel_size=4, strides=1, padding='valid', activation=activation_fn)
+            laser_c3 = tf.layers.conv1d(laser_p2, filters=32, kernel_size=6, strides=1, padding='same', activation=activation_fn)
             laser_p3 = tf.layers.max_pooling1d(laser_c3, pool_size=4, strides=4)
             laser_fl = tf.layers.flatten(laser_p3)
         else:
@@ -29,7 +29,16 @@ class ActorCritic:
 
     def __init__(self, n_laser_readings, n_hidden_neurons, n_hidden_layers, use_conv_layer, activation_fn_name,
                  allow_negative_commands, laser_max_range=30.):
+
         self.action_size = 2
+        
+        if activation_fn_name == 'leaky_relu': activation_fn = tf.nn.leaky_relu
+        elif activation_fn_name == 'elu': activation_fn = tf.nn.elu
+        elif activation_fn_name == 'tanh': activation_fn = tf.nn.tanh
+        else: raise Exception("Invalid non-linearity '{}'".format(activation_fn_name))
+
+        if allow_negative_commands: v_activation_fn = tf.nn.tanh
+        else: v_activation_fn = tf.nn.sigmoid
 
         # goal: (x, y, th, desired_v) - pose in car reference
         self.placeholder_goal = tf.placeholder(dtype=tf.float32, shape=[None, 4], name='placeholder_goal')
@@ -44,24 +53,16 @@ class ActorCritic:
         # flag used when computing the target q: 1 if is final, 0 otherwise.
         self.placeholder_is_final = tf.placeholder(dtype=tf.float32, shape=[None, 1], name='placeholder_is_final')
 
-        if activation_fn_name == 'leaky_relu': activation_fn = tf.nn.leaky_relu
-        elif activation_fn_name == 'elu': activation_fn = tf.nn.elu
-        elif activation_fn_name == 'tanh': activation_fn = tf.nn.tanh
-        else: raise Exception("Invalid non-linearity '{}'".format(activation_fn_name))
-
-        if allow_negative_commands: v_activation_fn = tf.nn.tanh
-        else: v_activation_fn = tf.nn.sigmoid
-
         # normalize laser to be in [-1., 1.]
         norm_laser = tf.clip_by_value(self.placeholder_laser, 0., laser_max_range)
         norm_laser = (norm_laser / laser_max_range)
         # normalize goal
-        norm_goal = self.placeholder_goal # / [10., 10., 1.0, 10.]
+        norm_goal = self.placeholder_goal # / [10., 10., 10.0, 1.0]
         # normalize state
-        norm_state = self.placeholder_state # / 10.
+        norm_state = self.placeholder_state  # / 10.
 
         with tf.variable_scope("actor"):
-            state_fc, goal_fc, laser_fc = self.encoder(norm_laser, norm_goal, norm_state,
+            laser_fc, goal_fc, state_fc = self.encoder(norm_laser, norm_goal, norm_state,
                                                        use_conv_layer, activation_fn, n_hidden_neurons)
 
             actor_input =  tf.concat(axis=-1, values=[state_fc, goal_fc, laser_fc])
@@ -70,13 +71,29 @@ class ActorCritic:
             for _ in range(n_hidden_layers):
                 in_tensor = tf.layers.dense(in_tensor, units=n_hidden_neurons, activation=activation_fn)
 
-            self.command_phi = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_phi")
-            self.command_v = tf.layers.dense(in_tensor, units=1, activation=v_activation_fn, name="command_v")
+            """
+            self.command_v = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_v")
+
+            laser_fc2, goal_fc2, state_fc2 = self.encoder(norm_laser, norm_goal, norm_state,
+                                                       use_conv_layer, activation_fn, n_hidden_neurons)
+
+            actor_input2 =  tf.concat(axis=-1, values=[state_fc2, goal_fc2, laser_fc2])
+
+            in_tensor2 = actor_input2
+            for _ in range(n_hidden_layers):
+                in_tensor2 = tf.layers.dense(in_tensor2, units=n_hidden_neurons, activation=activation_fn)
+
+            self.command_phi = tf.layers.dense(in_tensor2, units=1, activation=tf.nn.tanh, name="command_phi")
             self.actor_command = tf.concat([self.command_v, self.command_phi], axis=-1)
-            # self.actor_command = tf.layers.dense(in_tensor, units=2, activation=tf.nn.tanh, name="commands")
+            """
+                        
+            #self.command_phi = tf.layers.dense(in_tensor, units=1, activation=tf.nn.tanh, name="command_phi")
+            #self.command_v = tf.layers.dense(in_tensor, units=1, activation=v_activation_fn, name="command_v")
+            #self.actor_command = tf.concat([self.command_v, self.command_phi], axis=-1)
+            self.actor_command = tf.layers.dense(in_tensor, units=self.action_size, activation=tf.nn.tanh, name="commands")
 
         with tf.variable_scope("critic"):
-            state_fc, goal_fc, laser_fc = self.encoder(norm_laser, norm_goal, norm_state,
+            laser_fc, goal_fc, state_fc = self.encoder(norm_laser, norm_goal, norm_state,
                                                        use_conv_layer, activation_fn, n_hidden_neurons)
 
             def action_preprocessing(cmd):
@@ -132,6 +149,7 @@ class DDPG(object):
                                    n_trad=n_trad, n_her=n_her,
                                    max_episode_size=params['n_steps_episode'])
 
+        self.params = params
         self.saver = tf.train.Saver()
 
     def _create_network(self, n_laser_readings, params):
@@ -147,6 +165,9 @@ class DDPG(object):
             print("config:", config)
             self.sess = tf.Session(config=config)
 
+        neg = params['allow_negative_commands']
+        if params['use_spline']: neg = True
+
         # Networks
         with tf.variable_scope('main'):
             self.main = ActorCritic(n_laser_readings,
@@ -154,7 +175,7 @@ class DDPG(object):
                              params['n_hidden_layers'],
                              params['use_conv_layer'],
                              params['activation_fn'],
-                             params['allow_negative_commands'])
+                             neg)
 
         with tf.variable_scope('target'):
             self.target = ActorCritic(n_laser_readings,
@@ -162,14 +183,14 @@ class DDPG(object):
                              params['n_hidden_layers'],
                              params['use_conv_layer'],
                              params['activation_fn'],
-                             params['allow_negative_commands'])
+                             neg)
 
         assert len(self._vars("main")) == len(self._vars("target"))
 
         # Critic loss function (TODO: make sure this is correct!)
         discounted_next_q = self.gamma * self.target.q_from_policy * (1. - self.main.placeholder_is_final)
-        target_Q = self.main.placeholder_reward + discounted_next_q
-        clipped_target_Q = tf.clip_by_value(target_Q, clip_value_min=-100., clip_value_max=100.)
+        self.target_Q = self.main.placeholder_reward + discounted_next_q
+        clipped_target_Q = tf.clip_by_value(self.target_Q, clip_value_min=-100., clip_value_max=100.)
         # The stop gradient prevents the target net from being trained.
         self.critic_loss = tf.reduce_mean(tf.square(tf.stop_gradient(clipped_target_Q) - self.main.q_from_action_placeholder))
 
@@ -178,10 +199,10 @@ class DDPG(object):
         # TODO: checar se o componente abaixo eh necessario e o que ele significa.
         
         if params['use_acceleration']:
-            self.action_l2 = params['l2_weight'] * tf.reduce_mean(tf.square(self.main.actor_command * 10.))
+            self.action_l2 = params['l2_weight'] * tf.reduce_mean(tf.square(self.main.actor_command))
         else:
-            self.action_l2 = params['l2_weight'] * tf.reduce_mean(tf.square(self.main.command_phi * 10.))
-            
+            self.action_l2 = params['l2_weight'] * tf.reduce_mean(tf.square(self.main.actor_command))
+
         self.policy_loss += self.action_l2 
 
         # Training
@@ -190,15 +211,24 @@ class DDPG(object):
         v_critic = self._vars("main/critic")
         v_policy = self._vars("main/actor")
 
-        """
-        print("Critic variables:")
-        print(v_critic)
-        print()
-        print("Policy variables:")
-        print(v_policy)
-        """
-        self.critic_train = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(loss=self.critic_loss, var_list=v_critic)
-        self.policy_train = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(loss=self.policy_loss, var_list=v_policy)
+        # critic_regularizer = tf.reduce_mean([tf.nn.l2_loss(v) for v in v_critic])
+        # policy_regularizer = tf.reduce_mean([tf.nn.l2_loss(v) for v in v_policy])
+         
+        # self.critic_loss += 0.01 * critic_regularizer
+        # self.policy_loss += 0.1 * policy_regularizer
+
+        self.critic_train = tf.train.AdamOptimizer(learning_rate=params['critic_lr']).minimize(loss=self.critic_loss, var_list=v_critic)
+        self.policy_train = tf.train.AdamOptimizer(learning_rate=params['actor_lr']).minimize(loss=self.policy_loss, var_list=v_policy)
+        
+        #policy_grads = tf.gradients(self.policy_loss, v_policy)
+        #critic_grads = tf.gradients(self.critic_loss, v_critic)
+        
+        #policy_grads, _ = tf.clip_by_global_norm(policy_grads, 1.0)
+        # critic_grads, _ = tf.clip_by_global_norm(critic_grads, 10.0)
+        
+        #self.policy_train = tf.train.AdamOptimizer(learning_rate=params['actor_lr']).apply_gradients(zip(policy_grads, v_policy))
+        #self.critic_train = tf.train.AdamOptimizer(learning_rate=params['critic_lr']).apply_gradients(zip(critic_grads, v_critic))
+        
         """
         Q_grads_tf = tf.gradients(self.Q_loss_tf, self._vars('main/Q'))
         pi_grads_tf = tf.gradients(self.pi_loss_tf, self._vars('main/pi'))
@@ -213,14 +243,6 @@ class DDPG(object):
         # Additional operations
         self.main_vars = self._vars('main')
         self.target_vars = self._vars('target')
-
-        """
-        print("main:")
-        print(self.main_vars)
-        print()
-        print("target:")
-        print(self.target_vars)
-        """
 
         self.copy_main_to_target = list(map(lambda v: v[0].assign(v[1]), zip(self.target_vars, self.main_vars)))
         self.target_update_rate = params['soft_update_rate']  # rate used for soft update of the target net.
@@ -258,29 +280,28 @@ class DDPG(object):
         }
 
         ret = self.sess.run(vals, feed_dict=feed)
-
+        
+        u = ret[0][0]
+        q = ret[1][0][0]
+        
         # import pprint
         # pprint.pprint(obs)
         # pprint.pprint(goal)
         # pprint.pprint(ret)
 
         # action postprocessing
-        u = ret[0][0]
         u += noise_eps * np.random.randn(*u.shape)  # gaussian noise
 
         # eps greedy
         if np.random.random() < random_eps:
-            if self.allow_negative_commands:
-                u = np.random.uniform(-1.0, 1.0, len(u))
-            else:
-                u = np.array([np.random.uniform(0.0, 1.0), np.random.uniform(-1.0, 1.0)])
+            u = np.random.uniform(-1.0, 1.0, len(u))
 
         if self.allow_negative_commands: u[0] = np.clip(u[0], -1.0, 1.0)
         else: u[0] = np.clip(u[0], 0.0, 1.0)
         
         u[1] = np.clip(u[1], -1., 1.)
 
-        return u, ret[1][0][0]
+        return u, q
 
     def store_episode(self, episode_batch):
         self.buffer.add(episode_batch)
@@ -314,7 +335,7 @@ class DDPG(object):
         # TODO: gradients sao aplicados "ao mesmo tempo" nas variaveis de pre-processamento. Checar em qual ordem isso
         # TODO: eh realizado, e se nao da problema treinar os dois ao msm tempo.
         out = self.sess.run([self.policy_loss, self.critic_loss,  
-                             self.target.q_from_policy, self.main.q_from_action_placeholder,
+                             self.target_Q, self.main.q_from_action_placeholder,
                              self.main.q_from_policy,
                              self.critic_train, self.policy_train, 
                              self.action_l2], feed_dict=feed)
@@ -323,12 +344,12 @@ class DDPG(object):
         critic_loss = out[1]
         l2_loss = out[7]
 
-        target_next_q = out[2]
+        target_q = out[2]
         predicted_q = out[3]
 
         main_q_policy = out[4]
 
-        return critic_loss, policy_loss, l2_loss, target_next_q, predicted_q, batch['rew'], main_q_policy
+        return critic_loss, policy_loss, l2_loss, target_q, predicted_q, batch['rew'], main_q_policy
 
     """
     def train(self, stage=True):

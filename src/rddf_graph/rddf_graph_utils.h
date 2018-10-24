@@ -66,6 +66,7 @@ typedef struct type_graph t_graph;
 
 using namespace std;
 
+void paint_image (int x, int y, cv::Vec3b pixel_color, cv::Mat *image);
 void get_map_origin(carmen_point_t *global_pose, double *x_origin, double *y_origin);
 cv::Mat rotate(cv::Mat src, cv::Point pt, double angle);
 void road_map_to_image(carmen_map_p map, cv::Mat *road_map_img);
