@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "voice_functions.h"
+#include "setting_voice_list.h"
 
 
 void
@@ -19,7 +16,7 @@ create_new_audio_file(FILE *list_of_speechs_file, char *inputed_string, char *la
 	sprintf(default_name_speech, "%s%.4d", default_name_speech, new_number);
 
 	init_voice();
-	speak((char*)inputed_string);
+	speak((char *)inputed_string);
 	finalize_voice();
 
 	sprintf(command, "mv voice_sample.wav ./%s.wav", default_name_speech);
@@ -28,6 +25,7 @@ create_new_audio_file(FILE *list_of_speechs_file, char *inputed_string, char *la
 	fprintf(list_of_speechs_file, "%s %s\n", default_name_speech, inputed_string);
 
 }
+
 
 void
 setting_voice_interface_list(char *input_string)
@@ -41,10 +39,10 @@ setting_voice_interface_list(char *input_string)
 	is_file_empty = getc(voice_interface_list_file);
 
 	//size_input_string = strlen(input_string);
-	audio_file_string = (char*)malloc(100*sizeof(char));
-	audio_file_name = (char*)malloc(11*sizeof(char));
-	full_file_line = (char*)malloc(100*sizeof(char));
-	audio_input_string = (char*)malloc(100*sizeof(char));
+	audio_file_string = (char *) malloc(100 * sizeof(char));
+	audio_file_name = (char *) malloc(11 * sizeof(char));
+	full_file_line = (char *) malloc(100 * sizeof(char));
+	audio_input_string = (char *) malloc(100 * sizeof(char));
 
 	strcpy(audio_input_string, input_string);
 	audio_input_string[strlen(audio_input_string)] = '\n';
@@ -88,7 +86,10 @@ int
 main()
 {
 	char nome[100] = "Atenção! Alguns módulos estão instáveis!";
-	setting_voice_interface_list((char*)nome);
+	setting_voice_interface_list((char *) nome);
+	setting_voice_interface_list((char *) "agua");
+	setting_voice_interface_list((char *) "água");
+
 
 	return 0;
 }

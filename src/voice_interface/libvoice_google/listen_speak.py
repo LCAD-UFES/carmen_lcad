@@ -5,7 +5,7 @@
 # LISTEN and SPEAK module
 # [START import_libraries]
 from __future__ import division
-
+import os
 import re
 import sys
 
@@ -162,19 +162,20 @@ def speak(text):
 
     # Select the type of audio file you want returned
     audio_config = texttospeech.types.AudioConfig(
-        audio_encoding=texttospeech.enums.AudioEncoding.MP3)
+        audio_encoding=texttospeech.enums.AudioEncoding.LINEAR16)
 
     # Perform the text-to-speech request on the text input with the selected
     # voice parameters and audio file type
     response = client.synthesize_speech(synthesis_input, voice, audio_config)
 
     # The response's audio_content is binary.
-    with open('voice_sample.mp3', 'wb') as out:
+    with open('voice_sample.wav', 'wb') as out:
         # Write the response to the output file.
         out.write(response.audio_content)
-        player = vlc.MediaPlayer("./voice_sample.mp3")
-        player.play()
-        print('Audio content written to file "voice_sample.mp3"')
+        os.system('aplay voice_sample.wav')
+        #player = vlc.MediaPlayer("./voice_sample.wav")
+        #player.play()
+        #print('Audio content written to file "voice_sample.wav"')
     # [END tts_quickstart]
 
 
