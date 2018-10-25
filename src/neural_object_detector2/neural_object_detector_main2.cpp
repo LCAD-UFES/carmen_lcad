@@ -44,6 +44,13 @@ get_world_to_camera_transformation ()
 	tf::Transform world_to_car_pose;
 	tf::StampedTransform world_to_camera_pose;
 	world_to_car_pose.setOrigin(tf::Vector3(pose.position.x, pose.position.y, pose.position.z));
+	//pegar a diferenca entre o pitch atual e o anterior. se for menor que um T deixa passar
+	double diff = actuaPitch - lastPitch;
+	double treshold.
+
+	if (diff < treshold)
+		pitch = 0.0;
+
 	world_to_car_pose.setRotation(tf::Quaternion(pose.orientation.yaw, pose.orientation.pitch, pose.orientation.roll)); // yaw, pitch, roll
 
 	//world_to_car_pose.setOrigin(tf::Vector3(globalpos.x, globalpos.y, 0.0));
