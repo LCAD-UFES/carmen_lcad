@@ -43,11 +43,12 @@ get_world_to_camera_transformation ()
 {
 	tf::Transform world_to_car_pose;
 	tf::StampedTransform world_to_camera_pose;
-	//world_to_car_pose.setOrigin(tf::Vector3(pose.position.x, pose.position.y, pose.position.z));
-	//world_to_car_pose.setRotation(tf::Quaternion(pose.orientation.yaw, pose.orientation.pitch, pose.orientation.roll)); // yaw, pitch, roll
+	world_to_car_pose.setOrigin(tf::Vector3(pose.position.x, pose.position.y, pose.position.z));
+	world_to_car_pose.setRotation(tf::Quaternion(pose.orientation.yaw, pose.orientation.pitch, pose.orientation.roll)); // yaw, pitch, roll
 
-	world_to_car_pose.setOrigin(tf::Vector3(globalpos.x, globalpos.y, 0.0));
-	world_to_car_pose.setRotation(tf::Quaternion(globalpos.theta, 0.0, 0.0)); // yaw, pitch, roll
+	//world_to_car_pose.setOrigin(tf::Vector3(globalpos.x, globalpos.y, 0.0));
+	//world_to_car_pose.setRotation(tf::Quaternion(globalpos.theta, 0.0, 0.0)); // yaw, pitch, roll
+	//world_to_car_pose.setRotation(tf::Quaternion(pose.orientation.yaw, pose.orientation.pitch, pose.orientation.roll)); // yaw, pitch, roll
 
 	tf::StampedTransform world_to_car_transform(world_to_car_pose, tf::Time(0), "/world", "/car");
 	transformer.setTransform(world_to_car_transform, "world_to_car_transform");
@@ -471,6 +472,13 @@ detections(carmen_bumblebee_basic_stereoimage_message *image_msg, carmen_velodyn
 }
 
 
+double
+euclidean_distance (double x1, double x2, double y1, double y2)
+{
+	return ( sqrt(pow(x2-x1,2) + pow(y2-y1,2)) );
+}
+
+
 #define crop_x 0.0
 #define crop_y 1.0
 void
@@ -508,53 +516,55 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     cv::Mat rgb_image_copy = rgb_image.clone();
 
-    detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points, 1);
+    //detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points, 1);
 
     int thickness = -1;
     int lineType = 8;
     carmen_position_t p;
 
-    cv::Mat out;
-    //cv::flip(rgb_image, out, 1);
-    out = rgb_image;
-    //for(int i = 0; i < 1; i++){
     tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation();
-    //for(int i = 0; i < last_rddf_poses.number_of_poses; i++){
-    	//cout<<i<<endl;
-    	//if(i%3==0)
-    	//{
-    p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[5], world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
-    rddf_points.push_back(p);
-    p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[last_rddf_poses.number_of_poses/2], world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
-    rddf_points.push_back(p);
-    p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[last_rddf_poses.number_of_poses-1], world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
-    rddf_points.push_back(p);
-    	//}
 
-    cv::Rect rec(rddf_points[rddf_points.size()-1].x - 208, rddf_points[rddf_points.size()-1].y-200, 416, 416);
-    cv::Mat roi = rgb_image (rec);
-    src_image = roi;
-    rgb_image = roi;
-    detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points, 2);
+//    p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[5], world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
+//    rddf_points.push_back(p);
+//    p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[last_rddf_poses.number_of_poses/2], world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
+//    rddf_points.push_back(p);
+//    p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[last_rddf_poses.number_of_poses-1], world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
+//    rddf_points.push_back(p);
+//
+//
+//    cv::Rect rec(rddf_points[rddf_points.size()-1].x - 208, rddf_points[rddf_points.size()-1].y-200, 416, 416);
+//    cv::Mat roi = rgb_image (rec);
+//    src_image = roi;
+//    rgb_image = roi;
+//    detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points, 2);
+//
+//    src_image = src_image_copy;
+//    rgb_image = rgb_image_copy;
+//
+//    cv::Rect rec2(rddf_points[rddf_points.size()-1].x - 50, rddf_points[rddf_points.size()-1].y-50, 100, 100);
+//    cv::Mat roi2 = rgb_image (rec2);
+//    cv::Size size2 (416, 416);
+//    cv::resize(roi2, roi2, size2);
+//    src_image = roi2;
+//    rgb_image = roi2;
+//    detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points, 3);
 
-    src_image = src_image_copy;
-    rgb_image = rgb_image_copy;
+    cv::Mat out;
+    out = rgb_image;
+    double distance;
+    for(int i = 0; i < last_rddf_poses.number_of_poses; i++){
 
-    cv::Rect rec2(rddf_points[rddf_points.size()-1].x - 50, rddf_points[rddf_points.size()-1].y-50, 100, 100);
-    //cv::Rect rec(rddf_points[rddf_points.size()-1].x - 208, rddf_points[rddf_points.size()-1].y-200, 416, 416);
-    cv::Mat roi2 = rgb_image (rec2);
-    cv::Size size2 (416, 416);
-    cv::resize(roi2, roi2, size2);
-//    cv::imshow("cutted", roi);
-    src_image = roi2;
-    rgb_image = roi2;
-    detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points, 3);
+       if(i%3==0)
+       {
+    	   p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[i], world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
+    	   distance = euclidean_distance(globalpos.x, last_rddf_poses.poses[i].x, globalpos.y, last_rddf_poses.poses[i].y);
+    	   cout<<i<<":"<<distance<<" meters"<<endl;
+       }
+       cv::circle(out, cv::Point(p.x, p.y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
+    }
 
-    	//cv::circle(out, cv::Point(p.x, p.y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
-    //}
-
-    //cv::imshow("test", out);
-    //cv::waitKey(10);
+    cv::imshow("test", out);
+    cv::waitKey(10);
 
 
 }
