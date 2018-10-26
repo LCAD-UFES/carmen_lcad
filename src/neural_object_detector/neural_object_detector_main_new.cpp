@@ -9,9 +9,9 @@
 #include <cstdlib>
 #include <fstream>
 #include <opencv2/highgui/highgui.hpp>
-#include "Darknet.hpp"
 #include <carmen/dbscan.h>
 #include <Python.h>
+#include "Darknet.hpp"
 
 using namespace std;
 using namespace cv;
@@ -685,7 +685,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 	int crop_x = 0;
 	int crop_y = 0;
-	int crop_w = image_msg->width; 1280;
+	int crop_w = image_msg->width;// 1280;
 	int crop_h = 400; //image_msg->height; 500;
 
 	if (camera_side == 0)
@@ -713,12 +713,12 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 
 	//////// Python
-	if (first_time)
-	{
-		init_python(image_msg->width, image_msg->height);
-		first_time = false;
-	}
-	call_python_function(image_msg->width, image_msg->height, image_msg->raw_right, predictions);
+//	if (first_time)
+//	{
+//		init_python(image_msg->width, image_msg->height);
+//		first_time = false;
+//	}
+//	call_python_function(image_msg->width, image_msg->height, image_msg->raw_right, predictions);
 	///////////////
 
 
