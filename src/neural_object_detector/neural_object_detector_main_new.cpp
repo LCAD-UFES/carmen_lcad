@@ -11,6 +11,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "Darknet.hpp"
 #include <carmen/dbscan.h>
+#include <Python.h>
 
 using namespace std;
 using namespace cv;
@@ -574,6 +575,100 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 	//printf("Cont %d\n", count);
 }
 
+//////// Python
+PyObject *python_pedestrian_tracker_function;
+
+
+void
+init_python(int image_width, int image_height)
+{
+	Py_Initialize();
+
+	PyObject *python_module_name = PyString_FromString((char *) "pedestrian_tracker");
+
+	PyObject *python_module = PyImport_Import(python_module_name);
+
+	if (python_module == NULL)
+	{
+		Py_Finalize();
+		exit (printf("Error: The python_module could not be loaded.\nMay be PYTHON_PATH is not set.\n"));
+	}
+	Py_DECREF(python_module_name);
+
+	PyObject *python_set_image_settings_function = PyObject_GetAttrString(python_module, (char *) "set_image_settings");
+
+	if (python_set_image_settings_function == NULL || !PyCallable_Check(python_set_image_settings_function))
+	{
+		Py_Finalize();
+		exit (printf("Error: Could not load the python_set_image_settings_function.\n"));
+	}
+
+	//char w[8], h[8];
+	//sprintf(w, "%d", image_width);
+	//sprintf(h, "%d", image_height);
+
+	PyObject *python_arguments = Py_BuildValue("(ii)", image_width, image_height);//w, h);               // Generic function, create objects from C values by a format string
+
+	PyObject_CallObject(python_set_image_settings_function, python_arguments);
+
+	Py_DECREF(python_arguments);
+	Py_DECREF(python_set_image_settings_function);
+
+	python_pedestrian_tracker_function = PyObject_GetAttrString(python_module, (char *) "run_pedestrian_tracker");
+
+	if (python_pedestrian_tracker_function == NULL || !PyCallable_Check(python_pedestrian_tracker_function))
+	{
+		Py_DECREF(python_module);
+		Py_Finalize();
+		exit (printf("Error: Could not load the python_pedestrian_tracker_function.\n"));
+	}
+}
+
+
+void
+predictions_to_string(char* string_predictions, vector<bbox_t> predictions, int size)
+{
+	char aux[34];
+	unsigned int i = 0;
+	sprintf(string_predictions, '\0');
+
+	if (size > 0)
+	{
+		sprintf(aux, "%d*%d*%d*%d-", predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
+		strcat(string_predictions, aux);
+
+		for (i = 1; i < size; i++)
+		{
+			sprintf(aux, "%d*%d*%d*%d-", predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
+			strcat(string_predictions, aux);
+		}
+	}
+	sprintf(aux, "FFFF");
+	strcat(string_predictions, aux);
+}
+
+
+void
+call_python_function(int width, int height, unsigned char *image, vector<bbox_t> predictions)
+{
+	unsigned int size = predictions.size();
+	char w[8], h[8], string_predictions [size * 34]; // 34 comes from 4 values (x, y, w, h) and 8 characters per value 4*8=32 plus 2 for safety
+
+	sprintf(w, "%d", width);
+	sprintf(h, "%d", height);
+
+	predictions_to_string(string_predictions, predictions, size);
+
+	//printf("%s\n", string_predictions);
+
+	PyObject *python_arguments = Py_BuildValue("(ss)", image, string_predictions);               // Generic function, create objects from C values by a format string
+
+	PyObject_CallObject(python_pedestrian_tracker_function, python_arguments);
+
+	Py_DECREF(python_arguments);
+}
+///////////////
+
 
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
@@ -581,12 +676,12 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	unsigned char *img;
 	double fps;
 	static double start_time = 0.0;
+	static bool first_time = true;
 
 //	int crop_x = image_msg->width * 0.2;
 //	int crop_y = image_msg->height * 0.25;
 //	int crop_w = image_msg->width * 0.55;
 //	int crop_h = image_msg->height * 0.5;
-
 
 	int crop_x = 0;
 	int crop_y = 0;
@@ -616,6 +711,18 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	vector<bbox_t> predictions = darknet->detect(open_cv_image, 0.2);  // Arguments (image, threshold)
 	predictions = filter_predictions_of_interest(predictions);
 
+
+	//////// Python
+	if (first_time)
+	{
+		init_python(image_msg->width, image_msg->height);
+		first_time = false;
+	}
+	call_python_function(image_msg->width, image_msg->height, image_msg->raw_right, predictions);
+	///////////////
+
+
+
 	if (predictions.size() > 0 && velodyne_msg != NULL)
 	{
 		vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
@@ -623,7 +730,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 		vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto
 
-		generate_traffic_light_annotations(predictions, points_inside_bbox);
+		//generate_traffic_light_annotations(predictions, points_inside_bbox);
 
 		vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
 
