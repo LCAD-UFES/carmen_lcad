@@ -238,10 +238,11 @@ InsertObjectIntoGrid(carmen_oriented_bounding_box pObject,
   // Test assumes objects have been inserted in all rows/columns overlapped
   float ooCellWidth = 1.0f / grid->cell_width;
   double radius = pObject.length + pObject.width;
-  int x1 = (int)floorf((pObject.object_pose.x - radius) * ooCellWidth);
-  int x2 = (int)floorf((pObject.object_pose.x + radius) * ooCellWidth);
-  int y1 = (int)floorf((pObject.object_pose.y - radius) * ooCellWidth);
-  int y2 = (int)floorf((pObject.object_pose.y + radius) * ooCellWidth);
+  
+  int x1 = (int)floorf((pObject.object_pose.x - radius) * ooCellWidth + grid->grid_width/2);
+  int x2 = (int)floorf((pObject.object_pose.x + radius) * ooCellWidth + grid->grid_width/2);
+  int y1 = (int)floorf((pObject.object_pose.y - radius) * ooCellWidth + grid->grid_height/2);
+  int y2 = (int)floorf((pObject.object_pose.y + radius) * ooCellWidth + grid->grid_height/2);
 
   x1 = clamp(x1, 0, grid->grid_width-1);
   x2 = clamp(x2, 0, grid->grid_width-1);
@@ -316,10 +317,11 @@ TestObjectAgainstGrid(carmen_oriented_bounding_box pObject, carmen_uniform_colli
 	// Test assumes objects have been inserted in all rows/columns overlapped
 	float ooCellWidth = 1.0f / grid->cell_width;
 	double radius = pObject.length + pObject.width;
-	int x1 = (int)floorf((pObject.object_pose.x - radius) * ooCellWidth);
-	int x2 = (int)floorf((pObject.object_pose.x + radius) * ooCellWidth);
-	int y1 = (int)floorf((pObject.object_pose.y - radius) * ooCellWidth);
-	int y2 = (int)floorf((pObject.object_pose.y + radius) * ooCellWidth);
+	
+	int x1 = (int)floorf((pObject.object_pose.x - radius) * ooCellWidth + grid->grid_width/2);
+	int x2 = (int)floorf((pObject.object_pose.x + radius) * ooCellWidth + grid->grid_width/2);
+	int y1 = (int)floorf((pObject.object_pose.y - radius) * ooCellWidth + grid->grid_height/2);
+	int y2 = (int)floorf((pObject.object_pose.y + radius) * ooCellWidth + grid->grid_height/2);
 
 	x1 = clamp(x1, 0, grid->grid_width-1);
 	x2 = clamp(x2, 0, grid->grid_width-1);
