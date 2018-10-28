@@ -1,10 +1,21 @@
+"""
+###############################################################################################
+TODO: Os caras da OpenAI treinaram no final de cada episodio. Tentar treinar a cada passo?
+TODO: Adicionar codigo para gerar graficos.
+TODO: Adicionar verificacao de erros (e.g., NANs no tensorflow).
+TODO: Adicionar goals com diferentes velocidades e diferentes velocidades inciais. Levar em conta 
+    o maximo que o carro consegue mudar a velocidade dada a distancia do ponto para o goal.
+TODO: Checar se nao estao acontecendo copias que podem causar bugs.
+TODO: Checar se os codigos de amostragem de batches podem ser mais eficientes.
+###############################################################################################
+"""
 
 import os
-import cv2
 import sys
 import random
 import time
 import numpy as np
+import copy
 
 import tensorflow as tf
 
@@ -12,420 +23,472 @@ from sacred import Experiment
 from sacred.observers import FileStorageObserver
 
 from rl.ddpg import DDPG
-from rl.util import relative_pose, dist, draw_rectangle
-from rl.envs import SimpleEnv, CarmenEnv, CarmenSimEnv
-
-import matplotlib.pyplot as plt
+from rl.util import relative_pose, numlist2str
+from rl.envs import *
+from rl.rewards import RewardFactory
+from rl.replay_buffer import ReplayBuffer
+from rl.action_transformers import ActionTransformerGroup
 
 
 results_dir = 'results/'
 ex = Experiment('rl_motion_planner')
 ex.observers.append(FileStorageObserver.create(results_dir))
 
-"""
-plt.ion()
-plt.show()
-"""
 
-def update_rewards(params, episode, info):
-    rw = 0.
+def print_report_and_view(transitions, obs, goal, g, cmd, q, env, view_active, view_sleep):
+    if len(transitions) % 25 == 0:
+        print('Step:', len(transitions),
+              'Pose:', numlist2str(obs['pose']), 
+              'Goal:', numlist2str(goal),
+              'RelativeGoal:', numlist2str(g), 
+              'Cmd:', numlist2str(cmd),
+              'Q:', q)
 
-    if info['success']:
-        # rw = (float(params['n_steps_episode'] + 1. - len(episode))) / float(params['n_steps_episode'])
+    if view_active:
+        env.view()
+        time.sleep(view_sleep)
+
+
+def run_one_episode(policy, update_goal, env, view_active, view_sleep, 
+                    frame_skip, exploration_transformers, additional_transformers, 
+                    use_target_net=False):
+    obs, goal = env.reset()
+
+    # even if the environment changes the goal internally, 
+    # we keep using the first goal (except if update_goal is True) .
+    goal = copy.deepcopy(goal)
+
+    transitions = []
+    done = False
+ 
+    while not done:
+        # we have to make a deep copy before interacting with the environment because if the env returns references
+        # (instead of a copy) to the observation, internal changes in the step method would cause changes to the variable.
+        obs = copy.deepcopy(obs)
+
+        g = relative_pose(obs['pose'], goal)
+        cmd, q = policy.get_actions(obs, g, use_target_net)
+        exploration_cmd = exploration_transformers.transform(cmd, obs)
+        final_command = additional_transformers.transform(exploration_cmd, obs)
         
-        # rw = (float(params['n_steps_episode'] - len(episode))) / float(params['n_steps_episode'] - 1)
+        for _ in range(frame_skip):
+            new_obs, new_goal, done, info = env.step(final_command)
         
-        # print(episode)
-        # rw = dist(episode[0][0]['pose'], episode[0][3])
-        
-        rw = 1.0
-    elif info['hit_obstacle']:
-        # rw = -1.0
-        rw = -1.
-    elif info['starved']:
-        rw = -1.
+        print_report_and_view(transitions, obs, goal, 
+                              g, cmd, q, env, 
+                              view_active, 
+                              view_sleep)
 
-    # rw /= len(episode)
+        transitions.append([obs, exploration_cmd])
 
-    # print('rw:', rw)
-    for i in range(len(episode)):
-        episode[i][2] = 0
+        obs = new_obs
+        if update_goal:
+            goal = copy.deepcopy(new_goal)
+
+    env.finalize()
     
-    episode[-1][2] = rw
+    episode = {
+        'transitions': transitions,
+        'goal': goal,
+        'success': info['success'],
+        'hit_obstacle': info['hit_obstacle'],
+    }
+
+    return episode
 
 
-def view_data(obs, g, rear_laser_is_active, goal_achievemnt_dist):
-    pixels_by_meter = 4.
-    viewer_size_in_meters = 50.
-    viewer_size_in_pixels = int(viewer_size_in_meters * pixels_by_meter)
-    distance_between_front_and_rear_axles = 2.625
-    distance_between_rear_wheels = 1.535
-    distance_between_rear_car_and_rear_wheels = 0.96
-    distance_between_front_car_and_front_wheels = 0.85
-
-    car_angle = obs['pose'][2]
-    laser = np.copy(obs['laser'])
-
-    """
-    plt.clf()
-    plt.plot(range(361), laser[:361], '-b')
-    plt.plot(range(361, len(laser)), laser[361:], '-r')
-    plt.draw()
-    plt.pause(0.001)
-    """
-
-    view = np.zeros((viewer_size_in_pixels, viewer_size_in_pixels, 3)) + 255
-
-    # TODO: read from params file
-    init = -np.pi / 2.
-
-    if rear_laser_is_active:
-        resolution = np.pi / float(len(laser) / 2.)
-    else:
-        resolution = np.pi / float(len(laser))
-
-    angle = init
-
-    color = (0, 0, 0)
-    n = 0
-
-    for distance in laser:
-        distance = distance[0]
-
-        x = pixels_by_meter * distance * np.cos(angle + car_angle)
-        y = pixels_by_meter * distance * np.sin(angle + car_angle)
-
-        x += view.shape[1] / 2.
-        y += view.shape[0] / 2.
-
-        angle += resolution
-        n += 1
-
-        # range max
-        if abs(distance) >= 30.:
-            continue
-
-        if n > len(laser) / 2:
-            color = (0, 0, 255)
-
-        cv2.circle(view, (int(x), int(y)), 1, color, -1)
-
-    cv2.circle(view, (view.shape[0] // 2, view.shape[1] // 2), 2, (0, 0, 255), -1)
-
-    # draw_rectangle(img, pose, height, width, zoom)
-    car_length = pixels_by_meter * (distance_between_front_and_rear_axles + distance_between_rear_car_and_rear_wheels + distance_between_front_car_and_front_wheels)
-    car_width = pixels_by_meter * distance_between_rear_wheels
-
-    # draw car in the origin
-    center_to_rear_axis = ((car_length / 2.) - distance_between_rear_car_and_rear_wheels * pixels_by_meter)
-    shift_x = center_to_rear_axis * np.cos(obs['pose'][2])
-    shift_y = center_to_rear_axis * np.sin(obs['pose'][2])
-
-    rectangle_pose = (shift_x, shift_y, obs['pose'][2])
-    draw_rectangle(view, rectangle_pose, height=car_width, width=car_length)
-
-    # draw goal
-    from rl.util import Transform2d
-    tr_g = Transform2d(g[0], g[1], g[2])
-    tr_r = Transform2d(0., 0., obs['pose'][2])
-    tr_g = tr_r.transform(tr_g)
-    g = np.array([tr_g.x, tr_g.y, tr_g.th])
-
-    # car_length - shft
-    x = pixels_by_meter * g[0]
-    y = pixels_by_meter * g[1]
-    th = g[2]
-
-    radius = int(goal_achievemnt_dist * pixels_by_meter)
-    cv2.circle(view, (int(x + view.shape[1] / 2.), int(y + view.shape[0] / 2.)), 2, (0, 128, 0), -1)
-    cv2.circle(view, (int(x + view.shape[1] / 2.), int(y + view.shape[0] / 2.)), radius, (0, 128, 0), 1)
-
-    x += center_to_rear_axis * np.cos(th)
-    y += center_to_rear_axis * np.sin(th)
-
-    draw_rectangle(view, (x, y, th), height=car_width, width=car_length, color=(0, 128, 0))
-
-    cv2.imshow("input_data", np.flip(view, axis=0))
-    
-    """
-    bars = np.zeros((300, 400, 3)) + 255
-    cv2.putText(bars, "Velocity", (150, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0))
-    cv2.rectangle(bars, (10, 50), (390, 100), (0, 0, 0))
-    v = int((obs['pose'][3] / 10.) * (380 / 2.) + bars.shape[1] / 2)
-    if obs['pose'][3] > 0: x1, x2 = bars.shape[1] // 2, v
-    else: x1, x2 = v, bars.shape[1] // 2
-    cv2.rectangle(bars, (x1, 60), (x2, 90), (0, 0, 255), -1)
-    
-    cv2.putText(bars, "Steering", (150, 130), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0))
-    cv2.rectangle(bars, (10, 150), (390, 200), (0, 0, 0))
-    phi = int((obs['pose'][4] / np.deg2rad(28.)) * (380 / 2.) + bars.shape[1] / 2)
-    if obs['pose'][3] > 0: x1, x2 = bars.shape[1] // 2, phi
-    else: x1, x2 = phi, bars.shape[1] // 2
-    cv2.rectangle(bars, (x1, 160), (x2, 190), (0, 255, 0), -1)
-
-    cv2.imshow("bars", bars)
-    """
-    
-    cv2.waitKey(1)
-
-
-def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=False):
-    # generate episodes
+def run_episodes(policy, update_goal, env, n_rollouts,  
+                 view_active, view_sleep, frame_skip, 
+                 exploration_transformers, additional_transformers, 
+                 use_target_net=False):
     episodes = []
-    n_successes = 0
-    n_collisions = 0
-    q0 = 0.
-
+    
     while len(episodes) < n_rollouts:
-        if params['env'] == 'carmen':
-            x = int(np.random.choice([100])) #range(100, 3001, 500)))
-            env.sim.set_initial_pose(x) 
+        episode = run_one_episode(policy, update_goal, env, view_active, view_sleep, 
+                                  frame_skip, exploration_transformers,
+                                  additional_transformers, 
+                                  use_target_net=use_target_net)
         
-        obs, goal = env.reset()
-
-        episode = []
-        done = False
-        info = None
-
-        i = 0
-        while not done:
-            #if not params['train']:
-                #goal = env.sim.goal()
-            
-            g = relative_pose(obs['pose'], goal)
-
-            if params['env'] == 'carmen' and params['view']:
-                view_data(obs, g, rear_laser_is_active=env.rear_laser_is_active(),
-                          goal_achievemnt_dist=params['goal_achievement_dist'])
-                env.view()
-                if not params['train']:
-                    time.sleep(params['view_sleep'])
-
-            cmd, q = policy.get_actions(obs, g + [goal[3]], noise_eps=params['noise_eps'] if not exploit else 0.,
-                                        random_eps=params['random_eps'] if not exploit else 0.,
-                                        use_target_net=use_target_net)
-
-            if len(episode) % 25 == 0:
-                print('CMD:', cmd, 'ODOM V: %.2f\tODOM PHI: %.2f' % (obs['pose'][3], np.rad2deg(obs['pose'][4])))
-
-            if len(episode) == 0:
-                q0 = q
-
-            for _ in range(1):
-                new_obs, done, info = env.step(cmd)
-
-            if params['env'] == 'simple' and params['view']:
-                env.view()
-                if not params['train']:
-                    time.sleep(params['view_sleep'])
-
-            # g_after = relative_pose(new_obs['pose'], goal)
-            # rw = 0.01 if not info['hit_obstacle'] else -1.0
-            
-            # if info['hit_obstacle']: rw = -5.0
-            # else: rw = (dist(obs['pose'], goal) - dist(goal, new_obs['pose'])) / 10.0
-            
-            rw = -dist(goal, obs['pose']) / 100.0
-            # print("Travelled dist:", dist(obs['pose'], new_obs['pose']))
-            # rw = 0.
-
-            episode.append([obs, cmd, rw, goal])
-            obs = new_obs
-
-        for i in range(len(episode)):
-            episode[i][2] += 0.3
-
-        env.finalize()
-        if len(episode) <= 1:
-            print("Episode is too small. Trying again.")
+        # TODO: Check if the robot started out of a valid map.
+        # TODO: Tratar caso em que o robo inicia sobre o goal.
+        #if len(transitions) == 1 and not last_info['success']:
+        if len(episode['transitions']) <= 1:
+            print("Episode starting in invalid pose. Trying again.")
             continue
-
-        if params['use_sparse']:
-            update_rewards(params, episode, info)
 
         episodes.append(episode)
 
-        if info['success']: n_successes += 1
-        elif info['hit_obstacle']: n_collisions += 1
-
-    return episodes, n_successes, n_collisions, q0
+    return episodes
 
 
+# Only for debugging purposes
 def print_episode(episode):
     print('-----------------------------------------')
+    
+    print('Goal:', episode['goal'], 
+          'Success:', episode['success'], 
+          'Hit_obstacle:', episode['hit_obstacle'])
+    
     i = 0
-    for transition in episode:
-        obs, cmd, rw, goal = transition
+    for transition in episode['transitions']:
+        obs = transition[0]
+        cmd = transition[1]
+        rw = transition[2]
+        
         print(i, end=' ')
-        for r in obs['laser']:
-            print('%.2f' % r[0], end=' ')
-        print(obs['pose'], cmd, rw, goal, '\n')
+        print(obs['pose'], cmd, rw, '\n')
         i += 1
+
     print('-----------------------------------------')
     input('Pressione enter para continuar:')
 
 
-def launch(params, n_epochs, seed, policy_save_interval):
-    """
-    ###############################################################################################
-    TODO: Os caras da OpenAI treinaram no final de cada episodio. Tentar treinar a cada passo?
-    TODO: Adicionar codigo para gerar graficos.
-    TODO: Adicionar verificacao de erros (e.g., NANs no tensorflow).
-    TODO: Adicionar goals com diferentes velocidades e diferentes velocidades inciais. Levar em conta o maximo que o
-        TODO: carro consegue mudar a velocidade dada a distancia do ponto para o goal.
-    TODO: Colocar goal na referencia do carro (inclusive no HER), e normalizar dados de entrada (laser e velocidades).
-    TODO: Checar se nao estao acontecendo copias que podem causar bugs.
-    TODO: Checar se o codigo da amostragem de batches podem ser mais eficientes.
-    ###############################################################################################
-    """
-    # It is not possible to set the seeds used by all carmen modules from here.
+def create_env(params):
+    name = params['env']
+    if name == 'simple': 
+        return EmptyRoomSimple(params)
+    elif name == 'ackerman':
+        return EmptyRoomAckerman(params)
+    elif name == 'carmen_offline': 
+        return Carmen(params, mode='offline', sim_dt=params['sim_dt'])
+    elif name == 'carmen_online': 
+        return Carmen(params, mode='online', sim_dt=params['sim_dt'])
+    else: 
+        raise Exception("Env '{}' not implemented.".format(name))
+
+
+def set_seeds(env, seed):
+    # Note: it is not possible to make the results reproducible when using
+    # Carmen in online mode (with message passing).
     tf.set_random_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
+    env.seed(seed)
 
-    init_time = time.time()
 
-    if params['env'] == 'simple': env = SimpleEnv(params)
-    elif params['env'] == 'carmen': env = CarmenSimEnv(params)
-    else: raise Exception("Env '{}' not implemented.".format(params['env']))
-
+def create_policy(params, env):
+    # read an state and goal to read their 
+    # dimensions when creating the neural net.
     state, goal = env.reset()
-    n_laser_readings = state['laser'].size
-
-    policy = DDPG(params, n_laser_readings=n_laser_readings)
     
+    # create the policy
+    policy = DDPG(params, state, goal)
+    
+    # load a pre-trained network if available
     checkpoint = params['checkpoint']
     if len(checkpoint) > 0:
         policy.load(checkpoint)
-
-    # Path to some log files
-    experiment_dir = os.path.join(results_dir, str(ex.current_run._id))
-    latest_policy_path = os.path.join(experiment_dir, 'policy_latest.ckpt')
-    best_policy_path = os.path.join(experiment_dir, 'policy_best.ckpt')
-    periodic_policy_path = os.path.join(experiment_dir, 'policy_{}.ckpt')
-
-    best_success_rate = -1
-
-    last_success_flags = []
-    last_collision_flags = []
-
-    times = []
-
-    # Training loop
-    for epoch in range(n_epochs):
-        # rollouts
-        episodes, n_successes, n_collisions, q0 = generate_rollouts(policy, env, params['n_rollouts'],
-                                                                    params, exploit=False)
-
-        # report
-        last_success_flags.append(n_successes / float(len(episodes)))
-        last_collision_flags.append(n_collisions / float(len(episodes)))
-
-        if len(last_success_flags) > 30: last_success_flags.pop(0)
-        if len(last_collision_flags) > 30: last_collision_flags.pop(0)
-
-        last_episode = episodes[-1]
-
-        # print_episode(last_episode)
-
-        print('** Episode', epoch * params['n_rollouts'],
-              'Return:', np.sum([t[2] for t in last_episode]),
-              'n_successes:', n_successes,
-              'n_collisions:', n_collisions,
-              'DIST:', dist(last_episode[-1][0]['pose'], last_episode[-1][-1]),
-              'SampleQ:', q0,
-              'SuccessAvg30:', np.mean(last_success_flags),
-              'CollisionsAvg30:', np.mean(last_collision_flags),
-              'EpSize:', len(last_episode)
-              )
-
-        sys.stdout.flush()
-
-        # Train
-        if params['train']:
-            init = time.time()
-            
-            policy.store_episode(episodes)
     
-            if len(policy.buffer.stack) > 0:
-                for b in range(params['n_batches']):
-                    c_loss, p_loss, l2_loss, target_q, predicted_q, rew, main_q_policy = policy.train()
-                    #"""
-                    if b % 128 == 0:
-                        print('Batch', b, 'CriticLoss:', c_loss, 'PolicyLoss:', p_loss,
-                              'L2 Loss:', l2_loss,
-                              'target_q predicted_q:\n', np.concatenate([rew[:5],
-                                                                          target_q[:5],
-                                                                          predicted_q[:5],
-                                                                          main_q_policy[:5]], axis=1))
-                        print()
-                    #"""
-    
-                policy.update_target_net()
+    return policy
 
-                # Save
-                if epoch % 20 == 0:
-                    policy_path = periodic_policy_path.format(epoch)
-                    policy.save(policy_path)
+
+def create_exploration_transformers(params):
+    p_v = copy.deepcopy(params)
+    if not p_v['allow_negative_velocity']:
+        p_v['action_clip_min'] = 0.
+    
+    filters = [params['v_filters'], params['phi_filters']]
+    params = [p_v, params]
+    return ActionTransformerGroup(filters, params)
+
+
+def create_additional_transformers(params):
+    p_v = copy.deepcopy(params)
+    if not p_v['allow_negative_velocity']:
+        p_v['action_clip_min'] = 0.
+
+    all_params = [p_v, params]
+
+    if params['spline_type'] == 'linear':
+        filters = [['linear_spline', 'clip'], ['linear_spline', 'clip']]
+        t = ActionTransformerGroup(filters, all_params) 
+    elif params['spline_type'] == 'cubic':
+        filters = [['cubic_spline', 'clip'], ['cubic_spline', 'clip']]
+        t = ActionTransformerGroup(filters, all_params) 
+    else:
+        filters = [['identity'], ['identity']]
+        t = ActionTransformerGroup(filters, all_params)
+
+    return t
+
+
+def add_to_queue(queue, value, max_size):
+    queue.append(value)
+    if len(queue) > max_size: 
+        queue.pop(0)
+
+
+def update_rewards(episode, reward_generator):
+    ep_return = 0.
+    
+    transitions = episode['transitions']
+    success = episode['success']
+    goal = episode['goal']
+    n = len(transitions)
+    
+    for i in range(n):
+        t = transitions[i]
+        is_final = (i == (n - 1))
+        r = reward_generator.reward(n, 
+                                   obs=t[0], 
+                                   goal=goal, 
+                                   achieved=success,
+                                   is_final=is_final)
+        t.append(r)
+        ep_return += r
+        
+    episode['return'] = ep_return
+
+
+def compute_rewards_and_statistics(episodes, statistics, reward_generator):
+    for e in episodes:
+        add_to_queue(statistics['successes_lastk'], e['success'], max_size=30)
+        add_to_queue(statistics['collisions_lastk'], e['hit_obstacle'], max_size=30)    
+        update_rewards(e, reward_generator)
+        
+    mean_success = np.mean(statistics['successes_lastk'])
+    return mean_success 
+
+
+def train(params, policy, episodes, replay_buffer):
+    training_time = 0.
+
+    if params['train']:
+        replay_buffer.add(episodes)
+
+        init_t = time.time()
+        
+        if len(replay_buffer) > params['min_buffer_size']:
             
-            times.append(time.time() - init)
-            print("\n** avg train time:", np.mean(times))
-            print("** overall train time:", time.time() - init_time)
-            print()
+            for batch_id in range(params['n_batches']):
+                print_report = False
+                if batch_id % 25 == 0:
+                    print_report = True 
+
+                policy.train(replay_buffer.get_batch(), print_report=print_report)
+
+            policy.update_target_net()
+            
+        training_time = time.time() - init_t
+
+    return training_time
+
+
+def save_policy(policy, epoch, save_interval, mean_success, best_success_rate, experiment_dir):
+    # save the policy from time to time
+    if epoch % save_interval == 0:
+        periodic_policy_path = os.path.join(experiment_dir, 'policy_%d.ckpt' % epoch)
+        policy.save(periodic_policy_path)
+
+    # save the policy if it improved.
+    if mean_success >= best_success_rate:
+        best_policy_path = os.path.join(experiment_dir, 'policy_best.ckpt')
+        policy.save(best_policy_path)
+        best_success_rate = mean_success
+        
+    return best_success_rate
+
+
+def print_report(epoch, n_rollouts, episodes, statistics, mean_success, train_time, experiment_time):
+    # Print episodes (debug)
+    # for e in episodes:
+        # print_episode(e)
+
+    curr_time = time.time()
+    
+    print('\n** Episode', epoch * n_rollouts,
+          'Return:', episodes[0]['return'],
+          'Success:', episodes[0]['success'],
+          'Collision:', episodes[0]['hit_obstacle'],
+          'SuccessAvg30:', mean_success,
+          'CollisionsAvg30:', np.mean(statistics['collisions_lastk']),
+          'AvgEpSize:', np.mean([len(e['transitions']) for e in episodes]),
+          'Training time:', train_time,
+          'Overall time:',  experiment_time, 
+          end='\n\n')
+    
+    sys.stdout.flush()
 
 
 @ex.config
 def config():
     seed = 1
     n_epochs = 100000
-
-    # the interval with which policy pickles are saved. If set to 0, only the best and latest policy will be pickled.
-    policy_save_interval = 0
+    save_interval = 20
 
     params = {
-        # env
-        'env': 'carmen',
-        'model': 'simple',
-        'n_steps_episode': 100,
-        'goal_achievement_dist': 1.0,
-        'vel_achievement_dist': 0.5,
-        'view': True,
-        'rddf': 'rddf-voltadaufes-20170809.txt',
-        'fix_initial_position': False,
+        # experiment
+        'use_gpu': True,
         'checkpoint': '',
         'train': True,
+        
+        # env
+        'env': 'simple',
+        'max_steps': 20,
+        'rddf': 'rddf-voltadaufes-20170809.txt',
+        'map': "map_ida_guarapari-20170403-2",
         'use_latency': False,
-        'use_gpu': True,
-        'use_acceleration': False,
-        'use_spline': False,
+        'use_curriculum': True,  # TODO!!
+        'allow_negative_velocity': True,  # CHECK!!
+        'allow_goals_behind': True,  # CHECK!!
+        'fix_goal': True,
+        'fix_initial_position': False,
+        # to sum several rewards, use their names separated by commas
+        'reward_type': 'sparse',
+        'frames_by_step': 1,
+        'sim_dt': 0.05,  # CHECK IF USED!!
+
+        # GUI
+        'view': True,
+        'view_sleep': 0,
+        'view_spline': True,
+        
         # net
-        'n_hidden_neurons': 128,
-        'n_hidden_layers': 1,
-        'soft_update_rate': 0.99,
+        'n_critic_hidden_neurons': 64,
+        'n_actor_hidden_neurons': 64,
+        'n_critic_hidden_layers': 1,
+        'n_actor_hidden_layers': 1,
+        'soft_update_rate': 0.95,
         'use_conv_layer': False,
         'activation_fn': 'elu',
-        'allow_negative_commands': True,
+        'critic_lr': 1e-3,
+        'actor_lr': 1e-3,
+        'laser_weight': 1.0,
+        'position_weight': 1.0,
+        'v_weight': 1.0,
+        'angle_weight': 1.0,
+        'critic_training_method': 'td',  # td or mc   # TODO MC!!  
+        
+        # tricks
+        'actor_gradient_clipping': 0.0,
+        'critic_gradient_clipping': 0.0,
+        'use_layer_norm': True,        # TODO!!
+        'l2_regularization_critic': 0.0,
+        'l2_regularization_actor': 0.0,
+        'l2_cmd': 0.0,
+        
         # training
         'n_rollouts': 1,
         'n_batches': 50,
         'batch_size': 256,
-        'use_her': True,
-        'use_sparse': True,
+        'use_her': True,  # CHECK!!
+        'use_sparse': True,  # CHECK!!
         'her_rate': 1.0,
-        'n_test_rollouts': 0.5,
         'replay_memory_capacity': 500,  # episodes
-        # exploration
+        'min_buffer_size': 10,
+        
+        # Commands
+        'n_commands': 2,
         'random_eps': 0.1,  # percentage of time a random action is taken
-        'noise_eps': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
-        'l2_weight': 0.0,
-        'critic_lr': 1e-4,
-        'actor_lr': 1e-4,
-        'view_sleep': 1e-4,
+        'noise_std': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
+        'spline_command_t': 0.15,
+        'use_acceleration': False,
+        'spline_type': None,  # None, linear, or cubic.  # TODO!!
+        'v_filters': ['random', 'gaussian', 'clip'],
+        'phi_filters': ['random', 'gaussian', 'clip'],
+        'action_clip_max': 1.0,
+        'action_clip_min': -1.0,
+        
+        # Reward generator params
+        'punish_failure': True,
+        'dist_weight': 1. / 100., 
+        'th_weight': 0.0, 
+        'velocity_weight': 0.0   # THERE IS A PARAMETER WITH ALMOST THE SAME NAME!!
     }
 
-    params['gamma'] = 1. - 1. / params['n_steps_episode']
+    params['gamma'] = 1. - 1. / params['max_steps']
+
+
+@ex.named_config
+def simple():
+    params = {}
+    params['env'] = 'simple'
+    params['n_critic_hidden_neurons'] = 64
+    params['n_actor_hidden_neurons'] = 64
+    params['use_conv_layer'] = False
+    params['max_steps'] = 40
+    params['soft_update_rate'] = 0.95
+    params['activation_fn'] = 'elu'
+    params['actor_lr'] = 1e-4
+    params['critic_lr'] = 1e-3
+    params['actor_gradient_clipping'] = 0.0
+    params['critic_gradient_clipping'] = 0.0
+    params['l2_regularization_critic'] = 0.0
+    params['l2_regularization_actor'] = 0.0
+    params['l2_cmd'] = 0.0
+    params['gamma'] = 1. - 1. / params['max_steps']
+    params['spline_type'] = 'cubic'
+    params['spline_command_t'] = 0.5
+
+
+@ex.named_config
+def carmen_offline():
+    params = {}
+    params['env'] = 'carmen_offline'
+    params['n_critic_hidden_neurons'] = 64
+    params['n_actor_hidden_neurons'] = 64
+    params['use_conv_layer'] = False
+    params['max_steps'] = 40
+    params['soft_update_rate'] = 0.95
+    params['activation_fn'] = 'elu'
+    params['actor_lr'] = 1e-4
+    params['critic_lr'] = 1e-3
+    params['actor_gradient_clipping'] = 0.0
+    params['critic_gradient_clipping'] = 0.0
+    params['l2_regularization_critic'] = 0.0
+    params['l2_regularization_actor'] = 0.0
+    params['l2_cmd'] = 0.0
+    params['gamma'] = 1. - 1. / params['max_steps']
+    params['spline_type'] = None 
+    params['spline_command_t'] = 0.15
+
+
+@ex.named_config
+def exploit():
+    params = {}
+    params['train'] = False
+    params['view_sleep'] = 0.03
+    params['random_eps'] = 0
+    params['noise_std'] = 0
 
 
 @ex.automain
-def main(seed, n_epochs, policy_save_interval, params):
-    launch(params, n_epochs, seed, policy_save_interval)
+def main(seed, n_epochs, save_interval, params):
+    init_experiment = time.time()
+    
+    env = create_env(params)
+    set_seeds(env, seed)
+    reward_generator = RewardFactory.create(params)
+    policy = create_policy(params, env)
+    exploration_transformers = create_exploration_transformers(params)
+    additional_transformers = create_additional_transformers(params)
+    replay_buffer = ReplayBuffer(params, reward_generator)
+    experiment_dir = os.path.join(results_dir, str(ex.current_run._id))
+
+    n_rollouts = params['n_rollouts']
+    update_goal = True if params['env'] == 'carmen_online' else False 
+
+    best_success_rate = -1
+    statistics = {
+        'successes_lastk': [],
+        'collisions_lastk': [],
+    }
+
+    for epoch in range(n_epochs):
+        episodes = run_episodes(policy, update_goal, env, n_rollouts, 
+                                params['view'], params['view_sleep'], 
+                                params['frames_by_step'],
+                                exploration_transformers,
+                                additional_transformers)
+
+        mean_success = compute_rewards_and_statistics(episodes, statistics, reward_generator)
+        
+        train_time = train(params, policy, episodes, replay_buffer)
+        
+        best_success_rate = save_policy(policy, epoch, save_interval, 
+                                        mean_success, best_success_rate,
+                                        experiment_dir)
+        
+        print_report(epoch, n_rollouts, episodes, statistics, 
+                     mean_success, train_time, time.time() - init_experiment)
+

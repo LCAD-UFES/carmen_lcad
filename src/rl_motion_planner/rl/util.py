@@ -3,6 +3,15 @@ import cv2
 import numpy as np
 
 
+def numlist2str(l):
+    str = ''
+    for e in l:
+        while type(e) == list:
+            e = e[0]
+        str += '%.2f\t' % e
+    return str
+
+
 def dist(a, b):
     return np.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
 
@@ -19,6 +28,17 @@ def normalize_theta(theta):
     if theta < -np.pi:
         theta += 2 * np.pi
     return theta
+
+
+def find_nearest_pose(x, l):
+    min_id = -1
+    min_d = np.inf
+    for id, p in enumerate(l):
+        d = dist(x, p)
+        if d < min_d:
+            min_d = d
+            min_id = id
+    return min_id, min_d
 
 
 def rotate(x, y, angle):
@@ -58,7 +78,7 @@ def relative_pose(x, y):
     a = Transform2d(y[0] - x[0], y[1] - x[1], y[2])
     b = Transform2d(0., 0., x[2])
     c = b.inverse().transform(a)
-    return [c.x, c.y, c.th]
+    return np.concatenate([[c.x, c.y, c.th], y[3:]])
 
 
 def ackerman_motion_model(pose, v, phi, dt, L=2.625):
@@ -105,3 +125,4 @@ def draw_rectangle(img, pose, height, width, zoom=1, color=(0, 0, 0)):
         img = cv2.line(img, p1, p2, color, 1)
 
     return img
+

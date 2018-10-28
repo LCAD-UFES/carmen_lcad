@@ -1,4 +1,4 @@
-#include "../panel/speedometer.h"
+#include "speedometer.h"
 
 #include <GL/glew.h>
 

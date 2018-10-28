@@ -12,7 +12,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 
-//using namespace cv;
+
 using namespace std;
 
 
@@ -24,9 +24,7 @@ public:
 			bool enjoy_mode=false,
 			bool use_latency=false,
 			const char *rddf_name="rddf-voltadaufes-20170809.txt",
-			const char *map_dir="map_ida_guarapari-20170403-2",
-			double min_dist_to_initial_goal=5.,
-			double max_dist_to_initial_goal=15.);
+			const char *map_dir="map_ida_guarapari-20170403-2");
 
 	void set_seed(int seed);
 	void reset();
@@ -35,7 +33,6 @@ public:
 
 	vector<double> laser();
 	vector<double> pose();
-	vector<double> goal();
 
 	bool hit_obstacle();
 
@@ -67,8 +64,6 @@ private:
 	cv::Mat *_view;
 
 	vector<carmen_ackerman_motion_command_t> _rddf;
-
-	carmen_ackerman_motion_command_t _goal;
 
 	bool _robot_is_on_map;
 	int _viewer_subsampling;

@@ -49,12 +49,12 @@ PY_INC = -I `python -c "from distutils.sysconfig import get_python_inc; print(ge
 PY_LIB += `python3-config --libs`
 
 pycarmen_sim:
-	swig -python -c++ pycarmen_sim.i
-	g++ -fPIC -c pycarmen_sim_wrap.cxx $(PY_INC) $(IFLAGS) $(CXXFLAGS)
-	g++ -shared pycarmen_sim_wrap.o libcarmen_sim_cpp.a -o _pycarmen_sim.so $(PY_LIB) $(LFLAGS) 
+	swig -python -c++ sim.i
+	g++ -fPIC -c sim_wrap.cxx $(PY_INC) $(IFLAGS) $(CXXFLAGS)
+	g++ -shared sim_wrap.o libcarmen_sim_cpp.a -o _sim.so $(PY_LIB) $(LFLAGS) 
 
 pycarmen_sim_clean:
-	rm -rf pycarmen_sim.py pycarmen_sim_wrap.cxx *.a *.so __pycache__
+	rm -rf sim.py sim_wrap.cxx *.a *.so __pycache__
 
 include $(CARMEN_HOME)/src/Makefile.rules
 

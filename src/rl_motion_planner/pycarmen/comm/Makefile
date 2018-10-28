@@ -35,12 +35,12 @@ PY_INC = -I `python -c "from distutils.sysconfig import get_python_inc; print(ge
 PY_LIB += `python3-config --libs`
 
 pycarmen_comm:
-	swig -python -c++ carmen_comm.i
-	g++ -fPIC -c carmen_comm_wrap.cxx $(PY_INC) 
-	g++ -shared carmen_comm_wrap.o libcarmen_comm_cpp.a -o _carmen_comm.so $(PY_LIB) $(LFLAGS)
+	swig -python -c++ comm.i
+	g++ -fPIC -c comm_wrap.cxx $(PY_INC) 
+	g++ -shared comm_wrap.o libcarmen_comm_cpp.a -o _comm.so $(PY_LIB) $(LFLAGS)
 
 pycarmen_comm_clean:
-	rm -rf carmen_comm.py carmen_comm_wrap.cxx
+	rm -rf comm.py comm_wrap.cxx *.a *.so __pycache__
 
 include $(CARMEN_HOME)/src/Makefile.rules
 

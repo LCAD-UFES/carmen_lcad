@@ -8,7 +8,7 @@
 #ifndef WITHOUT_TIME_H_
 #define WITHOUT_TIME_H_
 
-#include "../panel/accelerator.h"
+#include "accelerator.h"
 
 class withoutTime : public Accelerator
 {

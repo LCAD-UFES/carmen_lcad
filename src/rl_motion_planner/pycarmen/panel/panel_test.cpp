@@ -1,6 +1,7 @@
 
+#include "../panel/panel.h"
+
 #include <carmen/carmen.h>
-#include "panel.h"
 
 int main()
 {

@@ -1,18 +1,18 @@
 
+#include "../panel/panel.h"
+
 #include <math.h>
 #include <carmen/carmen.h>
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <csetjmp>
 
-#include "panel.h"
-
-#include "accelerator.h"
-#include "arrow.h"
-#include "lights.h"
-#include "speedometer.h"
-#include "steering.h"
-#include "without_time.h"
+#include "../panel/accelerator.h"
+#include "../panel/arrow.h"
+#include "../panel/lights.h"
+#include "../panel/speedometer.h"
+#include "../panel/steering.h"
+#include "../panel/without_time.h"
 
 
 class CarPanel_INNER

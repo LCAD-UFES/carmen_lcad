@@ -1,8 +1,9 @@
 
+#include "../sim/carmen_sim.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <carmen/carmen.h>
-#include <carmen/carmen_sim.h>
 
 
 int
@@ -21,9 +22,8 @@ main()
 
 			sim.step(v, phi, 0.1);
 
-			printf("Pose: %.2lf %.2lf %.2lf %.2lf Goal: %.2lf %.2lf %.2lf %.2lf time: %lf\n",
+			printf("Pose: %.2lf %.2lf %.2lf %.2lf time: %lf\n",
 					sim.pose()[0], sim.pose()[1], sim.pose()[2], sim.pose()[3],
-					sim.goal()[0], sim.goal()[1], sim.goal()[2], sim.goal()[3],
 					carmen_get_time());
 
 			printf("Laser: ");
@@ -36,8 +36,8 @@ main()
 
 			sim.draw_occupancy_map();
 			sim.draw_pose(sim.pose()[0], sim.pose()[1], sim.pose()[2], 0, 0, 0);
-			sim.draw_pose(sim.goal()[0], sim.goal()[1], sim.goal()[2], 0, 200, 200);
-			sim.show();
+			sim.draw_poses(sim.rddf_forward(), 0, 200, 200);
+			sim.show(50);
 		}
 	}
 

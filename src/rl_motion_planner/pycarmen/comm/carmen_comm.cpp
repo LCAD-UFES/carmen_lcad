@@ -1,5 +1,5 @@
 
-#include "carmen_comm.h"
+#include "../comm/carmen_comm.h"
 
 #include <cmath>
 #include <cstdio>
@@ -24,8 +24,9 @@
 #include <carmen/velodyne_interface.h>
 #include <carmen/rddf_interface.h>
 #include <locale.h>
-#include "util.h"
 #include <assert.h>
+
+#include "../comm/util.h"
 
 // Flags
 const int VIEW_LASER = 0;

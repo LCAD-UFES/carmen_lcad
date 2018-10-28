@@ -2,7 +2,8 @@
 #include <cstdio>
 #include <vector>
 #include <unistd.h>
-#include "carmen_comm.h"
+
+#include "../comm/carmen_comm.h"
 using namespace std;
 
 

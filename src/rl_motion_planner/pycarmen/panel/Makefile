@@ -50,12 +50,12 @@ PY_INC = -I `python -c "from distutils.sysconfig import get_python_inc; print(ge
 PY_LIB += `python3-config --libs`
 
 pycarmen_panel:
-	swig -python -c++ pycarmen_panel.i
-	g++ -fPIC -c pycarmen_panel_wrap.cxx $(PY_INC) $(IFLAGS) $(CXXFLAGS) -Wno-missing-field-initializers
-	g++ -shared pycarmen_panel_wrap.o libpanel.a -o _pycarmen_panel.so $(PY_LIB) $(LFLAGS) 
+	swig -python -c++ panel.i
+	g++ -fPIC -c panel_wrap.cxx $(PY_INC) $(IFLAGS) $(CXXFLAGS) -Wno-missing-field-initializers
+	g++ -shared panel_wrap.o libpanel.a -o _panel.so $(PY_LIB) $(LFLAGS) 
 
 pycarmen_panel_clean:
-	rm -rf pycarmen_panel.py pycarmen_panel_wrap.cxx *.a *.so __pycache__
+	rm -rf panel.py panel_wrap.cxx *.a *.so __pycache__
 	
 include $(CARMEN_HOME)/src/Makefile.rules
 

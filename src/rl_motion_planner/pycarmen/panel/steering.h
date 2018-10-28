@@ -3,8 +3,8 @@
 
 #include <math.h>
 
-#include "../panel/character.h"
-#include "../panel/utils.h"
+#include "character.h"
+#include "utils.h"
 
 
 class Steering

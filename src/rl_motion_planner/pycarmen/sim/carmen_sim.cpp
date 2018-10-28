@@ -1,4 +1,6 @@
 
+#include "../sim/carmen_sim.h"
+
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -7,7 +9,6 @@
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/simulator_ackerman_simulation.h>
 #include <carmen/collision_detection.h>
-#include "carmen_sim.h"
 
 using namespace cv;
 
@@ -22,9 +23,7 @@ CarmenSim::CarmenSim(bool fix_initial_position, bool use_truepos,
 		bool enjoy_mode,
 		bool use_latency,
 		const char *rddf_name,
-		const char *map_dir,
-		double min_dist_to_initial_goal,
-		double max_dist_to_initial_goal)
+		const char *map_dir)
 {
 	_fix_initial_position = fix_initial_position;
 	_use_truepos = use_truepos;
@@ -32,9 +31,6 @@ CarmenSim::CarmenSim(bool fix_initial_position, bool use_truepos,
     _allow_negative_commands = allow_negative_commands;
     _enjoy_mode = enjoy_mode;
     _use_latency = use_latency;
-
-	_min_pose_skip_to_initial_goal = (int) (min_dist_to_initial_goal / 0.5);
-	_max_pose_skip_to_initial_goal = (int) (max_dist_to_initial_goal / 0.5);
 
     string carmen_home = getenv("CARMEN_HOME");
     string rddf_path = carmen_home + "/data/rndf/" + _rddf_name;
@@ -47,7 +43,7 @@ CarmenSim::CarmenSim(bool fix_initial_position, bool use_truepos,
 
     _map_dir = carmen_home + "/data/" + map_dir;
 	_map_resolution = 0.2;
-	_viewer_subsampling = 1;
+	_viewer_subsampling = 2;
 	_map_pixel_by_meter = 1. / (_map_resolution * _viewer_subsampling);
 
 	carmen_grid_mapping_init_parameters(_map_resolution, 210);
@@ -85,33 +81,14 @@ CarmenSim::set_seed(int seed)
 void
 CarmenSim::reset()
 {
-	int direction, M, m;
-
-	M = _max_pose_skip_to_initial_goal;
-	m = _min_pose_skip_to_initial_goal;
-
-	if (_allow_negative_commands)
-		direction = (rand() % 2) * 2 - 1;  // -1 or 1
-	else
-		direction = 1;
-
 	int pose_id;
 
-	if (_fix_initial_position) pose_id = _initial_pos;
-	else pose_id = M + rand() % (_rddf.size() - M);
-
-	int shift = m + (rand() % (M - m));  // shift is a random integer between m and M
-
-	if (_enjoy_mode)
-	{
-		shift = 10;
-		direction = 1;
-	}
-
-	int goal_id = pose_id + shift * direction;
+	if (_fix_initial_position)
+		pose_id = _initial_pos;
+	else
+		pose_id = 100 + rand() % (_rddf.size() - 100);
 
 	carmen_ackerman_motion_command_t pose = _rddf[pose_id];
-	_goal = _rddf[goal_id];
 
 	// reset simulator
 	_simulator_config.true_pose.x = pose.x;
@@ -131,8 +108,6 @@ CarmenSim::reset()
 
 	carmen_simulator_ackerman_calc_laser_msg(&_front_laser, &_simulator_config, 0);
 	carmen_simulator_ackerman_calc_laser_msg(&_rear_laser, &_simulator_config, 1);
-
-	//_my_counter = 0;
 
 	_current_rddf_pose = pose_id;
 }
@@ -239,9 +214,6 @@ CarmenSim::step(double v, double phi, double dt)
 	}
 
     _update_map();
-
-    if (_enjoy_mode)
-    	_goal = _rddf[_find_nearest_goal(_simulator_config.true_pose.x, _simulator_config.true_pose.y) + 10];
 
 	carmen_simulator_ackerman_calc_laser_msg(&_front_laser, &_simulator_config, 0);
 	carmen_simulator_ackerman_calc_laser_msg(&_rear_laser, &_simulator_config, 1);
@@ -418,21 +390,6 @@ CarmenSim::pose()
 	data.push_back(_simulator_config.true_pose.theta);
 	data.push_back(_simulator_config.v);
 	data.push_back(_simulator_config.phi);
-
-	return data;
-}
-
-
-vector<double>
-CarmenSim::goal()
-{
-	vector<double> data;
-
-	data.push_back(_goal.x);
-	data.push_back(_goal.y);
-	data.push_back(_goal.theta);
-	data.push_back(_goal.v);
-	data.push_back(_goal.phi);
 
 	return data;
 }
