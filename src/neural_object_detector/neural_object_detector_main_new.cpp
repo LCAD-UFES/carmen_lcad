@@ -11,6 +11,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <carmen/dbscan.h>
 #include <Python.h>
+#include <numpy/arrayobject.h>
 #include "Darknet.hpp"
 
 using namespace std;
@@ -577,12 +578,13 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 
 //////// Python
 PyObject *python_pedestrian_tracker_function;
-
+npy_intp image_dimensions[3];
 
 void
 init_python(int image_width, int image_height)
 {
 	Py_Initialize();
+	import_array();
 
 	PyObject *python_module_name = PyString_FromString((char *) "pedestrian_tracker");
 
@@ -603,11 +605,7 @@ init_python(int image_width, int image_height)
 		exit (printf("Error: Could not load the python_set_image_settings_function.\n"));
 	}
 
-	//char w[8], h[8];
-	//sprintf(w, "%d", image_width);
-	//sprintf(h, "%d", image_height);
-
-	PyObject *python_arguments = Py_BuildValue("(ii)", image_width, image_height);//w, h);               // Generic function, create objects from C values by a format string
+	PyObject *python_arguments = Py_BuildValue("(ii)", image_width, image_height);               // Generic function, create objects from C values by a format string
 
 	PyObject_CallObject(python_set_image_settings_function, python_arguments);
 
@@ -620,8 +618,12 @@ init_python(int image_width, int image_height)
 	{
 		Py_DECREF(python_module);
 		Py_Finalize();
-		exit (printf("Error: Could not load the python_pedestrian_tracker_function.\n"));
+		exit (printf("Error: Could not load the python_semantic_segmentation_function.\n"));
 	}
+
+	image_dimensions[0] = image_height;           //create shape for numpy array
+	image_dimensions[1] = image_width;
+	image_dimensions[2] = 3;
 }
 
 
@@ -630,7 +632,7 @@ predictions_to_string(char* string_predictions, vector<bbox_t> predictions, int 
 {
 	char aux[34];
 	unsigned int i = 0;
-	sprintf(string_predictions, '\0');
+	//sprintf(string_predictions, '\0');
 
 	if (size > 0)
 	{
@@ -651,21 +653,21 @@ predictions_to_string(char* string_predictions, vector<bbox_t> predictions, int 
 void
 call_python_function(int width, int height, unsigned char *image, vector<bbox_t> predictions)
 {
-	unsigned int size = predictions.size();
-	char w[8], h[8], string_predictions [size * 34]; // 34 comes from 4 values (x, y, w, h) and 8 characters per value 4*8=32 plus 2 for safety
+	npy_intp dims[3] = {height, width, 3};
 
-	sprintf(w, "%d", width);
-	sprintf(h, "%d", height);
+	PyObject* numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image);        //convert testVector to a numpy array
+
+	int size = predictions.size();
+	char string_predictions [12288] = "\0"; // 34 comes from 4 values (x, y, w, h) and 8 characters per value 4*8=32 plus 2 for safety
 
 	predictions_to_string(string_predictions, predictions, size);
 
-	//printf("%s\n", string_predictions);
+	PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpyArray, NULL);
 
-	PyObject *python_arguments = Py_BuildValue("(ss)", image, string_predictions);               // Generic function, create objects from C values by a format string
+	if (PyErr_Occurred())
+        PyErr_Print();
 
-	PyObject_CallObject(python_pedestrian_tracker_function, python_arguments);
-
-	Py_DECREF(python_arguments);
+	Py_DECREF(numpyArray);
 }
 ///////////////
 
@@ -713,12 +715,12 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 
 	//////// Python
-//	if (first_time)
-//	{
-//		init_python(image_msg->width, image_msg->height);
-//		first_time = false;
-//	}
-//	call_python_function(image_msg->width, image_msg->height, image_msg->raw_right, predictions);
+	if (first_time)
+	{
+		init_python(image_msg->width, image_msg->height);
+		first_time = false;
+	}
+	call_python_function(image_msg->width, image_msg->height, image_msg->raw_right, predictions);
 	///////////////
 
 
