@@ -36,7 +36,9 @@ carmen_rddf_annotation_message last_rddf_annotation_message;
 carmen_behavior_selector_road_profile_message last_rddf_poses;
 
 bool last_rddf_annotation_message_valid = false;
+double last_pitch;
 
+SampleFilter filter2;
 
 tf::StampedTransform
 get_world_to_camera_transformation ()
@@ -44,14 +46,16 @@ get_world_to_camera_transformation ()
 	tf::Transform world_to_car_pose;
 	tf::StampedTransform world_to_camera_pose;
 	world_to_car_pose.setOrigin(tf::Vector3(pose.position.x, pose.position.y, pose.position.z));
-	//pegar a diferenca entre o pitch atual e o anterior. se for menor que um T deixa passar
-	double diff = actuaPitch - lastPitch;
-	double treshold.
+	double pitch;
 
-	if (diff < treshold)
-		pitch = 0.0;
+//	pitch = pose.orientation.pitch;
+//	printf("Pitch before: %lf ", pitch);
+//	SampleFilter_put(&filter2, pitch);
+//	pitch = SampleFilter_get(&filter2);
+//	printf("Pitch after: %lf \n", pitch);
+	pitch = 0.0;
 
-	world_to_car_pose.setRotation(tf::Quaternion(pose.orientation.yaw, pose.orientation.pitch, pose.orientation.roll)); // yaw, pitch, roll
+	world_to_car_pose.setRotation(tf::Quaternion(pose.orientation.yaw, pitch, pose.orientation.roll)); // yaw, pitch, roll
 
 	//world_to_car_pose.setOrigin(tf::Vector3(globalpos.x, globalpos.y, 0.0));
 	//world_to_car_pose.setRotation(tf::Quaternion(globalpos.theta, 0.0, 0.0)); // yaw, pitch, roll
@@ -61,6 +65,7 @@ get_world_to_camera_transformation ()
 	transformer.setTransform(world_to_car_transform, "world_to_car_transform");
 
 	transformer.lookupTransform("/world", "/camera", tf::Time(0), world_to_camera_pose);
+	last_pitch = pose.orientation.pitch;
 
 	return (world_to_camera_pose);
 }
@@ -295,8 +300,9 @@ void
 rddf_handler(carmen_behavior_selector_road_profile_message *message)
 {
 	last_rddf_poses = *message;
-	/*printf("RDDF NUM POSES: %d \n", message->number_of_poses);
 
+	/*printf("RDDF NUM POSES: %d \n", message->number_of_poses);
+/*
 	for (int i = 0; i < message->number_of_poses; i++)
 	{
 		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, last_rddf_poses.poses[i].theta);
@@ -565,7 +571,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
        {
     	   p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[i], world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
     	   distance = euclidean_distance(globalpos.x, last_rddf_poses.poses[i].x, globalpos.y, last_rddf_poses.poses[i].y);
-    	   cout<<i<<":"<<distance<<" meters"<<endl;
+    	   //cout<<i<<":"<<distance<<" meters"<<endl;
        }
        cv::circle(out, cv::Point(p.x, p.y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
     }
@@ -693,7 +699,7 @@ read_parameters(int argc, char **argv)
 		{camera_string, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL }
     };
 
-
+    SampleFilter_init(&filter2);
     num_items = sizeof(param_list) / sizeof(param_list[0]);
     carmen_param_install_params(argc, argv, param_list, num_items);
 

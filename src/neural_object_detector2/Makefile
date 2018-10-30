@@ -14,7 +14,7 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lbeha
           -lboost_signals -lboost_system -lmoving_objects_interface -llocalize_ackerman_interface -lvelodyne_camera_calibration \
           -lcamera_boxes_to_world -ldarknet `pkg-config opencv --libs` -ldbscan `pkg-config --cflags opencv` `pkg-config --libs opencv`
 
-SOURCES = dbscan.cpp neural_object_detector2.cpp neural_object_detector_main2.cpp neural_object_detector_test2.cpp neural_object_detector_main_new2.cpp
+SOURCES = dbscan.cpp neural_object_detector2.cpp neural_object_detector_main2.cpp neural_object_detector_test2.cpp neural_object_detector_main_new2.cpp SampleFilter.cpp
 
 PUBLIC_INCLUDES = behavior_selector_messages.h
 PUBLIC_LIBRARIES = 
@@ -22,7 +22,7 @@ PUBLIC_BINARIES = neural_object_detector2
 
 TARGETS = darknet libclustering velodyne_camera_calibration camera_boxes_to_world neural_object_detector2 neural_object_detector_test2 neural_object_detector_main_new2
 
-neural_object_detector2: dbscan.o neural_object_detector_main2.o neural_object_detector2.o 
+neural_object_detector2: dbscan.o SampleFilter.o neural_object_detector_main2.o neural_object_detector2.o 
 
 neural_object_detector_test2: neural_object_detector_test2.o
 

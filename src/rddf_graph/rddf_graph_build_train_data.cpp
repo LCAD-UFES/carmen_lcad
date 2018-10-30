@@ -234,6 +234,9 @@ main(int argc, char **argv)
 		carmen_param_check_version(argv[0]);
 		define_messages();
 	}
+
+	if (access("database/", F_OK) != 0)
+		system("mkdir database/");
 	//signal(SIGINT, shutdown_module);
 
 	string str_graph_filename (g_graph_filename);
