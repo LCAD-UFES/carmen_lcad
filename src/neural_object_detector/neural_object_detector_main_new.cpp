@@ -662,7 +662,9 @@ call_python_function(int width, int height, unsigned char *image, vector<bbox_t>
 
 	predictions_to_string(string_predictions, predictions, size);
 
-	PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpyArray, NULL);
+	PyObject *python_string = Py_BuildValue("s", string_predictions);
+
+	PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpyArray, python_string, NULL);
 
 	if (PyErr_Occurred())
         PyErr_Print();

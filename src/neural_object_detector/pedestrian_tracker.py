@@ -20,14 +20,14 @@ def set_image_settings(w, h):
 	print("Python image dimension: " + str(image_width) + " " + str(image_height) + "\n")
 
 
-def run_pedestrian_tracker(carmen_image):
+def run_pedestrian_tracker(carmen_image, string_predictions):
 	global image_width
 	global image_height
 	
-	#print(string_predictions)
+	print(string_predictions)
 	
 	#image = carmen_image.view(np.uint8).reshape((image_height, image_width, 3))[:,:,::-1]
-	print(carmen_image.shape)
+	#print(carmen_image.shape)
 	#carmen_image = carmen_image[:,:,::-1]
 	carmen_image = cv2.cvtColor(carmen_image, cv2.COLOR_BGR2RGB)
 	# image = np.array([ord(c) for c in carmen_image][:(image_height * image_width * 3)]).astype(np.uint8).reshape((image_height, image_width, 3))[:,:,::-1]
