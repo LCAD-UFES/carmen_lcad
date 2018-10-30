@@ -2423,57 +2423,6 @@ namespace View
 					right.push_back(lane_markings_msg->lane_vector[i]);
 				}
 			}
-
-			for (int i = 0; i<(int) left.size(); i++)
-			{
-				if (i%2 != 0 && i !=(int) left.size() - 1)
-				{
-					left[i].lane_segment_position1.x = (left[i].lane_segment_position1.x + left[i - 1].lane_segment_position1.x) / 2;
-					left[i].lane_segment_position1.y = (left[i].lane_segment_position1.y + left[i - 1].lane_segment_position1.y) / 2;
-					left[i].lane_segment_position2.x = (left[i].lane_segment_position2.x + left[i + 1].lane_segment_position2.x) / 2;
-					left[i].lane_segment_position2.x = (left[i].lane_segment_position2.x + left[i + 1].lane_segment_position2.x) / 2;
-				}
-			}
-			for (int i = 0; i < (int) left.size(); i++)
-			{
-				if (i%2 == 0 && i !=(int) left.size() - 1 && i!=0)
-				{
-					left[i].lane_segment_position1 = left[i - 1].lane_segment_position2;
-					left[i].lane_segment_position2 = left[i + 1].lane_segment_position1;
-				}else{
-					if ( i == 0)
-					{
-						left[i].lane_segment_position1 = left[i + 1].lane_segment_position2;
-					}else{
-						left[i].lane_segment_position1 = left[i - 1].lane_segment_position2;
-					}
-				}
-			}
-			for (int i = 0; i< (int) right.size(); i++)
-			{
-				if (i%2 != 0 && i !=(int) right.size() - 1)
-				{
-					right[i].lane_segment_position1.x = (right[i].lane_segment_position1.x + right[i - 1].lane_segment_position1.x) / 2;
-					right[i].lane_segment_position1.y = (right[i].lane_segment_position1.y + right[i - 1].lane_segment_position1.y) / 2;
-					right[i].lane_segment_position2.x = (right[i].lane_segment_position2.x + right[i + 1].lane_segment_position2.x) / 2;
-					right[i].lane_segment_position2.x = (right[i].lane_segment_position2.x + right[i + 1].lane_segment_position2.x) / 2;
-				}
-			}
-			for (int i = 0; i < (int) right.size(); i++)
-			{
-				if (i%2 == 0 && i != (int) right.size() - 1 && i!=0)
-				{
-					right[i].lane_segment_position1 = right[i - 1].lane_segment_position2;
-					right[i].lane_segment_position2 = right[i + 1].lane_segment_position1;
-				}else{
-					if ( i == 0)
-					{
-						right[i].lane_segment_position1 = right[i + 1].lane_segment_position2;
-					}else{
-						right[i].lane_segment_position1 = right[i - 1].lane_segment_position2;
-					}
-				}
-			}
 			carmen_lane_detector_lane_t anterior_left;
 			carmen_lane_detector_lane_t anterior_right;
 			if (left.size() > 1)
