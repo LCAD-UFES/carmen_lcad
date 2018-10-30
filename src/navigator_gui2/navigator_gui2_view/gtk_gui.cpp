@@ -1969,7 +1969,7 @@ namespace View
 			carmen_rddf_publish_end_point_message(1, world_point->pose);
 
 			placement_status = NO_PLACEMENT;
-
+			git config --global user.email "you@example.com"
 			return TRUE;
 		}
 
