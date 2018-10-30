@@ -483,14 +483,14 @@ filter_predictions_of_interest(vector<bbox_t> &predictions)
 
 	for (unsigned int i = 0; i < predictions.size(); i++)
 	{
-		if (i == 0 ||  // person
-			i == 1 ||  // bicycle
-			i == 2 ||  // car
-			i == 3 ||  // motorbike
-			i == 5 ||  // bus
-			i == 6 ||  // train
-			i == 7 ||  // truck
-			i == 9)    // traffic light
+		if (predictions[i].obj_id == 0)// ||  // person
+//			i == 1 ||  // bicycle
+//			i == 2 ||  // car
+//			i == 3 ||  // motorbike
+//			i == 5 ||  // bus
+//			i == 6 ||  // train
+//			i == 7 ||  // truck
+//			i == 9)    // traffic light
 		{
 			filtered_predictions.push_back(predictions[i]);
 		}
@@ -590,12 +590,16 @@ init_python(int image_width, int image_height)
 
 	PyObject *python_module = PyImport_Import(python_module_name);
 
+	printf("IMPORT\n");
+
 	if (python_module == NULL)
 	{
 		Py_Finalize();
 		exit (printf("Error: The python_module could not be loaded.\nMay be PYTHON_PATH is not set.\n"));
 	}
 	Py_DECREF(python_module_name);
+
+	printf("IMPORTed\n");
 
 	PyObject *python_set_image_settings_function = PyObject_GetAttrString(python_module, (char *) "set_image_settings");
 
@@ -604,6 +608,9 @@ init_python(int image_width, int image_height)
 		Py_Finalize();
 		exit (printf("Error: Could not load the python_set_image_settings_function.\n"));
 	}
+
+	printf("FUNCTION\n");
+
 
 	PyObject *python_arguments = Py_BuildValue("(ii)", image_width, image_height);               // Generic function, create objects from C values by a format string
 
@@ -650,28 +657,119 @@ predictions_to_string(char* string_predictions, vector<bbox_t> predictions, int 
 }
 
 
+float*
+convert_predtions_array(vector<bbox_t> predictions)
+{
+	unsigned int size = predictions.size();
+
+	//printf("%-d\n", size);
+
+	float *array = (float*) malloc(size * 4 * sizeof(float));
+
+	for (int i = 0; i < size; i++)
+	{
+		array[i*4]     = predictions[i].x;
+		array[i*4 + 1] = predictions[i].y;
+		array[i*4 + 2] = predictions[i].w;
+		array[i*4 + 3] = predictions[i].h;
+	}
+
+	return (array);
+}
+
+
 void
 call_python_function(int width, int height, unsigned char *image, vector<bbox_t> predictions)
 {
 	npy_intp dims[3] = {height, width, 3};
 
-	PyObject* numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image);        //convert testVector to a numpy array
+	npy_intp predictions_dimensions[2] = {(int)predictions.size(), 4};
 
-	int size = predictions.size();
-	char string_predictions [12288] = "\0"; // 34 comes from 4 values (x, y, w, h) and 8 characters per value 4*8=32 plus 2 for safety
 
-	predictions_to_string(string_predictions, predictions, size);
+	PyObject* numpy_image_array = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image);        //convert testVector to a numpy array
 
-	PyObject *python_string = Py_BuildValue("s", string_predictions);
+	float *array = convert_predtions_array(predictions);
 
-	PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpyArray, python_string, NULL);
+//	for (int i = 0; i < predictions.size() *4; i++)
+//	{
+//		printf("%f ", array[i]);
+//	}
+//	printf("\n");
+
+
+	PyObject* numpy_predictions_array = PyArray_SimpleNewFromData(2, predictions_dimensions, NPY_FLOAT, array);
+
+
+	//int size = predictions.size();
+	//char string_predictions [12288] = "\0"; // 34 comes from 4 values (x, y, w, h) and 8 characters per value 4*8=32 plus 2 for safety
+
+	//predictions_to_string(string_predictions, predictions, size);
+
+	//PyObject *python_string = Py_BuildValue("s", string_predictions);
+
+	PyObject* identifications = PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpy_image_array, numpy_predictions_array, NULL);
+
+
+	printf("PAssou\n");
+	int *predict = (int*) PyArray_DATA(identifications);
+
+	printf("PAssou\n");
+
+	if (predict == NULL)
+	{
+		Py_Finalize();
+		exit (printf("Error: The predctions erro.\n"));
+	}
+
+	printf("PAssou\n");
+
+	for (int i = 1; i < predict[0]; i++)
+	{
+		printf("%d ", predict[0]);
+	}
+	printf("\n");
 
 	if (PyErr_Occurred())
         PyErr_Print();
 
-	Py_DECREF(numpyArray);
+	free(array);
+	Py_DECREF(numpy_image_array);
+	Py_DECREF(numpy_predictions_array);
 }
 ///////////////
+
+
+
+
+unsigned char *
+crop_raw_image(int image_width, int image_height, unsigned char *raw_image, int displacement_x, int displacement_y, int crop_width, int crop_height)
+{
+	unsigned char *cropped_image = (unsigned char *) malloc (crop_width * crop_height * 3 * sizeof(unsigned char));  // Only works for 3 channels image
+
+	displacement_x = (displacement_x - 2) * 3;
+	displacement_y = (displacement_y - 2) * image_width * 3;
+	crop_width     = displacement_x + ((crop_width + 1) * 3);
+	crop_height    = displacement_y + ((crop_height + 1) * image_width * 3);
+	image_height   = image_height * image_width * 3;
+	image_width   *= 3;
+
+	for (int line = 0, index = 0; line < image_height; line += image_width)
+	{
+		for (int column = 0; column < image_width; column += 3)
+		{
+			if (column > displacement_x && column < crop_width && line > displacement_y && line < crop_height)
+			{
+				cropped_image[index]     = raw_image[line + column];
+				cropped_image[index + 1] = raw_image[line + column + 1];
+				cropped_image[index + 2] = raw_image[line + column + 2];
+
+				index += 3;
+			}
+		}
+	}
+
+	return (cropped_image);
+}
 
 
 void
@@ -682,15 +780,15 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	static double start_time = 0.0;
 	static bool first_time = true;
 
-//	int crop_x = image_msg->width * 0.2;
-//	int crop_y = image_msg->height * 0.25;
-//	int crop_w = image_msg->width * 0.55;
-//	int crop_h = image_msg->height * 0.5;
+	int crop_x = image_msg->width * 0.2;
+	int crop_y = image_msg->height * 0.25;
+	int crop_w = image_msg->width * 0.55;
+	int crop_h = image_msg->height * 0.5;
 
-	int crop_x = 0;
-	int crop_y = 0;
-	int crop_w = image_msg->width;// 1280;
-	int crop_h = 400; //image_msg->height; 500;
+//	int crop_x = 0;
+//	int crop_y = 0;
+//	int crop_w = image_msg->width;// 1280;
+//	int crop_h = image_msg->height;//400; // 500;
 
 	if (camera_side == 0)
 		img = image_msg->raw_left;
@@ -715,14 +813,15 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	vector<bbox_t> predictions = darknet->detect(open_cv_image, 0.2);  // Arguments (image, threshold)
 	predictions = filter_predictions_of_interest(predictions);
 
+	unsigned char *croped_image = crop_raw_image(image_msg->width, image_msg->height, image_msg->raw_right, crop_x, crop_y, crop_w, crop_h);
 
 	//////// Python
 	if (first_time)
 	{
-		init_python(image_msg->width, image_msg->height);
+		init_python(crop_w, crop_h);
 		first_time = false;
 	}
-	call_python_function(image_msg->width, image_msg->height, image_msg->raw_right, predictions);
+	call_python_function(crop_w, crop_h, croped_image, predictions);
 	///////////////
 
 
