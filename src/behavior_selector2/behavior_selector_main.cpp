@@ -71,6 +71,8 @@ static carmen_obstacle_distance_mapper_compact_map_message *compact_lane_content
 static double original_behaviour_selector_central_lane_obstacles_safe_distance;
 static double original_model_predictive_planner_obstacles_safe_distance;
 
+int param_reverse_driving = 0;
+
 
 int
 compute_max_rddf_num_poses_ahead(carmen_ackerman_traj_point_t current_pose)
@@ -491,10 +493,10 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 
 		double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, *current_robot_pose_v_and_phi);
 //		double distance_to_annotation = compute_distance_within_rddf(nearest_velocity_related_annotation->annotation_point, *current_robot_pose_v_and_phi);
-		FILE *caco13 = fopen("caco13.txt", "a");
-		fprintf(caco13, "%.2lf %.2lf\n", distance_to_annotation, DIST2D(nearest_velocity_related_annotation->annotation_point, *current_robot_pose_v_and_phi));
-		fflush(caco13);
-		fclose(caco13);
+//		FILE *caco13 = fopen("caco13.txt", "a");
+//		fprintf(caco13, "%.2lf %.2lf\n", distance_to_annotation, DIST2D(nearest_velocity_related_annotation->annotation_point, *current_robot_pose_v_and_phi));
+//		fflush(caco13);
+//		fclose(caco13);
 
 		double velocity_at_next_annotation = get_velocity_at_next_annotation(nearest_velocity_related_annotation, *current_robot_pose_v_and_phi, timestamp);
 
@@ -538,14 +540,14 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 		if (!annotation_ahead || (DIST2D(previous_annotation_point, nearest_velocity_related_annotation->annotation_point) > 0.0))
 			clearing_annotation = false;
 
-		FILE *caco = fopen("caco4.txt", "a");
-		fprintf(caco, "ca %d, aa %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf, aif %d, dg %.1lf, av %.1lf, ts %lf\n", clearing_annotation, annotation_ahead,
-				distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi->v,
-				goal->v,
-				carmen_rddf_play_annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point),
-				distance_to_goal, velocity_at_next_annotation, carmen_get_time());
-		fflush(caco);
-		fclose(caco);
+//		FILE *caco = fopen("caco4.txt", "a");
+//		fprintf(caco, "ca %d, aa %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf, aif %d, dg %.1lf, av %.1lf, ts %lf\n", clearing_annotation, annotation_ahead,
+//				distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi->v,
+//				goal->v,
+//				carmen_rddf_play_annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point),
+//				distance_to_goal, velocity_at_next_annotation, carmen_get_time());
+//		fflush(caco);
+//		fclose(caco);
 	}
 	else
 	{
@@ -663,12 +665,12 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	if ((goal_type == MOVING_OBSTACLE_GOAL1) || (goal_type == MOVING_OBSTACLE_GOAL2))//udatmo_obstacle_detected(timestamp))// && (current_robot_pose_v_and_phi->v > moving_obj_v))
 		goal->v = carmen_fmin(new_goal_v, goal->v);
 
-	FILE *caco = fopen("caco.txt", "a");
-	fprintf(caco, "%lf %lf %lf %lf %lf %d %d %d %lf %lf %lf %d ", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance,
-			desired_distance, behavior_selector_state_message.low_level_state, autonomous, goal_type,
-			udatmo_speed_left(), udatmo_speed_right(), udatmo_speed_center(), udatmo_obstacle_detected(timestamp));
-	fflush(caco);
-	fclose(caco);
+//	FILE *caco = fopen("caco.txt", "a");
+//	fprintf(caco, "%lf %lf %lf %lf %lf %d %d %d %lf %lf %lf %d ", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance,
+//			desired_distance, behavior_selector_state_message.low_level_state, autonomous, goal_type,
+//			udatmo_speed_left(), udatmo_speed_right(), udatmo_speed_center(), udatmo_obstacle_detected(timestamp));
+//	fflush(caco);
+//	fclose(caco);
 
 	return (goal->v);
 }
@@ -682,24 +684,24 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (goal_type == OBSTACLE_GOAL)
 		goal->v = set_goal_velocity_according_to_obstacle_distance(goal, current_robot_pose_v_and_phi);
 
-	FILE *caco = fopen("caco3.txt", "a");
-	fprintf(caco, "gv %lf  ", goal->v);
+//	FILE *caco = fopen("caco3.txt", "a");
+//	fprintf(caco, "gv %lf  ", goal->v);
 
 	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi, goal_type, timestamp);
 
-	fprintf(caco, "gva %lf  ", goal->v);
+//	fprintf(caco, "gva %lf  ", goal->v);
 	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
 			road_profile_message.poses, road_profile_message.number_of_poses);
-	fprintf(caco, "gvdlc %lf  ", goal->v);
+//	fprintf(caco, "gvdlc %lf  ", goal->v);
 
 	goal->v = set_goal_velocity_according_to_annotation(goal, current_robot_pose_v_and_phi, timestamp);
-	fprintf(caco, "gvda %lf ", goal->v);
+//	fprintf(caco, "gvda %lf ", goal->v);
 //	if (obstacle_avoider_active_recently)
 //		goal->v = carmen_fmin(2.5, goal->v);
 
-	fprintf(caco, "gvf %lf ts %lf\n", goal->v, carmen_get_time());
-	fflush(caco);
-	fclose(caco);
+//	fprintf(caco, "gvf %lf ts %lf\n", goal->v, carmen_get_time());
+//	fflush(caco);
+//	fclose(caco);
 }
 
 
@@ -925,10 +927,10 @@ publish_goal_list(carmen_ackerman_traj_point_t *goal_list, int goal_list_size, d
 		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME);
 	}
 
-	FILE *caco = fopen("caco.txt", "a");
-	fprintf(caco, "%lf %lf %lf\n", goal_list->v, distance_to_moving_obstacle_annotation(get_robot_pose()), carmen_get_time());
-	fflush(caco);
-	fclose(caco);
+//	FILE *caco = fopen("caco.txt", "a");
+//	fprintf(caco, "%lf %lf %lf\n", goal_list->v, distance_to_moving_obstacle_annotation(get_robot_pose()), carmen_get_time());
+//	fflush(caco);
+//	fclose(caco);
 }
 
 
@@ -1926,6 +1928,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "obstacle_avoider", 		  (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.obstacle_avoider_obstacles_safe_distance, 	1, NULL},
 		{(char *) "model_predictive_planner", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.model_predictive_planner_obstacles_safe_distance, 	1, NULL},
 		{(char *) "grid_mapping",      (char *) "map_width", CARMEN_PARAM_DOUBLE, &map_width, 	1, NULL},
+		{(char *) "behavior_selector", (char *) "reverse_driving", CARMEN_PARAM_ONOFF, &param_reverse_driving, 0, NULL}
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
 

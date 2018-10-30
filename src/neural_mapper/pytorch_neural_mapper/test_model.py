@@ -11,7 +11,7 @@ from PIL import Image
 import math
 import model as M
 from random import randint
-import train
+import train as train
 
 img_index = 1
 
@@ -49,13 +49,15 @@ if __name__ == '__main__':
                         help='Save image on disk')
 
     args = parser.parse_args()
-    model = M.FCNN()
+    model = M.FCNN(n_output=3)
     model.load_state_dict(torch.load('saved_models/'+args.model_name))
-
+    model = model.eval()
+    
     data, target = load_image(args.img_index)
     output = model(data)
     pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
-    imgPred = pred[0]
+    imgPred = pred[0].float()
+    imgPred = (imgPred + 1)*255/3
     imgPred = imgPred.cpu().float()
     imgTarget = torch.FloatTensor(1, 424, 424)
     imgTarget[0] = target[0]
@@ -65,4 +67,6 @@ if __name__ == '__main__':
         train.saveImage(imgTarget, debug_img_path + '/target_epoch' + args.model_name.split('.')[0] + 'img' + str(args.img_index) + '.png')
     train.showOutput(imgPred)
     train.showOutput(imgTarget)
-
+    print(imgPred)
+    print(imgTarget)
+    print(output.size())

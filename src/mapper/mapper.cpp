@@ -11,6 +11,17 @@
 #include <iostream>
 #include <fstream>
 
+#include <opencv2/core/version.hpp>
+#if CV_MAJOR_VERSION == 3
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgcodecs/imgcodecs.hpp>
+#else
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#endif
+
 #include "mapper.h"
 
 #define	UPDATE_CELLS_CROSSED_BY_RAYS		1
@@ -430,6 +441,29 @@ map_to_csv(carmen_map_t complete_map, char* csv_name)
     myfile.close();
 }
 
+
+void
+map_to_png(carmen_map_t complete_map, char* csv_name)
+{
+
+	char png_file_name[1024];
+	int width = complete_map.config.x_size;
+	int height = complete_map.config.y_size;
+
+	static cv::Mat neural_map_img = cv::Mat(cv::Size(width, height), CV_8UC1);
+	sprintf(png_file_name,"%s.png",csv_name);
+
+	for (int i = 0; i < height; i++)
+	{
+		for (int j = 0; j < width; j++)
+		{
+			neural_map_img.at<uchar>(height - 1 - j, i) = complete_map.map[i][j];
+		}
+	}
+	cv::imwrite(png_file_name, neural_map_img);
+}
+
+
 void
 save_map(carmen_map_t map, char* map_name, char* path, double timestamp, double x_meters_position_on_map,  double y_meters_position_on_map, double resolution, double angle)
 {
@@ -437,7 +471,8 @@ save_map(carmen_map_t map, char* map_name, char* path, double timestamp, double 
 	char name[100];
 	sprintf(name, "%s/%lf_%s_%0.3lf_%0.3lf_%.2lf_%0.6lf", path, timestamp, map_name, x_meters_position_on_map, y_meters_position_on_map, resolution, angle);
 	printf("%s\n", name);
-	map_to_csv(map, name);
+	//map_to_csv(map, name);
+	map_to_png(map, name);
 	set_map_to_zero(&map);
 }
 
@@ -638,10 +673,10 @@ int update_neural_mapper_output_map(carmen_map_t offline_map, carmen_map_t label
 			{
 				// labels: unknown = 1; empty = 2; occupied = 3;
 				// unknown
-				if(offline_map.map[i][j] < 0.)
+				if(offline_map.map[i][j] < 0.0)
 					label_map.map[i][j] = 1;
 				// occupied
-				else if(offline_map.map[i][j] > 0.5)
+				else if(offline_map.map[i][j] >= 0.5)
 					label_map.map[i][j] = 3;
 				// empty
 				else
@@ -1467,6 +1502,7 @@ mapper_publish_map(double timestamp)
 	if (build_snapshot_map)
 	{
 		memcpy(map.complete_map, offline_map.complete_map, offline_map.config.x_size *  offline_map.config.y_size * sizeof(double));
+		// memset(map.complete_map, 0, offline_map.config.x_size *  offline_map.config.y_size * sizeof(double));         // Uncomment to see the snapshot_map on viewer 3D, on carmen-ford-scape.ini turn on mapper_build_snapshot_map an turn off mapper_decay_to_offline_map
 		run_snapshot_mapper();
 	}
 

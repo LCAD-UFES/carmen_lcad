@@ -10,7 +10,7 @@ main()
 
     const char* retorno = listen();
     printf("Texto reconhecido: %s\n", retorno);
-    speak((char*) retorno);
+    speak((char*)"Alguns módulos estão instáveis!");
 
     finalize_voice();
     sleep(10);

@@ -159,7 +159,12 @@ void
 carmen_laser_subscribe_rearlaser_message(carmen_laser_laser_message *laser,
 				     carmen_handler_t handler,
 					 carmen_subscribe_t subscribe_how){
-  carmen_laser_subscribe_laser2_message(laser, handler, subscribe_how);
+
+	// carmen_laser_subscribe_laser9_message(laser, handler, subscribe_how);
+	carmen_subscribe_message(CARMEN_LASER_REARLASER_NAME,
+			   CARMEN_LASER_REARLASER_FMT,
+			   laser, sizeof(carmen_laser_laser_message), handler,
+			   subscribe_how);
 
 }
 

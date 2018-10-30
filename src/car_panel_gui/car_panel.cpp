@@ -6,6 +6,7 @@
  */
 
 #include "car_panel.h"
+#include "panel.h"
 
 
 car_panel *car_panel::instance = NULL;
@@ -15,7 +16,7 @@ car_panel::car_panel(int argc, char *argv[])
 {
 	if (!checkArguments(argc, argv))
 	{
-		subscribe_messages(3, 1.0);
+		subscribe_messages(3);
 	}
 }
 
@@ -36,6 +37,13 @@ void
 car_panel::set_type_message(int type_message)
 {
 	setTypeMessage(type_message);
+}
+
+
+void
+car_panel::set_turn_signal(int turn_signal)
+{
+	setTurnSignal(turn_signal);
 }
 
 

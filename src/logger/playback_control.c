@@ -34,13 +34,14 @@
 
 
 GdkGC *rrwd_gc, *rewind_gc, *stop_gc, *play_gc, *fwd_gc, *ffwd_gc;
-GtkWidget *playback_speed_widget_label, *playback_speed_widget;
-GtkWidget *playback_initial_time_widget_label, *playback_initial_time_widget;
+GtkWidget *playback_speed_widget_label, *playback_speed_widget_status, *playback_speed_widget;
+GtkWidget *playback_initial_time_widget_label, *playback_initial_time_widget_status, *playback_initial_time_widget;
 GtkWidget *gtk_label_info_speed_value, *gtk_label_info_current_message_value, *gtk_label_info_timestamp_value, *gtk_label_info_timestamp_difference_value;
 int speed_pending_update = 0;
 int initial_time_pending_update = 0;
 double playback_speed = 1.0;
-int playback_initial_time = 0.0;
+char *playback_message = NULL;
+
 
 
 void Redraw(GtkWidget *widget, GdkEventExpose *event, char *data);
@@ -90,24 +91,20 @@ static gboolean
 speed_params_save(GtkWidget *w, // __attribute__ ((unused)),
                   GdkEvent *event, gpointer pntr __attribute__((unused)))
 {
-    char *possible_comma;
-
     if ((event->key.keyval == gdk_keyval_from_name("Enter")) ||
         (event->key.keyval == gdk_keyval_from_name("Return")))
     {
         gchar *value = gtk_editable_get_chars(GTK_EDITABLE(w), 0, -1);
 
-        possible_comma = strchr(value, ','); // para o caso de alguem digitar virgula ao inves de ponto na velocidade
-        if (possible_comma != NULL)
-            possible_comma[0] = '.';
-
-        playback_speed = atof(value);
-
-        speed_pending_update = 0;
-        gtk_label_set_pattern(GTK_LABEL(playback_speed_widget_label), "");
-        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_SET_SPEED,
-                                0, playback_speed);
-        return TRUE;
+        if (carmen_playback_is_valid_speed(value, &playback_speed))
+        {
+			speed_pending_update = 0;
+			gtk_label_set_pattern(GTK_LABEL(playback_speed_widget_label), "");
+			gtk_label_set_text(GTK_LABEL(playback_speed_widget_status), "");
+			carmen_playback_command(CARMEN_PLAYBACK_COMMAND_SET_SPEED, NULL, 0, playback_speed);
+			return TRUE;
+        }
+        gtk_label_set_text(GTK_LABEL(playback_speed_widget_status), " (ERROR)");
     }
     return FALSE;
 }
@@ -120,14 +117,20 @@ initial_time_params_save(GtkWidget *w, // __attribute__ ((unused)),
     if ((event->key.keyval == gdk_keyval_from_name("Enter")) ||
         (event->key.keyval == gdk_keyval_from_name("Return")))
     {
-        gchar *value = gtk_editable_get_chars(GTK_EDITABLE(w), 0, -1);
-        playback_initial_time = atoi(value);
+    	playback_message = gtk_editable_get_chars(GTK_EDITABLE(w), 0, -1);
 
-        initial_time_pending_update = 0;
-        gtk_label_set_pattern(GTK_LABEL(playback_initial_time_widget_label), "");
-        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_SET_INITIAL_TIME,
-                                playback_initial_time, playback_speed);
-        return TRUE;
+    	int start_msg = -1, stop_msg = -1;
+    	double start_ts = -1.0, stop_ts = -1.0, start_x = 0.0, start_y = 0.0, stop_x = 0.0, stop_y = 0.0, radius = -1.0;
+
+        if (carmen_playback_is_valid_message(playback_message, &start_msg, &stop_msg, &start_ts, &stop_ts, &start_x, &start_y, &stop_x, &stop_y, &radius))
+        {
+			initial_time_pending_update = 0;
+			gtk_label_set_pattern(GTK_LABEL(playback_initial_time_widget_label), "");
+			gtk_label_set_text(GTK_LABEL(playback_initial_time_widget_status), "");
+			carmen_playback_command(CARMEN_PLAYBACK_COMMAND_SET_MESSAGE, playback_message, 0, playback_speed);
+			return TRUE;
+        }
+        gtk_label_set_text(GTK_LABEL(playback_initial_time_widget_status), " (ERROR)");
     }
     return FALSE;
 }
@@ -189,6 +192,33 @@ create_pixbuf(const gchar * filename)
     return pixbuf;
 }
 
+
+void usage(char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	vfprintf(stderr, fmt, args);
+	va_end(args);
+
+	fprintf(stderr, "Message play:stop options:\n");
+	fprintf(stderr, "\tplay from message number:    <num>\n");
+	fprintf(stderr, "\tstop at message number:      :<num>\n");
+	fprintf(stderr, "\tplay:stop message numbers:   <num>:<num>\n");
+	fprintf(stderr, "\tplay from time (s):          t <num>\n");
+	fprintf(stderr, "\tstop at time (s):            t :<num>\n");
+	fprintf(stderr, "\tplay:stop times (s):         t <num>:<num>\n");
+	fprintf(stderr, "\tplay from pose:              p <x> <y>\n");
+	fprintf(stderr, "\tstop at pose:                p :<x> <y>\n");
+	fprintf(stderr, "\tplay:stop poses:             p <x> <y>:<x> <y>\n");
+	fprintf(stderr, "\tpose search radius (m):      p ::<num>\n");
+	fprintf(stderr, "\t                             p <x> <y>::<num>\n");
+	fprintf(stderr, "\t                             p :<x> <y>:<num>\n");
+	fprintf(stderr, "\t                             p <x> <y>:<x> <y>:<num>\n");
+	exit(-1);
+}
+
+
 int
 main(int argc, char *argv[])
 {
@@ -198,6 +228,9 @@ main(int argc, char *argv[])
     GtkWidget *hbox, *rrwd, *rwd, *play, *stop, *ffwd, *fwd, *reset_button, *vbox, *hbox2;
     GtkWidget *rrwd_darea, *rwd_darea, *stop_darea, *play_darea,
             *ffwd_darea, *fwd_darea, *reset_darea;
+
+	if (argc > 1 && strcmp(argv[1], "-h") == 0)
+		usage(NULL);
 
     gtk_init(&argc, &argv);
 
@@ -229,7 +262,7 @@ main(int argc, char *argv[])
     }
 
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_widget_set_usize(window, 720, 100);
+    gtk_widget_set_usize(window, 890, 100);
 
     gtk_signal_connect(GTK_OBJECT(window), "destroy",
                        GTK_SIGNAL_FUNC(gtk_main_quit),
@@ -257,6 +290,7 @@ main(int argc, char *argv[])
     gtk_container_add(GTK_CONTAINER(vbox), hbox2);
 
     playback_speed_widget_label = gtk_label_new("Speed");
+    playback_speed_widget_status = gtk_label_new("");
     playback_speed_widget = gtk_entry_new_with_max_length(5);
     gtk_entry_set_text(GTK_ENTRY(playback_speed_widget), "1.0");
     gtk_editable_select_region(GTK_EDITABLE(playback_speed_widget), 0, GTK_ENTRY(playback_speed_widget)->text_length);
@@ -264,27 +298,30 @@ main(int argc, char *argv[])
                        GTK_SIGNAL_FUNC(speed_changed), NULL);
     gtk_signal_connect(GTK_OBJECT(playback_speed_widget), "key_press_event",
                        GTK_SIGNAL_FUNC(speed_params_save), NULL);
-    gtk_box_pack_start(GTK_BOX(hbox), playback_speed_widget_label,
-                       FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), playback_speed_widget_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), playback_speed_widget_status, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(hbox), playback_speed_widget, FALSE, FALSE, 5);
     gtk_widget_set_usize(playback_speed_widget, 50, 30);
     gtk_widget_show(playback_speed_widget);
     gtk_widget_show(playback_speed_widget_label);
+    gtk_widget_show(playback_speed_widget_status);
 
-    playback_initial_time_widget_label = gtk_label_new("Initial Message");
-    playback_initial_time_widget = gtk_entry_new_with_max_length(9);
+    playback_initial_time_widget_label = gtk_label_new("Message play:stop");
+    playback_initial_time_widget_status = gtk_label_new("");
+    playback_initial_time_widget = gtk_entry_new_with_max_length(60);
     gtk_entry_set_text(GTK_ENTRY(playback_initial_time_widget), "0");
     gtk_editable_select_region(GTK_EDITABLE(playback_initial_time_widget), 0, GTK_ENTRY(playback_initial_time_widget)->text_length);
     gtk_signal_connect(GTK_OBJECT(playback_initial_time_widget), "changed",
                        GTK_SIGNAL_FUNC(initial_time_changed), NULL);
     gtk_signal_connect(GTK_OBJECT(playback_initial_time_widget), "key_press_event",
                        GTK_SIGNAL_FUNC(initial_time_params_save), NULL);
-    gtk_box_pack_start(GTK_BOX(hbox), playback_initial_time_widget_label,
-                       FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), playback_initial_time_widget_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), playback_initial_time_widget_status, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(hbox), playback_initial_time_widget, FALSE, FALSE, 5);
-    gtk_widget_set_usize(playback_initial_time_widget, 100, 30);
+    gtk_widget_set_usize(playback_initial_time_widget, 150, 30);
     gtk_widget_show(playback_initial_time_widget);
     gtk_widget_show(playback_initial_time_widget_label);
+    gtk_widget_show(playback_initial_time_widget_status);
 
     rrwd = gtk_button_new();
     rrwd_darea = gtk_drawing_area_new();
@@ -542,21 +579,17 @@ void
 Send_Command(GtkWidget *widget __attribute__((unused)), char *data)
 {
     if (strcmp(data, "Stop") == 0)
-        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_STOP, 0, playback_speed);
+        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_STOP, NULL, 0, playback_speed);
     else if (strcmp(data, "Play") == 0)
-        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_PLAY, 0, playback_speed);
+        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_PLAY, NULL, 0, playback_speed);
     else if (strcmp(data, "RRW") == 0)
-        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_REWIND, 100,
-                                playback_speed);
+        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_REWIND, NULL, 100, playback_speed);
     else if (strcmp(data, "RW") == 0)
-        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_RWD_SINGLE, 1,
-                                playback_speed);
+        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_RWD_SINGLE, NULL, 1, playback_speed);
     else if (strcmp(data, "FFWD") == 0)
-        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_FORWARD, 100,
-                                playback_speed);
+        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_FORWARD, NULL, 100, playback_speed);
     else if (strcmp(data, "FWD") == 0)
-        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_FWD_SINGLE, 1,
-                                playback_speed);
+        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_FWD_SINGLE, NULL, 1, playback_speed);
     else if (strcmp(data, "RESET") == 0)
-        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_RESET, 0, playback_speed);
+        carmen_playback_command(CARMEN_PLAYBACK_COMMAND_RESET, NULL, 0, playback_speed);
 }

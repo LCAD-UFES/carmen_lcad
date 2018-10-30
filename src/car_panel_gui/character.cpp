@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include "character.h"
 
 

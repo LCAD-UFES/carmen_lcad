@@ -56,6 +56,8 @@ static int publish_laser_flag = 0;
 static int necessary_maps_available = 0;
 
 static int use_truepos = 0;
+static int use_velocity_nn = 1;
+static int use_phi_nn = 1;
 
 
 static void
@@ -304,7 +306,7 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 
 	// Existem duas versoes dessa funcao, uma em base_ackerman_simulation e
 	// outra em simulator_ackerman_simulation.
-	carmen_simulator_ackerman_recalc_pos(simulator_config);
+	carmen_simulator_ackerman_recalc_pos(simulator_config, use_velocity_nn, use_phi_nn);
 	carmen_simulator_ackerman_update_objects(simulator_config);
 
 	if (!use_truepos)
@@ -449,7 +451,8 @@ clear_objects_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 			sizeof(carmen_default_message));
 	IPC_freeByteArray(callData);
 
-	carmen_simulator_ackerman_clear_objects();
+	// carmen_simulator_ackerman_clear_objects();
+	carmen_simulator_objects_clear_objects();
 }
 
 
@@ -765,6 +768,8 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 			{"simulator", "sync_mode", CARMEN_PARAM_ONOFF, &(config->sync_mode), 1, NULL},
 			{"simulator", "use_robot", CARMEN_PARAM_ONOFF, &use_robot, 1, NULL},
 			{"simulator", "motion_timeout", CARMEN_PARAM_DOUBLE, &(config->motion_timeout),1, NULL},
+			{"simulator", "use_velocity_nn", CARMEN_PARAM_ONOFF, &use_velocity_nn,1, NULL},
+			{"simulator", "use_phi_nn", CARMEN_PARAM_ONOFF, &use_phi_nn, 1, NULL},
 			{"robot", "frontlaser_use", CARMEN_PARAM_ONOFF, &(config->use_front_laser), 1, NULL},
 			{"robot", "frontlaser_id", CARMEN_PARAM_INT, &(config->front_laser_config.id), 0, NULL},
 			{"robot", "rearlaser_use", CARMEN_PARAM_ONOFF, &(config->use_rear_laser), 1, NULL},
@@ -908,9 +913,15 @@ main(int argc, char **argv)
 	if (subscribe_to_relevant_messages() < 0)
 		carmen_die("Error subscribing to messages...\n");
 
-	carmen_ipc_addPeriodicTimer(simulator_conf.real_time, simulate_car_and_publish_readings, NULL);
+	// carmen_ipc_addPeriodicTimer(simulator_conf.real_time, simulate_car_and_publish_readings, NULL);
+	// carmen_ipc_dispatch();
+	//
+	while (1)
+	{
+		simulate_car_and_publish_readings(NULL, 0, 0);
+		carmen_ipc_sleep(simulator_conf.real_time);
+	}
 
-	carmen_ipc_dispatch();
 
 	exit(0);
 }

@@ -8,7 +8,6 @@
 #ifndef ACCELERATOR_H_
 #define ACCELERATOR_H_
 
-#include <GL/glew.h>
 #include <math.h>
 #include "utils.h"
 #include "character.h"
@@ -27,8 +26,6 @@ protected:
 	double velocity;
 	double time;
 	double acceleration;
-	double interval;
-	double intervalAccumulation;
 
 private:
 	double lineWidth;

@@ -69,7 +69,7 @@ void carmen_simulator_ackerman_add_objects_to_laser
 void carmen_simulator_ackerman_initialize_object_model(int argc, char *argv[]);
 
 /* clears all objects */
-void carmen_simulator_ackerman_clear_objects(void);	
+void carmen_simulator_objects_clear_objects(void);
 
 /* gets the positions of all objects */
 void carmen_simulator_ackerman_get_object_poses(int * num, 

@@ -94,6 +94,7 @@ typedef struct {
 #define      CARMEN_LASER_LASER4_NAME            "carmen_laser_laser4"
 #define      CARMEN_LASER_LASER5_NAME            "carmen_laser_laser5"
 #define      CARMEN_LASER_LASER6_NAME            "carmen_laser_laser6" //para o front laser do eduardo
+#define      CARMEN_LASER_LASER9_NAME            "carmen_laser_laser9" //para o rear laser
 
 #define      CARMEN_LASER_LASER1_FMT               CARMEN_LASER_LASER_FMT
 #define      CARMEN_LASER_LASER2_FMT               CARMEN_LASER_LASER_FMT
@@ -102,7 +103,7 @@ typedef struct {
 #define      CARMEN_LASER_LASER5_FMT               CARMEN_LASER_LASER_FMT
 
 #define      CARMEN_LASER_FRONTLASER_NAME        CARMEN_LASER_LASER1_NAME
-#define      CARMEN_LASER_REARLASER_NAME         CARMEN_LASER_LASER2_NAME
+#define      CARMEN_LASER_REARLASER_NAME         CARMEN_LASER_LASER9_NAME
 #define      CARMEN_LASER_FRONTLASER_2_NAME        CARMEN_LASER_LASER6_NAME
 #define      CARMEN_LASER_FRONTLASER_FMT           CARMEN_LASER_LASER_FMT
 #define      CARMEN_LASER_REARLASER_FMT            CARMEN_LASER_LASER_FMT

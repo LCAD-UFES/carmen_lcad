@@ -2,163 +2,235 @@
 import numpy as np
 import tensorflow as tf
 from rl.replay_buffer import ReplayBuffer
+from rl.util import numlist2str
+
+
+def get_activation(name):
+    if name == 'leaky_relu': activation_fn = tf.nn.leaky_relu
+    elif name == 'elu': activation_fn = tf.nn.elu
+    elif name == 'tanh': activation_fn = tf.nn.tanh
+    elif name == 'relu': activation_fn = tf.nn.relu
+    else: raise Exception("Invalid non-linearity '{}'".format(name))
+    return activation_fn
 
 
 class ActorCritic:
-    def __init__(self, n_laser_readings, n_hidden_neurons, n_hidden_layers, use_conv_layer, activation_fn_name,
-                 allow_negative_commands):
-        self.action_size = 2
+    def __init__(self, n_laser_readings, agent_state_size, goal_size, n_commands,
+                 params, allow_negative_commands):
 
+        activation_fn = get_activation(params['activation_fn']) 
+        self.v_activation_fn = tf.nn.tanh if allow_negative_commands else tf.nn.sigmoid
+
+        use_conv_layer = params['use_conv_layer']
+        if use_conv_layer and n_laser_readings < 100:
+            use_conv_layer = False
+
+        self._create_placeholders(n_laser_readings, agent_state_size, goal_size, n_commands)
+        laser, goal, state = self._preprocess(params['laser_weight'], params['position_weight'], params['v_weight'], params['angle_weight'])
+        
+        self._create_actor(laser, goal, state, n_commands, use_conv_layer, activation_fn, params['n_actor_hidden_layers'],params['n_actor_hidden_neurons'])
+        self._create_critic(laser, goal, state, use_conv_layer, activation_fn, params['n_critic_hidden_layers'],params['n_critic_hidden_neurons'])
+
+
+    def _create_placeholders(self, n_laser_readings, agent_state_size, goal_size, n_commands):
         # goal: (x, y, th, desired_v) - pose in car reference
-        self.placeholder_goal = tf.placeholder(dtype=tf.float32, shape=[None, 4], name='placeholder_goal')
+        self.placeholder_goal = tf.placeholder(dtype=tf.float32, shape=[None, goal_size], name='placeholder_goal')
         # laser: (range0, range1, ...)
         self.placeholder_laser = tf.placeholder(dtype=tf.float32, shape=[None, n_laser_readings, 1], name='placeholder_laser')
         # state: (current_v) - current velocity
-        self.placeholder_state = tf.placeholder(dtype=tf.float32, shape=[None, 1], name='placeholder_state')
+        self.placeholder_state = tf.placeholder(dtype=tf.float32, shape=[None, agent_state_size], name='placeholder_state')
         # performed action (for critic): (v, phi) - commands produced by the actor
-        self.placeholder_action = tf.placeholder(dtype=tf.float32, shape=[None, self.action_size], name='placeholder_action')
+        self.placeholder_action = tf.placeholder(dtype=tf.float32, shape=[None, n_commands], name='placeholder_action')
         # reward (for training the critic)
         self.placeholder_reward = tf.placeholder(dtype=tf.float32, shape=[None, 1], name='placeholder_reward')
         # flag used when computing the target q: 1 if is final, 0 otherwise.
         self.placeholder_is_final = tf.placeholder(dtype=tf.float32, shape=[None, 1], name='placeholder_is_final')
 
-        if activation_fn_name == 'leaky_relu': activation_fn = tf.nn.leaky_relu
-        elif activation_fn_name == 'elu': activation_fn = tf.nn.elu
-        else: raise Exception("Invalid non-linearity '{}'".format(activation_fn_name))
+        
+    def _preprocess(self, laser_weight, position_weight, v_weight, angle_weight):
+        laser = self.placeholder_laser * laser_weight
+        goal = self.placeholder_goal * [position_weight, position_weight, angle_weight, v_weight]
+        state = self.placeholder_state * [v_weight, angle_weight]
+        return laser, goal, state
+    
+    
+    def _encoder(self, laser, goal, state, use_conv_layer, activation_fn, n_hidden_neurons):
+        # laser pre-processing
+        if use_conv_layer:
+            laser_c1 = tf.layers.conv1d(laser, filters=32, kernel_size=6, strides=1, padding='same', activation=activation_fn)
+            laser_p1 = tf.layers.max_pooling1d(laser_c1, pool_size=4, strides=4)
+            laser_c2 = tf.layers.conv1d(laser_p1, filters=32, kernel_size=6, strides=1, padding='same', activation=activation_fn)
+            laser_p2 = tf.layers.max_pooling1d(laser_c2, pool_size=4, strides=4)
+            laser_c3 = tf.layers.conv1d(laser_p2, filters=32, kernel_size=6, strides=1, padding='same', activation=activation_fn)
+            laser_p3 = tf.layers.max_pooling1d(laser_c3, pool_size=4, strides=4)
+            laser_fl = tf.layers.flatten(laser_p3)
+        else:
+            laser_fl = tf.layers.flatten(laser)
+            
+        laser_fc = tf.layers.dense(laser_fl, units=n_hidden_neurons, activation=activation_fn)
 
-        if allow_negative_commands: cmd_activation_fn = tf.nn.tanh
-        else: cmd_activation_fn = tf.nn.sigmoid
+        # goal, state, and action pre-processing
+        goal_fc = tf.layers.dense(goal, units=n_hidden_neurons, activation=activation_fn)
+        state_fc = tf.layers.dense(state, units=n_hidden_neurons, activation=activation_fn)
 
-        with tf.variable_scope("preprocessing"):
-            # laser pre-processing
-            if use_conv_layer:
-                laser_c1 = tf.layers.conv1d(self.placeholder_laser, filters=32, kernel_size=6, strides=3, padding='valid', activation=activation_fn)
-                laser_c2 = tf.layers.conv1d(laser_c1, filters=32, kernel_size=6, strides=3, padding='valid', activation=activation_fn)
-                laser_c3 = tf.layers.conv1d(laser_c2, filters=32, kernel_size=6, strides=3, padding='valid', activation=activation_fn)
-                laser_fl = tf.layers.flatten(laser_c3)
-                laser_fc = tf.layers.dense(laser_fl, units=n_hidden_neurons, activation=activation_fn)
-            else:
-                laser_fl = tf.layers.flatten(self.placeholder_laser)
-                laser_fc = tf.layers.dense(laser_fl, units=n_hidden_neurons, activation=activation_fn)
+        return laser_fc, goal_fc, state_fc
 
-            # goal, state, and action pre-processing
-            goal_fc = tf.layers.dense(self.placeholder_goal, units=n_hidden_neurons, activation=activation_fn)
-            state_fc = tf.layers.dense(self.placeholder_state, units=n_hidden_neurons, activation=activation_fn)
 
-        # actor network
-        with tf.variable_scope("policy"):
-            actor_input = tf.concat(axis=-1, values=[state_fc, goal_fc, laser_fc])
+    def _hidden_layers(self, in_tensor, n_layers, n_neurons, activation_fn):
+        h = in_tensor
+        for _ in range(n_layers):
+            h = tf.layers.dense(h, units=n_neurons, activation=activation_fn)
+        return h
+    
+    
+    def _create_actor(self, laser, goal, state, n_commands, use_conv_layer, activation_fn, n_layers, n_neurons):
+        with tf.variable_scope("actor"):
+            l, g, s = self._encoder(laser, goal, state, use_conv_layer, activation_fn, n_neurons)
+            i =  tf.concat(axis=-1, values=[l, g, s])
+            h = self._hidden_layers(i, n_layers, n_neurons, activation_fn)
 
-            in_tensor = actor_input
-            for _ in range(n_hidden_layers):
-                in_tensor = tf.layers.dense(in_tensor, units=n_hidden_neurons, activation=activation_fn)
+            self.command_phi = tf.layers.dense(h, units=int(n_commands/2), activation=tf.nn.tanh, name="command_phi")
+            self.command_v = tf.layers.dense(h, units=int(n_commands/2), activation=self.v_activation_fn, name="command_v")
+            self.actor_command = tf.concat([self.command_v, self.command_phi], axis=-1)
+            #self.actor_command = tf.layers.dense(h, units=n_commands, activation=tf.nn.tanh, name="commands")
 
-            self.actor_command = tf.layers.dense(in_tensor, units=self.action_size,
-                                                 activation=cmd_activation_fn, name="actor_command")
 
-        def action_preprocessing(cmd):
-            return tf.layers.dense(cmd, units=n_hidden_neurons, activation=activation_fn)
+    def _critic_head(self, l, g, s, cmd, activation_fn, n_layers, n_neurons, reuse):
+        with tf.variable_scope("head", reuse=reuse):
+            c = tf.layers.dense(cmd, units=n_neurons, activation=activation_fn)
 
-        with tf.variable_scope("action_preprocessing"):
-            input_action_fc = action_preprocessing(self.placeholder_action)
+            critic_input = tf.concat(axis=-1, values=[l, g, s, c])
 
-        with tf.variable_scope("action_preprocessing", reuse=True):
-            computed_action_fc = action_preprocessing(self.actor_command)
+            h = self._hidden_layers(critic_input, n_layers, n_neurons, activation_fn)
+            critic_q = tf.layers.dense(h, units=1, activation=None)
+        
+        return critic_q
 
-        # critic network
-        # TODO: esses caras estavam dentro dos variable scopes no codigo da openAI. Precisa? Eles nao tem variaveis...
-        critic_input_for_policy_training = tf.concat(axis=-1, values=[actor_input, computed_action_fc])
-        critic_input_for_critic_training = tf.concat(axis=-1, values=[actor_input, input_action_fc])
 
-        def critic_net(critic_input):
-            in_tensor = critic_input
-            for _ in range(n_hidden_layers):
-                in_tensor = tf.layers.dense(in_tensor, units=n_hidden_neurons, activation=activation_fn)
-
-            critic_q = tf.layers.dense(in_tensor, units=1, activation=None)
-            return critic_q
-
+    def _create_critic(self, laser, goal, state, use_conv_layer, activation_fn, n_layers, n_neurons):
         with tf.variable_scope("critic"):
-            self.q_from_policy = critic_net(critic_input_for_policy_training)
+            l, g, s = self._encoder(laser, goal, state, use_conv_layer, activation_fn, n_neurons)
 
-        with tf.variable_scope("critic", reuse=True):
-            self.q_from_action_placeholder = critic_net(critic_input_for_critic_training)
+            self.q_from_action_placeholder = self._critic_head(l, g, s, self.placeholder_action, activation_fn, n_layers, n_neurons, reuse=False)
+            self.q_from_policy = self._critic_head(l, g, s, self.actor_command, activation_fn, n_layers, n_neurons, reuse=True)
 
-        # Attribute names to the tensor to allow loading
-        # TODO: esses caras precisam estar dentro dos variable scopes?
-        self.q_from_policy = tf.identity(self.q_from_policy, name="q_from_policy")
-        self.q_from_action_placeholder = tf.identity(self.q_from_action_placeholder, name="q_from_action")
+            # Attribute names to the tensor to allow loading later
+            self.q_from_policy = tf.identity(self.q_from_policy, name="q_from_policy")
+            self.q_from_action_placeholder = tf.identity(self.q_from_action_placeholder, name="q_from_action")
 
 
 class DDPG(object):
-    def __init__(self, params, n_laser_readings):
+    def __init__(self, params, observation, goal):
         self.gamma = params['gamma']
+        self.allow_negative_commands = params['allow_negative_velocity']
+        agent_state_size = len(observation['pose'][3:])
+        n_laser_readings = len(observation['laser'])
+        goal_size = len(goal)
+        n_commands = params['n_commands']  # TODO: get this value from the envs.
 
-        if params['use_her']:
-            if params['her_rate'] < 0 or params['her_rate'] > 1.0:
-                raise Exception('The param "her_rate" should be in the interval [0., 1.]')
+        self._create_session(params)
+        self._create_models(n_laser_readings, agent_state_size, goal_size, n_commands, params)
+        self._create_basic_objectives(params)
+        
+        self.critic_vars = self._vars("main/critic")
+        self.policy_vars = self._vars("main/actor")
 
-            n_trad = int(params['batch_size'] * (1. - params['her_rate']))
-            n_her = int(params['batch_size'] * params['her_rate'])
-        else:
-            n_trad = params['batch_size']
-            n_her = 0
-
-        self.allow_negative_commands = params['allow_negative_commands']
-        self._create_network(n_laser_readings, params)
-
-        self.buffer = ReplayBuffer(capacity=params['replay_memory_capacity'],
-                                   n_trad=n_trad, n_her=n_her,
-                                   max_episode_size=params['n_steps_episode'])
-
+        self._add_regularizers(params)
+        self._create_optimizers(params)
+        self._create_target_update_operations(params)
+        self._initialize_nets()
+        
+        self.params = params
         self.saver = tf.train.Saver()
+        
+        # print all trainable variables for debugging
+        for v in self._vars(None):
+            print(v)
 
-    def _create_network(self, n_laser_readings, params):
+
+    def _create_session(self, params):
         self.sess = tf.get_default_session()
-
         if self.sess is None:
-            self.sess = tf.Session()
+            config = None
+            if not params['use_gpu']:
+                config = tf.ConfigProto(device_count={'GPU': 0},
+                                        inter_op_parallelism_threads=1,
+                                        intra_op_parallelism_threads=1)
+            print("Session config:", config)
+            self.sess = tf.Session(config=config)
+
+
+    def _create_models(self, n_laser_readings, agent_state_size, goal_size, n_commands, params):
+        neg = params['allow_negative_velocity']
+        if params['spline_type'] is not None: 
+            neg = True
+
+        if params['spline_type'] == 'cubic':
+            n_commands *= 3
 
         # Networks
         with tf.variable_scope('main'):
             self.main = ActorCritic(n_laser_readings,
-                             params['n_hidden_neurons'],
-                             params['n_hidden_layers'],
-                             params['use_conv_layer'],
-                             params['activation_fn'],
-                             params['allow_negative_commands'])
+                                    agent_state_size, goal_size,
+                                    n_commands,
+                                    params,
+                                    neg)
 
         with tf.variable_scope('target'):
             self.target = ActorCritic(n_laser_readings,
-                             params['n_hidden_neurons'],
-                             params['n_hidden_layers'],
-                             params['use_conv_layer'],
-                             params['activation_fn'],
-                             params['allow_negative_commands'])
+                                      agent_state_size, goal_size,
+                                      n_commands,
+                                      params,
+                                      neg)
 
         assert len(self._vars("main")) == len(self._vars("target"))
 
-        # Critic loss function (TODO: make sure this is correct!)
+
+    def _create_basic_objectives(self, params):
         discounted_next_q = self.gamma * self.target.q_from_policy * (1. - self.main.placeholder_is_final)
-        target_Q = self.main.placeholder_reward + discounted_next_q
-        clipped_target_Q = tf.clip_by_value(target_Q, clip_value_min=-100, clip_value_max=100)
+        self.target_Q = self.main.placeholder_reward + discounted_next_q
+        clipped_target_Q = tf.clip_by_value(self.target_Q, clip_value_min=-100., clip_value_max=100.)
         # The stop gradient prevents the target net from being trained.
-        self.critic_loss = tf.reduce_mean(tf.square(tf.stop_gradient(clipped_target_Q) - self.main.q_from_action_placeholder))
-
-        # Policy loss function (TODO: checar se essa loss esta certa. Ela parece diferente do DDPG do paper).
+        clipped_target_Q = tf.stop_gradient(clipped_target_Q)
+        self.td = tf.square(clipped_target_Q - self.main.q_from_action_placeholder)
+        self.critic_loss = tf.reduce_mean(self.td)
         self.policy_loss = -tf.reduce_mean(self.main.q_from_policy)
-        # TODO: checar se o componente abaixo eh necessario e o que ele significa.
-        self.action_l2 = 0.0
-        self.policy_loss += self.action_l2 * tf.reduce_mean(tf.square(self.main.actor_command))
 
-        # Training
-        # TODO: MAKE SURE THESE ARE EQUIVALENT!!!!!
-        # TODO: CHECAR FUNCAO DE TREINO MAIS EMBAIXO!!!!!
-        v_critic = self._vars("main/preprocessing") + self._vars("main/action_preprocessing") + self._vars("main/critic")
-        v_policy = self._vars("main/preprocessing") + self._vars("main/action_preprocessing") + self._vars("main/policy")
-        self.critic_train = tf.train.AdamOptimizer(learning_rate=0.001).minimize(loss=self.critic_loss, var_list=v_critic)
-        self.policy_train = tf.train.AdamOptimizer(learning_rate=0.0001).minimize(loss=self.policy_loss, var_list=v_policy)
+
+    def _add_regularizers(self, params):
+        self.command_l2 = tf.reduce_mean(tf.square(self.main.actor_command))
+        self.command_l2 *= params['l2_cmd']
+        self.policy_loss += self.command_l2  
+
+        self.critic_l2 = tf.reduce_mean([tf.nn.l2_loss(v) for v in self.critic_vars])
+        self.critic_l2 *= params['l2_regularization_critic']
+        self.critic_loss += self.critic_l2 
+            
+        self.actor_l2 = tf.reduce_mean([tf.nn.l2_loss(v) for v in self.policy_vars])
+        self.actor_l2 *= params['l2_regularization_actor']
+        self.policy_loss += self.actor_l2
+
+
+    def _create_optimizers(self, params):
+        #self.critic_train = tf.train.AdamOptimizer(learning_rate=params['critic_lr']).minimize(loss=self.critic_loss, var_list=v_critic)
+        #self.policy_train = tf.train.AdamOptimizer(learning_rate=params['actor_lr']).minimize(loss=self.policy_loss, var_list=v_policy)
+        
+        policy_grads = tf.gradients(self.policy_loss, self.policy_vars)
+        critic_grads = tf.gradients(self.critic_loss, self.critic_vars)
+        
+        if params['actor_gradient_clipping'] > 0:
+            policy_grads, _ = tf.clip_by_global_norm(policy_grads, params['actor_gradient_clipping'])
+            
+        if params['critic_gradient_clipping'] > 0:
+            critic_grads, _ = tf.clip_by_global_norm(critic_grads, params['critic_gradient_clipping'])
+        
+        self.policy_train = tf.train.AdamOptimizer(learning_rate=params['actor_lr']).apply_gradients(zip(policy_grads, self.policy_vars))
+        self.critic_train = tf.train.AdamOptimizer(learning_rate=params['critic_lr']).apply_gradients(zip(critic_grads, self.critic_vars))
+        
         """
+        # ###########################
+        # Codigo da OpenAI
+        # ###########################
         Q_grads_tf = tf.gradients(self.Q_loss_tf, self._vars('main/Q'))
         pi_grads_tf = tf.gradients(self.pi_loss_tf, self._vars('main/pi'))
         assert len(self._vars('main/Q')) == len(Q_grads_tf)
@@ -169,31 +241,36 @@ class DDPG(object):
         self.pi_grad_tf = flatten_grads(grads=pi_grads_tf, var_list=self._vars('main/pi'))
         """
 
-        # Additional operations
-        self.main_vars = self._vars('main/preprocessing') + self._vars("main/action_preprocessing") + self._vars('main/policy') + self._vars('main/critic')
-        self.target_vars = self._vars('target/preprocessing') + self._vars("target/action_preprocessing") + self._vars('target/policy') + self._vars('target/critic')
-
-        self.copy_main_to_target = list(map(lambda v: v[0].assign(v[1]), zip(self.target_vars, self.main_vars)))
-        self.target_update_rate = 0.75  # rate used for soft update of the target net.
-        self.soft_update_target_net = list(
-            map(lambda v: v[0].assign(self.target_update_rate * v[0] + (1. - self.target_update_rate) * v[1]),
-                zip(self.target_vars, self.main_vars)))
-
-        # Initialize all variables
-        self.sess.run(tf.global_variables_initializer())
-
-        # Update the target net to be equals to the main net
-        self.sess.run(self.copy_main_to_target)
 
     def _vars(self, scope):
         res = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope)
         assert len(res) > 0
         return res
 
+
+    def _create_target_update_operations(self, params):
+        # Additional operations
+        self.main_vars = self._vars('main')
+        self.target_vars = self._vars('target')
+
+        self.copy_main_to_target = list(map(lambda v: v[0].assign(v[1]), zip(self.target_vars, self.main_vars)))
+        self.target_update_rate = params['soft_update_rate']  # rate used for soft update of the target net.
+        
+        self.soft_update_target_net = list(
+            map(lambda v: v[0].assign(self.target_update_rate * v[0] + (1. - self.target_update_rate) * v[1]),
+                zip(self.target_vars, self.main_vars)))
+
+
+    def _initialize_nets(self):
+        self.sess.run(tf.global_variables_initializer())
+        self.sess.run(self.copy_main_to_target)
+
+
     def update_target_net(self):
         self.sess.run(self.soft_update_target_net)
 
-    def get_actions(self, obs, goal, noise_eps=0., random_eps=0., use_target_net=False, view=False):
+
+    def get_actions(self, obs, goal, use_target_net=False):
         policy = self.target if use_target_net else self.main
 
         # values to compute
@@ -202,61 +279,81 @@ class DDPG(object):
         # forward
         feed = {
             self.main.placeholder_laser: [obs['laser']],
-            self.main.placeholder_state: [[obs['pose'][3]]],
+            self.main.placeholder_state: [[obs['pose'][3], obs['pose'][4]]],
             self.main.placeholder_goal: [goal],
         }
 
         ret = self.sess.run(vals, feed_dict=feed)
-
-        # action postprocessing
+        
         u = ret[0][0]
-        u += noise_eps * np.random.randn(*u.shape)  # gaussian noise
-        u = np.clip(u, -1.0, 1.0) if self.allow_negative_commands else np.clip(u, 0.0, 1.0)
+        q = ret[1][0][0]
+        
+        return u, q
 
-        if np.random.random() < random_eps:
-            u = np.random.uniform(-1.0, 1.0, len(u))
-
-        return u, ret[1][0][0]
-
-    def store_episode(self, episode_batch):
-        self.buffer.add(episode_batch)
 
     def save(self, path):
         save_path = self.saver.save(self.sess, path)
         print("Model saved in path: %s" % save_path)
 
+    
     def load(self, path):
         self.saver.restore(self.sess, path)
 
-    ####
-    # TRAIN
-    ####
-    def train(self):
-        batch = self.buffer.sample()
 
+    def _print_batch(self, batch):
+        for k, v in batch.items():
+            print(k)
+            for a in v:
+                print('\t', a)
+        import sys
+        sys.exit(0)
+    
+    
+    def train(self, batch, print_report):
+        # debug
+        # self._print_batch(batch)
+        
         feed = {
-            self.main.placeholder_goal: batch['goal'],
-            self.main.placeholder_laser: batch['laser'],
-            self.main.placeholder_state: batch['state'],
-            self.main.placeholder_action: batch['act'],
-            self.main.placeholder_reward: batch['rew'],
-            self.main.placeholder_is_final: batch['is_final'],
-            self.target.placeholder_goal: batch['goal'],
-            self.target.placeholder_laser: batch['next_laser'],
-            self.target.placeholder_state: batch['next_state'],
+            self.main.placeholder_goal: batch['goals'],
+            self.main.placeholder_laser: batch['lasers'],
+            self.main.placeholder_state: batch['agent_states'],
+            self.main.placeholder_action: batch['cmds'],
+            self.main.placeholder_reward: batch['rewards'],
+            self.main.placeholder_is_final: batch['is_finals'],
+            self.target.placeholder_goal: batch['next_goals'],
+            self.target.placeholder_laser: batch['next_lasers'],
+            self.target.placeholder_state: batch['next_agent_states'],
         }
 
-        # TODO: Diferente do caso da OpenAI em que os gradients sao computados e aplicados separadamente, aqui os
-        # TODO: gradients sao aplicados "ao mesmo tempo" nas variaveis de pre-processamento. Checar em qual ordem isso
-        # TODO: eh realizado, e se nao da problema treinar os dois ao msm tempo.
-        out = self.sess.run([self.critic_loss, self.policy_loss, self.critic_train, self.policy_train], feed_dict=feed)
+        out = self.sess.run([self.critic_loss, 
+                             self.policy_loss,
+                             self.command_l2,
+                             self.target_Q, 
+                             self.main.q_from_action_placeholder,
+                             self.main.q_from_policy,
+                             self.target.q_from_policy,
+                             self.critic_l2,
+                             self.actor_l2,
+                             self.critic_train, 
+                             self.policy_train],
+                            feed_dict=feed)
+        
+        if print_report:
+            print('CriticLoss:', out[0], 'PolicyLoss:', out[1])
+            print('Command L2:', out[2], 'Actor L2:', out[7], 'Critic L2:', out[8])
+            print('Rw:\t\t', numlist2str(batch['rewards'][:10]))
+            print('t.NextQ:\t', numlist2str(out[6][:10]))
+            print('IsFinal:\t', numlist2str(batch['is_finals'][:10]))
+            print('target_q:\t', numlist2str(out[3][:10]))
+            print('m.q_act:\t', numlist2str(out[4][:10]))
+            print('m.q_pol:\t', numlist2str(out[5][:10]))
+            print()
 
-        critic_loss = out[0]
-        policy_loss = out[1]
-
-        return critic_loss, policy_loss
 
     """
+    ############################
+    # Codigo da OpenAI:
+    ############################
     def train(self, stage=True):
         if stage:
             self.stage_batch()
@@ -294,4 +391,5 @@ class DDPG(object):
         self.Q_adam.update(Q_grad, self.Q_lr)
         self.pi_adam.update(pi_grad, self.pi_lr)
     """
-    ###
+
+

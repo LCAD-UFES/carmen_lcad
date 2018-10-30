@@ -150,7 +150,7 @@ Após a otimização, os dados podem ser visualizados pelo gnuplot:
 
 4. Modifique no process-volta_da_ufes_playback_viewer_3D_map_generation_hypergraphsclam.ini as saidas dos programas playback, rdd_build, graphslam_publish:
  playback 		support 	1		0			./playback <seu log>.txt
- rndf_build		interface	1		0			./rddf_build ../data/rndf/rndf_<seu log>.txt
+ rndf_build		interface	1		0			./rddf_build ../data/rndf/rddf_<seu log>.txt
  publish_poses		graphslam	0		0   			./graphslam_publish poses-opt-<seu log>.txt
 
 5. Modifique o carmen-ford-escape.ini para ativar a criacao de mapas comentando e descomentando o trecho abaixo (ver o carmen-ford-escape.ini).
@@ -184,13 +184,6 @@ Caso a pasta não exista, utilize o comando "mkdir $CARMEN_HOME/data/mapper_test
 11. Ao final do log seu mapa está pronto em ../data/mapper_teste2/ !!!! Pode matar o proccontrol no terminal e copiar seu novo mapa para seu lugar definitivo.
 
 12. Volte os parametros de construir mapa do carmen-ford-escape.ini
-
-==================================================================================================================================================
-##OBS:
-======
-O process já constroe o rndf(rddf) usando o ./rddf_build ../data/rndf/rndf.kml
-	Após criar o mapa, renomear o arquivo ../data/rndf/rndf.kml para ../data/rndf/rddf-<nome do log>.txt
-		mv ../data/rndf/rndf.kml ../data/rndf/rddf-<nome do log>.txt
 
 ==================================================================================================================================================
 Para limpar o mapa use os programas

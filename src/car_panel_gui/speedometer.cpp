@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include "speedometer.h"
 
 
@@ -117,7 +118,8 @@ void
 Speedometer::update(float speed)
 {
     // conversion to km/h
-    this->speed = fabs(speed * KMH_MS);
+    double speed_km_h = fabs(speed * KMH_MS);
+    this->speed = this->speed + (speed_km_h - this->speed) / 15.0; // Media para suavisar o display
 
     Utils::getDigitsFromValue(this->speed, &hundredSpeed, &dozenSpeed, &unitSpeed, &floatPointSpeed);
 

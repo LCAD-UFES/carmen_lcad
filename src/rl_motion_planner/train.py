@@ -1,9 +1,21 @@
+"""
+###############################################################################################
+TODO: Os caras da OpenAI treinaram no final de cada episodio. Tentar treinar a cada passo?
+TODO: Adicionar codigo para gerar graficos.
+TODO: Adicionar verificacao de erros (e.g., NANs no tensorflow).
+TODO: Adicionar goals com diferentes velocidades e diferentes velocidades inciais. Levar em conta 
+    o maximo que o carro consegue mudar a velocidade dada a distancia do ponto para o goal.
+TODO: Checar se nao estao acontecendo copias que podem causar bugs.
+TODO: Checar se os codigos de amostragem de batches podem ser mais eficientes.
+###############################################################################################
+"""
 
 import os
 import sys
 import random
 import time
 import numpy as np
+import copy
 
 import tensorflow as tf
 
@@ -11,8 +23,11 @@ from sacred import Experiment
 from sacred.observers import FileStorageObserver
 
 from rl.ddpg import DDPG
-from rl.util import relative_pose, dist
-from rl.envs import SimpleEnv, CarmenEnv
+from rl.util import relative_pose, numlist2str
+from rl.envs import *
+from rl.rewards import RewardFactory
+from rl.replay_buffer import ReplayBuffer
+from rl.action_transformers import ActionTransformerGroup
 
 
 results_dir = 'results/'
@@ -20,197 +35,460 @@ ex = Experiment('rl_motion_planner')
 ex.observers.append(FileStorageObserver.create(results_dir))
 
 
-def update_rewards(params, episode, info):
-    rw = -1.0
+def print_report_and_view(transitions, obs, goal, g, cmd, q, env, view_active, view_sleep):
+    if len(transitions) % 25 == 0:
+        print('Step:', len(transitions),
+              'Pose:', numlist2str(obs['pose']), 
+              'Goal:', numlist2str(goal),
+              'RelativeGoal:', numlist2str(g), 
+              'Cmd:', numlist2str(cmd),
+              'Q:', q)
 
-    if info['success']:
-        rw = float(params['n_steps_episode'] - len(episode)) / float(params['n_steps_episode'])
-        print("updated rewards:", rw)
-    elif info['hit_obstacle']:
-        rw = -1.0
-
-    rw /= len(episode)
-    print('rw:', rw)
-
-    for transition in episode:
-        transition[2] = rw
+    if view_active:
+        env.view()
+        time.sleep(view_sleep)
 
 
-def generate_rollouts(policy, env, n_rollouts, params, exploit, use_target_net=False):
-    # generate episodes
-    episodes = []
-    n_successes = 0
-    n_collisions = 0
-    q0 = 0.
+def run_one_episode(policy, update_goal, env, view_active, view_sleep, 
+                    frame_skip, exploration_transformers, additional_transformers, 
+                    use_target_net=False):
+    obs, goal = env.reset()
 
-    while len(episodes) < n_rollouts:
-        obs, goal = env.reset()
-        episode = []
-        done = False
-        info = None
+    # even if the environment changes the goal internally, 
+    # we keep using the first goal (except if update_goal is True) .
+    goal = copy.deepcopy(goal)
+
+    transitions = []
+    done = False
+ 
+    while not done:
+        # we have to make a deep copy before interacting with the environment because if the env returns references
+        # (instead of a copy) to the observation, internal changes in the step method would cause changes to the variable.
+        obs = copy.deepcopy(obs)
 
         g = relative_pose(obs['pose'], goal)
-        _, q0 = policy.get_actions(obs, g + [goal[3]], noise_eps=0.,
-                                   random_eps=0.,
-                                   use_target_net=False)
+        cmd, q = policy.get_actions(obs, g, use_target_net)
+        exploration_cmd = exploration_transformers.transform(cmd, obs)
+        final_command = additional_transformers.transform(exploration_cmd, obs)
+        
+        for _ in range(frame_skip):
+            new_obs, new_goal, done, info = env.step(final_command)
+        
+        print_report_and_view(transitions, obs, goal, 
+                              g, cmd, q, env, 
+                              view_active, 
+                              view_sleep)
 
-        while not done:
-            g = relative_pose(obs['pose'], goal)
+        transitions.append([obs, exploration_cmd])
 
-            cmd, q = policy.get_actions(obs, g + [goal[3]], noise_eps=params['noise_eps'] if not exploit else 0.,
-                                        random_eps=params['random_eps'] if not exploit else 0.,
-                                        use_target_net=use_target_net)
+        obs = new_obs
+        if update_goal:
+            goal = copy.deepcopy(new_goal)
 
-            new_obs, done, info = env.step(cmd)
+    env.finalize()
+    
+    episode = {
+        'transitions': transitions,
+        'goal': goal,
+        'success': info['success'],
+        'hit_obstacle': info['hit_obstacle'],
+    }
 
-            if params['view']:
-                env.view()
+    return episode
 
-            g_after = relative_pose(new_obs['pose'], goal)
-            rw = ((g[0] ** 2 + g[1] ** 2) - (g_after[0] ** 2 + g_after[1] ** 2)) / 100.0
 
-            episode.append([obs, cmd, rw, goal])
-            obs = new_obs
-
-        env.finalize()
-        if len(episode) == 0:
+def run_episodes(policy, update_goal, env, n_rollouts,  
+                 view_active, view_sleep, frame_skip, 
+                 exploration_transformers, additional_transformers, 
+                 use_target_net=False):
+    episodes = []
+    
+    while len(episodes) < n_rollouts:
+        episode = run_one_episode(policy, update_goal, env, view_active, view_sleep, 
+                                  frame_skip, exploration_transformers,
+                                  additional_transformers, 
+                                  use_target_net=use_target_net)
+        
+        # TODO: Check if the robot started out of a valid map.
+        # TODO: Tratar caso em que o robo inicia sobre o goal.
+        #if len(transitions) == 1 and not last_info['success']:
+        if len(episode['transitions']) <= 1:
+            print("Episode starting in invalid pose. Trying again.")
             continue
-
-        if params['use_her']:
-            update_rewards(params, episode, info)
 
         episodes.append(episode)
 
-        if info['success']: n_successes += 1
-        elif info['hit_obstacle']: n_collisions += 1
-
-    return episodes, n_successes, n_collisions, q0
+    return episodes
 
 
-def launch(params, n_epochs, seed, policy_save_interval, checkpoint):
-    """
-    ###############################################################################################
-    TODO: Os caras da OpenAI treinaram no final de cada episodio. Tentar treinar a cada passo?
-    TODO: Adicionar codigo para gerar graficos.
-    TODO: Adicionar verificacao de erros (e.g., NANs no tensorflow).
-    TODO: Adicionar goals com diferentes velocidades e diferentes velocidades inciais. Levar em conta o maximo que o
-        TODO: carro consegue mudar a velocidade dada a distancia do ponto para o goal.
-    TODO: Colocar goal na referencia do carro (inclusive no HER), e normalizar dados de entrada (laser e velocidades).
-    TODO: Checar se nao estao acontecendo copias que podem causar bugs.
-    TODO: Checar se o codigo da amostragem de batches podem ser mais eficientes.
-    ###############################################################################################
-    """
-    # It is not possible to set the seeds used by all carmen modules from here.
+# Only for debugging purposes
+def print_episode(episode):
+    print('-----------------------------------------')
+    
+    print('Goal:', episode['goal'], 
+          'Success:', episode['success'], 
+          'Hit_obstacle:', episode['hit_obstacle'])
+    
+    i = 0
+    for transition in episode['transitions']:
+        obs = transition[0]
+        cmd = transition[1]
+        rw = transition[2]
+        
+        print(i, end=' ')
+        print(obs['pose'], cmd, rw, '\n')
+        i += 1
+
+    print('-----------------------------------------')
+    input('Pressione enter para continuar:')
+
+
+def create_env(params):
+    name = params['env']
+    if name == 'simple': 
+        return EmptyRoomSimple(params)
+    elif name == 'ackerman':
+        return EmptyRoomAckerman(params)
+    elif name == 'carmen_offline': 
+        return Carmen(params, mode='offline', sim_dt=params['sim_dt'])
+    elif name == 'carmen_online': 
+        return Carmen(params, mode='online', sim_dt=params['sim_dt'])
+    else: 
+        raise Exception("Env '{}' not implemented.".format(name))
+
+
+def set_seeds(env, seed):
+    # Note: it is not possible to make the results reproducible when using
+    # Carmen in online mode (with message passing).
     tf.set_random_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
+    env.seed(seed)
 
-    print('Connecting to carmen')
-    if params['env'] == 'simple': env = SimpleEnv(params)
-    elif params['env'] == 'carmen': env = CarmenEnv(params)
-    else: raise Exception("Env '{}' not implemented.".format(params['env']))
 
+def create_policy(params, env):
+    # read an state and goal to read their 
+    # dimensions when creating the neural net.
     state, goal = env.reset()
-    n_laser_readings = len(state['laser'])
-
-    policy = DDPG(params, n_laser_readings=n_laser_readings)
+    
+    # create the policy
+    policy = DDPG(params, state, goal)
+    
+    # load a pre-trained network if available
+    checkpoint = params['checkpoint']
     if len(checkpoint) > 0:
         policy.load(checkpoint)
+    
+    return policy
 
-    # Path to some log files
-    experiment_dir = os.path.join(results_dir, str(ex.current_run._id))
-    latest_policy_path = os.path.join(experiment_dir, 'policy_latest.ckpt')
-    best_policy_path = os.path.join(experiment_dir, 'policy_best.ckpt')
-    periodic_policy_path = os.path.join(experiment_dir, 'policy_{}.ckpt')
 
-    best_success_rate = -1
+def create_exploration_transformers(params):
+    p_v = copy.deepcopy(params)
+    if not p_v['allow_negative_velocity']:
+        p_v['action_clip_min'] = 0.
+    
+    filters = [params['v_filters'], params['phi_filters']]
+    params = [p_v, params]
+    return ActionTransformerGroup(filters, params)
 
-    last_success_flags = []
-    last_collision_flags = []
 
-    # Training loop
-    for epoch in range(n_epochs):
-        # rollouts
-        episodes, n_successes, n_collisions, q0 = generate_rollouts(policy, env, params['n_rollouts'],
-                                                                    params, exploit=False)
+def create_additional_transformers(params):
+    p_v = copy.deepcopy(params)
+    if not p_v['allow_negative_velocity']:
+        p_v['action_clip_min'] = 0.
 
-        # report
-        last_success_flags.append(n_successes / float(len(episodes)))
-        last_collision_flags.append(n_collisions / float(len(episodes)))
+    all_params = [p_v, params]
 
-        if len(last_success_flags) > 30: last_success_flags.pop(0)
-        if len(last_collision_flags) > 30: last_collision_flags.pop(0)
+    if params['spline_type'] == 'linear':
+        filters = [['linear_spline', 'clip'], ['linear_spline', 'clip']]
+        t = ActionTransformerGroup(filters, all_params) 
+    elif params['spline_type'] == 'cubic':
+        filters = [['cubic_spline', 'clip'], ['cubic_spline', 'clip']]
+        t = ActionTransformerGroup(filters, all_params) 
+    else:
+        filters = [['identity'], ['identity']]
+        t = ActionTransformerGroup(filters, all_params)
 
-        last_episode = episodes[-1]
+    return t
 
-        print('** Episode', epoch * params['n_rollouts'],
-              'Return:', np.sum([t[2] for t in last_episode]),
-              'n_successes:', n_successes,
-              'n_collisions:', n_collisions,
-              'DIST:', dist(last_episode[-1][0]['pose'], last_episode[-1][-1]),
-              'SampleQ:', q0,
-              'SuccessAvg30:', np.mean(last_success_flags),
-              'CollisionsAvg30:', np.mean(last_collision_flags),
-              )
 
-        sys.stdout.flush()
+def add_to_queue(queue, value, max_size):
+    queue.append(value)
+    if len(queue) > max_size: 
+        queue.pop(0)
 
-        # Train
-        policy.store_episode(episodes)
 
-        if len(policy.buffer.stack) > 1:
-            for b in range(params['n_batches']):
-                policy.train()
+def update_rewards(episode, reward_generator):
+    ep_return = 0.
+    
+    transitions = episode['transitions']
+    success = episode['success']
+    goal = episode['goal']
+    n = len(transitions)
+    
+    for i in range(n):
+        t = transitions[i]
+        is_final = (i == (n - 1))
+        r = reward_generator.reward(n, 
+                                   obs=t[0], 
+                                   goal=goal, 
+                                   achieved=success,
+                                   is_final=is_final)
+        t.append(r)
+        ep_return += r
+        
+    episode['return'] = ep_return
 
-            # Save
-            if epoch % 20 == 0:
-                policy_path = periodic_policy_path.format(epoch)
-                policy.save(policy_path)
+
+def compute_rewards_and_statistics(episodes, statistics, reward_generator):
+    for e in episodes:
+        add_to_queue(statistics['successes_lastk'], e['success'], max_size=30)
+        add_to_queue(statistics['collisions_lastk'], e['hit_obstacle'], max_size=30)    
+        update_rewards(e, reward_generator)
+        
+    mean_success = np.mean(statistics['successes_lastk'])
+    return mean_success 
+
+
+def train(params, policy, episodes, replay_buffer):
+    training_time = 0.
+
+    if params['train']:
+        replay_buffer.add(episodes)
+
+        init_t = time.time()
+        
+        if len(replay_buffer) > params['min_buffer_size']:
+            
+            for batch_id in range(params['n_batches']):
+                print_report = False
+                if batch_id % 25 == 0:
+                    print_report = True 
+
+                policy.train(replay_buffer.get_batch(), print_report=print_report)
 
             policy.update_target_net()
+            
+        training_time = time.time() - init_t
+
+    return training_time
+
+
+def save_policy(policy, epoch, save_interval, mean_success, best_success_rate, experiment_dir):
+    # save the policy from time to time
+    if epoch % save_interval == 0:
+        periodic_policy_path = os.path.join(experiment_dir, 'policy_%d.ckpt' % epoch)
+        policy.save(periodic_policy_path)
+
+    # save the policy if it improved.
+    if mean_success >= best_success_rate:
+        best_policy_path = os.path.join(experiment_dir, 'policy_best.ckpt')
+        policy.save(best_policy_path)
+        best_success_rate = mean_success
+        
+    return best_success_rate
+
+
+def print_report(epoch, n_rollouts, episodes, statistics, mean_success, train_time, experiment_time):
+    # Print episodes (debug)
+    # for e in episodes:
+        # print_episode(e)
+
+    curr_time = time.time()
+    
+    print('\n** Episode', epoch * n_rollouts,
+          'Return:', episodes[0]['return'],
+          'Success:', episodes[0]['success'],
+          'Collision:', episodes[0]['hit_obstacle'],
+          'SuccessAvg30:', mean_success,
+          'CollisionsAvg30:', np.mean(statistics['collisions_lastk']),
+          'AvgEpSize:', np.mean([len(e['transitions']) for e in episodes]),
+          'Training time:', train_time,
+          'Overall time:',  experiment_time, 
+          end='\n\n')
+    
+    sys.stdout.flush()
 
 
 @ex.config
 def config():
     seed = 1
     n_epochs = 100000
-
-    # the interval with which policy pickles are saved. If set to 0, only the best and latest policy will be pickled.
-    policy_save_interval = 0
+    save_interval = 20
 
     params = {
+        # experiment
+        'use_gpu': True,
+        'checkpoint': '',
+        'train': True,
+        
         # env
         'env': 'simple',
-        'model': 'ackerman',
-        'n_steps_episode': 200,
-        'goal_achievement_dist': 1.0,
-        'vel_achievement_dist': 0.5,
-        'view': False,
+        'max_steps': 20,
         'rddf': 'rddf-voltadaufes-20170809.txt',
+        'map': "map_ida_guarapari-20170403-2",
+        'use_latency': False,
+        'use_curriculum': True,  # TODO!!
+        'allow_negative_velocity': True,  # CHECK!!
+        'allow_goals_behind': True,  # CHECK!!
+        'fix_goal': True,
+        'fix_initial_position': False,
+        # to sum several rewards, use their names separated by commas
+        'reward_type': 'sparse',
+        'frames_by_step': 1,
+        'sim_dt': 0.05,  # CHECK IF USED!!
+
+        # GUI
+        'view': True,
+        'view_sleep': 0,
+        'view_spline': True,
+        
         # net
-        'n_hidden_neurons': 64,
-        'n_hidden_layers': 1,
-        'use_conv_layer': True,
+        'n_critic_hidden_neurons': 64,
+        'n_actor_hidden_neurons': 64,
+        'n_critic_hidden_layers': 1,
+        'n_actor_hidden_layers': 1,
+        'soft_update_rate': 0.95,
+        'use_conv_layer': False,
         'activation_fn': 'elu',
-        'allow_negative_commands': True,
+        'critic_lr': 1e-3,
+        'actor_lr': 1e-3,
+        'laser_weight': 1.0,
+        'position_weight': 1.0,
+        'v_weight': 1.0,
+        'angle_weight': 1.0,
+        'critic_training_method': 'td',  # td or mc   # TODO MC!!  
+        
+        # tricks
+        'actor_gradient_clipping': 0.0,
+        'critic_gradient_clipping': 0.0,
+        'use_layer_norm': True,        # TODO!!
+        'l2_regularization_critic': 0.0,
+        'l2_regularization_actor': 0.0,
+        'l2_cmd': 0.0,
+        
         # training
         'n_rollouts': 1,
         'n_batches': 50,
         'batch_size': 256,
-        'use_her': True,
+        'use_her': True,  # CHECK!!
+        'use_sparse': True,  # CHECK!!
         'her_rate': 1.0,
-        'n_test_rollouts': 0,
         'replay_memory_capacity': 500,  # episodes
-        # exploration
-        'random_eps': 0.05,  # percentage of time a random action is taken
-        'noise_eps': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
+        'min_buffer_size': 10,
+        
+        # Commands
+        'n_commands': 2,
+        'random_eps': 0.1,  # percentage of time a random action is taken
+        'noise_std': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
+        'spline_command_t': 0.15,
+        'use_acceleration': False,
+        'spline_type': None,  # None, linear, or cubic.  # TODO!!
+        'v_filters': ['random', 'gaussian', 'clip'],
+        'phi_filters': ['random', 'gaussian', 'clip'],
+        'action_clip_max': 1.0,
+        'action_clip_min': -1.0,
+        
+        # Reward generator params
+        'punish_failure': True,
+        'dist_weight': 1. / 100., 
+        'th_weight': 0.0, 
+        'velocity_weight': 0.0   # THERE IS A PARAMETER WITH ALMOST THE SAME NAME!!
     }
 
-    params['gamma'] = 1. - 1. / params['n_steps_episode']
+    params['gamma'] = 1. - 1. / params['max_steps']
 
-    checkpoint = ''
+
+@ex.named_config
+def simple():
+    params = {}
+    params['env'] = 'simple'
+    params['n_critic_hidden_neurons'] = 64
+    params['n_actor_hidden_neurons'] = 64
+    params['use_conv_layer'] = False
+    params['max_steps'] = 40
+    params['soft_update_rate'] = 0.95
+    params['activation_fn'] = 'elu'
+    params['actor_lr'] = 1e-4
+    params['critic_lr'] = 1e-3
+    params['actor_gradient_clipping'] = 0.0
+    params['critic_gradient_clipping'] = 0.0
+    params['l2_regularization_critic'] = 0.0
+    params['l2_regularization_actor'] = 0.0
+    params['l2_cmd'] = 0.0
+    params['gamma'] = 1. - 1. / params['max_steps']
+    params['spline_type'] = 'cubic'
+    params['spline_command_t'] = 0.5
+
+
+@ex.named_config
+def carmen_offline():
+    params = {}
+    params['env'] = 'carmen_offline'
+    params['n_critic_hidden_neurons'] = 64
+    params['n_actor_hidden_neurons'] = 64
+    params['use_conv_layer'] = False
+    params['max_steps'] = 40
+    params['soft_update_rate'] = 0.95
+    params['activation_fn'] = 'elu'
+    params['actor_lr'] = 1e-4
+    params['critic_lr'] = 1e-3
+    params['actor_gradient_clipping'] = 0.0
+    params['critic_gradient_clipping'] = 0.0
+    params['l2_regularization_critic'] = 0.0
+    params['l2_regularization_actor'] = 0.0
+    params['l2_cmd'] = 0.0
+    params['gamma'] = 1. - 1. / params['max_steps']
+    params['spline_type'] = None 
+    params['spline_command_t'] = 0.15
+
+
+@ex.named_config
+def exploit():
+    params = {}
+    params['train'] = False
+    params['view_sleep'] = 0.03
+    params['random_eps'] = 0
+    params['noise_std'] = 0
 
 
 @ex.automain
-def main(seed, n_epochs, policy_save_interval, params, checkpoint):
-    launch(params, n_epochs, seed, policy_save_interval, checkpoint)
+def main(seed, n_epochs, save_interval, params):
+    init_experiment = time.time()
+    
+    env = create_env(params)
+    set_seeds(env, seed)
+    reward_generator = RewardFactory.create(params)
+    policy = create_policy(params, env)
+    exploration_transformers = create_exploration_transformers(params)
+    additional_transformers = create_additional_transformers(params)
+    replay_buffer = ReplayBuffer(params, reward_generator)
+    experiment_dir = os.path.join(results_dir, str(ex.current_run._id))
+
+    n_rollouts = params['n_rollouts']
+    update_goal = True if params['env'] == 'carmen_online' else False 
+
+    best_success_rate = -1
+    statistics = {
+        'successes_lastk': [],
+        'collisions_lastk': [],
+    }
+
+    for epoch in range(n_epochs):
+        episodes = run_episodes(policy, update_goal, env, n_rollouts, 
+                                params['view'], params['view_sleep'], 
+                                params['frames_by_step'],
+                                exploration_transformers,
+                                additional_transformers)
+
+        mean_success = compute_rewards_and_statistics(episodes, statistics, reward_generator)
+        
+        train_time = train(params, policy, episodes, replay_buffer)
+        
+        best_success_rate = save_policy(policy, epoch, save_interval, 
+                                        mean_success, best_success_rate,
+                                        experiment_dir)
+        
+        print_report(epoch, n_rollouts, episodes, statistics, 
+                     mean_success, train_time, time.time() - init_experiment)
+

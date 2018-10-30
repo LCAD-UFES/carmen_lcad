@@ -70,6 +70,13 @@ carmen_rddf_subscribe_annotation_message(carmen_rddf_annotation_message *message
 }
 
 void
+carmen_rddf_subscribe_traffic_sign_message(carmen_rddf_traffic_sign_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
+{
+    carmen_subscribe_message(CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_NAME, CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_FMT,
+                             message, sizeof (carmen_rddf_traffic_sign_message), handler, subscribe_how);
+}
+
+void
 carmen_rddf_unsubscribe_road_profile_message(carmen_handler_t handler)
 {
     carmen_unsubscribe_message(CARMEN_RDDF_ROAD_PROFILE_MESSAGE_NAME, handler);
@@ -103,6 +110,12 @@ void
 carmen_rddf_unsubscribe_annotation_message(carmen_handler_t handler)
 {
     carmen_unsubscribe_message(CARMEN_RDDF_ANNOTATION_MESSAGE_NAME, handler);
+}
+
+void
+carmen_rddf_unsubscribe_traffic_sign_message(carmen_handler_t handler)
+{
+    carmen_unsubscribe_message(CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_NAME, handler);
 }
 
 void
@@ -145,6 +158,12 @@ carmen_rddf_define_messages()
     //
     err = IPC_defineMsg(CARMEN_RDDF_ANNOTATION_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_RDDF_ANNOTATION_MESSAGE_FMT);
     carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_ANNOTATION_MESSAGE_NAME);
+
+    //
+    // define the traffic sign message
+    //
+    err = IPC_defineMsg(CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_NAME);
 }
 
 void
@@ -248,3 +267,29 @@ carmen_rddf_publish_annotation_message(carmen_annotation_t *annotations, int num
     carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ANNOTATION_MESSAGE_NAME);
 }
 
+void
+carmen_rddf_publish_traffic_sign_message(int traffic_sign_state, double traffic_sign_data)
+{
+    IPC_RETURN_TYPE err;
+    carmen_rddf_traffic_sign_message rddf_traffic_sign_message;
+
+    rddf_traffic_sign_message.traffic_sign_state = traffic_sign_state;
+    rddf_traffic_sign_message.traffic_sign_data = traffic_sign_data;
+    rddf_traffic_sign_message.timestamp = carmen_get_time();
+    rddf_traffic_sign_message.host = carmen_get_host();
+
+    err = IPC_publishData(CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_NAME, &rddf_traffic_sign_message);
+    carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_NAME);
+}
+
+
+char *
+get_traffic_sign_state_name(int state)
+{
+	if (state == RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_RIGHT) 	return ((char *) "Turn_Right");
+	if (state == RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT) 	return ((char *) "Turn_Left");
+	if (state == RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_GO_STRAIGHT)	return ((char *) "Go_Straight");
+	if (state == RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_OFF) 		return ((char *) "Off");
+
+	return ((char *) " ");
+}

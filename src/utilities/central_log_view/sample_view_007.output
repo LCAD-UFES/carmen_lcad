@@ -1,0 +1,54 @@
+Commandline: ./central_log_view sample_central.log -c b -msg *globalpos -mod *:rddf_play* -k 775794*-36369 -ik Pending -s o -vt 2 
+
+Central Log View Utility
+Log file: sample_central.log
+Log start time: Fri Apr 20 10:59:02 2018
+
+  Logline  Class            Message                               Id  Origin                     Destination                Status          Logtime       Elapsedtime	Data
+   548478  Broadcast        carmen_localize_ackerman_globalpos    40  localize_ackerman-10678    rddf_play-10681            sent            11:01:05.47         0.000	{	{	7757949.64	-363694.47	-2.38	}	{	0.00	0.01	0.00	}	{	0.00	0.00	0.00	}	{	{	7757949.64	-363694.47	0.00	}	{	0.00	0.00	-2.38	}	}	{	8.84	0.00	0.00	}	8.84	-0.04	0.00	1	1524232865.35	"avell-raphael"	}
+   549021  Broadcast        carmen_localize_ackerman_globalpos    37  localize_ackerman-10678    rddf_play-10681            sent            11:01:05.62         0.150	{	{	7757949.01	-363695.07	-2.39	}	{	0.00	0.00	0.00	}	{	0.00	0.00	0.00	}	{	{	7757949.01	-363695.07	0.00	}	{	0.00	0.00	-2.39	}	}	{	8.84	0.00	0.00	}	8.84	-0.04	0.00	1	1524232865.45	"avell-raphael"	}
+   549210  Broadcast        carmen_localize_ackerman_globalpos    42  localize_ackerman-10678    rddf_play-10681            sent            11:01:05.63         0.160	{	{	7757948.68	-363695.36	-2.40	}	{	0.00	0.00	0.00	}	{	0.00	0.00	0.00	}	{	{	7757948.68	-363695.36	0.00	}	{	0.00	0.00	-2.40	}	}	{	8.84	0.00	0.00	}	8.84	-0.04	0.00	1	1524232865.50	"avell-raphael"	}
+   549424  Broadcast        carmen_localize_ackerman_globalpos    23  localize_ackerman-10678    rddf_play-10681            sent            11:01:05.64         0.170	{	{	7757948.32	-363695.70	-2.41	}	{	0.01	0.01	0.00	}	{	0.00	0.00	0.00	}	{	{	7757948.32	-363695.70	0.00	}	{	0.00	0.00	-2.41	}	}	{	8.84	0.00	0.00	}	8.84	-0.04	0.01	1	1524232865.55	"avell-raphael"	}
+   549621  Broadcast        carmen_localize_ackerman_globalpos    17  localize_ackerman-10678    rddf_play-10681            sent            11:01:05.65         0.180	{	{	7757948.04	-363695.95	-2.41	}	{	0.00	0.00	0.00	}	{	0.00	0.00	0.00	}	{	{	7757948.04	-363695.95	0.00	}	{	0.00	0.00	-2.41	}	}	{	8.84	0.00	0.00	}	8.84	-0.04	0.00	1	1524232865.60	"avell-raphael"	}
+   549867  Broadcast        carmen_localize_ackerman_globalpos    37  localize_ackerman-10678    rddf_play-10681            sent            11:01:05.65         0.180	{	{	7757947.68	-363696.27	-2.42	}	{	0.01	0.01	0.00	}	{	0.00	0.00	0.00	}	{	{	7757947.68	-363696.27	0.00	}	{	0.00	0.00	-2.42	}	}	{	8.84	0.00	0.00	}	8.84	-0.04	0.01	1	1524232865.65	"avell-raphael"	}
+   550318  Broadcast        carmen_localize_ackerman_globalpos     7  localize_ackerman-10678    rddf_play-10681            sent            11:01:05.72         0.250	{	{	7757947.35	-363696.56	-2.43	}	{	0.00	0.00	0.00	}	{	0.00	0.00	0.00	}	{	{	7757947.35	-363696.56	0.00	}	{	0.00	0.00	-2.43	}	}	{	8.84	0.00	0.00	}	8.84	-0.03	0.00	1	1524232865.70	"avell-raphael"	}
+   550697  Broadcast        carmen_localize_ackerman_globalpos     3  localize_ackerman-10678    rddf_play-10681            sent            11:01:06.08         0.610	{	{	7757947.03	-363696.86	-2.43	}	{	0.00	0.00	0.00	}	{	0.00	0.00	0.00	}	{	{	7757947.03	-363696.86	0.00	}	{	0.00	0.00	-2.43	}	}	{	8.85	0.00	0.00	}	8.85	-0.03	0.00	1	1524232865.75	"avell-raphael"	}
+   551079  Broadcast        carmen_localize_ackerman_globalpos    14  localize_ackerman-10678    rddf_play-10681            sent            11:01:06.10         0.630	{	{	7757946.69	-363697.14	-2.44	}	{	0.01	0.00	0.00	}	{	0.00	0.00	0.00	}	{	{	7757946.69	-363697.14	0.00	}	{	0.00	0.00	-2.44	}	}	{	8.85	0.00	0.00	}	8.85	-0.03	0.00	1	1524232865.80	"avell-raphael"	}
+   551299  Broadcast        carmen_localize_ackerman_globalpos    22  localize_ackerman-10678    rddf_play-10681            sent            11:01:06.10         0.630	{	{	7757946.03	-363697.71	-2.44	}	{	0.01	0.00	0.00	}	{	0.00	0.00	0.00	}	{	{	7757946.03	-363697.71	0.00	}	{	0.00	0.00	-2.44	}	}	{	8.85	0.00	0.00	}	8.85	-0.03	0.00	1	1524232865.90	"avell-raphael"	}
+   551472  Broadcast        carmen_localize_ackerman_globalpos    46  localize_ackerman-10678    rddf_play-10681            sent            11:01:06.11         0.640	{	{	7757945.68	-363698.00	-2.45	}	{	0.01	0.00	0.00	}	{	0.00	0.00	0.00	}	{	{	7757945.68	-363698.00	0.00	}	{	0.00	0.00	-2.45	}	}	{	8.85	0.00	0.00	}	8.85	-0.03	-nan	1	1524232865.95	"avell-raphael"	}
+   551728  Broadcast        carmen_localize_ackerman_globalpos    25  localize_ackerman-10678    rddf_play-10681            sent            11:01:06.12         0.650	{	{	7757945.33	-363698.30	-2.46	}	{	0.02	0.01	0.00	}	{	0.00	0.00	0.00	}	{	{	7757945.33	-363698.30	0.00	}	{	0.00	0.00	-2.46	}	}	{	8.85	0.00	0.00	}	8.85	-0.03	0.01	1	1524232866.00	"avell-raphael"	}
+   551957  Broadcast        carmen_localize_ackerman_globalpos    48  localize_ackerman-10678    rddf_play-10681            sent            11:01:06.13         0.660	{	{	7757944.65	-363698.86	-2.46	}	{	0.01	0.01	0.00	}	{	0.00	0.00	0.00	}	{	{	7757944.65	-363698.86	0.00	}	{	0.00	0.00	-2.46	}	}	{	8.86	0.00	0.00	}	8.86	-0.03	0.01	1	1524232866.10	"avell-raphael"	}
+   552350  Broadcast        carmen_localize_ackerman_globalpos     4  localize_ackerman-10678    rddf_play-10681            sent            11:01:06.20         0.730	{	{	7757944.31	-363699.14	-2.47	}	{	0.01	0.01	0.00	}	{	0.00	0.00	0.00	}	{	{	7757944.31	-363699.14	0.00	}	{	0.00	0.00	-2.47	}	}	{	8.86	0.00	0.00	}	8.86	-0.03	0.01	1	1524232866.15	"avell-raphael"	}
+   552718  Broadcast        carmen_localize_ackerman_globalpos    27  localize_ackerman-10678    rddf_play-10681            sent            11:01:06.23         0.760	{	{	7757943.95	-363699.41	-2.48	}	{	0.00	0.00	0.00	}	{	0.00	0.00	0.00	}	{	{	7757943.95	-363699.41	0.00	}	{	0.00	0.00	-2.48	}	}	{	8.86	0.00	0.00	}	8.86	-0.03	-nan	1	1524232866.20	"avell-raphael"	}
+   553081  Broadcast        carmen_localize_ackerman_globalpos    40  localize_ackerman-10678    rddf_play-10681            sent            11:01:06.25         0.780	{	{	7757943.62	-363699.66	-2.48	}	{	0.00	0.00	0.00	}	{	0.00	0.00	0.00	}	{	{	7757943.62	-363699.66	0.00	}	{	0.00	0.00	-2.48	}	}	{	8.86	0.00	0.00	}	8.86	-0.02	-nan	1	1524232866.25	"avell-raphael"	}
+   553495  Broadcast        carmen_localize_ackerman_globalpos    46  localize_ackerman-10678    rddf_play-10681            sent            11:01:06.31         0.840	{	{	7757943.27	-363699.95	-2.48	}	{	0.00	0.00	0.00	}	{	0.00	0.00	0.00	}	{	{	7757943.27	-363699.95	0.00	}	{	0.00	0.00	-2.48	}	}	{	8.86	0.00	0.00	}	8.86	-0.02	0.00	1	1524232866.30	"avell-raphael"	}
+
+Selected log period:  from 11:01:05.47 to 11:01:06.31 (0.840 secs)
+Handle time summary:  Messaging: 99.110%  Waiting: 0.890%  Average size: 288480 bytes
+
+==========================================
+General Summary
+==========================================
+Log Record Class          Count      Lines
+--------------------  ---------  ---------
+Broadcast                    17         17
+Data                         17         51
+
+Totals:                                 68
+==========================================
+
+
+================================================================================================================================================
+Message Summary by Origin
+================================================================================================================================================
+Message: carmen_localize_ackerman_globalpos
+	Origin: localize_ackerman-10678
+		Destination                                   total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend
+		----------------------------------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+		rddf_play-10681                                  17         17          0          0          0          0          0          0
+	Origin Subtotals:                              1         17         17          0          0          0          0          0          0
+Message Subtotals:                                     1         17         17          0          0          0          0          0          0
+
+Grand Totals:                                          1         17         17          0          0          0          0          0          0
+================================================================================================================================================
+

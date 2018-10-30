@@ -1,3 +1,4 @@
+#include "Python.h"
 #include <stdio.h>
 #include "voice_functions.h"
 #include <iostream>
@@ -12,6 +13,8 @@ init_voice()
 {
 	Py_Initialize();
 	pName = PyString_FromString("listen_speak");
+
+	//pName = PyUnicode_DecodeFSDefault("listen_speak");	
 	pModule = PyImport_Import(pName);
 	Py_DECREF(pName);
 

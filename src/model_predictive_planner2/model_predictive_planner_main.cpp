@@ -1,8 +1,8 @@
 /*
  * model_predictive_planner_main.cpp
  *
- *  Created on: 04/12/2012
- *      Author: romulo
+ *
+ *
  */
 
 #include <carmen/carmen.h>
@@ -405,12 +405,12 @@ build_and_follow_path(double timestamp)
 				publish_model_predictive_rrt_path_message(path_follower_path, timestamp);
 				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 
-				FILE *caco = fopen("caco2.txt", "a");
-				fprintf(caco, "%lf %lf %lf %d\n", GlobalState::last_odometry.v, GlobalState::robot_config.max_v,
-						path_follower_path.begin()->command.v,
-						GlobalState::behavior_selector_low_level_state);
-				fflush(caco);
-				fclose(caco);
+//				FILE *caco = fopen("caco2.txt", "a");
+//				fprintf(caco, "%lf %lf %lf %d\n", GlobalState::last_odometry.v, GlobalState::robot_config.max_v,
+//						path_follower_path.begin()->command.v,
+//						GlobalState::behavior_selector_low_level_state);
+//				fflush(caco);
+//				fclose(caco);
 			}
 			//		else
 				//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
@@ -851,7 +851,8 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", 	(char *) "max_centripetal_acceleration",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_max_centripetal_acceleration,							1, NULL},
 		{(char *) "rddf",   (char *) "source_tracker", 								CARMEN_PARAM_ONOFF,  &GlobalState::use_tracker_goal_and_lane,									0, NULL},
 		{(char *) "behavior_selector", (char *) "goal_source_path_planner", 		CARMEN_PARAM_ONOFF,  &GlobalState::use_path_planner, 											0, NULL},
-		{(char *) "behavior_selector", (char *) "use_truepos", 						CARMEN_PARAM_ONOFF,  &GlobalState::use_truepos, 												0, NULL}
+		{(char *) "behavior_selector", (char *) "use_truepos", 						CARMEN_PARAM_ONOFF,  &GlobalState::use_truepos, 												0, NULL},
+		{(char *) "behavior_selector", (char *) "reverse_driving", 					CARMEN_PARAM_ONOFF,  &GlobalState::reverse_driving, 											0, NULL}
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -885,7 +886,6 @@ main(int argc, char **argv)
 
 	g_trajectory_lookup_table = new TrajectoryLookupTable(update_lookup_table);
 	memset((void *) &tree, 0, sizeof(Tree));
-
 //	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
 //	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
 //	virtual_laser_message.colors = (char *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(char));

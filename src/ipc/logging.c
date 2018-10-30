@@ -433,7 +433,7 @@ void Log_Time(int32 indent)
 {
   LOG_PTR *log;
 #if !defined(VXWORKS) && !defined(_WINSOCK_)
-  int hundredths;
+  int milliseconds; /* hundredths */
   struct timeval timeBlock;
   struct tm *localTime;
 #endif
@@ -452,11 +452,11 @@ void Log_Time(int32 indent)
 #else
       localTime = localtime((time_t *)&(timeBlock.tv_sec));
 #endif /* THINK_C || macintosh */
-      hundredths = timeBlock.tv_usec/10000;
+      milliseconds = timeBlock.tv_usec/1000; /* hundredths = timeBlock.tv_usec/10000; */
       
-      fprintf((*log)->theFile, "%*d:%02d:%02d.%02d", indent+2,
+      fprintf((*log)->theFile, "%*d:%02d:%02d.%03d", indent+2,   /* .%02d */
 	      localTime->tm_hour, localTime->tm_min,
-	      localTime->tm_sec, hundredths);
+	      localTime->tm_sec, milliseconds /* hundredths */ );
 #elif defined(VXWORKS)
       printTimeFromTicks((*log)->theFile, indent);
 #elif defined(_WINSOCK_)

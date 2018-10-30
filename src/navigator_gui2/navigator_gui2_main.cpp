@@ -754,6 +754,13 @@ state_handler(carmen_behavior_selector_state_message *msg)
 
 
 static void
+traffic_sign_handler(carmen_rddf_traffic_sign_message *msg)
+{
+	gui->navigator_graphics_update_traffic_sign_state(*msg);
+}
+
+
+static void
 odometry_handler(carmen_base_ackerman_odometry_message *msg)
 {
 	last_phi = msg->phi;
@@ -924,6 +931,7 @@ subscribe_ipc_messages()
 	carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) (truepos_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_simulator_ackerman_subscribe_objects_message(NULL, (carmen_handler_t) (objects_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) (state_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_rddf_subscribe_traffic_sign_message(NULL, (carmen_handler_t) (traffic_sign_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_navigator_ackerman_subscribe_plan_tree_message(NULL, (carmen_handler_t) (plan_tree_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) (fused_odometry_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) (odometry_handler), CARMEN_SUBSCRIBE_LATEST);

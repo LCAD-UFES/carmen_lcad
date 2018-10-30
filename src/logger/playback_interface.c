@@ -52,7 +52,7 @@ carmen_playback_define_messages (void)
 
 
 void
-carmen_playback_command (int command, int argument, float speed)
+carmen_playback_command (int cmd, char *message, int offset, float speed)
 {
 	IPC_RETURN_TYPE err;
 	carmen_playback_command_message playback_msg;
@@ -67,10 +67,72 @@ carmen_playback_command (int command, int argument, float speed)
 		initialized = 1;
 	}
 
-	playback_msg.cmd = command;
-	playback_msg.arg = argument;
+	playback_msg.cmd = cmd;
+	playback_msg.message = message;
+	playback_msg.offset = offset;
 	playback_msg.speed = speed;
 
 	err = IPC_publishData (CARMEN_PLAYBACK_COMMAND_NAME, &playback_msg);
 	carmen_test_ipc (err, "Could not publish", CARMEN_PLAYBACK_COMMAND_NAME);
+}
+
+
+int
+carmen_playback_is_valid_speed(char *value, double *speed)
+{
+    char *comma = strchr(value, ','); // para o caso de alguem digitar virgula em vez de ponto decimal
+    if (comma != NULL)
+        (*comma) = '.';
+
+    int ok = FALSE, pos = 0;
+
+    if (sscanf(value, " %lf %n", speed, &pos) == 1 && value[pos] == 0)
+    	ok = ((*speed) > 0.0);
+
+    return (ok);
+}
+
+
+int
+carmen_playback_is_valid_message(char *message, int *start_msg, int *stop_msg, double *start_ts, double *stop_ts,
+		double *start_x, double *start_y, double *stop_x, double *stop_y, double *radius)
+{
+	char *comma;
+
+    for (comma = message; (*comma) != 0; comma++)
+    {
+    	if ((*comma) == ',') // para o caso de alguem digitar virgulas em vez de pontos decimais
+    		(*comma) = '.';
+    }
+
+    int ok = FALSE, pos = 0;
+
+    if (sscanf(message, " %d %n", start_msg, &pos) == 1 && message[pos] == 0)
+    	ok = ((*start_msg) >= 0);
+    else if (sscanf(message, " : %d %n", stop_msg, &pos) == 1 && message[pos] == 0)
+    	ok = ((*stop_msg) >= 0);
+    else if (sscanf(message, " %d : %d %n", start_msg, stop_msg, &pos) == 2 && message[pos] == 0)
+    	ok = ((*start_msg) >= 0 && (*stop_msg) >= (*start_msg));
+    else if (sscanf(message, " t %lf %n", start_ts, &pos) == 1 && message[pos] == 0)
+    	ok = ((*start_ts) >= 0.0);
+    else if (sscanf(message, " t : %lf %n", stop_ts, &pos) == 1 && message[pos] == 0)
+    	ok = ((*stop_ts) >= 0.0);
+    else if (sscanf(message, " t %lf : %lf %n", start_ts, stop_ts, &pos) == 2 && message[pos] == 0)
+    	ok = ((*start_ts) >= 0.0 && (*stop_ts) >= (*start_ts));
+    else if (sscanf(message, " p %lf %lf %n", start_x, start_y, &pos) == 2 && message[pos] == 0)
+    	ok = TRUE;
+    else if (sscanf(message, " p : %lf %lf %n", stop_x, stop_y, &pos) == 2 && message[pos] == 0)
+    	ok = TRUE;
+    else if (sscanf(message, " p %lf %lf : %lf %lf %n", start_x, start_y, stop_x, stop_y, &pos) == 4 && message[pos] == 0)
+    	ok = TRUE;
+    else if (sscanf(message, " p : : %lf %n", radius, &pos) == 1 && message[pos] == 0)
+    	ok = ((*radius) >= 0.0);
+    else if (sscanf(message, " p %lf %lf : : %lf %n", start_x, start_y, radius, &pos) == 3 && message[pos] == 0)
+    	ok = ((*radius) >= 0.0);
+    else if (sscanf(message, " p : %lf %lf : %lf %n", stop_x, stop_y, radius, &pos) == 3 && message[pos] == 0)
+    	ok = ((*radius) >= 0.0);
+    else if (sscanf(message, " p %lf %lf : %lf %lf : %lf %n", start_x, start_y, stop_x, stop_y, radius, &pos) == 5 && message[pos] == 0)
+    	ok = ((*radius) >= 0.0);
+
+    return (ok);
 }

@@ -290,9 +290,8 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 
 vector<image_cartesian>
 velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
-                                                                         carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
-																		 unsigned int image_width, unsigned int image_height, unsigned int crop_x,
-																		 unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
+                                              carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose, unsigned int image_width,
+											  unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
 {
 	std::vector<image_cartesian> points;
 	double horizontal_angle = 0.0, vertical_angle = 0.0, previous_vertical_angle = 0.0, range = 0.0, previous_range = 0.0;
@@ -352,9 +351,9 @@ velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_messa
                 	point.ray_number  = i;
                 	point.image_x     = image_x - crop_x;
                 	point.image_y     = image_y - crop_y;
-                	point.cartesian_x = p3d_camera_reference.x();
-                	point.cartesian_y = p3d_camera_reference.y();
-                	point.cartesian_z = p3d_camera_reference.z();
+                	point.cartesian_x = p3d_velodyne_reference.x();
+                	point.cartesian_y = -p3d_velodyne_reference.y();             // Must be inverted because Velodyne angle is reversed with CARMEN angles
+                	point.cartesian_z = p3d_velodyne_reference.z();
 
                 	points.push_back(point);
                 }

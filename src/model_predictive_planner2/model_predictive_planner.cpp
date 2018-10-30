@@ -25,8 +25,8 @@
 
 using namespace g2o;
 
-int print_to_debug = 0;
-int plot_to_debug = 0;
+int print_to_debug = 1;
+int plot_to_debug = 1;
 
 //-----------Funcoes para extrair dados do Experimento------------------------
 double
@@ -175,11 +175,17 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 TrajectoryLookupTable::TrajectoryDimensions
 get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_odometry,	Pose *goal_pose)
 {
+	double theta_rev = carmen_normalize_theta(atan2(localizer_pose->y - goal_pose->y,  localizer_pose->x - goal_pose->x) - localizer_pose->theta);
+	double theta_2 = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
+	printf("Gol behind: %lf goal_in_front: %lf \n", theta_rev, theta_2);
 	TrajectoryLookupTable::TrajectoryDimensions td;
 
 	td.dist = sqrt((goal_pose->x - localizer_pose->x) * (goal_pose->x - localizer_pose->x) +
 			(goal_pose->y - localizer_pose->y) * (goal_pose->y - localizer_pose->y));
-	td.theta = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
+	if (GlobalState::reverse_driving)
+		td.theta = carmen_normalize_theta(atan2(localizer_pose->y - goal_pose->y,  localizer_pose->x - goal_pose->x) - localizer_pose->theta);
+	else
+		td.theta = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
 	td.d_yaw = carmen_normalize_theta(goal_pose->theta - localizer_pose->theta);
 	td.phi_i = last_odometry.phi;
 	td.v_i = last_odometry.v;
@@ -211,10 +217,12 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_r
 }
 
 
+//This function is necessary because in some cases the nearest pose from localize is inside the poses_back list
 void
 move_poses_back_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_road_profile_message *goal_list_message,
 		vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
 {
+
 	vector<carmen_ackerman_path_point_t> poses_back;
 	carmen_ackerman_path_point_t local_reference_lane_point;
 
@@ -242,20 +250,55 @@ move_poses_back_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_roa
 }
 
 
+void
+reverse_driving_move_poses_back_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_road_profile_message *goal_list_message,
+		vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
+{
+	carmen_ackerman_path_point_t local_reference_lane_point;
+	int index = 0;
+	if (goal_list_message->poses_back[0].x == goal_list_message->poses_back[1].x && goal_list_message->poses_back[0].y == goal_list_message->poses_back[1].y)
+		index = 1;
+
+	for (int k = index; k < goal_list_message->number_of_poses_back; k++)
+	{
+		SE2 lane_in_world_reference(goal_list_message->poses_back[k].x, goal_list_message->poses_back[k].y, goal_list_message->poses_back[k].theta);
+		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
+
+
+		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
+				goal_list_message->poses_back[k].v, goal_list_message->poses_back[k].phi, 0.0};
+
+		lane_in_local_pose->push_back(local_reference_lane_point);
+	}
+}
+
+
 bool
 move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_selector_road_profile_message *goal_list_message,
 		vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
 {
 	bool goal_in_lane = false;
 
-	if ((goal_list_message->number_of_poses < 2 || goal_list_message->number_of_poses > 250))
-		return false;
-
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
 
-	move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
-	move_poses_foward_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+	//Considera poses_back da lane como a lane de referencia para calcular plano de reh
 
+	if (GlobalState::reverse_driving)
+	{
+		if ((goal_list_message->number_of_poses_back < 2 || goal_list_message->number_of_poses_back > 250))
+			return false;
+
+		//		reverse_driving_move_poses_foward_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+		reverse_driving_move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+	}
+	else
+	{
+		if ((goal_list_message->number_of_poses < 2 || goal_list_message->number_of_poses > 250))
+			return false;
+
+		move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+		move_poses_foward_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+	}
 	return (goal_in_lane);
 }
 
@@ -280,7 +323,7 @@ add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerma
 
 	carmen_ackerman_path_point_t new_point = {p1.x, p1.y, p1.theta, p1.v, p1.phi, 0.0};
 
-	for (i = 0; i < num_points; i++)
+	for (i = 1; i < num_points; i++)
 	{
 		new_point.x = p1.x + (double) i * delta_x;
 		new_point.y = p1.y + (double) i * delta_y;
@@ -313,7 +356,7 @@ make_detailed_lane_start_at_car_pose(vector<carmen_ackerman_path_point_t> &detai
 			nearest_distance_to_car = dist;
 			nearest_i_to_car = i;
 		}
-
+//TODO: @@@Vinicius: Verificar para que nao precise percorrer todo a lane
 		dist = DIST2D(temp_detail.at(i), goal);
 		if (dist < nearest_distance_to_goal)
 		{
@@ -640,7 +683,25 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 		TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp,
 		TrajectoryLookupTable::TrajectoryDimensions td)
 {
-	if (!previous_good_tcp.valid)
+	if (GlobalState::reverse_driving && !previous_good_tcp.valid)
+		{
+			TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp;
+			dummy_tcp.valid = true;
+			dummy_tcp.tt = 5.0;
+			dummy_tcp.k1 = 0.0;
+			dummy_tcp.k2 = 0.01;
+			dummy_tcp.k3 = 0.02;
+			dummy_tcp.has_k1 = false;
+			dummy_tcp.shift_knots = false;
+			dummy_tcp.a = 0.0;
+			dummy_tcp.vf = -2.0;
+			dummy_tcp.sf = td.dist;
+			dummy_tcp.s = td.dist;
+
+			tcp = dummy_tcp;
+		}
+
+	else if (!previous_good_tcp.valid)
 	{
 		TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
 		if (!has_valid_discretization(tdd))
@@ -760,7 +821,7 @@ goal_pose_vector_too_different(Pose goal_pose, Pose localizer_pose)
 }
 
 bool
-goal_is_behide_car(Pose *localizer_pose, Pose *goal_pose)
+goal_is_behind_car(Pose *localizer_pose, Pose *goal_pose)
 {//funcao tem que ser melhorada. Usar coordenadas polares pode ser melhor.
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
 	SE2 goal_in_world_reference(goal_pose->x, goal_pose->y, goal_pose->theta);
@@ -772,6 +833,19 @@ goal_is_behide_car(Pose *localizer_pose, Pose *goal_pose)
 		return true;
 
 	return false;
+}
+
+void
+simulate_goal_position(vector<Pose> &goalPoseVector, carmen_behavior_selector_road_profile_message *goal_list_message, int distance_back)
+{
+	//TODO:
+	int goal_behide = distance_back / 0.5;
+	if (goal_list_message->number_of_poses_back < 2 || goal_list_message->number_of_poses_back < goal_behide)
+		goal_behide = goal_list_message->number_of_poses_back - 1;
+
+	goalPoseVector[0].x = goal_list_message->poses_back[goal_behide].x;
+	goalPoseVector[0].y = goal_list_message->poses_back[goal_behide].y;
+	goalPoseVector[0].theta = goal_list_message->poses_back[goal_behide].theta;
 }
 
 
@@ -787,6 +861,16 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	static double last_timestamp = 0.0;
 	bool goal_in_lane = false;
 
+	//TODO:Delete after behavior selector reverse GOALs - Getting a new GOAL in poses back to don't need to change the behaviour selector
+	if (GlobalState::reverse_driving)
+	{
+		target_v = -8.0;
+//		printf("Goal antes: %lf", goalPoseVector[0].x);
+		simulate_goal_position(goalPoseVector, goal_list_message, 10);
+//		printf(" Goal depois: %lf\n", goalPoseVector[0].x);
+	}
+
+
 	if (first_time || !GlobalState::following_path)
 	{
 		previous_good_tcp.valid = false;
@@ -794,10 +878,9 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		last_timestamp = goal_list_message->timestamp;
 	}
 
-	// TODO: behide -> behind
-	if (goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
+	if (!GlobalState::reverse_driving && goal_is_behind_car(localizer_pose, &goalPoseVector[0]))
 	{
-//		printf("goal is behide the car\n");
+//		printf("goal is behind the car\n");
 		return;
 	}
 
@@ -917,6 +1000,18 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 }
 
 
+double
+linear_progression_test(int n, double common, int index_of_element_zero)
+{
+	if (n == index_of_element_zero)
+		return (0.0);
+	else if (n > index_of_element_zero)
+		return (common * (n - index_of_element_zero));
+	else
+		return (-common * (index_of_element_zero - n));
+}
+
+
 vector<vector<carmen_ackerman_path_point_t> >
 compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometry,
 		double target_v, carmen_behavior_selector_road_profile_message *goal_list_message)
@@ -943,6 +1038,11 @@ compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometr
 		newPose.y += 0.3 * (double) magicSignals[i] * sin(carmen_normalize_theta((goal_pose->theta) - carmen_degrees_to_radians(90.0)));
 		goalPoseVector.push_back(newPose);
 	}
+//	for(int i = 0; i < N_THETA; i++)
+//	{
+//		printf("")
+//		linear_progression_test(i);
+//	}
 
 	paths.resize(lastOdometryVector.size() * goalPoseVector.size());
 
