@@ -35,6 +35,7 @@ def run_pedestrian_tracker(carmen_image, det_tlwhs):
 	global image_height
 	global tracker
 
+
 	#image = carmen_image.view(np.uint8).reshape((image_height, image_width, 3))[:,:,::-1]
 	#print(carmen_image.shape)
 	#carmen_image = carmen_image[:,:,::-1]
@@ -56,27 +57,26 @@ def run_pedestrian_tracker(carmen_image, det_tlwhs):
 		online_ids.append(t.track_id)
 
 
-    # '''
 	# Image Visualization
-        online_im = vis.plot_tracking(carmen_image, online_tlwhs, online_ids)
-        cv2.imshow('online_tracker', online_im)
+        # online_im = vis.plot_tracking(carmen_image, online_tlwhs, online_ids)
+        # cv2.imshow('online_tracker', online_im)
 
-        key = cv2.waitKey(1)
-        key = chr(key % 128).lower()
-        if key == 'q':
-            exit(0)
-        elif key == 'p':
-            cv2.waitKey(0)
-        elif key == 'a':
-            wait_time = int(not wait_time)
-    # '''
+        # key = cv2.waitKey(1)
+        # key = chr(key % 128).lower()
+        # if key == 'q':
+        #     exit(0)
+        # elif key == 'p':
+        #     cv2.waitKey(0)
+        # elif key == 'a':
+        #     wait_time = int(not wait_time)
 
 	#print(online_ids)
 	#print(online_tlwhs)
+	if (len(online_ids)>0):
+		online_result = np.concatenate((online_tlwhs, np.array([online_ids]).T), axis=1)
+		online_result = np.concatenate(([ len(online_ids) ], online_result.flatten()), axis=0).astype(np.int16)
+	else:
+		online_result = np.array([0]).astype(np.int16)
 
-	online_result = np.concatenate((online_tlwhs, np.array([online_ids]).T), axis=1)
-	online_result = np.concatenate(([ len(online_ids) ], online_result.flatten()), axis=0).astype(np.int)
-
-	#print(online_result)
 
 	return online_result

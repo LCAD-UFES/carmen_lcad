@@ -10,6 +10,7 @@
 #include <fstream>
 #include <opencv2/highgui/highgui.hpp>
 #include <carmen/dbscan.h>
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <Python.h>
 #include <numpy/arrayobject.h>
 #include "Darknet.hpp"
@@ -31,6 +32,121 @@ vector<Scalar> obj_colours_vector;
 carmen_velodyne_partial_scan_message *velodyne_msg;
 carmen_point_t globalpos;
 
+
+struct pedestrian
+{
+	int track_id;
+	double velocity;
+	double orientation;
+	unsigned int x, y, w, h;
+	double last_timestamp;
+	bool active;
+	double timestamp[5];
+	double x_world[5];
+	double y_world[5];
+	unsigned int circular_idx;// should be changed only for update_world_position function
+};
+
+vector<pedestrian> pedestrian_tracks;
+
+void update_world_position(pedestrian* p, double new_x, double new_y, double new_timestamp)
+{
+	p->circular_idx = (p->circular_idx+1)%5;
+	p->timestamp[p->circular_idx] = new_timestamp;
+	p->x_world[p->circular_idx] = new_x;
+	p->y_world[p->circular_idx] = new_y;
+
+	p->velocity = 0.0;
+	p->orientation = 0.0;
+	for(int i = 1; i<5; i++)
+	{
+		if (p->x_world[i] == -999.0)
+			p->x_world[i] = new_x;
+		if (p->y_world[i] == -999.0)
+			p->y_world[i] = new_y;
+		double delta_x = p->x_world[i]-p->x_world[i-1];
+		double delta_y = p->y_world[i]-p->y_world[i-1];
+		double delta_t = p->timestamp[i]-p->timestamp[i-1];
+		p->velocity+= sqrt(delta_x*delta_x + delta_y*delta_y)/delta_t;
+		p->orientation += atan2(delta_y,delta_x);
+	}
+	p->orientation /= 4.0;
+	p->velocity /= 4.0;
+}
+
+void update_pedestrian_bbox(pedestrian* p,short* bbox_vector)
+{
+	p->x = bbox_vector[0];
+	p->y = bbox_vector[1];
+	p->w = bbox_vector[2];
+	p->h = bbox_vector[3];
+
+	p->active = true;
+}
+
+pedestrian create_pedestrian(int t_id)
+{
+	pedestrian p;
+
+	p.circular_idx = 4;
+	p.track_id = t_id;
+
+	for(int i = 0; i<5; i++)
+	{
+		p.timestamp[i] = 0;
+		p.x_world[i] = -999.0;
+		p.y_world[i] = -999.0;
+	}
+	p.velocity = 0.0;
+	p.orientation = 0.0;
+	p.active = true;
+	p.last_timestamp = 0;
+	return p;
+}
+
+void update_pedestrians(short* pedestrian_python, double timestamp)
+{
+	for (int i=0; i<pedestrian_tracks.size(); i++)
+	{
+		pedestrian_tracks[i].active=false;
+	}
+
+	for (int i=1; i<=pedestrian_python[0]*5; i+=5)
+	{
+		int p_id = (pedestrian_python+i)[4];
+		int j=0;
+		for(; j<pedestrian_tracks.size(); j++)
+		{
+			if(pedestrian_tracks[j].track_id == p_id)
+			{
+				update_pedestrian_bbox(&pedestrian_tracks[j],pedestrian_python+i);
+				pedestrian_tracks[j].last_timestamp = timestamp;
+				break;
+			}
+		}
+		if (j == pedestrian_tracks.size())
+		{
+			pedestrian new_p = create_pedestrian(p_id);
+			update_pedestrian_bbox(&new_p,pedestrian_python+i);
+			new_p.last_timestamp = timestamp;
+			pedestrian_tracks.push_back(new_p);
+		}
+	}
+}
+
+void clean_pedestrians(double timestamp, double max_time)
+{
+	for (vector<pedestrian>::iterator it=pedestrian_tracks.begin(); it != pedestrian_tracks.end();)
+	{
+		if(timestamp - it->last_timestamp > max_time)
+		{
+			it = pedestrian_tracks.erase(it);
+		}
+		else{
+			it++;
+		}
+	}
+}
 
 void
 objects_names_from_file(string const class_names_file)
@@ -122,6 +238,33 @@ get_points_inside_bounding_boxes(vector<bbox_t> &predictions, vector<image_carte
 			predictions.erase(predictions.begin()+i);
 		}
 
+	}
+	return laser_list_inside_each_bounding_box;
+}
+
+vector<vector<image_cartesian>>
+get_points_inside_bounding_boxes_new(vector<pedestrian> &predictions, vector<image_cartesian> &velodyne_points_vector)
+{
+	vector<vector<image_cartesian>> laser_list_inside_each_bounding_box; //each_bounding_box_laser_list
+
+	for (unsigned int i = 0; i < predictions.size(); i++)
+	{
+		vector<image_cartesian> lasers_points_inside_bounding_box;
+
+		if (predictions[i].active)
+		{
+			for (unsigned int j = 0; j < velodyne_points_vector.size(); j++)
+			{
+				if (velodyne_points_vector[j].image_x >  predictions[i].x &&
+					velodyne_points_vector[j].image_x < (predictions[i].x + predictions[i].w) &&
+					velodyne_points_vector[j].image_y >  predictions[i].y &&
+					velodyne_points_vector[j].image_y < (predictions[i].y + predictions[i].h))
+				{
+					lasers_points_inside_bounding_box.push_back(velodyne_points_vector[j]);
+				}
+			}
+		}
+		laser_list_inside_each_bounding_box.push_back(lasers_points_inside_bounding_box);
 	}
 	return laser_list_inside_each_bounding_box;
 }
@@ -306,6 +449,42 @@ show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> p
     waitKey(1);
 }
 
+void
+show_detections_new(Mat image, vector<pedestrian> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
+		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
+{
+	char object_info[25];
+    char frame_rate[25];
+
+    cvtColor(image, image, COLOR_RGB2BGR);
+
+    sprintf(frame_rate, "FPS = %.2f", fps);
+
+    putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
+
+    for (unsigned int i = 0; i < predictions.size(); i++)
+    {
+    	if (predictions[i].active)
+    	{
+			sprintf(object_info, "%d Person", predictions[i].track_id);
+
+			rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
+						  obj_colours_vector[0.0], 2);
+
+			putText(image, object_info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+    	}
+	}
+
+	show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
+    show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
+    show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
+
+//    resize(image, image, Size(600, 300));
+    imshow("Neural Object Detector", image);
+    //imwrite("Image.jpg", image);
+    waitKey(1);
+}
+
 
 vector<image_cartesian>
 compute_detected_objects_poses(vector<vector<image_cartesian>> filtered_points)
@@ -376,6 +555,18 @@ compute_num_measured_objects(vector<image_cartesian> objects_poses)
 	return (num_objects);
 }
 
+int
+compute_num_measured_objects_new(vector<pedestrian> objects_poses)
+{
+	int num_objects = 0;
+
+	for (int i = 0; i < objects_poses.size(); i++)
+	{
+		if (objects_poses[i].x_world[objects_poses[i].circular_idx] > 0.0 || objects_poses[i].y_world[objects_poses[i].circular_idx] > 0.0)
+			num_objects++;
+	}
+	return (num_objects);
+}
 
 int board_x = 0.572;      // TODO ler do carmen ini
 int board_y = 0.0;
@@ -450,6 +641,77 @@ build_detected_objects_message(vector<bbox_t> predictions, vector<image_cartesia
 					break;
 			}
 			msg.point_clouds[l].num_associated = 0;
+
+			msg.point_clouds[l].point_size = points_lists[i].size();
+
+			msg.point_clouds[l].points = (carmen_vector_3D_t *) malloc (msg.point_clouds[l].point_size * sizeof(carmen_vector_3D_t));
+
+			for (int j = 0; j < points_lists[i].size(); j++)
+			{
+				carmen_vector_3D_t p;
+
+				p.x = points_lists[i][j].cartesian_x;
+				p.y = points_lists[i][j].cartesian_y;
+				p.z = points_lists[i][j].cartesian_z;
+
+				carmen_translte_2d(&p.x, &p.y, board_x, board_y);
+				carmen_rotate_2d  (&p.x, &p.y, globalpos.theta);
+				carmen_translte_2d(&p.x, &p.y, globalpos.x, globalpos.y);
+
+				msg.point_clouds[l].points[j] = p;
+			}
+			l++;
+		}
+	}
+	return (msg);
+}
+
+carmen_moving_objects_point_clouds_message
+build_detected_objects_message_new(vector<pedestrian> predictions, vector<vector<image_cartesian>> points_lists)
+{
+	carmen_moving_objects_point_clouds_message msg;
+	int num_objects = compute_num_measured_objects_new(predictions);
+
+	//printf ("Predictions %d Poses %d, Points %d\n", (int) predictions.size(), (int) objects_poses.size(), (int) points_lists.size());
+
+	msg.num_point_clouds = num_objects;
+	msg.point_clouds = (t_point_cloud_struct *) malloc (num_objects * sizeof(t_point_cloud_struct));
+
+	for (int i = 0, l = 0; i < predictions.size(); i++)
+	{                                                                                                               // The error code of -999.0 is set on compute_detected_objects_poses,
+		if (predictions[i].x_world[predictions[i].circular_idx] != -999.0 || predictions[i].y_world[predictions[i].circular_idx] != -999.0)                       // probably the object is out of the LiDAR's range
+		{
+			carmen_translte_2d(&predictions[i].x_world[predictions[i].circular_idx], &predictions[i].y_world[predictions[i].circular_idx], board_x, board_y);
+			carmen_rotate_2d  (&predictions[i].x_world[predictions[i].circular_idx], &predictions[i].y_world[predictions[i].circular_idx], carmen_normalize_theta(globalpos.theta));
+			carmen_translte_2d(&predictions[i].x_world[predictions[i].circular_idx], &predictions[i].y_world[predictions[i].circular_idx], globalpos.x, globalpos.y);
+
+			msg.point_clouds[l].r = 1.0;
+			msg.point_clouds[l].g = 1.0;
+			msg.point_clouds[l].b = 0.0;
+
+			msg.point_clouds[l].linear_velocity = predictions[i].velocity;
+			msg.point_clouds[l].orientation = predictions[i].orientation+globalpos.theta;
+			printf("%f %f\n", globalpos.theta,predictions[i].orientation);
+
+			msg.point_clouds[l].length = 4.5;
+			msg.point_clouds[l].height = 1.8;
+			msg.point_clouds[l].width  = 1.6;
+
+			msg.point_clouds[l].object_pose.x = predictions[i].x_world[predictions[i].circular_idx];
+			msg.point_clouds[l].object_pose.y = predictions[i].y_world[predictions[i].circular_idx];
+			msg.point_clouds[l].object_pose.z = 0.0;
+
+
+			msg.point_clouds[l].geometric_model = 0;
+			msg.point_clouds[l].model_features.geometry.height = 1.8;
+			msg.point_clouds[l].model_features.geometry.length = 3.0;
+			msg.point_clouds[l].model_features.geometry.width = 1.0;
+			msg.point_clouds[l].model_features.red = 1.0;
+			msg.point_clouds[l].model_features.green = 1.0;
+			msg.point_clouds[l].model_features.blue = 0.8;
+			msg.point_clouds[l].model_features.model_name = (char *) "pedestrian";
+
+			msg.point_clouds[l].num_associated = predictions[i].track_id;
 
 			msg.point_clouds[l].point_size = points_lists[i].size();
 
@@ -634,35 +896,10 @@ init_python(int image_width, int image_height)
 }
 
 
-void
-predictions_to_string(char* string_predictions, vector<bbox_t> predictions, int size)
-{
-	char aux[34];
-	unsigned int i = 0;
-	//sprintf(string_predictions, '\0');
-
-	if (size > 0)
-	{
-		sprintf(aux, "%d*%d*%d*%d-", predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
-		strcat(string_predictions, aux);
-
-		for (i = 1; i < size; i++)
-		{
-			sprintf(aux, "%d*%d*%d*%d-", predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
-			strcat(string_predictions, aux);
-		}
-	}
-	sprintf(aux, "FFFF");
-	strcat(string_predictions, aux);
-}
-
-
 float*
 convert_predtions_array(vector<bbox_t> predictions)
 {
 	unsigned int size = predictions.size();
-
-	//printf("%-d\n", size);
 
 	float *array = (float*) malloc(size * 4 * sizeof(float));
 
@@ -679,55 +916,27 @@ convert_predtions_array(vector<bbox_t> predictions)
 
 
 void
-call_python_function(int width, int height, unsigned char *image, vector<bbox_t> predictions)
+call_python_function(unsigned char *image, vector<bbox_t> predictions, double timestamp)
 {
-	npy_intp dims[3] = {height, width, 3};
-
 	npy_intp predictions_dimensions[2] = {(int)predictions.size(), 4};
 
 
-	PyObject* numpy_image_array = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image);        //convert testVector to a numpy array
+	PyObject* numpy_image_array = PyArray_SimpleNewFromData(3, image_dimensions, NPY_UBYTE, image);        //convert testVector to a numpy array
 
 	float *array = convert_predtions_array(predictions);
 
-//	for (int i = 0; i < predictions.size() *4; i++)
-//	{
-//		printf("%f ", array[i]);
-//	}
-//	printf("\n");
-
-
 	PyObject* numpy_predictions_array = PyArray_SimpleNewFromData(2, predictions_dimensions, NPY_FLOAT, array);
 
+	PyArrayObject* identifications = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpy_image_array, numpy_predictions_array, NULL);
 
-	//int size = predictions.size();
-	//char string_predictions [12288] = "\0"; // 34 comes from 4 values (x, y, w, h) and 8 characters per value 4*8=32 plus 2 for safety
-
-	//predictions_to_string(string_predictions, predictions, size);
-
-	//PyObject *python_string = Py_BuildValue("s", string_predictions);
-
-	PyObject* identifications = PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpy_image_array, numpy_predictions_array, NULL);
-
-
-	printf("PAssou\n");
-	int *predict = (int*) PyArray_DATA(identifications);
-
-	printf("PAssou\n");
-
+	short *predict = (short*)PyArray_DATA(identifications);
 	if (predict == NULL)
 	{
 		Py_Finalize();
 		exit (printf("Error: The predctions erro.\n"));
 	}
 
-	printf("PAssou\n");
-
-	for (int i = 1; i < predict[0]; i++)
-	{
-		printf("%d ", predict[0]);
-	}
-	printf("\n");
+	update_pedestrians(predict,timestamp);
 
 	if (PyErr_Occurred())
         PyErr_Print();
@@ -735,15 +944,18 @@ call_python_function(int width, int height, unsigned char *image, vector<bbox_t>
 	free(array);
 	Py_DECREF(numpy_image_array);
 	Py_DECREF(numpy_predictions_array);
+	Py_DECREF(identifications);
 }
 ///////////////
-
 
 
 
 unsigned char *
 crop_raw_image(int image_width, int image_height, unsigned char *raw_image, int displacement_x, int displacement_y, int crop_width, int crop_height)
 {
+	if (displacement_x == 0 && displacement_y == 0 && crop_width == image_width && image_height == crop_height)
+		return (raw_image);
+
 	unsigned char *cropped_image = (unsigned char *) malloc (crop_width * crop_height * 3 * sizeof(unsigned char));  // Only works for 3 channels image
 
 	displacement_x = (displacement_x - 2) * 3;
@@ -780,15 +992,15 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	static double start_time = 0.0;
 	static bool first_time = true;
 
-	int crop_x = image_msg->width * 0.2;
-	int crop_y = image_msg->height * 0.25;
-	int crop_w = image_msg->width * 0.55;
-	int crop_h = image_msg->height * 0.5;
+//	int crop_x = image_msg->width * 0.2;
+//	int crop_y = image_msg->height * 0.25;
+//	int crop_w = image_msg->width * 0.55;
+//	int crop_h = image_msg->height * 0.5;
 
-//	int crop_x = 0;
-//	int crop_y = 0;
-//	int crop_w = image_msg->width;// 1280;
-//	int crop_h = image_msg->height;//400; // 500;
+	int crop_x = 0;
+	int crop_y = 0;
+	int crop_w = image_msg->width;// 1280;
+	int crop_h = image_msg->height;//400; // 500;
 
 	if (camera_side == 0)
 		img = image_msg->raw_left;
@@ -816,22 +1028,39 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	unsigned char *croped_image = crop_raw_image(image_msg->width, image_msg->height, image_msg->raw_right, crop_x, crop_y, crop_w, crop_h);
 
 	//////// Python
-	if (first_time)
-	{
-		init_python(crop_w, crop_h);
-		first_time = false;
-	}
-	call_python_function(crop_w, crop_h, croped_image, predictions);
+	call_python_function(croped_image, predictions, image_msg->timestamp);
 	///////////////
 
-
-
-	if (predictions.size() > 0 && velodyne_msg != NULL)
+//	if (predictions.size() > 0 && velodyne_msg != NULL)
+//	{
+//		vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
+//						image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+//
+//		vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto
+//
+//		//generate_traffic_light_annotations(predictions, points_inside_bbox);
+//
+//		vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
+//
+//		vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
+//
+//		carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
+//
+//		publish_moving_objects_message(image_msg->timestamp, &msg);
+//
+//		fps = 1.0 / (carmen_get_time() - start_time);
+//		start_time = carmen_get_time();
+//
+//		//printf("%d %d %d\n", (int) predictions.size(), (int) points_inside_bbox.size(), (int) filtered_points.size());
+//
+//		show_detections(open_cv_image, predictions, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+//	}
+	if (pedestrian_tracks.size() > 0 && velodyne_msg != NULL)
 	{
 		vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
 						image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 
-		vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto
+		vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes_new(pedestrian_tracks, points); // TODO remover bbox que nao tenha nenhum ponto
 
 		//generate_traffic_light_annotations(predictions, points_inside_bbox);
 
@@ -839,16 +1068,23 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 		vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
 
-		carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
 
+		for (int i=0; i<positions.size();i++)
+		{
+			if (!(positions[i].cartesian_x == -999.0 && positions[i].cartesian_y == -999.0))
+			{
+				update_world_position(&pedestrian_tracks[i],positions[i].cartesian_x,positions[i].cartesian_y,image_msg->timestamp);
+			}
+		}
+		clean_pedestrians(image_msg->timestamp, 1.0);
+		carmen_moving_objects_point_clouds_message msg = build_detected_objects_message_new(pedestrian_tracks, filtered_points);
 		publish_moving_objects_message(image_msg->timestamp, &msg);
-
 		fps = 1.0 / (carmen_get_time() - start_time);
 		start_time = carmen_get_time();
 
 		//printf("%d %d %d\n", (int) predictions.size(), (int) points_inside_bbox.size(), (int) filtered_points.size());
 
-		show_detections(open_cv_image, predictions, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+		show_detections_new(open_cv_image, pedestrian_tracks, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 	}
 }
 
@@ -962,6 +1198,9 @@ initialize_yolo_DRKNET()
 	set_object_vector_color();
 
 	velodyne_msg = NULL;
+
+	//init_python(704, 480);
+	init_python(1280, 960);
 
 	//namedWindow( "Display window", WINDOW_AUTOSIZE);
 }
