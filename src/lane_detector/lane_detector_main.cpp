@@ -31,6 +31,7 @@
 #include <cstdlib> /*< std::getenv */
 #include <fstream>
 #include <math.h>
+#include <algorithm>
 
 #define SHOW_DETECTIONS
 #define SHOW_BBOX true
@@ -62,6 +63,32 @@ carmen_point_t globalpos;
 /*
  This function find the closest velodyne message with the camera message
  */
+
+typedef struct
+{
+	unsigned int a;
+	unsigned int b;
+	unsigned int c;
+}line;
+
+bool
+function_to_order_left (carmen_velodyne_points_in_cam_with_obstacle_t i, carmen_velodyne_points_in_cam_with_obstacle_t j)
+{
+	if (i.velodyne_points_in_cam.ipx > j.velodyne_points_in_cam.ipx)
+		return true;
+	else
+		return (i.velodyne_points_in_cam.ipy > j.velodyne_points_in_cam.ipy);
+}
+
+bool
+function_to_order_right (carmen_velodyne_points_in_cam_with_obstacle_t i, carmen_velodyne_points_in_cam_with_obstacle_t j)
+{
+	if (i.velodyne_points_in_cam.ipx < j.velodyne_points_in_cam.ipx)
+		return true;
+	else
+		return (i.velodyne_points_in_cam.ipy > j.velodyne_points_in_cam.ipy);
+}
+
 carmen_velodyne_partial_scan_message
 find_velodyne_most_sync_with_cam(double bumblebee_timestamp)
 {
@@ -81,7 +108,20 @@ find_velodyne_most_sync_with_cam(double bumblebee_timestamp)
 }
 
 
+line
+get_line(unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2)
+{
+	// Line Equation a = yA - yB, b = xB - xA, c = xAyB - xByA
+	unsigned int a = y1 - y2;
+	unsigned int b = x2 - x1;
+	unsigned int c = (x1 * y2) - (x2 * y1);
 
+	line line_aux;
+	line_aux.a = a;
+	line_aux.b = b;
+	line_aux.c = c;
+	return line_aux;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -98,8 +138,95 @@ register_ipc_messages(void)
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_LANE_NAME);
 }
 
+line
+construct_the_line(bbox_t &predictions, bool left_or_right)
+{
+	line line;
+	if (left_or_right)
+	{
+		line = get_line(predictions.x, predictions.y + predictions.h, predictions.x + predictions.w, predictions.y) ;
+	}else
+	{
+		line = get_line(predictions.x, predictions.y, predictions.x + predictions.w, predictions.y + predictions.h);
+	}
+
+	return line;
+}
+
+double
+calculate_the_distance_point_to_the_line (line line_aux, carmen_velodyne_points_in_cam_with_obstacle_t point_aux)
+{
+	double distance = (abs(line_aux.a * point_aux.velodyne_points_in_cam.ipx + line_aux.b * point_aux.velodyne_points_in_cam.ipy + line_aux.c)
+			/ sqrt(line_aux.a * line_aux.a + line_aux.b * line_aux.b));
+	return distance;
+}
+
+std::vector<carmen_velodyne_points_in_cam_with_obstacle_t>
+locate_the_candidate_points_in_the_bounding_box(bbox_t &predictions,
+		std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> &laser_points_in_camera_box_list,
+		bool left_or_right)
+{
+	line line_aux = construct_the_line(predictions, left_or_right);
+	std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> candidate_points;
+	for (int j = 0; j < laser_points_in_camera_box_list.size(); j++)
+	{
+		double distance_aux = calculate_the_distance_point_to_the_line(line_aux, laser_points_in_camera_box_list[j]);
+		if (distance_aux <= 2)
+		{
+			candidate_points.push_back(laser_points_in_camera_box_list[j]);
+		}
+	}
+	return candidate_points;
+}
+
 void
-lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > &laser_points_in_camera_box_list,
+seting_part_of_the_lane_message(carmen_vector_3D_t p1, int i, int idx_pt1,
+		carmen_vector_3D_t p2, int idx_pt2,
+	    carmen_lane_detector_lane_message_t& message,
+		std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> &candidate_points)
+{
+	if (candidate_points.empty())
+		return;
+	p1 =
+			carmen_covert_sphere_to_cartesian_coord(
+					candidate_points[idx_pt1].velodyne_points_in_cam.laser_polar);
+	if (idx_pt2 > 0)
+		p2 =
+			carmen_covert_sphere_to_cartesian_coord(
+					candidate_points[idx_pt2].velodyne_points_in_cam.laser_polar);
+	else
+		p1 = p2;
+	carmen_vector_3D_t offset;
+	std:: cout <<"i " << i << '\n';
+	std:: cout <<"p1 x " << candidate_points[idx_pt1].velodyne_points_in_cam.ipx << " y " << candidate_points[idx_pt1].velodyne_points_in_cam.ipy << '\n';
+	std:: cout <<"p2 x " << candidate_points[idx_pt2].velodyne_points_in_cam.ipx << " y " << candidate_points[idx_pt2].velodyne_points_in_cam.ipy << '\n';
+
+	offset.x = 0.572;
+	offset.y = 0.0;
+	offset.z = 2.154;
+
+	p1 = translate_point(p1, offset);
+	p2 = translate_point(p2, offset);
+
+	p1 = rotate_point(p1, globalpos.theta);
+	p2 = rotate_point(p2, globalpos.theta);
+
+	offset.x = globalpos.x;
+	offset.y = globalpos.y;
+	offset.z = 0.0;
+
+	p1 = translate_point(p1, offset);
+	p2 = translate_point(p2, offset);
+
+	message.lane_vector[i].lane_segment_position1.x = p1.x;
+	message.lane_vector[i].lane_segment_position1.y = p1.y;
+	message.lane_vector[i].lane_segment_position2.x = p2.x;
+	message.lane_vector[i].lane_segment_position2.y = p2.y;
+	message.lane_vector[i].lane_class = 0;
+}
+
+std::vector < std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> >
+lane_publish_messages(double _timestamp, std::vector<bbox_t> &predictions, std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > &laser_points_in_camera_box_list,
 		std::vector<bool> &left_or_right)
 {
 	// stamps the message
@@ -107,132 +234,38 @@ lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyn
 	message.host = carmen_get_host();
 	message.timestamp = _timestamp;
 	message.lane_vector_size = laser_points_in_camera_box_list.size();
-	if (laser_points_in_camera_box_list.size() == 0)
-		return ;
-	message.lane_vector = (carmen_lane_detector_lane_t*) malloc ( message.lane_vector_size * sizeof (carmen_lane_detector_lane_t) );
 
+	std::vector < std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > vector_candidate_points;
+	if (laser_points_in_camera_box_list.size() == 0)
+			return vector_candidate_points;
+	message.lane_vector = (carmen_lane_detector_lane_t*) malloc ( message.lane_vector_size * sizeof (carmen_lane_detector_lane_t) );
 	for (int i = 0; i < laser_points_in_camera_box_list.size(); i++)
 	{
-		unsigned int idx_pt1 = 0, idx_pt2 = 0;
-		unsigned int x_min = 10000, x_max = 0, y_min = 10000, y_max = 0, idx_pt1_b, idx_pt2_b;
-		for(int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
-		{
-			if (left_or_right[i] == false)
-			{
-				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx < x_min)
-					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy < y_min)
-					{
-						x_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
-						y_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy;
-						idx_pt1_b = idx_pt1 = j;
-					}
-				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx > x_max)
-					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy > y_max)
-					{
-						x_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
-						y_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy;
-						idx_pt2_b = idx_pt2 = j;
-					}
-			}else
-			{
-				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx < x_min)
-					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy > y_max)
-					{
-						x_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
-						y_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy;
-						idx_pt2_b = idx_pt2 = j;
-					}
-				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx > x_max)
-					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy < y_min)
-					{
-						x_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
-						y_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy;
-						idx_pt1_b = idx_pt1 = j;
-					}
-			}
-		}
-		for(int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
-		{
-			if (left_or_right[i] == false)
-			{
-				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx < x_min )
-					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy < y_min &&
-							laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy != laser_points_in_camera_box_list[i][idx_pt1_b].velodyne_points_in_cam.ipy )
-					{
-						x_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
-						y_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy;
-						idx_pt1 = j;
-					}
-				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx > x_max)
-					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy > y_max &&
-							laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy != laser_points_in_camera_box_list[i][idx_pt2_b].velodyne_points_in_cam.ipy)
-					{
-						x_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
-						y_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy;
-						idx_pt2 = j;
-					}
-			}else
-			{
-				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx < x_min )
-					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy > y_max &&
-							laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy != laser_points_in_camera_box_list[i][idx_pt2_b].velodyne_points_in_cam.ipy)
-					{
-						x_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
-						y_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy;
-						idx_pt2 = j;
-					}
-				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx > x_max )
-					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy < y_min &&
-							laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy != laser_points_in_camera_box_list[i][idx_pt1_b].velodyne_points_in_cam.ipy)
-					{
-						x_max = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx;
-						y_min = laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy;
-						idx_pt1 = j;
-					}
-			}
-		}
+		std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> candidate_points =
+				locate_the_candidate_points_in_the_bounding_box(predictions[i], laser_points_in_camera_box_list[i], left_or_right[i]);
 		carmen_vector_3D_t p1, p2;
-		carmen_vector_3D_t offset;
-		p1 = carmen_covert_sphere_to_cartesian_coord(laser_points_in_camera_box_list[i][idx_pt1].velodyne_points_in_cam.laser_polar);
-		p2 = carmen_covert_sphere_to_cartesian_coord(laser_points_in_camera_box_list[i][idx_pt2].velodyne_points_in_cam.laser_polar);
-	/*	std:: cout <<"i " << i << '\n';
-		std:: cout <<"p1 x " << laser_points_in_camera_box_list[i][idx_pt1].velodyne_points_in_cam.ipx << " y " << laser_points_in_camera_box_list[i][idx_pt1].velodyne_points_in_cam.ipy << '\n';
-		std:: cout <<"p2 x " << laser_points_in_camera_box_list[i][idx_pt2].velodyne_points_in_cam.ipx << " y " << laser_points_in_camera_box_list[i][idx_pt2].velodyne_points_in_cam.ipy << '\n';*/
-        offset.x = 0.572;
-        offset.y = 0.0;
-        offset.z = 2.154;
-
-        p1 = translate_point(p1, offset);
-        p2 = translate_point(p2, offset);
-
-        p1 = rotate_point(p1, globalpos.theta);
-        p2 = rotate_point(p2, globalpos.theta);
-
-        offset.x = globalpos.x;
-        offset.y = globalpos.y;
-        offset.z = 0.0;
-
-        p1 = translate_point(p1, offset);
-        p2 = translate_point(p2, offset);
-
-		message.lane_vector[i].lane_segment_position1.x = p1.x;
-		message.lane_vector[i].lane_segment_position1.y = p1.y;
-		message.lane_vector[i].lane_segment_position2.x = p2.x;
-		message.lane_vector[i].lane_segment_position2.y = p2.y;
-		message.lane_vector[i].lane_class = 0;
-
+		int idx_pt1, idx_pt2;
 		if (left_or_right[i] == true)
 		{
+			std::sort(candidate_points.begin(), candidate_points.end(), function_to_order_left);
+			idx_pt1 = 0;
+			idx_pt2 = candidate_points.size() - 1;
 			message.lane_vector[i].left = 1;
 		}else
 		{
+			std::sort(candidate_points.begin(), candidate_points.end(), function_to_order_right);
+			idx_pt1 = 0;
+			idx_pt2 = candidate_points.size() - 1;
 			message.lane_vector[i].left = 0;
 		}
+		seting_part_of_the_lane_message(p1, i, idx_pt1, p2, idx_pt2, message,
+				candidate_points);
+		vector_candidate_points.push_back(candidate_points);
 	}
 	// publish!
 	carmen_lane_publish_message(&message);
 	free(message.lane_vector);
-
+	return vector_candidate_points;
 }
 
 
@@ -280,11 +313,11 @@ velodyne_points_in_lane_bboxes(std::vector<bounding_box> bouding_boxes_list,
 
 void
 put_the_lane_dectections_in_image(std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list,
-	const cv::Mat& rgb_image, std::vector<bbox_t> predictions, std::vector<bounding_box> bouding_boxes_list, int end_time, int start_time) {
+		std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> >& vector_candidate_points,
+		const cv::Mat& rgb_image, std::vector<bounding_box> bouding_boxes_list, int end_time, int start_time) {
 	double fps;
 	int delta_t = end_time - start_time;
 	fps = 1.0 / delta_t;
-	char confianca[7];
 	char frame_rate[25];
 	sprintf(frame_rate, "FPS = %.2f", fps);
 	cv::putText(rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
@@ -307,8 +340,28 @@ put_the_lane_dectections_in_image(std::vector< std::vector<carmen_velodyne_point
 	{
 		for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
 		{
-			cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
-			laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1, cv::Scalar(255, 0, 0), 3, 0);
+			int size = vector_candidate_points[i].size() -1;
+			if (size < 0)
+			{
+				cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
+						laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1, cv::Scalar(255, 0, 0), 3, 0);
+			}else
+			{
+				if (vector_candidate_points[i][0]. velodyne_points_in_cam.ipx == laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx
+						&& vector_candidate_points[i][0]. velodyne_points_in_cam.ipy == laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy)
+					cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
+					laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1, cv::Scalar(0, 0, 255), 3, 0);
+				else
+				{
+					if (vector_candidate_points[i][size]. velodyne_points_in_cam.ipx == laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx
+							&& vector_candidate_points[i][size]. velodyne_points_in_cam.ipy == laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy)
+						cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
+						laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1, cv::Scalar(0, 0, 255), 3, 0);
+					else
+						cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
+								laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1, cv::Scalar(255, 0, 0), 3, 0);
+				}
+			}
 		}
 	}
 	cv::Mat resized_image(cv::Size(640, 480), CV_8UC3);
@@ -368,7 +421,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
 	cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
 
-	double start_time, end_time, delta_t, fps;
+	double start_time, end_time;
 
 	start_time = carmen_get_time();
 
@@ -392,8 +445,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list = velodyne_points_in_lane_bboxes(bouding_boxes_list,
     		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height, &left_or_right);
     end_time = carmen_get_time();
-	put_the_lane_dectections_in_image(laser_points_in_camera_box_list, rgb_image, predictions, bouding_boxes_list, end_time, start_time);
-	lane_publish_messages(image_msg-> timestamp, laser_points_in_camera_box_list, left_or_right);
+	std::vector < std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > vector_candidate_points =
+			lane_publish_messages(image_msg-> timestamp, predictions, laser_points_in_camera_box_list, left_or_right);
+	put_the_lane_dectections_in_image(laser_points_in_camera_box_list, vector_candidate_points, rgb_image, bouding_boxes_list, end_time, start_time);
 }
 
 
@@ -523,7 +577,6 @@ main(int argc, char **argv)
         carmen_die("%s: Wrong number of parameters. Neural_car_detector requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>",
                    argv[0], argc - 1, argv[0]);
 
-    int gpu = 1;
     int device_id = 0;
     /**** DETECTNET PARAMETERS ****/
     std::string model_file = "deploy.prototxt";
