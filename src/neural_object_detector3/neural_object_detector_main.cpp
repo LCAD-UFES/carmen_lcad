@@ -10,12 +10,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <carmen/dbscan.h>
 #include <Python.h>
-//#include "Darknet.hpp"
 #include "neural_object_detector.hpp"
-
 #include <carmen/darknet.h>
-
-detection *dets;
 
 using namespace std;
 using namespace cv;
@@ -32,6 +28,10 @@ carmen_point_t globalpos;
 //Detector *darknet;
 vector<string> obj_names_vector;
 vector<Scalar> obj_colours_vector;
+
+char **names;
+image **alphabet;
+network *network_config;
 
 
 void
@@ -93,7 +93,7 @@ publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clo
 
 
 vector<vector<image_cartesian>>
-get_points_inside_bounding_boxes(vector<bbox_t> &predictions, vector<image_cartesian> &velodyne_points_vector)
+get_points_inside_bounding_boxes(vector<bbox> &predictions, vector<image_cartesian> &velodyne_points_vector)
 {
 	vector<vector<image_cartesian>> laser_list_inside_each_bounding_box; //each_bounding_box_laser_list
 
@@ -276,7 +276,7 @@ show_all_points(Mat &image, unsigned int image_width, unsigned int image_height,
 
 
 void
-show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
+show_detections(Mat image, vector<bbox> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
 		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
 {
 	char object_info[25];
@@ -385,7 +385,7 @@ int board_z = 2.154;
 
 
 carmen_moving_objects_point_clouds_message
-build_detected_objects_message(vector<bbox_t> predictions, vector<image_cartesian> objects_poses, vector<vector<image_cartesian>> points_lists)
+build_detected_objects_message(vector<bbox> predictions, vector<image_cartesian> objects_poses, vector<vector<image_cartesian>> points_lists)
 {
 	carmen_moving_objects_point_clouds_message msg;
 	int num_objects = compute_num_measured_objects(objects_poses);
@@ -478,10 +478,10 @@ build_detected_objects_message(vector<bbox_t> predictions, vector<image_cartesia
 }
 
 
-vector<bbox_t>
-filter_predictions_of_interest(vector<bbox_t> &predictions)
+vector<bbox>
+filter_predictions_of_interest(vector<bbox> &predictions)
 {
-	vector<bbox_t> filtered_predictions;
+	vector<bbox> filtered_predictions;
 
 	for (unsigned int i = 0; i < predictions.size(); i++)
 	{
@@ -536,7 +536,7 @@ carmen_translte_3d(double *x, double *y, double *z, double offset_x, double offs
 
 
 void
-generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<image_cartesian>> points_inside_bbox)
+generate_traffic_light_annotations(vector<bbox> predictions, vector<vector<image_cartesian>> points_inside_bbox)
 {
 	static vector<image_cartesian> traffic_light_points;
 	static int count = 0;
@@ -578,255 +578,219 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 	//printf("Cont %d\n", count);
 }
 
-//////// Python
-PyObject *python_pedestrian_tracker_function;
 
-
-void
-init_python(int image_width, int image_height)
+float*
+convert_image_msg_to_darknet_image(int image_width, int image_height, unsigned char *raw_image)
 {
-	Py_Initialize();
+	//image_t converted_image;
+	int image_size = image_width * image_height * 3;
 
-	PyObject *python_module_name = PyString_FromString((char *) "pedestrian_tracker");
+	//converted_image.w = image_width;
+	//converted_image.h = image_height;
+	//converted_image.c = 3;                                      // 3 is the Number of Channels
+	float *image = (float *) malloc (image_size * sizeof (float));
 
-	PyObject *python_module = PyImport_Import(python_module_name);
+	//memcpy(image, raw_image, image_width * image_height * 3 *sizeof(char));
 
-	if (python_module == NULL)
+	for (int i = 0; i < image_size; i++)
 	{
-		Py_Finalize();
-		exit (printf("Error: The python_module could not be loaded.\nMay be PYTHON_PATH is not set.\n"));
-	}
-	Py_DECREF(python_module_name);
-
-	PyObject *python_set_image_settings_function = PyObject_GetAttrString(python_module, (char *) "set_image_settings");
-
-	if (python_set_image_settings_function == NULL || !PyCallable_Check(python_set_image_settings_function))
-	{
-		Py_Finalize();
-		exit (printf("Error: Could not load the python_set_image_settings_function.\n"));
+		image[i] = (float) raw_image[i] / 255;
 	}
 
-	//char w[8], h[8];
-	//sprintf(w, "%d", image_width);
-	//sprintf(h, "%d", image_height);
-
-	PyObject *python_arguments = Py_BuildValue("(ii)", image_width, image_height);//w, h);               // Generic function, create objects from C values by a format string
-
-	PyObject_CallObject(python_set_image_settings_function, python_arguments);
-
-	Py_DECREF(python_arguments);
-	Py_DECREF(python_set_image_settings_function);
-
-	python_pedestrian_tracker_function = PyObject_GetAttrString(python_module, (char *) "run_pedestrian_tracker");
-
-	if (python_pedestrian_tracker_function == NULL || !PyCallable_Check(python_pedestrian_tracker_function))
-	{
-		Py_DECREF(python_module);
-		Py_Finalize();
-		exit (printf("Error: Could not load the python_pedestrian_tracker_function.\n"));
-	}
+	return (image);
 }
 
 
-void
-predictions_to_string(char* string_predictions, vector<bbox_t> predictions, int size)
+vector<bbox>
+extract_predictions2(int width, int height, detection *dets, int detections_number, float thresh, int classes)
 {
-	char aux[34];
-	unsigned int i = 0;
-	//sprintf(string_predictions, '\0');
+	vector<bbox> bounding_box_vector;
+	int i,j;
 
-	if (size > 0)
+	for(i = 0; i < detections_number; ++i)
 	{
-		sprintf(aux, "%d*%d*%d*%d-", predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
-		strcat(string_predictions, aux);
+		char labelstr[4096] = {0};
+		int object_class = -1;
 
-		for (i = 1; i < size; i++)
+		for(j = 0; j < classes; ++j)
 		{
-			sprintf(aux, "%d*%d*%d*%d-", predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
-			strcat(string_predictions, aux);
+			if (dets[i].prob[j] > thresh)
+			{
+				if (object_class < 0)
+				{
+					strcat(labelstr, names[j]);
+					object_class = j;
+				}
+				else
+				{
+					strcat(labelstr, ", ");
+					strcat(labelstr, names[j]);
+				}
+				printf("%s: %.0f%%\n", names[j], dets[i].prob[j]*100);
+			}
+		}
+		if(object_class >= 0)
+		{
+			box b = dets[i].bbox;
+			int left  = (b.x - b.w/2.) * width;
+			int right = (b.x + b.w/2.) * width;
+			int top   = (b.y - b.h/2.) * height;
+			int bot   = (b.y + b.h/2.) * height;
+
+			if(left < 0)
+				left = 0;
+			if(right > width - 1)
+				right = width - 1;
+			if(top < 0)
+				top = 0;
+			if(bot > height - 1)
+				bot = height - 1;
+
+			if (strcmp("person",        labelstr) == 0 || strcmp("bicycle",       labelstr) == 0 || strcmp("motorbike",     labelstr) == 0 ||
+				strcmp("car",           labelstr) == 0 || strcmp("bus",           labelstr) == 0 || strcmp("truck",         labelstr) == 0 ||
+				strcmp("traffic light", labelstr) == 0)
+			{
+				bbox bbox;
+				bbox.x = left;
+				bbox.y = top;
+				bbox.w = right;
+				bbox.h = bot;
+				bbox.obj_id = j;
+
+				bounding_box_vector.push_back(bbox);
+			}
 		}
 	}
-	sprintf(aux, "FFFF");
-	strcat(string_predictions, aux);
+	return (bounding_box_vector);
 }
 
 
-void
-call_python_function(int width, int height, unsigned char *image, vector<bbox_t> predictions)
+vector<bbox>
+extract_predictions(int width, int height, detection *dets, int detections_number, float thresh, int classes)
 {
-	unsigned int size = predictions.size();
-	char w[8], h[8], string_predictions [size * 34]; // 34 comes from 4 values (x, y, w, h) and 8 characters per value 4*8=32 plus 2 for safety
+	vector<bbox> bounding_box_vector;
+	int i,j;
 
-	sprintf(w, "%d", width);
-	sprintf(h, "%d", height);
+	for(i = 0; i < detections_number; ++i)
+	{
+		char labelstr[4096] = {0};
+		int object_class = -1;
+		for(j = 0; j < classes; ++j)
+		{
+			//printf("Passou\n");
+			if (dets[i].prob[j] > thresh)
+			{
+				if (object_class < 0)
+				{
+					strcat(labelstr, names[j]);
+					object_class = j;
+				}
+				else
+				{
+					strcat(labelstr, ", ");
+					strcat(labelstr, names[j]);
+				}
+				printf("%s: %.0f%%\n", names[j], dets[i].prob[j]*100);
+			}
+		}
+		if(object_class >= 0)
+		{
+			box b = dets[i].bbox;
 
-	predictions_to_string(string_predictions, predictions, size);
+			int left  = (b.x-b.w/2.)*width;
+			int right = (b.x+b.w/2.)*width;
+			int top   = (b.y-b.h/2.)*height;
+			int bot   = (b.y+b.h/2.)*height;
 
-	//printf("%s\n", string_predictions);
+			if(left < 0) left = 0;
+			if(right > width-1) right = width-1;
+			if(top < 0) top = 0;
+			if(bot > height-1) bot = height-1;
 
-	PyObject *python_arguments = Py_BuildValue("(ss)", image, string_predictions);               // Generic function, create objects from C values by a format string
+			if (strcmp("person",        labelstr) == 0 || strcmp("bicycle",       labelstr) == 0 || strcmp("motorbike",     labelstr) == 0 ||
+				strcmp("car",           labelstr) == 0 || strcmp("bus",           labelstr) == 0 || strcmp("truck",         labelstr) == 0 ||
+				strcmp("traffic light", labelstr) == 0)
+			{
+				bbox bbox;
+				bbox.x = left;
+				bbox.y = top;
+				bbox.w = right;
+				bbox.h = bot;
+				bbox.obj_id = j;
 
-	PyObject_CallObject(python_pedestrian_tracker_function, python_arguments);
-
-	Py_DECREF(python_arguments);
+				bounding_box_vector.push_back(bbox);
+			}
+		}
+	}
+	return (bounding_box_vector);
 }
-///////////////
 
-/*
+
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
-	unsigned char *img;
+	float *float_image = convert_image_msg_to_darknet_image(image_msg->height, image_msg->width, image_msg->raw_right);
 	double fps;
 	static double start_time = 0.0;
-	static bool first_time = true;
 
-//	int crop_x = image_msg->width * 0.2;
-//	int crop_y = image_msg->height * 0.25;
-//	int crop_w = image_msg->width * 0.55;
-//	int crop_h = image_msg->height * 0.5;
+	vector<image_cartesian> points;
+	vector<vector<image_cartesian>> points_inside_bbox;
+	vector<vector<image_cartesian>> filtered_points;
+	vector<image_cartesian> positions;
 
-	int crop_x = 0;
-	int crop_y = 0;
-	int crop_w = image_msg->width;// 1280;
-	int crop_h = 400; //image_msg->height; 500;
+	double time = what_time_is_it_now();
+	float nms = 0.45;
+	float thresh = 0.2;
+	float hier_thresh = 0.5;
 
-	if (camera_side == 0)
-		img = image_msg->raw_left;
-	else
-		img = image_msg->raw_right;
+	image im;
+	im.w = image_msg->width;
+	im.h = image_msg->height;
+	im.c = 3;
+	im.data = float_image;
 
-	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
-	//printf("%d %d\n", image_msg->width, image_msg->height);
-	//printf("%d %d %d %d\n", crop_x, crop_y, crop_w, crop_h);
+	image sized = letterbox_image(im, network_config->w, network_config->h);
+	//image sized = resize_image(im, network_config->w, network_config->h);
+	//image sized2 = resize_max(im, network_config->w);
+	//image sized = crop_image(sized2, -((network_config->w - sized2.w)/2), -((network_config->h - sized2.h)/2), network_config->w, network_config->h);
+	//resize_network(network_config, sized.w, sized.h);
+	layer network_layers = network_config->layers[network_config->n-1];
 
-	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
-	open_cv_image = open_cv_image(myROI);
+	//printf("Predicting\n");
 
-	//cvtColor(open_cv_image, open_cv_image, COLOR_RGB2BGR);
+	float *X = sized.data;
 
-	//char image_name[256];
-	//sprintf(image_name, "%s%lf.png", "image", image_msg->timestamp);
-	//imwrite(image_name , open_cv_image);
-	imshow("NOD", open_cv_image);
-	waitKey(1);
+	network_predict(network_config, X);
 
-	vector<bbox_t> predictions = darknet->detect(open_cv_image, 0.2);  // Arguments (image, threshold)
-	predictions = filter_predictions_of_interest(predictions);
+	//printf("Predicted in %f seconds.\n", what_time_is_it_now()-time);
 
+	int nboxes = 0;
+	detection *dets = get_network_boxes(network_config, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes);
+	//printf("%d\n", nboxes);
+	//if (nms) do_nms_obj(boxes, probs, network_layers.w*network_layers.h*network_layers.n, network_layers.classes, nms);
+	if (nms)
+		do_nms_sort(dets, nboxes, network_layers.classes, nms);
 
-	//////// Python
-//	if (first_time)
-//	{
-//		init_python(image_msg->width, image_msg->height);
-//		first_time = false;
-//	}
-//	call_python_function(image_msg->width, image_msg->height, image_msg->raw_right, predictions);
-	///////////////
+	printf("##%d\n", network_layers.classes);
 
+	vector<bbox> predictions = extract_predictions(im.w, im.h, dets, nboxes, thresh, network_layers.classes);
+	free_detections(dets, nboxes);
 
+	//printf("--%d\n", (int)predictions.size());
 
-	if (predictions.size() > 0 && velodyne_msg != NULL)
-	{
-		vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
-						image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+	fps = 1.0 / (carmen_get_time() - start_time);
+	start_time = carmen_get_time();
+	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, image_msg->raw_right, 0);
 
-		vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto
+	//printf("Passou\n");
+	show_detections(open_cv_image, predictions, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, 0, 0, image_msg->width, image_msg->height);
+	//imshow("Neural Object Detector", open_cv_image);
+	//waitKey(1);
 
-		//generate_traffic_light_annotations(predictions, points_inside_bbox);
-
-		vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
-
-		vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
-
-		carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
-
-		publish_moving_objects_message(image_msg->timestamp, &msg);
-
-		fps = 1.0 / (carmen_get_time() - start_time);
-		start_time = carmen_get_time();
-
-		//printf("%d %d %d\n", (int) predictions.size(), (int) points_inside_bbox.size(), (int) filtered_points.size());
-
-		show_detections(open_cv_image, predictions, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
-	}
+	//free_image(im);
+	free_image(sized);
 }
-*/
 
-
-void
-image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
-
-//test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen)
-{
-	char *datacfg;
-	char *cfgfile;
-	char *weightfile;
-	char *filename;
-	float thresh;
-	float hier_thresh;
-	char *outfile;
-	int fullscreen;
-
-
-    list *options = read_data_cfg(datacfg);
-    char *name_list = option_find_str(options, "names", "data/names.list");
-    char **names = get_labels(name_list);
-
-    image **alphabet = load_alphabet();
-    network *net = load_network(cfgfile, weightfile, 0);
-    set_batch_network(net, 1);
-    srand(2222222);
-    double time;
-    char buff[256];
-    char *input = buff;
-    float nms=.45;
-    while(1){
-        if(filename){
-            strncpy(input, filename, 256);
-        } else {
-            printf("Enter Image Path: ");
-            fflush(stdout);
-            input = fgets(input, 256, stdin);
-            if(!input) return;
-            strtok(input, "\n");
-        }
-        image im = load_image_color(input,0,0);
-        image sized = letterbox_image(im, net->w, net->h);
-        //image sized = resize_image(im, net->w, net->h);
-        //image sized2 = resize_max(im, net->w);
-        //image sized = crop_image(sized2, -((net->w - sized2.w)/2), -((net->h - sized2.h)/2), net->w, net->h);
-        //resize_network(net, sized.w, sized.h);
-        layer l = net->layers[net->n-1];
-
-
-        float *X = sized.data;
-        time=what_time_is_it_now();
-        network_predict(net, X);
-        printf("%s: Predicted in %f seconds.\n", input, what_time_is_it_now()-time);
-        int nboxes = 0;
-        detection *dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes);
-        //printf("%d\n", nboxes);
-        //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-        if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
-        draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
-        free_detections(dets, nboxes);
-        if(outfile){
-            save_image(im, outfile);
-        }
-        else{
-            save_image(im, "predictions");
-#ifdef OPENCV
-            make_window("predictions", 512, 512, 0);
-            show_image(im, "predictions", 0);
-#endif
-        }
-
-        free_image(im);
-        free_image(sized);
-        if (filename) break;
-    }
-}
 
 
 void
@@ -917,50 +881,109 @@ read_parameters(int argc, char **argv)
 }
 
 
-/*
 void
 initialize_yolo_DARKNET()
 {
-	string darknet_home = getenv("DARKNET_HOME");  // Get environment variable pointing path of DARKNET_HOME
+	char cfgfile[64] = "../../sharedlib/darknet/cfg/yolov3.cfg";
+	char datacfg[64] = "../../sharedlib/darknet/cfg/coco.data";
+	char weightfile[64] = "../../sharedlib/darknet/yolov3.weights";
 
-	if (darknet_home.empty())
-		printf("Cannot find darknet path. Check if you have correctly set DARKNET_HOME environment variable.\n");
+	list *options = read_data_cfg(datacfg);
 
-	string cfg_filename = darknet_home + "/cfg/neural_object_detector_yolo.cfg";
-	string weight_filename = darknet_home + "/yolo.weights";
-	string class_names_file = darknet_home + "/data/coco.names";
+	char *name_list = option_find_str(options, (char*) "names", (char*) "../../sharedlib/darknet/data/names.list");
 
-	darknet = new Detector(cfg_filename, weight_filename, 0);   // (cfg_filename, weight_filename, GPU ID)
+	names = get_labels(name_list);
 
-	carmen_test_alloc(darknet);
+	alphabet = load_alphabet();
 
-	objects_names_from_file(class_names_file);
+	network_config = load_network(cfgfile, weightfile, 0);
 
-	set_object_vector_color();
-
-	velodyne_msg = NULL;
+	set_batch_network(network_config, 1);
 }
-*/
+
+
+void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen)
+{
+    list *options = read_data_cfg(datacfg);
+    char *name_list = option_find_str(options, "names", "data/names.list");
+    char **names = get_labels(name_list);
+
+    image **alphabet = load_alphabet();
+    network *net = load_network(cfgfile, weightfile, 0);
+    set_batch_network(net, 1);
+    srand(2222222);
+    double time;
+    char buff[256];
+    char *input = buff;
+    float nms=.45;
+    while(1){
+        if(filename){
+            strncpy(input, filename, 256);
+        } else {
+            printf("Enter Image Path: ");
+            fflush(stdout);
+            input = fgets(input, 256, stdin);
+            if(!input) return;
+            strtok(input, "\n");
+        }
+        image im = load_image_color(input,0,0);
+        image sized = letterbox_image(im, net->w, net->h);
+        //image sized = resize_image(im, net->w, net->h);
+        //image sized2 = resize_max(im, net->w);
+        //image sized = crop_image(sized2, -((net->w - sized2.w)/2), -((net->h - sized2.h)/2), net->w, net->h);
+        //resize_network(net, sized.w, sized.h);
+        layer l = net->layers[net->n-1];
+
+
+        float *X = sized.data;
+        time=what_time_is_it_now();
+        network_predict(net, X);
+        printf("%s: Predicted in %f seconds.\n", input, what_time_is_it_now()-time);
+        int nboxes = 0;
+        detection *dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes);
+        //printf("%d\n", nboxes);
+        //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
+
+        printf("############%d\n", l.classes);
+        if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
+        draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
+        free_detections(dets, nboxes);
+        if(outfile){
+            save_image(im, outfile);
+        }
+        else{
+            save_image(im, "predictions");
+#ifdef OPENCV
+            make_window("predictions", 512, 512, 0);
+            show_image(im, "predictions", 0);
+#endif
+        }
+
+        free_image(im);
+        free_image(sized);
+        if (filename) break;
+    }
+}
 
 
 int
 main(int argc, char **argv)
 {
-    carmen_ipc_initialize(argc, argv);
+test_detector("../../sharedlib/darknet/cfg/coco.data", "../../sharedlib/darknet/cfg/yolov3.cfg", "../../sharedlib/darknet/yolov3.weights", "dog.jpg", 0.3, .5, "results", 0);
 
-    read_parameters(argc, argv);
-
-    subscribe_messages();
-
-    signal(SIGINT, shutdown_module);
-
-    //initialize_yolo_DARKNET();
-
-	setlocale(LC_ALL, "C");
-
-    carmen_ipc_dispatch();
+//	carmen_ipc_initialize(argc, argv);
+//
+//    read_parameters(argc, argv);
+//
+//    subscribe_messages();
+//
+//    signal(SIGINT, shutdown_module);
+//
+//    initialize_yolo_DARKNET();
+//
+//	setlocale(LC_ALL, "C");
+//
+//    carmen_ipc_dispatch();
 
     return 0;
 }
-
-

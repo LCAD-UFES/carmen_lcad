@@ -11,7 +11,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet
 
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -lmoving_objects_interface -llocalize_ackerman_interface \
-          -lvelodyne_camera_calibration -ltf -lrt -lLinearMath -lboost_thread-mt -lboost_signals  -ldarknet -lboost_system `pkg-config opencv --libs` -ldbscan  \
+          -lvelodyne_camera_calibration -ldarknet -ltf -lrt -lLinearMath -lboost_thread-mt -lboost_signals  -lboost_system `pkg-config opencv --libs` -ldbscan  \
           `pkg-config --cflags opencv` -lpython2.7 -lpthread
 
 SOURCES = neural_object_detector.cpp neural_object_detector_main.cpp
