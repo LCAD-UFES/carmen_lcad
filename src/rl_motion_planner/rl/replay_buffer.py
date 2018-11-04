@@ -57,14 +57,8 @@ class ReplayBuffer:
         
         n = len(transitions)
         
-        # If we are using her we must have at least 
-        # one posterior observation to use as fake goal.
-        limit = n
-        if is_her: 
-            limit = n-1
-        
         # sample a transition
-        t_id = np.random.randint(limit)
+        t_id = np.random.randint(n)
         t = episode['transitions'][t_id]
 
         # obtain the transition data
@@ -72,10 +66,10 @@ class ReplayBuffer:
         rew, goal, is_final = self._compute_goal_reward_and_final_flag(is_her, t, episode, t_id, n, obs)
         
         if is_final: 
-            next_obs = transitions[t_id + 1][0]
-        else:
-            # This value is dummy because Q_next is not used when is_finals is 1.0.
+            # This value is dummy because Q_next is not used when is_final is 1.0.
             next_obs = obs
+        else:
+            next_obs = transitions[t_id + 1][0]
 
         # add to batch
         self._add_to_batch(obs, cmd, next_obs, rew, goal, is_final)
@@ -95,10 +89,15 @@ class ReplayBuffer:
             is_final = 1.0 if (t_id >= n - 1) else 0.
         # HER samples 
         else:
-            assert (t_id < n - 1)
-            # sample an observation from an episode to be a fake goal.
-            # the goals are assumed to have same format as poses.
-            goal_id = np.random.randint(t_id + 1, n)
+            if t_id == (n - 1):
+                # if there are not further observations to be used as fake goal, we
+                # assume the agent started on the goal.
+                goal_id = t_id
+            else:
+                # sample an observation from an episode to be a fake goal.
+                # the goals are assumed to have same format as poses.
+                goal_id = np.random.randint(t_id + 1, n)
+
             transitions = episode['transitions']
             goal = self._pose_to_goal(transitions[goal_id][0]['pose'])
             

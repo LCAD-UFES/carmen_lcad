@@ -46,6 +46,7 @@ class Carmen(AbstractEnv):
         self.max_speed_forward = max_speed_forward
         self.max_speed_backward = max_speed_backward
         self.max_phi = np.deg2rad(28.)
+        self.commands_are_derivatives = params['commands_are_derivatives']
         
         self.goal_achievement_dist = goal_achievement_dist
         self.velocity_achievement_dist = velocity_achievement_dist

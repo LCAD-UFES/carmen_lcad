@@ -26,7 +26,10 @@ class ActorCritic:
             use_conv_layer = False
 
         self._create_placeholders(n_laser_readings, agent_state_size, goal_size, n_commands)
-        laser, goal, state = self._preprocess(params['laser_weight'], params['position_weight'], params['v_weight'], params['angle_weight'])
+        laser, goal, state = self._preprocess(params['laser_normalization_weight'], 
+                                              params['position_normalization_weight'], 
+                                              params['v_normalization_weight'], 
+                                              params['angle_normalization_weight'])
         
         self._create_actor(laser, goal, state, n_commands, use_conv_layer, activation_fn, params['n_actor_hidden_layers'],params['n_actor_hidden_neurons'])
         self._create_critic(laser, goal, state, use_conv_layer, activation_fn, params['n_critic_hidden_layers'],params['n_critic_hidden_neurons'])
@@ -47,10 +50,17 @@ class ActorCritic:
         self.placeholder_is_final = tf.placeholder(dtype=tf.float32, shape=[None, 1], name='placeholder_is_final')
 
         
-    def _preprocess(self, laser_weight, position_weight, v_weight, angle_weight):
-        laser = self.placeholder_laser * laser_weight
-        goal = self.placeholder_goal * [position_weight, position_weight, angle_weight, v_weight]
-        state = self.placeholder_state * [v_weight, angle_weight]
+    def _preprocess(self, laser_normalization_weight, 
+                    position_normalization_weight, 
+                    v_normalization_weight, 
+                    angle_normalization_weight):
+        laser = self.placeholder_laser * laser_normalization_weight
+        goal = self.placeholder_goal * [position_normalization_weight, 
+                                        position_normalization_weight, 
+                                        angle_normalization_weight, 
+                                        v_normalization_weight]
+        state = self.placeholder_state * [v_normalization_weight, 
+                                          angle_normalization_weight]
         return laser, goal, state
     
     
@@ -332,8 +342,8 @@ class DDPG(object):
                              self.main.q_from_action_placeholder,
                              self.main.q_from_policy,
                              self.target.q_from_policy,
-                             self.critic_l2,
                              self.actor_l2,
+                             self.critic_l2,
                              self.critic_train, 
                              self.policy_train],
                             feed_dict=feed)

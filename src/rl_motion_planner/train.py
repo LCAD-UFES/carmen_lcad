@@ -110,9 +110,7 @@ def run_episodes(policy, update_goal, env, n_rollouts,
                                   use_target_net=use_target_net)
         
         # TODO: Check if the robot started out of a valid map.
-        # TODO: Tratar caso em que o robo inicia sobre o goal.
-        #if len(transitions) == 1 and not last_info['success']:
-        if len(episode['transitions']) <= 1:
+        if len(episode['transitions']) == 1 and not episode['success']:
             print("Episode starting in invalid pose. Trying again.")
             continue
 
@@ -246,8 +244,8 @@ def compute_rewards_and_statistics(episodes, statistics, reward_generator):
         add_to_queue(statistics['collisions_lastk'], e['hit_obstacle'], max_size=30)    
         update_rewards(e, reward_generator)
         
-    mean_success = np.mean(statistics['successes_lastk'])
-    return mean_success 
+    mean_success_lastk = np.mean(statistics['successes_lastk'])
+    return mean_success_lastk 
 
 
 def train(params, policy, episodes, replay_buffer):
@@ -328,7 +326,6 @@ def config():
         'rddf': 'rddf-voltadaufes-20170809.txt',
         'map': "map_ida_guarapari-20170403-2",
         'use_latency': False,
-        'use_curriculum': True,  # TODO!!
         'allow_negative_velocity': True,  # CHECK!!
         'allow_goals_behind': True,  # CHECK!!
         'fix_goal': True,
@@ -337,6 +334,7 @@ def config():
         'reward_type': 'sparse',
         'frames_by_step': 1,
         'sim_dt': 0.05,  # CHECK IF USED!!
+        'commands_are_derivatives': False,  # TODO!
 
         # GUI
         'view': True,
@@ -353,10 +351,10 @@ def config():
         'activation_fn': 'elu',
         'critic_lr': 1e-3,
         'actor_lr': 1e-3,
-        'laser_weight': 1.0,
-        'position_weight': 1.0,
-        'v_weight': 1.0,
-        'angle_weight': 1.0,
+        'laser_normalization_weight': 1.0,
+        'position_normalization_weight': 1.0,
+        'v_normalization_weight': 1.0,
+        'angle_normalization_weight': 1.0,
         'critic_training_method': 'td',  # td or mc   # TODO MC!!  
         
         # tricks
@@ -376,13 +374,13 @@ def config():
         'her_rate': 1.0,
         'replay_memory_capacity': 500,  # episodes
         'min_buffer_size': 10,
+        'use_curriculum': True,  # TODO!!
         
         # Commands
         'n_commands': 2,
-        'random_eps': 0.1,  # percentage of time a random action is taken
+        'random_eps': 0.1,  # percentage of times a random action is taken
         'noise_std': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
         'spline_command_t': 0.15,
-        'use_acceleration': False,
         'spline_type': None,  # None, linear, or cubic.  # TODO!!
         'v_filters': ['random', 'gaussian', 'clip'],
         'phi_filters': ['random', 'gaussian', 'clip'],
@@ -406,10 +404,10 @@ def simple():
     params['n_critic_hidden_neurons'] = 64
     params['n_actor_hidden_neurons'] = 64
     params['use_conv_layer'] = False
-    params['max_steps'] = 40
-    params['soft_update_rate'] = 0.95
+    params['max_steps'] = 20
+    params['soft_update_rate'] = 0.0
     params['activation_fn'] = 'elu'
-    params['actor_lr'] = 1e-4
+    params['actor_lr'] = 1e-3
     params['critic_lr'] = 1e-3
     params['actor_gradient_clipping'] = 0.0
     params['critic_gradient_clipping'] = 0.0
@@ -417,18 +415,19 @@ def simple():
     params['l2_regularization_actor'] = 0.0
     params['l2_cmd'] = 0.0
     params['gamma'] = 1. - 1. / params['max_steps']
-    params['spline_type'] = 'cubic'
+    params['spline_type'] = None # 'linear'
     params['spline_command_t'] = 0.5
+    params['use_curriculum'] = True
 
 
 @ex.named_config
 def carmen_offline():
     params = {}
     params['env'] = 'carmen_offline'
-    params['n_critic_hidden_neurons'] = 64
+    params['n_critic_hidden_neurons'] = 128
     params['n_actor_hidden_neurons'] = 64
     params['use_conv_layer'] = False
-    params['max_steps'] = 40
+    params['max_steps'] = 100
     params['soft_update_rate'] = 0.95
     params['activation_fn'] = 'elu'
     params['actor_lr'] = 1e-4
@@ -438,9 +437,13 @@ def carmen_offline():
     params['l2_regularization_critic'] = 0.0
     params['l2_regularization_actor'] = 0.0
     params['l2_cmd'] = 0.0
-    params['gamma'] = 1. - 1. / params['max_steps']
     params['spline_type'] = None 
     params['spline_command_t'] = 0.15
+    params['laser_normalization_weight'] = 1.0 / 30.
+    params['position_normalization_weight'] = 1.0 / 10.
+    params['v_normalization_weight'] = 1.0 / 10.
+    params['angle_normalization_weight'] = 2.0
+    params['gamma'] = 1. - 1. / params['max_steps']
 
 
 @ex.named_config
@@ -481,14 +484,21 @@ def main(seed, n_epochs, save_interval, params):
                                 exploration_transformers,
                                 additional_transformers)
 
-        mean_success = compute_rewards_and_statistics(episodes, statistics, reward_generator)
+        mean_success_lastk = compute_rewards_and_statistics(episodes, statistics, reward_generator)
         
         train_time = train(params, policy, episodes, replay_buffer)
         
         best_success_rate = save_policy(policy, epoch, save_interval, 
-                                        mean_success, best_success_rate,
+                                        mean_success_lastk, best_success_rate,
                                         experiment_dir)
         
         print_report(epoch, n_rollouts, episodes, statistics, 
-                     mean_success, train_time, time.time() - init_experiment)
+                     mean_success_lastk, train_time, time.time() - init_experiment)
 
+        if len(statistics['successes_lastk']) >= 10:
+            if mean_success_lastk >= 0.5:
+                env.goal_sampler.increase_difficulty()
+            else:
+                env.goal_sampler.decrease_difficulty()
+
+            
