@@ -92,6 +92,7 @@ def run_one_episode(policy, update_goal, env, view_active, view_sleep,
         'goal': goal,
         'success': info['success'],
         'hit_obstacle': info['hit_obstacle'],
+        'level': env.goal_sampler.level(),
     }
 
     return episode
@@ -242,6 +243,7 @@ def compute_rewards_and_statistics(episodes, statistics, reward_generator):
     for e in episodes:
         add_to_queue(statistics['successes_lastk'], e['success'], max_size=30)
         add_to_queue(statistics['collisions_lastk'], e['hit_obstacle'], max_size=30)    
+        add_to_queue(statistics['level_lastk'], e['level'], max_size=30)
         update_rewards(e, reward_generator)
         
     mean_success_lastk = np.mean(statistics['successes_lastk'])
@@ -299,10 +301,11 @@ def print_report(epoch, n_rollouts, episodes, statistics, mean_success, train_ti
           'Success:', episodes[0]['success'],
           'Collision:', episodes[0]['hit_obstacle'],
           'SuccessAvg30:', mean_success,
+          'Level:', statistics['level_lastk'][-1],
           'CollisionsAvg30:', np.mean(statistics['collisions_lastk']),
           'AvgEpSize:', np.mean([len(e['transitions']) for e in episodes]),
           'Training time:', train_time,
-          'Overall time:',  experiment_time, 
+          'Overall time:',  experiment_time,
           end='\n\n')
     
     sys.stdout.flush()
@@ -401,7 +404,7 @@ def config():
 def simple():
     params = {}
     params['env'] = 'simple'
-    params['n_critic_hidden_neurons'] = 64
+    params['n_critic_hidden_neurons'] = 8
     params['n_actor_hidden_neurons'] = 64
     params['use_conv_layer'] = False
     params['max_steps'] = 20
@@ -418,6 +421,32 @@ def simple():
     params['spline_type'] = None # 'linear'
     params['spline_command_t'] = 0.5
     params['use_curriculum'] = True
+
+
+@ex.named_config
+def ackerman():
+    params = {}
+    params['env'] = 'ackerman'
+    params['n_critic_hidden_neurons'] = 128
+    params['n_actor_hidden_neurons'] = 128
+    params['use_conv_layer'] = False
+    params['max_steps'] = 200
+    params['soft_update_rate'] = 0.99
+    params['activation_fn'] = 'elu'
+    params['actor_lr'] = 1e-4
+    params['critic_lr'] = 1e-4
+    params['actor_gradient_clipping'] = 0.0
+    params['critic_gradient_clipping'] = 0.0
+    params['l2_regularization_critic'] = 0.0
+    params['l2_regularization_actor'] = 0.0
+    params['l2_cmd'] = 0.0
+    params['gamma'] = 1. - 1. / params['max_steps']
+    params['spline_type'] = None # 'linear'
+    params['spline_command_t'] = 0.5
+    params['use_curriculum'] = True
+    params['her_rate'] = 0.
+    params['n_batches'] = 500
+    params['batch_size'] = 512
 
 
 @ex.named_config
@@ -475,7 +504,10 @@ def main(seed, n_epochs, save_interval, params):
     statistics = {
         'successes_lastk': [],
         'collisions_lastk': [],
+        'level_lastk': [],
     }
+    
+    last_difficulty_update = 0
 
     for epoch in range(n_epochs):
         episodes = run_episodes(policy, update_goal, env, n_rollouts, 
@@ -495,10 +527,10 @@ def main(seed, n_epochs, save_interval, params):
         print_report(epoch, n_rollouts, episodes, statistics, 
                      mean_success_lastk, train_time, time.time() - init_experiment)
 
-        if len(statistics['successes_lastk']) >= 10:
-            if mean_success_lastk >= 0.5:
+        if len(statistics['successes_lastk']) >= 10 and ((epoch - last_difficulty_update) > 10):
+            if mean_success_lastk >= 0.8:
                 env.goal_sampler.increase_difficulty()
-            else:
+            elif mean_success_lastk <= 0.2:
                 env.goal_sampler.decrease_difficulty()
 
             
