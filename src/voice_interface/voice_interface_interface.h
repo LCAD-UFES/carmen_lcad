@@ -10,6 +10,10 @@
 
 #include <carmen/carmen.h>
 #include <carmen/voice_interface_messages.h>
+#include <Python.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 #ifdef __cplusplus
@@ -17,7 +21,11 @@ extern "C"
 {
 #endif
 
-#define LIST_OF_SPEECHS_FILE "$CARMEN_HOME/data/voice_interface_speechs/list_of_speechs.txt"
+#define LIST_OF_SPEECHS_FILE "list_of_speechs.txt"
+#define VOICE_SPEECHS_PATH "/data/voice_interface_speechs/"
+#define MAX_SIZE_0F_AUDIO_STRING 1000
+#define DEFAULT_SIZE_NAME_AUDIO 1000
+#define DEFAULT_SIZE_COMMAND_LINE 10000
 
 
 void
