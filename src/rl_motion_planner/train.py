@@ -331,12 +331,12 @@ def config():
         'use_latency': False,
         'allow_negative_velocity': True,  # CHECK!!
         'allow_goals_behind': True,  # CHECK!!
-        'fix_goal': True,
+        'fix_goal': True, # CHECK!
         'fix_initial_position': False,
         # to sum several rewards, use their names separated by commas
         'reward_type': 'sparse',
         'frames_by_step': 1,
-        'sim_dt': 0.05,  # CHECK IF USED!!
+        'sim_dt': 0.1,  # CHECK IF USED!!
         'commands_are_derivatives': False,  # TODO!
 
         # GUI
@@ -427,14 +427,14 @@ def simple():
 def ackerman():
     params = {}
     params['env'] = 'ackerman'
-    params['n_critic_hidden_neurons'] = 128
-    params['n_actor_hidden_neurons'] = 128
+    params['n_critic_hidden_neurons'] = 32
+    params['n_actor_hidden_neurons'] = 64
     params['use_conv_layer'] = False
-    params['max_steps'] = 200
-    params['soft_update_rate'] = 0.99
+    params['max_steps'] = 100
+    params['soft_update_rate'] = 0.
     params['activation_fn'] = 'elu'
     params['actor_lr'] = 1e-4
-    params['critic_lr'] = 1e-4
+    params['critic_lr'] = 1e-3
     params['actor_gradient_clipping'] = 0.0
     params['critic_gradient_clipping'] = 0.0
     params['l2_regularization_critic'] = 0.0
@@ -444,9 +444,9 @@ def ackerman():
     params['spline_type'] = None # 'linear'
     params['spline_command_t'] = 0.5
     params['use_curriculum'] = True
-    params['her_rate'] = 0.
-    params['n_batches'] = 500
-    params['batch_size'] = 512
+    params['her_rate'] = 1.
+    params['n_batches'] = 100
+    params['batch_size'] = 64
 
 
 @ex.named_config
@@ -460,11 +460,11 @@ def carmen_offline():
     params['soft_update_rate'] = 0.95
     params['activation_fn'] = 'elu'
     params['actor_lr'] = 1e-4
-    params['critic_lr'] = 1e-3
+    params['critic_lr'] = 1e-4
     params['actor_gradient_clipping'] = 0.0
     params['critic_gradient_clipping'] = 0.0
     params['l2_regularization_critic'] = 0.0
-    params['l2_regularization_actor'] = 0.0
+    params['l2_regularization_actor'] = 0.01
     params['l2_cmd'] = 0.0
     params['spline_type'] = None 
     params['spline_command_t'] = 0.15
@@ -473,6 +473,7 @@ def carmen_offline():
     params['v_normalization_weight'] = 1.0 / 10.
     params['angle_normalization_weight'] = 2.0
     params['gamma'] = 1. - 1. / params['max_steps']
+    params['her_rate'] = 0.
 
 
 @ex.named_config
@@ -527,10 +528,12 @@ def main(seed, n_epochs, save_interval, params):
         print_report(epoch, n_rollouts, episodes, statistics, 
                      mean_success_lastk, train_time, time.time() - init_experiment)
 
-        if len(statistics['successes_lastk']) >= 10 and ((epoch - last_difficulty_update) > 10):
-            if mean_success_lastk >= 0.8:
+        if (len(statistics['successes_lastk']) >= 10) and ((epoch - last_difficulty_update) > 10):
+            if mean_success_lastk >= 0.5:
                 env.goal_sampler.increase_difficulty()
-            elif mean_success_lastk <= 0.2:
+                last_difficulty_update = epoch
+            elif mean_success_lastk <= 0.5:
                 env.goal_sampler.decrease_difficulty()
+                last_difficulty_update = epoch
 
             

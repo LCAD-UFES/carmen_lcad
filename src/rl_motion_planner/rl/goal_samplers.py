@@ -103,7 +103,7 @@ class StepSampler(AbstractGoalSampler):
         if self.max_delta == self.init_delta:
             return 1.0
         else:
-            return (self.delta - self.init_delta) / (self.max_delta - self.init_delta)
+            return self.delta # (self.delta - self.init_delta) / (self.max_delta - self.init_delta)
 
 
 class PoseSampler(AbstractGoalSampler):
@@ -197,7 +197,7 @@ class RddfGoalSampler(AbstractGoalSampler):
         if self.max_shift == self.min_shift:
             return 1.0
         else:
-            return (self.shift - self.min_shift) / (self.max_shift - self.min_shift) 
+            return self.shift # (self.shift - self.min_shift) / (self.max_shift - self.min_shift) 
     
     def _set_goal_id(self, id):
         self.goal_id = id + self.shift
