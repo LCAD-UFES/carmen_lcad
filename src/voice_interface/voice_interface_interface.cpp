@@ -47,11 +47,11 @@ carmen_voice_interface_define_can_line_message()
 void
 carmen_voice_interface_create_new_audio_file(FILE *list_of_speechs, char *speech, char *last_audio_name_used)
 {
-	int new_number = 0, length_of_name_speech = 6, length_of_number = 5;
-	char speech_audio_name[MAX_SIZE_0F_AUDIO_STRING], last_number_used[length_of_number];
+	int new_number = 0;
+	char speech_audio_name[MAX_SIZE_0F_AUDIO_STRING], last_number_used[LENGTH_NUMBER_AS_STRING];
 
-	strncpy(speech_audio_name, last_audio_name_used, length_of_name_speech);
-	strncpy(last_number_used, last_audio_name_used+length_of_name_speech, length_of_number);
+	strncpy (speech_audio_name, last_audio_name_used, LENGTH_SPEECH_WORD);
+	strncpy (last_number_used, last_audio_name_used + LENGTH_SPEECH_WORD, LENGTH_NUMBER_AS_STRING);
 
 	new_number = atoi (last_number_used);
 	new_number++;
@@ -61,23 +61,22 @@ carmen_voice_interface_create_new_audio_file(FILE *list_of_speechs, char *speech
 	speak((char *)speech, speech_audio_name);
 	finalize_voice();
 	fprintf (list_of_speechs, "%s %s\n", speech_audio_name,speech);
+	printf("Audio content created. \n");
 }
 
 char *
 carmen_voice_interface_speak(char *speech)
 {
-	char *CARMEN_HOME ;
-	CARMEN_HOME = (char *)malloc (DEFAULT_SIZE_COMMAND_LINE * sizeof (char ));
+	char *list_of_speechs_path ;
+	list_of_speechs_path = (char *)malloc (MAX_SIZE_COMMAND_LINE * sizeof (char ));
 
-	char *CARMENHOME;
-	CARMENHOME = (char *)malloc (DEFAULT_SIZE_COMMAND_LINE * sizeof (char ));
-	CARMENHOME =  getenv ("CARMEN_HOME");
+	char *CARMEN_HOME;
+	CARMEN_HOME = (char *)malloc (MAX_SIZE_COMMAND_LINE * sizeof (char ));
+	CARMEN_HOME =  getenv ("CARMEN_HOME");
 
-	strcat (CARMEN_HOME, CARMENHOME);
-	strcat (CARMEN_HOME, VOICE_SPEECHS_PATH);
-	strcat (CARMEN_HOME, LIST_OF_SPEECHS_FILE);
+	sprintf(list_of_speechs_path, "%s%s%s", CARMEN_HOME, VOICE_SPEECHS_PATH, LIST_OF_SPEECHS_FILE);
 
-	FILE *list_of_speechs = fopen(CARMEN_HOME, "r");
+	FILE *list_of_speechs = fopen(list_of_speechs_path, "r");
 
 	if (list_of_speechs == NULL)
 	{
@@ -92,30 +91,27 @@ carmen_voice_interface_speak(char *speech)
 			return ((char *) "Error: Could not load SPEAK function.\n");
 		}
 
-		list_of_speechs = fopen (CARMEN_HOME, "w");
+		list_of_speechs = fopen (list_of_speechs_path, "w");
 		fprintf (list_of_speechs, "%s %s\n", speech_file_name, (char *)speech);
 		fclose (list_of_speechs);
 		finalize_voice();
 	}
 	else
 	{
-
 		int speech_string_matched = 0;
-		char audio_string[MAX_SIZE_0F_AUDIO_STRING];
-		char speakers_command[DEFAULT_SIZE_COMMAND_LINE];
-		char speech_file_name[DEFAULT_SIZE_NAME_AUDIO];
-		char speech_phrase[MAX_SIZE_0F_AUDIO_STRING];
+		char audio_string[MAX_SIZE_0F_AUDIO_STRING], speech_phrase[MAX_SIZE_0F_AUDIO_STRING];
+		char speech_file_name[LENGTH_SPEECH_WORD + LENGTH_NUMBER_AS_STRING];
 
 		strncpy (speech_phrase, speech, MAX_SIZE_0F_AUDIO_STRING);
-		fseek (list_of_speechs, 0, SEEK_SET);
 		do {
-			fscanf (list_of_speechs, "%s %[^\n] ", speech_file_name, audio_string);
+			fscanf (list_of_speechs, "%s %[^\n]", speech_file_name, audio_string);
+
 			if (strcmp (speech_phrase, audio_string) == 0)
 			{
+				char system_command[MAX_SIZE_COMMAND_LINE];
 
-				strcat (CARMENHOME, VOICE_SPEECHS_PATH);
-				sprintf (speakers_command, "aplay %s%s", CARMENHOME, speech_file_name);
-				system (speakers_command);
+				sprintf (system_command, "aplay %s%s%s", CARMEN_HOME, VOICE_SPEECHS_PATH, speech_file_name);
+				system (system_command);
 				speech_string_matched = 1;
 			}
 		} while (!feof (list_of_speechs) && (speech_string_matched == 0));
@@ -123,12 +119,12 @@ carmen_voice_interface_speak(char *speech)
 
 		if (speech_string_matched == 0)
 		{
-			FILE *list_of_speechs = fopen(CARMEN_HOME, "a");
+			FILE *list_of_speechs = fopen (list_of_speechs_path, "a");
 			carmen_voice_interface_create_new_audio_file(list_of_speechs, speech_phrase, speech_file_name);
-			fclose(list_of_speechs);
+			fclose (list_of_speechs);
 		}
 	}
 
+	free(list_of_speechs_path);
 	return (NULL); // OK
 }
-

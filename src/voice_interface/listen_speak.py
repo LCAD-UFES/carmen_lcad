@@ -6,7 +6,6 @@
 # [START import_libraries]
 from __future__ import division
 import os
-import os.path
 import re
 import sys
 import pyaudio

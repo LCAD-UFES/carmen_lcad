@@ -24,9 +24,9 @@ extern "C"
 #define LIST_OF_SPEECHS_FILE "list_of_speechs.txt"
 #define VOICE_SPEECHS_PATH "/data/voice_interface_speechs/"
 #define MAX_SIZE_0F_AUDIO_STRING 1000
-#define DEFAULT_SIZE_NAME_AUDIO 1000
-#define DEFAULT_SIZE_COMMAND_LINE 10000
-
+#define MAX_SIZE_COMMAND_LINE 10000
+#define LENGTH_SPEECH_WORD 6
+#define LENGTH_NUMBER_AS_STRING 5
 
 void
 carmen_voice_interface_subscribe_can_line_message(carmen_voice_interface_can_line_message *message, carmen_handler_t handler,
