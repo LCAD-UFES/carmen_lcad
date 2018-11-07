@@ -4,6 +4,8 @@ include ../Makefile.conf
 MODULE_NAME = voice_interface_PACKAGE
 MODULE_COMMENT = Allows voice interaction with IARA
 
+SUBDIRS += libvoice libvoice_google
+
 LINK = g++
 
 # Application specific include directories.
