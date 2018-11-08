@@ -25,6 +25,6 @@ int speak(char *text, char *speech_file_name);
 /*
 * Enable Microfone to output a text from an audio
 */
-const char* listen();
+const char *listen();
 
 #endif /* _VOICE_INTERFACE_H_ */

@@ -114,7 +114,14 @@ class EmptyRoomAckerman(EmptyRoom):
         viewer_size = 500
         goal_achievement_dist = 0.5
         clip_pose = False
-        pose2d_sampler = PoseSampler(2, room_size/2, room_size/2, 0., np.pi, np.pi, 0., distribution='uniform')
+        
+        if params['use_curriculum']:
+            pose2d_sampler = PoseSampler(2, room_size/20, room_size/2, room_size/20, 
+                                         np.pi, np.pi, 0., distribution='uniform')
+        else:
+            pose2d_sampler = PoseSampler(2, room_size/2, room_size/2, 0., 
+                                         np.pi, np.pi, 0., distribution='uniform')
+
         self.env = super().__init__(params, room_size, viewer_size, pose2d_sampler, 
                                     goal_achievement_dist, clip_pose)
 

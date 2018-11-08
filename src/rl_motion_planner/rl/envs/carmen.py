@@ -31,6 +31,10 @@ class Carmen(AbstractEnv):
         self.mode = mode
         self.params = params
         
+        if params['use_curriculum']:
+            min_steps_to_initial_goal = 2
+            max_steps_to_initial_goal = 40
+        
         self.rddf = read_rddf(params['rddf'])
         goal_sampler = RddfGoalSampler(self.rddf, 
                                        params['allow_goals_behind'], 
@@ -46,7 +50,6 @@ class Carmen(AbstractEnv):
         self.max_speed_forward = max_speed_forward
         self.max_speed_backward = max_speed_backward
         self.max_phi = np.deg2rad(28.)
-        self.commands_are_derivatives = params['commands_are_derivatives']
         
         self.goal_achievement_dist = goal_achievement_dist
         self.velocity_achievement_dist = velocity_achievement_dist
@@ -54,7 +57,7 @@ class Carmen(AbstractEnv):
         # only used if params['use_acceleration'] is True
         self.max_acceleration_v = max_acceleration  # m/s^2
         self.max_velocity_phi = max_phi_velocity  # rad/s 
-        self.use_acceleration = params['use_acceleration']
+        self.commands_are_derivatives = params['commands_are_derivatives']
 
         if params['view'] and self.mode != 'online':
             self.panel = CarPanel()
@@ -167,7 +170,7 @@ class Carmen(AbstractEnv):
                                             [0.0], 
                                             time.time())
 
-        if self.use_acceleration:
+        if self.commands_are_derivatives:
             self.v += cmd[0] * self.max_acceleration_v * self.sim_dt
             self.phi += cmd[1] * self.max_velocity_phi * self.sim_dt
         

@@ -4,18 +4,16 @@ include ../Makefile.conf
 MODULE_NAME = voice_interface_PACKAGE
 MODULE_COMMENT = Allows voice interaction with IARA
 
-SUBDIRS += libvoice libvoice_google
-
 LINK = g++
 
 # Application specific include directories.
-IFLAGS += -I/usr/include/python2.7
+IFLAGS += -I/usr/include/python3.5
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lpython2.7 -lparam_interface -lipc -lglobal -lvoice_interface_interface
+LFLAGS += -L/opt/lib/python3.5/config-3.5m -lpython3.5m -lparam_interface -lipc -lglobal -lvoice_interface_interface
 CFLAGS += -Wall
 # Source code files (.c, .cpp) 
-SOURCES = voice_interface_main.cpp voice_interface_interface.cpp voice_interface.cpp
+SOURCES = voice_interface_main.cpp voice_interface_interface.cpp voice_interface_python3.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = voice_interface_messages.h voice_interface_interface.h
@@ -29,9 +27,9 @@ PUBLIC_BINARIES = voice_interface
 TARGETS = libvoice_interface_interface.a voice_interface 
 PUBLIC_LIBRARIES_SO = libvoice_interface_interface.so 
 
-libvoice_interface_interface.a: voice_interface_interface.o voice_interface.o
+libvoice_interface_interface.a: voice_interface_interface.o voice_interface_python3.o
 
-voice_interface: voice_interface_main.o voice_interface.o libvoice_interface_interface.a
+voice_interface: voice_interface_main.o voice_interface_python3.o libvoice_interface_interface.a
 
 # rules
 

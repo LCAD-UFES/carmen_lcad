@@ -1,4 +1,4 @@
-#!/usr/local/bin/python2.7
+#!/usr/local/bin/python3.5
 #
 # LISTEN and SPEAK module
 # [START import_libraries]

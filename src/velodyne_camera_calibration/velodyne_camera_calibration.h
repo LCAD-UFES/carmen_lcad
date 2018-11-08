@@ -12,6 +12,7 @@
 using namespace std;
 
 #include <vector>
+#include <tf.h>
 
 typedef struct
 {
@@ -77,5 +78,17 @@ velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_messa
                                                                          carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
 																		 unsigned int image_width, unsigned int image_height, unsigned int crop_x,
 																		 unsigned int crop_y, unsigned int crop_width, unsigned int crop_height);
+
+tf::StampedTransform
+get_world_to_camera_transformation (tf::Transformer *transformer, carmen_pose_3D_t pose);
+
+carmen_position_t
+convert_rddf_pose_to_point_in_image(double x, double y, double z,
+									tf::StampedTransform world_to_camera_pose,
+									carmen_camera_parameters camera_parameters,
+									int image_width, int image_height);
+
+void
+initialize_transformations(carmen_pose_3D_t board_pose, carmen_pose_3D_t camera_pose, tf::Transformer *transformer);
 
 #endif // SRC_VELODYNE_CAMERA_CALIBRATION_VELODYNE_CAMERA_CALIBRATION_H_

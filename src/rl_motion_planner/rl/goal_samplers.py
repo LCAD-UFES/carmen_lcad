@@ -16,6 +16,9 @@ class AbstractGoalSampler:
     def decrease_difficulty(self):
         pass
 
+    def level(self):
+        return 0
+
 
 class UniformSampler(AbstractGoalSampler):
     def __init__(self, n_dims, limits=None):
@@ -43,12 +46,12 @@ class GaussianSampler(AbstractGoalSampler):
         self.clip_stddev = clip_stddev
          
     def reset(self, state):
-        dev = np.random.randn(self.mean.size) * self.stddev
+        sample = np.random.randn(self.mean.size) * self.stddev
 
         if clip_stddev:
-            dev = np.clip(dev, -stddev, stddev)
+            sample = np.clip(sample, -stddev, stddev)
         
-        self.goal = self.mean + dev 
+        self.goal = self.mean + sample 
         return self.goal
     
     def update(self, state):
@@ -74,8 +77,11 @@ class StepSampler(AbstractGoalSampler):
             msg = msg % distribution
             raise Exception(msg)
 
-    def _apply_delta(self, normalized_position):
-        return normalized_position * self.delta
+    def _apply_delta(self, x):
+        if self.max_delta == self.init_delta:
+            return x
+        else:
+            return x * self.delta
     
     def reset(self, state):
         return self._apply_delta(self.sampler.reset(state))
@@ -93,13 +99,18 @@ class StepSampler(AbstractGoalSampler):
         if self.delta < self.init_delta:
             self.delta = self.init_delta
 
+    def level(self):
+        if self.max_delta == self.init_delta:
+            return 1.0
+        else:
+            return self.delta # (self.delta - self.init_delta) / (self.max_delta - self.init_delta)
+
 
 class PoseSampler(AbstractGoalSampler):
     def __init__(self, n_dims, 
                  p_min_delta, p_max_delta, p_delta_step, 
                  o_min_delta, o_max_delta, o_delta_step, 
                  distribution='uniform'):
-        
         # TODO: compute number of orientation components in higher dims
         if n_dims == 2:
             self.p_dims, self.o_dims = 2, 1
@@ -136,8 +147,11 @@ class PoseSampler(AbstractGoalSampler):
         self.p_sampler.decrease_difficulty()
         self.o_sampler.decrease_difficulty()
 
+    def level(self):
+        return self.p_sampler.level()
 
-class RddfGoalSampler:
+
+class RddfGoalSampler(AbstractGoalSampler):
     def __init__(self, rddf, allow_goals_behind, fix_goal=True, min_shift=1, max_shift=20, shift_step=1):
         self.rddf = rddf
         self.fix_goal = fix_goal
@@ -179,6 +193,12 @@ class RddfGoalSampler:
         if self.shift < self.min_shift:
             self.shift = self.min_shift
 
+    def level(self):
+        if self.max_shift == self.min_shift:
+            return 1.0
+        else:
+            return self.shift # (self.shift - self.min_shift) / (self.max_shift - self.min_shift) 
+    
     def _set_goal_id(self, id):
         self.goal_id = id + self.shift
         if self.goal_id >= len(self.rddf): 
