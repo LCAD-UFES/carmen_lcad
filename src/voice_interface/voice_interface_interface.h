@@ -41,8 +41,14 @@ carmen_voice_interface_publish_can_line_message(carmen_voice_interface_can_line_
 void
 carmen_voice_interface_define_can_line_message();
 
+void
+carmen_voice_interface_create_new_audio_file(FILE *list_of_speechs, char *speech, char *last_audio_name_used);
+
 char *
 carmen_voice_interface_speak(char *speech);
+
+char *
+carmen_voice_interface_listen();
 
 #ifdef __cplusplus
 }
