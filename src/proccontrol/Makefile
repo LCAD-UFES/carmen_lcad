@@ -1,6 +1,6 @@
 include ../Makefile.conf
 
-LFLAGS += -lcarmenserial -lglobal -lipc -lespeak 
+LFLAGS += -lcarmenserial -lglobal -lipc -lespeak -lvoice_interface_interface
 
 MODULE_NAME = PROCCONTROL
 MODULE_COMMENT = Process controller for CARMEN
