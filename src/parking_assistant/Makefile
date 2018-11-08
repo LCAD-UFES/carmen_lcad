@@ -7,7 +7,7 @@ MODULE_COMMENT = Parking Assistant Package
 LINK = g++
 
 # Application specific include directories.
-IFLAGS += 
+IFLAGS += -I/usr/include/python2.7
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lparam_interface -lglobal -lipc -lparking_assistant_interface \
