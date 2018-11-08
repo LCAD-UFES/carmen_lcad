@@ -103,6 +103,7 @@ carmen_voice_interface_speak(char *speech)
 		char speech_file_name[LENGTH_SPEECH_WORD + LENGTH_NUMBER_AS_STRING];
 
 		strncpy (speech_phrase, speech, MAX_SIZE_0F_AUDIO_STRING);
+
 		do {
 			fscanf (list_of_speechs, "%s %[^\n]", speech_file_name, audio_string);
 
@@ -124,7 +125,22 @@ carmen_voice_interface_speak(char *speech)
 			fclose (list_of_speechs);
 		}
 	}
-
 	free(list_of_speechs_path);
 	return (NULL); // OK
+}
+
+char *
+carmen_voice_interface_listen(){
+
+	char *voice_interface_error = init_voice();
+			if (voice_interface_error != NULL)
+				return (voice_interface_error);
+
+	const char * words_said = listen();
+	printf("\n");
+	printf("Message: '%s'\n", words_said);
+	printf("\n");
+	finalize_voice();
+
+	return NULL;
 }
