@@ -17,13 +17,18 @@ from PIL import Image
 from model import DeepLabModel
 from visualize import vis_segmentation
 
-saved_path = 'deeplab_model_cityscapes.tar.gz'
+saved_path = carmen_home + '/sharedlib/Deeplab/deeplab_model_cityscapes.tar.gz'
 model = DeepLabModel(saved_path)
 
 def process_image(carmen_image):
   img_teste = Image.fromarray(carmen_image)
   resized_im, seg_map = model.run(img_teste)
   vis_segmentation(resized_im, seg_map)
+  print("\n Hello there \n")
+  # plt.imshow(carmen_image)
+  # plt.axis('off')
+  # plt.title('input image')
+  # plt.show()
 
 
 #Para rodar de forma standalone. Troque o nome do arquivo teste.png para aquele que vc usar de teste

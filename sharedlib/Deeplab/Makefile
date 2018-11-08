@@ -7,8 +7,8 @@ CXXFLAGS +=
 MODULE_NAME = Deeplab Neural Network
 MODULE_COMMENT = Semantic segmentation inference using Deeplab tensorflow model
 
-IFLAGS += 
-LFLAGS += 
+IFLAGS += -I/usr/include/python2.7
+LFLAGS += -lpython2.7 -lpthread 
 
 SOURCES = 
  

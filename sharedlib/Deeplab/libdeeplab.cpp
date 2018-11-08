@@ -36,17 +36,24 @@ initialize_inference_context()
 
 
 
-void
+unsigned char*
 process_image(int width, int height, unsigned char *image)
 {
 	//create shape for numpy array
 	npy_intp dims[3] = {height, width, 3};
 	PyObject* numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image);
 
-	PyObject_CallFunctionObjArgs(python_semantic_segmentation_function, numpyArray, NULL);
+	PyObject* return_array;
+
+	return_array = PyObject_CallFunctionObjArgs(python_semantic_segmentation_function, numpyArray, NULL);
+
+	unsigned char *z = (unsigned char*) PyArray_DATA(return_array);
 
 	if (PyErr_Occurred())
         PyErr_Print();
 
 	Py_DECREF(numpyArray);
+	Py_DECREF(return_array);
+
+	return z;
 }
