@@ -45,7 +45,7 @@ process_image(int width, int height, unsigned char *image)
 
 	PyObject* return_array;
 
-	return_array = PyObject_CallFunctionObjArgs(python_semantic_segmentation_function, numpyArray, NULL);
+	return_array = PyObject_CallFunction(python_semantic_segmentation_function, "(O)", numpyArray);
 
 	unsigned char *z = (unsigned char*) PyArray_DATA(return_array);
 
@@ -53,7 +53,7 @@ process_image(int width, int height, unsigned char *image)
         PyErr_Print();
 
 	Py_DECREF(numpyArray);
-	Py_DECREF(return_array);
+	// Py_DECREF(return_array);
 
 	return z;
 }

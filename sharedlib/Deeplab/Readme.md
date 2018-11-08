@@ -13,6 +13,13 @@ instalar dependencias -> ```make virtualenv```
 
 baixar modelo -> ```make download```
 
+para funcionar de qualquer lugar -> vai no .bashrc e coloque 
+
+```
+# Deeplab
+export PYTHONPATH=$CARMEN_HOME/sharedlib/Deeplab:$PYTHONPATH
+```
+
 ### Running standalone
 Para rodar somente a parte em python, descomente as ultimas linhas presentes no arquivo `bridge.py` e rode `python2 bridge.py`
 

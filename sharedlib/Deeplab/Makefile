@@ -8,7 +8,7 @@ MODULE_NAME = Deeplab Neural Network
 MODULE_COMMENT = Semantic segmentation inference using Deeplab tensorflow model
 
 IFLAGS += -I/usr/include/python2.7
-LFLAGS += -lpython2.7 -lpthread 
+LFLAGS += -lpython2.7 -lpthread
 
 SOURCES = 
  
