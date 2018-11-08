@@ -171,7 +171,7 @@ locate_the_candidate_points_in_the_bounding_box(bbox_t &predictions,
 	for (int j = 0; j < laser_points_in_camera_box_list.size(); j++)
 	{
 		double distance_aux = calculate_the_distance_point_to_the_line(line_aux, laser_points_in_camera_box_list[j]);
-		if (distance_aux <= 2)
+		if (distance_aux <= 3)
 		{
 			candidate_points.push_back(laser_points_in_camera_box_list[j]);
 		}
@@ -197,10 +197,11 @@ seting_part_of_the_lane_message(carmen_vector_3D_t p1, int i, int idx_pt1,
 	else
 		p1 = p2;
 	carmen_vector_3D_t offset;
-	std:: cout <<"i " << i << '\n';
+	/*std:: cout <<"i " << i << '\n';
 	std:: cout <<"p1 x " << candidate_points[idx_pt1].velodyne_points_in_cam.ipx << " y " << candidate_points[idx_pt1].velodyne_points_in_cam.ipy << '\n';
-	std:: cout <<"p2 x " << candidate_points[idx_pt2].velodyne_points_in_cam.ipx << " y " << candidate_points[idx_pt2].velodyne_points_in_cam.ipy << '\n';
-
+	std:: cout <<"p2 x " << candidate_points[idx_pt2].velodyne_points_in_cam.ipx << " y " << candidate_points[idx_pt2].velodyne_points_in_cam.ipy << '\n';*/
+	p1.y = -p1.y;
+	p2.y = -p2.y;
 	offset.x = 0.572;
 	offset.y = 0.0;
 	offset.z = 2.154;
@@ -247,13 +248,13 @@ lane_publish_messages(double _timestamp, std::vector<bbox_t> &predictions, std::
 		int idx_pt1, idx_pt2;
 		if (left_or_right[i] == true)
 		{
-			std::sort(candidate_points.begin(), candidate_points.end(), function_to_order_left);
+			std::sort(candidate_points.begin(), candidate_points.end(), function_to_order_right);
 			idx_pt1 = 0;
 			idx_pt2 = candidate_points.size() - 1;
 			message.lane_vector[i].left = 1;
 		}else
 		{
-			std::sort(candidate_points.begin(), candidate_points.end(), function_to_order_right);
+			std::sort(candidate_points.begin(), candidate_points.end(), function_to_order_left);
 			idx_pt1 = 0;
 			idx_pt2 = candidate_points.size() - 1;
 			message.lane_vector[i].left = 0;
@@ -364,6 +365,8 @@ put_the_lane_dectections_in_image(std::vector< std::vector<carmen_velodyne_point
 			}
 		}
 	}
+	vector_candidate_points.clear();
+	laser_points_in_camera_box_list.clear();
 	cv::Mat resized_image(cv::Size(640, 480), CV_8UC3);
 	cv::resize(rgb_image, resized_image, resized_image.size());
 	cv::imshow("Lane detector", resized_image);
