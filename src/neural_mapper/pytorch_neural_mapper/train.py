@@ -21,20 +21,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 
-n_imgs = 79
-n_train = 60
-n_test = 19
+n_imgs = 900
+n_train = 280
+n_test = 120
 #n_train = 10
 #n_test = 1
 
 train_start_index = 0
 test_start_index = n_train
 
-img_x_dim = 424
-img_y_dim = 424
+img_x_dim = 500
+img_y_dim = 500
 
-data_path = '/dados/neural_mapper/60mts/data/'
-target_path = '/dados/neural_mapper/60mts/labels/'
+data_path = '/dados/neural_mapper_png_dataset/volta_da_ufes30102018/data/'
+target_path = '/dados/neural_mapper_png_dataset/volta_da_ufes30102018/labels/'
 debug_img_path = 'debug_imgs/'
 
 input_dimensions = 5
@@ -48,7 +48,13 @@ def png2tensor(file_name):
 def png2target(file_name):
     img2tensor = transforms.ToTensor()
     img = Image.open(file_name)
-    return (img2tensor(img)*255 - 1)
+    #print((img2tensor(img)*255 - 1))
+    target = (img2tensor(img)*255 - 1)
+
+    weight = np.array([len(np.where(target.numpy() == t)[0]) for t in np.unique(target.numpy())])
+
+    #print(weight)
+    return target, weight
     #return img2tensor(img)
 
 def tensor2png(tensor):
@@ -76,24 +82,30 @@ def saveImage(tensor, file_name):
 
 def load_data(batch_size, dataset_size):
     dataset = []
+    weights = np.zeros(n_classes)
     n = math.floor(dataset_size/batch_size)
     for i in range(n):
         data = torch.zeros(batch_size, input_dimensions, img_x_dim, img_y_dim)
         target = torch.zeros(batch_size, img_x_dim, img_y_dim, dtype=torch.int64)
 
         for j in range(batch_size):
-            data[j][0] = png2tensor(data_path + str(batch_size*i + j + train_start_index + 1) + '_max.png')
-            data[j][1] = png2tensor(data_path + str(batch_size*i + j + train_start_index + 1) + '_mean.png')
-            data[j][2] = png2tensor(data_path + str(batch_size*i + j + train_start_index + 1) + '_min.png')
-            data[j][3] = png2tensor(data_path + str(batch_size*i + j + train_start_index + 1) + '_numb.png')
-            data[j][4] = png2tensor(data_path + str(batch_size*i + j + train_start_index + 1) + '_std.png')
-            target[j] = png2target(target_path + str(batch_size*i + j + train_start_index) + '_label.png')
-            #print(target[j])
+            # + 1 se indice comeca em 1 
+            data[j][0] = png2tensor(data_path + str(batch_size*i + j + train_start_index) + '_max.png')# + 1) + '_max.png')
+            data[j][1] = png2tensor(data_path + str(batch_size*i + j + train_start_index) + '_mean.png')# + 1) + '_mean.png')
+            data[j][2] = png2tensor(data_path + str(batch_size*i + j + train_start_index) + '_min.png')# + 1) + '_min.png')
+            data[j][3] = png2tensor(data_path + str(batch_size*i + j + train_start_index) + '_numb.png')# + 1) + '_numb.png')
+            data[j][4] = png2tensor(data_path + str(batch_size*i + j + train_start_index) + '_std.png')# + 1) + '_std.png')
+            target[j], new_weights = png2target(target_path + str(batch_size*i + j + train_start_index) + '_label.png')
+            weights = weights + new_weights
+
         row = []
         row.append(data)
         row.append(target)
         dataset.append(row)
-    return dataset
+        #print(weights)
+    max_weight = max(weights)
+    weights = max_weight/weights
+    return dataset, weights
 
 def load_train_data(batch_size, train_data_size):
     dataset = []
@@ -140,20 +152,20 @@ def load_test_data(batch_size, test_data_size):
         dataset.append(row)
     return dataset
 
-def train(args, model, device, train_loader, optimizer, epoch):
+def train(args, model, device, train_loader, optimizer, epoch, weights):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.long().to(device)
         optimizer.zero_grad()
         output = model(data)
-        loss = F.cross_entropy(output, target)
-        loss.backward()
+        out_loss = F.cross_entropy(output, target)#, weight=weights)
+        out_loss.backward()
         optimizer.step()
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
     #                epoch, batch_idx * len(data), len(train_loader.dataset),
                 epoch, batch_idx * len(data), len(train_loader)*args.batch_size,
-                100. * batch_idx / len(train_loader), loss.item()))
+                100. * batch_idx / len(train_loader), out_loss.item()))
 
            # pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
             #imgPred = pred[0]
@@ -200,7 +212,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch Neural Mapper')
     parser.add_argument('--batch-size', type=int, default=5, metavar='N',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--test-batch-size', type=int, default=1, metavar='N',
+    parser.add_argument('--test-batch-size', type=int, default=2, metavar='N',
                         help='input batch size for testing (default: 1000)')
     parser.add_argument('--epochs', type=int, default=100, metavar='N',
                         help='number of epochs to train (default: 10)')
@@ -237,7 +249,7 @@ if __name__ == '__main__':
     #train_loader = load_train_data(args.batch_size, n_train)
     #test_loader = load_test_data(args.test_batch_size, n_test)
 
-    dataset_loader = load_data(args.batch_size, n_imgs)
+    dataset_loader, weights = load_data(args.batch_size, n_imgs)
     shuffle(dataset_loader)
     n_train_batches = math.floor(n_train/args.batch_size)
     train_loader = dataset_loader[:n_train_batches]    
@@ -256,8 +268,13 @@ if __name__ == '__main__':
     
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
+    #weights[1] = weights[1]*50
+    print("PESOS:")
+    print (weights)
+    #weights = [1., 100.]
+    class_weights = torch.FloatTensor(weights).cuda()
     for epoch in range(1, args.epochs + 1):
-        train(args, model, device, train_loader, optimizer, epoch)
+        train(args, model, device, train_loader, optimizer, epoch, class_weights)
         test(args, model, device, test_loader, epoch)
         if(epoch % 10 == 0):
             torch.save(model.state_dict(), 'saved_models/' + str(n_imgs)  + "imgs_epoch" + str(epoch) + '.model')

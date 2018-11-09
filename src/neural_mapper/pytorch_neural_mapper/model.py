@@ -63,7 +63,7 @@ class FCNN(nn.Module):
 		self.n_layers_enc = 32
 		self.n_layers_ctx = 128
 		self.n_input = n_input
-		self.prob_drop = 0.25
+		self.prob_drop = 0.3
 
 		# Encoder
 		self.enc1 = nn.Conv2d(self.n_input, self.n_layers_enc, 3, stride=1, padding=1, dilation=1)

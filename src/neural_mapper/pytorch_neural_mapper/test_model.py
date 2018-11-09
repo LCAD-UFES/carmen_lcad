@@ -16,24 +16,24 @@ import train as train
 img_index = 1
 
 
-img_x_dim = 424
-img_y_dim = 424
+img_x_dim = 500
+img_y_dim = 500
 
 data_dim = 5
 
-data_path = '/dados/neural_mapper/60mts/data/'
-target_path = '/dados/neural_mapper/60mts/labels/'
+data_path = '/dados/neural_mapper_png_dataset/volta_da_ufes30102018/data/'
+target_path = '/dados/neural_mapper_png_dataset/volta_da_ufes30102018/labels/'
 debug_img_path = 'debug_imgs/'
 
 def load_image(index):
     data = torch.zeros(1, data_dim, img_x_dim, img_y_dim)
     target = torch.zeros(1, img_x_dim, img_y_dim)
 
-    data[0][0] = train.png2tensor(data_path + str(index + 1) + '_max.png')
-    data[0][1] = train.png2tensor(data_path + str(index + 1) + '_mean.png')
-    data[0][2] = train.png2tensor(data_path + str(index + 1) + '_min.png')
-    data[0][3] = train.png2tensor(data_path + str(index + 1) + '_numb.png')
-    data[0][4] = train.png2tensor(data_path + str(index + 1) + '_std.png')
+    data[0][0] = train.png2tensor(data_path + str(index) + '_max.png')
+    data[0][1] = train.png2tensor(data_path + str(index) + '_mean.png')
+    data[0][2] = train.png2tensor(data_path + str(index) + '_min.png')
+    data[0][3] = train.png2tensor(data_path + str(index) + '_numb.png')
+    data[0][4] = train.png2tensor(data_path + str(index) + '_std.png')
     target[0] = train.png2tensor(target_path + str(index) + '_view.png')
 
     return data, target
@@ -41,7 +41,7 @@ def load_image(index):
 if __name__ == '__main__':
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch Neural Mapper test on images')
-    parser.add_argument('--img-index', type=int, default=randint(0,78), metavar='N',
+    parser.add_argument('--img-index', type=int, default=randint(0,400), metavar='N',
                         help='Image index on dataset')
     parser.add_argument('--save-img', type=bool, default=False, metavar='N',
                         help='Save image on disk')
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     imgPred = pred[0].float()
     imgPred = (imgPred + 1)*255/3
     imgPred = imgPred.cpu().float()
-    imgTarget = torch.FloatTensor(1, 424, 424)
+    imgTarget = torch.FloatTensor(1, img_x_dim, img_y_dim)
     imgTarget[0] = target[0]
     imgTarget = imgTarget.cpu().float()
     if(args.save_img):
