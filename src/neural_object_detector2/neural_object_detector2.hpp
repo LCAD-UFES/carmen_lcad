@@ -17,6 +17,7 @@
 #include <string>
 
 #include "dbscan.h"
+#include "SampleFilter.h"
 
 
 #include <opencv2/highgui/highgui.hpp>

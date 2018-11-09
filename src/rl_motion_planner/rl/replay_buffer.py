@@ -1,135 +1,141 @@
 
+
 import sys
 import numpy as np
-from collections import deque
 from rl.util import relative_pose, dist
 
 
 class ReplayBuffer:
-    def __init__(self, capacity, n_trad, n_her, max_episode_size):
-        """
-        :param capacity: max size of the replay memory
-        :param n_trad: number of traditional transitions per batch
-        :param n_her: number of her transitions per batch
-        :param: max_episode_size to compute the reward in goals chosen in hindsight
-        """
-        print('ReplayBuffer with n_trad={} and n_her={}'.format(n_trad, n_her))
-        self.capacity = capacity
-        self.n_trad = n_trad
-        self.n_her = n_her
-        self.max_episode_size = max_episode_size
-        self.stack = deque()
+    def __init__(self, params, reward_generator):
+        self.capacity = params['replay_memory_capacity']
+        self.n_trad = params['batch_size'] * (1. - params['her_rate'])
+        self.batch_size = params['batch_size']
+        self.rgen = reward_generator
+        self.buffer = []
+        self.batch = dict()
+
+
+    def __len__(self):
+        return len(self.buffer)
+
 
     def add(self, episodes):
         for e in episodes:
-            if len(e) > 1:
-                self.stack.append(e)
-                if len(self.stack) > self.capacity:
-                    self.stack.popleft()
+            self.buffer.append(e)
+            if len(self.buffer) > self.capacity:
+                self.buffer.pop(0)
 
-    def sample(self):
-        batch = {'laser': [], 'state': [], 'goal': [], 'rew': [], 'act': [],
-                 'next_laser': [], 'next_state': [], 'next_goal': [], 'is_final': []}
 
-        # sample a set of episodes
-        n = len(self.stack)
-        e_ids = np.random.randint(0, n, self.n_trad)
+    def get_batch(self):
+        self._reset_batch()
 
-        # add a set of transitions to the batch
-        transitions_not_final = []
-        for i in range(self.n_trad):
-            e = e_ids[i]
-            t = np.random.randint(0, len(self.stack[e]))
-            goal = relative_pose(self.stack[e][t][0]['pose'], self.stack[e][t][3]) + [self.stack[e][t][3][3]]
+        for i in range(self.batch_size):
+            if i < self.n_trad:
+                self._sample_and_add_transition_to_batch(is_her=False)
+            else:
+                self._sample_and_add_transition_to_batch(is_her=True)
+
+        return self.batch
+
+
+    def _reset_batch(self):
+        self.batch['agent_states'] = []
+        self.batch['lasers'] = []
+        self.batch['goals'] = []
+        self.batch['rewards'] = []
+        self.batch['cmds'] = []
+        self.batch['is_finals'] = []
+        self.batch['next_agent_states'] = []
+        self.batch['next_lasers'] = []
+        self.batch['next_goals'] = []
+
+
+    def _sample_and_add_transition_to_batch(self, is_her=False):
+        # sample an episode
+        episode = self.buffer[np.random.randint(len(self.buffer))]
+        transitions = episode['transitions']
+        
+        n = len(transitions)
+        
+        # sample a transition
+        t_id = np.random.randint(n)
+        t = episode['transitions'][t_id]
+
+        # obtain the transition data
+        obs, cmd = t[0], t[1]
+        rew, goal, is_final = self._compute_goal_reward_and_final_flag(is_her, t, episode, t_id, n, obs)
+        
+        if is_final: 
+            # This value is dummy because Q_next is not used when is_final is 1.0.
+            next_obs = obs
+        else:
+            next_obs = transitions[t_id + 1][0]
+
+        # add to batch
+        self._add_to_batch(obs, cmd, next_obs, rew, goal, is_final)
+
+
+    def _pose_to_goal(self, pose):
+        goal = np.zeros(4)
+        goal[:3] = pose[:3]
+        return goal
+
+
+    def _compute_goal_reward_and_final_flag(self, is_her, t, episode, t_id, n, obs):
+        # Traditional samples 
+        if not is_her:
+            rew = t[2]
+            goal = episode['goal']
+            is_final = 1.0 if (t_id >= n - 1) else 0.
+        # HER samples 
+        else:
+            if t_id == (n - 1):
+                # if there are not further observations to be used as fake goal, we
+                # assume the agent started on the goal.
+                goal_id = t_id
+            else:
+                # sample an observation from an episode to be a fake goal.
+                # the goals are assumed to have same format as poses.
+                goal_id = np.random.randint(t_id + 1, n)
+
+            transitions = episode['transitions']
+            goal = self._pose_to_goal(transitions[goal_id][0]['pose'])
             
-            batch['laser'].append(self.stack[e][t][0]['laser'])
-            batch['state'].append([self.stack[e][t][0]['pose'][3], self.stack[e][t][0]['pose'][4]])
-            batch['act'].append(self.stack[e][t][1])
-            batch['rew'].append([self.stack[e][t][2]])
-            batch['goal'].append(goal)
+            # The fake episode would have ended as soon as the agent reaches the goal.
+            her_episode_size = goal_id
+            
+            is_final = 1.0 if ((goal_id - t_id) <= 1) else 0.0
+            is_final_flag = True if is_final == 1.0 else 0.0 
+            
+            rew = self.rgen.reward(her_episode_size, obs, 
+                                   goal=goal, 
+                                   achieved=True, 
+                                   is_final=is_final_flag)
+        
+        return rew, goal, is_final
 
-            # check if the transition is the last one in the episode
-            if t < len(self.stack[e]) - 1:
-                transitions_not_final.append([e, t])
-                next_goal = relative_pose(self.stack[e][t + 1][0]['pose'], self.stack[e][t][3]) + [self.stack[e][t][3][3]]
-                batch['next_laser'].append(self.stack[e][t + 1][0]['laser'])
-                batch['next_state'].append([self.stack[e][t + 1][0]['pose'][3], self.stack[e][t + 1][0]['pose'][4]])
-                batch['next_goal'].append(next_goal)
-                batch['is_final'].append([0.0])
-            else:
-                # If the transition is the last one, we don't have a next observation. In this case, we copy the
-                # current observation as next one. This value will be ignored when computing the target q.
-                batch['next_laser'].append(self.stack[e][t][0]['laser'])
-                batch['next_state'].append([self.stack[e][t][0]['pose'][3], self.stack[e][t][0]['pose'][4]])
-                batch['next_goal'].append(goal)
-                batch['is_final'].append([1.0])
 
-        # generate additional training data using her
-        """
-        Os caras da OpenAI usaram transicoes dos mesmos episodios acima para escolher novos goals. 
-        Eh errado escolher transicoes de outros episodios?
-        """
-        # if len(transitions_not_final) > 0:
-        for i in range(self.n_her):
-            # e, t = transitions_not_final[np.random.randint(len(transitions_not_final))]
-            e = np.random.randint(0, n)
-            t = np.random.randint(0, len(self.stack[e]) - 1)
+    def _state_from_obs(self, obs):
+        return obs['pose'][3:]
 
-            future_t = np.random.randint(t + 1, len(self.stack[e]))
-            her_episode_size = future_t - t
-            her_return = (self.max_episode_size - her_episode_size) / (self.max_episode_size - 1)
-            rew = (her_return / her_episode_size)
-            #is_final = 1.0 if (her_episode_size == 1) else 0.0
-            is_final = 0.0
 
-            #"""
-            # rew = dist(self.stack[e][t][0]['pose'], self.stack[e][future_t][0]['pose']) / (her_episode_size * 10.0) 
-            # rew /= her_episode_size
-            if her_episode_size <= 1:
-                rew = 1.0 # (dist(self.stack[e][t][0]['pose'], self.stack[e][future_t][0]['pose']) / 10.)  
-                is_final = 1.0
-            else:
-                rew = 0.0
-            #"""
-
-            """
-            if her_episode_size <= 1:
-                # her_return = (self.max_episode_size + 1 - her_episode_size) / self.max_episode_size
-                # rew = (her_return / her_episode_size)
-                rew = 1.0
-                is_final = 1.0
-            else:
-                rew = 0.
-                is_final = 0.0
-            """
-
-            # rew = 1. / self.max_episode_size
-
-            batch['laser'].append(self.stack[e][t][0]['laser'])
-            batch['state'].append([self.stack[e][t][0]['pose'][3], self.stack[e][t][0]['pose'][4]])
-            batch['act'].append(self.stack[e][t][1])
-            batch['rew'].append([rew])
-
-            her_goal = self.stack[e][future_t][0]['pose'][:4]
-            goal = relative_pose(self.stack[e][t][0]['pose'], her_goal) + [her_goal[3]]
-            next_goal = relative_pose(self.stack[e][t + 1][0]['pose'], her_goal) + [her_goal[3]]
-
-            batch['goal'].append(goal)
-            batch['next_laser'].append(self.stack[e][t + 1][0]['laser'])
-            batch['next_state'].append([self.stack[e][t + 1][0]['pose'][3], self.stack[e][t + 1][0]['pose'][4]])
-            batch['next_goal'].append(next_goal)
-            batch['is_final'].append([is_final])
-
-            """
-            print("pose", self.stack[e][t][0]['pose'], "\n"
-                  "goal", self.stack[e][future_t][0]['pose'][:4],
-                  "rew", rew, "dt:", her_episode_size)
-            """
-
-        #import pprint
-        #pprint.pprint(batch)
-
-        return batch
+    def _add_to_batch(self, obs, cmd, next_obs, rew, goal, is_final):
+        g_pose = relative_pose(obs['pose'], goal)
+        g_next = relative_pose(next_obs['pose'], goal)
+        
+        s = self._state_from_obs(obs)
+        n = self._state_from_obs(next_obs)
+        
+        self.batch['agent_states'].append(s)
+        self.batch['lasers'].append(obs['laser'])
+        self.batch['goals'].append(g_pose)
+        self.batch['rewards'].append([rew])
+        self.batch['cmds'].append(cmd)
+        self.batch['is_finals'].append([is_final])
+        self.batch['next_agent_states'].append(n)
+        self.batch['next_lasers'].append(next_obs['laser'])
+        self.batch['next_goals'].append(g_next)
 
 
 
+            

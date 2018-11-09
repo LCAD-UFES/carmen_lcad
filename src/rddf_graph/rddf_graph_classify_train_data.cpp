@@ -91,7 +91,7 @@ classify_train_data(FILE *f_last_classified, vector < vector<t_pattern> > databa
 	cv::Mat image_15_15_scaled;
 	cv::Mat image_3_3;
 	cv::Mat image_3_3_scaled;
-	cv::Size size(15 * 10, 15 * 10);
+	cv::Size size(15 * 30, 15 * 30);
 	int k;
 	l_class actual;
 
@@ -109,7 +109,7 @@ classify_train_data(FILE *f_last_classified, vector < vector<t_pattern> > databa
 		{
 			//if (database_filenames[i].size() != 0 )
 			if (std::count(database_filenames[i][j].pattern.begin(), database_filenames[i][j].pattern.end(),'1') >= 3)
-			//if(i==84)
+			if(i==84)
 			{
 				actual.file_index = i;
 				actual.pattern = j;
@@ -123,10 +123,16 @@ classify_train_data(FILE *f_last_classified, vector < vector<t_pattern> > databa
 				}
 				create_image_3_3(&image_3_3, database_filenames[i][j].pattern);
 				//cv::resize(image_15_15, image_15_15_scaled, size, 0, 0, cv::INTER_NEAREST);
-				//cv::resize(image_15_15, image_15_15_scaled, size, 0, 0, cv::INTER_NEAREST);
-				cv::resize(image_15_15, image_15_15_scaled, size);
-				//cv::resize(image_3_3, image_3_3_scaled, size, 0, 0, cv::INTER_NEAREST);
-				cv::resize(image_3_3, image_3_3_scaled, size);
+				cv::resize(image_15_15, image_15_15_scaled, size, 0, 0, cv::INTER_NEAREST);
+				//cv::resize(image_15_15, image_15_15_scaled, size);
+				cv::resize(image_3_3, image_3_3_scaled, size, 0, 0, cv::INTER_NEAREST);
+				cv::Point p1, p2;
+				p1.x = 180;
+				p1.y = 180;
+				p2.x = 270;
+				p2.y = 270;
+				cv::rectangle(image_15_15_scaled, p1, p2, cv::Scalar(0,0,255),2);
+				//cv::resize(image_3_3, image_3_3_scaled, size);
 				cv::imshow("z->valid | x->invalid | esc->exit", image_15_15_scaled);
 				cv::imshow("image 3x3", image_3_3_scaled);
 
@@ -216,9 +222,9 @@ fill_database_matrix(FILE *f_database_filenames, vector < vector<t_pattern> > &d
 			//if(i!=16)
 				//sum+=database_filenames[i].size();
 			cont++;
-			//cout<<i<<" ";
+			cout<<i<<" ";
 			//cout<<database_filenames[i][0].filename<<endl;
-			//cout<<database_filenames[i].size()<<endl;
+			cout<<database_filenames[i].size()<<endl;
 		}
 		//cout<<i<<" "<<database_filenames[i].size()<<endl;getchar();
 	}

@@ -220,6 +220,13 @@ clamp(int value, int min, int max)
   return value;
 }
 
+/**
+ * @brief Insert object defined by OBB pObject into grid.
+ * 
+ * @param pObject OBB that define the object
+ * @param object_index relative number of the object into the grid. (N+1 if the grid already has N objects)
+ * @param grid 
+ */
 void
 InsertObjectIntoGrid(carmen_oriented_bounding_box pObject,
                      int object_index,
@@ -231,10 +238,11 @@ InsertObjectIntoGrid(carmen_oriented_bounding_box pObject,
   // Test assumes objects have been inserted in all rows/columns overlapped
   float ooCellWidth = 1.0f / grid->cell_width;
   double radius = pObject.length + pObject.width;
-  int x1 = (int)floorf((pObject.object_pose.x - radius) * ooCellWidth);
-  int x2 = (int)floorf((pObject.object_pose.x + radius) * ooCellWidth);
-  int y1 = (int)floorf((pObject.object_pose.y - radius) * ooCellWidth);
-  int y2 = (int)floorf((pObject.object_pose.y + radius) * ooCellWidth);
+  
+  int x1 = (int)floorf((pObject.object_pose.x - radius) * ooCellWidth + grid->grid_width/2);
+  int x2 = (int)floorf((pObject.object_pose.x + radius) * ooCellWidth + grid->grid_width/2);
+  int y1 = (int)floorf((pObject.object_pose.y - radius) * ooCellWidth + grid->grid_height/2);
+  int y2 = (int)floorf((pObject.object_pose.y + radius) * ooCellWidth + grid->grid_height/2);
 
   x1 = clamp(x1, 0, grid->grid_width-1);
   x2 = clamp(x2, 0, grid->grid_width-1);
@@ -250,6 +258,16 @@ InsertObjectIntoGrid(carmen_oriented_bounding_box pObject,
     grid->columnBitArray[x][i] |= (1 << object_index);
 }
 
+/**
+ * @brief Construct an uniform collision grid and insert an list of objects into it.
+ * 
+ * @param num_objects 
+ * @param objects
+ * @param grid_width 
+ * @param grid_height 
+ * @param cell_width 
+ * @return carmen_uniform_collision_grid 
+ */
 carmen_uniform_collision_grid
 construct_uniform_collision_grid(int num_objects, carmen_oriented_bounding_box *objects, int grid_width, int grid_height, double cell_width)
 {
@@ -280,6 +298,13 @@ construct_uniform_collision_grid(int num_objects, carmen_oriented_bounding_box *
 	return grid;
 }
 
+/**
+ * @brief Check the object pObject against the grid and return the sum of the penetration distance between pObject and all of the objects inside the grid. Implementation based on (Real Time Collision Detection - 2004)
+ *
+ * @param pObject 
+ * @param grid 
+ * @return double 
+ */
 double
 TestObjectAgainstGrid(carmen_oriented_bounding_box pObject, carmen_uniform_collision_grid *grid)
 {
@@ -292,15 +317,16 @@ TestObjectAgainstGrid(carmen_oriented_bounding_box pObject, carmen_uniform_colli
 	// Test assumes objects have been inserted in all rows/columns overlapped
 	float ooCellWidth = 1.0f / grid->cell_width;
 	double radius = pObject.length + pObject.width;
-	int x1 = (int)floorf((pObject.object_pose.x - radius) * ooCellWidth);
-	int x2 = (int)floorf((pObject.object_pose.x + radius) * ooCellWidth);
-	int y1 = (int)floorf((pObject.object_pose.y - radius) * ooCellWidth);
-	int y2 = (int)floorf((pObject.object_pose.y + radius) * ooCellWidth);
+	
+	int x1 = (int)floorf((pObject.object_pose.x - radius) * ooCellWidth + grid->grid_width/2);
+	int x2 = (int)floorf((pObject.object_pose.x + radius) * ooCellWidth + grid->grid_width/2);
+	int y1 = (int)floorf((pObject.object_pose.y - radius) * ooCellWidth + grid->grid_height/2);
+	int y2 = (int)floorf((pObject.object_pose.y + radius) * ooCellWidth + grid->grid_height/2);
 
-  x1 = clamp(x1, 0, grid->grid_width-1);
-  x2 = clamp(x2, 0, grid->grid_width-1);
-  y1 = clamp(y1, 0, grid->grid_height-1);
-  y2 = clamp(y2, 0, grid->grid_height-1);
+	x1 = clamp(x1, 0, grid->grid_width-1);
+	x2 = clamp(x2, 0, grid->grid_width-1);
+	y1 = clamp(y1, 0, grid->grid_height-1);
+	y2 = clamp(y2, 0, grid->grid_height-1);
 
 	// Compute the merged (bitwise-or’ed) bit array of all overlapped grid rows.
 	// Ditto for all overlapped grid columns
@@ -313,7 +339,7 @@ TestObjectAgainstGrid(carmen_oriented_bounding_box pObject, carmen_uniform_colli
 
 	// Now go through the intersection of the merged bit arrays and collision test
 	// those objects having their corresponding bit set
-	double sum = 0;
+	double p_distance = 0;
 	for (int i = 0; i < grid->num_objects_div_32; i++)
 	{
 		int32_t objectsMask = mergedRowArray[i] & mergedColumnArray[i];
@@ -325,15 +351,15 @@ TestObjectAgainstGrid(carmen_oriented_bounding_box pObject, carmen_uniform_colli
 
 			// Get index number of set bit, test against corresponding object
 			// (GetBitIndex(v) returns log_2(v), i.e. n such that 2 ∧ n = v)
-      uint32_t objectIndex = GetBitIndex(singleObjectMask) + i * 32;
+      		uint32_t objectIndex = GetBitIndex(singleObjectMask) + i * 32;
 
-			sum += compute_collision_obb_obb(pObject, grid->objects[objectIndex]);
+			p_distance += compute_collision_obb_obb(pObject, grid->objects[objectIndex]);
 			// Mask out tested object, and continue with any remaining objects
 			objectsMask ^= singleObjectMask;
 		}
 	}
 
-	return sum;
+	return p_distance;
 }
 
 carmen_point_t

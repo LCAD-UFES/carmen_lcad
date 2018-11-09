@@ -1,8 +1,8 @@
 #include <stdio.h>
+#include <iostream>
 #include <carmen/carmen.h>
 #include <carmen/voice_interface_interface.h>
-
-
+using namespace std;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -63,9 +63,13 @@ main (int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	voice_interface_initialize();
 
-	char *voice_interface_error = carmen_voice_interface_speak((char *) "Só alegria!");
-	if (voice_interface_error)
-		printf("%s", voice_interface_error);
+	char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Só alegria");
+	if (voice_interface_speak_error)
+		printf("%s \n", voice_interface_speak_error);
+
+	const char *voice_interface_listen_error = carmen_voice_interface_listen();
+		if (voice_interface_listen_error)
+			printf("%s \n", voice_interface_listen_error);
 
 	return (0);
 }

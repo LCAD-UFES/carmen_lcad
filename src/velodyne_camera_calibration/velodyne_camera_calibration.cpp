@@ -5,8 +5,8 @@
 #include <carmen/carmen.h>
 #include <carmen/visual_tracker_interface.h>
 #include "velodyne_camera_calibration.h"
+//#include <tf.h>
 
-#include <tf.h>
 
 const int MIN_ANGLE_OBSTACLE = 2;
 const int MAX_ANGLE_OBSTACLE = 188;
@@ -363,4 +363,93 @@ velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_messa
 		}
 	}
 	return points;
+}
+
+
+tf::StampedTransform
+get_world_to_camera_transformation (tf::Transformer *transformer, carmen_pose_3D_t pose)
+{
+	tf::Transform world_to_car_pose;
+	tf::StampedTransform world_to_camera_pose;
+	world_to_car_pose.setOrigin(tf::Vector3(pose.position.x, pose.position.y, pose.position.z));
+	double pitch;
+
+//	pitch = pose.orientation.pitch;
+//	printf("Pitch before: %lf ", pitch);
+//	SampleFilter_put(&filter2, pitch);
+//	pitch = SampleFilter_get(&filter2);
+//	printf("Pitch after: %lf \n", pitch);
+	pitch = 0.0;
+
+	world_to_car_pose.setRotation(tf::Quaternion(pose.orientation.yaw, pitch, pose.orientation.roll)); // yaw, pitch, roll
+
+	//world_to_car_pose.setOrigin(tf::Vector3(globalpos.x, globalpos.y, 0.0));
+	//world_to_car_pose.setRotation(tf::Quaternion(globalpos.theta, 0.0, 0.0)); // yaw, pitch, roll
+	//world_to_car_pose.setRotation(tf::Quaternion(pose.orientation.yaw, pose.orientation.pitch, pose.orientation.roll)); // yaw, pitch, roll
+
+	tf::StampedTransform world_to_car_transform(world_to_car_pose, tf::Time(0), "/world", "/car");
+	transformer->setTransform(world_to_car_transform, "world_to_car_transform");
+
+	transformer->lookupTransform("/world", "/camera", tf::Time(0), world_to_camera_pose);
+	//last_pitch = pose.orientation.pitch;
+
+	return (world_to_camera_pose);
+}
+
+
+carmen_position_t
+convert_rddf_pose_to_point_in_image(double x, double y, double z,
+									tf::StampedTransform world_to_camera_pose,
+									carmen_camera_parameters camera_parameters,
+									int image_width, int image_height)
+{
+
+
+	tf::Point point (x, y, z);
+	tf::Point point_transformed;
+
+	carmen_position_t point_in_image;
+
+	// fx and fy are the focal lengths
+	double fx_meters = camera_parameters.fx_factor * image_width * camera_parameters.pixel_size;
+	double fy_meters = camera_parameters.fy_factor * image_height * camera_parameters.pixel_size;
+	//cu, cv represent the camera principal point
+	double cu = camera_parameters.cu_factor * (double) image_width;
+	double cv = camera_parameters.cv_factor * (double) image_height;
+	//printf("Focal Lenght: %lf X %lf\n", fx_meters, fy_meters);
+	//printf("Principal Point: %lf X %lf\n", cu, cv);
+
+	point_transformed = world_to_camera_pose.inverse() * point;
+
+	//printf("Pose in camera reference: %lf X %lf X %lf\n", rddf_pose_transformed[0], rddf_pose_transformed[1], rddf_pose_transformed[2]);
+
+	point_in_image.x = (unsigned int) (fx_meters * (point_transformed[1] / point_transformed[0]) / camera_parameters.pixel_size + cu);
+	point_in_image.y = (unsigned int) (fy_meters * (-(point_transformed[2]+0.28) / point_transformed[0]) / camera_parameters.pixel_size + cv);
+	point_in_image.x = image_width - point_in_image.x;
+
+	//printf("Pose in image: %lf X %lf\n", point.x, point.y);
+
+	return (point_in_image);
+}
+
+void
+initialize_transformations(carmen_pose_3D_t board_pose, carmen_pose_3D_t camera_pose, tf::Transformer *transformer)
+{
+	tf::Transform board_to_camera_pose;
+	tf::Transform car_to_board_pose;
+
+	tf::Time::init();
+
+	// board pose with respect to the car
+	car_to_board_pose.setOrigin(tf::Vector3(board_pose.position.x, board_pose.position.y, board_pose.position.z));
+	car_to_board_pose.setRotation(tf::Quaternion(board_pose.orientation.yaw, board_pose.orientation.pitch, board_pose.orientation.roll)); 				// yaw, pitch, roll
+	tf::StampedTransform car_to_board_transform(car_to_board_pose, tf::Time(0), "/car", "/board");
+	transformer->setTransform(car_to_board_transform, "car_to_board_transform");
+
+	// camera pose with respect to the board
+	board_to_camera_pose.setOrigin(tf::Vector3(camera_pose.position.x, camera_pose.position.y, camera_pose.position.z));
+	board_to_camera_pose.setRotation(tf::Quaternion(camera_pose.orientation.yaw + carmen_degrees_to_radians(2.5), camera_pose.orientation.pitch, camera_pose.orientation.roll)); 				// yaw, pitch, roll
+	//board_to_camera_pose.setRotation(tf::Quaternion(camera_pose.orientation.yaw, camera_pose.orientation.pitch, camera_pose.orientation.roll)); 				// yaw, pitch, roll
+	tf::StampedTransform board_to_camera_transform(board_to_camera_pose, tf::Time(0), "/board", "/camera");
+	transformer->setTransform(board_to_camera_transform, "board_to_camera_transform");
 }

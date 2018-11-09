@@ -1,16 +1,13 @@
 #!/usr/local/bin/python2.7
 #
-#
-# Date: 15/08/2018
 # LISTEN and SPEAK module
 # [START import_libraries]
 from __future__ import division
 import os
 import re
 import sys
-
 import pyaudio
-import vlc
+
 from google.cloud import speech, texttospeech
 from google.cloud.speech import enums, types
 from six.moves import queue
@@ -169,10 +166,13 @@ def speak(text, speech_file):
     response = client.synthesize_speech(synthesis_input, voice, audio_config)
 
     # The response's audio_content is binary.
-    with open(speech_file, 'wb') as out:
+    carmen_home = os.environ["CARMEN_HOME"]
+    total_path = carmen_home + '/data/voice_interface_speechs/' + speech_file
+    
+    with open(total_path, 'wb') as out:
         # Write the response to the output file.
         out.write(response.audio_content)
-        os.system('aplay ' + speech_file)
+        os.system('aplay ' + total_path)
 
 
 def listen():

@@ -14,3 +14,7 @@
   sudo apt-get install subversion`
   svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/voice_interface/
   ```
+#### Versão Python
+
+Python == 2.7.12
+Python3 == 3.5.2

@@ -195,6 +195,7 @@ sharedlib/libtf/src/test
 sharedlib/libvelodyne/test
 sharedlib/pso/pso_c
 sharedlib/pso/pso_test
+sharedlib/ENet/caffe-enet/python/caffe/proto/caffe_pb2.py
 src/Makefile.vars
 src/Makefile~
 src/base_ackerman/base_ackerman
