@@ -76,6 +76,12 @@ sensor_parameters_t ultrasonic_sensor_params;
 sensor_data_t *sensors_data;
 int number_of_sensors;
 
+carmen_camera_parameters *camera_params;
+carmen_pose_3D_t *camera_pose;
+int *camera_alive;
+int datmo_min_camera_index;
+int datmo_max_camera_index;
+
 carmen_pose_3D_t velodyne_pose;
 carmen_pose_3D_t laser_ldmrs_pose;
 
@@ -551,6 +557,91 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 }
 
 
+void
+bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_message* message)
+{
+
+}
+
+
+void
+bumblebee_basic1_image_handler(carmen_bumblebee_basic_stereoimage_message* message)
+{
+	bumblebee_basic_image_handler(1, message);
+}
+
+
+void
+bumblebee_basic2_image_handler(carmen_bumblebee_basic_stereoimage_message* message)
+{
+	bumblebee_basic_image_handler(2, message);
+}
+
+
+void
+bumblebee_basic3_image_handler(carmen_bumblebee_basic_stereoimage_message* message)
+{
+	bumblebee_basic_image_handler(3, message);
+}
+
+
+void
+bumblebee_basic4_image_handler(carmen_bumblebee_basic_stereoimage_message* message)
+{
+	bumblebee_basic_image_handler(4, message);
+}
+
+
+void
+bumblebee_basic5_image_handler(carmen_bumblebee_basic_stereoimage_message* message)
+{
+	bumblebee_basic_image_handler(5, message);
+}
+
+
+void
+bumblebee_basic6_image_handler(carmen_bumblebee_basic_stereoimage_message* message)
+{
+	bumblebee_basic_image_handler(6, message);
+}
+
+
+void
+bumblebee_basic7_image_handler(carmen_bumblebee_basic_stereoimage_message* message)
+{
+	bumblebee_basic_image_handler(7, message);
+}
+
+
+void
+bumblebee_basic8_image_handler(carmen_bumblebee_basic_stereoimage_message* message)
+{
+	bumblebee_basic_image_handler(8, message);
+}
+
+
+void
+bumblebee_basic9_image_handler(carmen_bumblebee_basic_stereoimage_message* message)
+{
+	bumblebee_basic_image_handler(9, message);
+}
+
+
+void (*image_handler[]) (carmen_bumblebee_basic_stereoimage_message*) =
+{
+		NULL,
+		bumblebee_basic1_image_handler,
+		bumblebee_basic2_image_handler,
+		bumblebee_basic3_image_handler,
+		bumblebee_basic4_image_handler,
+		bumblebee_basic5_image_handler,
+		bumblebee_basic6_image_handler,
+		bumblebee_basic7_image_handler,
+		bumblebee_basic8_image_handler,
+		bumblebee_basic9_image_handler,
+};
+
+
 static void
 shutdown_module(int signo)
 {
@@ -762,6 +853,61 @@ get_alive_sensors(int argc, char **argv)
 		{
 			sensors_params[i].name = (char *) calloc(strlen(param_list[i].variable) + 1, sizeof(char));
 			strcpy(sensors_params[i].name, param_list[i].variable);
+		}
+	}
+}
+
+
+static void
+get_alive_datmo_cameras(int argc, char **argv)
+{
+	int number_of_cameras = (datmo_max_camera_index - datmo_min_camera_index + 1);
+	if (number_of_cameras < 1)
+		return;
+
+	camera_alive = (int *) calloc(number_of_cameras, sizeof(int));
+	carmen_test_alloc(camera_alive);
+	camera_params = (carmen_camera_parameters *) calloc(number_of_cameras, sizeof(carmen_camera_parameters));
+	carmen_test_alloc(camera_params);
+	camera_pose = (carmen_pose_3D_t *) calloc(number_of_cameras, sizeof(carmen_pose_3D_t));
+	carmen_test_alloc(camera_pose);
+
+	for (int i = 0; i < number_of_cameras; i++)
+	{
+	    char datmo_camera[256];
+	    sprintf(datmo_camera, "datmo_bumblebee_basic%d", i + datmo_min_camera_index);
+
+		carmen_param_t param_list[] =
+		{
+			{(char *) "mapper", datmo_camera, CARMEN_PARAM_ONOFF, &camera_alive[i], 0, NULL},
+		};
+
+	    carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+		if (camera_alive[i])
+		{
+			char bumblebee_name[256];
+			char camera_name[256];
+			sprintf(bumblebee_name, "bumblebee_basic%d", i + datmo_min_camera_index);
+			sprintf(camera_name, "camera%d", i + datmo_min_camera_index);
+
+			carmen_param_t param_list2[] =
+			{
+				{bumblebee_name, (char*) "fx",         CARMEN_PARAM_DOUBLE, &camera_params[i].fx_factor,       0, NULL },
+				{bumblebee_name, (char*) "fy",         CARMEN_PARAM_DOUBLE, &camera_params[i].fy_factor,       0, NULL },
+				{bumblebee_name, (char*) "cu",         CARMEN_PARAM_DOUBLE, &camera_params[i].cu_factor,       0, NULL },
+				{bumblebee_name, (char*) "cv",         CARMEN_PARAM_DOUBLE, &camera_params[i].cv_factor,       0, NULL },
+				{bumblebee_name, (char*) "pixel_size", CARMEN_PARAM_DOUBLE, &camera_params[i].pixel_size,      0, NULL },
+
+				{camera_name,    (char*) "x",          CARMEN_PARAM_DOUBLE, &camera_pose[i].position.x,        0, NULL },
+				{camera_name,    (char*) "y",          CARMEN_PARAM_DOUBLE, &camera_pose[i].position.y,        0, NULL },
+				{camera_name,    (char*) "z",          CARMEN_PARAM_DOUBLE, &camera_pose[i].position.z,        0, NULL },
+				{camera_name,    (char*) "roll",       CARMEN_PARAM_DOUBLE, &camera_pose[i].orientation.roll,  0, NULL },
+				{camera_name,    (char*) "pitch",      CARMEN_PARAM_DOUBLE, &camera_pose[i].orientation.pitch, 0, NULL },
+				{camera_name,    (char*) "yaw",        CARMEN_PARAM_DOUBLE, &camera_pose[i].orientation.yaw,   0, NULL },
+			};
+
+			carmen_param_install_params(argc, argv, param_list2, sizeof(param_list2) / sizeof(param_list2[0]));
 		}
 	}
 }
@@ -1039,6 +1185,9 @@ read_parameters(int argc, char **argv,
 		{(char *) "mapper",  (char *) "update_and_merge_with_snapshot_map", CARMEN_PARAM_ONOFF, &update_and_merge_with_snapshot_map, 0, NULL},
 		{(char *) "mapper",  (char *) "number_of_threads", CARMEN_PARAM_INT, &number_of_threads, 0, NULL},
 
+		{(char *) "mapper",  (char *) "datmo_min_camera_index", CARMEN_PARAM_INT, &datmo_min_camera_index, 0, NULL},
+		{(char *) "mapper",  (char *) "datmo_max_camera_index", CARMEN_PARAM_INT, &datmo_max_camera_index, 0, NULL},
+
 		{(char *) "commandline",  (char *) "map_path", CARMEN_PARAM_STRING, &map_path, 0, NULL},
 
 		{(char *) "visual_odometry", (char *) "is_global_pos", CARMEN_PARAM_ONOFF, &visual_odometry_is_global_pos, 0, NULL},
@@ -1106,6 +1255,7 @@ read_parameters(int argc, char **argv,
 	carmen_grid_mapping_init_parameters(map_resolution, map_width);
 
 	get_alive_sensors(argc, argv);
+	get_alive_datmo_cameras(argc, argv);
 
 	carmen_param_allow_unfound_variables(1);
 
@@ -1186,6 +1336,12 @@ subscribe_to_ipc_messages()
 
 	// draw moving objects
 //	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	for (int camera = datmo_min_camera_index; camera <= datmo_max_camera_index; camera++)
+	{
+		if (camera_alive[camera - datmo_min_camera_index])
+			carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler[camera], CARMEN_SUBSCRIBE_LATEST);
+	}
 }
 
 
