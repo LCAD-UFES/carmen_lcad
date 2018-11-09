@@ -2,7 +2,7 @@ include ../Makefile.conf
 
 # Module name and description
 MODULE_NAME = MAPPER_PACKAGE
-MODULE_COMMENT = Mapper Maps using Velodyne!
+MODULE_COMMENT = Creates maps using velodyne and camera image segmentation for detection of moving objects
 
 #CFLAGS += # -Wall -std=c99  -O3 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops -Wno-unused-but-set-variable
 #CFLAGS += -Wall -std=c99 -O4 -mfpmath=sse -msse2 -msse4.2
