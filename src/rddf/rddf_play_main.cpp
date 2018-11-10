@@ -270,6 +270,7 @@ get_key_non_blocking(void)
 }
 
 
+// Cross_walk handling, checks if there is a pedestrian in the cross walk to send the PEDESTRIAN_TRACK_BUSY message
 bool
 pedestrian_track_busy(carmen_moving_objects_point_clouds_message *moving_objects, carmen_annotation_t pedestrian_track_annotation)
 {
@@ -295,7 +296,8 @@ pedestrian_track_busy(carmen_moving_objects_point_clouds_message *moving_objects
 	for (int i = 0; i < moving_objects->num_point_clouds; i++)
 	{
 		if ((strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") == 0) &&
-			(DIST2D(moving_objects->point_clouds[i].object_pose, world_point) < pedestrian_track_annotation.annotation_point.z))
+			//(moving_objects->point_clouds[i].linear_velocity > 0.5) && // TODO Take the direction of movement in account
+			(DIST2D(moving_objects->point_clouds[i].object_pose, world_point) < pedestrian_track_annotation.annotation_point.z)) // TODO ????? should'nt it be distance of the pedestrian to the cross walk center???
 			return (true);
 	}
 	return (false);
