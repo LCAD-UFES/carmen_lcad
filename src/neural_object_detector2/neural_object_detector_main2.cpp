@@ -497,7 +497,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     cv::Mat out;
     out = rgb_image;
     double distance, last_distance;
-    double meters_spacement = 15.0;
+    double meters_spacement = 25.0;
     for(int i = 15, a = 0; i < last_rddf_poses.number_of_poses; i++, a++){
     	if(a == 0)
     	{
@@ -522,32 +522,31 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     }
     vector<cv::Mat> scene_slices;
     cv::Mat roi;
+    double image_size_x;
+    double image_size_y;
     for(int i = 0; i < rddf_points.size(); i++){
 
-    	double dist_percentage = (100 - distances_of_rddf_from_car[i])/100;
-
-//    	cout<<dist_percentage<<endl;
-//    	cout<<abs((image_msg->width * dist_percentage)/2 - rddf_points[0].x)<<" "<<image_msg->width * dist_percentage<<endl;
-//    	cout<<abs((out.rows * dist_percentage) - rddf_points[0].y)<<" "<<out.rows * dist_percentage<<endl;
+    	if(i>0)
+    	{
+    		double dist_percentage = (100 - distances_of_rddf_from_car[i])/100;
+    		image_size_x = scene_slices[i-1].cols * dist_percentage;
+    		image_size_y = scene_slices[i-1].rows * dist_percentage;
+    	}
 
     	cv::circle(out, cv::Point(rddf_points[i].x, rddf_points[i].y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
 
-
-    	//cv::Rect rec((image_msg->width - rddf_points[0].x), rddf_points[0].y, (image_msg->width - rddf_points[0].x)*2, out.rows * dist_percentage);
-    	//cv::Rect rec(rddf_points[0].x - (image_msg->width * dist_percentage)/2, rddf_points[0].y, image_msg->width * dist_percentage, out.rows * dist_percentage);
     	if(i == 0)
     	{
-    		cv::Rect rec(rddf_points[0].x - 320, rddf_points[0].y-400, 640, 384);
+    		//cv::Rect rec(rddf_points[0].x - 320, rddf_points[0].y-300, 640, 384);
+    		double scale = 384.0*(3.0/4.0);
+    		cv::Rect rec(rddf_points[0].x - 320, rddf_points[0].y-scale, 640, 384);
     		roi = out (rec);
     		scene_slices.push_back(roi);
     	}
-    	else
+    	else if (image_size_x >=100 && image_size_y >=100)
     	{
-    		double image_size_x;
-    		double image_size_y;
-    		image_size_x = scene_slices[i-1].cols * dist_percentage;
-    		//image_size_y = scene_slices[i-1].rows * dist_percentage;
-    		cv::Rect rec(rddf_points[i].x - (image_size_x/2), rddf_points[i].y-(400*dist_percentage), scene_slices[i-1].cols * dist_percentage, scene_slices[i-1].rows * dist_percentage);
+    		//cv::Rect rec(rddf_points[i].x - (image_size_x/2), rddf_points[i].y-(300*dist_percentage), image_size_x, scene_slices[i-1].rows * dist_percentage);
+    		cv::Rect rec(rddf_points[i].x - (image_size_x/2), rddf_points[i].y-(image_size_y*(3.0/4.0)), image_size_x, image_size_y);
     		roi = out (rec);
     		scene_slices.push_back(roi);
     	}
