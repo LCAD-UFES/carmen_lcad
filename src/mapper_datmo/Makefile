@@ -65,7 +65,7 @@ PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = mapper compute_velodyne_calibration_table
-TARGETS = convert_maps_from_float_to_double libprob_models.a mapper libmapper_interface.a libmapper.a compute_velodyne_calibration_table
+TARGETS = convert_maps_from_float_to_double libprob_models.a mapper libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -94,6 +94,9 @@ compute_velodyne_calibration_table: compute_velodyne_calibration_table.o
 
 libprob_models.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/prob_models/
+
+libdeeplab.a: 
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/Deeplab/
 
 clean: clean_prob_models
 
