@@ -30,13 +30,13 @@ To begin to use a Google Cloud API, you must have a Google account.
 - Enable the APIs. First, access the [search page](https://console.cloud.google.com/apis/library?project=voice-iara&folder&organizationId), select the project in the top bar, and search for "Cloud Text-to-Speech API". Click the banner and select activate in the next page. Repeat the process, but this time search for "Cloud Speech API" to activate the  Speech-to-Text API. 
 
 - Set up authentication:
--- Go to the [Create Service Account Key](https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.62067500.-1617484999.1535991245) page in the GCP Console. (*Menu(≡) ->  API&Services -> Credentials*)
--- From the Service account drop-down list, select *New service account*.
--- Enter a name into the Service account name field: *voice_interface_account* (the Service account name will come with a number series, you'll rename it later).
--- From the Role drop-down list, set *Owner*.
--- Click *Create*.
--- A JSON file that contains your key will start to download with a default name: *project-name-number-series.json*
- -- Rename it to our default name (*voice_interface_credentials.json*) and save it at *~/credentials/*
+	- Go to the [Create Service Account Key](https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.62067500.-1617484999.1535991245) page in the GCP Console. (*Menu(≡) ->  API&Services -> Credentials*)
+	- From the Service account drop-down list, select *New service account*.
+	- Enter a name into the Service account name field: *voice_interface_account* (the Service account name will come with a number series, you'll rename it later).
+	- From the Role drop-down list, set *Owner*.
+	- Click *Create*.
+	- A JSON file that contains your key will start to download with a default name: *project-name-number-series.json*
+ 	- Rename it to our default name (*voice_interface_credentials.json*) and save it at *~/credentials/*
 ```sh
 cd ~
 mkdir credentials
@@ -49,8 +49,8 @@ mv ~/Downloads/voice_interface_number_series.json ~/credentials/voice_interface_
 - Verify if the right project is set at the top of the page.
 - Select the service account: voice_interface_account.
 - Select 'JSON' as key type.
--- A JSON file that contains your key will start to download with a default name: *project-name-number-series.json*
- -- Rename it to our default name (*voice_interface_credentials.json*) and save it at *~/credentials/*
+	- A JSON file that contains your key will start to download with a default name: *project-name-number-series.json*
+	- Rename it to our default name (*voice_interface_credentials.json*) and save it at *~/credentials/*
 ```sh
 cd ~
 mkdir credentials
