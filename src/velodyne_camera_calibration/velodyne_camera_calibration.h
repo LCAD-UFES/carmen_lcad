@@ -82,6 +82,10 @@ velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_messa
 tf::StampedTransform
 get_world_to_camera_transformation (tf::Transformer *transformer, carmen_pose_3D_t pose);
 
+
+tf::StampedTransform
+get_world_to_camera_transformer(tf::Transformer *transformer, double x, double y, double z, double roll, double pitch, double yaw);
+
 carmen_position_t
 convert_rddf_pose_to_point_in_image(double x, double y, double z,
 									tf::StampedTransform world_to_camera_pose,

@@ -10,6 +10,7 @@
 
 #define NUM_VELODYNE_POINT_CLOUDS	5
 #define GLOBAL_POS_QUEUE_SIZE		100
+#define MAX_CAMERA_INDEX 			9
 
 /**
   * Prototypes
