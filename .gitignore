@@ -1,3 +1,4 @@
+src/global/carmen-config.c
 bin/line_follower_main
 src/line_follower/line_follower_main
 sharedlib/libvoice/voice_test
@@ -15,6 +16,7 @@ Makefile.depend
 data/map*/*.bmp
 data/map_ida_guarapari-20170403-2.tar.gz
 data/map_ida_guarapari-20170403-2/*
+bin/traffic_light_annotation_tool
 bin/debug.txt
 bin/out.txt
 bin/build_average_map
