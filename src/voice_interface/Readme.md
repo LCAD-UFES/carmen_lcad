@@ -23,7 +23,7 @@
 
 To begin to use a Google Cloud API, you must have a Google account.
 
-- Select or create a GCP project. [Go to the Manage Page Resources](https://console.cloud.google.com/cloud-resource-manager?_ga=2.159473469.-1617484999.1535991245)
+- Select or create a GCP project names: voice_interface. [Go to the Manage Page Resources](https://console.cloud.google.com/cloud-resource-manager?_ga=2.159473469.-1617484999.1535991245)
 
 - Make sure that billing is enabled for your project. [Learn how to enable Billing](https://cloud.google.com/billing/docs/how-to/modify-project)
 
@@ -32,29 +32,36 @@ To begin to use a Google Cloud API, you must have a Google account.
 - Set up authentication:
 -- Go to the [Create Service Account Key](https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.62067500.-1617484999.1535991245) page in the GCP Console. (*Menu(≡) ->  API&Services -> Credentials*)
 -- From the Service account drop-down list, select *New service account*.
--- Enter a name into the Service account name field: *voice_interface_credentials* (the Service account name will come with a number series, you'll rename it later).
+-- Enter a name into the Service account name field: *voice_interface_account* (the Service account name will come with a number series, you'll rename it later).
 -- From the Role drop-down list, set *Owner*.
 -- Click *Create*.
--- A JSON file that contains your key will start to download:
- -- Rename it to default: *voice_interface_credentials.json*
- -- Save it at *~/credentials/*
+-- A JSON file that contains your key will start to download with a default name: *project-name-number-series.json*
+ -- Rename it to our default name (*voice_interface_credentials.json*) and save it at *~/credentials/*
 ```sh
 cd ~
 mkdir credentials
-mv ~/Downloads/voice_interface_credentials_number_series.json ~/credentials/voice_interface_credentials.json
+mv ~/Downloads/voice_interface_number_series.json ~/credentials/voice_interface_credentials.json
 ```
   
-# 2. Already have an account? (but changed you computer?)
+# 2. Already have an account? (but changed your computer?)
 
- - Create a new service account
- 
+- Create a new service account, but at the same service account and project: [Create NEW Service Account Key](https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.62067500.-1617484999.1535991245)
+- Verify if the right project is set at the top of the page.
+- Select the service account: voice_interface_account.
+- Select 'JSON' as key type.
+-- A JSON file that contains your key will start to download with a default name: *project-name-number-series.json*
+ -- Rename it to our default name (*voice_interface_credentials.json*) and save it at *~/credentials/*
+```sh
+cd ~
+mkdir credentials
+mv ~/Downloads/voice_interface_number_series.json ~/credentials/voice_interface_credentials.json
 
 # 3. Setting variables
 - Set the environment variable GOOGLE_APPLICATION_CREDENTIALS to the file path of the JSON file that contains your service account key.
 ```
  nano ~/.bashrc
 ``` 
- Add to bashrc:
+ Add at the end of bashrc:
 ```sh
 #Voice Interface
 export GOOGLE_APPLICATION_CREDENTIALS=~/voice_interface_credentials.json
@@ -64,7 +71,7 @@ export PYTHONPATH=$PYTHONPATH:$CARMEN_HOME/src/voice_interface
 ```
 bash
 ```
-
+(*still necessary?*)
 - Install and initialize [Google Cloud SDK](https://cloud.google.com/sdk/docs/#deb)
 ```sh
 export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)"
