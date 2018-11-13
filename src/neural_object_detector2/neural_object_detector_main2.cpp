@@ -307,12 +307,12 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
 
     }
 
-    int thickness = -1;
-    int lineType = 8;
-    for (unsigned int i = 0; i < rddf_points.size(); i++)
-    {
-    	cv::circle(rgb_image, cv::Point(rddf_points[i].x, rddf_points[i].y), 3.5, cv::Scalar(0, 255, 255), thickness, lineType);
-    }
+//    int thickness = -1;
+//    int lineType = 8;
+//    for (unsigned int i = 0; i < rddf_points.size(); i++)
+//    {
+//    	cv::circle(rgb_image, cv::Point(rddf_points[i].x, rddf_points[i].y), 3.5, cv::Scalar(0, 255, 255), thickness, lineType);
+//    }
 
 
 
@@ -416,10 +416,59 @@ detections(carmen_bumblebee_basic_stereoimage_message *image_msg, carmen_velodyn
 }
 
 
+bool
+check_rect_inside_image (cv::Rect rec, cv::Mat img)
+{
+	if(0 <= rec.x
+		&& 0 <= rec.width
+		&& rec.x + rec.width <= img.cols
+		&& 0 <= rec.y
+		&& 0 <= rec.height
+		&& rec.y + rec.height <= img.rows)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+
 double
 euclidean_distance (double x1, double x2, double y1, double y2)
 {
 	return ( sqrt(pow(x2-x1,2) + pow(y2-y1,2)) );
+}
+
+
+vector<carmen_position_t>
+get_rddf_points_in_image (double meters_spacement, vector<double> &distances_of_rddf_from_car, tf::StampedTransform world_to_camera_pose, int img_width, int img_height)
+{
+	carmen_position_t p;
+	vector<carmen_position_t> rddf_points_in_image;
+	double distance, last_distance;
+	for(int i = 15, a = 0; i < last_rddf_poses.number_of_poses; i++, a++){
+		if(a == 0)
+		{
+			distance = euclidean_distance(globalpos.x, last_rddf_poses.poses[i].x, globalpos.y, last_rddf_poses.poses[i].y);
+			distances_of_rddf_from_car.push_back(distance);
+			last_distance = distance;
+			p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, 0.0, world_to_camera_pose, camera_parameters, img_width, img_height);
+			rddf_points_in_image.push_back(p);
+		}
+		else
+		{
+			distance = euclidean_distance(globalpos.x, last_rddf_poses.poses[i].x, globalpos.y, last_rddf_poses.poses[i].y);
+			double distance_diff = distance - last_distance;
+			if (distance_diff >= (meters_spacement-1) && distance_diff <= (meters_spacement+1))
+			{
+				p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, 0.0, world_to_camera_pose, camera_parameters, img_width, img_height);
+				distances_of_rddf_from_car.push_back(distance);
+				rddf_points_in_image.push_back(p);
+				last_distance = distance;
+			}
+		}
+	}
+	return (rddf_points_in_image);
 }
 
 
@@ -428,7 +477,7 @@ euclidean_distance (double x1, double x2, double y1, double y2)
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
-	vector<carmen_position_t> rddf_points;
+	vector<carmen_position_t> rddf_points_in_image;
 	vector<double> distances_of_rddf_from_car;
 	double hood_removal_percentage = 0.2;
 	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
@@ -469,101 +518,74 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, pose);
 
-//    p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[5], world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
-//    rddf_points.push_back(p);
-//    p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[last_rddf_poses.number_of_poses/2], world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
-//    rddf_points.push_back(p);
-//    p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[last_rddf_poses.number_of_poses-1], world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
-//    rddf_points.push_back(p);
-//
-//
-//    cv::Rect rec(rddf_points[rddf_points.size()-1].x - 208, rddf_points[rddf_points.size()-1].y-200, 416, 416);
-//    cv::Mat roi = rgb_image (rec);
-//    src_image = roi;
-//    rgb_image = roi;
-//    detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points, 2);
-//
-//    src_image = src_image_copy;
-//    rgb_image = rgb_image_copy;
-//
-//    cv::Rect rec2(rddf_points[rddf_points.size()-1].x - 50, rddf_points[rddf_points.size()-1].y-50, 100, 100);
-//    cv::Mat roi2 = rgb_image (rec2);
-//    cv::Size size2 (416, 416);
-//    cv::resize(roi2, roi2, size2);
-//    src_image = roi2;
-//    rgb_image = roi2;
-//    detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points, 3);
-
     cv::Mat out;
     out = rgb_image;
-    double distance, last_distance;
     double meters_spacement = 25.0;
-    for(int i = 15, a = 0; i < last_rddf_poses.number_of_poses; i++, a++){
-    	if(a == 0)
-    	{
-    		distance = euclidean_distance(globalpos.x, last_rddf_poses.poses[i].x, globalpos.y, last_rddf_poses.poses[i].y);
-    		distances_of_rddf_from_car.push_back(distance);
-    		last_distance = distance;
-    		p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, 0.0, world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
-    		rddf_points.push_back(p);
-    	}
-    	else
-    	{
-    		distance = euclidean_distance(globalpos.x, last_rddf_poses.poses[i].x, globalpos.y, last_rddf_poses.poses[i].y);
-    		double distance_diff = distance - last_distance;
-    		if (distance_diff >= (meters_spacement-1) && distance_diff <= (meters_spacement+1))
-    		{
-    			p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, 0.0, world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
-    			distances_of_rddf_from_car.push_back(distance);
-    			rddf_points.push_back(p);
-    			last_distance = distance;
-    		}
-    	}
-    }
+    rddf_points_in_image = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
+
     vector<cv::Mat> scene_slices;
+    scene_slices.push_back(out);
     cv::Mat roi;
     double image_size_x;
     double image_size_y;
-    for(int i = 0; i < rddf_points.size(); i++){
+    for(int i = 0; i < rddf_points_in_image.size(); i++){
 
     	if(i>0)
     	{
     		double dist_percentage = (100 - distances_of_rddf_from_car[i])/100;
     		image_size_x = scene_slices[i-1].cols * dist_percentage;
     		image_size_y = scene_slices[i-1].rows * dist_percentage;
+
     	}
 
-    	cv::circle(out, cv::Point(rddf_points[i].x, rddf_points[i].y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
+    	//cv::circle(out, cv::Point(rddf_points[i].x, rddf_points[i].y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
 
     	if(i == 0)
     	{
     		//cv::Rect rec(rddf_points[0].x - 320, rddf_points[0].y-300, 640, 384);
     		double scale = 384.0*(3.0/4.0);
-    		cv::Rect rec(rddf_points[0].x - 320, rddf_points[0].y-scale, 640, 384);
+    		cv::Rect rec(rddf_points_in_image[1].x - 320, rddf_points_in_image[1].y-scale, 640, 384);
+    		//cout<<"Slice"<<i<<" "<<640<<" "<<384<<endl;
+    		//cout<<rddf_points[0].x - 320<<" "<<rddf_points[0].y-scale<<" "<<640<<" "<<384-(rddf_points[0].y-scale)<<endl;
     		roi = out (rec);
     		scene_slices.push_back(roi);
     	}
     	else if (image_size_x >=100 && image_size_y >=100)
     	{
     		//cv::Rect rec(rddf_points[i].x - (image_size_x/2), rddf_points[i].y-(300*dist_percentage), image_size_x, scene_slices[i-1].rows * dist_percentage);
-    		cv::Rect rec(rddf_points[i].x - (image_size_x/2), rddf_points[i].y-(image_size_y*(3.0/4.0)), image_size_x, image_size_y);
-    		roi = out (rec);
-    		scene_slices.push_back(roi);
+    		double scale = image_size_y*(3.0/4.0);
+    		cv::Rect rec(rddf_points_in_image[i].x - (image_size_x/2), rddf_points_in_image[i].y-scale, image_size_x, image_size_y);
+    		//cout<<"Slice"<<i<<" "<<image_size_x<<" "<<image_size_y<<endl;
+    		//cout<<rddf_points[i].x - (image_size_x/2)<<" "<<rddf_points[i].y-scale<<" "<<image_size_y-(rddf_points[i].y-scale)<<endl;
+    		if (check_rect_inside_image(rec, out))
+    		{
+    			roi = out (rec);
+    			scene_slices.push_back(roi);
+    		}
+
     	}
+    	else
+    	{
+    		cv::Rect rec(rddf_points_in_image[rddf_points_in_image.size()-1].x - 50, rddf_points_in_image[rddf_points_in_image.size()-1].y-50, 100, 100);
+    		if (check_rect_inside_image(rec, out))
+    		{
+    			roi = out (rec);
+    			scene_slices.push_back(roi);
+    		}
+    	}
+    	//cout<<endl;
 
     }
+    //cout<<endl<<endl<<endl<<endl;
 
     for(int i = 0; i < scene_slices.size(); i++){
-    	string image_name = "test" + i;
-    	cv::imshow(image_name, scene_slices[i]);
-    	cv::waitKey(10);
+//    	string image_name = "test" + i;
+//    	cv::imshow(image_name, scene_slices[i]);
+//    	cv::waitKey(10);
+    	src_image = scene_slices[i];
+    	rgb_image = scene_slices[i];
+    	detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, 2);
     }
-
-    //cv::imshow("test", out);
-    //cv::imshow("test2", roi);
-    //cv::waitKey(10);
-
-
 }
 
 
