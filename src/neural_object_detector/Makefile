@@ -3,10 +3,10 @@ include ../Makefile.conf
 MODULE_NAME = Neural Object Detector
 MODULE_COMMENT = Detect vehicles using convolutional neural networks.
 
-LINK = g++ -O3
-CXXFLAGS = -std=c++11 -O3 -Wno-BOOST_SIGNALS_NO_DEPRECATION_WARNING
+LINK = g++
+CXXFLAGS = -std=c++11
 
-IFLAGS += -DUSE_OPENCV -DNO_NVML -I/usr/include/python2.7
+IFLAGS += -DUSE_OPENCV -DNO_NVML -I/usr/include/python2.7 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -DUSE_OPENCV -DNO_NVML
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet/lib
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
