@@ -24,10 +24,14 @@
 #include <carmen/rddf_util.h>
 #include <carmen/ultrasonic_filter_interface.h>
 #include <carmen/parking_assistant_interface.h>
+#include <carmen/libdeeplab.h>
 #include <omp.h>
 #include "mapper.h"
 
 #include "message_interpolation.cpp"
+
+#include <opencv2/highgui/highgui.hpp>
+
 
 
 carmen_map_t offline_map;
@@ -575,6 +579,14 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 
 	points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_params[camera], velodyne_pose, camera_pose[camera],
 			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+
+
+	unsigned char* segmentation = process_image(image_msg->width, image_msg->height, img);
+
+	cv::Mat segmentation_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC1, segmentation);
+
+    cv::imshow("Segmentacao", segmentation_cv);
+    cv::waitKey(1);
 
 
 
@@ -1170,6 +1182,8 @@ read_camera_parameters(int argc, char **argv)
 	}
 	if (active_cameras == 0)
 		fprintf(stderr, "No cameras active for datmo\n\n");
+	else
+		initialize_inference_context();
 }
 
 

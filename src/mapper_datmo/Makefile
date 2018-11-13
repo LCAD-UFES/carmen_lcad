@@ -26,6 +26,14 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
 
+# Deeplab
+IFLAGS += -I/usr/include/python2.7
+LFLAGS += -ldeeplab -lpython2.7
+
+#OPENCV
+IFLAGS += -DUSE_OPENCV
+LFLAGS += `pkg-config opencv --libs` `pkg-config --cflags opencv` `pkg-config --libs opencv`
+
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lprob_models -lm -lz -lglobal 		\
 	-lparam_interface -llaser_interface -lipc -lmapper_interface -lobstacle_avoider_interface		\
