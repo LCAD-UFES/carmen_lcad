@@ -77,26 +77,26 @@ Run the SDK to set configurations:
 gcloud init
 ```
 
-# 2. Install the Client Library
+# 4. Install the Client Library
 
 Examples of the Text-to-Speech and Speech-to-Text APIs:
 
 Using Python3 (3.5.2 or greater)
 ```sh
-sudo apt-get install portaudio19-dev
 pip3 install --upgrade google-cloud-texttospeech
 pip3 install --upgrade google-cloud-speech
+sudo apt-get install portaudio19-dev
 pip3 install pyaudio
 ```
 
-### 3. Some Python Samples
+### 5. Some Python Samples
 
 https://github.com/GoogleCloudPlatform/python-docs-samples
 
-### 4. Tips
+### 6. Tips
 
   
-### 5. Problems to be solved
+### 7. Problems to be solved
 
   - Billing account? The same json can be used for everybody? 
   	A: Using the same Google account you can create multiple service keys and designate roles to which one.
