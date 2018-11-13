@@ -16,8 +16,8 @@
   ```
 #### Python Version
 
-	-- Python == 2.7.12
-	-- Python3 == 3.5.2
+	-- Python == 2.7.12 (not used anymore)
+	-- Python3 == 3.5.2 or greater
 
 # 1. Creating an account at Google Cloud Console
 
@@ -32,15 +32,32 @@ To begin to use a Google Cloud API, you must have a Google account.
   - Set up authentication:
   -- Go to the [Create Service Account Key](https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.62067500.-1617484999.1535991245) page in the GCP Console. (*Menu(≡) ->  API&Services -> Credentials*)
 -- From the Service account drop-down list, select *New service account*.
-  -- Enter a name into the Service account name field. *(Tip: do not use spaces ' ')*
-  -- Don't select a value from the Role drop-down list. No role is required to access this service. *(Tip: set Owner as role)*
-  -- Click *Create*. (Perhaps, a note will appear, warning that this service account has no role).
-  -- Click *Create without role*. A JSON file that contains your key downloads to your computer.
+  -- Enter a name into the Service account name field: *voice_interface_credentials* (the Service account name will come with a number series, you'll rename it later).
+  -- From the Role drop-down list, set *Owner*.
+  -- Click *Create*.
+  -- A JSON file that contains your key will start to download:
+  	-- Rename it to default: *voice_interface_credentials.json*
+  	-- Save it at *~/credentials/*
+  ```
+  cd ~
+  mkdir credentials
+  mv ~/Downloads/voice_interface_credentials_number_series.json ~/credentials/voice_interface_credentials.json
+  ```
+  
+# 2. Already have an account? (but changed you computer?)
 
-  - Set the environment variable GOOGLE_APPLICATION_CREDENTIALS to the file path of the JSON file that contains your service account key. This variable only applies to your current shell session, so if you open a new session, set the variable again. 
-  > *e.g.
-  ```sh
-  export GOOGLE_APPLICATION_CREDENTIALS=/home/user/path/project_name-key.json
+ - Create a new service account
+ 
+
+# 3. 
+  - Set the environment variable GOOGLE_APPLICATION_CREDENTIALS to the file path of the JSON file that contains your service account key.
+  ```
+  nano ~/.bashrc
+  ```
+  > Add to bashrc:
+ 	#Voice Interface
+  export GOOGLE_APPLICATION_CREDENTIALS=~/voice_interface_credentials.json
+  export PYTHONPATH=$PYTHONPATH:$CARMEN_HOME/src/voice_interface
   ```
   
   - Install and initialize [Google Cloud SDK](https://cloud.google.com/sdk/docs/#deb)
@@ -59,21 +76,12 @@ To begin to use a Google Cloud API, you must have a Google account.
 
 Examples of the Text-to-Speech and Speech-to-Text APIs:
 
-(Using Python 2.7.12)
-```sh
-sudo apt-get install python-pyaudio vlc
-pip install --upgrade google-cloud-texttospeech google-cloud-speech python-pyaudio
-```
-
 Using Python3 (3.5.2 or greater)
 ```sh
-pip3 install --upgrade google-cloud-texttospeech google-cloud-speech python-pyaudio
-```
-
-If you get problems installing 'pyaudio': "Failed building wheel for pyaudio"
-Try: 
-```sh
 sudo apt-get install portaudio19-dev
+pip3 install --upgrade google-cloud-texttospeech
+pip3 install --upgrade google-cloud-speech
+pip3 install pyaudio
 ```
 
 ### 3. Some Python Samples
@@ -82,12 +90,7 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
 
 ### 4. Tips
 
-  - Add your directory as a PYTHONPATH:
-  ```sh
-  export PYTHONPATH=$PYTHONPATH:`pwd`
-  ```
-***
-
+  
 ### 5. Problems to be solved
 
   - Billing account? The same json can be used for everybody? 
