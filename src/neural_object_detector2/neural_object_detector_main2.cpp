@@ -198,66 +198,6 @@ objects_names_from_file(string const class_names_file)
 }
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           //
-// Publishers                                                                                //
-//                                                                                           //
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-void
-publish_moving_objects_message(double timestamp)
-{
-    moving_objects_point_clouds_message.timestamp = timestamp;
-    moving_objects_point_clouds_message.host = carmen_get_host();
-
-    carmen_moving_objects_point_clouds_publish_message(&moving_objects_point_clouds_message);
-
-    for (int i = 0; i < moving_objects_point_clouds_message.num_point_clouds; i++) {
-        free(moving_objects_point_clouds_message.point_clouds[i].points);
-    }
-    free(moving_objects_point_clouds_message.point_clouds);
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           //
-// Handlers                                                                                  //
-//                                                                                           //
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-void
-rddf_handler(carmen_behavior_selector_road_profile_message *message)
-{
-	last_rddf_poses = *message;
-
-	/*printf("RDDF NUM POSES: %d \n", message->number_of_poses);
-/*
-	for (int i = 0; i < message->number_of_poses; i++)
-	{
-		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, last_rddf_poses.poses[i].theta);
-
-	}*/
-}
-
-
-static void
-rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
-{
-	last_rddf_annotation_message = *message;
-	last_rddf_annotation_message_valid = true;
-
-	/*printf("RDDF NUM OF ANNOTATIONS: %d \n", last_rddf_annotation_message.num_annotations);
-
-	for (int i = 0; i < message->num_annotations; i++)
-	{
-		printf("ANNOTATION %d: x  = %d\n", i, last_rddf_annotation_message.annotations->annotation_type);
-
-	}*/
-}
-
-
 void
 show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list,
 		vector<bbox_t> predictions, vector<bounding_box> bouding_boxes_list, double hood_removal_percentage, double fps,
@@ -349,70 +289,68 @@ detections(carmen_bumblebee_basic_stereoimage_message *image_msg, carmen_velodyn
 	vector<bounding_box> bouding_boxes_list;
 	vector<bounding_box> bouding_boxes_list_fovy;
 	vector<bbox_t> predictions = darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
-	    //vector<bbox_t> predictions_fovy = darknet->detect(roi, 0.2);  // Arguments (img, threshold)
+	//vector<bbox_t> predictions_fovy = darknet->detect(roi, 0.2);  // Arguments (img, threshold)
 
-	    //predictions = darknet->tracking(predictions); // Coment this line if object tracking is not necessary
-	    //INSERIR FUNÇÃO PARA FOVEADO: receber alguns pontos do rddf (função que converte da posição do mundo para a posição na imagem) recortar a área em volta do ponto
-	    //na imagem, passar essa imagem para a rede, receber a detecção e reprojetar na imagem original
-	    for (const auto &box : predictions) // Covert Darknet bounding box to neural_object_deddtector bounding box
-	    {
-	        bounding_box bbox;
+	//predictions = darknet->tracking(predictions); // Coment this line if object tracking is not necessary
+	//INSERIR FUNÇÃO PARA FOVEADO: receber alguns pontos do rddf (função que converte da posição do mundo para a posição na imagem) recortar a área em volta do ponto
+	//na imagem, passar essa imagem para a rede, receber a detecção e reprojetar na imagem original
+	for (const auto &box : predictions) // Covert Darknet bounding box to neural_object_deddtector bounding box
+	{
+		bounding_box bbox;
 
-	        bbox.pt1.x = box.x;
-	        bbox.pt1.y = box.y;
-	        bbox.pt2.x = box.x + box.w;
-	        bbox.pt2.y = box.y + box.h;
+		bbox.pt1.x = box.x;
+		bbox.pt1.y = box.y;
+		bbox.pt2.x = box.x + box.w;
+		bbox.pt2.y = box.y + box.h;
 
-	        bouding_boxes_list.push_back(bbox);
-	    }
-
-
-	    // Removes the ground, Removes points outside cameras field of view and Returns the points that are obstacles and are inside bboxes
-	    vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list,
-	    		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
+		bouding_boxes_list.push_back(bbox);
+	}
 
 
+	// Removes the ground, Removes points outside cameras field of view and Returns the points that are obstacles and are inside bboxes
+	vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list,
+			&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
 
-	    // Removes the ground, Removes points outside cameras field of view and Returns the points that reach obstacles
-	    //vector<velodyne_camera_points> points = velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(
-	    //		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
 
-	    // ONLY Convert from sferical to cartesian cordinates
-	    vector< vector<carmen_vector_3D_t>> cluster_list = get_cluster_list(laser_points_in_camera_box_list);
 
-	    // Cluster points and get biggest
-	    filter_points_in_clusters(&cluster_list);
+	// Removes the ground, Removes points outside cameras field of view and Returns the points that reach obstacles
+	//vector<velodyne_camera_points> points = velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(
+	//		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
 
-	    for (int i = 0; i < cluster_list.size(); i++)
-	    {
-	        carmen_moving_object_type tp = find_cluster_type_by_obj_id(obj_names, predictions.at(i).obj_id);
+	// ONLY Convert from sferical to cartesian cordinates
+	vector< vector<carmen_vector_3D_t>> cluster_list = get_cluster_list(laser_points_in_camera_box_list);
 
-	        int cluster_id = predictions.at(i).track_id;
+	// Cluster points and get biggest
+	filter_points_in_clusters(&cluster_list);
 
-	        carmen_tracked_cluster_t clust;
+	for (int i = 0; i < cluster_list.size(); i++)
+	{
+		carmen_moving_object_type tp = find_cluster_type_by_obj_id(obj_names, predictions.at(i).obj_id);
 
-	        clust.points = cluster_list.at(i);
+		int cluster_id = predictions.at(i).track_id;
 
-	        clust.orientation = globalpos.theta;  //TODO: Calcular velocidade e orientacao corretas (provavelmente usando um tracker)
-	        clust.linear_velocity = 0.0;
-	        clust.track_id = cluster_id;
-	        clust.last_detection_timestamp = image_msg->timestamp;
-	        clust.cluster_type = tp;
+		carmen_tracked_cluster_t clust;
 
-	        clusters.push_back(clust);
-	    }
+		clust.points = cluster_list.at(i);
 
-	    build_moving_objects_message(clusters);
+		clust.orientation = globalpos.theta;  //TODO: Calcular velocidade e orientacao corretas (provavelmente usando um tracker)
+		clust.linear_velocity = 0.0;
+		clust.track_id = cluster_id;
+		clust.last_detection_timestamp = image_msg->timestamp;
+		clust.cluster_type = tp;
 
-	    publish_moving_objects_message(image_msg->timestamp);
+		clusters.push_back(clust);
+	}
 
-	    fps = 1.0 / (carmen_get_time() - start_time);
-	    start_time = carmen_get_time();
+	build_moving_objects_message(clusters);
 
-	#ifdef SHOW_DETECTIONS
-	    show_detections(rgb_image, laser_points_in_camera_box_list, predictions, bouding_boxes_list,
-	    		hood_removal_percentage, fps, rddf_points, window_name);
-	#endif
+	fps = 1.0 / (carmen_get_time() - start_time);
+	start_time = carmen_get_time();
+
+#ifdef SHOW_DETECTIONS
+	show_detections(rgb_image, laser_points_in_camera_box_list, predictions, bouding_boxes_list,
+			hood_removal_percentage, fps, rddf_points, window_name);
+#endif
 }
 
 
@@ -472,6 +410,81 @@ get_rddf_points_in_image (double meters_spacement, vector<double> &distances_of_
 }
 
 
+carmen_pose_3D_t
+filter_pitch(carmen_pose_3D_t car_pose)
+{
+	carmen_pose_3D_t filtered_car_pose;
+
+	filtered_car_pose = car_pose;
+	SampleFilter_put(&filter2, pose.orientation.pitch);
+	filtered_car_pose.orientation.pitch = SampleFilter_get(&filter2);
+//	filtered_car_pose.orientation.pitch = 0.0;
+
+	return (filtered_car_pose);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+publish_moving_objects_message(double timestamp)
+{
+    moving_objects_point_clouds_message.timestamp = timestamp;
+    moving_objects_point_clouds_message.host = carmen_get_host();
+
+    carmen_moving_objects_point_clouds_publish_message(&moving_objects_point_clouds_message);
+
+    for (int i = 0; i < moving_objects_point_clouds_message.num_point_clouds; i++) {
+        free(moving_objects_point_clouds_message.point_clouds[i].points);
+    }
+    free(moving_objects_point_clouds_message.point_clouds);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+rddf_handler(carmen_behavior_selector_road_profile_message *message)
+{
+	last_rddf_poses = *message;
+
+	/*printf("RDDF NUM POSES: %d \n", message->number_of_poses);
+/*
+	for (int i = 0; i < message->number_of_poses; i++)
+	{
+		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, last_rddf_poses.poses[i].theta);
+
+	}*/
+}
+
+
+static void
+rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
+{
+	last_rddf_annotation_message = *message;
+	last_rddf_annotation_message_valid = true;
+
+	/*printf("RDDF NUM OF ANNOTATIONS: %d \n", last_rddf_annotation_message.num_annotations);
+
+	for (int i = 0; i < message->num_annotations; i++)
+	{
+		printf("ANNOTATION %d: x  = %d\n", i, last_rddf_annotation_message.annotations->annotation_type);
+
+	}*/
+}
+
+
 #define crop_x 0.0
 #define crop_y 1.0
 void
@@ -516,6 +529,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     int lineType = 8;
     carmen_position_t p;
 
+    carmen_pose_3D_t car_pose = filter_pitch(pose);
     tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, pose);
 
     cv::Mat out;
@@ -524,13 +538,13 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     rddf_points_in_image = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
 
     vector<cv::Mat> scene_slices;
-    //scene_slices.push_back(out);
+    scene_slices.push_back(out);
     cv::Mat roi;
     double image_size_x;
     double image_size_y;
-    for(int i = 0; i < rddf_points_in_image.size(); i++){
-
-    	if(i>0)
+    for (int i = 0; i < rddf_points_in_image.size(); i++)
+    {
+    	if (i > 0)
     	{
     		double dist_percentage = (100 - distances_of_rddf_from_car[i])/100;
     		image_size_x = scene_slices[i-1].cols * dist_percentage;
@@ -538,19 +552,19 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     	}
 
-    	//cv::circle(out, cv::Point(rddf_points[i].x, rddf_points[i].y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
+    	cv::circle(out, cv::Point(rddf_points_in_image[i].x, rddf_points_in_image[i].y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
 
-    	if(i == 0)
+    	if (i == 0)
     	{
     		//cv::Rect rec(rddf_points[0].x - 320, rddf_points[0].y-300, 640, 384);
-    		double scale = 384.0*(3.0/4.0);
+    		double scale = 384.0 * (3.0 / 4.0);
     		cv::Rect rec(rddf_points_in_image[1].x - 320, rddf_points_in_image[1].y-scale, 640, 384);
     		//cout<<"Slice"<<i<<" "<<640<<" "<<384<<endl;
     		//cout<<rddf_points[0].x - 320<<" "<<rddf_points[0].y-scale<<" "<<640<<" "<<384-(rddf_points[0].y-scale)<<endl;
     		roi = out (rec);
     		scene_slices.push_back(roi);
     	}
-    	else if (image_size_x >=100 && image_size_y >=100)
+    	else if (image_size_x >= 100 && image_size_y >= 100)
     	{
     		//cv::Rect rec(rddf_points[i].x - (image_size_x/2), rddf_points[i].y-(300*dist_percentage), image_size_x, scene_slices[i-1].rows * dist_percentage);
     		double scale = image_size_y*(3.0/4.0);
@@ -576,7 +590,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	//cout<<endl;
     }
     //cout<<endl<<endl<<endl<<endl;
-    for(int i = 0; i < scene_slices.size(); i++){
+    for (int i = 0; i < scene_slices.size(); i++)
+    {
     	stringstream ss;
     	ss << i;
     	string image_name = "slice_" + ss.str();
@@ -586,6 +601,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 //    	rgb_image = scene_slices[i];
 //    	detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, 2);
     }
+//	publish_moving_objects_message(image_msg->timestamp);
 }
 
 

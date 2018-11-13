@@ -17,7 +17,7 @@
 #include <string>
 
 #include "dbscan.h"
-#include "SampleFilter.h"
+#include "SampleFilter_neural_object_detector2.h"
 
 
 #include <opencv2/highgui/highgui.hpp>

@@ -1,11 +1,11 @@
-#include "SampleFilter.h"
+#include "SampleFilter_neural_object_detector2.h"
 
 static double filter_taps[SAMPLEFILTER_TAP_NUM] = {
-		3.700743415417188e-17,
-		0.20000000000000004,
-		3.700743415417188e-17
-
-
+  -0.4997211679724967,
+  -0.0005437092341474603,
+  1.0004493343934011,
+  -0.0005437092341474603,
+  -0.4997211679724967
 };
 
 void SampleFilter_init(SampleFilter* f) {

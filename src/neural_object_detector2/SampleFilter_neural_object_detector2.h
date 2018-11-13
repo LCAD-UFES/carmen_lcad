@@ -6,16 +6,21 @@
 FIR filter designed with
  http://t-filter.appspot.com
 
-sampling frequency: 40 Hz
+sampling frequency: 20 Hz
 
-* 0 Hz - 20 Hz
-  gain = 0.06
-  desired ripple = 1 dB
-  actual ripple = 8.881784197001252e-14 dB
+* 0 Hz - 0.1 Hz
+  gain = 0
+  desired attenuation = -60 dB
+  actual attenuation = -54.46025665027494 dB
+
+* 0.105 Hz - 10 Hz
+  gain = 1
+  desired ripple = 10 dB
+  actual ripple = 59.590236468198114 dB
 
 */
 
-#define SAMPLEFILTER_TAP_NUM 3
+#define SAMPLEFILTER_TAP_NUM 5
 
 typedef struct {
   double history[SAMPLEFILTER_TAP_NUM];
