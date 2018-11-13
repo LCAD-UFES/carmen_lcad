@@ -16,8 +16,8 @@
   ```
 #### Python Version
 
--- Python == 2.7.12
--- Python3 == 3.5.2
+	-- Python == 2.7.12
+	-- Python3 == 3.5.2
 
 # 1. Creating an account at Google Cloud Console
 
@@ -40,7 +40,7 @@ To begin to use a Google Cloud API, you must have a Google account.
   - Set the environment variable GOOGLE_APPLICATION_CREDENTIALS to the file path of the JSON file that contains your service account key. This variable only applies to your current shell session, so if you open a new session, set the variable again. 
   > *e.g.
   ```sh
-  export GOOGLE_APPLICATION_CREDENTIALS=/home/user/path/project_name-key.json)*
+  export GOOGLE_APPLICATION_CREDENTIALS=/home/user/path/project_name-key.json
   ```
   
   - Install and initialize [Google Cloud SDK](https://cloud.google.com/sdk/docs/#deb)
