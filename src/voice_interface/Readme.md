@@ -55,6 +55,7 @@ mv ~/Downloads/voice_interface_number_series.json ~/credentials/voice_interface_
 cd ~
 mkdir credentials
 mv ~/Downloads/voice_interface_number_series.json ~/credentials/voice_interface_credentials.json
+```
 
 # 3. Setting variables
 - Set the environment variable GOOGLE_APPLICATION_CREDENTIALS to the file path of the JSON file that contains your service account key.
@@ -62,7 +63,7 @@ mv ~/Downloads/voice_interface_number_series.json ~/credentials/voice_interface_
  nano ~/.bashrc
 ``` 
  Add at the end of bashrc:
-```sh
+```
 #Voice Interface
 export GOOGLE_APPLICATION_CREDENTIALS=~/voice_interface_credentials.json
 export PYTHONPATH=$PYTHONPATH:$CARMEN_HOME/src/voice_interface
@@ -89,7 +90,7 @@ gcloud init
 Examples of the Text-to-Speech and Speech-to-Text APIs:
 
 Using Python3 (3.5.2 or greater)
-```sh
+```
 pip3 install --upgrade google-cloud-texttospeech
 pip3 install --upgrade google-cloud-speech
 sudo apt-get install portaudio19-dev
@@ -105,17 +106,17 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
   
 ### 7. Problems to be solved
 
-  - Billing account? The same json can be used for everybody? 
-  	A: Using the same Google account you can create multiple service keys and designate roles to which one.
+	- Billing account? The same json can be used for everybody? 
+		- A: Using the same Google account you can create multiple service keys and designate roles to which one.
   	
-  - When you run "gcloud init", it asks the user to login. Will it work in a different machine? Can we upload the config file (the .boto saved at ~/.boto)? Is this enough? In the end of the process, it says "You can create additional configurations if you work with multiple accounts and/or projects. Run "gcloud topic configurations" to learn more.". Will we have one account for the whole IARA project, or one for each developer?
-  A:
-  
-  - Try to make the system work with Python3. (SOLVED)
-  - Add a timeout to the listen function.
-  - Make sure the packages required by python-pyaudio don't break stuff like the nvidia driver (some 'mesa' related packages are installed).
-  - Change the speak function to send the audio to the speakers without having to save the file in the disk. (SOLVED)
-  - Make the speak function synchronous: the function should only finish after the speakers played the sentence.
+	- When you run "gcloud init", it asks the user to login. Will it work in a different machine? Can we upload the config file (the .boto saved at ~/.boto)? Is this enough? In the end of the process, it says "You can create additional configurations if you work with multiple accounts and/or projects. Run "gcloud topic configurations" to learn more.". Will we have one account for the whole IARA project, or one for each developer?
+		- A:
+ 
+	- Try to make the system work with Python3. (SOLVED)
+	- Add a timeout to the listen function.
+	- Make sure the packages required by python-pyaudio don't break stuff like the nvidia driver (some 'mesa' related packages are installed).
+	- Change the speak function to send the audio to the speakers without having to save the file in the disk. (SOLVED)
+	- Make the speak function synchronous: the function should only finish after the speakers played the sentence.
 
 ### See more about Google Cloud APIS
 
