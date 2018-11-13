@@ -38,11 +38,9 @@ To begin to use a Google Cloud API, you must have a Google account.
   -- A JSON file that contains your key will start to download:
   	-- Rename it to default: *voice_interface_credentials.json*
   	-- Save it at *~/credentials/*
-  ```
-  cd ~
-  mkdir credentials
-  mv ~/Downloads/voice_interface_credentials_number_series.json ~/credentials/voice_interface_credentials.json
-  ```
+> cd ~
+> mkdir credentials
+> mv ~/Downloads/voice_interface_credentials_number_series.json ~/credentials/voice_interface_credentials.json
   
 # 2. Already have an account? (but changed you computer?)
 
@@ -51,14 +49,12 @@ To begin to use a Google Cloud API, you must have a Google account.
 
 # 3. 
   - Set the environment variable GOOGLE_APPLICATION_CREDENTIALS to the file path of the JSON file that contains your service account key.
-  ```
-  nano ~/.bashrc
-  ```
-  > Add to bashrc:
- 	#Voice Interface
-  export GOOGLE_APPLICATION_CREDENTIALS=~/voice_interface_credentials.json
-  export PYTHONPATH=$PYTHONPATH:$CARMEN_HOME/src/voice_interface
-  ```
+> nano ~/.bashrc
+  
+ Add to bashrc:
+ > #Voice Interface
+ > export GOOGLE_APPLICATION_CREDENTIALS=~/voice_interface_credentials.json
+ > export PYTHONPATH=$PYTHONPATH:$CARMEN_HOME/src/voice_interface
   
   - Install and initialize [Google Cloud SDK](https://cloud.google.com/sdk/docs/#deb)
   ```sh
