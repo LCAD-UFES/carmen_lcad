@@ -23,24 +23,26 @@
 
 To begin to use a Google Cloud API, you must have a Google account.
 
-  - Select or create a GCP project. [Go to the Manage Page Resources](https://console.cloud.google.com/cloud-resource-manager?_ga=2.159473469.-1617484999.1535991245)
+- Select or create a GCP project. [Go to the Manage Page Resources](https://console.cloud.google.com/cloud-resource-manager?_ga=2.159473469.-1617484999.1535991245)
 
-  - Make sure that billing is enabled for your project. [Learn how to enable Billing](https://cloud.google.com/billing/docs/how-to/modify-project)
+- Make sure that billing is enabled for your project. [Learn how to enable Billing](https://cloud.google.com/billing/docs/how-to/modify-project)
 
-  - Enable the APIs. First, access the [search page](https://console.cloud.google.com/apis/library?project=voice-iara&folder&organizationId), select the project in the top bar, and search for "Cloud Text-to-Speech API". Click the banner and select activate in the next page. Repeat the process, but this time search for "Cloud Speech API" to activate the  Speech-to-Text API. 
+- Enable the APIs. First, access the [search page](https://console.cloud.google.com/apis/library?project=voice-iara&folder&organizationId), select the project in the top bar, and search for "Cloud Text-to-Speech API". Click the banner and select activate in the next page. Repeat the process, but this time search for "Cloud Speech API" to activate the  Speech-to-Text API. 
 
-  - Set up authentication:
-  -- Go to the [Create Service Account Key](https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.62067500.-1617484999.1535991245) page in the GCP Console. (*Menu(≡) ->  API&Services -> Credentials*)
+- Set up authentication:
+-- Go to the [Create Service Account Key](https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.62067500.-1617484999.1535991245) page in the GCP Console. (*Menu(≡) ->  API&Services -> Credentials*)
 -- From the Service account drop-down list, select *New service account*.
-  -- Enter a name into the Service account name field: *voice_interface_credentials* (the Service account name will come with a number series, you'll rename it later).
-  -- From the Role drop-down list, set *Owner*.
-  -- Click *Create*.
-  -- A JSON file that contains your key will start to download:
-  	-- Rename it to default: *voice_interface_credentials.json*
-  	-- Save it at *~/credentials/*
-> cd ~
-> mkdir credentials
-> mv ~/Downloads/voice_interface_credentials_number_series.json ~/credentials/voice_interface_credentials.json
+-- Enter a name into the Service account name field: *voice_interface_credentials* (the Service account name will come with a number series, you'll rename it later).
+-- From the Role drop-down list, set *Owner*.
+-- Click *Create*.
+-- A JSON file that contains your key will start to download:
+ -- Rename it to default: *voice_interface_credentials.json*
+ -- Save it at *~/credentials/*
+```sh
+cd ~
+mkdir credentials
+mv ~/Downloads/voice_interface_credentials_number_series.json ~/credentials/voice_interface_credentials.json
+```
   
 # 2. Already have an account? (but changed you computer?)
 
@@ -48,25 +50,32 @@ To begin to use a Google Cloud API, you must have a Google account.
  
 
 # 3. Setting variables
-  - Set the environment variable GOOGLE_APPLICATION_CREDENTIALS to the file path of the JSON file that contains your service account key.
-> nano ~/.bashrc
-  
+- Set the environment variable GOOGLE_APPLICATION_CREDENTIALS to the file path of the JSON file that contains your service account key.
+```
+ nano ~/.bashrc
+``` 
  Add to bashrc:
- > -- #Voice Interface
- > -- export GOOGLE_APPLICATION_CREDENTIALS=~/voice_interface_credentials.json
- > -- export PYTHONPATH=$PYTHONPATH:$CARMEN_HOME/src/voice_interface
-  
-  - Install and initialize [Google Cloud SDK](https://cloud.google.com/sdk/docs/#deb)
-  ```sh
-  export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)"
-  echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-  curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-  sudo apt-get update && sudo apt-get install google-cloud-sdk
-  ```
-  Run the SDK to set configurations:
-  ```sh
-  gcloud init
-  ```
+```sh
+#Voice Interface
+export GOOGLE_APPLICATION_CREDENTIALS=~/voice_interface_credentials.json
+export PYTHONPATH=$PYTHONPATH:$CARMEN_HOME/src/voice_interface
+```
+- At the terminal:
+```
+bash
+```
+
+- Install and initialize [Google Cloud SDK](https://cloud.google.com/sdk/docs/#deb)
+```sh
+export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)"
+echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+sudo apt-get update && sudo apt-get install google-cloud-sdk
+```
+Run the SDK to set configurations:
+```sh
+gcloud init
+```
 
 # 2. Install the Client Library
 
