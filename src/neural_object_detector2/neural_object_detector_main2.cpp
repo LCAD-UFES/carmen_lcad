@@ -524,7 +524,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     rddf_points_in_image = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
 
     vector<cv::Mat> scene_slices;
-    scene_slices.push_back(out);
+    //scene_slices.push_back(out);
     cv::Mat roi;
     double image_size_x;
     double image_size_y;
@@ -574,17 +574,17 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     		}
     	}
     	//cout<<endl;
-
     }
     //cout<<endl<<endl<<endl<<endl;
-
     for(int i = 0; i < scene_slices.size(); i++){
-//    	string image_name = "test" + i;
-//    	cv::imshow(image_name, scene_slices[i]);
-//    	cv::waitKey(10);
-    	src_image = scene_slices[i];
-    	rgb_image = scene_slices[i];
-    	detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, 2);
+    	stringstream ss;
+    	ss << i;
+    	string image_name = "slice_" + ss.str();
+    	cv::imshow(image_name, scene_slices[i]);
+    	cv::waitKey(10);
+//    	src_image = scene_slices[i];
+//    	rgb_image = scene_slices[i];
+//    	detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, 2);
     }
 }
 
