@@ -377,7 +377,7 @@ get_image_slices (vector<cv::Mat> &scene_slices, cv::Mat out, vector<carmen_posi
 			image_size_y = scene_slices[(i+1)-1].rows * dist_percentage;
 		}
 
-		cv::circle(out, cv::Point(rddf_points_in_image[i].x, rddf_points_in_image[i].y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
+		//cv::circle(out, cv::Point(rddf_points_in_image[i].x, rddf_points_in_image[i].y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
 
 		if (i == 0)
 		{
@@ -592,14 +592,13 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     vector<cv::Mat> scene_slices;
     vector<cv::Mat> scene_slices_resized;
-    cv::Mat slice_resized;
     scene_slices.push_back(out);
     get_image_slices(scene_slices, out, rddf_points_in_image, distances_of_rddf_from_car);
 
 
     for (int i = 0; i < scene_slices.size(); i++)
     {
-
+    	cv::Mat slice_resized;
     	cv::resize(scene_slices[i], slice_resized, size);
     	scene_slices_resized.push_back(slice_resized);
     }
