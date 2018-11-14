@@ -16,6 +16,7 @@ Makefile.depend
 data/map*/*.bmp
 data/map_ida_guarapari-20170403-2.tar.gz
 data/map_ida_guarapari-20170403-2/*
+data/voice_interface_speechs/*
 bin/traffic_light_annotation_tool
 bin/debug.txt
 bin/out.txt
