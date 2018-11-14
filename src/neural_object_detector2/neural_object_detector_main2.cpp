@@ -612,7 +612,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	cv::Mat slice_resized;
     	cv::resize(scene_slices[i], slice_resized, size);
     	scene_slices_resized.push_back(slice_resized);
-    	printf("Scale factor of slice %d: %lf %lf\n",i,scale_factor_of_slice_to_original_frame[i].scale_factor_x,scale_factor_of_slice_to_original_frame[i].scale_factor_y);
+    	cout<<"Slice_"<<i<<"size: "<<scene_slices[i].cols<<" "<<scene_slices[i].rows<<endl;
+    	//printf("Scale factor of slice %d: %lf %lf\n",i,scale_factor_of_slice_to_original_frame[i].scale_factor_x,scale_factor_of_slice_to_original_frame[i].scale_factor_y);
     	//cout<<"Scale factor of slice "<<i<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_x<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_y<<endl;
     }
     //cout<<endl<<endl<<endl<<endl;
@@ -627,6 +628,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	rgb_image = scene_slices[i];
     	detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, window_name);
     }
+    cout<<endl;
 //	publish_moving_objects_message(image_msg->timestamp);
 }
 
