@@ -11,7 +11,7 @@ char *
 init_voice()
 {
 	Py_Initialize();
-	python_module_name = PyString_FromString((char *) "listen_speak");
+	python_module_name = PyUnicode_FromString((char *) "listen_speak");
 
 	python_module = PyImport_Import(python_module_name);
 	Py_DECREF(python_module_name);
@@ -66,11 +66,12 @@ speak(char *speech, char *speech_file_name)
 }
 
 
-const char* 
+const char *
 listen()
 {
 	PyObject *python_listen_function_output = PyObject_CallFunction(python_listen_function, NULL);
-	const char *listen_function_output = PyString_AsString(python_listen_function_output);
+	PyObject *listen_function_object = PyUnicode_AsUTF8String(python_listen_function_output);
+	char *listen_function_output = PyBytes_AS_STRING(listen_function_object);
 	const char *words = listen_function_output;
 	Py_DECREF(python_listen_function_output);
 	return words;
