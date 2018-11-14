@@ -26,6 +26,14 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
 
+# Deeplab
+IFLAGS += -I/usr/include/python2.7
+LFLAGS += -ldeeplab -lpython2.7
+
+#OPENCV
+IFLAGS += -DUSE_OPENCV
+LFLAGS += `pkg-config opencv --libs` `pkg-config --cflags opencv` `pkg-config --libs opencv`
+
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lprob_models -lm -lz -lglobal 		\
 	-lparam_interface -llaser_interface -lipc -lmapper_interface -lobstacle_avoider_interface		\
@@ -57,7 +65,7 @@ PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = mapper compute_velodyne_calibration_table
-TARGETS = convert_maps_from_float_to_double libprob_models.a mapper libmapper_interface.a libmapper.a compute_velodyne_calibration_table
+TARGETS = convert_maps_from_float_to_double libprob_models.a mapper libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -86,6 +94,9 @@ compute_velodyne_calibration_table: compute_velodyne_calibration_table.o
 
 libprob_models.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/prob_models/
+
+libdeeplab.a: 
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/Deeplab/
 
 clean: clean_prob_models
 

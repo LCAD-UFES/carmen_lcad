@@ -9,7 +9,6 @@
 #include <fstream>
 #include <opencv2/highgui/highgui.hpp>
 #include <carmen/dbscan.h>
-#include <Python.h>
 #include "neural_object_detector.hpp"
 #include <carmen/darknet.h>
 
@@ -23,13 +22,12 @@ carmen_velodyne_partial_scan_message *velodyne_msg;
 carmen_camera_parameters camera_parameters;
 carmen_pose_3D_t velodyne_pose;
 carmen_pose_3D_t camera_pose;
-carmen_point_t globalpos;
+carmen_point_t   globalpos;
 
-//Detector *darknet;
 vector<string> obj_names_vector;
 vector<Scalar> obj_colours_vector;
 
-char **names;
+char **classes_names;
 image **alphabet;
 network *network_config;
 
@@ -601,129 +599,135 @@ convert_image_msg_to_darknet_image(int image_width, int image_height, unsigned c
 }
 
 
-vector<bbox>
-extract_predictions2(int width, int height, detection *dets, int detections_number, float thresh, int classes)
+typedef struct
 {
-	vector<bbox> bounding_box_vector;
-	int i,j;
+    unsigned int x, y, w, h;	// (x,y) - top-left corner, (w, h) - width & height of bounded box
+    float prob;					// confidence - probability that the object was found correctly
+    unsigned int obj_id;		// class of object - from range [0, classes-1]
+    unsigned int track_id;		// tracking id for video (0 - untracked, 1 - inf - tracked object)
+}bbox_t;
 
-	for(i = 0; i < detections_number; ++i)
+
+vector<bbox_t>
+extract_predictions(image *im, detection *dets, int num, float thresh, image **alphabet, int classes, char* line)
+{
+	int i,j;
+	vector<bbox_t> bbox_vector;
+
+    FILE* results = fopen("results_iara.txt", "a");
+
+	for(i = 0; i < num; ++i)
 	{
 		char labelstr[4096] = {0};
-		int object_class = -1;
-
+		int clas = -1;
 		for(j = 0; j < classes; ++j)
 		{
 			if (dets[i].prob[j] > thresh)
 			{
-				if (object_class < 0)
+				if (clas < 0)
 				{
-					strcat(labelstr, names[j]);
-					object_class = j;
+					strcat(labelstr, classes_names[j]);
+					clas = j;
 				}
 				else
 				{
 					strcat(labelstr, ", ");
-					strcat(labelstr, names[j]);
+					strcat(labelstr, classes_names[j]);
 				}
-				printf("%s: %.0f%%\n", names[j], dets[i].prob[j]*100);
+				//printf("%s: %.0f%%\n", classes_names[j], dets[i].prob[j]*100);
 			}
 		}
-		if(object_class >= 0)
-		{
-			box b = dets[i].bbox;
-			int left  = (b.x - b.w/2.) * width;
-			int right = (b.x + b.w/2.) * width;
-			int top   = (b.y - b.h/2.) * height;
-			int bot   = (b.y + b.h/2.) * height;
-
-			if(left < 0)
-				left = 0;
-			if(right > width - 1)
-				right = width - 1;
-			if(top < 0)
-				top = 0;
-			if(bot > height - 1)
-				bot = height - 1;
-
-			if (strcmp("person",        labelstr) == 0 || strcmp("bicycle",       labelstr) == 0 || strcmp("motorbike",     labelstr) == 0 ||
-				strcmp("car",           labelstr) == 0 || strcmp("bus",           labelstr) == 0 || strcmp("truck",         labelstr) == 0 ||
-				strcmp("traffic light", labelstr) == 0)
-			{
-				bbox bbox;
-				bbox.x = left;
-				bbox.y = top;
-				bbox.w = right;
-				bbox.h = bot;
-				bbox.obj_id = j;
-
-				bounding_box_vector.push_back(bbox);
-			}
-		}
-	}
-	return (bounding_box_vector);
-}
-
-
-vector<bbox>
-extract_predictions(int width, int height, detection *dets, int detections_number, float thresh, int classes)
-{
-	vector<bbox> bounding_box_vector;
-	int i,j;
-
-	for(i = 0; i < detections_number; ++i)
-	{
-		char labelstr[4096] = {0};
-		int object_class = -1;
-		for(j = 0; j < classes; ++j)
-		{
-			//printf("Passou\n");
-			if (dets[i].prob[j] > thresh)
-			{
-				if (object_class < 0)
-				{
-					strcat(labelstr, names[j]);
-					object_class = j;
-				}
-				else
-				{
-					strcat(labelstr, ", ");
-					strcat(labelstr, names[j]);
-				}
-				printf("%s: %.0f%%\n", names[j], dets[i].prob[j]*100);
-			}
-		}
-		if(object_class >= 0)
+		if (clas >= 0)
 		{
 			box b = dets[i].bbox;
 
-			int left  = (b.x-b.w/2.)*width;
-			int right = (b.x+b.w/2.)*width;
-			int top   = (b.y-b.h/2.)*height;
-			int bot   = (b.y+b.h/2.)*height;
+			int left  = (b.x-b.w/2.)*im->w;
+			int right = (b.x+b.w/2.)*im->w;
+			int top   = (b.y-b.h/2.)*im->h;
+			int bot   = (b.y+b.h/2.)*im->h;
 
 			if(left < 0) left = 0;
-			if(right > width-1) right = width-1;
+			if(right > im->w-1) right = im->w-1;
 			if(top < 0) top = 0;
-			if(bot > height-1) bot = height-1;
+			if(bot > im->h-1) bot = im->h-1;
 
-			if (strcmp("person",        labelstr) == 0 || strcmp("bicycle",       labelstr) == 0 || strcmp("motorbike",     labelstr) == 0 ||
-				strcmp("car",           labelstr) == 0 || strcmp("bus",           labelstr) == 0 || strcmp("truck",         labelstr) == 0 ||
-				strcmp("traffic light", labelstr) == 0)
-			{
-				bbox bbox;
-				bbox.x = left;
-				bbox.y = top;
-				bbox.w = right;
-				bbox.h = bot;
-				bbox.obj_id = j;
+			bbox_t bbox;
 
-				bounding_box_vector.push_back(bbox);
-			}
+			bbox.x = left;
+			bbox.y = top;
+			bbox.w = right;
+			bbox.h = bot;
+			bbox.obj_id = j;
+			bbox.prob = dets[i].prob[j]*100;
+			bbox.track_id = 0;
+
+
+			//traffic light
+//			if (strcmp("bicycle",       labelstr) == 0 ||
+//				strcmp("motorbike",     labelstr) == 0 ||
+//				strcmp("car",           labelstr) == 0 ||
+//				strcmp("bus",           labelstr) == 0 ||
+//				strcmp("truck",         labelstr) == 0 ||
+			//if (strcmp("person", labelstr) == 0)
+			//fprintf(results, "%s %s %d %d %d %d\n", line, labelstr, left, top, right, bot);
+
+			//if (strcmp("person", labelstr) == 0)
+			//	fprintf(results, "%d, -1, %f, %f, %f, %f, 1, -1, -1, -1\n", frame, (float)left, (float)top, (float)(right - left), (float)(bot - top));//, dets[i].prob[j]);
 		}
 	}
-	return (bounding_box_vector);
+    fclose(results);
+
+    return (bbox_vector);
 }
+
+vector<bbox_t>
+run_YOLO(image *im)
+{
+	char buff[256], *input = buff;
+	float nms = 0.45;
+	int nboxes = 0;
+
+	image sized = letterbox_image(*im, network_config->w, network_config->h);
+
+	layer l = network_config->layers[network_config->n-1];
+
+	float *X = sized.data;
+
+	network_predict(network_config, X);
+
+	//printf("%s: Predicted in %f seconds.\n", input, what_time_is_it_now()-time);
+
+	detection *dets = get_network_boxes(network_config, im->w, im->h, 0.5, 0.5, 0, 1, &nboxes);
+
+	if (nms)
+		do_nms_sort(dets, nboxes, 80, nms);
+	//do_nms_sort(dets, nboxes, l.classes, nms); // l.classes do not work when darknet is compiled for cuda set l.classes = 80 to coco dataset
+
+	//draw_detections(im, dets, nboxes, 0.5, classes_names, alphabet, 80);
+
+	vector<bbox_t> bbox_vector = extract_predictions(im, dets, nboxes, 0.5, alphabet, 80, input);
+
+	//save_image(im, "predictions");
+
+	//free_image(im);
+	free_image(sized);
+
+	return (bbox_vector);
+}
+
+
+//void
+//initialize_YOLO()
+//{
+//	list *options = read_data_cfg((char*) "../../sharedlib/darknet/cfg/coco.data");
+//	char *name_list = option_find_str(options, (char*) "names", (char*) "../../sharedlib/darknet/data/names.list");
+//
+//	classes_names = get_labels(name_list);
+//	alphabet = load_alphabet();
+//	network_config = load_network((char*) "../../sharedlib/darknet/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet/yolov3.weights", 0);
+//
+//	set_batch_network(network_config, 1);
+//}
 
 
 void
@@ -749,46 +753,20 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	im.c = 3;
 	im.data = float_image;
 
-	image sized = letterbox_image(im, network_config->w, network_config->h);
-	//image sized = resize_image(im, network_config->w, network_config->h);
-	//image sized2 = resize_max(im, network_config->w);
-	//image sized = crop_image(sized2, -((network_config->w - sized2.w)/2), -((network_config->h - sized2.h)/2), network_config->w, network_config->h);
-	//resize_network(network_config, sized.w, sized.h);
-	layer network_layers = network_config->layers[network_config->n-1];
 
-	//printf("Predicting\n");
+	vector<bbox_t> predictions = run_YOLO(&im);
 
-	float *X = sized.data;
+	printf("--%d\n", (int)predictions.size());
 
-	network_predict(network_config, X);
-
-	//printf("Predicted in %f seconds.\n", what_time_is_it_now()-time);
-
-	int nboxes = 0;
-	detection *dets = get_network_boxes(network_config, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes);
-	//printf("%d\n", nboxes);
-	//if (nms) do_nms_obj(boxes, probs, network_layers.w*network_layers.h*network_layers.n, network_layers.classes, nms);
-	if (nms)
-		do_nms_sort(dets, nboxes, network_layers.classes, nms);
-
-	printf("##%d\n", network_layers.classes);
-
-	vector<bbox> predictions = extract_predictions(im.w, im.h, dets, nboxes, thresh, network_layers.classes);
-	free_detections(dets, nboxes);
-
-	//printf("--%d\n", (int)predictions.size());
-
-	fps = 1.0 / (carmen_get_time() - start_time);
-	start_time = carmen_get_time();
 	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, image_msg->raw_right, 0);
 
 	//printf("Passou\n");
-	show_detections(open_cv_image, predictions, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, 0, 0, image_msg->width, image_msg->height);
+	//show_detections(open_cv_image, predictions, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, 0, 0, image_msg->width, image_msg->height);
 	//imshow("Neural Object Detector", open_cv_image);
 	//waitKey(1);
 
 	//free_image(im);
-	free_image(sized);
+	//free_image(sized);
 }
 
 
@@ -881,109 +859,22 @@ read_parameters(int argc, char **argv)
 }
 
 
-void
-initialize_yolo_DARKNET()
-{
-	char cfgfile[64] = "../../sharedlib/darknet/cfg/yolov3.cfg";
-	char datacfg[64] = "../../sharedlib/darknet/cfg/coco.data";
-	char weightfile[64] = "../../sharedlib/darknet/yolov3.weights";
-
-	list *options = read_data_cfg(datacfg);
-
-	char *name_list = option_find_str(options, (char*) "names", (char*) "../../sharedlib/darknet/data/names.list");
-
-	names = get_labels(name_list);
-
-	alphabet = load_alphabet();
-
-	network_config = load_network(cfgfile, weightfile, 0);
-
-	set_batch_network(network_config, 1);
-}
-
-
-void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen)
-{
-    list *options = read_data_cfg(datacfg);
-    char *name_list = option_find_str(options, "names", "data/names.list");
-    char **names = get_labels(name_list);
-
-    image **alphabet = load_alphabet();
-    network *net = load_network(cfgfile, weightfile, 0);
-    set_batch_network(net, 1);
-    srand(2222222);
-    double time;
-    char buff[256];
-    char *input = buff;
-    float nms=.45;
-    while(1){
-        if(filename){
-            strncpy(input, filename, 256);
-        } else {
-            printf("Enter Image Path: ");
-            fflush(stdout);
-            input = fgets(input, 256, stdin);
-            if(!input) return;
-            strtok(input, "\n");
-        }
-        image im = load_image_color(input,0,0);
-        image sized = letterbox_image(im, net->w, net->h);
-        //image sized = resize_image(im, net->w, net->h);
-        //image sized2 = resize_max(im, net->w);
-        //image sized = crop_image(sized2, -((net->w - sized2.w)/2), -((net->h - sized2.h)/2), net->w, net->h);
-        //resize_network(net, sized.w, sized.h);
-        layer l = net->layers[net->n-1];
-
-
-        float *X = sized.data;
-        time=what_time_is_it_now();
-        network_predict(net, X);
-        printf("%s: Predicted in %f seconds.\n", input, what_time_is_it_now()-time);
-        int nboxes = 0;
-        detection *dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes);
-        //printf("%d\n", nboxes);
-        //if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-
-        printf("############%d\n", l.classes);
-        if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
-        draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
-        free_detections(dets, nboxes);
-        if(outfile){
-            save_image(im, outfile);
-        }
-        else{
-            save_image(im, "predictions");
-#ifdef OPENCV
-            make_window("predictions", 512, 512, 0);
-            show_image(im, "predictions", 0);
-#endif
-        }
-
-        free_image(im);
-        free_image(sized);
-        if (filename) break;
-    }
-}
-
-
 int
 main(int argc, char **argv)
 {
-test_detector("../../sharedlib/darknet/cfg/coco.data", "../../sharedlib/darknet/cfg/yolov3.cfg", "../../sharedlib/darknet/yolov3.weights", "dog.jpg", 0.3, .5, "results", 0);
+	carmen_ipc_initialize(argc, argv);
 
-//	carmen_ipc_initialize(argc, argv);
-//
-//    read_parameters(argc, argv);
-//
-//    subscribe_messages();
-//
-//    signal(SIGINT, shutdown_module);
-//
-//    initialize_yolo_DARKNET();
-//
-//	setlocale(LC_ALL, "C");
-//
-//    carmen_ipc_dispatch();
+    read_parameters(argc, argv);
+
+    subscribe_messages();
+
+    signal(SIGINT, shutdown_module);
+
+    initialize_yolo_DARKNET();
+
+	setlocale(LC_ALL, "C");
+
+    carmen_ipc_dispatch();
 
     return 0;
 }

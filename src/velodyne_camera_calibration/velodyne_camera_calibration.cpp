@@ -398,26 +398,12 @@ get_world_to_camera_transformation (tf::Transformer *transformer, carmen_pose_3D
 	tf::Transform world_to_car_pose;
 	tf::StampedTransform world_to_camera_pose;
 	world_to_car_pose.setOrigin(tf::Vector3(pose.position.x, pose.position.y, pose.position.z));
-	double pitch;
-
-//	pitch = pose.orientation.pitch;
-//	printf("Pitch before: %lf ", pitch);
-//	SampleFilter_put(&filter2, pitch);
-//	pitch = SampleFilter_get(&filter2);
-//	printf("Pitch after: %lf \n", pitch);
-	pitch = 0.0;
-
-	world_to_car_pose.setRotation(tf::Quaternion(pose.orientation.yaw, pitch, pose.orientation.roll)); // yaw, pitch, roll
-
-	//world_to_car_pose.setOrigin(tf::Vector3(globalpos.x, globalpos.y, 0.0));
-	//world_to_car_pose.setRotation(tf::Quaternion(globalpos.theta, 0.0, 0.0)); // yaw, pitch, roll
-	//world_to_car_pose.setRotation(tf::Quaternion(pose.orientation.yaw, pose.orientation.pitch, pose.orientation.roll)); // yaw, pitch, roll
+	world_to_car_pose.setRotation(tf::Quaternion(pose.orientation.yaw, pose.orientation.pitch, pose.orientation.roll)); // yaw, pitch, roll
 
 	tf::StampedTransform world_to_car_transform(world_to_car_pose, tf::Time(0), "/world", "/car");
 	transformer->setTransform(world_to_car_transform, "world_to_car_transform");
 
 	transformer->lookupTransform("/world", "/camera", tf::Time(0), world_to_camera_pose);
-	//last_pitch = pose.orientation.pitch;
 
 	return (world_to_camera_pose);
 }

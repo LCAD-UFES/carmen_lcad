@@ -24,10 +24,14 @@
 #include <carmen/rddf_util.h>
 #include <carmen/ultrasonic_filter_interface.h>
 #include <carmen/parking_assistant_interface.h>
+#include <carmen/libdeeplab.h>
 #include <omp.h>
 #include "mapper.h"
 
 #include "message_interpolation.cpp"
+
+#include <opencv2/highgui/highgui.hpp>
+
 
 
 carmen_map_t offline_map;
@@ -574,7 +578,15 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 	unsigned int crop_h = image_msg->height;
 
 	points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_params[camera], velodyne_pose, camera_pose[camera],
-					image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+
+
+	unsigned char* segmentation = process_image(image_msg->width, image_msg->height, img);
+
+	cv::Mat segmentation_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC1, segmentation);
+
+    cv::imshow("Segmentacao", segmentation_cv);
+    cv::waitKey(1);
 
 
 
@@ -1083,7 +1095,8 @@ static const char *
 usage()
 {
 	const char *msg = (const char *)
-		"\nUsage: %s -map_path <path> [args]\n" " args:\n"
+		"\nUsage: %s -map_path <path> [args]\n"
+		" args:\n"
 		"    -camera<n> left|right                  : active cameras for datmo\n"
 		"    -calibration_file <file>               : calibration file for loading\n"
 		"    -save_calibration_file <file>          : calibration file for saving\n"
@@ -1124,7 +1137,6 @@ get_camera_param(int argc, char **argv, int camera)
 		};
 
 		carmen_param_allow_unfound_variables(0);
-
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 	}
 }
@@ -1149,19 +1161,14 @@ read_camera_parameters(int argc, char **argv)
 	};
 
 	carmen_param_allow_unfound_variables(1);
-
 	carmen_param_install_params(argc, argv, camera_param_list, sizeof(camera_param_list) / sizeof(camera_param_list[0]));
 
 	active_cameras = 0;
-
 	for (int i = 1; i <= MAX_CAMERA_INDEX; i++)
 	{
 		camera_alive[i] = -1;
-
 		if (camera_side[i] == NULL)
 			continue;
-
-		active_cameras++;
 
 		if (strcmp(camera_side[i], "left") == 0 || strcmp(camera_side[i], "0") == 0)
 			camera_alive[i] = 0;
@@ -1170,11 +1177,13 @@ read_camera_parameters(int argc, char **argv)
 		else
 			carmen_die("-camera%d %s: Wrong camera side option. Must be either left or right\n", i, camera_side[i]);
 
+		active_cameras++;
 		get_camera_param(argc, argv, i);
 	}
-
 	if (active_cameras == 0)
-		fprintf(stderr, "No cameras active for datmo\n");
+		fprintf(stderr, "No cameras active for datmo\n\n");
+	else
+		initialize_inference_context();
 }
 
 
@@ -1302,7 +1311,6 @@ read_parameters(int argc, char **argv,
 	};
 
 	carmen_param_allow_unfound_variables(0);
-
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
 	ultrasonic_sensor_params.current_range_max = ultrasonic_sensor_params.range_max;
@@ -1331,7 +1339,6 @@ read_parameters(int argc, char **argv,
 	};
 
 	carmen_param_allow_unfound_variables(1);
-
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
 	get_sensors_param(argc, argv);
@@ -1349,11 +1356,10 @@ carmen_subscribe_to_ultrasonic_relevant_messages()
 static void
 subscribe_to_ipc_messages()
 {
-	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t)carmen_localize_ackerman_globalpos_message_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) carmen_localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	if (sensors_params[0].alive)
-		carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t)velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+		carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	if (sensors_params[1].alive)
 	{
@@ -1362,28 +1368,28 @@ subscribe_to_ipc_messages()
 	}
 
 	if (sensors_params[2].alive)
-		carmen_stereo_velodyne_subscribe_scan_message(2, NULL, (carmen_handler_t)velodyne_variable_scan_message_handler2, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_velodyne_subscribe_scan_message(2, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler2, CARMEN_SUBSCRIBE_LATEST);
 
 	if (sensors_params[3].alive)
-		carmen_stereo_velodyne_subscribe_scan_message(3, NULL, (carmen_handler_t)velodyne_variable_scan_message_handler3, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_velodyne_subscribe_scan_message(3, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler3, CARMEN_SUBSCRIBE_LATEST);
 
 	if (sensors_params[4].alive)
-		carmen_stereo_velodyne_subscribe_scan_message(4, NULL, (carmen_handler_t)velodyne_variable_scan_message_handler4, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_velodyne_subscribe_scan_message(4, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler4, CARMEN_SUBSCRIBE_LATEST);
 
 	if (sensors_params[5].alive)
-		carmen_stereo_velodyne_subscribe_scan_message(5, NULL, (carmen_handler_t)velodyne_variable_scan_message_handler5, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_velodyne_subscribe_scan_message(5, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler5, CARMEN_SUBSCRIBE_LATEST);
 
 	if (sensors_params[6].alive)
-		carmen_stereo_velodyne_subscribe_scan_message(6, NULL, (carmen_handler_t)velodyne_variable_scan_message_handler6, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_velodyne_subscribe_scan_message(6, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler6, CARMEN_SUBSCRIBE_LATEST);
 
 	if (sensors_params[7].alive)
-		carmen_stereo_velodyne_subscribe_scan_message(7, NULL, (carmen_handler_t)velodyne_variable_scan_message_handler7, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_velodyne_subscribe_scan_message(7, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler7, CARMEN_SUBSCRIBE_LATEST);
 
 	if (sensors_params[8].alive)
-		carmen_stereo_velodyne_subscribe_scan_message(8, NULL, (carmen_handler_t)velodyne_variable_scan_message_handler8, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_velodyne_subscribe_scan_message(8, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler8, CARMEN_SUBSCRIBE_LATEST);
 
 	if (sensors_params[9].alive)
-		carmen_stereo_velodyne_subscribe_scan_message(9, NULL, (carmen_handler_t)velodyne_variable_scan_message_handler9, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_velodyne_subscribe_scan_message(9, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler9, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
