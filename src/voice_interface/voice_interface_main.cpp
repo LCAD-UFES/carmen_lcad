@@ -63,7 +63,7 @@ main (int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	voice_interface_initialize();
 
-	char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Oi, meu nome é IARA!");
+	char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Oi.");
 	if (voice_interface_speak_error)
 		printf("%s \n", voice_interface_speak_error);
 

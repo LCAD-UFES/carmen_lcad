@@ -50,6 +50,12 @@ typedef struct
     carmen_moving_object_type cluster_type;
 } carmen_tracked_cluster_t, *carmen_tracked_cluster_p;
 
+typedef struct
+{
+	double scale_factor_x;
+	double scale_factor_y;
+}t_scale_factor;
+
 
 dbscan::Cluster
 generate_cluster(vector<carmen_vector_3D_t> points);
