@@ -109,6 +109,7 @@ main (int argc, char **argv)
 			printf("%s \n", voice_interface_speak_error);
 
 		hotword_detection();
+		system("mpg123 computerbeep_4.mp3");
 		const char *voice_command = carmen_voice_interface_listen();
 		if (voice_command)
 			printf("%s \n", voice_command);
