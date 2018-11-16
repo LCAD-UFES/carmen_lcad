@@ -39,6 +39,7 @@ typedef struct
 	double cv_factor;
 	double pixel_size;
 	double baseline;
+	double fov;
 } carmen_camera_parameters;
 
 void
@@ -94,5 +95,12 @@ convert_rddf_pose_to_point_in_image(double x, double y, double z,
 
 void
 initialize_transformations(carmen_pose_3D_t board_pose, carmen_pose_3D_t camera_pose, tf::Transformer *transformer);
+
+tf::Point
+spherical_to_cartesian(double hangle, double vangle, double range);
+
+tf::Point
+move_to_camera_reference(tf::Point p3d_velodyne_reference, carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose);
+
 
 #endif // SRC_VELODYNE_CAMERA_CALIBRATION_VELODYNE_CAMERA_CALIBRATION_H_
