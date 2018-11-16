@@ -7,7 +7,7 @@ MODULE_COMMENT = Allows voice interaction with IARA
 LINK = g++
 
 # Application specific include directories.
-IFLAGS += -I/usr/include/python3.5m
+IFLAGS += -I/usr/include/python3.5
 
 # python3-config --libs
 # Required default libraries to comunicate with Carmen Core.
