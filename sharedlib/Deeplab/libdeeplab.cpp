@@ -20,7 +20,7 @@ initialize_visualize_module()
 	if (python_module == NULL)
 	{
 		Py_Finalize();
-		exit(printf("Error: The python_module visualize could not be loaded.\nMay be PYTHON_PATH is not set.\n"));
+		exit(printf("Error: The python_module visualize could not be loaded.\nMaybe PYTHONPATH is not set.\n"));
 	}
 	Py_DECREF(python_module_name);
 
@@ -57,7 +57,7 @@ initialize_inference_context()
 	if (python_module == NULL)
 	{
 		Py_Finalize();
-		exit(printf("Error: The python_module bridge could not be loaded.\nMay be PYTHON_PATH is not set.\n"));
+		exit(printf("Error: The python_module bridge could not be loaded.\nMaybe PYTHONPATH is not set.\n"));
 	}
 	Py_DECREF(python_module_name);
 
