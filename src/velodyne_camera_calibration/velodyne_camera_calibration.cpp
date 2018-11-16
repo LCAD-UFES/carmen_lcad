@@ -1,9 +1,7 @@
-
 #include <opencv/cv.h>
 #include <opencv2/highgui/highgui.hpp>
-
-#include <carmen/carmen.h>
-#include <carmen/visual_tracker_interface.h>
+//#include <carmen/carmen.h>
+//#include <carmen/visual_tracker_interface.h>
 #include "velodyne_camera_calibration.h"
 
 const int MIN_ANGLE_OBSTACLE = 2;

@@ -97,23 +97,3 @@ rotate_point(carmen_vector_3D_t point, double theta)
 	p.z = point.z;
 	return (p);
 }
-
-
-void
-filter_points_in_clusters(std::vector<std::vector<carmen_vector_3D_t> > *cluster_list)
-{
-	for (unsigned int i = 0; i < cluster_list->size(); i++)
-	{
-		if ((*cluster_list)[i].size() > 0)
-		{
-			dbscan::Cluster cluster = generate_cluster((*cluster_list)[i]);
-			dbscan::Clusters clusters = dbscan::DBSCAN(0.5, 5, cluster);
-			if (clusters.size() > 0)
-			{
-				cluster = get_biggest_cluster(clusters);
-				(*cluster_list)[i] = get_carmen_points(cluster);
-			}
-		}
-	}
-}
-

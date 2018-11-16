@@ -360,10 +360,13 @@ check_rect_inside_image (cv::Rect rec, cv::Mat img)
 
 
 void
-get_image_slices (vector<cv::Mat> &scene_slices, cv::Mat out, vector<carmen_position_t> rddf_points_in_image, vector<double> distances_of_rddf_from_car)
+get_image_slices (vector<cv::Mat> &scene_slices, vector<t_scale_factor> &scale_factor_of_slice_to_original_frame,
+				 cv::Mat out, vector<carmen_position_t> rddf_points_in_image,
+				 vector<double> distances_of_rddf_from_car)
 {
 	cv::Mat roi;
 	cv::Point top_left_point;
+	t_scale_factor scale_factor;
 	double image_size_x;
 	double image_size_y;
 	int thickness = -1;
@@ -383,21 +386,17 @@ get_image_slices (vector<cv::Mat> &scene_slices, cv::Mat out, vector<carmen_posi
 		{
 			//cv::Rect rec(rddf_points[0].x - 320, rddf_points[0].y-300, 640, 384);
 			double scale = 384.0 * (3.0 / 4.0);
-			if(rddf_points_in_image[0].x < 320)
-			{
-				top_left_point.x =  rddf_points_in_image[1].x - (320 - rddf_points_in_image[1].x);
-			}
-			else
-			{
-				top_left_point.x = rddf_points_in_image[1].x - 320;
-			}
+			top_left_point.x = rddf_points_in_image[1].x - 320;
 
 			cv::Rect rec(top_left_point.x, rddf_points_in_image[0].y-scale, 640, 384);
 			//cout<<"Slice"<<i<<" "<<640<<" "<<384<<endl;
 			//cout<<rddf_points[0].x - 320<<" "<<rddf_points[0].y-scale<<" "<<640<<" "<<384-(rddf_points[0].y-scale)<<endl;
 			if (check_rect_inside_image(rec, out)){
 				roi = out (rec);
+				scale_factor.scale_factor_x = (double)scene_slices[0].cols / roi.cols;
+				scale_factor.scale_factor_y = (double)scene_slices[0].rows / roi.rows;
 				scene_slices.push_back(roi);
+				scale_factor_of_slice_to_original_frame.push_back(scale_factor);
 			}
 
 		}
@@ -412,6 +411,10 @@ get_image_slices (vector<cv::Mat> &scene_slices, cv::Mat out, vector<carmen_posi
 			{
 				roi = out (rec);
 				scene_slices.push_back(roi);
+				scale_factor.scale_factor_x = scene_slices[0].cols / roi.cols;
+				scale_factor.scale_factor_y = scene_slices[0].rows / roi.rows;
+				scene_slices.push_back(roi);
+				scale_factor_of_slice_to_original_frame.push_back(scale_factor);
 			}
 
 		}
@@ -421,7 +424,10 @@ get_image_slices (vector<cv::Mat> &scene_slices, cv::Mat out, vector<carmen_posi
 			if (check_rect_inside_image(rec, out))
 			{
 				roi = out (rec);
+				scale_factor.scale_factor_x = scene_slices[0].cols / roi.cols;
+				scale_factor.scale_factor_y = scene_slices[0].rows / roi.rows;
 				scene_slices.push_back(roi);
+				scale_factor_of_slice_to_original_frame.push_back(scale_factor);
 			}
 		}
 		//cout<<endl;
@@ -471,11 +477,11 @@ carmen_pose_3D_t
 filter_pitch(carmen_pose_3D_t car_pose)
 {
 	carmen_pose_3D_t filtered_car_pose;
-	cout<<car_pose.orientation.pitch<<" ";
+	//cout<<car_pose.orientation.pitch<<" ";
 	filtered_car_pose = car_pose;
 	SampleFilter_put(&filter2, pose.orientation.pitch);
 	filtered_car_pose.orientation.pitch = SampleFilter_get(&filter2);
-	cout<<filtered_car_pose.orientation.pitch<<endl;
+	//cout<<filtered_car_pose.orientation.pitch<<endl;
 	filtered_car_pose.orientation.pitch = 0.0;
 
 	return (filtered_car_pose);
@@ -587,13 +593,18 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     cv::Mat out;
     out = rgb_image;
-    double meters_spacement =35.0;
+    double meters_spacement = 35.0;
     rddf_points_in_image = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
 
     vector<cv::Mat> scene_slices;
     vector<cv::Mat> scene_slices_resized;
+    vector<t_scale_factor> scale_factor_of_slice_to_original_frame;
+    t_scale_factor scale;
     scene_slices.push_back(out);
-    get_image_slices(scene_slices, out, rddf_points_in_image, distances_of_rddf_from_car);
+    scale.scale_factor_x = 1;
+    scale.scale_factor_y = 1;
+    scale_factor_of_slice_to_original_frame.push_back(scale);
+    get_image_slices(scene_slices, scale_factor_of_slice_to_original_frame, out, rddf_points_in_image, distances_of_rddf_from_car);
 
 
     for (int i = 0; i < scene_slices.size(); i++)
@@ -601,6 +612,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	cv::Mat slice_resized;
     	cv::resize(scene_slices[i], slice_resized, size);
     	scene_slices_resized.push_back(slice_resized);
+    	cout<<"Slice_"<<i<<"size: "<<scene_slices[i].cols<<" "<<scene_slices[i].rows<<endl;
+    	//printf("Scale factor of slice %d: %lf %lf\n",i,scale_factor_of_slice_to_original_frame[i].scale_factor_x,scale_factor_of_slice_to_original_frame[i].scale_factor_y);
+    	//cout<<"Scale factor of slice "<<i<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_x<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_y<<endl;
     }
     //cout<<endl<<endl<<endl<<endl;
     for (int i = 0; i < scene_slices.size(); i++)
@@ -610,10 +624,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	string window_name = "slice_" + ss.str();
 //    	cv::imshow(window_name, scene_slices[i]);
 //    	cv::waitKey(10);
-    	src_image = scene_slices_resized[i];
-    	rgb_image = scene_slices_resized[i];
+    	src_image = scene_slices[i];
+    	rgb_image = scene_slices[i];
     	detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, window_name);
     }
+    cout<<endl;
 //	publish_moving_objects_message(image_msg->timestamp);
 }
 
