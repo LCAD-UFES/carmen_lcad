@@ -1,16 +1,4 @@
-#include <carmen/carmen.h>
-#include <carmen/bumblebee_basic_interface.h>
-#include <carmen/velodyne_interface.h>
-#include <carmen/velodyne_camera_calibration.h>
-#include <carmen/moving_objects_messages.h>
-#include <carmen/moving_objects_interface.h>
-#include <string>
-#include <cstdlib>
-#include <fstream>
-#include <opencv2/highgui/highgui.hpp>
-#include <carmen/dbscan.h>
 #include "neural_object_detector.hpp"
-#include <carmen/darknet.h>
 
 using namespace std;
 using namespace cv;
@@ -18,14 +6,34 @@ using namespace cv;
 int camera;
 int camera_side;
 
+typedef struct
+{
+	double fx_factor;
+	double fy_factor;
+	double cu_factor;
+	double cv_factor;
+	double pixel_size;
+	double baseline;
+} carmen_camera_parameters;
+
+
+typedef struct
+{
+	int shot_number;
+	int ray_number;
+    int image_x;
+    int image_y;
+    double cartesian_x;
+    double cartesian_y;
+    double cartesian_z;
+}image_cartesian;
+
+
 carmen_velodyne_partial_scan_message *velodyne_msg;
 carmen_camera_parameters camera_parameters;
 carmen_pose_3D_t velodyne_pose;
 carmen_pose_3D_t camera_pose;
 carmen_point_t   globalpos;
-
-vector<string> obj_names_vector;
-vector<Scalar> obj_colours_vector;
 
 char **classes_names;
 image **alphabet;
@@ -33,248 +41,7 @@ network *network_config;
 
 
 void
-objects_names_from_file(string const class_names_file)
-{
-    ifstream file(class_names_file);
-
-    if (!file.is_open())
-    	return;
-
-    for (string line; getline(file, line);)
-    	obj_names_vector.push_back(line);
-
-    cout << "Object names loaded!\n\n";
-}
-
-
-void
-set_object_vector_color()
-{
-	for (unsigned int i = 0; i < obj_names_vector.size(); i++)
-	{
-		if (i == 2 ||                                         // car
-			i == 3 ||                                         // motorbike
-			i == 5 ||                                         // bus
-			i == 6 ||                                         // train
-			i == 7)                                           // truck
-			obj_colours_vector.push_back(Scalar(0, 0, 255));
-		else if (i == 0 || i == 1)                            // person or bicycle
-			obj_colours_vector.push_back(Scalar(255, 0, 0));
-		else
-			obj_colours_vector.push_back(Scalar(230, 230, 230));
-	}
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           //
-// Publishers                                                                                //
-//                                                                                           //
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-void
-publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clouds_message *msg)
-{
-	msg->timestamp = timestamp;
-	msg->host = carmen_get_host();
-
-    carmen_moving_objects_point_clouds_publish_message(msg);
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           //
-// Handlers                                                                                  //
-//                                                                                           //
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-vector<vector<image_cartesian>>
-get_points_inside_bounding_boxes(vector<bbox> &predictions, vector<image_cartesian> &velodyne_points_vector)
-{
-	vector<vector<image_cartesian>> laser_list_inside_each_bounding_box; //each_bounding_box_laser_list
-
-	//cout << predictions.size() << endl;
-
-	for (unsigned int i = 0; i < predictions.size();)
-	{
-		vector<image_cartesian> lasers_points_inside_bounding_box;
-
-		for (unsigned int j = 0; j < velodyne_points_vector.size(); j++)
-		{
-			if (velodyne_points_vector[j].image_x >  predictions[i].x &&
-				velodyne_points_vector[j].image_x < (predictions[i].x + predictions[i].w) &&
-				velodyne_points_vector[j].image_y >  predictions[i].y &&
-				velodyne_points_vector[j].image_y < (predictions[i].y + predictions[i].h))
-			{
-				lasers_points_inside_bounding_box.push_back(velodyne_points_vector[j]);
-			}
-		}
-		if (lasers_points_inside_bounding_box.size() > 0)
-		{
-			laser_list_inside_each_bounding_box.push_back(lasers_points_inside_bounding_box);
-			i++;
-		}
-		else
-		{
-			//cout << predictions.size() << endl;
-			predictions.erase(predictions.begin()+i);
-		}
-
-	}
-	return laser_list_inside_each_bounding_box;
-}
-
-
-vector<image_cartesian>
-get_biggest_cluster(vector<vector<image_cartesian>> &clusters)
-{
-	unsigned int max_size = 0, max_index = 0;
-
-	for (unsigned int i = 0; i < clusters.size(); i++)
-	{
-		if (clusters[i].size() > max_size)
-		{
-			max_size = clusters[i].size();
-			max_index = i;
-		}
-	}
-	return (clusters[max_index]);
-}
-
-
-inline double
-distance2(image_cartesian a, image_cartesian b)
-{
-	double dx = a.cartesian_x - b.cartesian_x;
-	double dy = a.cartesian_y - b.cartesian_y;
-
-	return (dx * dx + dy * dy);
-}
-
-
-vector<int>
-query(double d2, int i, const vector<image_cartesian> &points, std::vector<bool> clustered)
-{
-	vector<int> neighbors;
-	const image_cartesian &point = points[i];
-
-	for (size_t j = 0; j < points.size(); j++)
-	{
-		if ((distance2(point, points[j]) < d2) && !clustered[j])
-			neighbors.push_back(j);
-	}
-
-	return (neighbors);
-}
-
-
-vector<vector<image_cartesian>>
-dbscan_compute_clusters(double d2, size_t density, const vector<image_cartesian> &points)
-{
-	vector<vector<image_cartesian>> clusters;
-	vector<bool> clustered(points.size(), false);
-
-	for (size_t i = 0; i < points.size(); ++i)
-	{
-		// Ignore already clustered points.
-		if (clustered[i])
-			continue;
-
-		// Ignore points without enough neighbors.
-		vector<int> neighbors = query(d2, i, points, clustered);
-		if (neighbors.size() < density)
-			continue;
-
-		// Create a new cluster with the i-th point as its first element.
-		vector<image_cartesian> c;
-		clusters.push_back(c);
-		vector<image_cartesian> &cluster = clusters.back();
-		cluster.push_back(points[i]);
-		clustered[i] = true;
-
-		// Add the point's neighbors (and possibly their neighbors) to the cluster.
-		for (size_t j = 0; j < neighbors.size(); ++j)
-		{
-			int k = neighbors[j];
-			if (clustered[k])
-				continue;
-
-			cluster.push_back(points[k]);
-			clustered[k] = true;
-
-			vector<int> farther = query(d2, k, points, clustered);
-			if (farther.size() >= density)
-				neighbors.insert(neighbors.end(), farther.begin(), farther.end());
-		}
-	}
-	return (clusters);
-}
-
-
-vector<vector<image_cartesian>>
-filter_object_points_using_dbscan(vector<vector<image_cartesian>> &points_lists)
-{
-	vector<vector<image_cartesian>> filtered_points;
-
-	for (unsigned int i = 0; i < points_lists.size(); i++)
-	{
-		vector<vector<image_cartesian>> clusters = dbscan_compute_clusters(0.5, 3, points_lists[i]);        // Compute clusters using dbscan
-
-		if (clusters.size() == 0)                                          // If dbscan returned zero clusters
-		{
-			vector<image_cartesian> empty_cluster;
-			filtered_points.push_back(empty_cluster);                      // An empty cluster is added to the clusters vector
-		}
-		else if (clusters.size() == 1)
-		{
-			filtered_points.push_back(clusters[0]);
-		}
-		else                                                               // dbscan returned more than one cluster
-		{
-			filtered_points.push_back(get_biggest_cluster(clusters));      // get the biggest, the biggest cluster will always better represent the object
-		}
-	}
-	return (filtered_points);
-}
-
-
-void
-show_LIDAR_points(Mat &image, vector<image_cartesian> all_points)
-{
-	for (unsigned int i = 0; i < all_points.size(); i++)
-		circle(image, Point(all_points[i].image_x, all_points[i].image_y), 1, cvScalar(0, 0, 255), 1, 8, 0);
-}
-
-
-void
-show_LIDAR(Mat &image, vector<vector<image_cartesian>> points_lists, int r, int g, int b)
-{
-	for (unsigned int i = 0; i < points_lists.size(); i++)
-	{
-		for (unsigned int j = 0; j < points_lists[i].size(); j++)
-			circle(image, Point(points_lists[i][j].image_x, points_lists[i][j].image_y), 1, cvScalar(b, g, r), 1, 8, 0);
-	}
-}
-
-
-void
-show_all_points(Mat &image, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
-{
-	vector<carmen_velodyne_points_in_cam_t> all_points = carmen_velodyne_camera_calibration_lasers_points_in_camera(
-					velodyne_msg, camera_parameters, velodyne_pose, camera_pose, image_width, image_height);
-
-	int max_x = crop_x + crop_width, max_y = crop_y + crop_height;
-
-	for (unsigned int i = 0; i < all_points.size(); i++)
-		if (all_points[i].ipx >= crop_x && all_points[i].ipx <= max_x && all_points[i].ipy >= crop_y && all_points[i].ipy <= max_y)
-			circle(image, Point(all_points[i].ipx - crop_x, all_points[i].ipy - crop_y), 1, cvScalar(0, 0, 255), 1, 8, 0);
-}
-
-
-void
-show_detections(Mat image, vector<bbox> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
+display(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
 		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
 {
 	char object_info[25];
@@ -288,346 +55,45 @@ show_detections(Mat image, vector<bbox> predictions, vector<image_cartesian> poi
 
     for (unsigned int i = 0; i < predictions.size(); i++)
     {
-        sprintf(object_info, "%d %s %.2f", predictions[i].obj_id, obj_names_vector[predictions[i].obj_id].c_str(), predictions[i].prob);
+    	//printf("---%d \n", predictions[i].obj_id);
+        sprintf(object_info, "%d %s %d", predictions[i].obj_id, classes_names[predictions[i].obj_id], (int)predictions[i].prob);
 
         rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
-                      obj_colours_vector[predictions[i].obj_id], 1);
+        		Scalar(0, 0, 255), 1);
 
-        putText(image, object_info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+        putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
     }
 
-	show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
-    show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
-    show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
+	//show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
+    //show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
+    //show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
-//    resize(image, image, Size(600, 300));
+    //resize(image, image, Size(600, 300));
     imshow("Neural Object Detector", image);
     //imwrite("Image.jpg", image);
     waitKey(1);
 }
 
 
-vector<image_cartesian>
-compute_detected_objects_poses(vector<vector<image_cartesian>> filtered_points)
-{
-	vector<image_cartesian> objects_positions;
-	unsigned int i, j;
-
-	for(i = 0; i < filtered_points.size(); i++)
-	{
-		image_cartesian point;
-
-		if (filtered_points[i].size() == 0)
-		{
-			point.cartesian_x = -999.0;    // This error code is set, probably the object is out of the LiDAR's range
-			point.cartesian_y = -999.0;
-			point.cartesian_z = -999.0;
-			//printf("Empty Bbox\n");
-		}
-		else
-		{
-			point.cartesian_x = 0.0;
-			point.cartesian_y = 0.0;
-			point.cartesian_z = 0.0;
-
-			for(j = 0; j < filtered_points[i].size(); j++)
-			{
-				point.cartesian_x += filtered_points[i][j].cartesian_x;
-				point.cartesian_y += filtered_points[i][j].cartesian_y;
-				point.cartesian_z += filtered_points[i][j].cartesian_z;
-			}
-			point.cartesian_x = point.cartesian_x / j;
-			point.cartesian_y = point.cartesian_y / j;
-			point.cartesian_z = point.cartesian_z / j;
-		}
-		objects_positions.push_back(point);
-	}
-	return (objects_positions);
-}
-
-
-void
-carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
-{
-	*x += offset_x;
-	*y += offset_y;
-}
-
-
-void
-carmen_spherical_to_cartesian(double *x, double *y, double *z, double horizontal_angle, double vertical_vangle, double range)
-{
-	*x = range * cos(vertical_vangle) * cos(horizontal_angle);
-	*y = range * cos(vertical_vangle) * sin(horizontal_angle);
-	*z = range * sin(vertical_vangle);
-}
-
-
-int
-compute_num_measured_objects(vector<image_cartesian> objects_poses)
-{
-	int num_objects = 0;
-
-	for (int i = 0; i < objects_poses.size(); i++)
-	{
-		if (objects_poses[i].cartesian_x > 0.0 || objects_poses[i].cartesian_y > 0.0)
-			num_objects++;
-	}
-	return (num_objects);
-}
-
-
-int board_x = 0.572;      // TODO ler do carmen ini
-int board_y = 0.0;
-int board_z = 2.154;
-
-
-carmen_moving_objects_point_clouds_message
-build_detected_objects_message(vector<bbox> predictions, vector<image_cartesian> objects_poses, vector<vector<image_cartesian>> points_lists)
-{
-	carmen_moving_objects_point_clouds_message msg;
-	int num_objects = compute_num_measured_objects(objects_poses);
-
-	//printf ("Predictions %d Poses %d, Points %d\n", (int) predictions.size(), (int) objects_poses.size(), (int) points_lists.size());
-
-	msg.num_point_clouds = num_objects;
-	msg.point_clouds = (t_point_cloud_struct *) malloc (num_objects * sizeof(t_point_cloud_struct));
-
-	for (int i = 0, l = 0; i < objects_poses.size(); i++)
-	{                                                                                                               // The error code of -999.0 is set on compute_detected_objects_poses,
-		if (objects_poses[i].cartesian_x != -999.0 || objects_poses[i].cartesian_y != -999.0)                       // probably the object is out of the LiDAR's range
-		{
-			carmen_translte_2d(&objects_poses[i].cartesian_x, &objects_poses[i].cartesian_y, board_x, board_y);
-			carmen_rotate_2d  (&objects_poses[i].cartesian_x, &objects_poses[i].cartesian_y, carmen_normalize_theta(globalpos.theta));
-			carmen_translte_2d(&objects_poses[i].cartesian_x, &objects_poses[i].cartesian_y, globalpos.x, globalpos.y);
-
-			msg.point_clouds[l].r = 1.0;
-			msg.point_clouds[l].g = 1.0;
-			msg.point_clouds[l].b = 0.0;
-
-			msg.point_clouds[l].linear_velocity = 0;
-			msg.point_clouds[l].orientation = globalpos.theta;
-
-			msg.point_clouds[l].length = 4.5;
-			msg.point_clouds[l].height = 1.8;
-			msg.point_clouds[l].width  = 1.6;
-
-			msg.point_clouds[l].object_pose.x = objects_poses[i].cartesian_x;
-			msg.point_clouds[l].object_pose.y = objects_poses[i].cartesian_y;
-			msg.point_clouds[l].object_pose.z = 0.0;
-
-			switch (predictions[i].obj_id)
-			{
-				case 0:
-					msg.point_clouds[l].geometric_model = 0;
-					msg.point_clouds[l].model_features.geometry.height = 1.8;
-					msg.point_clouds[l].model_features.geometry.length = 1.0;
-					msg.point_clouds[l].model_features.geometry.width = 1.0;
-					msg.point_clouds[l].model_features.red = 1.0;
-					msg.point_clouds[l].model_features.green = 1.0;
-					msg.point_clouds[l].model_features.blue = 0.8;
-					msg.point_clouds[l].model_features.model_name = (char *) "pedestrian";
-					break;
-				case 2:
-					msg.point_clouds[l].geometric_model = 0;
-					msg.point_clouds[l].model_features.geometry.height = 1.8;
-					msg.point_clouds[l].model_features.geometry.length = 4.5;
-					msg.point_clouds[l].model_features.geometry.width = 1.6;
-					msg.point_clouds[l].model_features.red = 1.0;
-					msg.point_clouds[l].model_features.green = 0.0;
-					msg.point_clouds[l].model_features.blue = 0.8;
-					msg.point_clouds[l].model_features.model_name = (char *) "car";
-					break;
-				default:
-					msg.point_clouds[l].geometric_model = 0;
-					msg.point_clouds[l].model_features.geometry.height = 1.8;
-					msg.point_clouds[l].model_features.geometry.length = 4.5;
-					msg.point_clouds[l].model_features.geometry.width = 1.6;
-					msg.point_clouds[l].model_features.red = 1.0;
-					msg.point_clouds[l].model_features.green = 1.0;
-					msg.point_clouds[l].model_features.blue = 0.0;
-					msg.point_clouds[l].model_features.model_name = (char *) "other";
-					break;
-			}
-			msg.point_clouds[l].num_associated = 0;
-
-			msg.point_clouds[l].point_size = points_lists[i].size();
-
-			msg.point_clouds[l].points = (carmen_vector_3D_t *) malloc (msg.point_clouds[l].point_size * sizeof(carmen_vector_3D_t));
-
-			for (int j = 0; j < points_lists[i].size(); j++)
-			{
-				carmen_vector_3D_t p;
-
-				p.x = points_lists[i][j].cartesian_x;
-				p.y = points_lists[i][j].cartesian_y;
-				p.z = points_lists[i][j].cartesian_z;
-
-				carmen_translte_2d(&p.x, &p.y, board_x, board_y);
-				carmen_rotate_2d  (&p.x, &p.y, globalpos.theta);
-				carmen_translte_2d(&p.x, &p.y, globalpos.x, globalpos.y);
-
-				msg.point_clouds[l].points[j] = p;
-			}
-			l++;
-		}
-	}
-	return (msg);
-}
-
-
-vector<bbox>
-filter_predictions_of_interest(vector<bbox> &predictions)
-{
-	vector<bbox> filtered_predictions;
-
-	for (unsigned int i = 0; i < predictions.size(); i++)
-	{
-		if (i == 0 ||  // person
-			i == 1 ||  // bicycle
-			i == 2 ||  // car
-			i == 3 ||  // motorbike
-			i == 5 ||  // bus
-			i == 6 ||  // train
-			i == 7 ||  // truck
-			i == 9)    // traffic light
-		{
-			filtered_predictions.push_back(predictions[i]);
-		}
-	}
-	return (filtered_predictions);
-}
-
-
-void
-compute_annotation_specifications(vector<vector<image_cartesian>> traffic_light_clusters)
-{
-	double mean_x = 0.0, mean_y = 0.0, mean_z = 0.0;
-	int i, j;
-
-	for (i = 0; i < traffic_light_clusters.size(); i++)
-	{
-		for (j = 0; j < traffic_light_clusters[i].size(); j++)
-		{
-			//printf("%lf %lf %lf\n", traffic_light_clusters[i][j].cartesian_x, traffic_light_clusters[i][j].cartesian_y, traffic_light_clusters[i][j].cartesian_z);
-
-			mean_x += traffic_light_clusters[i][j].cartesian_x;
-			mean_y += traffic_light_clusters[i][j].cartesian_y;
-			mean_z += traffic_light_clusters[i][j].cartesian_z;
-		}
-		printf("TL %lf %lf %lf\n", mean_x/j, mean_y/j, mean_z/j);
-
-		mean_x = 0.0;
-		mean_y = 0.0;
-		mean_z = 0.0;
-	}
-}
-
-
-void
-carmen_translte_3d(double *x, double *y, double *z, double offset_x, double offset_y, double offset_z)
-{
-	*x += offset_x;
-	*y += offset_y;
-	*z += offset_z;
-}
-
-
-void
-generate_traffic_light_annotations(vector<bbox> predictions, vector<vector<image_cartesian>> points_inside_bbox)
-{
-	static vector<image_cartesian> traffic_light_points;
-	static int count = 0;
-	int traffic_light_found = 1;
-
-	//printf("--- %lf %lf\n", globalpos.x, globalpos.y);
-
-	for (int i = 0; i < predictions.size(); i++)
-	{
-		if (predictions[i].obj_id == 9)
-		{
-			//printf("%s\n", obj_names_vector[predictions[i].obj_id].c_str());
-			for (int j = 0; j < points_inside_bbox[i].size(); j++)
-			{
-				//printf("%lf %lf\n", points_inside_bbox[i][j].cartesian_x, points_inside_bbox[i][j].cartesian_y);
-
-				//carmen_translte_3d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, &points_inside_bbox[i][j].cartesian_z, board_x, board_y, board_z);
-				carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, board_x, board_y);
-				carmen_rotate_2d  (&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos.theta);
-				carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos.x, globalpos.y);
-
-				traffic_light_points.push_back(points_inside_bbox[i][j]);
-				//printf("%lf %lf\n", points_inside_bbox[i][j].cartesian_x, points_inside_bbox[i][j].cartesian_y);
-			}
-			count = 0;
-			traffic_light_found = 0;
-		}
-	}
-	count += traffic_light_found;
-
-	if (count >= 20)                // If stays without see a traffic light for more than 20 frames
-	{                               // Compute traffic light positions and generate annotations
-		vector<vector<image_cartesian>> traffic_light_clusters = dbscan_compute_clusters(0.5, 3, traffic_light_points);
-		printf("--- %d\n", (int)traffic_light_clusters.size());
-		compute_annotation_specifications(traffic_light_clusters);
-		traffic_light_points.clear();
-		count = 0;
-	}
-	//printf("Cont %d\n", count);
-}
-
-
-float*
-convert_image_msg_to_darknet_image(int image_width, int image_height, unsigned char *raw_image)
-{
-	//image_t converted_image;
-	int image_size = image_width * image_height * 3;
-
-	//converted_image.w = image_width;
-	//converted_image.h = image_height;
-	//converted_image.c = 3;                                      // 3 is the Number of Channels
-	float *image = (float *) malloc (image_size * sizeof (float));
-
-	//memcpy(image, raw_image, image_width * image_height * 3 *sizeof(char));
-
-	for (int i = 0; i < image_size; i++)
-	{
-		image[i] = (float) raw_image[i] / 255;
-	}
-
-	return (image);
-}
-
-
-typedef struct
-{
-    unsigned int x, y, w, h;	// (x,y) - top-left corner, (w, h) - width & height of bounded box
-    float prob;					// confidence - probability that the object was found correctly
-    unsigned int obj_id;		// class of object - from range [0, classes-1]
-    unsigned int track_id;		// tracking id for video (0 - untracked, 1 - inf - tracked object)
-}bbox_t;
-
-
 vector<bbox_t>
-extract_predictions(image *im, detection *dets, int num, float thresh, image **alphabet, int classes, char* line)
+extract_predictions(image img, detection *dets, int num, float thresh, image **alphabet, int classes_number, char* line)
 {
 	int i,j;
 	vector<bbox_t> bbox_vector;
 
-    FILE* results = fopen("results_iara.txt", "a");
-
 	for(i = 0; i < num; ++i)
 	{
 		char labelstr[4096] = {0};
-		int clas = -1;
-		for(j = 0; j < classes; ++j)
+		int obj_id = -1;
+
+		for(j = 0; j < classes_number; ++j)
 		{
 			if (dets[i].prob[j] > thresh)
 			{
-				if (clas < 0)
+				if (obj_id < 0)   //TODO Get the class with the higher probability
 				{
 					strcat(labelstr, classes_names[j]);
-					clas = j;
+					obj_id = j;
 				}
 				else
 				{
@@ -637,57 +103,52 @@ extract_predictions(image *im, detection *dets, int num, float thresh, image **a
 				//printf("%s: %.0f%%\n", classes_names[j], dets[i].prob[j]*100);
 			}
 		}
-		if (clas >= 0)
+		if (obj_id >= 0)
 		{
 			box b = dets[i].bbox;
 
-			int left  = (b.x-b.w/2.)*im->w;
-			int right = (b.x+b.w/2.)*im->w;
-			int top   = (b.y-b.h/2.)*im->h;
-			int bot   = (b.y+b.h/2.)*im->h;
+			int left  = (b.x - (b.w / 2.0)) * img.w;
+			int right = (b.x + (b.w / 2.0)) * img.w;
+			int top   = (b.y - (b.h / 2.0)) * img.h;
+			int bot   = (b.y + (b.h / 2.0)) * img.h;
 
-			if(left < 0) left = 0;
-			if(right > im->w-1) right = im->w-1;
-			if(top < 0) top = 0;
-			if(bot > im->h-1) bot = im->h-1;
+			if(left < 0)
+				left = 0;
+			if(right > img.w-1)
+				right = img.w-1;
+			if(top < 0)
+				top = 0;
+			if(bot > img.h-1)
+				bot = img.h-1;
 
 			bbox_t bbox;
 
 			bbox.x = left;
 			bbox.y = top;
-			bbox.w = right;
-			bbox.h = bot;
-			bbox.obj_id = j;
-			bbox.prob = dets[i].prob[j]*100;
+			bbox.w = right - left;
+			bbox.h = bot - top;
+			bbox.obj_id = obj_id;
+			bbox.prob = dets[i].prob[obj_id]*100;
 			bbox.track_id = 0;
 
-
-			//traffic light
-//			if (strcmp("bicycle",       labelstr) == 0 ||
-//				strcmp("motorbike",     labelstr) == 0 ||
-//				strcmp("car",           labelstr) == 0 ||
-//				strcmp("bus",           labelstr) == 0 ||
-//				strcmp("truck",         labelstr) == 0 ||
-			//if (strcmp("person", labelstr) == 0)
-			//fprintf(results, "%s %s %d %d %d %d\n", line, labelstr, left, top, right, bot);
-
-			//if (strcmp("person", labelstr) == 0)
-			//	fprintf(results, "%d, -1, %f, %f, %f, %f, 1, -1, -1, -1\n", frame, (float)left, (float)top, (float)(right - left), (float)(bot - top));//, dets[i].prob[j]);
+			bbox_vector.push_back(bbox);
 		}
 	}
-    fclose(results);
-
     return (bbox_vector);
 }
 
 vector<bbox_t>
-run_YOLO(image *im)
+test_YOLO()
 {
 	char buff[256], *input = buff;
 	float nms = 0.45;
 	int nboxes = 0;
 
-	image sized = letterbox_image(*im, network_config->w, network_config->h);
+	strncpy(input, (char*) "../../sharedlib/darknet2/data/dog.jpg", 256);
+
+	image im = load_image_color(input,0,0);
+
+	image sized = letterbox_image(im, network_config->w, network_config->h);
 
 	layer l = network_config->layers[network_config->n-1];
 
@@ -697,7 +158,7 @@ run_YOLO(image *im)
 
 	//printf("%s: Predicted in %f seconds.\n", input, what_time_is_it_now()-time);
 
-	detection *dets = get_network_boxes(network_config, im->w, im->h, 0.5, 0.5, 0, 1, &nboxes);
+	detection *dets = get_network_boxes(network_config, im.w, im.h, 0.5, 0.5, 0, 1, &nboxes);
 
 	if (nms)
 		do_nms_sort(dets, nboxes, 80, nms);
@@ -709,33 +170,149 @@ run_YOLO(image *im)
 
 	//save_image(im, "predictions");
 
-	//free_image(im);
+	free_image(im);
 	free_image(sized);
 
 	return (bbox_vector);
 }
 
 
-//void
-//initialize_YOLO()
-//{
-//	list *options = read_data_cfg((char*) "../../sharedlib/darknet/cfg/coco.data");
-//	char *name_list = option_find_str(options, (char*) "names", (char*) "../../sharedlib/darknet/data/names.list");
-//
-//	classes_names = get_labels(name_list);
-//	alphabet = load_alphabet();
-//	network_config = load_network((char*) "../../sharedlib/darknet/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet/yolov3.weights", 0);
-//
-//	set_batch_network(network_config, 1);
-//}
+vector<bbox_t>
+run_YOLO(image *img)
+{
+	char buff[256], *input = buff;
+	float nms = 0.45;
+	int nboxes = 0;
+
+	//save_image(*img, "predictions");
+
+	image sized = letterbox_image(*img, network_config->w, network_config->h);
+
+	layer l = network_config->layers[network_config->n-1];
+
+	float *X = sized.data;
+
+	network_predict(network_config, X);
+
+	detection *dets = get_network_boxes(network_config, img->w, img->h, 0.5, 0.5, 0, 1, &nboxes);
+
+	if (nms)
+		do_nms_sort(dets, nboxes, 80, nms);
+		//do_nms_sort(dets, nboxes, l.classes, nms); // l.classes do not work when darknet is compiled for cuda set l.classes = 80 to coco dataset
+
+	vector<bbox_t> bbox_vector = extract_predictions(*img, dets, nboxes, 0.5, alphabet, 80, input);
+
+	free_image(sized);
+	return (bbox_vector);
+}
+
+
+image						// TODO the image crop may also easily be made here
+convert_image_msg_to_darknet_image(unsigned int image_size, unsigned int w, unsigned int h, unsigned char *data)
+{
+    int c = 3;    // Number of channels
+    image image = make_image(w, h, c);
+
+    if (data == NULL)
+    	return image;
+
+    for(int k = 0; k < c; ++k)
+    {
+    	for(int j = 0; j < h; ++j)
+    	{
+    		for(int i = 0; i < w; ++i)
+    		{
+    			int dst_index = i + (w * j) + (w * h * k);
+    			int src_index = k + (c * i) + (c * w * j);
+    			image.data[dst_index] = (float) (data[src_index] / 255.0);    // 255 because of conversion Uchar (byte) ti float
+    		}
+    	}
+    }
+    return (image);
+}
+
+
+image
+convert_image_msg_to_darknet_image_and_crop(unsigned int image_size, unsigned int w, unsigned int h, unsigned char *data,
+											unsigned int crop_x, unsigned int crop_y, unsigned int crop_w, unsigned int crop_h)
+{
+    int c = 3;    // Number of channels
+    image image = make_image(crop_w, crop_h, c);
+
+    if (data == NULL)
+    	return image;
+
+    int m, n;
+
+    for(int k = 0; k < c; ++k)
+    {
+    	for(int j = crop_y, n = 0; j < crop_h; ++j, ++n)
+    	{
+    		for(int i = crop_x, m = 0; i < crop_w; ++i, ++m)
+    		{
+    			int dst_index = m + (crop_w * n) + (crop_w * crop_h * k);
+    			int src_index = k + (c * i) + (c * w * j);
+
+    			printf("%d %d ", (c * i) , (c * w * j));
+    			image.data[dst_index] = (float) (data[src_index] / 255.0);    // 255 because of conversion Uchar (byte) ti float
+    		}
+    	    printf("-------------------------------------------------------------------------------------------\n\n\n\n");
+    	}
+    }
+    printf("-------------------------------------------------------------------------------------------\n\n\n\n");
+
+    return (image);
+}
+
+
+unsigned char *
+crop_raw_image(int image_width, int image_height, unsigned char *raw_image, int crop_x, int crop_y, int crop_w, int crop_h)
+{
+	unsigned char *cropped_image = (unsigned char *) malloc (crop_w * crop_h * 3 * sizeof(unsigned char));  // Only works for 3 channels image
+	int row, col, index;
+
+	crop_x = (crop_x - 2) * 3;
+	crop_y = (crop_y - 2) * image_width * 3;
+	crop_w    = crop_x + ((crop_w + 1) * 3);
+	crop_h    = crop_y + ((crop_h + 1) * image_width * 3);
+	image_height   = image_height * image_width * 3;
+	image_width   *= 3;
+
+	for (row = 0, index = 0; row < image_height; row += image_width)
+	{
+		for (col = 0; col < image_width; col += 3)
+		{
+			if (col > crop_x && col < crop_w && row > crop_y && row < crop_h)
+			{
+				cropped_image[index]     = raw_image[row + col];
+				cropped_image[index + 1] = raw_image[row + col + 1];
+				cropped_image[index + 2] = raw_image[row + col + 2];
+
+				index += 3;
+			}
+		}
+	}
+
+	return (cropped_image);
+}
 
 
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
-	float *float_image = convert_image_msg_to_darknet_image(image_msg->height, image_msg->width, image_msg->raw_right);
+	if (image_msg == NULL)
+		return;
+
 	double fps;
 	static double start_time = 0.0;
+	unsigned char *img;
+
+//	printf("%d %d\n", image_msg->height, image_msg->width);
+
+	if (camera_side == 0)
+		img = image_msg->raw_left;
+	else
+		img = image_msg->raw_right;
 
 	vector<image_cartesian> points;
 	vector<vector<image_cartesian>> points_inside_bbox;
@@ -747,28 +324,24 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	float thresh = 0.2;
 	float hier_thresh = 0.5;
 
-	image im;
-	im.w = image_msg->width;
-	im.h = image_msg->height;
-	im.c = 3;
-	im.data = float_image;
+	unsigned char *cropped_img = crop_raw_image(image_msg->width, image_msg->height, img, 160, 40, 320, 320);
 
+	image darknet_image = convert_image_msg_to_darknet_image(image_msg->image_size, 320, 320, cropped_img);
+	//image darknet_image = convert_image_msg_to_darknet_image_and_crop(image_msg->image_size, image_msg->width, image_msg->height, img, 160, 40, 320, 320); // TODO the image crop may also easily be made here
 
-	vector<bbox_t> predictions = run_YOLO(&im);
+	//save_image(darknet_image, "predictions");
 
-	printf("--%d\n", (int)predictions.size());
+	vector<bbox_t> predictions = run_YOLO(&darknet_image);
 
-	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, image_msg->raw_right, 0);
+	//Mat open_cv_image = Mat(darknet_image.h, darknet_image.w, CV_32FC3, darknet_image.data, 0);
+	Mat open_cv_image = Mat(320, 320, CV_8UC3, cropped_img, 0);
 
-	//printf("Passou\n");
-	//show_detections(open_cv_image, predictions, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, 0, 0, image_msg->width, image_msg->height);
-	//imshow("Neural Object Detector", open_cv_image);
-	//waitKey(1);
+	fps = 1.0 / (carmen_get_time() - start_time);
+	start_time = carmen_get_time();
+	display(open_cv_image, predictions, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, 0, 0, image_msg->width, image_msg->height);
 
-	//free_image(im);
-	//free_image(sized);
+	free_image(darknet_image);
 }
-
 
 
 void
@@ -776,7 +349,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 {
 	velodyne_msg = velodyne_message;
 
-    carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_msg);
+    //carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_msg);
 }
 
 
@@ -859,22 +432,36 @@ read_parameters(int argc, char **argv)
 }
 
 
+void
+initialize_YOLO()
+{
+	list *options = read_data_cfg((char*) "../../sharedlib/darknet2/cfg/coco.data");
+	char *name_list = option_find_str(options, (char*) "names", (char*) "../../sharedlib/darknet2/data/names.list");
+
+	classes_names = get_labels(name_list);
+	alphabet = load_alphabet();
+	network_config = load_network((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights", 0);
+
+	set_batch_network(network_config, 1);
+}
+
+
 int
 main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
 
-    read_parameters(argc, argv);
+	read_parameters(argc, argv);
 
-    subscribe_messages();
+	subscribe_messages();
 
-    signal(SIGINT, shutdown_module);
+	signal(SIGINT, shutdown_module);
 
-    initialize_yolo_DARKNET();
+	initialize_YOLO();
 
 	setlocale(LC_ALL, "C");
 
-    carmen_ipc_dispatch();
+	carmen_ipc_dispatch();
 
-    return 0;
+	return 0;
 }
