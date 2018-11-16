@@ -109,9 +109,9 @@ main (int argc, char **argv)
 			printf("%s \n", voice_interface_speak_error);
 
 		hotword_detection();
-		const char *voice_interface_listen_error = carmen_voice_interface_listen();
-		if (voice_interface_listen_error)
-			printf("%s \n", voice_interface_listen_error);
+		const char *voice_command = carmen_voice_interface_listen();
+		if (voice_command)
+			printf("%s \n", voice_command);
 		carmen_ipc_sleep(0.02);
 	}
 
