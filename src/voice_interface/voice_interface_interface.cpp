@@ -130,17 +130,12 @@ carmen_voice_interface_speak(char *speech)
 }
 
 char *
-carmen_voice_interface_listen(){
-
-	char *voice_interface_error = init_voice();
-			if (voice_interface_error != NULL)
-				return (voice_interface_error);
-
+carmen_voice_interface_listen()
+{
 	const char * words_said = listen();
 	printf("\n");
 	printf("Message: '%s'\n", words_said);
 	printf("\n");
-	finalize_voice();
 
-	return NULL;
+	return (NULL);
 }
