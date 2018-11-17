@@ -31,7 +31,9 @@
 #include "message_interpolation.cpp"
 
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 
 carmen_map_t offline_map;
@@ -86,6 +88,7 @@ int number_of_sensors;
 carmen_camera_parameters camera_params[MAX_CAMERA_INDEX + 1];
 carmen_pose_3D_t camera_pose[MAX_CAMERA_INDEX + 1];
 camera_data_t camera_data[MAX_CAMERA_INDEX + 1];
+cv::Mat camera_image_semantic[MAX_CAMERA_INDEX + 1];
 int camera_alive[MAX_CAMERA_INDEX + 1];
 int active_cameras;
 
@@ -137,6 +140,7 @@ void
 filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
 {
 	camera_filter_count[camera_index]++;
+	cv::Scalar laser_ray_color;
 	int image_width  = camera_data[camera_index].width[image_index];
 	int image_height = camera_data[camera_index].height[image_index];
 	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
@@ -150,50 +154,50 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 	for (int j = 0; j < number_of_laser_shots; j++)
 	{
 		int p = j * sensor_params->vertical_resolution;
-		double horizontal_angle = sensor_data->points[cloud_index].sphere_points[p].horizontal_angle;
+		double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[p].horizontal_angle;
 		if (fabs(horizontal_angle) > fov) // Disregard laser shots out of the camera's field of view
 			continue;
 
 		double previous_range = sensor_data->points[cloud_index].sphere_points[p].length;
 		double previous_vertical_angle = sensor_data->points[cloud_index].sphere_points[p].vertical_angle;
+		tf::Point previous_velodyne_p3d = spherical_to_cartesian(horizontal_angle, previous_vertical_angle, previous_range);
 
 		for (int i = 1; i < sensor_params->vertical_resolution; i++)
 		{
 			p++;
-			double range = sensor_data->points[cloud_index].sphere_points[p].length;
-			if (range <= MIN_RANGE || range >= sensor_params->range_max) // Disregard laser rays out of range
-				continue;
-
 			double vertical_angle = sensor_data->points[cloud_index].sphere_points[p].vertical_angle;
-
-			tf::Point previous_velodyne_p3d = spherical_to_cartesian(horizontal_angle, previous_vertical_angle, previous_range);
+			double range = sensor_data->points[cloud_index].sphere_points[p].length;
 			tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
-			previous_range = range;
-			previous_vertical_angle = vertical_angle;
-
-			// Jose's method check if a point is obstacle
-			double delta_x = velodyne_p3d.x() - previous_velodyne_p3d.x();
-			double delta_z = velodyne_p3d.z() - previous_velodyne_p3d.z();
-			double line_angle = carmen_radians_to_degrees(fabs(atan2(delta_z, delta_x)));
-			if (line_angle <= MIN_ANGLE_OBSTACLE || line_angle >= MAX_ANGLE_OBSTACLE) // Disregard laser rays that didn't hit an obstacle
-				continue;
-
 			tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
-
 			int image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
 			int image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
-
 			if (image_x < 0 || image_x >= image_width || image_y < 0 || image_y >= image_height) // Disregard laser rays out of the image window
 				continue;
 
-			int pixel_index = image_x * image_width + image_y;
-			if (is_moving_object(camera_data[camera_index].semantic[image_index][pixel_index]))
+			// Jose's method for checking if a point is an obstacle
+			double delta_x = velodyne_p3d.x() - previous_velodyne_p3d.x();
+			double delta_z = velodyne_p3d.z() - previous_velodyne_p3d.z();
+			double line_angle = carmen_radians_to_degrees(fabs(atan2(delta_z, delta_x)));
+			previous_velodyne_p3d = velodyne_p3d;
+
+			if (range <= MIN_RANGE || range >= sensor_params->range_max) // Disregard laser rays out of distance range
+				laser_ray_color = cv::Scalar(0, 255, 255);
+			else if (line_angle <= MIN_ANGLE_OBSTACLE || line_angle >= MAX_ANGLE_OBSTACLE) // Disregard laser rays that didn't hit an obstacle
+				laser_ray_color = cv::Scalar(0, 255, 0);
+//			else if (!is_moving_object(camera_data[camera_index].semantic[image_index][image_x * image_width + image_y])) // Disregard if it is not a moving object
+//				laser_ray_color = cv::Scalar(255, 0, 0);
+			else
 			{
+				laser_ray_color = cv::Scalar(0, 0, 255);
 				sensor_data->points[cloud_index].sphere_points[p].length = sensor_params->range_max; // Make this laser ray out of range
 				camera_datmo_count[camera_index]++;
 			}
+			if (verbose >= 2)
+				circle(camera_image_semantic[camera_index], cv::Point(image_x, image_y), 1, laser_ray_color, 1, 8, 0);
 		}
 	}
+	if (verbose >= 2)
+		imshow("Image Semantic Segmentation", camera_image_semantic[camera_index]), cv::waitKey(1);
 }
 
 
@@ -744,16 +748,16 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 	camera_data[camera].image_size[i] = image_msg->image_size;
 	camera_data[camera].isRectified[i] = image_msg->isRectified;
 	camera_data[camera].image[i] = (camera_alive[camera] == 0) ? image_msg->raw_left : image_msg->raw_right;
-	camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
+//	camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
 	camera_data[camera].timestamp[i] = image_msg->timestamp;
 
 	if (verbose >= 2)
 	{
-		cv::Mat image_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC1, camera_data[camera].image[i]);
-		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC1, camera_data[camera].semantic[i]);
-		cv::Mat concat;
-	    hconcat(image_cv, semantic_cv, concat);
-		imshow("Image Semantic Segmentation", concat);
+		cv::Mat image_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, camera_data[camera].image[i]);
+		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, cv::Scalar(0)); // camera_data[camera].semantic[i]);
+		hconcat(image_cv, semantic_cv, camera_image_semantic[camera]);
+		cvtColor(camera_image_semantic[camera], camera_image_semantic[camera], CV_RGB2BGR);
+		imshow("Image Semantic Segmentation", camera_image_semantic[camera]);
 		cv::waitKey(1);
 	}
 }
@@ -1382,8 +1386,8 @@ read_camera_parameters(int argc, char **argv)
 	}
 	if (active_cameras == 0)
 		fprintf(stderr, "No cameras active for datmo\n\n");
-	else
-		initialize_inference_context();
+//	else
+//		initialize_inference_context();
 }
 
 
