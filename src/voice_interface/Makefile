@@ -8,8 +8,7 @@ LINK = g++
 CFLAGS += -Wall
 
 # Application specific include directories.
-IFLAGS += -I/usr/include/python3.5 -I$(HOME)/carmen_packages/Porcupine/include
-LFLAGS += -L$(HOME)/carmen_packages/Porcupine/lib/linux/x86_64
+IFLAGS += -I/usr/include/python3.5
 
 # python3-config --libs
 # Required default libraries to comunicate with Carmen Core.
@@ -28,7 +27,7 @@ PUBLIC_LIBRARIES = libvoice_interface_interface.a
 PUBLIC_BINARIES = voice_interface 
 
 TARGETS = libvoice_interface_interface.a voice_interface 
-PUBLIC_LIBRARIES_SO = libvoice_interface_interface.so 
+PUBLIC_LIBRARIES_SO = libvoice_interface_interface.so
 
 libvoice_interface_interface.a: voice_interface_interface.o voice_interface.o
 

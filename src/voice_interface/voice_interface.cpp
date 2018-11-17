@@ -1,6 +1,9 @@
 #include <Python.h>
 #include <stdio.h>
 #include <iostream>
+#include <string.h>
+#include "voice_interface.h"
+
 
 using namespace std;
 
@@ -65,10 +68,11 @@ speak(char *speech, char *speech_file_name)
 }
 
 
-const char *
-listen()
+void
+listen(char *listened_string)
 {
 	PyObject *python_listen_function_output = PyObject_CallFunction(python_listen_function, NULL);
 	const char *listen_function_output = PyBytes_AS_STRING(python_listen_function_output);
-	return(listen_function_output);
+	strncpy(listened_string, listen_function_output, MAX_LISTENDED_STRING_SIZE - 1);
+	Py_XDECREF(python_listen_function_output);
 }

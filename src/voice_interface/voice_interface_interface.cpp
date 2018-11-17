@@ -129,13 +129,13 @@ carmen_voice_interface_speak(char *speech)
 	return (NULL); // OK
 }
 
+
 char *
 carmen_voice_interface_listen()
 {
-	const char * words_said = listen();
-	printf("\n");
-	printf("Message: '%s'\n", words_said);
-	printf("\n");
+	static char words_said[MAX_LISTENDED_STRING_SIZE];
 
-	return (NULL);
+	listen(words_said);
+
+	return (words_said);
 }

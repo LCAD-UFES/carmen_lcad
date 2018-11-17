@@ -102,18 +102,34 @@ main (int argc, char **argv)
 	voice_interface_define_messages();
 	carmen_voice_interface_initialize();
 
+	char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Oi Alberto!");
+	if (voice_interface_speak_error)
+		printf("%s \n", voice_interface_speak_error);
+
+	printf("Awaiting hotword\n");
 	while (true)
 	{
-		char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Oi.");
-		if (voice_interface_speak_error)
-			printf("%s \n", voice_interface_speak_error);
+		if (hotword_detection() == 1) // hotword detected
+		{
+			printf("Hotword detected\n");
+			fflush(stdout);
 
-		hotword_detection();
-		system("mpg123 computerbeep_4.mp3");
-		const char *voice_command = carmen_voice_interface_listen();
-		if (voice_command)
-			printf("%s \n", voice_command);
-		carmen_ipc_sleep(0.02);
+			carmen_ipc_sleep(0.1); // Necessario para reconectar com o audio para tocar o som abaixo.
+			system("mpg123 computerbeep_4.mp3");
+
+			printf("Awaiting for command\n\n");
+			fflush(stdout);
+			char *voice_command = carmen_voice_interface_listen();
+			if (voice_command)
+				printf("\nVoice command: %s \n\n", voice_command);
+
+			printf("Awaiting hotword\n");
+			fflush(stdout);
+		}
+		else if (hotword_detection() == 2) // error
+			printf ("Error in hotword detection\n");
+
+		carmen_ipc_sleep(0.001);
 	}
 
 	return (0);

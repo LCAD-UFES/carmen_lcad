@@ -205,3 +205,4 @@ def listen():
         mytest = listen_print_loop(responses, stream).encode('utf-8')
     
     return mytest
+
