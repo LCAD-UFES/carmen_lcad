@@ -203,12 +203,13 @@ start_porcupine()
 int
 hotword_detection()
 {
-	int err = 0;
-	const int buffer_size = pv_porcupine_frame_length();
-	short wav_data[buffer_size];
 	bool detected;
+	int err = 0;
 
-	err = snd_pcm_readi(capture_handle, wav_data, buffer_size) != buffer_size;
+	int buffer_size = pv_porcupine_frame_length();
+	short *wav_data = (short *) malloc(buffer_size * sizeof(short));
+
+	err = snd_pcm_readi(capture_handle, (void *) wav_data, buffer_size) != buffer_size;
 	if (err < 0)
 	{
 		cout << "read from audio interface failed (" << snd_strerror(err) << ", " << err << ")" << endl;
@@ -227,6 +228,8 @@ hotword_detection()
 	}
 	else
 		pv_porcupine_process(porcupineObject, wav_data, &detected);
+
+	free(wav_data);
 
 	if (detected)
 		return (1);

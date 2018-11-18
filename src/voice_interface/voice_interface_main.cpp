@@ -2,10 +2,13 @@
 #include <iostream>
 #include <carmen/carmen.h>
 #include <carmen/voice_interface_interface.h>
+#include <alsa/asoundlib.h>
 #include "voice_interface.h"
 #include "porcupine_keyword.h"
 
 using namespace std;
+
+extern snd_pcm_t* capture_handle;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -59,6 +62,33 @@ shutdown_module(int signo)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+bool
+check_command(char *voice_command, char *command_template)
+{
+	return (true);
+}
+
+
+void
+execute_command(char *voice_command)
+{
+	if (voice_command)
+	{
+		printf("\nVoice command: %s \n", voice_command);
+		if (strcmp(voice_command, "timeout") == 0)
+		{
+			char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Desculpe... Não consegui captar o comando.");
+			if (voice_interface_speak_error)
+				printf("%s \n", voice_interface_speak_error);
+		}
+		else if (check_command(voice_command, (char *) "seguir curso"))
+		{
+			printf("\Command detected: %s \n\n", "seguir curso");
+			carmen_navigator_ackerman_go();
+		}
+	}
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -102,34 +132,36 @@ main (int argc, char **argv)
 	voice_interface_define_messages();
 	carmen_voice_interface_initialize();
 
-	char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Oi Alberto!");
-	if (voice_interface_speak_error)
-		printf("%s \n", voice_interface_speak_error);
+//	char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Oi Alberto!");
+//	if (voice_interface_speak_error)
+//		printf("%s \n", voice_interface_speak_error);
 
 	printf("Awaiting hotword\n");
 	while (true)
 	{
-		if (hotword_detection() == 1) // hotword detected
+		int hotword_detection_result = hotword_detection();
+		if (hotword_detection_result == 1) // hotword detected
 		{
+			snd_pcm_drop(capture_handle);
+
 			printf("Hotword detected\n");
-			fflush(stdout);
 
 			carmen_ipc_sleep(0.1); // Necessario para reconectar com o audio para tocar o som abaixo.
-			system("mpg123 computerbeep_4.mp3");
+			system("mpg123 $CARMEN_HOME/data/voice_interface_hotword_data/computerbeep_4.mp3");
 
 			printf("Awaiting for command\n\n");
-			fflush(stdout);
 			char *voice_command = carmen_voice_interface_listen();
-			if (voice_command)
-				printf("\nVoice command: %s \n\n", voice_command);
+			execute_command(voice_command);
+
+			snd_pcm_prepare(capture_handle);
+			snd_pcm_start(capture_handle);
 
 			printf("Awaiting hotword\n");
-			fflush(stdout);
 		}
-		else if (hotword_detection() == 2) // error
+		else if (hotword_detection_result == 2) // error
 			printf ("Error in hotword detection\n");
 
-		carmen_ipc_sleep(0.001);
+		carmen_ipc_sleep(0.0);
 	}
 
 	return (0);
