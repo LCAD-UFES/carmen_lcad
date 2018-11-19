@@ -33,12 +33,12 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/pso -lpso++ -fopenmp
 LFLAGS += `pkg-config --libs opencv`	  
 LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 
-SOURCES = grab_data_for_calibration.cpp calibrate_bias.cpp
+SOURCES = grab_data_for_calibration.cpp calibrate_bias.cpp calibrate_bias_from_log.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = grab_data_for_calibration calibrate_bias
-TARGETS = libpso++.a grab_data_for_calibration calibrate_bias 
+PUBLIC_BINARIES = grab_data_for_calibration calibrate_bias calibrate_bias_from_log
+TARGETS = libpso++.a grab_data_for_calibration calibrate_bias calibrate_bias_from_log
 
 libpso++.a:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/pso/
@@ -49,5 +49,6 @@ clean_pso:
 
 grab_data_for_calibration: grab_data_for_calibration.o
 calibrate_bias: calibrate_bias.o
+calibrate_bias_from_log: calibrate_bias_from_log.o
 
 include ../Makefile.rules

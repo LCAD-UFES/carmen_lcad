@@ -1,29 +1,27 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
-MODULE_NAME = SEG MAP
-MODULE_COMMENT = SLAM using semantic segmentation
-
-SUBDIRS += libsegmap
+MODULE_NAME = LIB SEG MAP
+MODULE_COMMENT = Library for the segmap module
 
 LINK = g++ 
 
 CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-compare -std=c++11 #-fopenmp
+
 # Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11
 IFLAGS += -std=c++11
-
 IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
 LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization
 LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
 LFLAGS += -L /usr/lib -lvtkIO -lvtkFiltering -lvtkCommon -lvtkRendering -lvtkGraphics
-LFLAGS += `pkg-config --libs opencv` -lsegmap
+LFLAGS += `pkg-config --libs opencv`
 
-SOURCES = main.cpp
+SOURCES = segmap_grid_map.cpp segmap_util.cpp segmap_particle_filter.cpp segmap_pose2d.cpp segmap_car_config.cpp
 
-PUBLIC_INCLUDES = 
-PUBLIC_LIBRARIES = 
+PUBLIC_INCLUDES = segmap_grid_map.h segmap_util.h segmap_particle_filter.h segmap_pose2d.h segmap_car_config.h
+PUBLIC_LIBRARIES = libsegmap.a
 PUBLIC_BINARIES = 
-TARGETS = main 
+TARGETS = libsegmap.a
 
-main: main.o
+libsegmap.a: segmap_grid_map.o segmap_util.o segmap_particle_filter.o segmap_pose2d.o segmap_car_config.o
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

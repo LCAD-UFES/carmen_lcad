@@ -21,7 +21,7 @@ def vis_segmentation(image, seg_map):
   plt.title('segmentation map')
 
   plt.subplot(grid_spec[2])
-  plt.imshow(image)
+  plt.imshow(image, extent=[0, seg_image.shape[1], seg_image.shape[0], 0])
   plt.imshow(seg_image, alpha=0.7)
   plt.axis('off')
   plt.title('segmentation overlay')
