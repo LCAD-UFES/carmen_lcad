@@ -94,7 +94,7 @@ pose6d_to_matrix(double x, double y, double z, double roll, double pitch, double
 }
 
 
-class GridMap
+class GridMapTile
 {
 public:
 	// make these attributes private
@@ -102,13 +102,38 @@ public:
 	double _hm, _wm, _xo, _yo;
 	double _m_by_pixel;
 	double _pixels_by_m;
-	int _h, _w;
+	int _h, _w, _nt_h, _nt_w;
 	Mat *_map;
-	//double **_map;
+	//double **_map_tiles;
 
-	GridMap(double y_origin, double x_origin,
+	static string tile_name_from_position(double x, double y)
+	{
+		return "";
+	}
+
+	static bool tile_exists(string name)
+	{
+		return false;
+	}
+
+	static GridMapTile* load_tile(string name)
+	{
+		return NULL;
+	}
+
+	static void create_empty_tile(string name, double height_meters, double width_meters,
+			double resolution, int n_fields_by_cell, vector<double> &unknown_value)
+	{
+	}
+
+	bool contains(double x, double y)
+	{
+		return false;
+	}
+
+	GridMapTile(double y_origin, double x_origin,
 			double height_meters, double width_meters,
-			double resolution)
+			double resolution, int n_tiles_h, int n_tiles_w)
 	{
 		_xo = x_origin;
 		_yo = y_origin;
@@ -118,18 +143,21 @@ public:
 		_pixels_by_m = 1 / resolution;
 		_h = (int) (_pixels_by_m * _hm);
 		_w = (int) (_pixels_by_m * _wm);
-		_map = new Mat(_h, _w, CV_8UC3);
+		_nt_h = n_tiles_h;
+		_nt_w = n_tiles_w;
+		_map = new Mat(_h * _nt_h, _w * _nt_w, CV_8UC3);
 
-		memset(_map->data, 128, _h * _w * 3 * sizeof(unsigned char));
-		printf("Map size: %d x %d\n", _h, _w);
+		//memset(_map->data, 128, _h * _w * 3 * sizeof(unsigned char));
+		printf("Map size: %d x %d\n", _h * _nt_h, _w * _nt_w);
 	}
 
-	~GridMap()
+	~GridMapTile()
 	{
 		delete(_map);
 	}
 
-	void add_point(PointXYZRGB &p)
+	void
+	add_point(PointXYZRGB &p)
 	{
 		int px, py, pos;
 
@@ -180,7 +208,93 @@ public:
 		return v;
 	}
 
-	Mat to_image() { return _map->clone(); }
+	Mat
+	to_image() { return _map->clone(); }
+};
+
+
+class GridMap
+{
+public:
+	static const int TYPE_SEMANTIC = 0;
+	static const int TYPE_VISUAL = 1;
+	static const int _N_TILES = 3;
+	static const int _N_CLASSES = 15;
+
+	string _tiles_dir;
+	double _height_meters;
+	double _width_meters;
+	double _resolution;
+	vector<double> _unknown;
+	int _n_fields_by_cell;
+	int _middle_tile;
+
+	GridMapTile *_tiles[_N_TILES][_N_TILES];
+
+	GridMap(string tiles_dir, double height_meters, double width_meters, double resolution,
+			int map_type)
+	{
+		_tiles_dir = tiles_dir;
+		_height_meters = height_meters;
+		_width_meters = width_meters;
+		_resolution = resolution;
+
+		for (int i = 0; i < _N_TILES; i++)
+			for (int j = 0; j < _N_TILES; j++)
+				_tiles[i][j] = NULL;
+
+		_middle_tile = (int) (_N_TILES / 2.);
+
+		if (map_type == GridMap::TYPE_SEMANTIC)
+		{
+			// The first '_N_CLASSES' fields contains the count for
+			// each class, and the last field is a boolean informing
+			// if the cell was observed. All classes are initialized with
+			// a count of 1 to prevent probabilities equal to zero when
+			// computing particle weights.
+			_n_fields_by_cell = _N_CLASSES + 1;
+			_unknown = vector<double>(_n_fields_by_cell, 1.);
+			_unknown[_unknown.size() - 1] = 0;
+		}
+		else if (map_type == GridMap::TYPE_VISUAL)
+		{
+			// r, g, b
+			_n_fields_by_cell = 3;
+			_unknown = vector<double>(_n_fields_by_cell, -1);
+		}
+	}
+
+	void
+	_reload_tiles(double robot_x, double robot_y)
+	{
+	}
+
+	void
+	reload(double robot_x, double robot_y)
+	{
+		if (_tiles[_middle_tile][_middle_tile] == NULL)
+			_reload_tiles(robot_x, robot_y);
+
+		if (!_tiles[_middle_tile][_middle_tile]->contains(robot_x, robot_y))
+			_reload_tiles(robot_x, robot_y);
+	}
+
+	void
+	add_point(PointXYZRGB &p)
+	{
+	}
+
+	vector<double>
+	read_cell(PointXYZRGB &p)
+	{
+		return vector<double>();
+	}
+
+	Mat
+	to_image()
+	{
+		return Mat();
+	}
 };
 
 
@@ -901,6 +1015,7 @@ draw_rectangle(Mat &img,
 		double height, double width, Scalar color,
 		double x_origin, double y_origin, double pixels_by_meter)
 {
+/*
 	vector<Point2f> vertices;
 	vector<Point> vertices_px;
 
@@ -937,12 +1052,14 @@ draw_rectangle(Mat &img,
 		else
 			line(img, vertices_px[i], vertices_px[i + 1], color, 1);
 	}
+*/
 }
 
 
 void
 draw_poses(GridMap &map, Mat &map_img, vector<Matrix<double, 4, 4>> &poses)
 {
+/*
 	Point pixel;
 	int radius = (0.25 * map._pixels_by_m);
 	Pose2d p;
@@ -968,12 +1085,14 @@ draw_poses(GridMap &map, Mat &map_img, vector<Matrix<double, 4, 4>> &poses)
 				map._yo,
 				map._pixels_by_m);
 	}
+*/
 }
 
 
 void
 draw_particle(Mat &map_img, Pose2d &p, GridMap &map, int radius, Scalar color)
 {
+/*
 	Point pixel;
 
 	pixel.x = (p.x - map._xo) * map._pixels_by_m;
@@ -985,6 +1104,7 @@ draw_particle(Mat &map_img, Pose2d &p, GridMap &map, int radius, Scalar color)
 	p2.y = ((2.0 * sin(p.th) + p.y) - map._yo) * map._pixels_by_m;
 
 	line(map_img, pixel, p2, color, 1);
+*/
 }
 
 
@@ -992,6 +1112,7 @@ void
 view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses, Pose2d current_pose,
 	PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZRGB>::Ptr transformed_cloud)
 {
+	/*
 	int i, j;
 	Pose2d p;
 	Point pixel;
@@ -1020,6 +1141,7 @@ view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses, Pose
 		bkp.copyTo(*map._map);
 
 	int radius = (0.25 * map._pixels_by_m);
+	*/
 
 	/*
 	for (i = 0; i < poses.size(); i += 1)
@@ -1047,6 +1169,7 @@ view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses, Pose
 	}
 	*/
 
+	/*
 	for (i = 0; i < pf._n; i++)
 		draw_particle(map_img, pf._p[i], map, radius, Scalar(0, 0, 255));
 
@@ -1058,6 +1181,7 @@ view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses, Pose
 	//resize(map_img, resized_map, resized_map.size());
 	imshow("map", map_img);
 	waitKey(-1);
+	*/
 }
 
 
@@ -1251,7 +1375,8 @@ main()
 			25.0, 25.0, degrees_to_radians(100),
 			100., 100., 100.);
 
-	GridMap map(-20, -2, 100, 200, 0.2);
+	//GridMap map(-20, -2, 100, 200, 0.2);
+	GridMap map("/dados/maps/maps_20180112-2/", 75., 75., 0.2, GridMap::TYPE_SEMANTIC);
 
 	// KITTI
 	/*
