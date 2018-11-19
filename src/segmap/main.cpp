@@ -16,6 +16,7 @@
 #include <pcl/io/ply_io.h>
 #include <pcl/common/transforms.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include <sys/stat.h>
 
 
 using namespace cv;
@@ -102,57 +103,136 @@ public:
 	double _hm, _wm, _xo, _yo;
 	double _m_by_pixel;
 	double _pixels_by_m;
-	int _h, _w, _nt_h, _nt_w;
+	int _h, _w;
 	Mat *_map;
 	//double **_map_tiles;
 
-	static string tile_name_from_position(double x, double y)
-	{
-		return "";
-	}
+	static const int TYPE_SEMANTIC = 0;
+	static const int TYPE_VISUAL = 1;
+	static const int _N_CLASSES = 15;
 
-	static bool tile_exists(string name)
-	{
-		return false;
-	}
-
-	static GridMapTile* load_tile(string name)
-	{
-		return NULL;
-	}
-
-	static void create_empty_tile(string name, double height_meters, double width_meters,
-			double resolution, int n_fields_by_cell, vector<double> &unknown_value)
-	{
-	}
+	vector<double> _unknown;
+	int _n_fields_by_cell;
+	int _map_type;
+	string _tiles_dir;
 
 	bool contains(double x, double y)
 	{
-		return false;
+		if (x < _xo || x >= _xo + _wm || y < _yo || y >= _yo + _hm)
+			return false;
+
+		return true;
 	}
 
-	GridMapTile(double y_origin, double x_origin,
-			double height_meters, double width_meters,
-			double resolution, int n_tiles_h, int n_tiles_w)
+	static const char* type2str(int map_type)
 	{
-		_xo = x_origin;
-		_yo = y_origin;
+		if (map_type == TYPE_SEMANTIC)
+			return "semantic";
+		else if (map_type == TYPE_VISUAL)
+			return "visual";
+		else
+			exit(printf("Map type '%d' not found.\n", map_type));
+	}
+
+	void save()
+	{
+		char name[256];
+		sprintf(name, "%s/%s_%lf_%lf.config",
+				_tiles_dir.c_str(),
+				GridMapTile::type2str(_map_type),
+				_xo, _yo);
+
+		FILE *fptr = fopen(name, "w");
+
+		if (fptr == NULL)
+			exit(printf("Error: Unable to create the file '%s'", name));
+
+		fprintf(fptr, "xo: %lf\n", _xo);
+		fprintf(fptr, "yo: %lf\n", _yo);
+		fprintf(fptr, "hm: %lf\n", _hm);
+		fprintf(fptr, "wm: %lf\n", _wm);
+		fprintf(fptr, "m_by_pixel: %lf\n", _m_by_pixel);
+		fprintf(fptr, "map_type: %d\n", _map_type);
+
+		fclose(fptr);
+
+		sprintf(name, "%s/%s_%lf_%lf.png",
+				_tiles_dir.c_str(),
+				GridMapTile::type2str(_map_type),
+				_xo, _yo);
+
+		imwrite(name, *_map);
+	}
+
+	void
+	_initialize_map()
+	{
+		// assumes the origin is set.
+		char name[256];
+
+		sprintf(name, "%s/%s_%lf_%lf.png",
+				_tiles_dir.c_str(),
+				GridMapTile::type2str(_map_type),
+				_xo, _yo);
+
+		_map = new Mat(_h, _w, CV_8UC3);
+
+		struct stat buffer;
+
+		if (stat(name, &buffer) == 0)
+			imread(name).copyTo(*_map);
+		else
+			memset(_map->data, 128, _h * _w * 3 * sizeof(unsigned char));
+	}
+
+	void
+	_initialize_derivated_values()
+	{
+		_pixels_by_m = 1 / _m_by_pixel;
+		_h = (int) (_pixels_by_m * _hm);
+		_w = (int) (_pixels_by_m * _wm);
+
+		if (_map_type == GridMapTile::TYPE_SEMANTIC)
+		{
+			// The first '_N_CLASSES' fields contains the count for
+			// each class, and the last field is a boolean informing
+			// if the cell was observed. All classes are initialized with
+			// a count of 1 to prevent probabilities equal to zero when
+			// computing particle weights.
+			_n_fields_by_cell = _N_CLASSES + 1;
+			_unknown = vector<double>(_n_fields_by_cell, 1.);
+			_unknown[_unknown.size() - 1] = 0;
+		}
+		else if (_map_type == GridMapTile::TYPE_VISUAL)
+		{
+			// r, g, b
+			_n_fields_by_cell = 3;
+			_unknown = vector<double>(_n_fields_by_cell, -1);
+		}
+		else
+			exit(printf("Map type '%d' not found.\n", _map_type));
+	}
+
+	GridMapTile(double point_y, double point_x,
+			double height_meters, double width_meters,
+			double resolution, int map_type, string tiles_dir)
+	{
+		 // map tile origin
+		_xo = width_meters * ((int) (point_x / width_meters));
+		_yo = height_meters * ((int) (point_y / height_meters));
 		_hm = height_meters;
 		_wm = width_meters;
 		_m_by_pixel = resolution;
-		_pixels_by_m = 1 / resolution;
-		_h = (int) (_pixels_by_m * _hm);
-		_w = (int) (_pixels_by_m * _wm);
-		_nt_h = n_tiles_h;
-		_nt_w = n_tiles_w;
-		_map = new Mat(_h * _nt_h, _w * _nt_w, CV_8UC3);
+		_map_type = map_type;
+		_tiles_dir = tiles_dir;
 
-		//memset(_map->data, 128, _h * _w * 3 * sizeof(unsigned char));
-		printf("Map size: %d x %d\n", _h * _nt_h, _w * _nt_w);
+		_initialize_derivated_values();
+		_initialize_map();
 	}
 
 	~GridMapTile()
 	{
+		save();
 		delete(_map);
 	}
 
@@ -216,18 +296,14 @@ public:
 class GridMap
 {
 public:
-	static const int TYPE_SEMANTIC = 0;
-	static const int TYPE_VISUAL = 1;
 	static const int _N_TILES = 3;
-	static const int _N_CLASSES = 15;
 
 	string _tiles_dir;
 	double _height_meters;
 	double _width_meters;
 	double _resolution;
-	vector<double> _unknown;
-	int _n_fields_by_cell;
 	int _middle_tile;
+	int _map_type;
 
 	GridMapTile *_tiles[_N_TILES][_N_TILES];
 
@@ -238,35 +314,42 @@ public:
 		_height_meters = height_meters;
 		_width_meters = width_meters;
 		_resolution = resolution;
+		_map_type = map_type;
 
 		for (int i = 0; i < _N_TILES; i++)
 			for (int j = 0; j < _N_TILES; j++)
 				_tiles[i][j] = NULL;
 
 		_middle_tile = (int) (_N_TILES / 2.);
+	}
 
-		if (map_type == GridMap::TYPE_SEMANTIC)
-		{
-			// The first '_N_CLASSES' fields contains the count for
-			// each class, and the last field is a boolean informing
-			// if the cell was observed. All classes are initialized with
-			// a count of 1 to prevent probabilities equal to zero when
-			// computing particle weights.
-			_n_fields_by_cell = _N_CLASSES + 1;
-			_unknown = vector<double>(_n_fields_by_cell, 1.);
-			_unknown[_unknown.size() - 1] = 0;
-		}
-		else if (map_type == GridMap::TYPE_VISUAL)
-		{
-			// r, g, b
-			_n_fields_by_cell = 3;
-			_unknown = vector<double>(_n_fields_by_cell, -1);
-		}
+	GridMapTile*
+	_reload_tile(double x, double y)
+	{
+		return new GridMapTile(y, x, _height_meters,
+				_width_meters, _resolution, _map_type, _tiles_dir);
 	}
 
 	void
 	_reload_tiles(double robot_x, double robot_y)
 	{
+		int i, j;
+
+		for (i = 0; i < _N_TILES; i++)
+			for (j = 0; j < _N_TILES; j++)
+				if (_tiles[i][j] != NULL)
+					delete(_tiles[i][j]);
+
+		// TODO: make the following code general.
+		_tiles[0][0] = _reload_tile(robot_x - 75., robot_y - 75.);
+		_tiles[0][1] = _reload_tile(robot_x, robot_y - 75.);
+		_tiles[0][2] = _reload_tile(robot_x + 75., robot_y - 75.);
+		_tiles[1][0] = _reload_tile(robot_x - 75., robot_y);
+		_tiles[1][1] = _reload_tile(robot_x, robot_y);
+		_tiles[1][2] = _reload_tile(robot_x + 75., robot_y);
+		_tiles[2][0] = _reload_tile(robot_x - 75., robot_y + 75.);
+		_tiles[2][1] = _reload_tile(robot_x, robot_y + 75.);
+		_tiles[2][2] = _reload_tile(robot_x + 75., robot_y + 75.);
 	}
 
 	void
@@ -282,18 +365,37 @@ public:
 	void
 	add_point(PointXYZRGB &p)
 	{
+		int i, j;
+
+		for (i = 0; i < _N_TILES; i++)
+		{
+			for (j = 0; j < _N_TILES; j++)
+			{
+				if (_tiles[i][j]->contains(p.x, p.y))
+					_tiles[i][j]->add_point(p);
+			}
+		}
 	}
 
 	vector<double>
 	read_cell(PointXYZRGB &p)
 	{
-		return vector<double>();
+		int i, j;
+
+		for (i = 0; i < _N_TILES; i++)
+		{
+			for (j = 0; j < _N_TILES; j++)
+			{
+				if (_tiles[i][j]->contains(p.x, p.y))
+					return _tiles[i][j]->read_cell(p);
+			}
+		}
 	}
 
 	Mat
 	to_image()
 	{
-		return Mat();
+		return _tiles[1][1]->to_image();
 	}
 };
 
@@ -897,7 +999,8 @@ load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud)
 	char name[1024];
 	//sprintf(name, "/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/image_02/data/%010d.png", i);
 	//sprintf(name, "/dados/imgs_kitti/%010d_trainval.png", i);
-	sprintf(name, "/dados/data_20180112-2/data/trainfine/%010d.png", i);
+	//sprintf(name, "/dados/data_20180112-2/data/trainfine/%010d.png", i);
+	sprintf(name, "/dados/data_20180112-2/data/bb3/%010d.png", i);
 
 	//Mat img(375, 1242, CV_8UC3);
 	//Mat raw_img = imread(name);
@@ -1220,6 +1323,7 @@ create_map(GridMap &map, vector<Matrix<double, 4, 4>> &poses, PointCloud<PointXY
 		transformPointCloud(*cloud, *transformed_cloud, car2world);
 		//transformed_cloud = cloud;
 
+		map.reload(poses[i](0, 3), poses[i](1, 3));
 		add_point_cloud_to_map(transformed_cloud, map);
 
 		char *cloud_name = (char *) calloc (32, sizeof(char));
@@ -1249,6 +1353,11 @@ create_map(GridMap &map, vector<Matrix<double, 4, 4>> &poses, PointCloud<PointXY
 				step = !step;
 			if (!step || (step && c == 'n'))
 				break;
+			if (c == 'r')
+			{
+				printf("Reinitializing\n");
+				i = 0;
+			}
 		}
 	}
 
@@ -1376,7 +1485,7 @@ main()
 			100., 100., 100.);
 
 	//GridMap map(-20, -2, 100, 200, 0.2);
-	GridMap map("/dados/maps/maps_20180112-2/", 75., 75., 0.2, GridMap::TYPE_SEMANTIC);
+	GridMap map("/dados/maps/maps_20180112-2/", 75., 75., 0.2, GridMapTile::TYPE_SEMANTIC);
 
 	// KITTI
 	/*
