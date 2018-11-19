@@ -56,6 +56,12 @@ typedef struct
 	double scale_factor_y;
 }t_scale_factor;
 
+typedef struct
+{
+	double translate_factor_x;
+	double translate_factor_y;
+}t_translate_factor;
+
 
 dbscan::Cluster
 generate_cluster(vector<carmen_vector_3D_t> points);
