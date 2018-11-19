@@ -1,6 +1,14 @@
 
+#include <vector>
+#include <cstdio>
+#include <cstdlib>
+#include <opencv/cv.h>
 #include "segmap_grid_map.h"
 #include <sys/stat.h>
+
+
+using namespace std;
+using namespace cv;
 
 
 void
@@ -14,14 +22,32 @@ GridMapTile::_initialize_map()
 			GridMapTile::type2str(_map_type),
 			_xo, _yo);
 
-	_map = new Mat(_h, _w, CV_8UC3);
+	//_map = new Mat(_h, _w, CV_8UC3);
+	_map = (double *) calloc (_h * _w * _n_fields_by_cell);
 
 	struct stat buffer;
 
 	if (stat(name, &buffer) == 0)
-		imread(name).copyTo(*_map);
+	{
+		//imread(name).copyTo(*_map);
+		fptr = fopen(name, "rb");
+		fread(_map, sizeof(double), _h * _w * _n_fields_by_cell, fptr);
+		fclose(fptr);
+	}
 	else
-		memset(_map->data, 128, _h * _w * 3 * sizeof(unsigned char));
+	{
+		//memset(_map->data, 128, _h * _w * 3 * sizeof(unsigned char));
+		for (int i = 0; i < _h; i++)
+		{
+			for (int j = 0; j < _w; j++)
+			{
+				for (int k = 0; k < _n_fields_by_cell; k++)
+				{
+					_map[_n_fields_by_cell * (i * _w + _j) + k] = _unknown[k];
+				}
+			}
+		}
+	}
 }
 
 
@@ -47,7 +73,7 @@ GridMapTile::_initialize_derivated_values()
 	{
 		// r, g, b
 		_n_fields_by_cell = 3;
-		_unknown = vector<double>(_n_fields_by_cell, -1);
+		_unknown = vector<double>(_n_fields_by_cell, 128.);
 	}
 	else
 		exit(printf("Map type '%d' not found.\n", _map_type));
@@ -76,7 +102,8 @@ GridMapTile::GridMapTile(double point_y, double point_x,
 GridMapTile::~GridMapTile()
 {
 	save();
-	delete(_map);
+	//delete(_map);
+	free(_map);
 }
 
 
@@ -115,12 +142,21 @@ GridMapTile::save()
 
 	fclose(fptr);
 
-	sprintf(name, "%s/%s_%lf_%lf.png",
+	sprintf(name, "%s/%s_%lf_%lf.map",
 			_tiles_dir.c_str(),
 			GridMapTile::type2str(_map_type),
 			_xo, _yo);
 
-	imwrite(name, *_map);
+	fptr = fopen(name, "wb");
+	fwrite(_map, sizeof(double), _h * _w * _n_fields_by_cell, fptr);
+	fclose(fptr);
+
+	// only for debugging
+	sprintf(name, "%s/%s_%lf_%lf.png",
+			_tiles_dir.c_str(),
+			GridMapTile::type2str(_map_type),
+			_xo, _yo);
+	imwrite(name, to_image());
 }
 
 
@@ -132,7 +168,7 @@ GridMapTile::add_point(PointXYZRGB &p)
 	px = (p.x - _xo) * _pixels_by_m;
 	py = (p.y - _yo) * _pixels_by_m;
 
-	double _r = 0;
+	double _r = 0.8;
 	unsigned char *data_vector = (unsigned char *) _map->data;
 
 	if (px >= 0 && px < _w && py >= 0 && py < _h)
@@ -190,7 +226,17 @@ GridMapTile::read_cell(PointXYZRGB &p)
 Mat
 GridMapTile::to_image()
 {
-	return _map->clone();
+	Map m(_h, _w, CV_8UC3);
+
+	for (int i = 0; i < _h; i++)
+	{
+		for (int j = 0; j < _w; j++)
+		{
+			//
+		}
+	}
+
+	return m;
 }
 
 

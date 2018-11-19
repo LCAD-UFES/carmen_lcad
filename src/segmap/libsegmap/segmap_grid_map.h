@@ -26,8 +26,8 @@ public:
 	double _m_by_pixel;
 	double _pixels_by_m;
 	int _h, _w;
-	Mat *_map;
-	//double **_map_tiles;
+	//Mat *_map;
+	double *_map;
 
 	static const int TYPE_SEMANTIC = 0;
 	static const int TYPE_VISUAL = 1;
