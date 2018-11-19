@@ -19,15 +19,13 @@ struct image_t
 };
 
 
-void
-initialize_YOLO(char* data_file_name, char* list_file_name, char* cfg_file_name, char* weights_file_name,
-		void *net, char **classes_names);
+char **
+get_classes_names(char *data_file_name, char *list_file_name);
 
-void
-test_YOLO(void * net, char **classes_names, char * image_path);
 
-////std::vector<bbox_t>
-////extract_predictions(image img, detection *dets, int num, float thresh, char **classes_names, int classes_number, char* line);
+void*
+initialize_YOLO(char *cfg_file_name, char *weights_file_name);
 
-////std::vector<bbox_t>
-//run_YOLO(image *img, void * net, char **classes_name);
+
+std::vector<bbox_t>
+run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold);
