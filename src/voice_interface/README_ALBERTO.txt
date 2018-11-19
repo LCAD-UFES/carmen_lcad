@@ -47,3 +47,72 @@
 	- averaged_perceptron_tagger
 	- punkt
 
+== RASA (https://rasa.com) ==
+- Instalacao
+ sudo pip install rasa_nlu
+ sudo pip install rasa_nlu[spacy]
+ python -m spacy download en_core_web_md
+ python -m spacy link en_core_web_md en
+ pip install rasa_nlu[tensorflow]
+ sudo apt-get install libjsoncpp-dev
+
+- Teste (ver https://www.rasa.com/docs/nlu/0.13.1/quickstart/)
+  - Salve o conteudo abaixo no arquivo nlu_config.yml (sem os +++...)
+++++++++++++++++++++++++++++++++
+language: "pt"
+pipeline: "tensorflow_embedding"
+++++++++++++++++++++++++++++++++
+  - Salve o conteudo abaixo no arquivo nlu.md
+++++++++++++++++++++++++++++++++
+## intent:greet
+- Ei
+- Olá
+- Oi
+- bom Dia
+- boa noite
+- Olá
+
+## intent:restaurant_search
+- Estou procurando um lugar para comer
+- Eu quero pegar o almoço
+- Estou procurando um local para jantar
+- estou procurando um lugar no [norte](local) da cidade
+- mostre-me [chinese](culinaria) restaurantes
+- mostre-me um lugar [mexicano](culinaria) no [centro](local)
+- Estou à procura de um lugar [indiano](culinaria)
+- procurar restaurantes
+- em qualquer lugar no [oeste](local)
+- em qualquer lugar perto de [18328](localizacao)
+- Eu estou procurando por comida [asiática fusion](culinaria)
+- Estou procurando um restaurante em [29432](localizacao)
+
+## intent:thankyou
+- obrigado!
+- obrigado
+- muito obrigado
+++++++++++++++++++++++++++++++++
+  - Execute o comando:
+ python -m rasa_nlu.train -c nlu_config.yml --data nlu.md -o models --fixed_model_name nlu --project current --verbose
+  - O comando acima cria o modelo. Teste o modelo via linha de comando com o codigo abaixo. Salve ele em um arquivo rasa_test.py:
+++++++++++++++++++++++++++++++++
+from rasa_nlu.model import Interpreter
+import json
+interpreter = Interpreter.load("./models/current/nlu")
+message = "Eu gostaria de conhecer um restaurante mexicano no norte"
+result = interpreter.parse(message)
+print(json.dumps(result, indent=2))
+++++++++++++++++++++++++++++++++
+  - Teste o modelo via linha de comando com:
+ python rasa_test.py
+  - Teste o modelo via servidor web inciando o servidor:
+ python -m rasa_nlu.server --path models --response_log logs
+  - E, em um outro terminal, mandando um post:
+ curl -XPOST localhost:5000/parse -d '{"q":"Eu gostaria de conhecer um restaurante mexicano no norte", "project":"current", "model":"nlu"}'
+
+- Teste em C++
+  - Compile o codigo com a linha abaixo:
+ g++ c_post_example.cpp -lcurl -ljsoncpp
+  - Teste: rode o servidor em um terminal
+ python -m rasa_nlu.server --path models --response_log logs
+  - Teste: rode o codigo em C++ em outro
+ ./a.out
