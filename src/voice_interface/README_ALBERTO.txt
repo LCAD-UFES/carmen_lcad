@@ -110,9 +110,62 @@ print(json.dumps(result, indent=2))
  curl -XPOST localhost:5000/parse -d '{"q":"Eu gostaria de conhecer um restaurante mexicano no norte", "project":"current", "model":"nlu"}'
 
 - Teste em C++
+  - Salve o conteudo abaixo no arquivo c_post_example.cpp
+++++++++++++++++++++++++++++++++
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <curl/curl.h>
+#include <jsoncpp/json/json.h>
+
+using namespace std;
+
+static size_t 
+WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+{
+    ((std::string *) userp)->append((char *) contents, size * nmemb);
+    return (size * nmemb);
+}
+
+
+int 
+main(void)
+{
+	CURL *curl;
+	CURLcode res;
+	std::string readBuffer;
+
+	curl = curl_easy_init();
+	if (curl) 
+	{
+		curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:5000/parse?q=restaurante+mexicano&project=current&model=nlu");
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+		res = curl_easy_perform(curl);
+		curl_easy_cleanup(curl);
+
+		std::cout << readBuffer << std::endl;
+
+		stringstream ifs(readBuffer);
+		Json::Reader reader;
+		Json::Value obj;
+		reader.parse(ifs, obj);     // Reader can also read strings
+		cout << obj << endl;
+		cout << "Project: " << obj["project"].asString() << endl;
+		cout << "Entities[0]: " << obj["entities"][0] << endl;
+		cout << "Entities:entity: " << obj["entities"][0]["entity"].asString() << endl;
+		cout << "Intent: " << obj["intent"] << endl;
+		cout << "Intent: " << obj["intent"]["name"].asString() << endl;
+	}
+
+	return 0;
+}
+++++++++++++++++++++++++++++++++
   - Compile o codigo com a linha abaixo:
  g++ c_post_example.cpp -lcurl -ljsoncpp
   - Teste: rode o servidor em um terminal
  python -m rasa_nlu.server --path models --response_log logs
   - Teste: rode o codigo em C++ em outro
  ./a.out
+
