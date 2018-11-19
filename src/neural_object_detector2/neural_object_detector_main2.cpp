@@ -268,14 +268,12 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
 
 
 void
-detections2(carmen_bumblebee_basic_stereoimage_message *image_msg, carmen_velodyne_partial_scan_message velodyne_sync_with_cam,
+detections(vector<bounding_box> &bouding_boxes_list, carmen_bumblebee_basic_stereoimage_message *image_msg, carmen_velodyne_partial_scan_message velodyne_sync_with_cam,
 		   cv::Mat src_image, cv::Mat rgb_image, double start_time, double fps, vector<carmen_position_t> rddf_points,
 		   string window_name)
 {
 	double hood_removal_percentage = 0.2;
 	vector<carmen_tracked_cluster_t> clusters;
-	vector<bounding_box> bouding_boxes_list;
-	vector<bounding_box> bouding_boxes_list_fovy;
 	vector<bbox_t> predictions = darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
 	//vector<bbox_t> predictions_fovy = darknet->detect(roi, 0.2);  // Arguments (img, threshold)
 
@@ -298,8 +296,6 @@ detections2(carmen_bumblebee_basic_stereoimage_message *image_msg, carmen_velody
 	// Removes the ground, Removes points outside cameras field of view and Returns the points that are obstacles and are inside bboxes
 	vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list,
 			&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
-
-
 
 	// Removes the ground, Removes points outside cameras field of view and Returns the points that reach obstacles
 	//vector<velodyne_camera_points> points = velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(
@@ -339,34 +335,6 @@ detections2(carmen_bumblebee_basic_stereoimage_message *image_msg, carmen_velody
 	show_detections(rgb_image, laser_points_in_camera_box_list, predictions, bouding_boxes_list,
 			hood_removal_percentage, fps, rddf_points, window_name);
 #endif
-}
-
-
-void
-detections(vector<bounding_box> &bouding_boxes_list, carmen_bumblebee_basic_stereoimage_message *image_msg, carmen_velodyne_partial_scan_message velodyne_sync_with_cam,
-		   cv::Mat src_image, cv::Mat rgb_image, double start_time, double fps, vector<carmen_position_t> rddf_points,
-		   string window_name)
-{
-	double hood_removal_percentage = 0.2;
-	vector<carmen_tracked_cluster_t> clusters;
-	vector<bounding_box> bouding_boxes_list_fovy;
-	vector<bbox_t> predictions = darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
-	//vector<bbox_t> predictions_fovy = darknet->detect(roi, 0.2);  // Arguments (img, threshold)
-
-	//predictions = darknet->tracking(predictions); // Coment this line if object tracking is not necessary
-	//INSERIR FUNÇÃO PARA FOVEADO: receber alguns pontos do rddf (função que converte da posição do mundo para a posição na imagem) recortar a área em volta do ponto
-	//na imagem, passar essa imagem para a rede, receber a detecção e reprojetar na imagem original
-	for (const auto &box : predictions) // Covert Darknet bounding box to neural_object_deddtector bounding box
-	{
-		bounding_box bbox;
-
-		bbox.pt1.x = box.x;
-		bbox.pt1.y = box.y;
-		bbox.pt2.x = box.x + box.w;
-		bbox.pt2.y = box.y + box.h;
-
-		bouding_boxes_list.push_back(bbox);
-	}
 }
 
 
