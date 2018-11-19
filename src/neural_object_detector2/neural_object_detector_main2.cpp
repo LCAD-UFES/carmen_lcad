@@ -200,7 +200,7 @@ objects_names_from_file(string const class_names_file)
 
 void
 show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list,
-		vector<bbox_t> predictions, vector<bounding_box> bouding_boxes_list, double hood_removal_percentage, double fps,
+		vector<bbox_t> predictions, double hood_removal_percentage, double fps,
                 vector<carmen_position_t> rddf_points, string window_name)
 {
     char confianca[25];
@@ -210,7 +210,7 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
 
     cv::putText(rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
 
-    for (unsigned int i = 0; i < bouding_boxes_list.size(); i++)
+    for (unsigned int i = 0; i < predictions.size(); i++)
     {
 
 		for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
@@ -233,16 +233,16 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
             object_color = cv::Scalar(255, 0, 255);
 
         cv::rectangle(rgb_image,
-                      cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
-                      cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
+                      cv::Point(predictions[i].x, predictions[i].y),
+                      cv::Point(predictions[i].x + predictions[i].w, predictions[i].y + predictions[i].h),
                       object_color, 1);
 
         cv::putText(rgb_image, obj_name,
-                    cv::Point(bouding_boxes_list[i].pt2.x + 1, bouding_boxes_list[i].pt1.y - 3),
+                    cv::Point(predictions[i].x + 1, predictions[i].y - 3),
                     cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
 
         cv::putText(rgb_image, confianca,
-                    cv::Point(bouding_boxes_list[i].pt1.x + 1, bouding_boxes_list[i].pt1.y - 3),
+                    cv::Point(predictions[i].x + 1, predictions[i].y - 3),
                     cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
 
     }
@@ -336,18 +336,17 @@ show_detections2(cv::Mat rgb_image, vector<bounding_box> bouding_boxes_list, str
 
 
 void
-detections(vector<bounding_box> &bouding_boxes_list, carmen_bumblebee_basic_stereoimage_message *image_msg, carmen_velodyne_partial_scan_message velodyne_sync_with_cam,
+detections(vector<bbox_t> predictions, carmen_bumblebee_basic_stereoimage_message *image_msg, carmen_velodyne_partial_scan_message velodyne_sync_with_cam,
 		   cv::Mat src_image, cv::Mat rgb_image, double start_time, double fps, vector<carmen_position_t> rddf_points,
 		   string window_name)
 {
+	vector <bounding_box> bouding_boxes_list;
 	double hood_removal_percentage = 0.2;
 	vector<carmen_tracked_cluster_t> clusters;
-	vector<bbox_t> predictions = darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
 	//vector<bbox_t> predictions_fovy = darknet->detect(roi, 0.2);  // Arguments (img, threshold)
 
 	//predictions = darknet->tracking(predictions); // Coment this line if object tracking is not necessary
-	//INSERIR FUNÇÃO PARA FOVEADO: receber alguns pontos do rddf (função que converte da posição do mundo para a posição na imagem) recortar a área em volta do ponto
-	//na imagem, passar essa imagem para a rede, receber a detecção e reprojetar na imagem original
+
 	for (const auto &box : predictions) // Covert Darknet bounding box to neural_object_deddtector bounding box
 	{
 		bounding_box bbox;
@@ -359,7 +358,6 @@ detections(vector<bounding_box> &bouding_boxes_list, carmen_bumblebee_basic_ster
 
 		bouding_boxes_list.push_back(bbox);
 	}
-
 
 	// Removes the ground, Removes points outside cameras field of view and Returns the points that are obstacles and are inside bboxes
 	vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list,
@@ -400,7 +398,7 @@ detections(vector<bounding_box> &bouding_boxes_list, carmen_bumblebee_basic_ster
 	start_time = carmen_get_time();
 
 #ifdef SHOW_DETECTIONS
-	show_detections(rgb_image, laser_points_in_camera_box_list, predictions, bouding_boxes_list,
+	show_detections(rgb_image, laser_points_in_camera_box_list, predictions,
 			hood_removal_percentage, fps, rddf_points, window_name);
 #endif
 }
@@ -424,7 +422,7 @@ check_rect_inside_image (cv::Rect rec, cv::Mat img)
 
 
 void
-get_image_slices (vector<cv::Mat> &scene_slices, vector<t_translate_factor> &translate_factor_of_slice_to_original_frame,
+get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &transform_factor_of_slice_to_original_frame,
 				 cv::Mat out, vector<carmen_position_t> rddf_points_in_image,
 				 vector<double> distances_of_rddf_from_car)
 {
@@ -436,7 +434,7 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_translate_factor> &tra
 	{
 		cv::Mat roi;
 		cv::Point top_left_point;
-		t_translate_factor translate_factor;
+		t_transform_factor t;
 		double image_size_x;
 		double image_size_y;
 		//cout<<i<<endl;
@@ -463,10 +461,12 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_translate_factor> &tra
 			if (check_rect_inside_image(rec, out)){
 				roi = out (rec);
 				//cout<<roi.cols<<" "<<roi.rows<<endl;
-				translate_factor.translate_factor_x = top_left_point.x;
-				translate_factor.translate_factor_y = top_left_point.y;
+				t.scale_factor_x = double(scene_slices[0].cols) / double(roi.cols);
+				t.scale_factor_y = double(scene_slices[0].rows) / double(roi.rows);
+				t.translate_factor_x = top_left_point.x;
+				t.translate_factor_y = top_left_point.y;
 				scene_slices.push_back(roi);
-				translate_factor_of_slice_to_original_frame.push_back(translate_factor);
+				transform_factor_of_slice_to_original_frame.push_back(t);
 			}
 
 		}
@@ -483,10 +483,12 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_translate_factor> &tra
 			{
 				roi = out (rec);
 				//cout<<roi.cols<<" "<<roi.rows<<endl;
-				translate_factor.translate_factor_x = top_left_point.x;
-				translate_factor.translate_factor_y = top_left_point.y;
+				t.scale_factor_x = double(scene_slices[0].cols) / double(roi.cols);
+				t.scale_factor_y = double(scene_slices[0].rows) / double(roi.rows);
+				t.translate_factor_x = top_left_point.x;
+				t.translate_factor_y = top_left_point.y;
 				scene_slices.push_back(roi);
-				translate_factor_of_slice_to_original_frame.push_back(translate_factor);
+				transform_factor_of_slice_to_original_frame.push_back(t);
 			}
 
 		}
@@ -676,13 +678,15 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     vector<cv::Mat> scene_slices;
     vector<cv::Mat> scene_slices_resized;
-    vector<t_translate_factor> translate_factor_of_slice_to_original_frame;
-    t_translate_factor t;
+    vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
+    t_transform_factor t;
     scene_slices.push_back(out);
+    t.scale_factor_x = 1;
+    t.scale_factor_y = 1;
     t.translate_factor_x = 0;
     t.translate_factor_y = 0;
-    translate_factor_of_slice_to_original_frame.push_back(t);
-    get_image_slices(scene_slices, translate_factor_of_slice_to_original_frame, out, rddf_points_in_image, distances_of_rddf_from_car);
+    transform_factor_of_slice_to_original_frame.push_back(t);
+    get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image, distances_of_rddf_from_car);
 
 
 //    for (int i = 0; i < scene_slices.size(); i++)
@@ -695,10 +699,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 //    	//cout<<"Scale factor of slice "<<i<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_x<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_y<<endl;
 //    }
     //cout<<endl<<endl<<endl<<endl;
-    vector<vector<bounding_box>> bouding_boxes_of_slices;
+    vector<vector<bbox_t>> bouding_boxes_of_slices;
     for (int i = 0; i < scene_slices.size(); i++)
     {
-    	vector<bounding_box> bbox_temp;
+    	vector<bbox_t> predictions;
     	stringstream ss;
     	ss << i;
     	string window_name = "slice_" + ss.str();
@@ -706,28 +710,31 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 //    	cv::waitKey(10);
     	src_image = scene_slices[i];
     	rgb_image = scene_slices[i];
-    	detections(bbox_temp, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, window_name);
+    	predictions = darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
+    	//detections(predictions, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, window_name);
     	//cout<<"Slice_"<<i<<"detected "<<bbox_temp.size()<<endl;
-    	bouding_boxes_of_slices.push_back(bbox_temp);
+    	bouding_boxes_of_slices.push_back(predictions);
     }
 
-    vector<bounding_box> bbox;
-    bounding_box b;
-    for (int i = 0; i < bouding_boxes_of_slices.size()-1; i++)
+    vector<bbox_t> bbox;
+    bbox_t b;
+    for (int i = 0; i < bouding_boxes_of_slices.size(); i++)
     {
     	for (int j = 0; j < bouding_boxes_of_slices[i].size(); j++)
     	{
-    		b.pt1.x = bouding_boxes_of_slices[i][j].pt1.x + translate_factor_of_slice_to_original_frame[i].translate_factor_x;
-    		b.pt1.y = bouding_boxes_of_slices[i][j].pt1.y + translate_factor_of_slice_to_original_frame[i].translate_factor_y;
-    		b.pt2.x = bouding_boxes_of_slices[i][j].pt2.x + translate_factor_of_slice_to_original_frame[i].translate_factor_x;
-    		b.pt2.x = bouding_boxes_of_slices[i][j].pt2.y + translate_factor_of_slice_to_original_frame[i].translate_factor_y;
+    		b.x = bouding_boxes_of_slices[i][j].x + transform_factor_of_slice_to_original_frame[i].translate_factor_x;
+    		b.y = bouding_boxes_of_slices[i][j].y + transform_factor_of_slice_to_original_frame[i].translate_factor_y;
+    		b.w = bouding_boxes_of_slices[i][j].w / transform_factor_of_slice_to_original_frame[i].scale_factor_x;
+    		b.h = bouding_boxes_of_slices[i][j].h / transform_factor_of_slice_to_original_frame[i].scale_factor_y;
     		bbox.push_back(b);
     	}
     }
     //cout<<bbox.size()<<endl;
     rgb_image = scene_slices[0];
+    src_image = scene_slices[0];
+    detections(bbox, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "FUNCIONA!!!");
     //show_detections2(rgb_image, bbox, "NOD_FULL");
-    //cout<<scene_slices.size()<<" "<<bouding_boxes_of_slices.size()<<" "<<scale_factor_of_slice_to_original_frame.size()<<endl;
+    cout<<scene_slices.size()<<" "<<bouding_boxes_of_slices.size()<<" "<<transform_factor_of_slice_to_original_frame.size()<<endl;
     //cout<<endl;
 //	publish_moving_objects_message(image_msg->timestamp);
 }
