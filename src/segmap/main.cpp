@@ -118,7 +118,7 @@ public:
 
 	bool contains(double x, double y)
 	{
-		if (x < _xo || x >= _xo + _wm || y < _yo || y >= _yo + _hm)
+		if (x < _xo || x >= (_xo + _wm) || y < _yo || y >= (_yo + _hm))
 			return false;
 
 		return true;
@@ -217,9 +217,10 @@ public:
 			double height_meters, double width_meters,
 			double resolution, int map_type, string tiles_dir)
 	{
-		 // map tile origin
-		_xo = width_meters * ((int) (point_x / width_meters));
-		_yo = height_meters * ((int) (point_y / height_meters));
+		// map tile origin
+		_xo = floor(point_x / width_meters) * width_meters;
+		_yo = floor(point_y / height_meters) * height_meters;
+		printf("Origin: %lf %lf\n", _xo, _yo);
 		_hm = height_meters;
 		_wm = width_meters;
 		_m_by_pixel = resolution;
@@ -333,6 +334,8 @@ public:
 	void
 	_reload_tiles(double robot_x, double robot_y)
 	{
+		printf("Reloading tiles!\n");
+
 		int i, j;
 
 		for (i = 0; i < _N_TILES; i++)
@@ -372,7 +375,10 @@ public:
 			for (j = 0; j < _N_TILES; j++)
 			{
 				if (_tiles[i][j]->contains(p.x, p.y))
+				{
 					_tiles[i][j]->add_point(p);
+					return;
+				}
 			}
 		}
 	}
@@ -395,7 +401,23 @@ public:
 	Mat
 	to_image()
 	{
-		return _tiles[1][1]->to_image();
+		Mat middle_tile = _tiles[1][1]->to_image();
+		int h = middle_tile.rows;
+		int w = middle_tile.cols;
+
+		Mat viewer(h * 3, w * 3, CV_8UC3);
+
+		_tiles[0][0]->to_image().copyTo(viewer(Rect(0, 0, w, h)));
+		_tiles[0][1]->to_image().copyTo(viewer(Rect(w, 0, w, h)));
+		_tiles[0][2]->to_image().copyTo(viewer(Rect(2*w, 0, w, h)));
+		_tiles[1][0]->to_image().copyTo(viewer(Rect(0, h, w, h)));
+		_tiles[1][1]->to_image().copyTo(viewer(Rect(w, h, w, h)));
+		_tiles[1][2]->to_image().copyTo(viewer(Rect(2*w, h, w, h)));
+		_tiles[2][0]->to_image().copyTo(viewer(Rect(0, 2*h, w, h)));
+		_tiles[2][1]->to_image().copyTo(viewer(Rect(w, 2*h, w, h)));
+		_tiles[2][2]->to_image().copyTo(viewer(Rect(2*w, 2*h, w, h)));
+
+		return viewer;
 	}
 };
 
@@ -1324,6 +1346,8 @@ create_map(GridMap &map, vector<Matrix<double, 4, 4>> &poses, PointCloud<PointXY
 		//transformed_cloud = cloud;
 
 		map.reload(poses[i](0, 3), poses[i](1, 3));
+		printf("car pose: %lf %lf\n", poses[i](0, 3), poses[i](1, 3));
+
 		add_point_cloud_to_map(transformed_cloud, map);
 
 		char *cloud_name = (char *) calloc (32, sizeof(char));
@@ -1485,7 +1509,8 @@ main()
 			100., 100., 100.);
 
 	//GridMap map(-20, -2, 100, 200, 0.2);
-	GridMap map("/dados/maps/maps_20180112-2/", 75., 75., 0.2, GridMapTile::TYPE_SEMANTIC);
+	system("rm -rf /dados/maps/maps_20180112-2/*");
+	GridMap map("/dados/maps/maps_20180112-2/", 75., 75., 0.4, GridMapTile::TYPE_SEMANTIC);
 
 	// KITTI
 	/*
