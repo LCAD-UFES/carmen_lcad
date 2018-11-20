@@ -478,7 +478,7 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 			}
 
 		}
-		else// if (image_size_x >= 100 && image_size_y >= 100)
+		else if (image_size_y >= 60)
 		{
 			//cv::Rect rec(rddf_points[i].x - (image_size_x/2), rddf_points[i].y-(300*dist_percentage), image_size_x, scene_slices[i-1].rows * dist_percentage);
 			double scale = image_size_y*(3.0/4.0);
@@ -724,7 +724,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	src_image = scene_slices[i];
     	rgb_image = scene_slices[i];
     	predictions = darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
-    	detections(predictions, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, window_name);
+    	//detections(predictions, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, window_name);
     	//cout<<"Slice_"<<i<<"detected "<<bbox_temp.size()<<endl;
     	bouding_boxes_of_slices.push_back(predictions);
     }
@@ -735,17 +735,18 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     {
     	for (int j = 0; j < bouding_boxes_of_slices[i].size(); j++)
     	{
+    		b = bouding_boxes_of_slices[i][j];
     		b.x = bouding_boxes_of_slices[i][j].x + transform_factor_of_slice_to_original_frame[i].translate_factor_x;
     		b.y = bouding_boxes_of_slices[i][j].y + transform_factor_of_slice_to_original_frame[i].translate_factor_y;
-    		b.w = bouding_boxes_of_slices[i][j].w / transform_factor_of_slice_to_original_frame[i].scale_factor_x;
-    		b.h = bouding_boxes_of_slices[i][j].h / transform_factor_of_slice_to_original_frame[i].scale_factor_y;
+    		//b.w = bouding_boxes_of_slices[i][j].w / transform_factor_of_slice_to_original_frame[i].scale_factor_x;
+    		//b.h = bouding_boxes_of_slices[i][j].h / transform_factor_of_slice_to_original_frame[i].scale_factor_y;
     		bbox.push_back(b);
     	}
     }
     //cout<<bbox.size()<<endl;
     rgb_image = scene_slices[0];
     src_image = scene_slices[0];
-    //detections(bbox, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "FUNCIONA!!!");
+    detections(bbox, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "FUNCIONA!!!");
     //show_detections2(rgb_image, bbox, "NOD_FULL");
     //cout<<scene_slices.size()<<" "<<bouding_boxes_of_slices.size()<<" "<<transform_factor_of_slice_to_original_frame.size()<<endl;
     //cout<<endl;
