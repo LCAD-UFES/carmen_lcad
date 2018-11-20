@@ -227,7 +227,7 @@ python3 -m rasa_nlu.server --path models --response_log logs
 curl -XPOST localhost:5000/parse -d '{"q":"Eu gostaria de conhecer um restaurante mexicano no norte", "project":"current", "model":"nlu"}'
 ```  
 
-### 7.1.2. Em C++
+#### 7.1.2. Em C++
 
 - Salve o conteudo abaixo no arquivo c_post_example.cpp:
 
