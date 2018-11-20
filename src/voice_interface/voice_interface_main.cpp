@@ -3,6 +3,12 @@
 #include <carmen/carmen.h>
 #include <carmen/voice_interface_interface.h>
 #include <alsa/asoundlib.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <curl/curl.h>
+#include <jsoncpp/json/json.h>
 #include "voice_interface.h"
 #include "porcupine_keyword.h"
 
@@ -62,15 +68,77 @@ shutdown_module(int signo)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool
-check_command(char *voice_command, char *command_template)
+static size_t
+curlopt_writefunction(void *contents, size_t size, size_t nmemb, void *userp)
 {
-	return (true);
+    ((std::string *) userp)->append((char *) contents, size * nmemb);
+    return (size * nmemb);
+}
+
+
+Json::Value
+get_rasa_server_response(char *query)
+{
+	CURL *curl;
+	CURLcode curl_error;
+	string http_server_string_response;
+
+	curl = curl_easy_init();
+	if (curl)
+	{
+		char *http_query = curl_easy_escape(curl, query, strlen(query));
+		if (http_query)
+		{
+//			printf("Encoded: %s\n", http_query);
+			char http_query_post[2048];
+			strncpy(http_query_post, "http://localhost:5000/parse?q=", 2048);
+			strncat(http_query_post, http_query, 2048 - (strlen(http_query_post) + strlen(http_query)));
+			strncat(http_query_post, "&project=current&model=nlu", 2048 - (strlen(http_query_post) + strlen("&project=current&model=nlu")));
+//			printf("Encoded POST: %s\n", http_query_post);
+			curl_easy_setopt(curl, CURLOPT_URL, http_query_post);
+			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlopt_writefunction);
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &http_server_string_response);
+			curl_error = curl_easy_perform(curl);
+			if (curl_error)
+			{
+				printf("Error in check_command(). Could not get curl http response in check_command().\n");
+				exit(1);
+			}
+
+			curl_easy_cleanup(curl);
+			curl_free(http_query);
+		}
+		else
+		{
+			printf("Error in check_command(). Could not get http_query in check_command().\n");
+			exit(1);
+		}
+
+//		std::cout << readBuffer << endl;
+
+		stringstream input_string_stream(http_server_string_response);
+		Json::Reader reader;
+		Json::Value http_server_json_response;
+		reader.parse(input_string_stream, http_server_json_response);
+		cout << http_server_json_response << std::endl;
+//		cout << "Project: " << http_server_json_response["project"].asString() << endl;
+//		cout << "Entities[0]: " << http_server_json_response["entities"][0] << endl;
+//		cout << "Entities:entity: " << http_server_json_response["entities"][0]["entity"].asString() << endl;
+//		cout << "Intent: " << http_server_json_response["intent"] << endl;
+//		cout << "Intent: " << http_server_json_response["intent"]["name"].asString() << endl;
+
+		return (http_server_json_response);
+	}
+	else
+	{
+		printf("Error in check_command(). Could not get curl object.\n");
+		exit(1);
+	}
 }
 
 
 void
-execute_command(char *voice_command)
+execute_voice_command(char *voice_command)
 {
 	if (voice_command)
 	{
@@ -81,10 +149,84 @@ execute_command(char *voice_command)
 			if (voice_interface_speak_error)
 				printf("%s \n", voice_interface_speak_error);
 		}
-		else if (check_command(voice_command, (char *) "seguir curso"))
+		else
 		{
-			printf("\Command detected: %s \n\n", "seguir curso");
-			carmen_navigator_ackerman_go();
+			Json::Value rasa_server_response = get_rasa_server_response(voice_command);
+			printf("rasa_server_response[\"intent\"][\"confidence\"] %lf\n", rasa_server_response["intent"]["confidence"].asDouble());
+			if (rasa_server_response["intent"]["confidence"].asDouble() > 0.7)
+			{
+				if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "engage") == 0)
+				{
+					printf("Command detected: %s \n\n", "Seguir curso");
+					carmen_navigator_ackerman_go();
+					carmen_ipc_sleep(0.1); // Necessario para reconectar com o audio para tocar o som abaixo.
+					system("mpg123 $CARMEN_HOME/data/voice_interface_hotword_data/helm_engage_clean.mp3");
+				}
+				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "set_course") == 0)
+				{
+					printf("Command detected: %s \n\n", "Estabelecer curso");
+					bool place_detected = false;
+					for (unsigned int i = 0; i < rasa_server_response["entities"].size(); i++)
+					{
+						cout << "Entity :" << rasa_server_response["entities"][i]["entity"].asString() << endl;
+						if (strcmp(rasa_server_response["entities"][i]["entity"].asString().c_str(), "place") == 0)
+						{
+							cout << "Entity value la vai:" << endl;
+							cout << "Entity value :" << rasa_server_response["entities"][i]["value"].asString() << endl;
+							char *voice_interface_speak_error = carmen_voice_interface_speak((char *) ("Curso para " +
+									rasa_server_response["entities"][i]["value"].asString() + " definido.").c_str());
+							if (voice_interface_speak_error)
+								printf("%s \n", voice_interface_speak_error);
+
+							place_detected = true;
+						}
+					}
+					if (!place_detected)
+					{
+						char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Desculpe... Não identifiquei nenhum lugar de meu conhecimento em seu comando...\n");
+						if (voice_interface_speak_error)
+							printf("%s \n", voice_interface_speak_error);
+						voice_interface_speak_error = carmen_voice_interface_speak((char *) ("Você disse " + rasa_server_response["text"].asString() + "?\n").c_str());
+						if (voice_interface_speak_error)
+							printf("%s \n", voice_interface_speak_error);
+						voice_interface_speak_error = carmen_voice_interface_speak((char *) ("Se o que você disse está corrento, favor incluir o lugar mencionado em minha base de dados."));
+						if (voice_interface_speak_error)
+							printf("%s \n", voice_interface_speak_error);
+					}
+				}
+				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "greet") == 0)
+				{
+					printf("Command detected: %s \n\n", "Olá");
+					char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Olá!... Bom ter você aqui!");
+					if (voice_interface_speak_error)
+						printf("%s \n", voice_interface_speak_error);
+				}
+				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "thankyou") == 0)
+				{
+					printf("Command detected: %s \n\n", "Obrigada");
+					char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Por nada!");
+					if (voice_interface_speak_error)
+						printf("%s \n", voice_interface_speak_error);
+				}
+				else
+				{
+					char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Desculpe... Sua inteção parace clara, mas não sei o que fazer...\n");
+					if (voice_interface_speak_error)
+						printf("%s \n", voice_interface_speak_error);
+					voice_interface_speak_error = carmen_voice_interface_speak((char *) ("Você disse " + rasa_server_response["text"].asString() + "?\n").c_str());
+					if (voice_interface_speak_error)
+						printf("%s \n", voice_interface_speak_error);
+				}
+			}
+			else
+			{
+				char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Desculpe... Não entendi claramente sua intenção...\n");
+				if (voice_interface_speak_error)
+					printf("%s \n", voice_interface_speak_error);
+				voice_interface_speak_error = carmen_voice_interface_speak((char *) ("Você disse " + rasa_server_response["text"].asString() + "?\n").c_str());
+				if (voice_interface_speak_error)
+					printf("%s \n", voice_interface_speak_error);
+			}
 		}
 	}
 }
@@ -151,7 +293,7 @@ main (int argc, char **argv)
 
 			printf("Awaiting for command\n\n");
 			char *voice_command = carmen_voice_interface_listen();
-			execute_command(voice_command);
+			execute_voice_command(voice_command);
 
 			snd_pcm_prepare(capture_handle);
 			snd_pcm_start(capture_handle);

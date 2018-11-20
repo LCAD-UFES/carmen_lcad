@@ -13,7 +13,7 @@ IFLAGS += -I/usr/include/python3.5
 # python3-config --libs
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += `python3.5-config --libs` -lparam_interface -lipc -lglobal -lvoice_interface_interface -lpv_porcupine -lasound \
-			-lnavigator_ackerman_interface
+			-lnavigator_ackerman_interface -lcurl -ljsoncpp
 			
 # Source code files (.c, .cpp) 
 SOURCES = voice_interface_main.cpp voice_interface_interface.cpp voice_interface.cpp porcupine_keyword.cpp
