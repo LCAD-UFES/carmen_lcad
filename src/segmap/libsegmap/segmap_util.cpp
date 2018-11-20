@@ -70,16 +70,12 @@ pose6d_to_matrix(double x, double y, double z, double roll, double pitch, double
 }
 
 
-vector<Matrix<double, 4, 4>>
-oxts2Mercartor(vector<vector<double>> &data)
+void
+oxts2Mercartor(vector<vector<double>> &data, vector<Matrix<double, 4, 4>> &poses)
 {
 	double scale = cos(data[0][0] * M_PI / 180.);
 	double er = 6378137;
 
-	// pose[i] contains the transformation which takes a
-	// 3D point in the i'th frame and projects it into the oxts
-	// coordinates of the first frame.
-	vector<Matrix<double, 4, 4>> poses;
 	Matrix<double, 4, 4> p0;
 
 	for (int i = 0; i < data.size(); i++)
@@ -112,8 +108,6 @@ oxts2Mercartor(vector<vector<double>> &data)
 		p = p0.inverse() * p;
 		poses.push_back(p);
 	}
-
-	return poses;
 }
 
 

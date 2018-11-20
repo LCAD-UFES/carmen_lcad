@@ -12,8 +12,6 @@
 #include <Eigen/Geometry>
 #include <opencv/cv.hpp>
 #include <opencv/highgui.h>
-#include <pcl/io/io.h>
-#include <pcl/io/ply_io.h>
 #include <pcl/common/transforms.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
@@ -23,7 +21,7 @@
 #include "libsegmap/segmap_particle_filter.h"
 #include "libsegmap/segmap_pose2d.h"
 #include "libsegmap/segmap_util.h"
-
+#include "libsegmap/segmap_dataset.h"
 
 using namespace cv;
 using namespace std;
@@ -31,43 +29,6 @@ using namespace Eigen;
 using namespace pcl;
 
 
-vector<double>
-load_timestamps()
-{
-	vector<double> times;
-	char *time_name = "/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/oxts/timestamps.txt";
-
-	int dummy;
-	double t;
-	FILE *f = fopen(time_name, "r");
-
-	if (f == NULL)
-		exit(printf("File '%s' not found.", time_name));
-
-	while(fscanf(f, "%d-%d-%d %d:%d:%lf", &dummy, &dummy, &dummy, &dummy, &dummy, &t) == 6)
-		times.push_back(t);
-
-	fclose(f);
-	return times;
-}
-
-
-vector<vector<double>>
-load_oxts(vector<double> &times)
-{
-	vector<vector<double>> data;
-
-	char *dir = "/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/oxts/data";
-	char name[1024];
-
-	for (int i = 0; i < times.size(); i++)
-	{
-		sprintf(name, "%s/%010d.txt", dir, i);
-		data.push_back(read_vector(name));
-	}
-
-	return data;
-}
 
 
 void
@@ -84,65 +45,6 @@ print_poses(vector<Matrix<double, 4, 4>> &poses)
 				p(1, 3) / p(3, 3),
 				p(2, 3) / p(3, 3));
 	}
-}
-
-
-void
-read_pointcloud_kitti(int i, PointCloud<PointXYZRGB>::Ptr cloud)
-{
-	// pointers
-	static int num;
-	static float *data;
-	static int first = 1;
-
-	float *px = data+0;
-	float *py = data+1;
-	float *pz = data+2;
-	float *pr = data+3;
-
-	char name[1024];
-	sprintf(name, "/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/velodyne_points/data/%010d.bin", i);
-
-	num = 1000000;
-
-	if (first)
-	{
-		data = (float*) malloc(num * sizeof(float));
-		first = 0;
-	}
-
-	printf("loading pointcloud '%s'\n", name);
-
-	// load point cloud
-	FILE *stream;
-	stream = fopen(name, "rb");
-	num = fread(data, sizeof(float), num, stream) / 4;
-	fclose(stream);
-
-	for (int i = 0; i < num; i++)
-	{
-		px += 4; py += 4; pz += 4; pr += 4;
-
-		pcl::PointXYZRGB point;
-
-		point.x = *px;
-		point.y = *py;
-		point.z = *pz;
-		point.r = *pr;
-		point.g = *pr;
-		point.b = *pr;
-
-		cloud->push_back(point);
-	}
-}
-
-
-void
-read_pointcloud_carmen(int i, PointCloud<PointXYZRGB>::Ptr cloud)
-{
-	char name[1024];
-	sprintf(name, "/dados/data_20180112-2/data/velodyne/%010d.ply", i);
-	pcl::io::loadPLYFile(name, *cloud);
 }
 
 
@@ -175,70 +77,37 @@ segmented_image_view(Mat &m)
 
 
 void
-load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud)
+load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, DatasetInterface &dataset)
 {
-	cloud->clear();
-
-	PointCloud<PointXYZRGB>::Ptr raw_cloud(new PointCloud<PointXYZRGB>);
-	//read_pointcloud_kitti(i, raw_cloud);
-	read_pointcloud_carmen(i, raw_cloud);
-
-	char name[1024];
-	//sprintf(name, "/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/image_02/data/%010d.png", i);
-	//sprintf(name, "/dados/imgs_kitti/%010d_trainval.png", i);
-	sprintf(name, "/dados/data_20180112-2/data/trainfine/%010d.png", i);
-	//sprintf(name, "/dados/data_20180112-2/data/bb3/%010d.png", i);
-
-	//Mat img(375, 1242, CV_8UC3);
-	Mat raw_img = imread(name);
-	Mat img = Mat::ones(480, 640, CV_8UC3) * 20;
-	Mat roi = img(Rect(0, 50, 640, 320));
-	resize(raw_img, roi, roi.size());
-
-	printf("loading image '%s'\n", name);
-
-	//Mat view = img.clone();
-	img = segmented_image_view(img);
-	Mat view = img.clone();
-
 	int p, x, y;
-	Matrix<double, 4, 1> P;
 	Matrix<double, 3, 1> pixel;
 	PointXYZRGB point;
+	PointCloud<PointXYZRGB>::Ptr raw_cloud(new PointCloud<PointXYZRGB>);
 
-	//Matrix<double, 3, 4> vel2cam = kitti_velodyne_to_cam();
-	Matrix<double, 3, 4> vel2cam = carmen_velodyne_to_cam3(img.cols, img.rows);
+	cloud->clear();
+	dataset.load_pointcloud(i, raw_cloud);
+	Mat img = dataset.load_image(i);
+
+	//img = segmented_image_view(img);
+	Mat view = img.clone();
 
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
 		point = raw_cloud->at(i);
-
-		P << point.x, point.y, point.z, 1.;
-		pixel = vel2cam * P;
-
+    	pixel = dataset.transform_vel2cam(point);
+    
 		x = pixel(0, 0) / pixel(2, 0);
 		y = pixel(1, 0) / pixel(2, 0);
-		y = img.rows - y - 1;
-		x = img.cols - x - 1;
 
-		//cout << pose << endl << endl;
-		//cout << P << endl << endl;
-		//cout << Pt << endl << endl;
-		//cout << "P3d:" << endl;
-		//cout << P << endl;
-		//cout << "pixel:" << endl;
-		//cout << pixel << endl;
-		//cout << "x-y: " << x << " " << y << endl;
-		//cout << endl;
-
+		// to use fused camera and velodyne
 		//if (0)
 		if (point.x > 7 && x >= 0 && x < img.cols && y >= 0 && y < img.rows)
 		{
 			pcl::PointXYZRGB point2;
 
-			point2.x = P(0, 0) / P(3, 0);
-			point2.y = P(1, 0) / P(3, 0);
-			point2.z = P(2, 0) / P(3, 0);
+			point2.x = point.x;
+			point2.y = point.y;
+			point2.z = point.z;
 
 			// colors
 			p = 3 * (y * img.cols + x);
@@ -250,6 +119,7 @@ load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud)
 			cloud->push_back(point2);
 		}
 
+		// to use remission
 		else if (0)
 		//else if (1) //point.z < 0.)
 		{
@@ -261,36 +131,6 @@ load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud)
 	}
 
 	imshow("img", view);
-}
-
-
-vector<pair<double, double>>
-estimate_v(vector<Matrix<double, 4, 4>> &poses, vector<double> &ts)
-{
-	vector<pair<double, double>> vs;
-
-	double lx = 0, ly = 0, lt = 0;
-
-	for (int i = 0; i < poses.size(); i++)
-	{
-		double x = poses[i](0, 3) / poses[i](3, 3);
-		double y = poses[i](1, 3) / poses[i](3, 3);
-
-		double ds = sqrt(pow(x - lx, 2) + pow(y - ly, 2));
-		double dt = ts[i] - lt;
-
-		lx = x;
-		ly = y;
-		lt = ts[i];
-
-		if (i > 0)
-			vs.push_back(pair<double, double>(ds / dt, 0));
-
-		if (i == 1)
-			vs.push_back(pair<double, double>(ds / dt, 0));
-	}
-
-	return vs;
 }
 
 
@@ -471,14 +311,15 @@ view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses, Pose
 
 
 void
-create_map(GridMap &map, vector<Matrix<double, 4, 4>> &poses, PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZRGB>::Ptr transformed_cloud)
+create_map(GridMap &map, vector<Matrix<double, 4, 4>> &poses, PointCloud<PointXYZRGB>::Ptr cloud,
+		PointCloud<PointXYZRGB>::Ptr transformed_cloud, DatasetInterface &dataset)
 {
 	pcl::visualization::PCLVisualizer viewer("Cloud Viewer");
 	viewer.setBackgroundColor(.5, .5, .5);
 	viewer.removeAllPointClouds();
 	viewer.addCoordinateSystem(10);
 
-	Matrix<double, 4, 4> vel2car = carmen_vel2car();
+	Matrix<double, 4, 4> vel2car = dataset.transform_vel2car();
 	Matrix<double, 4, 4> car2world;
 
 	deque<string> cloud_names;
@@ -486,7 +327,7 @@ create_map(GridMap &map, vector<Matrix<double, 4, 4>> &poses, PointCloud<PointXY
 
 	for (int i = 0; i < poses.size(); i += 1)
 	{
-		load_fused_pointcloud_and_camera(i, cloud);
+		load_fused_pointcloud_and_camera(i, cloud, dataset);
 
 		car2world = poses[i] * vel2car;
 		transformPointCloud(*cloud, *transformed_cloud, car2world);
@@ -563,6 +404,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 			//if (i > 16)
 			if (1)
 			{
+				/*
 				printf("Correction\n");
 				load_fused_pointcloud_and_camera(i, cloud);
 				pf.correct(gps, cloud, map, transformed_cloud);
@@ -577,70 +419,10 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 						sqrt(pow(gps.x - mode.x, 2) + pow(gps.y - mode.y, 2)));
 
 				view(pf, map, poses, gps, cloud, transformed_cloud);
+				*/
 			}
 		}
 	}
-}
-
-
-void
-load_carmen_data(vector<double> &times,
-		vector<Matrix<double, 4, 4>> &poses,
-		vector<pair<double, double>> &odom)
-{
-	FILE *f = fopen("/dados/data_20180112-2/data/poses.txt", "r");
-
-	char dummy[128];
-	double x, y, th, t, v, phi;
-	double x0, y0;
-	int first = 1;
-
-	double ds, lt, dt, odom_x, odom_y, odom_th;
-
-	odom_x = odom_y = odom_th = 0.;
-
-	while (!feof(f))
-	{
-		fscanf(f, "\n%s %lf %lf %lf %lf %s %lf %lf %s\n",
-				dummy, &x, &y, &th, &t, dummy, &v, &phi, dummy);
-
-		if (first)
-		{
-			x0 = x;
-			y0 = y;
-			first = 0;
-		}
-		else
-		{
-			dt = t - lt;
-			ds = v * 1.006842 * dt;
-			odom_x += ds * cos(odom_th);
-			odom_y += ds * sin(odom_th);
-			odom_th += ds * tan(phi * 0.861957 - 0.002372) / distance_between_front_and_rear_axles;
-			odom_th = normalize_theta(odom_th);
-		}
-		lt = t;
-
-		Pose2d pose(odom_x, odom_y, odom_th);
-		// Pose2d pose(x - x0, y - y0, normalize_theta(th));
-
-		poses.push_back(Pose2d::to_matrix(pose));
-		times.push_back(t);
-		odom.push_back(pair<double, double>(v, phi));
-	}
-
-	Matrix<double, 4, 4> p0_inv = Matrix<double, 4, 4>(poses[0]).inverse();
-
-	for (int i = 0; i < poses.size(); i++)
-	{
-		poses[i] = p0_inv * poses[i];
-		Pose2d p = Pose2d::from_matrix(poses[i]);
-		p.y = -p.y;
-		p.th = normalize_theta(-p.th);
-		poses[i] = Pose2d::to_matrix(p);
-	}
-
-	fclose(f);
 }
 
 
@@ -658,7 +440,7 @@ main()
 
 	//GridMap map(-20, -2, 100, 200, 0.2);
 	system("rm -rf /dados/maps/maps_20180112-2/*");
-	GridMap map("/dados/maps/maps_20180112-2/", 75., 75., 0.4, GridMapTile::TYPE_VISUAL);
+	GridMap map("/dados/maps/maps_20180112-2/", 75., 75., 0.4, GridMapTile::TYPE_SEMANTIC);
 
 	// KITTI
 	/*
@@ -672,9 +454,15 @@ main()
 	vector<double> times;
 	vector<Matrix<double, 4, 4>> poses;
 	vector<pair<double, double>> odom;
-	load_carmen_data(times, poses, odom);
 
-	create_map(map, poses, cloud, transformed_cloud);
+	//"
+	//load_carmen_data(times, poses, odom);
+	DatasetCarmen dataset(480, 640, "/dados/data_20180112-2/data/", 0);
+    // DatasetKitti dataset("/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/", 1);
+
+	dataset.load_data(times, poses, odom);
+
+	create_map(map, poses, cloud, transformed_cloud, dataset);
 	run_particle_filter(pf, map, poses, odom, times, cloud, transformed_cloud);
 
 	printf("Done\n");

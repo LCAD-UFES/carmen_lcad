@@ -56,7 +56,11 @@ double degrees_to_radians(double theta);
 
 Matrix<double, 4, 4> pose6d_to_matrix(double x, double y, double z, double roll, double pitch, double yaw);
 
-vector<Matrix<double, 4, 4>> oxts2Mercartor(vector<vector<double>> &data);
+// pose[i] contains the transformation which takes a
+// 3D point in the i'th frame and projects it into the oxts
+// coordinates of the first frame.
+void oxts2Mercartor(vector<vector<double>> &data, vector<Matrix<double, 4, 4>> &poses);
+
 vector<double> read_vector(char *name);
 
 // debug
