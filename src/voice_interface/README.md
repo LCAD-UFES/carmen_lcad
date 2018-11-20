@@ -81,8 +81,9 @@ curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 sudo apt-get update && sudo apt-get install google-cloud-sdk
 ```
 Run the SDK to set configurations:
+
 ```sh
-gcloud init
+ gcloud init
 ```
 
 # 4. Install the Client Library
@@ -90,11 +91,11 @@ gcloud init
 Examples of the Text-to-Speech and Speech-to-Text APIs:
 
 Using Python3 (3.5.2 or greater)
-```
-pip3 install --upgrade google-cloud-texttospeech
-pip3 install --upgrade google-cloud-speech
-sudo apt-get install portaudio19-dev
-pip3 install pyaudio
+```sh
+ pip3 install --upgrade google-cloud-texttospeech
+ pip3 install --upgrade google-cloud-speech
+ sudo apt-get install portaudio19-dev
+ pip3 install pyaudio
 ```
 
 ## 5. Some Python Samples
@@ -124,7 +125,7 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
 ### 6.1 Para uso no CARMEN
 
 ```sh
-cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_interface_hotword_data/hotword_oi_iara.ppn
+ cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_interface_hotword_data/hotword_oi_iara.ppn
  cp ~/carmen_packages/Porcupine/lib/common/porcupine_params.pv $CARMEN_HOME/data/voice_interface_hotword_data/
  cp ~/carmen_packages/Porcupine/include/picovoice.h $CARMEN_HOME/src/voice_interface/
  cp ~/carmen_packages/Porcupine/lib/linux/x86_64/libpv_porcupine.a libpv_porcupine.a.copy
@@ -136,6 +137,8 @@ cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_inte
 
 - Instalação:
 ```sh
+ sudo apt-get install mpg123
+ sudo pip3 install -U spacy
  sudo pip3 install rasa_nlu
  sudo pip3 install rasa_nlu[spacy]
  sudo python3 -m spacy download en_core_web_md
@@ -159,7 +162,7 @@ gedit nlu.md &
 ```
 - Adicione o seguinte conteúdo no arquivo  e salve-o: (where?)
 
-```sh
+```md
 ## intent:greet
 - Ei
 - Olá
@@ -167,6 +170,7 @@ gedit nlu.md &
 - bom Dia
 - boa noite
 - Olá
+
 ## intent:restaurant_search
 - Estou procurando um lugar para comer
 - Eu quero pegar o almoço
@@ -180,6 +184,7 @@ gedit nlu.md &
 - em qualquer lugar perto de [18328](localizacao)
 - Eu estou procurando por comida [asiática fusion](culinaria)
 - Estou procurando um restaurante em [29432](localizacao)
+
 ## intent:thankyou
 - obrigado!
 - obrigado
@@ -225,7 +230,7 @@ python3 -m rasa_nlu.server --path models --response_log logs
 
 ```sh
 curl -XPOST localhost:5000/parse -d '{"q":"Eu gostaria de conhecer um restaurante mexicano no norte", "project":"current", "model":"nlu"}'
-```  
+```
 
 #### 7.1.2. Em C++
 
@@ -236,7 +241,9 @@ curl -XPOST localhost:5000/parse -d '{"q":"Eu gostaria de conhecer um restaurant
 ```sh
 gedit c_post_example.cpp &
 ```
+
  - Conteúdo:
+
 ```c
  #include <iostream>
  #include <fstream>
@@ -288,7 +295,9 @@ gedit c_post_example.cpp &
  	return 0;
 }
 ```
+
 - Compile o codigo com a linha abaixo:
+
 ```sh
  g++ c_post_example.cpp -lcurl -ljsoncpp
 ```
