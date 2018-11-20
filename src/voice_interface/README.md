@@ -136,11 +136,11 @@ cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_inte
 
 - Instalação:
 ```sh
- sudo pip install rasa_nlu
- sudo pip install rasa_nlu[spacy]
- python -m spacy download en_core_web_md
- python -m spacy link en_core_web_md en
- pip install rasa_nlu[tensorflow]
+ sudo pip3 install rasa_nlu
+ sudo pip3 install rasa_nlu[spacy]
+ sudo python3 -m spacy download en_core_web_md
+ sudo python3 -m spacy link en_core_web_md en
+ sudo pip3 install rasa_nlu[tensorflow]
  sudo apt-get install libjsoncpp-dev
 ```
 - Teste: [RASA/Quickstart]
@@ -203,7 +203,7 @@ gedit nlu.md &
 ```
 - Adicione no arquivo:
 
-```
+```python
 from rasa_nlu.model import Interpreter
 import json
 interpreter = Interpreter.load("./models/current/nlu")
