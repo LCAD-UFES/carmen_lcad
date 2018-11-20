@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <opencv/cv.h>
 #include "segmap_grid_map.h"
+#include "segmap_util.h"
 #include <sys/stat.h>
 
 
@@ -17,36 +18,27 @@ GridMapTile::_initialize_map()
 	// assumes the origin is set.
 	char name[256];
 
-	sprintf(name, "%s/%s_%lf_%lf.png",
+	sprintf(name, "%s/%s_%lf_%lf.map",
 			_tiles_dir.c_str(),
 			GridMapTile::type2str(_map_type),
 			_xo, _yo);
 
-	//_map = new Mat(_h, _w, CV_8UC3);
-	_map = (double *) calloc (_h * _w * _n_fields_by_cell);
+	_map = (double *) calloc (_h * _w * _n_fields_by_cell, sizeof(double));
 
 	struct stat buffer;
 
 	if (stat(name, &buffer) == 0)
 	{
-		//imread(name).copyTo(*_map);
-		fptr = fopen(name, "rb");
+		FILE *fptr = fopen(name, "rb");
 		fread(_map, sizeof(double), _h * _w * _n_fields_by_cell, fptr);
 		fclose(fptr);
 	}
 	else
 	{
-		//memset(_map->data, 128, _h * _w * 3 * sizeof(unsigned char));
 		for (int i = 0; i < _h; i++)
-		{
 			for (int j = 0; j < _w; j++)
-			{
 				for (int k = 0; k < _n_fields_by_cell; k++)
-				{
-					_map[_n_fields_by_cell * (i * _w + _j) + k] = _unknown[k];
-				}
-			}
-		}
+					_map[_n_fields_by_cell * (i * _w + j) + k] = _unknown[k];
 	}
 }
 
@@ -65,7 +57,7 @@ GridMapTile::_initialize_derivated_values()
 		// if the cell was observed. All classes are initialized with
 		// a count of 1 to prevent probabilities equal to zero when
 		// computing particle weights.
-		_n_fields_by_cell = _N_CLASSES + 1;
+		_n_fields_by_cell = _color_map.n_classes + 1;
 		_unknown = vector<double>(_n_fields_by_cell, 1.);
 		_unknown[_unknown.size() - 1] = 0;
 	}
@@ -87,12 +79,13 @@ GridMapTile::GridMapTile(double point_y, double point_x,
 	// map tile origin
 	_xo = floor(point_x / width_meters) * width_meters;
 	_yo = floor(point_y / height_meters) * height_meters;
-	printf("Origin: %lf %lf\n", _xo, _yo);
 	_hm = height_meters;
 	_wm = width_meters;
 	_m_by_pixel = resolution;
 	_map_type = map_type;
 	_tiles_dir = tiles_dir;
+
+	printf("Creating tile with origin: %lf %lf\n", _xo, _yo);
 
 	_initialize_derivated_values();
 	_initialize_map();
@@ -102,7 +95,6 @@ GridMapTile::GridMapTile(double point_y, double point_x,
 GridMapTile::~GridMapTile()
 {
 	save();
-	//delete(_map);
 	free(_map);
 }
 
@@ -169,15 +161,25 @@ GridMapTile::add_point(PointXYZRGB &p)
 	py = (p.y - _yo) * _pixels_by_m;
 
 	double _r = 0.8;
-	unsigned char *data_vector = (unsigned char *) _map->data;
 
 	if (px >= 0 && px < _w && py >= 0 && py < _h)
 	{
-		pos = 3 * (py * _w + px);
+		pos = _n_fields_by_cell * (py * _w + px);
 
-		data_vector[pos + 0] = (unsigned char) (data_vector[pos + 0] * _r + p.b * (1. - _r));
-		data_vector[pos + 1] = (unsigned char) (data_vector[pos + 1] * _r + p.g * (1. - _r));
-		data_vector[pos + 2] = (unsigned char) (data_vector[pos + 2] * _r + p.r * (1. - _r));
+		if (_map_type == TYPE_VISUAL)
+		{
+			_map[pos + 0] = _map[pos + 0] * _r + p.b * (1. - _r);
+			_map[pos + 1] = _map[pos + 1] * _r + p.g * (1. - _r);
+			_map[pos + 2] = _map[pos + 2] * _r + p.r * (1. - _r);
+		}
+		else if (_map_type == TYPE_SEMANTIC)
+		{
+			// set the flag to set the cell as observed.
+			_map[pos + (_n_fields_by_cell - 1)] = 1;
+			_map[pos + p.r]++;
+		}
+		else
+			exit(printf("Error: map_type '%d' not defined.\n", _map_type));
 	}
 }
 
@@ -200,39 +202,76 @@ GridMapTile::read_cell(PointXYZRGB &p)
 	px = (p.x - _xo) * _pixels_by_m;
 	py = (p.y - _yo) * _pixels_by_m;
 
-	unsigned char *data_vector = (unsigned char *) _map->data;
-
-	vector<double> v;
-
 	if (px >= 0 && px < _w && py >= 0 && py < _h)
 	{
-		pos = 3 * (py * _w + px);
+		pos = _n_fields_by_cell * (py * _w + px);
 
-		v.push_back(data_vector[pos + 0]);
-		v.push_back(data_vector[pos + 1]);
-		v.push_back(data_vector[pos + 2]);
+		vector<double> v;
+
+		for (int k = 0; k < _n_fields_by_cell; k++)
+			v.push_back(_map[pos + k]);
+
+		return v;
 	}
 	else
 	{
-		v.push_back(-1);
-		v.push_back(-1);
-		v.push_back(-1);
+		printf("Warning: reading a cell outside the current map. Returning an empty vector.\n");
+		return vector<double>();
 	}
+}
 
-	return v;
+
+Scalar
+GridMapTile::cell2color(double *cell_vals)
+{
+	Scalar color;
+
+	if (_map_type == TYPE_VISUAL)
+	{
+		color[0] = (unsigned char) cell_vals[0];
+		color[1] = (unsigned char) cell_vals[1];
+		color[2] = (unsigned char) cell_vals[2];
+	}
+	else if (_map_type == TYPE_SEMANTIC)
+	{
+		if (cell_vals[_n_fields_by_cell - 1])
+		{
+			return _color_map.color(argmax(cell_vals, _n_fields_by_cell - 1));
+		}
+		else
+		{
+			color[0] = 128;
+			color[1] = 128;
+			color[2] = 128;
+		}
+	}
+	else
+		exit(printf("Error: map_type '%d' not defined.\n", _map_type));
+
+	return color;
 }
 
 
 Mat
 GridMapTile::to_image()
 {
-	Map m(_h, _w, CV_8UC3);
+	int p;
+	double *cell_vals;
+	Scalar color;
+
+	Mat m(_h, _w, CV_8UC3);
 
 	for (int i = 0; i < _h; i++)
 	{
 		for (int j = 0; j < _w; j++)
 		{
-			//
+			cell_vals = &(_map[_n_fields_by_cell * (i * _w + j)]);
+			color = cell2color(cell_vals);
+			p = 3 * (i * m.cols + j);
+
+			m.data[p] = color[0];
+			m.data[p + 1] = color[1];
+			m.data[p + 2] = color[2];
 		}
 	}
 

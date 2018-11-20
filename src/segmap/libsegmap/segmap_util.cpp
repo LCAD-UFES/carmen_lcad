@@ -150,3 +150,30 @@ print_vector(vector<double> &v)
 }
 
 
+int
+argmax(double *v, int size)
+{
+	int p = 0;
+
+	for (int i = 1; i < size; i++)
+		if (v[i] > v[p])
+			p = i;
+
+	return p;
+}
+
+
+int
+argmin(double *v, int size)
+{
+	int p = 0;
+
+	for (int i = 1; i < size; i++)
+		if (v[i] < v[p])
+			p = i;
+
+	return p;
+}
+
+
+
