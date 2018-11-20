@@ -9,6 +9,7 @@
 #include <opencv/highgui.h>
 #include <Eigen/Geometry>
 #include <pcl/common/transforms.h>
+#include "segmap_util.h"
 
 
 using namespace pcl;
@@ -26,12 +27,11 @@ public:
 	double _m_by_pixel;
 	double _pixels_by_m;
 	int _h, _w;
-	//Mat *_map;
 	double *_map;
+	CityScapesColorMap _color_map;
 
 	static const int TYPE_SEMANTIC = 0;
 	static const int TYPE_VISUAL = 1;
-	static const int _N_CLASSES = 15;
 
 	vector<double> _unknown;
 	int _n_fields_by_cell;

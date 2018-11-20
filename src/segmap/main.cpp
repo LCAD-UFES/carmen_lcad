@@ -146,6 +146,34 @@ read_pointcloud_carmen(int i, PointCloud<PointXYZRGB>::Ptr cloud)
 }
 
 
+Mat
+segmented_image_view(Mat &m)
+{
+	CityScapesColorMap color_map;
+	Mat view(m.rows, m.cols, CV_8UC3);
+
+	for (int i = 0; i < m.rows; i++)
+	{
+		for (int j = 0; j < m.cols; j++)
+		{
+			int cl = m.data[3 * (i * m.cols + j)];
+			Scalar color;
+
+			if (cl < 20)
+				color = color_map.color(cl);
+			else
+				color = Scalar(0, 0, 0);
+
+			view.data[3 * (i * view.cols + j)] = color[0];
+			view.data[3 * (i * view.cols + j) + 1] = color[1];
+			view.data[3 * (i * view.cols + j) + 2] = color[2];
+		}
+	}
+
+	return view;
+}
+
+
 void
 load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud)
 {
@@ -158,16 +186,19 @@ load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud)
 	char name[1024];
 	//sprintf(name, "/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/image_02/data/%010d.png", i);
 	//sprintf(name, "/dados/imgs_kitti/%010d_trainval.png", i);
-	//sprintf(name, "/dados/data_20180112-2/data/trainfine/%010d.png", i);
-	sprintf(name, "/dados/data_20180112-2/data/bb3/%010d.png", i);
+	sprintf(name, "/dados/data_20180112-2/data/trainfine/%010d.png", i);
+	//sprintf(name, "/dados/data_20180112-2/data/bb3/%010d.png", i);
 
 	//Mat img(375, 1242, CV_8UC3);
-	//Mat raw_img = imread(name);
-	//cv::resize(raw_img, img, img.size());
-	Mat img = imread(name);
+	Mat raw_img = imread(name);
+	Mat img = Mat::ones(480, 640, CV_8UC3) * 20;
+	Mat roi = img(Rect(0, 50, 640, 320));
+	resize(raw_img, roi, roi.size());
 
 	printf("loading image '%s'\n", name);
 
+	//Mat view = img.clone();
+	img = segmented_image_view(img);
 	Mat view = img.clone();
 
 	int p, x, y;

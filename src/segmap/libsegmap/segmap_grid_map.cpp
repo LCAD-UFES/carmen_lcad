@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <opencv/cv.h>
 #include "segmap_grid_map.h"
+#include "segmap_util.h"
 #include <sys/stat.h>
 
 
@@ -22,21 +23,18 @@ GridMapTile::_initialize_map()
 			GridMapTile::type2str(_map_type),
 			_xo, _yo);
 
-	//_map = new Mat(_h, _w, CV_8UC3);
 	_map = (double *) calloc (_h * _w * _n_fields_by_cell, sizeof(double));
 
 	struct stat buffer;
 
 	if (stat(name, &buffer) == 0)
 	{
-		//imread(name).copyTo(*_map);
 		FILE *fptr = fopen(name, "rb");
 		fread(_map, sizeof(double), _h * _w * _n_fields_by_cell, fptr);
 		fclose(fptr);
 	}
 	else
 	{
-		//memset(_map->data, 128, _h * _w * 3 * sizeof(unsigned char));
 		for (int i = 0; i < _h; i++)
 			for (int j = 0; j < _w; j++)
 				for (int k = 0; k < _n_fields_by_cell; k++)
@@ -59,7 +57,7 @@ GridMapTile::_initialize_derivated_values()
 		// if the cell was observed. All classes are initialized with
 		// a count of 1 to prevent probabilities equal to zero when
 		// computing particle weights.
-		_n_fields_by_cell = _N_CLASSES + 1;
+		_n_fields_by_cell = _color_map.n_classes + 1;
 		_unknown = vector<double>(_n_fields_by_cell, 1.);
 		_unknown[_unknown.size() - 1] = 0;
 	}
@@ -97,7 +95,6 @@ GridMapTile::GridMapTile(double point_y, double point_x,
 GridMapTile::~GridMapTile()
 {
 	save();
-	//delete(_map);
 	free(_map);
 }
 
@@ -175,6 +172,14 @@ GridMapTile::add_point(PointXYZRGB &p)
 			_map[pos + 1] = _map[pos + 1] * _r + p.g * (1. - _r);
 			_map[pos + 2] = _map[pos + 2] * _r + p.r * (1. - _r);
 		}
+		else if (_map_type == TYPE_SEMANTIC)
+		{
+			// set the flag to set the cell as observed.
+			_map[pos + (_n_fields_by_cell - 1)] = 1;
+			_map[pos + p.r]++;
+		}
+		else
+			exit(printf("Error: map_type '%d' not defined.\n", _map_type));
 	}
 }
 
@@ -197,20 +202,22 @@ GridMapTile::read_cell(PointXYZRGB &p)
 	px = (p.x - _xo) * _pixels_by_m;
 	py = (p.y - _yo) * _pixels_by_m;
 
-	vector<double> v;
-
 	if (px >= 0 && px < _w && py >= 0 && py < _h)
 	{
 		pos = _n_fields_by_cell * (py * _w + px);
 
-		v.push_back(_map[pos + 0]);
-		v.push_back(_map[pos + 1]);
-		v.push_back(_map[pos + 2]);
+		vector<double> v;
+
+		for (int k = 0; k < _n_fields_by_cell; k++)
+			v.push_back(_map[pos + k]);
+
+		return v;
 	}
 	else
+	{
 		printf("Warning: reading a cell outside the current map. Returning an empty vector.\n");
-
-	return v;
+		return vector<double>();
+	}
 }
 
 
@@ -225,8 +232,21 @@ GridMapTile::cell2color(double *cell_vals)
 		color[1] = (unsigned char) cell_vals[1];
 		color[2] = (unsigned char) cell_vals[2];
 	}
+	else if (_map_type == TYPE_SEMANTIC)
+	{
+		if (cell_vals[_n_fields_by_cell - 1])
+		{
+			return _color_map.color(argmax(cell_vals, _n_fields_by_cell - 1));
+		}
+		else
+		{
+			color[0] = 128;
+			color[1] = 128;
+			color[2] = 128;
+		}
+	}
 	else
-		exit(printf("Not implemented.\n"));
+		exit(printf("Error: map_type '%d' not defined.\n", _map_type));
 
 	return color;
 }
