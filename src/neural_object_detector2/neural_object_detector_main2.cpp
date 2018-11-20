@@ -258,7 +258,7 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
 
     //cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
     //cv::resize(rgb_image, resized_image, resized_image.size());
-    cv::resize(rgb_image, rgb_image, cv::Size(600, 300));
+    cv::resize(rgb_image, rgb_image, cv::Size(640, 364));
     cv::imshow(window_name, rgb_image);
     cv::waitKey(1);
 
