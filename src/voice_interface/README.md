@@ -97,7 +97,7 @@ sudo apt-get install portaudio19-dev
 pip3 install pyaudio
 ```
 
-### 5. Some Python Samples
+## 5. Some Python Samples
 
 https://github.com/GoogleCloudPlatform/python-docs-samples
 
@@ -121,7 +121,7 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
 
 "Hotword detected!"
 
-#### 6.1 Para uso no CARMEN
+### 6.1 Para uso no CARMEN
 
 ```sh
 cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_interface_hotword_data/hotword_oi_iara.ppn
@@ -186,8 +186,8 @@ gedit nlu.md &
 - muito obrigado
 ```
 
-#### 7.1. Testes
-##### 7.1.1. Em Python 3: 
+### 7.1. Testes
+#### 7.1.1. Em Python 3: 
 
 - Execute:
 
@@ -196,10 +196,12 @@ gedit nlu.md &
 ```
 - O comando acima cria o modelo. Teste o modelo via linha de comando com o codigo abaixo. Salve ele em um arquivo rasa_test.py:
 
+-  No terminal:
+
 ```sh
  gedit rasa_test.py &
 ```
-- Adicione:
+- Adicione no arquivo:
 
 ```
 from rasa_nlu.model import Interpreter
@@ -225,15 +227,16 @@ python3 -m rasa_nlu.server --path models --response_log logs
 curl -XPOST localhost:5000/parse -d '{"q":"Eu gostaria de conhecer um restaurante mexicano no norte", "project":"current", "model":"nlu"}'
 ```  
 
-#### 7.1.2. Em C++
+### 7.1.2. Em C++
 
-- Teste em C++
-  - Salve o conteudo abaixo no arquivo c_post_example.cpp:
-  
+- Salve o conteudo abaixo no arquivo c_post_example.cpp:
+
+-  No terminal:
+
 ```sh
 gedit c_post_example.cpp &
 ```
-  
+ - Conteúdo:
 ```c
  #include <iostream>
  #include <fstream>
@@ -299,10 +302,10 @@ gedit c_post_example.cpp &
  ./a.out
 ```
   
-### 6. Tips
+### 8. Tips
 
   
-### 7. Problems to be solved
+### 9. Problems to be solved (TTS/STT)
 
 	- Billing account? The same json can be used for everybody? 
 		- A: Using the same Google account you can create multiple service keys and designate roles to which one.
