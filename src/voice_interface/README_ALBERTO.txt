@@ -15,12 +15,13 @@
 - Depois disso eh soh falar "Ok Iara" que detecta.
 
 - O codigo agora usa esta hotword. Ela foi instalada com os seguintes comandos
- cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn ../../data/voice_interface_hotword_data/hotword_oi_iara.ppn
- cp ~/carmen_packages/Porcupine/lib/common/porcupine_params.pv ../../data/voice_interface_hotword_data/
- cp ~/carmen_packages/Porcupine/include/picovoice.h .
+ cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_interface_hotword_data/hotword_oi_iara.ppn
+ cp ~/carmen_packages/Porcupine/lib/common/porcupine_params.pv $CARMEN_HOME/data/voice_interface_hotword_data/
+ cp ~/carmen_packages/Porcupine/include/picovoice.h $CARMEN_HOME/src/voice_interface/
  cp ~/carmen_packages/Porcupine/lib/linux/x86_64/libpv_porcupine.a libpv_porcupine.a.copy
- ln -s libpv_porcupine.a.copy ../../lib/libpv_porcupine.a
- git add picovoice.h libpv_porcupine.a.copy ../../data/voice_interface_hotword_data/porcupine_params.pv ../../data/voice_interface_hotword_data/hotword_oi_iara.ppn
+ cd ~/carmen_packages/Porcupine/
+ ln -s libpv_porcupine.a.copy $CARMEN_HOME/lib/libpv_porcupine.a
+ git add picovoice.h libpv_porcupine.a.copy $CARMEN_HOME/data/voice_interface_hotword_data/porcupine_params.pv $CARMEN_HOME/data/voice_interface_hotword_data/hotword_oi_iara.ppn
 
 - TODO: o Porcupine diz que eh livre mais quando roda diz que expira em 90 dias...
 
