@@ -724,7 +724,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	src_image = scene_slices[i];
     	rgb_image = scene_slices[i];
     	predictions = darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
-    	//detections(predictions, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, window_name);
+    	detections(predictions, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, window_name);
     	//cout<<"Slice_"<<i<<"detected "<<bbox_temp.size()<<endl;
     	bouding_boxes_of_slices.push_back(predictions);
     }
@@ -745,7 +745,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     //cout<<bbox.size()<<endl;
     rgb_image = scene_slices[0];
     src_image = scene_slices[0];
-    detections(bbox, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "FUNCIONA!!!");
+    //detections(bbox, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "FUNCIONA!!!");
     //show_detections2(rgb_image, bbox, "NOD_FULL");
     //cout<<scene_slices.size()<<" "<<bouding_boxes_of_slices.size()<<" "<<transform_factor_of_slice_to_original_frame.size()<<endl;
     //cout<<endl;
