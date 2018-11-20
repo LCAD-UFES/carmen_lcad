@@ -137,6 +137,8 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
 
 - Instalação:
 ```sh
+ sudo apt-get install mpg123
+ sudo pip3 install -U spacy
  sudo pip3 install rasa_nlu
  sudo pip3 install rasa_nlu[spacy]
  sudo python3 -m spacy download en_core_web_md
@@ -168,6 +170,7 @@ gedit nlu.md &
 - bom Dia
 - boa noite
 - Olá
+
 ## intent:restaurant_search
 - Estou procurando um lugar para comer
 - Eu quero pegar o almoço
@@ -181,6 +184,7 @@ gedit nlu.md &
 - em qualquer lugar perto de [18328](localizacao)
 - Eu estou procurando por comida [asiática fusion](culinaria)
 - Estou procurando um restaurante em [29432](localizacao)
+
 ## intent:thankyou
 - obrigado!
 - obrigado
