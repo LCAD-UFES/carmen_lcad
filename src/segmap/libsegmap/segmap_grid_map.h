@@ -40,6 +40,7 @@ public:
 
 	void _initialize_map();
 	void _initialize_derivated_values();
+	Scalar cell2color(double *cell_vals);
 
 	GridMapTile(double point_y, double point_x,
 			double height_meters, double width_meters,

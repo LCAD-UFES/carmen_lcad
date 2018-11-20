@@ -627,7 +627,7 @@ main()
 
 	//GridMap map(-20, -2, 100, 200, 0.2);
 	system("rm -rf /dados/maps/maps_20180112-2/*");
-	GridMap map("/dados/maps/maps_20180112-2/", 75., 75., 0.4, GridMapTile::TYPE_SEMANTIC);
+	GridMap map("/dados/maps/maps_20180112-2/", 75., 75., 0.4, GridMapTile::TYPE_VISUAL);
 
 	// KITTI
 	/*
