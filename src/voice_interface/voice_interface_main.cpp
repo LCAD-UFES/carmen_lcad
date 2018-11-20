@@ -160,7 +160,7 @@ execute_voice_command(char *voice_command)
 					printf("Command detected: %s \n\n", "Seguir curso");
 					carmen_navigator_ackerman_go();
 					carmen_ipc_sleep(0.1); // Necessario para reconectar com o audio para tocar o som abaixo.
-					system("mpg123 $CARMEN_HOME/data/voice_interface_hotword_data/helm_engage_clean.mp3");
+					system("mpg123 $CARMEN_HOME/data/voice_interface_hotword_data/helm_engage_clean.mp3"); // http://www.trekcore.com/audio/
 				}
 				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "set_course") == 0)
 				{
@@ -289,7 +289,7 @@ main (int argc, char **argv)
 			printf("Hotword detected\n");
 
 			carmen_ipc_sleep(0.1); // Necessario para reconectar com o audio para tocar o som abaixo.
-			system("mpg123 $CARMEN_HOME/data/voice_interface_hotword_data/computerbeep_4.mp3");
+			system("mpg123 $CARMEN_HOME/data/voice_interface_hotword_data/computerbeep_4.mp3"); // http://www.trekcore.com/audio/
 
 			printf("Awaiting for command\n\n");
 			char *voice_command = carmen_voice_interface_listen();
