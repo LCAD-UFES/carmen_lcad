@@ -189,7 +189,7 @@ execute_voice_command(char *voice_command)
 						voice_interface_speak_error = carmen_voice_interface_speak((char *) ("Você disse " + rasa_server_response["text"].asString() + "?\n").c_str());
 						if (voice_interface_speak_error)
 							printf("%s \n", voice_interface_speak_error);
-						voice_interface_speak_error = carmen_voice_interface_speak((char *) ("Se o que você disse está corrento, favor incluir o lugar mencionado em minha base de dados."));
+						voice_interface_speak_error = carmen_voice_interface_speak((char *) ("Se o que você disse está correto, favor incluir o lugar mencionado em minha base de dados."));
 						if (voice_interface_speak_error)
 							printf("%s \n", voice_interface_speak_error);
 					}
