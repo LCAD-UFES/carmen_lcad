@@ -435,6 +435,10 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 		cv::Mat roi;
 		cv::Point top_left_point;
 		t_transform_factor t;
+		int sum_transform_x = 0;
+		int sum_transform_y = 0;
+		double mult_scale_x = 0;
+		double mult_scale_y = 0;
 		double image_size_x;
 		double image_size_y;
 		//cout<<i<<endl;
@@ -461,10 +465,14 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 			if (check_rect_inside_image(rec, out)){
 				roi = out (rec);
 				//cout<<roi.cols<<" "<<roi.rows<<endl;
-				t.scale_factor_x = double(scene_slices[0].cols) / double(roi.cols);
-				t.scale_factor_y = double(scene_slices[0].rows) / double(roi.rows);
-				t.translate_factor_x = top_left_point.x;
-				t.translate_factor_y = top_left_point.y;
+				mult_scale_x += double(scene_slices[0].cols) / double(roi.cols);
+				mult_scale_y += double(scene_slices[0].rows) / double(roi.rows);
+				t.scale_factor_x = mult_scale_x;
+				t.scale_factor_y = mult_scale_y;
+				sum_transform_x += top_left_point.x;
+				sum_transform_y += top_left_point.y;
+				t.translate_factor_x = sum_transform_x;
+				t.translate_factor_y = sum_transform_y;
 				scene_slices.push_back(roi);
 				transform_factor_of_slice_to_original_frame.push_back(t);
 			}
@@ -483,10 +491,15 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 			{
 				roi = out (rec);
 				//cout<<roi.cols<<" "<<roi.rows<<endl;
-				t.scale_factor_x = double(scene_slices[0].cols) / double(roi.cols);
-				t.scale_factor_y = double(scene_slices[0].rows) / double(roi.rows);
-				t.translate_factor_x = top_left_point.x;
-				t.translate_factor_y = top_left_point.y;
+				mult_scale_x += double(scene_slices[0].cols) / double(roi.cols);
+				mult_scale_y += double(scene_slices[0].rows) / double(roi.rows);
+				t.scale_factor_x = mult_scale_x;
+				t.scale_factor_y = mult_scale_y;
+				sum_transform_x += top_left_point.x;
+				sum_transform_y += top_left_point.y;
+				t.translate_factor_x = sum_transform_x;
+				t.translate_factor_y = sum_transform_y;
+
 				scene_slices.push_back(roi);
 				transform_factor_of_slice_to_original_frame.push_back(t);
 			}
@@ -734,7 +747,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     src_image = scene_slices[0];
     detections(bbox, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "FUNCIONA!!!");
     //show_detections2(rgb_image, bbox, "NOD_FULL");
-    cout<<scene_slices.size()<<" "<<bouding_boxes_of_slices.size()<<" "<<transform_factor_of_slice_to_original_frame.size()<<endl;
+    //cout<<scene_slices.size()<<" "<<bouding_boxes_of_slices.size()<<" "<<transform_factor_of_slice_to_original_frame.size()<<endl;
     //cout<<endl;
 //	publish_moving_objects_message(image_msg->timestamp);
 }
