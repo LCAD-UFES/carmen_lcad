@@ -11,47 +11,8 @@ using namespace cv;
 using namespace pcl;
 
 
-Mat
-DatasetCarmen::load_image(int i)
-{
-	if (_use_segmented)
-		sprintf(_name, "%s/trainfine/%010d.png", _path.c_str(), i);
-	else
-		sprintf(_name, "%s/bb3/%010d.png", _path.c_str(), i);
-
-	Mat raw_img = imread(_name);
-	Mat resized;
-
-	if (raw_img.cols != _image_width || raw_img.rows != _image_height)
-	{
-		resized = Mat(_image_height, _image_width, CV_8UC3);
-		resize(raw_img, resized, resized.size());
-	}
-	else
-		resized = raw_img;
-
-	if (_use_segmented)
-	{
-		Mat img = Mat::ones(_image_height, _image_width, CV_8UC3) * _unknown_class;
-		Mat roi = img(Rect(0, (int) (0.1 * _image_width), _image_width, (int) (_image_width / 2.)));
-		resize(resized, roi, roi.size());
-		return img;
-	}
-	else
-		return resized;
-}
-
-
 void
-DatasetCarmen::load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud)
-{
-	sprintf(_name, "%s/velodyne/%010d.ply", _path.c_str(), i);
-	pcl::io::loadPLYFile(_name, *cloud);
-}
-
-
-Matrix<double, 3, 1>
-DatasetCarmen::transform_vel2cam(PointXYZRGB &p)
+DatasetCarmen::_init_vel2cam_transform()
 {
 	Matrix<double, 3, 4> projection;
 	Matrix<double, 4, 4> velodyne2board;
@@ -85,11 +46,86 @@ DatasetCarmen::transform_vel2cam(PointXYZRGB &p)
 				  0, fy_meters / pixel_size, cv, 0,
 				  0, 0, 1, 0.;
 
+	_vel2cam = projection * R * cam2board.inverse() * velodyne2board;
+}
+
+
+void
+DatasetCarmen::_init_vel2car_transform()
+{
+	Matrix<double, 4, 4> velodyne2board;
+	Matrix<double, 4, 4> board2car;
+
+	velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
+	board2car = pose6d_to_matrix(0.572, 0, 1.394, 0.0, 0.0122173048, 0.0);
+
+	_vel2car = board2car * velodyne2board;
+}
+
+
+DatasetCarmen::DatasetCarmen(int image_height, int image_width, string path, int use_segmented) :
+	DatasetInterface(path, use_segmented)
+{
+	_image_height = image_height;
+	_image_width = image_width;
+	_unknown_class = CityScapesColorMap().n_classes + 1;
+
+	_init_vel2cam_transform();
+	_init_vel2car_transform();
+}
+
+
+Mat
+DatasetCarmen::load_image(int i)
+{
+	if (_use_segmented)
+		sprintf(_name, "%s/trainfine/%010d.png", _path.c_str(), i);
+	else
+		sprintf(_name, "%s/bb3/%010d.png", _path.c_str(), i);
+
+	Mat raw_img = imread(_name);
+
+    if (raw_img.rows == 0 || raw_img.cols == 0)
+    	exit(printf("Error: Image '%s' not found.\n", _name));
+
+	Mat resized;
+
+	if (raw_img.cols != _image_width || raw_img.rows != _image_height)
+	{
+		resized = Mat(_image_height, _image_width, CV_8UC3);
+		resize(raw_img, resized, resized.size());
+	}
+	else
+		resized = raw_img;
+
+	if (_use_segmented)
+	{
+		Mat img = Mat::ones(_image_height, _image_width, CV_8UC3) * _unknown_class;
+		Mat roi = img(Rect(0, (int) (0.1 * _image_width), _image_width, (int) (_image_width / 2.)));
+		resize(resized, roi, roi.size());
+		return img;
+	}
+	else
+		return resized;
+}
+
+
+void
+DatasetCarmen::load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud)
+{
+	sprintf(_name, "%s/velodyne/%010d.ply", _path.c_str(), i);
+	pcl::io::loadPLYFile(_name, *cloud);
+}
+
+
+Matrix<double, 3, 1>
+DatasetCarmen::transform_vel2cam(PointXYZRGB &p)
+{
     Matrix<double, 4, 1> p_velodyne;
     Matrix<double, 3, 1> p_img;
 
     p_velodyne << p.x, p.y, p.z, 1.;
-    p_img = projection * R * cam2board.inverse() * velodyne2board * p_velodyne;
+    p_img = _vel2cam * p_velodyne;
 
 	p_img(0, 0) = _image_width - p_img(0, 0) / p_img(2, 0) - 1;
 	p_img(1, 0) = _image_height - p_img(1, 0) / p_img(2, 0) - 1;
@@ -102,13 +138,7 @@ DatasetCarmen::transform_vel2cam(PointXYZRGB &p)
 Matrix<double, 4, 4>
 DatasetCarmen::transform_vel2car()
 {
-	Matrix<double, 4, 4> velodyne2board;
-	Matrix<double, 4, 4> board2car;
-
-	velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
-	board2car = pose6d_to_matrix(0.572, 0, 1.394, 0.0, 0.0122173048, 0.0);
-
-	return board2car * velodyne2board;
+	return _vel2car;
 }
 
 
@@ -125,9 +155,6 @@ DatasetCarmen::load_data(vector<double> &times,
 	double x, y, th, t, v, phi;
 	double x0, y0;
 
-	// double ds, lt, dt, odom_x, odom_y, odom_th;
-	// odom_x = odom_y = odom_th = 0.;
-
 	while (!feof(f))
 	{
 		fscanf(f, "\n%s %lf %lf %lf %lf %s %lf %lf %s\n",
@@ -139,20 +166,7 @@ DatasetCarmen::load_data(vector<double> &times,
 			y0 = y;
 			first = 0;
 		}
-		/*
-		else
-		{
-			dt = t - lt;
-			ds = v * 1.006842 * dt;
-			odom_x += ds * cos(odom_th);
-			odom_y += ds * sin(odom_th);
-			odom_th += ds * tan(phi * 0.861957 - 0.002372) / distance_between_front_and_rear_axles;
-			odom_th = normalize_theta(odom_th);
-		}
-		lt = t;
 
-		Pose2d pose(odom_x, odom_y, odom_th);
-		*/
 		Pose2d pose(x - x0, y - y0, normalize_theta(th));
 
 		poses.push_back(Pose2d::to_matrix(pose));
@@ -175,6 +189,31 @@ DatasetCarmen::load_data(vector<double> &times,
 }
 
 
+void
+DatasetKitti::_init_vel2cam_transform()
+{
+	Matrix<double, 4, 4> R00;
+	Matrix<double, 3, 4> P02;
+	Matrix<double, 4, 4> Rt;
+
+	R00 << 9.999239e-01, 9.837760e-03, -7.445048e-03, 0.,
+			-9.869795e-03, 9.999421e-01, -4.278459e-03, 0.,
+			7.402527e-03, 4.351614e-03, 9.999631e-01, 0.,
+			0., 0., 0., 1.;
+
+	Rt << 7.533745e-03, -9.999714e-01, -6.166020e-04, -4.069766e-03,
+			1.480249e-02, 7.280733e-04, -9.998902e-01, -7.631618e-02,
+			9.998621e-01, 7.523790e-03, 1.480755e-02, -2.717806e-01,
+			0., 0., 0., 1.;
+
+	P02 << 7.215377e+02, 0.000000e+00, 6.095593e+02, 4.485728e+01,
+			0.000000e+00, 7.215377e+02, 1.728540e+02, 2.163791e-01,
+			0.000000e+00, 0.000000e+00, 1.000000e+00, 2.745884e-03;
+
+	_vel2cam = P02 * R00 * Rt;
+}
+
+
 Mat
 DatasetKitti::load_image(int i)
 {
@@ -185,6 +224,9 @@ DatasetKitti::load_image(int i)
 
     Mat img = imread(_name);
     Mat resized;
+
+    if (img.rows == 0 || img.cols == 0)
+    	exit(printf("Error: Image '%s' not found.\n", _name));
 
     if (img.rows != 375)
     {
@@ -248,28 +290,9 @@ DatasetKitti::load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud)
 Matrix<double, 3, 1>
 DatasetKitti::transform_vel2cam(PointXYZRGB &p)
 {
-	Matrix<double, 4, 4> R00;
-	Matrix<double, 3, 4> P02;
-	Matrix<double, 4, 4> Rt;
-
-	R00 << 9.999239e-01, 9.837760e-03, -7.445048e-03, 0.,
-			-9.869795e-03, 9.999421e-01, -4.278459e-03, 0.,
-			7.402527e-03, 4.351614e-03, 9.999631e-01, 0.,
-			0., 0., 0., 1.;
-
-	Rt << 7.533745e-03, -9.999714e-01, -6.166020e-04, -4.069766e-03,
-			1.480249e-02, 7.280733e-04, -9.998902e-01, -7.631618e-02,
-			9.998621e-01, 7.523790e-03, 1.480755e-02, -2.717806e-01,
-			0., 0., 0., 1.;
-
-	P02 << 7.215377e+02, 0.000000e+00, 6.095593e+02, 4.485728e+01,
-			0.000000e+00, 7.215377e+02, 1.728540e+02, 2.163791e-01,
-			0.000000e+00, 0.000000e+00, 1.000000e+00, 2.745884e-03;
-
     Matrix<double, 4, 1> p_velodyne;
     p_velodyne << p.x, p.y, p.z, 1.;
-
-	return P02 * R00 * Rt * p_velodyne;
+	return _vel2cam * p_velodyne;
 }
 
 
