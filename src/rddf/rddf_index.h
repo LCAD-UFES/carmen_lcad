@@ -143,6 +143,7 @@ long find_timestamp_index_position_with_full_index_search(double x, double y, do
 carmen_timestamp_index* get_timestamp_index();
 carmen_ackerman_traj_point_t create_ackerman_traj_point_struct(double x, double y, double velocity_x, double phi, double yaw);
 
+void carmen_rddf_index_clear();
 
 #ifdef __cplusplus
 }
