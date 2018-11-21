@@ -289,118 +289,15 @@ compute_num_measured_objects(vector<image_cartesian> objects_poses)
 }
 
 
-carmen_moving_objects_point_clouds_message
-build_detected_objects_message(vector<bbox_t> predictions, vector<image_cartesian> objects_poses, vector<vector<image_cartesian>> points_lists)
-{
-	carmen_moving_objects_point_clouds_message msg;
-	int num_objects = compute_num_measured_objects(objects_poses);
-
-	//printf ("Predictions %d Poses %d, Points %d\n", (int) predictions.size(), (int) objects_poses.size(), (int) points_lists.size());
-
-	msg.num_point_clouds = num_objects;
-	msg.point_clouds = (t_point_cloud_struct *) malloc (num_objects * sizeof(t_point_cloud_struct));
-
-	for (int i = 0, l = 0; i < objects_poses.size(); i++)
-	{                                                                                                               // The error code of -999.0 is set on compute_detected_objects_poses,
-		if (objects_poses[i].cartesian_x != -999.0 || objects_poses[i].cartesian_y != -999.0)                       // probably the object is out of the LiDAR's range
-		{
-			carmen_translte_2d(&objects_poses[i].cartesian_x, &objects_poses[i].cartesian_y, board_pose.position.x, board_pose.position.y);
-			carmen_rotate_2d  (&objects_poses[i].cartesian_x, &objects_poses[i].cartesian_y, carmen_normalize_theta(globalpos_msg->globalpos.theta));
-			carmen_translte_2d(&objects_poses[i].cartesian_x, &objects_poses[i].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
-
-			msg.point_clouds[l].r = 1.0;
-			msg.point_clouds[l].g = 1.0;
-			msg.point_clouds[l].b = 0.0;
-
-			msg.point_clouds[l].linear_velocity = 0;
-			msg.point_clouds[l].orientation = globalpos_msg->globalpos.theta;
-
-			msg.point_clouds[l].length = 4.5;
-			msg.point_clouds[l].height = 1.8;
-			msg.point_clouds[l].width  = 1.6;
-
-			msg.point_clouds[l].object_pose.x = objects_poses[i].cartesian_x;
-			msg.point_clouds[l].object_pose.y = objects_poses[i].cartesian_y;
-			msg.point_clouds[l].object_pose.z = 0.0;
-
-			switch (predictions[i].obj_id)
-			{
-				case 0:
-					msg.point_clouds[l].geometric_model = 0;
-					msg.point_clouds[l].model_features.geometry.height = 1.8;
-					msg.point_clouds[l].model_features.geometry.length = 1.0;
-					msg.point_clouds[l].model_features.geometry.width = 1.0;
-					msg.point_clouds[l].model_features.red = 1.0;
-					msg.point_clouds[l].model_features.green = 1.0;
-					msg.point_clouds[l].model_features.blue = 0.8;
-					msg.point_clouds[l].model_features.model_name = (char *) "pedestrian";
-					break;
-				case 2:
-					msg.point_clouds[l].geometric_model = 0;
-					msg.point_clouds[l].model_features.geometry.height = 1.8;
-					msg.point_clouds[l].model_features.geometry.length = 4.5;
-					msg.point_clouds[l].model_features.geometry.width = 1.6;
-					msg.point_clouds[l].model_features.red = 1.0;
-					msg.point_clouds[l].model_features.green = 0.0;
-					msg.point_clouds[l].model_features.blue = 0.8;
-					msg.point_clouds[l].model_features.model_name = (char *) "car";
-					break;
-				default:
-					msg.point_clouds[l].geometric_model = 0;
-					msg.point_clouds[l].model_features.geometry.height = 1.8;
-					msg.point_clouds[l].model_features.geometry.length = 4.5;
-					msg.point_clouds[l].model_features.geometry.width = 1.6;
-					msg.point_clouds[l].model_features.red = 1.0;
-					msg.point_clouds[l].model_features.green = 1.0;
-					msg.point_clouds[l].model_features.blue = 0.0;
-					msg.point_clouds[l].model_features.model_name = (char *) "other";
-					break;
-			}
-			msg.point_clouds[l].num_associated = 0;
-
-			msg.point_clouds[l].point_size = points_lists[i].size();
-
-			msg.point_clouds[l].points = (carmen_vector_3D_t *) malloc (msg.point_clouds[l].point_size * sizeof(carmen_vector_3D_t));
-
-			for (int j = 0; j < points_lists[i].size(); j++)
-			{
-				carmen_vector_3D_t p;
-
-				p.x = points_lists[i][j].cartesian_x;
-				p.y = points_lists[i][j].cartesian_y;
-				p.z = points_lists[i][j].cartesian_z;
-
-				carmen_translte_2d(&p.x, &p.y, board_pose.position.x, board_pose.position.y);
-				carmen_rotate_2d  (&p.x, &p.y, globalpos_msg->globalpos.theta);
-				carmen_translte_2d(&p.x, &p.y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
-
-				msg.point_clouds[l].points[j] = p;
-			}
-			l++;
-		}
-	}
-	return (msg);
-}
-
-
 vector<bbox_t>
-filter_predictions_of_interest(vector<bbox_t> &predictions)
+filter_predictions_traffic_light(vector<bbox_t> &predictions)
 {
 	vector<bbox_t> filtered_predictions;
 
 	for (unsigned int i = 0; i < predictions.size(); i++)
 	{
-//		if (predictions[i].obj_id == 0 ||  // person
-//			predictions[i].obj_id == 1 ||  // bicycle
-//			predictions[i].obj_id == 2 ||  // car
-//			predictions[i].obj_id == 3 ||  // motorbike
-//			predictions[i].obj_id == 5 ||  // bus
-//			predictions[i].obj_id == 6 ||  // train
-//			predictions[i].obj_id == 7 ||  // truck
 		if (predictions[i].obj_id == 9)    // traffic light
-		{
 			filtered_predictions.push_back(predictions[i]);
-		}
 	}
 	return (filtered_predictions);
 }
@@ -539,7 +436,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     //waitKey(1);
 
 	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.5);
-	predictions = filter_predictions_of_interest(predictions);
+	predictions = filter_predictions_traffic_light(predictions);
 
 	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
 			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
@@ -551,10 +448,6 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
 
 	vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
-
-	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
-
-	publish_moving_objects_message(image_msg->timestamp, &msg);
 
 	Mat open_cv_image = Mat(crop_h, crop_w, CV_8UC3, img, 0);
 
@@ -568,6 +461,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 	carmen_position_t object_on_image = convert_rddf_pose_to_point_in_image(7757493.704663, -364151.945918, 5.428209,
 			world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
+
+
 
 	circle(open_cv_image, Point((int)object_on_image.x, (int)object_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
 
