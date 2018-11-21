@@ -14,6 +14,10 @@ const int MAX_ANGLE_OBSTACLE = 188;
 #define MAX_RANGE 50.0
 #define MIN_RANGE 0.5
 
+
+#define CAMERA_FOV 0.576 // In radians ~ 33 degrees TODO por no carmen.ini
+
+
 const int column_correspondence[32] =
 {
 		0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23, 8,
@@ -102,38 +106,31 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 
 		for (int j = 0; j < velodyne_message->number_of_32_laser_shots; j++)
 		{
+			double h_angle = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
+
+			if (fabs(carmen_normalize_theta(h_angle - camera_pose.orientation.yaw)) >= CAMERA_FOV)
+				continue;
+
 			double range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
 
-            double h_angle = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
-
-			if (range <= MIN_RANGE)
-				range = MAX_RANGE;
-
-			if (range > MAX_RANGE)
-				range = MAX_RANGE;
-
-			if (range >= MAX_RANGE)
+			if (range <= MIN_RANGE || range >= MAX_RANGE)
 				continue;
 
 			tf::Point p3d_velodyne_reference = spherical_to_cartesian(h_angle, v_angle, range);
 
-			if (p3d_velodyne_reference.x() > 0)
+			tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference,velodyne_pose,camera_pose);
+
+			double px = (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
+			double py = (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
+
+			int ipx = (int) px;
+			int ipy = (int) py;
+
+			if (ipx >= 0 && ipx <= image_width && ipy >= 0 && ipy <= image_height)
 			{
-                tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference,velodyne_pose,camera_pose);
+				carmen_velodyne_points_in_cam_t velodyne_in_cam = {ipx, ipy, {h_angle, v_angle, range}};
 
-                double px = (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
-                double py = (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
-
-                int ipx = (int) px;
-                int ipy = (int) py;
-
-				if (ipx >= 0 && ipx <= image_width && ipy >= 0 && ipy <= image_height)
-				{
-					carmen_velodyne_points_in_cam_t velodyne_in_cam = {ipx, ipy, {h_angle, v_angle, range}};
-
-					laser_points_in_camera.push_back(velodyne_in_cam);
-				}
-
+				laser_points_in_camera.push_back(velodyne_in_cam);
 			}
 		}
 	}
@@ -285,8 +282,6 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 	return laser_points_in_camera;
 }
 
-
-#define CAMERA_FOV 0.87 // In radians ~ 25 degrees TODO por no carmen.ini
 
 vector<image_cartesian>
 velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
