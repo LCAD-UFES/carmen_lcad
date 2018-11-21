@@ -15,12 +15,13 @@
 - Depois disso eh soh falar "Ok Iara" que detecta.
 
 - O codigo agora usa esta hotword. Ela foi instalada com os seguintes comandos
- cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn ../../data/voice_interface_hotword_data/hotword_oi_iara.ppn
- cp ~/carmen_packages/Porcupine/lib/common/porcupine_params.pv ../../data/voice_interface_hotword_data/
- cp ~/carmen_packages/Porcupine/include/picovoice.h .
+ cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_interface_hotword_data/hotword_oi_iara.ppn
+ cp ~/carmen_packages/Porcupine/lib/common/porcupine_params.pv $CARMEN_HOME/data/voice_interface_hotword_data/
+ cp ~/carmen_packages/Porcupine/include/picovoice.h $CARMEN_HOME/src/voice_interface/
  cp ~/carmen_packages/Porcupine/lib/linux/x86_64/libpv_porcupine.a libpv_porcupine.a.copy
- ln -s libpv_porcupine.a.copy ../../lib/libpv_porcupine.a
- git add picovoice.h libpv_porcupine.a.copy ../../data/voice_interface_hotword_data/porcupine_params.pv ../../data/voice_interface_hotword_data/hotword_oi_iara.ppn
+ cd ~/carmen_packages/Porcupine/
+ ln -s libpv_porcupine.a.copy $CARMEN_HOME/lib/libpv_porcupine.a
+ git add picovoice.h libpv_porcupine.a.copy $CARMEN_HOME/data/voice_interface_hotword_data/porcupine_params.pv $CARMEN_HOME/data/voice_interface_hotword_data/hotword_oi_iara.ppn
 
 - TODO: o Porcupine diz que eh livre mais quando roda diz que expira em 90 dias...
 
@@ -49,11 +50,13 @@
 
 == RASA (https://rasa.com) ==
 - Instalacao
- sudo pip install rasa_nlu
- sudo pip install rasa_nlu[spacy]
- python -m spacy download en_core_web_md
- python -m spacy link en_core_web_md en
- pip install rasa_nlu[tensorflow]
+ sudo apt-get install mpg123
+ sudo pip3 install -U spacy
+ sudo pip3 install rasa_nlu
+ sudo pip3 install rasa_nlu[spacy]
+ sudo python3 -m spacy download en_core_web_md
+ sudo python3 -m spacy link en_core_web_md en
+ pip3 install rasa_nlu[tensorflow]
  sudo apt-get install libjsoncpp-dev
 
 - Teste (ver https://www.rasa.com/docs/nlu/0.13.1/quickstart/)
@@ -92,7 +95,7 @@ pipeline: "tensorflow_embedding"
 - muito obrigado
 ++++++++++++++++++++++++++++++++
   - Execute o comando:
- python -m rasa_nlu.train -c nlu_config.yml --data nlu.md -o models --fixed_model_name nlu --project current --verbose
+ python3 -m rasa_nlu.train -c nlu_config.yml --data nlu.md -o models --fixed_model_name nlu --project current --verbose
   - O comando acima cria o modelo. Teste o modelo via linha de comando com o codigo abaixo. Salve ele em um arquivo rasa_test.py:
 ++++++++++++++++++++++++++++++++
 from rasa_nlu.model import Interpreter
@@ -103,9 +106,9 @@ result = interpreter.parse(message)
 print(json.dumps(result, indent=2))
 ++++++++++++++++++++++++++++++++
   - Teste o modelo via linha de comando com:
- python rasa_test.py
+ python3 rasa_test.py
   - Teste o modelo via servidor web inciando o servidor:
- python -m rasa_nlu.server --path models --response_log logs
+ python3 -m rasa_nlu.server --path models --response_log logs
   - E, em um outro terminal, mandando um post:
  curl -XPOST localhost:5000/parse -d '{"q":"Eu gostaria de conhecer um restaurante mexicano no norte", "project":"current", "model":"nlu"}'
 
@@ -165,7 +168,7 @@ main(void)
   - Compile o codigo com a linha abaixo:
  g++ c_post_example.cpp -lcurl -ljsoncpp
   - Teste: rode o servidor em um terminal
- python -m rasa_nlu.server --path models --response_log logs
+ python3 -m rasa_nlu.server --path models --response_log logs
   - Teste: rode o codigo em C++ em outro
  ./a.out
 

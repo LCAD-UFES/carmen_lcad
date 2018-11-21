@@ -5,8 +5,10 @@
 #include <vector>
 #include <Eigen/Core>
 #include <Eigen/LU>
+#include <opencv/cv.hpp>
 
 
+using namespace cv;
 using namespace std;
 using namespace Eigen;
 
@@ -70,16 +72,12 @@ pose6d_to_matrix(double x, double y, double z, double roll, double pitch, double
 }
 
 
-vector<Matrix<double, 4, 4>>
-oxts2Mercartor(vector<vector<double>> &data)
+void
+oxts2Mercartor(vector<vector<double>> &data, vector<Matrix<double, 4, 4>> &poses)
 {
 	double scale = cos(data[0][0] * M_PI / 180.);
 	double er = 6378137;
 
-	// pose[i] contains the transformation which takes a
-	// 3D point in the i'th frame and projects it into the oxts
-	// coordinates of the first frame.
-	vector<Matrix<double, 4, 4>> poses;
 	Matrix<double, 4, 4> p0;
 
 	for (int i = 0; i < data.size(); i++)
@@ -112,8 +110,6 @@ oxts2Mercartor(vector<vector<double>> &data)
 		p = p0.inverse() * p;
 		poses.push_back(p);
 	}
-
-	return poses;
 }
 
 
@@ -175,5 +171,49 @@ argmin(double *v, int size)
 	return p;
 }
 
+
+void
+draw_rectangle(Mat &img,
+		double x, double y, double theta,
+		double height, double width, Scalar color,
+		double x_origin, double y_origin, double pixels_by_meter)
+{
+	vector<Point2f> vertices;
+	vector<Point> vertices_px;
+
+	vertices.push_back(Point2f(-width / 2., -height / 2.));
+	vertices.push_back(Point2f(-width / 2., height / 2.));
+	vertices.push_back(Point2f(width / 2., height / 2.));
+	vertices.push_back(Point2f(width / 2., 0.));
+	vertices.push_back(Point2f(0., 0.));
+	vertices.push_back(Point2f(width / 2., 0));
+	vertices.push_back(Point2f(width / 2., -height / 2.));
+
+	double v_radius, v_angle;
+
+	// transform vertices
+	for (int i = 0; i < vertices.size(); i++)
+	{
+		v_radius = sqrt(pow(vertices[i].x, 2.) + pow(vertices[i].y, 2.));
+		v_angle = atan2(vertices[i].y, vertices[i].x);
+
+		vertices[i].x = v_radius * cos(v_angle + theta) + x;
+		vertices[i].y = v_radius * sin(v_angle + theta) + y;
+
+		Point p;
+		p.x = (int) ((vertices[i].x - x_origin) * pixels_by_meter);
+		p.y = (int) ((vertices[i].y - y_origin) * pixels_by_meter);
+
+		vertices_px.push_back(p);
+	}
+
+	for (int i = 0; i < vertices_px.size(); i++)
+	{
+		if (i == vertices_px.size() - 1)
+			line(img, vertices_px[i], vertices_px[0], color, 1);
+		else
+			line(img, vertices_px[i], vertices_px[i + 1], color, 1);
+	}
+}
 
 
