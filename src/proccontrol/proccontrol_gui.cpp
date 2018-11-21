@@ -20,7 +20,7 @@ extern "C" {
 }
 #endif
 
-#include <carmen/voice.h>
+#include <carmen/voice_interface_interface.h>
 #include "proccontrol_gui.h"
 
 QDisplay                             * qdisplay;
@@ -242,8 +242,9 @@ QDisplay::showStatus2(int group, int module, int status, char *module_name)
 				//carmen_voice_send_alert((char *) "Atenção! Alguns módulos estão instáveis!");
 				if (true)
 				{
-					system("aplay $CARMEN_HOME/src/voice_interface/libvoice_google/voice_sample.wav");
-
+					int system_result = system("aplay $CARMEN_HOME/src/voice_interface/libvoice_google/voice_sample.wav");
+					if (system_result != 0)
+						printf("Error: Could not play error speech.\n");
 				}
 			}
 		}

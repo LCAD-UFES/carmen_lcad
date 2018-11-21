@@ -3,46 +3,25 @@ include ../Makefile.conf
 MODULE_NAME = Neural Object Detector
 MODULE_COMMENT = Detect vehicles using convolutional neural networks.
 
-LINK = g++ -O3
-CXXFLAGS = -std=c++11 -O3 
+LINK = g++
+CXXFLAGS = -std=c++11
 
-IFLAGS += -DUSE_OPENCV -DNO_NVML -I/usr/include/python2.7
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -DBOOST_SIGNALS_NO_DEPRECATION_WARNING
 
-LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -lmoving_objects_interface -llocalize_ackerman_interface \
-          -lvelodyne_camera_calibration -ldarknet -ltf -lrt -lLinearMath -lboost_thread-mt -lboost_signals  -lboost_system `pkg-config opencv --libs` -ldbscan  \
-          `pkg-config --cflags opencv` -lpython2.7 -lpthread
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
 
-SOURCES = neural_object_detector.cpp neural_object_detector_main.cpp
+LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -llocalize_ackerman_interface \
+		   -lmoving_objects_interface -ldarknet2 `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
+		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration
 
-PUBLIC_INCLUDES = 
-PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = neural_object_detector
+SOURCES = neural_object_detector_main.cpp
 
-TARGETS = darknet libclustering velodyne_camera_calibration neural_object_detector
+TARGETS = darknet2 neural_object_detector
 
-neural_object_detector: neural_object_detector_main.o neural_object_detector.o 
+neural_object_detector: neural_object_detector_main.o
 
-darknet:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet
+darknet2:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2
 
-libclustering:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libclustering
-	
-velodyne_camera_calibration:
-	$(MAKE) -C $(CARMEN_HOME)/src/velodyne_camera_calibration
-
-clean: clean_libclustering clean_velodyne_camera_calibration #clean_darknet
-
-#clean_darknet:
-#	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/darknet
-
-clean_libclustering:
-	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libclustering
-
-clean_velodyne_camera_calibration:
-	$(MAKE) clean -C $(CARMEN_HOME)/src/velodyne_camera_calibration
 
 include ../Makefile.rules
-

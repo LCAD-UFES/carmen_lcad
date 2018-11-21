@@ -1278,3 +1278,14 @@ get_timestamp_index()
 {
 	return &carmen_index_ordered_by_timestamp;
 }
+
+void
+carmen_rddf_index_clear()
+{
+	carmen_pose_index_ordered_by_x.index.clear();
+	carmen_pose_index_ordered_by_x.index_is_sorted = false;
+	carmen_pose_index_ordered_by_y.index.clear();
+	carmen_pose_index_ordered_by_y.index_is_sorted = false;
+	carmen_index_ordered_by_timestamp.index.clear();
+	carmen_index_ordered_by_timestamp.index_is_sorted = false;
+}

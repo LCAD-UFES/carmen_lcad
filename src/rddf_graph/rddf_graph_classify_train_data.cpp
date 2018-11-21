@@ -107,10 +107,8 @@ classify_train_data(FILE *f_last_classified, vector < vector<t_pattern> > databa
 		for (unsigned int j = last_classified.pattern; j<database_filenames[i].size();j++)
 		//for (unsigned int j = last_classified.pattern; j<database_filenames[i].size();)
 		{
-			//if (database_filenames[i].size() != 0 )
-			if (std::count(database_filenames[i][j].pattern.begin(), database_filenames[i][j].pattern.end(),'1') >= 3)
-			if(i==84)
-			{
+			//if (std::count(database_filenames[i][j].pattern.begin(), database_filenames[i][j].pattern.end(),'1') >= 3)
+
 				actual.file_index = i;
 				actual.pattern = j;
 				image_15_15 = cv::Mat(15, 15, CV_8UC3, cv::Scalar(255, 255, 255));
@@ -184,7 +182,7 @@ classify_train_data(FILE *f_last_classified, vector < vector<t_pattern> > databa
 					fclose (f_last_classified);
 					exit(1);
 				}
-			}
+
 		}
 
 	}
@@ -217,6 +215,8 @@ fill_database_matrix(FILE *f_database_filenames, vector < vector<t_pattern> > &d
 	int sum = 0;
 	for (unsigned int i = 0; i<database_filenames.size();i++)
 	{
+		if (i == 84)
+			cout<<database_filenames[i].size()<<endl;
 		if (database_filenames[i].size() != 0)
 		{
 			//if(i!=16)
@@ -296,8 +296,10 @@ main(int argc, char **argv)
 	else
 	{
 		string filename = database_classified_dir + "/last_classified.txt";
-		f_last_classified = fopen (filename.c_str(),"r+");
+		f_last_classified = fopen (filename.c_str(),"r");
 		fscanf(f_last_classified, "%d %d\n", &last_classified.file_index, &last_classified.pattern);
+		fclose (f_last_classified);
+		f_last_classified = fopen (filename.c_str(),"w");
 	}
 
 

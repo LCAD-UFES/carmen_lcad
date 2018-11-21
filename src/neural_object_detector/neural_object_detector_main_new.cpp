@@ -48,10 +48,73 @@ struct pedestrian
 	unsigned int circular_idx;// should be changed only for update_world_position function
 };
 
+struct fake_pedestrian
+{
+	bool active;
+	double orientation; // rad
+	double velocity;  // m/s
+	double start_time; // s
+	double stop_time; // s
+	double x;   // m - relative to world pos
+	double y;   // m - relative to world pos
+	pedestrian p;
+};
+
+vector<fake_pedestrian> simulated_pedestrians;
 vector<pedestrian> pedestrian_tracks;
 
-void update_world_position(pedestrian* p, double new_x, double new_y, double new_timestamp)
+double
+no_out_mean(vector<double> values)// calculates the mean value removing outlayers(values > 1.5*std_dev)
 {
+	if (values.size() == 0)
+		return 0.0;
+	double mean = 0;
+	for (int i=0; i<values.size(); i++)
+		mean += values[i];
+	mean /= values.size();
+	double std = 0;
+	for (int i=0; i<values.size(); i++)
+		std += abs(mean-values[i]);
+	std /= values.size();
+	double sum = 0;
+	int elements = 0;
+	for (int i=0; i<values.size(); i++)
+	{
+		if (abs(mean-values[i]) < 1.5*std) //change outlayer treshold by changing this
+		{
+			sum += values[i];
+			elements++;
+		}
+	}
+	if (elements == 0)
+		return 0.0;
+	return sum/elements;
+}
+
+double slope(const vector<double>& x, const vector<double>& y)
+{
+    double n = x.size();
+
+    double avgX = accumulate(x.begin(), x.end(), 0.0) / n;
+    double avgY = accumulate(y.begin(), y.end(), 0.0) / n;
+
+    double numerator = 0.0;
+    double denominator = 0.0;
+
+    for(int i=0; i<n; ++i){
+        numerator += (x[i] - avgX) * (y[i] - avgY);
+        denominator += (x[i] - avgX) * (x[i] - avgX);
+    }
+
+    if(denominator == 0){
+        return 1.0;
+    }
+
+    return numerator / denominator;
+}
+
+void update_world_position(pedestrian* p, double new_x, double new_y, double new_timestamp)
+{	
 	p->circular_idx = (p->circular_idx+1)%P_BUFF_SIZE;
 	p->timestamp[p->circular_idx] = new_timestamp;
 	p->x_world[p->circular_idx] = new_x;
@@ -59,22 +122,39 @@ void update_world_position(pedestrian* p, double new_x, double new_y, double new
 
 	p->velocity = 0.0;
 	p->orientation = 0.0;
+
+	vector<double> velx_vect;
+	vector<double> vely_vect;
+	vector<double> valid_x;
+	vector<double> valid_y;
+
+
 	int i = 0;
-	for(i = 1; i<P_BUFF_SIZE; i++)
+	for(i = 0; i<P_BUFF_SIZE-1; i++)
 	{
-		if (p->x_world[i] == -999.0 && p->y_world[i] == -999.0)
+		int idx = (p->circular_idx+P_BUFF_SIZE-i) % P_BUFF_SIZE;
+		int prev_idx = (p->circular_idx+P_BUFF_SIZE-i-1) % P_BUFF_SIZE;
+		if (p->x_world[prev_idx] == -999.0 && p->y_world[prev_idx] == -999.0)
 			break;
-		double delta_x = p->x_world[i]-p->x_world[i-1];
-		double delta_y = p->y_world[i]-p->y_world[i-1];
-		double delta_t = p->timestamp[i]-p->timestamp[i-1];
-		p->velocity+= sqrtf(delta_x*delta_x + delta_y*delta_y)/delta_t;
-		p->orientation += atan2(delta_y,delta_x);
+		double delta_x = p->x_world[idx]-p->x_world[prev_idx];
+		double delta_y = p->y_world[idx]-p->y_world[prev_idx];
+		double delta_t = p->timestamp[idx]-p->timestamp[prev_idx];
+
+		//printf("DELTAS: %f ; %f ; %f --- Vel = %f\n",delta_x, delta_y, delta_t,new_vel);
+		velx_vect.push_back(delta_x/delta_t);
+		velx_vect.push_back(delta_y/delta_t);
+		valid_x.push_back(p->x_world[idx]);
+		valid_y.push_back(p->y_world[idx]);
 	}
-	p->orientation /= (i-1.0);
-	p->velocity /= (i-1.0);
+
+	p->orientation = atan(slope(valid_x,valid_y));
+	double velx = no_out_mean(velx_vect);
+	double vely = no_out_mean(vely_vect);
+	p->velocity = sqrt(velx*velx+vely*vely);
 }
 
-void update_pedestrian_bbox(pedestrian* p,short* bbox_vector)
+void
+update_pedestrian_bbox(pedestrian* p,short* bbox_vector)
 {
 	p->x = bbox_vector[0];
 	p->y = bbox_vector[1];
@@ -82,6 +162,16 @@ void update_pedestrian_bbox(pedestrian* p,short* bbox_vector)
 	p->h = bbox_vector[3];
 
 	p->active = true;
+}
+
+double
+get_pedestrian_x(pedestrian p){
+	return p.x_world[p.circular_idx];
+}
+
+double
+get_pedestrian_y(pedestrian p){
+	return p.y_world[p.circular_idx];
 }
 
 pedestrian create_pedestrian(int t_id)
@@ -104,7 +194,8 @@ pedestrian create_pedestrian(int t_id)
 	return p;
 }
 
-void update_pedestrians(short* pedestrian_python, double timestamp)
+void
+update_pedestrians(short* pedestrian_python, double timestamp)
 {
 	for (int i=0; i<pedestrian_tracks.size(); i++)
 	{
@@ -134,7 +225,8 @@ void update_pedestrians(short* pedestrian_python, double timestamp)
 	}
 }
 
-void clean_pedestrians(double timestamp, double max_time)
+void
+clean_pedestrians(double timestamp, double max_time)
 {
 	for (vector<pedestrian>::iterator it=pedestrian_tracks.begin(); it != pedestrian_tracks.end();)
 	{
@@ -147,6 +239,44 @@ void clean_pedestrians(double timestamp, double max_time)
 		}
 	}
 }
+
+void
+update_simulated_pedestrians (double timestamp)
+{
+	for (int i=0; i<simulated_pedestrians.size(); i++)
+	{
+		if (!simulated_pedestrians[i].active && timestamp > simulated_pedestrians[i].start_time && timestamp < simulated_pedestrians[i].stop_time)
+		{
+			simulated_pedestrians[i].active = true;
+			pedestrian new_ped = create_pedestrian(-(i+1));
+			new_ped.active = true;
+			new_ped.last_timestamp = timestamp;
+			simulated_pedestrians[i].p = new_ped;
+			update_world_position(&simulated_pedestrians[i].p, simulated_pedestrians[i].x,
+						simulated_pedestrians[i].y, timestamp);
+			printf("[%03d] - Created\n",simulated_pedestrians[i].p.track_id);
+		} 		
+		else if (simulated_pedestrians[i].active)
+		{
+			if (timestamp > simulated_pedestrians[i].stop_time)
+			{
+				simulated_pedestrians[i].active = false;
+				printf("[%03d] - Deleted\n",simulated_pedestrians[i].p.track_id);
+				continue;
+			}
+			simulated_pedestrians[i].p.active = true;
+			double dt = timestamp - simulated_pedestrians[i].p.last_timestamp;
+			simulated_pedestrians[i].p.last_timestamp = timestamp;
+			double ds = simulated_pedestrians[i].velocity*dt;
+			simulated_pedestrians[i].x += cos(simulated_pedestrians[i].orientation)*ds;
+			simulated_pedestrians[i].y += sin(simulated_pedestrians[i].orientation)*ds;
+			update_world_position(&simulated_pedestrians[i].p, simulated_pedestrians[i].x,
+						simulated_pedestrians[i].y, timestamp);
+			printf("[%03d] - Updated\n",simulated_pedestrians[i].p.track_id);	
+		}
+	}
+}
+
 
 void
 objects_names_from_file(string const class_names_file)
@@ -243,7 +373,7 @@ get_points_inside_bounding_boxes(vector<bbox_t> &predictions, vector<image_carte
 }
 
 vector<vector<image_cartesian>>
-get_points_inside_bounding_boxes_new(vector<pedestrian> &predictions, vector<image_cartesian> &velodyne_points_vector)
+get_points_inside_bounding_boxes(vector<pedestrian> &predictions, vector<image_cartesian> &velodyne_points_vector)
 {
 	vector<vector<image_cartesian>> laser_list_inside_each_bounding_box; //each_bounding_box_laser_list
 
@@ -264,9 +394,9 @@ get_points_inside_bounding_boxes_new(vector<pedestrian> &predictions, vector<ima
 											velodyne_points_vector[j].image_y >  predictions[i].y &&
 											velodyne_points_vector[j].image_y < (predictions[i].y + predictions[i].h)))
 			{
-				double delta_x =  predictions[i].x_world[predictions[i].circular_idx];
-				double delta_y =  predictions[i].y_world[predictions[i].circular_idx];
-				double actual_dist = sqrtf(delta_x*delta_x+delta_y*delta_y);
+				double delta_x =  get_pedestrian_x(predictions[i]);
+				double delta_y =  get_pedestrian_y(predictions[i]);
+				double actual_dist = sqrt(delta_x*delta_x+delta_y*delta_y);
 				if ( actual_dist < min_dist || min_dist_index==-1)
 				{
 					min_dist = actual_dist;
@@ -343,7 +473,7 @@ query(double d2, int i, const vector<image_cartesian> &points, std::vector<bool>
 			neighbors.push_back(j);
 	}
 
-	return (neighbors);
+	return neighbors;
 }
 
 
@@ -449,45 +579,8 @@ show_all_points(Mat &image, unsigned int image_width, unsigned int image_height,
 			circle(image, Point(all_points[i].ipx - crop_x, all_points[i].ipy - crop_y), 1, cvScalar(0, 0, 255), 1, 8, 0);
 }
 
-
 void
-show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
-		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
-{
-	char object_info[25];
-    char frame_rate[25];
-
-    cvtColor(image, image, COLOR_RGB2BGR);
-
-    sprintf(frame_rate, "FPS = %.2f", fps);
-
-    putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
-
-    for (unsigned int i = 0; i < predictions.size(); i++)
-    {
-        sprintf(object_info, "%d %s %.2f", predictions[i].obj_id, obj_names_vector[predictions[i].obj_id].c_str(), predictions[i].prob);
-
-        rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
-                      obj_colours_vector[predictions[i].obj_id], 1);
-
-        putText(image, object_info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
-    }
-
-//	show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
-    vector<vector<image_cartesian>> lidar_points;
-    lidar_points.push_back(points);
-    show_LIDAR(image, lidar_points, 255, 0, 0);
-    show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
-    show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
-
-//    resize(image, image, Size(600, 300));
-    imshow("Neural Object Detector", image);
-    //imwrite("Image.jpg", image);
-    waitKey(1);
-}
-
-void
-show_detections_new(Mat image, vector<pedestrian> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
+show_detections(Mat image, vector<pedestrian> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
 		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
 {
 	char object_info[25];
@@ -581,28 +674,14 @@ carmen_spherical_to_cartesian(double *x, double *y, double *z, double horizontal
 	*z = range * sin(vertical_vangle);
 }
 
-
 int
-compute_num_measured_objects(vector<image_cartesian> objects_poses)
+compute_num_measured_objects(vector<pedestrian> objects_poses)
 {
 	int num_objects = 0;
 
 	for (int i = 0; i < objects_poses.size(); i++)
 	{
-		if (objects_poses[i].cartesian_x > 0.0 || objects_poses[i].cartesian_y > 0.0)
-			num_objects++;
-	}
-	return (num_objects);
-}
-
-int
-compute_num_measured_objects_new(vector<pedestrian> objects_poses)
-{
-	int num_objects = 0;
-
-	for (int i = 0; i < objects_poses.size(); i++)
-	{
-		if ((objects_poses[i].x_world[objects_poses[i].circular_idx] > 0.0 || objects_poses[i].y_world[objects_poses[i].circular_idx] > 0.0)&&objects_poses[i].active)
+		if ((get_pedestrian_x(objects_poses[i]) > 0.0 || get_pedestrian_y(objects_poses[i]) > 0.0)&&objects_poses[i].active)
 			num_objects++;
 	}
 	return (num_objects);
@@ -612,132 +691,52 @@ int board_x = 0.572;      // TODO ler do carmen ini
 int board_y = 0.0;
 int board_z = 2.154;
 
-
 carmen_moving_objects_point_clouds_message
-build_detected_objects_message(vector<bbox_t> predictions, vector<image_cartesian> objects_poses, vector<vector<image_cartesian>> points_lists)
+build_detected_objects_message(vector<pedestrian> predictions, vector<vector<image_cartesian>> points_lists)
 {
 	carmen_moving_objects_point_clouds_message msg;
-	int num_objects = compute_num_measured_objects(objects_poses);
 
-	//printf ("Predictions %d Poses %d, Points %d\n", (int) predictions.size(), (int) objects_poses.size(), (int) points_lists.size());
+	vector<pedestrian> tmp_predictions = predictions;
 
-	msg.num_point_clouds = num_objects;
-	msg.point_clouds = (t_point_cloud_struct *) malloc (num_objects * sizeof(t_point_cloud_struct));
-
-	for (int i = 0, l = 0; i < objects_poses.size(); i++)
-	{                                                                                                               // The error code of -999.0 is set on compute_detected_objects_poses,
-		if (objects_poses[i].cartesian_x != -999.0 || objects_poses[i].cartesian_y != -999.0)                       // probably the object is out of the LiDAR's range
+	for (int i=0; i<simulated_pedestrians.size(); i++)
+	{
+		if (simulated_pedestrians[i].active)
 		{
-			carmen_translte_2d(&objects_poses[i].cartesian_x, &objects_poses[i].cartesian_y, board_x, board_y);
-			carmen_rotate_2d  (&objects_poses[i].cartesian_x, &objects_poses[i].cartesian_y, carmen_normalize_theta(globalpos.theta));
-			carmen_translte_2d(&objects_poses[i].cartesian_x, &objects_poses[i].cartesian_y, globalpos.x, globalpos.y);
-
-			msg.point_clouds[l].r = 1.0;
-			msg.point_clouds[l].g = 1.0;
-			msg.point_clouds[l].b = 0.0;
-
-			msg.point_clouds[l].linear_velocity = 0;
-			msg.point_clouds[l].orientation = globalpos.theta;
-
-			msg.point_clouds[l].length = 4.5;
-			msg.point_clouds[l].height = 1.8;
-			msg.point_clouds[l].width  = 1.6;
-
-			msg.point_clouds[l].object_pose.x = objects_poses[i].cartesian_x;
-			msg.point_clouds[l].object_pose.y = objects_poses[i].cartesian_y;
-			msg.point_clouds[l].object_pose.z = 0.0;
-
-			switch (predictions[i].obj_id)
-			{
-				case 0:
-					msg.point_clouds[l].geometric_model = 0;
-					msg.point_clouds[l].model_features.geometry.height = 1.8;
-					msg.point_clouds[l].model_features.geometry.length = 1.0;
-					msg.point_clouds[l].model_features.geometry.width = 1.0;
-					msg.point_clouds[l].model_features.red = 1.0;
-					msg.point_clouds[l].model_features.green = 1.0;
-					msg.point_clouds[l].model_features.blue = 0.8;
-					msg.point_clouds[l].model_features.model_name = (char *) "pedestrian";
-					break;
-				case 2:
-					msg.point_clouds[l].geometric_model = 0;
-					msg.point_clouds[l].model_features.geometry.height = 1.8;
-					msg.point_clouds[l].model_features.geometry.length = 4.5;
-					msg.point_clouds[l].model_features.geometry.width = 1.6;
-					msg.point_clouds[l].model_features.red = 1.0;
-					msg.point_clouds[l].model_features.green = 0.0;
-					msg.point_clouds[l].model_features.blue = 0.8;
-					msg.point_clouds[l].model_features.model_name = (char *) "car";
-					break;
-				default:
-					msg.point_clouds[l].geometric_model = 0;
-					msg.point_clouds[l].model_features.geometry.height = 1.8;
-					msg.point_clouds[l].model_features.geometry.length = 4.5;
-					msg.point_clouds[l].model_features.geometry.width = 1.6;
-					msg.point_clouds[l].model_features.red = 1.0;
-					msg.point_clouds[l].model_features.green = 1.0;
-					msg.point_clouds[l].model_features.blue = 0.0;
-					msg.point_clouds[l].model_features.model_name = (char *) "other";
-					break;
-			}
-			msg.point_clouds[l].num_associated = 0;
-
-			msg.point_clouds[l].point_size = points_lists[i].size();
-
-			msg.point_clouds[l].points = (carmen_vector_3D_t *) malloc (msg.point_clouds[l].point_size * sizeof(carmen_vector_3D_t));
-
-			for (int j = 0; j < points_lists[i].size(); j++)
-			{
-				carmen_vector_3D_t p;
-
-				p.x = points_lists[i][j].cartesian_x;
-				p.y = points_lists[i][j].cartesian_y;
-				p.z = points_lists[i][j].cartesian_z;
-
-				carmen_translte_2d(&p.x, &p.y, board_x, board_y);
-				carmen_rotate_2d  (&p.x, &p.y, globalpos.theta);
-				carmen_translte_2d(&p.x, &p.y, globalpos.x, globalpos.y);
-
-				msg.point_clouds[l].points[j] = p;
-			}
-			l++;
+			tmp_predictions.push_back(simulated_pedestrians[i].p);
+			image_cartesian ic;
+			vector<image_cartesian> vic;
+			vic.push_back(ic);
+			points_lists.push_back(vic);
 		}
 	}
-	return (msg);
-}
-
-carmen_moving_objects_point_clouds_message
-build_detected_objects_message_new(vector<pedestrian> predictions, vector<vector<image_cartesian>> points_lists)
-{
-	carmen_moving_objects_point_clouds_message msg;
-	int num_objects = compute_num_measured_objects_new(predictions);
+	int num_objects = compute_num_measured_objects(tmp_predictions);
 
 	//printf ("Predictions %d Poses %d, Points %d\n", (int) predictions.size(), (int) objects_poses.size(), (int) points_lists.size());
 
 	msg.num_point_clouds = num_objects;
 	msg.point_clouds = (t_point_cloud_struct *) malloc (num_objects * sizeof(t_point_cloud_struct));
 
-	for (int i = 0, l = 0; i < predictions.size(); i++)
+	for (int i = 0, l = 0; i < tmp_predictions.size(); i++)
 	{                                                                                                               // The error code of -999.0 is set on compute_detected_objects_poses,
-		if ((predictions[i].x_world[predictions[i].circular_idx] != -999.0 || predictions[i].y_world[predictions[i].circular_idx] != -999.0)&&predictions[i].active)                       // probably the object is out of the LiDAR's range
+		if ((get_pedestrian_x(tmp_predictions[i]) != -999.0 || get_pedestrian_y(tmp_predictions[i]) != -999.0)&&tmp_predictions[i].active)                       // probably the object is out of the LiDAR's range
 		{
-//			carmen_translte_2d(&predictions[i].x_world[predictions[i].circular_idx], &predictions[i].y_world[predictions[i].circular_idx], board_x, board_y);
-//			carmen_rotate_2d  (&predictions[i].x_world[predictions[i].circular_idx], &predictions[i].y_world[predictions[i].circular_idx], carmen_normalize_theta(globalpos.theta));
-//			carmen_translte_2d(&predictions[i].x_world[predictions[i].circular_idx], &predictions[i].y_world[predictions[i].circular_idx], globalpos.x, globalpos.y);
+//			carmen_translte_2d(&tmp_predictions[i].x_world[tmp_predictions[i].circular_idx], &tmp_predictions[i].y_world[tmp_predictions[i].circular_idx], board_x, board_y);
+//			carmen_rotate_2d  (&tmp_predictions[i].x_world[tmp_predictions[i].circular_idx], &tmp_predictions[i].y_world[tmp_predictions[i].circular_idx], carmen_normalize_theta(globalpos.theta));
+//			carmen_translte_2d(&tmp_predictions[i].x_world[tmp_predictions[i].circular_idx], &tmp_predictions[i].y_world[tmp_predictions[i].circular_idx], globalpos.x, globalpos.y);
 
 			msg.point_clouds[l].r = 1.0;
 			msg.point_clouds[l].g = 1.0;
 			msg.point_clouds[l].b = 0.0;
 
-			msg.point_clouds[l].linear_velocity = predictions[i].velocity;
-			msg.point_clouds[l].orientation = predictions[i].orientation;
+			msg.point_clouds[l].linear_velocity = tmp_predictions[i].velocity;
+			msg.point_clouds[l].orientation = tmp_predictions[i].orientation;
 
 			msg.point_clouds[l].length = 4.5;
 			msg.point_clouds[l].height = 1.8;
 			msg.point_clouds[l].width  = 1.6;
 
-			msg.point_clouds[l].object_pose.x = predictions[i].x_world[predictions[i].circular_idx];
-			msg.point_clouds[l].object_pose.y = predictions[i].y_world[predictions[i].circular_idx];
+			msg.point_clouds[l].object_pose.x = get_pedestrian_x(tmp_predictions[i]);
+			msg.point_clouds[l].object_pose.y = get_pedestrian_y(tmp_predictions[i]);
 			msg.point_clouds[l].object_pose.z = 0.0;
 
 
@@ -750,7 +749,7 @@ build_detected_objects_message_new(vector<pedestrian> predictions, vector<vector
 			msg.point_clouds[l].model_features.blue = 0.8;
 			msg.point_clouds[l].model_features.model_name = (char *) "pedestrian";
 
-			msg.point_clouds[l].num_associated = predictions[i].track_id;
+			msg.point_clouds[l].num_associated = tmp_predictions[i].track_id;
 
 			msg.point_clouds[l].point_size = points_lists[i].size();
 
@@ -974,7 +973,7 @@ call_python_function(unsigned char *image, vector<bbox_t> predictions, double ti
 		Py_Finalize();
 		exit (printf("Error: The predctions erro.\n"));
 	}
-
+	
 	update_pedestrians(predict,timestamp);
 
 	if (PyErr_Occurred())
@@ -1075,70 +1074,49 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	call_python_function(croped_image, predictions, image_msg->timestamp);
 	///////////////
 
-//	if (predictions.size() > 0 && velodyne_msg != NULL)
-//	{
-//		vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
-//						image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
-//
-//		vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto
-//
-//		//generate_traffic_light_annotations(predictions, points_inside_bbox);
-//
-//		vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
-//
-//		vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
-//
-//		carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(predictions, positions, filtered_points);
-//
-//		publish_moving_objects_message(image_msg->timestamp, &msg);
-//
-//		fps = 1.0 / (carmen_get_time() - start_time);
-//		start_time = carmen_get_time();
-//
-//		//printf("%d %d %d\n", (int) predictions.size(), (int) points_inside_bbox.size(), (int) filtered_points.size());
-//
-//		show_detections(open_cv_image, predictions, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
-//	}
-	if (pedestrian_tracks.size() > 0 && velodyne_msg != NULL)
+	if ((pedestrian_tracks.size() > 0 || simulated_pedestrians.size() > 0) && velodyne_msg != NULL)
 	{
-		points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
-						image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
-
-
-//		vector<image_cartesian> points = carmen_velodyne_camera_calibration_test(velodyne_msg, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
-
-		points_inside_bbox = get_points_inside_bounding_boxes_new(pedestrian_tracks, points); // TODO remover bbox que nao tenha nenhum ponto
-
-		//generate_traffic_light_annotations(predictions, points_inside_bbox);
-
-		filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
-
-		positions = compute_detected_objects_poses(filtered_points);
-
-		for (int i=0; i<positions.size();i++)
+		if (pedestrian_tracks.size() > 0)
 		{
-			if (!(positions[i].cartesian_x == -999.0 && positions[i].cartesian_y == -999.0))
+			points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
+							image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+	//		vector<image_cartesian> points = carmen_velodyne_camera_calibration_test(velodyne_msg, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
+
+			points_inside_bbox = get_points_inside_bounding_boxes(pedestrian_tracks, points); // TODO remover bbox que nao tenha nenhum ponto
+
+			//generate_traffic_light_annotations(predictions, points_inside_bbox);
+
+			filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
+
+			positions = compute_detected_objects_poses(filtered_points);
+
+			for (int i=0; i<positions.size();i++)
 			{
-				carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, board_x, board_y);
-				carmen_rotate_2d  (&positions[i].cartesian_x, &positions[i].cartesian_y, carmen_normalize_theta(globalpos.theta));
-				carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, globalpos.x, globalpos.y);
+				if (!(positions[i].cartesian_x == -999.0 && positions[i].cartesian_y == -999.0))
+				{
+					carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, board_x, board_y);
+					carmen_rotate_2d  (&positions[i].cartesian_x, &positions[i].cartesian_y, carmen_normalize_theta(globalpos.theta));
+					carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, globalpos.x, globalpos.y);
 
-				update_world_position(&pedestrian_tracks[i],positions[i].cartesian_x,positions[i].cartesian_y,image_msg->timestamp);
-				printf("[%03d] Velocity: %f\n",pedestrian_tracks[i].track_id, pedestrian_tracks[i].velocity);
+					update_world_position(&pedestrian_tracks[i],positions[i].cartesian_x,positions[i].cartesian_y,image_msg->timestamp);
+					printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f \n",
+							pedestrian_tracks[i].track_id, pedestrian_tracks[i].velocity,pedestrian_tracks[i].orientation,abs(pedestrian_tracks[i].orientation - globalpos.theta));
+				}
 			}
-		}
 
-		clean_pedestrians(image_msg->timestamp, 1.0);
-		carmen_moving_objects_point_clouds_message msg = build_detected_objects_message_new(pedestrian_tracks, filtered_points);
+			clean_pedestrians(image_msg->timestamp, 1.0);
+		}
+		update_simulated_pedestrians(image_msg->timestamp);
+		carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
 		publish_moving_objects_message(image_msg->timestamp, &msg);
 		fps = 1.0 / (carmen_get_time() - start_time);
 		start_time = carmen_get_time();
 
 		//printf("%d %d %d\n", (int) predictions.size(), (int) points_inside_bbox.size(), (int) filtered_points.size());
 
-		show_detections_new(open_cv_image, pedestrian_tracks, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+		//show_detections(open_cv_image, pedestrian_tracks, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 	}
-	show_detections_new(open_cv_image, pedestrian_tracks, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+	show_detections(open_cv_image, pedestrian_tracks, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 }
 
 
@@ -1253,10 +1231,31 @@ initialize_yolo_DRKNET()
 	velodyne_msg = NULL;
 
 //	init_python(704, 480);
-//	init_python(1280, 960);
+	init_python(1280, 960);
 
-	init_python(640, 480);
+//	init_python(640, 480);
+
 	//namedWindow( "Display window", WINDOW_AUTOSIZE);
+
+	//CREATE SIMULATED PEDESTRIANS
+//	fake_pedestrian new_p;
+//	new_p.start_time = 1515703040.0;
+//	new_p.stop_time = 1515703060.0;
+//	new_p.x = 7757327.00;
+//	new_p.y = -364110.00;
+//	new_p.active = false;
+//	new_p.velocity = 2.0;
+//	new_p.orientation = .0;
+//	simulated_pedestrians.push_back(new_p);
+//	fake_pedestrian new_p2;
+//	new_p2.start_time = 1515703020.0;
+//	new_p2.stop_time = 1515703060.0;
+//	new_p2.x = 7757327.00;
+//	new_p2.y = -364110.00;
+//	new_p2.active = false;
+//	new_p2.velocity = 2.0;
+//	new_p2.orientation = 1.5;
+//	simulated_pedestrians.push_back(new_p2);
 }
 
 

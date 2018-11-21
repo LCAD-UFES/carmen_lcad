@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_LISTENDED_STRING_SIZE	1024
 /*
 * Initiate Python interpreter and verify module
 */
@@ -25,6 +26,6 @@ int speak(char *text, char *speech_file_name);
 /*
 * Enable Microfone to output a text from an audio
 */
-const char *listen();
+void listen(char *listened_string);
 
 #endif /* _VOICE_INTERFACE_H_ */

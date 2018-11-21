@@ -5,8 +5,8 @@
 TEMPLATE = app
 TARGET = proccontrol_gui
 DEPENDPATH += .
-INCLUDEPATH += ../../include 
-LIBS += -L../../lib -lcarmenserial -lglobal -lipc -lz -L ./ -lvoice -lespeak
+INCLUDEPATH += ../../include -I /usr/include/python2.7
+LIBS += -L../../lib -lcarmenserial -lglobal -lipc -lz -L ./ -lvoice_interface_interface -lespeak
 QMAKE_CXXFLAGS += -Wno-write-strings
 QMAKE_CFLAGS += -Wno-write-strings
 

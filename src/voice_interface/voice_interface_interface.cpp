@@ -10,121 +10,127 @@
 
 
 void
-carmen_voice_interface_subscribe_can_line_message(carmen_voice_interface_can_line_message *message, carmen_handler_t handler,
+carmen_voice_interface_subscribe_command_message(carmen_voice_interface_command_message *message, carmen_handler_t handler,
 		carmen_subscribe_t subscribe_how)
 {
-	carmen_subscribe_message((char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME, (char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_FMT, message,
-			sizeof(carmen_voice_interface_can_line_message), handler, subscribe_how);
+	carmen_subscribe_message((char *) CARMEN_VOICE_INTERFACE_COMMAND_MESSAGE_NAME, (char *) CARMEN_VOICE_INTERFACE_COMMAND_MESSAGE_FMT, message,
+			sizeof(carmen_voice_interface_command_message), handler, subscribe_how);
 }
 
 
 void
-carmen_voice_interface_unsubscribe_can_line_message(carmen_handler_t handler)
+carmen_voice_interface_unsubscribe_command_message(carmen_handler_t handler)
 {
-	carmen_unsubscribe_message((char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME, handler);
+	carmen_unsubscribe_message((char *) CARMEN_VOICE_INTERFACE_COMMAND_MESSAGE_NAME, handler);
 }
 
 
 void
-carmen_voice_interface_publish_can_line_message(carmen_voice_interface_can_line_message *message)
-{
-	IPC_RETURN_TYPE err;
-
-	err = IPC_publishData((char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME, message);
-	carmen_test_ipc_exit(err, "Could not publish", (char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_FMT);
-}
-
-
-void
-carmen_voice_interface_define_can_line_message()
+carmen_voice_interface_publish_command_message(carmen_voice_interface_command_message *message)
 {
 	IPC_RETURN_TYPE err;
 
-	err = IPC_defineMsg((char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME, IPC_VARIABLE_LENGTH, (char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_FMT);
-	carmen_test_ipc_exit(err, (char *) "Could not define", (char *) CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME);
+	err = IPC_publishData((char *) CARMEN_VOICE_INTERFACE_COMMAND_MESSAGE_NAME, message);
+	carmen_test_ipc_exit(err, "Could not publish", (char *) CARMEN_VOICE_INTERFACE_COMMAND_MESSAGE_FMT);
 }
+
+
+void
+carmen_voice_interface_define_command_message()
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_defineMsg((char *) CARMEN_VOICE_INTERFACE_COMMAND_MESSAGE_NAME, IPC_VARIABLE_LENGTH, (char *) CARMEN_VOICE_INTERFACE_COMMAND_MESSAGE_FMT);
+	carmen_test_ipc_exit(err, (char *) "Could not define", (char *) CARMEN_VOICE_INTERFACE_COMMAND_MESSAGE_NAME);
+}
+
 
 void
 carmen_voice_interface_create_new_audio_file(FILE *list_of_speechs, char *speech, char *last_audio_name_used)
 {
 	int new_number = 0;
-	char speech_audio_name[MAX_SIZE_0F_AUDIO_STRING], last_number_used[LENGTH_NUMBER_AS_STRING];
+	char last_number_used[LENGTH_NUMBER_AS_STRING + 1];
 
-	strncpy (speech_audio_name, last_audio_name_used, LENGTH_SPEECH_WORD);
-	strncpy (last_number_used, last_audio_name_used + LENGTH_SPEECH_WORD, LENGTH_NUMBER_AS_STRING);
+	strcpy(last_number_used, last_audio_name_used + strlen("speech"));
 
 	new_number = atoi (last_number_used);
 	new_number++;
-	sprintf (speech_audio_name, "%s%.5d", speech_audio_name, new_number);
+	char speech_audio_name[LENGTH_SPEECH_WORD + LENGTH_NUMBER_AS_STRING + 1];
+	sprintf (speech_audio_name, "%s%.5d", "speech", new_number);
 
-	init_voice();
-	speak((char *)speech, speech_audio_name);
-	finalize_voice();
-	fprintf (list_of_speechs, "%s %s\n", speech_audio_name,speech);
-	printf("Audio content created. \n");
+	speak((char *) speech, speech_audio_name);
+	fprintf (list_of_speechs, "%s %s\n", speech_audio_name, speech);
+	printf("Audio content created.\n");
 }
+
 
 char *
 carmen_voice_interface_speak(char *speech)
 {
-	char *list_of_speechs_path ;
-	list_of_speechs_path = (char *)malloc (MAX_SIZE_COMMAND_LINE * sizeof (char ));
+	char *carmen_home = getenv ("CARMEN_HOME");
 
-	char *CARMEN_HOME;
-	CARMEN_HOME = (char *)malloc (MAX_SIZE_COMMAND_LINE * sizeof (char ));
-	CARMEN_HOME =  getenv ("CARMEN_HOME");
+	char list_of_speechs_filename[MAX_SIZE_COMMAND_LINE];
+	sprintf(list_of_speechs_filename, "%s%s%s", carmen_home, VOICE_SPEECHS_PATH, LIST_OF_SPEECHS_FILE);
 
-	sprintf(list_of_speechs_path, "%s%s%s", CARMEN_HOME, VOICE_SPEECHS_PATH, LIST_OF_SPEECHS_FILE);
-
-	FILE *list_of_speechs = fopen(list_of_speechs_path, "r");
-
+	FILE *list_of_speechs = fopen(list_of_speechs_filename, "r");
 	if (list_of_speechs == NULL)
 	{
-		char *voice_interface_error = init_voice();
-		if (voice_interface_error != NULL)
-			return (voice_interface_error);
-
 		char *speech_file_name = (char *) "speech00001";
-		if (speak(speech, speech_file_name) != 0)
-		{
-			finalize_voice();
-			return ((char *) "Error: Could not load SPEAK function.\n");
-		}
+		speak(speech, speech_file_name);
 
-		list_of_speechs = fopen (list_of_speechs_path, "w");
-		fprintf (list_of_speechs, "%s %s\n", speech_file_name, (char *)speech);
-		fclose (list_of_speechs);
-		finalize_voice();
+		list_of_speechs = fopen(list_of_speechs_filename, "w");
+		fprintf(list_of_speechs, "%s %s\n", speech_file_name, speech);
+		printf("Audio content created.\n");
+		fclose(list_of_speechs);
 	}
 	else
 	{
 		int speech_string_matched = 0;
-		char audio_string[MAX_SIZE_0F_AUDIO_STRING], speech_phrase[MAX_SIZE_0F_AUDIO_STRING];
-		char speech_file_name[LENGTH_SPEECH_WORD + LENGTH_NUMBER_AS_STRING];
+		int speech_file_name_size = strlen("speech") + strlen("00001");
+		char speech_file_name_and_speech_saved[speech_file_name_size + MAX_SIZE_0F_AUDIO_STRING];
+		char speech_saved[MAX_SIZE_0F_AUDIO_STRING];
+		char speech_file_name[speech_file_name_size + 1];
 
-		strncpy (speech_phrase, speech, MAX_SIZE_0F_AUDIO_STRING);
-		do {
-			fscanf (list_of_speechs, "%s %[^\n]", speech_file_name, audio_string);
+		while (fgets(speech_file_name_and_speech_saved, speech_file_name_size + MAX_SIZE_0F_AUDIO_STRING, list_of_speechs))
+		{
+			speech_file_name_and_speech_saved[speech_file_name_size] = '\0';
+			strcpy(speech_file_name, speech_file_name_and_speech_saved);
+			strcpy(speech_saved, speech_file_name_and_speech_saved + speech_file_name_size + 1);
+			if (speech_saved[strlen(speech_saved) - 1] == '\n')
+				speech_saved[strlen(speech_saved) - 1] = '\0';
+			if (speech[strlen(speech) - 1] == '\n')
+				speech[strlen(speech) - 1] = '\0';
 
-			if (strcmp (speech_phrase, audio_string) == 0)
+			if (strcmp(speech_saved, speech) == 0)
 			{
 				char system_command[MAX_SIZE_COMMAND_LINE];
 
-				sprintf (system_command, "aplay %s%s%s", CARMEN_HOME, VOICE_SPEECHS_PATH, speech_file_name);
-				system (system_command);
+				sprintf(system_command, "aplay %s%s%s", carmen_home, VOICE_SPEECHS_PATH, speech_file_name);
+				system(system_command);
 				speech_string_matched = 1;
+				break;
 			}
-		} while (!feof (list_of_speechs) && (speech_string_matched == 0));
+		}
 		fclose (list_of_speechs);
 
 		if (speech_string_matched == 0)
 		{
-			FILE *list_of_speechs = fopen (list_of_speechs_path, "a");
-			carmen_voice_interface_create_new_audio_file(list_of_speechs, speech_phrase, speech_file_name);
-			fclose (list_of_speechs);
+			FILE *list_of_speechs = fopen (list_of_speechs_filename, "a");
+			carmen_voice_interface_create_new_audio_file(list_of_speechs, speech, speech_file_name);
+			fclose(list_of_speechs);
 		}
 	}
 
-	free(list_of_speechs_path);
 	return (NULL); // OK
+}
+
+
+char *
+carmen_voice_interface_listen()
+{
+	static char words_said[MAX_LISTENDED_STRING_SIZE];
+
+	listen(words_said);
+
+	return (words_said);
 }

@@ -6,9 +6,9 @@ MODULE_COMMENT = Find global coordinates of bounding boxes in camera image.
 LINK = g++
 
 CFLAGS += -Wall
-CXXFLAGS += -Wall
+CXXFLAGS += -Wall -std=c++11
 
-IFLAGS += 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -DUSE_OPENCV -DNO_NVML -DBOOST_SIGNALS_NO_DEPRECATION_WARNING
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface `pkg-config --libs opencv` \
           -lvelodyne_camera_calibration \
           -lcamera_boxes_to_world

@@ -737,7 +737,14 @@ compute_mapper_map(carmen_mapper_map_message *mapper_msg)
 
     sprintf(dataset_name,"%s%lf_label", path_to_save, mapper_msg->timestamp);
 
-	raw_label_map.complete_map = mapper_msg->complete_map;
+
+	for (int i = 0; i < raw_label_map.config.y_size;i++){
+		for(int j = 0; j < raw_label_map.config.x_size; j++){
+			raw_label_map.map[i][j] = mapper_msg->complete_map[i*mapper_msg->config.y_size + j];
+//			printf("%lf", raw_label_map.map[i][j]);
+		}
+//		printf("\n");
+	}
 
     show_map(&raw_label_map, dataset_name);	
 }
