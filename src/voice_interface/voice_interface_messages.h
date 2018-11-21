@@ -13,16 +13,19 @@
 extern "C" {
 #endif
 
-/* Message Struct Example */
+#define SET_COURSE 1
+
 typedef struct
 {
-	char *can_line;
+	int command_id;
+	char *command;
+
 	double timestamp;
 	char *host;
-} carmen_voice_interface_can_line_message;
+} carmen_voice_interface_command_message;
 
-#define CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_NAME	"carmen_voice_interface_can_line_message"
-#define CARMEN_VOICE_INTERFACE_CAN_LINE_MESSAGE_FMT	"{string,double,string}"
+#define CARMEN_VOICE_INTERFACE_COMMAND_MESSAGE_NAME	"carmen_voice_interface_command_message"
+#define CARMEN_VOICE_INTERFACE_COMMAND_MESSAGE_FMT	"{int,string,double,string}"
 
 #ifdef __cplusplus
 }

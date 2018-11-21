@@ -169,6 +169,7 @@ DatasetCarmen::load_data(vector<double> &times,
 
 		Pose2d pose(x - x0, y - y0, normalize_theta(th));
 
+		phi = normalize_theta(-phi);
 		poses.push_back(Pose2d::to_matrix(pose));
 		times.push_back(t);
 		odom.push_back(pair<double, double>(v, phi));

@@ -1,8 +1,9 @@
 ## intent:set_course
-- Estabelecer um curso para [NTI](place)
-- Definir um curso para [NTI](place)
+- Estabelecer um curso para a [volta da ufes](place)
+- Definir um curso para a [volta da ufes](place)
+- Estabelecer um curso para o [estacionamento da ambiental](place)
+- Definir um curso para o [estacionamento da ambiental](place)
 - Vamos para o [NPD](place)
-- Siga para [casa](place)
 
 ## intent:engage
 - Engage!

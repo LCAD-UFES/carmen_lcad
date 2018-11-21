@@ -13,6 +13,11 @@ PyObject *python_module, *python_listen_function, *python_speak_function;
 char *
 init_voice()
 {
+	static bool already_initialized = false;
+
+	if (already_initialized)
+		return (NULL);
+
 	Py_Initialize();
 
 	PyObject *sysPath = PySys_GetObject((char *) "path");
@@ -54,6 +59,8 @@ init_voice()
 		return ((char *) "Error: Could not load the python_module listen function.\n");
 	}
 
+	already_initialized = true;
+
 	return (NULL); // OK
 }
 
@@ -71,6 +78,7 @@ finalize_voice()
 int
 speak(char *speech, char *speech_file_name)
 {
+	// Saves the speech fine in $CARMEN_HOME/data/voice_interface_speechs/ (see listen_speak.py))
 	PyObject *python_function_arguments = Py_BuildValue("(ss)", speech, speech_file_name);
 	PyObject *python_speak_function_output = PyObject_CallObject(python_speak_function, python_function_arguments);
 	Py_DECREF(python_function_arguments);

@@ -19,6 +19,8 @@ using namespace std;
 #include <carmen/collision_detection.h>
 #include <carmen/moving_objects_messages.h>
 #include <carmen/moving_objects_interface.h>
+#include <carmen/voice_interface_messages.h>
+#include <carmen/voice_interface_interface.h>
 #include <carmen/road_mapper.h>
 #include <carmen/grid_mapping.h>
 
@@ -1575,6 +1577,51 @@ carmen_rddf_play_find_and_publish_poses_around_end_point(double x, double y, dou
 	free(poses_around_end_point);
 }
 
+
+static void
+carmen_rddf_play_load_index(char *rddf_filename)
+{
+	int annotation = 0;
+	carmen_fused_odometry_message message;
+	placemark_vector_t placemark_vector;
+
+	if (!carmen_rddf_index_exists(rddf_filename))
+	{
+		if (strcmp(rddf_filename + (strlen(rddf_filename) - 3), "kml") == 0)
+		{
+			carmen_rddf_play_open_kml(rddf_filename, &placemark_vector);
+
+			for (unsigned int i = 0; i < placemark_vector.size(); i++)
+			{
+				if (carmen_rddf_play_copy_kml(placemark_vector[i], &message, &annotation))
+					carmen_rddf_index_add(&message, 0, 0, annotation);
+			}
+
+			carmen_rddf_index_save(rddf_filename);
+		}
+		else
+		{
+			FILE *fptr = fopen(rddf_filename, "r");
+
+			while (!feof(fptr))
+			{
+				memset(&message, 0, sizeof(message));
+
+				fscanf(fptr, "%lf %lf %lf %lf %lf %lf\n",
+					&(message.pose.position.x), &(message.pose.position.y),
+					&(message.pose.orientation.yaw), &(message.velocity.x), &(message.phi),
+					&(message.timestamp));
+
+				carmen_rddf_index_add(&message, 0, 0, 0);
+			}
+
+			carmen_rddf_index_save(rddf_filename);
+			fclose(fptr);
+		}
+	}
+
+	carmen_rddf_load_index(rddf_filename);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1750,6 +1797,17 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 {
 	moving_objects = moving_objects_point_clouds_message;
 }
+
+
+void
+carmen_voice_interface_command_message_handler(carmen_voice_interface_command_message *message)
+{
+	if (message->command_id == SET_COURSE)
+	{
+		carmen_rddf_index_clear();
+		carmen_rddf_play_load_index(message->command);
+	}
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1786,52 +1844,7 @@ carmen_rddf_play_subscribe_messages()
 
 	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-}
-
-
-static void
-carmen_rddf_play_load_index(char *rddf_filename)
-{
-	int annotation = 0;
-	carmen_fused_odometry_message message;
-	placemark_vector_t placemark_vector;
-
-	if (!carmen_rddf_index_exists(rddf_filename))
-	{
-		if (strcmp(rddf_filename + (strlen(rddf_filename) - 3), "kml") == 0)
-		{
-			carmen_rddf_play_open_kml(rddf_filename, &placemark_vector);
-
-			for (unsigned int i = 0; i < placemark_vector.size(); i++)
-			{
-				if (carmen_rddf_play_copy_kml(placemark_vector[i], &message, &annotation))
-					carmen_rddf_index_add(&message, 0, 0, annotation);
-			}
-
-			carmen_rddf_index_save(rddf_filename);
-		}
-		else
-		{
-			FILE *fptr = fopen(rddf_filename, "r");
-
-			while (!feof(fptr))
-			{
-				memset(&message, 0, sizeof(message));
-
-				fscanf(fptr, "%lf %lf %lf %lf %lf %lf\n",
-					&(message.pose.position.x), &(message.pose.position.y),
-					&(message.pose.orientation.yaw), &(message.velocity.x), &(message.phi),
-					&(message.timestamp));
-
-				carmen_rddf_index_add(&message, 0, 0, 0);
-			}
-
-			carmen_rddf_index_save(rddf_filename);
-			fclose(fptr);
-		}
-	}
-
-	carmen_rddf_load_index(rddf_filename);
+	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
