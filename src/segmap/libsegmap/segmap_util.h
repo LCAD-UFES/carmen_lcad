@@ -69,5 +69,11 @@ void print_vector(vector<double> &v);
 int argmax(double *v, int size);
 int argmin(double *v, int size);
 
+void
+draw_rectangle(Mat &img,
+		double x, double y, double theta,
+		double height, double width, Scalar color,
+		double x_origin, double y_origin, double pixels_by_meter);
+
 
 #endif

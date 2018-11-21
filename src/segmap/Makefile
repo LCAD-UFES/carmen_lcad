@@ -24,6 +24,8 @@ PUBLIC_LIBRARIES =
 PUBLIC_BINARIES = 
 TARGETS = main 
 
-main: main.o
+# The libsegmap.a is added as a dependency to make the program be compiled when a .cpp file in the lib is changed.
+# Without adding the lib as a dependency, we would have to do a make clean && make whenever we change a .cpp file.
+main: main.o libsegmap/libsegmap.a
 
 include ../Makefile.rules

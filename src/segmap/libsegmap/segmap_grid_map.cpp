@@ -123,7 +123,7 @@ GridMapTile::save()
 	FILE *fptr = fopen(name, "w");
 
 	if (fptr == NULL)
-		exit(printf("Error: Unable to create the file '%s'", name));
+		exit(printf("Error: Unable to create the file '%s'\n", name));
 
 	fprintf(fptr, "xo: %lf\n", _xo);
 	fprintf(fptr, "yo: %lf\n", _yo);
@@ -279,13 +279,13 @@ GridMapTile::to_image()
 }
 
 
-GridMap::GridMap(string tiles_dir, double height_meters, double width_meters, double resolution,
-		int map_type)
+GridMap::GridMap(string tiles_dir, double tile_height_meters, double tile_width_meters, double resolution, int map_type)
 {
 	_tiles_dir = tiles_dir;
-	_height_meters = height_meters;
-	_width_meters = width_meters;
-	_resolution = resolution;
+	_tile_height_meters = tile_height_meters;
+	_tile_width_meters = tile_width_meters;
+	m_by_pixels = resolution;
+	pixels_by_m = 1. / resolution;
 	_map_type = map_type;
 
 	for (int i = 0; i < _N_TILES; i++)
@@ -293,14 +293,18 @@ GridMap::GridMap(string tiles_dir, double height_meters, double width_meters, do
 			_tiles[i][j] = NULL;
 
 	_middle_tile = (int) (_N_TILES / 2.);
+
+	height_meters = 0;
+	width_meters = 0;
+	xo = yo = 0;
 }
 
 
 GridMapTile*
 GridMap::_reload_tile(double x, double y)
 {
-	return new GridMapTile(y, x, _height_meters,
-			_width_meters, _resolution, _map_type, _tiles_dir);
+	return new GridMapTile(y, x, _tile_height_meters,
+			_tile_width_meters, m_by_pixels, _map_type, _tiles_dir);
 }
 
 
@@ -317,15 +321,18 @@ GridMap::_reload_tiles(double robot_x, double robot_y)
 				delete(_tiles[i][j]);
 
 	// TODO: make the following code general.
-	_tiles[0][0] = _reload_tile(robot_x - 75., robot_y - 75.);
-	_tiles[0][1] = _reload_tile(robot_x, robot_y - 75.);
-	_tiles[0][2] = _reload_tile(robot_x + 75., robot_y - 75.);
-	_tiles[1][0] = _reload_tile(robot_x - 75., robot_y);
+	_tiles[0][0] = _reload_tile(robot_x - _tile_width_meters, robot_y - _tile_height_meters);
+	_tiles[0][1] = _reload_tile(robot_x, robot_y - _tile_height_meters);
+	_tiles[0][2] = _reload_tile(robot_x + _tile_width_meters, robot_y - _tile_height_meters);
+	_tiles[1][0] = _reload_tile(robot_x - _tile_width_meters, robot_y);
 	_tiles[1][1] = _reload_tile(robot_x, robot_y);
-	_tiles[1][2] = _reload_tile(robot_x + 75., robot_y);
-	_tiles[2][0] = _reload_tile(robot_x - 75., robot_y + 75.);
-	_tiles[2][1] = _reload_tile(robot_x, robot_y + 75.);
-	_tiles[2][2] = _reload_tile(robot_x + 75., robot_y + 75.);
+	_tiles[1][2] = _reload_tile(robot_x + _tile_width_meters, robot_y);
+	_tiles[2][0] = _reload_tile(robot_x - _tile_width_meters, robot_y + _tile_height_meters);
+	_tiles[2][1] = _reload_tile(robot_x, robot_y + _tile_height_meters);
+	_tiles[2][2] = _reload_tile(robot_x + _tile_width_meters, robot_y + _tile_height_meters);
+
+	xo = _tiles[0][0]->_xo;
+	yo = _tiles[0][0]->_yo;
 }
 
 

@@ -5,8 +5,10 @@
 #include <vector>
 #include <Eigen/Core>
 #include <Eigen/LU>
+#include <opencv/cv.hpp>
 
 
+using namespace cv;
 using namespace std;
 using namespace Eigen;
 
@@ -169,5 +171,49 @@ argmin(double *v, int size)
 	return p;
 }
 
+
+void
+draw_rectangle(Mat &img,
+		double x, double y, double theta,
+		double height, double width, Scalar color,
+		double x_origin, double y_origin, double pixels_by_meter)
+{
+	vector<Point2f> vertices;
+	vector<Point> vertices_px;
+
+	vertices.push_back(Point2f(-width / 2., -height / 2.));
+	vertices.push_back(Point2f(-width / 2., height / 2.));
+	vertices.push_back(Point2f(width / 2., height / 2.));
+	vertices.push_back(Point2f(width / 2., 0.));
+	vertices.push_back(Point2f(0., 0.));
+	vertices.push_back(Point2f(width / 2., 0));
+	vertices.push_back(Point2f(width / 2., -height / 2.));
+
+	double v_radius, v_angle;
+
+	// transform vertices
+	for (int i = 0; i < vertices.size(); i++)
+	{
+		v_radius = sqrt(pow(vertices[i].x, 2.) + pow(vertices[i].y, 2.));
+		v_angle = atan2(vertices[i].y, vertices[i].x);
+
+		vertices[i].x = v_radius * cos(v_angle + theta) + x;
+		vertices[i].y = v_radius * sin(v_angle + theta) + y;
+
+		Point p;
+		p.x = (int) ((vertices[i].x - x_origin) * pixels_by_meter);
+		p.y = (int) ((vertices[i].y - y_origin) * pixels_by_meter);
+
+		vertices_px.push_back(p);
+	}
+
+	for (int i = 0; i < vertices_px.size(); i++)
+	{
+		if (i == vertices_px.size() - 1)
+			line(img, vertices_px[i], vertices_px[0], color, 1);
+		else
+			line(img, vertices_px[i], vertices_px[i + 1], color, 1);
+	}
+}
 
 
