@@ -370,12 +370,66 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 	if (count >= 20)                // If stays without see a traffic light for more than 20 frames
 	{                               // Compute traffic light positions and generate annotations
 		vector<vector<image_cartesian>> traffic_light_clusters = dbscan_compute_clusters(0.5, 3, traffic_light_points);
-		printf("--- %d\n", (int)traffic_light_clusters.size());
+		//printf("--- %d\n", (int)traffic_light_clusters.size());
 		compute_annotation_specifications(traffic_light_clusters);
 		traffic_light_points.clear();
 		count = 0;
 	}
 	//printf("Cont %d\n", count);
+}
+
+
+carmen_traffic_light *
+compute_main_traffic_light(vector<bbox_t> predictions, carmen_position_t tf_annotation_on_image)
+{
+	carmen_traffic_light *main_traffic_light = (carmen_traffic_light *) malloc (1 * sizeof(carmen_traffic_light));
+	bbox_t main_bbox;
+	double dist = 0.0, main_dist = DBL_MAX, x_centroid = 0.0, y_centroid = 0.0;
+
+	for (unsigned int i = 0; i < predictions.size(); i++)
+	{
+		x_centroid = predictions[i].x + (predictions[i].w / 2);
+		y_centroid = predictions[i].y + (predictions[i].h / 2);
+
+		x_centroid = x_centroid - tf_annotation_on_image.x;
+		y_centroid = y_centroid - tf_annotation_on_image.y;
+
+		dist = sqrt((x_centroid * x_centroid) + (y_centroid * y_centroid));
+
+		if (dist < main_dist)
+		{
+			main_dist = dist;
+			main_bbox = predictions[i];
+		}
+	}
+	main_traffic_light->x1 = main_bbox.x;
+	main_traffic_light->y1 = main_bbox.y;
+	main_traffic_light->x2 = main_bbox.x + main_bbox.w;
+	main_traffic_light->y2 = main_bbox.y + main_bbox.h;
+
+	if (main_bbox.obj_id == 0)                                                    //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED
+		main_traffic_light->color = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;       //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN
+	else if (main_bbox.obj_id == 1)                                               //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_YELLOW
+		main_traffic_light->color = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN;     //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF
+	else                                                                          //RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_RIGHT
+		main_traffic_light->color = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF;       //RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT
+
+	return (main_traffic_light);
+}
+
+
+carmen_traffic_light_message
+build_traffic_light_message(carmen_bumblebee_basic_stereoimage_message *image_msg, vector<bbox_t> predictions, carmen_position_t tf_annotation_on_image)
+{
+	carmen_traffic_light_message traffic_light_message;
+
+	traffic_light_message.num_traffic_lights = 1;
+	traffic_light_message.traffic_lights = compute_main_traffic_light(predictions, tf_annotation_on_image);
+	traffic_light_message.traffic_light_annotation_distance = 9999.0;
+	traffic_light_message.timestamp = image_msg->timestamp;
+	traffic_light_message.host = carmen_get_host();
+
+	return (traffic_light_message);
 }
 
 
@@ -393,6 +447,13 @@ publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clo
 	msg->host = carmen_get_host();
 
     carmen_moving_objects_point_clouds_publish_message(msg);
+}
+
+
+static void
+publish_traffic_lights(carmen_traffic_light_message *traffic_light_message)
+{
+    carmen_traffic_light_publish_message(camera, traffic_light_message);
 }
 
 
@@ -431,12 +492,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 	unsigned char *cropped_img = crop_raw_image(image_msg->width, image_msg->height, img, crop_x, crop_y, crop_w, crop_h);
 
-	//Mat open_cv_image = Mat(crop_h, crop_w, CV_8UC3, cropped_img, 0);
-	//imshow("Neural Object Detector", open_cv_image);
-    //waitKey(1);
-
-	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.5);
-	predictions = filter_predictions_traffic_light(predictions);
+	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.2);
+	//predictions = filter_predictions_traffic_light(predictions);
 
 	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
 			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
@@ -459,12 +516,18 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
 			globalpos_msg->pose.orientation.roll, globalpos_msg->pose.orientation.pitch, globalpos_msg->pose.orientation.yaw);
 
-	carmen_position_t object_on_image = convert_rddf_pose_to_point_in_image(7757493.704663, -364151.945918, 5.428209,
+	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757493.704663, -364151.945918, 5.428209,
+	carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757498.416323, -364158.291071, 5.631667,
+	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757492.914793, -364155.064267, 5.450262,
 			world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
 
+	if (predictions.size() > 0)
+	{
+		carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotation_on_image);
+		publish_traffic_lights(&traffic_light_message);
+	}
 
-
-	circle(open_cv_image, Point((int)object_on_image.x, (int)object_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
+	circle(open_cv_image, Point((int)tf_annotation_on_image.x, (int)tf_annotation_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
 
 	display(open_cv_image, predictions, points, points_inside_bbox, filtered_points, fps, crop_w, crop_h);
 }
@@ -565,11 +628,17 @@ read_parameters(int argc, char **argv)
 
 
 void
-initialize_YOLO_detector()
+initializer()
 {
-	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/cfg/coco.data", (char*) "../../sharedlib/darknet2/data/names.list");
+    initialize_transformations(board_pose, camera_pose, &transformer);
 
-	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
+    classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/traffic_light.names");
+
+	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/traffic_light.cfg", (char*) "../../sharedlib/darknet2/yolov3_traffic_light_rgo.weights");
+
+//	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
+//
+//	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
 }
 
 
@@ -584,9 +653,7 @@ main(int argc, char **argv)
 
 	signal(SIGINT, shutdown_module);
 
-	initialize_YOLO_detector();
-
-    initialize_transformations(board_pose, camera_pose, &transformer);
+	initializer();
 
 	setlocale(LC_ALL, "C");
 

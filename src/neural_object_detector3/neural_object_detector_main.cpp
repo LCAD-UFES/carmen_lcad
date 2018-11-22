@@ -390,14 +390,14 @@ filter_predictions_of_interest(vector<bbox_t> &predictions)
 
 	for (unsigned int i = 0; i < predictions.size(); i++)
 	{
-//		if (predictions[i].obj_id == 0 ||  // person
-//			predictions[i].obj_id == 1 ||  // bicycle
-//			predictions[i].obj_id == 2 ||  // car
-//			predictions[i].obj_id == 3 ||  // motorbike
-//			predictions[i].obj_id == 5 ||  // bus
-//			predictions[i].obj_id == 6 ||  // train
-//			predictions[i].obj_id == 7 ||  // truck
-		if (predictions[i].obj_id == 9)    // traffic light
+		if (predictions[i].obj_id == 0 ||  // person
+			predictions[i].obj_id == 1 ||  // bicycle
+			predictions[i].obj_id == 2 ||  // car
+			predictions[i].obj_id == 3 ||  // motorbike
+			predictions[i].obj_id == 5 ||  // bus
+			predictions[i].obj_id == 6 ||  // train
+			predictions[i].obj_id == 7 ||  // truck
+		    predictions[i].obj_id == 9)    // traffic light
 		{
 			filtered_predictions.push_back(predictions[i]);
 		}
@@ -473,7 +473,7 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 	if (count >= 20)                // If stays without see a traffic light for more than 20 frames
 	{                               // Compute traffic light positions and generate annotations
 		vector<vector<image_cartesian>> traffic_light_clusters = dbscan_compute_clusters(0.5, 3, traffic_light_points);
-		printf("--- %d\n", (int)traffic_light_clusters.size());
+		//printf("--- %d\n", (int)traffic_light_clusters.size());
 		compute_annotation_specifications(traffic_light_clusters);
 		traffic_light_points.clear();
 		count = 0;
@@ -670,9 +670,11 @@ read_parameters(int argc, char **argv)
 
 
 void
-initialize_YOLO_detector()
+initializer()
 {
-	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/cfg/coco.data", (char*) "../../sharedlib/darknet2/data/names.list");
+	initialize_transformations(board_pose, camera_pose, &transformer);
+
+	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
 
 	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
 }
@@ -689,9 +691,7 @@ main(int argc, char **argv)
 
 	signal(SIGINT, shutdown_module);
 
-	initialize_YOLO_detector();
-
-    initialize_transformations(board_pose, camera_pose, &transformer);
+	initializer();
 
 	setlocale(LC_ALL, "C");
 

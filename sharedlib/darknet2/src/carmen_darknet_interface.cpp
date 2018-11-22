@@ -17,13 +17,15 @@ extern "C"
 
 
 char **
-get_classes_names(char *data_file_name, char *list_file_name)
+get_classes_names(char *classes_names_file)
 {
-	list *options = read_data_cfg(data_file_name);
+	//list *options = read_data_cfg(data_file_name);
 
-	char *name_list = option_find_str(options, (char*) "names", list_file_name);
+	//char *name_list = option_find_str(options, (char*) "names", list_file_name);
 
-	return (get_labels(name_list));
+	//printf("--%s\n", name_list);
+
+	return (get_labels(classes_names_file));
 }
 
 
@@ -36,7 +38,7 @@ initialize_YOLO(char *cfg_file_name, char *weights_file_name)
 
 	set_batch_network(net, 1);
 
-	//printf("---%d\n", net->layers[net->n-1].classes);
+	printf("------- Number of Classes: %d -------\n", net->layers[net->n-1].classes);
 
 	//test_YOLO(net, classes_names, (char*) "dog.jpeg");
 
@@ -192,13 +194,13 @@ run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_nam
 
 	detection *dets = get_network_boxes(net, img.w, img.h, threshold, threshold, 0, 1, &nboxes);
 
-	if (nms)    // TODO is it necessary???
-		do_nms_sort(dets, nboxes, 80, nms); // TODO use layer l = net->layers[net->n-1].classes
+	if (nms)    // Remove coincident bboxes
+		do_nms_sort(dets, nboxes, net->layers[net->n-1].classes, nms);
 		//do_nms_sort(dets, nboxes, l.classes, nms); // l.classes do not work when darknet is compiled for cuda set l.classes = 80 to coco dataset
 
 	//save_image(*img, "predictions");
 
-	std::vector<bbox_t> bbox_vector = extract_predictions(img, dets, nboxes, 0.5, 80, classes_names);// TODO use layer l = net->layers[net->n-1].classes
+	std::vector<bbox_t> bbox_vector = extract_predictions(img, dets, nboxes, 0.5, net->layers[net->n-1].classes, classes_names);// TODO use layer l = net->layers[net->n-1].classes
 
 	free_image(sized);
 	return (bbox_vector);
