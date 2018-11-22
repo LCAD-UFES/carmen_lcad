@@ -155,7 +155,7 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 	{
 		int p = j * sensor_params->vertical_resolution;
 		double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[p].horizontal_angle;
-		if (fabs(horizontal_angle) > fov) // Disregard laser shots out of the camera's field of view
+		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > fov) // Disregard laser shots out of the camera's field of view
 			continue;
 
 		double previous_range = sensor_data->points[cloud_index].sphere_points[p].length;
@@ -184,8 +184,9 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 				laser_ray_color = cv::Scalar(0, 255, 255);
 			else if (line_angle <= MIN_ANGLE_OBSTACLE || line_angle >= MAX_ANGLE_OBSTACLE) // Disregard laser rays that didn't hit an obstacle
 				laser_ray_color = cv::Scalar(0, 255, 0);
-//			else if (!is_moving_object(camera_data[camera_index].semantic[image_index][image_x * image_width + image_y])) // Disregard if it is not a moving object
-//				laser_ray_color = cv::Scalar(255, 0, 0);
+//			else if (!is_moving_object(camera_data[camera_index].semantic[image_index][image_x + image_y * image_width])) // Disregard if it is not a moving object
+			else if (camera_data[camera_index].semantic[image_index][image_x + image_y * image_width] < 11)
+				laser_ray_color = cv::Scalar(255, 0, 0);
 			else
 			{
 				laser_ray_color = cv::Scalar(0, 0, 255);
@@ -193,7 +194,10 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 				camera_datmo_count[camera_index]++;
 			}
 			if (verbose >= 2)
+			{
+				circle(camera_image_semantic[camera_index], cv::Point(image_x + image_width, image_y), 1, laser_ray_color, 1, 8, 0);
 				circle(camera_image_semantic[camera_index], cv::Point(image_x, image_y), 1, laser_ray_color, 1, 8, 0);
+			}
 		}
 	}
 	if (verbose >= 2)
@@ -736,6 +740,31 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 }
 
 
+static const cv::Vec3b
+colormap[] =
+{
+    cv::Vec3b(128, 64, 128),
+    cv::Vec3b(244, 35, 232),
+    cv::Vec3b(70, 70, 70),
+    cv::Vec3b(102, 102, 156),
+    cv::Vec3b(190, 153, 153),
+    cv::Vec3b(153, 153, 153),
+    cv::Vec3b(250, 170, 30),
+    cv::Vec3b(220, 220, 0),
+    cv::Vec3b(107, 142, 35),
+    cv::Vec3b(152, 251, 152),
+    cv::Vec3b(70, 130, 180),
+    cv::Vec3b(220, 20, 60),
+    cv::Vec3b(255, 0, 0),
+    cv::Vec3b(0, 0, 142),
+    cv::Vec3b(0, 0, 70),
+    cv::Vec3b(0, 60, 100),
+    cv::Vec3b(0, 80, 100),
+    cv::Vec3b(0, 0, 230),
+    cv::Vec3b(119, 11, 32),
+};
+
+
 void
 bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
@@ -748,13 +777,19 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 	camera_data[camera].image_size[i] = image_msg->image_size;
 	camera_data[camera].isRectified[i] = image_msg->isRectified;
 	camera_data[camera].image[i] = (camera_alive[camera] == 0) ? image_msg->raw_left : image_msg->raw_right;
-//	camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
+	camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
 	camera_data[camera].timestamp[i] = image_msg->timestamp;
 
 	if (verbose >= 2)
 	{
 		cv::Mat image_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, camera_data[camera].image[i]);
-		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, cv::Scalar(0)); // camera_data[camera].semantic[i]);
+		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, cv::Scalar(0));
+	    for (int y = 0; y < semantic_cv.rows; y++)
+	        for (int x = 0; x < semantic_cv.cols; x++)
+	        	semantic_cv.at<cv::Vec3b>(cv::Point(x, y)) = colormap[camera_data[camera].semantic[i][x + y * semantic_cv.cols]];
+
+//		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC1, camera_data[camera].semantic[i]);
+//		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, color_image(image_msg->width, image_msg->height, camera_data[camera].semantic[i]));
 		hconcat(image_cv, semantic_cv, camera_image_semantic[camera]);
 		cvtColor(camera_image_semantic[camera], camera_image_semantic[camera], CV_RGB2BGR);
 		imshow("Image Semantic Segmentation", camera_image_semantic[camera]);
@@ -1386,8 +1421,8 @@ read_camera_parameters(int argc, char **argv)
 	}
 	if (active_cameras == 0)
 		fprintf(stderr, "No cameras active for datmo\n\n");
-//	else
-//		initialize_inference_context();
+	else
+		initialize_inference_context();
 }
 
 
