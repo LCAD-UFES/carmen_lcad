@@ -1,0 +1,4 @@
+# <place definido em iara_nlu.md>: <arquivo rddf>
+volta da ufes: data/rndf/rddf-voltadaufes-20170809.txt
+estacionamento da ambiental: data/rndf/rndf_log_voltadaufes-20160315-estacionamento-ambiental-4.kml
+

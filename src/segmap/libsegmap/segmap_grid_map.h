@@ -64,15 +64,20 @@ public:
 	static const int _N_TILES = 3;
 
 	string _tiles_dir;
-	double _height_meters;
-	double _width_meters;
-	double _resolution;
+	double _tile_height_meters;
+	double _tile_width_meters;
 	int _middle_tile;
 	int _map_type;
 
+	double m_by_pixels;
+	double pixels_by_m;
+	double height_meters;
+	double width_meters;
+	int xo, yo;
+
 	GridMapTile *_tiles[_N_TILES][_N_TILES];
 
-	GridMap(string tiles_dir, double height_meters, double width_meters, double resolution, int map_type);
+	GridMap(string tiles_dir, double tile_height_meters, double tile_width_meters, double resolution, int map_type);
 	GridMapTile* _reload_tile(double x, double y);
 	void _reload_tiles(double robot_x, double robot_y);
 	void reload(double robot_x, double robot_y);

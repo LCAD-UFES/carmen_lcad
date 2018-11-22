@@ -23,8 +23,8 @@
 using namespace std;
 
 // Change these to match your environment!
-const char MODEL_PATH[] = "/data/voice_interface_hotword_data/porcupine_params.pv";
-const char KEYWORD_PATH[] = "/data/voice_interface_hotword_data/hotword_oi_iara.ppn";
+const char MODEL_PATH[] = "/data/voice_interface_data/porcupine_params.pv";
+const char KEYWORD_PATH[] = "/data/voice_interface_data/hotword_oi_iara.ppn";
 float sensitivity = 0.5f;
 
 static pv_porcupine_object_t *porcupineObject;
