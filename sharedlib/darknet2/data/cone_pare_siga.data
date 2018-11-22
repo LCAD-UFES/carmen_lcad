@@ -1,0 +1,5 @@
+classes= 1  
+train  = /dados/traffic_cone/train.txt  
+valid  = /dados/traffic_cone/test.txt  
+names = /dados/traffic_cone/obj.names  
+backup = /dados/backup/traffic_cone/

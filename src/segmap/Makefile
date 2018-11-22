@@ -12,10 +12,10 @@ CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-comp
 IFLAGS += -std=c++11
 
 IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
-LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization
+LFLAGS += `pkg-config --libs opencv` -lsegmap -lopencv_imgcodecs
 LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
 LFLAGS += -L /usr/lib -lvtkIO -lvtkFiltering -lvtkCommon -lvtkRendering -lvtkGraphics
-LFLAGS += `pkg-config --libs opencv` -lsegmap
+LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization
 
 SOURCES = main.cpp
 
@@ -24,6 +24,8 @@ PUBLIC_LIBRARIES =
 PUBLIC_BINARIES = 
 TARGETS = main 
 
-main: main.o
+# The libsegmap.a is added as a dependency to make the program be compiled when a .cpp file in the lib is changed.
+# Without adding the lib as a dependency, we would have to do a make clean && make whenever we change a .cpp file.
+main: main.o libsegmap/libsegmap.a
 
 include ../Makefile.rules
