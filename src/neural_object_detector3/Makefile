@@ -14,11 +14,15 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
 		   -lmoving_objects_interface -ldarknet2 `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics \
 		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration
 
-SOURCES = neural_object_detector_main.cpp
+SOURCES = neural_object_detector_main.cpp neural_object_detector_simulator.cpp neural_object_detector_traffic_light.cpp
 
-TARGETS = darknet2 neural_object_detector
+TARGETS = darknet2 neural_object_detector neural_object_detector_simulator neural_object_detector_traffic_light
 
 neural_object_detector: neural_object_detector_main.o
+
+neural_object_detector_simulator: neural_object_detector_simulator.o
+
+neural_object_detector_traffic_light: neural_object_detector_traffic_light.o
 
 darknet2:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2
