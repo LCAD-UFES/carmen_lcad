@@ -359,17 +359,12 @@ carmen_rddf_play_load_rddf_from_file(char *rddf_filename, int *out_waypoint_vect
 		vector<carmen_fused_odometry_message> messages;
 		FILE *fptr = fopen(rddf_filename, "r");
 
-		while (!feof(fptr))
-		{
-			memset(&message, 0, sizeof(message));
-
-			fscanf(fptr, "%lf %lf %lf %lf %lf %lf\n",
+		while (fscanf(fptr, "%lf %lf %lf %lf %lf %lf\n",
 				&(message.pose.position.x), &(message.pose.position.y),
 				&(message.pose.orientation.yaw), &(message.velocity.x), &(message.phi),
-				&(message.timestamp));
-
+				&(message.timestamp)) == 6)
 			messages.push_back(message);
-		}
+
 		fclose(fptr);
 
 		carmen_rddf_waypoint *waypoint_vector = (carmen_rddf_waypoint *) calloc (sizeof(carmen_rddf_waypoint), messages.size());
