@@ -9,4 +9,4 @@ python2 -m pip install -r requirements.txt
 sudo apt-get install python-tk # Requerido para utilizar Matplotlib, remover no futuro (?)
 
 # Desativando o virtualenv
-deactivate
+#deactivate

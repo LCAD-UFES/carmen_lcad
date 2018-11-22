@@ -9,8 +9,27 @@
 //#define STEREO_MAPPING_SENSOR_INDEX 	10
 
 #define NUM_VELODYNE_POINT_CLOUDS	5
+#define NUM_CAMERA_IMAGES			5
 #define GLOBAL_POS_QUEUE_SIZE		100
 #define MAX_CAMERA_INDEX 			9
+#define MAX_TIMESTAMP_DIFFERENCE	0.08
+#define MIN_RANGE 					0.5
+#define MIN_ANGLE_OBSTACLE			2
+#define MAX_ANGLE_OBSTACLE			188
+
+
+typedef struct _camera_data
+{
+	int current_index;
+	int *width;
+	int *height;
+	int *image_size;
+	int *isRectified;
+	unsigned char **image;
+	unsigned char **semantic;
+	double *timestamp;
+} camera_data_t;
+
 
 /**
   * Prototypes

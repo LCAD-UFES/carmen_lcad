@@ -11,6 +11,7 @@
 #include <carmen/moving_objects_messages.h>
 #include <carmen/moving_objects_interface.h>
 #include <carmen/rddf_messages.h>
+#include <carmen/laser_ldmrs_utils.h>
 
 
 #include <vector>
@@ -40,6 +41,7 @@ enum class carmen_moving_object_type
     other
 };
 
+
 typedef struct
 {
     std::vector<carmen_vector_3D_t> points; // pontos que compõe o cluster
@@ -49,6 +51,22 @@ typedef struct
     double last_detection_timestamp;
     carmen_moving_object_type cluster_type;
 } carmen_tracked_cluster_t, *carmen_tracked_cluster_p;
+
+
+typedef struct
+{
+	double translate_factor_x;
+	double translate_factor_y;
+	double scale_factor_x;
+	double scale_factor_y;
+}t_transform_factor;
+
+
+typedef struct
+{
+	double translate_factor_x;
+	double translate_factor_y;
+}t_translate_factor;
 
 
 dbscan::Cluster
