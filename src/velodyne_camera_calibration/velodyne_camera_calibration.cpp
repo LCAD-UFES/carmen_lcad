@@ -415,9 +415,7 @@ get_world_to_camera_transformer(tf::Transformer *transformer, double x, double y
 	tf::Transform world_to_car_pose;
 	tf::StampedTransform world_to_camera_pose;
 	world_to_car_pose.setOrigin(tf::Vector3(x, y, z));
-
 	world_to_car_pose.setRotation(tf::Quaternion(yaw, pitch, roll));
-
 	tf::StampedTransform world_to_car_transform(world_to_car_pose, tf::Time(0), "/world", "/car");
 	transformer->setTransform(world_to_car_transform, "world_to_car_transform");
 
