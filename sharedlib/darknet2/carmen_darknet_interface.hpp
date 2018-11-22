@@ -20,7 +20,7 @@ struct image_t
 
 
 char **
-get_classes_names(char *data_file_name, char *list_file_name);
+get_classes_names(char *classes_names_file);
 
 
 void*
