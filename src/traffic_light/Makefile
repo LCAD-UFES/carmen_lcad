@@ -78,7 +78,7 @@ libsqueezenet_tlight.a: squeezenet_tlight.o
 
 traffic_light: traffic_light_main.o libtraffic_light_interface.a TLightStateRecog/tlight_vgram.o squeezenet_tlight.o #tlight_vgram.o
 else
-traffic_light: traffic_light_main.o libtraffic_light_interface.a TLightStateRecog/tlight_vgram.o traffic_light_annotation_tool.o#tlight_vgram.o 
+traffic_light: traffic_light_main.o libtraffic_light_interface.a TLightStateRecog/tlight_vgram.o #traffic_light_annotation_tool.o #tlight_vgram.o 
 endif
 #mapping_traffic_light:			mapping_traffic_light_main.o libtraffic_light_interface.a
 
