@@ -266,7 +266,7 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
 
     //cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
     //cv::resize(rgb_image, resized_image, resized_image.size());
-    cv::resize(rgb_image, rgb_image, cv::Size(640, 364));
+    //cv::resize(rgb_image, rgb_image, cv::Size(640, 364));
     cv::imshow(window_name, rgb_image);
     cv::waitKey(1);
 
@@ -424,7 +424,7 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 					r2.x = bboxes[i].x + bboxes[i].w;
 					r2.y = bboxes[i].y + bboxes[i].h;
 					percentage_of_intersection_between_bboxes = calc_percentage_of_rectangles_intersection(l1, r1, l2, r2);
-					cout<< percentage_of_intersection_between_bboxes<< endl;
+					//cout<< percentage_of_intersection_between_bboxes<< endl;
 					if (percentage_of_intersection_between_bboxes > 35)
 					{
 						intersects_with_bboxes = true;
