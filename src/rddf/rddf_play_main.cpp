@@ -1804,6 +1804,7 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 {
 	if (message->command_id == SET_COURSE)
 	{
+		printf("New rddf set by voice command: %s\n", message->command);
 		carmen_rddf_index_clear();
 		carmen_rddf_play_load_index(message->command);
 	}

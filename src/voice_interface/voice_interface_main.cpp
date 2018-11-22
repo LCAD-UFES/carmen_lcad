@@ -168,6 +168,9 @@ check_if_place_is_known(const char *place)
 
 			place_in_database = strtok(a_place, ":");
 			rddf = strtok(NULL, ": ");
+			if (rddf[strlen(rddf) - 1] == '\n')
+				rddf[strlen(rddf) - 1] = '\0';
+
 			printf("************ %s\n", rddf);
 			if (strcasecmp(place, (const char *) place_in_database) == 0)
 			{
