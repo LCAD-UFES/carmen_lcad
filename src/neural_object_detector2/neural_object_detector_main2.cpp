@@ -365,8 +365,7 @@ calc_percentage_of_rectangles_intersection(cv::Point l1, cv::Point r1, cv::Point
 	int area1 = abs(l1.x - r1.x) * abs(l1.y - r1.y);
 	// Area of 2nd Rectangle
 	int area2 = abs(l2.x - r2.x) * abs(l2.y - r2.y);
-	int area1_minus_intersection;
-	int area2_minus_intersection;
+	int total_area;
 
 	// Length of intersecting part i.e
 	// start from max(l1.x, l2.x) of
@@ -375,10 +374,10 @@ calc_percentage_of_rectangles_intersection(cv::Point l1, cv::Point r1, cv::Point
 	// start from end we get required
 	// lengths
 	int areaI = abs((min(r1.x, r2.x) - max(l1.x, l2.x)) * (min(r1.y, r2.y) - max(l1.y, l2.y)));
-	area1_minus_intersection = abs(area1 - areaI);
-	area2_minus_intersection = abs(area2 - areaI);
+	total_area  = abs(area1 + area2 - areaI);
 
-	intersection_percentage = (100 * areaI) / (area1_minus_intersection + area2_minus_intersection);
+
+	intersection_percentage = (100 * areaI) / (total_area);
 	return (intersection_percentage);
 
 
