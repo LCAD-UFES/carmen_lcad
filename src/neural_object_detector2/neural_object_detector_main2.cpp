@@ -388,26 +388,12 @@ bool rectangles_intersects(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r
 {
 
 
-	if (  (  l1.x  <  r2.x  )  &&  (   r1.x   >  l2.x  )  &&
-	       (  l1.y  <  r2.y  )  &&
-	         (  r1.y  >  l2.y  )  )
+	if ((l1.x < r2.x) &&
+		(r1.x > l2.x) &&
+		(l1.y < r2.y) &&
+		(r1.y > l2.y))
 		return true;
 
-
-
-//	if   (  (  l1.x  >  r2.x  )||  (  r1.x  <  l2.x  )  || (  l1.y > r2.y ) ||
-//	           (   r1.y  <  l2.y   ) )
-//		return false;
-//
-//
-//
-//    // If one rectangle is on left side of other
-//    if (l1.x > r2.x || l2.x > r1.x)
-//        return false;
-//
-//    // If one rectangle is above other
-//    if (l1.y < r2.y || l2.y < r1.y)
-//        return false;
 
     return false;
 }
@@ -959,6 +945,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     //show_detections2(rgb_image, bbox, "NOD_FULL");
     //cout<<scene_slices.size()<<" "<<bouding_boxes_of_slices.size()<<" "<<transform_factor_of_slice_to_original_frame.size()<<endl;
     //cout<<endl;
+    printf("%lf-r.png\n", image_msg->timestamp);
+    //cout<<image_msg->timestamp<<"-r.png"<<endl;
 //	publish_moving_objects_message(image_msg->timestamp);
 }
 
