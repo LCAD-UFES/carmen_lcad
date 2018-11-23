@@ -386,15 +386,30 @@ calc_percentage_of_rectangles_intersection(cv::Point l1, cv::Point r1, cv::Point
 
 bool rectangles_intersects(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r2)
 {
-    // If one rectangle is on left side of other
-    if (l1.x > r2.x || l2.x > r1.x)
-        return false;
 
-    // If one rectangle is above other
-    if (l1.y < r2.y || l2.y < r1.y)
-        return false;
 
-    return true;
+	if (  (  l1.x  <  r2.x  )  &&  (   r1.x   >  l2.x  )  &&
+	       (  l1.y  <  r2.y  )  &&
+	         (  r1.y  >  l2.y  )  )
+		return true;
+
+
+
+//	if   (  (  l1.x  >  r2.x  )||  (  r1.x  <  l2.x  )  || (  l1.y > r2.y ) ||
+//	           (   r1.y  <  l2.y   ) )
+//		return false;
+//
+//
+//
+//    // If one rectangle is on left side of other
+//    if (l1.x > r2.x || l2.x > r1.x)
+//        return false;
+//
+//    // If one rectangle is above other
+//    if (l1.y < r2.y || l2.y < r1.y)
+//        return false;
+
+    return false;
 }
 
 
@@ -426,22 +441,23 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 				cv::Point r1; //bottom right
 				r1.x = b.x + b.w;
 				r1.y = b.y + b.h;
+				//cout<<l1.x<<" "<<l1.y<<" "<<r1.x<<" "<<r1.y<<endl;
 
 				for (int k = 0; k < bboxes.size(); k++)
 				{
 					float percentage_of_intersection_between_bboxes;
 					cv::Point l2;
-					l2.x = bboxes[i].x;
-					l2.y = bboxes[i].y;
+					l2.x = bboxes[k].x;
+					l2.y = bboxes[k].y;
 					cv::Point r2;
-					r2.x = bboxes[i].x + bboxes[i].w;
-					r2.y = bboxes[i].y + bboxes[i].h;
-
+					r2.x = bboxes[k].x + bboxes[k].w;
+					r2.y = bboxes[k].y + bboxes[k].h;
+					//cout<<"\t"<<l2.x<<" "<<l2.y<<" "<<r2.x<<" "<<r2.y<<endl;
 					if (rectangles_intersects(l1, r1, l2, r2))
 					{
 						percentage_of_intersection_between_bboxes = calc_percentage_of_rectangles_intersection(l1, r1, l2, r2);
 						//cout<< percentage_of_intersection_between_bboxes<< endl;
-						if (percentage_of_intersection_between_bboxes > 35)
+						if (percentage_of_intersection_between_bboxes > 20)
 						{
 							intersects_with_bboxes = true;
 							break;
