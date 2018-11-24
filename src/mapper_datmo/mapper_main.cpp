@@ -27,6 +27,7 @@
 #include <carmen/libdeeplab.h>
 #include <omp.h>
 #include "mapper.h"
+#include <sys/stat.h>
 
 #include "message_interpolation.cpp"
 
@@ -195,8 +196,10 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 			}
 			if (verbose >= 2)
 			{
-				circle(camera_image_semantic[camera_index], cv::Point(image_x + image_width, image_y), 1, laser_ray_color, 1, 8, 0);
-				circle(camera_image_semantic[camera_index], cv::Point(image_x, image_y), 1, laser_ray_color, 1, 8, 0);
+				int ix = (double) image_x / image_width  * camera_image_semantic[camera_index].cols / 2;
+				int iy = (double) image_y / image_height * camera_image_semantic[camera_index].rows;
+				circle(camera_image_semantic[camera_index], cv::Point(ix, iy), 1, laser_ray_color, 1, 8, 0);
+				circle(camera_image_semantic[camera_index], cv::Point(ix + camera_image_semantic[camera_index].cols / 2, iy), 1, laser_ray_color, 1, 8, 0);
 			}
 		}
 	}
@@ -766,6 +769,32 @@ colormap[] =
 
 
 void
+save_image_semantic_map_to_disk(int width, int height, int camera, double timestamp, unsigned char *segmap)
+{
+	static const char *dirname = (char *) "/dados/log_dante_michelini-20181116.txt_segmap";
+	static struct stat st;
+	if (stat(dirname, &st) == -1)
+		mkdir(dirname, 0777);
+
+	char path[256];
+	int subdir1 = (int) timestamp / 10000 * 10000;
+	sprintf(path, "%s/%d/", dirname, subdir1);
+	if (stat(path, &st) == -1)
+		mkdir(path, 0777);
+
+	int subdir2 = (int) timestamp / 100 * 100;
+	sprintf(path, "%s/%d/%d/", dirname, subdir1, subdir2);
+	if (stat(path, &st) == -1)
+		mkdir(path, 0777);
+
+	sprintf(path, "%s/%d/%d/%.6lf.bb%d.segmap", dirname, subdir1, subdir2, timestamp, camera);
+	carmen_FILE *segmap_file = carmen_fopen(path, "w");
+	carmen_fwrite(segmap, width * height, 1, segmap_file);
+	carmen_fclose(segmap_file);
+}
+
+
+void
 bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	camera_msg_count[camera]++;
@@ -779,10 +808,11 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 	camera_data[camera].image[i] = (camera_alive[camera] == 0) ? image_msg->raw_left : image_msg->raw_right;
 	camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
 	camera_data[camera].timestamp[i] = image_msg->timestamp;
+	save_image_semantic_map_to_disk(image_msg->width, image_msg->height, camera, image_msg->timestamp, camera_data[camera].semantic[i]);
 
 	if (verbose >= 2)
 	{
-		cv::Mat image_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, camera_data[camera].image[i]);
+	    cv::Mat image_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, camera_data[camera].image[i]);
 		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, cv::Scalar(0));
 	    for (int y = 0; y < semantic_cv.rows; y++)
 	        for (int x = 0; x < semantic_cv.cols; x++)
@@ -790,7 +820,15 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 
 //		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC1, camera_data[camera].semantic[i]);
 //		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, color_image(image_msg->width, image_msg->height, camera_data[camera].semantic[i]));
-		hconcat(image_cv, semantic_cv, camera_image_semantic[camera]);
+
+	    int window_widht = BUMBLEBEE_BASIC_VIEW_MAX_WINDOW_WIDTH;
+	    int window_height = (double) image_msg->height * window_widht / image_msg->width;
+	    if (window_widht != image_msg->width)
+	    {
+	    	resize(image_cv, image_cv, cv::Size(window_widht, window_height));
+	    	resize(semantic_cv, semantic_cv, cv::Size(window_widht, window_height));
+	    }
+	    hconcat(image_cv, semantic_cv, camera_image_semantic[camera]);
 		cvtColor(camera_image_semantic[camera], camera_image_semantic[camera], CV_RGB2BGR);
 		imshow("Image Semantic Segmentation", camera_image_semantic[camera]);
 		cv::waitKey(1);
