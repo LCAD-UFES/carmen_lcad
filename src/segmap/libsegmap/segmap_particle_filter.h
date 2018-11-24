@@ -39,6 +39,9 @@ public:
 	Pose2d best;
 
 	double _gauss();
+	double _gps_weight(Pose2d &p, Pose2d &gps);
+	double _semantic_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
+	double _image_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
 
 	// public:
 	ParticleFilter(int n_particles, double x_std, double y_std, double th_std,

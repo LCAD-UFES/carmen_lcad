@@ -95,7 +95,10 @@ draw_pointcloud(Mat &m, PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap 
 		px = (point.x - map.xo) * map.pixels_by_m;
 		py = (point.y - map.yo) * map.pixels_by_m;
 
-		circle(m, Point(px, py), 2, Scalar(b, g, r), -1);
+		m.data[3 * (py * m.cols + px)] = b;
+		m.data[3 * (py * m.cols + px) + 1] = g;
+		m.data[3 * (py * m.cols + px) + 2] = r;
+		//circle(m, Point(px, py), 1, Scalar(b, g, r), 1);
 	}
 }
 
@@ -130,10 +133,9 @@ view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses, Pose
 	static int step = 1;
 
 	char c;
-	int i, j;
+	int i;
 	Pose2d p;
 	Point pixel;
-	double shift_x, shift_y;
 
 	Pose2d mean = pf.mean();
 	Pose2d mode = pf.mode();
@@ -155,11 +157,11 @@ view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses, Pose
 	draw_particle(map_img, mode, map, Scalar(255, 0, 0));
 	draw_particle(map_img, current_pose, map, Scalar(0, 0, 0));
 
-	double mult = (double) 800. / (double) map_img.rows;
-	Mat resized_map((int) (map_img.rows * mult), (int) (map_img.cols * mult), CV_8UC3);
-	resize(map_img, resized_map, resized_map.size());
-	imshow("viewer", resized_map);
-	//imshow("viewer", map_img);
+	//double mult = (double) 800. / (double) map_img.rows;
+	//Mat resized_map((int) (map_img.rows * mult), (int) (map_img.cols * mult), CV_8UC3);
+	//resize(map_img, resized_map, resized_map.size());
+	//imshow("viewer", resized_map);
+	imshow("viewer", map_img);
 
 	c = waitKey(step ? -1 : 1);
 	if (c == 'S' || c == 's')

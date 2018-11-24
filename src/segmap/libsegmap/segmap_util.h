@@ -75,5 +75,4 @@ draw_rectangle(Mat &img,
 		double height, double width, Scalar color,
 		double x_origin, double y_origin, double pixels_by_meter);
 
-
 #endif
