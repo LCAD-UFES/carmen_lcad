@@ -1785,9 +1785,9 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 {
 	if (message->command_id == SET_SPEED)
 	{
-		if (strcmp(message->command, "MAX_SPEED"))
+		if (strcmp(message->command, "MAX_SPEED") == 0)
 			set_max_v(carmen_ini_max_velocity);
-		else if (strcmp(message->command, "0.0"))
+		else if (strcmp(message->command, "0.0") == 0)
 			set_max_v(0.0);
 
 		printf("New speed set by voice command: %s\n", message->command);
