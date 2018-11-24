@@ -1,0 +1,4 @@
+bias v: 0.994461 -0.000000 bias phi: 0.928022 -0.000046 initial angle: -1.998344
+Fitness (MSE): -4.046536
+Fitness (SQRT(MSE)): 2.011600
+

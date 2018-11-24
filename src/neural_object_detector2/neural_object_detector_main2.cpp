@@ -10,13 +10,21 @@ int camera_side;
 
 carmen_camera_parameters camera_parameters;
 carmen_pose_3D_t velodyne_pose;
+carmen_pose_3D_t bullbar_pose;
+carmen_pose_3D_t sick_pose;
 carmen_pose_3D_t camera_pose;
 carmen_pose_3D_t board_pose;
 tf::Transformer transformer;
+tf::Transformer transformer_sick;
 
 const unsigned int maxPositions = 50;
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
 vector<carmen_velodyne_partial_scan_message> velodyne_vector;
+
+
+carmen_laser_ldmrs_new_message* sick_laser_message;
+carmen_velodyne_partial_scan_message sick_message_arrange;
+vector<carmen_velodyne_partial_scan_message> sick_vector;
 
 
 Detector *darknet;
@@ -258,7 +266,7 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
 
     //cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
     //cv::resize(rgb_image, resized_image, resized_image.size());
-    cv::resize(rgb_image, rgb_image, cv::Size(640, 364));
+    //cv::resize(rgb_image, rgb_image, cv::Size(640, 364));
     cv::imshow(window_name, rgb_image);
     cv::waitKey(1);
 
@@ -348,11 +356,55 @@ check_rect_inside_image (cv::Rect rec, cv::Mat img)
 }
 
 
+float
+calc_percentage_of_rectangles_intersection(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r2)
+{
+	float intersection_percentage;
+
+	// Area of 1st Rectangle
+	int area1 = abs(l1.x - r1.x) * abs(l1.y - r1.y);
+	// Area of 2nd Rectangle
+	int area2 = abs(l2.x - r2.x) * abs(l2.y - r2.y);
+	int total_area;
+
+	// Length of intersecting part i.e
+	// start from max(l1.x, l2.x) of
+	// x-coordinate and end at min(r1.x,
+	// r2.x) x-coordinate by subtracting
+	// start from end we get required
+	// lengths
+	int areaI = abs((min(r1.x, r2.x) - max(l1.x, l2.x)) * (min(r1.y, r2.y) - max(l1.y, l2.y)));
+	total_area  = abs(area1 + area2 - areaI);
+
+
+	intersection_percentage = (100 * areaI) / (total_area);
+	return (intersection_percentage);
+
+
+}
+
+
+bool rectangles_intersects(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r2)
+{
+
+
+	if ((l1.x < r2.x) &&
+		(r1.x > l2.x) &&
+		(l1.y < r2.y) &&
+		(r1.y > l2.y))
+		return true;
+
+
+    return false;
+}
+
+
 vector<bbox_t>
 transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_slices, vector<t_transform_factor> transform_factor_of_slice_to_original_frame)
 {
 	vector<bbox_t> bboxes;
 	bbox_t b;
+	bool intersects_with_bboxes = false;
 
 	for (int i = 0; i < bounding_boxes_of_slices.size(); i++)
 	{
@@ -363,7 +415,50 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 			b.y = bounding_boxes_of_slices[i][j].y + transform_factor_of_slice_to_original_frame[i].translate_factor_y;
 			//b.w = bouding_boxes_of_slices[i][j].w / transform_factor_of_slice_to_original_frame[i].scale_factor_x;
 			//b.h = bouding_boxes_of_slices[i][j].h / transform_factor_of_slice_to_original_frame[i].scale_factor_y;
-			bboxes.push_back(b);
+			if (i == 0)
+			{
+				bboxes.push_back(b);
+			}
+			else
+			{
+				cv::Point l1; //top left
+				l1.x = b.x;
+				l1.y = b.y;
+				cv::Point r1; //bottom right
+				r1.x = b.x + b.w;
+				r1.y = b.y + b.h;
+				//cout<<l1.x<<" "<<l1.y<<" "<<r1.x<<" "<<r1.y<<endl;
+
+				for (int k = 0; k < bboxes.size(); k++)
+				{
+					float percentage_of_intersection_between_bboxes;
+					cv::Point l2;
+					l2.x = bboxes[k].x;
+					l2.y = bboxes[k].y;
+					cv::Point r2;
+					r2.x = bboxes[k].x + bboxes[k].w;
+					r2.y = bboxes[k].y + bboxes[k].h;
+					//cout<<"\t"<<l2.x<<" "<<l2.y<<" "<<r2.x<<" "<<r2.y<<endl;
+					if (rectangles_intersects(l1, r1, l2, r2))
+					{
+						percentage_of_intersection_between_bboxes = calc_percentage_of_rectangles_intersection(l1, r1, l2, r2);
+						//cout<< percentage_of_intersection_between_bboxes<< endl;
+						if (percentage_of_intersection_between_bboxes > 20)
+						{
+							intersects_with_bboxes = true;
+							break;
+						}
+					}
+
+				}
+				if (intersects_with_bboxes == false)
+				{
+					bboxes.push_back(b);
+					intersects_with_bboxes = false;
+				}
+
+			}
+
 		}
 	}
 
@@ -591,8 +686,164 @@ rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
 }
 
 
+tf::Point
+move_to_camera_reference2(tf::Point p3d_velodyne_reference, carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose)
+{
+    tf::Transform pose_velodyne_in_board(
+            tf::Quaternion(velodyne_pose.orientation.yaw, velodyne_pose.orientation.pitch, velodyne_pose.orientation.roll),
+            tf::Vector3(velodyne_pose.position.x, velodyne_pose.position.y, velodyne_pose.position.z));
+
+    tf::Transform pose_camera_in_board(
+            tf::Quaternion(camera_pose.orientation.yaw, camera_pose.orientation.pitch, camera_pose.orientation.roll),
+            tf::Vector3(camera_pose.position.x, camera_pose.position.y, camera_pose.position.z));
+
+
+	tf::Transform velodyne_frame_to_board_frame = pose_velodyne_in_board;
+	//tf::Transform board_frame_to_camera_frame = pose_camera_in_board;
+	tf::Transform board_frame_to_camera_frame = pose_camera_in_board.inverse();
+
+	return board_frame_to_camera_frame * velodyne_frame_to_board_frame * p3d_velodyne_reference;
+}
+
+std::vector<carmen_velodyne_points_in_cam_t>
+carmen_velodyne_camera_calibration_lasers_points_in_camera2(carmen_laser_ldmrs_new_message* laser_message,
+														   carmen_camera_parameters camera_parameters,
+														   carmen_pose_3D_t sick_pose, carmen_pose_3D_t camera_pose,
+														   int image_width, int image_height)
+		{
+	std::vector<carmen_velodyne_points_in_cam_t> laser_points_in_camera;
+
+	tf::StampedTransform sick_to_camera_pose;
+
+	// bull pose with respect to the car
+	tf::Transform bull_to_car_pose;
+	bull_to_car_pose.setOrigin(tf::Vector3(bullbar_pose.position.x, bullbar_pose.position.y, bullbar_pose.position.z));
+	bull_to_car_pose.setRotation(tf::Quaternion(bullbar_pose.orientation.yaw, bullbar_pose.orientation.pitch, bullbar_pose.orientation.roll)); // yaw, pitch, roll
+	tf::StampedTransform bull_to_car_transform(bull_to_car_pose, tf::Time(0), "/car", "/bull");
+	transformer_sick.setTransform(bull_to_car_transform, "bull_to_car_transform");
+
+
+	// sick pose with respect to the bull
+	tf::Transform sick_to_bull_pose;
+	sick_to_bull_pose.setOrigin(tf::Vector3(sick_pose.position.x, sick_pose.position.y, sick_pose.position.z));
+	sick_to_bull_pose.setRotation(tf::Quaternion(sick_pose.orientation.yaw, sick_pose.orientation.pitch, sick_pose.orientation.roll));
+	tf::StampedTransform sick_to_bull_transform(sick_to_bull_pose, tf::Time(0), "/bull", "/sick");
+	transformer_sick.setTransform(sick_to_bull_transform, "sick_to_bull_transform");
+
+	transformer_sick.lookupTransform("/camera", "/sick", tf::Time(0), sick_to_camera_pose);
+
+
+    double fx_meters = camera_parameters.fx_factor * image_width * camera_parameters.pixel_size;
+    double fy_meters = camera_parameters.fy_factor * image_height * camera_parameters.pixel_size;
+
+    double cu = camera_parameters.cu_factor * (double) image_width;
+    double cv = camera_parameters.cv_factor * (double) image_height;
+    //cout<<laser_message->scan_points<<endl;
+	for (int i = 0; i < laser_message->scan_points; i++)
+	{
+		double v_angle = laser_message->arraypoints[i].vertical_angle;
+		//double v_angle = carmen_normalize_theta(carmen_degrees_to_radians(laser_message->arraypoints[i].vertical_angle));
+		double range = laser_message->arraypoints[i].radial_distance;
+		//printf("Range: %lf\n", range);
+		double h_angle = laser_message->arraypoints[i].horizontal_angle;
+		//double h_angle = carmen_normalize_theta(carmen_degrees_to_radians(laser_message->arraypoints[i].horizontal_angle));
+
+		//			if (range <= MIN_RANGE)
+		//				range = MAX_RANGE;
+		//
+		//			if (range > MAX_RANGE)
+		//				range = MAX_RANGE;
+		//
+		//			if (range >= MAX_RANGE)
+		//				continue;
+
+		tf::Point p3d_velodyne_reference = spherical_to_cartesian(h_angle, v_angle, range);
+
+		if (p3d_velodyne_reference.x() > 0)
+		{
+			//tf::Point p3d_camera_reference = move_to_camera_reference2(p3d_velodyne_reference,sick_pose,camera_pose);
+			tf::Point p3d_camera_reference = sick_to_camera_pose * p3d_velodyne_reference;
+
+			double px = (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
+			double py = (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
+
+			int ipx = image_width - (int) px - 1;
+			//int ipx = (int) px;
+			//int ipy = image_height - (int) py -1;
+			int ipy = (int) py;
+
+			if (ipx >= 0 && ipx <= image_width && ipy >= 0 && ipy <= image_height)
+			{
+				carmen_velodyne_points_in_cam_t velodyne_in_cam = {ipx, ipy, {h_angle, v_angle, range}};
+
+				laser_points_in_camera.push_back(velodyne_in_cam);
+			}
+
+		}
+
+	}
+	return laser_points_in_camera;
+}
+
+
 #define crop_x 0.0
 #define crop_y 1.0
+
+
+void
+image_handler2(carmen_bumblebee_basic_stereoimage_message *image_msg)
+{
+	vector<carmen_velodyne_points_in_cam_t> sick_points = carmen_velodyne_camera_calibration_lasers_points_in_camera2(sick_laser_message,
+															   camera_parameters,
+															   bullbar_pose, camera_pose,
+															   image_msg->width, image_msg->height);
+
+	vector<carmen_position_t> rddf_points_in_image;
+	vector<double> distances_of_rddf_from_car;
+	double hood_removal_percentage = 0.2;
+	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
+	cv::Size size(320, 320);
+
+	cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
+	cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
+
+	static double start_time = 0.0;
+	double fps;
+
+	if (camera_side == 0)
+		memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char));
+	else
+		memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char));
+
+	if (velodyne_vector.size() > 0)
+		velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp); // TODO não faz sentido! Tem que sempre pegar a ultima msg do velodyne
+	else
+		return;
+
+	cv::Mat src_image_copy = src_image.clone();
+
+	cv::Mat pRoi = src_image_copy(cv::Rect(src_image_copy.cols * crop_x / 2.0, 0,
+			src_image_copy.cols - src_image_copy.cols * crop_x, src_image_copy.rows));
+	src_image = pRoi;
+	src_image_copy = src_image.clone();
+
+	cv::cvtColor(src_image, rgb_image, cv::COLOR_RGB2BGR);
+
+	cv::Mat rgb_image_copy = rgb_image.clone();
+
+	for (unsigned int i = 0; i < sick_points.size(); i++)
+	{
+		//cout<<sick_points[i].ipx<<" "<<sick_points[i].ipy<<endl;
+
+		cv::circle(rgb_image, cv::Point(sick_points[i].ipx,	sick_points[i].ipy), 1, cv::Scalar(0, 0, 255), 1);
+	}
+
+	cv::imshow("test", rgb_image);
+	cv::waitKey(10);
+}
+
+
+
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
@@ -630,10 +881,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     cv::Mat rgb_image_copy = rgb_image.clone();
 
     vector<bbox_t> predictions;
-    predictions = darknet->detect(src_image, 0.2);
-    detections(predictions, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Original Detection");
+    //predictions = darknet->detect(src_image, 0.2);
+    //detections(predictions, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Original Detection");
 
-    //detections(image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points, 1);
     carmen_pose_3D_t car_pose = filter_pitch(pose);
     tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, car_pose);
 
@@ -679,9 +929,24 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     rgb_image = scene_slices[0];
     src_image = scene_slices[0];
     detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Foviated Detection");
+
+//    for (int i = 1; i < scene_slices.size(); i++)
+//    {
+//    	cv::Scalar color (0,0,255);
+//    	cv::rectangle(rgb_image,
+//    	cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x, transform_factor_of_slice_to_original_frame[i].translate_factor_y),
+//		cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x + scene_slices[i].cols, transform_factor_of_slice_to_original_frame[i].translate_factor_y + scene_slices[i].rows),
+//		color, 3);
+//    	cv::imshow("out", rgb_image);
+//    	cv::waitKey(10);
+//    	cv::imwrite("out.jpg", rgb_image);
+//    }
+
     //show_detections2(rgb_image, bbox, "NOD_FULL");
     //cout<<scene_slices.size()<<" "<<bouding_boxes_of_slices.size()<<" "<<transform_factor_of_slice_to_original_frame.size()<<endl;
     //cout<<endl;
+    printf("%lf-r.png\n", image_msg->timestamp);
+    //cout<<image_msg->timestamp<<"-r.png"<<endl;
 //	publish_moving_objects_message(image_msg->timestamp);
 }
 
@@ -713,6 +978,14 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
         free(velodyne_vector.begin()->partial_scan);
         velodyne_vector.erase(velodyne_vector.begin());
     }
+}
+
+
+void
+carmen_laser_ldmrs_new_message_handler(carmen_laser_ldmrs_new_message* laser_message)
+{
+	sick_laser_message = laser_message;
+	//sick_message_arrange = carmen_laser_ldmrs_new_convert_laser_scan_to_partial_velodyne_message(laser_message, laser_message->timestamp);
 }
 
 
@@ -750,6 +1023,8 @@ subscribe_messages()
 
     carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
+    carmen_laser_subscribe_ldmrs_new_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_new_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
     carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     //carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -773,10 +1048,18 @@ read_parameters(int argc, char **argv)
 
     char bumblebee_string[256];
     char camera_string[256];
+    char bullbar_string[256];
+    char sick_string[256];
+    char velodyne_string[256];
     char sensor_board_string[256];
+
+
 
     sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera); // Geather the cameri ID
     sprintf(camera_string, "%s%d", "camera", camera);
+    sprintf(bullbar_string, "%s", "front_bullbar");
+    sprintf(sick_string, "%s", "laser_ldmrs");
+    sprintf(velodyne_string, "%s", "velodyne");
     sprintf(sensor_board_string, "%s", "sensor_board_1");
 
     carmen_param_t param_list[] =
@@ -799,7 +1082,32 @@ read_parameters(int argc, char **argv)
 		{camera_string, (char*) "z",     CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL },
 		{camera_string, (char*) "roll",  CARMEN_PARAM_DOUBLE, &camera_pose.orientation.roll, 0, NULL },
 		{camera_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.pitch, 0, NULL },
-		{camera_string, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL }
+		{camera_string, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL },
+
+		{bullbar_string, (char*) "x",     CARMEN_PARAM_DOUBLE, &bullbar_pose.position.x, 0, NULL },
+		{bullbar_string, (char*) "y",     CARMEN_PARAM_DOUBLE, &bullbar_pose.position.y, 0, NULL },
+		{bullbar_string, (char*) "z",     CARMEN_PARAM_DOUBLE, &bullbar_pose.position.z, 0, NULL },
+		{bullbar_string, (char*) "roll",  CARMEN_PARAM_DOUBLE, &bullbar_pose.orientation.roll, 0, NULL },
+		{bullbar_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &bullbar_pose.orientation.pitch, 0, NULL },
+		{bullbar_string, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &bullbar_pose.orientation.yaw, 0, NULL },
+
+		{sick_string, (char*) "x",     CARMEN_PARAM_DOUBLE, &sick_pose.position.x, 0, NULL },
+		{sick_string, (char*) "y",     CARMEN_PARAM_DOUBLE, &sick_pose.position.y, 0, NULL },
+		{sick_string, (char*) "z",     CARMEN_PARAM_DOUBLE, &sick_pose.position.z, 0, NULL },
+		{sick_string, (char*) "roll",  CARMEN_PARAM_DOUBLE, &sick_pose.orientation.roll, 0, NULL },
+		{sick_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &sick_pose.orientation.pitch, 0, NULL },
+		{sick_string, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &sick_pose.orientation.yaw, 0, NULL },
+
+		{velodyne_string, (char*) "x",     CARMEN_PARAM_DOUBLE, &velodyne_pose.position.x, 0, NULL },
+		{velodyne_string, (char*) "y",     CARMEN_PARAM_DOUBLE, &velodyne_pose.position.y, 0, NULL },
+		{velodyne_string, (char*) "z",     CARMEN_PARAM_DOUBLE, &velodyne_pose.position.z, 0, NULL },
+		{velodyne_string, (char*) "roll",  CARMEN_PARAM_DOUBLE, &velodyne_pose.orientation.roll, 0, NULL },
+		{velodyne_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &velodyne_pose.orientation.pitch, 0, NULL },
+		{velodyne_string, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &velodyne_pose.orientation.yaw, 0, NULL }
+
+
+
+		//LER SICK DO CARMEN INI
     };
 
     SampleFilter_init(&filter2);
@@ -844,6 +1152,7 @@ main(int argc, char **argv)
     read_parameters(argc, argv);
 
     initialize_transformations(board_pose, camera_pose, &transformer);
+    initialize_transformations(board_pose, camera_pose, &transformer_sick);
 
     subscribe_messages();
 
