@@ -617,6 +617,13 @@ get_max_v()
 }
 
 
+void
+set_max_v(double v)
+{
+	robot_config.max_v = v;
+}
+
+
 carmen_robot_ackerman_config_t *
 get_robot_config()
 {

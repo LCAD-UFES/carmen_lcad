@@ -1,3 +1,4 @@
+#include <strings.h>
 #include <stdio.h>
 #include <iostream>
 #include <carmen/carmen.h>
@@ -7,7 +8,6 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <strings.h>
 #include <curl/curl.h>
 #include <jsoncpp/json/json.h>
 #include <locale.h>
@@ -213,10 +213,20 @@ execute_voice_command(char *voice_command)
 				{
 					printf("Command detected: %s \n\n", "Seguir curso");
 
+					publish_voice_interface_command_message("MAX_SPEED", SET_SPEED);
 					carmen_navigator_ackerman_go();
 
 					carmen_ipc_sleep(0.1); // Necessario para reconectar com o audio para tocar o som abaixo.
 					system("mpg123 $CARMEN_HOME/data/voice_interface_data/helm_engage_clean.mp3"); // http://www.trekcore.com/audio/
+				}
+				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "stop") == 0)
+				{
+					printf("Command detected: %s \n\n", "Parar!");
+
+					publish_voice_interface_command_message("0.0", SET_SPEED);
+
+					carmen_ipc_sleep(0.1); // Necessario para reconectar com o audio para tocar o som abaixo.
+					system("mpg123 $CARMEN_HOME/data/voice_interface_data/computerbeep_1.mp3"); // http://www.trekcore.com/audio/
 				}
 				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "set_course") == 0)
 				{
@@ -232,7 +242,7 @@ execute_voice_command(char *voice_command)
 								publish_voice_interface_command_message(rddf_to_place, SET_COURSE);
 
 								speek_sentence((char *) ("Curso para " +
-										rasa_server_response["entities"][i]["value"].asString() + " definido.").c_str());
+										rasa_server_response["entities"][i]["value"].asString() + " estabelecido.").c_str());
 
 								place_detected = true;
 							}
