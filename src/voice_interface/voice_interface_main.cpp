@@ -7,7 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <string.h>
+#include <strings.h>
 #include <curl/curl.h>
 #include <jsoncpp/json/json.h>
 #include <locale.h>
