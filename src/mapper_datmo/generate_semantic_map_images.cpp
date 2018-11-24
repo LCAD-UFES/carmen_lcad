@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <locale.h>
+#include <carmen/libdeeplab.h>
 
 using namespace cv;
 
@@ -41,6 +42,9 @@ process_bumblebee(FILE *f, char *dir, int camera_side, bool show_image)
 	if (camera_side == 0 || camera_side == INT_MAX)
 	{
 		fread(raw_left, img_size, sizeof(unsigned char), image_file);
+
+		unsigned char *semantic_left = process_image(w, h, raw_left);
+
 		img_l = Mat(h, w, CV_8UC3, raw_left, 0);
 		cvtColor(img_l, img_l, COLOR_RGB2BGR);
 
@@ -140,6 +144,8 @@ main(int argc, char **argv)
 		printf("Warning: Directory %s already exists", argv[2]);
 	else if (status != 0)
 		exit(printf("ERROR: Could not create directory '%s'\n", argv[2]));
+
+	initialize_inference_context();
 
 	int camera_side = find_side_arg(argc, argv);
 	bool show_image = find_show_arg(argc, argv);

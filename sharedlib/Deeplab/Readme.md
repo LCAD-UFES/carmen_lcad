@@ -21,7 +21,7 @@ export PYTHONPATH=$CARMEN_HOME/sharedlib/Deeplab:$PYTHONPATH
 ```
 
 ### Running standalone
-Para rodar somente a parte em python, descomente as ultimas linhas presentes no arquivo `bridge.py` e rode `python2 bridge.py`
+Para rodar somente a parte em python, descomente as ultimas linhas presentes no arquivo `bridge.py` e rode `python2 bridge.py <png_filenames>`
 
 NAO EH NECESSARIO ATIVAR O VIRTUALENV ANTES DE RODAR DE FORMA STANDALONE, O PROPRIO SCRIPT PYTHON JA FAZ ISSO.
 
