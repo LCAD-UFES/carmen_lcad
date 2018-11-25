@@ -108,7 +108,7 @@ Os arquivos acima estão no seguinte formato:
 
     ```
     cd src/hypergraphsclam
-    ./hypergraphsclam sync-<seu log>.txt poses-opt-<seu log>.txt
+    ./hypergraphsclam sync-<seu log>.txt poses-opt-<seu log>
     ```
 
     Exemplo:
@@ -139,6 +139,11 @@ O otimizador gera 4 arquivos:
 
 Os quatro arquivos acima estão no seguinte formato:
     x y theta timeStamp cos(theta) sin(theta)
+
+Os dados de "poses-opt-log_volta_da_ufes-20171106.txt" podem estar fora de ordem (timestamp). Assim, 
+reoordene com sort (troque abaixo para o nome de seu log)
+    sort -k 4 poses-opt-log_volta_da_ufes-20171106.txt > caco.txt
+    mv caco.txt poses-opt-log_volta_da_ufes-20171106.txt
 
 Após a otimização, os dados podem ser visualizados pelo gnuplot:
     Exemplo:
