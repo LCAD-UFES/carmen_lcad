@@ -26,6 +26,13 @@
 - retormar o curso
 - continue
 
+## intent:initialize
+- Inicializar sistemas de propulsão e controle 
+- Inicializar sistemas
+- Inincializar
+- Preparar sistemas para operação autônoma
+- Prepare-se para operação autônoma
+
 ## intent:greet
 - Olá
 - Oi
@@ -36,6 +43,12 @@
 ## intent:stop
 - pare
 - Pare
+
+## intent:stop_immediately
+- pare imediatamente
+- Pare imediatamente
+- Para imediatamente
+- Pare agora
 
 ## intent:thankyou
 - obrigado!

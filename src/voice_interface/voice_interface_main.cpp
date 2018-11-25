@@ -219,6 +219,24 @@ execute_voice_command(char *voice_command)
 					carmen_ipc_sleep(0.1); // Necessario para reconectar com o audio para tocar o som abaixo.
 					system("mpg123 $CARMEN_HOME/data/voice_interface_data/helm_engage_clean.mp3"); // http://www.trekcore.com/audio/
 				}
+				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "initialize") == 0)
+				{
+					printf("Command detected: %s \n\n", "Inicializar");
+
+					carmen_navigator_ackerman_stop();
+					publish_voice_interface_command_message("MAX_SPEED", SET_SPEED);
+
+					speek_sentence((char *) "Sistemas de propulsão e controle autônomo, incializados!");
+				}
+				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "stop_immediately") == 0)
+				{
+					printf("Command detected: %s \n\n", "Parar imeditamente!");
+
+					carmen_navigator_ackerman_stop();
+
+					carmen_ipc_sleep(0.1); // Necessario para reconectar com o audio para tocar o som abaixo.
+					system("mpg123 $CARMEN_HOME/data/voice_interface_data/computerbeep_1.mp3"); // http://www.trekcore.com/audio/
+				}
 				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "stop") == 0)
 				{
 					printf("Command detected: %s \n\n", "Parar!");
