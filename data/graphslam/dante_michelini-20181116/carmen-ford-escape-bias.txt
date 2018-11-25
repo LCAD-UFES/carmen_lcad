@@ -1,0 +1,5 @@
+# Dante Michelini
+robot_v_multiplier				0.994461
+robot_phi_multiplier			0.928022
+robot_phi_bias					-0.000046
+

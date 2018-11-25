@@ -1,4 +1,3 @@
-
 #include <carmen/carmen.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/path_planner_messages.h>
@@ -14,6 +13,8 @@
 #include <carmen/motion_planner_interface.h>
 #include <carmen/global_graphics.h>
 #include <carmen/navigator_ackerman_interface.h>
+#include <carmen/voice_interface_messages.h>
+#include <carmen/voice_interface_interface.h>
 #include <carmen/collision_detection.h>
 
 #include "behavior_selector.h"
@@ -70,6 +71,8 @@ static carmen_obstacle_distance_mapper_compact_map_message *compact_lane_content
 
 static double original_behaviour_selector_central_lane_obstacles_safe_distance;
 static double original_model_predictive_planner_obstacles_safe_distance;
+
+static double carmen_ini_max_velocity;
 
 
 int
@@ -1778,6 +1781,22 @@ carmen_navigator_ackerman_status_message_handler(carmen_navigator_ackerman_statu
 
 
 static void
+carmen_voice_interface_command_message_handler(carmen_voice_interface_command_message *message)
+{
+	if (message->command_id == SET_SPEED)
+	{
+		if (strcmp(message->command, "MAX_SPEED") == 0)
+			set_max_v(carmen_ini_max_velocity);
+		else if (strcmp(message->command, "0.0") == 0)
+			set_max_v(0.0);
+
+		printf("New speed set by voice command: %lf\n", get_max_v());
+		fflush(stdout);
+	}
+}
+
+
+static void
 signal_handler(int signo __attribute__ ((unused)) )
 {
 	carmen_ipc_disconnect();
@@ -1857,6 +1876,8 @@ register_handlers()
 			(carmen_handler_t)remove_goal_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) carmen_navigator_ackerman_status_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1940,6 +1961,7 @@ read_parameters(int argc, char **argv)
 	param_distance_between_waypoints = distance_between_waypoints;
 	param_change_goal_distance = change_goal_distance;
 
+	carmen_ini_max_velocity = robot_config.max_v;
 	behavior_selector_initialize(robot_config, distance_between_waypoints, change_goal_distance, following_lane_planner, parking_planner);
 
 	if (param_goal_source_onoff)

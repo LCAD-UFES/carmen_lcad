@@ -14,6 +14,8 @@ IFLAGS += \
 	-I/usr/local/include/EXTERNAL/csparse/ \
 	-I/usr/local/include/g2o/
 
+IFLAGS += -I/usr/include/python3.5
+
 LFLAGS += \
 	-L$(CARMEN_HOME)/sharedlib/prob_models \
 	$(INTERFACE_LIBS) \
@@ -37,6 +39,7 @@ LFLAGS += \
 	-lobstacle_distance_mapper_interface \
 	-ludatmo \
 	-lmoving_objects_interface \
+	-lvoice_interface_interface `python3.5-config --libs` \
 	`pkg-config --libs opencv`
 	
 LFLAGS += -lrddf_util -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper

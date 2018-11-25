@@ -53,12 +53,14 @@ GridMapTile::_initialize_derivated_values()
 	if (_map_type == GridMapTile::TYPE_SEMANTIC)
 	{
 		// The first '_N_CLASSES' fields contains the count for
-		// each class, and the last field is a boolean informing
+		// each class, and the last two fields are the total
+		// number of rays that hit the cell, and a boolean informing
 		// if the cell was observed. All classes are initialized with
 		// a count of 1 to prevent probabilities equal to zero when
 		// computing particle weights.
-		_n_fields_by_cell = _color_map.n_classes + 1;
-		_unknown = vector<double>(_n_fields_by_cell, 1.);
+		_n_fields_by_cell = _color_map.n_classes + 2;
+		_unknown = vector<double>(_n_fields_by_cell, 1);
+		_unknown[_unknown.size() - 2] = _color_map.n_classes;
 		_unknown[_unknown.size() - 1] = 0;
 	}
 	else if (_map_type == GridMapTile::TYPE_VISUAL)
@@ -174,9 +176,12 @@ GridMapTile::add_point(PointXYZRGB &p)
 		}
 		else if (_map_type == TYPE_SEMANTIC)
 		{
-			// set the flag to set the cell as observed.
-			_map[pos + (_n_fields_by_cell - 1)] = 1;
+			// increment the class count
 			_map[pos + p.r]++;
+			// increment the number of rays that hit the cell
+			_map[pos + (_n_fields_by_cell - 2)]++;
+			// set the cell as observed.
+			_map[pos + (_n_fields_by_cell - 1)] = 1;
 		}
 		else
 			exit(printf("Error: map_type '%d' not defined.\n", _map_type));
@@ -236,7 +241,7 @@ GridMapTile::cell2color(double *cell_vals)
 	{
 		if (cell_vals[_n_fields_by_cell - 1])
 		{
-			return _color_map.color(argmax(cell_vals, _n_fields_by_cell - 1));
+			return _color_map.color(argmax(cell_vals, _n_fields_by_cell - 2));
 		}
 		else
 		{

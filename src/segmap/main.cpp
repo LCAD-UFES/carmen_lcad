@@ -76,7 +76,7 @@ segmented_image_view(Mat &m)
 
 
 void
-load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, DatasetInterface &dataset)
+load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, DatasetInterface &dataset, int is_segmented, int view=0)
 {
 	int p, x, y;
 	Matrix<double, 3, 1> pixel;
@@ -87,8 +87,15 @@ load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, Data
 	dataset.load_pointcloud(i, raw_cloud);
 	Mat img = dataset.load_image(i);
 
-	//img = segmented_image_view(img);
-	Mat view = img.clone();
+	Mat viewer_img;
+
+	if (view)
+	{
+		if (is_segmented)
+			viewer_img = segmented_image_view(img);
+		else
+			viewer_img = img.clone();
+	}
 
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
@@ -100,7 +107,7 @@ load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, Data
 
 		// to use fused camera and velodyne
 		//if (0)
-		if (point.x > 7 && x >= 0 && x < img.cols && y >= 0 && y < img.rows)
+		if (point.x > 7 && x >= 0 && x < img.cols && y >= 0 && y < img.rows && point.x < 30. && point.y < 30.)
 		{
 			pcl::PointXYZRGB point2;
 
@@ -114,7 +121,9 @@ load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, Data
 			point2.g = img.data[p + 1];
 			point2.b = img.data[p + 0];
 
-			circle(view, Point(x, y), 2, Scalar(0,0,255), -1);
+			if (view)
+				circle(viewer_img, Point(x, y), 2, Scalar(0,0,255), -1);
+
 			cloud->push_back(point2);
 		}
 
@@ -129,7 +138,8 @@ load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, Data
 		}
 	}
 
-	imshow("img", view);
+	if (view)
+		imshow("cam_vel_fused", viewer_img);
 }
 
 
@@ -150,7 +160,7 @@ create_map(GridMap &map, vector<Matrix<double, 4, 4>> &poses, PointCloud<PointXY
 
 	for (int i = 0; i < poses.size(); i += 1)
 	{
-		load_fused_pointcloud_and_camera(i, cloud, dataset);
+		load_fused_pointcloud_and_camera(i, cloud, dataset, map._map_type == GridMapTile::TYPE_SEMANTIC, 1);
 
 		car2world = poses[i] * vel2car;
 		transformPointCloud(*cloud, *transformed_cloud, car2world);
@@ -222,14 +232,14 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 
 			printf("Prediction\n");
 			pf.predict(odom[i].first, odom[i].second, times[i] - times[i-1]);
-			view(pf, map, poses, gps, NULL, NULL);
+			//view(pf, map, poses, gps, NULL, NULL);
 
 			//if (i % 4 == 0 && i > 0)
 			//if (i > 16)
 			if (1)
 			{
 				printf("Correction\n");
-				load_fused_pointcloud_and_camera(i, cloud, dataset);
+				load_fused_pointcloud_and_camera(i, cloud, dataset, map._map_type == GridMapTile::TYPE_SEMANTIC);
 				pf.correct(gps, cloud, map, transformed_cloud);
 
 				Pose2d mean = pf.mean();
@@ -255,9 +265,9 @@ create_dataset(char *dataset_name)
 	DatasetInterface *dataset;
 
 	if (!strcmp(dataset_name, "carmen"))
-		dataset = new DatasetCarmen(480, 640, "/dados/data_20180112-2/data/", 0);
+		dataset = new DatasetCarmen(480, 640, "/dados/data_20180112-2/data/", 1);
 	else if (!strcmp(dataset_name, "kitti"))
-		dataset = new DatasetKitti("/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/", 0);
+		dataset = new DatasetKitti("/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/", 1);
 	else
 		exit(printf("Error: dataset '%s' not found.\n", dataset_name));
 
@@ -285,13 +295,13 @@ main(int argc, char **argv)
 	dataset->load_data(times, poses, odom);
 
 	ParticleFilter pf(30, 0.5, 0.5, degrees_to_radians(10),
-			0.1, degrees_to_radians(1),
-			0.05, 0.05, degrees_to_radians(1),
+			0.5, degrees_to_radians(2.),
+			0.05, 0.05, degrees_to_radians(2.),
 			25.0, 25.0, degrees_to_radians(100),
 			100., 100., 100.);
 
 	//system("rm -rf /dados/maps/maps_20180112-2/*");
-	GridMap map("/dados/maps/maps_20180112-2/", 75., 75., 0.2, GridMapTile::TYPE_VISUAL);
+	GridMap map("/dados/maps/maps_20180112-2/", 50., 50., 0.2, GridMapTile::TYPE_SEMANTIC);
 
 	//create_map(map, poses, cloud, transformed_cloud, *dataset);
 	run_particle_filter(pf, map, poses, odom, times, cloud, transformed_cloud, *dataset);

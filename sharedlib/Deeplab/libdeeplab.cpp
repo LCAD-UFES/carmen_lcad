@@ -6,6 +6,7 @@
 
 //////// Python
 PyObject *python_semantic_segmentation_function;
+PyObject *python_color_image_function;
 PyObject *python_get_label_name_by_number_function;
 PyObject *python_is_moving_object_function;
 
@@ -70,6 +71,15 @@ initialize_inference_context()
 		exit (printf("Error: Could not load the python_semantic_segmentation_function.\n"));
 	}
 
+	python_color_image_function = PyObject_GetAttrString(python_module, (char *) "color_image");
+
+	if (python_color_image_function == NULL || !PyCallable_Check(python_color_image_function))
+	{
+		Py_DECREF(python_module);
+		Py_Finalize();
+		exit (printf("Error: Could not load the python_color_image_function.\n"));
+	}
+
 	initialize_visualize_module();
 }
 
@@ -85,6 +95,29 @@ process_image(int width, int height, unsigned char *image)
 	PyObject* return_array;
 
 	return_array = PyObject_CallFunction(python_semantic_segmentation_function, (char *) "(O)", numpyArray);
+
+	unsigned char *z = (unsigned char*) PyArray_DATA(return_array);
+
+	if (PyErr_Occurred())
+        PyErr_Print();
+
+	Py_DECREF(numpyArray);
+	// Py_DECREF(return_array);
+
+	return z;
+}
+
+
+unsigned char*
+color_image(int width, int height, unsigned char *seg_map)
+{
+	//create shape for numpy array
+	npy_intp dims[2] = {height, width};
+	PyObject* numpyArray = PyArray_SimpleNewFromData(2, dims, NPY_UBYTE, seg_map);
+
+	PyObject* return_array;
+
+	return_array = PyObject_CallFunction(python_color_image_function, (char *) "(O)", numpyArray);
 
 	unsigned char *z = (unsigned char*) PyArray_DATA(return_array);
 

@@ -3,6 +3,12 @@
 - Definir um curso para a [volta da ufes](place)
 - Estabelecer um curso para o [estacionamento da ambiental](place)
 - Definir um curso para o [estacionamento da ambiental](place)
+- Estabelecer curso [demonstração petrobras](place)
+- Definir um curso para a [demonstração petrobras](place)
+- Estabelecer curso [demonstração inmetro](place)
+- Definir um curso para a [demonstração inmetro](place)
+- Estabelecer curso [casa firjan](place)
+- Definir um curso para a [casa firjan](place)
 - Vamos para o [NPD](place)
 
 ## intent:engage
@@ -17,6 +23,15 @@
 - manda ver
 - toca o barco
 - siga em frente
+- retormar o curso
+- continue
+
+## intent:initialize
+- Inicializar sistemas de propulsão e controle 
+- Inicializar sistemas
+- Inincializar
+- Preparar sistemas para operação autônoma
+- Prepare-se para operação autônoma
 
 ## intent:greet
 - Olá
@@ -24,6 +39,16 @@
 - bom Dia
 - boa tarde
 - boa noite
+
+## intent:stop
+- pare
+- Pare
+
+## intent:stop_immediately
+- pare imediatamente
+- Pare imediatamente
+- Para imediatamente
+- Pare agora
 
 ## intent:thankyou
 - obrigado!

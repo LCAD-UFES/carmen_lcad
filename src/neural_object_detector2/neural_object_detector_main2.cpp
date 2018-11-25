@@ -365,8 +365,7 @@ calc_percentage_of_rectangles_intersection(cv::Point l1, cv::Point r1, cv::Point
 	int area1 = abs(l1.x - r1.x) * abs(l1.y - r1.y);
 	// Area of 2nd Rectangle
 	int area2 = abs(l2.x - r2.x) * abs(l2.y - r2.y);
-	int area1_minus_intersection;
-	int area2_minus_intersection;
+	int total_area;
 
 	// Length of intersecting part i.e
 	// start from max(l1.x, l2.x) of
@@ -375,13 +374,28 @@ calc_percentage_of_rectangles_intersection(cv::Point l1, cv::Point r1, cv::Point
 	// start from end we get required
 	// lengths
 	int areaI = abs((min(r1.x, r2.x) - max(l1.x, l2.x)) * (min(r1.y, r2.y) - max(l1.y, l2.y)));
-	area1_minus_intersection = abs(area1 - areaI);
-	area2_minus_intersection = abs(area2 - areaI);
+	total_area  = abs(area1 + area2 - areaI);
 
-	intersection_percentage = (100 * areaI) / (area1_minus_intersection + area2_minus_intersection);
+
+	intersection_percentage = (100 * areaI) / (total_area);
 	return (intersection_percentage);
 
 
+}
+
+
+bool rectangles_intersects(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r2)
+{
+
+
+	if ((l1.x < r2.x) &&
+		(r1.x > l2.x) &&
+		(l1.y < r2.y) &&
+		(r1.y > l2.y))
+		return true;
+
+
+    return false;
 }
 
 
@@ -413,23 +427,29 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 				cv::Point r1; //bottom right
 				r1.x = b.x + b.w;
 				r1.y = b.y + b.h;
+				//cout<<l1.x<<" "<<l1.y<<" "<<r1.x<<" "<<r1.y<<endl;
 
 				for (int k = 0; k < bboxes.size(); k++)
 				{
 					float percentage_of_intersection_between_bboxes;
 					cv::Point l2;
-					l2.x = bboxes[i].x;
-					l2.y = bboxes[i].y;
+					l2.x = bboxes[k].x;
+					l2.y = bboxes[k].y;
 					cv::Point r2;
-					r2.x = bboxes[i].x + bboxes[i].w;
-					r2.y = bboxes[i].y + bboxes[i].h;
-					percentage_of_intersection_between_bboxes = calc_percentage_of_rectangles_intersection(l1, r1, l2, r2);
-					//cout<< percentage_of_intersection_between_bboxes<< endl;
-					if (percentage_of_intersection_between_bboxes > 35)
+					r2.x = bboxes[k].x + bboxes[k].w;
+					r2.y = bboxes[k].y + bboxes[k].h;
+					//cout<<"\t"<<l2.x<<" "<<l2.y<<" "<<r2.x<<" "<<r2.y<<endl;
+					if (rectangles_intersects(l1, r1, l2, r2))
 					{
-						intersects_with_bboxes = true;
-						break;
+						percentage_of_intersection_between_bboxes = calc_percentage_of_rectangles_intersection(l1, r1, l2, r2);
+						//cout<< percentage_of_intersection_between_bboxes<< endl;
+						if (percentage_of_intersection_between_bboxes > 20)
+						{
+							intersects_with_bboxes = true;
+							break;
+						}
 					}
+
 				}
 				if (intersects_with_bboxes == false)
 				{
@@ -925,6 +945,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     //show_detections2(rgb_image, bbox, "NOD_FULL");
     //cout<<scene_slices.size()<<" "<<bouding_boxes_of_slices.size()<<" "<<transform_factor_of_slice_to_original_frame.size()<<endl;
     //cout<<endl;
+    printf("%lf-r.png\n", image_msg->timestamp);
+    //cout<<image_msg->timestamp<<"-r.png"<<endl;
 //	publish_moving_objects_message(image_msg->timestamp);
 }
 

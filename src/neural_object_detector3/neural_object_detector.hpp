@@ -8,6 +8,9 @@
 #include <carmen/velodyne_camera_calibration.h>
 #include <carmen/moving_objects_messages.h>
 #include <carmen/moving_objects_interface.h>
+#include <carmen/traffic_light_interface.h>
+#include <carmen/traffic_light_messages.h>
+#include <carmen/rddf_messages.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
