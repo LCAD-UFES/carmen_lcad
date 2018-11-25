@@ -13,6 +13,34 @@ using namespace std;
 using namespace Eigen;
 
 
+Mat
+segmented_image_view(Mat &m)
+{
+	CityScapesColorMap color_map;
+	Mat view(m.rows, m.cols, CV_8UC3);
+
+	for (int i = 0; i < m.rows; i++)
+	{
+		for (int j = 0; j < m.cols; j++)
+		{
+			int cl = m.data[3 * (i * m.cols + j)];
+			Scalar color;
+
+			if (cl < 20)
+				color = color_map.color(cl);
+			else
+				color = Scalar(0, 0, 0);
+
+			view.data[3 * (i * view.cols + j)] = color[2];
+			view.data[3 * (i * view.cols + j) + 1] = color[1];
+			view.data[3 * (i * view.cols + j) + 2] = color[0];
+		}
+	}
+
+	return view;
+}
+
+
 double
 normalize_theta(double theta)
 {
@@ -216,4 +244,20 @@ draw_rectangle(Mat &img,
 	}
 }
 
+
+void
+print_poses(vector<Matrix<double, 4, 4>> &poses)
+{
+	Matrix<double, 4, 4> p;
+
+	for (int i = 0; i < poses.size(); i++)
+	{
+		p = poses[i];
+
+		printf("%.2lf %.2lf %.2lf\n",
+				p(0, 3) / p(3, 3),
+				p(1, 3) / p(3, 3),
+				p(2, 3) / p(3, 3));
+	}
+}
 
