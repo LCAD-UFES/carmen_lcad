@@ -1935,7 +1935,7 @@ bool GrabData::ParseLogFile(const std::string &input_filename)
             // build a new sick message
             msg = new StampedSICK(msg_id);
         }
-        else if ("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3" == tag)   // ZED eh FILE4
+        else if ("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3____" == tag)   // ZED eh FILE4. Os "_____" sao para nao considerar esta mensagem
         {
             // parse the Bumblebee stereo image message
             msg = new StampedBumblebee(msg_id);

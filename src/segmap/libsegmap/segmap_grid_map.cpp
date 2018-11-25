@@ -241,7 +241,9 @@ GridMapTile::cell2color(double *cell_vals)
 	{
 		if (cell_vals[_n_fields_by_cell - 1])
 		{
-			return _color_map.color(argmax(cell_vals, _n_fields_by_cell - 2));
+			Scalar rgb = _color_map.color(argmax(cell_vals, _n_fields_by_cell - 2));
+			Scalar bgr(rgb[2], rgb[1], rgb[0]);
+			return bgr;
 		}
 		else
 		{

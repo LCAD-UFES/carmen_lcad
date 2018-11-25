@@ -17,15 +17,16 @@ LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
 LFLAGS += -L /usr/lib -lvtkIO -lvtkFiltering -lvtkCommon -lvtkRendering -lvtkGraphics
 LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization
 
-SOURCES = main.cpp
+SOURCES = localizer.cpp mapper.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = 
-TARGETS = main 
+TARGETS = localizer mapper 
 
 # The libsegmap.a is added as a dependency to make the program be compiled when a .cpp file in the lib is changed.
 # Without adding the lib as a dependency, we would have to do a make clean && make whenever we change a .cpp file.
-main: main.o libsegmap/libsegmap.a
+localizer: localizer.o libsegmap/libsegmap.a
+mapper: mapper.o libsegmap/libsegmap.a
 
 include ../Makefile.rules
