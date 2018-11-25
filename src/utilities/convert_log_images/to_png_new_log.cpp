@@ -28,36 +28,39 @@ process_bumblebee(FILE *f, char *dir, int camera_side, bool show_image)
 		return 0;
 	}
 
-	FILE *image_file = fopen(path, "r");
+	FILE *image_file = fopen(path, "rb");
 
 	if (image_file == NULL)
 		exit(printf("ERROR: file '%s' not found!\n", path));
 
+	printf ("Saving image: %s%s\n", dir, timestamp);
+
 	static unsigned char *raw_left = (unsigned char*) malloc (img_size * sizeof(unsigned char));
 	static unsigned char *raw_right = (unsigned char*) malloc (img_size * sizeof(unsigned char));
+	fread(raw_left, img_size, sizeof(unsigned char), image_file);
+	fread(raw_right, img_size, sizeof(unsigned char), image_file);
+
 	Mat img_l;
 	Mat img_r;
 
 	if (camera_side == 0 || camera_side == INT_MAX)
 	{
-		fread(raw_left, img_size, sizeof(unsigned char), image_file);
 		img_l = Mat(h, w, CV_8UC3, raw_left, 0);
 		cvtColor(img_l, img_l, COLOR_RGB2BGR);
 
 		char out_name_l[1024];
 		sprintf(out_name_l, "%s/%s-l.png", dir, timestamp);
-		imwrite(out_name_l, img_l);
+		imwrite(out_name_l, img_l, {CV_IMWRITE_PNG_COMPRESSION, 9});
 	}
 
 	if (camera_side == 1 || camera_side == INT_MAX)
 	{
-		fread(raw_right, img_size, sizeof(unsigned char), image_file);
 		img_r = Mat(h, w, CV_8UC3, raw_right, 0);
 		cvtColor(img_r, img_r, COLOR_RGB2BGR);
 
 		char out_name_r[1024];
 		sprintf(out_name_r, "%s/%s-r.png", dir, timestamp);
-		imwrite(out_name_r, img_r);
+		imwrite(out_name_r, img_r, {CV_IMWRITE_PNG_COMPRESSION, 9});
 	}
 
 	if (show_image)
@@ -137,7 +140,7 @@ main(int argc, char **argv)
 
 	int status = mkdir(argv[2], 0777);
 	if (status == -1)
-		printf("Warning: Directory %s already exists", argv[2]);
+		printf("Warning: Directory %s already exists\n", argv[2]);
 	else if (status != 0)
 		exit(printf("ERROR: Could not create directory '%s'\n", argv[2]));
 
