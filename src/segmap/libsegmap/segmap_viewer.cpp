@@ -19,33 +19,43 @@ using namespace cv;
 
 
 void
-draw_poses(GridMap &map, Mat &map_img, vector<Matrix<double, 4, 4>> &poses)
+draw_pose(GridMap &map, Mat &map_img, Pose2d &p, Scalar color)
 {
-	Point pixel;
 	int radius = (0.25 * map.pixels_by_m);
-	Pose2d p;
 	double shift_x, shift_y;
+	Point pixel;
 
+	shift_x = center_to_rear_axis * cos(p.th);
+	shift_y = center_to_rear_axis * sin(p.th);
+
+	pixel.x = (p.x - map.xo) * map.pixels_by_m;
+	pixel.y = (p.y - map.yo) * map.pixels_by_m;
+	circle(map_img, pixel, radius, color, -1);
+
+	draw_rectangle(map_img,
+			p.x + shift_x,
+			p.y + shift_y,
+			p.th,
+			car_width, car_length, color,
+			map.xo,
+			map.yo,
+			map.pixels_by_m);
+}
+
+
+void
+draw_pose(GridMap &map, Mat &map_img, Matrix<double, 4, 4> &pose, Scalar color)
+{
+	Pose2d p = Pose2d::from_matrix(pose);
+	draw_pose(map, map_img, p, color);
+}
+
+
+void
+draw_poses(GridMap &map, Mat &map_img, vector<Matrix<double, 4, 4>> &poses, Scalar color)
+{
 	for (int i = 0; i < poses.size(); i += 1)
-	{
-		p = Pose2d::from_matrix(poses[i]);
-
-		shift_x = center_to_rear_axis * cos(p.th);
-		shift_y = center_to_rear_axis * sin(p.th);
-
-		pixel.x = (p.x - map.xo) * map.pixels_by_m;
-		pixel.y = (p.y - map.yo) * map.pixels_by_m;
-		circle(map_img, pixel, radius, Scalar(0, 255, 0), -1);
-
-		draw_rectangle(map_img,
-				p.x + shift_x,
-				p.y + shift_y,
-				p.th,
-				car_width, car_length, Scalar(0, 255, 0),
-				map.xo,
-				map.yo,
-				map.pixels_by_m);
-	}
+		draw_pose(map, map_img, poses[i], color);
 }
 
 
@@ -70,7 +80,7 @@ draw_particle(Mat &map_img, Pose2d &p, GridMap &map, Scalar color)
 
 
 void
-draw_pointcloud(Mat &m, PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map, int highlight_points)
+draw_pointcloud(Mat &m, PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map, int paint_points, Scalar color)
 {
 	int px, py;
 	unsigned char r, g, b;
@@ -80,10 +90,11 @@ draw_pointcloud(Mat &m, PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap 
 	{
 		point = transformed_cloud->at(i);
 
-		if (highlight_points)
+		if (paint_points)
 		{
-			r = 255;
-			g = b = 0;
+			r = color[2];
+			g = color[1];
+			b = color[0];
 		}
 		else
 		{
@@ -137,25 +148,25 @@ view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses, Pose
 	Pose2d p;
 	Point pixel;
 
-	Pose2d mean = pf.mean();
 	Pose2d mode = pf.mode();
-
 	Mat map_img = map.to_image();
 
 	if (cloud != NULL)
 	{
 		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(mode));
-		draw_pointcloud(map_img, transformed_cloud, map);
+		draw_pointcloud(map_img, transformed_cloud, map, 1, Scalar(0, 0, 255));
+
+		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(current_pose));
+		draw_pointcloud(map_img, transformed_cloud, map, 1, Scalar(0, 255, 0));
 	}
 
-	draw_poses(map, map_img, poses);
+	//draw_poses(map, map_img, poses, Scalar(0, 255, 0));
 
-	for (i = 0; i < pf._n; i++)
-		draw_particle(map_img, pf._p[i], map, Scalar(0, 0, 255));
+	//for (i = 0; i < pf._n; i++)
+		//draw_particle(map_img, pf._p[i], map, Scalar(0, 255, 255));
 
-	draw_particle(map_img, mean, map, Scalar(0, 255, 255));
-	draw_particle(map_img, mode, map, Scalar(255, 0, 0));
-	draw_particle(map_img, current_pose, map, Scalar(0, 0, 0));
+	draw_pose(map, map_img, current_pose, Scalar(0, 255, 0));
+	draw_pose(map, map_img, mode, Scalar(0, 0, 255));
 
 	//double mult = (double) 800. / (double) map_img.rows;
 	//Mat resized_map((int) (map_img.rows * mult), (int) (map_img.cols * mult), CV_8UC3);
