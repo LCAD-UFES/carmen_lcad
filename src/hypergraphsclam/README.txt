@@ -153,6 +153,11 @@ Após a otimização, os dados podem ser visualizados pelo gnuplot:
     replot '<gps.txt ou odom.txt ou velodyne.txt ou poses>' u 1:2 w l
     ```
 
+Talvez o aquivo de poses não esteja ordenado pelo timestamp após rodar a otimização. Para ordenar pelo timestamp execute um `sort` para a 4ª coluna. Exemplo:
+    ```
+    sort -k4 poses-opt-log_dante_michelini-20181116.txt > sorted-poses-opt-log_dante_michelini-20181116.txt
+    ```
+
 4. Modifique no process-volta_da_ufes_playback_viewer_3D_map_generation_hypergraphsclam.ini as saidas dos programas playback, rdd_build, graphslam_publish:
  playback 		support 	1		0			./playback <seu log>.txt
  rndf_build		interface	1		0			./rddf_build ../data/rndf/rddf_<seu log>.txt
