@@ -19,12 +19,6 @@ extern "C"
 char **
 get_classes_names(char *classes_names_file)
 {
-	//list *options = read_data_cfg(data_file_name);
-
-	//char *name_list = option_find_str(options, (char*) "names", list_file_name);
-
-	//printf("--%s\n", name_list);
-
 	return (get_labels(classes_names_file));
 }
 
@@ -39,8 +33,6 @@ initialize_YOLO(char *cfg_file_name, char *weights_file_name)
 	set_batch_network(net, 1);
 
 	printf("------- Number of Classes: %d -------\n", net->layers[net->n-1].classes);
-
-	//test_YOLO(net, classes_names, (char*) "dog.jpeg");
 
 	return (net);
 }
