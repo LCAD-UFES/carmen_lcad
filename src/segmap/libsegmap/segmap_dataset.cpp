@@ -257,6 +257,55 @@ DatasetCarmen::load_data(vector<double> &times,
 	}
 
 	fclose(f);
+
+	data_file = _path + "/sync_latlong.txt";
+	f = fopen(data_file.c_str(), "r");
+
+	_gps.clear();
+
+	p0.x = 7757677.517731;
+	p0.y = -363602.117405;
+
+	while (!feof(f))
+	{
+		Pose2d pose_gps;
+		int quality;
+		Matrix<double, 4, 4> pose_gps_mat;
+
+		fscanf(f, "\n%s %lf %lf %lf %lf %s %lf %lf %s\n",
+				dummy, &x, &y, &th, &t, dummy, &v, &phi, dummy);
+
+		char c = fgetc(f);
+		if (c != 'V')
+			continue;
+
+		fscanf(f, "\n%s %s %s %s ",
+				dummy, dummy, dummy, dummy);
+
+		fscanf(f, " %s %s %s %s %s %s %s ",
+				dummy, dummy, dummy, dummy, dummy, dummy, dummy);
+
+		fscanf(f, " %s %s %lf %lf %d %s ",
+			dummy, dummy, &pose_gps.x, &pose_gps.y, &quality, dummy);
+
+		fscanf(f, " %s %s %lf %s %s ",
+			dummy, dummy, &pose_gps.th, dummy, dummy);
+
+		fscanf(f, " %s %s %s %s\n",
+			dummy, dummy, dummy, dummy);
+
+		pose_gps.x -= p0.x;
+		pose_gps.y -= p0.y;
+		pose_gps_mat = p0_inv * Pose2d::to_matrix(pose_gps);
+		pose_gps = Pose2d::from_matrix(pose_gps_mat);
+		pose_gps.y = -pose_gps.y;
+		pose_gps.th = normalize_theta(-pose_gps.th);
+
+		_gps.push_back(pose_gps);
+		_gps_quality.push_back(quality);
+	}
+
+	fclose(f);
 }
 
 
@@ -443,6 +492,13 @@ DatasetKitti::load_data(vector<double> &times,
 	_load_timestamps(times);
 	_load_oxts(times, data);
 	oxts2Mercartor(data, poses);
+
+	for (int i = 0; i < poses.size(); i++)
+	{
+		_gps.push_back(Pose2d::from_matrix(poses[i]));
+		_gps_quality.push_back(1);
+	}
+
 	_estimate_v(poses, times, odom);
 }
 

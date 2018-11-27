@@ -226,7 +226,7 @@ execute_voice_command(char *voice_command)
 					carmen_navigator_ackerman_stop();
 					publish_voice_interface_command_message("MAX_SPEED", SET_SPEED);
 
-					speek_sentence((char *) "Sistemas de propulsão e controle autônomo, incializados!");
+					speek_sentence((char *) "Sistemas de propulsão e controle autônomo, ativados!");
 				}
 				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "stop_immediately") == 0)
 				{
@@ -283,16 +283,29 @@ execute_voice_command(char *voice_command)
 					printf("Command detected: %s \n\n", "Obrigada");
 					speek_sentence((char *) "Por nada!");
 				}
+				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "introduce_yourself") == 0)
+				{
+					printf("Command detected: %s \n\n", "Apresente-se");
+					speek_sentence((char *) "Olá! Eu sou a Iara, o automóvel robótico autônomo inteligente da Ufes.");
+					speek_sentence((char *) "Meu mecanismo de autonomia é baseado em localização precisa em mapas.");
+					speek_sentence((char *) "Assim, não dependo de GPS.");
+					speek_sentence((char *) "Os mapas que uso são construídos por mim mesma, com a ajuda de 32 raios laser.");
+					speek_sentence((char *) "Além disso, possuo câmeras cujas imagens são analisadas por redes neurais profundas.");
+					speek_sentence((char *) "Com elas consigo ver pedestres, semáforos, faixas e outras sinalizações de trânsito relevantes.");
+					speek_sentence((char *) "Estou às suas ordens!");
+				}
 				else
 				{
 					speek_sentence((char *) "Desculpe... Sua inteção parace clara, mas não sei o que fazer...");
 					speek_sentence((char *) ("Você disse " + rasa_server_response["text"].asString() + "?").c_str());
+					speek_sentence((char *) "Se foi isto, não sei como proceder.");
 				}
 			}
 			else
 			{
 				speek_sentence((char *) "Desculpe... Não entendi claramente sua intenção...");
 				speek_sentence((char *) ("Você disse " + rasa_server_response["text"].asString() + "?").c_str());
+				speek_sentence((char *) "Se foi isto, não sei como proceder.");
 			}
 		}
 	}

@@ -33,6 +33,12 @@
 - Preparar sistemas para operação autônoma
 - Prepare-se para operação autônoma
 
+## intent:introduce_yourself
+- Apresente-se
+- Fale sobre você
+- Fala aí
+- Quem é você
+
 ## intent:greet
 - Olá
 - Oi
