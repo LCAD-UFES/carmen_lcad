@@ -35,6 +35,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 		vector<pair<double, double>> &odom, vector<double> &times, PointCloud<PointXYZRGB>::Ptr cloud,
 		PointCloud<PointXYZRGB>::Ptr transformed_cloud, DatasetInterface &dataset)
 {
+	//Pose2d p0 = dataset._gps[0];
 	Pose2d p0 = Pose2d::from_matrix(poses[0]);
 
 	pf.seed(time(NULL));
@@ -47,7 +48,10 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 	for (int i = 1; i < times.size(); i++)
 	{
 		printf("Step %d of %ld\n", i+1, times.size());
-		Pose2d gps = Pose2d::from_matrix(poses[i]); // TODO: add noise
+		//Pose2d gps = dataset._gps[i];
+		Pose2d gps = Pose2d::from_matrix(poses[i+1]); // TODO: add noise
+
+		printf("%lf %lf %lf\n", gps.x, gps.y, gps.th);
 
 		printf("Prediction\n");
 		pf.predict(odom[i].first, odom[i].second, times[i] - times[i-1]);
@@ -83,7 +87,8 @@ create_dataset(char *dataset_name)
 	DatasetInterface *dataset;
 
 	if (!strcmp(dataset_name, "carmen"))
-		dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180112/", 1);
+		//dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180907-2/", 1);
+		dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180112-2/", 1);
 	else if (!strcmp(dataset_name, "kitti"))
 		dataset = new DatasetKitti("/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/", 1);
 	else

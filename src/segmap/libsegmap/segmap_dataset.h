@@ -24,6 +24,9 @@ protected:
 	int _use_segmented;
 
 public:
+	vector<Pose2d> _gps;
+	vector<int> _gps_quality;
+
 	virtual Mat load_image(int i) = 0;
 	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud) = 0;
 	void load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, int view=0);
@@ -57,6 +60,7 @@ class DatasetCarmen : public DatasetInterface
 	void _init_vel2car_transform();
 
 public:
+
 	virtual Mat load_image(int i);
 	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud);
 	virtual Matrix<double, 3, 1> transform_vel2cam(PointXYZRGB &p);
