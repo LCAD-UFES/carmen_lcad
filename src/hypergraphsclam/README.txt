@@ -189,7 +189,7 @@ Caso a pasta não exista, utilize o comando "mkdir $CARMEN_HOME/data/mapper_test
 
 10. Acione o play no playback e espere terminar de tocar o log.
 
-##OBS: selecionar map na aba map do carmen navegatior
+## OBS: selecionar a opção "Map" no menu "Maps" na janela "Carmen-LCAD Navigator" (Ou aperte ctrl+m)
 
 11. Ao final do log seu mapa está pronto em ../data/mapper_teste2/ !!!! Pode matar o proccontrol no terminal e copiar seu novo mapa para seu lugar definitivo.
 
