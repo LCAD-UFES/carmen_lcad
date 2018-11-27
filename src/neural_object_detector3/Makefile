@@ -17,6 +17,8 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
 
 SOURCES = neural_object_detector_main.cpp neural_object_detector_simulator.cpp neural_object_detector_traffic_light.cpp
 
+PUBLIC_BINARIES = neural_object_detector neural_object_detector_simulator neural_object_detector_traffic_light
+
 TARGETS = darknet2 neural_object_detector neural_object_detector_simulator neural_object_detector_traffic_light
 
 neural_object_detector: neural_object_detector_main.o

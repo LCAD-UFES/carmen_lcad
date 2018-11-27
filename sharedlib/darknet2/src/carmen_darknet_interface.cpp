@@ -186,8 +186,6 @@ run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_nam
 
 	image sized = letterbox_image(img, net->w, net->h);
 
-	//layer l = net->layers[net->n-1];
-
 	float *X = sized.data;
 
 	network_predict(net, X);
@@ -196,12 +194,13 @@ run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_nam
 
 	if (nms)    // Remove coincident bboxes
 		do_nms_sort(dets, nboxes, net->layers[net->n-1].classes, nms);
-		//do_nms_sort(dets, nboxes, l.classes, nms); // l.classes do not work when darknet is compiled for cuda set l.classes = 80 to coco dataset
 
 	//save_image(*img, "predictions");
 
-	std::vector<bbox_t> bbox_vector = extract_predictions(img, dets, nboxes, 0.5, net->layers[net->n-1].classes, classes_names);// TODO use layer l = net->layers[net->n-1].classes
+	std::vector<bbox_t> bbox_vector = extract_predictions(img, dets, nboxes, 0.5, net->layers[net->n-1].classes, classes_names);
 
+	free_detections(dets, nboxes);
 	free_image(sized);
+	free_image(img);
 	return (bbox_vector);
 }

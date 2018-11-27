@@ -81,12 +81,9 @@ process_bumblebee(FILE *f, char *dir, int camera_side, bool show_image, bool sav
 		for (int row = 0; row < h; row++)
 			for (int col = 0; col < w; col++)
 			{
-				if (col + (row * w) < 307200)
-				{
 					colored_map_l[col + (row * w)][0] = deeplab_semantic_color_map[semantic_left[col + (row * w)]][0];
 					colored_map_l[col + (row * w)][1] = deeplab_semantic_color_map[semantic_left[col + (row * w)]][1];
 					colored_map_l[col + (row * w)][2] = deeplab_semantic_color_map[semantic_left[col + (row * w)]][2];
-				}
 			}
 		semantic_cv_l = Mat(h, w, CV_8UC3, colored_map_l, 0);
 
@@ -111,12 +108,9 @@ process_bumblebee(FILE *f, char *dir, int camera_side, bool show_image, bool sav
 		for (int row = 0; row < h; row++)
 			for (int col = 0; col < w; col++)
 			{
-				if (col + (row * w) < 307200)
-				{
 					colored_map_r[col + (row * w)][0] = deeplab_semantic_color_map[semantic_right[col + (row * w)]][0];
 					colored_map_r[col + (row * w)][1] = deeplab_semantic_color_map[semantic_right[col + (row * w)]][1];
 					colored_map_r[col + (row * w)][2] = deeplab_semantic_color_map[semantic_right[col + (row * w)]][2];
-				}
 			}
 		semantic_cv_r = Mat(h, w, CV_8UC3, colored_map_r, 0);
 

@@ -49,7 +49,7 @@ display(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, v
     //show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
     //show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
-    //resize(image, image, Size(600, 300));
+    //resize(image, image, Size(640, 480));
     imshow("Neural Object Detector", image);
     //imwrite("Image.jpg", image);
     waitKey(1);
@@ -480,15 +480,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	else
 		img = image_msg->raw_right;
 
-	//	int crop_x = image_msg->width * 0.25;
-	//	int crop_y = image_msg->height * 0.25;
-	//	int crop_w = image_msg->width * 0.50;
-	//	int crop_h = image_msg->height * 0.5;
-
-	int crop_x = 0;
+	int crop_x = 320;
 	int crop_y = 0;
-	int crop_w = image_msg->width;// 1280;
-	int crop_h = image_msg->height;//400; // 500;
+	int crop_w = 640;
+	int crop_h = 480;
 
 	unsigned char *cropped_img = crop_raw_image(image_msg->width, image_msg->height, img, crop_x, crop_y, crop_w, crop_h);
 
