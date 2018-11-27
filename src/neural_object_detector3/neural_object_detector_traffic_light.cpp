@@ -46,7 +46,7 @@ display(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, v
     }
 
 	//show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
-    //show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
+    //show_LIDAR(image, points_inside_bbox,    0, 0, 255);				 	// Blue points are all points inside the bbox
     //show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
     //resize(image, image, Size(640, 480));
@@ -82,7 +82,6 @@ crop_raw_image(int image_width, int image_height, unsigned char *raw_image, int 
 			}
 		}
 	}
-
 	return (cropped_image);
 }
 
@@ -480,14 +479,17 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	else
 		img = image_msg->raw_right;
 
-	int crop_x = 320;
+	int crop_x = 0;
 	int crop_y = 0;
-	int crop_w = 640;
-	int crop_h = 480;
+	int crop_w = image_msg->width;
+	int crop_h = image_msg->height;
 
-	unsigned char *cropped_img = crop_raw_image(image_msg->width, image_msg->height, img, crop_x, crop_y, crop_w, crop_h);
+//	unsigned char *cropped_img = crop_raw_image(image_msg->width, image_msg->height, img, crop_x, crop_y, crop_w, crop_h);
+	Mat open_cv_image = Mat(crop_h, crop_w, CV_8UC3, img, 0);
+	resize(open_cv_image, open_cv_image, Size(640, 480));
 
-	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.2);
+
+	vector<bbox_t> predictions = run_YOLO(open_cv_image.data, crop_w, crop_h, network_struct, classes_names, 0.2);
 	//predictions = filter_predictions_traffic_light(predictions);
 
 	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
@@ -501,7 +503,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 	vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
 
-	Mat open_cv_image = Mat(crop_h, crop_w, CV_8UC3, img, 0);
+	//open_cv_image = Mat(crop_h, crop_w, CV_8UC3, img, 0);
 
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
