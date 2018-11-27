@@ -56,7 +56,8 @@ public:
 
 	void predict(double v, double phi, double dt);
 	double sensor_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
-	void correct(Pose2d &gps, PointCloud<PointXYZRGB>::Ptr cloud, GridMap &map, PointCloud<PointXYZRGB>::Ptr transformed_cloud);
+	void correct(Pose2d &gps, PointCloud<PointXYZRGB>::Ptr cloud, GridMap &map, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
+			Matrix<double, 4, 4> &vel2car);
 
 	Pose2d mean();
 	Pose2d mode();
