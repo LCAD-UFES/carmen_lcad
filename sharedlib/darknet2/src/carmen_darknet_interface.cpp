@@ -38,6 +38,20 @@ initialize_YOLO(char *cfg_file_name, char *weights_file_name)
 }
 
 
+//void
+//save_image_file(char* img, int w, int h, char* path)
+//{
+//	image out_img;
+//
+//	out_img.w = w;
+//	out_img.h = h;
+//	out_img.c = 3;
+//	out_img.data = img;
+//
+//	save_image(out_img, path);
+//}
+
+
 void
 test_YOLO(void *net, char **classes_names, char *image_path)
 {
@@ -186,8 +200,6 @@ run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_nam
 
 	if (nms)    // Remove coincident bboxes
 		do_nms_sort(dets, nboxes, net->layers[net->n-1].classes, nms);
-
-	//save_image(*img, "predictions");
 
 	std::vector<bbox_t> bbox_vector = extract_predictions(img, dets, nboxes, 0.5, net->layers[net->n-1].classes, classes_names);
 
