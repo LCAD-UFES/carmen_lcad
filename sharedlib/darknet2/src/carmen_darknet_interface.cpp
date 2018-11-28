@@ -19,12 +19,6 @@ extern "C"
 char **
 get_classes_names(char *classes_names_file)
 {
-	//list *options = read_data_cfg(data_file_name);
-
-	//char *name_list = option_find_str(options, (char*) "names", list_file_name);
-
-	//printf("--%s\n", name_list);
-
 	return (get_labels(classes_names_file));
 }
 
@@ -40,10 +34,22 @@ initialize_YOLO(char *cfg_file_name, char *weights_file_name)
 
 	printf("------- Number of Classes: %d -------\n", net->layers[net->n-1].classes);
 
-	//test_YOLO(net, classes_names, (char*) "dog.jpeg");
-
 	return (net);
 }
+
+
+//void
+//save_image_file(char* img, int w, int h, char* path)
+//{
+//	image out_img;
+//
+//	out_img.w = w;
+//	out_img.h = h;
+//	out_img.c = 3;
+//	out_img.data = img;
+//
+//	save_image(out_img, path);
+//}
 
 
 void
@@ -101,7 +107,7 @@ extract_predictions(image img, detection *dets, int num, float thresh, int class
 		{
 			if (dets[i].prob[j] > thresh)
 			{
-				if (obj_id < 0)   //TODO Get the class with the higher probability
+				if (obj_id < 0)   //TODO Get the class with the higher probability ????
 				{
 					strcat(labelstr, classes_names[j]);
 					obj_id = j;
@@ -186,7 +192,70 @@ run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_nam
 
 	image sized = letterbox_image(img, net->w, net->h);
 
-	//layer l = net->layers[net->n-1];
+	float *X = sized.data;
+
+	network_predict(net, X);
+
+	detection *dets = get_network_boxes(net, img.w, img.h, threshold, threshold, 0, 1, &nboxes);
+
+	if (nms)    // Remove coincident bboxes
+		do_nms_sort(dets, nboxes, net->layers[net->n-1].classes, nms);
+
+	std::vector<bbox_t> bbox_vector = extract_predictions(img, dets, nboxes, 0.5, net->layers[net->n-1].classes, classes_names);
+
+	free_detections(dets, nboxes);
+	free_image(sized);
+	free_image(img);
+	return (bbox_vector);
+}
+
+
+void
+save_predictions_to_file_VOC_pascal(detection *dets, int num, float thresh, int classes_number, char **classes_names, char* file_path)
+{
+	int i,j;
+
+	FILE* output_file = fopen(file_path, "w");
+
+	for(i = 0; i < num; ++i)
+	{
+		char labelstr[4096] = {0};
+		int obj_id = -1;
+
+		for(j = 0; j < classes_number; ++j)
+		{
+			if (dets[i].prob[j] > thresh)
+			{
+				if (obj_id < 0)
+				{
+					strcat(labelstr, classes_names[j]);
+					obj_id = j;
+				}
+				else
+				{
+					strcat(labelstr, ", ");
+					strcat(labelstr, classes_names[j]);
+				}
+			}
+		}
+		if (obj_id >= 0)
+			fprintf(output_file, "%d %f %f %f %f\n", obj_id, dets[i].bbox.x, dets[i].bbox.y, dets[i].bbox.w, dets[i].bbox.h);
+	}
+	fclose(output_file);
+}
+
+
+void
+run_YOLO_VOC_Pascal(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold, char* file_path)
+{
+	float nms = 0.45;
+	int nboxes = 0;
+
+	network *net = (network*) net_config;
+
+	image img = convert_image_msg_to_darknet_image(w, h, data);
+
+	image sized = letterbox_image(img, net->w, net->h);
 
 	float *X = sized.data;
 
@@ -196,12 +265,10 @@ run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_nam
 
 	if (nms)    // Remove coincident bboxes
 		do_nms_sort(dets, nboxes, net->layers[net->n-1].classes, nms);
-		//do_nms_sort(dets, nboxes, l.classes, nms); // l.classes do not work when darknet is compiled for cuda set l.classes = 80 to coco dataset
 
-	//save_image(*img, "predictions");
+	save_predictions_to_file_VOC_pascal(dets, nboxes, 0.5, net->layers[net->n-1].classes, classes_names, file_path);
 
-	std::vector<bbox_t> bbox_vector = extract_predictions(img, dets, nboxes, 0.5, net->layers[net->n-1].classes, classes_names);// TODO use layer l = net->layers[net->n-1].classes
-
+	free_detections(dets, nboxes);
 	free_image(sized);
-	return (bbox_vector);
+	free_image(img);
 }

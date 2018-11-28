@@ -1,3 +1,4 @@
+#include <strings.h>
 #include <stdio.h>
 #include <iostream>
 #include <carmen/carmen.h>
@@ -175,9 +176,7 @@ check_if_place_is_known(const char *place)
 			if (strcasecmp(place, (const char *) place_in_database) == 0)
 			{
 				static char rddf_file_name[2048];
-				strcpy(rddf_file_name, carmen_home);
-				strcat(rddf_file_name, "/");
-				strcat(rddf_file_name, rddf);
+				strcpy(rddf_file_name, rddf);
 
 				return (rddf_file_name);
 			}
@@ -212,10 +211,38 @@ execute_voice_command(char *voice_command)
 				{
 					printf("Command detected: %s \n\n", "Seguir curso");
 
+					publish_voice_interface_command_message("MAX_SPEED", SET_SPEED);
 					carmen_navigator_ackerman_go();
 
 					carmen_ipc_sleep(0.1); // Necessario para reconectar com o audio para tocar o som abaixo.
 					system("mpg123 $CARMEN_HOME/data/voice_interface_data/helm_engage_clean.mp3"); // http://www.trekcore.com/audio/
+				}
+				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "initialize") == 0)
+				{
+					printf("Command detected: %s \n\n", "Inicializar");
+
+					carmen_navigator_ackerman_stop();
+					publish_voice_interface_command_message("MAX_SPEED", SET_SPEED);
+
+					speek_sentence((char *) "Sistemas de propulsão e controle autônomo, ativados!");
+				}
+				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "stop_immediately") == 0)
+				{
+					printf("Command detected: %s \n\n", "Parar imeditamente!");
+
+					carmen_navigator_ackerman_stop();
+
+					carmen_ipc_sleep(0.1); // Necessario para reconectar com o audio para tocar o som abaixo.
+					system("mpg123 $CARMEN_HOME/data/voice_interface_data/computerbeep_1.mp3"); // http://www.trekcore.com/audio/
+				}
+				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "stop") == 0)
+				{
+					printf("Command detected: %s \n\n", "Parar!");
+
+					publish_voice_interface_command_message("0.0", SET_SPEED);
+
+					carmen_ipc_sleep(0.1); // Necessario para reconectar com o audio para tocar o som abaixo.
+					system("mpg123 $CARMEN_HOME/data/voice_interface_data/computerbeep_1.mp3"); // http://www.trekcore.com/audio/
 				}
 				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "set_course") == 0)
 				{
@@ -231,7 +258,7 @@ execute_voice_command(char *voice_command)
 								publish_voice_interface_command_message(rddf_to_place, SET_COURSE);
 
 								speek_sentence((char *) ("Curso para " +
-										rasa_server_response["entities"][i]["value"].asString() + " definido.").c_str());
+										rasa_server_response["entities"][i]["value"].asString() + " estabelecido.").c_str());
 
 								place_detected = true;
 							}
@@ -254,16 +281,29 @@ execute_voice_command(char *voice_command)
 					printf("Command detected: %s \n\n", "Obrigada");
 					speek_sentence((char *) "Por nada!");
 				}
+				else if (strcmp(rasa_server_response["intent"]["name"].asString().c_str(), "introduce_yourself") == 0)
+				{
+					printf("Command detected: %s \n\n", "Apresente-se");
+					speek_sentence((char *) "Olá! Eu sou a Iara, o automóvel robótico autônomo inteligente da Ufes.");
+					speek_sentence((char *) "Meu mecanismo de autonomia é baseado em localização precisa em mapas.");
+					speek_sentence((char *) "Assim, não dependo de GPS.");
+					speek_sentence((char *) "Os mapas que uso são construídos por mim mesma, com a ajuda de 32 raios laser.");
+					speek_sentence((char *) "Possuo, também, câmeras cujas imagens são analisadas por redes neurais profundas.");
+					speek_sentence((char *) "Com elas consigo ver pedestres, semáforos, faixas e outras sinalizações de trânsito relevantes.");
+					speek_sentence((char *) "Estou às suas ordens!");
+				}
 				else
 				{
 					speek_sentence((char *) "Desculpe... Sua inteção parace clara, mas não sei o que fazer...");
 					speek_sentence((char *) ("Você disse " + rasa_server_response["text"].asString() + "?").c_str());
+					speek_sentence((char *) "Se foi isto, não sei como proceder.");
 				}
 			}
 			else
 			{
 				speek_sentence((char *) "Desculpe... Não entendi claramente sua intenção...");
 				speek_sentence((char *) ("Você disse " + rasa_server_response["text"].asString() + "?").c_str());
+				speek_sentence((char *) "Se foi isto, não sei como proceder.");
 			}
 		}
 	}

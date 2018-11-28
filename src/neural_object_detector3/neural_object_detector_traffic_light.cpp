@@ -21,6 +21,40 @@ carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
 	*y += offset_y;
 }
 
+
+void
+show_LIDAR_points(Mat &image, vector<image_cartesian> all_points, int r, int g, int b)
+{
+	for (unsigned int i = 0; i < all_points.size(); i++)
+		circle(image, Point(all_points[i].image_x, all_points[i].image_y), 1, cvScalar(b, g, r), 5, 8, 0);
+}
+
+
+void
+show_LIDAR(Mat &image, vector<vector<image_cartesian>> points_lists, int r, int g, int b)
+{
+	for (unsigned int i = 0; i < points_lists.size(); i++)
+	{
+		for (unsigned int j = 0; j < points_lists[i].size(); j++)
+			circle(image, Point(points_lists[i][j].image_x, points_lists[i][j].image_y), 1, cvScalar(b, g, r), 5, 8, 0);
+	}
+}
+
+
+void
+show_all_points(Mat &image, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
+{
+	vector<carmen_velodyne_points_in_cam_t> all_points = carmen_velodyne_camera_calibration_lasers_points_in_camera(
+					velodyne_msg, camera_parameters, velodyne_pose, camera_pose, image_width, image_height);
+
+	int max_x = crop_x + crop_width, max_y = crop_y + crop_height;
+
+	for (unsigned int i = 0; i < all_points.size(); i++)
+		if (all_points[i].ipx >= crop_x && all_points[i].ipx <= max_x && all_points[i].ipy >= crop_y && all_points[i].ipy <= max_y)
+			circle(image, Point(all_points[i].ipx - crop_x, all_points[i].ipy - crop_y), 1, cvScalar(0, 0, 255), 5, 8, 0);
+}
+
+
 void
 display(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
 		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height)
@@ -46,12 +80,12 @@ display(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, v
     }
 
 	//show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
-    //show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
+    show_LIDAR_points(image, points, 255, 0, 0);
+    show_LIDAR(image, points_inside_bbox, 0, 0, 255);				 	// Blue points are all points inside the bbox
     //show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
-    //resize(image, image, Size(600, 300));
+    resize(image, image, Size(640, 480));
     imshow("Neural Object Detector", image);
-    //imwrite("Image.jpg", image);
     waitKey(1);
 }
 
@@ -82,7 +116,6 @@ crop_raw_image(int image_width, int image_height, unsigned char *raw_image, int 
 			}
 		}
 	}
-
 	return (cropped_image);
 }
 
@@ -91,8 +124,6 @@ vector<vector<image_cartesian>>
 get_points_inside_bounding_boxes(vector<bbox_t> &predictions, vector<image_cartesian> &velodyne_points_vector)
 {
 	vector<vector<image_cartesian>> laser_list_inside_each_bounding_box; //each_bounding_box_laser_list
-
-	//cout << predictions.size() << endl;
 
 	for (unsigned int i = 0; i < predictions.size();)
 	{
@@ -115,7 +146,6 @@ get_points_inside_bounding_boxes(vector<bbox_t> &predictions, vector<image_carte
 		}
 		else
 		{
-			//cout << predictions.size() << endl;
 			predictions.erase(predictions.begin()+i);
 		}
 
@@ -346,8 +376,8 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 
 	for (int i = 0; i < predictions.size(); i++)
 	{
-		if (predictions[i].obj_id == 9)
-		{
+//		if (predictions[i].obj_id == 9)
+//		{
 			//printf("%s\n", obj_names_vector[predictions[i].obj_id].c_str());
 			for (int j = 0; j < points_inside_bbox[i].size(); j++)
 			{
@@ -363,11 +393,11 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 			}
 			count = 0;
 			traffic_light_found = 0;
-		}
+//		}
 	}
 	count += traffic_light_found;
 
-	if (count >= 20)                // If stays without see a traffic light for more than 20 frames
+	if (count > 8)                // If stays without see a traffic light for more than N frames
 	{                               // Compute traffic light positions and generate annotations
 		vector<vector<image_cartesian>> traffic_light_clusters = dbscan_compute_clusters(0.5, 3, traffic_light_points);
 		//printf("--- %d\n", (int)traffic_light_clusters.size());
@@ -375,7 +405,7 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 		traffic_light_points.clear();
 		count = 0;
 	}
-	//printf("Cont %d\n", count);
+	printf("Cont %d\n", count);
 }
 
 
@@ -480,19 +510,19 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	else
 		img = image_msg->raw_right;
 
-	//	int crop_x = image_msg->width * 0.25;
-	//	int crop_y = image_msg->height * 0.25;
-	//	int crop_w = image_msg->width * 0.50;
-	//	int crop_h = image_msg->height * 0.5;
-
 	int crop_x = 0;
 	int crop_y = 0;
-	int crop_w = image_msg->width;// 1280;
-	int crop_h = image_msg->height;//400; // 500;
+	int crop_w = image_msg->width;
+	int crop_h = image_msg->height;
+	int resize_w = image_msg->width;
+	int resize_h = image_msg->height;
 
-	unsigned char *cropped_img = crop_raw_image(image_msg->width, image_msg->height, img, crop_x, crop_y, crop_w, crop_h);
+//	unsigned char *cropped_img = crop_raw_image(image_msg->width, image_msg->height, img, crop_x, crop_y, crop_w, crop_h);
+	Mat open_cv_image = Mat(crop_h, crop_w, CV_8UC3, img, 0);
+	//resize(open_cv_image, open_cv_image, Size(resize_w, resize_h));
 
-	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.2);
+
+	vector<bbox_t> predictions = run_YOLO(img, image_msg->width, image_msg->height, network_struct, classes_names, 0.2);
 	//predictions = filter_predictions_traffic_light(predictions);
 
 	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
@@ -500,13 +530,13 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 	vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto
 
-	generate_traffic_light_annotations(predictions, points_inside_bbox);
+	//generate_traffic_light_annotations(predictions, points_inside_bbox);
 
-	vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
+	vector<vector<image_cartesian>> filtered_points;// = filter_object_points_using_dbscan(points_inside_bbox);
 
-	vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
+//	vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
 
-	Mat open_cv_image = Mat(crop_h, crop_w, CV_8UC3, img, 0);
+	//open_cv_image = Mat(crop_h, crop_w, CV_8UC3, img, 0);
 
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
@@ -517,8 +547,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			globalpos_msg->pose.orientation.roll, globalpos_msg->pose.orientation.pitch, globalpos_msg->pose.orientation.yaw);
 
 	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757493.704663, -364151.945918, 5.428209,
-	carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757498.416323, -364158.291071, 5.631667,
+	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757498.416323, -364158.291071, 5.631667,
 	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757492.914793, -364155.064267, 5.450262,
+	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7755670.270790, -365305.500336, 2.437284,
+	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7755685.885188, -365308.134036, 4.194098,
+	carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7755687.117894, -365310.704539, 5.602783,
 			world_to_camera_pose, camera_parameters, image_msg->width, image_msg->height);
 
 	if (predictions.size() > 0)
@@ -635,10 +668,6 @@ initializer()
     classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/traffic_light.names");
 
 	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/traffic_light.cfg", (char*) "../../sharedlib/darknet2/yolov3_traffic_light_rgo.weights");
-
-//	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
-//
-//	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
 }
 
 

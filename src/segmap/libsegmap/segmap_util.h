@@ -49,6 +49,7 @@ public:
 	}
 };
 
+Mat segmented_image_view(Mat &m);
 
 double normalize_theta(double theta);
 double radians_to_degrees(double theta);
@@ -69,11 +70,12 @@ void print_vector(vector<double> &v);
 int argmax(double *v, int size);
 int argmin(double *v, int size);
 
-void
-draw_rectangle(Mat &img,
+void draw_rectangle(Mat &img,
 		double x, double y, double theta,
 		double height, double width, Scalar color,
 		double x_origin, double y_origin, double pixels_by_meter);
+
+void print_poses(vector<Matrix<double, 4, 4>> &poses);
 
 
 #endif

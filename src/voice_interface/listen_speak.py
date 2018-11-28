@@ -199,7 +199,7 @@ def listen():
         requests = (types.StreamingRecognizeRequest(audio_content=content)
                     for content in audio_generator)
 
-        responses = client.streaming_recognize(streaming_config, requests, timeout=5.0)
+        responses = client.streaming_recognize(streaming_config, requests, timeout=7.0)
 
         # Now, put the transcription responses to use.
         try:

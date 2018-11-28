@@ -1,4 +1,7 @@
 # <place definido em iara_nlu.md>: <arquivo rddf>
 volta da ufes: data/rndf/rddf-voltadaufes-20170809.txt
 estacionamento da ambiental: data/rndf/rndf_log_voltadaufes-20160315-estacionamento-ambiental-4.kml
+demonstração oval: data/rndf/rddf_log_cenpes-20181125.txt
+demonstração 8: data/rndf/rddf_log_cenpes-20181125-1.txt
+casa firjan: data/rndf/rndf_log_voltadaufes-20160315-estacionamento-ambiental-4.kml
 

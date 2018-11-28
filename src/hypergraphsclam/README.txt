@@ -108,7 +108,7 @@ Os arquivos acima estão no seguinte formato:
 
     ```
     cd src/hypergraphsclam
-    ./hypergraphsclam sync-<seu log>.txt poses-opt-<seu log>.txt
+    ./hypergraphsclam sync-<seu log>.txt poses-opt-<seu log>
     ```
 
     Exemplo:
@@ -140,12 +140,22 @@ O otimizador gera 4 arquivos:
 Os quatro arquivos acima estão no seguinte formato:
     x y theta timeStamp cos(theta) sin(theta)
 
+Os dados de "poses-opt-log_volta_da_ufes-20171106.txt" podem estar fora de ordem (timestamp). Assim, 
+reoordene com sort (troque abaixo para o nome de seu log)
+    sort -k 4 poses-opt-log_volta_da_ufes-20171106.txt > caco.txt
+    mv caco.txt poses-opt-log_volta_da_ufes-20171106.txt
+
 Após a otimização, os dados podem ser visualizados pelo gnuplot:
     Exemplo:
     ```
     gnuplot
     plot '<gps.txt ou odom.txt ou velodyne.txt ou poses> u 1:2 w l
     replot '<gps.txt ou odom.txt ou velodyne.txt ou poses>' u 1:2 w l
+    ```
+
+Talvez o aquivo de poses não esteja ordenado pelo timestamp após rodar a otimização. Para ordenar pelo timestamp execute um `sort` para a 4ª coluna. Exemplo:
+    ```
+    sort -k4 poses-opt-log_dante_michelini-20181116.txt > sorted-poses-opt-log_dante_michelini-20181116.txt
     ```
 
 4. Modifique no process-volta_da_ufes_playback_viewer_3D_map_generation_hypergraphsclam.ini as saidas dos programas playback, rdd_build, graphslam_publish:
@@ -179,7 +189,7 @@ Caso a pasta não exista, utilize o comando "mkdir $CARMEN_HOME/data/mapper_test
 
 10. Acione o play no playback e espere terminar de tocar o log.
 
-##OBS: selecionar map na aba map do carmen navegatior
+## OBS: selecionar a opção "Map" no menu "Maps" na janela "Carmen-LCAD Navigator" (Ou aperte ctrl+m)
 
 11. Ao final do log seu mapa está pronto em ../data/mapper_teste2/ !!!! Pode matar o proccontrol no terminal e copiar seu novo mapa para seu lugar definitivo.
 

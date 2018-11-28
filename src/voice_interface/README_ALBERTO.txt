@@ -15,8 +15,8 @@
 - Depois disso eh soh falar "Ok Iara" que detecta.
 
 - O codigo agora usa esta hotword. Ela foi instalada com os seguintes comandos
- cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_interface_hotword_data/hotword_oi_iara.ppn
- cp ~/carmen_packages/Porcupine/lib/common/porcupine_params.pv $CARMEN_HOME/data/voice_interface_hotword_data/
+ cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_interface_data/hotword_oi_iara.ppn
+ cp ~/carmen_packages/Porcupine/lib/common/porcupine_params.pv $CARMEN_HOME/data/voice_interface_data/
  cp ~/carmen_packages/Porcupine/include/picovoice.h $CARMEN_HOME/src/voice_interface/
  cp ~/carmen_packages/Porcupine/lib/linux/x86_64/libpv_porcupine.a libpv_porcupine.a.copy
  cd ~/carmen_packages/Porcupine/
@@ -171,4 +171,12 @@ main(void)
  python3 -m rasa_nlu.server --path models --response_log logs
   - Teste: rode o codigo em C++ em outro
  ./a.out
+
+
+= Como rodar a voice_interface remota
+ export CENTRALHOST=192.168.0.1
+ python -m rasa_nlu.server --path models --response_log logs
+ ./voice_interface
+- Para atualizar rasa DNN
+ python -m rasa_nlu.train -c nlu_config.yml --data iara_nlu.md -o models --fixed_model_name nlu --project current --verbose
 

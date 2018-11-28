@@ -20,7 +20,7 @@ int main(int argc, char **argv)
         hypergraph_optimizer.Run();
     }
 
-    std::cout << "Optimization done!" << std::endl;
+    std::cout << "Optimization done =D !" << std::endl;
 
     return 0;
 

@@ -12,6 +12,75 @@ using namespace pcl;
 
 
 void
+DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, int view)
+{
+	int p, x, y;
+	Matrix<double, 3, 1> pixel;
+	PointXYZRGB point;
+	PointCloud<PointXYZRGB>::Ptr raw_cloud(new PointCloud<PointXYZRGB>);
+
+	cloud->clear();
+
+	load_pointcloud(i, raw_cloud);
+	Mat img = load_image(i);
+
+	Mat viewer_img;
+
+	if (view)
+	{
+		if (_use_segmented)
+			viewer_img = segmented_image_view(img);
+		else
+			viewer_img = img.clone();
+	}
+
+	for (int i = 0; i < raw_cloud->size(); i++)
+	{
+		point = raw_cloud->at(i);
+    	pixel = transform_vel2cam(point);
+
+		x = pixel(0, 0) / pixel(2, 0);
+		y = pixel(1, 0) / pixel(2, 0);
+
+		// to use fused camera and velodyne
+		//if (0)
+		if (point.x > 7 && x >= 0 && x < img.cols && y >= 0 && y < img.rows && point.x < 30. && point.y < 30.)
+		{
+			pcl::PointXYZRGB point2;
+
+			point2.x = point.x;
+			point2.y = point.y;
+			point2.z = point.z;
+
+			// colors
+			p = 3 * (y * img.cols + x);
+			point2.r = img.data[p + 2];
+			point2.g = img.data[p + 1];
+			point2.b = img.data[p + 0];
+
+			if (view)
+				circle(viewer_img, Point(x, y), 2, Scalar(0,0,255), -1);
+
+			cloud->push_back(point2);
+		}
+
+		// to use remission
+		else if (0)
+		//else if (1) //point.z < 0.)
+		{
+			point.r *= 3;
+			point.g *= 3;
+			point.b *= 3;
+			cloud->push_back(point);
+		}
+	}
+
+	if (view)
+		imshow("cam_vel_fused", viewer_img);
+}
+
+
+void
 DatasetCarmen::_init_vel2cam_transform()
 {
 	Matrix<double, 3, 4> projection;
@@ -79,7 +148,7 @@ Mat
 DatasetCarmen::load_image(int i)
 {
 	if (_use_segmented)
-		sprintf(_name, "%s/trainfine/%010d.png", _path.c_str(), i);
+		sprintf(_name, "%s/semantic/%010d.png", _path.c_str(), i);
 	else
 		sprintf(_name, "%s/bb3/%010d.png", _path.c_str(), i);
 
@@ -100,10 +169,11 @@ DatasetCarmen::load_image(int i)
 
 	if (_use_segmented)
 	{
-		Mat img = Mat::ones(_image_height, _image_width, CV_8UC3) * _unknown_class;
-		Mat roi = img(Rect(0, (int) (0.1 * _image_width), _image_width, (int) (_image_width / 2.)));
-		resize(resized, roi, roi.size());
-		return img;
+		//Mat img = Mat::ones(_image_height, _image_width, CV_8UC3) * _unknown_class;
+		//Mat roi = img(Rect(0, (int) (0.1 * _image_width), _image_width, (int) (_image_width / 2.)));
+		//resize(resized, roi, roi.size());
+		//return img;
+		return resized;
 	}
 	else
 		return resized;
@@ -147,27 +217,24 @@ DatasetCarmen::load_data(vector<double> &times,
 		vector<Matrix<double, 4, 4>> &poses,
 		vector<pair<double, double>> &odom)
 {
-	string data_file = _path + "/poses.txt";
+	string data_file = _path + "/optimized.txt";
 	FILE *f = fopen(data_file.c_str(), "r");
 
-	int first = 1;
 	char dummy[128];
 	double x, y, th, t, v, phi;
-	double x0, y0;
+
+	Pose2d p0;
+
+	p0.x = 7757677.517731;
+	p0.y = -363602.117405;
+	p0.th = 0.645639;
 
 	while (!feof(f))
 	{
 		fscanf(f, "\n%s %lf %lf %lf %lf %s %lf %lf %s\n",
 				dummy, &x, &y, &th, &t, dummy, &v, &phi, dummy);
 
-		if (first)
-		{
-			x0 = x;
-			y0 = y;
-			first = 0;
-		}
-
-		Pose2d pose(x - x0, y - y0, normalize_theta(th));
+		Pose2d pose(x - p0.x, y - p0.y, normalize_theta(th));
 
 		phi = normalize_theta(-phi);
 		poses.push_back(Pose2d::to_matrix(pose));
@@ -175,7 +242,10 @@ DatasetCarmen::load_data(vector<double> &times,
 		odom.push_back(pair<double, double>(v, phi));
 	}
 
-	Matrix<double, 4, 4> p0_inv = Matrix<double, 4, 4>(poses[0]).inverse();
+	p0.x = 0;
+	p0.y = 0;
+
+	Matrix<double, 4, 4> p0_inv = Pose2d::to_matrix(p0).inverse();
 
 	for (int i = 0; i < poses.size(); i++)
 	{
@@ -184,6 +254,55 @@ DatasetCarmen::load_data(vector<double> &times,
 		p.y = -p.y;
 		p.th = normalize_theta(-p.th);
 		poses[i] = Pose2d::to_matrix(p);
+	}
+
+	fclose(f);
+
+	data_file = _path + "/sync_latlong.txt";
+	f = fopen(data_file.c_str(), "r");
+
+	_gps.clear();
+
+	p0.x = 7757677.517731;
+	p0.y = -363602.117405;
+
+	while (!feof(f))
+	{
+		Pose2d pose_gps;
+		int quality;
+		Matrix<double, 4, 4> pose_gps_mat;
+
+		fscanf(f, "\n%s %lf %lf %lf %lf %s %lf %lf %s\n",
+				dummy, &x, &y, &th, &t, dummy, &v, &phi, dummy);
+
+		char c = fgetc(f);
+		if (c != 'V')
+			continue;
+
+		fscanf(f, "\n%s %s %s %s ",
+				dummy, dummy, dummy, dummy);
+
+		fscanf(f, " %s %s %s %s %s %s %s ",
+				dummy, dummy, dummy, dummy, dummy, dummy, dummy);
+
+		fscanf(f, " %s %s %lf %lf %d %s ",
+			dummy, dummy, &pose_gps.x, &pose_gps.y, &quality, dummy);
+
+		fscanf(f, " %s %s %lf %s %s ",
+			dummy, dummy, &pose_gps.th, dummy, dummy);
+
+		fscanf(f, " %s %s %s %s\n",
+			dummy, dummy, dummy, dummy);
+
+		pose_gps.x -= p0.x;
+		pose_gps.y -= p0.y;
+		pose_gps_mat = p0_inv * Pose2d::to_matrix(pose_gps);
+		pose_gps = Pose2d::from_matrix(pose_gps_mat);
+		pose_gps.y = -pose_gps.y;
+		pose_gps.th = normalize_theta(-pose_gps.th);
+
+		_gps.push_back(pose_gps);
+		_gps_quality.push_back(quality);
 	}
 
 	fclose(f);
@@ -373,6 +492,13 @@ DatasetKitti::load_data(vector<double> &times,
 	_load_timestamps(times);
 	_load_oxts(times, data);
 	oxts2Mercartor(data, poses);
+
+	for (int i = 0; i < poses.size(); i++)
+	{
+		_gps.push_back(Pose2d::from_matrix(poses[i]));
+		_gps_quality.push_back(1);
+	}
+
 	_estimate_v(poses, times, odom);
 }
 

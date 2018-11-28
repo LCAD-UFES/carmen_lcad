@@ -2,27 +2,29 @@ include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK = g++
 CFLAGS += 
-CXXFLAGS += 
+CXXFLAGS += -std=c++11
 
 MODULE_NAME = Deeplab Neural Network
 MODULE_COMMENT = Semantic segmentation inference using Deeplab tensorflow model
 
 IFLAGS += -I/usr/include/python2.7
-LFLAGS += -lpython2.7 -lpthread
+LFLAGS += -ldeeplab -lpython2.7 -lpthread `pkg-config --libs opencv` 
 
-SOURCES = 
+SOURCES = generate_semantic_map_images.cpp
  
 PUBLIC_INCLUDES = libdeeplab.h
 PUBLIC_LIBRARIES = libdeeplab.a
 #PUBLIC_BINARIES =
 
-TARGETS = libdeeplab.a  
+TARGETS = libdeeplab.a generate_semantic_map_images
 PUBLIC_LIBRARIES_SO =
 
 libdeeplab.a: libdeeplab.o
 
 install_python2:
 	sudo apt-get install python-dev python-pip
+
+generate_semantic_map_images: generate_semantic_map_images.o
 
 # https://stackoverflow.com/questions/7369145/activating-a-virtualenv-using-a-shell-script-doesnt-seem-to-work
 virtualenv:

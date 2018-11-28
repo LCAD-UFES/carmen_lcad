@@ -16,6 +16,7 @@
 #define MIN_RANGE 					0.5
 #define MIN_ANGLE_OBSTACLE			2
 #define MAX_ANGLE_OBSTACLE			188
+#define BUMBLEBEE_BASIC_VIEW_MAX_WINDOW_WIDTH 640
 
 
 typedef struct _camera_data
