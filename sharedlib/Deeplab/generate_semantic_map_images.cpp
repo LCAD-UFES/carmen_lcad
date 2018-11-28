@@ -65,7 +65,7 @@ process_bumblebee(FILE *f, char *dir, int camera_side, bool show_image, bool sav
 
 	Mat img_l, img_r, semantic_cv_l, semantic_cv_r;
 
-	printf ("Saving image: %s%s\n", dir, timestamp);
+	printf ("Saving image: %s/%s\n", dir, timestamp);
 
 	if (camera_side == 0 || camera_side == INT_MAX)
 	{

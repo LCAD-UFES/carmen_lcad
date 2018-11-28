@@ -107,7 +107,7 @@ extract_predictions(image img, detection *dets, int num, float thresh, int class
 		{
 			if (dets[i].prob[j] > thresh)
 			{
-				if (obj_id < 0)   //TODO Get the class with the higher probability
+				if (obj_id < 0)   //TODO Get the class with the higher probability ????
 				{
 					strcat(labelstr, classes_names[j]);
 					obj_id = j;
@@ -207,4 +207,68 @@ run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_nam
 	free_image(sized);
 	free_image(img);
 	return (bbox_vector);
+}
+
+
+void
+save_predictions_to_file_VOC_pascal(detection *dets, int num, float thresh, int classes_number, char **classes_names, char* file_path)
+{
+	int i,j;
+
+	FILE* output_file = fopen(file_path, "w");
+
+	for(i = 0; i < num; ++i)
+	{
+		char labelstr[4096] = {0};
+		int obj_id = -1;
+
+		for(j = 0; j < classes_number; ++j)
+		{
+			if (dets[i].prob[j] > thresh)
+			{
+				if (obj_id < 0)
+				{
+					strcat(labelstr, classes_names[j]);
+					obj_id = j;
+				}
+				else
+				{
+					strcat(labelstr, ", ");
+					strcat(labelstr, classes_names[j]);
+				}
+			}
+		}
+		if (obj_id >= 0)
+			fprintf(output_file, "%d %f %f %f %f\n", obj_id, dets[i].bbox.x, dets[i].bbox.y, dets[i].bbox.w, dets[i].bbox.h);
+	}
+	fclose(output_file);
+}
+
+
+void
+run_YOLO_VOC_Pascal(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold, char* file_path)
+{
+	float nms = 0.45;
+	int nboxes = 0;
+
+	network *net = (network*) net_config;
+
+	image img = convert_image_msg_to_darknet_image(w, h, data);
+
+	image sized = letterbox_image(img, net->w, net->h);
+
+	float *X = sized.data;
+
+	network_predict(net, X);
+
+	detection *dets = get_network_boxes(net, img.w, img.h, threshold, threshold, 0, 1, &nboxes);
+
+	if (nms)    // Remove coincident bboxes
+		do_nms_sort(dets, nboxes, net->layers[net->n-1].classes, nms);
+
+	save_predictions_to_file_VOC_pascal(dets, nboxes, 0.5, net->layers[net->n-1].classes, classes_names, file_path);
+
+	free_detections(dets, nboxes);
+	free_image(sized);
+	free_image(img);
 }
