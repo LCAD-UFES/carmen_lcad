@@ -25,6 +25,9 @@
 - manda ver
 - toca o barco
 - siga em frente
+- em frente
+- ao infinito e além
+- para o infinito e além
 - retormar o curso
 - continue
 
