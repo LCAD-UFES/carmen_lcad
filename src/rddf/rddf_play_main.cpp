@@ -1975,7 +1975,13 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 	{
 		printf("New rddf set by voice command: %s\n", message->command);
 		carmen_rddf_index_clear();
-		carmen_rddf_play_load_index(message->command);
+		char *carmen_home = getenv("CARMEN_HOME");
+		static char rddf_file_name[2048];
+		strcpy(rddf_file_name, carmen_home);
+		strcat(rddf_file_name, "/");
+		strcat(rddf_file_name, message->command);
+
+		carmen_rddf_play_load_index(rddf_file_name);
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////

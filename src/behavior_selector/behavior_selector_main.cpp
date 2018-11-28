@@ -354,7 +354,7 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
 		v = 0.08;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
-		v = 0.08;
+		v = 0.00;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))
 		v = 0.09;
@@ -1418,7 +1418,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 //				(udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config()) < stop_sign_distance(current_robot_pose_v_and_phi)))
 //				decision_making_state_msg->low_level_state = Following_Moving_Object;
 			printf("current_robot_pose_v_and_phi.v %lf, distance_to_stop_sign(current_robot_pose_v_and_phi) %lf\n", current_robot_pose_v_and_phi.v, distance_to_stop_sign(current_robot_pose_v_and_phi));
-			if ((current_robot_pose_v_and_phi.v < 1.0) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 2.0))
+			if ((current_robot_pose_v_and_phi.v < 0.1) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 4.0))
 			{
 				printf("troquei\n");
 				decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
