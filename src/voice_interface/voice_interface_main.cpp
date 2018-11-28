@@ -290,7 +290,7 @@ execute_voice_command(char *voice_command)
 					speek_sentence((char *) "Meu mecanismo de autonomia é baseado em localização precisa em mapas.");
 					speek_sentence((char *) "Assim, não dependo de GPS.");
 					speek_sentence((char *) "Os mapas que uso são construídos por mim mesma, com a ajuda de 32 raios laser.");
-					speek_sentence((char *) "Além disso, possuo câmeras cujas imagens são analisadas por redes neurais profundas.");
+					speek_sentence((char *) "Possuo, também, câmeras cujas imagens são analisadas por redes neurais profundas.");
 					speek_sentence((char *) "Com elas consigo ver pedestres, semáforos, faixas e outras sinalizações de trânsito relevantes.");
 					speek_sentence((char *) "Estou às suas ordens!");
 				}

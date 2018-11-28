@@ -172,3 +172,11 @@ main(void)
   - Teste: rode o codigo em C++ em outro
  ./a.out
 
+
+= Como rodar a voice_interface remota
+ export CENTRALHOST=192.168.0.1
+ python -m rasa_nlu.server --path models --response_log logs
+ ./voice_interface
+- Para atualizar rasa DNN
+ python -m rasa_nlu.train -c nlu_config.yml --data iara_nlu.md -o models --fixed_model_name nlu --project current --verbose
+
