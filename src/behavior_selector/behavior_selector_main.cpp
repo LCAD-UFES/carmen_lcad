@@ -1415,10 +1415,15 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 //			if (udatmo_obstacle_detected(timestamp) &&
 //				(udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config()) < stop_sign_distance(current_robot_pose_v_and_phi)))
 //				decision_making_state_msg->low_level_state = Following_Moving_Object;
-			if ((current_robot_pose_v_and_phi.v < 0.15) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 2.0))
+			printf("current_robot_pose_v_and_phi.v %lf, distance_to_stop_sign(current_robot_pose_v_and_phi) %lf\n", current_robot_pose_v_and_phi.v, distance_to_stop_sign(current_robot_pose_v_and_phi));
+			if ((current_robot_pose_v_and_phi.v < 1.0) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 2.0))
+			{
+				printf("troquei\n");
 				decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
+			}
 			break;
 		case Stopped_At_Stop_Sign_S0:
+			printf("mudei\n");
 			decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S1;
 			break;
 		case Stopped_At_Stop_Sign_S1:
