@@ -6,6 +6,8 @@ carmen_pose_3D_t velodyne_pose;
 carmen_velodyne_partial_scan_message *velodyne_msg;
 carmen_point_t globalpos;
 
+bool go_msg_absent;
+
 #define P_BUFF_SIZE 10
 
 struct pedestrian
@@ -217,6 +219,9 @@ clean_pedestrians(double timestamp, double max_time)
 void
 update_simulated_pedestrians (double timestamp)
 {
+	if (go_msg_absent)
+		return;
+
 	for (int i=0; i<simulated_pedestrians.size(); i++)
 	{
 		if (!simulated_pedestrians[i].active && timestamp > simulated_pedestrians[i].start_time && timestamp < simulated_pedestrians[i].stop_time)
@@ -228,14 +233,14 @@ update_simulated_pedestrians (double timestamp)
 			simulated_pedestrians[i].p = new_ped;
 			update_world_position(&simulated_pedestrians[i].p, simulated_pedestrians[i].x,
 						simulated_pedestrians[i].y, timestamp);
-			printf("[%03d] - Created\n",simulated_pedestrians[i].p.track_id);
+			//printf("[%03d] - Created\n",simulated_pedestrians[i].p.track_id);
 		} 		
 		else if (simulated_pedestrians[i].active)
 		{
 			if (timestamp > simulated_pedestrians[i].stop_time)
 			{
 				simulated_pedestrians[i].active = false;
-				printf("[%03d] - Deleted\n",simulated_pedestrians[i].p.track_id);
+				//printf("[%03d] - Deleted\n",simulated_pedestrians[i].p.track_id);
 				continue;
 			}
 			simulated_pedestrians[i].p.active = true;
@@ -246,7 +251,7 @@ update_simulated_pedestrians (double timestamp)
 			simulated_pedestrians[i].y += sin(simulated_pedestrians[i].orientation)*ds;
 			update_world_position(&simulated_pedestrians[i].p, simulated_pedestrians[i].x,
 						simulated_pedestrians[i].y, timestamp);
-			printf("[%03d] - Updated\n",simulated_pedestrians[i].p.track_id);	
+			//printf("[%03d] - Updated\n",simulated_pedestrians[i].p.track_id);
 		}
 	}
 }
@@ -343,9 +348,6 @@ compute_num_measured_objects(vector<pedestrian> objects_poses)
 	return (num_objects);
 }
 
-int board_x = 0.572;      // TODO ler do carmen ini
-int board_y = 0.0;
-int board_z = 2.154;
 
 carmen_moving_objects_point_clouds_message
 build_detected_objects_message(vector<pedestrian> predictions, vector<vector<image_cartesian>> points_lists)
@@ -376,10 +378,6 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 	{                                                                                                               // The error code of -999.0 is set on compute_detected_objects_poses,
 		if ((get_pedestrian_x(tmp_predictions[i]) != -999.0 || get_pedestrian_y(tmp_predictions[i]) != -999.0)&&tmp_predictions[i].active)                       // probably the object is out of the LiDAR's range
 		{
-//			carmen_translte_2d(&tmp_predictions[i].x_world[tmp_predictions[i].circular_idx], &tmp_predictions[i].y_world[tmp_predictions[i].circular_idx], board_x, board_y);
-//			carmen_rotate_2d  (&tmp_predictions[i].x_world[tmp_predictions[i].circular_idx], &tmp_predictions[i].y_world[tmp_predictions[i].circular_idx], carmen_normalize_theta(globalpos.theta));
-//			carmen_translte_2d(&tmp_predictions[i].x_world[tmp_predictions[i].circular_idx], &tmp_predictions[i].y_world[tmp_predictions[i].circular_idx], globalpos.x, globalpos.y);
-
 			msg.point_clouds[l].r = 1.0;
 			msg.point_clouds[l].g = 1.0;
 			msg.point_clouds[l].b = 0.0;
@@ -387,9 +385,9 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 			msg.point_clouds[l].linear_velocity = tmp_predictions[i].velocity;
 			msg.point_clouds[l].orientation = tmp_predictions[i].orientation;
 
-			msg.point_clouds[l].length = 4.5;
-			msg.point_clouds[l].height = 1.8;
-			msg.point_clouds[l].width  = 1.6;
+			msg.point_clouds[l].length = 0.2;
+			msg.point_clouds[l].height = 0.2;
+			msg.point_clouds[l].width  = 0.2;
 
 			msg.point_clouds[l].object_pose.x = get_pedestrian_x(tmp_predictions[i]);
 			msg.point_clouds[l].object_pose.y = get_pedestrian_y(tmp_predictions[i]);
@@ -397,9 +395,9 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 
 
 			msg.point_clouds[l].geometric_model = 0;
-			msg.point_clouds[l].model_features.geometry.height = 1.8;
-			msg.point_clouds[l].model_features.geometry.length = 3.0;
-			msg.point_clouds[l].model_features.geometry.width = 1.0;
+			msg.point_clouds[l].model_features.geometry.height = 0.2;
+			msg.point_clouds[l].model_features.geometry.length = 0.2;
+			msg.point_clouds[l].model_features.geometry.width = 0.2;
 			msg.point_clouds[l].model_features.red = 1.0;
 			msg.point_clouds[l].model_features.green = 1.0;
 			msg.point_clouds[l].model_features.blue = 0.8;
@@ -418,10 +416,6 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 				p.x = points_lists[i][j].cartesian_x;
 				p.y = points_lists[i][j].cartesian_y;
 				p.z = points_lists[i][j].cartesian_z;
-
-				carmen_translte_2d(&p.x, &p.y, board_x, board_y);
-				carmen_rotate_2d  (&p.x, &p.y, globalpos.theta);
-				carmen_translte_2d(&p.x, &p.y, globalpos.x, globalpos.y);
 
 				msg.point_clouds[l].points[j] = p;
 			}
@@ -446,6 +440,13 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 }
 
 
+static void
+navigator_ackerman_go_message_handler()
+{
+	go_msg_absent = false;
+}
+
+
 void
 shutdown_module(int signo)
 {
@@ -465,12 +466,17 @@ void
 subscribe_messages()
 {
     carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_subscribe_message((char *) CARMEN_NAVIGATOR_ACKERMAN_GO_NAME, (char *) CARMEN_DEFAULT_MESSAGE_FMT, NULL, sizeof(carmen_navigator_ackerman_go_message),
+    		(carmen_handler_t)navigator_ackerman_go_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
 void
 initialize_simulated_pedestrians()
 {
+	go_msg_absent = true;
+
 	fake_pedestrian new_p;
 
 //	new_p.start_time = 1515703040.0;
@@ -491,7 +497,7 @@ initialize_simulated_pedestrians()
 //	new_p2.orientation = 1.5;
 //	simulated_pedestrians.push_back(new_p2);
 
-//	new_p.start_time = 0.0;
+//	new_p.start_time = 0.0;                     // Stopped near border
 //	new_p.stop_time = 9915703060.0;
 //	new_p.x = 7757906.61;
 //	new_p.y = -363602.8;
@@ -500,7 +506,7 @@ initialize_simulated_pedestrians()
 //	new_p.orientation = -0.766;
 //	simulated_pedestrians.push_back(new_p);
 
-//	new_p.start_time = 0.0;
+//	new_p.start_time = 0.0;                     // Sideways
 //	new_p.stop_time = 9915703060.0;
 //	new_p.x = 7757900.40;
 //	new_p.y = -363598.40;
@@ -509,7 +515,7 @@ initialize_simulated_pedestrians()
 //	new_p.orientation = -0.766;
 //	simulated_pedestrians.push_back(new_p);
 
-//	new_p.start_time = 0.0;
+//	new_p.start_time = 0.0;                      // Bottom Left
 //	new_p.stop_time = 9915703060.0;
 //	new_p.x = 7757900.11;
 //	new_p.y = -363608.86;
@@ -518,32 +524,30 @@ initialize_simulated_pedestrians()
 //	new_p.orientation = 0.873	;
 //	simulated_pedestrians.push_back(new_p);
 
-
-	//ERRADO
-	new_p.start_time = 0.0;
-	new_p.stop_time = 9915703060.0;
-	new_p.x = 7757918.28;
-	new_p.y = -363601.10;
-	new_p.active = false;
-	new_p.velocity = 1.0;
-	new_p.orientation = 2.988;
-	simulated_pedestrians.push_back(new_p);
-
-//	new_p.start_time = 0.0;
+//	new_p.start_time = 0.0;                       // Bottom Right
 //	new_p.stop_time = 9915703060.0;
-//	new_p.x = 7757907.18;
-//	new_p.y = -363590.69;
+//	new_p.x = 7757918.28;
+//	new_p.y = -363601.10;
 //	new_p.active = false;
-//	new_p.velocity = 1.0;
-//	new_p.orientation = -1.380;
+//	new_p.velocity = 0.7;
+//	new_p.orientation = 2.988;
 //	simulated_pedestrians.push_back(new_p);
 
-//	new_p.start_time = 0.0;
+	new_p.start_time = 0.0;                       // Up Right
+	new_p.stop_time = 9915703060.0;
+	new_p.x = 7757907.18;
+	new_p.y = -363590.69;
+	new_p.active = false;
+	new_p.velocity = 1.0;
+	new_p.orientation = -1.380;
+	simulated_pedestrians.push_back(new_p);
+//
+//	new_p.start_time = 0.0;                       // Up Left
 //	new_p.stop_time = 9915703060.0;
 //	new_p.x = 7757899.01;
 //	new_p.y = -363597.10;
 //	new_p.active = false;
-//	new_p.velocity = 1.0;
+//	new_p.velocity = 0.7;
 //	new_p.orientation = -0.288;
 //	simulated_pedestrians.push_back(new_p);
 }

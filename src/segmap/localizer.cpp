@@ -35,6 +35,8 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 		vector<pair<double, double>> &odom, vector<double> &times, PointCloud<PointXYZRGB>::Ptr cloud,
 		PointCloud<PointXYZRGB>::Ptr transformed_cloud, DatasetInterface &dataset)
 {
+	printf("N poses: %ld\n", poses.size());
+	//Pose2d p0 = dataset._gps[0];
 	Pose2d p0 = Pose2d::from_matrix(poses[0]);
 
 	pf.seed(time(NULL));
@@ -42,12 +44,17 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 	map.reload(p0.x, p0.y);
 
 	printf("Initial particles\n");
-	view(pf, map, poses, p0, NULL, NULL);
+	view(pf, map, poses, p0, NULL, NULL, NULL);
+
+	Matrix<double, 4, 4> vel2car = dataset.transform_vel2car();
 
 	for (int i = 1; i < times.size(); i++)
 	{
 		printf("Step %d of %ld\n", i+1, times.size());
+		//Pose2d gps = dataset._gps[i];
 		Pose2d gps = Pose2d::from_matrix(poses[i]); // TODO: add noise
+
+		printf("%lf %lf %lf\n", gps.x, gps.y, gps.th);
 
 		printf("Prediction\n");
 		pf.predict(odom[i].first, odom[i].second, times[i] - times[i-1]);
@@ -59,7 +66,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 		{
 			printf("Correction\n");
 			dataset.load_fused_pointcloud_and_camera(i, cloud, 1);
-			pf.correct(gps, cloud, map, transformed_cloud);
+			pf.correct(gps, cloud, map, transformed_cloud, vel2car);
 
 			Pose2d mean = pf.mean();
 			Pose2d mode = pf.mode();
@@ -70,8 +77,10 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 			printf("PF Mode: %.2lf %.2lf %.2lf Error: %lf\n", mode.x, mode.y, radians_to_degrees(mode.th),
 					sqrt(pow(gps.x - mode.x, 2) + pow(gps.y - mode.y, 2)));
 
-			view(pf, map, poses, gps, cloud, transformed_cloud);
-			map.reload(mode.x, mode.y);
+			view(pf, map, poses, gps, cloud, transformed_cloud, &vel2car);
+
+			if (odom[i].first > 0.1)
+				map.reload(mode.x, mode.y);
 		}
 	}
 }
@@ -83,7 +92,8 @@ create_dataset(char *dataset_name)
 	DatasetInterface *dataset;
 
 	if (!strcmp(dataset_name, "carmen"))
-		dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180112/", 1);
+		//dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180907-2/", 1);
+		dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180112-2/", 1);
 	else if (!strcmp(dataset_name, "kitti"))
 		dataset = new DatasetKitti("/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/", 1);
 	else
