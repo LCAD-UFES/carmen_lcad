@@ -74,6 +74,8 @@ static double original_model_predictive_planner_obstacles_safe_distance;
 
 static double carmen_ini_max_velocity;
 
+static bool soft_stop_on = false;
+
 
 int
 compute_max_rddf_num_poses_ahead(carmen_ackerman_traj_point_t current_pose)
@@ -1519,6 +1521,35 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 }
 
 
+carmen_ackerman_traj_point_t *
+check_soft_stop(carmen_ackerman_traj_point_t *first_goal, carmen_ackerman_traj_point_t *goal_list, int &goal_type)
+{
+	static bool soft_stop_in_progress = false;
+	static carmen_ackerman_traj_point_t soft_stop_goal;
+	static int soft_stop_goal_type;
+
+	if (soft_stop_on)
+	{
+		if (!soft_stop_in_progress)
+		{
+			soft_stop_goal = *first_goal;
+			soft_stop_goal_type = goal_type;
+			soft_stop_in_progress = true;
+		}
+		else
+		{
+			goal_list[0] = soft_stop_goal;
+			first_goal = &soft_stop_goal;
+			goal_type = soft_stop_goal_type;
+		}
+	}
+	else
+		soft_stop_in_progress = false;
+
+	return (first_goal);
+}
+
+
 void
 select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
@@ -1533,10 +1564,12 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	int goal_list_size;
 	carmen_ackerman_traj_point_t *goal_list = behavior_selector_get_goal_list(&goal_list_size);
 	carmen_ackerman_traj_point_t *first_goal = &(goal_list[0]);
-	int *goal_type = behavior_selector_get_goal_type();
+	int goal_type = behavior_selector_get_goal_type()[0];
+
+	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
 
 	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
-			first_goal, goal_type[0], timestamp);
+			first_goal, goal_type, timestamp);
 	if (error != 0)
 		carmen_die("State machine error code %d\n", error);
 
@@ -1544,10 +1577,10 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	static carmen_ackerman_traj_point_t *last_valid_goal_p = NULL;
 	if (goal_list_size > 0)
 	{
-		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type[0], timestamp);
+		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type, timestamp);
 		publish_goal_list(goal_list, goal_list_size, timestamp);
 
-		last_valid_goal = goal_list[0];
+		last_valid_goal = *first_goal;
 		last_valid_goal_p = &last_valid_goal;
 	}
 	else if (last_valid_goal_p != NULL)
@@ -1791,9 +1824,15 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 	if (message->command_id == SET_SPEED)
 	{
 		if (strcmp(message->command, "MAX_SPEED") == 0)
+		{
 			set_max_v(carmen_ini_max_velocity);
+			soft_stop_on = false;
+		}
 		else if (strcmp(message->command, "0.0") == 0)
+		{
 			set_max_v(0.0);
+			soft_stop_on = true;
+		}
 
 		printf("New speed set by voice command: %lf\n", get_max_v());
 		fflush(stdout);
