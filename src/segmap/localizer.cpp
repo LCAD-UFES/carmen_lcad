@@ -122,6 +122,12 @@ main(int argc, char **argv)
 	dataset = create_dataset(dataset_name);
 	dataset->load_data(times, poses, odom);
 
+//	for (int i = 0; i < poses.size(); i++)
+//	{
+//		dataset->load_fused_pointcloud_and_camera(i, cloud, 1);
+//		waitKey(-1);
+//	}
+
 	ParticleFilter pf(30, 0.5, 0.5, degrees_to_radians(10),
 			0.5, degrees_to_radians(2.),
 			0.05, 0.05, degrees_to_radians(2.),
