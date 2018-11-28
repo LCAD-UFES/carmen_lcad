@@ -176,9 +176,7 @@ check_if_place_is_known(const char *place)
 			if (strcasecmp(place, (const char *) place_in_database) == 0)
 			{
 				static char rddf_file_name[2048];
-				strcpy(rddf_file_name, carmen_home);
-				strcat(rddf_file_name, "/");
-				strcat(rddf_file_name, rddf);
+				strcpy(rddf_file_name, rddf);
 
 				return (rddf_file_name);
 			}
