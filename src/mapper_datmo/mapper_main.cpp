@@ -794,6 +794,29 @@ save_image_semantic_map_to_disk(int width, int height, int camera, double timest
 }
 
 
+unsigned char*
+open_semantic_image(char* dir, double timestamp)
+{
+	char complete_path[1024];
+	int img_size = 1228800;
+
+	sprintf(complete_path, "%s/%lf-r.segmap", dir, timestamp);
+
+	printf("%s\n", complete_path);
+
+	FILE *image_file = fopen(complete_path, "rb");
+
+	if (!image_file)
+		return NULL;
+
+	unsigned char *semantic = (unsigned char*) malloc (img_size * sizeof(unsigned char));
+
+	fread(semantic, img_size, sizeof(unsigned char), image_file);
+
+	return (semantic);
+}
+
+
 void
 bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
@@ -806,9 +829,11 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 	camera_data[camera].image_size[i] = image_msg->image_size;
 	camera_data[camera].isRectified[i] = image_msg->isRectified;
 	camera_data[camera].image[i] = (camera_alive[camera] == 0) ? image_msg->raw_left : image_msg->raw_right;
-	camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
 	camera_data[camera].timestamp[i] = image_msg->timestamp;
-	save_image_semantic_map_to_disk(image_msg->width, image_msg->height, camera, image_msg->timestamp, camera_data[camera].semantic[i]);
+	//camera_data[camera].semantic[i] = open_semantic_image((char*)"/dados/log_dante_michelini-20181116.txt_segmap", image_msg->timestamp);
+	camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
+	//save_image_semantic_map_to_disk(image_msg->width, image_msg->height, camera, image_msg->timestamp, camera_data[camera].semantic[i]);
+
 
 	if (verbose >= 2)
 	{
