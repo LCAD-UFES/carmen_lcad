@@ -154,7 +154,7 @@ DatasetCarmen::load_image(int i)
 
 	Mat raw_img = imread(_name);
 
-    if (raw_img.rows == 0 || raw_img.cols == 0)
+    if (raw_img.data == 0 || raw_img.rows == 0 || raw_img.cols == 0)
     	exit(printf("Error: Image '%s' not found.\n", _name));
 
 	Mat resized;
@@ -183,8 +183,13 @@ DatasetCarmen::load_image(int i)
 void
 DatasetCarmen::load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud)
 {
+	int success;
+
 	sprintf(_name, "%s/velodyne/%010d.ply", _path.c_str(), i);
-	pcl::io::loadPLYFile(_name, *cloud);
+	success = pcl::io::loadPLYFile(_name, *cloud);
+
+	if (success < 0 || cloud->size() == 0)
+		exit(printf("Cloud %s not found.\n", _name));
 }
 
 
@@ -341,7 +346,7 @@ DatasetKitti::load_image(int i)
     Mat img = imread(_name);
     Mat resized;
 
-    if (img.rows == 0 || img.cols == 0)
+    if (img.data == 0 || img.rows == 0 || img.cols == 0)
     	exit(printf("Error: Image '%s' not found.\n", _name));
 
     if (img.rows != 375)

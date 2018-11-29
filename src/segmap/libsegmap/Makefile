@@ -5,7 +5,11 @@ MODULE_COMMENT = Library for the segmap module
 
 LINK = g++ 
 
-CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-compare -std=c++11 #-fopenmp
+CXXFLAGS += -pg
+LFLAGS += -pg
+IFLAGS += -pg
+
+CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-compare -std=c++11 
 
 # Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11
 IFLAGS += -std=c++11

@@ -106,10 +106,14 @@ draw_pointcloud(Mat &m, PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap 
 		px = (point.x - map.xo) * map.pixels_by_m;
 		py = (point.y - map.yo) * map.pixels_by_m;
 
-		m.data[3 * (py * m.cols + px)] = b;
-		m.data[3 * (py * m.cols + px) + 1] = g;
-		m.data[3 * (py * m.cols + px) + 2] = r;
-		//circle(m, Point(px, py), 1, Scalar(b, g, r), 1);
+
+		if (px >= 0 && px < m.cols && py >= 0 && py < m.rows)
+		{
+			m.data[3 * (py * m.cols + px)] = b;
+			m.data[3 * (py * m.cols + px) + 1] = g;
+			m.data[3 * (py * m.cols + px) + 2] = r;
+			//circle(m, Point(px, py), 1, Scalar(b, g, r), 1);
+		}
 	}
 }
 
@@ -145,7 +149,6 @@ view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses, Pose
 	static int step = 1;
 
 	char c;
-	int i;
 	Pose2d p;
 	Point pixel;
 
@@ -155,19 +158,32 @@ view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses, Pose
 
 	if (cloud != NULL)
 	{
-		tr = Pose2d::to_matrix(mode) * (*vel2car);
-		transformPointCloud(*cloud, *transformed_cloud, tr);
-		draw_pointcloud(map_img, transformed_cloud, map, 1, Scalar(0, 0, 255));
-
 		tr = Pose2d::to_matrix(current_pose) * (*vel2car);
 		transformPointCloud(*cloud, *transformed_cloud, tr);
 		draw_pointcloud(map_img, transformed_cloud, map, 1, Scalar(0, 255, 0));
+
+		tr = Pose2d::to_matrix(mode) * (*vel2car);
+		transformPointCloud(*cloud, *transformed_cloud, tr);
+
+		for (int i = 0; i < transformed_cloud->size(); i++)
+		{
+			if (fabs(transformed_cloud->at(i).x - mode.x) > 100 || fabs(transformed_cloud->at(i).y - mode.y) > 100)
+			{
+				printf("i: %d Point: %lf %lf Transformed: %lf %lf mode: %lf %lf %lf\n",
+						i, cloud->at(i).x, cloud->at(i).y,
+						transformed_cloud->at(i).x, transformed_cloud->at(i).y,
+						mode.x, mode.y, mode.th
+						);
+			}
+		}
+
+		draw_pointcloud(map_img, transformed_cloud, map, 1, Scalar(0, 0, 255));
 	}
 
 	//draw_poses(map, map_img, poses, Scalar(0, 255, 0));
 
-	//for (i = 0; i < pf._n; i++)
-		//draw_particle(map_img, pf._p[i], map, Scalar(0, 255, 255));
+	for (int i = 0; i < pf._n; i++)
+		draw_particle(map_img, pf._p[i], map, Scalar(0, 255, 255));
 
 	draw_pose(map, map_img, current_pose, Scalar(0, 255, 0));
 	draw_pose(map, map_img, mode, Scalar(0, 0, 255));

@@ -12,7 +12,6 @@ ParticleFilter::_gauss()
 // public:
 ParticleFilter::ParticleFilter(int n_particles, double x_std, double y_std, double th_std,
 		double v_std, double phi_std, double pred_x_std, double pred_y_std, double pred_th_std,
-		double gps_var_x, double gps_var_y, double gps_var_th,
 		double color_var_r, double color_var_g, double color_var_b)
 {
 	_n = n_particles;
@@ -32,10 +31,6 @@ ParticleFilter::ParticleFilter(int n_particles, double x_std, double y_std, doub
 	_pred_x_std = pred_x_std;
 	_pred_y_std = pred_y_std;
 	_pred_th_std = pred_th_std;
-
-	_gps_var_x = gps_var_x;
-	_gps_var_y = gps_var_y;
-	_gps_var_th = gps_var_th;
 
 	_color_var_r = color_var_r / pow(255., 2.);
 	_color_var_g = color_var_g / pow(255., 2.);
@@ -101,19 +96,6 @@ ParticleFilter::predict(double v, double phi, double dt)
 
 
 double
-ParticleFilter::_gps_weight(Pose2d &p, Pose2d &gps)
-{
-	double gps_unnorm_log_prob;
-
-	gps_unnorm_log_prob = (1. / _gps_var_x) * pow(p.x - gps.x, 2) +
-						 (1. / _gps_var_y) * pow(p.y - gps.y, 2) +
-						 (1. / _gps_var_th) * pow(p.th - gps.th, 2);
-
-	return exp(-gps_unnorm_log_prob);
-}
-
-
-double
 ParticleFilter::_semantic_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map)
 {
 	double count;
@@ -130,11 +112,8 @@ ParticleFilter::_semantic_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 		count = v[v.size() - 2];
 		// add the log probability of the observed class.
 		unnorm_log_prob += log(v[point.r] / count);
-
-		//printf("unnorm_log_prob: %lf\n\n", unnorm_log_prob);
 	}
 
-	//return exp(unnorm_log_prob);
 	return unnorm_log_prob;
 }
 
@@ -155,33 +134,22 @@ ParticleFilter::_image_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Gr
 		// TODO: what to do when the cell was never observed?
 		if (v[0] != -1)
 		{
-			//unnorm_log_prob += (1. / _color_var_r) * pow((point.r - v[2]) / 255., 2) +
-			//		(1. / _color_var_g) * pow((point.g - v[1]) / 255., 2) +
-			//		(1. / _color_var_b) * pow((point.b - v[0]) / 255., 2);
-
 			unnorm_log_prob += fabs((point.r - v[2]) / 255.) +
 						fabs((point.g - v[1]) / 255.) +
 						fabs((point.b - v[0]) / 255.);
 
 			n_valid_cells += 1;
 		}
-
-		//printf("unnorm_log_prob: %lf\n\n", unnorm_log_prob);
 	}
-
-	// return (1. / unnorm_log_prob);
 
 	double c = 10.;  // constant to magnify the particle weights.
 	unnorm_log_prob /= (3. * n_valid_cells);
-	//printf("n votes: %lf\n", n_votes);
-	//printf("unnorm_log_prob: %lf\n", c * unnorm_log_prob);
-
 	return exp(-c * unnorm_log_prob);
 }
 
 
 void
-ParticleFilter::correct(Pose2d &gps, PointCloud<PointXYZRGB>::Ptr cloud,
+ParticleFilter::correct(PointCloud<PointXYZRGB>::Ptr cloud,
 		GridMap &map, PointCloud<PointXYZRGB>::Ptr transformed_cloud, Matrix<double, 4, 4> &vel2car)
 {
 	int i;
@@ -199,8 +167,6 @@ ParticleFilter::correct(Pose2d &gps, PointCloud<PointXYZRGB>::Ptr cloud,
 			_w[i] = _semantic_weight(transformed_cloud, map);
 		else
 			_w[i] = _image_weight(transformed_cloud, map);
-
-		//printf("Unormalized _w[%d]: %lf\n", i, _w[i]);
 
 		_p_bef[i] = _p[i];
 
@@ -237,8 +203,6 @@ ParticleFilter::correct(Pose2d &gps, PointCloud<PointXYZRGB>::Ptr cloud,
 	{
 		_w[i] /= sum_weights;
 		_w_bef[i] = _w[i];
-
-		//printf("Normalized _w[%d]: %lf\n", i, _w[i]);
 	}
 
 	// resample

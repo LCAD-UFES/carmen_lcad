@@ -77,5 +77,6 @@ void draw_rectangle(Mat &img,
 
 void print_poses(vector<Matrix<double, 4, 4>> &poses);
 
+double dist2d(double x1, double y1, double x2, double y2);
 
 #endif

@@ -35,7 +35,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 		vector<pair<double, double>> &odom, vector<double> &times, PointCloud<PointXYZRGB>::Ptr cloud,
 		PointCloud<PointXYZRGB>::Ptr transformed_cloud, DatasetInterface &dataset)
 {
-	printf("N poses: %ld\n", poses.size());
+	//printf("N poses: %ld\n", poses.size());
 	//Pose2d p0 = dataset._gps[0];
 	Pose2d p0 = Pose2d::from_matrix(poses[0]);
 
@@ -43,45 +43,46 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 	pf.reset(p0.x, p0.y, p0.th);
 	map.reload(p0.x, p0.y);
 
-	printf("Initial particles\n");
-	view(pf, map, poses, p0, NULL, NULL, NULL);
-
+	int last_reload = 0;
 	Matrix<double, 4, 4> vel2car = dataset.transform_vel2car();
 
-	for (int i = 1; i < times.size(); i++)
+	for (int i = 1; i < 50; i++) //times.size(); i++)
 	{
-		printf("Step %d of %ld\n", i+1, times.size());
 		//Pose2d gps = dataset._gps[i];
-		Pose2d gps = Pose2d::from_matrix(poses[i]); // TODO: add noise
+		Pose2d gt_pose = Pose2d::from_matrix(poses[i]); // TODO: add noise
 
-		printf("%lf %lf %lf\n", gps.x, gps.y, gps.th);
-
-		printf("Prediction\n");
 		pf.predict(odom[i].first, odom[i].second, times[i] - times[i-1]);
 		//view(pf, map, poses, gps, NULL, NULL);
+		dataset.load_fused_pointcloud_and_camera(i, cloud, 0);
 
-		//if (i % 4 == 0 && i > 0)
+		//if (i % 1 == 0 && i > 0)
 		//if (i > 16)
-		if (1)
+		//if (1)
 		{
-			printf("Correction\n");
-			dataset.load_fused_pointcloud_and_camera(i, cloud, 1);
-			pf.correct(gps, cloud, map, transformed_cloud, vel2car);
+			pf.correct(cloud, map, transformed_cloud, vel2car);
 
 			Pose2d mean = pf.mean();
 			Pose2d mode = pf.mode();
 
-			printf("True pose: %.2lf %.2lf %.2lf\n", gps.x, gps.y, radians_to_degrees(gps.th));
-			printf("PF Mean: %.2lf %.2lf %.2lf Error: %lf\n", mean.x, mean.y, radians_to_degrees(mean.th),
-					sqrt(pow(gps.x - mean.x, 2) + pow(gps.y - mean.y, 2)));
-			printf("PF Mode: %.2lf %.2lf %.2lf Error: %lf\n", mode.x, mode.y, radians_to_degrees(mode.th),
-					sqrt(pow(gps.x - mode.x, 2) + pow(gps.y - mode.y, 2)));
+			printf("Step: %d of %ld ", i + 1, times.size());
+			printf("GT_pose: %lf %lf %lf ", gt_pose.x, gt_pose.y, gt_pose.th);
+			printf("PF_Mean: %lf %lf %lf ", mean.x, mean.y, mean.th);
+			printf("PF_Mode: %lf %lf %lf ", mode.x, mode.y, mode.th);
+			printf("D_GT_MEAN: %lf ", dist2d(mean.x, mean.y, gt_pose.x, gt_pose.y));
+			printf("D_GT_MODE: %lf ", dist2d(mode.x, mode.y, gt_pose.x, gt_pose.y));
+			printf("O_GT_MEAN: %lf ", fabs(normalize_theta(mean.th - gt_pose.th)));
+			printf("O_GT_MODE: %lf ", fabs(normalize_theta(mode.th - gt_pose.th)));
+			printf("\n");
+			fflush(stdout);
 
-			view(pf, map, poses, gps, cloud, transformed_cloud, &vel2car);
-
-			if (odom[i].first > 0.1)
+			if (odom[i].first > 0.1 && (i - last_reload > 10))
+			{
 				map.reload(mode.x, mode.y);
+				last_reload = i;
+			}
 		}
+
+		//view(pf, map, poses, gt_pose, cloud, transformed_cloud, &vel2car);
 	}
 }
 
@@ -122,16 +123,9 @@ main(int argc, char **argv)
 	dataset = create_dataset(dataset_name);
 	dataset->load_data(times, poses, odom);
 
-//	for (int i = 0; i < poses.size(); i++)
-//	{
-//		dataset->load_fused_pointcloud_and_camera(i, cloud, 1);
-//		waitKey(-1);
-//	}
-
 	ParticleFilter pf(30, 0.5, 0.5, degrees_to_radians(10),
-			0.5, degrees_to_radians(2.),
-			0.05, 0.05, degrees_to_radians(2.),
-			25.0, 25.0, degrees_to_radians(100),
+			0.1, degrees_to_radians(0.5),
+			0.01, 0.01, degrees_to_radians(0.5),
 			100., 100., 100.);
 
 	GridMap map("/dados/maps/maps_20180112-2/", 50., 50., 0.2, GridMapTile::TYPE_SEMANTIC);

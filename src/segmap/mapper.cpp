@@ -85,6 +85,7 @@ create_map(GridMap &map, vector<Matrix<double, 4, 4>> &poses, PointCloud<PointXY
 			if (c == 's')
 				step = !step;
 			if (!step || (step && c == 'n'))
+
 				break;
 			if (c == 'r')
 			{
@@ -132,12 +133,6 @@ main(int argc, char **argv)
 
 	dataset = create_dataset(dataset_name);
 	dataset->load_data(times, poses, odom);
-
-	ParticleFilter pf(30, 0.5, 0.5, degrees_to_radians(10),
-			0.5, degrees_to_radians(2.),
-			0.05, 0.05, degrees_to_radians(2.),
-			25.0, 25.0, degrees_to_radians(100),
-			100., 100., 100.);
 
 	system("rm -rf /dados/maps/maps_20180112-2/*");
 	GridMap map("/dados/maps/maps_20180112-2/", 50., 50., 0.2, GridMapTile::TYPE_SEMANTIC);

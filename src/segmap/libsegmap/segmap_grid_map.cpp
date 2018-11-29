@@ -87,7 +87,7 @@ GridMapTile::GridMapTile(double point_y, double point_x,
 	_map_type = map_type;
 	_tiles_dir = tiles_dir;
 
-	printf("Creating tile with origin: %lf %lf\n", _xo, _yo);
+	//printf("Creating tile with origin: %lf %lf\n", _xo, _yo);
 
 	_initialize_derivated_values();
 	_initialize_map();
@@ -150,6 +150,7 @@ GridMapTile::save()
 			_tiles_dir.c_str(),
 			GridMapTile::type2str(_map_type),
 			_xo, _yo);
+
 	imwrite(name, to_image());
 }
 
@@ -207,20 +208,21 @@ GridMapTile::read_cell(PointXYZRGB &p)
 	px = (p.x - _xo) * _pixels_by_m;
 	py = (p.y - _yo) * _pixels_by_m;
 
+	static vector<double> v(_unknown);
+
 	if (px >= 0 && px < _w && py >= 0 && py < _h)
 	{
 		pos = _n_fields_by_cell * (py * _w + px);
 
-		vector<double> v;
-
 		for (int k = 0; k < _n_fields_by_cell; k++)
-			v.push_back(_map[pos + k]);
+			//v.push_back(_map[pos + k]);
+			v[k] = _map[pos + k];
 
 		return v;
 	}
 	else
 	{
-		printf("Warning: reading a cell outside the current map. Returning unknown vector.\n");
+		//printf("Warning: reading a cell outside the current map. Returning unknown vector.\n");
 		return _unknown;
 	}
 }
@@ -318,8 +320,6 @@ GridMap::_reload_tile(double x, double y)
 void
 GridMap::_reload_tiles(double robot_x, double robot_y)
 {
-	printf("Reloading tiles!\n");
-
 	int i, j;
 
 	for (i = 0; i < _N_TILES; i++)
@@ -387,7 +387,7 @@ GridMap::read_cell(PointXYZRGB &p)
 		}
 	}
 
-	printf("Warning: trying to read a cell that is not in the current map tiles! Returning unknown.\n");
+	//printf("Warning: trying to read a cell that is not in the current map tiles! Returning unknown.\n");
 	return _tiles[0][0]->_unknown;
 }
 
