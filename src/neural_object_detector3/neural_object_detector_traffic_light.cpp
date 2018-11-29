@@ -344,13 +344,11 @@ compute_annotation_specifications(vector<vector<image_cartesian>> traffic_light_
 	{
 		for (j = 0; j < traffic_light_clusters[i].size(); j++)
 		{
-			//printf("%lf %lf %lf\n", traffic_light_clusters[i][j].cartesian_x, traffic_light_clusters[i][j].cartesian_y, traffic_light_clusters[i][j].cartesian_z);
-
 			mean_x += traffic_light_clusters[i][j].cartesian_x;
 			mean_y += traffic_light_clusters[i][j].cartesian_y;
 			mean_z += traffic_light_clusters[i][j].cartesian_z;
 		}
-		printf("TL %lf %lf %lf\n", mean_x/j, mean_y/j, mean_z/j);
+		printf("TL %lf %lf %lf Cluster Size %d\n", mean_x/j, mean_y/j, mean_z/j, (int)traffic_light_clusters[i].size());
 
 		mean_x = 0.0;
 		mean_y = 0.0;
@@ -377,31 +375,25 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 
 	for (int i = 0; i < predictions.size(); i++)
 	{
-//		if (predictions[i].obj_id == 9)
-//		{
-			//printf("%s\n", obj_names_vector[predictions[i].obj_id].c_str());
-			for (int j = 0; j < points_inside_bbox[i].size(); j++)
-			{
-				//printf("%lf %lf\n", points_inside_bbox[i][j].cartesian_x, points_inside_bbox[i][j].cartesian_y);
+		for (int j = 0; j < points_inside_bbox[i].size(); j++)
+		{
+			carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, board_pose.position.x, board_pose.position.y);
+			carmen_rotate_2d  (&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos_msg->globalpos.theta);
+			carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
 
-				//carmen_translte_3d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, &points_inside_bbox[i][j].cartesian_z, board_x, board_y, board_pose.position.z);
-				carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, board_pose.position.x, board_pose.position.y);
-				carmen_rotate_2d  (&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos_msg->globalpos.theta);
-				carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
+			points_inside_bbox[i][j].cartesian_z += board_pose.position.z + velodyne_pose.position.z;
 
-				traffic_light_points.push_back(points_inside_bbox[i][j]);
-				//printf("%lf %lf\n", points_inside_bbox[i][j].cartesian_x, points_inside_bbox[i][j].cartesian_y);
-			}
-			count = 0;
-			traffic_light_found = 0;
-//		}
+			traffic_light_points.push_back(points_inside_bbox[i][j]);
+		}
+		count = 0;
+		traffic_light_found = 0;
 	}
 	count += traffic_light_found;
 
-	if (count > 8)                // If stays without see a traffic light for more than N frames
+	if (count > 8)                  // If stays without see a traffic light for more than N frames
 	{                               // Compute traffic light positions and generate annotations
 		vector<vector<image_cartesian>> traffic_light_clusters = dbscan_compute_clusters(0.5, 3, traffic_light_points);
-		//printf("--- %d\n", (int)traffic_light_clusters.size());
+
 		compute_annotation_specifications(traffic_light_clusters);
 		traffic_light_points.clear();
 		count = 0;
@@ -525,8 +517,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	else
 		img = image_msg->raw_right;
 
-	int resized_w = 640;
-	int resized_h = 640;
+	int resized_w = image_msg->width;
+	int resized_h = image_msg->height;
 	int crop_x = 0;
 	int crop_y = 0;
 	int crop_w = resized_w;
@@ -544,32 +536,32 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
 
-//	if (globalpos_msg == NULL)
-//		return;
-//	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
-//			globalpos_msg->pose.orientation.roll, globalpos_msg->pose.orientation.pitch, globalpos_msg->pose.orientation.yaw);
-//
-//	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757493.704663, -364151.945918, 5.428209,
-//	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757498.416323, -364158.291071, 5.631667,
-//	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757492.914793, -364155.064267, 5.450262,
-//	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7755670.270790, -365305.500336, 2.437284,
-//	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7755685.885188, -365308.134036, 4.194098,
-//	carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7755687.117894, -365310.704539, 3.602783,
-//			world_to_camera_pose, camera_parameters, resized_w, resized_h);
-//
-//	if (predictions.size() > 0)
-//		printf ("Distance %lf\n", sqrt((7755687.117894 - globalpos_msg->globalpos.x) * (7755687.117894 - globalpos_msg->globalpos.x) +
-//				(-365310.704539 - globalpos_msg->globalpos.y) * (-365310.704539 - globalpos_msg->globalpos.y)));
-//	else
-//		printf("No Traffic Light Detected!\n");
-//
-//	if (predictions.size() > 0)
-//	{
-//		carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotation_on_image);
-//		publish_traffic_lights(&traffic_light_message);
-//	}
-//
-//	circle(open_cv_image, Point((int)tf_annotation_on_image.x, (int)tf_annotation_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
+	if (globalpos_msg == NULL)
+		return;
+	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
+			0.0, 0.0, globalpos_msg->globalpos.theta);
+
+	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757493.704663, -364151.945918, 5.428209,
+	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757498.416323, -364158.291071, 5.631667,
+	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757492.914793, -364155.064267, 5.450262,
+	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7755670.270790, -365305.500336, 2.437284,
+	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7755685.885188, -365308.134036, 4.194098,
+	carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7755665.126833, -365311.600079, 3.668485,
+			world_to_camera_pose, camera_parameters, resized_w, resized_h);
+
+	if (predictions.size() > 0)
+		printf ("Distance %lf\n", sqrt((7755687.117894 - globalpos_msg->globalpos.x) * (7755687.117894 - globalpos_msg->globalpos.x) +
+				(-365310.704539 - globalpos_msg->globalpos.y) * (-365310.704539 - globalpos_msg->globalpos.y)));
+	else
+		printf("No Traffic Light Detected!\n");
+
+	if (predictions.size() > 0)
+	{
+		carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotation_on_image);
+		publish_traffic_lights(&traffic_light_message);
+	}
+
+	circle(open_cv_image, Point((int)tf_annotation_on_image.x, (int)tf_annotation_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
 
 	display(open_cv_image, predictions, fps, resized_w, resized_h);
 }
