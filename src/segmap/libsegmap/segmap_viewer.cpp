@@ -183,10 +183,13 @@ view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses, Pose
 	//draw_poses(map, map_img, poses, Scalar(0, 255, 0));
 
 	for (int i = 0; i < pf._n; i++)
-		draw_particle(map_img, pf._p[i], map, Scalar(0, 255, 255));
+		draw_particle(map_img, pf._p[i], map, Scalar(0, 0, 0));
 
+	Pose2d mean = pf.mean();
+	draw_pose(map, map_img, mean, Scalar(0, 255, 255));
 	draw_pose(map, map_img, current_pose, Scalar(0, 255, 0));
 	draw_pose(map, map_img, mode, Scalar(0, 0, 255));
+
 
 	//double mult = (double) 800. / (double) map_img.rows;
 	//Mat resized_map((int) (map_img.rows * mult), (int) (map_img.cols * mult), CV_8UC3);

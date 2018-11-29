@@ -237,15 +237,27 @@ ParticleFilter::mean()
 {
 	Pose2d p;
 
+	// th_y and th_x are used to compute the mean of theta.
+    // Note: The circular mean is different than the arithmetic mean.
+    // For example, the arithmetic mean of the three angles 0°, 0° and 90° is
+	// (0+0+90)/3 = 30°, but the vector mean is 26.565°. The difference is bigger
+	// when the angles are widely distributed. If the angles are uniformly distributed
+	// on the circle, then the resulting radius will be 0, and there is no circular mean.
+	// (In fact, it is impossible to define a continuous mean operation on the circle.)
+    // See https://en.wikipedia.org/wiki/Mean_of_circular_quantities
+	// See https://rosettacode.org/wiki/Averages/Mean_angle
+	double th_y = 0., th_x = 0.;
+
 	for (int i = 0; i < _n; i++)
 	{
 		p.x += (_p[i].x * _w[i]);
 		p.y += (_p[i].y * _w[i]);
-		p.th += (_p[i].th * _w[i]);
+
+		th_y += (sin(_p[i].th) * _w[i]);
+		th_x += (cos(_p[i].th) * _w[i]);
 	}
 
-	p.th = normalize_theta(p.th);
-
+	p.th = atan2(th_y, th_x);
 	return p;
 }
 

@@ -45,13 +45,14 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 
 	int last_reload = 0;
 	Matrix<double, 4, 4> vel2car = dataset.transform_vel2car();
+	int step = 10;
 
-	for (int i = 1; i < 50; i++) //times.size(); i++)
+	for (int i = step; i < times.size(); i += step)
 	{
 		//Pose2d gps = dataset._gps[i];
 		Pose2d gt_pose = Pose2d::from_matrix(poses[i]); // TODO: add noise
 
-		pf.predict(odom[i].first, odom[i].second, times[i] - times[i-1]);
+		pf.predict(odom[i].first, odom[i].second, times[i] - times[i - step]);
 		//view(pf, map, poses, gps, NULL, NULL);
 		dataset.load_fused_pointcloud_and_camera(i, cloud, 0);
 
@@ -82,7 +83,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 			}
 		}
 
-		//view(pf, map, poses, gt_pose, cloud, transformed_cloud, &vel2car);
+		view(pf, map, poses, gt_pose, cloud, transformed_cloud, &vel2car);
 	}
 }
 
@@ -93,8 +94,8 @@ create_dataset(char *dataset_name)
 	DatasetInterface *dataset;
 
 	if (!strcmp(dataset_name, "carmen"))
-		//dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180907-2/", 1);
-		dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180112-2/", 1);
+		dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180907-2/", 1);
+		//dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180112-2/", 1);
 	else if (!strcmp(dataset_name, "kitti"))
 		dataset = new DatasetKitti("/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/", 1);
 	else
