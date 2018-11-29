@@ -220,8 +220,8 @@ GridMapTile::read_cell(PointXYZRGB &p)
 	}
 	else
 	{
-		printf("Warning: reading a cell outside the current map. Returning an empty vector.\n");
-		return vector<double>();
+		printf("Warning: reading a cell outside the current map. Returning unknown vector.\n");
+		return _unknown;
 	}
 }
 
@@ -387,8 +387,8 @@ GridMap::read_cell(PointXYZRGB &p)
 		}
 	}
 
-	printf("Warning: trying to read a cell that is not in the current map tiles!\n");
-	return vector<double>();
+	printf("Warning: trying to read a cell that is not in the current map tiles! Returning unknown.\n");
+	return _tiles[0][0]->_unknown;
 }
 
 

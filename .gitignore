@@ -365,6 +365,7 @@ src/traffic_light/log_generate_images
 src/traffic_light/mapping_traffic_light
 src/traffic_light/traffic_light
 src/traffic_light/traffic_light_view
+src/traffic_light/traffic_light_annotation_tool
 src/ultrasonic/ultrasonic
 src/ultrasonic/ultrasonic_viewer
 src/v_disparity/v_disparity_view

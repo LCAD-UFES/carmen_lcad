@@ -29,3 +29,7 @@ initialize_YOLO(char *cfg_file_name, char *weights_file_name);
 
 std::vector<bbox_t>
 run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold);
+
+
+void
+run_YOLO_VOC_Pascal(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold, char* file_path);

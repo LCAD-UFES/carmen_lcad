@@ -44,7 +44,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 
 		// to use fused camera and velodyne
 		//if (0)
-		if (point.x > 7 && x >= 0 && x < img.cols && y >= 0 && y < img.rows && point.x < 30. && point.y < 30.)
+		if (point.x > 7 && x >= 0 && x < img.cols && y >= 0 && y < img.rows)
 		{
 			pcl::PointXYZRGB point2;
 
@@ -93,7 +93,7 @@ DatasetCarmen::_init_vel2cam_transform()
 	// This is a rotation to change the ref. frame from x: forward, y: left, z: up
 	// to x: right, y: down, z: forward.
 	Matrix<double, 4, 4> R;
-	R = pose6d_to_matrix(0., 0., 0., 0., M_PI/2., -M_PI/2);
+	R = pose6d_to_matrix(0., 0., 0., 0., M_PI/2., M_PI/2);
 
 	double fx_factor = 0.764749;
 	double fy_factor = 1.01966;
@@ -196,10 +196,6 @@ DatasetCarmen::transform_vel2cam(PointXYZRGB &p)
 
     p_velodyne << p.x, p.y, p.z, 1.;
     p_img = _vel2cam * p_velodyne;
-
-	p_img(0, 0) = _image_width - p_img(0, 0) / p_img(2, 0) - 1;
-	p_img(1, 0) = _image_height - p_img(1, 0) / p_img(2, 0) - 1;
-    p_img(2, 0) = 1.0;
 
 	return p_img;
 }
