@@ -252,6 +252,9 @@ update_simulated_pedestrians (double timestamp)
 			update_world_position(&simulated_pedestrians[i].p, simulated_pedestrians[i].x,
 						simulated_pedestrians[i].y, timestamp);
 			//printf("[%03d] - Updated\n",simulated_pedestrians[i].p.track_id);
+			//Force Velocity
+			simulated_pedestrians[i].p.velocity=simulated_pedestrians[i].velocity;
+			simulated_pedestrians[i].p.orientation=simulated_pedestrians[i].orientation;
 		}
 	}
 }
