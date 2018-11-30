@@ -29,17 +29,17 @@ extern "C"
 #define LENGTH_NUMBER_AS_STRING 5
 
 void
-carmen_voice_interface_subscribe_can_line_message(carmen_voice_interface_can_line_message *message, carmen_handler_t handler,
+carmen_voice_interface_subscribe_command_message(carmen_voice_interface_command_message *message, carmen_handler_t handler,
 		carmen_subscribe_t subscribe_how);
 
 void
-carmen_voice_interface_unsubscribe_can_line_message(carmen_handler_t handler);
+carmen_voice_interface_unsubscribe_command_message(carmen_handler_t handler);
 
 void
-carmen_voice_interface_publish_can_line_message(carmen_voice_interface_can_line_message *message);
+carmen_voice_interface_publish_command_message(carmen_voice_interface_command_message *message);
 
 void
-carmen_voice_interface_define_can_line_message();
+carmen_voice_interface_define_command_message();
 
 void
 carmen_voice_interface_create_new_audio_file(FILE *list_of_speechs, char *speech, char *last_audio_name_used);

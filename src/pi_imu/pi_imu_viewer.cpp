@@ -13,10 +13,13 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <cstdint>
 // OpenCV
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+
+#include "x_IMU_IMU_and_AHRS_Algorithms.Form_3Dcuboid.h"
 
 #define G 9.80665
 #define RAD_TO_DEG (180.0 / M_PI)
@@ -41,7 +44,8 @@ unsigned int cubemapTexture;
 using namespace Eigen;
 Quaternionf  quat;
 
-
+unsigned int  texture [6];
+std::vector<std::string> imageFiles;
 //---------------------------------------------------------------------------------------------------
 // Definitions
 
@@ -454,6 +458,142 @@ display (void)
 	// Executa os comandos OpenGL
 	glutSwapBuffers();
 }
+
+
+
+	void LoadTextureFromImage(std::vector <std::string> filesNames)
+	{
+	    int numOfPic = filesNames.size();
+		cv::Mat images [numOfPic];
+		for (int im = 0; im < numOfPic; im++)
+		{
+			images[im] = cv::imread(filesNames[im].c_str(), CV_LOAD_IMAGE_COLOR);
+		}
+		glGenTextures(numOfPic, texture);
+		for (int i = 0; i < numOfPic; i++)
+		{
+
+			glBindTexture(GL_TEXTURE_2D, texture[i]);
+			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			gluBuild2DMipmaps(GL_TEXTURE_2D, (int)GL_RGB, images[i].cols, images[i].rows, GL_BGR_EXT, GL_UNSIGNED_BYTE, images[i].data);
+			images[i].release();
+		}
+	}
+
+	void simpleOpenGlControl_Load(std::any sender, EventArgs *e)
+	{
+		simpleOpenGlControl->InitializeContexts();
+		simpleOpenGlControl->SwapBuffers();
+		simpleOpenGlControl_SizeChanged(sender, e);
+		glShadeModel(GL_SMOOTH);
+		glEnable(GL_LINE_SMOOTH);
+		glEnable(GL_TEXTURE_2D); // Enable Texture Mapping
+		glEnable(GL_NORMALIZE);
+		glEnable(GL_COLOR_MATERIAL);
+		glEnable(GL_DEPTH_TEST); // Enables Depth Testing
+		glEnable(GL_BLEND);
+		glEnable(GL_LIGHTING);
+		glEnable(GL_LIGHT0);
+		glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST); // Really Nice Point Smoothing
+		LoadTextureFromImage(imageFiles);
+	}
+	/// <summary>
+		/// Redraw cuboid polygons.
+		/// </summary>
+	void simpleOpenGlControl_Paint(object sender, PaintEventArgs e)
+	{
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    // Clear screen and DepthBuffer
+		glLoadIdentity();
+		glPolygonMode(GL_FRONT, GL_FILL);
+
+		// Set camera view and distance
+		glTranslatef(0, 0, -1.0f * CameraDistance);
+		switch (getCameraView())
+		{
+		case (getCameraView().Right):
+			glRotatef(-90, 0, 1, 0);
+			glRotatef(-90, 1, 0, 0);
+			break;
+		case (getCameraView().Left):
+			glRotatef(90, 0, 1, 0);
+			glRotatef(-90, 1, 0, 0);
+			break;
+		case (getCameraView().Back):
+			glRotatef(90, 1, 0, 0);
+			glRotatef(180, 0, 1, 0);
+			break;
+		case (CameraViews.Front):
+			glRotatef(-90, 1, 0, 0);
+			break;
+		case (CameraViews.Top):
+			break;
+		case (getCameraView().Bottom):
+			glRotatef(180, 1, 0, 0);
+			break;
+		}
+
+		glPushMatrix();
+		glMultMatrixf(transformationMatrix);                         // apply transformation matrix to cuboid
+
+		// +'ve x face
+		glBindTexture(GL_TEXTURE_2D, textures[0]);
+		glBegin(GL_QUADS);
+		glNormal3f(1, 0, 0); glTexCoord2f(0, 0); glVertex3f(halfXdimension, -halfYdimension, -halfZdimension);
+		glNormal3f(1, 0, 0); glTexCoord2f(0, 1); glVertex3f(halfXdimension, -halfYdimension, halfZdimension);
+		glNormal3f(1, 0, 0); glTexCoord2f(1, 1); glVertex3f(halfXdimension, halfYdimension, halfZdimension);
+		glNormal3f(1, 0, 0); glTexCoord2f(1, 0); glVertex3f(halfXdimension, halfYdimension, -halfZdimension);
+		glEnd();
+
+		// -'ve x face
+		glBindTexture(GL_TEXTURE_2D, textures[1]);
+		glBegin(GL_QUADS);
+		glNormal3f(-1, 0, 0); glTexCoord2f(1, 0); glVertex3f(-halfXdimension, -halfYdimension, -halfZdimension);
+		glNormal3f(-1, 0, 0); glTexCoord2f(1, 1); glVertex3f(-halfXdimension, -halfYdimension, halfZdimension);
+		glNormal3f(-1, 0, 0); glTexCoord2f(0, 1); glVertex3f(-halfXdimension, halfYdimension, halfZdimension);
+		glNormal3f(-1, 0, 0); glTexCoord2f(0, 0); glVertex3f(-halfXdimension, halfYdimension, -halfZdimension);
+		glEnd();
+
+		// +'ve y face
+		glBindTexture(GL_TEXTURE_2D, textures[2]);
+		glBegin(GL_QUADS);
+		glNormal3f(0, 1, 0); glTexCoord2f(1, 0); glVertex3f(-halfXdimension, halfYdimension, -halfZdimension);
+		glNormal3f(0, 1, 0); glTexCoord2f(1, 1); glVertex3f(-halfXdimension, halfYdimension, halfZdimension);
+		glNormal3f(0, 1, 0); glTexCoord2f(0, 1); glVertex3f(halfXdimension, halfYdimension, halfZdimension);
+		glNormal3f(0, 1, 0); glTexCoord2f(0, 0); glVertex3f(halfXdimension, halfYdimension, -halfZdimension);
+		glEnd();
+
+		// -'ve y face
+		glBindTexture(GL_TEXTURE_2D, textures[3]);
+		glBegin(GL_QUADS);
+		glNormal3f(0, -1, 0); glTexCoord2f(0, 0); glVertex3f(-halfXdimension, -halfYdimension, -halfZdimension);
+		glNormal3f(0, -1, 0); glTexCoord2f(0, 1); glVertex3f(-halfXdimension, -halfYdimension, halfZdimension);
+		glNormal3f(0, -1, 0); glTexCoord2f(1, 1); glVertex3f(halfXdimension, -halfYdimension, halfZdimension);
+		glNormal3f(0, -1, 0); glTexCoord2f(1, 0); glVertex3f(halfXdimension, -halfYdimension, -halfZdimension);
+		glEnd();
+
+		// +'ve z face
+		glBindTexture(GL_TEXTURE_2D, textures[4]);
+		glBegin(GL_QUADS);
+		glNormal3f(0, 0, 1); glTexCoord2f(0, 0); glVertex3f(-halfXdimension, -halfYdimension, halfZdimension);
+		glNormal3f(0, 0, 1); glTexCoord2f(1, 0); glVertex3f(halfXdimension, -halfYdimension, halfZdimension);
+		glNormal3f(0, 0, 1); glTexCoord2f(1, 1); glVertex3f(halfXdimension, halfYdimension, halfZdimension);
+		glNormal3f(0, 0, 1); glTexCoord2f(0, 1); glVertex3f(-halfXdimension, halfYdimension, halfZdimension);
+		glEnd();
+
+		// -'ve z face
+		glBindTexture(GL_TEXTURE_2D, textures[5]);
+		glBegin(GL_QUADS);
+		glNormal3f(0, 0, -1); glTexCoord2f(0, 1); glVertex3f(-halfXdimension, -halfYdimension, -halfZdimension);
+		glNormal3f(0, 0, -1); glTexCoord2f(1, 1); glVertex3f(halfXdimension, -halfYdimension, -halfZdimension);
+		glNormal3f(0, 0, -1); glTexCoord2f(1, 0); glVertex3f(halfXdimension, halfYdimension, -halfZdimension);
+		glNormal3f(0, 0, -1); glTexCoord2f(0, 0); glVertex3f(-halfXdimension, halfYdimension, -halfZdimension);
+		glEnd();
+
+		glPopMatrix();
+		glFlush();
+	}
 
 
 void

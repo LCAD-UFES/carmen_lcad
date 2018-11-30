@@ -44,6 +44,7 @@ HyperGraphSclamOptimizer::HyperGraphSclamOptimizer(int argc, char **argv) :
         external_loop(DEFAULT_OPTIMIZER_OUTER_ITERATIONS),
         internal_loop(DEFAULT_OPTIMIZER_INNER_POSE_ITERATIONS),
         optimizer_inner_odom_calib_iterations(DEFAULT_OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS),
+        fake_gps_clustering_distance(DEFAULT_FAKE_GPS_CLUSTERING_DISTANCE),
         use_gps(false),
         use_velodyne_seq(false),
         use_velodyne_loop(false),
@@ -216,6 +217,10 @@ void HyperGraphSclamOptimizer::ArgsParser(int argc, char **argv)
                 else if ("OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS" == str)
                 {
                     ss >> optimizer_inner_odom_calib_iterations;
+                }
+                else if ("FAKE_GPS_CLUSTERING_DISTANCE" == str)
+                {
+                    ss >> fake_gps_clustering_distance;
                 }
                 else if ("USE_GPS" == str)
                 {
@@ -792,7 +797,7 @@ void HyperGraphSclamOptimizer::MakeGPSSparse()
 
             double diff = (next_t - last_t).norm();
 
-            if (0.850f > diff)
+            if (fake_gps_clustering_distance > diff)
             {
                 g2o::EdgeGPS* gps(*next);
                 gps_buffer.erase(next);

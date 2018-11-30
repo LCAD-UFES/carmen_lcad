@@ -19,6 +19,8 @@ using namespace std;
 #include <carmen/collision_detection.h>
 #include <carmen/moving_objects_messages.h>
 #include <carmen/moving_objects_interface.h>
+#include <carmen/voice_interface_messages.h>
+#include <carmen/voice_interface_interface.h>
 #include <carmen/road_mapper.h>
 #include <carmen/grid_mapping.h>
 
@@ -299,6 +301,177 @@ pedestrian_track_busy(carmen_moving_objects_point_clouds_message *moving_objects
 			return (true);
 	}
 	return (false);
+}
+
+
+
+typedef enum
+{
+	Free_Crosswalk,
+	Stopping_Busy_Crosswalk,
+	Stopped_Busy_Crosswalk,
+	Leaving_Crosswalk
+} carmen_rddf_play_state;
+
+
+carmen_rddf_play_state crosswalk_state = Free_Crosswalk;
+
+
+carmen_vector_2D_t
+get_displaced_annotation_position(carmen_annotation_t pedestrian_track_annotation)    // The crosswalk annotated position is displaced by the distance from rear axle to car front
+{                                                                                     // because the annotation position is made this way
+	carmen_vector_2D_t desplaced_crosswalk_pose;
+	double displacement = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
+	double theta = pedestrian_track_annotation.annotation_orientation;
+	desplaced_crosswalk_pose.x = pedestrian_track_annotation.annotation_point.x + displacement * cos(theta);
+	desplaced_crosswalk_pose.y = pedestrian_track_annotation.annotation_point.y + displacement * sin(theta);
+
+	return (desplaced_crosswalk_pose);
+}
+
+
+bool
+pedestrian_about_to_enter_crosswalk(t_point_cloud_struct moving_object, carmen_annotation_t pedestrian_track_annotation, double ray)
+{
+	carmen_vector_2D_t desplaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
+
+	double pedestrian_time_to_crosswalk_border = 999.9;//DBL_MAX;
+	double car_time_to_crosswalk_center = 999.9;//DBL_MAX;
+	double orientantion;
+
+	orientantion = carmen_normalize_theta(atan2(desplaced_crosswalk_pose.y - moving_object.object_pose.y, desplaced_crosswalk_pose.x - moving_object.object_pose.x));
+
+	if (abs(carmen_normalize_theta(orientantion - moving_object.orientation)) > 0.53)   // ~30 degrees; Pedestrian is not walking towards crosswalk
+	{
+		return (false);
+	}
+	double x_border = ray * cos((orientantion)) + desplaced_crosswalk_pose.x;            // Position the pedestrian will be when it hits crosswalk border
+	double y_border = ray * sin((orientantion)) + desplaced_crosswalk_pose.y;
+
+	double d_x = x_border - moving_object.object_pose.x;
+	double d_y = y_border - moving_object.object_pose.y;
+
+	if (moving_object.linear_velocity > 0.2)
+		pedestrian_time_to_crosswalk_border = abs((sqrt((d_x * d_x) + (d_y * d_y)))) / moving_object.linear_velocity;
+
+	if (current_globalpos_msg->v > 0.5)
+		car_time_to_crosswalk_center = abs(DIST2D(current_globalpos_msg->globalpos, desplaced_crosswalk_pose)) / current_globalpos_msg->v;
+
+	printf("%lf %lf ", orientantion, moving_object.orientation);
+	printf("Bx %lf By %lf ", x_border, y_border);
+	printf("TC %lf TP %lf", car_time_to_crosswalk_center, pedestrian_time_to_crosswalk_border);
+	printf("C %lf P %lf\n", current_globalpos_msg->v, moving_object.linear_velocity);
+
+	if (car_time_to_crosswalk_center < pedestrian_time_to_crosswalk_border)
+		return (false);
+
+	//printf("about_to_enter\n");
+	return (true);
+}
+
+
+bool
+pedestrian_in_crosswalk(carmen_moving_objects_point_clouds_message *moving_objects, carmen_annotation_t pedestrian_track_annotation)
+{
+	double ray = pedestrian_track_annotation.annotation_point.z;
+	carmen_vector_2D_t desplaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
+
+	for (int i = 0; i < moving_objects->num_point_clouds; i++)
+	{
+		if ((strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") == 0 &&
+			 DIST2D(moving_objects->point_clouds[i].object_pose, desplaced_crosswalk_pose) < ray)
+			 ||
+			 pedestrian_about_to_enter_crosswalk(moving_objects->point_clouds[i], pedestrian_track_annotation, ray))
+		{
+			//printf("In\n");
+			return (true);
+		}
+	}
+	//printf("Out\n");
+	return (false);
+}
+
+
+bool                                // TODO checar se o pedestre não esta no caminho
+pedestrian_crossing(carmen_moving_objects_point_clouds_message *moving_objects_msg, carmen_annotation_t pedestrian_track_annotation)
+{
+	double ray = pedestrian_track_annotation.annotation_point.z;
+	carmen_vector_2D_t desplaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
+
+	for (int i = 0; i < moving_objects->num_point_clouds; i++)
+	{
+		if (strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") == 0)
+		{
+			if ((DIST2D(moving_objects->point_clouds[i].object_pose, desplaced_crosswalk_pose) < ray &&                    // Inside the crosswalk circle
+				 moving_objects_msg->point_clouds[i].linear_velocity > 0.2 &&                                              // Moving faster than 0.2m/s
+				 abs(current_globalpos_msg->globalpos.theta - moving_objects_msg->point_clouds[i].orientation) > 0.2)      // Not moving parallel to the car (sideways with the crosswalk)
+				 )//||
+				 //pedestrian_about_to_enter_crosswalk(moving_objects_msg->point_clouds[i], desplaced_crosswalk_pose, ray))
+			{
+					return (true);
+			}
+		}
+	}
+	return (false);
+}
+
+
+bool
+pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_objects_msg, carmen_annotation_t pedestrian_track_annotation)
+{
+	if (moving_objects_msg == NULL || moving_objects_msg->num_point_clouds < 1)
+		return (false);
+
+	carmen_vector_2D_t desplaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
+
+	switch (crosswalk_state)
+	{
+		case Free_Crosswalk:
+			//printf("Free_Crosswalk \n");
+			if (pedestrian_in_crosswalk(moving_objects_msg, pedestrian_track_annotation))
+			{
+				crosswalk_state = Stopping_Busy_Crosswalk;
+				return (true);
+			}
+			return (false);
+
+		case Stopping_Busy_Crosswalk:
+			//printf("Stopping_Busy_Crosswalk %lf %lf\n", current_globalpos_msg->v, DIST2D(current_globalpos_msg->globalpos, desplaced_crosswalk_pose));
+			if (!pedestrian_in_crosswalk(moving_objects_msg, pedestrian_track_annotation))
+			{
+				crosswalk_state = Free_Crosswalk;
+				return (false);
+			}
+			else if (current_globalpos_msg->v < 0.15 && DIST2D(current_globalpos_msg->globalpos, desplaced_crosswalk_pose) < 12.0) // || dist stop point < 2.0
+			{
+				crosswalk_state = Stopped_Busy_Crosswalk;
+			}
+			return (true);
+
+		case Stopped_Busy_Crosswalk:
+			//printf("Stopped_Busy_Crosswalk \n");
+			if (!pedestrian_crossing(moving_objects_msg, pedestrian_track_annotation))
+			{
+				crosswalk_state = Leaving_Crosswalk;
+				return (false);
+			}
+			return (true);
+
+		case Leaving_Crosswalk:
+			//printf("Leaving_Crosswalk %lf\n", DIST2D(current_globalpos_msg->globalpos, desplaced_crosswalk_pose));
+			if (pedestrian_crossing(moving_objects_msg, pedestrian_track_annotation))
+			{
+				printf("pedestrian_crossing \n");
+				crosswalk_state = Stopped_Busy_Crosswalk;
+				return (true);
+			}
+			else if (DIST2D(current_globalpos_msg->globalpos, desplaced_crosswalk_pose) < 2.0)
+			{
+				crosswalk_state = Free_Crosswalk;
+			}
+			return (false);
+	}
+	return (true);
 }
 
 
@@ -1573,6 +1746,51 @@ carmen_rddf_play_find_and_publish_poses_around_end_point(double x, double y, dou
 	free(poses_around_end_point);
 }
 
+
+static void
+carmen_rddf_play_load_index(char *rddf_filename)
+{
+	int annotation = 0;
+	carmen_fused_odometry_message message;
+	placemark_vector_t placemark_vector;
+
+	if (!carmen_rddf_index_exists(rddf_filename))
+	{
+		if (strcmp(rddf_filename + (strlen(rddf_filename) - 3), "kml") == 0)
+		{
+			carmen_rddf_play_open_kml(rddf_filename, &placemark_vector);
+
+			for (unsigned int i = 0; i < placemark_vector.size(); i++)
+			{
+				if (carmen_rddf_play_copy_kml(placemark_vector[i], &message, &annotation))
+					carmen_rddf_index_add(&message, 0, 0, annotation);
+			}
+
+			carmen_rddf_index_save(rddf_filename);
+		}
+		else
+		{
+			FILE *fptr = fopen(rddf_filename, "r");
+
+			while (!feof(fptr))
+			{
+				memset(&message, 0, sizeof(message));
+
+				fscanf(fptr, "%lf %lf %lf %lf %lf %lf\n",
+					&(message.pose.position.x), &(message.pose.position.y),
+					&(message.pose.orientation.yaw), &(message.velocity.x), &(message.phi),
+					&(message.timestamp));
+
+				carmen_rddf_index_add(&message, 0, 0, 0);
+			}
+
+			carmen_rddf_index_save(rddf_filename);
+			fclose(fptr);
+		}
+	}
+
+	carmen_rddf_load_index(rddf_filename);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1748,6 +1966,24 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 {
 	moving_objects = moving_objects_point_clouds_message;
 }
+
+
+void
+carmen_voice_interface_command_message_handler(carmen_voice_interface_command_message *message)
+{
+	if (message->command_id == SET_COURSE)
+	{
+		printf("New rddf set by voice command: %s\n", message->command);
+		carmen_rddf_index_clear();
+		char *carmen_home = getenv("CARMEN_HOME");
+		static char rddf_file_name[2048];
+		strcpy(rddf_file_name, carmen_home);
+		strcat(rddf_file_name, "/");
+		strcat(rddf_file_name, message->command);
+
+		carmen_rddf_play_load_index(rddf_file_name);
+	}
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1784,52 +2020,7 @@ carmen_rddf_play_subscribe_messages()
 
 	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-}
-
-
-static void
-carmen_rddf_play_load_index(char *rddf_filename)
-{
-	int annotation = 0;
-	carmen_fused_odometry_message message;
-	placemark_vector_t placemark_vector;
-
-	if (!carmen_rddf_index_exists(rddf_filename))
-	{
-		if (strcmp(rddf_filename + (strlen(rddf_filename) - 3), "kml") == 0)
-		{
-			carmen_rddf_play_open_kml(rddf_filename, &placemark_vector);
-
-			for (unsigned int i = 0; i < placemark_vector.size(); i++)
-			{
-				if (carmen_rddf_play_copy_kml(placemark_vector[i], &message, &annotation))
-					carmen_rddf_index_add(&message, 0, 0, annotation);
-			}
-
-			carmen_rddf_index_save(rddf_filename);
-		}
-		else
-		{
-			FILE *fptr = fopen(rddf_filename, "r");
-
-			while (!feof(fptr))
-			{
-				memset(&message, 0, sizeof(message));
-
-				fscanf(fptr, "%lf %lf %lf %lf %lf %lf\n",
-					&(message.pose.position.x), &(message.pose.position.y),
-					&(message.pose.orientation.yaw), &(message.velocity.x), &(message.phi),
-					&(message.timestamp));
-
-				carmen_rddf_index_add(&message, 0, 0, 0);
-			}
-
-			carmen_rddf_index_save(rddf_filename);
-			fclose(fptr);
-		}
-	}
-
-	carmen_rddf_load_index(rddf_filename);
+	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

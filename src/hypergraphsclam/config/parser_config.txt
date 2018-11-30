@@ -29,9 +29,9 @@ CURVATURE_REQUIRED_TIME 0.0001
 -- Se quiser mais rapido, pode rodar o odometry calibration. porem nao parece ser muito necessario
 -- Initial odometry bias guess, the default values are: v_mult = 1.0, phi_mult = 1.0 and phi_add = 0.0
 -- You can pick this values from a previous calibration result
--- V_MULT_ODOMETRY_BIAS 1.008211
--- PHI_MULT_ODOMETRY_BIAS 0.903564
--- PHI_ADD_ODOMETRY_BIAS -0.002708
+V_MULT_ODOMETRY_BIAS 1.008211
+PHI_MULT_ODOMETRY_BIAS 0.903564
+PHI_ADD_ODOMETRY_BIAS -0.002708
 
 
 

@@ -1,0 +1,8 @@
+p_0 = exp(-1.0 / (2 * 5.8))
+plot [0:1] (exp(-((x - 1.0) * (x - 1.0)) / (2*5.8)) - p_0) / (1.0 - p_0)
+
+p_0 = exp(-1.0 / two_times_sigma);
+p_obstacle = (exp(-((obstacle_evidence - 1.0) * (obstacle_evidence - 1.0)) / two_times_sigma) - p_0) / (1.0 - p_0);
+
+
+plot [0:1] (1.0 / exp(x / a) - 1.0) / (1.0 / exp(1.0 / a) - 1.0) 

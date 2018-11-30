@@ -1,18 +1,18 @@
-
 #include <opencv/cv.h>
 #include <opencv2/highgui/highgui.hpp>
-
-#include <carmen/carmen.h>
-#include <carmen/visual_tracker_interface.h>
+//#include <carmen/carmen.h>
+//#include <carmen/visual_tracker_interface.h>
 #include "velodyne_camera_calibration.h"
-//#include <tf.h>
-
 
 const int MIN_ANGLE_OBSTACLE = 2;
 const int MAX_ANGLE_OBSTACLE = 188;
 
 #define MAX_RANGE 50.0
 #define MIN_RANGE 0.5
+
+
+#define CAMERA_FOV 0.576 // In radians ~ 33 degrees TODO por no carmen.ini
+
 
 const int column_correspondence[32] =
 {
@@ -102,38 +102,31 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 
 		for (int j = 0; j < velodyne_message->number_of_32_laser_shots; j++)
 		{
+			double h_angle = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
+
+			if (fabs(carmen_normalize_theta(h_angle - camera_pose.orientation.yaw)) >= CAMERA_FOV)
+				continue;
+
 			double range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
 
-            double h_angle = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
-
-			if (range <= MIN_RANGE)
-				range = MAX_RANGE;
-
-			if (range > MAX_RANGE)
-				range = MAX_RANGE;
-
-			if (range >= MAX_RANGE)
+			if (range <= MIN_RANGE || range >= MAX_RANGE)
 				continue;
 
 			tf::Point p3d_velodyne_reference = spherical_to_cartesian(h_angle, v_angle, range);
 
-			if (p3d_velodyne_reference.x() > 0)
+			tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference,velodyne_pose,camera_pose);
+
+			double px = (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
+			double py = (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
+
+			int ipx = (int) px;
+			int ipy = (int) py;
+
+			if (ipx >= 0 && ipx <= image_width && ipy >= 0 && ipy <= image_height)
 			{
-                tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference,velodyne_pose,camera_pose);
+				carmen_velodyne_points_in_cam_t velodyne_in_cam = {ipx, ipy, {h_angle, v_angle, range}};
 
-                double px = (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
-                double py = (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
-
-                int ipx = (int) px;
-                int ipy = (int) py;
-
-				if (ipx >= 0 && ipx <= image_width && ipy >= 0 && ipy <= image_height)
-				{
-					carmen_velodyne_points_in_cam_t velodyne_in_cam = {ipx, ipy, {h_angle, v_angle, range}};
-
-					laser_points_in_camera.push_back(velodyne_in_cam);
-				}
-
+				laser_points_in_camera.push_back(velodyne_in_cam);
 			}
 		}
 	}
@@ -286,8 +279,6 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 }
 
 
-#define CAMERA_FOV 0.87 // In radians ~ 25 degrees TODO por no carmen.ini
-
 vector<image_cartesian>
 velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
                                               carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose, unsigned int image_width,
@@ -299,6 +290,9 @@ velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_messa
 
 	unsigned int max_x = crop_x + crop_width;
 	unsigned int max_y = crop_y + crop_height;
+
+	if (velodyne_message == NULL)
+		return (points);
 
 	double fx_meters = camera_parameters.fx_factor * camera_parameters.pixel_size * image_width;
 	double fy_meters = camera_parameters.fy_factor * camera_parameters.pixel_size * image_height;
@@ -366,45 +360,70 @@ velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_messa
 }
 
 
+void
+initialize_transformations(carmen_pose_3D_t board_pose, carmen_pose_3D_t camera_pose, tf::Transformer *transformer)
+{
+	//printf("%lf %lf %lf %lf %lf %lf \n", board_pose.position.x, board_pose.position.y, board_pose.position.z, board_pose.orientation.roll, board_pose.orientation.pitch, board_pose.orientation.yaw);
+
+	tf::Transform board_to_camera_pose;
+	tf::Transform car_to_board_pose;
+
+	tf::Time::init();
+
+	// board pose with respect to the car
+	car_to_board_pose.setOrigin(tf::Vector3(board_pose.position.x, board_pose.position.y, board_pose.position.z));
+	car_to_board_pose.setRotation(tf::Quaternion(board_pose.orientation.yaw, board_pose.orientation.pitch, board_pose.orientation.roll)); 				// yaw, pitch, roll
+	tf::StampedTransform car_to_board_transform(car_to_board_pose, tf::Time(0), "/car", "/board");
+	transformer->setTransform(car_to_board_transform, "car_to_board_transform");
+
+	// camera pose with respect to the board
+	board_to_camera_pose.setOrigin(tf::Vector3(camera_pose.position.x, camera_pose.position.y, camera_pose.position.z));
+	board_to_camera_pose.setRotation(tf::Quaternion(camera_pose.orientation.yaw + carmen_degrees_to_radians(2.5), camera_pose.orientation.pitch, camera_pose.orientation.roll)); 				// yaw, pitch, roll
+	//board_to_camera_pose.setRotation(tf::Quaternion(camera_pose.orientation.yaw, camera_pose.orientation.pitch, camera_pose.orientation.roll)); 				// yaw, pitch, roll
+	tf::StampedTransform board_to_camera_transform(board_to_camera_pose, tf::Time(0), "/board", "/camera");
+	transformer->setTransform(board_to_camera_transform, "board_to_camera_transform");
+}
+
+
 tf::StampedTransform
 get_world_to_camera_transformation (tf::Transformer *transformer, carmen_pose_3D_t pose)
 {
 	tf::Transform world_to_car_pose;
 	tf::StampedTransform world_to_camera_pose;
 	world_to_car_pose.setOrigin(tf::Vector3(pose.position.x, pose.position.y, pose.position.z));
-	double pitch;
-
-//	pitch = pose.orientation.pitch;
-//	printf("Pitch before: %lf ", pitch);
-//	SampleFilter_put(&filter2, pitch);
-//	pitch = SampleFilter_get(&filter2);
-//	printf("Pitch after: %lf \n", pitch);
-	pitch = 0.0;
-
-	world_to_car_pose.setRotation(tf::Quaternion(pose.orientation.yaw, pitch, pose.orientation.roll)); // yaw, pitch, roll
-
-	//world_to_car_pose.setOrigin(tf::Vector3(globalpos.x, globalpos.y, 0.0));
-	//world_to_car_pose.setRotation(tf::Quaternion(globalpos.theta, 0.0, 0.0)); // yaw, pitch, roll
-	//world_to_car_pose.setRotation(tf::Quaternion(pose.orientation.yaw, pose.orientation.pitch, pose.orientation.roll)); // yaw, pitch, roll
+	world_to_car_pose.setRotation(tf::Quaternion(pose.orientation.yaw, pose.orientation.pitch, pose.orientation.roll)); // yaw, pitch, roll
 
 	tf::StampedTransform world_to_car_transform(world_to_car_pose, tf::Time(0), "/world", "/car");
 	transformer->setTransform(world_to_car_transform, "world_to_car_transform");
 
 	transformer->lookupTransform("/world", "/camera", tf::Time(0), world_to_camera_pose);
-	//last_pitch = pose.orientation.pitch;
+
+	return (world_to_camera_pose);
+}
+
+
+tf::StampedTransform
+get_world_to_camera_transformer(tf::Transformer *transformer, double x, double y, double z, double roll, double pitch, double yaw)
+{
+	//printf("%lf %lf %lf %lf %lf %lf \n", x, y, z, roll, pitch, yaw);
+
+	tf::Transform world_to_car_pose;
+	tf::StampedTransform world_to_camera_pose;
+	world_to_car_pose.setOrigin(tf::Vector3(x, y, z));
+	world_to_car_pose.setRotation(tf::Quaternion(yaw, pitch, roll));
+	tf::StampedTransform world_to_car_transform(world_to_car_pose, tf::Time(0), "/world", "/car");
+	transformer->setTransform(world_to_car_transform, "world_to_car_transform");
+
+	transformer->lookupTransform("/world", "/camera", tf::Time(0), world_to_camera_pose);
 
 	return (world_to_camera_pose);
 }
 
 
 carmen_position_t
-convert_rddf_pose_to_point_in_image(double x, double y, double z,
-									tf::StampedTransform world_to_camera_pose,
-									carmen_camera_parameters camera_parameters,
-									int image_width, int image_height)
+convert_rddf_pose_to_point_in_image(double x, double y, double z, tf::StampedTransform world_to_camera_pose,
+									carmen_camera_parameters camera_parameters, int image_width, int image_height)
 {
-
-
 	tf::Point point (x, y, z);
 	tf::Point point_transformed;
 
@@ -432,24 +451,7 @@ convert_rddf_pose_to_point_in_image(double x, double y, double z,
 	return (point_in_image);
 }
 
-void
-initialize_transformations(carmen_pose_3D_t board_pose, carmen_pose_3D_t camera_pose, tf::Transformer *transformer)
-{
-	tf::Transform board_to_camera_pose;
-	tf::Transform car_to_board_pose;
 
-	tf::Time::init();
+//carmen_position_t
+//world_point_to_image()
 
-	// board pose with respect to the car
-	car_to_board_pose.setOrigin(tf::Vector3(board_pose.position.x, board_pose.position.y, board_pose.position.z));
-	car_to_board_pose.setRotation(tf::Quaternion(board_pose.orientation.yaw, board_pose.orientation.pitch, board_pose.orientation.roll)); 				// yaw, pitch, roll
-	tf::StampedTransform car_to_board_transform(car_to_board_pose, tf::Time(0), "/car", "/board");
-	transformer->setTransform(car_to_board_transform, "car_to_board_transform");
-
-	// camera pose with respect to the board
-	board_to_camera_pose.setOrigin(tf::Vector3(camera_pose.position.x, camera_pose.position.y, camera_pose.position.z));
-	board_to_camera_pose.setRotation(tf::Quaternion(camera_pose.orientation.yaw + carmen_degrees_to_radians(2.5), camera_pose.orientation.pitch, camera_pose.orientation.roll)); 				// yaw, pitch, roll
-	//board_to_camera_pose.setRotation(tf::Quaternion(camera_pose.orientation.yaw, camera_pose.orientation.pitch, camera_pose.orientation.roll)); 				// yaw, pitch, roll
-	tf::StampedTransform board_to_camera_transform(board_to_camera_pose, tf::Time(0), "/board", "/camera");
-	transformer->setTransform(board_to_camera_transform, "board_to_camera_transform");
-}

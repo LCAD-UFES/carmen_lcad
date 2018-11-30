@@ -3,13 +3,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <carmen/carmen.h>
-#include <carmen/bumblebee_basic_interface.h>
-#include <carmen/velodyne_interface.h>
-#include <carmen/velodyne_camera_calibration.h>
-
-#include <tf.h>
-
+#include "velodyne_camera_calibration.h"
 
 int bumblebee_received = 0;
 

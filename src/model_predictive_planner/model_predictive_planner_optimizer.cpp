@@ -47,6 +47,9 @@ compute_a_and_t_from_s(double s, double target_v,
 		double v = target_td.v_i;
 		tcp_seed.tt = -(sqrt(2.0 * a * s + v * v) + v) / a;
 	}
+	if (tcp_seed.tt > 200.0)
+		tcp_seed.tt = 200.0;
+
 //	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
 	params->suitable_tt = tcp_seed.tt;
 	params->suitable_acceleration = tcp_seed.a = a;

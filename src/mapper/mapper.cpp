@@ -356,26 +356,25 @@ fixed_normalize_map(carmen_map_t *value_map)
 }
 */
 // normalize map to 0-255 values
-carmen_map_t
-fixed_normalize_map(carmen_map_t value_map, double new_max)
+void
+neural_mapper_fixed_normalize_map(carmen_map_t value_map, carmen_map_t &map_normalized, double new_max)
 {
 	double min = -1.0;
 	double max = 5; // altura maxima considerada de 5 metros
 
-	carmen_map_t normalized;
-	carmen_grid_mapping_create_new_map(&normalized, value_map.config.x_size, value_map.config.y_size, value_map.config.resolution, 'u');
+//	carmen_map_t normalized;
+//	carmen_grid_mapping_create_new_map(&normalized, value_map.config.x_size, value_map.config.y_size, value_map.config.resolution, 'u');
 
 	//normalization
-	for(int i = 0; i < value_map.config.y_size;i++){
-		for(int j = 0; j < value_map.config.x_size;j++){
-			double temp = (value_map.map[j][i]-min)*(new_max)/(max-min);
-			normalized.map[j][i] = temp;
+	for(int y = 0; y < value_map.config.y_size;y++){
+		for(int x = 0; x < value_map.config.x_size;x++){
+			double temp = (value_map.map[x][y]-min)*(new_max)/(max-min);
+			map_normalized.map[x][y] = temp;
 			//printf("%lf\n", temp);
 		}
 	}
 
 	//printf("max = %lf | min = %lf | norm_max = %d | norm_min = %d\n", max, min, normalized[max_index], normalized[min_index]);
-	return normalized;
 }
 
 // normalize map to 0-1 values
@@ -444,7 +443,7 @@ void
 show_map(carmen_map_t *value_map, char *name)
 {
 
-	map_to_bitmap(fixed_normalize_map(*value_map, 255.), name);
+//	map_to_bitmap(neural_mapper_fixed_normalize_map(*value_map, 255.), name);
 	set_map_to_void(value_map);
 	set_map_to_void(&normalized);
 }
@@ -479,33 +478,48 @@ map_to_csv(carmen_map_t complete_map, char* csv_name)
 
 
 void
-map_to_png(carmen_map_t complete_map, char* csv_name, bool is_label)
+map_to_png(carmen_map_t complete_map, char* csv_name, bool is_label, bool color_label)
 {
 
 	carmen_map_t png_map = complete_map;
-	if(!is_label)
-		png_map = fixed_normalize_map(complete_map, 255.);
+	if(!is_label && !color_label)
+		neural_mapper_fixed_normalize_map(complete_map, png_map, 255.);
 
 	char png_file_name[1024];
-//	int width = complete_map.config.x_size;
-//	int height = complete_map.config.y_size;
+	int width = complete_map.config.x_size;
+	int height = complete_map.config.y_size;
 
-//	static cv::Mat neural_map_img = cv::Mat(cv::Size(width, height), CV_8UC1);
+	cv::Mat neural_map_img = cv::Mat(cv::Size(width, height), CV_8UC3);
 	sprintf(png_file_name,"%s.png",csv_name);
 
-// jeito mais rapido de gravar com Opencv
-	cv::Mat png_mat = cv::Mat(complete_map.config.x_size, complete_map.config.y_size, CV_64FC1, *png_map.map);
-
-/*
-	for (int i = 0; i < height; i++)
+	if(color_label)
 	{
-		for (int j = 0; j < width; j++)
+		for (int y = 0; y < complete_map.config.y_size; y++)
 		{
-			neural_map_img.at<uchar>(height - 1 - j, i) = complete_map.map[i][j];
+			for (int x = 0; x < complete_map.config.x_size; x++)
+			{
+//				printf("Meus valores aqui X: %d Y %d:  %lf\n",i,j,complete_map.map[i][j]);
+				if (complete_map.map[x][y] == 1.0)//desconhecido-blue
+					neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(255,120,0);
+				if (complete_map.map[x][y] == 2.0)//Livre-white
+					neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(255,255,255);
+				if (complete_map.map[x][y] == 3.0)//ocupado
+					neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(0,0,0);
+			}
 		}
+
+		cv::imwrite(png_file_name, neural_map_img);
+		neural_map_img.release();
 	}
-*/
-	cv::imwrite(png_file_name, png_mat);
+
+	else
+	{
+		// jeito mais rapido de gravar com Opencv
+		cv::Mat png_mat = cv::Mat(complete_map.config.x_size, complete_map.config.y_size, CV_64FC1, *png_map.map);
+		cv::imwrite(png_file_name, png_mat);
+		png_mat.release();
+	}
+
 }
 
 
@@ -522,12 +536,13 @@ save_map(carmen_map_t map, char* map_name, char* path, bool is_label)
 		sprintf(name, "%s/labels/%d_%s", path, map_index, map_name);
 	//printf("%s\n", name);
 	//map_to_csv(map, name);
-	map_to_png(map, name, is_label);
+	map_to_png(map, name, is_label, false);
 	if(is_label)
 	{
 		sprintf(name, "%s/labels/%d_view", path, map_index);
-		map_to_png(map, name, false);
+		map_to_png(map, name, false, true);
 	}
+
 	set_map_to_void(&map);
 }
 
@@ -596,7 +611,8 @@ update_neural_mapper_inputs_maps_with_new_point(int x_index, int y_index, double
 }
 
 
-int update_neural_mapper_input_maps(sensor_data_t * sensor_data, sensor_parameters_t *sensor_params, int thread_id, carmen_map_t *log_odds_snapshot_map)
+int
+update_neural_mapper_input_maps(sensor_data_t * sensor_data, sensor_parameters_t *sensor_params, int thread_id, carmen_map_t *log_odds_snapshot_map)
 {
 
 	for (int i = 0; i < sensor_params->vertical_resolution; i++)
@@ -631,7 +647,12 @@ int update_neural_mapper_input_maps(sensor_data_t * sensor_data, sensor_paramete
 		double distance_meters = (sqrt(pow(x_meters_distance,2)+pow(y_meters_distance,2)));
 		//printf("Distances = %d %d and max = %d\n", x_meters_distance, y_meters_distance, neural_mapper_max_distance_meters);
 
-		if(distance_meters < neural_mapper_max_distance_meters && x_ray_index >= 0 && x_ray_index < int(2*neural_mapper_max_distance_meters/map_config.resolution) && y_ray_index >= 0 && y_ray_index < int(2*neural_mapper_max_distance_meters/map_config.resolution) && z < 5)
+		if(distance_meters < neural_mapper_max_distance_meters &&
+				x_ray_index >= 0 &&
+				x_ray_index < int(2*neural_mapper_max_distance_meters/map_config.resolution) &&
+				y_ray_index >= 0 &&
+				y_ray_index < int(2*neural_mapper_max_distance_meters/map_config.resolution) &&
+				z < 5)
 		{
 			//printf("I AM HERE\n");
 			update_neural_mapper_inputs_maps_with_new_point(x_ray_index, y_ray_index, z, remission);
@@ -641,7 +662,8 @@ int update_neural_mapper_input_maps(sensor_data_t * sensor_data, sensor_paramete
 	return 0;
 }
 
-int update_neural_mapper_output_map(carmen_map_t offline_map, carmen_map_t label_map, double car_x, double car_y){
+int
+update_neural_mapper_output_map(carmen_map_t offline_map, carmen_map_t label_map, double car_x, double car_y){
 	//indices iniciais do offline map (pois)
 	//printf("%lf, %lf \n", x_origin, y_origin);
 
@@ -965,7 +987,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 				y_meters_car_position_according_to_map = y_meters_global - y_origin;
 
 				double travelled_distance = sqrt(pow((x_meters_global - last_x_meters_global),2)+pow((y_meters_global - last_y_meters_global),2));
-				printf("%lf\n", travelled_distance);
+				//printf("travelled_distance: %lf\n", travelled_distance);
 				get_next_map = (travelled_distance > neural_mapper_data_pace);
 				if(get_next_map)
 				{
@@ -977,6 +999,8 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 			// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
 			update_log_odds_of_cells_in_the_velodyne_perceptual_field(log_odds_snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global,
 					sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+			//@@@ VINICIUS Pegar antes dessa funcao de baixo o snapshot (o snapshot eh um mapa de logodds Variavel:log_odds_snapshot_map)
+			//Funcao Abaixo junta o snapshot com o mapoffiline
 			carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map,
 					sensor_params->log_odds.log_odds_l0);
 //			carmen_grid_mapping_save_map((char *) "test.map", &map);
@@ -987,7 +1011,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 			if (generate_neural_mapper_dataset && get_next_map)//number_of_data_passed >= neural_mapper_data_pace)
 			{
 					update_neural_mapper_output_map(offline_map, neural_mapper_occupancy_map, x_meters_car_position_according_to_map, y_meters_car_position_according_to_map);
-				    char path[100] = "/dados/neural_mapper_png_dataset/partial_3channels";
+				    char path[100] = "/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/60mts_180907";
 				    /*
 				    save_map(raw_number_of_lasers_map, (char *) "numb", path, sensor_data->current_timestamp, x_meters_car_position_according_to_map, y_meters_car_position_according_to_map, map_config.resolution, robot_pose_for_neural_mapper.orientation.yaw, false);
 				    save_map(raw_mean_hight_map, (char *) "mean", path, sensor_data->current_timestamp, x_meters_car_position_according_to_map, y_meters_car_position_according_to_map, map_config.resolution, robot_pose_for_neural_mapper.orientation.yaw, false);
@@ -997,12 +1021,12 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 					save_map(neural_mapper_occupancy_map, (char *) "label", path, sensor_data->current_timestamp, x_meters_car_position_according_to_map, y_meters_car_position_according_to_map, map_config.resolution, robot_pose_for_neural_mapper.orientation.yaw, true);
 					number_of_data_passed = 0;
 					*/
-				    save_map(raw_number_of_lasers_map, (char *) "partial_numb", path, false);
-				    save_map(raw_mean_hight_map, (char *) "partial_mean", path, false);
-				    save_map(raw_max_hight_map, (char *) "partial_max", path, false);
-				    save_map(raw_min_hight_map, (char *) "partial_min", path, false);
-					save_map(std_map, (char *) "partial_std", path, false);
-					save_map(neural_mapper_occupancy_map, (char *) "partial_label", path, true);
+				    save_map(raw_number_of_lasers_map, (char *) "numb", path, false);
+				    save_map(raw_mean_hight_map, (char *) "mean", path, false);
+				    save_map(raw_max_hight_map, (char *) "max", path, false);
+				    save_map(raw_min_hight_map, (char *) "min", path, false);
+					save_map(std_map, (char *) "std", path, false);
+					save_map(neural_mapper_occupancy_map, (char *) "label", path, true);
 					map_index++;		    		
 			}
 			//number_of_data_passed++;
