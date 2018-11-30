@@ -160,26 +160,26 @@ Neural_map_queue::map_to_png(carmen_map_t complete_map, char* csv_name, bool is_
 	char png_file_name[1024];
 	sprintf(png_file_name,"%s.png",csv_name);
 
-//	if (rgb_map)
-//	{
-//		cv::Mat neural_map_img = cv::Mat(cv::Size(complete_map.config.x_size, complete_map.config.y_size), CV_8UC3);
-//		for (int y = 0; y < complete_map.config.y_size; y++)
-//		{
-//			for (int x = 0; x < complete_map.config.x_size; x++)
-//			{
-////				printf("Meus valores aqui X: %d Y %d:  %lf\n",x,y,complete_map.map[x][y]);
-//				if (complete_map.map[x][y] == 0.0)//desconhecido-blue
-//					neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(255,120,0);
-//				if (complete_map.map[x][y] == 127.0)//Livre-white
-//					neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(255,255,255);
-//				if (complete_map.map[x][y] == 255.0)//ocupado
-//					neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(0,0,0);
-//			}
-//		}
-//		cv::imwrite(png_file_name, neural_map_img);
-//		neural_map_img.release();
-//	}
-//	else
+	if (rgb_map)
+	{
+		cv::Mat neural_map_img = cv::Mat(cv::Size(complete_map.config.x_size, complete_map.config.y_size), CV_8UC3);
+		for (int y = 0; y < complete_map.config.y_size; y++)
+		{
+			for (int x = 0; x < complete_map.config.x_size; x++)
+			{
+//				printf("Meus valores aqui X: %d Y %d:  %lf\n",x,y,complete_map.map[x][y]);
+				if (complete_map.map[x][y] <= 2.0)//desconhecido-blue
+					neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(255,120,0);
+				else if (complete_map.map[x][y] <= 130.0)//Livre-white
+					neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(255,255,255);
+				else if (complete_map.map[x][y] <= 260.0)//ocupado
+					neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(0,0,0);
+			}
+		}
+		cv::imwrite(png_file_name, neural_map_img);
+		neural_map_img.release();
+	}
+	else
 	{
 	// jeito mais rapido de gravar com Opencv
 	cv::Mat png_mat = cv::Mat(complete_map.config.x_size, complete_map.config.y_size, CV_64FC1, *png_map.map);
