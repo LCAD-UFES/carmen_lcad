@@ -94,7 +94,7 @@ create_dataset(char *dataset_name)
 	DatasetInterface *dataset;
 
 	if (!strcmp(dataset_name, "carmen"))
-		dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180907-2/", 1);
+		dataset = new DatasetCarmen(960, 1280, "/dados/data/data_20180907-2/", 1);
 		//dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180112-2/", 1);
 	else if (!strcmp(dataset_name, "kitti"))
 		dataset = new DatasetKitti("/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/", 1);
