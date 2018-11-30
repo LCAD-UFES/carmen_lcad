@@ -86,7 +86,8 @@ def saveImage(tensor, file_name):
     img = tensor2png(tensor)
     img.save(file_name)
 
-def load_data(batch_size, dataset_list):
+def load_data(batch_size, file_name):
+    dataset_list = getDatasetList(file_name)
     dataset = []
     weights = []
     batch_weight = np.zeros(n_classes)
@@ -98,13 +99,12 @@ def load_data(batch_size, dataset_list):
 
         for j in range(batch_size):
             # + 1 se indice comeca em 1 
-            print(data_path + str(dataset_list[i*n + j]) + '_max.png')
-            data[j][0] = png2tensor(data_path + str(dataset_list[i*n + j]) + '_max.png')[0]# + 1) + '_max.png')
-            data[j][1] = png2tensor(data_path + str(dataset_list[i*n + j]) + '_mean.png')[0]# + 1) + '_mean.png')
-            data[j][2] = png2tensor(data_path + str(dataset_list[i*n + j]) + '_min.png')[0]# + 1) + '_min.png')
-            data[j][3] = png2tensor(data_path + str(dataset_list[i*n + j]) + '_numb.png')[0]# + 1) + '_numb.png')
-            data[j][4] = png2tensor(data_path + str(dataset_list[i*n + j]) + '_std.png')[0]# + 1) + '_std.png')
-            tmp, new_weights = png2target(target_path + str(dataset_list[i*n + j]) + '_label.png')
+            data[j][0] = png2tensor(data_path + str(dataset_list[i*batch_size + j]) + '_max.png')[0]# + 1) + '_max.png')
+            data[j][1] = png2tensor(data_path + str(dataset_list[i*batch_size + j]) + '_mean.png')[0]# + 1) + '_mean.png')
+            data[j][2] = png2tensor(data_path + str(dataset_list[i*batch_size + j]) + '_min.png')[0]# + 1) + '_min.png')
+            data[j][3] = png2tensor(data_path + str(dataset_list[i*batch_size + j]) + '_numb.png')[0]# + 1) + '_numb.png')
+            data[j][4] = png2tensor(data_path + str(dataset_list[i*batch_size + j]) + '_std.png')[0]# + 1) + '_std.png')
+            tmp, new_weights = png2target(target_path + str(dataset_list[i*batch_size + j]) + '_label.png')
             target[j] = tmp[0]
             batch_weight = batch_weight + new_weights
         max_weight = max(batch_weight)
@@ -216,12 +216,9 @@ def test(args, model, device, test_loader, epoch, weights):
 
 def getDatasetList(file_name):
     file = open(file_name)
-    content = file.read().replace("\n", " ")
-    content_list = content.split(' === ')
-    dataset_list = []
-    for indexes in content_list:
-        dataset_list.append(indexes.split(" "))
-    return dataset_list
+    content = file.read()
+    content_list = content.split('\n')
+    return content_list
 
 
 if __name__ == '__main__':
@@ -268,9 +265,8 @@ if __name__ == '__main__':
     # train_loader = load_train_data(args.batch_size, n_train)
     # test_loader = load_test_data(args.test_batch_size, n_test)
 
-    dataset_list = getDatasetList(args.dataset_index)
-    train_set, train_weights = load_data(args.batch_size, dataset_list[0])
-    test_set, test_weights = load_data(args.test_batch_size, dataset_list[1])
+    train_set, train_weights = load_data(args.batch_size, "treino.txt")
+    test_set, test_weights = load_data(args.test_batch_size, "teste.txt")
 
     print("Train loader dataset size: " + str(len(train_set)))
     print("Train loader data dimensions: " + str(train_set[0][0].size()), "Train loader target dimensions: " + str(train_set[0][1].size()))
