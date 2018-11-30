@@ -54,37 +54,27 @@ if __name__ == '__main__':
     model = M.FCNN(n_output=3)
     model.load_state_dict(torch.load('saved_models/'+args.model_name))
     model = model.eval()
-    text = "Set de Treino + Validacao"
 
-    indexes = []   
-    for i in range(1608):
-        indexes.append(i)
-    #print (indexes)
+    data, target = load_image(args.img_index)
+    #start = time.now()
+    output = model(data)
+    pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
 
-    #shuffle(indexes)
-    for i in indexes:
-#    data, target = load_image(args.img_index)
-        print(str(i+args.img_index)+ ": ")
-        data, target = load_image(i+args.img_index)
-        #start = time.now()
-        output = model(data)
-        pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
-
-        imgPred = pred[0].float()
-        imgPred = (imgPred + 1)*255/3
-        imgPred = imgPred.cpu().float()
-        imgTarget = torch.FloatTensor(1, img_x_dim, img_y_dim)
-        imgTarget[0] = target[0]
-        imgTarget = imgTarget.cpu().float()
-        if(args.save_img):
-            #train.saveImage(imgPred, debug_img_path + '/predic_epoch' + args.model_name.split('.')[0] + 'img' + str(args.img_index) + '.png')
-            #train.saveImage(imgTarget, debug_img_path + '/target_epoch' + args.model_name.split('.')[0] + 'img' + str(args.img_index) + '.png')
-            train.saveImage(imgPred, debug_img_path + '/PREDICT.png')
-            train.saveImage(imgTarget, debug_img_path + '/TARGET.png')
-            #        if(i > 1000):
-            #           text = "Set de Teste"
-        #train.showOutput(imgPred)
-        #train.showOutput(imgTarget)
+    imgPred = pred[0].float()
+    imgPred = (imgPred + 1)*255/3
+    imgPred = imgPred.cpu().float()
+    imgTarget = torch.FloatTensor(1, img_x_dim, img_y_dim)
+    imgTarget[0] = target[0]
+    imgTarget = imgTarget.cpu().float()
+    if(args.save_img):
+        #train.saveImage(imgPred, debug_img_path + '/predic_epoch' + args.model_name.split('.')[0] + 'img' + str(args.img_index) + '.png')
+        #train.saveImage(imgTarget, debug_img_path + '/target_epoch' + args.model_name.split('.')[0] + 'img' + str(args.img_index) + '.png')
+        train.saveImage(imgPred, debug_img_path + '/PREDICT.png')
+        train.saveImage(imgTarget, debug_img_path + '/TARGET.png')
+        #        if(i > 1000):
+        #           text = "Set de Teste"
+    train.showOutput(imgPred)
+    train.showOutput(imgTarget)
         #print(imgPred)
             #print(imgTarget)
             #print(output.size())
