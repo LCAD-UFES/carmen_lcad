@@ -34,8 +34,8 @@ test_start_index = n_train
 img_y_dim = 600
 img_x_dim = 600
 
-data_path = '/dados/neural_mapper_png_dataset/radius_fixed_angles_acumulated_dataset2/data/'
-target_path = '/dados/neural_mapper_png_dataset/radius_fixed_angles_acumulated_dataset2/labels/'
+data_path = '/dados/neural_mapper_png_dataset/inverted_radius_fixed_angles_acumulated_dataset2/data/'
+target_path = '/dados/neural_mapper_png_dataset/inverted_radius_fixed_angles_acumulated_dataset2/labels/'
 debug_img_path = 'debug_imgs/'
 
 input_dimensions = 5
@@ -87,7 +87,7 @@ def saveImage(tensor, file_name):
     img.save(file_name)
 
 def load_data(batch_size, file_name):
-    dataset_list = getDatasetList(file_name)
+    dataset_list = shuffle(getDatasetList(file_name))
     dataset = []
     weights = []
     batch_weight = np.zeros(n_classes)
@@ -99,6 +99,7 @@ def load_data(batch_size, file_name):
 
         for j in range(batch_size):
             # + 1 se indice comeca em 1 
+            print(i*batch_size + j)
             data[j][0] = png2tensor(data_path + str(dataset_list[i*batch_size + j]) + '_max.png')[0]# + 1) + '_max.png')
             data[j][1] = png2tensor(data_path + str(dataset_list[i*batch_size + j]) + '_mean.png')[0]# + 1) + '_mean.png')
             data[j][2] = png2tensor(data_path + str(dataset_list[i*batch_size + j]) + '_min.png')[0]# + 1) + '_min.png')
@@ -119,6 +120,9 @@ def load_data(batch_size, file_name):
         row.append(target)
         dataset.append(row)
         #print(weights)
+    #ziped = list(zip(dataset, weights))
+    #shuffle(ziped)
+    #dataset, weights = zip(*ziped)
     return dataset, weights
 
 def load_train_data(batch_size, train_data_size):
