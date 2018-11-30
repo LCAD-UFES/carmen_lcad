@@ -43,7 +43,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		y = pixel(1, 0) / pixel(2, 0);
 
 		// to use fused camera and velodyne
-		//if (0)
+		// if (0)
 		if (point.x > 7 && x >= 0 && x < img.cols && y >= 0 && y < img.rows)
 		{
 			pcl::PointXYZRGB point2;
