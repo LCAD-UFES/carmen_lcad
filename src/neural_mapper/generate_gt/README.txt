@@ -5,7 +5,7 @@ Como usar:
 1 - Criar meta-data a partir de um playback qualquer:
 - Usando o codigo do mapper em anexo, chamar o mapper:
 
-./mapper -map_path ../data/map_ida_guarapari-20170403-2 -map_x 7756450 -map_y -364200 -generate_neural_mapper_dataset on -neural_mapper_max_distance_meters 60 -neural_mapper_data_pace 60
+./mapper -map_path ../data/map_ida_guarapari-20170403-2 -map_x 7756450 -map_y -364200 -generate_neural_mapper_dataset on -neural_mapper_max_distance_meters 60 -neural_mapper_data_pace 60 -num_clouds 1
 
 -> Parametros:
 -generate_neural_mapper_dataset => flag de geracao do dataset (on/off)
@@ -13,6 +13,8 @@ Como usar:
 -neural_mapper_max_distance_meters => raio de leitura maxima dos lasers (em metros)
 
 -neural_mapper_data_pace => numero 'n' inteiro (a cada n timestamps e retira uma amostra para o banco de dados)
+
+-num_clouds => numero 'n' inteiro de quantas núvens serão acumuladas para cada inferencia
 
 
 Obs. 1: Os outros paramatros sao normais do mapper
