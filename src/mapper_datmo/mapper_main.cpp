@@ -176,22 +176,22 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 				continue;
 
 			// Jose's method for checking if a point is an obstacle
-			double delta_x = velodyne_p3d.x() - previous_velodyne_p3d.x();
-			double delta_z = velodyne_p3d.z() - previous_velodyne_p3d.z();
+			double delta_x = abs(velodyne_p3d.x() - previous_velodyne_p3d.x());
+			double delta_z = abs(velodyne_p3d.z() - previous_velodyne_p3d.z());
 			double line_angle = carmen_radians_to_degrees(fabs(atan2(delta_z, delta_x)));
 			previous_velodyne_p3d = velodyne_p3d;
 
-			if (range <= MIN_RANGE || range >= sensor_params->range_max) // Disregard laser rays out of distance range
-				laser_ray_color = cv::Scalar(0, 255, 255);
-			else if (line_angle <= MIN_ANGLE_OBSTACLE || line_angle >= MAX_ANGLE_OBSTACLE) // Disregard laser rays that didn't hit an obstacle
-				laser_ray_color = cv::Scalar(0, 255, 0);
+//			if (range <= MIN_RANGE || range >= sensor_params->range_max) // Disregard laser rays out of distance range
+//				laser_ray_color = cv::Scalar(0, 255, 255);
+//			else if (line_angle <= MIN_ANGLE_OBSTACLE || line_angle >= MAX_ANGLE_OBSTACLE) // Disregard laser rays that didn't hit an obstacle
+//				laser_ray_color = cv::Scalar(0, 255, 0);
 //			else if (!is_moving_object(camera_data[camera_index].semantic[image_index][image_x + image_y * image_width])) // Disregard if it is not a moving object
-			else if (camera_data[camera_index].semantic[image_index][image_x + image_y * image_width] < 11)
+			/*else */if (camera_data[camera_index].semantic[image_index][image_x + image_y * image_width] < 11)
 				laser_ray_color = cv::Scalar(255, 0, 0);
 			else
 			{
 				laser_ray_color = cv::Scalar(0, 0, 255);
-				sensor_data->points[cloud_index].sphere_points[p].length = sensor_params->range_max; // Make this laser ray out of range
+				sensor_data->points[cloud_index].sphere_points[p].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
 				camera_datmo_count[camera_index]++;
 			}
 			if (verbose >= 2)
@@ -208,11 +208,13 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 }
 
 
-void
+int
 filter_sensor_data_using_image_semantic_segmentation(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
 {
+	int filter_cameras = 0;
+
 	if (active_cameras == 0)
-		return;
+		return 0;
 
 	for (int camera = 1; camera <= MAX_CAMERA_INDEX; camera++)
 	{
@@ -240,7 +242,9 @@ filter_sensor_data_using_image_semantic_segmentation(sensor_parameters_t *sensor
 			continue;
 
 		filter_sensor_data_using_one_image(sensor_params, sensor_data, camera, nearest_index);
+		filter_cameras++;
 	}
+	return filter_cameras;
 }
 
 
@@ -266,8 +270,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 			sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
 			sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
 
-			filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]);
-			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+			if (filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]) > 0)
+				run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
 			sensors_data[sensor_number].robot_pose[i] = old_robot_position;
 			sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
@@ -291,8 +295,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
 		sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
 
-		filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]);
-		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+		if (filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]) > 0)
+			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
 		sensors_data[sensor_number].robot_pose[i] = old_robot_position;
 		sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
@@ -802,7 +806,7 @@ open_semantic_image(char* dir, double timestamp)
 
 	sprintf(complete_path, "%s/%lf-r.segmap", dir, timestamp);
 
-	printf("%s\n", complete_path);
+	//printf("%s\n", complete_path);
 
 	FILE *image_file = fopen(complete_path, "rb");
 
@@ -830,9 +834,14 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 	camera_data[camera].isRectified[i] = image_msg->isRectified;
 	camera_data[camera].image[i] = (camera_alive[camera] == 0) ? image_msg->raw_left : image_msg->raw_right;
 	camera_data[camera].timestamp[i] = image_msg->timestamp;
-	//camera_data[camera].semantic[i] = open_semantic_image((char*)"/dados/log_dante_michelini-20181116.txt_segmap", image_msg->timestamp);
-	camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
-	//save_image_semantic_map_to_disk(image_msg->width, image_msg->height, camera, image_msg->timestamp, camera_data[camera].semantic[i]);
+	camera_data[camera].semantic[i] = open_semantic_image((char*)"/dados/log_dante_michelini-20181116.txt_segmap", image_msg->timestamp);
+
+	if (camera_data[camera].semantic[i] == NULL)
+	{
+		printf ("Image Not Found! %s/%lf.segmap\n", (char*)"/dados/log_dante_michelini-20181116.txt_segmap", image_msg->timestamp);
+		camera_data[camera].semantic[i] = image_msg->raw_right;
+		//camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
+	}
 
 
 	if (verbose >= 2)
