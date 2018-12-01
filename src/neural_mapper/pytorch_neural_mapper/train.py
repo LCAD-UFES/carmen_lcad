@@ -34,8 +34,8 @@ test_start_index = n_train
 img_y_dim = 600
 img_x_dim = 600
 
-data_path = '/dados/neural_mapper_png_dataset/inverted_radius_fixed_angles_acumulated_dataset2/data/'
-target_path = '/dados/neural_mapper_png_dataset/inverted_radius_fixed_angles_acumulated_dataset2/labels/'
+data_path = '/dados/neural_mapper_png_dataset/acumulated_dataset2/data/'
+target_path = '/dados/neural_mapper_png_dataset/acumulated_dataset2/labels/'
 debug_img_path = 'debug_imgs/'
 
 input_dimensions = 5
@@ -87,7 +87,8 @@ def saveImage(tensor, file_name):
     img.save(file_name)
 
 def load_data(batch_size, file_name):
-    dataset_list = shuffle(getDatasetList(file_name))
+    dataset_list = getDatasetList(file_name)
+    shuffle(dataset_list)
     dataset = []
     weights = []
     batch_weight = np.zeros(n_classes)
@@ -124,6 +125,36 @@ def load_data(batch_size, file_name):
     #shuffle(ziped)
     #dataset, weights = zip(*ziped)
     return dataset, weights
+
+def load_data2(batch_size, batch_idx, dataset_list):
+    batch_weight = np.zeros(n_classes)
+    dataset_size = len(dataset_list)
+    n = math.floor(dataset_size/batch_size)
+    data = torch.zeros(batch_size, input_dimensions, img_x_dim, img_y_dim)
+    target = torch.zeros(batch_size, img_x_dim, img_y_dim, dtype=torch.int64)
+
+    for j in range(batch_size):
+        # + 1 se indice comeca em 1 
+        #print(batch_idx*batch_size + j)
+        data[j][0] = png2tensor(data_path + str(dataset_list[batch_idx*batch_size + j]) + '_max.png')[0]# + 1) + '_max.png')
+        data[j][1] = png2tensor(data_path + str(dataset_list[batch_idx*batch_size + j]) + '_mean.png')[0]# + 1) + '_mean.png')
+        data[j][2] = png2tensor(data_path + str(dataset_list[batch_idx*batch_size + j]) + '_min.png')[0]# + 1) + '_min.png')
+        data[j][3] = png2tensor(data_path + str(dataset_list[batch_idx*batch_size + j]) + '_numb.png')[0]# + 1) + '_numb.png')
+        data[j][4] = png2tensor(data_path + str(dataset_list[batch_idx*batch_size + j]) + '_std.png')[0]# + 1) + '_std.png')
+        tmp, new_weights = png2target(target_path + str(dataset_list[batch_idx*batch_size + j]) + '_label.png')
+        target[j] = tmp[0]
+        batch_weight = batch_weight + new_weights
+    max_weight = max(batch_weight)
+    batch_weight = max_weight/batch_weight
+    # normalize weights
+    #max_w = max(batch_weight)
+    #min_w = min(batch_weight)
+    #batch_weight = (batch_weight - 1)*10/(max_w - 1) + 1
+    #print(weights)
+    #ziped = list(zip(dataset, weights))
+    #shuffle(ziped)
+    #dataset, weights = zip(*ziped)
+    return data, target , batch_weight
 
 def load_train_data(batch_size, train_data_size):
     dataset = []
@@ -199,6 +230,56 @@ def train(args, model, device, train_loader, optimizer, epoch, weights):
             showOutput2(imgPred)
             #showOutput(imgTarget)
 
+def train2(args, model, device, train_loader, optimizer, epoch, batch_size):
+    #class_weights = torch.FloatTensor(weights).cuda()
+
+    model.train()
+    for batch_idx in range(math.floor(len(train_loader)/batch_size)):
+        data, target, weights = load_data2(batch_size, batch_idx, train_loader)
+        data, target = data.to(device), target.long().to(device)
+        optimizer.zero_grad()
+        output = model(data)
+        batch_weight = torch.FloatTensor(weights).cuda()
+        out_loss = F.cross_entropy(output, target, weight=batch_weight)
+        out_loss.backward()
+        optimizer.step()
+        if batch_idx % args.log_interval == 0:
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+    #                epoch, batch_idx * len(data), len(train_loader.dataset),
+                epoch, batch_idx * len(data), len(train_loader)*args.batch_size,
+                100. * batch_idx / len(train_loader), out_loss.item()))
+
+            pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
+            imgPred = pred[0]
+            imgPred = imgPred.cpu().float()
+            #imgTarget = torch.FloatTensor(1, 424, 424)
+            #imgTarget[0] = target[0]
+            #imgTarget = imgTarget.cpu().float()
+            #saveImage(imgPred, debug_img_path + '/predic_epoch' + str(epoch) + '.png')
+            #saveImage(imgTarget, debug_img_path + '/target_epoch' + str(epoch) + '.png')
+            showOutput2(imgPred)
+            #showOutput(imgTarget)
+
+def test(args, model, device, test_loader, epoch, batch_size):
+    model.eval()
+    test_loss = 0
+    correct = 0
+    with torch.no_grad():
+        for batch_idx in range(math.floor(len(test_loader)/batch_size)):
+            data, target, weights = load_data2(batch_size, batch_idx, test_loader)
+            data, target = data.to(device), target.long().to(device)
+            output = model(data)
+            batch_weight = torch.FloatTensor(weights).cuda()
+            test_loss += F.cross_entropy(output, target, reduction="sum").item() # sum up batch loss
+            pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
+            correct += pred.eq(target.view_as(pred)).sum().item()
+
+    #    test_loss /= len(test_loader.dataset)
+    test_loss /= (len(test_loader)*test_loader[0][1].size(0)*test_loader[0][1].size(1)*test_loader[0][1].size(2))
+    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        test_loss, correct, len(test_loader)*test_loader[0][1].size(0)*test_loader[0][1].size(1)*test_loader[0][1].size(2),
+        100. * correct / (len(test_loader)*test_loader[0][1].size(0)*test_loader[0][1].size(1)*test_loader[0][1].size(2))))
+
 def test(args, model, device, test_loader, epoch, weights):
     model.eval()
     test_loss = 0
@@ -208,7 +289,7 @@ def test(args, model, device, test_loader, epoch, weights):
             data, target = data.to(device), target.long().to(device)
             output = model(data)
             batch_weight = torch.FloatTensor(weights[batch_idx]).cuda()
-            test_loss += F.cross_entropy(output, target, weight=batch_weight).item() # sum up batch loss
+            test_loss += F.cross_entropy(output, target, reduction="sum").item() # sum up batch loss
             pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
 
@@ -265,18 +346,20 @@ if __name__ == '__main__':
     # Training and testing loss plots
     # test_loss_plot, = plt.plot(range(1, args.epochs), [], 'bs')
 
+    train_list = getDatasetList("treino.txt")
+    test_list = getDatasetList("teste.txt")
 
     # train_loader = load_train_data(args.batch_size, n_train)
     # test_loader = load_test_data(args.test_batch_size, n_test)
 
-    train_set, train_weights = load_data(args.batch_size, "treino.txt")
-    test_set, test_weights = load_data(args.test_batch_size, "teste.txt")
+    #train_set, train_weights = load_data(args.batch_size, "treino.txt")
+    #test_set, test_weights = load_data(args.test_batch_size, "teste.txt")
 
-    print("Train loader dataset size: " + str(len(train_set)))
-    print("Train loader data dimensions: " + str(train_set[0][0].size()), "Train loader target dimensions: " + str(train_set[0][1].size()))
+    print("Train loader dataset size: " + str(len(train_list)))
+    #print("Train loader data dimensions: " + str(train_set[0][0].size()), "Train loader target dimensions: " + str(train_set[0][1].size()))
 
-    print("Test loader dataset size: " + str(len(test_set)))    
-    print("Test loader data dimensions: " + str(test_set[0][0].size()), "Test loader target dimensions: " + str(test_set[0][1].size()))
+    print("Test loader dataset size: " + str(len(test_list)))    
+    #print("Test loader data dimensions: " + str(test_set[0][0].size()), "Test loader target dimensions: " + str(test_set[0][1].size()))
 
     model = M.FCNN(n_input=input_dimensions, n_output=n_classes).to(device)
     if(args.use_model is not None):
@@ -286,17 +369,25 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
     #weights[1] = weights[1]*50
-    print("PESOS:")
-    print (train_weights)
+    #print("PESOS:")
+    #print (train_weights)
     #weights = [1., 100.]
     #class_weights = torch.FloatTensor(weights).cuda()
+
+    for epoch in range(1, args.epochs + 1):
+        train2(args, model, device, train_list, optimizer, epoch, args.batch_size)
+        test2(args, model, device, test_list, epoch, args.test_batch_size)
+        if(epoch % 10 == 0):
+            torch.save(model.state_dict(), 'saved_models/' + str(n_imgs)  + "imgs_epoch" + str(epoch) + '.model')
+
+'''
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_set, optimizer, epoch, train_weights)
         test(args, model, device, test_set, epoch, test_weights)
         if(epoch % 10 == 0):
             torch.save(model.state_dict(), 'saved_models/' + str(n_imgs)  + "imgs_epoch" + str(epoch) + '.model')
 
-'''
+
     data = train_loader[0][0]
     target = train_loader[0][1]
     data, target = data.to(device), target.long().to(device)
