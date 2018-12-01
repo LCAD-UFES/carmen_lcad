@@ -216,7 +216,7 @@ print_result(double *particle)
 	x_withoutbias = 0;
 	y_withoutbias = 0;
 
-	yaw = yaw_withoutbias = estimate_theta(pso_data, 0);
+	yaw = yaw_withoutbias = particle[4]; // estimate_theta(pso_data, 0);
 	fprintf(stderr, "Initial angle: %lf\n", yaw);
 
 	dt_gps_and_odom = 0;
@@ -232,7 +232,7 @@ print_result(double *particle)
 			//fprintf(stderr, "Initiating a new log at message %d with dt: %lf\n", i, dt);
 			x = pso_data->lines[i].gps_x - pso_data->lines[0].gps_x;
 			y = pso_data->lines[i].gps_y - pso_data->lines[0].gps_y;
-			yaw = yaw_withoutbias = estimate_theta(pso_data, i);
+			yaw = yaw_withoutbias = particle[4]; //estimate_theta(pso_data, i);
 			fprintf(stderr, "Reseting initial angle: %lf\n", yaw);
 			continue;
 		}
@@ -276,7 +276,7 @@ fitness(double *particle, void *data)
 	x = 0;
 	y = 0;
 
-	yaw = estimate_theta(pso_data, 0);
+	yaw = particle[4]; // estimate_theta(pso_data, 0);
 
 	for (i = 1; i < pso_data->lines.size(); i++)
 	{
@@ -288,7 +288,7 @@ fitness(double *particle, void *data)
 			//fprintf(stderr, "Initiating a new log at message %d with dt: %lf\n", i, dt);
 			x = pso_data->lines[i].gps_x - pso_data->lines[0].gps_x;
 			y = pso_data->lines[i].gps_y - pso_data->lines[0].gps_y;
-			yaw = estimate_theta(pso_data, i);
+			yaw = particle[4]; // estimate_theta(pso_data, i);
 			continue;
 		}
 
@@ -355,6 +355,10 @@ set_limits(int dim)
 	limits[3][0] = -0.3;
 	limits[3][1] = 0.3;
 
+	// Initial angle
+	limits[4][0] = -M_PI;
+	limits[4][1] = M_PI;
+
 	return limits;
 }
 
@@ -368,19 +372,20 @@ main(int argc, char **argv)
 		exit(printf("Use %s <input-data>\n", argv[0]));
 
 	read_data(argv[1]);
-	limits = set_limits(4);
+	limits = set_limits(5);
 
 	srand(time(NULL));
 	srand(rand());
 
 	ParticleSwarmOptimization optimizer(
-		fitness, limits, 4, &DataReadFromFile, 1000, 100);
+		fitness, limits, 5, &DataReadFromFile, 1000, 100);
 
 	optimizer.Optimize();
 
-	fprintf(stderr, "bias v: %lf %lf bias phi: %lf %lf\n",
+	fprintf(stderr, "bias v: %lf %lf bias phi: %lf %lf Initial Angle: %lf\n",
 		optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
-		optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3]
+		optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
+        optimizer.GetBestSolution()[4]
 	);
 
 	fprintf(stderr, "Fitness (MSE): %lf\n", optimizer.GetBestFitness());
