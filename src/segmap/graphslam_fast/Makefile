@@ -1,4 +1,4 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 MODULE_NAME = GRAPHSLAM_FAST_PACKAGE
 MODULE_COMMENT = New Version of GraphSLAM for faster processing
@@ -40,10 +40,6 @@ LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp 
 
 SOURCES = convert_latlon_to_xyz.cpp generate_loop_closures.cpp graphslam.cpp convert_pointclouds_to_pcl.cpp
-
-PUBLIC_INCLUDES = 
-PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = 
 TARGETS = convert_latlon_to_xyz generate_loop_closures  graphslam convert_pointclouds_to_pcl
 
 convert_latlon_to_xyz: convert_latlon_to_xyz.o
@@ -51,4 +47,4 @@ generate_loop_closures: generate_loop_closures.o
 graphslam:  graphslam.o
 convert_pointclouds_to_pcl: convert_pointclouds_to_pcl.o
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

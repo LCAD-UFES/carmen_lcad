@@ -1,4 +1,14 @@
 
+# calibrate odometry to map logs
+# convert images to png
+# run semantic segmentation for the png images
+# synchronize
+# convert latlong to xyz  
+# run loop closures (optional)
+# optimize
+# convert pointclouds to ply
+# create the following data dir
+
 rm -rf data
 mkdir data
 mkdir data/velodyne
