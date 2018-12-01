@@ -45,8 +45,8 @@ ParticleSwarmOptimization::Optimize()
 		_update_particles();
 		_error[num_iteractions] = _gbest_fitness;
 
-		fprintf(stderr, "Iteraction: %d of %d GbestFitness: %lf\n",
-			num_iteractions, _max_iteractions, -_gbest_fitness);
+		//fprintf(stderr, "Iteraction: %d of %d GbestFitness: %lf\n",
+			//num_iteractions, _max_iteractions, -_gbest_fitness);
 
 		num_iteractions++;
 	}
