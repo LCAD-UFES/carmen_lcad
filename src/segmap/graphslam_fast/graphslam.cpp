@@ -70,13 +70,6 @@ load_data(char *name, vector<Data> &lines)
 	{
 		Data d;
 
-/*
-VELODYNE_PARTIAL_SCAN_IN_FILE /dados/logs/log_volta_da_ufes-20180907-2.txt_velodyne/1536320000/1536325900/1536325965.083151.pointcloud 1085 1536325965.083151
-BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3 /dados/logs/log_volta_da_ufes-20180907-2.txt_bumblebee/1536320000/1536325900/1536325965.095084.bb3.image 1280 960
-3686400 1 1536325965.095084 GPS_XYZ 1 7757734.713280 -363558.145922 4 1536325965.087092 NMEAHDT 1 0.656872 1 1536325965.087092 ROBOTVELOCITY_ACK -0.001000
-0.000440 1536325965.073174
-*/
-
 		char c = fgetc(f);
 		if (c != 'V')
 		{
@@ -107,6 +100,20 @@ BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3 /dados/logs/log_volta_da_ufes-20180907-2.tx
 
 
 void
+load_odom_calib(char *name, double *mult_v, double *mult_phi, double *add_phi)
+{
+    FILE *f = fopen(name, "r");
+    char dummy[64];
+
+    fscanf(f, "%s %s %lf %s %s %s %lf %lf", 
+        dummy, dummy, mult_v, dummy, dummy, dummy, 
+        mult_phi, add_phi);
+
+    fclose(f);
+}
+
+
+void
 read_loop_restrictions(char *filename, vector<LoopRestriction> &loop_data)
 {
 	int n;
@@ -114,7 +121,10 @@ read_loop_restrictions(char *filename, vector<LoopRestriction> &loop_data)
 	double x, y, theta;
 
 	if ((f = fopen(filename, "r")) == NULL)
-		exit(printf("Error: Unable to open file '%s'!\n", filename));
+	{
+		printf("Warning: Unable to open file '%s'! Ignoring loop closures.\n", filename);
+		return;
+	}
 
 	while(!feof(f))
 	{
@@ -143,9 +153,9 @@ add_vertices(vector<Data> &input_data, SparseOptimizer *optimizer)
 	for (i = 0; i < input_data.size(); i++)
 	{
 		SE2 estimate(
-			input_data[i].x - input_data[0].x,
-			input_data[i].y - input_data[0].y,
-			input_data[i].angle
+			i, //input_data[i].x - input_data[0].x,
+			0, //input_data[i].y - input_data[0].y,
+			0.0 //input_data[i].angle
 		);
 
 		VertexSE2* vertex = new VertexSE2;
@@ -178,23 +188,17 @@ create_information_matrix(double x_std, double y_std, double z_std)
 void
 add_odometry_edges(vector<Data> &input_data, SparseOptimizer *optimizer, vector<SE2> &dead_reckoning, double xy_std, double th_std)
 {
-	double dt;
 	Matrix3d information = create_information_matrix(xy_std, xy_std, th_std);
 
 	for (size_t i = 1; i < input_data.size(); i++)
 	{
-		dt = input_data[i].ack_time - input_data[i - 1].ack_time;
-
-		if (dt > 0 && dt < 600)  // we are in the same log
-		{
-			SE2 measure = dead_reckoning[i - 1].inverse() * dead_reckoning[i];
-			EdgeSE2* edge = new EdgeSE2;
-			edge->vertices()[0] = optimizer->vertex(i - 1);
-			edge->vertices()[1] = optimizer->vertex(i);
-			edge->setMeasurement(measure);
-			edge->setInformation(information);
-			optimizer->addEdge(edge);
-		}
+		SE2 measure = dead_reckoning[i - 1].inverse() * dead_reckoning[i];
+		EdgeSE2* edge = new EdgeSE2;
+		edge->vertices()[0] = optimizer->vertex(i - 1);
+		edge->vertices()[1] = optimizer->vertex(i);
+		edge->setMeasurement(measure);
+		edge->setInformation(information);
+		optimizer->addEdge(edge);
 	}
 }
 
@@ -234,16 +238,17 @@ gps_std_from_quality(int quality)
 
 
 void
-add_gps_edges(vector<Data> &input_data, SparseOptimizer *optimizer)
+add_gps_edges(vector<Data> &input_data, SparseOptimizer *optimizer, double xy_std_mult, double th_std)
 {
 	for (size_t i = 0; i < input_data.size(); i++)
 	{
 		SE2 measure(input_data[i].x - input_data[0].x,
 					input_data[i].y - input_data[0].y,
-					input_data[i].angle);
+					//input_data[i].angle);
+					0.);
 
 		double gps_std = gps_std_from_quality(input_data[i].quality);
-		Matrix3d information = create_information_matrix(gps_std * 70., gps_std * 70., 3.14 * 1000000);
+		Matrix3d information = create_information_matrix(gps_std * xy_std_mult, gps_std * xy_std_mult, th_std);
 
 		EdgeGPS *edge_gps = new EdgeGPS;
 		edge_gps->vertices()[0] = optimizer->vertex(i);
@@ -255,9 +260,9 @@ add_gps_edges(vector<Data> &input_data, SparseOptimizer *optimizer)
 
 
 void
-add_loop_closure_edges(vector<LoopRestriction> &loop_data, SparseOptimizer *optimizer)
+add_loop_closure_edges(vector<LoopRestriction> &loop_data, SparseOptimizer *optimizer, double xy_std, double th_std)
 {
-	Matrix3d information = create_information_matrix(50., 50., 0.6);
+	Matrix3d information = create_information_matrix(xy_std, xy_std, th_std);
 
 	for (size_t i = 0; i < loop_data.size(); i++)
 	{
@@ -275,7 +280,7 @@ add_loop_closure_edges(vector<LoopRestriction> &loop_data, SparseOptimizer *opti
 
 
 void
-create_dead_reckoning(vector<Data> &input_data, vector<SE2> &dead_reckoning)
+create_dead_reckoning(vector<Data> &input_data, vector<SE2> &dead_reckoning, double mult_v, double mult_phi, double add_phi)
 {
 	double x, y, ds, th, dt, v, phi;
 
@@ -285,23 +290,8 @@ create_dead_reckoning(vector<Data> &input_data, vector<SE2> &dead_reckoning)
 	for (size_t i = 1; i < input_data.size(); i++)
 	{
 		dt = input_data[i].ack_time - input_data[i - 1].ack_time;
-
-		if (dt < 0 || dt > 600)  // a new log started
-		{
-			printf("Starting a new log at message %ld from %ld\n", i, input_data.size());
-			x = y = th = 0.;
-			dead_reckoning.push_back(SE2(x, y, th));
-			continue;
-		}
-
-		/*
-		bias v: 1.006842 -0.000000 bias phi: 0.861957 -0.002372
-		Fitness (MSE): -22.967871
-		Fitness (SQRT(MSE)): 4.792481
-		Initial angle: 0.641244
-		*/
-		v = input_data[i - 1].v * 1.006842;
-		phi = input_data[i - 1].phi * 0.861957 - 0.002372;
+		v = input_data[i - 1].v * mult_v;
+		phi = input_data[i - 1].phi * mult_phi + add_phi;
 
 		ds = v * dt;
 		x += ds * cos(th);
@@ -315,15 +305,16 @@ create_dead_reckoning(vector<Data> &input_data, vector<SE2> &dead_reckoning)
 
 
 void
-load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_data, SparseOptimizer *optimizer)
+load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_data, SparseOptimizer *optimizer,
+    double mult_v, double mult_phi, double add_phi)
 {
 	vector<SE2> dead_reckoning;
 
 	add_vertices(input_data, optimizer);
-	create_dead_reckoning(input_data, dead_reckoning);
-	add_odometry_edges(input_data, optimizer, dead_reckoning, 0.1, 0.009);
-	add_gps_edges(input_data, optimizer);
-	//add_loop_closure_edges(loop_data, optimizer);
+	create_dead_reckoning(input_data, dead_reckoning, mult_v, mult_phi, add_phi);
+    add_odometry_edges(input_data, optimizer, dead_reckoning, 1., 0.001);
+	add_gps_edges(input_data, optimizer, 10.0, M_PI * 1e10);
+	//add_loop_closure_edges(loop_data, optimizer, 10.0, M_PI);
 
 	optimizer->save("poses_before.g2o");
 	cout << "load complete!" << endl;
@@ -333,39 +324,17 @@ load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_d
 void
 save_corrected_vertices(char *out_name, vector<Data> &input_data, SparseOptimizer *optimizer)
 {
-	int log_id = 0;
-	double x, y, th, t, dt;
+	double x, y, th, t;
 
-	char name_with_index[256];
-
-	sprintf(name_with_index, "%s.%02d.txt", out_name, log_id);
-	FILE *f = fopen(name_with_index, "w");
+	FILE *f = fopen(out_name, "w");
 
 	if (f == NULL)
-		exit(printf("File '%s' couldn't be opened!\n", name_with_index));
+		exit(printf("File '%s' couldn't be opened!\n", out_name));
 
 	int start = -1;
 
 	for (size_t i = 0; i < optimizer->vertices().size(); i++)
 	{
-		if (i > 0)
-		{
-			dt = input_data[i].cloud_time - input_data[i - 1].cloud_time;
-
-			if (dt < 0 || dt > 600)
-			{
-				printf("Initializing a new log at message %ld of %ld\n", i, input_data.size());
-				log_id++;
-
-				fclose(f);
-				sprintf(name_with_index, "%s.%02d.txt", out_name, log_id);
-				f = fopen(name_with_index, "w");
-
-				if (f == NULL)
-					exit(printf("File '%s' couldn't be opened!\n", name_with_index));
-			}
-		}
-
 		VertexSE2* v = dynamic_cast<VertexSE2*>(optimizer->vertex(i));
 		SE2 pose = v->estimate();
 
@@ -376,7 +345,7 @@ save_corrected_vertices(char *out_name, vector<Data> &input_data, SparseOptimize
 
 		//if (input_data[i].v > 1.0)
 		{
-			fprintf(f, "%d %lf %lf %lf %lf %lf %lf %lf %lf\n", i, x, y, th, t, input_data[i].image_time, input_data[i].v,
+			fprintf(f, "%ld %lf %lf %lf %lf %lf %lf %lf %lf\n", i, x, y, th, t, input_data[i].image_time, input_data[i].v,
 					input_data[i].phi, input_data[i].ack_time);
 			if (start == -1) start = i;
 		}
@@ -437,11 +406,12 @@ int main(int argc, char **argv)
 {
 	if (argc < 4)
 	{
-		exit(printf("Use %s <sync-file> <loops-file> <saida.txt>\n", argv[0]));
+		exit(printf("Use %s <sync-file> <loops-file> <odom-calib-file.txt> <saida.txt>\n", argv[0]));
 	}
 
 	vector<Data> input_data;
 	vector<LoopRestriction> loop_data;
+    double mult_v, mult_phi, add_phi;
 
 	SparseOptimizer* optimizer;
 
@@ -455,15 +425,16 @@ int main(int argc, char **argv)
 	optimizer = initialize_optimizer();
 
 	load_data(argv[1], input_data);
+    load_odom_calib(argv[3], &mult_v, &mult_phi, &add_phi);
 	read_loop_restrictions(argv[2], loop_data);
-	load_data_to_optimizer(input_data, loop_data, optimizer);
+	load_data_to_optimizer(input_data, loop_data, optimizer, mult_v, mult_phi, add_phi);
 
 	optimizer->setVerbose(true);
 	cerr << "Optimizing" << endl;
 	prepare_optimization(optimizer);
 	optimizer->optimize(20);
 	cerr << "OptimizationDone!" << endl;
-	save_corrected_vertices(argv[3], input_data, optimizer);
+	save_corrected_vertices(argv[4], input_data, optimizer);
 	cerr << "OutputSaved!" << endl;
 
 	return 0;

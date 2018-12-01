@@ -182,6 +182,11 @@ read_data(char *filename)
 double
 estimate_theta(PsoData *pso_data, int id)
 {
+    /** 
+    Estimates theta using the first GPS positions ahead. 
+    This method fails if the car is moving backwards in the beginning of the log, 
+        or if it starts in a curve.
+    **/
 	for (uint i = id; i < pso_data->lines.size(); i++)
 	{
 		double dy = pso_data->lines[i].gps_y - pso_data->lines[id].gps_y;

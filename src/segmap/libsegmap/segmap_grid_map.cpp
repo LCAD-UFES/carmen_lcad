@@ -309,6 +309,12 @@ GridMap::GridMap(string tiles_dir, double tile_height_meters, double tile_width_
 }
 
 
+GridMap::~GridMap()
+{
+	save();
+}
+
+
 GridMapTile*
 GridMap::_reload_tile(double x, double y)
 {
@@ -419,4 +425,17 @@ GridMap::to_image()
 	return viewer;
 }
 
+
+void
+GridMap::save()
+{
+	for (int i = 0; i < _N_TILES; i++)
+	{
+		for (int j = 0; j < _N_TILES; j++)
+		{
+			if (_tiles[i][j] != NULL)
+				_tiles[i][j]->save();
+		}
+	}
+}
 

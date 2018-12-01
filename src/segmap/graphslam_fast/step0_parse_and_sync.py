@@ -19,20 +19,19 @@ def find_near(s, queue, key):
     return near
     
 
-def save_sync_data(s, queue):
-    for k in queue.keys():
-        if len(queue[k]) == 0:
-            return
-    else:
-        synced = s[:-2]
+def save_sync_data(queue, ref, order):
+    keys_without_ref = [k for k in queue.keys() if k != ref]
+
+    for s in queue[ref]:
+        data = dict()
+        data[ref] = s[:-2]
         
-        for k in sorted(queue.keys()):
-            synced += queue[k][find_near(s, queue, k)][:-2]
-        
-        print(' '.join(synced))
-        
-        #for k in sorted(queue.keys()):
-            #queue[k].clear()
+        for k in keys_without_ref:
+            data[k] = queue[k][find_near(s, queue, k)][:-2]
+
+        for k in order:        
+            print(' '.join(data[k]), end=' ')
+        print()
 
 
 def add_to_queue(queue, data):
@@ -44,8 +43,8 @@ def add_to_queue(queue, data):
 def process_log(log, data):
     f = open(log, 'r')
     
-    queue = {'gps1': [], 'gps_orientation': [], 'odom': [], 'camera': []}
-    velodynes = []
+    queue = {'gps1': [], 'gps_orientation': [], 'odom': [], 'camera': [], 'velodyne': []}
+    #velodynes = []
     
     s = f.readline().rstrip().lstrip()
     while s != '':
@@ -63,14 +62,13 @@ def process_log(log, data):
                 add_to_queue(queue['camera'], s)
             elif VELODYNE_TAG in s[0]:
                 #save_sync_data(s, queue)
-                velodynes.append(s)
+                #velodynes.append(s)
+                add_to_queue(queue['velodyne'], s)
             
         s = f.readline().rstrip().lstrip()     
     
     f.close()
-    
-    for v in velodynes:
-        save_sync_data(v, queue)
+    save_sync_data(queue, 'camera', ['velodyne', 'camera', 'gps1', 'gps_orientation', 'odom'])
     
 
 if __name__ == "__main__":

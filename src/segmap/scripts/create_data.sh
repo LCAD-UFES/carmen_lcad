@@ -8,6 +8,7 @@
 # optimize
 # convert pointclouds to ply
 # create the following data dir
+# rename to kitti format
 
 rm -rf data
 mkdir data

@@ -221,7 +221,10 @@ DatasetCarmen::load_data(vector<double> &times,
 	string data_file = _path + "/optimized.txt";
 	FILE *f = fopen(data_file.c_str(), "r");
 
-	char dummy[128];
+	if (f == NULL)
+		exit(printf("File '%s' not found.\n", data_file.c_str()));
+
+	char dummy[256];
 	double x, y, th, t, v, phi;
 
 	Pose2d p0;
@@ -259,8 +262,11 @@ DatasetCarmen::load_data(vector<double> &times,
 
 	fclose(f);
 
-	data_file = _path + "/sync_latlong.txt";
+	data_file = _path + "/sync.txt";
 	f = fopen(data_file.c_str(), "r");
+
+	if (f == NULL)
+		exit(printf("Error: file '%s' not found.\n", data_file.c_str()));
 
 	_gps.clear();
 

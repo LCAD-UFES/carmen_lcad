@@ -1,6 +1,6 @@
 include ../../Makefile.conf
 
-CFLAGS += 
+CXXFLAGS += -std=c++11
 IFLAGS += `pkg-config --cflags opencv`
 LFLAGS += `pkg-config --libs opencv`
 

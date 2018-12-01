@@ -75,7 +75,10 @@ load_data(char *name, vector<Data> &lines)
 
 		char c = fgetc(f);
 		if (c != 'V')
+		{
+			printf("skipping char %c at line %ld\n", c, lines.size()+1);
 			continue;
+		}
 
 		fscanf(f, "\n%s %s %d %lf ",
 				dummy, d.cloud_path, &d.n_rays, &d.cloud_time);
@@ -115,7 +118,7 @@ find_loop_closure_poses(vector<Data> &lines, vector<pair<int, int>> &loop_closur
 
 			double dist = sqrt(pow(delta_x, 2) + pow(delta_y, 2));
 
-			if ((dist < min_dist) && (fabs(delta_t) > 300.0))
+			if ((dist < min_dist) && (fabs(delta_t) > 30.0))
 			{
 				min_dist = dist;
 				min_id = j;

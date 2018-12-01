@@ -78,12 +78,14 @@ public:
 	GridMapTile *_tiles[_N_TILES][_N_TILES];
 
 	GridMap(string tiles_dir, double tile_height_meters, double tile_width_meters, double resolution, int map_type);
+	~GridMap();
 	GridMapTile* _reload_tile(double x, double y);
 	void _reload_tiles(double robot_x, double robot_y);
 	void reload(double robot_x, double robot_y);
 	void add_point(PointXYZRGB &p);
 	vector<double> read_cell(PointXYZRGB &p);
 	Mat to_image();
+	void save();
 };
 
 
