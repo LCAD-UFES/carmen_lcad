@@ -106,7 +106,8 @@ create_dataset(char *dataset_name)
 
 	if (!strcmp(dataset_name, "carmen"))
 		//dataset = new DatasetCarmen(960, 1280, "/dados/data/data_log_estacionamentos-20181130.txt/", 0);
-		dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180112/", 1);
+		//dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180112/", 1);
+        dataset = new DatasetCarmen(960, 1280, "/dados/data/data_log-mata-da-praia-20181130.txt/", 0);
 	else if (!strcmp(dataset_name, "kitti"))
 		dataset = new DatasetKitti("/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/", 1);
 	else
@@ -135,7 +136,7 @@ main(int argc, char **argv)
 	dataset = create_dataset(dataset_name);
 	dataset->load_data(times, poses, odom);
 
-	char *map_name = "/dados/maps/maps_20180112-2/";
+	char *map_name = "/dados/maps/maps_log-mata-da-praia-20181130/";
 	char cmd[256];
 
 	sprintf(cmd, "rm -rf %s && mkdir %s", map_name, map_name);

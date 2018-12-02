@@ -94,7 +94,7 @@ create_dataset(char *dataset_name)
 	DatasetInterface *dataset;
 
 	if (!strcmp(dataset_name, "carmen"))
-		dataset = new DatasetCarmen(960, 1280, "/dados/data/data_20180907-2/", 1);
+		dataset = new DatasetCarmen(960, 1280, "/dados/data/data_log-mata-da-praia-20181130-test.txt", 0);
 		//dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180112-2/", 1);
 	else if (!strcmp(dataset_name, "kitti"))
 		dataset = new DatasetKitti("/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/", 1);
@@ -125,11 +125,11 @@ main(int argc, char **argv)
 	dataset->load_data(times, poses, odom);
 
 	ParticleFilter pf(30, 0.5, 0.5, degrees_to_radians(10),
-			0.1, degrees_to_radians(0.5),
-			0.01, 0.01, degrees_to_radians(0.5),
+			0.5, degrees_to_radians(2.5),
+			0.1, 0.1, degrees_to_radians(2.5),
 			100., 100., 100.);
 
-	GridMap map("/dados/maps/maps_20180112-2/", 50., 50., 0.2, GridMapTile::TYPE_SEMANTIC);
+	GridMap map("/dados/maps/maps_log-mata-da-praia-20181130/", 50., 50., 0.2, GridMapTile::TYPE_VISUAL);
 	run_particle_filter(pf, map, poses, odom, times, cloud, transformed_cloud, *dataset);
 
 	printf("Done\n");

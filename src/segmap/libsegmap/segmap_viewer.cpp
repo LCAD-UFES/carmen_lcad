@@ -183,7 +183,7 @@ view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses, Pose
 	//draw_poses(map, map_img, poses, Scalar(0, 255, 0));
 
 	for (int i = 0; i < pf._n; i++)
-		draw_particle(map_img, pf._p[i], map, Scalar(0, 0, 0));
+		draw_particle(map_img, pf._p[i], map, Scalar(255, 255, 255));
 
 	Pose2d mean = pf.mean();
 	draw_pose(map, map_img, mean, Scalar(0, 255, 255));

@@ -64,7 +64,7 @@ def preprocess_log(log_path):
     # run loop closures
     loops_path = output_dir + '/loops.txt'
     cmd = './graphslam_fast/generate_loop_closures ' + sync_xyz_path + ' ' + loops_path
-    #run_cmd(cmd)
+    run_cmd(cmd)
     
     # optimize poses
     cmd = './graphslam_fast/graphslam ' + sync_xyz_path + ' ' + loops_path + ' ' + odom_calib_path + ' ' + output_dir + '/optimized.txt'
