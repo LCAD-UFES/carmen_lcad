@@ -5,7 +5,7 @@ int camera;
 int camera_side;
 char **classes_names;
 void *network_struct;
-carmen_localize_ackerman_globalpos_message *globalpos_msg;
+carmen_localize_ackerman_globalpos_message *globalpos_msg = NULL;
 carmen_velodyne_partial_scan_message *velodyne_msg;
 carmen_camera_parameters camera_parameters;
 carmen_pose_3D_t velodyne_pose;
@@ -23,6 +23,9 @@ double
 compute_distance_to_the_traffic_light()
 {
     double nearest_traffic_light_distance = DBL_MAX;
+
+    if (globalpos_msg == NULL)
+    	return DBL_MAX;
 
     for (unsigned int i = 0; i < annotation_vector.size(); i++)
     {
@@ -378,7 +381,7 @@ compute_annotation_specifications(vector<vector<image_cartesian>> traffic_light_
 			mean_y += traffic_light_clusters[i][j].cartesian_y;
 			mean_z += traffic_light_clusters[i][j].cartesian_z;
 		}
-		printf("TL %lf %lf %lf Cluster Size %d\n", mean_x/j, mean_y/j, mean_z/j, (int)traffic_light_clusters[i].size());
+		printf("TL %lf %lf %lf %lf Cluster Size %d\n", globalpos_msg->globalpos.theta, mean_x/j, mean_y/j, mean_z/j, (int)traffic_light_clusters[i].size());
 
 		mean_x = 0.0;
 		mean_y = 0.0;
@@ -575,8 +578,6 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 		else
 			printf("No Traffic Light Detected!\n");
 
-		if (globalpos_msg == NULL)
-			return;
 		tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
 				0.0, 0.0, globalpos_msg->globalpos.theta);
 
