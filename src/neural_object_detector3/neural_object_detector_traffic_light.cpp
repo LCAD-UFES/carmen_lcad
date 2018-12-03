@@ -13,7 +13,37 @@ carmen_pose_3D_t camera_pose;
 carmen_pose_3D_t board_pose;
 tf::Transformer transformer;
 
+vector <carmen_pose_3D_t> annotation_vector;
+carmen_pose_3D_t nearest_traffic_light_pose;
+
 #define MAX_TRAFFIC_LIGHT_DIST 50
+
+
+double
+compute_distance_to_the_traffic_light()
+{
+    double nearest_traffic_light_distance = DBL_MAX;
+
+    for (unsigned int i = 0; i < annotation_vector.size(); i++)
+    {
+    		double distance = sqrt(pow(globalpos_msg->globalpos.x - annotation_vector[i].position.x, 2) +
+							pow(globalpos_msg->globalpos.y - annotation_vector[i].position.y, 2));
+    		if (distance < nearest_traffic_light_distance)
+    		{
+    			bool orientation_ok = fabs(carmen_radians_to_degrees(globalpos_msg->globalpos.theta - annotation_vector[i].orientation.yaw)) < 10.0 ? 1 : 0;
+
+    			bool behind = fabs(carmen_normalize_theta((atan2(globalpos_msg->globalpos.y - annotation_vector[i].position.y,
+    							globalpos_msg->globalpos.x - annotation_vector[i].position.x) - M_PI - globalpos_msg->globalpos.theta))) > M_PI_2;
+
+				if (distance <= MAX_TRAFFIC_LIGHT_DISTANCE && orientation_ok && behind == false)
+				{
+	    			nearest_traffic_light_distance = distance;
+	    			nearest_traffic_light_pose = annotation_vector[i];
+				}
+    		}
+    }
+    return (nearest_traffic_light_distance);
+}
 
 
 void
@@ -536,33 +566,30 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
 
-	if (globalpos_msg == NULL)
-		return;
-	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
-			0.0, 0.0, globalpos_msg->globalpos.theta);
+	double distance_to_tf = compute_distance_to_the_traffic_light();
 
-	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757493.704663, -364151.945918, 5.428209,
-	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757498.416323, -364158.291071, 5.631667,
-	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7757492.914793, -364155.064267, 5.450262,
-	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7755670.270790, -365305.500336, 2.437284,
-	//carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7755685.885188, -365308.134036, 4.194098,
-	carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(7755665.126833, -365311.600079, 3.668485,
-			world_to_camera_pose, camera_parameters, resized_w, resized_h);
-
-	if (predictions.size() > 0)
-		printf ("Distance %lf\n", sqrt((7755687.117894 - globalpos_msg->globalpos.x) * (7755687.117894 - globalpos_msg->globalpos.x) +
-				(-365310.704539 - globalpos_msg->globalpos.y) * (-365310.704539 - globalpos_msg->globalpos.y)));
-	else
-		printf("No Traffic Light Detected!\n");
-
-	if (predictions.size() > 0)
+	if (distance_to_tf < DBL_MAX)
 	{
-		carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotation_on_image);
-		publish_traffic_lights(&traffic_light_message);
+		if (predictions.size() > 0)
+			printf("Distance %lf\n", distance_to_tf);
+		else
+			printf("No Traffic Light Detected!\n");
+
+		if (globalpos_msg == NULL)
+			return;
+		tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
+				0.0, 0.0, globalpos_msg->globalpos.theta);
+
+		carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(nearest_traffic_light_pose.position.x, nearest_traffic_light_pose.position.y, nearest_traffic_light_pose.position.z,
+				world_to_camera_pose, camera_parameters, resized_w, resized_h);
+
+		if (predictions.size() > 0)
+		{
+			carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotation_on_image);
+			publish_traffic_lights(&traffic_light_message);
+		}
+		circle(open_cv_image, Point((int)tf_annotation_on_image.x, (int)tf_annotation_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
 	}
-
-	circle(open_cv_image, Point((int)tf_annotation_on_image.x, (int)tf_annotation_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
-
 	display(open_cv_image, predictions, fps, resized_w, resized_h);
 }
 
@@ -610,13 +637,42 @@ subscribe_messages()
 
 
 void
+load_traffic_light_annotation_file(char* path)
+{
+	carmen_pose_3D_t pose;
+	FILE *annotation_file = fopen(path,"r");
+
+	int annotation_type, annotation_code;
+	char line[1024], annotation_description[1024];
+
+	while (fgets(line, 1023, annotation_file) != NULL)
+	{
+		sscanf(line, "%s %d %d %lf %lf %lf %lf\n", annotation_description, &annotation_type, &annotation_code,
+						&pose.orientation.yaw, &pose.position.x, &pose.position.y, &pose.position.z);
+
+		if (strcmp("RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT", annotation_description) == 0)
+		{
+			printf("%lf %lf %lf %lf\n", pose.orientation.yaw, pose.position.x, pose.position.y, pose.position.z);
+			pose.orientation.roll = 0.0;
+			pose.orientation.pitch = 0.0;
+			annotation_vector.push_back(pose);
+		}
+	}
+
+	fclose(annotation_file);
+}
+
+
+void
 read_parameters(int argc, char **argv)
 {
-	if ((argc != 3))
-		carmen_die("%s: Wrong number of parameters. neural_object_detector requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>", argv[0], argc - 1, argv[0]);
+	if ((argc != 4))
+		carmen_die("%s: Wrong number of parameters. neural_object_detector requires 3 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)> <rddf_file_path>\n", argv[0], argc - 1, argv[0]);
 
 	camera = atoi(argv[1]);             // Define the camera to be used
     camera_side = atoi(argv[2]);        // 0 For left image 1 for right image
+
+    load_traffic_light_annotation_file(argv[3]);
 
     int num_items;
 

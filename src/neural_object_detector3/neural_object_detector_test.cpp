@@ -7,8 +7,8 @@ void *network_struct;
 FILE*
 open_file(int argc, char **argv)
 {
-	if (argc < 2)
-		carmen_die("--- Wrong number of parameters. ---\nUsage: %s <image_list>\n", argv[0]);
+	if (argc < 3)
+		carmen_die("--- Wrong number of parameters. ---\nUsage: %s <image_list> <output_folder>\n", argv[0]);
 
 	FILE* file = fopen(argv[1], "r");
 
@@ -73,6 +73,7 @@ replace_file_type(char* image_file)
 			image_file[i+1] = 't';
 			image_file[i+2] = 'x';
 			image_file[i+3] = 't';
+			image_file[i+4] = '\0';
 			return 1;
 		}
 	}
@@ -82,7 +83,25 @@ replace_file_type(char* image_file)
 
 
 void
-run_yolo_on_dataset(FILE* image_list, bool show_detections)
+compute_output_file_path(char *output_dir, char *image_path)
+{
+	char *tok = strtok (image_path, "/");
+	char *path = tok;
+
+	while (tok != NULL)
+	{
+		path = tok;
+		tok = strtok (NULL, "/");
+	}
+
+	sprintf(image_path, "%s/%s", output_dir, path);
+
+	replace_file_type(image_path);
+}
+
+
+void
+run_yolo_on_dataset(FILE* image_list, bool show_detections, char *output_dir)
 {
 	Mat open_cv_image;
 	char file_path[1024];
@@ -101,11 +120,10 @@ run_yolo_on_dataset(FILE* image_list, bool show_detections)
 		}
 		printf("Loading Image %s\n", file_path);
 
-		if (replace_file_type(file_path) == 0)
-			continue;
-
 		//Rect myROI(280, 70, 720, 480);               // Uncomment these lines to select a crop region on the image
 		//image = image(myROI);
+
+		compute_output_file_path(output_dir, file_path);
 
 		printf("Saving Result File %s\n", file_path);
 
@@ -147,17 +165,17 @@ main(int argc, char **argv)
 {
 	FILE* image_list = open_file(argc, argv);
 
-//	int status = mkdir(argv[2], 0777);
-//	if (status == -1)
-//		printf("Warning: Directory %s already exists.\n", argv[2]);
-//	else if (status != 0)
-//		exit(printf("ERROR: Could not create directory '%s'\n", argv[2]));
+	int status = mkdir(argv[2], 0777);
+	if (status == -1)
+		printf("Warning: Directory %s already exists.\n", argv[2]);
+	else if (status != 0)
+		exit(printf("ERROR: Could not create directory '%s'\n", argv[2]));
 
 	bool show_detections = find_show_arg(argc, argv);
 
 	initializer();
 
-    run_yolo_on_dataset(image_list, show_detections);
+    run_yolo_on_dataset(image_list, show_detections, argv[2]);
 
     fclose (image_list);
 
