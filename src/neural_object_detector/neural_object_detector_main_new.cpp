@@ -91,8 +91,11 @@ no_out_mean(vector<double> values)// calculates the mean value removing outlayer
 	return sum/elements;
 }
 
-double slope(const vector<double>& x, const vector<double>& y)
+double slope_angle(const vector<double>& x, const vector<double>& y)
 {
+	if (x.size() < 2)
+		return 0.0;
+
     double n = x.size();
 
     double avgX = accumulate(x.begin(), x.end(), 0.0) / n;
@@ -107,10 +110,12 @@ double slope(const vector<double>& x, const vector<double>& y)
     }
 
     if(denominator == 0){
-        return 1.0;
+        return 0.0;
     }
 
-    return numerator / denominator;
+    if (x[0] > x[x.size()-1])
+    	return (numerator / denominator)+3.14;
+    return atan2(numerator,denominator);
 }
 
 void update_world_position(pedestrian* p, double new_x, double new_y, double new_timestamp)
@@ -127,7 +132,7 @@ void update_world_position(pedestrian* p, double new_x, double new_y, double new
 	vector<double> vely_vect;
 	vector<double> valid_x;
 	vector<double> valid_y;
-
+	vector<double> ori;
 
 	int i = 0;
 	for(i = 0; i<P_BUFF_SIZE-1; i++)
@@ -142,12 +147,18 @@ void update_world_position(pedestrian* p, double new_x, double new_y, double new
 
 		//printf("DELTAS: %f ; %f ; %f --- Vel = %f\n",delta_x, delta_y, delta_t,new_vel);
 		velx_vect.push_back(delta_x/delta_t);
-		velx_vect.push_back(delta_y/delta_t);
+		vely_vect.push_back(delta_y/delta_t);
 		valid_x.push_back(p->x_world[idx]);
 		valid_y.push_back(p->y_world[idx]);
+		ori.push_back(atan2(delta_y,delta_x));
 	}
 
-	p->orientation = atan(slope(valid_x,valid_y));
+	double slope = carmen_normalize_theta(slope_angle(valid_x,valid_y));
+	double mean_ori = carmen_normalize_theta(no_out_mean(ori));
+	if (abs(carmen_normalize_theta(mean_ori-slope)) < abs(carmen_normalize_theta(mean_ori-slope-M_PI)))
+		p->orientation = slope;
+	else
+		p->orientation = carmen_normalize_theta(slope-M_PI);
 	double velx = no_out_mean(velx_vect);
 	double vely = no_out_mean(vely_vect);
 	p->velocity = sqrt(velx*velx+vely*vely);
@@ -254,14 +265,14 @@ update_simulated_pedestrians (double timestamp)
 			simulated_pedestrians[i].p = new_ped;
 			update_world_position(&simulated_pedestrians[i].p, simulated_pedestrians[i].x,
 						simulated_pedestrians[i].y, timestamp);
-			printf("[%03d] - Created\n",simulated_pedestrians[i].p.track_id);
+			//printf("[%03d] - Created\n",simulated_pedestrians[i].p.track_id);
 		} 		
 		else if (simulated_pedestrians[i].active)
 		{
 			if (timestamp > simulated_pedestrians[i].stop_time)
 			{
 				simulated_pedestrians[i].active = false;
-				printf("[%03d] - Deleted\n",simulated_pedestrians[i].p.track_id);
+				//printf("[%03d] - Deleted\n",simulated_pedestrians[i].p.track_id);
 				continue;
 			}
 			simulated_pedestrians[i].p.active = true;
@@ -272,7 +283,7 @@ update_simulated_pedestrians (double timestamp)
 			simulated_pedestrians[i].y += sin(simulated_pedestrians[i].orientation)*ds;
 			update_world_position(&simulated_pedestrians[i].p, simulated_pedestrians[i].x,
 						simulated_pedestrians[i].y, timestamp);
-			printf("[%03d] - Updated\n",simulated_pedestrians[i].p.track_id);	
+			//printf("[%03d] - Updated\n",simulated_pedestrians[i].p.track_id);
 		}
 	}
 }
@@ -729,6 +740,7 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 			msg.point_clouds[l].b = 0.0;
 
 			msg.point_clouds[l].linear_velocity = tmp_predictions[i].velocity;
+			printf("%f\n",tmp_predictions[i].velocity);
 			msg.point_clouds[l].orientation = tmp_predictions[i].orientation;
 
 			msg.point_clouds[l].length = 4.5;
@@ -1238,7 +1250,7 @@ initialize_yolo_DRKNET()
 	//namedWindow( "Display window", WINDOW_AUTOSIZE);
 
 	//CREATE SIMULATED PEDESTRIANS
-//	fake_pedestrian new_p;
+	fake_pedestrian new_p;
 //	new_p.start_time = 1515703040.0;
 //	new_p.stop_time = 1515703060.0;
 //	new_p.x = 7757327.00;
@@ -1256,6 +1268,15 @@ initialize_yolo_DRKNET()
 //	new_p2.velocity = 2.0;
 //	new_p2.orientation = 1.5;
 //	simulated_pedestrians.push_back(new_p2);
+
+	new_p.start_time = 0.0;
+	new_p.stop_time = 9915703060.0;
+	new_p.x = 7757918.28;
+	new_p.y = -363601.10;
+	new_p.active = false;
+	new_p.velocity = 1.0;
+	new_p.orientation = 2.988+M_PI;
+	simulated_pedestrians.push_back(new_p);
 }
 
 
