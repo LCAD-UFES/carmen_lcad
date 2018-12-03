@@ -16,7 +16,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L$(CARMEN_HOME)/sharedlib/libtf/src -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
-LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lbehavior_selector_interface -lrddf_interface -lparam_interface -ltf -lrt -lLinearMath -lboost_thread-mt \
+LFLAGS += -lplayback_interface -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lbehavior_selector_interface -lrddf_interface -lparam_interface -ltf -lrt -lLinearMath -lboost_thread-mt \
           -lboost_signals -lboost_system -lmoving_objects_interface -llocalize_ackerman_interface -lvelodyne_camera_calibration \
           -lcamera_boxes_to_world -ldarknet `pkg-config opencv --libs` -ldbscan `pkg-config --cflags opencv` `pkg-config --libs opencv` \
 		  -llaser_ldmrs_interface -llaser_ldmrs_utils
