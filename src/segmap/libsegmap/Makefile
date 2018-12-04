@@ -1,6 +1,6 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
-MODULE_NAME = LIB SEG MAP
+MODULE_NAME = LIB_SEG_MAP
 MODULE_COMMENT = Library for the segmap module
 
 LINK = g++ 

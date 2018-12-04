@@ -24,6 +24,8 @@ protected:
 	int _use_segmented;
 
 public:
+	vector<double> _times;
+	vector<double> _camera_times;
 	vector<Pose2d> _gps;
 	vector<int> _gps_quality;
 

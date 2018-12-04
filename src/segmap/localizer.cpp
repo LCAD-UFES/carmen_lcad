@@ -45,7 +45,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 
 	int last_reload = 0;
 	Matrix<double, 4, 4> vel2car = dataset.transform_vel2car();
-	int step = 10;
+	int step = 1;
 
 	for (int i = step; i < times.size(); i += step)
 	{
@@ -54,7 +54,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 
 		pf.predict(odom[i].first, odom[i].second, times[i] - times[i - step]);
 		//view(pf, map, poses, gps, NULL, NULL);
-		dataset.load_fused_pointcloud_and_camera(i, cloud, 0);
+		dataset.load_fused_pointcloud_and_camera(i, cloud, 1);
 
 		//if (i % 1 == 0 && i > 0)
 		//if (i > 16)
@@ -94,7 +94,7 @@ create_dataset(char *dataset_name)
 	DatasetInterface *dataset;
 
 	if (!strcmp(dataset_name, "carmen"))
-		dataset = new DatasetCarmen(960, 1280, "/dados/data/data_log-mata-da-praia-20181130-test.txt", 0);
+		dataset = new DatasetCarmen(960, 1280, "/dados/data/data_log_aeroporto_vila_velha_20170726.txt/", 0);
 		//dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180112-2/", 1);
 	else if (!strcmp(dataset_name, "kitti"))
 		dataset = new DatasetKitti("/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/", 1);
@@ -129,7 +129,7 @@ main(int argc, char **argv)
 			0.1, 0.1, degrees_to_radians(2.5),
 			100., 100., 100.);
 
-	GridMap map("/dados/maps/maps_log-mata-da-praia-20181130/", 50., 50., 0.2, GridMapTile::TYPE_VISUAL);
+	GridMap map("/dados/maps/maps_log_aeroporto_vila_velha_20170726-2.txt", 50., 50., 0.2, GridMapTile::TYPE_VISUAL);
 	run_particle_filter(pf, map, poses, odom, times, cloud, transformed_cloud, *dataset);
 
 	printf("Done\n");

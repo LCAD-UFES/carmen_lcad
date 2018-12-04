@@ -37,6 +37,7 @@ public:
 	int _n_fields_by_cell;
 	int _map_type;
 	string _tiles_dir;
+	int _save_maps;
 
 	void _initialize_map();
 	void _initialize_derivated_values();
@@ -44,7 +45,8 @@ public:
 
 	GridMapTile(double point_y, double point_x,
 			double height_meters, double width_meters,
-			double resolution, int map_type, string tiles_dir);
+			double resolution, int map_type, string tiles_dir,
+			int save_maps=0);
 
 	~GridMapTile();
 
@@ -68,6 +70,7 @@ public:
 	double _tile_width_meters;
 	int _middle_tile;
 	int _map_type;
+	int _save_maps;
 
 	double m_by_pixels;
 	double pixels_by_m;
@@ -77,7 +80,7 @@ public:
 
 	GridMapTile *_tiles[_N_TILES][_N_TILES];
 
-	GridMap(string tiles_dir, double tile_height_meters, double tile_width_meters, double resolution, int map_type);
+	GridMap(string tiles_dir, double tile_height_meters, double tile_width_meters, double resolution, int map_type, int save_maps=0);
 	~GridMap();
 	GridMapTile* _reload_tile(double x, double y);
 	void _reload_tiles(double robot_x, double robot_y);

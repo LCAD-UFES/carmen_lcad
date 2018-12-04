@@ -76,7 +76,8 @@ GridMapTile::_initialize_derivated_values()
 
 GridMapTile::GridMapTile(double point_y, double point_x,
 		double height_meters, double width_meters,
-		double resolution, int map_type, string tiles_dir)
+		double resolution, int map_type, string tiles_dir,
+		int save_maps)
 {
 	// map tile origin
 	_xo = floor(point_x / width_meters) * width_meters;
@@ -86,6 +87,7 @@ GridMapTile::GridMapTile(double point_y, double point_x,
 	_m_by_pixel = resolution;
 	_map_type = map_type;
 	_tiles_dir = tiles_dir;
+	_save_maps = save_maps;
 
 	//printf("Creating tile with origin: %lf %lf\n", _xo, _yo);
 
@@ -96,7 +98,9 @@ GridMapTile::GridMapTile(double point_y, double point_x,
 
 GridMapTile::~GridMapTile()
 {
-	save();
+	if (_save_maps)
+		save();
+
 	free(_map);
 }
 
@@ -288,7 +292,7 @@ GridMapTile::to_image()
 }
 
 
-GridMap::GridMap(string tiles_dir, double tile_height_meters, double tile_width_meters, double resolution, int map_type)
+GridMap::GridMap(string tiles_dir, double tile_height_meters, double tile_width_meters, double resolution, int map_type, int save_maps)
 {
 	_tiles_dir = tiles_dir;
 	_tile_height_meters = tile_height_meters;
@@ -296,6 +300,7 @@ GridMap::GridMap(string tiles_dir, double tile_height_meters, double tile_width_
 	m_by_pixels = resolution;
 	pixels_by_m = 1. / resolution;
 	_map_type = map_type;
+	_save_maps = save_maps;
 
 	for (int i = 0; i < _N_TILES; i++)
 		for (int j = 0; j < _N_TILES; j++)
@@ -311,7 +316,8 @@ GridMap::GridMap(string tiles_dir, double tile_height_meters, double tile_width_
 
 GridMap::~GridMap()
 {
-	save();
+	if (_save_maps)
+		save();
 }
 
 
@@ -319,7 +325,7 @@ GridMapTile*
 GridMap::_reload_tile(double x, double y)
 {
 	return new GridMapTile(y, x, _tile_height_meters,
-			_tile_width_meters, m_by_pixels, _map_type, _tiles_dir);
+			_tile_width_meters, m_by_pixels, _map_type, _tiles_dir, _save_maps);
 }
 
 

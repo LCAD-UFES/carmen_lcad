@@ -134,7 +134,7 @@ find_loop_closure_poses(vector<Data> &lines, vector<pair<int, int>> &loop_closur
 
 
 PointXYZRGB
-compute_point_from_velodyne(double v_angle, double h_angle, double radius, unsigned char intensity, unsigned char r, unsigned char g, unsigned char b)
+compute_point_from_velodyne(double v_angle, double h_angle, double radius, unsigned char intensity __attribute__((unused)), unsigned char r, unsigned char g, unsigned char b)
 {
     // build a new point
     PointXYZRGB point;
@@ -237,7 +237,7 @@ run_gicp(vector<Data> &lines, vector<pair<int, int>> &loop_closure_indices, vect
 	#pragma omp parallel for default(none) shared(lines, transforms, converged, loop_closure_indices) private(i, gicp)
 	for (i = 0; i < loop_closure_indices.size(); i++)
 	{
-		printf("%d of %d\n", i, loop_closure_indices.size());
+		printf("%d of %ld\n", i, loop_closure_indices.size());
 
 		PointCloud<PointXYZRGB>::Ptr source(new PointCloud<PointXYZRGB>), target(new PointCloud<PointXYZRGB>);
 		PointCloud<PointXYZRGB>::Ptr source_world(new PointCloud<PointXYZRGB>), target_world(new PointCloud<PointXYZRGB>);

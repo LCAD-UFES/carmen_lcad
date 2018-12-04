@@ -23,71 +23,6 @@ double velodyne_vertical_angles[32] =
 
 int velodyne_ray_order[32] = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31};
 
-const double TIME_SPENT_IN_EACH_SCAN = 0.000046091445;
-const double distance_between_rear_wheels = 1.535;
-const double distance_between_front_and_rear_axles = 2.625;
-const double distance_between_front_car_and_front_wheels = 0.85;
-const double distance_between_rear_car_and_rear_wheels = 0.96;
-const double car_length = (distance_between_front_and_rear_axles +
-						distance_between_rear_car_and_rear_wheels +
-						distance_between_front_car_and_front_wheels);
-const double car_width = distance_between_rear_wheels;
-
-
-class Data
-{
-public:
-	char cloud_path[128];
-	int n_rays;
-	double cloud_time;
-
-	char image_path[128];
-	int w, h, size, n;
-	double image_time;
-
-	double x, y, quality, gps_time;
-	double angle, angle_quality, gps2_time;
-
-	double v, phi, ack_time;
-};
-
-
-void
-load_data(char *name, vector<Data> &lines)
-{
-	FILE *f = fopen(name, "r");
-	char dummy[128];
-	int idummy;
-
-	while (!feof(f))
-	{
-		Data d;
-
-		char c = fgetc(f);
-		if (c != 'V')
-			continue;
-
-		fscanf(f, "\n%s %s %d %lf ",
-				dummy, d.cloud_path, &d.n_rays, &d.cloud_time);
-
-		fscanf(f, " %s %s %d %d %d %d %lf ",
-				dummy, d.image_path, &d.w, &d.h, &d.size, &d.n, &d.image_time);
-
-		fscanf(f, " %s %d %lf %lf %lf %lf ",
-			dummy, &idummy, &d.x, &d.y, &d.quality, &d.gps_time);
-
-		fscanf(f, " %s %d %lf %lf %lf ",
-			dummy,  &idummy, &d.angle, &d.angle_quality, &d.gps2_time);
-
-		fscanf(f, " %s %lf %lf %lf\n",
-			dummy, &d.v, &d.phi, &d.ack_time);
-
-		lines.push_back(d);
-	}
-
-	fclose(f);
-}
-
 
 PointXYZRGB
 compute_point_from_velodyne(double v_angle, double h_angle, double radius, unsigned char intensity)
@@ -116,11 +51,10 @@ compute_point_from_velodyne(double v_angle, double h_angle, double radius, unsig
 
 
 void
-load_pointcloud(Data &d, PointCloud<PointXYZRGB>::Ptr cloud)
+load_pointcloud(char *path, int n_rays, PointCloud<PointXYZRGB>::Ptr cloud)
 {
-	FILE *f = fopen(d.cloud_path, "rb");
+	FILE *f = fopen(path, "rb");
 
-	double th, ds;
 	double h_angle, v_angle;
 	unsigned short distances[32];
 	unsigned char intensities[32];
@@ -128,9 +62,7 @@ load_pointcloud(Data &d, PointCloud<PointXYZRGB>::Ptr cloud)
 
 	cloud->clear();
 
-	th = 0;
-
-	for(int i = 0; i < d.n_rays; i++)
+	for(int i = 0; i < n_rays; i++)
 	{
 		fread(&h_angle, sizeof(double), 1, f);
 	    fread(distances, sizeof(unsigned short), 32, f);
@@ -145,15 +77,6 @@ load_pointcloud(Data &d, PointCloud<PointXYZRGB>::Ptr cloud)
 	    	v_angle = M_PI * v_angle / 180.;
 
 	    	PointXYZRGB point = compute_point_from_velodyne(v_angle, h_angle, range, intensities[velodyne_ray_order[j]]);
-
-	    	if (range > 70.  || (fabs(point.x) < 4. && fabs(point.y) < 2.)) // || point.z < -1.5 || point.z > 1.5)
-	    		continue;
-
-	    	ds = d.v * (i * TIME_SPENT_IN_EACH_SCAN);
-	    	point.x += ds * cos(th);
-	    	point.y += ds * sin(th);
-	    	th = carmen_normalize_theta(ds * (tan(d.phi) / distance_between_front_and_rear_axles));
-
 	    	cloud->push_back(point);
 	    }
 	}
@@ -167,27 +90,43 @@ main(int argc, char **argv)
 {
 	if (argc < 3)
 	{
-		printf("\nError: Use %s <sync_file> <output_dir>\n\n", argv[0]);
+		printf("\nError: Use %s <file-list_velodynes> <output_dir>\n\n", argv[0]);
 		exit(0);
 	}
 
-	vector<Data> lines;
-	char str[256];
-
-	load_data(argv[1], lines);
-
+	int n_rays;
+	double time;
+	char str[256], dummy[256], path[256];
 	sprintf(str, "rm -rf %s && mkdir %s", argv[2], argv[2]);
 	printf("Command: %s\n", str);
 	system(str);
 
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 
-	for (int i = 0; i < lines.size(); i++)
+	FILE *f = fopen(argv[1], "r");
+
+	if (f == NULL)
+		exit(printf("Error: file '%s' not found!\n", argv[1]));
+
+	int i = 0;
+	int success = 0;
+
+	while (!feof(f))
 	{
-		load_pointcloud(lines[i], cloud);
-		sprintf(str, "%s/%lf.ply", argv[2], lines[i].cloud_time);
-		printf("%d of %ld - Saving pointcloud %s\n", i+1, lines.size(), str);
+		success = fscanf(f, "\n%s %s %d %lf %s %s\n", dummy, path, &n_rays, &time, dummy, dummy);
+
+		if (success != 6)
+			continue;
+
+		load_pointcloud(path, n_rays, cloud);
+
+		sprintf(str, "%s/%lf.ply", argv[2], time);
 		pcl::io::savePLYFileBinary(str, *cloud);
+
+		if (i % 100 == 0)
+			printf("Saving pointcloud %d: %s\n", i+1, str);
+
+		i++;
 	}
 
 	return 0;

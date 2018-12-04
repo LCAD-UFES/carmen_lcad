@@ -305,7 +305,7 @@ create_dead_reckoning(vector<Data> &input_data, vector<SE2> &dead_reckoning, dou
 
 
 void
-load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_data, SparseOptimizer *optimizer,
+load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_data __attribute__((unused)), SparseOptimizer *optimizer,
     double mult_v, double mult_phi, double add_phi)
 {
 	vector<SE2> dead_reckoning;

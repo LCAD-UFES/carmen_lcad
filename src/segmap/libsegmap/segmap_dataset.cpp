@@ -22,7 +22,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 	cloud->clear();
 
 	load_pointcloud(i, raw_cloud);
-	Mat img = load_image(i);
+	Mat img = load_image(i+0);
 
 	Mat viewer_img;
 
@@ -148,9 +148,10 @@ Mat
 DatasetCarmen::load_image(int i)
 {
 	if (_use_segmented)
-		sprintf(_name, "%s/semantic/%010d.png", _path.c_str(), i);
+		sprintf(_name, "%s/semantic/%lf-r.png", _path.c_str(), _camera_times[i]);
 	else
-		sprintf(_name, "%s/bb3/%010d.png", _path.c_str(), i);
+		//sprintf(_name, "%s/bb3/%010d.png", _path.c_str(), i);
+		sprintf(_name, "%s/bb3/%lf-r.png", _path.c_str(), _camera_times[i]);
 
 	Mat raw_img = imread(_name);
 
@@ -185,7 +186,7 @@ DatasetCarmen::load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud)
 {
 	int success;
 
-	sprintf(_name, "%s/velodyne/%010d.ply", _path.c_str(), i);
+	sprintf(_name, "%s/velodyne/%lf.ply", _path.c_str(), _times[i]);
 	success = pcl::io::loadPLYFile(_name, *cloud);
 
 	if (success < 0 || cloud->size() == 0)
@@ -231,18 +232,24 @@ DatasetCarmen::load_data(vector<double> &times,
 
 	p0.x = 7757677.517731;
 	p0.y = -363602.117405;
-	p0.th = 0.645639;
+	p0.th = 0.;
+
+	_camera_times.clear();
+	double camera_time;
 
 	while (!feof(f))
 	{
-		fscanf(f, "\n%s %lf %lf %lf %lf %s %lf %lf %s\n",
-				dummy, &x, &y, &th, &t, dummy, &v, &phi, dummy);
+		fscanf(f, "\n%s %lf %lf %lf %lf %lf %lf %lf %s\n",
+				dummy, &x, &y, &th, &t, &camera_time, &v, &phi, dummy);
 
 		Pose2d pose(x - p0.x, y - p0.y, normalize_theta(th));
 
 		phi = normalize_theta(-phi);
 		poses.push_back(Pose2d::to_matrix(pose));
+
 		times.push_back(t);
+		_times.push_back(t);
+		_camera_times.push_back(camera_time);
 		odom.push_back(pair<double, double>(v, phi));
 	}
 

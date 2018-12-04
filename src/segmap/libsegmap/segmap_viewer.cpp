@@ -142,7 +142,7 @@ draw_pointcloud(Mat &m, PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap 
 
 
 void
-view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses, Pose2d current_pose,
+view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses __attribute__((unused)), Pose2d current_pose,
 	PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 	Matrix<double, 4, 4> *vel2car)
 {
