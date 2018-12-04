@@ -9,6 +9,7 @@ int camera;
 int camera_side;
 double meters_spacement;
 char *log_name;
+char *groundtruth_path;
 carmen_camera_parameters camera_parameters;
 carmen_pose_3D_t velodyne_pose;
 carmen_pose_3D_t bullbar_pose;
@@ -971,28 +972,48 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     }
 
     char arr[30];
+    char gt_path[60];
+    strcpy(gt_path, groundtruth_path);
     //memcpy(arr,&image_msg->timestamp,sizeof(image_msg->timestamp));
+    sprintf(gt_path,"%s/%lf", gt_path, image_msg->timestamp);
     sprintf(arr,"%lf", image_msg->timestamp);
     string str_arr (arr);
-    cout<<str_arr<<endl;
+    string str_gt_path (gt_path);
+    string groundtruth_folder = str_gt_path + "-r.txt";
     string detections_folder = str_folder_name + arr + "-r.txt";
 
-    FILE *f = fopen (detections_folder.c_str(), "w");
-    for (int i = 0; i < bounding_boxes_of_slices_in_original_image.size(); i++)
+
+    FILE *f_groundtruth = fopen (groundtruth_folder.c_str(), "r");
+    if (f_groundtruth != NULL)
     {
-    	bbox_t b = bounding_boxes_of_slices_in_original_image[i];
-    	int obj_id = b.obj_id;
-    	string obj_name;
-    	if (obj_names.size() > obj_id)
-    		obj_name = obj_names[obj_id];
+    	cout<<"entrei!"<<endl;
+    	char classe [10];
+    	float x1, y1, x2, y2;
+    	fscanf (f_groundtruth, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2);
+    	FILE *f_detection = fopen (detections_folder.c_str(), "w");
+    	for (int i = 0; i < bounding_boxes_of_slices_in_original_image.size(); i++)
+    	{
+    		bbox_t b = bounding_boxes_of_slices_in_original_image[i];
+    		int obj_id = b.obj_id;
+    		string obj_name;
+    		if (obj_names.size() > obj_id)
+    			obj_name = obj_names[obj_id];
 
-    	if (obj_name.compare("car") == 0)
-    		fprintf (f, "%s %f %.2f %.2f %.2f %.2f\n", "car", b.prob, (float)b.x, (float)b.y, (float)(b.x + b.w), (float)(b.y + b.h));
+    		if (obj_name.compare("car") == 0)
+    		{
+    			cv::Point l1, r1, l2, r2;
+    			l1.x = (int)x1; l1.y = (int)y1; //top left
+    			r1.x = (int)x2; l1.y = (int)y2; //right botton of groundtruth bbox
+    			l1.x = (int)b.x; l1.y = (int)b.y; //top left
+    			r1.x = (int)b.x + b.w; l1.y = (int)b.y + b.h; //right botton of detection
+    			if(rectangles_intersects(l1, r1, l2, r2))
+    				fprintf (f_detection, "%s %f %.2f %.2f %.2f %.2f\n", "car", b.prob, (float)b.x, (float)b.y, (float)(b.x + b.w), (float)(b.y + b.h));
+    		}
+
+    	}
+    	fclose (f_detection);
     }
-    fclose (f);
-
-
-
+    fclose (f_groundtruth);
 
     //cout<<image_msg->timestamp<<"-r.png"<<endl;
 //	publish_moving_objects_message(image_msg->timestamp);
@@ -1106,6 +1127,7 @@ read_parameters(int argc, char **argv)
     meters = argv[3];
     meters_spacement = atoi(meters);
     log_name = argv[4];
+    groundtruth_path = argv[5];
 
     int num_items;
 
@@ -1184,8 +1206,8 @@ read_parameters(int argc, char **argv)
 int
 main(int argc, char **argv)
 {
-    if ((argc != 5))
-        carmen_die("%s: Wrong number of parameters. neural_object_detector2 requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)> <meters_spacement> <log_name>\n",
+    if ((argc != 6))
+        carmen_die("%s: Wrong number of parameters. neural_object_detector2 requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)> <meters_spacement> <log_name> <groundtruth_path>\n",
                    argv[0], argc - 1, argv[0]);
 
     int device_id = 0;
