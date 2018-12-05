@@ -35,10 +35,10 @@ create_map(GridMap &map, vector<Matrix<double, 4, 4>> &poses, PointCloud<PointXY
 		PointCloud<PointXYZRGB>::Ptr transformed_cloud, DatasetInterface &dataset,
 		vector<pair<double, double>> &odom)
 {
-	pcl::visualization::PCLVisualizer viewer("Cloud Viewer");
-	viewer.setBackgroundColor(.5, .5, .5);
-	viewer.removeAllPointClouds();
-	viewer.addCoordinateSystem(10);
+	//pcl::visualization::PCLVisualizer viewer("Cloud Viewer");
+	//viewer.setBackgroundColor(.5, .5, .5);
+	//viewer.removeAllPointClouds();
+	//viewer.addCoordinateSystem(10);
 
 	Matrix<double, 4, 4> vel2car = dataset.transform_vel2car();
 
@@ -49,7 +49,7 @@ create_map(GridMap &map, vector<Matrix<double, 4, 4>> &poses, PointCloud<PointXY
 	{
 		printf("car pose: %lf %lf\n", poses[i](0, 3), poses[i](1, 3));
 
-		dataset.load_fused_pointcloud_and_camera(i, cloud, 1);
+		dataset.load_fused_pointcloud_and_camera(i, cloud, 0);
 		transform_pointcloud(cloud, transformed_cloud,
 			poses[i], vel2car, odom[i]);
 
@@ -58,12 +58,12 @@ create_map(GridMap &map, vector<Matrix<double, 4, 4>> &poses, PointCloud<PointXY
 		for (int j = 0; j < transformed_cloud->size(); j++)
 			map.add_point(transformed_cloud->at(j));
 
-		char *cloud_name = (char *) calloc (32, sizeof(char));
-		sprintf(cloud_name, "cloud%d", i);
-		//viewer.removeAllPointClouds();
-		viewer.addPointCloud(transformed_cloud, cloud_name);
-		viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, cloud_name);
-		cloud_names.push_back(cloud_name);
+		//char *cloud_name = (char *) calloc (32, sizeof(char));
+		//sprintf(cloud_name, "cloud%d", i);
+		////viewer.removeAllPointClouds();
+		//viewer.addPointCloud(transformed_cloud, cloud_name);
+		//viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, cloud_name);
+		//cloud_names.push_back(cloud_name);
 
 		//if (cloud_names.size() >= 10)
 		//{
@@ -78,7 +78,7 @@ create_map(GridMap &map, vector<Matrix<double, 4, 4>> &poses, PointCloud<PointXY
 		char c = ' ';
 		while (1)
 		{
-			viewer.spinOnce();
+			//viewer.spinOnce();
 			c = waitKey(5);
 
 			if (c == 's')

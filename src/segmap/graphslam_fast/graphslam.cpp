@@ -311,10 +311,10 @@ load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_d
 	vector<SE2> dead_reckoning;
 
 	add_vertices(input_data, optimizer);
-	create_dead_reckoning(input_data, dead_reckoning, mult_v, mult_phi, add_phi);
-    add_odometry_edges(input_data, optimizer, dead_reckoning, 1., 0.01);
+	//create_dead_reckoning(input_data, dead_reckoning, mult_v, mult_phi, add_phi);
+    //add_odometry_edges(input_data, optimizer, dead_reckoning, 1., 0.01);
 	add_gps_edges(input_data, optimizer, 1000.0, M_PI * 1e3);
-	add_loop_closure_edges(loop_data, optimizer, 1000.0, M_PI * 1e10);
+	//add_loop_closure_edges(loop_data, optimizer, 1000.0, M_PI * 1e10);
 
 	optimizer->save("poses_before.g2o");
 	cout << "load complete!" << endl;

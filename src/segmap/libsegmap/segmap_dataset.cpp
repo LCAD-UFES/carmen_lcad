@@ -186,8 +186,8 @@ DatasetCarmen::load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud)
 {
 	int success;
 
-	//sprintf(_name, "%s/velodyne/%lf.ply", _path.c_str(), _times[i]);
-	sprintf(_name, "%s/velodyne/%010d.ply", _path.c_str(), i);
+	sprintf(_name, "%s/velodyne/%lf.ply", _path.c_str(), _times[i]);
+	//sprintf(_name, "%s/velodyne/%010d.ply", _path.c_str(), i);
 
 	success = pcl::io::loadPLYFile(_name, *cloud);
 
