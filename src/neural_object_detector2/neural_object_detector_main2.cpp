@@ -1,5 +1,6 @@
 #include "neural_object_detector2.hpp"
 #include <carmen/tf.h>
+#include <sys/stat.h>
 
 #define SHOW_DETECTIONS
 
@@ -978,39 +979,51 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	before_first_file = false;
     	acessessing = true;
     	FILE *f_groundtruth = fopen (groundtruth_folder.c_str(), "r");
-    	char classe [10];
-    	float x1, y1, x2, y2;
-    	fscanf (f_groundtruth, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2);
-    	FILE *f_detection = fopen (detections_folder.c_str(), "w");
-    	for (int i = 0; i < bounding_boxes_of_slices_in_original_image.size(); i++)
+    	struct stat st;
+    	stat(groundtruth_folder.c_str(), &st);
+    	int size = st.st_size;
+    	if (size == 0)
     	{
-    		//cout<<"\t"<<i<<endl;
-    		bbox_t b = bounding_boxes_of_slices_in_original_image[i];
-    		int obj_id = b.obj_id;
-    		//cout<<"\t"<<" "<<obj_names[obj_id]<<" "<<(float)b.x<<" "<<(float)b.y<<" "<<(float)(b.x + b.w)<<" "<<(float)(b.y + b.h)<<endl;
-    		string obj_name;
-    		if (obj_names.size() > obj_id)
-    			obj_name = obj_names[obj_id];
-
-    		if (obj_name.compare("car") == 0)
-    		{
-    			cv::Point l1, r1, l2, r2;
-    			l1.x = (int)x1; l1.y = (int)y1; //top left
-    			r1.x = (int)x2; r1.y = (int)y2; //right botton of groundtruth bbox
-    			l2.x = (int)b.x; l2.y = (int)b.y; //top left
-    			r2.x = (int)b.x + b.w; r2.y = (int)b.y + b.h; //right botton of detection
-    			//cout<<x1<<" "<<x1<<" "
-    			//cout<<classe<<" "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<endl;
-    			if(rectangles_intersects(l1, r1, l2, r2))
-    			{
-    				//cout<<"\t"<<i<<" "<<obj_names[obj_id]<<endl;
-    				fprintf (f_detection, "%s %f %.2f %.2f %.2f %.2f\n", "car", b.prob, (float)b.x, (float)b.y, (float)(b.x + b.w), (float)(b.y + b.h));
-    			}
-    		}
-
+    		FILE *f_detection = fopen (detections_folder.c_str(), "w");
+    		fclose (f_detection);
+    		fclose (f_groundtruth);
     	}
-    	fclose (f_detection);
-    	fclose (f_groundtruth);
+    	else
+    	{
+    		char classe [10];
+    		float x1, y1, x2, y2;
+    		fscanf (f_groundtruth, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2);
+    		FILE *f_detection = fopen (detections_folder.c_str(), "w");
+    		for (int i = 0; i < bounding_boxes_of_slices_in_original_image.size(); i++)
+    		{
+    			//cout<<"\t"<<i<<endl;
+    			bbox_t b = bounding_boxes_of_slices_in_original_image[i];
+    			int obj_id = b.obj_id;
+    			//cout<<"\t"<<" "<<obj_names[obj_id]<<" "<<(float)b.x<<" "<<(float)b.y<<" "<<(float)(b.x + b.w)<<" "<<(float)(b.y + b.h)<<endl;
+    			string obj_name;
+    			if (obj_names.size() > obj_id)
+    				obj_name = obj_names[obj_id];
+
+    			if (obj_name.compare("car") == 0)
+    			{
+    				cv::Point l1, r1, l2, r2;
+    				l1.x = (int)x1; l1.y = (int)y1; //top left
+    				r1.x = (int)x2; r1.y = (int)y2; //right botton of groundtruth bbox
+    				l2.x = (int)b.x; l2.y = (int)b.y; //top left
+    				r2.x = (int)b.x + b.w; r2.y = (int)b.y + b.h; //right botton of detection
+    				//cout<<x1<<" "<<x1<<" "
+    				//cout<<classe<<" "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<endl;
+    				if(rectangles_intersects(l1, r1, l2, r2))
+    				{
+    					//cout<<"\t"<<i<<" "<<obj_names[obj_id]<<endl;
+    					fprintf (f_detection, "%s %f %.2f %.2f %.2f %.2f\n", "car", b.prob, (float)b.x, (float)b.y, (float)(b.x + b.w), (float)(b.y + b.h));
+    				}
+    			}
+
+    		}
+    		fclose (f_detection);
+    		fclose (f_groundtruth);
+    	}
     }
     else
     	acessessing = false;
