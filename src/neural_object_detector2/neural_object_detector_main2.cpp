@@ -19,6 +19,8 @@ carmen_pose_3D_t board_pose;
 tf::Transformer transformer;
 tf::Transformer transformer_sick;
 
+string str_folder_name;
+
 const unsigned int maxPositions = 50;
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
 vector<carmen_velodyne_partial_scan_message> velodyne_vector;
@@ -853,7 +855,8 @@ image_handler2(carmen_bumblebee_basic_stereoimage_message *image_msg)
 }
 
 
-
+bool before_first_file = true;
+bool acessessing = false;
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
@@ -891,53 +894,54 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     cv::Mat rgb_image_copy = rgb_image.clone();
 
     vector<bbox_t> bounding_boxes_of_slices_in_original_image;
-    //bounding_boxes_of_slices_in_original_image = darknet->detect(src_image, 0.2);
-    //detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Original Detection");
+    bounding_boxes_of_slices_in_original_image = darknet->detect(src_image, 0.2);
+    detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Original Detection");
 
-    carmen_pose_3D_t car_pose = filter_pitch(pose);
-    tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, car_pose);
-
-    cv::Mat out;
-    out = rgb_image;
-    rddf_points_in_image = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
-
-    vector<cv::Mat> scene_slices;
-    vector<cv::Mat> scene_slices_resized;
-    vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
-    t_transform_factor t;
-    scene_slices.push_back(out);
-    t.scale_factor_x = 1;
-    t.scale_factor_y = 1;
-    t.translate_factor_x = 0;
-    t.translate_factor_y = 0;
-    transform_factor_of_slice_to_original_frame.push_back(t);
-    get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image, distances_of_rddf_from_car);
-
-
+//    carmen_pose_3D_t car_pose = filter_pitch(pose);
+//    tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, car_pose);
+//
+//    cv::Mat out;
+//    out = rgb_image;
+//    rddf_points_in_image = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
+//
+//    vector<cv::Mat> scene_slices;
+//    vector<cv::Mat> scene_slices_resized;
+//    vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
+//    t_transform_factor t;
+//    scene_slices.push_back(out);
+//    t.scale_factor_x = 1;
+//    t.scale_factor_y = 1;
+//    t.translate_factor_x = 0;
+//    t.translate_factor_y = 0;
+//    transform_factor_of_slice_to_original_frame.push_back(t);
+//    get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image, distances_of_rddf_from_car);
+//
+//
+////    for (int i = 0; i < scene_slices.size(); i++)
+////    {
+////    	cv::Mat slice_resized;
+////    	cv::resize(scene_slices[i], slice_resized, size);
+////    	scene_slices_resized.push_back(slice_resized);
+////    	//cout<<"Slice_"<<i<<"size: "<<scene_slices[i].cols<<" "<<scene_slices[i].rows<<endl;
+////    	//printf("Scale factor of slice %d: %lf %lf\n",i,scale_factor_of_slice_to_original_frame[i].scale_factor_x,scale_factor_of_slice_to_original_frame[i].scale_factor_y);
+////    	//cout<<"Scale factor of slice "<<i<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_x<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_y<<endl;
+////    }
+//    //cout<<endl<<endl<<endl<<endl;
+//    vector<vector<bbox_t>> bounding_boxes_of_slices;
 //    for (int i = 0; i < scene_slices.size(); i++)
 //    {
-//    	cv::Mat slice_resized;
-//    	cv::resize(scene_slices[i], slice_resized, size);
-//    	scene_slices_resized.push_back(slice_resized);
-//    	//cout<<"Slice_"<<i<<"size: "<<scene_slices[i].cols<<" "<<scene_slices[i].rows<<endl;
-//    	//printf("Scale factor of slice %d: %lf %lf\n",i,scale_factor_of_slice_to_original_frame[i].scale_factor_x,scale_factor_of_slice_to_original_frame[i].scale_factor_y);
-//    	//cout<<"Scale factor of slice "<<i<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_x<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_y<<endl;
+//    	vector<bbox_t> predictions;
+//    	predictions = get_predictions_of_slices(i, scene_slices[i]);
+//    	bounding_boxes_of_slices.push_back(predictions);
 //    }
-    //cout<<endl<<endl<<endl<<endl;
-    vector<vector<bbox_t>> bounding_boxes_of_slices;
-    for (int i = 0; i < scene_slices.size(); i++)
-    {
-    	vector<bbox_t> predictions;
-    	predictions = get_predictions_of_slices(i, scene_slices[i]);
-    	bounding_boxes_of_slices.push_back(predictions);
-    }
-
-
-    bounding_boxes_of_slices_in_original_image = transform_bounding_boxes_of_slices(bounding_boxes_of_slices, transform_factor_of_slice_to_original_frame);
-
-    rgb_image = scene_slices[0];
-    src_image = scene_slices[0];
-    detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Foviated Detection");
+//
+//
+//    bounding_boxes_of_slices_in_original_image = transform_bounding_boxes_of_slices(bounding_boxes_of_slices, transform_factor_of_slice_to_original_frame);
+//
+//    rgb_image = scene_slices[0];
+//    src_image = scene_slices[0];
+//    //cout<<"qtd of detections: "<<bounding_boxes_of_slices_in_original_image.size()<<endl;
+//    detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Foviated Detection");
 
 
 //    for (int i = 1; i < scene_slices.size(); i++)
@@ -958,19 +962,6 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     //printf("%lf-r.png\n", image_msg->timestamp);
 
 
-    stringstream ss;
-    ss << meters_spacement;
-    string str_log_name(log_name);
-    char folder_name[100];
-    sprintf(folder_name, "%s_%.0lf_mts_detections/", log_name,meters_spacement);
-    string str_folder_name (folder_name);
-    string command;
-    if (access(str_folder_name.c_str(), F_OK) != 0)
-    {
-    	command = "mkdir " + str_folder_name;
-    	system(command.c_str());
-    }
-
     char arr[50];
     char gt_path[200];
     strcpy(gt_path, groundtruth_path);
@@ -982,10 +973,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     string groundtruth_folder = str_gt_path + "-r.txt";
     string detections_folder = str_folder_name + arr + "-r.txt";
 
-
-
     if (access(groundtruth_folder.c_str(), F_OK) == 0)
     {
+    	before_first_file = false;
+    	acessessing = true;
     	FILE *f_groundtruth = fopen (groundtruth_folder.c_str(), "r");
     	char classe [10];
     	float x1, y1, x2, y2;
@@ -993,9 +984,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	FILE *f_detection = fopen (detections_folder.c_str(), "w");
     	for (int i = 0; i < bounding_boxes_of_slices_in_original_image.size(); i++)
     	{
+    		//cout<<"\t"<<i<<endl;
     		bbox_t b = bounding_boxes_of_slices_in_original_image[i];
     		int obj_id = b.obj_id;
-    		cout<<"\t"<<" "<<obj_names[obj_id]<<" "<<(float)b.x<<" "<<(float)b.y<<" "<<(float)(b.x + b.w)<<" "<<(float)(b.y + b.h)<<endl;
+    		//cout<<"\t"<<" "<<obj_names[obj_id]<<" "<<(float)b.x<<" "<<(float)b.y<<" "<<(float)(b.x + b.w)<<" "<<(float)(b.y + b.h)<<endl;
     		string obj_name;
     		if (obj_names.size() > obj_id)
     			obj_name = obj_names[obj_id];
@@ -1004,12 +996,16 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     		{
     			cv::Point l1, r1, l2, r2;
     			l1.x = (int)x1; l1.y = (int)y1; //top left
-    			r1.x = (int)x2; l1.y = (int)y2; //right botton of groundtruth bbox
-    			l1.x = (int)b.x; l1.y = (int)b.y; //top left
-    			r1.x = (int)b.x + b.w; l1.y = (int)b.y + b.h; //right botton of detection
-    			cout<<classe<<" "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<endl;
+    			r1.x = (int)x2; r1.y = (int)y2; //right botton of groundtruth bbox
+    			l2.x = (int)b.x; l2.y = (int)b.y; //top left
+    			r2.x = (int)b.x + b.w; r2.y = (int)b.y + b.h; //right botton of detection
+    			//cout<<x1<<" "<<x1<<" "
+    			//cout<<classe<<" "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<endl;
     			if(rectangles_intersects(l1, r1, l2, r2))
+    			{
+    				//cout<<"\t"<<i<<" "<<obj_names[obj_id]<<endl;
     				fprintf (f_detection, "%s %f %.2f %.2f %.2f %.2f\n", "car", b.prob, (float)b.x, (float)b.y, (float)(b.x + b.w), (float)(b.y + b.h));
+    			}
     		}
 
     	}
@@ -1017,7 +1013,14 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	fclose (f_groundtruth);
     }
     else
-    	cout<<"Could not open: "<<groundtruth_folder<<endl;
+    	acessessing = false;
+
+    if (before_first_file == false && acessessing == false)
+    {
+    	cout<<"database_completed!"<<endl;
+    	exit(0);
+    }
+    	//cout<<"Could not open: "<<groundtruth_folder<<endl;
 
 
 
@@ -1241,6 +1244,18 @@ main(int argc, char **argv)
     signal(SIGINT, shutdown_module);
 
     read_parameters(argc, argv);
+    stringstream ss;
+    ss << meters_spacement;
+    string str_log_name(log_name);
+    char folder_name[100];
+    sprintf(folder_name, "%s_%.0lf_mts_detections/", log_name,meters_spacement);
+    str_folder_name = folder_name;
+    string command;
+    if (access(str_folder_name.c_str(), F_OK) != 0)
+    {
+    	command = "mkdir " + str_folder_name;
+    	system(command.c_str());
+    }
 
     initialize_transformations(board_pose, camera_pose, &transformer);
     initialize_transformations(board_pose, camera_pose, &transformer_sick);
