@@ -5,9 +5,12 @@
 #include <opencv/cv.h>
 #include <vector>
 #include <Eigen/Core>
+#include <pcl/common/transforms.h>
+#include "segmap_pose2d.h"
 
 using namespace cv;
 using namespace std;
+using namespace pcl;
 using namespace Eigen;
 
 
@@ -78,5 +81,20 @@ void draw_rectangle(Mat &img,
 void print_poses(vector<Matrix<double, 4, 4>> &poses);
 
 double dist2d(double x1, double y1, double x2, double y2);
+
+void ackerman_motion_model(Pose2d &pose, double v, double phi, double dt);
+
+void
+correct_point(Pose2d &correction,
+		Matrix<double, 4, 4> vel2car,
+		Matrix<double, 4, 4> pose,
+		PointXYZRGB &point);
+
+void
+transform_pointcloud(PointCloud<PointXYZRGB>::Ptr cloud,
+		PointCloud<PointXYZRGB>::Ptr transformed_cloud,
+		Matrix<double, 4, 4> &pose,
+		Matrix<double, 4, 4> &vel2car,
+		pair<double, double> &odom);
 
 #endif

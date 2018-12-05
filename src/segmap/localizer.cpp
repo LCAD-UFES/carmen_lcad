@@ -60,7 +60,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4
 		//if (i > 16)
 		//if (1)
 		{
-			pf.correct(cloud, map, transformed_cloud, vel2car);
+			pf.correct(cloud, map, transformed_cloud, vel2car, odom[i]);
 
 			Pose2d mean = pf.mean();
 			Pose2d mode = pf.mode();

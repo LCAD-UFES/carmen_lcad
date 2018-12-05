@@ -153,9 +153,9 @@ add_vertices(vector<Data> &input_data, SparseOptimizer *optimizer)
 	for (i = 0; i < input_data.size(); i++)
 	{
 		SE2 estimate(
-			i, //input_data[i].x - input_data[0].x,
-			0, //input_data[i].y - input_data[0].y,
-			0.0 //input_data[i].angle
+			input_data[i].x - input_data[0].x,
+			input_data[i].y - input_data[0].y,
+			input_data[i].angle
 		);
 
 		VertexSE2* vertex = new VertexSE2;
@@ -244,8 +244,8 @@ add_gps_edges(vector<Data> &input_data, SparseOptimizer *optimizer, double xy_st
 	{
 		SE2 measure(input_data[i].x - input_data[0].x,
 					input_data[i].y - input_data[0].y,
-					//input_data[i].angle);
-					0.);
+					input_data[i].angle);
+					//0.);
 
 		double gps_std = gps_std_from_quality(input_data[i].quality);
 		Matrix3d information = create_information_matrix(gps_std * xy_std_mult, gps_std * xy_std_mult, th_std);
@@ -312,9 +312,9 @@ load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_d
 
 	add_vertices(input_data, optimizer);
 	create_dead_reckoning(input_data, dead_reckoning, mult_v, mult_phi, add_phi);
-    add_odometry_edges(input_data, optimizer, dead_reckoning, 1., 0.001);
-	add_gps_edges(input_data, optimizer, 10.0, M_PI * 1e10);
-	//add_loop_closure_edges(loop_data, optimizer, 10.0, M_PI);
+    add_odometry_edges(input_data, optimizer, dead_reckoning, 1., 0.01);
+	add_gps_edges(input_data, optimizer, 1000.0, M_PI * 1e3);
+	add_loop_closure_edges(loop_data, optimizer, 1000.0, M_PI * 1e10);
 
 	optimizer->save("poses_before.g2o");
 	cout << "load complete!" << endl;

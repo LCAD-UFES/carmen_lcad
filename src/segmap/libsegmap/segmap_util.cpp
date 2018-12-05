@@ -1,12 +1,12 @@
 
-#include "segmap_util.h"
-
 #include <cmath>
 #include <vector>
 #include <Eigen/Core>
 #include <Eigen/LU>
 #include <opencv/cv.hpp>
 
+#include "segmap_util.h"
+#include "segmap_car_config.h"
 
 using namespace cv;
 using namespace std;
@@ -268,3 +268,51 @@ dist2d(double x1, double y1, double x2, double y2)
 	return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
 }
 
+
+void
+ackerman_motion_model(Pose2d &pose, double v, double phi, double dt)
+{
+	pose.x = pose.x + dt * v * cos(pose.th);
+	pose.y = pose.y + dt * v * sin(pose.th);
+	pose.th = pose.th + dt * (v / distance_between_front_and_rear_axles) * tan(phi);
+	pose.th = normalize_theta(pose.th);
+}
+
+
+void
+correct_point(Pose2d &correction,
+		Matrix<double, 4, 4> vel2car,
+		Matrix<double, 4, 4> pose,
+		PointXYZRGB &point)
+{
+	Matrix<double, 4, 1> p, corrected;
+	Matrix<double, 4, 4> correction_mat;
+
+	p << point.x, point.y, point.z, 1.;
+	correction_mat = Pose2d::to_matrix(correction);
+	corrected = pose * correction_mat * vel2car * p;
+
+	point.x = corrected(0, 0) /corrected(3, 0);
+	point.y = corrected(1, 0) /corrected(3, 0);
+	point.z = corrected(2, 0) /corrected(3, 0);
+}
+
+
+void
+transform_pointcloud(PointCloud<PointXYZRGB>::Ptr cloud,
+		PointCloud<PointXYZRGB>::Ptr transformed_cloud,
+		Matrix<double, 4, 4> &pose,
+		Matrix<double, 4, 4> &vel2car,
+		pair<double, double> &odom)
+{
+	Pose2d correction(0., 0., 0.);
+	transformed_cloud->clear();
+
+	for (int j = 0; j < cloud->size(); j++)
+	{
+		PointXYZRGB point = cloud->at(j);
+		correct_point(correction, vel2car, pose, point);
+		ackerman_motion_model(correction, odom.first, odom.second, (TIME_SPENT_IN_EACH_SCAN / 32.));
+		transformed_cloud->push_back(point);
+	}
+}

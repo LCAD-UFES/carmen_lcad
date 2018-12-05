@@ -43,8 +43,8 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		y = pixel(1, 0) / pixel(2, 0);
 
 		// to use fused camera and velodyne
-		// if (0)
-		if (point.x > 7 && x >= 0 && x < img.cols && y >= 0 && y < img.rows)
+		if (0)
+		// if (point.x > 7 && x >= 0 && x < img.cols && y >= 0 && y < img.rows)
 		{
 			pcl::PointXYZRGB point2;
 
@@ -65,8 +65,8 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		}
 
 		// to use remission
-		else if (0)
-		//else if (1) //point.z < 0.)
+		// else if (0)
+		else if (1) //point.z < 0.)
 		{
 			point.r *= 3;
 			point.g *= 3;
@@ -186,7 +186,9 @@ DatasetCarmen::load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud)
 {
 	int success;
 
-	sprintf(_name, "%s/velodyne/%lf.ply", _path.c_str(), _times[i]);
+	//sprintf(_name, "%s/velodyne/%lf.ply", _path.c_str(), _times[i]);
+	sprintf(_name, "%s/velodyne/%010d.ply", _path.c_str(), i);
+
 	success = pcl::io::loadPLYFile(_name, *cloud);
 
 	if (success < 0 || cloud->size() == 0)
