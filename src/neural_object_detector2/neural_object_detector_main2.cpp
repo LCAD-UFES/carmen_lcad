@@ -4,6 +4,8 @@
 
 #define SHOW_DETECTIONS
 
+bool rectangles_intersects(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r2);
+
 using namespace std;
 
 int camera;
@@ -11,6 +13,7 @@ int camera_side;
 double meters_spacement;
 char *log_name;
 char *groundtruth_path;
+char *detection_type;
 carmen_camera_parameters camera_parameters;
 carmen_pose_3D_t velodyne_pose;
 carmen_pose_3D_t bullbar_pose;
@@ -277,6 +280,84 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
     cv::waitKey(1);
 
     //resized_image.release();
+}
+
+
+bool before_first_file = true;
+bool acessessing = false;
+void
+save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_original_image)
+{
+	char arr[50];
+	char gt_path[200];
+	strcpy(gt_path, groundtruth_path);
+	//memcpy(arr,&timestamp,sizeof(timestamp));
+	sprintf(gt_path,"%s/%lf", gt_path, timestamp);
+	sprintf(arr,"%lf", timestamp);
+	string str_arr (arr);
+	string str_gt_path (gt_path);
+	string groundtruth_folder = str_gt_path + "-r.txt";
+	string detections_folder = str_folder_name + arr + "-r.txt";
+
+	if (access(groundtruth_folder.c_str(), F_OK) == 0)
+	{
+		before_first_file = false;
+		acessessing = true;
+		FILE *f_groundtruth = fopen (groundtruth_folder.c_str(), "r");
+		struct stat st;
+		stat(groundtruth_folder.c_str(), &st);
+		int size = st.st_size;
+		if (size == 0)
+		{
+			FILE *f_detection = fopen (detections_folder.c_str(), "w");
+			fclose (f_detection);
+			fclose (f_groundtruth);
+		}
+		else
+		{
+			char classe [10];
+			float x1, y1, x2, y2;
+			fscanf (f_groundtruth, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2);
+			FILE *f_detection = fopen (detections_folder.c_str(), "w");
+			for (int i = 0; i < bounding_boxes_of_slices_in_original_image.size(); i++)
+			{
+				//cout<<"\t"<<i<<endl;
+				bbox_t b = bounding_boxes_of_slices_in_original_image[i];
+				int obj_id = b.obj_id;
+				//cout<<"\t"<<" "<<obj_names[obj_id]<<" "<<(float)b.x<<" "<<(float)b.y<<" "<<(float)(b.x + b.w)<<" "<<(float)(b.y + b.h)<<endl;
+				string obj_name;
+				if (obj_names.size() > obj_id)
+					obj_name = obj_names[obj_id];
+
+				if (obj_name.compare("car") == 0)
+				{
+					cv::Point l1, r1, l2, r2;
+					l1.x = (int)x1; l1.y = (int)y1; //top left
+					r1.x = (int)x2; r1.y = (int)y2; //right botton of groundtruth bbox
+					l2.x = (int)b.x; l2.y = (int)b.y; //top left
+					r2.x = (int)b.x + b.w; r2.y = (int)b.y + b.h; //right botton of detection
+					//cout<<x1<<" "<<x1<<" "
+					//cout<<classe<<" "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<endl;
+					if(rectangles_intersects(l1, r1, l2, r2))
+					{
+						//cout<<"\t"<<i<<" "<<obj_names[obj_id]<<endl;
+						fprintf (f_detection, "%s %f %.2f %.2f %.2f %.2f\n", "car", b.prob, (float)b.x, (float)b.y, (float)(b.x + b.w), (float)(b.y + b.h));
+					}
+				}
+
+			}
+			fclose (f_detection);
+			fclose (f_groundtruth);
+		}
+	}
+	else
+		acessessing = false;
+
+	if (before_first_file == false && acessessing == false)
+	{
+		cout<<"database_completed!"<<endl;
+		exit(0);
+	}
 }
 
 
@@ -856,8 +937,6 @@ image_handler2(carmen_bumblebee_basic_stereoimage_message *image_msg)
 }
 
 
-bool before_first_file = true;
-bool acessessing = false;
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
@@ -895,146 +974,77 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     cv::Mat rgb_image_copy = rgb_image.clone();
 
     vector<bbox_t> bounding_boxes_of_slices_in_original_image;
-    bounding_boxes_of_slices_in_original_image = darknet->detect(src_image, 0.2);
-    detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Original Detection");
-
-//    carmen_pose_3D_t car_pose = filter_pitch(pose);
-//    tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, car_pose);
-//
-//    cv::Mat out;
-//    out = rgb_image;
-//    rddf_points_in_image = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
-//
-//    vector<cv::Mat> scene_slices;
-//    vector<cv::Mat> scene_slices_resized;
-//    vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
-//    t_transform_factor t;
-//    scene_slices.push_back(out);
-//    t.scale_factor_x = 1;
-//    t.scale_factor_y = 1;
-//    t.translate_factor_x = 0;
-//    t.translate_factor_y = 0;
-//    transform_factor_of_slice_to_original_frame.push_back(t);
-//    get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image, distances_of_rddf_from_car);
-//
-//
-////    for (int i = 0; i < scene_slices.size(); i++)
-////    {
-////    	cv::Mat slice_resized;
-////    	cv::resize(scene_slices[i], slice_resized, size);
-////    	scene_slices_resized.push_back(slice_resized);
-////    	//cout<<"Slice_"<<i<<"size: "<<scene_slices[i].cols<<" "<<scene_slices[i].rows<<endl;
-////    	//printf("Scale factor of slice %d: %lf %lf\n",i,scale_factor_of_slice_to_original_frame[i].scale_factor_x,scale_factor_of_slice_to_original_frame[i].scale_factor_y);
-////    	//cout<<"Scale factor of slice "<<i<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_x<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_y<<endl;
-////    }
-//    //cout<<endl<<endl<<endl<<endl;
-//    vector<vector<bbox_t>> bounding_boxes_of_slices;
-//    for (int i = 0; i < scene_slices.size(); i++)
-//    {
-//    	vector<bbox_t> predictions;
-//    	predictions = get_predictions_of_slices(i, scene_slices[i]);
-//    	bounding_boxes_of_slices.push_back(predictions);
-//    }
-//
-//
-//    bounding_boxes_of_slices_in_original_image = transform_bounding_boxes_of_slices(bounding_boxes_of_slices, transform_factor_of_slice_to_original_frame);
-//
-//    rgb_image = scene_slices[0];
-//    src_image = scene_slices[0];
-//    //cout<<"qtd of detections: "<<bounding_boxes_of_slices_in_original_image.size()<<endl;
-//    detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Foviated Detection");
-
-
-//    for (int i = 1; i < scene_slices.size(); i++)
-//    {
-//    	cv::Scalar color (0,0,255);
-//    	cv::rectangle(rgb_image,
-//    	cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x, transform_factor_of_slice_to_original_frame[i].translate_factor_y),
-//		cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x + scene_slices[i].cols, transform_factor_of_slice_to_original_frame[i].translate_factor_y + scene_slices[i].rows),
-//		color, 3);
-//    	cv::imshow("out", rgb_image);
-//    	cv::waitKey(10);
-//    	cv::imwrite("out.jpg", rgb_image);
-//    }
-
-    //show_detections2(rgb_image, bbox, "NOD_FULL");
-    //cout<<scene_slices.size()<<" "<<bouding_boxes_of_slices.size()<<" "<<transform_factor_of_slice_to_original_frame.size()<<endl;
-    //cout<<endl;
-    //printf("%lf-r.png\n", image_msg->timestamp);
-
-
-    char arr[50];
-    char gt_path[200];
-    strcpy(gt_path, groundtruth_path);
-    //memcpy(arr,&image_msg->timestamp,sizeof(image_msg->timestamp));
-    sprintf(gt_path,"%s/%lf", gt_path, image_msg->timestamp);
-    sprintf(arr,"%lf", image_msg->timestamp);
-    string str_arr (arr);
-    string str_gt_path (gt_path);
-    string groundtruth_folder = str_gt_path + "-r.txt";
-    string detections_folder = str_folder_name + arr + "-r.txt";
-
-    if (access(groundtruth_folder.c_str(), F_OK) == 0)
+    if (strcmp(detection_type,"-ss") == 0)
     {
-    	before_first_file = false;
-    	acessessing = true;
-    	FILE *f_groundtruth = fopen (groundtruth_folder.c_str(), "r");
-    	struct stat st;
-    	stat(groundtruth_folder.c_str(), &st);
-    	int size = st.st_size;
-    	if (size == 0)
-    	{
-    		FILE *f_detection = fopen (detections_folder.c_str(), "w");
-    		fclose (f_detection);
-    		fclose (f_groundtruth);
-    	}
-    	else
-    	{
-    		char classe [10];
-    		float x1, y1, x2, y2;
-    		fscanf (f_groundtruth, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2);
-    		FILE *f_detection = fopen (detections_folder.c_str(), "w");
-    		for (int i = 0; i < bounding_boxes_of_slices_in_original_image.size(); i++)
-    		{
-    			//cout<<"\t"<<i<<endl;
-    			bbox_t b = bounding_boxes_of_slices_in_original_image[i];
-    			int obj_id = b.obj_id;
-    			//cout<<"\t"<<" "<<obj_names[obj_id]<<" "<<(float)b.x<<" "<<(float)b.y<<" "<<(float)(b.x + b.w)<<" "<<(float)(b.y + b.h)<<endl;
-    			string obj_name;
-    			if (obj_names.size() > obj_id)
-    				obj_name = obj_names[obj_id];
-
-    			if (obj_name.compare("car") == 0)
-    			{
-    				cv::Point l1, r1, l2, r2;
-    				l1.x = (int)x1; l1.y = (int)y1; //top left
-    				r1.x = (int)x2; r1.y = (int)y2; //right botton of groundtruth bbox
-    				l2.x = (int)b.x; l2.y = (int)b.y; //top left
-    				r2.x = (int)b.x + b.w; r2.y = (int)b.y + b.h; //right botton of detection
-    				//cout<<x1<<" "<<x1<<" "
-    				//cout<<classe<<" "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<endl;
-    				if(rectangles_intersects(l1, r1, l2, r2))
-    				{
-    					//cout<<"\t"<<i<<" "<<obj_names[obj_id]<<endl;
-    					fprintf (f_detection, "%s %f %.2f %.2f %.2f %.2f\n", "car", b.prob, (float)b.x, (float)b.y, (float)(b.x + b.w), (float)(b.y + b.h));
-    				}
-    			}
-
-    		}
-    		fclose (f_detection);
-    		fclose (f_groundtruth);
-    	}
+    	bounding_boxes_of_slices_in_original_image = darknet->detect(src_image, 0.2);
+    	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Original Detection");
     }
-    else
-    	acessessing = false;
 
-    if (before_first_file == false && acessessing == false)
+    else if (strcmp(detection_type,"-ss") == 0)
     {
-    	cout<<"database_completed!"<<endl;
-    	exit(0);
-    }
-    	//cout<<"Could not open: "<<groundtruth_folder<<endl;
+    	carmen_pose_3D_t car_pose = filter_pitch(pose);
+    	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, car_pose);
 
+    	cv::Mat out;
+    	out = rgb_image;
+    	rddf_points_in_image = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
+
+    	vector<cv::Mat> scene_slices;
+    	vector<cv::Mat> scene_slices_resized;
+    	vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
+    	t_transform_factor t;
+    	scene_slices.push_back(out);
+    	t.scale_factor_x = 1;
+    	t.scale_factor_y = 1;
+    	t.translate_factor_x = 0;
+    	t.translate_factor_y = 0;
+    	transform_factor_of_slice_to_original_frame.push_back(t);
+    	get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image, distances_of_rddf_from_car);
+
+
+    	//    for (int i = 0; i < scene_slices.size(); i++)
+    	//    {
+    	//    	cv::Mat slice_resized;
+    	//    	cv::resize(scene_slices[i], slice_resized, size);
+    	//    	scene_slices_resized.push_back(slice_resized);
+    	//    	//cout<<"Slice_"<<i<<"size: "<<scene_slices[i].cols<<" "<<scene_slices[i].rows<<endl;
+    	//    	//printf("Scale factor of slice %d: %lf %lf\n",i,scale_factor_of_slice_to_original_frame[i].scale_factor_x,scale_factor_of_slice_to_original_frame[i].scale_factor_y);
+    	//    	//cout<<"Scale factor of slice "<<i<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_x<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_y<<endl;
+    	//    }
+    	//cout<<endl<<endl<<endl<<endl;
+    	vector<vector<bbox_t>> bounding_boxes_of_slices;
+    	for (int i = 0; i < scene_slices.size(); i++)
+    	{
+    		vector<bbox_t> predictions;
+    		predictions = get_predictions_of_slices(i, scene_slices[i]);
+    		bounding_boxes_of_slices.push_back(predictions);
+    	}
+
+
+    	bounding_boxes_of_slices_in_original_image = transform_bounding_boxes_of_slices(bounding_boxes_of_slices, transform_factor_of_slice_to_original_frame);
+
+    	rgb_image = scene_slices[0];
+    	src_image = scene_slices[0];
+    	//cout<<"qtd of detections: "<<bounding_boxes_of_slices_in_original_image.size()<<endl;
+    	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Foviated Detection");
+
+
+    	//    for (int i = 1; i < scene_slices.size(); i++)
+    	//    {
+    	//    	cv::Scalar color (0,0,255);
+    	//    	cv::rectangle(rgb_image,
+    	//    	cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x, transform_factor_of_slice_to_original_frame[i].translate_factor_y),
+    	//		cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x + scene_slices[i].cols, transform_factor_of_slice_to_original_frame[i].translate_factor_y + scene_slices[i].rows),
+    	//		color, 3);
+    	//    	cv::imshow("out", rgb_image);
+    	//    	cv::waitKey(10);
+    	//    	cv::imwrite("out.jpg", rgb_image);
+    	//    }
+
+    	//printf("%lf-r.png\n", image_msg->timestamp);
+    }
+
+    save_detections(image_msg->timestamp, bounding_boxes_of_slices_in_original_image);
 
 
     //cout<<image_msg->timestamp<<"-r.png"<<endl;
@@ -1150,6 +1160,8 @@ read_parameters(int argc, char **argv)
     meters_spacement = atoi(meters);
     log_name = argv[4];
     groundtruth_path = argv[5];
+    detection_type = argv[6];
+
 
     int num_items;
 
@@ -1228,8 +1240,9 @@ read_parameters(int argc, char **argv)
 int
 main(int argc, char **argv)
 {
-    if ((argc != 6))
-        carmen_die("%s: Wrong number of parameters. neural_object_detector2 requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)> <meters_spacement> <log_name> <groundtruth_path>\n",
+    if ((argc != 7))
+        carmen_die("%s: Wrong number of parameters. neural_object_detector2 requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)>"
+        		" <meters_spacement> <log_name> <groundtruth_path> <-cs for slices -ss without slices>\n",
                    argv[0], argc - 1, argv[0]);
 
     int device_id = 0;
@@ -1261,7 +1274,10 @@ main(int argc, char **argv)
     ss << meters_spacement;
     string str_log_name(log_name);
     char folder_name[100];
-    sprintf(folder_name, "%s_%.0lf_mts_detections/", log_name,meters_spacement);
+    if (strcmp(detection_type,"-cs") == 0)
+    	sprintf(folder_name, "%s_%.0lf_mts_detections/", log_name,meters_spacement);
+    else if (strcmp(detection_type,"-ss") == 0)
+    	sprintf(folder_name, "%s_detections/", log_name);
     str_folder_name = folder_name;
     string command;
     if (access(str_folder_name.c_str(), F_OK) != 0)
