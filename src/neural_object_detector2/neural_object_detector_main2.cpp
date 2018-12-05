@@ -895,54 +895,54 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     cv::Mat rgb_image_copy = rgb_image.clone();
 
     vector<bbox_t> bounding_boxes_of_slices_in_original_image;
-    bounding_boxes_of_slices_in_original_image = darknet->detect(src_image, 0.2);
-    detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Original Detection");
+    //bounding_boxes_of_slices_in_original_image = darknet->detect(src_image, 0.2);
+    //detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Original Detection");
 
-//    carmen_pose_3D_t car_pose = filter_pitch(pose);
-//    tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, car_pose);
-//
-//    cv::Mat out;
-//    out = rgb_image;
-//    rddf_points_in_image = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
-//
-//    vector<cv::Mat> scene_slices;
-//    vector<cv::Mat> scene_slices_resized;
-//    vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
-//    t_transform_factor t;
-//    scene_slices.push_back(out);
-//    t.scale_factor_x = 1;
-//    t.scale_factor_y = 1;
-//    t.translate_factor_x = 0;
-//    t.translate_factor_y = 0;
-//    transform_factor_of_slice_to_original_frame.push_back(t);
-//    get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image, distances_of_rddf_from_car);
-//
-//
-////    for (int i = 0; i < scene_slices.size(); i++)
-////    {
-////    	cv::Mat slice_resized;
-////    	cv::resize(scene_slices[i], slice_resized, size);
-////    	scene_slices_resized.push_back(slice_resized);
-////    	//cout<<"Slice_"<<i<<"size: "<<scene_slices[i].cols<<" "<<scene_slices[i].rows<<endl;
-////    	//printf("Scale factor of slice %d: %lf %lf\n",i,scale_factor_of_slice_to_original_frame[i].scale_factor_x,scale_factor_of_slice_to_original_frame[i].scale_factor_y);
-////    	//cout<<"Scale factor of slice "<<i<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_x<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_y<<endl;
-////    }
-//    //cout<<endl<<endl<<endl<<endl;
-//    vector<vector<bbox_t>> bounding_boxes_of_slices;
+    carmen_pose_3D_t car_pose = filter_pitch(pose);
+    tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, car_pose);
+
+    cv::Mat out;
+    out = rgb_image;
+    rddf_points_in_image = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
+
+    vector<cv::Mat> scene_slices;
+    vector<cv::Mat> scene_slices_resized;
+    vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
+    t_transform_factor t;
+    scene_slices.push_back(out);
+    t.scale_factor_x = 1;
+    t.scale_factor_y = 1;
+    t.translate_factor_x = 0;
+    t.translate_factor_y = 0;
+    transform_factor_of_slice_to_original_frame.push_back(t);
+    get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image, distances_of_rddf_from_car);
+
+
 //    for (int i = 0; i < scene_slices.size(); i++)
 //    {
-//    	vector<bbox_t> predictions;
-//    	predictions = get_predictions_of_slices(i, scene_slices[i]);
-//    	bounding_boxes_of_slices.push_back(predictions);
+//    	cv::Mat slice_resized;
+//    	cv::resize(scene_slices[i], slice_resized, size);
+//    	scene_slices_resized.push_back(slice_resized);
+//    	//cout<<"Slice_"<<i<<"size: "<<scene_slices[i].cols<<" "<<scene_slices[i].rows<<endl;
+//    	//printf("Scale factor of slice %d: %lf %lf\n",i,scale_factor_of_slice_to_original_frame[i].scale_factor_x,scale_factor_of_slice_to_original_frame[i].scale_factor_y);
+//    	//cout<<"Scale factor of slice "<<i<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_x<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_y<<endl;
 //    }
-//
-//
-//    bounding_boxes_of_slices_in_original_image = transform_bounding_boxes_of_slices(bounding_boxes_of_slices, transform_factor_of_slice_to_original_frame);
-//
-//    rgb_image = scene_slices[0];
-//    src_image = scene_slices[0];
-//    //cout<<"qtd of detections: "<<bounding_boxes_of_slices_in_original_image.size()<<endl;
-//    detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Foviated Detection");
+    //cout<<endl<<endl<<endl<<endl;
+    vector<vector<bbox_t>> bounding_boxes_of_slices;
+    for (int i = 0; i < scene_slices.size(); i++)
+    {
+    	vector<bbox_t> predictions;
+    	predictions = get_predictions_of_slices(i, scene_slices[i]);
+    	bounding_boxes_of_slices.push_back(predictions);
+    }
+
+
+    bounding_boxes_of_slices_in_original_image = transform_bounding_boxes_of_slices(bounding_boxes_of_slices, transform_factor_of_slice_to_original_frame);
+
+    rgb_image = scene_slices[0];
+    src_image = scene_slices[0];
+    //cout<<"qtd of detections: "<<bounding_boxes_of_slices_in_original_image.size()<<endl;
+    detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Foviated Detection");
 
 
 //    for (int i = 1; i < scene_slices.size(); i++)
