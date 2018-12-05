@@ -316,8 +316,8 @@ load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_d
 
 	create_dead_reckoning(input_data, dead_reckoning, mult_v, mult_phi, add_phi, init_angle);
 	add_vertices(input_data, optimizer, dead_reckoning);
-    add_odometry_edges(input_data, optimizer, dead_reckoning, 0.01, 0.1);
-	add_gps_edges(input_data, optimizer, 100.0, M_PI * 1e10);
+    add_odometry_edges(input_data, optimizer, dead_reckoning, 0.01, 0.001);
+	add_gps_edges(input_data, optimizer, 1.0, M_PI * 1e10);
 	//add_loop_closure_edges(loop_data, optimizer, 1000.0, M_PI * 1e10);
 
 	optimizer->save("poses_before.g2o");

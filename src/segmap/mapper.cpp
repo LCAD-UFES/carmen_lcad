@@ -55,10 +55,14 @@ create_map(GridMap &map, PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZ
 	Matrix<double, 4, 4> vel2car = dataset.transform_vel2car();
 
 	deque<string> cloud_names;
-	int step = 1;
+	int pause_viewer = 1;
+	int step = 5;
 
-	for (int i = 300; i < dataset.data.size(); i += 1)
+	for (int i = 300; i < dataset.data.size(); i += step)
 	{
+		if (fabs(dataset.data[i].v) < 0.1)
+			continue;
+
 		Pose2d pose = dataset.data[i].pose;
 
 		printf("Step %d car pose: %lf %lf %lf\n", i, pose.x, pose.y, pose.th);
@@ -99,8 +103,8 @@ create_map(GridMap &map, PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZ
 			c = waitKey(5);
 
 			if (c == 's')
-				step = !step;
-			if (!step || (step && c == 'n'))
+				pause_viewer = !pause_viewer;
+			if (!pause_viewer || (pause_viewer && c == 'n'))
 
 				break;
 			if (c == 'r')
