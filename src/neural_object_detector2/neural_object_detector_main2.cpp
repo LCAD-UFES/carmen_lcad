@@ -398,10 +398,10 @@ bool rectangles_intersects(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r
 {
 
 
-	if ((l1.x < r2.x) &&
-		(r1.x > l2.x) &&
-		(l1.y < r2.y) &&
-		(r1.y > l2.y))
+	if ((l1.x <= r2.x) &&
+		(r1.x >= l2.x) &&
+		(l1.y <= r2.y) &&
+		(r1.y >= l2.y))
 		return true;
 
 
@@ -937,7 +937,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     rgb_image = scene_slices[0];
     src_image = scene_slices[0];
-    //detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Foviated Detection");
+    detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Foviated Detection");
 
 
 //    for (int i = 1; i < scene_slices.size(); i++)
@@ -971,8 +971,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	system(command.c_str());
     }
 
-    char arr[30];
-    char gt_path[60];
+    char arr[50];
+    char gt_path[200];
     strcpy(gt_path, groundtruth_path);
     //memcpy(arr,&image_msg->timestamp,sizeof(image_msg->timestamp));
     sprintf(gt_path,"%s/%lf", gt_path, image_msg->timestamp);
@@ -983,10 +983,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     string detections_folder = str_folder_name + arr + "-r.txt";
 
 
-    FILE *f_groundtruth = fopen (groundtruth_folder.c_str(), "r");
-    if (f_groundtruth != NULL)
+
+    if (access(groundtruth_folder.c_str(), F_OK) == 0)
     {
-    	cout<<"entrei!"<<endl;
+    	FILE *f_groundtruth = fopen (groundtruth_folder.c_str(), "r");
     	char classe [10];
     	float x1, y1, x2, y2;
     	fscanf (f_groundtruth, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2);
@@ -995,6 +995,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	{
     		bbox_t b = bounding_boxes_of_slices_in_original_image[i];
     		int obj_id = b.obj_id;
+    		cout<<"\t"<<" "<<obj_names[obj_id]<<" "<<(float)b.x<<" "<<(float)b.y<<" "<<(float)(b.x + b.w)<<" "<<(float)(b.y + b.h)<<endl;
     		string obj_name;
     		if (obj_names.size() > obj_id)
     			obj_name = obj_names[obj_id];
@@ -1006,14 +1007,19 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     			r1.x = (int)x2; l1.y = (int)y2; //right botton of groundtruth bbox
     			l1.x = (int)b.x; l1.y = (int)b.y; //top left
     			r1.x = (int)b.x + b.w; l1.y = (int)b.y + b.h; //right botton of detection
+    			cout<<classe<<" "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<endl;
     			if(rectangles_intersects(l1, r1, l2, r2))
     				fprintf (f_detection, "%s %f %.2f %.2f %.2f %.2f\n", "car", b.prob, (float)b.x, (float)b.y, (float)(b.x + b.w), (float)(b.y + b.h));
     		}
 
     	}
     	fclose (f_detection);
+    	fclose (f_groundtruth);
     }
-    fclose (f_groundtruth);
+    else
+    	cout<<"Could not open: "<<groundtruth_folder<<endl;
+
+
 
     //cout<<image_msg->timestamp<<"-r.png"<<endl;
 //	publish_moving_objects_message(image_msg->timestamp);
