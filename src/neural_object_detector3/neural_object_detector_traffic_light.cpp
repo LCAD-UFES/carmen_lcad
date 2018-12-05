@@ -17,7 +17,8 @@ vector <carmen_pose_3D_t> annotation_vector;
 carmen_pose_3D_t nearest_traffic_light_pose;
 
 #define MAX_TRAFFIC_LIGHT_DIST 50
-
+#define MIN_TRAFFIC_LIGHT_TRESHOLD 4
+#define MAX_TRAFFIC_LIGHT_TRESHOLD 4
 
 double
 compute_distance_to_the_traffic_light()
@@ -447,6 +448,15 @@ compute_traffic_light_pose(vector<bbox_t> predictions, int resized_w, int resize
 }
 
 
+double
+compute_treshold()
+{
+	double dist = DIST2D(nearest_traffic_light_pose.position, globalpos_msg->globalpos);
+
+	return (MIN_TRAFFIC_LIGHT_TRESHOLD + (MAX_TRAFFIC_LIGHT_TRESHOLD / dist));
+}
+
+
 carmen_traffic_light*
 get_main_traffic_light(vector<bbox_t> predictions, carmen_position_t tf_annotation_on_image)
 {
@@ -476,7 +486,7 @@ get_main_traffic_light(vector<bbox_t> predictions, carmen_position_t tf_annotati
 	main_traffic_light->y2 = main_bbox.y + main_bbox.h;
 	main_traffic_light->color = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF;                    // In case of any failure, TRAFFIC_LIGHT_OFF message is sent
 
-	if (dist < MAX_TRAFFIC_LIGHT_DIST)                                                     //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED
+	if (dist < compute_treshold())                                                         //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED
 	{                                                                                      //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN
 		if (main_bbox.obj_id == 0)                                                         //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_YELLOW
 			main_traffic_light->color = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;            //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF
@@ -589,7 +599,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotation_on_image);
 			publish_traffic_lights(&traffic_light_message);
 		}
+		printf("----%lf\n", compute_treshold());
 		circle(open_cv_image, Point((int)tf_annotation_on_image.x, (int)tf_annotation_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
+		circle(open_cv_image, Point((int)tf_annotation_on_image.x, (int)tf_annotation_on_image.y), compute_treshold(), Scalar(255, 255, 0), 1, 8);
 	}
 	display(open_cv_image, predictions, fps, resized_w, resized_h);
 }
