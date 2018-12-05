@@ -93,8 +93,8 @@ correct_point(Pose2d &correction,
 void
 transform_pointcloud(PointCloud<PointXYZRGB>::Ptr cloud,
 		PointCloud<PointXYZRGB>::Ptr transformed_cloud,
-		Matrix<double, 4, 4> &pose,
+		Pose2d &pose,
 		Matrix<double, 4, 4> &vel2car,
-		pair<double, double> &odom);
+		double v, double phi);
 
 #endif

@@ -152,7 +152,7 @@ void
 ParticleFilter::correct(PointCloud<PointXYZRGB>::Ptr cloud,
 		GridMap &map, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 		Matrix<double, 4, 4> &vel2car,
-		pair<double, double> &odom)
+		double v, double phi)
 {
 	int i;
 	double sum_weights, min_weight;
@@ -164,8 +164,7 @@ ParticleFilter::correct(PointCloud<PointXYZRGB>::Ptr cloud,
 	{
 		//Matrix<double, 4, 4> tr = Pose2d::to_matrix(_p[i]) * vel2car;
 		//transformPointCloud(*cloud, *transformed_cloud, tr);
-		Matrix<double, 4, 4> pose = Pose2d::to_matrix(_p[i]);
-		transform_pointcloud(cloud, transformed_cloud, pose, vel2car, odom);
+		transform_pointcloud(cloud, transformed_cloud, _p[i], vel2car, v, phi);
 
 		if (map._map_type == GridMapTile::TYPE_SEMANTIC)
 			_w[i] = _semantic_weight(transformed_cloud, map);

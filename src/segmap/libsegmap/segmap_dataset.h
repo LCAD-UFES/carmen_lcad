@@ -16,6 +16,20 @@ using namespace cv;
 using namespace Eigen;
 
 
+class DataSample
+{
+public:
+	double velodyne_time;
+	double image_time;
+	double gps_time;
+	double odom_time;
+	double v, phi;
+	Pose2d gps;
+	int gps_quality;
+	Pose2d pose;
+};
+
+
 class DatasetInterface
 {
 protected:
@@ -24,10 +38,9 @@ protected:
 	int _use_segmented;
 
 public:
-	vector<double> _times;
-	vector<double> _camera_times;
-	vector<Pose2d> _gps;
-	vector<int> _gps_quality;
+	int image_height;
+	int image_width;
+	vector<DataSample> data;
 
 	virtual Mat load_image(int i) = 0;
 	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud) = 0;
@@ -35,15 +48,14 @@ public:
 
 	virtual Matrix<double, 3, 1> transform_vel2cam(PointXYZRGB &p) = 0;
 	virtual Matrix<double, 4, 4> transform_vel2car() = 0;
-	virtual void load_data(vector<double> &times,
-			vector<Matrix<double, 4, 4>> &poses,
-			vector<pair<double, double>> &odom) = 0;
+	virtual void load_data() = 0;
 
 	DatasetInterface(string path, int use_segmented)
 	{
 		_path = path;
 		_use_segmented = use_segmented;
 		strcpy(_name, "");
+		image_height = image_width = 0;
 	}
 
 	virtual ~DatasetInterface() {}
@@ -52,13 +64,13 @@ public:
 
 class DatasetCarmen : public DatasetInterface
 {
-	int _image_height;
-	int _image_width;
 	int _unknown_class;
 	Matrix<double, 3, 4> _vel2cam;
 	Matrix<double, 4, 4> _vel2car;
 
-	void _init_vel2cam_transform();
+	bool _vel2cam_initialized;
+
+	void _init_vel2cam_transform(int image_height, int image_width);
 	void _init_vel2car_transform();
 
 public:
@@ -67,13 +79,9 @@ public:
 	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud);
 	virtual Matrix<double, 3, 1> transform_vel2cam(PointXYZRGB &p);
 	virtual Matrix<double, 4, 4> transform_vel2car();
+	virtual void load_data();
 
-	// TODO: load odometry biases from file.
-	virtual void load_data(vector<double> &times,
-			vector<Matrix<double, 4, 4>> &poses,
-			vector<pair<double, double>> &odom);
-
-	DatasetCarmen(int image_height, int image_width, string path, int use_segmented);
+	DatasetCarmen(string path, int use_segmented);
 	~DatasetCarmen() {}
 };
 
@@ -96,13 +104,12 @@ public:
 	virtual Matrix<double, 4, 4> transform_vel2car();
 
 	// TODO: load odometry biases from file.
-	virtual void load_data(vector<double> &times,
-			vector<Matrix<double, 4, 4>> &poses,
-			vector<pair<double, double>> &odom);
+	virtual void load_data();
 
 	DatasetKitti(string path, int use_segmented) :
 		DatasetInterface(path, use_segmented)
 	{
+		load_data();
 		_init_vel2cam_transform();
 	}
 

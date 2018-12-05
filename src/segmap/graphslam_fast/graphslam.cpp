@@ -100,14 +100,13 @@ load_data(char *name, vector<Data> &lines)
 
 
 void
-load_odom_calib(char *name, double *mult_v, double *mult_phi, double *add_phi)
+load_odom_calib(char *name, double *mult_v, double *mult_phi, double *add_phi, double *init_angle)
 {
     FILE *f = fopen(name, "r");
     char dummy[64];
 
-    fscanf(f, "%s %s %lf %s %s %s %lf %lf", 
-        dummy, dummy, mult_v, dummy, dummy, dummy, 
-        mult_phi, add_phi);
+    fscanf(f, "%s %s %lf %s %s %s %lf %lf %s %s %lf",
+        dummy, dummy, mult_v, dummy, dummy, dummy, mult_phi, add_phi, dummy, dummy, init_angle);
 
     fclose(f);
 }
@@ -146,17 +145,19 @@ read_loop_restrictions(char *filename, vector<LoopRestriction> &loop_data)
 
 
 void
-add_vertices(vector<Data> &input_data, SparseOptimizer *optimizer)
+add_vertices(vector<Data> &input_data, SparseOptimizer *optimizer, vector<SE2> &dead_reckoning)
 {
 	uint i;
 
 	for (i = 0; i < input_data.size(); i++)
 	{
-		SE2 estimate(
-			input_data[i].x - input_data[0].x,
-			input_data[i].y - input_data[0].y,
-			input_data[i].angle
-		);
+		//SE2 estimate(
+		//	input_data[i].x - input_data[0].x,
+		//	input_data[i].y - input_data[0].y,
+		//	input_data[i].angle
+		//);
+
+		SE2 estimate = dead_reckoning[i];
 
 		VertexSE2* vertex = new VertexSE2;
 		vertex->setId(i);
@@ -240,12 +241,12 @@ gps_std_from_quality(int quality)
 void
 add_gps_edges(vector<Data> &input_data, SparseOptimizer *optimizer, double xy_std_mult, double th_std)
 {
-	for (size_t i = 0; i < input_data.size(); i++)
+	for (size_t i = 0; i < input_data.size(); i+= 20)
 	{
 		SE2 measure(input_data[i].x - input_data[0].x,
 					input_data[i].y - input_data[0].y,
-					input_data[i].angle);
-					//0.);
+					//input_data[i].angle);
+					0.);
 
 		double gps_std = gps_std_from_quality(input_data[i].quality);
 		Matrix3d information = create_information_matrix(gps_std * xy_std_mult, gps_std * xy_std_mult, th_std);
@@ -280,12 +281,15 @@ add_loop_closure_edges(vector<LoopRestriction> &loop_data, SparseOptimizer *opti
 
 
 void
-create_dead_reckoning(vector<Data> &input_data, vector<SE2> &dead_reckoning, double mult_v, double mult_phi, double add_phi)
+create_dead_reckoning(vector<Data> &input_data, vector<SE2> &dead_reckoning, double mult_v, double mult_phi, double add_phi, double init_angle)
 {
 	double x, y, ds, th, dt, v, phi;
 
 	x = y = th = 0.;
+	th = init_angle;
 	dead_reckoning.push_back(SE2(x, y, th));
+
+	mult_v = 1.0;
 
 	for (size_t i = 1; i < input_data.size(); i++)
 	{
@@ -306,14 +310,14 @@ create_dead_reckoning(vector<Data> &input_data, vector<SE2> &dead_reckoning, dou
 
 void
 load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_data __attribute__((unused)), SparseOptimizer *optimizer,
-    double mult_v, double mult_phi, double add_phi)
+    double mult_v, double mult_phi, double add_phi, double init_angle)
 {
 	vector<SE2> dead_reckoning;
 
-	add_vertices(input_data, optimizer);
-	//create_dead_reckoning(input_data, dead_reckoning, mult_v, mult_phi, add_phi);
-    //add_odometry_edges(input_data, optimizer, dead_reckoning, 1., 0.01);
-	add_gps_edges(input_data, optimizer, 1000.0, M_PI * 1e3);
+	create_dead_reckoning(input_data, dead_reckoning, mult_v, mult_phi, add_phi, init_angle);
+	add_vertices(input_data, optimizer, dead_reckoning);
+    add_odometry_edges(input_data, optimizer, dead_reckoning, 0.01, 0.1);
+	add_gps_edges(input_data, optimizer, 100.0, M_PI * 1e10);
 	//add_loop_closure_edges(loop_data, optimizer, 1000.0, M_PI * 1e10);
 
 	optimizer->save("poses_before.g2o");
@@ -411,7 +415,7 @@ int main(int argc, char **argv)
 
 	vector<Data> input_data;
 	vector<LoopRestriction> loop_data;
-    double mult_v, mult_phi, add_phi;
+    double mult_v, mult_phi, add_phi, init_angle;
 
 	SparseOptimizer* optimizer;
 
@@ -425,9 +429,9 @@ int main(int argc, char **argv)
 	optimizer = initialize_optimizer();
 
 	load_data(argv[1], input_data);
-    load_odom_calib(argv[3], &mult_v, &mult_phi, &add_phi);
+    load_odom_calib(argv[3], &mult_v, &mult_phi, &add_phi, &init_angle);
 	read_loop_restrictions(argv[2], loop_data);
-	load_data_to_optimizer(input_data, loop_data, optimizer, mult_v, mult_phi, add_phi);
+	load_data_to_optimizer(input_data, loop_data, optimizer, mult_v, mult_phi, add_phi, init_angle);
 
 	optimizer->setVerbose(true);
 	cerr << "Optimizing" << endl;

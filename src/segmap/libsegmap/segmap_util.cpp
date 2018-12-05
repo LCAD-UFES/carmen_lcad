@@ -4,6 +4,7 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 #include <opencv/cv.hpp>
+#include <cfloat>
 
 #include "segmap_util.h"
 #include "segmap_car_config.h"
@@ -301,18 +302,25 @@ correct_point(Pose2d &correction,
 void
 transform_pointcloud(PointCloud<PointXYZRGB>::Ptr cloud,
 		PointCloud<PointXYZRGB>::Ptr transformed_cloud,
-		Matrix<double, 4, 4> &pose,
+		Pose2d &pose,
 		Matrix<double, 4, 4> &vel2car,
-		pair<double, double> &odom)
+		double v, double phi)
 {
 	Pose2d correction(0., 0., 0.);
 	transformed_cloud->clear();
 
+	Matrix<double, 4, 4> pose_t = Pose2d::to_matrix(pose);
+
 	for (int j = 0; j < cloud->size(); j++)
 	{
 		PointXYZRGB point = cloud->at(j);
-		correct_point(correction, vel2car, pose, point);
-		ackerman_motion_model(correction, odom.first, odom.second, (TIME_SPENT_IN_EACH_SCAN / 32.));
-		transformed_cloud->push_back(point);
+
+		if (point.x < DBL_MAX && point.y < DBL_MAX && point.z < DBL_MAX)
+		{
+			correct_point(correction, vel2car, pose_t, point);
+			transformed_cloud->push_back(point);
+		}
+
+		ackerman_motion_model(correction, v, phi, (TIME_SPENT_IN_EACH_SCAN / 32.));
 	}
 }

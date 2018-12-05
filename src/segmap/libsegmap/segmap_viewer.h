@@ -35,7 +35,7 @@ draw_pointcloud(Mat &m, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 		GridMap &map, int paint_points = 1, Scalar color = Scalar(0,0,0));
 
 void
-view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses, Pose2d current_pose,
+view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 	PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZRGB>::Ptr transformed_cloud, Matrix<double, 4, 4> *vel2car);
 
 

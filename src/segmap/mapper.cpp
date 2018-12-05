@@ -31,9 +31,21 @@ using namespace pcl;
 
 
 void
-create_map(GridMap &map, vector<Matrix<double, 4, 4>> &poses, PointCloud<PointXYZRGB>::Ptr cloud,
-		PointCloud<PointXYZRGB>::Ptr transformed_cloud, DatasetInterface &dataset,
-		vector<pair<double, double>> &odom)
+colorize_cloud_according_to_segmentation(PointCloud<PointXYZRGB>::Ptr cloud)
+{
+	CityScapesColorMap colormap;
+	for (int i = 0; i < cloud->size(); i++)
+	{
+		Scalar color = colormap.color(cloud->at(i).r);
+		cloud->at(i).r = color[2];
+		cloud->at(i).g = color[1];
+		cloud->at(i).b = color[0];
+	}
+}
+
+
+void
+create_map(GridMap &map, PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZRGB>::Ptr transformed_cloud, DatasetInterface &dataset)
 {
 	//pcl::visualization::PCLVisualizer viewer("Cloud Viewer");
 	//viewer.setBackgroundColor(.5, .5, .5);
@@ -45,34 +57,39 @@ create_map(GridMap &map, vector<Matrix<double, 4, 4>> &poses, PointCloud<PointXY
 	deque<string> cloud_names;
 	int step = 1;
 
-	for (int i = 0; i < poses.size(); i += 1)
+	for (int i = 300; i < dataset.data.size(); i += 1)
 	{
-		printf("car pose: %lf %lf\n", poses[i](0, 3), poses[i](1, 3));
+		Pose2d pose = dataset.data[i].pose;
 
-		dataset.load_fused_pointcloud_and_camera(i, cloud, 0);
-		transform_pointcloud(cloud, transformed_cloud,
-			poses[i], vel2car, odom[i]);
+		printf("Step %d car pose: %lf %lf %lf\n", i, pose.x, pose.y, pose.th);
 
-		map.reload(poses[i](0, 3), poses[i](1, 3));
+		dataset.load_fused_pointcloud_and_camera(i, cloud, 1);
+		transform_pointcloud(cloud, transformed_cloud, pose, vel2car, dataset.data[i].v, dataset.data[i].phi);
+		//transformed_cloud = cloud;
+
+		map.reload(pose.x, pose.y);
 
 		for (int j = 0; j < transformed_cloud->size(); j++)
 			map.add_point(transformed_cloud->at(j));
 
+		//if (map._map_type == GridMapTile::TYPE_SEMANTIC)
+		//	colorize_cloud_according_to_segmentation(transformed_cloud);
+        //
 		//char *cloud_name = (char *) calloc (32, sizeof(char));
 		//sprintf(cloud_name, "cloud%d", i);
 		////viewer.removeAllPointClouds();
 		//viewer.addPointCloud(transformed_cloud, cloud_name);
 		//viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, cloud_name);
 		//cloud_names.push_back(cloud_name);
-
-		//if (cloud_names.size() >= 10)
+		//
+		//if (cloud_names.size() >= 50)
 		//{
 		//	viewer.removePointCloud(cloud_names[0]);
 		//	cloud_names.pop_front();
 		//}
 
 		Mat map_img = map.to_image().clone();
-		draw_pose(map, map_img, poses[i], Scalar(0, 255, 0));
+		draw_pose(map, map_img, pose, Scalar(0, 255, 0));
 		imshow("viewer", map_img);
 
 		char c = ' ';
@@ -104,9 +121,7 @@ create_dataset(char *dataset_name)
 	DatasetInterface *dataset;
 
 	if (!strcmp(dataset_name, "carmen"))
-		//dataset = new DatasetCarmen(960, 1280, "/dados/data/data_log_estacionamentos-20181130.txt/", 0);
-		//dataset = new DatasetCarmen(480, 640, "/dados/data/data_20180112/", 1);
-        dataset = new DatasetCarmen(960, 1280, "/dados/data/data_log_estacionamentos-20181130.txt", 0);
+        dataset = new DatasetCarmen("/dados/data/data_log_volta_da_ufes-20180112-2.txt/", 1);
 	else if (!strcmp(dataset_name, "kitti"))
 		dataset = new DatasetKitti("/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/", 1);
 	else
@@ -124,24 +139,20 @@ main(int argc, char **argv)
 	if (argc > 1)
 		dataset_name = argv[1];
 
-	vector<double> times;
-	vector<Matrix<double, 4, 4>> poses;
-	vector<pair<double, double>> odom;
 	DatasetInterface *dataset;
 
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
 
 	dataset = create_dataset(dataset_name);
-	dataset->load_data(times, poses, odom);
 
-	char *map_name = "/dados/maps/maps_log_estacionamentos-20181130.txt";
+	char *map_name = "/dados/maps/maps_log_volta_da_ufes-20180112-2.txt";
 	char cmd[256];
 
 	sprintf(cmd, "rm -rf %s && mkdir %s", map_name, map_name);
 	system(cmd);
-	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
-	create_map(map, poses, cloud, transformed_cloud, *dataset, odom);
+	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_SEMANTIC, 1);
+	create_map(map, cloud, transformed_cloud, *dataset);
 	printf("Done\n");
 
 	return 0;

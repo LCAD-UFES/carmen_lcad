@@ -142,7 +142,7 @@ draw_pointcloud(Mat &m, PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap 
 
 
 void
-view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses __attribute__((unused)), Pose2d current_pose,
+view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 	PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 	Matrix<double, 4, 4> *vel2car)
 {
@@ -189,7 +189,6 @@ view(ParticleFilter &pf, GridMap &map, vector<Matrix<double, 4, 4>> &poses __att
 	draw_pose(map, map_img, mean, Scalar(0, 255, 255));
 	draw_pose(map, map_img, current_pose, Scalar(0, 255, 0));
 	draw_pose(map, map_img, mode, Scalar(0, 0, 255));
-
 
 	//double mult = (double) 800. / (double) map_img.rows;
 	//Mat resized_map((int) (map_img.rows * mult), (int) (map_img.cols * mult), CV_8UC3);
