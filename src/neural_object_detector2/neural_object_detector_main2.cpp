@@ -399,7 +399,7 @@ save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_ori
 	{
 		if (strcmp(detection_type,"-cs") == 0)
 		{
-			for (int i = scene_slices.size() - 1; i >= 1; i++)
+			for (int i = 1; i < scene_slices.size(); i++)
 			{
 				cv::rectangle(rgb_image,
 						cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x, transform_factor_of_slice_to_original_frame[i].translate_factor_y),
@@ -590,10 +590,10 @@ bool rectangles_intersects(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r
 {
 
 
-	if ((l1.x <= r2.x) &&
-		(r1.x >= l2.x) &&
-		(l1.y <= r2.y) &&
-		(r1.y >= l2.y))
+	if ((l1.x < r2.x) &&
+		(r1.x > l2.x) &&
+		(l1.y < r2.y) &&
+		(r1.y > l2.y))
 		return true;
 
 
@@ -740,7 +740,7 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 			}
 
 		}
-		else if (image_size_y >= 60)
+		else if (image_size_y >= 10)
 		{
 			//cv::Rect rec(rddf_points[i].x - (image_size_x/2), rddf_points[i].y-(300*dist_percentage), image_size_x, scene_slices[i-1].rows * dist_percentage);
 			double scale = image_size_y*(3.0/4.0);
