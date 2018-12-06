@@ -24,6 +24,7 @@ tf::Transformer transformer;
 tf::Transformer transformer_sick;
 
 string str_folder_name;
+string str_folder_image_name;
 
 const unsigned int maxPositions = 50;
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
@@ -216,7 +217,7 @@ objects_names_from_file(string const class_names_file)
 
 
 void
-show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list,
+show_detections(cv::Mat *rgb_image, vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list,
 		vector<bbox_t> predictions, double hood_removal_percentage, double fps,
                 vector<carmen_position_t> rddf_points, string window_name)
 {
@@ -225,13 +226,13 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
 
     sprintf(frame_rate, "FPS = %.2f", fps);
 
-    cv::putText(rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
+    cv::putText(*rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
 
     for (unsigned int i = 0; i < predictions.size(); i++)
     {
 
 		for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
-			cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
+			cv::circle(*rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
 					laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1, cv::Scalar(0, 0, 255), 1);
 
         cv::Scalar object_color;
@@ -245,22 +246,39 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
             obj_name = obj_names[obj_id];
 
         if (obj_name.compare("car") == 0)
-            object_color = cv::Scalar(0, 0, 255);
-        else
-            object_color = cv::Scalar(255, 0, 255);
+        {
+        	object_color = cv::Scalar(0, 0, 255);
+        	cv::rectangle(*rgb_image,
+        			cv::Point(predictions[i].x, predictions[i].y),
+					cv::Point(predictions[i].x + predictions[i].w, predictions[i].y + predictions[i].h),
+					object_color, 1);
 
-        cv::rectangle(rgb_image,
-                      cv::Point(predictions[i].x, predictions[i].y),
-                      cv::Point(predictions[i].x + predictions[i].w, predictions[i].y + predictions[i].h),
-                      object_color, 1);
+        	cv::putText(*rgb_image, obj_name,
+        			cv::Point(predictions[i].x + 1, predictions[i].y - 3),
+					cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
 
-        cv::putText(rgb_image, obj_name,
-                    cv::Point(predictions[i].x + 1, predictions[i].y - 3),
-                    cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
+        	cv::putText(*rgb_image, confianca,
+        			cv::Point(predictions[i].x + 1, predictions[i].y - 3),
+					cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+        }
 
-        cv::putText(rgb_image, confianca,
-                    cv::Point(predictions[i].x + 1, predictions[i].y - 3),
-                    cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+//        if (obj_name.compare("car") == 0)
+//            object_color = cv::Scalar(0, 0, 255);
+//        else
+//            object_color = cv::Scalar(255, 0, 255);
+//
+//        cv::rectangle(rgb_image,
+//                      cv::Point(predictions[i].x, predictions[i].y),
+//                      cv::Point(predictions[i].x + predictions[i].w, predictions[i].y + predictions[i].h),
+//                      object_color, 1);
+//
+//        cv::putText(rgb_image, obj_name,
+//                    cv::Point(predictions[i].x + 1, predictions[i].y - 3),
+//                    cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
+//
+//        cv::putText(rgb_image, confianca,
+//                    cv::Point(predictions[i].x + 1, predictions[i].y - 3),
+//                    cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
 
     }
 
@@ -276,17 +294,94 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
     //cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
     //cv::resize(rgb_image, resized_image, resized_image.size());
     //cv::resize(rgb_image, rgb_image, cv::Size(640, 364));
-    cv::imshow(window_name, rgb_image);
+    cv::imshow(window_name, *rgb_image);
     cv::waitKey(1);
 
     //resized_image.release();
 }
 
 
+vector<cv::Scalar>
+get_slice_colors (unsigned int slices_size)
+{
+	vector<cv::Scalar> colors;
+	cv::Scalar color;
+	if (slices_size== 1)
+	{
+		color = cv::Scalar (0, 0, 255);
+		colors.push_back(color);
+	}
+
+	else if (slices_size== 2)
+	{
+		color = cv::Scalar (0, 0, 255);
+		colors.push_back(color);
+		color = cv::Scalar (0, 255, 0);
+		colors.push_back(color);
+	}
+
+	else if (slices_size== 3)
+	{
+		color = cv::Scalar (0, 0, 255);
+		colors.push_back(color);
+		color = cv::Scalar (0, 255, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 0, 0);
+		colors.push_back(color);
+	}
+
+	else if (slices_size== 4)
+	{
+		color = cv::Scalar (0, 0, 255);
+		colors.push_back(color);
+		color = cv::Scalar (0, 255, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 0, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 255, 0);
+		colors.push_back(color);
+	}
+
+	else if (slices_size== 5)
+	{
+		color = cv::Scalar (0, 0, 255);
+		colors.push_back(color);
+		color = cv::Scalar (0, 255, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 0, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 255, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 0, 255);
+		colors.push_back(color);
+	}
+
+	else if (slices_size== 6)
+	{
+		color = cv::Scalar (0, 0, 255);
+		colors.push_back(color);
+		color = cv::Scalar (0, 255, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 0, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 255, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 0, 255);
+		colors.push_back(color);
+		color = cv::Scalar (0, 255, 255);
+		colors.push_back(color);
+	}
+
+	return (colors);
+
+}
+
+
+
 bool before_first_file = true;
 bool acessessing = false;
 void
-save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_original_image)
+save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_original_image, cv::Mat rgb_image, vector<cv::Mat> scene_slices, vector<cv::Scalar> colors, vector<t_transform_factor> transform_factor_of_slice_to_original_frame)
 {
 	char arr[50];
 	char gt_path[200];
@@ -298,9 +393,22 @@ save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_ori
 	string str_gt_path (gt_path);
 	string groundtruth_folder = str_gt_path + "-r.txt";
 	string detections_folder = str_folder_name + arr + "-r.txt";
+	string images_folder = str_folder_image_name + arr + "-r.png";
 
 	if (access(groundtruth_folder.c_str(), F_OK) == 0)
 	{
+		if (strcmp(detection_type,"-cs") == 0)
+		{
+			for (int i = scene_slices.size() - 1; i >= 1; i++)
+			{
+				cv::rectangle(rgb_image,
+						cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x, transform_factor_of_slice_to_original_frame[i].translate_factor_y),
+						cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x + scene_slices[i].cols, transform_factor_of_slice_to_original_frame[i].translate_factor_y + scene_slices[i].rows),
+						colors[i-1], 3);
+				cv::imwrite(images_folder, rgb_image);
+			}
+		}
+
 		before_first_file = false;
 		acessessing = true;
 		FILE *f_groundtruth = fopen (groundtruth_folder.c_str(), "r");
@@ -363,7 +471,7 @@ save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_ori
 
 void
 detections(vector<bbox_t> predictions, carmen_bumblebee_basic_stereoimage_message *image_msg, carmen_velodyne_partial_scan_message velodyne_sync_with_cam,
-		   cv::Mat src_image, cv::Mat rgb_image, double start_time, double fps, vector<carmen_position_t> rddf_points,
+		   cv::Mat src_image, cv::Mat *rgb_image, double start_time, double fps, vector<carmen_position_t> rddf_points,
 		   string window_name)
 {
 	vector <bounding_box> bouding_boxes_list;
@@ -974,13 +1082,16 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     cv::Mat rgb_image_copy = rgb_image.clone();
 
     vector<bbox_t> bounding_boxes_of_slices_in_original_image;
+    vector<cv::Scalar> colors;
+    vector<cv::Mat> scene_slices;
+    vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
     if (strcmp(detection_type,"-ss") == 0)
     {
     	bounding_boxes_of_slices_in_original_image = darknet->detect(src_image, 0.2);
-    	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Original Detection");
+    	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, &rgb_image, start_time, fps, rddf_points_in_image, "Original Detection");
+    	colors = get_slice_colors (1);
     }
-
-    else if (strcmp(detection_type,"-ss") == 0)
+    else if (strcmp(detection_type,"-cs") == 0)
     {
     	carmen_pose_3D_t car_pose = filter_pitch(pose);
     	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, car_pose);
@@ -989,9 +1100,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	out = rgb_image;
     	rddf_points_in_image = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
 
-    	vector<cv::Mat> scene_slices;
+
     	vector<cv::Mat> scene_slices_resized;
-    	vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
     	t_transform_factor t;
     	scene_slices.push_back(out);
     	t.scale_factor_x = 1;
@@ -1026,25 +1136,14 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	rgb_image = scene_slices[0];
     	src_image = scene_slices[0];
     	//cout<<"qtd of detections: "<<bounding_boxes_of_slices_in_original_image.size()<<endl;
-    	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, "Foviated Detection");
+    	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, &rgb_image, start_time, fps, rddf_points_in_image, "Foviated Detection");
 
-
-    	//    for (int i = 1; i < scene_slices.size(); i++)
-    	//    {
-    	//    	cv::Scalar color (0,0,255);
-    	//    	cv::rectangle(rgb_image,
-    	//    	cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x, transform_factor_of_slice_to_original_frame[i].translate_factor_y),
-    	//		cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x + scene_slices[i].cols, transform_factor_of_slice_to_original_frame[i].translate_factor_y + scene_slices[i].rows),
-    	//		color, 3);
-    	//    	cv::imshow("out", rgb_image);
-    	//    	cv::waitKey(10);
-    	//    	cv::imwrite("out.jpg", rgb_image);
-    	//    }
+    	colors = get_slice_colors (scene_slices.size());
 
     	//printf("%lf-r.png\n", image_msg->timestamp);
     }
 
-    save_detections(image_msg->timestamp, bounding_boxes_of_slices_in_original_image);
+    save_detections(image_msg->timestamp, bounding_boxes_of_slices_in_original_image, rgb_image, scene_slices, colors, transform_factor_of_slice_to_original_frame);
 
 
     //cout<<image_msg->timestamp<<"-r.png"<<endl;
@@ -1274,16 +1373,38 @@ main(int argc, char **argv)
     ss << meters_spacement;
     string str_log_name(log_name);
     char folder_name[100];
+    char folder_image_name[100];
     if (strcmp(detection_type,"-cs") == 0)
-    	sprintf(folder_name, "%s_%.0lf_mts_detections/", log_name,meters_spacement);
-    else if (strcmp(detection_type,"-ss") == 0)
-    	sprintf(folder_name, "%s_detections/", log_name);
-    str_folder_name = folder_name;
-    string command;
-    if (access(str_folder_name.c_str(), F_OK) != 0)
     {
-    	command = "mkdir " + str_folder_name;
-    	system(command.c_str());
+    	sprintf(folder_name, "%s_%.0lf_mts_detections/", log_name,meters_spacement);
+    	sprintf(folder_image_name, "%s_%.0lf_mts_images/", log_name,meters_spacement);
+    	str_folder_name = folder_name;
+    	str_folder_image_name = folder_image_name;
+    	string command;
+    	if (access(str_folder_name.c_str(), F_OK) != 0)
+    	{
+    		command = "mkdir " + str_folder_name;
+    		system(command.c_str());
+    	}
+
+    	if (access(str_folder_image_name.c_str(), F_OK) != 0)
+    	{
+    		command = "mkdir " + str_folder_image_name;
+    		system(command.c_str());
+    	}
+    }
+
+    else if (strcmp(detection_type,"-ss") == 0)
+    {
+    	sprintf(folder_name, "%s_detections/", log_name);
+    	str_folder_name = folder_name;
+    	string command;
+    	if (access(str_folder_name.c_str(), F_OK) != 0)
+    	{
+    		command = "mkdir " + str_folder_name;
+    		system(command.c_str());
+    	}
+
     }
 
     initialize_transformations(board_pose, camera_pose, &transformer);
