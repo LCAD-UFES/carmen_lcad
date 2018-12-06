@@ -92,7 +92,7 @@ create_dataset(char *dataset_name)
 	DatasetInterface *dataset;
 
 	if (!strcmp(dataset_name, "carmen"))
-		dataset = new DatasetCarmen("/dados/data/data_log_aeroporto_vila_velha_20170726.txt/", 0);
+		dataset = new DatasetCarmen("/dados/data/data_log_estacionamentos-20181130.txt", 0);
 	else if (!strcmp(dataset_name, "kitti"))
 		dataset = new DatasetKitti("/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/", 1);
 	else
@@ -122,7 +122,7 @@ main(int argc, char **argv)
 			0.1, 0.1, degrees_to_radians(2.5),
 			100., 100., 100.);
 
-	GridMap map("/dados/maps/maps_log_aeroporto_vila_velha_20170726-2.txt", 50., 50., 0.2, GridMapTile::TYPE_VISUAL);
+	GridMap map("/dados/maps/maps_data_log_estacionamentos-20181130-test.txt", 50., 50., 0.2, GridMapTile::TYPE_VISUAL);
 	run_particle_filter(pf, map, cloud, transformed_cloud, *dataset);
 
 	printf("Done\n");

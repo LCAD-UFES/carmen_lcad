@@ -56,9 +56,9 @@ create_map(GridMap &map, PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZ
 
 	deque<string> cloud_names;
 	int pause_viewer = 1;
-	int step = 5;
+	int step = 1;
 
-	for (int i = 300; i < dataset.data.size(); i += step)
+	for (int i = 0; i < dataset.data.size(); i += step)
 	{
 		if (fabs(dataset.data[i].v) < 0.1)
 			continue;
@@ -125,7 +125,7 @@ create_dataset(char *dataset_name)
 	DatasetInterface *dataset;
 
 	if (!strcmp(dataset_name, "carmen"))
-        dataset = new DatasetCarmen("/dados/data/data_log_volta_da_ufes-20180112-2.txt/", 1);
+        dataset = new DatasetCarmen("/dados/data/data_log_estacionamentos-20181130-test.txt", 0);
 	else if (!strcmp(dataset_name, "kitti"))
 		dataset = new DatasetKitti("/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/", 1);
 	else
@@ -150,12 +150,12 @@ main(int argc, char **argv)
 
 	dataset = create_dataset(dataset_name);
 
-	char *map_name = "/dados/maps/maps_log_volta_da_ufes-20180112-2.txt";
+	char *map_name = "/dados/maps/maps_data_log_estacionamentos-20181130-test.txt";
 	char cmd[256];
 
 	sprintf(cmd, "rm -rf %s && mkdir %s", map_name, map_name);
 	system(cmd);
-	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_SEMANTIC, 1);
+	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
 	create_map(map, cloud, transformed_cloud, *dataset);
 	printf("Done\n");
 
