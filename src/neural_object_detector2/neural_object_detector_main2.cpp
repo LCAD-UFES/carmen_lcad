@@ -4,7 +4,8 @@
 
 #define SHOW_DETECTIONS
 
-bool rectangles_intersects(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r2);
+//bool rectangles_intersects(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r2);
+bool rectangles_intersects(cv::Rect A, cv::Rect B);
 
 using namespace std;
 
@@ -439,14 +440,21 @@ save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_ori
 
 				if (obj_name.compare("car") == 0)
 				{
-					cv::Point l1, r1, l2, r2;
-					l1.x = (int)x1; l1.y = (int)y1; //top left
-					r1.x = (int)x2; r1.y = (int)y2; //right botton of groundtruth bbox
-					l2.x = (int)b.x; l2.y = (int)b.y; //top left
-					r2.x = (int)b.x + b.w; r2.y = (int)b.y + b.h; //right botton of detection
+					cv::Rect rect_A;
+					cv::Rect rect_B;
+					rect_A.x = (int)x1; rect_A.y = (int)y1;
+					rect_A.width = (int)x2 - (int)x1; rect_A.height = (int)y2 - (int)y1;
+					rect_B.x = (int)b.x; rect_B.y = (int)b.y;
+					rect_B.width = (int)b.w; rect_B.height = b.h;
+//					cv::Point l1, r1, l2, r2;
+//					l1.x = (int)x1; l1.y = (int)y1; //top left
+//					r1.x = (int)x2; r1.y = (int)y2; //right botton of groundtruth bbox
+//					l2.x = (int)b.x; l2.y = (int)b.y; //top left
+//					r2.x = (int)b.x + b.w; r2.y = (int)b.y + b.h; //right botton of detection
 					//cout<<x1<<" "<<x1<<" "
 					//cout<<classe<<" "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<endl;
-					if(rectangles_intersects(l1, r1, l2, r2))
+					//if(rectangles_intersects(l1, r1, l2, r2))
+					if(rectangles_intersects(rect_A, rect_B))
 					{
 						//cout<<"\t"<<i<<" "<<obj_names[obj_id]<<endl;
 						fprintf (f_detection, "%s %f %.2f %.2f %.2f %.2f\n", "car", b.prob, (float)b.x, (float)b.y, (float)(b.x + b.w), (float)(b.y + b.h));
@@ -586,18 +594,33 @@ calc_percentage_of_rectangles_intersection(cv::Point l1, cv::Point r1, cv::Point
 }
 
 
-bool rectangles_intersects(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r2)
+//bool rectangles_intersects(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r2)
+//{
+//
+//
+//	if ((l1.x < r2.x) &&
+//		(r1.x > l2.x) &&
+//		(l1.y < r2.y) &&
+//		(r1.y > l2.y))
+//		return true;
+//
+//
+//    return false;
+//}
+
+
+bool valueInRange(int value, int min, int max)
+{ return (value >= min) && (value <= max); }
+
+bool rectangles_intersects(cv::Rect A, cv::Rect B)
 {
+    bool xOverlap = valueInRange(A.x, B.x, B.x + B.width) ||
+                    valueInRange(B.x, A.x, A.x + A.width);
 
+    bool yOverlap = valueInRange(A.y, B.y, B.y + B.height) ||
+                    valueInRange(B.y, A.y, A.y + A.height);
 
-	if ((l1.x < r2.x) &&
-		(r1.x > l2.x) &&
-		(l1.y < r2.y) &&
-		(r1.y > l2.y))
-		return true;
-
-
-    return false;
+    return xOverlap && yOverlap;
 }
 
 
@@ -623,6 +646,9 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 			}
 			else
 			{
+				cv::Rect rect_B;
+				rect_B.x = (int)b.x; rect_B.y = (int)b.y;
+				rect_B.width = (int)b.w; rect_B.height = b.h;
 				cv::Point l1; //top left
 				l1.x = b.x;
 				l1.y = b.y;
@@ -633,6 +659,15 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 
 				for (int k = 0; k < bboxes.size(); k++)
 				{
+					cv::Rect rect_A;
+					rect_A.x = (int)bboxes[k].x; rect_A.y = (int)bboxes[k].y;
+					rect_A.width = (int)bboxes[k].w; rect_A.height = (int)bboxes[k].h;
+
+					//					cv::Point l1, r1, l2, r2;
+					//					l1.x = (int)x1; l1.y = (int)y1; //top left
+					//					r1.x = (int)x2; r1.y = (int)y2; //right botton of groundtruth bbox
+					//					l2.x = (int)b.x; l2.y = (int)b.y; //top left
+					//					r2.x = (int)b.x + b.w; r2.y = (int)b.y + b.h; //right botton of detection
 					float percentage_of_intersection_between_bboxes;
 					cv::Point l2;
 					l2.x = bboxes[k].x;
@@ -641,11 +676,12 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 					r2.x = bboxes[k].x + bboxes[k].w;
 					r2.y = bboxes[k].y + bboxes[k].h;
 					//cout<<"\t"<<l2.x<<" "<<l2.y<<" "<<r2.x<<" "<<r2.y<<endl;
-					if (rectangles_intersects(l1, r1, l2, r2))
+					//if (rectangles_intersects(l1, r1, l2, r2))
+					if(rectangles_intersects(rect_A, rect_B))
 					{
 						percentage_of_intersection_between_bboxes = calc_percentage_of_rectangles_intersection(l1, r1, l2, r2);
 						//cout<< percentage_of_intersection_between_bboxes<< endl;
-						if (percentage_of_intersection_between_bboxes > 20)
+						if (percentage_of_intersection_between_bboxes > 10)
 						{
 							intersects_with_bboxes = true;
 							break;
