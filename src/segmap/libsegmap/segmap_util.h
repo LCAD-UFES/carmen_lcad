@@ -23,7 +23,7 @@ public:
 
 	CityScapesColorMap()
 	{
-		n_classes = 19;
+		n_classes = 20;
 
 		_colors.push_back(Scalar(128, 64, 128));
 		_colors.push_back(Scalar(244, 35, 232));
@@ -44,6 +44,7 @@ public:
 		_colors.push_back(Scalar(0, 80, 100));
 		_colors.push_back(Scalar(0, 0, 230));
 		_colors.push_back(Scalar(119, 11, 32));
+		_colors.push_back(Scalar(0, 0, 0)); // unknown class
 	}
 
 	Scalar color(int index)

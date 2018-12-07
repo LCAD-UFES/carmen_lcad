@@ -45,8 +45,11 @@ colorize_cloud_according_to_segmentation(PointCloud<PointXYZRGB>::Ptr cloud)
 
 
 void
-create_map(GridMap &map, PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZRGB>::Ptr transformed_cloud, DatasetInterface &dataset)
+create_map(GridMap &map, DatasetInterface &dataset)
 {
+	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
+	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
+
 	//pcl::visualization::PCLVisualizer viewer("Cloud Viewer");
 	//viewer.setBackgroundColor(.5, .5, .5);
 	//viewer.removeAllPointClouds();
@@ -112,53 +115,48 @@ create_map(GridMap &map, PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZ
 				printf("Reinitializing\n");
 				i = 0;
 			}
+			if (c == 'f')
+				step *= 2;
+			if (c == 'g')
+			{
+				step /= 2;
+				if (step < 1) step = 1;
+			}
 		}
+
+//		if (i > 500 && i < dataset.data.size() - 1000)
+//			i = dataset.data.size() - 1000;
 	}
 
 	//waitKey(-1);
 }
 
 
-DatasetInterface*
-create_dataset(char *dataset_name)
-{
-	DatasetInterface *dataset;
-
-	if (!strcmp(dataset_name, "carmen"))
-        dataset = new DatasetCarmen("/dados/data/data_log_estacionamentos-20181130-test.txt", 0);
-	else if (!strcmp(dataset_name, "kitti"))
-		dataset = new DatasetKitti("/dados/kitti_stuff/kitti_2011_09_26/2011_09_26_data/2011_09_26_drive_0048_sync/", 1);
-	else
-		exit(printf("Error: dataset '%s' not found.\n", dataset_name));
-
-	return dataset;
-}
-
-
 int
 main(int argc, char **argv)
 {
-	char *dataset_name = "carmen";
+	if (argc < 2)
+		exit(printf("Error: Use %s <log data directory>\n", argv[0]));
 
-	if (argc > 1)
-		dataset_name = argv[1];
+	char dataset_name[256];
+	char map_name[256];
+
+	sprintf(dataset_name, "/dados/data/%s", argv[1]);
+	sprintf(map_name, "/dados/maps/map_%s", argv[1]);
+	printf("dataset_name: %s\n", dataset_name);
+	printf("map_name: %s\n", map_name);
 
 	DatasetInterface *dataset;
+    dataset = new DatasetCarmen(dataset_name, 0);
 
-	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
-	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
-
-	dataset = create_dataset(dataset_name);
-
-	char *map_name = "/dados/maps/maps_data_log_estacionamentos-20181130-test.txt";
 	char cmd[256];
-
 	sprintf(cmd, "rm -rf %s && mkdir %s", map_name, map_name);
 	system(cmd);
-	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
-	create_map(map, cloud, transformed_cloud, *dataset);
-	printf("Done\n");
 
+	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
+	create_map(map, *dataset);
+
+	printf("Done\n");
 	return 0;
 }
 

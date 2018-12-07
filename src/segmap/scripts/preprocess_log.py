@@ -53,28 +53,31 @@ def preprocess_log(log_path):
 
     # synchronize messages and store them in a convenient format
     sync_path = '/tmp/sync_' + log_name
-    cmd = 'python graphslam_fast/step0_parse_and_sync.py ' + log_path + ' > ' + sync_path
+    cmd = 'python scripts/step0_parse_and_sync.py ' + log_path + ' > ' + sync_path
     run_cmd(cmd)
     
     # convert gps data to xyz
     sync_xyz_path = output_dir + '/sync.txt' 
-    cmd = './graphslam_fast/convert_latlon_to_xyz ' + sync_path + ' ' + sync_xyz_path
+    cmd = './scripts/convert_latlon_to_xyz ' + sync_path + ' ' + sync_xyz_path
     run_cmd(cmd)
 
     # run loop closures
-    loops_path = output_dir + '/loops.txt'
-    cmd = './graphslam_fast/generate_loop_closures ' + sync_xyz_path + ' ' + loops_path
-    run_cmd(cmd)
+    loops_path = '/tmp/bla.txt'
+    #loops_path = output_dir + '/loops.txt'
+    #cmd = './graphslam_fast/generate_loop_closures ' + sync_xyz_path + ' ' + loops_path
+    #run_cmd(cmd)
     
     # optimize poses
     cmd = './graphslam_fast/graphslam ' + sync_xyz_path + ' ' + loops_path + ' ' + odom_calib_path + ' ' + output_dir + '/optimized.txt'
     run_cmd(cmd)
 
     # convert pointclouds to pcl format
+    tmp_velodyne_file = '/tmp/velodynes_' + log_name
     velodyne_dir = output_dir + '/velodyne/'
     if not os.path.exists(velodyne_dir):
         os.mkdir(velodyne_dir)
-    cmd = './graphslam_fast/convert_pointclouds_to_pcl ' + sync_xyz_path + ' ' + velodyne_dir
+    run_cmd('grep VELODYNE ' + log_path + ' > ' + tmp_velodyne_file)
+    cmd = './scripts/convert_pointclouds_to_pcl ' + tmp_velodyne_file + ' ' + velodyne_dir
     run_cmd(cmd)
 
     # convert images to png
@@ -96,8 +99,8 @@ def preprocess_log(log_path):
     #run_cmd(cmd)
 
     # convert to kitti format
-    cmd = 'python scripts/rename_data_to_kitti_format.py ' + output_dir
-    run_cmd(cmd)
+    # cmd = 'python scripts/rename_data_to_kitti_format.py ' + output_dir
+    # run_cmd(cmd)
 
     print('Done. Time elapsed:', time.time() - init)
 

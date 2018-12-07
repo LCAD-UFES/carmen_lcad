@@ -21,7 +21,9 @@ def process_image(png_filename):
     #raw_img_teste = enhancer.enhance(1.0)
     width, height = raw_img_teste.size
     img_teste = raw_img_teste.crop((0, int((50/480)*height), width, height-int((110/480) * height)))
+    init = time.time()
     resized_im, seg_map = model.run(img_teste)
+    print('Time to run model:', time.time() - init, end=' ')
     seg_map = np.asarray(seg_map.astype(np.uint8))
     seg_image = label_to_color_image(seg_map).astype(np.uint8)
     resized_im = cv2.resize(np.asarray(resized_im), (640, 480))

@@ -144,7 +144,7 @@ draw_pointcloud(Mat &m, PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap 
 void
 view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 	PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
-	Matrix<double, 4, 4> *vel2car)
+	Matrix<double, 4, 4> *vel2car, double v, double phi)
 {
 	static int step = 1;
 
@@ -154,16 +154,18 @@ view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 
 	Pose2d mode = pf.mode();
 	Mat map_img = map.to_image();
-	Matrix<double, 4, 4> tr;
+	//Matrix<double, 4, 4> tr;
 
 	if (cloud != NULL)
 	{
-		tr = Pose2d::to_matrix(current_pose) * (*vel2car);
-		transformPointCloud(*cloud, *transformed_cloud, tr);
+		//tr = Pose2d::to_matrix(current_pose) * (*vel2car);
+		//transformPointCloud(*cloud, *transformed_cloud, tr);
+		transform_pointcloud(cloud, transformed_cloud, current_pose, *vel2car, v, phi);
 		draw_pointcloud(map_img, transformed_cloud, map, 1, Scalar(0, 255, 0));
 
-		tr = Pose2d::to_matrix(mode) * (*vel2car);
-		transformPointCloud(*cloud, *transformed_cloud, tr);
+		//tr = Pose2d::to_matrix(mode) * (*vel2car);
+		//transformPointCloud(*cloud, *transformed_cloud, tr);
+		transform_pointcloud(cloud, transformed_cloud, mode, *vel2car, v, phi);
 
 		for (int i = 0; i < transformed_cloud->size(); i++)
 		{

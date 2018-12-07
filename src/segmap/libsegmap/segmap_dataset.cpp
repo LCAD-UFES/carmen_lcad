@@ -23,7 +23,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 	cloud->clear();
 
 	load_pointcloud(i, raw_cloud);
-	Mat img = load_image(i+0);
+	Mat img = load_image(i);
 
 	Mat viewer_img;
 
@@ -85,8 +85,20 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 
 	if (view)
 	{
+		if (_use_segmented)
+		{
+			sprintf(_name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
+			Mat aux_img = imread(_name);
+			Mat view_copy = viewer_img.clone();
+			cv::vconcat(aux_img, view_copy, viewer_img);
+		}
+
+		double resize_rate = 640. / (double) viewer_img.cols;
+		int height = resize_rate * viewer_img.rows;
+		int width = resize_rate * viewer_img.cols;
+
 		Mat resized(480, 640, CV_8UC3);
-		resize(viewer_img, resized, resized.size());
+		resize(viewer_img, resized, Size(width, height));
 		imshow("cam_vel_fused", resized);
 	}
 }
@@ -173,7 +185,7 @@ DatasetCarmen::load_image(int i)
 	if (_use_segmented)
 	{
 		int height = (int) (0.75 * raw_img.cols);
-		resized = Mat::zeros(height, raw_img.cols, CV_8UC3);
+		resized = Mat::ones(height, raw_img.cols, CV_8UC3) * 20;
 		int top_limit = (50. / 480.) * height;
 		int bottom_limit = height - (110. / 480.) * height;
 		raw_img.copyTo(resized(Rect(0, top_limit, raw_img.cols, bottom_limit - top_limit)));

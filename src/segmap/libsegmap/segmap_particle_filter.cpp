@@ -1,6 +1,6 @@
 
 #include "segmap_particle_filter.h"
-
+#include <cassert>
 
 double
 ParticleFilter::_gauss()
@@ -79,13 +79,20 @@ ParticleFilter::predict(double v, double phi, double dt)
 
 	for (int i = 0; i < _n; i++)
 	{
-		noisy_v = v + _gauss() * _v_std;
-		noisy_phi = phi + _gauss() * _phi_std;
+		noisy_v = v;
+		noisy_phi = phi;
 
-		_p[i].x += noisy_v * dt * cos(_p[i].th) + _gauss() * _pred_x_std;
-		_p[i].y += noisy_v * dt * sin(_p[i].th) + _gauss() * _pred_y_std;
+		noisy_v += _gauss() * _v_std;
+		noisy_phi = normalize_theta(noisy_phi + _gauss() * _phi_std);
+
+		_p[i].x += noisy_v * dt * cos(_p[i].th);
+		_p[i].y += noisy_v * dt * sin(_p[i].th);
 		_p[i].th += noisy_v * dt * tan(noisy_phi) / distance_between_front_and_rear_axles;
-		_p[i].th = normalize_theta(_p[i].th +  _gauss() * _pred_th_std);
+
+		_p[i].x += _gauss() * _pred_x_std;
+		_p[i].y += _gauss() * _pred_y_std;
+		_p[i].th += _gauss() * _pred_th_std;
+		_p[i].th = normalize_theta(_p[i].th);
 
 		_p_bef[i] = _p[i];
 		_w_bef[i] = _w[i];
@@ -110,6 +117,7 @@ ParticleFilter::_semantic_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 		// cell observed at least once.
 		// TODO: what to do when the cell was never observed?
 		count = v[v.size() - 2];
+		assert(count != 0);
 		// add the log probability of the observed class.
 		unnorm_log_prob += log(v[point.r] / count);
 	}
@@ -160,6 +168,7 @@ ParticleFilter::correct(PointCloud<PointXYZRGB>::Ptr cloud,
 	int max_id = 0;
 	int min_id = 0;
 
+	fprintf(stderr, "DEBUG: Unormalized particle weights: ");
 	for (i = 0; i < _n; i++)
 	{
 		//Matrix<double, 4, 4> tr = Pose2d::to_matrix(_p[i]) * vel2car;
@@ -178,7 +187,10 @@ ParticleFilter::correct(PointCloud<PointXYZRGB>::Ptr cloud,
 
 		if (_w[i] < _w[min_id])
 			min_id = i;
+
+		fprintf(stderr, "%.4lf ", _w[i]);
 	}
+	fprintf(stderr, "\n");
 
 	best = _p[max_id];
 	min_weight = _w[min_id];
@@ -202,11 +214,19 @@ ParticleFilter::correct(PointCloud<PointXYZRGB>::Ptr cloud,
 	//printf("Sum weights: %lf\n", sum_weights);
 
 	// normalize the probabilities
+	fprintf(stderr, "DEBUG: Normalized particle weights: ");
 	for (i = 0; i < _n; i++)
 	{
-		_w[i] /= sum_weights;
+		if (sum_weights == 0)
+			_w[i] = 1. / (double) _n;
+		else
+			_w[i] /= sum_weights;
+
 		_w_bef[i] = _w[i];
+
+		fprintf(stderr, "%.4lf ", _w[i]);
 	}
+	fprintf(stderr, "\n");
 
 	// resample
 	_p[0] = best; // elitism

@@ -167,7 +167,7 @@ GridMapTile::add_point(PointXYZRGB &p)
 	px = (p.x - _xo) * _pixels_by_m;
 	py = (p.y - _yo) * _pixels_by_m;
 
-	double _r = 0.8;
+	double _r = 0.5;
 
 	if (px >= 0 && px < _w && py >= 0 && py < _h)
 	{
