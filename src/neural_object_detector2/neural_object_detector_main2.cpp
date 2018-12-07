@@ -400,7 +400,8 @@ save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_ori
 	{
 		if (strcmp(detection_type,"-cs") == 0)
 		{
-			for (int i = 1; i < scene_slices.size(); i++)
+			//for (int i = 1; i < scene_slices.size(); i++)
+			for (int i = scene_slices.size()-1; i >= 1 ; i--)
 			{
 				cv::rectangle(rgb_image,
 						cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x, transform_factor_of_slice_to_original_frame[i].translate_factor_y),
@@ -630,6 +631,7 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 	vector<bbox_t> bboxes;
 	bbox_t b;
 	bool intersects_with_bboxes = false;
+	bool rect_dont_intersects = false;
 
 	for (int i = 0; i < bounding_boxes_of_slices.size(); i++)
 	{
@@ -681,7 +683,7 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 					{
 						percentage_of_intersection_between_bboxes = calc_percentage_of_rectangles_intersection(l1, r1, l2, r2);
 						//cout<< percentage_of_intersection_between_bboxes<< endl;
-						if (percentage_of_intersection_between_bboxes > 10)
+						if (percentage_of_intersection_between_bboxes > 1)
 						{
 							intersects_with_bboxes = true;
 							break;
