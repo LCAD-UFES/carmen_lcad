@@ -274,7 +274,7 @@ dist2d(double x1, double y1, double x2, double y2)
 void
 ackerman_motion_model(Pose2d &pose, double v, double phi, double dt)
 {
-	if (phi < degrees_to_radians(-30) || phi > degrees_to_radians(30))
+	if (fabs(phi) > degrees_to_radians(80))
 		exit(printf("Error phi = %lf\n", radians_to_degrees(phi)));
 
 

@@ -48,7 +48,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset)
 
 	for (int i = step; i < dataset.data.size(); i += step)
 	{
-		Pose2d gt_pose = dataset.data[i].gps;
+		Pose2d gt_pose = dataset.data[i].pose;
 
 		pf.predict(dataset.data[i].v, dataset.data[i].phi, dataset.data[i].image_time - dataset.data[i - step].image_time);
 		//view(pf, map, poses, gps, NULL, NULL);
@@ -104,8 +104,8 @@ main(int argc, char **argv)
 	dataset = new DatasetCarmen(dataset_name, 1);
 
 	ParticleFilter pf(30, 0.5, 0.5, degrees_to_radians(5),
-			0.1, degrees_to_radians(.5),
-			0.025, 0.025, degrees_to_radians(.25),
+			0.2, degrees_to_radians(.5),
+			0.1, 0.1, degrees_to_radians(.5),
 			100., 100., 100.);
 
 	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_SEMANTIC);

@@ -147,13 +147,13 @@ main(int argc, char **argv)
 	printf("map_name: %s\n", map_name);
 
 	DatasetInterface *dataset;
-    dataset = new DatasetCarmen(dataset_name, 0);
+    dataset = new DatasetCarmen(dataset_name, 1);
 
 	char cmd[256];
 	sprintf(cmd, "rm -rf %s && mkdir %s", map_name, map_name);
 	system(cmd);
 
-	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
+	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_SEMANTIC, 1);
 	create_map(map, *dataset);
 
 	printf("Done\n");
