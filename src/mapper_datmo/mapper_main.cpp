@@ -76,6 +76,7 @@ int decay_to_offline_map;
 int create_map_sum_and_count;
 int use_remission;
 
+int process_semantic = 0;
 int verbose = 0;
 
 carmen_pose_3D_t sensor_board_1_pose;
@@ -136,6 +137,8 @@ extern carmen_mapper_virtual_scan_message virtual_scan_message;
 char *calibration_file = NULL;
 char *save_calibration_file = NULL;
 
+static char *segmap_dirname = (char *) "/dados/log_dante_michelini-20181116.txt_segmap";
+
 
 void
 filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
@@ -175,18 +178,26 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 			if (image_x < 0 || image_x >= image_width || image_y < 0 || image_y >= image_height) // Disregard laser rays out of the image window
 				continue;
 
+			int thread_id = omp_get_thread_num();
+			double log_odds = get_log_odds_via_unexpeted_delta_range(sensor_params, sensor_data, i, j, robot_near_strong_slow_down_annotation, thread_id);
+
 			// Jose's method for checking if a point is an obstacle
-			double delta_x = abs(velodyne_p3d.x() - previous_velodyne_p3d.x());
-			double delta_z = abs(velodyne_p3d.z() - previous_velodyne_p3d.z());
+			double delta_x = fabs(velodyne_p3d.x() - previous_velodyne_p3d.x());
+			double delta_z = fabs(velodyne_p3d.z() - previous_velodyne_p3d.z());
 			double line_angle = carmen_radians_to_degrees(fabs(atan2(delta_z, delta_x)));
 			previous_velodyne_p3d = velodyne_p3d;
 
+			(void) log_odds, (void) line_angle;
 //			if (range <= MIN_RANGE || range >= sensor_params->range_max) // Disregard laser rays out of distance range
 //				laser_ray_color = cv::Scalar(0, 255, 255);
-//			else if (line_angle <= MIN_ANGLE_OBSTACLE || line_angle >= MAX_ANGLE_OBSTACLE) // Disregard laser rays that didn't hit an obstacle
+//			else
+//			if (line_angle <= MIN_ANGLE_OBSTACLE || line_angle >= MAX_ANGLE_OBSTACLE) // Disregard laser rays that didn't hit an obstacle
+//			if (log_odds < MIN_LOG_ODDS) // Disregard laser rays that didn't hit an obstacle
 //				laser_ray_color = cv::Scalar(0, 255, 0);
-//			else if (!is_moving_object(camera_data[camera_index].semantic[image_index][image_x + image_y * image_width])) // Disregard if it is not a moving object
-			/*else */if (camera_data[camera_index].semantic[image_index][image_x + image_y * image_width] < 11)
+//			else
+			if ((camera_data[camera_index].semantic[image_index] != NULL) &&
+			    (camera_data[camera_index].semantic[image_index][image_x + image_y * image_width] < 11)) // Disregard if it is not a moving object
+//				(!is_moving_object(camera_data[camera_index].semantic[image_index][image_x + image_y * image_width])) // Disregard if it is not a moving object
 				laser_ray_color = cv::Scalar(255, 0, 0);
 			else
 			{
@@ -230,7 +241,7 @@ filter_sensor_data_using_image_semantic_segmentation(sensor_parameters_t *sensor
 				continue;
 
 			int j = sensor_data->point_cloud_index;
-			double time_difference = fabs(camera_data[camera].timestamp[i] - sensor_data->points_timestamp[j]);
+			double time_difference = fabs(camera_data[camera].timestamp[i] - sensor_data->points_timestamp[j] - CAMERA_DELAY);
 			if (time_difference < nearest_time_diff)
 			{
 				nearest_index = i;
@@ -341,7 +352,7 @@ print_stats_header()
 void
 print_stats()
 {
-	const double time_interval = 15.0;
+	const double time_interval = 5.0;
 	static double last_print_time = globalpos_history[0].timestamp;
 	if (globalpos_history[last_globalpos].timestamp - last_print_time < time_interval)
 		return;
@@ -773,51 +784,67 @@ colormap[] =
 
 
 void
-save_image_semantic_map_to_disk(int width, int height, int camera, double timestamp, unsigned char *segmap)
+save_image_semantic_map_to_disk(unsigned char *segmap, int width, int height, int camera, char camera_side, double timestamp, char *dirname)
 {
-	static const char *dirname = (char *) "/dados/log_dante_michelini-20181116.txt_segmap";
-	static struct stat st;
-	if (stat(dirname, &st) == -1)
-		mkdir(dirname, 0777);
+	char path[2000];
+	strcpy(path, dirname);
+	if (path[strlen(path) - 1] != '/')
+		strcat(path, "/");
 
-	char path[256];
+	struct stat st;
+	if (stat(path, &st) == -1)
+		mkdir(path, 0777);
+
 	int subdir1 = (int) timestamp / 10000 * 10000;
-	sprintf(path, "%s/%d/", dirname, subdir1);
+	sprintf(path, "%s%d/", path, subdir1);
 	if (stat(path, &st) == -1)
 		mkdir(path, 0777);
 
 	int subdir2 = (int) timestamp / 100 * 100;
-	sprintf(path, "%s/%d/%d/", dirname, subdir1, subdir2);
+	sprintf(path, "%s%d/", path, subdir2);
 	if (stat(path, &st) == -1)
 		mkdir(path, 0777);
 
-	sprintf(path, "%s/%d/%d/%.6lf.bb%d.segmap", dirname, subdir1, subdir2, timestamp, camera);
-	carmen_FILE *segmap_file = carmen_fopen(path, "w");
-	carmen_fwrite(segmap, width * height, 1, segmap_file);
+	sprintf(path, "%s%.6lf.bb%d-%c.segmap", path, timestamp, camera, camera_side);
+	int segmap_size = width * height;
+	carmen_FILE *segmap_file = carmen_fopen(path, "wb");
+	carmen_fwrite(segmap, sizeof(unsigned char), segmap_size, segmap_file);
 	carmen_fclose(segmap_file);
 }
 
 
-unsigned char*
-open_semantic_image(char* dir, double timestamp)
+unsigned char *
+open_semantic_image(int width, int height, int camera, char camera_side, double timestamp, char *dirname)
 {
+	(void) camera;
 	char complete_path[1024];
-	int img_size = 1228800;
+	sprintf(complete_path, "%s/%.6lf-%c.segmap", dirname, timestamp, camera_side);
 
-	sprintf(complete_path, "%s/%lf-r.segmap", dir, timestamp);
+	carmen_FILE *segmap_file = carmen_fopen(complete_path, "rb");
 
-	//printf("%s\n", complete_path);
-
-	FILE *image_file = fopen(complete_path, "rb");
-
-	if (!image_file)
+	if (!segmap_file)
+	{
+		fprintf (stderr, "Error: Segmap file not found! %s\n", complete_path);
 		return NULL;
+	}
 
-	unsigned char *semantic = (unsigned char*) malloc (img_size * sizeof(unsigned char));
+	int segmap_size = width * height;
+	unsigned char *segmap = (unsigned char *) malloc (sizeof(unsigned char) * segmap_size);
 
-	fread(semantic, img_size, sizeof(unsigned char), image_file);
+	if (!segmap)
+	{
+		fprintf (stderr, "Error: Could not allocate memory for segmap file! %s\n", complete_path);
+		return NULL;
+	}
 
-	return (semantic);
+	int bytes_read = carmen_fread(segmap, sizeof(unsigned char), segmap_size, segmap_file);
+
+	if (bytes_read != segmap_size)
+		fprintf(stderr, "Error: Segmap file size must be %d bytes, but %d bytes were read from disk! %s\n", segmap_size, bytes_read, complete_path);
+
+	carmen_fclose(segmap_file);
+
+	return segmap;
 }
 
 
@@ -826,31 +853,33 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 {
 	camera_msg_count[camera]++;
 	int i = (camera_data[camera].current_index + 1) % NUM_CAMERA_IMAGES;
+	char camera_side = (camera_alive[camera] == 0) ? 'l' : 'r';
 
 	camera_data[camera].current_index = i;
 	camera_data[camera].width[i] = image_msg->width;
 	camera_data[camera].height[i] = image_msg->height;
 	camera_data[camera].image_size[i] = image_msg->image_size;
 	camera_data[camera].isRectified[i] = image_msg->isRectified;
-	camera_data[camera].image[i] = (camera_alive[camera] == 0) ? image_msg->raw_left : image_msg->raw_right;
 	camera_data[camera].timestamp[i] = image_msg->timestamp;
-	camera_data[camera].semantic[i] = open_semantic_image((char*)"/dados/log_dante_michelini-20181116.txt_segmap", image_msg->timestamp);
+	camera_data[camera].image[i] = (camera_alive[camera] == 0) ? image_msg->raw_left : image_msg->raw_right;
 
-	if (camera_data[camera].semantic[i] == NULL)
-	{
-		printf ("Image Not Found! %s/%lf.segmap\n", (char*)"/dados/log_dante_michelini-20181116.txt_segmap", image_msg->timestamp);
-		camera_data[camera].semantic[i] = image_msg->raw_right;
-		//camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
-	}
+	if (camera_data[camera].semantic[i] != NULL)
+		free(camera_data[camera].semantic[i]);
+	camera_data[camera].semantic[i] = NULL;
 
+	if (process_semantic)
+		camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
+	else
+		camera_data[camera].semantic[i] = open_semantic_image(image_msg->width, image_msg->height, camera, camera_side, image_msg->timestamp, segmap_dirname);
 
 	if (verbose >= 2)
 	{
 	    cv::Mat image_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, camera_data[camera].image[i]);
 		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, cv::Scalar(0));
-	    for (int y = 0; y < semantic_cv.rows; y++)
-	        for (int x = 0; x < semantic_cv.cols; x++)
-	        	semantic_cv.at<cv::Vec3b>(cv::Point(x, y)) = colormap[camera_data[camera].semantic[i][x + y * semantic_cv.cols]];
+		if (camera_data[camera].semantic[i] != NULL)
+			for (int y = 0; y < semantic_cv.rows; y++)
+				for (int x = 0; x < semantic_cv.cols; x++)
+					semantic_cv.at<cv::Vec3b>(cv::Point(x, y)) = colormap[camera_data[camera].semantic[i][x + y * semantic_cv.cols]];
 
 //		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC1, camera_data[camera].semantic[i]);
 //		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, color_image(image_msg->width, image_msg->height, camera_data[camera].semantic[i]));
@@ -1494,6 +1523,7 @@ read_camera_parameters(int argc, char **argv)
 	if (active_cameras == 0)
 		fprintf(stderr, "No cameras active for datmo\n\n");
 	else
+	if (process_semantic)
 		initialize_inference_context();
 }
 
@@ -1647,6 +1677,7 @@ read_parameters(int argc, char **argv,
 		{(char *) "commandline", (char *) "generate_neural_mapper_dataset", CARMEN_PARAM_ONOFF, &generate_neural_mapper_dataset, 0, NULL},
 		{(char *) "commandline", (char *) "neural_mapper_max_distance_meters", CARMEN_PARAM_INT, &neural_mapper_max_distance_meters, 0, NULL},
 		{(char *) "commandline", (char *) "neural_mapper_data_pace", CARMEN_PARAM_INT, &neural_mapper_data_pace, 0, NULL},
+		{(char *) "commandline", (char *) "process_semantic", CARMEN_PARAM_ONOFF, &process_semantic, 1, NULL},
 		{(char *) "commandline", (char *) "verbose", CARMEN_PARAM_INT, &verbose, 1, NULL},
 	};
 
