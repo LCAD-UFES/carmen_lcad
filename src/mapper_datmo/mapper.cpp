@@ -50,6 +50,8 @@ extern int robot_near_strong_slow_down_annotation;
 extern int ok_to_publish;
 extern int number_of_threads;
 
+extern int file_warnings;
+
 #define HUGE_DISTANCE     32000
 
 #define MAX_VIRTUAL_LASER_SAMPLES 10000
@@ -1024,7 +1026,7 @@ initialize_first_map_block_origin(carmen_map_t *current_carmen_map, carmen_posit
 
 	if (update_and_merge_with_mapper_saved_maps)
 	{
-		carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, map_type, x_origin, y_origin, current_carmen_map);
+		carmen_grid_mapping_get_block_map_by_origin_x_y_verbose(map_path, map_type, x_origin, y_origin, current_carmen_map, file_warnings);
 
 		if (current_carmen_map->complete_map == NULL)
 			carmen_grid_mapping_initialize_map(current_carmen_map, map.config.x_size, map.config.resolution, map_type);
@@ -1101,19 +1103,19 @@ mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 			}
 
 			// get new map with integrated information of the old map
-			carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'm', x_origin, y_origin, &new_carmen_map);
+			carmen_grid_mapping_get_block_map_by_origin_x_y_verbose(map_path, 'm', x_origin, y_origin, &new_carmen_map, file_warnings);
 			if (use_remission)
 			{
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 's', x_origin, y_origin, &new_sum_remission_map);
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, '2', x_origin, y_origin, &new_sum_sqr_remission_map);
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'c', x_origin, y_origin, &new_count_remission_map);
+				carmen_grid_mapping_get_block_map_by_origin_x_y_verbose(map_path, 's', x_origin, y_origin, &new_sum_remission_map, file_warnings);
+				carmen_grid_mapping_get_block_map_by_origin_x_y_verbose(map_path, '2', x_origin, y_origin, &new_sum_sqr_remission_map, file_warnings);
+				carmen_grid_mapping_get_block_map_by_origin_x_y_verbose(map_path, 'c', x_origin, y_origin, &new_count_remission_map, file_warnings);
 			}
 
 			if (create_map_sum_and_count)
 			{
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'u', x_origin, y_origin, &new_sum_occupancy_map);
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'e', x_origin, y_origin, &new_mean_occupancy_map);
-				carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, 'o', x_origin, y_origin, &new_count_occupancy_map);
+				carmen_grid_mapping_get_block_map_by_origin_x_y_verbose(map_path, 'u', x_origin, y_origin, &new_sum_occupancy_map, file_warnings);
+				carmen_grid_mapping_get_block_map_by_origin_x_y_verbose(map_path, 'e', x_origin, y_origin, &new_mean_occupancy_map, file_warnings);
+				carmen_grid_mapping_get_block_map_by_origin_x_y_verbose(map_path, 'o', x_origin, y_origin, &new_count_occupancy_map, file_warnings);
 			}
 		}
 		else

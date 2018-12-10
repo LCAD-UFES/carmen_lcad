@@ -20,6 +20,7 @@ static int local_gridmap_count_3 = (LOCAL_MAP_SIZE/3) / 0.2;
 static int global_gridmap_count = GLOBAL_MAP_SIZE / 0.6;
 static int map_quadrant;
 
+static int file_warnings = 1;
 
 #define MAP_BUFFER_SIZE 18
 
@@ -526,7 +527,7 @@ carmen_grid_mapping_get_block_map_by_origin_x_y(char *map_path, char map_type, d
 
 			sprintf(full_map_path, "%s/%c%d_%d.map", map_path, map_type, (int)local_x_origin, (int)local_y_origin);
 
-			block_map_exists_on_file = carmen_map_read_gridmap_chunk(full_map_path, &unk_map) != -1;
+			block_map_exists_on_file = carmen_map_read_gridmap_chunk_verbose(full_map_path, &unk_map, file_warnings) != -1;
 
 			if (block_map_exists_on_file)
 			{
@@ -545,6 +546,19 @@ carmen_grid_mapping_get_block_map_by_origin_x_y(char *map_path, char map_type, d
 
 	return count_maps_on_file > 0;
 
+}
+
+int
+carmen_grid_mapping_get_block_map_by_origin_x_y_verbose(char *map_path, char map_type, double x_origin, double y_origin, carmen_map_t *new_map, int verbose)
+{
+	int result;
+	int previous_file_warnings_option = file_warnings;
+
+	file_warnings = verbose;
+	result = carmen_grid_mapping_get_block_map_by_origin_x_y(map_path, map_type, x_origin, y_origin, new_map);
+	file_warnings = previous_file_warnings_option;
+
+	return result;
 }
 
 int

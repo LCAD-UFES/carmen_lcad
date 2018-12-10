@@ -123,6 +123,7 @@ int carmen_map_read_gridmap_config(char *filename, carmen_map_config_p config);
 int carmen_map_read_named_gridmap_config(char *filename, char *chunk_name, 
 					 carmen_map_config_p config);
 int carmen_map_read_gridmap_chunk(char *filename, carmen_map_p map);
+int carmen_map_read_gridmap_chunk_verbose(char *filename, carmen_map_p map, int verbose);
 int carmen_map_read_named_gridmap_chunk(char *filename, char *chunk_name, 
 					carmen_map_p map);
 int carmen_map_read_offlimits_chunk(char *filename, 

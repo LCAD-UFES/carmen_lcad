@@ -207,6 +207,32 @@ dbscan_compute_clusters(double d2, size_t density, const vector<image_cartesian>
 }
 
 
+cv::Scalar cluster_color2[] =
+{
+	cv::Vec3b(255, 255, 255),
+	cv::Vec3b(255, 0, 0),
+    cv::Vec3b(255, 255, 0),
+    cv::Vec3b(255, 0, 255),
+    cv::Vec3b(0, 255, 255),
+    cv::Vec3b(150, 150, 150),
+    cv::Vec3b(150, 150, 0),
+    cv::Vec3b(150, 0, 150),
+    cv::Vec3b(0, 150, 150),
+    cv::Vec3b(107, 142, 35),
+    cv::Vec3b(152, 251, 152),
+    cv::Vec3b(70, 130, 180),
+    cv::Vec3b(220, 20, 60),
+    cv::Vec3b(255, 0, 0),
+    cv::Vec3b(0, 0, 142),
+    cv::Vec3b(0, 0, 70),
+    cv::Vec3b(0, 60, 100),
+    cv::Vec3b(0, 80, 100),
+    cv::Vec3b(0, 0, 230),
+    cv::Vec3b(119, 11, 32),
+};
+
+
+
 cv::Scalar cluster_color[] =
 {
 	cv::Scalar(255, 255, 255),
@@ -236,6 +262,7 @@ void
 filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
 {
 	camera_filter_count[camera_index]++;
+	int filter_datmo_count = 0;
 	cv::Scalar laser_ray_color;
 	int image_width  = camera_data[camera_index].width[image_index];
 	int image_height = camera_data[camera_index].height[image_index];
@@ -243,7 +270,11 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
 	double cu = camera_params[camera_index].cu_factor * image_width;
 	double cv = camera_params[camera_index].cv_factor * image_height;
-	double fov = camera_params[camera_index].fov;
+//	double fov = camera_params[camera_index].fov;
+	cv::Mat img = camera_image_semantic[camera_index];
+	double img_planar_resolution = 0.2;
+	int img_planar_depth = (double) sensor_params->range_max / img_planar_resolution;
+	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
 
@@ -299,17 +330,21 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 //			{
 //				laser_ray_color = cv::Scalar(0, 0, 255);
 //				sensor_data->points[cloud_index].sphere_points[p].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
-//				camera_datmo_count[camera_index]++;
+//				filter_datmo_count++;
 //			}
 			if (line_angle > MIN_ANGLE_OBSTACLE && line_angle < MAX_ANGLE_OBSTACLE && range > MIN_RANGE && range < sensor_params->range_max)// Disregard laser rays that didn't hit an obstacle
 			{
-				int ix = (double) image_x / image_width  * camera_image_semantic[camera_index].cols / 2;
-				int iy = (double) image_y / image_height * camera_image_semantic[camera_index].rows;
+				int ix = (double) image_x / image_width  * img.cols / 2;
+				int iy = (double) image_y / image_height * img.rows;
 
-				if (verbose >= 2 && ix > 0 && ix <= (image_width / 2) && iy > 0 && iy <= image_height)
+				if (verbose >= 2 && ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
 				{
-					circle(camera_image_semantic[camera_index], cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
-					circle(camera_image_semantic[camera_index], cv::Point(ix + camera_image_semantic[camera_index].cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+					circle(img, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+					circle(img, cv::Point(ix + img.cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+					int px = (double) camera_p3d.y() / img_planar_resolution + img_planar_depth;
+					int py = (double) img_planar.rows - 1 - camera_p3d.x() / img_planar_resolution;
+					if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
+						img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 255);
 				}
 				image_cartesian point;
 				point.shot_number = j;
@@ -350,17 +385,29 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 			for (unsigned int j = 0; j < filtered_points[i].size(); j++)
 			{
 				sensor_data->points[cloud_index].sphere_points[filtered_points[i][j].ray_number].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
+				filter_datmo_count++;
 
-				if (filtered_points[i][j].image_x > 0 && filtered_points[i][j].image_x <= image_width && filtered_points[i][j].image_y > 0 && filtered_points[i][j].image_y <= image_height) // Disregard laser rays out of the image window
+				if (filtered_points[i][j].image_x >= 0 && filtered_points[i][j].image_x < image_width && filtered_points[i][j].image_y >= 0 && filtered_points[i][j].image_y < image_height) // Disregard laser rays out of the image window
 				{
-					int ix = (double) filtered_points[i][j].image_x / image_width  * camera_image_semantic[camera_index].cols / 2;
-					int iy = (double) filtered_points[i][j].image_y / image_height * camera_image_semantic[camera_index].rows;
-					circle(camera_image_semantic[camera_index], cv::Point(ix, iy), 1, cluster_color[i], 1, 8, 0);
+					int ix = (double) filtered_points[i][j].image_x / image_width  * img.cols / 2;
+					int iy = (double) filtered_points[i][j].image_y / image_height * img.rows;
+					circle(img, cv::Point(ix, iy), 1, cluster_color[i], 1, 8, 0);
+					int px = (double) -filtered_points[i][j].cartesian_y / img_planar_resolution + img_planar_depth;
+					int py = (double) img_planar.rows - 1 - filtered_points[i][j].cartesian_x / img_planar_resolution;
+					if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
+						img_planar.at<cv::Scalar>(cv::Point(px, py)) = cluster_color2[i];
 				}
 			}
 	}
 	if (verbose >= 2)
-		imshow("Image Semantic Segmentation", camera_image_semantic[camera_index]), cv::waitKey(1);
+	{
+		imshow("Image Semantic Segmentation", img);
+//    	resize(img_planar, img_planar, cv::Size(0, 0), 2, 2, cv::INTER_NEAREST); // cv::Size(2 * img_planar.cols, 2 * img_planar.rows));
+		imshow("Velodyne Semantic Map", img_planar);
+		cv::waitKey(1);
+	}
+	if (filter_datmo_count)
+		camera_datmo_count[camera_index]++;
 }
 
 
@@ -368,6 +415,7 @@ void
 filter_sensor_data_using_one_image_old(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
 {
 	camera_filter_count[camera_index]++;
+	int filter_datmo_count = 0;
 	cv::Scalar laser_ray_color;
 	int image_width  = camera_data[camera_index].width[image_index];
 	int image_height = camera_data[camera_index].height[image_index];
@@ -376,6 +424,7 @@ filter_sensor_data_using_one_image_old(sensor_parameters_t *sensor_params, senso
 	double cu = camera_params[camera_index].cu_factor * image_width;
 	double cv = camera_params[camera_index].cv_factor * image_height;
 	double fov = camera_params[camera_index].fov;
+	cv::Mat img = camera_image_semantic[camera_index];
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
 
@@ -427,19 +476,21 @@ filter_sensor_data_using_one_image_old(sensor_parameters_t *sensor_params, senso
 			{
 				laser_ray_color = cv::Scalar(0, 0, 255);
 				sensor_data->points[cloud_index].sphere_points[p].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
-				camera_datmo_count[camera_index]++;
+				filter_datmo_count++;
 			}
 			if (verbose >= 2)
 			{
-				int ix = (double) image_x / image_width  * camera_image_semantic[camera_index].cols / 2;
-				int iy = (double) image_y / image_height * camera_image_semantic[camera_index].rows;
-				circle(camera_image_semantic[camera_index], cv::Point(ix, iy), 1, laser_ray_color, 1, 8, 0);
-				circle(camera_image_semantic[camera_index], cv::Point(ix + camera_image_semantic[camera_index].cols / 2, iy), 1, laser_ray_color, 1, 8, 0);
+				int ix = (double) image_x / image_width  * img.cols / 2;
+				int iy = (double) image_y / image_height * img.rows;
+				circle(img, cv::Point(ix, iy), 1, laser_ray_color, 1, 8, 0);
+				circle(img, cv::Point(ix + img.cols / 2, iy), 1, laser_ray_color, 1, 8, 0);
 			}
 		}
 	}
 	if (verbose >= 2)
-		imshow("Image Semantic Segmentation", camera_image_semantic[camera_index]), cv::waitKey(1);
+		imshow("Image Semantic Segmentation", img), cv::waitKey(1);
+	if (filter_datmo_count)
+		camera_datmo_count[camera_index]++;
 }
 
 
@@ -496,47 +547,29 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 	for (i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
 	{
 		double time_difference = fabs(sensors_data[sensor_number].points_timestamp[i] - globalpos_message->timestamp);
-		if (time_difference == 0.0)
-		{
-			old_point_cloud_index = sensors_data[sensor_number].point_cloud_index;
-			sensors_data[sensor_number].point_cloud_index = i;
-			old_globalpos_timestamp = sensors_data[sensor_number].robot_timestamp[i];
-			old_robot_position = sensors_data[sensor_number].robot_pose[i];
-			sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
-			sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
-
-			if (filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]) > 0)
-				run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
-
-			sensors_data[sensor_number].robot_pose[i] = old_robot_position;
-			sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
-			sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
-			break;
-		}
-		else if (time_difference < nearest_time)
+		if (time_difference < nearest_time)
 		{
 			nearest_global_pos = i;
 			nearest_time = time_difference;
 		}
+		if (time_difference == 0.0)
+			break;
 	}
 
-	if (i == NUM_VELODYNE_POINT_CLOUDS)
-	{
-		i = nearest_global_pos;
-		old_point_cloud_index = sensors_data[sensor_number].point_cloud_index;
-		sensors_data[sensor_number].point_cloud_index = i;
-		old_globalpos_timestamp = sensors_data[sensor_number].robot_timestamp[i];
-		old_robot_position = sensors_data[sensor_number].robot_pose[i];
-		sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
-		sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
+	i = nearest_global_pos;
+	old_point_cloud_index = sensors_data[sensor_number].point_cloud_index;
+	old_robot_position = sensors_data[sensor_number].robot_pose[i];
+	old_globalpos_timestamp = sensors_data[sensor_number].robot_timestamp[i];
+	sensors_data[sensor_number].point_cloud_index = i;
+	sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
+	sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
 
-		if (filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]) > 0)
-			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+	if (filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]) > 0)
+		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
-		sensors_data[sensor_number].robot_pose[i] = old_robot_position;
-		sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
-		sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
-	}
+	sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
+	sensors_data[sensor_number].robot_pose[i] = old_robot_position;
+	sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
 }
 
 
@@ -1117,8 +1150,8 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 	    }
 	    hconcat(image_cv, semantic_cv, camera_image_semantic[camera]);
 		cvtColor(camera_image_semantic[camera], camera_image_semantic[camera], CV_RGB2BGR);
-		imshow("Image Semantic Segmentation", camera_image_semantic[camera]);
-		cv::waitKey(1);
+//		imshow("Image Semantic Segmentation", camera_image_semantic[camera]);
+//		cv::waitKey(1);
 	}
 }
 

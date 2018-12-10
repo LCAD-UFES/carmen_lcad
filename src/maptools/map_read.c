@@ -30,6 +30,8 @@
 #include "map_io.h"
 #include <assert.h>
 
+static int file_warnings = 1;
+
 /*
  * if size < 0 then ignore buf and advance fp to one byte after the next '\0'
  */
@@ -666,7 +668,8 @@ int carmen_map_read_gridmap_chunk(char *filename, carmen_map_p map)
 
   fp = carmen_fopen(filename, "r");
   if(fp == NULL) {
-    fprintf(stderr, "Error: could not open file %s for reading.\n",
+	if (file_warnings)
+      fprintf(stderr, "Error: could not open file %s for reading.\n",
 	    filename);
     return -1;
   }
@@ -695,6 +698,18 @@ int carmen_map_read_gridmap_chunk(char *filename, carmen_map_p map)
   strcpy(map->config.map_name, filename);
 
   return carmen_map_read_gridmap_chunk_data(fp, map);
+}
+
+int carmen_map_read_gridmap_chunk_verbose(char *filename, carmen_map_p map, int verbose)
+{
+	int result;
+	int previous_file_warnings_option = file_warnings;
+
+	file_warnings = verbose;
+	result = carmen_map_read_gridmap_chunk(filename, map);
+	file_warnings = previous_file_warnings_option;
+
+	return result;
 }
 
 int carmen_map_read_named_gridmap_chunk(char *filename, char *chunk_name,
