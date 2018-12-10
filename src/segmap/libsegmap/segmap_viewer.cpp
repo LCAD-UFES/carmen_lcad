@@ -146,7 +146,7 @@ view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 	PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 	Matrix<double, 4, 4> *vel2car, double v, double phi)
 {
-	static int step = 1;
+	static int step = 0;
 
 	char c;
 	Pose2d p;
@@ -188,7 +188,7 @@ view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 		draw_particle(map_img, pf._p[i], map, Scalar(255, 255, 255));
 
 	Pose2d mean = pf.mean();
-	draw_pose(map, map_img, mean, Scalar(0, 255, 255));
+	//draw_pose(map, map_img, mean, Scalar(0, 255, 255));
 	draw_pose(map, map_img, current_pose, Scalar(0, 255, 0));
 	draw_pose(map, map_img, mode, Scalar(0, 0, 255));
 

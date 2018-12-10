@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
 #include <carmen/carmen.h>
 #include "prob_measurement_model.h"
 

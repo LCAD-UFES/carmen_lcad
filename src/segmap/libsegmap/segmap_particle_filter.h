@@ -40,8 +40,7 @@ public:
 	double _gauss();
 	double _semantic_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
 	double _image_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
-	void _compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
-			GridMap &map, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
+	void _compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &map,
 			Matrix<double, 4, 4> &vel2car,
 			double v, double phi, int *max_id, int *min_id);
 	void _normalize_weights(int min_id, int max_id);

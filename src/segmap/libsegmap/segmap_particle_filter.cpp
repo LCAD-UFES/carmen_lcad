@@ -109,7 +109,7 @@ ParticleFilter::_semantic_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 	double unnorm_log_prob = 0.;
 	PointXYZRGB point;
 
-	for (int i = 0; i < transformed_cloud->size(); i++)
+	for (int i = 0; i < transformed_cloud->size(); i += 1)
 	{
 		point = transformed_cloud->at(i);
 		vector<double> v = map.read_cell(point);
@@ -158,13 +158,15 @@ ParticleFilter::_image_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Gr
 
 void
 ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
-		GridMap &map, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
+		GridMap &map,
 		Matrix<double, 4, 4> &vel2car,
 		double v, double phi, int *max_id, int *min_id)
 {
 	int i;
 
-	fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
+	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
+
+	//#pragma omp parallel for default(none) private(i) shared(cloud, map, vel2car, v, phi)
 	for (i = 0; i < _n; i++)
 	{
 		//Matrix<double, 4, 4> tr = Pose2d::to_matrix(_p[i]) * vel2car;
@@ -177,14 +179,20 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 			_w[i] = _image_weight(transformed_cloud, map);
 
 		_p_bef[i] = _p[i];
+	}
+
+	*max_id = *min_id = 0;
+
+	fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
+	for (i = 0; i < _n; i++)
+	{
+		fprintf(stderr, "%.4lf ", _w[i]);
 
 		if (_w[i] > _w[*max_id])
 			*max_id = i;
 
 		if (_w[i] < _w[*min_id])
 			*min_id = i;
-
-		fprintf(stderr, "%.4lf ", _w[i]);
 	}
 	fprintf(stderr, "\n");
 
@@ -245,14 +253,13 @@ ParticleFilter::_resample()
 {
 	int i;
 
-	_p[0] = best; // elitism
-
+	//_p[0] = best; // elitism
 	int pos = rand() % _n;
 	double step = 1. / (double) _n;
 	double sum = 0.;
 
     fprintf(stderr, "step: %lf pos: %d Particles: \n", step, pos);
-	for (i = 1; i < _n; i++)
+	for (i = 0; i < _n; i++)
 	{
 		sum += _w[pos];
 		while (sum < step)
@@ -283,7 +290,7 @@ ParticleFilter::correct(PointCloud<PointXYZRGB>::Ptr cloud,
 	int max_id = 0;
 	int min_id = 0;
 
-	_compute_weights(cloud, map, transformed_cloud, vel2car, v, phi, &max_id, &min_id);
+	_compute_weights(cloud, map, vel2car, v, phi, &max_id, &min_id);
 	_normalize_weights(min_id, max_id);
 	_resample();
 }

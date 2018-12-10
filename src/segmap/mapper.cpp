@@ -58,7 +58,7 @@ create_map(GridMap &map, DatasetInterface &dataset)
 	Matrix<double, 4, 4> vel2car = dataset.transform_vel2car();
 
 	deque<string> cloud_names;
-	int pause_viewer = 1;
+	int pause_viewer = 0;
 	int step = 1;
 
 	for (int i = 0; i < dataset.data.size(); i += step)
@@ -68,9 +68,9 @@ create_map(GridMap &map, DatasetInterface &dataset)
 
 		Pose2d pose = dataset.data[i].pose;
 
-		printf("Step %d car pose: %lf %lf %lf\n", i, pose.x, pose.y, pose.th);
+		// printf("Step %d car pose: %lf %lf %lf\n", i, pose.x, pose.y, pose.th);
 
-		dataset.load_fused_pointcloud_and_camera(i, cloud, 1);
+		dataset.load_fused_pointcloud_and_camera(i, cloud, 0);
 		transform_pointcloud(cloud, transformed_cloud, pose, vel2car, dataset.data[i].v, dataset.data[i].phi);
 		//transformed_cloud = cloud;
 
@@ -95,34 +95,34 @@ create_map(GridMap &map, DatasetInterface &dataset)
 		//	cloud_names.pop_front();
 		//}
 
-		Mat map_img = map.to_image().clone();
-		draw_pose(map, map_img, pose, Scalar(0, 255, 0));
-		imshow("viewer", map_img);
-
-		char c = ' ';
-		while (1)
-		{
-			//viewer.spinOnce();
-			c = waitKey(5);
-
-			if (c == 's')
-				pause_viewer = !pause_viewer;
-			if (!pause_viewer || (pause_viewer && c == 'n'))
-
-				break;
-			if (c == 'r')
-			{
-				printf("Reinitializing\n");
-				i = 0;
-			}
-			if (c == 'f')
-				step *= 2;
-			if (c == 'g')
-			{
-				step /= 2;
-				if (step < 1) step = 1;
-			}
-		}
+		//Mat map_img = map.to_image().clone();
+		//draw_pose(map, map_img, pose, Scalar(0, 255, 0));
+		//imshow("viewer", map_img);
+        //
+		//char c = ' ';
+		//while (1)
+		//{
+		//	//viewer.spinOnce();
+		//	c = waitKey(5);
+        //
+		//	if (c == 's')
+		//		pause_viewer = !pause_viewer;
+		//	if (!pause_viewer || (pause_viewer && c == 'n'))
+        //
+		//		break;
+		//	if (c == 'r')
+		//	{
+		//		printf("Reinitializing\n");
+		//		i = 0;
+		//	}
+		//	if (c == 'f')
+		//		step *= 2;
+		//	if (c == 'g')
+		//	{
+		//		step /= 2;
+		//		if (step < 1) step = 1;
+		//	}
+		//}
 
 //		if (i > 500 && i < dataset.data.size() - 1000)
 //			i = dataset.data.size() - 1000;
