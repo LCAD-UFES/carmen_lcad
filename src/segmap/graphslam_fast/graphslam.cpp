@@ -241,9 +241,9 @@ gps_std_from_quality(int quality)
 void
 add_gps_edges(vector<Data> &input_data, SparseOptimizer *optimizer, double xy_std_mult, double th_std)
 {
-	for (size_t i = 0; i < input_data.size(); i += 1)
+	for (size_t i = 0; i < input_data.size(); i += 20)
 	{
-		if (fabs(input_data[i].v) < 10.) // || input_data[i].quality != 4)
+		if (fabs(input_data[i].v) < .2) // || input_data[i].quality != 4)
 			continue;
 
 		SE2 measure(input_data[i].x - input_data[0].x,
@@ -292,9 +292,9 @@ create_dead_reckoning(vector<Data> &input_data, vector<SE2> &dead_reckoning, dou
 	th = init_angle;
 	dead_reckoning.push_back(SE2(x, y, th));
 
-	mult_v = .998;
-	mult_phi = 1.04;
-    add_phi = -0.002;
+	//mult_v = .97;
+	//mult_phi = 0.94;
+    //add_phi = -0.001;
 
 	for (size_t i = 1; i < input_data.size(); i++)
 	{
@@ -358,8 +358,8 @@ load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_d
 
 	create_dead_reckoning(input_data, dead_reckoning, mult_v, mult_phi, add_phi, init_angle);
 	add_vertices(input_data, optimizer, dead_reckoning);
-    add_odometry_edges(input_data, optimizer, dead_reckoning,0.01, 0.001);
-	add_gps_edges(input_data, optimizer, .5, 1e10 * M_PI); //.2, M_PI);
+    add_odometry_edges(input_data, optimizer, dead_reckoning, 0.01, 0.001);
+	add_gps_edges(input_data, optimizer, 1., 1e10 * M_PI); //.2, M_PI);
 	//add_loop_closure_edges(loop_data, optimizer, 5., M_PI);
     //add_gps_loop_closures(optimizer, input_data, 1.0, M_PI);
 

@@ -46,10 +46,22 @@ if __name__ == "__main__":
             if len(filename) < 2 or len(s) < 2:
                 continue
             name = argv[2] + '/' + s[-1]
+            result_name = argv[2] + '/result_' + s[-1]
+            
             init = time.time()
-            seg_map, result = process_image(filename)
-            cv2.imwrite(name, seg_map)
-            cv2.imwrite(argv[2] + '/result_' + s[-1], result)   
+            
+            image_exists = False
+            if os.path.exists(name) and os.path.exists(result_name):
+                img_check = cv2.imread(name)
+                if img_check is not None:
+                    if img_check.shape[0] != 0 and img_check.shape[1] != 0:
+                        image_exists = True
+            
+            if not image_exists:            
+                seg_map, result = process_image(filename)
+                cv2.imwrite(name, seg_map)
+                cv2.imwrite(result_name, result)   
+
             consumed_time = time.time() - init 
             print(count, 'of', len(pngs), filename, 'consumed_time:', consumed_time)
             count += 1
