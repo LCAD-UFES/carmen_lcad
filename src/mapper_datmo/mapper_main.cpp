@@ -77,6 +77,7 @@ int create_map_sum_and_count;
 int use_remission;
 
 int process_semantic = 0;
+int file_warnings = 1;
 int verbose = 0;
 
 carmen_pose_3D_t sensor_board_1_pose;
@@ -1414,6 +1415,8 @@ usage()
 		"    -generate_neural_mapper_dataset on|off : neural mapper dataset option\n"
 		"    -neural_mapper_max_distance_meters <n> : neural mapper maximum distance in meters\n"
 		"    -neural_mapper_data_pace <n>           : neural mapper data pace\n"
+		"    -process_semantic on|off               : process semantic segmentation using Deeplab\n"
+		"    -file_warnings on|off                  : make or suppress file warnings\n"
 		"    -verbose <n>                           : verbose option\n"
 		"\n";
 
@@ -1678,6 +1681,7 @@ read_parameters(int argc, char **argv,
 		{(char *) "commandline", (char *) "neural_mapper_max_distance_meters", CARMEN_PARAM_INT, &neural_mapper_max_distance_meters, 0, NULL},
 		{(char *) "commandline", (char *) "neural_mapper_data_pace", CARMEN_PARAM_INT, &neural_mapper_data_pace, 0, NULL},
 		{(char *) "commandline", (char *) "process_semantic", CARMEN_PARAM_ONOFF, &process_semantic, 1, NULL},
+		{(char *) "commandline", (char *) "file_warnings", CARMEN_PARAM_ONOFF, &file_warnings, 1, NULL},
 		{(char *) "commandline", (char *) "verbose", CARMEN_PARAM_INT, &verbose, 1, NULL},
 	};
 
