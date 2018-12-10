@@ -56,9 +56,6 @@ static carmen_pose_3D_t ultrasonic_sensor_r2_g;
 static carmen_pose_3D_t ultrasonic_sensor_l1_g;
 static carmen_pose_3D_t ultrasonic_sensor_l2_g;
 
-/**
- * Model params
- */
 
 double safe_range_above_sensors;
 double robot_wheel_radius;
@@ -141,8 +138,234 @@ char *save_calibration_file = NULL;
 static char *segmap_dirname = (char *) "/dados/log_dante_michelini-20181116.txt_segmap";
 
 
+inline double
+distance2(image_cartesian a, image_cartesian b)
+{
+	double dx = a.cartesian_x - b.cartesian_x;
+	double dy = a.cartesian_y - b.cartesian_y;
+
+	return (dx * dx + dy * dy);
+}
+
+
+vector<int>
+query(double d2, int i, const vector<image_cartesian> &points, std::vector<bool> clustered)
+{
+	vector<int> neighbors;
+	const image_cartesian &point = points[i];
+
+	for (size_t j = 0; j < points.size(); j++)
+	{
+		if ((distance2(point, points[j]) < d2) && !clustered[j])
+			neighbors.push_back(j);
+	}
+
+	return (neighbors);
+}
+
+
+vector<vector<image_cartesian>>
+dbscan_compute_clusters(double d2, size_t density, const vector<image_cartesian> &points)
+{
+	vector<vector<image_cartesian>> clusters;
+	vector<bool> clustered(points.size(), false);
+
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		// Ignore already clustered points.
+		if (clustered[i])
+			continue;
+
+		// Ignore points without enough neighbors.
+		vector<int> neighbors = query(d2, i, points, clustered);
+		if (neighbors.size() < density)
+			continue;
+
+		// Create a new cluster with the i-th point as its first element.
+		vector<image_cartesian> c;
+		clusters.push_back(c);
+		vector<image_cartesian> &cluster = clusters.back();
+		cluster.push_back(points[i]);
+		clustered[i] = true;
+
+		// Add the point's neighbors (and possibly their neighbors) to the cluster.
+		for (size_t j = 0; j < neighbors.size(); ++j)
+		{
+			int k = neighbors[j];
+			if (clustered[k])
+				continue;
+
+			cluster.push_back(points[k]);
+			clustered[k] = true;
+
+			vector<int> farther = query(d2, k, points, clustered);
+			if (farther.size() >= density)
+				neighbors.insert(neighbors.end(), farther.begin(), farther.end());
+		}
+	}
+	return (clusters);
+}
+
+
+cv::Scalar cluster_color[] =
+{
+	cv::Scalar(255, 255, 255),
+	cv::Scalar(255, 0, 0),
+    cv::Scalar(255, 255, 0),
+    cv::Scalar(255, 0, 255),
+    cv::Scalar(0, 255, 255),
+    cv::Scalar(150, 150, 150),
+    cv::Scalar(150, 150, 0),
+    cv::Scalar(150, 0, 150),
+    cv::Scalar(0, 150, 150),
+    cv::Scalar(107, 142, 35),
+    cv::Scalar(152, 251, 152),
+    cv::Scalar(70, 130, 180),
+    cv::Scalar(220, 20, 60),
+    cv::Scalar(255, 0, 0),
+    cv::Scalar(0, 0, 142),
+    cv::Scalar(0, 0, 70),
+    cv::Scalar(0, 60, 100),
+    cv::Scalar(0, 80, 100),
+    cv::Scalar(0, 0, 230),
+    cv::Scalar(119, 11, 32),
+};
+
+
 void
 filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
+{
+	camera_filter_count[camera_index]++;
+	cv::Scalar laser_ray_color;
+	int image_width  = camera_data[camera_index].width[image_index];
+	int image_height = camera_data[camera_index].height[image_index];
+	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
+	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
+	double cu = camera_params[camera_index].cu_factor * image_width;
+	double cv = camera_params[camera_index].cv_factor * image_height;
+	double fov = camera_params[camera_index].fov;
+	int cloud_index = sensor_data->point_cloud_index;
+	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
+
+	vector<image_cartesian> points;
+
+	for (int j = 0; j < number_of_laser_shots; j++)
+	{
+		int p = j * sensor_params->vertical_resolution;
+		double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[p].horizontal_angle;
+
+		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > 1.57) // Disregard laser shots out of the camera's field of view
+			continue;
+
+//		if (horizontal_angle > 1.57 || horizontal_angle < 1.57 ) // Disregard laser shots out of the camera's field of view
+//			continue;
+
+		double previous_range = sensor_data->points[cloud_index].sphere_points[p].length;
+		double previous_vertical_angle = sensor_data->points[cloud_index].sphere_points[p].vertical_angle;
+		tf::Point previous_velodyne_p3d = spherical_to_cartesian(horizontal_angle, previous_vertical_angle, previous_range);
+
+		for (int i = 1; i < sensor_params->vertical_resolution; i++)
+		{
+			p++;
+			double vertical_angle = sensor_data->points[cloud_index].sphere_points[p].vertical_angle;
+			double range = sensor_data->points[cloud_index].sphere_points[p].length;
+
+			tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+			tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
+
+//			if (velodyne_p3d.x() > 0.0)
+//				continue;
+
+			int image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
+			int image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
+
+//			if (image_x < 0 || image_x >= image_width || image_y < 0 || image_y >= image_height) // Disregard laser rays out of the image window
+//				continue;
+
+			// Jose's method for checking if a point is an obstacle
+			double delta_x = abs(velodyne_p3d.x() - previous_velodyne_p3d.x());
+			double delta_z = abs(velodyne_p3d.z() - previous_velodyne_p3d.z());
+			double line_angle = carmen_radians_to_degrees(fabs(atan2(delta_z, delta_x)));
+			previous_velodyne_p3d = velodyne_p3d;
+
+//			if (range <= MIN_RANGE || range >= sensor_params->range_max) // Disregard laser rays out of distance range
+//				laser_ray_color = cv::Scalar(0, 255, 255);
+//			else if (line_angle <= MIN_ANGLE_OBSTACLE || line_angle >= MAX_ANGLE_OBSTACLE) // Disregard laser rays that didn't hit an obstacle
+//				laser_ray_color = cv::Scalar(0, 255, 0);
+//			else if (!is_moving_object(camera_data[camera_index].semantic[image_index][image_x + image_y * image_width])) // Disregard if it is not a moving object
+//			/*else*/ if (camera_data[camera_index].semantic[image_index][image_x + image_y * image_width] < 11)
+//				laser_ray_color = cv::Scalar(255, 0, 0);
+//			else
+//			{
+//				laser_ray_color = cv::Scalar(0, 0, 255);
+//				sensor_data->points[cloud_index].sphere_points[p].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
+//				camera_datmo_count[camera_index]++;
+//			}
+			if (line_angle > MIN_ANGLE_OBSTACLE && line_angle < MAX_ANGLE_OBSTACLE && range > MIN_RANGE && range < sensor_params->range_max)// Disregard laser rays that didn't hit an obstacle
+			{
+				int ix = (double) image_x / image_width  * camera_image_semantic[camera_index].cols / 2;
+				int iy = (double) image_y / image_height * camera_image_semantic[camera_index].rows;
+
+				if (verbose >= 2 && ix > 0 && ix <= (image_width / 2) && iy > 0 && iy <= image_height)
+				{
+					circle(camera_image_semantic[camera_index], cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+					circle(camera_image_semantic[camera_index], cv::Point(ix + camera_image_semantic[camera_index].cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+				}
+				image_cartesian point;
+				point.shot_number = j;
+				point.ray_number  = p;
+				point.image_x     = image_x;
+				point.image_y     = image_y;
+				point.cartesian_x = velodyne_p3d.x();
+				point.cartesian_y = -velodyne_p3d.y();             // Must be inverted because Velodyne angle is reversed with CARMEN angles
+				point.cartesian_z = velodyne_p3d.z();
+
+				points.push_back(point);
+			}
+			else
+				continue;
+		}
+	}
+	vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.5, 5, points);;
+
+	for (unsigned int i = 0; i < filtered_points.size(); i++)
+	{
+		bool is_moving_obstacle = false;
+		unsigned int cont = 0;
+		for (unsigned int j = 0; j < filtered_points[i].size(); j++)
+		{
+			if (filtered_points[i][j].image_x < 0 || filtered_points[i][j].image_x >= image_width || filtered_points[i][j].image_y < 0 || filtered_points[i][j].image_y >= image_height) // Disregard laser rays out of the image window
+				continue;
+
+			if (camera_data[camera_index].semantic[image_index][filtered_points[i][j].image_x + (filtered_points[i][j].image_y * image_width)] > 11)
+				cont++;
+			if (cont > 10 || cont > (filtered_points[i].size() / 5))
+			{
+				is_moving_obstacle = true;
+				break;
+			}
+		}
+
+		if (is_moving_obstacle)
+			for (unsigned int j = 0; j < filtered_points[i].size(); j++)
+			{
+				sensor_data->points[cloud_index].sphere_points[filtered_points[i][j].ray_number].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
+
+				if (filtered_points[i][j].image_x > 0 && filtered_points[i][j].image_x <= image_width && filtered_points[i][j].image_y > 0 && filtered_points[i][j].image_y <= image_height) // Disregard laser rays out of the image window
+				{
+					int ix = (double) filtered_points[i][j].image_x / image_width  * camera_image_semantic[camera_index].cols / 2;
+					int iy = (double) filtered_points[i][j].image_y / image_height * camera_image_semantic[camera_index].rows;
+					circle(camera_image_semantic[camera_index], cv::Point(ix, iy), 1, cluster_color[i], 1, 8, 0);
+				}
+			}
+	}
+	if (verbose >= 2)
+		imshow("Image Semantic Segmentation", camera_image_semantic[camera_index]), cv::waitKey(1);
+}
+
+
+void
+filter_sensor_data_using_one_image_old(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
 {
 	camera_filter_count[camera_index]++;
 	cv::Scalar laser_ray_color;
