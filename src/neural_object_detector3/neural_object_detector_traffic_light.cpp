@@ -14,17 +14,16 @@ carmen_pose_3D_t board_pose;
 tf::Transformer transformer;
 
 vector <carmen_pose_3D_t> annotation_vector;
-carmen_pose_3D_t nearest_traffic_light_pose;
+vector <carmen_pose_3D_t> nearests_traffic_lights_vector;
 
 // // carmen_position_t screen_marker;
 // Point screen_marker = Point(0,0);
 // bool screen_marker_set = false;
 
+#define TRAFFIC_LIGHT_TRESHOLD 7       // Distance in meters to consider traffic light position
 #define MAX_TRAFFIC_LIGHT_DIST 100
-// #define MIN_TRAFFIC_LIGHT_THRESHOLD 30
-// #define MAX_TRAFFIC_LIGHT_THRESHOLD 1000
-#define MIN_TRAFFIC_LIGHT_THRESHOLD 20
-#define MAX_TRAFFIC_LIGHT_THRESHOLD 90
+#define MIN_TRAFFIC_LIGHT_THRESHOLD 20 // 30
+#define MAX_TRAFFIC_LIGHT_THRESHOLD 90 // 1000
 
 double
 compute_distance_to_the_traffic_light()
@@ -48,10 +47,22 @@ compute_distance_to_the_traffic_light()
                 if (distance <= MAX_TRAFFIC_LIGHT_DISTANCE && orientation_ok && behind == false)
                 {
                     nearest_traffic_light_distance = distance;
-                    nearest_traffic_light_pose = annotation_vector[i];
+                    nearests_traffic_lights_vector.push_back(annotation_vector[i]);
                 }
             }
     }
+    nearest_traffic_light_distance = DBL_MAX;
+
+    for (unsigned int i = 0; i < annotation_vector.size(); i++)
+    {
+    	double distance = sqrt(pow(nearests_traffic_lights_vector[0].position.x - annotation_vector[i].position.x, 2) +
+    			pow(nearests_traffic_lights_vector[0].position.y - annotation_vector[i].position.y, 2));
+    	if (distance < TRAFFIC_LIGHT_TRESHOLD)
+    	{
+    		nearests_traffic_lights_vector.push_back(annotation_vector[i]);
+    	}
+    }
+
     return (nearest_traffic_light_distance);
 }
 
@@ -457,9 +468,9 @@ compute_traffic_light_pose(vector<bbox_t> predictions, int resized_w, int resize
 int
 compute_threshold()
 {
-    double dist = DIST2D(nearest_traffic_light_pose.position, globalpos_msg->globalpos);
+    double dist = DIST2D(nearests_traffic_lights_vector[0].position, globalpos_msg->globalpos);
 
-    //printf("%lf %lf\n", nearest_traffic_light_pose.position.x, nearest_traffic_light_pose.position.y);
+    //printf("%lf %lf\n", nearests_traffic_lights_vector.position.x, nearests_traffic_lights_vector.position.y);
     // printf("Dist %lf\n", dist); // #!#
 
 
@@ -479,27 +490,32 @@ compute_threshold()
 
 
 carmen_traffic_light*
-get_main_traffic_light(vector<bbox_t> predictions, carmen_position_t tf_annotation_on_image)
+get_main_traffic_light(vector<bbox_t> predictions,  vector<carmen_position_t> tf_annotation_on_image)
 {
     carmen_traffic_light *main_traffic_light = (carmen_traffic_light *) malloc (1 * sizeof(carmen_traffic_light));
     bbox_t main_bbox;
     double dist = 0.0, main_dist = DBL_MAX, x_centroid = 0.0, y_centroid = 0.0;
 
+    int threshold = compute_threshold();
+
     for (unsigned int i = 0; i < predictions.size(); i++)
     {
-        x_centroid = predictions[i].x + (predictions[i].w / 2);
-        y_centroid = predictions[i].y + (predictions[i].h / 2);
+    	for (unsigned int j = 0; j < tf_annotation_on_image.size(); j++)
+    	{
+    		x_centroid = predictions[i].x + (predictions[i].w / 2);
+    		y_centroid = predictions[i].y + (predictions[i].h / 2);
 
-        x_centroid = x_centroid - tf_annotation_on_image.x;
-        y_centroid = y_centroid - tf_annotation_on_image.y;
+    		x_centroid = x_centroid - tf_annotation_on_image[j].x;
+    		y_centroid = y_centroid - tf_annotation_on_image[j].y;
 
-        dist = sqrt((x_centroid * x_centroid) + (y_centroid * y_centroid));
+    		dist = sqrt((x_centroid * x_centroid) + (y_centroid * y_centroid));
 
-        if (dist < main_dist)
-        {
-            main_dist = dist;
-            main_bbox = predictions[i];
-        }
+    		if (dist < main_dist && dist < threshold)
+    		{
+    			main_dist = dist;
+    			main_bbox = predictions[i];
+    		}
+    	}
     }
     main_traffic_light->x1 = main_bbox.x;
     main_traffic_light->y1 = main_bbox.y;
@@ -507,7 +523,7 @@ get_main_traffic_light(vector<bbox_t> predictions, carmen_position_t tf_annotati
     main_traffic_light->y2 = main_bbox.y + main_bbox.h;
     main_traffic_light->color = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF;                    // In case of any failure, TRAFFIC_LIGHT_OFF message is sent
 
-    if (dist < compute_threshold())                                                         //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED
+    if (main_dist < DBL_MAX)                                                               //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED
     {                                                                                      //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN
         if (main_bbox.obj_id == 0)                                                         //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_YELLOW
             main_traffic_light->color = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;            //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF
@@ -520,7 +536,7 @@ get_main_traffic_light(vector<bbox_t> predictions, carmen_position_t tf_annotati
 
 
 carmen_traffic_light_message
-build_traffic_light_message(carmen_bumblebee_basic_stereoimage_message *image_msg, vector<bbox_t> predictions, carmen_position_t tf_annotation_on_image)
+build_traffic_light_message(carmen_bumblebee_basic_stereoimage_message *image_msg, vector<bbox_t> predictions, vector<carmen_position_t> tf_annotation_on_image)
 {
     carmen_traffic_light_message traffic_light_message;
 
@@ -598,11 +614,13 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     fps = 1.0 / (carmen_get_time() - start_time);
     start_time = carmen_get_time();
 
-    if (globalpos_msg != NULL && velodyne_msg != NULL)
+    if (globalpos_msg != NULL && velodyne_msg != NULL && predictions.size() > 0)
     {
         compute_traffic_light_pose(predictions, resized_w, resized_h, crop_x, crop_y, crop_w, crop_h);
         double distance_to_tf = compute_distance_to_the_traffic_light();
-        if (distance_to_tf < DBL_MAX) {
+
+        if (distance_to_tf < DBL_MAX)
+        {
             if (predictions.size() > 0)
                 printf("Distance %lf\n", distance_to_tf);
             else
@@ -611,32 +629,35 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
             tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
                     0.0, 0.0, globalpos_msg->globalpos.theta);
 
-            carmen_position_t tf_annotation_on_image = convert_rddf_pose_to_point_in_image(nearest_traffic_light_pose.position.x, nearest_traffic_light_pose.position.y, nearest_traffic_light_pose.position.z,
-                    world_to_camera_pose, camera_parameters, resized_w, resized_h);
+            vector<carmen_position_t> tf_annotations_on_image;
 
-            if (predictions.size() > 0)
+            for (int i = 0; i < nearests_traffic_lights_vector.size(); i++)
             {
-                carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotation_on_image);
-                publish_traffic_lights(&traffic_light_message);
+            	tf_annotations_on_image.push_back(convert_rddf_pose_to_point_in_image(nearests_traffic_lights_vector[i].position.x, nearests_traffic_lights_vector[i].position.y, nearests_traffic_lights_vector[i].position.z,
+            			world_to_camera_pose, camera_parameters, resized_w, resized_h));
+
+            	circle(open_cv_image, Point((int)tf_annotations_on_image[i].x, (int)tf_annotations_on_image[i].y), 5.0, Scalar(255, 255, 0), -1, 8);
+            	circle(open_cv_image, Point((int)tf_annotations_on_image[i].x, (int)tf_annotations_on_image[i].y), compute_threshold(), Scalar(255, 255, 0), 1, 8);
             }
-            // printf("T %d\n", compute_threshold()); // #!#
-            circle(open_cv_image, Point((int)tf_annotation_on_image.x, (int)tf_annotation_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
-            circle(open_cv_image, Point((int)tf_annotation_on_image.x, (int)tf_annotation_on_image.y), compute_threshold(), Scalar(255, 255, 0), 1, 8);
+
+            carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotations_on_image);
+            publish_traffic_lights(&traffic_light_message);
         }
 
-        // @possatti Debug TL annotations within a distance.
-        for (unsigned int i = 0; i < annotation_vector.size(); i++)
-        {
-            double distance = sqrt(pow(globalpos_msg->globalpos.x - annotation_vector[i].position.x, 2) +
-                            pow(globalpos_msg->globalpos.y - annotation_vector[i].position.y, 2));
-            if (distance < 100) {
-                tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
-                    0.0, 0.0, globalpos_msg->globalpos.theta);
-                carmen_position_t point = convert_rddf_pose_to_point_in_image(annotation_vector[i].position.x, annotation_vector[i].position.y, annotation_vector[i].position.z,
-                    world_to_camera_pose, camera_parameters, resized_w, resized_h);
-                circle(open_cv_image, Point((int)point.x, (int)point.y), 3.0, Scalar(255, 0, 0), -1, 8);
-            }
-        }
+          // @possatti Debug TL annotations within a distance.
+//        for (unsigned int i = 0; i < annotation_vector.size(); i++)
+//        {
+//            double distance = sqrt(pow(globalpos_msg->globalpos.x - annotation_vector[i].position.x, 2) +
+//                            pow(globalpos_msg->globalpos.y - annotation_vector[i].position.y, 2));
+//            if (distance < 100)
+//            {
+//                tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
+//                    0.0, 0.0, globalpos_msg->globalpos.theta);
+//                carmen_position_t point = convert_rddf_pose_to_point_in_image(annotation_vector[i].position.x, annotation_vector[i].position.y, annotation_vector[i].position.z,
+//                    world_to_camera_pose, camera_parameters, resized_w, resized_h);
+//                circle(open_cv_image, Point((int)point.x, (int)point.y), 3.0, Scalar(255, 0, 0), -1, 8);
+//            }
+//        }
     }
 
     // if (screen_marker_set) {
