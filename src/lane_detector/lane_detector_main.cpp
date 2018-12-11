@@ -47,7 +47,7 @@ carmen_pose_3D_t camera_pose;
 const unsigned int maxPositions = 50;
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
 std::vector<carmen_velodyne_partial_scan_message> velodyne_vector;
-
+std::vector<string> classifications;
 #define USE_YOLO_V2 publish	1
 #define USE_DETECTNET 	0
 
@@ -269,7 +269,7 @@ lane_publish_messages(double _timestamp, std::vector<bbox_t> &predictions, std::
 	// publish!
 	carmen_lane_publish_message(&message);
 	free(message.lane_vector);
-	return vector_candidate_points;
+	return vector_candidate_points;classifications.push_back("sem");
 }
 
 
@@ -342,6 +342,8 @@ put_the_lane_dectections_in_image(std::vector< std::vector<carmen_velodyne_point
 	}
 	for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
 	{
+		cv::putText(rgb_image, classifications[i].c_str(), cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
+				cv::FONT_HERSHEY_PLAIN, 2, cvScalar(255, 255, 255), 2);
 		for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
 		{
 			int size = vector_candidate_points[i].size() -1;
@@ -371,6 +373,7 @@ put_the_lane_dectections_in_image(std::vector< std::vector<carmen_velodyne_point
 			}
 		}
 	}
+	classifications.clear();
 	vector_candidate_points.clear();
 	laser_points_in_camera_box_list.clear();
 	cv::Mat resized_image(cv::Size(640, 480), CV_8UC3);
@@ -403,7 +406,6 @@ void correcting_lane_sides(std::vector<bounding_box>& bouding_boxes_list,
 				}
 		}
 	}
-
 	aux.clear();
 	for (int i = 0; i < bouding_boxes_list.size(); i++)
 	{
@@ -433,6 +435,36 @@ detection_of_the_lanes(std::vector<bounding_box> &bouding_boxes_list, cv::Mat& r
 	unsigned int x_min = 10000, x_max = 0;
 	for (int i = 0; i < predictions.size(); i++)
 	{
+		switch (predictions[i].obj_id)
+		{
+			case 0:
+				classifications.push_back("sem");
+				break;
+			case 1:
+				classifications.push_back("branca cont.");
+				break;
+			case 2:
+				classifications.push_back("branca trace.");
+				break;
+			case 3:
+				classifications.push_back("amarela cont.");
+				break;
+			case 4:
+				classifications.push_back("amarela trace.");
+				break;
+			case 5:
+				classifications.push_back("amarela dupla cont.");
+				break;
+			case 6:
+				classifications.push_back("amarela cont trace");
+				break;
+			case 7:
+				classifications.push_back("amarela 2");
+				break;
+			default:
+				classifications.push_back("erro");
+		}
+		printf("%d\n",predictions[i].obj_id);
 		if (predictions[i].x < x_min)
 			x_min = predictions[i].x;
 
@@ -639,8 +671,8 @@ main(int argc, char **argv)
     std::string darknet_home = std::getenv("DARKNET_HOME"); /*< get environment variable pointing path of darknet*/
     if (darknet_home.empty())
         printf("Cannot find darknet path. Check if you have correctly set DARKNET_HOME environment variable.\n");
-    std::string cfg_filename = darknet_home + "/cfg/yolo_voc_lane.cfg";
-    std::string weight_filename = darknet_home + "/yolo_lane.weights";
+    std::string cfg_filename = darknet_home + "/cfg/yolov3-voc_lane.cfg";
+    std::string weight_filename = darknet_home + "/yolov3-voc_lane_10000.weights";
     std::string voc_names = darknet_home + "/data/lane.names";
     obj_names = objects_names_from_file(voc_names);
     darknet = new Detector(cfg_filename, weight_filename, device_id);
