@@ -27,12 +27,12 @@ struct pedestrian
 struct fake_pedestrian
 {
 	bool active;
-	double orientation; // rad
-	double velocity;  // m/s
+	double orientation;  // rad
+	double velocity;    // m/s
 	double start_time; // s
 	double stop_time; // s
-	double x;   // m - relative to world pos
-	double y;   // m - relative to world pos
+	double x;        // m - relative to world pos
+	double y;       // m - relative to world pos
 	pedestrian p;
 };
 
@@ -67,7 +67,7 @@ no_out_mean(vector<double> values)// calculates the mean value removing outlayer
 	return sum/elements;
 }
 
-double slope(const vector<double>& x, const vector<double>& y)
+double slope_angle(const vector<double>& x, const vector<double>& y)
 {
     double n = x.size();
 
@@ -86,7 +86,7 @@ double slope(const vector<double>& x, const vector<double>& y)
         return 1.0;
     }
 
-    return numerator / denominator;
+    return atan2(numerator,denominator);
 }
 
 void update_world_position(pedestrian* p, double new_x, double new_y, double new_timestamp)
@@ -103,7 +103,7 @@ void update_world_position(pedestrian* p, double new_x, double new_y, double new
 	vector<double> vely_vect;
 	vector<double> valid_x;
 	vector<double> valid_y;
-
+	vector<double> ori;
 
 	int i = 0;
 	for(i = 0; i<P_BUFF_SIZE-1; i++)
@@ -118,12 +118,19 @@ void update_world_position(pedestrian* p, double new_x, double new_y, double new
 
 		//printf("DELTAS: %f ; %f ; %f --- Vel = %f\n",delta_x, delta_y, delta_t,new_vel);
 		velx_vect.push_back(delta_x/delta_t);
-		velx_vect.push_back(delta_y/delta_t);
+		vely_vect.push_back(delta_y/delta_t);
 		valid_x.push_back(p->x_world[idx]);
 		valid_y.push_back(p->y_world[idx]);
+		ori.push_back(atan2(delta_y,delta_x));
 	}
-
-	p->orientation = atan(slope(valid_x,valid_y));
+	//Calculate Orientation
+	double slope = carmen_normalize_theta(slope_angle(valid_x,valid_y));
+	double mean_ori = carmen_normalize_theta(no_out_mean(ori));
+	if (abs(carmen_normalize_theta(mean_ori-slope)) < abs(carmen_normalize_theta(mean_ori-slope-M_PI)))
+		p->orientation = slope;
+	else
+		p->orientation = carmen_normalize_theta(slope-M_PI);
+	//Calculate Velocity
 	double velx = no_out_mean(velx_vect);
 	double vely = no_out_mean(vely_vect);
 	p->velocity = sqrt(velx*velx+vely*vely);
@@ -478,7 +485,7 @@ subscribe_messages()
 void
 initialize_simulated_pedestrians()
 {
-	go_msg_absent = true;
+	go_msg_absent = false;
 
 	fake_pedestrian new_p;
 
@@ -517,7 +524,7 @@ initialize_simulated_pedestrians()
 //	new_p.velocity = 0.5;
 //	new_p.orientation = -0.766;
 //	simulated_pedestrians.push_back(new_p);
-
+//
 //	new_p.start_time = 0.0;                      // Bottom Left
 //	new_p.stop_time = 9915703060.0;
 //	new_p.x = 7757900.11;
@@ -526,24 +533,24 @@ initialize_simulated_pedestrians()
 //	new_p.velocity = 1.0;
 //	new_p.orientation = 0.873	;
 //	simulated_pedestrians.push_back(new_p);
-
-//	new_p.start_time = 0.0;                       // Bottom Right
-//	new_p.stop_time = 9915703060.0;
-//	new_p.x = 7757918.28;
-//	new_p.y = -363601.10;
-//	new_p.active = false;
-//	new_p.velocity = 0.7;
-//	new_p.orientation = 2.988;
-//	simulated_pedestrians.push_back(new_p);
-
-	new_p.start_time = 0.0;                       // Up Right
+//
+	new_p.start_time = 0.0;                       // Bottom Right
 	new_p.stop_time = 9915703060.0;
-	new_p.x = 7757907.18;
-	new_p.y = -363590.69;
+	new_p.x = 7757918.28;
+	new_p.y = -363601.10;
 	new_p.active = false;
-	new_p.velocity = 1.0;
-	new_p.orientation = -1.380;
+	new_p.velocity = 0.7;
+	new_p.orientation = 2.988;
 	simulated_pedestrians.push_back(new_p);
+//
+//	new_p.start_time = 0.0;                       // Up Right
+//	new_p.stop_time = 9915703060.0;
+//	new_p.x = 7757907.18;
+//	new_p.y = -363590.69;
+//	new_p.active = false;
+//	new_p.velocity = 0.4;
+//	new_p.orientation = -1.380;
+//	simulated_pedestrians.push_back(new_p);
 //
 //	new_p.start_time = 0.0;                       // Up Left
 //	new_p.stop_time = 9915703060.0;
@@ -552,6 +559,33 @@ initialize_simulated_pedestrians()
 //	new_p.active = false;
 //	new_p.velocity = 0.7;
 //	new_p.orientation = -0.288;
+//	simulated_pedestrians.push_back(new_p);
+
+//	new_p.start_time = 0.0;                       // Tangent to the crosswalk
+//	new_p.stop_time = 9915703060.0;
+//	new_p.x = 7757890.34;
+//	new_p.y = -363607.10;
+//	new_p.active = false;
+//	new_p.velocity = 2.0;
+//	new_p.orientation = 0.166;
+//	simulated_pedestrians.push_back(new_p);
+
+//	new_p.start_time = 0.0;                       // Crosswalk direction
+//	new_p.stop_time = 9915703060.0;
+//	new_p.x = 7757900.92;
+//	new_p.y = -363607.70;
+//	new_p.active = false;
+//	new_p.velocity = 1.0;
+//	new_p.orientation = 0.87;
+//	simulated_pedestrians.push_back(new_p);
+
+//	new_p.start_time = 0.0;                       // Car's direction
+//	new_p.stop_time = 9915703060.0;
+//	new_p.x = 7757914.89;
+//	new_p.y = -363608.30;
+//	new_p.active = false;
+//	new_p.velocity = 1.0;
+//	new_p.orientation = 2.46;
 //	simulated_pedestrians.push_back(new_p);
 }
 
