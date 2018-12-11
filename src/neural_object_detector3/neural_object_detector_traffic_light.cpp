@@ -16,9 +16,15 @@ tf::Transformer transformer;
 vector <carmen_pose_3D_t> annotation_vector;
 carmen_pose_3D_t nearest_traffic_light_pose;
 
+// // carmen_position_t screen_marker;
+// Point screen_marker = Point(0,0);
+// bool screen_marker_set = false;
+
 #define MAX_TRAFFIC_LIGHT_DIST 100
-#define MIN_TRAFFIC_LIGHT_TRESHOLD 30
-#define MAX_TRAFFIC_LIGHT_TRESHOLD 1000
+// #define MIN_TRAFFIC_LIGHT_THRESHOLD 30
+// #define MAX_TRAFFIC_LIGHT_THRESHOLD 1000
+#define MIN_TRAFFIC_LIGHT_THRESHOLD 20
+#define MAX_TRAFFIC_LIGHT_THRESHOLD 90
 
 double
 compute_distance_to_the_traffic_light()
@@ -449,7 +455,7 @@ compute_traffic_light_pose(vector<bbox_t> predictions, int resized_w, int resize
 
 
 int
-compute_treshold()
+compute_threshold()
 {
     double dist = DIST2D(nearest_traffic_light_pose.position, globalpos_msg->globalpos);
 
@@ -457,14 +463,18 @@ compute_treshold()
     // printf("Dist %lf\n", dist); // #!#
 
 
-    int treshold = 1000 / dist;
+    // int threshold = 1000 / dist;
+    static double m = (MAX_TRAFFIC_LIGHT_THRESHOLD - MIN_TRAFFIC_LIGHT_THRESHOLD) / (double)MAX_TRAFFIC_LIGHT_DIST;
+    int threshold = MIN_TRAFFIC_LIGHT_THRESHOLD + m * (MAX_TRAFFIC_LIGHT_DIST - dist);
+    // printf("dist=%lf; threshold=%d\n", dist, threshold);
+    printf("dist=%lf; threshold=%d; m=%lf\n", dist, threshold, m);
 
-    if (treshold > MAX_TRAFFIC_LIGHT_TRESHOLD)
-        return MAX_TRAFFIC_LIGHT_TRESHOLD;
-    else if (treshold < MIN_TRAFFIC_LIGHT_TRESHOLD)
-        return MIN_TRAFFIC_LIGHT_TRESHOLD;
+    if (threshold > MAX_TRAFFIC_LIGHT_THRESHOLD)
+        return MAX_TRAFFIC_LIGHT_THRESHOLD;
+    else if (threshold < MIN_TRAFFIC_LIGHT_THRESHOLD)
+        return MIN_TRAFFIC_LIGHT_THRESHOLD;
     else
-        return treshold;
+        return threshold;
 }
 
 
@@ -497,7 +507,7 @@ get_main_traffic_light(vector<bbox_t> predictions, carmen_position_t tf_annotati
     main_traffic_light->y2 = main_bbox.y + main_bbox.h;
     main_traffic_light->color = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF;                    // In case of any failure, TRAFFIC_LIGHT_OFF message is sent
 
-    if (dist < compute_treshold())                                                         //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED
+    if (dist < compute_threshold())                                                         //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED
     {                                                                                      //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN
         if (main_bbox.obj_id == 0)                                                         //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_YELLOW
             main_traffic_light->color = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;            //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF
@@ -583,7 +593,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     resize(open_cv_image, open_cv_image, Size(resized_w, resized_h));
 
     vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
-    predictions = filter_predictions_traffic_light(predictions);
+    // predictions = filter_predictions_traffic_light(predictions);
 
     fps = 1.0 / (carmen_get_time() - start_time);
     start_time = carmen_get_time();
@@ -609,9 +619,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
                 carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotation_on_image);
                 publish_traffic_lights(&traffic_light_message);
             }
-            // printf("T %d\n", compute_treshold()); // #!#
+            // printf("T %d\n", compute_threshold()); // #!#
             circle(open_cv_image, Point((int)tf_annotation_on_image.x, (int)tf_annotation_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
-            circle(open_cv_image, Point((int)tf_annotation_on_image.x, (int)tf_annotation_on_image.y), compute_treshold(), Scalar(255, 255, 0), 1, 8);
+            circle(open_cv_image, Point((int)tf_annotation_on_image.x, (int)tf_annotation_on_image.y), compute_threshold(), Scalar(255, 255, 0), 1, 8);
         }
 
         // @possatti Debug TL annotations within a distance.
@@ -628,6 +638,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
             }
         }
     }
+
+    // if (screen_marker_set) {
+    //     circle(open_cv_image, Point((int)screen_marker.x, (int)screen_marker.y), 3.0, Scalar(0, 0, 255), -1, 8);
+    // }
 
     display(open_cv_image, predictions, fps, resized_w, resized_h);
 }
@@ -768,17 +782,33 @@ read_parameters(int argc, char **argv)
     carmen_param_install_params(argc, argv, param_list, num_items);
 }
 
+// void
+// onMouse(int event, int x, int y, int, void*)
+// {
+//     if (event == EVENT_MBUTTONDOWN) {
+//         fprintf(stderr, "MIDDLE CLICK: x=%d y=%d\n", x, y);
+//         // screen_marker.x = x;
+//         // screen_marker.y = y;
+//         screen_marker = Point(x,y);
+//         screen_marker_set = true;
+//         // TODO: Place marker.
+//     }
+// }
+
 
 void
 initializer()
 {
     initialize_transformations(board_pose, camera_pose, &transformer);
 
-    // classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/traffic_light.names");
-    // network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/traffic_light.cfg", (char*) "../../sharedlib/darknet2/yolov3_traffic_light_rgo.weights");
+    classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/traffic_light.names");
+    network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/traffic_light.cfg", (char*) "../../sharedlib/darknet2/yolov3_traffic_light_rgo.weights");
 
-    classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
-    network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
+    // classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
+    // network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
+
+    // namedWindow("Neural Object Detector", WINDOW_AUTOSIZE);
+    // setMouseCallback("Neural Object Detector", onMouse);
 }
 
 
