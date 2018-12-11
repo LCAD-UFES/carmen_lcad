@@ -22,6 +22,7 @@
 #include <opencv/highgui.h>
 #endif
 
+
 #include "mapper2.h"
 
 #define	UPDATE_CELLS_CROSSED_BY_RAYS		1
@@ -272,6 +273,38 @@ initialize_virtual_scan_message_update(int sensor_id, carmen_pose_3D_t robot_pos
 /**********************************************************
 * Functions for generate neural mapper dataset
 ***********************************************************/
+
+
+void
+neural_map_run_foward(std::vector<cv::Mat> &maps)
+{
+	if(maps.size() == 5)
+	{
+		//	cv::Mat c1 = cv::Mat(maps[0].config.x_size, maps[0].config.y_size, CV_64FC1, maps[0].map);
+		//	cv::Mat c2 = cv::Mat(maps[1].config.x_size, maps[1].config.y_size, CV_64FC1, maps[1].map);
+		//	cv::Mat c3 = cv::Mat(maps[2].config.x_size, maps[2].config.y_size, CV_64FC1, maps[2].map);
+		//	cv::Mat c4 = cv::Mat(maps[3].config.x_size, maps[3].config.y_size, CV_64FC1, maps[3].map);
+		//	cv::Mat c5 = cv::Mat(maps[4].config.x_size, maps[4].config.y_size, CV_64FC1, maps[4].map);
+		//
+		//	cv::imshow("Janela", maps[0]);
+		//	cv::waitKey(1);
+
+
+		cv::Mat	mapper_inference = cv::Mat(cv::Size(600, 600), CV_8UC3);
+
+		//mapper_inference.data = process_image_nm(600, 600, maps[0].data, maps[1].data, maps[2].data, maps[3].data, maps[4].data);
+
+		printf("CEGOU AQui 3 \n");
+		//cv::Mat	mapper_inference.data = process_image(this->size_x, this->size_y,number_of_lasers_map, number_of_lasers_map, raw_max_hight_map, mean_hight_map, square_sum_map);
+		//	update_output_map(convertImageToMap(mapper_inferece));
+
+
+	}
+	else
+		printf("A rede precisa de 5 mapas de entrada \n - Inferencia nao realizada \n");
+
+}
+
 
 int 
 map_to_bitmap(carmen_map_t complete_map, char* bitmap_name)
@@ -804,6 +837,8 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 			// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
 			update_log_odds_of_cells_in_the_velodyne_perceptual_field(log_odds_snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global,
 					sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+			//@@@ VINICIUS Pegar antes dessa funcao de baixo o snapshot (o snapshot eh um mapa de logodds Variavel:log_odds_snapshot_map)
+						//Funcao Abaixo junta o snapshot com o mapoffiline
 			carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map,
 					sensor_params->log_odds.log_odds_l0);
 //			carmen_grid_mapping_save_map((char *) "test.map", &map);
@@ -816,15 +851,22 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 					update_neural_mapper_output_map(offline_map, new_neural_map.neural_mapper_occupancy_map, x_meters_car_position_according_to_map, y_meters_car_position_according_to_map);
 					if(get_next_map)
 					{
-					    char path[100] = "/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/raw_acumulated_dataset_60m";
+					    char path[256] = "/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/60mts_guarapari/";
 
 						neural_mapper_acumulator->export_png(path, map_index);
+//					    std::vector<cv::Mat> neural_statistics_maps = neural_mapper_acumulator->get_maps();
+//					    cv::imshow("TESTE", neural_statistics_maps.at(2));
+//					    sprintf(path2 , "%s_%d.png", path2, map_index);
+//					    cv::imwrite(path2, neural_statistics_maps.at(2));
+//					    cv::waitKey(0);
+//					    neural_map_run_foward(neural_statistics_maps);
 						map_index++;
 					}
 					neural_mapper_acumulator->push(new_neural_map);
 					new_neural_map.clear_maps();   		
 			}
 			//number_of_data_passed++;
+
 
 /*************************************************/
 		}

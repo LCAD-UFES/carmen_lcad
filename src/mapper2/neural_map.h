@@ -23,6 +23,7 @@
 #include <opencv/highgui.h>
 #endif
 
+#include <vector>
 
 class Neural_map
 {
@@ -71,6 +72,10 @@ public:
 	void push(Neural_map new_map);
 	void acumulate_maps();
 	void export_png(char* path, int max_index);
+	void convertMapToChar();
+	std::vector<cv::Mat> get_maps();
+	cv::Mat map_to_png2(carmen_map_t complete_map, bool is_label, double map_max, double map_min, bool rgb_map);
+
 };
 
 #endif /* MAPPER2_NEURAL_MAP_H_ */

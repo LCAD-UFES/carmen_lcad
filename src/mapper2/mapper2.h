@@ -3,6 +3,7 @@
 
 #include <tf.h>
 #include <carmen/moving_objects_interface.h>
+#include "libfcnpy.h"
 #include "neural_map.h"
 
 //#define	MINIMUM_VELODYNE_DISTANCE 0.75
