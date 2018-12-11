@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <carmen/carmen.h>
+#include <stdbool.h>
 #include "prob_measurement_model.h"
 
 #define      DISTANCE_MAP_HUGE_DISTANCE     10
@@ -282,6 +283,9 @@ void carmen_prob_models_create_masked_distance_map(carmen_prob_models_distance_m
 void carmen_prob_models_initialize_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_config_t config);
 
 float ***load_calibration_table(char *calibration_file);
+
+double get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int ray_index, int scan_index,
+		bool reduce_sensitivity, int thread_id);
 
 #ifdef __cplusplus
 }

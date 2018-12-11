@@ -27,11 +27,14 @@
 #include <carmen/libdeeplab.h>
 #include <omp.h>
 #include "mapper.h"
+#include <sys/stat.h>
 
 #include "message_interpolation.cpp"
 
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 
 carmen_map_t offline_map;
@@ -53,9 +56,6 @@ static carmen_pose_3D_t ultrasonic_sensor_r2_g;
 static carmen_pose_3D_t ultrasonic_sensor_l1_g;
 static carmen_pose_3D_t ultrasonic_sensor_l2_g;
 
-/**
- * Model params
- */
 
 double safe_range_above_sensors;
 double robot_wheel_radius;
@@ -73,6 +73,10 @@ int decay_to_offline_map;
 int create_map_sum_and_count;
 int use_remission;
 
+int process_semantic = 0;
+int file_warnings = 1;
+int verbose = 0;
+
 carmen_pose_3D_t sensor_board_1_pose;
 carmen_pose_3D_t front_bullbar_pose;
 
@@ -83,10 +87,19 @@ int number_of_sensors;
 
 carmen_camera_parameters camera_params[MAX_CAMERA_INDEX + 1];
 carmen_pose_3D_t camera_pose[MAX_CAMERA_INDEX + 1];
+camera_data_t camera_data[MAX_CAMERA_INDEX + 1];
+cv::Mat camera_image_semantic[MAX_CAMERA_INDEX + 1];
 int camera_alive[MAX_CAMERA_INDEX + 1];
 int active_cameras;
 
-carmen_velodyne_partial_scan_message *velodyne_msg;
+static long globalpos_msg_count = 0;
+static long truepos_msg_count = 0;
+static long *sensor_msg_count;
+static long *map_update_count;
+static long camera_msg_count[MAX_CAMERA_INDEX + 1];
+static long camera_filter_count[MAX_CAMERA_INDEX + 1];
+static long camera_datmo_count[MAX_CAMERA_INDEX + 1];
+
 carmen_pose_3D_t velodyne_pose;
 carmen_pose_3D_t laser_ldmrs_pose;
 
@@ -122,10 +135,409 @@ extern carmen_mapper_virtual_scan_message virtual_scan_message;
 char *calibration_file = NULL;
 char *save_calibration_file = NULL;
 
+static char *segmap_dirname = (char *) "/dados/log_dante_michelini-20181116.txt_segmap";
+
+
+inline double
+distance2(image_cartesian a, image_cartesian b)
+{
+	double dx = a.cartesian_x - b.cartesian_x;
+	double dy = a.cartesian_y - b.cartesian_y;
+
+	return (dx * dx + dy * dy);
+}
+
+
+vector<int>
+query(double d2, int i, const vector<image_cartesian> &points, std::vector<bool> clustered)
+{
+	vector<int> neighbors;
+	const image_cartesian &point = points[i];
+
+	for (size_t j = 0; j < points.size(); j++)
+	{
+		if ((distance2(point, points[j]) < d2) && !clustered[j])
+			neighbors.push_back(j);
+	}
+
+	return (neighbors);
+}
+
+
+vector<vector<image_cartesian>>
+dbscan_compute_clusters(double d2, size_t density, const vector<image_cartesian> &points)
+{
+	vector<vector<image_cartesian>> clusters;
+	vector<bool> clustered(points.size(), false);
+
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		// Ignore already clustered points.
+		if (clustered[i])
+			continue;
+
+		// Ignore points without enough neighbors.
+		vector<int> neighbors = query(d2, i, points, clustered);
+		if (neighbors.size() < density)
+			continue;
+
+		// Create a new cluster with the i-th point as its first element.
+		vector<image_cartesian> c;
+		clusters.push_back(c);
+		vector<image_cartesian> &cluster = clusters.back();
+		cluster.push_back(points[i]);
+		clustered[i] = true;
+
+		// Add the point's neighbors (and possibly their neighbors) to the cluster.
+		for (size_t j = 0; j < neighbors.size(); ++j)
+		{
+			int k = neighbors[j];
+			if (clustered[k])
+				continue;
+
+			cluster.push_back(points[k]);
+			clustered[k] = true;
+
+			vector<int> farther = query(d2, k, points, clustered);
+			if (farther.size() >= density)
+				neighbors.insert(neighbors.end(), farther.begin(), farther.end());
+		}
+	}
+	return (clusters);
+}
+
+
+cv::Scalar cluster_color2[] =
+{
+	cv::Vec3b(255, 255, 255),
+	cv::Vec3b(255, 0, 0),
+    cv::Vec3b(255, 255, 0),
+    cv::Vec3b(255, 0, 255),
+    cv::Vec3b(0, 255, 255),
+    cv::Vec3b(150, 150, 150),
+    cv::Vec3b(150, 150, 0),
+    cv::Vec3b(150, 0, 150),
+    cv::Vec3b(0, 150, 150),
+    cv::Vec3b(107, 142, 35),
+    cv::Vec3b(152, 251, 152),
+    cv::Vec3b(70, 130, 180),
+    cv::Vec3b(220, 20, 60),
+    cv::Vec3b(255, 0, 0),
+    cv::Vec3b(0, 0, 142),
+    cv::Vec3b(0, 0, 70),
+    cv::Vec3b(0, 60, 100),
+    cv::Vec3b(0, 80, 100),
+    cv::Vec3b(0, 0, 230),
+    cv::Vec3b(119, 11, 32),
+};
+
+
+
+cv::Scalar cluster_color[] =
+{
+	cv::Scalar(255, 255, 255),
+	cv::Scalar(255, 0, 0),
+    cv::Scalar(255, 255, 0),
+    cv::Scalar(255, 0, 255),
+    cv::Scalar(0, 255, 255),
+    cv::Scalar(150, 150, 150),
+    cv::Scalar(150, 150, 0),
+    cv::Scalar(150, 0, 150),
+    cv::Scalar(0, 150, 150),
+    cv::Scalar(107, 142, 35),
+    cv::Scalar(152, 251, 152),
+    cv::Scalar(70, 130, 180),
+    cv::Scalar(220, 20, 60),
+    cv::Scalar(255, 0, 0),
+    cv::Scalar(0, 0, 142),
+    cv::Scalar(0, 0, 70),
+    cv::Scalar(0, 60, 100),
+    cv::Scalar(0, 80, 100),
+    cv::Scalar(0, 0, 230),
+    cv::Scalar(119, 11, 32),
+};
+
+
+void
+filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
+{
+	camera_filter_count[camera_index]++;
+	int filter_datmo_count = 0;
+	cv::Scalar laser_ray_color;
+	int image_width  = camera_data[camera_index].width[image_index];
+	int image_height = camera_data[camera_index].height[image_index];
+	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
+	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
+	double cu = camera_params[camera_index].cu_factor * image_width;
+	double cv = camera_params[camera_index].cv_factor * image_height;
+//	double fov = camera_params[camera_index].fov;
+	cv::Mat img = camera_image_semantic[camera_index];
+	double img_planar_resolution = 0.2;
+	int img_planar_depth = (double) sensor_params->range_max / img_planar_resolution;
+	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
+	int cloud_index = sensor_data->point_cloud_index;
+	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
+
+	vector<image_cartesian> points;
+
+	for (int j = 0; j < number_of_laser_shots; j++)
+	{
+		int p = j * sensor_params->vertical_resolution;
+		double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[p].horizontal_angle;
+
+		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > 1.57) // Disregard laser shots out of the camera's field of view
+			continue;
+
+//		if (horizontal_angle > 1.57 || horizontal_angle < 1.57 ) // Disregard laser shots out of the camera's field of view
+//			continue;
+
+		double previous_range = sensor_data->points[cloud_index].sphere_points[p].length;
+		double previous_vertical_angle = sensor_data->points[cloud_index].sphere_points[p].vertical_angle;
+		tf::Point previous_velodyne_p3d = spherical_to_cartesian(horizontal_angle, previous_vertical_angle, previous_range);
+
+		for (int i = 1; i < sensor_params->vertical_resolution; i++)
+		{
+			p++;
+			double vertical_angle = sensor_data->points[cloud_index].sphere_points[p].vertical_angle;
+			double range = sensor_data->points[cloud_index].sphere_points[p].length;
+
+			tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+			tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
+
+//			if (velodyne_p3d.x() > 0.0)
+//				continue;
+
+			int image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
+			int image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
+
+//			if (image_x < 0 || image_x >= image_width || image_y < 0 || image_y >= image_height) // Disregard laser rays out of the image window
+//				continue;
+
+			// Jose's method for checking if a point is an obstacle
+			double delta_x = abs(velodyne_p3d.x() - previous_velodyne_p3d.x());
+			double delta_z = abs(velodyne_p3d.z() - previous_velodyne_p3d.z());
+			double line_angle = carmen_radians_to_degrees(fabs(atan2(delta_z, delta_x)));
+			previous_velodyne_p3d = velodyne_p3d;
+
+//			if (range <= MIN_RANGE || range >= sensor_params->range_max) // Disregard laser rays out of distance range
+//				laser_ray_color = cv::Scalar(0, 255, 255);
+//			else if (line_angle <= MIN_ANGLE_OBSTACLE || line_angle >= MAX_ANGLE_OBSTACLE) // Disregard laser rays that didn't hit an obstacle
+//				laser_ray_color = cv::Scalar(0, 255, 0);
+//			else if (!is_moving_object(camera_data[camera_index].semantic[image_index][image_x + image_y * image_width])) // Disregard if it is not a moving object
+//			/*else*/ if (camera_data[camera_index].semantic[image_index][image_x + image_y * image_width] < 11)
+//				laser_ray_color = cv::Scalar(255, 0, 0);
+//			else
+//			{
+//				laser_ray_color = cv::Scalar(0, 0, 255);
+//				sensor_data->points[cloud_index].sphere_points[p].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
+//				filter_datmo_count++;
+//			}
+			if (line_angle > MIN_ANGLE_OBSTACLE && line_angle < MAX_ANGLE_OBSTACLE && range > MIN_RANGE && range < sensor_params->range_max)// Disregard laser rays that didn't hit an obstacle
+			{
+				int ix = (double) image_x / image_width  * img.cols / 2;
+				int iy = (double) image_y / image_height * img.rows;
+
+				if (verbose >= 2 && ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
+				{
+					circle(img, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+					circle(img, cv::Point(ix + img.cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+					int px = (double) camera_p3d.y() / img_planar_resolution + img_planar_depth;
+					int py = (double) img_planar.rows - 1 - camera_p3d.x() / img_planar_resolution;
+					if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
+						img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 255);
+				}
+				image_cartesian point;
+				point.shot_number = j;
+				point.ray_number  = p;
+				point.image_x     = image_x;
+				point.image_y     = image_y;
+				point.cartesian_x = velodyne_p3d.x();
+				point.cartesian_y = -velodyne_p3d.y();             // Must be inverted because Velodyne angle is reversed with CARMEN angles
+				point.cartesian_z = velodyne_p3d.z();
+
+				points.push_back(point);
+			}
+			else
+				continue;
+		}
+	}
+	vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.5, 5, points);;
+
+	for (unsigned int i = 0; i < filtered_points.size(); i++)
+	{
+		bool is_moving_obstacle = false;
+		unsigned int cont = 0;
+		for (unsigned int j = 0; j < filtered_points[i].size(); j++)
+		{
+			if (filtered_points[i][j].image_x < 0 || filtered_points[i][j].image_x >= image_width || filtered_points[i][j].image_y < 0 || filtered_points[i][j].image_y >= image_height) // Disregard laser rays out of the image window
+				continue;
+
+			if (camera_data[camera_index].semantic[image_index][filtered_points[i][j].image_x + (filtered_points[i][j].image_y * image_width)] > 11)
+				cont++;
+			if (cont > 10 || cont > (filtered_points[i].size() / 5))
+			{
+				is_moving_obstacle = true;
+				break;
+			}
+		}
+
+		if (is_moving_obstacle)
+			for (unsigned int j = 0; j < filtered_points[i].size(); j++)
+			{
+				sensor_data->points[cloud_index].sphere_points[filtered_points[i][j].ray_number].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
+				filter_datmo_count++;
+
+				if (filtered_points[i][j].image_x >= 0 && filtered_points[i][j].image_x < image_width && filtered_points[i][j].image_y >= 0 && filtered_points[i][j].image_y < image_height) // Disregard laser rays out of the image window
+				{
+					int ix = (double) filtered_points[i][j].image_x / image_width  * img.cols / 2;
+					int iy = (double) filtered_points[i][j].image_y / image_height * img.rows;
+					circle(img, cv::Point(ix, iy), 1, cluster_color[i], 1, 8, 0);
+					int px = (double) -filtered_points[i][j].cartesian_y / img_planar_resolution + img_planar_depth;
+					int py = (double) img_planar.rows - 1 - filtered_points[i][j].cartesian_x / img_planar_resolution;
+					if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
+						img_planar.at<cv::Scalar>(cv::Point(px, py)) = cluster_color2[i];
+				}
+			}
+	}
+	if (verbose >= 2)
+	{
+		imshow("Image Semantic Segmentation", img);
+//    	resize(img_planar, img_planar, cv::Size(0, 0), 2, 2, cv::INTER_NEAREST); // cv::Size(2 * img_planar.cols, 2 * img_planar.rows));
+		imshow("Velodyne Semantic Map", img_planar);
+		cv::waitKey(1);
+	}
+	if (filter_datmo_count)
+		camera_datmo_count[camera_index]++;
+}
+
+
+void
+filter_sensor_data_using_one_image_old(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
+{
+	camera_filter_count[camera_index]++;
+	int filter_datmo_count = 0;
+	cv::Scalar laser_ray_color;
+	int image_width  = camera_data[camera_index].width[image_index];
+	int image_height = camera_data[camera_index].height[image_index];
+	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
+	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
+	double cu = camera_params[camera_index].cu_factor * image_width;
+	double cv = camera_params[camera_index].cv_factor * image_height;
+	double fov = camera_params[camera_index].fov;
+	cv::Mat img = camera_image_semantic[camera_index];
+	int cloud_index = sensor_data->point_cloud_index;
+	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
+
+	for (int j = 0; j < number_of_laser_shots; j++)
+	{
+		int p = j * sensor_params->vertical_resolution;
+		double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[p].horizontal_angle;
+		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > fov) // Disregard laser shots out of the camera's field of view
+			continue;
+
+		double previous_range = sensor_data->points[cloud_index].sphere_points[p].length;
+		double previous_vertical_angle = sensor_data->points[cloud_index].sphere_points[p].vertical_angle;
+		tf::Point previous_velodyne_p3d = spherical_to_cartesian(horizontal_angle, previous_vertical_angle, previous_range);
+
+		for (int i = 1; i < sensor_params->vertical_resolution; i++)
+		{
+			p++;
+			double vertical_angle = sensor_data->points[cloud_index].sphere_points[p].vertical_angle;
+			double range = sensor_data->points[cloud_index].sphere_points[p].length;
+			tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+			tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
+			int image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
+			int image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
+			if (image_x < 0 || image_x >= image_width || image_y < 0 || image_y >= image_height) // Disregard laser rays out of the image window
+				continue;
+
+			int thread_id = omp_get_thread_num();
+			double log_odds = get_log_odds_via_unexpeted_delta_range(sensor_params, sensor_data, i, j, robot_near_strong_slow_down_annotation, thread_id);
+
+			// Jose's method for checking if a point is an obstacle
+			double delta_x = fabs(velodyne_p3d.x() - previous_velodyne_p3d.x());
+			double delta_z = fabs(velodyne_p3d.z() - previous_velodyne_p3d.z());
+			double line_angle = carmen_radians_to_degrees(fabs(atan2(delta_z, delta_x)));
+			previous_velodyne_p3d = velodyne_p3d;
+
+			(void) log_odds, (void) line_angle;
+//			if (range <= MIN_RANGE || range >= sensor_params->range_max) // Disregard laser rays out of distance range
+//				laser_ray_color = cv::Scalar(0, 255, 255);
+//			else
+//			if (line_angle <= MIN_ANGLE_OBSTACLE || line_angle >= MAX_ANGLE_OBSTACLE) // Disregard laser rays that didn't hit an obstacle
+//			if (log_odds < MIN_LOG_ODDS) // Disregard laser rays that didn't hit an obstacle
+//				laser_ray_color = cv::Scalar(0, 255, 0);
+//			else
+			if ((camera_data[camera_index].semantic[image_index] != NULL) &&
+			    (camera_data[camera_index].semantic[image_index][image_x + image_y * image_width] < 11)) // Disregard if it is not a moving object
+//				(!is_moving_object(camera_data[camera_index].semantic[image_index][image_x + image_y * image_width])) // Disregard if it is not a moving object
+				laser_ray_color = cv::Scalar(255, 0, 0);
+			else
+			{
+				laser_ray_color = cv::Scalar(0, 0, 255);
+				sensor_data->points[cloud_index].sphere_points[p].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
+				filter_datmo_count++;
+			}
+			if (verbose >= 2)
+			{
+				int ix = (double) image_x / image_width  * img.cols / 2;
+				int iy = (double) image_y / image_height * img.rows;
+				circle(img, cv::Point(ix, iy), 1, laser_ray_color, 1, 8, 0);
+				circle(img, cv::Point(ix + img.cols / 2, iy), 1, laser_ray_color, 1, 8, 0);
+			}
+		}
+	}
+	if (verbose >= 2)
+		imshow("Image Semantic Segmentation", img), cv::waitKey(1);
+	if (filter_datmo_count)
+		camera_datmo_count[camera_index]++;
+}
+
+
+int
+filter_sensor_data_using_image_semantic_segmentation(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
+{
+	int filter_cameras = 0;
+
+	if (active_cameras == 0)
+		return 0;
+
+	for (int camera = 1; camera <= MAX_CAMERA_INDEX; camera++)
+	{
+		if (camera_alive[camera] < 0)
+			continue;
+
+		int nearest_index = -1;
+		double nearest_time_diff = DBL_MAX;
+
+		for (int i = 0; i < NUM_CAMERA_IMAGES; i++)
+		{
+			if (camera_data[camera].image[i] == NULL)
+				continue;
+
+			int j = sensor_data->point_cloud_index;
+			double time_difference = fabs(camera_data[camera].timestamp[i] - sensor_data->points_timestamp[j] - CAMERA_DELAY);
+			if (time_difference < nearest_time_diff)
+			{
+				nearest_index = i;
+				nearest_time_diff = time_difference;
+			}
+		}
+
+		if (nearest_time_diff > MAX_TIMESTAMP_DIFFERENCE)
+			continue;
+
+		filter_sensor_data_using_one_image(sensor_params, sensor_data, camera, nearest_index);
+		filter_cameras++;
+	}
+	return filter_cameras;
+}
+
 
 void
 include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
+	map_update_count[sensor_number]++;
 	int i, old_point_cloud_index = -1;
 	int nearest_global_pos = 0;
 	double nearest_time = globalpos_message->timestamp;
@@ -135,45 +547,29 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 	for (i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
 	{
 		double time_difference = fabs(sensors_data[sensor_number].points_timestamp[i] - globalpos_message->timestamp);
-		if (time_difference == 0.0)
-		{
-			old_point_cloud_index = sensors_data[sensor_number].point_cloud_index;
-			sensors_data[sensor_number].point_cloud_index = i;
-			old_globalpos_timestamp = sensors_data[sensor_number].robot_timestamp[i];
-			old_robot_position = sensors_data[sensor_number].robot_pose[i];
-			sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
-			sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
-
-			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
-
-			sensors_data[sensor_number].robot_pose[i] = old_robot_position;
-			sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
-			sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
-			break;
-		}
-		else if (time_difference < nearest_time)
+		if (time_difference < nearest_time)
 		{
 			nearest_global_pos = i;
 			nearest_time = time_difference;
 		}
+		if (time_difference == 0.0)
+			break;
 	}
 
-	if (i == NUM_VELODYNE_POINT_CLOUDS)
-	{
-		i = nearest_global_pos;
-		old_point_cloud_index = sensors_data[sensor_number].point_cloud_index;
-		sensors_data[sensor_number].point_cloud_index = i;
-		old_globalpos_timestamp = sensors_data[sensor_number].robot_timestamp[i];
-		old_robot_position = sensors_data[sensor_number].robot_pose[i];
-		sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
-		sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
+	i = nearest_global_pos;
+	old_point_cloud_index = sensors_data[sensor_number].point_cloud_index;
+	old_robot_position = sensors_data[sensor_number].robot_pose[i];
+	old_globalpos_timestamp = sensors_data[sensor_number].robot_timestamp[i];
+	sensors_data[sensor_number].point_cloud_index = i;
+	sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
+	sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
 
+	if (filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]) > 0)
 		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
-		sensors_data[sensor_number].robot_pose[i] = old_robot_position;
-		sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
-		sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
-	}
+	sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
+	sensors_data[sensor_number].robot_pose[i] = old_robot_position;
+	sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
 }
 
 
@@ -190,6 +586,53 @@ free_virtual_scan_message()
 			virtual_scan_message.num_sensors = 0;
 		}
 	}
+}
+
+
+void
+print_stats_header()
+{
+	fprintf(stderr, "\n%9s %9s ", "globalpos", "truepos");
+
+	for (int i = 0; i < number_of_sensors; i++)
+		if (sensors_params[i].alive)
+			fprintf(stderr, "%8s%d %8s%d ", "sensor", i, "update", i);
+
+	for (int k = 1; k <= MAX_CAMERA_INDEX; k++)
+		if (camera_alive[k] >= 0)
+			fprintf(stderr, "%8s%d %8s%d %8s%d ", "camera", k, "filter", k, "datmo", k);
+
+	fprintf(stderr, "\n");
+}
+
+
+void
+print_stats()
+{
+	const double time_interval = 5.0;
+	static double last_print_time = globalpos_history[0].timestamp;
+	if (globalpos_history[last_globalpos].timestamp - last_print_time < time_interval)
+		return;
+
+	const int lines_page = 50;
+	static int line_count = 0;
+	if (line_count % lines_page == 0)
+		print_stats_header();
+
+	fprintf(stderr, "%9ld %9ld ", globalpos_msg_count, truepos_msg_count);
+
+	for (int i = 0; i < number_of_sensors; i++)
+		if (sensors_params[i].alive)
+			fprintf(stderr, "%9ld %9ld ", sensor_msg_count[i], map_update_count[i]);
+
+	for (int k = 1; k <= MAX_CAMERA_INDEX; k++)
+		if (camera_alive[k] >= 0)
+			fprintf(stderr, "%9ld %9ld %9ld ", camera_msg_count[k], camera_filter_count[k], camera_datmo_count[k]);
+
+	fprintf(stderr, "\n");
+
+	last_print_time = globalpos_history[last_globalpos].timestamp;
+	line_count++;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -227,6 +670,7 @@ publish_virtual_scan(double timestamp)
 static void
 carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
+	globalpos_msg_count++;
 	if (visual_odometry_is_global_pos)
 		interpolator.AddMessageToInterpolationList(globalpos_message);
 	else
@@ -274,12 +718,16 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		publish_map(globalpos_message->timestamp);
 		publish_virtual_scan(globalpos_message->timestamp);
 	}
+
+	if (verbose >= 1)
+		print_stats();
 }
 
 
 static void
 true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 {
+	truepos_msg_count++;
 	if (offline_map_available)
 	{
 		map_decay_to_offline_map(get_the_map());
@@ -291,16 +739,15 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
+	sensor_msg_count[VELODYNE]++;
 	mapper_velodyne_partial_scan(VELODYNE, velodyne_message);
-
-	velodyne_msg = velodyne_message;
-    carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_msg);
 }
 
 
 static void
 laser_ldrms_message_handler(carmen_laser_ldmrs_message *laser) // old handler not used anymore
 {
+	sensor_msg_count[LASER_LDMRS]++;
 	carmen_velodyne_partial_scan_message partial_scan_message = carmen_laser_ldmrs_convert_laser_scan_to_partial_velodyne_message(laser, laser->timestamp);
 
 	if (partial_scan_message.number_of_32_laser_shots > 0)
@@ -314,6 +761,8 @@ laser_ldrms_message_handler(carmen_laser_ldmrs_message *laser) // old handler no
 static void
 laser_ldrms_new_message_handler(carmen_laser_ldmrs_new_message *laser)
 {
+	sensor_msg_count[LASER_LDMRS]++;
+
 //	FILE *f = fopen("scan.txt", "a");
 //	fprintf(f, "\n\n%d %lf %lf %d %f %f %d \n\n",
 //			laser->scan_number,
@@ -365,16 +814,10 @@ laser_ldrms_new_message_handler(carmen_laser_ldmrs_new_message *laser)
 }
 
 
-void
-velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *message)
-{
-	mapper_velodyne_variable_scan(1, message);
-}
-
-
 static void
 velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *message)
 {
+	sensor_msg_count[2]++;
 	mapper_velodyne_variable_scan(2, message);
 }
 
@@ -382,6 +825,7 @@ velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *m
 static void
 velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *message)
 {
+	sensor_msg_count[3]++;
 	camera3_ready = mapper_velodyne_variable_scan(3, message);
 }
 
@@ -389,6 +833,7 @@ velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *m
 static void
 velodyne_variable_scan_message_handler4(carmen_velodyne_variable_scan_message *message)
 {
+	sensor_msg_count[4]++;
 	mapper_velodyne_variable_scan(4, message);
 }
 
@@ -396,6 +841,7 @@ velodyne_variable_scan_message_handler4(carmen_velodyne_variable_scan_message *m
 static void
 velodyne_variable_scan_message_handler5(carmen_velodyne_variable_scan_message *message)
 {
+	sensor_msg_count[5]++;
 	mapper_velodyne_variable_scan(5, message);
 }
 
@@ -403,6 +849,7 @@ velodyne_variable_scan_message_handler5(carmen_velodyne_variable_scan_message *m
 static void
 velodyne_variable_scan_message_handler6(carmen_velodyne_variable_scan_message *message)
 {
+	sensor_msg_count[6]++;
 	mapper_velodyne_variable_scan(6, message);
 }
 
@@ -410,6 +857,7 @@ velodyne_variable_scan_message_handler6(carmen_velodyne_variable_scan_message *m
 static void
 velodyne_variable_scan_message_handler7(carmen_velodyne_variable_scan_message *message)
 {
+	sensor_msg_count[7]++;
 	mapper_velodyne_variable_scan(7, message);
 }
 
@@ -417,6 +865,7 @@ velodyne_variable_scan_message_handler7(carmen_velodyne_variable_scan_message *m
 static void
 velodyne_variable_scan_message_handler8(carmen_velodyne_variable_scan_message *message)
 {
+	sensor_msg_count[8]++;
 	mapper_velodyne_variable_scan(8, message);
 }
 
@@ -424,6 +873,7 @@ velodyne_variable_scan_message_handler8(carmen_velodyne_variable_scan_message *m
 static void
 velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *message)
 {
+	sensor_msg_count[9]++;
 	mapper_velodyne_variable_scan(9, message);
 }
 
@@ -565,31 +1015,144 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 }
 
 
+static const cv::Vec3b
+colormap[] =
+{
+    cv::Vec3b(128, 64, 128),
+    cv::Vec3b(244, 35, 232),
+    cv::Vec3b(70, 70, 70),
+    cv::Vec3b(102, 102, 156),
+    cv::Vec3b(190, 153, 153),
+    cv::Vec3b(153, 153, 153),
+    cv::Vec3b(250, 170, 30),
+    cv::Vec3b(220, 220, 0),
+    cv::Vec3b(107, 142, 35),
+    cv::Vec3b(152, 251, 152),
+    cv::Vec3b(70, 130, 180),
+    cv::Vec3b(220, 20, 60),
+    cv::Vec3b(255, 0, 0),
+    cv::Vec3b(0, 0, 142),
+    cv::Vec3b(0, 0, 70),
+    cv::Vec3b(0, 60, 100),
+    cv::Vec3b(0, 80, 100),
+    cv::Vec3b(0, 0, 230),
+    cv::Vec3b(119, 11, 32),
+};
+
+
+void
+save_image_semantic_map_to_disk(unsigned char *segmap, int width, int height, int camera, char camera_side, double timestamp, char *dirname)
+{
+	char path[2000];
+	strcpy(path, dirname);
+	if (path[strlen(path) - 1] != '/')
+		strcat(path, "/");
+
+	struct stat st;
+	if (stat(path, &st) == -1)
+		mkdir(path, 0777);
+
+	int subdir1 = (int) timestamp / 10000 * 10000;
+	sprintf(path, "%s%d/", path, subdir1);
+	if (stat(path, &st) == -1)
+		mkdir(path, 0777);
+
+	int subdir2 = (int) timestamp / 100 * 100;
+	sprintf(path, "%s%d/", path, subdir2);
+	if (stat(path, &st) == -1)
+		mkdir(path, 0777);
+
+	sprintf(path, "%s%.6lf.bb%d-%c.segmap", path, timestamp, camera, camera_side);
+	int segmap_size = width * height;
+	carmen_FILE *segmap_file = carmen_fopen(path, "wb");
+	carmen_fwrite(segmap, sizeof(unsigned char), segmap_size, segmap_file);
+	carmen_fclose(segmap_file);
+}
+
+
+unsigned char *
+open_semantic_image(int width, int height, int camera, char camera_side, double timestamp, char *dirname)
+{
+	(void) camera;
+	char complete_path[1024];
+	sprintf(complete_path, "%s/%.6lf-%c.segmap", dirname, timestamp, camera_side);
+
+	carmen_FILE *segmap_file = carmen_fopen(complete_path, "rb");
+
+	if (!segmap_file)
+	{
+		fprintf (stderr, "Error: Segmap file not found! %s\n", complete_path);
+		return NULL;
+	}
+
+	int segmap_size = width * height;
+	unsigned char *segmap = (unsigned char *) malloc (sizeof(unsigned char) * segmap_size);
+
+	if (!segmap)
+	{
+		fprintf (stderr, "Error: Could not allocate memory for segmap file! %s\n", complete_path);
+		return NULL;
+	}
+
+	int bytes_read = carmen_fread(segmap, sizeof(unsigned char), segmap_size, segmap_file);
+
+	if (bytes_read != segmap_size)
+		fprintf(stderr, "Error: Segmap file size must be %d bytes, but %d bytes were read from disk! %s\n", segmap_size, bytes_read, complete_path);
+
+	carmen_fclose(segmap_file);
+
+	return segmap;
+}
+
+
 void
 bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
-	unsigned char *img = (camera_alive[camera] == 0) ? image_msg->raw_left : image_msg->raw_right;
-	static double start_time = 0.0;
-	vector<image_cartesian> points;
+	camera_msg_count[camera]++;
+	int i = (camera_data[camera].current_index + 1) % NUM_CAMERA_IMAGES;
+	char camera_side = (camera_alive[camera] == 0) ? 'l' : 'r';
 
-	unsigned int crop_x = 0;
-	unsigned int crop_y = 0;
-	unsigned int crop_w = image_msg->width;
-	unsigned int crop_h = image_msg->height;
+	camera_data[camera].current_index = i;
+	camera_data[camera].width[i] = image_msg->width;
+	camera_data[camera].height[i] = image_msg->height;
+	camera_data[camera].image_size[i] = image_msg->image_size;
+	camera_data[camera].isRectified[i] = image_msg->isRectified;
+	camera_data[camera].timestamp[i] = image_msg->timestamp;
+	camera_data[camera].image[i] = (camera_alive[camera] == 0) ? image_msg->raw_left : image_msg->raw_right;
 
-	points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_params[camera], velodyne_pose, camera_pose[camera],
-			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+	if (camera_data[camera].semantic[i] != NULL)
+		free(camera_data[camera].semantic[i]);
+	camera_data[camera].semantic[i] = NULL;
 
+	if (process_semantic)
+		camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
+	else
+		camera_data[camera].semantic[i] = open_semantic_image(image_msg->width, image_msg->height, camera, camera_side, image_msg->timestamp, segmap_dirname);
 
-	unsigned char* segmentation = process_image(image_msg->width, image_msg->height, img);
+	if (verbose >= 2)
+	{
+	    cv::Mat image_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, camera_data[camera].image[i]);
+		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, cv::Scalar(0));
+		if (camera_data[camera].semantic[i] != NULL)
+			for (int y = 0; y < semantic_cv.rows; y++)
+				for (int x = 0; x < semantic_cv.cols; x++)
+					semantic_cv.at<cv::Vec3b>(cv::Point(x, y)) = colormap[camera_data[camera].semantic[i][x + y * semantic_cv.cols]];
 
-	cv::Mat segmentation_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC1, segmentation);
+//		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC1, camera_data[camera].semantic[i]);
+//		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, color_image(image_msg->width, image_msg->height, camera_data[camera].semantic[i]));
 
-    cv::imshow("Segmentacao", segmentation_cv);
-    cv::waitKey(1);
-
-
-
+	    int window_widht = BUMBLEBEE_BASIC_VIEW_MAX_WINDOW_WIDTH;
+	    int window_height = (double) image_msg->height * window_widht / image_msg->width;
+	    if (window_widht != image_msg->width)
+	    {
+	    	resize(image_cv, image_cv, cv::Size(window_widht, window_height));
+	    	resize(semantic_cv, semantic_cv, cv::Size(window_widht, window_height));
+	    }
+	    hconcat(image_cv, semantic_cv, camera_image_semantic[camera]);
+		cvtColor(camera_image_semantic[camera], camera_image_semantic[camera], CV_RGB2BGR);
+//		imshow("Image Semantic Segmentation", camera_image_semantic[camera]);
+//		cv::waitKey(1);
+	}
 }
 
 
@@ -712,7 +1275,6 @@ init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char 
 	*intensity = (unsigned char **)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(unsigned char *));
 	*robot_phi_out = (double *)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(double));
 	*points_timestamp_out = (double *)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(double));
-
 
 	carmen_test_alloc(velodyne_points);
 
@@ -844,6 +1406,9 @@ get_alive_sensors(int argc, char **argv)
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
+	sensor_msg_count = (long *) calloc(number_of_sensors, sizeof(long));
+	map_update_count = (long *) calloc(number_of_sensors, sizeof(long));
+
 	for (i = 0; i < number_of_sensors; i++)
 	{
 		sensors_params[i].unsafe_height_above_ground = sensors_params[0].unsafe_height_above_ground;
@@ -883,6 +1448,9 @@ get_alive_sensors(int argc, char **argv)
 			sensors_params[i].name = (char *) calloc(strlen(param_list[i].variable) + 1, sizeof(char));
 			strcpy(sensors_params[i].name, param_list[i].variable);
 		}
+
+		sensor_msg_count[i] = 0;
+		map_update_count[i] = 0;
 	}
 }
 
@@ -1103,9 +1671,31 @@ usage()
 		"    -generate_neural_mapper_dataset on|off : neural mapper dataset option\n"
 		"    -neural_mapper_max_distance_meters <n> : neural mapper maximum distance in meters\n"
 		"    -neural_mapper_data_pace <n>           : neural mapper data pace\n"
+		"    -process_semantic on|off               : process semantic segmentation using Deeplab\n"
+		"    -file_warnings on|off                  : make or suppress file warnings\n"
+		"    -verbose <n>                           : verbose option\n"
 		"\n";
 
 	return msg;
+}
+
+
+static void
+init_camera_data(int **width, int **height, int **image_size, int **isRectified, unsigned char ***image, unsigned char ***semantic, double **timestamp)
+{
+	*width = (int *) calloc(NUM_CAMERA_IMAGES, sizeof(int));
+	*height = (int *) calloc(NUM_CAMERA_IMAGES, sizeof(int));
+	*image_size = (int *) calloc(NUM_CAMERA_IMAGES, sizeof(int));
+	*isRectified = (int *) calloc(NUM_CAMERA_IMAGES, sizeof(int));
+	*image = (unsigned char **) calloc(NUM_CAMERA_IMAGES, sizeof(unsigned char *));
+	*semantic = (unsigned char **) calloc(NUM_CAMERA_IMAGES, sizeof(unsigned char *));
+	*timestamp = (double *) calloc(NUM_CAMERA_IMAGES, sizeof(double));
+
+	for (int i = 0; i < NUM_CAMERA_IMAGES; i++)
+	{
+		(*image)[i] = NULL;
+		(*semantic)[i] = NULL;
+	}
 }
 
 
@@ -1127,6 +1717,7 @@ get_camera_param(int argc, char **argv, int camera)
 			{bumblebee_name, (char*) "cu",         CARMEN_PARAM_DOUBLE, &camera_params[camera].cu_factor,       0, NULL },
 			{bumblebee_name, (char*) "cv",         CARMEN_PARAM_DOUBLE, &camera_params[camera].cv_factor,       0, NULL },
 			{bumblebee_name, (char*) "pixel_size", CARMEN_PARAM_DOUBLE, &camera_params[camera].pixel_size,      0, NULL },
+			{bumblebee_name, (char*) "fov",        CARMEN_PARAM_DOUBLE, &camera_params[camera].fov,             0, NULL },
 
 			{camera_name,    (char*) "x",          CARMEN_PARAM_DOUBLE, &camera_pose[camera].position.x,        0, NULL },
 			{camera_name,    (char*) "y",          CARMEN_PARAM_DOUBLE, &camera_pose[camera].position.y,        0, NULL },
@@ -1138,6 +1729,14 @@ get_camera_param(int argc, char **argv, int camera)
 
 		carmen_param_allow_unfound_variables(0);
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+		camera_data[camera].current_index = -1;
+		init_camera_data(&camera_data[camera].width, &camera_data[camera].height, &camera_data[camera].image_size, &camera_data[camera].isRectified,
+				&camera_data[camera].image, &camera_data[camera].semantic, &camera_data[camera].timestamp);
+
+		camera_msg_count[camera] = 0;
+		camera_filter_count[camera] = 0;
+		camera_datmo_count[camera] = 0;
 	}
 }
 
@@ -1183,6 +1782,7 @@ read_camera_parameters(int argc, char **argv)
 	if (active_cameras == 0)
 		fprintf(stderr, "No cameras active for datmo\n\n");
 	else
+	if (process_semantic)
 		initialize_inference_context();
 }
 
@@ -1336,6 +1936,9 @@ read_parameters(int argc, char **argv,
 		{(char *) "commandline", (char *) "generate_neural_mapper_dataset", CARMEN_PARAM_ONOFF, &generate_neural_mapper_dataset, 0, NULL},
 		{(char *) "commandline", (char *) "neural_mapper_max_distance_meters", CARMEN_PARAM_INT, &neural_mapper_max_distance_meters, 0, NULL},
 		{(char *) "commandline", (char *) "neural_mapper_data_pace", CARMEN_PARAM_INT, &neural_mapper_data_pace, 0, NULL},
+		{(char *) "commandline", (char *) "process_semantic", CARMEN_PARAM_ONOFF, &process_semantic, 1, NULL},
+		{(char *) "commandline", (char *) "file_warnings", CARMEN_PARAM_ONOFF, &file_warnings, 1, NULL},
+		{(char *) "commandline", (char *) "verbose", CARMEN_PARAM_INT, &verbose, 1, NULL},
 	};
 
 	carmen_param_allow_unfound_variables(1);

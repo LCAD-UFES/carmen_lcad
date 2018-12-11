@@ -21,7 +21,7 @@ def vis_segmentation(image, seg_map):
   plt.title('segmentation map')
 
   plt.subplot(grid_spec[2])
-  plt.imshow(image)
+  plt.imshow(image, extent=[0, seg_image.shape[1], seg_image.shape[0], 0])
   plt.imshow(seg_image, alpha=0.7)
   plt.axis('off')
   plt.title('segmentation overlay')
@@ -117,3 +117,17 @@ LABEL_NAMES = np.asarray([
 
 FULL_LABEL_MAP = np.arange(len(LABEL_NAMES)).reshape(len(LABEL_NAMES), 1)
 FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
+
+def get_label_name_by_number(label_number):
+    if 0 <= label_number < len(LABEL_NAMES):
+        return LABEL_NAMES[label_number]
+    return ''
+
+MOVING_OBJECTS = []
+for label_number in range(len(LABEL_NAMES)):
+    if LABEL_NAMES[label_number] in ('person','rider','car','truck','bus','train','motorcycle','bicycle'):
+        MOVING_OBJECTS.append(label_number)
+MOVING_OBJECTS = np.asarray(MOVING_OBJECTS)
+
+def is_moving_object(label_number):
+    return int(label_number in MOVING_OBJECTS)

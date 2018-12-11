@@ -51,6 +51,7 @@ int carmen_grid_mapping_get_buffered_map(double x_origin, double y_origin, carme
 int carmen_grid_mapping_get_block_map_by_origin(char *map_path, char map_type, carmen_point_t pose, carmen_map_t *new_map);
 
 int carmen_grid_mapping_get_block_map_by_origin_x_y(char *map_path, char map_type, double x_origin, double y_origin, carmen_map_t *new_map);
+int carmen_grid_mapping_get_block_map_by_origin_x_y_verbose(char *map_path, char map_type, double x_origin, double y_origin, carmen_map_t *new_map, int verbose);
 
 int carmen_grid_mapping_save_block_map_by_origin(char *map_path, char map_type, carmen_map_t *map);
 

@@ -1,4 +1,3 @@
-
 #include <carmen/carmen.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/path_planner_messages.h>
@@ -14,6 +13,8 @@
 #include <carmen/motion_planner_interface.h>
 #include <carmen/global_graphics.h>
 #include <carmen/navigator_ackerman_interface.h>
+#include <carmen/voice_interface_messages.h>
+#include <carmen/voice_interface_interface.h>
 #include <carmen/collision_detection.h>
 
 #include "behavior_selector.h"
@@ -70,6 +71,10 @@ static carmen_obstacle_distance_mapper_compact_map_message *compact_lane_content
 
 static double original_behaviour_selector_central_lane_obstacles_safe_distance;
 static double original_model_predictive_planner_obstacles_safe_distance;
+
+static double carmen_ini_max_velocity;
+
+static bool soft_stop_on = false;
 
 
 int
@@ -349,7 +354,7 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
 		v = 0.08;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
-		v = 0.08;
+		v = 0.00;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))
 		v = 0.09;
@@ -1412,10 +1417,15 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 //			if (udatmo_obstacle_detected(timestamp) &&
 //				(udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config()) < stop_sign_distance(current_robot_pose_v_and_phi)))
 //				decision_making_state_msg->low_level_state = Following_Moving_Object;
-			if ((current_robot_pose_v_and_phi.v < 0.15) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 2.0))
+			printf("current_robot_pose_v_and_phi.v %lf, distance_to_stop_sign(current_robot_pose_v_and_phi) %lf\n", current_robot_pose_v_and_phi.v, distance_to_stop_sign(current_robot_pose_v_and_phi));
+			if ((current_robot_pose_v_and_phi.v < 0.1) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 4.0))
+			{
+				printf("troquei\n");
 				decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
+			}
 			break;
 		case Stopped_At_Stop_Sign_S0:
+			printf("mudei\n");
 			decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S1;
 			break;
 		case Stopped_At_Stop_Sign_S1:
@@ -1511,6 +1521,35 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 }
 
 
+carmen_ackerman_traj_point_t *
+check_soft_stop(carmen_ackerman_traj_point_t *first_goal, carmen_ackerman_traj_point_t *goal_list, int &goal_type)
+{
+	static bool soft_stop_in_progress = false;
+	static carmen_ackerman_traj_point_t soft_stop_goal;
+	static int soft_stop_goal_type;
+
+	if (soft_stop_on)
+	{
+		if (!soft_stop_in_progress)
+		{
+			soft_stop_goal = *first_goal;
+			soft_stop_goal_type = goal_type;
+			soft_stop_in_progress = true;
+		}
+		else
+		{
+			goal_list[0] = soft_stop_goal;
+			first_goal = &soft_stop_goal;
+			goal_type = soft_stop_goal_type;
+		}
+	}
+	else
+		soft_stop_in_progress = false;
+
+	return (first_goal);
+}
+
+
 void
 select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
@@ -1525,10 +1564,12 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	int goal_list_size;
 	carmen_ackerman_traj_point_t *goal_list = behavior_selector_get_goal_list(&goal_list_size);
 	carmen_ackerman_traj_point_t *first_goal = &(goal_list[0]);
-	int *goal_type = behavior_selector_get_goal_type();
+	int goal_type = behavior_selector_get_goal_type()[0];
+
+	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
 
 	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
-			first_goal, goal_type[0], timestamp);
+			first_goal, goal_type, timestamp);
 	if (error != 0)
 		carmen_die("State machine error code %d\n", error);
 
@@ -1536,10 +1577,10 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	static carmen_ackerman_traj_point_t *last_valid_goal_p = NULL;
 	if (goal_list_size > 0)
 	{
-		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type[0], timestamp);
+		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type, timestamp);
 		publish_goal_list(goal_list, goal_list_size, timestamp);
 
-		last_valid_goal = goal_list[0];
+		last_valid_goal = *first_goal;
 		last_valid_goal_p = &last_valid_goal;
 	}
 	else if (last_valid_goal_p != NULL)
@@ -1778,6 +1819,28 @@ carmen_navigator_ackerman_status_message_handler(carmen_navigator_ackerman_statu
 
 
 static void
+carmen_voice_interface_command_message_handler(carmen_voice_interface_command_message *message)
+{
+	if (message->command_id == SET_SPEED)
+	{
+		if (strcmp(message->command, "MAX_SPEED") == 0)
+		{
+			set_max_v(carmen_ini_max_velocity);
+			soft_stop_on = false;
+		}
+		else if (strcmp(message->command, "0.0") == 0)
+		{
+			set_max_v(0.0);
+			soft_stop_on = true;
+		}
+
+		printf("New speed set by voice command: %lf\n", get_max_v());
+		fflush(stdout);
+	}
+}
+
+
+static void
 signal_handler(int signo __attribute__ ((unused)) )
 {
 	carmen_ipc_disconnect();
@@ -1857,6 +1920,8 @@ register_handlers()
 			(carmen_handler_t)remove_goal_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) carmen_navigator_ackerman_status_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1940,6 +2005,7 @@ read_parameters(int argc, char **argv)
 	param_distance_between_waypoints = distance_between_waypoints;
 	param_change_goal_distance = change_goal_distance;
 
+	carmen_ini_max_velocity = robot_config.max_v;
 	behavior_selector_initialize(robot_config, distance_between_waypoints, change_goal_distance, following_lane_planner, parking_planner);
 
 	if (param_goal_source_onoff)

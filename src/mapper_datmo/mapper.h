@@ -8,9 +8,31 @@
 #define	MINIMUM_HEIGHT_DIFFERENCE 	0.07
 //#define STEREO_MAPPING_SENSOR_INDEX 	10
 
-#define NUM_VELODYNE_POINT_CLOUDS	5
+#define NUM_VELODYNE_POINT_CLOUDS	10
+#define NUM_CAMERA_IMAGES			5
 #define GLOBAL_POS_QUEUE_SIZE		100
 #define MAX_CAMERA_INDEX 			9
+#define CAMERA_DELAY				0.00 // 0.30
+#define MAX_TIMESTAMP_DIFFERENCE	0.10 // 0.08
+#define MIN_RANGE 					0.5
+#define MIN_ANGLE_OBSTACLE			2
+#define MAX_ANGLE_OBSTACLE			188
+#define MIN_LOG_ODDS				0.02
+#define BUMBLEBEE_BASIC_VIEW_MAX_WINDOW_WIDTH 640
+
+
+typedef struct _camera_data
+{
+	int current_index;
+	int *width;
+	int *height;
+	int *image_size;
+	int *isRectified;
+	unsigned char **image;
+	unsigned char **semantic;
+	double *timestamp;
+} camera_data_t;
+
 
 /**
   * Prototypes

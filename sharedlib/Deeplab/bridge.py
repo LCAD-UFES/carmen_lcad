@@ -15,27 +15,30 @@ from PIL import Image
 
 # Imports just from my module
 from model import DeepLabModel
-from visualize import vis_segmentation
+from visualize import vis_segmentation, label_to_color_image
 
 saved_path = carmen_home + '/sharedlib/Deeplab/deeplab_model_cityscapes.tar.gz'
 model = DeepLabModel(saved_path)
 
 def process_image(carmen_image):
-  img_teste = Image.fromarray(carmen_image)
-  
-  
-  resized_im, seg_map = model.run(img_teste)
-  seg_map = seg_map.astype(np.uint8)
+    img_teste = Image.fromarray(carmen_image)
+    resized_im, seg_map = model.run(img_teste)
+    seg_map = seg_map.astype(np.uint8)
+    return seg_map
 
-  # vis_segmentation(resized_im, seg_map)
+def color_image(seg_map):
+      seg_image = label_to_color_image(seg_map).astype(np.uint8)
+      return seg_image
 
-  return seg_map
+def process_image_from_disk(png_filename):
+    img_teste = Image.open(png_filename)
+    resized_im, seg_map = model.run(img_teste)
+    vis_segmentation(resized_im, seg_map)
 
-
-
-#Para rodar de forma standalone. Troque o nome do arquivo teste.png para aquele que vc usar de teste
-# def process_image_from_disk():
-#   img_teste = Image.open('teste.png')
-#   resized_im, seg_map = model.run(img_teste)
-#   vis_segmentation(resized_im, seg_map)
-# process_image_from_disk()
+if __name__ == "__main__":
+    from sys import argv, version_info
+    if len(argv) < 2 or argv[1] == '-h':
+        print('\nUsage: python' + str(version_info.major) + ' ' + argv[0] + ' <png_filenames> ...\n')
+        exit()
+    for filename in argv[1:]:
+        process_image_from_disk(filename)

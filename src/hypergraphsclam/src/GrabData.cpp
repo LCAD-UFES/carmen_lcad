@@ -412,10 +412,12 @@ void GrabData::BuildOdometryMeasures()
                     StampedMessagePtr prev_msg = *prev;
 
                     double dt = current_msg->timestamp - prev_msg->timestamp;
-
-                    // update the measurement
-                    prev_msg->odom_measurement = VehicleModel::GetOdometryMeasure(v, phi, dt);
-                    prev_msg->raw_measurement = VehicleModel::GetOdometryMeasure(raw_v, raw_phi, dt);
+                    if (dt > 0 && dt < 600)
+                    {
+                        // update the measurement
+                        prev_msg->odom_measurement = VehicleModel::GetOdometryMeasure(v, phi, dt);
+                        prev_msg->raw_measurement = VehicleModel::GetOdometryMeasure(raw_v, raw_phi, dt);
+                    }
 
                     // go to the previous message
                     rit = prev;
@@ -461,9 +463,12 @@ void GrabData::BuildOdometryMeasures()
                 // precompute the delta tim
                 double dt = next_msg->timestamp - current_msg->timestamp;
 
-                // get the current odometry measurement
-                current_msg->odom_measurement = VehicleModel::GetOdometryMeasure(v, phi, dt);
-                current_msg->raw_measurement = VehicleModel::GetOdometryMeasure(raw_v, raw_phi, dt);
+                if (dt > 0 && dt < 600)
+                {
+                    // get the current odometry measurement
+                    current_msg->odom_measurement = VehicleModel::GetOdometryMeasure(v, phi, dt);
+                    current_msg->raw_measurement = VehicleModel::GetOdometryMeasure(raw_v, raw_phi, dt);
+                }
 
                 // go to the next messages
                 it = next;
@@ -887,35 +892,39 @@ void GrabData::BuildLidarMeasuresMT()
                 // get the factor
                 double cf = double(int(current->speed * (next->timestamp - current->timestamp) * 100.0)) * 0.02;
 
-                // the odometry guess
-                g2o::SE2 odom(current->est.inverse() * next->est);
-
-                if (0.0 != cf)
+                double dt = next->timestamp - current->timestamp;
+                if (dt > 0 && dt < 600)
                 {
-                    if (BuildLidarOdometryMeasure(gicp, grid_filtering, cf, odom, current_cloud, next_cloud, current->seq_measurement))
-                    {
-                        // set the base id
-                        current->seq_id = next->id;
+                    // the odometry guess
+                    g2o::SE2 odom(current->est.inverse() * next->est);
 
-                        if (save_accumulated_point_clouds)
+                    if (0.0 != cf)
+                    {
+                        if (BuildLidarOdometryMeasure(gicp, grid_filtering, cf, odom, current_cloud, next_cloud, current->seq_measurement))
                         {
-                            if (first_index == current_index || last_index == current_index)
+                            // set the base id
+                            current->seq_id = next->id;
+
+                            if (save_accumulated_point_clouds)
                             {
-                                first_last_mutex.lock();
-                                StampedLidar::SavePointCloud(path, current_index, *current_cloud);
-                                first_last_mutex.unlock();
-                            }
-                            else
-                            {
-                                StampedLidar::SavePointCloud(path, current_index, *current_cloud);
+                                if (first_index == current_index || last_index == current_index)
+                                {
+                                    first_last_mutex.lock();
+                                    StampedLidar::SavePointCloud(path, current_index, *current_cloud);
+                                    first_last_mutex.unlock();
+                                }
+                                else
+                                {
+                                    StampedLidar::SavePointCloud(path, current_index, *current_cloud);
+                                }
                             }
                         }
-                    }
-                    else
-                    {
-                        error_increment_mutex.lock();
-                        ++icp_errors;
-                        error_increment_mutex.unlock();
+                        else
+                        {
+                            error_increment_mutex.lock();
+                            ++icp_errors;
+                            error_increment_mutex.unlock();
+                        }
                     }
                 }
 
@@ -1170,7 +1179,8 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
         {
             counter += 1;
 
-            if (0 == percent % counter) { std::cout << "-"; }
+            std::cout << counter << " of " << lmsize << std::endl;
+            //if (0 == percent % counter) { std::cout << "-"; }
 
             // get the current lidar message pointer
             StampedLidarPtr current = *it;
@@ -1303,13 +1313,17 @@ void GrabData::BuildVisualOdometryMeasures()
                     int32_t dims[3] = {int32_t(next_msg->GetWidth()), int32_t(next_msg->GetHeight()), int32_t(next_msg->GetWidth())};
                     if (viso.process(&limg[0], &rimg[0], dims))
                     {
-                        // get the current transformation matrix
-                        Matrix transf = Matrix::inv(viso.getMotion());
-                        // update the sequential id
-                        current_msg->seq_id = next_msg->id;
+                        double dt = next_msg->timestamp - current_msg->timestamp;
+                        if (dt > 0 && dt < 600)
+                        {
+                            // get the current transformation matrix
+                            Matrix transf = Matrix::inv(viso.getMotion());
+                            // update the sequential id
+                            current_msg->seq_id = next_msg->id;
 
-                        // save the measur
-                        current_msg->seq_measurement = GetSE2FromVisoMatrix(transf);
+                            // save the measur
+                            current_msg->seq_measurement = GetSE2FromVisoMatrix(transf);
+                        }
                     }
                     else
                     {
@@ -1389,6 +1403,9 @@ void GrabData::SaveOdometryEdges(std::ofstream &os)
             double dy = measurement[1];
             double yaw = measurement[2];
             double dt = b->timestamp - a->timestamp;
+
+            if (dt < 0 || dt > 600)
+                continue;
 
             // write the odometry measurements
             os << "ODOM_EDGE " << a->id << _s << b->id << _s << std::fixed << dx << _s << dy << _s << yaw << _s << rv << _s << rphi << _s << dt << "\n";
@@ -1918,7 +1935,7 @@ bool GrabData::ParseLogFile(const std::string &input_filename)
             // build a new sick message
             msg = new StampedSICK(msg_id);
         }
-        else if ("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3" == tag)   // ZED eh FILE4
+        else if ("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3____" == tag)   // ZED eh FILE4. Os "_____" sao para nao considerar esta mensagem
         {
             // parse the Bumblebee stereo image message
             msg = new StampedBumblebee(msg_id);

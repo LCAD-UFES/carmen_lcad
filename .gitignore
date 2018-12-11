@@ -16,7 +16,6 @@ Makefile.depend
 data/map*/*.bmp
 data/map_ida_guarapari-20170403-2.tar.gz
 data/map_ida_guarapari-20170403-2/*
-data/voice_interface_speechs/*
 bin/traffic_light_annotation_tool
 bin/debug.txt
 bin/out.txt
@@ -78,6 +77,7 @@ bin/map
 bin/map_editor
 bin/map_server
 bin/mapper
+bin/mapper2
 bin/mapping_traffic_light
 bin/maptool
 bin/model_learner_ackerman
@@ -366,6 +366,7 @@ src/traffic_light/log_generate_images
 src/traffic_light/mapping_traffic_light
 src/traffic_light/traffic_light
 src/traffic_light/traffic_light_view
+src/traffic_light/traffic_light_annotation_tool
 src/ultrasonic/ultrasonic
 src/ultrasonic/ultrasonic_viewer
 src/v_disparity/v_disparity_view
@@ -564,3 +565,5 @@ src/kitti2carmen/kitti2carmen_main
 src/neural_mapper/generate_gt/neural_mapper_dataset_generator
 src/neural_mapper/generate_gt/neural_mapper_dataset_generator.o
 src/neural_mapper/generate_gt/Makefile.depend
+src/mapper2/mapper2
+
