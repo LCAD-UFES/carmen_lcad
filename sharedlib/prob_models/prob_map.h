@@ -283,9 +283,6 @@ void carmen_prob_models_initialize_distance_map(carmen_prob_models_distance_map 
 
 float ***load_calibration_table(char *calibration_file);
 
-double get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int ray_index, int scan_index,
-		bool reduce_sensitivity, int thread_id);
-
 #ifdef __cplusplus
 }
 #endif
