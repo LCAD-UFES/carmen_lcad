@@ -96,8 +96,11 @@ speed_params_save(GtkWidget *w, // __attribute__ ((unused)),
     {
         gchar *value = gtk_editable_get_chars(GTK_EDITABLE(w), 0, -1);
 
-        if (carmen_playback_is_valid_speed(value, &playback_speed))
+        double speed_val;
+
+        if (carmen_playback_is_valid_speed(value, &speed_val))
         {
+        	playback_speed = speed_val;
 			speed_pending_update = 0;
 			gtk_label_set_pattern(GTK_LABEL(playback_speed_widget_label), "");
 			gtk_label_set_text(GTK_LABEL(playback_speed_widget_status), "");
@@ -119,8 +122,8 @@ initial_time_params_save(GtkWidget *w, // __attribute__ ((unused)),
     {
     	playback_message = gtk_editable_get_chars(GTK_EDITABLE(w), 0, -1);
 
-    	int start_msg = -1, stop_msg = -1;
-    	double start_ts = -1.0, stop_ts = -1.0, start_x = 0.0, start_y = 0.0, stop_x = 0.0, stop_y = 0.0, radius = -1.0;
+    	int start_msg, stop_msg;
+    	double start_ts, stop_ts, start_x, start_y, stop_x, stop_y, radius;
 
         if (carmen_playback_is_valid_message(playback_message, &start_msg, &stop_msg, &start_ts, &stop_ts, &start_x, &start_y, &stop_x, &stop_y, &radius))
         {
@@ -214,8 +217,14 @@ read_parameters(int argc, char *argv[])
 	{
 	    gtk_entry_set_text(GTK_ENTRY(playback_speed_widget), speed);
 
-        if (carmen_playback_is_valid_speed(speed, &playback_speed))
+	    double speed_val;
+
+        if (carmen_playback_is_valid_speed(speed, &speed_val))
+        {
+        	playback_speed = speed_val;
+			gtk_label_set_pattern(GTK_LABEL(playback_speed_widget_label), "");
 			carmen_playback_command(CARMEN_PLAYBACK_COMMAND_SET_SPEED, NULL, 0, playback_speed);
+        }
         else
         	gtk_label_set_text(GTK_LABEL(playback_speed_widget_status), " (ERROR)");
 	}
@@ -224,11 +233,15 @@ read_parameters(int argc, char *argv[])
     {
         gtk_entry_set_text(GTK_ENTRY(playback_initial_time_widget), message);
 
-    	int start_msg = -1, stop_msg = -1;
-    	double start_ts = -1.0, stop_ts = -1.0, start_x = 0.0, start_y = 0.0, stop_x = 0.0, stop_y = 0.0, radius = -1.0;
+    	int start_msg, stop_msg;
+    	double start_ts, stop_ts, start_x, start_y, stop_x, stop_y, radius;
 
         if (carmen_playback_is_valid_message(message, &start_msg, &stop_msg, &start_ts, &stop_ts, &start_x, &start_y, &stop_x, &stop_y, &radius))
-			carmen_playback_command(CARMEN_PLAYBACK_COMMAND_SET_MESSAGE, message, 0, playback_speed);
+        {
+        	playback_message = message;
+			gtk_label_set_pattern(GTK_LABEL(playback_initial_time_widget_label), "");
+			carmen_playback_command(CARMEN_PLAYBACK_COMMAND_SET_MESSAGE, playback_message, 0, playback_speed);
+        }
         else
         	gtk_label_set_text(GTK_LABEL(playback_initial_time_widget_status), " (ERROR)");
     }
