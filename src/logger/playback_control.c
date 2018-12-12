@@ -260,9 +260,9 @@ void usage(char *fmt, ...)
 	va_end(args);
 
 	fprintf(stderr, " [args]:\n"
-			        "\tspeed <value>                speed option (default: 1.0)\n"
-			        "\tmessage <option>             message play:stop option (default: 0)\n"
-			        "\tautostart on|off             auto start option (default: off)\n");
+			        "\t-speed <value>               speed option (default: 1.0)\n"
+			        "\t-message <option>            message play:stop option (default: 0)\n"
+			        "\t-autostart on|off            auto start option (default: off)\n");
 
 	fprintf(stderr, "\n Message play:stop runtime options:\n");
 	fprintf(stderr, "\tplay from message number:    <num>\n");
