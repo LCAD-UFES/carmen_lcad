@@ -13,7 +13,7 @@
 #define GLOBAL_POS_QUEUE_SIZE		100
 #define MAX_CAMERA_INDEX 			9
 #define CAMERA_DELAY				0.00 // 0.30
-#define MAX_TIMESTAMP_DIFFERENCE	0.10 // 0.08
+#define MAX_TIMESTAMP_DIFFERENCE	0.15 // 0.08
 #define MIN_RANGE 					0.5
 #define MIN_ANGLE_OBSTACLE			2
 #define MAX_ANGLE_OBSTACLE			188
@@ -50,6 +50,6 @@ void mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin
 int run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global);
 void map_decay_to_offline_map(carmen_map_t *current_map);
 carmen_map_t *get_the_map();
-
+void change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle);
 
 #endif /* MAPPER_H_ */

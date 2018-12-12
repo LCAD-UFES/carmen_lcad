@@ -193,6 +193,51 @@ create_pixbuf(const gchar * filename)
 }
 
 
+void
+read_parameters(int argc, char *argv[])
+{
+	char *speed = NULL;
+	char *message = NULL;
+	int autostart = 0;
+
+	carmen_param_t param_optional_list[] =
+	{
+		{(char *) "commandline",	(char *) "speed",		CARMEN_PARAM_STRING,	&(speed),		0, NULL},
+		{(char *) "commandline",	(char *) "message",		CARMEN_PARAM_STRING, 	&(message),		0, NULL},
+		{(char *) "commandline",	(char *) "autostart",	CARMEN_PARAM_ONOFF, 	&(autostart),	0, NULL},
+	};
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
+
+	if (speed)
+	{
+	    gtk_entry_set_text(GTK_ENTRY(playback_speed_widget), speed);
+
+        if (carmen_playback_is_valid_speed(speed, &playback_speed))
+			carmen_playback_command(CARMEN_PLAYBACK_COMMAND_SET_SPEED, NULL, 0, playback_speed);
+        else
+        	gtk_label_set_text(GTK_LABEL(playback_speed_widget_status), " (ERROR)");
+	}
+
+    if (message)
+    {
+        gtk_entry_set_text(GTK_ENTRY(playback_initial_time_widget), message);
+
+    	int start_msg = -1, stop_msg = -1;
+    	double start_ts = -1.0, stop_ts = -1.0, start_x = 0.0, start_y = 0.0, stop_x = 0.0, stop_y = 0.0, radius = -1.0;
+
+        if (carmen_playback_is_valid_message(message, &start_msg, &stop_msg, &start_ts, &stop_ts, &start_x, &start_y, &stop_x, &stop_y, &radius))
+			carmen_playback_command(CARMEN_PLAYBACK_COMMAND_SET_MESSAGE, message, 0, playback_speed);
+        else
+        	gtk_label_set_text(GTK_LABEL(playback_initial_time_widget_status), " (ERROR)");
+    }
+
+    if (autostart)
+    	carmen_playback_command(CARMEN_PLAYBACK_COMMAND_PLAY, NULL, 0, playback_speed);
+}
+
+
 void usage(char *fmt, ...)
 {
 	va_list args;
@@ -201,7 +246,12 @@ void usage(char *fmt, ...)
 	vfprintf(stderr, fmt, args);
 	va_end(args);
 
-	fprintf(stderr, "Message play:stop options:\n");
+	fprintf(stderr, " [args]:\n"
+			        "\tspeed <value>                speed option (default: 1.0)\n"
+			        "\tmessage <option>             message play:stop option (default: 0)\n"
+			        "\tautostart on|off             auto start option (default: off)\n");
+
+	fprintf(stderr, "\n Message play:stop runtime options:\n");
 	fprintf(stderr, "\tplay from message number:    <num>\n");
 	fprintf(stderr, "\tstop at message number:      :<num>\n");
 	fprintf(stderr, "\tplay:stop message numbers:   <num>:<num>\n");
@@ -230,7 +280,7 @@ main(int argc, char *argv[])
             *ffwd_darea, *fwd_darea, *reset_darea;
 
 	if (argc > 1 && strcmp(argv[1], "-h") == 0)
-		usage(NULL);
+		usage("%s [args]\n", argv[0]);
 
     gtk_init(&argc, &argv);
 
@@ -455,6 +505,8 @@ main(int argc, char *argv[])
 
     gtk_widget_show(gtk_label_info_timestamp_difference);
     gtk_widget_show(gtk_label_info_timestamp_difference_value);
+
+	read_parameters(argc, argv);
 
     gtk_widget_show_all(window);
 

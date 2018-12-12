@@ -91,8 +91,8 @@ int globalpos_initialized = 0;
 extern carmen_localize_ackerman_globalpos_message *globalpos_history;
 extern int last_globalpos;
 
-carmen_robot_ackerman_config_t car_config;
-carmen_map_config_t map_config;
+extern carmen_robot_ackerman_config_t car_config;
+extern carmen_map_config_t map_config;
 
 double x_origin, y_origin; // map origin in meters
 
@@ -114,7 +114,7 @@ get_the_map()
 }
 
 
-static void
+void
 change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle)
 {
 	if ((angle > M_PI / 2.0) || (angle < -M_PI / 2.0))
