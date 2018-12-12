@@ -57,7 +57,7 @@ import torch.nn.functional as F
 
 # LiDAR road detection FCNN as described in https://arxiv.org/pdf/1703.03613.pdf
 class FCNN(nn.Module):
-	def __init__(self, n_input=5, n_output=2):
+	def __init__(self, n_input=5, n_output=3):
 		super(FCNN, self).__init__()
 		self.num_classes = n_output
 		self.n_layers_enc = 32

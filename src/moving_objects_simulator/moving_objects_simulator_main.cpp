@@ -28,8 +28,8 @@ carmen_point_t initial_pose, actual_pose;
 
 #define MIN_DIST 10.0
 #define MAX_DIST 30.0
-//#define PUBLISH_BY_ID
-#define PLAYBACK_OBJECTS
+#define PUBLISH_BY_ID
+//#define PLAYBACK_OBJECTS
 
 void
 find_start_position()

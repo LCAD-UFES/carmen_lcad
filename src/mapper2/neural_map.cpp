@@ -45,6 +45,8 @@ Neural_map::Neural_map(int size_x, int size_y, double resolution, double car_x, 
 	this->neural_mapper_occupancy_map.config.y_origin = center_pos_y;
 	this->raw_square_sum_map.config.y_origin = center_pos_y;
 
+
+
 }
 
 
@@ -129,7 +131,6 @@ Neural_map_queue::Neural_map_queue(int n_maps, int size_x, int size_y, double re
 carmen_map_t
 Neural_map_queue::fixed_normalize_map(carmen_map_t value_map, double new_max, double last_max, double min)
 {
-
 	carmen_map_t normalized = value_map;
 
 	//normalization
@@ -146,6 +147,39 @@ Neural_map_queue::fixed_normalize_map(carmen_map_t value_map, double new_max, do
 
 	//printf("max = %lf | min = %lf | norm_max = %d | norm_min = %d\n", max, min, normalized[max_index], normalized[min_index]);
 	return normalized;
+}
+
+cv::Mat
+Neural_map_queue::map_to_png2(carmen_map_t complete_map, bool is_label, double map_max, double map_min, bool rgb_map)
+{
+	carmen_map_t png_map = complete_map;
+	if(!is_label)
+		png_map = fixed_normalize_map(complete_map, 255., map_max, map_min);
+
+	if (rgb_map)
+	{
+		cv::Mat neural_map_img = cv::Mat(cv::Size(complete_map.config.x_size, complete_map.config.y_size), CV_8UC3);
+		for (int y = 0; y < complete_map.config.y_size; y++)
+		{
+			for (int x = 0; x < complete_map.config.x_size; x++)
+			{
+				//				printf("Meus valores aqui X: %d Y %d:  %lf\n",x,y,complete_map.map[x][y]);
+				if (complete_map.map[x][y] <= 2.0)//desconhecido-blue
+					neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(255,120,0);
+				else if (complete_map.map[x][y] <= 130.0)//Livre-white
+					neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(255,255,255);
+				else if (complete_map.map[x][y] <= 260.0)//ocupado
+					neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(0,0,0);
+			}
+		}
+		return neural_map_img;
+	}
+	else
+	{
+		// jeito mais rapido de gravar com Opencv
+		cv::Mat png_mat = cv::Mat(complete_map.config.x_size, complete_map.config.y_size, CV_64FC1, *png_map.map);
+		return png_mat;
+	}
 }
 
 
@@ -336,4 +370,51 @@ Neural_map_queue::export_png(char* path, int map_index)
 	this->save_map(output_map.raw_square_sum_map, (char *) "std", path, false, this->neural_maps[0].rotation, 20, map_index);
 	this->save_map(output_map.neural_mapper_occupancy_map, (char *) "label", path, true, this->neural_maps[0].rotation, 0, map_index);
 	this->output_map.clear_maps();
+}
+
+
+//
+//
+//
+//void
+//Neural_map_queue::predict_map(char* path, int map_index)
+//{
+//	acumulate_maps();
+//
+//	this->send_maps(output_map.raw_number_of_lasers_map, output_map.raw_min_hight_map, output_map.raw_max_hight_map, output_map.raw_mean_hight_map,
+//			output_map.raw_square_sum_map, output_map.neural_mapper_occupancy_map
+//			(char *) "numb", path, false, this->neural_maps[0].rotation, 50, map_index);
+//
+//	this->output_map.clear_maps();
+//
+//}
+
+
+std::vector<cv::Mat>
+Neural_map_queue::get_maps()
+{
+	acumulate_maps();
+
+	std::vector<cv::Mat> statistic_maps;
+	statistic_maps.push_back(this->map_to_png2(output_map.raw_number_of_lasers_map,false, 50,-1,false));
+	statistic_maps.push_back(this->map_to_png2(output_map.raw_min_hight_map, false, 5, -1, false));
+	statistic_maps.push_back(this->map_to_png2(output_map.raw_max_hight_map, false, 5, -1, false));
+	statistic_maps.push_back(this->map_to_png2(output_map.raw_mean_hight_map, false, 5, -1, false));
+	statistic_maps.push_back(this->map_to_png2(output_map.raw_square_sum_map, false, 20, -1, false));
+
+	return statistic_maps;
+
+}
+
+
+void
+Neural_map_queue::convertMapToChar()
+{
+//	cv::Mat png_mat = cv::Mat(this->output_map.raw_number_of_lasers_map.config.x_size, this->output_map.raw_number_of_lasers_map.config.y_size,
+//			CV_64FC1, *this->output_map.raw_number_of_lasers_map);
+//	cv::Mat png_mat = cv::Mat(this->output_map.raw_number_of_lasers_map.config.x_size, this->output_map.raw_number_of_lasers_map.config.y_size,
+//				CV_64FC1, *this->output_map.raw_number_of_lasers_map);
+//	cv::Mat png_mat = cv::Mat(this->output_map.raw_number_of_lasers_map.config.x_size, this->output_map.raw_number_of_lasers_map.config.y_size,
+//				CV_64FC1, *this->output_map.raw_number_of_lasers_map);
+
 }
