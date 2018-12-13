@@ -839,50 +839,50 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 		double image_size_x;
 		double image_size_y;
 		//cout<<i<<endl;
-		//if (i > 0)//pedro
-		if (i >= 0)//ranik
+		if (i > 0)//pedro
+		//if (i >= 0)//ranik
 		{
-			//double dist_percentage = (100.0 - distances_of_rddf_from_car[i])/100.0;//pedro
+			double dist_percentage = (100.0 - distances_of_rddf_from_car[i])/100.0;//pedro
 			//double dist_percentage = pow((1-(meters_spacement/100)),i);//ramoni
-			double dist_percentage = (distances_of_rddf_from_car[i]*5)/(pow(distances_of_rddf_from_car[i],2));//ranik
+			//double dist_percentage = (distances_of_rddf_from_car[i]*5)/(pow(distances_of_rddf_from_car[i],2));//ranik
 			//cout<<dist_percentage<<endl;
-			//image_size_x = static_cast<double>(scene_slices[(i+1)-1].cols) * dist_percentage;//pedroRamoni
-			//image_size_y = static_cast<double>(scene_slices[(i+1)-1].rows) * dist_percentage;//pedroRamoni
-			image_size_x = static_cast<double>(scene_slices[0].cols) * dist_percentage;//ranik
-			image_size_y = static_cast<double>(scene_slices[0].rows) * dist_percentage;//ranik
+			image_size_x = static_cast<double>(scene_slices[(i+1)-1].cols) * dist_percentage;//pedroRamoni
+			image_size_y = static_cast<double>(scene_slices[(i+1)-1].rows) * dist_percentage;//pedroRamoni
+			//image_size_x = static_cast<double>(scene_slices[0].cols) * dist_percentage;//ranik
+			//image_size_y = static_cast<double>(scene_slices[0].rows) * dist_percentage;//ranik
 			//cout<<image_size_x<<" "<<image_size_y<<endl;
 		}
 
 		//cv::circle(out, cv::Point(rddf_points_in_image[i].x, rddf_points_in_image[i].y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
 
-//		if (i == 0)
-//		{
-//			//cv::Rect rec(rddf_points[0].x - 320, rddf_points[0].y-300, 640, 384);
-//			double scale = 384.0 * (3.0 / 4.0);
-//			top_left_point.x = rddf_points_in_image[0].x - 320;
-//			top_left_point.y = rddf_points_in_image[0].y - scale;
-//
-//			cv::Rect rec(top_left_point.x, top_left_point.y, 640, 384);
-//			//cout<<"Slice"<<i<<" "<<640<<" "<<384<<endl;
-//			//cout<<rddf_points[0].x - 320<<" "<<rddf_points[0].y-scale<<" "<<640<<" "<<384-(rddf_points[0].y-scale)<<endl;
-//			if (check_rect_inside_image(rec, out)){
-//				roi = out (rec);
-//				//cout<<roi.cols<<" "<<roi.rows<<endl;
-//				mult_scale_x += double(scene_slices[0].cols) / double(roi.cols);
-//				mult_scale_y += double(scene_slices[0].rows) / double(roi.rows);
-//				t.scale_factor_x = mult_scale_x;
-//				t.scale_factor_y = mult_scale_y;
-//				sum_transform_x += top_left_point.x;
-//				sum_transform_y += top_left_point.y;
-//				t.translate_factor_x = sum_transform_x;
-//				t.translate_factor_y = sum_transform_y;
-//				scene_slices.push_back(roi);
-//				transform_factor_of_slice_to_original_frame.push_back(t);
-//			}
-//
-//		}
-//		else if (image_size_y >= 30)
-		if (image_size_x >= 80)//ranik
+		if (i == 0)
+		{
+			//cv::Rect rec(rddf_points[0].x - 320, rddf_points[0].y-300, 640, 384);
+			double scale = 384.0 * (3.0 / 4.0);
+			top_left_point.x = rddf_points_in_image[0].x - 320;
+			top_left_point.y = rddf_points_in_image[0].y - scale;
+
+			cv::Rect rec(top_left_point.x, top_left_point.y, 640, 384);
+			//cout<<"Slice"<<i<<" "<<640<<" "<<384<<endl;
+			//cout<<rddf_points[0].x - 320<<" "<<rddf_points[0].y-scale<<" "<<640<<" "<<384-(rddf_points[0].y-scale)<<endl;
+			if (check_rect_inside_image(rec, out)){
+				roi = out (rec);
+				//cout<<roi.cols<<" "<<roi.rows<<endl;
+				mult_scale_x += double(scene_slices[0].cols) / double(roi.cols);
+				mult_scale_y += double(scene_slices[0].rows) / double(roi.rows);
+				t.scale_factor_x = mult_scale_x;
+				t.scale_factor_y = mult_scale_y;
+				sum_transform_x += top_left_point.x;
+				sum_transform_y += top_left_point.y;
+				t.translate_factor_x = sum_transform_x;
+				t.translate_factor_y = sum_transform_y;
+				scene_slices.push_back(roi);
+				transform_factor_of_slice_to_original_frame.push_back(t);
+			}
+
+		}
+		else if (image_size_y >= 30)
+		//if (image_size_x >= 80)//ranik
 		{
 			//cv::Rect rec(rddf_points[i].x - (image_size_x/2), rddf_points[i].y-(300*dist_percentage), image_size_x, scene_slices[i-1].rows * dist_percentage);
 			double scale = image_size_y*(3.0/4.0);
@@ -1382,7 +1382,67 @@ shutdown_module(int signo)
     }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
+void
+create_folders(char *)
+{
+	stringstream ss;
+	ss << meters_spacement;
+	string str_log_name(log_name);
+	char folder_name[100];
+	char folder_image_name[100];
+	if (strcmp(detection_type,"-cs") == 0)
+	{
+		sprintf(folder_name, "%s_%.0lf_mts_detections/", log_name,meters_spacement);
+		sprintf(folder_image_name, "%s_%.0lf_mts_images/", log_name,meters_spacement);
+		str_folder_name = folder_name;
+		str_folder_image_name = folder_image_name;
+		string command;
+		if (access(str_folder_name.c_str(), F_OK) != 0)
+		{
+			command = "mkdir " + str_folder_name;
+			system(command.c_str());
+		}
 
+		if (access(str_folder_image_name.c_str(), F_OK) != 0)
+		{
+			command = "mkdir " + str_folder_image_name;
+			system(command.c_str());
+
+			command = "mkdir " + str_folder_image_name + "slices/";
+			str_folder_image_name_slices = str_folder_image_name + "slices/";
+			system(command.c_str());
+
+			command = "mkdir " + str_folder_image_name + "slices_rddf_filtered/";
+			str_folder_image_name_slices_rddf_filtered = str_folder_image_name + "slices_rddf_filtered/";
+			system(command.c_str());
+
+			command = "mkdir " + str_folder_image_name + "slices_rddf_full/";
+			str_folder_image_name_slices_rddf_full = str_folder_image_name + "slices_rddf_full/";
+			system(command.c_str());
+
+			command = "mkdir " + str_folder_image_name + "rddf_full/";
+			str_folder_image_name_rddf_full = str_folder_image_name + "rddf_full/";
+			system(command.c_str());
+
+			command = "mkdir " + str_folder_image_name + "rddf_filtered/";
+			str_folder_image_name_rddf_filtered = str_folder_image_name + "rddf_filtered/";
+			system(command.c_str());
+		}
+	}
+
+	else if (strcmp(detection_type,"-ss") == 0)
+	{
+		sprintf(folder_name, "%s_detections/", log_name);
+		str_folder_name = folder_name;
+		string command;
+		if (access(str_folder_name.c_str(), F_OK) != 0)
+		{
+			command = "mkdir " + str_folder_name;
+			system(command.c_str());
+		}
+
+	}
+}
 
 void
 subscribe_messages()
@@ -1528,63 +1588,8 @@ main(int argc, char **argv)
     signal(SIGINT, shutdown_module);
 
     read_parameters(argc, argv);
-    stringstream ss;
-    ss << meters_spacement;
-    string str_log_name(log_name);
-    char folder_name[100];
-    char folder_image_name[100];
-    if (strcmp(detection_type,"-cs") == 0)
-    {
-    	sprintf(folder_name, "%s_%.0lf_mts_detections/", log_name,meters_spacement);
-    	sprintf(folder_image_name, "%s_%.0lf_mts_images/", log_name,meters_spacement);
-    	str_folder_name = folder_name;
-    	str_folder_image_name = folder_image_name;
-    	string command;
-    	if (access(str_folder_name.c_str(), F_OK) != 0)
-    	{
-    		command = "mkdir " + str_folder_name;
-    		system(command.c_str());
-    	}
 
-    	if (access(str_folder_image_name.c_str(), F_OK) != 0)
-    	{
-    		command = "mkdir " + str_folder_image_name;
-    		system(command.c_str());
-
-    		command = "mkdir " + str_folder_image_name + "slices/";
-    		str_folder_image_name_slices = str_folder_image_name + "slices/";
-    		system(command.c_str());
-
-    		command = "mkdir " + str_folder_image_name + "slices_rddf_filtered/";
-    		str_folder_image_name_slices_rddf_filtered = str_folder_image_name + "slices_rddf_filtered/";
-    		system(command.c_str());
-
-    		command = "mkdir " + str_folder_image_name + "slices_rddf_full/";
-    		str_folder_image_name_slices_rddf_full = str_folder_image_name + "slices_rddf_full/";
-    		system(command.c_str());
-
-    		command = "mkdir " + str_folder_image_name + "rddf_full/";
-    		str_folder_image_name_rddf_full = str_folder_image_name + "rddf_full/";
-    		system(command.c_str());
-
-    		command = "mkdir " + str_folder_image_name + "rddf_filtered/";
-    		str_folder_image_name_rddf_filtered = str_folder_image_name + "rddf_filtered/";
-    		system(command.c_str());
-    	}
-    }
-
-    else if (strcmp(detection_type,"-ss") == 0)
-    {
-    	sprintf(folder_name, "%s_detections/", log_name);
-    	str_folder_name = folder_name;
-    	string command;
-    	if (access(str_folder_name.c_str(), F_OK) != 0)
-    	{
-    		command = "mkdir " + str_folder_name;
-    		system(command.c_str());
-    	}
-
-    }
+    create_folders();
 
     initialize_transformations(board_pose, camera_pose, &transformer);
     initialize_transformations(board_pose, camera_pose, &transformer_sick);
