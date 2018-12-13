@@ -30,7 +30,7 @@ if __name__ == "__main__":
          'test': ['data_log-volta-da-ufes-20181207-estacionamento_ambiental.txt', 'data_log-volta-da-ufes-20181206-estacionamento-test.txt']}, 
         {'map': 'data_log-jardim-da-penha-mapeamento-20181208.txt', 'test': ['data_log-jardim_da_penha-20181207-2.txt', 'data_log-jardim_da_penha-20181207.txt']}, 
         {'map': 'data_log_estacionamentos-20181130.txt', 'test': ['data_log-volta-da-ufes-20181206-honofre-test.txt', 'data_log_estacionamentos-20181130-test.txt']},
-        {'map': 'data_log_sao_paulo_brt_20170827.txt', 'test': ['data_log_sao_paulo_brt_20170827-2.txt']}
+        #{'map': 'data_log_sao_paulo_brt_20170827.txt', 'test': ['data_log_sao_paulo_brt_20170827-2.txt']}
     ]
 
     run_localization_experiments(experiments) 

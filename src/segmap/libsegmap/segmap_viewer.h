@@ -39,5 +39,7 @@ view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 	PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZRGB>::Ptr transformed_cloud, Matrix<double, 4, 4> *vel2car,
 	double v, double phi);
 
+void
+colorize_cloud_according_to_segmentation(PointCloud<PointXYZRGB>::Ptr cloud);
 
 #endif

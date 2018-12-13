@@ -108,6 +108,9 @@ ParticleFilter::_semantic_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 	double count;
 	double unnorm_log_prob = 0.;
 	PointXYZRGB point;
+	
+	assert(transformed_cloud->size() > 0);
+    //double den = 1. / (double) transformed_cloud->size();
 
 	for (int i = 0; i < transformed_cloud->size(); i += 1)
 	{
@@ -119,7 +122,7 @@ ParticleFilter::_semantic_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 		count = v[v.size() - 2];
 		assert(count != 0);
 		// add the log probability of the observed class.
-		unnorm_log_prob += log(v[point.r] / count);
+		unnorm_log_prob += log(v[point.r] / count); // * den;
 	}
 
 	return unnorm_log_prob;
@@ -214,6 +217,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	for (i = 0; i < _n; i++)
 	{
 		//_w[i] = exp(_w[i] - max_weight);
+		//_w[i] = exp(_w[i]);
         _w[i] -= min_weight;
 		sum_weights += _w[i];
 
@@ -240,6 +244,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 		else
 			_w[i] /= sum_weights;
 
+        assert(_w[i] >= 0);
 		_w_bef[i] = _w[i];
 
 		fprintf(stderr, "%.4lf ", _w[i]);

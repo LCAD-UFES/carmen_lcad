@@ -86,7 +86,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset)
 		}
 
 		//printf("Correction\n");
-		//view(pf, map, gt_pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi);
+		view(pf, map, gt_pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi);
 	}
 }
 

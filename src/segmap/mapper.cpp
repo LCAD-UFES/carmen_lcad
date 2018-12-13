@@ -31,34 +31,22 @@ using namespace pcl;
 
 
 void
-colorize_cloud_according_to_segmentation(PointCloud<PointXYZRGB>::Ptr cloud)
-{
-	CityScapesColorMap colormap;
-	for (int i = 0; i < cloud->size(); i++)
-	{
-		Scalar color = colormap.color(cloud->at(i).r);
-		cloud->at(i).r = color[2];
-		cloud->at(i).g = color[1];
-		cloud->at(i).b = color[0];
-	}
-}
-
-
-void
 create_map(GridMap &map, DatasetInterface &dataset)
 {
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
 
-	//pcl::visualization::PCLVisualizer viewer("Cloud Viewer");
-	//viewer.setBackgroundColor(.5, .5, .5);
-	//viewer.removeAllPointClouds();
-	//viewer.addCoordinateSystem(10);
+    /*
+	pcl::visualization::PCLVisualizer viewer("CloudViewer");
+	viewer.setBackgroundColor(1, 1, 1);
+	viewer.removeAllPointClouds();
+	viewer.addCoordinateSystem(2);
+    */
 
 	Matrix<double, 4, 4> vel2car = dataset.transform_vel2car();
 
 	deque<string> cloud_names;
-	int pause_viewer = 0;
+	int pause_viewer = 1;
 	int step = 1;
 
 	for (int i = 0; i < dataset.data.size(); i += step)
@@ -68,7 +56,7 @@ create_map(GridMap &map, DatasetInterface &dataset)
 
 		Pose2d pose = dataset.data[i].pose;
 
-		// printf("Step %d car pose: %lf %lf %lf\n", i, pose.x, pose.y, pose.th);
+		//printf("Step %d car pose: %lf %lf %lf\n", i, pose.x, pose.y, pose.th);
 
 		dataset.load_fused_pointcloud_and_camera(i, cloud, 0);
 		transform_pointcloud(cloud, transformed_cloud, pose, vel2car, dataset.data[i].v, dataset.data[i].phi);
@@ -79,50 +67,52 @@ create_map(GridMap &map, DatasetInterface &dataset)
 		for (int j = 0; j < transformed_cloud->size(); j++)
 			map.add_point(transformed_cloud->at(j));
 
-		//if (map._map_type == GridMapTile::TYPE_SEMANTIC)
-		//	colorize_cloud_according_to_segmentation(transformed_cloud);
-        //
-		//char *cloud_name = (char *) calloc (32, sizeof(char));
-		//sprintf(cloud_name, "cloud%d", i);
-		////viewer.removeAllPointClouds();
-		//viewer.addPointCloud(transformed_cloud, cloud_name);
-		//viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, cloud_name);
-		//cloud_names.push_back(cloud_name);
-		//
-		//if (cloud_names.size() >= 50)
-		//{
-		//	viewer.removePointCloud(cloud_names[0]);
-		//	cloud_names.pop_front();
-		//}
+		if (map._map_type == GridMapTile::TYPE_SEMANTIC)
+			colorize_cloud_according_to_segmentation(transformed_cloud);
 
-		//Mat map_img = map.to_image().clone();
-		//draw_pose(map, map_img, pose, Scalar(0, 255, 0));
-		//imshow("viewer", map_img);
-        //
-		//char c = ' ';
-		//while (1)
-		//{
-		//	//viewer.spinOnce();
-		//	c = waitKey(5);
-        //
-		//	if (c == 's')
-		//		pause_viewer = !pause_viewer;
-		//	if (!pause_viewer || (pause_viewer && c == 'n'))
-        //
-		//		break;
-		//	if (c == 'r')
-		//	{
-		//		printf("Reinitializing\n");
-		//		i = 0;
-		//	}
-		//	if (c == 'f')
-		//		step *= 2;
-		//	if (c == 'g')
-		//	{
-		//		step /= 2;
-		//		if (step < 1) step = 1;
-		//	}
-		//}
+        /*
+		char *cloud_name = (char *) calloc (32, sizeof(char));
+		sprintf(cloud_name, "cloud%d", i);
+		//viewer.removeAllPointClouds();
+		viewer.addPointCloud(transformed_cloud, cloud_name);
+		viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, cloud_name);
+		cloud_names.push_back(cloud_name);
+
+		if (cloud_names.size() >= 1000)
+		{
+			viewer.removePointCloud(cloud_names[0]);
+			cloud_names.pop_front();
+		}
+
+		Mat map_img = map.to_image().clone();
+		draw_pose(map, map_img, pose, Scalar(0, 255, 0));
+		imshow("viewer", map_img);
+
+		char c = ' ';
+		while (1)
+		{
+			viewer.spinOnce();
+			c = waitKey(5);
+
+			if (c == 's')
+				pause_viewer = !pause_viewer;
+			if (!pause_viewer || (pause_viewer && c == 'n'))
+
+				break;
+			if (c == 'r')
+			{
+				printf("Reinitializing\n");
+				i = 0;
+			}
+			if (c == 'f')
+				step *= 2;
+			if (c == 'g')
+			{
+				step /= 2;
+				if (step < 1) step = 1;
+			}
+		} 
+		*/    
 
 //		if (i > 500 && i < dataset.data.size() - 1000)
 //			i = dataset.data.size() - 1000;

@@ -204,3 +204,15 @@ view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 }
 
 
+void
+colorize_cloud_according_to_segmentation(PointCloud<PointXYZRGB>::Ptr cloud)
+{
+	CityScapesColorMap colormap;
+	for (int i = 0; i < cloud->size(); i++)
+	{
+		Scalar color = colormap.color(cloud->at(i).r);
+		cloud->at(i).r = color[0];
+		cloud->at(i).g = color[1];
+		cloud->at(i).b = color[2];
+	}
+}
