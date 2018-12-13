@@ -21,6 +21,10 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 IFLAGS += `pkg-config --cflags opencv`
 
+#Libfcnpy
+IFLAGS += -I/usr/include/python3.5m
+LFLAGS += -lpython3.5m
+
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 # Required default libraries to comunicate with Carmen Core.
@@ -46,7 +50,7 @@ LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_r
 LFLAGS += -lrddf_util -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 	
 # Source code files (.c, .cpp) 
-SOURCES = mapper2.cpp mapper2_main.cpp message_interpolation.cpp convert_maps_from_float_to_double.cpp mapper2_interface.c compute_velodyne_calibration_table.cpp neural_map.cpp
+SOURCES = mapper2.cpp mapper2_main.cpp message_interpolation.cpp convert_maps_from_float_to_double.cpp mapper2_interface.c compute_velodyne_calibration_table.cpp neural_map.cpp libfcnpy.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = mapper2_messages.h mapper2_interface.h mapper2.h
@@ -74,7 +78,7 @@ libmapper2.a: mapper2.o
 
 libmapper2_interface.so.1:	libmapper2_interface.o
 
-mapper2: mapper2.o mapper2_main.o libmapper2.a neural_map.o
+mapper2: mapper2.o mapper2_main.o libmapper2.a neural_map.o libfcnpy.o
 
 convert_maps_from_float_to_double: convert_maps_from_float_to_double.o
 

@@ -96,8 +96,11 @@ speed_params_save(GtkWidget *w, // __attribute__ ((unused)),
     {
         gchar *value = gtk_editable_get_chars(GTK_EDITABLE(w), 0, -1);
 
-        if (carmen_playback_is_valid_speed(value, &playback_speed))
+        double speed_val;
+
+        if (carmen_playback_is_valid_speed(value, &speed_val))
         {
+        	playback_speed = speed_val;
 			speed_pending_update = 0;
 			gtk_label_set_pattern(GTK_LABEL(playback_speed_widget_label), "");
 			gtk_label_set_text(GTK_LABEL(playback_speed_widget_status), "");
@@ -119,8 +122,8 @@ initial_time_params_save(GtkWidget *w, // __attribute__ ((unused)),
     {
     	playback_message = gtk_editable_get_chars(GTK_EDITABLE(w), 0, -1);
 
-    	int start_msg = -1, stop_msg = -1;
-    	double start_ts = -1.0, stop_ts = -1.0, start_x = 0.0, start_y = 0.0, stop_x = 0.0, stop_y = 0.0, radius = -1.0;
+    	int start_msg, stop_msg;
+    	double start_ts, stop_ts, start_x, start_y, stop_x, stop_y, radius;
 
         if (carmen_playback_is_valid_message(playback_message, &start_msg, &stop_msg, &start_ts, &stop_ts, &start_x, &start_y, &stop_x, &stop_y, &radius))
         {
@@ -193,6 +196,61 @@ create_pixbuf(const gchar * filename)
 }
 
 
+void
+read_parameters(int argc, char *argv[])
+{
+	char *speed = NULL;
+	char *message = NULL;
+	int autostart = 0;
+
+	carmen_param_t param_optional_list[] =
+	{
+		{(char *) "commandline",	(char *) "speed",		CARMEN_PARAM_STRING,	&(speed),		0, NULL},
+		{(char *) "commandline",	(char *) "message",		CARMEN_PARAM_STRING, 	&(message),		0, NULL},
+		{(char *) "commandline",	(char *) "autostart",	CARMEN_PARAM_ONOFF, 	&(autostart),	0, NULL},
+	};
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
+
+	if (speed)
+	{
+	    gtk_entry_set_text(GTK_ENTRY(playback_speed_widget), speed);
+
+	    double speed_val;
+
+        if (carmen_playback_is_valid_speed(speed, &speed_val))
+        {
+        	playback_speed = speed_val;
+			gtk_label_set_pattern(GTK_LABEL(playback_speed_widget_label), "");
+			carmen_playback_command(CARMEN_PLAYBACK_COMMAND_SET_SPEED, NULL, 0, playback_speed);
+        }
+        else
+        	gtk_label_set_text(GTK_LABEL(playback_speed_widget_status), " (ERROR)");
+	}
+
+    if (message)
+    {
+        gtk_entry_set_text(GTK_ENTRY(playback_initial_time_widget), message);
+
+    	int start_msg, stop_msg;
+    	double start_ts, stop_ts, start_x, start_y, stop_x, stop_y, radius;
+
+        if (carmen_playback_is_valid_message(message, &start_msg, &stop_msg, &start_ts, &stop_ts, &start_x, &start_y, &stop_x, &stop_y, &radius))
+        {
+        	playback_message = message;
+			gtk_label_set_pattern(GTK_LABEL(playback_initial_time_widget_label), "");
+			carmen_playback_command(CARMEN_PLAYBACK_COMMAND_SET_MESSAGE, playback_message, 0, playback_speed);
+        }
+        else
+        	gtk_label_set_text(GTK_LABEL(playback_initial_time_widget_status), " (ERROR)");
+    }
+
+    if (autostart)
+    	carmen_playback_command(CARMEN_PLAYBACK_COMMAND_PLAY, NULL, 0, playback_speed);
+}
+
+
 void usage(char *fmt, ...)
 {
 	va_list args;
@@ -201,7 +259,12 @@ void usage(char *fmt, ...)
 	vfprintf(stderr, fmt, args);
 	va_end(args);
 
-	fprintf(stderr, "Message play:stop options:\n");
+	fprintf(stderr, " [args]:\n"
+			        "\t-speed <value>               speed option (default: 1.0)\n"
+			        "\t-message <option>            message play:stop option (default: 0)\n"
+			        "\t-autostart on|off            auto start option (default: off)\n");
+
+	fprintf(stderr, "\n Message play:stop runtime options:\n");
 	fprintf(stderr, "\tplay from message number:    <num>\n");
 	fprintf(stderr, "\tstop at message number:      :<num>\n");
 	fprintf(stderr, "\tplay:stop message numbers:   <num>:<num>\n");
@@ -230,7 +293,7 @@ main(int argc, char *argv[])
             *ffwd_darea, *fwd_darea, *reset_darea;
 
 	if (argc > 1 && strcmp(argv[1], "-h") == 0)
-		usage(NULL);
+		usage("%s [args]\n", argv[0]);
 
     gtk_init(&argc, &argv);
 
@@ -455,6 +518,8 @@ main(int argc, char *argv[])
 
     gtk_widget_show(gtk_label_info_timestamp_difference);
     gtk_widget_show(gtk_label_info_timestamp_difference_value);
+
+	read_parameters(argc, argv);
 
     gtk_widget_show_all(window);
 

@@ -26,6 +26,11 @@ tf::Transformer transformer_sick;
 
 string str_folder_name;
 string str_folder_image_name;
+string str_folder_image_name_slices;
+string str_folder_image_name_slices_rddf_filtered;
+string str_folder_image_name_slices_rddf_full;
+string str_folder_image_name_rddf_full;
+string str_folder_image_name_rddf_filtered;
 
 const unsigned int maxPositions = 50;
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
@@ -227,7 +232,7 @@ show_detections(cv::Mat *rgb_image, vector<vector<carmen_velodyne_points_in_cam_
 
     sprintf(frame_rate, "FPS = %.2f", fps);
 
-    cv::putText(*rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
+    //cv::putText(*rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
 
     for (unsigned int i = 0; i < predictions.size(); i++)
     {
@@ -287,7 +292,7 @@ show_detections(cv::Mat *rgb_image, vector<vector<carmen_velodyne_points_in_cam_
 //    int lineType = 8;
 //    for (unsigned int i = 0; i < rddf_points.size(); i++)
 //    {
-//    	cv::circle(rgb_image, cv::Point(rddf_points[i].x, rddf_points[i].y), 3.5, cv::Scalar(0, 255, 255), thickness, lineType);
+//    	cv::circle(*rgb_image, cv::Point(rddf_points[i].x, rddf_points[i].y), 1.5, cv::Scalar(0, 255, 255), thickness, lineType);
 //    }
 
 
@@ -373,6 +378,44 @@ get_slice_colors (unsigned int slices_size)
 		colors.push_back(color);
 	}
 
+	else if (slices_size== 7)
+	{
+		color = cv::Scalar (0, 0, 255);
+		colors.push_back(color);
+		color = cv::Scalar (0, 255, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 0, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 255, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 0, 255);
+		colors.push_back(color);
+		color = cv::Scalar (0, 255, 255);
+		colors.push_back(color);
+		color = cv::Scalar (0, 0, 0);
+		colors.push_back(color);
+	}
+
+	else if (slices_size== 8)
+	{
+		color = cv::Scalar (0, 0, 255);
+		colors.push_back(color);
+		color = cv::Scalar (0, 255, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 0, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 255, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 0, 255);
+		colors.push_back(color);
+		color = cv::Scalar (0, 255, 255);
+		colors.push_back(color);
+		color = cv::Scalar (0, 0, 0);
+		colors.push_back(color);
+		color = cv::Scalar (255, 255, 255);
+		colors.push_back(color);
+	}
+
 	return (colors);
 
 }
@@ -382,7 +425,9 @@ get_slice_colors (unsigned int slices_size)
 bool before_first_file = true;
 bool acessessing = false;
 void
-save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_original_image, cv::Mat rgb_image, vector<cv::Mat> scene_slices, vector<cv::Scalar> colors, vector<t_transform_factor> transform_factor_of_slice_to_original_frame)
+save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_original_image, cv::Mat rgb_image,
+				vector<cv::Mat> scene_slices, vector<cv::Scalar> colors, vector<t_transform_factor> transform_factor_of_slice_to_original_frame,
+				vector<carmen_position_t> rddf_points_in_image_filtered, vector<carmen_position_t> rddf_points_in_image_full)
 {
 	char arr[50];
 	char gt_path[200];
@@ -394,21 +439,60 @@ save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_ori
 	string str_gt_path (gt_path);
 	string groundtruth_folder = str_gt_path + "-r.txt";
 	string detections_folder = str_folder_name + arr + "-r.txt";
-	string images_folder = str_folder_image_name + arr + "-r.png";
+	string images_folder = str_folder_image_name_slices + arr + "-r.png";
+	string images_folder_rddf_filtered = str_folder_image_name_rddf_filtered + arr + "-r.png";
+	string images_folder_rddf_full = str_folder_image_name_rddf_full + arr + "-r.png";
+	string images_folder_slices_rddf_full = str_folder_image_name_slices_rddf_full + arr + "-r.png";
+	string images_folder_slices_rddf_filtered = str_folder_image_name_slices_rddf_filtered + arr + "-r.png";
+	cv::Mat rgb_image_original = rgb_image.clone();
 
 	if (access(groundtruth_folder.c_str(), F_OK) == 0)
 	{
 		if (strcmp(detection_type,"-cs") == 0)
 		{
-			//for (int i = 1; i < scene_slices.size(); i++)
 			for (int i = scene_slices.size()-1; i >= 1 ; i--)
 			{
 				cv::rectangle(rgb_image,
 						cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x, transform_factor_of_slice_to_original_frame[i].translate_factor_y),
 						cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x + scene_slices[i].cols, transform_factor_of_slice_to_original_frame[i].translate_factor_y + scene_slices[i].rows),
 						colors[i-1], 3);
-				cv::imwrite(images_folder, rgb_image);
 			}
+			cv::imwrite(images_folder, rgb_image);
+
+			cv::Mat rgb_image_slices = rgb_image.clone();
+
+			int thickness = -1;
+			int lineType = 8;
+			for (unsigned int i = 0; i < rddf_points_in_image_full.size(); i++)
+			{
+				cv::circle(rgb_image, cv::Point(rddf_points_in_image_full[i].x, rddf_points_in_image_full[i].y), 1.5, cv::Scalar(0, 255, 255), thickness, lineType);
+			}
+			cv::imwrite(images_folder_slices_rddf_full, rgb_image);
+
+			cv::Mat a;
+			a = rgb_image_slices.clone();
+			for (unsigned int i = 0; i < rddf_points_in_image_filtered.size(); i++)
+			{
+				cv::circle(a, cv::Point(rddf_points_in_image_filtered[i].x, rddf_points_in_image_filtered[i].y), 2.5, cv::Scalar(0, 255, 255), thickness, lineType);
+			}
+			cv::imwrite(images_folder_slices_rddf_filtered, a);
+
+			cv::Mat b;
+			b = rgb_image_original.clone();
+			for (unsigned int i = 0; i < rddf_points_in_image_full.size(); i++)
+			{
+				cv::circle(b, cv::Point(rddf_points_in_image_full[i].x, rddf_points_in_image_full[i].y), 1.5, cv::Scalar(0, 255, 255), thickness, lineType);
+			}
+			cv::imwrite(images_folder_rddf_full, b);
+
+			cv::Mat c;
+			c = rgb_image_original.clone();
+			for (unsigned int i = 0; i < rddf_points_in_image_filtered.size(); i++)
+			{
+				cv::circle(c, cv::Point(rddf_points_in_image_filtered[i].x, rddf_points_in_image_filtered[i].y), 2.5, cv::Scalar(0, 255, 255), thickness, lineType);
+			}
+			cv::imwrite(images_folder_rddf_filtered, c);
+
 		}
 
 		before_first_file = false;
@@ -576,6 +660,7 @@ calc_percentage_of_rectangles_intersection(cv::Point l1, cv::Point r1, cv::Point
 	int area1 = abs( calc_area((l1.x - r1.x), (l1.y - r1.y)) ); //abs(l1.x - r1.x) * abs(l1.y - r1.y);
 	// Area of 2nd Rectangle
 	int area2 = abs( calc_area((l2.x - r2.x), (l2.y - r2.y)) ); //abs(l2.x - r2.x) * abs(l2.y - r2.y);
+	//cout<<"\t"<<"Area of bBox2: "<<area2;
 	int total_area;
 
 	// Length of intersecting part i.e
@@ -589,6 +674,7 @@ calc_percentage_of_rectangles_intersection(cv::Point l1, cv::Point r1, cv::Point
 
 
 	intersection_percentage = (100 * areaI) / (total_area);
+	//cout<<"\t"<<"Intersection percent: "<<intersection_percentage<<endl;
 	return (intersection_percentage);
 
 
@@ -658,6 +744,8 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 				r1.x = b.x + b.w;
 				r1.y = b.y + b.h;
 				//cout<<l1.x<<" "<<l1.y<<" "<<r1.x<<" "<<r1.y<<endl;
+				int area1 = abs( calc_area((l1.x - r1.x), (l1.y - r1.y)) ); //abs(l1.x - r1.x) * abs(l1.y - r1.y);
+				//cout<<"Area of bBox1: "<<area1<<endl;
 
 				for (int k = 0; k < bboxes.size(); k++)
 				{
@@ -683,6 +771,15 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 					{
 						percentage_of_intersection_between_bboxes = calc_percentage_of_rectangles_intersection(l1, r1, l2, r2);
 						//cout<< percentage_of_intersection_between_bboxes<< endl;
+						int area2 = abs( calc_area((l2.x - r2.x), (l2.y - r2.y)) ); //abs(l2.x - r2.x) * abs(l2.y - r2.y);
+						if (area2 > area1)
+						{
+							b.x = l2.x;
+							b.y = l2.y;
+							b.w = bboxes[k].w;
+							b.h = bboxes[k].h;
+						}
+
 						if (percentage_of_intersection_between_bboxes > 1)
 						{
 							intersects_with_bboxes = true;
@@ -742,11 +839,17 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 		double image_size_x;
 		double image_size_y;
 		//cout<<i<<endl;
-		if (i > 0)
+		if (i > 0)//pedro
+		//if (i >= 0)//ranik
 		{
-			double dist_percentage = (100.0 - distances_of_rddf_from_car[i])/100.0;
-			image_size_x = static_cast<double>(scene_slices[(i+1)-1].cols) * dist_percentage;
-			image_size_y = static_cast<double>(scene_slices[(i+1)-1].rows) * dist_percentage;
+			double dist_percentage = (100.0 - distances_of_rddf_from_car[i])/100.0;//pedro
+			//double dist_percentage = pow((1-(meters_spacement/100)),i);//ramoni
+			//double dist_percentage = (distances_of_rddf_from_car[i]*5)/(pow(distances_of_rddf_from_car[i],2));//ranik
+			//cout<<dist_percentage<<endl;
+			image_size_x = static_cast<double>(scene_slices[(i+1)-1].cols) * dist_percentage;//pedroRamoni
+			image_size_y = static_cast<double>(scene_slices[(i+1)-1].rows) * dist_percentage;//pedroRamoni
+			//image_size_x = static_cast<double>(scene_slices[0].cols) * dist_percentage;//ranik
+			//image_size_y = static_cast<double>(scene_slices[0].rows) * dist_percentage;//ranik
 			//cout<<image_size_x<<" "<<image_size_y<<endl;
 		}
 
@@ -778,7 +881,8 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 			}
 
 		}
-		else if (image_size_y >= 10)
+		else if (image_size_y >= 30)
+		//if (image_size_x >= 80)//ranik
 		{
 			//cv::Rect rec(rddf_points[i].x - (image_size_x/2), rddf_points[i].y-(300*dist_percentage), image_size_x, scene_slices[i-1].rows * dist_percentage);
 			double scale = image_size_y*(3.0/4.0);
@@ -831,6 +935,21 @@ double
 euclidean_distance (double x1, double x2, double y1, double y2)
 {
 	return ( sqrt(pow(x2-x1,2) + pow(y2-y1,2)) );
+}
+
+
+vector<carmen_position_t>
+get_rddf_points_in_image_full (tf::StampedTransform world_to_camera_pose, int img_width, int img_height)
+{
+	carmen_position_t p;
+	vector<carmen_position_t> rddf_points_in_image;
+	double distance, last_distance;
+	for(int i = 0; i < last_rddf_poses.number_of_poses; i++)
+	{
+		p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, 0.0, world_to_camera_pose, camera_parameters, img_width, img_height);
+		rddf_points_in_image.push_back(p);
+	}
+	return (rddf_points_in_image);
 }
 
 
@@ -1087,6 +1206,7 @@ void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	vector<carmen_position_t> rddf_points_in_image;
+	vector<carmen_position_t> rddf_points_in_image_full;
 	vector<double> distances_of_rddf_from_car;
 	double hood_removal_percentage = 0.2;
 	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
@@ -1137,7 +1257,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	cv::Mat out;
     	out = rgb_image;
     	rddf_points_in_image = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
-
+    	rddf_points_in_image_full = get_rddf_points_in_image_full(world_to_camera_pose, image_msg->width, image_msg->height);
 
     	vector<cv::Mat> scene_slices_resized;
     	t_transform_factor t;
@@ -1174,14 +1294,15 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	rgb_image = scene_slices[0];
     	src_image = scene_slices[0];
     	//cout<<"qtd of detections: "<<bounding_boxes_of_slices_in_original_image.size()<<endl;
-    	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, &rgb_image, start_time, fps, rddf_points_in_image, "Foviated Detection");
+    	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, &rgb_image, start_time, fps, rddf_points_in_image_full, "Foviated Detection");
 
     	colors = get_slice_colors (scene_slices.size());
 
     	//printf("%lf-r.png\n", image_msg->timestamp);
     }
 
-    save_detections(image_msg->timestamp, bounding_boxes_of_slices_in_original_image, rgb_image, scene_slices, colors, transform_factor_of_slice_to_original_frame);
+    save_detections(image_msg->timestamp, bounding_boxes_of_slices_in_original_image, rgb_image, scene_slices, colors,
+    				transform_factor_of_slice_to_original_frame, rddf_points_in_image, rddf_points_in_image_full);
 
 
     //cout<<image_msg->timestamp<<"-r.png"<<endl;
@@ -1261,7 +1382,67 @@ shutdown_module(int signo)
     }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
+void
+create_folders(char *)
+{
+	stringstream ss;
+	ss << meters_spacement;
+	string str_log_name(log_name);
+	char folder_name[100];
+	char folder_image_name[100];
+	if (strcmp(detection_type,"-cs") == 0)
+	{
+		sprintf(folder_name, "%s_%.0lf_mts_detections/", log_name,meters_spacement);
+		sprintf(folder_image_name, "%s_%.0lf_mts_images/", log_name,meters_spacement);
+		str_folder_name = folder_name;
+		str_folder_image_name = folder_image_name;
+		string command;
+		if (access(str_folder_name.c_str(), F_OK) != 0)
+		{
+			command = "mkdir " + str_folder_name;
+			system(command.c_str());
+		}
 
+		if (access(str_folder_image_name.c_str(), F_OK) != 0)
+		{
+			command = "mkdir " + str_folder_image_name;
+			system(command.c_str());
+
+			command = "mkdir " + str_folder_image_name + "slices/";
+			str_folder_image_name_slices = str_folder_image_name + "slices/";
+			system(command.c_str());
+
+			command = "mkdir " + str_folder_image_name + "slices_rddf_filtered/";
+			str_folder_image_name_slices_rddf_filtered = str_folder_image_name + "slices_rddf_filtered/";
+			system(command.c_str());
+
+			command = "mkdir " + str_folder_image_name + "slices_rddf_full/";
+			str_folder_image_name_slices_rddf_full = str_folder_image_name + "slices_rddf_full/";
+			system(command.c_str());
+
+			command = "mkdir " + str_folder_image_name + "rddf_full/";
+			str_folder_image_name_rddf_full = str_folder_image_name + "rddf_full/";
+			system(command.c_str());
+
+			command = "mkdir " + str_folder_image_name + "rddf_filtered/";
+			str_folder_image_name_rddf_filtered = str_folder_image_name + "rddf_filtered/";
+			system(command.c_str());
+		}
+	}
+
+	else if (strcmp(detection_type,"-ss") == 0)
+	{
+		sprintf(folder_name, "%s_detections/", log_name);
+		str_folder_name = folder_name;
+		string command;
+		if (access(str_folder_name.c_str(), F_OK) != 0)
+		{
+			command = "mkdir " + str_folder_name;
+			system(command.c_str());
+		}
+
+	}
+}
 
 void
 subscribe_messages()
@@ -1407,43 +1588,8 @@ main(int argc, char **argv)
     signal(SIGINT, shutdown_module);
 
     read_parameters(argc, argv);
-    stringstream ss;
-    ss << meters_spacement;
-    string str_log_name(log_name);
-    char folder_name[100];
-    char folder_image_name[100];
-    if (strcmp(detection_type,"-cs") == 0)
-    {
-    	sprintf(folder_name, "%s_%.0lf_mts_detections/", log_name,meters_spacement);
-    	sprintf(folder_image_name, "%s_%.0lf_mts_images/", log_name,meters_spacement);
-    	str_folder_name = folder_name;
-    	str_folder_image_name = folder_image_name;
-    	string command;
-    	if (access(str_folder_name.c_str(), F_OK) != 0)
-    	{
-    		command = "mkdir " + str_folder_name;
-    		system(command.c_str());
-    	}
 
-    	if (access(str_folder_image_name.c_str(), F_OK) != 0)
-    	{
-    		command = "mkdir " + str_folder_image_name;
-    		system(command.c_str());
-    	}
-    }
-
-    else if (strcmp(detection_type,"-ss") == 0)
-    {
-    	sprintf(folder_name, "%s_detections/", log_name);
-    	str_folder_name = folder_name;
-    	string command;
-    	if (access(str_folder_name.c_str(), F_OK) != 0)
-    	{
-    		command = "mkdir " + str_folder_name;
-    		system(command.c_str());
-    	}
-
-    }
+    create_folders();
 
     initialize_transformations(board_pose, camera_pose, &transformer);
     initialize_transformations(board_pose, camera_pose, &transformer_sick);

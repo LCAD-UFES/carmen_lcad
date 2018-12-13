@@ -1263,6 +1263,8 @@ main(int argc, char **argv)
 {
 	carmen_map_config_t map_config;
 	carmen_robot_ackerman_config_t car_config;
+	//Initialize Python Interface for inference with pytorch
+	initialize_inference_context_mapper2();
 
 	/* Connect to IPC Server */
 	carmen_ipc_initialize(argc, argv);

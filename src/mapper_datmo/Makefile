@@ -64,8 +64,8 @@ PUBLIC_INCLUDES = mapper_messages.h mapper_interface.h mapper.h
 PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-PUBLIC_BINARIES = mapper mapper_datmo compute_velodyne_calibration_table
-TARGETS = convert_maps_from_float_to_double libprob_models.a mapper mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a
+PUBLIC_BINARIES = mapper_datmo compute_velodyne_calibration_table
+TARGETS = convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -82,8 +82,6 @@ libmapper_interface.a:	mapper_interface.o
 libmapper.a: mapper.o
 
 libmapper_interface.so.1:	libmapper_interface.o
-
-mapper: mapper.o mapper_main.o libmapper.a
 
 mapper_datmo: mapper.o mapper_main.o libmapper.a
 
