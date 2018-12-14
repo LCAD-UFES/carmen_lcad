@@ -58,7 +58,7 @@ create_map(GridMap &map, DatasetInterface &dataset)
 
 		//printf("Step %d car pose: %lf %lf %lf\n", i, pose.x, pose.y, pose.th);
 
-		dataset.load_fused_pointcloud_and_camera(i, cloud, 0);
+		dataset.load_fused_pointcloud_and_camera(i, cloud, 1);
 		transform_pointcloud(cloud, transformed_cloud, pose, vel2car, dataset.data[i].v, dataset.data[i].phi);
 		//transformed_cloud = cloud;
 
@@ -83,6 +83,7 @@ create_map(GridMap &map, DatasetInterface &dataset)
 			viewer.removePointCloud(cloud_names[0]);
 			cloud_names.pop_front();
 		}
+		*/
 
 		Mat map_img = map.to_image().clone();
 		draw_pose(map, map_img, pose, Scalar(0, 255, 0));
@@ -91,7 +92,7 @@ create_map(GridMap &map, DatasetInterface &dataset)
 		char c = ' ';
 		while (1)
 		{
-			viewer.spinOnce();
+			//viewer.spinOnce();
 			c = waitKey(5);
 
 			if (c == 's')
@@ -112,7 +113,6 @@ create_map(GridMap &map, DatasetInterface &dataset)
 				if (step < 1) step = 1;
 			}
 		} 
-		*/    
 
 //		if (i > 500 && i < dataset.data.size() - 1000)
 //			i = dataset.data.size() - 1000;

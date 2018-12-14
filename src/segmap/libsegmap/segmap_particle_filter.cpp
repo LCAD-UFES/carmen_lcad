@@ -143,7 +143,7 @@ ParticleFilter::_image_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Gr
 
 		// cell observed at least once.
 		// TODO: what to do when the cell was never observed?
-		//if (v[0] != -1)
+		// if (v[0] != -1)
 		{
 			unnorm_log_prob += fabs((point.r - v[2]) / 255.) +
 						fabs((point.g - v[1]) / 255.) +
@@ -153,9 +153,7 @@ ParticleFilter::_image_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Gr
 		}
 	}
 
-	double c = 10.;  // constant to magnify the particle weights.
-	unnorm_log_prob /= (3. * n_valid_cells);
-	return exp(-c * unnorm_log_prob);
+	return unnorm_log_prob;
 }
 
 
@@ -216,9 +214,9 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	fprintf(stderr, "DEBUG: Weights as Probs: ");
 	for (i = 0; i < _n; i++)
 	{
-		//_w[i] = exp(_w[i] - max_weight);
+		_w[i] = exp(_w[i] - max_weight) + (1. / (double) _n);
 		//_w[i] = exp(_w[i]);
-        _w[i] -= min_weight;
+        //_w[i] -= min_weight;
 		sum_weights += _w[i];
 
 		fprintf(stderr, "%.4lf ", _w[i]);

@@ -66,8 +66,9 @@ GridMapTile::_initialize_derivated_values()
 	else if (_map_type == GridMapTile::TYPE_VISUAL)
 	{
 		// r, g, b
-		_n_fields_by_cell = 3;
+		_n_fields_by_cell = 4;
 		_unknown = vector<double>(_n_fields_by_cell, 128.);
+        _unknown[3] = 1.;
 	}
 	else
 		exit(printf("Map type '%d' not found.\n", _map_type));
@@ -90,7 +91,6 @@ GridMapTile::GridMapTile(double point_y, double point_x,
 	_save_maps = save_maps;
 
 	//printf("Creating tile with origin: %lf %lf\n", _xo, _yo);
-
 	_initialize_derivated_values();
 	_initialize_map();
 }
@@ -167,17 +167,19 @@ GridMapTile::add_point(PointXYZRGB &p)
 	px = (p.x - _xo) * _pixels_by_m;
 	py = (p.y - _yo) * _pixels_by_m;
 
-	double _r = 0.5;
-
 	if (px >= 0 && px < _w && py >= 0 && py < _h)
 	{
 		pos = _n_fields_by_cell * (py * _w + px);
 
 		if (_map_type == TYPE_VISUAL)
 		{
-			_map[pos + 0] = _map[pos + 0] * _r + p.b * (1. - _r);
-			_map[pos + 1] = _map[pos + 1] * _r + p.g * (1. - _r);
-			_map[pos + 2] = _map[pos + 2] * _r + p.r * (1. - _r);
+            double weight;
+            weight = 1. / (double) _map[pos + 3];
+
+			_map[pos + 0] = _map[pos + 0] * (1. - weight) + p.b * weight;
+			_map[pos + 1] = _map[pos + 1] * (1. - weight) + p.g * weight;
+			_map[pos + 2] = _map[pos + 2] * (1. - weight) + p.r * weight;
+            _map[pos + 3] += 1;
 		}
 		else if (_map_type == TYPE_SEMANTIC)
 		{
