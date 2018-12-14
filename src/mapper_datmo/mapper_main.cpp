@@ -424,7 +424,7 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 	if (verbose >= 2)
 	{
 		imshow("Image Semantic Segmentation", img);
-    	resize(img_planar, img_planar, cv::Size(0, 0), 2.5, 2.5, cv::INTER_NEAREST);
+    	resize(img_planar, img_planar, cv::Size(0, 0), 3.5, 3.5, cv::INTER_NEAREST);
 		imshow("Velodyne Semantic Map", img_planar);
 		cv::waitKey(1);
 	}

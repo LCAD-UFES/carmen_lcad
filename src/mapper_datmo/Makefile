@@ -55,7 +55,7 @@ LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_r
 LFLAGS += -lrddf_util -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 	
 # Source code files (.c, .cpp) 
-SOURCES = mapper.cpp mapper_main.cpp message_interpolation.cpp convert_maps_from_float_to_double.cpp mapper_interface.c compute_velodyne_calibration_table.cpp
+SOURCES = mapper.cpp mapper_main.cpp message_interpolation.cpp convert_maps_from_float_to_double.cpp mapper_interface.c compute_velodyne_calibration_table.cpp compute_maps_difference.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = mapper_messages.h mapper_interface.h mapper.h
@@ -65,7 +65,7 @@ PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = mapper_datmo compute_velodyne_calibration_table
-TARGETS = convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a
+TARGETS = convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a compute_maps_difference
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -88,6 +88,8 @@ mapper_datmo: mapper.o mapper_main.o libmapper.a
 convert_maps_from_float_to_double: convert_maps_from_float_to_double.o
 
 compute_velodyne_calibration_table: compute_velodyne_calibration_table.o
+
+compute_maps_difference: compute_maps_difference.o
 
 
 # rules
