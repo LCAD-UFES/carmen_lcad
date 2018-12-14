@@ -39,10 +39,11 @@ LFLAGS += `pkg-config --libs opencv`
 LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp 
 
-SOURCES = generate_loop_closures.cpp graphslam.cpp 
-TARGETS = generate_loop_closures graphslam
+SOURCES = generate_loop_closures.cpp graphslam.cpp joint_graphslam.cpp
+TARGETS = generate_loop_closures graphslam joint_graphslam
 
 generate_loop_closures: generate_loop_closures.o
 graphslam:  graphslam.o
+joint_graphslam: joint_graphslam.o
 
 include $(CARMEN_HOME)/src/Makefile.rules

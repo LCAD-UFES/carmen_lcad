@@ -55,7 +55,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 
 		// to use fused camera and velodyne
 		// if (0)
-		if (point.x > 0 && x >= 0 && x < img.cols && y >= 0 && y < img.rows && (!_use_segmented || (y > top_limit && y < bottom_limit)))
+		if (point.z < 0 && point.x > 0 && x >= 0 && x < img.cols && y >= 0 && y < img.rows && (!_use_segmented || (y > top_limit && y < bottom_limit)))
 		{
 			pcl::PointXYZRGB point2;
 
@@ -77,7 +77,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 
 		// to use remission
 		else if (0)
-		// else if (1) //point.z < 0.)
+		// else if (point.z < 0.)
 		{
 			point.r *= 3;
 			point.g *= 3;
@@ -103,10 +103,10 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 			Mat aux_img = imread(_name);
 			Mat view_copy = viewer_img.clone();
 			cv::hconcat(aux_img, view_copy, viewer_img);
-			flip(viewer_img, viewer_img, +1);
+			//flip(viewer_img, viewer_img, +1);
 		}
 
-		double resize_rate = 1.0; //640. / (double) viewer_img.cols;
+		double resize_rate = 640. / (double) viewer_img.cols;
 		int height = resize_rate * viewer_img.rows;
 		int width = resize_rate * viewer_img.cols;
 
@@ -295,7 +295,7 @@ DatasetCarmen::load_data()
 
 	fclose(f);
 
-	data_file = _path + "/optimized.txt";
+	data_file = _path + "/optimized_jointly.txt";
 	f = fopen(data_file.c_str(), "r");
 
 	if (f == NULL)
