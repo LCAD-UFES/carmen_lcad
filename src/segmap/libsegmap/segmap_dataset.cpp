@@ -5,11 +5,14 @@
 #include "segmap_pose2d.h"
 #include "segmap_util.h"
 #include "segmap_dataset.h"
+#include "segmap_viewer.h"
+#include <pcl/visualization/pcl_visualizer.h>
 
 
 using namespace cv;
 using namespace pcl;
 
+//pcl::visualization::PCLVisualizer *myviewer = new pcl::visualization::PCLVisualizer("CloudViewer2");
 
 void
 DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, int view)
@@ -83,6 +86,15 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		}
 	}
 
+    /*
+	myviewer->setBackgroundColor(1, 1, 1);
+	myviewer->removeAllPointClouds();
+	myviewer->addCoordinateSystem(2);
+	myviewer->addPointCloud(raw_cloud, "raw_cloud");
+	myviewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "raw_cloud");
+	myviewer->spinOnce();
+    */
+
 	if (view)
 	{
 		if (_use_segmented)
@@ -90,10 +102,11 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 			sprintf(_name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
 			Mat aux_img = imread(_name);
 			Mat view_copy = viewer_img.clone();
-			cv::vconcat(aux_img, view_copy, viewer_img);
+			cv::hconcat(aux_img, view_copy, viewer_img);
+			flip(viewer_img, viewer_img, +1);
 		}
 
-		double resize_rate = 640. / (double) viewer_img.cols;
+		double resize_rate = 1.0; //640. / (double) viewer_img.cols;
 		int height = resize_rate * viewer_img.rows;
 		int width = resize_rate * viewer_img.cols;
 

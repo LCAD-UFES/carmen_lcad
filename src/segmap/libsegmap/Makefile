@@ -5,9 +5,9 @@ MODULE_COMMENT = Library for the segmap module
 
 LINK = g++ 
 
-CXXFLAGS += -pg
-LFLAGS += -pg
-IFLAGS += -pg
+CXXFLAGS += -pg -fopenmp
+LFLAGS += -pg -fopenmp
+IFLAGS += -pg 
 
 CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-compare -std=c++11 
 
