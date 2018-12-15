@@ -55,7 +55,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 
 		// to use fused camera and velodyne
 		// if (0)
-		if (point.z < 0 && point.x > 0 && x >= 0 && x < img.cols && y >= 0 && y < img.rows && (!_use_segmented || (y > top_limit && y < bottom_limit)))
+		if (point.x > 0 && x >= 0 && x < img.cols && y >= 0 && y < img.rows && (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
 		{
 			pcl::PointXYZRGB point2;
 
@@ -102,7 +102,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 			sprintf(_name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
 			Mat aux_img = imread(_name);
 			Mat view_copy = viewer_img.clone();
-			cv::hconcat(aux_img, view_copy, viewer_img);
+			cv::vconcat(aux_img, view_copy, viewer_img);
 			//flip(viewer_img, viewer_img, +1);
 		}
 
@@ -110,7 +110,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		int height = resize_rate * viewer_img.rows;
 		int width = resize_rate * viewer_img.cols;
 
-		Mat resized(480, 640, CV_8UC3);
+		Mat resized(height, width, CV_8UC3);
 		resize(viewer_img, resized, Size(width, height));
 		imshow("cam_vel_fused", resized);
 	}

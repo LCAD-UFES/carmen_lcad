@@ -29,13 +29,13 @@ using namespace std;
 using namespace g2o;
 
 const double distance_between_front_and_rear_axles = 2.625;
-const double interlog_xy_std = 5.0;
-const double interlog_th_std = M_PI * 1e10;
-const double odom_xy_std = 0.01;
-const double odom_th_std = 0.001;
+const double interlog_xy_std = 0.5;
+const double interlog_th_std = 1e10;
+const double odom_xy_std = 0.001;
+const double odom_th_std = 0.0001;
 const double gps_xy_std = 0.2;
-const double gps_th_std = M_PI * 1e10;
-
+const double gps_th_std = 1e10;
+const double min_vel_to_add_gps = 0.5;
 
 class SyncDataSample
 {
@@ -110,8 +110,8 @@ public:
 			&odom.mult_phi, &odom.add_phi, dummy, dummy, 
 			&odom.init_angle);
 
-        odom.mult_v = 1.0;
-        odom.add_phi = 0.0;
+        //odom.mult_v = 1.0;
+        //odom.add_phi = 0.0;
 
 		printf("Odom data: %lf %lf %lf %lf\n", 
 			odom.mult_v, odom.mult_phi, odom.add_phi, odom.init_angle);
@@ -225,7 +225,7 @@ gps_std_from_quality(int quality)
 			gps_std = DBL_MAX;
 	}
 
-	return gps_std;
+	return 1.0; // gps_std;
 }
 
 
@@ -246,7 +246,7 @@ add_connections_between_pair_logs(Data &di, Data &dj, SparseOptimizer &optimizer
 			double d = sqrt(pow(di.sync[k].x - dj.sync[l].x, 2) + 
 				pow(di.sync[k].y - dj.sync[l].y, 2));
 			
-			if (fabs(di.sync[k].v) > 3. && fabs(dj.sync[l].v) > 3. && dth < carmen_degrees_to_radians(30.) && d < 1.) // && di.sync[k].quality == 4 && dj.sync[l].quality == 4)
+			if (fabs(di.sync[k].v) > min_vel_to_add_gps && fabs(dj.sync[l].v) > min_vel_to_add_gps && dth < carmen_degrees_to_radians(30.) && d < 1.) // && di.sync[k].quality == 4 && dj.sync[l].quality == 4)
 			{
 				SE2 gps_i = SE2(di.sync[k].x, di.sync[k].y, di.sync[k].angle);
 				SE2 gps_j = SE2(dj.sync[l].x, dj.sync[l].y, dj.sync[l].angle);
@@ -353,7 +353,7 @@ create_graph(vector<Data> &input_data, SparseOptimizer &optimizer)
 			add_vertex(vertex_id, input_data[i].dead_reckoning[j], optimizer);
 			input_data[i].vertices_ids.push_back(vertex_id);
 
-			if (fabs(input_data[i].sync[j].v) > 3.) // && input_data[i].sync[j].quality == 4)
+			if (fabs(input_data[i].sync[j].v) > min_vel_to_add_gps) // && input_data[i].sync[j].quality == 4)
 				add_gps_edge(vertex_id, input_data, i, j, optimizer);
 
 			if (j > 0)

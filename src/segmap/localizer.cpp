@@ -51,7 +51,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset)
 	    //if (fabs(dataset.data[i].v) < 1.0) continue;
 		Pose2d gt_pose = dataset.data[i].pose;
 
-		pf.predict(dataset.data[i].v, dataset.data[i].phi, dataset.data[i].image_time - dataset.data[i - step].image_time);
+		pf.predict(dataset.data[i - 1].v, dataset.data[i - 1].phi, dataset.data[i].image_time - dataset.data[i - step].image_time);
 		//view(pf, map, poses, gps, NULL, NULL);
 		dataset.load_fused_pointcloud_and_camera(i, cloud, 1);
 
