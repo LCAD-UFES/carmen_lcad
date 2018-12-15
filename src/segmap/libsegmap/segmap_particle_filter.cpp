@@ -214,9 +214,9 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	fprintf(stderr, "DEBUG: Weights as Probs: ");
 	for (i = 0; i < _n; i++)
 	{
-		_w[i] = exp(_w[i] - max_weight) + (1. / (double) _n);
+		//_w[i] = exp(_w[i] - max_weight) + (1. / (double) (3. * _n));
 		//_w[i] = exp(_w[i]);
-        //_w[i] -= min_weight;
+        _w[i] -= min_weight;
 		sum_weights += _w[i];
 
 		fprintf(stderr, "%.4lf ", _w[i]);

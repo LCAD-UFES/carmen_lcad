@@ -35,7 +35,7 @@ def compare_and_print_stats(localizer_poses, gt_poses, localizer_label, gt_label
     dth = np.abs(angle_diff(localizer_poses[:, 1], gt_poses[:, 1]))
     dists = np.sqrt(dx ** 2 + dy ** 2)
     
-    #print(localizer_label + '_' + gt_label)
+    print(localizer_label + '_' + gt_label)
     print('RMSE:', np.mean(dists), 'Std:', np.std(dists), 'MaxDist:', np.max(dists))
     #print('RMSE_X:', np.mean(dx), 'RMSE_Y:', np.mean(dy), 'RMSE_TH:', np.rad2deg(angle_mean(dth)))
     #print('% losses:', 100. * np.mean(dists > 1.))
@@ -55,10 +55,10 @@ def generate_reports(lines, optimized_poses):
     graph_gts[:, 2] = -graph_gts[:, 2]
     #print(graph_gts)
 
-    compare_and_print_stats(pmeans, gps_gts, 'mean', 'gps')
+    #compare_and_print_stats(pmeans, gps_gts, 'mean', 'gps')
     #compare_and_print_stats(pmodes, gps_gts, 'mode', 'gps')
-    #compare_and_print_stats(pmeans, graph_gts, 'mean', 'graphslam')
-    #compare_and_print_stats(pmodes, graph_gts, 'mode', 'graphslam')
+    compare_and_print_stats(pmeans, graph_gts, 'mean', 'graphslam')
+    compare_and_print_stats(pmodes, graph_gts, 'mode', 'graphslam')
 
     """
     plt.figure()
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     else:
         lines = open(sys.argv[1], 'r').readlines()
         lines = [l.rstrip().rsplit() for l in lines if 'Step' in l]
-        optimized_poses = open(sys.argv[2] + "/optimized.txt", 'r').readlines()
+        optimized_poses = open(sys.argv[2] + "/optimized_jointly.txt", 'r').readlines()
         optimized_poses = [p.rstrip().rsplit() for p in optimized_poses][1:]
 
         lines = np.asarray(lines)
