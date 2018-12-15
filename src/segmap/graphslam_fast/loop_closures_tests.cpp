@@ -337,6 +337,12 @@ main(int argc, char **argv)
 
 		if (converged)
 		{
+            correction = create_transformation_matrix(
+                correction(0, 3) / correction(3, 3),
+                -correction(1, 3) / correction(3, 3),
+                -theta_from_matrix(correction)
+            );
+
 			target_pose = correction * target_pose;
 			sprintf(cloud_name, "cloud%d", i);
 
