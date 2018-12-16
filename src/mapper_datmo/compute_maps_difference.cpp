@@ -40,11 +40,14 @@ compute_map_diff(char *gt_path, char *map_path)
 
 		if (carmen_map_read_gridmap_chunk(map_path, &map) == 0)
 		{
-			printf("Opening map: %s\n", map_path);
+			printf("Opening map:    %s\n", map_path);
 
 			int size = gt_map.config.x_size * gt_map.config.y_size;
 			for (int i = 0; i < size; i++)
 			{
+//				if (gt_map.complete_map[i] < 0.0)
+//					continue;
+
 				if (gt_map.complete_map[i] >= 0.0 && map.complete_map[i] >= 0.0)
 				{
 					true_positives  += (gt_map.complete_map[i] >= IS_OBSTACLE && map.complete_map[i] >= IS_OBSTACLE);
@@ -75,11 +78,11 @@ compute_metrics()
 	int negatives = 0;
 	int total = 0;
 
-	precision = true_positives / (true_positives + false_positives);
+	precision = (float)true_positives / (true_positives + false_positives);
 
-	recall = true_positives / (true_positives + false_negatives);
+	recall = (float)true_positives / (true_positives + false_negatives);
 
-	accuracy = (true_positives + true_negatives) / (true_positives + true_negatives + false_positives + false_negatives);
+	accuracy = (float)(true_positives + true_negatives) / (true_positives + true_negatives + false_positives + false_negatives);
 
 	positives = true_positives + false_negatives;
 
@@ -87,7 +90,13 @@ compute_metrics()
 
 	total = positives + negatives;
 
-	printf("Positives %9d (%6.2lf%%)\nNegatives %9d (%6.2lf%%)\n", positives, (double) 100 * positives / total, negatives, (double) 100 * negatives / total);
+	printf("True Positives  (%8d)\n", true_positives);
+	printf("True Negatives  (%8d)\n", true_negatives);
+	printf("False Positives (%8d)\n", false_positives);
+	printf("False Negatives (%8d)\n", false_negatives);
+
+	printf("Positives %9d (%6.2lf%%)\n", positives, (double) 100 * positives / total);
+	printf("Negatives %9d (%6.2lf%%)\n", negatives, (double) 100 * negatives / total);
 	printf("Precision %9lf \nRecall    %9lf\nAccuracy  %9lf\n", precision, recall, accuracy);
 }
 
@@ -110,8 +119,6 @@ compute_maps_difference(char *gt_dir_path, char *map_dir_path)
     {
     	if (sscanf(gt_content->d_name, "m%ld_%ld.map", &x, &y) == 2)
     	{
-    		//printf("Opening gt_map: %s\n", gt_content->d_name);
-
     		if (gt_dir_path[strlen(gt_dir_path) - 1] == '/')
     			sprintf(complete_gt_path, "%s%s", gt_dir_path, gt_content->d_name);
     		else
@@ -125,9 +132,6 @@ compute_maps_difference(char *gt_dir_path, char *map_dir_path)
     		compute_map_diff(complete_gt_path, complete_path);
     	}
     }
-
-    compute_metrics();
-
     closedir(gt_dir);
 }
 
@@ -143,6 +147,8 @@ main(int argc, char **argv)
 	}
 
     compute_maps_difference(argv[1], argv[2]);
+
+    compute_metrics();
 
     return 0;
 }
