@@ -108,7 +108,7 @@ compute_maps_difference(char *gt_dir_path, char *map_dir_path)
     DIR *gt_dir;
     struct dirent *gt_content;
     char complete_gt_path[1024], complete_path[1024];
-    int x, y, pos;
+    int x, y;
 
     if ((gt_dir = opendir(gt_dir_path)) == NULL)
     {
@@ -118,7 +118,9 @@ compute_maps_difference(char *gt_dir_path, char *map_dir_path)
 
     while ((gt_content = readdir(gt_dir)) != NULL)
     {
-    	if (sscanf(gt_content->d_name, "m%d_%d.map%n", &x, &y, &pos) == 2 && gt_content->d_name[pos] == 0)
+    	unsigned int pos = 0;
+
+    	if (sscanf(gt_content->d_name, "m%d_%d.map%n", &x, &y, &pos) == 2 && pos == strlen(gt_content->d_name))
     	{
     		if (gt_dir_path[strlen(gt_dir_path) - 1] == '/')
     			sprintf(complete_gt_path, "%s%s", gt_dir_path, gt_content->d_name);
