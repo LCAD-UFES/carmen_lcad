@@ -62,7 +62,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset)
 		//if (i > 16)
 		//if (1)
 		{
-			pf.correct(cloud, map, transformed_cloud, vel2car, dataset.data[i].v, dataset.data[i].phi);
+			pf.correct(cloud, map, transformed_cloud, vel2car, dataset.data[i].gps, dataset.data[i].v, dataset.data[i].phi);
 
 			Pose2d mean = pf.mean();
 			Pose2d mode = pf.mode();
@@ -108,7 +108,8 @@ main(int argc, char **argv)
 	DatasetInterface *dataset;
 	dataset = new DatasetCarmen(dataset_name, 1);
 
-	ParticleFilter pf(30, 0.5, 0.5, degrees_to_radians(5),
+	ParticleFilter pf(30, ParticleFilter::WEIGHT_SEMANTIC, 
+			0.5, 0.5, degrees_to_radians(5),
 			0.2, degrees_to_radians(.5),
 			0.1, 0.1, degrees_to_radians(.5),
 			100., 100., 100.);

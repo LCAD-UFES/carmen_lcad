@@ -36,12 +36,12 @@ create_map(GridMap &map, DatasetInterface &dataset)
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
 
-    /*
+    ///*
 	pcl::visualization::PCLVisualizer viewer("CloudViewer");
 	viewer.setBackgroundColor(1, 1, 1);
 	viewer.removeAllPointClouds();
 	viewer.addCoordinateSystem(2);
-    */
+    //*/
 
 	Matrix<double, 4, 4> vel2car = dataset.transform_vel2car();
 
@@ -49,12 +49,27 @@ create_map(GridMap &map, DatasetInterface &dataset)
 	int pause_viewer = 1;
 	int step = 1;
 
+	ParticleFilter pf(200, ParticleFilter::WEIGHT_GPS, 
+			0.1, 0.1, degrees_to_radians(0.1),
+			0.2, degrees_to_radians(.5),
+			0.05, 0.05, degrees_to_radians(.1),
+			100., 100., 100.);
+
+	pf.reset(dataset.data[0].pose.x, dataset.data[0].pose.y, dataset.data[0].pose.th);
+
 	for (int i = 0; i < dataset.data.size(); i += step)
 	{
+		if (i >= step)
+			pf.predict(dataset.data[i].v, dataset.data[i].phi, dataset.data[i].odom_time - dataset.data[i - step].odom_time);
+
 		if (fabs(dataset.data[i].v) < 0.1)
 			continue;
 
-		Pose2d pose = dataset.data[i].pose;
+		if (i % 10 == 0)
+			pf.correct(cloud, map, transformed_cloud, vel2car, dataset.data[i].gps, dataset.data[i].v, dataset.data[i].phi);
+
+		//Pose2d pose = dataset.data[i].pose;
+		Pose2d pose = pf.mean();
 
 		//printf("Step %d car pose: %lf %lf %lf\n", i, pose.x, pose.y, pose.th);
 
@@ -70,7 +85,7 @@ create_map(GridMap &map, DatasetInterface &dataset)
 		if (map._map_type == GridMapTile::TYPE_SEMANTIC)
 			colorize_cloud_according_to_segmentation(transformed_cloud);
 
-        /*
+        ///*
 		char *cloud_name = (char *) calloc (32, sizeof(char));
 		sprintf(cloud_name, "cloud%d", i);
 		//viewer.removeAllPointClouds();
@@ -78,21 +93,25 @@ create_map(GridMap &map, DatasetInterface &dataset)
 		viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, cloud_name);
 		cloud_names.push_back(cloud_name);
 
-		if (cloud_names.size() >= 1000)
+		if (cloud_names.size() >= 300)
 		{
 			viewer.removePointCloud(cloud_names[0]);
 			cloud_names.pop_front();
 		}
-		*/
+		//*/
 
+		view(pf, map, dataset.data[i].pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi);
+
+		/*
 		Mat map_img = map.to_image().clone();
 		draw_pose(map, map_img, pose, Scalar(0, 255, 0));
 		imshow("viewer", map_img);
+		*/
 
 		char c = ' ';
 		while (1)
 		{
-			//viewer.spinOnce();
+			viewer.spinOnce();
 			c = waitKey(5);
 
 			if (c == 's')
@@ -113,6 +132,7 @@ create_map(GridMap &map, DatasetInterface &dataset)
 				if (step < 1) step = 1;
 			}
 		} 
+		//*/
 
 //		if (i > 500 && i < dataset.data.size() - 1000)
 //			i = dataset.data.size() - 1000;
