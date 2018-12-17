@@ -5,7 +5,8 @@
 
 using namespace std;
 
-#define IS_OBSTACLE 0.50   // Minimum probability of a map cell being an obstacle
+#define rrt_obstacle_probability_threshold 0.5			 // carmen-ford-escape.ini
+#define IS_OBSTACLE rrt_obstacle_probability_threshold   // Minimum probability of a map cell being an obstacle
 
 int true_positives = 0;
 int true_negatives = 0;
@@ -50,10 +51,10 @@ compute_map_diff(char *gt_path, char *map_path)
 
 				if (gt_map.complete_map[i] >= 0.0 && map.complete_map[i] >= 0.0)
 				{
-					true_positives  += (gt_map.complete_map[i] >= IS_OBSTACLE && map.complete_map[i] >= IS_OBSTACLE);
-					true_negatives  += (gt_map.complete_map[i] <  IS_OBSTACLE && map.complete_map[i] <  IS_OBSTACLE);
-					false_positives += (gt_map.complete_map[i] <  IS_OBSTACLE && map.complete_map[i] >= IS_OBSTACLE);
-					false_negatives += (gt_map.complete_map[i] >= IS_OBSTACLE && map.complete_map[i] <  IS_OBSTACLE);
+					true_positives  += (gt_map.complete_map[i] >  IS_OBSTACLE && map.complete_map[i] >  IS_OBSTACLE);
+					true_negatives  += (gt_map.complete_map[i] <= IS_OBSTACLE && map.complete_map[i] <= IS_OBSTACLE);
+					false_positives += (gt_map.complete_map[i] <= IS_OBSTACLE && map.complete_map[i] >  IS_OBSTACLE);
+					false_negatives += (gt_map.complete_map[i] >  IS_OBSTACLE && map.complete_map[i] <= IS_OBSTACLE);
 				}
 			}
 			carmen_map_free_gridmap(&map);
@@ -78,11 +79,11 @@ compute_metrics()
 	int negatives = 0;
 	int total = 0;
 
-	precision = (float)true_positives / (true_positives + false_positives);
+	precision = (double) true_positives / (true_positives + false_positives);
 
-	recall = (float)true_positives / (true_positives + false_negatives);
+	recall = (double) true_positives / (true_positives + false_negatives);
 
-	accuracy = (float)(true_positives + true_negatives) / (true_positives + true_negatives + false_positives + false_negatives);
+	accuracy = (double)(true_positives + true_negatives) / (true_positives + true_negatives + false_positives + false_negatives);
 
 	positives = true_positives + false_negatives;
 
@@ -107,7 +108,7 @@ compute_maps_difference(char *gt_dir_path, char *map_dir_path)
     DIR *gt_dir;
     struct dirent *gt_content;
     char complete_gt_path[1024], complete_path[1024];
-    long int x, y;
+    int x, y, pos;
 
     if ((gt_dir = opendir(gt_dir_path)) == NULL)
     {
@@ -117,7 +118,7 @@ compute_maps_difference(char *gt_dir_path, char *map_dir_path)
 
     while ((gt_content = readdir(gt_dir)) != NULL)
     {
-    	if (sscanf(gt_content->d_name, "m%ld_%ld.map", &x, &y) == 2)
+    	if (sscanf(gt_content->d_name, "m%d_%d.map%n", &x, &y, &pos) == 2 && gt_content->d_name[pos] == 0)
     	{
     		if (gt_dir_path[strlen(gt_dir_path) - 1] == '/')
     			sprintf(complete_gt_path, "%s%s", gt_dir_path, gt_content->d_name);
@@ -142,7 +143,7 @@ main(int argc, char **argv)
 {
 	if (argc < 3)
 	{
-		printf("\nUse: %s <ground_truth_map_path> <map_path>\n\n", argv[0]);
+		printf("\nUsage: %s <ground_truth_map_path> <map_path>\n\n", argv[0]);
 		return 0;
 	}
 
