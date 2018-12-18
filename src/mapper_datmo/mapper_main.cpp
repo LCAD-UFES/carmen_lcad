@@ -389,7 +389,8 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 			if (filtered_points[i][j].image_x < 0 || filtered_points[i][j].image_x >= image_width || filtered_points[i][j].image_y < 0 || filtered_points[i][j].image_y >= image_height) // Disregard laser rays out of the image window
 				continue;
 
-			if (camera_data[camera_index].semantic[image_index][filtered_points[i][j].image_x + (filtered_points[i][j].image_y * image_width)] >= 11) // 0 to 10 : Static objects
+			if ((camera_data[camera_index].semantic[image_index] != NULL) &&
+			    (camera_data[camera_index].semantic[image_index][filtered_points[i][j].image_x + (filtered_points[i][j].image_y * image_width)] >= 11)) // 0 to 10 : Static objects
 				cont++;
 			if (cont > 10 || cont > (filtered_points[i].size() / 5))
 			{
@@ -1132,7 +1133,7 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 {
 	camera_msg_count[camera]++;
 	int i = (camera_data[camera].current_index + 1) % NUM_CAMERA_IMAGES;
-	char camera_side = (camera_alive[camera] == 0) ? 'l' : 'r';
+	char camera_side = (camera_alive[camera] == 0) ? 'l' : 'r';  // left or right side
 
 	camera_data[camera].current_index = i;
 	camera_data[camera].width[i] = image_msg->width;
@@ -1140,11 +1141,15 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 	camera_data[camera].image_size[i] = image_msg->image_size;
 	camera_data[camera].isRectified[i] = image_msg->isRectified;
 	camera_data[camera].timestamp[i] = image_msg->timestamp;
-	camera_data[camera].image[i] = (camera_alive[camera] == 0) ? image_msg->raw_left : image_msg->raw_right;
+
+	if (camera_data[camera].image[i] != NULL)
+		free(camera_data[camera].image[i]);
+
+	camera_data[camera].image[i] = (unsigned char *) malloc(sizeof(unsigned char) * image_msg->image_size);
+	memcpy(camera_data[camera].image[i], ((camera_alive[camera] == 0) ? image_msg->raw_left : image_msg->raw_right), image_msg->image_size);
 
 	if (camera_data[camera].semantic[i] != NULL)
 		free(camera_data[camera].semantic[i]);
-	camera_data[camera].semantic[i] = NULL;
 
 	if (process_semantic)
 		camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
