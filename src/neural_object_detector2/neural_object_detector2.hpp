@@ -12,7 +12,7 @@
 #include <carmen/moving_objects_interface.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/laser_ldmrs_utils.h>
-#include <carmen/carmen_darknet_interface.hpp>
+
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
@@ -28,7 +28,8 @@
 
 #include <cstdlib>
 #include <fstream>
-//#include "Darknet.hpp"
+#include "Darknet.hpp"
+//#include <carmen/carmen_darknet_interface.hpp>
 
 #define SHOW_DETECTIONS
 
