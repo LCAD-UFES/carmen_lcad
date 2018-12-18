@@ -60,6 +60,13 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
                                                            int image_width, int image_height);
 
 std::vector<carmen_velodyne_points_in_cam_t>
+carmen_sick_camera_calibration_lasers_points_in_camera(carmen_laser_ldmrs_new_message *sick_message,
+                                                           carmen_camera_parameters camera_parameters,
+                                                           tf::Transformer *sick_transformation_tree,
+                                                           int image_width, int image_height);
+
+
+std::vector<carmen_velodyne_points_in_cam_t>
 carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle(carmen_velodyne_partial_scan_message *velodyne_message,
                                                                          carmen_camera_parameters camera_parameters,
                                                                          carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
@@ -77,9 +84,17 @@ velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_messa
 																		 unsigned int image_width, unsigned int image_height, unsigned int crop_x,
 																		 unsigned int crop_y, unsigned int crop_width, unsigned int crop_height);
 
+vector<image_cartesian>
+sick_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
+                                                                         tf::Transformer *sick_transformation_tree,
+																		 unsigned int image_width, unsigned int image_height, unsigned int crop_x,
+																		 unsigned int crop_y, unsigned int crop_width, unsigned int crop_height);
+
 void
 initialize_transformations(carmen_pose_3D_t board_pose, carmen_pose_3D_t camera_pose, tf::Transformer *transformer);
 
+void
+initialize_sick_transformations(carmen_pose_3D_t board_pose, carmen_pose_3D_t camera_pose, carmen_pose_3D_t bull_pose,carmen_pose_3D_t sick_pose, tf::Transformer *transformer);
 
 tf::StampedTransform
 get_world_to_camera_transformation (tf::Transformer *transformer, carmen_pose_3D_t pose);

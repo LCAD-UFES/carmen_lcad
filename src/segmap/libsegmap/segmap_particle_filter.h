@@ -20,6 +20,13 @@ using namespace pcl;
 class ParticleFilter
 {
 public:
+	enum WeightType
+	{
+		WEIGHT_GPS,
+		WEIGHT_SEMANTIC,
+		WEIGHT_VISUAL
+	};
+
 	int _n;
 	Pose2d *_p;
 	double *_w;
@@ -37,17 +44,22 @@ public:
 
 	Pose2d best;
 
+	WeightType _weight_type;
+
 	double _gauss();
 	double _semantic_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
 	double _image_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
+	double _gps_weight(Pose2d &pose, Pose2d &gps);
+
 	void _compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &map,
 			Matrix<double, 4, 4> &vel2car,
-			double v, double phi, int *max_id, int *min_id);
+			double v, double phi, Pose2d &gps, int *max_id, int *min_id);
 	void _normalize_weights(int min_id, int max_id);
 	void _resample();
 
 	// public:
-	ParticleFilter(int n_particles, double x_std, double y_std, double th_std,
+	ParticleFilter(int n_particles, WeightType weight_type,
+			double x_std, double y_std, double th_std,
 			double v_std, double phi_std,
 			double pred_x_std, double pred_y_std, double pred_th_std,
 			double color_var_r, double color_var_g, double color_var_b);
@@ -60,7 +72,7 @@ public:
 	void predict(double v, double phi, double dt);
 	double sensor_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
 	void correct(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &map, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
-			Matrix<double, 4, 4> &vel2car, double v, double phi);
+			Matrix<double, 4, 4> &vel2car, Pose2d &gps, double v, double phi);
 
 	Pose2d mean();
 	Pose2d mode();

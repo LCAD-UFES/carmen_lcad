@@ -93,9 +93,11 @@ int number_of_threads = 1;
 int camera3_ready = 0;
 
 /******variables for neural_mapper dataset*****/
+int use_neural_mapper = 0;
 int generate_neural_mapper_dataset = 0;
 int neural_mapper_max_distance_meters = 0;
 int neural_mapper_data_pace = 0;
+int neural_map_num_clouds = 1;
 /**********************/
 
 rotation_matrix *r_matrix_car_to_global = NULL;
@@ -1113,9 +1115,11 @@ read_parameters(int argc, char **argv,
 	{
 		{(char *) "commandline", (char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
 		{(char *) "commandline", (char *) "save_calibration_file", CARMEN_PARAM_STRING, &save_calibration_file, 0, NULL},
+		{(char *) "commandline", (char *) "use_neural_mapper", CARMEN_PARAM_ONOFF, &use_neural_mapper, 0, NULL},
 		{(char *) "commandline", (char *) "generate_neural_mapper_dataset", CARMEN_PARAM_ONOFF, &generate_neural_mapper_dataset, 0, NULL},
 		{(char *) "commandline", (char *) "neural_mapper_max_distance_meters", CARMEN_PARAM_INT, &neural_mapper_max_distance_meters, 0, NULL},
-		{(char *) "commandline", (char *) "neural_mapper_data_pace", CARMEN_PARAM_INT, &neural_mapper_data_pace, 0, NULL}
+		{(char *) "commandline", (char *) "neural_mapper_data_pace", CARMEN_PARAM_INT, &neural_mapper_data_pace, 0, NULL},
+		{(char *) "commandline", (char *) "num_clouds", CARMEN_PARAM_INT, &neural_map_num_clouds, 0, NULL}
 
 	};
 

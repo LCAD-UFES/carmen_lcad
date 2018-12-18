@@ -10,11 +10,13 @@ ParticleFilter::_gauss()
 
 
 // public:
-ParticleFilter::ParticleFilter(int n_particles, double x_std, double y_std, double th_std,
+ParticleFilter::ParticleFilter(int n_particles, WeightType weight_type,
+		double x_std, double y_std, double th_std,
 		double v_std, double phi_std, double pred_x_std, double pred_y_std, double pred_th_std,
 		double color_var_r, double color_var_g, double color_var_b)
 {
 	_n = n_particles;
+	_weight_type = weight_type;
 
 	_p = (Pose2d *) calloc (_n, sizeof(Pose2d));
 	_w = (double *) calloc (_n, sizeof(double));
@@ -157,11 +159,18 @@ ParticleFilter::_image_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Gr
 }
 
 
+double
+ParticleFilter::_gps_weight(Pose2d &pose, Pose2d &gps)
+{
+	return exp(-0.5 * (pow((pose.x - gps.x) / _x_std, 2) + pow((pose.y - gps.y) / _y_std, 2)));
+}
+
+
 void
 ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 		GridMap &map,
-		Matrix<double, 4, 4> &vel2car,
-		double v, double phi, int *max_id, int *min_id)
+		Matrix<double, 4, 4> &vel2car, 
+		double v, double phi, Pose2d &gps, int *max_id, int *min_id)
 {
 	int i;
 
@@ -174,10 +183,12 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 		//transformPointCloud(*cloud, *transformed_cloud, tr);
 		transform_pointcloud(cloud, transformed_cloud, _p[i], vel2car, v, phi);
 
-		if (map._map_type == GridMapTile::TYPE_SEMANTIC)
+		if (_weight_type == WEIGHT_SEMANTIC)
 			_w[i] = _semantic_weight(transformed_cloud, map);
-		else
+		else if (_weight_type == WEIGHT_VISUAL)
 			_w[i] = _image_weight(transformed_cloud, map);
+		else if (_weight_type == WEIGHT_GPS)
+			_w[i] = _gps_weight(_p[i], gps);
 
 		_p_bef[i] = _p[i];
 	}
@@ -287,13 +298,13 @@ ParticleFilter::_resample()
 void
 ParticleFilter::correct(PointCloud<PointXYZRGB>::Ptr cloud,
 		GridMap &map, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
-		Matrix<double, 4, 4> &vel2car,
+		Matrix<double, 4, 4> &vel2car, Pose2d &gps, 
 		double v, double phi)
 {
 	int max_id = 0;
 	int min_id = 0;
 
-	_compute_weights(cloud, map, vel2car, v, phi, &max_id, &min_id);
+	_compute_weights(cloud, map, vel2car, v, phi, gps, &max_id, &min_id);
 	_normalize_weights(min_id, max_id);
 	_resample();
 }
