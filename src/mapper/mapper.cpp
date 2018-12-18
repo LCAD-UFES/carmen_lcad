@@ -522,8 +522,8 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 							x_origin, y_origin, neural_mapper_data_pace);
 
 					neural_mapper_update_output_map(offline_map, neural_mapper_car_position_according_to_map);
-					char path[1024] = "/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/imgs_teste/";
-					neural_mapper_export_dataset_as_png(get_next_map, path);
+					char neural_mapper_dataset_path[1024] = "/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/imgs_teste/";
+					neural_mapper_export_dataset_as_png(get_next_map, neural_mapper_dataset_path);
 				}
 				neural_mapper_update_queue_and_clear_maps();
 			}
