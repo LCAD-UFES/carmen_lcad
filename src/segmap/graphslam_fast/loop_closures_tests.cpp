@@ -166,9 +166,23 @@ public:
 void
 load_pointcloud(char *dir_name, double time, PointCloud<PointXYZRGB>::Ptr cloud)
 {
+	PointCloud<PointXYZRGB>::Ptr raw_cloud = PointCloud<PointXYZRGB>::Ptr(new PointCloud<PointXYZRGB>);
+
+	raw_cloud->clear();
+	cloud->clear();
+
 	char name[256];
 	sprintf(name, "%s/velodyne/%lf.ply", dir_name, time);
-	int success = pcl::io::loadPLYFile(name, *cloud);
+	int success = pcl::io::loadPLYFile(name, *raw_cloud);
+
+	/*
+	for (int i = 0; i < raw_cloud->size(); i++)
+	{
+		if (raw_cloud->at(i).z < 0.)
+			cloud->push_back(raw_cloud->at(i));
+	}
+	*/
+	copyPointCloud(*raw_cloud, *cloud);
 
 	if (success < 0 || cloud->size() <= 0)
 		exit(printf("Could not load pointcloud!\n"));
@@ -201,10 +215,10 @@ run_gicp(PointCloud<PointXYZRGB>::Ptr source, PointCloud<PointXYZRGB>::Ptr targe
 	{
 		gicp = new GeneralizedIterativeClosestPoint<PointXYZRGB, PointXYZRGB>();
 		gicp->setMaximumIterations(200);
-		gicp->setTransformationEpsilon(1e-3);
-		gicp->setMaxCorrespondenceDistance(20.0);
+		gicp->setTransformationEpsilon(1e-5);
+		gicp->setMaxCorrespondenceDistance(5.0);
 
-		const double leaf_size = 0.25;
+		const double leaf_size = 0.3;
 		grid = new pcl::VoxelGrid<pcl::PointXYZRGB>();
 		grid->setLeafSize(leaf_size, leaf_size, leaf_size);
 	}
@@ -267,6 +281,9 @@ main(int argc, char **argv)
 
     deque<string> clouds_on_viewer;
 	pcl::visualization::PCLVisualizer viewer("CloudViewer");
+	//pcl::visualization::PCLVisualizer viewer2("CloudViewer2");
+	//viewer2.setBackgroundColor(1, 1, 1);
+
 	viewer.setBackgroundColor(1, 1, 1);
 	viewer.removeAllPointClouds();
 	viewer.addCoordinateSystem(2);
@@ -282,21 +299,22 @@ main(int argc, char **argv)
 	load_pointcloud(argv[1], data[0].sync[0].cloud_time, target);
 	target_pose = create_transformation_matrix(0, 0, 0);
 
-	viewer.addPointCloud(target, "cloud0");
-	viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "cloud0");
+	//viewer.addPointCloud(target, "cloud0");
+	//viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "cloud0");
 
     double time_last_icp = 0;
 
 	for (int i = 1; i < data[0].sync.size(); i++)
 	{
-		if (fabs(data[0].sync[i].v) < 1.0 || data[0].sync[i].cloud_time - time_last_icp < 0.05)
+		if (fabs(data[0].sync[i].v) < 0.2 || data[0].sync[i].cloud_time - time_last_icp < 0.05) // || fabs(data[0].sync[i].phi) < carmen_degrees_to_radians(20.))
 			continue;
 
         time_last_icp = data[0].sync[i].cloud_time;
 
+		source->clear();
+		aligned->clear();
 		load_pointcloud(argv[1], data[0].sync[i].cloud_time, source);
 		run_gicp(source, target, &correction, &converged, aligned);
-        copyPointCloud(*source, *target);
 
 		printf("Step: %d Converged: %d Correction: %lf %lf %lf %lf\n", 
             i, converged,
@@ -306,44 +324,36 @@ main(int argc, char **argv)
             theta_from_matrix(correction)
         );
 
-		//viewer.removeAllPointClouds();
+/*
+		viewer2.removeAllPointClouds();
 
-		//viewer.addPointCloud(source, "source");
-		//viewer.addPointCloud(target, "target");
-		//viewer.addPointCloud(aligned, "transformed");
+		viewer2.addPointCloud(source, "source");
+		viewer2.addPointCloud(target, "target");
+		viewer2.addPointCloud(aligned, "transformed");
 		
-		//viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "source");
-		//viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "target");
-		//viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "transformed");
+		viewer2.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "source");
+		viewer2.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "target");
+		viewer2.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "transformed");
 
-		//viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "source");
-		//viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "target");
-		//viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0, 1, "transformed");
+		viewer2.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "source");
+		viewer2.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "target");
+		viewer2.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0, 1, "transformed");
+*/
 
-		imshow("viewer", Mat::zeros(300, 300, CV_8UC3));
-
-		char c = ' ';
-		while (1)
-		{
-			viewer.spinOnce();
-			c = waitKey(5);
-
-			if (c == 's')
-				pause_viewer = !pause_viewer;
-
-			if (!pause_viewer || (pause_viewer && c == 'n'))
-				break;
-		} 
+		target->clear();
+        copyPointCloud(*source, *target);
 
 		if (converged)
 		{
+			/*
             correction = create_transformation_matrix(
                 correction(0, 3) / correction(3, 3),
-                -correction(1, 3) / correction(3, 3),
-                -theta_from_matrix(correction)
+                correction(1, 3) / correction(3, 3),
+                theta_from_matrix(correction)
             );
+			*/
 
-			target_pose = correction * target_pose;
+			target_pose = target_pose * correction;
 			sprintf(cloud_name, "cloud%d", i);
 
 	        pcl::transformPointCloud(
@@ -351,6 +361,7 @@ main(int argc, char **argv)
 		        *aligned, 
 		        target_pose);
 
+			///*
             for (int j = 0; j < aligned->size(); j++)
             {
                 int b = ((aligned->at(j).z + 5.0) / 10.) * 255;
@@ -358,13 +369,14 @@ main(int argc, char **argv)
                 if (b > 255) b = 255;
 
                 aligned->at(j).r *= 10.;
-                aligned->at(j).g = 0.;
-                aligned->at(j).b = b;
+                aligned->at(j).g *= 10.;
+                aligned->at(j).b *= 10.;
             }
+			//*/
 
             clouds_on_viewer.push_back(string(cloud_name));
 
-            if (clouds_on_viewer.size() > 20)
+            if (clouds_on_viewer.size() > 500)
             {
                 viewer.removePointCloud(clouds_on_viewer[0]);
                 clouds_on_viewer.pop_front();
@@ -377,11 +389,27 @@ main(int argc, char **argv)
 				target_pose(1, 3) / target_pose(3, 3), 
 				theta_from_matrix(target_pose));
 
-            viewer.addCoordinateSystem (2.0, 
-                target_pose(0, 3) / target_pose(3, 3), 
-                target_pose(1, 3) / target_pose(3, 3), 
-                target_pose(2, 3) / target_pose(3, 3));
+			//Matrix4f target_pose_float = target_pose.cast<float>();
+			Eigen::Affine3f affine;
+			affine = target_pose.cast<float>();
+            viewer.addCoordinateSystem (2.0, affine);
 		}
+
+		imshow("viewer", Mat::zeros(300, 300, CV_8UC3));
+
+		char c = ' ';
+		while (1)
+		{
+			//viewer2.spinOnce();
+			viewer.spinOnce();
+			c = waitKey(5);
+
+			if (c == 's')
+				pause_viewer = !pause_viewer;
+
+			if (!pause_viewer || (pause_viewer && c == 'n'))
+				break;
+		} 
 	}
 	
 	return 0;
