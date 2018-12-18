@@ -1,22 +1,16 @@
 ###Currente use of Neural Mapper
-####Dependencies
-O script de treino da rede com pytorch está no git em src/neural_mapper/pytorch_neural_mapper
-
-Há também um script de testes que abre um modelo treinado e escolhe um indice de entrada pra retornar uma saída (test_model.py).
-
-Utilização da rede:
-- Instalar python 3.5 e o pytorch para ele (python padrão do ubuntu 16.04)
-- Colocar a pasta 60mts/, em anexo,  em /dados/neural_mapper/
-- criar a pasta saved_models/ em (...) /pytorch_neural_mapper/
-- Para treinar:
-    python3 train.py --batch-size 5 --log-interval 10 --lr 0.001 --epochs 1000
-- Para testar:
-    python3 test_model.py --model-name <nome_do_modelo> //(Ex. 1000.model)
 
 ### Generating input dataset
 ####Using pytorch code
+
 This code generates the input dataset for neural mapper training.
+
 Como usar:
+Antes crie as pasta que receber o dataset com os seguintes diretorios:
+ -Pasta_dataset
+ --data
+ --labels
+Coloque o caminho para Pasta_dataset dentro do codigo do mapper.cpp (pesquise neural_mapper_dataset_path)(Sera mudado para um parametro)
 1 - Criar meta-data a partir de um log com mapa e poses do graphslam usando:
 Edite o process-volta_da_ufes_playback_viewer_3D_neural_mapper.ini
 
@@ -35,9 +29,12 @@ Verifique se o Publish_poses esta rodando e Dê play no log em uma velocidade de
 
 - Sobre o código que salva os mapas: Dentro do process o mapper é chamado com as flags para gerar o dataset:
 
- ./mapper -map_path ../data/maper_test2/ -map_x 7756450 -map_y -364200 -generate_neural_mapper_dataset on -neural_mapper_max_distance_meters 60 -neural_mapper_data_pace 2
+ ./mapper -map_path ../data/maper_test2/ -map_x 7756450 -map_y -364200 -use_neural_mapper on -generate_neural_mapper_dataset on -neural_mapper_max_distance_meters 60 -neural_mapper_data_pace 2
 
 -> Parametros:
+
+-use_neural_mapper => flag para ativar o codigo do neural mapper
+
 -generate_neural_mapper_dataset => flag de geracao do dataset (on/off)
 
 -neural_mapper_max_distance_meters => raio de leitura maxima dos lasers (em metros)
@@ -46,6 +43,24 @@ Verifique se o Publish_poses esta rodando e Dê play no log em uma velocidade de
 
 Obs. 1: Os outros paramatros sao normais do mapper
 
+####Training Model
+####Dependencies
+O script de treino da rede com pytorch está no git em src/neural_mapper/pytorch_neural_mapper
+
+Há também um script de testes que abre um modelo treinado e escolhe um indice de entrada pra retornar uma saída (test_model.py).
+
+Utilização da rede:
+- Instalar python 3.5 e o pytorch para ele (python padrão do ubuntu 16.04)
+- Colocar a pasta 60mts/, em anexo,  em /dados/neural_mapper/
+- criar a pasta saved_models/ em (...) /pytorch_neural_mapper/
+- Para treinar:
+    python3 train.py --batch-size 5 --log-interval 10 --lr 0.001 --epochs 1000
+- Para testar:
+    python3 test_model_GPU.py --model-name <nome_do_modelo> //(Ex. 1000.model)
+
+
+
+---------------------Codigo abaixo desativado--------------
 2 - usar o cogido parse_neural_mapper_metadata.py para gerar o dado processado:
  -> primeiro, alterar a variavel path para a pasta onde se encontra a banco o metadata gerado em 1;
  -> colocar na variavel outpath o caminho onde deseja que o banco de dados processado seja gerado

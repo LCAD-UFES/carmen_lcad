@@ -10,11 +10,13 @@ ParticleFilter::_gauss()
 
 
 // public:
-ParticleFilter::ParticleFilter(int n_particles, double x_std, double y_std, double th_std,
+ParticleFilter::ParticleFilter(int n_particles, WeightType weight_type,
+		double x_std, double y_std, double th_std,
 		double v_std, double phi_std, double pred_x_std, double pred_y_std, double pred_th_std,
 		double color_var_r, double color_var_g, double color_var_b)
 {
 	_n = n_particles;
+	_weight_type = weight_type;
 
 	_p = (Pose2d *) calloc (_n, sizeof(Pose2d));
 	_w = (double *) calloc (_n, sizeof(double));
@@ -108,8 +110,11 @@ ParticleFilter::_semantic_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 	double count;
 	double unnorm_log_prob = 0.;
 	PointXYZRGB point;
+	
+	assert(transformed_cloud->size() > 0);
+    //double den = 1. / (double) transformed_cloud->size();
 
-	for (int i = 0; i < transformed_cloud->size(); i++)
+	for (int i = 0; i < transformed_cloud->size(); i += 1)
 	{
 		point = transformed_cloud->at(i);
 		vector<double> v = map.read_cell(point);
@@ -119,7 +124,7 @@ ParticleFilter::_semantic_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 		count = v[v.size() - 2];
 		assert(count != 0);
 		// add the log probability of the observed class.
-		unnorm_log_prob += log(v[point.r] / count);
+		unnorm_log_prob += log(v[point.r] / count); // * den;
 	}
 
 	return unnorm_log_prob;
@@ -140,7 +145,7 @@ ParticleFilter::_image_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Gr
 
 		// cell observed at least once.
 		// TODO: what to do when the cell was never observed?
-		//if (v[0] != -1)
+		// if (v[0] != -1)
 		{
 			unnorm_log_prob += fabs((point.r - v[2]) / 255.) +
 						fabs((point.g - v[1]) / 255.) +
@@ -150,41 +155,56 @@ ParticleFilter::_image_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Gr
 		}
 	}
 
-	double c = 10.;  // constant to magnify the particle weights.
-	unnorm_log_prob /= (3. * n_valid_cells);
-	return exp(-c * unnorm_log_prob);
+	return unnorm_log_prob;
+}
+
+
+double
+ParticleFilter::_gps_weight(Pose2d &pose, Pose2d &gps)
+{
+	return exp(-0.5 * (pow((pose.x - gps.x) / _x_std, 2) + pow((pose.y - gps.y) / _y_std, 2)));
 }
 
 
 void
 ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
-		GridMap &map, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
-		Matrix<double, 4, 4> &vel2car,
-		double v, double phi, int *max_id, int *min_id)
+		GridMap &map,
+		Matrix<double, 4, 4> &vel2car, 
+		double v, double phi, Pose2d &gps, int *max_id, int *min_id)
 {
 	int i;
 
-	fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
+	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
+
+	//#pragma omp parallel for default(none) private(i) shared(cloud, map, vel2car, v, phi)
 	for (i = 0; i < _n; i++)
 	{
 		//Matrix<double, 4, 4> tr = Pose2d::to_matrix(_p[i]) * vel2car;
 		//transformPointCloud(*cloud, *transformed_cloud, tr);
 		transform_pointcloud(cloud, transformed_cloud, _p[i], vel2car, v, phi);
 
-		if (map._map_type == GridMapTile::TYPE_SEMANTIC)
+		if (_weight_type == WEIGHT_SEMANTIC)
 			_w[i] = _semantic_weight(transformed_cloud, map);
-		else
+		else if (_weight_type == WEIGHT_VISUAL)
 			_w[i] = _image_weight(transformed_cloud, map);
+		else if (_weight_type == WEIGHT_GPS)
+			_w[i] = _gps_weight(_p[i], gps);
 
 		_p_bef[i] = _p[i];
+	}
+
+	*max_id = *min_id = 0;
+
+	fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
+	for (i = 0; i < _n; i++)
+	{
+		fprintf(stderr, "%.4lf ", _w[i]);
 
 		if (_w[i] > _w[*max_id])
 			*max_id = i;
 
 		if (_w[i] < _w[*min_id])
 			*min_id = i;
-
-		fprintf(stderr, "%.4lf ", _w[i]);
 	}
 	fprintf(stderr, "\n");
 
@@ -205,7 +225,8 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	fprintf(stderr, "DEBUG: Weights as Probs: ");
 	for (i = 0; i < _n; i++)
 	{
-		//_w[i] = exp(_w[i] - max_weight);
+		//_w[i] = exp(_w[i] - max_weight) + (1. / (double) (3. * _n));
+		//_w[i] = exp(_w[i]);
         _w[i] -= min_weight;
 		sum_weights += _w[i];
 
@@ -232,6 +253,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 		else
 			_w[i] /= sum_weights;
 
+        assert(_w[i] >= 0);
 		_w_bef[i] = _w[i];
 
 		fprintf(stderr, "%.4lf ", _w[i]);
@@ -245,14 +267,13 @@ ParticleFilter::_resample()
 {
 	int i;
 
-	_p[0] = best; // elitism
-
+	//_p[0] = best; // elitism
 	int pos = rand() % _n;
 	double step = 1. / (double) _n;
 	double sum = 0.;
 
     fprintf(stderr, "step: %lf pos: %d Particles: \n", step, pos);
-	for (i = 1; i < _n; i++)
+	for (i = 0; i < _n; i++)
 	{
 		sum += _w[pos];
 		while (sum < step)
@@ -277,13 +298,13 @@ ParticleFilter::_resample()
 void
 ParticleFilter::correct(PointCloud<PointXYZRGB>::Ptr cloud,
 		GridMap &map, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
-		Matrix<double, 4, 4> &vel2car,
+		Matrix<double, 4, 4> &vel2car, Pose2d &gps, 
 		double v, double phi)
 {
 	int max_id = 0;
 	int min_id = 0;
 
-	_compute_weights(cloud, map, transformed_cloud, vel2car, v, phi, &max_id, &min_id);
+	_compute_weights(cloud, map, vel2car, v, phi, gps, &max_id, &min_id);
 	_normalize_weights(min_id, max_id);
 	_resample();
 }

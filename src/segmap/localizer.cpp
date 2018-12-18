@@ -48,17 +48,21 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset)
 
 	for (int i = step; i < dataset.data.size(); i += step)
 	{
+	    //if (fabs(dataset.data[i].v) < 1.0) continue;
 		Pose2d gt_pose = dataset.data[i].pose;
 
-		pf.predict(dataset.data[i].v, dataset.data[i].phi, dataset.data[i].image_time - dataset.data[i - step].image_time);
+		pf.predict(dataset.data[i - 1].v, dataset.data[i - 1].phi, dataset.data[i].image_time - dataset.data[i - step].image_time);
 		//view(pf, map, poses, gps, NULL, NULL);
 		dataset.load_fused_pointcloud_and_camera(i, cloud, 1);
+
+        //printf("Prediction\n");
+        //view(pf, map, gt_pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi);
 
 		//if (i % 1 == 0 && i > 0)
 		//if (i > 16)
 		//if (1)
 		{
-			pf.correct(cloud, map, transformed_cloud, vel2car, dataset.data[i].v, dataset.data[i].phi);
+			pf.correct(cloud, map, transformed_cloud, vel2car, dataset.data[i].gps, dataset.data[i].v, dataset.data[i].phi);
 
 			Pose2d mean = pf.mean();
 			Pose2d mode = pf.mode();
@@ -81,6 +85,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset)
 			}
 		}
 
+		//printf("Correction\n");
 		view(pf, map, gt_pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi);
 	}
 }
@@ -103,7 +108,8 @@ main(int argc, char **argv)
 	DatasetInterface *dataset;
 	dataset = new DatasetCarmen(dataset_name, 1);
 
-	ParticleFilter pf(30, 0.5, 0.5, degrees_to_radians(5),
+	ParticleFilter pf(30, ParticleFilter::WEIGHT_SEMANTIC, 
+			0.5, 0.5, degrees_to_radians(5),
 			0.2, degrees_to_radians(.5),
 			0.1, 0.1, degrees_to_radians(.5),
 			100., 100., 100.);

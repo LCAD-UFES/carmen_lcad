@@ -3,6 +3,8 @@
 
 #include <tf.h>
 #include <carmen/moving_objects_interface.h>
+#include "neural_mapper_io.h"
+
 
 //#define	MINIMUM_VELODYNE_DISTANCE 0.75
 #define	MINIMUM_HEIGHT_DIFFERENCE 	0.07

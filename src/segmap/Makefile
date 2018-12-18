@@ -7,9 +7,9 @@ SUBDIRS += graphslam_fast libsegmap scripts
 
 LINK = g++ 
 
-CXXFLAGS += -pg
+CXXFLAGS += -pg -fopenmp
 LFLAGS += -pg
-IFLAGS += -pg
+IFLAGS += -pg -fopenmp
 
 CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-compare -std=c++11
 # Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11

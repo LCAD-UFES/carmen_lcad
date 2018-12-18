@@ -9,6 +9,12 @@ bool rectangles_intersects(cv::Rect A, cv::Rect B);
 
 using namespace std;
 
+//yolov3//
+char **classes_names;
+void *network_struct;
+//*********//
+
+
 int camera;
 int camera_side;
 double meters_spacement;
@@ -41,7 +47,7 @@ carmen_velodyne_partial_scan_message sick_message_arrange;
 vector<carmen_velodyne_partial_scan_message> sick_vector;
 
 
-Detector *darknet;
+//Detector *darknet;
 vector<string> obj_names;
 
 
@@ -511,7 +517,7 @@ save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_ori
 		{
 			char classe [10];
 			float x1, y1, x2, y2;
-			int retorno = fscanf (f_groundtruth, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2);
+			fscanf (f_groundtruth, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2);
 			FILE *f_detection = fopen (detections_folder.c_str(), "w");
 			for (int i = 0; i < bounding_boxes_of_slices_in_original_image.size(); i++)
 			{
@@ -718,10 +724,10 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 	bbox_t b;
 	bool intersects_with_bboxes = false;
 	bool rect_dont_intersects = false;
+
 	for (int i = 0; i < bounding_boxes_of_slices.size(); i++)
 	{
 		for (int j = 0; j < bounding_boxes_of_slices[i].size(); j++)
-
 		{
 			b = bounding_boxes_of_slices[i][j];
 			b.x = bounding_boxes_of_slices[i][j].x + transform_factor_of_slice_to_original_frame[i].translate_factor_x;
@@ -767,25 +773,25 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 					r2.y = bboxes[k].y + bboxes[k].h;
 					//cout<<"\t"<<l2.x<<" "<<l2.y<<" "<<r2.x<<" "<<r2.y<<endl;
 					//if (rectangles_intersects(l1, r1, l2, r2))
-					if(rectangles_intersects(rect_A, rect_B))
-					{
-						percentage_of_intersection_between_bboxes = calc_percentage_of_rectangles_intersection(l1, r1, l2, r2);
-						//cout<< percentage_of_intersection_between_bboxes<< endl;
-						int area2 = abs( calc_area((l2.x - r2.x), (l2.y - r2.y)) ); //abs(l2.x - r2.x) * abs(l2.y - r2.y);
-						if (area2 > area1)
-						{
-							b.x = l2.x;
-							b.y = l2.y;
-							b.w = bboxes[k].w;
-							b.h = bboxes[k].h;
-						}
-
-						if (percentage_of_intersection_between_bboxes > 1)
-						{
-							intersects_with_bboxes = true;
-							break;
-						}
-					}
+//					if(rectangles_intersects(rect_A, rect_B))
+//					{
+//						percentage_of_intersection_between_bboxes = calc_percentage_of_rectangles_intersection(l1, r1, l2, r2);
+//						//cout<< percentage_of_intersection_between_bboxes<< endl;
+//						int area2 = abs( calc_area((l2.x - r2.x), (l2.y - r2.y)) ); //abs(l2.x - r2.x) * abs(l2.y - r2.y);
+//						if (area2 > area1)
+//						{
+//							b.x = l2.x;
+//							b.y = l2.y;
+//							b.w = bboxes[k].w;
+//							b.h = bboxes[k].h;
+//						}
+//
+//						if (percentage_of_intersection_between_bboxes > 1)
+//						{
+//							intersects_with_bboxes = true;
+//							break;
+//						}
+//					}
 
 				}
 				if (intersects_with_bboxes == false)
@@ -812,7 +818,9 @@ get_predictions_of_slices (int i, cv::Mat image)
 	string window_name = "slice_" + ss.str();
 	cv::Mat src_image = image;
 	cv::Mat rgb_image = image;
-	predictions = darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
+	unsigned char *img;
+	img = image.data;
+	predictions = run_YOLO(img, image.cols, image.rows, network_struct, classes_names, 0.5);//darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
 	//detections(predictions, image_msg, velodyne_sync_with_cam, src_image, rgb_image, start_time, fps, rddf_points_in_image, window_name);
 	return (predictions);
 }
@@ -1074,22 +1082,22 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera2(carmen_laser_ldmrs_n
 
 	tf::StampedTransform sick_to_camera_pose;
 
-		// bull pose with respect to the car
-		tf::Transform bull_to_car_pose;
-		bull_to_car_pose.setOrigin(tf::Vector3(bullbar_pose.position.x, bullbar_pose.position.y, bullbar_pose.position.z));
-		bull_to_car_pose.setRotation(tf::Quaternion(bullbar_pose.orientation.yaw, bullbar_pose.orientation.pitch, bullbar_pose.orientation.roll)); // yaw, pitch, roll
-		tf::StampedTransform bull_to_car_transform(bull_to_car_pose, tf::Time(0), "/car", "/bull");
-		transformer_sick.setTransform(bull_to_car_transform, "bull_to_car_transform");
+	// bull pose with respect to the car
+	tf::Transform bull_to_car_pose;
+	bull_to_car_pose.setOrigin(tf::Vector3(bullbar_pose.position.x, bullbar_pose.position.y, bullbar_pose.position.z));
+	bull_to_car_pose.setRotation(tf::Quaternion(bullbar_pose.orientation.yaw, bullbar_pose.orientation.pitch, bullbar_pose.orientation.roll)); // yaw, pitch, roll
+	tf::StampedTransform bull_to_car_transform(bull_to_car_pose, tf::Time(0), "/car", "/bull");
+	transformer_sick.setTransform(bull_to_car_transform, "bull_to_car_transform");
 
 
-		// sick pose with respect to the bull
-		tf::Transform sick_to_bull_pose;
-		sick_to_bull_pose.setOrigin(tf::Vector3(sick_pose.position.x, sick_pose.position.y, sick_pose.position.z));
-		sick_to_bull_pose.setRotation(tf::Quaternion(sick_pose.orientation.yaw, sick_pose.orientation.pitch, sick_pose.orientation.roll));
-		tf::StampedTransform sick_to_bull_transform(sick_to_bull_pose, tf::Time(0), "/bull", "/sick");
-		transformer_sick.setTransform(sick_to_bull_transform, "sick_to_bull_transform");
+	// sick pose with respect to the bull
+	tf::Transform sick_to_bull_pose;
+	sick_to_bull_pose.setOrigin(tf::Vector3(sick_pose.position.x, sick_pose.position.y, sick_pose.position.z));
+	sick_to_bull_pose.setRotation(tf::Quaternion(sick_pose.orientation.yaw, sick_pose.orientation.pitch, sick_pose.orientation.roll));
+	tf::StampedTransform sick_to_bull_transform(sick_to_bull_pose, tf::Time(0), "/bull", "/sick");
+	transformer_sick.setTransform(sick_to_bull_transform, "sick_to_bull_transform");
 
-		transformer_sick.lookupTransform("/camera", "/bull", tf::Time(0), sick_to_camera_pose);
+	transformer_sick.lookupTransform("/camera", "/sick", tf::Time(0), sick_to_camera_pose);
 
 
     double fx_meters = camera_parameters.fx_factor * image_width * camera_parameters.pixel_size;
@@ -1107,17 +1115,14 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera2(carmen_laser_ldmrs_n
 		double h_angle = laser_message->arraypoints[i].horizontal_angle;
 		//double h_angle = carmen_normalize_theta(carmen_degrees_to_radians(laser_message->arraypoints[i].horizontal_angle));
 
-		double MIN_RANGE = 0.5;
-		double MAX_RANGE = 170.0;
-
-		if (range <= MIN_RANGE)
-			range = MAX_RANGE;
-		
-		if (range > MAX_RANGE)
-			range = MAX_RANGE;
-		
-		if (range >= MAX_RANGE)
-			continue;
+		//			if (range <= MIN_RANGE)
+		//				range = MAX_RANGE;
+		//
+		//			if (range > MAX_RANGE)
+		//				range = MAX_RANGE;
+		//
+		//			if (range >= MAX_RANGE)
+		//				continue;
 
 		tf::Point p3d_velodyne_reference = spherical_to_cartesian(h_angle, v_angle, range);
 
@@ -1153,16 +1158,18 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera2(carmen_laser_ldmrs_n
 
 
 void
-image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
+image_handler2(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
-	
+	vector<carmen_velodyne_points_in_cam_t> sick_points = carmen_velodyne_camera_calibration_lasers_points_in_camera2(sick_laser_message,
+															   camera_parameters,
+															   bullbar_pose, camera_pose,
+															   image_msg->width, image_msg->height);
 
 	vector<carmen_position_t> rddf_points_in_image;
 	vector<double> distances_of_rddf_from_car;
 	double hood_removal_percentage = 0.2;
 	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
 	cv::Size size(320, 320);
-
 
 	cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
 	cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
@@ -1191,11 +1198,6 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 	cv::Mat rgb_image_copy = rgb_image.clone();
 
-vector<carmen_velodyne_points_in_cam_t> sick_points = carmen_velodyne_camera_calibration_lasers_points_in_camera2(sick_laser_message,
-															   camera_parameters,
-															   bullbar_pose, camera_pose,
-															   rgb_image.cols, rgb_image.rows);
-
 	for (unsigned int i = 0; i < sick_points.size(); i++)
 	{
 		//cout<<sick_points[i].ipx<<" "<<sick_points[i].ipy<<endl;
@@ -1209,7 +1211,7 @@ vector<carmen_velodyne_points_in_cam_t> sick_points = carmen_velodyne_camera_cal
 
 
 void
-image_handler2(carmen_bumblebee_basic_stereoimage_message *image_msg)
+image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	vector<carmen_position_t> rddf_points_in_image;
 	vector<carmen_position_t> rddf_points_in_image_full;
@@ -1217,6 +1219,15 @@ image_handler2(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	double hood_removal_percentage = 0.2;
 	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
 	cv::Size size(320, 320);
+
+
+	unsigned char *img;
+
+//	if (camera_side == 0)
+//		img = image_msg->raw_left;
+//	else
+//		img = image_msg->raw_right;
+
 
     cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
     cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
@@ -1234,11 +1245,16 @@ image_handler2(carmen_bumblebee_basic_stereoimage_message *image_msg)
     else
         return;
 
+
+
     cv::Mat src_image_copy = src_image.clone();
 
     cv::Mat pRoi = src_image_copy(cv::Rect(src_image_copy.cols * crop_x / 2.0, 0,
     		src_image_copy.cols - src_image_copy.cols * crop_x, src_image_copy.rows));
     src_image = pRoi;
+
+    //cv::Mat open_cv_image = Mat(crop_h, crop_w, CV_8UC3, cropped_img, 0);
+
     src_image_copy = src_image.clone();
 
     cv::cvtColor(src_image, rgb_image, cv::COLOR_RGB2BGR);
@@ -1251,7 +1267,8 @@ image_handler2(carmen_bumblebee_basic_stereoimage_message *image_msg)
     vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
     if (strcmp(detection_type,"-ss") == 0)
     {
-    	bounding_boxes_of_slices_in_original_image = darknet->detect(src_image, 0.2);
+    	img = src_image.data;
+    	bounding_boxes_of_slices_in_original_image = run_YOLO(src_image.data, src_image.cols, src_image.rows, network_struct, classes_names, 0.5);//darknet->detect(src_image, 0.2);
     	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, &rgb_image, start_time, fps, rddf_points_in_image, "Original Detection");
     	colors = get_slice_colors (1);
     }
@@ -1274,6 +1291,7 @@ image_handler2(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	t.translate_factor_y = 0;
     	transform_factor_of_slice_to_original_frame.push_back(t);
     	get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image, distances_of_rddf_from_car);
+    	colors = get_slice_colors (scene_slices.size());
 
 
     	//    for (int i = 0; i < scene_slices.size(); i++)
@@ -1302,7 +1320,7 @@ image_handler2(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	//cout<<"qtd of detections: "<<bounding_boxes_of_slices_in_original_image.size()<<endl;
     	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, &rgb_image, start_time, fps, rddf_points_in_image_full, "Foviated Detection");
 
-    	colors = get_slice_colors (scene_slices.size());
+
 
     	//printf("%lf-r.png\n", image_msg->timestamp);
     }
@@ -1396,7 +1414,6 @@ create_folders()
 	string str_log_name(log_name);
 	char folder_name[100];
 	char folder_image_name[100];
-	int retorno;
 	if (strcmp(detection_type,"-cs") == 0)
 	{
 		sprintf(folder_name, "%s_%.0lf_mts_detections/", log_name,meters_spacement);
@@ -1404,37 +1421,36 @@ create_folders()
 		str_folder_name = folder_name;
 		str_folder_image_name = folder_image_name;
 		string command;
-
 		if (access(str_folder_name.c_str(), F_OK) != 0)
 		{
 			command = "mkdir " + str_folder_name;
-			retorno = system(command.c_str());
+			system(command.c_str());
 		}
 
 		if (access(str_folder_image_name.c_str(), F_OK) != 0)
 		{
 			command = "mkdir " + str_folder_image_name;
-			retorno = system(command.c_str());
+			system(command.c_str());
 
 			command = "mkdir " + str_folder_image_name + "slices/";
 			str_folder_image_name_slices = str_folder_image_name + "slices/";
-			retorno = system(command.c_str());
+			system(command.c_str());
 
 			command = "mkdir " + str_folder_image_name + "slices_rddf_filtered/";
 			str_folder_image_name_slices_rddf_filtered = str_folder_image_name + "slices_rddf_filtered/";
-			retorno = system(command.c_str());
+			system(command.c_str());
 
 			command = "mkdir " + str_folder_image_name + "slices_rddf_full/";
 			str_folder_image_name_slices_rddf_full = str_folder_image_name + "slices_rddf_full/";
-			retorno = system(command.c_str());
+			system(command.c_str());
 
 			command = "mkdir " + str_folder_image_name + "rddf_full/";
 			str_folder_image_name_rddf_full = str_folder_image_name + "rddf_full/";
-			retorno = system(command.c_str());
+			system(command.c_str());
 
 			command = "mkdir " + str_folder_image_name + "rddf_filtered/";
 			str_folder_image_name_rddf_filtered = str_folder_image_name + "rddf_filtered/";
-			retorno = system(command.c_str());
+			system(command.c_str());
 		}
 	}
 
@@ -1446,7 +1462,7 @@ create_folders()
 		if (access(str_folder_name.c_str(), F_OK) != 0)
 		{
 			command = "mkdir " + str_folder_name;
-			retorno = system(command.c_str());
+			system(command.c_str());
 		}
 
 	}
@@ -1562,6 +1578,19 @@ read_parameters(int argc, char **argv)
     return 0;
 }
 
+void
+initializer()
+{
+	initialize_transformations(board_pose, camera_pose, &transformer);
+	initialize_transformations(board_pose, camera_pose, &transformer_sick);
+
+	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
+	string class_names_file = "../../sharedlib/darknet2/data/coco.names";
+	obj_names = objects_names_from_file(class_names_file);
+
+	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
+}
+
 
 int
 main(int argc, char **argv)
@@ -1573,17 +1602,17 @@ main(int argc, char **argv)
 
     int device_id = 0;
 
-    string darknet_home = getenv("DARKNET_HOME");  // Get environment variable pointing path of darknet
-    if (darknet_home.empty())
-        printf("Cannot find darknet path. Check if you have correctly set DARKNET_HOME environment variable.\n");
-
-    string cfg_filename = darknet_home + "/cfg/neural_object_detector_yolo.cfg";
-    string weight_filename = darknet_home + "/yolo.weights";
-    string class_names_file = darknet_home + "/data/coco.names";
-    obj_names = objects_names_from_file(class_names_file);
-
-    darknet = new Detector(cfg_filename, weight_filename, device_id);
-    carmen_test_alloc(darknet);
+//    string darknet_home = getenv("DARKNET_HOME");  // Get environment variable pointing path of darknet
+//    if (darknet_home.empty())
+//        printf("Cannot find darknet path. Check if you have correctly set DARKNET_HOME environment variable.\n");
+//
+//    string cfg_filename = darknet_home + "/cfg/neural_object_detector_yolo.cfg";
+//    string weight_filename = darknet_home + "/yolo.weights";
+//    string class_names_file = darknet_home + "/data/coco.names";
+//    obj_names = objects_names_from_file(class_names_file);
+//
+//    darknet = new Detector(cfg_filename, weight_filename, device_id);
+//    carmen_test_alloc(darknet);
 
 //#ifdef SHOW_DETECTIONS
 //    cv::namedWindow("Neural Object Detector", cv::WINDOW_AUTOSIZE);
@@ -1597,10 +1626,9 @@ main(int argc, char **argv)
 
     read_parameters(argc, argv);
 
-    create_folders();
+    initializer();
 
-    initialize_transformations(board_pose, camera_pose, &transformer);
-    initialize_transformations(board_pose, camera_pose, &transformer_sick);
+    create_folders();
 
     subscribe_messages();
 

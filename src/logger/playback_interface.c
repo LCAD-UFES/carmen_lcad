@@ -27,6 +27,7 @@
  ********************************************************/
 
 #include <carmen/carmen.h>
+#include <locale.h>
 
 
 void
@@ -80,6 +81,8 @@ carmen_playback_command (int cmd, char *message, int offset, float speed)
 int
 carmen_playback_is_valid_speed(char *value, double *speed)
 {
+    setlocale(LC_ALL, "C");
+
     char *comma = strchr(value, ','); // para o caso de alguem digitar virgula em vez de ponto decimal
     if (comma != NULL)
         (*comma) = '.';

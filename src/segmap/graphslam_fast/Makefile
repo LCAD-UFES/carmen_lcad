@@ -37,12 +37,14 @@ LFLAGS += -lvtkCommon -lvtkFiltering -lvtkRendering -lpcl_common -lpcl_surface -
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter -lprob_models -lrotation_geometry
 LFLAGS += `pkg-config --libs opencv`	  
 LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp -lvtkGraphics
 
-SOURCES = generate_loop_closures.cpp graphslam.cpp 
-TARGETS = generate_loop_closures graphslam
+SOURCES = generate_loop_closures.cpp graphslam.cpp joint_graphslam.cpp loop_closures_tests.cpp
+TARGETS = generate_loop_closures graphslam joint_graphslam loop_closures_tests
 
 generate_loop_closures: generate_loop_closures.o
 graphslam:  graphslam.o
+joint_graphslam: joint_graphslam.o
+loop_closures_tests: loop_closures_tests.o
 
 include $(CARMEN_HOME)/src/Makefile.rules

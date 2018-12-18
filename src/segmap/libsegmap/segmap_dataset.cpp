@@ -5,11 +5,14 @@
 #include "segmap_pose2d.h"
 #include "segmap_util.h"
 #include "segmap_dataset.h"
+#include "segmap_viewer.h"
+#include <pcl/visualization/pcl_visualizer.h>
 
 
 using namespace cv;
 using namespace pcl;
 
+//pcl::visualization::PCLVisualizer *myviewer = new pcl::visualization::PCLVisualizer("CloudViewer2");
 
 void
 DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, int view)
@@ -52,7 +55,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 
 		// to use fused camera and velodyne
 		// if (0)
-		if (point.x > 0 && x >= 0 && x < img.cols && y >= 0 && y < img.rows && (!_use_segmented || (y > top_limit && y < bottom_limit)))
+		if (point.x > 0 && x >= 0 && x < img.cols && y >= 0 && y < img.rows && (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
 		{
 			pcl::PointXYZRGB point2;
 
@@ -74,7 +77,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 
 		// to use remission
 		else if (0)
-		// else if (1) //point.z < 0.)
+		// else if (point.z < 0.)
 		{
 			point.r *= 3;
 			point.g *= 3;
@@ -82,6 +85,15 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 			cloud->push_back(point);
 		}
 	}
+
+    /*
+	myviewer->setBackgroundColor(1, 1, 1);
+	myviewer->removeAllPointClouds();
+	myviewer->addCoordinateSystem(2);
+	myviewer->addPointCloud(raw_cloud, "raw_cloud");
+	myviewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "raw_cloud");
+	myviewer->spinOnce();
+    */
 
 	if (view)
 	{
@@ -91,13 +103,14 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 			Mat aux_img = imread(_name);
 			Mat view_copy = viewer_img.clone();
 			cv::vconcat(aux_img, view_copy, viewer_img);
+			//flip(viewer_img, viewer_img, +1);
 		}
 
 		double resize_rate = 640. / (double) viewer_img.cols;
 		int height = resize_rate * viewer_img.rows;
 		int width = resize_rate * viewer_img.cols;
 
-		Mat resized(480, 640, CV_8UC3);
+		Mat resized(height, width, CV_8UC3);
 		resize(viewer_img, resized, Size(width, height));
 		imshow("cam_vel_fused", resized);
 	}
@@ -282,7 +295,7 @@ DatasetCarmen::load_data()
 
 	fclose(f);
 
-	data_file = _path + "/optimized.txt";
+	data_file = _path + "/optimized_jointly.txt";
 	f = fopen(data_file.c_str(), "r");
 
 	if (f == NULL)

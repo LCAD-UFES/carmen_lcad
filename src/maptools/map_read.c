@@ -657,7 +657,8 @@ static int carmen_map_read_gridmap_chunk_data(carmen_FILE *fp,
   return 0;
 }
 
-int carmen_map_read_gridmap_chunk(char *filename, carmen_map_p map)
+int
+carmen_map_read_gridmap_chunk(char *filename, carmen_map_p map)
 {
   carmen_FILE *fp;
   int chunk_type, chunk_size;
@@ -700,7 +701,9 @@ int carmen_map_read_gridmap_chunk(char *filename, carmen_map_p map)
   return carmen_map_read_gridmap_chunk_data(fp, map);
 }
 
-int carmen_map_read_gridmap_chunk_verbose(char *filename, carmen_map_p map, int verbose)
+
+int
+carmen_map_read_gridmap_chunk_verbose(char *filename, carmen_map_p map, int verbose)
 {
 	int result;
 	int previous_file_warnings_option = file_warnings;
@@ -712,7 +715,30 @@ int carmen_map_read_gridmap_chunk_verbose(char *filename, carmen_map_p map, int 
 	return result;
 }
 
-int carmen_map_read_named_gridmap_chunk(char *filename, char *chunk_name,
+
+void
+carmen_map_free_gridmap(carmen_map_p map)
+{
+	if (map->config.map_name != NULL)
+	{
+		free(map->config.map_name);
+		map->config.map_name = NULL;
+	}
+	if (map->complete_map != NULL)
+	{
+		free(map->complete_map);
+		map->complete_map = NULL;
+	}
+	if (map->map != NULL)
+	{
+		free(map->map);
+		map->map = NULL;
+	}
+}
+
+
+int
+carmen_map_read_named_gridmap_chunk(char *filename, char *chunk_name,
 					carmen_map_p map)
 {
   carmen_FILE *fp;
