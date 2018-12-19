@@ -675,6 +675,20 @@ show_LIDAR(Mat &image, vector<vector<image_cartesian>> points_lists, int r, int 
 	}
 }
 
+void
+show_LIDAR_deepth(Mat &image, vector<vector<image_cartesian>> points_lists, int r, int g, int b, int rt, int gt, int bt, double max_range)
+{
+	for (unsigned int i = 0; i < points_lists.size(); i++)
+	{
+		for (unsigned int j = 0; j < points_lists[i].size(); j++){
+			double distance = sqrt(points_lists[i][j].cartesian_x*points_lists[i][j].cartesian_x+points_lists[i][j].cartesian_y*points_lists[i][j].cartesian_y);
+			int rp = rt + double((max_range-distance)/max_range)*double(r-rt);
+			int gp = gt + double((max_range-distance)/max_range)*double(g-gt);
+			int bp = bt + double((max_range-distance)/max_range)*double(b-bt);
+			circle(image, Point(points_lists[i][j].image_x, points_lists[i][j].image_y), 1, cvScalar(bp, gp, rp), 1, 8, 0);
+		}
+	}
+}
 
 void
 show_all_points(Mat &image, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
@@ -763,7 +777,6 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 			msg.point_clouds[l].b = 0.0;
 
 			msg.point_clouds[l].linear_velocity = tmp_predictions[i].velocity;
-			printf("%f\n",tmp_predictions[i].velocity);
 			msg.point_clouds[l].orientation = tmp_predictions[i].orientation;
 
 			msg.point_clouds[l].length = 4.5;
@@ -991,7 +1004,6 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	call_python_function(open_cv_image.data, predictions, image_msg->timestamp);
 	///////////////
 
-	printf("ssss\n");
 	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose,
 			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 //	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_parameters, &transformer_sick,

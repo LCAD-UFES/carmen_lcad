@@ -433,9 +433,6 @@ sick_camera_calibration_fuse_camera_lidar(carmen_laser_ldmrs_new_message *sick_m
 	unsigned int max_x = crop_x + crop_width;
 	unsigned int max_y = crop_y + crop_height;
 
-
-	printf("BUG\n");
-
 	if (sick_message == NULL)
 		return (points);
 
