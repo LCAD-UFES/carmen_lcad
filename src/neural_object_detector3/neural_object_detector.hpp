@@ -11,6 +11,7 @@
 #include <carmen/traffic_light_interface.h>
 #include <carmen/traffic_light_messages.h>
 #include <carmen/rddf_messages.h>
+#include <carmen/laser_ldmrs_utils.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>

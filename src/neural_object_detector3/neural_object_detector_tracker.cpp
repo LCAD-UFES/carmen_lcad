@@ -10,18 +10,48 @@ char **classes_names;
 void *network_struct;
 carmen_localize_ackerman_globalpos_message *globalpos_msg;
 carmen_velodyne_partial_scan_message *velodyne_msg;
+carmen_velodyne_partial_scan_message sick_converted_to_velodyne_msg;
+carmen_laser_ldmrs_new_message* sick_laser_message;
 carmen_camera_parameters camera_parameters;
 carmen_pose_3D_t velodyne_pose;
 carmen_pose_3D_t camera_pose;
 carmen_pose_3D_t board_pose;
-tf::Transformer transformer;
+carmen_pose_3D_t bullbar_pose;
+carmen_pose_3D_t sick_pose;
+tf::Transformer transformer_sick;
+
+vector<carmen_velodyne_partial_scan_message> velodyne_vector; //used to correct camera delay
+#define CAM_DELAY 0.2
+#define MAX_POSITIONS 10
+
+// This function find the closest velodyne message with the camera message
+carmen_velodyne_partial_scan_message
+find_velodyne_most_sync_with_cam(double bumblebee_timestamp)  // TODO is this necessary?
+{
+	bumblebee_timestamp -= CAM_DELAY;
+	carmen_velodyne_partial_scan_message velodyne;
+    double minTimestampDiff = DBL_MAX;
+    int minTimestampIndex = -1;
+
+    for (unsigned int i = 0; i < velodyne_vector.size(); i++)
+    {
+        if (fabs(velodyne_vector[i].timestamp - bumblebee_timestamp) < minTimestampDiff)
+        {
+            minTimestampIndex = i;
+            minTimestampDiff = fabs(velodyne_vector[i].timestamp - bumblebee_timestamp);
+        }
+    }
+
+    velodyne = velodyne_vector[minTimestampIndex];
+    return (velodyne);
+}
 
 int board_x = 0.572;      // TODO ler do carmen ini
 int board_y = 0.0;
 int board_z = 2.154;
 
 //Pedestrian related funcitons and structs --------
-#define P_BUFF_SIZE 10
+#define P_BUFF_SIZE 16
 
 struct pedestrian
 {
@@ -88,9 +118,6 @@ double slope_angle(const vector<double>& x, const vector<double>& y)
     if(denominator == 0){
         return 0.0;
     }
-
-    if (x[0] > x[x.size()-1])
-    	return (numerator / denominator)+3.14;
     return atan2(numerator,denominator);
 }
 
@@ -887,12 +914,17 @@ publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clo
 // Handlers                                                                                  //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
-
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
+	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
+
 	if (image_msg == NULL)
+		return;
+
+	if (velodyne_vector.size() > 0)
+		velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp);
+	else
 		return;
 
 	double fps;
@@ -913,6 +945,19 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
 
+//	vector<carmen_velodyne_points_in_cam_t> sick_points = carmen_sick_camera_calibration_lasers_points_in_camera(sick_laser_message,
+//																   camera_parameters,
+//																   &transformer_sick,
+//																   open_cv_image.cols, open_cv_image.rows);
+//	vector<image_cartesian> new_sick_points;
+//	for (int i = 0; i < sick_points.size(); i++)
+//	{
+//		image_cartesian new_point;
+//		new_point.image_x = sick_points[i].ipx;
+//		new_point.image_y = sick_points[i].ipy;
+//		new_sick_points.push_back(new_point);
+//	} DEIXAR ATÉ PEDRO DAR OK QUE PODE APAGAR!!!!!!!!!
+
 	vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
 	predictions = filter_predictions_of_interest(predictions);
 
@@ -920,7 +965,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	call_python_function(open_cv_image.data, predictions, image_msg->timestamp);
 	///////////////
 
-	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
+//	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose,
+//			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(sick_laser_message, camera_parameters, &transformer_sick,
 			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 
 	vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(pedestrian_tracks, points); // TODO remover bbox que nao tenha nenhum ponto
@@ -960,6 +1007,34 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	velodyne_msg = velodyne_message;
 
 	carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_msg);
+
+	carmen_velodyne_partial_scan_message velodyne_copy;
+
+	velodyne_copy.host = velodyne_msg->host;
+	velodyne_copy.number_of_32_laser_shots = velodyne_msg->number_of_32_laser_shots;
+
+	velodyne_copy.partial_scan = (carmen_velodyne_32_laser_shot *) malloc(
+			sizeof(carmen_velodyne_32_laser_shot) * velodyne_msg->number_of_32_laser_shots);
+
+	memcpy(velodyne_copy.partial_scan, velodyne_msg->partial_scan,
+		   sizeof(carmen_velodyne_32_laser_shot) * velodyne_msg->number_of_32_laser_shots);
+
+	velodyne_copy.timestamp = velodyne_msg->timestamp;
+
+	velodyne_vector.push_back(velodyne_copy);
+
+	if (velodyne_vector.size() > MAX_POSITIONS)
+	{
+		free(velodyne_vector.begin()->partial_scan);
+		velodyne_vector.erase(velodyne_vector.begin());
+	}
+}
+
+
+void
+carmen_laser_ldmrs_new_message_handler(carmen_laser_ldmrs_new_message* laser_message)
+{
+	sick_laser_message = laser_message;
 }
 
 
@@ -992,6 +1067,8 @@ subscribe_messages()
 
     carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
+    carmen_laser_subscribe_ldmrs_new_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_new_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
     carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
@@ -1009,9 +1086,13 @@ read_parameters(int argc, char **argv)
 
     char bumblebee_string[256];
     char camera_string[256];
+    char bullbar_string[256];
+    char sick_string[256];
 
     sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera); // Geather the cameri ID
     sprintf(camera_string, "%s%d", "camera", camera);
+    sprintf(bullbar_string, "%s", "front_bullbar");
+    sprintf(sick_string, "%s", "laser_ldmrs");
 
     carmen_param_t param_list[] =
     {
@@ -1040,7 +1121,21 @@ read_parameters(int argc, char **argv)
 		{(char *) "sensor_board_1", (char*) "z",     CARMEN_PARAM_DOUBLE, &board_pose.position.z, 0, NULL },
 		{(char *) "sensor_board_1", (char*) "roll",  CARMEN_PARAM_DOUBLE, &board_pose.orientation.roll, 0, NULL },
 		{(char *) "sensor_board_1", (char*) "pitch", CARMEN_PARAM_DOUBLE, &board_pose.orientation.pitch, 0, NULL },
-		{(char *) "sensor_board_1", (char*) "yaw",   CARMEN_PARAM_DOUBLE, &board_pose.orientation.yaw, 0, NULL }
+		{(char *) "sensor_board_1", (char*) "yaw",   CARMEN_PARAM_DOUBLE, &board_pose.orientation.yaw, 0, NULL },
+
+		{bullbar_string, (char*) "x",     CARMEN_PARAM_DOUBLE, &bullbar_pose.position.x, 0, NULL },
+		{bullbar_string, (char*) "y",     CARMEN_PARAM_DOUBLE, &bullbar_pose.position.y, 0, NULL },
+		{bullbar_string, (char*) "z",     CARMEN_PARAM_DOUBLE, &bullbar_pose.position.z, 0, NULL },
+		{bullbar_string, (char*) "roll",  CARMEN_PARAM_DOUBLE, &bullbar_pose.orientation.roll, 0, NULL },
+		{bullbar_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &bullbar_pose.orientation.pitch, 0, NULL },
+		{bullbar_string, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &bullbar_pose.orientation.yaw, 0, NULL },
+
+		{sick_string, (char*) "x",     CARMEN_PARAM_DOUBLE, &sick_pose.position.x, 0, NULL },
+		{sick_string, (char*) "y",     CARMEN_PARAM_DOUBLE, &sick_pose.position.y, 0, NULL },
+		{sick_string, (char*) "z",     CARMEN_PARAM_DOUBLE, &sick_pose.position.z, 0, NULL },
+		{sick_string, (char*) "roll",  CARMEN_PARAM_DOUBLE, &sick_pose.orientation.roll, 0, NULL },
+		{sick_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &sick_pose.orientation.pitch, 0, NULL },
+		{sick_string, (char*) "yaw",   CARMEN_PARAM_DOUBLE, &sick_pose.orientation.yaw, 0, NULL }
     };
 
     num_items = sizeof(param_list) / sizeof(param_list[0]);
@@ -1051,7 +1146,7 @@ read_parameters(int argc, char **argv)
 void
 initializer()
 {
-	initialize_transformations(board_pose, camera_pose, &transformer);
+	initialize_sick_transformations(board_pose, camera_pose, bullbar_pose, sick_pose, &transformer_sick);
 
 	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
 
