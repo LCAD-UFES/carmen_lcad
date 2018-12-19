@@ -10,8 +10,8 @@ const int MAX_ANGLE_OBSTACLE = 188;
 #define MAX_RANGE 50.0
 #define MIN_RANGE 0.5
 
-#define SICK_MIN_RANGE = 0.5;
-#define SICK_MAX_RANGE = 170.0;
+#define SICK_MIN_RANGE 0.5
+#define SICK_MAX_RANGE 170.0
 
 
 #define CAMERA_FOV 0.576 // In radians ~ 33 degrees TODO por no carmen.ini
@@ -422,19 +422,19 @@ velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_messa
 
 
 vector<image_cartesian>
-sick_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
+sick_camera_calibration_fuse_camera_lidar(carmen_laser_ldmrs_new_message *sick_message, carmen_camera_parameters camera_parameters,
                                                                          tf::Transformer *sick_transformation_tree,
 																		 unsigned int image_width, unsigned int image_height, unsigned int crop_x,
 																		 unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
 {
 	std::vector<image_cartesian> points;
-	double horizontal_angle = 0.0, vertical_angle = 0.0, previous_vertical_angle = 0.0, range = 0.0, previous_range = 0.0;
+	double horizontal_angle = 0.0, vertical_angle = 0.0, range = 0.0;
 	unsigned int image_x = 0, image_y = 0;
 
 	unsigned int max_x = crop_x + crop_width;
 	unsigned int max_y = crop_y + crop_height;
 
-	if (velodyne_message == NULL)
+	if (sick_message == NULL)
 		return (points);
 
 	double fx_meters = camera_parameters.fx_factor * camera_parameters.pixel_size * image_width;
@@ -443,66 +443,50 @@ sick_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_message *
 	double cu = camera_parameters.cu_factor * (double) image_width;
 	double cv = camera_parameters.cv_factor * (double) image_height;
 
-	for (int j = 0; j < velodyne_message->number_of_32_laser_shots; j++)
-	{
-		horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
 
-		if (horizontal_angle < -CAMERA_FOV || horizontal_angle > CAMERA_FOV) // Discharge measures out of the camera field of view
+	tf::StampedTransform sick_to_camera_pose;
+	sick_transformation_tree->lookupTransform("/camera", "/sick", tf::Time(0), sick_to_camera_pose);
+
+	for (int i = 0; i < sick_message->scan_points; i++)
+	{
+		horizontal_angle = sick_message->arraypoints[i].horizontal_angle;
+
+		if (horizontal_angle < -CAMERA_FOV || horizontal_angle > CAMERA_FOV)// Discharge measures out of the camera field of view
 			continue;
 
-		previous_range = (((double) velodyne_message->partial_scan[j].distance[0]) / 500.0);
-		previous_vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[0]));
+		range = sick_message->arraypoints[i].radial_distance;
 
-		for (int i = 1; i < 32; i++)
+		if (range <= SICK_MIN_RANGE || range >= SICK_MAX_RANGE)
+			continue;
+
+		vertical_angle = sick_message->arraypoints[i].vertical_angle;
+
+		tf::Point p3d_velodyne_reference = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+		if (p3d_velodyne_reference.x() > 0)
 		{
-			range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
+			tf::Point p3d_camera_reference = sick_to_camera_pose * p3d_velodyne_reference;
 
-			if (range <= SICK_MIN_RANGE || range >= SICK_MAX_RANGE)
-				continue;
+			image_x = (unsigned int) (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
+			image_y = (unsigned int) (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
 
-			vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[i]));
-
-			tf::Point p3d_velodyne_reference = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
-			tf::Point p3d_velodyne_reference_1 = spherical_to_cartesian(horizontal_angle, previous_vertical_angle, previous_range);
-
-			if (p3d_velodyne_reference.x() > 0)
+			if (image_x >= crop_x && image_x <= max_x && image_y >= crop_y && image_y <= max_y)
 			{
-				// Jose's method check if a point is obstacle
-				double delta_x = p3d_velodyne_reference.x() - p3d_velodyne_reference_1.x();
-				double delta_z = p3d_velodyne_reference.z() - p3d_velodyne_reference_1.z(); // TODO verificar calculo do z no mapper
+				image_cartesian point;
+				point.shot_number = i;
+				point.ray_number  = i;
+				point.image_x     = crop_width - image_x + crop_x;
+				point.image_y     = image_y - crop_y;
+				point.cartesian_x = p3d_velodyne_reference.x();
+				point.cartesian_y = p3d_velodyne_reference.y();             // Must be inverted because Velodyne angle is reversed with CARMEN angles
+				point.cartesian_z = p3d_velodyne_reference.z();
 
-				double line_angle = carmen_radians_to_degrees(fabs(atan2(delta_z, delta_x)));
-
-				if (!(line_angle > MIN_ANGLE_OBSTACLE) && (line_angle < MAX_ANGLE_OBSTACLE))
-					continue;
-
-				tf::StampedTransform sick_to_camera_pose;
-				sick_transformation_tree->lookupTransform("/camera", "/sick", tf::Time(0), sick_to_camera_pose);
-				tf::Point p3d_camera_reference = sick_to_camera_pose * p3d_velodyne_reference;
-
-				image_x = (unsigned int) (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
-                image_y = (unsigned int) (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
-
-                if (image_x >= crop_x && image_x <= max_x && image_y >= crop_y && image_y <= max_y)
-                {
-                	image_cartesian point;
-                	point.shot_number = j;
-                	point.ray_number  = i;
-                	point.image_x     = image_x - crop_x;
-                	point.image_y     = image_y - crop_y;
-                	point.cartesian_x = p3d_velodyne_reference.x();
-                	point.cartesian_y = -p3d_velodyne_reference.y();             // Must be inverted because Velodyne angle is reversed with CARMEN angles
-                	point.cartesian_z = p3d_velodyne_reference.z();
-
-                	points.push_back(point);
-                }
+				points.push_back(point);
 			}
-			previous_range = range;
-			previous_vertical_angle = vertical_angle;
 		}
 	}
 	return points;
 }
+
 
 void
 initialize_transformations(carmen_pose_3D_t board_pose, carmen_pose_3D_t camera_pose, tf::Transformer *transformer)

@@ -85,7 +85,7 @@ velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_messa
 																		 unsigned int crop_y, unsigned int crop_width, unsigned int crop_height);
 
 vector<image_cartesian>
-sick_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
+sick_camera_calibration_fuse_camera_lidar(carmen_laser_ldmrs_new_message *sick_message, carmen_camera_parameters camera_parameters,
                                                                          tf::Transformer *sick_transformation_tree,
 																		 unsigned int image_width, unsigned int image_height, unsigned int crop_x,
 																		 unsigned int crop_y, unsigned int crop_width, unsigned int crop_height);
