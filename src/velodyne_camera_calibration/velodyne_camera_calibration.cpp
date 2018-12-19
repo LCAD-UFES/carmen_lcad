@@ -147,7 +147,6 @@ carmen_sick_camera_calibration_lasers_points_in_camera(carmen_laser_ldmrs_new_me
 	tf::StampedTransform sick_to_camera_pose;
 	sick_transformation_tree->lookupTransform("/camera", "/sick", tf::Time(0), sick_to_camera_pose);
 
-
 	double fx_meters = camera_parameters.fx_factor * image_width * camera_parameters.pixel_size;
 	double fy_meters = camera_parameters.fy_factor * image_height * camera_parameters.pixel_size;
 
@@ -434,6 +433,9 @@ sick_camera_calibration_fuse_camera_lidar(carmen_laser_ldmrs_new_message *sick_m
 	unsigned int max_x = crop_x + crop_width;
 	unsigned int max_y = crop_y + crop_height;
 
+
+	printf("BUG\n");
+
 	if (sick_message == NULL)
 		return (points);
 
@@ -451,8 +453,8 @@ sick_camera_calibration_fuse_camera_lidar(carmen_laser_ldmrs_new_message *sick_m
 	{
 		horizontal_angle = sick_message->arraypoints[i].horizontal_angle;
 
-		if (horizontal_angle < -CAMERA_FOV || horizontal_angle > CAMERA_FOV)// Discharge measures out of the camera field of view
-			continue;
+//		if (horizontal_angle < -CAMERA_FOV || horizontal_angle > CAMERA_FOV)// Discharge measures out of the camera field of view
+//			continue;
 
 		range = sick_message->arraypoints[i].radial_distance;
 
@@ -538,15 +540,15 @@ initialize_sick_transformations(carmen_pose_3D_t board_pose, carmen_pose_3D_t ca
 	// bull pose with respect to the car
 	bull_to_car_pose.setOrigin(tf::Vector3(bullbar_pose.position.x, bullbar_pose.position.y, bullbar_pose.position.z));
 	bull_to_car_pose.setRotation(tf::Quaternion(bullbar_pose.orientation.yaw, bullbar_pose.orientation.pitch, bullbar_pose.orientation.roll)); // yaw, pitch, roll
-	tf::StampedTransform bull_to_car_transform(bull_to_car_pose, tf::Time(0), "/car", "/sick");
+	tf::StampedTransform bull_to_car_transform(bull_to_car_pose, tf::Time(0), "/car", "/bull");
 	transformer->setTransform(bull_to_car_transform, "bull_to_car_transform");
 
 	// sick pose with respect to the bull
-//	tf::Transform sick_to_bull_pose;
-//	sick_to_bull_pose.setOrigin(tf::Vector3(sick_pose.position.x, sick_pose.position.y, sick_pose.position.z));
-//	sick_to_bull_pose.setRotation(tf::Quaternion(sick_pose.orientation.yaw, sick_pose.orientation.pitch, sick_pose.orientation.roll));
-//	tf::StampedTransform sick_to_bull_transform(sick_to_bull_pose, tf::Time(0), "/bull", "/sick");
-//	transformer->setTransform(sick_to_bull_transform, "sick_to_bull_transform");
+	tf::Transform sick_to_bull_pose;
+	sick_to_bull_pose.setOrigin(tf::Vector3(sick_pose.position.x, sick_pose.position.y, sick_pose.position.z));
+	sick_to_bull_pose.setRotation(tf::Quaternion(sick_pose.orientation.yaw, sick_pose.orientation.pitch, sick_pose.orientation.roll));
+	tf::StampedTransform sick_to_bull_transform(sick_to_bull_pose, tf::Time(0), "/bull", "/sick");
+	transformer->setTransform(sick_to_bull_transform, "sick_to_bull_transform");
 
 }
 

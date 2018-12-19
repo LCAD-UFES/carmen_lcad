@@ -10,7 +10,6 @@ char **classes_names;
 void *network_struct;
 carmen_localize_ackerman_globalpos_message *globalpos_msg;
 carmen_velodyne_partial_scan_message *velodyne_msg;
-carmen_velodyne_partial_scan_message sick_converted_to_velodyne_msg;
 carmen_laser_ldmrs_new_message* sick_laser_message;
 carmen_camera_parameters camera_parameters;
 carmen_pose_3D_t velodyne_pose;
@@ -21,6 +20,8 @@ carmen_pose_3D_t sick_pose;
 tf::Transformer transformer_sick;
 
 vector<carmen_velodyne_partial_scan_message> velodyne_vector; //used to correct camera delay
+vector<carmen_laser_ldmrs_new_message> sick_vector; //used to correct camera delay
+
 #define CAM_DELAY 0.2
 #define MAX_POSITIONS 10
 
@@ -46,9 +47,27 @@ find_velodyne_most_sync_with_cam(double bumblebee_timestamp)  // TODO is this ne
     return (velodyne);
 }
 
-int board_x = 0.572;      // TODO ler do carmen ini
-int board_y = 0.0;
-int board_z = 2.154;
+carmen_laser_ldmrs_new_message
+find_sick_most_sync_with_cam(double bumblebee_timestamp)  // TODO is this necessary?
+{
+	bumblebee_timestamp -= CAM_DELAY;
+	carmen_laser_ldmrs_new_message sick;
+    double minTimestampDiff = DBL_MAX;
+    int minTimestampIndex = -1;
+
+    for (unsigned int i = 0; i < sick_vector.size(); i++)
+    {
+        if (fabs(sick_vector[i].timestamp - bumblebee_timestamp) < minTimestampDiff)
+        {
+            minTimestampIndex = i;
+            minTimestampDiff = fabs(sick_vector[i].timestamp - bumblebee_timestamp);
+        }
+    }
+
+    sick = sick_vector[minTimestampIndex];
+    return (sick);
+}
+
 
 //Pedestrian related funcitons and structs --------
 #define P_BUFF_SIZE 16
@@ -568,7 +587,6 @@ filter_object_points_using_dbscan(vector<vector<image_cartesian>> &points_lists)
 	{
 		vector<vector<image_cartesian>> clusters = dbscan_compute_clusters(0.5, 1, points_lists[i]);        // Compute clusters using dbscan
 
-		printf("Points: %d -- Clusters: %d\n",points_lists[i].size(),clusters.size());
 		if (clusters.size() == 0)                                          // If dbscan returned zero clusters
 		{
 			vector<image_cartesian> empty_cluster;
@@ -736,7 +754,7 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 	{                                                                                                               // The error code of -999.0 is set on compute_detected_objects_poses,
 		if ((get_pedestrian_x(tmp_predictions[i]) != -999.0 || get_pedestrian_y(tmp_predictions[i]) != -999.0)&&tmp_predictions[i].active)                       // probably the object is out of the LiDAR's range
 		{
-//			carmen_translte_2d(&tmp_predictions[i].x_world[tmp_predictions[i].circular_idx], &tmp_predictions[i].y_world[tmp_predictions[i].circular_idx], board_x, board_y);
+//			carmen_translte_2d(&tmp_predictions[i].x_world[tmp_predictions[i].circular_idx], &tmp_predictions[i].y_world[tmp_predictions[i].circular_idx], board_pose.position.x, board_pose.position.y);
 //			carmen_rotate_2d  (&tmp_predictions[i].x_world[tmp_predictions[i].circular_idx], &tmp_predictions[i].y_world[tmp_predictions[i].circular_idx], carmen_normalize_theta(globalpos.theta));
 //			carmen_translte_2d(&tmp_predictions[i].x_world[tmp_predictions[i].circular_idx], &tmp_predictions[i].y_world[tmp_predictions[i].circular_idx], globalpos.x, globalpos.y);
 
@@ -780,7 +798,7 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 				p.y = points_lists[i][j].cartesian_y;
 				p.z = points_lists[i][j].cartesian_z;
 
-				carmen_translte_2d(&p.x, &p.y, board_x, board_y);
+				carmen_translte_2d(&p.x, &p.y, board_pose.position.x, board_pose.position.y);
 				carmen_rotate_2d  (&p.x, &p.y, globalpos_msg->globalpos.theta);
 				carmen_translte_2d(&p.x, &p.y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
 
@@ -866,7 +884,7 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 			{
 				//printf("%lf %lf\n", points_inside_bbox[i][j].cartesian_x, points_inside_bbox[i][j].cartesian_y);
 
-				//carmen_translte_3d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, &points_inside_bbox[i][j].cartesian_z, board_x, board_y, board_pose.position.z);
+				//carmen_translte_3d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, &points_inside_bbox[i][j].cartesian_z, board_pose.position.x, board_pose.position.y, board_pose.position.z);
 				carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, board_pose.position.x, board_pose.position.y);
 				carmen_rotate_2d  (&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos_msg->globalpos.theta);
 				carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
@@ -918,6 +936,7 @@ void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
+	carmen_laser_ldmrs_new_message sick_sync_with_cam;
 
 	if (image_msg == NULL)
 		return;
@@ -926,6 +945,12 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 		velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp);
 	else
 		return;
+
+	if (sick_vector.size() > 0)
+		sick_sync_with_cam = find_sick_most_sync_with_cam(image_msg->timestamp);
+	else
+		return;
+
 
 	double fps;
 	static double start_time = 0.0;
@@ -944,6 +969,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
+
 
 //	vector<carmen_velodyne_points_in_cam_t> sick_points = carmen_sick_camera_calibration_lasers_points_in_camera(sick_laser_message,
 //																   camera_parameters,
@@ -965,10 +991,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	call_python_function(open_cv_image.data, predictions, image_msg->timestamp);
 	///////////////
 
-//	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose,
-//			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
-	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(sick_laser_message, camera_parameters, &transformer_sick,
+	printf("ssss\n");
+	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose,
 			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+//	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_parameters, &transformer_sick,
+//			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 
 	vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(pedestrian_tracks, points); // TODO remover bbox que nao tenha nenhum ponto
 
@@ -980,7 +1007,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	{
 		if (!(positions[i].cartesian_x == -999.0 && positions[i].cartesian_y == -999.0))
 		{
-			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, board_x, board_y);
+			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, board_pose.position.x, board_pose.position.y);
+//			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, bullbar_pose.position.x, bullbar_pose.position.y); //bullbar if the points are from sick, board if the points are from velodyne
 			carmen_rotate_2d  (&positions[i].cartesian_x, &positions[i].cartesian_y, carmen_normalize_theta(globalpos_msg->globalpos.theta));
 			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
 
@@ -1035,6 +1063,34 @@ void
 carmen_laser_ldmrs_new_message_handler(carmen_laser_ldmrs_new_message* laser_message)
 {
 	sick_laser_message = laser_message;
+
+	carmen_laser_ldmrs_new_message sick_copy;
+	sick_copy.host = sick_laser_message->host;
+	sick_copy.angle_ticks_per_rotation = sick_laser_message->angle_ticks_per_rotation;
+	sick_copy.end_angle = sick_laser_message->end_angle;
+	sick_copy.flags = sick_laser_message->flags;
+	sick_copy.scan_end_time = sick_laser_message->scan_end_time;
+	sick_copy.scan_number = sick_laser_message->scan_number;
+	sick_copy.scan_points = sick_laser_message->scan_points;
+	sick_copy.scan_start_time = sick_laser_message->scan_start_time;
+	sick_copy.scanner_status = sick_laser_message->scanner_status;
+	sick_copy.start_angle = sick_laser_message->start_angle;
+	sick_copy.sync_phase_offset = sick_laser_message->sync_phase_offset;
+	sick_copy.timestamp = sick_laser_message->timestamp;
+
+	sick_copy.arraypoints = (carmen_laser_ldmrs_new_point *) malloc(
+			sizeof(carmen_laser_ldmrs_new_point) * sick_laser_message->scan_points);
+
+	memcpy(sick_copy.arraypoints, sick_laser_message->arraypoints,
+			sizeof(carmen_laser_ldmrs_new_point) * sick_laser_message->scan_points);
+
+	sick_vector.push_back(sick_copy);
+
+	if (sick_vector.size() > MAX_POSITIONS)
+	{
+		free(sick_vector.begin()->arraypoints);
+		sick_vector.erase(sick_vector.begin());
+	}
 }
 
 
