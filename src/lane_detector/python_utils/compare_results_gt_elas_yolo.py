@@ -79,6 +79,13 @@ def show_image(gt_points, predictions_points, chosen_points_list, chosen_points_
 	for p in gt_points:
 		cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (255,0,0), 2)
 		
+	cv2.line(img, (gt_points[0][0], gt_points[0][1]), (gt_points[1][0], gt_points[1][1]), (255,0,0), 1)
+	cv2.line(img, (gt_points[1][0], gt_points[1][1]), (gt_points[2][0], gt_points[2][1]), (255,0,0), 1)
+	cv2.line(img, (gt_points[2][0], gt_points[2][1]), (gt_points[3][0], gt_points[3][1]), (255,0,0), 1)
+	cv2.line(img, (gt_points[4][0], gt_points[4][1]), (gt_points[5][0], gt_points[5][1]), (255,0,0), 1)
+	cv2.line(img, (gt_points[5][0], gt_points[5][1]), (gt_points[6][0], gt_points[6][1]), (255,0,0), 1)
+	cv2.line(img, (gt_points[6][0], gt_points[6][1]), (gt_points[7][0], gt_points[7][1]), (255,0,0), 1)
+		
 	for p in chosen_points_list:
 		cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (0,255,255), 2)
 		
@@ -89,8 +96,8 @@ def show_image(gt_points, predictions_points, chosen_points_list, chosen_points_
 		cv2.imshow('Lane Detector Compute Error', img)
 		key = cv2.waitKey(0) & 0xff
 		
-		if key == 10:      # Enter key
-			cv2.imwrite(gt_file_name.replace('txt', 'png'), img)
+		if key == 10 or key == 13:      # Enter key
+			#cv2.imwrite(gt_file_name.replace('txt', 'png'), img)
 			break
 		elif key == 27:    # ESC key
 			sys.exit()

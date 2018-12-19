@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <carmen/carmen.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
 
@@ -30,6 +32,25 @@ str_ends_with(const char * str, const char * suffix)          // Returns 1 if st
 }
 
 
+cv::Vec3b
+transform_map_to_image(double gt_cell, double map_cell)
+{
+	if (gt_cell >= 0.0 && map_cell >= 0.0)
+	{
+		if (gt_cell >  IS_OBSTACLE && map_cell >  IS_OBSTACLE)
+			return cv::Vec3b(0,0,0);
+		if (gt_cell <= IS_OBSTACLE && map_cell <= IS_OBSTACLE)
+			return cv::Vec3b(255,255,255);
+		if (gt_cell <= IS_OBSTACLE && map_cell >  IS_OBSTACLE)
+			return cv::Vec3b(0,0,255);
+		if (gt_cell >  IS_OBSTACLE && map_cell <= IS_OBSTACLE)
+			return cv::Vec3b(31,172,255);
+	}
+
+	return cv::Vec3b(255, 144, 30);
+}
+
+
 void
 compute_map_diff(char *gt_path, char *map_path)
 {
@@ -42,6 +63,7 @@ compute_map_diff(char *gt_path, char *map_path)
 		if (carmen_map_read_gridmap_chunk(map_path, &map) == 0)
 		{
 			printf("Opening map:    %s\n", map_path);
+			cv::Mat img = cv::Mat(cv::Size(gt_map.config.x_size, gt_map.config.y_size), CV_8UC3, cv::Scalar(255, 144, 30));
 
 			int size = gt_map.config.x_size * gt_map.config.y_size;
 			for (int i = 0; i < size; i++)
@@ -56,8 +78,19 @@ compute_map_diff(char *gt_path, char *map_path)
 					false_positives += (gt_map.complete_map[i] <= IS_OBSTACLE && map.complete_map[i] >  IS_OBSTACLE);
 					false_negatives += (gt_map.complete_map[i] >  IS_OBSTACLE && map.complete_map[i] <= IS_OBSTACLE);
 				}
+				int x = int(gt_map.config.y_size - 1 - (i % gt_map.config.x_size));
+				int y = int(i / gt_map.config.x_size);
+				img.at<cv::Vec3b>(cv::Point(y, x)) = transform_map_to_image(gt_map.complete_map[i], map.complete_map[i]);
 			}
 			carmen_map_free_gridmap(&map);
+
+			char img_name[1024];
+			sprintf(img_name, "%s.png", map_path);
+
+			resize(img, img, cv::Size(0, 0), 2.5, 2.5, cv::INTER_NEAREST);
+			imwrite(img_name, img);
+			//imshow("Map", img);
+			//cv::waitKey(0);
 		}
 		else
 			printf("Could not read map: %s\n", map_path);
@@ -143,9 +176,9 @@ compute_maps_difference(char *gt_dir_path, char *map_dir_path)
 int
 main(int argc, char **argv)
 {
-	if (argc < 3)
+	if (argc < 3 || argc > 4)
 	{
-		printf("\nUsage: %s <ground_truth_map_path> <map_path>\n\n", argv[0]);
+		printf("\nUsage: %s <ground_truth_map_path> <map_path> -show\n\n", argv[0]);
 		return 0;
 	}
 

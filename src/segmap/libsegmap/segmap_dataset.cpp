@@ -72,7 +72,11 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 			if (view)
 				circle(viewer_img, Point(x, y), 2, Scalar(0,0,255), -1);
 
-			cloud->push_back(point2);
+            /*
+            printf("** WARNING: REMOVING MAX RANGE AT SEGMAP_DATASET.CPP **\n");
+            if (point.x < 70.)
+    			cloud->push_back(point2);
+            */
 		}
 
 		// to use remission
@@ -295,7 +299,7 @@ DatasetCarmen::load_data()
 
 	fclose(f);
 
-	data_file = _path + "/optimized_jointly.txt";
+	data_file = _path + "/optimized.txt";
 	f = fopen(data_file.c_str(), "r");
 
 	if (f == NULL)
