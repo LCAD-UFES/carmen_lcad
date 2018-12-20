@@ -37,14 +37,17 @@ LFLAGS += -lvtkCommon -lvtkFiltering -lvtkRendering -lpcl_common -lpcl_surface -
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter -lprob_models -lrotation_geometry
 LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp -lvtkGraphics -lsegmap 
-LFLAGS += `pkg-config --libs opencv`
+LFLAGS += `pkg-config --libs opencv` -lboost_system -lsegmap
 
-SOURCES = generate_loop_closures.cpp graphslam.cpp joint_graphslam.cpp loop_closures_tests.cpp
-TARGETS = generate_loop_closures graphslam joint_graphslam loop_closures_tests
+IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
+LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization
+
+SOURCES = generate_loop_closures.cpp graphslam.cpp joint_graphslam.cpp gicp_odometry.cpp graphslam_util.cpp
+TARGETS = generate_loop_closures graphslam joint_graphslam gicp_odometry 
 
 generate_loop_closures: generate_loop_closures.o
-graphslam:  graphslam.o
-joint_graphslam: joint_graphslam.o
-loop_closures_tests: loop_closures_tests.o
+graphslam: graphslam.o
+joint_graphslam: joint_graphslam.o graphslam_util.o ../libsegmap/libsegmap.a
+gicp_odometry: gicp_odometry.o graphslam_util.o ../libsegmap/libsegmap.a
 
 include $(CARMEN_HOME)/src/Makefile.rules

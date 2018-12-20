@@ -7,6 +7,7 @@ GPS_ORIENTATION_TAG = 'NMEAHDT'
 ODOM_TAG = 'ROBOTVELOCITY_ACK'
 CAMERA_TAG = 'BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3'
 VELODYNE_TAG = 'VELODYNE_PARTIAL_SCAN_IN_FILE'
+XSENS_TAG = 'XSENS_QUAT'  
 
 
 def find_near(s, queue, key):
@@ -43,8 +44,12 @@ def add_to_queue(queue, data):
 def process_log(log, data):
     f = open(log, 'r')
     
-    queue = {'gps1': [], 'gps_orientation': [], 'odom': [], 'camera': [], 'velodyne': []}
-    #velodynes = []
+    queue = {'gps1': [], 
+        'gps_orientation': [], 
+        'odom': [], 
+        'camera': [], 
+        'velodyne': [],
+        'xsens': []}
     
     s = f.readline().rstrip().lstrip()
     while s != '':
@@ -64,18 +69,20 @@ def process_log(log, data):
                 #save_sync_data(s, queue)
                 #velodynes.append(s)
                 add_to_queue(queue['velodyne'], s)
+            elif XSENS_TAG in s[0]:
+                add_to_queue(queue['xsens'], s)
             
         s = f.readline().rstrip().lstrip()     
     
     f.close()
-    save_sync_data(queue, 'camera', ['velodyne', 'camera', 'gps1', 'gps_orientation', 'odom'])
+    save_sync_data(queue, 'camera', ['velodyne', 'camera', 'gps1', 'gps_orientation', 'odom', 'xsens'])
     
 
 if __name__ == "__main__":
     args = sys.argv
     
     if len(args) < 2:
-        print("\n\nUse python %s [log list]\n\n" % args[0])
+        print("\n\nUse python %s [log name]\n\n" % args[0])
     else:
         logs = args[1:]
         data = []

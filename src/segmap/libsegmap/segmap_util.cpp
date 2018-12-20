@@ -13,6 +13,7 @@
 using namespace cv;
 using namespace std;
 using namespace Eigen;
+using namespace pcl;
 
 
 Mat
@@ -99,6 +100,13 @@ pose6d_to_matrix(double x, double y, double z, double roll, double pitch, double
 		0, 0, 0, 1;
 
     return T;
+}
+
+
+Matrix<double, 4, 4> 
+pose3d_to_matrix(double x, double y, double theta)
+{
+	return pose6d_to_matrix(x, y, 0., 0., 0., theta);
 }
 
 
@@ -272,16 +280,23 @@ dist2d(double x1, double y1, double x2, double y2)
 
 
 void
-ackerman_motion_model(Pose2d &pose, double v, double phi, double dt)
+ackerman_motion_model(double &x, double &y, double &th, double v, double phi, double dt)
 {
 	if (fabs(phi) > degrees_to_radians(80))
 		exit(printf("Error phi = %lf\n", radians_to_degrees(phi)));
 
+	double ds = dt * v;
+	x += ds * cos(th);
+	y += ds * sin(th);
+	th += (ds / distance_between_front_and_rear_axles) * tan(phi);
+	th = normalize_theta(th);
+}
 
-	pose.x = pose.x + dt * v * cos(pose.th);
-	pose.y = pose.y + dt * v * sin(pose.th);
-	pose.th = pose.th + dt * (v / distance_between_front_and_rear_axles) * tan(phi);
-	pose.th = normalize_theta(pose.th);
+
+void
+ackerman_motion_model(Pose2d &pose, double v, double phi, double dt)
+{
+	ackerman_motion_model(pose.x, pose.y, pose.th, v, phi, dt);
 }
 
 
@@ -343,3 +358,5 @@ transform_pointcloud(PointCloud<PointXYZRGB>::Ptr cloud,
 		ackerman_motion_model(correction, v, phi, (TIME_SPENT_IN_EACH_SCAN / 32.));
 	}
 }
+
+

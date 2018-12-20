@@ -75,8 +75,8 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
             /*
             printf("** WARNING: REMOVING MAX RANGE AT SEGMAP_DATASET.CPP **\n");
             if (point.x < 70.)
-    			cloud->push_back(point2);
             */
+    			cloud->push_back(point2);
 		}
 
 		// to use remission
@@ -268,6 +268,7 @@ DatasetCarmen::load_data()
 	char dummy[256];
 	double offset_x = 7757677.517731;
 	double offset_y = -363602.117405;
+	double q0, q1, q2, q3;
 
 	while (!feof(f))
 	{
@@ -288,40 +289,63 @@ DatasetCarmen::load_data()
 		n_read = fscanf(f, " %s %lf %lf %lf\n", dummy, &sample.v, &sample.phi, &sample.odom_time);
 		if (n_read != 4) continue;
 
+		n_read = fscanf(f, " %s %s %s %s %lf %lf %lf %lf %s %s %s %s %s %s %s %s %lf\n", 
+			dummy, dummy, dummy, dummy, 
+			&q0, &q1, &q2, &q3,
+			dummy, dummy, dummy, 
+			dummy, dummy, dummy, 
+			dummy, dummy, &sample.xsens_time);
+		if (n_read != 17) exit(printf("Error: xsens data not found at '%s'!\n", data_file.c_str()));
+
+		sample.xsens = Quaterniond(q0, q1, q2, q3);
 		sample.gps.x -= offset_x;
 		sample.gps.y -= offset_y;
 		sample.gps.y = -sample.gps.y;
 		sample.gps.th = normalize_theta(-sample.gps.th);
 		sample.phi = normalize_theta(-sample.phi);
+		sample.pose = Pose2d(0., 0., 0.);
 
 		data.push_back(sample);
 	}
 
 	fclose(f);
 
+	string name = _path + "/odom_calib_stderr.txt";
+	f = fopen(name.c_str(), "r");
+
+	if (f == NULL)
+		exit(printf("Error: file '%s' not found.\n", name.c_str()));
+
+	fscanf(f, "%s %s %lf %s %s %s %lf %lf %s %s %lf",
+		dummy, dummy, &odom_calib.mult_v, dummy, dummy, dummy, 
+		&odom_calib.mult_phi, &odom_calib.add_phi, dummy, dummy, 
+		&odom_calib.init_angle);
+
 	data_file = _path + "/optimized.txt";
 	f = fopen(data_file.c_str(), "r");
 
 	if (f == NULL)
-		exit(printf("File '%s' not found.\n", data_file.c_str()));
-
-	for (int i = 0; i < data.size(); i++)
+		printf("Warning: File '%s' not found. Filling poses with zeros.\n", data_file.c_str());
+	else
 	{
-		fscanf(f, "\n%s %lf %lf %lf %s %s %s %s %s\n",
-				dummy, &data[i].pose.x, &data[i].pose.y, &data[i].pose.th,
-				dummy, dummy, dummy, dummy, dummy);
+		for (int i = 0; i < data.size(); i++)
+		{
+			fscanf(f, "\n%s %lf %lf %lf %s %s %s %s %s\n",
+					dummy, &data[i].pose.x, &data[i].pose.y, &data[i].pose.th,
+					dummy, dummy, dummy, dummy, dummy);
 
-		data[i].pose.x -= offset_x;
-		data[i].pose.y -= offset_y;
-		data[i].pose.y = -data[i].pose.y;
-		data[i].pose.th = normalize_theta(-data[i].pose.th);
+			data[i].pose.x -= offset_x;
+			data[i].pose.y -= offset_y;
+			data[i].pose.y = -data[i].pose.y;
+			data[i].pose.th = normalize_theta(-data[i].pose.th);
 
-//		printf("%lf %lf %lf %lf %lf %lf\n",
-//				data[i].gps.x, data[i].gps.y, data[i].gps.th,
-//				data[i].pose.x, data[i].pose.y, data[i].pose.th);
+	//		printf("%lf %lf %lf %lf %lf %lf\n",
+	//				data[i].gps.x, data[i].gps.y, data[i].gps.th,
+	//				data[i].pose.x, data[i].pose.y, data[i].pose.th);
+		}
+
+		fclose(f);
 	}
-
-	fclose(f);
 }
 
 
