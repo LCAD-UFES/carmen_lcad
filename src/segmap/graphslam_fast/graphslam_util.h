@@ -56,6 +56,7 @@ run_gicp(
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr target, 
 	Matrix<double, 4, 4> *correction, 
 	int *converged, 
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr output);
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr output,
+	double leaf_size=0.3);
 
 #endif
