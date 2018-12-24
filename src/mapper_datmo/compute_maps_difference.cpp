@@ -18,7 +18,9 @@ int false_negatives = 0;
 char *save_png_path = NULL;
 char *poses_filename = NULL;
 vector<carmen_point_t> poses_array;
-double radius = 999999;
+carmen_point_t from_pose = {0.0, 0.0, 0.0};
+carmen_point_t to_pose = {0.0, 0.0, 0.0};
+double radius = 5.0;
 bool show_map_diff = false;
 
 
@@ -41,7 +43,7 @@ str_ends_with(const char * str, const char * suffix)          // Returns 1 if st
 cv::Mat
 get_area_of_interest_from_poses_array(carmen_map_config_t map_config, double radius)
 {
-	if (sqrt((map_config.x_size * map_config.x_size) + (map_config.y_size * map_config.y_size)) / 2 <= radius)
+	if (poses_array.empty() || radius <= 0.0)
 		return cv::Mat(cv::Size(map_config.x_size, map_config.y_size), CV_8UC3, cv::Scalar(1,1,1));
 
 	cv::Mat area_of_interest = cv::Mat(cv::Size(map_config.x_size, map_config.y_size), CV_8UC3, cv::Scalar(2,2,2));
@@ -128,6 +130,8 @@ compute_map_diff(char *gt_path, char *map_path, char *save_path)
 
 			if (show_map_diff)
 			{
+				cv::namedWindow(filename);
+				cv::moveWindow(filename, 10, 10);
 				imshow(filename, img);
 				cv::waitKey(0);
 				cv::destroyWindow(filename);
@@ -227,7 +231,8 @@ compute_maps_difference(char *gt_dir_path, char *map_dir_path)
 void
 usage(char *program)
 {
-	fprintf(stderr, "\nUsage: %s <ground_truth_map_path> <map_path> -save <save_png_path> -poses <poses_file> -radius <meters> -show\n\n", program);
+	fprintf(stderr, "\nUsage: %s <ground_truth_map_path> <map_path> -save <save_png_path> "
+			"-poses <poses_file> -from <x> <y> -to <x> <y> -radius <meters> -show\n\n", program);
 }
 
 
@@ -250,6 +255,8 @@ read_poses(char *filename)
     char non_whitespace;
     carmen_point_t pose;
     double timestamp;
+    bool from_reached = (from_pose.x == 0.0);
+    bool to_reached = false;
 
 	if (poses_file == NULL)
 		return 0;
@@ -265,7 +272,12 @@ read_poses(char *filename)
 			fprintf(stderr, "\nPoses file format error on line %d: %s\n", line_num, line);
 			return 0;
 		}
-		poses_array.push_back(pose);
+
+		from_reached |= (DIST2D(pose, from_pose) <= radius);
+		to_reached |= ((DIST2D(pose, to_pose) <= radius) && (to_pose.x != 0.0));
+
+		if (from_reached && !to_reached)
+			poses_array.push_back(pose);
 	}
 	free(line);
 	fclose(poses_file);
@@ -277,6 +289,8 @@ read_poses(char *filename)
 void
 read_parameters(int argc, char **argv)
 {
+	int arg_num = 0;
+
 	for (int i = 3; i < argc; i++)
 	{
 		if (strcmp(argv[i], "-save") == 0)
@@ -296,16 +310,42 @@ read_parameters(int argc, char **argv)
 			if (poses_filename)
 				exit_error("\nOnly one -poses option allowed [%d]: %s\n", i, argv);
 			poses_filename = argv[i];
-			if (read_poses(poses_filename) == 0)
-				exit_error("\nCould not read poses from file [%d]: %s\n", i, argv);
+			arg_num = i;
+		}
+		else if (strcmp(argv[i], "-from") == 0)
+		{
+			i += 2;
+			if (i >= argc)
+				exit_error("\nCoordinates <x> <y> expected after [%d]: %s\n", i - 2, argv);
+			if (from_pose.x != 0.0)
+				exit_error("\nOnly one -from option allowed [%d]: %s\n", i - 1, argv);
+			char *px, *py;
+			from_pose.x = strtod(argv[i - 1], &px);
+			from_pose.y = strtod(argv[i], &py);
+			if ((*px) != 0 || (*py) != 0)
+				exit_error("\nInvalid coordinates <x> <y> [%d]: %s\n", i - ((*px) != 0), argv);
+		}
+		else if (strcmp(argv[i], "-to") == 0)
+		{
+			i += 2;
+			if (i >= argc)
+				exit_error("\nCoordinates <x> <y> expected after [%d]: %s\n", i - 2, argv);
+			if (to_pose.x != 0.0)
+				exit_error("\nOnly one -to option allowed [%d]: %s\n", i - 1, argv);
+			char *px, *py;
+			to_pose.x = strtod(argv[i - 1], &px);
+			to_pose.y = strtod(argv[i], &py);
+			if ((*px) != 0 || (*py) != 0)
+				exit_error("\nInvalid coordinates <x> <y> [%d]: %s\n", i - ((*px) != 0), argv);
 		}
 		else if (strcmp(argv[i], "-radius") == 0)
 		{
 			i++;
 			if (i == argc)
 				exit_error("\nDistance (meters) expected after [%d]: %s\n", i - 1, argv);
-			radius = atof(argv[i]);
-			if (radius <= 0.0)
+			char *p;
+			radius = strtod(argv[i], &p);
+			if (radius <= 0.0 || (*p) != 0)
 				exit_error("\nRadius must have a positive value [%d]: %s\n", i, argv);
 		}
 		else if (strcmp(argv[i], "-show") == 0)
@@ -315,6 +355,8 @@ read_parameters(int argc, char **argv)
 		else
 			exit_error("\nInvalid option [%d]: %s\n", i, argv);
 	}
+	if (poses_filename && read_poses(poses_filename) == 0)
+		exit_error("\nCould not read poses from file [%d]: %s\n", arg_num, argv);
 }
 
 
@@ -322,7 +364,7 @@ int
 main(int argc, char **argv)
 {
 	if (argc < 3)
-		exit_error("\nToo few arguments\n", 0, argv);
+		exit_error("", argc, argv);
 
 	read_parameters(argc, argv);
 
