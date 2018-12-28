@@ -1,149 +1,258 @@
 #!/bin/bash
-USAGE="Usage: $0 <map_png_directory> [<map_length_meters>]"
-nl='\n'
-if ! [ -x "$(command -v inkscape)" ]; then echo "This script requires the Inkscape graphics software. You may download and install it from http://www.inkscape.org"; exit; fi
-if [ $# -eq 0 ]; then echo "$USAGE"; exit; fi
-if [ $# -gt 2 ]; then echo -e "Too many arguments"$nl"$USAGE"; exit; fi
-directory=$1
-if ! [ -d $directory ]; then echo -e "$1: No such directory"$nl"$USAGE"; exit; fi
-if [ $# -eq 2 ]; then map_length=$(bc <<< $2 2> /dev/null); else map_length=70; fi
-if [ "$map_length" = "" ] || [ $(bc <<< "$map_length <= 0") -eq 1 ]; then echo -e "$2: Invalid map length in meters"$nl"$USAGE"; exit; fi
 
-count=0
-for filename in $directory/m*_*.map.png; do
-	fileinfo=$(file $filename)
-	fileinfo=${fileinfo#"$filename: "}
+USAGE="
+Usage: $0 <directory> <file_pattern> <map_width_meters> <map_height_meters>
+  file_pattern:       default = m{x}_{y}.map.png
+  map_width_meters:   default = 70
+  map_height_meters:  default = <map_width_meters>
+"
 
-	x=${filename#$directory/m}
-	x=${x%_*.map.png}
-	y=${filename#$directory/m*_}
-	y=${y%.map.png}
+######## Prerequisites ##########
 
-	if [ $count -eq 0 ]; then
-		common_fileinfo=$fileinfo
-		width=${fileinfo#"PNG image data, "}
-		width=${width%%" x "*}
-		height=${fileinfo#"PNG image data, "*" x "}
-		height=${height%%", "*}
+if [[ ! -x "$(command -v inkscape)" ]]; then 
+	echo -e "\nThis script requires the Inkscape graphics software. You may download and install it from http://www.inkscape.org\n"
+	exit
+fi
 
-		x_min=$x
-		x_max=$x
-		y_min=$y
-		y_max=$y
+########### Defaults ############
+
+file_pattern="m{x}_{y}.map.png"
+map_width=70
+
+########## Functions ############
+
+function usage()
+{
+	echo -e "$USAGE"
+	exit $1
+}
+
+function usage_error()
+{
+	echo -e "\n$1"
+	usage 1
+}
+
+function get_x_from_filename()
+{
+	x_value=${1#$x_prefix}
+	x_value=${x_value%$x_suffix}
+	echo $x_value
+}
+
+function get_y_from_filename()
+{
+	y_value=${1#$y_prefix}
+	y_value=${y_value%$y_suffix}
+	echo $y_value
+}
+
+function get_imagetype()
+{
+	types="PNG JPEG"
+	for t in $types; do
+		tag="*$t image data*"
+		if [[ $1 = $tag ]]; then
+			echo $t
+			return
+		fi
+	done
+	echo 'null'
+}
+
+function get_imagesize()
+{
+	size=0x0
+	imagetype=$(get_imagetype "$1")
+	case $imagetype in
+		PNG) 
+			size=${1#$imagetype" image data, "}
+			size=${size%%", "*}
+			size=${size// /}
+			;;
+		JPEG)
+			size=${1#*precision*", "}
+			size=${size%%", "*}
+			;;
+	esac
+	echo $size
+}
+
+function is_file_pattern_ok()
+{
+	if [[ $1 != *{x}* ]] || [[ $1 != *{y}* ]] || [[ $1 = *{x}*{x}* ]] || [[ $1 = *{y}*{y}* ]]; then
+		echo -e "\nFile pattern must have exactly one {x} and one {y}"
+		return 1
 	fi
+	x_mask=${file_pattern/'{y}'/*}
+	x_prefix=${x_mask%'{x}'*}
+	x_suffix=${x_mask#*'{x}'}
+	y_mask=${file_pattern/'{x}'/*}
+	y_prefix=${y_mask%'{y}'*}
+	y_suffix=${y_mask#*'{y}'}
+	filemask=${x_mask/'{x}'/*}
+}
 
-	if [ "$fileinfo" != "$common_fileinfo" ]; then
-		echo "$(basename $filename): File disregarded because file info does not match the other files: $fileinfo"
+function float_test()
+{
+	evaluation=$(bc <<< $1 2>/dev/null)
+	test $evaluation = 1
+	return $?
+}
+
+function is_positive_float()
+{
+	calc=0
+	if [[ $1 =~ ^[+-]?[0-9]+\.?[0-9]*$ ]]; then
+		calc=$1
+	fi
+	float_test "$calc > 0"
+	return $? 
+}
+
+########### Parameters ############
+
+if (( $# == 0 )); then usage; fi
+if (( $# >  4 )); then usage_error "Too many arguments"; fi
+if [[ ! -d $1 ]]; then usage_error "$1: No such directory"; fi
+if (( $# >= 2 )); then file_pattern=$2; fi
+if ! is_file_pattern_ok $file_pattern; then usage_error "$2: Invalid file pattern"; fi
+if (( $# >= 3 )); then map_width=$3; fi
+if ! is_positive_float $map_width;  then usage_error "$3: Invalid map width in meters";  fi
+if (( $# >= 4 )); then map_height=$4; else map_height=$map_width; fi
+if ! is_positive_float $map_height; then usage_error "$4: Invalid map height in meters"; fi
+
+###################################
+
+directory=$1
+count=0
+for filename in "$directory"/$filemask; do
+	fileinfo=$(file "$filename")
+	fileinfo=${fileinfo#"$filename: "}
+	imagesize=$(get_imagesize "$fileinfo")
+	href=$(basename "$filename")
+	if [[ $imagesize = 0x0 ]]; then
+		echo -e "\n$href: Unable to use this file type: $fileinfo"
 		continue
 	fi
+	x=$(get_x_from_filename "$href")
+	y=$(get_y_from_filename "$href")
 
-	let "count++"
-	if [ $x_min -gt $x ]; then x_min=$x; fi
-	if [ $x_max -lt $x ]; then x_max=$x; fi
-	if [ $y_min -gt $y ]; then y_min=$y; fi
-	if [ $y_max -lt $y ]; then y_max=$y; fi
+	if (( $count == 0 )); then
+		common_imagesize=$imagesize
+		width=${imagesize%x*}
+		height=${imagesize#*x}
+		x_min=$x; x_max=$x
+		y_min=$y; y_max=$y
+	fi
+	if [[ $imagesize != $common_imagesize ]]; then
+		echo -e "\n$href: Image size does not match the other files: $fileinfo"
+		continue
+	fi
+	
+	let count++
+	if (( $x_min > $x )); then x_min=$x; fi
+	if (( $x_max < $x )); then x_max=$x; fi
+	if (( $y_min > $y )); then y_min=$y; fi
+	if (( $y_max < $y )); then y_max=$y; fi
 done
 
-echo "$count map PNG files read"
-let "total_width  = ( ( x_max - x_min ) / map_length + 1 ) * width"
-let "total_height = ( ( y_max - y_min ) / map_length + 1 ) * height"
-zoom_width=$(bc <<< "scale=4; 1430 * 0.9 / $total_width")
-zoom_height=$(bc <<< "scale=4; 900 * 0.9 / $total_height")
-if [ $(bc <<< "$zoom_width <  $zoom_height") -eq 1 ]; then zoom=$zoom_width; else zoom=$zoom_height; fi
+echo -e "\n$count $file_pattern files read\n"
+total_width=$( bc <<< "( ( $x_max - $x_min ) / $map_width  + 1 ) * $width")
+total_height=$(bc <<< "( ( $y_max - $y_min ) / $map_height + 1 ) * $height")
+zoom_width=$( bc <<< "scale=4; 1430 * 0.9 / $total_width")
+zoom_height=$(bc <<< "scale=4;  900 * 0.9 / $total_height")
+if float_test "$zoom_width <  $zoom_height"; then zoom=$zoom_width; else zoom=$zoom_height; fi
 cx=$(bc <<< "( $total_width  / 2 )  + ( 154 / $zoom )")
 cy=$(bc <<< "( $total_height / 2 )")
 docname=complete_"$x_min"_"$y_min".map.svg
 inkscape_file=$directory/$docname
 
 content=
-content+='<?xml version="1.0" encoding="UTF-8" standalone="no"?>'$nl
-content+='<!-- Created with Inkscape (http://www.inkscape.org/) -->'$nl
-content+='<svg'$nl
-content+='   xmlns:dc="http://purl.org/dc/elements/1.1/"'$nl
-content+='   xmlns:cc="http://creativecommons.org/ns#"'$nl
-content+='   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"'$nl
-content+='   xmlns:svg="http://www.w3.org/2000/svg"'$nl
-content+='   xmlns="http://www.w3.org/2000/svg"'$nl
-content+='   xmlns:xlink="http://www.w3.org/1999/xlink"'$nl
-content+='   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"'$nl
-content+='   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"'$nl
-content+='   width="'$total_width'"'$nl
-content+='   height="'$total_height'"'$nl
-content+='   viewBox="0 0 '$total_width' '$total_height'"'$nl
-content+='   version="1.1"'$nl
-content+='   id="svg8"'$nl
-content+='   inkscape:version="0.92.2 (unknown)"'$nl
-content+='   sodipodi:docname="'$docname'">'$nl
-content+='  <defs'$nl
-content+='     id="defs2" />'$nl
-content+='  <sodipodi:namedview'$nl
-content+='     id="base"'$nl
-content+='     pagecolor="#ffffff"'$nl
-content+='     bordercolor="#666666"'$nl
-content+='     borderopacity="1.0"'$nl
-content+='     inkscape:pageopacity="0.0"'$nl
-content+='     inkscape:pageshadow="2"'$nl
-content+='     inkscape:zoom="'$zoom'"'$nl
-content+='     inkscape:cx="'$cx'"'$nl
-content+='     inkscape:cy="'$cy'"'$nl
-content+='     inkscape:document-units="px"'$nl
-content+='     inkscape:current-layer="layer1"'$nl
-content+='     showgrid="false"'$nl
-content+='     units="px"'$nl
-content+='     inkscape:window-width="1855"'$nl
-content+='     inkscape:window-height="1056"'$nl
-content+='     inkscape:window-x="65"'$nl
-content+='     inkscape:window-y="24"'$nl
-content+='     inkscape:window-maximized="1" />'$nl
-content+='  <metadata'$nl
-content+='     id="metadata5">'$nl
-content+='    <rdf:RDF>'$nl
-content+='      <cc:Work'$nl
-content+='         rdf:about="">'$nl
-content+='        <dc:format>image/svg+xml</dc:format>'$nl
-content+='        <dc:type'$nl
-content+='           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />'$nl
-content+='        <dc:title></dc:title>'$nl
-content+='      </cc:Work>'$nl
-content+='    </rdf:RDF>'$nl
-content+='  </metadata>'$nl
-content+='  <g'$nl
-content+='     inkscape:label="Layer 1"'$nl
-content+='     inkscape:groupmode="layer"'$nl
-content+='     id="layer1"'$nl
-content+='     transform="translate(0,0)">'$nl
+content+='<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
+content+='<!-- Created with Inkscape (http://www.inkscape.org/) -->\n'
+content+='<svg\n'
+content+='   xmlns:dc="http://purl.org/dc/elements/1.1/"\n'
+content+='   xmlns:cc="http://creativecommons.org/ns#"\n'
+content+='   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"\n'
+content+='   xmlns:svg="http://www.w3.org/2000/svg"\n'
+content+='   xmlns="http://www.w3.org/2000/svg"\n'
+content+='   xmlns:xlink="http://www.w3.org/1999/xlink"\n'
+content+='   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"\n'
+content+='   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"\n'
+content+='   width="'$total_width'"\n'
+content+='   height="'$total_height'"\n'
+content+='   viewBox="0 0 '$total_width' '$total_height'"\n'
+content+='   version="1.1"\n'
+content+='   id="svg8"\n'
+content+='   inkscape:version="0.92.2 (unknown)"\n'
+content+='   sodipodi:docname="'$docname'">\n'
+content+='  <defs\n'
+content+='     id="defs2" />\n'
+content+='  <sodipodi:namedview\n'
+content+='     id="base"\n'
+content+='     pagecolor="#ffffff"\n'
+content+='     bordercolor="#666666"\n'
+content+='     borderopacity="1.0"\n'
+content+='     inkscape:pageopacity="0.0"\n'
+content+='     inkscape:pageshadow="2"\n'
+content+='     inkscape:zoom="'$zoom'"\n'
+content+='     inkscape:cx="'$cx'"\n'
+content+='     inkscape:cy="'$cy'"\n'
+content+='     inkscape:document-units="px"\n'
+content+='     inkscape:current-layer="layer1"\n'
+content+='     showgrid="false"\n'
+content+='     units="px"\n'
+content+='     inkscape:window-width="1855"\n'
+content+='     inkscape:window-height="1056"\n'
+content+='     inkscape:window-x="65"\n'
+content+='     inkscape:window-y="24"\n'
+content+='     inkscape:window-maximized="1" />\n'
+content+='  <metadata\n'
+content+='     id="metadata5">\n'
+content+='    <rdf:RDF>\n'
+content+='      <cc:Work\n'
+content+='         rdf:about="">\n'
+content+='        <dc:format>image/svg+xml</dc:format>\n'
+content+='        <dc:type\n'
+content+='           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />\n'
+content+='        <dc:title></dc:title>\n'
+content+='      </cc:Work>\n'
+content+='    </rdf:RDF>\n'
+content+='  </metadata>\n'
+content+='  <g\n'
+content+='     inkscape:label="Layer 1"\n'
+content+='     inkscape:groupmode="layer"\n'
+content+='     id="layer1"\n'
+content+='     transform="translate(0,0)">\n'
 
-for filename in $directory/m*_*.map.png; do
-	fileinfo=$(file $filename)
+for filename in "$directory"/$filemask; do
+	fileinfo=$(file "$filename")
 	fileinfo=${fileinfo#"$filename: "}
-	if [ "$fileinfo" != "$common_fileinfo" ]; then continue; fi
+	imagesize=$(get_imagesize "$fileinfo")
+	href=$(basename "$filename")
+	absref=$(cd $(dirname "$filename"); pwd)/"$href"
+	if [[ $imagesize != $common_imagesize ]]; then continue; fi
 
-	href=$(basename $filename)
-	absref=$(cd $(dirname $filename); pwd)/$href
+	x=$(get_x_from_filename "$href")
+	y=$(get_y_from_filename "$href")
+	x_img=$(bc <<< "( ( $x - $x_min ) / $map_width ) * $width")
+	y_img=$(bc <<< "$total_height - ( ( ( ( $y - $y_min ) / $map_height ) + 1 ) * $height )")
 
-	x=${filename#$directory/m}
-	x=${x%_*.map.png}
-	y=${filename#$directory/m*_}
-	y=${y%.map.png}
-
-	let "x_img = ( ( x - x_min ) / map_length ) * width"
-	let "y_img = total_height - ( ( ( ( y - y_min ) / map_length ) + 1 ) * height )"
-
-	content+='    <image'$nl
-	content+='       sodipodi:absref="'$absref'"'$nl
-	content+='       xlink:href="'$href'"'$nl
-	content+='       id="'$href'"'$nl
-	content+='       x="'$x_img'"'$nl
-	content+='       y="'$y_img'"'$nl
-	content+='       width="'$width'"'$nl
-	content+='       height="'$height'"'$nl
-	content+='       preserveAspectRatio="none" />'$nl
+	content+='    <image\n'
+	content+='       sodipodi:absref="'$absref'"\n'
+	content+='       xlink:href="'$href'"\n'
+	content+='       id="'$href'"\n'
+	content+='       x="'$x_img'"\n'
+	content+='       y="'$y_img'"\n'
+	content+='       width="'$width'"\n'
+	content+='       height="'$height'"\n'
+	content+='       preserveAspectRatio="none" />\n'
 done
 
-content+='  </g>'$nl
+content+='  </g>\n'
 content+='</svg>'
 echo -e "$content" > $inkscape_file
-
 set -x
 inkscape $inkscape_file 2> /dev/null &
 
