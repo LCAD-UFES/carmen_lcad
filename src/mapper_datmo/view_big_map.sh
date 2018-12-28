@@ -9,8 +9,11 @@ Usage: $0 <directory> <file_pattern> <map_width_meters> <map_height_meters>
 
 ######## Prerequisites ##########
 
-if [[ ! -x "$(command -v inkscape)" ]]; then 
-	echo -e "\nThis script requires the Inkscape graphics software. You may download and install it from http://www.inkscape.org\n"
+graphics_software="inkscape"
+software_source="http://www.inkscape.org"
+
+if [[ ! -x $(command -v "$graphics_software") ]]; then 
+	echo -e "\nThis script requires the $graphics_software graphics software. You may download and install it from $software_source\n"
 	exit
 fi
 
@@ -33,6 +36,21 @@ function usage_error()
 	usage 1
 }
 
+function is_file_pattern_ok()
+{
+	if [[ $1 != *{x}* ]] || [[ $1 != *{y}* ]] || [[ $1 = *{x}*{x}* ]] || [[ $1 = *{y}*{y}* ]]; then
+		echo -e "\nFile pattern must have exactly one {x} and one {y}"
+		return 1
+	fi
+	x_mask=${file_pattern/'{y}'/*}
+	x_prefix=${x_mask%'{x}'*}
+	x_suffix=${x_mask#*'{x}'}
+	y_mask=${file_pattern/'{x}'/*}
+	y_prefix=${y_mask%'{y}'*}
+	y_suffix=${y_mask#*'{y}'}
+	file_wildcard=${y_mask/'{y}'/*}
+}
+
 function get_x_from_filename()
 {
 	x_value=${1#$x_prefix}
@@ -49,15 +67,15 @@ function get_y_from_filename()
 
 function get_imagetype()
 {
-	types="PNG JPEG"
-	for t in $types; do
+	valid_types="PNG JPEG"
+	for t in $valid_types; do
 		tag="*$t image data*"
 		if [[ $1 = $tag ]]; then
 			echo $t
 			return
 		fi
 	done
-	echo 'null'
+	echo 'invalid'
 }
 
 function get_imagesize()
@@ -65,48 +83,47 @@ function get_imagesize()
 	size=0x0
 	imagetype=$(get_imagetype "$1")
 	case $imagetype in
+
 		PNG) 
-			size=${1#$imagetype" image data, "}
+			size=${1#*"image data, "}
 			size=${size%%", "*}
 			size=${size// /}
 			;;
 		JPEG)
-			size=${1#*precision*", "}
+			size=${1#*"precision"*", "}
 			size=${size%%", "*}
 			;;
 	esac
 	echo $size
 }
 
-function is_file_pattern_ok()
+function float_min()
 {
-	if [[ $1 != *{x}* ]] || [[ $1 != *{y}* ]] || [[ $1 = *{x}*{x}* ]] || [[ $1 = *{y}*{y}* ]]; then
-		echo -e "\nFile pattern must have exactly one {x} and one {y}"
-		return 1
+	evaluation=$(bc <<< "$1 < $2" 2>/dev/null)
+	if [[ $evaluation = 1 ]]; then
+		echo "$1"
+	else
+		echo "$2"
 	fi
-	x_mask=${file_pattern/'{y}'/*}
-	x_prefix=${x_mask%'{x}'*}
-	x_suffix=${x_mask#*'{x}'}
-	y_mask=${file_pattern/'{x}'/*}
-	y_prefix=${y_mask%'{y}'*}
-	y_suffix=${y_mask#*'{y}'}
-	filemask=${x_mask/'{x}'/*}
 }
 
 function float_test()
 {
-	evaluation=$(bc <<< $1 2>/dev/null)
+	evaluation=$(bc <<< "$1" 2>/dev/null)
 	test $evaluation = 1
 	return $?
 }
 
+function is_float()
+{
+	[[ $1 =~ ^[-]?[0-9]+\.?[0-9]*$ ]] || [[ $1 =~ ^[-]?[0-9]*\.?[0-9]+$ ]]
+	return $? 
+}
+
 function is_positive_float()
 {
-	calc=0
-	if [[ $1 =~ ^[+-]?[0-9]+\.?[0-9]*$ ]]; then
-		calc=$1
-	fi
-	float_test "$calc > 0"
+	if ! is_float "$1"; then return 1; fi
+	float_test "$1 > 0"
 	return $? 
 }
 
@@ -114,7 +131,7 @@ function is_positive_float()
 
 if (( $# == 0 )); then usage; fi
 if (( $# >  4 )); then usage_error "Too many arguments"; fi
-if [[ ! -d $1 ]]; then usage_error "$1: No such directory"; fi
+if [[ ! -d $1 ]]; then usage_error "$1: No such directory"; else directory=$1; fi
 if (( $# >= 2 )); then file_pattern=$2; fi
 if ! is_file_pattern_ok $file_pattern; then usage_error "$2: Invalid file pattern"; fi
 if (( $# >= 3 )); then map_width=$3; fi
@@ -124,9 +141,8 @@ if ! is_positive_float $map_height; then usage_error "$4: Invalid map height in 
 
 ###################################
 
-directory=$1
 count=0
-for filename in "$directory"/$filemask; do
+for filename in "$directory"/$file_wildcard; do
 	fileinfo=$(file "$filename")
 	fileinfo=${fileinfo#"$filename: "}
 	imagesize=$(get_imagesize "$fileinfo")
@@ -137,7 +153,10 @@ for filename in "$directory"/$filemask; do
 	fi
 	x=$(get_x_from_filename "$href")
 	y=$(get_y_from_filename "$href")
-
+	if ! is_float "$x" || ! is_float "$y"; then
+		echo -e "\n$href: Invalid map coordinates (x,y): ($x,$y)"
+		continue
+	fi
 	if (( $count == 0 )); then
 		common_imagesize=$imagesize
 		width=${imagesize%x*}
@@ -156,17 +175,17 @@ for filename in "$directory"/$filemask; do
 	if (( $y_min > $y )); then y_min=$y; fi
 	if (( $y_max < $y )); then y_max=$y; fi
 done
-
 echo -e "\n$count $file_pattern files read\n"
+
 total_width=$( bc <<< "( ( $x_max - $x_min ) / $map_width  + 1 ) * $width")
 total_height=$(bc <<< "( ( $y_max - $y_min ) / $map_height + 1 ) * $height")
 zoom_width=$( bc <<< "scale=4; 1430 * 0.9 / $total_width")
 zoom_height=$(bc <<< "scale=4;  900 * 0.9 / $total_height")
-if float_test "$zoom_width <  $zoom_height"; then zoom=$zoom_width; else zoom=$zoom_height; fi
-cx=$(bc <<< "( $total_width  / 2 )  + ( 154 / $zoom )")
+zoom=$(float_min "$zoom_width" "$zoom_height")
+cx=$(bc <<< "( $total_width  / 2 ) + ( 154 / $zoom )")
 cy=$(bc <<< "( $total_height / 2 )")
 docname=complete_"$x_min"_"$y_min".map.svg
-inkscape_file=$directory/$docname
+graphics_file="$directory/$docname"
 
 content=
 content+='<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
@@ -226,16 +245,17 @@ content+='     inkscape:groupmode="layer"\n'
 content+='     id="layer1"\n'
 content+='     transform="translate(0,0)">\n'
 
-for filename in "$directory"/$filemask; do
+for filename in "$directory"/$file_wildcard; do
 	fileinfo=$(file "$filename")
 	fileinfo=${fileinfo#"$filename: "}
 	imagesize=$(get_imagesize "$fileinfo")
 	href=$(basename "$filename")
 	absref=$(cd $(dirname "$filename"); pwd)/"$href"
-	if [[ $imagesize != $common_imagesize ]]; then continue; fi
-
 	x=$(get_x_from_filename "$href")
 	y=$(get_y_from_filename "$href")
+	if ! is_float "$x" || ! is_float "$y"; then continue; fi
+	if [[ $imagesize != $common_imagesize ]]; then continue; fi
+
 	x_img=$(bc <<< "( ( $x - $x_min ) / $map_width ) * $width")
 	y_img=$(bc <<< "$total_height - ( ( ( ( $y - $y_min ) / $map_height ) + 1 ) * $height )")
 
@@ -252,7 +272,7 @@ done
 
 content+='  </g>\n'
 content+='</svg>'
-echo -e "$content" > $inkscape_file
+echo -e "$content" > $graphics_file
 set -x
-inkscape $inkscape_file 2> /dev/null &
+$graphics_software $graphics_file 2> /dev/null &
 
