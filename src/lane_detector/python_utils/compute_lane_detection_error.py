@@ -1,87 +1,155 @@
 import sys
 import os
-import math
 import cv2
+import numpy as np
+
+out_of_range = 999999
+
+def file_name_compare(fa, fb):
+	# file_name format: lane_<n>.txt
+	try:
+		na = int(fa[5:-4])
+		nb = int(fb[5:-4])
+		
+		if fa[:5] != 'lane_' or fb[:5] != 'lane_':
+			raise ValueError
+		
+	except ValueError:
+		return -1 if (fa < fb) else int(fa > fb)
+	
+	return (na - nb)
 
 
 def read_groud_truth_points(gt_dir, gt_file_name):
-	print gt_dir + gt_file_name
-	
+	print(gt_dir + gt_file_name)
 	gt_file = open(gt_dir + gt_file_name, "r")
-	file_content = gt_file.readlines()
 	
-	gt_ponts_list = []
+	gt_points_list = []
 	
-	for line in file_content:
-		line = line.strip().split()
-		line[0] = int(line[0])
-		line[1] = int(line[1])
-		gt_ponts_list.append(line[:])
-		
-	return gt_ponts_list
+	# Each line of the gt_file contains the coordinates of one groundtruth point
+	# Line format: x y
+	#   Field 0: x coordinate of the point (in pixels)
+	#   Field 1: y coordinate of the point (in pixels)
+	
+	for line in gt_file:
+		gt = line.split()
+		if len(gt) == 2:
+			x, y = [ int(data) for data in gt ]
+			gt_points_list.append([x, y])
+		elif gt:
+			print('Invalid gt file record: ' + line)
+	
+	if len(gt_points_list) == 8:	
+		gt_points_list = [ gt_points_list[:4], gt_points_list[4:] ]  # Left and right lane gt points
+	else:
+		print(str(len(gt_points_list)) + ' gt points found, but 8 were expected')
+		gt_points_list = [ [], [] ]
+	
+	return gt_points_list
 
 
-def dist(x1, y1, x2, y2):
-	dx = x1 - x2
-	dy = y1 - y2
+def get_ground_truth_poly_lines(gt_points, height):
+	X_left  = [ xy[0] for xy in gt_points[0] ]
+	Y_left  = [ xy[1] for xy in gt_points[0] ]
+	poly_coeffs_left  = np.polyfit(Y_left, X_left, 3)
+
+	X_right = [ xy[0] for xy in gt_points[1] ]
+	Y_right = [ xy[1] for xy in gt_points[1] ]
+	poly_coeffs_right = np.polyfit(Y_right, X_right, 3)
+
+	gt_poly_lines = [ [out_of_range] * height, [out_of_range] * height ]
+
+	for y in reversed(range(height)):
+		x_left  = int(np.polyval(poly_coeffs_left,  y))
+		x_right = int(np.polyval(poly_coeffs_right, y))
+		if abs(x_left - x_right) < 5:
+			break
+		gt_poly_lines[0][y] = x_left
+		gt_poly_lines[1][y] = x_right
 	
-	return math.sqrt((dx * dx) + (dy * dy))
+	return gt_poly_lines
 
 
-def read_and_convert_4_points_coordinates(predictions_dir, gt_file_name, image_width, image_heigth):
-	print predictions_dir + gt_file_name
-	predictions_files_list = open(predictions_dir + gt_file_name, "r")
-	content = predictions_files_list.readlines()
+def read_and_convert_4_points_coordinates(predictions_dir, file_name, image_width, image_height):
+	print(predictions_dir + file_name)
+	predictions_list_file = open(predictions_dir + file_name, "r")
 	
-	prediction = []
 	predictions_list = []
+
+	# Each line of the file contains the coordinates of one predicted bounding box
+	# Line format: class x y w h
+	#   Field 0: object class
+	#   Field 1: x coordinate of the bounding box's center (in a fraction of image_width)
+	#   Field 2: y coordinate of the bounding box's center (in a fraction of image_height)
+	#   Field 3: the bounding box's width  (in a fraction of image_width)
+	#   Field 4: the bounding box's height (in a fraction of image_height)
 	
-	for line in content:
-		line = line.replace('\n', '').rsplit(' ')
-		
-		prediction.append(int((float(line[1]) - (float(line[3]) / 2)) * image_width))
-		prediction.append(int((float(line[2]) - (float(line[4]) / 2)) * image_heigth))
-		predictions_list.append(prediction[:])
-		del prediction[:]
-		
-		prediction.append(int((float(line[1]) + (float(line[3]) / 2)) * image_width))
-		prediction.append(int((float(line[2]) + (float(line[4]) / 2)) * image_heigth))
-		predictions_list.append(prediction[:])
-		del prediction[:]
-		
-		prediction.append(int((float(line[1]) - (float(line[3]) / 2)) * image_width))
-		prediction.append(int((float(line[2]) + (float(line[4]) / 2)) * image_heigth))
-		predictions_list.append(prediction[:])
-		del prediction[:]
-		
-		prediction.append(int((float(line[1]) + (float(line[3]) / 2)) * image_width))
-		prediction.append(int((float(line[2]) - (float(line[4]) / 2)) * image_heigth))
-		
-		predictions_list.append(prediction[:])
-		del prediction[:]
+	for line in predictions_list_file:
+		bbox = line.split()
+		if len(bbox) == 5:
+			x, y, w, h = [ float(data) for data in bbox[1:] ]
+			x_left   = int((x - (w / 2)) * image_width)
+			x_right  = int((x + (w / 2)) * image_width)
+			y_top    = int((y - (h / 2)) * image_height)
+			y_bottom = int((y + (h / 2)) * image_height)
+			predictions_list.append([ [ [x_left, y_bottom], [x_right, y_top] ], [ [x_left, y_top], [x_right, y_bottom] ] ])
+		elif bbox:
+			print('Invalid prediction file record: ' + line)
 		
 	return predictions_list
 
 
 def find_image_path():
 	for i, param in enumerate(sys.argv):
-		if param == '-show':
+		if param == '-show' and len(sys.argv) > (i + 1):
 			return sys.argv[i + 1]
 	return ""
 
 
-def show_image(gt_points, predictions_points, chosen_points_list, gt_file_path, images_path):
-	img = cv2.imread(images_path + gt_file_name.replace('txt', 'png'))
+def plot_poly_lines(img, poly_lines):
+	for i in range(len(poly_lines)):
+		for y, x in enumerate(poly_lines[i]):
+			if x != out_of_range:
+				cv2.circle(img, (x, y), 2, (255,0,0), -1)
+
+
+def plot_gt_points(img, gt_points):
+	for i in range(len(gt_points)):
+		for (x, y) in gt_points[i]:
+			cv2.circle(img, (x, y), 5, (255,0,0), -1)
+
+
+def plot_predictions(img, predictions_points, gt_poly_lines):
+	for bbox in predictions_points:
+		( diagonal_1, diagonal_2 ) = bbox
+		err_1 = compute_diagonal(gt_poly_lines, diagonal_1)
+		err_2 = compute_diagonal(gt_poly_lines, diagonal_2)
+
+		if err_1 == out_of_range and err_2 == out_of_range:
+			cv2.rectangle(img, bbox[0], (255,255,0), 2)
+		elif err_1 < err_2:
+			((xa, ya), (xb, yb)) = diagonal_1
+		else:
+			((xa, ya), (xb, yb)) = diagonal_2
+			
+		cv2.rectangle(img, (xa, ya), (xb, yb), (0,0,255), 2)
+		cv2.circle(img, (xa, ya), 5, (0,0,255), -1)
+		cv2.circle(img, (xb, yb), 5, (0,0,255), -1)
+
+
+def show_image(gt_points, gt_poly_lines, predictions_points, gt_file_name, images_path, image_width, image_height):
+	img_file = images_path + gt_file_name.replace('.txt', '.png')
+	if not os.path.isfile(img_file):
+		img = np.full((image_height, image_width, 3), (255,255,255), np.uint8)
+	else:
+		img = cv2.imread(img_file)
+
+	plot_poly_lines(img, gt_poly_lines)
 	
-	#for p in predictions_points:
-		#cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (0,0,255), 2)
-		
-	for p in gt_points:
-		cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (255,0,0), 2)
-		
-	for p in chosen_points_list:
-		cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (0,255,255), 2)
-		
+	plot_gt_points(img, gt_points)
+	
+	plot_predictions(img, predictions_points, gt_poly_lines)
+	
 	while (1):
 		cv2.imshow('Lane Detector Compute Error', img)
 		key = cv2.waitKey(0) & 0xff
@@ -92,97 +160,44 @@ def show_image(gt_points, predictions_points, chosen_points_list, gt_file_path, 
 			sys.exit()
 
 
-def distance_point_line(p1, p2, p):
-	dy = float(p2[1]) - float(p1[1])
-	dya = float(p[1]) - float(p1[1])
+def compute_diagonal(gt_poly_lines, diagonal):
+	((x1, y1), (x2, y2)) = diagonal
+
+	if  gt_poly_lines[0][y1] == out_of_range or gt_poly_lines[0][y2] == out_of_range or \
+		gt_poly_lines[1][y1] == out_of_range or gt_poly_lines[1][y2] == out_of_range:
+		return out_of_range
+
+	err_x1_left  = abs(x1 - gt_poly_lines[0][y1])
+	err_x2_left  = abs(x2 - gt_poly_lines[0][y2])
+	err_x1_right = abs(x1 - gt_poly_lines[1][y1])
+	err_x2_right = abs(x2 - gt_poly_lines[1][y2])
+	err = float(min((err_x1_left + err_x2_left), (err_x1_right + err_x2_right))) / 2
 	
-	pdya = dya / dy
-	
-	x = float(p1[0]) + ((float(p2[0]) - float(p1[0])) * pdya)
-	
-	error = abs(int(x) - p[0])
-	
-	return error, x
+	return err
 
 
-def distance_point_line2(p1, p2, p):
-	x1 = p1[0]
-	y1 = p1[1]
-	x2 = p2[0]
-	y2 = p2[1]
-	ya = p[1]
-	
-	num = (x2 * (y1 - ya)) + (x1 * (ya - y2))
-	den = y1 - y2
-	
-	x = float(num) / float(den)
-	x = int(x)
-	
-	distance = abs(x - p[0])
-	
-	return distance, x
+def compute_error(gt_points, gt_poly_lines, predictions_points):
+	error = 0; count_in = 0; count_out = 0
 
+	for bbox in predictions_points:
+		( diagonal_1, diagonal_2 ) = bbox
+		err_1 = compute_diagonal(gt_poly_lines, diagonal_1)
+		err_2 = compute_diagonal(gt_poly_lines, diagonal_2)
 
-def comppute_point_to_line_error(line_p1, line_p2, predictions_points):
-	min_dist = 999999
+		if err_1 == out_of_range and err_2 == out_of_range:
+			count_out += 1
+		else:
+			count_in += 1
+			error += min(err_1, err_2)
 	
-	for p in predictions_points:
-		distance = dist(line_p1[0], line_p1[1], p[0], p[1])
-		
-		if distance < min_dist:
-			point = p
-			min_dist = distance
-			
-	returned = distance_point_line2(line_p1, line_p2, point)
-	point[0] = returned[1]
-	
-	return returned[0], point
+	missed = len(gt_points[0]) + len(gt_points[1]) - 2 - count_in - count_out
 
-
-def compute_error(gt_points, predictions_points):
-	error = 0
-	chosen_points_list = []
-	
-	returned = comppute_point_to_line_error(gt_points[0], gt_points[1], predictions_points)   # Top Left
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-	
-	returned = comppute_point_to_line_error(gt_points[1], gt_points[2], predictions_points)
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-	
-	returned = comppute_point_to_line_error(gt_points[2], gt_points[3], predictions_points)
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-	
-	returned = comppute_point_to_line_error(gt_points[3], gt_points[2], predictions_points)   # Botton Left
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-	
-	returned = comppute_point_to_line_error(gt_points[4], gt_points[5], predictions_points)   # Top Right
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-	
-	returned = comppute_point_to_line_error(gt_points[5], gt_points[6], predictions_points)
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-	
-	returned = comppute_point_to_line_error(gt_points[6], gt_points[7], predictions_points)
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-	
-	returned = comppute_point_to_line_error(gt_points[7], gt_points[6], predictions_points)   # Botton Right
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-
-	print 'Error: ' + str(error)
-	
-	return error, chosen_points_list
+	return error, count_in, count_out, missed
 
 
 if __name__ == "__main__":
-	if len(sys.argv) < 4 or len(sys.argv) > 8:
-		print "\nUse: python", sys.argv[0], "ground/truth/dir predictions/dir image_width image_heigth -show images/path (optional) -format jpg (optional)\n"
+	if len(sys.argv) < 5 or len(sys.argv) > 7:
+		print("\nUsage: python " + sys.argv[0] + " <ground_truth_dir> <predictions_dir> <image_width> <image_height> -show <images_dir> (optional)\n")
 	else:
 		if not sys.argv[1].endswith('/'):
 			sys.argv[1] += '/'
@@ -190,32 +205,37 @@ if __name__ == "__main__":
 			sys.argv[2] += '/'
 			
 		image_width  = int(sys.argv[3])
-		image_heigth = int(sys.argv[4])
+		image_height = int(sys.argv[4])
 		
 		images_path = find_image_path()
+		if images_path and not images_path.endswith('/'):
+			images_path += '/'
 		
-		gt_files_list = [l for l in os.listdir(sys.argv[1])]
-		gt_files_list.sort()
+		gt_files_list = [file_name for file_name in os.listdir(sys.argv[1])]
+		gt_files_list = sorted(gt_files_list, cmp = file_name_compare)
 		
-		error = 0
-		cont = 0
+		accum_error = 0; accum_count_in = 0; accum_count_out = 0; accum_missed = 0
+
 		for gt_file_name in gt_files_list:
 			if not gt_file_name.endswith('.txt'):
 				continue
 				
 			gt_points = read_groud_truth_points(sys.argv[1], gt_file_name)
+			gt_poly_lines = get_ground_truth_poly_lines(gt_points, image_height)
 			
-			predictions_points = read_and_convert_4_points_coordinates(sys.argv[2], gt_file_name, image_width, image_heigth)
+			predictions_points = read_and_convert_4_points_coordinates(sys.argv[2], gt_file_name, image_width, image_height)
 			
-			returned = compute_error(gt_points, predictions_points)
+			(error, count_in, count_out, missed) = compute_error(gt_points, gt_poly_lines, predictions_points)
 			
-			error += returned[0]
-			cont += 1
+			accum_error += error
+			accum_count_in += count_in
+			accum_count_out += count_out
+			accum_missed += missed
 			
-			if images_path:
-				show_image(gt_points, predictions_points, returned[1], gt_file_name, images_path)
+			if len(sys.argv) >= 6 and sys.argv[5] == '-show':
+				show_image(gt_points, gt_poly_lines, predictions_points, gt_file_name, images_path, image_width, image_height)
 			
-		print 'TOTAL Error: ' + str(error/cont)
-		
-		
-		
+		print('\nCount in:  %6d' % accum_count_in + ' bounding boxes in range')
+		print('Count out: %6d' % accum_count_out + ' bounding boxes out of range')
+		print('Missed:    %6d' % accum_missed + ' bounding boxes missed')
+		print('Average Error: %.2f' % (float(accum_error)/accum_count_in) + ' pixels per predicted point\n')
