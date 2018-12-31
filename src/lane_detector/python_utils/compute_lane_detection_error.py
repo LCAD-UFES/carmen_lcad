@@ -177,22 +177,22 @@ def compute_diagonal(gt_poly_lines, diagonal):
 
 
 def compute_error(gt_points, gt_poly_lines, predictions_points):
-	error = 0; count_in = 0; count_out = 0
+	error = 0; true_pos = 0; false_pos = 0
 
 	for bbox in predictions_points:
 		( diagonal_1, diagonal_2 ) = bbox
 		err_1 = compute_diagonal(gt_poly_lines, diagonal_1)
 		err_2 = compute_diagonal(gt_poly_lines, diagonal_2)
-
-		if err_1 == out_of_range and err_2 == out_of_range:
-			count_out += 1
+		err = min(err_1, err_2)
+		if err != out_of_range:
+			error += err
+			true_pos += 1
 		else:
-			count_in += 1
-			error += min(err_1, err_2)
+			false_pos += 1
 	
-	missed = len(gt_points[0]) + len(gt_points[1]) - 2 - count_in - count_out
+	false_neg = len(gt_points[0]) + len(gt_points[1]) - 2 - true_pos - false_pos
 
-	return error, count_in, count_out, missed
+	return error, true_pos, false_pos, false_neg
 
 
 if __name__ == "__main__":
@@ -214,7 +214,7 @@ if __name__ == "__main__":
 		gt_files_list = [file_name for file_name in os.listdir(sys.argv[1])]
 		gt_files_list = sorted(gt_files_list, cmp = file_name_compare)
 		
-		accum_error = 0; accum_count_in = 0; accum_count_out = 0; accum_missed = 0
+		accum_error = 0; accum_true_pos = 0; accum_false_pos = 0; accum_false_neg = 0
 
 		for gt_file_name in gt_files_list:
 			if not gt_file_name.endswith('.txt'):
@@ -225,17 +225,19 @@ if __name__ == "__main__":
 			
 			predictions_points = read_and_convert_4_points_coordinates(sys.argv[2], gt_file_name, image_width, image_height)
 			
-			(error, count_in, count_out, missed) = compute_error(gt_points, gt_poly_lines, predictions_points)
+			(error, true_pos, false_pos, false_neg) = compute_error(gt_points, gt_poly_lines, predictions_points)
 			
 			accum_error += error
-			accum_count_in += count_in
-			accum_count_out += count_out
-			accum_missed += missed
+			accum_true_pos += true_pos
+			accum_false_pos += false_pos
+			accum_false_neg += false_neg
 			
 			if len(sys.argv) >= 6 and sys.argv[5] == '-show':
 				show_image(gt_points, gt_poly_lines, predictions_points, gt_file_name, images_path, image_width, image_height)
 			
-		print('\nCount in:  %6d' % accum_count_in + ' bounding boxes in range')
-		print('Count out: %6d' % accum_count_out + ' bounding boxes out of range')
-		print('Missed:    %6d' % accum_missed + ' bounding boxes missed')
-		print('Average Error: %.2f' % (float(accum_error)/accum_count_in) + ' pixels per predicted point\n')
+		print('\nTrue positives:  %6d' % accum_true_pos + ' bounding boxes in range')
+		print('False positives: %6d' % accum_false_pos + ' bounding boxes out of range')
+		print('False negatives: %6d' % accum_false_neg + ' bounding boxes missed')
+		print('Average Error: %.2f' % (float(accum_error)/(accum_true_pos + accum_false_pos)) + ' pixels per predicted point\n')
+		print('Precision: %.6f' % (float(accum_true_pos)/(accum_true_pos + accum_false_pos)))
+		print('Recall:    %.6f' % (float(accum_true_pos)/(accum_true_pos + accum_false_neg)))
