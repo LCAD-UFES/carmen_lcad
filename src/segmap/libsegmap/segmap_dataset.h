@@ -3,6 +3,7 @@
 #define _SEGMAP_LIBSEGMAP_SEGMAP_DATASET_H_
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <pcl/common/transforms.h>
 #include <string>
 #include <vector>
@@ -16,6 +17,13 @@ using namespace cv;
 using namespace Eigen;
 
 
+class OdomCalib
+{
+public:
+	double mult_v, mult_phi, add_phi, init_angle;
+};
+
+
 class DataSample
 {
 public:
@@ -23,10 +31,12 @@ public:
 	double image_time;
 	double gps_time;
 	double odom_time;
+	double xsens_time;
 	double v, phi;
-	Pose2d gps;
 	int gps_quality;
+	Quaterniond xsens;
 	Pose2d pose;
+	Pose2d gps;
 };
 
 
@@ -34,13 +44,14 @@ class DatasetInterface
 {
 protected:
 	char _name[1024]; // utility attribute for creating file names.
-	string _path;
-	int _use_segmented;
 
 public:
 	int image_height;
 	int image_width;
 	vector<DataSample> data;
+	OdomCalib odom_calib;
+	string _path;
+	int _use_segmented;
 
 	virtual Mat load_image(int i) = 0;
 	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud) = 0;

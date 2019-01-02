@@ -27,8 +27,8 @@ def process_image(carmen_image):
     return seg_map
 
 def color_image(seg_map):
-      seg_image = label_to_color_image(seg_map).astype(np.uint8)
-      return seg_image
+    seg_image = label_to_color_image(seg_map).astype(np.uint8)
+    return seg_image
 
 def process_image_from_disk(png_filename):
     img_teste = Image.open(png_filename)

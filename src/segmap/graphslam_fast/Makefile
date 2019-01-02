@@ -35,16 +35,20 @@ LFLAGS += -L /usr/local/lib -lcholmod -lg2o_core -lg2o_stuff -lg2o_types_slam2d 
 LFLAGS += -lvtkCommon -lvtkFiltering -lvtkRendering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
 		-lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter -lprob_models -lrotation_geometry
-LFLAGS += `pkg-config --libs opencv`	  
 LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp -lvtkGraphics
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp -lvtkGraphics -lsegmap 
+LFLAGS += `pkg-config --libs opencv` -lboost_system -lsegmap
 
-SOURCES = generate_loop_closures.cpp graphslam.cpp joint_graphslam.cpp loop_closures_tests.cpp
-TARGETS = generate_loop_closures graphslam joint_graphslam loop_closures_tests
+IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
+LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization
+
+SOURCES = generate_loop_closures.cpp graphslam.cpp joint_graphslam.cpp gicp_odometry.cpp graphslam_util.cpp gicp_reconstruction.cpp
+TARGETS = graphslam joint_graphslam gicp_odometry gicp_reconstruction # generate_loop_closures 
 
 generate_loop_closures: generate_loop_closures.o
-graphslam:  graphslam.o
-joint_graphslam: joint_graphslam.o
-loop_closures_tests: loop_closures_tests.o
+graphslam: graphslam.o
+joint_graphslam: joint_graphslam.o graphslam_util.o ../libsegmap/libsegmap.a
+gicp_odometry: gicp_odometry.o graphslam_util.o ../libsegmap/libsegmap.a
+gicp_reconstruction: gicp_reconstruction.o graphslam_util.o ../libsegmap/libsegmap.a
 
 include $(CARMEN_HOME)/src/Makefile.rules

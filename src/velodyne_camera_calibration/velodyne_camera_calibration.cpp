@@ -10,6 +10,9 @@ const int MAX_ANGLE_OBSTACLE = 188;
 #define MAX_RANGE 50.0
 #define MIN_RANGE 0.5
 
+#define SICK_MIN_RANGE 0.5
+#define SICK_MAX_RANGE 170.0
+
 
 #define CAMERA_FOV 0.576 // In radians ~ 33 degrees TODO por no carmen.ini
 
@@ -129,6 +132,63 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 				laser_points_in_camera.push_back(velodyne_in_cam);
 			}
 		}
+	}
+	return laser_points_in_camera;
+}
+
+
+std::vector<carmen_velodyne_points_in_cam_t>
+carmen_sick_camera_calibration_lasers_points_in_camera(carmen_laser_ldmrs_new_message *sick_message,
+                                                           carmen_camera_parameters camera_parameters,
+                                                           tf::Transformer *sick_transformation_tree,
+                                                           int image_width, int image_height)
+{
+	std::vector<carmen_velodyne_points_in_cam_t> laser_points_in_camera;
+	tf::StampedTransform sick_to_camera_pose;
+	sick_transformation_tree->lookupTransform("/camera", "/sick", tf::Time(0), sick_to_camera_pose);
+
+	double fx_meters = camera_parameters.fx_factor * image_width * camera_parameters.pixel_size;
+	double fy_meters = camera_parameters.fy_factor * image_height * camera_parameters.pixel_size;
+
+	double cu = camera_parameters.cu_factor * (double) image_width;
+	double cv = camera_parameters.cv_factor * (double) image_height;
+	//cout<<laser_message->scan_points<<endl;
+	for (int i = 0; i < sick_message->scan_points; i++)
+	{
+		double v_angle = sick_message->arraypoints[i].vertical_angle;
+		//double v_angle = carmen_normalize_theta(carmen_degrees_to_radians(laser_message->arraypoints[i].vertical_angle));
+		double range = sick_message->arraypoints[i].radial_distance;
+		//printf("Range: %lf\n", range);
+		double h_angle = sick_message->arraypoints[i].horizontal_angle;
+		//double h_angle = carmen_normalize_theta(carmen_degrees_to_radians(laser_message->arraypoints[i].horizontal_angle));
+
+		if (range <= SICK_MIN_RANGE || range >= SICK_MAX_RANGE)
+						continue;
+
+		tf::Point p3d_velodyne_reference = spherical_to_cartesian(h_angle, v_angle, range);
+
+		if (p3d_velodyne_reference.x() > 0)
+		{
+			//tf::Point p3d_camera_reference = move_to_camera_reference2(p3d_velodyne_reference,sick_pose,camera_pose);
+			tf::Point p3d_camera_reference = sick_to_camera_pose * p3d_velodyne_reference;
+
+			double px = (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
+			double py = (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
+
+			int ipx = image_width - (int) px - 1;
+			//int ipx = (int) px;
+			//int ipy = image_height - (int) py -1;
+			int ipy = (int) py;
+
+			if (ipx >= 0 && ipx <= image_width && ipy >= 0 && ipy <= image_height)
+			{
+				carmen_velodyne_points_in_cam_t velodyne_in_cam = {ipx, ipy, {h_angle, v_angle, range}};
+
+				laser_points_in_camera.push_back(velodyne_in_cam);
+			}
+
+		}
+
 	}
 	return laser_points_in_camera;
 }
@@ -360,6 +420,73 @@ velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_messa
 }
 
 
+vector<image_cartesian>
+sick_camera_calibration_fuse_camera_lidar(carmen_laser_ldmrs_new_message *sick_message, carmen_camera_parameters camera_parameters,
+                                                                         tf::Transformer *sick_transformation_tree,
+																		 unsigned int image_width, unsigned int image_height, unsigned int crop_x,
+																		 unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
+{
+	std::vector<image_cartesian> points;
+	double horizontal_angle = 0.0, vertical_angle = 0.0, range = 0.0;
+	unsigned int image_x = 0, image_y = 0;
+
+	unsigned int max_x = crop_x + crop_width;
+	unsigned int max_y = crop_y + crop_height;
+
+	if (sick_message == NULL)
+		return (points);
+
+	double fx_meters = camera_parameters.fx_factor * camera_parameters.pixel_size * image_width;
+	double fy_meters = camera_parameters.fy_factor * camera_parameters.pixel_size * image_height;
+
+	double cu = camera_parameters.cu_factor * (double) image_width;
+	double cv = camera_parameters.cv_factor * (double) image_height;
+
+
+	tf::StampedTransform sick_to_camera_pose;
+	sick_transformation_tree->lookupTransform("/camera", "/sick", tf::Time(0), sick_to_camera_pose);
+
+	for (int i = 0; i < sick_message->scan_points; i++)
+	{
+		horizontal_angle = sick_message->arraypoints[i].horizontal_angle;
+
+//		if (horizontal_angle < -CAMERA_FOV || horizontal_angle > CAMERA_FOV)// Discharge measures out of the camera field of view
+//			continue;
+
+		range = sick_message->arraypoints[i].radial_distance;
+
+		if (range <= SICK_MIN_RANGE || range >= SICK_MAX_RANGE)
+			continue;
+
+		vertical_angle = sick_message->arraypoints[i].vertical_angle;
+
+		tf::Point p3d_velodyne_reference = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+		if (p3d_velodyne_reference.x() > 0)
+		{
+			tf::Point p3d_camera_reference = sick_to_camera_pose * p3d_velodyne_reference;
+
+			image_x = (unsigned int) (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
+			image_y = (unsigned int) (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
+
+			if (image_x >= crop_x && image_x <= max_x && image_y >= crop_y && image_y <= max_y)
+			{
+				image_cartesian point;
+				point.shot_number = i;
+				point.ray_number  = i;
+				point.image_x     = crop_width - image_x + crop_x;
+				point.image_y     = image_y - crop_y;
+				point.cartesian_x = p3d_velodyne_reference.x();
+				point.cartesian_y = p3d_velodyne_reference.y();             // Must be inverted because Velodyne angle is reversed with CARMEN angles
+				point.cartesian_z = p3d_velodyne_reference.z();
+
+				points.push_back(point);
+			}
+		}
+	}
+	return points;
+}
+
+
 void
 initialize_transformations(carmen_pose_3D_t board_pose, carmen_pose_3D_t camera_pose, tf::Transformer *transformer)
 {
@@ -384,6 +511,43 @@ initialize_transformations(carmen_pose_3D_t board_pose, carmen_pose_3D_t camera_
 	transformer->setTransform(board_to_camera_transform, "board_to_camera_transform");
 }
 
+
+void
+initialize_sick_transformations(carmen_pose_3D_t board_pose, carmen_pose_3D_t camera_pose, carmen_pose_3D_t bullbar_pose,carmen_pose_3D_t sick_pose, tf::Transformer *transformer)
+{
+	tf::Transform board_to_camera_pose;
+	tf::Transform car_to_board_pose;
+	tf::Transform bull_to_car_pose;
+
+	tf::Time::init();
+
+	// board pose with respect to the car
+	car_to_board_pose.setOrigin(tf::Vector3(board_pose.position.x, board_pose.position.y, board_pose.position.z));
+	car_to_board_pose.setRotation(tf::Quaternion(board_pose.orientation.yaw, board_pose.orientation.pitch, board_pose.orientation.roll)); 				// yaw, pitch, roll
+	tf::StampedTransform car_to_board_transform(car_to_board_pose, tf::Time(0), "/car", "/board");
+	transformer->setTransform(car_to_board_transform, "car_to_board_transform");
+
+	// camera pose with respect to the board
+	board_to_camera_pose.setOrigin(tf::Vector3(camera_pose.position.x, camera_pose.position.y, camera_pose.position.z));
+	board_to_camera_pose.setRotation(tf::Quaternion(camera_pose.orientation.yaw + carmen_degrees_to_radians(2.5), camera_pose.orientation.pitch, camera_pose.orientation.roll)); 				// yaw, pitch, roll
+	//board_to_camera_pose.setRotation(tf::Quaternion(camera_pose.orientation.yaw, camera_pose.orientation.pitch, camera_pose.orientation.roll)); 				// yaw, pitch, roll
+	tf::StampedTransform board_to_camera_transform(board_to_camera_pose, tf::Time(0), "/board", "/camera");
+	transformer->setTransform(board_to_camera_transform, "board_to_camera_transform");
+
+	// bull pose with respect to the car
+	bull_to_car_pose.setOrigin(tf::Vector3(bullbar_pose.position.x, bullbar_pose.position.y, bullbar_pose.position.z));
+	bull_to_car_pose.setRotation(tf::Quaternion(bullbar_pose.orientation.yaw, bullbar_pose.orientation.pitch, bullbar_pose.orientation.roll)); // yaw, pitch, roll
+	tf::StampedTransform bull_to_car_transform(bull_to_car_pose, tf::Time(0), "/car", "/bull");
+	transformer->setTransform(bull_to_car_transform, "bull_to_car_transform");
+
+	// sick pose with respect to the bull
+	tf::Transform sick_to_bull_pose;
+	sick_to_bull_pose.setOrigin(tf::Vector3(sick_pose.position.x, sick_pose.position.y, sick_pose.position.z));
+	sick_to_bull_pose.setRotation(tf::Quaternion(sick_pose.orientation.yaw, sick_pose.orientation.pitch, sick_pose.orientation.roll));
+	tf::StampedTransform sick_to_bull_transform(sick_to_bull_pose, tf::Time(0), "/bull", "/sick");
+	transformer->setTransform(sick_to_bull_transform, "sick_to_bull_transform");
+
+}
 
 tf::StampedTransform
 get_world_to_camera_transformation (tf::Transformer *transformer, carmen_pose_3D_t pose)

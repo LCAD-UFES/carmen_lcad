@@ -55,6 +55,9 @@ load_pointcloud(char *path, int n_rays, PointCloud<PointXYZRGB>::Ptr cloud)
 {
 	FILE *f = fopen(path, "rb");
 
+    if (f == NULL)
+        exit(printf("File %s not found.\n", path));
+
 	double h_angle, v_angle;
 	unsigned short distances[32];
 	unsigned char intensities[32];

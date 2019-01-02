@@ -3,7 +3,7 @@ include ../Makefile.conf
 MODULE_NAME = SEG MAP
 MODULE_COMMENT = SLAM using semantic segmentation
 
-SUBDIRS += graphslam_fast libsegmap scripts
+SUBDIRS += libsegmap graphslam_fast scripts
 
 LINK = g++ 
 

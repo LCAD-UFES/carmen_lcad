@@ -125,6 +125,7 @@ main(int argc, char **argv)
 		write_gps(read_gps(f), 1, g);
 		copy_fields(f, g, 5, 'N'); // gps NMEAHDT
 		copy_fields(f, g, 4, 'R'); // robot ackerman
+		copy_fields(f, g, 17, 'X'); // xsens
 
 		fprintf(g, "\n");
 	}
