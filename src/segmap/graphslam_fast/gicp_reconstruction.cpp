@@ -96,7 +96,7 @@ draw_pose(Matrix<double, 4, 4> &pose)
 {
     Eigen::Affine3f affine;
 	affine = pose.cast<float>();
-    viewer->addCoordinateSystem(.1, affine);
+    viewer->addCoordinateSystem(1., affine);
 }
 
 
@@ -181,13 +181,13 @@ main(int argc, char **argv)
 	Matrix<double, 4, 4> correction;
 	int converged;
 
-	target = load_cloud(path_clouds[0]);
+	target = load_cloud(path_clouds[200]);
 	target = filter_pointcloud(target);
 	increase_bightness(target);
 	target_pose = pose3d_to_matrix(0., 0., 0.);
     draw_pose(target_pose);
 
-    for (int i = 1; i < path_clouds.size(); i++)
+    for (int i = 201; i < path_clouds.size(); i++)
 	{
 		source->clear();
 		aligned->clear();
@@ -243,7 +243,7 @@ main(int argc, char **argv)
 
 		if (converged)
 		{
-			target_pose = correction * target_pose;
+			target_pose = correction; // * target_pose;
 
 			printf("target pose: %lf %lf %lf\n", 
 				target_pose(0, 3) / target_pose(3, 3), 
