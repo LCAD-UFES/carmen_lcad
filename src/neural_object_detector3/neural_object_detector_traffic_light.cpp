@@ -1,5 +1,4 @@
 #include "neural_object_detector.hpp"
-#include <fstream>
 
 int camera;
 int camera_side;
@@ -13,22 +12,46 @@ carmen_pose_3D_t camera_pose;
 carmen_pose_3D_t board_pose;
 tf::Transformer transformer;
 
+map<int,Scalar> tl_colors = {
+    {0, Scalar(0, 0, 255)},
+    {1, Scalar(0, 255, 0)},
+};
+
 vector <carmen_pose_3D_t> annotation_vector;
 vector <carmen_pose_3D_t> nearests_traffic_lights_vector;
 
-// // carmen_position_t screen_marker;
-// Point screen_marker = Point(0,0);
-// bool screen_marker_set = false;
+image_cartesian marker_picked_point;
+// carmen_pose_3D_t picked_point;
+Point screen_marker = Point(0,0);
+bool screen_marker_set = false;
+bool marker_point_found = false;
 
-#define TRAFFIC_LIGHT_TRESHOLD 7       // Distance in meters to consider traffic light position
-#define MAX_TRAFFIC_LIGHT_DIST 100
-#define MIN_TRAFFIC_LIGHT_THRESHOLD 20 // 30
+// These control what is displayed on the window. They are variables because it would be super cool to change them according to command line options in the future.
+bool DRAW_FPS = false;
+bool DRAW_BBS = true;
+bool DRAW_CLOSE_TLS = true;
+bool DRAW_CIRCLE_THRESHOLD = true;
+bool DRAW_LIDAR_POINTS = false;
+
+#define TRAFFIC_LIGHT_GROUPING_TRESHOLD 20      // Distance in meters to consider traffic light position
+// #define MAX_TRAFFIC_LIGHT_DIST 100
+#define MAX_TRAFFIC_LIGHT_DIST 110 // For annotating ground truth.
+#define MIN_TRAFFIC_LIGHT_THRESHOLD 10 // 30
 #define MAX_TRAFFIC_LIGHT_THRESHOLD 90 // 1000
+#define DEFAULT_TRAFFIC_LIGHT_THRESHOLD 60 // pixels
+#define TRAFFIC_LIGHT_IMAGE_THRESHOLD 1.5 // meters
+#define ORIENTATION_RESTRICTION 60 // degrees
+
+
+#define RESIZED_W 640
+#define RESIZED_H 480
 
 double
 compute_distance_to_the_traffic_light()
 {
     double nearest_traffic_light_distance = DBL_MAX;
+    carmen_pose_3D_t nearest_traffic_light;
+    nearests_traffic_lights_vector.clear();
 
     if (velodyne_msg == NULL || globalpos_msg == NULL)
         return DBL_MAX;
@@ -39,28 +62,39 @@ compute_distance_to_the_traffic_light()
                             pow(globalpos_msg->globalpos.y - annotation_vector[i].position.y, 2));
             if (distance < nearest_traffic_light_distance)
             {
-                bool orientation_ok = fabs(carmen_radians_to_degrees(globalpos_msg->globalpos.theta - annotation_vector[i].orientation.yaw)) < 10.0 ? 1 : 0;
+                bool orientation_ok = fabs(carmen_radians_to_degrees(globalpos_msg->globalpos.theta - annotation_vector[i].orientation.yaw)) < ORIENTATION_RESTRICTION ? 1 : 0;
 
                 bool behind = fabs(carmen_normalize_theta((atan2(globalpos_msg->globalpos.y - annotation_vector[i].position.y,
                                 globalpos_msg->globalpos.x - annotation_vector[i].position.x) - M_PI - globalpos_msg->globalpos.theta))) > M_PI_2;
 
-                if (distance <= MAX_TRAFFIC_LIGHT_DISTANCE && orientation_ok && behind == false)
+                // if (distance <= MAX_TRAFFIC_LIGHT_DISTANCE && orientation_ok && behind == false && distance < nearest_traffic_light_distance)
+                if (distance <= MAX_TRAFFIC_LIGHT_DIST && orientation_ok && behind == false && distance < nearest_traffic_light_distance)
                 {
                     nearest_traffic_light_distance = distance;
-                    nearests_traffic_lights_vector.push_back(annotation_vector[i]);
+                    nearest_traffic_light = annotation_vector[i];
                 }
             }
     }
-    nearest_traffic_light_distance = DBL_MAX;
+    nearests_traffic_lights_vector.push_back(nearest_traffic_light);
 
-    for (unsigned int i = 0; i < annotation_vector.size(); i++)
+    if (nearests_traffic_lights_vector.size() > 0)
     {
-    	double distance = sqrt(pow(nearests_traffic_lights_vector[0].position.x - annotation_vector[i].position.x, 2) +
-    			pow(nearests_traffic_lights_vector[0].position.y - annotation_vector[i].position.y, 2));
-    	if (distance < TRAFFIC_LIGHT_TRESHOLD)
-    	{
-    		nearests_traffic_lights_vector.push_back(annotation_vector[i]);
-    	}
+        for (unsigned int i = 0; i < annotation_vector.size(); i++)
+        {
+            double distance = sqrt(pow(nearests_traffic_lights_vector[0].position.x - annotation_vector[i].position.x, 2) +
+                    pow(nearests_traffic_lights_vector[0].position.y - annotation_vector[i].position.y, 2));
+            if (distance < TRAFFIC_LIGHT_GROUPING_TRESHOLD)
+            {
+                bool orientation_ok = fabs(carmen_radians_to_degrees(globalpos_msg->globalpos.theta - annotation_vector[i].orientation.yaw)) < ORIENTATION_RESTRICTION ? 1 : 0;
+
+                bool behind = fabs(carmen_normalize_theta((atan2(globalpos_msg->globalpos.y - annotation_vector[i].position.y,
+                                globalpos_msg->globalpos.x - annotation_vector[i].position.x) - M_PI - globalpos_msg->globalpos.theta))) > M_PI_2;
+                if (orientation_ok && behind == false)
+                {
+                    nearests_traffic_lights_vector.push_back(annotation_vector[i]);
+                }
+            }
+        }
     }
 
     return (nearest_traffic_light_distance);
@@ -76,10 +110,10 @@ carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
 
 
 void
-show_LIDAR_points(Mat &image, vector<image_cartesian> all_points, int r, int g, int b)
+show_LIDAR_points(Mat &image, vector<image_cartesian> all_points, int r, int g, int b, int point_radius=1)
 {
     for (unsigned int i = 0; i < all_points.size(); i++)
-        circle(image, Point(all_points[i].image_x, all_points[i].image_y), 1, cvScalar(b, g, r), 5, 8, 0);
+        circle(image, Point(all_points[i].image_x, all_points[i].image_y), point_radius, cvScalar(b, g, r), -1, 8, 0);
 }
 
 
@@ -107,28 +141,39 @@ show_all_points(Mat &image, unsigned int image_width, unsigned int image_height,
             circle(image, Point(all_points[i].ipx - crop_x, all_points[i].ipy - crop_y), 1, cvScalar(0, 0, 255), 5, 8, 0);
 }
 
-
 void
-display(Mat image, vector<bbox_t> predictions, double fps, unsigned int image_width, unsigned int image_height)
+display(Mat image, vector<bbox_t> predictions, double fps, unsigned int image_width, unsigned int image_height, vector<image_cartesian> lidar_points)
 {
     char object_info[25];
     char frame_rate[25];
 
+    if (DRAW_LIDAR_POINTS)
+    {
+        show_LIDAR_points(image, lidar_points, 100, 255, 100, 1);
+    }
+
     cvtColor(image, image, COLOR_RGB2BGR);
 
-    sprintf(frame_rate, "FPS = %.2f", fps);
-
-    putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
-
-    for (unsigned int i = 0; i < predictions.size(); i++)
+    if (DRAW_FPS)
     {
-        //printf("---%d \n", predictions[i].obj_id);
-        sprintf(object_info, "%d %s %d", predictions[i].obj_id, classes_names[predictions[i].obj_id], (int)predictions[i].prob);
+        sprintf(frame_rate, "FPS = %.2f", fps);
+        putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
+    }
 
-        rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
-                Scalar(0, 0, 255), 1);
+    if (DRAW_BBS)
+    {
+        for (unsigned int i = 0; i < predictions.size(); i++)
+        {
+            sprintf(object_info, "%d %s %d", predictions[i].obj_id, classes_names[predictions[i].obj_id], (int)predictions[i].prob);
 
-        putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+            Scalar bb_color = Scalar(255,255,255);
+            if (tl_colors.find(predictions[i].obj_id) != tl_colors.end()) {
+              bb_color = tl_colors[predictions[i].obj_id];
+            }
+            rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)), bb_color, 1);
+
+            putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+        }
     }
 
     //show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
@@ -454,10 +499,32 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 
 
 void
-compute_traffic_light_pose(vector<bbox_t> predictions, int resized_w, int resized_h, int crop_x, int crop_y, int crop_w, int crop_h)
+compute_traffic_light_pose(vector<bbox_t> predictions, int resized_w, int resized_h, int crop_x, int crop_y, int crop_w, int crop_h, vector<image_cartesian> points)
 {
-    vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
-            resized_w, resized_h, crop_x, crop_y, crop_w, crop_h);
+    if (screen_marker_set)
+    {
+        if (!marker_point_found)
+        {
+            double marker_picked_point_pixel_distance = DBL_MAX;
+            for (int i = 0; i < points.size(); ++i)
+            {
+                double pixel_distance = sqrt(pow(screen_marker.x - points[i].image_x, 2) +
+                                pow(screen_marker.y - points[i].image_y, 2));
+                if (pixel_distance < marker_picked_point_pixel_distance) {
+                    marker_picked_point_pixel_distance = pixel_distance;
+                    marker_picked_point = points[i];
+                }
+            }
+
+            carmen_translte_2d(&marker_picked_point.cartesian_x, &marker_picked_point.cartesian_y, board_pose.position.x, board_pose.position.y);
+            carmen_rotate_2d  (&marker_picked_point.cartesian_x, &marker_picked_point.cartesian_y, globalpos_msg->globalpos.theta);
+            carmen_translte_2d(&marker_picked_point.cartesian_x, &marker_picked_point.cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
+            marker_picked_point.cartesian_z += board_pose.position.z + velodyne_pose.position.z;
+            fprintf(stderr, "Picked point: %lf\t%lf\t%lf; theta=%lf\n", marker_picked_point.cartesian_x, marker_picked_point.cartesian_y, marker_picked_point.cartesian_z, globalpos_msg->globalpos.theta);
+            fprintf(stderr, "RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT\t8\t0\t%lf\t%lf\t%lf\t%lf\n", globalpos_msg->globalpos.theta, marker_picked_point.cartesian_x, marker_picked_point.cartesian_y, marker_picked_point.cartesian_z);
+            marker_point_found = true;
+        }
+    }
 
     vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto
 
@@ -468,17 +535,34 @@ compute_traffic_light_pose(vector<bbox_t> predictions, int resized_w, int resize
 int
 compute_threshold()
 {
-    double dist = DIST2D(nearests_traffic_lights_vector[0].position, globalpos_msg->globalpos);
-
-    //printf("%lf %lf\n", nearests_traffic_lights_vector.position.x, nearests_traffic_lights_vector.position.y);
-    // printf("Dist %lf\n", dist); // #!#
-
-
+    // ## Hyperbolic
+    // double dist = DIST2D(nearests_traffic_lights_vector[0].position, globalpos_msg->globalpos);
     // int threshold = 1000 / dist;
-    static double m = (MAX_TRAFFIC_LIGHT_THRESHOLD - MIN_TRAFFIC_LIGHT_THRESHOLD) / (double)MAX_TRAFFIC_LIGHT_DIST;
-    int threshold = MIN_TRAFFIC_LIGHT_THRESHOLD + m * (MAX_TRAFFIC_LIGHT_DIST - dist);
-    // printf("dist=%lf; threshold=%d\n", dist, threshold);
-    printf("dist=%lf; threshold=%d; m=%lf\n", dist, threshold, m);
+
+    // ## Linear
+    // double dist = DIST2D(nearests_traffic_lights_vector[0].position, globalpos_msg->globalpos);
+    // static double m = (MAX_TRAFFIC_LIGHT_THRESHOLD - MIN_TRAFFIC_LIGHT_THRESHOLD) / (double)MAX_TRAFFIC_LIGHT_DIST;
+    // int threshold = MIN_TRAFFIC_LIGHT_THRESHOLD + m * (MAX_TRAFFIC_LIGHT_DIST - dist);
+
+    // ## Hyperbolic using projection.
+    tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
+                0.0, 0.0, globalpos_msg->globalpos.theta);
+    carmen_position_t tl_point = convert_rddf_pose_to_point_in_image(nearests_traffic_lights_vector[0].position.x, nearests_traffic_lights_vector[0].position.y, nearests_traffic_lights_vector[0].position.z,
+                   world_to_camera_pose, camera_parameters, RESIZED_W, RESIZED_H);
+    carmen_position_t below_point = convert_rddf_pose_to_point_in_image(nearests_traffic_lights_vector[0].position.x, nearests_traffic_lights_vector[0].position.y, nearests_traffic_lights_vector[0].position.z + TRAFFIC_LIGHT_IMAGE_THRESHOLD,
+                   world_to_camera_pose, camera_parameters, RESIZED_W, RESIZED_H);
+    // fprintf(stderr, "tl_point: %lf %lf\n", tl_point.x, tl_point.y);
+    // fprintf(stderr, "below_point: %lf %lf\n", below_point.x, below_point.y);
+
+    int threshold;
+    if (tl_point.x >= 0 && tl_point.y >= 0 && tl_point.x < RESIZED_W && tl_point.y < RESIZED_H
+        && below_point.x >= 0 && below_point.y >= 0 && below_point.x < RESIZED_W && below_point.y < RESIZED_H) {
+        threshold = (int) sqrt(pow(tl_point.x - below_point.x, 2) + pow(tl_point.y - below_point.y, 2));
+    } else {
+        threshold = DEFAULT_TRAFFIC_LIGHT_THRESHOLD;
+    }
+
+    // fprintf(stderr, "threshold: %d\n", threshold);
 
     if (threshold > MAX_TRAFFIC_LIGHT_THRESHOLD)
         return MAX_TRAFFIC_LIGHT_THRESHOLD;
@@ -490,7 +574,7 @@ compute_threshold()
 
 
 carmen_traffic_light*
-get_main_traffic_light(vector<bbox_t> predictions,  vector<carmen_position_t> tf_annotation_on_image)
+get_main_traffic_light(vector<bbox_t> predictions,  vector<carmen_position_t> tf_annotations_on_image)
 {
     carmen_traffic_light *main_traffic_light = (carmen_traffic_light *) malloc (1 * sizeof(carmen_traffic_light));
     bbox_t main_bbox;
@@ -500,22 +584,22 @@ get_main_traffic_light(vector<bbox_t> predictions,  vector<carmen_position_t> tf
 
     for (unsigned int i = 0; i < predictions.size(); i++)
     {
-    	for (unsigned int j = 0; j < tf_annotation_on_image.size(); j++)
-    	{
-    		x_centroid = predictions[i].x + (predictions[i].w / 2);
-    		y_centroid = predictions[i].y + (predictions[i].h / 2);
+        for (unsigned int j = 0; j < tf_annotations_on_image.size(); j++)
+        {
+            x_centroid = predictions[i].x + (predictions[i].w / 2);
+            y_centroid = predictions[i].y + (predictions[i].h / 2);
 
-    		x_centroid = x_centroid - tf_annotation_on_image[j].x;
-    		y_centroid = y_centroid - tf_annotation_on_image[j].y;
+            x_centroid = x_centroid - tf_annotations_on_image[j].x;
+            y_centroid = y_centroid - tf_annotations_on_image[j].y;
 
-    		dist = sqrt((x_centroid * x_centroid) + (y_centroid * y_centroid));
+            dist = sqrt((x_centroid * x_centroid) + (y_centroid * y_centroid));
 
-    		if (dist < main_dist && dist < threshold)
-    		{
-    			main_dist = dist;
-    			main_bbox = predictions[i];
-    		}
-    	}
+            if (dist < main_dist && dist < threshold)
+            {
+                main_dist = dist;
+                main_bbox = predictions[i];
+            }
+        }
     }
     main_traffic_light->x1 = main_bbox.x;
     main_traffic_light->y1 = main_bbox.y;
@@ -597,74 +681,95 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     else
         img = image_msg->raw_right;
 
-    int resized_w = image_msg->width;
-    int resized_h = image_msg->height;
     int crop_x = 0;
     int crop_y = 0;
-    int crop_w = resized_w;
-    int crop_h = resized_h;
+    int crop_w = RESIZED_W;
+    int crop_h = RESIZED_H;
 
-//  unsigned char *cropped_img = crop_raw_image(image_msg->width, image_msg->height, img, crop_x, crop_y, crop_w, crop_h);
     Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);
-    resize(open_cv_image, open_cv_image, Size(resized_w, resized_h));
+    resize(open_cv_image, open_cv_image, Size(RESIZED_W, RESIZED_H));
 
     vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
-    // predictions = filter_predictions_traffic_light(predictions);
 
     fps = 1.0 / (carmen_get_time() - start_time);
     start_time = carmen_get_time();
 
-    if (globalpos_msg != NULL && velodyne_msg != NULL && predictions.size() > 0)
+    vector<image_cartesian> lidar_points;
+
+    if (globalpos_msg != NULL && velodyne_msg != NULL)
     {
-        compute_traffic_light_pose(predictions, resized_w, resized_h, crop_x, crop_y, crop_w, crop_h);
+        lidar_points = velodyne_camera_calibration_fuse_camera_lidar(velodyne_msg, camera_parameters, velodyne_pose, camera_pose,
+                RESIZED_W, RESIZED_H, crop_x, crop_y, crop_w, crop_h);
+
+        tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
+                0.0, 0.0, globalpos_msg->globalpos.theta);
+
         double distance_to_tf = compute_distance_to_the_traffic_light();
 
+        vector<carmen_position_t> tf_annotations_on_image;
         if (distance_to_tf < DBL_MAX)
         {
-            if (predictions.size() > 0)
-                printf("Distance %lf\n", distance_to_tf);
-            else
-                printf("No Traffic Light Detected!\n");
-
-            tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
-                    0.0, 0.0, globalpos_msg->globalpos.theta);
-
-            vector<carmen_position_t> tf_annotations_on_image;
-
             for (int i = 0; i < nearests_traffic_lights_vector.size(); i++)
             {
-            	tf_annotations_on_image.push_back(convert_rddf_pose_to_point_in_image(nearests_traffic_lights_vector[i].position.x, nearests_traffic_lights_vector[i].position.y, nearests_traffic_lights_vector[i].position.z,
-            			world_to_camera_pose, camera_parameters, resized_w, resized_h));
+                tf_annotations_on_image.push_back(convert_rddf_pose_to_point_in_image(nearests_traffic_lights_vector[i].position.x, nearests_traffic_lights_vector[i].position.y, nearests_traffic_lights_vector[i].position.z,
+                        world_to_camera_pose, camera_parameters, RESIZED_W, RESIZED_H));
 
-            	circle(open_cv_image, Point((int)tf_annotations_on_image[i].x, (int)tf_annotations_on_image[i].y), 5.0, Scalar(255, 255, 0), -1, 8);
-            	circle(open_cv_image, Point((int)tf_annotations_on_image[i].x, (int)tf_annotations_on_image[i].y), compute_threshold(), Scalar(255, 255, 0), 1, 8);
+                if (DRAW_CIRCLE_THRESHOLD)
+                {
+                    // circle(open_cv_image, Point((int)tf_annotations_on_image[i].x, (int)tf_annotations_on_image[i].y), 3, Scalar(255, 255, 0), -1, 8);
+                    circle(open_cv_image, Point((int)tf_annotations_on_image[i].x, (int)tf_annotations_on_image[i].y), compute_threshold(), Scalar(255, 255, 0), 1, 8);
+                }
             }
 
-            carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotations_on_image);
-            publish_traffic_lights(&traffic_light_message);
+            printf("Timestamp=%lf; Distance=%lf\n", image_msg->timestamp, distance_to_tf);
         }
 
-          // @possatti Debug TL annotations within a distance.
-//        for (unsigned int i = 0; i < annotation_vector.size(); i++)
-//        {
-//            double distance = sqrt(pow(globalpos_msg->globalpos.x - annotation_vector[i].position.x, 2) +
-//                            pow(globalpos_msg->globalpos.y - annotation_vector[i].position.y, 2));
-//            if (distance < 100)
-//            {
-//                tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformer(&transformer, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y, 0.0,
-//                    0.0, 0.0, globalpos_msg->globalpos.theta);
-//                carmen_position_t point = convert_rddf_pose_to_point_in_image(annotation_vector[i].position.x, annotation_vector[i].position.y, annotation_vector[i].position.z,
-//                    world_to_camera_pose, camera_parameters, resized_w, resized_h);
-//                circle(open_cv_image, Point((int)point.x, (int)point.y), 3.0, Scalar(255, 0, 0), -1, 8);
-//            }
-//        }
+        if (predictions.size() > 0)
+        {
+            compute_traffic_light_pose(predictions, RESIZED_W, RESIZED_H, crop_x, crop_y, crop_w, crop_h, lidar_points);
+
+            if (distance_to_tf < DBL_MAX)
+            {
+                carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotations_on_image);
+                publish_traffic_lights(&traffic_light_message);
+            }
+        }
+
+        // @possatti Debug TL annotations within a distance.
+        if (DRAW_CLOSE_TLS)
+        {
+            for (unsigned int i = 0; i < annotation_vector.size(); i++)
+            {
+                double distance = sqrt(pow(globalpos_msg->globalpos.x - annotation_vector[i].position.x, 2) +
+                                   pow(globalpos_msg->globalpos.y - annotation_vector[i].position.y, 2));
+                bool behind = fabs(carmen_normalize_theta((
+                    atan2(globalpos_msg->globalpos.y - annotation_vector[i].position.y, globalpos_msg->globalpos.x - annotation_vector[i].position.x)
+                     - M_PI - globalpos_msg->globalpos.theta))) > M_PI_2;
+                if (distance < 100 && ! behind)
+                {
+                   carmen_position_t point = convert_rddf_pose_to_point_in_image(annotation_vector[i].position.x, annotation_vector[i].position.y, annotation_vector[i].position.z,
+                       world_to_camera_pose, camera_parameters, RESIZED_W, RESIZED_H);
+                   circle(open_cv_image, Point((int)point.x, (int)point.y), 1, Scalar(255, 0, 0), -1, 8);
+               }
+            }
+        }
+
+        // Draw the point picked by hand.
+        if (marker_point_found)
+        {
+            // Scalar(253,106,2) # Orange
+            carmen_position_t point = convert_rddf_pose_to_point_in_image(marker_picked_point.cartesian_x, marker_picked_point.cartesian_y, marker_picked_point.cartesian_z,
+                   world_to_camera_pose, camera_parameters, RESIZED_W, RESIZED_H);
+            circle(open_cv_image, Point((int)point.x, (int)point.y), 5, Scalar(253,106,2), -1, 8);
+        }
     }
 
-    // if (screen_marker_set) {
-    //     circle(open_cv_image, Point((int)screen_marker.x, (int)screen_marker.y), 3.0, Scalar(0, 0, 255), -1, 8);
-    // }
+    if (screen_marker_set)
+    {
+        circle(open_cv_image, Point((int)screen_marker.x, (int)screen_marker.y), 3.0, Scalar(100, 100, 255), -1, 8);
+    }
 
-    display(open_cv_image, predictions, fps, resized_w, resized_h);
+    display(open_cv_image, predictions, fps, RESIZED_W, RESIZED_H, lidar_points);
 }
 
 
@@ -766,7 +871,7 @@ read_parameters(int argc, char **argv)
     char bumblebee_string[256];
     char camera_string[256];
 
-    sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera); // Geather the cameri ID
+    sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera); // Gather the cameri ID
     sprintf(camera_string, "%s%d", "camera", camera);
 
     carmen_param_t param_list[] =
@@ -803,18 +908,16 @@ read_parameters(int argc, char **argv)
     carmen_param_install_params(argc, argv, param_list, num_items);
 }
 
-// void
-// onMouse(int event, int x, int y, int, void*)
-// {
-//     if (event == EVENT_MBUTTONDOWN) {
-//         fprintf(stderr, "MIDDLE CLICK: x=%d y=%d\n", x, y);
-//         // screen_marker.x = x;
-//         // screen_marker.y = y;
-//         screen_marker = Point(x,y);
-//         screen_marker_set = true;
-//         // TODO: Place marker.
-//     }
-// }
+void
+onMouse(int event, int x, int y, int, void*)
+{
+    if (event == EVENT_MBUTTONDOWN) {
+        // fprintf(stderr, "MIDDLE CLICK: x=%d y=%d\n", x, y);
+        screen_marker = Point(x,y);
+        screen_marker_set = true;
+        marker_point_found = false;
+    }
+}
 
 
 void
@@ -828,8 +931,8 @@ initializer()
     // classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
     // network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
 
-    // namedWindow("Neural Object Detector", WINDOW_AUTOSIZE);
-    // setMouseCallback("Neural Object Detector", onMouse);
+    namedWindow("Neural Object Detector", WINDOW_AUTOSIZE);
+    setMouseCallback("Neural Object Detector", onMouse);
 }
 
 
