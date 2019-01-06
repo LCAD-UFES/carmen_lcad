@@ -12,6 +12,23 @@ using namespace pcl;
 using namespace Eigen;
 
 
+PointCloud<PointXYZRGB>::Ptr 
+filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
+{
+	PointCloud<PointXYZRGB>::Ptr cloud = PointCloud<PointXYZRGB>::Ptr(new PointCloud<PointXYZRGB>);
+	cloud->clear();
+
+	for (int i = 0; i < raw_cloud->size(); i++)
+	{
+		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) && 
+			 raw_cloud->at(i).x < 70.0 && raw_cloud->at(i).z < -1.)
+			cloud->push_back(raw_cloud->at(i));
+	}
+
+	return cloud;
+}
+
+
 void
 read_odom_data(char *filename, vector<pair<int,int>> &indices,
 	vector<Matrix<double, 4, 4>> &relative_transform_vector,
@@ -73,7 +90,7 @@ increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
 		// int b = ((aligned->at(j).z + 5.0) / 10.) * 255;
 		// if (b < 0) b = 0;
 		// if (b > 255) b = 255;
-		int mult = 3;
+		int mult = 4;
 
 		int color = mult * (int) aligned->at(j).r;
 		if (color > 255) color = 255;
@@ -130,6 +147,7 @@ main(int argc, char **argv)
     {
         cloud->clear();
         dataset.load_pointcloud(indices[i].second, cloud);
+        cloud = filter_pointcloud(cloud);
 		increase_bightness(cloud);
 
         ///*
@@ -146,22 +164,22 @@ main(int argc, char **argv)
 		    Pose2d::to_matrix(pose_t) * 
 		    relative_transform_vector[i];
 
-        Pose2d util = Pose2d::from_matrix(step);
-        util.y = -util.y;
-        util.th = -util.th;
-        step = Pose2d::to_matrix(util);
+        //Pose2d util = Pose2d::from_matrix(step);
+        //util.y = -util.y;
+        //util.th = -util.th;
+        //step = Pose2d::to_matrix(util);
 
-        //pose = pose * relative_transform_vector[i]; 
+        pose = pose * relative_transform_vector[i]; 
         //pose = pose * (guess * relative_transform_vector[i]);
-        pose = pose * step;
+        //pose = pose * step;
         //*/
         //pose = Pose2d::to_matrix(dataset.data[indices[i].second].pose);
 
         moved->clear();
     	pcl::transformPointCloud(*cloud, *moved, pose);
-        sprintf(cloud_name, "%05d", indices[i].second);
-        viewer->addPointCloud(moved, cloud_name);
-        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, cloud_name);
+        sprintf(cloud_name, "cloud_%05d", indices[i].second);
+        viewer->addPointCloud(moved, string(cloud_name));
+        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, string(cloud_name));
         draw_pose(viewer, pose);
 
         imshow("viewer", Mat::zeros(300, 300, CV_8UC3));

@@ -53,7 +53,7 @@ run_icp_step(DatasetCarmen &dataset, int i, vector<Matrix<double, 4, 4>> &relati
 	target_pose.y = 0.;
 	
     //** TEST **//
-	source_pose = target_pose;
+	//source_pose = target_pose;
 
 	Matrix<double, 4, 4> guess = 
 		Pose2d::to_matrix(target_pose).inverse() *
@@ -62,7 +62,7 @@ run_icp_step(DatasetCarmen &dataset, int i, vector<Matrix<double, 4, 4>> &relati
 	pcl::transformPointCloud(*source, *source_moved, guess);
 
 	Matrix<double, 4, 4> correction;
-	run_gicp(source, target, &correction, &(convergence_vector[i-1]), aligned, 0.05);
+	run_gicp(source_moved, target, &correction, &(convergence_vector[i-1]), aligned, 0.05);
 
 	relative_transform_vector[i-1] = correction;
 }
@@ -104,6 +104,8 @@ main(int argc, char **argv)
     //int size = 100;
 	vector<Matrix<double, 4, 4>> relative_transform_vector(size);
 	vector<int> convergence_vector(size);
+
+    printf("Running.\n");
 
 	#pragma omp parallel for default(none) shared(dataset, convergence_vector, relative_transform_vector, size) private(i)
     for (i = 1; i < (size + 1); i++)

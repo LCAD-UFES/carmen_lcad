@@ -54,8 +54,8 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 			point.x = point.y = point.z = DBL_MAX;
 
 		// to use fused camera and velodyne
-		// if (0)
-		if (point.x > 0 && x >= 0 && x < img.cols && y >= 0 && y < img.rows && (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
+		if (0)
+		// if (point.x > 0 && x >= 0 && x < img.cols && y >= 0 && y < img.rows && (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
 		{
 			pcl::PointXYZRGB point2;
 
@@ -80,7 +80,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		}
 
 		// to use remission
-		else if (0)
+		else if (1)
 		// else if (point.z < 0.)
 		{
 			point.r *= 3;

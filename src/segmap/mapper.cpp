@@ -197,7 +197,7 @@ main(int argc, char **argv)
 	sprintf(cmd, "rm -rf %s && mkdir %s", map_name, map_name);
 	system(cmd);
 
-	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
+	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 0);
 	create_map(map, *dataset);
 
 	printf("Done\n");
