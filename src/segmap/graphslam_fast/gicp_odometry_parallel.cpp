@@ -51,6 +51,9 @@ run_icp_step(DatasetCarmen &dataset, int i, vector<Matrix<double, 4, 4>> &relati
 	source_pose.y -= target_pose.y;
 	target_pose.x = 0.;
 	target_pose.y = 0.;
+	
+    //** TEST **//
+	source_pose = target_pose;
 
 	Matrix<double, 4, 4> guess = 
 		Pose2d::to_matrix(target_pose).inverse() *
@@ -61,7 +64,7 @@ run_icp_step(DatasetCarmen &dataset, int i, vector<Matrix<double, 4, 4>> &relati
 	Matrix<double, 4, 4> correction;
 	run_gicp(source, target, &correction, &(convergence_vector[i-1]), aligned, 0.05);
 
-	relative_transform_vector[i-1] = correction * guess;
+	relative_transform_vector[i-1] = correction;
 }
 
 

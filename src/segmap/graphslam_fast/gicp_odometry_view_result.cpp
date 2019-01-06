@@ -87,7 +87,8 @@ main(int argc, char **argv)
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr moved(new PointCloud<PointXYZRGB>);
 
-    Matrix<double, 4, 4> pose = pose3d_to_matrix(0, 0, 0);
+    Matrix<double, 4, 4> pose = pose3d_to_matrix(0., 0., 0.);
+    Matrix<double, 4, 4> p0 = pose3d_to_matrix(0., 0., 0.);
     dataset.load_pointcloud(indices[0].first, cloud);
 
     sprintf(cloud_name, "%05d", indices[0].first);
@@ -99,9 +100,24 @@ main(int argc, char **argv)
     {
         cloud->clear();
         dataset.load_pointcloud(indices[i].second, cloud);
-        pose *= relative_transform_vector[i];
 
-    	pcl::transformPointCloud(*cloud, *moved, pose);
+	    Pose2d pose_tm1 = dataset.data[indices[i].first].pose;
+	    Pose2d pose_t = dataset.data[indices[i].second].pose;
+
+	    pose_t.x -= pose_tm1.x;
+	    pose_t.y -= pose_tm1.y;
+	    pose_tm1.x = 0.;
+	    pose_tm1.y = 0.;
+
+	    Matrix<double, 4, 4> guess = 
+		    Pose2d::to_matrix(pose_tm1).inverse() *
+		    Pose2d::to_matrix(pose_t);
+
+        //pose = pose * relative_transform_vector[i]; 
+        pose = pose * (guess * relative_transform_vector[i]);
+
+        moved->clear();
+    	pcl::transformPointCloud(*cloud, *moved, p0.inverse() * pose);
         sprintf(cloud_name, "%05d", indices[i].second);
         viewer->addPointCloud(moved, cloud_name);
         viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, cloud_name);
