@@ -65,6 +65,37 @@ draw_pose(pcl::visualization::PCLVisualizer *viewer, Matrix<double, 4, 4> &pose)
 }
 
 
+void
+increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
+{
+	for (int j = 0; j < aligned->size(); j++)
+	{
+		// int b = ((aligned->at(j).z + 5.0) / 10.) * 255;
+		// if (b < 0) b = 0;
+		// if (b > 255) b = 255;
+		int mult = 3;
+
+		int color = mult * (int) aligned->at(j).r;
+		if (color > 255) color = 255;
+		else if (color < 0) color = 0;
+	
+		aligned->at(j).r = (unsigned char) color;
+
+		color = mult * (int) aligned->at(j).g;
+		if (color > 255) color = 255;
+		else if (color < 0) color = 0;
+
+		aligned->at(j).g = (unsigned char) color;
+
+		color = mult * (int) aligned->at(j).b;
+		if (color > 255) color = 255;
+		else if (color < 0) color = 0;
+
+		aligned->at(j).b = (unsigned char) color;
+	}
+}
+
+
 int 
 main(int argc, char **argv)
 {
@@ -87,20 +118,21 @@ main(int argc, char **argv)
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr moved(new PointCloud<PointXYZRGB>);
 
-    Matrix<double, 4, 4> pose = pose3d_to_matrix(0., 0., 0.);
-    Matrix<double, 4, 4> p0 = pose3d_to_matrix(0., 0., 0.);
+    Matrix<double, 4, 4> pose = pose3d_to_matrix(0., 0., dataset.odom_calib.init_angle);
     dataset.load_pointcloud(indices[0].first, cloud);
 
-    sprintf(cloud_name, "%05d", indices[0].first);
-    viewer->addPointCloud(cloud, cloud_name);
-    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, cloud_name);
-    draw_pose(viewer, pose);
+    //sprintf(cloud_name, "%05d", indices[0].first);
+    //viewer->addPointCloud(cloud, cloud_name);
+    //viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, cloud_name);
+    //draw_pose(viewer, pose);
 
     for (int i = 0; i < relative_transform_vector.size(); i++)
     {
         cloud->clear();
         dataset.load_pointcloud(indices[i].second, cloud);
+		increase_bightness(cloud);
 
+        ///*
 	    Pose2d pose_tm1 = dataset.data[indices[i].first].pose;
 	    Pose2d pose_t = dataset.data[indices[i].second].pose;
 
@@ -109,12 +141,21 @@ main(int argc, char **argv)
 	    pose_tm1.x = 0.;
 	    pose_tm1.y = 0.;
 
-	    Matrix<double, 4, 4> guess = 
+	    Matrix<double, 4, 4> step = 
 		    Pose2d::to_matrix(pose_tm1).inverse() *
-		    Pose2d::to_matrix(pose_t);
+		    Pose2d::to_matrix(pose_t) * 
+		    relative_transform_vector[i];
 
-        pose = pose * relative_transform_vector[i]; 
+        Pose2d util = Pose2d::from_matrix(step);
+        util.y = -util.y;
+        util.th = -util.th;
+        step = Pose2d::to_matrix(util);
+
+        //pose = pose * relative_transform_vector[i]; 
         //pose = pose * (guess * relative_transform_vector[i]);
+        pose = pose * step;
+        //*/
+        //pose = Pose2d::to_matrix(dataset.data[indices[i].second].pose);
 
         moved->clear();
     	pcl::transformPointCloud(*cloud, *moved, pose);

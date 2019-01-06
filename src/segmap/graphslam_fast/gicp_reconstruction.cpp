@@ -193,7 +193,7 @@ main(int argc, char **argv)
 		aligned->clear();
         source = load_cloud(path_clouds[i]);
 		source = filter_pointcloud(source);
-		source = leafize(source, 0.15);
+		source = leafize(source, 0.015);
 		increase_bightness(source);
 
 		run_gicp(source, target, &correction, &converged, aligned, -1);
@@ -235,7 +235,7 @@ main(int argc, char **argv)
         //copyPointCloud(*source, *target);
 		//copyPointCloud(*aligned, *target);
 		(*target) += (*aligned);
-		target = leafize(target, 0.15);
+		target = leafize(target, 0.015);
 
 		viewer->removeAllPointClouds();
 		viewer->addPointCloud(target, "lcad");
