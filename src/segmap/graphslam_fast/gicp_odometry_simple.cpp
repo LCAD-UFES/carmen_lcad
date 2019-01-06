@@ -142,7 +142,6 @@ main(int argc, char **argv)
 
     double time_last_icp = 0;
 
-	//for (int i = 1; i < data[0].sync.size(); i++)
     for (int i = 1; i < dataset.data.size(); i++)
 	{
 		if (fabs(dataset.data[i].v) < 0.2 || dataset.data[i].velodyne_time - time_last_icp < 0.05) // || fabs(data[0].sync[i].phi) < carmen_degrees_to_radians(20.))
