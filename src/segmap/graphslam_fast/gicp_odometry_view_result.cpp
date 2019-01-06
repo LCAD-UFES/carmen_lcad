@@ -113,11 +113,11 @@ main(int argc, char **argv)
 		    Pose2d::to_matrix(pose_tm1).inverse() *
 		    Pose2d::to_matrix(pose_t);
 
-        //pose = pose * relative_transform_vector[i]; 
-        pose = pose * (guess * relative_transform_vector[i]);
+        pose = pose * relative_transform_vector[i]; 
+        //pose = pose * (guess * relative_transform_vector[i]);
 
         moved->clear();
-    	pcl::transformPointCloud(*cloud, *moved, p0.inverse() * pose);
+    	pcl::transformPointCloud(*cloud, *moved, pose);
         sprintf(cloud_name, "%05d", indices[i].second);
         viewer->addPointCloud(moved, cloud_name);
         viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, cloud_name);
