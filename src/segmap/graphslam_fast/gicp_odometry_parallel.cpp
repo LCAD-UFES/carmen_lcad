@@ -97,8 +97,8 @@ main(int argc, char **argv)
 	if (out_file == NULL)
 		exit(printf("Output file '%s' could not be open.\n", argv[2]));
 
-    //int size = dataset.data.size() - 1;
-    int size = 100;
+    int size = dataset.data.size() - 1;
+    //int size = 100;
 	vector<Matrix<double, 4, 4>> relative_transform_vector(size);
 	vector<int> convergence_vector(size);
 
