@@ -79,7 +79,7 @@ load_pointcloud(char *path, int n_rays, PointCloud<PointXYZRGB>::Ptr cloud)
 	    	v_angle = velodyne_vertical_angles[j];
 	    	v_angle = M_PI * v_angle / 180.;
 
-	    	PointXYZRGB point = compute_point_from_velodyne(v_angle, h_angle, range, intensities[velodyne_ray_order[j]]);
+	    	PointXYZRGB point = compute_point_from_velodyne(v_angle, -h_angle, range, intensities[velodyne_ray_order[j]]);
 	    	cloud->push_back(point);
 	    }
 	}

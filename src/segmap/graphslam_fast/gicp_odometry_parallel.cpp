@@ -59,7 +59,7 @@ run_icp_step(DatasetCarmen &dataset, int i, vector<Matrix<double, 4, 4>> &relati
 	pcl::transformPointCloud(*source, *source_moved, guess);
 
 	Matrix<double, 4, 4> correction;
-	run_gicp(source, target, &correction, &(convergence_vector[i-1]), aligned);
+	run_gicp(source, target, &correction, &(convergence_vector[i-1]), aligned, 0.05);
 
 	relative_transform_vector[i-1] = correction * guess;
 }
@@ -97,11 +97,13 @@ main(int argc, char **argv)
 	if (out_file == NULL)
 		exit(printf("Output file '%s' could not be open.\n", argv[2]));
 
-	vector<Matrix<double, 4, 4>> relative_transform_vector(dataset.data.size()-1);
-	vector<int> convergence_vector(dataset.data.size()-1);
+    //int size = dataset.data.size() - 1;
+    int size = 100;
+	vector<Matrix<double, 4, 4>> relative_transform_vector(size);
+	vector<int> convergence_vector(size);
 
-	#pragma omp parallel for default(none) shared(dataset, convergence_vector, relative_transform_vector) private(i)
-    for (i = 1; i < dataset.data.size(); i++)
+	#pragma omp parallel for default(none) shared(dataset, convergence_vector, relative_transform_vector, size) private(i)
+    for (i = 1; i < (size + 1); i++)
 		run_icp_step(dataset, i, relative_transform_vector, convergence_vector);
 
 	write_output(out_file, relative_transform_vector, convergence_vector);

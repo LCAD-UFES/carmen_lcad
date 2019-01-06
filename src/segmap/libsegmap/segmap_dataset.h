@@ -42,9 +42,6 @@ public:
 
 class DatasetInterface
 {
-protected:
-	char _name[1024]; // utility attribute for creating file names.
-
 public:
 	int image_height;
 	int image_width;
@@ -65,7 +62,6 @@ public:
 	{
 		_path = path;
 		_use_segmented = use_segmented;
-		strcpy(_name, "");
 		image_height = image_width = 0;
 	}
 
@@ -99,6 +95,9 @@ public:
 
 class DatasetKitti : public DatasetInterface
 {
+protected:
+	char _name[1024]; // utility attribute for creating file names.
+
 	void _load_oxts(vector<double> &times, vector<vector<double>> &data);
 	void _load_timestamps(vector<double> &times);
 

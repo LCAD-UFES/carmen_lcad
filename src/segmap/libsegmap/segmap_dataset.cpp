@@ -103,8 +103,9 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 	{
 		if (_use_segmented)
 		{
-			sprintf(_name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
-			Mat aux_img = imread(_name);
+		    char name[512];
+			sprintf(name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
+			Mat aux_img = imread(name);
 			Mat view_copy = viewer_img.clone();
 			cv::vconcat(aux_img, view_copy, viewer_img);
 			//flip(viewer_img, viewer_img, +1);
@@ -186,16 +187,17 @@ DatasetCarmen::DatasetCarmen(string path, int use_segmented) :
 Mat
 DatasetCarmen::load_image(int i)
 {
-	if (_use_segmented)
-		sprintf(_name, "%s/semantic/%lf-r.png", _path.c_str(), data[i].image_time);
-	else
-		//sprintf(_name, "%s/bb3/%010d.png", _path.c_str(), i);
-		sprintf(_name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
+    char name[512];
 
-	Mat raw_img = imread(_name);
+	if (_use_segmented)
+		sprintf(name, "%s/semantic/%lf-r.png", _path.c_str(), data[i].image_time);
+	else
+		sprintf(name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
+
+	Mat raw_img = imread(name);
 
     if (raw_img.data == 0 || raw_img.rows == 0 || raw_img.cols == 0)
-    	exit(printf("Error: Image '%s' not found.\n", _name));
+    	exit(printf("Error: Image '%s' not found.\n", name));
 
 	Mat resized;
 
@@ -223,13 +225,13 @@ DatasetCarmen::load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud)
 {
 	int success;
 
-	sprintf(_name, "%s/velodyne/%lf.ply", _path.c_str(), data[i].velodyne_time);
-	//sprintf(_name, "%s/velodyne/%010d.ply", _path.c_str(), i);
+    char name[512];
+	sprintf(name, "%s/velodyne/%lf.ply", _path.c_str(), data[i].velodyne_time);
 
-	success = pcl::io::loadPLYFile(_name, *cloud);
+	success = pcl::io::loadPLYFile(name, *cloud);
 
 	if (success < 0 || cloud->size() == 0)
-		exit(printf("Cloud %s not found.\n", _name));
+		exit(printf("Cloud %s not found.\n", name));
 }
 
 

@@ -181,19 +181,19 @@ main(int argc, char **argv)
 	Matrix<double, 4, 4> correction;
 	int converged;
 
-	target = load_cloud(path_clouds[200]);
+	target = load_cloud(path_clouds[800]);
 	target = filter_pointcloud(target);
 	increase_bightness(target);
 	target_pose = pose3d_to_matrix(0., 0., 0.);
     draw_pose(target_pose);
 
-    for (int i = 201; i < path_clouds.size(); i++)
+    for (int i = 801; i < path_clouds.size(); i++)
 	{
 		source->clear();
 		aligned->clear();
         source = load_cloud(path_clouds[i]);
 		source = filter_pointcloud(source);
-		source = leafize(source, 0.01);
+		source = leafize(source, 0.15);
 		increase_bightness(source);
 
 		run_gicp(source, target, &correction, &converged, aligned, -1);
@@ -235,7 +235,7 @@ main(int argc, char **argv)
         //copyPointCloud(*source, *target);
 		//copyPointCloud(*aligned, *target);
 		(*target) += (*aligned);
-		target = leafize(target, 0.01);
+		target = leafize(target, 0.15);
 
 		viewer->removeAllPointClouds();
 		viewer->addPointCloud(target, "lcad");

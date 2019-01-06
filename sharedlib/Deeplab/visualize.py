@@ -131,3 +131,4 @@ MOVING_OBJECTS = np.asarray(MOVING_OBJECTS)
 
 def is_moving_object(label_number):
     return int(label_number in MOVING_OBJECTS)
+    

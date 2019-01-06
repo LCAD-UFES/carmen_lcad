@@ -34,7 +34,7 @@ def generate_graph(data):
             ds = dt * v
             dx = ds * tf.cos(poses[-1][2])
             dy = ds * tf.sin(poses[-1][2])
-            print(float(d[23]), dt, dx, dy)
+            #print(float(d[23]), dt, dx, dy)
 
             loss += 1000. * (x - (poses[-1][0] + dx)) ** 2 + 1000. * (y - (poses[-1][1] + dy)) ** 2
             loss += 10000. * (poses[-1][2] - th) ** 2.
