@@ -38,7 +38,7 @@ vector<carmen_velodyne_partial_scan_message> velodyne_vector;
 
 carmen_laser_ldmrs_new_message* sick_laser_message;
 carmen_velodyne_partial_scan_message sick_message_arrange;
-vector<carmen_velodyne_partial_scan_message> sick_vector;
+vector<carmen_laser_ldmrs_new_message> sick_vector;
 
 
 Detector *darknet;
@@ -64,12 +64,14 @@ SampleFilter filter2;
 
 carmen_playback_command_message command_of_playback;
 
-
+#define CAM_DELAY 0.2
+#define MAX_POSITIONS 10
 // This function find the closest velodyne message with the camera message
 carmen_velodyne_partial_scan_message
 find_velodyne_most_sync_with_cam(double bumblebee_timestamp)  // TODO is this necessary?
 {
-    carmen_velodyne_partial_scan_message velodyne;
+	bumblebee_timestamp -= CAM_DELAY;
+	carmen_velodyne_partial_scan_message velodyne;
     double minTimestampDiff = DBL_MAX;
     int minTimestampIndex = -1;
 
@@ -84,6 +86,28 @@ find_velodyne_most_sync_with_cam(double bumblebee_timestamp)  // TODO is this ne
 
     velodyne = velodyne_vector[minTimestampIndex];
     return (velodyne);
+}
+
+
+carmen_laser_ldmrs_new_message
+find_sick_most_sync_with_cam(double bumblebee_timestamp)  // TODO is this necessary?
+{
+	bumblebee_timestamp -= CAM_DELAY;
+	carmen_laser_ldmrs_new_message sick;
+    double minTimestampDiff = DBL_MAX;
+    int minTimestampIndex = -1;
+
+    for (unsigned int i = 0; i < sick_vector.size(); i++)
+    {
+        if (fabs(sick_vector[i].timestamp - bumblebee_timestamp) < minTimestampDiff)
+        {
+            minTimestampIndex = i;
+            minTimestampDiff = fabs(sick_vector[i].timestamp - bumblebee_timestamp);
+        }
+    }
+
+    sick = sick_vector[minTimestampIndex];
+    return (sick);
 }
 
 
@@ -1052,56 +1076,63 @@ rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
-	
-
-	vector<carmen_position_t> rddf_points_in_image;
-	vector<double> distances_of_rddf_from_car;
-	double hood_removal_percentage = 0.2;
 	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
-	cv::Size size(320, 320);
+	carmen_laser_ldmrs_new_message sick_sync_with_cam;
 
-
-	cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
-	cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
-
-	static double start_time = 0.0;
-	double fps;
-
-	if (camera_side == 0)
-		memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char));
-	else
-		memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char));
+	if (image_msg == NULL)
+		return;
 
 	if (velodyne_vector.size() > 0)
-		velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp); // TODO não faz sentido! Tem que sempre pegar a ultima msg do velodyne
+		velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp);
 	else
 		return;
 
-	cv::Mat src_image_copy = src_image.clone();
+	if (sick_vector.size() > 0)
+		sick_sync_with_cam = find_sick_most_sync_with_cam(image_msg->timestamp);
+	else
+		return;
 
-	cv::Mat pRoi = src_image_copy(cv::Rect(src_image_copy.cols * crop_x / 2.0, 0,
-			src_image_copy.cols - src_image_copy.cols * crop_x, src_image_copy.rows));
-	src_image = pRoi;
-	src_image_copy = src_image.clone();
 
-	cv::cvtColor(src_image, rgb_image, cv::COLOR_RGB2BGR);
+	double fps;
+	static double start_time = 0.0;
+	unsigned char *img;
 
-	cv::Mat rgb_image_copy = rgb_image.clone();
+	if (camera_side == 0)
+		img = image_msg->raw_left;
+	else
+		img = image_msg->raw_right;
 
-vector<carmen_velodyne_points_in_cam_t> sick_points = carmen_sick_camera_calibration_lasers_points_in_camera(sick_laser_message,
-															   camera_parameters,
-															   &transformer_sick,
-															   rgb_image.cols, rgb_image.rows);
+	int crop_X = 0;
+	int crop_Y = 0;
+	int crop_w = image_msg->width;// 1280;
+	int crop_h = image_msg->height*0.8;//400; // 500;
 
+
+	cv::Mat open_cv_image = cv::Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
+	cv::Rect myROI(crop_X, crop_Y, crop_w, crop_h);     // TODO put this in the .ini file
+	open_cv_image = open_cv_image(myROI);
+
+//	vector<carmen_velodyne_points_in_cam_t> sick_points = carmen_sick_camera_calibration_lasers_points_in_camera(sick_laser_message,
+//														  camera_parameters,
+//			                                              &transformer_sick,
+//														  open_cv_image.cols, image_msg->height);
+
+	vector<image_cartesian> sick_points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_parameters, &transformer_sick,
+			image_msg->width, image_msg->height, crop_X, crop_Y, crop_w, crop_h);
+
+	cvtColor(open_cv_image, open_cv_image, COLOR_RGB2BGR);
 	for (unsigned int i = 0; i < sick_points.size(); i++)
 	{
 		//cout<<sick_points[i].ipx<<" "<<sick_points[i].ipy<<endl;
 
-		cv::circle(rgb_image, cv::Point(sick_points[i].ipx,	sick_points[i].ipy), 1, cv::Scalar(0, 0, 255), 1);
+		cv::circle(open_cv_image, cv::Point(sick_points[i].image_x,	sick_points[i].image_y), 1, cv::Scalar(0, 0, 255), 1);
 	}
 
-	cv::imshow("test", rgb_image);
+
+	cv::imshow("test", open_cv_image);
 	cv::waitKey(10);
+
+
 }
 
 
@@ -1256,7 +1287,34 @@ void
 carmen_laser_ldmrs_new_message_handler(carmen_laser_ldmrs_new_message* laser_message)
 {
 	sick_laser_message = laser_message;
-	//sick_message_arrange = carmen_laser_ldmrs_new_convert_laser_scan_to_partial_velodyne_message(laser_message, laser_message->timestamp);
+
+	carmen_laser_ldmrs_new_message sick_copy;
+	sick_copy.host = sick_laser_message->host;
+	sick_copy.angle_ticks_per_rotation = sick_laser_message->angle_ticks_per_rotation;
+	sick_copy.end_angle = sick_laser_message->end_angle;
+	sick_copy.flags = sick_laser_message->flags;
+	sick_copy.scan_end_time = sick_laser_message->scan_end_time;
+	sick_copy.scan_number = sick_laser_message->scan_number;
+	sick_copy.scan_points = sick_laser_message->scan_points;
+	sick_copy.scan_start_time = sick_laser_message->scan_start_time;
+	sick_copy.scanner_status = sick_laser_message->scanner_status;
+	sick_copy.start_angle = sick_laser_message->start_angle;
+	sick_copy.sync_phase_offset = sick_laser_message->sync_phase_offset;
+	sick_copy.timestamp = sick_laser_message->timestamp;
+
+	sick_copy.arraypoints = (carmen_laser_ldmrs_new_point *) malloc(
+			sizeof(carmen_laser_ldmrs_new_point) * sick_laser_message->scan_points);
+
+	memcpy(sick_copy.arraypoints, sick_laser_message->arraypoints,
+			sizeof(carmen_laser_ldmrs_new_point) * sick_laser_message->scan_points);
+
+	sick_vector.push_back(sick_copy);
+
+	if (sick_vector.size() > MAX_POSITIONS)
+	{
+		free(sick_vector.begin()->arraypoints);
+		sick_vector.erase(sick_vector.begin());
+	}
 }
 
 
