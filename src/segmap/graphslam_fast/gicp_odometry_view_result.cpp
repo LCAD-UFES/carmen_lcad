@@ -169,9 +169,7 @@ main(int argc, char **argv)
         //util.th = -util.th;
         //step = Pose2d::to_matrix(util);
 
-        pose = pose * relative_transform_vector[i]; 
-        //pose = pose * (guess * relative_transform_vector[i]);
-        //pose = pose * step;
+        pose = pose * step;
         //*/
         //pose = Pose2d::to_matrix(dataset.data[indices[i].second].pose);
 

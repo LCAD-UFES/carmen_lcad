@@ -92,6 +92,19 @@ load_data(char *name, vector<Data> &lines)
 		fscanf(f, " %s %lf %lf %lf\n",
 			dummy, &d.v, &d.phi, &d.ack_time);
 
+        int n_read;
+        double q0, q1, q2, q3, xsens_time;
+
+		n_read = fscanf(f, " %s %s %s %s %lf %lf %lf %lf %s %s %s %s %s %s %s %s %lf\n", 
+			dummy, dummy, dummy, dummy, 
+			&q0, &q1, &q2, &q3,
+			dummy, dummy, dummy, 
+			dummy, dummy, dummy, 
+			dummy, dummy, &xsens_time);
+
+		if (n_read != 17) 
+            exit(printf("Error: xsens data not found at '%s'!\n", name));
+
 		lines.push_back(d);
 	}
 

@@ -44,8 +44,8 @@ run_icp_step(DatasetCarmen &dataset, int i, vector<Matrix<double, 4, 4>> &relati
 	source = filter_pointcloud(source);
 	target = filter_pointcloud(target);
 
-	Pose2d source_pose = dataset.data[i-1].pose;
-	Pose2d target_pose = dataset.data[i].pose;
+	Pose2d target_pose = dataset.data[i-1].pose;
+	Pose2d source_pose = dataset.data[i].pose;
 
 	source_pose.x -= target_pose.x;
 	source_pose.y -= target_pose.y;
