@@ -365,15 +365,16 @@ add_gps_loop_closures(SparseOptimizer *optimizer, vector<Data> &input_data, doub
 
 void
 load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_data __attribute__((unused)), SparseOptimizer *optimizer,
-    double mult_v, double mult_phi, double add_phi, double init_angle)
+    double mult_v, double mult_phi, double add_phi, double init_angle, vector<LoopRestriction> &gicp_odom_data)
 {
 	vector<SE2> dead_reckoning;
 
 	create_dead_reckoning(input_data, dead_reckoning, mult_v, mult_phi, add_phi, init_angle);
 	add_vertices(input_data, optimizer, dead_reckoning);
     add_odometry_edges(input_data, optimizer, dead_reckoning, 0.01, 0.001);
-	add_gps_edges(input_data, optimizer, 1., 1e10 * M_PI); //.2, M_PI);
-	//add_loop_closure_edges(loop_data, optimizer, 5., M_PI);
+	add_gps_edges(input_data, optimizer, 0.2, 1e10 * M_PI); //.2, M_PI);
+	add_loop_closure_edges(loop_data, optimizer, 0.5, 0.05);
+    add_loop_closure_edges(gicp_odom_data, optimizer, 0.5, 0.05);
     //add_gps_loop_closures(optimizer, input_data, 1.0, M_PI);
 
 	optimizer->save("poses_before.g2o");
@@ -464,13 +465,13 @@ initialize_optimizer()
 
 int main(int argc, char **argv)
 {
-	if (argc < 4)
+	if (argc < 6)
 	{
-		exit(printf("Use %s <sync-file> <loops-file> <odom-calib-file.txt> <saida.txt>\n", argv[0]));
+		exit(printf("Use %s <sync-file> <loops-file> <odom-calib-file.txt> <gicp-odom> <saida.txt>\n", argv[0]));
 	}
 
 	vector<Data> input_data;
-	vector<LoopRestriction> loop_data;
+	vector<LoopRestriction> loop_data, gicp_odom_data;
     double mult_v, mult_phi, add_phi, init_angle;
 
 	SparseOptimizer* optimizer;
@@ -487,14 +488,15 @@ int main(int argc, char **argv)
 	load_data(argv[1], input_data);
     load_odom_calib(argv[3], &mult_v, &mult_phi, &add_phi, &init_angle);
 	read_loop_restrictions(argv[2], loop_data);
-	load_data_to_optimizer(input_data, loop_data, optimizer, mult_v, mult_phi, add_phi, init_angle);
+    read_loop_restrictions(argv[4], gicp_odom_data);
+	load_data_to_optimizer(input_data, loop_data, optimizer, mult_v, mult_phi, add_phi, init_angle, gicp_odom_data);
 
 	optimizer->setVerbose(true);
 	cerr << "Optimizing" << endl;
 	prepare_optimization(optimizer);
 	optimizer->optimize(20);
 	cerr << "OptimizationDone!" << endl;
-	save_corrected_vertices(argv[4], input_data, optimizer);
+	save_corrected_vertices(argv[5], input_data, optimizer);
 	cerr << "OutputSaved!" << endl;
 
 	return 0;

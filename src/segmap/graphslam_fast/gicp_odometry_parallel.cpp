@@ -84,13 +84,43 @@ write_output(FILE *out_file, vector<Matrix<double, 4, 4>> &relative_transform_ve
 }
 
 
+void
+write_output_to_graphslam(char *out_file, DatasetCarmen &dataset, vector<Matrix<double, 4, 4>> &relative_transform_vector, vector<int> &convergence_vector)
+{
+    FILE *f = fopen(out_file, "w");
+
+    for (int i = 1; i < relative_transform_vector.size(); i++)
+    {
+        Pose2d pose_target = dataset.data[i-1].pose;
+	    Pose2d pose_source = dataset.data[i].pose;
+
+	    pose_source.x -= pose_target.x;
+	    pose_source.y -= pose_target.y;
+	    pose_target.x = 0.;
+	    pose_target.y = 0.;
+
+	    Matrix<double, 4, 4> guess = 
+		    Pose2d::to_matrix(pose_target).inverse() *
+		    Pose2d::to_matrix(pose_source);
+
+        Matrix<double, 4, 4> relative_pose = guess * relative_transform_vector[i];
+        Pose2d pose = Pose2d::from_matrix(relative_pose);
+        
+        fprintf(f, "%d %d %d %lf %lf %lf\n", i-1, i,
+            convergence_vector[i], pose.x, pose.y, pose.th);
+    }
+
+    fclose(f);
+}
+
+
 int 
 main(int argc, char **argv)
 {
 	srand(time(NULL));
 
-	if (argc < 3)
-		exit(printf("Use %s <data-directory> <output_file>\n", argv[0]));
+	if (argc < 4)
+		exit(printf("Use %s <data-directory> <output_file> <output_file_graphslam>\n", argv[0]));
 
 	int i;
 	DatasetCarmen dataset(argv[1], 0);
@@ -112,6 +142,7 @@ main(int argc, char **argv)
 		run_icp_step(dataset, i, relative_transform_vector, convergence_vector);
 
 	write_output(out_file, relative_transform_vector, convergence_vector);
+    write_output_to_graphslam(argv[3], dataset, relative_transform_vector, convergence_vector);
 	fclose(out_file);
 
 	return 0;

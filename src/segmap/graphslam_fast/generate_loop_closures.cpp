@@ -81,6 +81,36 @@ write_output(FILE *out_file, vector<pair<int, int>> &loop_closure_indices, vecto
 }
 
 
+void
+write_output_to_graphslam(char *out_file, DatasetCarmen &dataset, vector<pair<int, int>> &indices, vector<Matrix<double, 4, 4>> &relative_transform_vector, vector<int> &convergence_vector)
+{
+    FILE *f = fopen(out_file, "w");
+
+    for (int i = 0; i < indices.size(); i++)
+    {
+        Pose2d pose_target = dataset.data[indices[i].first].pose;
+	    Pose2d pose_source = dataset.data[indices[i].second].pose;
+
+	    pose_source.x -= pose_target.x;
+	    pose_source.y -= pose_target.y;
+	    pose_target.x = 0.;
+	    pose_target.y = 0.;
+
+	    Matrix<double, 4, 4> guess = 
+		    Pose2d::to_matrix(pose_target).inverse() *
+		    Pose2d::to_matrix(pose_source);
+
+        Matrix<double, 4, 4> relative_pose = guess * relative_transform_vector[i];
+        Pose2d pose = Pose2d::from_matrix(relative_pose);
+        
+        fprintf(f, "%d %d %d %lf %lf %lf\n", indices[i].first, indices[i].second,
+            convergence_vector[i], pose.x, pose.y, pose.th);
+    }
+
+    fclose(f);
+}
+
+
 struct myclass 
 {
     bool operator() (pair<double, int> i, pair<double, int> j) 
@@ -108,7 +138,7 @@ find_loop_closure_poses(DatasetCarmen &dataset, vector<pair<int, int>> &loop_clo
 
 			double dist = sqrt(pow(delta_x, 2) + pow(delta_y, 2));
 
-			if (dist < 5.0 && fabs(delta_t) > 20.)
+			if (dist < 1.0 && fabs(delta_t) > 20.)
                 candidates.push_back(pair<double, int>(dist, j));
 		}
 
@@ -139,8 +169,8 @@ main(int argc, char **argv)
 {
 	srand(time(NULL));
 
-	if (argc < 3)
-		exit(printf("Use %s <data-directory> <output_file>\n", argv[0]));
+	if (argc < 4)
+		exit(printf("Use %s <data-directory> <output_file> <output_file_to_graphslam>\n", argv[0]));
 
 	int i;
 	DatasetCarmen dataset(argv[1], 0);
@@ -166,6 +196,8 @@ main(int argc, char **argv)
             &(relative_transform_vector[i]), &(convergence_vector[i]));
 
 	write_output(out_file, loop_closure_indices, relative_transform_vector, convergence_vector);
+    write_output_to_graphslam(argv[3], dataset, loop_closure_indices, relative_transform_vector, convergence_vector);
+
 	fclose(out_file);
 
 	return 0;
