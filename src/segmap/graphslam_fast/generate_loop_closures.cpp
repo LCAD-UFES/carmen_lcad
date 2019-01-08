@@ -24,7 +24,7 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
 		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) && 
-			 raw_cloud->at(i).x < 70.0) // || raw_cloud->at(i).z < 0.))
+			 raw_cloud->at(i).x < 70.0 && raw_cloud->at(i).z > -1.0)
 			cloud->push_back(raw_cloud->at(i));
 	}
 
@@ -60,7 +60,6 @@ run_icp_step(DatasetCarmen &dataset, int from, int to, Matrix<double, 4, 4> *rel
 	
 	pcl::transformPointCloud(*source, *source_moved, guess);
 
-	Matrix<double, 4, 4> correction;
 	run_gicp(source_moved, target, relative_transform, convergence_flag, aligned, 0.05);
 }
 
@@ -138,7 +137,7 @@ find_loop_closure_poses(DatasetCarmen &dataset, vector<pair<int, int>> &loop_clo
 
 			double dist = sqrt(pow(delta_x, 2) + pow(delta_y, 2));
 
-			if (dist < 1.0 && fabs(delta_t) > 20.)
+			if (dist < 5.0 && fabs(delta_t) > 20.)
                 candidates.push_back(pair<double, int>(dist, j));
 		}
 
@@ -190,10 +189,23 @@ main(int argc, char **argv)
     printf("Running.\n");
 	find_loop_closure_poses(dataset, loop_closure_indices);
 
-   	#pragma omp parallel for default(none) private(i) shared(dataset, convergence_vector, relative_transform_vector, size, loop_closure_indices) 
-    for (i = 0; i < loop_closure_indices.size(); i++)
+	int n_processed_clouds = 0;
+	int n = loop_closure_indices.size();
+
+   	#pragma omp parallel for default(none) private(i) shared(dataset, convergence_vector, relative_transform_vector, size, loop_closure_indices, n_processed_clouds, n) 
+    for (i = 0; i < n; i++)
+	{
 	    run_icp_step(dataset, loop_closure_indices[i].first, loop_closure_indices[i].second, 
             &(relative_transform_vector[i]), &(convergence_vector[i]));
+
+		#pragma omp critical
+        {
+            n_processed_clouds++;
+
+            if (n_processed_clouds % 100 == 0)
+    	    	printf("%d processed clouds of %d\n", n_processed_clouds, n);
+        }
+	}
 
 	write_output(out_file, loop_closure_indices, relative_transform_vector, convergence_vector);
     write_output_to_graphslam(argv[3], dataset, loop_closure_indices, relative_transform_vector, convergence_vector);

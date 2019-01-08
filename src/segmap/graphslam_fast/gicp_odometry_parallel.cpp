@@ -137,9 +137,21 @@ main(int argc, char **argv)
 
     printf("Running.\n");
 
-	#pragma omp parallel for default(none) shared(dataset, convergence_vector, relative_transform_vector, size) private(i)
+	int n_processed_clouds = 0;
+
+	#pragma omp parallel for default(none) shared(dataset, convergence_vector, relative_transform_vector, size, n_processed_clouds) private(i)
     for (i = 1; i < (size + 1); i++)
+	{
 		run_icp_step(dataset, i, relative_transform_vector, convergence_vector);
+
+        #pragma omp critical
+        {
+            n_processed_clouds++;
+
+            if (n_processed_clouds % 100 == 0)
+    	    	printf("%d processed clouds of %d\n", n_processed_clouds, size);
+        }
+	}
 
 	write_output(out_file, relative_transform_vector, convergence_vector);
     write_output_to_graphslam(argv[3], dataset, relative_transform_vector, convergence_vector);
