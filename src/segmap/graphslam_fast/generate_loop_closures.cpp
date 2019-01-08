@@ -24,7 +24,7 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
 		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) && 
-			 raw_cloud->at(i).x < 70.0 && raw_cloud->at(i).z > -1.0)
+			 raw_cloud->at(i).x < 70.0) // && raw_cloud->at(i).z > -1.0)
 			cloud->push_back(raw_cloud->at(i));
 	}
 
