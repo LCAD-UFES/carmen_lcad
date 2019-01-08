@@ -1,24 +1,70 @@
 import sys
 import os
 import cv2
+from glob import glob
 
 
-#def replace_format(path):
-	#i = len(path)
-	#while (i > 0):
-		#if path[i] == '.'
-		#path[i + 1] = 't'
-		#path[i + 2] = 'x'
-		#path[i + 3] = 't'
+def check_file_name(file_name):
+	# file_name format: lane_<n>.txt
+	try:
+		n = int(file_name[5:-4])
 		
+		if file_name[:5] != 'lane_' or file_name[-4:] != '.txt':
+			raise ValueError
+		
+	except ValueError:
+		n = -1
+	
+	return n
+
+
+def file_name_compare(file_a, file_b):
+	if os.path.dirname(file_a) != os.path.dirname(file_b):
+		return -1 if (file_a < file_b) else 1
+
+	fa = os.path.basename(file_a)
+	fb = os.path.basename(file_b)
+	# file_name format: lane_<n>.txt
+	try:
+		na = int(fa[5:-4])
+		nb = int(fb[5:-4])
+		
+		if check_file_name(fa) < 0 or check_file_name(fb) < 0:
+			raise ValueError
+		
+	except ValueError:
+		return -1 if (fa < fb) else int(fa > fb)
+	
+	return (na - nb)
+
+
+def get_image_file_name(label_file, labels_path, images_path, image_type):
+	file_name = os.path.basename(label_file)[:-3] + image_type
+	file_dir = os.path.dirname(label_file)
+	labels_parts = labels_path.split('*')
+	subdir = file_dir[len(labels_parts[0]):]
+	if len(labels_parts) > 1 and len(labels_parts[1]) > 1:
+		subdir = subdir[:-len(labels_parts[1]) + 1]
+	images_parts = images_path.split('*')
+	img_file_name = subdir.join(images_parts) + file_name
+	
+	return img_file_name
 
 
 def main(labels_path, images_path, image_dimensions):
-	for label_file in os.listdir(labels_path):
-		f = open(labels_path + label_file, "r")
-		print label_file
+	image_width, image_height = image_dimensions[:]
+	label_file_list = glob(labels_path + '*')
+	if not label_file_list:
+		print("\nNo labels files found: " + labels_path + "\n")
+		return 1
 
-		img_file = images_path + label_file.replace('.txt', '.png')
+	for label_file in sorted(label_file_list, cmp = file_name_compare):
+		if check_file_name(os.path.basename(label_file)) < 0:
+			print('FILE NAME FORMAT: ' + label_file)
+			continue
+
+		print(label_file)
+		img_file = get_image_file_name(label_file, labels_path, images_path, 'png')
 		if not os.path.isfile(img_file):
 			print('FILE NOT FOUND: ' + img_file)
 			continue
@@ -27,29 +73,43 @@ def main(labels_path, images_path, image_dimensions):
 		img = cv2.imread(img_file)
 		
 		i = 0
+		f = open(label_file)
+		
+		# Each line of the file contains the coordinates of one predicted bounding box
+		# Line format: class x y w h
+		#   Field 0: object class
+		#   Field 1: x coordinate of the bounding box's center (in a fraction of image_width)
+		#   Field 2: y coordinate of the bounding box's center (in a fraction of image_height)
+		#   Field 3: the bounding box's width  (in a fraction of image_width)
+		#   Field 4: the bounding box's height (in a fraction of image_height)
+		
 		for line in f:
-			if len(line) < 10:
-				continue
+			bbox = line.split()
+			if len(bbox) == 5:
+				obj_class = bbox[0]
+				x, y, w, h = [ float(data) for data in bbox[1:] ]
+				x_left   = int((x - (w / 2)) * image_width)
+				x_right  = int((x + (w / 2)) * image_width)
+				y_top    = int((y - (h / 2)) * image_height)
+				y_bottom = int((y + (h / 2)) * image_height)
+				
+				cv2.rectangle(img, (x_left, y_top), (x_right, y_bottom), (255,0,0), 2)
+				cv2.putText(img, obj_class + ' [%d]' % i, ((x_left + 3), (y_top - 6)), cv2.FONT_HERSHEY_PLAIN, 1, [255,255,0], 1);
+				i += 1
+			elif bbox:
+				print('ERROR: Invalid prediction file record: ' + line)
 			
-			box = line.split()
-			x1 = int((float(box[1]) - (float(box[3]) / 2)) * image_dimensions[0])
-			y1 = int((float(box[2]) - (float(box[4]) / 2)) * image_dimensions[1])
-			x2 = int((float(box[1]) + (float(box[3]) / 2)) * image_dimensions[0])
-			y2 = int((float(box[2]) + (float(box[4]) / 2)) * image_dimensions[1])
+		f.close()
 
-			#print str(x1) + ' ' +  str(y1) + ' ' + str(x2) + ' ' + str(y2)
-			cv2.rectangle(img, (x1, y1), (x2, y2), (255,0,0), 2)
-			cv2.putText(img, str(i), ((x1 + x2) / 2, (y1+ y2) / 2), cv2.FONT_HERSHEY_PLAIN, 1, [0,0,255], 1);
-			i += 1
-
-		while (1):
+		while True:
 			cv2.imshow('Yolo View', img)
 			key = cv2.waitKey(0) & 0xff
 			
-			if key == 10:      # Enter key
+			if key == 10:    # Enter key
 				break
-			elif key == 27:    # ESC key
-				return
+			if key == 27:    # ESC key
+				return 0
+	return 0
 
 
 if __name__ == "__main__":
@@ -58,12 +118,17 @@ if __name__ == "__main__":
 			sys.argv[1] += '/'
 		if not sys.argv[2].endswith('/'):
 			sys.argv[2] += '/'
+		
+		if len(sys.argv[1].split('*')) > 2 or len(sys.argv[1].split('*')) > 2: 
+			print("\nOnly one '*' allowed in pathnames\n")
 			
 		s = sys.argv[3].rsplit('x')
 		if len(s) != 2:
 			print("\nInvalid image size: wxh\n")
 		else:
 			image_dimensions = [int(s[0]), int(s[1])]
-			main(sys.argv[1], sys.argv[2], image_dimensions)
-	else:
-		print("\nUsage: python " + sys.argv[0] + " labels/path/ images/path/ image_size (wxh)\n")
+			if main(sys.argv[1], sys.argv[2], image_dimensions) == 0:
+				sys.exit()
+			
+	print("\nUsage: python " + sys.argv[0] + " labels_path images_path image_size(wxh)\n")
+	print("Example: python " + sys.argv[0] + ' "/lane_dataset/yolo/*/labels/" "/lane_dataset/gt/*/images/" 640x480\n')
