@@ -135,7 +135,13 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
 # 7. Using RASA
 [RASA Docs](https://www.rasa.com/docs/)
 
-- Instalação:
+
+#### Tensorflow
+
+	-- Tensorflow == 1.5
+
+
+- Installation:
 ```sh
  sudo apt-get install mpg123
  sudo pip3 install -U spacy
@@ -146,12 +152,16 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
  sudo pip3 install rasa_nlu[tensorflow]
  sudo apt-get install libjsoncpp-dev
 ```
-- Teste: [RASA/Quickstart]
+- Creating: [RASA/Quickstart]
+
+```sh
+cd $CARMEN_HOME/src/voice_interface
+```
 
 ```sh
 gedit nlu_config.yml &
 ```
-- Adicione o seguinte conteúdo no arquivo e salve-o: (where?)
+- Add the follow content and save it: 
 ```
 language: "pt"
 pipeline: "tensorflow_embedding"
@@ -160,7 +170,7 @@ pipeline: "tensorflow_embedding"
 ```sh
 gedit nlu.md &
 ```
-- Adicione o seguinte conteúdo no arquivo  e salve-o: (where?)
+- Add the follow content and save it: 
 
 ```md
 ## intent:greet
@@ -199,14 +209,14 @@ gedit nlu.md &
 ```sh
  python3 -m rasa_nlu.train -c nlu_config.yml --data nlu.md -o models --fixed_model_name nlu --project current --verbose
 ```
-- O comando acima cria o modelo. Teste o modelo via linha de comando com o codigo abaixo. Salve ele em um arquivo rasa_test.py:
+- The command above creates a model. Test the template with line command. Save it in a rasa_test.py file:
 
--  No terminal:
+- At the terminal:
 
 ```sh
  gedit rasa_test.py &
 ```
-- Adicione no arquivo:
+- Add the content below to the file:
 
 ```python
 from rasa_nlu.model import Interpreter
@@ -217,16 +227,16 @@ result = interpreter.parse(message)
 print(json.dumps(result, indent=2))
 ```
 
-- Teste o modelo via linha de comando com:
+- Test the model with line command:
 ```sh
 python3 rasa_test.py
 ```
-- Teste o modelo via servidor web inciando o servidor:
+- Test the model with web server:
 
 ```sh
 python3 -m rasa_nlu.server --path models --response_log logs
 ```
-- E, em um outro terminal, mandando um post:
+- And, in another terminal, send a post:
 
 ```sh
 curl -XPOST localhost:5000/parse -d '{"q":"Eu gostaria de conhecer um restaurante mexicano no norte", "project":"current", "model":"nlu"}'
@@ -234,15 +244,13 @@ curl -XPOST localhost:5000/parse -d '{"q":"Eu gostaria de conhecer um restaurant
 
 #### 7.1.2. Em C++
 
-- Salve o conteudo abaixo no arquivo c_post_example.cpp:
-
--  No terminal:
+- At the terminal:
 
 ```sh
 gedit c_post_example.cpp &
 ```
 
- - Conteúdo:
+ - Add the content below to the file and save it:
 
 ```c
  #include <iostream>
@@ -296,20 +304,22 @@ gedit c_post_example.cpp &
 }
 ```
 
-- Compile o codigo com a linha abaixo:
+- Compile the code:
 
 ```sh
  g++ c_post_example.cpp -lcurl -ljsoncpp
 ```
 
-- Teste: rode o servidor em um terminal: 
+- Test it: execute the server at the terminal: 
 ```sh
  python3 -m rasa_nlu.server --path models --response_log logs
 ```
-- Teste: rode o codigo em C++ em outro terminal:
+- Test it: execute the C++ code at other terminal:
 ```sh
  ./a.out
 ```
+
+
   
 ### 8. Tips
 
