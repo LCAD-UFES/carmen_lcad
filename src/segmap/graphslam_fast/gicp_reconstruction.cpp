@@ -34,7 +34,10 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 	///*
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
-		if ((fabs(raw_cloud->at(i).x) > 2.0 || fabs(raw_cloud->at(i).y) > 2.0) && raw_cloud->at(i).x < 70.0)
+		if ((fabs(raw_cloud->at(i).x) > 2.0 || fabs(raw_cloud->at(i).y) > 2.0) && raw_cloud->at(i).x < 70.0 
+			//&& raw_cloud->at(i).z > -1.0 
+			//&& raw_cloud->at(i).z < -0.0
+			) 
 			cloud->push_back(raw_cloud->at(i));
 	}
 	// */
@@ -193,7 +196,7 @@ main(int argc, char **argv)
 		aligned->clear();
         source = load_cloud(path_clouds[i]);
 		source = filter_pointcloud(source);
-		source = leafize(source, 0.015);
+		source = leafize(source, 0.15);
 		increase_bightness(source);
 
 		run_gicp(source, target, &correction, &converged, aligned, -1);
@@ -235,7 +238,7 @@ main(int argc, char **argv)
         //copyPointCloud(*source, *target);
 		//copyPointCloud(*aligned, *target);
 		(*target) += (*aligned);
-		target = leafize(target, 0.015);
+		target = leafize(target, 0.15);
 
 		viewer->removeAllPointClouds();
 		viewer->addPointCloud(target, "lcad");

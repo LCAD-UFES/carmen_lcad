@@ -22,7 +22,7 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
 		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) && 
-			 raw_cloud->at(i).x < 70.0) // || raw_cloud->at(i).z < 0.))
+			 raw_cloud->at(i).x < 70.0 && raw_cloud->at(i).z < -1)
 			cloud->push_back(raw_cloud->at(i));
 	}
 
@@ -62,7 +62,7 @@ run_icp_step(DatasetCarmen &dataset, int i, vector<Matrix<double, 4, 4>> &relati
 	pcl::transformPointCloud(*source, *source_moved, guess);
 
 	Matrix<double, 4, 4> correction;
-	run_gicp(source_moved, target, &correction, &(convergence_vector[i-1]), aligned, 0.05);
+	run_gicp(source_moved, target, &correction, &(convergence_vector[i-1]), aligned, 0.0);
 
 	relative_transform_vector[i-1] = correction;
 }

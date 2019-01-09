@@ -8,6 +8,7 @@
 #include <carmen/segmap_dataset.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 
 using namespace std;
@@ -23,8 +24,11 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
-		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) && 
-			 raw_cloud->at(i).x < 70.0) // && raw_cloud->at(i).z > -1.0)
+		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) 
+			&& raw_cloud->at(i).x < 70.0 
+			&& raw_cloud->at(i).z > -1.5 
+			&& raw_cloud->at(i).z < -0.0
+		)
 			cloud->push_back(raw_cloud->at(i));
 	}
 
@@ -38,6 +42,7 @@ run_icp_step(DatasetCarmen &dataset, int from, int to, Matrix<double, 4, 4> *rel
 	PointCloud<PointXYZRGB>::Ptr source(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr target(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr aligned(new PointCloud<PointXYZRGB>);
+	//PointCloud<PointXYZRGB>::Ptr aligned2(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr source_moved(new PointCloud<PointXYZRGB>);
 
 	dataset.load_pointcloud(from, target);
@@ -51,6 +56,9 @@ run_icp_step(DatasetCarmen &dataset, int from, int to, Matrix<double, 4, 4> *rel
 
 	source_pose.x -= target_pose.x;
 	source_pose.y -= target_pose.y;
+	//source_pose.x = 0.;
+	//source_pose.y = 0.;
+
 	target_pose.x = 0.;
 	target_pose.y = 0.;
 	
@@ -60,7 +68,34 @@ run_icp_step(DatasetCarmen &dataset, int from, int to, Matrix<double, 4, 4> *rel
 	
 	pcl::transformPointCloud(*source, *source_moved, guess);
 
-	run_gicp(source_moved, target, relative_transform, convergence_flag, aligned, 0.05);
+	run_gicp(source_moved, target, relative_transform, convergence_flag, aligned, 0.0);
+	//pcl::transformPointCloud(*source, *aligned2, ((*relative_transform) * guess).cast<float>());
+
+	/*
+	if (0)
+	{
+		static pcl::visualization::PCLVisualizer *viewer = NULL;
+
+		if (viewer == NULL)
+			viewer = new pcl::visualization::PCLVisualizer();
+
+		viewer->removeAllPointClouds();
+		viewer->setBackgroundColor(.5, .5, .5);
+		viewer->addPointCloud(target, "target");
+		viewer->addPointCloud(source_moved, "source");
+		viewer->addPointCloud(aligned, "aligned");
+		//viewer->addPointCloud(aligned2, "aligned2d");
+		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "source");
+		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "target");
+		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "aligned");
+		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "aligned2d");
+		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "source"); 
+		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "target"); 
+		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0, 1, "aligned"); 
+		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 1, "aligned2d");
+		viewer->spinOnce();
+	}
+	*/
 }
 
 
@@ -92,6 +127,8 @@ write_output_to_graphslam(char *out_file, DatasetCarmen &dataset, vector<pair<in
 
 	    pose_source.x -= pose_target.x;
 	    pose_source.y -= pose_target.y;
+		//pose_source.x = 0;
+		//pose_source.y = 0;
 	    pose_target.x = 0.;
 	    pose_target.y = 0.;
 
@@ -99,7 +136,7 @@ write_output_to_graphslam(char *out_file, DatasetCarmen &dataset, vector<pair<in
 		    Pose2d::to_matrix(pose_target).inverse() *
 		    Pose2d::to_matrix(pose_source);
 
-        Matrix<double, 4, 4> relative_pose = guess * relative_transform_vector[i];
+        Matrix<double, 4, 4> relative_pose = relative_transform_vector[i] * guess;
         Pose2d pose = Pose2d::from_matrix(relative_pose);
         
         fprintf(f, "%d %d %d %lf %lf %lf\n", indices[i].first, indices[i].second,
@@ -120,7 +157,7 @@ struct myclass
 
 
 void
-find_loop_closure_poses(DatasetCarmen &dataset, vector<pair<int, int>> &loop_closure_indices)
+find_top_k_loop_closure_poses(DatasetCarmen &dataset, vector<pair<int, int>> &loop_closure_indices)
 {
 	for (int i = 0; i < dataset.data.size(); i++)
 	{
@@ -137,7 +174,7 @@ find_loop_closure_poses(DatasetCarmen &dataset, vector<pair<int, int>> &loop_clo
 
 			double dist = sqrt(pow(delta_x, 2) + pow(delta_y, 2));
 
-			if (dist < 5.0 && fabs(delta_t) > 20.)
+			if (dist < 3.0 && fabs(delta_t) > 20.)
                 candidates.push_back(pair<double, int>(dist, j));
 		}
 
@@ -163,6 +200,34 @@ find_loop_closure_poses(DatasetCarmen &dataset, vector<pair<int, int>> &loop_clo
 }
 
 
+void
+find_all_loop_closure_poses(DatasetCarmen &dataset, vector<pair<int, int>> &loop_closure_indices)
+{
+	for (int i = 0; i < dataset.data.size(); i += 100)
+	{
+        if (fabs(dataset.data[i].v) < 0.5)
+            continue;
+
+		for (int j = i + 1; j < dataset.data.size(); j++)
+		{
+			double delta_x = dataset.data[i].pose.x - dataset.data[j].pose.x;
+			double delta_y = dataset.data[i].pose.y - dataset.data[j].pose.y;
+			double delta_t = dataset.data[i].velodyne_time - dataset.data[j].velodyne_time;
+
+			double dist = sqrt(pow(delta_x, 2) + pow(delta_y, 2));
+
+			if (dist < 1.0 && fabs(delta_t) > 20.)
+			{
+                loop_closure_indices.push_back(pair<int, int>(i, j));
+				j += 100; // skip some messages
+			}
+		}
+	}
+
+	printf("Num loop closures: %ld\n", loop_closure_indices.size());
+}
+
+
 int 
 main(int argc, char **argv)
 {
@@ -180,17 +245,17 @@ main(int argc, char **argv)
 		exit(printf("Output file '%s' could not be open.\n", argv[2]));
 
     int size = dataset.data.size() - 1;
-    //int size = 100;
 
 	vector<Matrix<double, 4, 4>> relative_transform_vector(size);
 	vector<int> convergence_vector(size);
 	vector<pair<int, int>> loop_closure_indices;
 
     printf("Running.\n");
-	find_loop_closure_poses(dataset, loop_closure_indices);
+	find_all_loop_closure_poses(dataset, loop_closure_indices);
 
 	int n_processed_clouds = 0;
 	int n = loop_closure_indices.size();
+	//int n = 400;
 
    	#pragma omp parallel for default(none) private(i) shared(dataset, convergence_vector, relative_transform_vector, size, loop_closure_indices, n_processed_clouds, n) 
     for (i = 0; i < n; i++)

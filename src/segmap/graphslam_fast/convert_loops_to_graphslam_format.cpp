@@ -78,7 +78,7 @@ main(int argc, char **argv)
 		    Pose2d::to_matrix(pose_target).inverse() *
 		    Pose2d::to_matrix(pose_source);
 
-        Matrix<double, 4, 4> relative_pose = guess * relative_transform_vector[i];
+        Matrix<double, 4, 4> relative_pose = relative_transform_vector[i] * guess;
         Pose2d pose = Pose2d::from_matrix(relative_pose);
 
         fprintf(f, "%d %d %d %lf %lf %lf\n", 

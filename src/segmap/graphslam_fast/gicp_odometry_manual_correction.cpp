@@ -23,8 +23,11 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
-		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) && 
-			raw_cloud->at(i).x < 70.0) // && raw_cloud->at(i).z > -1.)
+		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) 
+			&& raw_cloud->at(i).x < 70.0 
+			&& raw_cloud->at(i).z > -1.5 
+			//&& raw_cloud->at(i).z < -0.3
+		)
 			cloud->push_back(raw_cloud->at(i));
 	}
 
@@ -131,7 +134,7 @@ int
 main(int argc, char **argv)
 {
     if (argc < 3)
-        exit(printf("Error: Use %s <dataset_dir> <odom_file>\n", argv[0]));
+        exit(printf("Error: Use %s <dataset_dir> <transforms_file_graphslam_format>\n", argv[0]));
 
     vector<pair<int,int>> indices;
 	vector<Pose2d> relative_transform_vector;
@@ -185,11 +188,11 @@ main(int argc, char **argv)
 
     	pcl::transformPointCloud(*source, *source_moved, guess);
 
-        viewer->addPointCloud(source_moved, "source");
+        //viewer->addPointCloud(source_moved, "source");
         viewer->addPointCloud(target, "target");
-        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "source");
+        //viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "source");
         viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "target");
-        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "source"); // red
+        //viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "source"); // red
         viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "target"); // green
 
         imshow("viewer", Mat::zeros(300, 300, CV_8UC3));
@@ -205,10 +208,12 @@ main(int argc, char **argv)
 			viewer->spinOnce();
 			c = waitKey(5);
 
+			//printf("c: %c %d\n", c, c);
+
 			if (c == ' ')
 				pause_viewer = !pause_viewer;
 
-			if (c == 'u')
+			if (c == 10) // enter
 				update_file(argv[2], corrected_poses, indices, convergence_vector);
 
 			if ((!pause_viewer && direction == 0) || (pause_viewer && c == 83)) // right arrow
@@ -241,7 +246,7 @@ main(int argc, char **argv)
 				mem.th = normalize_theta(corrected_pose.th - relative_transform_vector[i].th);
 			}
 
-			if (c == '0')
+			if (c == 82) // arrow up
 			{
 				corrected_pose.x = mem.x + relative_transform_vector[i].x;
 				corrected_pose.y = mem.y + relative_transform_vector[i].y;
@@ -250,7 +255,7 @@ main(int argc, char **argv)
 			}
 
 			// reset
-			if (c == 'h')
+			if (c == 84) // arrow down
 			{
 				corrected_pose = relative_transform_vector[i];
 				updated = 1;
@@ -260,8 +265,8 @@ main(int argc, char **argv)
 			if (c == 'd') { corrected_pose.x += 0.1; updated = 1; } 
 			if (c == 's') { corrected_pose.y -= 0.1; updated = 1; } 
 			if (c == 'w') { corrected_pose.y += 0.1; updated = 1; } 
-			if (c == 'q') { corrected_pose.th = normalize_theta(corrected_pose.th - degrees_to_radians(0.5)); updated = 1; } 
-			if (c == 'e') { corrected_pose.th = normalize_theta(corrected_pose.th + degrees_to_radians(0.5)); updated = 1; } 
+			if (c == 'e') { corrected_pose.th = normalize_theta(corrected_pose.th - degrees_to_radians(0.5)); updated = 1; } 
+			if (c == 'q') { corrected_pose.th = normalize_theta(corrected_pose.th + degrees_to_radians(0.5)); updated = 1; } 
 
 			if (updated)
 			{

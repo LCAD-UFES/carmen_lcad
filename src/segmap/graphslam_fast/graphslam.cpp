@@ -171,6 +171,7 @@ add_vertices(vector<Data> &input_data, SparseOptimizer *optimizer, vector<SE2> &
 		//);
 
 		SE2 estimate = dead_reckoning[i];
+		//SE2 estimate = SE2(i, 0, 0);
 
 		VertexSE2* vertex = new VertexSE2;
 		vertex->setId(i);
@@ -254,15 +255,20 @@ gps_std_from_quality(int quality)
 void
 add_gps_edges(vector<Data> &input_data, SparseOptimizer *optimizer, double xy_std_mult, double th_std)
 {
-	for (size_t i = 0; i < input_data.size(); i += 20)
+	for (size_t i = 0; i < input_data.size(); i += 1)
 	{
 		if (fabs(input_data[i].v) < .2) // || input_data[i].quality != 4)
 			continue;
 
+		double angle = input_data[i].angle;
+		
+		if (i > 0 && fabs(input_data[i].v) >= 1.0)
+			angle = atan2(input_data[i].y - input_data[i-1].y, input_data[i].x - input_data[i-1].x);
+
 		SE2 measure(input_data[i].x - input_data[0].x,
 					input_data[i].y - input_data[0].y,
-					//input_data[i].angle);
-					0.);
+					angle);
+					//0.);
 
 		double gps_std = gps_std_from_quality(input_data[i].quality);
 		Matrix3d information = create_information_matrix(gps_std * xy_std_mult, gps_std * xy_std_mult, th_std);
@@ -305,9 +311,9 @@ create_dead_reckoning(vector<Data> &input_data, vector<SE2> &dead_reckoning, dou
 	th = init_angle;
 	dead_reckoning.push_back(SE2(x, y, th));
 
-	//mult_v = .97;
-	//mult_phi = 0.94;
-    //add_phi = -0.001;
+	//mult_v = 1.0; //1.2;
+	//mult_phi = 1.0; //0.94;
+    //add_phi = 0.0; //-0.001;
 
 	for (size_t i = 1; i < input_data.size(); i++)
 	{
@@ -371,10 +377,11 @@ load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_d
 
 	create_dead_reckoning(input_data, dead_reckoning, mult_v, mult_phi, add_phi, init_angle);
 	add_vertices(input_data, optimizer, dead_reckoning);
-    add_odometry_edges(input_data, optimizer, dead_reckoning, 0.01, 0.001);
-	add_gps_edges(input_data, optimizer, 0.2, 1e10 * M_PI); //.2, M_PI);
-	add_loop_closure_edges(loop_data, optimizer, 0.5, 0.05);
-    add_loop_closure_edges(gicp_odom_data, optimizer, 0.5, 0.05);
+    add_odometry_edges(input_data, optimizer, dead_reckoning, 0.003, carmen_degrees_to_radians(.03));
+	//add_gps_edges(input_data, optimizer, 0.2, carmen_degrees_to_radians(10.));
+	add_gps_edges(input_data, optimizer, 0.5, 1e10 * M_PI); //.2, M_PI);
+	//add_loop_closure_edges(loop_data, optimizer, 0.1, carmen_degrees_to_radians(10.));
+    //add_loop_closure_edges(gicp_odom_data, optimizer, 0.5, carmen_degrees_to_radians(3.));
     //add_gps_loop_closures(optimizer, input_data, 1.0, M_PI);
 
 	optimizer->save("poses_before.g2o");

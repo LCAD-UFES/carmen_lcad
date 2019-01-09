@@ -18,6 +18,8 @@ enum SEGMAP_MODE
 	SEGMAP_MODE_SEMANTIC
 };
 
+const double MAX_RANGE = 100.;
+
 
 class CityScapesColorMap
 {
@@ -95,14 +97,15 @@ void ackerman_motion_model(Pose2d &pose, double v, double phi, double dt);
 void
 correct_point(Pose2d &correction,
 		Matrix<double, 4, 4> vel2car,
-		Matrix<double, 4, 4> pose,
 		pcl::PointXYZRGB &point);
 
+/*
 void
 transform_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
 		pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud,
 		Pose2d &pose,
 		Matrix<double, 4, 4> &vel2car,
 		double v, double phi);
+*/
 
 #endif

@@ -179,9 +179,8 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 	//#pragma omp parallel for default(none) private(i) shared(cloud, map, vel2car, v, phi)
 	for (i = 0; i < _n; i++)
 	{
-		//Matrix<double, 4, 4> tr = Pose2d::to_matrix(_p[i]) * vel2car;
-		//transformPointCloud(*cloud, *transformed_cloud, tr);
-		transform_pointcloud(cloud, transformed_cloud, _p[i], vel2car, v, phi);
+		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
+		//transform_pointcloud(cloud, transformed_cloud, _p[i], vel2car, v, phi);
 
 		if (_weight_type == WEIGHT_SEMANTIC)
 			_w[i] = _semantic_weight(transformed_cloud, map);
