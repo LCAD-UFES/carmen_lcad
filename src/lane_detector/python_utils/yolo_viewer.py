@@ -1,6 +1,7 @@
 import sys
 import os
 import cv2
+import numpy as np
 from glob import glob
 
 
@@ -51,27 +52,26 @@ def get_image_file_name(label_file, labels_path, images_path, image_type):
 	return img_file_name
 
 
-def main(labels_path, images_path, image_dimensions):
-	image_width, image_height = image_dimensions[:]
+def main(labels_path, images_path, image_width, image_height):
 	label_file_list = glob(labels_path + '*')
 	if not label_file_list:
-		print("\nNo labels files found: " + labels_path + "\n")
+		print("\nERROR: No labels files found: " + labels_path + "\n")
 		return 1
 
 	for label_file in sorted(label_file_list, cmp = file_name_compare):
 		if check_file_name(os.path.basename(label_file)) < 0:
-			print('FILE NAME FORMAT: ' + label_file)
+			print('ERROR: FILE NAME FORMAT: ' + label_file)
 			continue
 
 		print(label_file)
 		img_file = get_image_file_name(label_file, labels_path, images_path, 'png')
 		if not os.path.isfile(img_file):
-			print('FILE NOT FOUND: ' + img_file)
-			continue
-		
-		print(img_file)
-		img = cv2.imread(img_file)
-		
+			print('ERROR: FILE NOT FOUND: ' + img_file)
+			img = np.full((image_height, image_width, 3), (255,255,255), np.uint8)
+		else:
+			print(img_file)
+			img = cv2.imread(img_file)
+
 		i = 0
 		f = open(label_file)
 		
@@ -119,16 +119,15 @@ if __name__ == "__main__":
 		if not sys.argv[2].endswith('/'):
 			sys.argv[2] += '/'
 		
-		if len(sys.argv[1].split('*')) > 2 or len(sys.argv[1].split('*')) > 2: 
+		if len(sys.argv[1].split('*')) > 2 or len(sys.argv[2].split('*')) > 2: 
 			print("\nOnly one '*' allowed in pathnames\n")
-			
-		s = sys.argv[3].rsplit('x')
-		if len(s) != 2:
-			print("\nInvalid image size: wxh\n")
-		else:
-			image_dimensions = [int(s[0]), int(s[1])]
-			if main(sys.argv[1], sys.argv[2], image_dimensions) == 0:
+		else:	
+			s = sys.argv[3].split('x')
+			if len(s) != 2:
+				print("\nInvalid image size: wxh\n")
+			elif main(sys.argv[1], sys.argv[2], int(s[0]), int(s[1])) == 0:
 				sys.exit()
 			
 	print("\nUsage: python " + sys.argv[0] + " labels_path images_path image_size(wxh)\n")
 	print("Example: python " + sys.argv[0] + ' "/lane_dataset/yolo/*/labels/" "/lane_dataset/gt/*/images/" 640x480\n')
+	print("Note: label lines must be in format: class x y w h (in fractions)\n")

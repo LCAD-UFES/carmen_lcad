@@ -1,5 +1,6 @@
 import sys
 import os
+from glob import glob
 
 
 def check_file_name(file_name):
@@ -18,55 +19,58 @@ def check_file_name(file_name):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("\nUsage: python " + sys.argv[0] + " <ground_truth_dir>\n")
+        print("\nUsage: python " + sys.argv[0] + " <labels_dir>\n")
         sys.exit(1)
 
-    gt_subdirs = [subdir for subdir in os.listdir(sys.argv[1])]
+    if not sys.argv[1].endswith('/'):
+        sys.argv[1] += '/'
     
+    if len(sys.argv[1].split('*')) > 2: 
+        print("\nOnly one '*' allowed in pathname\n")
+        sys.exit(1)
+
+    label_file_list = glob(sys.argv[1] + '*')
+    if not label_file_list:
+        print("\nERROR: No label files found: " + sys.argv[1] + "\n")
+        sys.exit(1)
+
     file_count = 0; file_error_name = 0; file_error_lines = 0; file_error_fields = 0; file_error_value = 0
     error_lines = [0] * 100
-    
-    for subdir in gt_subdirs:
-        subdir_name = sys.argv[1] + '/' + subdir + '/labels'
-        if not os.path.isdir(subdir_name):
+
+    for label_file in label_file_list:
+        gt_file = os.path.basename(label_file)
+        if not os.path.isfile(label_file):
             continue
 
-        gt_files = [files for files in os.listdir(subdir_name)]
-
-        for gt_file in gt_files:
-            file_name = subdir_name + '/' + gt_file
-            if not os.path.isfile(file_name):
+        file_count += 1
+        
+        if check_file_name(gt_file) < 0:
+            file_error_name += 1
+            print('Error: file name: ' + label_file)
+            continue
+        
+        file_lines = open(label_file).readlines()
+        if len(file_lines) != 6:
+            file_error_lines += 1
+            if len(file_lines) < 100:
+                error_lines[len(file_lines)] += 1
+            print('Error: line count = %d ' % len(file_lines) + '  file = %s' % label_file)
+            continue
+        
+        for line in file_lines:
+            fields = line.split()
+            if len(fields) != 5:
+                file_error_fields += 1
+                print('Error: field count = %d ' % len(fields) + '  line = %s' % line + '  file = %s' % label_file)
                 continue
-
-            file_count += 1
             
-            if check_file_name(gt_file) < 0:
-                file_error_name += 1
-                print('Error: file name: ' + file_name)
-                continue
-            
-            file_lines = open(file_name).readlines()
-            if len(file_lines) != 6:
-                file_error_lines += 1
-                if len(file_lines) < 100:
-                    error_lines[len(file_lines)] += 1
-                print('Error: line count = %d ' % len(file_lines) + '  file = %s' % file_name)
-                continue
-            
-            for line in file_lines:
-                fields = line.split()
-                if len(fields) != 5:
-                    file_error_fields += 1
-                    print('Error: field count = %d ' % len(fields) + '  line = %s' % line + '  file = %s' % file_name)
-                    continue
-                
-                for value in fields:
-                    try:
-                        float(value)
-                        
-                    except ValueError:
-                        file_error_value += 1
-                        print('Error: data value = %s' % value + '  line = %s' % line + '  file = %s' % file_name)
+            for value in fields:
+                try:
+                    float(value)
+                    
+                except ValueError:
+                    file_error_value += 1
+                    print('Error: data value = %s' % value + '  line = %s' % line + '  file = %s' % label_file)
                         
     print('Total file count = %d' % file_count)
     print('Total file name errors = %d' % file_error_name)

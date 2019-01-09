@@ -2,8 +2,10 @@ import sys
 import os
 import cv2
 import numpy as np
+from glob import glob
 
 out_of_range = 999999
+
 
 def file_name_compare(fa, fb):
 	# file_name format: lane_<n>.txt
@@ -156,7 +158,7 @@ def show_image(gt_points, gt_poly_lines, predictions_points, gt_file_name, image
 		
 		if key == 10:      # Enter key
 			break
-		elif key == 27:    # ESC key
+		if key == 27:      # ESC key
 			sys.exit()
 
 
