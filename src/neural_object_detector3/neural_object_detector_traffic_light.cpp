@@ -17,6 +17,13 @@ map<int,Scalar> tl_colors = {
     {1, Scalar(0, 255, 0)},
 };
 
+map<int,char const*> tl_code_names = {
+    {RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED,    "RED"},
+    {RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN,  "GREEN"},
+    {RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_YELLOW, "YELLOW"},
+    {RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF,    "OFF"},
+};
+
 vector <carmen_pose_3D_t> annotation_vector;
 vector <carmen_pose_3D_t> nearests_traffic_lights_vector;
 
@@ -654,6 +661,7 @@ publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clo
 static void
 publish_traffic_lights(carmen_traffic_light_message *traffic_light_message)
 {
+    // print("image_timestamp=;tl_state=;distance=", )
     carmen_traffic_light_publish_message(camera, traffic_light_message);
 }
 
@@ -721,7 +729,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
                 }
             }
 
-            printf("Timestamp=%lf; Distance=%lf\n", image_msg->timestamp, distance_to_tf);
+            // printf("Timestamp=%lf; Distance=%lf\n", image_msg->timestamp, distance_to_tf);
         }
 
         if (predictions.size() > 0)
@@ -732,6 +740,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
             {
                 carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotations_on_image);
                 publish_traffic_lights(&traffic_light_message);
+                char const* tl_code_name = tl_code_names[traffic_light_message.traffic_lights->color];
+                printf("image_timestamp=%lf;tl_state=%s;distance=%lf\n", image_msg->timestamp, tl_code_name, distance_to_tf);
             }
         }
 
