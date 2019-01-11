@@ -17,8 +17,10 @@ void *network_struct;
 
 int camera;
 int camera_side;
+int qtd_crops;
 double meters_spacement;
 char *log_name;
+char *crops_tam;
 char *groundtruth_path;
 char *detection_type;
 carmen_camera_parameters camera_parameters;
@@ -456,12 +458,14 @@ save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_ori
 	{
 		if (strcmp(detection_type,"-cs") == 0)
 		{
-			for (int i = scene_slices.size()-1; i >= 1 ; i--)
-			{
-				cv::rectangle(rgb_image,
-						cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x, transform_factor_of_slice_to_original_frame[i].translate_factor_y),
-						cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x + scene_slices[i].cols, transform_factor_of_slice_to_original_frame[i].translate_factor_y + scene_slices[i].rows),
-						colors[i-1], 3);
+			if(qtd_crops != 1){
+				for (int i = qtd_crops-1; i >= 1 ; i--)
+				{
+					cv::rectangle(rgb_image,
+							cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x, transform_factor_of_slice_to_original_frame[i].translate_factor_y),
+							cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x + scene_slices[i].cols, transform_factor_of_slice_to_original_frame[i].translate_factor_y + scene_slices[i].rows),
+							colors[i-1], 3);
+				}
 			}
 			cv::imwrite(images_folder, rgb_image);
 
@@ -1291,7 +1295,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	t.translate_factor_y = 0;
     	transform_factor_of_slice_to_original_frame.push_back(t);
     	get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image, distances_of_rddf_from_car);
-    	colors = get_slice_colors (scene_slices.size());
+    	colors = get_slice_colors (qtd_crops);
 
 
     	//    for (int i = 0; i < scene_slices.size(); i++)
@@ -1305,7 +1309,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	//    }
     	//cout<<endl<<endl<<endl<<endl;
     	vector<vector<bbox_t>> bounding_boxes_of_slices;
-    	for (int i = 0; i < scene_slices.size(); i++)
+    	for (int i = 0; i < qtd_crops; i++)
     	{
     		vector<bbox_t> predictions;
     		predictions = get_predictions_of_slices(i, scene_slices[i]);
@@ -1500,9 +1504,11 @@ read_parameters(int argc, char **argv)
     char *meters;
     meters = argv[3];
     meters_spacement = atoi(meters);
-    log_name = argv[4];
-    groundtruth_path = argv[5];
-    detection_type = argv[6];
+    crops_tam = argv[4];
+    qtd_crops = atoi(crops_tam);
+    log_name = argv[5];
+    groundtruth_path = argv[6];
+    detection_type = argv[7];
 
 
     int num_items;
@@ -1595,9 +1601,9 @@ initializer()
 int
 main(int argc, char **argv)
 {
-    if ((argc != 7))
+    if ((argc != 8))
         carmen_die("%s: Wrong number of parameters. neural_object_detector2 requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)>"
-        		" <meters_spacement> <log_name> <groundtruth_path> <-cs for slices -ss without slices>\n",
+        		" <meters_spacement> <qtd_crops> <log_name> <groundtruth_path> <-cs for slices -ss without slices>\n",
                    argv[0], argc - 1, argv[0]);
 
     int device_id = 0;
