@@ -24,7 +24,7 @@ char *poses_filename = NULL;
 vector<carmen_point_t> poses_array;
 carmen_point_t from_pose = {0.0, 0.0, 0.0};
 carmen_point_t to_pose = {0.0, 0.0, 0.0};
-double radius = 5.0;
+double radius = 0.0;
 bool show_map_changes = false;
 
 
@@ -53,51 +53,54 @@ get_area_of_interest_from_poses_array(carmen_map_config_t map_config, double rad
 cv::Vec3b
 transform_map_to_image(double gt_cell, double clean_cell, double dirty_cell, bool update_stats)
 {
-	if (gt_cell >= 0.0 && clean_cell >= 0.0 && dirty_cell >= 0.0)
+	cv::Vec3b cell_color = cv::Vec3b(255, 144, 30); // bluish
+	int update = int(update_stats);
+
+	if (gt_cell < 0.0 || clean_cell < 0.0 || dirty_cell < 0.0)
+		return cell_color;
+
+	if (gt_cell <= IS_OBSTACLE && clean_cell <= IS_OBSTACLE  && dirty_cell <= IS_OBSTACLE)
 	{
-		if (gt_cell <= IS_OBSTACLE && clean_cell <= IS_OBSTACLE  && dirty_cell <= IS_OBSTACLE)
-		{
-			true_negatives += int(update_stats);
-			return cv::Vec3b(255, 255, 255); // white
-		}
-		if (gt_cell <= IS_OBSTACLE && clean_cell <= IS_OBSTACLE  && dirty_cell >  IS_OBSTACLE)
-		{
-			true_positives += int(update_stats);
-			return cv::Vec3b(  0, 175,   0); // green
-		}
-		if (gt_cell <= IS_OBSTACLE && clean_cell >  IS_OBSTACLE  && dirty_cell <= IS_OBSTACLE)
-		{
-			false_positives_N += int(update_stats);
-			return cv::Vec3b(  0, 127, 127); // brown
-		}
-		if (gt_cell <= IS_OBSTACLE && clean_cell >  IS_OBSTACLE  && dirty_cell >  IS_OBSTACLE)
-		{
-			false_negatives_N += int(update_stats);
-			return cv::Vec3b(  0,   0, 255); // red
-		}
-		if (gt_cell >  IS_OBSTACLE && clean_cell <= IS_OBSTACLE  && dirty_cell <= IS_OBSTACLE)
-		{
-			false_negatives += int(update_stats);
-			return cv::Vec3b(  0,   0, 127); // dark red
-		}
-		if (gt_cell >  IS_OBSTACLE && clean_cell <= IS_OBSTACLE  && dirty_cell >  IS_OBSTACLE)
-		{
-			false_positives += int(update_stats);
-			return cv::Vec3b( 31, 172, 255); // orange
-		}
-		if (gt_cell >  IS_OBSTACLE && clean_cell >  IS_OBSTACLE  && dirty_cell <= IS_OBSTACLE)
-		{
-			true_positives_N += int(update_stats);
-			return cv::Vec3b(  0, 100,   0); // dark green
-		}
-		if (gt_cell >  IS_OBSTACLE && clean_cell >  IS_OBSTACLE  && dirty_cell >  IS_OBSTACLE)
-		{
-			true_negatives_N += int(update_stats);
-			return cv::Vec3b(  0,   0,   0); // black
-		}
+		true_negatives += update;
+		cell_color = cv::Vec3b(255, 255, 255); // white
+	}
+	else if (gt_cell <= IS_OBSTACLE && clean_cell <= IS_OBSTACLE  && dirty_cell >  IS_OBSTACLE)
+	{
+		true_positives += update;
+		cell_color = cv::Vec3b(  0, 175,   0); // green
+	}
+	else if (gt_cell <= IS_OBSTACLE && clean_cell >  IS_OBSTACLE  && dirty_cell <= IS_OBSTACLE)
+	{
+		false_positives_N += update;
+		cell_color = cv::Vec3b(  0, 127, 127); // brown
+	}
+	else if (gt_cell <= IS_OBSTACLE && clean_cell >  IS_OBSTACLE  && dirty_cell >  IS_OBSTACLE)
+	{
+		false_negatives_N += update;
+		cell_color = cv::Vec3b(  0,   0, 255); // red
+	}
+	else if (gt_cell >  IS_OBSTACLE && clean_cell <= IS_OBSTACLE  && dirty_cell <= IS_OBSTACLE)
+	{
+		false_negatives += update;
+		cell_color = cv::Vec3b(  0,   0, 127); // dark red
+	}
+	else if (gt_cell >  IS_OBSTACLE && clean_cell <= IS_OBSTACLE  && dirty_cell >  IS_OBSTACLE)
+	{
+		false_positives += update;
+		cell_color = cv::Vec3b( 31, 172, 255); // orange
+	}
+	else if (gt_cell >  IS_OBSTACLE && clean_cell >  IS_OBSTACLE  && dirty_cell <= IS_OBSTACLE)
+	{
+		true_positives_N += update;
+		cell_color = cv::Vec3b(  0, 100,   0); // dark green
+	}
+	else if (gt_cell >  IS_OBSTACLE && clean_cell >  IS_OBSTACLE  && dirty_cell >  IS_OBSTACLE)
+	{
+		true_negatives_N += update;
+		cell_color = cv::Vec3b(  0,   0,   0); // black
 	}
 
-	return cv::Vec3b(255, 144, 30);
+	return cell_color;
 }
 
 
@@ -119,7 +122,7 @@ compute_one_map_changes(char *gt_path, char *clean_path, char *dirty_path, char 
 		carmen_map_free_gridmap(&gt_map);
 		return;
 	}
-	printf("Opening map:    %s\n", clean_path);
+	printf("Opening clean_map: %s\n", clean_path);
 
 	if (carmen_map_read_gridmap_chunk(dirty_path, &dirty_map) != 0)
 	{
@@ -128,7 +131,7 @@ compute_one_map_changes(char *gt_path, char *clean_path, char *dirty_path, char 
 		carmen_map_free_gridmap(&clean_map);
 		return;
 	}
-	printf("Opening map:    %s\n", dirty_path);
+	printf("Opening dirty_map: %s\n", dirty_path);
 
 	char *filename = strrchr(gt_path, '/') + 1;
 	sscanf(filename, "m%lf_%lf.map", &gt_map.config.x_origin, &gt_map.config.y_origin);
@@ -146,6 +149,10 @@ compute_one_map_changes(char *gt_path, char *clean_path, char *dirty_path, char 
 		}
 	}
 
+	carmen_map_free_gridmap(&gt_map);
+	carmen_map_free_gridmap(&clean_map);
+	carmen_map_free_gridmap(&dirty_map);
+
 	img = img / shade;
 	resize(img, img, cv::Size(0, 0), 2.5, 2.5, cv::INTER_NEAREST);
 
@@ -160,10 +167,6 @@ compute_one_map_changes(char *gt_path, char *clean_path, char *dirty_path, char 
 		cv::waitKey(0);
 		cv::destroyWindow(filename);
 	}
-
-	carmen_map_free_gridmap(&gt_map);
-	carmen_map_free_gridmap(&clean_map);
-	carmen_map_free_gridmap(&dirty_map);
 }
 
 
@@ -187,6 +190,11 @@ compute_metrics()
 	true_negatives += true_negatives_N;
 	false_positives += false_positives_N;
 	false_negatives += false_negatives_N;
+
+	printf("\nTP (%8d)\n", true_positives);
+	printf("TN (%8d)\n", true_negatives);
+	printf("FP (%8d)\n", false_positives);
+	printf("FN (%8d)\n\n", false_negatives);
 
 	int gt_positives = true_positives + false_negatives;
 	int gt_negatives = true_negatives + false_positives;
