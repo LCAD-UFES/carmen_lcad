@@ -143,9 +143,10 @@ compute_one_map_changes(char *gt_path, char *clean_path, char *dirty_path, char 
 	{
 		for (int y = 0; y < gt_map.config.y_size; y++)
 		{
-			bool update_stats = (shade.at<cv::Vec3b>(cv::Point(x, gt_map.config.y_size - 1 - y)) == cv::Vec3b(1,1,1));
+			cv::Point map_cell = cv::Point(x, gt_map.config.y_size - 1 - y);
+			bool update_stats = (shade.at<cv::Vec3b>(map_cell) == cv::Vec3b(1,1,1));
 			cv::Vec3b cell_color = transform_map_to_image(gt_map.map[x][y], clean_map.map[x][y], dirty_map.map[x][y], update_stats);
-			img.at<cv::Vec3b>(cv::Point(x, gt_map.config.y_size - 1 - y)) = cell_color;
+			img.at<cv::Vec3b>(map_cell) = cell_color;
 		}
 	}
 
@@ -191,11 +192,6 @@ compute_metrics()
 	false_positives += false_positives_N;
 	false_negatives += false_negatives_N;
 
-	printf("\nTP (%8d)\n", true_positives);
-	printf("TN (%8d)\n", true_negatives);
-	printf("FP (%8d)\n", false_positives);
-	printf("FN (%8d)\n\n", false_negatives);
-
 	int gt_positives = true_positives + false_negatives;
 	int gt_negatives = true_negatives + false_positives;
 	int total = gt_positives + gt_negatives;
@@ -213,9 +209,17 @@ compute_metrics()
 
 	accuracy = (double) trues / total;
 
-	printf("Positives %9d (%6.2lf%%)\n", gt_positives, (double) 100 * gt_positives / total);
-	printf("Negatives %9d (%6.2lf%%)\n", gt_negatives, (double) 100 * gt_negatives / total);
-	printf("\nPrecision %9lf \nRecall    %9lf\nAccuracy  %9lf\n\n", precision, recall, accuracy);
+	printf("Positives         (%8d) (%6.2lf%%)\n", gt_positives, (double) 100 * gt_positives / total);
+	printf("Negatives         (%8d) (%6.2lf%%)\n", gt_negatives, (double) 100 * gt_negatives / total);
+
+	printf("\nTP                (%8d)\n", true_positives);
+	printf("TN                (%8d)\n", true_negatives);
+	printf("FP                (%8d)\n", false_positives);
+	printf("FN                (%8d)\n", false_negatives);
+	printf("----------------------------\n");
+	printf("Total             (%8d)\n", total);
+
+	printf("\nPrecision %9.2lf%% \nRecall    %9.2lf%%\nAccuracy  %9.2lf%%\n\n", 100 * precision, 100 * recall, 100 * accuracy);
 }
 
 
