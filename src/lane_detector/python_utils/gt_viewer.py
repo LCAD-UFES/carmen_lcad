@@ -21,7 +21,7 @@ def check_file_name(file_name):
 	return n
 
 
-def file_name_compare(file_a, file_b):
+def file_name_by_number(file_a, file_b):
 	if os.path.dirname(file_a) != os.path.dirname(file_b):
 		return -1 if (file_a < file_b) else 1
 
@@ -190,7 +190,7 @@ def main(gt_path, images_path, image_width, image_height):
 		print("\nERROR: No ground truth files found: " + gt_path + "\n")
 		return 1
 
-	for gt_file in sorted(gt_file_list, cmp = file_name_compare):
+	for gt_file in sorted(gt_file_list, cmp = file_name_by_number):
 		if check_file_name(os.path.basename(gt_file)) < 0:
 			print('ERROR: FILE NAME FORMAT: ' + gt_file)
 			continue
