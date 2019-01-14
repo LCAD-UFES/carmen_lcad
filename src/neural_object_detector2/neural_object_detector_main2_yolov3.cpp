@@ -17,8 +17,10 @@ void *network_struct;
 
 int camera;
 int camera_side;
+int qtd_crops;
 double meters_spacement;
 char *log_name;
+char *crops_tam;
 char *groundtruth_path;
 char *detection_type;
 carmen_camera_parameters camera_parameters;
@@ -456,12 +458,14 @@ save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_ori
 	{
 		if (strcmp(detection_type,"-cs") == 0)
 		{
-			for (int i = scene_slices.size()-1; i >= 1 ; i--)
-			{
-				cv::rectangle(rgb_image,
-						cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x, transform_factor_of_slice_to_original_frame[i].translate_factor_y),
-						cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x + scene_slices[i].cols, transform_factor_of_slice_to_original_frame[i].translate_factor_y + scene_slices[i].rows),
-						colors[i-1], 3);
+			if(qtd_crops != 1){
+				for (int i = qtd_crops-1; i >= 1 ; i--)
+				{
+					cv::rectangle(rgb_image,
+							cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x, transform_factor_of_slice_to_original_frame[i].translate_factor_y),
+							cv::Point(transform_factor_of_slice_to_original_frame[i].translate_factor_x + scene_slices[i].cols, transform_factor_of_slice_to_original_frame[i].translate_factor_y + scene_slices[i].rows),
+							colors[i-1], 3);
+				}
 			}
 			cv::imwrite(images_folder, rgb_image);
 
@@ -517,7 +521,7 @@ save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_slices_in_ori
 		{
 			char classe [10];
 			float x1, y1, x2, y2;
-			fscanf (f_groundtruth, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2);
+			int retorno = fscanf (f_groundtruth, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2);
 			FILE *f_detection = fopen (detections_folder.c_str(), "w");
 			for (int i = 0; i < bounding_boxes_of_slices_in_original_image.size(); i++)
 			{
@@ -724,10 +728,10 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 	bbox_t b;
 	bool intersects_with_bboxes = false;
 	bool rect_dont_intersects = false;
-
 	for (int i = 0; i < bounding_boxes_of_slices.size(); i++)
 	{
 		for (int j = 0; j < bounding_boxes_of_slices[i].size(); j++)
+
 		{
 			b = bounding_boxes_of_slices[i][j];
 			b.x = bounding_boxes_of_slices[i][j].x + transform_factor_of_slice_to_original_frame[i].translate_factor_x;
@@ -773,25 +777,25 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 					r2.y = bboxes[k].y + bboxes[k].h;
 					//cout<<"\t"<<l2.x<<" "<<l2.y<<" "<<r2.x<<" "<<r2.y<<endl;
 					//if (rectangles_intersects(l1, r1, l2, r2))
-//					if(rectangles_intersects(rect_A, rect_B))
-//					{
-//						percentage_of_intersection_between_bboxes = calc_percentage_of_rectangles_intersection(l1, r1, l2, r2);
-//						//cout<< percentage_of_intersection_between_bboxes<< endl;
-//						int area2 = abs( calc_area((l2.x - r2.x), (l2.y - r2.y)) ); //abs(l2.x - r2.x) * abs(l2.y - r2.y);
-//						if (area2 > area1)
-//						{
-//							b.x = l2.x;
-//							b.y = l2.y;
-//							b.w = bboxes[k].w;
-//							b.h = bboxes[k].h;
-//						}
-//
-//						if (percentage_of_intersection_between_bboxes > 1)
-//						{
-//							intersects_with_bboxes = true;
-//							break;
-//						}
-//					}
+					if(rectangles_intersects(rect_A, rect_B))
+					{
+						percentage_of_intersection_between_bboxes = calc_percentage_of_rectangles_intersection(l1, r1, l2, r2);
+						//cout<< percentage_of_intersection_between_bboxes<< endl;
+						int area2 = abs( calc_area((l2.x - r2.x), (l2.y - r2.y)) ); //abs(l2.x - r2.x) * abs(l2.y - r2.y);
+						if (area2 > area1)
+						{
+							b.x = l2.x;
+							b.y = l2.y;
+							b.w = bboxes[k].w;
+							b.h = bboxes[k].h;
+						}
+
+						if (percentage_of_intersection_between_bboxes > 1)
+						{
+							intersects_with_bboxes = true;
+							break;
+						}
+					}
 
 				}
 				if (intersects_with_bboxes == false)
@@ -807,7 +811,6 @@ transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_sli
 
 	return (bboxes);
 }
-
 
 vector<bbox_t>
 get_predictions_of_slices (int i, cv::Mat image)
@@ -847,50 +850,50 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 		double image_size_x;
 		double image_size_y;
 		//cout<<i<<endl;
-		if (i > 0)//pedro
-		//if (i >= 0)//ranik
+		//if (i > 0)//pedro
+		if (i >= 0)//ranik
 		{
-			double dist_percentage = (100.0 - distances_of_rddf_from_car[i])/100.0;//pedro
+			//double dist_percentage = (100.0 - distances_of_rddf_from_car[i])/100.0;//pedro
 			//double dist_percentage = pow((1-(meters_spacement/100)),i);//ramoni
-			//double dist_percentage = (distances_of_rddf_from_car[i]*5)/(pow(distances_of_rddf_from_car[i],2));//ranik
+			double dist_percentage = (distances_of_rddf_from_car[i]*5)/(pow(distances_of_rddf_from_car[i],2));//ranik
 			//cout<<dist_percentage<<endl;
-			image_size_x = static_cast<double>(scene_slices[(i+1)-1].cols) * dist_percentage;//pedroRamoni
-			image_size_y = static_cast<double>(scene_slices[(i+1)-1].rows) * dist_percentage;//pedroRamoni
-			//image_size_x = static_cast<double>(scene_slices[0].cols) * dist_percentage;//ranik
-			//image_size_y = static_cast<double>(scene_slices[0].rows) * dist_percentage;//ranik
+			//image_size_x = static_cast<double>(scene_slices[(i+1)-1].cols) * dist_percentage;//pedroRamoni
+			//image_size_y = static_cast<double>(scene_slices[(i+1)-1].rows) * dist_percentage;//pedroRamoni
+			image_size_x = static_cast<double>(scene_slices[0].cols) * dist_percentage;//ranik
+			image_size_y = static_cast<double>(scene_slices[0].rows) * dist_percentage;//ranik
 			//cout<<image_size_x<<" "<<image_size_y<<endl;
 		}
 
 		//cv::circle(out, cv::Point(rddf_points_in_image[i].x, rddf_points_in_image[i].y), 2.0, cv::Scalar(0, 255, 255), thickness, lineType);
 
-		if (i == 0)
-		{
-			//cv::Rect rec(rddf_points[0].x - 320, rddf_points[0].y-300, 640, 384);
-			double scale = 384.0 * (3.0 / 4.0);
-			top_left_point.x = rddf_points_in_image[0].x - 320;
-			top_left_point.y = rddf_points_in_image[0].y - scale;
+//		if (i == 0)
+//		{
+//			//cv::Rect rec(rddf_points[0].x - 320, rddf_points[0].y-300, 640, 384);
+//			double scale = 384.0 * (3.0 / 4.0);
+//			top_left_point.x = rddf_points_in_image[0].x - 320;
+//			top_left_point.y = rddf_points_in_image[0].y - scale;
+//
+//			cv::Rect rec(top_left_point.x, top_left_point.y, 640, 384);
+//			//cout<<"Slice"<<i<<" "<<640<<" "<<384<<endl;
+//			//cout<<rddf_points[0].x - 320<<" "<<rddf_points[0].y-scale<<" "<<640<<" "<<384-(rddf_points[0].y-scale)<<endl;
+//			if (check_rect_inside_image(rec, out)){
+//				roi = out (rec);
+//				//cout<<roi.cols<<" "<<roi.rows<<endl;
+//				mult_scale_x += double(scene_slices[0].cols) / double(roi.cols);
+//				mult_scale_y += double(scene_slices[0].rows) / double(roi.rows);
+//				t.scale_factor_x = mult_scale_x;
+//				t.scale_factor_y = mult_scale_y;
+//				sum_transform_x += top_left_point.x;
+//				sum_transform_y += top_left_point.y;
+//				t.translate_factor_x = sum_transform_x;
+//				t.translate_factor_y = sum_transform_y;
+//				scene_slices.push_back(roi);
+//				transform_factor_of_slice_to_original_frame.push_back(t);
+//			}
 
-			cv::Rect rec(top_left_point.x, top_left_point.y, 640, 384);
-			//cout<<"Slice"<<i<<" "<<640<<" "<<384<<endl;
-			//cout<<rddf_points[0].x - 320<<" "<<rddf_points[0].y-scale<<" "<<640<<" "<<384-(rddf_points[0].y-scale)<<endl;
-			if (check_rect_inside_image(rec, out)){
-				roi = out (rec);
-				//cout<<roi.cols<<" "<<roi.rows<<endl;
-				mult_scale_x += double(scene_slices[0].cols) / double(roi.cols);
-				mult_scale_y += double(scene_slices[0].rows) / double(roi.rows);
-				t.scale_factor_x = mult_scale_x;
-				t.scale_factor_y = mult_scale_y;
-				sum_transform_x += top_left_point.x;
-				sum_transform_y += top_left_point.y;
-				t.translate_factor_x = sum_transform_x;
-				t.translate_factor_y = sum_transform_y;
-				scene_slices.push_back(roi);
-				transform_factor_of_slice_to_original_frame.push_back(t);
-			}
-
-		}
-		else if (image_size_y >= 30)
-		//if (image_size_x >= 80)//ranik
+//		}
+//		else if (image_size_y >= 30)
+		if (image_size_x >= 80)//ranik
 		{
 			//cv::Rect rec(rddf_points[i].x - (image_size_x/2), rddf_points[i].y-(300*dist_percentage), image_size_x, scene_slices[i-1].rows * dist_percentage);
 			double scale = image_size_y*(3.0/4.0);
@@ -938,6 +941,7 @@ get_image_slices (vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tra
 	//cout<<scene_slices.size()<<endl;
 	//cout<<endl;
 }
+
 
 double
 euclidean_distance (double x1, double x2, double y1, double y2)
@@ -1291,7 +1295,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	t.translate_factor_y = 0;
     	transform_factor_of_slice_to_original_frame.push_back(t);
     	get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image, distances_of_rddf_from_car);
-    	colors = get_slice_colors (scene_slices.size());
+    	colors = get_slice_colors (qtd_crops);
 
 
     	//    for (int i = 0; i < scene_slices.size(); i++)
@@ -1305,7 +1309,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	//    }
     	//cout<<endl<<endl<<endl<<endl;
     	vector<vector<bbox_t>> bounding_boxes_of_slices;
-    	for (int i = 0; i < scene_slices.size(); i++)
+    	for (int i = 0; i < qtd_crops; i++)
     	{
     		vector<bbox_t> predictions;
     		predictions = get_predictions_of_slices(i, scene_slices[i]);
@@ -1325,8 +1329,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	//printf("%lf-r.png\n", image_msg->timestamp);
     }
 
-    save_detections(image_msg->timestamp, bounding_boxes_of_slices_in_original_image, rgb_image, scene_slices, colors,
-    				transform_factor_of_slice_to_original_frame, rddf_points_in_image, rddf_points_in_image_full);
+    //save_detections(image_msg->timestamp, bounding_boxes_of_slices_in_original_image, rgb_image, scene_slices, colors,
+    //				transform_factor_of_slice_to_original_frame, rddf_points_in_image, rddf_points_in_image_full);
 
 
     //cout<<image_msg->timestamp<<"-r.png"<<endl;
@@ -1500,9 +1504,11 @@ read_parameters(int argc, char **argv)
     char *meters;
     meters = argv[3];
     meters_spacement = atoi(meters);
-    log_name = argv[4];
-    groundtruth_path = argv[5];
-    detection_type = argv[6];
+    crops_tam = argv[4];
+    qtd_crops = atoi(crops_tam);
+    log_name = argv[5];
+    groundtruth_path = argv[6];
+    detection_type = argv[7];
 
 
     int num_items;
@@ -1595,9 +1601,9 @@ initializer()
 int
 main(int argc, char **argv)
 {
-    if ((argc != 7))
+    if ((argc != 8))
         carmen_die("%s: Wrong number of parameters. neural_object_detector2 requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)>"
-        		" <meters_spacement> <log_name> <groundtruth_path> <-cs for slices -ss without slices>\n",
+        		" <meters_spacement> <qtd_crops> <log_name> <groundtruth_path> <-cs for slices -ss without slices>\n",
                    argv[0], argc - 1, argv[0]);
 
     int device_id = 0;

@@ -63,9 +63,16 @@ def apply_colors(img):
 	for i in range(img.shape[0]):
 		for j in range(img.shape[1]):
 			p = img[i, j, 0]
-			img[i, j] = colors[p]
+			if p >= 19:
+			    color = [0, 0, 0]
+			else:
+			    color = [colors[p, 2], colors[p, 1], colors[p, 0]]
+			img[i, j] = color
 	return img
 	
+
+
+'''
 	
 imgs_dir = '/dados/logs/log_volta_da_ufes-20180112-2.txt_bumblebee_png'
 xception_dir = '/dados/results_semantic_segmentation/xception71_cityscapes_trainfine/log_volta_da_ufes-20180112-2.txt_bumblebee_png/'
@@ -101,9 +108,8 @@ for ind in range(0, len(imgs), 4):
         if c == 1048691: # ord('s'):
             step = not step
             
-
-
-
-
+'''
+cv2.imwrite("seg.png", apply_colors(cv2.imread('/home/filipe/workspace/papers/2018_segmap/fig/img2_seg.jpg')))
+#cv2.waitKey(-1)
 
 

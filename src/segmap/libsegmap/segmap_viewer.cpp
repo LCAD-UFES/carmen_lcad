@@ -159,13 +159,14 @@ view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 	if (cloud != NULL)
 	{
 		//tr = Pose2d::to_matrix(current_pose) * (*vel2car);
-		//transformPointCloud(*cloud, *transformed_cloud, tr);
-		transform_pointcloud(cloud, transformed_cloud, current_pose, *vel2car, v, phi);
+		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(current_pose));
+		//transform_pointcloud(cloud, transformed_cloud, current_pose, *vel2car, v, phi);
 		draw_pointcloud(map_img, transformed_cloud, map, 1, Scalar(0, 255, 0));
 
 		//tr = Pose2d::to_matrix(mode) * (*vel2car);
 		//transformPointCloud(*cloud, *transformed_cloud, tr);
-		transform_pointcloud(cloud, transformed_cloud, mode, *vel2car, v, phi);
+		//transform_pointcloud(cloud, transformed_cloud, mode, *vel2car, v, phi);
+		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(mode));
 
 		for (int i = 0; i < transformed_cloud->size(); i++)
 		{

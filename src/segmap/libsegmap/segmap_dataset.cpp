@@ -14,8 +14,9 @@ using namespace pcl;
 
 //pcl::visualization::PCLVisualizer *myviewer = new pcl::visualization::PCLVisualizer("CloudViewer2");
 
+
 void
-DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, int view)
+DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi, int view)
 {
 	int p, x, y;
 	double range;
@@ -40,6 +41,8 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 
 	int top_limit = (50. / 480.) * img.rows;
 	int bottom_limit = img.rows - (110. / 480.) * img.rows;
+	Pose2d correction(0., 0., 0.);
+	Matrix<double, 4, 4> vel2car = transform_vel2car();
 
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
@@ -51,18 +54,22 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		y = pixel(1, 0) / pixel(2, 0);
 
 		if (range < 4.0 || range > 70. || (fabs(point.x) < 6.0 && fabs(point.y) < 4.))
-			point.x = point.y = point.z = DBL_MAX;
+			point.x = point.y = point.z = MAX_RANGE; 
+
+		pcl::PointXYZRGB point2;
+
+		point2.x = point.x;
+		point2.y = point.y;
+		point2.z = point.z;
+
+		point2.r = point.r;
+		point2.g = point.g;
+		point2.b = point.b;
 
 		// to use fused camera and velodyne
-		// if (0)
-		if (point.x > 0 && x >= 0 && x < img.cols && y >= 0 && y < img.rows && (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
+		if (0)
+		// if (point.x > 0 && x >= 0 && x < img.cols && y >= 0 && y < img.rows && (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
 		{
-			pcl::PointXYZRGB point2;
-
-			point2.x = point.x;
-			point2.y = point.y;
-			point2.z = point.z;
-
 			// colors
 			p = 3 * (y * img.cols + x);
 			point2.r = img.data[p + 2];
@@ -76,18 +83,23 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
             printf("** WARNING: REMOVING MAX RANGE AT SEGMAP_DATASET.CPP **\n");
             if (point.x < 70.)
             */
-    			cloud->push_back(point2);
-		}
+		   	correct_point(correction, vel2car, point2);
+    		cloud->push_back(point2);
 
+		}
 		// to use remission
-		else if (0)
+		else if (1)
 		// else if (point.z < 0.)
 		{
-			point.r *= 3;
-			point.g *= 3;
-			point.b *= 3;
-			cloud->push_back(point);
+			point2.r *= 1;
+			point2.g *= 1;
+			point2.b *= 1;
+
+			correct_point(correction, vel2car, point2);
+			cloud->push_back(point2);
 		}
+
+		ackerman_motion_model(correction, v, phi, (TIME_SPENT_IN_EACH_SCAN / 32.));
 	}
 
     /*
@@ -103,8 +115,9 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 	{
 		if (_use_segmented)
 		{
-			sprintf(_name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
-			Mat aux_img = imread(_name);
+		    char name[512];
+			sprintf(name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
+			Mat aux_img = imread(name);
 			Mat view_copy = viewer_img.clone();
 			cv::vconcat(aux_img, view_copy, viewer_img);
 			//flip(viewer_img, viewer_img, +1);
@@ -186,16 +199,17 @@ DatasetCarmen::DatasetCarmen(string path, int use_segmented) :
 Mat
 DatasetCarmen::load_image(int i)
 {
-	if (_use_segmented)
-		sprintf(_name, "%s/semantic/%lf-r.png", _path.c_str(), data[i].image_time);
-	else
-		//sprintf(_name, "%s/bb3/%010d.png", _path.c_str(), i);
-		sprintf(_name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
+    char name[512];
 
-	Mat raw_img = imread(_name);
+	if (_use_segmented)
+		sprintf(name, "%s/semantic/%lf-r.png", _path.c_str(), data[i].image_time);
+	else
+		sprintf(name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
+
+	Mat raw_img = imread(name);
 
     if (raw_img.data == 0 || raw_img.rows == 0 || raw_img.cols == 0)
-    	exit(printf("Error: Image '%s' not found.\n", _name));
+    	exit(printf("Error: Image '%s' not found.\n", name));
 
 	Mat resized;
 
@@ -223,13 +237,13 @@ DatasetCarmen::load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud)
 {
 	int success;
 
-	sprintf(_name, "%s/velodyne/%lf.ply", _path.c_str(), data[i].velodyne_time);
-	//sprintf(_name, "%s/velodyne/%010d.ply", _path.c_str(), i);
+    char name[512];
+	sprintf(name, "%s/velodyne/%lf.ply", _path.c_str(), data[i].velodyne_time);
 
-	success = pcl::io::loadPLYFile(_name, *cloud);
+	success = pcl::io::loadPLYFile(name, *cloud);
 
 	if (success < 0 || cloud->size() == 0)
-		exit(printf("Cloud %s not found.\n", _name));
+		exit(printf("Cloud %s not found.\n", name));
 }
 
 

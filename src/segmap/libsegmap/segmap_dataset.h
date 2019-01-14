@@ -42,9 +42,6 @@ public:
 
 class DatasetInterface
 {
-protected:
-	char _name[1024]; // utility attribute for creating file names.
-
 public:
 	int image_height;
 	int image_width;
@@ -55,7 +52,7 @@ public:
 
 	virtual Mat load_image(int i) = 0;
 	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud) = 0;
-	void load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, int view=0);
+	void load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi, int view = 0);
 
 	virtual Matrix<double, 3, 1> transform_vel2cam(PointXYZRGB &p) = 0;
 	virtual Matrix<double, 4, 4> transform_vel2car() = 0;
@@ -65,7 +62,6 @@ public:
 	{
 		_path = path;
 		_use_segmented = use_segmented;
-		strcpy(_name, "");
 		image_height = image_width = 0;
 	}
 
@@ -99,6 +95,9 @@ public:
 
 class DatasetKitti : public DatasetInterface
 {
+protected:
+	char _name[1024]; // utility attribute for creating file names.
+
 	void _load_oxts(vector<double> &times, vector<vector<double>> &data);
 	void _load_timestamps(vector<double> &times);
 

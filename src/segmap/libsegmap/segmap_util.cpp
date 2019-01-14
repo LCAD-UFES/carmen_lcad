@@ -303,7 +303,6 @@ ackerman_motion_model(Pose2d &pose, double v, double phi, double dt)
 void
 correct_point(Pose2d &correction,
 		Matrix<double, 4, 4> vel2car,
-		Matrix<double, 4, 4> pose,
 		PointXYZRGB &point)
 {
 	Matrix<double, 4, 1> p, corrected;
@@ -311,19 +310,18 @@ correct_point(Pose2d &correction,
 
 	p << point.x, point.y, point.z, 1.;
 	correction_mat = Pose2d::to_matrix(correction);
-	corrected = pose * correction_mat * vel2car * p;
+	corrected = correction_mat * vel2car * p;
 
 	double m = corrected(3, 0);
 
 	// how to handle points at infinity?
 	if (m == 0)
 	{
-		Pose2d posep = Pose2d::from_matrix(pose);
-		printf("Warning: point projected to infinity: %lf %lf %lf -> %lf %lf %lf %lf Pose: %lf %lf %lf correction: %lf %lf %lf\n",
+		printf("Warning: point projected to infinity: %lf %lf %lf -> %lf %lf %lf %lf correction: %lf %lf %lf\n",
 				point.x, point.y, point.z,
 				corrected(0, 0), corrected(1, 0), corrected(2, 0), corrected(3, 0),
-				posep.x, posep.y, posep.th,
 				correction.x, correction.y, correction.th);
+
 		m = 1.0;
 	}
 
@@ -332,7 +330,7 @@ correct_point(Pose2d &correction,
 	point.z = corrected(2, 0) / m;
 }
 
-
+/*
 void
 transform_pointcloud(PointCloud<PointXYZRGB>::Ptr cloud,
 		PointCloud<PointXYZRGB>::Ptr transformed_cloud,
@@ -349,7 +347,7 @@ transform_pointcloud(PointCloud<PointXYZRGB>::Ptr cloud,
 	{
 		PointXYZRGB point = PointXYZRGB(cloud->at(j));
 
-		if (point.x < DBL_MAX && point.y < DBL_MAX && point.z < DBL_MAX)
+		if (point.x < MAX_RANGE && point.y < MAX_RANGE&& point.z < MAX_RANGE)
 		{
 			correct_point(correction, vel2car, pose_t, point);
 			transformed_cloud->push_back(point);
@@ -358,5 +356,5 @@ transform_pointcloud(PointCloud<PointXYZRGB>::Ptr cloud,
 		ackerman_motion_model(correction, v, phi, (TIME_SPENT_IN_EACH_SCAN / 32.));
 	}
 }
-
+*/
 

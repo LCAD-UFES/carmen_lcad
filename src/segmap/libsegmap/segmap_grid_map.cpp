@@ -425,10 +425,10 @@ GridMap::to_image()
 	_tiles[2][1]->to_image().copyTo(viewer(Rect(w, 2*h, w, h)));
 	_tiles[2][2]->to_image().copyTo(viewer(Rect(2*w, 2*h, w, h)));
 
-	line(viewer, Point(w, 0), Point(w, 3*h), Scalar(0,0,0), 1);
-	line(viewer, Point(2*w, 0), Point(2*w, 3*h), Scalar(0,0,0), 1);
-	line(viewer, Point(0, h), Point(3*w, h), Scalar(0,0,0), 1);
-	line(viewer, Point(0, 2*h), Point(3*w, 2*h), Scalar(0,0,0), 1);
+	//line(viewer, Point(w, 0), Point(w, 3*h), Scalar(0,0,0), 1);
+	//line(viewer, Point(2*w, 0), Point(2*w, 3*h), Scalar(0,0,0), 1);
+	//line(viewer, Point(0, h), Point(3*w, h), Scalar(0,0,0), 1);
+	//line(viewer, Point(0, 2*h), Point(3*w, 2*h), Scalar(0,0,0), 1);
 
 	return viewer;
 }

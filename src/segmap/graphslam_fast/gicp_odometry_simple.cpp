@@ -40,8 +40,11 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 	///*
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
-		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) && 
-			 raw_cloud->at(i).x < 70.0) // || raw_cloud->at(i).z < 0.))
+		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) 
+			&& raw_cloud->at(i).x < 70.0 
+			//&& raw_cloud->at(i).z > -1.0
+			//&& raw_cloud->at(i).z < -0.0
+		)
 			cloud->push_back(raw_cloud->at(i));
 	}
 	// */
@@ -135,14 +138,13 @@ main(int argc, char **argv)
 	Matrix<double, 4, 4> correction;
 	int converged;
 
-    dataset.load_fused_pointcloud_and_camera(0, target, 1);
+    dataset.load_pointcloud(0, target);
 	target = filter_pointcloud(target);
 	target_pose = pose3d_to_matrix(0., 0., dataset.odom_calib.init_angle);
     draw_pose(target_pose);
 
     double time_last_icp = 0;
 
-	//for (int i = 1; i < data[0].sync.size(); i++)
     for (int i = 1; i < dataset.data.size(); i++)
 	{
 		if (fabs(dataset.data[i].v) < 0.2 || dataset.data[i].velodyne_time - time_last_icp < 0.05) // || fabs(data[0].sync[i].phi) < carmen_degrees_to_radians(20.))
@@ -153,7 +155,7 @@ main(int argc, char **argv)
 		source->clear();
 		aligned->clear();
 		//load_pointcloud(argv[1], data[0].sync[i].cloud_time, source);
-        dataset.load_fused_pointcloud_and_camera(i, source, 1);
+        dataset.load_pointcloud(i, source);
 		source = filter_pointcloud(source);
 		run_gicp(source, target, &correction, &converged, aligned);
 
@@ -165,7 +167,7 @@ main(int argc, char **argv)
             correction(3, 0), correction(3, 1), correction(3, 2), correction(3, 3)
         );
 
-/*
+///*
 		viewer2->removeAllPointClouds();
 
 		viewer2->addPointCloud(source, "source");
@@ -179,7 +181,7 @@ main(int argc, char **argv)
 		viewer2->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "source");
 		viewer2->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "target");
 		viewer2->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0, 1, "transformed");
-*/
+//*/
 
 		target->clear();
         copyPointCloud(*source, *target);
@@ -205,7 +207,7 @@ main(int argc, char **argv)
 			increase_bightness(aligned);
             clouds_on_viewer.push_back(string(cloud_name));
 
-            if (clouds_on_viewer.size() > 100)
+            if (clouds_on_viewer.size() > DBL_MAX)
             {
                 viewer->removePointCloud(clouds_on_viewer[0]);
                 clouds_on_viewer.pop_front();
@@ -226,7 +228,7 @@ main(int argc, char **argv)
 		char c = ' ';
 		while (1)
 		{
-			//viewer2->spinOnce();
+			viewer2->spinOnce();
 			viewer->spinOnce();
 			c = waitKey(5);
 

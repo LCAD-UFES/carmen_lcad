@@ -354,7 +354,7 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
 		v = 0.08;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
-		v = 0.00;
+		v = 0.08;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))
 		v = 0.09;
@@ -476,8 +476,8 @@ compute_distance_within_rddf(carmen_vector_3D_t annotation_point, carmen_ackerma
 
 
 double
-set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
-		double timestamp)
+set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, int goal_type,
+		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi, double timestamp)
 {
 	static bool clearing_annotation = false;
 	static carmen_vector_3D_t previous_annotation_point = {0.0, 0.0, 0.0};
@@ -529,7 +529,9 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 		if (last_rddf_annotation_message_valid &&
 			(clearing_annotation ||
 			 (((distance_to_annotation < distance_to_act_on_annotation) ||
-			   (distance_to_annotation < distance_to_goal)) && annotation_ahead)))
+			   (distance_to_annotation < distance_to_goal)) && annotation_ahead) ||
+			   ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
+				((goal_type == ANNOTATION_GOAL2) || (goal_type == ANNOTATION_GOAL2)))))
 		{
 			if (!clearing_annotation)
 				previous_annotation_point = nearest_velocity_related_annotation->annotation_point;
@@ -538,6 +540,11 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 			goal->v = carmen_fmin(
 					get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation, distance_to_goal, distance_to_annotation),
 					goal->v);
+
+			if (((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
+					((goal_type == ANNOTATION_GOAL2) || (goal_type == ANNOTATION_GOAL2))))
+				goal->v = get_velocity_at_next_annotation(nearest_velocity_related_annotation, *current_robot_pose_v_and_phi,
+						timestamp);
 		}
 
 		if (!annotation_ahead || (DIST2D(previous_annotation_point, nearest_velocity_related_annotation->annotation_point) > 0.0))
@@ -697,7 +704,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 			road_profile_message.poses, road_profile_message.number_of_poses);
 //	fprintf(caco, "gvdlc %lf  ", goal->v);
 
-	goal->v = set_goal_velocity_according_to_annotation(goal, current_robot_pose_v_and_phi, timestamp);
+	goal->v = set_goal_velocity_according_to_annotation(goal, goal_type, current_robot_pose_v_and_phi, timestamp);
 //	fprintf(caco, "gvda %lf ", goal->v);
 //	if (obstacle_avoider_active_recently)
 //		goal->v = carmen_fmin(2.5, goal->v);
@@ -1414,18 +1421,10 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			break;
 
 		case Stopping_At_Stop_Sign:
-//			if (udatmo_obstacle_detected(timestamp) &&
-//				(udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config()) < stop_sign_distance(current_robot_pose_v_and_phi)))
-//				decision_making_state_msg->low_level_state = Following_Moving_Object;
-			printf("current_robot_pose_v_and_phi.v %lf, distance_to_stop_sign(current_robot_pose_v_and_phi) %lf\n", current_robot_pose_v_and_phi.v, distance_to_stop_sign(current_robot_pose_v_and_phi));
-			if ((current_robot_pose_v_and_phi.v < 0.1) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 4.0))
-			{
-				printf("troquei\n");
+			if ((fabs(current_robot_pose_v_and_phi.v) < 0.01) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 4.0))
 				decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
-			}
 			break;
 		case Stopped_At_Stop_Sign_S0:
-			printf("mudei\n");
 			decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S1;
 			break;
 		case Stopped_At_Stop_Sign_S1:

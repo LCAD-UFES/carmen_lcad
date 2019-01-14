@@ -92,6 +92,19 @@ load_data(char *name, vector<Data> &lines)
 		fscanf(f, " %s %lf %lf %lf\n",
 			dummy, &d.v, &d.phi, &d.ack_time);
 
+        int n_read;
+        double q0, q1, q2, q3, xsens_time;
+
+		n_read = fscanf(f, " %s %s %s %s %lf %lf %lf %lf %s %s %s %s %s %s %s %s %lf\n", 
+			dummy, dummy, dummy, dummy, 
+			&q0, &q1, &q2, &q3,
+			dummy, dummy, dummy, 
+			dummy, dummy, dummy, 
+			dummy, dummy, &xsens_time);
+
+		if (n_read != 17) 
+            exit(printf("Error: xsens data not found at '%s'!\n", name));
+
 		lines.push_back(d);
 	}
 
@@ -158,6 +171,7 @@ add_vertices(vector<Data> &input_data, SparseOptimizer *optimizer, vector<SE2> &
 		//);
 
 		SE2 estimate = dead_reckoning[i];
+		//SE2 estimate = SE2(i, 0, 0);
 
 		VertexSE2* vertex = new VertexSE2;
 		vertex->setId(i);
@@ -241,15 +255,20 @@ gps_std_from_quality(int quality)
 void
 add_gps_edges(vector<Data> &input_data, SparseOptimizer *optimizer, double xy_std_mult, double th_std)
 {
-	for (size_t i = 0; i < input_data.size(); i += 20)
+	for (size_t i = 0; i < input_data.size(); i += 1)
 	{
 		if (fabs(input_data[i].v) < .2) // || input_data[i].quality != 4)
 			continue;
 
+		double angle = input_data[i].angle;
+		
+		if (i > 0 && fabs(input_data[i].v) >= 1.0)
+			angle = atan2(input_data[i].y - input_data[i-1].y, input_data[i].x - input_data[i-1].x);
+
 		SE2 measure(input_data[i].x - input_data[0].x,
 					input_data[i].y - input_data[0].y,
-					//input_data[i].angle);
-					0.);
+					angle);
+					//0.);
 
 		double gps_std = gps_std_from_quality(input_data[i].quality);
 		Matrix3d information = create_information_matrix(gps_std * xy_std_mult, gps_std * xy_std_mult, th_std);
@@ -292,9 +311,9 @@ create_dead_reckoning(vector<Data> &input_data, vector<SE2> &dead_reckoning, dou
 	th = init_angle;
 	dead_reckoning.push_back(SE2(x, y, th));
 
-	//mult_v = .97;
-	//mult_phi = 0.94;
-    //add_phi = -0.001;
+	//mult_v = 1.0; //1.2;
+	//mult_phi = 1.0; //0.94;
+    //add_phi = 0.0; //-0.001;
 
 	for (size_t i = 1; i < input_data.size(); i++)
 	{
@@ -352,15 +371,17 @@ add_gps_loop_closures(SparseOptimizer *optimizer, vector<Data> &input_data, doub
 
 void
 load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_data __attribute__((unused)), SparseOptimizer *optimizer,
-    double mult_v, double mult_phi, double add_phi, double init_angle)
+    double mult_v, double mult_phi, double add_phi, double init_angle, vector<LoopRestriction> &gicp_odom_data)
 {
 	vector<SE2> dead_reckoning;
 
 	create_dead_reckoning(input_data, dead_reckoning, mult_v, mult_phi, add_phi, init_angle);
 	add_vertices(input_data, optimizer, dead_reckoning);
-    add_odometry_edges(input_data, optimizer, dead_reckoning, 0.01, 0.001);
-	add_gps_edges(input_data, optimizer, 1., 1e10 * M_PI); //.2, M_PI);
-	//add_loop_closure_edges(loop_data, optimizer, 5., M_PI);
+    add_odometry_edges(input_data, optimizer, dead_reckoning, 0.003, carmen_degrees_to_radians(.03));
+	//add_gps_edges(input_data, optimizer, 0.2, carmen_degrees_to_radians(10.));
+	add_gps_edges(input_data, optimizer, 0.5, 1e10 * M_PI); //.2, M_PI);
+	//add_loop_closure_edges(loop_data, optimizer, 0.1, carmen_degrees_to_radians(10.));
+    //add_loop_closure_edges(gicp_odom_data, optimizer, 0.5, carmen_degrees_to_radians(3.));
     //add_gps_loop_closures(optimizer, input_data, 1.0, M_PI);
 
 	optimizer->save("poses_before.g2o");
@@ -451,13 +472,13 @@ initialize_optimizer()
 
 int main(int argc, char **argv)
 {
-	if (argc < 4)
+	if (argc < 6)
 	{
-		exit(printf("Use %s <sync-file> <loops-file> <odom-calib-file.txt> <saida.txt>\n", argv[0]));
+		exit(printf("Use %s <sync-file> <loops-file> <odom-calib-file.txt> <gicp-odom> <saida.txt>\n", argv[0]));
 	}
 
 	vector<Data> input_data;
-	vector<LoopRestriction> loop_data;
+	vector<LoopRestriction> loop_data, gicp_odom_data;
     double mult_v, mult_phi, add_phi, init_angle;
 
 	SparseOptimizer* optimizer;
@@ -474,14 +495,15 @@ int main(int argc, char **argv)
 	load_data(argv[1], input_data);
     load_odom_calib(argv[3], &mult_v, &mult_phi, &add_phi, &init_angle);
 	read_loop_restrictions(argv[2], loop_data);
-	load_data_to_optimizer(input_data, loop_data, optimizer, mult_v, mult_phi, add_phi, init_angle);
+    read_loop_restrictions(argv[4], gicp_odom_data);
+	load_data_to_optimizer(input_data, loop_data, optimizer, mult_v, mult_phi, add_phi, init_angle, gicp_odom_data);
 
 	optimizer->setVerbose(true);
 	cerr << "Optimizing" << endl;
 	prepare_optimization(optimizer);
 	optimizer->optimize(20);
 	cerr << "OptimizationDone!" << endl;
-	save_corrected_vertices(argv[4], input_data, optimizer);
+	save_corrected_vertices(argv[5], input_data, optimizer);
 	cerr << "OutputSaved!" << endl;
 
 	return 0;
