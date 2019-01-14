@@ -34,12 +34,12 @@ def file_name_by_number(file_a, file_b):
 	return (na - nb)
 
 
-def gt_point_order_by_y(pa, pb):
+def point_order_by_y(pa, pb):
 	# Points ordered by y coordinate (in reverse order)
 	return int(pb[2] - pa[2])
 
 
-def gt_line_order_by_x(la, lb):
+def line_order_by_x(la, lb):
 	# Lines ordered by x coordinate of the first point of the line
 	return int(la[0][1] - lb[0][1])
 
@@ -49,47 +49,58 @@ def bbox_order_by_y(bbox_a, bbox_b):
 	return int(bbox_b[1][1] - bbox_a[1][1])
 
 
-def read_ground_truth_file(gt_file_name, width, height):
-	print(gt_file_name)
-	gt_lines = []
+def check_point_limits(x, y, width, height):
+	x_tolerance = 0.1 * width
+	y_tolerance = 0.1 * height
+	min_x = - x_tolerance
+	max_x = width + x_tolerance
+	min_y = - y_tolerance
+	max_y = height + y_tolerance
+			
+	if  not ((min_x <= x < max_x) and (min_y <= y < max_y)):
+		raise ValueError
+
+
+def read_points_file(file_name, width, height):
+	print(file_name)
+	lines = []
 	
-	# Each record of the gt_file contains the coordinates of one ground truth point
+	# Each record of the file contains the coordinates of one point
 	# Record format: class line x y
 	#   Field 0: object class
 	#   Field 1: line sequence number (starting from zero)
 	#   Field 2: x coordinate of the point (in pixels)
 	#   Field 3: y coordinate of the point (in pixels)
 
-	gt_file = open(gt_file_name)
-	for record in gt_file:
+	p_file = open(file_name)
+	for record in p_file:
 		try:
-			gt = record.split()
-			if len(gt) != 4:
+			p = record.split()
+			if len(p) != 4:
 				raise ValueError
 				
-			gt_data = [ int(data) for data in gt ]
-			(obj_class, line_seq, x, y) = gt_data
-			if  (0 > x >= width) or (0 > y >= height):
-				raise ValueError
+			p_data = [ int(data) for data in p ]
+			(obj_class, line_seq, x, y) = p_data
+			check_point_limits(x, y, width, height)
 			
-			for i in range(len(gt_lines), line_seq + 1):
-				gt_lines.append([])
+			for i in range(len(lines), line_seq + 1):
+				lines.append([])
 			
-			gt_lines[line_seq].append([obj_class, x, y])
+			lines[line_seq].append([obj_class, x, y])
 		
 		except ValueError:
-			if gt:
-				print('ERROR: Invalid grount truth record (class line x y): ' + record)
+			if p:
+				print('ERROR: Invalid point record (class line x y): ' + record)
 			continue
-	gt_file.close()
+	p_file.close()
 
-	for i in range(len(gt_lines)):
-		gt_line_sorted = sorted(gt_lines[i], cmp = gt_point_order_by_y)
-		gt_lines[i] = gt_line_sorted
+	for i in range(len(lines)):
+		line_sorted = sorted(lines[i], cmp = point_order_by_y)
+		lines[i] = line_sorted
 	
-	gt_lines_sorted = sorted(gt_lines, cmp = gt_line_order_by_x)
+	lines_sorted = sorted(lines, cmp = line_order_by_x)
 	
-	return gt_lines_sorted
+	return lines_sorted
 
 
 def get_ground_truth_top(gt_lines, height):
@@ -141,70 +152,6 @@ def gt_interpolate(y_predicted, gt_line, gt_top):
 	gt_x = np.polyval(coeffs, y_predicted)
 
 	return (obj_class, gt_x)
-
-
-# def get_ground_truth_continuum_lines(gt_lines, height):
-# 	gt_continuum_lines = [[]] * len(gt_lines)
-# 	
-# 	for i in range(len(gt_lines)):
-# 		if len(gt_lines[i]) > 0:
-# 			p0 = gt_lines[i][0]
-# 			(obj_class, x0, y0) = p0
-# 			if len(gt_lines[i]) == 1:
-# 				gt_continuum_lines[i] = [[obj_class, x0]] * height
-# 			else:
-# 				gt_continuum_lines[i] = [[obj_class, out_of_range]] * height
-# 				for j in range(1, len(gt_lines[i])):
-# 					p1 = gt_lines[i][j]
-# 					(obj_class, x1, y1) = p1
-# 					coeffs = np.polyfit([y0, y1], [x0, x1], 1)
-# 					p0 = p1
-# 					if j == 1:
-# 						y0 = height
-# 					if j == len(gt_lines[i]) - 1:
-# 						y1 = 0
-# 					
-# 					for y in range(int(y1), int(y0)):
-# 						x = int(np.polyval(coeffs, y))
-# 						gt_continuum_lines[i][y] = [obj_class, x]
-# 	
-# 	if len(gt_continuum_lines) > 1:					
-# 		for y in reversed(range(1, height)):
-# 			for i in range(1, len(gt_continuum_lines)):
-# 				(p0_left, p0_right) = (gt_continuum_lines[i - 1][y],     gt_continuum_lines[i][y])
-# 				(p1_left, p1_right) = (gt_continuum_lines[i - 1][y - 1], gt_continuum_lines[i][y - 1])
-# 				(obj_class_left,  x0_left)  = p0_left
-# 				(obj_class_right, x0_right) = p0_right
-# 				(obj_class_left,  x1_left)  = p1_left
-# 				(obj_class_right, x1_right) = p1_right
-# 				if (out_of_range in (x0_left, x0_right, x1_left, x1_right)) or \
-# 				   (x1_left > x1_right) or ((x1_left - x1_right) > (x0_left - x0_right)):
-# 					gt_continuum_lines[i - 1][y - 1] = [obj_class_left,  out_of_range]
-# 					gt_continuum_lines[i][y - 1]     = [obj_class_right, out_of_range]
-# 
-# 	return gt_continuum_lines
-
-
-# def get_ground_truth_poly_lines(gt_points, height):
-# 	X_left  = [ xy[0] for xy in gt_points[0] ]
-# 	Y_left  = [ xy[1] for xy in gt_points[0] ]
-# 	poly_coeffs_left  = np.polyfit(Y_left, X_left, 3)
-# 
-# 	X_right = [ xy[0] for xy in gt_points[1] ]
-# 	Y_right = [ xy[1] for xy in gt_points[1] ]
-# 	poly_coeffs_right = np.polyfit(Y_right, X_right, 3)
-# 
-# 	gt_poly_lines = [ [out_of_range] * height, [out_of_range] * height ]
-# 
-# 	for y in reversed(range(height)):
-# 		x_left  = int(np.polyval(poly_coeffs_left,  y))
-# 		x_right = int(np.polyval(poly_coeffs_right, y))
-# 		if abs(x_left - x_right) < 5:
-# 			break
-# 		gt_poly_lines[0][y] = x_left
-# 		gt_poly_lines[1][y] = x_right
-# 	
-# 	return gt_poly_lines
 
 
 def remove_bbox_outliers(bboxes, width):
@@ -271,15 +218,16 @@ def bboxes_clustering(bboxes, width):
 		print("ERROR: Bounding box does not fit in any line: (x=" + str(x) + ", y=" + str(y) + ")")
 
 	for bboxes_cluster in (bboxes_left, bboxes_right):
-		(obj_class_first, (x_first, y_first), diag_1_first, diag_2_first) = bboxes_cluster[ 0]
-		(obj_class_last,  (x_last,  y_last ), diag_1_last,  diag_2_last ) = bboxes_cluster[-1]
-		diag = 1 if (x_first < x_last) else 2
-		cluster = []
-		for bbox in bboxes_cluster:
-			(obj_class, center, diagonal_1, diagonal_2) = bbox
-			diagonal = diagonal_1 if (diag == 1) else diagonal_2
-			cluster.append([ obj_class, diagonal ])
-		bboxes_clusters.append(cluster)
+		if len(bboxes_cluster) > 0:
+			(obj_class_first, (x_first, y_first), diag_1_first, diag_2_first) = bboxes_cluster[ 0]
+			(obj_class_last,  (x_last,  y_last ), diag_1_last,  diag_2_last ) = bboxes_cluster[-1]
+			diag = 1 if (x_first < x_last) else 2
+			cluster = []
+			for bbox in bboxes_cluster:
+				(obj_class, center, diagonal_1, diagonal_2) = bbox
+				diagonal = diagonal_1 if (diag == 1) else diagonal_2
+				cluster.append([ obj_class, diagonal ])
+			bboxes_clusters.append(cluster)
 	
 	return bboxes_clusters
 
@@ -296,12 +244,11 @@ def check_bbox_limits(x_left, x_right, y_top, y_bottom, width, height):
 		raise ValueError
 	
 
-def read_predictions_file(predictions_dir, file_name, width, height):
-	predictions_file_name = predictions_dir + os.path.basename(file_name)
-	print(predictions_file_name)
-	predictions_list = []
+def read_bboxes_file(file_name, width, height):
+	print(file_name)
+	bbox_list = []
 
-	# Each record of the file contains the coordinates of one predicted bounding box
+	# Each record of the file contains the coordinates of one bounding box
 	# Record format: class x y w h
 	#   Field 0: object class
 	#   Field 1: x coordinate of the bounding box's center (in a fraction of image_width)
@@ -309,8 +256,8 @@ def read_predictions_file(predictions_dir, file_name, width, height):
 	#   Field 3: the bounding box's width  (in a fraction of image_width)
 	#   Field 4: the bounding box's height (in a fraction of image_height)
 	
-	predictions_file = open(predictions_file_name)
-	for record in predictions_file:
+	bbox_file = open(file_name)
+	for record in bbox_file:
 		try:
 			bbox = record.split()
 			if len(bbox) != 5:
@@ -327,81 +274,100 @@ def read_predictions_file(predictions_dir, file_name, width, height):
 			center = [x * width, y * height]
 			diagonal_1 = [ [x_left, y_bottom], [x_right, y_top] ]
 			diagonal_2 = [ [x_left, y_top],    [x_right, y_bottom] ]
-			predictions_list.append([ obj_class, center, diagonal_1, diagonal_2 ])
+			bbox_list.append([ obj_class, center, diagonal_1, diagonal_2 ])
 		
 		except ValueError:
 			if bbox:
-				print("ERROR: Invalid predictions file record: " + record)
+				print("ERROR: Invalid bounding box file record (class x y w h): " + record)
 			continue
-	predictions_file.close()
+	bbox_file.close()
 	
-	return predictions_list
+	return bbox_list
 
 
-def plot_gt_lines(img, gt_lines, gt_top):
+def plot_points(img, gt_lines, gt_top, show_lines, color = (255,0,0)):
+	line_color  = [color[0], (255 - color[1]) // 2, color[2]]
+
 	for gt_line in gt_lines:
 		if len(gt_line) > 0:
-			(obj_class, x0, y0) = gt_line[0]
-			if len(gt_line) == 1:
-				cv2.line(img, (x0, len(img) - 1), (x0, gt_top), (255,0,0), 2)
-
-			for j in range(1, len(gt_line)):
-				(obj_class, x1, y1) = gt_line[j]
-				coeffs = np.polyfit([y0, y1], [x0, x1], 1)
-				if j == 1:
-					y0 = len(img) - 1
-					x0 = np.polyval(coeffs, y0)
-				if j == (len(gt_line) - 1):
-					y1 = gt_top
-					x1 = np.polyval(coeffs, y1)
-				cv2.line(img, (int(x0), int(y0)), (int(x1), int(y1)), (255,0,0), 2)
-				(obj_class, x0, y0) = gt_line[j]
+			if show_lines:
+				(obj_class, x0, y0) = gt_line[0]
+				if len(gt_line) == 1:
+					cv2.line(img, (x0, len(img) - 1), (x0, gt_top), line_color, 2)
+	
+				for j in range(1, len(gt_line)):
+					(obj_class, x1, y1) = gt_line[j]
+					coeffs = np.polyfit([y0, y1], [x0, x1], 1)
+					if j == 1:
+						y0 = len(img) - 1
+						x0 = np.polyval(coeffs, y0)
+					if j == (len(gt_line) - 1):
+						y1 = gt_top
+						x1 = np.polyval(coeffs, y1)
+					cv2.line(img, (int(x0), int(y0)), (int(x1), int(y1)), line_color, 2)
+					(obj_class, x0, y0) = gt_line[j]
 
 			for (obj_class, x, y) in gt_line:
-				(x, y) = (int(x), int(y))
-				cv2.circle(img, (x, y), 5, (255,0,0), -1)
-				cv2.putText(img, str(obj_class), ((x + 6), (y + 9)), cv2.FONT_HERSHEY_PLAIN, 1, (255,0,0), 1)
+					(x, y) = (int(x), int(y))
+					cv2.circle(img, (x, y), 5, color, -1)
+					cv2.putText(img, str(obj_class), ((x + 6), (y + 9)), cv2.FONT_HERSHEY_PLAIN, 1, color, 1)
 
 
-def plot_bboxes(img, predictions, gt_lines, gt_top, max_error):
+def plot_bboxes(img, predictions, gt_lines, gt_top, max_error, color = (0,0,255)):
+	line_color  = [color[0], (255 - color[1]) // 2, color[2]]
+	error_color = [(255 - color[i]) for i in range(3)]
+	
 	for bbox_list in predictions:
 		for bbox in bbox_list:
 			(obj_class, diagonal) = bbox
 			((xa, ya), (xb, yb)) = diagonal
 			((xa, ya), (xb, yb)) = ((int(xa), int(ya)), (int(xb), int(yb)))
-			cv2.rectangle(img, (xa, ya), (xb, yb), (0,0,255), 2)
+			cv2.rectangle(img, (xa, ya), (xb, yb), line_color, 2)
 			cv2.putText(img, str(obj_class), ((min(xa, xb) + 3), (min(ya, yb) - 6)), cv2.FONT_HERSHEY_PLAIN, 1, (0,0,255), 1)
 			(compute_a, compute_b) = compute_diagonal(gt_lines, gt_top, diagonal, obj_class, max_error)
 			(class_a, bbox_a, err_a) = compute_a
 			(class_b, bbox_b, err_b) = compute_b
 			if bbox_a:
-				cv2.circle(img, (xa, ya), 5, (0,0,255), -1)
+				cv2.circle(img, (xa, ya), 5, color, -1)
 			else:
-				cv2.circle(img, (xa, ya), 5, (255,255,0), -1)
+				cv2.circle(img, (xa, ya), 5, error_color, -1)
 			if bbox_b:
-				cv2.circle(img, (xb, yb), 5, (0,0,255), -1)
+				cv2.circle(img, (xb, yb), 5, color, -1)
 			else:
-				cv2.circle(img, (xb, yb), 5, (255,255,0), -1)
+				cv2.circle(img, (xb, yb), 5, error_color, -1)
 	
 
-def plot_image(predictions, gt_lines, gt_top, max_error, gt_file_name, image_width, image_height, show_images, images_dir, save_results, save_dir):
-	img_file = images_dir + os.path.basename(gt_file_name)[:-3] + 'png'
+def plot_image(file_name, elas_predictions, yolo_predictions, gt_lines, gt_top, params):
+	(width, height, max_error, yolo_dir, elas_dir, images_dir, save_dir, show_images, show_lines) = params
+	img_file = images_dir + file_name[:-3] + 'png'
 	if os.path.isfile(img_file):
 		img = cv2.imread(img_file)
+		(img_h, img_w) = img.shape[0:2]
+		if (img_h, img_w) != (height, width):
+			raise Exception(4, "ERROR: Image shape %dx%d does not match size parameter: %dx%d" % (img_w, img_h, width, height))
 	else:
 		print('ERROR: FILE NOT FOUND: ' + img_file)
-		img = np.full((image_height, image_width, 3), (255,255,255), np.uint8)
+		img = np.full((height, width, 3), (255,255,255), np.uint8)
 
-	plot_gt_lines(img, gt_lines, gt_top)
-	plot_bboxes(img, predictions, gt_lines, gt_top, max_error)
+	plot_points(img, gt_lines, gt_top, show_lines, color = (255,0,0))
 
-	if save_results:
-		cv2.imwrite(save_dir + os.path.basename(img_file), img)
+	if elas_dir:
+		plot_points(img, elas_predictions, gt_top, show_lines = False, color = (0,255,0))
+
+	if yolo_dir:
+		plot_bboxes(img, yolo_predictions, gt_lines, gt_top, max_error, color = (0,0,255))
+
+	if save_dir:
+		save_file = save_dir + file_name[:-3] + 'png'
+		save_subdir = os.path.dirname(save_file)
+		if not os.path.exists(save_subdir):
+			os.makedirs(save_subdir)	
+		cv2.imwrite(save_file, img)
 	
 	if show_images:
-		window_name = 'Lane Detector - ' + os.path.basename(gt_file_name)[:-4]
-		cv2.namedWindow(window_name)
-		cv2.moveWindow(window_name, 10, 10)
+		window_name = 'Lane Detector'
+# 		cv2.namedWindow(window_name)
+# 		cv2.moveWindow(window_name, 300, 600)
 		while True:
 			cv2.imshow(window_name, img)
 			key = cv2.waitKey(0) & 0xff
@@ -409,148 +375,181 @@ def plot_image(predictions, gt_lines, gt_top, max_error, gt_file_name, image_wid
 				break
 			if key == 27:      # ESC key
 				sys.exit(0)
-		cv2.destroyWindow(window_name)
+# 		cv2.destroyWindow(window_name)
+
+
+def compute_point(gt_lines, gt_top, point, obj_class, max_error):
+	(classif, detect, error) = (False, False, out_of_range)
+	(x, y) = point
+
+	for gt_line in gt_lines:
+		if len(gt_line) > 0:
+			(gt_classif, gt_x) = gt_interpolate(y, gt_line, gt_top)
+			gt_error = abs(gt_x - x) if (gt_x != out_of_range) else out_of_range
+	
+			if gt_error <= error:
+				error = gt_error
+				detect  |= (error <= max_error)
+				classif |= (detect and (obj_class == gt_classif))
+
+	compute_point = (classif, detect, error)
+	return compute_point
 
 
 def compute_diagonal(gt_lines, gt_top, diagonal, obj_class, max_error):
-	(class_a, bbox_a, err_a) = (False, False, out_of_range)
-	(class_b, bbox_b, err_b) = (False, False, out_of_range)
+	(classif_a, detect_a, err_a) = (False, False, out_of_range)
+	(classif_b, detect_b, err_b) = (False, False, out_of_range)
 	((xa, ya), (xb, yb)) = diagonal
 	for gt_line in gt_lines:
 		if len(gt_line) > 0:
-			(gt_class_a, gt_xa) = gt_interpolate(ya, gt_line, gt_top)
-			(gt_class_b, gt_xb) = gt_interpolate(yb, gt_line, gt_top)
+			(gt_classif_a, gt_xa) = gt_interpolate(ya, gt_line, gt_top)
+			(gt_classif_b, gt_xb) = gt_interpolate(yb, gt_line, gt_top)
 			gt_err_a = abs(gt_xa - xa) if (gt_xa != out_of_range) else out_of_range
 			gt_err_b = abs(gt_xb - xb) if (gt_xb != out_of_range) else out_of_range
 	
 			if (gt_err_a + gt_err_b) <= (err_a + err_b):
 				err_a = gt_err_a
 				err_b = gt_err_b
-				bbox_a |= (err_a <= max_error)
-				bbox_b |= (err_b <= max_error)
-				class_a |= (bbox_a and (obj_class == gt_class_a))
-				class_b |= (bbox_b and (obj_class == gt_class_b))
+				detect_a |= (err_a <= max_error)
+				detect_b |= (err_b <= max_error)
+				classif_a |= (detect_a and (obj_class == gt_classif_a))
+				classif_b |= (detect_b and (obj_class == gt_classif_b))
 
-	compute_a = (class_a, bbox_a, err_a)
-	compute_b = (class_b, bbox_b, err_b)
+	compute_a = (classif_a, detect_a, err_a)
+	compute_b = (classif_b, detect_b, err_b)
 	return (compute_a, compute_b)
 
 
-def compute_error(predictions, gt_lines, gt_top, max_error):
-	(class_error, class_true_pos, class_false_pos) = (0, 0, 0)
-	(bbox_error,  bbox_true_pos,  bbox_false_pos)  = (0, 0, 0)
+def compute_error(method, predictions, gt_lines, gt_top, max_error):
+	(classif_error, classif_true_pos, classif_false_pos) = (0, 0, 0)
+	(detect_error,  detect_true_pos,  detect_false_pos)  = (0, 0, 0)
 
-	for prediction_bboxes in predictions:
-		for bbox in prediction_bboxes:
-			(obj_class, diagonal) = bbox
-			(compute_a, compute_b) = compute_diagonal(gt_lines, gt_top, diagonal, obj_class, max_error)
+	for prediction in predictions:
+		for item in prediction:
 
-			for (class_p, bbox_p, err_p) in (compute_a, compute_b):
-				if class_p:
-					class_error += err_p
-					class_true_pos += 1
-				else:
-					class_false_pos += 1
-
-				if bbox_p:
-					bbox_error += err_p
-					bbox_true_pos += 1
-				else:
-					bbox_false_pos += 1
+			if method == 'Yolo':
+				(obj_class, diagonal) = item
+				(compute_a, compute_b) = compute_diagonal(gt_lines, gt_top, diagonal, obj_class, max_error)
+				compute_points = [compute_a, compute_b]
 	
-	expected_bbox_points = sum([ (len(gt_line) - 1) for gt_line in gt_lines ]) * 2
-	class_false_neg = expected_bbox_points - class_true_pos - class_false_pos
-	bbox_false_neg  = expected_bbox_points - bbox_true_pos  - bbox_false_pos
-	result_class = (class_error, class_true_pos, class_false_pos, class_false_neg)
-	result_bbox  = (bbox_error,  bbox_true_pos,  bbox_false_pos,  bbox_false_neg)
+			if method == 'Elas':
+				(obj_class, x, y) = item
+				compute_p = compute_point(gt_lines, gt_top, (x, y), obj_class, max_error)
+				compute_points = [compute_p]
+				
+			for (classif_p, detect_p, err_p) in compute_points:
+				if classif_p:
+					classif_error += err_p
+					classif_true_pos += 1
+				else:
+					classif_false_pos += 1
 
-	return (result_class, result_bbox)
+				if detect_p:
+					detect_error += err_p
+					detect_true_pos += 1
+				else:
+					detect_false_pos += 1
+
+	if method == 'Yolo':
+		expected_detect_points = sum([ (len(gt_line) - 1) for gt_line in gt_lines ]) * 2
+	if method == 'Elas':
+		expected_detect_points = sum([ len(gt_line) for gt_line in gt_lines ])
+		
+	classif_false_neg = expected_detect_points - classif_true_pos - classif_false_pos
+	detect_false_neg  = expected_detect_points - detect_true_pos  - detect_false_pos
+	result_classif = (classif_error, classif_true_pos, classif_false_pos, classif_false_neg)
+	result_detect  = (detect_error,  detect_true_pos,  detect_false_pos,  detect_false_neg)
+
+	return (result_classif, result_detect)
 
 
-def recursive_glob(dir_name, file_pattern):
+def recursive_glob(dir_name, file_pattern, relative = False, origin = ''):
 	file_list = []
+	if origin == '':
+		origin = dir_name
+
 	if os.path.isdir(dir_name):
-		file_list = [file_name for file_name in glob(dir_name + file_pattern) if os.path.isfile(file_name)]
+		if relative:
+			file_list = [file_name[len(origin):] for file_name in glob(dir_name + file_pattern) if os.path.isfile(file_name)]
+		else:
+			file_list = [file_name for file_name in glob(dir_name + file_pattern) if os.path.isfile(file_name)]
+
 		for item in os.listdir(dir_name):
-			file_list += recursive_glob(dir_name + item + '/', file_pattern)
+			file_list += recursive_glob(dir_name + item + '/', file_pattern, relative, origin)
 	
 	return file_list
 
 
-def main(ground_truth_dir, predictions_dir, image_width, image_height, max_error, show_images, images_dir, save_results, save_dir):
+def update_accum_results(method, accum_results, results):
+	(result_classif, result_detect) = results
+	(classif_error, classif_true_pos, classif_false_pos, classif_false_neg) = result_classif
+	(detect_error,  detect_true_pos,  detect_false_pos,  detect_false_neg)  = result_detect
+
+	accum_results[method][0][0] += classif_error
+	accum_results[method][0][1] += classif_true_pos
+	accum_results[method][0][2] += classif_false_pos
+	accum_results[method][0][3] += classif_false_neg
+	accum_results[method][1][0] += detect_error
+	accum_results[method][1][1] += detect_true_pos
+	accum_results[method][1][2] += detect_false_pos
+	accum_results[method][1][3] += detect_false_neg
+
+
+def main(ground_truth_dir, params):
+	(width, height, max_error, yolo_dir, elas_dir, images_dir, save_dir, show_images, show_lines) = params
+	dir_name = yolo_dir if yolo_dir else ground_truth_dir
 	file_pattern = 'lane_*.txt'
-	gt_file_list = recursive_glob(ground_truth_dir, file_pattern)
-	if not gt_file_list:
-		raise Exception(3, "ERROR: No ground truth " + file_pattern + " files found in: " + ground_truth_dir)
+	file_list = recursive_glob(dir_name, file_pattern, relative = True)
+	if not file_list:
+		raise Exception(3, "ERROR: No " + file_pattern + " files found in: " + dir_name)
 	
-	(class_accum_error, class_accum_true_pos, class_accum_false_pos, class_accum_false_neg) = (0, 0, 0, 0)
-	(bbox_accum_error,  bbox_accum_true_pos,  bbox_accum_false_pos,  bbox_accum_false_neg)  = (0, 0, 0, 0)
+	elas_predictions = []
+	yolo_predictions = []
+	accum_results = {}
+	if elas_dir:
+		accum_results['Elas'] = [[0, 0, 0, 0], [0, 0, 0, 0]]
+	if yolo_dir:
+		accum_results['Yolo'] = [[0, 0, 0, 0], [0, 0, 0, 0]]
 
-	for gt_file_name in sorted(gt_file_list, cmp = file_name_by_number):
-		gt_lines = read_ground_truth_file(gt_file_name, image_width, image_height)
-		gt_top = get_ground_truth_top(gt_lines, image_height)
-		predictions_list = read_predictions_file(predictions_dir, gt_file_name, image_width, image_height)
-		predictions = bboxes_clustering(predictions_list, image_width)
+	for file_name in sorted(file_list, cmp = file_name_by_number):
+		gt_lines = read_points_file(ground_truth_dir + file_name, width, height)
+		gt_top = get_ground_truth_top(gt_lines, height)
+
+		if elas_dir:
+			elas_predictions = read_points_file(elas_dir + file_name, width, height)
+			results = compute_error('Elas', elas_predictions, gt_lines, gt_top, max_error)
+			update_accum_results('Elas', accum_results, results)
+
+		if yolo_dir:
+			yolo_bboxes = read_bboxes_file(yolo_dir + file_name, width, height)
+			yolo_predictions = bboxes_clustering(yolo_bboxes, width)
+			results = compute_error('Yolo', yolo_predictions, gt_lines, gt_top, max_error)
+			update_accum_results('Yolo', accum_results, results)
 		
-		(result_class, result_bbox) = compute_error(predictions, gt_lines, gt_top, max_error)
-		(class_error, class_true_pos, class_false_pos, class_false_neg) = result_class
-		(bbox_error,  bbox_true_pos,  bbox_false_pos,  bbox_false_neg)  = result_bbox
-		class_accum_error += class_error
-		class_accum_true_pos += class_true_pos
-		class_accum_false_pos += class_false_pos
-		class_accum_false_neg += class_false_neg
-		bbox_accum_error += bbox_error
-		bbox_accum_true_pos += bbox_true_pos
-		bbox_accum_false_pos += bbox_false_pos
-		bbox_accum_false_neg += bbox_false_neg
-
-		if show_images or save_results:
-			plot_image(predictions, gt_lines, gt_top, max_error, gt_file_name, image_width, image_height, show_images, images_dir, save_results, save_dir)
+		if show_images or save_dir:
+			plot_image(file_name, elas_predictions, yolo_predictions, gt_lines, gt_top, params)
 	
-	result_class_accum = (class_accum_error, class_accum_true_pos, class_accum_false_pos, class_accum_false_neg)
-	result_bbox_accum  = (bbox_accum_error,  bbox_accum_true_pos,  bbox_accum_false_pos,  bbox_accum_false_neg)
-	return (result_class_accum, result_bbox_accum)
+	return accum_results
 
 
 def print_stats(results):
-	(result_class, result_bbox) = results
-	
-	for (result_type, error, true_pos, false_pos, false_neg) in (['Class'] + list(result_class), ['Bounding Box'] + list(result_bbox)):
-		print('\n' + result_type + ' statistics:')
-		print('   True positives:  (%6d)' % true_pos  + ' predicted points')
-		print('   False positives: (%6d)' % false_pos + ' predicted points')
-		print('   False negatives: (%6d)' % false_neg + ' unpredicted points')
-		print('   Average Error:   %6.2f' % (1.0 * error  / (true_pos + false_pos)) + ' pixels')
-		print('   Precision: %6.2f%%' % (100.0 * true_pos / (true_pos + false_pos)))
-		print('   Recall:    %6.2f%%' % (100.0 * true_pos / (true_pos + false_neg)))
-		print('   Accuracy:  %6.2f%%' % (100.0 * true_pos / (true_pos + false_pos + false_neg)) + '\n')
-	
-
-def read_parameters(argv):
-	(show_images, images_dir, save_results, save_dir) = (False, './', False, './')
-
-	i = 5
-	while i < len(argv):
-		if argv[i] == '-show':
-			show_images = True
-
-		elif argv[i] == '-img':
-			if (i + 1) < len(argv) and argv[i + 1][0] != '-':
-				i += 1
-				images_dir = argv[i] if argv[i].endswith('/') else argv[i] + '/'
-
-		elif argv[i] == '-save':
-			save_results = True
-			if (i + 1) < len(argv) and argv[i + 1][0] != '-':
-				i += 1
-				save_dir = argv[i] if argv[i].endswith('/') else argv[i] + '/'
-				
-		else:
-			raise Exception(2, "ERROR: Invalid command line argument [%d]: " % i + argv[i])
-		
-		i += 1
-
-	return (show_images, images_dir, save_results, save_dir)
+	for method in results.keys():
+		(result_classif, result_detect) = results[method]
+		print('\n' + method.upper() + '  statistics:\n')
+		for (result_type, error, true_pos, false_pos, false_neg) in (['Classification'] + list(result_classif), ['Detection'] + list(result_detect)):
+			total = (true_pos + false_pos + false_neg)
+			print('   ' + result_type + ':')
+			print('      True positives:  (%6d)' % true_pos  + ' predicted points')
+			print('      False positives: (%6d)' % false_pos + ' predicted points')
+			print('      False negatives: (%6d)' % false_neg + ' unpredicted points')
+			print('      Total:           (%6d)' % total     + ' points')
+			if (true_pos + false_pos) > 0:
+				print('      Average Error:    %6.2f ' % (1.0 * error  / (true_pos + false_pos)) + ' pixels')
+				print('      Precision: %6.2f%%' % (100.0 * true_pos / (true_pos + false_pos)))
+			if (true_pos + false_neg) > 0:
+				print('      Recall:    %6.2f%%' % (100.0 * true_pos / (true_pos + false_neg)))
+			if total > 0:
+				print('      Accuracy:  %6.2f%%' % (100.0 * true_pos / total) + '\n')
 
 
 def get_image_size(size):
@@ -563,23 +562,78 @@ def get_image_size(size):
 		image_height = int(dims[1])
 	
 	except ValueError:
-		raise Exception(1, "ERROR: Invalid image size format wxh: " + size)
+		raise Exception(0, "ERROR: Invalid image size format wxh: " + size)
 	
 	return (image_width, image_height)
+	
+
+def check_argv(argv, i):
+	if i >= len(argv) or argv[i][0] == '-':
+		raise Exception(0, "ERROR: argument expected after [%d]: " % (i - 1) + argv[i - 1])
+	return i
+
+
+def read_parameters(argv):
+	width = 640
+	height = 480
+	max_error = 20
+	yolo_dir = ''
+	elas_dir = ''
+	images_dir = ''
+	save_dir = ''
+	show_images = False
+	show_lines = False
+
+	i = 2
+	while i < len(argv):
+		if argv[i] == '-size':
+			i = check_argv(argv, i + 1)
+			(width, height) = get_image_size(argv[i])
+
+		elif argv[i] == '-error':
+			i = check_argv(argv, i + 1)
+			max_error = float(argv[i])
+
+		elif argv[i] == '-yolo':
+			i = check_argv(argv, i + 1)
+			yolo_dir   = argv[i] if argv[i].endswith('/') else argv[i] + '/'
+
+		elif argv[i] == '-elas':
+			i = check_argv(argv, i + 1)
+			elas_dir   = argv[i] if argv[i].endswith('/') else argv[i] + '/'
+
+		elif argv[i] == '-img':
+			i = check_argv(argv, i + 1)
+			images_dir = argv[i] if argv[i].endswith('/') else argv[i] + '/'
+
+		elif argv[i] == '-save':
+			i = check_argv(argv, i + 1)
+			save_dir   = argv[i] if argv[i].endswith('/') else argv[i] + '/'
+				
+		elif argv[i] == '-show':
+			show_images = True
+
+		elif argv[i] == '-lines':
+			show_lines = True
+
+		else:
+			raise Exception(2, "ERROR: Invalid command line argument [%d]: " % i + argv[i])
+		
+		i += 1
+
+	params = (width, height, max_error, yolo_dir, elas_dir, images_dir, save_dir, show_images, show_lines)
+	return params
 
 
 if __name__ == "__main__":
 	try:
-		if not 5 <= len(sys.argv) <= 10:
+		if not 2 <= len(sys.argv) <= 16:
 			raise Exception(0, 'usage')
 
 		ground_truth_dir = sys.argv[1] if sys.argv[1].endswith('/') else sys.argv[1] + '/'
-		predictions_dir  = sys.argv[2] if sys.argv[2].endswith('/') else sys.argv[2] + '/'
-		(image_width, image_height) = get_image_size(sys.argv[3])
-		max_error = float(sys.argv[4])
-		(show_images, images_dir, save_results, save_dir) = read_parameters(sys.argv)
+		params = read_parameters(sys.argv)
 		
-		results = main(ground_truth_dir, predictions_dir, image_width, image_height, max_error, show_images, images_dir, save_results, save_dir)
+		results = main(ground_truth_dir, params)
 		print_stats(results)
 		sys.exit(0)
 	
@@ -587,12 +641,15 @@ if __name__ == "__main__":
 		if error.args[-1] != 'usage':
 			print('\n' + error.args[-1] + '\n')
 		
-		print("\nUsage: python " + sys.argv[0] + "  <ground_truth_dir>  <predictions_dir>  <image_size>[wxh]  <max_error>[pixels]"
-			"  -show  -img  <images_dir>  -save  <save_dir>\n")
-		print("Example: python " + sys.argv[0] + "  /lane_dataset/groundtruth/labels  /lane_dataset/yolo/labels  640x480  30"
-			"  -show  -img  /lane_dataset/groundtruth/images  -save /results/\n")
-		print("Note: Groundtruth label records must be in the format: class line x y (in pixels)")
-		print("      Predictions label records must be in the format: class x y w h (in fractions)\n")
+		print("\nUsage: python " + sys.argv[0] + "  <gt_dir>  -size <wxh>  -error <pixels>"
+			"  -yolo <yolo_results_dir>  -elas <elas_results_dir>"
+			"  -show  -lines  -img <images_dir>  -save <plot_results_dir>\n")
+		print("Example: python " + sys.argv[0] + "  /lane_dataset/groundtruth/labels  -size 640x480  -error 30"
+			"  -yolo /lane_dataset/yolo/labels  -elas /lane_dataset/elas/labels"
+			"  -show  -lines  -img /lane_dataset/groundtruth/images  -save /results/\n")
+		print("Note: Ground truth label records must be in the format: class line x y (in pixels)")
+		print("      Elas result  label records must be in the format: class line x y (in pixels)")
+		print("      Yolo result  label records must be in the format: class x y w h (in fractions)\n")
 
 		if len(error.args) == 1:
 			raise
