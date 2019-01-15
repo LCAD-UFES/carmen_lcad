@@ -364,7 +364,7 @@ main (int argc, char **argv)
 		if (strcmp (argv[1], "pt") == 0){
 			printf("Aguardando hotword.... \n\n ");
 		}else{
-			return(printf("Use: ./voice_interface -en or -pt \n"));
+			return(printf("Use: ./voice_interface en or pt \n"));
 
 		}
 	}

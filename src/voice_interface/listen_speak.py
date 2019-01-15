@@ -27,8 +27,6 @@ def language(language_to_use):
         LANGUAGE_CODE = 'en-US'
     elif language_to_use == "pt":
         LANGUAGE_CODE = 'pt-BR'
-    else:
-        pass
 
 class MicrophoneStream(object):
     """Opens a recording stream as a generator yielding the audio chunks."""

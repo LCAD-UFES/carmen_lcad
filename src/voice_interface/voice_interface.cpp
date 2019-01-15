@@ -53,7 +53,7 @@ init_voice(char *language_code)
 		return ((char *) "Error: Could not load the python_module language function.\n");
 	}
 
-	PyObject *python_function_arguments = Py_BuildValue("z", language_code);
+	PyObject *python_function_arguments = Py_BuildValue("s", language_code);
 	PyObject *python_language_function_output = PyObject_CallObject(python_language_function, python_function_arguments);
 	Py_DECREF(python_function_arguments);
 	Py_DECREF(python_language_function_output);
