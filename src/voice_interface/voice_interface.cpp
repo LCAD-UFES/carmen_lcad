@@ -7,8 +7,7 @@
 
 using namespace std;
 
-PyObject *python_module, *python_language_function, *python_listen_function, *python_speak_function,
-			*python_language_code;
+PyObject *python_module, *python_language_function, *python_listen_function, *python_speak_function;
 
 
 char *
@@ -54,9 +53,11 @@ init_voice(char *language_code)
 	}
 
 	PyObject *python_function_arguments = Py_BuildValue("s", language_code);
+	if (python_language_function == NULL) printf("aqui \n");
+	if (python_function_arguments == NULL) printf("aqui 2 \n");
 	PyObject *python_language_function_output = PyObject_CallObject(python_language_function, python_function_arguments);
 	Py_DECREF(python_function_arguments);
-	Py_DECREF(python_language_function_output);
+	//Py_DECREF(python_language_function_output);
 
 	python_speak_function = PyObject_GetAttrString(python_module, (char *) "speak");
 	if (python_speak_function == NULL || !PyCallable_Check(python_speak_function))
@@ -95,7 +96,7 @@ int
 speak(char *speech, char *speech_file_name)
 {
 	// Saves the speech fine in $CARMEN_HOME/data/voice_interface_speechs/ (see listen_speak.py))
-	PyObject *python_function_arguments = Py_BuildValue("(ss)", speech, speech_file_name, python_language_code);
+	PyObject *python_function_arguments = Py_BuildValue("(ss)", speech, speech_file_name);
 	PyObject *python_speak_function_output = PyObject_CallObject(python_speak_function, python_function_arguments);
 	Py_DECREF(python_function_arguments);
 	Py_DECREF(python_speak_function_output);
