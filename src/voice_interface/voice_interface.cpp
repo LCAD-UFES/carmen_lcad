@@ -7,11 +7,12 @@
 
 using namespace std;
 
-PyObject *python_module, *python_listen_function, *python_speak_function;
+PyObject *python_module, *python_language_function, *python_listen_function, *python_speak_function,
+			*python_language_code;
 
 
 char *
-init_voice()
+init_voice(char *language_code)
 {
 	static bool already_initialized = false;
 
@@ -34,6 +35,7 @@ init_voice()
 	Py_DECREF(python_program_path);
 
 	PyObject *python_module_name = PyUnicode_FromString((char *) "listen_speak");
+
 	PyObject *python_module = PyImport_Import(python_module_name);
 	Py_DECREF(python_module_name);
 
@@ -42,6 +44,19 @@ init_voice()
 		Py_Finalize();
 		return ((char *) "Error: The python_module could not be loaded.\n");
 	}
+
+	python_language_function = PyObject_GetAttrString(python_module, (char *) "language");
+	if (python_language_function == NULL || !PyCallable_Check(python_language_function))
+	{
+		Py_DECREF(python_module);
+		Py_Finalize();
+		return ((char *) "Error: Could not load the python_module language function.\n");
+	}
+
+	PyObject *python_function_arguments = Py_BuildValue("z", language_code);
+	PyObject *python_language_function_output = PyObject_CallObject(python_language_function, python_function_arguments);
+	Py_DECREF(python_function_arguments);
+	Py_DECREF(python_language_function_output);
 
 	python_speak_function = PyObject_GetAttrString(python_module, (char *) "speak");
 	if (python_speak_function == NULL || !PyCallable_Check(python_speak_function))
@@ -68,6 +83,7 @@ init_voice()
 void 
 finalize_voice()
 {
+	Py_XDECREF(python_language_function);
 	Py_XDECREF(python_speak_function);
 	Py_XDECREF(python_listen_function);
 	Py_DECREF(python_module);
@@ -79,7 +95,7 @@ int
 speak(char *speech, char *speech_file_name)
 {
 	// Saves the speech fine in $CARMEN_HOME/data/voice_interface_speechs/ (see listen_speak.py))
-	PyObject *python_function_arguments = Py_BuildValue("(ss)", speech, speech_file_name);
+	PyObject *python_function_arguments = Py_BuildValue("(ss)", speech, speech_file_name, python_language_code);
 	PyObject *python_speak_function_output = PyObject_CallObject(python_speak_function, python_function_arguments);
 	Py_DECREF(python_function_arguments);
 	Py_DECREF(python_speak_function_output);

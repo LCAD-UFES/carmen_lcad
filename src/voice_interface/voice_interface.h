@@ -11,10 +11,10 @@
 /*
 * Initiate Python interpreter and verify module
 */
-char *init_voice();
+char *init_voice(char *language_code);
 
 /*
-* Finalize Python interpreter and "drecrement" Python variables
+* Finalize Python interpreter and "decrement" Python variables
 */
 void finalize_voice();
 
