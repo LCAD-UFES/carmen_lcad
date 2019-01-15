@@ -7,6 +7,36 @@ from glob import glob
 out_of_range = 999999
 
 
+class statistics:
+	def __init__(self, error = 0.0, true_pos = 0, true_neg = 0, false_pos = 0, false_neg = 0):
+		self.error = error
+		self.true_pos = true_pos
+		self.true_neg = true_neg
+		self.false_pos = false_pos
+		self.false_neg = false_neg
+
+	def total(self):
+		return (self.true_pos + self.true_neg + self.false_pos + self.false_neg)
+	
+	def avg_error(self):
+		return (float(self.error) / self.true_pos) if (self.true_pos > 0) else None
+	
+	def precision(self):
+		positives = (self.true_pos + self.false_pos)
+		return (float(self.true_pos) / positives) if (positives > 0) else None
+	
+	def recall(self):
+		gt_positives = (self.true_pos + self.false_neg)		
+		return (float(self.true_pos) / gt_positives) if (gt_positives > 0) else None
+	
+	def accuracy(self):
+		return (float(self.true_pos + self.true_neg) / self.total()) if (self.total() > 0) else None
+	
+	def __add__(self, other):
+		return statistics((self.error + other.error), (self.true_pos + other.true_pos), (self.true_neg + other.true_neg), 
+			(self.false_pos + other.false_pos), (self.false_neg + other.false_neg))
+
+
 def file_number(file_name):
 	# file_name format: lane_<n>.txt
 	try:
@@ -50,13 +80,13 @@ def bbox_order_by_y(bbox_a, bbox_b):
 
 
 def check_point_limits(x, y, width, height):
-	x_tolerance = 0.5 * width
-	y_tolerance = 0.5 * height
+	x_tolerance = 0.1 * width
+	y_tolerance = 0.1 * height
 	min_x = - x_tolerance
 	max_x = width + x_tolerance
 	min_y = - y_tolerance
 	max_y = height + y_tolerance
-	
+			
 	if  not ((min_x <= x < max_x) and (min_y <= y < max_y)):
 		raise ValueError
 
@@ -72,15 +102,15 @@ def read_points_file(file_name, width, height):
 	#   Field 2: x coordinate of the point (in pixels)
 	#   Field 3: y coordinate of the point (in pixels)
 
-	point_file = open(file_name)
-	for record in point_file:
+	p_file = open(file_name)
+	for record in p_file:
 		try:
-			point = record.split()
-			if len(point) != 4:
+			p = record.split()
+			if len(p) != 4:
 				raise ValueError
 				
-			point_data = [ int(data) for data in point ]
-			(obj_class, line_seq, x, y) = point_data
+			p_data = [ int(data) for data in p ]
+			(obj_class, line_seq, x, y) = p_data
 			check_point_limits(x, y, width, height)
 			
 			for i in range(len(lines), line_seq + 1):
@@ -89,10 +119,10 @@ def read_points_file(file_name, width, height):
 			lines[line_seq].append([obj_class, x, y])
 		
 		except ValueError:
-			if point:
-				sys.stderr.write('FILE ' + file_name + '  ERROR: Invalid point record (class line x y): ' + record.strip() + '\n')
+			if p:
+				print('ERROR: Invalid point record (class line x y): ' + record)
 			continue
-	point_file.close()
+	p_file.close()
 
 	for i in range(len(lines)):
 		line_sorted = sorted(lines[i], cmp = point_order_by_y)
@@ -167,7 +197,7 @@ def remove_bbox_outliers(bboxes, width):
 		if i == 1:
 			last_theta = theta
 		
-		if abs(dx) > 30 and abs(theta) < (np.pi / 16):
+		if abs(dx) > 30 and abs(np.sin(theta)) < 0.1:
 			if abs(x - width / 2) < abs(last_x - width / 2):
 				outliers.append(bboxes[i])
 				del bboxes[i]
@@ -176,7 +206,7 @@ def remove_bbox_outliers(bboxes, width):
 				del bboxes[i - 1]
 			continue
 		
-		if abs(dx) > 30 and abs(theta - last_theta) > (np.pi / 4):
+		if abs(theta - last_theta) > (np.pi / 4):
 			outliers.append(bboxes[i])
 			del bboxes[i]
 			continue
@@ -187,7 +217,7 @@ def remove_bbox_outliers(bboxes, width):
 	return outliers
 
 
-def bboxes_clustering(bboxes, width, height, file_name):
+def bboxes_clustering(bboxes, width):
 	bboxes_clusters = []; bboxes_left = []; bboxes_right = []; outliers = []
 	
 	for bbox in bboxes:
@@ -215,9 +245,7 @@ def bboxes_clustering(bboxes, width, height, file_name):
 
 	for bbox in outliers:
 		(obj_class, (x, y), diagonal_1, diagonal_2) = bbox
-		((xa, ya), (xb, yb)) = diagonal_1
-		record = "%d %f %f %f %f" %  (obj_class, float(x) / width, float(y) / height, float(abs(xa - xb)) / width, float(abs(ya - yb)) / height)
-		sys.stderr.write('FILE ' + file_name + "  ERROR: Bounding box does not fit in any cluster (class x y w h): " + record + '\n')
+		print("ERROR: Bounding box does not fit in any line: (x=" + str(x) + ", y=" + str(y) + ")")
 
 	for bboxes_cluster in (bboxes_left, bboxes_right):
 		if len(bboxes_cluster) > 0:
@@ -235,8 +263,8 @@ def bboxes_clustering(bboxes, width, height, file_name):
 
 
 def check_bbox_limits(x_left, x_right, y_top, y_bottom, width, height):
-	x_tolerance = 0.5 * width
-	y_tolerance = 0.5 * height
+	x_tolerance = 0.1 * width
+	y_tolerance = 0.1 * height
 	min_x = - x_tolerance
 	max_x = width + x_tolerance
 	min_y = - y_tolerance
@@ -280,13 +308,11 @@ def read_bboxes_file(file_name, width, height):
 		
 		except ValueError:
 			if bbox:
-				sys.stderr.write('FILE ' + file_name + "  ERROR: Invalid bounding box file record (class x y w h): " + record.strip() + '\n')
+				print("ERROR: Invalid bounding box file record (class x y w h): " + record)
 			continue
 	bbox_file.close()
 	
-	bboxes_clusters = bboxes_clustering(bbox_list, width, height, file_name)
-	
-	return bboxes_clusters
+	return bbox_list
 
 
 def plot_points(img, gt_lines, gt_top, show_lines, color = (255,0,0)):
@@ -348,9 +374,9 @@ def plot_image(file_name, elas_predictions, yolo_predictions, gt_lines, gt_top, 
 		img = cv2.imread(img_file)
 		(img_h, img_w) = img.shape[0:2]
 		if (img_h, img_w) != (height, width):
-			raise Exception(2, 'FILE ' + img_file + "  ERROR: Image shape %dx%d does not match size parameter: %dx%d" % (img_w, img_h, width, height))
+			raise Exception(4, "ERROR: Image shape %dx%d does not match size parameter: %dx%d" % (img_w, img_h, width, height))
 	else:
-		sys.stderr.write('FILE ' + img_file + "  ERROR: Image file not found\n")
+		print('ERROR: FILE NOT FOUND: ' + img_file)
 		img = np.full((height, width, 3), (255,255,255), np.uint8)
 
 	plot_points(img, gt_lines, gt_top, show_lines, color = (255,0,0))
@@ -455,12 +481,12 @@ def compute_error(method, predictions, gt_lines, gt_top, max_error):
 					detect_false_pos += 1
 
 	if method == 'Yolo':
-		expected_detect_points = sum([ (len(gt_line) - 1) for gt_line in gt_lines ]) * 2
+		expected_points = sum([ (len(gt_line) - 1) for gt_line in gt_lines ]) * 2
 	if method == 'Elas':
-		expected_detect_points = sum([ len(gt_line) for gt_line in gt_lines ])
+		expected_points = sum([ len(gt_line) for gt_line in gt_lines ])
 		
-	classif_false_neg = expected_detect_points - classif_true_pos - classif_false_pos
-	detect_false_neg  = expected_detect_points - detect_true_pos  - detect_false_pos
+	classif_false_neg = expected_points - classif_true_pos - classif_false_pos
+	detect_false_neg  = expected_points - detect_true_pos  - detect_false_pos
 	result_classif = (classif_error, classif_true_pos, classif_false_pos, classif_false_neg)
 	result_detect  = (detect_error,  detect_true_pos,  detect_false_pos,  detect_false_neg)
 
@@ -505,7 +531,7 @@ def main(ground_truth_dir, params):
 	file_pattern = 'lane_*.txt'
 	file_list = recursive_glob(dir_name, file_pattern, relative = True)
 	if not file_list:
-		raise Exception(1, "ERROR: No " + file_pattern + " files found in: " + dir_name)
+		raise Exception(3, "ERROR: No " + file_pattern + " files found in: " + dir_name)
 	
 	elas_predictions = []
 	yolo_predictions = []
@@ -525,7 +551,8 @@ def main(ground_truth_dir, params):
 			update_accum_results('Elas', accum_results, results)
 
 		if yolo_dir:
-			yolo_predictions = read_bboxes_file(yolo_dir + file_name, width, height)
+			yolo_bboxes = read_bboxes_file(yolo_dir + file_name, width, height)
+			yolo_predictions = bboxes_clustering(yolo_bboxes, width)
 			results = compute_error('Yolo', yolo_predictions, gt_lines, gt_top, max_error)
 			update_accum_results('Yolo', accum_results, results)
 		
@@ -535,45 +562,25 @@ def main(ground_truth_dir, params):
 	return accum_results
 
 
-def save_stats(results, path_name = ''):
-	if path_name:
-		log_file_name = '__'.join(path_name.strip('/').split('/')) + '.log'
-		log_file = open(log_file_name, 'w')
-	else:
-		log_file = sys.stdout
-	
-	log_file.write('\n' + '  '.join(sys.argv) + '\n\n')
-	
+def print_stats(results):
 	for method in results.keys():
-		(result_classif, result_detect) = results[method]
-		log_file.write('\n' + method.upper() + '  statistics:\n\n')
-		for (result_type, error, true_pos, false_pos, false_neg) in (['classification'] + list(result_classif), ['detection'] + list(result_detect)):
-			total = (true_pos + false_pos + false_neg)
+		(stats_classif, stats_detect) = results[method]
+		print('\n' + method.upper() + '  statistics:\n')
+		for (result_type, stats) in (('classification', stats_classif), ('detection', stats_detect)):
 			try:
-				log_file.write('   ' + result_type.capitalize() + ':')
-				log_file.write('      True positives:  (%6d)'  % true_pos  + ' predicted points\n')
-				log_file.write('      False positives: (%6d)'  % false_pos + ' predicted points\n')
-				log_file.write('      False negatives: (%6d)'  % false_neg + ' unpredicted points\n')
-				log_file.write('      Total:           (%6d)'  % total     + ' points\n')
-				log_file.write('      Average Error:    %6.2f' % (1.0 * error  / true_pos) + '  pixels\n')
-				log_file.write('      Precision: %6.2f%%' % (100.0 * true_pos / (true_pos + false_pos)) + '\n')
-				log_file.write('      Recall:    %6.2f%%' % (100.0 * true_pos / (true_pos + false_neg)) + '\n')
-				log_file.write('      Accuracy:  %6.2f%%' % (100.0 * true_pos / total) + '\n\n')
+				print('   ' + result_type.capitalize() + ':')
+				print('      True positives:  (%6d)'  % stats.true_pos  + ' predicted points')
+				print('      False positives: (%6d)'  % stats.false_pos + ' predicted points')
+				print('      False negatives: (%6d)'  % stats.false_neg + ' unpredicted points')
+				print('      Total:           (%6d)'  % stats.total()   + ' points')
+				print('      Average error:    %6.2f' % stats.avg_error() + '  pixels')
+				print('      Precision:  %6.2f%%' % (100 * stats.precision()))
+				print('      Recall:     %6.2f%%' % (100 * stats.recall()))
+				print('      Accuracy:   %6.2f%%' % (100 * stats.accuracy()) + '\n')
 
-			except ZeroDivisionError:
+			except TypeError:
 				pass
-				
-	if path_name:
-		print('\nLog file generated: ' + log_file_name + '\n')
-		log_file.close()
 
-
-def print_stats(results, params):
-	save_stats(results)
-
-	(width, height, max_error, yolo_dir, elas_dir, images_dir, save_dir, show_images, show_lines) = params
-	if yolo_dir:
-		save_stats(results, yolo_dir)
 
 def get_image_size(size):
 	try:
@@ -590,13 +597,13 @@ def get_image_size(size):
 	return (image_width, image_height)
 	
 
-def check_argv(i):
-	if i >= len(sys.argv) or sys.argv[i][0] == '-':
-		raise Exception(0, "ERROR: argument expected after [%d]: " % (i - 1) + sys.argv[i - 1])
+def check_argv(argv, i):
+	if i >= len(argv) or argv[i][0] == '-':
+		raise Exception(0, "ERROR: argument expected after [%d]: " % (i - 1) + argv[i - 1])
 	return i
 
 
-def read_parameters():
+def read_parameters(argv):
 	width = 640
 	height = 480
 	max_error = 20
@@ -608,39 +615,39 @@ def read_parameters():
 	show_lines = False
 
 	i = 2
-	while i < len(sys.argv):
-		if sys.argv[i] == '-size':
-			i = check_argv(i + 1)
-			(width, height) = get_image_size(sys.argv[i])
+	while i < len(argv):
+		if argv[i] == '-size':
+			i = check_argv(argv, i + 1)
+			(width, height) = get_image_size(argv[i])
 
-		elif sys.argv[i] == '-error':
-			i = check_argv(i + 1)
-			max_error = float(sys.argv[i])
+		elif argv[i] == '-error':
+			i = check_argv(argv, i + 1)
+			max_error = float(argv[i])
 
-		elif sys.argv[i] == '-yolo':
-			i = check_argv(i + 1)
-			yolo_dir   = sys.argv[i] if sys.argv[i].endswith('/') else sys.argv[i] + '/'
+		elif argv[i] == '-yolo':
+			i = check_argv(argv, i + 1)
+			yolo_dir   = argv[i] if argv[i].endswith('/') else argv[i] + '/'
 
-		elif sys.argv[i] == '-elas':
-			i = check_argv(i + 1)
-			elas_dir   = sys.argv[i] if sys.argv[i].endswith('/') else sys.argv[i] + '/'
+		elif argv[i] == '-elas':
+			i = check_argv(argv, i + 1)
+			elas_dir   = argv[i] if argv[i].endswith('/') else argv[i] + '/'
 
-		elif sys.argv[i] == '-img':
-			i = check_argv(i + 1)
-			images_dir = sys.argv[i] if sys.argv[i].endswith('/') else sys.argv[i] + '/'
+		elif argv[i] == '-img':
+			i = check_argv(argv, i + 1)
+			images_dir = argv[i] if argv[i].endswith('/') else argv[i] + '/'
 
-		elif sys.argv[i] == '-save':
-			i = check_argv(i + 1)
-			save_dir   = sys.argv[i] if sys.argv[i].endswith('/') else sys.argv[i] + '/'
+		elif argv[i] == '-save':
+			i = check_argv(argv, i + 1)
+			save_dir   = argv[i] if argv[i].endswith('/') else argv[i] + '/'
 				
-		elif sys.argv[i] == '-show':
+		elif argv[i] == '-show':
 			show_images = True
 
-		elif sys.argv[i] == '-lines':
+		elif argv[i] == '-lines':
 			show_lines = True
 
 		else:
-			raise Exception(0, "ERROR: Invalid command line argument [%d]: " % i + sys.argv[i])
+			raise Exception(2, "ERROR: Invalid command line argument [%d]: " % i + argv[i])
 		
 		i += 1
 
@@ -654,24 +661,25 @@ if __name__ == "__main__":
 			raise Exception(0, 'usage')
 
 		ground_truth_dir = sys.argv[1] if sys.argv[1].endswith('/') else sys.argv[1] + '/'
-		params = read_parameters()
+		params = read_parameters(sys.argv)
+		
 		results = main(ground_truth_dir, params)
-		print_stats(results, params)
+		print_stats(results)
 		sys.exit(0)
 	
 	except Exception as error:
 		if error.args[-1] != 'usage':
-			sys.stderr.write('\n' + error.args[-1] + '\n\n')
+			print('\n' + error.args[-1] + '\n')
 		
-		sys.stderr.write("\nUsage: python " + sys.argv[0] + "  <gt_dir>  -size <wxh>  -error <pixels>"
+		print("\nUsage: python " + sys.argv[0] + "  <gt_dir>  -size <wxh>  -error <pixels>"
 			"  -yolo <yolo_results_dir>  -elas <elas_results_dir>"
-			"  -show  -lines  -img <images_dir>  -save <plot_results_dir>\n\n")
-		sys.stderr.write("Example: python " + sys.argv[0] + "  /lane_dataset/groundtruth/labels  -size 640x480  -error 30"
+			"  -show  -lines  -img <images_dir>  -save <plot_results_dir>\n")
+		print("Example: python " + sys.argv[0] + "  /lane_dataset/groundtruth/labels  -size 640x480  -error 30"
 			"  -yolo /lane_dataset/yolo/labels  -elas /lane_dataset/elas/labels"
-			"  -show  -lines  -img /lane_dataset/groundtruth/images  -save /results/\n\n")
-		sys.stderr.write("Note: Ground truth label records must be in the format: class line x y (in pixels)\n")
-		sys.stderr.write("      Elas result  label records must be in the format: class line x y (in pixels)\n")
-		sys.stderr.write("      Yolo result  label records must be in the format: class x y w h (in fractions)\n\n")
+			"  -show  -lines  -img /lane_dataset/groundtruth/images  -save /results/\n")
+		print("Note: Ground truth label records must be in the format: class line x y (in pixels)")
+		print("      Elas result  label records must be in the format: class line x y (in pixels)")
+		print("      Yolo result  label records must be in the format: class x y w h (in fractions)\n")
 
 		if len(error.args) == 1:
 			raise
