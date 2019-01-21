@@ -12,8 +12,8 @@
 using namespace cv;
 using namespace pcl;
 
-//pcl::visualization::PCLVisualizer *myviewer = new pcl::visualization::PCLVisualizer("CloudViewer2");
 
+//pcl::visualization::PCLVisualizer *myviewer = new pcl::visualization::PCLVisualizer("CloudViewer2");
 
 void
 DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi, int view)
@@ -26,7 +26,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 
 	cloud->clear();
 
-	load_pointcloud(i, raw_cloud);
+	load_pointcloud(i, raw_cloud, v, phi);
 	Mat img = load_image(i);
 
 	Mat viewer_img;
@@ -34,15 +34,16 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 	if (view)
 	{
 		if (_use_segmented)
+		{
 			viewer_img = segmented_image_view(img);
+			imshow("bla_seg", viewer_img);
+		}
 		else
 			viewer_img = img.clone();
 	}
 
 	int top_limit = (50. / 480.) * img.rows;
 	int bottom_limit = img.rows - (110. / 480.) * img.rows;
-	Pose2d correction(0., 0., 0.);
-	Matrix<double, 4, 4> vel2car = transform_vel2car();
 
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
@@ -56,19 +57,19 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		if (range < 4.0 || range > 70. || (fabs(point.x) < 6.0 && fabs(point.y) < 4.))
 			point.x = point.y = point.z = MAX_RANGE; 
 
-		pcl::PointXYZRGB point2;
+		pcl::PointXYZRGB point2(point);
 
-		point2.x = point.x;
-		point2.y = point.y;
-		point2.z = point.z;
-
-		point2.r = point.r;
-		point2.g = point.g;
-		point2.b = point.b;
+		//point2.x = point.x;
+		//point2.y = point.y;
+		//point2.z = point.z;
+		//point2.r = point.r;
+		//point2.g = point.g;
+		//point2.b = point.b;
 
 		// to use fused camera and velodyne
-		if (0)
-		// if (point.x > 0 && x >= 0 && x < img.cols && y >= 0 && y < img.rows && (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
+		// if (0)
+		if ((point.x > 0 && x >= 0 && x < img.cols) && (y >= 0 && y < img.rows) 
+			&& (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
 		{
 			// colors
 			p = 3 * (y * img.cols + x);
@@ -83,23 +84,15 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
             printf("** WARNING: REMOVING MAX RANGE AT SEGMAP_DATASET.CPP **\n");
             if (point.x < 70.)
             */
-		   	correct_point(correction, vel2car, point2);
-    		cloud->push_back(point2);
 
+    		cloud->push_back(point2);
 		}
 		// to use remission
-		else if (1)
+		else if (0)
 		// else if (point.z < 0.)
 		{
-			point2.r *= 1;
-			point2.g *= 1;
-			point2.b *= 1;
-
-			correct_point(correction, vel2car, point2);
 			cloud->push_back(point2);
 		}
-
-		ackerman_motion_model(correction, v, phi, (TIME_SPENT_IN_EACH_SCAN / 32.));
 	}
 
     /*
@@ -131,6 +124,8 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		resize(viewer_img, resized, Size(width, height));
 		imshow("cam_vel_fused", resized);
 	}
+
+	transformPointCloud(*cloud, *cloud, transform_vel2car());
 }
 
 
@@ -233,7 +228,7 @@ DatasetCarmen::load_image(int i)
 
 
 void
-DatasetCarmen::load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud)
+DatasetCarmen::load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi)
 {
 	int success;
 
@@ -244,6 +239,15 @@ DatasetCarmen::load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud)
 
 	if (success < 0 || cloud->size() == 0)
 		exit(printf("Cloud %s not found.\n", name));
+
+	// correct the points positions considering of the car motion.	
+	Pose2d correction(0., 0., 0.);
+
+	for (int i = 0; i < cloud->size(); i++)
+	{
+		correct_point(correction, _vel2car, cloud->at(i));
+		ackerman_motion_model(correction, v, phi, (TIME_SPENT_IN_EACH_SCAN / 32.));
+	}
 }
 
 
@@ -415,7 +419,7 @@ DatasetKitti::load_image(int i)
 
 
 void
-DatasetKitti::load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud)
+DatasetKitti::load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi)
 {
 	// pointers
 	static int num;

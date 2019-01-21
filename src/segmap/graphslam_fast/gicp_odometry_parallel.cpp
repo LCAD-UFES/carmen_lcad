@@ -38,8 +38,8 @@ run_icp_step(DatasetCarmen &dataset, int i, vector<Matrix<double, 4, 4>> &relati
 	PointCloud<PointXYZRGB>::Ptr aligned(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr source_moved(new PointCloud<PointXYZRGB>);
 
-	dataset.load_pointcloud(i - 1, target);
-	dataset.load_pointcloud(i, source);
+	dataset.load_pointcloud(i - 1, target, dataset.data[i - 1].v, dataset.data[i - 1].phi);
+	dataset.load_pointcloud(i, source, dataset.data[i].v, dataset.data[i].phi);
 
 	source = filter_pointcloud(source);
 	target = filter_pointcloud(target);

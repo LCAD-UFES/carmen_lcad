@@ -1,5 +1,5 @@
 classes= 20
-train  = /home/pjreddie/data/voc/train.txt
+train  = /home/filipe/carmen_lcad/sharedlib/darknet2/train.txt
 valid  = /home/pjreddie/data/voc/2007_test.txt
 names = data/voc.names
 backup = backup

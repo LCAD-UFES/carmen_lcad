@@ -136,7 +136,7 @@ main(int argc, char **argv)
 	PointCloud<PointXYZRGB>::Ptr moved(new PointCloud<PointXYZRGB>);
 
     Matrix<double, 4, 4> pose = pose3d_to_matrix(0., 0., dataset.odom_calib.init_angle);
-    dataset.load_pointcloud(indices[0].first, cloud);
+    dataset.load_pointcloud(indices[0].first, cloud, dataset.data[indices[0].first].v, dataset.data[indices[0].first].phi);
 
     //sprintf(cloud_name, "%05d", indices[0].first);
     //viewer->addPointCloud(cloud, cloud_name);
@@ -146,7 +146,7 @@ main(int argc, char **argv)
     for (int i = 0; i < relative_transform_vector.size(); i++)
     {
         cloud->clear();
-        dataset.load_pointcloud(indices[i].second, cloud);
+        dataset.load_pointcloud(indices[i].second, cloud, dataset.data[indices[i].second].v, dataset.data[indices[i].second].phi);
         cloud = filter_pointcloud(cloud);
 		increase_bightness(cloud);
 

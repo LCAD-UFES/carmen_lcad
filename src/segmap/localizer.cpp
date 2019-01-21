@@ -53,7 +53,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset)
 
 		pf.predict(dataset.data[i - 1].v, dataset.data[i - 1].phi, dataset.data[i].image_time - dataset.data[i - step].image_time);
 		//view(pf, map, poses, gps, NULL, NULL);
-		dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, 1);
+		dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, 0);
 
         //printf("Prediction\n");
         //view(pf, map, gt_pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi);
@@ -86,7 +86,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset)
 		}
 
 		//printf("Correction\n");
-		view(pf, map, gt_pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi);
+		// view(pf, map, gt_pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi);
 	}
 }
 
@@ -107,6 +107,13 @@ main(int argc, char **argv)
 
 	DatasetInterface *dataset;
 	dataset = new DatasetCarmen(dataset_name, 1);
+
+    /*
+    ParticleFilter::ParticleFilter(int n_particles, WeightType weight_type,
+		    double x_std, double y_std, double th_std,
+		    double v_std, double phi_std, double pred_x_std, double pred_y_std, double pred_th_std,
+		    double color_var_r, double color_var_g, double color_var_b)    
+    */
 
 	ParticleFilter pf(30, ParticleFilter::WEIGHT_SEMANTIC, 
 			0.5, 0.5, degrees_to_radians(5),
