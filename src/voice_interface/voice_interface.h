@@ -18,6 +18,13 @@ char *init_voice(char *language_code);
 */
 void finalize_voice();
 
+
+/*
+ * Set language to use at interface
+ */
+void
+set_language(char *language_to_set);
+
 /*
 * Transforms current text in audio
 */

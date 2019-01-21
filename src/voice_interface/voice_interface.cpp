@@ -52,12 +52,7 @@ init_voice(char *language_code)
 		return ((char *) "Error: Could not load the python_module language function.\n");
 	}
 
-	PyObject *python_function_arguments = Py_BuildValue("s", language_code);
-	if (python_language_function == NULL) printf("aqui \n");
-	if (python_function_arguments == NULL) printf("aqui 2 \n");
-	PyObject *python_language_function_output = PyObject_CallObject(python_language_function, python_function_arguments);
-	Py_DECREF(python_function_arguments);
-	//Py_DECREF(python_language_function_output);
+	set_language(language_code);
 
 	python_speak_function = PyObject_GetAttrString(python_module, (char *) "speak");
 	if (python_speak_function == NULL || !PyCallable_Check(python_speak_function))
@@ -80,8 +75,7 @@ init_voice(char *language_code)
 	return (NULL); // OK
 }
 
-
-void 
+void
 finalize_voice()
 {
 	Py_XDECREF(python_language_function);
@@ -91,6 +85,15 @@ finalize_voice()
 	Py_Finalize();
 }
 
+void
+set_language(char *language_to_set)
+{
+
+	PyObject *python_function_arguments = Py_BuildValue("s", language_to_set);
+	PyObject *python_language_function_output = PyObject_CallObject(python_language_function, python_function_arguments);
+	Py_DECREF(python_function_arguments);
+	//Py_DECREF(python_language_function_output);
+}
 
 int
 speak(char *speech, char *speech_file_name)
