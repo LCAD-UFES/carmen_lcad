@@ -35,14 +35,15 @@ bool marker_point_found = false;
 
 // These control what is displayed on the window. They are variables because it would be super cool to change them according to command line options in the future.
 bool DRAW_FPS = false;
+bool DRAW_TEXTBACKGROUND = true;
 bool DRAW_BBS = true; // Falso para criar o GT.
 bool DRAW_CLOSE_TLS = true; // Falso para criar o GT.
 bool DRAW_CIRCLE_THRESHOLD = true;
-bool DRAW_LIDAR_POINTS = true;
+bool DRAW_LIDAR_POINTS = false;
 bool RUN_YOLO = true; // Falso para criar o GT.
 bool COMPUTE_TL_POSES = false;
-bool PRINT_FINAL_PREDICTION = true; // Falso para criar o GT.
-bool PRINT_GT_PREP = true;
+bool PRINT_FINAL_PREDICTION = false; // Falso para criar o GT.
+bool PRINT_GT_PREP = false;
 
 #define TRAFFIC_LIGHT_GROUPING_TRESHOLD 20 // Distance in meters to consider traffic light position
 // #define MAX_TRAFFIC_LIGHT_DIST 100
@@ -53,6 +54,7 @@ bool PRINT_GT_PREP = true;
 #define TRAFFIC_LIGHT_IMAGE_THRESHOLD 1.5 // meters
 #define ORIENTATION_RESTRICTION 60 // degrees
 #define CAMERA_HFOV_2 20 // Camera hfov / 2 = 33
+#define CONFIDENCE_THRESHOLD 0.2
 
 
 // #define RESIZED_W 1280
@@ -197,7 +199,21 @@ display(Mat image, vector<bbox_t> predictions, double fps, unsigned int image_wi
             }
             rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)), bb_color, 1);
 
-            putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+            if (DRAW_TEXTBACKGROUND)
+            {
+                //Drawing backgound into text
+                int baseline=0;
+                Size textSize = getTextSize(object_info, FONT_HERSHEY_PLAIN, 1, 1, &baseline);
+                baseline += 1;
+                // center the text
+                Point textPoint = Point(predictions[i].x + 1, predictions[i].y - 3);
+                // draw the box
+                rectangle(image, textPoint + Point(textSize.width, -textSize.height), textPoint + Point(0, 1), Scalar(0,0,0), -1);
+                // ... and the baseline first
+                //line(image, textPoint + Point(0, 1), textPoint + Point(textSize.width, 1), Scalar(0, 0, 255));
+            }
+
+            putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, bb_color, 1);
         }
     }
 
@@ -724,7 +740,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     vector<bbox_t> predictions;
     if (RUN_YOLO) {
-        predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
+        predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, CONFIDENCE_THRESHOLD);
     } else {
         fprintf(stderr, "==============================\n");
         fprintf(stderr, "WARNING: YOLO is not running!!\n");
@@ -999,7 +1015,8 @@ initializer()
     initialize_transformations(board_pose, camera_pose, &transformer);
 
     classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/traffic_light.names");
-    network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/traffic_light.cfg", (char*) "../../sharedlib/darknet2/yolov3_traffic_light_rgo.weights");
+    // network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/traffic_light.cfg", (char*) "../../sharedlib/darknet2/yolov3_traffic_light_rgo.weights");
+    network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3-nrgr-10000-const-lr-1e-4.cfg", (char*) "../../sharedlib/darknet2/yolov3-nrgr-10000-const-lr-1e-4_15000.weights");
 
     // classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
     // network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
