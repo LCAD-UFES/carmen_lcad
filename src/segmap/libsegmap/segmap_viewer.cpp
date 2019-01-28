@@ -170,7 +170,7 @@ view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 
 		for (int i = 0; i < transformed_cloud->size(); i++)
 		{
-			if (fabs(transformed_cloud->at(i).x - mode.x) > 100 || fabs(transformed_cloud->at(i).y - mode.y) > 100)
+			if (fabs(transformed_cloud->at(i).x - mode.x) > 200 || fabs(transformed_cloud->at(i).y - mode.y) > 200)
 			{
 				printf("i: %d Point: %lf %lf Transformed: %lf %lf mode: %lf %lf %lf\n",
 						i, cloud->at(i).x, cloud->at(i).y,

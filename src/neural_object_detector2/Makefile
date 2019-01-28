@@ -22,7 +22,7 @@ LFLAGS += -lplayback_interface -lglobal -lipc -lvelodyne_interface -lbumblebee_b
           -lcamera_boxes_to_world -ldarknet `pkg-config opencv --libs` -ldbscan `pkg-config --cflags opencv` `pkg-config --libs opencv` \
 		  -llaser_ldmrs_interface -llaser_ldmrs_utils
 
-SOURCES = dbscan.cpp neural_object_detector2.cpp neural_object_detector_main2.cpp neural_object_detector_test2.cpp neural_object_detector_main_new2.cpp SampleFilter_neural_object_detector2.cpp
+SOURCES = dbscan.cpp neural_object_detector2.cpp neural_object_detector_main2_edited.cpp neural_object_detector_test2.cpp neural_object_detector_main_new2.cpp SampleFilter_neural_object_detector2.cpp
 
 PUBLIC_INCLUDES = behavior_selector_messages.h
 PUBLIC_LIBRARIES = 
@@ -30,7 +30,7 @@ PUBLIC_BINARIES = neural_object_detector2
 
 TARGETS = darknet libclustering velodyne_camera_calibration camera_boxes_to_world neural_object_detector2 neural_object_detector_test2 neural_object_detector_main_new2
 
-neural_object_detector2: dbscan.o SampleFilter_neural_object_detector2.o neural_object_detector_main2.o neural_object_detector2.o 
+neural_object_detector2: dbscan.o SampleFilter_neural_object_detector2.o neural_object_detector_main2_edited.o neural_object_detector2.o 
 
 neural_object_detector_test2: neural_object_detector_test2.o
 

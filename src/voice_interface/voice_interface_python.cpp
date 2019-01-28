@@ -8,7 +8,7 @@ PyObject *python_module_name, *python_module, *python_listen_function, *python_s
 
 
 char *
-init_voice()
+init_voice(char* language_code)
 {
 	Py_Initialize();
 	python_module_name = PyString_FromString((char *) "listen_speak");

@@ -11,12 +11,19 @@
 /*
 * Initiate Python interpreter and verify module
 */
-char *init_voice();
+char *init_voice(char *language_code);
 
 /*
-* Finalize Python interpreter and "drecrement" Python variables
+* Finalize Python interpreter and "decrement" Python variables
 */
 void finalize_voice();
+
+
+/*
+ * Set language to use at interface
+ */
+void
+set_language(char *language_to_set);
 
 /*
 * Transforms current text in audio

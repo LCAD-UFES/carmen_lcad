@@ -1,4 +1,0 @@
-// msg: ~29000
-timestamp(image)=1542361763.947835; distance=99.826383; tl_state=RED
-timestamp(image)=1542361856.370451; distance=5.403788; tl_state=GREEN // msg 53395
-timestamp(image)=1542361865.172113; distance=6.559536; tl_state=NONE // msg 55603

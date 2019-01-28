@@ -51,7 +51,7 @@ public:
 	int _use_segmented;
 
 	virtual Mat load_image(int i) = 0;
-	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud) = 0;
+	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi) = 0;
 	void load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi, int view = 0);
 
 	virtual Matrix<double, 3, 1> transform_vel2cam(PointXYZRGB &p) = 0;
@@ -83,7 +83,7 @@ class DatasetCarmen : public DatasetInterface
 public:
 
 	virtual Mat load_image(int i);
-	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud);
+	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi);
 	virtual Matrix<double, 3, 1> transform_vel2cam(PointXYZRGB &p);
 	virtual Matrix<double, 4, 4> transform_vel2car();
 	virtual void load_data();
@@ -109,7 +109,7 @@ protected:
 
 public:
 	virtual Mat load_image(int i);
-	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud);
+	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi);
 	virtual Matrix<double, 3, 1> transform_vel2cam(PointXYZRGB &p);
 	virtual Matrix<double, 4, 4> transform_vel2car();
 

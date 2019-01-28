@@ -138,7 +138,7 @@ main(int argc, char **argv)
 	Matrix<double, 4, 4> correction;
 	int converged;
 
-    dataset.load_pointcloud(0, target);
+    dataset.load_pointcloud(0, target, dataset.data[0].v, dataset.data[0].phi);
 	target = filter_pointcloud(target);
 	target_pose = pose3d_to_matrix(0., 0., dataset.odom_calib.init_angle);
     draw_pose(target_pose);
@@ -155,7 +155,7 @@ main(int argc, char **argv)
 		source->clear();
 		aligned->clear();
 		//load_pointcloud(argv[1], data[0].sync[i].cloud_time, source);
-        dataset.load_pointcloud(i, source);
+        dataset.load_pointcloud(i, source,  dataset.data[i].v, dataset.data[i].phi);
 		source = filter_pointcloud(source);
 		run_gicp(source, target, &correction, &converged, aligned);
 

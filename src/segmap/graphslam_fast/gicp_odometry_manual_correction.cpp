@@ -168,8 +168,8 @@ main(int argc, char **argv)
 	    PointCloud<PointXYZRGB>::Ptr source_moved(new PointCloud<PointXYZRGB>);
 	    PointCloud<PointXYZRGB>::Ptr target(new PointCloud<PointXYZRGB>);
 
-        dataset.load_pointcloud(indices[i].first, target);
-        dataset.load_pointcloud(indices[i].second, source);
+        dataset.load_pointcloud(indices[i].first, target, dataset.data[indices[i].first].v, dataset.data[indices[i].first].phi);
+        dataset.load_pointcloud(indices[i].second, source, dataset.data[indices[i].second].v, dataset.data[indices[i].second].phi);
 
         target = filter_pointcloud(target);
         source = filter_pointcloud(source);

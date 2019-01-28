@@ -310,7 +310,10 @@ correct_point(Pose2d &correction,
 
 	p << point.x, point.y, point.z, 1.;
 	correction_mat = Pose2d::to_matrix(correction);
-	corrected = correction_mat * vel2car * p;
+
+	// move the point to the car reference frame, apply the correction due to car motion, 
+	// and move back to the velodyne frame.
+	corrected = vel2car.inverse() * correction_mat * vel2car * p;
 
 	double m = corrected(3, 0);
 

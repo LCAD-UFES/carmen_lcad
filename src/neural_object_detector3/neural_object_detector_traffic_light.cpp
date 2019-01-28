@@ -35,12 +35,17 @@ bool marker_point_found = false;
 
 // These control what is displayed on the window. They are variables because it would be super cool to change them according to command line options in the future.
 bool DRAW_FPS = false;
-bool DRAW_BBS = true;
-bool DRAW_CLOSE_TLS = true;
+bool DRAW_TEXTBACKGROUND = true;
+bool DRAW_BBS = true; // Falso para criar o GT.
+bool DRAW_CLOSE_TLS = true; // Falso para criar o GT.
 bool DRAW_CIRCLE_THRESHOLD = true;
 bool DRAW_LIDAR_POINTS = false;
+bool RUN_YOLO = true; // Falso para criar o GT.
+bool COMPUTE_TL_POSES = false;
+bool PRINT_FINAL_PREDICTION = false; // Falso para criar o GT.
+bool PRINT_GT_PREP = false;
 
-#define TRAFFIC_LIGHT_GROUPING_TRESHOLD 20      // Distance in meters to consider traffic light position
+#define TRAFFIC_LIGHT_GROUPING_TRESHOLD 20 // Distance in meters to consider traffic light position
 // #define MAX_TRAFFIC_LIGHT_DIST 100
 #define MAX_TRAFFIC_LIGHT_DIST 110 // For annotating ground truth.
 #define MIN_TRAFFIC_LIGHT_THRESHOLD 10 // 30
@@ -48,8 +53,12 @@ bool DRAW_LIDAR_POINTS = false;
 #define DEFAULT_TRAFFIC_LIGHT_THRESHOLD 60 // pixels
 #define TRAFFIC_LIGHT_IMAGE_THRESHOLD 1.5 // meters
 #define ORIENTATION_RESTRICTION 60 // degrees
+#define CAMERA_HFOV_2 20 // Camera hfov / 2 = 33
+#define CONFIDENCE_THRESHOLD 0.2
 
 
+// #define RESIZED_W 1280
+// #define RESIZED_H 960
 #define RESIZED_W 640
 #define RESIZED_H 480
 
@@ -67,15 +76,26 @@ compute_distance_to_the_traffic_light()
     {
             double distance = sqrt(pow(globalpos_msg->globalpos.x - annotation_vector[i].position.x, 2) +
                             pow(globalpos_msg->globalpos.y - annotation_vector[i].position.y, 2));
-            if (distance < nearest_traffic_light_distance)
+            // if (distance < nearest_traffic_light_distance)
+            if (distance <= MAX_TRAFFIC_LIGHT_DIST && distance < nearest_traffic_light_distance)
             {
                 bool orientation_ok = fabs(carmen_radians_to_degrees(globalpos_msg->globalpos.theta - annotation_vector[i].orientation.yaw)) < ORIENTATION_RESTRICTION ? 1 : 0;
+                // bool orientation_ok = true;
+
+                // auto dx = globalpos_msg->globalpos.x - annotation_vector[i].position.x;
+                // auto dy = (globalpos_msg->globalpos.y - annotation_vector[i].position.y) * -1;
+                // auto tl_angle = carmen_normalize_theta(atan2(dy, dx));
+                // fprintf(stderr, "tl_angle=%f\n", tl_angle);
+                // auto d_angle_tl_iara = fabs(carmen_normalize_theta(tl_angle - M_PI - globalpos_msg->globalpos.theta));
+                // fprintf(stderr, "d_angle_tl_iara=%f\n", d_angle_tl_iara);
+                // bool in_camera = carmen_radians_to_degrees(d_angle_tl_iara) < CAMERA_HFOV_2;
 
                 bool behind = fabs(carmen_normalize_theta((atan2(globalpos_msg->globalpos.y - annotation_vector[i].position.y,
                                 globalpos_msg->globalpos.x - annotation_vector[i].position.x) - M_PI - globalpos_msg->globalpos.theta))) > M_PI_2;
 
                 // if (distance <= MAX_TRAFFIC_LIGHT_DISTANCE && orientation_ok && behind == false && distance < nearest_traffic_light_distance)
                 if (distance <= MAX_TRAFFIC_LIGHT_DIST && orientation_ok && behind == false && distance < nearest_traffic_light_distance)
+                // if (distance <= MAX_TRAFFIC_LIGHT_DIST && orientation_ok && in_camera && distance < nearest_traffic_light_distance)
                 {
                     nearest_traffic_light_distance = distance;
                     nearest_traffic_light = annotation_vector[i];
@@ -179,7 +199,21 @@ display(Mat image, vector<bbox_t> predictions, double fps, unsigned int image_wi
             }
             rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)), bb_color, 1);
 
-            putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+            if (DRAW_TEXTBACKGROUND)
+            {
+                //Drawing backgound into text
+                int baseline=0;
+                Size textSize = getTextSize(object_info, FONT_HERSHEY_PLAIN, 1, 1, &baseline);
+                baseline += 1;
+                // center the text
+                Point textPoint = Point(predictions[i].x + 1, predictions[i].y - 3);
+                // draw the box
+                rectangle(image, textPoint + Point(textSize.width, -textSize.height), textPoint + Point(0, 1), Scalar(0,0,0), -1);
+                // ... and the baseline first
+                //line(image, textPoint + Point(0, 1), textPoint + Point(textSize.width, 1), Scalar(0, 0, 255));
+            }
+
+            putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, bb_color, 1);
         }
     }
 
@@ -188,7 +222,7 @@ display(Mat image, vector<bbox_t> predictions, double fps, unsigned int image_wi
     //show_LIDAR(image, points_inside_bbox, 0, 0, 255);                 // Blue points are all points inside the bbox
     //show_LIDAR(image, filtered_points, 0, 255, 0);                        // Green points are filtered points
 
-    resize(image, image, Size(640, 480));
+    // resize(image, image, Size(640, 480));
     imshow("Neural Object Detector", image);
     waitKey(1);
 }
@@ -506,34 +540,35 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 
 
 void
+compute_picked_point(vector<image_cartesian> points)
+{
+    if (screen_marker_set && !marker_point_found)
+    {
+        double marker_picked_point_pixel_distance = DBL_MAX;
+        for (int i = 0; i < points.size(); ++i)
+        {
+            double pixel_distance = sqrt(pow(screen_marker.x - points[i].image_x, 2) +
+                            pow(screen_marker.y - points[i].image_y, 2));
+            if (pixel_distance < marker_picked_point_pixel_distance) {
+                marker_picked_point_pixel_distance = pixel_distance;
+                marker_picked_point = points[i];
+            }
+        }
+
+        carmen_translte_2d(&marker_picked_point.cartesian_x, &marker_picked_point.cartesian_y, board_pose.position.x, board_pose.position.y);
+        carmen_rotate_2d  (&marker_picked_point.cartesian_x, &marker_picked_point.cartesian_y, globalpos_msg->globalpos.theta);
+        carmen_translte_2d(&marker_picked_point.cartesian_x, &marker_picked_point.cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
+        marker_picked_point.cartesian_z += board_pose.position.z + velodyne_pose.position.z;
+        fprintf(stderr, "Picked point: %lf\t%lf\t%lf; theta=%lf\n", marker_picked_point.cartesian_x, marker_picked_point.cartesian_y, marker_picked_point.cartesian_z, globalpos_msg->globalpos.theta);
+        fprintf(stderr, "RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT\t8\t0\t%lf\t%lf\t%lf\t%lf\n", globalpos_msg->globalpos.theta, marker_picked_point.cartesian_x, marker_picked_point.cartesian_y, marker_picked_point.cartesian_z);
+        marker_point_found = true;
+    }
+}
+
+void
 compute_traffic_light_pose(vector<bbox_t> predictions, int resized_w, int resized_h, int crop_x, int crop_y, int crop_w, int crop_h, vector<image_cartesian> points)
 {
-    if (screen_marker_set)
-    {
-        if (!marker_point_found)
-        {
-            double marker_picked_point_pixel_distance = DBL_MAX;
-            for (int i = 0; i < points.size(); ++i)
-            {
-                double pixel_distance = sqrt(pow(screen_marker.x - points[i].image_x, 2) +
-                                pow(screen_marker.y - points[i].image_y, 2));
-                if (pixel_distance < marker_picked_point_pixel_distance) {
-                    marker_picked_point_pixel_distance = pixel_distance;
-                    marker_picked_point = points[i];
-                }
-            }
-
-            carmen_translte_2d(&marker_picked_point.cartesian_x, &marker_picked_point.cartesian_y, board_pose.position.x, board_pose.position.y);
-            carmen_rotate_2d  (&marker_picked_point.cartesian_x, &marker_picked_point.cartesian_y, globalpos_msg->globalpos.theta);
-            carmen_translte_2d(&marker_picked_point.cartesian_x, &marker_picked_point.cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
-            marker_picked_point.cartesian_z += board_pose.position.z + velodyne_pose.position.z;
-            fprintf(stderr, "Picked point: %lf\t%lf\t%lf; theta=%lf\n", marker_picked_point.cartesian_x, marker_picked_point.cartesian_y, marker_picked_point.cartesian_z, globalpos_msg->globalpos.theta);
-            fprintf(stderr, "RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT\t8\t0\t%lf\t%lf\t%lf\t%lf\n", globalpos_msg->globalpos.theta, marker_picked_point.cartesian_x, marker_picked_point.cartesian_y, marker_picked_point.cartesian_z);
-            marker_point_found = true;
-        }
-    }
-
-    vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto
+    vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto, int threshold
 
     generate_traffic_light_annotations(predictions, points_inside_bbox);
 }
@@ -581,13 +616,11 @@ compute_threshold()
 
 
 carmen_traffic_light*
-get_main_traffic_light(vector<bbox_t> predictions,  vector<carmen_position_t> tf_annotations_on_image)
+get_main_traffic_light(vector<bbox_t> predictions,  vector<carmen_position_t> tf_annotations_on_image, int threshold)
 {
     carmen_traffic_light *main_traffic_light = (carmen_traffic_light *) malloc (1 * sizeof(carmen_traffic_light));
     bbox_t main_bbox;
     double dist = 0.0, main_dist = DBL_MAX, x_centroid = 0.0, y_centroid = 0.0;
-
-    int threshold = compute_threshold();
 
     for (unsigned int i = 0; i < predictions.size(); i++)
     {
@@ -608,14 +641,19 @@ get_main_traffic_light(vector<bbox_t> predictions,  vector<carmen_position_t> tf
             }
         }
     }
-    main_traffic_light->x1 = main_bbox.x;
-    main_traffic_light->y1 = main_bbox.y;
-    main_traffic_light->x2 = main_bbox.x + main_bbox.w;
-    main_traffic_light->y2 = main_bbox.y + main_bbox.h;
+
+    main_traffic_light->x1 = 0;
+    main_traffic_light->y1 = 0;
+    main_traffic_light->x2 = 0;
+    main_traffic_light->y2 = 0;
     main_traffic_light->color = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF;                    // In case of any failure, TRAFFIC_LIGHT_OFF message is sent
 
     if (main_dist < DBL_MAX)                                                               //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED
     {                                                                                      //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN
+        main_traffic_light->x1 = main_bbox.x;
+        main_traffic_light->y1 = main_bbox.y;
+        main_traffic_light->x2 = main_bbox.x + main_bbox.w;
+        main_traffic_light->y2 = main_bbox.y + main_bbox.h;
         if (main_bbox.obj_id == 0)                                                         //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_YELLOW
             main_traffic_light->color = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;            //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF
         else if (main_bbox.obj_id == 1)                                                    //RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_RIGHT
@@ -627,12 +665,12 @@ get_main_traffic_light(vector<bbox_t> predictions,  vector<carmen_position_t> tf
 
 
 carmen_traffic_light_message
-build_traffic_light_message(carmen_bumblebee_basic_stereoimage_message *image_msg, vector<bbox_t> predictions, vector<carmen_position_t> tf_annotation_on_image)
+build_traffic_light_message(carmen_bumblebee_basic_stereoimage_message *image_msg, vector<bbox_t> predictions, vector<carmen_position_t> tf_annotations_on_image, int tl_threshold)
 {
     carmen_traffic_light_message traffic_light_message;
 
     traffic_light_message.num_traffic_lights = 1;
-    traffic_light_message.traffic_lights = get_main_traffic_light(predictions, tf_annotation_on_image);
+    traffic_light_message.traffic_lights = get_main_traffic_light(predictions, tf_annotations_on_image, tl_threshold);
     traffic_light_message.traffic_light_annotation_distance = 9999.0;
     traffic_light_message.timestamp = image_msg->timestamp;
     traffic_light_message.host = carmen_get_host();
@@ -695,9 +733,19 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     int crop_h = RESIZED_H;
 
     Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);
-    resize(open_cv_image, open_cv_image, Size(RESIZED_W, RESIZED_H));
+    if (Size(RESIZED_W, RESIZED_H) != open_cv_image.size())
+    {
+        resize(open_cv_image, open_cv_image, Size(RESIZED_W, RESIZED_H));
+    }
 
-    vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
+    vector<bbox_t> predictions;
+    if (RUN_YOLO) {
+        predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, CONFIDENCE_THRESHOLD);
+    } else {
+        fprintf(stderr, "==============================\n");
+        fprintf(stderr, "WARNING: YOLO is not running!!\n");
+        fprintf(stderr, "==============================\n");
+    }
 
     fps = 1.0 / (carmen_get_time() - start_time);
     start_time = carmen_get_time();
@@ -715,34 +763,57 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         double distance_to_tf = compute_distance_to_the_traffic_light();
 
         vector<carmen_position_t> tf_annotations_on_image;
+        const size_t line_size = 100;
+        char final_prediction_line[line_size];
+        char gt_prep_line[line_size];
         if (distance_to_tf < DBL_MAX)
         {
+            int tl_threshold = compute_threshold();
+
             for (int i = 0; i < nearests_traffic_lights_vector.size(); i++)
             {
-                tf_annotations_on_image.push_back(convert_rddf_pose_to_point_in_image(nearests_traffic_lights_vector[i].position.x, nearests_traffic_lights_vector[i].position.y, nearests_traffic_lights_vector[i].position.z,
-                        world_to_camera_pose, camera_parameters, RESIZED_W, RESIZED_H));
+                carmen_position_t tl_on_cam = convert_rddf_pose_to_point_in_image(nearests_traffic_lights_vector[i].position.x, nearests_traffic_lights_vector[i].position.y, nearests_traffic_lights_vector[i].position.z,
+                        world_to_camera_pose, camera_parameters, RESIZED_W, RESIZED_H);
 
-                if (DRAW_CIRCLE_THRESHOLD)
-                {
-                    // circle(open_cv_image, Point((int)tf_annotations_on_image[i].x, (int)tf_annotations_on_image[i].y), 3, Scalar(255, 255, 0), -1, 8);
-                    circle(open_cv_image, Point((int)tf_annotations_on_image[i].x, (int)tf_annotations_on_image[i].y), compute_threshold(), Scalar(255, 255, 0), 1, 8);
+                // Check if TL annotation is really on camera.
+                if (tl_on_cam.x >= 0 && tl_on_cam.y >= 0 && tl_on_cam.x < RESIZED_W && tl_on_cam.y < RESIZED_H) {
+                    tf_annotations_on_image.push_back(tl_on_cam);
+
+                    if (DRAW_CIRCLE_THRESHOLD)
+                    {
+                        // circle(open_cv_image, Point((int)tf_annotations_on_image[i].x, (int)tf_annotations_on_image[i].y), 3, Scalar(255, 255, 0), -1, 8);
+                        // circle(open_cv_image, Point((int)tf_annotations_on_image[i].x, (int)tf_annotations_on_image[i].y), compute_threshold(), Scalar(255, 255, 0), 1, 8);
+                        circle(open_cv_image, Point((int)tl_on_cam.x, (int)tl_on_cam.y), tl_threshold, Scalar(255, 255, 0), 1, 8);
+                    }
                 }
             }
 
-            // printf("Timestamp=%lf; Distance=%lf\n", image_msg->timestamp, distance_to_tf);
+            // if (predictions.size() > 0 && COMPUTE_TL_POSES)
+            if (COMPUTE_TL_POSES)
+            {
+                // FIXME: Quase certeza que da pra tirar o `predictions.size() > 0`.
+                compute_traffic_light_pose(predictions, RESIZED_W, RESIZED_H, crop_x, crop_y, crop_w, crop_h, lidar_points);
+            }
+
+            if (tf_annotations_on_image.size() > 0) {
+                carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotations_on_image, tl_threshold);
+                publish_traffic_lights(&traffic_light_message);
+
+                char const* tl_code_name = tl_code_names[traffic_light_message.traffic_lights->color];
+                snprintf(final_prediction_line, line_size, "timestamp(image)=%lf; distance=%lf; tl_state=%s\n", image_msg->timestamp, distance_to_tf, tl_code_name);
+                snprintf(gt_prep_line, line_size,          "timestamp(image)=%lf; distance=%lf; tl_state=\n", image_msg->timestamp, distance_to_tf);
+            }
         }
 
-        if (predictions.size() > 0)
-        {
-            compute_traffic_light_pose(predictions, RESIZED_W, RESIZED_H, crop_x, crop_y, crop_w, crop_h, lidar_points);
+        if (tf_annotations_on_image.size() == 0) {
+            snprintf(final_prediction_line, line_size, "timestamp(image)=%lf; distance=NaN; tl_state=NONE\n", image_msg->timestamp);
+            snprintf(gt_prep_line, line_size,          "timestamp(image)=%lf; distance=NaN; tl_state=\n", image_msg->timestamp);
+        }
 
-            if (distance_to_tf < DBL_MAX)
-            {
-                carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotations_on_image);
-                publish_traffic_lights(&traffic_light_message);
-                char const* tl_code_name = tl_code_names[traffic_light_message.traffic_lights->color];
-                printf("image_timestamp=%lf;tl_state=%s;distance=%lf\n", image_msg->timestamp, tl_code_name, distance_to_tf);
-            }
+        if (PRINT_FINAL_PREDICTION) {
+            printf("%s", final_prediction_line);
+        } else if (PRINT_GT_PREP) {
+            printf("%s", gt_prep_line);
         }
 
         // @possatti Debug TL annotations within a distance.
@@ -762,6 +833,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
                    circle(open_cv_image, Point((int)point.x, (int)point.y), 1, Scalar(255, 0, 0), -1, 8);
                }
             }
+        }
+
+        if (COMPUTE_TL_POSES)
+        {
+            compute_picked_point(lidar_points);
         }
 
         // Draw the point picked by hand.
@@ -926,6 +1002,9 @@ onMouse(int event, int x, int y, int, void*)
         screen_marker = Point(x,y);
         screen_marker_set = true;
         marker_point_found = false;
+    } else if (event == EVENT_RBUTTONDOWN) {
+        screen_marker_set = false;
+        marker_point_found = false;
     }
 }
 
@@ -936,7 +1015,8 @@ initializer()
     initialize_transformations(board_pose, camera_pose, &transformer);
 
     classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/traffic_light.names");
-    network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/traffic_light.cfg", (char*) "../../sharedlib/darknet2/yolov3_traffic_light_rgo.weights");
+    // network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/traffic_light.cfg", (char*) "../../sharedlib/darknet2/yolov3_traffic_light_rgo.weights");
+    network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3-nrgr-10000-const-lr-1e-4.cfg", (char*) "../../sharedlib/darknet2/yolov3-nrgr-10000-const-lr-1e-4_15000.weights");
 
     // classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
     // network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
