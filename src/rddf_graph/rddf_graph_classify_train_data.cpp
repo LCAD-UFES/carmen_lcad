@@ -191,10 +191,19 @@ classify_train_data(FILE *f_last_classified, vector < vector<t_pattern> > databa
 }
 
 
-void
-define_classes(FILE *f_last_classified, vector < vector<t_pattern> > database_filenames, l_class last_classified, string database_classified_dir)
+void save_classed_image (FILE f_database_classes, string pattern, string new_filename, string database_classes_dir, string database_classified_filename)
 {
-	cv::namedWindow("z->valid | x->invalid | esc->exit", cv::WINDOW_AUTOSIZE);
+	new_filename = database_classes_dir + "/" + new_filename;
+	fprintf(&f_database_classes, "%s %s\n", new_filename.c_str(), pattern.c_str());
+	string command = "cp " + database_classified_filename + " " + new_filename;
+	int retorno = system(command.c_str());
+}
+
+
+void
+define_classes(FILE *f_last_classified, vector < vector<t_pattern> > database_filenames, l_class last_classified, string database_classes_dir)
+{
+	cv::namedWindow("image 15x15", cv::WINDOW_AUTOSIZE);
 	cv::namedWindow("image 3x3", cv::WINDOW_AUTOSIZE);
 	cv::moveWindow("image 3x3", 15*20, 0);
 	cv::Mat image_15_15;
@@ -205,8 +214,8 @@ define_classes(FILE *f_last_classified, vector < vector<t_pattern> > database_fi
 	int k;
 	l_class actual;
 
-	string filename = database_classified_dir + "/database_classified.txt";
-	FILE *f_database_classified = fopen(filename.c_str(), "a+");
+	string filename = database_classes_dir + "/database_classified.txt";
+	FILE *f_database_classes = fopen(filename.c_str(), "a+");
 
 	vector <string> valids;
 	vector <string> invalids;
@@ -215,83 +224,111 @@ define_classes(FILE *f_last_classified, vector < vector<t_pattern> > database_fi
 	for (unsigned int i = last_classified.file_index; i<database_filenames.size();i++)
 	{
 		for (unsigned int j = last_classified.pattern; j<database_filenames[i].size();j++)
-		//for (unsigned int j = last_classified.pattern; j<database_filenames[i].size();)
 		{
-			//if (std::count(database_filenames[i][j].pattern.begin(), database_filenames[i][j].pattern.end(),'1') >= 3)
-
 				actual.file_index = i;
 				actual.pattern = j;
 				image_15_15 = cv::Mat(15, 15, CV_8UC3, cv::Scalar(255, 255, 255));
 				image_3_3 = cv::Mat(15, 15, CV_8UC3, cv::Scalar(255, 255, 255));
-				image_15_15 = cv::imread(database_filenames[i][j].filename);
-				if (!image_15_15.data)
+				string new_filename = database_filenames[i][j].filename;
+				char invalid = '0';
+				size_t found = new_filename.find(invalid, 36);
+				if (found == string::npos) //means that didn't find 0 and actual class is -1
 				{
-					std::cout << "Image " << database_filenames[i][j].filename <<  " not loaded"<<endl;
-					exit(1);
+					size_t found_bar = new_filename.find_last_of("/");
+					size_t found_underline = new_filename.find_last_of("_");
+					image_15_15 = cv::imread(database_filenames[i][j].filename);
+					if (!image_15_15.data)
+					{
+						std::cout << "Image " << database_filenames[i][j].filename <<  " not loaded"<<endl;
+						exit(1);
+					}
+					create_image_3_3(&image_3_3, database_filenames[i][j].pattern);
+					//cv::resize(image_15_15, image_15_15_scaled, size, 0, 0, cv::INTER_NEAREST);
+					cv::resize(image_15_15, image_15_15_scaled, size, 0, 0, cv::INTER_NEAREST);
+					//cv::resize(image_15_15, image_15_15_scaled, size);
+					cv::resize(image_3_3, image_3_3_scaled, size, 0, 0, cv::INTER_NEAREST);
+					cv::Point p1, p2;
+					p1.x = 180;
+					p1.y = 180;
+					p2.x = 270;
+					p2.y = 270;
+					cv::rectangle(image_15_15_scaled, p1, p2, cv::Scalar(0,0,255),2);
+					//cv::resize(image_3_3, image_3_3_scaled, size);
+					cv::imshow("image 15x15", image_15_15_scaled);
+					cv::imshow("image 3x3", image_3_3_scaled);
+					k = (char)cv::waitKey();
+
+					if (k == 49) //1
+					{
+						string pattern = "101010000";
+						new_filename = database_filenames[i][j].filename.substr(found_bar+1, found_underline-found_bar) + "1.jpg";
+						save_classed_image (*f_database_classes, pattern, new_filename, database_classes_dir, database_filenames[i][j].filename);
+					}
+
+					else if (k == 50) //2
+					{
+						string pattern = "000010101";
+						new_filename = database_filenames[i][j].filename.substr(found_bar+1, found_underline-found_bar) + "2.jpg";
+						save_classed_image (*f_database_classes, pattern, new_filename, database_classes_dir, database_filenames[i][j].filename);
+					}
+
+					else if (k == 51) //3
+					{
+						string pattern = "100010100";
+						new_filename = database_filenames[i][j].filename.substr(found_bar+1, found_underline-found_bar) + "3.jpg";
+						save_classed_image (*f_database_classes, pattern, new_filename, database_classes_dir, database_filenames[i][j].filename);
+					}
+
+					else if (k == 52) //4
+					{
+						string pattern = "001010001";
+						new_filename = database_filenames[i][j].filename.substr(found_bar+1, found_underline-found_bar) + "4.jpg";
+						save_classed_image (*f_database_classes, pattern, new_filename, database_classes_dir, database_filenames[i][j].filename);
+					}
+
+					else if (k == 53) //5
+					{
+						string pattern = "010010010";
+						new_filename = database_filenames[i][j].filename.substr(found_bar+1, found_underline-found_bar) + "5.jpg";
+						save_classed_image (*f_database_classes, pattern, new_filename, database_classes_dir, database_filenames[i][j].filename);
+					}
+
+					else if (k == 54) //6
+					{
+						string pattern = "000111000";
+						new_filename = database_filenames[i][j].filename.substr(found_bar+1, found_underline-found_bar) + "6.jpg";
+						save_classed_image (*f_database_classes, pattern, new_filename, database_classes_dir, database_filenames[i][j].filename);
+					}
+
+					else if (k == 55) //7
+					{
+						string pattern = "100010001";
+						new_filename = database_filenames[i][j].filename.substr(found_bar+1, found_underline-found_bar) + "7.jpg";
+						save_classed_image (*f_database_classes, pattern, new_filename, database_classes_dir, database_filenames[i][j].filename);
+					}
+
+					else if (k == 56) //8
+					{
+						string pattern = "001010100";
+						new_filename = database_filenames[i][j].filename.substr(found_bar+1, found_underline-found_bar) + "8.jpg";
+						save_classed_image (*f_database_classes, pattern, new_filename, database_classes_dir, database_filenames[i][j].filename);
+					}
+
+					if (k == 27) //esc sair
+					{
+						fprintf(f_last_classified, "%d %d\n", actual.file_index, actual.pattern);
+						fclose (f_database_classes);
+						fclose (f_last_classified);
+						exit(1);
+					}
+
+
 				}
-				create_image_3_3(&image_3_3, database_filenames[i][j].pattern);
-				//cv::resize(image_15_15, image_15_15_scaled, size, 0, 0, cv::INTER_NEAREST);
-				cv::resize(image_15_15, image_15_15_scaled, size, 0, 0, cv::INTER_NEAREST);
-				//cv::resize(image_15_15, image_15_15_scaled, size);
-				cv::resize(image_3_3, image_3_3_scaled, size, 0, 0, cv::INTER_NEAREST);
-				cv::Point p1, p2;
-				p1.x = 180;
-				p1.y = 180;
-				p2.x = 270;
-				p2.y = 270;
-				cv::rectangle(image_15_15_scaled, p1, p2, cv::Scalar(0,0,255),2);
-				//cv::resize(image_3_3, image_3_3_scaled, size);
-				cv::imshow("z->valid | x->invalid | esc->exit", image_15_15_scaled);
-				cv::imshow("image 3x3", image_3_3_scaled);
-
-				k = (char)cv::waitKey();
-				if (k == 122) //z - valido!!!
-				{
-					/*if(database_filenames[i][j].filename.compare(invalids.back()) == 0)
-						invalids.pop_back();
-
-					valids.push_back(database_filenames[i][j].filename);
-					j++;*/
 
 
-					string new_filename = database_filenames[i][j].filename;
-					size_t found_bar = database_filenames[i][j].filename.find_last_of("/");
-					new_filename = database_filenames[i][j].filename.substr(found_bar+1, database_filenames[i][j].filename.size()-found_bar-1);
-					new_filename = database_classified_dir + "/" + new_filename;
-					fprintf(f_database_classified, "%s %s\n", new_filename.c_str(), database_filenames[i][j].pattern.c_str());
-					string command = "cp " + database_filenames[i][j].filename + " " + new_filename;
-					system(command.c_str());
-				}
-				if (k == 120) //x - invalido!!!!!!
-				{
-					/*if(database_filenames[i][j].filename.compare(valids.back()) == 0)
-						valids.pop_back();
 
-					invalids.push_back(database_filenames[i][j].filename);
-					j++;*/
 
-					string new_filename = database_filenames[i][j].filename;
-					size_t found_bar = database_filenames[i][j].filename.find_last_of("/");
-					size_t found_underline = database_filenames[i][j].filename.find_last_of("_");
-					new_filename = database_filenames[i][j].filename.substr(found_bar+1, found_underline-found_bar) + "0.jpg";
-					new_filename = database_classified_dir + "/" + new_filename;
-					fprintf(f_database_classified, "%s %s\n", new_filename.c_str(), database_filenames[i][j].pattern.c_str());
-					string command = "cp " + database_filenames[i][j].filename + " " + new_filename;
-					system(command.c_str());
-				}
-				if (k == 44) //traz - volta!!!!!!
-				{
-					j-=2;
-					back_pressed = true;
-				}
 
-				if (k == 27) //sair
-				{
-					fprintf(f_last_classified, "%d %d\n", actual.file_index, actual.pattern);
-					fclose (f_database_classified);
-					fclose (f_last_classified);
-					exit(1);
-				}
 
 		}
 
