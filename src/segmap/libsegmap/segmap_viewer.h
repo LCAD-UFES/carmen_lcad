@@ -37,7 +37,7 @@ draw_pointcloud(Mat &m, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 void
 view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 	PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZRGB>::Ptr transformed_cloud, Matrix<double, 4, 4> *vel2car,
-	double v, double phi);
+	double v, double phi, Mat *pf_view_img);
 
 void
 colorize_cloud_according_to_segmentation(PointCloud<PointXYZRGB>::Ptr cloud);

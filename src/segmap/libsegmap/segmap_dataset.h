@@ -52,7 +52,7 @@ public:
 
 	virtual Mat load_image(int i) = 0;
 	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi) = 0;
-	void load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi, int view = 0);
+	void load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi, int view = 0, Mat *output_img_view=0);
 
 	virtual Matrix<double, 3, 1> transform_vel2cam(PointXYZRGB &p) = 0;
 	virtual Matrix<double, 4, 4> transform_vel2car() = 0;

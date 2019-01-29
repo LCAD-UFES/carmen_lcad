@@ -62,10 +62,10 @@ increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
 	// */
 }
 
-#define VIEW 1
+#define VIEW 0
 
 void
-create_map(GridMap &map, DatasetInterface &dataset)
+create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 {
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
@@ -80,6 +80,8 @@ create_map(GridMap &map, DatasetInterface &dataset)
 #endif
 
 	Matrix<double, 4, 4> vel2car = dataset.transform_vel2car();
+	Mat img_view;
+	char map_name[512];
 
 	deque<string> cloud_names;
 	int step = 1;
@@ -93,7 +95,7 @@ create_map(GridMap &map, DatasetInterface &dataset)
 
 		cloud->clear();
 		transformed_cloud->clear();
-		dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, VIEW);
+		dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, 1, &img_view);
 		pcl::transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(pose));
 
 		map.reload(pose.x, pose.y);
@@ -101,10 +103,18 @@ create_map(GridMap &map, DatasetInterface &dataset)
 		for (int j = 0; j < transformed_cloud->size(); j++)
             map.add_point(transformed_cloud->at(j));
 
+		Mat map_img = map.to_image().clone();
+		draw_pose(map, map_img, pose, Scalar(0, 255, 0));
+
+		Mat concat;
+		hconcat(map_img, img_view, concat);
+		sprintf(map_name, "%s/step_%010d.png", path_save_maps, i);
+		imwrite(map_name, concat);
+
 #if VIEW
 		if (map._map_type == GridMapTile::TYPE_SEMANTIC)
 			colorize_cloud_according_to_segmentation(transformed_cloud);
-		increase_bightness(transformed_cloud);
+		//increase_bightness(transformed_cloud);
 
         ///*
 		char *cloud_name = (char *) calloc (32, sizeof(char));
@@ -126,10 +136,8 @@ create_map(GridMap &map, DatasetInterface &dataset)
 		//*/
 
 		//view(pf, map, dataset.data[i].pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi);
-
-		Mat map_img = map.to_image().clone();
-		draw_pose(map, map_img, pose, Scalar(0, 255, 0));
-		imshow("viewer", map_img);
+		
+		imshow("concat", concat);
 
 		char c = ' ';
 		while (1)
@@ -220,23 +228,29 @@ main(int argc, char **argv)
 	if (argc < 2)
 		exit(printf("Error: Use %s <log data directory>\n", argv[0]));
 
+	char path_save_maps[256];
 	char dataset_name[256];
 	char map_name[256];
 
 	sprintf(dataset_name, "/dados/data/%s", argv[1]);
 	sprintf(map_name, "/dados/maps/map_%s", argv[1]);
-	printf("dataset_name: %s\n", dataset_name);
-	printf("map_name: %s\n", map_name);
-
-	DatasetInterface *dataset;
-    dataset = new DatasetCarmen(dataset_name, 1);
+	sprintf(path_save_maps, "/dados/map_imgs/%s", argv[1]);
 
 	char cmd[256];
+	sprintf(cmd, "rm -rf %s && mkdir %s", path_save_maps, path_save_maps);
+	system(cmd);
+
 	sprintf(cmd, "rm -rf %s && mkdir %s", map_name, map_name);
 	system(cmd);
 
+	printf("dataset_name: %s\n", dataset_name);
+	printf("map_name: %s\n", map_name);
+	printf("path to save maps: %s\n", path_save_maps);
+
+	DatasetInterface *dataset;
+    dataset = new DatasetCarmen(dataset_name, 1);
 	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_SEMANTIC, 1);
-	create_map(map, *dataset);
+	create_map(map, *dataset, path_save_maps);
 
 	printf("Done\n");
 	return 0;

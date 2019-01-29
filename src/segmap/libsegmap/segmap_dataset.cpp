@@ -16,7 +16,7 @@ using namespace pcl;
 //pcl::visualization::PCLVisualizer *myviewer = new pcl::visualization::PCLVisualizer("CloudViewer2");
 
 void
-DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi, int view)
+DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi, int view, Mat *output_img_view)
 {
 	int p, x, y;
 	double range;
@@ -36,7 +36,6 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		if (_use_segmented)
 		{
 			viewer_img = segmented_image_view(img);
-			imshow("bla_seg", viewer_img);
 		}
 		else
 			viewer_img = img.clone();
@@ -116,13 +115,16 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 			//flip(viewer_img, viewer_img, +1);
 		}
 
-		double resize_rate = 640. / (double) viewer_img.cols;
+		double resize_rate = 750. / (double) viewer_img.rows;
 		int height = resize_rate * viewer_img.rows;
 		int width = resize_rate * viewer_img.cols;
 
 		Mat resized(height, width, CV_8UC3);
 		resize(viewer_img, resized, Size(width, height));
-		imshow("cam_vel_fused", resized);
+		//imshow("cam_vel_fused", resized);
+		if (output_img_view != NULL)
+			resized.copyTo(*output_img_view);
+
 	}
 
 	transformPointCloud(*cloud, *cloud, transform_vel2car());

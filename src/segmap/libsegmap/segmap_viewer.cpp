@@ -144,7 +144,7 @@ draw_pointcloud(Mat &m, PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap 
 void
 view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 	PointCloud<PointXYZRGB>::Ptr cloud, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
-	Matrix<double, 4, 4> *vel2car, double v, double phi)
+	Matrix<double, 4, 4> *vel2car, double v, double phi, Mat *pf_view_img)
 {
 	static int step = 0;
 
@@ -152,7 +152,7 @@ view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 	Pose2d p;
 	Point pixel;
 
-	Pose2d mode = pf.mode();
+    Pose2d mean = pf.mean();
 	Mat map_img = map.to_image();
 	//Matrix<double, 4, 4> tr;
 
@@ -166,16 +166,16 @@ view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 		//tr = Pose2d::to_matrix(mode) * (*vel2car);
 		//transformPointCloud(*cloud, *transformed_cloud, tr);
 		//transform_pointcloud(cloud, transformed_cloud, mode, *vel2car, v, phi);
-		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(mode));
+		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(mean));
 
 		for (int i = 0; i < transformed_cloud->size(); i++)
 		{
-			if (fabs(transformed_cloud->at(i).x - mode.x) > 200 || fabs(transformed_cloud->at(i).y - mode.y) > 200)
+			if (fabs(transformed_cloud->at(i).x - mean.x) > 200 || fabs(transformed_cloud->at(i).y - mean.y) > 200)
 			{
-				printf("i: %d Point: %lf %lf Transformed: %lf %lf mode: %lf %lf %lf\n",
+				printf("i: %d Point: %lf %lf Transformed: %lf %lf mean: %lf %lf %lf\n",
 						i, cloud->at(i).x, cloud->at(i).y,
 						transformed_cloud->at(i).x, transformed_cloud->at(i).y,
-						mode.x, mode.y, mode.th
+						mean.x, mean.y, mean.th
 						);
 			}
 		}
@@ -188,20 +188,22 @@ view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 	for (int i = 0; i < pf._n; i++)
 		draw_particle(map_img, pf._p[i], map, Scalar(255, 255, 255));
 
-	Pose2d mean = pf.mean();
-	//draw_pose(map, map_img, mean, Scalar(0, 255, 255));
+	draw_pose(map, map_img, mean, Scalar(0, 0, 255));
 	draw_pose(map, map_img, current_pose, Scalar(0, 255, 0));
-	draw_pose(map, map_img, mode, Scalar(0, 0, 255));
+	//draw_pose(map, map_img, mode, Scalar(0, 0, 255));
 
 	//double mult = (double) 800. / (double) map_img.rows;
 	//Mat resized_map((int) (map_img.rows * mult), (int) (map_img.cols * mult), CV_8UC3);
 	//resize(map_img, resized_map, resized_map.size());
 	//imshow("viewer", resized_map);
-	imshow("viewer", map_img);
+	//imshow("viewer", map_img);
 
-	c = waitKey(step ? -1 : 1);
-	if (c == 'S' || c == 's')
-		step = !step;
+	if (pf_view_img != NULL)
+		map_img.copyTo(*pf_view_img);
+
+	//c = waitKey(step ? -1 : 1);
+	//if (c == 'S' || c == 's')
+		//step = !step;
 }
 
 
