@@ -1,9 +1,9 @@
 #include "mainwindow.h"
 
-xsens_global* data1;
+carmen_xsens_global_message* data1;
 // Constructor of the main window
 // Create window properties, menu etc ...
-MainWindow::MainWindow(QWidget *parent,int w, int h, xsens_global* data)
+MainWindow::MainWindow(QWidget *parent,int w, int h, carmen_xsens_global_message* data)
     : QMainWindow(parent)
 {        
     // Set the window size
@@ -99,21 +99,21 @@ MainWindow::onTimer_ReadData()
        float mx,my,mz;
 
         
-		ax = data1->acc.x;
-		ay = data1->acc.y;
-		az = data1->acc.z;
+		ax = data1->m_acc.x;
+		ay = data1->m_acc.y;
+		az = data1->m_acc.z;
 
-		gx = data1->gyr.x;
-		gy = data1->gyr.x;
-		gz = data1->gyr.x;
-
+		gx = data1->m_gyr.x;
+		gy = data1->m_gyr.x;
+		gz = data1->m_gyr.x;
+/*
 		mx = data1->mag.x;
 		my = data1->mag.y;
 		mz = data1->mag.z;
-
+*/
 	   Object_GL->setAcceleromter(ax,ay,az);
        Object_GL->setGyroscope(gx,gy,gz);
-       Object_GL->setMagnetometer(mx,my,mz);
+ //      Object_GL->setMagnetometer(mx,my,mz);
 
 //       MadgwickAHRSupdate(gx,gy,gz,ax,ay,az,mx,my,mz);
       MadgwickAHRSupdateIMU(gx,gy,gz,ax,ay,az);
@@ -130,8 +130,8 @@ MainWindow::onTimer_ReadData()
        double psi = atan2(R21, R11 );
 
        //std::cout << R31 << "\t" << phi*180./M_PI << "\t" << theta*180./M_PI << "\t" << psi*180./M_PI << std::endl;
-       Object_GL->setAngles(phi*180./M_PI , theta*180./M_PI , psi*180./M_PI );
-	std::cout << "x  " << phi*180./M_PI <<  "\t" << "y  " << theta*180./M_PI  <<  "\t" << "z  "<<  "\t" << psi*180./M_PI << "\t"<< std::endl;
+       Object_GL->setAngles(data1->m_roll* 180. / M_PI  , data1->m_pitch * 180. / M_PI , data1->m_yaw * 180./M_PI );
+	std::cout << "x  " << data1->m_roll* 180. / M_PI <<  "\t" << "y  " << data1->m_pitch*180./M_PI  <<  "\t" << "z  "<<  "\t" << data1->m_yaw*180./M_PI << "\t"<< std::endl;
        /*std::cout << ax << "\t" << ay << "\t" << az << "\t";
        std::cout << gx << "\t" << gy << "\t" << gz << "\t";
        std::cout << mx << "\t" << my << "\t" << mz << "\t";

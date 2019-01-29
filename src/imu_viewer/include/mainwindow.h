@@ -1,8 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <rOc_timer.h>
-#include <rOc_serial.h>
+//#include <rOc_timer.h>
+//#include <rOc_serial.h>
 #include <iostream>
 #include <QtWidgets/QMainWindow>
 #include <qgridlayout.h>
@@ -11,7 +11,8 @@
 #include <QMessageBox>
 #include <MadgwickAHRS.h>
 #include <carmen/xsens_messages.h>
-#include <carmen/xsenscore.h>
+//#include "/home/lcad/carmen_lcad/src/xsens/xsens_messages.h" 
+
 #include <carmen/carmen.h>
 
 #define         DEVICE_NAME     "/dev/ttyACM0"
@@ -24,7 +25,7 @@ class MainWindow : public QMainWindow
 
 public:
     // Constructor and destructor
-    MainWindow(QWidget *parent = 0, int w=600, int h=400, xsens_global* data = 0);
+    MainWindow(QWidget *parent = 0, int w=600, int h=400, carmen_xsens_global_message* data = 0);
     ~MainWindow();
 
 
@@ -58,7 +59,7 @@ private:
     ObjectOpenGL            *Object_GL;
 
     // Serial device for communicating with the Arduino
-    rOc_serial mpu9250;
+
 
 };
 
