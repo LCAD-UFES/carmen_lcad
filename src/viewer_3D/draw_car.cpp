@@ -26,12 +26,12 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 {	
 	CarDrawer* carDrawer = (CarDrawer*)malloc(sizeof(CarDrawer));
 
-	carDrawer->carModel = glmReadOBJ("ford_escape_model.obj");
-	glmUnitize(carDrawer->carModel);
-
 	int num_items;
 
+	char* model_file;
+
 	carmen_param_t param_list[] = {
+	{"carmodel", "file_name", CARMEN_PARAM_STRING, &model_file, 0, NULL},
 	{"carmodel", "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->car_size.x), 0, NULL},
 	{"carmodel", "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->car_size.y), 0, NULL},
 	{"carmodel", "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->car_size.z), 0, NULL},
@@ -74,6 +74,14 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 	
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	printf("FILE: %s\n", model_file);
+
+	if (model_file == NULL)
+		carDrawer->carModel = glmReadOBJ("ford_escape_model.obj");
+	else
+		carDrawer->carModel = glmReadOBJ(model_file);
+	glmUnitize(carDrawer->carModel);
 
 	glmScale(carDrawer->carModel, carDrawer->car_size.x/2.0);
 
