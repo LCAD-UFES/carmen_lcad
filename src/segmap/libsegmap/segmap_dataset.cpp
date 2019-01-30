@@ -341,31 +341,42 @@ DatasetCarmen::load_data()
 		&odom_calib.mult_phi, &odom_calib.add_phi, dummy, dummy, 
 		&odom_calib.init_angle);
 
-	data_file = _path + "/optimized.txt";
+	data_file = _path + "/optimized_to_map.txt";
 	f = fopen(data_file.c_str(), "r");
 
 	if (f == NULL)
-		printf("Warning: File '%s' not found. Filling poses with zeros.\n", data_file.c_str());
-	else
 	{
-		for (int i = 0; i < data.size(); i++)
+		printf("Warning: File '%s' not found. Trying to load optimized poses.\n", data_file.c_str());
+
+		data_file = _path + "/optimized.txt";
+		f = fopen(data_file.c_str(), "r");
+
+		if (f == NULL)
 		{
-			fscanf(f, "\n%s %lf %lf %lf %s %s %s %s %s\n",
-					dummy, &data[i].pose.x, &data[i].pose.y, &data[i].pose.th,
-					dummy, dummy, dummy, dummy, dummy);
-
-			data[i].pose.x -= offset_x;
-			data[i].pose.y -= offset_y;
-			data[i].pose.y = -data[i].pose.y;
-			data[i].pose.th = normalize_theta(-data[i].pose.th);
-
-	//		printf("%lf %lf %lf %lf %lf %lf\n",
-	//				data[i].gps.x, data[i].gps.y, data[i].gps.th,
-	//				data[i].pose.x, data[i].pose.y, data[i].pose.th);
+			printf("Warning: File '%s' not found. Filling poses with zeros.\n", data_file.c_str());	
+			return;
 		}
-
-		fclose(f);
 	}
+
+	printf("Using poses from '%s'\n", data_file.c_str());
+
+	for (int i = 0; i < data.size(); i++)
+	{
+		fscanf(f, "\n%s %lf %lf %lf %s %s %s %s %s\n",
+				dummy, &data[i].pose.x, &data[i].pose.y, &data[i].pose.th,
+				dummy, dummy, dummy, dummy, dummy);
+
+		data[i].pose.x -= offset_x;
+		data[i].pose.y -= offset_y;
+		data[i].pose.y = -data[i].pose.y;
+		data[i].pose.th = normalize_theta(-data[i].pose.th);
+
+//		printf("%lf %lf %lf %lf %lf %lf\n",
+//				data[i].gps.x, data[i].gps.y, data[i].gps.th,
+//				data[i].pose.x, data[i].pose.y, data[i].pose.th);
+	}
+
+	fclose(f);
 }
 
 
