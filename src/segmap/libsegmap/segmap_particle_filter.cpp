@@ -1,6 +1,8 @@
 
 #include "segmap_particle_filter.h"
+#include "segmap_viewer.h"
 #include <cassert>
+
 
 double
 ParticleFilter::_gauss()

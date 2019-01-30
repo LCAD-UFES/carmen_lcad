@@ -76,6 +76,12 @@ typedef struct fpoints
 	int count;
 } fpointers;
 
+typedef struct {
+	int n_points;
+	double *points;
+	double displacement;
+} carmen_polygon_config_t;
+
 namespace View
 {
 
@@ -227,9 +233,9 @@ namespace View
 
 		carmen_localize_ackerman_globalpos_message *globalpos;
 
-		carmen_robot_config_t	 *robot_config;
-		carmen_car_config_t		 *car_config;
-		carmen_navigator_config_t *nav_config;
+		carmen_robot_config_t	 	*robot_config;
+		carmen_polygon_config_t		*poly_config;
+		carmen_navigator_config_t 	*nav_config;
 
 		carmen_world_point_t cursor_pos;
 		placement_t placement_status;
@@ -294,7 +300,7 @@ namespace View
 		Controls *getControls() { return &controls_; }
 
 		void navigator_graphics_initialize(int argc, char **argv, carmen_localize_ackerman_globalpos_message *msg,
-						carmen_robot_config_t *robot_conf_param, carmen_car_config_t *car_config_param,
+						carmen_robot_config_t *robot_conf_param, carmen_polygon_config_t *poly_config_param,
 						carmen_navigator_config_t *nav_conf_param, carmen_navigator_panel_config_t *nav_panel_conf_param);
 
 		int navigator_graphics_update_map();

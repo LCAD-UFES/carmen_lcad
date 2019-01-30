@@ -1,7 +1,7 @@
 
 import os
 
-results_dir = "results/0005_results_localizer_norm_by_max/"
+results_dir = "results/0006_rerun_com_parametros_do_paper/"
 files = [f for f in os.listdir(results_dir) if 'report_' in f]
 
 for f in files:

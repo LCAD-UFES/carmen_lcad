@@ -73,10 +73,11 @@ def compare_and_save_stats(localizer_poses, gt_poses, localizer_label, gt_label,
 
     f.close()
 
-    print(log_name.replace('data_log', '')[1:], '&', '%.1f & %.1f & %.1f & %.1f \\\\' % (
-        #log_size(gt_poses) / 1000., 
+    print(log_name.replace('data_log', '')[1:], '&', 
+        '%.1f & %.1f & %.1f & %.1f & %.1f & %.1f \\\\' % (
+        log_size(gt_poses) / 1000., 
         np.mean(dists),  
-        #np.std(dists), 
+        np.std(dists), 
         np.max(dists), 
         np.mean(np.abs(dx_local)), 
         np.mean(np.abs(dy_local)), 
@@ -126,18 +127,20 @@ def generate_reports(lines, sync, log_name):
 
 
 if __name__ == "__main__":
-    d1 = '/home/filipe/workspace/papers/2018_segmap/results/0004_results_localizer/'
-    d2 = '/home/filipe/workspace/papers/2018_segmap/results/syncs/'
-    reports = [f for f in os.listdir(d1) if 'report' in f]
+    d1 = 'results/0006_rerun_com_parametros_do_paper/'
+    reports = [f for f in os.listdir(d1) if 'report_data' in f]
+
+    print('Log Size (km) & RMSE & STD & max & RMSE X & RMSE Y')
+
     for r in reports:
+        print('')
         log_name = 'data' + r.rsplit('data')[1][:-1]
-        sync = 'sync_' + log_name
-        #print(log_name)
+        sync = '/dados/data/%s/sync.txt' % log_name
 
         lines = open(d1 + '/' + r, 'r').readlines()
         lines = [l.rstrip().rsplit() for l in lines if 'Step' in l]
 
-        gt = open(d2 + '/' + sync, 'r').readlines()
+        gt = open(sync, 'r').readlines()
         gt = [p.rstrip().rsplit() for p in gt]
 
         lines = np.asarray(lines)

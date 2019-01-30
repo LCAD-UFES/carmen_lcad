@@ -1,6 +1,5 @@
 #include "gtk_gui.h"
 
-
 extern void
 mapper_handler(carmen_mapper_map_message *message);
 
@@ -319,7 +318,7 @@ namespace View
 	}
 
 	void GtkGui::navigator_graphics_initialize(int argc, char **argv, carmen_localize_ackerman_globalpos_message *msg,
-			carmen_robot_config_t *robot_conf_param, carmen_car_config_t *car_config_param,
+			carmen_robot_config_t *robot_conf_param, carmen_polygon_config_t *poly_config_param,
 			carmen_navigator_config_t *nav_conf_param, carmen_navigator_panel_config_t *nav_panel_conf_param)
 	{
 		GdkGLConfig *glconfig;
@@ -561,7 +560,7 @@ namespace View
 		globalpos = msg;
 
 		robot_config = robot_conf_param;
-		car_config	 = car_config_param;
+		poly_config	 = poly_config_param;
 		nav_config	 = nav_conf_param;
 
 		cursor_pos.map = NULL;
@@ -2529,7 +2528,7 @@ namespace View
 
 		for (int i = 0; i < rddf_annotation_msg.num_annotations; i++)
 		{
-			double displacement = car_config->distance_between_front_and_rear_axles + car_config->distance_between_front_car_and_front_wheels;
+			double displacement = poly_config->displacement;//car_config->distance_between_front_and_rear_axles + car_config->distance_between_front_car_and_front_wheels;
 			world_point.pose.theta = rddf_annotation_msg.annotations[i].annotation_orientation;
 			world_point.pose.x = rddf_annotation_msg.annotations[i].annotation_point.x + displacement * cos(world_point.pose.theta);
 			world_point.pose.y = rddf_annotation_msg.annotations[i].annotation_point.y + displacement * sin(world_point.pose.theta);
@@ -2812,25 +2811,32 @@ namespace View
 			carmen_world_point_t *location, int filled,
 			GdkColor *colour)
 	{
-		carmen_world_point_t wp[4];
-		double width2, length, dist_rear_car_rear_wheels;
+		carmen_world_point_t wp[poly_config->n_points];
+//		double width2, length, dist_rear_car_rear_wheels;
+//
+//		dist_rear_car_rear_wheels = car_config->distance_between_rear_car_and_rear_wheels;
+//		width2 = robot_config->width / 2;
+//		length = robot_config->length;
+//
+//		wp[0].pose.x = x_coord(-dist_rear_car_rear_wheels, width2, location);
+//		wp[0].pose.y = y_coord(-dist_rear_car_rear_wheels, width2, location);
+//		wp[1].pose.x = x_coord(-dist_rear_car_rear_wheels, -width2, location);
+//		wp[1].pose.y = y_coord(-dist_rear_car_rear_wheels, -width2, location);
+//		wp[2].pose.x = x_coord(length - dist_rear_car_rear_wheels, -width2, location);
+//		wp[2].pose.y = y_coord(length - dist_rear_car_rear_wheels, -width2, location);
+//		wp[3].pose.x = x_coord(length - dist_rear_car_rear_wheels, width2, location);
+//		wp[3].pose.y = y_coord(length - dist_rear_car_rear_wheels, width2, location);
+//
+//		wp[0].map = wp[1].map = wp[2].map  = location->map;
 
-		dist_rear_car_rear_wheels = car_config->distance_between_rear_car_and_rear_wheels;
-		width2 = robot_config->width / 2;
-		length = robot_config->length;
+		for (int i=0; i< poly_config->n_points; i++)
+		{
+			wp[i].pose.x = x_coord(poly_config->points[2*i], poly_config->points[2*i+1], location);
+			wp[i].pose.y = y_coord(poly_config->points[2*i], poly_config->points[2*i+1], location);
+			wp[i].map = location->map;
+		}
 
-		wp[0].pose.x = x_coord(-dist_rear_car_rear_wheels, width2, location);
-		wp[0].pose.y = y_coord(-dist_rear_car_rear_wheels, width2, location);
-		wp[1].pose.x = x_coord(-dist_rear_car_rear_wheels, -width2, location);
-		wp[1].pose.y = y_coord(-dist_rear_car_rear_wheels, -width2, location);
-		wp[2].pose.x = x_coord(length - dist_rear_car_rear_wheels, -width2, location);
-		wp[2].pose.y = y_coord(length - dist_rear_car_rear_wheels, -width2, location);
-		wp[3].pose.x = x_coord(length - dist_rear_car_rear_wheels, width2, location);
-		wp[3].pose.y = y_coord(length - dist_rear_car_rear_wheels, width2, location);
-
-		wp[0].map = wp[1].map = wp[2].map = wp[3].map = location->map;
-
-		carmen_map_graphics_draw_polygon(the_map_view, colour, wp, 4, filled);
+		carmen_map_graphics_draw_polygon(the_map_view, colour, wp, poly_config->n_points, filled);
 	}
 
 	void

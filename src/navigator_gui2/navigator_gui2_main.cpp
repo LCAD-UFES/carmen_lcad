@@ -25,7 +25,7 @@
 #endif
 
 static carmen_robot_config_t	 robot_config;
-static carmen_car_config_t		 car_config;
+static carmen_polygon_config_t		 poly_config;
 static carmen_navigator_config_t nav_config;
 static carmen_navigator_panel_config_t nav_panel_config;
 static carmen_navigator_map_t map_type = CARMEN_NAVIGATOR_MAP_v;
@@ -53,9 +53,9 @@ static int last_moving_objects_point_clouds;
 moving_objects_tracking_t *moving_objects_tracking;
 int current_num_point_clouds;
 int previous_num_point_clouds = 0;
+
+
 static void
-
-
 navigator_get_empty_map()
 {
 	superimposedmap_type = CARMEN_NONE_v;
@@ -844,10 +844,25 @@ handle_ipc(gpointer			*data __attribute__ ((unused)),
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+void
+parse_polygon_file (carmen_polygon_config_t *poly_config, char* poly_file)
+{
+	FILE *poly;
+	poly = fopen(poly_file, "r");
+	fscanf(poly,"%lf\n",&(poly_config->displacement));
+	fscanf(poly,"%d\n",&(poly_config->n_points));
+	poly_config->points = (double*) malloc(poly_config->n_points*2*sizeof(double));
+	for (int i=0; i<poly_config->n_points; i++)
+	{
+		fscanf(poly,"%lf %lf\n",&(poly_config->points[2*i]),&(poly_config->points[2*i+1]));
+	}
+	fclose(poly);
+}
+
 static void
 read_parameters(int argc, char *argv[],
 		carmen_robot_config_t *robot_config,
-		carmen_car_config_t *car_config,
+		carmen_polygon_config_t *poly_config,
 		carmen_navigator_config_t *nav_config,
 		carmen_navigator_panel_config_t *navigator_panel_config)
 {
@@ -894,17 +909,22 @@ read_parameters(int argc, char *argv[],
 	localize_std.theta = carmen_degrees_to_radians(localize_std.theta);
 	robot_config->rectangular = 1;
 
+	char* poly_file;
+
 	carmen_param_t param_ackerman_list[] =
 	{
-		{(char *) "robot", (char *) "distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &(car_config->distance_between_front_and_rear_axles),	 1, NULL},
-		{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &(car_config->distance_between_rear_car_and_rear_wheels),	 1, NULL},
-		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels",	CARMEN_PARAM_DOUBLE, &(car_config->distance_between_front_car_and_front_wheels),	 1, NULL},
-		{(char *) "robot", (char *) "distance_between_rear_wheels",					CARMEN_PARAM_DOUBLE, &(car_config->distance_between_rear_wheels),				 1, NULL}
+//		{(char *) "robot", (char *) "distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &(car_config->distance_between_front_and_rear_axles),	 1, NULL},
+//		{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &(car_config->distance_between_rear_car_and_rear_wheels),	 1, NULL},
+//		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels",	CARMEN_PARAM_DOUBLE, &(car_config->distance_between_front_car_and_front_wheels),	 1, NULL},
+//		{(char *) "robot", (char *) "distance_between_rear_wheels",					CARMEN_PARAM_DOUBLE, &(car_config->distance_between_rear_wheels),				 1, NULL}
+		{(char *) "robot", (char *) "polygon_file",CARMEN_PARAM_STRING, &(poly_file), 1, NULL}
 	};
 
 	num_items = sizeof(param_ackerman_list) / sizeof(param_ackerman_list[0]);
 
 	carmen_param_install_params(argc, argv, param_ackerman_list, num_items);
+
+	parse_polygon_file(poly_config, poly_file);
 
 	carmen_param_t param_cmd_list[] =
 	{
@@ -993,7 +1013,7 @@ void
 init_navigator_gui_variables(int argc, char* argv[])
 {
 	carmen_localize_ackerman_globalpos_message globalpos;
-	gui->navigator_graphics_initialize(argc, argv, &globalpos, &robot_config, &car_config, &nav_config, &nav_panel_config);
+	gui->navigator_graphics_initialize(argc, argv, &globalpos, &robot_config, &poly_config, &nav_config, &nav_panel_config);
 
 	carmen_graphics_update_ipc_callbacks((GdkInputFunction) (handle_ipc));
 
@@ -1019,7 +1039,7 @@ main(int argc, char *argv[])
 	carmen_param_check_version(argv[0]);
 	signal(SIGINT, nav_shutdown);
 
-	read_parameters(argc, argv, &robot_config, &car_config, &nav_config, &nav_panel_config);
+	read_parameters(argc, argv, &robot_config, &poly_config, &nav_config, &nav_panel_config);
 	carmen_grid_mapping_init_parameters(0.2, 150);
 
 	// Esta incializacao evita que o valgrind reclame de varias variaveis nao inicializadas

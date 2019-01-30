@@ -31,7 +31,7 @@ using namespace pcl;
 
 
 void
-run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset)
+run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 {
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
@@ -46,14 +46,18 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset)
 	Matrix<double, 4, 4> vel2car = dataset.transform_vel2car();
 	int step = 1;
 
+	Mat view_img;
+	Mat pf_view_img;
+	char img_name[512];
+
 	for (int i = step; i < dataset.data.size(); i += step)
 	{
 	    //if (fabs(dataset.data[i].v) < 1.0) continue;
-		Pose2d gt_pose = dataset.data[i].pose;
+		Pose2d gt_pose = dataset.data[i].gps;
 
 		pf.predict(dataset.data[i - 1].v, dataset.data[i - 1].phi, dataset.data[i].image_time - dataset.data[i - step].image_time);
 		//view(pf, map, poses, gps, NULL, NULL);
-		dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, 0);
+		dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, 1, &view_img);
 
         //printf("Prediction\n");
         //view(pf, map, gt_pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi);
@@ -61,7 +65,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset)
 		//if (i % 1 == 0 && i > 0)
 		//if (i > 16)
 		//if (1)
-		{
+		//{
 			pf.correct(cloud, map, transformed_cloud, vel2car, dataset.data[i].gps, dataset.data[i].v, dataset.data[i].phi);
 
 			Pose2d mean = pf.mean();
@@ -80,13 +84,23 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset)
 
 			if (dataset.data[i].v > 0.1 && (i - last_reload > 10))
 			{
-				map.reload(mode.x, mode.y);
+				map.reload(mean.x, mean.y);
 				last_reload = i;
 			}
-		}
+		//}
 
 		//printf("Correction\n");
-		// view(pf, map, gt_pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi);
+		view(pf, map, gt_pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi, &pf_view_img);
+
+		Mat concat;
+		hconcat(pf_view_img, view_img, concat);
+		sprintf(img_name, "%s/step_%010d.png", path_save_maps, i);
+		char text[32];
+		sprintf(text, "DistGPS: %.2lfm Vel: %.2lfm/s", dist2d(mean.x, mean.y, dataset.data[i].gps.x, dataset.data[i].gps.y), dataset.data[i].v);
+		putText(concat, text, Point(780, 700), FONT_HERSHEY_PLAIN, 1.3, Scalar(255,255,255), 1);
+		imwrite(img_name, concat);
+		//imshow("bla", concat);
+		//waitKey(1);
 	}
 }
 
@@ -105,6 +119,13 @@ main(int argc, char **argv)
 	printf("dataset_name: %s\n", dataset_name);
 	printf("map_name: %s\n", map_name);
 
+	char path_save_maps[256];
+	char cmd[256];
+	sprintf(path_save_maps, "/dados/localizer_imgs/%s", argv[1]);
+	sprintf(cmd, "rm -rf %s && mkdir %s", path_save_maps, path_save_maps);
+	system(cmd);
+	printf("path_save_maps: %s\n", path_save_maps);	
+
 	DatasetInterface *dataset;
 	dataset = new DatasetCarmen(dataset_name, 1);
 
@@ -122,7 +143,7 @@ main(int argc, char **argv)
 			100., 100., 100.);
 
 	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_SEMANTIC);
-	run_particle_filter(pf, map, *dataset);
+	run_particle_filter(pf, map, *dataset, path_save_maps);
 
 	printf("Done\n");
 	return 0;
