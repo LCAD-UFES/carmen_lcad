@@ -33,7 +33,12 @@
 
 ## intent:initialize
 - Inicializar sistemas de propulsão e controle 
+- Ativar sistemas de propulsão e controle 
+- Acionar sistemas de propulsão e controle 
 - Inicializar sistemas
+- Acionar sistemas
+- Ativar sistemas
+- Ativar
 - Inincializar
 - Preparar sistemas para operação autônoma
 - Prepare-se para operação autônoma
