@@ -62,7 +62,7 @@ increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
 	// */
 }
 
-#define VIEW 0
+#define VIEW 1
 
 void
 create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])

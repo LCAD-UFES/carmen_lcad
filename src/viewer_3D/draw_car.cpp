@@ -28,7 +28,7 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 
 	int num_items;
 
-	char* model_file;
+	char* model_file = NULL;
 
 	carmen_param_t param_list[] = {
 	{"carmodel", "file_name", CARMEN_PARAM_STRING, &model_file, 0, NULL},

@@ -53,7 +53,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset,
 	for (int i = step; i < dataset.data.size(); i += step)
 	{
 	    //if (fabs(dataset.data[i].v) < 1.0) continue;
-		Pose2d gt_pose = dataset.data[i].gps;
+		Pose2d gt_pose = dataset.data[i].pose;
 
 		pf.predict(dataset.data[i - 1].v, dataset.data[i - 1].phi, dataset.data[i].image_time - dataset.data[i - step].image_time);
 		//view(pf, map, poses, gps, NULL, NULL);
