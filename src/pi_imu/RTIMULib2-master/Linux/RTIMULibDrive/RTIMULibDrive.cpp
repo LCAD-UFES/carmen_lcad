@@ -42,32 +42,7 @@
 int server_fd;
 int file;
 
-void
-extract_camera_configuration(char *cam_config, int &image_width, int &image_height, int &frame_rate, int &brightness, int &contrast)
-{
-	char *token;
 
-	token = strtok(cam_config, "*");
-
-	printf ("--- Connected! Widith: %s ", token);
-	image_width = atoi(token);
-
-	token = strtok (NULL, "*");
-	printf ("Height: %s ", token);
-	image_height = atoi(token);
-
-	token = strtok (NULL, "*");
-	printf ("Frame Rate: %s ", token);
-	frame_rate = atoi(token);
-
-	token = strtok (NULL, "*");
-	printf ("Brightness: %s ", token);
-	brightness = atoi(token);
-
-	token = strtok (NULL, "*");
-	printf ("Contrast: %s ---\n", token);
-	contrast = atoi(token);
-}
 
 int
 connect_with_client()
