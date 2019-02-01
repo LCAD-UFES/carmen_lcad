@@ -22,6 +22,8 @@ carmen_xsens_define_messages()
     /* register xsens's global message */
     err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_QUAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_QUAT_FMT);
     carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_QUAT_NAME);
+    err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_NAME);
 }
 
 int
@@ -105,7 +107,7 @@ int
 main(int argc, char **argv)
 {
 	carmen_xsens_global_quat_message xsens_quat_message;
-
+	carmen_xsens_global_message pose;
 
 	carmen_ipc_initialize(argc, argv);
 
@@ -117,7 +119,7 @@ main(int argc, char **argv)
 //	carmen_bumblebee_basic_define_messages(camera_number);
 
 	int pi_socket = stablished_connection_with_server();
-
+/*
 	double AccY = 0.0;
 	double AccX = 0.0;
 	double AccZ = 0.0;
@@ -129,13 +131,14 @@ main(int argc, char **argv)
 	double MagX = 0.0;
 	double MagY = 0.0;
 	double MagZ = 0.0;
-
+*/
 	/*double pressure;
 	double temperature;*/
 
 	int valread;
 
 	IPC_RETURN_TYPE err;
+	IPC_RETURN_TYPE err1;
 
 	carmen_xsens_define_messages();
 
@@ -153,17 +156,21 @@ main(int argc, char **argv)
 		}
 		else if ((valread == -1) || (valread != SOCKET_DATA_PACKET_SIZE))
 			continue;
-
-		int magRaw[3];
-		int accRaw[3];
+/*
+		float magRaw[3];
+		float accRaw[3];
 		int gyrRaw[3];
-
-		sscanf((char *) rpi_imu_data, "%d %d %d %d %d %d %d %d %d *\n", &(accRaw[0]), &(accRaw[1]), &(accRaw[2]), &(gyrRaw[0]), &(gyrRaw[1]),  &(gyrRaw[2]),
-				&(magRaw[0]), &(magRaw[1]), &(magRaw[2]));
+*/
+		//double magRaw[3];
+		sscanf((char *) rpi_imu_data, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf*\n", &(xsens_quat_message.m_acc.x), &(xsens_quat_message.m_acc.y), &(xsens_quat_message.m_acc.z)
+				, &(xsens_quat_message.m_gyr.x), &(xsens_quat_message.m_gyr.y), &(xsens_quat_message.m_gyr.z), &(xsens_quat_message.quat_data.m_data[0]),
+				&(xsens_quat_message.quat_data.m_data[1]), &(xsens_quat_message.quat_data.m_data[2]), &(xsens_quat_message.quat_data.m_data[3]),
+				&(xsens_quat_message.m_mag.x), &(xsens_quat_message.m_mag.y), &(xsens_quat_message.m_mag.z),
+				&(pose.m_roll), &(pose.m_pitch), &(pose.m_yaw) );
 
 		//printf("%d %d %d %d %d %d %d %d %d **\n", accRaw[0], accRaw[1], accRaw[2], gyrRaw[0], gyrRaw[1], gyrRaw[2],
 				//magRaw[0], magRaw[1], magRaw[2]);
-
+/*
 		AccX = accRaw[0] * ACCELEROMETER_CONSTANT * G;
 		AccY = accRaw[1] * ACCELEROMETER_CONSTANT * G;
 		AccZ = accRaw[2] * ACCELEROMETER_CONSTANT * G;
@@ -181,28 +188,29 @@ main(int argc, char **argv)
 		printf("MAGNETOMETRO = X:%f mgauss Y:%f mgauss Z:%f mgauss\n", MagX, MagY, MagZ);
 
 		// publishing  carmen_xsens_global_quat_message
-
+*/
 		 //Acceleration
-		xsens_quat_message.m_acc.x = AccX;
-		xsens_quat_message.m_acc.y = AccY;
-		xsens_quat_message.m_acc.z = AccZ;
-
+		xsens_quat_message.m_acc.x = xsens_quat_message.m_acc.x * G;
+		xsens_quat_message.m_acc.y = xsens_quat_message.m_acc.y * G;
+		xsens_quat_message.m_acc.z = xsens_quat_message.m_acc.z * G;
+/*
 		//Gyro
-		xsens_quat_message.m_gyr.x = GyrX;
-		xsens_quat_message.m_gyr.y = GyrY;
-		xsens_quat_message.m_gyr.z = GyrZ;
+
+		xsens_quat_message.m_gyr.x = 0.;
+		xsens_quat_message.m_gyr.y = 0.;
+		xsens_quat_message.m_gyr.z = 0.;
 
 		//Magnetism
-		xsens_quat_message.m_mag.x = MagX;
-		xsens_quat_message.m_mag.y = MagY;
-		xsens_quat_message.m_mag.z = MagZ;
+		xsens_quat_message.m_mag.x = 0.;
+		xsens_quat_message.m_mag.y = 0.;
+		xsens_quat_message.m_mag.z = 0.;
 
 		xsens_quat_message.quat_data.m_data[0] = 0.0;
 		xsens_quat_message.quat_data.m_data[1] = 0.0;
 		xsens_quat_message.quat_data.m_data[2] = 0.0;
 		xsens_quat_message.quat_data.m_data[3] = 0.0;
 
-
+*/
 		xsens_quat_message.m_temp = 0.0;
 		xsens_quat_message.m_count = 0;
 
@@ -212,8 +220,10 @@ main(int argc, char **argv)
 		//Host
 		xsens_quat_message.host = carmen_get_host();
 
-		err = IPC_publishData(CARMEN_XSENS_GLOBAL_QUAT_NAME, &xsens_quat_message);
-		carmen_test_ipc_exit(err, "Could not publish", CARMEN_XSENS_GLOBAL_QUAT_NAME);
+		err = IPC_publishData(CARMEN_XSENS_GLOBAL_NAME, &pose);
+		carmen_test_ipc_exit(err, "Could not publish", CARMEN_XSENS_GLOBAL_NAME);
+		err1 = IPC_publishData(CARMEN_XSENS_GLOBAL_QUAT_NAME, &xsens_quat_message);
+		carmen_test_ipc_exit(err1, "Could not publish", CARMEN_XSENS_GLOBAL_QUAT_NAME);
 
 		/*printf("TEMPERATURA =  %f C\n", temperature);
 		printf("PRESSÃO = %f mb\n", pressure);*/
