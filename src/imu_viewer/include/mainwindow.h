@@ -25,7 +25,7 @@ class MainWindow : public QMainWindow
 
 public:
     // Constructor and destructor
-    MainWindow(QWidget *parent = 0, int w=600, int h=400, carmen_xsens_global_message* data = 0);
+    MainWindow(QWidget *parent = 0, int w=600, int h=400, carmen_xsens_global_quat_message* data = 0, carmen_xsens_global_message* pose = 0);
     ~MainWindow();
 
 
