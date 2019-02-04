@@ -100,13 +100,19 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 		cloud->clear();
 		transformed_cloud->clear();
 		dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, 1, &img_view);
-		pose.x = pose.y = 0.;
-		pose.th = normalize_theta(-pose.th - degrees_to_radians(18));
-		pcl::transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(pose));
+		//pose.x = pose.y = 0.;
+		//pose.th = normalize_theta(-pose.th - degrees_to_radians(18));
+		
+		double roll, pitch, yaw;
+		Vector3d euler = dataset.data[i].xsens.toRotationMatrix().eulerAngles(2, 1, 0);
+		yaw = euler[0]; pitch = euler[1]; roll = euler[2];
 
-		Mat concat = Mat::zeros(200, 200, CV_8UC3);
+		printf("roll: %lf pitch: %lf yaw: %lf\n",
+			radians_to_degrees(roll), radians_to_degrees(pitch), radians_to_degrees(yaw));
 
-		/*
+		Matrix<double, 4, 4> mat = pose6d_to_matrix(pose.x, pose.y, 0., roll, pitch, pose.th);
+		pcl::transformPointCloud(*cloud, *transformed_cloud, mat);
+
 		map.reload(pose.x, pose.y);
 
 		for (int j = 0; j < transformed_cloud->size(); j++)
@@ -117,17 +123,19 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 
 		Mat concat;
 		hconcat(map_img, img_view, concat);
-		sprintf(map_name, "%s/step_%010d.png", path_save_maps, i);
-		imwrite(map_name, concat);
-		*/
+		//sprintf(map_name, "%s/step_%010d.png", path_save_maps, i);
+		//imwrite(map_name, concat);
 
 #if VIEW
+
+		/*
 		rot3d = dataset.data[i].xsens;
 		transf << rot3d(0, 0), rot3d(0, 1), rot3d(0, 2), 0,
 			rot3d(1, 0), rot3d(1, 1), rot3d(1, 2), 0,
 			rot3d(2, 0), rot3d(2, 1), rot3d(2, 2), 0,
 			0, 0, 0, 1;
 		pcl::transformPointCloud(*cloud, *transformed_cloud2, transf);
+		*/
 
 		if (map._map_type == GridMapTile::TYPE_SEMANTIC)
 			colorize_cloud_according_to_segmentation(transformed_cloud);
@@ -137,16 +145,14 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 		char *cloud_name = (char *) calloc (32, sizeof(char));
 		sprintf(cloud_name, "cloud%d", i);
 
-		viewer.removeAllPointClouds();
+		//viewer.removeAllPointClouds();
 		//for (int j = 0; j < transformed_cloud->size(); j++)
 		    //transformed_cloud->at(j).z = 0.;
 		
 		viewer.addPointCloud(transformed_cloud, cloud_name);
-		viewer.addPointCloud(transformed_cloud2, "xsens");
-		viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, cloud_name);
-		viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "xsens");
-		viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, cloud_name);
-		viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "xsens");
+		//viewer.addPointCloud(transformed_cloud2, "xsens");
+		//viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "xsens");
+		//viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "xsens");
 		//cloud_names.push_back(cloud_name);
 
 		//if (cloud_names.size() >= 300)

@@ -176,7 +176,7 @@ find_all_loop_closure_poses(DatasetCarmen &test_dataset, DatasetCarmen &mapping_
 			}
 		}
 
-		printf("%d %d %lf\n", i, nn_id, min_dist);
+		//printf("%d %d %lf\n", i, nn_id, min_dist);
 
 		if (min_dist < 5.0)
 			loop_closure_indices.push_back(pair<int, int>(i, nn_id));

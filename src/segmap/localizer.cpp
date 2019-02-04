@@ -53,7 +53,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset,
 	for (int i = step; i < dataset.data.size(); i += step)
 	{
 	    //if (fabs(dataset.data[i].v) < 1.0) continue;
-		Pose2d gt_pose = dataset.data[i].pose;
+		Pose2d gt_pose = dataset.data[i].pose_registered_to_map;
 
 		pf.predict(dataset.data[i - 1].v, dataset.data[i - 1].phi, dataset.data[i].image_time - dataset.data[i - step].image_time);
 		//view(pf, map, poses, gps, NULL, NULL);
@@ -96,11 +96,11 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset,
 		hconcat(pf_view_img, view_img, concat);
 		sprintf(img_name, "%s/step_%010d.png", path_save_maps, i);
 		char text[32];
-		sprintf(text, "DistGPS: %.2lfm Vel: %.2lfm/s", dist2d(mean.x, mean.y, dataset.data[i].gps.x, dataset.data[i].gps.y), dataset.data[i].v);
+		sprintf(text, "DistGT: %.2lfm Vel: %.2lfm/s", dist2d(mean.x, mean.y, gt_pose.x, gt_pose.y), dataset.data[i].v);
 		putText(concat, text, Point(780, 700), FONT_HERSHEY_PLAIN, 1.3, Scalar(255,255,255), 1);
-		imwrite(img_name, concat);
-		//imshow("bla", concat);
-		//waitKey(1);
+		//imwrite(img_name, concat);
+		imshow("bla", concat);
+		waitKey(1);
 	}
 }
 
