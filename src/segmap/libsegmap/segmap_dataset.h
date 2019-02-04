@@ -36,6 +36,8 @@ public:
 	int gps_quality;
 	Quaterniond xsens;
 	Pose2d pose;
+	Pose2d pose_with_loop_closure;
+	Pose2d pose_registered_to_map;
 	Pose2d gps;
 };
 

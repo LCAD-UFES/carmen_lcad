@@ -2,7 +2,7 @@ total:	home export phase1 phase2 phase3 phase4
 
 include Makefile.conf
 
-PACKAGES = ipc global param_daemon proccontrol voice_interface robot_ackerman_gui laser-new  	\
+PACKAGES = ipc global param_daemon proccontrol robot_ackerman_gui laser-new  	\
 	   obstacle_avoider simulator_ackerman localize_ackerman robot_ackerman \
 	   maptools mapeditor logger dynamic_object_detector \
 	   navigator_ackerman joystick pantilt laser gps gps_xyz imu localize_neural	\
@@ -19,7 +19,7 @@ PACKAGES = ipc global param_daemon proccontrol voice_interface robot_ackerman_gu
 	   odometry_calibration utilities visual_tracker	\
 	   visual_car_tracking model_predictive_planner utilities \
 	   moving_objects_simulator zed_camera2 graphslam hypergraphsclam \
-	   neural_object_detector road_mapper can_dump traffic_light # tracker_opentld tracker
+	   neural_object_detector road_mapper can_dump traffic_light # tracker_opentld tracker voice_interface 
 
 ifndef NO_CPP
 PACKAGES += carmenpp
