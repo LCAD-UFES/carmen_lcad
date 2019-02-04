@@ -21,6 +21,7 @@ typedef struct
 	int	   show_dynamic_points;
 	int	   show_annotations;
 	int	   show_lane_markings;
+	int	   show_collision_range;
 	int	   show_simulator_objects;
 	int	   show_true_pos;
 	int	   show_tracked_objects;

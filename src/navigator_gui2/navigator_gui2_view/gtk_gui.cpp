@@ -241,6 +241,7 @@ namespace View
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowDynamicPoints), nav_panel_config->show_dynamic_points);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowAnnotations), nav_panel_config->show_annotations);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowLaneMarkings), nav_panel_config->show_lane_markings);
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowCollisionRange), nav_panel_config->show_collision_range);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSimulatorShowTruePosition), nav_panel_config->show_true_pos);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSimulator_ShowObjects), nav_panel_config->show_simulator_objects);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuGoals_EditRddfGoals), nav_panel_config->edit_rddf_goals);
@@ -318,7 +319,7 @@ namespace View
 	}
 
 	void GtkGui::navigator_graphics_initialize(int argc, char **argv, carmen_localize_ackerman_globalpos_message *msg,
-			carmen_robot_config_t *robot_conf_param, carmen_polygon_config_t *poly_config_param,
+			carmen_robot_config_t *robot_conf_param, carmen_polygon_config_t *poly_config_param, carmen_collision_config_t *collision_config_param,
 			carmen_navigator_config_t *nav_conf_param, carmen_navigator_panel_config_t *nav_panel_conf_param)
 	{
 		GdkGLConfig *glconfig;
@@ -447,6 +448,7 @@ namespace View
 		controls_.menuDisplay_ShowDynamicPoints = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowDynamicPoints" ));
 		controls_.menuDisplay_ShowAnnotations = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowAnnotations" ));
 		controls_.menuDisplay_ShowLaneMarkings = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowLaneMarkings" ));
+		controls_.menuDisplay_ShowCollisionRange = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowCollisionRange" ));
 		controls_.menuDisplay_ShowFusedOdometry = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowFusedOdometry" ));
 		controls_.menuDisplay_ShowGaussians = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowGaussians" ));
 		controls_.menuDisplay_ShowLaserData = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowLaserData" ));
@@ -561,6 +563,7 @@ namespace View
 
 		robot_config = robot_conf_param;
 		poly_config	 = poly_config_param;
+		collision_config = collision_config_param;
 		nav_config	 = nav_conf_param;
 
 		cursor_pos.map = NULL;
@@ -2811,7 +2814,6 @@ namespace View
 			carmen_world_point_t *location, int filled,
 			GdkColor *colour)
 	{
-		carmen_world_point_t wp[poly_config->n_points];
 //		double width2, length, dist_rear_car_rear_wheels;
 //
 //		dist_rear_car_rear_wheels = car_config->distance_between_rear_car_and_rear_wheels;
@@ -2829,14 +2831,29 @@ namespace View
 //
 //		wp[0].map = wp[1].map = wp[2].map  = location->map;
 
-		for (int i=0; i< poly_config->n_points; i++)
+		if (nav_panel_config->show_collision_range)
 		{
-			wp[i].pose.x = x_coord(poly_config->points[2*i], poly_config->points[2*i+1], location);
-			wp[i].pose.y = y_coord(poly_config->points[2*i], poly_config->points[2*i+1], location);
-			wp[i].map = location->map;
+			for (int i=0; i < collision_config->n_markers; i++)
+			{
+				carmen_world_point_t center;
+				center.pose.x = x_coord(collision_config->markers[i].x, collision_config->markers[i].y, location);
+				center.pose.y = y_coord(collision_config->markers[i].x, collision_config->markers[i].y, location);
+				center.map = location->map;
+				carmen_map_graphics_draw_circle(the_map_view, colour, filled, &center, collision_config->markers[i].radius);
+			}
 		}
+		else
+		{
+			carmen_world_point_t wp[poly_config->n_points];
+			for (int i=0; i < poly_config->n_points; i++)
+			{
+				wp[i].pose.x = x_coord(poly_config->points[2*i], poly_config->points[2*i+1], location);
+				wp[i].pose.y = y_coord(poly_config->points[2*i], poly_config->points[2*i+1], location);
+				wp[i].map = location->map;
+			}
 
-		carmen_map_graphics_draw_polygon(the_map_view, colour, wp, poly_config->n_points, filled);
+			carmen_map_graphics_draw_polygon(the_map_view, colour, wp, poly_config->n_points, filled);
+		}
 	}
 
 	void

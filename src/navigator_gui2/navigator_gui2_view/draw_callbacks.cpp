@@ -534,6 +534,14 @@ void on_menuDisplay_ShowLaneMarkings_toggled (GtkCheckMenuItem* togglebutton __a
 }
 
 //extern "C" G_MODULE_EXPORT
+void on_menuDisplay_ShowCollisionRange_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui __attribute__ ((unused)))
+{
+	global_gui->nav_panel_config->show_collision_range = gtk_check_menu_item_get_active(togglebutton);
+}
+
+
+//extern "C" G_MODULE_EXPORT
 void on_menuSimulatorShowTruePosition_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {

@@ -210,6 +210,10 @@ void on_menuDisplay_ShowLaneMarkings_toggled (GtkCheckMenuItem* togglebutton,
 		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
+void on_menuDisplay_ShowCollisionRange_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
 void on_menuSimulatorShowTruePosition_toggled (GtkCheckMenuItem* togglebutton,
 		GtkGui* gui);
 
