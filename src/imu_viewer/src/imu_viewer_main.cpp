@@ -56,24 +56,20 @@ xsens_quat_message_handler(carmen_xsens_global_quat_message *xsens_quat_message)
 	data->m_gyr.y = xsens_quat_message->m_gyr.y;
 	data->m_gyr.z = xsens_quat_message->m_gyr.z;
 
-	/*rotation_matrix* r_mat = create_rotation_matrix_from_quaternions_new(xsens_quat_message->quat_data);
+	rotation_matrix* r_mat = create_rotation_matrix_from_quaternions_new(xsens_quat_message->quat_data);
 	carmen_orientation_3D_t euler_angles = get_angles_from_rotation_matrix(r_mat);
-	destroy_rotation_matrix(r_mat);*/
+	destroy_rotation_matrix(r_mat);
 
 
 	data->m_mag.x = xsens_quat_message->m_mag.x;
 	data->m_mag.y = xsens_quat_message->m_mag.y;
 	data->m_mag.z = xsens_quat_message->m_mag.z;
-}
 
-void
-xsens_pose_message_handler(carmen_xsens_global_message *pose)
-{
+	data->quat_data = xsens_quat_message->quat_data;
 
-	data_pose->m_roll = pose->m_roll;
-	data_pose->m_pitch = pose->m_pitch;
-	data_pose->m_yaw = pose->m_yaw;
-
+	data_pose->m_roll = euler_angles.roll;
+	data_pose->m_pitch= euler_angles.pitch;
+	data_pose->m_yaw = euler_angles.yaw;
 }
 
 
@@ -101,7 +97,6 @@ main(int argc, char *argv[])
 	data_pose = (carmen_xsens_global_message*) calloc(1, sizeof (carmen_xsens_global_message));
 	carmen_xsens_subscribe_xsens_global_quat_message(NULL,
 			(carmen_handler_t) xsens_quat_message_handler, CARMEN_SUBSCRIBE_LATEST);
-    carmen_xsens_subscribe_xsens_global_message(NULL,(carmen_handler_t) xsens_pose_message_handler, CARMEN_SUBSCRIBE_LATEST);
     QApplication a(argc, argv);
     MainWindow w(0,800,600, data, data_pose);
 	// Connect to the Arduino
