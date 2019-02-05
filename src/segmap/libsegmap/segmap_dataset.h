@@ -82,6 +82,8 @@ class DatasetCarmen : public DatasetInterface
 	void _init_vel2cam_transform(int image_height, int image_width);
 	void _init_vel2car_transform();
 
+	void _segment_lane_marks(Mat &m, int i);
+
 public:
 
 	virtual Mat load_image(int i);

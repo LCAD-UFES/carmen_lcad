@@ -193,13 +193,43 @@ DatasetCarmen::DatasetCarmen(string path, int use_segmented) :
 }
 
 
+void 
+DatasetCarmen::_segment_lane_marks(Mat &m, int i)
+{
+    char name[512];
+	double r, g, b, gray;
+	sprintf(name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
+	Mat bgr_img = imread(name);
+
+	for (int i = 450; i < 750; i++)
+	{
+		for (int j = 0; j < bgr_img.cols; j++)
+		{
+			b = bgr_img.data[3 * (i * bgr_img.cols + j)];
+			g = bgr_img.data[3 * (i * bgr_img.cols + j) + 1];
+			r = bgr_img.data[3 * (i * bgr_img.cols + j) + 2];
+			gray = (b + g + r) / 3;
+
+			if (gray > 60)
+			{
+				m.data[3 * (i * m.cols + j)] = 20;
+				m.data[3 * (i * m.cols + j) + 1] = 20;
+				m.data[3 * (i * m.cols + j) + 2] = 20;
+			}
+		}
+	}
+}
+
+
 Mat
 DatasetCarmen::load_image(int i)
 {
     char name[512];
 
 	if (_use_segmented)
+	{
 		sprintf(name, "%s/semantic/%lf-r.png", _path.c_str(), data[i].image_time);
+	}
 	else
 		sprintf(name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
 
@@ -217,6 +247,9 @@ DatasetCarmen::load_image(int i)
 		int top_limit = (50. / 480.) * height;
 		int bottom_limit = height - (110. / 480.) * height;
 		raw_img.copyTo(resized(Rect(0, top_limit, raw_img.cols, bottom_limit - top_limit)));
+
+		if (_path.find("aeroporto") != std::string::npos)
+			_segment_lane_marks(resized, i);
 	}
 	else
 		resized = raw_img;
