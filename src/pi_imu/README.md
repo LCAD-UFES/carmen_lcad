@@ -36,17 +36,6 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
  $ sudo apt-get install i2c-tools libi2c-dev python-smbus
  $ sudo raspi-config
 ```
-- Acesse e habilite a camera:
-->Interfacing Options
-       ->Camera
-
-Para testar: O comando raspistill grava uma imgem e raspivid grava um video 
-
-```bash
- $ raspistill -v -o test.jpg
- $ raspivid -o teste.h264 -t 10000
-```
-
 
 # Install Dependencies anf Download the pi_imu file from git
 
@@ -56,18 +45,31 @@ Para testar: O comando raspistill grava uma imgem e raspivid grava um video
 ```
 
 
-# Compile and test the pi_imu module on the Raspberry PI
+# Compile and executing the pi_imu drive module on the Raspberry PI
 
 ```bash
- $ cd pi_camera/raspicam && mkdir build && cd build && cmake ..
+ $ cd pi_imu/RTIMULib2-master/Linux/RTIMULibDrive
  $ make
- $ sudo make install
- $ cd ../.. && mkdir build && cd build && cmake ..
- $ make
- $ ./pi_camera_test
+ $ ./Output/RTIMULibDrive 
 ```
 
- The pi_camera_test program will run the camera and display the image captured using OpenCv
+# Compile the pi_imu client drive module on your computer
+
+```bash
+ $ cd $CARMEN_HOME/src/pi_imu
+ $ make
+ $ ./pi_imu_client_driver
+```
+
+# Visualize the pi_imu module on your computer
+
+```bash
+ $ cd $CARMEN_HOME/src/pi_imu_viewer
+ $ make
+ $ ./bin/mpu9250-OpenGl 
+```
+
+ The pi_imu_viewer program will display the image of a box representing the state of the IMU
 
 
 # Configure an Static IP to the Raspberry PI on IARA's network
