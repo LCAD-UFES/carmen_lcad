@@ -105,7 +105,6 @@ int
 main(int argc, char **argv)
 {
 	carmen_xsens_global_quat_message xsens_quat_message;
-	carmen_xsens_global_message pose;
 
 	carmen_ipc_initialize(argc, argv);
 
@@ -156,8 +155,8 @@ main(int argc, char **argv)
 		//Host
 		xsens_quat_message.host = carmen_get_host();
 
-		err = IPC_publishData(CARMEN_XSENS_GLOBAL_NAME, &pose);
-		carmen_test_ipc_exit(err, "Could not publish", CARMEN_XSENS_GLOBAL_NAME);
+		err = IPC_publishData(CARMEN_XSENS_GLOBAL_QUAT_NAME, &xsens_quat_message);
+		carmen_test_ipc_exit(err, "Could not publish", CARMEN_XSENS_GLOBAL_QUAT_NAME);
 	}
 	return 0;
 }

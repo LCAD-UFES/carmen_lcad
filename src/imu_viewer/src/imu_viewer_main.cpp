@@ -56,9 +56,7 @@ xsens_quat_message_handler(carmen_xsens_global_quat_message *xsens_quat_message)
 	data->m_gyr.y = xsens_quat_message->m_gyr.y;
 	data->m_gyr.z = xsens_quat_message->m_gyr.z;
 
-	rotation_matrix* r_mat = create_rotation_matrix_from_quaternions_new(xsens_quat_message->quat_data);
-	carmen_orientation_3D_t euler_angles = get_angles_from_rotation_matrix(r_mat);
-	destroy_rotation_matrix(r_mat);
+
 
 
 	data->m_mag.x = xsens_quat_message->m_mag.x;
@@ -66,6 +64,10 @@ xsens_quat_message_handler(carmen_xsens_global_quat_message *xsens_quat_message)
 	data->m_mag.z = xsens_quat_message->m_mag.z;
 
 	data->quat_data = xsens_quat_message->quat_data;
+
+	rotation_matrix* r_mat = create_rotation_matrix_from_quaternions_new(data->quat_data);
+		carmen_orientation_3D_t euler_angles = get_angles_from_rotation_matrix(r_mat);
+		destroy_rotation_matrix(r_mat);
 
 	data_pose->m_roll = euler_angles.roll;
 	data_pose->m_pitch= euler_angles.pitch;
