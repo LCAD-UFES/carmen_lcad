@@ -1,15 +1,12 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-//#include <rOc_timer.h>
-//#include <rOc_serial.h>
 #include <iostream>
 #include <QtWidgets/QMainWindow>
 #include <qgridlayout.h>
 #include <objectgl.h>
 #include <QMenuBar>
 #include <QMessageBox>
-#include <MadgwickAHRS.h>
 #include <carmen/xsens_messages.h>
 //#include "/home/lcad/carmen_lcad/src/xsens/xsens_messages.h" 
 

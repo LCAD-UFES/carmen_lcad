@@ -54,16 +54,11 @@ OBJECTS_DIR   = tmp/
 SOURCES       = src/imu_viewer_main.cpp \
 		src/mainwindow.cpp \
 		src/objectgl.cpp \
-		src/MadgwickAHRS.cpp \
-		src/rOc_serial.cpp \
-		src/rOc_timer.cpp tmp/moc_mainwindow.cpp \
+	        tmp/moc_mainwindow.cpp \
 		tmp/moc_objectgl.cpp
 OBJECTS       = tmp/imu_viewer_main.o \
 		tmp/mainwindow.o \
 		tmp/objectgl.o \
-		tmp/MadgwickAHRS.o \
-		tmp/rOc_serial.o \
-		tmp/rOc_timer.o \
 		tmp/moc_mainwindow.o \
 		tmp/moc_objectgl.o
 DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
@@ -124,14 +119,9 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/lex.prf \
 		mpu9250-opengl.pro include/mainwindow.h \
 		include/objectgl.h \
-		include/MadgwickAHRS.h \
-		include/rOc_serial.h \
-		include/rOc_timer.h src/imu_viewer_main.cpp \
+		src/imu_viewer_main.cpp \
 		src/mainwindow.cpp \
-		src/objectgl.cpp \
-		src/MadgwickAHRS.cpp \
-		src/rOc_serial.cpp \
-		src/rOc_timer.cpp
+		src/objectgl.cpp
 QMAKE_TARGET  = mpu9250-OpenGl
 DESTDIR       = bin/#avoid trailing-slash linebreak
 TARGET        = bin/mpu9250-OpenGl
@@ -300,8 +290,8 @@ dist: distdir FORCE
 distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
-	$(COPY_FILE) --parents include/mainwindow.h include/objectgl.h include/MadgwickAHRS.h include/rOc_serial.h include/rOc_timer.h $(DISTDIR)/
-	$(COPY_FILE) --parents src/imu_viewer_main.cpp src/mainwindow.cpp src/objectgl.cpp src/MadgwickAHRS.cpp src/rOc_serial.cpp src/rOc_timer.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents include/mainwindow.h include/objectgl.h $(DISTDIR)/
+	$(COPY_FILE) --parents src/imu_viewer_main.cpp src/mainwindow.cpp src/objectgl.cpp $(DISTDIR)/
 
 
 #clean: compiler_clean 
@@ -327,10 +317,8 @@ compiler_rcc_clean:
 compiler_moc_header_make_all: tmp/moc_mainwindow.cpp tmp/moc_objectgl.cpp
 compiler_moc_header_clean:
 	-$(DEL_FILE) tmp/moc_mainwindow.cpp tmp/moc_objectgl.cpp
-tmp/moc_mainwindow.cpp: include/rOc_timer.h \
-		include/rOc_serial.h \
+tmp/moc_mainwindow.cpp:
 		include/objectgl.h \
-		include/MadgwickAHRS.h \
 		include/mainwindow.h
 	/usr/lib/x86_64-linux-gnu/qt5/bin/moc $(DEFINES) -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++-64 -I/home/lcad/carmen_lcad/src/pi_imu/mpu9250_OpenGL -I/home/lcad/carmen_lcad/src/pi_imu/mpu9250_OpenGL/src -I/home/lcad/carmen_lcad/src/pi_imu/mpu9250_OpenGL/include -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/5 -I/usr/include/x86_64-linux-gnu/c++/5 -I/usr/include/c++/5/backward -I/usr/lib/gcc/x86_64-linux-gnu/5/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include include/mainwindow.h -o tmp/moc_mainwindow.cpp
 
@@ -352,30 +340,16 @@ compiler_clean: compiler_moc_header_clean
 ####### Compile
 
 tmp/imu_viewer_main.o: src/imu_viewer_main.cpp include/mainwindow.h \
-		include/rOc_timer.h \
-		include/rOc_serial.h \
-		include/objectgl.h \
-		include/MadgwickAHRS.h
+		include/objectgl.h 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o tmp/imu_viewer_main.o src/imu_viewer_main.cpp
 
 tmp/mainwindow.o: src/mainwindow.cpp include/mainwindow.h \
-		include/rOc_timer.h \
-		include/rOc_serial.h \
-		include/objectgl.h \
-		include/MadgwickAHRS.h
+		include/objectgl.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o tmp/mainwindow.o src/mainwindow.cpp
 
 tmp/objectgl.o: src/objectgl.cpp include/objectgl.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o tmp/objectgl.o src/objectgl.cpp
 
-tmp/MadgwickAHRS.o: src/MadgwickAHRS.cpp include/MadgwickAHRS.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o tmp/MadgwickAHRS.o src/MadgwickAHRS.cpp
-
-tmp/rOc_serial.o: src/rOc_serial.cpp include/rOc_serial.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o tmp/rOc_serial.o src/rOc_serial.cpp
-
-tmp/rOc_timer.o: src/rOc_timer.cpp include/rOc_timer.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o tmp/rOc_timer.o src/rOc_timer.cpp
 
 tmp/moc_mainwindow.o: tmp/moc_mainwindow.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o tmp/moc_mainwindow.o tmp/moc_mainwindow.cpp
