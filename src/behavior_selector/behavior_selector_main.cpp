@@ -1956,6 +1956,7 @@ static void
 read_parameters(int argc, char **argv)
 {
 	carmen_robot_ackerman_config_t robot_config;
+	carmen_collision_config_t collision_config;
 	double distance_between_waypoints, change_goal_distance, distance_to_remove_annotation_goal;
 	carmen_behavior_selector_algorithm_t parking_planner, following_lane_planner;
 
@@ -1994,18 +1995,22 @@ read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
 
 
+	char* collision_file = (char*) "ford_escape/ford_escape_col.txt";
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_t optional_param_list[] =
 	{
-		{(char *) "commandline", (char *) "activate_tracking", CARMEN_PARAM_ONOFF, &activate_tracking, 0, NULL}
+		{(char *) "commandline", (char *) "activate_tracking", CARMEN_PARAM_ONOFF, &activate_tracking, 0, NULL},
+		{(char *) "robot", (char *) "collision_file", CARMEN_PARAM_STRING, &collision_file, 1, NULL},
 	};
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
+
+	carmen_parse_collision_file(&collision_config, collision_file);
 
 	param_distance_between_waypoints = distance_between_waypoints;
 	param_change_goal_distance = change_goal_distance;
 
 	carmen_ini_max_velocity = robot_config.max_v;
-	behavior_selector_initialize(robot_config, distance_between_waypoints, change_goal_distance, following_lane_planner, parking_planner);
+	behavior_selector_initialize(robot_config, distance_between_waypoints, change_goal_distance, following_lane_planner, parking_planner, collision_config);
 
 	if (param_goal_source_onoff)
 		goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL;

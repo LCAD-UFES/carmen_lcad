@@ -909,27 +909,41 @@ trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, carme
 		else
 			return (2);
 	}
-//	double initial_displacement, displacement_inc;
-//	double number_of_point = 5.0;
-//	get_initial_displacement_and_displacement_inc(&initial_displacement, &displacement_inc, circle_radius, number_of_point, robot_config);
-//
-//	for (double i = 0; i < number_of_point; i += 1.0)
-//	{
-//		double displacement = initial_displacement + i * displacement_inc;
-//		carmen_point_t displaced_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&trajectory_pose, displacement);
-//		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-//		//distance equals to -1.0 when the coordinates are outside of map
-//		if (distance != -1.0)
-//		{
-//			if (distance < circle_radius)
-//				return (1);
-//		}
-//		else
-//			return (2);
-//	}
-//
 	return (0);
 }
+
+int
+trajectory_pose_hit_obstacle_old(carmen_ackerman_traj_point_t trajectory_pose, double circle_radius,
+		carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
+{
+	if (distance_map == NULL)
+	{
+		printf("distance_map == NULL in trajectory_pose_hit_obstacle()\n");
+		return (1);
+	}
+
+	double initial_displacement, displacement_inc;
+	double number_of_point = 5.0;
+	get_initial_displacement_and_displacement_inc(&initial_displacement, &displacement_inc, circle_radius, number_of_point, robot_config);
+
+	for (double i = 0; i < number_of_point; i += 1.0)
+	{
+		double displacement = initial_displacement + i * displacement_inc;
+		carmen_point_t displaced_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&trajectory_pose, displacement);
+		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+		//distance equals to -1.0 when the coordinates are outside of map
+		if (distance != -1.0)
+		{
+			if (distance < circle_radius)
+				return (1);
+		}
+		else
+			return (2);
+	}
+
+	return (0);
+}
+
 
 
 double
