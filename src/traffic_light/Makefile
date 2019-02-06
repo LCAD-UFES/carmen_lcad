@@ -37,7 +37,7 @@ endif
 
 
 #SOURCES = traffic_light_main.cpp traffic_light_interface.cpp traffic_light.cpp mapping_traffic_light_main.cpp log_generate_images.cpp
-SOURCES = traffic_light_main.cpp traffic_light_interface.cpp traffic_light.cpp log_generate_images.cpp traffic_light_annotation_tool.cpp #tlight_train.cpp tlight_evaluate_train.cpp 
+SOURCES = traffic_light_main.cpp traffic_light_interface.cpp traffic_light.cpp log_generate_images.cpp #traffic_light_annotation_tool.cpp tlight_train.cpp tlight_evaluate_train.cpp 
 
 PUBLIC_INCLUDES = traffic_light_interface.h traffic_light_messages.h traffic_light.h
 
@@ -47,7 +47,7 @@ PUBLIC_LIBRARIES = libtraffic_light_interface.a
 PUBLIC_BINARIES = traffic_light log_generate_images
 
 #TARGETS = libtraffic_light_interface.a  traffic_light mapping_traffic_light log_generate_images
-TARGETS = libtraffic_light_interface.a  traffic_light log_generate_images traffic_light_annotation_tool #tlight_train tlight_evaluate_train
+TARGETS = libtraffic_light_interface.a  traffic_light log_generate_images #traffic_light_annotation_tool tlight_train tlight_evaluate_train
 
 PUBLIC_LIBRARIES_SO = libtraffic_light_interface.so
 
@@ -78,7 +78,7 @@ libsqueezenet_tlight.a: squeezenet_tlight.o
 
 traffic_light: traffic_light_main.o libtraffic_light_interface.a TLightStateRecog/tlight_vgram.o squeezenet_tlight.o #tlight_vgram.o
 else
-traffic_light: traffic_light_main.o libtraffic_light_interface.a TLightStateRecog/tlight_vgram.o traffic_light_annotation_tool.o #tlight_vgram.o 
+traffic_light: traffic_light_main.o libtraffic_light_interface.a TLightStateRecog/tlight_vgram.o #traffic_light_annotation_tool.o tlight_vgram.o 
 endif
 #mapping_traffic_light:			mapping_traffic_light_main.o libtraffic_light_interface.a
 
@@ -86,7 +86,7 @@ log_generate_images:			log_generate_images.o
 
 traffic_light_view:			traffic_light_view.o libtraffic_light_interface.a
 
-traffic_light_annotation_tool: traffic_light_annotation_tool.o
+#traffic_light_annotation_tool: traffic_light_annotation_tool.o
 
 # rules
 include ../Makefile.rules
