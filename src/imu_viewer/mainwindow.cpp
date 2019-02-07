@@ -76,10 +76,6 @@ MainWindow::onTimer_UpdateDisplay()
 	carmen_ipc_sleep(0.033333333);
 }
 
-#define         RATIO_ACC       (4./32767.)
-#define         RATIO_GYRO      ((1000./32767.)*(M_PI/180.))
-//#define         RATIO_GYRO      (1000./32767.)
-#define         RATIO_MAG       (48./32767.)
 
 // Timer event : get raw data from Arduino
 void 
@@ -100,21 +96,10 @@ MainWindow::onTimer_ReadData()
 }
 
 
-
 // Open the 'about' dialog box
 void 
 MainWindow::handleAbout()
 {
     QMessageBox::information(this,"About OpenGL Frame","<H2>OpenGL Frame</H2>2011<BR>Supported by the Cart-O-Matic project (ANR CAROTTE)<BR>University of Angers (France,Europe)<BR>Designed by Philippe Lucidarme <BR> Contact: philippe.lucidarme@univ-angers.fr. ");
 }
-
-
-// Connect to the serial device (Arduino)
-
-bool
-MainWindow::connect()
-{
-    return true;
-}
-
 
