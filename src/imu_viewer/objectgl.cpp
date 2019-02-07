@@ -7,7 +7,6 @@
 // -------------------------------------------------
 
 
-// Constructor
 ObjectOpenGL::ObjectOpenGL(QWidget *parent) :
         QGLWidget(parent)
 {
@@ -28,8 +27,6 @@ ObjectOpenGL::ObjectOpenGL(QWidget *parent) :
 }
 
 
-
-// Destructor
 ObjectOpenGL::~ObjectOpenGL()
 {
     makeCurrent();
@@ -37,7 +34,8 @@ ObjectOpenGL::~ObjectOpenGL()
 
 
 // Initialize OpenGl
-void ObjectOpenGL::initializeGL()
+void
+ObjectOpenGL::initializeGL()
 {
     // Intitialize Open GL
     qglClearColor(BackGround_Color);                            // Set backGround color
@@ -59,7 +57,8 @@ void ObjectOpenGL::initializeGL()
 
 
 // Redraw the openGl window
-void ObjectOpenGL::paintGL(  )
+void
+ObjectOpenGL::paintGL(  )
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
@@ -151,8 +150,8 @@ void ObjectOpenGL::paintGL(  )
 }
 
 
-
-void ObjectOpenGL::Draw_Box()
+void
+ObjectOpenGL::Draw_Box()
 {
 
     glPushMatrix();
@@ -239,7 +238,8 @@ void ObjectOpenGL::Draw_Box()
 }
 
 // Draw the frame (X,Y and Z axis)
-void ObjectOpenGL::Draw_Frame()
+void
+ObjectOpenGL::Draw_Frame()
 {
     glLineWidth(10.0);
     // X-axis
@@ -267,7 +267,8 @@ void ObjectOpenGL::Draw_Frame()
 // Standard views
 // -------------------------------------------------
 
-void ObjectOpenGL::FrontView()
+void
+ObjectOpenGL::FrontView()
 {
     SetXRotation(0);
     SetYRotation(0);
@@ -277,7 +278,8 @@ void ObjectOpenGL::FrontView()
 
 }
 
-void ObjectOpenGL::RearView()
+void
+ObjectOpenGL::RearView()
 {
     SetXRotation(0);
     SetYRotation(180*16);
@@ -286,7 +288,8 @@ void ObjectOpenGL::RearView()
     dx=dy=0;
 }
 
-void ObjectOpenGL::LeftView()
+void
+ObjectOpenGL::LeftView()
 {
     SetXRotation(0);
     SetYRotation(90*16);
@@ -295,7 +298,8 @@ void ObjectOpenGL::LeftView()
     dx=dy=0;
 }
 
-void ObjectOpenGL::RightView()
+void
+ObjectOpenGL::RightView()
 {
     SetXRotation(0);
     SetYRotation(-90*16);
@@ -304,7 +308,8 @@ void ObjectOpenGL::RightView()
     dx=dy=0;
 }
 
-void ObjectOpenGL::TopView()
+void
+ObjectOpenGL::TopView()
 {
     SetXRotation(-90*16);
     SetYRotation(0);
@@ -313,7 +318,8 @@ void ObjectOpenGL::TopView()
    dx=dy=0;
 }
 
-void ObjectOpenGL::BottomView()
+void
+ObjectOpenGL::BottomView()
 {
     SetXRotation(90*16);
     SetYRotation(0);
@@ -322,7 +328,8 @@ void ObjectOpenGL::BottomView()
     dx=dy=0;
 }
 
-void ObjectOpenGL::IsometricView()
+void
+ObjectOpenGL::IsometricView()
 {
     SetXRotation(62*16);
     SetYRotation(0); //-45*16);
@@ -346,7 +353,8 @@ void ObjectOpenGL::resizeGL(int width, int height)
 
 // OpenGL angles are contained in the interval [0 : 360*16]
 // Normalize the angle in this interval
-void ObjectOpenGL::NormalizeAngle(int *angle)
+void
+ObjectOpenGL::NormalizeAngle(int *angle)
 {
     while (*angle < 0)
         *angle += 360 * 16;
@@ -357,7 +365,8 @@ void ObjectOpenGL::NormalizeAngle(int *angle)
 
 
 // Update the rotation around X if necessary
-void ObjectOpenGL::SetXRotation(int angle)
+void
+ObjectOpenGL::SetXRotation(int angle)
 {
     NormalizeAngle(&angle);
     if (angle != xRot)
@@ -382,7 +391,8 @@ void ObjectOpenGL::SetYRotation(int angle)
 
 
 // Update the rotation around Z if necessary
-void ObjectOpenGL::SetZRotation(int angle)
+void
+ObjectOpenGL::SetZRotation(int angle)
 {
     NormalizeAngle(&angle);
     if (angle != zRot)
@@ -406,7 +416,8 @@ void ObjectOpenGL::mousePressEvent(QMouseEvent *event){
 }
 
 // Wheel event : Change the Zoom
-void ObjectOpenGL::wheelEvent(QWheelEvent *event)
+void
+ObjectOpenGL::wheelEvent(QWheelEvent *event)
 {
 
     if(event->delta()<0)
@@ -417,7 +428,8 @@ void ObjectOpenGL::wheelEvent(QWheelEvent *event)
 
 // Mouse move event
 // Update the view if necessary
-void ObjectOpenGL::mouseMoveEvent(QMouseEvent *event)
+void
+ObjectOpenGL::mouseMoveEvent(QMouseEvent *event)
 {
     // Left button : move
     if(event->buttons()==Qt::LeftButton)
