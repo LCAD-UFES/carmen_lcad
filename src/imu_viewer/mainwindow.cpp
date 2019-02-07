@@ -97,8 +97,6 @@ MainWindow::onTimer_ReadData()
 //		pitch = -M_PI;
 
 	Object_GL->setAngles(pose_copy->m_roll * 180. / M_PI , pose_copy->m_pitch * 180. / M_PI, pose_copy->m_yaw  * 180. / M_PI);
-	std::cout << "roll  " << pose_copy->m_roll* 180. / M_PI <<  "\t" << "pitch  " << pose_copy->m_pitch*180./M_PI  <<  "\t" << "yaw  "<<  "\t"
-		   << pose_copy->m_yaw*180./M_PI << "\t"<< std::endl;
 }
 
 
