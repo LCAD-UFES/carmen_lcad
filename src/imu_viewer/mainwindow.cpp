@@ -53,7 +53,7 @@ MainWindow::MainWindow(QWidget *parent,int w, int h, carmen_xsens_global_quat_me
     QTimer *timerArduino = new QTimer();
     timerArduino->connect(timerArduino, SIGNAL(timeout()),this, SLOT(onTimer_ReadData()));
     timerArduino->start(10);
-	
+
 }
 
 
@@ -119,7 +119,7 @@ MainWindow::handleAbout()
 
 // Connect to the serial device (Arduino)
 
-bool 
+bool
 MainWindow::connect()
 {
     return true;

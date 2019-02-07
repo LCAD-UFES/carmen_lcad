@@ -3,28 +3,21 @@
 # -------------------------------------------------
 QT +=           opengl
 
-TARGET =        mpu9250-OpenGl
+TARGET =        imu_viewer
 
 TEMPLATE =      app
 
-SOURCES +=      src/main.cpp
-SOURCES +=      src/mainwindow.cpp
-SOURCES +=      src/objectgl.cpp
-SOURCES +=      src/MadgwickAHRS.cpp
-SOURCES +=      src/rOc_serial.cpp
-SOURCES +=      src/rOc_timer.cpp
+SOURCES +=      imu_viewer_main.cpp
+SOURCES +=      mainwindow.cpp
+SOURCES +=      objectgl.cpp
 
-HEADERS +=      include/mainwindow.h
-HEADERS +=      include/objectgl.h
-HEADERS +=      include/MadgwickAHRS.h
-HEADERS +=      include/rOc_serial.h
-HEADERS +=      include/rOc_timer.h
+INCLUDEPATH +=	$(CARMEN_HOME)/include
+LIBS +=			-L$(CARMEN_HOME)/lib -lxsens_interface -lparam_interface -lipc -lglobal -lgps_xyz_interface -lrotation_geometry
 
-INCLUDEPATH +=  src
-INCLUDEPATH +=  include
+HEADERS +=      mainwindow.h
+HEADERS +=      objectgl.h
 
-
-OBJECTS_DIR = tmp/
-MOC_DIR = tmp/
-DESTDIR = bin/
+OBJECTS_DIR = ./
+MOC_DIR = ./
+DESTDIR = ./
 

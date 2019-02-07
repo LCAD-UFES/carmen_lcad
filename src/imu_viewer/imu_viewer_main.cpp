@@ -1,14 +1,5 @@
-/* OpenGL Frame
-   Designed by Philippe Lucidarme
-   LISA - University of Angers
-   Supported by the Cart-O-matic project (ANR CAROTTE)
+// Baseado em: https://bitbucket.org/cinqlair/mpu9250/src/0b38d94e630291eeff31fb0c1897425f64cb0c31/mpu9250_OpenGL/?at=master
 
-   Contact : philippe.lucidarme@univ-angers.fr
-   Website : http://5lair.free.fr
-
-   sudo apt-get install freeglut3 freeglut3-dev
-
-*/
 
 //#include <QtGui/QApplication>
 #include <QtWidgets/QApplication>
@@ -21,6 +12,7 @@
 #include <carmen/gps_xyz_interface.h>
 carmen_xsens_global_quat_message *xsens_quat_message, *data;
 carmen_xsens_global_message *data_pose, *pose;
+
 
 rotation_matrix *
 create_rotation_matrix_from_quaternions_new(carmen_xsens_quat quat)
@@ -45,6 +37,23 @@ create_rotation_matrix_from_quaternions_new(carmen_xsens_quat quat)
 	return (r_matrix);
 }
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//																								//
+// Publishers																					//
+//																								//
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//																								//
+// Handlers																						//
+//																								//
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 void
 xsens_quat_message_handler(carmen_xsens_global_quat_message *xsens_quat_message)
 {
@@ -55,8 +64,6 @@ xsens_quat_message_handler(carmen_xsens_global_quat_message *xsens_quat_message)
 	data->m_gyr.x = xsens_quat_message->m_gyr.x;
 	data->m_gyr.y = xsens_quat_message->m_gyr.y;
 	data->m_gyr.z = xsens_quat_message->m_gyr.z;
-
-
 
 
 	data->m_mag.x = xsens_quat_message->m_mag.x;
@@ -86,6 +93,16 @@ shutdown_module(int signo)
         exit(0);
     }
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//																								//
+// Inicializations																				//
+//																								//
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 int 
@@ -97,17 +114,16 @@ main(int argc, char *argv[])
 
 	data = (carmen_xsens_global_quat_message*) calloc (1, sizeof (carmen_xsens_global_quat_message));
 	data_pose = (carmen_xsens_global_message*) calloc(1, sizeof (carmen_xsens_global_message));
+
 	carmen_xsens_subscribe_xsens_global_quat_message(NULL,
 			(carmen_handler_t) xsens_quat_message_handler, CARMEN_SUBSCRIBE_LATEST);
-    QApplication a(argc, argv);
-    MainWindow w(0,800,600, data, data_pose);
-	// Connect to the Arduino
 
-    if (!w.connect()) 
-		return 0;
+	QApplication a(argc, argv);
+    MainWindow w(0,800,600, data, data_pose);
 
     w.show();
-    return a.exec();
+
+    return (a.exec());
 }
 
 

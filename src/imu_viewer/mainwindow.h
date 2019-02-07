@@ -15,7 +15,6 @@
 #define         DEVICE_NAME     "/dev/ttyACM0"
 
 
-
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -24,7 +23,6 @@ public:
     // Constructor and destructor
     MainWindow(QWidget *parent = 0, int w=600, int h=400, carmen_xsens_global_quat_message* data = 0, carmen_xsens_global_message* pose = 0);
     ~MainWindow();
-
 
     bool                    connect();
 
@@ -54,9 +52,6 @@ private:
 
     // OpenGL object
     ObjectOpenGL            *Object_GL;
-
-    // Serial device for communicating with the Arduino
-
 
 };
 
