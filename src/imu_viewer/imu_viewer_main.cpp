@@ -24,8 +24,8 @@ create_rotation_matrix_from_quaternions_new(carmen_xsens_quat quat)
 
 	rotation_matrix *r_matrix =(rotation_matrix *) malloc(sizeof(rotation_matrix));
 
-	r_matrix->matrix[0 + 3*0] = q0*q0 + q1*q1 - q2*q2 - q3*q3;
-	r_matrix->matrix[0 + 3*1] = 2*(q1*q2 - q0*q3);
+	r_matrix->matrix[0 + 3 * 0] = q0 * q0 + q1*q1 - q2*q2 - q3*q3;
+	r_matrix->matrix[0 + 3 * 1] = 2*(q1*q2 - q0*q3);
 	r_matrix->matrix[0 + 3*2] = 2*(q0*q2 + q1*q3);
 	r_matrix->matrix[1 + 3*0] =	2*(q1*q2 + q0*q3);
 	r_matrix->matrix[1 + 3*1] = q0*q0 - q1*q1 + q2*q2 - q3*q3;

@@ -53,21 +53,14 @@ MainWindow::MainWindow(QWidget *parent,int w, int h, carmen_xsens_global_quat_me
     QTimer *timerArduino = new QTimer();
     timerArduino->connect(timerArduino, SIGNAL(timeout()),this, SLOT(onTimer_ReadData()));
     timerArduino->start(10);
-
 }
 
 
-
-
-
-// Desctructor
 MainWindow::~MainWindow()
-{}
+{
+}
 
 
-
-
-// On resize event, the items in the window are resized
 void 
 MainWindow::resizeEvent(QResizeEvent *)
 {
@@ -76,9 +69,6 @@ MainWindow::resizeEvent(QResizeEvent *)
 }
 
 
-
-
-// Timer event : repain the Open Gl window
 void 
 MainWindow::onTimer_UpdateDisplay()
 {
@@ -95,16 +85,20 @@ MainWindow::onTimer_UpdateDisplay()
 void 
 MainWindow::onTimer_ReadData()
 {
+//	static double pitch = -M_PI;
 
-	   Object_GL->setAcceleromter(data_copy->m_acc.x, data_copy->m_acc.y , data_copy->m_acc.z);
-       Object_GL->setGyroscope(data_copy->m_gyr.x, data_copy->m_gyr.y, data_copy->m_gyr.z);
-       Object_GL->setMagnetometer(data_copy->m_mag.x, data_copy->m_mag.y, data_copy->m_mag.z);
+	Object_GL->setAcceleromter(data_copy->m_acc.x, data_copy->m_acc.y , data_copy->m_acc.z);
+	Object_GL->setGyroscope(data_copy->m_gyr.x, data_copy->m_gyr.y, data_copy->m_gyr.z);
+	Object_GL->setMagnetometer(data_copy->m_mag.x, data_copy->m_mag.y, data_copy->m_mag.z);
 
+//	pose_copy->m_pitch = pitch;
+//	pitch += 0.1;
+//	if (pitch > M_PI)
+//		pitch = -M_PI;
 
-       //std::cout << R31 << "\t" << phi*180./M_PI << "\t" << theta*180./M_PI << "\t" << psi*180./M_PI << std::endl;
-       Object_GL->setAngles(pose_copy->m_roll * 180. / M_PI , pose_copy->m_pitch * 180. / M_PI, pose_copy->m_yaw  * 180. / M_PI);
-       std::cout << "x  " << pose_copy->m_roll* 180. / M_PI <<  "\t" << "y  " << pose_copy->m_pitch*180./M_PI  <<  "\t" << "z  "<<  "\t"
-    		   << pose_copy->m_yaw*180./M_PI << "\t"<< std::endl;
+	Object_GL->setAngles(pose_copy->m_roll * 180. / M_PI , pose_copy->m_pitch * 180. / M_PI, pose_copy->m_yaw  * 180. / M_PI);
+	std::cout << "roll  " << pose_copy->m_roll* 180. / M_PI <<  "\t" << "pitch  " << pose_copy->m_pitch*180./M_PI  <<  "\t" << "yaw  "<<  "\t"
+		   << pose_copy->m_yaw*180./M_PI << "\t"<< std::endl;
 }
 
 
