@@ -32,14 +32,14 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
 - Não execute upgrade
 
 ```bash
- $ sudo apt-get update
- $ sudo apt-get install i2c-tools libi2c-dev python-smbus
  $ sudo raspi-config
 ```
 
-# Install Dependencies anf Download the pi_imu file from git
+# Install Dependencies and Download the pi_imu file from git
 
 ```bash
+ $ sudo apt-get update
+ $ sudo apt-get install i2c-tools libi2c-dev python-smbus
  $ sudo apt-get install subversion
  $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/pi_imu
 ```

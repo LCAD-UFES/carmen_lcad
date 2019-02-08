@@ -41,11 +41,11 @@ main(int argc, char* argv[])
 
 		Mat frame = Mat(height, width, CV_8UC3, rpi_cam_data);
 
-		//imshow("Pi Camera Test", frame);
-		//waitKey(1);
+		imshow("Pi Camera Test", frame);
+		waitKey(1);
 
-		sprintf(frame_name, "%s%d", "Frame_", cont);
-		imwrite(frame_name, frame);
+		//sprintf(frame_name, "%s%d", "Frame_", cont);
+		//imwrite(frame_name, frame);
 
 		printf("FPS: %lf\n", 1 / ((double)(clock() - tic) / CLOCKS_PER_SEC));
 	}

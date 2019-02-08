@@ -27,7 +27,7 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
 - O cartão esta formatado e pode ser inserido no Raspberry para utilização.
 
 
-# Enable the Camera
+# Enable the Camera and SSH
 
 - Não execute upgrade
 
@@ -35,25 +35,26 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
  $ sudo apt-get update
  $ sudo raspi-config
 ```
-- Acesse e habilite a camera:
-->Interfacing Options
-       ->Camera
+ Acesse e habilite a camera:
+ 
+ - Interfacing Options->Camera
+ - Interfacing Options->SSH
 
-Para testar: O comando raspistill grava uma imgem e raspivid grava um video 
+Teste usando o comando: 
 
 ```bash
  $ raspistill -v -o test.jpg
  $ raspivid -o teste.h264 -t 10000
 ```
-
+raspistill grava uma imgem e raspivid grava um video
 
 # Install Dependencies anf Download the pi_camera file from git
 
 ```bash
  $ sudo apt-get install libopencv-dev python-opencv
- $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/pi_camera
  $ sudo apt-get install cmake
  $ sudo apt-get install subversion
+ $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/pi_camera
 ```
 
 
@@ -109,3 +110,24 @@ Para testar: O comando raspistill grava uma imgem e raspivid grava um video
 ```
 
  The eth0 inet addr must be 192.168.0.15
+ 
+# Test the pi_camera on IARA
+ 
+ Run the server on the Raspberry PI (You can access the raspbery pi from IARA using ssh to facilitate)
+ 
+ ```bash
+ $ ssh pi@192.168.0.15
+ $ cd ~/pi_camera/build
+ $ ./pi_camera_server_driver
+```
+ Run the viewer on IARA
+ 
+ ```bash
+ $ cd ~/carmen_lcad/bin
+ $ ./central
+```
+ Open another terminal window (on terminal press Ctrl+Shift+t)
+ 
+```bash
+ $ ./proccontrol process-pi-camera-viewer.ini
+```

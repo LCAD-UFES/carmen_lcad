@@ -58,7 +58,6 @@ connect_with_client()
         perror("--- Socket Failed ---\n");
         return (-1);
     }
-    //printf("--- OPT\n");
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
     {
         perror("--- Setsockopt Failed ---\n");
@@ -68,14 +67,12 @@ connect_with_client()
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons( PORT );
     
-    //printf("--- BIND\n");
     // Forcefully attaching socket to the port defined
     if (bind(server_fd, (struct sockaddr *) &address, sizeof(address)) < 0)
     {
         perror("--- Bind Failed ---\n");
         return (-1);
     }
-    //printf("--- Listen\n");
     if (listen(server_fd, 3) < 0)
     {
         perror("-- Listen Failed ---\n");
