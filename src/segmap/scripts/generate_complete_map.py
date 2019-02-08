@@ -39,7 +39,8 @@ if __name__ == "__main__":
         {'map': 'data_log_estacionamentos-20181130.txt', 'test': ['data_log-volta-da-ufes-20181206-honofre-test.txt', 'data_log_estacionamentos-20181130-test.txt']},
     ]
 
-    mapping_datasets = [x['map'] for x in experiments]
+    mapping_datasets = ['data_log-estacionamento-ambiental-20181208.txt']
+    #mapping_datasets = [x['map'] for x in experiments]
     #print('Mapping datasets:', mapping_datasets)
     process_pool = Pool(len(mapping_datasets)) 
     process_pool.map(save_complete_map, mapping_datasets)

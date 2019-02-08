@@ -193,13 +193,43 @@ DatasetCarmen::DatasetCarmen(string path, int use_segmented) :
 }
 
 
+void 
+DatasetCarmen::_segment_lane_marks(Mat &m, int i)
+{
+    char name[512];
+	double r, g, b, gray;
+	sprintf(name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
+	Mat bgr_img = imread(name);
+
+	for (int i = 450; i < 750; i++)
+	{
+		for (int j = 0; j < bgr_img.cols; j++)
+		{
+			b = bgr_img.data[3 * (i * bgr_img.cols + j)];
+			g = bgr_img.data[3 * (i * bgr_img.cols + j) + 1];
+			r = bgr_img.data[3 * (i * bgr_img.cols + j) + 2];
+			gray = (b + g + r) / 3;
+
+			if (gray > 60)
+			{
+				m.data[3 * (i * m.cols + j)] = 20;
+				m.data[3 * (i * m.cols + j) + 1] = 20;
+				m.data[3 * (i * m.cols + j) + 2] = 20;
+			}
+		}
+	}
+}
+
+
 Mat
 DatasetCarmen::load_image(int i)
 {
     char name[512];
 
 	if (_use_segmented)
+	{
 		sprintf(name, "%s/semantic/%lf-r.png", _path.c_str(), data[i].image_time);
+	}
 	else
 		sprintf(name, "%s/bb3/%lf-r.png", _path.c_str(), data[i].image_time);
 
@@ -217,6 +247,9 @@ DatasetCarmen::load_image(int i)
 		int top_limit = (50. / 480.) * height;
 		int bottom_limit = height - (110. / 480.) * height;
 		raw_img.copyTo(resized(Rect(0, top_limit, raw_img.cols, bottom_limit - top_limit)));
+
+		if (_path.find("aeroporto") != std::string::npos)
+			_segment_lane_marks(resized, i);
 	}
 	else
 		resized = raw_img;
@@ -324,6 +357,8 @@ DatasetCarmen::load_data()
 		sample.gps.th = normalize_theta(-sample.gps.th);
 		sample.phi = normalize_theta(-sample.phi);
 		sample.pose = Pose2d(0., 0., 0.);
+		sample.pose_registered_to_map = Pose2d(0., 0., 0.);
+		sample.pose_with_loop_closure = Pose2d(0., 0., 0.);
 
 		data.push_back(sample);
 	}
@@ -346,37 +381,96 @@ DatasetCarmen::load_data()
 
 	if (f == NULL)
 	{
-		printf("Warning: File '%s' not found. Trying to load optimized poses.\n", data_file.c_str());
-
-		data_file = _path + "/optimized.txt";
-		f = fopen(data_file.c_str(), "r");
-
-		if (f == NULL)
-		{
-			printf("Warning: File '%s' not found. Filling poses with zeros.\n", data_file.c_str());	
-			return;
-		}
+		printf("Warning: File '%s' not found. Filling poses with zero.\n", data_file.c_str());
 	}
-
-	printf("Using poses from '%s'\n", data_file.c_str());
-
-	for (int i = 0; i < data.size(); i++)
+	else
 	{
-		fscanf(f, "\n%s %lf %lf %lf %s %s %s %s %s\n",
-				dummy, &data[i].pose.x, &data[i].pose.y, &data[i].pose.th,
-				dummy, dummy, dummy, dummy, dummy);
+		printf("Reading poses from '%s'\n", data_file.c_str());
 
-		data[i].pose.x -= offset_x;
-		data[i].pose.y -= offset_y;
-		data[i].pose.y = -data[i].pose.y;
-		data[i].pose.th = normalize_theta(-data[i].pose.th);
+		for (int i = 0; i < data.size(); i++)
+		{
+			fscanf(f, "\n%s %lf %lf %lf %s %s %s %s %s\n",
+					dummy, 
+					&data[i].pose_registered_to_map.x, 
+					&data[i].pose_registered_to_map.y, 
+					&data[i].pose_registered_to_map.th,
+					dummy, dummy, dummy, dummy, dummy);
 
-//		printf("%lf %lf %lf %lf %lf %lf\n",
-//				data[i].gps.x, data[i].gps.y, data[i].gps.th,
-//				data[i].pose.x, data[i].pose.y, data[i].pose.th);
+			data[i].pose_registered_to_map.x -= offset_x;
+			data[i].pose_registered_to_map.y -= offset_y;
+			data[i].pose_registered_to_map.y = -data[i].pose_registered_to_map.y;
+			data[i].pose_registered_to_map.th = normalize_theta(-data[i].pose_registered_to_map.th);
+
+	//		printf("%lf %lf %lf %lf %lf %lf\n",
+	//				data[i].gps.x, data[i].gps.y, data[i].gps.th,
+	//				data[i].pose.x, data[i].pose.y, data[i].pose.th);
+		}
+
+		fclose(f);
 	}
 
-	fclose(f);
+	data_file = _path + "/optimized_with_gicp.txt";
+	f = fopen(data_file.c_str(), "r");
+
+	if (f == NULL)
+	{
+		printf("Warning: File '%s' not found. Filling poses with zero.\n", data_file.c_str());
+	}
+	else
+	{
+		printf("Reading poses from '%s'\n", data_file.c_str());
+
+		for (int i = 0; i < data.size(); i++)
+		{
+			fscanf(f, "\n%s %lf %lf %lf %s %s %s %s %s\n",
+					dummy, 
+					&data[i].pose_with_loop_closure.x, 
+					&data[i].pose_with_loop_closure.y, 
+					&data[i].pose_with_loop_closure.th,
+					dummy, dummy, dummy, dummy, dummy);
+
+			data[i].pose_with_loop_closure.x -= offset_x;
+			data[i].pose_with_loop_closure.y -= offset_y;
+			data[i].pose_with_loop_closure.y = -data[i].pose_with_loop_closure.y;
+			data[i].pose_with_loop_closure.th = normalize_theta(-data[i].pose_with_loop_closure.th);
+
+	//		printf("%lf %lf %lf %lf %lf %lf\n",
+	//				data[i].gps.x, data[i].gps.y, data[i].gps.th,
+	//				data[i].pose.x, data[i].pose.y, data[i].pose.th);
+		}
+
+		fclose(f);
+	}
+
+	data_file = _path + "/optimized.txt";
+	f = fopen(data_file.c_str(), "r");
+
+	if (f == NULL)
+	{
+		printf("Warning: File '%s' not found. Filling poses with zeros.\n", data_file.c_str());	
+	}
+	else
+	{
+		printf("Reading poses from '%s'\n", data_file.c_str());
+
+		for (int i = 0; i < data.size(); i++)
+		{
+			fscanf(f, "\n%s %lf %lf %lf %s %s %s %s %s\n",
+					dummy, &data[i].pose.x, &data[i].pose.y, &data[i].pose.th,
+					dummy, dummy, dummy, dummy, dummy);
+
+			data[i].pose.x -= offset_x;
+			data[i].pose.y -= offset_y;
+			data[i].pose.y = -data[i].pose.y;
+			data[i].pose.th = normalize_theta(-data[i].pose.th);
+
+	//		printf("%lf %lf %lf %lf %lf %lf\n",
+	//				data[i].gps.x, data[i].gps.y, data[i].gps.th,
+	//				data[i].pose.x, data[i].pose.y, data[i].pose.th);
+		}
+
+		fclose(f);
+	}
 }
 
 

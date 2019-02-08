@@ -34,6 +34,7 @@ const int VIEW_SIMULATED_LASER = 0;
 
 // Parameters
 carmen_robot_ackerman_config_t global_robot_ackerman_config;
+carmen_collision_config_t global_collision_config;
 
 // Messages
 carmen_laser_laser_message global_front_laser_message;
@@ -815,9 +816,12 @@ hit_obstacle()
 	pose.phi = global_truepos_message.phi;
 	pose.v = global_truepos_message.v;
 
+//	int hit = trajectory_pose_hit_obstacle(pose,
+//		global_robot_ackerman_config.obstacle_avoider_obstacles_safe_distance,
+//		&global_obstacle_distance_map, &global_robot_ackerman_config);
 	int hit = trajectory_pose_hit_obstacle(pose,
-		global_robot_ackerman_config.obstacle_avoider_obstacles_safe_distance,
-		&global_obstacle_distance_map, &global_robot_ackerman_config);
+		&global_obstacle_distance_map, &global_collision_config);
+
 
 	return (hit == 1);
 }
@@ -917,6 +921,21 @@ read_robot_ackerman_parameters(int argc, char **argv)
 	return 0;
 }
 
+int
+read_collision_parameters(int argc, char **argv)
+{
+	char* collision_file = (char*) "ford_escape/ford_escape_col.txt";
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_t optional_param_list[] =
+	{
+		{(char *) "robot", (char *) "collision_file", CARMEN_PARAM_STRING, &collision_file, 1, NULL},
+	};
+	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
+
+	carmen_parse_collision_file(&global_collision_config, collision_file);
+	return 0;
+}
 
 static void
 read_simulator_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *config)
@@ -1139,6 +1158,7 @@ init()
 	carmen_ipc_initialize(argc, argv);
 
 	read_robot_ackerman_parameters(argc, argv);
+	read_collision_parameters(argc, argv);
 	read_simulator_parameters(argc, argv, &simulator_config);
 	carmen_libpid_read_PID_parameters(argc, argv);
 

@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <carmen/carmen.h>
+#include "collision_detection.h"
 
 #define NUM_MOTION_COMMANDS_VECTORS	10
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	500
@@ -26,7 +27,7 @@ carmen_navigator_ackerman_plan_message build_navigator_ackerman_plan_message(car
 void copy_grid_mapping_to_map_vector(carmen_mapper_map_message *grid_map, int position);
 void copy_cost_map_to_map_vector(carmen_map_t *cost_map, int position);
 double get_last_motion_command_total_time(carmen_ackerman_motion_command_p motion_command_vector, int num_motion_commands);
-int obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int num_motion_commands, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config);
+int obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int num_motion_commands, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_collision_config_t * collision_config);
 void publish_base_ackerman_motion_command_message_to_stop_robot();
 void add_map_to_map_vector(carmen_mapper_map_message *message);
 void add_cost_map_to_map_vector(carmen_map_t *cost_map);

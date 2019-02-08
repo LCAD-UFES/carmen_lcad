@@ -36,6 +36,8 @@ public:
 	int gps_quality;
 	Quaterniond xsens;
 	Pose2d pose;
+	Pose2d pose_with_loop_closure;
+	Pose2d pose_registered_to_map;
 	Pose2d gps;
 };
 
@@ -79,6 +81,8 @@ class DatasetCarmen : public DatasetInterface
 
 	void _init_vel2cam_transform(int image_height, int image_width);
 	void _init_vel2car_transform();
+
+	void _segment_lane_marks(Mat &m, int i);
 
 public:
 

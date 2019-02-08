@@ -1968,3 +1968,35 @@ carmen_line_to_point_crossed_rectangle(carmen_position_t *nearest_intersection, 
 
 	return (crossed);
 }
+
+void
+carmen_parse_polygon_file (carmen_polygon_config_t *poly_config, char* poly_file)
+{
+	FILE *poly;
+	poly = fopen(poly_file, "r");
+	fscanf(poly,"%lf\n",&(poly_config->displacement));
+	fscanf(poly,"%d\n",&(poly_config->n_points));
+	poly_config->points = (double*) malloc(poly_config->n_points*2*sizeof(double));
+	int i;
+	for (i=0; i<poly_config->n_points; i++)
+	{
+		fscanf(poly,"%lf %lf\n",&(poly_config->points[2*i]),&(poly_config->points[2*i+1]));
+	}
+	fclose(poly);
+}
+
+void
+carmen_parse_collision_file(carmen_collision_config_t* collision_list, char* collision_file)
+{
+	FILE *col;
+	col = fopen(collision_file, "r");
+	fscanf(col,"%d\n",&(collision_list->n_markers));
+	collision_list->markers = (carmen_collision_marker_t*) malloc(collision_list->n_markers*sizeof(carmen_collision_marker_t));
+	int i;
+	for (i=0; i<collision_list->n_markers; i++)
+	{
+		fscanf(col,"%lf %lf %lf %d\n",&(collision_list->markers[i].x),&(collision_list->markers[i].y),
+				&(collision_list->markers[i].radius),&(collision_list->markers[i].level));
+	}
+	fclose(col);
+}

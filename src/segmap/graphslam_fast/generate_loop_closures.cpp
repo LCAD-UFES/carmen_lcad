@@ -25,14 +25,46 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
 		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) 
-			&& raw_cloud->at(i).x < 70.0 
-			&& raw_cloud->at(i).z > -1.5 
-			&& raw_cloud->at(i).z < -0.0
+			&& raw_cloud->at(i).x < 70.0  // remove max range
+			&& raw_cloud->at(i).z > -1.3  // remove ground
+			&& raw_cloud->at(i).z < -0.  // remove tree tops
 		)
 			cloud->push_back(raw_cloud->at(i));
 	}
 
 	return cloud;
+}
+
+
+PointCloud<PointXYZRGB>::Ptr
+create_cloud(DatasetCarmen &dataset, int id, Pose2d &target_pose)
+{
+	PointCloud<PointXYZRGB>::Ptr raw_cloud(new PointCloud<PointXYZRGB>);
+	PointCloud<PointXYZRGB>::Ptr raw_moved(new PointCloud<PointXYZRGB>);
+	PointCloud<PointXYZRGB>::Ptr out_cloud(new PointCloud<PointXYZRGB>);
+
+	
+
+	for (int i = -5; i < 6; i++)
+	{
+		dataset.load_pointcloud(id + i, raw_cloud, 
+			dataset.data[id + i].v, 
+			dataset.data[id + i].phi);
+
+		raw_cloud = filter_pointcloud(raw_cloud);
+		Pose2d pose = dataset.data[id + i].pose;
+		pose.x -= target_pose.x;
+		pose.y -= target_pose.y;
+
+		Matrix<double, 4, 4> tr = 
+			pose3d_to_matrix(0., 0., target_pose.th).inverse() *
+			Pose2d::to_matrix(pose);
+		
+		pcl::transformPointCloud(*raw_cloud, *raw_moved, tr);
+		(*out_cloud) += (*raw_moved);
+	}
+	
+	return out_cloud;
 }
 
 
@@ -45,34 +77,16 @@ run_icp_step(DatasetCarmen &dataset, int from, int to, Matrix<double, 4, 4> *rel
 	//PointCloud<PointXYZRGB>::Ptr aligned2(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr source_moved(new PointCloud<PointXYZRGB>);
 
-	dataset.load_pointcloud(from, target, dataset.data[from].v, dataset.data[from].phi);
-	dataset.load_pointcloud(to, source, dataset.data[to].v, dataset.data[to].phi);
-
-	source = filter_pointcloud(source);
-	target = filter_pointcloud(target);
-
 	Pose2d target_pose = dataset.data[from].pose;
-	Pose2d source_pose = dataset.data[to].pose;
 
-	source_pose.x -= target_pose.x;
-	source_pose.y -= target_pose.y;
-	//source_pose.x = 0.;
-	//source_pose.y = 0.;
+	target = create_cloud(dataset, from, target_pose); 
+	source = create_cloud(dataset, to, target_pose); 
 
-	target_pose.x = 0.;
-	target_pose.y = 0.;
-	
-	Matrix<double, 4, 4> guess = 
-		Pose2d::to_matrix(target_pose).inverse() *
-		Pose2d::to_matrix(source_pose);
-	
-	pcl::transformPointCloud(*source, *source_moved, guess);
-
-	run_gicp(source_moved, target, relative_transform, convergence_flag, aligned, 0.0);
+	run_gicp(source, target, relative_transform, convergence_flag, aligned, 0.1);
 	//pcl::transformPointCloud(*source, *aligned2, ((*relative_transform) * guess).cast<float>());
 
-	/*
-	if (0)
+	///*
+	if (1)
 	{
 		static pcl::visualization::PCLVisualizer *viewer = NULL;
 
@@ -82,20 +96,20 @@ run_icp_step(DatasetCarmen &dataset, int from, int to, Matrix<double, 4, 4> *rel
 		viewer->removeAllPointClouds();
 		viewer->setBackgroundColor(.5, .5, .5);
 		viewer->addPointCloud(target, "target");
-		viewer->addPointCloud(source_moved, "source");
+		viewer->addPointCloud(source, "source");
 		viewer->addPointCloud(aligned, "aligned");
 		//viewer->addPointCloud(aligned2, "aligned2d");
 		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "source");
 		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "target");
 		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "aligned");
-		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "aligned2d");
+		//viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "aligned2d");
 		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "source"); 
 		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "target"); 
 		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0, 1, "aligned"); 
-		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 1, "aligned2d");
+		//viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 1, "aligned2d");
 		viewer->spinOnce();
 	}
-	*/
+	//*/
 }
 
 
@@ -203,12 +217,12 @@ find_top_k_loop_closure_poses(DatasetCarmen &dataset, vector<pair<int, int>> &lo
 void
 find_all_loop_closure_poses(DatasetCarmen &dataset, vector<pair<int, int>> &loop_closure_indices)
 {
-	for (int i = 0; i < dataset.data.size(); i += 100)
+	for (int i = 5; i < dataset.data.size() - 5; i += 50)
 	{
-        if (fabs(dataset.data[i].v) < 0.5)
-            continue;
+		double min_dist = DBL_MAX;
+		int nn_id = -1;
 
-		for (int j = i + 1; j < dataset.data.size(); j++)
+		for (int j = i + 1; j < dataset.data.size() - 5; j++)
 		{
 			double delta_x = dataset.data[i].pose.x - dataset.data[j].pose.x;
 			double delta_y = dataset.data[i].pose.y - dataset.data[j].pose.y;
@@ -216,12 +230,15 @@ find_all_loop_closure_poses(DatasetCarmen &dataset, vector<pair<int, int>> &loop
 
 			double dist = sqrt(pow(delta_x, 2) + pow(delta_y, 2));
 
-			if (dist < 1.0 && fabs(delta_t) > 20.)
+			if (dist < min_dist && fabs(delta_t) > 20.)
 			{
-                loop_closure_indices.push_back(pair<int, int>(i, j));
-				j += 100; // skip some messages
+                min_dist = dist;
+				nn_id = j;
 			}
 		}
+
+		if (min_dist < 5.0)
+			loop_closure_indices.push_back(pair<int, int>(i, nn_id));
 	}
 
 	printf("Num loop closures: %ld\n", loop_closure_indices.size());
@@ -257,13 +274,13 @@ main(int argc, char **argv)
 	int n = loop_closure_indices.size();
 	//int n = 400;
 
-   	#pragma omp parallel for default(none) private(i) shared(dataset, convergence_vector, relative_transform_vector, size, loop_closure_indices, n_processed_clouds, n) 
+   	//#pragma omp parallel for default(none) private(i) shared(dataset, convergence_vector, relative_transform_vector, size, loop_closure_indices, n_processed_clouds, n) 
     for (i = 0; i < n; i++)
 	{
 	    run_icp_step(dataset, loop_closure_indices[i].first, loop_closure_indices[i].second, 
             &(relative_transform_vector[i]), &(convergence_vector[i]));
 
-		#pragma omp critical
+		//#pragma omp critical
         {
             n_processed_clouds++;
 

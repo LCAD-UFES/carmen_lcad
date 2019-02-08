@@ -42,32 +42,7 @@
 int server_fd;
 int file;
 
-void
-extract_camera_configuration(char *cam_config, int &image_width, int &image_height, int &frame_rate, int &brightness, int &contrast)
-{
-	char *token;
 
-	token = strtok(cam_config, "*");
-
-	printf ("--- Connected! Widith: %s ", token);
-	image_width = atoi(token);
-
-	token = strtok (NULL, "*");
-	printf ("Height: %s ", token);
-	image_height = atoi(token);
-
-	token = strtok (NULL, "*");
-	printf ("Frame Rate: %s ", token);
-	frame_rate = atoi(token);
-
-	token = strtok (NULL, "*");
-	printf ("Brightness: %s ", token);
-	brightness = atoi(token);
-
-	token = strtok (NULL, "*");
-	printf ("Contrast: %s ---\n", token);
-	contrast = atoi(token);
-}
 
 int
 connect_with_client()
@@ -201,10 +176,10 @@ int main()
                 //sampleCount = 0;
                 rateTimer = now;
             }
-		sprintf((char *) rpi_imu_data, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f*\n", imuData.accel.x(), imuData.accel.y(), imuData.accel.z(), 
+		sprintf((char *) rpi_imu_data, "%f %f %f %f %f %f %f %f %f %f %f %f %f*\n", imuData.accel.x(), imuData.accel.y(), imuData.accel.z(),
 			imuData.gyro.x(), imuData.gyro.y(), imuData.gyro.z(),
 			imuData.fusionQPose.scalar(), imuData.fusionQPose.x(), imuData.fusionQPose.y(), imuData.fusionQPose.z(), 
-			imuData.compass.x(), imuData.compass.y(), imuData.compass.z(), imuData.fusionPose.x(), imuData.fusionPose.y(), imuData.fusionPose.z());
+			imuData.compass.x(), imuData.compass.y(), imuData.compass.z());
 
 	 	int result = send(pi_socket, rpi_imu_data, SOCKET_DATA_PACKET_SIZE, MSG_NOSIGNAL);  // Returns number of bytes read, 0 in case of connection lost, -1 in case of error
 		if (result == -1)

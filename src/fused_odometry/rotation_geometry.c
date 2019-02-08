@@ -8,6 +8,8 @@
 //	This matrix is the result of first rotating the z axis by yaw, then the y axis by pitch and then the x axis by roll
 //	assuming the frame of reference rotates with the object.
 //
+//  See Xsens MTIG manual, pg 31
+//
 //	| 	cos(p)*cos(y)		-cos(r)*sin(y)+sin(r)*sin(p)*cos(y)		sin(r)*sin(y)+cos(r)*sin(p)*cos(y)	|
 //	| 	cos(p)*sin(y)		cos(r)*cos(y)+sin(r)*sin(p)*sin(y)		-sin(r)*cos(y)+cos(r)*sin(p)*sin(y)	|
 //	| 		-sin(p)		 			sin(r)*cos(p)								cos(r)*cos(p)			|
@@ -25,6 +27,7 @@ create_rotation_matrix(carmen_orientation_3D_t orientation)
 	double sinYaw 	= sin(orientation.yaw);
 	double cosYaw 	= cos(orientation.yaw);
 
+	// The first parameter is the line and the second the column, i.e. [0 + 3*1] is line 0 column 1.
 	r_matrix->matrix[0 + 3*0] = cosPitch*cosYaw;
 	r_matrix->matrix[0 + 3*1] = -cosRoll*sinYaw + sinRoll*sinPitch*cosYaw;
 	r_matrix->matrix[0 + 3*2] = sinRoll*sinYaw + cosRoll*sinPitch*cosYaw;

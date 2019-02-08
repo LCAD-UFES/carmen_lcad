@@ -30,7 +30,7 @@ public:
 
 	CityScapesColorMap()
 	{
-		n_classes = 20;
+		n_classes = 21;
 
 		_colors.push_back(cv::Scalar(128, 64, 128));
 		_colors.push_back(cv::Scalar(244, 35, 232));
@@ -52,6 +52,7 @@ public:
 		_colors.push_back(cv::Scalar(0, 0, 230));
 		_colors.push_back(cv::Scalar(119, 11, 32));
 		_colors.push_back(cv::Scalar(0, 0, 0)); // unknown class
+		_colors.push_back(cv::Scalar(255, 255, 255)); // lane marks
 	}
 
 	cv::Scalar color(int index)

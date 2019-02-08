@@ -22,8 +22,11 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
-		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) && 
-			 raw_cloud->at(i).x < 70.0 && raw_cloud->at(i).z > -1.)
+		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) 
+			&& raw_cloud->at(i).x < 70.0  // remove max range
+			&& raw_cloud->at(i).z > -1.25  // remove ground
+			//&& raw_cloud->at(i).z < -0.5  // remove tree tops
+		)
 			cloud->push_back(raw_cloud->at(i));
 	}
 
@@ -138,8 +141,8 @@ main(int argc, char **argv)
         dataset.load_pointcloud(indices[i].first, target, dataset.data[indices[i].first].v, dataset.data[indices[i].first].phi);
         dataset.load_pointcloud(indices[i].second, source, dataset.data[indices[i].second].v, dataset.data[indices[i].second].phi);
 
-        //target = filter_pointcloud(target);
-        //source = filter_pointcloud(source);
+        target = filter_pointcloud(target);
+        source = filter_pointcloud(source);
 
 	    Pose2d pose_target = dataset.data[indices[i].first].pose;
 	    Pose2d pose_source = dataset.data[indices[i].second].pose;
@@ -158,15 +161,15 @@ main(int argc, char **argv)
     	pcl::transformPointCloud(*source, *source_moved, guess);
     	pcl::transformPointCloud(*source, *aligned, relative_pose);
 
-        viewer->addPointCloud(source_moved, "source");
+        //viewer->addPointCloud(source_moved, "source");
         viewer->addPointCloud(target, "target");
         viewer->addPointCloud(aligned, "aligned");
 
-        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "source");
+        //viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "source");
         viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "target");
         viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "aligned");
 
-        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "source"); // red
+        //viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "source"); // red
         viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "target"); // green
         viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0, 1, "aligned");  // blue
 

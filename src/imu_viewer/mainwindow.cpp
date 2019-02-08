@@ -53,21 +53,14 @@ MainWindow::MainWindow(QWidget *parent,int w, int h, carmen_xsens_global_quat_me
     QTimer *timerArduino = new QTimer();
     timerArduino->connect(timerArduino, SIGNAL(timeout()),this, SLOT(onTimer_ReadData()));
     timerArduino->start(10);
-	
 }
 
 
-
-
-
-// Desctructor
 MainWindow::~MainWindow()
-{}
+{
+}
 
 
-
-
-// On resize event, the items in the window are resized
 void 
 MainWindow::resizeEvent(QResizeEvent *)
 {
@@ -76,9 +69,6 @@ MainWindow::resizeEvent(QResizeEvent *)
 }
 
 
-
-
-// Timer event : repain the Open Gl window
 void 
 MainWindow::onTimer_UpdateDisplay()
 {
@@ -86,27 +76,24 @@ MainWindow::onTimer_UpdateDisplay()
 	carmen_ipc_sleep(0.033333333);
 }
 
-#define         RATIO_ACC       (4./32767.)
-#define         RATIO_GYRO      ((1000./32767.)*(M_PI/180.))
-//#define         RATIO_GYRO      (1000./32767.)
-#define         RATIO_MAG       (48./32767.)
 
 // Timer event : get raw data from Arduino
 void 
 MainWindow::onTimer_ReadData()
 {
+//	static double pitch = -M_PI;
 
-	   Object_GL->setAcceleromter(data_copy->m_acc.x, data_copy->m_acc.y , data_copy->m_acc.z);
-       Object_GL->setGyroscope(data_copy->m_gyr.x, data_copy->m_gyr.y, data_copy->m_gyr.z);
-       Object_GL->setMagnetometer(data_copy->m_mag.x, data_copy->m_mag.y, data_copy->m_mag.z);
+	Object_GL->setAcceleromter(data_copy->m_acc.x, data_copy->m_acc.y , data_copy->m_acc.z);
+	Object_GL->setGyroscope(data_copy->m_gyr.x, data_copy->m_gyr.y, data_copy->m_gyr.z);
+	Object_GL->setMagnetometer(data_copy->m_mag.x, data_copy->m_mag.y, data_copy->m_mag.z);
 
+//	pose_copy->m_pitch = pitch;
+//	pitch += 0.1;
+//	if (pitch > M_PI)
+//		pitch = -M_PI;
 
-       //std::cout << R31 << "\t" << phi*180./M_PI << "\t" << theta*180./M_PI << "\t" << psi*180./M_PI << std::endl;
-       Object_GL->setAngles(pose_copy->m_roll * 180. / M_PI , pose_copy->m_pitch * 180. / M_PI, pose_copy->m_yaw  * 180. / M_PI);
-       std::cout << "x  " << pose_copy->m_roll* 180. / M_PI <<  "\t" << "y  " << pose_copy->m_pitch*180./M_PI  <<  "\t" << "z  "<<  "\t"
-    		   << pose_copy->m_yaw*180./M_PI << "\t"<< std::endl;
+	Object_GL->setAngles(pose_copy->m_roll * 180. / M_PI , pose_copy->m_pitch * 180. / M_PI, pose_copy->m_yaw  * 180. / M_PI);
 }
-
 
 
 // Open the 'about' dialog box
@@ -115,14 +102,4 @@ MainWindow::handleAbout()
 {
     QMessageBox::information(this,"About OpenGL Frame","<H2>OpenGL Frame</H2>2011<BR>Supported by the Cart-O-Matic project (ANR CAROTTE)<BR>University of Angers (France,Europe)<BR>Designed by Philippe Lucidarme <BR> Contact: philippe.lucidarme@univ-angers.fr. ");
 }
-
-
-// Connect to the serial device (Arduino)
-
-bool 
-MainWindow::connect()
-{
-    return true;
-}
-
 

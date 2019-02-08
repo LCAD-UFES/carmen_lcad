@@ -409,10 +409,10 @@ load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_d
 	}
 	else
 	{
-		add_gps_edges(input_data, optimizer, 0.5, 1e10 * M_PI); //.2, M_PI);
+		add_gps_edges(input_data, optimizer, 0.3, 1e10 * M_PI); //.2, M_PI);
 	}
 	
-	//add_loop_closure_edges(loop_data, optimizer, 0.1, carmen_degrees_to_radians(10.));
+	add_loop_closure_edges(loop_data, optimizer, 0.3, carmen_degrees_to_radians(3.));
     //add_loop_closure_edges(gicp_odom_data, optimizer, 0.5, carmen_degrees_to_radians(3.));
     //add_gps_loop_closures(optimizer, input_data, 1.0, M_PI);
 

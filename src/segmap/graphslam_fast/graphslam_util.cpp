@@ -241,9 +241,9 @@ run_gicp(
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr source_leafed(new pcl::PointCloud<pcl::PointXYZRGB>);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr target_leafed(new pcl::PointCloud<pcl::PointXYZRGB>);
 
-	gicp.setMaximumIterations(20);
+	gicp.setMaximumIterations(200);
 	//gicp.setTransformationEpsilon(1e-5);
-	gicp.setMaxCorrespondenceDistance(200.0);
+	gicp.setMaxCorrespondenceDistance(20.0);
 	//gicp.setRANSACOutlierRejectionThreshold(0.02);
 
 	if (leaf_size > 0.)

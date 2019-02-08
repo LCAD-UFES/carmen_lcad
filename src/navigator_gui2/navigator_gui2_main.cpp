@@ -25,7 +25,8 @@
 #endif
 
 static carmen_robot_config_t	 robot_config;
-static carmen_polygon_config_t		 poly_config;
+static carmen_polygon_config_t		poly_config;
+static carmen_collision_config_t	collision_config;
 static carmen_navigator_config_t nav_config;
 static carmen_navigator_panel_config_t nav_panel_config;
 static carmen_navigator_map_t map_type = CARMEN_NAVIGATOR_MAP_v;
@@ -813,6 +814,8 @@ nav_shutdown(int signo __attribute__ ((unused)))
 {
 	static int done = 0;
 
+	free(poly_config.points);
+	free(collision_config.markers);
 	if (!done)
 	{
 		done = 1;
@@ -843,26 +846,11 @@ handle_ipc(gpointer			*data __attribute__ ((unused)),
 //                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-void
-parse_polygon_file (carmen_polygon_config_t *poly_config, char* poly_file)
-{
-	FILE *poly;
-	poly = fopen(poly_file, "r");
-	fscanf(poly,"%lf\n",&(poly_config->displacement));
-	fscanf(poly,"%d\n",&(poly_config->n_points));
-	poly_config->points = (double*) malloc(poly_config->n_points*2*sizeof(double));
-	for (int i=0; i<poly_config->n_points; i++)
-	{
-		fscanf(poly,"%lf %lf\n",&(poly_config->points[2*i]),&(poly_config->points[2*i+1]));
-	}
-	fclose(poly);
-}
-
 static void
 read_parameters(int argc, char *argv[],
 		carmen_robot_config_t *robot_config,
 		carmen_polygon_config_t *poly_config,
+		carmen_collision_config_t *collision_config,
 		carmen_navigator_config_t *nav_config,
 		carmen_navigator_panel_config_t *navigator_panel_config)
 {
@@ -894,6 +882,7 @@ read_parameters(int argc, char *argv[],
 		{(char *) "navigator_panel", (char *) "show_dynamic_objects",	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_dynamic_objects),	1, NULL},
 		{(char *) "navigator_panel", (char *) "show_annotations",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_annotations),	1, NULL},
 		{(char *) "navigator_panel", (char *) "show_lane_markings",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_lane_markings),	1, NULL},
+		{(char *) "navigator_panel", (char *) "show_collision_range",	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_collision_range),	1, NULL},
 		{(char *) "navigator_panel", (char *) "use_ackerman",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->use_ackerman),		1, NULL},
 		{(char *) "navigator_panel", (char *) "localize_std_x",			CARMEN_PARAM_DOUBLE, &localize_std.x,								1, NULL},
 		{(char *) "navigator_panel", (char *) "localize_std_y",			CARMEN_PARAM_DOUBLE, &localize_std.y,								1, NULL},
@@ -903,13 +892,13 @@ read_parameters(int argc, char *argv[],
 	};
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
-
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
 	localize_std.theta = carmen_degrees_to_radians(localize_std.theta);
 	robot_config->rectangular = 1;
 
-	char* poly_file;
+	char *poly_file = (char*) "ford_escape/ford_escape_poly.txt";
+	char *collision_file = (char*) "ford_escape/ford_escape_col.txt";
 
 	carmen_param_t param_ackerman_list[] =
 	{
@@ -917,14 +906,17 @@ read_parameters(int argc, char *argv[],
 //		{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &(car_config->distance_between_rear_car_and_rear_wheels),	 1, NULL},
 //		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels",	CARMEN_PARAM_DOUBLE, &(car_config->distance_between_front_car_and_front_wheels),	 1, NULL},
 //		{(char *) "robot", (char *) "distance_between_rear_wheels",					CARMEN_PARAM_DOUBLE, &(car_config->distance_between_rear_wheels),				 1, NULL}
-		{(char *) "robot", (char *) "polygon_file",CARMEN_PARAM_STRING, &(poly_file), 1, NULL}
+		{(char *) "robot", (char *) "polygon_file",CARMEN_PARAM_STRING, &(poly_file), 0, NULL},
+		{(char *) "robot", (char *) "collision_file", CARMEN_PARAM_STRING, &(collision_file), 0, NULL},
 	};
 
+	carmen_param_allow_unfound_variables(1);
 	num_items = sizeof(param_ackerman_list) / sizeof(param_ackerman_list[0]);
-
 	carmen_param_install_params(argc, argv, param_ackerman_list, num_items);
+	carmen_param_allow_unfound_variables(0);
 
-	parse_polygon_file(poly_config, poly_file);
+	carmen_parse_polygon_file(poly_config, poly_file);
+	carmen_parse_collision_file(collision_config, collision_file);
 
 	carmen_param_t param_cmd_list[] =
 	{
@@ -1013,7 +1005,7 @@ void
 init_navigator_gui_variables(int argc, char* argv[])
 {
 	carmen_localize_ackerman_globalpos_message globalpos;
-	gui->navigator_graphics_initialize(argc, argv, &globalpos, &robot_config, &poly_config, &nav_config, &nav_panel_config);
+	gui->navigator_graphics_initialize(argc, argv, &globalpos, &robot_config, &poly_config, &collision_config, &nav_config, &nav_panel_config);
 
 	carmen_graphics_update_ipc_callbacks((GdkInputFunction) (handle_ipc));
 
@@ -1039,7 +1031,7 @@ main(int argc, char *argv[])
 	carmen_param_check_version(argv[0]);
 	signal(SIGINT, nav_shutdown);
 
-	read_parameters(argc, argv, &robot_config, &poly_config, &nav_config, &nav_panel_config);
+	read_parameters(argc, argv, &robot_config, &poly_config, &collision_config, &nav_config, &nav_panel_config);
 	carmen_grid_mapping_init_parameters(0.2, 150);
 
 	// Esta incializacao evita que o valgrind reclame de varias variaveis nao inicializadas
