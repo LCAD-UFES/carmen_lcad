@@ -35,7 +35,48 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
  $ sudo raspi-config
 ```
 
-# Install Dependencies and Download the pi_imu file from git
+
+# How to Enable i2c on the Raspberry Pi
+
+```bash
+$ sudo nano /etc/modprobe.d/raspi-blacklist.conf
+
+Place a hash '#' in front of blacklist i2c-bcm2708
+If the above file is blank or doesn't exist, then skip the above step
+
+
+$ sudo nano /etc/modules
+Add these two lines;
+
+i2c-dev
+i2c-bcm2708
+
+$ sudo nano /boot/config.txt
+
+Add these two lines to the bottom of the file:
+dtparam=i2c_arm=on
+dtparam=i2c1=on
+
+$ sudo reboot
+
+Once your Raspberry Pi reboots, you can check for any components connected to the i2c bus by using i2cdetect;
+
+$ sudo /usr/sbin/i2cdetect -y 1
+
+A table like the table below will be shown and if any divices are connected, thier address will be shown. 
+Below you can see that a device is connected to the i2c bus which is using the address of 0x6b.
+
+0 1 2 3 4 5 6 7 8 9 a b c d e f
+00: -- -- -- -- -- -- -- -- -- -- -- -- --
+10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+40: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+60: -- -- -- -- -- -- -- -- -- -- -- 6b -- -- -- --
+70: -- -- -- -- -- -- -- --
+```
+# Install Dependencies anf Download the pi_imu file from git
 
 ```bash
  $ sudo apt-get update
@@ -44,13 +85,20 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
  $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/pi_imu
 ```
 
-
 # Compile and executing the pi_imu drive module on the Raspberry PI
 
 ```bash
  $ cd pi_imu/RTIMULib2-master/Linux/RTIMULibDrive
  $ make
  $ ./Output/RTIMULibDrive 
+```
+
+# testing the pi_imu drive module on the Raspberry PI
+
+```bash
+ $ cd pi_imu/RTIMULib2-master/Linux/RTIMULibDrive
+ $ make test
+ $ ./Output/RTIMULibDrive_test 
 ```
 
 # Compile the pi_imu client drive module on your computer

@@ -108,15 +108,47 @@ OBJECTS = objects/RTIMULibDrive.o \
     objects/RTPressureMS5611.o \
     objects/RTPressureMS5637.o 
 
+OBJECTS_TEST = objects/RTIMULibDrive_test.o \
+    objects/RTMath.o \
+    objects/RTIMUHal.o \
+    objects/RTFusion.o \
+    objects/RTFusionKalman4.o \
+    objects/RTFusionRTQF.o \
+    objects/RTIMUSettings.o \
+    objects/RTIMUAccelCal.o \
+    objects/RTIMUMagCal.o \
+    objects/RTIMU.o \
+    objects/RTIMUNull.o \
+    objects/RTIMUMPU9150.o \
+    objects/RTIMUMPU9250.o \
+    objects/RTIMUGD20HM303D.o \
+    objects/RTIMUGD20M303DLHC.o \
+    objects/RTIMUGD20HM303DLHC.o \
+    objects/RTIMULSM9DS0.o \
+    objects/RTIMULSM9DS1.o \
+    objects/RTIMUBMX055.o \
+    objects/RTIMUBNO055.o \
+    objects/RTPressure.o \
+    objects/RTPressureBMP180.o \
+    objects/RTPressureLPS25H.o \
+    objects/RTPressureMS5611.o \
+    objects/RTPressureMS5637.o 
+
 MAKE_TARGET	= RTIMULibDrive
+MAKE_TARGET_TEST        = RTIMULibDrive_test
 DESTDIR		= Output/
 TARGET		= Output/$(MAKE_TARGET)
-
+TARGET_TEST      = Output/$(MAKE_TARGET_TEST)
 # Build rules
 
 $(TARGET): $(OBJECTS)
 	@$(CHK_DIR_EXISTS) Output/ || $(MKDIR) Output/
 	$(LINK) $(LFLAGS) -o $(TARGET) $(OBJECTS) $(LIBS)
+
+test: $(OBJECTS_TEST)
+	@$(CHK_DIR_EXISTS) Output/ || $(MKDIR) Output/
+	$(LINK) $(LFLAGS) -o $(TARGET_TEST) $(OBJECTS_TEST) $(LIBS)
+
 
 clean:
 	-$(DEL_FILE) $(OBJECTS)
@@ -135,6 +167,10 @@ $(OBJECTS_DIR)%.o : $(RTIMULIBPATH)/IMUDrivers/%.cpp $(DEPS)
 $(OBJECTS_DIR)RTIMULibDrive.o : RTIMULibDrive.cpp $(DEPS)
 	@$(CHK_DIR_EXISTS) objects/ || $(MKDIR) objects/
 	$(CXX) -c -o $@ RTIMULibDrive.cpp $(CFLAGS) $(INCPATH)
+
+$(OBJECTS_DIR)RTIMULibDrive_test.o : RTIMULibDrive.cpp $(DEPS)
+	@$(CHK_DIR_EXISTS) objects/ || $(MKDIR) objects/
+	$(CXX) -c -o $@ RTIMULibDrive_test.cpp $(CFLAGS) $(INCPATH)
 
 # Install
 
