@@ -210,7 +210,7 @@ DatasetCarmen::_segment_lane_marks(Mat &m, int i)
 			r = bgr_img.data[3 * (i * bgr_img.cols + j) + 2];
 			gray = (b + g + r) / 3;
 
-			if (gray > 60)
+			if (gray > 40)
 			{
 				m.data[3 * (i * m.cols + j)] = 20;
 				m.data[3 * (i * m.cols + j) + 1] = 20;
@@ -243,7 +243,7 @@ DatasetCarmen::load_image(int i)
 	if (_use_segmented)
 	{
 		int height = (int) (0.75 * raw_img.cols);
-		resized = Mat::ones(height, raw_img.cols, CV_8UC3) * 20;
+		resized = Mat::ones(height, raw_img.cols, CV_8UC3) * 19;
 		int top_limit = (50. / 480.) * height;
 		int bottom_limit = height - (110. / 480.) * height;
 		raw_img.copyTo(resized(Rect(0, top_limit, raw_img.cols, bottom_limit - top_limit)));
