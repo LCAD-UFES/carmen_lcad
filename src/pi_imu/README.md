@@ -32,10 +32,9 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
 - Não execute upgrade
 
 ```bash
- $ sudo apt-get update
- $ sudo apt-get install i2c-tools libi2c-dev python-smbus
  $ sudo raspi-config
 ```
+
 
 # How to Enable i2c on the Raspberry Pi
 
@@ -80,11 +79,11 @@ Below you can see that a device is connected to the i2c bus which is using the a
 # Install Dependencies anf Download the pi_imu file from git
 
 ```bash
+ $ sudo apt-get update
+ $ sudo apt-get install i2c-tools libi2c-dev python-smbus
  $ sudo apt-get install subversion
  $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/pi_imu
 ```
-
-
 
 # Compile and executing the pi_imu drive module on the Raspberry PI
 

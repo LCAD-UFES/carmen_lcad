@@ -82,11 +82,10 @@ ObjectOpenGL::paintGL(  )
     glScalef(1,-1,1);
 
     // Draw the frame
-//    Draw_Frame();
+    // Draw_Frame();
 
     // Start display of the items
     glPushMatrix();                                             // The following properties are only for the object
-
 
 
     // Zoom according to the view's parameters
@@ -97,9 +96,9 @@ ObjectOpenGL::paintGL(  )
 
     glLineWidth(5.0);
 
-#define RAW_ACC
-#define RAW_GYRO
-#define RAW_MAG
+//#define RAW_ACC
+//#define RAW_GYRO
+//#define RAW_MAG
 
 #ifdef RAW_ACC
     // Accelerometer
@@ -219,8 +218,8 @@ ObjectOpenGL::Draw_Box()
     glVertex3d(0.8   ,-0.5     ,0.2);
     glEnd();
 
-    qglColor(QColor::fromRgb(255,255,255,255));
-    glPointSize(10.0);
+//    qglColor(QColor::fromRgb(255,255,255,255));
+//    glPointSize(10.0);
 
     glBegin(GL_POINTS);
     glVertex3d(-0.8 ,-0.5   ,-0.2);

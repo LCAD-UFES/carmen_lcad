@@ -415,7 +415,11 @@ CarmenSim::hit_obstacle()
 	mess.size = mess.config.x_size * mess.config.y_size;
 
 	int hit = trajectory_pose_hit_obstacle(tpose,
-		&mess, &_collision_config);
+		_robot_ackerman_config.obstacle_avoider_obstacles_safe_distance,
+		&mess, &_robot_ackerman_config);
+
+//	int hit = trajectory_pose_hit_obstacle_new(tpose,
+//		&mess, &_robot_ackerman_config);
 
 	return (hit == 1);
 }
@@ -665,8 +669,6 @@ CarmenSim::_load_params()
 
 	_use_velocity_nn = false;
 	_use_phi_nn = false;
-
-	carmen_parse_collision_file(&_collision_config, "ford_escape/ford_escape_col.txt");
 }
 
 

@@ -19,7 +19,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L../car_panel_gui/
 LFLAGS += -L/usr/local/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -lparam_interface -lipc -lglobal -lmap_graphics -lglobal_graphics -lmap_interface -lprob_models \
 		  -lgrid_mapping -lbase_ackerman_interface -lgeometry -lobstacle_avoider_interface \
-		  -ldynamic_object_detector_interface -lmapper_interface \
+		  -ldynamic_object_detector_interface -lmapper_interface -lcollision_detection \
 		  -lsimulator_ackerman_interface -llocalize_ackerman_interface -lnavigator_ackerman_interface \
 		  -lfused_odometry_interface -lmap_io -lrddf_interface -lmap_server_interface -lbehavior_selector_interface \
 		  -lrotation_geometry -lcar_panel -lrobot_ackerman_interface -lparking_assistant_interface \

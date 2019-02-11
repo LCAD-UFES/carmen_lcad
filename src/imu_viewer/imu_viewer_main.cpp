@@ -38,6 +38,27 @@ create_rotation_matrix_from_quaternions_new(carmen_xsens_quat quat)
 }
 
 
+carmen_orientation_3D_t
+get_angles_from_rotation_matrix_new(rotation_matrix *r_matrix)//, carmen_xsens_global_quat_message *xsens_quat_message)
+{
+	carmen_orientation_3D_t angles;
+
+	angles.roll = atan2(r_matrix->matrix[2 + 3*1], r_matrix->matrix[2 + 3*2]);
+	angles.pitch = -asin(r_matrix->matrix[2 + 3*0]);
+	angles.yaw = -atan2(r_matrix->matrix[1 + 3*0], r_matrix->matrix[0 + 3*0]); // O yaw tem que ficar ao contrario por algum sinal trocado codigo adentro (OpenGL?)
+
+//	printf("r %+03.1lf   p %+03.1lf   y %+03.1lf   **  x %+03.1lf   y %+03.1lf   z %+03.1lf\n",
+//			carmen_radians_to_degrees(angles.roll),
+//			carmen_radians_to_degrees(angles.pitch),
+//			carmen_radians_to_degrees(angles.yaw),
+//			xsens_quat_message->m_acc.x,
+//			xsens_quat_message->m_acc.y,
+//			xsens_quat_message->m_acc.z);
+
+	return (angles);
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //																								//
 // Publishers																					//
@@ -72,13 +93,22 @@ xsens_quat_message_handler(carmen_xsens_global_quat_message *xsens_quat_message)
 
 	data->quat_data = xsens_quat_message->quat_data;
 
-	rotation_matrix* r_mat = create_rotation_matrix_from_quaternions_new(data->quat_data);
-		carmen_orientation_3D_t euler_angles = get_angles_from_rotation_matrix(r_mat);
-		destroy_rotation_matrix(r_mat);
+	rotation_matrix *r_mat = create_rotation_matrix_from_quaternions_new(data->quat_data);
+	carmen_orientation_3D_t euler_angles = get_angles_from_rotation_matrix_new(r_mat);//, xsens_quat_message);
+	destroy_rotation_matrix(r_mat);
 
 	data_pose->m_roll = euler_angles.roll;
-	data_pose->m_pitch= euler_angles.pitch;
+	data_pose->m_pitch = euler_angles.pitch;
 	data_pose->m_yaw = euler_angles.yaw;
+}
+
+
+void
+xsens_global_euler_message_handler(carmen_xsens_global_euler_message *xsens_global_euler_message)
+{
+	data_pose->m_roll = carmen_degrees_to_radians(xsens_global_euler_message->euler_data.m_roll);
+	data_pose->m_pitch = carmen_degrees_to_radians(xsens_global_euler_message->euler_data.m_pitch);
+	data_pose->m_yaw = carmen_degrees_to_radians(xsens_global_euler_message->euler_data.m_yaw);
 }
 
 
@@ -117,6 +147,8 @@ main(int argc, char *argv[])
 
 	carmen_xsens_subscribe_xsens_global_quat_message(NULL,
 			(carmen_handler_t) xsens_quat_message_handler, CARMEN_SUBSCRIBE_LATEST);
+//	carmen_xsens_subscribe_xsens_global_euler_message(NULL,
+//			(carmen_handler_t) xsens_global_euler_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	QApplication a(argc, argv);
     MainWindow w(0,800,600, data, data_pose);

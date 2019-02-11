@@ -17,6 +17,7 @@
 #include <carmen/map_graphics.h>
 #include <carmen/grid_mapping.h>
 #include <carmen/rddf_interface.h>
+#include <carmen/collision_detection.h>
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>
 #include <gdk/gdkx.h>
@@ -61,6 +62,12 @@ typedef enum
 	SELECTING_NEAR_WAYPOINT,
 	EDITING_NEAR_RDDF
 } placement_t;
+
+typedef struct {
+	int n_points;
+	double *points;
+	double displacement;
+} carmen_polygon_config_t;
 
 typedef struct points
 {

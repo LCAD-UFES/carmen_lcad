@@ -35,7 +35,7 @@ PUBLIC_BINARIES = imu_viewer
 TARGETS = imu_viewer
 
 # Este modulo eh compilado pelo qmake. Veja o arquivo mpu9250-opengl.pro
-imu_viewer: 
+imu_viewer: *.cpp
 	$(QMAKE) -spec linux-g++-64 -o Makefile.qmake mpu9250-opengl.pro
 	make -f Makefile.qmake
 	

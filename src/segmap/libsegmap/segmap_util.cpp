@@ -29,10 +29,7 @@ segmented_image_view(Mat &m)
 			int cl = m.data[3 * (i * m.cols + j)];
 			Scalar color;
 
-			if (cl < 20)
-				color = color_map.color(cl);
-			else
-				color = Scalar(0, 0, 0);
+			color = color_map.color(cl);
 
 			view.data[3 * (i * view.cols + j)] = color[2];
 			view.data[3 * (i * view.cols + j) + 1] = color[1];
