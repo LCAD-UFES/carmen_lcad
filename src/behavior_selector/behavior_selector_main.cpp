@@ -308,15 +308,16 @@ red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_ph
 {
 	static double last_red_timestamp = 0.0;
 
+	carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.5);
+
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-				&current_robot_pose_v_and_phi, false);
+				&displaced_robot_pose, false);
 
 	if (nearest_velocity_related_annotation == NULL)
 		return (false);
 
 	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
-	carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
 
 	carmen_annotation_t *nearest_traffic_light_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT,
 			last_rddf_annotation_message, &displaced_robot_pose);
@@ -530,8 +531,9 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 			(clearing_annotation ||
 			 (((distance_to_annotation < distance_to_act_on_annotation) ||
 			   (distance_to_annotation < distance_to_goal)) && annotation_ahead) ||
-			   ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
-				((goal_type == ANNOTATION_GOAL2) || (goal_type == ANNOTATION_GOAL2)))))
+			   (((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) ||
+			     (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP))&&
+				(goal_type == ANNOTATION_GOAL2))))
 		{
 			if (!clearing_annotation)
 				previous_annotation_point = nearest_velocity_related_annotation->annotation_point;
@@ -541,8 +543,9 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 					get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation, distance_to_goal, distance_to_annotation),
 					goal->v);
 
-			if (((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
-					((goal_type == ANNOTATION_GOAL2) || (goal_type == ANNOTATION_GOAL2))))
+			if ((((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) ||
+				  (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP)) &&
+				 (goal_type == ANNOTATION_GOAL2)))
 				goal->v = get_velocity_at_next_annotation(nearest_velocity_related_annotation, *current_robot_pose_v_and_phi,
 						timestamp);
 		}
