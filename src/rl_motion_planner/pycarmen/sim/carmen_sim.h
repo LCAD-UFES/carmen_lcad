@@ -72,7 +72,6 @@ private:
 	carmen_prob_models_distance_map _obstacle_distance_map;
 
 	carmen_robot_ackerman_config_t _robot_ackerman_config;
-	carmen_collision_config_t _collision_config;
 	carmen_simulator_ackerman_config_t _simulator_config;
 	double _car_length, _car_width;
 

@@ -34,8 +34,6 @@ static int log_mode = 0;
 
 static double last_behaviour_selector_compact_lane_contents_message_timestamp = 0.0;
 
-static carmen_collision_config_t collision_config;
-
 //static void
 //consume_motion_command_time(int motion_command_vetor)
 //{
@@ -165,7 +163,7 @@ obstacle_avoider_timer_handler()
 //	consume_motion_command_time(motion_command_vetor);
 
 	if (ackerman_collision_avoidance)
-		robot_hit_obstacle |= obstacle_avoider(motion_commands_vector[motion_command_vetor], num_motion_commands_in_vector[motion_command_vetor], &carmen_robot_ackerman_config, &collision_config);
+		robot_hit_obstacle |= obstacle_avoider(motion_commands_vector[motion_command_vetor], num_motion_commands_in_vector[motion_command_vetor], &carmen_robot_ackerman_config);
 
 	if (num_motion_commands_in_vector[motion_command_vetor] > 0)
 	{
@@ -398,8 +396,6 @@ shutdown_obstacle_avoider(int signo __attribute__ ((unused)))
 	publish_base_ackerman_motion_command_message_to_stop_robot();
 	carmen_ipc_disconnect();
 
-	free(collision_config.markers);
-
 	exit(0);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -478,18 +474,18 @@ read_parameters(int argc, char **argv)
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
-	char* collision_file = (char*) "ford_escape/ford_escape_col.txt";
-	carmen_param_t opt_param_list[] =
-	{
-			{"robot", "collision_file", CARMEN_PARAM_STRING, &collision_file, 1, NULL},
-	};
-
-	carmen_param_allow_unfound_variables(1);
-	num_items = sizeof(param_list)/sizeof(param_list[0]);
-	carmen_param_install_params(argc, argv, opt_param_list, num_items);
-	carmen_param_allow_unfound_variables(1);
-
-	carmen_parse_collision_file(&collision_config, collision_file);
+//	char* collision_file = (char*) "ford_escape/ford_escape_col.txt";
+//	carmen_param_t opt_param_list[] =
+//	{
+//		{"robot", "collision_file", CARMEN_PARAM_STRING, &collision_file, 1, NULL},
+//	};
+//
+//	carmen_param_allow_unfound_variables(1);
+//	num_items = sizeof(opt_param_list)/sizeof(opt_param_list[0]);
+//	carmen_param_install_params(argc, argv, opt_param_list, num_items);
+//	carmen_param_allow_unfound_variables(0);
+//
+//	carmen_parse_collision_file(&carmen_robot_ackerman_config, collision_file);
 
 	return 0;
 }

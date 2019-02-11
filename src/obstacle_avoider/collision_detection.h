@@ -33,6 +33,20 @@ typedef struct _carmen_uniform_collision_grid
 	carmen_oriented_bounding_box *objects;
 } carmen_uniform_collision_grid;
 
+typedef struct
+{
+	double 	x;
+	double 	y;
+	double 	radius;
+	int 	level;
+} carmen_collision_marker_t;
+
+typedef struct
+{
+	int n_markers;
+	carmen_collision_marker_t* markers;
+} carmen_collision_config_t;
+
 double compute_collision_obb_obb(const carmen_oriented_bounding_box carmen_oriented_bounding_box1,
 								 const carmen_oriented_bounding_box carmen_oriented_bounding_box2);
 
@@ -59,17 +73,26 @@ double carmen_obstacle_avoider_get_maximum_occupancy_of_map_cells_hit_by_robot_b
 		double car_length, double car_width, double distance_between_rear_car_and_rear_wheels);
 
 int pose_hit_obstacle(carmen_point_t pose, carmen_map_t *map, carmen_robot_ackerman_config_t *car_config);
+
 int obstacle_avoider_pose_hit_obstacle(carmen_point_t pose, carmen_map_t *map, carmen_robot_ackerman_config_t *car_config);
+
 int pose_hit_obstacle_ultrasonic(carmen_point_t pose, carmen_map_t *map, carmen_robot_ackerman_config_t *car_config);
-int trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, carmen_obstacle_distance_mapper_map_message *distance_map,
-		carmen_collision_config_t *collision_config);
-int trajectory_pose_hit_obstacle_old(carmen_ackerman_traj_point_t trajectory_pose, double circle_radius,
+
+//int trajectory_pose_hit_obstacle_new(carmen_ackerman_traj_point_t trajectory_pose, carmen_obstacle_distance_mapper_map_message *distance_map,
+//		carmen_robot_ackerman_config_t* robot_config);
+
+int trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, double circle_radius,
 		carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config);
+
 double
 road_velocity_percentual(carmen_point_t pose, carmen_map_t *map, carmen_robot_ackerman_config_t *car_config);
 
 carmen_point_t
 carmen_collision_detection_move_path_point_to_world_coordinates(const carmen_point_t point, carmen_point_t *localizer_pose, double displacement);
+
+//double
+//carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles_new(carmen_point_t *localizer_pose, carmen_point_t point_to_check,
+//		carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config);
 
 double
 carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t *localizer_pose, carmen_point_t point_to_check,
@@ -82,15 +105,15 @@ carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *g
 carmen_point_t
 carmen_collision_detection_displace_car_pose_according_to_car_orientation(carmen_ackerman_traj_point_t *car_pose, double displacement);
 
-carmen_point_t
-carmen_collision_detection_pose_according_to_car_orientation(carmen_ackerman_traj_point_t *car_pose, double x, double y);
-
 carmen_position_t
 carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(carmen_point_t *global_point, carmen_obstacle_distance_mapper_map_message *distance_map);
 
 double
 carmen_obstacle_avoider_compute_closest_car_distance_to_colliding_point(carmen_ackerman_traj_point_t *car_pose, carmen_position_t point_to_check,
 		carmen_robot_ackerman_config_t robot_config, double circle_radius);
+
+void
+carmen_parse_collision_file(carmen_collision_config_t* robot_config, char* collision_file);
 
 #ifdef __cplusplus
 }
