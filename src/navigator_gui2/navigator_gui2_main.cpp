@@ -846,6 +846,22 @@ handle_ipc(gpointer			*data __attribute__ ((unused)),
 //                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+void
+carmen_parse_polygon_file (carmen_polygon_config_t *poly_config, char* poly_file)
+{
+	FILE *poly;
+	poly = fopen(poly_file, "r");
+	fscanf(poly,"%lf\n",&(poly_config->displacement));
+	fscanf(poly,"%d\n",&(poly_config->n_points));
+	poly_config->points = (double*) malloc(poly_config->n_points*2*sizeof(double));
+	int i;
+	for (i=0; i<poly_config->n_points; i++)
+	{
+		fscanf(poly,"%lf %lf\n",&(poly_config->points[2*i]),&(poly_config->points[2*i+1]));
+	}
+	fclose(poly);
+}
+
 static void
 read_parameters(int argc, char *argv[],
 		carmen_robot_config_t *robot_config,
