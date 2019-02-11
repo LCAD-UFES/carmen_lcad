@@ -1,14 +1,14 @@
 #!/bin/bash
 
 DEFAULT_DIRS="\$CARMEN_HOME/src  \$CARMEN_HOME/sharedlib  \$CARMEN_HOME/bin  \$CARMEN_HOME/data/gui"
-DEFAULT_TYPES=".c .cpp .c++ .cc .cxx .C .h .hpp .h++ .hxx .H .py .ini .sh .glade Makefile"
+DEFAULT_TYPES=".c .cpp .c++ .cc .cxx .C .h .hpp .h++ .hxx .H .py .ini .sh .glade Makefile README* readme*"
 RESULT_FILE="GREP.txt"
 
 function display_usage_exit()
 {
 	if [[ "$2" ]]; then echo -e "\n$2\n"; fi
 	echo -e "\nThis script performs recursive grep search of patterns in all files of given directories and types\n"
-	echo -e "Usage: $0  <mandatory patterns>  -any <alternative patterns>  -dirs <directories>  -types <file types>\n"
+	echo -e "Usage: $0  <mandatory patterns>  -a <alternative patterns>  -d <directories>  -t <file types>\n"
 	echo -e "       default dirs:  $DEFAULT_DIRS"
 	echo -e "       default types: $DEFAULT_TYPES\n"
 	exit "$1"
@@ -30,11 +30,11 @@ LIST=MUST
 
 for ARG in "$@"; do
 	if [[ $ARG = -* ]]; then
-		if [[ $ARG = -any ]]; then
+		if [[ $ARG = -any ]] || [[ $ARG = -a ]]; then
 			LIST=ANY
-		elif [[ $ARG = -dirs ]]; then
+		elif [[ $ARG = -dirs ]] || [[ $ARG = -d ]]; then
 			LIST=DIRS
-		elif [[ $ARG = -types ]]; then
+		elif [[ $ARG = -types ]] || [[ $ARG = -t ]]; then
 			LIST=TYPES
 		else
 			display_usage_exit 1 "$ARG: Invalid argument"
