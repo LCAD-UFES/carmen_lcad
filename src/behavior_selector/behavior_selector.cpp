@@ -19,7 +19,6 @@
 #define USE_DATMO_GOAL
 
 static carmen_robot_ackerman_config_t robot_config;
-static carmen_collision_config_t collision_config;
 static double distance_between_waypoints = 5;
 static carmen_ackerman_traj_point_t robot_pose;
 static int robot_initialized = 0;
@@ -130,18 +129,12 @@ add_goal_to_goal_list(int &goal_index, carmen_ackerman_traj_point_t &current_goa
 	goal_index++;
 }
 
-int
-try_avoiding_obstacle(int rddf_pose_index, carmen_rddf_road_profile_message* rddf)
-{
-	int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[rddf_pose_index], current_map, &collision_config);
-
-	return (rddf_pose_hit_obstacle);
-}
 
 int
-try_avoiding_obstacle_old(int rddf_pose_index, double circle_radius, carmen_rddf_road_profile_message* rddf)
+try_avoiding_obstacle(int rddf_pose_index, double circle_radius, carmen_rddf_road_profile_message* rddf)
 {
-	int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle_old(rddf->poses[rddf_pose_index], circle_radius, current_map, &robot_config);
+	//int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle_new(rddf->poses[rddf_pose_index], current_map, &robot_config);
+	int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[rddf_pose_index], circle_radius, current_map, &robot_config);
 
 	return (rddf_pose_hit_obstacle);
 
@@ -190,7 +183,7 @@ get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &
 		carmen_ackerman_traj_point_t current_goal, int current_goal_rddf_index,
 		double timestamp)
 {
-	int rddf_pose_hit_obstacle = try_avoiding_obstacle(rddf_pose_index, rddf);
+	int rddf_pose_hit_obstacle = try_avoiding_obstacle(rddf_pose_index, robot_config.obstacle_avoider_obstacles_safe_distance, rddf);
 
 	moving_object_in_front_index = udatmo_detect_obstacle_index(current_map, rddf, goal_index, rddf_pose_index, robot_pose, timestamp);
 
@@ -675,12 +668,11 @@ distance_between_waypoints_and_goals()
 
 void
 behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_between_waypoints, double change_goal_dist,
-		carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner, carmen_collision_config_t param_collision_config)
+		carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner)
 {
 	udatmo_init(config);
 
 	robot_config = config;
-	collision_config = param_collision_config;
 	distance_between_waypoints = dist_between_waypoints;
 	change_goal_distance = change_goal_dist;
 	parking_planner = p_planner;

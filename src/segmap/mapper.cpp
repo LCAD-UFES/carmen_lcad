@@ -103,14 +103,15 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 		//pose.x = pose.y = 0.;
 		//pose.th = normalize_theta(-pose.th - degrees_to_radians(18));
 		
-		double roll, pitch, yaw;
-		Vector3d euler = dataset.data[i].xsens.toRotationMatrix().eulerAngles(2, 1, 0);
-		yaw = euler[0]; pitch = euler[1]; roll = euler[2];
+		//double roll, pitch, yaw;
+		//Vector3d euler = dataset.data[i].xsens.toRotationMatrix().eulerAngles(2, 1, 0);
+		//yaw = euler[0]; pitch = euler[1]; roll = euler[2];
 
-		printf("roll: %lf pitch: %lf yaw: %lf\n",
-			radians_to_degrees(roll), radians_to_degrees(pitch), radians_to_degrees(yaw));
+		//printf("roll: %lf pitch: %lf yaw: %lf\n",
+			//radians_to_degrees(roll), radians_to_degrees(pitch), radians_to_degrees(yaw));
 
-		Matrix<double, 4, 4> mat = pose6d_to_matrix(pose.x, pose.y, 0., roll, pitch, pose.th);
+		//Matrix<double, 4, 4> mat = pose6d_to_matrix(pose.x, pose.y, 0., roll, pitch, pose.th);
+		Matrix<double, 4, 4> mat = pose6d_to_matrix(pose.x, pose.y, 0, 0, 0, pose.th);
 		pcl::transformPointCloud(*cloud, *transformed_cloud, mat);
 
 		map.reload(pose.x, pose.y);

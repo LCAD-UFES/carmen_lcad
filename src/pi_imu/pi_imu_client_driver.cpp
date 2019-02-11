@@ -41,15 +41,13 @@ stablished_connection_with_server()
 	host_info.ai_family = AF_UNSPEC;     // IP version not specified. Can be both.
 	host_info.ai_socktype = SOCK_STREAM; // Use SOCK_STREAM for TCP or SOCK_DGRAM for UDP.
 
-	status = getaddrinfo("10.42.0.28", PORT, &host_info, &host_info_list);
+	status = getaddrinfo("192.168.0.15", PORT, &host_info, &host_info_list);
 
 	if (status != 0)
 	{
-
 		printf("--- Get_Addrinfo ERROR! ---\n");
 		return (-1);
 	}
-
 	status = connect(pi_socket, host_info_list->ai_addr, host_info_list->ai_addrlen);
 
 	if(status < 0)

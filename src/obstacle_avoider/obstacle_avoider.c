@@ -268,7 +268,7 @@ velocity_recalculate(carmen_ackerman_motion_command_t *motion_commands_vector, i
 
 
 int
-obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int num_motion_commands, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, carmen_collision_config_t * collision_config)
+obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int num_motion_commands, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config)
 {
 //	int map_index = current_map;
 	int pose_index = current_pose;
@@ -288,8 +288,8 @@ obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int n
 //				if (obstacle_avoider_pose_hit_obstacle(to_carmen_point_t(&(trajectory_vector_of_points[i])), map_vector[map_index], carmen_robot_ackerman_config))
 //				trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, double circle_radius,
 //						carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
-				if (trajectory_pose_hit_obstacle(trajectory_vector_of_points[i],
-						obstacle_distance_map, collision_config))
+				if (trajectory_pose_hit_obstacle(trajectory_vector_of_points[i], carmen_robot_ackerman_config->obstacle_avoider_obstacles_safe_distance,
+						obstacle_distance_map, carmen_robot_ackerman_config))
 				{
 					if (identify_unstoppable_colision(motion_commands_vector[0].time * num_motion_commands, motion_commands_vector[0].v, carmen_robot_ackerman_config))
 					{

@@ -261,7 +261,6 @@ typedef struct {
 	double distance_between_front_car_and_front_wheels;
 } carmen_car_config_t;
 
-
 typedef struct {
 	double max_phi;
 	double max_v;
@@ -294,26 +293,6 @@ typedef struct {
 	double behaviour_selector_lateral_lane_obstacles_safe_distance;
 	double behaviour_selector_lateral_lane_displacement;
 } carmen_robot_ackerman_config_t;
-
-typedef struct {
-	int n_points;
-	double *points;
-	double displacement;
-} carmen_polygon_config_t;
-
-typedef struct
-{
-	double 	x;
-	double 	y;
-	double 	radius;
-	int 	level;
-} carmen_collision_marker_t;
-
-typedef struct
-{
-	int n_markers;
-	carmen_collision_marker_t* markers;
-} carmen_collision_config_t;
 
 typedef struct {
     double x;
@@ -716,12 +695,6 @@ carmen_line_to_point_crossed_rectangle(carmen_position_t *intersection, carmen_p
 
 int
 carmen_line_to_line_intersection(carmen_position_t *I0, carmen_position_t s1_p0, carmen_position_t s1_p1, carmen_position_t s2_p0, carmen_position_t s2_p1);
-
-void
-carmen_parse_polygon_file (carmen_polygon_config_t *poly_config, char* poly_file);
-
-void
-carmen_parse_collision_file(carmen_collision_config_t* collision_list, char* collision_file);
 
 extern carmen_inline char *carmen_next_word(char *str)
 {
