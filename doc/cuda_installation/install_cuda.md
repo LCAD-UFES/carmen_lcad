@@ -3,11 +3,11 @@ IMPORTANTE: O instalador da zed requer CUDA 9.1, enquanto o tensorflow requer CU
 ### Instalar o driver de placa de vídeo do fabricante
 Em System Settings, acesse Software & Updates.
 
-<img src="https://github.com/gnunesm/carmen_lcad/blob/master/doc/tutorial_cuda/settings_screenshot.png" width="800" title="Imagem de System Settings">
+<img src="https://github.com/LCAD-UFES/carmen_lcad/blob/master/doc/cuda_installation/settings_screenshot.png" width="800" title="Imagem de System Settings">
 
 Acesse a aba Additional drivers, selecione a primeira opção de driver NVIDIA, clique em Apply Changes. Aguarde o fim do processo, quando aparecerá a opção de reiniciar o computador, e o reinicie.
 
-![Imagem de Software & Updates](https://github.com/gnunesm/carmen_lcad/blob/master/doc/tutorial_cuda/additional_drivers_screenshot.png)
+![Imagem de Software & Updates](https://github.com/LCAD-UFES/carmen_lcad/blob/master/doc/cuda_installation/additional_drivers_screenshot.png)
 
 
 ### Instalar o CUDA 9.0
