@@ -36,7 +36,7 @@
 #include <time.h>
 
 
-#define PORT 3457
+#define PORT 3458
 #define SOCKET_DATA_PACKET_SIZE	2048
 
 int server_fd;
