@@ -83,7 +83,7 @@ void GrabData::SeparateMessages()
     bool valid_velocity = false;
 
     // how many lidar odometry measurements with velocity equals to zero
-    int max_zeros = 5;
+    int max_zeros = 2;
 
     // the odometry messages with invalid speed counter
     int zeros = max_zeros;
@@ -112,7 +112,7 @@ void GrabData::SeparateMessages()
         if (nullptr != odom)
         {
             // does it have a valid velocity?
-            valid_velocity = 0.001 < std::fabs(odom->v);
+            valid_velocity = 0.005 < std::fabs(odom->v);
             zeros = valid_velocity ? max_zeros : zeros - 1;
         }
 

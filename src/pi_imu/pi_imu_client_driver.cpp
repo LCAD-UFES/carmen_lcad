@@ -7,7 +7,7 @@
 
 char* tcp_ip_address;
 
-#define PORT "3457"
+#define PORT "3458"
 #define SOCKET_DATA_PACKET_SIZE	2048
 #define G 9.80665
 #define ACCELEROMETER_CONSTANT (4.0 / 32768.0/*2^15*/)
