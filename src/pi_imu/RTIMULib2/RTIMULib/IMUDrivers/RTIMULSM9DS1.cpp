@@ -386,7 +386,7 @@ bool RTIMULSM9DS1::IMURead()
 
     //  sort out accel data;
 
-    m_imuData.accel.setX(-m_imuData.accel.x());
+    m_imuData.accel.setX(m_imuData.accel.x());
     m_imuData.accel.setY(-m_imuData.accel.y());
 
     //  sort out compass axes
