@@ -77,6 +77,16 @@ typedef struct
 #define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME       "carmen_velodyne_variable_scan_message"
 #define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT        "{int, <{int, <short:1>, <byte:1>, double}:1>, double, string}"
 
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE0_NAME       "carmen_velodyne_variable_scan_message0"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE1_NAME       "carmen_velodyne_variable_scan_message1"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE2_NAME       "carmen_velodyne_variable_scan_message2"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE3_NAME       "carmen_velodyne_variable_scan_message3"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE4_NAME       "carmen_velodyne_variable_scan_message4"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE5_NAME       "carmen_velodyne_variable_scan_message5"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE6_NAME       "carmen_velodyne_variable_scan_message6"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE7_NAME       "carmen_velodyne_variable_scan_message7"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE8_NAME       "carmen_velodyne_variable_scan_message8"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE9_NAME       "carmen_velodyne_variable_scan_message9"
 
 #ifdef __cplusplus
 }

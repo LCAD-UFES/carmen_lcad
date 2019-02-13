@@ -7,6 +7,7 @@
 #include <carmen/moving_objects_messages.h>
 #include <carmen/moving_objects_interface.h>
 #include <carmen/velodyne_interface.h>
+#include <carmen/velodyne_transforms.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/collision_detection.h>

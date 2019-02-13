@@ -665,13 +665,13 @@ align_hipotheses_poses(virtual_scan_track_t *track)
 		for (int i = 0; i < track->size - 2; i++)
 		{
 			double delta_t1 = track->box_model_hypothesis[i + 1].hypothesis_points.precise_timestamp - track->box_model_hypothesis[i].hypothesis_points.precise_timestamp;
-			double delta_t2 = track->box_model_hypothesis[i + 2].hypothesis_points.precise_timestamp - track->box_model_hypothesis[i + 1].hypothesis_points.precise_timestamp;
+//			double delta_t2 = track->box_model_hypothesis[i + 2].hypothesis_points.precise_timestamp - track->box_model_hypothesis[i + 1].hypothesis_points.precise_timestamp;
 			if ((fabs(delta_t1) > 0.035))// && (fabs(delta_t2) > 0.01))
 			{
-				double v1 = DIST2D(track->box_model_hypothesis[i + 1].hypothesis, track->box_model_hypothesis[i].hypothesis) / delta_t1;
-				double v2 = DIST2D(track->box_model_hypothesis[i + 2].hypothesis, track->box_model_hypothesis[i + 1].hypothesis) / delta_t2;
-				double v = (v2 + v1) / 2.0;
-				double distance = v * delta_t1;
+//				double v1 = DIST2D(track->box_model_hypothesis[i + 1].hypothesis, track->box_model_hypothesis[i].hypothesis) / delta_t1;
+//				double v2 = DIST2D(track->box_model_hypothesis[i + 2].hypothesis, track->box_model_hypothesis[i + 1].hypothesis) / delta_t2;
+//				double v = (v2 + v1) / 2.0;
+//				double distance = v * delta_t1;
 				double estimated_theta = atan2(track->box_model_hypothesis[i + 1].hypothesis.y - track->box_model_hypothesis[i].hypothesis.y,
 						track->box_model_hypothesis[i + 1].hypothesis.x - track->box_model_hypothesis[i].hypothesis.x);
 

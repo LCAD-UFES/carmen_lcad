@@ -1,7 +1,8 @@
+
+
+#include <string.h>
 #include <carmen/carmen.h>
-#include <carmen/rotation_geometry.h>
 #include <carmen/velodyne_messages.h>
-#include "tf_helper.h"
 
 int velodyne_vertical_correction_size = 32;
 
@@ -91,6 +92,55 @@ carmen_velodyne_unsubscribe_partial_scan_message(carmen_handler_t handler)
 	carmen_unsubscribe_message((char*) CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_NAME, handler);
 }
 
+
+void
+carmen_velodyne_create_variable_velodyne_message_name(int sensor_id, char message_name[])
+{
+	if (sensor_id == -1)
+		strcpy(message_name, CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME);
+	else
+		sprintf(message_name, "%s%d", CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME, sensor_id);
+}
+
+
+void
+carmen_velodyne_subscribe_variable_scan_message(carmen_velodyne_variable_scan_message *message,
+										 carmen_handler_t handler,
+										 carmen_subscribe_t subscribe_how,
+										 int sensor_id)
+{
+	static char message_name[64];
+	carmen_velodyne_create_variable_velodyne_message_name(sensor_id, message_name);
+	
+	carmen_subscribe_message(message_name,
+			(char*) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT,
+			message, sizeof(carmen_velodyne_variable_scan_message),
+			handler, subscribe_how);
+}
+
+
+void
+carmen_velodyne_unsubscribe_variable_scan_message(carmen_handler_t handler, int sensor_id)
+{
+	static char message_name[64];
+	carmen_velodyne_create_variable_velodyne_message_name(sensor_id, message_name);
+	carmen_unsubscribe_message(message_name, handler);
+}
+
+
+IPC_RETURN_TYPE
+carmen_velodyne_publish_variable_scan_message(carmen_velodyne_variable_scan_message *message, int sensor_id)
+{
+	IPC_RETURN_TYPE err;
+
+	static char message_name[64];
+	carmen_velodyne_create_variable_velodyne_message_name(sensor_id, message_name);
+	err = IPC_publishData(message_name, message);
+	carmen_test_ipc_exit(err, "Could not publish", message_name);
+
+	return err;
+}
+
 void
 carmen_velodyne_subscribe_gps_message(carmen_velodyne_gps_message *message,
 		carmen_handler_t handler,
@@ -101,6 +151,7 @@ carmen_velodyne_subscribe_gps_message(carmen_velodyne_gps_message *message,
 			message, sizeof(carmen_velodyne_gps_message),
 			handler, subscribe_how);
 }
+
 
 void
 carmen_velodyne_unsubscribe_gps_message(carmen_handler_t handler)
@@ -122,27 +173,15 @@ carmen_velodyne_define_messages()
 
 	err = IPC_defineMsg(CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME);
-}
 
+	char message_name[64];
 
-carmen_pose_3D_t
-get_velodyne_pose_in_relation_to_car(int argc, char** argv)
-{		
-	return (get_velodyne_pose_in_relation_to_car_helper(argc, argv));
-}
-
-
-void
-get_world_pose_with_velodyne_offset_initialize(int argc, char **argv)
-{
-	get_world_pose_with_velodyne_offset_initialize_helper(argc, argv);
-}
-
-
-carmen_pose_3D_t
-get_world_pose_with_velodyne_offset(carmen_pose_3D_t world_pose)
-{
-	return (get_world_pose_with_velodyne_offset_helper(world_pose));
+	for (int i = 0; i <= 9; i++)
+	{
+		carmen_velodyne_create_variable_velodyne_message_name(i, message_name);
+		err = IPC_defineMsg(message_name, IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT);
+		carmen_test_ipc_exit(err, "Could not define", message_name);
+	}
 }
 
 
