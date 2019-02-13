@@ -139,8 +139,8 @@ Below you can see that a device is connected to the i2c bus which is using the a
 
  static ip_address=192.168.0.15/24
  static routers=192.168.0.1
- static domain_name_servers=192.168.0.1
-``` 
+ static domain_name_servers=8.8.8.8
+```
 
  To exit the editor, press ctrl+x
  To save your changes press the letter “Y” then hit enter
