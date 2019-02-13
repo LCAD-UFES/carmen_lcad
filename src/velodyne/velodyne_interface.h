@@ -52,6 +52,10 @@ carmen_velodyne_subscribe_gps_message(carmen_velodyne_gps_message *message,
 void
 carmen_velodyne_unsubscribe_gps_message(carmen_handler_t handler);
 
+IPC_RETURN_TYPE
+carmen_velodyne_publish_gps_message(carmen_velodyne_gps_message *message);
+
+
 void
 carmen_velodyne_define_messages();
 

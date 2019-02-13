@@ -40,29 +40,6 @@ read_parameters(int argc, char **argv)
 }
 
 
-std::vector<double> make_xyz_lut() 
-{
-    const int n = W * H;
-    std::vector<double> xyz = std::vector<double>(3 * n, 0);
-
-    for (int icol = 0; icol < W; icol++) 
-    {
-        double h_angle_0 = 2.0 * M_PI * icol / W;
-        
-        for (int ipx = 0; ipx < H; ipx++) 
-        {
-            int ind = 3 * (icol * H + ipx);
-            double h_angle = std::sin(ouster64_azimuth_angles[ipx] * 2 * M_PI / 360.0) + h_angle_0;
-            xyz[ind + 0] = std::cos(ouster64_altitude_angles[ipx] * 2 * M_PI / 360.0) * std::cos(h_angle);
-            xyz[ind + 1] = -std::cos(ouster64_altitude_angles[ipx] * 2 * M_PI / 360.0) * std::sin(h_angle);
-            xyz[ind + 2] = std::sin(ouster64_altitude_angles[ipx] * 2 * M_PI / 360.0);
-        }
-    }
-
-    return xyz;
-}
-
-
 void
 variable_scan_handler(carmen_velodyne_variable_scan_message *message)
 {
@@ -70,16 +47,25 @@ variable_scan_handler(carmen_velodyne_variable_scan_message *message)
 
     PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 
-    for (int i = 0; i < message->number_of_shots; i++)
+    for (int i = 0; i < message->number_of_shots; i += 1)
     {
-        for (int j = 0; j < message->partial_scan[i].shot_size; j++)
+        for (int j = 0; j < message->partial_scan[i].shot_size; j += 1)
         {
             double range = message->partial_scan[i].distance[j] / 1000.;
-            double h_angle = std::sin(carmen_degrees_to_radians(ouster64_azimuth_angles[j])) + message->partial_scan[i].angle;
+            // In the original example code from ouster, the horizontal angle was summed with the sin of 
+            // the offset. However, the section in the manual that describes how to convert the sensor readings to cartesian  
+            // coordinates, the angle is summed with the offset without the sin. As the manual's calculations seem more 
+            // correct, I use them.
+            // double h_angle = message->partial_scan[i].angle + std::sin(carmen_degrees_to_radians(ouster64_azimuth_offsets[j]));
+            double h_angle = carmen_normalize_theta(message->partial_scan[i].angle + carmen_degrees_to_radians(ouster64_azimuth_offsets[j]));
             double v_angle = carmen_degrees_to_radians(ouster64_altitude_angles[j]);
 
             pcl::PointXYZRGB point;
 
+            // In the original example code from ouster, they store the values multiplied by the range 
+            // in a lookup table for efficiency. When a point clouds arrives, they only multiply the range by 
+            // the value stored in the lookup table. The lookup table can be created because the horizontal and 
+            // vertical angles are fixed accross readings.
             point.x = range * std::cos(v_angle) * std::cos(h_angle);
             point.y = range * (-std::cos(v_angle) * std::sin(h_angle));
             point.z = range * std::sin(v_angle);
@@ -92,8 +78,48 @@ variable_scan_handler(carmen_velodyne_variable_scan_message *message)
     }
 
     viewer->addPointCloud(cloud, "cloud");
-    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "cloud");
+    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "cloud");
     viewer->spinOnce();
+
+    static int count = 0;
+    double current_time = carmen_get_time();
+    static double time_last_print = 0;
+
+    count++;
+
+    if (current_time - time_last_print > 1.0)
+    {
+        printf("VariableScan message received on %lf. Frequency: %d Hz.\n", 
+            message->timestamp, count
+        );
+
+        count = 0;
+        time_last_print = current_time;
+    }
+}
+
+
+void
+imu_handler(carmen_velodyne_gps_message *message)
+{
+    static int count = 0;
+    static double time_last_print = 0;
+
+    double current_time = carmen_get_time();
+
+    count++;
+
+    if (current_time - time_last_print > 1.0)
+    {
+        printf("IMU message received on %lf. Frequency: %d Hz Acc: %.2lf %.2lf %.2lf Gyro: %.2lf %.2lf %.2lf.\n", 
+            message->timestamp, count,
+            message->accel1_x, message->accel2_x, message->accel3_x,
+            message->gyro1, message->gyro2, message->gyro3
+        );
+
+        count = 0;
+        time_last_print = current_time;
+    }
 }
 
 
@@ -105,9 +131,13 @@ main(int argc, char** argv)
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
 
-    xyz_lookup_table = make_xyz_lut();    
     viewer = new pcl::visualization::PCLVisualizer("CloudViewer");
     viewer->setBackgroundColor(0, 0, 1);
+
+    carmen_velodyne_subscribe_gps_message(NULL, 
+        (carmen_handler_t) imu_handler, 
+        CARMEN_SUBSCRIBE_LATEST
+    );
 
     carmen_velodyne_subscribe_variable_scan_message(NULL, 
         (carmen_handler_t) variable_scan_handler, 
