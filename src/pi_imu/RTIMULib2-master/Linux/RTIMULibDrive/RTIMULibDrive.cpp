@@ -170,8 +170,8 @@ main()
 
 			if ((now - displayTimer) > 100000)
 			{
-				printf("%s\n", RTMath::displayDegrees("", imuData.fusionPose));
-				fflush(stdout);
+//				printf("%s\n", RTMath::displayDegrees("", imuData.fusionPose));
+//				fflush(stdout);
 				displayTimer = now;
 			}
 

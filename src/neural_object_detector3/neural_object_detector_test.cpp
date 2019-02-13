@@ -135,10 +135,10 @@ run_yolo_on_dataset(FILE* image_list, bool show_detections, char *output_dir)
 
 
 void
-initializer()
+initializer(char* argv)
 {
 	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
-	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet/cfg/neural_object_detector_yolo.cfg", (char*) "../../sharedlib/darknet/yolo.weights");
+	network_struct = initialize_YOLO((char*) "/dados/marcelo/darknet2/cfg/yolov3-voc_lane.cfg", (char*) argv);
 
 //	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
 //	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
@@ -173,7 +173,7 @@ main(int argc, char **argv)
 
 	bool show_detections = find_show_arg(argc, argv);
 
-	initializer();
+	initializer(argv[3]);
 
     run_yolo_on_dataset(image_list, show_detections, argv[2]);
 
