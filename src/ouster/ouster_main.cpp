@@ -18,7 +18,9 @@ static char *ouster_hostname = NULL;
 static char *ouster_destination_ip = NULL;
 static int ouster_sensor_id = 0;
 static int ouster_publish_imu = 0;
-
+static double ouster_revolution_frequency = 0;
+static double ouster_horizontal_resolution = 0;
+static int ouster_intensity_type = 0;
 
 /*********************************************************
 		   --- Handlers ---
@@ -140,24 +142,61 @@ build_and_publish_variable_velodyne_message(uint8_t* buf)
         {
             const uint8_t* px_buf = OS1::nth_px(ipx, col_buf);
             uint32_t range = OS1::px_range(px_buf); // in mm
-            //int ind = 3 * (m_id * H + ipx);
+            uint16_t intensity = 0;
+            
+            if (ouster_intensity_type == INTENSITY) 
+                intensity = OS1::px_signal_photons(px_buf);
+            else if (ouster_intensity_type == REFLECTIVITY)
+                intensity = OS1::px_reflectivity(px_buf);
+            else if (ouster_intensity_type == NOISE)
+                intensity = OS1::px_noise_photons(px_buf);
+            else
+                fprintf(stderr, "Warning: Invalid intensity type: %d. Filling intensity with zeros.\n", intensity);
 
-            //double h_angle = std::sin(beam_azimuth_angles.at(ipx) * 2 * M_PI / 360.0) + h_angle_0; // @filipe: ??
-            //double v_angle = carmen_degrees_to_radians(beam_altitude_angles[ipx]);
-
-            // @filipe: the precision of the range and intensity returned by the sensor are higher 
+            // the precision of the range and intensity returned by the sensor are higher 
             // than what it is possible to store in the message.
             message->partial_scan[m_id].distance[ipx] = (unsigned short) range;
-            message->partial_scan[m_id].intensity[ipx] = (unsigned char) OS1::px_signal_photons(px_buf);
+            message->partial_scan[m_id].intensity[ipx] = (unsigned char) intensity;
         }
     }
 }
 
 
 void 
-handle_imu(uint8_t* buf __attribute__((unused))) 
+build_and_publish_imu_message(uint8_t* buf __attribute__((unused))) 
 {
-    // TODO.
+    float acc_x, acc_y, acc_z;
+    float gyro_x, gyro_y, gyro_z;
+
+    // It is possible to acquire the accelerometer timestamp using 'imu_accel_ts(buf)'
+    // and the gyroscope timestamp using 'imu_gyro_ts(buf)'.
+    // uint64_t imu_timestamp;
+    // imu_timestamp = OS1::imu_sys_ts(buf);
+
+    // imu linear acceleration
+    acc_x = OS1::imu_la_x(buf);
+    acc_y = OS1::imu_la_y(buf);
+    acc_z = OS1::imu_la_z(buf);
+
+    // imu angular velocity
+    gyro_x = OS1::imu_av_x(buf);
+    gyro_y = OS1::imu_av_y(buf);
+    gyro_z = OS1::imu_av_z(buf);
+
+    // publish imu message.
+    carmen_velodyne_gps_message imu_message;
+    memset(&imu_message, 0, sizeof(carmen_velodyne_gps_message));
+    
+    imu_message.gyro1 = gyro_x;
+    imu_message.gyro2 = gyro_y;
+    imu_message.gyro3 = gyro_z;
+    imu_message.accel1_x = acc_x;
+    imu_message.accel2_x = acc_y;
+    imu_message.accel3_x = acc_z;
+    imu_message.timestamp = carmen_get_time();
+    imu_message.host = carmen_get_host();
+
+    carmen_velodyne_publish_gps_message(&imu_message);
 }
 
 
@@ -182,6 +221,12 @@ read_parameters(int argc, char **argv)
 			{(char*) "commandline", (char*) "sensor_hostname", CARMEN_PARAM_STRING, &ouster_hostname, 0, NULL},
 			{(char*) "commandline", (char*) "ip_destination_computer", CARMEN_PARAM_STRING, &ouster_destination_ip, 0, NULL},
             {(char*) "commandline", (char*) "sensor_id", CARMEN_PARAM_INT, &ouster_sensor_id, 0, NULL},
+            // 512, 1024, 2048
+            {(char*) "commandline", (char*) "horizontal_resolution", CARMEN_PARAM_INT, &ouster_horizontal_resolution, 0, NULL},
+            // 10, 20
+            {(char*) "commandline", (char*) "revolution_frequency", CARMEN_PARAM_INT, &ouster_revolution_frequency, 0, NULL},
+            // types: [1: 'intensity', 2: 'reflectivity', 3: 'noise']
+            {(char*) "commandline", (char*) "intensity_type", CARMEN_PARAM_INT, &ouster_intensity_type, 0, NULL}, 
 			{(char*) "commandline", (char*) "publish_imu", CARMEN_PARAM_ONOFF, &ouster_publish_imu, 0, NULL},
 	};
 
@@ -205,6 +250,10 @@ main(int argc, char** argv)
 	read_parameters(argc, argv);
 	carmen_velodyne_define_messages();
 
+    fprintf(stderr, "Warning: param 'revolution_frequency' not handled yet. Using frequency of 10.\n");
+    fprintf(stderr, "Warning: param 'horizontal_resolution' not handled yet. Using resolution of 1024\n");
+    fprintf(stderr, "Intensity type: '%s'\n", intensity_type_to_string(ouster_intensity_type));
+
     std::shared_ptr<OS1::client> cli = OS1::init_client(ouster_hostname, ouster_destination_ip);
     
     if (!cli) 
@@ -215,6 +264,7 @@ main(int argc, char** argv)
     else
     {
         std::cerr << "Successfully connected to sensor: " << ouster_hostname << std::endl;
+        std::cerr << "Wait 15-20 seconds to start receiving point clouds." << std::endl;
     }
 
     uint8_t lidar_buf[OS1::lidar_packet_bytes + 1];
@@ -237,7 +287,7 @@ main(int argc, char** argv)
         else if (st & OS1::IMU_DATA) 
         {
             if (OS1::read_imu_packet(*cli, imu_buf)) 
-                handle_imu(imu_buf);
+                build_and_publish_imu_message(imu_buf);
         }
     }
 

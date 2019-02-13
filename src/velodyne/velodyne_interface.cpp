@@ -160,6 +160,18 @@ carmen_velodyne_unsubscribe_gps_message(carmen_handler_t handler)
 }
 
 
+IPC_RETURN_TYPE
+carmen_velodyne_publish_gps_message(carmen_velodyne_gps_message *message)
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_publishData(CARMEN_VELODYNE_GPS_MESSAGE_NAME, message);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_VELODYNE_GPS_MESSAGE_NAME);
+
+	return err;
+}
+
+
 void
 carmen_velodyne_define_messages()
 {
