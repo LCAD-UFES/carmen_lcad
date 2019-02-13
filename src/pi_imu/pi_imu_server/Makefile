@@ -82,7 +82,7 @@ DEPS    = $(RTIMULIBPATH)/RTMath.h \
     $(RTIMULIBPATH)/IMUDrivers/RTPressureMS5611.h \
     $(RTIMULIBPATH)/IMUDrivers/RTPressureMS5637.h 
 
-OBJECTS = objects/RTIMULibDrive.o \
+OBJECTS = objects/pi_imu_server_driver.o \
     objects/RTMath.o \
     objects/RTIMUHal.o \
     objects/RTFusion.o \
@@ -108,7 +108,7 @@ OBJECTS = objects/RTIMULibDrive.o \
     objects/RTPressureMS5611.o \
     objects/RTPressureMS5637.o 
 
-OBJECTS_TEST = objects/RTIMULibDrive_test.o \
+OBJECTS_TEST = objects/pi_imu_test.o \
     objects/RTMath.o \
     objects/RTIMUHal.o \
     objects/RTFusion.o \
@@ -134,8 +134,8 @@ OBJECTS_TEST = objects/RTIMULibDrive_test.o \
     objects/RTPressureMS5611.o \
     objects/RTPressureMS5637.o 
 
-MAKE_TARGET	= RTIMULibDrive
-MAKE_TARGET_TEST        = RTIMULibDrive_test
+MAKE_TARGET	= pi_imu_server_driver
+MAKE_TARGET_TEST        = pi_imu_test
 DESTDIR		= Output/
 TARGET		= Output/$(MAKE_TARGET)
 TARGET_TEST      = Output/$(MAKE_TARGET_TEST)
@@ -164,13 +164,13 @@ $(OBJECTS_DIR)%.o : $(RTIMULIBPATH)/IMUDrivers/%.cpp $(DEPS)
 	@$(CHK_DIR_EXISTS) objects/ || $(MKDIR) objects/
 	$(CXX) -c -o $@ $< $(CFLAGS) $(INCPATH)
 
-$(OBJECTS_DIR)RTIMULibDrive.o : RTIMULibDrive.cpp $(DEPS)
+$(OBJECTS_DIR)pi_imu_server_driver.o : pi_imu_server_driver.cpp $(DEPS)
 	@$(CHK_DIR_EXISTS) objects/ || $(MKDIR) objects/
-	$(CXX) -c -o $@ RTIMULibDrive.cpp $(CFLAGS) $(INCPATH)
+	$(CXX) -c -o $@ pi_imu_server_driver.cpp $(CFLAGS) $(INCPATH)
 
-$(OBJECTS_DIR)RTIMULibDrive_test.o : RTIMULibDrive.cpp $(DEPS)
+$(OBJECTS_DIR)pi_imu_test.o : pi_imu_test.cpp $(DEPS)
 	@$(CHK_DIR_EXISTS) objects/ || $(MKDIR) objects/
-	$(CXX) -c -o $@ RTIMULibDrive_test.cpp $(CFLAGS) $(INCPATH)
+	$(CXX) -c -o $@ pi_imu_test.cpp $(CFLAGS) $(INCPATH)
 
 # Install
 
