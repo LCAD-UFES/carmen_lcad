@@ -79,6 +79,8 @@ build_and_publish_variable_velodyne_message(uint8_t* buf)
 
     int index = 0;
 
+    // This is the solution used by ouster to store the packets until a complete
+    // scan is complete. TODO: develop a a more elegant (and efficient, is possible) solution.
     for (int icol = 0; icol < OS1::columns_per_buffer; icol++) 
     {
         const uint8_t* col_buf = OS1::nth_col(icol, buf);
@@ -86,7 +88,7 @@ build_and_publish_variable_velodyne_message(uint8_t* buf)
 
         // drop invalid / out-of-bounds data in case of misconfiguration
         if (OS1::col_valid(col_buf) != 0xffffffff || m_id >= W) 
-            continue; // @filipe: ??
+            continue; // what to do in this case??
 
         const uint64_t ts = OS1::col_timestamp(col_buf);
         float h_angle_0 = OS1::col_h_angle(col_buf);    
@@ -276,16 +278,20 @@ main(int argc, char** argv)
         
         if (st & OS1::ERROR) 
         {
-            // @filipe: what to do when the connection is lost? check what velodyne's module does.
+            // what to do when the connection is lost? check what velodyne's module does.
             return 1;
         }
         else if (st & OS1::LIDAR_DATA) 
         {
+            // A lidar packet contains 16 columns, each with 64 vertical readings.
+            // The function 'build_and_publish_variable_velodyne_message' store the packets in a buffer
+            // and publishes a message when a complete scan is obtained.
             if (OS1::read_lidar_packet(*cli, lidar_buf))
                 build_and_publish_variable_velodyne_message(lidar_buf);
         }
         else if (st & OS1::IMU_DATA) 
         {
+            // The IMU is running in a smaller frequency than it should be. TODO: fix it!
             if (OS1::read_imu_packet(*cli, imu_buf)) 
                 build_and_publish_imu_message(imu_buf);
         }
