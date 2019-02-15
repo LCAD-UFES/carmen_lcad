@@ -52,6 +52,7 @@ HyperGraphSclamOptimizer::HyperGraphSclamOptimizer(int argc, char **argv) :
         use_sick_loop(false),
         use_bumblebee_seq(false),
         use_bumblebee_loop(false),
+        use_odometry(false),
         gps_origin(0.0, 0.0),
         optimizer(nullptr),
         factory(nullptr),
@@ -249,6 +250,10 @@ void HyperGraphSclamOptimizer::ArgsParser(int argc, char **argv)
                 else if ("USE_BUMBLEBEE_LOOP" == str)
                 {
                     use_bumblebee_loop = true;
+                }
+                else if ("USE_ODOMETRY" == str)
+                {
+                    use_odometry = true;
                 }
             }
 
@@ -1156,7 +1161,7 @@ void HyperGraphSclamOptimizer::LoadHyperGraphToOptimizer()
             // push the new vertex to the optimizer
             AddVertex(ss);
         }
-        else if ("ODOM_EDGE" == tag)
+        else if ("ODOM_EDGE" == tag && use_odometry)
         {
             if (0 != odom_counter)
             {

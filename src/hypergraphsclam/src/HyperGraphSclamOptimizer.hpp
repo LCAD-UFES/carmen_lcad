@@ -146,6 +146,9 @@ class HyperGraphSclamOptimizer {
         // use bumblebee_loop
         bool use_bumblebee_loop;
 
+        // use bumblebee_loop
+        bool use_odometry;
+
         // the gps origin
         Eigen::Vector2d gps_origin;
 
