@@ -112,8 +112,8 @@ fit_multiple_models_to_track_of_hypotheses(virtual_scan_track_t *track)
 		}
 
 
-		double vx = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[2][0];
-		double vy = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[3][0];
+//		double vx = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[2][0];
+//		double vy = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[3][0];
 //		track->box_model_hypothesis[j].hypothesis_state.v = sqrt(vx * vx + vy + vy);
 //		track->box_model_hypothesis[j].hypothesis_state.w = track->box_model_hypothesis[j].hypothesis_state.imm->imm_x_k_k.val[6][0];
 

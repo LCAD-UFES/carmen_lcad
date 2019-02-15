@@ -1026,12 +1026,29 @@ initializer()
 }
 
 
+//IPC_RETURN_TYPE
+//carmen_traffic_light_define_messages(int camera)
+//{
+//    IPC_RETURN_TYPE err;
+//
+//    char *message_name = carmen_traffic_light_message_name(camera);
+//    err = IPC_defineMsg(message_name, IPC_VARIABLE_LENGTH, CARMEN_TRAFFIC_LIGHT_FMT);
+//    carmen_test_ipc_exit(err, "Could not define", message_name);
+//    free(message_name);
+//    return err;
+//}
+
+
 int
 main(int argc, char **argv)
 {
     carmen_ipc_initialize(argc, argv);
 
+    camera = atoi(argv[1]);
+
     read_parameters(argc, argv);
+
+    carmen_traffic_light_define_messages(camera);
 
     subscribe_messages();
 

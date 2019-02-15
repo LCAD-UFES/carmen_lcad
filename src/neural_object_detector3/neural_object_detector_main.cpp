@@ -560,6 +560,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
+	printf("FPS= %.2f\n", fps);
 
 	if (globalpos_msg == NULL)
 		return;

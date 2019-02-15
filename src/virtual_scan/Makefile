@@ -10,8 +10,8 @@ LINK = g++
 
 LFLAGS += \
 	-lgrid_mapping -lmap_io -lmap_interface -lmapper_interface -lparam_interface -lipc -lglobal -lmap_server_interface \
-	-lmoving_objects_interface -lvelodyne_interface -ltf -lboost_thread-mt -lboost_signals -lboost_system -lkalman -ldbscan \
-	-llocalize_ackerman_interface -lrddf_interface -lcollision_detection -lviso 
+	-lmoving_objects_interface -lvelodyne_interface -lvelodyne_transforms -ltf -lboost_thread-mt -lboost_signals \
+	-lboost_system -lkalman -ldbscan -llocalize_ackerman_interface -lrddf_interface -lcollision_detection -lviso 
 
 SOURCES = \
 	virtual_scan_main.cpp \

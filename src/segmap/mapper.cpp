@@ -95,7 +95,7 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 		if (fabs(dataset.data[i].v) < 0.1)
 			continue;
 
-		Pose2d pose = dataset.data[i].pose;
+		Pose2d pose = dataset.data[i].gps;
 
 		cloud->clear();
 		transformed_cloud->clear();

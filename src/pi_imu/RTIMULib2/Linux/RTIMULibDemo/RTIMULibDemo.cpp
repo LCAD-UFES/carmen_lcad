@@ -246,7 +246,7 @@ void RTIMULibDemo::timerEvent(QTimerEvent *event)
             m_calStatus->setText(QString("Cal status - accel %1, mag %2, runtime mag %3, ellipsoid %4")
                     .arg(m_imuThread->getIMU()->getAccelCalibrationValid() ? "in use" : "not in use")
                                  .arg(m_imuThread->getIMU()->getCompassCalibrationValid() ? "in use" : "not in use")
-                                // .arg(m_imuThread->getIMU()->getRuntimeCompassCalibrationValid() ? "in use" : "not in use")
+                                 .arg(m_imuThread->getIMU()->getRuntimeCompassCalibrationValid() ? "in use" : "not in use")
                     .arg(m_imuThread->getIMU()->getCompassCalibrationEllipsoidValid() ? "in use" : "not in use"));
         }
 

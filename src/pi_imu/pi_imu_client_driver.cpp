@@ -4,15 +4,15 @@
 #include <netdb.h>
 #include <math.h>
 
-
-char* tcp_ip_address;
-
-#define PORT "3457"
+#define PORT "3458"
 #define SOCKET_DATA_PACKET_SIZE	2048
 #define G 9.80665
 #define ACCELEROMETER_CONSTANT (4.0 / 32768.0/*2^15*/)
 #define MAGNETOMETER_CONSTANT (8.0 / 32768.0/*2^15*/)
 #define GYROSCOPE_CONSTANT (500.0 / 32768.0/*2^15*/)
+
+char *tcp_ip_address;
+
 
 void
 carmen_xsens_define_messages()
@@ -23,6 +23,7 @@ carmen_xsens_define_messages()
     err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_QUAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_QUAT_FMT);
     carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_QUAT_NAME);
 }
+
 
 int
 stablished_connection_with_server()
@@ -50,7 +51,7 @@ stablished_connection_with_server()
 	}
 	status = connect(pi_socket, host_info_list->ai_addr, host_info_list->ai_addrlen);
 
-	if(status < 0)
+	if (status < 0)
 	{
 		printf("--- Connection Failed! ---\n");
 		return (-1);
@@ -76,8 +77,28 @@ trying_to_reconnect()
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 
+void
+carmen_publish_xsens_quat_message(carmen_xsens_global_quat_message xsens_quat_message)
+{
+	xsens_quat_message.timestamp = carmen_get_time();
+	xsens_quat_message.host = carmen_get_host();
 
+	// Acceleration
+	xsens_quat_message.m_acc.x = xsens_quat_message.m_acc.x * G;
+	xsens_quat_message.m_acc.y = xsens_quat_message.m_acc.y * G;
+	xsens_quat_message.m_acc.z = xsens_quat_message.m_acc.z * G;
+	xsens_quat_message.m_temp = 0.0;
+	xsens_quat_message.m_count = 0;
+
+	IPC_RETURN_TYPE err = IPC_publishData(CARMEN_XSENS_GLOBAL_QUAT_NAME, &xsens_quat_message);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_XSENS_GLOBAL_QUAT_NAME);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -97,13 +118,9 @@ signal_handler(int sig)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
-
 int
 main(int argc, char **argv)
 {
-	carmen_xsens_global_quat_message xsens_quat_message;
-
 	carmen_ipc_initialize(argc, argv);
 
 	carmen_param_check_version(argv[0]);
@@ -113,10 +130,9 @@ main(int argc, char **argv)
 
 	int valread;
 
-	IPC_RETURN_TYPE err;
-
 	carmen_xsens_define_messages();
 
+	carmen_xsens_global_quat_message xsens_quat_message;
 	while (1)
 	{
 		unsigned char rpi_imu_data[SOCKET_DATA_PACKET_SIZE];
@@ -138,23 +154,9 @@ main(int argc, char **argv)
 				&(xsens_quat_message.quat_data.m_data[0]), &(xsens_quat_message.quat_data.m_data[1]), &(xsens_quat_message.quat_data.m_data[2]), &(xsens_quat_message.quat_data.m_data[3]),
 				&(xsens_quat_message.m_mag.x), &(xsens_quat_message.m_mag.y), &(xsens_quat_message.m_mag.z));
 
-
-		 //Acceleration
-		xsens_quat_message.m_acc.x = xsens_quat_message.m_acc.x * G;
-		xsens_quat_message.m_acc.y = xsens_quat_message.m_acc.y * G;
-		xsens_quat_message.m_acc.z = xsens_quat_message.m_acc.z * G;
-
-		xsens_quat_message.m_temp = 0.0;
-		xsens_quat_message.m_count = 0;
-
-		//Timestamp
-		xsens_quat_message.timestamp = carmen_get_time();
-
-		//Host
-		xsens_quat_message.host = carmen_get_host();
-
-		err = IPC_publishData(CARMEN_XSENS_GLOBAL_QUAT_NAME, &xsens_quat_message);
-		carmen_test_ipc_exit(err, "Could not publish", CARMEN_XSENS_GLOBAL_QUAT_NAME);
+		carmen_publish_xsens_quat_message(xsens_quat_message);
+//		printf("%lf\n", carmen_get_time());
 	}
-	return 0;
+
+	return (0);
 }

@@ -3,8 +3,6 @@
 
 #include <carmen/velodyne_messages.h>
 #include <carmen/carmen.h>
-#include <carmen/rotation_geometry.h>
-
 
 #ifdef __cplusplus
 extern "C"
@@ -30,6 +28,22 @@ carmen_velodyne_subscribe_partial_scan_message(carmen_velodyne_partial_scan_mess
 void
 carmen_velodyne_unsubscribe_partial_scan_message(carmen_handler_t handler);
 
+// set sensor_id to -1 to use the default message
+void
+carmen_velodyne_subscribe_variable_scan_message(carmen_velodyne_variable_scan_message *message,
+										 carmen_handler_t handler,
+										 carmen_subscribe_t subscribe_how,
+										 int sensor_id);
+
+// set sensor_id to -1 to use the default message
+void
+carmen_velodyne_unsubscribe_variable_scan_message(carmen_handler_t handler, int sensor_id);
+
+// set sensor_id to -1 to use the default message
+IPC_RETURN_TYPE
+carmen_velodyne_publish_variable_scan_message(carmen_velodyne_variable_scan_message *message, int sensor_id);
+
+
 void
 carmen_velodyne_subscribe_gps_message(carmen_velodyne_gps_message *message,
 			       carmen_handler_t handler,
@@ -38,17 +52,12 @@ carmen_velodyne_subscribe_gps_message(carmen_velodyne_gps_message *message,
 void
 carmen_velodyne_unsubscribe_gps_message(carmen_handler_t handler);
 
+IPC_RETURN_TYPE
+carmen_velodyne_publish_gps_message(carmen_velodyne_gps_message *message);
+
+
 void
 carmen_velodyne_define_messages();
-
-carmen_pose_3D_t
-get_velodyne_pose_in_relation_to_car(int argc, char** argv);
-
-void
-get_world_pose_with_velodyne_offset_initialize(int argc, char **argv);
-
-carmen_pose_3D_t
-get_world_pose_with_velodyne_offset(carmen_pose_3D_t world_pose);
 
 void
 carmen_velodyne_variable_scan_update_points(carmen_velodyne_variable_scan_message *message,

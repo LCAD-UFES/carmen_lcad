@@ -22,19 +22,19 @@ LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath 
 CFLAGS += -Wall
 
 # Source code files (.c, .cpp) 
-SOURCES = velodyne_main.cpp velodyne_interface.cpp tf_helper.cpp
+SOURCES = velodyne_main.cpp velodyne_interface.cpp velodyne_transforms.cpp tf_helper.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
-PUBLIC_INCLUDES = velodyne_messages.h velodyne_interface.h velodyne_mean_error.h
+PUBLIC_INCLUDES = velodyne_messages.h velodyne_interface.h velodyne_mean_error.h velodyne_transforms.h
 
 # Public libraries, linked to 'carmen/lib'.
-PUBLIC_LIBRARIES = libvelodyne_interface.a
+PUBLIC_LIBRARIES = libvelodyne_interface.a libvelodyne_transforms.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = velodyne
 
-TARGETS = libvelodyne_interface.a velodyne libvelodyne.a
-PUBLIC_LIBRARIES_SO = libvelodyne_interface.so
+TARGETS = libvelodyne_interface.a velodyne libvelodyne.a libvelodyne_transforms.a
+PUBLIC_LIBRARIES_SO = libvelodyne_interface.so libvelodyne_transforms.so
 
 ifndef NO_PYTHON
 TARGETS += libvelodyne_interface.so.1
@@ -52,17 +52,16 @@ endif
 libvelodyne.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libvelodyne 
 
-libvelodyne_interface.a: velodyne_interface.o tf_helper.o
-
-libvelodyne_interface.so.1:	velodyne_interface.o tf_helper.o
+libvelodyne_transforms.a: velodyne_transforms.o tf_helper.o
+libvelodyne_interface.a: velodyne_interface.o 
+libvelodyne_interface.so.1:	velodyne_interface.o 
+libvelodyne_transforms.so.1:  velodyne_transforms.o tf_helper.o
 
 velodyne: velodyne_main.o libvelodyne_interface.a 
-
 clean: clean_libvelodyne
 
 clean_libvelodyne:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libvelodyne/
-
 
 # rules
 

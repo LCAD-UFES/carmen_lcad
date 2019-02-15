@@ -534,14 +534,14 @@ initialize_simulated_pedestrians()
 //	new_p.orientation = 0.873	;
 //	simulated_pedestrians.push_back(new_p);
 //
-	new_p.start_time = 0.0;                       // Bottom Right
-	new_p.stop_time = 9915703060.0;
-	new_p.x = 7757918.28;
-	new_p.y = -363601.10;
-	new_p.active = false;
-	new_p.velocity = 0.7;
-	new_p.orientation = 2.988;
-	simulated_pedestrians.push_back(new_p);
+//	new_p.start_time = 0.0;                       // Bottom Right
+//	new_p.stop_time = 9915703060.0;
+//	new_p.x = 7757918.28;
+//	new_p.y = -363601.10;
+//	new_p.active = false;
+//	new_p.velocity = 0.7;
+//	new_p.orientation = 2.988;
+//	simulated_pedestrians.push_back(new_p);
 //
 //	new_p.start_time = 0.0;                       // Up Right
 //	new_p.stop_time = 9915703060.0;
@@ -587,6 +587,42 @@ initialize_simulated_pedestrians()
 //	new_p.velocity = 1.0;
 //	new_p.orientation = 2.46;
 //	simulated_pedestrians.push_back(new_p);
+
+//	new_p.start_time = 0.0;
+//	new_p.stop_time = 9915703060.0;
+//	new_p.x = 7757173.00;
+//	new_p.y = -364063.20;
+//	new_p.active = false;
+//	new_p.velocity = 2.01;
+//	new_p.orientation = -2.55;
+//	simulated_pedestrians.push_back(new_p);
+
+//	new_p.start_time = 0.0;
+//	new_p.stop_time = 9915703060.0;
+//	new_p.x = 7757158.40;
+//	new_p.y = -364110.60;
+//	new_p.active = false;
+//	new_p.velocity = 1.01;
+//	new_p.orientation = 1.573;
+//	simulated_pedestrians.push_back(new_p);
+//
+//	new_p.start_time = 0.0;
+//	new_p.stop_time = 9915703060.0;
+//	new_p.x = 7757145.46;
+//	new_p.y = -364076.0;
+//	new_p.active = false;
+//	new_p.velocity = 1.01;
+//	new_p.orientation = -0.04;
+//	simulated_pedestrians.push_back(new_p);
+//
+	new_p.start_time = 0.0;
+	new_p.stop_time = 9915703060.0;
+	new_p.x = 7757158.70;
+	new_p.y = -364070.55;
+	new_p.active = false;
+	new_p.velocity = 0.01;
+	new_p.orientation = 2.46;
+	simulated_pedestrians.push_back(new_p);
 }
 
 
