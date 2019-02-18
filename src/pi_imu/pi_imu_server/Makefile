@@ -23,7 +23,7 @@
 
 # Compiler, tools and options
 
-RTIMULIBPATH  = ../RTIMULib2/RTIMULib
+RTIMULIBPATH  = ../../RTIMULib2/RTIMULib
 
 CC    			= gcc
 CXX   			= g++
