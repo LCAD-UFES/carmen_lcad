@@ -4,9 +4,6 @@ SUBDIRS = model_learn_ackerman
 
 CFLAGS += -std=c11 -fopenmp
 CXXFLAGS += -std=c++11 -fopenmp
-
-LFLAGS += 
-
 LINK = g++
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
@@ -15,17 +12,14 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_p
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
-
 LFLAGS += -lgrid_mapping -lmapper_interface -lglobal -lparam_interface -lmap_io -lmap_util -llaser_interface \
 	  -lrobot_ackerman_interface -lobstacle_avoider_interface -lipc -lmap_server_interface \
 	  -lfused_odometry_interface -lvelodyne_interface -lrotation_geometry -lprob_models -lgl_plotter \
 	  -lGLEW -lGL -lGLU -lglut -lX11 -lmap_interface -lbase_ackerman_interface \
-	  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface -lmoving_objects_interface -lxsens_interface
+	  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface -lmoving_objects_interface -lxsens_interface \
+	  `pkg-config --libs opencv`
 
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
-
-IFLAGS += `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv`
 
 PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
