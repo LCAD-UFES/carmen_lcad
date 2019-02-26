@@ -48,6 +48,10 @@ USAGE INSTRUCTIONS
      file "config/master.cfg" that corresponds to a Ladybug3 omni-
      directional camera. A sample config file for a monocular camera 
      setup is given as "config/monocular-cam.cfg"
+
+Obs: para utilizar o arquivo de configuração com as informações da câmera da IARA, digite:
+     ./mi-extrinsic-calib -c ../config/iara_cam.cfg
+
   3. At the end of the program two output files are created in bin/.
      "calib_param.txt" stores the estimated calibration parameters.
      "calib_cov.txt" stores the estimated 6x6 covariance matrix.

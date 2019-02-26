@@ -1,0 +1,10 @@
+Foram feitas as seguintes modificações no código original para que funcione com a versão 3.1.10 do OpenCV:  
+
+Modificação 1: arquivo mi-extrinsic-calib-1.0/src/calibration/Calibration.cpp
+. Troca das linhas 278 e 279 por:
+cv::Mat outMat = cv::cvarrToMat(out);
+cv::Mat imageMat = cv::cvarrToMat(iplimage);
+
+Modificação 2: arquivo mi-extrinsic-calib-1.0/src/calibration/Calibration.h
+. Troca das linhas 13 e 14 por:
+#include <opencv2/opencv.hpp>
