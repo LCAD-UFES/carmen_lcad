@@ -495,7 +495,7 @@ carmen_prob_models_update_log_odds_of_nearest_target(carmen_map_t *map,  sensor_
 
 
 void
-carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id)
+carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id, double safe_height_from_ground)
 {
 	int i;
 	cell_coords_t cell_hit_by_ray, cell_hit_by_nearest_ray;
@@ -525,14 +525,14 @@ carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_m
 
 		if (!sensor_data->maxed[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
 			!sensor_data->ray_hit_the_robot[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
-			!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]], highest_sensor, safe_range_above_sensors)))
+			!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]], highest_sensor, safe_range_above_sensors, safe_height_from_ground)))
 			carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y, 2.0 * sensor_params->log_odds.log_odds_occ);
 	}
 }
 
 
 void
-carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id)
+carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id, double safe_height_from_ground)
 {
 	int i;
 	cell_coords_t cell_hit_by_ray, cell_hit_by_nearest_ray;
@@ -572,7 +572,7 @@ carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, 
 
 		if (!sensor_data->maxed[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
 			!sensor_data->ray_hit_the_robot[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
-			!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]], highest_sensor, safe_range_above_sensors)))
+			!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]], highest_sensor, safe_range_above_sensors, safe_height_from_ground)))
 		{
 			if (count_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] == -1.0)
 			{
@@ -699,7 +699,7 @@ static void
 update_intensity_of_cells(carmen_map_t *sum_remission_map,
 		carmen_map_t *sum_sqr_remission_map, carmen_map_t *count_remission_map,
 		sensor_data_t *sensor_data, sensor_parameters_t *sensor_params,
-		double highest_sensor, double safe_range_above_sensors, int ray, cell_coords_t *map_cells_hit_by_rays, int thread_id)
+		double highest_sensor, double safe_range_above_sensors, int ray, cell_coords_t *map_cells_hit_by_rays, int thread_id, double safe_height_from_ground = 0.0)
 {
 	cell_coords_t cell_hit_by_ray;
 
@@ -708,7 +708,7 @@ update_intensity_of_cells(carmen_map_t *sum_remission_map,
 
 	if (map_grid_is_valid(sum_remission_map, cell_hit_by_ray.x, cell_hit_by_ray.y) &&
 		!sensor_data->maxed[thread_id][ray] && !sensor_data->ray_hit_the_robot[thread_id][ray] &&
-		!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][ray], highest_sensor, safe_range_above_sensors)))
+		!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][ray], highest_sensor, safe_range_above_sensors, safe_height_from_ground)))
 	{
 		if (map_cells_hit_by_rays != NULL)
 		{
@@ -753,7 +753,7 @@ update_intensity_of_cells(carmen_map_t *sum_remission_map,
 static void
 update_intensity_of_cells(carmen_compact_map_t *mean_remission_compact_map,
 		sensor_data_t *sensor_data, sensor_parameters_t *sensor_params,
-		double highest_sensor, double safe_range_above_sensors, int ray, cell_coords_t *map_cells_hit_by_rays, int thread_id)
+		double highest_sensor, double safe_range_above_sensors, int ray, cell_coords_t *map_cells_hit_by_rays, int thread_id, double safe_height_from_ground = 0.0)
 {
 	cell_coords_t cell_hit_by_ray;
 
@@ -762,7 +762,7 @@ update_intensity_of_cells(carmen_compact_map_t *mean_remission_compact_map,
 
 	if (map_grid_is_valid(mean_remission_compact_map, cell_hit_by_ray.x, cell_hit_by_ray.y) &&
 		!sensor_data->maxed[thread_id][ray] && !sensor_data->ray_hit_the_robot[thread_id][ray] &&
-		!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][ray], highest_sensor, safe_range_above_sensors)))
+		!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][ray], highest_sensor, safe_range_above_sensors, safe_height_from_ground)))
 	{
 		if (map_cells_hit_by_rays != NULL)
 		{
@@ -839,7 +839,7 @@ carmen_prob_models_check_if_new_log_odds_snapshot_map_allocation_is_needed(carme
 void
 carmen_prob_models_update_intensity_of_cells_hit_by_rays(carmen_map_t *sum_remission_map, carmen_map_t *sum_sqr_remission_map,
 		carmen_map_t *count_remission_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor,
-		double safe_range_above_sensors, cell_coords_t *map_cells_hit_by_each_rays, int thread_id)
+		double safe_range_above_sensors, cell_coords_t *map_cells_hit_by_each_rays, int thread_id, double safe_height_from_ground)
 {
 	int i;
 
@@ -849,9 +849,9 @@ carmen_prob_models_update_intensity_of_cells_hit_by_rays(carmen_map_t *sum_remis
 	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
 		if (map_cells_hit_by_each_rays != NULL)
-			update_intensity_of_cells(sum_remission_map, sum_sqr_remission_map, count_remission_map, sensor_data, sensor_params, highest_sensor, safe_range_above_sensors, i, &map_cells_hit_by_each_rays[i], thread_id);
+			update_intensity_of_cells(sum_remission_map, sum_sqr_remission_map, count_remission_map, sensor_data, sensor_params, highest_sensor, safe_range_above_sensors, i, &map_cells_hit_by_each_rays[i], thread_id, safe_height_from_ground);
 		else
-			update_intensity_of_cells(sum_remission_map, sum_sqr_remission_map, count_remission_map, sensor_data, sensor_params, highest_sensor, safe_range_above_sensors, i, NULL, thread_id);
+			update_intensity_of_cells(sum_remission_map, sum_sqr_remission_map, count_remission_map, sensor_data, sensor_params, highest_sensor, safe_range_above_sensors, i, NULL, thread_id, safe_height_from_ground);
 	}
 }
 
@@ -1242,9 +1242,9 @@ get_log_odds_map_cell(const ProbabilisticMap *map, int x, int y)
 
 
 int
-carmen_prob_models_unaceptable_height(double obstacle_height, double highest_sensor, double safe_range_above_sensors)
+carmen_prob_models_unaceptable_height(double obstacle_height, double highest_sensor, double safe_range_above_sensors, double safe_height_from_ground)
 {
-	if (obstacle_height > highest_sensor + safe_range_above_sensors)// obstaculo bateria no carro pois esta dentro de sua altura
+	if (obstacle_height > highest_sensor + safe_range_above_sensors || obstacle_height < safe_height_from_ground )// obstaculo bateria no carro pois esta dentro de sua altura
 	{
 		return (1);
 	}
@@ -1600,7 +1600,7 @@ carmen_prob_models_get_occuppancy_log_odds_by_height(sensor_data_t *sensor_data,
 
 void
 carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data_t *sensor_data, sensor_parameters_t *sensor_params, int scan_index,
-		double highest_sensor, double safe_range_above_sensors, int reduce_sensitivity, int thread_id)
+		double highest_sensor, double safe_range_above_sensors, int reduce_sensitivity, int thread_id, double safe_height_from_ground)
 {
 	int i;
 	double min_ray_size = 10000.0;
@@ -1608,7 +1608,7 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 
 	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
-		if (carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][i], highest_sensor, safe_range_above_sensors))
+		if (carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][i], highest_sensor, safe_range_above_sensors, safe_height_from_ground))
 			sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_l0;
 		else
 		{
@@ -1618,7 +1618,7 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 //			fprintf(plot_data, " oh %lf  uhag %lf # ", sensor_data->obstacle_height[thread_id][i], sensor_params->unsafe_height_above_ground);
 			if (sensor_data->obstacle_height[thread_id][i] > sensor_params->unsafe_height_above_ground)
 			{
-				if (!sensor_data->maxed[thread_id][i] && !sensor_data->ray_hit_the_robot[thread_id][i] && !(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][i], highest_sensor, safe_range_above_sensors)))
+				if (!sensor_data->maxed[thread_id][i] && !sensor_data->ray_hit_the_robot[thread_id][i] && !(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][i], highest_sensor, safe_range_above_sensors, safe_height_from_ground)))
 				{
 					sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_occ;
 				}

@@ -131,7 +131,7 @@ init_buttons(interface_drawer* i_drawer) {
     i_drawer->butt[12].text = "Map";
     i_drawer->butt[13].text = "Annotation";
     i_drawer->butt[14].text = "SICK";
-    i_drawer->butt[15].text = "SICK Rays";
+    i_drawer->butt[15].text = "Show Rays";
 
     i_drawer->butt[16].text = "XSENS Axis";
     i_drawer->butt[17].text = "Global Pos";

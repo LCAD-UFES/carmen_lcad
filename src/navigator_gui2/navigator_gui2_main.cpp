@@ -26,12 +26,11 @@
 
 static carmen_robot_config_t	 robot_config;
 static carmen_polygon_config_t		poly_config;
-static carmen_collision_config_t	collision_config;
 static carmen_navigator_config_t nav_config;
 static carmen_navigator_panel_config_t nav_panel_config;
 static carmen_navigator_map_t map_type = CARMEN_NAVIGATOR_MAP_v;
 static carmen_navigator_map_t superimposedmap_type = CARMEN_NONE_v;
-static carmen_map_p map = NULL, cost_map = NULL, offline_map = NULL, likelihood_map = NULL, global_likelihood_map = NULL,
+static carmen_map_p map = NULL, map_level1 = NULL, cost_map = NULL, offline_map = NULL, likelihood_map = NULL, global_likelihood_map = NULL,
 		complete_map = NULL, moving_objects_map = NULL, lane_map = NULL, remission_map = NULL, road_map = NULL;
 carmen_localize_ackerman_map_t localize_all_maps;
 int first_localize_map_message_received = 1;
@@ -133,6 +132,9 @@ navigator_get_map(carmen_navigator_map_t type, int is_superimposed)
 		break;
 	case CARMEN_NAVIGATOR_MAP_v:
 		navigator_get_specific_map(is_superimposed, map, CARMEN_NAVIGATOR_MAP_v);
+		break;
+	case CARMEN_NAVIGATOR_MAP_LEVEL1_v:
+		navigator_get_specific_map(is_superimposed, map_level1, CARMEN_NAVIGATOR_MAP_LEVEL1_v);
 		break;
 	case CARMEN_OFFLINE_MAP_v:
 		navigator_get_specific_map(is_superimposed, offline_map, CARMEN_OFFLINE_MAP_v);
@@ -362,6 +364,36 @@ mapper_handler(carmen_mapper_map_message *message)
 
 	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_NAVIGATOR_MAP_v)
 		gui->navigator_graphics_change_map(map);
+}
+
+
+void
+mapper_level1_handler(carmen_mapper_map_message *message)
+{
+	static double last_time_stamp = 0.0;
+
+	if (message->size <= 0)
+		return;
+
+	// @@@ Alberto: codigo adicionado para atualizar o mapa a uma taxa maxima de 10Hz
+	if ((carmen_get_time() - last_time_stamp) > 0.1)
+		last_time_stamp = carmen_get_time();
+	else
+		return;
+
+	if (map_level1 && (message->config.x_size != map_level1->config.x_size || message->config.y_size != map_level1->config.y_size))
+		carmen_map_destroy(&map_level1);
+
+	map_level1 = copy_grid_mapping_to_map(map_level1, message);
+
+	if (superimposedmap_type == CARMEN_NAVIGATOR_MAP_LEVEL1_v)
+	{
+		carmen_map_interface_set_superimposed_map(map_level1);
+		gui->navigator_graphics_redraw_superimposed();
+	}
+
+	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_NAVIGATOR_MAP_LEVEL1_v)
+		gui->navigator_graphics_change_map(map_level1);
 }
 
 
@@ -814,8 +846,6 @@ nav_shutdown(int signo __attribute__ ((unused)))
 {
 	static int done = 0;
 
-	free(poly_config.points);
-	free(collision_config.markers);
 	if (!done)
 	{
 		done = 1;
@@ -866,7 +896,6 @@ static void
 read_parameters(int argc, char *argv[],
 		carmen_robot_config_t *robot_config,
 		carmen_polygon_config_t *poly_config,
-		carmen_collision_config_t *collision_config,
 		carmen_navigator_config_t *nav_config,
 		carmen_navigator_panel_config_t *navigator_panel_config)
 {
@@ -914,7 +943,6 @@ read_parameters(int argc, char *argv[],
 	robot_config->rectangular = 1;
 
 	char *poly_file = (char*) "ford_escape/ford_escape_poly.txt";
-	char *collision_file = (char*) "ford_escape/ford_escape_col.txt";
 
 	carmen_param_t param_ackerman_list[] =
 	{
@@ -923,7 +951,6 @@ read_parameters(int argc, char *argv[],
 //		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels",	CARMEN_PARAM_DOUBLE, &(car_config->distance_between_front_car_and_front_wheels),	 1, NULL},
 //		{(char *) "robot", (char *) "distance_between_rear_wheels",					CARMEN_PARAM_DOUBLE, &(car_config->distance_between_rear_wheels),				 1, NULL}
 		{(char *) "robot", (char *) "polygon_file",CARMEN_PARAM_STRING, &(poly_file), 0, NULL},
-		{(char *) "robot", (char *) "collision_file", CARMEN_PARAM_STRING, &(collision_file), 0, NULL},
 	};
 
 	carmen_param_allow_unfound_variables(1);
@@ -932,7 +959,6 @@ read_parameters(int argc, char *argv[],
 	carmen_param_allow_unfound_variables(0);
 
 	carmen_parse_polygon_file(poly_config, poly_file);
-	carmen_parse_collision_file(collision_config, collision_file);
 
 	carmen_param_t param_cmd_list[] =
 	{
@@ -980,6 +1006,7 @@ subscribe_ipc_messages()
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_map_server_subscribe_road_map(NULL, (carmen_handler_t) road_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 //	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_mapper_subscribe_map_level1_message(NULL, (carmen_handler_t) mapper_level1_handler, CARMEN_SUBSCRIBE_LATEST);
 
 //	carmen_grid_mapping_moving_objects_raw_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_moving_objects_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -1021,7 +1048,7 @@ void
 init_navigator_gui_variables(int argc, char* argv[])
 {
 	carmen_localize_ackerman_globalpos_message globalpos;
-	gui->navigator_graphics_initialize(argc, argv, &globalpos, &robot_config, &poly_config, &collision_config, &nav_config, &nav_panel_config);
+	gui->navigator_graphics_initialize(argc, argv, &globalpos, &robot_config, &poly_config, &nav_config, &nav_panel_config);
 
 	carmen_graphics_update_ipc_callbacks((GdkInputFunction) (handle_ipc));
 
@@ -1047,7 +1074,7 @@ main(int argc, char *argv[])
 	carmen_param_check_version(argv[0]);
 	signal(SIGINT, nav_shutdown);
 
-	read_parameters(argc, argv, &robot_config, &poly_config, &collision_config, &nav_config, &nav_panel_config);
+	read_parameters(argc, argv, &robot_config, &poly_config, &nav_config, &nav_panel_config);
 	carmen_grid_mapping_init_parameters(0.2, 150);
 
 	// Esta incializacao evita que o valgrind reclame de varias variaveis nao inicializadas

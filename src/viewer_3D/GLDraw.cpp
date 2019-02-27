@@ -562,9 +562,13 @@ draw_gps_fault_signal (void)
 void
 draw_laser_rays (point_cloud current_reading, carmen_vector_3D_t laser_position)
 {
-    glBegin (GL_LINES);
 
-    glColor3d (0.2, 0.6, 0.3);
+    glEnable (GL_BLEND);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glBegin (GL_LINES);
+
+    glColor4d (0.2, 0.2, 0.2, 0.2);
 
     int j;
     for (j = 0; j < current_reading.num_points; j++)

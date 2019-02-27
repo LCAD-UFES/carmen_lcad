@@ -250,6 +250,8 @@ namespace View
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_None), true);
 		else if (strcmp(nav_panel_config->superimposed_map, "Map") == 0)
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Map), true);
+		else if (strcmp(nav_panel_config->superimposed_map, "Map Level1") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_MapLevel1), true);
 		else if (strcmp(nav_panel_config->superimposed_map, "Offline Map") == 0)
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_OfflineMap), true);
 		else if (strcmp(nav_panel_config->superimposed_map, "Utility") == 0)
@@ -273,6 +275,8 @@ namespace View
 
 		if (strcmp(nav_panel_config->map, "Map") == 0)
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_Map), true);
+		else if (strcmp(nav_panel_config->map, "Map Level1") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_MapLevel1), true);
 		else if (strcmp(nav_panel_config->map, "Offline Map") == 0)
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_OfflineMap), true);
 		else if (strcmp(nav_panel_config->map, "Utility") == 0)
@@ -319,7 +323,7 @@ namespace View
 	}
 
 	void GtkGui::navigator_graphics_initialize(int argc, char **argv, carmen_localize_ackerman_globalpos_message *msg,
-			carmen_robot_config_t *robot_conf_param, carmen_polygon_config_t *poly_config_param, carmen_collision_config_t *collision_config_param,
+			carmen_robot_config_t *robot_conf_param, carmen_polygon_config_t *poly_config_param,
 			carmen_navigator_config_t *nav_conf_param, carmen_navigator_panel_config_t *nav_panel_conf_param)
 	{
 		GdkGLConfig *glconfig;
@@ -463,6 +467,7 @@ namespace View
 
 		controls_.menuSuperimposedMaps_None = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_None" ));
 		controls_.menuSuperimposedMaps_Map = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_Map" ));
+		controls_.menuSuperimposedMaps_MapLevel1 = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_MapLevel1" ));
 		controls_.menuSuperimposedMaps_OfflineMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_OfflineMap" ));
 		controls_.menuSuperimposedMaps_Utility = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_Utility" ));
 		controls_.menuSuperimposedMaps_Costs = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_Costs" ));
@@ -474,6 +479,7 @@ namespace View
 		controls_.menuSuperimposedMaps_RoadMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_RoadMap" ));
 
 		controls_.menuMaps_Map = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_Map" ));
+		controls_.menuMaps_MapLevel1 = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_MapLevel1" ));
 		controls_.menuMaps_OfflineMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_OfflineMap" ));
 		controls_.menuMaps_Utility = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_Utility" ));
 		controls_.menuMaps_Costs = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_Costs" ));
@@ -563,7 +569,6 @@ namespace View
 
 		robot_config = robot_conf_param;
 		poly_config	 = poly_config_param;
-		collision_config = collision_config_param;
 		nav_config	 = nav_conf_param;
 
 		cursor_pos.map = NULL;
@@ -578,6 +583,8 @@ namespace View
 			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 1);
 		}
+		else if (strcmp(nav_panel_config->superimposed_map, "Map Level1") == 0)
+			navigator_get_map(CARMEN_NAVIGATOR_MAP_LEVEL1_v, 1);
 		else if (strcmp(nav_panel_config->superimposed_map, "Offline Map") == 0)
 			navigator_get_map(CARMEN_OFFLINE_MAP_v, 1);
 		else if (strcmp(nav_panel_config->superimposed_map, "Utility") == 0)
@@ -606,6 +613,8 @@ namespace View
 			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 0);
 		}
+		else if (strcmp(nav_panel_config->map, "Map Level1") == 0)
+			navigator_get_map(CARMEN_NAVIGATOR_MAP_LEVEL1_v, 1);
 		else if (strcmp(nav_panel_config->map, "Offline Map") == 0)
 			navigator_get_map(CARMEN_OFFLINE_MAP_v, 0);
 		else if (strcmp(nav_panel_config->map, "Utility") == 0)
@@ -919,6 +928,10 @@ namespace View
 		switch (type)
 		{
 		case CARMEN_NAVIGATOR_MAP_v:
+			flags = 0;
+			break;
+
+		case CARMEN_NAVIGATOR_MAP_LEVEL1_v:
 			flags = 0;
 			break;
 
@@ -2833,6 +2846,7 @@ namespace View
 
 		if (nav_panel_config->show_collision_range)
 		{
+			carmen_collision_config_t *collision_config = carmen_get_global_collision_config();
 			for (int i=0; i < collision_config->n_markers; i++)
 			{
 				carmen_world_point_t center;
