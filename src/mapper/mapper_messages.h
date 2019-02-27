@@ -24,6 +24,7 @@ typedef struct
 } carmen_mapper_map_message;
 
 #define CARMEN_MAPPER_MAP_MESSAGE_NAME	"carmen_mapper_map_message"
+#define CARMEN_MAPPER_MAP_LEVEL1_MESSAGE_NAME	"carmen_mapper_map_level1_message"
 #define CARMEN_MAPPER_MAP_MESSAGE_FMT		"{<double:2>, int, {int, int, double, [byte:64], string, double, double}, double, string}"
 #define CARMEN_MAPPER_MAP_MOVING_OBJECTS_RAW_MAP_MESSAGE_NAME "carmen_mapper_map_moving_objects_raw_map_message_name"
 

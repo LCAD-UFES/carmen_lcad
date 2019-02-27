@@ -15,6 +15,10 @@ carmen_mapper_subscribe_map_message(carmen_mapper_map_message *message,
 			       carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 void
+carmen_mapper_subscribe_map_level1_message(carmen_mapper_map_message *message,
+					carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
 carmen_mapper_subscribe_virtual_laser_message(carmen_mapper_virtual_laser_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 void
@@ -30,6 +34,9 @@ carmen_mapper_moving_objects_raw_map_subscribe_message(carmen_mapper_map_message
 
 void
 carmen_mapper_unsubscribe_map_message(carmen_handler_t handler);
+
+void
+carmen_mapper_unsubscribe_map_level1_message(carmen_handler_t handler);
 
 void
 carmen_mapper_unsubscribe_message(carmen_handler_t handler);
@@ -57,6 +64,9 @@ carmen_mapper_define_virtual_scan_message();
 
 void
 carmen_mapper_publish_map_message(carmen_map_t *carmen_map, double timestamp);
+
+void
+carmen_mapper_publish_map_level_message(carmen_map_t *carmen_map, double timestamp, int height_level);
 
 void
 carmen_mapper_publish_virtual_laser_message(carmen_mapper_virtual_laser_message *virtual_laser_message, double timestamp);

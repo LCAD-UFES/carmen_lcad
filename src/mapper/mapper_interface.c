@@ -63,6 +63,12 @@ carmen_mapper_subscribe_map_message(carmen_mapper_map_message *message, carmen_h
 	CARMEN_MAPPER_MAP_MESSAGE_FMT, message, sizeof(carmen_mapper_map_message), handler, subscribe_how);
 }
 
+void
+carmen_mapper_subscribe_map_level1_message(carmen_mapper_map_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
+{
+	carmen_subscribe_message(CARMEN_MAPPER_MAP_LEVEL1_MESSAGE_NAME,
+	CARMEN_MAPPER_MAP_MESSAGE_FMT, message, sizeof(carmen_mapper_map_message), handler, subscribe_how);
+}
 
 void
 carmen_mapper_moving_objects_raw_map_subscribe_message(carmen_mapper_map_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)

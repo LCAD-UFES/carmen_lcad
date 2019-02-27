@@ -36,7 +36,7 @@ carmen_localize_ackerman_map_t localize_all_maps;
 int first_localize_map_message_received = 1;
 static double last_navigator_status = 0.0;
 static int	  is_graphics_up = 0;
-
+int height_max_level = 0;
 
 static double last_v = 0, last_phi = 0;
 static carmen_ackerman_traj_point_t last_goal;
@@ -934,6 +934,7 @@ read_parameters(int argc, char *argv[],
 		{(char *) "navigator_panel", (char *) "localize_std_theta",		CARMEN_PARAM_DOUBLE, &localize_std.theta,							1, NULL},
 		{(char *) "navigator_panel", (char *) "map",					CARMEN_PARAM_STRING, &(navigator_panel_config->map),				0, NULL},
 		{(char *) "navigator_panel", (char *) "superimposed_map",		CARMEN_PARAM_STRING, &(navigator_panel_config->superimposed_map),	0, NULL},
+		{(char *) "mapper",			 (char *) "height_max_level",		CARMEN_PARAM_STRING, &height_max_level,								0, NULL},
 	};
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
@@ -1006,7 +1007,8 @@ subscribe_ipc_messages()
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_map_server_subscribe_road_map(NULL, (carmen_handler_t) road_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 //	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_mapper_subscribe_map_level1_message(NULL, (carmen_handler_t) mapper_level1_handler, CARMEN_SUBSCRIBE_LATEST);
+	if (height_max_level == 1)
+		carmen_mapper_subscribe_map_level1_message(NULL, (carmen_handler_t) mapper_level1_handler, CARMEN_SUBSCRIBE_LATEST);
 
 //	carmen_grid_mapping_moving_objects_raw_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_moving_objects_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
