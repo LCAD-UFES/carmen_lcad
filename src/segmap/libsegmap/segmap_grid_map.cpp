@@ -310,8 +310,8 @@ GridMap::GridMap(string tiles_dir, double tile_height_meters, double tile_width_
 
 	_middle_tile = (int) (_N_TILES / 2.);
 
-	height_meters = 0;
-	width_meters = 0;
+	height_meters = _tile_height_meters * _N_TILES;
+	width_meters = _tile_width_meters * _N_TILES;
 	xo = yo = 0;
 }
 
