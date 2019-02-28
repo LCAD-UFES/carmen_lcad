@@ -26,6 +26,21 @@ euler2rotation(double roll, double pitch, double yaw)
 }
 
 
+Matrix<double, 4, 4>
+pose2transform(double x, double y, double z, double roll, double pitch, double yaw)
+{
+    Matrix<double, 4, 4> T;
+    Matrix<double, 3, 3> R = euler2rotation(roll, pitch, yaw);
+
+    T << R(0, 0), R(0, 1), R(0, 2), x, 
+        R(1, 0), R(1, 1), R(1, 2), y, 
+        R(2, 0), R(2, 1), R(2, 2), z, 
+        0, 0, 0, 1;
+
+    return T;
+}
+
+
 void
 ambiguity_example()
 {
@@ -62,6 +77,8 @@ euler2rotation_example()
     // direita (o yaw eh feito em relacao ao sistema original em z: cima), fazendo o sistema virar
     // x: direita, y: baixo, z: frente.
     // ********************************************************************************************
+    cout << "--------------------------------------------------------" << endl;
+    cout << "Analise da rotacao direta" << endl;
     R = euler2rotation(-M_PI / 2., 0, -M_PI / 2);
 
     // saida esperada: 0, -1, 0
@@ -84,9 +101,10 @@ euler2rotation_example()
     // A transformada inversa resulta no mesmo que aplicar ao sistema original, a sequencia de rotacoes
     // +pi/2 yaw(z), +pi/2 roll(x), como esperado.
     // ******************************************
-    // saida esperada: 0, 0, 1
-    cout << "Analise da Inversa:" << endl << endl;
+    cout << "--------------------------------------------------------" << endl;
+    cout << "Analise da rotacao inversa:" << endl << endl;
 
+    // saida esperada: 0, 0, 1
     axis << 1, 0, 0;
     cout << axis << " -> " << R.inverse() * axis << endl << endl;
 
@@ -105,7 +123,8 @@ euler2rotation_example()
     // Isso eh curioso pq o yaw da 2a rotacao eh ao redor do z no sistema de coordenadas
     // original, nao ao redor do novo z apos a aplicacao de R1.
     // ******************************************
-    cout << "Analise de Sequencias de Rotacoes vs. Matriz de Rotacao:" << endl << endl;
+    cout << "--------------------------------------------------------" << endl;
+    cout << "Analise de sequencias de rotacoes vs. matriz de rotacao:" << endl << endl;
     R1 = euler2rotation(-M_PI / 2., 0., 0.); // roll
     R2 = euler2rotation(0., 0., -M_PI / 2.); // yaw
 
@@ -121,7 +140,6 @@ euler2rotation_example()
     axis << 0, 0, 1;
     cout << axis << " -> " << R2 * (R1 * axis) << endl << endl;   
 
-
     // ******************************************
     // Importante: Observe que ao aplicar uma rotacao a um vetor (ou ponto) NAO obtemos
     // as coordenadas dele no sistema rotacionado. O que obtemos sao as coordenadas do 
@@ -129,6 +147,89 @@ euler2rotation_example()
     // rotacionado? Resposta: a inversa da rotacao retorna as coordenadas do vetor no 
     // sistema rotacionado (veja o exemplo de rotacao inversa com esse olhar).
     // ******************************************
+
+
+    // ******************************************
+    // Questao: Uma rotacao com o negativo de roll, pitch, e yaw equivale a rotacao inversa? Eu
+    // acho que nao pq a ordem das operacoes tb deveria ser invertida. Conclusao: De fato, aplicar
+    // a inversa de uma rotacao nao equivale a aplicar uma rotacao com o negativo de roll, pitch, e yaw.
+    // ******************************************
+    cout << "--------------------------------------------------------" << endl;
+    cout << "Analise da rotacao obtida negativando os angulos:" << endl << endl;
+    R = euler2rotation(M_PI / 2., 0, M_PI / 2);
+
+    // saida esperada: 0, 0, 1
+    axis << 1, 0, 0;
+    cout << axis << " -> " << R * axis << endl << endl;
+
+    // saida esperada: -1, 0, 0
+    axis << 0, 1, 0;
+    cout << axis << " -> " << R * axis << endl << endl;
+
+    // saida esperada: 0, -1, 0
+    axis << 0, 0, 1;
+    cout << axis << " -> " << R * axis << endl << endl << endl;
+}
+
+
+void
+transformations_example()
+{
+    Matrix<double, 4, 1> point;
+    Matrix<double, 4, 4> T;
+
+    // ******************************************
+    // Questao: Ao transformar um ponto, primeiro rotacionamos, depois transladamos. E se fizermos a inversa, 
+    // primeiro transladamos, e depois rotacionamos? Conclusao: Sim. Quando aplicamos a transformada direta, fazemos
+    //  a seguinte sequencia de operações: roll, pitch, yaw, t. Quando aplicamos a transformacao inversa, fazemos
+    // a seguinte sequencia de operacoes: -t, -yaw, -pitch, -roll. Sejam T a transformacao criada usando a pose de 
+    // sistema de coordenadas B com relacao a um sistema A, P as coordenadas de um ponto em A, e Q as coordenadas
+    // do mesmo ponto em B. Entao: Q = T.inverse() * P, e P = T * Q.
+    // ******************************************
+    cout << "--------------------------------------------------------" << endl;
+    cout << "Transformacoes:" << endl << endl;
+
+    point << 1, 0, 0, 1;
+    T = pose2transform(2, 0, 0, M_PI / 2, 0, M_PI / 2);
+
+    // resultado esperado: [2, 1, 0]
+    cout << "Transformacao de um ponto:" << endl;
+    cout << "T:" << endl << T << endl << endl;
+    cout << "point:" << endl << point << endl << endl;
+    cout << "T * point:" << endl << T * point << endl << endl;
+
+    // resultado esperado: [0, 0, -1]
+    cout << "Obtencao das coordenadas de um ponto em um sistema de destino:" << endl;
+    cout << "T.inverse()" << endl << T.inverse() << endl << endl;
+    cout << "point:" << endl << point << endl << endl;
+    cout << "T.inverse() * point:" << endl << T.inverse() * point << endl << endl << endl;
+
+    // resultado esperado: [1, 0, 0] 
+    point << 0, 0, -1, 1;
+    cout << "Obtencao das coordenadas de um ponto no sistema de origem:" << endl;
+    cout << "T" << endl << T << endl << endl;
+    cout << "point:" << endl << point << endl << endl;
+    cout << "T * point:" << endl << T * point << endl << endl << endl;
+
+    // ******************************************
+    // Questao: Pose do velodyne com respeito a camera.
+    // ******************************************
+    cout << "--------------------------------------------------------" << endl;
+    cout << "Pose do velodyne com respeito a camera:" << endl << endl;
+
+    T = pose2transform(0.115, -0.27, -0.1, M_PI/2, -M_PI/2, 0);
+
+    // resultado esperado: [2.1, 0.115, -0.27]
+    point << 0, 0, 2, 1;
+    cout << "projection from cam to velodyne" << endl;
+    cout << "point:" << endl << point << endl << endl;
+    cout << "T.inverse() * point:" << endl << T.inverse() * point << endl << endl << endl;
+
+    // resultado esperado: [0, 0, 2]
+    point << 2.1, 0.115, -0.27, 1; 
+    cout << "projection from velodyne to cam" << endl;
+    cout << "point:" << endl << point << endl << endl;
+    cout << "T * point:" << endl << T * point << endl << endl << endl;
 }
 
 
@@ -136,7 +237,8 @@ int
 main()
 {
     //ambiguity_example();
-    euler2rotation_example();
+    //euler2rotation_example();
+    transformations_example();
 
     return 0;    
 }

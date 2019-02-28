@@ -6,11 +6,11 @@ LIB += -L /usr/lib -lvtkIO -lvtkFiltering -lvtkCommon -lvtkRendering -lvtkGraphi
 LIB += `pkg-config --libs opencv`
 
 all:
-	#g++ -o example_project_vel_to_cam_ufes example_project_vel_to_cam_ufes.cpp $(CFLAGS) $(INC) $(LIB)
+	g++ -o example_project_vel_to_cam_ufes example_project_vel_to_cam_ufes.cpp $(CFLAGS) $(INC) $(LIB)
 	#g++ -o example_project_vel_to_cam example_project_vel_to_cam.cpp $(CFLAGS) $(INC) $(LIB)
 	#g++ -o example_oxmts2poses  example_oxmts2poses.cpp $(CFLAGS) $(INC) $(LIB)
-	g++ -o example_euler2rotation example_euler2rotation.cpp $(CFLAGS) $(INC) $(LIB)
+	#g++ -o example_euler2rotation_and_transforms example_euler2rotation_and_transforms.cpp $(CFLAGS) $(INC) $(LIB)
 	#g++ -o example_view_ufes_data example_view_ufes_data.cpp $(CFLAGS) $(INC) $(LIB)
 	#g++ -o example_view_kitti_as_map example_view_kitti_as_map.cpp $(CFLAGS) $(INC) $(LIB)
 clean:
-	rm -rf example_project_vel_to_cam example_oxmts2poses example_euler2rotation example_view_ufes_data example_view_kitti_as_map
+	rm -rf example_project_vel_to_cam example_oxmts2poses example_euler2rotation_and_transforms example_view_ufes_data example_view_kitti_as_map

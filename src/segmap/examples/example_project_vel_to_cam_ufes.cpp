@@ -39,21 +39,7 @@ pose6d_to_matrix(double x, double y, double z, double roll, double pitch, double
 int 
 main()
 {
-    pcl::visualization::PCLVisualizer viewer("cloud");
-    PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
-    
-    pcl::io::loadPLYFile("/dados/data/data_log-jardim_da_penha-20181207-2.txt/velodyne/1544204839.806388.ply", *cloud);
-    Mat img = imread("/dados/data/data_log-jardim_da_penha-20181207-2.txt/bb3/1544204840.171747-r.png");
-    
-    Matrix<double, 4, 4> velodyne2cam;
-    velodyne2cam <<
-        0.998721,  -0.013557, -0.0487156,   -0.10791,
-        0.0127058,   0.999762, -0.0177392,  0.0329626,
-        0.0489445,  0.0170975,   0.998655,   0.267897,
-        0,          0,          0,          1
-	;
- 
-    /*
+   /*
     From carmen-ford-escape.ini
     
     velodyne_x	0.145
@@ -71,76 +57,58 @@ main()
     camera3_yaw		-0.023562 		# -0.017453	#0.0 		#0.5585			# 0.09
     */
  
-    //velodyne2cam = pose6d_to_matrix(-0.025, -0.115, 0.27, 0, 0, 0);
-    Matrix<double, 4, 4> vel_wrt_cam_t = pose6d_to_matrix(-0.025, -0.115, 0.27, 0, 0, 0);
+    pcl::visualization::PCLVisualizer viewer("cloud");
+    PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
+    
+    pcl::io::loadPLYFile("1544204839.806388-minus_h.ply", *cloud);
+    Mat img = imread("1544204840.171747-r.png");
+    
+    Matrix<double, 4, 1> point, pcam;
+    Matrix<double, 3, 1> hpixel;
+    Matrix<double, 3, 4> projection;
+    Matrix<double, 4, 4> cam_wrt_velodyne, vel2cam;
+ 
+    cam_wrt_velodyne = pose6d_to_matrix(0.1, 0.115, -0.27, -M_PI/2, 0, -M_PI/2);
+    vel2cam = cam_wrt_velodyne.inverse();
 
-    Matrix<double, 4, 4> R;
-     /*
-     R <<
-        3.7494e-33,          -1, 6.12323e-17,           0,
-        6.12323e-17, 6.12323e-17,           1,           0,
-                 -1,           0, 6.12323e-17,           0,
-                  0,          0,           0,           1
-    ;
-    */
-    R = pose6d_to_matrix(0, 0, 0, -M_PI/2., M_PI/2., 0);
+    /*
+    // BASIC EXAMPLES OF TRANSFORMATION FROM VELODYNE TO CAMERA
 
-    ///*
-    Matrix<double, 4, 1> bla;
-    bla << 1., 0., 0., 0.;
-    cout << "X:" << endl;
-    cout << R * bla << endl << endl;
+    // Saida esperada: [0.115, -0.27, 0.9]
+    point << 1., 0., 0., 1.;
+    cout << "vel2cam * (1, 0, 0):" << endl;
+    cout << vel2cam * point << endl << endl;
 
-    bla << 0., 1., 0., 0.;
-    cout << "Y:" << endl;
-    cout << R * bla << endl << endl;
+    // Saida esperada: [0.885, -0.27, -0.1]
+    point << 0., 1., 0., 1.;
+    cout << "vel2cam * (0, 1, 0):" << endl;
+    cout << vel2cam * point << endl << endl;
 
-    bla << 0., 0., 1., 0.;
-    cout << "Z:" << endl;
-    cout << R * bla << endl << endl;
+    // Saida esperada: [0.115, -1.27, -0.1]
+    point << 0., 0., 1., 1.;
+    cout << "vel2cam * (0, 0, 1):" << endl;
+    cout << vel2cam * point << endl << endl;
      
     return 0;     
-    //*/
-     
-    Matrix<double, 3, 4> projection;
-    projection << 
-        489.439,       0, 323.471,       0,
-        0, 489.437, 237.031,       0,
-        0,       0,       1,       0
+    */
     
+    projection << 
+        489.439, 0, 323.471, 0,
+        0, 489.437, 237.031, 0,
+        0, 0, 1, 0
     ;
  
-    Matrix<double, 4, 1> point, pcam, prot;
-    Matrix<double, 3, 1> hpixel;
- 
-    for (int i = 0; i < 1; i++) // cloud->size(); i++)
+    for (int i = 0; i < cloud->size(); i++)
     {
-        Matrix<double, 4, 1> point;
-        point << 
-            2, // cloud->at(i).x,
-            0, // cloud->at(i).y,
-            0, // cloud->at(i).z,            
-            1;
+        point << cloud->at(i).x, cloud->at(i).y, cloud->at(i).z, 1;
         
-        pcam = velodyne2cam * point;
-        prot = R * pcam;
-        hpixel = projection * prot;
+        pcam = vel2cam * point;
+        hpixel = projection * pcam;
         Point pixel((int) hpixel(0, 0) / hpixel(2, 0), (int) hpixel(1, 0) / hpixel(2, 0));
-        double r = sqrt(pow(point(0,0), 2) + pow(point(1,0), 2) + pow(point(2,0), 2));
+        double r = sqrt(pow(point(0, 0), 2) + pow(point(1, 0), 2) + pow(point(2, 0), 2));
         
-        cout << "point" << endl;
-        cout << point << endl << endl;
-        cout << "pcam" << endl;
-        cout << pcam << endl << endl;
-        cout << "prot" << endl;
-        cout << prot << endl << endl;
-        cout << "hpixel" << endl;
-        cout << hpixel << endl << endl;
-        cout << "pixel" << endl;
-        cout << pixel.x << " " << pixel.y << endl << endl;
-        
-        if (pcam(0, 0) > 0 && r < 70.)
-            circle(img, pixel, 2, Scalar(0,0,255), -1);
+        if (pcam(2, 0) > 0. && r < 70.)
+            circle(img, pixel, 2, Scalar(0, 0, 255), -1);
     }
     
     imshow("img", img);
@@ -150,6 +118,6 @@ main()
 	viewer.addCoordinateSystem(2);
 	viewer.addPointCloud(cloud, "cloud");
 	viewer.spin();
-    
+
     return 0;
 }
