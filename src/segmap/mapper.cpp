@@ -276,8 +276,8 @@ main(int argc, char **argv)
 	printf("path to save maps: %s\n", path_save_maps);
 
 	DatasetInterface *dataset;
-    dataset = new DatasetCarmen(dataset_name, 1);
-	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_SEMANTIC, 1);
+    dataset = new DatasetCarmen(dataset_name, 0);
+	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 0);
 	create_map(map, *dataset, path_save_maps);
 
 	printf("Done\n");

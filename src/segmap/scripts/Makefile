@@ -42,11 +42,12 @@ LFLAGS += -lsegmap
 LFLAGS += `pkg-config --libs opencv` -lvtkCommon -lvtkFiltering -lvtkRendering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
 		-lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt
 
-SOURCES = convert_latlon_to_xyz.cpp convert_pointclouds_to_pcl.cpp generate_dataset_velodyne_segmentation.cpp
-TARGETS = convert_latlon_to_xyz convert_pointclouds_to_pcl generate_dataset_velodyne_segmentation
+SOURCES = convert_latlon_to_xyz.cpp convert_pointclouds_to_pcl.cpp generate_dataset_velodyne_segmentation.cpp generate_data_for_cam_lidar_calibration.cpp
+TARGETS = convert_latlon_to_xyz convert_pointclouds_to_pcl generate_dataset_velodyne_segmentation generate_data_for_cam_lidar_calibration
 
 convert_latlon_to_xyz: convert_latlon_to_xyz.o
 convert_pointclouds_to_pcl: convert_pointclouds_to_pcl.o
 generate_dataset_velodyne_segmentation: generate_dataset_velodyne_segmentation.o 
+generate_data_for_cam_lidar_calibration: generate_data_for_cam_lidar_calibration.o
 
 include $(CARMEN_HOME)/src/Makefile.rules
