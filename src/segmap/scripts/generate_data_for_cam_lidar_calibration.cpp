@@ -16,7 +16,9 @@ save_data(PointCloud<PointXYZRGB>::Ptr cloud, Mat &img, int sample_id)
     char path[256];
     
     sprintf(path, "/dados/calibration_data/bb3/img%04d.png", sample_id);
-    imwrite(path, img);
+    Mat resized(480, 640, CV_8UC3);
+    resize(img, resized, resized.size());
+    imwrite(path, resized);
 
 	sprintf(path, "/dados/calibration_data/velodyne/cloud%04d.txt", sample_id);
 	FILE *f = fopen(path, "w");

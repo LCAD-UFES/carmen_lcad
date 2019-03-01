@@ -68,8 +68,8 @@ def preprocess_log(log_path):
     #run_cmd(cmd)
     
     # optimize poses
-    cmd = './graphslam_fast/graphslam ' + sync_xyz_path + ' ' + loops_path + ' ' + odom_calib_path + ' ' + output_dir + '/optimized.txt'
-    run_cmd(cmd)
+    #cmd = './graphslam_fast/graphslam ' + sync_xyz_path + ' ' + loops_path + ' ' + odom_calib_path + ' ' + output_dir + '/optimized.txt'
+    #run_cmd(cmd)
 
     # convert pointclouds to pcl format
     tmp_velodyne_file = '/tmp/velodynes_' + log_name

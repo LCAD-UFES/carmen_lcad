@@ -1,7 +1,7 @@
 #include "Calibration.h"
 #define KDE_METHOD
 //#define CHI_SQUARE_TEST
-//#define _DEBUG_
+#define _DEBUG_
 
 namespace perls
 {
@@ -473,16 +473,16 @@ namespace perls
               for (int i = 0; i < this->m_NumCams; i++)
               {
                   //Create a window
-                  sprintf (window_name[i], "SCAN Image %d", i);
-                  cvNamedWindow (window_name[i], 1 );
+                  //sprintf (window_name[i], "SCAN Image %d", i);
+                  //cvNamedWindow (window_name[i], 1 );
                   //Display image with projected 3D points
-                  cvShowImage (window_name[i], debug_dest.image[i]);
+                  cvShowImage ("img", debug_dest.image[i]);
                   //Wait for user to press a key
-                  cvWaitKey (0);
+                  cvWaitKey (1);
                   //Release the memory used for clone image
                   cvReleaseImage (&debug_dest.image[i]);
                   //Destroy the opencv window
-                  cvDestroyWindow (window_name[i]);
+                  //cvDestroyWindow (window_name[i]);
               }
             #endif
         } //for(int scan_index = 0; scan_index < numScans; scan_index++)
@@ -1064,6 +1064,7 @@ namespace perls
     
         }
         ssc_pose_set (x0_hl, xk);
+        cvWaitKey(-1);
         return index;
     }
 

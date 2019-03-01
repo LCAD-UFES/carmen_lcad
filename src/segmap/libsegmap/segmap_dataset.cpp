@@ -25,16 +25,9 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 	PointCloud<PointXYZRGB>::Ptr raw_cloud(new PointCloud<PointXYZRGB>);
 
 	cloud->clear();
-
 	load_pointcloud(i, raw_cloud, v, phi);
-    raw_cloud->clear();
-    point.x = 3.0;
-    point.y = 0.;
-    point.z = -0.75;
-    raw_cloud->push_back(point);
     
 	Mat img = load_image(i);
-
 	Mat viewer_img;
 
 	if (view)
@@ -56,13 +49,13 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		range = sqrt(pow(point.x, 2) + pow(point.y, 2));
     	pixel = transform_vel2cam(point);
 
-        printf("pixel %lf %lf %lf\n", pixel(0, 0), pixel(1, 0), pixel(2, 0));
+        //printf("pixel %lf %lf %lf\n", pixel(0, 0), pixel(1, 0), pixel(2, 0));
 
 		x = pixel(0, 0) / pixel(2, 0);
 		y = pixel(1, 0) / pixel(2, 0);
 
-		if (range < 4.0 || range > 70. || (fabs(point.x) < 6.0 && fabs(point.y) < 4.))
-			point.x = point.y = point.z = MAX_RANGE; 
+		//if (range < 4.0 || range > 70. || (fabs(point.x) < 6.0 && fabs(point.y) < 4.))
+		//	point.x = point.y = point.z = MAX_RANGE; 
 
 		pcl::PointXYZRGB point2(point);
 
@@ -74,9 +67,9 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		//point2.b = point.b;
 
 		// to use fused camera and velodyne
-		//if (0)
-		if ((point.x > 0 && x >= 0 && x < img.cols) && (y >= 0 && y < img.rows) 
-		 	&& (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
+		if (0)
+		//if ((point.x > 0 && x >= 0 && x < img.cols) && (y >= 0 && y < img.rows) 
+		// 	&& (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
 		{
 			// colors
 			p = 3 * (y * img.cols + x);
@@ -95,7 +88,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
     		cloud->push_back(point2);
 		}
 		// to use remission
-		else if (0)
+		else if (1)
 		// else if (point.z < 0.)
 		{
 			cloud->push_back(point2);
@@ -150,50 +143,6 @@ DatasetCarmen::_init_vel2cam_transform(int image_height, int image_width)
 	velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
 	cam2board = pose6d_to_matrix(0.245, -0.04, 0.210, -0.017453, 0.026037, -0.023562);
 
-	/*
-	0.998721  -0.013557 -0.0487156   -0.10791
-	0.0127058   0.999762 -0.0177392  0.0329626
-	0.0489445  0.0170975   0.998655   0.267897
-			0          0          0          1
-
-	[ 0.01711885 -0.04896405  0.01272139]         
-			
-	-0.0127058  -0.999762  0.0177392 -0.0329626
-	0.0489445  0.0170975   0.998655   0.267897
-	-0.998721   0.013557  0.0487156    0.10791
-			0          0          0          1         
-					
-	[0.27142109 1.52020797 1.824786  ] 
-
-	velodyne2cam = pose6d_to_matrix(
-		-0.047048,
-		-0.037045,
-		0.118188,
-		1.597316,
-		0.036927,
-		-1.615269 
-	);
-
-	velodyne2cam = pose6d_to_matrix(
-		-0.0329626,
-		0.267897,
-		0.10791,
-		0.27142109, // 1.597316,
-		1.52020797, // 0.036927,
-		1.824786 // -1.615269 
-	);
-	*/
-
-	velodyne2cam = pose6d_to_matrix(
-		0.0329626,
-		-0.267897,
-		-0.10791,
-		0.27142109, // 1.597316,
-		1.52020797, // 0.036927,
-		1.824786 // -1.615269 
-	);
-
-
 	// This is a rotation to change the ref. frame from x: forward, y: left, z: up
 	// to x: right, y: down, z: forward.
 	Matrix<double, 4, 4> R;
@@ -224,15 +173,23 @@ DatasetCarmen::_init_vel2cam_transform(int image_height, int image_width)
 				  0, fy_meters / pixel_size, cv, 0,
 				  0, 0, 1, 0.;
 				  
-    cout << projection << endl;				  
-
+    //cout << projection << endl;				  
 	Matrix<double, 4, 4> mat = cam2board.inverse() * velodyne2board;
-	cout << mat << endl;
-	
-	cout << R << endl;
+    Matrix<double, 3, 3> Rmat;
+    Rmat << mat(0, 0), mat(0, 1), mat(0, 2),
+        mat(1, 0), mat(1, 1), mat(1, 2),
+        mat(2, 0), mat(2, 1), mat(2, 2);
 
-	//_vel2cam = projection * R * cam2board.inverse() * velodyne2board;
-	_vel2cam = projection * velodyne2cam;
+    Matrix<double, 3, 1> ypr = Rmat.eulerAngles(2, 1, 0);
+
+	cout << "vel2cam:" << 
+        mat(0, 3) << " " << mat(1, 3) << " " << mat(2, 3) << " " <<
+        ypr(2, 0) << " " << ypr(1, 0) << " " << ypr(0, 0) << 
+        endl;
+
+	//cout << R << endl;
+
+	_vel2cam = projection * R * cam2board.inverse() * velodyne2board;
 }
 
 

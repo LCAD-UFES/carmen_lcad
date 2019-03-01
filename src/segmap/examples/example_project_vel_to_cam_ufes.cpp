@@ -68,7 +68,11 @@ main()
     Matrix<double, 3, 4> projection;
     Matrix<double, 4, 4> cam_wrt_velodyne, vel2cam;
  
-    cam_wrt_velodyne = pose6d_to_matrix(0.1, 0.115, -0.27, -M_PI/2, 0, -M_PI/2);
+    // cam wrt vel from segmap_dataset: 0.0942407 -0.038998 -0.272209 3.12383 3.09286 3.12802
+    cam_wrt_velodyne = pose6d_to_matrix(0.1, 0.115, -0.27, 
+        -M_PI/2, // + DEG2RAD(0), 
+        0, //  + DEG2RAD(0), 
+        -M_PI/2); //  + DEG2RAD(0));
     vel2cam = cam_wrt_velodyne.inverse();
 
     /*
