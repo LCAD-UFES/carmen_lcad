@@ -77,8 +77,11 @@ class DatasetCarmen : public DatasetInterface
 	Matrix<double, 3, 4> _vel2cam;
 	Matrix<double, 4, 4> _vel2car;
 
+	uchar ***_velodyne_intensity_calibration;
+
 	bool _vel2cam_initialized;
 
+	void _load_velodyne_intensity_calibration();
 	void _init_vel2cam_transform(int image_height, int image_width);
 	void _init_vel2car_transform();
 

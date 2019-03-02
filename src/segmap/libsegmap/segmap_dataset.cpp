@@ -54,8 +54,8 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		x = pixel(0, 0) / pixel(2, 0);
 		y = pixel(1, 0) / pixel(2, 0);
 
-		//if (range < 4.0 || range > 70. || (fabs(point.x) < 6.0 && fabs(point.y) < 4.))
-		//	point.x = point.y = point.z = MAX_RANGE; 
+		if (range < 4.0 || range > 70. || (fabs(point.x) < 6.0 && fabs(point.y) < 4.))
+			point.x = point.y = point.z = MAX_RANGE; 
 
 		pcl::PointXYZRGB point2(point);
 
@@ -69,7 +69,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		// to use fused camera and velodyne
 		if (0)
 		//if ((point.x > 0 && x >= 0 && x < img.cols) && (y >= 0 && y < img.rows) 
-		// 	&& (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
+		 	//&& (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
 		{
 			// colors
 			p = 3 * (y * img.cols + x);
@@ -173,7 +173,8 @@ DatasetCarmen::_init_vel2cam_transform(int image_height, int image_width)
 				  0, fy_meters / pixel_size, cv, 0,
 				  0, 0, 1, 0.;
 				  
-    //cout << projection << endl;				  
+	/*				  
+    //cout << projection << endl;
 	Matrix<double, 4, 4> mat = cam2board.inverse() * velodyne2board;
     Matrix<double, 3, 3> Rmat;
     Rmat << mat(0, 0), mat(0, 1), mat(0, 2),
@@ -186,10 +187,11 @@ DatasetCarmen::_init_vel2cam_transform(int image_height, int image_width)
         mat(0, 3) << " " << mat(1, 3) << " " << mat(2, 3) << " " <<
         ypr(2, 0) << " " << ypr(1, 0) << " " << ypr(0, 0) << 
         endl;
-
 	//cout << R << endl;
+	*/
 
 	_vel2cam = projection * R * cam2board.inverse() * velodyne2board;
+    //_vel2cam = projection * pose6d_to_matrix(0.04, 0.115, -0.27, -M_PI/2-0.052360, -0.034907, -M_PI/2-0.008727).inverse();
 }
 
 
@@ -206,10 +208,69 @@ DatasetCarmen::_init_vel2car_transform()
 }
 
 
+void
+DatasetCarmen::_load_velodyne_intensity_calibration()
+{
+	const char *path = "data/calibration_table.txt";
+	
+	FILE *calibration_file_bin = fopen(path, "r");
+	if (!calibration_file_bin)
+		exit(printf("Error: file '%s' does not exist.\n", path));
+
+	_velodyne_intensity_calibration = (uchar ***) calloc(32, sizeof(uchar **));
+
+	for (int i = 0; i < 32; i++)
+	{
+		_velodyne_intensity_calibration[i] = (uchar **) calloc(10, sizeof(uchar *));
+		
+		for (int j = 0; j < 10; j++)
+			_velodyne_intensity_calibration[i][j] = (uchar *) calloc(256, sizeof(uchar));
+	}
+
+	int laser, ray_size, intensity;
+	long accumulated_intennsity, count;
+	float val, max_val = 0.0, min_val = 255.0;
+	
+	while (fscanf(calibration_file_bin, "%d %d %d %f %ld %ld", &laser, &ray_size, &intensity, &val, &accumulated_intennsity, &count) == 6)
+	{
+		_velodyne_intensity_calibration[laser][ray_size][intensity] = (uchar) val;
+
+		if (val > max_val)
+			max_val = val;
+		
+		if (val < min_val)
+			min_val = val;
+	}
+
+	for (int i = 0; i < 32; i++)
+	{
+		for (int j = 0; j < 10; j++)
+		{
+			for (int k = 0; k < 256; k++)
+			{
+				val = _velodyne_intensity_calibration[i][j][k];
+				val = (val - min_val) / (max_val - min_val);
+
+				if (val > 1.0)
+					val = 1.0;
+
+				if (val < 0.0)
+					val = 0.0;
+
+				_velodyne_intensity_calibration[i][j][k] = (uchar) (val * 255.);
+			}
+		}
+	}
+
+	fclose(calibration_file_bin);
+}
+
+
 DatasetCarmen::DatasetCarmen(string path, int use_segmented) :
 	DatasetInterface(path, use_segmented)
 {
 	load_data();
+	_load_velodyne_intensity_calibration();
 	_unknown_class = CityScapesColorMap().n_classes + 1;
 	_init_vel2car_transform();
 	_init_vel2cam_transform(image_height, image_width);
