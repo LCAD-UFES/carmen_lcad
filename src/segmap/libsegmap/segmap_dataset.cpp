@@ -913,7 +913,7 @@ NewCarmenDataset::_parse_gps_position(vector<char*> data, DataSample *sample)
 	sample->gps.y = -utm.x;
 
 	sample->gps_quality = atoi(data[7]);
-	sample->gps_time = atof(data[data.size() - 1]);
+	sample->gps_time = atof(data[data.size() - 3]);
 }
 
 
