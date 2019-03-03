@@ -1,4 +1,9 @@
 
+#include <carmen/carmen.h>
+#include <carmen/Gdc_Coord_3d.h>
+#include <carmen/Utm_Coord_3d.h>
+#include <carmen/Gdc_To_Utm_Converter.h>
+
 #include <opencv/cv.hpp>
 #include <pcl/io/io.h>
 #include <pcl/io/ply_io.h>
@@ -7,7 +12,6 @@
 #include "segmap_dataset.h"
 #include "segmap_viewer.h"
 #include <pcl/visualization/pcl_visualizer.h>
-
 
 using namespace cv;
 using namespace pcl;
@@ -749,4 +753,240 @@ DatasetKitti::load_data()
 //
 //	_estimate_v(poses, times, odom);
 }
+
+
+NewCarmenDataset::NewCarmenDataset(char *path, int sync_type)
+{
+	_fptr = safe_fopen(path, "r");
+	_sync_type = sync_type;
+	_sample = new DataSample();
+}
+
+
+NewCarmenDataset::~NewCarmenDataset()
+{
+	fclose(_fptr);
+	delete(_sample);
+	_clear_synchronization_queues();
+}
+
+
+void
+NewCarmenDataset::reset()
+{
+	rewind(_fptr);
+}
+
+
+void
+NewCarmenDataset::_free_queue(vector<char*> queue)
+{
+	for (int i = 0; i < queue.size(); i++)
+		free(queue[i]);
+}
+
+
+void 
+NewCarmenDataset::_clear_synchronization_queues()
+{
+	_free_queue(_imu_queue);
+	_free_queue(_gps_position_queue);
+	_free_queue(_gps_orientation_queue);
+	_free_queue(_odom_queue);
+	_free_queue(_camera_queue);
+	_free_queue(_velodyne_queue);
+
+	_imu_queue.clear();
+	_gps_position_queue.clear();
+	_gps_orientation_queue.clear();
+	_odom_queue.clear();
+	_camera_queue.clear();
+	_velodyne_queue.clear();
+}
+
+
+void 
+NewCarmenDataset::_add_message_to_queue(char *line)
+{
+	// ignore small lines
+	if (strlen(line) > 10)
+	{
+		if (!strncmp("NMEAGGA", line, strlen("NMEAGGA")) && line[strlen("NMEAGGA") + 1] == '1')
+			_gps_position_queue.push_back(string_copy(line));
+		else if (!strncmp("NMEAHDT", line, strlen("NMEAHDT")))
+			_gps_orientation_queue.push_back(string_copy(line));
+		else if (!strncmp("ROBOTVELOCITY_ACK", line, strlen("ROBOTVELOCITY_ACK")))
+			_odom_queue.push_back(string_copy(line));
+		else if (!strncmp("XSENS_QUAT", line, strlen("XSENS_QUAT")))
+			_imu_queue.push_back(string_copy(line));
+		else if (!strncmp("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3", line, strlen("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3")))
+			_camera_queue.push_back(string_copy(line));
+		else if (!strncmp("VELODYNE_PARTIAL_SCAN_IN_FILE", line, strlen("VELODYNE_PARTIAL_SCAN_IN_FILE")))
+			_velodyne_queue.push_back(string_copy(line));
+	}
+}
+
+
+vector<char*> 
+NewCarmenDataset::_find_nearest(vector<char*> &queue, double ref_time)
+{
+	double msg_time, nearest_time;
+	vector<char*> splitted;
+	vector<char*> most_sync;
+
+	nearest_time = 0;
+
+	for (int i = 0; i < queue.size(); i++)
+	{
+		splitted = string_split(queue[i], " ");
+		msg_time = atof(splitted[splitted.size() - 3]);
+
+		if (fabs(msg_time - ref_time) < fabs(nearest_time - ref_time))
+		{
+			nearest_time = msg_time;
+			most_sync = vector<char*>(splitted);
+		}
+	}
+
+	return most_sync;
+}
+
+
+void 
+NewCarmenDataset::_parse_odom(vector<char*> data, DataSample *sample)
+{
+	sample->v = atof(data[1]);
+	sample->phi = atof(data[2]);
+	sample->odom_time = atof(data[3]);
+}
+
+
+void 
+NewCarmenDataset::_parse_imu(vector<char*> data, DataSample *sample)
+{
+	sample->xsens = Quaterniond(
+		atof(data[4]),
+		atof(data[5]),
+		atof(data[6]),
+		atof(data[7])
+	);
+
+	sample->xsens_time = atof(data[data.size() - 3]);
+}
+
+
+void
+NewCarmenDataset::_parse_velodyne(vector<char*> data, DataSample *sample)
+{
+	sample->velodyne_path = data[1];
+	sample->velodyne_time =  atof(data[data.size() - 3]);
+}
+
+
+void 
+NewCarmenDataset::_parse_camera(vector<char*> data, DataSample *sample)
+{
+	sample->image_path = data[1];
+	sample->image_time = atof(data[data.size() - 3]);
+}
+
+
+void 
+NewCarmenDataset::_parse_gps_position(vector<char*> data, DataSample *sample)
+{
+	double lt = carmen_global_convert_degmin_to_double(atof(data[3]));
+	double lg = carmen_global_convert_degmin_to_double(atof(data[5]));
+
+	// verify the latitude and longitude orientations
+	if ('S' == data[4][0]) lt = -lt;
+	if ('W' == data[6][0]) lg = -lg;
+
+	// convert to x and y coordinates
+	Gdc_Coord_3d gdc = Gdc_Coord_3d(lt, lg, atof(data[10]));
+
+	// Transformando o z utilizando como altitude a altitude mesmo - que esta vindo como zero
+	Utm_Coord_3d utm;
+	Gdc_To_Utm_Converter::Init();
+	Gdc_To_Utm_Converter::Convert(gdc , utm);
+
+	sample->gps.x = utm.y;
+	sample->gps.y = -utm.x;
+
+	sample->gps_quality = atoi(data[7]);
+	sample->gps_time = atof(data[data.size() - 1]);
+}
+
+
+void 
+NewCarmenDataset::_parse_gps_orientation(vector<char*> data, DataSample *sample)
+{
+	sample->gps.th = atof(data[2]);
+	sample->gps_orientation_quality = atoi(data[3]);
+}
+
+
+void
+NewCarmenDataset::_assemble_data_package_from_queues()
+{
+	double ref_time;
+	
+	if (_sync_type == SYNC_BY_CAMERA) 
+	{
+		// most recent camera message
+		vector<char*> splitted = string_split(_camera_queue[_camera_queue.size() - 1], " ");
+		ref_time = atof(splitted[splitted.size() - 3]);
+
+		_parse_camera(splitted, _sample);
+		_parse_velodyne(_find_nearest(_velodyne_queue, ref_time), _sample);
+	}
+	else if (_sync_type == SYNC_BY_LIDAR)
+	{
+		// most recent velodyne message
+		vector<char*> splitted = string_split(_velodyne_queue[_velodyne_queue.size() - 1], " ");
+		ref_time = atof(splitted[splitted.size() - 3]);
+
+		_parse_velodyne(splitted, _sample);
+		_parse_camera(_find_nearest(_camera_queue, ref_time), _sample);
+	}
+	else
+		exit(printf("Error: invalid sync type: '%d'\n", _sync_type));
+	
+	_parse_odom(_find_nearest(_odom_queue, ref_time), _sample);
+	_parse_imu(_find_nearest(_imu_queue, ref_time), _sample);
+	_parse_gps_position(_find_nearest(_gps_position_queue, ref_time), _sample);
+	_parse_gps_orientation(_find_nearest(_gps_orientation_queue, ref_time), _sample);
+}
+
+
+DataSample* 
+NewCarmenDataset::next_data_package()
+{
+	int all_sensors_were_received;
+	static char _line[_MAX_LINE_LENGTH];
+
+	_clear_synchronization_queues();
+	all_sensors_were_received = 0;
+
+	while (!all_sensors_were_received)
+	{
+		if (feof(_fptr))
+			break;
+
+		fscanf(_fptr, "\n%[^\n]\n", _line);
+		_add_message_to_queue(_line);
+
+		if (_velodyne_queue.size() > 0 && _camera_queue.size() > 0 && 
+			_imu_queue.size() > 0 && _odom_queue.size() > 0 && 
+			_gps_position_queue.size() > 0 && _gps_orientation_queue.size() > 0)
+			all_sensors_were_received = 1;
+	}
+
+	// a data package could not be created because the log is over.
+	if (!all_sensors_were_received) 
+		return NULL;
+	
+	_assemble_data_package_from_queues();
+	return _sample;
+}
+
 

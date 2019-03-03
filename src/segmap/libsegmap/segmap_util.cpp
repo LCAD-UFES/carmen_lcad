@@ -358,3 +358,40 @@ transform_pointcloud(PointCloud<PointXYZRGB>::Ptr cloud,
 }
 */
 
+FILE *safe_fopen(char *path, char *mode)
+{
+	FILE *f = fopen(path, mode);
+
+	if (f == NULL)
+		exit(printf("fopen failed with path: '%s', and mode '%s'\n", path, mode));
+
+	return f;
+}
+
+vector<char*>
+string_split(char *string, char *delimiters)
+{
+	char *token;
+	vector<char*> parts;
+
+	token = strtok(string, delimiters);
+
+	while (token != NULL)
+	{
+		if (strlen(token) > 0)
+			parts.push_back(token);
+			
+		token = strtok(NULL, delimiters);
+	}
+
+	return parts;
+}
+
+
+char* 
+string_copy(char *str)
+{
+	char *cpy = (char *) calloc (sizeof(char), strlen(str) + 1);
+	strcpy(cpy, str);
+	return cpy;
+}

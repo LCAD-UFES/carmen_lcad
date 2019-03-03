@@ -29,16 +29,23 @@ class DataSample
 public:
 	double velodyne_time;
 	double image_time;
-	double gps_time;
 	double odom_time;
 	double xsens_time;
 	double v, phi;
+	double gps_time;
+	
 	int gps_quality;
+	int gps_orientation_quality;
+	
 	Quaterniond xsens;
+	
 	Pose2d pose;
 	Pose2d pose_with_loop_closure;
 	Pose2d pose_registered_to_map;
 	Pose2d gps;
+
+	char *velodyne_path;
+	char *image_path;
 };
 
 
@@ -131,6 +138,50 @@ public:
 	}
 
 	~DatasetKitti() {}
+};
+
+
+class NewCarmenDataset
+{
+public:
+	
+	static const int SYNC_BY_CAMERA = 0;
+	static const int SYNC_BY_LIDAR = 1;
+	
+	NewCarmenDataset(char *path, int sync_type = SYNC_BY_CAMERA);
+	~NewCarmenDataset();
+	void reset();
+	DataSample* next_data_package();
+
+
+protected:
+
+	static const long _MAX_LINE_LENGTH = (5*4000000);
+
+	DataSample *_sample;
+	int _sync_type;
+	FILE *_fptr;
+
+	vector<char*> _imu_queue;
+	vector<char*> _gps_position_queue;
+	vector<char*> _gps_orientation_queue;
+	vector<char*> _odom_queue;
+	vector<char*> _camera_queue;
+	vector<char*> _velodyne_queue;
+
+	void _clear_synchronization_queues();
+	void _add_message_to_queue(char *data);
+	void _assemble_data_package_from_queues();
+	static void _free_queue(vector<char*> queue);
+
+	static vector<char*> _find_nearest(vector<char*> &queue, double ref_time);
+
+	static void _parse_odom(vector<char*> data, DataSample *sample);
+	static void _parse_imu(vector<char*> data, DataSample *sample);
+	static void _parse_velodyne(vector<char*> data, DataSample *sample);
+	static void _parse_camera(vector<char*> data, DataSample *sample);
+	static void _parse_gps_position(vector<char*> data, DataSample *sample);
+	static void _parse_gps_orientation(vector<char*> data, DataSample *sample);
 };
 
 
