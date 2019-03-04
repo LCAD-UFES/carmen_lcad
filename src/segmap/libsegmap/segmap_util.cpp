@@ -395,3 +395,28 @@ string_copy(char *str)
 	strcpy(cpy, str);
 	return cpy;
 }
+
+
+char*
+string_join(vector<char*> tokens, char *join_text)
+{
+	int size;
+	char *joined;
+	int joined_size = 0;
+
+	for (int i = 0; i < tokens.size(); i++)
+		joined_size += strlen(tokens[i]);
+	
+	size = joined_size + tokens.size() * strlen(join_text) + 1;
+	joined = (char*) calloc (sizeof(char), size);
+	joined[0] = '\0';
+
+	for (int i = 0; i < tokens.size(); i++)
+	{
+		strcat(joined, tokens[i]);
+		strcat(joined, join_text);
+	}
+
+	return joined;
+}
+

@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <vector>
 #include <Eigen/Core>
-#include "graphslam_util.h"
+#include "gicp.h"
 #include <carmen/segmap_util.h>
 #include <carmen/segmap_pose2d.h>
 #include <carmen/segmap_dataset.h>
@@ -42,8 +42,6 @@ create_cloud(DatasetCarmen &dataset, int id, Pose2d &target_pose)
 	PointCloud<PointXYZRGB>::Ptr raw_cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr raw_moved(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr out_cloud(new PointCloud<PointXYZRGB>);
-
-	
 
 	for (int i = -5; i < 6; i++)
 	{

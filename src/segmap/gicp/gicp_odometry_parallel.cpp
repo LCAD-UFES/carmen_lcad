@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <Eigen/Core>
-#include "graphslam_util.h"
+#include "gicp.h"
 #include <carmen/segmap_util.h>
 #include <carmen/segmap_pose2d.h>
 #include <carmen/segmap_dataset.h>
