@@ -210,9 +210,9 @@ dbscan_compute_clusters(double d2, size_t density, const vector<image_cartesian>
 }
 
 
-cv::Scalar cluster_color[] =
+cv::Scalar
+cluster_color[] =
 {
-//	cv::Scalar(255, 255, 255),
 	cv::Scalar(255, 0, 0),
     cv::Scalar(255, 255, 0),
     cv::Scalar(255, 0, 255),
@@ -232,6 +232,31 @@ cv::Scalar cluster_color[] =
     cv::Scalar(0, 80, 100),
     cv::Scalar(0, 0, 230),
     cv::Scalar(119, 11, 32),
+};
+
+
+static const cv::Vec3b
+colormap[] =
+{
+    cv::Vec3b(128, 64, 128),
+    cv::Vec3b(244, 35, 232),
+    cv::Vec3b(70, 70, 70),
+    cv::Vec3b(102, 102, 156),
+    cv::Vec3b(190, 153, 153),
+    cv::Vec3b(153, 153, 153),
+    cv::Vec3b(250, 170, 30),
+    cv::Vec3b(220, 220, 0),
+    cv::Vec3b(107, 142, 35),
+    cv::Vec3b(152, 251, 152),
+    cv::Vec3b(70, 130, 180),
+    cv::Vec3b(220, 20, 60),
+    cv::Vec3b(255, 0, 0),
+    cv::Vec3b(0, 0, 142),
+    cv::Vec3b(0, 0, 70),
+    cv::Vec3b(0, 60, 100),
+    cv::Vec3b(0, 80, 100),
+    cv::Vec3b(0, 0, 230),
+    cv::Vec3b(119, 11, 32),
 };
 
 
@@ -435,6 +460,60 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 
 
 void
+erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
+{
+	camera_filter_count[camera_index]++;
+	int filter_datmo_count = 0;
+	cv::Scalar laser_ray_color;
+	int image_width  = camera_data[camera_index].width[image_index];
+	int image_height = camera_data[camera_index].height[image_index];
+	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
+	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
+	double cu = camera_params[camera_index].cu_factor * image_width;
+	double cv = camera_params[camera_index].cv_factor * image_height;
+	double map_resolution = map_config.resolution;
+	int img_planar_depth = (double) 0.5 * sensor_params->range_max / map_resolution;
+	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
+	cv::Mat img = camera_image_semantic[camera_index];
+	int cloud_index = sensor_data->point_cloud_index;
+	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
+	int thread_id = omp_get_thread_num();
+
+	for (int j = 0; j < number_of_laser_shots; j++)
+	{
+		int scan_index = j * sensor_params->vertical_resolution;
+		double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
+
+		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+			continue;
+
+		get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
+
+		for (int i = 1; i < sensor_params->vertical_resolution; i++)
+		{
+			double vertical_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle;
+			double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
+
+			tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+			tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
+
+			int image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
+			int image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
+
+			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
+			double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
+
+			if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max)  //TODO TODO TODO TODO TODO TODO                                           // Laser ray probably hit a moving obstacle
+			{
+				//sensor_data->ray_position_in_the_floor[thread_id][i].x = bx;
+				//sensor_data->ray_position_in_the_floor[thread_id][i].y = by;
+			}
+		}
+	}
+}
+
+
+void
 filter_sensor_data_using_one_image_old(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
 {
 	camera_filter_count[camera_index]++;
@@ -557,6 +636,49 @@ filter_sensor_data_using_image_semantic_segmentation(sensor_parameters_t *sensor
 }
 
 
+bool
+there_are_images_related_to_point_clould(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
+{
+	int filter_cameras = 0;
+
+	if (active_cameras == 0)
+		return 0;
+
+	for (int camera = 1; camera <= MAX_CAMERA_INDEX; camera++)
+	{
+		if (camera_alive[camera] < 0)
+			continue;
+
+		int nearest_index = -1;
+		double nearest_time_diff = DBL_MAX;
+
+		for (int i = 0; i < NUM_CAMERA_IMAGES; i++)
+		{
+			if (camera_data[camera].image[i] == NULL)
+				continue;
+
+			int j = sensor_data->point_cloud_index;
+			double time_difference = fabs(camera_data[camera].timestamp[i] - sensor_data->points_timestamp[j] - CAMERA_DELAY);
+			if (time_difference < nearest_time_diff)
+			{
+				nearest_index = i;
+				nearest_time_diff = time_difference;
+			}
+		}
+
+		if (nearest_time_diff > MAX_TIMESTAMP_DIFFERENCE)
+			continue;
+
+		filter_cameras++;
+	}
+
+	if (active_cameras == filter_cameras)   // TODO Must have a master camera instead of check for all cameras
+		return true;
+
+	return false;
+}
+
+
 void
 include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
@@ -587,8 +709,17 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 	sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
 	sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
 
-	if (filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]) > 0)
+//// Used in Article
+//	if (filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]) > 0)
+//		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+
+//// New - Erase cells occupied by moving obstacles
+	if (there_are_images_related_to_point_clould)
+	{
 		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+		//	erase_moving_obstacles_cells(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+
+	}
 
 	sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
 	sensors_data[sensor_number].robot_pose[i] = old_robot_position;
@@ -1036,31 +1167,6 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 {
 	moving_objects_message = *moving_objects_point_clouds_message;
 }
-
-
-static const cv::Vec3b
-colormap[] =
-{
-    cv::Vec3b(128, 64, 128),
-    cv::Vec3b(244, 35, 232),
-    cv::Vec3b(70, 70, 70),
-    cv::Vec3b(102, 102, 156),
-    cv::Vec3b(190, 153, 153),
-    cv::Vec3b(153, 153, 153),
-    cv::Vec3b(250, 170, 30),
-    cv::Vec3b(220, 220, 0),
-    cv::Vec3b(107, 142, 35),
-    cv::Vec3b(152, 251, 152),
-    cv::Vec3b(70, 130, 180),
-    cv::Vec3b(220, 20, 60),
-    cv::Vec3b(255, 0, 0),
-    cv::Vec3b(0, 0, 142),
-    cv::Vec3b(0, 0, 70),
-    cv::Vec3b(0, 60, 100),
-    cv::Vec3b(0, 80, 100),
-    cv::Vec3b(0, 0, 230),
-    cv::Vec3b(119, 11, 32),
-};
 
 
 void

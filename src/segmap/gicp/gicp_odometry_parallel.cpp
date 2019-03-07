@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <Eigen/Core>
-#include "graphslam_util.h"
+#include "gicp.h"
 #include <carmen/segmap_util.h>
 #include <carmen/segmap_pose2d.h>
 #include <carmen/segmap_dataset.h>
@@ -22,7 +22,7 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
 		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) && 
-			 raw_cloud->at(i).x < 70.0 && raw_cloud->at(i).z < -1)
+			 raw_cloud->at(i).x < 70.0 && raw_cloud->at(i).z < 0 && raw_cloud->at(i).z > -1.5)
 			cloud->push_back(raw_cloud->at(i));
 	}
 

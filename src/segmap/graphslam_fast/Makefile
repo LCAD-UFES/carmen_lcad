@@ -42,27 +42,10 @@ LFLAGS += `pkg-config --libs opencv` -lboost_system -lsegmap
 IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
 LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization
 
-SOURCES = generate_loop_closures.cpp graphslam.cpp joint_graphslam.cpp gicp_odometry_parallel.cpp graphslam_util.cpp \
-	gicp_reconstruction.cpp gicp_odometry_view_result.cpp gicp_odometry_view_matching_result.cpp \
-	gicp_odometry_manual_correction.cpp convert_loops_to_graphslam_format.cpp gicp_odometry_simple.cpp \
-	generate_loop_closures_between_logs.cpp gicp_odometry_view_matching_result_loop_closures_between_logs.cpp filter_incorrect_gicps.cpp
-TARGETS = graphslam joint_graphslam gicp_odometry gicp_reconstruction gicp_odometry_view_result generate_loop_closures \
-	gicp_odometry_view_matching_result gicp_odometry_manual_correction convert_loops_to_graphslam_format gicp_odometry_simple \
-	generate_loop_closures_between_logs gicp_odometry_view_matching_result_loop_closures_between_logs filter_incorrect_gicps
+SOURCES = graphslam.cpp joint_graphslam.cpp graphslam_util.cpp
+TARGETS = graphslam joint_graphslam 
 
-
-filter_incorrect_gicps: filter_incorrect_gicps.o graphslam_util.o ../libsegmap/libsegmap.a
-gicp_odometry_view_matching_result_loop_closures_between_logs: gicp_odometry_view_matching_result_loop_closures_between_logs.o graphslam_util.o ../libsegmap/libsegmap.a
-generate_loop_closures_between_logs: generate_loop_closures_between_logs.o graphslam_util.o ../libsegmap/libsegmap.a
-generate_loop_closures: generate_loop_closures.o graphslam_util.o ../libsegmap/libsegmap.a
 graphslam: graphslam.o
 joint_graphslam: joint_graphslam.o graphslam_util.o ../libsegmap/libsegmap.a
-gicp_odometry: gicp_odometry_parallel.o graphslam_util.o ../libsegmap/libsegmap.a
-gicp_reconstruction: gicp_reconstruction.o graphslam_util.o ../libsegmap/libsegmap.a
-gicp_odometry_view_result: gicp_odometry_view_result.o graphslam_util.o ../libsegmap/libsegmap.a
-gicp_odometry_view_matching_result: gicp_odometry_view_matching_result.o graphslam_util.o ../libsegmap/libsegmap.a
-gicp_odometry_manual_correction: gicp_odometry_manual_correction.o graphslam_util.o ../libsegmap/libsegmap.a
-convert_loops_to_graphslam_format: convert_loops_to_graphslam_format.o graphslam_util.o ../libsegmap/libsegmap.a
-gicp_odometry_simple: gicp_odometry_simple.o graphslam_util.o ../libsegmap/libsegmap.a
 
 include $(CARMEN_HOME)/src/Makefile.rules

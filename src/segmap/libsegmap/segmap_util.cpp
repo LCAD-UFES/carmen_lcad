@@ -358,3 +358,65 @@ transform_pointcloud(PointCloud<PointXYZRGB>::Ptr cloud,
 }
 */
 
+FILE *safe_fopen(char *path, char *mode)
+{
+	FILE *f = fopen(path, mode);
+
+	if (f == NULL)
+		exit(printf("fopen failed with path: '%s', and mode '%s'\n", path, mode));
+
+	return f;
+}
+
+vector<char*>
+string_split(char *string, char *delimiters)
+{
+	char *token;
+	vector<char*> parts;
+
+	token = strtok(string, delimiters);
+
+	while (token != NULL)
+	{
+		if (strlen(token) > 0)
+			parts.push_back(token);
+			
+		token = strtok(NULL, delimiters);
+	}
+
+	return parts;
+}
+
+
+char* 
+string_copy(char *str)
+{
+	char *cpy = (char *) calloc (sizeof(char), strlen(str) + 1);
+	strcpy(cpy, str);
+	return cpy;
+}
+
+
+char*
+string_join(vector<char*> tokens, char *join_text)
+{
+	int size;
+	char *joined;
+	int joined_size = 0;
+
+	for (int i = 0; i < tokens.size(); i++)
+		joined_size += strlen(tokens[i]);
+	
+	size = joined_size + tokens.size() * strlen(join_text) + 1;
+	joined = (char*) calloc (sizeof(char), size);
+	joined[0] = '\0';
+
+	for (int i = 0; i < tokens.size(); i++)
+	{
+		strcat(joined, tokens[i]);
+		strcat(joined, join_text);
+	}
+
+	return joined;
+}
+

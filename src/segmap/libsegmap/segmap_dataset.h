@@ -29,16 +29,25 @@ class DataSample
 public:
 	double velodyne_time;
 	double image_time;
-	double gps_time;
 	double odom_time;
 	double xsens_time;
+	double gps_time;
+
 	double v, phi;
 	int gps_quality;
+	int gps_orientation_quality;
+	int image_width, image_height;
+	int n_laser_shots;
+
 	Quaterniond xsens;
+	
 	Pose2d pose;
 	Pose2d pose_with_loop_closure;
 	Pose2d pose_registered_to_map;
 	Pose2d gps;
+
+	string velodyne_path;
+	string image_path;
 };
 
 
@@ -77,8 +86,11 @@ class DatasetCarmen : public DatasetInterface
 	Matrix<double, 3, 4> _vel2cam;
 	Matrix<double, 4, 4> _vel2car;
 
+	uchar ***_velodyne_intensity_calibration;
+
 	bool _vel2cam_initialized;
 
+	void _load_velodyne_intensity_calibration();
 	void _init_vel2cam_transform(int image_height, int image_width);
 	void _init_vel2car_transform();
 
@@ -128,6 +140,56 @@ public:
 	}
 
 	~DatasetKitti() {}
+};
+
+
+class NewCarmenDataset
+{
+public:
+	
+	static const int SYNC_BY_CAMERA = 0;
+	static const int SYNC_BY_LIDAR = 1;
+	
+	NewCarmenDataset(char *path, int sync_type = SYNC_BY_CAMERA);
+	~NewCarmenDataset();
+	void reset();
+	DataSample* next_data_package();
+	static Mat read_image(DataSample *sample);
+	static PointCloud<PointXYZRGB>::Ptr read_pointcloud(DataSample *sample);
+
+protected:
+
+	static const long _MAX_LINE_LENGTH = (5*4000000);
+
+	string _images_path;
+	string _velodyne_path;
+	DataSample *_sample;
+	int _sync_type;
+	FILE *_fptr;
+
+	vector<char*> _imu_queue;
+	vector<char*> _gps_position_queue;
+	vector<char*> _gps_orientation_queue;
+	vector<char*> _odom_queue;
+	vector<char*> _camera_queue;
+	vector<char*> _velodyne_queue;
+
+	void _clear_synchronization_queues();
+	void _add_message_to_queue(char *data);
+	void _assemble_data_package_from_queues();
+	static void _free_queue(vector<char*> queue);
+
+	static vector<char*> _find_nearest(vector<char*> &queue, double ref_time);
+
+	static void _parse_odom(vector<char*> data, DataSample *sample);
+	static void _parse_imu(vector<char*> data, DataSample *sample);
+	static void _parse_velodyne(vector<char*> data, DataSample *sample, string velodyne_path);
+	static void _parse_camera(vector<char*> data, DataSample *sample, string image_path);
+	static void _parse_gps_position(vector<char*> data, DataSample *sample);
+	static void _parse_gps_orientation(vector<char*> data, DataSample *sample);
+
+	static PointXYZRGB _compute_point_from_velodyne(double v_angle, double h_angle, double radius, unsigned char intensity);
+
 };
 
 

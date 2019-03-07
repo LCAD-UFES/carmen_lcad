@@ -109,4 +109,9 @@ transform_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
 		double v, double phi);
 */
 
+FILE *safe_fopen(char *path, char *mode);
+vector<char*> string_split(char *string, char *delimiters);
+char* string_copy(char *str);
+char* string_join(vector<char*> tokens, char *join_text);
+
 #endif

@@ -136,13 +136,13 @@ main(int argc, char **argv)
 		    double color_var_r, double color_var_g, double color_var_b)    
     */
 
-	ParticleFilter pf(30, ParticleFilter::WEIGHT_SEMANTIC, 
+	ParticleFilter pf(30, ParticleFilter::WEIGHT_VISUAL, 
 			0.5, 0.5, degrees_to_radians(5),
 			0.2, degrees_to_radians(.5),
 			0.1, 0.1, degrees_to_radians(.5),
-			100., 100., 100.);
+			10., 10., 10.);
 
-	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_SEMANTIC);
+	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_VISUAL);
 	run_particle_filter(pf, map, *dataset, path_save_maps);
 
 	printf("Done\n");

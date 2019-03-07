@@ -57,6 +57,9 @@ extern "C" G_MODULE_EXPORT
 void on_menuMaps_Map_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
+void on_menuMaps_MapLevel1_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
 void on_menuMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
@@ -91,6 +94,9 @@ void on_menuSuperimposedMaps_None_toggled (GtkCheckMenuItem* togglebutton, GtkGu
 
 extern "C" G_MODULE_EXPORT
 void on_menuSuperimposedMaps_Map_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
+void on_menuSuperimposedMaps_MapLevel1_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
 void on_menuSuperimposedMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);

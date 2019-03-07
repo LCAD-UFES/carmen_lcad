@@ -42,4 +42,27 @@ view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
 void
 colorize_cloud_according_to_segmentation(PointCloud<PointXYZRGB>::Ptr cloud);
 
+class PointCloudViewer
+{
+public:
+	PointCloudViewer(float point_size = 1, float back_red = 0.5, float back_green = 0.5, float back_blue = 0.5);
+	~PointCloudViewer();
+
+	void show(PointCloud<PointXYZRGB>::Ptr cloud);
+	void show(Mat &img, char *name, int resize_to_width=-1);
+	void loop();
+	void clear();
+
+protected:
+	pcl::visualization::PCLVisualizer *_cloud_viewer;
+
+	// background color
+	float _br, _bg, _bb;
+	int _point_size;
+	int _n_clouds;
+	bool _pause_viewer;
+	bool _img_visible;
+
+};
+
 #endif

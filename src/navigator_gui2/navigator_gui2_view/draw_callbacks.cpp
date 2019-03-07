@@ -135,6 +135,17 @@ void on_menuMaps_Map_toggled (GtkCheckMenuItem* togglebutton,
 }
 
 //extern "C" G_MODULE_EXPORT
+void on_menuMaps_MapLevel1_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui __attribute__ ((unused)))
+{
+	if (gtk_check_menu_item_get_active(togglebutton))
+	{
+		superimposed_is_set = 0;
+		navigator_get_map(CARMEN_NAVIGATOR_MAP_LEVEL1_v, superimposed_is_set);
+	}
+}
+
+//extern "C" G_MODULE_EXPORT
 void on_menuMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -269,6 +280,18 @@ void on_menuSuperimposedMaps_Map_toggled (GtkCheckMenuItem* togglebutton __attri
 	}
 	else
 		carmen_mapper_unsubscribe_map_message((carmen_handler_t) mapper_handler);
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuSuperimposedMaps_MapLevel1_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui)
+{
+	if (gtk_check_menu_item_get_active(togglebutton))
+	{
+		superimposed_is_set = 1;
+		navigator_get_map(CARMEN_NAVIGATOR_MAP_LEVEL1_v, superimposed_is_set);
+		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
+	}
 }
 
 //extern "C" G_MODULE_EXPORT

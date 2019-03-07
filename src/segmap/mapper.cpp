@@ -95,7 +95,7 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 		if (fabs(dataset.data[i].v) < 0.1)
 			continue;
 
-		Pose2d pose = dataset.data[i].gps;
+		Pose2d pose = dataset.data[i].pose;
 
 		cloud->clear();
 		transformed_cloud->clear();
@@ -150,6 +150,7 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 		//for (int j = 0; j < transformed_cloud->size(); j++)
 		    //transformed_cloud->at(j).z = 0.;
 		
+		viewer.removeAllPointClouds();
 		viewer.addPointCloud(transformed_cloud, cloud_name);
 		//viewer.addPointCloud(transformed_cloud2, "xsens");
 		//viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "xsens");
@@ -276,8 +277,8 @@ main(int argc, char **argv)
 	printf("path to save maps: %s\n", path_save_maps);
 
 	DatasetInterface *dataset;
-    dataset = new DatasetCarmen(dataset_name, 1);
-	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_SEMANTIC, 1);
+    dataset = new DatasetCarmen(dataset_name, 0);
+	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
 	create_map(map, *dataset, path_save_maps);
 
 	printf("Done\n");

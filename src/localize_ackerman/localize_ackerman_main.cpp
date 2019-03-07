@@ -47,6 +47,11 @@
 
 #include "localize_ackerman_using_map.h"
 
+
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+using namespace cv;
+
 double safe_range_above_sensors;
 
 static int necessary_maps_available = 0;
@@ -412,6 +417,181 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 	if (g_reinitiaze_particles)
 		carmen_localize_ackerman_initialize_particles_gaussians(filter, 1, &(summary.mean), &g_std);
 }
+
+
+////////////////////////////////////// RANIK ///////////////////////////////////////////////////////
+
+double*
+convert_map_to_array(carmen_map_p map)
+{
+    unsigned int width = map->config.x_size;
+    unsigned int height = map->config.y_size;
+    unsigned int size = width * height;
+    unsigned int row = 0, col = 0, index = 0;
+    double *array_map = (double *) malloc (size * sizeof(double));
+
+    for (unsigned int i = 0; i < size; ++i)
+    {
+        row = (height - 1) - i % height;
+
+        col = i / height;
+
+        index = row * width + col;
+
+        array_map[index] =  1 - map->complete_map[i];
+
+//    	if (map->complete_map[i] != 0.0)
+//    		printf("%lf\n", map->complete_map[i]);
+    }
+    return (array_map);
+
+    exit(0);
+}
+
+
+void
+cv_draw_map(carmen_map_p map, double x, double y, double rotation_angle)
+{
+	double *inverted_map = convert_map_to_array(map);
+
+	unsigned int height = map->config.y_size;
+	double inverse_resolution = 1.0 / map->config.resolution;
+
+	unsigned int row = height - floor((y - map->config.y_origin) * inverse_resolution + 0.5);
+	unsigned int col = floor((x - map->config.x_origin) * inverse_resolution + 0.5);
+
+	Mat image_localize_map = Mat(map->config.x_size, map->config.y_size, CV_64FC1 , inverted_map, 0);
+
+	//printf("%lf %lf %d %d\n", x, y, (int)x - 125, (int)y - 125);
+	if (row  > (unsigned int)map->config.x_size || col > (unsigned int) map->config.x_size)
+	{
+		printf("Out of map\n");
+		return;
+	}
+
+	Mat roteted_map;
+	//Mat rotation_matrix = getRotationMatrix2D(Point(map->config.x_size / 2, map->config.y_size / 2), 90 + rotation_angle, 1.0);
+	Mat rotation_matrix = getRotationMatrix2D(Point(col, row), -rotation_angle, 1.0);
+	warpAffine(image_localize_map, roteted_map, rotation_matrix, Size(image_localize_map.cols, image_localize_map.rows), INTER_NEAREST);
+
+
+	//Rect myROI(col - 125, row - 125, 250, 250);
+	//image_localize_map = image_localize_map(myROI);
+	Rect myROI(col - 150, row - 150, 300, 300);
+	roteted_map = roteted_map(myROI);
+
+	//circle(image_localize_map, Point(x, y), 1, cvScalar(0, 0, 255), 25, 8, 0);
+
+	imshow("Localize Map", roteted_map);
+	waitKey(1);
+	free(inverted_map);
+}
+
+
+void
+cv_draw_compact_map(carmen_compact_map_t *compact_local_map)
+{
+	carmen_map_t local_map;
+	carmen_grid_mapping_create_new_map(&local_map, compact_local_map->config.x_size, compact_local_map->config.y_size, compact_local_map->config.resolution, 'c');
+	memset(local_map.complete_map, 0, local_map.config.x_size * local_map.config.y_size * sizeof(double));
+	carmen_prob_models_uncompress_compact_map(&local_map, compact_local_map);
+
+	double *inverted_map = convert_map_to_array(&local_map);
+
+	Mat image_local_map = Mat(local_map.config.x_size, local_map.config.y_size, CV_64F , inverted_map, 0);
+
+	Rect myROI((local_map.config.x_size / 2) - 150, (local_map.config.y_size / 2) - 150, 300, 300);
+	image_local_map = image_local_map(myROI);
+
+	imshow("Local Map", image_local_map);
+	waitKey(1);
+
+	free (local_map.complete_map);
+	free (local_map.map);
+	free(inverted_map);
+}
+
+double*
+get_unknown_region(carmen_map_p map)
+{
+    unsigned int width = map->config.x_size;
+    unsigned int height = map->config.y_size;
+    unsigned int size = width * height;
+    unsigned int row = 0, col = 0, index = 0;
+    double *array_map = (double *) malloc (size * sizeof(double));
+
+    for (unsigned int i = 0; i < size; ++i)
+    {
+        row = (height - 1) - i % height;
+
+        col = i / height;
+
+        index = row * width + col;
+
+        if (map->complete_map[i] < 0.0)
+        	array_map[index] =  0.0;
+        else
+        	array_map[index] =  1.0;
+
+//    	if (map->complete_map[i] != 0.0)
+//    		printf("%lf\n", map->complete_map[i]);
+    }
+    return (array_map);
+
+    exit(0);
+}
+
+
+void
+cv_draw_map_unknown_region(carmen_map_p map, double x, double y, double rotation_angle)
+{
+	double *inverted_map = get_unknown_region(map);
+
+	unsigned int height = map->config.y_size;
+	double inverse_resolution = 1.0 / map->config.resolution;
+
+	unsigned int row = height - floor((y - map->config.y_origin) * inverse_resolution + 0.5);
+	unsigned int col = floor((x - map->config.x_origin) * inverse_resolution + 0.5);
+
+	Mat image_localize_map = Mat(map->config.x_size, map->config.y_size, CV_64FC1 , inverted_map, 0);
+
+//	printf("%lf %lf %d %d\n", x, y, (int)x - 125, (int)y - 125);
+	if (row  > (unsigned int)map->config.x_size || col > (unsigned int) map->config.x_size)
+	{
+		printf("Out of map\n");
+		return;
+	}
+
+	Mat roteted_map;
+	//Mat rotation_matrix = getRotationMatrix2D(Point(map->config.x_size / 2, map->config.y_size / 2), 90 + rotation_angle, 1.0);
+	Mat rotation_matrix = getRotationMatrix2D(Point(col, row), -rotation_angle, 1.0);
+	warpAffine(image_localize_map, roteted_map, rotation_matrix, Size(image_localize_map.cols, image_localize_map.rows), INTER_NEAREST);
+
+
+	//Rect myROI(col - 125, row - 125, 250, 250);
+	//image_localize_map = image_localize_map(myROI);
+	Rect myROI(col - 150, row - 150, 300, 300);
+	roteted_map = roteted_map(myROI);
+
+	//circle(image_localize_map, Point(x, y), 1, cvScalar(0, 0, 255), 25, 8, 0);
+
+	imshow("Unknown Map", roteted_map);
+	waitKey(1);
+	free(inverted_map);
+}
+
+
+void
+display_maps()
+{
+	cv_draw_map(&localize_map.carmen_map, summary.mean.x, summary.mean.y, carmen_radians_to_degrees(summary.mean.theta));
+	cv_draw_compact_map(&local_compacted_map);
+	//cv_draw_map_unknown_region(&localize_map.carmen_map, summary.mean.x, summary.mean.y, carmen_radians_to_degrees(summary.mean.theta));
+}
+///////////////////////////// END RANIK ///////////////////////////////////////////////////////
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -493,6 +673,9 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 
 	if (g_reinitiaze_particles)
 		carmen_localize_ackerman_initialize_particles_gaussians(filter, 1, &(summary.mean), &g_std);
+
+
+//	display_maps();             // Ranik Display a crop of local and offline maps
 }
 
 

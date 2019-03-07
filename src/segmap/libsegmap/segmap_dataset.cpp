@@ -1,4 +1,9 @@
 
+#include <carmen/carmen.h>
+#include <carmen/Gdc_Coord_3d.h>
+#include <carmen/Utm_Coord_3d.h>
+#include <carmen/Gdc_To_Utm_Converter.h>
+
 #include <opencv/cv.hpp>
 #include <pcl/io/io.h>
 #include <pcl/io/ply_io.h>
@@ -8,12 +13,20 @@
 #include "segmap_viewer.h"
 #include <pcl/visualization/pcl_visualizer.h>
 
-
 using namespace cv;
 using namespace pcl;
 
 
-//pcl::visualization::PCLVisualizer *myviewer = new pcl::visualization::PCLVisualizer("CloudViewer2");
+double velodyne_vertical_angles[32] =
+{
+		-30.6700000, -29.3300000, -28.0000000, -26.6700000, -25.3300000, -24.0000000, -22.6700000, -21.3300000,
+		-20.0000000, -18.6700000, -17.3300000, -16.0000000, -14.6700000, -13.3300000, -12.0000000, -10.6700000,
+		-9.3299999, -8.0000000, -6.6700001, -5.3299999, -4.0000000, -2.6700001, -1.3300000, 0.0000000, 1.3300000,
+		2.6700001, 4.0000000, 5.3299999, 6.6700001, 8.0000000, 9.3299999, 10.6700000
+};
+
+int velodyne_ray_order[32] = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31};
+
 
 void
 DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi, int view, Mat *output_img_view)
@@ -25,10 +38,9 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 	PointCloud<PointXYZRGB>::Ptr raw_cloud(new PointCloud<PointXYZRGB>);
 
 	cloud->clear();
-
 	load_pointcloud(i, raw_cloud, v, phi);
+    
 	Mat img = load_image(i);
-
 	Mat viewer_img;
 
 	if (view)
@@ -50,6 +62,8 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		range = sqrt(pow(point.x, 2) + pow(point.y, 2));
     	pixel = transform_vel2cam(point);
 
+        //printf("pixel %lf %lf %lf\n", pixel(0, 0), pixel(1, 0), pixel(2, 0));
+
 		x = pixel(0, 0) / pixel(2, 0);
 		y = pixel(1, 0) / pixel(2, 0);
 
@@ -66,9 +80,9 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		//point2.b = point.b;
 
 		// to use fused camera and velodyne
-		// if (0)
-		if ((point.x > 0 && x >= 0 && x < img.cols) && (y >= 0 && y < img.rows) 
-			&& (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
+		if (0)
+		//if ((point.x > 0 && x >= 0 && x < img.cols) && (y >= 0 && y < img.rows) 
+		 	//&& (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
 		{
 			// colors
 			p = 3 * (y * img.cols + x);
@@ -87,7 +101,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
     		cloud->push_back(point2);
 		}
 		// to use remission
-		else if (0)
+		else if (1)
 		// else if (point.z < 0.)
 		{
 			cloud->push_back(point2);
@@ -137,6 +151,7 @@ DatasetCarmen::_init_vel2cam_transform(int image_height, int image_width)
 	Matrix<double, 3, 4> projection;
 	Matrix<double, 4, 4> velodyne2board;
 	Matrix<double, 4, 4> cam2board;
+	Matrix<double, 4, 4> velodyne2cam;
 
 	velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
 	cam2board = pose6d_to_matrix(0.245, -0.04, 0.210, -0.017453, 0.026037, -0.023562);
@@ -158,6 +173,11 @@ DatasetCarmen::_init_vel2cam_transform(int image_height, int image_width)
     double cu = cu_factor * image_width;
     double cv = cv_factor * image_height;
 
+	printf("Camera parameters: focal length: %lf cu: %lf cv: %lf\n",
+		sqrt(pow(fx_factor * image_width, 2) + pow(fy_factor * image_height, 2)),
+		cu, cv
+	);
+
     // see http://www.cvlibs.net/publications/Geiger2013IJRR.pdf
     // Note: Storing cu and cv in the 3rd column instead of the 4th is a trick.
     // To compute the pixel coordinates we divide the first two
@@ -165,8 +185,26 @@ DatasetCarmen::_init_vel2cam_transform(int image_height, int image_width)
 	projection << fx_meters / pixel_size, 0, cu, 0,
 				  0, fy_meters / pixel_size, cv, 0,
 				  0, 0, 1, 0.;
+				  
+	/*				  
+    //cout << projection << endl;
+	Matrix<double, 4, 4> mat = cam2board.inverse() * velodyne2board;
+    Matrix<double, 3, 3> Rmat;
+    Rmat << mat(0, 0), mat(0, 1), mat(0, 2),
+        mat(1, 0), mat(1, 1), mat(1, 2),
+        mat(2, 0), mat(2, 1), mat(2, 2);
+
+    Matrix<double, 3, 1> ypr = Rmat.eulerAngles(2, 1, 0);
+
+	cout << "vel2cam:" << 
+        mat(0, 3) << " " << mat(1, 3) << " " << mat(2, 3) << " " <<
+        ypr(2, 0) << " " << ypr(1, 0) << " " << ypr(0, 0) << 
+        endl;
+	//cout << R << endl;
+	*/
 
 	_vel2cam = projection * R * cam2board.inverse() * velodyne2board;
+    //_vel2cam = projection * pose6d_to_matrix(0.04, 0.115, -0.27, -M_PI/2-0.052360, -0.034907, -M_PI/2-0.008727).inverse();
 }
 
 
@@ -183,10 +221,69 @@ DatasetCarmen::_init_vel2car_transform()
 }
 
 
+void
+DatasetCarmen::_load_velodyne_intensity_calibration()
+{
+	const char *path = "data/calibration_table.txt";
+	
+	FILE *calibration_file_bin = fopen(path, "r");
+	if (!calibration_file_bin)
+		exit(printf("Error: file '%s' does not exist.\n", path));
+
+	_velodyne_intensity_calibration = (uchar ***) calloc(32, sizeof(uchar **));
+
+	for (int i = 0; i < 32; i++)
+	{
+		_velodyne_intensity_calibration[i] = (uchar **) calloc(10, sizeof(uchar *));
+		
+		for (int j = 0; j < 10; j++)
+			_velodyne_intensity_calibration[i][j] = (uchar *) calloc(256, sizeof(uchar));
+	}
+
+	int laser, ray_size, intensity;
+	long accumulated_intennsity, count;
+	float val, max_val = 0.0, min_val = 255.0;
+	
+	while (fscanf(calibration_file_bin, "%d %d %d %f %ld %ld", &laser, &ray_size, &intensity, &val, &accumulated_intennsity, &count) == 6)
+	{
+		_velodyne_intensity_calibration[laser][ray_size][intensity] = (uchar) val;
+
+		if (val > max_val)
+			max_val = val;
+		
+		if (val < min_val)
+			min_val = val;
+	}
+
+	for (int i = 0; i < 32; i++)
+	{
+		for (int j = 0; j < 10; j++)
+		{
+			for (int k = 0; k < 256; k++)
+			{
+				val = _velodyne_intensity_calibration[i][j][k];
+				val = (val - min_val) / (max_val - min_val);
+
+				if (val > 1.0)
+					val = 1.0;
+
+				if (val < 0.0)
+					val = 0.0;
+
+				_velodyne_intensity_calibration[i][j][k] = (uchar) (val * 255.);
+			}
+		}
+	}
+
+	fclose(calibration_file_bin);
+}
+
+
 DatasetCarmen::DatasetCarmen(string path, int use_segmented) :
 	DatasetInterface(path, use_segmented)
 {
 	load_data();
+	_load_velodyne_intensity_calibration();
 	_unknown_class = CityScapesColorMap().n_classes + 1;
 	_init_vel2car_transform();
 	_init_vel2cam_transform(image_height, image_width);
@@ -666,3 +763,342 @@ DatasetKitti::load_data()
 //	_estimate_v(poses, times, odom);
 }
 
+
+NewCarmenDataset::NewCarmenDataset(char *path, int sync_type)
+{
+	_fptr = safe_fopen(path, "r");
+	_sync_type = sync_type;
+	_sample = new DataSample();
+
+	_velodyne_path = string(path) + "_velodyne";
+	_images_path = string(path) + "_bumblebee";
+}
+
+
+NewCarmenDataset::~NewCarmenDataset()
+{
+	fclose(_fptr);
+	delete(_sample);
+	_clear_synchronization_queues();
+}
+
+
+void
+NewCarmenDataset::reset()
+{
+	rewind(_fptr);
+}
+
+
+void
+NewCarmenDataset::_free_queue(vector<char*> queue)
+{
+	for (int i = 0; i < queue.size(); i++)
+		free(queue[i]);
+}
+
+
+void 
+NewCarmenDataset::_clear_synchronization_queues()
+{
+	_free_queue(_imu_queue);
+	_free_queue(_gps_position_queue);
+	_free_queue(_gps_orientation_queue);
+	_free_queue(_odom_queue);
+	_free_queue(_camera_queue);
+	_free_queue(_velodyne_queue);
+
+	_imu_queue.clear();
+	_gps_position_queue.clear();
+	_gps_orientation_queue.clear();
+	_odom_queue.clear();
+	_camera_queue.clear();
+	_velodyne_queue.clear();
+}
+
+
+void 
+NewCarmenDataset::_add_message_to_queue(char *line)
+{
+	// ignore small lines
+	if (strlen(line) > 10)
+	{
+		if (!strncmp("NMEAGGA", line, strlen("NMEAGGA")) && line[strlen("NMEAGGA") + 1] == '1')
+			_gps_position_queue.push_back(string_copy(line));
+		else if (!strncmp("NMEAHDT", line, strlen("NMEAHDT")))
+			_gps_orientation_queue.push_back(string_copy(line));
+		else if (!strncmp("ROBOTVELOCITY_ACK", line, strlen("ROBOTVELOCITY_ACK")))
+			_odom_queue.push_back(string_copy(line));
+		else if (!strncmp("XSENS_QUAT", line, strlen("XSENS_QUAT")))
+			_imu_queue.push_back(string_copy(line));
+		else if (!strncmp("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3", line, strlen("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3")))
+			_camera_queue.push_back(string_copy(line));
+		else if (!strncmp("VELODYNE_PARTIAL_SCAN_IN_FILE", line, strlen("VELODYNE_PARTIAL_SCAN_IN_FILE")))
+			_velodyne_queue.push_back(string_copy(line));
+	}
+}
+
+
+vector<char*> 
+NewCarmenDataset::_find_nearest(vector<char*> &queue, double ref_time)
+{
+	double msg_time, nearest_time;
+	vector<char*> splitted;
+	vector<char*> most_sync;
+
+	nearest_time = 0;
+
+	for (int i = 0; i < queue.size(); i++)
+	{
+		splitted = string_split(queue[i], " ");
+		msg_time = atof(splitted[splitted.size() - 3]);
+
+		if (fabs(msg_time - ref_time) < fabs(nearest_time - ref_time))
+		{
+			nearest_time = msg_time;
+			most_sync = vector<char*>(splitted);
+		}
+	}
+
+	return most_sync;
+}
+
+
+void 
+NewCarmenDataset::_parse_odom(vector<char*> data, DataSample *sample)
+{
+	sample->v = atof(data[1]);
+	sample->phi = atof(data[2]);
+	sample->odom_time = atof(data[3]);
+}
+
+
+void 
+NewCarmenDataset::_parse_imu(vector<char*> data, DataSample *sample)
+{
+	sample->xsens = Quaterniond(
+		atof(data[4]),
+		atof(data[5]),
+		atof(data[6]),
+		atof(data[7])
+	);
+
+	sample->xsens_time = atof(data[data.size() - 3]);
+}
+
+
+void
+NewCarmenDataset::_parse_velodyne(vector<char*> data, DataSample *sample, string velodyne_path)
+{
+	vector<char*> splitted = string_split(data[1], "/");
+	
+	int n = splitted.size();
+	string path = velodyne_path + "/" + 
+		splitted[n - 3] + "/" + 
+		splitted[n - 2] + "/" + 
+		splitted[n - 1];
+
+	sample->n_laser_shots = atoi(data[2]);
+	sample->velodyne_path = path;
+	sample->velodyne_time =  atof(data[data.size() - 3]);
+}
+
+
+void 
+NewCarmenDataset::_parse_camera(vector<char*> data, DataSample *sample, string image_path)
+{
+	vector<char*> splitted = string_split(data[1], "/");
+	
+	int n = splitted.size();
+	string path = image_path + "/" + 
+		splitted[n - 3] + "/" + 
+		splitted[n - 2] + "/" + 
+		splitted[n - 1];
+
+	sample->image_path = path;
+	sample->image_height = atoi(data[2]);
+	sample->image_width = atoi(data[3]);
+	sample->image_time = atof(data[data.size() - 3]);
+}
+
+
+void 
+NewCarmenDataset::_parse_gps_position(vector<char*> data, DataSample *sample)
+{
+	double lt = carmen_global_convert_degmin_to_double(atof(data[3]));
+	double lg = carmen_global_convert_degmin_to_double(atof(data[5]));
+
+	// verify the latitude and longitude orientations
+	if ('S' == data[4][0]) lt = -lt;
+	if ('W' == data[6][0]) lg = -lg;
+
+	// convert to x and y coordinates
+	Gdc_Coord_3d gdc = Gdc_Coord_3d(lt, lg, atof(data[10]));
+
+	// Transformando o z utilizando como altitude a altitude mesmo - que esta vindo como zero
+	Utm_Coord_3d utm;
+	Gdc_To_Utm_Converter::Init();
+	Gdc_To_Utm_Converter::Convert(gdc , utm);
+
+	sample->gps.x = utm.y;
+	sample->gps.y = -utm.x;
+
+	sample->gps_quality = atoi(data[7]);
+	sample->gps_time = atof(data[data.size() - 3]);
+}
+
+
+void 
+NewCarmenDataset::_parse_gps_orientation(vector<char*> data, DataSample *sample)
+{
+	sample->gps.th = atof(data[2]);
+	sample->gps_orientation_quality = atoi(data[3]);
+}
+
+
+void
+NewCarmenDataset::_assemble_data_package_from_queues()
+{
+	double ref_time;
+	
+	if (_sync_type == SYNC_BY_CAMERA) 
+	{
+		// most recent camera message
+		vector<char*> splitted = string_split(_camera_queue[_camera_queue.size() - 1], " ");
+		ref_time = atof(splitted[splitted.size() - 3]);
+
+		_parse_camera(splitted, _sample, _images_path);
+		_parse_velodyne(_find_nearest(_velodyne_queue, ref_time), _sample, _velodyne_path);
+	}
+	else if (_sync_type == SYNC_BY_LIDAR)
+	{
+		// most recent velodyne message
+		vector<char*> splitted = string_split(_velodyne_queue[_velodyne_queue.size() - 1], " ");
+		ref_time = atof(splitted[splitted.size() - 3]);
+
+		_parse_velodyne(splitted, _sample, _velodyne_path);
+		_parse_camera(_find_nearest(_camera_queue, ref_time), _sample, _images_path);
+	}
+	else
+		exit(printf("Error: invalid sync type: '%d'\n", _sync_type));
+	
+	_parse_odom(_find_nearest(_odom_queue, ref_time), _sample);
+	_parse_imu(_find_nearest(_imu_queue, ref_time), _sample);
+	_parse_gps_position(_find_nearest(_gps_position_queue, ref_time), _sample);
+	_parse_gps_orientation(_find_nearest(_gps_orientation_queue, ref_time), _sample);
+}
+
+
+DataSample* 
+NewCarmenDataset::next_data_package()
+{
+	int all_sensors_were_received;
+	static char _line[_MAX_LINE_LENGTH];
+
+	_clear_synchronization_queues();
+	all_sensors_were_received = 0;
+
+	while (!all_sensors_were_received)
+	{
+		if (feof(_fptr))
+			break;
+
+		fscanf(_fptr, "\n%[^\n]\n", _line);
+		_add_message_to_queue(_line);
+
+		if (_velodyne_queue.size() > 0 && _camera_queue.size() > 0 && 
+			_imu_queue.size() > 0 && _odom_queue.size() > 0 && 
+			_gps_position_queue.size() > 0 && _gps_orientation_queue.size() > 0)
+			all_sensors_were_received = 1;
+	}
+
+	// a data package could not be created because the log is over.
+	if (!all_sensors_were_received) 
+		return NULL;
+	
+	_assemble_data_package_from_queues();
+	return _sample;
+}
+
+
+Mat 
+NewCarmenDataset::read_image(DataSample *sample)
+{
+	static int image_size = sample->image_height * sample->image_width * 3;
+	static unsigned char *raw_right = (unsigned char*) calloc (image_size, sizeof(unsigned char));
+	static Mat img_r = Mat(sample->image_width, sample->image_height, CV_8UC3, raw_right, 0);
+	
+	FILE *image_file = safe_fopen((char*) sample->image_path.c_str(), "rb");
+	// jump the left image
+	fseek(image_file, image_size * sizeof(unsigned char), SEEK_SET);
+	fread(raw_right, image_size, sizeof(unsigned char), image_file);
+	fclose(image_file);
+	// carmen images are stored as rgb
+	cvtColor(img_r, img_r, COLOR_RGB2BGR);
+
+	return img_r;
+}
+
+
+PointXYZRGB
+NewCarmenDataset::_compute_point_from_velodyne(double v_angle, double h_angle, double radius, unsigned char intensity)
+{
+    // build a new point
+    PointXYZRGB point;
+
+	double cos_rot_angle = cos(h_angle);
+	double sin_rot_angle = sin(h_angle);
+
+	double cos_vert_angle = cos(v_angle);
+	double sin_vert_angle = sin(v_angle);
+
+	double xy_distance = radius * cos_vert_angle;
+
+	point.x = (xy_distance * cos_rot_angle);
+	point.y = (xy_distance * sin_rot_angle);
+	point.z = (radius * sin_vert_angle);
+
+	point.r = intensity;
+    point.g = intensity;
+    point.b = intensity;
+
+    return point;
+}
+
+
+PointCloud<PointXYZRGB>::Ptr
+NewCarmenDataset::read_pointcloud(DataSample *sample)
+{
+	static PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
+
+	FILE *f = safe_fopen((char*) sample->velodyne_path.c_str(), "rb");
+
+	double h_angle, v_angle;
+	unsigned short distances[32];
+	unsigned char intensities[32];
+	double range;
+
+	cloud->clear();
+
+	for(int i = 0; i < sample->n_laser_shots; i++)
+	{
+		fread(&h_angle, sizeof(double), 1, f);
+	    fread(distances, sizeof(unsigned short), 32, f);
+	    fread(intensities, sizeof(unsigned char), 32, f);
+
+	    h_angle = M_PI * h_angle / 180.;
+
+	    for (int j = 0; j < 32; j++)
+	    {
+	    	range = (double) distances[velodyne_ray_order[j]] / 500.;
+	    	v_angle = velodyne_vertical_angles[j];
+	    	v_angle = M_PI * v_angle / 180.;
+
+	    	PointXYZRGB point = _compute_point_from_velodyne(v_angle, -h_angle, range, intensities[velodyne_ray_order[j]]);
+	    	cloud->push_back(point);
+	    }
+	}
+
+    fclose(f);
+	return cloud;
+}

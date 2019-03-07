@@ -147,6 +147,7 @@ namespace View
 			GtkCheckMenuItem* menuSimulator_ShowObjects;
 			GtkCheckMenuItem* menuGoals_EditRddfGoals;
 			GtkCheckMenuItem* menuMaps_Map;
+			GtkCheckMenuItem* menuMaps_MapLevel1;
 			GtkCheckMenuItem* menuMaps_OfflineMap;
 			GtkCheckMenuItem* menuMaps_Utility;
 			GtkCheckMenuItem* menuMaps_Costs;
@@ -159,6 +160,7 @@ namespace View
 			GtkCheckMenuItem* menuMaps_RoadMap;
 			GtkCheckMenuItem* menuSuperimposedMaps_None;
 			GtkCheckMenuItem* menuSuperimposedMaps_Map;
+			GtkCheckMenuItem* menuSuperimposedMaps_MapLevel1;
 			GtkCheckMenuItem* menuSuperimposedMaps_OfflineMap;
 			GtkCheckMenuItem* menuSuperimposedMaps_Utility;
 			GtkCheckMenuItem* menuSuperimposedMaps_Costs;
@@ -237,7 +239,6 @@ namespace View
 
 		carmen_robot_config_t	 	*robot_config;
 		carmen_polygon_config_t		*poly_config;
-		carmen_collision_config_t   *collision_config;
 		carmen_navigator_config_t 	*nav_config;
 
 		carmen_world_point_t cursor_pos;
@@ -303,7 +304,7 @@ namespace View
 		Controls *getControls() { return &controls_; }
 
 		void navigator_graphics_initialize(int argc, char **argv, carmen_localize_ackerman_globalpos_message *msg,
-						carmen_robot_config_t *robot_conf_param, carmen_polygon_config_t *poly_config_param, carmen_collision_config_t *collision_config_param,
+						carmen_robot_config_t *robot_conf_param, carmen_polygon_config_t *poly_config_param,
 						carmen_navigator_config_t *nav_conf_param, carmen_navigator_panel_config_t *nav_panel_conf_param);
 
 		int navigator_graphics_update_map();

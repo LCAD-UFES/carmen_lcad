@@ -133,6 +133,18 @@
                       </object>
                     </child>
                     <child>
+                      <object class="GtkRadioMenuItem" id="menuMaps_MapLevel1">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="label" translatable="yes">Map Level1</property>
+                        <property name="use_underline">True</property>
+                        <property name="draw_as_radio">True</property>
+                        <property name="group">menuMaps_OfflineMap</property>
+                        <signal name="toggled" handler="on_menuMaps_MapLevel1_toggled" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkRadioMenuItem" id="menuMaps_OfflineMap">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
@@ -288,6 +300,18 @@
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuSuperimposedMaps_None</property>
                         <signal name="toggled" handler="on_menuSuperimposedMaps_Map_toggled" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkRadioMenuItem" id="menuSuperimposedMaps_MapLevel1">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="label" translatable="yes">Map Level1</property>
+                        <property name="use_underline">True</property>
+                        <property name="draw_as_radio">True</property>
+                        <property name="group">menuSuperimposedMaps_None</property>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_MapLevel1_toggled" swapped="no"/>
                       </object>
                     </child>
                     <child>

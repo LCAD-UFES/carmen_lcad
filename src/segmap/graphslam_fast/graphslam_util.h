@@ -2,7 +2,6 @@
 #ifndef __GRAPHSLAM_UTIL__
 #define __GRAPHSLAM_UTIL__
 
-#include <pcl/common/projection_matrix.h>
 #include "g2o/types/slam2d/se2.h"
 #include "g2o/core/sparse_optimizer.h"
 #include <carmen/segmap_dataset.h>
@@ -49,14 +48,5 @@ save_corrected_vertices(
 	string filename, 
 	double offset_x, 
     double offset_y);
-
-void
-run_gicp(
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr source, 
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr target, 
-	Matrix<double, 4, 4> *correction, 
-	int *converged, 
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr output,
-	double leaf_size=0.);
 
 #endif
