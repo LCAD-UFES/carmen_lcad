@@ -31,12 +31,14 @@ public:
 	double image_time;
 	double odom_time;
 	double xsens_time;
-	double v, phi;
 	double gps_time;
-	
+
+	double v, phi;
 	int gps_quality;
 	int gps_orientation_quality;
-	
+	int image_width, image_height;
+	int n_laser_shots;
+
 	Quaterniond xsens;
 	
 	Pose2d pose;
@@ -152,8 +154,8 @@ public:
 	~NewCarmenDataset();
 	void reset();
 	DataSample* next_data_package();
-	Mat read_image(char *path);
-	PointCloud<PointXYZRGB>::Ptr read_pointcloud(char *path);
+	static Mat read_image(DataSample *sample);
+	static PointCloud<PointXYZRGB>::Ptr read_pointcloud(DataSample *sample);
 
 protected:
 
@@ -172,10 +174,6 @@ protected:
 	vector<char*> _camera_queue;
 	vector<char*> _velodyne_queue;
 
-	int _image_height;
-	int _image_width;
-	int _n_pointcloud_shots;
-
 	void _clear_synchronization_queues();
 	void _add_message_to_queue(char *data);
 	void _assemble_data_package_from_queues();
@@ -185,8 +183,8 @@ protected:
 
 	static void _parse_odom(vector<char*> data, DataSample *sample);
 	static void _parse_imu(vector<char*> data, DataSample *sample);
-	static void _parse_velodyne(vector<char*> data, DataSample *sample, string velodyne_path, int *n_shots);
-	static void _parse_camera(vector<char*> data, DataSample *sample, string image_path, int *image_height, int *image_width);
+	static void _parse_velodyne(vector<char*> data, DataSample *sample, string velodyne_path);
+	static void _parse_camera(vector<char*> data, DataSample *sample, string image_path);
 	static void _parse_gps_position(vector<char*> data, DataSample *sample);
 	static void _parse_gps_orientation(vector<char*> data, DataSample *sample);
 
