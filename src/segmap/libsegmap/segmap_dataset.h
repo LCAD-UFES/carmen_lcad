@@ -161,6 +161,7 @@ protected:
 
 	static const long _MAX_LINE_LENGTH = (5*4000000);
 
+	OdomCalib _calib;
 	string _images_path;
 	string _velodyne_path;
 	DataSample *_sample;
@@ -174,11 +175,12 @@ protected:
 	vector<char*> _camera_queue;
 	vector<char*> _velodyne_queue;
 
+	void _load_odometry_calibration(char *path);
 	void _clear_synchronization_queues();
 	void _add_message_to_queue(char *data);
 	void _assemble_data_package_from_queues();
-	static void _free_queue(vector<char*> queue);
 
+	static void _free_queue(vector<char*> queue);
 	static vector<char*> _find_nearest(vector<char*> &queue, double ref_time);
 
 	static void _parse_odom(vector<char*> data, DataSample *sample);

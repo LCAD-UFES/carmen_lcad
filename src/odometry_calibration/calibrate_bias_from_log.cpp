@@ -195,7 +195,7 @@ estimate_theta(PsoData *pso_data, int id)
 		double d = sqrt(pow(dx, 2) +
 						pow(dy, 2));
 
-		if (d > 10)
+		if (d > 5)
 			return atan2(dy, dx);
 	}
 
@@ -204,7 +204,7 @@ estimate_theta(PsoData *pso_data, int id)
 
 
 void
-print_result(double *particle)
+print_result(double *particle, FILE *f_report)
 {
 	uint i;
 	double dt, x, y, yaw, v, phi;
@@ -221,7 +221,10 @@ print_result(double *particle)
 	x_withoutbias = 0;
 	y_withoutbias = 0;
 
-	yaw = yaw_withoutbias = particle[4]; // estimate_theta(pso_data, 0);
+	yaw = yaw_withoutbias = particle[4]; 
+	//yaw = yaw_withoutbias = estimate_theta(pso_data, 0);
+	
+	fprintf(f_report, "Initial angle: %lf\n", yaw);
 	fprintf(stderr, "Initial angle: %lf\n", yaw);
 
 	dt_gps_and_odom = 0;
@@ -230,17 +233,6 @@ print_result(double *particle)
 	for (i = 1; i < pso_data->lines.size(); i++)
 	{
 		dt = pso_data->lines[i].time - pso_data->lines[i - 1].time;
-
-		// for the case in which we are optimizing a merged log.
-		if (dt > 6000 || dt < 0)
-		{
-			//fprintf(stderr, "Initiating a new log at message %d with dt: %lf\n", i, dt);
-			x = pso_data->lines[i].gps_x - pso_data->lines[0].gps_x;
-			y = pso_data->lines[i].gps_y - pso_data->lines[0].gps_y;
-			yaw = yaw_withoutbias = particle[4]; //estimate_theta(pso_data, i);
-			fprintf(stderr, "Reseting initial angle: %lf\n", yaw);
-			continue;
-		}
 
 		v = pso_data->lines[i].v * particle[0] + particle[1];
 		phi = carmen_normalize_theta(pso_data->lines[i].phi * particle[2] + particle[3]);
@@ -261,7 +253,7 @@ print_result(double *particle)
 		dt_gps_and_odom = fabs(pso_data->lines[i].time - pso_data->lines[i].gps_time);
 		dt_gps_and_odom_acc += dt_gps_and_odom;
 
-		printf("%lf %lf %lf %lf %lf %lf %lf %lf\n", x, y, gps_x, gps_y, x_withoutbias, y_withoutbias, dt_gps_and_odom, dt_gps_and_odom_acc);
+		fprintf(f_report, "DATA %lf %lf %lf %lf %lf %lf %lf %lf\n", x, y, gps_x, gps_y, x_withoutbias, y_withoutbias, dt_gps_and_odom, dt_gps_and_odom_acc);
 	}
 }
 
@@ -281,21 +273,12 @@ fitness(double *particle, void *data)
 	x = 0;
 	y = 0;
 
-	yaw = particle[4]; // estimate_theta(pso_data, 0);
+	yaw = particle[4]; 
+	//yaw = estimate_theta(pso_data, 0);
 
 	for (i = 1; i < pso_data->lines.size(); i++)
 	{
 		dt = pso_data->lines[i].time - pso_data->lines[i - 1].time;
-
-		// for the case in which we are optimizing a merged log.
-		if (dt > 6000 || dt < 0)
-		{
-			//fprintf(stderr, "Initiating a new log at message %d with dt: %lf\n", i, dt);
-			x = pso_data->lines[i].gps_x - pso_data->lines[0].gps_x;
-			y = pso_data->lines[i].gps_y - pso_data->lines[0].gps_y;
-			yaw = particle[4]; // estimate_theta(pso_data, i);
-			continue;
-		}
 
 		// v = raw_v * mult_bias + add_bias
 		v = pso_data->lines[i].v * particle[0] + particle[1];
@@ -315,6 +298,15 @@ fitness(double *particle, void *data)
 
 		// add the error
 		error += sqrt(pow(x - gps_x, 2) + pow(y - gps_y, 2));
+
+		// reinforce consistency between heading direction and heading estimated using gps
+		if ((fabs(v) > 5.0) && (i > 0))
+		{
+			double gps_yaw = atan2(pso_data->lines[i].gps_y - pso_data->lines[i - 1].gps_y, 
+								   pso_data->lines[i].gps_x - pso_data->lines[i - 1].gps_x);
+
+			error += 100 * fabs(carmen_radians_to_degrees(carmen_normalize_theta(gps_yaw - yaw)));
+		}
 	}
 
 	// pso only maximizes, so we use as fitness the inverse of the error.
@@ -345,6 +337,8 @@ set_limits(int dim)
 	limits = alloc_limits(dim);
 
 	// v multiplicative bias
+	//limits[0][0] = 0.95; //0.5;
+	//limits[0][1] = 1.05; //1.5;
 	limits[0][0] = 0.5;
 	limits[0][1] = 1.5;
 
@@ -357,12 +351,12 @@ set_limits(int dim)
 	limits[2][1] = 1.5;
 
 	// phi additive bias
-	limits[3][0] = -0.3;
-	limits[3][1] = 0.3;
+	limits[3][0] = -0.5;
+	limits[3][1] = 0.5;
 
 	// Initial angle
-	limits[4][0] = -M_PI;
-	limits[4][1] = M_PI;
+	limits[4][0] = 0.830968; // -M_PI;
+	limits[4][1] = 0.830969; // M_PI;
 
 	return limits;
 }
@@ -373,19 +367,31 @@ main(int argc, char **argv)
 {
 	double **limits;
 
-	if (argc < 2)
-		exit(printf("Use %s <input-data>\n", argv[0]));
+	if (argc < 4)
+		exit(printf("Use %s <log_path> <output_calibration_file> <output_report_file>\n", argv[0]));
 
 	read_data(argv[1]);
 	limits = set_limits(5);
+
+	FILE *f_calibration = fopen(argv[2], "w");
+	FILE *f_report = fopen(argv[3], "w");
+
+	if (f_calibration == NULL) exit(printf("Error: unable to open file '%s'\n", argv[2]));
+	if (f_report == NULL) exit(printf("Error: unable to open file '%s'\n", argv[3]));
 
 	srand(time(NULL));
 	srand(rand());
 
 	ParticleSwarmOptimization optimizer(
-		fitness, limits, 5, &DataReadFromFile, 1000, 100);
+		fitness, limits, 5, &DataReadFromFile, 1000, 200);
 
 	optimizer.Optimize();
+
+	fprintf(f_calibration, "bias v: %lf %lf bias phi: %lf %lf Initial Angle: %lf\n",
+		optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
+		optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
+        optimizer.GetBestSolution()[4]
+	);
 
 	fprintf(stderr, "bias v: %lf %lf bias phi: %lf %lf Initial Angle: %lf\n",
 		optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
@@ -393,11 +399,14 @@ main(int argc, char **argv)
         optimizer.GetBestSolution()[4]
 	);
 
+	fprintf(f_report, "Fitness (MSE): %lf\n", optimizer.GetBestFitness());
+	fprintf(f_report, "Fitness (SQRT(MSE)): %lf\n", sqrt(fabs(optimizer.GetBestFitness())));
+
 	fprintf(stderr, "Fitness (MSE): %lf\n", optimizer.GetBestFitness());
 	fprintf(stderr, "Fitness (SQRT(MSE)): %lf\n", sqrt(fabs(optimizer.GetBestFitness())));
 
 	// DEBUG: it prints the calibrated odometry, gps and raw odometry
-	print_result(optimizer.GetBestSolution());
+	print_result(optimizer.GetBestSolution(), f_report);
 
 	return 0;
 }
