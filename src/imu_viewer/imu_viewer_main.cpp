@@ -91,6 +91,11 @@ xsens_quat_message_handler(carmen_xsens_global_quat_message *xsens_quat_message)
 	data->m_mag.y = xsens_quat_message->m_mag.y;
 	data->m_mag.z = xsens_quat_message->m_mag.z;
 
+	printf ("%lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+			xsens_quat_message->m_acc.x, xsens_quat_message->m_acc.y, xsens_quat_message->m_acc.z,
+			xsens_quat_message->m_gyr.x, xsens_quat_message->m_gyr.y, xsens_quat_message->m_gyr.z,
+			xsens_quat_message->m_mag.x, xsens_quat_message->m_mag.y, xsens_quat_message->m_mag.z);
+
 	data->quat_data = xsens_quat_message->quat_data;
 
 	rotation_matrix *r_mat = create_rotation_matrix_from_quaternions_new(data->quat_data);
