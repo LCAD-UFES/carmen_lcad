@@ -157,11 +157,12 @@ public:
 	static Mat read_image(DataSample *sample);
 	static PointCloud<PointXYZRGB>::Ptr read_pointcloud(DataSample *sample);
 
+	OdomCalib _calib;
+	
 protected:
 
 	static const long _MAX_LINE_LENGTH = (5*4000000);
 
-	OdomCalib _calib;
 	string _images_path;
 	string _velodyne_path;
 	DataSample *_sample;
