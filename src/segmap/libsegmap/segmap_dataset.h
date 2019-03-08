@@ -20,7 +20,7 @@ using namespace Eigen;
 class OdomCalib
 {
 public:
-	double mult_v, mult_phi, add_phi, init_angle;
+	double mult_v, add_v, mult_phi, add_phi, init_angle;
 };
 
 

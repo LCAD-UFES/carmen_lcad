@@ -802,8 +802,9 @@ NewCarmenDataset::_load_odometry_calibration(char *path)
 	
 	if (f != NULL)
 	{
-		fscanf(f, "bias v: %lf 0.000000 bias phi: %lf %lf Initial Angle: %lf",
+		fscanf(f, "bias v: %lf %lf bias phi: %lf %lf Initial Angle: %lf",
 			&_calib.mult_v, 
+			&_calib.add_v, 
 			&_calib.mult_phi,
 			&_calib.add_phi,
 			&_calib.init_angle);
@@ -819,8 +820,8 @@ NewCarmenDataset::_load_odometry_calibration(char *path)
 		_calib.add_phi = 0.;
 	}
 
-	printf("Odom calibration: bias v: %lf 0.000000 bias phi: %lf %lf\n", 
-		_calib.mult_v, _calib.mult_phi, _calib.add_phi);
+	printf("Odom calibration: bias v: %lf %lf bias phi: %lf %lf\n", 
+		_calib.mult_v, _calib.add_v, _calib.mult_phi, _calib.add_phi);
 }
 
 
