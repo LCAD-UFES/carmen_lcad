@@ -358,7 +358,8 @@ transform_pointcloud(PointCloud<PointXYZRGB>::Ptr cloud,
 }
 */
 
-FILE *safe_fopen(char *path, char *mode)
+FILE*
+safe_fopen(const char *path, const char *mode)
 {
 	FILE *f = fopen(path, mode);
 
@@ -367,6 +368,7 @@ FILE *safe_fopen(char *path, char *mode)
 
 	return f;
 }
+
 
 vector<char*>
 string_split(char *string, char *delimiters)

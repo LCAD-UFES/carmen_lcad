@@ -1065,7 +1065,7 @@ NewCarmenDataset::read_image(DataSample *sample)
 	static unsigned char *raw_right = (unsigned char*) calloc (image_size, sizeof(unsigned char));
 	static Mat img_r = Mat(sample->image_width, sample->image_height, CV_8UC3, raw_right, 0);
 	
-	FILE *image_file = safe_fopen((char*) sample->image_path.c_str(), "rb");
+	FILE *image_file = safe_fopen(sample->image_path.c_str(), "rb");
 	// jump the left image
 	fseek(image_file, image_size * sizeof(unsigned char), SEEK_SET);
 	fread(raw_right, image_size, sizeof(unsigned char), image_file);
@@ -1108,7 +1108,7 @@ NewCarmenDataset::read_pointcloud(DataSample *sample)
 {
 	static PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 
-	FILE *f = safe_fopen((char*) sample->velodyne_path.c_str(), "rb");
+	FILE *f = safe_fopen(sample->velodyne_path.c_str(), "rb");
 
 	double h_angle, v_angle;
 	unsigned short distances[32];

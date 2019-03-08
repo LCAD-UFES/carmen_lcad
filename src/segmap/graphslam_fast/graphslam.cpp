@@ -57,6 +57,9 @@ class GraphSlamData
 		char _gicp_map_file[256];
 		char _output_file[256];
 
+		double gps_xy_std, gps_angle_std;
+		double odom_xy_std, odom_angle_std;
+
 	protected:
 		void _load_parameters(char *config);
 };
@@ -158,40 +161,6 @@ add_odometry_edges(SparseOptimizer *optimizer, vector<SE2> &dead_reckoning, doub
 }
 
 
-double
-gps_std_from_quality(int quality)
-{
-	double gps_std;
-
-	// @Filipe: desvios padrao para cada modo do GPS Trimble.
-	// @Filipe: OBS: Multipliquei os stds por 2 no switch abaixo para dar uma folga.
-	// 0: DBL_MAX
-	// 1: 4.0
-	// 2: 1.0
-	// 4: 0.1
-	// 5: 0.1
-	switch (quality)
-	{
-		case 1:
-			gps_std = 8.0;
-			break;
-		case 2:
-			gps_std = 2.0;
-			break;
-		case 4:
-			gps_std = 0.2;
-			break;
-		case 5:
-			gps_std = 1.5;
-			break;
-		default:
-			gps_std = DBL_MAX;
-	}
-
-	return gps_std;
-}
-
-
 void
 add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer, double xy_std, double th_std)
 {
@@ -201,8 +170,9 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer, double xy_std, do
 	int i = 0;
 
 	data.dataset->reset();
+	Matrix3d information = create_information_matrix(xy_std, xy_std, th_std);
 
-	while (sample = data.dataset->next_data_package())
+	while ((sample = data.dataset->next_data_package()))
 	{
 		if (i == 0)
 			gps0 = sample->gps;
@@ -222,11 +192,6 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer, double xy_std, do
 					sample->gps.y - gps0.y,
 					angle);
 					//0.);
-
-		double gps_std = 1.0;
-		//double gps_std = gps_std_from_quality(input_data[i].quality);
-
-		Matrix3d information = create_information_matrix(gps_std * xy_std, gps_std * xy_std, th_std);
 
 		EdgeGPS *edge_gps = new EdgeGPS;
 		edge_gps->vertices()[0] = optimizer->vertex(i);
@@ -286,7 +251,6 @@ add_loop_closure_edges(vector<LoopRestriction> &loop_data, SparseOptimizer *opti
 void
 create_dead_reckoning(GraphSlamData &data, vector<SE2> &dead_reckoning)
 {
-	int n;
 	double dt, previous_t;
 
 	previous_t = 0;
@@ -295,7 +259,7 @@ create_dead_reckoning(GraphSlamData &data, vector<SE2> &dead_reckoning)
 	
 	DataSample *sample;
 
-	while (sample = data.dataset->next_data_package())
+	while ((sample = data.dataset->next_data_package()))
 	{
 		if (previous_t > 0)
 		{
@@ -319,12 +283,12 @@ load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer)
 
 	create_dead_reckoning(data, dead_reckoning);
 	add_vertices(dead_reckoning, optimizer);
-    add_odometry_edges(optimizer, dead_reckoning, 0.02, deg2rad(.5));
+    add_odometry_edges(optimizer, dead_reckoning, data.odom_xy_std, deg2rad(data.odom_angle_std));
 	
 	//if (gicp_gps.size() > 0)
 		//add_gps_gicp_edges(gicp_gps, optimizer, 0.01, deg2rad(0.1)); 
 	//else
-		add_gps_edges(data, optimizer, 10.0, deg2rad(10.));
+		add_gps_edges(data, optimizer, data.gps_xy_std, deg2rad(data.gps_angle_std));
 	
 	//add_loop_closure_edges(loop_data, optimizer, 0.3, carmen_degrees_to_radians(3.));
     //add_loop_closure_edges(gicp_odom_data, optimizer, 0.5, carmen_degrees_to_radians(3.));
@@ -419,12 +383,20 @@ GraphSlamData::_load_parameters(char *config)
 	fscanf(f, "\ngicp_odom: %[^\n]\n", _gicp_odom_file);
 	fscanf(f, "\ngicp_map: %[^\n]\n", _gicp_map_file);
 	fscanf(f, "\noutput: %[^\n]\n", _output_file);
+	fscanf(f, "\nodom_xy_std: %lf", &odom_xy_std);
+	fscanf(f, "\nodom_angle_std: %lf", &odom_angle_std);
+	fscanf(f, "\ngps_xy_std: %lf", &gps_xy_std);
+	fscanf(f, "\ngps_angle_std: %lf", &gps_angle_std);
 
 	printf("log: %s\n", _log_file);
 	printf("loops: %s\n", _loop_closure_file);
 	printf("gicp_odom: %s\n", _gicp_odom_file);
 	printf("gicp_map: %s\n", _gicp_map_file);
 	printf("output: %s\n", _output_file);
+	printf("odom_xy_std: %lf\n", odom_xy_std);
+	printf("odom_angle_std: %lf\n", odom_angle_std);
+	printf("gps_xy_std: %lf\n", gps_xy_std);
+	printf("gps_angle_std: %lf\n", gps_angle_std);
 
 	fclose(f);
 }
