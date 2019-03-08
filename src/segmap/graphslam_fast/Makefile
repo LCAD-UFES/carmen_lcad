@@ -40,12 +40,13 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision 
 LFLAGS += `pkg-config --libs opencv` -lboost_system -lsegmap
 
 IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
-LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal
+LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal 
 
-SOURCES = graphslam.cpp joint_graphslam.cpp graphslam_util.cpp
-TARGETS = graphslam joint_graphslam 
+SOURCES = graphslam.cpp joint_graphslam.cpp graphslam_util.cpp view_path.cpp
+TARGETS = graphslam joint_graphslam view_path
 
 graphslam: graphslam.o
 joint_graphslam: joint_graphslam.o graphslam_util.o ../libsegmap/libsegmap.a
+view_path: view_path.o ../libsegmap/libsegmap.a
 
 include $(CARMEN_HOME)/src/Makefile.rules

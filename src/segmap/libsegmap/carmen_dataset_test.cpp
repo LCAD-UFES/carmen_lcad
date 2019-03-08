@@ -24,7 +24,7 @@ main()
 
     Pose2d gps0;
 
-    while (data_package = dataset.next_data_package())
+    while ((data_package = dataset.next_data_package()))
     {
         if (previous_time > 0.)
         {
