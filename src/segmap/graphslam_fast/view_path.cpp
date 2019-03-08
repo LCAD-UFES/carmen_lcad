@@ -28,8 +28,8 @@ main(int argc, char **argv)
     while (!feof(f))
     {
 
-        fscanf(f, "\n%s %lf %lf %lf %s %s\n", 
-            dummy, &x, &y, &th, dummy, dummy);
+        fscanf(f, "\n%s %lf %lf %lf %s %s %s\n", 
+            dummy, &x, &y, &th, dummy, dummy, dummy);
 
         if (n == 0)
         {

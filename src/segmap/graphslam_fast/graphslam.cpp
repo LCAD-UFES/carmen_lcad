@@ -308,6 +308,7 @@ save_corrected_vertices(GraphSlamData &data, SparseOptimizer *optimizer)
 	data.dataset->reset();
 	DataSample *sample;
 	Pose2d gps0;
+
 	for (size_t i = 0; i < optimizer->vertices().size(); i++)
 	{
  		sample = data.dataset->next_data_package();
@@ -321,7 +322,7 @@ save_corrected_vertices(GraphSlamData &data, SparseOptimizer *optimizer)
 		y = pose.toVector().data()[1] + gps0.y;
 		th = pose.toVector().data()[2];
 
-		fprintf(f, "%ld %lf %lf %lf %lf %lf\n", i, x, y, th, sample->gps.x, sample->gps.y);
+		fprintf(f, "%ld %lf %lf %lf %lf %lf %lf\n", i, x, y, th, sample->image_time, sample->gps.x, sample->gps.y);
 	}
 
 	fclose(f);
