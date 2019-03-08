@@ -19,7 +19,7 @@ IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/
 LFLAGS += `pkg-config --libs opencv` -lsegmap -lopencv_imgcodecs
 LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
 LFLAGS += -L /usr/lib -lvtkIO -lvtkFiltering -lvtkCommon -lvtkRendering -lvtkGraphics
-LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization
+LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal
 
 SOURCES = localizer.cpp mapper.cpp test_mapper_mesh.cpp
 

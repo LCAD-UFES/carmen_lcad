@@ -17,11 +17,11 @@ LFLAGS += `pkg-config --libs opencv`
 
 SOURCES = example_project_vel_to_cam_ufes.cpp example_project_vel_to_cam.cpp \
 	example_oxmts2poses.cpp example_euler2rotation_and_transforms.cpp \
-	example_view_ufes_data.cpp example_view_kitti_as_map.cpp
+	example_view_ufes_data.cpp example_view_kitti_as_map.cpp example_view_xsens.cpp
 
 TARGETS = example_project_vel_to_cam_ufes example_project_vel_to_cam \
 	example_oxmts2poses example_euler2rotation_and_transforms \
-	example_view_ufes_data example_view_kitti_as_map
+	example_view_ufes_data example_view_kitti_as_map example_view_xsens
 
 example_project_vel_to_cam_ufes: example_project_vel_to_cam_ufes.o
 example_project_vel_to_cam: example_project_vel_to_cam.o
@@ -29,6 +29,7 @@ example_oxmts2poses: example_oxmts2poses.o
 example_euler2rotation_and_transforms: example_euler2rotation_and_transforms.o 
 example_view_ufes_data: example_view_ufes_data.o
 example_view_kitti_as_map: example_view_kitti_as_map.o
+example_view_xsens: example_view_xsens.o
 
 include $(CARMEN_HOME)/src/Makefile.rules
 

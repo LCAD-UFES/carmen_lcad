@@ -1,0 +1,5 @@
+log:/media/filipe/Hitachi-Teste/log-jardim-da-penha-mapeamento-20181208.txt
+loops: none
+gicp_odom: none
+gicp_map: none
+output:/dados/data2/data_log-jardim-da-penha-mapeamento-20181208.txt/fused_odom.txt

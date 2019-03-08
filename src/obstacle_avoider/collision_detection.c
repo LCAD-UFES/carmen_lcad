@@ -8,6 +8,8 @@
 #include <float.h>
 #define SECURITY_VELOCITY_PERCENT 0.5
 
+carmen_collision_config_t global_collision_config;
+
 //carmen_mapper_virtual_laser_message virtual_laser_message;
 
 /**
@@ -861,6 +863,35 @@ carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *g
 //	return (distance);
 //}
 
+void
+check_collision_config_initialization(){
+
+	static int collision_config_initialized = 0;
+	char* collision_file;
+	int i;
+	FILE *collision_file_pointer;
+
+	if (collision_config_initialized)
+		return;
+
+	carmen_param_allow_unfound_variables(0);
+	carmen_param_t param_list[] =
+	{
+		{"robot", "collision_file", CARMEN_PARAM_STRING, &collision_file, 1, NULL},
+	};
+	carmen_param_install_params(0, NULL, param_list, sizeof(param_list)/sizeof(param_list[0]));
+
+	collision_file_pointer = fopen(collision_file, "r");
+	fscanf(collision_file_pointer,"%d", &(global_collision_config.n_markers));
+	global_collision_config.markers = (carmen_collision_marker_t*) malloc(global_collision_config.n_markers*sizeof(carmen_collision_marker_t));
+
+	for (i=0; i<global_collision_config.n_markers; i++)
+		fscanf(collision_file_pointer,"%lf %lf %lf %lf", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
+				&global_collision_config.markers[i].radius, &global_collision_config.markers[i].hight);
+
+	fclose(collision_file_pointer);
+	collision_config_initialized = 1;
+}
 
 void
 get_initial_displacement_and_displacement_inc(double *initial_displacement, double *displacement_inc, double circle_radius, double number_of_point,
@@ -873,27 +904,29 @@ get_initial_displacement_and_displacement_inc(double *initial_displacement, doub
 	*initial_displacement = circle_radius - (robot_config->distance_between_rear_car_and_rear_wheels + 0.8);
 }
 
-//double
-//carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles_new(carmen_point_t *localizer_pose, carmen_point_t point_to_check,
-//		carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
-//{
-//	double proximity_to_obstacles = 0.0;
-//
-//	for (int i = 0; i < robot_config->n_collision_circles; i++)
-//	{
-//		carmen_point_t displaced_point = carmen_collision_detection_in_car_coordinate_frame(point_to_check, localizer_pose,
-//				robot_config->collision_circles[i].x, robot_config->collision_circles[i].y);
-//		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-//		//distance equals to -1.0 when the coordinates are outside of map
-//		if (distance != -1.0)
-//		{
-//			double delta = distance - robot_config->collision_circles[i].radius;
-//			if (delta < 0.0)
-//				proximity_to_obstacles += delta * delta;
-//		}
-//	}
-//	return (proximity_to_obstacles);
-//}
+double
+carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles_new(carmen_point_t *localizer_pose, carmen_point_t point_to_check,
+carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map, double circle_radius)
+{
+	check_collision_config_initialization();
+
+	double proximity_to_obstacles = 0.0;
+
+	for (int i = 0; i < global_collision_config.n_markers; i++)
+	{
+		carmen_point_t displaced_point = carmen_collision_detection_in_car_coordinate_frame(point_to_check, localizer_pose,
+				global_collision_config.markers[i].x, global_collision_config.markers[i].y);
+		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+		//distance equals to -1.0 when the coordinates are outside of map
+		if (distance != -1.0)
+		{
+			double delta = distance - global_collision_config.markers[i].radius - circle_radius + 1.0;
+			if (delta < 0.0)
+				proximity_to_obstacles += delta * delta;
+		}
+	}
+	return (proximity_to_obstacles);
+}
 
 
 double
@@ -923,32 +956,34 @@ carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t
 }
 
 
-//int
-//trajectory_pose_hit_obstacle_new(carmen_ackerman_traj_point_t trajectory_pose, carmen_obstacle_distance_mapper_map_message *distance_map,
-//		carmen_robot_ackerman_config_t *robot_config)
-//{
-//	if (distance_map == NULL)
-//	{
-//		printf("distance_map == NULL in trajectory_pose_hit_obstacle()\n");
-//		return (1);
-//	}
-//
-//	for (int i = 0; i < robot_config->n_collision_circles; i++)
-//	{
-//		carmen_point_t displaced_point = carmen_collision_detection_pose_according_to_car_orientation(&trajectory_pose,
-//				robot_config->collision_circles[i].x, robot_config->collision_circles[i].y);
-//		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
-//		//distance equals to -1.0 when the coordinates are outside of map
-//		if (distance != -1.0)
-//		{
-//			if (distance < robot_config->collision_circles[i].radius)
-//				return (1);
-//		}
-//		else
-//			return (2);
-//	}
-//	return (0);
-//}
+int
+trajectory_pose_hit_obstacle_new(carmen_ackerman_traj_point_t trajectory_pose, double circle_radius,
+carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
+{
+	check_collision_config_initialization();
+
+	if (distance_map == NULL)
+	{
+		printf("distance_map == NULL in trajectory_pose_hit_obstacle()\n");
+		return (1);
+	}
+
+	for (int i = 0; i < global_collision_config.n_markers; i++)
+	{
+		carmen_point_t displaced_point = carmen_collision_detection_pose_according_to_car_orientation(&trajectory_pose,
+				global_collision_config.markers[i].x, global_collision_config.markers[i].y);
+		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+		//distance equals to -1.0 when the coordinates are outside of map
+		if (distance != -1.0)
+		{
+			if (distance < global_collision_config.markers[i].radius + circle_radius - 1.0)
+				return (1);
+		}
+		else
+			return (2);
+	}
+	return (0);
+}
 
 int
 trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, double circle_radius,
@@ -1017,18 +1052,9 @@ carmen_obstacle_avoider_compute_closest_car_distance_to_colliding_point(carmen_a
 	return (proximity_to_colliding_point);
 }
 
-void
-carmen_parse_collision_file(carmen_collision_config_t* robot_config, char* collision_file)
-{
-	FILE *col;
-	col = fopen(collision_file, "r");
-	fscanf(col,"%d\n",&(robot_config->n_markers));
-	robot_config->markers = (carmen_collision_marker_t*) malloc(robot_config->n_markers*sizeof(carmen_collision_marker_t));
-	int i;
-	for (i=0; i<robot_config->n_markers; i++)
-	{
-		fscanf(col,"%lf %lf %lf %d\n",&(robot_config->markers[i].x),&(robot_config->markers[i].y),
-				&(robot_config->markers[i].radius),&(robot_config->markers[i].level));
-	}
-	fclose(col);
+
+carmen_collision_config_t*
+carmen_get_global_collision_config(){
+	check_collision_config_initialization();
+	return &global_collision_config;
 }

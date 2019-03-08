@@ -1,4 +1,6 @@
 
+#include <carmen/segmap_dataset.h>
+#include <carmen/segmap_util.h>
 #include <carmen/carmen.h>
 #include <iostream>
 #include <vector>
@@ -28,23 +30,6 @@
 using namespace std;
 using namespace g2o;
 
-class Data
-{
-public:
-	char cloud_path[256];
-	int n_rays;
-	double cloud_time;
-
-	char image_path[256];
-	int w, h, size, n;
-	double image_time;
-
-	double x, y, quality, gps_time;
-	double angle, angle_quality, gps2_time;
-
-	double v, phi, ack_time;
-};
-
 
 class LoopRestriction
 {
@@ -56,73 +41,28 @@ class LoopRestriction
 };
 
 
+class GraphSlamData
+{
+	public:
+		NewCarmenDataset *dataset;
+		vector<LoopRestriction> loop_data, gicp_odom_data, gicp_gps;
+
+		GraphSlamData(char *config);
+		~GraphSlamData() { delete(dataset);	} 
+
+		// TODO: remove underlines;
+		char _log_file[256];
+		char _loop_closure_file[256];
+		char _gicp_odom_file[256];
+		char _gicp_map_file[256];
+		char _output_file[256];
+
+	protected:
+		void _load_parameters(char *config);
+};
+
+
 const double distance_between_front_and_rear_axles = 2.625;
-
-
-void
-load_data(char *name, vector<Data> &lines)
-{
-	FILE *f = fopen(name, "r");
-	char dummy[256];
-	int idummy;
-
-	while (!feof(f))
-	{
-		Data d;
-
-		char c = fgetc(f);
-		if (c != 'V')
-		{
-			printf("skipping char %c at line %ld\n", c, lines.size()+1);
-			continue;
-		}
-
-		fscanf(f, "\n%s %s %d %lf ",
-				dummy, d.cloud_path, &d.n_rays, &d.cloud_time);
-
-		fscanf(f, " %s %s %d %d %d %d %lf ",
-				dummy, d.image_path, &d.w, &d.h, &d.size, &d.n, &d.image_time);
-
-		fscanf(f, " %s %d %lf %lf %lf %lf ",
-			dummy, &idummy, &d.x, &d.y, &d.quality, &d.gps_time);
-
-		fscanf(f, " %s %d %lf %lf %lf ",
-			dummy,  &idummy, &d.angle, &d.angle_quality, &d.gps2_time);
-
-		fscanf(f, " %s %lf %lf %lf\n",
-			dummy, &d.v, &d.phi, &d.ack_time);
-
-        int n_read;
-        double q0, q1, q2, q3, xsens_time;
-
-		n_read = fscanf(f, " %s %s %s %s %lf %lf %lf %lf %s %s %s %s %s %s %s %s %lf\n", 
-			dummy, dummy, dummy, dummy, 
-			&q0, &q1, &q2, &q3,
-			dummy, dummy, dummy, 
-			dummy, dummy, dummy, 
-			dummy, dummy, &xsens_time);
-
-		if (n_read != 17) 
-            exit(printf("Error: xsens data not found at '%s'!\n", name));
-
-		lines.push_back(d);
-	}
-
-	fclose(f);
-}
-
-
-void
-load_odom_calib(char *name, double *mult_v, double *mult_phi, double *add_phi, double *init_angle)
-{
-    FILE *f = fopen(name, "r");
-    char dummy[64];
-
-    fscanf(f, "%s %s %lf %s %s %s %lf %lf %s %s %lf",
-        dummy, dummy, mult_v, dummy, dummy, dummy, mult_phi, add_phi, dummy, dummy, init_angle);
-
-    fclose(f);
-}
 
 
 void
@@ -158,11 +98,11 @@ read_loop_restrictions(char *filename, vector<LoopRestriction> &loop_data)
 
 
 void
-add_vertices(vector<Data> &input_data, SparseOptimizer *optimizer, vector<SE2> &dead_reckoning)
+add_vertices(vector<SE2> &dead_reckoning, SparseOptimizer *optimizer)
 {
 	uint i;
 
-	for (i = 0; i < input_data.size(); i++)
+	for (i = 0; i < dead_reckoning.size(); i++)
 	{
 		//SE2 estimate(
 		//	input_data[i].x - input_data[0].x,
@@ -201,11 +141,11 @@ create_information_matrix(double x_std, double y_std, double z_std)
 
 
 void
-add_odometry_edges(vector<Data> &input_data, SparseOptimizer *optimizer, vector<SE2> &dead_reckoning, double xy_std, double th_std)
+add_odometry_edges(SparseOptimizer *optimizer, vector<SE2> &dead_reckoning, double xy_std, double th_std)
 {
 	Matrix3d information = create_information_matrix(xy_std, xy_std, th_std);
 
-	for (size_t i = 1; i < input_data.size(); i++)
+	for (size_t i = 1; i < dead_reckoning.size(); i++)
 	{
 		SE2 measure = dead_reckoning[i - 1].inverse() * dead_reckoning[i];
 		EdgeSE2* edge = new EdgeSE2;
@@ -253,31 +193,49 @@ gps_std_from_quality(int quality)
 
 
 void
-add_gps_edges(vector<Data> &input_data, SparseOptimizer *optimizer, double xy_std_mult, double th_std)
+add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer, double xy_std, double th_std)
 {
-	for (size_t i = 0; i < input_data.size(); i += 1)
+	Pose2d gps0(0, 0, 0), prev_gps(0, 0, 0);
+	DataSample *sample;
+
+	int i = 0;
+
+	data.dataset->reset();
+
+	while (sample = data.dataset->next_data_package())
 	{
-		if (fabs(input_data[i].v) < .2) // || input_data[i].quality != 4)
-			continue;
+		if (i == 0)
+			gps0 = sample->gps;
 
-		double angle = input_data[i].angle;
-		
-		if (i > 0 && fabs(input_data[i].v) >= 1.0)
-			angle = atan2(input_data[i].y - input_data[i-1].y, input_data[i].x - input_data[i-1].x);
+		//if (fabs(sample->v) < 0.2) 
+		//{
+			//i++;
+			//continue;
+		//}
 
-		SE2 measure(input_data[i].x - input_data[0].x,
-					input_data[i].y - input_data[0].y,
+		double angle = sample->gps.th;
+		if (i > 0 && fabs(sample->v) >= 2.0)
+			angle = atan2(sample->gps.y - prev_gps.y, 
+						  sample->gps.x - prev_gps.x);
+
+		SE2 measure(sample->gps.x - gps0.x,
+					sample->gps.y - gps0.y,
 					angle);
 					//0.);
 
-		double gps_std = gps_std_from_quality(input_data[i].quality);
-		Matrix3d information = create_information_matrix(gps_std * xy_std_mult, gps_std * xy_std_mult, th_std);
+		double gps_std = 1.0;
+		//double gps_std = gps_std_from_quality(input_data[i].quality);
+
+		Matrix3d information = create_information_matrix(gps_std * xy_std, gps_std * xy_std, th_std);
 
 		EdgeGPS *edge_gps = new EdgeGPS;
 		edge_gps->vertices()[0] = optimizer->vertex(i);
 		edge_gps->setMeasurement(measure);
 		edge_gps->setInformation(information);
 		optimizer->addEdge(edge_gps);
+
+		prev_gps = sample->gps;
+		i++;
 	}
 }
 
@@ -326,93 +284,49 @@ add_loop_closure_edges(vector<LoopRestriction> &loop_data, SparseOptimizer *opti
 
 
 void
-create_dead_reckoning(vector<Data> &input_data, vector<SE2> &dead_reckoning, double mult_v, double mult_phi, double add_phi, double init_angle)
+create_dead_reckoning(GraphSlamData &data, vector<SE2> &dead_reckoning)
 {
-	double x, y, ds, th, dt, v, phi;
+	int n;
+	double dt, previous_t;
 
-	x = y = th = 0.;
-	th = init_angle;
-	dead_reckoning.push_back(SE2(x, y, th));
-
-	//mult_v = 1.0; //1.2;
-	//mult_phi = 1.0; //0.94;
-    //add_phi = 0.0; //-0.001;
-
-	for (size_t i = 1; i < input_data.size(); i++)
-	{
-		dt = input_data[i].ack_time - input_data[i - 1].ack_time;
-		v = input_data[i - 1].v * mult_v;
-		phi = input_data[i - 1].phi * mult_phi + add_phi;
-
-		ds = v * dt;
-		x += ds * cos(th);
-		y += ds * sin(th);
-		th += ds * tan(phi) / distance_between_front_and_rear_axles;
-		th = carmen_normalize_theta(th);
-
-		dead_reckoning.push_back(SE2(x, y, th));
-	}
-}
-
-
-void
-add_gps_loop_closures(SparseOptimizer *optimizer, vector<Data> &input_data, double xy_std, double th_std)
-{
-    Matrix3d information = create_information_matrix(xy_std, xy_std, th_std);
-
-    int n = 0;
-
- 	for (size_t i = 0; i < input_data.size(); i += 1)
-	{
-	    for (size_t j = i + 1; j < input_data.size(); j++)
-	    {
-	        if (input_data[i].quality == 4 && input_data[j].quality == 4)
-	        {
-	            double dt = input_data[j].gps_time - input_data[i].gps_time;
-	            double dth = fabs(carmen_normalize_theta(input_data[i].angle - input_data[j].angle));
-                double d = sqrt(pow(input_data[i].x - input_data[j].x, 2) + pow(input_data[i].y -input_data[j].y, 2));
-                
-                if (dt > 10. && dth < carmen_degrees_to_radians(30.) && d < 10)
-                {
-                    SE2 measure = SE2(input_data[i].x, input_data[i].y, input_data[i].angle).inverse() * SE2(input_data[j].x, input_data[j].y, input_data[j].angle);
-
-			        EdgeSE2* edge = new EdgeSE2;
-			        edge->vertices()[0] = optimizer->vertex(i);
-			        edge->vertices()[1] = optimizer->vertex(j);
-			        edge->setMeasurement(measure);
-			        edge->setInformation(information);
-			        optimizer->addEdge(edge);
-			        n++;
-                }
-	        }
-	    }
-	}
+	previous_t = 0;
+	Pose2d pose(0, 0, data.dataset->_calib.init_angle);
+	dead_reckoning.push_back(SE2(pose.x, pose.y, pose.th));
 	
-	printf("num gps loop closures: %d\n", n);
+	DataSample *sample;
+
+	while (sample = data.dataset->next_data_package())
+	{
+		if (previous_t > 0)
+		{
+			dt = sample->image_time - previous_t;
+			ackerman_motion_model(pose, sample->v, sample->phi, dt);
+			//printf("dt: %lf v: %lf phi: %lf x: %lf y: %lf\n", dt, sample->v, sample->phi, pose.x, pose.y);
+			dead_reckoning.push_back(SE2(pose.x, pose.y, pose.th));
+		}
+
+		previous_t = sample->image_time;
+	}
+
+	printf("N odometry edges: %ld\n", dead_reckoning.size() - 1);
 }
 
 
 void
-load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_data __attribute__((unused)), SparseOptimizer *optimizer,
-    double mult_v, double mult_phi, double add_phi, double init_angle, vector<LoopRestriction> &gicp_odom_data, vector<LoopRestriction> &gicp_gps)
+load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer)
 {
 	vector<SE2> dead_reckoning;
 
-	create_dead_reckoning(input_data, dead_reckoning, mult_v, mult_phi, add_phi, init_angle);
-	add_vertices(input_data, optimizer, dead_reckoning);
-    add_odometry_edges(input_data, optimizer, dead_reckoning, 0.01, carmen_degrees_to_radians(.1));
-	//add_gps_edges(input_data, optimizer, 0.2, carmen_degrees_to_radians(10.));
+	create_dead_reckoning(data, dead_reckoning);
+	add_vertices(dead_reckoning, optimizer);
+    add_odometry_edges(optimizer, dead_reckoning, 0.02, deg2rad(.5));
 	
-	if (gicp_gps.size() > 0)
-	{
-		add_gps_gicp_edges(gicp_gps, optimizer, 0.01, carmen_degrees_to_radians(0.1)); 
-	}
-	else
-	{
-		add_gps_edges(input_data, optimizer, 0.3, 1e10 * M_PI); //.2, M_PI);
-	}
+	//if (gicp_gps.size() > 0)
+		//add_gps_gicp_edges(gicp_gps, optimizer, 0.01, deg2rad(0.1)); 
+	//else
+		add_gps_edges(data, optimizer, 10.0, deg2rad(10.));
 	
-	add_loop_closure_edges(loop_data, optimizer, 0.3, carmen_degrees_to_radians(3.));
+	//add_loop_closure_edges(loop_data, optimizer, 0.3, carmen_degrees_to_radians(3.));
     //add_loop_closure_edges(gicp_odom_data, optimizer, 0.5, carmen_degrees_to_radians(3.));
     //add_gps_loop_closures(optimizer, input_data, 1.0, M_PI);
 
@@ -422,36 +336,28 @@ load_data_to_optimizer(vector<Data> &input_data, vector<LoopRestriction> &loop_d
 
 
 void
-save_corrected_vertices(char *out_name, vector<Data> &input_data, SparseOptimizer *optimizer)
+save_corrected_vertices(GraphSlamData &data, SparseOptimizer *optimizer)
 {
-	double x, y, th, t;
+	double x, y, th;
+	FILE *f = safe_fopen(data._output_file, "w");
 
-	FILE *f = fopen(out_name, "w");
-
-	if (f == NULL)
-		exit(printf("File '%s' couldn't be opened!\n", out_name));
-
-	int start = -1;
-
+	data.dataset->reset();
+	DataSample *sample;
+	Pose2d gps0;
 	for (size_t i = 0; i < optimizer->vertices().size(); i++)
 	{
+ 		sample = data.dataset->next_data_package();
+
+		if (i == 0) gps0 = sample->gps;
+
 		VertexSE2* v = dynamic_cast<VertexSE2*>(optimizer->vertex(i));
 		SE2 pose = v->estimate();
 
-		x = pose.toVector().data()[0] + input_data[0].x;
-		y = pose.toVector().data()[1] + input_data[0].y;
+		x = pose.toVector().data()[0] + gps0.x;
+		y = pose.toVector().data()[1] + gps0.y;
 		th = pose.toVector().data()[2];
-		t = input_data[i].cloud_time;
 
-		//if (input_data[i].v > 1.0)
-		{
-			fprintf(f, "%ld %lf %lf %lf %lf %lf %lf %lf %lf\n", i, x, y, th, t, input_data[i].image_time, input_data[i].v,
-					input_data[i].phi, input_data[i].ack_time);
-			if (start == -1) start = i;
-		}
-
-		//if (start != -1 && i - start > 1500)
-			//break;
+		fprintf(f, "%ld %lf %lf %lf %lf %lf\n", i, x, y, th, sample->gps.x, sample->gps.y);
 	}
 
 	fclose(f);
@@ -503,57 +409,63 @@ initialize_optimizer()
 
 
 void
-adjust_gicp_gps_poses(vector<LoopRestriction> &gicp_gps)
+GraphSlamData::_load_parameters(char *config)
 {
-	for (int i = 0; i < gicp_gps.size(); i++)
-	{
-		double offset_x = 7757677.517731;
-		double offset_y = -363602.117405;
 
-		gicp_gps[i].transform = SE2(
-			gicp_gps[i].transform[0] + offset_x,
-			-gicp_gps[i].transform[1] + offset_y,
-			-gicp_gps[i].transform[2]);
-	}
+	FILE *f = safe_fopen(config, "r");
+
+	fscanf(f, "\nlog: %[^\n]\n", _log_file);
+	fscanf(f, "\nloops: %[^\n]\n", _loop_closure_file);
+	fscanf(f, "\ngicp_odom: %[^\n]\n", _gicp_odom_file);
+	fscanf(f, "\ngicp_map: %[^\n]\n", _gicp_map_file);
+	fscanf(f, "\noutput: %[^\n]\n", _output_file);
+
+	printf("log: %s\n", _log_file);
+	printf("loops: %s\n", _loop_closure_file);
+	printf("gicp_odom: %s\n", _gicp_odom_file);
+	printf("gicp_map: %s\n", _gicp_map_file);
+	printf("output: %s\n", _output_file);
+
+	fclose(f);
+}
+
+
+GraphSlamData::GraphSlamData(char *config)
+{
+	_load_parameters(config);
+
+	dataset = new NewCarmenDataset(_log_file);
+	read_loop_restrictions(_loop_closure_file, loop_data);
+    read_loop_restrictions(_gicp_odom_file, gicp_odom_data);
+	read_loop_restrictions(_gicp_map_file, gicp_gps);
 }
 
 
 int main(int argc, char **argv)
 {
-	if (argc < 7)
-	{
-		exit(printf("Use %s <sync-file> <loops-file> <odom-calib-file.txt> <gicp-odom> <gicp-gps> <saida.txt>\n", argv[0]));
-	}
-
-	vector<Data> input_data;
-	vector<LoopRestriction> loop_data, gicp_odom_data, gicp_gps;
-    double mult_v, mult_phi, add_phi, init_angle;
-
-	SparseOptimizer* optimizer;
+	if (argc < 2)
+		exit(printf("Use %s <config.txt>\n", argv[0]));
 
 	srand(time(NULL));
+	SparseOptimizer* optimizer;
 
+	// initialize optimizer (why does the initialization using the factory only works in the main?).
 	DlWrapper dlSolverWrapper;
 	loadStandardSolver(dlSolverWrapper, argc, argv);
 	Factory* factory = Factory::instance();
 	factory->registerType("EDGE_GPS", new HyperGraphElementCreator<EdgeGPS>);
-
 	optimizer = initialize_optimizer();
 
-	load_data(argv[1], input_data);
-    load_odom_calib(argv[3], &mult_v, &mult_phi, &add_phi, &init_angle);
-	read_loop_restrictions(argv[2], loop_data);
-    read_loop_restrictions(argv[4], gicp_odom_data);
-	read_loop_restrictions(argv[5], gicp_gps);
-	adjust_gicp_gps_poses(gicp_gps);
-	load_data_to_optimizer(input_data, loop_data, optimizer, mult_v, mult_phi, add_phi, init_angle, gicp_odom_data, gicp_gps);
+	GraphSlamData data(argv[1]);
+	load_data_to_optimizer(data, optimizer);
 
 	optimizer->setVerbose(true);
-	cerr << "Optimizing" << endl;
 	prepare_optimization(optimizer);
 	optimizer->optimize(20);
 	cerr << "OptimizationDone!" << endl;
-	save_corrected_vertices(argv[6], input_data, optimizer);
+
+	// output
+	save_corrected_vertices(data, optimizer);
 	cerr << "OutputSaved!" << endl;
 
 	return 0;

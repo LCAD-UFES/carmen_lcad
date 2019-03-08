@@ -773,8 +773,7 @@ NewCarmenDataset::NewCarmenDataset(char *path, int sync_type)
 	_velodyne_path = string(path) + "_velodyne";
 	_images_path = string(path) + "_bumblebee";
 
-	_image_height = 0;
-	_image_width = 0;
+	_load_odometry_calibration(path);
 }
 
 
@@ -790,6 +789,38 @@ void
 NewCarmenDataset::reset()
 {
 	rewind(_fptr);
+}
+
+
+void 
+NewCarmenDataset::_load_odometry_calibration(char *path)
+{
+	vector<char*> splitted = string_split(path, "/");
+	string odom_calib = "/dados/data2/data_" + string(splitted[splitted.size() - 1]) + "/odom_calib.txt";
+	
+	FILE *f = fopen(odom_calib.c_str(), "r");
+	
+	if (f != NULL)
+	{
+		fscanf(f, "bias v: %lf 0.000000 bias phi: %lf %lf Initial Angle: %lf",
+			&_calib.mult_v, 
+			&_calib.mult_phi,
+			&_calib.add_phi,
+			&_calib.init_angle);
+
+		fclose(f);
+	}
+	else
+	{
+		printf("Warning: odometry calibration file not found. Assuming default values.\n");
+		
+		_calib.mult_phi = _calib.mult_v = 1.0;
+		_calib.init_angle = 0.;
+		_calib.add_phi = 0.;
+	}
+
+	printf("Odom calibration: bias v: %lf 0.000000 bias phi: %lf %lf\n", 
+		_calib.mult_v, _calib.mult_phi, _calib.add_phi);
 }
 
 
@@ -891,7 +922,7 @@ NewCarmenDataset::_parse_imu(vector<char*> data, DataSample *sample)
 
 
 void
-NewCarmenDataset::_parse_velodyne(vector<char*> data, DataSample *sample, string velodyne_path, int *n_shots)
+NewCarmenDataset::_parse_velodyne(vector<char*> data, DataSample *sample, string velodyne_path)
 {
 	vector<char*> splitted = string_split(data[1], "/");
 	
@@ -901,14 +932,14 @@ NewCarmenDataset::_parse_velodyne(vector<char*> data, DataSample *sample, string
 		splitted[n - 2] + "/" + 
 		splitted[n - 1];
 
-	(*n_shots) =  atoi(data[2]);
+	sample->n_laser_shots = atoi(data[2]);
 	sample->velodyne_path = path;
 	sample->velodyne_time =  atof(data[data.size() - 3]);
 }
 
 
 void 
-NewCarmenDataset::_parse_camera(vector<char*> data, DataSample *sample, string image_path, int *image_height, int *image_width)
+NewCarmenDataset::_parse_camera(vector<char*> data, DataSample *sample, string image_path)
 {
 	vector<char*> splitted = string_split(data[1], "/");
 	
@@ -919,8 +950,8 @@ NewCarmenDataset::_parse_camera(vector<char*> data, DataSample *sample, string i
 		splitted[n - 1];
 
 	sample->image_path = path;
-	(*image_height) = atoi(data[2]);
-	(*image_width) = atoi(data[3]);
+	sample->image_height = atoi(data[2]);
+	sample->image_width = atoi(data[3]);
 	sample->image_time = atof(data[data.size() - 3]);
 }
 
@@ -970,8 +1001,8 @@ NewCarmenDataset::_assemble_data_package_from_queues()
 		vector<char*> splitted = string_split(_camera_queue[_camera_queue.size() - 1], " ");
 		ref_time = atof(splitted[splitted.size() - 3]);
 
-		_parse_camera(splitted, _sample, _images_path, &_image_height, &_image_width);
-		_parse_velodyne(_find_nearest(_velodyne_queue, ref_time), _sample, _velodyne_path, &_n_pointcloud_shots);
+		_parse_camera(splitted, _sample, _images_path);
+		_parse_velodyne(_find_nearest(_velodyne_queue, ref_time), _sample, _velodyne_path);
 	}
 	else if (_sync_type == SYNC_BY_LIDAR)
 	{
@@ -979,8 +1010,8 @@ NewCarmenDataset::_assemble_data_package_from_queues()
 		vector<char*> splitted = string_split(_velodyne_queue[_velodyne_queue.size() - 1], " ");
 		ref_time = atof(splitted[splitted.size() - 3]);
 
-		_parse_velodyne(splitted, _sample, _velodyne_path, &_n_pointcloud_shots);
-		_parse_camera(_find_nearest(_camera_queue, ref_time), _sample, _images_path, &_image_height, &_image_width);
+		_parse_velodyne(splitted, _sample, _velodyne_path);
+		_parse_camera(_find_nearest(_camera_queue, ref_time), _sample, _images_path);
 	}
 	else
 		exit(printf("Error: invalid sync type: '%d'\n", _sync_type));
@@ -989,6 +1020,9 @@ NewCarmenDataset::_assemble_data_package_from_queues()
 	_parse_imu(_find_nearest(_imu_queue, ref_time), _sample);
 	_parse_gps_position(_find_nearest(_gps_position_queue, ref_time), _sample);
 	_parse_gps_orientation(_find_nearest(_gps_orientation_queue, ref_time), _sample);
+
+	_sample->v *= _calib.mult_v;
+	_sample->phi = normalize_theta(_sample->phi * _calib.mult_phi + _calib.add_phi);
 }
 
 
@@ -1025,13 +1059,13 @@ NewCarmenDataset::next_data_package()
 
 
 Mat 
-NewCarmenDataset::read_image(char *path)
+NewCarmenDataset::read_image(DataSample *sample)
 {
-	static int image_size = _image_height * _image_width * 3;
+	static int image_size = sample->image_height * sample->image_width * 3;
 	static unsigned char *raw_right = (unsigned char*) calloc (image_size, sizeof(unsigned char));
-	static Mat img_r = Mat(_image_width, _image_height, CV_8UC3, raw_right, 0);
+	static Mat img_r = Mat(sample->image_width, sample->image_height, CV_8UC3, raw_right, 0);
 	
-	FILE *image_file = safe_fopen(path, "rb");
+	FILE *image_file = safe_fopen((char*) sample->image_path.c_str(), "rb");
 	// jump the left image
 	fseek(image_file, image_size * sizeof(unsigned char), SEEK_SET);
 	fread(raw_right, image_size, sizeof(unsigned char), image_file);
@@ -1070,11 +1104,11 @@ NewCarmenDataset::_compute_point_from_velodyne(double v_angle, double h_angle, d
 
 
 PointCloud<PointXYZRGB>::Ptr
-NewCarmenDataset::read_pointcloud(char *path)
+NewCarmenDataset::read_pointcloud(DataSample *sample)
 {
 	static PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 
-	FILE *f = safe_fopen(path, "rb");
+	FILE *f = safe_fopen((char*) sample->velodyne_path.c_str(), "rb");
 
 	double h_angle, v_angle;
 	unsigned short distances[32];
@@ -1083,7 +1117,7 @@ NewCarmenDataset::read_pointcloud(char *path)
 
 	cloud->clear();
 
-	for(int i = 0; i < _n_pointcloud_shots; i++)
+	for(int i = 0; i < sample->n_laser_shots; i++)
 	{
 		fread(&h_angle, sizeof(double), 1, f);
 	    fread(distances, sizeof(unsigned short), 32, f);

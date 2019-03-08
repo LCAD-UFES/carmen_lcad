@@ -42,7 +42,7 @@ bool DRAW_CIRCLE_THRESHOLD = true;
 bool DRAW_LIDAR_POINTS = false;
 bool RUN_YOLO = true; // Falso para criar o GT.
 bool COMPUTE_TL_POSES = false;
-bool PRINT_FINAL_PREDICTION = false; // Falso para criar o GT.
+bool PRINT_FINAL_PREDICTION = true; // Falso para criar o GT.
 bool PRINT_GT_PREP = false;
 
 #define TRAFFIC_LIGHT_GROUPING_TRESHOLD 20 // Distance in meters to consider traffic light position
@@ -1015,8 +1015,8 @@ initializer()
     initialize_transformations(board_pose, camera_pose, &transformer);
 
     classes_names = get_classes_names((char*) "../sharedlib/darknet2/data/traffic_light.names");
-    // network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/traffic_light.cfg", (char*) "../../sharedlib/darknet2/yolov3_traffic_light_rgo.weights");
-    network_struct = initialize_YOLO((char*) "../sharedlib/darknet2/cfg/yolov3-nrgr-10000-const-lr-1e-4.cfg", (char*) "../sharedlib/darknet2/yolov3-nrgr-10000-const-lr-1e-4_15000.weights");
+    network_struct = initialize_YOLO((char*) "../sharedlib/darknet2/cfg/traffic_light.cfg", (char*) "../sharedlib/darknet2/yolov3_traffic_light_rgo.weights");
+    //network_struct = initialize_YOLO((char*) "../sharedlib/darknet2/cfg/yolov3-nrgr-10000-const-lr-1e-4.cfg", (char*) "../sharedlib/darknet2/yolov3-nrgr-10000-const-lr-1e-4_15000.weights");
 
     // classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
     // network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");

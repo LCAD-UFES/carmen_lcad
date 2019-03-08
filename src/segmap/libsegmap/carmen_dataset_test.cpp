@@ -2,6 +2,7 @@
 #include <cstdio>
 #include "segmap_dataset.h"
 #include "segmap_util.h"
+#include "segmap_viewer.h"
 #include <pcl/visualization/pcl_visualizer.h>
 
 using namespace pcl;
@@ -16,8 +17,7 @@ main()
         NewCarmenDataset("/dados/log_estacionamentos-20181130-test.txt",
                          NewCarmenDataset::SYNC_BY_CAMERA);
 
-    pcl::visualization::PCLVisualizer *cloud_viewer = new pcl::visualization::PCLVisualizer("CloudViewer");
-    cloud_viewer->setBackgroundColor(1, 1, 1);
+    PointCloudViewer viewer;
 
     Pose2d dead_reckoning;
     double previous_time = 0;
@@ -52,15 +52,13 @@ main()
             data_package->velodyne_path.c_str()
         );
 
-        Mat img = dataset.read_image((char*) data_package->image_path.c_str());
-        PointCloud<PointXYZRGB>::Ptr cloud = dataset.read_pointcloud((char*) data_package->velodyne_path.c_str());
-
-        cloud_viewer->removeAllPointClouds();
-        cloud_viewer->addPointCloud(cloud);
-        cloud_viewer->spinOnce();
-
-        imshow("img", img);
-        waitKey(1);
+        Mat img = NewCarmenDataset::read_image(data_package);
+        PointCloud<PointXYZRGB>::Ptr cloud = NewCarmenDataset::read_pointcloud(data_package);
+        
+        viewer.show(img, "img", 320);
+        viewer.show(cloud);
+        viewer.loop();
+        viewer.clear();
     }
     
     printf("Ok\n");
