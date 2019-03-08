@@ -796,7 +796,7 @@ void
 NewCarmenDataset::_load_odometry_calibration(char *path)
 {
 	vector<char*> splitted = string_split(path, "/");
-	string odom_calib = "/dados/data2/data_" + string(splitted[splitted.size() - 1]);
+	string odom_calib = "/dados/data2/data_" + string(splitted[splitted.size() - 1]) + "/odom_calib.txt";
 	
 	FILE *f = fopen(odom_calib.c_str(), "r");
 	
@@ -818,6 +818,9 @@ NewCarmenDataset::_load_odometry_calibration(char *path)
 		_calib.init_angle = 0.;
 		_calib.add_phi = 0.;
 	}
+
+	printf("Odom calibration: bias v: %lf 0.000000 bias phi: %lf %lf\n", 
+		_calib.mult_v, _calib.mult_phi, _calib.add_phi);
 }
 
 

@@ -214,7 +214,7 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer, double xy_std, do
 		//}
 
 		double angle = sample->gps.th;
-		if (i > 0 && fabs(sample->v) >= 1.0)
+		if (i > 0 && fabs(sample->v) >= 2.0)
 			angle = atan2(sample->gps.y - prev_gps.y, 
 						  sample->gps.x - prev_gps.x);
 
@@ -286,10 +286,11 @@ add_loop_closure_edges(vector<LoopRestriction> &loop_data, SparseOptimizer *opti
 void
 create_dead_reckoning(GraphSlamData &data, vector<SE2> &dead_reckoning)
 {
+	int n;
 	double dt, previous_t;
 
 	previous_t = 0;
-	Pose2d pose(0, 0, 0);
+	Pose2d pose(0, 0, data.dataset->_calib.init_angle);
 	dead_reckoning.push_back(SE2(pose.x, pose.y, pose.th));
 	
 	DataSample *sample;
@@ -300,11 +301,14 @@ create_dead_reckoning(GraphSlamData &data, vector<SE2> &dead_reckoning)
 		{
 			dt = sample->image_time - previous_t;
 			ackerman_motion_model(pose, sample->v, sample->phi, dt);
+			//printf("dt: %lf v: %lf phi: %lf x: %lf y: %lf\n", dt, sample->v, sample->phi, pose.x, pose.y);
 			dead_reckoning.push_back(SE2(pose.x, pose.y, pose.th));
 		}
 
 		previous_t = sample->image_time;
 	}
+
+	printf("N odometry edges: %ld\n", dead_reckoning.size() - 1);
 }
 
 
@@ -315,12 +319,12 @@ load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer)
 
 	create_dead_reckoning(data, dead_reckoning);
 	add_vertices(dead_reckoning, optimizer);
-    add_odometry_edges(optimizer, dead_reckoning, 0.05, deg2rad(2.));
+    add_odometry_edges(optimizer, dead_reckoning, 0.02, deg2rad(.5));
 	
 	//if (gicp_gps.size() > 0)
 		//add_gps_gicp_edges(gicp_gps, optimizer, 0.01, deg2rad(0.1)); 
 	//else
-		add_gps_edges(data, optimizer, 1.0, deg2rad(10.));
+		add_gps_edges(data, optimizer, 10.0, deg2rad(10.));
 	
 	//add_loop_closure_edges(loop_data, optimizer, 0.3, carmen_degrees_to_radians(3.));
     //add_loop_closure_edges(gicp_odom_data, optimizer, 0.5, carmen_degrees_to_radians(3.));
