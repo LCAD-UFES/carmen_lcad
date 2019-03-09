@@ -479,6 +479,8 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
 	int thread_id = omp_get_thread_num();
 
+	printf("Erase\n");
+
 	for (int j = 0; j < number_of_laser_shots; j++)
 	{
 		int scan_index = j * sensor_params->vertical_resolution;
@@ -502,6 +504,8 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 
 			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
 			double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
+
+			cv_draw_map();
 
 			if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max)  //TODO TODO TODO TODO TODO TODO                                           // Laser ray probably hit a moving obstacle
 			{
@@ -629,7 +633,8 @@ filter_sensor_data_using_image_semantic_segmentation(sensor_parameters_t *sensor
 		if (nearest_time_diff > MAX_TIMESTAMP_DIFFERENCE)
 			continue;
 
-		filter_sensor_data_using_one_image(sensor_params, sensor_data, camera, nearest_index);
+		//filter_sensor_data_using_one_image(sensor_params, sensor_data, camera, nearest_index);
+		erase_moving_obstacles_cells(sensor_params, sensor_data, camera, nearest_index);
 		filter_cameras++;
 	}
 	return filter_cameras;
@@ -637,7 +642,7 @@ filter_sensor_data_using_image_semantic_segmentation(sensor_parameters_t *sensor
 
 
 bool
-there_are_images_related_to_point_clould(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
+check_lidar_camera_max_timestamp_difference(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
 {
 	int filter_cameras = 0;
 
@@ -709,16 +714,15 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 	sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
 	sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
 
-//// Used in Article
+////Used in Article
 //	if (filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]) > 0)
 //		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
-//// New - Erase cells occupied by moving obstacles
-	if (there_are_images_related_to_point_clould)
+////New - Erase cells occupied by moving obstacles
+//	if (check_lidar_camera_max_timestamp_difference)
 	{
 		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
-		//	erase_moving_obstacles_cells(&sensors_params[sensor_number], &sensors_data[sensor_number]);
-
+		filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]);
 	}
 
 	sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
