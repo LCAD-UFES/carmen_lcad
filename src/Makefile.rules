@@ -1,7 +1,12 @@
+YELLOW_COLOR=\033[1;33m
+LIGHT_CYAN_COLOR=\033[1;36m
+NO_COLOR=\033[0m
+
 banner = $(SILENT) \
 	echo ; \
 	echo "****************************************************************" ; \
 	echo "* Module  : "$(MODULE_NAME) ; \
+	echo "* Path    : "`pwd` ; \
 	echo "* Comment : "$(MODULE_COMMENT) ; \
 	echo "****************************************************************" ; \
 
@@ -241,6 +246,7 @@ phase1:
 	$(subdir_recurse)
 	$(banner)
 	$(ECHO) ""
+	(>&2 echo "${YELLOW_COLOR}Entering : "`pwd`"${NO_COLOR}")
 	$(ECHO) "  --> Starting make"
 	$(compile_mae)
 	$(install_includes)
@@ -258,11 +264,13 @@ endif
 endif
 	$(install_libraries)
 	$(ECHO) "  <-- Make done"
+	(>&2 echo "${LIGHT_CYAN_COLOR}Leaving  : "`pwd`"${NO_COLOR}")
 
 phase2:
 	$(subdir_recurse)
 	$(banner)
 	$(ECHO) ""
+	(>&2 echo "${YELLOW_COLOR}Entering : "`pwd`"${NO_COLOR}")
 	$(ECHO) "  --> Starting make"
 ifdef CARMEN_TEST
 	$(SILENT) $(MAKE) binaries 2>> error.out
@@ -271,6 +279,7 @@ else
 endif
 	$(install_binaries)
 	$(ECHO) "  <-- Make done"
+	(>&2 echo "${LIGHT_CYAN_COLOR}Leaving  : "`pwd`"${NO_COLOR}")
 
 phase3:
 	$(subdir_recurse)
@@ -284,6 +293,7 @@ all:
 	$(subdir_recurse)
 	$(banner)
 	$(ECHO) ""
+	(>&2 echo "${YELLOW_COLOR}Entering : "`pwd`"${NO_COLOR}")
 	$(ECHO) "  --> Starting make"
 	$(compile_mae)
 	$(install_includes)
@@ -309,6 +319,7 @@ endif
 	$(install_binaries)
 	$(install_glades)
 	$(ECHO) "  <-- Make done"
+	(>&2 echo "${LIGHT_CYAN_COLOR}Leaving  : "`pwd`"${NO_COLOR}")
 
 install:
 	$(subdir_recurse)
