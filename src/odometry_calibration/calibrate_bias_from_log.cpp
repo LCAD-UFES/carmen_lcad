@@ -300,12 +300,12 @@ fitness(double *particle, void *data)
 		error += sqrt(pow(x - gps_x, 2) + pow(y - gps_y, 2));
 
 		// reinforce consistency between heading direction and heading estimated using gps
-		if ((fabs(v) > 5.0) && (i > 0))
+		if ((fabs(v) > 2.0) && (i > 0))
 		{
 			double gps_yaw = atan2(pso_data->lines[i].gps_y - pso_data->lines[i - 1].gps_y, 
 								   pso_data->lines[i].gps_x - pso_data->lines[i - 1].gps_x);
 
-			error += 100 * fabs(carmen_radians_to_degrees(carmen_normalize_theta(gps_yaw - yaw)));
+			error += 5 * fabs(carmen_radians_to_degrees(carmen_normalize_theta(gps_yaw - yaw)));
 		}
 	}
 
@@ -339,24 +339,24 @@ set_limits(int dim)
 	// v multiplicative bias
 	//limits[0][0] = 0.95; //0.5;
 	//limits[0][1] = 1.05; //1.5;
-	limits[0][0] = 0.5;
-	limits[0][1] = 1.5;
+	limits[0][0] = 0.99999999;
+	limits[0][1] = 1.8;
 
 	// v additive bias
 	limits[1][0] = -0.00000001;
 	limits[1][1] = 0.00000001;
 
 	// phi multiplicative bias
-	limits[2][0] = 0.5;
-	limits[2][1] = 1.5;
+	limits[2][0] = 0.9;
+	limits[2][1] = 1.1;
 
 	// phi additive bias
-	limits[3][0] = -0.5;
-	limits[3][1] = 0.5;
+	limits[3][0] = -carmen_degrees_to_radians(5.);
+	limits[3][1] = carmen_degrees_to_radians(5.);
 
 	// Initial angle
-	limits[4][0] = 0.830968; // -M_PI;
-	limits[4][1] = 0.830969; // M_PI;
+	limits[4][0] = -M_PI;
+	limits[4][1] = M_PI;
 
 	return limits;
 }
