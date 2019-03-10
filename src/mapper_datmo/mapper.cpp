@@ -107,6 +107,48 @@ carmen_mapper_virtual_scan_message virtual_scan_message;
 carmen_moving_objects_point_clouds_message moving_objects_message;
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////// RANIK
+double*
+convert_map_to_array(carmen_map_p updated_map)
+{
+    unsigned int width = updated_map->config.x_size;
+    unsigned int height = updated_map->config.y_size;
+    unsigned int size = width * height;
+    unsigned int row = 0, col = 0, index = 0;
+    double *array_map = (double *) malloc (size * sizeof(double));
+
+    for (unsigned int i = 0; i < size; ++i)
+    {
+        row = (height - 1) - i % height;
+
+        col = i / height;
+
+        index = row * width + col;
+
+        array_map[index] =  1 - updated_map->complete_map[i];
+    }
+    return (array_map);
+}
+
+
+void
+cv_draw_map()
+{
+	double *inverted_map = convert_map_to_array(&map);
+
+	unsigned int height = map.config.y_size;
+	double inverse_resolution = 1.0 / map.config.resolution;
+
+	cv::Mat image_localize_map = cv::Mat(map.config.x_size, map.config.y_size, CV_64FC1 , inverted_map, 0);
+
+	cv::imshow("Map", image_localize_map);
+	cv::waitKey(1);
+	free(inverted_map);
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 carmen_map_t *
 get_the_map()
 {

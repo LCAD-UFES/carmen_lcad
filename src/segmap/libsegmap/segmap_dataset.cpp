@@ -772,6 +772,8 @@ NewCarmenDataset::NewCarmenDataset(char *path, int sync_type)
 
 	_velodyne_path = string(path) + "_velodyne";
 	_images_path = string(path) + "_bumblebee";
+
+	_load_odometry_calibration(path);
 }
 
 
@@ -787,6 +789,39 @@ void
 NewCarmenDataset::reset()
 {
 	rewind(_fptr);
+}
+
+
+void 
+NewCarmenDataset::_load_odometry_calibration(char *path)
+{
+	vector<char*> splitted = string_split(path, "/");
+	string odom_calib = "/dados/data2/data_" + string(splitted[splitted.size() - 1]) + "/odom_calib.txt";
+	
+	FILE *f = fopen(odom_calib.c_str(), "r");
+	
+	if (f != NULL)
+	{
+		fscanf(f, "bias v: %lf %lf bias phi: %lf %lf Initial Angle: %lf",
+			&_calib.mult_v, 
+			&_calib.add_v, 
+			&_calib.mult_phi,
+			&_calib.add_phi,
+			&_calib.init_angle);
+
+		fclose(f);
+	}
+	else
+	{
+		printf("Warning: odometry calibration file not found. Assuming default values.\n");
+		
+		_calib.mult_phi = _calib.mult_v = 1.0;
+		_calib.init_angle = 0.;
+		_calib.add_phi = 0.;
+	}
+
+	printf("Odom calibration: bias v: %lf %lf bias phi: %lf %lf\n", 
+		_calib.mult_v, _calib.add_v, _calib.mult_phi, _calib.add_phi);
 }
 
 
@@ -986,6 +1021,9 @@ NewCarmenDataset::_assemble_data_package_from_queues()
 	_parse_imu(_find_nearest(_imu_queue, ref_time), _sample);
 	_parse_gps_position(_find_nearest(_gps_position_queue, ref_time), _sample);
 	_parse_gps_orientation(_find_nearest(_gps_orientation_queue, ref_time), _sample);
+
+	_sample->v *= _calib.mult_v;
+	_sample->phi = normalize_theta(_sample->phi * _calib.mult_phi + _calib.add_phi);
 }
 
 
@@ -1028,7 +1066,7 @@ NewCarmenDataset::read_image(DataSample *sample)
 	static unsigned char *raw_right = (unsigned char*) calloc (image_size, sizeof(unsigned char));
 	static Mat img_r = Mat(sample->image_width, sample->image_height, CV_8UC3, raw_right, 0);
 	
-	FILE *image_file = safe_fopen((char*) sample->image_path.c_str(), "rb");
+	FILE *image_file = safe_fopen(sample->image_path.c_str(), "rb");
 	// jump the left image
 	fseek(image_file, image_size * sizeof(unsigned char), SEEK_SET);
 	fread(raw_right, image_size, sizeof(unsigned char), image_file);
@@ -1071,7 +1109,7 @@ NewCarmenDataset::read_pointcloud(DataSample *sample)
 {
 	static PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 
-	FILE *f = safe_fopen((char*) sample->velodyne_path.c_str(), "rb");
+	FILE *f = safe_fopen(sample->velodyne_path.c_str(), "rb");
 
 	double h_angle, v_angle;
 	unsigned short distances[32];

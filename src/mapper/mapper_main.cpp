@@ -104,6 +104,8 @@ rotation_matrix *r_matrix_car_to_global = NULL;
 
 int use_truepos = 0;
 
+double time_secs_between_map_save = 0.0;
+
 extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 extern carmen_moving_objects_point_clouds_message moving_objects_message;
@@ -265,6 +267,9 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		publish_map(globalpos_message->timestamp);
 		publish_virtual_scan(globalpos_message->timestamp);
 	}
+
+	if (update_and_merge_with_mapper_saved_maps && time_secs_between_map_save > 0.0)
+		mapper_periodically_save_current_map(globalpos_message->timestamp);
 }
 
 
@@ -1119,8 +1124,8 @@ read_parameters(int argc, char **argv,
 		{(char *) "commandline", (char *) "generate_neural_mapper_dataset", CARMEN_PARAM_ONOFF, &generate_neural_mapper_dataset, 0, NULL},
 		{(char *) "commandline", (char *) "neural_mapper_max_distance_meters", CARMEN_PARAM_INT, &neural_mapper_max_distance_meters, 0, NULL},
 		{(char *) "commandline", (char *) "neural_mapper_data_pace", CARMEN_PARAM_INT, &neural_mapper_data_pace, 0, NULL},
-		{(char *) "commandline", (char *) "num_clouds", CARMEN_PARAM_INT, &neural_map_num_clouds, 0, NULL}
-
+		{(char *) "commandline", (char *) "num_clouds", CARMEN_PARAM_INT, &neural_map_num_clouds, 0, NULL},
+		{(char *) "commandline", (char *) "time_secs_between_map_save", CARMEN_PARAM_DOUBLE, &time_secs_between_map_save, 0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));

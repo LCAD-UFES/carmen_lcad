@@ -67,7 +67,7 @@ gps_std_from_quality(int quality)
 			gps_std = DBL_MAX;
 	}
 
-	return 1.0; // gps_std;
+	return gps_std;
 }
 
 

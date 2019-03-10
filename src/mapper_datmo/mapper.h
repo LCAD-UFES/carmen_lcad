@@ -38,6 +38,8 @@ typedef struct _camera_data
   * Prototypes
   */
 
+void cv_draw_map();
+
 void mapper_merge_online_map_with_offline_map(carmen_map_t *offline_map);
 int mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_message *message);
 int mapper_velodyne_partial_scan(int sensor_number, carmen_velodyne_partial_scan_message *velodyne_message);

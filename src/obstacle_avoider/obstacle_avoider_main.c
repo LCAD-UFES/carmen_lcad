@@ -474,19 +474,6 @@ read_parameters(int argc, char **argv)
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
-//	char* collision_file = (char*) "ford_escape/ford_escape_col.txt";
-//	carmen_param_t opt_param_list[] =
-//	{
-//		{"robot", "collision_file", CARMEN_PARAM_STRING, &collision_file, 1, NULL},
-//	};
-//
-//	carmen_param_allow_unfound_variables(1);
-//	num_items = sizeof(opt_param_list)/sizeof(opt_param_list[0]);
-//	carmen_param_install_params(argc, argv, opt_param_list, num_items);
-//	carmen_param_allow_unfound_variables(0);
-//
-//	carmen_parse_collision_file(&carmen_robot_ackerman_config, collision_file);
-
 	return 0;
 }
 

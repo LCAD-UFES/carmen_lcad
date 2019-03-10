@@ -98,6 +98,8 @@ carmen_mapper_virtual_scan_message virtual_scan_message;
 
 carmen_moving_objects_point_clouds_message moving_objects_message;
 
+extern bool offline_map_available;
+extern double time_secs_between_map_save;
 
 carmen_map_t *
 get_the_map()
@@ -1083,6 +1085,24 @@ mapper_save_current_map()
 		carmen_grid_mapping_save_block_map_by_origin(map_path, 'e', &mean_occupancy_map);
 		carmen_grid_mapping_save_block_map_by_origin(map_path, 'o', &count_occupancy_map);
 	}
+}
+
+
+void
+mapper_periodically_save_current_map(double timestamp)
+{
+	if (!offline_map_available || map.complete_map == NULL || x_origin == 0.0)
+		return;
+
+	static double last_time = 0.0;
+	if (last_time == 0.0)
+		last_time = timestamp;
+
+	if ((timestamp - last_time) < time_secs_between_map_save)
+		return;
+
+	mapper_save_current_map();
+	last_time = timestamp;
 }
 
 
