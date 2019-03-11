@@ -1244,7 +1244,7 @@ get_log_odds_map_cell(const ProbabilisticMap *map, int x, int y)
 int
 carmen_prob_models_unaceptable_height(double obstacle_height, double highest_sensor, double safe_range_above_sensors, double safe_height_from_ground)
 {
-	if (obstacle_height > highest_sensor + safe_range_above_sensors || obstacle_height < safe_height_from_ground )// obstaculo bateria no carro pois esta dentro de sua altura
+	if ((obstacle_height > highest_sensor + safe_range_above_sensors) || (obstacle_height < safe_height_from_ground))	// obstaculo bateria no carro pois esta dentro de sua altura
 	{
 		return (1);
 	}
