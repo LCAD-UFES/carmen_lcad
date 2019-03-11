@@ -67,6 +67,41 @@ increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
 
 
 void
+colorize(PointCloud<PointXYZRGB>::Ptr cloud, 
+		 Matrix<double, 4, 4> &lidar2cam,
+		 Matrix<double, 3, 4> &projection,
+		 Mat &img)
+{
+	Mat orig = img.clone();
+	Matrix<double, 4, 1> plidar, pcam;
+	Matrix<double, 3, 1> ppixelh;
+	Point ppixel;
+
+	for (int i = 0; i < cloud->size(); i++)
+	{
+		plidar << cloud->at(i).x, cloud->at(i).y, cloud->at(i).z, 1;
+		pcam = lidar2cam * plidar;
+
+		if (pcam(0, 0) / pcam(3, 0) > 0)
+		{
+			ppixelh = projection * pcam;
+			ppixel.x = (ppixelh(0, 0) / ppixelh(2, 0)); // * img.cols
+			ppixel.y = (ppixelh(1, 0) / ppixelh(2, 0)); // * img.rows
+
+			if (ppixel.x >= 0 && ppixel.x < img.cols && ppixel.y >= 0 && ppixel.y < img.rows)
+			{
+				circle(img, ppixel, 2, Scalar(0,0,255));
+
+				cloud->at(i).r = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 2];
+				cloud->at(i).g = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 1];
+				cloud->at(i).b = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 0];
+			}
+		}
+	}
+}
+
+
+void
 create_map(GridMap &map, NewCarmenDataset *dataset, char path_save_maps[])
 {
 	DataSample *sample;
@@ -74,7 +109,12 @@ create_map(GridMap &map, NewCarmenDataset *dataset, char path_save_maps[])
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
 
+	Mat img;
+    Matrix<double, 4, 4> lidar2cam = dataset->vel2cam();
+	Matrix<double, 3, 4> projection = dataset->projection_matrix();
+
 	dataset->reset();
+	
 	Pose2d pose(0, 0, dataset->calib.init_angle);
 	double prev_t = 0;
 
@@ -92,8 +132,13 @@ create_map(GridMap &map, NewCarmenDataset *dataset, char path_save_maps[])
 								 dataset->intensity_calibration);
 
 		load_as_pointcloud(&loader, cloud);
+		img = dataset->read_image(sample);
+
+		colorize(cloud, lidar2cam, projection, img);
 		transformPointCloud(*cloud, *transformed, Pose2d::to_matrix(pose));
+
 		viewer.show(transformed);
+		viewer.show(img, "img", 640);
 		viewer.loop();
 	}
 }

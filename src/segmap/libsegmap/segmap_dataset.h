@@ -156,9 +156,21 @@ public:
 	DataSample* next_data_package();
 	static Mat read_image(DataSample *sample);
 
+	// Returns a matrix to transform from lidar to camera frame.
+	// Points shall be in homogeneous coordinates.
+	// To obtain the pixel positions, multiply the transformed x-coordinate
+	// by the image width, and y-coordinate by the image height.
+	Matrix<double, 4, 4> vel2cam();
+
+	// matrix to project from camera frame to image coordinates.
+	Matrix<double, 3, 4> projection_matrix();
+
+	// Returns a matrix to transfrom from lidar to car frame.
+	Matrix<double, 4, 4> vel2car();
+
 	OdomCalib calib;
     unsigned char ***intensity_calibration;
-	
+
 protected:
 
 	static const long _MAX_LINE_LENGTH = (5*4000000);

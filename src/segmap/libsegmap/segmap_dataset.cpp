@@ -727,6 +727,68 @@ NewCarmenDataset::reset()
 }
 
 
+Matrix<double, 4, 4> 
+NewCarmenDataset::vel2cam()
+{
+	Matrix<double, 4, 4> velodyne2board;
+	Matrix<double, 4, 4> cam2board;
+
+	velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
+	cam2board = pose6d_to_matrix(0.245, -0.04, 0.210, -0.017453, 0.026037, -0.023562);
+
+    //_vel2cam = projection * pose6d_to_matrix(0.04, 0.115, -0.27, -M_PI/2-0.052360, -0.034907, -M_PI/2-0.008727).inverse();
+	return cam2board.inverse() * velodyne2board;
+}
+
+
+Matrix<double, 3, 4> 
+NewCarmenDataset::projection_matrix()
+{
+	Matrix<double, 3, 4> projection;
+	Matrix<double, 4, 4> R;
+
+	// This is a rotation to change the ref. frame from 
+	// x: forward, y: left, z: up to x: right, y: down, z: forward.
+	// R = pose6d_to_matrix(0., 0., 0., 0., M_PI/2., -M_PI/2);
+	R = pose6d_to_matrix(0., 0., 0., -M_PI/2., 0, -M_PI/2).inverse();
+
+	double fx_factor = 0.764749;
+	double fy_factor = 1.01966;
+	double cu_factor = 0.505423;
+	double cv_factor = 0.493814;
+	double pixel_size = 0.00000375;
+
+    double fx_meters = fx_factor * pixel_size * 1280;
+    double fy_meters = fy_factor * pixel_size * 960;
+
+    double cu = cu_factor * 1280;
+    double cv = cv_factor * 960;
+
+    // see http://www.cvlibs.net/publications/Geiger2013IJRR.pdf
+    // Note: Storing cu and cv in the 3rd column instead of the 4th is a trick.
+    // To compute the pixel coordinates we divide the first two
+    // dimensions of the point in homogeneous coordinates by the third one (which is Z).
+	projection << fx_meters / pixel_size, 0, cu, 0,
+				  0, fy_meters / pixel_size, cv, 0,
+				  0, 0, 1, 0.;
+
+	return projection * R;				  
+}
+
+
+Matrix<double, 4, 4> 
+NewCarmenDataset::vel2car()
+{
+	Matrix<double, 4, 4> velodyne2board;
+	Matrix<double, 4, 4> board2car;
+
+	velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
+	board2car = pose6d_to_matrix(0.572, 0, 1.394, 0.0, 0.0122173048, 0.0);
+
+	return board2car * velodyne2board;
+}
+
+
 void 
 NewCarmenDataset::_load_odometry_calibration(char *path)
 {
