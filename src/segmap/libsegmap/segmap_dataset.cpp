@@ -69,9 +69,9 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		//point2.b = point.b;
 
 		// to use fused camera and velodyne
-		if (0)
-		//if ((point.x > 0 && x >= 0 && x < img.cols) && (y >= 0 && y < img.rows) 
-		 	//&& (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
+		//if (0)
+		if ((point.x > 0 && x >= 0 && x < img.cols) && (y >= 0 && y < img.rows) 
+		 	&& (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
 		{
 			// colors
 			p = 3 * (y * img.cols + x);
@@ -90,7 +90,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
     		cloud->push_back(point2);
 		}
 		// to use remission
-		else if (1)
+		else if (0)
 		// else if (point.z < 0.)
 		{
 			cloud->push_back(point2);
@@ -730,14 +730,16 @@ NewCarmenDataset::reset()
 Matrix<double, 4, 4> 
 NewCarmenDataset::vel2cam()
 {
-	Matrix<double, 4, 4> velodyne2board;
-	Matrix<double, 4, 4> cam2board;
+	//Matrix<double, 4, 4> velodyne2board;
+	//Matrix<double, 4, 4> cam2board;
 
-	velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
-	cam2board = pose6d_to_matrix(0.245, -0.04, 0.210, -0.017453, 0.026037, -0.023562 + carmen_degrees_to_radians(1.35));
+	//velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
+	//cam2board = pose6d_to_matrix(0.245, -0.04, 0.210, -0.017453, 0.026037, -0.023562 + carmen_degrees_to_radians(1.35));
 
     //_vel2cam = projection * pose6d_to_matrix(0.04, 0.115, -0.27, -M_PI/2-0.052360, -0.034907, -M_PI/2-0.008727).inverse();
-	return cam2board.inverse() * velodyne2board;
+	//return cam2board.inverse() * velodyne2board;
+
+	return pose6d_to_matrix(-0.020000, 0.125000, -0.27, -0.015708, 0.048869, 0.005236).inverse();
 }
 
 

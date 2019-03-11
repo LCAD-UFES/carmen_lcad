@@ -31,7 +31,7 @@ using namespace Eigen;
 using namespace pcl;
 
 #define VIEW 1
-
+#define USE_NEW 1
 
 void
 increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
@@ -70,7 +70,8 @@ void
 colorize(PointCloud<PointXYZRGB>::Ptr cloud, 
 		 Matrix<double, 4, 4> &lidar2cam,
 		 Matrix<double, 3, 4> &projection,
-		 Mat &img)
+		 Mat &img,
+		 PointCloud<PointXYZRGB>::Ptr colored)
 {
 	Mat orig = img.clone();
 	Matrix<double, 4, 1> plidar, pcam;
@@ -79,28 +80,32 @@ colorize(PointCloud<PointXYZRGB>::Ptr cloud,
 
 	for (int i = 0; i < cloud->size(); i++)
 	{
-		plidar << cloud->at(i).x, cloud->at(i).y, cloud->at(i).z, 1;
+		plidar << cloud->at(i).x, cloud->at(i).y, cloud->at(i).z, 1.;
 		pcam = lidar2cam * plidar;
 
 		if (pcam(0, 0) / pcam(3, 0) > 0)
 		{
 			ppixelh = projection * pcam;
-			ppixel.x = (ppixelh(0, 0) / ppixelh(2, 0)) * img.cols;
+
 			ppixel.y = (ppixelh(1, 0) / ppixelh(2, 0)) * img.rows;
+			ppixel.x = (ppixelh(0, 0) / ppixelh(2, 0)) * img.cols;
 
 			if (ppixel.x >= 0 && ppixel.x < img.cols && ppixel.y >= 0 && ppixel.y < img.rows)
 			{
-				circle(img, ppixel, 2, Scalar(0,0,255));
+				circle(img, ppixel, 2, Scalar(0,0,255), -1);
 
-				cloud->at(i).r = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 2];
-				cloud->at(i).g = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 1];
-				cloud->at(i).b = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 0];
+				PointXYZRGB point = cloud->at(i);
+				point.r = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 2];
+				point.g = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 1];
+				point.b = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 0];
+				colored->push_back(point);
 			}
 		}
 	}
 }
 
 
+#if USE_NEW
 void
 create_map(GridMap &map, NewCarmenDataset *dataset, char path_save_maps[])
 {
@@ -108,8 +113,10 @@ create_map(GridMap &map, NewCarmenDataset *dataset, char path_save_maps[])
 	PointCloudViewer viewer;
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
+	PointCloud<PointXYZRGB>::Ptr colored(new PointCloud<PointXYZRGB>);
 
 	Mat img;
+	Matrix<double, 4, 4> lidar2car = dataset->vel2car();
     Matrix<double, 4, 4> lidar2cam = dataset->vel2cam();
 	Matrix<double, 3, 4> projection = dataset->projection_matrix();
 
@@ -134,8 +141,9 @@ create_map(GridMap &map, NewCarmenDataset *dataset, char path_save_maps[])
 		load_as_pointcloud(&loader, cloud);
 		img = dataset->read_image(sample);
 
-		colorize(cloud, lidar2cam, projection, img);
-		transformPointCloud(*cloud, *transformed, Pose2d::to_matrix(pose));
+		colored->clear();
+		colorize(cloud, lidar2cam, projection, img, colored);
+		transformPointCloud(*colored, *transformed, (Pose2d::to_matrix(pose) * lidar2car).cast<float>());
 
 		viewer.show(transformed);
 		viewer.show(img, "img", 640);
@@ -144,9 +152,9 @@ create_map(GridMap &map, NewCarmenDataset *dataset, char path_save_maps[])
 }
 
 
-#if 0
+#else
 void
-create_map(GridMap &map, DatasetInterface *dataset, char path_save_maps[])
+create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 {
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
@@ -338,7 +346,6 @@ main(int argc, char **argv)
 	if (argc < 2)
 		exit(printf("Error: Use %s <log>\n", argv[0]));
 
-	/*
 	char path_save_maps[256];
 	char dataset_name[256];
 	char map_name[256];
@@ -357,12 +364,17 @@ main(int argc, char **argv)
 	printf("dataset_name: %s\n", dataset_name);
 	printf("map_name: %s\n", map_name);
 	printf("path to save maps: %s\n", path_save_maps);
-	*/
 
+	GridMap map("/tmp", 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
+
+#if USE_NEW	
 	NewCarmenDataset *dataset;
     dataset = new NewCarmenDataset(argv[1]);
-	GridMap map("/tmp", 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
 	create_map(map, dataset, "/tmp");
+#else
+	DatasetInterface *dataset = new DatasetCarmen(dataset_name, 0);
+	create_map(map, *dataset, path_save_maps);
+#endif
 
 	printf("Done\n");
 	return 0;

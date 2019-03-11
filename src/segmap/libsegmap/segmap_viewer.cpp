@@ -253,7 +253,6 @@ PointCloudViewer::show(PointCloud<PointXYZRGB>::Ptr cloud)
 
 	if (_cloud_viewer == NULL)
 	{
-		printf("viewer alloc\n");
 		_cloud_viewer = new pcl::visualization::PCLVisualizer("CloudViewer");
 		_cloud_viewer->setBackgroundColor(_br, _bg, _bb);
 		_cloud_viewer->addCoordinateSystem(2.);

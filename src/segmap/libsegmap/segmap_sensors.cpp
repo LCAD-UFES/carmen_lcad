@@ -81,6 +81,7 @@ CarmenLidarLoader::_get_distance_index(double distance)
 LidarShot* 
 CarmenLidarLoader::next()
 {
+    double range_floor;
     unsigned char calib_intensity;
     unsigned char raw_intensity;
     int range_index;
@@ -97,10 +98,13 @@ CarmenLidarLoader::next()
         _shot->ranges[i] = ((double) _raw_ranges[velodyne_ray_order[i]]) / 500.;
 
         // reorder and calibrate intensity
-        range_index = _get_distance_index(_shot->ranges[i]);
         raw_intensity = _raw_intensities[velodyne_ray_order[i]];
-        calib_intensity = _calibration[i][range_index][raw_intensity];
-        _shot->intensities[i] = calib_intensity;
+
+        //double range_floor = _shot->ranges[i] * cos(_shot->v_angles[i]);
+        //range_index = _get_distance_index(range_floor);
+        //calib_intensity = _calibration[i][range_index][raw_intensity];
+        
+        _shot->intensities[i] = raw_intensity;
     }
 
     _n_readings++;
