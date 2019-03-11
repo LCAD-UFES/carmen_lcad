@@ -3,6 +3,7 @@
 #include "segmap_dataset.h"
 #include "segmap_util.h"
 #include "segmap_viewer.h"
+#include "segmap_sensors.h"
 #include <pcl/visualization/pcl_visualizer.h>
 
 using namespace pcl;
@@ -17,6 +18,7 @@ main()
         NewCarmenDataset("/dados/log_estacionamentos-20181130-test.txt",
                          NewCarmenDataset::SYNC_BY_CAMERA);
 
+    PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
     PointCloudViewer viewer;
 
     Pose2d dead_reckoning;
@@ -53,7 +55,8 @@ main()
         );
 
         Mat img = NewCarmenDataset::read_image(data_package);
-        PointCloud<PointXYZRGB>::Ptr cloud = NewCarmenDataset::read_pointcloud(data_package);
+        CarmenLidarLoader loader(data_package->velodyne_path.c_str(), data_package->n_laser_shots, dataset.intensity_calibration);
+        load_as_pointcloud(&loader, cloud);
         
         viewer.show(img, "img", 320);
         viewer.show(cloud);

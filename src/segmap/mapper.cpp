@@ -23,12 +23,15 @@
 #include "libsegmap/segmap_util.h"
 #include "libsegmap/segmap_dataset.h"
 #include "libsegmap/segmap_viewer.h"
+#include "libsegmap/segmap_sensors.h"
 
 using namespace cv;
 using namespace std;
 using namespace Eigen;
 using namespace pcl;
 
+#define VIEW 1
+#define USE_NEW 1
 
 void
 increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
@@ -62,8 +65,94 @@ increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
 	// */
 }
 
-#define VIEW 1
 
+void
+colorize(PointCloud<PointXYZRGB>::Ptr cloud, 
+		 Matrix<double, 4, 4> &lidar2cam,
+		 Matrix<double, 3, 4> &projection,
+		 Mat &img,
+		 PointCloud<PointXYZRGB>::Ptr colored)
+{
+	Mat orig = img.clone();
+	Matrix<double, 4, 1> plidar, pcam;
+	Matrix<double, 3, 1> ppixelh;
+	Point ppixel;
+
+	for (int i = 0; i < cloud->size(); i++)
+	{
+		plidar << cloud->at(i).x, cloud->at(i).y, cloud->at(i).z, 1.;
+		pcam = lidar2cam * plidar;
+
+		if (pcam(0, 0) / pcam(3, 0) > 0)
+		{
+			ppixelh = projection * pcam;
+
+			ppixel.y = (ppixelh(1, 0) / ppixelh(2, 0)) * img.rows;
+			ppixel.x = (ppixelh(0, 0) / ppixelh(2, 0)) * img.cols;
+
+			if (ppixel.x >= 0 && ppixel.x < img.cols && ppixel.y >= 0 && ppixel.y < img.rows)
+			{
+				circle(img, ppixel, 2, Scalar(0,0,255), -1);
+
+				PointXYZRGB point = cloud->at(i);
+				point.r = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 2];
+				point.g = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 1];
+				point.b = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 0];
+				colored->push_back(point);
+			}
+		}
+	}
+}
+
+
+#if USE_NEW
+void
+create_map(GridMap &map, NewCarmenDataset *dataset, char path_save_maps[])
+{
+	DataSample *sample;
+	PointCloudViewer viewer;
+	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
+	PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
+	PointCloud<PointXYZRGB>::Ptr colored(new PointCloud<PointXYZRGB>);
+
+	Mat img;
+	Matrix<double, 4, 4> lidar2car = dataset->vel2car();
+    Matrix<double, 4, 4> lidar2cam = dataset->vel2cam();
+	Matrix<double, 3, 4> projection = dataset->projection_matrix();
+
+	dataset->reset();
+	
+	Pose2d pose(0, 0, dataset->calib.init_angle);
+	double prev_t = 0;
+
+	while ((sample = dataset->next_data_package()))
+	{		
+		if (prev_t > 0)
+			ackerman_motion_model(pose, sample->v, sample->phi, sample->image_time - prev_t);
+
+		prev_t = sample->image_time;
+
+		if (fabs(sample->v) < 1.0)
+			continue;
+
+		CarmenLidarLoader loader(sample->velodyne_path.c_str(), sample->n_laser_shots,
+								 dataset->intensity_calibration);
+
+		load_as_pointcloud(&loader, cloud);
+		img = dataset->read_image(sample);
+
+		colored->clear();
+		colorize(cloud, lidar2cam, projection, img, colored);
+		transformPointCloud(*colored, *transformed, (Pose2d::to_matrix(pose) * lidar2car).cast<float>());
+
+		viewer.show(transformed);
+		viewer.show(img, "img", 640);
+		viewer.loop();
+	}
+}
+
+
+#else
 void
 create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 {
@@ -249,13 +338,13 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 
 	//waitKey(-1);
 }
-
+#endif
 
 int
 main(int argc, char **argv)
 {
 	if (argc < 2)
-		exit(printf("Error: Use %s <log data directory>\n", argv[0]));
+		exit(printf("Error: Use %s <log>\n", argv[0]));
 
 	char path_save_maps[256];
 	char dataset_name[256];
@@ -276,10 +365,16 @@ main(int argc, char **argv)
 	printf("map_name: %s\n", map_name);
 	printf("path to save maps: %s\n", path_save_maps);
 
-	DatasetInterface *dataset;
-    dataset = new DatasetCarmen(dataset_name, 0);
-	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
+	GridMap map("/tmp", 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
+
+#if USE_NEW	
+	NewCarmenDataset *dataset;
+    dataset = new NewCarmenDataset(argv[1]);
+	create_map(map, dataset, "/tmp");
+#else
+	DatasetInterface *dataset = new DatasetCarmen(dataset_name, 0);
 	create_map(map, *dataset, path_save_maps);
+#endif
 
 	printf("Done\n");
 	return 0;

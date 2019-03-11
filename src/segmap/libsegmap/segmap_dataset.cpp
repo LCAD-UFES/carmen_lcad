@@ -17,17 +17,6 @@ using namespace cv;
 using namespace pcl;
 
 
-double velodyne_vertical_angles[32] =
-{
-		-30.6700000, -29.3300000, -28.0000000, -26.6700000, -25.3300000, -24.0000000, -22.6700000, -21.3300000,
-		-20.0000000, -18.6700000, -17.3300000, -16.0000000, -14.6700000, -13.3300000, -12.0000000, -10.6700000,
-		-9.3299999, -8.0000000, -6.6700001, -5.3299999, -4.0000000, -2.6700001, -1.3300000, 0.0000000, 1.3300000,
-		2.6700001, 4.0000000, 5.3299999, 6.6700001, 8.0000000, 9.3299999, 10.6700000
-};
-
-int velodyne_ray_order[32] = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31};
-
-
 void
 DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi, int view, Mat *output_img_view)
 {
@@ -80,9 +69,9 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		//point2.b = point.b;
 
 		// to use fused camera and velodyne
-		if (0)
-		//if ((point.x > 0 && x >= 0 && x < img.cols) && (y >= 0 && y < img.rows) 
-		 	//&& (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
+		//if (0)
+		if ((point.x > 0 && x >= 0 && x < img.cols) && (y >= 0 && y < img.rows) 
+		 	&& (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
 		{
 			// colors
 			p = 3 * (y * img.cols + x);
@@ -101,7 +90,7 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
     		cloud->push_back(point2);
 		}
 		// to use remission
-		else if (1)
+		else if (0)
 		// else if (point.z < 0.)
 		{
 			cloud->push_back(point2);
@@ -221,69 +210,10 @@ DatasetCarmen::_init_vel2car_transform()
 }
 
 
-void
-DatasetCarmen::_load_velodyne_intensity_calibration()
-{
-	const char *path = "data/calibration_table.txt";
-	
-	FILE *calibration_file_bin = fopen(path, "r");
-	if (!calibration_file_bin)
-		exit(printf("Error: file '%s' does not exist.\n", path));
-
-	_velodyne_intensity_calibration = (uchar ***) calloc(32, sizeof(uchar **));
-
-	for (int i = 0; i < 32; i++)
-	{
-		_velodyne_intensity_calibration[i] = (uchar **) calloc(10, sizeof(uchar *));
-		
-		for (int j = 0; j < 10; j++)
-			_velodyne_intensity_calibration[i][j] = (uchar *) calloc(256, sizeof(uchar));
-	}
-
-	int laser, ray_size, intensity;
-	long accumulated_intennsity, count;
-	float val, max_val = 0.0, min_val = 255.0;
-	
-	while (fscanf(calibration_file_bin, "%d %d %d %f %ld %ld", &laser, &ray_size, &intensity, &val, &accumulated_intennsity, &count) == 6)
-	{
-		_velodyne_intensity_calibration[laser][ray_size][intensity] = (uchar) val;
-
-		if (val > max_val)
-			max_val = val;
-		
-		if (val < min_val)
-			min_val = val;
-	}
-
-	for (int i = 0; i < 32; i++)
-	{
-		for (int j = 0; j < 10; j++)
-		{
-			for (int k = 0; k < 256; k++)
-			{
-				val = _velodyne_intensity_calibration[i][j][k];
-				val = (val - min_val) / (max_val - min_val);
-
-				if (val > 1.0)
-					val = 1.0;
-
-				if (val < 0.0)
-					val = 0.0;
-
-				_velodyne_intensity_calibration[i][j][k] = (uchar) (val * 255.);
-			}
-		}
-	}
-
-	fclose(calibration_file_bin);
-}
-
-
 DatasetCarmen::DatasetCarmen(string path, int use_segmented) :
 	DatasetInterface(path, use_segmented)
 {
 	load_data();
-	_load_velodyne_intensity_calibration();
 	_unknown_class = CityScapesColorMap().n_classes + 1;
 	_init_vel2car_transform();
 	_init_vel2cam_transform(image_height, image_width);
@@ -764,7 +694,7 @@ DatasetKitti::load_data()
 }
 
 
-NewCarmenDataset::NewCarmenDataset(char *path, int sync_type)
+NewCarmenDataset::NewCarmenDataset(char *path, int sync_type, char *intensity_calib_path)
 {
 	_fptr = safe_fopen(path, "r");
 	_sync_type = sync_type;
@@ -774,6 +704,10 @@ NewCarmenDataset::NewCarmenDataset(char *path, int sync_type)
 	_images_path = string(path) + "_bumblebee";
 
 	_load_odometry_calibration(path);
+
+	intensity_calibration = _allocate_calibration_table();
+	_load_intensity_calibration(intensity_calib_path);
+
 }
 
 
@@ -782,6 +716,7 @@ NewCarmenDataset::~NewCarmenDataset()
 	fclose(_fptr);
 	delete(_sample);
 	_clear_synchronization_queues();
+	_free_calibration_table(intensity_calibration);
 }
 
 
@@ -789,6 +724,70 @@ void
 NewCarmenDataset::reset()
 {
 	rewind(_fptr);
+}
+
+
+Matrix<double, 4, 4> 
+NewCarmenDataset::vel2cam()
+{
+	//Matrix<double, 4, 4> velodyne2board;
+	//Matrix<double, 4, 4> cam2board;
+
+	//velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
+	//cam2board = pose6d_to_matrix(0.245, -0.04, 0.210, -0.017453, 0.026037, -0.023562 + carmen_degrees_to_radians(1.35));
+
+    //_vel2cam = projection * pose6d_to_matrix(0.04, 0.115, -0.27, -M_PI/2-0.052360, -0.034907, -M_PI/2-0.008727).inverse();
+	//return cam2board.inverse() * velodyne2board;
+
+	return pose6d_to_matrix(-0.020000, 0.125000, -0.27, -0.015708, 0.048869, 0.005236).inverse();
+}
+
+
+Matrix<double, 3, 4> 
+NewCarmenDataset::projection_matrix()
+{
+	Matrix<double, 3, 4> projection;
+	Matrix<double, 4, 4> R;
+
+	// This is a rotation to change the ref. frame from 
+	// x: forward, y: left, z: up to x: right, y: down, z: forward.
+	// R = pose6d_to_matrix(0., 0., 0., 0., M_PI/2., -M_PI/2);
+	R = pose6d_to_matrix(0., 0., 0., -M_PI/2., 0, -M_PI/2).inverse();
+
+	double fx_factor = 0.764749;
+	double fy_factor = 1.01966;
+	double cu_factor = 0.505423;
+	double cv_factor = 0.493814;
+	double pixel_size = 0.00000375;
+
+    double fx_meters = fx_factor * pixel_size;
+    double fy_meters = fy_factor * pixel_size;
+
+    double cu = cu_factor;
+    double cv = cv_factor;
+
+    // see http://www.cvlibs.net/publications/Geiger2013IJRR.pdf
+    // Note: Storing cu and cv in the 3rd column instead of the 4th is a trick.
+    // To compute the pixel coordinates we divide the first two
+    // dimensions of the point in homogeneous coordinates by the third one (which is Z).
+	projection << fx_meters / pixel_size, 0, cu, 0,
+				  0, fy_meters / pixel_size, cv, 0,
+				  0, 0, 1, 0.;
+
+	return projection * R;				  
+}
+
+
+Matrix<double, 4, 4> 
+NewCarmenDataset::vel2car()
+{
+	Matrix<double, 4, 4> velodyne2board;
+	Matrix<double, 4, 4> board2car;
+
+	velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
+	board2car = pose6d_to_matrix(0.572, 0, 1.394, 0.0, 0.0122173048, 0.0);
+
+	return board2car * velodyne2board;
 }
 
 
@@ -803,11 +802,11 @@ NewCarmenDataset::_load_odometry_calibration(char *path)
 	if (f != NULL)
 	{
 		fscanf(f, "bias v: %lf %lf bias phi: %lf %lf Initial Angle: %lf",
-			&_calib.mult_v, 
-			&_calib.add_v, 
-			&_calib.mult_phi,
-			&_calib.add_phi,
-			&_calib.init_angle);
+			&calib.mult_v, 
+			&calib.add_v, 
+			&calib.mult_phi,
+			&calib.add_phi,
+			&calib.init_angle);
 
 		fclose(f);
 	}
@@ -815,13 +814,89 @@ NewCarmenDataset::_load_odometry_calibration(char *path)
 	{
 		printf("Warning: odometry calibration file not found. Assuming default values.\n");
 		
-		_calib.mult_phi = _calib.mult_v = 1.0;
-		_calib.init_angle = 0.;
-		_calib.add_phi = 0.;
+		calib.mult_phi = calib.mult_v = 1.0;
+		calib.add_phi = calib.add_v = 0.;
+		calib.init_angle = 0.;
 	}
 
 	printf("Odom calibration: bias v: %lf %lf bias phi: %lf %lf\n", 
-		_calib.mult_v, _calib.add_v, _calib.mult_phi, _calib.add_phi);
+		calib.mult_v, calib.add_v, calib.mult_phi, calib.add_phi);
+}
+
+
+unsigned char***
+NewCarmenDataset::_allocate_calibration_table()
+{
+	unsigned char ***table = (unsigned char ***) calloc(32, sizeof(unsigned char **));
+
+	for (int i = 0; i < 32; i++)
+	{
+		table[i] = (unsigned char **) calloc(10, sizeof(unsigned char *));
+		
+		for (int j = 0; j < 10; j++)
+			table[i][j] = (unsigned char *) calloc(256, sizeof(unsigned char));
+	}
+
+	return table;
+}
+
+
+void 
+NewCarmenDataset::_free_calibration_table(unsigned char ***table)
+{
+	for (int i = 0; i < 32; i++)
+	{
+		for (int j = 0; j < 10; j++)
+			free(table[i][j]);
+
+		free(table[i]);
+	}
+
+	free(table);
+}
+
+
+void
+NewCarmenDataset::_load_intensity_calibration(char *path)
+{
+	FILE *calibration_file_bin = safe_fopen(path, "r");
+
+	int laser, ray_size, intensity;
+	long accumulated_intennsity, count;
+	float val, max_val = 0.0, min_val = 255.0;
+	
+	while (fscanf(calibration_file_bin, "%d %d %d %f %ld %ld", &laser, &ray_size, &intensity, &val, &accumulated_intennsity, &count) == 6)
+	{
+		intensity_calibration[laser][ray_size][intensity] = (uchar) val;
+
+		if (val > max_val)
+			max_val = val;
+		
+		if (val < min_val)
+			min_val = val;
+	}
+
+	for (int i = 0; i < 32; i++)
+	{
+		for (int j = 0; j < 10; j++)
+		{
+			for (int k = 0; k < 256; k++)
+			{
+				val = intensity_calibration[i][j][k];
+				val = (val - min_val) / (max_val - min_val);
+
+				if (val > 1.0)
+					val = 1.0;
+
+				if (val < 0.0)
+					val = 0.0;
+
+				intensity_calibration[i][j][k] = (uchar) (val * 255.);
+			}
+		}
+	}
+
+	fclose(calibration_file_bin);
 }
 
 
@@ -1022,8 +1097,8 @@ NewCarmenDataset::_assemble_data_package_from_queues()
 	_parse_gps_position(_find_nearest(_gps_position_queue, ref_time), _sample);
 	_parse_gps_orientation(_find_nearest(_gps_orientation_queue, ref_time), _sample);
 
-	_sample->v *= _calib.mult_v;
-	_sample->phi = normalize_theta(_sample->phi * _calib.mult_phi + _calib.add_phi);
+	_sample->v = _sample->v * calib.mult_v + calib.add_v;
+	_sample->phi = normalize_theta(_sample->phi * calib.mult_phi + calib.add_phi);
 }
 
 
@@ -1077,66 +1152,3 @@ NewCarmenDataset::read_image(DataSample *sample)
 	return img_r;
 }
 
-
-PointXYZRGB
-NewCarmenDataset::_compute_point_from_velodyne(double v_angle, double h_angle, double radius, unsigned char intensity)
-{
-    // build a new point
-    PointXYZRGB point;
-
-	double cos_rot_angle = cos(h_angle);
-	double sin_rot_angle = sin(h_angle);
-
-	double cos_vert_angle = cos(v_angle);
-	double sin_vert_angle = sin(v_angle);
-
-	double xy_distance = radius * cos_vert_angle;
-
-	point.x = (xy_distance * cos_rot_angle);
-	point.y = (xy_distance * sin_rot_angle);
-	point.z = (radius * sin_vert_angle);
-
-	point.r = intensity;
-    point.g = intensity;
-    point.b = intensity;
-
-    return point;
-}
-
-
-PointCloud<PointXYZRGB>::Ptr
-NewCarmenDataset::read_pointcloud(DataSample *sample)
-{
-	static PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
-
-	FILE *f = safe_fopen(sample->velodyne_path.c_str(), "rb");
-
-	double h_angle, v_angle;
-	unsigned short distances[32];
-	unsigned char intensities[32];
-	double range;
-
-	cloud->clear();
-
-	for(int i = 0; i < sample->n_laser_shots; i++)
-	{
-		fread(&h_angle, sizeof(double), 1, f);
-	    fread(distances, sizeof(unsigned short), 32, f);
-	    fread(intensities, sizeof(unsigned char), 32, f);
-
-	    h_angle = M_PI * h_angle / 180.;
-
-	    for (int j = 0; j < 32; j++)
-	    {
-	    	range = (double) distances[velodyne_ray_order[j]] / 500.;
-	    	v_angle = velodyne_vertical_angles[j];
-	    	v_angle = M_PI * v_angle / 180.;
-
-	    	PointXYZRGB point = _compute_point_from_velodyne(v_angle, -h_angle, range, intensities[velodyne_ray_order[j]]);
-	    	cloud->push_back(point);
-	    }
-	}
-
-    fclose(f);
-	return cloud;
-}

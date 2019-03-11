@@ -262,7 +262,7 @@ create_dead_reckoning(GraphSlamData &data, vector<SE2> &dead_reckoning)
 	double dt, previous_t;
 
 	previous_t = 0;
-	Pose2d pose(0, 0, data.dataset->_calib.init_angle);
+	Pose2d pose(0, 0, data.dataset->calib.init_angle);
 	dead_reckoning.push_back(SE2(pose.x, pose.y, pose.th));
 	
 	DataSample *sample;
