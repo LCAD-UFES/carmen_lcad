@@ -85,8 +85,8 @@ colorize(PointCloud<PointXYZRGB>::Ptr cloud,
 		if (pcam(0, 0) / pcam(3, 0) > 0)
 		{
 			ppixelh = projection * pcam;
-			ppixel.x = (ppixelh(0, 0) / ppixelh(2, 0)); // * img.cols
-			ppixel.y = (ppixelh(1, 0) / ppixelh(2, 0)); // * img.rows
+			ppixel.x = (ppixelh(0, 0) / ppixelh(2, 0)) * img.cols;
+			ppixel.y = (ppixelh(1, 0) / ppixelh(2, 0)) * img.rows;
 
 			if (ppixel.x >= 0 && ppixel.x < img.cols && ppixel.y >= 0 && ppixel.y < img.rows)
 			{

@@ -758,11 +758,11 @@ NewCarmenDataset::projection_matrix()
 	double cv_factor = 0.493814;
 	double pixel_size = 0.00000375;
 
-    double fx_meters = fx_factor * pixel_size * 1280;
-    double fy_meters = fy_factor * pixel_size * 960;
+    double fx_meters = fx_factor * pixel_size;
+    double fy_meters = fy_factor * pixel_size;
 
-    double cu = cu_factor * 1280;
-    double cv = cv_factor * 960;
+    double cu = cu_factor;
+    double cv = cv_factor;
 
     // see http://www.cvlibs.net/publications/Geiger2013IJRR.pdf
     // Note: Storing cu and cv in the 3rd column instead of the 4th is a trick.
