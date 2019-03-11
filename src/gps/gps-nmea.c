@@ -168,7 +168,7 @@ gps_parse_rmc(char * line, int num_chars)
     if (line[i]=='$' || line[i]=='*')
       return(FALSE);
   }
-  if (num_chars>0 && carmen_extern_gpgga_ptr!=NULL) {
+  if (num_chars>0 && carmen_extern_gprmc_ptr!=NULL) {
 
     ptr = strsep( &line, ",");
     if (ptr==NULL) return(FALSE);
@@ -225,7 +225,7 @@ gps_parse_rmc(char * line, int num_chars)
 }
 
 int
-carmen_gps_parse_data( char * line, int num_chars )
+carmen_gps_parse_data(char *line, int num_chars)
 {
   if (num_chars >= 6)
   {

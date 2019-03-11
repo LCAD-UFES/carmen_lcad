@@ -1,6 +1,6 @@
 CC=g++
-CFLAGS=-I. -Wall
-LFLAGS=
+CFLAGS=-I. -Wall -g
+LFLAGS= -lrt -lncurses -lpthread
 DEPS = cmt1.h 
 OBJSTATIC = cmt1.o cmt2.o cmt3.o cmtmessage.o cmtpacket.o cmtscan.o xsens_std.o xsens_time.o xsens_exception.o
 
@@ -10,16 +10,16 @@ all: static
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 example: $(OBJSTATIC) example_linux.cpp
-	$(CC) $(CFLAGS) $(LFLAGS) $(OBJSTATIC) -lncurses -lrt example_linux.cpp -o example
+	$(CC) $(CFLAGS) $(OBJSTATIC) example_linux.cpp -o example $(LFLAGS)
 
 example1s: $(OBJSTATIC) example1s_mt_linux.cpp
-	$(CC) $(CFLAGS) $(LFLAGS) $(OBJSTATIC) -lrt example1s_mt_linux.cpp -o example1s
+	$(CC) $(CFLAGS) $(OBJSTATIC) example1s_mt_linux.cpp -o example1s $(LFLAGS)
 
 example2s: $(OBJSTATIC) example2s_mt_linux.cpp
-	$(CC) $(CFLAGS) $(LFLAGS) $(OBJSTATIC) -lrt example2s_mt_linux.cpp -o example2s
+	$(CC) $(CFLAGS) $(OBJSTATIC) example2s_mt_linux.cpp -o example2s $(LFLAGS)
 
 example3s: $(OBJSTATIC) example3s_mt_linux.cpp
-	$(CC) $(CFLAGS) $(LFLAGS) $(OBJSTATIC) -lrt example3s_mt_linux.cpp -o example3s
+	$(CC) $(CFLAGS) $(OBJSTATIC) example3s_mt_linux.cpp -o example3s $(LFLAGS)
 
 
 static: $(OBJSTATIC)
