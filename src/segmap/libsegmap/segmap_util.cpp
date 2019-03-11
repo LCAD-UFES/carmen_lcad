@@ -422,3 +422,20 @@ string_join(vector<char*> tokens, char *join_text)
 	return joined;
 }
 
+
+void
+spherical2cartersian(double v_angle, double h_angle, double radius, 
+										 double *x, double *y, double *z)
+{
+	double cos_rot_angle = cos(h_angle);
+	double sin_rot_angle = sin(h_angle);
+
+	double cos_vert_angle = cos(v_angle);
+	double sin_vert_angle = sin(v_angle);
+
+	double xy_distance = radius * cos_vert_angle;
+
+	*x = (xy_distance * cos_rot_angle);
+	*y = (xy_distance * sin_rot_angle);
+	*z = (radius * sin_vert_angle);
+}

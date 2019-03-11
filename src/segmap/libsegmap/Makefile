@@ -20,15 +20,15 @@ LFLAGS += -L /usr/lib -lvtkIO -lvtkFiltering -lvtkCommon -lvtkRendering -lvtkGra
 LFLAGS += `pkg-config --libs opencv` 
 
 SOURCES = segmap_grid_map.cpp segmap_util.cpp segmap_particle_filter.cpp segmap_pose2d.cpp \
-	segmap_dataset.cpp segmap_viewer.cpp carmen_dataset_test.cpp
+	segmap_dataset.cpp segmap_viewer.cpp carmen_dataset_test.cpp segmap_sensors.cpp
 
 PUBLIC_INCLUDES = segmap_grid_map.h segmap_util.h segmap_particle_filter.h segmap_pose2d.h segmap_car_config.h \
-	segmap_dataset.h segmap_viewer.h
+	segmap_dataset.h segmap_viewer.h segmap_sensors.h
 PUBLIC_LIBRARIES = libsegmap.a
 PUBLIC_BINARIES = 
 TARGETS = libsegmap.a carmen_dataset_test
 
-libsegmap.a: segmap_grid_map.o segmap_util.o segmap_particle_filter.o segmap_pose2d.o segmap_dataset.o segmap_viewer.o
+libsegmap.a: segmap_grid_map.o segmap_util.o segmap_particle_filter.o segmap_pose2d.o segmap_dataset.o segmap_viewer.o segmap_sensors.o
 carmen_dataset_test: carmen_dataset_test.o libsegmap.a
 
 include $(CARMEN_HOME)/src/Makefile.rules

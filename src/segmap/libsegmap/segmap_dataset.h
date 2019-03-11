@@ -86,11 +86,8 @@ class DatasetCarmen : public DatasetInterface
 	Matrix<double, 3, 4> _vel2cam;
 	Matrix<double, 4, 4> _vel2car;
 
-	uchar ***_velodyne_intensity_calibration;
-
 	bool _vel2cam_initialized;
 
-	void _load_velodyne_intensity_calibration();
 	void _init_vel2cam_transform(int image_height, int image_width);
 	void _init_vel2car_transform();
 
@@ -150,14 +147,17 @@ public:
 	static const int SYNC_BY_CAMERA = 0;
 	static const int SYNC_BY_LIDAR = 1;
 	
-	NewCarmenDataset(char *path, int sync_type = SYNC_BY_CAMERA);
+	NewCarmenDataset(char *path, int sync_type = SYNC_BY_CAMERA,
+		   			 char *lidar_calib_path = "data/calibration_table.txt");
+
 	~NewCarmenDataset();
+
 	void reset();
 	DataSample* next_data_package();
 	static Mat read_image(DataSample *sample);
-	static PointCloud<PointXYZRGB>::Ptr read_pointcloud(DataSample *sample);
 
-	OdomCalib _calib;
+	OdomCalib calib;
+    unsigned char ***intensity_calibration;
 	
 protected:
 
@@ -177,6 +177,7 @@ protected:
 	vector<char*> _velodyne_queue;
 
 	void _load_odometry_calibration(char *path);
+	void _load_intensity_calibration(char *path);
 	void _clear_synchronization_queues();
 	void _add_message_to_queue(char *data);
 	void _assemble_data_package_from_queues();
@@ -184,17 +185,16 @@ protected:
 	static void _free_queue(vector<char*> queue);
 	static vector<char*> _find_nearest(vector<char*> &queue, double ref_time);
 
+	static unsigned char*** _allocate_calibration_table();
+	static void _free_calibration_table(unsigned char ***table);
+
 	static void _parse_odom(vector<char*> data, DataSample *sample);
 	static void _parse_imu(vector<char*> data, DataSample *sample);
 	static void _parse_velodyne(vector<char*> data, DataSample *sample, string velodyne_path);
 	static void _parse_camera(vector<char*> data, DataSample *sample, string image_path);
 	static void _parse_gps_position(vector<char*> data, DataSample *sample);
 	static void _parse_gps_orientation(vector<char*> data, DataSample *sample);
-
-	static PointXYZRGB _compute_point_from_velodyne(double v_angle, double h_angle, double radius, unsigned char intensity);
-
 };
-
 
 #endif
 

@@ -23,11 +23,14 @@
 #include "libsegmap/segmap_util.h"
 #include "libsegmap/segmap_dataset.h"
 #include "libsegmap/segmap_viewer.h"
+#include "libsegmap/segmap_sensors.h"
 
 using namespace cv;
 using namespace std;
 using namespace Eigen;
 using namespace pcl;
+
+#define VIEW 1
 
 
 void
@@ -62,10 +65,43 @@ increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
 	// */
 }
 
-#define VIEW 1
 
 void
-create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
+create_map(GridMap &map, NewCarmenDataset *dataset, char path_save_maps[])
+{
+	DataSample *sample;
+	PointCloudViewer viewer;
+	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
+	PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
+
+	dataset->reset();
+	Pose2d pose(0, 0, dataset->calib.init_angle);
+	double prev_t = 0;
+
+	while ((sample = dataset->next_data_package()))
+	{		
+		if (prev_t > 0)
+			ackerman_motion_model(pose, sample->v, sample->phi, sample->image_time - prev_t);
+
+		prev_t = sample->image_time;
+
+		if (fabs(sample->v) < 1.0)
+			continue;
+
+		CarmenLidarLoader loader(sample->velodyne_path.c_str(), sample->n_laser_shots,
+								 dataset->intensity_calibration);
+
+		load_as_pointcloud(&loader, cloud);
+		transformPointCloud(*cloud, *transformed, Pose2d::to_matrix(pose));
+		viewer.show(transformed);
+		viewer.loop();
+	}
+}
+
+
+#if 0
+void
+create_map(GridMap &map, DatasetInterface *dataset, char path_save_maps[])
 {
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
@@ -249,14 +285,15 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 
 	//waitKey(-1);
 }
-
+#endif
 
 int
 main(int argc, char **argv)
 {
 	if (argc < 2)
-		exit(printf("Error: Use %s <log data directory>\n", argv[0]));
+		exit(printf("Error: Use %s <log>\n", argv[0]));
 
+	/*
 	char path_save_maps[256];
 	char dataset_name[256];
 	char map_name[256];
@@ -275,11 +312,12 @@ main(int argc, char **argv)
 	printf("dataset_name: %s\n", dataset_name);
 	printf("map_name: %s\n", map_name);
 	printf("path to save maps: %s\n", path_save_maps);
+	*/
 
-	DatasetInterface *dataset;
-    dataset = new DatasetCarmen(dataset_name, 0);
-	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
-	create_map(map, *dataset, path_save_maps);
+	NewCarmenDataset *dataset;
+    dataset = new NewCarmenDataset(argv[1]);
+	GridMap map("/tmp", 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
+	create_map(map, dataset, "/tmp");
 
 	printf("Done\n");
 	return 0;
