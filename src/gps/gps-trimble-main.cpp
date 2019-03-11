@@ -50,8 +50,11 @@
 #include "gps-ipc.h"
 #include "gps-io.h"
 
-#define TCP_IP_ADDRESS			"172.20.10.4"
+#define TCP_IP_ADDRESS			"192.168.0.103"
 #define TCP_IP_PORT				"5017"
+//#define TCP_IP_ADDRESS			"172.20.10.4"
+//#define TCP_IP_PORT				"5017"
+
 //http://bd982.com/ -> site de teste do gps Trimble bd982
 //#define TCP_IP_ADDRESS			"155.63.160.20"
 //#define TCP_IP_PORT				"5018"
@@ -67,7 +70,7 @@ print_usage()
 			"\nUsage:\n"
 			" ./gps_nmea_trimble <empty> -> This will try and connect with the Trimble GPS (default)\n"
 			" ./gps_nmea_trimble <gps number> <port number> <ip address 2>  <ip address 1> ...  <ip address n>\n"
-			"For GPS Trimble -> ./gps_nmea_trimble 1 5018 155.63.160.20\n"
+			"For GPS Trimble -> ./gps_nmea_trimble 1 5018 192.168.0.103\n"
 			"For GPS Reach 1 -> ./gps_nmea_trimble 2 5019 172.20.10.2 (when using IPhone)\n"
 			"For GPS Reach 2 -> ./gps_nmea_trimble 3 5020 172.20.10.4 (when using IPhone)\n\n");
 }
