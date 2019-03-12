@@ -14,7 +14,7 @@
 #include <opencv/highgui.h>
 #include <pcl/common/transforms.h>
 #include <pcl/visualization/pcl_visualizer.h>
-
+#include <boost/program_options.hpp>
 
 #include "libsegmap/segmap_car_config.h"
 #include "libsegmap/segmap_grid_map.h"
@@ -29,6 +29,8 @@ using namespace cv;
 using namespace std;
 using namespace Eigen;
 using namespace pcl;
+namespace po = boost::program_options;
+
 
 #define VIEW 1
 #define USE_NEW 1
@@ -342,9 +344,36 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 int
 main(int argc, char **argv)
 {
-	if (argc < 2)
-		exit(printf("Error: Use %s <log>\n", argv[0]));
+	string map_type;
+	const char *log_path;
+	double resolution;
+	double tile_size;
 
+	po::variables_map vm;
+	po::positional_options_description log_path_arg;
+	po::options_description additional_args("Options");
+	
+	log_path_arg.add("log-path", 1);
+	additional_args.add_options()
+		("help,h", "produce help message")
+		("map_type,mt", po::value<string>(&map_type)->default_value("gaussian"), "Map type: [categorical | gaussian]") 
+		("resolution,r", po::value<double>(&resolution)->default_value(0.2), "Map resolution") 
+		("tile_size,s", po::value<double>(&tile_size)->default_value(50.), "Map tiles size") 
+	;
+	
+	store(po::command_line_parser(argc, argv).options(additional_args).positional(log_path_arg).run(), vm);
+	notify(vm);
+
+	if (vm.count("log-path") == 0 || vm.count("help"))
+	{
+		cout << "Usage: " << argv[0] << " [options] log-path" << endl;
+		cout << additional_args << endl;
+		//cout << log_path_arg << endl;
+	}
+
+	return 1;
+
+	/*
 	char path_save_maps[256];
 	char dataset_name[256];
 	char map_name[256];
@@ -363,6 +392,7 @@ main(int argc, char **argv)
 	printf("dataset_name: %s\n", dataset_name);
 	printf("map_name: %s\n", map_name);
 	printf("path to save maps: %s\n", path_save_maps);
+	*/
 
 	GridMap map("/tmp", 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
 
