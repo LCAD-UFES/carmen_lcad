@@ -1,4 +1,6 @@
 
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 #include "segmap_sensors.h"
 #include "segmap_util.h"
 #include <cstdlib>
@@ -126,6 +128,35 @@ CarmenLidarLoader::reset()
 }
 
 
+
+SemanticSegmentationLoader::SemanticSegmentationLoader(char *log_path, char *data_path)
+{
+    vector<char*> log_path_splitted = string_split(log_path, "/");
+    char *log_name = log_path_splitted[log_path_splitted.size() - 1];
+
+    _log_data_dir = (char*) calloc(strlen(log_name) + strlen(data_path) + strlen("/data_/semantic") + 1, sizeof(char));
+    _seg_img_path = (char*) calloc(strlen(_log_data_dir) + 64, sizeof(char));
+
+    sprintf(_log_data_dir, "%s/data_%s/semantic", data_path, log_name);
+}
+
+
+SemanticSegmentationLoader::~SemanticSegmentationLoader()
+{
+    free(_log_data_dir);
+    free(_seg_img_path);
+}
+
+
+cv::Mat
+SemanticSegmentationLoader::load(DataSample *sample)
+{
+    sprintf(_seg_img_path, "%s/%lf-r.png", _log_data_dir, sample->image_time);
+    printf("segmented image name: %s\n", _seg_img_path);
+    return cv::imread(_seg_img_path);
+}
+
+
 void
 load_as_pointcloud(CarmenLidarLoader *loader, PointCloud<PointXYZRGB>::Ptr cloud)
 {
@@ -153,3 +184,47 @@ load_as_pointcloud(CarmenLidarLoader *loader, PointCloud<PointXYZRGB>::Ptr cloud
         }
     }
 }
+
+
+void 
+get_pixel_position(double x, double y, double z, Matrix<double, 4, 4> &lidar2cam,
+		           Matrix<double, 3, 4> &projection, cv::Mat &img, cv::Point *ppixel, int *is_valid)
+{
+    static Matrix<double, 4, 1> plidar, pcam;
+	static Matrix<double, 3, 1> ppixelh;
+
+    *is_valid = 0;
+    plidar << x, y, z, 1.;
+	pcam = lidar2cam * plidar;
+
+    if (pcam(0, 0) / pcam(3, 0) > 0)
+    {
+        ppixelh = projection * pcam;
+
+        ppixel->y = (ppixelh(1, 0) / ppixelh(2, 0)) * img.rows;
+        ppixel->x = (ppixelh(0, 0) / ppixelh(2, 0)) * img.cols;
+
+        if (ppixel->x >= 0 && ppixel->x < img.cols && ppixel->y >= 0 && ppixel->y < img.rows)
+            *is_valid = 1;
+    }
+}
+
+
+cv::Mat 
+load_image(DataSample *sample)
+{
+	static int image_size = sample->image_height * sample->image_width * 3;
+	static unsigned char *raw_right = (unsigned char*) calloc (image_size, sizeof(unsigned char));
+	static Mat img_r = Mat(sample->image_width, sample->image_height, CV_8UC3, raw_right, 0);
+	
+	FILE *image_file = safe_fopen(sample->image_path.c_str(), "rb");
+	// jump the left image
+	fseek(image_file, image_size * sizeof(unsigned char), SEEK_SET);
+	fread(raw_right, image_size, sizeof(unsigned char), image_file);
+	fclose(image_file);
+	// carmen images are stored as rgb
+	cvtColor(img_r, img_r, COLOR_RGB2BGR);
+
+	return img_r;
+}
+

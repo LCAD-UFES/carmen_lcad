@@ -1134,21 +1134,3 @@ NewCarmenDataset::next_data_package()
 }
 
 
-Mat 
-NewCarmenDataset::read_image(DataSample *sample)
-{
-	static int image_size = sample->image_height * sample->image_width * 3;
-	static unsigned char *raw_right = (unsigned char*) calloc (image_size, sizeof(unsigned char));
-	static Mat img_r = Mat(sample->image_width, sample->image_height, CV_8UC3, raw_right, 0);
-	
-	FILE *image_file = safe_fopen(sample->image_path.c_str(), "rb");
-	// jump the left image
-	fseek(image_file, image_size * sizeof(unsigned char), SEEK_SET);
-	fread(raw_right, image_size, sizeof(unsigned char), image_file);
-	fclose(image_file);
-	// carmen images are stored as rgb
-	cvtColor(img_r, img_r, COLOR_RGB2BGR);
-
-	return img_r;
-}
-

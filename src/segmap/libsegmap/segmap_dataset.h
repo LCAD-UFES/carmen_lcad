@@ -154,7 +154,6 @@ public:
 
 	void reset();
 	DataSample* next_data_package();
-	static Mat read_image(DataSample *sample);
 
 	// Returns a matrix to transform from lidar to camera frame.
 	// Points shall be in homogeneous coordinates.

@@ -54,7 +54,7 @@ main()
             data_package->velodyne_path.c_str()
         );
 
-        Mat img = NewCarmenDataset::read_image(data_package);
+        Mat img = load_image(data_package);
         CarmenLidarLoader loader(data_package->velodyne_path.c_str(), data_package->n_laser_shots, dataset.intensity_calibration);
         load_as_pointcloud(&loader, cloud);
         

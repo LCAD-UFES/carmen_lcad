@@ -374,9 +374,12 @@ vector<char*>
 string_split(char *string, char *delimiters)
 {
 	char *token;
+	char *copy = new char[strlen(string) + 1];
+	strcpy(copy, string);
+	
 	vector<char*> parts;
 
-	token = strtok(string, delimiters);
+	token = strtok(copy, delimiters);
 
 	while (token != NULL)
 	{

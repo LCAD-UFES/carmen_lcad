@@ -74,32 +74,23 @@ colorize(PointCloud<PointXYZRGB>::Ptr cloud,
 		 PointCloud<PointXYZRGB>::Ptr colored)
 {
 	Mat orig = img.clone();
-	Matrix<double, 4, 1> plidar, pcam;
-	Matrix<double, 3, 1> ppixelh;
 	Point ppixel;
+	int is_valid;
 
 	for (int i = 0; i < cloud->size(); i++)
 	{
-		plidar << cloud->at(i).x, cloud->at(i).y, cloud->at(i).z, 1.;
-		pcam = lidar2cam * plidar;
+		get_pixel_position(cloud->at(i).x, cloud->at(i).y, cloud->at(i).z,
+					lidar2cam, projection, img, &ppixel, &is_valid);
 
-		if (pcam(0, 0) / pcam(3, 0) > 0)
+		if (is_valid)
 		{
-			ppixelh = projection * pcam;
+			circle(img, ppixel, 2, Scalar(0, 0, 255), -1);
 
-			ppixel.y = (ppixelh(1, 0) / ppixelh(2, 0)) * img.rows;
-			ppixel.x = (ppixelh(0, 0) / ppixelh(2, 0)) * img.cols;
-
-			if (ppixel.x >= 0 && ppixel.x < img.cols && ppixel.y >= 0 && ppixel.y < img.rows)
-			{
-				circle(img, ppixel, 2, Scalar(0,0,255), -1);
-
-				PointXYZRGB point = cloud->at(i);
-				point.r = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 2];
-				point.g = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 1];
-				point.b = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 0];
-				colored->push_back(point);
-			}
+			PointXYZRGB point = cloud->at(i);
+			point.r = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 2];
+			point.g = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 1];
+			point.b = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 0];
+			colored->push_back(point);
 		}
 	}
 }
@@ -107,9 +98,10 @@ colorize(PointCloud<PointXYZRGB>::Ptr cloud,
 
 #if USE_NEW
 void
-create_map(GridMap &map, NewCarmenDataset *dataset, char path_save_maps[])
+create_map(GridMap &map, char *log_name, NewCarmenDataset *dataset, char path_save_maps[])
 {
 	DataSample *sample;
+	LidarShot *shot;
 	PointCloudViewer viewer;
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
@@ -121,6 +113,7 @@ create_map(GridMap &map, NewCarmenDataset *dataset, char path_save_maps[])
 	Matrix<double, 3, 4> projection = dataset->projection_matrix();
 
 	dataset->reset();
+	SemanticSegmentationLoader sloader(log_name);
 	
 	Pose2d pose(0, 0, dataset->calib.init_angle);
 	double prev_t = 0;
@@ -138,8 +131,14 @@ create_map(GridMap &map, NewCarmenDataset *dataset, char path_save_maps[])
 		CarmenLidarLoader loader(sample->velodyne_path.c_str(), sample->n_laser_shots,
 								 dataset->intensity_calibration);
 
+		//while (!loader.done())
+		//{
+		//	shot = loader.next();
+		//}
+
 		load_as_pointcloud(&loader, cloud);
-		img = dataset->read_image(sample);
+		//img = load_image(sample);
+		img = sloader.load(sample);
 
 		colored->clear();
 		colorize(cloud, lidar2cam, projection, img, colored);
@@ -370,7 +369,7 @@ main(int argc, char **argv)
 #if USE_NEW	
 	NewCarmenDataset *dataset;
     dataset = new NewCarmenDataset(argv[1]);
-	create_map(map, dataset, "/tmp");
+	create_map(map, argv[1], dataset, "/tmp");
 #else
 	DatasetInterface *dataset = new DatasetCarmen(dataset_name, 0);
 	create_map(map, *dataset, path_save_maps);
