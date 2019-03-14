@@ -26,7 +26,7 @@ $CARMEN_HOME/bin/make_clean_all
 
 PREPARATION="web_cam tracker lane_detector path_planner camera . camera velodyne_camera_calibration 
 	     camera_boxes_to_world ../sharedlib/libclustering web_cam laser-ldmrs tracker 
-	     lane_detector dynamic_object_detector voice_interface/libvoice"
+	     lane_detector dynamic_object_detector voice_interface/libvoice voice_interface"
 
 MODULES="." # May include other modules separated by spaces
 

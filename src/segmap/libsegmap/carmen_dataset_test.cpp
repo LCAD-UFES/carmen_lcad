@@ -16,6 +16,7 @@ main()
 
     NewCarmenDataset dataset = 
         NewCarmenDataset("/dados/log_estacionamentos-20181130-test.txt",
+			"/dados/data2/data_log_estacionamentos-20181130-test.txt/calib.txt",
                          NewCarmenDataset::SYNC_BY_CAMERA);
 
     PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);

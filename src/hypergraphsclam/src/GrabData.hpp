@@ -111,6 +111,14 @@ namespace hyper {
             double icp_translation_confidence_factor;
             bool save_accumulated_point_clouds;
 
+            bool use_velodyne_odometry;
+            bool use_sick_odometry;
+            bool use_bumblebee_odometry;
+            
+            bool use_velodyne_loop;
+            bool use_sick_loop;
+            bool use_bumblebee_loop;
+
             // separate the gps, sick and velodyne messages
             void SeparateMessages();
 
