@@ -43,7 +43,6 @@ main(int argc, char **argv)
     v.push_back("/media/filipe/Hitachi-Teste/log-mata-da-praia-20181130-test.txt");              
     v.push_back("/media/filipe/Hitachi-Teste/log-volta-da-ufes-noite-20181130.txt");
 
-
     DataSample* data_package;
     PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
     PointCloudViewer viewer;
@@ -57,6 +56,7 @@ main(int argc, char **argv)
     {
         NewCarmenDataset dataset = 
             NewCarmenDataset((char*) v[k].c_str(),
+                            (char*) ("/dados/data2/data_" + v[k] + "/odom_calib.txt").c_str(),
                             NewCarmenDataset::SYNC_BY_CAMERA);
 
         Pose2d dead_reckoning;

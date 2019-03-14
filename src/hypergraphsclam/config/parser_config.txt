@@ -33,6 +33,9 @@ V_MULT_ODOMETRY_BIAS 1.008211
 PHI_MULT_ODOMETRY_BIAS 0.903564
 PHI_ADD_ODOMETRY_BIAS -0.002708
 
+-- Descomente os argumentos abaixo para desabilitar a construcao das respectivas arestas
+
+
 
 
 -- So para visualizacao

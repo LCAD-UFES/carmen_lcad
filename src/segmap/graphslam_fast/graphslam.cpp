@@ -56,6 +56,7 @@ class GraphSlamData
 		char _gicp_odom_file[256];
 		char _gicp_map_file[256];
 		char _output_file[256];
+		char _odom_calib_file[256];
 
 		double gps_xy_std, gps_angle_std;
 		double odom_xy_std, odom_angle_std;
@@ -388,6 +389,7 @@ GraphSlamData::_load_parameters(char *config)
 	FILE *f = safe_fopen(config, "r");
 
 	fscanf(f, "\nlog: %[^\n]\n", _log_file);
+	fscanf(f, "\nodom_calib: %[^\n]\n", _odom_calib_file);
 	fscanf(f, "\nloops: %[^\n]\n", _loop_closure_file);
 	fscanf(f, "\ngicp_odom: %[^\n]\n", _gicp_odom_file);
 	fscanf(f, "\ngicp_map: %[^\n]\n", _gicp_map_file);
@@ -398,6 +400,7 @@ GraphSlamData::_load_parameters(char *config)
 	fscanf(f, "\ngps_angle_std: %lf", &gps_angle_std);
 
 	printf("log: %s\n", _log_file);
+	printf("odom_calib: %s\n", _odom_calib_file);
 	printf("loops: %s\n", _loop_closure_file);
 	printf("gicp_odom: %s\n", _gicp_odom_file);
 	printf("gicp_map: %s\n", _gicp_map_file);
@@ -415,7 +418,7 @@ GraphSlamData::GraphSlamData(char *config)
 {
 	_load_parameters(config);
 
-	dataset = new NewCarmenDataset(_log_file);
+	dataset = new NewCarmenDataset(_log_file, _odom_calib_file, NewCarmenDataset::SYNC_BY_LIDAR);
 	read_loop_restrictions(_loop_closure_file, loop_data);
     read_loop_restrictions(_gicp_odom_file, gicp_odom_data);
 	read_loop_restrictions(_gicp_map_file, gicp_gps);
