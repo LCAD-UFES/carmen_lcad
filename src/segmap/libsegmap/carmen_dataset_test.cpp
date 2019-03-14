@@ -79,6 +79,8 @@ main(int argc, char **argv)
         imwrite(name, img);
         sprintf(name, "calibration/velodyne/cloud%04d.txt", sample_id);
         FILE *f = fopen(name, "w");
+        
+        fprintf(f, "%ld\n", cloud->size());
         for (int i = 0; i < cloud->size(); i++)
         {
             if (cloud->at(i).x != 0 || cloud->at(i).y != 0 || cloud->at(i).z != 0)
