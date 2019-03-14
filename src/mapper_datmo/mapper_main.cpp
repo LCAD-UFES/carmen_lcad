@@ -458,28 +458,23 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 		camera_datmo_count[camera_index]++;
 }
 
+vector<carmen_vector_2D_t> moving_objecst_cells_vector;
 
 void
 erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
 {
 	camera_filter_count[camera_index]++;
-	int filter_datmo_count = 0;
-	cv::Scalar laser_ray_color;
 	int image_width  = camera_data[camera_index].width[image_index];
 	int image_height = camera_data[camera_index].height[image_index];
 	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
 	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
 	double cu = camera_params[camera_index].cu_factor * image_width;
 	double cv = camera_params[camera_index].cv_factor * image_height;
-	double map_resolution = map_config.resolution;
-	int img_planar_depth = (double) 0.5 * sensor_params->range_max / map_resolution;
-	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
-	cv::Mat img = camera_image_semantic[camera_index];
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
 	int thread_id = omp_get_thread_num();
 
-	printf("Erase\n");
+	//vector<carmen_vector_2D_t> moving_objecst_cells_vector;
 
 	for (int j = 0; j < number_of_laser_shots; j++)
 	{
@@ -488,6 +483,9 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 
 		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
 			continue;
+
+		//if (horizontal_angle > M_PI_2 || horizontal_angle < M_PI_2 ) // Disregard laser shots out of the camera's field of view
+		//	continue;
 
 		get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
 
@@ -505,14 +503,21 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
 			double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
 
-			cv_draw_map();
-
-			if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max)  //TODO TODO TODO TODO TODO TODO                                           // Laser ray probably hit a moving obstacle
+			if ((prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) &&                                                                            // Laser ray probably hit an obstacle
+				(camera_data[camera_index].semantic[image_index] != NULL) && (image_x >= 0 && image_x <= image_width && image_y >= 0 && image_y <= image_height) && // Disregard laser rays out of the image window
+				(camera_data[camera_index].semantic[image_index][image_x + (image_y * image_width)] >= 11))                                                         // 0 to 10 : Static objects >= 11 Moving Objects
 			{
-				//sensor_data->ray_position_in_the_floor[thread_id][i].x = bx;
-				//sensor_data->ray_position_in_the_floor[thread_id][i].y = by;
+				moving_objecst_cells_vector.push_back(sensor_data->ray_position_in_the_floor[thread_id][i]);
 			}
 		}
+	}
+	if (verbose >= 2)
+	{
+//		printf ("S %d\n", (int) moving_objecst_cells_vector.size());
+		//imshow("Image Semantic Segmentation", cv::Mat(camera_data[camera_index].height[image_index], camera_data[camera_index].width[image_index], CV_8UC1, camera_data[camera_index].semantic[image_index], 0));
+		//imshow("Image Semantic Segmentation", camera_image_semantic[camera_index]);
+		//cv::waitKey(1);
+		cv_draw_map(moving_objecst_cells_vector);
 	}
 }
 
@@ -635,51 +640,34 @@ filter_sensor_data_using_image_semantic_segmentation(sensor_parameters_t *sensor
 
 		//filter_sensor_data_using_one_image(sensor_params, sensor_data, camera, nearest_index);
 		erase_moving_obstacles_cells(sensor_params, sensor_data, camera, nearest_index);
+
 		filter_cameras++;
 	}
+
 	return filter_cameras;
 }
 
 
 bool
-check_lidar_camera_max_timestamp_difference(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
+check_lidar_camera_max_timestamp_difference(sensor_data_t *sensor_data)
 {
-	int filter_cameras = 0;
-
 	if (active_cameras == 0)
-		return 0;
+		return false;
 
 	for (int camera = 1; camera <= MAX_CAMERA_INDEX; camera++)
 	{
 		if (camera_alive[camera] < 0)
 			continue;
 
-		int nearest_index = -1;
-		double nearest_time_diff = DBL_MAX;
-
 		for (int i = 0; i < NUM_CAMERA_IMAGES; i++)
 		{
 			if (camera_data[camera].image[i] == NULL)
 				continue;
 
-			int j = sensor_data->point_cloud_index;
-			double time_difference = fabs(camera_data[camera].timestamp[i] - sensor_data->points_timestamp[j] - CAMERA_DELAY);
-			if (time_difference < nearest_time_diff)
-			{
-				nearest_index = i;
-				nearest_time_diff = time_difference;
-			}
+			if (fabs(camera_data[camera].timestamp[i] - sensor_data->points_timestamp[sensor_data->point_cloud_index] - CAMERA_DELAY) < MAX_TIMESTAMP_DIFFERENCE)
+				return true;
 		}
-
-		if (nearest_time_diff > MAX_TIMESTAMP_DIFFERENCE)
-			continue;
-
-		filter_cameras++;
 	}
-
-	if (active_cameras == filter_cameras)   // TODO Must have a master camera instead of check for all cameras
-		return true;
-
 	return false;
 }
 
@@ -719,11 +707,12 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 //		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
 ////New - Erase cells occupied by moving obstacles
-//	if (check_lidar_camera_max_timestamp_difference)
+	if (check_lidar_camera_max_timestamp_difference(&sensors_data[sensor_number]))
 	{
 		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 		filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]);
 	}
+	//cv_draw_map();
 
 	sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
 	sensors_data[sensor_number].robot_pose[i] = old_robot_position;
@@ -870,6 +859,8 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 			include_sensor_data_into_map(LASER_LDMRS, globalpos_message);
 		if (sensors_params[3].alive && camera3_ready)	// camera 3
 			include_sensor_data_into_map(3, globalpos_message);
+
+//		cv_draw_map();
 
 		camera3_ready = 0;
 
