@@ -168,9 +168,9 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer, double xy_std, do
 	DataSample *sample;
 
 	int i = 0;
+	int skip = 0;
 
 	data.dataset->reset();
-	Matrix3d information = create_information_matrix(xy_std, xy_std, th_std);
 
 	while ((sample = data.dataset->next_data_package()))
 	{
@@ -179,19 +179,26 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer, double xy_std, do
 
 		//if (fabs(sample->v) < 0.2) 
 		//{
-			//i++;
-			//continue;
+		//	i++;
+		//	skip = 1;
+		//	continue;
 		//}
 
-		double angle = sample->gps.th;
-		if (i > 0 && fabs(sample->v) >= 2.0)
+		//Matrix<double, 3, 1> ypr = sample->xsens.toRotationMatrix().eulerAngles(2, 1, 0);
+		//double angle = ypr(0, 0); 
+		double angle = 0; 
+
+		Matrix3d information = create_information_matrix(xy_std, xy_std, th_std);
+
+		if (i > 0 && fabs(sample->v) >= 2.0 && !skip)
 			angle = atan2(sample->gps.y - prev_gps.y, 
 						  sample->gps.x - prev_gps.x);
+		else
+			information = create_information_matrix(xy_std, xy_std, 1e7);
 
 		SE2 measure(sample->gps.x - gps0.x,
 					sample->gps.y - gps0.y,
 					angle);
-					//0.);
 
 		EdgeGPS *edge_gps = new EdgeGPS;
 		edge_gps->vertices()[0] = optimizer->vertex(i);
@@ -201,6 +208,7 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer, double xy_std, do
 
 		prev_gps = sample->gps;
 		i++;
+		skip = 0;
 	}
 }
 
@@ -254,7 +262,7 @@ create_dead_reckoning(GraphSlamData &data, vector<SE2> &dead_reckoning)
 	double dt, previous_t;
 
 	previous_t = 0;
-	Pose2d pose(0, 0, data.dataset->_calib.init_angle);
+	Pose2d pose(0, 0, data.dataset->calib.init_angle);
 	dead_reckoning.push_back(SE2(pose.x, pose.y, pose.th));
 	
 	DataSample *sample;

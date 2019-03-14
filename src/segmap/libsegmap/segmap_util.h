@@ -109,11 +109,13 @@ transform_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
 		double v, double phi);
 */
 
-FILE*
-safe_fopen(const char *path, const char *mode);
+FILE* safe_fopen(const char *path, const char *mode);
 
 vector<char*> string_split(char *string, char *delimiters);
 char* string_copy(char *str);
 char* string_join(vector<char*> tokens, char *join_text);
+
+void spherical2cartersian(double v_angle, double h_angle, double radius, 
+						  double *x, double *y, double *z);
 
 #endif

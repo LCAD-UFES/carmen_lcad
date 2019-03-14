@@ -85,29 +85,26 @@ doMtSettings(xsens::Cmt3 &cmt3, CmtOutputMode &mode,
 
 	for (unsigned int i = 0; i < mtCount; i++)
 	{
-		CmtScenario scenarios[5];
+		CmtScenario scenarios[CMT_MAX_SCENARIOS_IN_MT];
 		cmt3.getAvailableScenarios(scenarios, deviceIds[i]);
 
-		int scenario_available = 0;
+		bool scenario_available = false;
 		printf("\nAvailable scenarios:\n");
-		for(int j=0; j<5; j++)
+		for (int j = 0; j < CMT_MAX_SCENARIOS_IN_MT; j++)
 		{
 			printf("Scenario %d: %.20s\n", scenarios[j].m_type, scenarios[j].m_label);
 
-			if(scenarios[j].m_type == xsens_scenario)
-			{
-				scenario_available = 10;
-			}
+			if (scenarios[j].m_type == xsens_scenario)
+				scenario_available = true;
 		}
 
-		if(scenario_available)
+		if (scenario_available)
 		{
+			printf("\nSetting scenario %d\n", xsens_scenario);
 			cmt3.setScenario(xsens_scenario, deviceIds[i]);
 		}
 		else
-		{
 			printf("\nError, scenario %d not available\n", xsens_scenario);
-		}
 
 		uint8_t scenarioType = 0;
 		uint8_t scenarioVersion = 0;
@@ -144,7 +141,9 @@ doMtSettings(xsens::Cmt3 &cmt3, CmtOutputMode &mode,
 	EXIT_ON_ERROR(res,"gotoMeasurement");
 }
 
-int doHardwareScan(xsens::Cmt3 &cmt3, CmtDeviceId deviceIds[])
+
+int
+doHardwareScan_old(xsens::Cmt3 &cmt3, CmtDeviceId deviceIds[])
 {
 	XsensResultValue res;
 	List<CmtPortInfo> portInfo;
@@ -152,7 +151,7 @@ int doHardwareScan(xsens::Cmt3 &cmt3, CmtDeviceId deviceIds[])
 	
 	printf("Opening ports...");
 
-	res = cmt3.openPort(xsens_dev, B460800);
+	res = cmt3.openPort(xsens_dev, B1152000);
 	EXIT_ON_ERROR(res,"cmtOpenPort");
 
 	if(res == XRV_OK)
@@ -175,6 +174,72 @@ int doHardwareScan(xsens::Cmt3 &cmt3, CmtDeviceId deviceIds[])
 		printf("Device ID at busId %i: %08lx\n\n",j+1,(long) deviceIds[j]);
 	}
 	
+	return mtCount;
+}
+
+
+int
+doHardwareScan(xsens::Cmt3 &cmt3, CmtDeviceId deviceIds[])
+{
+	XsensResultValue res;
+	List<CmtPortInfo> portInfo;
+	unsigned long portCount = 0;
+	int mtCount;
+
+	printf("Scanning for connected Xsens devices...");
+	xsens::cmtScanPorts(portInfo);
+	portCount = portInfo.length();
+	printf("done\n");
+
+	if (portCount == 0) {
+		printf("No MotionTrackers found\n\n");
+		return 0;
+	}
+
+	for(int i = 0; i < (int)portCount; i++) {
+		printf("Using COM port %s at ", portInfo[i].m_portName);
+
+		switch (portInfo[i].m_baudrate) {
+		case B9600  : printf("9k6");   break;
+		case B19200 : printf("19k2");  break;
+		case B38400 : printf("38k4");  break;
+		case B57600 : printf("57k6");  break;
+		case B115200: printf("115k2"); break;
+		case B230400: printf("230k4"); break;
+		case B460800: printf("460k8"); break;
+		case B921600: printf("921k6"); break;
+		default: printf("0x%x", portInfo[i].m_baudrate);
+		}
+		printf(" baud\n\n");
+	}
+
+	printf("Opening ports...");
+	//open the port which the device is connected to and connect at the device's baudrate.
+	for(int p = 0; p < (int)portCount; p++){
+		res = cmt3.openPort(portInfo[p].m_portName, portInfo[p].m_baudrate);
+		EXIT_ON_ERROR(res,"cmtOpenPort");
+	}
+	printf("done\n\n");
+
+	 //set the measurement timeout to 100ms (default is 16ms)
+	int timeOut = 100;
+	res = cmt3.setTimeoutMeasurement(timeOut);
+	EXIT_ON_ERROR(res, "set measurment timeout");
+	printf("Measurement timeout set to %d ms\n", timeOut);
+
+	//get the Mt sensor count.
+	printf("Retrieving MotionTracker count (excluding attached Xbus Master(s))\n");
+	mtCount = cmt3.getMtCount();
+	printf("MotionTracker count: %d\n\n", mtCount);
+
+	// retrieve the device IDs
+	printf("Retrieving MotionTrackers device ID(s)\n");
+	for(int j = 0; j < mtCount; j++){
+		res = cmt3.getDeviceId((unsigned char)(j+1), deviceIds[j]);
+		EXIT_ON_ERROR(res,"getDeviceId");
+		printf("Device ID at busId %i: %08lx\n\n",j+1,(long) deviceIds[j]);
+	}
+
 	return mtCount;
 }
 
@@ -367,14 +432,10 @@ read_data_from_xsens(void)
 			//}
 
 			if ((mode & CMT_OUTPUTMODE_CALIB) != 0) 
-			{					
 				caldata = packet->getCalData(i);				
-			}
 
 			if ((mode & CMT_OUTPUTMODE_ORIENT) == 0) 
-			{
 				continue;
-			}
 
 			switch (settings & CMT_OUTPUTSETTINGS_ORIENTMODE_MASK) 
 			{
@@ -398,15 +459,11 @@ read_data_from_xsens(void)
 
 			
 			if ((mode & CMT_OUTPUTMODE_POSITION) != 0) 
-			{								
 				positionLLA = packet->getPositionLLA();
-			}	
 
 			
 			if ((mode & CMT_OUTPUTMODE_VELOCITY) != 0) 
-			{
 				velocity = packet->getVelocity();
-			}
 			
 
 			//if((mode & CMT_OUTPUTMODE_GPSPVT_PRESSURE) != 0)
@@ -418,9 +475,7 @@ read_data_from_xsens(void)
 
 
 			if ((mode & CMT_OUTPUTMODE_STATUS) != 0)
-			{
 				status = packet->getStatus();
-			}
 
 			switch(xsens_type)
 			{
@@ -434,6 +489,9 @@ read_data_from_xsens(void)
 				{
 					carmen_xsens_mtig_message xsens_message = make_xsens_mtig_message(deviceIds[i], qat_data, caldata, positionLLA, velocity, status);
 					publish_mtig_message(xsens_message);
+
+					carmen_xsens_global_quat_message message = make_xsens_mti_quat_message(qat_data, caldata);
+					publish_mti_quat_message(message);
 					break;
 				}
 			}
@@ -492,11 +550,10 @@ main(int argc, char **argv)
 	int xsens_initialized = init_xsens();
 
 	if (xsens_initialized)
-	{
 		read_data_from_xsens();
-	}
 
 	carmen_ipc_disconnect();
-	return 0;
+
+	return (0);
 }
 

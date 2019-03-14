@@ -47,6 +47,7 @@ carmen_gps_gpgga_message *carmen_extern_gpgga_ptr = NULL;
 carmen_gps_gphdt_message *carmen_extern_gphdt_ptr = NULL;
 carmen_gps_gprmc_message *carmen_extern_gprmc_ptr = NULL;
 
+
 void
 ipc_publish_position( void )
 {
@@ -89,6 +90,7 @@ ipc_publish_position( void )
 	//printf("\n");
 	
 }
+
 
 void
 ipc_initialize_messages(void)

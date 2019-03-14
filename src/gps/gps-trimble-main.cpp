@@ -52,18 +52,27 @@
 
 #define TCP_IP_ADDRESS			"192.168.0.103"
 #define TCP_IP_PORT				"5017"
+//#define TCP_IP_ADDRESS			"172.20.10.4"
+//#define TCP_IP_PORT				"5017"
+
 //http://bd982.com/ -> site de teste do gps Trimble bd982
 //#define TCP_IP_ADDRESS			"155.63.160.20"
 //#define TCP_IP_PORT				"5018"
 #define INCOME_DATA_BUFFER_SIZE	1000
 
-int socketfd; // The socket descriptor
+int socketfd;
 
 
 void
-print_usage( void )
+print_usage()
 {
-	fprintf( stderr, "Syntax: gps_nmea_trimble\n");
+	fprintf(stderr,
+			"\nUsage:\n"
+			" ./gps_nmea_trimble <empty> -> This will try and connect with the Trimble GPS (default)\n"
+			" ./gps_nmea_trimble <gps number> <port number> <ip address 2>  <ip address 1> ...  <ip address n>\n"
+			"For GPS Trimble -> ./gps_nmea_trimble 1 5018 192.168.0.103\n"
+			"For GPS Reach 1 -> ./gps_nmea_trimble 2 5019 172.20.10.2 (when using IPhone)\n"
+			"For GPS Reach 2 -> ./gps_nmea_trimble 3 5020 172.20.10.4 (when using IPhone)\n\n");
 }
 
 
@@ -126,12 +135,13 @@ parse_hdt_info(char *first_nmea_string_end)
 
 
 void
-publish_carmen_gps_gphdt_message()
+publish_carmen_gps_gphdt_message(int gps_number)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 
 	if (carmen_extern_gphdt_ptr != NULL)
 	{
+		carmen_extern_gphdt_ptr->nr = gps_number;
 		err = IPC_publishData (CARMEN_GPS_GPHDT_MESSAGE_NAME, carmen_extern_gphdt_ptr);
 		carmen_test_ipc(err, "Could not publish", CARMEN_GPS_GPHDT_MESSAGE_NAME);
 	}
@@ -139,7 +149,7 @@ publish_carmen_gps_gphdt_message()
 
 
 int
-publish_carmen_gps_gpgga_message()
+publish_carmen_gps_gpgga_message(int gps_number)
 {
 	static double previous_utc_gpgga = -1.0;
 	IPC_RETURN_TYPE err = IPC_OK;
@@ -153,9 +163,9 @@ publish_carmen_gps_gpgga_message()
 //		carmen_extern_gpgga_ptr->gps_quality = 4;
 
 		previous_utc_gpgga = carmen_extern_gpgga_ptr->utc;
+		carmen_extern_gpgga_ptr->nr = gps_number;
 
-		err = IPC_publishData (CARMEN_GPS_GPGGA_MESSAGE_NAME,
-					   carmen_extern_gpgga_ptr );
+		err = IPC_publishData (CARMEN_GPS_GPGGA_MESSAGE_NAME, carmen_extern_gpgga_ptr);
 		carmen_test_ipc(err, "Could not publish", CARMEN_GPS_GPGGA_MESSAGE_NAME);
 		// fprintf( stderr, "(gga)" );
 		// printf("gga lt:% .20lf lg:% .20lf\t", carmen_extern_gpgga_ptr->latitude, carmen_extern_gpgga_ptr->longitude);
@@ -197,7 +207,7 @@ shutdown_module(int a __attribute__ ((unused)))
 
 
 int
-init_tcp_ip_socket()
+init_tcp_ip_socket(char *address, char *port)
 {
     int status;
     struct addrinfo host_info;       // The struct that getaddrinfo() fills up with data.
@@ -208,14 +218,14 @@ init_tcp_ip_socket()
     host_info.ai_family = AF_UNSPEC;     // IP version not specified. Can be both.
     host_info.ai_socktype = SOCK_STREAM; // Use SOCK_STREAM for TCP or SOCK_DGRAM for UDP.
 
-    status = getaddrinfo(TCP_IP_ADDRESS, TCP_IP_PORT, &host_info, &host_info_list);
+    status = getaddrinfo(address, port, &host_info, &host_info_list);
     if (status != 0)
     {
         std::cout << "getaddrinfo error" << gai_strerror(status) << std::endl;
         return (-1);
     }
 
-    socketfd = socket(host_info_list->ai_family, host_info_list->ai_socktype, host_info_list->ai_protocol);
+    int socketfd = socket(host_info_list->ai_family, host_info_list->ai_socktype, host_info_list->ai_protocol);
     if (socketfd == -1)
     {
         std::cout << "socket error" << std::endl;
@@ -228,6 +238,7 @@ init_tcp_ip_socket()
         std::cout << "connect error" << std::endl;
         return (-1);
     }
+
     freeaddrinfo(host_info_list);
 
     return (socketfd);
@@ -247,45 +258,109 @@ ipc_initialize_messages( void )
 			      CARMEN_GPS_GPHDT_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_GPS_GPHDT_MESSAGE_NAME);
 
-	int gps_nr = 1; // This says it is a Trimble GPS
+	int gps_number = 1; // This says it is a Trimble GPS
 	static carmen_gps_gpgga_message gpgga;
 	static carmen_gps_gphdt_message gphdt;
+	static carmen_gps_gprmc_message gprmc;
 
 	carmen_erase_structure(&gpgga, sizeof(carmen_gps_gpgga_message));
 	carmen_erase_structure(&gphdt, sizeof(carmen_gps_gphdt_message));
+	carmen_erase_structure(&gprmc, sizeof(carmen_gps_gprmc_message));
   
 	gpgga.host = carmen_get_host();
 	gphdt.host = carmen_get_host();
+	gprmc.host = carmen_get_host();
 
 	carmen_extern_gpgga_ptr = &gpgga;
-	carmen_extern_gpgga_ptr->nr = gps_nr;
+	carmen_extern_gpgga_ptr->nr = gps_number;
 	carmen_extern_gphdt_ptr = &gphdt;
-	carmen_extern_gphdt_ptr->nr = gps_nr;
+	carmen_extern_gphdt_ptr->nr = gps_number;
+	carmen_extern_gprmc_ptr = &gprmc;
+	carmen_extern_gprmc_ptr->nr = gps_number;
 }
+
+
+int
+get_socketfd(char *address, char *port)
+{
+	int socketfd;
+
+	fprintf(stderr, "Trying to open socket to tcp/ip ip and port: %s:%s\n", address, port);
+	if ((socketfd = init_tcp_ip_socket(address, port)) < 0)
+		fprintf(stderr, "can't open tcp/ip socket on ip and port: %s:%s\n", address, port);
+	else
+		fprintf(stderr, "socket on %s:%s established!\n", address, port);
+
+	return (socketfd);
+}
+
+
+int
+try_to_establish_socket_with_gps(int argc, char **argv)
+{
+	char* address = (char*) (TCP_IP_ADDRESS);
+	char* port = (char*) (TCP_IP_PORT);
+	int gps_number = 1;
+
+	if (argc == 1)
+	{
+		// Default to Trimble, gps_number 1
+		socketfd = get_socketfd(address, port);
+		if (socketfd == -1)
+			exit(1);
+	}
+	else if (argc > 3)
+	{
+		gps_number = atoi(argv[1]);
+		if ((gps_number != 2) && (gps_number != 3))
+		{
+			printf("Wrong gps_number parameter. See usage above.\n");
+			exit(1);
+		}
+
+		bool found = false;
+		for (int i = 3; i < argc; i++)
+		{
+			socketfd = get_socketfd(argv[i], argv[2]);
+			if (socketfd != -1)
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
+		{
+			printf("Could not establish socket...\n");
+			exit(1);
+		}
+	}
+	else
+	{
+		printf("Wrong number of parameters. See usage above.\n");
+		exit(1);
+	}
+
+	return (gps_number);
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 int
-main(int argc, char *argv[])
+main(int argc, char **argv)
 {
 	signal(SIGINT, shutdown_module);
 	carmen_ipc_initialize(argc, argv);
 	ipc_initialize_messages();
 
-	fprintf( stderr, "INFO: ************************\n" );
-	fprintf( stderr, "INFO: ********* GPS   ********\n" );
-	fprintf( stderr, "INFO: ************************\n" );
+	fprintf(stderr, "INFO: ************************\n");
+	fprintf(stderr, "INFO: ********* GPS   ********\n");
+	fprintf(stderr, "INFO: ************************\n");
 
-	fprintf( stderr, "INFO: open socket to tcp/ip ip and port: %s:%s\n", TCP_IP_ADDRESS, TCP_IP_PORT);
-	if ((socketfd = init_tcp_ip_socket()) < 0)
-	{
-		fprintf(stderr, "ERROR: can't open tcp ip socket !!!\n\n");
-		exit(1);
-	}
-	else
-	{
-		fprintf(stderr, "INFO: done\n");
-	}
+	print_usage();
+
+	int gps_number = try_to_establish_socket_with_gps(argc, argv);
 
 	while (TRUE)
 	{
@@ -294,17 +369,21 @@ main(int argc, char *argv[])
 
 		get_data_from_socket(incomming_data_buffer, socketfd);
 
+//		printf("%s\n", incomming_data_buffer);
 		carmen_extern_gpgga_ptr->timestamp = carmen_get_time();
 		carmen_extern_gphdt_ptr->timestamp = carmen_extern_gpgga_ptr->timestamp;
 
 		if ((first_nmea_string_end = parse_gga_info(incomming_data_buffer)) != NULL)
-			publish_carmen_gps_gpgga_message();
+			publish_carmen_gps_gpgga_message(gps_number);
 
 		if (first_nmea_string_end)
 		{
 			// strcpy(first_nmea_string_end, "$GPHDT,333.694,T*3D");
 			if (parse_hdt_info(first_nmea_string_end))
-				publish_carmen_gps_gphdt_message();
+			{
+				if (gps_number == 1) // Only the Trimble GPS knows a suitable orientation at the moment in this point.
+					publish_carmen_gps_gphdt_message(gps_number);
+			}
 		}
 	}
 

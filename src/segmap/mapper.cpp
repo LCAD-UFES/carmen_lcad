@@ -14,7 +14,7 @@
 #include <opencv/highgui.h>
 #include <pcl/common/transforms.h>
 #include <pcl/visualization/pcl_visualizer.h>
-
+#include <boost/program_options.hpp>
 
 #include "libsegmap/segmap_car_config.h"
 #include "libsegmap/segmap_grid_map.h"
@@ -23,12 +23,17 @@
 #include "libsegmap/segmap_util.h"
 #include "libsegmap/segmap_dataset.h"
 #include "libsegmap/segmap_viewer.h"
+#include "libsegmap/segmap_sensors.h"
 
 using namespace cv;
 using namespace std;
 using namespace Eigen;
 using namespace pcl;
+namespace po = boost::program_options;
 
+
+#define VIEW 1
+#define USE_NEW 1
 
 void
 increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
@@ -62,8 +67,93 @@ increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
 	// */
 }
 
-#define VIEW 1
 
+void
+colorize(PointCloud<PointXYZRGB>::Ptr cloud, 
+		 Matrix<double, 4, 4> &lidar2cam,
+		 Matrix<double, 3, 4> &projection,
+		 Mat &img,
+		 PointCloud<PointXYZRGB>::Ptr colored)
+{
+	Mat orig = img.clone();
+	Point ppixel;
+	int is_valid;
+
+	for (int i = 0; i < cloud->size(); i++)
+	{
+		get_pixel_position(cloud->at(i).x, cloud->at(i).y, cloud->at(i).z,
+					lidar2cam, projection, img, &ppixel, &is_valid);
+
+		if (is_valid)
+		{
+			circle(img, ppixel, 2, Scalar(0, 0, 255), -1);
+
+			PointXYZRGB point = cloud->at(i);
+			point.r = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 2];
+			point.g = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 1];
+			point.b = orig.data[3 * (ppixel.y * orig.cols + ppixel.x) + 0];
+			colored->push_back(point);
+		}
+	}
+}
+
+
+#if USE_NEW
+void
+create_map(GridMap &map, char *log_name, NewCarmenDataset *dataset, char path_save_maps[])
+{
+	DataSample *sample;
+	LidarShot *shot;
+	PointCloudViewer viewer;
+	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
+	PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
+	PointCloud<PointXYZRGB>::Ptr colored(new PointCloud<PointXYZRGB>);
+
+	Mat img;
+	Matrix<double, 4, 4> lidar2car = dataset->vel2car();
+    Matrix<double, 4, 4> lidar2cam = dataset->vel2cam();
+	Matrix<double, 3, 4> projection = dataset->projection_matrix();
+
+	dataset->reset();
+	SemanticSegmentationLoader sloader(log_name);
+	
+	Pose2d pose(0, 0, dataset->calib.init_angle);
+	double prev_t = 0;
+
+	while ((sample = dataset->next_data_package()))
+	{		
+		if (prev_t > 0)
+			ackerman_motion_model(pose, sample->v, sample->phi, sample->image_time - prev_t);
+
+		prev_t = sample->image_time;
+
+		if (fabs(sample->v) < 1.0)
+			continue;
+
+		CarmenLidarLoader loader(sample->velodyne_path.c_str(), sample->n_laser_shots,
+								 dataset->intensity_calibration);
+
+		//while (!loader.done())
+		//{
+		//	shot = loader.next();
+		//}
+
+		load_as_pointcloud(&loader, cloud);
+		//img = load_image(sample);
+		img = sloader.load(sample);
+
+		colored->clear();
+		colorize(cloud, lidar2cam, projection, img, colored);
+		transformPointCloud(*colored, *transformed, (Pose2d::to_matrix(pose) * lidar2car).cast<float>());
+
+		viewer.show(transformed);
+		viewer.show(img, "img", 640);
+		viewer.loop();
+	}
+}
+
+
+#else
 void
 create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 {
@@ -249,14 +339,41 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 
 	//waitKey(-1);
 }
-
+#endif
 
 int
 main(int argc, char **argv)
 {
-	if (argc < 2)
-		exit(printf("Error: Use %s <log data directory>\n", argv[0]));
+	string map_type;
+	const char *log_path;
+	double resolution;
+	double tile_size;
 
+	po::variables_map vm;
+	po::positional_options_description log_path_arg;
+	po::options_description additional_args("Options");
+	
+	log_path_arg.add("log-path", 1);
+	additional_args.add_options()
+		("help,h", "produce help message")
+		("map_type,mt", po::value<string>(&map_type)->default_value("gaussian"), "Map type: [categorical | gaussian]") 
+		("resolution,r", po::value<double>(&resolution)->default_value(0.2), "Map resolution") 
+		("tile_size,s", po::value<double>(&tile_size)->default_value(50.), "Map tiles size") 
+	;
+	
+	store(po::command_line_parser(argc, argv).options(additional_args).positional(log_path_arg).run(), vm);
+	notify(vm);
+
+	if (vm.count("log-path") == 0 || vm.count("help"))
+	{
+		cout << "Usage: " << argv[0] << " [options] log-path" << endl;
+		cout << additional_args << endl;
+		//cout << log_path_arg << endl;
+	}
+
+	return 1;
+
+	/*
 	char path_save_maps[256];
 	char dataset_name[256];
 	char map_name[256];
@@ -275,11 +392,18 @@ main(int argc, char **argv)
 	printf("dataset_name: %s\n", dataset_name);
 	printf("map_name: %s\n", map_name);
 	printf("path to save maps: %s\n", path_save_maps);
+	*/
 
-	DatasetInterface *dataset;
-    dataset = new DatasetCarmen(dataset_name, 0);
-	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
+	GridMap map("/tmp", 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
+
+#if USE_NEW	
+	NewCarmenDataset *dataset;
+    dataset = new NewCarmenDataset(argv[1]);
+	create_map(map, argv[1], dataset, "/tmp");
+#else
+	DatasetInterface *dataset = new DatasetCarmen(dataset_name, 0);
 	create_map(map, *dataset, path_save_maps);
+#endif
 
 	printf("Done\n");
 	return 0;
