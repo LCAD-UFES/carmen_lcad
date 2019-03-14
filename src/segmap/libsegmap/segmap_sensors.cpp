@@ -92,7 +92,7 @@ CarmenLidarLoader::next()
     fread(_raw_ranges, sizeof(unsigned short), _n_vert, _fptr);
     fread(_raw_intensities, sizeof(unsigned char), _n_vert, _fptr);
 
-    _shot->h_angle = degrees_to_radians(_shot->h_angle);
+    _shot->h_angle = -degrees_to_radians(_shot->h_angle);
 
     for (int i = 0; i < _n_vert; i++)
     {
