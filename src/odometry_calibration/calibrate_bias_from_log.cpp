@@ -339,8 +339,8 @@ set_limits(int dim)
 	// v multiplicative bias
 	//limits[0][0] = 0.95; //0.5;
 	//limits[0][1] = 1.05; //1.5;
-	limits[0][0] = 0.99999999;
-	limits[0][1] = 1.8;
+	limits[0][0] = 0.9;
+	limits[0][1] = 1.1;
 
 	// v additive bias
 	limits[1][0] = -0.00000001;

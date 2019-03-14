@@ -40,7 +40,7 @@ VISUAL_YY_VAR.25
 VISUAL_HH_VAR 0.125
 
 -- Multiplicado do desvio padrao- quanto maior, menor a confianca no GPS - 125 ta confiando bem pouco no multiplier 
-GPS_POSE_STD_MULTIPLIER 95.5
+GPS_POSE_STD_MULTIPLIER 15.5
 GPS_POSE_HH_STD 170.75
 
 -- special edge: two messages with same timestamp value - Nao precisa mecher, basicamente nao deixa o otimizador mexer em nos da mesma mensagem (GPS-HEADING)
@@ -62,11 +62,12 @@ OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS 10
 FAKE_GPS_CLUSTERING_DISTANCE 0.2
 
 -- edges configuration - disable, enable edges - Comente para dizer quais voce nao quer usar como aresta.
---USE_VELODYNE_SEQ
---USE_VELODYNE_LOOP
+-- USE_VELODYNE_SEQ
+USE_VELODYNE_LOOP
 -- USE_BUMBLEBEE_SEQ
 -- USE_BUMBLEBEE_LOOP
 -- USE_SICK_SEQ
 -- USE_SICK_LOOP
 USE_GPS
 USE_ODOMETRY
+

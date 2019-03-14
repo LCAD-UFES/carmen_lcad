@@ -45,7 +45,13 @@ GrabData::GrabData() :
     lidar_odometry_min_distance(LIDAR_ODOMETRY_MIN_DISTANCE),
     visual_odometry_min_distance(VISUAL_ODOMETRY_MIN_DISTANCE),
     icp_translation_confidence_factor(ICP_TRANSLATION_CONFIDENCE_FACTOR),
-    save_accumulated_point_clouds(false) {}
+    save_accumulated_point_clouds(false),
+    use_velodyne_odometry(true),
+    use_sick_odometry(true),
+    use_bumblebee_odometry(true),
+    use_velodyne_loop(true),
+    use_sick_loop(true),
+    use_bumblebee_loop(true) {}
 
 
 // the main destructor
@@ -1849,6 +1855,30 @@ void GrabData::Configure(std::string config_filename)
             else if ("SAVE_ACCUMULATED_POINT_CLOUDS")
             {
                 save_accumulated_point_clouds = true;
+            }
+            else if ("DISABLE_VELODYNE_ODOMETRY")
+            {
+                use_velodyne_odometry = false;
+            }
+            else if ("DISABLE_VELODYNE_LOOP")
+            {
+                use_velodyne_loop = false;
+            }
+            else if ("DISABLE_SICK_ODOMETRY")
+            {
+                use_sick_odometry = false;
+            }
+            else if ("DISABLE_SICK_LOOP")
+            {
+                use_sick_loop = false;
+            }
+            else if ("DISABLE_BUMBLEBEE_ODOMETRY")
+            {
+                use_bumblebee_odometry = false;
+            }
+            else if ("DISABLE_BUMBLEBEE_LOOP")
+            {
+                use_bumblebee_loop = false;
             }
         }
     }

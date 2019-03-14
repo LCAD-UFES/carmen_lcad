@@ -147,8 +147,9 @@ public:
 	static const int SYNC_BY_CAMERA = 0;
 	static const int SYNC_BY_LIDAR = 1;
 	
-	NewCarmenDataset(char *path, int sync_type = SYNC_BY_CAMERA,
-		   			 char *lidar_calib_path = "data/calibration_table.txt");
+	NewCarmenDataset(char *path, char *odom_calib_path,
+			int sync_type = SYNC_BY_CAMERA,
+			char *lidar_calib_path = "data/calibration_table.txt");
 
 	~NewCarmenDataset();
 
