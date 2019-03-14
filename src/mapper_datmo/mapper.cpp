@@ -107,7 +107,7 @@ carmen_mapper_virtual_scan_message virtual_scan_message;
 carmen_moving_objects_point_clouds_message moving_objects_message;
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////// RANIK
+//////////////////////////////////////  RANIK  ///////////////////////////////////////////////////////
 double*
 convert_map_to_array(carmen_map_p updated_map)
 {
@@ -132,16 +132,43 @@ convert_map_to_array(carmen_map_p updated_map)
 
 
 void
-cv_draw_map()
+color_moving_objecst_cells(std::vector<carmen_vector_2D_t> moving_objecst_cells_vector, cv::Mat &map_img)
+{
+	int x = 0, y = 0;
+
+	for (int i = 0; i < moving_objecst_cells_vector.size(); i++)
+	{
+		//printf("%d %d %lf %lf\n", map.config.x_size, map.config.y_size, map.config.x_origin,map.config.y_origin);
+
+		x = (double) (moving_objecst_cells_vector[i].x - map_config.x_origin) / map_config.resolution;
+		y = (double) (moving_objecst_cells_vector[i].y - map_config.y_origin) / map_config.resolution;
+		if (x < 0 || x > map_img.cols || y < 0 || y > map_img.rows)
+		{
+			printf("Cell out of Map %d %d\n", x, y);
+			continue;
+		}
+		printf("%d %d\n", x, y);
+		rectangle(map_img,cv::Rect(x, (map_config.y_size - 1 - y), 1, 1), 0.5, CV_FILLED, 8, 0);
+	}
+}
+
+
+void
+cv_draw_map(std::vector<carmen_vector_2D_t> moving_objecst_cells_vector)
 {
 	double *inverted_map = convert_map_to_array(&map);
 
-	unsigned int height = map.config.y_size;
-	double inverse_resolution = 1.0 / map.config.resolution;
+	//unsigned int height = map.config.y_size;
+	//double inverse_resolution = 1.0 / map.config.resolution;
 
-	cv::Mat image_localize_map = cv::Mat(map.config.x_size, map.config.y_size, CV_64FC1 , inverted_map, 0);
+	cv::Mat map_img = cv::Mat(map.config.x_size, map.config.y_size, CV_64FC1 , inverted_map, 0);
 
-	cv::imshow("Map", image_localize_map);
+	cv::Mat map_img_3c;
+	map_img.convertTo(map_img_3c, CV_64FC3);
+
+	color_moving_objecst_cells(moving_objecst_cells_vector, map_img_3c);
+
+	cv::imshow("Map", map_img_3c);
 	cv::waitKey(1);
 	free(inverted_map);
 }
