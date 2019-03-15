@@ -6,18 +6,20 @@
 
 
 void
-create_necessary_directories()
+prepare_all_directories()
 {
-    if (!boost::filesystem::is_directory("/dados/tmp/"))
-        boost::filesystem::create_directory("/dados/tmp/");
+    // remove the directory contents recursively, and then removes the directory.
+    boost::filesystem::remove_all("/dados/tmp");
 
-    //mkdir /dados/tmp
-    //mkdir /dados/tmp/sick
-    //mkdir /dados/tmp/velodyne
-    //mkdir /dados/tmp/lgm
-    //mkdir /dados/tmp/lgm/sick
-    //mkdir /dados/tmp/lgm/velodyne
-    //mkdir /dados/tmp/images
+    boost::filesystem::create_directory("/dados/tmp");
+    boost::filesystem::create_directory("/dados/tmp/sick");
+    boost::filesystem::create_directory("/dados/tmp/velodyne");
+    boost::filesystem::create_directory("/dados/tmp/lgm");
+    boost::filesystem::create_directory("/dados/tmp/lgm/sick");
+    boost::filesystem::create_directory("/dados/tmp/lgm/velodyne");
+    boost::filesystem::create_directory("/dados/tmp/images");
+
+    std::cout << "Necessary directories created." << std::endl;
 }
 
 
@@ -27,11 +29,11 @@ main (int argc, char **argv)
     if (argc != 3) 
     {
         // error
-        std::cout << "Usage: ./parser <log_file> <output_file>";
+        std::cout << "Usage: ./parser <log_file> <output_file>" << std::endl;
         return -1;
     }
 
-    create_necessary_directories();
+    prepare_all_directories();
 
     // read the input filenames
     std::string input_file(argv[1]);
@@ -60,16 +62,13 @@ main (int argc, char **argv)
 
         // save extra info
         gd.SaveEstimates();
-
     } 
     else 
         std::cout << "Error! Could not parse the log file!\n";
 
     // close everything
     gd.Clear();
-
-    // clearing?
-    std::cout << "Cleared!\n";
+    std::cout << "Done!\n";
 
     return 0;
 

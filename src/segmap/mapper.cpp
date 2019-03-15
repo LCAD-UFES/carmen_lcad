@@ -146,7 +146,14 @@ create_map(GridMap &map, char *log_name, NewCarmenDataset *dataset, char path_sa
 		colorize(cloud, lidar2cam, projection, img, colored);
 		transformPointCloud(*colored, *transformed, (Pose2d::to_matrix(pose) * lidar2car).cast<float>());
 
+		for (int j = 0; j < transformed->size(); j++)
+            map.add_point(transformed->at(j));
+
+		Mat map_img = map.to_image().clone();
+		draw_pose(map, map_img, pose, Scalar(0, 255, 0));
+
 		viewer.show(transformed);
+		viewer.show(map_img, "map", 640);
 		viewer.show(img, "img", 640);
 		viewer.loop();
 	}
@@ -353,7 +360,7 @@ main(int argc, char **argv)
 	po::positional_options_description log_path_arg;
 	po::options_description additional_args("Options");
 	
-	log_path_arg.add("log-path", 1);
+	log_path_arg.add("log-path", -1);
 	additional_args.add_options()
 		("help,h", "produce help message")
 		("map_type,mt", po::value<string>(&map_type)->default_value("gaussian"), "Map type: [categorical | gaussian]") 
