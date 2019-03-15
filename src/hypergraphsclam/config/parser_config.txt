@@ -26,7 +26,7 @@ ICP_TRANSLATION_CONFIDENCE_FACTOR 1.00
 -- Nao Lembro
 CURVATURE_REQUIRED_TIME 0.0001
 
--- Se quiser mais rapido, pode rodar o odometry calibration. porem nao parece ser muito necessario
+-- Se quiser mais rapido, pode rodar o odometry calibration. porem nao parece ser muito necessario.
 -- Initial odometry bias guess, the default values are: v_mult = 1.0, phi_mult = 1.0 and phi_add = 0.0
 -- You can pick this values from a previous calibration result
 V_MULT_ODOMETRY_BIAS 1.008211
@@ -34,9 +34,12 @@ PHI_MULT_ODOMETRY_BIAS 0.903564
 PHI_ADD_ODOMETRY_BIAS -0.002708
 
 -- Descomente os argumentos abaixo para desabilitar a construcao das respectivas arestas
-
-
-
+DISABLE_VELODYNE_ODOMETRY
+-- DISABLE_VELODYNE_LOOP
+DISABLE_SICK_ODOMETRY
+-- DISABLE_SICK_LOOP
+DISABLE_BUMBLEBEE_ODOMETRY
+DISABLE_BUMBLEBEE_LOOP
 
 -- So para visualizacao
 -- Save the accumulated point clouds, uncomment the line below in order to save the accumulated clouds

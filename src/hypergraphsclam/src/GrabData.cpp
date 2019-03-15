@@ -1178,8 +1178,8 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
         StampedLidarPtrVector::iterator it(lidar_messages.begin());
 
         unsigned lmsize = lidar_messages.size();
-        unsigned percent = lmsize / 100;
         unsigned counter = 0;
+        // unsigned percent = lmsize / 100;
 
         while (end != it)
         {
@@ -1562,9 +1562,8 @@ void GrabData::SaveGPSEstimates()
 
 
 // save lidar message
-void GrabData::SaveLidarEdges(const std::string &msg_name, std::ofstream &os, const StampedLidarPtrVector &lidar_messages)
+void GrabData::SaveLidarEdges(const std::string &msg_name, std::ofstream &os, const StampedLidarPtrVector &lidar_messages, bool use_lidar_odometry, bool use_lidar_loop)
 {
-
     if (!lidar_messages.empty())
     {
         // iterate over the lidar messages
@@ -1579,7 +1578,7 @@ void GrabData::SaveLidarEdges(const std::string &msg_name, std::ofstream &os, co
             // direct access
             StampedLidarPtr from = *current;
 
-            if (last_index > from->seq_id)
+            if (last_index > from->seq_id && use_lidar_odometry)
             {
                 // get the SE2 reference
                 g2o::SE2 &measurement(from->seq_measurement);
@@ -1588,7 +1587,7 @@ void GrabData::SaveLidarEdges(const std::string &msg_name, std::ofstream &os, co
                 os << msg_name << "_SEQ " << from->id << " " << from->seq_id << " " << std::fixed << measurement[0] << " " << measurement[1] << " " << measurement[2] << "\n";
 
             }
-            if (last_index > from->loop_closure_id)
+            if (last_index > from->loop_closure_id && use_lidar_loop)
             {
                 // get the SE2 reference
                 g2o::SE2 &measurement(from->loop_measurement);
@@ -1610,7 +1609,7 @@ void GrabData::SaveVisualOdometryEdges(std::ofstream &os)
 
     std::cout << "\tSaving all visual odometry edges..." << std::endl;
 
-    if (!bumblebee_messages.empty())
+    if (!bumblebee_messages.empty() && use_bumblebee_odometry)
     {
         // iterate over the lidar messages
         StampedBumblebeePtrVector::const_iterator end = bumblebee_messages.end();
@@ -1649,14 +1648,14 @@ void GrabData::SaveICPEdges(std::ofstream &os)
     std::cout << "\tSaving all SICK edges..." << std::endl;
 
     // the sick icp edges
-    SaveLidarEdges(std::string("SICK"), os, sick_messages);
+    SaveLidarEdges(std::string("SICK"), os, sick_messages, use_sick_odometry, use_sick_loop);
 
     std::cout << "\tSick edges saved!" << std::endl;
 
     std::cout << "\tSaving all Velodyne edges..." << std::endl;
 
     // the velodyne icp edges
-    SaveLidarEdges(std::string("VELODYNE"), os, velodyne_messages);
+    SaveLidarEdges(std::string("VELODYNE"), os, velodyne_messages, use_velodyne_odometry, use_velodyne_loop);
 
     std::cout << "\tVelodyne edges saved!" << std::endl;
 }
@@ -1858,26 +1857,32 @@ void GrabData::Configure(std::string config_filename)
             }
             else if ("DISABLE_VELODYNE_ODOMETRY")
             {
+                std::cout << "Disabling lidar odometry" << std::endl;
                 use_velodyne_odometry = false;
             }
             else if ("DISABLE_VELODYNE_LOOP")
             {
+                std::cout << "Disabling lidar loop closures" << std::endl;
                 use_velodyne_loop = false;
             }
             else if ("DISABLE_SICK_ODOMETRY")
             {
+                std::cout << "Disabling sick odometry" << std::endl;
                 use_sick_odometry = false;
             }
             else if ("DISABLE_SICK_LOOP")
             {
+                std::cout << "Disabling sick loop closures" << std::endl;
                 use_sick_loop = false;
             }
             else if ("DISABLE_BUMBLEBEE_ODOMETRY")
             {
+                std::cout << "Disabling visual odometry" << std::endl;
                 use_bumblebee_odometry = false;
             }
             else if ("DISABLE_BUMBLEBEE_LOOP")
             {
+                std::cout << "Disabling visual loop closures" << std::endl;
                 use_bumblebee_loop = false;
             }
         }
@@ -2043,32 +2048,47 @@ void GrabData::BuildHyperGraph()
         // build the initial estimates
         BuildOdometryEstimates();
 
-        // build the visual odometry measurements
-        BuildVisualOdometryMeasures();
-
-        // build the visual odometry estimates
-        BuildVisualOdometryEstimates();
+        if (use_bumblebee_odometry)
+        {
+            // build the visual odometry measurements
+            BuildVisualOdometryMeasures();
+         
+            // build the visual odometry estimates
+            BuildVisualOdometryEstimates();
+        }
 
         // the loop measurement is done after the gps synchronization
         BuildLidarOdometryGPSEstimates();
 
-        // build the velodyne loop closure measurements
-        BuildLidarLoopClosureMeasures(velodyne_messages);
+        if (use_velodyne_loop) 
+        {
+            // build the velodyne loop closure measurements
+            BuildLidarLoopClosureMeasures(velodyne_messages);
+        }
 
-        // build the velodyne odometry measurements
-        BuildLidarOdometryMeasuresWithThreads(velodyne_messages);
+        if (use_velodyne_odometry)
+        {
+            // build the velodyne odometry measurements
+            BuildLidarOdometryMeasuresWithThreads(velodyne_messages);
+            
+            // build the velodyne odometry estimates
+            BuildRawLidarOdometryEstimates(velodyne_messages, used_velodyne);
+        }
 
-        // build the velodyne odometry estimates
-        BuildRawLidarOdometryEstimates(velodyne_messages, used_velodyne);
+        if (use_sick_loop)
+        {
+            // build the sick loop closure measMatrix4ures
+            BuildLidarLoopClosureMeasures(sick_messages);
+        }
 
-        // build the sick loop closure measMatrix4ures
-        BuildLidarLoopClosureMeasures(sick_messages);
+        if (use_sick_odometry)
+        {
+            // build the sick odometry measurements
+            BuildLidarOdometryMeasuresWithThreads(sick_messages);
 
-        // build the sick odometry measurements
-        BuildLidarOdometryMeasuresWithThreads(sick_messages);
-
-        // build the sick odometry estimates
-        BuildRawLidarOdometryEstimates(sick_messages, used_sick);
+            // build the sick odometry estimates
+            BuildRawLidarOdometryEstimates(sick_messages, used_sick);
+        }
     }
 }
 

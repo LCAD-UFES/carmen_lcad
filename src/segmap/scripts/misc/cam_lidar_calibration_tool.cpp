@@ -8,7 +8,10 @@
 #include <carmen/segmap_sensors.h>
 #include <carmen/segmap_viewer.h>
 #include <carmen/segmap_util.h>
+#include <string>
 
+
+using namespace std;
 using namespace Eigen;
 using namespace cv;
 using namespace pcl;
@@ -58,7 +61,12 @@ main(int argc, char **argv)
     PointCloudViewer viewer;
     DataSample *sample;
     PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
-	NewCarmenDataset *dataset = new NewCarmenDataset(argv[1]);
+	
+    vector<char*> splitted_path = string_split(argv[1], "/");
+    char *log_name = splitted_path[splitted_path.size() - 1];
+    char *odom_calib_path = (char *) (string("/dados/data2/data_") + log_name + string("/odom_calib.txt")).c_str();
+
+    NewCarmenDataset *dataset = new NewCarmenDataset(argv[1], odom_calib_path);
 
     Matrix<double, 3, 4> projection = dataset->projection_matrix();
 

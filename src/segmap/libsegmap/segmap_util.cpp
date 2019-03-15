@@ -371,7 +371,7 @@ safe_fopen(const char *path, const char *mode)
 
 
 vector<char*>
-string_split(char *string, char *delimiters)
+string_split(const char *string, const char *delimiters)
 {
 	char *token;
 	char *copy = new char[strlen(string) + 1];
@@ -394,7 +394,7 @@ string_split(char *string, char *delimiters)
 
 
 char* 
-string_copy(char *str)
+string_copy(const char *str)
 {
 	char *cpy = (char *) calloc (sizeof(char), strlen(str) + 1);
 	strcpy(cpy, str);

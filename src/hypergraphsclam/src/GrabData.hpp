@@ -236,7 +236,7 @@ namespace hyper {
             void SaveGPSEstimates();
 
             // save icp edges
-            void SaveLidarEdges(const std::string &msg_name, std::ofstream &os, const StampedLidarPtrVector &lidar_messages);
+            void SaveLidarEdges(const std::string &msg_name, std::ofstream &os, const StampedLidarPtrVector &lidar_messages, bool use_lidar_odometry, bool use_lidar_loop);
 
             // save visual odometry edges
             void SaveVisualOdometryEdges(std::ofstream &os);

@@ -23,9 +23,9 @@ main(int argc, char **argv)
     v.push_back("/media/filipe/Hitachi-Teste/log_aeroporto_vila_velha_20170726-2.txt");          
     v.push_back("/media/filipe/Hitachi-Teste/log-mata-da-praia-20181130.txt");
     v.push_back("/media/filipe/Hitachi-Teste/log_aeroporto_vila_velha_20170726.txt");            
-    v.push_back("/media/filipe/Hitachi-Teste/log_sao_paulo_brt_20170827-2.txt");
+    //v.push_back("/media/filipe/Hitachi-Teste/log_sao_paulo_brt_20170827-2.txt");
     v.push_back("/media/filipe/Hitachi-Teste/log_dante_michelini-20181116-pista-esquerda.txt");  
-    v.push_back("/media/filipe/Hitachi-Teste/log_sao_paulo_brt_20170827.txt");
+    //v.push_back("/media/filipe/Hitachi-Teste/log_sao_paulo_brt_20170827.txt");
     v.push_back("/media/filipe/Hitachi-Teste/log_dante_michelini-20181116.txt");                 
     v.push_back("/media/filipe/Hitachi-Teste/log_volta_da_ufes-20180112-2.txt");
     v.push_back("/media/filipe/Hitachi-Teste/log-estacionamento-ambiental-20181208.txt");        
@@ -50,13 +50,17 @@ main(int argc, char **argv)
     int sample_id;
     sample_id = 0;
 
-    char name[128];
+    char name[256];
 
     for (int k = 0; k < v.size(); k++)
     {
-        NewCarmenDataset dataset = 
-            NewCarmenDataset((char*) v[k].c_str(),
-                            (char*) ("/dados/data2/data_" + v[k] + "/odom_calib.txt").c_str(),
+        vector<char*> splitted_path = string_split((char*) v[k].c_str(), "/");
+        char *log_name = splitted_path[splitted_path.size() - 1];
+        char *odom_calib_path = (char *) (string("/dados/data2/data_") + log_name + string("/odom_calib.txt")).c_str();
+
+        printf("log name: %s\n", v[k].c_str());
+        NewCarmenDataset dataset((char*) v[k].c_str(),
+                            odom_calib_path,
                             NewCarmenDataset::SYNC_BY_CAMERA);
 
         Pose2d dead_reckoning;
@@ -80,12 +84,14 @@ main(int argc, char **argv)
             }
 
             if (fabs(data_package->v) < 1.)
+            {
+                count = 0;
                 continue;
+            }
 
             if (count++ < 50)
                 continue;
             
-            count = 0;
 
             printf("gps: %lf %lf ", data_package->gps.x, data_package->gps.y);
             printf("odom: %lf %lf ", dead_reckoning.x + gps0.x, dead_reckoning.y + gps0.y);
@@ -102,15 +108,22 @@ main(int argc, char **argv)
                 data_package->velodyne_path.c_str()
             );
 
-            Mat img = load_image(data_package);
+            Mat raw = load_image(data_package);
+            Mat img(480, 640, CV_8UC3);
+            resize(raw, img, img.size());
+
             CarmenLidarLoader loader(data_package->velodyne_path.c_str(), data_package->n_laser_shots, dataset.intensity_calibration);
             load_as_pointcloud(&loader, cloud);
             
             sprintf(name, "calibration/bb3/img%04d.png", sample_id);
+            printf("img path: %s\n", name);
             imwrite(name, img);
+
             sprintf(name, "calibration/velodyne/cloud%04d.txt", sample_id);
+            printf("velodyne path: %s\n", name);
+
             FILE *f = fopen(name, "w");
-            
+
             int n = 0;
 
             for (int i = 0; i < cloud->size(); i++)

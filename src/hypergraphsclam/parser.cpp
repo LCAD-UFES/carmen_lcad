@@ -1,16 +1,37 @@
+
+#include <string>
 #include <unistd.h>
 #include <GrabData.hpp>
+#include <boost/filesystem/operations.hpp>
 
-int main (int argc, char **argv) {
 
-    if (argc != 3) {
+void
+create_necessary_directories()
+{
+    if (!boost::filesystem::is_directory("/dados/tmp/"))
+        boost::filesystem::create_directory("/dados/tmp/");
 
+    //mkdir /dados/tmp
+    //mkdir /dados/tmp/sick
+    //mkdir /dados/tmp/velodyne
+    //mkdir /dados/tmp/lgm
+    //mkdir /dados/tmp/lgm/sick
+    //mkdir /dados/tmp/lgm/velodyne
+    //mkdir /dados/tmp/images
+}
+
+
+int 
+main (int argc, char **argv) 
+{
+    if (argc != 3) 
+    {
         // error
         std::cout << "Usage: ./parser <log_file> <output_file>";
-
         return -1;
-
     }
+
+    create_necessary_directories();
 
     // read the input filenames
     std::string input_file(argv[1]);
@@ -29,8 +50,8 @@ int main (int argc, char **argv) {
     gd.Configure(config_filename);
 
     // try to process the log file
-    if (gd.ParseLogFile(input_file)) {
-
+    if (gd.ParseLogFile(input_file)) 
+    {
         // build the hyper graph
         gd.BuildHyperGraph();
 
@@ -40,11 +61,9 @@ int main (int argc, char **argv) {
         // save extra info
         gd.SaveEstimates();
 
-    } else {
-
+    } 
+    else 
         std::cout << "Error! Could not parse the log file!\n";
-
-    }
 
     // close everything
     gd.Clear();

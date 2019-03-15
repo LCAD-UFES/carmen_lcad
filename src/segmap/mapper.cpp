@@ -397,8 +397,13 @@ main(int argc, char **argv)
 	GridMap map("/tmp", 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
 
 #if USE_NEW	
+
+    vector<char*> splitted_path = string_split(argv[1], "/");
+    char *log_name = splitted_path[splitted_path.size() - 1];
+    char *odom_calib_path = (char *) (string("/dados/data2/data_") + log_name + string("/odom_calib.txt")).c_str();
+
 	NewCarmenDataset *dataset;
-    dataset = new NewCarmenDataset(argv[1]);
+    dataset = new NewCarmenDataset(argv[1], odom_calib_path);
 	create_map(map, argv[1], dataset, "/tmp");
 #else
 	DatasetInterface *dataset = new DatasetCarmen(dataset_name, 0);
