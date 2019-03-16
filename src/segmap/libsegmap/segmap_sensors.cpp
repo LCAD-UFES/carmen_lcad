@@ -5,6 +5,10 @@
 #include "segmap_util.h"
 #include <cstdlib>
 
+using namespace std;
+using namespace cv;
+
+
 static const double _velodyne_vertical_angles[32] =
 {
         -30.6700000, -29.3300000, -28.0000000, -26.6700000, -25.3300000, -24.0000000, -22.6700000, -21.3300000,

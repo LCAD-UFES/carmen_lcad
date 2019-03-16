@@ -8,8 +8,6 @@
 #include <pcl/common/transforms.h>
 #include "segmap_pose2d.h"
 
-using namespace std;
-using namespace Eigen;
 
 enum SEGMAP_MODE
 {
@@ -23,7 +21,7 @@ const double MAX_RANGE = 100.;
 
 class CityScapesColorMap
 {
-	vector<cv::Scalar> _colors;
+	std::vector<cv::Scalar> _colors;
 
 public:
 	int n_classes;
@@ -67,18 +65,18 @@ double normalize_theta(double theta);
 double radians_to_degrees(double theta);
 double degrees_to_radians(double theta);
 
-Matrix<double, 4, 4> pose6d_to_matrix(double x, double y, double z, double roll, double pitch, double yaw);
-Matrix<double, 4, 4> pose3d_to_matrix(double x, double y, double theta);
+Eigen::Matrix<double, 4, 4> pose6d_to_matrix(double x, double y, double z, double roll, double pitch, double yaw);
+Eigen::Matrix<double, 4, 4> pose3d_to_matrix(double x, double y, double theta);
 
 // pose[i] contains the transformation which takes a
 // 3D pcl::Point in the i'th frame and projects it into the oxts
 // coordinates of the first frame.
-void oxts2Mercartor(vector<vector<double>> &data, vector<Matrix<double, 4, 4>> &poses);
+void oxts2Mercartor(std::vector<std::vector<double>> &data, std::vector<Eigen::Matrix<double, 4, 4>> &poses);
 
-vector<double> read_vector(char *name);
+std::vector<double> read_vector(char *name);
 
 // debug
-void print_vector(vector<double> &v);
+void print_vector(std::vector<double> &v);
 
 int argmax(double *v, int size);
 int argmin(double *v, int size);
@@ -88,7 +86,7 @@ void draw_rectangle(cv::Mat &img,
 		double height, double width, cv::Scalar color,
 		double x_origin, double y_origin, double pixels_by_meter);
 
-void print_poses(vector<Matrix<double, 4, 4>> &poses);
+void print_poses(std::vector<Eigen::Matrix<double, 4, 4>> &poses);
 
 double dist2d(double x1, double y1, double x2, double y2);
 
@@ -97,7 +95,7 @@ void ackerman_motion_model(Pose2d &pose, double v, double phi, double dt);
 
 void
 correct_point(Pose2d &correction,
-		Matrix<double, 4, 4> vel2car,
+							Eigen::Matrix<double, 4, 4> vel2car,
 		pcl::PointXYZRGB &point);
 
 /*
@@ -111,9 +109,9 @@ transform_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
 
 FILE* safe_fopen(const char *path, const char *mode);
 
-vector<char*> string_split(const char *string, const char *delimiters);
+std::vector<char*> string_split(const char *string, const char *delimiters);
 char* string_copy(const char *str);
-char* string_join(vector<char*> tokens, char *join_text);
+char* string_join(std::vector<char*> tokens, char *join_text);
 
 void spherical2cartersian(double v_angle, double h_angle, double radius, 
 						  double *x, double *y, double *z);

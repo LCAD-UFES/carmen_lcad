@@ -48,9 +48,12 @@ SOURCES = generate_loop_closures.cpp gicp_odometry_parallel.cpp \
 	generate_loop_closures_between_logs.cpp gicp_odometry_view_matching_result_loop_closures_between_logs.cpp \
     filter_incorrect_gicps.cpp gicp.cpp
 
-TARGETS = gicp_odometry gicp_reconstruction gicp_odometry_view_result generate_loop_closures \
+TARGETS = libgicp.a generate_loop_closures # gicp_odometry gicp_reconstruction gicp_odometry_view_result \
 	gicp_odometry_view_matching_result gicp_odometry_manual_correction convert_loops_to_graphslam_format gicp_odometry_simple \
-	generate_loop_closures_between_logs gicp_odometry_view_matching_result_loop_closures_between_logs filter_incorrect_gicps
+	generate_loop_closures_between_logs gicp_odometry_view_matching_result_loop_closures_between_logs filter_incorrect_gicps 
+
+PUBLIC_INCLUDES += gicp.h
+PUBLIC_LIBRARIES += libgicp.a
 
 filter_incorrect_gicps: filter_incorrect_gicps.o ../libsegmap/libsegmap.a
 gicp_odometry_view_matching_result_loop_closures_between_logs: gicp_odometry_view_matching_result_loop_closures_between_logs.o ../libsegmap/libsegmap.a gicp.o
@@ -63,5 +66,6 @@ gicp_odometry_view_matching_result: gicp_odometry_view_matching_result.o ../libs
 gicp_odometry_manual_correction: gicp_odometry_manual_correction.o ../libsegmap/libsegmap.a gicp.o
 convert_loops_to_graphslam_format: convert_loops_to_graphslam_format.o ../libsegmap/libsegmap.a gicp.o
 gicp_odometry_simple: gicp_odometry_simple.o ../libsegmap/libsegmap.a gicp.o
+libgicp.a: gicp.o
 
 include $(CARMEN_HOME)/src/Makefile.rules

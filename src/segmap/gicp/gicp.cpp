@@ -1,6 +1,8 @@
 
 #include "gicp.h"
 
+using namespace Eigen;
+
 
 void
 run_gicp(

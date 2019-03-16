@@ -29,6 +29,7 @@ using namespace cv;
 using namespace std;
 using namespace Eigen;
 using namespace pcl;
+
 namespace po = boost::program_options;
 
 
@@ -47,33 +48,36 @@ increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
 		int mult = 3;
 
 		int color = mult * (int) aligned->at(j).r;
-		if (color > 255) color = 255;
-		else if (color < 0) color = 0;
-	
+		if (color > 255)
+			color = 255;
+		else if (color < 0)
+			color = 0;
+
 		aligned->at(j).r = (unsigned char) color;
 
 		color = mult * (int) aligned->at(j).g;
-		if (color > 255) color = 255;
-		else if (color < 0) color = 0;
+		if (color > 255)
+			color = 255;
+		else if (color < 0)
+			color = 0;
 
 		aligned->at(j).g = (unsigned char) color;
 
 		color = mult * (int) aligned->at(j).b;
-		if (color > 255) color = 255;
-		else if (color < 0) color = 0;
+		if (color > 255)
+			color = 255;
+		else if (color < 0)
+			color = 0;
 
 		aligned->at(j).b = (unsigned char) color;
 	}
 	// */
 }
 
-
 void
-colorize(PointCloud<PointXYZRGB>::Ptr cloud, 
-		 Matrix<double, 4, 4> &lidar2cam,
-		 Matrix<double, 3, 4> &projection,
-		 Mat &img,
-		 PointCloud<PointXYZRGB>::Ptr colored)
+colorize(PointCloud<PointXYZRGB>::Ptr cloud, Matrix<double, 4, 4> &lidar2cam,
+					Matrix<double, 3, 4> &projection, Mat &img,
+					PointCloud<PointXYZRGB>::Ptr colored)
 {
 	Mat orig = img.clone();
 	Point ppixel;
@@ -82,7 +86,7 @@ colorize(PointCloud<PointXYZRGB>::Ptr cloud,
 	for (int i = 0; i < cloud->size(); i++)
 	{
 		get_pixel_position(cloud->at(i).x, cloud->at(i).y, cloud->at(i).z,
-					lidar2cam, projection, img, &ppixel, &is_valid);
+												lidar2cam, projection, img, &ppixel, &is_valid);
 
 		if (is_valid)
 		{
@@ -97,10 +101,10 @@ colorize(PointCloud<PointXYZRGB>::Ptr cloud,
 	}
 }
 
-
 #if USE_NEW
 void
-create_map(GridMap &map, char *log_name, NewCarmenDataset *dataset, char path_save_maps[])
+create_map(GridMap &map, char *log_name, NewCarmenDataset *dataset,
+						char path_save_maps[])
 {
 	DataSample *sample;
 	LidarShot *shot;
@@ -111,27 +115,29 @@ create_map(GridMap &map, char *log_name, NewCarmenDataset *dataset, char path_sa
 
 	Mat img;
 	Matrix<double, 4, 4> lidar2car = dataset->vel2car();
-    Matrix<double, 4, 4> lidar2cam = dataset->vel2cam();
+	Matrix<double, 4, 4> lidar2cam = dataset->vel2cam();
 	Matrix<double, 3, 4> projection = dataset->projection_matrix();
 
 	dataset->reset();
 	SemanticSegmentationLoader sloader(log_name);
-	
+
 	Pose2d pose(0, 0, dataset->calib.init_angle);
 	double prev_t = 0;
 
 	while ((sample = dataset->next_data_package()))
-	{		
+	{
 		if (prev_t > 0)
-			ackerman_motion_model(pose, sample->v, sample->phi, sample->image_time - prev_t);
+			ackerman_motion_model(pose, sample->v, sample->phi,
+														sample->image_time - prev_t);
 
 		prev_t = sample->image_time;
 
 		if (fabs(sample->v) < 1.0)
 			continue;
 
-		CarmenLidarLoader loader(sample->velodyne_path.c_str(), sample->n_laser_shots,
-								 dataset->intensity_calibration);
+		CarmenLidarLoader loader(sample->velodyne_path.c_str(),
+															sample->n_laser_shots,
+															dataset->intensity_calibration);
 
 		//while (!loader.done())
 		//{
@@ -144,10 +150,11 @@ create_map(GridMap &map, char *log_name, NewCarmenDataset *dataset, char path_sa
 
 		colored->clear();
 		colorize(cloud, lidar2cam, projection, img, colored);
-		transformPointCloud(*colored, *transformed, (Pose2d::to_matrix(pose) * lidar2car).cast<float>());
+		transformPointCloud(*colored, *transformed,
+												(Pose2d::to_matrix(pose) * lidar2car).cast<float>());
 
 		for (int j = 0; j < transformed->size(); j++)
-            map.add_point(transformed->at(j));
+			map.add_point(transformed->at(j));
 
 		Mat map_img = map.to_image().clone();
 		draw_pose(map, map_img, pose, Scalar(0, 255, 0));
@@ -158,7 +165,6 @@ create_map(GridMap &map, char *log_name, NewCarmenDataset *dataset, char path_sa
 		viewer.loop();
 	}
 }
-
 
 #else
 void
@@ -190,7 +196,7 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 	for (int i = 0; i < dataset.data.size(); i += step)
 	{
 		if (fabs(dataset.data[i].v) < 0.1)
-			continue;
+		continue;
 
 		Pose2d pose = dataset.data[i].pose;
 
@@ -199,13 +205,13 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 		dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, 1, &img_view);
 		//pose.x = pose.y = 0.;
 		//pose.th = normalize_theta(-pose.th - degrees_to_radians(18));
-		
+
 		//double roll, pitch, yaw;
 		//Vector3d euler = dataset.data[i].xsens.toRotationMatrix().eulerAngles(2, 1, 0);
 		//yaw = euler[0]; pitch = euler[1]; roll = euler[2];
 
 		//printf("roll: %lf pitch: %lf yaw: %lf\n",
-			//radians_to_degrees(roll), radians_to_degrees(pitch), radians_to_degrees(yaw));
+		//radians_to_degrees(roll), radians_to_degrees(pitch), radians_to_degrees(yaw));
 
 		//Matrix<double, 4, 4> mat = pose6d_to_matrix(pose.x, pose.y, 0., roll, pitch, pose.th);
 		Matrix<double, 4, 4> mat = pose6d_to_matrix(pose.x, pose.y, 0, 0, 0, pose.th);
@@ -214,7 +220,7 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 		map.reload(pose.x, pose.y);
 
 		for (int j = 0; j < transformed_cloud->size(); j++)
-            map.add_point(transformed_cloud->at(j));
+		map.add_point(transformed_cloud->at(j));
 
 		Mat map_img = map.to_image().clone();
 		draw_pose(map, map_img, pose, Scalar(0, 255, 0));
@@ -227,26 +233,26 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 #if VIEW
 
 		/*
-		rot3d = dataset.data[i].xsens;
-		transf << rot3d(0, 0), rot3d(0, 1), rot3d(0, 2), 0,
-			rot3d(1, 0), rot3d(1, 1), rot3d(1, 2), 0,
-			rot3d(2, 0), rot3d(2, 1), rot3d(2, 2), 0,
-			0, 0, 0, 1;
-		pcl::transformPointCloud(*cloud, *transformed_cloud2, transf);
-		*/
+		 rot3d = dataset.data[i].xsens;
+		 transf << rot3d(0, 0), rot3d(0, 1), rot3d(0, 2), 0,
+		 rot3d(1, 0), rot3d(1, 1), rot3d(1, 2), 0,
+		 rot3d(2, 0), rot3d(2, 1), rot3d(2, 2), 0,
+		 0, 0, 0, 1;
+		 pcl::transformPointCloud(*cloud, *transformed_cloud2, transf);
+		 */
 
 		if (map._map_type == GridMapTile::TYPE_SEMANTIC)
-			colorize_cloud_according_to_segmentation(transformed_cloud);
+		colorize_cloud_according_to_segmentation(transformed_cloud);
 		//increase_bightness(transformed_cloud);
 
-        ///*
+		///*
 		char *cloud_name = (char *) calloc (32, sizeof(char));
 		sprintf(cloud_name, "cloud%d", i);
 
 		//viewer.removeAllPointClouds();
 		//for (int j = 0; j < transformed_cloud->size(); j++)
-		    //transformed_cloud->at(j).z = 0.;
-		
+		//transformed_cloud->at(j).z = 0.;
+
 		viewer.removeAllPointClouds();
 		viewer.addPointCloud(transformed_cloud, cloud_name);
 		//viewer.addPointCloud(transformed_cloud2, "xsens");
@@ -262,7 +268,7 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 		//*/
 
 		//view(pf, map, dataset.data[i].pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi);
-		
+
 		imshow("concat", concat);
 
 		char c = ' ';
@@ -272,145 +278,175 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 			c = waitKey(5);
 
 			if (c == 's')
-				pause_viewer = !pause_viewer;
+			pause_viewer = !pause_viewer;
 			if (!pause_viewer || (pause_viewer && c == 'n'))
 
-				break;
+			break;
 			if (c == 'r')
 			{
 				printf("Reinitializing\n");
 				i = 0;
 			}
 			if (c == 'f')
-				step *= 2;
+			step *= 2;
 			if (c == 'g')
 			{
 				step /= 2;
 				if (step < 1) step = 1;
 			}
-		} 
+		}
 		//*/
-#endif 
+#endif
 
 //		if (i > 500 && i < dataset.data.size() - 1000)
 //			i = dataset.data.size() - 1000;
 	}
-	
+
 	/*
-	for (int i = 0; i < 500; i++)
-	{
-		if (fabs(dataset.data[i].v) < 0.1)
-			continue;
+	 for (int i = 0; i < 500; i++)
+	 {
+	 if (fabs(dataset.data[i].v) < 0.1)
+	 continue;
 
-		Pose2d pose = dataset.data[i].pose;
+	 Pose2d pose = dataset.data[i].pose;
 
-		cloud->clear();
-		transformed_cloud->clear();
-		dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, 1);
-		pcl::transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(pose));
-		
-		for (int j = 0; j < transformed_cloud->size(); j++)
-		    transformed_cloud->at(j).z += .7;
-		
-        viewer.removePointCloud("bola");
-		viewer.addPointCloud(transformed_cloud, "bola");
-        viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 8, "bola");
-        viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.5, 0, "bola");
-        
-        char c = ' ';
-		while (1)
-		{
-			viewer.spinOnce();
-			c = waitKey(5);
+	 cloud->clear();
+	 transformed_cloud->clear();
+	 dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, 1);
+	 pcl::transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(pose));
 
-			if (c == 's')
-				pause_viewer = !pause_viewer;
-			if (!pause_viewer || (pause_viewer && c == 'n'))
+	 for (int j = 0; j < transformed_cloud->size(); j++)
+	 transformed_cloud->at(j).z += .7;
 
-				break;
-			if (c == 'r')
-			{
-				printf("Reinitializing\n");
-				i = 0;
-			}
-			if (c == 'f')
-				step *= 2;
-			if (c == 'g')
-			{
-				step /= 2;
-				if (step < 1) step = 1;
-			}
-		} 
-	}
-	*/
+	 viewer.removePointCloud("bola");
+	 viewer.addPointCloud(transformed_cloud, "bola");
+	 viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 8, "bola");
+	 viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.5, 0, "bola");
+
+	 char c = ' ';
+	 while (1)
+	 {
+	 viewer.spinOnce();
+	 c = waitKey(5);
+
+	 if (c == 's')
+	 pause_viewer = !pause_viewer;
+	 if (!pause_viewer || (pause_viewer && c == 'n'))
+
+	 break;
+	 if (c == 'r')
+	 {
+	 printf("Reinitializing\n");
+	 i = 0;
+	 }
+	 if (c == 'f')
+	 step *= 2;
+	 if (c == 'g')
+	 {
+	 step /= 2;
+	 if (step < 1) step = 1;
+	 }
+	 }
+	 }
+	 */
 
 	//waitKey(-1);
 }
 #endif
 
-int
-main(int argc, char **argv)
-{
-	string map_type;
-	const char *log_path;
-	double resolution;
-	double tile_size;
 
+po::variables_map
+read_command_line_arguments(int argc, char **argv)
+{
 	po::variables_map vm;
 	po::positional_options_description log_path_arg;
-	po::options_description additional_args("Options");
-	
+	po::options_description required_args("Required");
+	po::options_description additional_args("Additional");
+	po::options_description all_args("All Arguments");
+
+	required_args.add_options()("log-path", po::value<string>(), "Path of a log");
 	log_path_arg.add("log-path", -1);
+
 	additional_args.add_options()
-		("help,h", "produce help message")
-		("map_type,mt", po::value<string>(&map_type)->default_value("gaussian"), "Map type: [categorical | gaussian]") 
-		("resolution,r", po::value<double>(&resolution)->default_value(0.2), "Map resolution") 
-		("tile_size,s", po::value<double>(&tile_size)->default_value(50.), "Map tiles size") 
-	;
-	
-	store(po::command_line_parser(argc, argv).options(additional_args).positional(log_path_arg).run(), vm);
+			("help,h", "produce help message")
+			("map_type,mt", po::value<string>()->default_value("gaussian"), "Map type: [categorical | gaussian]")
+			( "resolution,r", po::value<double>()->default_value(0.2), "Map resolution")
+			("tile_size,s", po::value<double>()->default_value(50.), "Map tiles size");
+
+	all_args.add(required_args).add(additional_args);
+
+	store(
+			po::command_line_parser(argc, argv).options(all_args).positional(
+					log_path_arg).run(),
+			vm);
 	notify(vm);
 
 	if (vm.count("log-path") == 0 || vm.count("help"))
 	{
 		cout << "Usage: " << argv[0] << " [options] log-path" << endl;
 		cout << additional_args << endl;
-		//cout << log_path_arg << endl;
+		exit(-1);
 	}
+
+	return vm;
+}
+
+
+int
+main(int argc, char **argv)
+{
+	string map_type;
+	string log_path;
+	double resolution;
+	double tile_size;
+	po::variables_map args;
+
+	args = read_command_line_arguments(argc, argv);
+
+	map_type = args["map_type"].as<string>();
+	resolution = args["resolution"].as<double>();
+	tile_size = args["tile_size"].as<double>();
+	log_path = args["log-path"].as<string>();
+
+	printf("%s\n", map_type.c_str());
+	printf("%s\n", log_path.c_str());
+	printf("%lf\n", resolution);
+	printf("%lf\n", tile_size);
 
 	return 1;
 
 	/*
-	char path_save_maps[256];
-	char dataset_name[256];
-	char map_name[256];
+	 char path_save_maps[256];
+	 char dataset_name[256];
+	 char map_name[256];
 
-	sprintf(dataset_name, "/dados/data/%s", argv[1]);
-	sprintf(map_name, "/dados/maps/map_%s", argv[1]);
-	sprintf(path_save_maps, "/dados/map_imgs/%s", argv[1]);
+	 sprintf(dataset_name, "/dados/data/%s", argv[1]);
+	 sprintf(map_name, "/dados/maps/map_%s", argv[1]);
+	 sprintf(path_save_maps, "/dados/map_imgs/%s", argv[1]);
 
-	char cmd[256];
-	sprintf(cmd, "rm -rf %s && mkdir %s", path_save_maps, path_save_maps);
-	system(cmd);
+	 char cmd[256];
+	 sprintf(cmd, "rm -rf %s && mkdir %s", path_save_maps, path_save_maps);
+	 system(cmd);
 
-	sprintf(cmd, "rm -rf %s && mkdir %s", map_name, map_name);
-	system(cmd);
+	 sprintf(cmd, "rm -rf %s && mkdir %s", map_name, map_name);
+	 system(cmd);
 
-	printf("dataset_name: %s\n", dataset_name);
-	printf("map_name: %s\n", map_name);
-	printf("path to save maps: %s\n", path_save_maps);
-	*/
+	 printf("dataset_name: %s\n", dataset_name);
+	 printf("map_name: %s\n", map_name);
+	 printf("path to save maps: %s\n", path_save_maps);
+	 */
 
 	GridMap map("/tmp", 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
 
 #if USE_NEW	
 
-    vector<char*> splitted_path = string_split(argv[1], "/");
-    char *log_name = splitted_path[splitted_path.size() - 1];
-    char *odom_calib_path = (char *) (string("/dados/data2/data_") + log_name + string("/odom_calib.txt")).c_str();
+	vector<char*> splitted_path = string_split(argv[1], "/");
+	char *log_name = splitted_path[splitted_path.size() - 1];
+	char *odom_calib_path = (char *) (string("/dados/data2/data_") + log_name
+			+ string("/odom_calib.txt")).c_str();
 
 	NewCarmenDataset *dataset;
-    dataset = new NewCarmenDataset(argv[1], odom_calib_path);
+	dataset = new NewCarmenDataset(argv[1], odom_calib_path);
 	create_map(map, argv[1], dataset, "/tmp");
 #else
 	DatasetInterface *dataset = new DatasetCarmen(dataset_name, 0);
@@ -420,5 +456,4 @@ main(int argc, char **argv)
 	printf("Done\n");
 	return 0;
 }
-
 

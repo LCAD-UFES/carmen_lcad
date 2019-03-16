@@ -1,0 +1,5 @@
+log = /media/filipe/Hitachi-Teste/log-jardim-da-penha-mapeamento-20181208.txt
+odom_calib = /dados/data2/data_log-jardim-da-penha-mapeamento-20181208.txt/odom_calib.txt
+fused_odom = /dados/data2/data_log-jardim-da-penha-mapeamento-20181208.txt/fused_odom.txt
+output = /dados/data2/data_log-jardim-da-penha-mapeamento-20181208.txt/loops.txt
+report = /dados/data2/data_log-jardim-da-penha-mapeamento-20181208.txt/loops_report.txt

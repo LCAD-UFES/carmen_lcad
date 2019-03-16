@@ -26,19 +26,10 @@
 #include "g2o/core/optimizable_graph.h"
 
 #include "edge_gps_2D.h"
+#include <carmen/gicp.h>
 
 using namespace std;
 using namespace g2o;
-
-
-class LoopRestriction
-{
-	public:
-		SE2 transform;
-		int converged;
-		int from;
-		int to;
-};
 
 
 class GraphSlamData
@@ -385,7 +376,6 @@ initialize_optimizer()
 void
 GraphSlamData::_load_parameters(char *config)
 {
-
 	FILE *f = safe_fopen(config, "r");
 
 	fscanf(f, "\nlog: %[^\n]\n", _log_file);

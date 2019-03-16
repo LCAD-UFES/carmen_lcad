@@ -1795,6 +1795,8 @@ g2o::SE2 GrabData::GetSE2FromVisoMatrix(const Matrix &matrix)
 // configuration
 void GrabData::Configure(std::string config_filename)
 {
+    std::cout << "Reading cofigure file '" << config_filename << "'" << std::endl;
+
     std::ifstream is(config_filename, std::ifstream::in);
     if (is.good())
     {
@@ -1803,7 +1805,6 @@ void GrabData::Configure(std::string config_filename)
 
         while (-1 != StringHelper::ReadLine(is, ss))
         {
-
             std::string str;
             ss >> str;
 
@@ -1851,36 +1852,36 @@ void GrabData::Configure(std::string config_filename)
             {
                 ss >> StampedOdometry::phiab;
             }
-            else if ("SAVE_ACCUMULATED_POINT_CLOUDS")
+            else if ("SAVE_ACCUMULATED_POINT_CLOUDS" == str)
             {
                 save_accumulated_point_clouds = true;
             }
-            else if ("DISABLE_VELODYNE_ODOMETRY")
+            else if ("DISABLE_VELODYNE_ODOMETRY" == str)
             {
                 std::cout << "Disabling lidar odometry" << std::endl;
                 use_velodyne_odometry = false;
             }
-            else if ("DISABLE_VELODYNE_LOOP")
+            else if ("DISABLE_VELODYNE_LOOP" == str)
             {
                 std::cout << "Disabling lidar loop closures" << std::endl;
                 use_velodyne_loop = false;
             }
-            else if ("DISABLE_SICK_ODOMETRY")
+            else if ("DISABLE_SICK_ODOMETRY" == str)
             {
                 std::cout << "Disabling sick odometry" << std::endl;
                 use_sick_odometry = false;
             }
-            else if ("DISABLE_SICK_LOOP")
+            else if ("DISABLE_SICK_LOOP" == str)
             {
                 std::cout << "Disabling sick loop closures" << std::endl;
                 use_sick_loop = false;
             }
-            else if ("DISABLE_BUMBLEBEE_ODOMETRY")
+            else if ("DISABLE_BUMBLEBEE_ODOMETRY" == str)
             {
                 std::cout << "Disabling visual odometry" << std::endl;
                 use_bumblebee_odometry = false;
             }
-            else if ("DISABLE_BUMBLEBEE_LOOP")
+            else if ("DISABLE_BUMBLEBEE_LOOP" == str)
             {
                 std::cout << "Disabling visual loop closures" << std::endl;
                 use_bumblebee_loop = false;
@@ -2029,7 +2030,6 @@ bool GrabData::ParseLogFile(const std::string &input_filename)
 // parser
 void GrabData::BuildHyperGraph()
 {
-
     if (!raw_messages.empty())
     {
         // sort all the messages by the timestamp
@@ -2058,6 +2058,10 @@ void GrabData::BuildHyperGraph()
         }
 
         // the loop measurement is done after the gps synchronization
+        // For each velodyne message, the method searches for the GPS 
+        // poses with closest timestamp, and computes the velodyne pose
+        // if the car is in the GPS pose. It is a hack for plotting and 
+        // it does not interfere with the hypergraph optimization. 
         BuildLidarOdometryGPSEstimates();
 
         if (use_velodyne_loop) 

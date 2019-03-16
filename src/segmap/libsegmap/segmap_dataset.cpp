@@ -14,7 +14,9 @@
 #include <pcl/visualization/pcl_visualizer.h>
 
 using namespace cv;
+using namespace std;
 using namespace pcl;
+using namespace Eigen;
 
 
 void

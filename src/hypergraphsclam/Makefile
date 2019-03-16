@@ -52,6 +52,10 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libviso2.3/src -lviso
 # the messages library
 #LFLAGS += -L$(CARMEN_HOME)/src/hypergraphsclam/Messages/
 
+# Profile flags
+CXXFLAGS += -pg
+LFLAGS += -pg
+
 SUBDIRS = Helpers/ Messages/ src/ CustomEdges/
 
 SOURCES = 	Helpers/StringHelper.cpp \
