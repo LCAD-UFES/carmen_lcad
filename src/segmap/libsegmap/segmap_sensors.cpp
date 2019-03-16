@@ -133,7 +133,7 @@ CarmenLidarLoader::reset()
 
 
 
-SemanticSegmentationLoader::SemanticSegmentationLoader(char *log_path, char *data_path)
+SemanticSegmentationLoader::SemanticSegmentationLoader(const char *log_path, const char *data_path)
 {
     vector<char*> log_path_splitted = string_split(log_path, "/");
     char *log_name = log_path_splitted[log_path_splitted.size() - 1];

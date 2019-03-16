@@ -60,7 +60,7 @@ protected:
 class SemanticSegmentationLoader
 {
 public:
-    SemanticSegmentationLoader(char *log_path, char *data_path="/dados/data");
+    SemanticSegmentationLoader(const char *log_path, const char *data_path="/dados/data");
     ~SemanticSegmentationLoader();
 
     cv::Mat load(DataSample *sample);

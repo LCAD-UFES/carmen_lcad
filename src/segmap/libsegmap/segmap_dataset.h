@@ -144,9 +144,9 @@ public:
 	static const int SYNC_BY_CAMERA = 0;
 	static const int SYNC_BY_LIDAR = 1;
 	
-	NewCarmenDataset(char *path, char *odom_calib_path,
+	NewCarmenDataset(const char *path, const char *odom_calib_path,
 			int sync_type = SYNC_BY_CAMERA,
-			char *lidar_calib_path = "data/calibration_table.txt");
+			const char *lidar_calib_path = "data/calibration_table.txt");
 
 	~NewCarmenDataset();
 
@@ -185,8 +185,8 @@ protected:
 	std::vector<char*> _camera_queue;
 	std::vector<char*> _velodyne_queue;
 
-	void _load_odometry_calibration(char *path);
-	void _load_intensity_calibration(char *path);
+	void _load_odometry_calibration(const char *path);
+	void _load_intensity_calibration(const char *path);
 	void _clear_synchronization_queues();
 	void _add_message_to_queue(char *data);
 	void _assemble_data_package_from_queues();

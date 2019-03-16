@@ -103,7 +103,7 @@ colorize(PointCloud<PointXYZRGB>::Ptr cloud, Matrix<double, 4, 4> &lidar2cam,
 
 #if USE_NEW
 void
-create_map(GridMap &map, char *log_name, NewCarmenDataset *dataset,
+create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 						char path_save_maps[])
 {
 	DataSample *sample;
@@ -119,7 +119,7 @@ create_map(GridMap &map, char *log_name, NewCarmenDataset *dataset,
 	Matrix<double, 3, 4> projection = dataset->projection_matrix();
 
 	dataset->reset();
-	SemanticSegmentationLoader sloader(log_name);
+	SemanticSegmentationLoader sloader(log_path);
 
 	Pose2d pose(0, 0, dataset->calib.init_angle);
 	double prev_t = 0;
@@ -369,9 +369,10 @@ read_command_line_arguments(int argc, char **argv)
 
 	additional_args.add_options()
 			("help,h", "produce help message")
-			("map_type,mt", po::value<string>()->default_value("gaussian"), "Map type: [categorical | gaussian]")
+			("map_type,t", po::value<string>()->default_value("gaussian"), "Map type: [categorical | gaussian]")
 			( "resolution,r", po::value<double>()->default_value(0.2), "Map resolution")
-			("tile_size,s", po::value<double>()->default_value(50.), "Map tiles size");
+			("tile_size,s", po::value<double>()->default_value(50.), "Map tiles size")
+			("map_path,m", po::value<string>()->default_value("/tmp"), "Path to save the maps");
 
 	all_args.add(required_args).add(additional_args);
 
@@ -395,10 +396,8 @@ read_command_line_arguments(int argc, char **argv)
 int
 main(int argc, char **argv)
 {
-	string map_type;
-	string log_path;
-	double resolution;
-	double tile_size;
+	string map_type, log_path, map_path;
+	double resolution, tile_size;
 	po::variables_map args;
 
 	args = read_command_line_arguments(argc, argv);
@@ -407,13 +406,7 @@ main(int argc, char **argv)
 	resolution = args["resolution"].as<double>();
 	tile_size = args["tile_size"].as<double>();
 	log_path = args["log-path"].as<string>();
-
-	printf("%s\n", map_type.c_str());
-	printf("%s\n", log_path.c_str());
-	printf("%lf\n", resolution);
-	printf("%lf\n", tile_size);
-
-	return 1;
+	map_path = args["map_path"].as<string>();
 
 	/*
 	 char path_save_maps[256];
@@ -436,18 +429,20 @@ main(int argc, char **argv)
 	 printf("path to save maps: %s\n", path_save_maps);
 	 */
 
-	GridMap map("/tmp", 50., 50., 0.2, GridMapTile::TYPE_VISUAL, 1);
+	GridMap map(map_path, tile_size, tile_size, resolution, GridMapTile::TYPE_VISUAL, 1);
 
 #if USE_NEW	
 
-	vector<char*> splitted_path = string_split(argv[1], "/");
+	const char *c_log_path = log_path.c_str();
+	vector<char*> splitted_path = string_split(c_log_path, "/");
 	char *log_name = splitted_path[splitted_path.size() - 1];
-	char *odom_calib_path = (char *) (string("/dados/data2/data_") + log_name
+	const char *odom_calib_path = (string("/dados/data2/data_") + log_name
 			+ string("/odom_calib.txt")).c_str();
 
 	NewCarmenDataset *dataset;
-	dataset = new NewCarmenDataset(argv[1], odom_calib_path);
-	create_map(map, argv[1], dataset, "/tmp");
+	dataset = new NewCarmenDataset(c_log_path, odom_calib_path);
+	create_map(map, c_log_path, dataset, "/tmp");
+
 #else
 	DatasetInterface *dataset = new DatasetCarmen(dataset_name, 0);
 	create_map(map, *dataset, path_save_maps);

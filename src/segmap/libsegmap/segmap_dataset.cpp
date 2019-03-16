@@ -696,7 +696,10 @@ DatasetKitti::load_data()
 }
 
 
-NewCarmenDataset::NewCarmenDataset(char *path, char *odom_calib_path, int sync_type, char *intensity_calib_path)
+NewCarmenDataset::NewCarmenDataset(const char *path,
+																	 const char *odom_calib_path,
+																	 int sync_type,
+																	 const char *intensity_calib_path)
 {
 	_fptr = safe_fopen(path, "r");
 	_sync_type = sync_type;
@@ -794,7 +797,7 @@ NewCarmenDataset::vel2car()
 
 
 void 
-NewCarmenDataset::_load_odometry_calibration(char *path)
+NewCarmenDataset::_load_odometry_calibration(const char *path)
 {
 	vector<char*> splitted = string_split(path, "/");
 	//string odom_calib = "/dados/data2/data_" + string(splitted[splitted.size() - 1]) + "/odom_calib.txt";
@@ -860,7 +863,7 @@ NewCarmenDataset::_free_calibration_table(unsigned char ***table)
 
 
 void
-NewCarmenDataset::_load_intensity_calibration(char *path)
+NewCarmenDataset::_load_intensity_calibration(const char *path)
 {
 	FILE *calibration_file_bin = safe_fopen(path, "r");
 
