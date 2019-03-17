@@ -20,6 +20,7 @@ LFLAGS += `pkg-config --libs opencv` -lsegmap -lopencv_imgcodecs
 LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
 LFLAGS += -L /usr/lib -lvtkIO -lvtkFiltering -lvtkCommon -lvtkRendering -lvtkGraphics
 LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal -lboost_program_options
+LFLAGS += -lsegmap_util
 
 SOURCES = localizer.cpp mapper.cpp test_mapper_mesh.cpp
 

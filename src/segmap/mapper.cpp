@@ -24,6 +24,7 @@
 #include "libsegmap/segmap_dataset.h"
 #include "libsegmap/segmap_viewer.h"
 #include "libsegmap/segmap_sensors.h"
+#include <carmen/segmap_command_line.h>
 
 using namespace cv;
 using namespace std;
@@ -355,44 +356,6 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 #endif
 
 
-po::variables_map
-read_command_line_arguments(int argc, char **argv)
-{
-	po::variables_map vm;
-	po::positional_options_description log_path_arg;
-	po::options_description required_args("Required");
-	po::options_description additional_args("Additional");
-	po::options_description all_args("All Arguments");
-
-	required_args.add_options()("log-path", po::value<string>(), "Path of a log");
-	log_path_arg.add("log-path", -1);
-
-	additional_args.add_options()
-			("help,h", "produce help message")
-			("map_type,t", po::value<string>()->default_value("gaussian"), "Map type: [categorical | gaussian]")
-			( "resolution,r", po::value<double>()->default_value(0.2), "Map resolution")
-			("tile_size,s", po::value<double>()->default_value(50.), "Map tiles size")
-			("map_path,m", po::value<string>()->default_value("/tmp"), "Path to save the maps");
-
-	all_args.add(required_args).add(additional_args);
-
-	store(
-			po::command_line_parser(argc, argv).options(all_args).positional(
-					log_path_arg).run(),
-			vm);
-	notify(vm);
-
-	if (vm.count("log-path") == 0 || vm.count("help"))
-	{
-		cout << "Usage: " << argv[0] << " [options] log-path" << endl;
-		cout << additional_args << endl;
-		exit(-1);
-	}
-
-	return vm;
-}
-
-
 int
 main(int argc, char **argv)
 {
@@ -400,7 +363,15 @@ main(int argc, char **argv)
 	double resolution, tile_size;
 	po::variables_map args;
 
-	args = read_command_line_arguments(argc, argv);
+	CommandLineArguments args_parser;
+
+	args_parser.add_positional<string>("log-path", "Path of a log", 1);
+	args_parser.add<string>("map_type,t", "Map type: [categorical | gaussian]", "gaussian");
+	args_parser.add<double>("resolution,r", "Map resolution", 0.2);
+	args_parser.add<double>("tile_size,s", "Map tiles size", 50);
+	args_parser.add<string>("map_path,m", "Path to save the maps", "/tmp");
+	args_parser.save_config_file("data/mapper_config.txt");
+	args_parser.parse(argc, argv);
 
 	map_type = args["map_type"].as<string>();
 	resolution = args["resolution"].as<double>();
