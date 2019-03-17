@@ -1206,7 +1206,7 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
                 StampedLidarPtr lidar_loop = *next;
 
                 // compute the current distance
-                double distance = (current->gps_sync_estimate.translation() - lidar_loop->gps_sync_estimate.translation()).squaredNorm();
+                double distance = (current->gps_sync_estimate.translation() - lidar_loop->gps_sync_estimate.translation()).norm();
 
                 // the time difference
                 double dt = std::fabs(lidar_loop->timestamp - current->timestamp);
