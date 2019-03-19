@@ -464,7 +464,7 @@ namespace perls
                                     refc_sum = refc_sum + refc; 
                                     #ifdef _DEBUG_
                                       //Plot the 3D points on the image
-                                      if (point.z > -2.0)
+                                      if (point.z > -200.0)
                                       {
                                           CvPoint c0 = cvPoint (cvRound (u), cvRound (v));
                                           cvCircle (debug_dest.image[j], c0, 2, CV_RGB(255-255*point.x/30, 0, 0), -1, 4, 0); //-1, 8, 0);
