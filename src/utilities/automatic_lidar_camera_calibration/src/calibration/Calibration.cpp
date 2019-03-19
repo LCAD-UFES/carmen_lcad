@@ -191,11 +191,11 @@ namespace perls
             }
             
             //generate K matrix
-            this->m_Calib.K[i][0] = focal_length*scale_x;
+            this->m_Calib.K[i][0] = 489.439360; //focal_length*scale_x;
             this->m_Calib.K[i][1] = 0; 
             this->m_Calib.K[i][2] = camera_center_X;
             this->m_Calib.K[i][3] = 0;
-            this->m_Calib.K[i][4] = focal_length*scale_y;
+            this->m_Calib.K[i][4] = 489.436800; //focal_length*scale_y;
             this->m_Calib.K[i][5] = camera_center_Y;
             this->m_Calib.K[i][6] = 0; this->m_Calib.K[i][7] = 0; this->m_Calib.K[i][8] = 1;
             
