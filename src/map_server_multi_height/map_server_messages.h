@@ -24,6 +24,7 @@ typedef carmen_mapper_map_message carmen_map_server_offline_map_message;
 
 #define CARMEN_MAP_SERVER_OFFLINE_MAP_NAME 	"carmen_map_server_offline_map_message"
 #define CARMEN_MAP_SERVER_OFFLINE_MAP_FMT 	CARMEN_MAPPER_MAP_MESSAGE_FMT
+#define CARMEN_MAP_SERVER_OFFLINE_MAP_LEVEL1_NAME 	"carmen_map_server_offline_map_level1_message"
 
 typedef carmen_mapper_map_message carmen_map_server_road_map_message;
 
@@ -79,7 +80,6 @@ typedef struct {
 	double timestamp;
 	char *host;
 } carmen_map_server_localize_map_message;
-
 
 #define CARMEN_MAP_SERVER_LOCALIZE_MAP_NAME		"carmen_map_server_localize_map_name"
 //#define CARMEN_MAP_SERVER_LOCALIZE_MAP_FMT		"{{int, int, double, [byte:64], string, double, double}, int, <double:2>, <double:2>, <double:2>, <double:2>, <double:2>, <double:2>, <short:2>, <short:2>, double, string}"

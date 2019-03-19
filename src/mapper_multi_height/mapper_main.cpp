@@ -431,10 +431,11 @@ offline_map_handler(carmen_map_server_offline_map_message *msg)
 	map_origin.x = msg->config.x_origin;
 	map_origin.y = msg->config.y_origin;
 
-	if (height_level == 1)
-		memset(offline_map.complete_map, 0,  msg->config.x_size * msg->config.y_size * sizeof(double));
-	else
-		memcpy(offline_map.complete_map, msg->complete_map, msg->config.x_size * msg->config.y_size * sizeof(double));
+//	if (height_level == 1)
+//		memset(offline_map.complete_map, 0,  msg->config.x_size * msg->config.y_size * sizeof(double));
+//	else
+//		memcpy(offline_map.complete_map, msg->complete_map, msg->config.x_size * msg->config.y_size * sizeof(double));
+	memcpy(offline_map.complete_map, msg->complete_map, msg->config.x_size * msg->config.y_size * sizeof(double));
 
 	offline_map.config = msg->config;
 
@@ -1196,11 +1197,12 @@ subscribe_to_ipc_messages()
 	switch (height_level)
 	{
 		case 1:
-			carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
+			carmen_map_server_subscribe_offline_map_level1(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
 			break;
 		default:
 			carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
 	}
+//	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	if (!use_truepos) // This flag is for a special kind of operation where the sensor pipeline listen to the globalpos and the planning pipeline to the truepos
 		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) true_pos_message_handler, CARMEN_SUBSCRIBE_LATEST);
