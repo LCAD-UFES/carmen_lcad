@@ -4,7 +4,7 @@ Código para calibração entre câmera e LIDAR. Indicado para ajuste fino, pois
 otimizado. No artigo correspondente, indica-se que é mais efetivo quando as imagens utilizadas possuem muitos objetos próximos.
 Nos testes realizados, mesmo com muitas imagens, o principal erro visível é no pitch, principalmente em objetos no alto.
 
-Vídeo contendo resultados em:
+Vídeo contendo resultados em: https://youtu.be/WYltBETjuuM
 
 Ver adequações necessárias no código original no arquivo modificações.txt. Outras modificações foram feitas ao longo dos testes
 (ver commits no Github).
