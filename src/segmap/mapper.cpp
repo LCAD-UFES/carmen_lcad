@@ -14,7 +14,6 @@
 #include <opencv/highgui.h>
 #include <pcl/common/transforms.h>
 #include <pcl/visualization/pcl_visualizer.h>
-#include <boost/program_options.hpp>
 
 #include "libsegmap/segmap_car_config.h"
 #include "libsegmap/segmap_grid_map.h"
@@ -30,9 +29,6 @@ using namespace cv;
 using namespace std;
 using namespace Eigen;
 using namespace pcl;
-
-namespace po = boost::program_options;
-
 
 #define VIEW 1
 #define USE_NEW 1
@@ -108,7 +104,6 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 						char path_save_maps[])
 {
 	DataSample *sample;
-	LidarShot *shot;
 	PointCloudViewer viewer;
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
@@ -119,19 +114,18 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 	Matrix<double, 4, 4> lidar2cam = dataset->vel2cam();
 	Matrix<double, 3, 4> projection = dataset->projection_matrix();
 
-	dataset->reset();
 	SemanticSegmentationLoader sloader(log_path);
+	Pose2d pose(0, 0, dataset->initial_angle());
 
-	Pose2d pose(0, 0, dataset->calib.init_angle);
-	double prev_t = 0;
-
-	while ((sample = dataset->next_data_package()))
+	for (int i = 0; i < dataset->size(); i++)
 	{
-		if (prev_t > 0)
-			ackerman_motion_model(pose, sample->v, sample->phi,
-														sample->image_time - prev_t);
+		sample = dataset->at(i);
 
-		prev_t = sample->image_time;
+		if (i > 0)
+		{
+			ackerman_motion_model(pose, sample->v, sample->phi,
+														sample->image_time - dataset->at(i - 1)->image_time);
+		}
 
 		if (fabs(sample->v) < 1.0)
 			continue;
@@ -151,8 +145,7 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 
 		colored->clear();
 		colorize(cloud, lidar2cam, projection, img, colored);
-		transformPointCloud(*colored, *transformed,
-												(Pose2d::to_matrix(pose) * lidar2car).cast<float>());
+		transformPointCloud(*colored, *transformed, (Pose2d::to_matrix(pose) * lidar2car).cast<float>());
 
 		for (int j = 0; j < transformed->size(); j++)
 			map.add_point(transformed->at(j));
@@ -373,11 +366,11 @@ main(int argc, char **argv)
 	args_parser.save_config_file("data/mapper_config.txt");
 	args_parser.parse(argc, argv);
 
-	map_type = args["map_type"].as<string>();
-	resolution = args["resolution"].as<double>();
-	tile_size = args["tile_size"].as<double>();
-	log_path = args["log-path"].as<string>();
-	map_path = args["map_path"].as<string>();
+	map_type = args_parser.get<string>("map_type");
+	resolution = args_parser.get<double>("resolution");
+	tile_size = args_parser.get<double>("tile_size");
+	log_path = args_parser.get<string>("log-path");
+	map_path = args_parser.get<string>("map_path");
 
 	/*
 	 char path_save_maps[256];
@@ -404,15 +397,11 @@ main(int argc, char **argv)
 
 #if USE_NEW	
 
-	const char *c_log_path = log_path.c_str();
-	vector<char*> splitted_path = string_split(c_log_path, "/");
-	char *log_name = splitted_path[splitted_path.size() - 1];
-	const char *odom_calib_path = (string("/dados/data2/data_") + log_name
-			+ string("/odom_calib.txt")).c_str();
+	string odom_calib_path = default_odom_calib_path(log_path.c_str());
 
 	NewCarmenDataset *dataset;
-	dataset = new NewCarmenDataset(c_log_path, odom_calib_path);
-	create_map(map, c_log_path, dataset, "/tmp");
+	dataset = new NewCarmenDataset(log_path, odom_calib_path);
+	create_map(map, log_path.c_str(), dataset, "/tmp");
 
 #else
 	DatasetInterface *dataset = new DatasetCarmen(dataset_name, 0);

@@ -78,11 +78,10 @@ CommandLineArguments::_show_help_message_if_necessary(po::variables_map vmap, ch
 	// check if positional arguments are missing
 	for (int i = 0; i < _all_positional_args.size(); i++)
 	{
+		all_args_str = all_args_str + " " + _all_positional_args[i];
+
 		if (vmap.count(_all_positional_args[i]) == 0)
-		{
 			required_args_are_missing = 1;
-			all_args_str = all_args_str + " " + _all_positional_args[i];
-		}
 	}
 
 	if (vmap.count("help") || required_args_are_missing)
@@ -111,22 +110,17 @@ CommandLineArguments::_read_args_from_config_file(po::options_description &confi
 }
 
 
-po::variables_map
+void
 CommandLineArguments::parse(int argc, char **argv)
 {
-	po::variables_map vmap;
 	po::options_description all_options;
-
 	all_options.add(*_positional_args).add(*_additional_args);
 
 	// parse arguments from command line
-	store(po::command_line_parser(argc, argv).options(all_options).positional(*_positional_args_for_parsing).run(), vmap);
-	notify(vmap);
+	store(po::command_line_parser(argc, argv).options(all_options).positional(*_positional_args_for_parsing).run(), _args);
+	notify(_args);
 
-	_read_args_from_config_file(all_options, &vmap);
-	_show_help_message_if_necessary(vmap, argv[0]);
-
-	return vmap;
+	_read_args_from_config_file(all_options, &_args);
+	_show_help_message_if_necessary(_args, argv[0]);
 }
-
 

@@ -4,6 +4,7 @@
 
 #include <opencv/cv.h>
 #include <vector>
+#include <string>
 #include <Eigen/Core>
 #include <pcl/common/transforms.h>
 #include "segmap_pose2d.h"
@@ -115,5 +116,8 @@ char* string_join(std::vector<char*> tokens, char *join_text);
 
 void spherical2cartersian(double v_angle, double h_angle, double radius, 
 						  double *x, double *y, double *z);
+
+std::string file_name_from_path(const char *path);
+std::string default_odom_calib_path(const char *log_path);
 
 #endif
