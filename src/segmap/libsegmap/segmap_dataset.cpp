@@ -711,10 +711,9 @@ NewCarmenDataset::NewCarmenDataset(std::string path,
 
 	intensity_calibration = _allocate_calibration_table();
 
-	_load_log();
 	_load_intensity_calibration(intensity_calib_path);
 	_load_odometry_calibration(odom_calib_path);
-
+	_load_log();
 }
 
 
@@ -1174,11 +1173,6 @@ NewCarmenDataset::_assemble_data_package_from_queues()
 
 	time_field = msg_splitted.size() - 3;
 	ref_time = atof(msg_splitted[time_field]);
-
-	for (int i = 0; i < _odom_messages.size(); i++)
-		printf("%s\n", _odom_messages[i]);
-
-	printf("\n");
 
 	_parse_velodyne(_find_nearest(_velodyne_messages, ref_time), sample, _velodyne_dir);
 	_parse_odom(_find_nearest(_odom_messages, ref_time), sample);

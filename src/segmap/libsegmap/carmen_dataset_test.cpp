@@ -41,7 +41,6 @@ main(int argc, char **argv)
 		printf("odom time: %lf ", data_package->odom_time);
 		printf("xsens time: %lf\n", data_package->xsens_time);
 
-
 		CarmenLidarLoader loader(data_package->velodyne_path.c_str(),
 		                         data_package->n_laser_shots,
 		                         dataset.intensity_calibration);

@@ -78,11 +78,10 @@ CommandLineArguments::_show_help_message_if_necessary(po::variables_map vmap, ch
 	// check if positional arguments are missing
 	for (int i = 0; i < _all_positional_args.size(); i++)
 	{
+		all_args_str = all_args_str + " " + _all_positional_args[i];
+
 		if (vmap.count(_all_positional_args[i]) == 0)
-		{
 			required_args_are_missing = 1;
-			all_args_str = all_args_str + " " + _all_positional_args[i];
-		}
 	}
 
 	if (vmap.count("help") || required_args_are_missing)
