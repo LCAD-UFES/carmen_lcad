@@ -17,7 +17,7 @@ IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/
 LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization
 LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
 LFLAGS += -L /usr/lib -lvtkIO -lvtkFiltering -lvtkCommon -lvtkRendering -lvtkGraphics -lglobal
-LFLAGS += `pkg-config --libs opencv` 
+LFLAGS += `pkg-config --libs opencv` -lsegmap_util -lboost_program_options
 
 SOURCES = segmap_grid_map.cpp segmap_util.cpp segmap_particle_filter.cpp segmap_pose2d.cpp \
 	segmap_dataset.cpp segmap_viewer.cpp carmen_dataset_test.cpp segmap_sensors.cpp
@@ -29,6 +29,6 @@ PUBLIC_BINARIES =
 TARGETS = libsegmap.a carmen_dataset_test
 
 libsegmap.a: segmap_grid_map.o segmap_util.o segmap_particle_filter.o segmap_pose2d.o segmap_dataset.o segmap_viewer.o segmap_sensors.o
-carmen_dataset_test: carmen_dataset_test.o libsegmap.a
+carmen_dataset_test: carmen_dataset_test.o libsegmap.a ../libsegmap_util/lsegmap_util.a
 
 include $(CARMEN_HOME)/src/Makefile.rules

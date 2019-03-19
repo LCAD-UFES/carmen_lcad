@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <cstdio>
+#include <cstdlib>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
@@ -28,10 +30,14 @@ public:
 
 	void save_config_file(std::string path);
 
-	po::variables_map parse(int argc, char **argv);
+	void parse(int argc, char **argv);
+
+	template<class T>
+	T get(const std::string &name) const;
 
 protected:
 
+	po::variables_map _args;
 	po::positional_options_description *_positional_args_for_parsing;
 	po::options_description *_positional_args;
 	po::options_description *_additional_args;
@@ -84,6 +90,16 @@ CommandLineArguments::add_positional(std::string name, std::string description, 
 	_positional_args->add_options()(name.c_str(), po::value<T>(), description.c_str());
 	_positional_args_for_parsing->add(name.c_str(), nmax);
 	_all_positional_args.push_back(name);
+}
+
+
+template<class T> T
+CommandLineArguments::get(const std::string &name) const
+{
+	if (_args.count(name) <= 0)
+		exit(printf("Error: argument '%s' not found.\n", name.c_str()));
+
+	return _args[name.c_str()].as<T>();
 }
 
 

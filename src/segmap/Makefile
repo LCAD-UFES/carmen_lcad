@@ -1,9 +1,9 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 MODULE_NAME = SEG MAP
 MODULE_COMMENT = SLAM using semantic segmentation
 
-SUBDIRS += libsegmap graphslam_fast scripts
+SUBDIRS += libsegmap_util libsegmap graphslam_fast scripts
 
 LINK = g++ 
 
@@ -35,4 +35,4 @@ localizer: localizer.o libsegmap/libsegmap.a
 mapper: mapper.o libsegmap/libsegmap.a
 test_mapper_mesh: test_mapper_mesh.o libsegmap/libsegmap.a
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

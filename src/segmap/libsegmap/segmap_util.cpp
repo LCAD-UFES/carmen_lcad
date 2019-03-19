@@ -442,3 +442,21 @@ spherical2cartersian(double v_angle, double h_angle, double radius,
 	*y = (xy_distance * sin_rot_angle);
 	*z = (radius * sin_vert_angle);
 }
+
+
+std::string
+file_name_from_path(const char *path)
+{
+	vector<char*> splitted = string_split(path, "/");
+	return std::string(splitted[splitted.size() - 1]);
+}
+
+
+std::string
+default_odom_calib_path(const char *log_path)
+{
+	std::string log_name = file_name_from_path(log_path);
+	return (string("/dados/data2/data_") + log_name + string("/odom_calib.txt"));
+}
+
+

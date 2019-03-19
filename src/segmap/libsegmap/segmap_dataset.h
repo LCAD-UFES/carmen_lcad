@@ -142,16 +142,14 @@ class NewCarmenDataset
 public:
 	
 	static const int SYNC_BY_CAMERA = 0;
-	static const int SYNC_BY_LIDAR = 1;
+	static const int SYNC_BY_VELODYNE = 1;
 	
-	NewCarmenDataset(const char *path, const char *odom_calib_path,
-			int sync_type = SYNC_BY_CAMERA,
-			const char *lidar_calib_path = "data/calibration_table.txt");
+	NewCarmenDataset(std::string path,
+	                 std::string odom_calib_path,
+	                 int sync_type = SYNC_BY_CAMERA,
+	                 std::string lidar_calib_path = "data/calibration_table.txt");
 
 	~NewCarmenDataset();
-
-	void reset();
-	DataSample* next_data_package();
 
 	// Returns a matrix to transform from lidar to camera frame.
 	// Points shall be in homogeneous coordinates.
@@ -165,32 +163,46 @@ public:
 	// Returns a matrix to transfrom from lidar to car frame.
 	Eigen::Matrix<double, 4, 4> vel2car();
 
-	OdomCalib calib;
-    unsigned char ***intensity_calibration;
+	unsigned char ***intensity_calibration;
+
+	// Number of messages of the sensor used for synchronization.
+	// For example, if the velodyne is the reference sensor, the method returns
+	// the number of velodyne messages in the log.
+	int size() const;
+
+	// returns the i-th synchronized data package.
+	DataSample* operator[](int i) const;
+	DataSample* at(int i) const;
+
+	double initial_angle() const;
 
 protected:
 
 	static const long _MAX_LINE_LENGTH = (5*4000000);
 
-	std::string _images_path;
-	std::string _velodyne_path;
-	DataSample *_sample;
+	OdomCalib _calib;
+	std::string _images_dir;
+	std::string _velodyne_dir;
+	std::vector<DataSample*> _data;
 	int _sync_type;
 	FILE *_fptr;
 
-	std::vector<char*> _imu_queue;
-	std::vector<char*> _gps_position_queue;
-	std::vector<char*> _gps_orientation_queue;
-	std::vector<char*> _odom_queue;
-	std::vector<char*> _camera_queue;
-	std::vector<char*> _velodyne_queue;
+	std::vector<char*> _imu_messages;
+	std::vector<char*> _gps_position_messages;
+	std::vector<char*> _gps_orientation_messages;
+	std::vector<char*> _odom_messages;
+	std::vector<char*> _camera_messages;
+	std::vector<char*> _velodyne_messages;
 
-	void _load_odometry_calibration(const char *path);
-	void _load_intensity_calibration(const char *path);
+	void _load_log();
+	void _load_odometry_calibration(std::string &path);
+	void _load_intensity_calibration(std::string &path);
+
+	DataSample* _next_data_package();
+	DataSample* _assemble_data_package_from_queues();
+
 	void _clear_synchronization_queues();
 	void _add_message_to_queue(char *data);
-	void _assemble_data_package_from_queues();
-
 	static void _free_queue(std::vector<char*> queue);
 	static std::vector<char*> _find_nearest(std::vector<char*> &queue, double ref_time);
 
