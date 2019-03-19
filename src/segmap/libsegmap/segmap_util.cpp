@@ -371,7 +371,7 @@ safe_fopen(const char *path, const char *mode)
 
 
 vector<char*>
-string_split(char *string, char *delimiters)
+string_split(const char *string, const char *delimiters)
 {
 	char *token;
 	char *copy = new char[strlen(string) + 1];
@@ -394,7 +394,7 @@ string_split(char *string, char *delimiters)
 
 
 char* 
-string_copy(char *str)
+string_copy(const char *str)
 {
 	char *cpy = (char *) calloc (sizeof(char), strlen(str) + 1);
 	strcpy(cpy, str);
@@ -442,3 +442,21 @@ spherical2cartersian(double v_angle, double h_angle, double radius,
 	*y = (xy_distance * sin_rot_angle);
 	*z = (radius * sin_vert_angle);
 }
+
+
+std::string
+file_name_from_path(const char *path)
+{
+	vector<char*> splitted = string_split(path, "/");
+	return std::string(splitted[splitted.size() - 1]);
+}
+
+
+std::string
+default_odom_calib_path(const char *log_path)
+{
+	std::string log_name = file_name_from_path(log_path);
+	return (string("/dados/data2/data_") + log_name + string("/odom_calib.txt"));
+}
+
+

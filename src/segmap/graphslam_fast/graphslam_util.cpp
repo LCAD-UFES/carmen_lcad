@@ -14,7 +14,9 @@
 #include <carmen/segmap_util.h>
 #include "graphslam_util.h"
 
+
 using namespace g2o;
+using namespace std;
 using namespace Eigen;
 
 

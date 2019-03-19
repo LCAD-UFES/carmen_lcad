@@ -11,11 +11,6 @@
 #include <opencv/cv.hpp>
 #include "segmap_util.h"
 
-using namespace std;
-using namespace pcl;
-using namespace cv;
-using namespace Eigen;
-
 
 class OdomCalib
 {
@@ -39,15 +34,15 @@ public:
 	int image_width, image_height;
 	int n_laser_shots;
 
-	Quaterniond xsens;
+	Eigen::Quaterniond xsens;
 	
 	Pose2d pose;
 	Pose2d pose_with_loop_closure;
 	Pose2d pose_registered_to_map;
 	Pose2d gps;
 
-	string velodyne_path;
-	string image_path;
+	std::string velodyne_path;
+	std::string image_path;
 };
 
 
@@ -56,20 +51,20 @@ class DatasetInterface
 public:
 	int image_height;
 	int image_width;
-	vector<DataSample> data;
+	std::vector<DataSample> data;
 	OdomCalib odom_calib;
-	string _path;
+	std::string _path;
 	int _use_segmented;
 
-	virtual Mat load_image(int i) = 0;
-	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi) = 0;
-	void load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi, int view = 0, Mat *output_img_view=0);
+	virtual cv::Mat load_image(int i) = 0;
+	virtual void load_pointcloud(int i, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, double v, double phi) = 0;
+	void load_fused_pointcloud_and_camera(int i, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, double v, double phi, int view = 0, cv::Mat *output_img_view=0);
 
-	virtual Matrix<double, 3, 1> transform_vel2cam(PointXYZRGB &p) = 0;
-	virtual Matrix<double, 4, 4> transform_vel2car() = 0;
+	virtual Eigen::Matrix<double, 3, 1> transform_vel2cam(pcl::PointXYZRGB &p) = 0;
+	virtual Eigen::Matrix<double, 4, 4> transform_vel2car() = 0;
 	virtual void load_data() = 0;
 
-	DatasetInterface(string path, int use_segmented)
+	DatasetInterface(std::string path, int use_segmented)
 	{
 		_path = path;
 		_use_segmented = use_segmented;
@@ -83,25 +78,25 @@ public:
 class DatasetCarmen : public DatasetInterface
 {
 	int _unknown_class;
-	Matrix<double, 3, 4> _vel2cam;
-	Matrix<double, 4, 4> _vel2car;
+	Eigen::Matrix<double, 3, 4> _vel2cam;
+	Eigen::Matrix<double, 4, 4> _vel2car;
 
 	bool _vel2cam_initialized;
 
 	void _init_vel2cam_transform(int image_height, int image_width);
 	void _init_vel2car_transform();
 
-	void _segment_lane_marks(Mat &m, int i);
+	void _segment_lane_marks(cv::Mat &m, int i);
 
 public:
 
-	virtual Mat load_image(int i);
-	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi);
-	virtual Matrix<double, 3, 1> transform_vel2cam(PointXYZRGB &p);
-	virtual Matrix<double, 4, 4> transform_vel2car();
+	virtual cv::Mat load_image(int i);
+	virtual void load_pointcloud(int i, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, double v, double phi);
+	virtual Eigen::Matrix<double, 3, 1> transform_vel2cam(pcl::PointXYZRGB &p);
+	virtual Eigen::Matrix<double, 4, 4> transform_vel2car();
 	virtual void load_data();
 
-	DatasetCarmen(string path, int use_segmented);
+	DatasetCarmen(std::string path, int use_segmented);
 	~DatasetCarmen() {}
 };
 
@@ -111,25 +106,27 @@ class DatasetKitti : public DatasetInterface
 protected:
 	char _name[1024]; // utility attribute for creating file names.
 
-	void _load_oxts(vector<double> &times, vector<vector<double>> &data);
-	void _load_timestamps(vector<double> &times);
+	void _load_oxts(std::vector<double> &times, std::vector<std::vector<double>> &data);
+	void _load_timestamps(std::vector<double> &times);
 
 	// assumes for simplicity that phi is zero.
-	void _estimate_v(vector<Matrix<double, 4, 4>> &poses, vector<double> &ts, vector<pair<double, double>> &odom);
+	void _estimate_v(std::vector<Eigen::Matrix<double, 4, 4>> &poses,
+									 std::vector<double> &ts,
+									 std::vector<std::pair<double, double>> &odom);
 
-	Matrix<double, 3, 4> _vel2cam;
+	Eigen::Matrix<double, 3, 4> _vel2cam;
 	void _init_vel2cam_transform();
 
 public:
-	virtual Mat load_image(int i);
-	virtual void load_pointcloud(int i, PointCloud<PointXYZRGB>::Ptr cloud, double v, double phi);
-	virtual Matrix<double, 3, 1> transform_vel2cam(PointXYZRGB &p);
-	virtual Matrix<double, 4, 4> transform_vel2car();
+	virtual cv::Mat load_image(int i);
+	virtual void load_pointcloud(int i, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, double v, double phi);
+	virtual Eigen::Matrix<double, 3, 1> transform_vel2cam(pcl::PointXYZRGB &p);
+	virtual Eigen::Matrix<double, 4, 4> transform_vel2car();
 
 	// TODO: load odometry biases from file.
 	virtual void load_data();
 
-	DatasetKitti(string path, int use_segmented) :
+	DatasetKitti(std::string path, int use_segmented) :
 		DatasetInterface(path, use_segmented)
 	{
 		load_data();
@@ -145,67 +142,79 @@ class NewCarmenDataset
 public:
 	
 	static const int SYNC_BY_CAMERA = 0;
-	static const int SYNC_BY_LIDAR = 1;
+	static const int SYNC_BY_VELODYNE = 1;
 	
-	NewCarmenDataset(char *path, char *odom_calib_path,
-			int sync_type = SYNC_BY_CAMERA,
-			char *lidar_calib_path = "data/calibration_table.txt");
+	NewCarmenDataset(std::string path,
+	                 std::string odom_calib_path,
+	                 int sync_type = SYNC_BY_CAMERA,
+	                 std::string lidar_calib_path = "data/calibration_table.txt");
 
 	~NewCarmenDataset();
-
-	void reset();
-	DataSample* next_data_package();
 
 	// Returns a matrix to transform from lidar to camera frame.
 	// Points shall be in homogeneous coordinates.
 	// To obtain the pixel positions, multiply the transformed x-coordinate
 	// by the image width, and y-coordinate by the image height.
-	Matrix<double, 4, 4> vel2cam();
+	Eigen::Matrix<double, 4, 4> vel2cam();
 
 	// matrix to project from camera frame to image coordinates.
-	Matrix<double, 3, 4> projection_matrix();
+	Eigen::Matrix<double, 3, 4> projection_matrix();
 
 	// Returns a matrix to transfrom from lidar to car frame.
-	Matrix<double, 4, 4> vel2car();
+	Eigen::Matrix<double, 4, 4> vel2car();
 
-	OdomCalib calib;
-    unsigned char ***intensity_calibration;
+	unsigned char ***intensity_calibration;
+
+	// Number of messages of the sensor used for synchronization.
+	// For example, if the velodyne is the reference sensor, the method returns
+	// the number of velodyne messages in the log.
+	int size() const;
+
+	// returns the i-th synchronized data package.
+	DataSample* operator[](int i) const;
+	DataSample* at(int i) const;
+
+	double initial_angle() const;
 
 protected:
 
 	static const long _MAX_LINE_LENGTH = (5*4000000);
 
-	string _images_path;
-	string _velodyne_path;
-	DataSample *_sample;
+	OdomCalib _calib;
+	std::string _images_dir;
+	std::string _velodyne_dir;
+	std::vector<DataSample*> _data;
 	int _sync_type;
 	FILE *_fptr;
 
-	vector<char*> _imu_queue;
-	vector<char*> _gps_position_queue;
-	vector<char*> _gps_orientation_queue;
-	vector<char*> _odom_queue;
-	vector<char*> _camera_queue;
-	vector<char*> _velodyne_queue;
+	std::vector<char*> _imu_messages;
+	std::vector<char*> _gps_position_messages;
+	std::vector<char*> _gps_orientation_messages;
+	std::vector<char*> _odom_messages;
+	std::vector<char*> _camera_messages;
+	std::vector<char*> _velodyne_messages;
 
-	void _load_odometry_calibration(char *path);
-	void _load_intensity_calibration(char *path);
+	void _load_log();
+	void _load_odometry_calibration(std::string &path);
+	void _load_intensity_calibration(std::string &path);
+
+	DataSample* _next_data_package();
+	DataSample* _assemble_data_package_from_queues();
+
 	void _clear_synchronization_queues();
 	void _add_message_to_queue(char *data);
-	void _assemble_data_package_from_queues();
-
-	static void _free_queue(vector<char*> queue);
-	static vector<char*> _find_nearest(vector<char*> &queue, double ref_time);
+	static void _free_queue(std::vector<char*> queue);
+	static std::vector<char*> _find_nearest(std::vector<char*> &queue, double ref_time);
 
 	static unsigned char*** _allocate_calibration_table();
 	static void _free_calibration_table(unsigned char ***table);
 
-	static void _parse_odom(vector<char*> data, DataSample *sample);
-	static void _parse_imu(vector<char*> data, DataSample *sample);
-	static void _parse_velodyne(vector<char*> data, DataSample *sample, string velodyne_path);
-	static void _parse_camera(vector<char*> data, DataSample *sample, string image_path);
-	static void _parse_gps_position(vector<char*> data, DataSample *sample);
-	static void _parse_gps_orientation(vector<char*> data, DataSample *sample);
+	static void _parse_odom(std::vector<char*> data, DataSample *sample);
+	static void _parse_imu(std::vector<char*> data, DataSample *sample);
+	static void _parse_velodyne(std::vector<char*> data, DataSample *sample, std::string velodyne_path);
+	static void _parse_camera(std::vector<char*> data, DataSample *sample, std::string image_path);
+	static void _parse_gps_position(std::vector<char*> data, DataSample *sample);
+	static void _parse_gps_orientation(std::vector<char*> data, DataSample *sample);
 };
 
 #endif

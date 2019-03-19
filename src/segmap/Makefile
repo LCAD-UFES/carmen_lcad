@@ -1,9 +1,9 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 MODULE_NAME = SEG MAP
 MODULE_COMMENT = SLAM using semantic segmentation
 
-SUBDIRS += libsegmap graphslam_fast scripts
+SUBDIRS += libsegmap_util libsegmap graphslam_fast scripts
 
 LINK = g++ 
 
@@ -20,6 +20,7 @@ LFLAGS += `pkg-config --libs opencv` -lsegmap -lopencv_imgcodecs
 LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
 LFLAGS += -L /usr/lib -lvtkIO -lvtkFiltering -lvtkCommon -lvtkRendering -lvtkGraphics
 LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal -lboost_program_options
+LFLAGS += -lsegmap_util
 
 SOURCES = localizer.cpp mapper.cpp test_mapper_mesh.cpp
 
@@ -34,4 +35,4 @@ localizer: localizer.o libsegmap/libsegmap.a
 mapper: mapper.o libsegmap/libsegmap.a
 test_mapper_mesh: test_mapper_mesh.o libsegmap/libsegmap.a
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

@@ -1,16 +1,39 @@
+
+#include <string>
 #include <unistd.h>
 #include <GrabData.hpp>
+#include <boost/filesystem/operations.hpp>
 
-int main (int argc, char **argv) {
 
-    if (argc != 3) {
+void
+prepare_all_directories()
+{
+    // remove the directory contents recursively, and then removes the directory.
+    boost::filesystem::remove_all("/dados/tmp");
 
+    boost::filesystem::create_directory("/dados/tmp");
+    boost::filesystem::create_directory("/dados/tmp/sick");
+    boost::filesystem::create_directory("/dados/tmp/velodyne");
+    boost::filesystem::create_directory("/dados/tmp/lgm");
+    boost::filesystem::create_directory("/dados/tmp/lgm/sick");
+    boost::filesystem::create_directory("/dados/tmp/lgm/velodyne");
+    boost::filesystem::create_directory("/dados/tmp/images");
+
+    std::cout << "Necessary directories created." << std::endl;
+}
+
+
+int 
+main (int argc, char **argv) 
+{
+    if (argc != 3) 
+    {
         // error
-        std::cout << "Usage: ./parser <log_file> <output_file>";
-
+        std::cout << "Usage: ./parser <log_file> <output_file>" << std::endl;
         return -1;
-
     }
+
+    prepare_all_directories();
 
     // read the input filenames
     std::string input_file(argv[1]);
@@ -29,8 +52,8 @@ int main (int argc, char **argv) {
     gd.Configure(config_filename);
 
     // try to process the log file
-    if (gd.ParseLogFile(input_file)) {
-
+    if (gd.ParseLogFile(input_file)) 
+    {
         // build the hyper graph
         gd.BuildHyperGraph();
 
@@ -39,18 +62,13 @@ int main (int argc, char **argv) {
 
         // save extra info
         gd.SaveEstimates();
-
-    } else {
-
+    } 
+    else 
         std::cout << "Error! Could not parse the log file!\n";
-
-    }
 
     // close everything
     gd.Clear();
-
-    // clearing?
-    std::cout << "Cleared!\n";
+    std::cout << "Done!\n";
 
     return 0;
 
