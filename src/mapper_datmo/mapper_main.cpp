@@ -459,14 +459,6 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 }
 
 
-//typedef struct
-//{
-//    int seg;
-//    double x;
-//    double y;
-//}ray_info;
-
-
 vector<carmen_vector_2D_t> moving_objecst_cells_vector;
 
 
@@ -475,7 +467,6 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 {
 	camera_filter_count[camera_index]++;
 	int filter_datmo_count = 0;
-	cv::Scalar laser_ray_color;
 	int image_width  = camera_data[camera_index].width[image_index];
 	int image_height = camera_data[camera_index].height[image_index];
 	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
@@ -484,11 +475,14 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 	double cv = camera_params[camera_index].cv_factor * image_height;
 	double map_resolution = map_config.resolution;
 	int img_planar_depth = (double) 0.5 * sensor_params->range_max / map_resolution;
-	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
-	cv::Mat img = camera_image_semantic[camera_index];
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
 	int thread_id = omp_get_thread_num();
+
+	carmen_map_p map = get_the_map();
+	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
+	cv::Mat cluster_img = cv::Mat(map->config.x_size, map->config.y_size, CV_8UC3, cv::Scalar(255, 255, 255));
+	cv::Mat img = camera_image_semantic[camera_index];
 
 	vector<image_cartesian> rays;
 
@@ -497,8 +491,8 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 		int scan_index = j * sensor_params->vertical_resolution;
 		double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
 
-		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
-			continue;
+//		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+//			continue;
 
 		// Compute the log odds each ray the log odds is the logarithm of the probability
 		get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
@@ -530,6 +524,8 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 				ray.cartesian_z = 0.0;
 				rays.push_back(ray);
 
+				//printf("%lf O %lf\n", sensor_data->ray_position_in_the_floor[thread_id][i].x, sensor_data->ray_origin_in_the_floor[thread_id][i].x);
+
 				if (verbose >= 2)
 				{
 					int ix = (double) image_x / image_width  * img.cols / 2;
@@ -539,16 +535,21 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 						circle(img, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 						circle(img, cv::Point(ix + img.cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 					}
-					int px = (double) camera_p3d.y() / map_resolution + img_planar_depth;
-					int py = (double) img_planar.rows - 1 - camera_p3d.x() / map_resolution;
-					if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
-						img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 255);
+//					int px = (double) camera_p3d.y() / map_resolution + img_planar_depth;
+//					int py = (double) img_planar.rows - 1 - camera_p3d.x() / map_resolution;
+//					if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
+//						img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 255);
+					int px = (double) (ray.cartesian_x - map_config.x_origin) / map_config.resolution;
+					int py = (double) (ray.cartesian_y - map_config.y_origin) / map_config.resolution;
+					//cluster_img.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(cluster_color[i][0], cluster_color[i][1], cluster_color[i][2]);
+					//printf ("%d %d\n", px, (map_config.y_size - 1 - py));
+					rectangle(cluster_img, cv::Rect(px, (map_config.y_size - 1 - py), 1, 1), cv::Scalar(0, 0, 255), CV_FILLED, 8, 0);
 				}
 			}
 		}
 	}
 
-	vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.5, 5, rays);
+	vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.2, 5, rays);
 
 	for (unsigned int i = 0; i < filtered_points.size(); i++)
 	{
@@ -580,28 +581,31 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 				moving_objecst_cells_vector.push_back(point);
 				filter_datmo_count++;
 
-				if (verbose >= 2)
+				if (verbose >= 2)   // TODO color the clusters on the camera image
 				{
-					int ix = (double) filtered_points[i][j].image_x / image_width  * img.cols / 2;
-					int iy = (double) filtered_points[i][j].image_y / image_height * img.rows;
-					if (ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
-						circle(img, cv::Point(ix, iy), 1, cluster_color[i], 1, 8, 0);
-
-					carmen_map_p mapa = get_the_map();
-					int px = (double) (moving_objecst_cells_vector[i].x - map_config.x_origin) / map_config.resolution;
-					int py = (double) (moving_objecst_cells_vector[i].y - map_config.y_origin) / map_config.resolution;
-					printf("%d %d %d %d\n", img_planar.cols, img_planar.rows, px, py);
-					//if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
-						img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(cluster_color[i][0], cluster_color[i][1], cluster_color[i][2]);
+					int px = (double) (point.x - map_config.x_origin) / map_config.resolution;
+					int py = (double) (point.y - map_config.y_origin) / map_config.resolution;
+					//cluster_img.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(cluster_color[i][0], cluster_color[i][1], cluster_color[i][2]);
+					//printf ("%d %d\n", px, (map_config.y_size - 1 - py));
+					rectangle(cluster_img, cv::Rect(px, (map_config.y_size - 1 - py), 1, 1), cluster_color[i], CV_FILLED, 8, 0);
 				}
 			}
 		}
 	}
 	if (verbose >= 2)
 	{
+		int x = ((sensor_data->ray_origin_in_the_floor[thread_id][1].x  - map_config.x_origin)  / map_config.resolution) - 100;
+		int y = (map_config.y_size - 1 - ((sensor_data->ray_origin_in_the_floor[thread_id][1].y  - map_config.x_origin) / map_config.resolution)) - 100;
+		//printf("%d %d %d %d\n", cluster_img.cols, cluster_img.rows, x, y);
+
+		cv::Mat cimg = cluster_img;
+		if (x >= 0 && x <= cluster_img.cols && y >= 0 && y <= cluster_img.rows)
+			cimg = cluster_img(cv::Rect(x, y, 200, 200));
+		resize(cimg, cimg, cv::Size(0, 0), 3.5, 3.5, cv::INTER_NEAREST);
+
 		imshow("Image Semantic Segmentation", img);
-		resize(img_planar, img_planar, cv::Size(0, 0), 3.5, 3.5, cv::INTER_NEAREST);
-		imshow("Clusters", img_planar);
+		imshow("Clusters", cimg);
+		//cv::waitKey(1);
 		cv_draw_map(moving_objecst_cells_vector);
 	}
 	if (filter_datmo_count)
