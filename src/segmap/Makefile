@@ -3,7 +3,7 @@ include $(CARMEN_HOME)/src/Makefile.conf
 MODULE_NAME = SEG MAP
 MODULE_COMMENT = SLAM using semantic segmentation
 
-SUBDIRS += libsegmap_util libsegmap graphslam_fast scripts
+SUBDIRS += libsegmap_util libsegmap graphslam_fast gicp scripts
 
 LINK = g++ 
 

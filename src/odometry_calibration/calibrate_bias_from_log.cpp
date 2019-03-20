@@ -339,8 +339,8 @@ set_limits(int dim)
 	// v multiplicative bias
 	//limits[0][0] = 0.95; //0.5;
 	//limits[0][1] = 1.05; //1.5;
-	limits[0][0] = 0.9;
-	limits[0][1] = 1.1;
+	limits[0][0] = 1.0;
+	limits[0][1] = 1.01;
 
 	// v additive bias
 	limits[1][0] = -0.00000001;
@@ -383,7 +383,7 @@ main(int argc, char **argv)
 	srand(rand());
 
 	ParticleSwarmOptimization optimizer(
-		fitness, limits, 5, &DataReadFromFile, 1000, 200);
+		fitness, limits, 5, &DataReadFromFile, 100, 100);
 
 	optimizer.Optimize();
 

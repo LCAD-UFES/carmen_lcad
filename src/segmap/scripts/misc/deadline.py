@@ -6,7 +6,7 @@ import numpy as np
 from dateutil import tz
 
 timezone = tz.gettz("America/Tijuana") # Pacific US (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
-deadline = datetime.datetime(2019, 1, 15, 23, 59, 0, tzinfo=timezone)
+deadline = datetime.datetime(2019, 8, 1, 23, 59, 0, tzinfo=timezone)
 
 while True:
     left = deadline - datetime.datetime.now(tz=timezone)

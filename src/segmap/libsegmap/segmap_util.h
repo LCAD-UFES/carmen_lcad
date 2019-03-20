@@ -119,5 +119,6 @@ void spherical2cartersian(double v_angle, double h_angle, double radius,
 
 std::string file_name_from_path(const char *path);
 std::string default_odom_calib_path(const char *log_path);
+std::string default_fused_odom_path(const char *log_path);
 
 #endif

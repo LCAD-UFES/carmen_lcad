@@ -1,7 +1,7 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
-MODULE_NAME = GRAPHSLAM_FAST_PACKAGE
-MODULE_COMMENT = New Version of GraphSLAM for faster processing
+MODULE_NAME = SEGMAP GICP
+MODULE_COMMENT = Library and programs for running registration using GICP.
 
 LINK = g++ 
 
@@ -37,7 +37,7 @@ LFLAGS += -lvtkCommon -lvtkFiltering -lvtkRendering -lpcl_common -lpcl_surface -
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter -lprob_models -lrotation_geometry
 LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp -lvtkGraphics -lsegmap 
-LFLAGS += `pkg-config --libs opencv` -lboost_system -lsegmap -lsegmap_util
+LFLAGS += `pkg-config --libs opencv` -lboost_system -lsegmap -lsegmap_util -lboost_program_options
 
 IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
 LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization

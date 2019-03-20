@@ -48,7 +48,7 @@ public:
 	PointCloudViewer(float point_size = 1, float back_red = 0.5, float back_green = 0.5, float back_blue = 0.5);
 	~PointCloudViewer();
 
-	void show(PointCloud<PointXYZRGB>::Ptr cloud);
+	void show(PointCloud<PointXYZRGB>::Ptr cloud, double r = -1., double g = -1., double b = -1.);
 	void show(Mat &img, char *name, int resize_to_width=-1);
 	void loop();
 	void clear();

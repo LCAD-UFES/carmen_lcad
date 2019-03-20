@@ -19,8 +19,9 @@ main(int argc, char **argv)
 
 	string log_path = args.get<string>("log");
 	string odom_calib_path = default_odom_calib_path(log_path.c_str());
+	string fused_odom_path = default_fused_odom_path(log_path.c_str());
 
-	NewCarmenDataset dataset(log_path, odom_calib_path);
+	NewCarmenDataset dataset(log_path, odom_calib_path, fused_odom_path);
 
 	DataSample* data_package;
 	Pose2d gps0;
@@ -39,7 +40,8 @@ main(int argc, char **argv)
 		printf("image time: %lf ", data_package->image_time);
 		printf("velodyne time: %lf ", data_package->velodyne_time);
 		printf("odom time: %lf ", data_package->odom_time);
-		printf("xsens time: %lf\n", data_package->xsens_time);
+		printf("xsens time: %lf ", data_package->xsens_time);
+		printf("fused odom: %lf %lf %lf\n", data_package->pose.x, data_package->pose.y, data_package->pose.th);
 
 		CarmenLidarLoader loader(data_package->velodyne_path.c_str(),
 		                         data_package->n_laser_shots,

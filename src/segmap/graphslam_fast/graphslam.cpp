@@ -51,6 +51,7 @@ public:
 
 	double gps_xy_std, gps_angle_std;
 	double odom_xy_std, odom_angle_std;
+	double loop_xy_std, loop_angle_std;
 	int n_iterations;
 
 protected:
@@ -68,24 +69,32 @@ read_loop_restrictions(string &filename, vector<LoopRestriction> *loop_data)
 	FILE *f;
 	double x, y, theta;
 
-	f = safe_fopen(filename.c_str(), "r");
+	if (filename.size() <= 0)
+		return;
 
-	while(!feof(f))
+	f = fopen(filename.c_str(), "r");
+
+	if (f != NULL)
 	{
-		LoopRestriction l;
-
-		n = fscanf(f, "%d %d %d %lf %lf %lf\n",
-		           &l.from, &l.to, &l.converged, &x, &y, &theta
-		);
-
-		if (n == 6)
+		while(!feof(f))
 		{
-			l.transform = SE2(x, y, theta);
-			loop_data->push_back(l);
-		}
-	}
+			LoopRestriction l;
 
-	fclose(f);
+			n = fscanf(f, "%d %d %d %lf %lf %lf\n",
+								 &l.from, &l.to, &l.converged, &x, &y, &theta
+			);
+
+			if (n == 6)
+			{
+				l.transform = SE2(x, y, theta);
+				loop_data->push_back(l);
+			}
+		}
+
+		fclose(f);
+	}
+	else
+		fprintf(stderr, "Warning: ignoring loop closure file '%s'\n", filename.c_str());
 }
 
 
@@ -139,7 +148,16 @@ add_odometry_edges(SparseOptimizer *optimizer, vector<SE2> &dead_reckoning, doub
 
 	for (size_t i = 1; i < dead_reckoning.size(); i++)
 	{
-		SE2 measure = dead_reckoning[i - 1].inverse() * dead_reckoning[i];
+		SE2 prev_inv = dead_reckoning[i - 1].inverse();
+		SE2 measure = prev_inv * dead_reckoning[i];
+		SE2 t1 = dead_reckoning[i - 1] * measure;
+		SE2 t2 = prev_inv.inverse();
+
+		printf("i: %lf %lf %lf prev_inv: %lf %lf %lf measure: %lf %lf %lf\n",
+					 dead_reckoning[i][0],dead_reckoning[i][1], dead_reckoning[i][2],
+					 prev_inv[0], prev_inv[1],prev_inv[2],
+					 measure[0], measure[1], measure[2]);
+
 		EdgeSE2* edge = new EdgeSE2;
 		edge->vertices()[0] = optimizer->vertex(i - 1);
 		edge->vertices()[1] = optimizer->vertex(i);
@@ -173,7 +191,7 @@ compute_angle_from_gps(GraphSlamData &data, int i,
 		// when the car velocity is high enough.
 		if (i > 0 && fabs(sample->v) >= min_velocity_for_estimating_heading)
 		{
-			DataSample *prev = data.dataset->at(i);
+			DataSample *prev = data.dataset->at(i - 1);
 			*angle = atan2(sample->gps.y - prev->gps.y, sample->gps.x - prev->gps.x);
 			*filtered_th_std = th_std;
 		}
@@ -220,6 +238,10 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
 		SE2 measure(sample->gps.x - gps0.x,
 		            sample->gps.y - gps0.y,
 		            angle);
+
+		printf("GPS: measure: %lf %lf %lf x_std: %lf th_std: %lf\n",
+					 measure[0], measure[1], angle,
+					 xy_std, filtered_th_std);
 
 		EdgeGPS *edge_gps = new EdgeGPS;
 		edge_gps->vertices()[0] = optimizer->vertex(i);
@@ -288,7 +310,7 @@ create_dead_reckoning(GraphSlamData &data, vector<SE2> &dead_reckoning)
 
 		dt = sample->image_time - data.dataset->at(i - 1)->image_time;
 		ackerman_motion_model(pose, sample->v, sample->phi, dt);
-		//printf("dt: %lf v: %lf phi: %lf x: %lf y: %lf\n", dt, sample->v, sample->phi, pose.x, pose.y);
+		printf("Dead reckoning: %d dt: %lf v: %lf phi: %lf x: %lf y: %lf\n", i, dt, sample->v, sample->phi, pose.x, pose.y);
 		dead_reckoning.push_back(SE2(pose.x, pose.y, pose.th));
 
 	}
@@ -310,8 +332,8 @@ load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer)
 	//add_gps_gicp_edges(gicp_gps, optimizer, 0.01, deg2rad(0.1));
 	//else
 	add_gps_edges(data, optimizer, data.gps_xy_std, deg2rad(data.gps_angle_std));
+	add_loop_closure_edges(data.loop_data, optimizer, data.loop_xy_std, carmen_degrees_to_radians(data.loop_angle_std));
 
-	//add_loop_closure_edges(loop_data, optimizer, 0.3, carmen_degrees_to_radians(3.));
 	//add_loop_closure_edges(gicp_odom_data, optimizer, 0.5, carmen_degrees_to_radians(3.));
 	//add_gps_loop_closures(optimizer, input_data, 1.0, M_PI);
 
@@ -392,36 +414,38 @@ initialize_optimizer()
 
 
 void
-load_parameters(int argc, char **argv, GraphSlamData *data)
+load_parameters(int argc, char **argv, 	CommandLineArguments *args, GraphSlamData *data)
 {
-	CommandLineArguments args;
+	args->add_positional<string>("log", "Path to a log", 1);
+	args->add_positional<string>("output", "Path to the output file", 1);
+	args->add<string>("odom_calib,o", "Path to the odometry calibration file", "none");
+	args->add<string>("loops,l", "Path to a file with loop closure relations", "none");
+	args->add<string>("gicp_odom", "Path to a file with odometry relations generated with GICP", "none");
+	args->add<string>("gicp_to_map", "Path to a file with poses given by registration to an a priori map", "none");
+	args->add<double>("odom_xy_std", "Std in xy of odometry-based movement estimations (m)", 0.02);
+	args->add<double>("gps_xy_std", "Std in xy of gps measurements (m)", 10.0);
+	args->add<double>("loop_xy_std", "Std in xy of loop closure measurements (m)", 0.3);
+	args->add<double>("odom_angle", "Std of heading of odometry-based movement estimations (degrees)", 0.5);
+	args->add<double>("gps_angle", "Std of heading estimated using consecutive gps measurements when the car is moving (degrees)", 10);
+	args->add<double>("loop_angle", "Std of heading in loop closure measurements (degrees)", 3);
+	args->add<int>("n_iterations,n", "Number of optimization terations", 20);
 
-	args.add_positional<string>("log", "Path to a log");
-	args.add_positional<string>("output", "Path to the output file");
-	args.add<string>("odom_calib,c", "Path to the odometry calibration file", "");
-	args.add<string>("loops,l", "Path to a file with loop closure relations", "");
-	args.add<string>("gicp_odom", "Path to a file with odometry relations generated with GICP", "");
-	args.add<string>("gicp_to_map", "Path to a file with poses given by registration to an a priori map", "");
-	args.add<double>("odom_xy_std,o", "Std in xy of odometry-based movement estimations (m)", 0.02);
-	args.add<double>("gps_xy_std,g", "Std in xy of gps measurements (m)", 10.0);
-	args.add<double>("odom_angle,a", "Std of heading of odometry-based movement estimations (degrees)", 0.5);
-	args.add<double>("gps_angle,h", "Std of heading estimated using consecutive gps measurements when the car is moving (degrees)", 10);
-	args.add<int>("n_iterations,n", "Number of optimization terations", 20);
+	args->save_config_file("data/graphslam_config.txt");
+	args->parse(argc, argv);
 
-	args.save_config_file("../data/graphslam_config.txt");
-	args.parse(argc, argv);
-
-	data->log_file = args.get<string>("log");
-	data->output_file = args.get<string>("output");
-	data->odom_calib_file = args.get<string>("odom_calib");
-	data->loop_closure_file = args.get<string>("loops");
-	data->gicp_odom_file = args.get<string>("gicp_odom");
-	data->gicp_map_file = args.get<string>("gicp_to_map");
-	data->odom_xy_std = args.get<double>("odom_xy_std");
-	data->gps_xy_std = args.get<double>("gps_xy_std");
-	data->odom_angle_std = args.get<double>("odom_angle");
-	data->gps_angle_std = args.get<double>("gps_angle");
-	data->n_iterations = args.get<int>("n_iterations");
+	data->log_file = args->get<string>("log");
+	data->output_file = args->get<string>("output");
+	data->odom_calib_file = args->get<string>("odom_calib");
+	data->loop_closure_file = args->get<string>("loops");
+	data->gicp_odom_file = args->get<string>("gicp_odom");
+	data->gicp_map_file = args->get<string>("gicp_to_map");
+	data->odom_xy_std = args->get<double>("odom_xy_std");
+	data->gps_xy_std = args->get<double>("gps_xy_std");
+	data->loop_xy_std = args->get<double>("loop_xy_std");
+	data->odom_angle_std = args->get<double>("odom_angle");
+	data->gps_angle_std = args->get<double>("gps_angle");
+	data->loop_angle_std = args->get<double>("loop_angle");
+	data->n_iterations = args->get<int>("n_iterations");
 }
 
 
@@ -431,8 +455,9 @@ int main(int argc, char **argv)
 	srand(time(NULL));
 	SparseOptimizer* optimizer;
 
-	load_parameters(argc, argv, &data);
-	data.dataset = new NewCarmenDataset(data.log_file, data.odom_calib_file, NewCarmenDataset::SYNC_BY_VELODYNE);
+	CommandLineArguments args;
+	load_parameters(argc, argv, &args, &data);
+	data.dataset = new NewCarmenDataset(data.log_file, data.odom_calib_file);
 	read_loop_restrictions(data.loop_closure_file, &data.loop_data);
 	read_loop_restrictions(data.gicp_odom_file, &data.gicp_odom_data);
 	read_loop_restrictions(data.gicp_map_file, &data.gicp_gps);
@@ -448,7 +473,7 @@ int main(int argc, char **argv)
 
 	optimizer->setVerbose(true);
 	prepare_optimization(optimizer);
-	optimizer->optimize(20);
+	optimizer->optimize(args.get<int>("n_iterations"));
 	cerr << "OptimizationDone!" << endl;
 
 	// output

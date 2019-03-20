@@ -145,7 +145,8 @@ public:
 	static const int SYNC_BY_VELODYNE = 1;
 	
 	NewCarmenDataset(std::string path,
-	                 std::string odom_calib_path,
+	                 std::string odom_calib_path = "",
+									 std::string fused_odom_path = "",
 	                 int sync_type = SYNC_BY_CAMERA,
 	                 std::string lidar_calib_path = "data/calibration_table.txt");
 
@@ -180,12 +181,13 @@ protected:
 
 	static const long _MAX_LINE_LENGTH = (5*4000000);
 
-	OdomCalib _calib;
 	std::string _images_dir;
 	std::string _velodyne_dir;
-	std::vector<DataSample*> _data;
+
 	int _sync_type;
-	FILE *_fptr;
+	OdomCalib _calib;
+	std::vector<DataSample*> _data;
+	std::vector<Pose2d> _fused_odom;
 
 	std::vector<char*> _imu_messages;
 	std::vector<char*> _gps_position_messages;
@@ -194,11 +196,13 @@ protected:
 	std::vector<char*> _camera_messages;
 	std::vector<char*> _velodyne_messages;
 
-	void _load_log();
+	void _load_log(std::string &path);
 	void _load_odometry_calibration(std::string &path);
 	void _load_intensity_calibration(std::string &path);
+	void _load_poses(std::string &path, std::vector<Pose2d> *poses);
+	void _update_data_with_poses();
 
-	DataSample* _next_data_package();
+	DataSample* _next_data_package(FILE *fptr);
 	DataSample* _assemble_data_package_from_queues();
 
 	void _clear_synchronization_queues();

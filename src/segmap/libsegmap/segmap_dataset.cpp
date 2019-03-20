@@ -699,11 +699,10 @@ DatasetKitti::load_data()
 
 NewCarmenDataset::NewCarmenDataset(std::string path,
                                    std::string odom_calib_path,
+																	 std::string fused_odom_path,
                                    int sync_type,
                                    std::string intensity_calib_path)
 {
-	printf("Loading log '%s'\n", path.c_str());
-	_fptr = safe_fopen(path.c_str(), "r");
 	_sync_type = sync_type;
 
 	_velodyne_dir = string(path) + "_velodyne";
@@ -713,7 +712,12 @@ NewCarmenDataset::NewCarmenDataset(std::string path,
 
 	_load_intensity_calibration(intensity_calib_path);
 	_load_odometry_calibration(odom_calib_path);
-	_load_log();
+
+	// reading the log requires odom calibration data.
+	_load_log(path);
+
+	_load_poses(fused_odom_path, &_fused_odom);
+	_update_data_with_poses();
 }
 
 
@@ -723,8 +727,6 @@ NewCarmenDataset::~NewCarmenDataset()
 
 	for (int i = 0; i < _data.size(); i++)
 		delete(_data[i]);
-
-	fclose(_fptr);
 }
 
 
@@ -828,14 +830,18 @@ NewCarmenDataset::vel2car()
 
 
 void
-NewCarmenDataset::_load_log()
+NewCarmenDataset::_load_log(std::string &path)
 {
+	printf("Loading log '%s'\n", path.c_str());
+	FILE *fptr = safe_fopen(path.c_str(), "r");
+
 	DataSample *sample;
 
-	while ((sample = _next_data_package()))
+	while ((sample = _next_data_package(fptr)))
 		_data.push_back(sample);
 
 	_clear_synchronization_queues();
+	fclose(fptr);
 }
 
 
@@ -843,29 +849,32 @@ void
 NewCarmenDataset::_load_odometry_calibration(std::string &path)
 {
 	printf("Loading odometry calibration '%s'\n", path.c_str());
-	vector<char*> splitted = string_split(path.c_str(), "/");
-	//string odom_calib = "/dados/data2/data_" + string(splitted[splitted.size() - 1]) + "/odom_calib.txt";
-	string odom_calib = path;
 
-	FILE *f = fopen(odom_calib.c_str(), "r");
+	int success = false;
 
-	if (f != NULL)
+	if (path.size() > 0)
 	{
-		int n = fscanf(f, "bias v: %lf %lf bias phi: %lf %lf Initial Angle: %lf",
-		               &_calib.mult_v,
-		               &_calib.add_v,
-		               &_calib.mult_phi,
-		               &_calib.add_phi,
-		               &_calib.init_angle);
+		FILE *f = fopen(path.c_str(), "r");
 
-		if (n != 5)
-			exit(printf("Failed to read odometry calibration data from file '%s'.\n", odom_calib.c_str()));
+		if (f != NULL)
+		{
+			int n = fscanf(f, "bias v: %lf %lf bias phi: %lf %lf Initial Angle: %lf",
+										 &_calib.mult_v,
+										 &_calib.add_v,
+										 &_calib.mult_phi,
+										 &_calib.add_phi,
+										 &_calib.init_angle);
 
-		fclose(f);
+			if (n == 5)
+				success = true;
+
+			fclose(f);
+		}
 	}
-	else
+
+	if (!success)
 	{
-		printf("Warning: odometry calibration file not found. Assuming default values.\n");
+		fprintf(stderr, "Warning: fail to load odometry calibration from '%s'. Assuming default values.\n", path.c_str());
 
 		_calib.mult_phi = _calib.mult_v = 1.0;
 		_calib.add_phi = _calib.add_v = 0.;
@@ -873,7 +882,66 @@ NewCarmenDataset::_load_odometry_calibration(std::string &path)
 	}
 
 	printf("Odom calibration: bias v: %lf %lf bias phi: %lf %lf\n", 
-	       _calib.mult_v, _calib.add_v, _calib.mult_phi, _calib.add_phi);
+				 _calib.mult_v, _calib.add_v, _calib.mult_phi, _calib.add_phi);
+}
+
+
+void
+NewCarmenDataset::_load_poses(std::string &path, std::vector<Pose2d> *poses)
+{
+	bool success = false;
+	char dummy[64];
+
+	printf("Loading poses from '%s'\n", path.c_str());
+
+	if (path.size() > 0)
+	{
+		FILE *f = fopen(path.c_str(), "r");
+
+		if (f != NULL)
+		{
+			while (!feof(f))
+			{
+				Pose2d pose;
+
+				fscanf(f, "\n%s %lf %lf %lf %s %s %s\n",
+							 dummy, &pose.x, &pose.y, &pose.th,
+							 dummy, dummy, dummy);
+
+				//printf("%lf %lf %lf\n", pose.x, pose.y, pose.th);
+				poses->push_back(pose);
+			}
+
+			if (poses->size() == size())
+				success = 1;
+			else
+				fprintf(stderr, "Warning: number of poses %ld is different from log size %d\n",
+								poses->size(), size());
+
+			fclose(f);
+		}
+		else
+		{
+			fprintf(stderr, "Warning: failed to open file '%s'\n", path.c_str());
+		}
+	}
+
+	if (!success)
+	{
+		fprintf(stderr, "Warning: failed to load poses from '%s'. Returning default values.\n", path.c_str());
+		poses->clear();
+	}
+}
+
+
+void
+NewCarmenDataset::_update_data_with_poses()
+{
+	for (int i = 0; i < size(); i++)
+	{
+		if (i < _fused_odom.size()) at(i)->pose = _fused_odom[i];
+		else at(i)->pose = Pose2d(0, 0, 0);
+	}
 }
 
 
@@ -1121,7 +1189,7 @@ NewCarmenDataset::_parse_gps_orientation(vector<char*> data, DataSample *sample)
 
 
 DataSample*
-NewCarmenDataset::_next_data_package()
+NewCarmenDataset::_next_data_package(FILE *fptr)
 {
 	int all_sensors_were_received;
 	static char _line[_MAX_LINE_LENGTH];
@@ -1131,10 +1199,10 @@ NewCarmenDataset::_next_data_package()
 
 	while (!all_sensors_were_received)
 	{
-		if (feof(_fptr))
+		if (feof(fptr))
 			break;
 
-		fscanf(_fptr, "\n%[^\n]\n", _line);
+		fscanf(fptr, "\n%[^\n]\n", _line);
 		_add_message_to_queue(_line);
 
 		if ((_velodyne_messages.size() > 0) && (_imu_messages.size() > 0) &&

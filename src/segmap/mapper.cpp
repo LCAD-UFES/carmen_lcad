@@ -33,6 +33,26 @@ using namespace pcl;
 #define VIEW 1
 #define USE_NEW 1
 
+
+PointCloud<PointXYZRGB>::Ptr
+filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
+{
+	PointCloud<PointXYZRGB>::Ptr cloud = PointCloud<PointXYZRGB>::Ptr(new PointCloud<PointXYZRGB>);
+	cloud->clear();
+
+	for (int i = 0; i < raw_cloud->size(); i++)
+	{
+		if ((fabs(raw_cloud->at(i).x) > 6.0 || fabs(raw_cloud->at(i).y) > 3.0) // remove rays that hit car
+		    && raw_cloud->at(i).x < 70.0  // remove max range
+		    && raw_cloud->at(i).z < -0.  // remove tree tops
+		     )
+			cloud->push_back(raw_cloud->at(i));
+	}
+
+	return cloud;
+}
+
+
 void
 increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
 {
@@ -71,6 +91,7 @@ increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
 	// */
 }
 
+
 void
 colorize(PointCloud<PointXYZRGB>::Ptr cloud, Matrix<double, 4, 4> &lidar2cam,
 					Matrix<double, 3, 4> &projection, Mat &img,
@@ -98,6 +119,7 @@ colorize(PointCloud<PointXYZRGB>::Ptr cloud, Matrix<double, 4, 4> &lidar2cam,
 	}
 }
 
+
 #if USE_NEW
 void
 create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
@@ -115,17 +137,11 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 	Matrix<double, 3, 4> projection = dataset->projection_matrix();
 
 	SemanticSegmentationLoader sloader(log_path);
-	Pose2d pose(0, 0, dataset->initial_angle());
+	Pose2d p0 = dataset->at(0)->pose;
 
 	for (int i = 0; i < dataset->size(); i++)
 	{
 		sample = dataset->at(i);
-
-		if (i > 0)
-		{
-			ackerman_motion_model(pose, sample->v, sample->phi,
-														sample->image_time - dataset->at(i - 1)->image_time);
-		}
 
 		if (fabs(sample->v) < 1.0)
 			continue;
@@ -134,19 +150,22 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 															sample->n_laser_shots,
 															dataset->intensity_calibration);
 
-		//while (!loader.done())
-		//{
-		//	shot = loader.next();
-		//}
+		Pose2d pose = sample->pose;
+		pose.x -= p0.x;
+		pose.y -= p0.y;
 
 		load_as_pointcloud(&loader, cloud);
-		//img = load_image(sample);
-		img = sloader.load(sample);
+		cloud = filter_pointcloud(cloud);
+
+		img = load_image(sample);
+		//img = sloader.load(sample);
 
 		colored->clear();
 		colorize(cloud, lidar2cam, projection, img, colored);
+
 		transformPointCloud(*colored, *transformed, (Pose2d::to_matrix(pose) * lidar2car).cast<float>());
 
+		map.reload(pose.x, pose.y);
 		for (int j = 0; j < transformed->size(); j++)
 			map.add_point(transformed->at(j));
 
@@ -358,7 +377,7 @@ main(int argc, char **argv)
 
 	CommandLineArguments args_parser;
 
-	args_parser.add_positional<string>("log-path", "Path of a log", 1);
+	args_parser.add_positional<string>("log_path", "Path of a log", 1);
 	args_parser.add<string>("map_type,t", "Map type: [categorical | gaussian]", "gaussian");
 	args_parser.add<double>("resolution,r", "Map resolution", 0.2);
 	args_parser.add<double>("tile_size,s", "Map tiles size", 50);
@@ -369,8 +388,12 @@ main(int argc, char **argv)
 	map_type = args_parser.get<string>("map_type");
 	resolution = args_parser.get<double>("resolution");
 	tile_size = args_parser.get<double>("tile_size");
-	log_path = args_parser.get<string>("log-path");
+	log_path = args_parser.get<string>("log_path");
 	map_path = args_parser.get<string>("map_path");
+
+	printf("map path: %s\n", map_path.c_str());
+	printf("tile size: %lf\n", tile_size);
+	printf("resolution: %lf\n", resolution);
 
 	/*
 	 char path_save_maps[256];
@@ -398,9 +421,10 @@ main(int argc, char **argv)
 #if USE_NEW	
 
 	string odom_calib_path = default_odom_calib_path(log_path.c_str());
+	string fused_odom_path = default_fused_odom_path(log_path.c_str());
 
 	NewCarmenDataset *dataset;
-	dataset = new NewCarmenDataset(log_path, odom_calib_path);
+	dataset = new NewCarmenDataset(log_path, odom_calib_path, fused_odom_path);
 	create_map(map, log_path.c_str(), dataset, "/tmp");
 
 #else

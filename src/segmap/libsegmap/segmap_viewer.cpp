@@ -247,7 +247,7 @@ PointCloudViewer::~PointCloudViewer()
 
 
 void 
-PointCloudViewer::show(PointCloud<PointXYZRGB>::Ptr cloud)
+PointCloudViewer::show(PointCloud<PointXYZRGB>::Ptr cloud, double r, double g, double b)
 {
 	char cloud_name[64];
 
@@ -263,6 +263,9 @@ PointCloudViewer::show(PointCloud<PointXYZRGB>::Ptr cloud)
 
 	_cloud_viewer->addPointCloud(cloud, cloud_name);
 	_cloud_viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, _point_size, cloud_name);
+
+	if (r >= 0 && g >= 0 && b >= 0)
+		_cloud_viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cloud_name);
 }
 
 
