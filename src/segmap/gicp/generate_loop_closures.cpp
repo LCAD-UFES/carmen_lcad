@@ -205,7 +205,7 @@ add_arguments_for_parsing(CommandLineArguments *args)
 {
 	args->add_positional<string>("log_path", "Path of a log", 1);
 	args->add_positional<string>("output", "Path of the output file", 1);
-	args->add<double>("voxel_size,x", "Size of voxels in voxel grid filter", 0.2);
+	args->add<double>("voxel_size,x", "Size of voxels in voxel grid filter", 0.1);
 	args->add<double>("loop_dist,d", "Maximum distance (in meters) to assume two poses form a loop closure", 2.0);
 	args->add<double>("time_dist,t", "Minimum temporal difference (in seconds) to assume two poses form a loop closure (instead of being consecutive poses)", 60.0);
 	args->add<int>("subsampling,s", "Number of data packages to skip when looking for loop closures (<= 1 for using all packages)", 0);

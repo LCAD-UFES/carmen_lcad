@@ -3,14 +3,11 @@
 #define __SEGMAP_SENSORS_H__
 
 #include <cstdio>
+#include <string>
 #include <Eigen/Core>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <carmen/segmap_dataset.h>
 #include <opencv/cv.hpp>
-
-
-using namespace pcl;
-using namespace Eigen;
 
 
 class LidarShot
@@ -67,14 +64,13 @@ public:
 
 protected:
 
-    char *_log_data_dir;
-    char *_seg_img_path;
+    std::string _log_data_dir;
 };
 
 
 cv::Mat load_image(DataSample *sample);
-void load_as_pointcloud(CarmenLidarLoader *loader, PointCloud<PointXYZRGB>::Ptr cloud);
-void get_pixel_position(double x, double y, double z, Matrix<double, 4, 4> &lidar2cam,
-		           Matrix<double, 3, 4> &projection, cv::Mat &img, cv::Point *ppixel, int *is_valid);
+void load_as_pointcloud(CarmenLidarLoader *loader, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
+void get_pixel_position(double x, double y, double z, Eigen::Matrix<double, 4, 4> &lidar2cam,
+                        Eigen::Matrix<double, 3, 4> &projection, cv::Mat &img, cv::Point *ppixel, int *is_valid);
 
 #endif

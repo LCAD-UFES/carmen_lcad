@@ -7,7 +7,6 @@
 #include <pcl/common/transforms.h>
 #include <string>
 #include <vector>
-#include <cstring>
 #include <opencv/cv.hpp>
 #include "segmap_util.h"
 
@@ -148,7 +147,7 @@ public:
 	                 std::string odom_calib_path = "",
 									 std::string fused_odom_path = "",
 	                 int sync_type = SYNC_BY_CAMERA,
-	                 std::string lidar_calib_path = "data/calibration_table.txt");
+	                 std::string lidar_calib_path = "");
 
 	~NewCarmenDataset();
 
@@ -189,12 +188,12 @@ protected:
 	std::vector<DataSample*> _data;
 	std::vector<Pose2d> _fused_odom;
 
-	std::vector<char*> _imu_messages;
-	std::vector<char*> _gps_position_messages;
-	std::vector<char*> _gps_orientation_messages;
-	std::vector<char*> _odom_messages;
-	std::vector<char*> _camera_messages;
-	std::vector<char*> _velodyne_messages;
+	std::vector<std::string> _imu_messages;
+	std::vector<std::string> _gps_position_messages;
+	std::vector<std::string> _gps_orientation_messages;
+	std::vector<std::string> _odom_messages;
+	std::vector<std::string> _camera_messages;
+	std::vector<std::string> _velodyne_messages;
 
 	void _load_log(std::string &path);
 	void _load_odometry_calibration(std::string &path);
@@ -206,19 +205,18 @@ protected:
 	DataSample* _assemble_data_package_from_queues();
 
 	void _clear_synchronization_queues();
-	void _add_message_to_queue(char *data);
-	static void _free_queue(std::vector<char*> queue);
-	static std::vector<char*> _find_nearest(std::vector<char*> &queue, double ref_time);
+	void _add_message_to_queue(std::string);
+	static std::vector<std::string> _find_nearest(std::vector<std::string> &queue, double ref_time);
 
 	static unsigned char*** _allocate_calibration_table();
 	static void _free_calibration_table(unsigned char ***table);
 
-	static void _parse_odom(std::vector<char*> data, DataSample *sample);
-	static void _parse_imu(std::vector<char*> data, DataSample *sample);
-	static void _parse_velodyne(std::vector<char*> data, DataSample *sample, std::string velodyne_path);
-	static void _parse_camera(std::vector<char*> data, DataSample *sample, std::string image_path);
-	static void _parse_gps_position(std::vector<char*> data, DataSample *sample);
-	static void _parse_gps_orientation(std::vector<char*> data, DataSample *sample);
+	static void _parse_odom(std::vector<std::string> data, DataSample *sample);
+	static void _parse_imu(std::vector<std::string> data, DataSample *sample);
+	static void _parse_velodyne(std::vector<std::string> data, DataSample *sample, std::string velodyne_path);
+	static void _parse_camera(std::vector<std::string> data, DataSample *sample, std::string image_path);
+	static void _parse_gps_position(std::vector<std::string> data, DataSample *sample);
+	static void _parse_gps_orientation(std::vector<std::string> data, DataSample *sample);
 };
 
 #endif

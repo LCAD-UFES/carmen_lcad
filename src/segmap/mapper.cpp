@@ -172,7 +172,10 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 		Mat map_img = map.to_image().clone();
 		draw_pose(map, map_img, pose, Scalar(0, 255, 0));
 
-		viewer.show(transformed);
+		// flip vertically.
+		flip(map_img, map_img, 0);
+
+		//viewer.show(transformed);
 		viewer.show(map_img, "map", 640);
 		viewer.show(img, "img", 640);
 		viewer.loop();

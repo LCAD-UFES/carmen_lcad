@@ -110,12 +110,10 @@ transform_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
 
 FILE* safe_fopen(const char *path, const char *mode);
 
-std::vector<char*> string_split(const char *string, const char *delimiters);
-char* string_copy(const char *str);
-char* string_join(std::vector<char*> tokens, char *join_text);
-
 void spherical2cartersian(double v_angle, double h_angle, double radius, 
 						  double *x, double *y, double *z);
+
+std::vector<std::string> string_split(std::string s, std::string pattern);
 
 std::string file_name_from_path(const char *path);
 std::string default_odom_calib_path(const char *log_path);

@@ -14,8 +14,10 @@ while True:
     h = left.seconds // 3600
     m = (left.seconds % 3600) // 60
     s = (left.seconds % 3600) % 60
-    img = np.zeros((70, 520, 3))
-    cv2.putText(img, "%02dd %02dh %02d:%02d" % (d, h, m, s), (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0,255,0), 3)
+    img = np.zeros((70, 750, 3))
+    months = d / 30
+    d = d % 30
+    cv2.putText(img, "%2dm %02dd %02dh %02d:%02d" % (months, d, h, m, s), (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0,255,0), 3)
     cv2.imshow("Deadline", img)
     cv2.waitKey(1)
     time.sleep(1)    

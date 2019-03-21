@@ -7,6 +7,8 @@
 
 using namespace std;
 using namespace cv;
+using namespace Eigen;
+using namespace pcl;
 
 
 static const double _velodyne_vertical_angles[32] =
@@ -47,7 +49,6 @@ CarmenLidarLoader::CarmenLidarLoader(const char *cloud_path, int n_rays, unsigne
 	_raw_ranges = (short int*) calloc (_n_vert, sizeof(short int));
 	_raw_intensities = (unsigned char*) calloc (_n_vert, sizeof(unsigned char));
 
-	//printf("cloud path: %s\n", cloud_path);
 	_fptr = safe_fopen(cloud_path, "rb");
 
 	for (int i = 0; i < _n_vert; i++)
@@ -131,28 +132,30 @@ CarmenLidarLoader::reset()
 
 SemanticSegmentationLoader::SemanticSegmentationLoader(const char *log_path, const char *data_path)
 {
-	vector<char*> log_path_splitted = string_split(log_path, "/");
-	char *log_name = log_path_splitted[log_path_splitted.size() - 1];
-
-	_log_data_dir = (char*) calloc(strlen(log_name) + strlen(data_path) + strlen("/data_/semantic") + 1, sizeof(char));
-	_seg_img_path = (char*) calloc(strlen(_log_data_dir) + 64, sizeof(char));
-
-	sprintf(_log_data_dir, "%s/data_%s/semantic", data_path, log_name);
+	vector<string> log_path_splitted = string_split(log_path, "/");
+	string log_name = log_path_splitted[log_path_splitted.size() - 1];
+	_log_data_dir = data_path + string("/data_") + log_name + string("/semantic");
 }
 
 
 SemanticSegmentationLoader::~SemanticSegmentationLoader()
 {
-	free(_log_data_dir);
-	free(_seg_img_path);
 }
 
 
 cv::Mat
 SemanticSegmentationLoader::load(DataSample *sample)
 {
-	sprintf(_seg_img_path, "%s/%lf-r.png", _log_data_dir, sample->image_time);
-	return cv::imread(_seg_img_path);
+	// static to prevent reallocation.
+	static char seg_img_path[256];
+
+	sprintf(seg_img_path, "%s/%lf-r.png", _log_data_dir.c_str(), sample->image_time);
+
+	// just to make sure the file exists.
+	FILE *f = safe_fopen(seg_img_path, "rb");
+	fclose(f);
+
+	return cv::imread(seg_img_path);
 }
 
 
@@ -226,7 +229,7 @@ load_image(DataSample *sample)
 		if (raw_right != NULL) free(raw_right);
 
 		raw_right = (unsigned char*) calloc (image_size, sizeof(unsigned char));
-		img_r = Mat(sample->image_width, sample->image_height, CV_8UC3, raw_right, 0);
+		img_r = Mat(sample->image_height, sample->image_width, CV_8UC3, raw_right, 0);
 	}
 
 	FILE *image_file = safe_fopen(sample->image_path.c_str(), "rb");

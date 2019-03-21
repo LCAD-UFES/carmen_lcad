@@ -9,6 +9,7 @@
 #include "segmap_pose2d.h"
 #include "segmap_util.h"
 #include "segmap_car_config.h"
+#include <boost/algorithm/string.hpp>
 
 using namespace cv;
 using namespace std;
@@ -283,10 +284,11 @@ ackerman_motion_model(double &x, double &y, double &th, double v, double phi, do
 		exit(printf("Error phi = %lf\n", radians_to_degrees(phi)));
 
 	double ds = dt * v;
-	x += ds * cos(th);
-	y += ds * sin(th);
+
 	th += (ds / distance_between_front_and_rear_axles) * tan(phi);
 	th = normalize_theta(th);
+	x += ds * cos(th);
+	y += ds * sin(th);
 }
 
 
@@ -370,62 +372,6 @@ safe_fopen(const char *path, const char *mode)
 }
 
 
-vector<char*>
-string_split(const char *string, const char *delimiters)
-{
-	char *token;
-	char *copy = new char[strlen(string) + 1];
-	strcpy(copy, string);
-	
-	vector<char*> parts;
-
-	token = strtok(copy, delimiters);
-
-	while (token != NULL)
-	{
-		if (strlen(token) > 0)
-			parts.push_back(token);
-			
-		token = strtok(NULL, delimiters);
-	}
-
-	return parts;
-}
-
-
-char* 
-string_copy(const char *str)
-{
-	char *cpy = (char *) calloc (sizeof(char), strlen(str) + 1);
-	strcpy(cpy, str);
-	return cpy;
-}
-
-
-char*
-string_join(vector<char*> tokens, char *join_text)
-{
-	int size;
-	char *joined;
-	int joined_size = 0;
-
-	for (int i = 0; i < tokens.size(); i++)
-		joined_size += strlen(tokens[i]);
-	
-	size = joined_size + tokens.size() * strlen(join_text) + 1;
-	joined = (char*) calloc (sizeof(char), size);
-	joined[0] = '\0';
-
-	for (int i = 0; i < tokens.size(); i++)
-	{
-		strcat(joined, tokens[i]);
-		strcat(joined, join_text);
-	}
-
-	return joined;
-}
-
-
 void
 spherical2cartersian(double v_angle, double h_angle, double radius, 
 										 double *x, double *y, double *z)
@@ -444,10 +390,27 @@ spherical2cartersian(double v_angle, double h_angle, double radius,
 }
 
 
+std::vector<std::string>
+string_split(std::string s, std::string pattern)
+{
+	vector<std::string> splitted, splitted_without_empties;
+
+	boost::split(splitted, s, boost::is_any_of(pattern));
+
+	for (int i = 0; i < splitted.size(); i++)
+	{
+		if (splitted[i].size() > 0)
+			splitted_without_empties.push_back(splitted[i]);
+	}
+
+	return splitted_without_empties;
+}
+
+
 std::string
 file_name_from_path(const char *path)
 {
-	vector<char*> splitted = string_split(path, "/");
+	vector<string> splitted = string_split(path, "/");
 	return std::string(splitted[splitted.size() - 1]);
 }
 
@@ -466,6 +429,5 @@ default_fused_odom_path(const char *log_path)
 	std::string log_name = file_name_from_path(log_path);
 	return (string("/dados/data2/data_") + log_name + string("/fused_odom.txt"));
 }
-
 
 
