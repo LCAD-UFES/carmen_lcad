@@ -1420,16 +1420,16 @@ draw_gps (carmen_vector_3D_t *gps_trail, int *gps_nr, int size)
 
     glBegin (GL_POINTS);
 
-    int i;
-    for (i = 0; i < size; i++)
+    for (int i = 0; i < size; i++)
     {
-        if (gps_nr[i] == 0)
-	    glColor3d (1.0, 0.5, 0.0);
-        else
-        {
-//	    printf("%d", gps_nr[i]);
-	    glColor3d (0.3, 1.0, 0.3);
-        }
+        if (gps_nr[i] == 1)
+        	glColor3d (0.3, 1.0, 0.3);
+        else if (gps_nr[i] == 2)
+        	glColor3d (0.9, 0.0, 0.0);
+        else if (gps_nr[i] == 3)
+        	glColor3d (0.0, 0.9, 0.0);
+        else // == 0
+        	glColor3d (1.0, 1.0, 1.0);
 
         glVertex3d (gps_trail[i].x, gps_trail[i].y, gps_trail[i].z);
     }

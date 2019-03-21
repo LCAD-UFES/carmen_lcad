@@ -544,9 +544,7 @@ xsens_xyz_message_handler(carmen_xsens_xyz_message *xsens_xyz)
 
     next_xsens_xyz_trail++;
     if (next_xsens_xyz_trail >= gps_size)
-    {
         next_xsens_xyz_trail -= gps_size;
-    }
 
     last_timestamp = xsens_xyz->timestamp;
 }
@@ -1400,9 +1398,9 @@ gps_xyz_message_handler(carmen_gps_xyz_message *gps_xyz_raw_message)
         gps_initialized = 1;
     }
 
-    carmen_vector_3D_t new_pos;
     carmen_vector_3D_t offset = get_position_offset();
 
+    carmen_vector_3D_t new_pos;
     new_pos.x = gps_xyz_raw_message->x - offset.x;
     new_pos.y = gps_xyz_raw_message->y - offset.y;
     new_pos.z = gps_xyz_raw_message->z - offset.z;
@@ -1413,13 +1411,12 @@ gps_xyz_message_handler(carmen_gps_xyz_message *gps_xyz_raw_message)
     last_gps_trail++;
 
     if (last_gps_trail >= gps_size)
-    {
         last_gps_trail -= gps_size;
-    }
 
-    if (gps_xyz_raw_message->nr != 0)
+    if ((gps_xyz_raw_message->nr == 1) || (gps_xyz_raw_message->nr == 2)) // Trimble ou Reach1
         gps_fix_flag = gps_xyz_raw_message->gps_quality;
 }
+
 
 static void
 map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_message *message)
@@ -1710,7 +1707,7 @@ init_gps(void)
 {
     gps_initialized = 0; // Only considered initialized when first message is received
 
-    gps_trail = (carmen_vector_3D_t*) malloc(gps_size * sizeof (carmen_vector_3D_t));
+    gps_trail = (carmen_vector_3D_t *) malloc(gps_size * sizeof (carmen_vector_3D_t));
     gps_nr = (int *) malloc(gps_size * sizeof(int));
 
     carmen_vector_3D_t init_pos;
@@ -1744,7 +1741,7 @@ init_xsens_xyz(void)
 {
     xsens_xyz_initialized = 0; // Only considered initialized when first message is received
 
-    xsens_xyz_trail = (carmen_vector_3D_t*) malloc(gps_size * sizeof (carmen_vector_3D_t));
+    xsens_xyz_trail = (carmen_vector_3D_t *) malloc(gps_size * sizeof (carmen_vector_3D_t));
 
     carmen_vector_3D_t init_pos;
 
@@ -1756,9 +1753,7 @@ init_xsens_xyz(void)
 
     int i;
     for (i = 0; i < gps_size; i++)
-    {
         xsens_xyz_trail[i] = init_pos;
-    }
 
     next_xsens_xyz_trail = 0;
 }
@@ -2469,24 +2464,16 @@ draw_loop(window *w)
         }
 
         if (draw_gps_flag)
-        {
             draw_gps(gps_trail, gps_nr, gps_size);
-        }
 
         if (draw_xsens_gps_flag)
-        {
             draw_gps_xsens_xyz(xsens_xyz_trail, gps_size);
-        }
 
         if (draw_odometry_flag)
-        {
             draw_odometry(odometry_trail, odometry_size);
-        }
 
         if (draw_localize_ackerman_flag)
-        {
             draw_localize_ackerman(localize_ackerman_trail, localize_ackerman_size);
-        }
 
         if (draw_particles_flag)
         {
@@ -2496,28 +2483,20 @@ draw_loop(window *w)
         }
 
         if (draw_map_flag)
-        {
             draw_map(m_drawer, get_position_offset());
-        }
 
         if (draw_trajectory_flag1)
         {
             draw_trajectory(t_drawer1, get_position_offset());
         	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
-        	{
         		draw_trajectory(t_drawerTree[i], get_position_offset());
-        	}
         }
 
         if (draw_trajectory_flag2)
-        {
             draw_trajectory(t_drawer2, get_position_offset());
-        }
 
         if (draw_trajectory_flag3)
-        {
             draw_trajectory(t_drawer3, get_position_offset());
-        }
 
         if (draw_map_image_flag)
         {
@@ -2565,15 +2544,13 @@ draw_loop(window *w)
         }
 
         if (!gps_fix_flag)
-        {
             draw_gps_fault_signal();
-        }
+
 #ifdef TEST_LANE_ANALYSIS
         if (draw_lane_analysis_flag) draw_lane_analysis(lane_drawer);
 #endif
 
         draw_interface(i_drawer);
-
     }
 }
 
@@ -2678,24 +2655,16 @@ draw_loop_for_picking(window *w)
         }
 
         if (draw_gps_flag)
-        {
             draw_gps(gps_trail, gps_nr, gps_size);
-        }
 
         if (draw_xsens_gps_flag)
-        {
             draw_gps_xsens_xyz(xsens_xyz_trail, gps_size);
-        }
 
         if (draw_odometry_flag)
-        {
             draw_odometry(odometry_trail, odometry_size);
-        }
 
         if (draw_localize_ackerman_flag)
-        {
             draw_localize_ackerman(localize_ackerman_trail, localize_ackerman_size);
-        }
 
         if (draw_particles_flag)
         {
@@ -2705,24 +2674,16 @@ draw_loop_for_picking(window *w)
         }
 
         if (draw_map_flag)
-        {
             draw_map(m_drawer, get_position_offset());
-        }
 
         if (draw_trajectory_flag1)
-        {
             draw_trajectory(t_drawer1, get_position_offset());
-        }
 
         if (draw_trajectory_flag2)
-        {
             draw_trajectory(t_drawer2, get_position_offset());
-        }
 
         if (draw_trajectory_flag3)
-        {
             draw_trajectory(t_drawer3, get_position_offset());
-        }
 
         if (draw_map_image_flag)
         {
@@ -2746,12 +2707,9 @@ draw_loop_for_picking(window *w)
         }
 
         if (!gps_fix_flag)
-        {
             draw_gps_fault_signal();
-        }
 
         //draw_interface(i_drawer);
-
     }
 }
 
@@ -2767,7 +2725,8 @@ subscribe_ipc_messages(void)
                                                                     (carmen_handler_t) carmen_fused_odometry_particle_message_handler,
                                                                     CARMEN_SUBSCRIBE_LATEST);
     // subscribe na mensagem de cada laser definido na config
-    for (int i = 1; i <= num_laser_devices; i++) {
+    for (int i = 1; i <= num_laser_devices; i++)
+    {
         printf("carmen_laser_subscribe: laser_id: %d\n", i);
         carmen_laser_subscribe_laser_message(i, NULL, (carmen_handler_t) carmen_laser_laser_message_handler, CARMEN_SUBSCRIBE_LATEST);
     }
@@ -2887,9 +2846,7 @@ int
 check_annotation_equal_zero()
 {
     if (annotation_point_world.x == 0 && annotation_point_world.y == 0 && annotation_point_world.z == 0)
-    {
         return 1;
-    }
     return 0;
 }
 
@@ -3042,67 +2999,43 @@ set_flag_viewer_3D(int flag_num, int value)
 
     case 22:
         if (!check_annotation_equal_zero())
-        {
             carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK), RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK, 0);
-        }
         break;
 
     case 23:
         if (!check_annotation_equal_zero())
-        {
             carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_STOP), RDDF_ANNOTATION_TYPE_STOP, 0);
-        }
         break;
 
     case 24:
         if (!check_annotation_equal_zero())
-        {
             carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_BARRIER), RDDF_ANNOTATION_TYPE_BARRIER, 0);
-        }
         break;
 
     case 25:
         if (!check_annotation_equal_zero())
-        {
             carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_BUMP), RDDF_ANNOTATION_TYPE_BUMP, 0);
-        }
         break;
 
     case 26:
         if (!check_annotation_equal_zero())
         {
             if (value == 0)
-            {
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_0);
-            }
             else if (value == 5)
-            {
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_5);
-            }
             else if (value == 10)
-            {
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_10);
-            }
             else if (value == 15)
-            {
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_15);
-            }
             else if (value == 20)
-            {
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_20);
-            }
             else if (value == 30)
-            {
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_30);
-            }
             else if (value == 40)
-            {
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_40);
-            }
             else if (value == 60)
-            {
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_SPEED_LIMIT), RDDF_ANNOTATION_TYPE_SPEED_LIMIT, RDDF_ANNOTATION_CODE_SPEED_LIMIT_60);
-            }
         }
         break;
     case 27:
@@ -3211,13 +3144,9 @@ mouseFunc(int type, int button, int x, int y)
     interface_mouse_func(i_drawer, type, button, x, y);
 
     if (type == 4)
-    {
         pressed = 1;
-    }
     else if (type == 5)
-    {
         pressed = 0;
-    }
 
     if (button == 4)
     {
