@@ -320,112 +320,47 @@ get_slice_colors (unsigned int slices_size)
 {
 	vector<cv::Scalar> colors;
 	cv::Scalar color;
-	if (slices_size== 1)
+	if (slices_size <= 1)
 	{
 		color = cv::Scalar (0, 0, 255);
 		colors.push_back(color);
 	}
-
-	else if (slices_size== 2)
+	if (slices_size <= 2)
 	{
-		color = cv::Scalar (0, 0, 255);
-		colors.push_back(color);
 		color = cv::Scalar (0, 255, 0);
 		colors.push_back(color);
 	}
-
-	else if (slices_size== 3)
+	if (slices_size <= 3)
 	{
-		color = cv::Scalar (0, 0, 255);
-		colors.push_back(color);
-		color = cv::Scalar (0, 255, 0);
-		colors.push_back(color);
 		color = cv::Scalar (255, 0, 0);
 		colors.push_back(color);
 	}
-
-	else if (slices_size== 4)
+	if (slices_size <= 4)
 	{
-		color = cv::Scalar (0, 0, 255);
-		colors.push_back(color);
-		color = cv::Scalar (0, 255, 0);
-		colors.push_back(color);
-		color = cv::Scalar (255, 0, 0);
-		colors.push_back(color);
 		color = cv::Scalar (255, 255, 0);
 		colors.push_back(color);
 	}
-
-	else if (slices_size== 5)
+	if (slices_size <= 5)
 	{
-		color = cv::Scalar (0, 0, 255);
-		colors.push_back(color);
-		color = cv::Scalar (0, 255, 0);
-		colors.push_back(color);
-		color = cv::Scalar (255, 0, 0);
-		colors.push_back(color);
-		color = cv::Scalar (255, 255, 0);
-		colors.push_back(color);
 		color = cv::Scalar (255, 0, 255);
 		colors.push_back(color);
 	}
-
-	else if (slices_size== 6)
+	if (slices_size <= 6)
 	{
-		color = cv::Scalar (0, 0, 255);
-		colors.push_back(color);
-		color = cv::Scalar (0, 255, 0);
-		colors.push_back(color);
-		color = cv::Scalar (255, 0, 0);
-		colors.push_back(color);
-		color = cv::Scalar (255, 255, 0);
-		colors.push_back(color);
-		color = cv::Scalar (255, 0, 255);
-		colors.push_back(color);
 		color = cv::Scalar (0, 255, 255);
 		colors.push_back(color);
 	}
-
-	else if (slices_size== 7)
+	if (slices_size <= 7)
 	{
-		color = cv::Scalar (0, 0, 255);
-		colors.push_back(color);
-		color = cv::Scalar (0, 255, 0);
-		colors.push_back(color);
-		color = cv::Scalar (255, 0, 0);
-		colors.push_back(color);
-		color = cv::Scalar (255, 255, 0);
-		colors.push_back(color);
-		color = cv::Scalar (255, 0, 255);
-		colors.push_back(color);
-		color = cv::Scalar (0, 255, 255);
-		colors.push_back(color);
 		color = cv::Scalar (0, 0, 0);
 		colors.push_back(color);
 	}
-
-	else if (slices_size== 8)
+	if (slices_size <= 8)
 	{
-		color = cv::Scalar (0, 0, 255);
-		colors.push_back(color);
-		color = cv::Scalar (0, 255, 0);
-		colors.push_back(color);
-		color = cv::Scalar (255, 0, 0);
-		colors.push_back(color);
-		color = cv::Scalar (255, 255, 0);
-		colors.push_back(color);
-		color = cv::Scalar (255, 0, 255);
-		colors.push_back(color);
-		color = cv::Scalar (0, 255, 255);
-		colors.push_back(color);
-		color = cv::Scalar (0, 0, 0);
-		colors.push_back(color);
 		color = cv::Scalar (255, 255, 255);
 		colors.push_back(color);
 	}
-
 	return (colors);
-
 }
 
 
@@ -662,7 +597,57 @@ calc_area (int width, int height)
 
 
 float
+intersectionOverUnion(bbox_t box1, bbox_t box2)
+{
+	// https://github.com/lukaswals/cpp-iout/blob/master/cppIOUT/IOUT.cpp
+	float minx1 = box1.x;
+	float maxx1 = box1.x + box1.w;
+	float miny1 = box1.y;
+	float maxy1 = box1.y+ box1.h;
+
+	float minx2 = box2.x;
+	float maxx2 = box2.x + box2.w;
+	float miny2 = box2.y;
+	float maxy2 = box2.y + box2.h;
+
+	if (minx1 > maxx2 || maxx1 < minx2 || miny1 > maxy2 || maxy1 < miny2)
+		return (0.0);
+	else
+	{
+		float dx = std::min(maxx2, maxx1) - std::max(minx2, minx1);
+		float dy = std::min(maxy2, maxy1) - std::max(miny2, miny1);
+		float area1 = (maxx1 - minx1)*(maxy1 - miny1);
+		float area2 = (maxx2 - minx2)*(maxy2 - miny2);
+		float inter = dx*dy; // Intersection
+		float uni = area1 + area2 - inter; // Union
+		float IoU = inter / uni;
+
+		return (IoU);
+	}
+}
+
+
+float
 calc_percentage_of_rectangles_intersection(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r2)
+{
+	bbox_t box1, box2;
+
+	box1.x = l1.x;
+	box1.y = l1.y;
+	box1.w = r1.x - l1.x;
+	box1.h = r1.y - l1.y;
+
+	box2.x = l2.x;
+	box2.y = l2.y;
+	box2.w = r2.x - l2.x;
+	box2.h = r2.y - l2.y;
+
+	return (100.0 * intersectionOverUnion(box1, box2));
+}
+
+
+float
+calc_percentage_of_rectangles_intersection_old(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r2)
 {
 	float intersection_percentage;
 
@@ -691,19 +676,19 @@ calc_percentage_of_rectangles_intersection(cv::Point l1, cv::Point r1, cv::Point
 }
 
 
-//bool rectangles_intersects(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r2)
-//{
-//
-//
-//	if ((l1.x < r2.x) &&
-//		(r1.x > l2.x) &&
-//		(l1.y < r2.y) &&
-//		(r1.y > l2.y))
-//		return true;
-//
-//
-//    return false;
-//}
+bool rectangles_intersects2(cv::Point l1, cv::Point r1, cv::Point l2, cv::Point r2)
+{
+
+
+	if ((l1.x < r2.x) &&
+		(r1.x > l2.x) &&
+		(l1.y < r2.y) &&
+		(r1.y > l2.y))
+		return true;
+
+
+    return false;
+}
 
 
 bool valueInRange(int value, int min, int max)
@@ -722,95 +707,72 @@ bool rectangles_intersects(cv::Rect A, cv::Rect B)
 
 
 vector<bbox_t>
-transform_bounding_boxes_of_slices (vector<vector<bbox_t>> bounding_boxes_of_slices, vector<t_transform_factor> transform_factor_of_slice_to_original_frame)
+transform_bounding_boxes_of_slices (vector< vector<bbox_t> > bounding_boxes_of_slices, vector<t_transform_factor> transform_factor_of_slice_to_original_frame)
 {
+	cv::Mat img;
+	img = or_image.clone();
 	vector<bbox_t> bboxes;
 	bbox_t b;
 	bool intersects_with_bboxes = false;
 	bool rect_dont_intersects = false;
+	bool intersect;
 	for (int i = 0; i < bounding_boxes_of_slices.size(); i++)
 	{
 		for (int j = 0; j < bounding_boxes_of_slices[i].size(); j++)
-
 		{
-			b = bounding_boxes_of_slices[i][j];
-			b.x = bounding_boxes_of_slices[i][j].x + transform_factor_of_slice_to_original_frame[i].translate_factor_x;
-			b.y = bounding_boxes_of_slices[i][j].y + transform_factor_of_slice_to_original_frame[i].translate_factor_y;
-			//b.w = bouding_boxes_of_slices[i][j].w / transform_factor_of_slice_to_original_frame[i].scale_factor_x;
-			//b.h = bouding_boxes_of_slices[i][j].h / transform_factor_of_slice_to_original_frame[i].scale_factor_y;
-			if (i == 0)
+			intersect = false;
+
+			int obj_id = bounding_boxes_of_slices[i][j].obj_id;
+			string obj_name;
+			if (obj_names.size() > obj_id)
+				obj_name = obj_names[obj_id];
+
+			if (obj_name.compare("car") == 0)
 			{
-				bboxes.push_back(b);
-			}
-			else
-			{
-				cv::Rect rect_B;
-				rect_B.x = (int)b.x; rect_B.y = (int)b.y;
-				rect_B.width = (int)b.w; rect_B.height = b.h;
+				b = bounding_boxes_of_slices[i][j];
+				b.x = bounding_boxes_of_slices[i][j].x + transform_factor_of_slice_to_original_frame[i].translate_factor_x;
+				b.y = bounding_boxes_of_slices[i][j].y + transform_factor_of_slice_to_original_frame[i].translate_factor_y;
+
 				cv::Point l1; //top left
 				l1.x = b.x;
 				l1.y = b.y;
 				cv::Point r1; //bottom right
 				r1.x = b.x + b.w;
 				r1.y = b.y + b.h;
-				//cout<<l1.x<<" "<<l1.y<<" "<<r1.x<<" "<<r1.y<<endl;
-				int area1 = abs( calc_area((l1.x - r1.x), (l1.y - r1.y)) ); //abs(l1.x - r1.x) * abs(l1.y - r1.y);
-				//cout<<"Area of bBox1: "<<area1<<endl;
 
-				for (int k = 0; k < bboxes.size(); k++)
+				int k = 0;
+				while (k < bboxes.size())
 				{
-					cv::Rect rect_A;
-					rect_A.x = (int)bboxes[k].x; rect_A.y = (int)bboxes[k].y;
-					rect_A.width = (int)bboxes[k].w; rect_A.height = (int)bboxes[k].h;
-
-					//					cv::Point l1, r1, l2, r2;
-					//					l1.x = (int)x1; l1.y = (int)y1; //top left
-					//					r1.x = (int)x2; r1.y = (int)y2; //right botton of groundtruth bbox
-					//					l2.x = (int)b.x; l2.y = (int)b.y; //top left
-					//					r2.x = (int)b.x + b.w; r2.y = (int)b.y + b.h; //right botton of detection
-					float percentage_of_intersection_between_bboxes;
 					cv::Point l2;
 					l2.x = bboxes[k].x;
 					l2.y = bboxes[k].y;
 					cv::Point r2;
 					r2.x = bboxes[k].x + bboxes[k].w;
 					r2.y = bboxes[k].y + bboxes[k].h;
-					//cout<<"\t"<<l2.x<<" "<<l2.y<<" "<<r2.x<<" "<<r2.y<<endl;
-					//if (rectangles_intersects(l1, r1, l2, r2))
-					if(rectangles_intersects(rect_A, rect_B))
+
+					float percentage_of_intersection_between_bboxes = calc_percentage_of_rectangles_intersection(l1, r1, l2, r2);
+
+					if (percentage_of_intersection_between_bboxes > 50.0)
 					{
-						percentage_of_intersection_between_bboxes = calc_percentage_of_rectangles_intersection(l1, r1, l2, r2);
-						//cout<< percentage_of_intersection_between_bboxes<< endl;
-						int area2 = abs( calc_area((l2.x - r2.x), (l2.y - r2.y)) ); //abs(l2.x - r2.x) * abs(l2.y - r2.y);
-						if (area2 > area1)
+						if (b.prob > bboxes[k].prob)
 						{
-							b.x = l2.x;
-							b.y = l2.y;
-							b.w = bboxes[k].w;
-							b.h = bboxes[k].h;
+							bboxes.erase(bboxes.begin() + k);
+							intersect = false;
+							k--;
 						}
-
-						if (percentage_of_intersection_between_bboxes > 1)
-						{
-							intersects_with_bboxes = true;
-							break;
-						}
+						else
+							intersect = true;
 					}
-
+					k++;
 				}
-				if (intersects_with_bboxes == false)
-				{
+
+				if (!intersect)
 					bboxes.push_back(b);
-					intersects_with_bboxes = false;
-				}
-
 			}
-
 		}
 	}
 
-	return (bboxes);
-}
+	return (bboxes)
 
 vector<bbox_t>
 get_predictions_of_slices (int i, cv::Mat image)
@@ -1009,6 +971,238 @@ filter_pitch(carmen_pose_3D_t car_pose)
 	filtered_car_pose.orientation.pitch = 0.0;
 
 	return (filtered_car_pose);
+}
+
+void
+show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_original_frame, vector<cv::Mat> scene_slices,
+		vector<vector<bbox_t>> bounding_boxes_of_slices, vector<bbox_t> predictions,
+		vector<carmen_position_t> rddf_points_in_image_filtered, double image_timestamp)
+{
+	printf("******************************************\n");
+	printf("Timestamp %lf:\n\n", image_timestamp);
+    char confianca[25];
+    int line_tickness = 1;
+//    char frame_rate[25];
+//
+//    sprintf(frame_rate, "FPS = %.2f", fps);
+//
+//    //cv::putText(*rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
+
+    char arr[50];
+    string str_arr;
+    char gt_path[200];
+    strcpy(gt_path, groundtruth_path);
+    sprintf(gt_path,"%s/%lf", gt_path, image_timestamp);
+    string str_gt_path (gt_path);
+    string groundtruth_folder = str_gt_path + "-r.txt";
+    int thickness = -1;
+    int lineType = 8;
+
+    bbox_t gt;
+    char classe[50];
+    float x1, x2, y1, y2;
+    if (access(groundtruth_folder.c_str(), F_OK) == 0)
+    {
+    	//cout<<groundtruth_folder<<" show"<<endl;
+    	FILE *f;
+    	f = fopen (groundtruth_folder.c_str(), "r");
+    	//int yy = fscanf (f, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2);
+    	//yy = yy;
+
+    	while (fscanf (f, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2) != EOF)
+    	{
+    		gt.x = (int)x1;
+    		gt.y = (int)y1;
+    		gt.w = (int)(x2 - x1);
+    		gt.h = (int)(y2 - y1);
+    		cv::rectangle(scene_slices[0],
+    				cv::Point(gt.x, gt.y),
+					cv::Point(gt.x + gt.w, gt.y + gt.h),
+					Scalar(0, 255, 0), 3);
+    	}
+
+    }
+    else
+    	exit(0);
+
+    string name;
+    for (int i = 0; i < qtd_crops; i++)
+    {
+    	cv::Mat image;
+		stringstream ss;
+//		char image_ts[40];
+//		sprintf(image_ts,"%lf_",image_timestamp);
+//		string im_ts (image_ts);
+//		name = "Foveated Detection" + im_ts;
+		ss << i;
+		name = "Foveated Detection" + ss.str();
+
+    	for (int j = 0; j < bounding_boxes_of_slices[i].size(); j++)
+    	{
+    		//cout<<bounding_boxes_of_slices[i].size()<<endl;
+
+    		bbox_t b = bounding_boxes_of_slices[i][j];
+    		bbox_t b_print = bounding_boxes_of_slices[i][j];
+    		b_print.x = b_print.x + transform_factor_of_slice_to_original_frame[i].translate_factor_x;
+    		b_print.y = b_print.y + transform_factor_of_slice_to_original_frame[i].translate_factor_y;
+
+
+    		cv::Scalar object_color;
+
+    		//sprintf(confianca, "%d  %.3f", predictions.at(i).obj_id, predictions.at(i).prob);
+
+    		int obj_id = bounding_boxes_of_slices[i][j].obj_id;
+
+    		string obj_name;
+    		if (obj_names.size() > obj_id)
+    			obj_name = obj_names[obj_id];
+
+    		//
+			if (obj_name.compare("car") == 0)
+			{
+					object_color = cv::Scalar(0, 0, 255);
+					line_tickness = 2;
+
+//				image = scene_slices[i].clone();
+
+					cv::rectangle(scene_slices[i],
+							cv::Point(b.x, b.y),
+							cv::Point(b.x + b.w, b.y + b.h),
+							object_color, line_tickness);
+
+				cout<<"Bboxes slice "<<i<<":"<<endl;
+				printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d - > %0.4f\n",
+						b_print.x, b_print.y, b_print.x + b_print.w, b_print.x + b_print.w, b_print.w, b_print.h, b_print.prob);
+			}
+
+    	}
+    	float iou;
+    	float iou2;
+    	if(i == qtd_crops-1)
+    	{
+
+    		cout<<endl<<endl<<"Groundtruth:"<<endl;
+    		printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d\n", gt.x, gt.y, gt.x + gt.w, gt.x + gt.w, gt.w, gt.h);
+    		cout<<endl;
+
+    		for (int k = 0; k < predictions.size(); k++)
+    		{
+    			bbox_t det;
+    			det = predictions[k];
+    			cv::Rect rect_A;
+    			cv::Rect rect_B;
+    			//bbox_t det;
+    			det = predictions[k];
+    			rect_A.x = (int)det.x; rect_A.y = (int)det.y;
+    			rect_A.width = (int)det.w; rect_B.height = det.h;
+
+    			cv::Point l1;
+    			l1.x = det.x;
+    			l1.y = det.y;
+    			cv::Point r1;
+    			r1.x = det.x + det.w;
+    			r1.y = det.y + det.h;
+
+    			rect_B.x = (int)gt.x; rect_B.y = (int)gt.x;
+    			rect_B.width = (int)gt.w; rect_B.height = gt.h;
+    			cv::Point l2;
+    			l2.x = gt.x;
+    			l2.y = gt.y;
+    			cv::Point r2;
+    			r2.x = gt.x + gt.w;
+    			r2.y = gt.y + gt.h;
+
+    			iou = calc_percentage_of_rectangles_intersection (l1, r1, l2, r2);
+    			if (iou > 50)
+    			{
+    				cout<<"Filtered:"<<endl;
+    				printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d -> %0.4f  IOU: %f\n", det.x, det.y, det.x + det.w, det.x + det.w, det.w, det.h, det.prob, iou);
+    			}
+    			else
+    			{
+    				cout<<"Filtered:"<<endl;
+    				printf("\tx1: %d, y1: %d, x2: %d, y2: %d, w: %d, h: %d -> %0.4f  IOU: %f ****** \n", det.x, det.y, det.x + det.w, det.x + det.w, det.w, det.h, det.prob, iou);
+    			}
+
+
+    		}
+    	}
+
+    	if (i == 0)
+    	{
+    		for (int l = 0; l < rddf_points_in_image_filtered.size(); l++)
+    		{
+
+    			cv::circle(scene_slices[0], cv::Point(rddf_points_in_image_filtered[l].x, rddf_points_in_image_filtered[l].y), 3.5, cv::Scalar(0, 255, 255), thickness, lineType);
+    		}
+    		for (int k = 0; k < predictions.size(); k++)
+    		{
+    			bbox_t det;
+    			det = predictions[k];
+    			float point_middle_det_x;
+    			float pos_middle_det_x;
+    			int is_in_rddf_filtered = 0;
+    			cv::Rect rect_A;
+    			cv::Rect rect_B;
+    			//bbox_t det;
+    			det = predictions[k];
+    			rect_A.x = (int)det.x; rect_A.y = (int)det.y;
+    			rect_A.width = (int)det.w; rect_B.height = det.h;
+
+    			cv::Point l1;
+    			l1.x = det.x;
+    			l1.y = det.y;
+    			cv::Point r1;
+    			r1.x = det.x + det.w;
+    			r1.y = det.y + det.h;
+
+
+    			point_middle_det_x = (r1.x - l1.x) / 2;
+    			pos_middle_det_x = l1.x + point_middle_det_x;
+
+    			rect_B.x = (int)gt.x; rect_B.y = (int)gt.x;
+    			rect_B.width = (int)gt.w; rect_B.height = gt.h;
+    			cv::Point l2;
+    			l2.x = gt.x;
+    			l2.y = gt.y;
+    			cv::Point r2;
+    			r2.x = gt.x + gt.w;
+    			r2.y = gt.y + gt.h;
+
+    			iou = calc_percentage_of_rectangles_intersection (l1, r1, l2, r2);
+
+//    			if (iou > 50)
+//    				cv::rectangle(scene_slices[0],
+//    						cv::Point(predictions[k].x, predictions[k].y),
+//							cv::Point(predictions[k].x + predictions[k].w, predictions[k].y + predictions[k].h),
+//							Scalar(255, 255, 0), 3);
+
+
+    			for (int l = 0; l < rddf_points_in_image_filtered.size(); l++)
+    			{
+    				if ((pos_middle_det_x > (rddf_points_in_image_filtered[l].x - 150)) && (pos_middle_det_x < (rddf_points_in_image_filtered[l].x + 150)))
+    					is_in_rddf_filtered++;
+    			}
+
+    			//if ((is_in_rddf_filtered == rddf_points_in_image_filtered.size()))
+    				//					if (iou > 50)
+    				cv::rectangle(scene_slices[0],
+    						cv::Point(predictions[k].x, predictions[k].y),
+							cv::Point(predictions[k].x + predictions[k].w, predictions[k].y + predictions[k].h),
+							Scalar(0, 255, 255), 3);
+
+    		}
+
+    	}
+    	cv:Mat aux_img = scene_slices[i];
+    	if (i == 0)
+    		cv::resize(aux_img, aux_img, Size(1152, 691));
+    	else
+    		cv::resize(aux_img, aux_img, Size(384, 230));
+    	cv::imshow(name, aux_img);
+    	cv::waitKey(1);
+    }
+    printf("******************************************\n\n\n\n\n\n");
 }
 
 
@@ -1217,21 +1411,12 @@ image_handler2(carmen_bumblebee_basic_stereoimage_message *image_msg)
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
-	vector<carmen_position_t> rddf_points_in_image;
+	vector<carmen_position_t> rddf_points_in_image_filtered;
 	vector<carmen_position_t> rddf_points_in_image_full;
 	vector<double> distances_of_rddf_from_car;
 	double hood_removal_percentage = 0.2;
 	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
 	cv::Size size(320, 320);
-
-
-	unsigned char *img;
-
-//	if (camera_side == 0)
-//		img = image_msg->raw_left;
-//	else
-//		img = image_msg->raw_right;
-
 
     cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
     cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
@@ -1249,28 +1434,23 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     else
         return;
 
-
-
     cv::Mat src_image_copy = src_image.clone();
 
     cv::Mat pRoi = src_image_copy(cv::Rect(src_image_copy.cols * crop_x / 2.0, 0,
     		src_image_copy.cols - src_image_copy.cols * crop_x, src_image_copy.rows));
     src_image = pRoi;
-
-    //cv::Mat open_cv_image = Mat(crop_h, crop_w, CV_8UC3, cropped_img, 0);
-
     src_image_copy = src_image.clone();
 
     cv::cvtColor(src_image, rgb_image, cv::COLOR_RGB2BGR);
 
     cv::Mat rgb_image_copy = rgb_image.clone();
+    or_image = rgb_image.clone();
 
     vector<bbox_t> bounding_boxes_of_slices_in_original_image;
     vector<cv::Scalar> colors;
     vector<cv::Mat> scene_slices;
     vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
     if (strcmp(detection_type,"-ss") == 0)
-    {
     	img = src_image.data;
     	bounding_boxes_of_slices_in_original_image = run_YOLO(src_image.data, src_image.cols, src_image.rows, network_struct, classes_names, 0.5);//darknet->detect(src_image, 0.2);
     	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, &rgb_image, start_time, fps, rddf_points_in_image, "Original Detection");
@@ -1283,7 +1463,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     	cv::Mat out;
     	out = rgb_image;
-    	rddf_points_in_image = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
+    	rddf_points_in_image_filtered = get_rddf_points_in_image(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, image_msg->width, image_msg->height);
     	rddf_points_in_image_full = get_rddf_points_in_image_full(world_to_camera_pose, image_msg->width, image_msg->height);
 
     	vector<cv::Mat> scene_slices_resized;
@@ -1294,21 +1474,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     	t.translate_factor_x = 0;
     	t.translate_factor_y = 0;
     	transform_factor_of_slice_to_original_frame.push_back(t);
-    	get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image, distances_of_rddf_from_car);
-    	colors = get_slice_colors (qtd_crops);
-
-
-    	//    for (int i = 0; i < scene_slices.size(); i++)
-    	//    {
-    	//    	cv::Mat slice_resized;
-    	//    	cv::resize(scene_slices[i], slice_resized, size);
-    	//    	scene_slices_resized.push_back(slice_resized);
-    	//    	//cout<<"Slice_"<<i<<"size: "<<scene_slices[i].cols<<" "<<scene_slices[i].rows<<endl;
-    	//    	//printf("Scale factor of slice %d: %lf %lf\n",i,scale_factor_of_slice_to_original_frame[i].scale_factor_x,scale_factor_of_slice_to_original_frame[i].scale_factor_y);
-    	//    	//cout<<"Scale factor of slice "<<i<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_x<<" "<<scale_factor_of_slice_to_original_frame[i].scale_factor_y<<endl;
-    	//    }
-    	//cout<<endl<<endl<<endl<<endl;
+    	get_image_slices(scene_slices, transform_factor_of_slice_to_original_frame, out, rddf_points_in_image_filtered, distances_of_rddf_from_car);
     	vector<vector<bbox_t>> bounding_boxes_of_slices;
+
     	for (int i = 0; i < qtd_crops; i++)
     	{
     		vector<bbox_t> predictions;
@@ -1319,10 +1487,27 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     	bounding_boxes_of_slices_in_original_image = transform_bounding_boxes_of_slices(bounding_boxes_of_slices, transform_factor_of_slice_to_original_frame);
 
+    	char arr[50];
+        char gt_path[200];
+        strcpy(gt_path, groundtruth_path);
+        sprintf(gt_path,"%s/%lf", gt_path, image_msg->timestamp);
+        string str_gt_path (gt_path);
+        string groundtruth_folder = str_gt_path + "-r.txt";
+
+        if (access(groundtruth_folder.c_str(), F_OK) == 0)
+        	show_detections_alberto(transform_factor_of_slice_to_original_frame ,scene_slices, bounding_boxes_of_slices, bounding_boxes_of_slices_in_original_image,
+        			rddf_points_in_image_filtered, image_msg->timestamp);
+
     	rgb_image = scene_slices[0];
     	src_image = scene_slices[0];
     	//cout<<"qtd of detections: "<<bounding_boxes_of_slices_in_original_image.size()<<endl;
-    	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, &rgb_image, start_time, fps, rddf_points_in_image_full, "Foviated Detection");
+//    	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, &rgb_image, start_time, fps, rddf_points_in_image_full, "Foviated Detection");
+
+    	colors = get_slice_colors (qtd_crops);
+
+    	//printf("%lf-r.png\n", image_msg->timestamp);
+//    	save_detections(image_msg->timestamp, bounding_boxes_of_slices_in_original_image, rgb_image, scene_slices, colors,
+//    	    				transform_factor_of_slice_to_original_frame, rddf_points_in_image_filtered, rddf_points_in_image_full, bounding_boxes_of_slices);
 
 
 
@@ -1381,7 +1566,34 @@ void
 carmen_laser_ldmrs_new_message_handler(carmen_laser_ldmrs_new_message* laser_message)
 {
 	sick_laser_message = laser_message;
-	//sick_message_arrange = carmen_laser_ldmrs_new_convert_laser_scan_to_partial_velodyne_message(laser_message, laser_message->timestamp);
+
+	carmen_laser_ldmrs_new_message sick_copy;
+	sick_copy.host = sick_laser_message->host;
+	sick_copy.angle_ticks_per_rotation = sick_laser_message->angle_ticks_per_rotation;
+	sick_copy.end_angle = sick_laser_message->end_angle;
+	sick_copy.flags = sick_laser_message->flags;
+	sick_copy.scan_end_time = sick_laser_message->scan_end_time;
+	sick_copy.scan_number = sick_laser_message->scan_number;
+	sick_copy.scan_points = sick_laser_message->scan_points;
+	sick_copy.scan_start_time = sick_laser_message->scan_start_time;
+	sick_copy.scanner_status = sick_laser_message->scanner_status;
+	sick_copy.start_angle = sick_laser_message->start_angle;
+	sick_copy.sync_phase_offset = sick_laser_message->sync_phase_offset;
+	sick_copy.timestamp = sick_laser_message->timestamp;
+
+	sick_copy.arraypoints = (carmen_laser_ldmrs_new_point *) malloc(
+			sizeof(carmen_laser_ldmrs_new_point) * sick_laser_message->scan_points);
+
+	memcpy(sick_copy.arraypoints, sick_laser_message->arraypoints,
+			sizeof(carmen_laser_ldmrs_new_point) * sick_laser_message->scan_points);
+
+	sick_vector.push_back(sick_copy);
+
+	if (sick_vector.size() > MAX_POSITIONS)
+	{
+		free(sick_vector.begin()->arraypoints);
+		sick_vector.erase(sick_vector.begin());
+	}
 }
 
 
@@ -1418,6 +1630,7 @@ create_folders()
 	string str_log_name(log_name);
 	char folder_name[100];
 	char folder_image_name[100];
+	int retorno;
 	if (strcmp(detection_type,"-cs") == 0)
 	{
 		sprintf(folder_name, "%s_%.0lf_mts_detections/", log_name,meters_spacement);
@@ -1425,36 +1638,45 @@ create_folders()
 		str_folder_name = folder_name;
 		str_folder_image_name = folder_image_name;
 		string command;
+
 		if (access(str_folder_name.c_str(), F_OK) != 0)
 		{
 			command = "mkdir " + str_folder_name;
-			system(command.c_str());
+			retorno = system(command.c_str());
 		}
 
 		if (access(str_folder_image_name.c_str(), F_OK) != 0)
 		{
 			command = "mkdir " + str_folder_image_name;
-			system(command.c_str());
+			retorno = system(command.c_str());
 
-			command = "mkdir " + str_folder_image_name + "slices/";
-			str_folder_image_name_slices = str_folder_image_name + "slices/";
-			system(command.c_str());
-
-			command = "mkdir " + str_folder_image_name + "slices_rddf_filtered/";
-			str_folder_image_name_slices_rddf_filtered = str_folder_image_name + "slices_rddf_filtered/";
-			system(command.c_str());
-
-			command = "mkdir " + str_folder_image_name + "slices_rddf_full/";
-			str_folder_image_name_slices_rddf_full = str_folder_image_name + "slices_rddf_full/";
-			system(command.c_str());
+			command = "mkdir " + str_folder_image_name + "original/";
+			str_folder_image_name_original = str_folder_image_name + "original/";
+			retorno = system(command.c_str());
 
 			command = "mkdir " + str_folder_image_name + "rddf_full/";
 			str_folder_image_name_rddf_full = str_folder_image_name + "rddf_full/";
-			system(command.c_str());
+			retorno = system(command.c_str());
 
 			command = "mkdir " + str_folder_image_name + "rddf_filtered/";
 			str_folder_image_name_rddf_filtered = str_folder_image_name + "rddf_filtered/";
-			system(command.c_str());
+			retorno = system(command.c_str());
+
+			command = "mkdir " + str_folder_image_name + "slices/";
+			str_folder_image_name_slices = str_folder_image_name + "slices/";
+			retorno = system(command.c_str());
+
+			command = "mkdir " + str_folder_image_name + "slices_rddf_full/";
+			str_folder_image_name_slices_rddf_full = str_folder_image_name + "slices_rddf_full/";
+			retorno = system(command.c_str());
+
+			command = "mkdir " + str_folder_image_name + "slices_rddf_filtered/";
+			str_folder_image_name_slices_rddf_filtered = str_folder_image_name + "slices_rddf_filtered/";
+			retorno = system(command.c_str());
+
+			command = "mkdir " + str_folder_image_name + "slices_and_detection/";
+			str_folder_image_name_slices_and_detection = str_folder_image_name + "slices_and_detection/";
+			retorno = system(command.c_str());
 		}
 	}
 
@@ -1466,33 +1688,10 @@ create_folders()
 		if (access(str_folder_name.c_str(), F_OK) != 0)
 		{
 			command = "mkdir " + str_folder_name;
-			system(command.c_str());
+			retorno = system(command.c_str());
 		}
 
 	}
-}
-
-void
-subscribe_messages()
-{
-    carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
-
-    //carmen_subscribe_playback_info_message(NULL, (carmen_handler_t) playback_command_handler, CARMEN_SUBSCRIBE_LATEST);
-
-    carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-    carmen_laser_subscribe_ldmrs_new_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_new_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-    carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-    //carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-
-
-    carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-    carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
-        			NULL, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
