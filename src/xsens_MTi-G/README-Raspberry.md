@@ -33,18 +33,34 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
 # Download and Install
 
 ```bash
- $ sudo apt-get install subversion
- $ mkdir ~/carmen_lcad
- $ cd carmen_lcad
- $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/
- $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/sharedlib/libcmt/ sharedlib
-
+ $ sudo apt-get install subversion libncurses5 libncurses5-dev
+ $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/ ~/carmen_lcad/src
+ $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/sharedlib/libcmt/ ~/carmen_lcad/sharedlib/libcmt
+ $ sudo wget http://www.cs.cmu.edu/afs/cs/project/TCA/ftp/ipc-3.9.1a.tar.gz
 ```
+
+- Baixe e compile uma versão mais atual do IPC
+
+```bash
+ $ cd /usr/local
+ $ sudo wget http://www.cs.cmu.edu/afs/cs/project/TCA/ftp/ipc-3.9.1a.tar.gz
+ $ sudo tar -xzvf ipc-3.9.1a.tar.gz
+ $ cd ipc-3.9.1/src/
+ $ sudo cp ~/carmen_lcad/src/xsens_MTi-G/formatters.h .
+ $ make
+```
+
+- Substitua o arquivo Makefile.rules do src do carmen
+
+```bash
+ $ cp ~/carmen_lcad/src/xsens_MTi-G/Makefile.rules ~/carmen_lcad/src
+```
+
 # Configure CARMEN LCAD
 
 ```bash
  $ cd ~/carmen_lcad/src
- $ ./configure --nojava  --nozlib --nocuda
+ $ ./configure --nojava --nozlib --nocuda
  Should the C++ tools be installed for CARMEN: [Y/n] Y
  Should Python Bindings be installed: [y/N] N
  Should the old laser server be used instead of the new one: [y/N] N
@@ -58,6 +74,9 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
  $ cd ~/carmen_lcad/src/xsens_MTi-G
  $ ./make_pi
 ```
+
+- O make_pi assume que a variavel CENTRALHOST possui o valor 192.168.1.1
+caso a rede que ira rodar o central tenha outro ip, altere o script make_pi ou o arquivo ~/.bashrc 
 
 # Install pi_imu (optional)
 

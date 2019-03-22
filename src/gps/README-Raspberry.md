@@ -147,6 +147,9 @@ Add the following content:
 
 ```
 iptables-restore < /etc/iptables.ipv4.nat
+
+sudo systemctl start hostapd
+sudo systemctl start dnsmasq
 ```
 
 - If the following error occurs:

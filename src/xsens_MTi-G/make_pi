@@ -36,5 +36,12 @@ MODULES="xsens_MTi-G"
 echo -e "\nPreparation...\n"
 make_list_of_modules "$PREPARATION" -ignore_errors
 
+make -C $CARMEN_HOME/src/fused_odometry librotation_geometry.a
+ln   -s $CARMEN_HOME/src/fused_odometry/librotation_geometry.a $CARMEN_HOME/lib/
+
 make_list_of_modules "$MODULES"
 
+if [ "$CENTRALHOST" = "" ]; then
+	echo "export CENTRALHOST=192.168.1.1" >> ~/.bashrc
+	echo -e "\nClose and restart terminal session for ~/.bashrc changes being effective\n"
+fi
