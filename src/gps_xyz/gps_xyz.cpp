@@ -53,8 +53,8 @@
 #define GPS_MESSAGE_QUEUE_SIZE 20
 #define GPS_REACH1 2
 #define GPS_REACH2 3
-#define SMALL_DELTA_T 0.01
-#define REFERENCE_ANGLE 0.0
+#define SMALL_DELTA_T 0.1
+#define REFERENCE_ANGLE (M_PI / 2.0)
 
 using namespace std;
 
@@ -65,7 +65,7 @@ vector<carmen_gps_xyz_message> gps_xyz_message_queue;
 double
 get_angle_between_gpss(carmen_gps_xyz_message reach2, carmen_gps_xyz_message reach1)
 {
-	double angle = atan2(reach2.y - reach1.y, reach2.x - reach1.x) + REFERENCE_ANGLE;
+	double angle = atan2(reach1.y - reach2.y, reach1.x - reach2.x) + REFERENCE_ANGLE;
 	angle = carmen_normalize_theta(angle);
 
 	return (angle);

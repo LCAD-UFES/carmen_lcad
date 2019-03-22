@@ -45,7 +45,7 @@ LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal
 SOURCES = graphslam.cpp joint_graphslam.cpp graphslam_util.cpp view_path.cpp
 TARGETS = graphslam joint_graphslam view_path
 
-graphslam: graphslam.o
+graphslam: graphslam.o ../libsegmap/libsegmap.a
 joint_graphslam: joint_graphslam.o graphslam_util.o ../libsegmap/libsegmap.a
 view_path: view_path.o ../libsegmap/libsegmap.a
 

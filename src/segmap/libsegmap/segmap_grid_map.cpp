@@ -19,9 +19,9 @@ GridMapTile::_initialize_map()
 	char name[256];
 
 	sprintf(name, "%s/%s_%lf_%lf.map",
-			_tiles_dir.c_str(),
-			GridMapTile::type2str(_map_type),
-			_xo, _yo);
+	        _tiles_dir.c_str(),
+	        GridMapTile::type2str(_map_type),
+	        _xo, _yo);
 
 	_map = (double *) calloc (_h * _w * _n_fields_by_cell, sizeof(double));
 
@@ -68,7 +68,7 @@ GridMapTile::_initialize_derivated_values()
 		// r, g, b
 		_n_fields_by_cell = 4;
 		_unknown = vector<double>(_n_fields_by_cell, 128.);
-        _unknown[3] = 1.;
+		_unknown[3] = 1.;
 	}
 	else
 		exit(printf("Map type '%d' not found.\n", _map_type));
@@ -76,9 +76,9 @@ GridMapTile::_initialize_derivated_values()
 
 
 GridMapTile::GridMapTile(double point_y, double point_x,
-		double height_meters, double width_meters,
-		double resolution, int map_type, string tiles_dir,
-		int save_maps)
+                         double height_meters, double width_meters,
+                         double resolution, int map_type, string tiles_dir,
+                         int save_maps)
 {
 	// map tile origin
 	_xo = floor(point_x / width_meters) * width_meters;
@@ -122,9 +122,9 @@ GridMapTile::save()
 {
 	char name[256];
 	sprintf(name, "%s/%s_%lf_%lf.config",
-			_tiles_dir.c_str(),
-			GridMapTile::type2str(_map_type),
-			_xo, _yo);
+	        _tiles_dir.c_str(),
+	        GridMapTile::type2str(_map_type),
+	        _xo, _yo);
 
 	FILE *fptr = fopen(name, "w");
 
@@ -141,9 +141,9 @@ GridMapTile::save()
 	fclose(fptr);
 
 	sprintf(name, "%s/%s_%lf_%lf.map",
-			_tiles_dir.c_str(),
-			GridMapTile::type2str(_map_type),
-			_xo, _yo);
+	        _tiles_dir.c_str(),
+	        GridMapTile::type2str(_map_type),
+	        _xo, _yo);
 
 	fptr = fopen(name, "wb");
 	fwrite(_map, sizeof(double), _h * _w * _n_fields_by_cell, fptr);
@@ -151,9 +151,9 @@ GridMapTile::save()
 
 	// only for debugging
 	sprintf(name, "%s/%s_%lf_%lf.png",
-			_tiles_dir.c_str(),
-			GridMapTile::type2str(_map_type),
-			_xo, _yo);
+	        _tiles_dir.c_str(),
+	        GridMapTile::type2str(_map_type),
+	        _xo, _yo);
 
 	imwrite(name, to_image());
 }
@@ -173,13 +173,13 @@ GridMapTile::add_point(PointXYZRGB &p)
 
 		if (_map_type == TYPE_VISUAL)
 		{
-            double weight;
-            weight = 1. / (double) _map[pos + 3];
+			double weight;
+			weight = 1. / (double) _map[pos + 3];
 
 			_map[pos + 0] = _map[pos + 0] * (1. - weight) + p.b * weight;
 			_map[pos + 1] = _map[pos + 1] * (1. - weight) + p.g * weight;
 			_map[pos + 2] = _map[pos + 2] * (1. - weight) + p.r * weight;
-            _map[pos + 3] += 1;
+			_map[pos + 3] += 1;
 		}
 		else if (_map_type == TYPE_SEMANTIC)
 		{
@@ -327,7 +327,7 @@ GridMapTile*
 GridMap::_reload_tile(double x, double y)
 {
 	return new GridMapTile(y, x, _tile_height_meters,
-			_tile_width_meters, m_by_pixels, _map_type, _tiles_dir, _save_maps);
+	                       _tile_width_meters, m_by_pixels, _map_type, _tiles_dir, _save_maps);
 }
 
 

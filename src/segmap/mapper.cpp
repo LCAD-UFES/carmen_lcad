@@ -42,11 +42,29 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 
 	for (int i = 0; i < raw_cloud->size(); i++)
 	{
+		double range = sqrt(pow(raw_cloud->at(i).x, 2) + pow(raw_cloud->at(i).y, 2));
+
+		if (range <= 0)
+			continue;
+
+		if (range < 4.0 || range > 70. || (fabs(raw_cloud->at(i).x) < 6.0 && fabs(raw_cloud->at(i).y) < 4.))
+			continue;
+
 		if ((fabs(raw_cloud->at(i).x) > 6.0 || fabs(raw_cloud->at(i).y) > 3.0) // remove rays that hit car
-		    && raw_cloud->at(i).x < 70.0  // remove max range
-		    && raw_cloud->at(i).z < -0.  // remove tree tops
+				//&& fabs(raw_cloud->at(i).x) < 70
+				//&& raw_cloud->at(i).z > 0.
+				//&& raw_cloud->at(i).z < 1.0
+		    //&& range < 50.0  // remove max range
+		    //&& raw_cloud->at(i).z > -2.5  // remove points bellow ground
+		    //&& raw_cloud->at(i).z < -0.  // remove tree tops
+		    //&& (raw_cloud->at(i).x != 0 && raw_cloud->at(i).y != 0)
+		    //&& (!isnan(raw_cloud->at(i).x) && !isnan(raw_cloud->at(i).y) && !isnan(raw_cloud->at(i).z) && !isnan(raw_cloud->at(i).r))
+		    //&& (!isinf(raw_cloud->at(i).x) && !isinf(raw_cloud->at(i).y) && !isinf(raw_cloud->at(i).z) && !isinf(raw_cloud->at(i).r))
 		     )
+		{
+			//printf("%lf %lf %lf\n", raw_cloud->at(i).x, raw_cloud->at(i).y, raw_cloud->at(i).z);
 			cloud->push_back(raw_cloud->at(i));
+		}
 	}
 
 	return cloud;
@@ -54,7 +72,7 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 
 
 void
-increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
+increase_brightness(PointCloud<PointXYZRGB>::Ptr aligned, int mult = 3)
 {
 	// /*
 	for (int j = 0; j < aligned->size(); j++)
@@ -62,8 +80,6 @@ increase_bightness(PointCloud<PointXYZRGB>::Ptr aligned)
 		// int b = ((aligned->at(j).z + 5.0) / 10.) * 255;
 		// if (b < 0) b = 0;
 		// if (b > 255) b = 255;
-		int mult = 3;
-
 		int color = mult * (int) aligned->at(j).r;
 		if (color > 255)
 			color = 255;
@@ -120,13 +136,82 @@ colorize(PointCloud<PointXYZRGB>::Ptr cloud, Matrix<double, 4, 4> &lidar2cam,
 }
 
 
+void
+getEulerYPR(Matrix<double, 3, 3> &m_el, double& yaw, double& pitch, double& roll, unsigned int solution_number = 1)
+{
+	struct Euler
+	{
+		double yaw;
+		double pitch;
+		double roll;
+	};
+
+	Euler euler_out;
+	Euler euler_out2; //second solution
+	//get the pointer to the raw data
+
+	// Check that pitch is not at a singularity
+	// Check that pitch is not at a singularity
+	if (fabs(m_el(2, 0)) >= 1)
+	{
+		euler_out.yaw = 0;
+		euler_out2.yaw = 0;
+
+		// From difference of angles formula
+		double delta = normalize_theta(atan2(m_el(2, 1), m_el(2, 2)));
+		if (m_el(2, 0) < 0)  //gimbal locked down
+		{
+			euler_out.pitch = M_PI / double(2.0);
+			euler_out2.pitch = M_PI / double(2.0);
+			euler_out.roll = delta;
+			euler_out2.roll = delta;
+		}
+		else // gimbal locked up
+		{
+			euler_out.pitch = -M_PI / double(2.0);
+			euler_out2.pitch = -M_PI / double(2.0);
+			euler_out.roll = delta;
+			euler_out2.roll = delta;
+		}
+	}
+	else
+	{
+		euler_out.pitch = -normalize_theta(asin(m_el(2, 0)));
+		euler_out2.pitch = M_PI - euler_out.pitch;
+
+		euler_out.roll = normalize_theta(atan2(m_el(2, 1)/cos(euler_out.pitch),
+		                       m_el(2, 2)/cos(euler_out.pitch)));
+		euler_out2.roll = normalize_theta(atan2(m_el(2, 1)/cos(euler_out2.pitch),
+		                        m_el(2, 2)/cos(euler_out2.pitch)));
+
+		euler_out.yaw = normalize_theta(atan2(m_el(1, 0)/cos(euler_out.pitch),
+		                      m_el(0, 0)/cos(euler_out.pitch)));
+		euler_out2.yaw = normalize_theta(atan2(m_el(1, 0)/cos(euler_out2.pitch),
+		                       m_el(0, 0)/cos(euler_out2.pitch)));
+	}
+
+	if (solution_number == 1)
+	{
+		yaw = euler_out.yaw;
+		pitch = euler_out.pitch;
+		roll = euler_out.roll;
+	}
+	else
+	{
+		yaw = euler_out2.yaw;
+		pitch = euler_out2.pitch;
+		roll = euler_out2.roll;
+	}
+}
+
+
 #if USE_NEW
 void
 create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 						char path_save_maps[])
 {
 	DataSample *sample;
-	PointCloudViewer viewer;
+	PointCloudViewer viewer(3);
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr colored(new PointCloud<PointXYZRGB>);
@@ -139,12 +224,16 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 	SemanticSegmentationLoader sloader(log_path);
 	Pose2d p0 = dataset->at(0)->pose;
 
-	for (int i = 0; i < dataset->size(); i++)
+	for (int i = 0; i < dataset->size(); i += 3)
 	{
 		sample = dataset->at(i);
 
 		if (fabs(sample->v) < 1.0)
 			continue;
+
+		cloud->clear();
+		transformed->clear();
+		colored->clear();
 
 		CarmenLidarLoader loader(sample->velodyne_path.c_str(),
 															sample->n_laser_shots,
@@ -160,22 +249,50 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 		img = load_image(sample);
 		//img = sloader.load(sample);
 
+		//colorize(cloud, lidar2cam, projection, img, colored);
 		colored->clear();
-		colorize(cloud, lidar2cam, projection, img, colored);
+		*colored += *cloud;
+		//*colored = *cloud;
+		increase_brightness(colored, 5);
 
-		transformPointCloud(*colored, *transformed, (Pose2d::to_matrix(pose) * lidar2car).cast<float>());
+		double yaw, pitch, roll;
+		yaw = pitch = roll = 0.;
+
+		// convert xsens data to roll, pitch, yaw
+		//Matrix<double, 3, 3> mat = sample->xsens.toRotationMatrix();
+		//getEulerYPR(mat, yaw, pitch, roll);
+
+		Matrix<double, 4, 4> car2world = pose6d_to_matrix(pose.x, pose.y, 0., roll, pitch, pose.th);
+		Matrix<double, 4, 4> t = car2world * lidar2car;
+		transformed->clear();
+		transformPointCloud(*colored, *transformed, t);
 
 		map.reload(pose.x, pose.y);
 		for (int j = 0; j < transformed->size(); j++)
+		{
+			if (isnan(transformed->at(j).x) ||
+					isnan(transformed->at(j).y) ||
+					isnan(transformed->at(j).z) ||
+					isinf(transformed->at(j).x) ||
+					isinf(transformed->at(j).y) ||
+					isinf(transformed->at(j).z))
+				continue;
+
 			map.add_point(transformed->at(j));
+		}
 
 		Mat map_img = map.to_image().clone();
 		draw_pose(map, map_img, pose, Scalar(0, 255, 0));
 
-		viewer.show(transformed);
-		viewer.show(map_img, "map", 640);
+		// flip vertically.
+		Mat img2;
+		flip(map_img, img2, 0);
+
+		//viewer.clear();
+		//viewer.show(transformed);
+		viewer.show(img2, "map", 640);
 		viewer.show(img, "img", 640);
-		viewer.loop();
+		//viewer.loop();
 	}
 }
 
@@ -201,7 +318,7 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 	char map_name[512];
 
 	deque<string> cloud_names;
-	int step = 1;
+	int step = 4;
 
 	Matrix<double, 3, 3> rot3d;
 	Matrix<double, 4, 4> transf;
@@ -216,6 +333,7 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 		cloud->clear();
 		transformed_cloud->clear();
 		dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, 1, &img_view);
+		increase_brightness(cloud, 5);
 		//pose.x = pose.y = 0.;
 		//pose.th = normalize_theta(-pose.th - degrees_to_radians(18));
 
@@ -428,8 +546,8 @@ main(int argc, char **argv)
 	create_map(map, log_path.c_str(), dataset, "/tmp");
 
 #else
-	DatasetInterface *dataset = new DatasetCarmen(dataset_name, 0);
-	create_map(map, *dataset, path_save_maps);
+	DatasetInterface *dataset = new DatasetCarmen("/dados/data/data_log_volta_da_ufes-20180907-2.txt", 0);
+	create_map(map, *dataset, "/tmp/");
 #endif
 
 	printf("Done\n");

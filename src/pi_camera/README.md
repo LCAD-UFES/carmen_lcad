@@ -1,4 +1,4 @@
-# Istall Raspbian on the Raspberry PI
+# Install Raspbian on the Raspberry PI
 
 - Baixe a imagem do sistema RASPBIAN STRETCH WITH DESKTOP no site do raspberry (https://www.raspberrypi.org/downloads/raspbian/)
 Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de comando.
@@ -89,8 +89,8 @@ raspistill grava uma imgem e raspivid grava um video
 ```
  interface eth0
 
- static ip_address=192.168.0.15/24
- static routers=192.168.0.1
+ static ip_address=192.168.1.15/24
+ static routers=192.168.1.1
  static domain_name_servers=8.8.8.8
 ```
 
@@ -116,7 +116,7 @@ raspistill grava uma imgem e raspivid grava um video
  Run the server on the Raspberry PI (You can access the raspbery pi from IARA using ssh to facilitate)
  
  ```bash
- $ ssh pi@192.168.0.15
+ $ ssh pi@192.168.1.15
  $ cd ~/pi_camera/build
  $ ./pi_camera_server_driver
 ```

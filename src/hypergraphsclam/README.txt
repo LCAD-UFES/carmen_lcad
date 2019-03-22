@@ -163,20 +163,21 @@ Talvez o aquivo de poses não esteja ordenado pelo timestamp após rodar a otimi
  rndf_build		interface	1		0			./rddf_build ../data/rndf/rddf_<seu log>.txt
  publish_poses		graphslam	0		0   			./graphslam_publish poses-opt-<seu log>.txt
 
-5. Modifique o carmen-ford-escape.ini para ativar a criacao de mapas comentando e descomentando o trecho abaixo (ver o carmen-ford-escape.ini).
+5. As seguintes variaveis do carmen-ford-escape.ini serao utilizadas na criacao de mapas:
 
-## Use the parameters below for building maps
-mapper_update_and_merge_with_snapshot_map		off
-mapper_global_map 					off
-mapper_merge_with_offline_map 				off
-mapper_decay_to_offline_map				off
-mapper_update_and_merge_with_mapper_saved_maps		on
-mapper_build_snapshot_map				off
-mapper_velodyne_range_max		 		70.0
-mapper_velodyne_range_max_factor 			4.0
-mapper_create_map_sum_and_count				off
-mapper_use_remission					on
-mapper_laser_ldmrs 					off
+## The parameters below are used with mapper -mapping_mode options
+mapper_mapping_mode_on_update_and_merge_with_snapshot_map	off
+mapper_mapping_mode_on_global_map 				off
+mapper_mapping_mode_on_merge_with_offline_map 			off
+mapper_mapping_mode_on_decay_to_offline_map			off
+mapper_mapping_mode_on_update_and_merge_with_mapper_saved_maps	on
+mapper_mapping_mode_on_build_snapshot_map			off
+mapper_mapping_mode_on_velodyne_range_max		 	70.0
+mapper_mapping_mode_on_velodyne_range_max_factor 		4.0
+mapper_mapping_mode_on_create_map_sum_and_count			off
+mapper_mapping_mode_on_use_remission				on
+mapper_mapping_mode_on_laser_ldmrs 				off
+
 
 6. Se existir a pasta data/mapper_teste2 limpe-a com o comando "rm -rf $CARMEN_HOME/data/mapper_teste2/*".
 Caso a pasta não exista, utilize o comando "mkdir $CARMEN_HOME/data/mapper_teste2" para criá-la.

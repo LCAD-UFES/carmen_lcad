@@ -1610,57 +1610,6 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
     globalpos.theta = globalpos_message->globalpos.theta;
     globalpos.x = globalpos_message->globalpos.x;
     globalpos.y = globalpos_message->globalpos.y;
-
-    /*car_same_hand*/
-//    pose.position.x = 7756766.136901;
-//    pose.position.y = -363658.810730;
-//    pose.position.z = 0.0;
-//    pose.orientation.yaw = -0.147103;
-//    pose.orientation.roll = 0.044425;
-//    pose.orientation.pitch = 0.005547;
-//    globalpos.theta = -0.147103;
-//    globalpos.x = 7756766.136901;
-//    globalpos.y = -363658.810730;
-
-    /*cancela_other_lane*/
-//    pose.position.x = 7757078.584749;
-//    pose.position.y = -364070.151852;
-//    pose.position.z = 0.0;
-//    pose.orientation.yaw = 2.978944;
-//    pose.orientation.roll = -0.013201;
-//    pose.orientation.pitch = 0.009792;
-////    globalpos.theta = 2.978944;
-//    globalpos.x = 7757078.584749;
-//    globalpos.y = -364070.151852;
-
-//    /*cancela_same_lane*/
-//    pose.position.x = 7757078.584749;
-//    pose.position.y = -364070.151852;
-//    pose.position.z = 0.0;
-//    pose.orientation.yaw = 2.978944;
-//    pose.orientation.roll = -0.013201;
-//    pose.orientation.pitch = 0.009792;
-//    globalpos.theta = 2.978944;
-//    globalpos.x = 7757078.584749;
-//    globalpos.y = -364070.151852;
-
-    //    /*cancela_mao_dupla*/
-//    pose.position.x = 7757078.917231;
-//    pose.position.y = -364070.262650;
-//    pose.position.z = 0.0;
-//    pose.orientation.yaw = 2.974394;
-//    pose.orientation.roll = -0.017662;
-//    pose.orientation.pitch = 0.016290;
-//    globalpos.theta = 2.974394;
-//    globalpos.x = 7757078.917231;
-//    globalpos.y = -364070.262650;
-
-//
-//    printf("%lf %lf %lf\n", globalpos.x, globalpos.y, globalpos.theta);getchar();
-//
-//    printf("Global pos: %lf X %lf Theta: %lf\n", globalpos.x, globalpos.y, globalpos.theta);
-//    printf("Global pose: %lf X %lf X %lf Theta: %lf Roll: %lf Pitch: %lf\n", pose.position.x, pose.position.y, pose.position.z, pose.orientation.yaw, pose.orientation.roll, pose.orientation.pitch);
-//    getchar();
 }
 
 
