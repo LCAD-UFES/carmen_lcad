@@ -71,9 +71,9 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 		//point2.b = point.b;
 
 		// to use fused camera and velodyne
-		//if (0)
-		if ((point.x > 0 && x >= 0 && x < img.cols) && (y >= 0 && y < img.rows) 
-				&& (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
+		if (0)
+		//if ((point.x > 0 && x >= 0 && x < img.cols) && (y >= 0 && y < img.rows)
+				//&& (!_use_segmented || (y > top_limit && y < bottom_limit))) // && (point.z < 0))
 		{
 			// colors
 			p = 3 * (y * img.cols + x);
@@ -92,8 +92,8 @@ DatasetInterface::load_fused_pointcloud_and_camera(int i, PointCloud<PointXYZRGB
 			cloud->push_back(point2);
 		}
 		// to use remission
-		else if (0)
-			// else if (point.z < 0.)
+		else if (1)
+		// else if (point.z < 0.)
 		{
 			cloud->push_back(point2);
 		}
@@ -835,12 +835,17 @@ NewCarmenDataset::_load_log(std::string &path)
 	printf("Loading log '%s'\n", path.c_str());
 	FILE *fptr = safe_fopen(path.c_str(), "r");
 
+	_read_log_msgs(fptr);
+
+	/*
 	DataSample *sample;
 
 	while ((sample = _next_data_package(fptr)))
 		_data.push_back(sample);
 
+	 */
 	_clear_synchronization_queues();
+
 	fclose(fptr);
 }
 
@@ -1053,45 +1058,72 @@ NewCarmenDataset::_add_message_to_queue(string line)
 	if (line.size() > 10)
 	{
 		const char *cline = line.c_str();
+		vector<string> splitted = string_split(line, " ");
+
+		if (splitted.size() < 4)
+			return;
+
+		double time = atof(splitted[splitted.size() - 3].c_str());
 
 		if (!strncmp("NMEAGGA", cline, strlen("NMEAGGA")) && cline[strlen("NMEAGGA") + 1] == '1')
+		{
 			_gps_position_messages.push_back(cline);
+			_gps_position_times.push_back(time);
+		}
 		else if (!strncmp("NMEAHDT", cline, strlen("NMEAHDT")))
+		{
 			_gps_orientation_messages.push_back(cline);
+			_gps_orientation_times.push_back(time);
+		}
 		else if (!strncmp("ROBOTVELOCITY_ACK", cline, strlen("ROBOTVELOCITY_ACK")))
+		{
 			_odom_messages.push_back(cline);
+			_odom_times.push_back(time);
+		}
 		else if (!strncmp("XSENS_QUAT", cline, strlen("XSENS_QUAT")))
+		{
 			_imu_messages.push_back(cline);
+			_imu_times.push_back(time);
+		}
 		else if (!strncmp("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3", cline, strlen("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3")))
+		{
 			_camera_messages.push_back(cline);
+			_camera_times.push_back(time);
+		}
 		else if (!strncmp("VELODYNE_PARTIAL_SCAN_IN_FILE", cline, strlen("VELODYNE_PARTIAL_SCAN_IN_FILE")))
+		{
 			_velodyne_messages.push_back(cline);
+			_velodyne_times.push_back(time);
+		}
 	}
 }
 
 
 vector<string>
-NewCarmenDataset::_find_nearest(vector<string> &queue, double ref_time)
+NewCarmenDataset::_find_nearest(vector<string> &queue, vector<double> &times, double ref_time)
 {
 	double msg_time, nearest_time;
 	vector<string> splitted;
 	vector<string> most_sync;
 
 	nearest_time = 0;
+	int id = 0;
 
 	for (int i = 0; i < queue.size(); i++)
 	{
-		splitted = string_split(queue[i], " ");
-		msg_time = atof(splitted[splitted.size() - 3].c_str());
+		//splitted = string_split(queue[i], " ");
+		//msg_time = atof(splitted[splitted.size() - 3].c_str());
+		msg_time = times[i];
 
 		if (fabs(msg_time - ref_time) < fabs(nearest_time - ref_time))
 		{
+			id = i;
 			nearest_time = msg_time;
-			most_sync = vector<string>(splitted);
+			//most_sync = vector<string>(splitted);
 		}
 	}
 
-	return most_sync;
+	return string_split(queue[id], " "); //most_sync;
 }
 
 
@@ -1121,6 +1153,8 @@ NewCarmenDataset::_parse_imu(vector<string> data, DataSample *sample)
 void
 NewCarmenDataset::_parse_velodyne(vector<string> data, DataSample *sample, string velodyne_path)
 {
+	assert(data.size() == 6);
+
 	vector<string> splitted = string_split(data[1], "/");
 
 	int n = splitted.size();
@@ -1132,6 +1166,8 @@ NewCarmenDataset::_parse_velodyne(vector<string> data, DataSample *sample, strin
 	sample->n_laser_shots = atoi(data[2].c_str());
 	sample->velodyne_path = path;
 	sample->velodyne_time =  atof(data[data.size() - 3].c_str());
+
+	printf("VEL %s %lf\n", sample->velodyne_path.c_str(), sample->velodyne_time);
 }
 
 
@@ -1187,6 +1223,49 @@ NewCarmenDataset::_parse_gps_orientation(vector<string> data, DataSample *sample
 }
 
 
+void
+NewCarmenDataset::_read_log_msgs(FILE *fptr)
+{
+	static char line[_MAX_LINE_LENGTH];
+
+	_clear_synchronization_queues();
+
+	while (!feof(fptr))
+	{
+		fscanf(fptr, "\n%[^\n]\n", line);
+
+		string copy_as_string = string(line);
+		_add_message_to_queue(copy_as_string);
+	}
+
+	for (int i = 0; i < _camera_messages.size(); i++)
+	{
+		//if (i % 50 == 0)
+			//printf("Parsing msg %d of %ld\n",i, _camera_messages.size());
+
+		vector<string> msg_splitted;
+		msg_splitted = string_split(_camera_messages[i], " ");
+
+		int time_field = msg_splitted.size() - 3;
+		double ref_time = atof(msg_splitted[time_field].c_str());
+
+		DataSample *sample = new DataSample;
+
+		_parse_velodyne(_find_nearest(_velodyne_messages, _velodyne_times, ref_time), sample, _velodyne_dir);
+		_parse_odom(_find_nearest(_odom_messages, _odom_times, ref_time), sample);
+		_parse_imu(_find_nearest(_imu_messages, _imu_times, ref_time), sample);
+		_parse_gps_position(_find_nearest(_gps_position_messages, _gps_position_times, ref_time), sample);
+		_parse_gps_orientation(_find_nearest(_gps_orientation_messages, _gps_orientation_times, ref_time), sample);
+		_parse_camera(msg_splitted, sample, _images_dir);
+
+		sample->v = sample->v * _calib.mult_v + _calib.add_v;
+		sample->phi = normalize_theta(sample->phi * _calib.mult_phi + _calib.add_phi);
+
+		_data.push_back(sample);
+	}
+}
+
+
 DataSample*
 NewCarmenDataset::_next_data_package(FILE *fptr)
 {
@@ -1228,35 +1307,37 @@ NewCarmenDataset::_next_data_package(FILE *fptr)
 DataSample*
 NewCarmenDataset::_assemble_data_package_from_queues()
 {
-	int time_field;
-	double ref_time;
-	vector<string> msg_splitted;
-	DataSample *sample = new DataSample;
-
-	if (_sync_type == SYNC_BY_CAMERA)
-		msg_splitted = string_split(_camera_messages[_camera_messages.size() - 1], " ");
-	else if (_sync_type == SYNC_BY_VELODYNE)
-		msg_splitted = string_split(_velodyne_messages[_velodyne_messages.size() - 1], " ");
-	else
-		exit(printf("Error: invalid sync type: '%d'\n", _sync_type));
-
-	time_field = msg_splitted.size() - 3;
-	ref_time = atof(msg_splitted[time_field].c_str());
-
-	_parse_velodyne(_find_nearest(_velodyne_messages, ref_time), sample, _velodyne_dir);
-	_parse_odom(_find_nearest(_odom_messages, ref_time), sample);
-	_parse_imu(_find_nearest(_imu_messages, ref_time), sample);
-	_parse_gps_position(_find_nearest(_gps_position_messages, ref_time), sample);
-	_parse_gps_orientation(_find_nearest(_gps_orientation_messages, ref_time), sample);
-
-	// to support logs that do not contain camera data, we ignore
-	// the need for camera data when synchronizing by velodyne.
-	if (_sync_type == SYNC_BY_VELODYNE || _camera_messages.size() > 0)
-		_parse_camera(_find_nearest(_camera_messages, ref_time), sample, _images_dir);
-
-	sample->v = sample->v * _calib.mult_v + _calib.add_v;
-	sample->phi = normalize_theta(sample->phi * _calib.mult_phi + _calib.add_phi);
-
-	return sample;
+	return NULL;
+//
+//	int time_field;
+//	double ref_time;
+//	vector<string> msg_splitted;
+//	DataSample *sample = new DataSample;
+//
+//	if (_sync_type == SYNC_BY_CAMERA)
+//		msg_splitted = string_split(_camera_messages[_camera_messages.size() - 1], " ");
+//	else if (_sync_type == SYNC_BY_VELODYNE)
+//		msg_splitted = string_split(_velodyne_messages[_velodyne_messages.size() - 1], " ");
+//	else
+//		exit(printf("Error: invalid sync type: '%d'\n", _sync_type));
+//
+//	time_field = msg_splitted.size() - 3;
+//	ref_time = atof(msg_splitted[time_field].c_str());
+//
+//	_parse_velodyne(_find_nearest(_velodyne_messages, ref_time), sample, _velodyne_dir);
+//	_parse_odom(_find_nearest(_odom_messages, ref_time), sample);
+//	_parse_imu(_find_nearest(_imu_messages, ref_time), sample);
+//	_parse_gps_position(_find_nearest(_gps_position_messages, ref_time), sample);
+//	_parse_gps_orientation(_find_nearest(_gps_orientation_messages, ref_time), sample);
+//
+//	// to support logs that do not contain camera data, we ignore
+//	// the need for camera data when synchronizing by velodyne.
+//	if (_sync_type == SYNC_BY_VELODYNE || _camera_messages.size() > 0)
+//		_parse_camera(_find_nearest(_camera_messages, ref_time), sample, _images_dir);
+//
+//	sample->v = sample->v * _calib.mult_v + _calib.add_v;
+//	sample->phi = normalize_theta(sample->phi * _calib.mult_phi + _calib.add_phi);
+//
+//	return sample;
 }
 

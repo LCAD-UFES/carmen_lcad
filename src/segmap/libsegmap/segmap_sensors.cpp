@@ -52,7 +52,7 @@ CarmenLidarLoader::CarmenLidarLoader(const char *cloud_path, int n_rays, unsigne
 	_fptr = safe_fopen(cloud_path, "rb");
 
 	for (int i = 0; i < _n_vert; i++)
-		_shot->v_angles[i] = degrees_to_radians(_velodyne_vertical_angles[i]);
+		_shot->v_angles[i] = normalize_theta(degrees_to_radians(_velodyne_vertical_angles[i]));
 
 	_n_readings = 0;
 }
@@ -94,7 +94,7 @@ CarmenLidarLoader::next()
 	fread(_raw_ranges, sizeof(unsigned short), _n_vert, _fptr);
 	fread(_raw_intensities, sizeof(unsigned char), _n_vert, _fptr);
 
-	_shot->h_angle = -degrees_to_radians(_shot->h_angle);
+	_shot->h_angle = -normalize_theta(degrees_to_radians(_shot->h_angle));
 
 	for (int i = 0; i < _n_vert; i++)
 	{
@@ -182,7 +182,7 @@ load_as_pointcloud(CarmenLidarLoader *loader, PointCloud<PointXYZRGB>::Ptr cloud
 			point.z = z;
 			point.r = point.g = point.b = shot->intensities[i];
 
-			cloud->push_back(point);
+			cloud->push_back(PointXYZRGB(point));
 		}
 	}
 }

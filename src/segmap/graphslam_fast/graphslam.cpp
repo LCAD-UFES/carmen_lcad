@@ -426,12 +426,12 @@ load_parameters(int argc, char **argv, GraphSlamData *data)
 	args.add<string>("loops,l", "Path to a file with loop closure relations", "none");
 	args.add<string>("gicp_odom", "Path to a file with odometry relations generated with GICP", "none");
 	args.add<string>("gicp_to_map", "Path to a file with poses given by registration to an a priori map", "none");
-	args.add<double>("odom_xy_std", "Std in xy of odometry-based movement estimations (m)", 0.02);
+	args.add<double>("odom_xy_std", "Std in xy of odometry-based movement estimations (m)", 0.005);
 	args.add<double>("gps_xy_std", "Std in xy of gps measurements (m)", 10.0);
 	args.add<double>("loop_xy_std", "Std in xy of loop closure measurements (m)", 0.3);
 	args.add<double>("gicp_odom_xy_std", "Std in xy of odometry estimated using GICP (m)", 0.3);
 	args.add<double>("gicp_to_map_xy_std", "Std in xy of loop closure measurements in relation to a map (m)", 0.3);
-	args.add<double>("odom_angle_std", "Std of heading of odometry-based movement estimations (degrees)", 0.5);
+	args.add<double>("odom_angle_std", "Std of heading of odometry-based movement estimations (degrees)", 0.1);
 	args.add<double>("gps_angle_std", "Std of heading estimated using consecutive gps measurements when the car is moving (degrees)", 10);
 	args.add<double>("loop_angle_std", "Std of heading in loop closure measurements (degrees)", 3);
 	args.add<double>("gicp_odom_angle_std", "Std of heading when estimating odometry using GICP (degrees)", 3);

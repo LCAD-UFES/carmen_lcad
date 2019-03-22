@@ -195,6 +195,13 @@ protected:
 	std::vector<std::string> _camera_messages;
 	std::vector<std::string> _velodyne_messages;
 
+	std::vector<double> _imu_times;
+	std::vector<double> _gps_position_times;
+	std::vector<double> _gps_orientation_times;
+	std::vector<double> _odom_times;
+	std::vector<double> _camera_times;
+	std::vector<double> _velodyne_times;
+
 	void _load_log(std::string &path);
 	void _load_odometry_calibration(std::string &path);
 	void _load_intensity_calibration(std::string &path);
@@ -206,7 +213,7 @@ protected:
 
 	void _clear_synchronization_queues();
 	void _add_message_to_queue(std::string);
-	static std::vector<std::string> _find_nearest(std::vector<std::string> &queue, double ref_time);
+	static std::vector<std::string> _find_nearest(std::vector<std::string> &queue, std::vector<double> &times, double ref_time);
 
 	static unsigned char*** _allocate_calibration_table();
 	static void _free_calibration_table(unsigned char ***table);
@@ -217,6 +224,8 @@ protected:
 	static void _parse_camera(std::vector<std::string> data, DataSample *sample, std::string image_path);
 	static void _parse_gps_position(std::vector<std::string> data, DataSample *sample);
 	static void _parse_gps_orientation(std::vector<std::string> data, DataSample *sample);
+
+	void _read_log_msgs(FILE *fptr);
 };
 
 #endif
