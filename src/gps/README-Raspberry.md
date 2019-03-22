@@ -42,10 +42,12 @@ sudo nano /etc/dhcpcd.conf
 
 - Go to the end of the file and edit it so that it looks like the following:
 
+```
 interface wlan0
-    static ip_address=192.168.4.1/24
-    nohook wpa_supplicant
-Now restart the dhcpcd daemon and set up the new wlan0 configuration:
+static ip_address=192.168.13.1/24
+nohook wpa_supplicant
+```
+- Now restart the dhcpcd daemon and set up the new wlan0 configuration:
 
 ```bash
 sudo service dhcpcd restart
@@ -79,7 +81,7 @@ You need to edit the hostapd configuration file, located at /etc/hostapd/hostapd
 sudo nano /etc/hostapd/hostapd.conf
 ```
 
-Add the information below to the configuration file. This configuration assumes we are using channel 7, with a network name of NameOfNetwork, and a password AardvarkBadgerHedgehog. Note that the name and password should not have quotes around them. The passphrase should be between 8 and 64 characters in length.
+- Add the information below to the configuration file. This configuration assumes we are using channel 7, with a network name of NameOfNetwork, and a password AardvarkBadgerHedgehog. Note that the name and password should not have quotes around them. The passphrase should be between 8 and 64 characters in length.
 
 To use the 5 GHz band, you can change the operations mode from hw_mode=g to hw_mode=a. Possible values for hw_mode are:
 
@@ -109,41 +111,47 @@ We now need to tell the system where to find this configuration file.
 sudo nano /etc/default/hostapd
 ```
 
-Find the line with #DAEMON_CONF, and replace it with this:
+- Find the line with #DAEMON_CONF, and replace it with this:
 
+```
 DAEMON_CONF="/etc/hostapd/hostapd.conf"
-Start it up
-Now start up the remaining services:
+```
 
+- Now start up the remaining services:
 
 ```bash
 sudo systemctl start hostapd
 sudo systemctl start dnsmasq
 ```
 
-Add routing and masquerade, edit /etc/sysctl.conf and uncomment this line:
+- Add routing and masquerade, edit /etc/sysctl.conf and uncomment this line:
 
 ```bash
 sudo nano /etc/sysctl.conf
 ```
-
-	net.ipv4.ip_forward=1
-
-Add a masquerade for outbound traffic on eth0:
+```
+net.ipv4.ip_forward=1
+```
+- Add a masquerade for outbound traffic on eth0:
 
 ```bash
 sudo iptables -t nat -A  POSTROUTING -o eth0 -j MASQUERADE
 ```
 
-Save the iptables rule.
+- Save the iptables rule.
 
 ```bash
 sudo sh -c "iptables-save > /etc/iptables.ipv4.nat"
 ```
 
-Edit /etc/rc.local and add this just above "exit 0" to install these rules on boot.
+- Edit /etc/rc.local and add this just above "exit 0" to install these rules on boot.
 
+```bash
+sudo nano /etc/rc.local
+```
+```
 iptables-restore < /etc/iptables.ipv4.nat
+```
 
 ```bash
 Reboot
