@@ -38,5 +38,23 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
  $ cd carmen_lcad
  $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/
  $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/sharedlib/libcmt/
+
+```
+# Configure CARMEN LCAD
+
+```bash
+ $ cd ~/carmen_lcad/src
+ $ ./configure --nojava  --nozlib --nocuda
+ Should the C++ tools be installed for CARMEN: [Y/n] Y
+ Should Python Bindings be installed: [y/N] N
+ Should the old laser server be used instead of the new one: [y/N] N
+ Install path [/usr/local/]: 
+ Robot numbers [*]: 1,2
 ```
 
+# Compile CARMEN LCAD
+
+```bash
+ $ cd ~/carmen_lcad/src
+ $ ./make_all_pi
+```
