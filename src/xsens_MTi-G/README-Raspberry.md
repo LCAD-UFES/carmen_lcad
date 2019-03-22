@@ -30,7 +30,7 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
 
 - O cartão esta formatado e pode ser inserido no Raspberry para utilização.
 
-# Install Dependencies anf Download the pi_camera file from git
+# Download and Install
 
 ```bash
  $ sudo apt-get install subversion
@@ -52,7 +52,7 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
  Robot numbers [*]: 1,2
 ```
 
-# Compile CARMEN LCAD (short version for Raspberry PI)
+# Compile xsens_MTi-G module on the Raspberry PI
 
 ```bash
  $ cd ~/carmen_lcad/src/xsens_MTi-G
