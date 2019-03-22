@@ -52,7 +52,7 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
  Robot numbers [*]: 1,2
 ```
 
-# Compile CARMEN LCAD
+# Compile CARMEN LCAD (short version for Raspberry PI)
 
 ```bash
  $ cd ~/carmen_lcad/src
