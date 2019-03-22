@@ -1,8 +1,5 @@
 # To Use the GSP RTK Reach on the Raspberry PI
 
-# Setting up a Raspberry Pi as an access point in a standalone network (NAT)
-
-
 # Add the Raspberry Pi-based access point to an existing network
 
 In order to work as an access point, the Raspberry Pi will need to have access point software installed, along with DHCP server software to provide connecting devices with a network address. Ensure that your Raspberry Pi is using an up-to-date version of Raspbian (dated 2017 or later).
@@ -124,13 +121,10 @@ sudo systemctl start hostapd
 sudo systemctl start dnsmasq
 ```
 
-- Add routing and masquerade, edit /etc/sysctl.conf and uncomment this line:
+- Add routing and masquerade, edit /etc/sysctl.conf and uncomment this line: net.ipv4.ip_forward=1
 
 ```bash
 sudo nano /etc/sysctl.conf
-```
-```
-net.ipv4.ip_forward=1
 ```
 - Add a masquerade for outbound traffic on eth0:
 
@@ -149,9 +143,23 @@ sudo sh -c "iptables-save > /etc/iptables.ipv4.nat"
 ```bash
 sudo nano /etc/rc.local
 ```
+Add the following content:
+
 ```
 iptables-restore < /etc/iptables.ipv4.nat
 ```
+
+- If the following error occurs:
+
+```
+Failed to start hostapd.service: Unit hostapd.service is masked.
+```
+Run the following command:
+
+```
+sudo systemctl unmask hostapd.service
+```
+
 
 ```bash
 Reboot
