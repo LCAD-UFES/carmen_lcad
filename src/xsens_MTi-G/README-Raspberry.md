@@ -37,7 +37,7 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
  $ mkdir ~/carmen_lcad
  $ cd carmen_lcad
  $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/
- $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/sharedlib/libcmt/
+ $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/sharedlib/libcmt/ sharedlib
 
 ```
 # Configure CARMEN LCAD
