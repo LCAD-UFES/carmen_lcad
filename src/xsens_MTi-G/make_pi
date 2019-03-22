@@ -1,5 +1,7 @@
 #!/bin/bash
 
+if [ "$CARMEN_HOME" = "" ]; then CARMEN_HOME=../..; fi
+
 function make_module()
 {
 	cd "$CARMEN_HOME/src/$1"
@@ -26,8 +28,6 @@ function make_list_of_modules()
 	done
 }
 
-
-$CARMEN_HOME/bin/make_clean_all
 
 PREPARATION=". web_cam global param_daemon gps_xyz fused_odometry xsens"
 
