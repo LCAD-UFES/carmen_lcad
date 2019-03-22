@@ -1,0 +1,10 @@
+#!/bin/bash
+grep $1 $2 > /tmp/caco.txt
+grep -v "#" /tmp/caco.txt > /tmp/caco2.txt
+cat /tmp/caco2.txt | rev | cut -d' ' -f 3 | rev > /tmp/caco.txt
+first_timesamp=$(head -n 1 /tmp/caco.txt)
+echo "plot \"/tmp/caco.txt\" u (\$1 - $first_timesamp)" > /tmp/caco2.txt 
+echo "pause -1" >> /tmp/caco2.txt
+echo "Press any key to finish..."
+gnuplot /tmp/caco2.txt
+# rm /tmp/caco.txt /tmp/caco2.txt
