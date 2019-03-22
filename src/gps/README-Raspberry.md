@@ -62,9 +62,11 @@ sudo nano /etc/dnsmasq.conf
 
 - Type or copy the following information into the dnsmasq configuration file and save it:
 
-	interface=wlan0      # Use the require wireless interface - usually wlan0
-	  dhcp-range=192.168.4.2,192.168.4.20,255.255.255.0,24h
-
+```
+	interface=wlan0        # Use the require wireless interface - usually
+	wlan0
+	  dhcp-range=192.168.13.22,192.168.13.25,255.255.255.0,24h
+```
 So, for wlan0, we are going to provide IP addresses between 192.168.4.2 and 192.168.4.20, with a lease time of 24 hours. If you are providing DHCP services for other network devices (e.g. eth0), you could add more sections with the appropriate interface header, with the range of addresses you intend to provide to that interface.
 
 There are many more options for dnsmasq; see the dnsmasq documentation for more details.
@@ -81,6 +83,7 @@ Add the information below to the configuration file. This configuration assumes 
 
 To use the 5 GHz band, you can change the operations mode from hw_mode=g to hw_mode=a. Possible values for hw_mode are:
 
+```
 a = IEEE 802.11a (5 GHz)
 b = IEEE 802.11b (2.4 GHz)
 g = IEEE 802.11g (2.4 GHz)
@@ -100,6 +103,7 @@ wpa_key_mgmt=WPA-PSK
 wpa_pairwise=TKIP
 rsn_pairwise=CCMP
 We now need to tell the system where to find this configuration file.
+```
 
 ```bash
 sudo nano /etc/default/hostapd
