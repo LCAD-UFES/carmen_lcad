@@ -55,7 +55,7 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
 # Compile CARMEN LCAD (short version for Raspberry PI)
 
 ```bash
- $ cd ~/carmen_lcad/src
+ $ cd ~/carmen_lcad/src/xsens_MTi-G
  $ ./make_pi
 ```
 
