@@ -56,5 +56,13 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
 
 ```bash
  $ cd ~/carmen_lcad/src
- $ ./make_all_pi
+ $ ./make_pi
 ```
+
+# Install pi_imu (optional)
+
+ [Read the instructions](../pi_imu)
+
+# Install pi_camera (optional)
+
+ [Read the instructions](../pi_camera)
