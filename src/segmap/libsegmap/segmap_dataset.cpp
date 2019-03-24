@@ -1130,6 +1130,8 @@ NewCarmenDataset::_find_nearest(vector<string> &queue, vector<double> &times, do
 void 
 NewCarmenDataset::_parse_odom(vector<string> data, DataSample *sample)
 {
+	assert(data.size() == 6);
+
 	sample->v = atof(data[1].c_str());
 	sample->phi = atof(data[2].c_str());
 	sample->odom_time = atof(data[3].c_str());
@@ -1139,6 +1141,8 @@ NewCarmenDataset::_parse_odom(vector<string> data, DataSample *sample)
 void 
 NewCarmenDataset::_parse_imu(vector<string> data, DataSample *sample)
 {
+	assert(data.size() == 19);
+
 	sample->xsens = Quaterniond(
 			atof(data[4].c_str()),
 			atof(data[5].c_str()),
@@ -1153,9 +1157,11 @@ NewCarmenDataset::_parse_imu(vector<string> data, DataSample *sample)
 void
 NewCarmenDataset::_parse_velodyne(vector<string> data, DataSample *sample, string velodyne_path)
 {
-	vector<string> splitted = string_split(data[1], "/");
+	assert(data.size() == 6);
 
+	vector<string> splitted = string_split(data[1], "/");
 	int n = splitted.size();
+
 	string path = velodyne_path + "/" + 
 			splitted[n - 3] + "/" +
 			splitted[n - 2] + "/" +
@@ -1170,9 +1176,11 @@ NewCarmenDataset::_parse_velodyne(vector<string> data, DataSample *sample, strin
 void 
 NewCarmenDataset::_parse_camera(vector<string> data, DataSample *sample, string image_path)
 {
-	vector<string> splitted = string_split(data[1], "/");
+	assert(data.size() == 9);
 
+	vector<string> splitted = string_split(data[1], "/");
 	int n = splitted.size();
+
 	string path = image_path + "/" + 
 			splitted[n - 3] + "/" +
 			splitted[n - 2] + "/" +
@@ -1236,9 +1244,6 @@ NewCarmenDataset::_read_log_msgs(FILE *fptr)
 
 	for (int i = 0; i < _camera_messages.size(); i++)
 	{
-		//if (i % 50 == 0)
-			//printf("Parsing msg %d of %ld\n",i, _camera_messages.size());
-
 		vector<string> msg_splitted;
 		msg_splitted = string_split(_camera_messages[i], " ");
 

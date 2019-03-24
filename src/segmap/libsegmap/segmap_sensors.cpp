@@ -90,23 +90,21 @@ CarmenLidarLoader::_get_distance_index(double distance)
 LidarShot* 
 CarmenLidarLoader::next()
 {
-	LidarShot* shot = new LidarShot(_n_vert);
-
-	fread(&(shot->h_angle), sizeof(double), 1, _fptr);
+	fread(&(_shot->h_angle), sizeof(double), 1, _fptr);
 	fread(_raw_ranges, sizeof(unsigned short), _n_vert, _fptr);
 	fread(_raw_intensities, sizeof(unsigned char), _n_vert, _fptr);
 
-	shot->h_angle = -normalize_theta(degrees_to_radians(shot->h_angle));
+	_shot->h_angle = -normalize_theta(degrees_to_radians(_shot->h_angle));
 
 	for (int i = 0; i < 32; i++)
 	{
 		// reorder and convert range to meters
-		shot->ranges[i] = ((double) _raw_ranges[velodyne_ray_order[i]]) / (double) 500.;
-		shot->intensities[i] = _raw_intensities[velodyne_ray_order[i]];
+		_shot->ranges[i] = ((double) _raw_ranges[velodyne_ray_order[i]]) / (double) 500.;
+		_shot->intensities[i] = _raw_intensities[velodyne_ray_order[i]];
 	}
 
 	_n_readings++;
-	return shot;
+	return _shot;
 }
 
 
@@ -180,8 +178,6 @@ load_as_pointcloud(CarmenLidarLoader *loader, PointCloud<PointXYZRGB>::Ptr cloud
 
 			cloud->push_back(point);
 		}
-
-		delete(shot);
 	}
 }
 
