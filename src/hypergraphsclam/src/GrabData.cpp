@@ -53,7 +53,6 @@ GrabData::GrabData() :
     use_sick_loop(true),
     use_bumblebee_loop(true) {}
 
-
 // the main destructor
 GrabData::~GrabData()
 {
@@ -346,6 +345,9 @@ void GrabData::BuildGPSMeasures()
 
                 // update the orientation
                 gps_pose->gps_measurement.setRotation(Eigen::Rotation2Dd(GetGPSOrientation(begin, it, end, gps_pose->timestamp)));
+
+                // move to local origin
+                gps_pose->gps_measurement = gps_pose->gps_measurement * StampedGPSPose::inv_gps_pose;
 
                 // let's take an advantage here
                 // gps_pose->est = gps_pose->gps_measurement;
@@ -1793,7 +1795,7 @@ g2o::SE2 GrabData::GetSE2FromVisoMatrix(const Matrix &matrix)
 
 
 // configuration
-void GrabData::Configure(std::string config_filename)
+void GrabData::Configure(std::string config_filename, std::string carmen_home)
 {
     std::cout << "Reading cofigure file '" << config_filename << "'" << std::endl;
 
@@ -1886,6 +1888,18 @@ void GrabData::Configure(std::string config_filename)
                 std::cout << "Disabling visual loop closures" << std::endl;
                 use_bumblebee_loop = false;
             }
+            else if ("GPS_IDENTIFIER" == str)
+            {
+                ss >> StampedGPSPose::gps_id;
+
+                if ("0" == StampedGPSPose::gps_id) {
+                    StampedGPSPose::gps_id = "";
+                }
+
+                if (!StampedGPSPose::gps_id.empty()) {
+                    StampedGPSPose::gps_id = "_" + StampedGPSPose::gps_id; 
+                }
+            }
         }
     }
     else
@@ -1894,8 +1908,77 @@ void GrabData::Configure(std::string config_filename)
     }
 
     is.close();
+
+    SetGPSPose(carmen_home);
 }
 
+// get the gps antena position in relation to sensor board
+void GrabData::SetGPSPose(std::string carmen_home)
+{
+
+    std::ifstream is(carmen_home + "/src/carmen-ford-escape-sensor-box.ini");
+   
+    if (is.good())
+    {
+        int param_counter = 0;
+        double x = 0.0, y = 0.0, yaw = 0.0;
+        double sbx = 0.0, sby = 0.0, sbyaw = 0.0;
+
+        std::string gps_nmea = "gps_nmea";
+        std::stringstream ss;
+
+        while (-1 != StringHelper::ReadLine(is, ss) and 6 > param_counter)
+        {
+            std::string str;
+            ss >> str;
+
+            if (gps_nmea + StampedGPSPose::gps_id + "_x" == str)
+            {
+                ss >> x;
+                param_counter += 1;   
+            }
+            else if (gps_nmea + StampedGPSPose::gps_id + "_y" == str)
+            {
+                ss >> y;
+                param_counter += 1;   
+            }
+            else if (gps_nmea + StampedGPSPose::gps_id + "_yaw" == str)
+            {
+                ss >> yaw;
+                param_counter += 1;   
+            }
+            else if ("sensor_board_1_x" == str)
+            {
+                ss >> sbx;
+                param_counter += 1;
+            }
+            else if ("sensor_board_1_y" == str)
+            {
+                ss >> sby;
+                param_counter += 1;
+            }
+            else if ("sensor_board_1_yaw" == str)
+            {
+                ss >> sbyaw;
+                param_counter += 1;
+            }
+        }
+
+        if (6 == param_counter) 
+        {
+            g2o::SE2 sensor_board(sbx, sby, mrpt::math::wrapToPi<double>(sbyaw));
+            StampedGPSPose::inv_gps_pose.setTranslation(Eigen::Vector2d(x, y));
+            StampedGPSPose::inv_gps_pose.setRotation(Eigen::Rotation2Dd(mrpt::math::wrapToPi<double>(yaw)));
+            StampedGPSPose::inv_gps_pose = (sensor_board * StampedGPSPose::inv_gps_pose).inverse();            
+        }
+        else 
+        {
+            std::cout << "Could not read the gps parameters!" << std::endl;
+        }
+    }
+
+    is.close();
+}
 
 // the main process
 // it reads the entire log file and builds the hypergraph
@@ -1907,7 +1990,6 @@ bool GrabData::ParseLogFile(const std::string &input_filename)
     if (!logfile.is_open())
     {
         std::cerr << "Unable to open the input file: " << input_filename << "\n";
-
         return false;
     }
 
@@ -1966,17 +2048,17 @@ bool GrabData::ParseLogFile(const std::string &input_filename)
             // build a new GPS orientation message
             msg = new StampedGPSOrientation(msg_id);
         }
-        else if ("LASER_LDMRS_NEW" == tag)
+        else if ((use_sick_odometry or use_sick_loop) and "LASER_LDMRS_NEW" == tag)
         {
             // build a new sick message
             msg = new StampedSICK(msg_id);
         }
-        else if ("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3____" == tag)   // ZED eh FILE4. Os "_____" sao para nao considerar esta mensagem
+        else if ((use_bumblebee_odometry or use_bumblebee_loop) and "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3____" == tag)   // ZED eh FILE4. Os "_____" sao para nao considerar esta mensagem
         {
             // parse the Bumblebee stereo image message
             msg = new StampedBumblebee(msg_id);
         }
-        else if ("VELODYNE_PARTIAL_SCAN_IN_FILE" == tag || "VELODYNE_PARTIAL_SCAN" == tag)
+        else if ((use_velodyne_odometry or use_velodyne_loop) and ("VELODYNE_PARTIAL_SCAN_IN_FILE" == tag or "VELODYNE_PARTIAL_SCAN" == tag))
         {
             // build a new velodyne message
             msg = new StampedVelodyne(msg_id);

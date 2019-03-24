@@ -34,10 +34,10 @@ PHI_MULT_ODOMETRY_BIAS 0.903564
 PHI_ADD_ODOMETRY_BIAS -0.002708
 
 -- Descomente os argumentos abaixo para desabilitar a construcao das respectivas arestas
-DISABLE_VELODYNE_ODOMETRY
+-- DISABLE_VELODYNE_ODOMETRY
 -- DISABLE_VELODYNE_LOOP
 DISABLE_SICK_ODOMETRY
--- DISABLE_SICK_LOOP
+DISABLE_SICK_LOOP
 DISABLE_BUMBLEBEE_ODOMETRY
 DISABLE_BUMBLEBEE_LOOP
 
@@ -45,3 +45,7 @@ DISABLE_BUMBLEBEE_LOOP
 -- Save the accumulated point clouds, uncomment the line below in order to save the accumulated clouds
 -- Make sure you have enough space available in your hard drive (3x the log size)
 -- SAVE_ACCUMULATED_POINT_CLOUDS
+
+
+-- indica qual gps a utilizar
+GPS_IDENTIFIER 1
