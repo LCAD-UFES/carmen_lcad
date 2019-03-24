@@ -44,17 +44,9 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 	{
 		double range = sqrt(pow(raw_cloud->at(i).x, 2) + pow(raw_cloud->at(i).y, 2));
 
-		if (range <= 0)
-			continue;
-
-		if (range < 4.0 || range > 70. || (fabs(raw_cloud->at(i).x) < 6.0 && fabs(raw_cloud->at(i).y) < 4.))
-			continue;
-
-		if ((fabs(raw_cloud->at(i).x) > 6.0 || fabs(raw_cloud->at(i).y) > 3.0) // remove rays that hit car
-				//&& fabs(raw_cloud->at(i).x) < 70
-				//&& raw_cloud->at(i).z > 0.
-				//&& raw_cloud->at(i).z < 1.0
-		    //&& range < 50.0  // remove max range
+		if (((fabs(raw_cloud->at(i).x) > 6.0) || (fabs(raw_cloud->at(i).y) > 4.0)) // remove rays that hit car
+		    && (range < 70.0)  // remove max range
+		    && (range > 4.0)  // remove max range
 		    //&& raw_cloud->at(i).z > -2.5  // remove points bellow ground
 		    //&& raw_cloud->at(i).z < -0.  // remove tree tops
 		    //&& (raw_cloud->at(i).x != 0 && raw_cloud->at(i).y != 0)
@@ -63,7 +55,7 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 		     )
 		{
 			//printf("%lf %lf %lf\n", raw_cloud->at(i).x, raw_cloud->at(i).y, raw_cloud->at(i).z);
-			cloud->push_back(raw_cloud->at(i));
+			cloud->push_back(PointXYZRGB(raw_cloud->at(i)));
 		}
 	}
 
@@ -211,12 +203,13 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 						char path_save_maps[])
 {
 	DataSample *sample;
-	PointCloudViewer viewer(3);
+	PointCloudViewer viewer(1, 0, 0, 1);
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr colored(new PointCloud<PointXYZRGB>);
 
 	Mat img;
+	double yaw, pitch, roll;
 	Matrix<double, 4, 4> lidar2car = dataset->vel2car();
 	Matrix<double, 4, 4> lidar2cam = dataset->vel2cam();
 	Matrix<double, 3, 4> projection = dataset->projection_matrix();
@@ -255,31 +248,21 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 		//*colored = *cloud;
 		increase_brightness(colored, 5);
 
-		double yaw, pitch, roll;
 		yaw = pitch = roll = 0.;
-
 		// convert xsens data to roll, pitch, yaw
-		//Matrix<double, 3, 3> mat = sample->xsens.toRotationMatrix();
-		//getEulerYPR(mat, yaw, pitch, roll);
+		Matrix<double, 3, 3> mat = sample->xsens.toRotationMatrix();
+		getEulerYPR(mat, yaw, pitch, roll);
 
 		Matrix<double, 4, 4> car2world = pose6d_to_matrix(pose.x, pose.y, 0., roll, pitch, pose.th);
 		Matrix<double, 4, 4> t = car2world * lidar2car;
+
 		transformed->clear();
 		transformPointCloud(*colored, *transformed, t);
 
 		map.reload(pose.x, pose.y);
-		for (int j = 0; j < transformed->size(); j++)
-		{
-			if (isnan(transformed->at(j).x) ||
-					isnan(transformed->at(j).y) ||
-					isnan(transformed->at(j).z) ||
-					isinf(transformed->at(j).x) ||
-					isinf(transformed->at(j).y) ||
-					isinf(transformed->at(j).z))
-				continue;
 
+		for (int j = 0; j < transformed->size(); j++)
 			map.add_point(transformed->at(j));
-		}
 
 		Mat map_img = map.to_image().clone();
 		draw_pose(map, map_img, pose, Scalar(0, 255, 0));
@@ -292,7 +275,7 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 		//viewer.show(transformed);
 		viewer.show(img2, "map", 640);
 		viewer.show(img, "img", 640);
-		//viewer.loop();
+		viewer.loop();
 	}
 }
 

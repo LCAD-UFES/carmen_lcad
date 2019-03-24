@@ -1153,8 +1153,6 @@ NewCarmenDataset::_parse_imu(vector<string> data, DataSample *sample)
 void
 NewCarmenDataset::_parse_velodyne(vector<string> data, DataSample *sample, string velodyne_path)
 {
-	assert(data.size() == 6);
-
 	vector<string> splitted = string_split(data[1], "/");
 
 	int n = splitted.size();
@@ -1166,8 +1164,6 @@ NewCarmenDataset::_parse_velodyne(vector<string> data, DataSample *sample, strin
 	sample->n_laser_shots = atoi(data[2].c_str());
 	sample->velodyne_path = path;
 	sample->velodyne_time =  atof(data[data.size() - 3].c_str());
-
-	printf("VEL %s %lf\n", sample->velodyne_path.c_str(), sample->velodyne_time);
 }
 
 

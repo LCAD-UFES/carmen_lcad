@@ -27,8 +27,8 @@ int velodyne_ray_order[32] = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26,
 PointXYZRGB
 compute_point_from_velodyne(double v_angle, double h_angle, double radius, unsigned char intensity)
 {
-    // build a new point
-    PointXYZRGB point;
+	// build a new point
+	PointXYZRGB point;
 
 	double cos_rot_angle = cos(h_angle);
 	double sin_rot_angle = sin(h_angle);
@@ -43,10 +43,10 @@ compute_point_from_velodyne(double v_angle, double h_angle, double radius, unsig
 	point.z = (radius * sin_vert_angle);
 
 	point.r = intensity;
-    point.g = intensity;
-    point.b = intensity;
+	point.g = intensity;
+	point.b = intensity;
 
-    return point;
+	return point;
 }
 
 
@@ -55,8 +55,8 @@ load_pointcloud(char *path, int n_rays, PointCloud<PointXYZRGB>::Ptr cloud)
 {
 	FILE *f = fopen(path, "rb");
 
-    if (f == NULL)
-        exit(printf("File %s not found.\n", path));
+	if (f == NULL)
+		exit(printf("File %s not found.\n", path));
 
 	double h_angle, v_angle;
 	unsigned short distances[32];
@@ -68,23 +68,23 @@ load_pointcloud(char *path, int n_rays, PointCloud<PointXYZRGB>::Ptr cloud)
 	for(int i = 0; i < n_rays; i++)
 	{
 		fread(&h_angle, sizeof(double), 1, f);
-	    fread(distances, sizeof(unsigned short), 32, f);
-	    fread(intensities, sizeof(unsigned char), 32, f);
+		fread(distances, sizeof(unsigned short), 32, f);
+		fread(intensities, sizeof(unsigned char), 32, f);
 
-	    h_angle = M_PI * h_angle / 180.;
+		h_angle = M_PI * h_angle / 180.;
 
-	    for (int j = 0; j < 32; j++)
-	    {
-	    	range = (double) distances[velodyne_ray_order[j]] / 500.;
-	    	v_angle = velodyne_vertical_angles[j];
-	    	v_angle = M_PI * v_angle / 180.;
+		for (int j = 0; j < 32; j++)
+		{
+			range = (double) distances[velodyne_ray_order[j]] / 500.;
+			v_angle = velodyne_vertical_angles[j];
+			v_angle = M_PI * v_angle / 180.;
 
-	    	PointXYZRGB point = compute_point_from_velodyne(v_angle, -h_angle, range, intensities[velodyne_ray_order[j]]);
-	    	cloud->push_back(point);
-	    }
+			PointXYZRGB point = compute_point_from_velodyne(v_angle, -h_angle, range, intensities[velodyne_ray_order[j]]);
+			cloud->push_back(point);
+		}
 	}
 
-    fclose(f);
+	fclose(f);
 }
 
 

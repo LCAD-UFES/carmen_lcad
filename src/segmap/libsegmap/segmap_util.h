@@ -113,6 +113,9 @@ FILE* safe_fopen(const char *path, const char *mode);
 void spherical2cartersian(double v_angle, double h_angle, double radius, 
 						  double *x, double *y, double *z);
 
+void cartersian2spherical(double x, double y, double z,
+							double *v_angle, double *h_angle, double *radius);
+
 std::vector<std::string> string_split(std::string s, std::string pattern);
 
 std::string file_name_from_path(const char *path);

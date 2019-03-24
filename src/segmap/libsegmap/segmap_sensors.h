@@ -39,10 +39,11 @@ public:
     bool done();
     void reset();
 
+    int _n_readings;
+
 protected:
     int _n_rays;
-    int _n_readings;
-    short int *_raw_ranges;
+    unsigned short int *_raw_ranges;
     unsigned char *_raw_intensities;
     FILE *_fptr;
     LidarShot *_shot;
