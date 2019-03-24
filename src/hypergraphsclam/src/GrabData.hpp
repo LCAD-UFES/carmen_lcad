@@ -123,7 +123,7 @@ namespace hyper {
             void SeparateMessages();
 
             // get the gps antena position in relation to sensor board
-            void SetGPSPose();
+            void SetGPSPose(std::string carmen_home);
 
             // get the gps estimation
             g2o::SE2 GetNearestGPSMeasure(
@@ -277,7 +277,7 @@ namespace hyper {
             ~GrabData();
 
             // configuration
-            void Configure(std::string config_filename);
+            void Configure(std::string config_filename, std::string carmen_home);
 
             // parse the log file
             bool ParseLogFile(const std::string &input_filename);

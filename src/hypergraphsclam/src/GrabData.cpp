@@ -1795,7 +1795,7 @@ g2o::SE2 GrabData::GetSE2FromVisoMatrix(const Matrix &matrix)
 
 
 // configuration
-void GrabData::Configure(std::string config_filename)
+void GrabData::Configure(std::string config_filename, std::string carmen_home)
 {
     std::cout << "Reading cofigure file '" << config_filename << "'" << std::endl;
 
@@ -1909,14 +1909,14 @@ void GrabData::Configure(std::string config_filename)
 
     is.close();
 
-    SetGPSPose();
+    SetGPSPose(carmen_home);
 }
 
 // get the gps antena position in relation to sensor board
-void GrabData::SetGPSPose()
+void GrabData::SetGPSPose(std::string carmen_home)
 {
 
-    std::ifstream is("../carmen-ford-escape-sensor-box.ini");
+    std::ifstream is(carmen_home + "/src/carmen-ford-escape-sensor-box.ini");
    
     if (is.good())
     {
@@ -1973,7 +1973,7 @@ void GrabData::SetGPSPose()
         }
         else 
         {
-            std::cout << "Could not read all the gps parameters!" << std::endl;
+            std::cout << "Could not read the gps parameters!" << std::endl;
         }
     }
 
