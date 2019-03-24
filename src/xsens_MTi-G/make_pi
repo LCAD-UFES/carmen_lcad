@@ -42,6 +42,9 @@ ln   -s $CARMEN_HOME/src/fused_odometry/librotation_geometry.a $CARMEN_HOME/lib/
 make_list_of_modules "$MODULES"
 
 if [ "$CENTRALHOST" = "" ]; then
-	echo "export CENTRALHOST=192.168.1.1" >> ~/.bashrc
-	echo -e "\nClose and restart terminal session for ~/.bashrc changes being effective\n"
+	CENTRALHOST=192.168.1.1
+	echo "export CENTRALHOST=$CENTRALHOST" >> ~/.bashrc
+	echo -e "\nClose and restart terminal session for ~/.bashrc changes to take effect: CENTRALHOST=$CENTRALHOST\n"
+else
+	echo -e "\nCENTRALHOST=$CENTRALHOST (otherwise edit ~/.bashrc)\n"
 fi
