@@ -122,6 +122,9 @@ namespace hyper {
             // separate the gps, sick and velodyne messages
             void SeparateMessages();
 
+            // get the gps antena position in relation to sensor board
+            void SetGPSPose();
+
             // get the gps estimation
             g2o::SE2 GetNearestGPSMeasure(
                         StampedMessagePtrVector::iterator it,

@@ -23,12 +23,15 @@ bool StampedGPSPose::FromCarmenLog(std::stringstream &ss)
     // helpers
     double lt_dm, lt, lg_dm, lg, sl;
     char lt_orientation, lg_orientation;
-    int quality, gps_id;
+    int quality;
+
+    std::string gid;
 
     // get the gps id
-    ss >> gps_id;
+    ss >> gid;
+    gid = "_" + gid;
 
-    if (1 == gps_id)
+    if (gps_id == gid)
     {
         // discards the second value
         SkipValues(ss, 1);
@@ -108,6 +111,8 @@ bool StampedGPSPose::FromCarmenLog(std::stringstream &ss)
         // update the measure without orientation
         gps_measurement.setTranslation(Eigen::Vector2d(utm.y, -utm.x));
 
+        gps_measurement = gps_measurement;
+
         // set the estimate
         StampedMessage::est = gps_measurement;
 
@@ -118,9 +123,12 @@ bool StampedGPSPose::FromCarmenLog(std::stringstream &ss)
     return false;
 }
 
-
 // get the stamped message type
 StampedMessageType StampedGPSPose::GetType()
 {
     return StampedGPSMessage;
 }
+
+// the external identifier
+std::string StampedGPSPose::gps_id = "_1";
+g2o::SE2 StampedGPSPose::inv_gps_pose = g2o::SE2(0.0, 0.0, 0.0);

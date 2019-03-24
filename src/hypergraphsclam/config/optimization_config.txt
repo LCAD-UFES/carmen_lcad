@@ -8,9 +8,9 @@
 -- HH == VARIANCIA DO HEADING EM RELACAO AO HEADING
 
 -- ODOMETRY displacement
-ODOMETRY_XX_VAR 0.8
-ODOMETRY_YY_VAR 0.8
-ODOMETRY_HH_VAR 0.75
+ODOMETRY_XX_VAR 1.8
+ODOMETRY_YY_VAR 1.8
+ODOMETRY_HH_VAR 0.5
 
 -- SICK ICP
 SICK_ICP_XX_VAR 0.8
@@ -23,8 +23,8 @@ SICK_LOOP_ICP_YY_VAR 0.7
 SICK_LOOP_ICP_HH_VAR 0.25
 
 -- VELODYNE ICP
-VELODYNE_ICP_XX_VAR 0.5
-VELODYNE_ICP_YY_VAR 0.5
+VELODYNE_ICP_XX_VAR 1.5
+VELODYNE_ICP_YY_VAR 1.5
 VELODYNE_ICP_HH_VAR 0.2
 
 -- VELODYNE ICP LOOP
@@ -40,7 +40,7 @@ VISUAL_YY_VAR.25
 VISUAL_HH_VAR 0.125
 
 -- Multiplicado do desvio padrao- quanto maior, menor a confianca no GPS - 125 ta confiando bem pouco no multiplier 
-GPS_POSE_STD_MULTIPLIER 10.5
+GPS_POSE_STD_MULTIPLIER 30.5
 GPS_POSE_HH_STD 150.75
 
 -- special edge: two messages with same timestamp value - Nao precisa mecher, basicamente nao deixa o otimizador mexer em nos da mesma mensagem (GPS-HEADING)
@@ -59,10 +59,12 @@ OPTIMIZER_INNER_POSE_ITERATIONS 40
 OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS 10
 
 -- the min clustering distance (GPS)
-FAKE_GPS_CLUSTERING_DISTANCE 0.2
+FAKE_GPS_CLUSTERING_DISTANCE 0.1
+
+-- 
 
 -- edges configuration - disable, enable edges - Comente para dizer quais voce nao quer usar como aresta.
--- USE_VELODYNE_SEQ
+USE_VELODYNE_SEQ
 USE_VELODYNE_LOOP
 -- USE_BUMBLEBEE_SEQ
 -- USE_BUMBLEBEE_LOOP
