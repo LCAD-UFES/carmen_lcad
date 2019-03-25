@@ -1292,14 +1292,19 @@ char* carmen_string_and_file_to_velodyne_partial_scan_message(char* string, carm
 
 	FILE *image_file = fopen(path, "rb");
 
-	for(i = 0; i < msg->number_of_32_laser_shots; i++)
+	if (image_file)
 	{
-		fread(&(msg->partial_scan[i].angle), sizeof(double), 1, image_file);
-	    fread(msg->partial_scan[i].distance, sizeof(short), 32, image_file);
-	    fread(msg->partial_scan[i].intensity, sizeof(char), 32, image_file);
-	}
+		for(i = 0; i < msg->number_of_32_laser_shots; i++)
+		{
+			fread(&(msg->partial_scan[i].angle), sizeof(double), 1, image_file);
+			fread(msg->partial_scan[i].distance, sizeof(short), 32, image_file);
+			fread(msg->partial_scan[i].intensity, sizeof(char), 32, image_file);
+		}
 
-    fclose(image_file);
+		fclose(image_file);
+	}
+	else
+		msg->number_of_32_laser_shots = 0;
 
 	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
 	copy_host_string(&msg->host, &current_pos);
@@ -1609,10 +1614,15 @@ char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string
 	{
 		FILE *image_file = fopen(path, "rb");
 
-		fread(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
-		fread(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
+		if (image_file)
+		{
+			fread(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
+			fread(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
 
-		fclose(image_file);
+			fclose(image_file);
+		}
+		else
+			msg->image_size = 0;
 	}
 
 	msg->timestamp = CLF_READ_DOUBLE(&current_pos);

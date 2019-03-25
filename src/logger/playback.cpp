@@ -272,6 +272,38 @@ update_playback_pose(char *message_name, void *message_data)
 }
 
 
+bool
+check_in_file_message(char *logger_message_name, char *logger_message_line)
+{
+	bool error = false;
+
+	error |= ((strcmp(logger_message_name, "VELODYNE_PARTIAL_SCAN_IN_FILE") == 0) && (velodyne_partial_scan.number_of_32_laser_shots <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE1") == 0) && (bumblebee_basic_stereoimage1.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE2") == 0) && (bumblebee_basic_stereoimage2.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3") == 0) && (bumblebee_basic_stereoimage3.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE4") == 0) && (bumblebee_basic_stereoimage4.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE5") == 0) && (bumblebee_basic_stereoimage5.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE6") == 0) && (bumblebee_basic_stereoimage6.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE7") == 0) && (bumblebee_basic_stereoimage7.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE8") == 0) && (bumblebee_basic_stereoimage8.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE9") == 0) && (bumblebee_basic_stereoimage9.image_size <= 0));
+
+	if (!error)
+		return true;
+
+	static double last_update = 0.0;
+	double current_time = carmen_get_time();
+
+	if (current_time - last_update > 2.0)
+	{
+		fprintf(stderr, "\nFILE NOT FOUND: %s\n", logger_message_line);
+		last_update = current_time;
+	}
+
+	return false;
+}
+
+
 int
 read_message(int message_num, int publish, int no_wait)
 {
@@ -316,6 +348,7 @@ read_message(int message_num, int publish, int no_wait)
 						wait_for_timestamp(playback_timestamp);
 
 					int do_not_publish = !g_publish_odometry && (strcmp(logger_callbacks[i].ipc_message_name, CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME) == 0);
+					do_not_publish |= !check_in_file_message(command, line);
 					if (!do_not_publish)
 						IPC_publishData(logger_callbacks[i].ipc_message_name, logger_callbacks[i].message_data);
 				}
