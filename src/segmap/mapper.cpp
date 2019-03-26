@@ -411,60 +411,7 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 		}
 		//*/
 #endif
-
-//		if (i > 500 && i < dataset.data.size() - 1000)
-//			i = dataset.data.size() - 1000;
 	}
-
-	/*
-	 for (int i = 0; i < 500; i++)
-	 {
-	 if (fabs(dataset.data[i].v) < 0.1)
-	 continue;
-
-	 Pose2d pose = dataset.data[i].pose;
-
-	 cloud->clear();
-	 transformed_cloud->clear();
-	 dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, 1);
-	 pcl::transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(pose));
-
-	 for (int j = 0; j < transformed_cloud->size(); j++)
-	 transformed_cloud->at(j).z += .7;
-
-	 viewer.removePointCloud("bola");
-	 viewer.addPointCloud(transformed_cloud, "bola");
-	 viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 8, "bola");
-	 viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.5, 0, "bola");
-
-	 char c = ' ';
-	 while (1)
-	 {
-	 viewer.spinOnce();
-	 c = waitKey(5);
-
-	 if (c == 's')
-	 pause_viewer = !pause_viewer;
-	 if (!pause_viewer || (pause_viewer && c == 'n'))
-
-	 break;
-	 if (c == 'r')
-	 {
-	 printf("Reinitializing\n");
-	 i = 0;
-	 }
-	 if (c == 'f')
-	 step *= 2;
-	 if (c == 'g')
-	 {
-	 step /= 2;
-	 if (step < 1) step = 1;
-	 }
-	 }
-	 }
-	 */
-
-	//waitKey(-1);
 }
 #endif
 
