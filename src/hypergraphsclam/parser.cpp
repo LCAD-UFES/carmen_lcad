@@ -1,9 +1,8 @@
-
 #include <string>
 #include <unistd.h>
 #include <GrabData.hpp>
+#include <StampedGPSPose.hpp>
 #include <boost/filesystem/operations.hpp>
-
 
 void
 prepare_all_directories()
@@ -49,7 +48,7 @@ main (int argc, char **argv)
     hyper::GrabData gd;
 
     // configure it
-    gd.Configure(config_filename);
+    gd.Configure(config_filename, carmen_home);
 
     // try to process the log file
     if (gd.ParseLogFile(input_file)) 
@@ -64,7 +63,9 @@ main (int argc, char **argv)
         gd.SaveEstimates();
     } 
     else 
+    {
         std::cout << "Error! Could not parse the log file!\n";
+    }
 
     // close everything
     gd.Clear();

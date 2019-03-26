@@ -262,10 +262,16 @@ PointCloudViewer::show(PointCloud<PointXYZRGB>::Ptr cloud, double r, double g, d
 	_n_clouds++;
 
 	_cloud_viewer->addPointCloud(cloud, cloud_name);
-	_cloud_viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, _point_size, cloud_name);
+	_cloud_viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,
+																									_point_size,
+																									cloud_name);
 
-	if (r >= 0 && g >= 0 && b >= 0)
-		_cloud_viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cloud_name);
+	if ((r >= 0) && (g >= 0) && (b >= 0))
+	{
+		_cloud_viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR,
+																										r, g, b,
+																										cloud_name);
+	}
 }
 
 

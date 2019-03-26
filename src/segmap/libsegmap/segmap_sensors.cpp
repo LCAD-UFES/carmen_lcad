@@ -25,9 +25,9 @@ static const int velodyne_ray_order[32] = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20
 LidarShot::LidarShot(int n_rays)
 {
 	n = n_rays;
-	ranges = (double *) calloc (n, sizeof(double));
-	v_angles = (double *) calloc (n, sizeof(double));
-	intensities = (unsigned char *) calloc (n, sizeof(unsigned char));
+	ranges = (double *) calloc(n, sizeof(double));
+	v_angles = (double *) calloc(n, sizeof(double));
+	intensities = (unsigned char *) calloc(n, sizeof(unsigned char));
 	h_angle = 0;
 }
 
@@ -46,13 +46,15 @@ CarmenLidarLoader::CarmenLidarLoader(const char *cloud_path, int n_rays, unsigne
 	_calibration = calibration;
 
 	_shot = new LidarShot(_n_vert);
-	_raw_ranges = (short int*) calloc (_n_vert, sizeof(short int));
-	_raw_intensities = (unsigned char*) calloc (_n_vert, sizeof(unsigned char));
+
+	// auxiliary vectors for reading data from file.
+	_raw_ranges = (unsigned short int*) calloc(_n_vert, sizeof(unsigned short int));
+	_raw_intensities = (unsigned char*) calloc(_n_vert, sizeof(unsigned char));
 
 	_fptr = safe_fopen(cloud_path, "rb");
 
 	for (int i = 0; i < _n_vert; i++)
-		_shot->v_angles[i] = degrees_to_radians(_velodyne_vertical_angles[i]);
+		_shot->v_angles[i] = normalize_theta(degrees_to_radians(_velodyne_vertical_angles[i]));
 
 	_n_readings = 0;
 }
@@ -88,26 +90,17 @@ CarmenLidarLoader::_get_distance_index(double distance)
 LidarShot* 
 CarmenLidarLoader::next()
 {
-	unsigned char raw_intensity;
-
 	fread(&(_shot->h_angle), sizeof(double), 1, _fptr);
 	fread(_raw_ranges, sizeof(unsigned short), _n_vert, _fptr);
 	fread(_raw_intensities, sizeof(unsigned char), _n_vert, _fptr);
 
-	_shot->h_angle = -degrees_to_radians(_shot->h_angle);
+	_shot->h_angle = -normalize_theta(degrees_to_radians(_shot->h_angle));
 
-	for (int i = 0; i < _n_vert; i++)
+	for (int i = 0; i < 32; i++)
 	{
 		// reorder and convert range to meters
-		_shot->ranges[i] = ((double) _raw_ranges[velodyne_ray_order[i]]) / 500.;
-
-		// reorder and calibrate intensity
-		raw_intensity = _raw_intensities[velodyne_ray_order[i]];
-
-		//double range_floor = _shot->ranges[i] * cos(_shot->v_angles[i]);
-		//int range_index = _get_distance_index(range_floor);
-		//unsigned char calib_intensity = _calibration[i][range_index][raw_intensity];
-		_shot->intensities[i] = raw_intensity;
+		_shot->ranges[i] = ((double) _raw_ranges[velodyne_ray_order[i]]) / (double) 500.;
+		_shot->intensities[i] = _raw_intensities[velodyne_ray_order[i]];
 	}
 
 	_n_readings++;
@@ -118,7 +111,7 @@ CarmenLidarLoader::next()
 bool 
 CarmenLidarLoader::done()
 {
-	return feof(_fptr) || (_n_readings >= _n_rays);
+	return (_n_readings >= _n_rays);
 }
 
 
@@ -165,7 +158,6 @@ load_as_pointcloud(CarmenLidarLoader *loader, PointCloud<PointXYZRGB>::Ptr cloud
 	int i;
 	double x, y, z;
 	LidarShot *shot;
-	PointXYZRGB point;
 
 	cloud->clear();
 
@@ -177,10 +169,12 @@ load_as_pointcloud(CarmenLidarLoader *loader, PointCloud<PointXYZRGB>::Ptr cloud
 		{
 			spherical2cartersian(shot->v_angles[i], shot->h_angle, shot->ranges[i], &x, &y, &z);
 
-			point.x = x;
-			point.y = y;
-			point.z = z;
-			point.r = point.g = point.b = shot->intensities[i];
+			PointXYZRGB point;
+
+			point.x = (float) x;
+			point.y = (float) y;
+			point.z = (float) z;
+			point.r = point.g = point.b = (unsigned char) shot->intensities[i];
 
 			cloud->push_back(point);
 		}

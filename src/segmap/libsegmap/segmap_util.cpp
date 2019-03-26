@@ -390,6 +390,24 @@ spherical2cartersian(double v_angle, double h_angle, double radius,
 }
 
 
+void
+cartersian2spherical(double x, double y, double z,
+										 double *v_angle, double *h_angle, double *radius)
+{
+	*radius = sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2));
+
+	if (*radius == 0)
+	{
+		*h_angle = *v_angle = 0;
+	}
+	else
+	{
+		*h_angle = normalize_theta(atan2(y, x));
+		*v_angle = normalize_theta(asin(z / (*radius)));
+	}
+}
+
+
 std::vector<std::string>
 string_split(std::string s, std::string pattern)
 {

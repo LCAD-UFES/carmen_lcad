@@ -12,6 +12,12 @@ namespace hyper {
 	{
 		public:
 
+			// the gps relative displacement wrt the car
+			static g2o::SE2 inv_gps_pose;
+
+			// the external identifier
+			static std::string gps_id;
+			
 			// the gps measure
 			g2o::SE2 gps_measurement;
 
@@ -29,6 +35,9 @@ namespace hyper {
 
 			// get the message type
 			virtual StampedMessageType GetType();
+
+			// set the local displacement
+			void SetSensorPose(g2o::SE2 gpose);
 	};
 
 	// syntactic sugar
@@ -37,7 +46,6 @@ namespace hyper {
 
 	// the standard vector typedef
 	typedef std::vector<StampedGPSPosePtr> StampedGPSPosePtrVector;
-
 }
 
 #endif

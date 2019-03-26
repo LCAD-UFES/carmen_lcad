@@ -2,7 +2,7 @@
 
  - To rum the xsens from the Raspberry PI:
 
-# Istall Raspbian on the Raspberry PI
+# Install Raspbian on the Raspberry PI
 
 - Baixe a imagem do sistema RASPBIAN STRETCH WITH DESKTOP no site do raspberry (https://www.raspberrypi.org/downloads/raspbian/)
 Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de comando.
@@ -30,32 +30,57 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
 
 - O cartão esta formatado e pode ser inserido no Raspberry para utilização.
 
-
-# Enable the Camera and SSH
-
-- Não execute upgrade
+# Download and Install
 
 ```bash
- $ sudo apt-get update
- $ sudo raspi-config
+ $ sudo apt-get install subversion libncurses5 libncurses5-dev
+ $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/ ~/carmen_lcad/src
+ $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/sharedlib/libcmt/ ~/carmen_lcad/sharedlib/libcmt
 ```
- Acesse e habilite a camera:
- 
- - Interfacing Options->Camera
- - Interfacing Options->SSH
 
-Teste usando o comando: 
+- Baixe e compile uma versão mais atual do IPC
 
 ```bash
- $ raspistill -v -o test.jpg
- $ raspivid -o teste.h264 -t 10000
+ $ cd /usr/local
+ $ sudo wget http://www.cs.cmu.edu/afs/cs/project/TCA/ftp/ipc-3.9.1a.tar.gz
+ $ sudo tar -xzvf ipc-3.9.1a.tar.gz
+ $ cd ipc-3.9.1/src/
+ $ sudo cp ~/carmen_lcad/src/xsens_MTi-G/formatters.h .
+ $ make
 ```
-raspistill grava uma imgem e raspivid grava um video
 
-# Install Dependencies anf Download the pi_camera file from git
+- Substitua o arquivo Makefile.rules do src do carmen
 
 ```bash
- $ sudo apt-get install subversion
- $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/
+ $ cp ~/carmen_lcad/src/xsens_MTi-G/Makefile.rules ~/carmen_lcad/src/
 ```
 
+# Configure CARMEN LCAD
+
+```bash
+ $ cd ~/carmen_lcad/src
+ $ ./configure --nojava --nozlib --nocuda
+ Should the C++ tools be installed for CARMEN: [Y/n] Y
+ Should Python Bindings be installed: [y/N] N
+ Should the old laser server be used instead of the new one: [y/N] N
+ Install path [/usr/local/]: 
+ Robot numbers [*]: 1,2
+```
+
+# Compile xsens_MTi-G module on the Raspberry PI
+
+```bash
+ $ cd ~/carmen_lcad/src/xsens_MTi-G
+ $ ./make_pi
+```
+
+- O make_pi assume que a variavel CENTRALHOST possui o valor 192.168.1.1. 
+Caso a rede que ira rodar o central tenha outro IP, altere o arquivo ~/.bashrc 
+
+# Install pi_imu (optional)
+
+ [Read the instructions](../pi_imu)
+
+# Install pi_camera (optional)
+
+ [Read the instructions](../pi_camera)

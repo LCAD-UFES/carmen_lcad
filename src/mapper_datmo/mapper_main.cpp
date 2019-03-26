@@ -475,6 +475,150 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 	double cv = camera_params[camera_index].cv_factor * image_height;
 	double map_resolution = map_config.resolution;
 	int img_planar_depth = (double) 0.5 * sensor_params->range_max / map_resolution;
+	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
+	cv::Mat img = camera_image_semantic[camera_index];
+	int cloud_index = sensor_data->point_cloud_index;
+	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
+	int thread_id = omp_get_thread_num();
+
+	vector<image_cartesian> points;
+	vector<vector<carmen_vector_2D_t>> points_on_ground;
+
+	for (int j = 0; j < number_of_laser_shots; j++)
+	{
+		int scan_index = j * sensor_params->vertical_resolution;
+		double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
+
+		//if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+		//	continue;
+
+		vector<carmen_vector_2D_t> pts_on_ground;
+
+		get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
+
+		for (int i = 1; i < sensor_params->vertical_resolution; i++)
+		{
+			double vertical_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle;
+			double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
+
+			tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+			tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
+
+			int image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
+			int image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
+
+			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
+			double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
+
+			carmen_vector_2D_t pt_on_ground;
+
+			if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
+			{
+				image_cartesian point;
+				point.shot_number = j;
+				point.ray_number  = i;
+				point.image_x     = image_x;
+				point.image_y     = image_y;
+				point.cartesian_x = camera_p3d.x();
+				point.cartesian_y = -camera_p3d.y();  // Must be inverted because Velodyne angle is reversed with CARMEN angles
+				point.cartesian_z = camera_p3d.z();
+				points.push_back(point);
+
+				pt_on_ground.x = sensor_data->ray_position_in_the_floor[thread_id][i].x;
+				pt_on_ground.y = sensor_data->ray_position_in_the_floor[thread_id][i].y;
+
+				if (verbose >= 2)
+				{
+					int ix = (double) image_x / image_width  * img.cols / 2;
+					int iy = (double) image_y / image_height * img.rows;
+					if (ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
+					{
+						circle(img, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+						circle(img, cv::Point(ix + img.cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+					}
+					int px = (double) camera_p3d.y() / map_resolution + img_planar_depth;
+					int py = (double) img_planar.rows - 1 - camera_p3d.x() / map_resolution;
+					if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
+						img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 255);
+				}
+			}
+			pts_on_ground.push_back(pt_on_ground);
+		}
+		points_on_ground.push_back(pts_on_ground);
+	}
+
+	vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.5, 5, points);;
+
+	for (unsigned int i = 0; i < filtered_points.size(); i++)
+	{
+		bool is_moving_obstacle = false;
+		unsigned int cont = 0;
+		for (unsigned int j = 0; j < filtered_points[i].size(); j++)
+		{
+			if (filtered_points[i][j].image_x < 0 || filtered_points[i][j].image_x >= image_width || filtered_points[i][j].image_y < 0 || filtered_points[i][j].image_y >= image_height) // Disregard laser rays out of the image window
+				continue;
+
+			if ((camera_data[camera_index].semantic[image_index] != NULL) &&
+			    (camera_data[camera_index].semantic[image_index][filtered_points[i][j].image_x + (filtered_points[i][j].image_y * image_width)] >= 11)) // 0 to 10 : Static objects
+				cont++;
+			if (cont > 10 || cont > (filtered_points[i].size() / 5))
+			{
+				is_moving_obstacle = true;
+				break;
+			}
+		}
+
+		if (is_moving_obstacle)
+		{
+			for (unsigned int j = 0; j < filtered_points[i].size(); j++)
+			{
+				int p = filtered_points[i][j].shot_number * sensor_params->vertical_resolution + filtered_points[i][j].ray_number;
+				sensor_data->points[cloud_index].sphere_points[p].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
+				filter_datmo_count++;
+
+				//printf ("%d %d\n", filtered_points[i][j].shot_number, filtered_points[i][j].ray_number);
+				printf ("%lf %lf\n", (double) (points_on_ground[filtered_points[i][j].shot_number][filtered_points[i][j].ray_number].x - map_config.x_origin) / map_config.resolution, (double) (points_on_ground[filtered_points[i][j].shot_number][filtered_points[i][j].ray_number].y - map_config.y_origin) / map_config.resolution);
+
+				if (verbose >= 2)
+				{
+					int ix = (double) filtered_points[i][j].image_x / image_width  * img.cols / 2;
+					int iy = (double) filtered_points[i][j].image_y / image_height * img.rows;
+					if (ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
+						circle(img, cv::Point(ix, iy), 1, cluster_color[i], 1, 8, 0);
+
+					int px = (double) -filtered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
+					int py = (double) img_planar.rows - 1 - filtered_points[i][j].cartesian_x / map_resolution;
+					if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
+						img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(cluster_color[i][0], cluster_color[i][1], cluster_color[i][2]);
+				}
+			}
+		}
+	}
+	if (verbose >= 2)
+	{
+		imshow("Image Semantic Segmentation", img);
+    	resize(img_planar, img_planar, cv::Size(0, 0), 3.5, 3.5, cv::INTER_NEAREST);
+		imshow("Velodyne Semantic Map", img_planar);
+		cv::waitKey(1);
+	}
+	if (filter_datmo_count)
+		camera_datmo_count[camera_index]++;
+}
+
+
+void
+erase_moving_obstacles_cells_old2(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
+{
+	camera_filter_count[camera_index]++;
+	int filter_datmo_count = 0;
+	int image_width  = camera_data[camera_index].width[image_index];
+	int image_height = camera_data[camera_index].height[image_index];
+	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
+	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
+	double cu = camera_params[camera_index].cu_factor * image_width;
+	double cv = camera_params[camera_index].cv_factor * image_height;
+	double map_resolution = map_config.resolution;
+	int img_planar_depth = (double) 0.5 * sensor_params->range_max / map_resolution;
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
 	int thread_id = omp_get_thread_num();
@@ -491,8 +635,8 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 		int scan_index = j * sensor_params->vertical_resolution;
 		double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
 
-//		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
-//			continue;
+		//if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+		//	continue;
 
 		// Compute the log odds each ray the log odds is the logarithm of the probability
 		get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
@@ -509,7 +653,7 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 
 			double prob = carmen_prob_models_log_odds_to_probabilistic(sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]);
 
-			if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
+			if (camera_p3d.z() > -1.4 && prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
 			{
 				image_cartesian ray;
 				ray.shot_number = 0;
@@ -524,8 +668,6 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 				ray.cartesian_z = 0.0;
 				rays.push_back(ray);
 
-				//printf("%lf O %lf\n", sensor_data->ray_position_in_the_floor[thread_id][i].x, sensor_data->ray_origin_in_the_floor[thread_id][i].x);
-
 				if (verbose >= 2)
 				{
 					int ix = (double) image_x / image_width  * img.cols / 2;
@@ -535,21 +677,15 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 						circle(img, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 						circle(img, cv::Point(ix + img.cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 					}
-//					int px = (double) camera_p3d.y() / map_resolution + img_planar_depth;
-//					int py = (double) img_planar.rows - 1 - camera_p3d.x() / map_resolution;
-//					if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
-//						img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 255);
 					int px = (double) (ray.cartesian_x - map_config.x_origin) / map_config.resolution;
 					int py = (double) (ray.cartesian_y - map_config.y_origin) / map_config.resolution;
-					//cluster_img.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(cluster_color[i][0], cluster_color[i][1], cluster_color[i][2]);
-					//printf ("%d %d\n", px, (map_config.y_size - 1 - py));
 					rectangle(cluster_img, cv::Rect(px, (map_config.y_size - 1 - py), 1, 1), cv::Scalar(0, 0, 255), CV_FILLED, 8, 0);
 				}
 			}
 		}
 	}
 
-	vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.2, 5, rays);
+	vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(1.0, 5, rays);
 
 	for (unsigned int i = 0; i < filtered_points.size(); i++)
 	{
@@ -581,14 +717,19 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 				moving_objecst_cells_vector.push_back(point);
 				filter_datmo_count++;
 
+				int px = (double) (point.x - map_config.x_origin) / map_config.resolution;
+				int py = (double) (point.y - map_config.y_origin) / map_config.resolution;
+
+				if (px < 0 || px > map->config.x_size || py < 0 || py > map->config.y_size)
+					continue;
+
 				if (verbose >= 2)   // TODO color the clusters on the camera image
 				{
-					int px = (double) (point.x - map_config.x_origin) / map_config.resolution;
-					int py = (double) (point.y - map_config.y_origin) / map_config.resolution;
-					//cluster_img.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(cluster_color[i][0], cluster_color[i][1], cluster_color[i][2]);
-					//printf ("%d %d\n", px, (map_config.y_size - 1 - py));
 					rectangle(cluster_img, cv::Rect(px, (map_config.y_size - 1 - py), 1, 1), cluster_color[i], CV_FILLED, 8, 0);
+					//printf("%d %d\n", px, py);
 				}
+
+				map->map[px][py] = 0.0;
 			}
 		}
 	}
@@ -596,7 +737,6 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 	{
 		int x = ((sensor_data->ray_origin_in_the_floor[thread_id][1].x  - map_config.x_origin)  / map_config.resolution) - 100;
 		int y = (map_config.y_size - 1 - ((sensor_data->ray_origin_in_the_floor[thread_id][1].y  - map_config.x_origin) / map_config.resolution)) - 100;
-		//printf("%d %d %d %d\n", cluster_img.cols, cluster_img.rows, x, y);
 
 		cv::Mat cimg = cluster_img;
 		if (x >= 0 && x <= cluster_img.cols && y >= 0 && y <= cluster_img.rows)
@@ -605,7 +745,7 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 
 		imshow("Image Semantic Segmentation", img);
 		imshow("Clusters", cimg);
-		//cv::waitKey(1);
+//		//cv::waitKey(1);
 		cv_draw_map(moving_objecst_cells_vector);
 	}
 	if (filter_datmo_count)

@@ -1,0 +1,50 @@
+#!/bin/bash
+
+if [ "$CARMEN_HOME" = "" ]; then CARMEN_HOME=$(realpath ../..); fi
+
+function make_module()
+{
+	cd "$CARMEN_HOME/src/$1"
+	if [ "$2" = "-ignore_errors" ]; then
+		echo "$1"
+		make &> /dev/null
+	else
+		make
+	fi
+}
+
+
+function make_list_of_modules()
+{
+	for mod in $1; do
+		ERROR=1
+		if [ -d "$CARMEN_HOME/src/$mod" ]; then
+			make_module "$mod" "$2"
+			ERROR=$?
+		fi
+		if [ $ERROR -ne 0 ] && [ "$2" != "-ignore_errors" ]; then
+			exit 1
+		fi
+	done
+}
+
+
+PREPARATION=". web_cam global param_daemon gps_xyz fused_odometry xsens"
+
+MODULES="xsens_MTi-G"
+
+echo -e "\nPreparation...\n"
+make_list_of_modules "$PREPARATION" -ignore_errors
+
+make -C $CARMEN_HOME/src/fused_odometry librotation_geometry.a
+ln   -s $CARMEN_HOME/src/fused_odometry/librotation_geometry.a $CARMEN_HOME/lib/
+
+make_list_of_modules "$MODULES"
+
+if [ "$CENTRALHOST" = "" ]; then
+	CENTRALHOST=192.168.1.1
+	echo "export CENTRALHOST=$CENTRALHOST" >> ~/.bashrc
+	echo -e "\nClose and restart terminal session for ~/.bashrc changes to take effect: CENTRALHOST=$CENTRALHOST\n"
+else
+	echo -e "\nCENTRALHOST=$CENTRALHOST (otherwise edit ~/.bashrc)\n"
+fi

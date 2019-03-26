@@ -22,14 +22,14 @@ using namespace std;
 
 class Line
 {
-	public:
-		double v;
-		double phi;
-		double time;
-		double gps_x;
-		double gps_y;
-		double gps_yaw;
-		double gps_time;
+public:
+	double v;
+	double phi;
+	double time;
+	double gps_x;
+	double gps_y;
+	double gps_yaw;
+	double gps_time;
 };
 
 
@@ -50,61 +50,61 @@ carmen_robot_ackerman_velocity_message read_odometry(FILE *f)
 }
 
 
-carmen_gps_xyz_message read_gps(FILE *f)
+carmen_gps_xyz_message read_gps(FILE *f, int gps_to_use)
 {
 	static char dummy[128];
 
-    double lt_dm, lt, lg_dm, lg, sea_level;
-    char lt_orientation, lg_orientation;
-    int quality, gps_id;
+	double lt_dm, lt, lg_dm, lg, sea_level;
+	char lt_orientation, lg_orientation;
+	int quality, gps_id;
 
-    carmen_gps_xyz_message m;
-    memset(&m, 0, sizeof(m));
+	carmen_gps_xyz_message m;
+	memset(&m, 0, sizeof(m));
 
-    fscanf(f, "%d", &gps_id);
+	fscanf(f, "%d", &gps_id);
 
-    if (1 == gps_id)
-    {
-    	fscanf(f, "%s", dummy);
+	if (gps_to_use == gps_id)
+	{
+		fscanf(f, "%s", dummy);
 
-    	fscanf(f, "%lf", &lt_dm);
-    	fscanf(f, " %c ", &lt_orientation); // read a char ignoring space
-    	fscanf(f, "%lf", &lg_dm);
-    	fscanf(f, " %c ", &lg_orientation); // read a char ignoring space
-    	fscanf(f, "%d", &quality);
+		fscanf(f, "%lf", &lt_dm);
+		fscanf(f, " %c ", &lt_orientation); // read a char ignoring space
+		fscanf(f, "%lf", &lg_dm);
+		fscanf(f, " %c ", &lg_orientation); // read a char ignoring space
+		fscanf(f, "%d", &quality);
 
-    	fscanf(f, "%s", dummy);
-    	fscanf(f, "%s", dummy);
+		fscanf(f, "%s", dummy);
+		fscanf(f, "%s", dummy);
 
-    	fscanf(f, "%lf", &sea_level);
+		fscanf(f, "%lf", &sea_level);
 
-    	fscanf(f, "%s", dummy);
-    	fscanf(f, "%s", dummy);
-    	fscanf(f, "%s", dummy);
-    	fscanf(f, "%s", dummy);
+		fscanf(f, "%s", dummy);
+		fscanf(f, "%s", dummy);
+		fscanf(f, "%s", dummy);
+		fscanf(f, "%s", dummy);
 
-    	fscanf(f, "%lf", &m.timestamp);
+		fscanf(f, "%lf", &m.timestamp);
 
-        lt = carmen_global_convert_degmin_to_double(lt_dm);
-        lg = carmen_global_convert_degmin_to_double(lg_dm);
+		lt = carmen_global_convert_degmin_to_double(lt_dm);
+		lg = carmen_global_convert_degmin_to_double(lg_dm);
 
-        // verify the latitude and longitude orientations
-        if ('S' == lt_orientation) lt = -lt;
-        if ('W' == lg_orientation) lg = -lg;
+		// verify the latitude and longitude orientations
+		if ('S' == lt_orientation) lt = -lt;
+		if ('W' == lg_orientation) lg = -lg;
 
-        // convert to x and y coordinates
-        Gdc_Coord_3d gdc = Gdc_Coord_3d(lt, lg, sea_level);
+		// convert to x and y coordinates
+		Gdc_Coord_3d gdc = Gdc_Coord_3d(lt, lg, sea_level);
 
-        // Transformando o z utilizando como altitude a altitude mesmo - que esta vindo como zero
-        Utm_Coord_3d utm;
-        Gdc_To_Utm_Converter::Init();
-        Gdc_To_Utm_Converter::Convert(gdc , utm);
+		// Transformando o z utilizando como altitude a altitude mesmo - que esta vindo como zero
+		Utm_Coord_3d utm;
+		Gdc_To_Utm_Converter::Init();
+		Gdc_To_Utm_Converter::Convert(gdc , utm);
 
-        m.x = utm.y;
-        m.y = -utm.x;
-    }
+		m.x = utm.y;
+		m.y = -utm.x;
+	}
 
-    return m;
+	return m;
 }
 
 
@@ -140,7 +140,7 @@ process_gps(carmen_gps_xyz_message &m, vector<carmen_robot_ackerman_velocity_mes
 
 
 void
-read_data(char *filename)
+read_data(char *filename, int gps_to_use)
 {
 	printf("Reading log...\n");
 	static char tag[256];
@@ -158,7 +158,7 @@ read_data(char *filename)
 
 			if (!strcmp(tag, "NMEAGGA"))
 			{
-				carmen_gps_xyz_message m = read_gps(f);
+				carmen_gps_xyz_message m = read_gps(f, gps_to_use);
 				process_gps(m, odoms);
 			}
 
@@ -176,24 +176,27 @@ read_data(char *filename)
 
 	fclose(f);
 	printf("Done.\n");
+
+	if (DataReadFromFile.lines.size() <= 0)
+		exit(printf("Error: Unable to load data from log '%s'. Are you sure you logged gps '%d'?\n", filename, gps_to_use));
 }
 
 
 double
 estimate_theta(PsoData *pso_data, int id)
 {
-    /** 
+	/**
     Estimates theta using the first GPS positions ahead. 
     This method fails if the car is moving backwards in the beginning of the log, 
         or if it starts in a curve.
-    **/
+	 **/
 	for (uint i = id; i < pso_data->lines.size(); i++)
 	{
 		double dy = pso_data->lines[i].gps_y - pso_data->lines[id].gps_y;
 		double dx = pso_data->lines[i].gps_x - pso_data->lines[id].gps_x;
 
 		double d = sqrt(pow(dx, 2) +
-						pow(dy, 2));
+		                pow(dy, 2));
 
 		if (d > 5)
 			return atan2(dy, dx);
@@ -223,7 +226,7 @@ print_result(double *particle, FILE *f_report)
 
 	yaw = yaw_withoutbias = particle[4]; 
 	//yaw = yaw_withoutbias = estimate_theta(pso_data, 0);
-	
+
 	fprintf(f_report, "Initial angle: %lf\n", yaw);
 	fprintf(stderr, "Initial angle: %lf\n", yaw);
 
@@ -303,7 +306,7 @@ fitness(double *particle, void *data)
 		if ((fabs(v) > 2.0) && (i > 0))
 		{
 			double gps_yaw = atan2(pso_data->lines[i].gps_y - pso_data->lines[i - 1].gps_y, 
-								   pso_data->lines[i].gps_x - pso_data->lines[i - 1].gps_x);
+			                       pso_data->lines[i].gps_x - pso_data->lines[i - 1].gps_x);
 
 			error += 5 * fabs(carmen_radians_to_degrees(carmen_normalize_theta(gps_yaw - yaw)));
 		}
@@ -321,7 +324,7 @@ alloc_limits(int dim)
 	double **limits;
 
 	limits = (double **) calloc (dim, sizeof(double*));
-	
+
 	for (i = 0; i < dim; i++)
 		limits[i] = (double *) calloc (2, sizeof(double));
 
@@ -368,9 +371,15 @@ main(int argc, char **argv)
 	double **limits;
 
 	if (argc < 4)
-		exit(printf("Use %s <log_path> <output_calibration_file> <output_report_file>\n", argv[0]));
+		exit(printf("Use %s <log_path> <output_calibration_file> <output_report_file> <gps_to_use: default: 1>\n", argv[0]));
 
-	read_data(argv[1]);
+	int gps_to_use = 1;
+
+	if (argc == 5)
+		gps_to_use = atoi(argv[4]);
+
+	read_data(argv[1], gps_to_use);
+
 	limits = set_limits(5);
 
 	FILE *f_calibration = fopen(argv[2], "w");
@@ -383,20 +392,20 @@ main(int argc, char **argv)
 	srand(rand());
 
 	ParticleSwarmOptimization optimizer(
-		fitness, limits, 5, &DataReadFromFile, 100, 100);
+			fitness, limits, 5, &DataReadFromFile, 300, 100);
 
 	optimizer.Optimize();
 
 	fprintf(f_calibration, "bias v: %lf %lf bias phi: %lf %lf Initial Angle: %lf\n",
-		optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
-		optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
-        optimizer.GetBestSolution()[4]
+	        optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
+	        optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
+	        optimizer.GetBestSolution()[4]
 	);
 
 	fprintf(stderr, "bias v: %lf %lf bias phi: %lf %lf Initial Angle: %lf\n",
-		optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
-		optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
-        optimizer.GetBestSolution()[4]
+	        optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
+	        optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
+	        optimizer.GetBestSolution()[4]
 	);
 
 	fprintf(f_report, "Fitness (MSE): %lf\n", optimizer.GetBestFitness());
