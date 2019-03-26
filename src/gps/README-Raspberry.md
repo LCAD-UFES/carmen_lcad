@@ -55,7 +55,7 @@ sudo service dhcpcd restart
 The DHCP service is provided by dnsmasq. By default, the configuration file contains a lot of information that is not needed, and it is easier to start from scratch. Rename this configuration file, and edit a new one:
 
 ```bash
-sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.orig  
+sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.orig
 sudo nano /etc/dnsmasq.conf
 ```
 
@@ -64,7 +64,8 @@ sudo nano /etc/dnsmasq.conf
 ```
 	interface=wlan0        # Use the require wireless interface - usually
 	wlan0
-	  dhcp-range=192.168.13.22,192.168.13.25,255.255.255.0,24h
+	dhcp-range=192.168.13.22,192.168.13.25,255.255.255.0,24h
+        dhcp-authoritative
 ```
 So, for wlan0, we are going to provide IP addresses between 192.168.4.2 and 192.168.4.20, with a lease time of 24 hours. If you are providing DHCP services for other network devices (e.g. eth0), you could add more sections with the appropriate interface header, with the range of addresses you intend to provide to that interface.
 
