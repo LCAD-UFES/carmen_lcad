@@ -7,7 +7,7 @@ LFLAGS += -la
 
 SOURCES = b.cpp
 PUBLIC_INCLUDES = b.h
-PUBLIC_LIBRARIES_SO = libb.so
+PUBLIC_LIBRARIES = libb.so
 
 TARGETS = libb.so
 

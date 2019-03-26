@@ -5,7 +5,7 @@ MODULE_COMMENT = Sharedlib example liba
 
 SOURCES = a.cpp
 PUBLIC_INCLUDES = a.h
-PUBLIC_LIBRARIES_SO = liba.so
+PUBLIC_LIBRARIES = liba.so
 
 TARGETS = liba.so
 
