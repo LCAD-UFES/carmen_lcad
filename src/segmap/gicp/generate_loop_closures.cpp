@@ -205,6 +205,9 @@ add_arguments_for_parsing(CommandLineArguments *args)
 {
 	args->add_positional<string>("log_path", "Path of a log", 1);
 	args->add_positional<string>("output", "Path of the output file", 1);
+	args->add<string>("odom_calib,o", "Odometry calibration file", "");
+	args->add<string>("fused_odom,f", "Fused odometry file (optimized using graphslam)", "");
+	args->add<int>("gps_id", "Id of the gps to be used", 1);
 	args->add<double>("voxel_size,x", "Size of voxels in voxel grid filter", 0.1);
 	args->add<double>("loop_dist,d", "Maximum distance (in meters) to assume two poses form a loop closure", 2.0);
 	args->add<double>("time_dist,t", "Minimum temporal difference (in seconds) to assume two poses form a loop closure (instead of being consecutive poses)", 60.0);
@@ -266,13 +269,14 @@ main(int argc, char **argv)
 
 	bool view = args.get<bool>("view");
 	string log_path = args.get<string>("log_path");
-	string odom_calib_path = default_odom_calib_path(log_path.c_str());
-	string fused_odom_path = default_fused_odom_path(log_path.c_str());
 
 	FILE *out_file = safe_fopen(args.get<string>("output").c_str(), "w");
 	FILE *report_file = safe_fopen(args.get<string>("report_file").c_str(), "w");
 
-	NewCarmenDataset dataset(log_path, odom_calib_path, fused_odom_path);
+	NewCarmenDataset dataset(log_path,
+	                         args.get<string>("odom_calib"),
+	                         args.get<string>("fused_odom"),
+	                         args.get<int>("gps_id"));
 
 	vector<pair<int, int>> loop_closure_indices;
 

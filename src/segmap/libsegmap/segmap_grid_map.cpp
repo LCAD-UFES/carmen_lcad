@@ -320,6 +320,18 @@ GridMap::~GridMap()
 {
 	if (_save_maps)
 		save();
+
+	_free_tiles();
+}
+
+
+void
+GridMap::_free_tiles()
+{
+	for (int i = 0; i < _N_TILES; i++)
+		for (int j = 0; j < _N_TILES; j++)
+			if (_tiles[i][j] != NULL)
+				delete(_tiles[i][j]);
 }
 
 
@@ -334,12 +346,7 @@ GridMap::_reload_tile(double x, double y)
 void
 GridMap::_reload_tiles(double robot_x, double robot_y)
 {
-	int i, j;
-
-	for (i = 0; i < _N_TILES; i++)
-		for (j = 0; j < _N_TILES; j++)
-			if (_tiles[i][j] != NULL)
-				delete(_tiles[i][j]);
+	_free_tiles();
 
 	// TODO: make the following code general.
 	_tiles[0][0] = _reload_tile(robot_x - _tile_width_meters, robot_y - _tile_height_meters);

@@ -49,6 +49,7 @@ public:
 	string output_file;
 	string odom_calib_file;
 
+	int gps_id;
 	double gps_xy_std, gps_angle_std;
 	double odom_xy_std, odom_angle_std;
 	double loop_xy_std, loop_angle_std;
@@ -424,6 +425,7 @@ load_parameters(int argc, char **argv, GraphSlamData *data)
 	args.add_positional<string>("output", "Path to the output file", 1);
 	args.add<string>("odom_calib,o", "Path to the odometry calibration file", "none");
 	args.add<string>("loops,l", "Path to a file with loop closure relations", "none");
+	args.add<int>("gps_id", "Index of the gps to be used", 1);
 	args.add<string>("gicp_odom", "Path to a file with odometry relations generated with GICP", "none");
 	args.add<string>("gicp_to_map", "Path to a file with poses given by registration to an a priori map", "none");
 	args.add<double>("odom_xy_std", "Std in xy of odometry-based movement estimations (m)", 0.005);
@@ -448,6 +450,7 @@ load_parameters(int argc, char **argv, GraphSlamData *data)
 	data->output_file = args.get<string>("output");
 	data->odom_calib_file = args.get<string>("odom_calib");
 	data->loop_closure_file = args.get<string>("loops");
+	data->gps_id = args.get<int>("gps_id");
 	data->gicp_odom_file = args.get<string>("gicp_odom");
 	data->gicp_map_file = args.get<string>("gicp_to_map");
 	data->odom_xy_std = args.get<double>("odom_xy_std");
@@ -483,7 +486,7 @@ int main(int argc, char **argv)
 	factory->registerType("EDGE_GPS", new HyperGraphElementCreator<EdgeGPS>);
 	optimizer = initialize_optimizer();
 
-	data.dataset = new NewCarmenDataset(data.log_file, data.odom_calib_file);
+	data.dataset = new NewCarmenDataset(data.log_file, data.odom_calib_file, "", data.gps_id);
 	read_loop_restrictions(data.loop_closure_file, &data.loop_data);
 	read_loop_restrictions(data.gicp_odom_file, &data.gicp_odom_data);
 	read_loop_restrictions(data.gicp_map_file, &data.gicp_fake_gps);

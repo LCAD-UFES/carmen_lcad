@@ -700,10 +700,14 @@ DatasetKitti::load_data()
 NewCarmenDataset::NewCarmenDataset(std::string path,
                                    std::string odom_calib_path,
 																	 std::string fused_odom_path,
-                                   int sync_type,
+																	 int gps_id,
+																	 NewCarmenDataset::SyncSensor sync_sensor,
+																	 NewCarmenDataset::SyncMode sync_mode,
                                    std::string intensity_calib_path)
 {
-	_sync_type = sync_type;
+	_gps_id = gps_id;
+	_sync_sensor = sync_sensor;
+	_sync_mode = sync_mode;
 
 	_velodyne_dir = string(path) + "_velodyne";
 	_images_dir = string(path) + "_bumblebee";
@@ -822,6 +826,7 @@ NewCarmenDataset::vel2car()
 	Matrix<double, 4, 4> velodyne2board;
 	Matrix<double, 4, 4> board2car;
 
+	// sensor board
 	velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
 	board2car = pose6d_to_matrix(0.572, 0, 1.394, 0.0, 0.0122173048, 0.0);
 
@@ -1065,7 +1070,7 @@ NewCarmenDataset::_add_message_to_queue(string line)
 
 		double time = atof(splitted[splitted.size() - 3].c_str());
 
-		if (!strncmp("NMEAGGA", cline, strlen("NMEAGGA")) && cline[strlen("NMEAGGA") + 1] == '1')
+		if (!strncmp("NMEAGGA", cline, strlen("NMEAGGA")) && (cline[strlen("NMEAGGA") + 1] - '0') == _gps_id)
 		{
 			_gps_position_messages.push_back(cline);
 			_gps_position_times.push_back(time);
@@ -1242,6 +1247,11 @@ NewCarmenDataset::_read_log_msgs(FILE *fptr)
 		_add_message_to_queue(copy_as_string);
 	}
 
+	assert(_velodyne_messages.size() > 0);
+	assert(_odom_messages.size() > 0);
+	assert(_gps_position_messages.size() > 0);
+	assert(_gps_orientation_messages.size() > 0);
+
 	for (int i = 0; i < _camera_messages.size(); i++)
 	{
 		vector<string> msg_splitted;
@@ -1292,7 +1302,7 @@ NewCarmenDataset::_next_data_package(FILE *fptr)
 		{
 			// to support logs that do not contain camera data, we ignore
 			// the need for camera data when synchronizing by velodyne.
-			if (_sync_type == SYNC_BY_VELODYNE || _camera_messages.size() > 0)
+			if (_sync_sensor == SYNC_BY_VELODYNE || _camera_messages.size() > 0)
 				all_sensors_were_received = 1;
 		}
 	}

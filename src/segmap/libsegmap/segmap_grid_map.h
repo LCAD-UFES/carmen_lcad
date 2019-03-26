@@ -89,6 +89,8 @@ public:
 	vector<double> read_cell(PointXYZRGB &p);
 	Mat to_image();
 	void save();
+
+	void _free_tiles();
 };
 
 

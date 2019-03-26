@@ -140,13 +140,33 @@ class NewCarmenDataset
 {
 public:
 	
-	static const int SYNC_BY_CAMERA = 0;
-	static const int SYNC_BY_VELODYNE = 1;
-	
+	enum SyncSensor
+	{
+		SYNC_BY_CAMERA = 0,
+		SYNC_BY_VELODYNE
+	};
+
+	enum SyncMode
+	{
+		// First store the messages of all sensors in different queues.
+		// Then, for each message of the reference sensor, search in all queues
+		// the messages with nearest time, even if they are posterior to the reference
+		// sensor message. Messages can be repeated in the sense that they can be
+		// the nearest messages to different reference sensor messages.
+		SYNC_BY_NEAREST = 0,
+
+		// This method is the most similar to what is found in real applications. Messages
+		// from all sensors are stored in queues until a message from the reference sensor is
+		// received. Then, we search for the messages with nearest time, and then the queue are cleared.
+		SYNC_BY_NEAREST_BEFORE,
+	};
+
 	NewCarmenDataset(std::string path,
 	                 std::string odom_calib_path = "",
 									 std::string fused_odom_path = "",
-	                 int sync_type = SYNC_BY_CAMERA,
+									 int gps_id = 1,
+									 NewCarmenDataset::SyncSensor sync_sensor = SYNC_BY_CAMERA,
+									 NewCarmenDataset::SyncMode sync_mode = SYNC_BY_NEAREST,
 	                 std::string lidar_calib_path = "");
 
 	~NewCarmenDataset();
@@ -183,7 +203,10 @@ protected:
 	std::string _images_dir;
 	std::string _velodyne_dir;
 
-	int _sync_type;
+	SyncSensor _sync_sensor;
+	SyncMode _sync_mode;
+	int _gps_id;
+
 	OdomCalib _calib;
 	std::vector<DataSample*> _data;
 	std::vector<Pose2d> _fused_odom;

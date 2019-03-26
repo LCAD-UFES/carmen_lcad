@@ -1,5 +1,6 @@
 odom_calib = none
 loops = none
+gps_id = 1
 gicp_odom = none
 gicp_to_map = none
 odom_xy_std = 0.005
