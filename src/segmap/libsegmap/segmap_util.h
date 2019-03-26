@@ -83,9 +83,9 @@ int argmax(double *v, int size);
 int argmin(double *v, int size);
 
 void draw_rectangle(cv::Mat &img,
-		double x, double y, double theta,
-		double height, double width, cv::Scalar color,
-		double x_origin, double y_origin, double pixels_by_meter);
+                    double x, double y, double theta,
+                    double height, double width, cv::Scalar color,
+                    double x_origin, double y_origin, double pixels_by_meter);
 
 void print_poses(std::vector<Eigen::Matrix<double, 4, 4>> &poses);
 
@@ -96,8 +96,8 @@ void ackerman_motion_model(Pose2d &pose, double v, double phi, double dt);
 
 void
 correct_point(Pose2d &correction,
-							Eigen::Matrix<double, 4, 4> vel2car,
-		pcl::PointXYZRGB &point);
+              Eigen::Matrix<double, 4, 4> vel2car,
+              pcl::PointXYZRGB &point);
 
 /*
 void
@@ -106,15 +106,15 @@ transform_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
 		Pose2d &pose,
 		Matrix<double, 4, 4> &vel2car,
 		double v, double phi);
-*/
+ */
 
 FILE* safe_fopen(const char *path, const char *mode);
 
 void spherical2cartersian(double v_angle, double h_angle, double radius, 
-						  double *x, double *y, double *z);
+                          double *x, double *y, double *z);
 
 void cartersian2spherical(double x, double y, double z,
-							double *v_angle, double *h_angle, double *radius);
+                          double *v_angle, double *h_angle, double *radius);
 
 std::vector<std::string> string_split(std::string s, std::string pattern);
 
