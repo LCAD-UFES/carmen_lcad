@@ -244,7 +244,7 @@ binaries:
 
 # The following part of the makefile seems to be unecessary. 
 # I am commenting as a test at match, 26th, 2019. If anything break after six months, remove it.
-ifeq (0, 1)
+ifeq (1, 1)
 phase1:
 	$(subdir_recurse)
 	$(banner)

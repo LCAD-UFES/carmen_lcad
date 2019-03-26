@@ -824,13 +824,26 @@ Matrix<double, 4, 4>
 NewCarmenDataset::vel2car()
 {
 	Matrix<double, 4, 4> velodyne2board;
-	Matrix<double, 4, 4> board2car;
-
-	// sensor board
 	velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
-	board2car = pose6d_to_matrix(0.572, 0, 1.394, 0.0, 0.0122173048, 0.0);
+	return _board2car() * velodyne2board;
+}
 
-	return board2car * velodyne2board;
+
+Matrix<double, 4, 4>
+NewCarmenDataset::xsens2car()
+{
+	Matrix<double, 4, 4> xsens2board;
+	xsens2board = pose6d_to_matrix();
+	return _board2car() * velodyne2board;
+}
+
+
+Eigen::Matrix<double, 4, 4>
+NewCarmenDataset::_board2car()
+{
+	Matrix<double, 4, 4> board2car;
+	board2car = pose6d_to_matrix(0.572, 0, 1.394, 0.0, 0.0122173048, 0.0);
+	return board2car;
 }
 
 

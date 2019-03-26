@@ -183,6 +183,9 @@ public:
 	// Returns a matrix to transfrom from lidar to car frame.
 	Eigen::Matrix<double, 4, 4> vel2car();
 
+	// Returns a matrix to transfrom from xsens to car frame.
+	Eigen::Matrix<double, 4, 4> xsens2car();
+
 	unsigned char ***intensity_calibration;
 
 	// Number of messages of the sensor used for synchronization.
@@ -247,6 +250,9 @@ protected:
 	static void _parse_camera(std::vector<std::string> data, DataSample *sample, std::string image_path);
 	static void _parse_gps_position(std::vector<std::string> data, DataSample *sample);
 	static void _parse_gps_orientation(std::vector<std::string> data, DataSample *sample);
+
+	// Returns a matrix to transfrom from the board to the car frame.
+	Eigen::Matrix<double, 4, 4> _board2car();
 
 	void _read_log_msgs(FILE *fptr);
 };
