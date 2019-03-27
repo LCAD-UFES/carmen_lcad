@@ -5,6 +5,8 @@
 
 #include "velodyne_camera_calibration.h"
 
+#include <iostream>
+
 int bumblebee_received = 0;
 
 int camera_number;
@@ -15,6 +17,27 @@ static carmen_pose_3D_t camera_pose; // Camera pose in relation to sensor board
 static carmen_pose_3D_t velodyne_pose; //velodyne pose in relation to sensor board
 
 static carmen_camera_parameters camera_parameters;
+
+void CallBackFunc(int event, int x, int y, int flags, void* userdata)
+{
+    if  ( event == cv::EVENT_LBUTTONDOWN )
+    {
+        cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+    }
+    else if  ( event == cv::EVENT_RBUTTONDOWN )
+    {
+        cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+    }
+    else if  ( event == cv::EVENT_MBUTTONDOWN )
+    {
+        cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+    }
+    else if ( event == cv::EVENT_MOUSEMOVE )
+    {
+        cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
+
+    }
+}
 
 void
 process_key_input(char k)
@@ -120,6 +143,22 @@ void
 bumblebee_basic_image_handler(carmen_bumblebee_basic_stereoimage_message *bumblebee_basic_message __attribute__ ((unused)))
 {
 	bumblebee_received = 1;
+
+    cv::Mat camera_image(cv::Size(bumblebee_message.width, bumblebee_message.height), CV_8UC3, bumblebee_message.raw_right);
+    cv::Mat camera_image_show(cv::Size(bumblebee_message.width, bumblebee_message.height), CV_8UC3);
+    cv::cvtColor(camera_image,camera_image_show, CV_RGB2BGR);
+
+    //Create a window
+     cv::namedWindow("My Window", 1);
+
+      //set the callback function for any mouse event
+     cv::setMouseCallback("My Window", CallBackFunc, NULL);
+
+      //show the image
+     cv::imshow("My Window", camera_image_show);
+
+      // Wait until user press some key
+     cv::waitKey(0);
 }
 
 
