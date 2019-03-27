@@ -833,8 +833,8 @@ Matrix<double, 4, 4>
 NewCarmenDataset::xsens2car()
 {
 	Matrix<double, 4, 4> xsens2board;
-	xsens2board = pose6d_to_matrix();
-	return _board2car() * velodyne2board;
+	xsens2board = pose6d_to_matrix(0.175, -0.01, 0.25, 0, 0, 0);
+	return _board2car() * xsens2board;
 }
 
 

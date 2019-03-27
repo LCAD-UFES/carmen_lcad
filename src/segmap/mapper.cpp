@@ -197,10 +197,50 @@ getEulerYPR(Matrix<double, 3, 3> &m_el, double& yaw, double& pitch, double& roll
 }
 
 
+Matrix<double, 3, 3>
+move_xsens_to_car(Matrix<double, 3, 3> xsens, Matrix<double, 4, 4> xsens2car)
+{
+	// static to prevent reallocation.
+	static Matrix<double, 4, 4> xsens4x4;
+	static Matrix<double, 3, 3> xsens_car;
+
+	xsens4x4(0, 0) = xsens(0, 0);
+	xsens4x4(0, 1) = xsens(0, 1);
+	xsens4x4(0, 2) = xsens(0, 2);
+	xsens4x4(0, 3) = 0;
+	xsens4x4(1, 0) = xsens(1, 0);
+	xsens4x4(1, 1) = xsens(1, 1);
+	xsens4x4(1, 2) = xsens(1, 2);
+	xsens4x4(1, 3) = 0;
+	xsens4x4(2, 0) = xsens(2, 0);
+	xsens4x4(2, 1) = xsens(2, 1);
+	xsens4x4(2, 2) = xsens(2, 2);
+	xsens4x4(2, 3) = 0;
+	xsens4x4(3, 0) = 0;
+	xsens4x4(3, 1) = 0;
+	xsens4x4(3, 2) = 0;
+	xsens4x4(3, 3) = 1;
+
+	xsens4x4 = xsens2car * xsens4x4;
+
+	xsens_car(0, 0) = xsens4x4(0, 0);
+	xsens_car(0, 1) = xsens4x4(0, 1);
+	xsens_car(0, 2) = xsens4x4(0, 2);
+	xsens_car(1, 0) = xsens4x4(1, 0);
+	xsens_car(1, 1) = xsens4x4(1, 1);
+	xsens_car(1, 2) = xsens4x4(1, 2);
+	xsens_car(2, 0) = xsens4x4(2, 0);
+	xsens_car(2, 1) = xsens4x4(2, 1);
+	xsens_car(2, 2) = xsens4x4(2, 2);
+
+	return xsens_car;
+}
+
+
 #if USE_NEW
 void
 create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
-						char path_save_maps[])
+						char path_save_maps[], int use_xsens)
 {
 	DataSample *sample;
 	PointCloudViewer viewer(1, 0, 0, 1);
@@ -213,6 +253,7 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 	Matrix<double, 4, 4> lidar2car = dataset->vel2car();
 	Matrix<double, 4, 4> lidar2cam = dataset->vel2cam();
 	Matrix<double, 3, 4> projection = dataset->projection_matrix();
+	Matrix<double, 4, 4> xsens2car = dataset->xsens2car();
 
 	SemanticSegmentationLoader sloader(log_path);
 	Pose2d p0 = dataset->at(0)->pose;
@@ -249,9 +290,13 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 		increase_brightness(colored, 5);
 
 		yaw = pitch = roll = 0.;
-		// convert xsens data to roll, pitch, yaw
-		Matrix<double, 3, 3> mat = sample->xsens.toRotationMatrix();
-		getEulerYPR(mat, yaw, pitch, roll);
+		if (use_xsens)
+		{
+			// convert xsens data to roll, pitch, yaw
+			Matrix<double, 3, 3> mat = sample->xsens.toRotationMatrix();
+			mat = move_xsens_to_car(mat, xsens2car);
+			getEulerYPR(mat, yaw, pitch, roll);
+		}
 
 		Matrix<double, 4, 4> car2world = pose6d_to_matrix(pose.x, pose.y, 0., roll, pitch, pose.th);
 		Matrix<double, 4, 4> t = car2world * lidar2car;
@@ -430,6 +475,7 @@ main(int argc, char **argv)
 	args_parser.add<double>("resolution,r", "Map resolution", 0.2);
 	args_parser.add<double>("tile_size,s", "Map tiles size", 50);
 	args_parser.add<string>("map_path,m", "Path to save the maps", "/tmp");
+	args_parser.add<int>("use_xsens,x", "Whether or not to use pitch, and roll angles from xsens", 1);
 	args_parser.save_config_file("data/mapper_config.txt");
 	args_parser.parse(argc, argv);
 
@@ -473,7 +519,8 @@ main(int argc, char **argv)
 
 	NewCarmenDataset *dataset;
 	dataset = new NewCarmenDataset(log_path, odom_calib_path, fused_odom_path);
-	create_map(map, log_path.c_str(), dataset, "/tmp");
+	create_map(map, log_path.c_str(), dataset, "/tmp",
+						 args_parser.get<int>("use_xsens"));
 
 #else
 	DatasetInterface *dataset = new DatasetCarmen("/dados/data/data_log_volta_da_ufes-20180907-2.txt", 0);
