@@ -54,7 +54,7 @@ CarmenImageLoader::_recreate_image_if_necessary(DataSample *sample)
 {
 	int sample_image_size = sample->image_height * sample->image_width * 3;
 
-	if (sample_image_size != _image_size)
+	if ((sample_image_size > 0) && (sample_image_size != _image_size))
 	{
 		_image_size = sample_image_size;
 
