@@ -8,40 +8,61 @@
 
 using namespace cv;
 
+CarmenImageLoader::CarmenImageLoader(CarmenImageLoader::CamSide side)
+{
+	_side = side;
+	_image_size = 0.;
+	_raw = NULL;
+}
+
+
+CarmenImageLoader::~CarmenImageLoader()
+{
+	if (_raw != NULL)
+		free(_raw);
+}
+
 
 cv::Mat
-load_image(DataSample *sample)
+CarmenImageLoader::load(DataSample *sample)
 {
-	static int image_size = 0.;
-	static unsigned char *raw_right = NULL;
-	static Mat img_r;
+	_recreate_image_if_necessary(sample);
 
-	int sample_image_size = sample->image_height * sample->image_width * 3;
+	FILE *fptr = fopen(sample->image_path.c_str(), "rb");
 
-	// realloc only if necessary
-	if (sample_image_size != image_size)
+	if (fptr != NULL)
 	{
-		image_size = sample_image_size;
+		// skip left image if we are interested in the right one.
+		if (_side == RIGHT_CAM)
+			fseek(fptr, _image_size * sizeof(unsigned char), SEEK_SET);
 
-		if (raw_right != NULL) free(raw_right);
+		fread(_raw, _image_size, sizeof(unsigned char), fptr);
+		fclose(fptr);
 
-		raw_right = (unsigned char*) calloc (image_size, sizeof(unsigned char));
-		img_r = Mat(sample->image_height, sample->image_width, CV_8UC3, raw_right, 0);
-	}
-
-	FILE *image_file = fopen(sample->image_path.c_str(), "rb");
-
-	if (image_file != NULL)
-	{
-		// jump the left image
-		fseek(image_file, image_size * sizeof(unsigned char), SEEK_SET);
-		fread(raw_right, image_size, sizeof(unsigned char), image_file);
-		fclose(image_file);
 		// carmen images are stored as rgb
-		cvtColor(img_r, img_r, COLOR_RGB2BGR);
+		cvtColor(_img, _img, COLOR_RGB2BGR);
 	}
 	else
 		fprintf(stderr, "Warning: image '%s' not found. Returning previous image.\n", sample->image_path.c_str());
 
-	return img_r;
+	return _img;
 }
+
+
+void
+CarmenImageLoader::_recreate_image_if_necessary(DataSample *sample)
+{
+	int sample_image_size = sample->image_height * sample->image_width * 3;
+
+	if (sample_image_size != _image_size)
+	{
+		_image_size = sample_image_size;
+
+		if (_raw != NULL)
+			free(_raw);
+
+		_raw = (unsigned char*) calloc (_image_size, sizeof(unsigned char));
+		_img = Mat(sample->image_height, sample->image_width, CV_8UC3, _raw, 0);
+	}
+}
+

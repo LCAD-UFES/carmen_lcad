@@ -149,6 +149,7 @@ main(int argc, char **argv)
 	CommandLineArguments args = parse_command_line_args(argc, argv);
 	NewCarmenDataset *dataset = create_dataset_from_args(args);
 	CarmenLidarLoader vloader;
+	CarmenImageLoader iloader;
 
 	step = args.get<int>("step");
 	offset = dataset->at(0)->pose;
@@ -163,7 +164,7 @@ main(int argc, char **argv)
 
 		print_sample_info(data_package);
 		load_and_transform_pointcloud(data_package, vloader, cloud, offset);
-		img = load_image(data_package);
+		img = iloader.load(data_package);
 
 		viewer.show(img, "img", 640);
 		viewer.show(cloud);
