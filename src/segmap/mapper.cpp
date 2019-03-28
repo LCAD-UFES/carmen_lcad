@@ -15,15 +15,20 @@
 #include <pcl/common/transforms.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
-#include "libsegmap/segmap_car_config.h"
-#include "libsegmap/segmap_grid_map.h"
-#include "libsegmap/segmap_particle_filter.h"
-#include "libsegmap/segmap_pose2d.h"
-#include "libsegmap/segmap_util.h"
-#include "libsegmap/segmap_dataset.h"
-#include "libsegmap/segmap_viewer.h"
-#include "libsegmap/segmap_sensors.h"
-#include <carmen/segmap_command_line.h>
+#include <carmen/segmap_dataset.h>
+#include <carmen/segmap_dataset_old.h>
+
+#include <carmen/segmap_grid_map.h>
+
+#include <carmen/carmen_lidar_reader.h>
+#include <carmen/carmen_semantic_segmentation_reader.h>
+#include <carmen/carmen_image_reader.h>
+
+#include <carmen/segmap_conversions.h>
+#include <carmen/segmap_sensor_viewer.h>
+#include <carmen/segmap_particle_filter_viewer.h>
+
+#include <carmen/command_line.h>
 
 using namespace cv;
 using namespace std;
@@ -32,6 +37,30 @@ using namespace pcl;
 
 #define VIEW 1
 #define USE_NEW 1
+
+
+void
+get_pixel_position(double x, double y, double z, Matrix<double, 4, 4> &lidar2cam,
+                   Matrix<double, 3, 4> &projection, cv::Mat &img, cv::Point *ppixel, int *is_valid)
+{
+	static Matrix<double, 4, 1> plidar, pcam;
+	static Matrix<double, 3, 1> ppixelh;
+
+	*is_valid = 0;
+	plidar << x, y, z, 1.;
+	pcam = lidar2cam * plidar;
+
+	if (pcam(0, 0) / pcam(3, 0) > 0)
+	{
+		ppixelh = projection * pcam;
+
+		ppixel->y = (ppixelh(1, 0) / ppixelh(2, 0)) * img.rows;
+		ppixel->x = (ppixelh(0, 0) / ppixelh(2, 0)) * img.cols;
+
+		if (ppixel->x >= 0 && ppixel->x < img.cols && ppixel->y >= 0 && ppixel->y < img.rows)
+			*is_valid = 1;
+	}
+}
 
 
 PointCloud<PointXYZRGB>::Ptr
@@ -127,74 +156,6 @@ colorize(PointCloud<PointXYZRGB>::Ptr cloud, Matrix<double, 4, 4> &lidar2cam,
 	}
 }
 
-
-void
-getEulerYPR(Matrix<double, 3, 3> &m_el, double& yaw, double& pitch, double& roll, unsigned int solution_number = 1)
-{
-	struct Euler
-	{
-		double yaw;
-		double pitch;
-		double roll;
-	};
-
-	Euler euler_out;
-	Euler euler_out2; //second solution
-	//get the pointer to the raw data
-
-	// Check that pitch is not at a singularity
-	// Check that pitch is not at a singularity
-	if (fabs(m_el(2, 0)) >= 1)
-	{
-		euler_out.yaw = 0;
-		euler_out2.yaw = 0;
-
-		// From difference of angles formula
-		double delta = normalize_theta(atan2(m_el(2, 1), m_el(2, 2)));
-		if (m_el(2, 0) < 0)  //gimbal locked down
-		{
-			euler_out.pitch = M_PI / double(2.0);
-			euler_out2.pitch = M_PI / double(2.0);
-			euler_out.roll = delta;
-			euler_out2.roll = delta;
-		}
-		else // gimbal locked up
-		{
-			euler_out.pitch = -M_PI / double(2.0);
-			euler_out2.pitch = -M_PI / double(2.0);
-			euler_out.roll = delta;
-			euler_out2.roll = delta;
-		}
-	}
-	else
-	{
-		euler_out.pitch = -normalize_theta(asin(m_el(2, 0)));
-		euler_out2.pitch = M_PI - euler_out.pitch;
-
-		euler_out.roll = normalize_theta(atan2(m_el(2, 1)/cos(euler_out.pitch),
-		                       m_el(2, 2)/cos(euler_out.pitch)));
-		euler_out2.roll = normalize_theta(atan2(m_el(2, 1)/cos(euler_out2.pitch),
-		                        m_el(2, 2)/cos(euler_out2.pitch)));
-
-		euler_out.yaw = normalize_theta(atan2(m_el(1, 0)/cos(euler_out.pitch),
-		                      m_el(0, 0)/cos(euler_out.pitch)));
-		euler_out2.yaw = normalize_theta(atan2(m_el(1, 0)/cos(euler_out2.pitch),
-		                       m_el(0, 0)/cos(euler_out2.pitch)));
-	}
-
-	if (solution_number == 1)
-	{
-		yaw = euler_out.yaw;
-		pitch = euler_out.pitch;
-		roll = euler_out.roll;
-	}
-	else
-	{
-		yaw = euler_out2.yaw;
-		pitch = euler_out2.pitch;
-		roll = euler_out2.roll;
-	}
-}
 
 
 Matrix<double, 3, 3>
@@ -360,7 +321,7 @@ create_map(GridMap &map, DatasetInterface &dataset, char path_save_maps[])
 
 		cloud->clear();
 		transformed_cloud->clear();
-		dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, 1, &img_view);
+		dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, 0, 1, &img_view);
 		increase_brightness(cloud, 5);
 		//pose.x = pose.y = 0.;
 		//pose.th = normalize_theta(-pose.th - degrees_to_radians(18));

@@ -3,8 +3,7 @@
 
 #include "g2o/types/slam2d/se2.h"
 #include "g2o/core/sparse_optimizer.h"
-#include <carmen/segmap_dataset.h>
-#include <carmen/segmap_util.h>
+#include <carmen/segmap_dataset_old.h>
 #include <Eigen/Core>
 
 // TODO: Add to a configuration file.
