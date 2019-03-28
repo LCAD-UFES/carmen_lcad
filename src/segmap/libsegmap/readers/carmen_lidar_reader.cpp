@@ -20,7 +20,7 @@ static const double _velodyne_vertical_angles[32] =
 static const int velodyne_ray_order[32] = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31};
 
 
-CarmenLidarLoader::CarmenLidarLoader(const char *cloud_path, int n_rays, unsigned char ***calibration)
+CarmenLidarLoader::CarmenLidarLoader(std::string &cloud_path, int n_rays, unsigned char ***calibration)
 {
 	_n_rays = n_rays;
 	_calibration = calibration;
@@ -31,7 +31,7 @@ CarmenLidarLoader::CarmenLidarLoader(const char *cloud_path, int n_rays, unsigne
 	_raw_ranges = (unsigned short int*) calloc(_n_vert, sizeof(unsigned short int));
 	_raw_intensities = (unsigned char*) calloc(_n_vert, sizeof(unsigned char));
 
-	_fptr = safe_fopen(cloud_path, "rb");
+	_fptr = safe_fopen(cloud_path.c_str(), "rb");
 
 	for (int i = 0; i < _n_vert; i++)
 		_shot->v_angles[i] = normalize_theta(degrees_to_radians(_velodyne_vertical_angles[i]));

@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <opencv2/imgproc.hpp>
+#include <carmen/synchronized_data_package.h>
 #include <carmen/carmen_image_reader.h>
 #include <carmen/util_io.h>
 
@@ -17,7 +18,7 @@ load_image(DataSample *sample)
 
 	int sample_image_size = sample->image_height * sample->image_width * 3;
 
-	// realloc if necessary
+	// realloc only if necessary
 	if (sample_image_size != image_size)
 	{
 		image_size = sample_image_size;
@@ -28,13 +29,19 @@ load_image(DataSample *sample)
 		img_r = Mat(sample->image_height, sample->image_width, CV_8UC3, raw_right, 0);
 	}
 
-	FILE *image_file = safe_fopen(sample->image_path.c_str(), "rb");
-	// jump the left image
-	fseek(image_file, image_size * sizeof(unsigned char), SEEK_SET);
-	fread(raw_right, image_size, sizeof(unsigned char), image_file);
-	fclose(image_file);
-	// carmen images are stored as rgb
-	cvtColor(img_r, img_r, COLOR_RGB2BGR);
+	FILE *image_file = fopen(sample->image_path.c_str(), "rb");
+
+	if (image_file != NULL)
+	{
+		// jump the left image
+		fseek(image_file, image_size * sizeof(unsigned char), SEEK_SET);
+		fread(raw_right, image_size, sizeof(unsigned char), image_file);
+		fclose(image_file);
+		// carmen images are stored as rgb
+		cvtColor(img_r, img_r, COLOR_RGB2BGR);
+	}
+	else
+		fprintf(stderr, "Warning: image '%s' not found. Returning previous image.\n", sample->image_path.c_str());
 
 	return img_r;
 }

@@ -106,18 +106,29 @@ protected:
 	std::vector<double> _camera_times;
 	std::vector<double> _velodyne_times;
 
+	// Returns a matrix to transfrom from the board to the car frame.
+	Eigen::Matrix<double, 4, 4> _board2car();
+
 	void _load_log(std::string &path);
 	void _load_odometry_calibration(std::string &path);
 	void _load_intensity_calibration(std::string &path);
 	void _load_poses(std::string &path, std::vector<Pose2d> *poses);
 	void _update_data_with_poses();
 
-	DataSample* _next_data_package(FILE *fptr);
-	DataSample* _assemble_data_package_from_queues();
+	void _load_synchronizing_by_nearest(FILE *fptr);
+	void _load_synchronizing_by_nearest_before(FILE *fptr);
+
+	void _read_until_reference_sensor_message(FILE *fptr);
+	void _read_and_enqueue_one_message(FILE *fptr);
+
+	void _synchronize_messages_by_times(std::vector<double> &reference_sensor_times);
+	DataSample* _create_synchronized_data_package(double ref_time);
 
 	void _clear_synchronization_queues();
 	void _add_message_to_queue(std::string);
-	static std::vector<std::string> _find_nearest(std::vector<std::string> &queue, std::vector<double> &times, double ref_time);
+
+	static std::vector<std::string> _find_nearest(std::vector<std::string> &queue,
+																								std::vector<double> &times, double ref_time);
 
 	static unsigned char*** _allocate_calibration_table();
 	static void _free_calibration_table(unsigned char ***table);
@@ -129,10 +140,6 @@ protected:
 	static void _parse_gps_position(std::vector<std::string> data, DataSample *sample);
 	static void _parse_gps_orientation(std::vector<std::string> data, DataSample *sample);
 
-	// Returns a matrix to transfrom from the board to the car frame.
-	Eigen::Matrix<double, 4, 4> _board2car();
-
-	void _read_log_msgs(FILE *fptr);
 };
 
 

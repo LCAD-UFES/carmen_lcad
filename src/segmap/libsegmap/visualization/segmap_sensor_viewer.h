@@ -15,7 +15,7 @@ public:
 	~PointCloudViewer();
 
 	void show(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, double r = -1., double g = -1., double b = -1.);
-	void show(cv::Mat &img, char *name, int resize_to_width=-1);
+	void show(cv::Mat &img, const char *name, int resize_to_width=-1);
 	void loop();
 	void clear();
 

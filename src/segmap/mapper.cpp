@@ -230,7 +230,7 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 		transformed->clear();
 		colored->clear();
 
-		CarmenLidarLoader loader(sample->velodyne_path.c_str(),
+		CarmenLidarLoader loader(sample->velodyne_path,
 															sample->n_laser_shots,
 															dataset->intensity_calibration);
 

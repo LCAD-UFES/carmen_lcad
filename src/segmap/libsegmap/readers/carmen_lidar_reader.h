@@ -2,7 +2,7 @@
 #ifndef __LIDAR_LOADER_H__
 #define __LIDAR_LOADER_H__
 
-#include <cstdio>
+#include <string>
 #include <carmen/lidar_shot.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -11,7 +11,7 @@
 class CarmenLidarLoader
 {
 public:
-    CarmenLidarLoader(const char *cloud_path, int n_rays, unsigned char ***calibration);
+    CarmenLidarLoader(std::string &cloud_path, int n_rays, unsigned char ***calibration);
     ~CarmenLidarLoader();
 
     LidarShot* next();
