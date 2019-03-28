@@ -216,6 +216,7 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 	Matrix<double, 3, 4> projection = dataset->projection_matrix();
 	Matrix<double, 4, 4> xsens2car = dataset->xsens2car();
 
+	CarmenLidarLoader loader;
 	SemanticSegmentationLoader sloader(log_path);
 	Pose2d p0 = dataset->at(0)->pose;
 
@@ -230,9 +231,7 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 		transformed->clear();
 		colored->clear();
 
-		CarmenLidarLoader loader(sample->velodyne_path,
-															sample->n_laser_shots,
-															dataset->intensity_calibration);
+		loader.initialize(sample->velodyne_path, sample->n_laser_shots);
 
 		Pose2d pose = sample->pose;
 		pose.x -= p0.x;

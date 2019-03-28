@@ -20,63 +20,44 @@ static const double _velodyne_vertical_angles[32] =
 static const int velodyne_ray_order[32] = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31};
 
 
-CarmenLidarLoader::CarmenLidarLoader(std::string &cloud_path, int n_rays, unsigned char ***calibration)
+CarmenLidarLoader::CarmenLidarLoader()
 {
-	_n_rays = n_rays;
-	_calibration = calibration;
-
 	_shot = new LidarShot(_n_vert);
 
 	// auxiliary vectors for reading data from file.
 	_raw_ranges = (unsigned short int*) calloc(_n_vert, sizeof(unsigned short int));
 	_raw_intensities = (unsigned char*) calloc(_n_vert, sizeof(unsigned char));
 
-	_fptr = safe_fopen(cloud_path.c_str(), "rb");
+	_n_rays = 0;
+	_fptr = NULL;
+	_n_readings = 0;
 
 	for (int i = 0; i < _n_vert; i++)
 		_shot->v_angles[i] = normalize_theta(degrees_to_radians(_velodyne_vertical_angles[i]));
-
-	_n_readings = 0;
 }
 
 
 CarmenLidarLoader::~CarmenLidarLoader()
 {
 	delete(_shot);
-	free(_raw_ranges);
-	free(_raw_intensities);
-	fclose(_fptr);
+
+	if (_fptr)
+		fclose(_fptr);
 }
-
-
-int
-CarmenLidarLoader::_get_distance_index(double distance)
-{
-	// Gera um indice para cada faixa de distancias.
-	// As faixas crescem de ~50% a cada intervalo.
-	// Indices de zero a 9 permitem distancias de zero a ~70 metros
-	if (distance < 3.5)
-		return (0);
-
-	int distance_index = (int) ((log(distance - 3.5 + 1.0) / log(1.45)) +  0.5);
-
-	if (distance_index > 9)
-		return (9);
-
-	return (distance_index);
-}
-
 
 LidarShot*
 CarmenLidarLoader::next()
 {
+	if (_fptr == NULL)
+		exit(printf("Error: In CarmenLidarLoader, you should call 'initialize' before calling 'next'.\n"));
+
 	fread(&(_shot->h_angle), sizeof(double), 1, _fptr);
 	fread(_raw_ranges, sizeof(unsigned short), _n_vert, _fptr);
 	fread(_raw_intensities, sizeof(unsigned char), _n_vert, _fptr);
 
 	_shot->h_angle = -normalize_theta(degrees_to_radians(_shot->h_angle));
 
-	for (int i = 0; i < 32; i++)
+	for (int i = 0; i < _n_vert; i++)
 	{
 		// reorder and convert range to meters
 		_shot->ranges[i] = ((double) _raw_ranges[velodyne_ray_order[i]]) / (double) 500.;
@@ -98,7 +79,20 @@ CarmenLidarLoader::done()
 void
 CarmenLidarLoader::reset()
 {
+	_n_readings = 0;
 	rewind(_fptr);
+}
+
+
+void
+CarmenLidarLoader::initialize(std::string &cloud_path, int n_rays)
+{
+	if (_fptr)
+		fclose(_fptr);
+
+	_n_rays = n_rays;
+	_fptr = safe_fopen(cloud_path.c_str(), "rb");
+	_n_readings = 0;
 }
 
 

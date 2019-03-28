@@ -37,17 +37,15 @@ print_sample_info(DataSample *data_package)
 
 void
 load_and_transform_pointcloud(DataSample *data_package,
+															CarmenLidarLoader &vloader,
 															PointCloud<PointXYZRGB>::Ptr cloud,
-															NewCarmenDataset *dataset)
+															Pose2d offset_pose)
 {
 	Pose2d pose;
 	Matrix<double, 4, 4> T;
 
-	CarmenLidarLoader loader(data_package->velodyne_path,
-													 data_package->n_laser_shots,
-													 dataset->intensity_calibration);
-
-	load_as_pointcloud(&loader, cloud);
+	vloader.initialize(data_package->velodyne_path, data_package->n_laser_shots);
+	load_as_pointcloud(&vloader, cloud);
 
 	for (int j = 0; j < cloud->size(); j++)
 	{
@@ -59,8 +57,8 @@ load_and_transform_pointcloud(DataSample *data_package,
 	pose = data_package->pose;
 
 	// to prevent numerical issues.
-	pose.x -= dataset->at(0)->pose.x;
-	pose.y -= dataset->at(0)->pose.y;
+	pose.x -= offset_pose.x;
+	pose.y -= offset_pose.y;
 
 	T = Pose2d::to_matrix(pose);
 	transformPointCloud(*cloud, *cloud, T);
@@ -143,14 +141,17 @@ main(int argc, char **argv)
 {
 	int step;
 	Mat img;
+	Pose2d offset;
 	DataSample* data_package;
 	PointCloudViewer viewer;
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 
 	CommandLineArguments args = parse_command_line_args(argc, argv);
 	NewCarmenDataset *dataset = create_dataset_from_args(args);
+	CarmenLidarLoader vloader;
 
 	step = args.get<int>("step");
+	offset = dataset->at(0)->pose;
 
 	for (int i = 1; i < dataset->size(); i += step)
 	{
@@ -161,7 +162,7 @@ main(int argc, char **argv)
 			continue;
 
 		print_sample_info(data_package);
-		load_and_transform_pointcloud(data_package, cloud, dataset);
+		load_and_transform_pointcloud(data_package, vloader, cloud, offset);
 		img = load_image(data_package);
 
 		viewer.show(img, "img", 640);
