@@ -12,13 +12,16 @@ IFLAGS += -std=c++11
 IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
 LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization
 
-SOURCES = segmap_semantic_segmentation_viewer.cpp segmap_sensor_viewer.cpp segmap_printers.cpp segmap_particle_filter_viewer.cpp
+SOURCES = segmap_semantic_segmentation_viewer.cpp segmap_sensor_viewer.cpp \
+	segmap_printers.cpp segmap_particle_filter_viewer.cpp
 
-PUBLIC_INCLUDES = segmap_semantic_segmentation_viewer.h segmap_sensor_viewer.h segmap_colormaps.h segmap_printers.h segmap_particle_filter_viewer.h
+PUBLIC_INCLUDES = segmap_semantic_segmentation_viewer.h segmap_sensor_viewer.h \
+	segmap_colormaps.h segmap_printers.h segmap_particle_filter_viewer.h 
 PUBLIC_LIBRARIES = libsegmap_visualization.a
 PUBLIC_BINARIES = 
 TARGETS = libsegmap_visualization.a
 
-libsegmap_visualization.a: segmap_semantic_segmentation_viewer.o segmap_sensor_viewer.o segmap_printers.o segmap_particle_filter_viewer.o
+libsegmap_visualization.a: segmap_semantic_segmentation_viewer.o segmap_sensor_viewer.o \
+	segmap_printers.o segmap_particle_filter_viewer.o
 
 include $(CARMEN_HOME)/src/Makefile.rules
