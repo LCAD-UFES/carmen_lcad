@@ -67,8 +67,7 @@ create_cloud(NewCarmenDataset &dataset, int id,
 	PointCloud<PointXYZRGB>::Ptr moved(new PointCloud<PointXYZRGB>);
 
 	CarmenLidarLoader loader;
-	loader.initialize(dataset[id]->velodyne_path, dataset[id]->n_laser_shots);
-
+	loader.reinitialize(dataset[id]->velodyne_path, dataset[id]->n_laser_shots);
 	load_as_pointcloud(&loader, cloud);
 	cloud = filter_pointcloud(cloud);
 

@@ -86,7 +86,7 @@ CarmenLidarLoader::reset()
 
 
 void
-CarmenLidarLoader::initialize(std::string &cloud_path, int n_rays)
+CarmenLidarLoader::reinitialize(std::string &cloud_path, int n_rays)
 {
 	if (_fptr)
 		fclose(_fptr);

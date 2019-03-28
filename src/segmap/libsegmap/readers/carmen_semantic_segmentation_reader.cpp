@@ -37,7 +37,17 @@ SemanticSegmentationLoader::load(DataSample *sample)
 	if (!boost::filesystem::exists(seg_img_path))
 		exit(printf("Segmented image '%s' not found.\n", seg_img_path));
 
-	return cv::imread(seg_img_path);
+	cv::Mat raw_img = cv::imread(seg_img_path);
+
+	int height = (int) (0.75 * raw_img.cols);
+	static Mat complete_img = Mat::ones(height, raw_img.cols, CV_8UC3) * 19;
+
+	int top_limit = (50. / 480.) * height;
+	int bottom_limit = height - (110. / 480.) * height;
+
+	raw_img.copyTo(complete_img(Rect(0, top_limit, raw_img.cols, bottom_limit - top_limit)));
+
+	return complete_img;
 }
 
 
