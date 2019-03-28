@@ -23,15 +23,20 @@ struct vert_group {
     int selected = 0;
 } vert;
 
-void CallBackFunc(int event, int x, int y, int flags, void* userdata)
+void CallBackFunc(int event, int x, int y, int flags, void *image)
 {
-    vert_group *v = (vert_group *) userdata;
+    cv::Mat *image_show = (cv::Mat *) image;
     if  ( event == cv::EVENT_LBUTTONDOWN )
     {
-        if (v->selected < 4) {
-            v->points[v->selected].x = x;
-            v->points[v->selected].y = y;
-            v->selected++;
+        if (vert.selected < 4) {
+            vert.points[vert.selected].x = x;
+            vert.points[vert.selected].y = y;
+            vert.selected++;
+            cv::circle(*image_show, cv::Point(x, y), 5, cv::Scalar(0,0,255), -5);
+            cv::imshow("My Window", *image_show);
+            if(vert.selected == 4) {
+                cv::destroyWindow("My Window");
+            }
         }
     }
 }
@@ -149,7 +154,7 @@ bumblebee_basic_image_handler(carmen_bumblebee_basic_stereoimage_message *bumble
      cv::namedWindow("My Window", 1);
 
       //set the callback function for any mouse event
-     cv::setMouseCallback("My Window", CallBackFunc, &vert);
+     cv::setMouseCallback("My Window", CallBackFunc, &camera_image_show);
 
       //show the image
      cv::imshow("My Window", camera_image_show);
@@ -163,6 +168,7 @@ bumblebee_basic_image_handler(carmen_bumblebee_basic_stereoimage_message *bumble
      cout << "mouse x: " << vert.points[1].x << ", mouse y: " << vert.points[1].y << endl;
      cout << "mouse x: " << vert.points[2].x << ", mouse y: " << vert.points[2].y << endl;
      cout << "mouse x: " << vert.points[3].x << ", mouse y: " << vert.points[3].y << endl;
+     cout << endl;
 }
 
 
@@ -170,7 +176,7 @@ void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
     carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_message);
-	show_velodyne(velodyne_message);
+	// show_velodyne(velodyne_message);
 }
 
 
