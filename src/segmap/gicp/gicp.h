@@ -3,9 +3,8 @@
 #define __GICP_H__
 
 #include <Eigen/Core>
-#include <pcl/registration/gicp.h>
-#include <pcl/filters/filter.h>
-#include <pcl/filters/voxel_grid.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 #include "g2o/types/slam2d/se2.h"
 
 

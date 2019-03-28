@@ -4,6 +4,8 @@
 
 void function_b();
 
+template<class T> T function_c(T x) { return x; }
+
 #endif
 
 
