@@ -1,6 +1,4 @@
 
-#include <carmen/segmap_dataset.h>
-#include <carmen/segmap_util.h>
 #include <carmen/carmen.h>
 #include <iostream>
 #include <string>
@@ -28,7 +26,11 @@
 
 #include "edge_gps_2D.h"
 #include <carmen/gicp.h>
-#include <carmen/segmap_command_line.h>
+#include <carmen/command_line.h>
+
+#include <carmen/segmap_dataset.h>
+#include <carmen/util_io.h>
+#include <carmen/ackerman_motion_model.h>
 
 using namespace std;
 using namespace g2o;
@@ -443,7 +445,10 @@ load_parameters(int argc, char **argv, GraphSlamData *data)
 	args.add<string>("global_angle_mode", "Method for estimating global angle: [xsens, gps, consecutive_gps]", "consecutive_gps");
 	args.add<int>("n_iterations,n", "Number of optimization terations", 50);
 
-	args.save_config_file("data/graphslam_config.txt");
+	char *carmen_path = getenv("CARMEN_HOME");
+	string config_path = string(carmen_path) + "/src/segmap/data/graphslam_config.txt";
+	args.save_config_file(config_path.c_str());
+
 	args.parse(argc, argv);
 
 	data->log_file = args.get<string>("log");

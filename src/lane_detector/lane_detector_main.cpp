@@ -22,7 +22,7 @@
 
 // Module specific
 //#include "DetectNet.hpp"
-#include "Darknet.hpp" /*< Yolo V2 */
+#include "carmen_darknet_interface.hpp" /*< Yolo V2 */
 #include "lane_detector.hpp"
 
 #include <carmen/lane_detector_messages.h>
@@ -52,7 +52,7 @@ std::vector<string> classifications;
 #define USE_DETECTNET 	0
 
 
-Detector *darknet;
+void *darknet;
 std::vector<std::string> obj_names;
 
 
@@ -69,7 +69,7 @@ typedef struct
 	unsigned int a;
 	unsigned int b;
 	unsigned int c;
-}line;
+}lines;
 
 bool
 function_to_order_left (carmen_velodyne_points_in_cam_with_obstacle_t i, carmen_velodyne_points_in_cam_with_obstacle_t j)
@@ -108,7 +108,7 @@ find_velodyne_most_sync_with_cam(double bumblebee_timestamp)
 }
 
 
-line
+lines
 get_line(unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2)
 {
 	// Line Equation a = yA - yB, b = xB - xA, c = xAyB - xByA
@@ -116,7 +116,7 @@ get_line(unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2)
 	unsigned int b = x2 - x1;
 	unsigned int c = (x1 * y2) - (x2 * y1);
 
-	line line_aux;
+	lines line_aux;
 	line_aux.a = a;
 	line_aux.b = b;
 	line_aux.c = c;
@@ -138,10 +138,10 @@ register_ipc_messages(void)
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_LANE_NAME);
 }
 
-line
+lines
 construct_the_line(bbox_t &predictions, bool left_or_right)
 {
-	line line;
+	lines line;
 	if (left_or_right)
 	{
 		line = get_line(predictions.x, predictions.y + predictions.h, predictions.x + predictions.w, predictions.y) ;
@@ -154,7 +154,7 @@ construct_the_line(bbox_t &predictions, bool left_or_right)
 }
 
 double
-calculate_the_distance_point_to_the_line (line line_aux, carmen_velodyne_points_in_cam_with_obstacle_t point_aux)
+calculate_the_distance_point_to_the_line (lines line_aux, carmen_velodyne_points_in_cam_with_obstacle_t point_aux)
 {
 	double distance = (abs(line_aux.a * point_aux.velodyne_points_in_cam.ipx + line_aux.b * point_aux.velodyne_points_in_cam.ipy + line_aux.c)
 			/ sqrt(line_aux.a * line_aux.a + line_aux.b * line_aux.b));
@@ -166,7 +166,7 @@ locate_the_candidate_points_in_the_bounding_box(bbox_t &predictions,
 		std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> &laser_points_in_camera_box_list,
 		bool left_or_right)
 {
-	line line_aux = construct_the_line(predictions, left_or_right);
+	lines line_aux = construct_the_line(predictions, left_or_right);
 	std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> candidate_points;
 	for (int j = 0; j < laser_points_in_camera_box_list.size(); j++)
 	{
@@ -431,11 +431,12 @@ void correcting_lane_sides(std::vector<bounding_box>& bouding_boxes_list,
 std::vector<bbox_t>
 detection_of_the_lanes(std::vector<bounding_box> &bouding_boxes_list, cv::Mat& rgb_image, std::vector<bool> &left_or_right) {
 	// detect the objects in image
-	std::vector<bbox_t> predictions = darknet->detect(rgb_image, 0.3);	//find x min and x max for orientation of the lines
+	char ** classes_names = get_classes_names((char*) "../../sharedlib/darknet/data/coco.names");
+	std::vector<bbox_t> predictions = run_YOLO(rgb_image.data, rgb_image.cols, rgb_image.rows, darknet ,  classes_names, 0.1);	//find x min and x max for orientation of the lines
 	unsigned int x_min = 10000, x_max = 0;
 	for (int i = 0; i < predictions.size(); i++)
 	{
-		switch (predictions[i].obj_id)
+		/*switch (predictions[i].obj_id)
 		{
 			case 0:
 				classifications.push_back("sem");
@@ -463,7 +464,61 @@ detection_of_the_lanes(std::vector<bounding_box> &bouding_boxes_list, cv::Mat& r
 				break;
 			default:
 				classifications.push_back("erro");
+		}*/
+		switch (predictions[i].obj_id)
+		{
+			case 0:
+				classifications.push_back("sem esq");
+				break;
+			case 1:
+				classifications.push_back("sem dir");
+				break;
+			case 2:
+				classifications.push_back("branca cont. esq");
+				break;
+			case 3:
+				classifications.push_back("branca cont. dir");
+				break;
+			case 4:
+				classifications.push_back("branca trace. esq");
+				break;
+			case 5:
+				classifications.push_back("branca trace. dir");
+				break;
+			case 6:
+				classifications.push_back("amarela cont. esq");
+				break;
+			case 7:
+				classifications.push_back("amarela cont. dir");
+				break;
+			case 8:
+				classifications.push_back("amarela trace. esq");
+				break;
+			case 9:
+				classifications.push_back("amarela trace. dir");
+				break;
+			case 10:
+				classifications.push_back("amarela dupla cont. esq");
+				break;
+			case 11:
+				classifications.push_back("amarela dupla cont. dir");
+				break;
+			case 12:
+				classifications.push_back("amarela cont trace esq");
+				break;
+			case 13:
+				classifications.push_back("amarela cont trace dir");
+				break;
+			case 14:
+				classifications.push_back("amarela 2 esq");
+				break;
+			case 15:
+				classifications.push_back("amarela 2 dir");
+				break;
+			default:
+				classifications.push_back("erro");
 		}
+
 		printf("%d\n",predictions[i].obj_id);
 		if (predictions[i].x < x_min)
 			x_min = predictions[i].x;
@@ -513,7 +568,6 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	double start_time, end_time;
 
 	start_time = carmen_get_time();
-
 	if (camera_side == 0) {
 		memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char));
 	} else {
@@ -663,7 +717,6 @@ main(int argc, char **argv)
         carmen_die("%s: Wrong number of parameters. Neural_car_detector requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>",
                    argv[0], argc - 1, argv[0]);
 
-    int device_id = 0;
     /**** DETECTNET PARAMETERS ****/
     std::string model_file = "deploy.prototxt";
     std::string trained_file = "snapshot_iter_21600.caffemodel";
@@ -671,11 +724,11 @@ main(int argc, char **argv)
     std::string darknet_home = std::getenv("DARKNET_HOME"); /*< get environment variable pointing path of darknet*/
     if (darknet_home.empty())
         printf("Cannot find darknet path. Check if you have correctly set DARKNET_HOME environment variable.\n");
-    std::string cfg_filename = darknet_home + "/cfg/yolov3-voc_lane.cfg";
-    std::string weight_filename = darknet_home + "/yolov3-voc_lane_10000.weights";
+    std::string cfg_filename =  "/home/vinicius/yolov3-voc_lane.cfg";
+    std::string weight_filename = darknet_home + "2/backup/yolov3-voc_lane_15000.weights";
     std::string voc_names = darknet_home + "/data/lane.names";
     obj_names = objects_names_from_file(voc_names);
-    darknet = new Detector(cfg_filename, weight_filename, device_id);
+    darknet = initialize_YOLO((char*) cfg_filename.c_str(),(char*) weight_filename.c_str());
     carmen_test_alloc(darknet);
 
 #ifdef SHOW_DETECTIONS
