@@ -27,6 +27,7 @@
 #include <carmen/segmap_conversions.h>
 #include <carmen/segmap_sensor_viewer.h>
 #include <carmen/segmap_particle_filter_viewer.h>
+#include <carmen/segmap_semantic_segmentation_viewer.h>
 
 #include <carmen/command_line.h>
 
@@ -93,37 +94,37 @@ filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
 
 
 void
-increase_brightness(PointCloud<PointXYZRGB>::Ptr aligned, int mult = 3)
+increase_brightness(PointCloud<PointXYZRGB>::Ptr cloud, int mult = 3)
 {
 	// /*
-	for (int j = 0; j < aligned->size(); j++)
+	for (int j = 0; j < cloud->size(); j++)
 	{
 		// int b = ((aligned->at(j).z + 5.0) / 10.) * 255;
 		// if (b < 0) b = 0;
 		// if (b > 255) b = 255;
-		int color = mult * (int) aligned->at(j).r;
+		int color = mult * (int) cloud->at(j).r;
 		if (color > 255)
 			color = 255;
 		else if (color < 0)
 			color = 0;
 
-		aligned->at(j).r = (unsigned char) color;
+		cloud->at(j).r = (unsigned char) color;
 
-		color = mult * (int) aligned->at(j).g;
+		color = mult * (int) cloud->at(j).g;
 		if (color > 255)
 			color = 255;
 		else if (color < 0)
 			color = 0;
 
-		aligned->at(j).g = (unsigned char) color;
+		cloud->at(j).g = (unsigned char) color;
 
-		color = mult * (int) aligned->at(j).b;
+		color = mult * (int) cloud->at(j).b;
 		if (color > 255)
 			color = 255;
 		else if (color < 0)
 			color = 0;
 
-		aligned->at(j).b = (unsigned char) color;
+		cloud->at(j).b = (unsigned char) color;
 	}
 	// */
 }
@@ -198,91 +199,116 @@ move_xsens_to_car(Matrix<double, 3, 3> xsens, Matrix<double, 4, 4> xsens2car)
 }
 
 
+void
+transform_cloud(DataSample *sample, Pose2d &pose,
+                PointCloud<PointXYZRGB>::Ptr cloud,
+                Matrix<double, 4, 4> &xsens2car,
+                Matrix<double, 4, 4> &vel2car,
+                int use_xsens)
+{
+	Matrix<double, 3, 3> mat;
+	double roll, pitch, yaw;
+
+	yaw = pitch = roll = 0.;
+
+	if (use_xsens)
+	{
+		// convert xsens data to roll, pitch, yaw
+		mat = sample->xsens.toRotationMatrix();
+		mat = move_xsens_to_car(mat, xsens2car);
+		getEulerYPR(mat, yaw, pitch, roll);
+	}
+
+	Matrix<double, 4, 4> car2world = pose6d_to_matrix(pose.x, pose.y, 0., roll, pitch, pose.th);
+	Matrix<double, 4, 4> t = car2world * vel2car;
+
+	transformPointCloud(*cloud, *cloud, t);
+}
+
+
+void
+fuse_cam_and_lidar(PointCloud<PointXYZRGB>::Ptr cloud, Mat &img,
+                   PointCloud<PointXYZRGB>::Ptr output)
+{
+	//colorize(cloud, lidar2cam, projection, img, colored);
+	//colored->clear();
+	//*colored += *cloud;
+	//*colored = *cloud;
+}
+
+
+
 #if USE_NEW
 void
 create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
-						char path_save_maps[], int use_xsens)
+						char path_save_maps[], int use_xsens, int step)
 {
 	DataSample *sample;
-	PointCloudViewer viewer(1, 0, 0, 1);
+	PointCloudViewer viewer(1);
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
-	PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr colored(new PointCloud<PointXYZRGB>);
 
-	Mat img;
-	double yaw, pitch, roll;
-	Matrix<double, 4, 4> lidar2car = dataset->vel2car();
-	Matrix<double, 4, 4> lidar2cam = dataset->vel2cam();
+	Mat img, simg, simg_view;
+
+	Matrix<double, 4, 4> vel2car = dataset->vel2car();
+	Matrix<double, 4, 4> vel2cam = dataset->vel2cam();
 	Matrix<double, 3, 4> projection = dataset->projection_matrix();
 	Matrix<double, 4, 4> xsens2car = dataset->xsens2car();
 
 	CarmenLidarLoader vloader;
 	CarmenImageLoader iloader;
 	SemanticSegmentationLoader sloader(log_path);
-	Pose2d p0 = dataset->at(0)->pose;
+	Pose2d pose, offset;
 
-	for (int i = 0; i < dataset->size(); i += 3)
+	offset = dataset->at(0)->pose;
+
+	for (int i = 0; i < dataset->size(); i += step)
 	{
 		sample = dataset->at(i);
 
 		if (fabs(sample->v) < 1.0)
 			continue;
 
-		cloud->clear();
-		transformed->clear();
-		colored->clear();
-
 		vloader.initialize(sample->velodyne_path, sample->n_laser_shots);
 		load_as_pointcloud(&vloader, cloud);
 		cloud = filter_pointcloud(cloud);
-		img = iloader.load(sample);
-		//img = sloader.load(sample);
+		increase_brightness(cloud, 5);
 
-		Pose2d pose = sample->pose;
-		pose.x -= p0.x;
-		pose.y -= p0.y;
+		pose = sample->pose;
 
+		pose.x -= offset.x;
+		pose.y -= offset.y;
 
-		//colorize(cloud, lidar2cam, projection, img, colored);
-		colored->clear();
-		*colored += *cloud;
-		//*colored = *cloud;
-		increase_brightness(colored, 5);
+		//img = iloader.load(sample);
+		//simg = sloader.load(sample);
+		//simg_view = segmented_image_view(simg);
 
-		yaw = pitch = roll = 0.;
-		if (use_xsens)
-		{
-			// convert xsens data to roll, pitch, yaw
-			Matrix<double, 3, 3> mat = sample->xsens.toRotationMatrix();
-			mat = move_xsens_to_car(mat, xsens2car);
-			getEulerYPR(mat, yaw, pitch, roll);
-		}
-
-		Matrix<double, 4, 4> car2world = pose6d_to_matrix(pose.x, pose.y, 0., roll, pitch, pose.th);
-		Matrix<double, 4, 4> t = car2world * lidar2car;
-
-		transformed->clear();
-		transformPointCloud(*colored, *transformed, t);
+		transform_cloud(sample, pose, cloud,
+		                xsens2car, vel2car,
+		                use_xsens);
 
 		map.reload(pose.x, pose.y);
 
-		for (int j = 0; j < transformed->size(); j++)
-			map.add_point(transformed->at(j));
+		for (int j = 0; j < cloud->size(); j++)
+			map.add_point(cloud->at(j));
 
 		Mat map_img = map.to_image().clone();
 		draw_pose(map, map_img, pose, Scalar(0, 255, 0));
 
 		// flip vertically.
-		Mat img2;
-		flip(map_img, img2, 0);
+		Mat map_view;
+		flip(map_img, map_view, 0);
 
 		//viewer.clear();
-		//viewer.show(transformed);
-		viewer.show(img2, "map", 640);
-		viewer.show(img, "img", 640);
+		//viewer.show(cloud);
+		//viewer.show(img, "img", 640);
+		//viewer.show(simg, "simg", 640);
+		//viewer.show(simg_view, "simg_view", 640);
+		viewer.show(map_view, "map", 640);
 		viewer.loop();
 	}
 }
+
 
 #else
 void
@@ -436,6 +462,7 @@ main(int argc, char **argv)
 	args_parser.add<double>("tile_size,s", "Map tiles size", 50);
 	args_parser.add<string>("map_path,m", "Path to save the maps", "/tmp");
 	args_parser.add<int>("use_xsens,x", "Whether or not to use pitch, and roll angles from xsens", 1);
+	args_parser.add<int>("step", "Number of data packages to skip", 1);
 	args_parser.save_config_file("data/mapper_config.txt");
 	args_parser.parse(argc, argv);
 
@@ -476,11 +503,13 @@ main(int argc, char **argv)
 
 	string odom_calib_path = default_odom_calib_path(log_path.c_str());
 	string fused_odom_path = default_fused_odom_path(log_path.c_str());
+	string graphslam_path = default_graphslam_path(log_path.c_str());
 
 	NewCarmenDataset *dataset;
 	dataset = new NewCarmenDataset(log_path, odom_calib_path, fused_odom_path);
 	create_map(map, log_path.c_str(), dataset, "/tmp",
-						 args_parser.get<int>("use_xsens"));
+						 args_parser.get<int>("use_xsens"),
+						 args_parser.get<int>("step"));
 
 #else
 	DatasetInterface *dataset = new DatasetCarmen("/dados/data/data_log_volta_da_ufes-20180907-2.txt", 0);

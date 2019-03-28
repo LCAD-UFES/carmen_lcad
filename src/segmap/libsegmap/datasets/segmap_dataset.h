@@ -145,6 +145,7 @@ protected:
 
 std::string default_odom_calib_path(const char *log_path);
 std::string default_fused_odom_path(const char *log_path);
+std::string default_graphslam_path(const char *log_path);
 
 
 #endif

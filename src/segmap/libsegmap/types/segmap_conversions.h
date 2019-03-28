@@ -23,7 +23,9 @@ void spherical2cartersian(double v_angle, double h_angle, double radius,
 void cartersian2spherical(double x, double y, double z,
                           double *v_angle, double *h_angle, double *radius);
 
-void getEulerYPR(Eigen::Matrix<double, 3, 3> &m_el, double& yaw, double& pitch, double& roll, unsigned int solution_number = 1);
+void getEulerYPR(Eigen::Matrix<double, 3, 3> &m_el,
+                 double& yaw, double& pitch, double& roll,
+                 unsigned int solution_number = 1);
 
 
 #endif

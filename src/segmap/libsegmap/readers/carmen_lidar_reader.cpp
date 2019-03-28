@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <carmen/util_io.h>
 #include <carmen/util_math.h>
+#include <carmen/lidar_shot.h>
 #include <carmen/segmap_conversions.h>
 #include <carmen/carmen_lidar_reader.h>
 
