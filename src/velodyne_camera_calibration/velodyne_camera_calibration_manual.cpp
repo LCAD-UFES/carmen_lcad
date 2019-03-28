@@ -18,24 +18,21 @@ static carmen_pose_3D_t velodyne_pose; //velodyne pose in relation to sensor boa
 
 static carmen_camera_parameters camera_parameters;
 
+struct vert_group {
+    cv::Point points[4];
+    int selected = 0;
+} vert;
+
 void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 {
+    vert_group *v = (vert_group *) userdata;
     if  ( event == cv::EVENT_LBUTTONDOWN )
     {
-        cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-    }
-    else if  ( event == cv::EVENT_RBUTTONDOWN )
-    {
-        cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-    }
-    else if  ( event == cv::EVENT_MBUTTONDOWN )
-    {
-        cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-    }
-    else if ( event == cv::EVENT_MOUSEMOVE )
-    {
-        cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
-
+        if (v->selected < 4) {
+            v->points[v->selected].x = x;
+            v->points[v->selected].y = y;
+            v->selected++;
+        }
     }
 }
 
@@ -152,13 +149,20 @@ bumblebee_basic_image_handler(carmen_bumblebee_basic_stereoimage_message *bumble
      cv::namedWindow("My Window", 1);
 
       //set the callback function for any mouse event
-     cv::setMouseCallback("My Window", CallBackFunc, NULL);
+     cv::setMouseCallback("My Window", CallBackFunc, &vert);
 
       //show the image
      cv::imshow("My Window", camera_image_show);
 
       // Wait until user press some key
      cv::waitKey(0);
+     vert.selected = 0;
+
+
+     cout << "mouse x: " << vert.points[0].x << ", mouse y: " << vert.points[0].y << endl;
+     cout << "mouse x: " << vert.points[1].x << ", mouse y: " << vert.points[1].y << endl;
+     cout << "mouse x: " << vert.points[2].x << ", mouse y: " << vert.points[2].y << endl;
+     cout << "mouse x: " << vert.points[3].x << ", mouse y: " << vert.points[3].y << endl;
 }
 
 
