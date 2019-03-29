@@ -3,16 +3,21 @@
 #include <string>
 #include <algorithm>
 #include <Eigen/Core>
-#include "gicp.h"
-#include <carmen/segmap_util.h>
-#include <carmen/segmap_pose2d.h>
-#include <carmen/segmap_dataset.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <pcl/visualization/pcl_visualizer.h>
-#include <carmen/segmap_command_line.h>
-#include <carmen/segmap_sensors.h>
-#include <carmen/segmap_viewer.h>
+#include <pcl/common/transforms.h>
+
+#include <carmen/util_io.h>
+#include <carmen/segmap_pose2d.h>
+#include <carmen/segmap_dataset.h>
+#include <carmen/segmap_conversions.h>
+#include <carmen/segmap_sensor_viewer.h>
+#include <carmen/carmen_lidar_reader.h>
+
+#include <carmen/command_line.h>
+
+#include "gicp.h"
 
 using namespace std;
 using namespace pcl;
@@ -55,15 +60,14 @@ compute_vel2target(Pose2d pose, Pose2d &target, Matrix<double, 4, 4> &vel2car)
 
 
 PointCloud<PointXYZRGB>::Ptr
-create_cloud(NewCarmenDataset &dataset, int id, Pose2d &target_pose, Matrix<double, 4, 4> &vel2car)
+create_cloud(NewCarmenDataset &dataset, int id,
+						 Pose2d &target_pose, Matrix<double, 4, 4> &vel2car)
 {
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloud<PointXYZRGB>::Ptr moved(new PointCloud<PointXYZRGB>);
 
-	CarmenLidarLoader loader(dataset[id]->velodyne_path.c_str(),
-													 dataset[id]->n_laser_shots,
-													 dataset.intensity_calibration);
-
+	CarmenLidarLoader loader;
+	loader.reinitialize(dataset[id]->velodyne_path, dataset[id]->n_laser_shots);
 	load_as_pointcloud(&loader, cloud);
 	cloud = filter_pointcloud(cloud);
 

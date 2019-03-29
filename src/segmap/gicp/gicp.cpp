@@ -1,5 +1,8 @@
 
 #include "gicp.h"
+#include <pcl/registration/gicp.h>
+#include <pcl/filters/filter.h>
+#include <pcl/filters/voxel_grid.h>
 
 using namespace Eigen;
 
