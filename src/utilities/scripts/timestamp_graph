@@ -1,5 +1,5 @@
 #!/bin/bash
-grep $1 $2 > /tmp/caco.txt
+grep "$1" $2 > /tmp/caco.txt
 grep -v "#" /tmp/caco.txt > /tmp/caco2.txt
 cat /tmp/caco2.txt | rev | cut -d' ' -f 3 | rev > /tmp/caco.txt
 first_timesamp=$(head -n 1 /tmp/caco.txt)
