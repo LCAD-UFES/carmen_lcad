@@ -42,17 +42,27 @@ The following video demonstrates the proposed system working offline (not in the
 
 ## Trained Models
 
-We trained a [YOLOv3][yolo] model using the datasets.... The trained model can be found [here][trained-model].
+Datasets used for training:
+ - DriveU Traffic Light Dataset (DTLD): https://www.uni-ulm.de/en/in/driveu/projects/driveu-traffic-light-dataset/
+ - LISA Traffic Light Dataset (LISA-TLD): https://www.kaggle.com/mbornoe/lisa-traffic-light-dataset
+
+We trained a [YOLOv3][yolo] model that can detect traffic lights and classify their state: red or yellow (in a single class); and green.
+To run the inference using our trained model, you will need the following files:
+ - Data (dummy): https://drive.google.com/open?id=1n14nQDpN_NAIn61JK5_EQYFJXPJM7Kai
+ - Names: https://drive.google.com/open?id=1ZgUceNvhHm9XST0H_M_hi8hqk4wx9mI6
+ - Cfg: https://drive.google.com/open?id=1dx6rKLPxnxu_YXzmsqr3D8IT5UTL_3Gu
+ - Weights: https://drive.google.com/open?id=1CCbc-6FgCtXD2g_1jQfGdm0cWqfIwwbC
 
 [yolo]: https://pjreddie.com/darknet/yolo/
-[trained-model]: https://drive.google.com/drive/folders/1axWkPbXcaqc3pg-5qP-FyJMgQwnVD6d9
 
-After compiling [darknet], run the folowing command to see the results on your own images.
+After compiling [darknet] and downloading the previous files to the same place where the darknet binary is, run the folowing command to see the results on your own images.
 
 [darknet]: https://github.com/pjreddie/darknet
 
 ```bash
-./darknet detect [CFG].cfg [WEIGHTS].weights your_own_image.png
-# Or, for multiple images:
-./darknet detect [CFG].cfg [WEIGHTS].weights
+./darknet detector test dummy_nrg.data yolov3-nrgr-10000-const-lr-1e-4.cfg yolov3-nrgr-10000-const-lr-1e-4_15000.weights YOUR_IMAGE.png
+# Or, for multiple images (file paths will be read from STDIN):
+./darknet detector test dummy_nrg.data yolov3-nrgr-10000-const-lr-1e-4.cfg yolov3-nrgr-10000-const-lr-1e-4_15000.weights
 ```
+
+While doing inference you can also pass the option `-thresh 0.2` to the binary in order to decrease its confidence threshold to 0.2, like we do in our paper.
