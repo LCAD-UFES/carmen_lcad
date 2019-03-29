@@ -20,7 +20,8 @@ IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ \
 LFLAGS += `pkg-config --libs opencv` -lopencv_imgcodecs
 LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
 LFLAGS += -L /usr/lib -lvtkIO -lvtkFiltering -lvtkCommon -lvtkRendering -lvtkGraphics
-LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal -lboost_program_options
+LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal 
+LFLAGS += -lboost_program_options -lboost_filesystem
 
 LFLAGS += -lsegmap_types -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
 	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models \

@@ -14,7 +14,7 @@ public:
     CarmenLidarLoader();
     ~CarmenLidarLoader();
 
-    void initialize(std::string &cloud_path, int n_rays);
+    void reinitialize(std::string &cloud_path, int n_rays);
 
     LidarShot* next();
     bool done();

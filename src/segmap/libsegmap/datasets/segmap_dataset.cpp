@@ -698,3 +698,11 @@ default_fused_odom_path(const char *log_path)
 	std::string log_name = file_name_from_path(log_path);
 	return (string("/dados/data2/data_") + log_name + string("/fused_odom.txt"));
 }
+
+
+std::string
+default_graphslam_path(const char *log_path)
+{
+	std::string log_name = file_name_from_path(log_path);
+	return (string("/dados/data2/data_") + log_name + string("/graphslam.txt"));
+}

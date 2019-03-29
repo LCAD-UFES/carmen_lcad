@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <carmen/util_io.h>
 #include <carmen/util_math.h>
+#include <carmen/lidar_shot.h>
 #include <carmen/segmap_conversions.h>
 #include <carmen/carmen_lidar_reader.h>
 
@@ -85,7 +86,7 @@ CarmenLidarLoader::reset()
 
 
 void
-CarmenLidarLoader::initialize(std::string &cloud_path, int n_rays)
+CarmenLidarLoader::reinitialize(std::string &cloud_path, int n_rays)
 {
 	if (_fptr)
 		fclose(_fptr);

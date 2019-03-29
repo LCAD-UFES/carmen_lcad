@@ -9,6 +9,18 @@
 using namespace std;
 
 
+FILE*
+safe_fopen(const char *path, const char *mode)
+{
+	FILE *f = fopen(path, mode);
+
+	if (f == NULL)
+		exit(printf("fopen failed with path: '%s', and mode '%s'\n", path, mode));
+
+	return f;
+}
+
+
 vector<double>
 read_vector(char *name)
 {
@@ -31,23 +43,10 @@ read_vector(char *name)
 }
 
 
-FILE*
-safe_fopen(const char *path, const char *mode)
-{
-	FILE *f = fopen(path, mode);
-
-	if (f == NULL)
-		exit(printf("fopen failed with path: '%s', and mode '%s'\n", path, mode));
-
-	return f;
-}
-
-
 std::string
 file_name_from_path(const char *path)
 {
 	vector<string> splitted = string_split(path, "/");
 	return std::string(splitted[splitted.size() - 1]);
 }
-
 

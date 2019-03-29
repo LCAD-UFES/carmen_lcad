@@ -44,7 +44,7 @@ load_and_transform_pointcloud(DataSample *data_package,
 	Pose2d pose;
 	Matrix<double, 4, 4> T;
 
-	vloader.initialize(data_package->velodyne_path, data_package->n_laser_shots);
+	vloader.reinitialize(data_package->velodyne_path, data_package->n_laser_shots);
 	load_as_pointcloud(&vloader, cloud);
 
 	for (int j = 0; j < cloud->size(); j++)
