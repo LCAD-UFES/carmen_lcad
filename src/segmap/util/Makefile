@@ -15,12 +15,12 @@ IFLAGS += -std=c++11
 
 LFLAGS += -lboost_program_options -lsegmap_utils
 
-SOURCES = command_line.cpp  carmen_param_file.cpp util_io.cpp util_math.cpp util_strings.cpp
+SOURCES = command_line.cpp  carmen_param_file.cpp util_io.cpp util_math.cpp util_strings.cpp util_time.cpp
 
-PUBLIC_INCLUDES = command_line.h carmen_param_file.h util_io.h util_math.h util_strings.h
+PUBLIC_INCLUDES = command_line.h carmen_param_file.h util_io.h util_math.h util_strings.h util_time.h
 PUBLIC_LIBRARIES = libutil.a
 TARGETS = libutil.a
 
-libutil.a: command_line.o carmen_param_file.o util_io.o util_math.o util_strings.o
+libutil.a: command_line.o carmen_param_file.o util_io.o util_math.o util_strings.o util_time.o
 
 include $(CARMEN_HOME)/src/Makefile.rules

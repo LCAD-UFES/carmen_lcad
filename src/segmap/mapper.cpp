@@ -30,6 +30,9 @@
 #include <carmen/segmap_particle_filter_viewer.h>
 #include <carmen/segmap_semantic_segmentation_viewer.h>
 
+#include <carmen/util_time.h>
+#include <carmen/util_math.h>
+
 #include <carmen/command_line.h>
 
 using namespace cv;
@@ -456,7 +459,7 @@ update_map(DataSample *sample, GridMap *map,
 	pose.x -= offset.x;
 	pose.y -= offset.y;
 
-	int use_new = 0;
+	int use_new = 1;
 
 	map->reload(pose.x, pose.y);
 
@@ -564,12 +567,17 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 
 	offset = dataset->at(0)->pose;
 
+	TimeCounter timer;
+	vector<double> times;
+
 	for (int i = 0; i < dataset->size(); i += step)
 	{
 		sample = dataset->at(i);
 
 		if (fabs(sample->v) < 1.0)
 			continue;
+
+		timer.start();
 
 		update_map(sample, &map,
 		           vloader,
@@ -583,7 +591,11 @@ create_map(GridMap &map, const char *log_path, NewCarmenDataset *dataset,
 		           use_xsens,
 		           map_type);
 
-		//view(map, sample, offset, viewer);
+		times.push_back(timer.ellapsed());
+
+		printf("Avg ellapsed %ld: %lf Current: %lf\n", times.size(), mean(times), times[times.size() - 1]);
+
+		view(map, sample, offset, viewer);
 	}
 }
 
