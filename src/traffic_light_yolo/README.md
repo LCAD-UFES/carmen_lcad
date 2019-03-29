@@ -37,7 +37,8 @@ trajectory.
 
 The following video demonstrates the proposed system working offline (not in the car).
 
-[![youtube-video](./misc/youtube-thumbnail.jpg)](https://youtu.be/VhdLpuErJ8E)
+<!-- https://stackoverflow.com/a/16079387/4630320 -->
+[![youtube-video](https://img.youtube.com/vi/VhdLpuErJ8E/0.jpg)](https://youtu.be/VhdLpuErJ8E)
 
 ## Trained Models
 
