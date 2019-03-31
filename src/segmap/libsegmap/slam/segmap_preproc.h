@@ -15,6 +15,13 @@ class SensorPreproc
 {
 public:
 
+	enum SensorReference
+	{
+		SENSOR_REFERENCE,
+		CAR_REFERENCE,
+		WORLD_REFERENCE
+	};
+
 	enum IntensityMode
 	{
 		INTENSITY = 0,
@@ -30,11 +37,15 @@ public:
 								Eigen::Matrix<double, 3, 4> projection,
 								Eigen::Matrix<double, 4, 4> xsens2car,
 								int use_xsens,
-			          Pose2d offset,
-								IntensityMode imode = INTENSITY);
+								Pose2d offset,
+								IntensityMode imode = INTENSITY,
+								double ignore_above_threshold = DBL_MAX,
+								double ignore_below_threshold = -DBL_MAX);
 
 	void reinitialize(DataSample *sample);
-	std::vector<pcl::PointXYZRGB> next_points();
+	std::vector<pcl::PointXYZRGB> next_points_in_sensor();
+	std::vector<pcl::PointXYZRGB> next_points_in_world();
+	std::vector<pcl::PointXYZRGB> next_points_in_car();
 	int size();
 
 protected:
@@ -52,6 +63,9 @@ protected:
 	int _n_lidar_shots;
 
 	cv::Mat _img;
+
+	double _ignore_above_threshold;
+	double _ignore_below_threshold;
 
 	Eigen::Matrix<double, 4, 4> _car2world;
 
@@ -78,12 +92,16 @@ protected:
 
 	static int _point3d_is_valid(Eigen::Matrix<double, 4, 1> &p_sensor,
 															 Eigen::Matrix<double, 4, 1> &p_car,
-															 Eigen::Matrix<double, 4, 1> &p_world);
+															 Eigen::Matrix<double, 4, 1> &p_world,
+															 double ignore_above_threshold,
+															 double ignore_below_threshold);
 
 	pcl::PointXYZRGB _create_point_and_intensity(Eigen::Matrix<double, 4, 1> &p_sensor,
+																							 Eigen::Matrix<double, 4, 1> &p_car,
 																							 Eigen::Matrix<double, 4, 1> &p_world,
 																							 unsigned char intensity,
-																							 int *valid);
+																							 int *valid,
+																							 SensorReference ref);
 
 	static unsigned char _brighten(unsigned char val, unsigned int multiplier = 5);
 
@@ -91,7 +109,15 @@ protected:
 													 cv::Mat &img, cv::Point *ppixel,
 													 int *is_valid);
 
+	static void _point_coords_from_mat(Eigen::Matrix<double, 4, 1> &mat, pcl::PointXYZRGB *point);
+
+	std::vector<pcl::PointXYZRGB> _next_points(SensorReference ref);
 };
+
+
+void load_as_pointcloud(SensorPreproc &preproc,
+												pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
+												SensorPreproc::SensorReference ref);
 
 
 #endif

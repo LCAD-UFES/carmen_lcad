@@ -26,9 +26,9 @@ ParticleFilter::_gauss()
 
 // public:
 ParticleFilter::ParticleFilter(int n_particles, WeightType weight_type,
-		double x_std, double y_std, double th_std,
-		double v_std, double phi_std, double pred_x_std, double pred_y_std, double pred_th_std,
-		double color_var_r, double color_var_g, double color_var_b)
+															 double x_std, double y_std, double th_std,
+															 double v_std, double phi_std, double pred_x_std, double pred_y_std, double pred_th_std,
+															 double color_std_r, double color_std_g, double color_std_b)
 {
 	_n = n_particles;
 	_weight_type = weight_type;
@@ -49,9 +49,9 @@ ParticleFilter::ParticleFilter(int n_particles, WeightType weight_type,
 	_pred_y_std = pred_y_std;
 	_pred_th_std = pred_th_std;
 
-	_color_var_r = color_var_r / pow(255., 2.);
-	_color_var_g = color_var_g / pow(255., 2.);
-	_color_var_b = color_var_b / pow(255., 2.);
+	_color_std_r = color_std_r / 255.;
+	_color_std_g = color_std_g / 255.;
+	_color_std_b = color_std_b / 255.;
 }
 
 
@@ -125,9 +125,9 @@ ParticleFilter::_semantic_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 	double count;
 	double unnorm_log_prob = 0.;
 	PointXYZRGB point;
-	
+
 	assert(transformed_cloud->size() > 0);
-    //double den = 1. / (double) transformed_cloud->size();
+	//double den = 1. / (double) transformed_cloud->size();
 
 	for (int i = 0; i < transformed_cloud->size(); i += 1)
 	{
@@ -162,9 +162,10 @@ ParticleFilter::_image_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Gr
 		// TODO: what to do when the cell was never observed?
 		// if (v[0] != -1)
 		{
-			unnorm_log_prob += fabs((point.r - v[2]) / 255.) +
-						fabs((point.g - v[1]) / 255.) +
-						fabs((point.b - v[0]) / 255.);
+			unnorm_log_prob +=
+					(-pow(((point.r - v[2]) / 255.) / _color_std_r, 2)) +
+					(-pow(((point.g - v[1]) / 255.) / _color_std_g, 2)) +
+					(-pow(((point.b - v[0]) / 255.) / _color_std_b, 2));
 
 			n_valid_cells += 1;
 		}
@@ -183,9 +184,7 @@ ParticleFilter::_gps_weight(Pose2d &pose, Pose2d &gps)
 
 void
 ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
-		GridMap &map,
-		Matrix<double, 4, 4> &vel2car, 
-		double v, double phi, Pose2d &gps, int *max_id, int *min_id)
+																 GridMap &map, Pose2d &gps, int *max_id, int *min_id)
 {
 	int i;
 
@@ -241,7 +240,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	{
 		//_w[i] = exp(_w[i] - max_weight) + (1. / (double) (3. * _n));
 		//_w[i] = exp(_w[i]);
-        _w[i] -= min_weight;
+		_w[i] -= min_weight;
 		sum_weights += _w[i];
 
 		fprintf(stderr, "%.4lf ", _w[i]);
@@ -267,7 +266,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 		else
 			_w[i] /= sum_weights;
 
-        assert(_w[i] >= 0);
+		assert(_w[i] >= 0);
 		_w_bef[i] = _w[i];
 
 		fprintf(stderr, "%.4lf ", _w[i]);
@@ -286,7 +285,7 @@ ParticleFilter::_resample()
 	double step = 1. / (double) _n;
 	double sum = 0.;
 
-    fprintf(stderr, "step: %lf pos: %d Particles: \n", step, pos);
+	fprintf(stderr, "step: %lf pos: %d Particles: \n", step, pos);
 	for (i = 0; i < _n; i++)
 	{
 		sum += _w[pos];
@@ -296,12 +295,12 @@ ParticleFilter::_resample()
 			sum += _w[pos];
 		}
 
-        fprintf(stderr, "%d ", pos);
+		fprintf(stderr, "%d ", pos);
 		_p[i] = _p_bef[pos];
 		sum = 0.;
-        pos = (pos + 1) % _n;
+		pos = (pos + 1) % _n;
 	}
-    fprintf(stderr, "\n");
+	fprintf(stderr, "\n");
 
 	// make all particles equally likely after resampling
 	for (i = 0; i < _n; i++)
@@ -310,15 +309,12 @@ ParticleFilter::_resample()
 
 
 void
-ParticleFilter::correct(PointCloud<PointXYZRGB>::Ptr cloud,
-		GridMap &map, PointCloud<PointXYZRGB>::Ptr transformed_cloud,
-		Matrix<double, 4, 4> &vel2car, Pose2d &gps, 
-		double v, double phi)
+ParticleFilter::correct(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &map, Pose2d &gps)
 {
 	int max_id = 0;
 	int min_id = 0;
 
-	_compute_weights(cloud, map, vel2car, v, phi, gps, &max_id, &min_id);
+	_compute_weights(cloud, map, gps, &max_id, &min_id);
 	_normalize_weights(min_id, max_id);
 	_resample();
 }
@@ -330,13 +326,13 @@ ParticleFilter::mean()
 	Pose2d p;
 
 	// th_y and th_x are used to compute the mean of theta.
-    // Note: The circular mean is different than the arithmetic mean.
-    // For example, the arithmetic mean of the three angles 0°, 0° and 90° is
+	// Note: The circular mean is different than the arithmetic mean.
+	// For example, the arithmetic mean of the three angles 0°, 0° and 90° is
 	// (0+0+90)/3 = 30°, but the vector mean is 26.565°. The difference is bigger
 	// when the angles are widely distributed. If the angles are uniformly distributed
 	// on the circle, then the resulting radius will be 0, and there is no circular mean.
 	// (In fact, it is impossible to define a continuous mean operation on the circle.)
-    // See https://en.wikipedia.org/wiki/Mean_of_circular_quantities
+	// See https://en.wikipedia.org/wiki/Mean_of_circular_quantities
 	// See https://rosettacode.org/wiki/Averages/Mean_angle
 	double th_y = 0., th_x = 0.;
 

@@ -29,7 +29,9 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
 														 Matrix<double, 4, 4> xsens2car,
 														 int use_xsens,
 														 Pose2d offset,
-														 IntensityMode imode)
+														 IntensityMode imode,
+														 double ignore_above_threshold,
+														 double ignore_below_threshold)
 {
 	_vloader = vloader;
 	_iloader = iloader;
@@ -42,6 +44,9 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
 	_offset = offset;
 	_imode = imode;
 	_n_lidar_shots = 0;
+
+	_ignore_above_threshold = ignore_above_threshold;
+	_ignore_below_threshold = ignore_below_threshold;
 
 	_p_sensor(3, 0) = 1.0;
 	_p_car(3, 0) = 1.0;
@@ -65,7 +70,7 @@ SensorPreproc::reinitialize(DataSample *sample)
 
 
 vector<pcl::PointXYZRGB>
-SensorPreproc::next_points()
+SensorPreproc::_next_points(SensorReference ref)
 {
 	int valid;
 	double h, v, r, in;
@@ -91,16 +96,37 @@ SensorPreproc::next_points()
 
 		_compute_point_in_different_references(h, v, r, &_p_sensor, &_p_car, &_p_world);
 
-		if (!_point3d_is_valid(_p_sensor, _p_car, _p_world))
+		if (!_point3d_is_valid(_p_sensor, _p_car, _p_world, _ignore_above_threshold, _ignore_below_threshold))
 			continue;
 
-		point = _create_point_and_intensity(_p_sensor, _p_world, in, &valid);
+		point = _create_point_and_intensity(_p_sensor, _p_car, _p_world, in, &valid, ref);
 
 		if (valid)
 			points.push_back(point);
 	}
 
 	return points;
+}
+
+
+std::vector<pcl::PointXYZRGB>
+SensorPreproc::next_points_in_sensor()
+{
+	return _next_points(SENSOR_REFERENCE);
+}
+
+
+std::vector<pcl::PointXYZRGB>
+SensorPreproc::next_points_in_car()
+{
+	return _next_points(CAR_REFERENCE);
+}
+
+
+std::vector<pcl::PointXYZRGB>
+SensorPreproc::next_points_in_world()
+{
+	return _next_points(WORLD_REFERENCE);
 }
 
 
@@ -213,7 +239,9 @@ SensorPreproc::_move_xsens_to_car(Matrix<double, 3, 3> xsens)
 int
 SensorPreproc::_point3d_is_valid(Matrix<double, 4, 1> &p_sensor,
 																 Matrix<double, 4, 1> &p_car,
-																 Matrix<double, 4, 1> &p_world)
+																 Matrix<double, 4, 1> &p_world,
+																 double ignore_above_threshold,
+																 double ignore_below_threshold)
 {
 	// The points in the following frames are not used so far,
 	// but they can be used in the future.
@@ -222,14 +250,14 @@ SensorPreproc::_point3d_is_valid(Matrix<double, 4, 1> &p_sensor,
 	int ray_hit_car = fabs(p_sensor(0, 0)) < 6.0 && fabs(p_sensor(1, 0)) < 4.0;
 	int ray_contains_nan = std::isnan(p_world(0, 0)) || std::isnan(p_world(1, 0)) || std::isnan(p_world(2, 0));
 	int ray_contains_inf = std::isinf(p_world(0, 0)) || std::isinf(p_world(1, 0)) || std::isinf(p_world(2, 0));
-	int ray_is_too_high = p_sensor(2, 0) > 0.0;
-	int ray_is_too_low = p_sensor(2, 0) < -2.5;
+	int ray_is_too_high = p_sensor(2, 0) > ignore_above_threshold;
+	int ray_is_too_low = p_sensor(2, 0) < ignore_below_threshold;
 
 	if (ray_hit_car
 			|| ray_contains_nan
 			|| ray_contains_inf
 			|| ray_is_too_high
-			//|| ray_is_too_low
+			|| ray_is_too_low
 			)
 		return 0;
 
@@ -237,17 +265,31 @@ SensorPreproc::_point3d_is_valid(Matrix<double, 4, 1> &p_sensor,
 }
 
 
+void
+SensorPreproc::_point_coords_from_mat(Eigen::Matrix<double, 4, 1> &mat, PointXYZRGB *point)
+{
+	point->x = mat(0, 0) / mat(3, 0);
+	point->y = mat(1, 0) / mat(3, 0);
+	point->z = mat(2, 0) / mat(3, 0);
+}
+
+
 PointXYZRGB
 SensorPreproc::_create_point_and_intensity(Matrix<double, 4, 1> &p_sensor,
+																					 Matrix<double, 4, 1> &p_car,
 																					 Matrix<double, 4, 1> &p_world,
 																					 unsigned char intensity,
-																					 int *valid)
+																					 int *valid,
+																					 SensorReference ref)
 {
 	PointXYZRGB point;
 
-	point.x = p_world(0, 0) / p_world(3, 0);
-	point.y = p_world(1, 0) / p_world(3, 0);
-	point.z = p_world(2, 0) / p_world(3, 0);
+	if (ref == SENSOR_REFERENCE)
+		_point_coords_from_mat(p_sensor, &point);
+	else if (ref == CAR_REFERENCE)
+		_point_coords_from_mat(p_car, &point);
+	else
+		_point_coords_from_mat(p_world, &point);
 
 	// in INTENSITY mode, the point color is given by
 	// the intensity observed by the lidar.
@@ -319,3 +361,26 @@ SensorPreproc::_get_pixel_position(Matrix<double, 4, 1> &p_sensor,
 			*is_valid = 1;
 	}
 }
+
+
+void load_as_pointcloud(SensorPreproc &preproc,
+												pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
+												SensorPreproc::SensorReference ref)
+{
+	vector<PointXYZRGB> points;
+	cloud->clear();
+
+	for (int i = 0; i < preproc.size(); i++)
+	{
+		if (ref == SensorPreproc::SENSOR_REFERENCE)
+			points = preproc.next_points_in_sensor();
+		else if (ref == SensorPreproc::CAR_REFERENCE)
+			points = preproc.next_points_in_car();
+		else
+			points = preproc.next_points_in_world();
+
+		for (int j = 0; j < points.size(); j++)
+			cloud->push_back(points[j]);
+	}
+}
+

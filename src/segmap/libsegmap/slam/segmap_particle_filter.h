@@ -23,8 +23,7 @@ public:
 	};
 
 	void _compute_weights(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, GridMap &map,
-	                      Eigen::Matrix<double, 4, 4> &vel2car,
-	                      double v, double phi, Pose2d &gps, int *max_id, int *min_id);
+	                      Pose2d &gps, int *max_id, int *min_id);
 	void _normalize_weights(int min_id, int max_id);
 	void _resample();
 
@@ -42,9 +41,7 @@ public:
 
 	void predict(double v, double phi, double dt);
 	double sensor_weight(pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
-	void correct(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, GridMap &map,
-	             pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud,
-	             Eigen::Matrix<double, 4, 4> &vel2car, Pose2d &gps, double v, double phi);
+	void correct(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, GridMap &map, Pose2d &gps);
 
 	Pose2d mean();
 	Pose2d mode();
@@ -59,7 +56,7 @@ public:
 
 	double _x_std, _y_std, _th_std, _v_std, _phi_std;
 	double _pred_x_std, _pred_y_std, _pred_th_std;
-	double _color_var_r, _color_var_g, _color_var_b;
+	double _color_std_r, _color_std_g, _color_std_b;
 
 	std::default_random_engine _random_generator;
 	std::normal_distribution<double> _std_normal_distribution;
