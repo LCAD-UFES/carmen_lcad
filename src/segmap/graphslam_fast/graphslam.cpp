@@ -440,8 +440,8 @@ load_parameters(int argc, char **argv, GraphSlamData *data)
 	args.add<double>("loop_angle_std", "Std of heading in loop closure measurements (degrees)", 3);
 	args.add<double>("gicp_odom_angle_std", "Std of heading when estimating odometry using GICP (degrees)", 3);
 	args.add<double>("gicp_to_map_angle_std", "Std of heading in loop closure in relation to a map (degrees)", 3);
-	args.add<double>("v_for_gps_heading", "Minimum velocity for estimating heading with consecutive GPS poses", 2.0);
-	args.add<double>("v_for_gps", "Minimum velocity for adding GPS edges (without this trick, positions in which v=0 can be overweighted)", 2.0);
+	args.add<double>("v_for_gps_heading", "Minimum velocity for estimating heading with consecutive GPS poses", 1.0);
+	args.add<double>("v_for_gps", "Minimum velocity for adding GPS edges (without this trick, positions in which v=0 can be overweighted)", 1.0);
 	args.add<string>("global_angle_mode", "Method for estimating global angle: [xsens, gps, consecutive_gps]", "consecutive_gps");
 	args.add<int>("n_iterations,n", "Number of optimization terations", 50);
 

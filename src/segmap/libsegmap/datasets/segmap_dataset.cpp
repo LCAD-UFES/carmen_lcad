@@ -473,6 +473,7 @@ NewCarmenDataset::_create_synchronized_data_package(double ref_time)
 
 	sample->v = sample->v * _calib.mult_v + _calib.add_v;
 	sample->phi = normalize_theta(sample->phi * _calib.mult_phi + _calib.add_phi);
+	sample->time = ref_time;
 
 	return sample;
 }

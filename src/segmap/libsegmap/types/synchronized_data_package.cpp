@@ -1,4 +1,5 @@
 
+#include <carmen/segmap_pose2d.h>
 #include <carmen/synchronized_data_package.h>
 
 
@@ -9,6 +10,7 @@ DataSample::DataSample()
 	odom_time = 0.0;
 	xsens_time = 0.0;
 	gps_time = 0.0;
+	time = 0.0;
 
 	v = 0;
 	phi = 0;

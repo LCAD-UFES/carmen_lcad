@@ -54,6 +54,14 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
 }
 
 
+SensorPreproc::~SensorPreproc()
+{
+	delete(_vloader);
+	delete(_iloader);
+	delete(_sloader);
+}
+
+
 void
 SensorPreproc::reinitialize(DataSample *sample)
 {

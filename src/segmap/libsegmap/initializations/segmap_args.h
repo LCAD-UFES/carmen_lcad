@@ -7,7 +7,7 @@
 
 std::string default_data_dir();
 
-void add_default_experiment_args(CommandLineArguments &args);
+void add_default_slam_args(CommandLineArguments &args);
 void add_default_mapper_args(CommandLineArguments &args);
 void add_default_localizer_args(CommandLineArguments &args);
 void add_default_sensor_preproc_args(CommandLineArguments &args);

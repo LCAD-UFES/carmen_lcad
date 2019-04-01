@@ -27,15 +27,15 @@ LFLAGS += -lsegmap_types -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
 	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lsegmap_initializations \
 	-lutil 
 
-DEPS = libsegmap/types/libsegmap_types.a \
-	libsegmap/datasets/libsegmap_datasets.a \
-	libsegmap/readers/libsegmap_readers.a \
-	libsegmap/motion_models/libsegmap_motion_models.a \
-	libsegmap/slam/libsegmap_slam.a \
-	libsegmap/visualization/libsegmap_visualization.a \
-	libsegmap/readers/libsemap_readers.a \
-	libsegmap/initializations/libsegmap_initializations.a \
-	util/libutil.a
+DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/datasets/libsegmap_datasets.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsegmap_readers.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/motion_models/libsegmap_motion_models.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/slam/libsegmap_slam.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/visualization/libsegmap_visualization.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsemap_readers.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/initializations/libsegmap_initializations.a \
+	$(CARMEN_HOME)/src/segmap/util/libutil.a
 
 SOURCES = mapper.cpp localizer.cpp  
 

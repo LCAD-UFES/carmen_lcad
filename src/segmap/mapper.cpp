@@ -112,7 +112,7 @@ main(int argc, char **argv)
 	string log_path;
 
 	CommandLineArguments args;
-	add_default_experiment_args(args);
+	add_default_slam_args(args);
 	add_default_sensor_preproc_args(args);
 	add_default_mapper_args(args);
 	args.save_config_file(default_data_dir() + "/mapper_config.txt");

@@ -42,6 +42,8 @@ public:
 								double ignore_above_threshold = DBL_MAX,
 								double ignore_below_threshold = -DBL_MAX);
 
+	~SensorPreproc();
+
 	void reinitialize(DataSample *sample);
 	std::vector<pcl::PointXYZRGB> next_points_in_sensor();
 	std::vector<pcl::PointXYZRGB> next_points_in_world();

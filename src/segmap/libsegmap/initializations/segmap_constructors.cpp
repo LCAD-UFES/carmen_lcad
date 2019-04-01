@@ -79,9 +79,8 @@ create_particle_filter(CommandLineArguments &args)
 
 
 NewCarmenDataset*
-create_dataset(CommandLineArguments &args)
+create_dataset(string log_path)
 {
-	string log_path = args.get<string>("log_path");
 	string odom_calib_path = default_odom_calib_path(log_path.c_str());
 	string fused_odom_path = default_fused_odom_path(log_path.c_str());
 	string graphslam_path = default_graphslam_path(log_path.c_str());
@@ -93,11 +92,13 @@ create_dataset(CommandLineArguments &args)
 
 
 SensorPreproc
-create_sensor_preproc(CommandLineArguments &args, NewCarmenDataset *dataset)
+create_sensor_preproc(CommandLineArguments &args,
+											NewCarmenDataset *dataset,
+											string log_path)
 {
 	CarmenLidarLoader *vloader = new CarmenLidarLoader;
 	CarmenImageLoader *iloader = new CarmenImageLoader;
-	SemanticSegmentationLoader *sloader = new SemanticSegmentationLoader(args.get<string>("log_path"));
+	SemanticSegmentationLoader *sloader = new SemanticSegmentationLoader(log_path);
 
 	SensorPreproc::IntensityMode i_mode;
 	i_mode = parse_intensity_mode(args.get<string>("intensity_mode"));
@@ -105,8 +106,9 @@ create_sensor_preproc(CommandLineArguments &args, NewCarmenDataset *dataset)
 	SensorPreproc preproc(vloader, iloader, sloader,
 												dataset->vel2cam(), dataset->vel2car(), dataset->projection_matrix(),
 												dataset->xsens2car(), args.get<int>("use_xsens"), dataset->at(0)->pose,
-												i_mode);
-
+												i_mode,
+												args.get<double>("ignore_above_threshold"),
+												args.get<double>("ignore_below_threshold"));
 
 	return preproc;
 }

@@ -19,14 +19,14 @@ VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 IFLAGS += `pkg-config --cflags opencv`
 
-# SEGMAP PART 1
-LFLAGS +=  -lsegmap_initializations -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
-	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models \
-	-lutil
-
 LFLAGS += -L/usr/local/lib  
 LFLAGS += `pkg-config --libs opencv`
-LFLAGS += -lboost_system -lboost_program_options -lboost_thread-mt -lboost_filesystem
+LFLAGS += -lboost_system -lboost_program_options -lboost_thread-mt
+
+# SEGMAP PART 1
+LFLAGS += -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
+	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models \
+	-lutil
 
 LFLAGS += -lvtkCommon -lvtkFiltering -lvtkRendering -lpcl_common -lpcl_surface -lpcl_io \
 	-lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
@@ -37,14 +37,14 @@ LFLAGS += -lglobal
 # SEGMAP PART 2
 LFLAGS += -lsegmap_types
 
-SOURCES = generate_loop_closures.cpp gicp.cpp generate_loop_closures_between_logs.cpp
+SOURCES = generate_loop_closures.cpp gicp.cpp
 	#gicp_odometry_parallel.cpp \
 	#gicp_reconstruction.cpp gicp_odometry_view_result.cpp gicp_odometry_view_matching_result.cpp \
 	#gicp_odometry_manual_correction.cpp convert_loops_to_graphslam_format.cpp gicp_odometry_simple.cpp \
 	#generate_loop_closures_between_logs.cpp gicp_odometry_view_matching_result_loop_closures_between_logs.cpp \
   #filter_incorrect_gicps.cpp 
 
-TARGETS = libgicp.a generate_loop_closures_between_logs generate_loop_closures 
+TARGETS = libgicp.a generate_loop_closures 
 	# gicp_odometry gicp_reconstruction gicp_odometry_view_result \
 	#gicp_odometry_view_matching_result gicp_odometry_manual_correction convert_loops_to_graphslam_format gicp_odometry_simple \
 	#generate_loop_closures_between_logs gicp_odometry_view_matching_result_loop_closures_between_logs filter_incorrect_gicps 
@@ -52,19 +52,8 @@ TARGETS = libgicp.a generate_loop_closures_between_logs generate_loop_closures
 PUBLIC_INCLUDES += gicp.h
 PUBLIC_LIBRARIES += libgicp.a
 
-DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
-	$(CARMEN_HOME)/src/segmap/libsegmap/datasets/libsegmap_datasets.a \
-	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsegmap_readers.a \
-	$(CARMEN_HOME)/src/segmap/libsegmap/motion_models/libsegmap_motion_models.a \
-	$(CARMEN_HOME)/src/segmap/libsegmap/slam/libsegmap_slam.a \
-	$(CARMEN_HOME)/src/segmap/libsegmap/visualization/libsegmap_visualization.a \
-	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsemap_readers.a \
-	$(CARMEN_HOME)/src/segmap/libsegmap/initializations/libsegmap_initializations.a \
-	$(CARMEN_HOME)/src/segmap/util/libutil.a
-
 libgicp.a: gicp.o
-generate_loop_closures: generate_loop_closures.o gicp.o $(DEPS)
-generate_loop_closures_between_logs: generate_loop_closures_between_logs.o gicp.o $(DEPS)
+generate_loop_closures: generate_loop_closures.o ../libsegmap/libsegmap.a gicp.o
 
 #filter_incorrect_gicps: filter_incorrect_gicps.o ../libsegmap/libsegmap.a
 #gicp_odometry_view_matching_result_loop_closures_between_logs: gicp_odometry_view_matching_result_loop_closures_between_logs.o ../libsegmap/libsegmap.a gicp.o
