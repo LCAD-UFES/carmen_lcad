@@ -9,6 +9,7 @@
 #include <carmen/util_math.h>
 #include <carmen/command_line.h>
 #include "libsegmap/initializations/segmap_args.h"
+#include <carmen/segmap_constructors.h>
 
 using namespace cv;
 using namespace std;
@@ -90,21 +91,6 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 }
 
 
-
-SensorPreproc::IntensityMode
-parse_intensity_mode(string map_type)
-{
-	if (map_type.compare("remission") == 0)
-		return SensorPreproc::INTENSITY;
-	else if (map_type.compare("visual") == 0)
-		return SensorPreproc::COLOR;
-	else if (map_type.compare("semantic") == 0)
-		return SensorPreproc::SEMANTIC;
-	else
-		exit(printf("Error: invalid map type '%s'.\n", map_type.c_str()));
-}
-
-
 int
 main(int argc, char **argv)
 {
@@ -140,21 +126,12 @@ main(int argc, char **argv)
 
 	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, graphslam_path);
 
-	CarmenLidarLoader *vloader = new CarmenLidarLoader;
-	CarmenImageLoader *iloader = new CarmenImageLoader;
-	SemanticSegmentationLoader *sloader = new SemanticSegmentationLoader(log_path);
 	Pose2d offset = dataset->at(0)->pose;
 
-	SensorPreproc preproc(vloader, iloader, sloader,
-												dataset->vel2cam(), dataset->vel2car(), dataset->projection_matrix(),
-												dataset->xsens2car(), args.get<int>("use_xsens"), dataset->at(0)->pose, i_mode);
+	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 
 	create_map(map, dataset, args.get<int>("step"), preproc, offset,
 						 args.get<double>("v_thresh"));
-
-	delete(vloader);
-	delete(iloader);
-	delete(sloader);
 
 	printf("Done.\n");
 	return 0;
