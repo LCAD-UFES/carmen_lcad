@@ -125,7 +125,7 @@ main(int argc, char **argv)
 							args.get<double>("resolution"),
 							map_type, 1);
 
-	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, graphslam);
+	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, graphslam_path);
 
 	Pose2d offset = dataset->at(0)->pose;
 
