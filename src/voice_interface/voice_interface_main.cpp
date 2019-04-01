@@ -358,6 +358,7 @@ main (int argc, char **argv)
 //	if (voice_interface_speak_error)
 //		printf("%s \n", voice_interface_speak_error);
 
+	/*
 	if (strcmp (argv[1], "en") == 0){
 		printf("Awaiting hotword... \n\n");
 	}else{
@@ -368,6 +369,7 @@ main (int argc, char **argv)
 
 		}
 	}
+	*/
 
 	while (true)
 	{
@@ -376,24 +378,12 @@ main (int argc, char **argv)
 		{
 			snd_pcm_drop(capture_handle);
 
-			if (strcmp (argv[1], "en") == 0) {
-				printf("Hotword detected! \n\n");
-			}else{
-				if (strcmp (argv[1], "pt") == 0){
-					printf("Hotword detectada! \n\n");
-				}
-			}
+			printf("Hotword detected! \n\n");
 
 			carmen_ipc_sleep(0.1); // Necessario para reconectar com o audio para tocar o som abaixo.
 			system("mpg123 $CARMEN_HOME/data/voice_interface_data/computerbeep_4.mp3"); // http://www.trekcore.com/audio/
 
-			if (strcmp (argv[1], "en") == 0){
-				printf("Awaiting for command: \n\n");
-			}else{
-				if (strcmp (argv[1], "pt") == 0){
-					printf("Aguardando o comando: \n\n");
-				}
-			}
+			printf("Awaiting for command: \n\n");
 
 			char *voice_command = carmen_voice_interface_listen();
 			execute_voice_command(voice_command);
@@ -401,13 +391,7 @@ main (int argc, char **argv)
 			snd_pcm_prepare(capture_handle);
 			snd_pcm_start(capture_handle);
 
-			if (strcmp (argv[1], "en") == 0){
-				printf("Awaiting hotword... \n\n");
-			}else{
-				if (strcmp (argv[1], "pt") == 0){
-					printf("Aguardando hotword... \n\n");
-				}
-			}
+			printf("Awaiting hotword... \n\n");
 		}
 		else if (hotword_detection_result == 2) // error
 			printf ("Error in hotword detection\n");

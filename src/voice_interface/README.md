@@ -45,7 +45,7 @@ mv ~/Downloads/voice_interface_number_series.json ~/credentials/voice_interface_
   
 # 2. Already have an account? (but changed your computer?)
 
-- Create a new service account, but at the same service account and project: [Create NEW Service Account Key](https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.62067500.-1617484999.1535991245)
+- Create a new service account key, but at the same service account and project: [Create NEW Service Account Key](https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.62067500.-1617484999.1535991245)
 - Verify if the right project is set at the top of the page.
 - Select the service account: voice_interface_account.
 - Select 'JSON' as key type.
