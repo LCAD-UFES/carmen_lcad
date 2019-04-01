@@ -125,8 +125,8 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
 ### 6.1 Para uso no CARMEN
 
 ```sh
- cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_interface_hotword_data/hotword_oi_iara.ppn
- cp ~/carmen_packages/Porcupine/lib/common/porcupine_params.pv $CARMEN_HOME/data/voice_interface_hotword_data/
+ cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_interface_data/hotword_oi_iara.ppn
+ cp ~/carmen_packages/Porcupine/lib/common/porcupine_params.pv $CARMEN_HOME/data/voice_interface_data/
  cp ~/carmen_packages/Porcupine/include/picovoice.h $CARMEN_HOME/src/voice_interface/
  cp ~/carmen_packages/Porcupine/lib/linux/x86_64/libpv_porcupine.a libpv_porcupine.a.copy
  ln -s ~/carmen_packages/Porcupine/libpv_porcupine.a.copy $CARMEN_HOME/lib/libpv_porcupine.a
