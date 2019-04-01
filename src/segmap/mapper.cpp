@@ -109,6 +109,7 @@ main(int argc, char **argv)
 	string odom_calib_path = default_odom_calib_path(log_path.c_str());
 	string fused_odom_path = default_fused_odom_path(log_path.c_str());
 	string graphslam_path = default_graphslam_path(log_path.c_str());
+	string graphslam_to_map_path = default_graphslam_to_map_path(log_path.c_str());
 
 	SensorPreproc::IntensityMode i_mode;
 	i_mode = parse_intensity_mode(args.get<string>("intensity_mode"));
@@ -124,7 +125,7 @@ main(int argc, char **argv)
 							args.get<double>("resolution"),
 							map_type, 1);
 
-	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, graphslam_path);
+	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, graphslam);
 
 	Pose2d offset = dataset->at(0)->pose;
 

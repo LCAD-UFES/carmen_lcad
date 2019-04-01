@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <carmen/segmap_grid_map.h>
 #include <carmen/util_math.h>
+#include <boost/filesystem.hpp>
 
 using namespace pcl;
 using namespace std;
@@ -302,6 +303,9 @@ GridMap::GridMap(string tiles_dir, double tile_height_meters, double tile_width_
 	pixels_by_m = 1. / resolution;
 	_map_type = map_type;
 	_save_maps = save_maps;
+
+	if (!boost::filesystem::exists(tiles_dir))
+		boost::filesystem::create_directory(tiles_dir);
 
 	for (int i = 0; i < _N_TILES; i++)
 		for (int j = 0; j < _N_TILES; j++)

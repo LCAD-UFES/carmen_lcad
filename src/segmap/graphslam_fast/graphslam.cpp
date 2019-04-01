@@ -274,7 +274,7 @@ add_gps_gicp_edges(vector<LoopRestriction> &gicp_gps, SparseOptimizer *optimizer
 			Matrix3d information = create_information_matrix(xy_std_mult, xy_std_mult, th_std);
 
 			EdgeGPS *edge_gps = new EdgeGPS;
-			edge_gps->vertices()[0] = optimizer->vertex(gicp_gps[i].from);
+			edge_gps->vertices()[0] = optimizer->vertex(gicp_gps[i].to);
 			edge_gps->setMeasurement(measure);
 			edge_gps->setInformation(information);
 			optimizer->addEdge(edge_gps);

@@ -707,3 +707,11 @@ default_graphslam_path(const char *log_path)
 	std::string log_name = file_name_from_path(log_path);
 	return (string("/dados/data2/data_") + log_name + string("/graphslam.txt"));
 }
+
+
+std::string
+default_graphslam_to_map_path(const char *log_path)
+{
+	std::string log_name = file_name_from_path(log_path);
+	return (string("/dados/data2/data_") + log_name + string("/graphslam_to_map.txt"));
+}
