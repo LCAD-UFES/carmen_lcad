@@ -24,8 +24,8 @@ LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal
 LFLAGS += -lboost_program_options -lboost_filesystem
 
 LFLAGS += -lsegmap_types -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
-	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models \
-	-lutil
+	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lsegmap_initializations \
+	-lutil 
 
 DEPS = libsegmap/types/libsegmap_types.a \
 	libsegmap/datasets/libsegmap_datasets.a \
@@ -34,6 +34,7 @@ DEPS = libsegmap/types/libsegmap_types.a \
 	libsegmap/slam/libsegmap_slam.a \
 	libsegmap/visualization/libsegmap_visualization.a \
 	libsegmap/readers/libsemap_readers.a \
+	libsegmap/initializations/libsegmap_initializations.a \
 	util/libutil.a
 
 SOURCES = mapper.cpp localizer.cpp  

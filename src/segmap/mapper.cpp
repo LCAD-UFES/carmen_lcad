@@ -8,6 +8,7 @@
 #include <carmen/util_time.h>
 #include <carmen/util_math.h>
 #include <carmen/command_line.h>
+#include "libsegmap/initializations/segmap_args.h"
 
 using namespace cv;
 using namespace std;
@@ -104,26 +105,6 @@ parse_intensity_mode(string map_type)
 }
 
 
-void
-add_args_for_parsing(CommandLineArguments &args)
-{
-	args.add_positional<string>("log_path", "Path of a log", 1);
-	args.add<double>("v_thresh", "Skip data packages with absolute velocity below this theshold", 1.0);
-
-	args.add<double>("resolution,r", "Map resolution", 0.2);
-	args.add<double>("tile_size,t", "Map tiles size", 50);
-	args.add<string>("map_path,m", "Path to save the maps", "/tmp");
-	args.add<int>("use_xsens,x", "Whether or not to use pitch, and roll angles from xsens", 1);
-	args.add<int>("step,s", "Number of data packages to skip", 1);
-	args.add<string>("intensity_mode,i", "Type of grid map [remission | visual | semantic]", "remission");
-	args.add<double>("ignore_above_threshold", "Ignore points with z-coord above this threshold", DBL_MAX);
-	args.add<double>("ignore_below_threshold", "Ignore points with z-coord below this threshold", -DBL_MAX);
-	args.add<double>("offset_x", "Offset to subtract the pose (x-coord)", 7757888.199148);
-	args.add<double>("offset_y", "Offset to subtract the pose (y-coord)", -363560.975411);
-	args.save_config_file("data/mapper_config.txt");
-}
-
-
 int
 main(int argc, char **argv)
 {
@@ -131,7 +112,10 @@ main(int argc, char **argv)
 	string log_path;
 
 	CommandLineArguments args;
-	add_args_for_parsing(args);
+	add_default_experiment_args(args);
+	add_default_sensor_preproc_args(args);
+	add_default_mapper_args(args);
+	args.save_config_file(default_data_dir() + "/mapper_config.txt");
 	args.parse(argc, argv);
 
 	log_path = args.get<string>("log_path");
