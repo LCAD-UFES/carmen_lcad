@@ -97,7 +97,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 		if (fabs(sample->v) < skip_velocity_threshold)
 			continue;
 
-		dt = sample->image_time - dataset->at(i - step)->image_time;
+		dt = sample->time - dataset->at(i - step)->time;
 		pf.predict(sample->v, sample->phi, dt);
 
 		preproc.reinitialize(sample);
@@ -147,7 +147,7 @@ main(int argc, char **argv)
 	NewCarmenDataset* dataset = create_dataset(log_path);
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 
-	GridMap map = create_grid_map(args);
+	GridMap map = create_grid_map(args, 0);
 	ParticleFilter pf = create_particle_filter(args);
 
 	pf.seed(args.get<int>("seed"));

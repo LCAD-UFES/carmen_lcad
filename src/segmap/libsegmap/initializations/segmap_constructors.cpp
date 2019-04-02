@@ -26,7 +26,7 @@ parse_intensity_mode(string map_type)
 
 
 GridMap
-create_grid_map(CommandLineArguments &args)
+create_grid_map(CommandLineArguments &args, int save_map)
 {
 	int map_type;
 	SensorPreproc::IntensityMode i_mode;
@@ -42,7 +42,7 @@ create_grid_map(CommandLineArguments &args)
 							args.get<double>("tile_size"),
 							args.get<double>("tile_size"),
 							args.get<double>("resolution"),
-							map_type, 0);
+							map_type, save_map);
 
 	return map;
 }

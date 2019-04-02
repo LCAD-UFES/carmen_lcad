@@ -17,7 +17,8 @@ def main(log_path):
     map_path = output_dir + "/map"
     
     # assumes we want to re-create the map 
-    os.system("rm -r " + map_path)
+    if os.path.exists(map_path):
+        os.system("rm -r " + map_path)
     
     cmd = carmen_path + "/src/segmap/mapper %s -m %s --v_thresh %lf" % (log_path, map_path, SKIP_WHEN_VELOCITY_IS_BELOW)
     run_command(cmd)

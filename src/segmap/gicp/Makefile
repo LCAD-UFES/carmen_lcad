@@ -37,17 +37,9 @@ LFLAGS += -lglobal
 # SEGMAP PART 2
 LFLAGS += -lsegmap_types
 
-SOURCES = generate_loop_closures.cpp gicp.cpp generate_loop_closures_between_logs.cpp
-	#gicp_odometry_parallel.cpp \
-	#gicp_reconstruction.cpp gicp_odometry_view_result.cpp gicp_odometry_view_matching_result.cpp \
-	#gicp_odometry_manual_correction.cpp convert_loops_to_graphslam_format.cpp gicp_odometry_simple.cpp \
-	#generate_loop_closures_between_logs.cpp gicp_odometry_view_matching_result_loop_closures_between_logs.cpp \
-  #filter_incorrect_gicps.cpp 
+SOURCES = generate_loop_closures.cpp gicp.cpp generate_loop_closures_between_logs.cpp pf_loop_closures.cpp
 
-TARGETS = libgicp.a generate_loop_closures_between_logs generate_loop_closures 
-	# gicp_odometry gicp_reconstruction gicp_odometry_view_result \
-	#gicp_odometry_view_matching_result gicp_odometry_manual_correction convert_loops_to_graphslam_format gicp_odometry_simple \
-	#generate_loop_closures_between_logs gicp_odometry_view_matching_result_loop_closures_between_logs filter_incorrect_gicps 
+TARGETS = libgicp.a generate_loop_closures_between_logs generate_loop_closures pf_loop_closures 
 
 PUBLIC_INCLUDES += gicp.h
 PUBLIC_LIBRARIES += libgicp.a
@@ -65,16 +57,6 @@ DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 libgicp.a: gicp.o
 generate_loop_closures: generate_loop_closures.o gicp.o $(DEPS)
 generate_loop_closures_between_logs: generate_loop_closures_between_logs.o gicp.o $(DEPS)
-
-#filter_incorrect_gicps: filter_incorrect_gicps.o ../libsegmap/libsegmap.a
-#gicp_odometry_view_matching_result_loop_closures_between_logs: gicp_odometry_view_matching_result_loop_closures_between_logs.o ../libsegmap/libsegmap.a gicp.o
-#generate_loop_closures_between_logs: generate_loop_closures_between_logs.o ../libsegmap/libsegmap.a  gicp.o
-#gicp_odometry: gicp_odometry_parallel.o ../libsegmap/libsegmap.a gicp.o
-#gicp_reconstruction: gicp_reconstruction.o ../libsegmap/libsegmap.a gicp.o
-#gicp_odometry_view_result: gicp_odometry_view_result.o ../libsegmap/libsegmap.a gicp.o
-#gicp_odometry_view_matching_result: gicp_odometry_view_matching_result.o ../libsegmap/libsegmap.a gicp.o
-#gicp_odometry_manual_correction: gicp_odometry_manual_correction.o ../libsegmap/libsegmap.a gicp.o
-#convert_loops_to_graphslam_format: convert_loops_to_graphslam_format.o ../libsegmap/libsegmap.a gicp.o
-#gicp_odometry_simple: gicp_odometry_simple.o ../libsegmap/libsegmap.a gicp.o
+pf_loop_closures: pf_loop_closures.o $(DEPS)
 
 include $(CARMEN_HOME)/src/Makefile.rules

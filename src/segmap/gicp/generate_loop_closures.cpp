@@ -121,12 +121,7 @@ main(int argc, char **argv)
 	args.save_config_file(default_data_dir() + "/loop_closures_config.txt");
 	args.parse(argc, argv);
 
-	string log_path = args.get<string>("log_path");
-
-	FILE *out_file = safe_fopen(args.get<string>("output").c_str(), "w");
-	FILE *report_file = safe_fopen(args.get<string>("report_file").c_str(), "w");
-
-	NewCarmenDataset dataset(log_path,
+	NewCarmenDataset dataset(args.get<string>("log_path"),
 	                         args.get<string>("odom_calib"),
 	                         args.get<string>("fused_odom"),
 	                         args.get<int>("gps_id"));
@@ -154,9 +149,6 @@ main(int argc, char **argv)
 	            loop_closure_indices,
 	            relative_transform_vector,
 	            convergence_vector);
-
-	fclose (out_file);
-	fclose (report_file);
 
 	printf("Done.");
 	return 0;
