@@ -10,6 +10,7 @@
 #include <carmen/segmap_conversions.h>
 #include <carmen/command_line.h>
 #include <carmen/util_io.h>
+#include <carmen/util_math.h>
 
 using namespace Eigen;
 
@@ -61,6 +62,7 @@ search_for_loop_closure_using_pose_dist(NewCarmenDataset &dataset,
                                         Pose2d reference_pose,
                                         double reference_pose_time,
                                         int from,
+                                        int to,
                                         double max_dist_threshold,
                                         double min_time_threshold,
                                         int *nn_id)
@@ -68,7 +70,7 @@ search_for_loop_closure_using_pose_dist(NewCarmenDataset &dataset,
 	*nn_id = -1;
 	double min_dist = DBL_MAX;
 
-	for (int j = from; j < dataset.size(); j++)
+	for (int j = from; j < to; j++)
 	{
 		double dx = reference_pose.x - dataset[j]->pose.x;
 		double dy = reference_pose.y - dataset[j]->pose.y;
@@ -100,12 +102,59 @@ compute_source2target_transform(Pose2d target_pose, Pose2d source_pose)
 
 
 void
-run_icp_step(DataSample *target_sample,
-             DataSample *source_sample,
+create_target_accumulating_clouds(NewCarmenDataset &target_dataset,
+                                  SensorPreproc &target_preproc,
+                                  int target_id,
+                                  double dist_accumulate_target_cloud,
+                                  pcl::PointCloud<pcl::PointXYZRGB>::Ptr target)
+{
+	Matrix<double, 4, 4> transform_to_target;
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+	target->clear();
+
+	double d;
+	int i, st, end;
+
+	// walk forward and backward in the dataset to find clouds around the target one.
+	d = 0;
+	for (i = target_id - 1; i >= 0 && d < dist_accumulate_target_cloud; i--)
+		//d += dist2d(target_dataset[i]->pose.x, target_dataset[i]->pose.y, target_dataset[i+1]->pose.x, target_dataset[i+1]->pose.y);
+		d = dist2d(target_dataset[i]->pose.x, target_dataset[i]->pose.y, target_dataset[target_id]->pose.x, target_dataset[target_id]->pose.y);
+
+	st = (i >= 0) ? i : 0;
+
+	d = 0;
+	for (i = target_id + 1; i < target_dataset.size() && d < dist_accumulate_target_cloud; i++)
+		//d += dist2d(target_dataset[i]->pose.x, target_dataset[i]->pose.y, target_dataset[i-1]->pose.x, target_dataset[i-1]->pose.y);
+		d = dist2d(target_dataset[i]->pose.x, target_dataset[i]->pose.y, target_dataset[target_id]->pose.x, target_dataset[target_id]->pose.y);
+
+	end = (i < target_dataset.size()) ? i : target_dataset.size();
+
+	// load the clouds
+	for (i = st; i < end; i++)
+	{
+		target_preproc.reinitialize(target_dataset[i]);
+		load_as_pointcloud(target_preproc, cloud, SensorPreproc::CAR_REFERENCE);
+		transform_to_target = compute_source2target_transform(target_dataset[target_id]->pose,
+		                                                      target_dataset[i]->pose);
+		pcl::transformPointCloud(*cloud, *cloud, transform_to_target);
+		(*target) += (*cloud);
+	}
+}
+
+
+void
+run_icp_step(NewCarmenDataset &target_dataset,
+             NewCarmenDataset &source_dataset,
+             int target_id,
+             int source_id,
              Matrix<double, 4, 4> *relative_transform,
              int *convergence_flag,
              SensorPreproc &target_preproc,
              SensorPreproc &source_preproc,
+             double voxel_grid_size,
+             double dist_accumulate_target_cloud,
              bool view)
 {
 	Matrix<double, 4, 4> source2target;
@@ -113,17 +162,18 @@ run_icp_step(DataSample *target_sample,
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr target(new pcl::PointCloud<pcl::PointXYZRGB>);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr aligned(new pcl::PointCloud<pcl::PointXYZRGB>);
 
-	target_preproc.reinitialize(target_sample);
-	load_as_pointcloud(target_preproc, target, SensorPreproc::CAR_REFERENCE);
+	create_target_accumulating_clouds(target_dataset, target_preproc,
+	                                  target_id, dist_accumulate_target_cloud,
+	                                  target);
 
-	source_preproc.reinitialize(source_sample);
+	source_preproc.reinitialize(source_dataset[source_id]);
 	load_as_pointcloud(source_preproc, source, SensorPreproc::CAR_REFERENCE);
 
-	source2target = compute_source2target_transform(target_sample->pose,
-	                                                source_sample->pose);
+	source2target = compute_source2target_transform(target_dataset[target_id]->pose,
+	                                                source_dataset[source_id]->pose);
 
 	pcl::transformPointCloud(*source, *source, source2target);
-	run_gicp(source, target, relative_transform, convergence_flag, aligned, 0.1);
+	run_gicp(source, target, relative_transform, convergence_flag, aligned, voxel_grid_size);
 
 	if (view)
 	{
@@ -133,7 +183,7 @@ run_icp_step(DataSample *target_sample,
 			viewer = new PointCloudViewer(3);
 
 		viewer->clear();
-		viewer->show(target, 0, 1, 0);
+		viewer->show(target); //, 0, 1, 0);
 		viewer->show(source, 1, 0, 0);
 		viewer->show(aligned, 0, 0, 1);
 		viewer->loop();
@@ -145,13 +195,14 @@ void
 add_default_gicp_args(CommandLineArguments &args)
 {
 	args.add_positional<std::string>("output", "Path of the output file", 1);
-	args.add<double>("voxel_size,x", "Size of voxels in voxel grid filter", 0.1);
+	args.add<double>("voxel_size,x", "Size of voxels in voxel grid filter", 0.05);
 	args.add<double>("loop_dist,d", "Maximum distance (in meters) to assume two poses form a loop closure", 2.0);
 	args.add<double>("time_dist,t", "Minimum temporal difference (in seconds) to assume two poses form a loop closure (instead of being consecutive poses)", 60.0);
 	args.add<int>("subsampling,s", "Number of data packages to skip when looking for loop closures (<= 1 for using all packages)", 0);
 	args.add<std::string>("report_file,r", "Path to a file to save debug information", "/tmp/loop_closure_report.txt");
 	args.add<int>("view,v", "Boolean to turn visualization on or off", 0);
-	args.add<double>("v_thresh", "Skip data packages with absolute velocity below this theshold", 0);
+	args.add<double>("v_thresh", "Skip data packages with absolute velocity below this theshold", 1.0);
+	args.add<double>("dist_to_accumulate", "Distance to accumulate clouds", 2.0);
 }
 
 

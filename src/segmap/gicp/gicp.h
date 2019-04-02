@@ -35,7 +35,7 @@ void
 search_for_loop_closure_using_pose_dist(NewCarmenDataset &dataset,
                                         Pose2d reference_pose,
                                         double reference_pose_time,
-                                        int from,
+                                        int from, int to,
                                         double max_dist_threshold,
                                         double min_time_threshold,
                                         int *nn_id);
@@ -55,12 +55,24 @@ compute_source2target_transform(Pose2d target_pose, Pose2d source_pose);
 
 
 void
-run_icp_step(DataSample *target_sample,
-             DataSample *source_sample,
+create_target_accumulating_clouds(NewCarmenDataset &target_dataset,
+                                  SensorPreproc &target_preproc,
+                                  int target_id,
+                                  double dist_accumulate_target_cloud,
+                                  pcl::PointCloud<pcl::PointXYZRGB>::Ptr target);
+
+
+void
+run_icp_step(NewCarmenDataset &target_dataset,
+             NewCarmenDataset &source_dataset,
+             int target_id,
+             int source_id,
              Eigen::Matrix<double, 4, 4> *relative_transform,
              int *convergence_flag,
              SensorPreproc &target_preproc,
              SensorPreproc &source_preproc,
+             double voxel_grid_size,
+             double dist_accumulate_target_cloud = -1,
              bool view = false);
 
 

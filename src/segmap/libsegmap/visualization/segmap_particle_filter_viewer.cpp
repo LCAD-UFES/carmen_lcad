@@ -182,13 +182,13 @@ draw_pointcloud(Mat &m, PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap 
 Mat
 pf_view(ParticleFilter &pf, GridMap &map,
 		 Pose2d current_pose,
+		 Pose2d pf_pose,
 		 PointCloud<PointXYZRGB>::Ptr cloud,
 		 int draw_particles)
 {
 	Point pixel;
 
 	cv::Mat map_img = map.to_image();
-	Pose2d mean = pf.mean();
 
 	if (cloud != NULL)
 	{
@@ -197,18 +197,18 @@ pf_view(ParticleFilter &pf, GridMap &map,
 		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(current_pose));
 		draw_pointcloud(map_img, transformed_cloud, map, 1, Scalar(0, 255, 0));
 
-		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(mean));
+		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(pf_pose));
 
 		// debug:
 		for (int i = 0; i < transformed_cloud->size(); i++)
 		{
-			if (fabs(transformed_cloud->at(i).x - mean.x) > 200
-					|| fabs(transformed_cloud->at(i).y - mean.y) > 200)
+			if (fabs(transformed_cloud->at(i).x - pf_pose.x) > 200
+					|| fabs(transformed_cloud->at(i).y - pf_pose.y) > 200)
 			{
-				printf("i: %d Point: %lf %lf Transformed: %lf %lf mean: %lf %lf %lf\n",
+				printf("i: %d Point: %lf %lf Transformed: %lf %lf pf_pose: %lf %lf %lf\n",
 							 i, cloud->at(i).x, cloud->at(i).y,
 							 transformed_cloud->at(i).x, transformed_cloud->at(i).y,
-							 mean.x, mean.y, mean.th
+							 pf_pose.x, pf_pose.y, pf_pose.th
 				);
 			}
 		}
@@ -222,7 +222,7 @@ pf_view(ParticleFilter &pf, GridMap &map,
 			draw_particle(map_img, pf._p[i], map, Scalar(255, 255, 255));
 	}
 
-	draw_pose(map, map_img, mean, Scalar(0, 0, 255));
+	draw_pose(map, map_img, pf_pose, Scalar(0, 0, 255));
 	draw_pose(map, map_img, current_pose, Scalar(0, 255, 0));
 
 	return map_img;
