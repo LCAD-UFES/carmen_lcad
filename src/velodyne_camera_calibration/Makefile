@@ -6,7 +6,6 @@ MODULE_COMMENT = Velodyne Camera Calibration
 CFLAGS += -std=c11
 CXXFLAGS += -std=c++11 -Wno-deprecated
 
-# PCL_INC = $(wildcard /home/gabriel/carmen_packages/pcl-pcl-1.8.0/)
 PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
@@ -21,7 +20,7 @@ LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basi
 LFLAGS += -lpcl_common -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_registration -lpcl_surface -lpcl_io -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization \
 			-lpcl_segmentation
 
-SOURCES = velodyne_camera_calibration_polygonal_board.cpp velodyne_camera_publish_range.cpp velodyne_camera_calibration.cpp
+SOURCES = velodyne_camera_calibration_main.cpp velodyne_camera_publish_range.cpp velodyne_camera_calibration.cpp velodyne_camera_calibration_manual.cpp
 
 PUBLIC_INCLUDES = velodyne_camera_calibration.h
 PUBLIC_LIBRARIES = libvelodyne_camera_calibration.a
