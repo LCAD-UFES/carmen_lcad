@@ -385,12 +385,13 @@ main (int argc, char **argv)
 
 			printf("Awaiting for command: \n\n");
 
+			
 			char *voice_command = carmen_voice_interface_listen();
 			execute_voice_command(voice_command);
 
-			snd_pcm_prepare(capture_handle);
+		/*	snd_pcm_prepare(capture_handle);
 			snd_pcm_start(capture_handle);
-
+*/
 			printf("Awaiting hotword... \n\n");
 		}
 		else if (hotword_detection_result == 2) // error
