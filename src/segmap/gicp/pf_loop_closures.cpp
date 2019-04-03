@@ -152,7 +152,7 @@ is_loop_closure(DataSample *sample, int sample_id,
 			dist = dist2d(sample->pose.x, sample->pose.y, dataset[i]->pose.x, dataset[i]->pose.y);
 			dt = fabs(sample->time - dataset[i]->time);
 
-			if (dist < 2.0 && dt > 20)
+			if (dist < 2.0 && dt > 10)
 				return 1;
 		}
 	}
@@ -213,20 +213,19 @@ run_loop_closure_estimation(NewCarmenDataset &dataset, SensorPreproc &preproc, G
 			loop_indices.push_back(i);
 			estimated_poses.push_back(estimate);
 
-			printf("LOOP %d %lf %lf %lf\n", i, estimate.x, estimate.y, estimate.th);
-			sample->pose = estimate;
-			sample->pose.x += offset.x;
-			sample->pose.y += offset.y;
+			//printf("LOOP %d %lf %lf %lf\n", i, estimate.x, estimate.y, estimate.th);
+			//sample->pose = estimate;
+			//sample->pose.x += offset.x;
+			//sample->pose.y += offset.y;
 			current_pose = estimate;
 
 			pf_reinit_required = 0;
 		}
 		else
 		{
+			update_map(sample, &map, preproc);
 			pf_reinit_required = 1;
 		}
-
-		update_map(sample, &map, preproc);
 
 		if (pf_reinit_required && view)
 		{

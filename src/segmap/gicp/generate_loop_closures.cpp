@@ -285,17 +285,17 @@ main(int argc, char **argv)
 	vector<int> convergence_vector_gicp(size);
 	vector<int> convergence_vector_pf(size);
 
-//	estimate_displacements_with_gicp(dataset,
-//	                                 loop_closure_indices,
-//	                                 &relative_transform_vector_gicp,
-//	                                 &convergence_vector_gicp,
-//	                                 args);
+	estimate_displacements_with_gicp(dataset,
+	                                 loop_closure_indices,
+	                                 &relative_transform_vector_gicp,
+	                                 &convergence_vector_gicp,
+	                                 args);
 
-	estimate_displacements_with_particle_filter(dataset,
-	                                            loop_closure_indices,
-	                                            &relative_transform_vector_pf,
-	                                            &convergence_vector_pf,
-	                                            args);
+//	estimate_displacements_with_particle_filter(dataset,
+//	                                            loop_closure_indices,
+//	                                            &relative_transform_vector_pf,
+//	                                            &convergence_vector_pf,
+//	                                            args);
 
 	save_output(args.get<string>("output"),
 	            dataset, dataset,
