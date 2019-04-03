@@ -47,7 +47,7 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 	printf("\n");
 	fflush(stdout);
 
-	Mat pf_img = pf_view(pf, map, gt_pose, cloud, 1);
+	Mat pf_img = pf_view(pf, map, gt_pose, pf.mean(), cloud, 1);
 
 	//Mat concat;
 	//hconcat(pf_view_img, view_img, concat);

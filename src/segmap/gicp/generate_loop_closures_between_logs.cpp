@@ -47,12 +47,16 @@ estimate_displacements(NewCarmenDataset &reference_dataset,
 		SensorPreproc ref_preproc = create_sensor_preproc(args, &reference_dataset, reference_log_path);
 		SensorPreproc adj_preproc = create_sensor_preproc(args, &dataset_to_adjust, log_to_adjust_path);
 
-		run_icp_step(reference_dataset[loop_closure_indices[i].first],
-		             dataset_to_adjust[loop_closure_indices[i].second],
+		run_icp_step(reference_dataset,
+		             dataset_to_adjust,
+		             loop_closure_indices[i].first,
+		             loop_closure_indices[i].second,
 		             &(relative_transform_vector->at(i)),
 		             &(convergence_vector->at(i)),
 		             ref_preproc,
 		             adj_preproc,
+		             args.get<double>("voxel_size"),
+		             5.0,
 		             view);
 
 #ifdef _OPENMP
@@ -92,7 +96,8 @@ find_nearest_poses(NewCarmenDataset &reference_dataset,
 		search_for_loop_closure_using_pose_dist(reference_dataset,
 		                                        dataset_to_adjust[i]->pose,
 		                                        dataset_to_adjust[i]->time,
-		                                        0, max_dist_threshold, 0.0,
+		                                        0, reference_dataset.size(),
+		                                        max_dist_threshold, 0.0,
 		                                        &nn_id);
 
 		if (nn_id >= 0)

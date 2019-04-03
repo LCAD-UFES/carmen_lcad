@@ -20,6 +20,7 @@
 #include <carmen/segmap_grid_map.h>
 #include <carmen/segmap_particle_filter.h>
 #include <carmen/segmap_particle_filter_viewer.h>
+#include <carmen/util_math.h>
 
 #include <carmen/command_line.h>
 #include "gicp.h"
@@ -28,6 +29,12 @@ using namespace std;
 using namespace Eigen;
 using namespace pcl;
 using namespace cv;
+
+enum LoopClosureDetectionMethod
+{
+	DETECT_USING_INTERSECTION_WITH_MAP = 0,
+	DETECT_BY_DIST_AND_TIME,
+};
 
 
 void
@@ -95,7 +102,7 @@ estimate_pose_with_particle_filter(DataSample *sample,
 	if (pf_reinit_required)
 	{
 		pf.reset(pose_guess.x, pose_guess.y, pose_guess.th);
-		n_correction_steps = 5;
+		n_correction_steps = 1;
 	}
 	else
 	{
@@ -110,9 +117,49 @@ estimate_pose_with_particle_filter(DataSample *sample,
 		pf.correct(cloud, map, sample->gps);
 
 	if (view)
-		(*pf_viewer_img) = pf_view(pf, map, pose_guess, cloud, 1);
+		(*pf_viewer_img) = pf_view(pf, map, pose_guess, pf.mode(), cloud, 1);
 
-	return pf.mean();
+	return pf.mode();
+}
+
+
+int
+is_loop_closure(DataSample *sample, int sample_id,
+                NewCarmenDataset &dataset,
+                SensorPreproc &preproc, GridMap &map,
+                double intersection_threshold_for_loop_closure_detection,
+                LoopClosureDetectionMethod method)
+{
+	if (method == DETECT_USING_INTERSECTION_WITH_MAP)
+	{
+		double percentage_points_that_hit_map;
+
+		// if there is enough intersection with the map, assume we detected a loop closure.
+		// the displacement is estimated using the particle filter.
+		percentage_points_that_hit_map =
+				compute_percentage_of_points_that_hit_map(sample, preproc, map);
+
+		printf("percentage_points_that_hit_map: %lf\n", percentage_points_that_hit_map);
+
+		if (percentage_points_that_hit_map > intersection_threshold_for_loop_closure_detection)
+			return 1;
+	}
+	else if (method == DETECT_BY_DIST_AND_TIME)
+	{
+		double dist, dt;
+		for (int i = 0; i < sample_id; i++)
+		{
+			dist = dist2d(sample->pose.x, sample->pose.y, dataset[i]->pose.x, dataset[i]->pose.y);
+			dt = fabs(sample->time - dataset[i]->time);
+
+			if (dist < 2.0 && dt > 10)
+				return 1;
+		}
+	}
+	else
+		exit(printf("Error: Invalid detection method '%d'\n", method));
+
+	return 0;
 }
 
 
@@ -126,9 +173,9 @@ run_loop_closure_estimation(NewCarmenDataset &dataset, SensorPreproc &preproc, G
 {
 	Mat viewer_img;
 	DataSample *sample;
-	double percentage_points_that_hit_map;
 	Pose2d estimate;
 
+	int loop_detected;
 	PointCloudViewer viewer;
 	Pose2d offset = dataset[0]->pose;
 	int step = args.get<int>("step");
@@ -151,14 +198,11 @@ run_loop_closure_estimation(NewCarmenDataset &dataset, SensorPreproc &preproc, G
 
 		map.reload(current_pose.x, current_pose.y);
 
-		// if there is enough intersection with the map, assume we detected a loop closure.
-		// the displacement is estimated using the particle filter.
-		percentage_points_that_hit_map =
-				compute_percentage_of_points_that_hit_map(sample, preproc, map);
+		loop_detected = is_loop_closure(sample, i, dataset, preproc, map,
+		                                intersection_threshold_for_loop_closure_detection,
+		                                DETECT_BY_DIST_AND_TIME);
 
-		printf("percentage_points_that_hit_map: %lf\n", percentage_points_that_hit_map);
-
-		if (percentage_points_that_hit_map > intersection_threshold_for_loop_closure_detection)
+		if (loop_detected)
 		{
 			double dt = sample->time - dataset[i - step]->time;
 
@@ -169,20 +213,19 @@ run_loop_closure_estimation(NewCarmenDataset &dataset, SensorPreproc &preproc, G
 			loop_indices.push_back(i);
 			estimated_poses.push_back(estimate);
 
-			printf("LOOP %d %lf %lf %lf\n", i, estimate.x, estimate.y, estimate.th);
-			sample->pose = estimate;
-			sample->pose.x += offset.x;
-			sample->pose.y += offset.y;
+			//printf("LOOP %d %lf %lf %lf\n", i, estimate.x, estimate.y, estimate.th);
+			//sample->pose = estimate;
+			//sample->pose.x += offset.x;
+			//sample->pose.y += offset.y;
 			current_pose = estimate;
 
 			pf_reinit_required = 0;
 		}
 		else
 		{
+			update_map(sample, &map, preproc);
 			pf_reinit_required = 1;
 		}
-
-		update_map(sample, &map, preproc);
 
 		if (pf_reinit_required && view)
 		{
