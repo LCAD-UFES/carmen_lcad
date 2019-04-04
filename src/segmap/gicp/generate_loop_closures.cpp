@@ -87,6 +87,8 @@ run_pf_step(NewCarmenDataset &target_dataset,
             int *convergence_flag,
             SensorPreproc &target_preproc,
             SensorPreproc &source_preproc,
+						ParticleFilter &pf,
+						GridMap &map,
             double dist_accumulate_target_cloud,
             bool view)
 {
@@ -95,22 +97,6 @@ run_pf_step(NewCarmenDataset &target_dataset,
 	create_target_accumulating_clouds(target_dataset, target_preproc,
 	                                  target_id, dist_accumulate_target_cloud,
 	                                  cloud);
-
-	GridMap map(string("/tmp/map_") + std::to_string(target_id), 50, 50, 0.2, GridMapTile::TYPE_VISUAL, 1);
-
-	ParticleFilter pf(50,
-	                  ParticleFilter::WEIGHT_VISUAL,
-										1.0,
-										1.0,
-										degrees_to_radians(20),
-										0.1,
-										degrees_to_radians(0.5),
-										0.01,
-										0.01,
-										degrees_to_radians(0.5),
-										10,
-										10,
-										10);
 
 	map.reload(0, 0);
 
@@ -162,16 +148,34 @@ estimate_displacements_with_particle_filter(NewCarmenDataset &dataset,
 	view = args.get<int>("view");
 #endif
 
-	double dist_acc = args.get<double>("dist_to_accumulate");
-
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 5) default(none) private(i) \
 		shared(dataset, convergence_vector, relative_transform_vector, \
-					 loop_closure_indices, n_processed_clouds, n, view, args, dist_acc)
+					 loop_closure_indices, n_processed_clouds, n, view, args)
 #endif
 	for (i = 0; i < n; i++)
 	{
 		SensorPreproc preproc = create_sensor_preproc(args, &dataset, args.get<string>("log_path"));
+
+		GridMap map(string("/tmp/map_") + std::to_string(loop_closure_indices[i].second),
+								args.get<double>("tile_size"),
+								args.get<double>("tile_size"),
+								args.get<double>("resolution"),
+								GridMapTile::TYPE_VISUAL, 1);
+
+		ParticleFilter pf(args.get<int>("n_particles"),
+		                  ParticleFilter::WEIGHT_VISUAL,
+											args.get<double>("gps_xy_std"),
+											args.get<double>("gps_xy_std"),
+											degrees_to_radians(args.get<double>("gps_h_std")),
+											args.get<double>("v_std"),
+											degrees_to_radians(args.get<double>("phi_std")),
+											args.get<double>("odom_xy_std"),
+											args.get<double>("odom_xy_std"),
+											degrees_to_radians(args.get<double>("odom_h_std")),
+											args.get<double>("color_red_std"),
+											args.get<double>("color_green_std"),
+											args.get<double>("color_blue_std"));
 
 		run_pf_step(dataset,
 		            dataset,
@@ -181,7 +185,8 @@ estimate_displacements_with_particle_filter(NewCarmenDataset &dataset,
 		            &(convergence_vector->at(i)),
 		            preproc,
 		            preproc,
-		            dist_acc,
+								pf, map,
+								args.get<double>("dist_to_accumulate"),
 		            view);
 
 #ifdef _OPENMP
@@ -259,10 +264,11 @@ main(int argc, char **argv)
 {
 	CommandLineArguments args;
 	args.add_positional<std::string>("log_path", "Path of a log", 1);
-	args.add<std::string>("odom_calib,o", "Odometry calibration file", "");
-	args.add<std::string>("fused_odom,f", "Fused odometry file (optimized using graphslam)", "");
+	args.add<std::string>("odom_calib,o", "Odometry calibration file", "none");
+	args.add<std::string>("fused_odom,f", "Fused odometry file (optimized using graphslam)", "none");
 	add_default_sensor_preproc_args(args);
 	add_default_gicp_args(args);
+	add_default_localizer_args(args);
 	args.save_config_file(default_data_dir() + "/loop_closures_config.txt");
 	args.parse(argc, argv);
 
@@ -285,17 +291,17 @@ main(int argc, char **argv)
 	vector<int> convergence_vector_gicp(size);
 	vector<int> convergence_vector_pf(size);
 
-	estimate_displacements_with_gicp(dataset,
-	                                 loop_closure_indices,
-	                                 &relative_transform_vector_gicp,
-	                                 &convergence_vector_gicp,
-	                                 args);
+//	estimate_displacements_with_gicp(dataset,
+//	                                 loop_closure_indices,
+//	                                 &relative_transform_vector_gicp,
+//	                                 &convergence_vector_gicp,
+//	                                 args);
 
-//	estimate_displacements_with_particle_filter(dataset,
-//	                                            loop_closure_indices,
-//	                                            &relative_transform_vector_pf,
-//	                                            &convergence_vector_pf,
-//	                                            args);
+	estimate_displacements_with_particle_filter(dataset,
+	                                            loop_closure_indices,
+	                                            &relative_transform_vector_pf,
+	                                            &convergence_vector_pf,
+	                                            args);
 
 	save_output(args.get<string>("output"),
 	            dataset, dataset,

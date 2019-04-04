@@ -11,8 +11,8 @@ CXXFLAGS += -std=c++11
 # Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11
 IFLAGS += -std=c++11
 
-CXXFLAGS += -fopenmp
-LFLAGS += -fopenmp
+#CXXFLAGS += -fopenmp
+#LFLAGS += -fopenmp
 
 PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
@@ -57,6 +57,6 @@ DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 libgicp.a: gicp.o
 generate_loop_closures: generate_loop_closures.o gicp.o $(DEPS)
 generate_loop_closures_between_logs: generate_loop_closures_between_logs.o gicp.o $(DEPS)
-pf_loop_closures: pf_loop_closures.o $(DEPS)
+pf_loop_closures: pf_loop_closures.o gicp.o $(DEPS)
 
 include $(CARMEN_HOME)/src/Makefile.rules

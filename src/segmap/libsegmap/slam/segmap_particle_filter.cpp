@@ -235,7 +235,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	max_weight = _w[max_id];
 	sum_weights = 0.;
 
-	fprintf(stderr, "DEBUG: Weights as Probs: ");
+	fprintf(stderr, "\nDEBUG: Weights as positive values: ");
 	for (i = 0; i < _n; i++)
 	{
 		//_w[i] = exp(_w[i] - max_weight) + (1. / (double) (3. * _n));
@@ -258,7 +258,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	//printf("Sum weights: %lf\n", sum_weights);
 
 	// normalize the weights
-	fprintf(stderr, "DEBUG: Normalized weights: ");
+	fprintf(stderr, "\nDEBUG: Weights Normalized: ");
 	for (i = 0; i < _n; i++)
 	{
 		if (sum_weights == 0)
@@ -271,7 +271,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 
 		fprintf(stderr, "%.4lf ", _w[i]);
 	}
-	fprintf(stderr, "\n");
+	fprintf(stderr, "---------\n\n");
 }
 
 

@@ -119,6 +119,9 @@ main(int argc, char **argv)
 	else
 		map_type = GridMapTile::TYPE_VISUAL;
 
+	if (boost::filesystem::exists(args.get<string>("map_path")))
+		boost::filesystem::remove_all(args.get<string>("map_path"));
+
 	GridMap map(args.get<string>("map_path"),
 							args.get<double>("tile_size"),
 							args.get<double>("tile_size"),

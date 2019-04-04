@@ -11,6 +11,7 @@
 #include <carmen/carmen_semantic_segmentation_reader.h>
 #include <carmen/synchronized_data_package.h>
 #include <carmen/segmap_conversions.h>
+#include <carmen/segmap_definitions.h>
 
 #include "segmap_preproc.h"
 
@@ -251,11 +252,22 @@ SensorPreproc::_point3d_is_valid(Matrix<double, 4, 1> &p_sensor,
 																 double ignore_above_threshold,
 																 double ignore_below_threshold)
 {
-	// The points in the following frames are not used so far,
-	// but they can be used in the future.
-	(void) p_car;
+	int ray_hit_car = 0;
+	int safe_border_x = 0.5;
+	int safe_border_y = 1.0;
 
-	int ray_hit_car = fabs(p_sensor(0, 0)) < 6.0 && fabs(p_sensor(1, 0)) < 4.0;
+	// test if the ray is inside the car area in x-axis direction.
+	// the conditions evaluate if the ray is between rear and rear axis, and between rear axis and front.
+	int x_test = (p_car(0, 0) > -(distance_between_rear_car_and_rear_wheels + safe_border_x))
+						&& (p_car(0, 0) < (car_length - distance_between_rear_car_and_rear_wheels + safe_border_x));
+
+	// test if the ray is inside the car area in y-axis direction.
+	int y_test = (p_car(1, 0) > -(car_width / 2. + safe_border_y))
+						&& (p_car(1, 0) < (car_width / 2. + safe_border_y));
+
+	if (x_test && y_test)
+		ray_hit_car = 1;
+
 	int ray_contains_nan = std::isnan(p_world(0, 0)) || std::isnan(p_world(1, 0)) || std::isnan(p_world(2, 0));
 	int ray_contains_inf = std::isinf(p_world(0, 0)) || std::isinf(p_world(1, 0)) || std::isinf(p_world(2, 0));
 	int ray_is_too_high = p_sensor(2, 0) > ignore_above_threshold;
