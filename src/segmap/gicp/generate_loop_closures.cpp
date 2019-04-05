@@ -64,142 +64,6 @@ detect_loop_closures(NewCarmenDataset &dataset, vector<pair<int, int>> *loop_clo
 }
 
 
-void
-estimate_displacements_with_particle_filter(NewCarmenDataset &dataset,
-                                            vector<pair<int, int>> &loop_closure_indices,
-                                            vector<Matrix<double, 4, 4>> *relative_transform_vector,
-                                            vector<int> *convergence_vector,
-																						int n_corrections_when_reinit,
-                                            CommandLineArguments &args)
-{
-	printf("Running displacement estimation using particle filters.\n");
-
-	int i;
-	int view;
-	int n_processed_clouds = 0;
-	int n = loop_closure_indices.size();
-
-#ifdef _OPENMP
-	view = 0;
-#else
-	view = args.get<int>("view");
-#endif
-
-	PointCloudViewer viewer;
-
-#ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 5) default(none) private(i) \
-		shared(dataset, convergence_vector, relative_transform_vector, \
-					 loop_closure_indices, n_processed_clouds, n, view, args, n_corrections_when_reinit, viewer)
-#endif
-	for (i = 0; i < n; i++)
-	{
-		SensorPreproc preproc = create_sensor_preproc(args, &dataset, args.get<string>("log_path"));
-
-		GridMap map(string("/tmp/map_") + std::to_string(loop_closure_indices[i].second),
-								args.get<double>("tile_size"),
-								args.get<double>("tile_size"),
-								args.get<double>("resolution"),
-								GridMapTile::TYPE_VISUAL, 1);
-
-		ParticleFilter pf(args.get<int>("n_particles"),
-		                  ParticleFilter::WEIGHT_VISUAL,
-											args.get<double>("gps_xy_std"),
-											args.get<double>("gps_xy_std"),
-											degrees_to_radians(args.get<double>("gps_h_std")),
-											args.get<double>("v_std"),
-											degrees_to_radians(args.get<double>("phi_std")),
-											args.get<double>("odom_xy_std"),
-											args.get<double>("odom_xy_std"),
-											degrees_to_radians(args.get<double>("odom_h_std")),
-											args.get<double>("color_red_std"),
-											args.get<double>("color_green_std"),
-											args.get<double>("color_blue_std"));
-
-		run_pf_step(dataset,
-		            dataset,
-		            loop_closure_indices[i].first,
-		            loop_closure_indices[i].second,
-		            &(relative_transform_vector->at(i)),
-		            &(convergence_vector->at(i)),
-		            preproc,
-		            preproc,
-								pf, map,
-								viewer,
-								args.get<double>("dist_to_accumulate"),
-								n_corrections_when_reinit,
-		            view);
-
-#ifdef _OPENMP
-#pragma omp critical
-#endif
-		{
-			n_processed_clouds++;
-
-			if (n_processed_clouds % 100 == 0)
-				printf("%d processed clouds of %d\n", n_processed_clouds, n);
-		}
-	}
-}
-
-
-void
-estimate_displacements_with_gicp(NewCarmenDataset &dataset,
-                                 vector<pair<int, int>> &loop_closure_indices,
-                                 vector<Matrix<double, 4, 4>> *relative_transform_vector,
-                                 vector<int> *convergence_vector,
-                                 CommandLineArguments &args)
-{
-	printf("Running ICPs.\n");
-
-	int i;
-	int view;
-	int n_processed_clouds = 0;
-	int n = loop_closure_indices.size();
-
-#ifdef _OPENMP
-	view = 0;
-#else
-	view = args.get<int>("view");
-#endif
-
-	double dist_acc = args.get<double>("dist_to_accumulate");
-	double voxel_size = args.get<double>("voxel_size");
-
-#ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 5) default(none) private(i) \
-		shared(dataset, convergence_vector, relative_transform_vector, \
-		       loop_closure_indices, n_processed_clouds, n, view, args, dist_acc, voxel_size)
-#endif
-	for (i = 0; i < n; i++)
-	{
-		SensorPreproc preproc = create_sensor_preproc(args, &dataset, args.get<string>("log_path"));
-
-		run_icp_step(dataset,
-		             dataset,
-		             loop_closure_indices[i].first,
-		             loop_closure_indices[i].second,
-		             &(relative_transform_vector->at(i)),
-		             &(convergence_vector->at(i)),
-		             preproc,
-		             preproc,
-		             voxel_size,
-		             dist_acc,
-		             view);
-
-#ifdef _OPENMP
-#pragma omp critical
-#endif
-		{
-			n_processed_clouds++;
-
-			if (n_processed_clouds % 100 == 0)
-				printf("%d processed clouds of %d\n", n_processed_clouds, n);
-		}
-	}
-}
-
-
 int
 main(int argc, char **argv)
 {
@@ -208,7 +72,7 @@ main(int argc, char **argv)
 	args.add<string>("mode", "Technique for estimating displacement between loop closure poses [particle_fitler | gicp]");
 	args.add<std::string>("odom_calib,o", "Odometry calibration file", "none");
 	args.add<std::string>("fused_odom,f", "Fused odometry file (optimized using graphslam)", "none");
-	args.add<int>("n_corrections_when_reinit", "Number of correction steps when reinitializing particle filter", 5);
+	args.add<int>("n_corrections_when_reinit", "Number of correction steps when reinitializing particle filter", 10);
 	add_default_sensor_preproc_args(args);
 	add_default_gicp_args(args);
 	add_default_localizer_args(args);
@@ -216,7 +80,8 @@ main(int argc, char **argv)
 	args.save_config_file(default_data_dir() + "/loop_closures_config.txt");
 	args.parse(argc, argv);
 
-	NewCarmenDataset dataset(args.get<string>("log_path"),
+	string log_path = args.get<string>("log_path");
+	NewCarmenDataset dataset(log_path,
 	                         args.get<string>("odom_calib"),
 	                         args.get<string>("fused_odom"),
 	                         args.get<int>("gps_id"));
@@ -237,14 +102,18 @@ main(int argc, char **argv)
 	if (mode.compare("gicp") == 0)
 	{
 		estimate_displacements_with_gicp(dataset,
+																		 dataset,
+																		 log_path, log_path,
 																		 loop_closure_indices,
 																		 &relative_transform_vector,
 																		 &convergence_vector,
 																		 args);
 	}
-	if (mode.compare("particle_filter") == 0)
+	else if (mode.compare("particle_filter") == 0)
 	{
 		estimate_displacements_with_particle_filter(dataset,
+																								dataset,
+																								log_path, log_path,
 																								loop_closure_indices,
 																								&relative_transform_vector,
 																								&convergence_vector,
@@ -263,3 +132,4 @@ main(int argc, char **argv)
 	printf("Done.");
 	return 0;
 }
+

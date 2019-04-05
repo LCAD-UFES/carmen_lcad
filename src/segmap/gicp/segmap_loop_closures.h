@@ -12,6 +12,7 @@
 #include <carmen/segmap_grid_map.h>
 #include <carmen/segmap_sensor_viewer.h>
 #include <carmen/segmap_particle_filter.h>
+#include <carmen/command_line.h>
 
 
 class LoopRestriction
@@ -106,6 +107,29 @@ void
 save_report_file(std::string path, std::vector<std::pair<int, int>> &loop_closure_indices,
                  std::vector<Eigen::Matrix<double, 4, 4>> &relative_transform_vector,
                  std::vector<int> &convergence_vector);
+
+
+void
+estimate_displacements_with_particle_filter(NewCarmenDataset &target_dataset,
+																						NewCarmenDataset &dataset_to_adjust,
+																						std::string target_dataset_path,
+																						std::string dataset_to_adjust_path,
+                                            std::vector<std::pair<int, int>> &loop_closure_indices,
+                                            std::vector<Eigen::Matrix<double, 4, 4>> *relative_transform_vector,
+                                            std::vector<int> *convergence_vector,
+																						int n_corrections_when_reinit,
+                                            CommandLineArguments &args);
+
+
+void
+estimate_displacements_with_gicp(NewCarmenDataset &target_dataset,
+																 NewCarmenDataset &dataset_to_adjust,
+																 std::string target_dataset_path,
+																 std::string dataset_to_adjust_path,
+                                 std::vector<std::pair<int, int>> &loop_closure_indices,
+                                 std::vector<Eigen::Matrix<double, 4, 4>> *relative_transform_vector,
+                                 std::vector<int> *convergence_vector,
+                                 CommandLineArguments &args);
 
 
 #endif

@@ -15,6 +15,8 @@
 #include <carmen/segmap_dataset.h>
 #include <carmen/segmap_preproc.h>
 #include <carmen/segmap_conversions.h>
+#include <carmen/segmap_constructors.h>
+#include <carmen/command_line.h>
 #include "gicp.h"
 
 using namespace Eigen;
@@ -313,4 +315,150 @@ save_report_file(std::string path, std::vector<std::pair<int, int>> &loop_closur
 	}
 
 	fclose(report_file);
+}
+
+
+void
+estimate_displacements_with_particle_filter(NewCarmenDataset &target_dataset,
+																						NewCarmenDataset &dataset_to_adjust,
+																						string target_dataset_path,
+																						string dataset_to_adjust_path,
+                                            vector<pair<int, int>> &loop_closure_indices,
+                                            vector<Matrix<double, 4, 4>> *relative_transform_vector,
+                                            vector<int> *convergence_vector,
+																						int n_corrections_when_reinit,
+                                            CommandLineArguments &args)
+{
+	printf("Running displacement estimation using particle filters.\n");
+
+	int i;
+	int view;
+	int n_processed_clouds = 0;
+	int n = loop_closure_indices.size();
+
+#ifdef _OPENMP
+	view = 0;
+#else
+	view = args.get<int>("view");
+#endif
+
+	PointCloudViewer viewer;
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 5) default(none) private(i) \
+		shared(target_dataset, dataset_to_adjust, convergence_vector, relative_transform_vector, \
+					 loop_closure_indices, n_processed_clouds, n, view, args, \
+					 n_corrections_when_reinit, viewer, target_dataset_path, dataset_to_adjust_path)
+#endif
+	for (i = 0; i < n; i++)
+	{
+		SensorPreproc target_preproc = create_sensor_preproc(args, &target_dataset, target_dataset_path);
+		SensorPreproc adj_preproc = create_sensor_preproc(args, &dataset_to_adjust, dataset_to_adjust_path);
+
+		GridMap map(string("/tmp/map_") + std::to_string(loop_closure_indices[i].second),
+								args.get<double>("tile_size"),
+								args.get<double>("tile_size"),
+								args.get<double>("resolution"),
+								GridMapTile::TYPE_VISUAL, 1);
+
+		ParticleFilter pf(args.get<int>("n_particles"),
+		                  ParticleFilter::WEIGHT_VISUAL,
+											args.get<double>("gps_xy_std"),
+											args.get<double>("gps_xy_std"),
+											degrees_to_radians(args.get<double>("gps_h_std")),
+											args.get<double>("v_std"),
+											degrees_to_radians(args.get<double>("phi_std")),
+											args.get<double>("odom_xy_std"),
+											args.get<double>("odom_xy_std"),
+											degrees_to_radians(args.get<double>("odom_h_std")),
+											args.get<double>("color_red_std"),
+											args.get<double>("color_green_std"),
+											args.get<double>("color_blue_std"));
+
+		run_pf_step(target_dataset,
+		            dataset_to_adjust,
+		            loop_closure_indices[i].first,
+		            loop_closure_indices[i].second,
+		            &(relative_transform_vector->at(i)),
+		            &(convergence_vector->at(i)),
+		            target_preproc,
+		            adj_preproc,
+								pf, map,
+								viewer,
+								args.get<double>("dist_to_accumulate"),
+								n_corrections_when_reinit,
+		            view);
+
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+		{
+			n_processed_clouds++;
+
+			if (n_processed_clouds % 100 == 0)
+				printf("%d processed clouds of %d\n", n_processed_clouds, n);
+		}
+	}
+}
+
+
+void
+estimate_displacements_with_gicp(NewCarmenDataset &target_dataset,
+																 NewCarmenDataset &dataset_to_adjust,
+																 string target_dataset_path,
+																 string dataset_to_adjust_path,
+                                 vector<pair<int, int>> &loop_closure_indices,
+                                 vector<Matrix<double, 4, 4>> *relative_transform_vector,
+                                 vector<int> *convergence_vector,
+                                 CommandLineArguments &args)
+{
+	printf("Running ICPs.\n");
+
+	int i;
+	int view;
+	int n_processed_clouds = 0;
+	int n = loop_closure_indices.size();
+
+#ifdef _OPENMP
+	view = 0;
+#else
+	view = args.get<int>("view");
+#endif
+
+	double dist_acc = args.get<double>("dist_to_accumulate");
+	double voxel_size = args.get<double>("voxel_size");
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 5) default(none) private(i) \
+		shared(target_dataset, dataset_to_adjust, convergence_vector, relative_transform_vector, \
+		       loop_closure_indices, n_processed_clouds, n, view, args, dist_acc, voxel_size, \
+					 target_dataset_path, dataset_to_adjust_path)
+#endif
+	for (i = 0; i < n; i++)
+	{
+		SensorPreproc target_preproc = create_sensor_preproc(args, &target_dataset, target_dataset_path);
+		SensorPreproc adj_preproc = create_sensor_preproc(args, &dataset_to_adjust, dataset_to_adjust_path);
+
+		run_icp_step(target_dataset,
+		             dataset_to_adjust,
+		             loop_closure_indices[i].first,
+		             loop_closure_indices[i].second,
+		             &(relative_transform_vector->at(i)),
+		             &(convergence_vector->at(i)),
+		             target_preproc,
+		             adj_preproc,
+		             voxel_size,
+		             dist_acc,
+		             view);
+
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+		{
+			n_processed_clouds++;
+
+			if (n_processed_clouds % 100 == 0)
+				printf("%d processed clouds of %d\n", n_processed_clouds, n);
+		}
+	}
 }

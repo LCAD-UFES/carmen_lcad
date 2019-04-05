@@ -11,8 +11,8 @@ CXXFLAGS += -std=c++11
 # Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11
 IFLAGS += -std=c++11
 
-#CXXFLAGS += -fopenmp
-#LFLAGS += -fopenmp
+CXXFLAGS += -fopenmp
+LFLAGS += -fopenmp
 
 PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
