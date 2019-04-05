@@ -13,6 +13,7 @@
 #include <pcl/point_types.h>
 
 #include <carmen/segmap_colormaps.h>
+#include <carmen/segmap_preproc.h>
 
 
 class GridMapTile
@@ -90,5 +91,7 @@ public:
 	void _free_tiles();
 };
 
+// utility function for updating the map with a point cloud.
+void update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc);
 
 #endif

@@ -1086,6 +1086,32 @@ char* carmen_string_to_xsens_quat_message(char* string, carmen_xsens_global_quat
 	return current_pos;
 }
 
+char* carmen_string_to_pi_imu_message(char* string, carmen_pi_imu_message_t* msg)
+{
+	char* current_pos = string;
+	if (strncmp(current_pos, "PI_IMU ", 7) == 0)
+		current_pos = carmen_next_word(current_pos);
+
+	msg->imu_vector->accel.x = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector->accel.y = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector->accel.z = CLF_READ_DOUBLE(&current_pos);
+
+	msg->imu_vector->magnetometer.x = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector->magnetometer.y = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector->magnetometer.z = CLF_READ_DOUBLE(&current_pos);
+
+	msg->imu_vector->gyro.x = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector->gyro.y = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector->gyro.z = CLF_READ_DOUBLE(&current_pos);
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+
+	copy_host_string(&msg->host, &current_pos);
+	//msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+
+	return current_pos;
+}
+
 char* carmen_string_to_xsens_matrix_message(char* string, carmen_xsens_global_matrix_message* msg)
 {
 	char* current_pos = string;

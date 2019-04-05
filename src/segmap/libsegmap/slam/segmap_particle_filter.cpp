@@ -271,7 +271,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 
 		fprintf(stderr, "%.4lf ", _w[i]);
 	}
-	fprintf(stderr, "---------\n\n");
+	fprintf(stderr, "\n\n---------\n\n");
 }
 
 
