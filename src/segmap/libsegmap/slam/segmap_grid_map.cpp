@@ -6,6 +6,7 @@
 #include <carmen/segmap_grid_map.h>
 #include <carmen/util_math.h>
 #include <boost/filesystem.hpp>
+#include <carmen/segmap_preproc.h>
 
 using namespace pcl;
 using namespace std;
@@ -457,3 +458,18 @@ GridMap::save()
 	}
 }
 
+
+
+void
+update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc)
+{
+	preproc.reinitialize(sample);
+
+	for (int i = 0; i < preproc.size(); i++)
+	{
+		vector<PointXYZRGB> points = preproc.next_points_in_world();
+
+		for (int j = 0; j < points.size(); j++)
+			map->add_point(points[j]);
+	}
+}

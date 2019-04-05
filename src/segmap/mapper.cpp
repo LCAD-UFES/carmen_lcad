@@ -17,21 +17,6 @@ using namespace pcl;
 
 
 void
-update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc)
-{
-	preproc.reinitialize(sample);
-
-	for (int i = 0; i < preproc.size(); i++)
-	{
-		vector<PointXYZRGB> points = preproc.next_points_in_world();
-
-		for (int j = 0; j < points.size(); j++)
-			map->add_point(points[j]);
-	}
-}
-
-
-void
 view(GridMap &map, DataSample *sample, Pose2d &offset, PointCloudViewer &viewer)
 {
 	Pose2d pose;

@@ -31,6 +31,7 @@
 #include <carmen/segmap_dataset.h>
 #include <carmen/util_io.h>
 #include <carmen/ackerman_motion_model.h>
+#include <carmen/segmap_loop_closures.h>
 
 using namespace std;
 using namespace g2o;
@@ -41,13 +42,16 @@ class GraphSlamData
 public:
 	NewCarmenDataset *dataset;
 	vector<LoopRestriction> loop_data, gicp_odom_data, gicp_fake_gps;
+	vector<LoopRestriction> pf_loop_data, pf_fake_gps;
 
 	~GraphSlamData() { delete(dataset);	}
 
 	string log_file;
 	string loop_closure_file;
+	string pf_loop_closure_file;
 	string gicp_odom_file;
 	string gicp_map_file;
+	string pf_to_map_file;
 	string output_file;
 	string odom_calib_file;
 
@@ -336,12 +340,16 @@ load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer)
 	add_vertices(dead_reckoning, optimizer);
 	add_odometry_edges(optimizer, dead_reckoning, data.odom_xy_std, deg2rad(data.odom_angle_std));
 
-	if (data.gicp_fake_gps.size() > 0)
+	if (data.gicp_fake_gps.size() > 0 || data.pf_fake_gps.size() > 0)
+	{
 		add_gps_gicp_edges(data.gicp_fake_gps, optimizer, data.gicp_to_map_xy_std, deg2rad(data.gicp_to_map_angle_std));
+		add_gps_gicp_edges(data.pf_fake_gps, optimizer, data.gicp_to_map_xy_std, deg2rad(data.gicp_to_map_angle_std));
+	}
 	else
 		add_gps_edges(data, optimizer, data.gps_xy_std, deg2rad(data.gps_angle_std));
 
 	add_loop_closure_edges(data.loop_data, optimizer, data.loop_xy_std, deg2rad(data.loop_angle_std));
+	add_loop_closure_edges(data.pf_loop_data, optimizer, data.loop_xy_std, deg2rad(data.loop_angle_std));
 	add_loop_closure_edges(data.gicp_odom_data, optimizer, data.gicp_odom_xy_std, deg2rad(data.gicp_odom_angle_std));
 
 }
@@ -428,8 +436,10 @@ load_parameters(int argc, char **argv, GraphSlamData *data)
 	args.add<string>("odom_calib,o", "Path to the odometry calibration file", "none");
 	args.add<string>("loops,l", "Path to a file with loop closure relations", "none");
 	args.add<int>("gps_id", "Index of the gps to be used", 1);
+	args.add<string>("pf_loops", "Path to a file with loop closures estimated with particle filters", "none");
 	args.add<string>("gicp_odom", "Path to a file with odometry relations generated with GICP", "none");
-	args.add<string>("gicp_to_map", "Path to a file with poses given by registration to an a priori map", "none");
+	args.add<string>("pf_to_map", "Path to a file with poses given by registration to an a priori map with particle filter", "none");
+	args.add<string>("gicp_to_map", "Path to a file with poses given by registration to an a priori map with gicp", "none");
 	args.add<double>("odom_xy_std", "Std in xy of odometry-based movement estimations (m)", 0.005);
 	args.add<double>("gps_xy_std", "Std in xy of gps measurements (m)", 10.0);
 	args.add<double>("loop_xy_std", "Std in xy of loop closure measurements (m)", 0.3);
@@ -455,9 +465,11 @@ load_parameters(int argc, char **argv, GraphSlamData *data)
 	data->output_file = args.get<string>("output");
 	data->odom_calib_file = args.get<string>("odom_calib");
 	data->loop_closure_file = args.get<string>("loops");
+	data->pf_loop_closure_file = args.get<string>("pf_loops");
 	data->gps_id = args.get<int>("gps_id");
 	data->gicp_odom_file = args.get<string>("gicp_odom");
 	data->gicp_map_file = args.get<string>("gicp_to_map");
+	data->pf_to_map_file = args.get<string>("pf_to_map");
 	data->odom_xy_std = args.get<double>("odom_xy_std");
 	data->gps_xy_std = args.get<double>("gps_xy_std");
 	data->loop_xy_std = args.get<double>("loop_xy_std");
@@ -493,8 +505,10 @@ int main(int argc, char **argv)
 
 	data.dataset = new NewCarmenDataset(data.log_file, data.odom_calib_file, "", data.gps_id);
 	read_loop_restrictions(data.loop_closure_file, &data.loop_data);
+	read_loop_restrictions(data.pf_loop_closure_file, &data.pf_loop_data);
 	read_loop_restrictions(data.gicp_odom_file, &data.gicp_odom_data);
 	read_loop_restrictions(data.gicp_map_file, &data.gicp_fake_gps);
+	read_loop_restrictions(data.pf_to_map_file, &data.pf_fake_gps);
 
 	load_data_to_optimizer(data, optimizer);
 
