@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -27,9 +28,15 @@ public class MainActivity extends AppCompatActivity {
 
     private ArrayList<String> data = new ArrayList<String>();
     private ArrayList<String> locais = new ArrayList<String>();
+    String[] local;
     AlertDialog alertDialogStores;
-    @Override
-    //private Button botaoori = new Button();
+    private boolean confori;
+    private boolean confdest;
+    Context context;
+    private Button botaoori;
+    private Button botaodest;
+    private TextView ori;
+    private TextView dest;
     //private Button botaodest = new Button();
     //private Button botaoook = new Button();
 
@@ -41,13 +48,82 @@ public class MainActivity extends AppCompatActivity {
         data = LerArquivo();
         //Separa os nomes dos locais
         for (String e: data){
-        locais.add(data.toString().split("\t")[0]);
+        locais.add(e.toString().split("\t")[0]);
+        System.out.println(e.toString().split("\t")[0]);
         }
+        data = (ArrayList<String>)locais.clone();
+        local = locais.toArray(new String[locais.size()]);
+       // System.out.println(local[1]);
+
+       botaoori = (Button) findViewById(R.id.but_ori);
+       botaodest = (Button) findViewById(R.id.but_dest);
+       ori = (TextView) findViewById(R.id.textView);
+       dest = (TextView) findViewById(R.id.textView2);
+       confori  = false;
+       confdest = false;
+
+
+
         //System.out.println(locais);
+        botaoori.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("Locais Origem");
+                if(!confori){
+                    builder.setItems(local, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            ori.setText(local[which]);
+                            confori = true;
+                            locais.remove(local[which]);
+                            local = locais.toArray(new String[locais.size()]);
+                            System.out.println("-------------------------------");
+
+                        }
+                    });
+                }else{
+                    builder.setItems(local, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            ori.setText(local[which]);
+                            confori = false;
+                            locais = (ArrayList<String>) data.clone();
+                            locais.remove(local[which]);
+                            local = locais.toArray(new String[locais.size()]);
+                            System.out.println("################################");
+                        }
+                    });
 
 
+
+                }
+
+                AlertDialog alert = builder.create();
+                alert.show();
+
+            }
+        });
+
+
+        botaodest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("Locais Destino");
+                builder.setItems(local, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dest.setText(local[which]);
+                    }
+                });
+                AlertDialog alert = builder.create();
+                alert.show();
+            }
+        });
 
     }
+
 
 
     public void showPopUp(){
