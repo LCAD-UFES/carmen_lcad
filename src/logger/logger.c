@@ -798,6 +798,13 @@ int main(int argc, char **argv)
 
   }
 
+  if (log_imu_pi)
+  {
+	  carmen_pi_imu_subscribe(NULL,
+			  (carmen_handler_t) pi_imu_handler,
+			  CARMEN_SUBSCRIBE_ALL);
+  }
+
   if (log_sonar)
   {
 	  carmen_ultrasonic_sonar_sensor_subscribe(NULL,

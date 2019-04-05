@@ -168,6 +168,7 @@ $(OBJECTS_DIR)pi_imu_server_driver.o : pi_imu_server_driver.cpp $(DEPS)
 	@$(CHK_DIR_EXISTS) objects/ || $(MKDIR) objects/
 	$(CXX) -c -o $@ pi_imu_server_driver.cpp $(CFLAGS) $(INCPATH)
 
+
 $(OBJECTS_DIR)pi_imu_test.o : pi_imu_test.cpp $(DEPS)
 	@$(CHK_DIR_EXISTS) objects/ || $(MKDIR) objects/
 	$(CXX) -c -o $@ pi_imu_test.cpp $(CFLAGS) $(INCPATH)

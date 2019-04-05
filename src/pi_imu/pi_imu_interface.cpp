@@ -24,7 +24,7 @@ carmen_pi_imu_subscribe(carmen_pi_imu_message_t *message, carmen_handler_t handl
 // ==============================================================
 // PUBLISHES
 IPC_RETURN_TYPE
-carmen_lane_publish_message(carmen_pi_imu_message_t *message)
+carmen_pi_imu_publish_message(carmen_pi_imu_message_t *message)
 {
 	IPC_RETURN_TYPE err;
     err = IPC_publishData(CARMEN_PI_IMU_NAME, message);

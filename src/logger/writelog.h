@@ -56,7 +56,7 @@
 #include <carmen/ford_escape_hybrid_messages.h>
 #include <carmen/can_dump_messages.h>
 #include <carmen/pi_imu_messages.h>
-
+#include <carmen/pi_imu_interface.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
