@@ -25,6 +25,7 @@
 #include "RTIMULSM9DS1.h"
 #include "RTIMUSettings.h"
 
+#define do_log 1
 //  this sets the learning rate for compass running average calculation
 
 #define COMPASS_ALPHA 0.2f
@@ -199,17 +200,33 @@ bool RTIMULSM9DS1::setGyroSampleRate()
     switch (m_settings->m_LSM9DS1GyroFsr) {
     case LSM9DS1_GYRO_FSR_250:
         ctrl1 |= 0x00;
-        m_gyroScale = (RTFLOAT)0.00875 * RTMATH_DEGREE_TO_RAD;
+
+        #ifndef do_log
+        	m_gyroScale = (RTFLOAT)0.00875 * RTMATH_DEGREE_TO_RAD;
+		#else
+        	m_gyroScale = (RTFLOAT)1.00000;
+		#endif
+
         break;
 
     case LSM9DS1_GYRO_FSR_500:
         ctrl1 |= 0x08;
-        m_gyroScale = (RTFLOAT)0.0175 * RTMATH_DEGREE_TO_RAD;
+		#ifndef do_log
+        	m_gyroScale = (RTFLOAT)0.0175 * RTMATH_DEGREE_TO_RAD;
+		#else
+        	m_gyroScale = (RTFLOAT)1.00000;
+		#endif
+
         break;
 
     case LSM9DS1_GYRO_FSR_2000:
         ctrl1 |= 0x18;
-        m_gyroScale = (RTFLOAT)0.07 * RTMATH_DEGREE_TO_RAD;
+		#ifndef do_log
+        	m_gyroScale = (RTFLOAT)0.07 * RTMATH_DEGREE_TO_RAD;
+		#else
+        	m_gyroScale = (RTFLOAT)1.00000;
+		#endif
+
         break;
 
     default:
@@ -253,19 +270,43 @@ bool RTIMULSM9DS1::setAccelCTRL6()
 
     switch (m_settings->m_LSM9DS1AccelFsr) {
     case LSM9DS1_ACCEL_FSR_2:
-        m_accelScale = (RTFLOAT)0.000061;
+
+    	#ifndef do_log
+        	m_accelScale = (RTFLOAT)0.000061;
+		#else
+        	m_accelScale = (RTFLOAT)1.000000;
+		#endif
+
         break;
 
     case LSM9DS1_ACCEL_FSR_4:
-        m_accelScale = (RTFLOAT)0.000122;
+
+    	#ifndef do_log
+        	m_accelScale = (RTFLOAT)0.000122;
+		#else
+        	m_accelScale = (RTFLOAT)1.000000;
+		#endif
+
         break;
 
     case LSM9DS1_ACCEL_FSR_8:
-        m_accelScale = (RTFLOAT)0.000244;
+
+    	#ifndef do_log
+        	m_accelScale = (RTFLOAT)0.000244;
+		#else
+        	m_accelScale = (RTFLOAT)1.000000;
+		#endif
+
         break;
 
     case LSM9DS1_ACCEL_FSR_16:
-        m_accelScale = (RTFLOAT)0.000732;
+
+    	#ifndef do_log
+        	m_accelScale = (RTFLOAT)0.000732;
+		#else
+        	m_accelScale = (RTFLOAT)1.000000;
+		#endif
+
         break;
 
     default:
@@ -313,22 +354,42 @@ bool RTIMULSM9DS1::setCompassCTRL2()
     switch (m_settings->m_LSM9DS1CompassFsr) {
     case LSM9DS1_COMPASS_FSR_4:
         ctrl2 = 0;
-        m_compassScale = (RTFLOAT)0.014;
+
+        #ifndef do_log
+        	m_compassScale = (RTFLOAT)0.014;
+		#else
+        	m_compassScale = (RTFLOAT)1.000;
+		#endif
         break;
 
     case LSM9DS1_COMPASS_FSR_8:
         ctrl2 = 0x20;
-        m_compassScale = (RTFLOAT)0.029;
+
+        #ifndef do_log
+        	m_compassScale = (RTFLOAT)0.029;
+		#else
+        	m_compassScale = (RTFLOAT)1.000;
+		#endif
         break;
 
     case LSM9DS1_COMPASS_FSR_12:
         ctrl2 = 0x40;
-        m_compassScale = (RTFLOAT)0.043;
+
+        #ifndef do_log
+        	m_compassScale = (RTFLOAT)0.043;
+		#else
+        	m_compassScale = (RTFLOAT)1.000;
+		#endif
         break;
 
     case LSM9DS1_COMPASS_FSR_16:
         ctrl2 = 0x60;
-        m_compassScale = (RTFLOAT)0.058;
+
+		#ifndef do_log
+        	m_compassScale = (RTFLOAT)0.058;
+		#else
+        	m_compassScale = (RTFLOAT)1.000;
+		#endif
         break;
 
     default:

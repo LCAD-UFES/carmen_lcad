@@ -16,16 +16,15 @@ experiments = [
         {'map': 'log_sao_paulo_brt_20170827.txt', 'test': ['log_sao_paulo_brt_20170827-2.txt']},
     ]
     
-    
+
 DATA_DIR = "/dados/data2/"
-GPS_XY_STD = 5.0
+GPS_XY_STD = 2.0
 GPS_H_STD = 10.0
 LOOPS_XY_STD = 0.3
 LOOPS_H_STD = 3.0
-IGNORE_POINTS_ABOVE = 0.0
-IGNORE_POINTS_BELOW = -1.5
+IGNORE_POINTS_ABOVE = 100
+IGNORE_POINTS_BELOW = -100
 SKIP_WHEN_VELOCITY_IS_BELOW = 1.0
-
 
 def create_output_dir(log_path):
     log_name = log_path.rsplit("/")[-1]

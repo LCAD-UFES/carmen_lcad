@@ -177,8 +177,6 @@ NewCarmenDataset::_board2car()
 void 
 NewCarmenDataset::_load_odometry_calibration(std::string &path)
 {
-	printf("Loading odometry calibration '%s'\n", path.c_str());
-
 	int success = false;
 
 	if (path.size() > 0)
@@ -203,12 +201,14 @@ NewCarmenDataset::_load_odometry_calibration(std::string &path)
 
 	if (!success)
 	{
-		fprintf(stderr, "Warning: fail to load odometry calibration from '%s'. Assuming default values.\n", path.c_str());
+		fprintf(stderr, "Warning: failed load odometry calibration from '%s'. Assuming default values.\n", path.c_str());
 
 		_calib.mult_phi = _calib.mult_v = 1.0;
 		_calib.add_phi = _calib.add_v = 0.;
 		_calib.init_angle = 0.;
 	}
+	else
+		printf("Odometry calibration successfully loaded from '%s'\n", path.c_str());
 
 	printf("Odom calibration: bias v: %lf %lf bias phi: %lf %lf\n", 
 				 _calib.mult_v, _calib.add_v, _calib.mult_phi, _calib.add_phi);
@@ -247,10 +247,6 @@ NewCarmenDataset::_load_poses(std::string &path, std::vector<Pose2d> *poses)
 
 			fclose(f);
 		}
-		else
-		{
-			fprintf(stderr, "Warning: failed to open file '%s'\n", path.c_str());
-		}
 	}
 
 	if (!success)
@@ -259,7 +255,7 @@ NewCarmenDataset::_load_poses(std::string &path, std::vector<Pose2d> *poses)
 		poses->clear();
 	}
 	else
-		fprintf(stderr, "Poses loaded from '%s'. Returning default values.\n", path.c_str());
+		fprintf(stderr, "Poses successfully loaded from '%s'.\n", path.c_str());
 }
 
 

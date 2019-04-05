@@ -14,6 +14,7 @@ public:
 	PointCloudViewer(float point_size = 1, float back_red = 0.5, float back_green = 0.5, float back_blue = 0.5);
 	~PointCloudViewer();
 
+	void set_step(int step_mode) { _pause_viewer = step_mode; }
 	void show(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, double r = -1., double g = -1., double b = -1.);
 	void show(cv::Mat &img, const char *name, int resize_to_width=-1);
 	void loop();

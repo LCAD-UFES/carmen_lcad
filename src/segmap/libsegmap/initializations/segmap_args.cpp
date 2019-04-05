@@ -30,7 +30,7 @@ add_default_mapper_args(CommandLineArguments &args)
 	// map parameters
 	args.add<double>("resolution,r", "Map resolution", 0.2);
 	args.add<double>("tile_size,t", "Map tiles size", 50);
-	args.add<string>("map_path,m", "Path to save the maps", "/tmp");
+	args.add<string>("map_path,m", "Path to save the maps", "/tmp/map");
 
 	args.save_config_file(default_data_dir() + "/mapper_config.txt");
 }

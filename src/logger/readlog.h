@@ -52,6 +52,7 @@
 #include <carmen/web_cam_messages.h>
 #include <carmen/base_ackerman_messages.h>
 #include <carmen/ultrasonic_filter_messages.h>
+#include <carmen/pi_imu_messages.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -231,6 +232,8 @@ char* carmen_string_to_velodyne_gps_message(char* string, carmen_velodyne_gps_me
 char* carmen_string_to_xsens_euler_message(char* string, carmen_xsens_global_euler_message* msg);
 
 char* carmen_string_to_xsens_quat_message(char* string, carmen_xsens_global_quat_message* msg);
+
+char* carmen_string_to_pi_imu_message(char* string, carmen_pi_imu_message_t* msg);
 
 char* carmen_string_to_xsens_matrix_message(char* string, carmen_xsens_global_matrix_message* msg);
 

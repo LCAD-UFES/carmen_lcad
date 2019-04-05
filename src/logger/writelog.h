@@ -55,7 +55,8 @@
 #include <carmen/base_ackerman_messages.h>
 #include <carmen/ford_escape_hybrid_messages.h>
 #include <carmen/can_dump_messages.h>
-
+#include <carmen/pi_imu_messages.h>
+#include <carmen/pi_imu_interface.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -204,6 +205,10 @@ void carmen_logwrite_write_xsens_quat(carmen_xsens_global_quat_message* msg,
 			       carmen_FILE *outfile,
 			       double timestamp);
 
+
+void carmen_logwrite_write_pi_imu(carmen_pi_imu_message_t* msg,
+			       carmen_FILE *outfile,
+			       double timestamp);
 
 void carmen_logwrite_write_xsens_matrix(carmen_xsens_global_matrix_message* msg,
 			       carmen_FILE *outfile,

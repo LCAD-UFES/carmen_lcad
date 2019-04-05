@@ -17,21 +17,6 @@ using namespace pcl;
 
 
 void
-update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc)
-{
-	preproc.reinitialize(sample);
-
-	for (int i = 0; i < preproc.size(); i++)
-	{
-		vector<PointXYZRGB> points = preproc.next_points_in_world();
-
-		for (int j = 0; j < points.size(); j++)
-			map->add_point(points[j]);
-	}
-}
-
-
-void
 view(GridMap &map, DataSample *sample, Pose2d &offset, PointCloudViewer &viewer)
 {
 	Pose2d pose;
@@ -118,6 +103,9 @@ main(int argc, char **argv)
 		map_type = GridMapTile::TYPE_SEMANTIC;
 	else
 		map_type = GridMapTile::TYPE_VISUAL;
+
+	if (boost::filesystem::exists(args.get<string>("map_path")))
+		boost::filesystem::remove_all(args.get<string>("map_path"));
 
 	GridMap map(args.get<string>("map_path"),
 							args.get<double>("tile_size"),
