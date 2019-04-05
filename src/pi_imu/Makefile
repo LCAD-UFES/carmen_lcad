@@ -13,6 +13,7 @@ LFLAGS +=  -lparam_interface -lipc -lglobal -lm  -lglut -lGL -lGLU
 
 SOURCES = pi_imu_client_driver.cpp #pi_imu_viewer.cpp
 
+PUBLIC_INCLUDES = pi_imu_messages.h pi_imu_interface.h
 PUBLIC_BINARIES = pi_imu_client_driver #pi_imu_viewer
 PUBLIC_LIBRARIES =
 

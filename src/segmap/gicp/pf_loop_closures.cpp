@@ -24,6 +24,8 @@
 
 #include <carmen/command_line.h>
 #include "gicp.h"
+#include <carmen/segmap_loop_closures.h>
+
 
 using namespace std;
 using namespace Eigen;
@@ -35,21 +37,6 @@ enum LoopClosureDetectionMethod
 	DETECT_USING_INTERSECTION_WITH_MAP = 0,
 	DETECT_BY_DIST_AND_TIME,
 };
-
-
-void
-update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc)
-{
-	preproc.reinitialize(sample);
-
-	for (int i = 0; i < preproc.size(); i++)
-	{
-		vector<PointXYZRGB> points = preproc.next_points_in_world();
-
-		for (int j = 0; j < points.size(); j++)
-			map->add_point(points[j]);
-	}
-}
 
 
 double
@@ -82,42 +69,6 @@ compute_percentage_of_points_that_hit_map(DataSample *sample, SensorPreproc &pre
 		percentage_points_that_hit_map = ((double) n_points_that_hit_map / (double) n_points_total);
 
 	return percentage_points_that_hit_map;
-}
-
-
-void
-show_flipped_img_in_viewer(PointCloudViewer &viewer, Mat &img)
-{
-	Mat flipped;
-	flip(img, flipped, 0);
-	viewer.show(flipped, "map", 640);
-	viewer.loop();
-}
-
-
-void
-run_viewer_if_necessary(Pose2d pose,
-												GridMap &map,
-												ParticleFilter &pf,
-												PointCloud<PointXYZRGB>::Ptr cloud,
-												PointCloudViewer &viewer,
-												int pf_was_updated,
-												int view)
-{
-	if (view)
-	{
-		Mat img;
-
-		if (pf_was_updated)
-			img = pf_view(pf, map, pose, pf.mean(), cloud, 1);
-		else
-		{
-			img = map.to_image().clone();
-			draw_pose(map, img, pose, Scalar(0, 255, 0));
-		}
-
-		show_flipped_img_in_viewer(viewer, img);
-	}
 }
 
 

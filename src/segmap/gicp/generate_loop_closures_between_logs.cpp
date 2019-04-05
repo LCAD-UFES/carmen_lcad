@@ -8,6 +8,7 @@
 #include <carmen/segmap_args.h>
 #include <carmen/segmap_constructors.h>
 #include "gicp.h"
+#include <carmen/segmap_loop_closures.h>
 
 using namespace Eigen;
 using namespace std;

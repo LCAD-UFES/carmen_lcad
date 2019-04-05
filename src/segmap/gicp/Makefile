@@ -37,12 +37,14 @@ LFLAGS += -lglobal
 # SEGMAP PART 2
 LFLAGS += -lsegmap_types
 
-SOURCES = generate_loop_closures.cpp gicp.cpp generate_loop_closures_between_logs.cpp pf_loop_closures.cpp
+SOURCES = generate_loop_closures.cpp gicp.cpp generate_loop_closures_between_logs.cpp pf_loop_closures.cpp \
+	segmap_loop_closures.cpp
 
-TARGETS = libgicp.a generate_loop_closures_between_logs generate_loop_closures pf_loop_closures 
+TARGETS = libsegmap_loop_closures.a generate_loop_closures_between_logs \
+	generate_loop_closures pf_loop_closures 
 
-PUBLIC_INCLUDES += gicp.h
-PUBLIC_LIBRARIES += libgicp.a
+PUBLIC_INCLUDES += gicp.h segmap_loop_closures.h
+PUBLIC_LIBRARIES += libsegmap_loop_closures.a
 
 DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/datasets/libsegmap_datasets.a \
@@ -54,9 +56,9 @@ DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/initializations/libsegmap_initializations.a \
 	$(CARMEN_HOME)/src/segmap/util/libutil.a
 
-libgicp.a: gicp.o
-generate_loop_closures: generate_loop_closures.o gicp.o $(DEPS)
-generate_loop_closures_between_logs: generate_loop_closures_between_logs.o gicp.o $(DEPS)
-pf_loop_closures: pf_loop_closures.o gicp.o $(DEPS)
+libsegmap_loop_closures.a: gicp.o segmap_loop_closures.o
+generate_loop_closures: generate_loop_closures.o gicp.o segmap_loop_closures.o $(DEPS)
+generate_loop_closures_between_logs: generate_loop_closures_between_logs.o gicp.o segmap_loop_closures.o $(DEPS)
+pf_loop_closures: pf_loop_closures.o gicp.o segmap_loop_closures.o $(DEPS)
 
 include $(CARMEN_HOME)/src/Makefile.rules

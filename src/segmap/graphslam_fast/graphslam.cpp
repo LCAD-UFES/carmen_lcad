@@ -31,6 +31,7 @@
 #include <carmen/segmap_dataset.h>
 #include <carmen/util_io.h>
 #include <carmen/ackerman_motion_model.h>
+#include <carmen/segmap_loop_closures.h>
 
 using namespace std;
 using namespace g2o;
