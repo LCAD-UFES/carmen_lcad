@@ -1,0 +1,5 @@
+# To activate this environment, use:
+# > source activate python_robotics
+#
+# To deactivate an active environment, use:
+# > source deactivate
