@@ -22,6 +22,7 @@
 	\li Job Mulder:	Updated file for release 0.1.0
 */
 
+#include <unistd.h>
 #include "cmt2.h"
 
 namespace xsens {
@@ -451,7 +452,9 @@ XsensResultValue Cmt2s::waitForMessage(Message* rcv, const uint8_t msgId, uint32
 		// read the entire message
 		while ((m_readBufferCount < target) && (m_toEnd >= getTimeOfDay()))
 		{
-			m_cmt1s.readData(target - m_readBufferCount,&m_readBuffer[m_readBufferCount],&length);
+			XsensResultValue result = m_cmt1s.readData(target - m_readBufferCount,&m_readBuffer[m_readBufferCount],&length);
+			if (result == XRV_ERROR)
+				usleep(1000);
 			m_readBufferCount += (uint16_t) length;
 		}
 		if ((m_readBufferCount < target) && (m_toEnd < getTimeOfDay()))

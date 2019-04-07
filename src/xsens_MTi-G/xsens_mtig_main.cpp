@@ -23,7 +23,7 @@ static CmtOutputSettings settings;
 
 static int xsens_scenario;
 static CmtVector gps_position;
-static char* xsens_dev;
+static char *xsens_dev;
 static int xsens_type = 0;
 // this macro tests for an error and exits the program with a message if there was one
 #define EXIT_ON_ERROR(res,comment) if (res != XRV_OK) { printf("Error %d occurred in " comment ": %s\n",res,xsensResultText(res)); exit(1); }
@@ -47,11 +47,11 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_t param_list[] =
 	{
-		{(char*)"xsens", (char*)"scenario", CARMEN_PARAM_INT, &xsens_scenario, 0, NULL},
-		{(char*)"xsens", (char*)"gps_x", CARMEN_PARAM_DOUBLE, &(gps_position.m_data[0]), 0, NULL},
-		{(char*)"xsens", (char*)"gps_y", CARMEN_PARAM_DOUBLE, &(gps_position.m_data[1]), 0, NULL},
-		{(char*)"xsens", (char*)"gps_z", CARMEN_PARAM_DOUBLE, &(gps_position.m_data[2]), 0, NULL},
-                {(char*)"xsens", (char*)"dev",   CARMEN_PARAM_STRING, &(xsens_dev), 0, NULL}
+		{(char *) "xsens", (char *) "scenario", CARMEN_PARAM_INT, &xsens_scenario, 0, NULL},
+		{(char *) "xsens", (char *) "gps_x", CARMEN_PARAM_DOUBLE, &(gps_position.m_data[0]), 0, NULL},
+		{(char *) "xsens", (char *) "gps_y", CARMEN_PARAM_DOUBLE, &(gps_position.m_data[1]), 0, NULL},
+		{(char *) "xsens", (char *) "gps_z", CARMEN_PARAM_DOUBLE, &(gps_position.m_data[2]), 0, NULL},
+		{(char *) "xsens", (char *) "dev",   CARMEN_PARAM_STRING, &(xsens_dev), 0, NULL}
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
@@ -151,7 +151,7 @@ doHardwareScan_old(xsens::Cmt3 &cmt3, CmtDeviceId deviceIds[])
 	
 	printf("Opening ports...");
 
-	res = cmt3.openPort(xsens_dev, B1152000);
+	res = cmt3.openPort(xsens_dev, B460800);
 	EXIT_ON_ERROR(res,"cmtOpenPort");
 
 	if(res == XRV_OK)
@@ -352,7 +352,7 @@ make_xsens_mtig_message(int sensor_ID, CmtQuat qat_data, CmtCalData caldata, Cmt
 
 
 carmen_xsens_global_quat_message
-make_xsens_mti_quat_message(CmtQuat qat_data, CmtCalData caldata)
+make_xsens_mti_quat_message(CmtQuat qat_data, CmtCalData caldata, double tdata)
 {
 	carmen_xsens_global_quat_message xsens_quat_message;
 
@@ -377,7 +377,7 @@ make_xsens_mti_quat_message(CmtQuat qat_data, CmtCalData caldata)
 	xsens_quat_message.quat_data.m_data[3] = qat_data.m_data[3];
 
 	//Temperature and Message Count
-	xsens_quat_message.m_temp = 0.0;
+	xsens_quat_message.m_temp = tdata;
 	xsens_quat_message.m_count = 0.0;
 
 	//Timestamp
@@ -392,7 +392,7 @@ make_xsens_mti_quat_message(CmtQuat qat_data, CmtCalData caldata)
 static int 
 read_data_from_xsens(void)
 {	
-	//double tdata;
+	double tdata = 0.0;
 
 	//structs to hold data.
 	CmtCalData caldata;
@@ -417,7 +417,6 @@ read_data_from_xsens(void)
 			if ((result == XRV_TIMEOUTNODATA) || (result == XRV_TIMEOUT))
 				continue;  //Ignore the error and restart the while loop			
 
-			
 			delete packet;
 			cmt3.closePort();
 			printf("\nError %d occured in waitForDataMessage, can not recover.\n", result);
@@ -426,10 +425,10 @@ read_data_from_xsens(void)
 
 		for (unsigned int i = 0; i < mtCount; i++) 
 		{	
-			//if ((mode & CMT_OUTPUTMODE_TEMP) != 0)
-			//{					
-			//	tdata = packet->getTemp(i);				
-			//}
+			if ((mode & CMT_OUTPUTMODE_TEMP) != 0)
+			{
+				tdata = packet->getTemp(i);
+			}
 
 			if ((mode & CMT_OUTPUTMODE_CALIB) != 0) 
 				caldata = packet->getCalData(i);				
@@ -481,7 +480,7 @@ read_data_from_xsens(void)
 			{
 				case 0:
 				{
-					carmen_xsens_global_quat_message message = make_xsens_mti_quat_message(qat_data, caldata);
+					carmen_xsens_global_quat_message message = make_xsens_mti_quat_message(qat_data, caldata, tdata);
 					publish_mti_quat_message(message);
 					break;
 				}
@@ -490,7 +489,7 @@ read_data_from_xsens(void)
 					carmen_xsens_mtig_message xsens_message = make_xsens_mtig_message(deviceIds[i], qat_data, caldata, positionLLA, velocity, status);
 					publish_mtig_message(xsens_message);
 
-					carmen_xsens_global_quat_message message = make_xsens_mti_quat_message(qat_data, caldata);
+					carmen_xsens_global_quat_message message = make_xsens_mti_quat_message(qat_data, caldata, tdata);
 					publish_mti_quat_message(message);
 					break;
 				}
@@ -512,7 +511,7 @@ init_xsens(void)
 		return 0;
 	}
 
-	mode = CMT_OUTPUTMODE_CALIB | CMT_OUTPUTMODE_ORIENT | CMT_OUTPUTMODE_STATUS | CMT_OUTPUTMODE_POSITION | CMT_OUTPUTMODE_VELOCITY;//CMT_OUTPUTMODE_GPSPVT_PRESSURE;
+	mode = CMT_OUTPUTMODE_CALIB | CMT_OUTPUTMODE_ORIENT | CMT_OUTPUTMODE_STATUS | CMT_OUTPUTMODE_POSITION | CMT_OUTPUTMODE_VELOCITY | CMT_OUTPUTMODE_TEMP;//CMT_OUTPUTMODE_GPSPVT_PRESSURE;
 	settings = CMT_OUTPUTSETTINGS_ORIENTMODE_QUATERNION | CMT_OUTPUTSETTINGS_TIMESTAMP_SAMPLECNT | CMT_OUTPUTSETTINGS_DATAFORMAT_FP1632;
 
 	doMtSettings(cmt3, mode, settings, deviceIds);

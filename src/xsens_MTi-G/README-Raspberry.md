@@ -1,6 +1,6 @@
 # RASPBERRY SENSORBOX
 
- - To rum the xsens from the Raspberry PI:
+ - To run the xsens from the Raspberry PI:
 
 # Install Raspbian on the Raspberry PI
 
@@ -76,6 +76,20 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
 
 - O make_pi assume que a variavel CENTRALHOST possui o valor 192.168.1.1. 
 Caso a rede que ira rodar o central tenha outro IP, altere o arquivo ~/.bashrc 
+
+# Make /dev/ttyUSB0 OK for read/write by xsens_MTi-G
+
+```bash
+ $ sudo apt-get update
+ $ sudo apt install setserial
+```
+
+Com o xsens conectado, execute:
+```bash
+ $ sudo usermod -a -G dialout pi
+ $ setserial /dev/ttyUSB0 low_latency 
+```
+
 
 # Install pi_imu (optional)
 
