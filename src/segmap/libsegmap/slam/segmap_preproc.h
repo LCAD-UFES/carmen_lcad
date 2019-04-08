@@ -121,5 +121,4 @@ void load_as_pointcloud(SensorPreproc &preproc,
 												pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
 												SensorPreproc::SensorReference ref);
 
-
 #endif
