@@ -144,7 +144,7 @@ main(int argc, char **argv)
 		// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
 		valread = recv(pi_socket, rpi_imu_data, SOCKET_DATA_PACKET_SIZE, MSG_WAITALL);
 
-		if (valread == 0) // Connection lost due to server shutdown.
+		if (valread == 0 || valread == -1) // 0 Connection lost due to server shutdown -1 Could not connect
 		{
 			close(pi_socket);
 			pi_socket = trying_to_reconnect();
