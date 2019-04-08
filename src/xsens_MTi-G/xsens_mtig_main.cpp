@@ -520,7 +520,7 @@ init_xsens(void)
 
 
 static void 
-register_ipc_messages(void)
+define_ipc_messages(void)
 {
 	IPC_RETURN_TYPE err;
 
@@ -538,7 +538,7 @@ main(int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
-	register_ipc_messages();
+	define_ipc_messages();
 
 	signal(SIGINT, shutdown_module);
 
