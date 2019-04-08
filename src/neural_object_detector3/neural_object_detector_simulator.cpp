@@ -507,14 +507,14 @@ initialize_simulated_pedestrians()
 //	new_p2.orientation = 1.5;
 //	simulated_pedestrians.push_back(new_p2);
 
-//	new_p.start_time = 0.0;                     // Stopped near border
-//	new_p.stop_time = 9915703060.0;
-//	new_p.x = 7757906.61;
-//	new_p.y = -363602.8;
-//	new_p.active = false;
-//	new_p.velocity = 0.001;
-//	new_p.orientation = -0.766;
-//	simulated_pedestrians.push_back(new_p);
+	new_p.start_time = 0.0;                     // Stopped near border
+	new_p.stop_time = 9915703060.0;
+	new_p.x = 7757888.0;
+	new_p.y = -363586.0;
+	new_p.active = false;
+	new_p.velocity = 0.001;
+	new_p.orientation = -0.766;
+	simulated_pedestrians.push_back(new_p);
 
 //	new_p.start_time = 0.0;                     // Sideways
 //	new_p.stop_time = 9915703060.0;
@@ -615,14 +615,14 @@ initialize_simulated_pedestrians()
 //	new_p.orientation = -0.04;
 //	simulated_pedestrians.push_back(new_p);
 //
-	new_p.start_time = 0.0;
-	new_p.stop_time = 9915703060.0;
-	new_p.x = 7757158.70;
-	new_p.y = -364070.55;
-	new_p.active = false;
-	new_p.velocity = 0.01;
-	new_p.orientation = 2.46;
-	simulated_pedestrians.push_back(new_p);
+// new_p.start_time = 0.0;
+// new_p.stop_time = 9915703060.0;
+// new_p.x = 7757158.70;
+// new_p.y = -364070.55;
+// new_p.active = false;
+// new_p.velocity = 0.01;
+// new_p.orientation = 2.46;
+// simulated_pedestrians.push_back(new_p);
 }
 
 
