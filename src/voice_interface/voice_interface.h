@@ -11,7 +11,7 @@
 /*
 * Initiate Python interpreter and verify module
 */
-char *init_voice(char *language_code);
+char *init_voice();
 
 /*
 * Finalize Python interpreter and "decrement" Python variables

@@ -11,7 +11,7 @@ PyObject *python_module, *python_language_function, *python_listen_function, *py
 
 
 char *
-init_voice(char *language_code)
+init_voice(/*char *language_code*/)
 {
 	static bool already_initialized = false;
 
@@ -44,7 +44,7 @@ init_voice(char *language_code)
 		return ((char *) "Error: The python_module could not be loaded.\n");
 	}
 
-	python_language_function = PyObject_GetAttrString(python_module, (char *) "language");
+	/*python_language_function = PyObject_GetAttrString(python_module, (char *) "language");
 	if (python_language_function == NULL || !PyCallable_Check(python_language_function))
 	{
 		Py_DECREF(python_module);
@@ -52,7 +52,7 @@ init_voice(char *language_code)
 		return ((char *) "Error: Could not load the python_module language function.\n");
 	}
 
-	set_language(language_code);
+	set_language(language_code);*/
 
 	python_speak_function = PyObject_GetAttrString(python_module, (char *) "speak");
 	if (python_speak_function == NULL || !PyCallable_Check(python_speak_function))
@@ -84,7 +84,7 @@ finalize_voice()
 	Py_DECREF(python_module);
 	Py_Finalize();
 }
-
+/*
 void
 set_language(char *language_to_set)
 {
@@ -94,6 +94,7 @@ set_language(char *language_to_set)
 	Py_DECREF(python_function_arguments);
 	//Py_DECREF(python_language_function_output);
 }
+ */
 
 int
 speak(char *speech, char *speech_file_name)
