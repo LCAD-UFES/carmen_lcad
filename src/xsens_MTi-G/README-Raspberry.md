@@ -90,6 +90,9 @@ Com o xsens conectado, execute:
  $ setserial /dev/ttyUSB0 low_latency 
 ```
 
+Para tornar o comando setserial permanente, adicione ele ao /etc/rc.local .
+Para isso, inclua a linha "setserial /dev/ttyUSB0 low_latency" no fim do arquivo /etc/rc.local uma linha antes do "exit 0".
+Após um sudo reboot, tudo estará pronto para uso.
 
 # Install pi_imu (optional)
 
