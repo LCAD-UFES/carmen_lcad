@@ -36,11 +36,19 @@ run_viewer_if_necessary(Pose2d pose,
 												pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
 												PointCloudViewer &viewer,
 												int pf_was_updated,
+												int show_particles,
 												int view);
 
 
 Eigen::Matrix<double, 4, 4>
 compute_source2target_transform(Pose2d target_pose, Pose2d source_pose);
+
+
+void
+find_dataset_indices_for_accumulating_data(NewCarmenDataset &target_dataset,
+																					 int target_id,
+																					 double dist_accumulate_target_cloud,
+																					 int *start, int *end);
 
 
 void

@@ -1,4 +1,5 @@
 
+#include <iostream>
 #include <Eigen/Core>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
@@ -43,6 +44,7 @@ run_viewer_if_necessary(Pose2d pose,
 												PointCloud<PointXYZRGB>::Ptr cloud,
 												PointCloudViewer &viewer,
 												int pf_was_updated,
+												int show_particles,
 												int view)
 {
 	if (view)
@@ -50,7 +52,7 @@ run_viewer_if_necessary(Pose2d pose,
 		Mat img;
 
 		if (pf_was_updated)
-			img = pf_view(pf, map, pose, pf.mean(), cloud, 1);
+			img = pf_view(pf, map, pose, pf.mean(), cloud, show_particles);
 		else
 		{
 			img = map.to_image().clone();
@@ -77,19 +79,13 @@ compute_source2target_transform(Pose2d target_pose, Pose2d source_pose)
 
 
 void
-create_target_accumulating_clouds(NewCarmenDataset &target_dataset,
-                                  SensorPreproc &target_preproc,
-                                  int target_id,
-                                  double dist_accumulate_target_cloud,
-                                  pcl::PointCloud<pcl::PointXYZRGB>::Ptr target)
+find_dataset_indices_for_accumulating_data(NewCarmenDataset &target_dataset,
+																					 int target_id,
+																					 double dist_accumulate_target_cloud,
+																					 int *start, int *end)
 {
-	Matrix<double, 4, 4> transform_to_target;
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-
-	target->clear();
-
+	int i;
 	double d;
-	int i, st, end;
 
 	// walk forward and backward in the dataset to find clouds around the target one.
 	d = 0;
@@ -97,14 +93,33 @@ create_target_accumulating_clouds(NewCarmenDataset &target_dataset,
 		//d += dist2d(target_dataset[i]->pose.x, target_dataset[i]->pose.y, target_dataset[i+1]->pose.x, target_dataset[i+1]->pose.y);
 		d = dist2d(target_dataset[i]->pose.x, target_dataset[i]->pose.y, target_dataset[target_id]->pose.x, target_dataset[target_id]->pose.y);
 
-	st = (i >= 0) ? i : 0;
+	(*start) = (i >= 0) ? i : 0;
 
 	d = 0;
 	for (i = target_id + 1; i < target_dataset.size() && d < dist_accumulate_target_cloud; i++)
 		//d += dist2d(target_dataset[i]->pose.x, target_dataset[i]->pose.y, target_dataset[i-1]->pose.x, target_dataset[i-1]->pose.y);
 		d = dist2d(target_dataset[i]->pose.x, target_dataset[i]->pose.y, target_dataset[target_id]->pose.x, target_dataset[target_id]->pose.y);
 
-	end = (i < target_dataset.size()) ? i : target_dataset.size();
+	(*end) = (i < target_dataset.size()) ? i : target_dataset.size();
+}
+
+
+void
+create_target_accumulating_clouds(NewCarmenDataset &target_dataset,
+                                  SensorPreproc &target_preproc,
+                                  int target_id,
+                                  double dist_accumulate_target_cloud,
+                                  pcl::PointCloud<pcl::PointXYZRGB>::Ptr target)
+{
+	int i, st, end;
+	Matrix<double, 4, 4> transform_to_target;
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+	target->clear();
+
+	find_dataset_indices_for_accumulating_data(target_dataset, target_id,
+																						 dist_accumulate_target_cloud,
+																						 &st, &end);
 
 	// load the clouds
 	for (i = st; i < end; i++)
@@ -117,7 +132,6 @@ create_target_accumulating_clouds(NewCarmenDataset &target_dataset,
 		(*target) += (*cloud);
 	}
 }
-
 
 
 void
@@ -164,6 +178,7 @@ run_icp_step(NewCarmenDataset &target_dataset,
              bool view)
 {
 	Matrix<double, 4, 4> source2target;
+	Matrix<double, 4, 4> correction;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr source(new pcl::PointCloud<pcl::PointXYZRGB>);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr target(new pcl::PointCloud<pcl::PointXYZRGB>);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr aligned(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -179,7 +194,9 @@ run_icp_step(NewCarmenDataset &target_dataset,
 	                                                source_dataset[source_id]->pose);
 
 	pcl::transformPointCloud(*source, *source, source2target);
-	run_gicp(source, target, relative_transform, convergence_flag, aligned, voxel_grid_size);
+	run_gicp(source, target, &correction, convergence_flag, aligned, voxel_grid_size);
+
+	(*relative_transform) = correction * source2target;
 
 	if (view)
 	{
@@ -193,6 +210,68 @@ run_icp_step(NewCarmenDataset &target_dataset,
 		viewer->show(source, 1, 0, 0);
 		viewer->show(aligned, 0, 0, 1);
 		viewer->loop();
+	}
+}
+
+
+pcl::PointXYZRGB
+transform_point(Eigen::Matrix<double, 4, 4> &t, pcl::PointXYZRGB &p_in)
+{
+	Eigen::Matrix<double, 4, 1> p_in_mat, p_out_mat;
+	pcl::PointXYZRGB p_out;
+
+	p_in_mat(0, 0) = p_in.x;
+	p_in_mat(1, 0) = p_in.y;
+	p_in_mat(2, 0) = p_in.z;
+	p_in_mat(3, 0) = 1.0;
+
+	p_out_mat = t * p_in_mat;
+
+	p_out.x = p_out_mat(0, 0) / p_out_mat(3, 0);
+	p_out.y = p_out_mat(1, 0) / p_out_mat(3, 0);
+	p_out.z = p_out_mat(2, 0) / p_out_mat(3, 0);
+
+	p_out.r = p_in.r;
+	p_out.g = p_in.g;
+	p_out.b = p_in.b;
+
+	return p_out;
+}
+
+
+void
+create_map_accumulating_points(NewCarmenDataset &target_dataset,
+										            int target_id,
+										            SensorPreproc &target_preproc,
+																GridMap &map,
+										            double dist_accumulate_target_cloud)
+{
+	int st, end;
+	Matrix<double, 4, 4> transform_to_target;
+
+	map.reload(0, 0);
+
+	find_dataset_indices_for_accumulating_data(target_dataset, target_id,
+																						 dist_accumulate_target_cloud,
+																						 &st, &end);
+
+	for (int i = st; i < end; i++)
+	{
+		target_preproc.reinitialize(target_dataset[i]);
+		transform_to_target = compute_source2target_transform(target_dataset[target_id]->pose,
+		                                                      target_dataset[i]->pose);
+
+		for (int j = 0; j < target_preproc.size(); j++)
+		{
+			vector<PointXYZRGB> points = target_preproc.next_points_in_car();
+
+			for (int j = 0; j < points.size(); j++)
+			{
+				PointXYZRGB p = points[j];
+				p = transform_point(transform_to_target, p);
+				map.add_point(p);
+			}
+		}
 	}
 }
 
@@ -215,14 +294,8 @@ run_pf_step(NewCarmenDataset &target_dataset,
 {
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
-	create_target_accumulating_clouds(target_dataset, target_preproc,
-	                                  target_id, dist_accumulate_target_cloud,
-	                                  cloud);
-
-	map.reload(0, 0);
-
-	for (int i = 0; i < cloud->size(); i++)
-		map.add_point(cloud->at(i));
+	create_map_accumulating_points(target_dataset, target_id, target_preproc,
+																 map, dist_accumulate_target_cloud);
 
 	source_preproc.reinitialize(source_dataset[source_id]);
 	load_as_pointcloud(source_preproc, cloud, SensorPreproc::CAR_REFERENCE);
@@ -231,27 +304,32 @@ run_pf_step(NewCarmenDataset &target_dataset,
 																															source_dataset[source_id]->pose);
 
 	Pose2d source_as_pose = Pose2d::from_matrix(smat);
+	pf.seed(source_id);
 	pf.reset(source_as_pose.x, source_as_pose.y, source_as_pose.th);
 
-	printf("Reset\n");
-	run_viewer_if_necessary(source_as_pose, map, pf, cloud, viewer, 1, view);
+	printf("Source: %lf %lf %lf\n", source_as_pose.x, source_as_pose.y, source_as_pose.th);
+	//viewer.set_step(1);
+	run_viewer_if_necessary(source_as_pose, map, pf, cloud, viewer, 1, 0, view);
 
 	for (int i = 0; i < n_corrections_when_reinit; i++)
 	{
 		pf.predict(0, 0, 0); // just to add a little noise
-
-		printf("Prediction\n");
-		run_viewer_if_necessary(source_as_pose, map, pf, cloud, viewer, 1, view);
+		//run_viewer_if_necessary(source_as_pose, map, pf, cloud, viewer, 1, 1, view);
 
 		pf.correct(cloud, map, source_dataset[source_id]->gps);
-
-		printf("Correction\n");
-		run_viewer_if_necessary(source_as_pose, map, pf, cloud, viewer, 1, view);
+		//run_viewer_if_necessary(source_as_pose, map, pf, cloud, viewer, 1, 1, view);
 	}
 
 	Pose2d estimate = pf.mean();
+	// for compatibility issues, the relative transform should store a "correction" term
+	// in relation to the source2target transform.
+	// (*relative_transform) = Pose2d::to_matrix(estimate) * smat.inverse();
 	(*relative_transform) = Pose2d::to_matrix(estimate);
 	(*convergence_flag) = 1;
+
+	cout << (*relative_transform) << endl;
+	printf("Estimate: %lf %lf %lf\n\n", estimate.x, estimate.y, estimate.th);
+	run_viewer_if_necessary(source_as_pose, map, pf, cloud, viewer, 1, 1, view);
 }
 
 
@@ -271,14 +349,17 @@ save_output(std::string path,
 
 	for (int i = 0; i < indices.size(); i++)
 	{
-		Pose2d target_pose = reference_dataset[indices[i].first]->pose;
-		Pose2d source_pose = dataset_to_be_adjusted[indices[i].second]->pose;
-
-		source2target = compute_source2target_transform(target_pose, source_pose);
-		corrected_pose = relative_transform_vector[i] * source2target;
+		//Pose2d target_pose = reference_dataset[indices[i].first]->pose;
+		//Pose2d source_pose = dataset_to_be_adjusted[indices[i].second]->pose;
+		//source2target = compute_source2target_transform(target_pose, source_pose);
+		//corrected_pose = relative_transform_vector[i] * source2target;
+		corrected_pose = relative_transform_vector[i];
 
 		if (project_to_world)
+		{
+			Pose2d target_pose = reference_dataset[indices[i].first]->pose;
 			corrected_pose = Pose2d::to_matrix(target_pose) * corrected_pose;
+		}
 
 		Pose2d pose = Pose2d::from_matrix(corrected_pose);
 

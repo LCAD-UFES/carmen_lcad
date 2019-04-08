@@ -171,6 +171,9 @@ ParticleFilter::_image_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Gr
 		}
 	}
 
+	if (transformed_cloud->size() > 0)
+		unnorm_log_prob /= (double) transformed_cloud->size();
+
 	return unnorm_log_prob;
 }
 
@@ -208,10 +211,10 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 
 	*max_id = *min_id = 0;
 
-	fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
+	//fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
 	for (i = 0; i < _n; i++)
 	{
-		fprintf(stderr, "%.4lf ", _w[i]);
+		//fprintf(stderr, "%.4lf ", _w[i]);
 
 		if (_w[i] > _w[*max_id])
 			*max_id = i;
@@ -219,7 +222,7 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 		if (_w[i] < _w[*min_id])
 			*min_id = i;
 	}
-	fprintf(stderr, "\n");
+	//fprintf(stderr, "\n");
 
 	best = _p[*max_id];
 }
@@ -235,7 +238,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	max_weight = _w[max_id];
 	sum_weights = 0.;
 
-	fprintf(stderr, "\nDEBUG: Weights as positive values: ");
+	//fprintf(stderr, "\nDEBUG: Weights as positive values: ");
 	for (i = 0; i < _n; i++)
 	{
 		//_w[i] = exp(_w[i] - max_weight) + (1. / (double) (3. * _n));
@@ -243,9 +246,9 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 		_w[i] -= min_weight;
 		sum_weights += _w[i];
 
-		fprintf(stderr, "%.4lf ", _w[i]);
+		//fprintf(stderr, "%.4lf ", _w[i]);
 	}
-	fprintf(stderr, "\n");
+	//fprintf(stderr, "\n");
 
 	//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[max_id]));
 	//for(int i = 0; i < transformed_cloud->size(); i++)
@@ -258,7 +261,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	//printf("Sum weights: %lf\n", sum_weights);
 
 	// normalize the weights
-	fprintf(stderr, "\nDEBUG: Weights Normalized: ");
+	//fprintf(stderr, "\nDEBUG: Weights Normalized: ");
 	for (i = 0; i < _n; i++)
 	{
 		if (sum_weights == 0)
@@ -269,9 +272,9 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 		assert(_w[i] >= 0);
 		_w_bef[i] = _w[i];
 
-		fprintf(stderr, "%.4lf ", _w[i]);
+		//fprintf(stderr, "%.4lf ", _w[i]);
 	}
-	fprintf(stderr, "\n\n---------\n\n");
+	//fprintf(stderr, "\n\n---------\n\n");
 }
 
 
@@ -285,7 +288,7 @@ ParticleFilter::_resample()
 	double step = 1. / (double) _n;
 	double sum = 0.;
 
-	fprintf(stderr, "step: %lf pos: %d Particles: \n", step, pos);
+	//fprintf(stderr, "step: %lf pos: %d Particles: \n", step, pos);
 	for (i = 0; i < _n; i++)
 	{
 		sum += _w[pos];
@@ -295,12 +298,12 @@ ParticleFilter::_resample()
 			sum += _w[pos];
 		}
 
-		fprintf(stderr, "%d ", pos);
+		//fprintf(stderr, "%d ", pos);
 		_p[i] = _p_bef[pos];
 		sum = 0.;
 		pos = (pos + 1) % _n;
 	}
-	fprintf(stderr, "\n");
+	//fprintf(stderr, "\n");
 
 	// make all particles equally likely after resampling
 	for (i = 0; i < _n; i++)
