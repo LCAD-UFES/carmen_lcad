@@ -4,6 +4,7 @@
 
 #include <carmen/carmen.h>
 #include <carmen/xsens_mtig_interface.h>
+#include <carmen/xsens_messages.h>
 #include <carmen/xsens_interface.h>
 
 #include "cmtdef.h"
