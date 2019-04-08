@@ -74,6 +74,19 @@ shutdown_catcher(int x)
 }
 
 
+static void
+register_ipc_messages(void)
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_defineMsg(CARMEN_XSENS_MTIG_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_MTIG_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_MTIG_NAME);
+
+    err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_QUAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_QUAT_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_QUAT_NAME);
+}
+
+
 int
 main(int argc, char **argv)
 { 
@@ -81,6 +94,7 @@ main(int argc, char **argv)
     carmen_randomize(&argc, &argv);
     carmen_ipc_initialize(argc, argv);
     carmen_param_check_version(argv[0]);
+    register_ipc_messages();
 
     /* Setup exit handler */
     signal(SIGINT, shutdown_catcher);
