@@ -536,10 +536,10 @@ main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
-	signal(SIGINT, shutdown_module);
-
-	register_ipc_messages();
 	read_parameters(argc, argv);
+	register_ipc_messages();
+
+	signal(SIGINT, shutdown_module);
 
 	int xsens_initialized = init_xsens();
 
