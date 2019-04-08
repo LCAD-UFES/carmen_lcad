@@ -10,7 +10,7 @@ LINK = g++
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcmt/
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcmt/
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcmt/ -L/usr/local/ipc-3.9.1/src/lib/Linux-4.14/
 LFLAGS += -lparam_interface -lipc -lglobal  -lgps_xyz_interface -lrotation_geometry -lcmt -lrt -lncurses -lpthread -lxsens_interface
 CFLAGS += -Wall
 
