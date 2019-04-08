@@ -426,9 +426,7 @@ read_data_from_xsens(void)
 		for (unsigned int i = 0; i < mtCount; i++) 
 		{	
 			if ((mode & CMT_OUTPUTMODE_TEMP) != 0)
-			{
 				tdata = packet->getTemp(i);
-			}
 
 			if ((mode & CMT_OUTPUTMODE_CALIB) != 0) 
 				caldata = packet->getCalData(i);				
@@ -528,6 +526,8 @@ register_ipc_messages(void)
 	err = IPC_defineMsg(CARMEN_XSENS_MTIG_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_MTIG_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_MTIG_NAME);
 
+    err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_QUAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_QUAT_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_QUAT_NAME);
 }
 
 
@@ -539,12 +539,7 @@ main(int argc, char **argv)
 	signal(SIGINT, shutdown_module);
 
 	register_ipc_messages();
-
 	read_parameters(argc, argv);
-
-	/* Define published messages by your module */
-	carmen_xsens_mtig_define_messages();
-	carmen_xsens_define_messages();
 
 	int xsens_initialized = init_xsens();
 
