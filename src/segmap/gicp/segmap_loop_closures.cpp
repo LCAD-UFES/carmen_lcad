@@ -30,7 +30,6 @@ using namespace pcl;
 using namespace cv;
 
 
-
 void
 show_flipped_img_in_viewer(PointCloudViewer &viewer, Mat &img)
 {
@@ -202,6 +201,10 @@ run_icp_step(NewCarmenDataset &target_dataset,
 
 	(*relative_transform) = correction * source2target;
 
+	std::cout << source2target << std::endl;
+	std::cout << correction << std::endl;
+	std::cout << (*relative_transform) << std::endl;
+
 	if (view)
 	{
 		static PointCloudViewer *viewer = NULL;
@@ -216,8 +219,16 @@ run_icp_step(NewCarmenDataset &target_dataset,
 
 		viewer->clear();
 		viewer->show(target); //, 0, 1, 0);
-		viewer->show(source, 1, 0, 0);
-		viewer->show(aligned, 0, 0, 1);
+
+		for (int i = 0; i < aligned->size(); i++)
+		{
+			aligned->at(i).z += 5.0;
+			//aligned->at(i).b = 255;
+		}
+
+		//viewer->show(source, 1, 0, 0);
+		//viewer->show(aligned, 0, 0, 1);
+		viewer->show(aligned);
 		viewer->loop();
 	}
 }
@@ -316,7 +327,7 @@ run_pf_step(NewCarmenDataset &target_dataset,
 	pf.seed(source_id);
 	pf.reset(source_as_pose.x, source_as_pose.y, source_as_pose.th);
 
-	printf("Source: %lf %lf %lf\n", source_as_pose.x, source_as_pose.y, source_as_pose.th);
+	//printf("Source: %lf %lf %lf\n", source_as_pose.x, source_as_pose.y, source_as_pose.th);
 	//viewer.set_step(1);
 	run_viewer_if_necessary(source_as_pose, map, pf, cloud, viewer, 1, 0, view);
 
@@ -336,8 +347,8 @@ run_pf_step(NewCarmenDataset &target_dataset,
 	(*relative_transform) = Pose2d::to_matrix(estimate);
 	(*convergence_flag) = 1;
 
-	cout << (*relative_transform) << endl;
-	printf("Estimate: %lf %lf %lf\n\n", estimate.x, estimate.y, estimate.th);
+	//cout << (*relative_transform) << endl;
+	//printf("Estimate: %lf %lf %lf\n\n", estimate.x, estimate.y, estimate.th);
 	run_viewer_if_necessary(source_as_pose, map, pf, cloud, viewer, 1, 1, view);
 }
 
@@ -422,7 +433,7 @@ estimate_displacements_with_particle_filter(NewCarmenDataset &target_dataset,
 	printf("Running displacement estimation using particle filters.\n");
 
 	int i;
-	int view;
+	int view = args.get<int>("view");
 	int n_processed_clouds = 0;
 	int n = loop_closure_indices.size();
 
@@ -433,20 +444,21 @@ estimate_displacements_with_particle_filter(NewCarmenDataset &target_dataset,
 	view = args.get<int>("view");
 #endif
 
+	string adj_name = file_name_from_path(dataset_to_adjust_path);
 	PointCloudViewer viewer;
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 5) default(none) private(i) \
 		shared(target_dataset, dataset_to_adjust, convergence_vector, relative_transform_vector, \
 					 loop_closure_indices, n_processed_clouds, n, view, args, \
-					 n_corrections_when_reinit, viewer, target_dataset_path, dataset_to_adjust_path)
+					 n_corrections_when_reinit, viewer, target_dataset_path, dataset_to_adjust_path, adj_name)
 #endif
 	for (i = 0; i < n; i++)
 	{
 		SensorPreproc target_preproc = create_sensor_preproc(args, &target_dataset, target_dataset_path);
 		SensorPreproc adj_preproc = create_sensor_preproc(args, &dataset_to_adjust, dataset_to_adjust_path);
 
-		GridMap map(string("/tmp/map_") + std::to_string(loop_closure_indices[i].second),
+		GridMap map(string("/tmp/map_") + adj_name + "_" + std::to_string(i),
 								args.get<double>("tile_size"),
 								args.get<double>("tile_size"),
 								args.get<double>("resolution"),
@@ -506,12 +518,11 @@ estimate_displacements_with_gicp(NewCarmenDataset &target_dataset,
 	printf("Running ICPs.\n");
 
 	int i;
-	int view;
+	int view = args.get<int>("view");
 	int n_processed_clouds = 0;
 	int n = loop_closure_indices.size();
 
 #ifdef _OPENMP
-	//view = 0;
 	if (view)
 		omp_set_num_threads(1);
 #else

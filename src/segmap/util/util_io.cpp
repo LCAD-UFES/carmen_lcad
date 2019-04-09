@@ -50,3 +50,9 @@ file_name_from_path(const char *path)
 	return std::string(splitted[splitted.size() - 1]);
 }
 
+
+std::string
+file_name_from_path(std::string &path)
+{
+	return file_name_from_path(path.c_str());
+}

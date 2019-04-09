@@ -78,16 +78,17 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 										double skip_velocity_threshold,
 										int correction_step,
 										int steps_to_skip_map_reload,
-										int min_speed_for_reloading_map)
+										Pose2d offset)
 {
 	double dt;
 	DataSample *sample;
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloudViewer s_viewer;
 	Pose2d pose;
-	Pose2d p0 = dataset->at(0)->pose;
 
-	p0.x = p0.y = 0.0;
+	Pose2d p0 = dataset->at(0)->pose;
+	p0.x -= offset.x;
+	p0.y -= offset.y;
 
 	pf.reset(p0.x, p0.y, p0.th);
 	map.reload(p0.x, p0.y);
@@ -96,12 +97,12 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 	int do_correction;
 	int last_reload = 0;
 
-	for (int i = 400 /*step*/; i < dataset->size(); i += step)
+	for (int i = step; i < dataset->size(); i += step)
 	{
 		sample = dataset->at(i);
 
-		//if (fabs(sample->v) < skip_velocity_threshold)
-			//continue;
+		if (fabs(sample->v) < skip_velocity_threshold)
+			continue;
 
 		dt = sample->time - dataset->at(i - step)->time;
 		pf.predict(sample->v, sample->phi, dt);
@@ -123,15 +124,15 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 
 		// only reload the map if the car is moving, and after a while.
 		// this prevents frequent (expensive) reloads when near to borders.
-		if ((fabs(sample->v) > min_speed_for_reloading_map)
-				&& (n - last_reload > steps_to_skip_map_reload))
+		if ((fabs(sample->v) > 0.) && (n - last_reload > steps_to_skip_map_reload))
 		{
 			map.reload(pose.x, pose.y);
 			last_reload = i;
 		}
 
-		viewer(sample, pf, map, i, dataset->size(), cloud,
-					 dataset->at(0)->gps, s_viewer);
+		viewer(sample, pf, map, i, dataset->size(), cloud, offset, s_viewer);
+		sample->pose = pf.mean();
+		update_map(sample, &map, preproc);
 
 		n++;
 	}
@@ -157,12 +158,15 @@ main(int argc, char **argv)
 	ParticleFilter pf = create_particle_filter(args);
 
 	pf.seed(args.get<int>("seed"));
+	Pose2d offset = Pose2d(args.get<double>("offset_x"),
+												 args.get<double>("offset_y"), 0);
+
 	run_particle_filter(pf, map, dataset, preproc,
 											args.get<int>("step"),
 											args.get<double>("v_thresh"),
 											args.get<int>("correction_step"),
-											args.get<double>("min_speed_for_reloading_map"),
-											args.get<int>("steps_to_skip_map_reload"));
+											args.get<int>("steps_to_skip_map_reload"),
+											offset);
 
 	printf("Done.\n");
 	return 0;
