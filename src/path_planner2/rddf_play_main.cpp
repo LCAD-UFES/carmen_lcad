@@ -91,7 +91,7 @@ static int *annotations;
 static int carmen_rddf_pose_initialized = 0;
 static int already_reached_nearest_waypoint_to_end_point = 0;
 
-static bool avoiding_pedestrian = false;
+//static bool avoiding_pedestrian = false;
 
 char *carmen_annotation_filename = NULL;
 vector<carmen_annotation_t> annotation_read_from_file;
@@ -1831,8 +1831,8 @@ init_python()
 }
 
 PyListObject * 
-convert_rddf_array(carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead, carmen_ackerman_traj_point_t *carmen_rddf_poses_back,
-		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back)
+convert_rddf_array(carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead, carmen_ackerman_traj_point_t *carmen_rddf_poses_back __attribute__ ((unused)),
+		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back __attribute__ ((unused)))
 {
 	PyObject *list = Py_BuildValue("[]");
 	// printf("Copying rddf_back\n");
@@ -1894,9 +1894,9 @@ frenet_planner(carmen_point_t robot_pose, carmen_ackerman_traj_point_t *carmen_r
 	if (carmen_rddf_poses_ahead == NULL || carmen_rddf_num_poses_ahead < 2)
 		return 0;	
 	
-	carmen_vector_3D_t object;
-	object.x = robot_pose.x;
-	object.y = robot_pose.y;
+//	carmen_vector_3D_t object;
+//	object.x = robot_pose.x;
+//	object.y = robot_pose.y;
 	static double last_min_dist = 0.0;
 	static double last_vel_dif = 0.0;
 
@@ -1925,7 +1925,7 @@ frenet_planner(carmen_point_t robot_pose, carmen_ackerman_traj_point_t *carmen_r
 	 		carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);	
 	PyListObject *python_pedestrians = get_pedestrians(moving_objects);
 	PyObject* python_velocity = PyFloat_FromDouble(current_globalpos_msg->v);
-	printf("Calling Python Func\n",python_displacement, python_vel_displacement, python_acc_displacement);
+	printf("Calling Python Func\n");//,python_displacement, python_vel_displacement, python_acc_displacement);
 	PyObject* python_new_rddf = PyObject_CallFunctionObjArgs(python_frenet_test, python_rddf, python_pedestrians, 
 			python_velocity, python_displacement, python_vel_displacement, python_acc_displacement, NULL);
 
@@ -2070,6 +2070,11 @@ carmen_rddf_play_load_index(char *rddf_filename)
 		else
 		{
 			FILE *fptr = fopen(rddf_filename, "r");
+			if (!fptr)
+			{
+				printf("Could not open file %s\n Exiting...\n", rddf_filename);
+				exit(1);
+			}
 
 			while (!feof(fptr))
 			{
