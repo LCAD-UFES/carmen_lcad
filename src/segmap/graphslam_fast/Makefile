@@ -39,20 +39,22 @@ LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp -lvtkGraphics 
 LFLAGS += `pkg-config --libs opencv` -lboost_system
 
-IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
-LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal -lboost_program_options 
+LFLAGS += -lsegmap_initializations 
 
-LFLAGS += -lsegmap_types -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
-	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lutil -lsegmap_initializations
+IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
+LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal -lboost_program_options `pkg-config --libs opencv` 
+
+LFLAGS += -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
+	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lutil `pkg-config --libs opencv` -lboost_filesystem -lsegmap_types  
 
 DEPS = ../libsegmap/types/libsegmap_types.a \
 	../libsegmap/datasets/libsegmap_datasets.a \
 	../libsegmap/readers/libsegmap_readers.a \
 	../libsegmap/motion_models/libsegmap_motion_models.a \
+	../libsegmap/readers/libsemap_initializations.a \
 	../libsegmap/slam/libsegmap_slam.a \
 	../libsegmap/visualization/libsegmap_visualization.a \
 	../libsegmap/readers/libsemap_readers.a \
-	../libsegmap/readers/libsemap_initializations.a \
 	../util/libutil.a
 
 SOURCES = graphslam.cpp joint_graphslam.cpp graphslam_util.cpp view_path.cpp

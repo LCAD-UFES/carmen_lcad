@@ -37,7 +37,6 @@ public:
 								Eigen::Matrix<double, 3, 4> projection,
 								Eigen::Matrix<double, 4, 4> xsens2car,
 								int use_xsens,
-								Pose2d offset,
 								IntensityMode imode = INTENSITY,
 								double ignore_above_threshold = DBL_MAX,
 								double ignore_below_threshold = -DBL_MAX);
@@ -60,7 +59,6 @@ protected:
 	Eigen::Matrix<double, 3, 4> _projection;
 	Eigen::Matrix<double, 4, 4> _xsens2car;
 	int _use_xsens;
-	Pose2d _offset;
 	IntensityMode _imode;
 	int _n_lidar_shots;
 
@@ -120,5 +118,11 @@ protected:
 void load_as_pointcloud(SensorPreproc &preproc,
 												pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
 												SensorPreproc::SensorReference ref);
+
+pcl::PointXYZRGB
+transform_point(Eigen::Matrix<double, 4, 4> &t, pcl::PointXYZRGB &p_in);
+
+pcl::PointXYZRGB
+transform_point(Pose2d &t, pcl::PointXYZRGB &p_in);
 
 #endif

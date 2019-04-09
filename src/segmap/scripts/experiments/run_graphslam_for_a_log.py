@@ -57,12 +57,12 @@ def run_loop_closures(carmen_path, log_path, output_dir, mode):
 	cmd = "%s %s -o %s -f %s" % (program, log_path, odom_calib, fused_odom)
 	
 	if mode == "gicp":
-		gicp_args = " --mode gicp --dist_to_accumulate 2.0 --ignore_above_threshold %lf --ignore_below_threshold %lf --v_thresh %lf -v 1" % (IGNORE_POINTS_ABOVE, IGNORE_POINTS_BELOW, SKIP_WHEN_VELOCITY_IS_BELOW)
+		gicp_args = " --mode gicp --dist_to_accumulate 2.0 --ignore_above_threshold %lf --ignore_below_threshold %lf --v_thresh %lf" % (IGNORE_POINTS_ABOVE, IGNORE_POINTS_BELOW, SKIP_WHEN_VELOCITY_IS_BELOW)
 		gicp_output = " " + output_dir + "/loops.txt"
 		run_command(cmd + gicp_output + gicp_args)
 
 	elif mode == "particle_filter":
-		pf_args = " --mode particle_filter --n_particles 200 --gps_xy_std 2.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 5.0 --n_corrections_when_reinit 20 --v_thresh %lf -v 1" % (SKIP_WHEN_VELOCITY_IS_BELOW)
+		pf_args = " --mode particle_filter --n_particles 50 --gps_xy_std 2.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 5.0 --n_corrections_when_reinit 20 --v_thresh %lf" % (SKIP_WHEN_VELOCITY_IS_BELOW)
 		pf_output = " " + output_dir + "/pf_loops.txt"
 		run_command(cmd + pf_output + pf_args)
 	else:

@@ -16,6 +16,14 @@ Pose2d::Pose2d(double px, double py, double pth)
 }
 
 
+Pose2d::Pose2d(const Pose2d &p)
+{
+	x = p.x;
+	y = p.y;
+	th = p.th;
+}
+
+
 Pose2d
 Pose2d::operator=(Pose2d p)
 {

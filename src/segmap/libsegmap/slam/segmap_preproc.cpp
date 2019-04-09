@@ -29,7 +29,6 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
 														 Matrix<double, 3, 4> projection,
 														 Matrix<double, 4, 4> xsens2car,
 														 int use_xsens,
-														 Pose2d offset,
 														 IntensityMode imode,
 														 double ignore_above_threshold,
 														 double ignore_below_threshold)
@@ -42,7 +41,6 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
 	_projection = projection;
 	_xsens2car = xsens2car;
 	_use_xsens = use_xsens;
-	_offset = offset;
 	_imode = imode;
 	_n_lidar_shots = 0;
 
@@ -163,8 +161,8 @@ SensorPreproc::_compute_transform_car2world(DataSample *sample)
 		getEulerYPR(_r3x3, yaw, pitch, roll);
 	}
 
-	_car2world = pose6d_to_matrix((sample->pose.x - _offset.x),
-															(sample->pose.y - _offset.y),
+	_car2world = pose6d_to_matrix((sample->pose.x),
+															(sample->pose.y),
 															0., roll, pitch,
 															sample->pose.th);
 }
@@ -402,6 +400,51 @@ void load_as_pointcloud(SensorPreproc &preproc,
 		for (int j = 0; j < points.size(); j++)
 			cloud->push_back(points[j]);
 	}
+}
+
+
+pcl::PointXYZRGB
+transform_point(Eigen::Matrix<double, 4, 4> &t, pcl::PointXYZRGB &p_in)
+{
+	Eigen::Matrix<double, 4, 1> p_in_mat, p_out_mat;
+	pcl::PointXYZRGB p_out;
+
+	p_in_mat(0, 0) = p_in.x;
+	p_in_mat(1, 0) = p_in.y;
+	p_in_mat(2, 0) = p_in.z;
+	p_in_mat(3, 0) = 1.0;
+
+	p_out_mat = t * p_in_mat;
+
+	p_out.x = p_out_mat(0, 0) / p_out_mat(3, 0);
+	p_out.y = p_out_mat(1, 0) / p_out_mat(3, 0);
+	p_out.z = p_out_mat(2, 0) / p_out_mat(3, 0);
+
+	p_out.r = p_in.r;
+	p_out.g = p_in.g;
+	p_out.b = p_in.b;
+
+	return p_out;
+}
+
+
+pcl::PointXYZRGB
+transform_point(Pose2d &t, pcl::PointXYZRGB &p_in)
+{
+	pcl::PointXYZRGB p_out;
+
+	double c = cos(t.th);
+	double s = sin(t.th);
+
+	p_out.x = p_in.x * c + p_in.y * (-s) + t.x;
+	p_out.y = p_in.x * s + p_in.y * c + t.y;
+
+	p_out.z = p_in.z;
+	p_out.r = p_in.r;
+	p_out.g = p_in.g;
+	p_out.b = p_in.b;
+
+	return p_out;
 }
 
 

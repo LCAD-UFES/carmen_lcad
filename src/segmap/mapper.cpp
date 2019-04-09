@@ -17,13 +17,10 @@ using namespace pcl;
 
 
 void
-view(GridMap &map, DataSample *sample, Pose2d &offset, PointCloudViewer &viewer)
+view(GridMap &map, DataSample *sample, PointCloudViewer &viewer)
 {
 	Pose2d pose;
 	pose = sample->pose;
-
-	pose.x -= offset.x;
-	pose.y -= offset.y;
 
 	Mat map_img = map.to_image().clone();
 	draw_pose(map, map_img, pose, Scalar(0, 255, 0));
@@ -44,7 +41,8 @@ view(GridMap &map, DataSample *sample, Pose2d &offset, PointCloudViewer &viewer)
 
 void
 create_map(GridMap &map, NewCarmenDataset *dataset, int step,
-					 SensorPreproc &preproc, Pose2d &offset, double skip_velocity_threshold)
+					 SensorPreproc &preproc, double skip_velocity_threshold,
+					 int view_flag)
 {
 	TimeCounter timer;
 	DataSample *sample;
@@ -60,7 +58,7 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 
 		timer.start();
 
-		map.reload(sample->pose.x - offset.x, sample->pose.y - offset.y);
+		map.reload(sample->pose.x, sample->pose.y);
 		update_map(sample, &map, preproc);
 
 		times.push_back(timer.ellapsed());
@@ -71,7 +69,8 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 						 mean(times),
 						 times[times.size() - 1]);
 
-		view(map, sample, offset, viewer);
+		if (view_flag)
+			view(map, sample, viewer);
 	}
 }
 
@@ -86,6 +85,7 @@ main(int argc, char **argv)
 	add_default_slam_args(args);
 	add_default_sensor_preproc_args(args);
 	add_default_mapper_args(args);
+	args.add<int>("view,v", "Flag to set visualization on or off", 1);
 	args.save_config_file(default_data_dir() + "/mapper_config.txt");
 	args.parse(argc, argv);
 
@@ -115,13 +115,11 @@ main(int argc, char **argv)
 
 	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, graphslam_path);
 
-	Pose2d offset = Pose2d(args.get<double>("offset_x"),
-												 args.get<double>("offset_y"), 0);
-
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 
-	create_map(map, dataset, args.get<int>("step"), preproc, offset,
-						 args.get<double>("v_thresh"));
+	create_map(map, dataset, args.get<int>("step"), preproc,
+						 args.get<double>("v_thresh"),
+						 args.get<int>("view"));
 
 	printf("Done.\n");
 	return 0;

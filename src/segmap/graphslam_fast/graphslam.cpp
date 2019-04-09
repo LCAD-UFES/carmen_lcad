@@ -34,6 +34,7 @@
 #include <carmen/segmap_loop_closures.h>
 #include <carmen/segmap_args.h>
 #include <carmen/segmap_conversions.h>
+#include <carmen/segmap_constructors.h>
 
 using namespace std;
 using namespace g2o;
@@ -228,8 +229,7 @@ compute_angle_from_gps(GraphSlamData &data, int i,
 
 void
 add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
-              double xy_std, double th_std,
-							double offset_x, double offset_y)
+              double xy_std, double th_std)
 {
 	double angle, filtered_th_std;
 	Pose2d gps0;
@@ -250,8 +250,8 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
 
 		information = create_information_matrix(xy_std, xy_std, th_std);
 
-		SE2 measure(sample->gps.x - offset_x,
-		            sample->gps.y - offset_y,
+		SE2 measure(sample->gps.x,
+		            sample->gps.y,
 		            angle);
 
 //		printf("GPS: measure: %lf %lf %lf x_std: %lf th_std: %lf\n",
@@ -270,47 +270,48 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
 void
 add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction> &gicp_gps,
 																		SparseOptimizer *optimizer, double xy_std_mult, double th_std,
-                                    double offset_x, double offset_y)
+                                    int check_for_outliers = 0)
 {
 	for (size_t i = 0; i < gicp_gps.size(); i += 1)
 	{
 		if (gicp_gps[i].converged)
 		{
-			SE2 measure(gicp_gps[i].transform[0] - offset_x,
-			            gicp_gps[i].transform[1] - offset_y,
+			SE2 measure(gicp_gps[i].transform[0],
+			            gicp_gps[i].transform[1],
 			            gicp_gps[i].transform[2]);
 
-			/*
-			int is_outlier;
-			is_outlier = 0;
-
-			if (i > 0)
+			if (check_for_outliers)
 			{
-				// try and discard outliers
-				double dt = data.dataset->at(gicp_gps[i].to)->time - data.dataset->at(gicp_gps[i-1].to)->time;
-				double dx = gicp_gps[i].transform[0] - gicp_gps[i-1].transform[0];
-				double dy = gicp_gps[i].transform[1] - gicp_gps[i-1].transform[1];
-				double registr_th = atan2(dy, dx);
+				int is_outlier;
+				is_outlier = 0;
 
-				double gdx = data.dataset->at(gicp_gps[i].to)->gps.x - data.dataset->at(gicp_gps[i-1].to)->gps.x;
-				double gdy = data.dataset->at(gicp_gps[i].to)->gps.y - data.dataset->at(gicp_gps[i-1].to)->gps.y;
-				double gps_th = atan2(gdy, gdx);
-				double dth = fabs(g2o::normalize_theta(registr_th - gps_th));
+				if (i > 0)
+				{
+					// try and discard outliers
+					double dt = data.dataset->at(gicp_gps[i].to)->time - data.dataset->at(gicp_gps[i-1].to)->time;
+					double dx = gicp_gps[i].transform[0] - gicp_gps[i-1].transform[0];
+					double dy = gicp_gps[i].transform[1] - gicp_gps[i-1].transform[1];
+					double registr_th = atan2(dy, dx);
 
-				double vx = fabs(dx / dt);
-				double vy = fabs(dy / dt);
+					double gdx = data.dataset->at(gicp_gps[i].to)->gps.x - data.dataset->at(gicp_gps[i-1].to)->gps.x;
+					double gdy = data.dataset->at(gicp_gps[i].to)->gps.y - data.dataset->at(gicp_gps[i-1].to)->gps.y;
+					double gps_th = atan2(gdy, gdx);
+					double dth = fabs(g2o::normalize_theta(registr_th - gps_th));
 
-				if (fabs(vx - data.dataset->at(gicp_gps[i].to)->v) > 2.0
-						//|| vy > 1.0
-						|| (data.dataset->at(gicp_gps[i].to)->v > 1.0 && dth > degrees_to_radians(20.)))
-					is_outlier = 1;
+					double vx = fabs(dx / dt);
+					double vy = fabs(dy / dt);
+
+					if (fabs(vx - data.dataset->at(gicp_gps[i].to)->v) > 2.0
+							|| vy > 1.0
+							|| (data.dataset->at(gicp_gps[i].to)->v > 1.0 && dth > degrees_to_radians(20.)))
+						is_outlier = 1;
+				}
+
+				if (is_outlier)
+					continue;
+
+				printf("ADDING %lf %lf\n", gicp_gps[i].transform[0], gicp_gps[i].transform[1]);
 			}
-
-			if (is_outlier)
-				continue;
-
-			printf("ADDING %lf %lf\n", gicp_gps[i].transform[0], gicp_gps[i].transform[1]);
-			 */
 
 			Matrix3d information = create_information_matrix(xy_std_mult, xy_std_mult, th_std);
 
@@ -369,8 +370,7 @@ create_dead_reckoning(GraphSlamData &data, vector<SE2> &dead_reckoning)
 
 
 void
-load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer,
-											 double offset_x, double offset_y)
+load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer)
 {
 	vector<SE2> dead_reckoning;
 
@@ -382,15 +382,13 @@ load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer,
 	{
 		add_gps_from_map_registration_edges(data, data.gicp_based_gps, optimizer,
 																				data.gicp_to_map_xy_std,
-																				deg2rad(data.gicp_to_map_angle_std),
-		                                    offset_x, offset_y);
+																				deg2rad(data.gicp_to_map_angle_std));
 		add_gps_from_map_registration_edges(data, data.pf_based_gps, optimizer,
 																				data.pf_to_map_xy_std,
-																				deg2rad(data.pf_to_map_angle_std),
-		                                    offset_x, offset_y);
+																				deg2rad(data.pf_to_map_angle_std));
 	}
 	else
-		add_gps_edges(data, optimizer, data.gps_xy_std, deg2rad(data.gps_angle_std), offset_x, offset_y);
+		add_gps_edges(data, optimizer, data.gps_xy_std, deg2rad(data.gps_angle_std));
 
 	add_loop_closure_edges(data.gicp_loop_data, optimizer, data.gicp_loop_xy_std, deg2rad(data.gicp_loop_angle_std));
 	add_loop_closure_edges(data.pf_loop_data, optimizer, data.pf_loop_xy_std, deg2rad(data.pf_loop_angle_std));
@@ -399,8 +397,7 @@ load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer,
 
 
 void
-save_corrected_vertices(GraphSlamData &data, SparseOptimizer *optimizer,
-												double offset_x, double offset_y)
+save_corrected_vertices(GraphSlamData &data, SparseOptimizer *optimizer)
 {
 	double x, y, th;
 	DataSample *sample;
@@ -414,8 +411,8 @@ save_corrected_vertices(GraphSlamData &data, SparseOptimizer *optimizer,
 		VertexSE2* v = dynamic_cast<VertexSE2*>(optimizer->vertex(i));
 		SE2 pose = v->estimate();
 
-		x = pose.toVector().data()[0] + offset_x;
-		y = pose.toVector().data()[1] + offset_y;
+		x = pose.toVector().data()[0];
+		y = pose.toVector().data()[1];
 		th = pose.toVector().data()[2];
 
 		fprintf(f, "%ld %lf %lf %lf %lf %lf %lf\n", i, x, y, th, sample->image_time, sample->gps.x, sample->gps.y);
@@ -576,16 +573,14 @@ int main(int argc, char **argv)
 	factory->registerType("EDGE_GPS", new HyperGraphElementCreator<EdgeGPS>);
 	optimizer = initialize_optimizer();
 
-	data.dataset = new NewCarmenDataset(data.log_file, data.odom_calib_file, "", data.gps_id);
+	data.dataset = create_dataset(args.get<string>("log"));
 	read_loop_restrictions(data.gicp_loop_closure_file, &data.gicp_loop_data);
 	read_loop_restrictions(data.pf_loop_closure_file, &data.pf_loop_data);
 	read_loop_restrictions(data.gicp_odom_file, &data.gicp_odom_data);
 	read_loop_restrictions(data.gicp_map_file, &data.gicp_based_gps);
 	read_loop_restrictions(data.pf_to_map_file, &data.pf_based_gps);
 
-	load_data_to_optimizer(data, optimizer,
-												 args.get<double>("offset_x"),
-												 args.get<double>("offset_y"));
+	load_data_to_optimizer(data, optimizer);
 
 	optimizer->setVerbose(true);
 	prepare_optimization(optimizer);
@@ -593,9 +588,7 @@ int main(int argc, char **argv)
 	cerr << "OptimizationDone!" << endl;
 
 	// output
-	save_corrected_vertices(data, optimizer,
-													 args.get<double>("offset_x"),
-													 args.get<double>("offset_y"));
+	save_corrected_vertices(data, optimizer);
 	cerr << "OutputSaved!" << endl;
 
 	return 0;

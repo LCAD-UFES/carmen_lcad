@@ -104,7 +104,6 @@ run_pf_step(NewCarmenDataset &target_dataset,
 void
 save_output(std::string path,
             NewCarmenDataset &reference_dataset,
-            NewCarmenDataset &dataset_to_be_adjusted,
             std::vector<std::pair<int, int>> &indices,
             std::vector<Eigen::Matrix<double, 4, 4>> &relative_transform_vector,
             std::vector<int> &convergence_vector,
@@ -127,6 +126,18 @@ estimate_displacements_with_particle_filter(NewCarmenDataset &target_dataset,
                                             std::vector<int> *convergence_vector,
 																						int n_corrections_when_reinit,
                                             CommandLineArguments &args);
+
+
+void
+estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_dataset,
+                                                   NewCarmenDataset &dataset_to_adjust,
+                                                   std::string target_dataset_path,
+                                                   std::string dataset_to_adjust_path,
+                                                   std::vector<std::pair<int, int>> &loop_closure_indices,
+                                                   std::vector<Eigen::Matrix<double, 4, 4>> *relative_transform_vector,
+                                                   std::vector<int> *convergence_vector,
+                                                   int n_corrections_when_reinit,
+                                                   CommandLineArguments &args);
 
 
 void

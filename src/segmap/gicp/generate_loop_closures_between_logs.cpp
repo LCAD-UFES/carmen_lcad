@@ -111,7 +111,6 @@ main(int argc, char **argv)
 
 	save_output(args.get<string>("output"),
 	            *reference_dataset,
-	            *dataset_to_adjust,
 	            loop_closure_indices,
 	            relative_transform_vector,
 	            convergence_vector, 1);

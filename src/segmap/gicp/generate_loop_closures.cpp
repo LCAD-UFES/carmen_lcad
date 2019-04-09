@@ -124,7 +124,7 @@ main(int argc, char **argv)
 		exit(printf("Error: invalid mode '%s'.\n", mode.c_str()));
 
 	save_output(args.get<string>("output"),
-	            dataset, dataset,
+	            dataset,
 	            loop_closure_indices,
 	            relative_transform_vector,
 	            convergence_vector);
