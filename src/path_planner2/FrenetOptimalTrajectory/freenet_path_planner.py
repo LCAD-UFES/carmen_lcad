@@ -23,7 +23,7 @@ MAX_SPEED = 50.0 / 3.6  # maximum speed [m/s]
 MAX_ACCEL = 2.0  # maximum acceleration [m/ss]
 MAX_CURVATURE = 1.0  # maximum curvature [1/m]
 MAX_ROAD_WIDTH = 5.0  # maximum road width [m]
-D_ROAD_W = 1.0  # road width sampling length [m]
+D_ROAD_W = 0.2  # road width sampling length [m]
 DT = 0.2  # time tick [s]
 MAXT = 10.0  # max prediction time [m]
 MINT = 9.9  # min prediction time [m]
@@ -240,13 +240,13 @@ def calc_global_paths(fplist, csp):
     return fplist
 
 
-def check_collision(fp, ob):
+def check_collision(fp, ob, robot_radius):
 
     for i in range(len(ob[:, 0])):
         d = [((ix - ob[i, 0])**2 + (iy - ob[i, 1])**2)
              for (ix, iy) in zip(fp.x, fp.y)]
 
-        collision = any([di <= ROBOT_RADIUS**2 for di in d])
+        collision = any([di <= robot_radius**2 for di in d])
 
         if collision:
             return False
@@ -254,7 +254,7 @@ def check_collision(fp, ob):
     return True
 
 
-def check_paths(fplist, ob):
+def check_paths(fplist, ob, robot_radius):
 
     okind = []
     for i in range(len(fplist)):
@@ -264,7 +264,7 @@ def check_paths(fplist, ob):
             continue
         elif any([abs(c) > MAX_CURVATURE for c in fplist[i].c]):  # Max curvature check
             continue
-        elif not check_collision(fplist[i], ob):
+        elif not check_collision(fplist[i], ob, robot_radius):
             continue
 
         okind.append(i)
@@ -272,11 +272,11 @@ def check_paths(fplist, ob):
     return [fplist[i] for i in okind]
 
 
-def frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob):
+def frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob, robot_radius):
 
     fplist = calc_frenet_paths(c_speed, c_d, c_d_d, c_d_dd, s0)
     fplist = calc_global_paths(fplist, csp)
-    fplist = check_paths(fplist, ob)
+    fplist = check_paths(fplist, ob, robot_radius)
 
     # find minimum cost path
     mincost = float("inf")
@@ -288,13 +288,13 @@ def frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob):
 
     return bestpath, fplist
 
-def frenet_planning(x, y, s0, c_speed, c_d, c_d_d, c_d_dd, ob):
+def frenet_planning(x, y, s0, c_speed, c_d, c_d_d, c_d_dd, ob, robot_radius):
     csp = cubic_spline_planner.Spline2D(x, y)
  
     fplist = calc_frenet_paths(c_speed, c_d, c_d_d, c_d_dd, s0)
     fplist = calc_global_paths(fplist, csp)
     if ob.size > 0:
-        fplist = check_paths(fplist, ob)
+        fplist = check_paths(fplist, ob, robot_radius)
  
     return fplist
 
@@ -328,31 +328,32 @@ def test(rddf, ob, c_speed, displacement, vel_dif, acc_dif):
     rddf = np.array(rddf)
     _, rddf_idx = np.unique(rddf, return_index=True, axis=0)
     rddf = rddf[np.sort(rddf_idx)]
-    print("[Python]",displacement, vel_dif, acc_dif)
 
-    fplist = frenet_planning(
-        rddf[:,0], rddf[:,1], 0.0, c_speed, displacement, vel_dif, acc_dif, ob)
+    fplist = frenet_planning(rddf[:,0], rddf[:,1], 0.0, c_speed, displacement, vel_dif, acc_dif, ob, 3.0)
     
     print("[Python]",len(fplist)," Paths found")
     if len(fplist) == 0:
-        print("[Python]Cant find any path")
-        return []
+        print("[Python]Cant find any path, Reducing safety distance")
+        fplist = frenet_planning(rddf[:,0], rddf[:,1], 0.0, c_speed, displacement, vel_dif, acc_dif, ob,2.0)
+        if len(fplist) == 0:
+            print("[Python]Cant find any path at all")
+            return []
 
     path = frenet_find_optimal(fplist)
 
-    plt.cla()
-    plt.plot(rddf[:,0], rddf[:,1])
-    if ob.size > 0:
-        plt.plot(ob[:, 0], ob[:, 1], "xk")
-    for fp in fplist:
-        plt.plot(fp.x[1:], fp.y[1:], "-g")
-    plt.plot(path.x[1:], path.y[1:], "-or")
-    plt.plot(path.x[1], path.y[1], "vc")
-    plt.xlim(path.x[1] - 50.0, path.x[1] + 50.0)
-    plt.ylim(path.y[1] - 50.0, path.y[1] + 50.0)
-    plt.title("v[km/h]:" + str(c_speed * 3.6)[0:4])
-    plt.grid(True)
-    plt.pause(0.000001)
+#     plt.cla()
+#     plt.plot(rddf[:,0], rddf[:,1])
+#     if ob.size > 0:
+#         plt.plot(ob[:, 0], ob[:, 1], "xk")
+#     for fp in fplist:
+#         plt.plot(fp.x[1:], fp.y[1:], "-g")
+#     plt.plot(path.x[1:], path.y[1:], "-or")
+#     plt.plot(path.x[1], path.y[1], "vc")
+#     plt.xlim(path.x[1] - 50.0, path.x[1] + 50.0)
+#     plt.ylim(path.y[1] - 50.0, path.y[1] + 50.0)
+#     plt.title("v[km/h]:" + str(c_speed * 3.6)[0:4])
+#     plt.grid(True)
+#     plt.pause(0.000001)
 
     path_x = np.array(path.x).reshape(len(path.x),1)
     path_y = np.array(path.y).reshape(len(path.y),1)
