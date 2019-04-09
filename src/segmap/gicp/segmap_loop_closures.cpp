@@ -20,6 +20,10 @@
 #include <carmen/command_line.h>
 #include "gicp.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 using namespace Eigen;
 using namespace std;
 using namespace pcl;
@@ -204,6 +208,11 @@ run_icp_step(NewCarmenDataset &target_dataset,
 
 		if (viewer == NULL)
 			viewer = new PointCloudViewer(3);
+
+		Pose2d target_pose = target_dataset[target_id]->pose;
+		Matrix<double, 4, 4> corrected_pose = Pose2d::to_matrix(target_pose) * (*relative_transform);
+		Pose2d pose = Pose2d::from_matrix(corrected_pose);
+		printf("%d %d %lf %lf %lf\n", target_id, source_id, pose.x, pose.y, pose.th);
 
 		viewer->clear();
 		viewer->show(target); //, 0, 1, 0);
@@ -418,7 +427,8 @@ estimate_displacements_with_particle_filter(NewCarmenDataset &target_dataset,
 	int n = loop_closure_indices.size();
 
 #ifdef _OPENMP
-	view = 0;
+	if (view)
+		omp_set_num_threads(1);
 #else
 	view = args.get<int>("view");
 #endif
@@ -501,7 +511,9 @@ estimate_displacements_with_gicp(NewCarmenDataset &target_dataset,
 	int n = loop_closure_indices.size();
 
 #ifdef _OPENMP
-	view = 0;
+	//view = 0;
+	if (view)
+		omp_set_num_threads(1);
 #else
 	view = args.get<int>("view");
 #endif

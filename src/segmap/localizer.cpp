@@ -30,6 +30,12 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 	Mat pf_view_img;
 
 	Pose2d gt_pose = sample->pose;
+
+	//6979 400 7757735.655524 -363557.823545 0.668327;
+	//gt_pose.x = 7757735.655524;
+	//gt_pose.y = -363557.823545;
+	//gt_pose.th = 0.668327;
+
 	gt_pose.x -= offset.x;
 	gt_pose.y -= offset.y;
 
@@ -90,12 +96,12 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 	int do_correction;
 	int last_reload = 0;
 
-	for (int i = step; i < dataset->size(); i += step)
+	for (int i = 400 /*step*/; i < dataset->size(); i += step)
 	{
 		sample = dataset->at(i);
 
-		if (fabs(sample->v) < skip_velocity_threshold)
-			continue;
+		//if (fabs(sample->v) < skip_velocity_threshold)
+			//continue;
 
 		dt = sample->time - dataset->at(i - step)->time;
 		pf.predict(sample->v, sample->phi, dt);
@@ -125,7 +131,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 		}
 
 		viewer(sample, pf, map, i, dataset->size(), cloud,
-					 dataset->at(0)->pose, s_viewer);
+					 dataset->at(0)->gps, s_viewer);
 
 		n++;
 	}
@@ -144,7 +150,7 @@ main(int argc, char **argv)
 	args.parse(argc, argv);
 
 	string log_path = args.get<string>("log_path");
-	NewCarmenDataset* dataset = create_dataset(log_path);
+	NewCarmenDataset* dataset = create_dataset(log_path, "graphslam_to_map");
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 
 	GridMap map = create_grid_map(args, 0);

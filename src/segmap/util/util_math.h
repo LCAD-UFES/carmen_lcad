@@ -3,8 +3,6 @@
 #define __SEGMAP_UTIL_MATH_H__
 
 #include <vector>
-#include <pcl/point_types.h>
-#include <Eigen/Core>
 
 double normalize_theta(double theta);
 

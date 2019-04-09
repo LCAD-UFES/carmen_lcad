@@ -3,7 +3,7 @@ include $(CARMEN_HOME)/src/Makefile.conf
 MODULE_NAME = SEG MAP MAIN
 MODULE_COMMENT = Main programs
 
-SUBDIRS += util libsegmap graphslam_fast gicp # scripts examples
+SUBDIRS += util libsegmap gicp graphslam_fast # scripts examples
 
 LINK = g++ 
 

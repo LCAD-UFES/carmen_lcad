@@ -43,7 +43,7 @@ IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/
 LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal -lboost_program_options 
 
 LFLAGS += -lsegmap_types -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
-	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lutil
+	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lutil -lsegmap_initializations
 
 DEPS = ../libsegmap/types/libsegmap_types.a \
 	../libsegmap/datasets/libsegmap_datasets.a \
@@ -52,6 +52,7 @@ DEPS = ../libsegmap/types/libsegmap_types.a \
 	../libsegmap/slam/libsegmap_slam.a \
 	../libsegmap/visualization/libsegmap_visualization.a \
 	../libsegmap/readers/libsemap_readers.a \
+	../libsegmap/readers/libsemap_initializations.a \
 	../util/libutil.a
 
 SOURCES = graphslam.cpp joint_graphslam.cpp graphslam_util.cpp view_path.cpp

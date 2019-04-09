@@ -1,8 +1,6 @@
 
 #include <cmath>
 #include <carmen/util_math.h>
-#include <pcl/point_types.h>
-#include <Eigen/Core>
 
 
 double

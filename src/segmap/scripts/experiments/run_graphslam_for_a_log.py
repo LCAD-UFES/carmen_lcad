@@ -38,7 +38,7 @@ def run_graphslam(carmen_path, log_path, output_dir, mode):
 		
 	odom_calib = output_dir + "/odom_calib.txt" 
 	cmd = "%s %s %s -o %s %s" % (program, log_path, output_path, odom_calib, loops)
-	cmd += " --gps_xy_std %lf --gps_angle_std %lf --loop_xy_std %lf --loop_angle_std %lf" % (GPS_XY_STD, GPS_H_STD, LOOPS_XY_STD, LOOPS_H_STD)
+	cmd += " --gps_xy_std %lf --gps_angle_std %lf --gicp_loops_xy_std %lf --gicp_loops_angle_std %lf --pf_loops_xy_std %lf --pf_loops_angle_std %lf" % (GPS_XY_STD, GPS_H_STD, GICP_LOOPS_XY_STD, GICP_LOOPS_H_STD, PF_LOOPS_XY_STD, PF_LOOPS_H_STD)
 	run_command(cmd)
 
 	# visualization
@@ -62,7 +62,7 @@ def run_loop_closures(carmen_path, log_path, output_dir, mode):
 		run_command(cmd + gicp_output + gicp_args)
 
 	elif mode == "particle_filter":
-		pf_args = " --mode particle_filter --n_particles 50 --gps_xy_std 3.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 5.0 --n_corrections_when_reinit 10 --ignore_above_threshold %lf --ignore_below_threshold %lf --v_thresh %lf -v 1" % (IGNORE_POINTS_ABOVE, IGNORE_POINTS_BELOW, SKIP_WHEN_VELOCITY_IS_BELOW)
+		pf_args = " --mode particle_filter --n_particles 200 --gps_xy_std 2.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 5.0 --n_corrections_when_reinit 20 --v_thresh %lf -v 1" % (SKIP_WHEN_VELOCITY_IS_BELOW)
 		pf_output = " " + output_dir + "/pf_loops.txt"
 		run_command(cmd + pf_output + pf_args)
 	else:
