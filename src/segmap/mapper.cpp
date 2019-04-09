@@ -115,7 +115,8 @@ main(int argc, char **argv)
 
 	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, graphslam_path);
 
-	Pose2d offset = dataset->at(0)->pose;
+	Pose2d offset = Pose2d(args.get<double>("offset_x"),
+												 args.get<double>("offset_y"), 0);
 
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 

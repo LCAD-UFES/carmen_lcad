@@ -191,14 +191,14 @@ run_loop_closure_estimation(NewCarmenDataset &dataset, SensorPreproc &preproc, G
 														int n_corrections_when_reinit,
 														int step,
 														double v_thresh,
-														int view)
+														int view,
+														Pose2d offset)
 {
 	DataSample *sample;
 	Pose2d estimate;
 
 	int loop_id;
 	PointCloudViewer viewer;
-	Pose2d offset = dataset[0]->pose;
 	int pf_reinit_required = 1;
 
 	vector<int> loop_indices;
@@ -315,6 +315,9 @@ main(int argc, char **argv)
 	vector<pair<int, int>> loop_closure_indices;
 	vector<Pose2d> relative_transform_vector;
 
+	Pose2d offset = Pose2d(args.get<double>("offset_x"),
+												 args.get<double>("offset_y"), 0);
+
 	run_loop_closure_estimation(dataset, preproc, map, pf,
 															&loop_closure_indices,
 															&relative_transform_vector,
@@ -324,7 +327,8 @@ main(int argc, char **argv)
 															args.get<int>("n_corrections_when_reinit"),
 															args.get<int>("subsampling"),
 															args.get<double>("v_thresh"),
-															args.get<int>("view"));
+															args.get<int>("view"),
+															offset);
 
 	save_output(args.get<string>("output"),
 	            loop_closure_indices,

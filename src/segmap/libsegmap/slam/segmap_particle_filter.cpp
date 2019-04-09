@@ -264,7 +264,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	//fprintf(stderr, "\nDEBUG: Weights Normalized: ");
 	for (i = 0; i < _n; i++)
 	{
-		if (sum_weights == 0)
+		if (fabs(sum_weights) < 1e-6)
 			_w[i] = 1. / (double) _n;
 		else
 			_w[i] /= sum_weights;

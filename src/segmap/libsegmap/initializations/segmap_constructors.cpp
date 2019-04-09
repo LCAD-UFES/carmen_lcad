@@ -111,9 +111,13 @@ create_sensor_preproc(CommandLineArguments &args,
 	SensorPreproc::IntensityMode i_mode;
 	i_mode = parse_intensity_mode(args.get<string>("intensity_mode"));
 
+	Pose2d offset = Pose2d(args.get<double>("offset_x"),
+												 args.get<double>("offset_y"),
+												 0.0);
+
 	SensorPreproc preproc(vloader, iloader, sloader,
 												dataset->vel2cam(), dataset->vel2car(), dataset->projection_matrix(),
-												dataset->xsens2car(), args.get<int>("use_xsens"), dataset->at(0)->pose,
+												dataset->xsens2car(), args.get<int>("use_xsens"), offset,
 												i_mode,
 												args.get<double>("ignore_above_threshold"),
 												args.get<double>("ignore_below_threshold"));
