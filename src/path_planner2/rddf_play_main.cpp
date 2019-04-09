@@ -39,9 +39,7 @@ using namespace std;
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_math.h>
 
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <Python.h>
-#include <numpy/arrayobject.h>
 
 using namespace g2o;
 
