@@ -95,6 +95,7 @@ create_dataset(string log_path, string mode)
 	odom_calib_path = default_odom_calib_path(log_path.c_str());
 
 	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, poses_path);
+
 	return dataset;
 }
 
@@ -113,10 +114,13 @@ create_sensor_preproc(CommandLineArguments &args,
 
 	SensorPreproc preproc(vloader, iloader, sloader,
 												dataset->vel2cam(), dataset->vel2car(), dataset->projection_matrix(),
-												dataset->xsens2car(), args.get<int>("use_xsens"), dataset->at(0)->pose,
+												dataset->xsens2car(), args.get<int>("use_xsens"),
 												i_mode,
 												args.get<double>("ignore_above_threshold"),
 												args.get<double>("ignore_below_threshold"));
 
 	return preproc;
 }
+
+
+

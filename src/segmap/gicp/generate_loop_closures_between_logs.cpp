@@ -57,12 +57,13 @@ main(int argc, char **argv)
 
 	args.add_positional<string>("target", "Reference log", 1);
 	args.add_positional<string>("source", "Log that will be adjusted to the reference log", 1);
-	args.add<string>("mode", "Technique for estimating displacement between loop closure poses [particle_fitler | gicp]");
-	args.add<int>("n_corrections_when_reinit", "Number of correction steps when reinitializing particle filter", 10);
+	args.add<string>("mode", "Technique for estimating displacement between loop closure poses [particle_filter | gicp | localization]");
+	args.add<int>("n_corrections_when_reinit", "Number of correction steps when reinitializing particle filter", 20);
 	add_default_sensor_preproc_args(args);
 	add_default_gicp_args(args);
 	add_default_localizer_args(args);
 	add_default_mapper_args(args);
+	args.add<int>("step,s", "Number of data packages to skip", 1);
 	args.save_config_file(default_data_dir() + "/loop_between_logs_config.txt");
 	args.parse(argc, argv);
 
@@ -106,12 +107,22 @@ main(int argc, char **argv)
 																								args.get<int>("n_corrections_when_reinit"),
 																								args);
 	}
+	else if (mode.compare("localization") == 0)
+	{
+		estimate_displacements_with_particle_filter_in_map(*reference_dataset,
+		                                                   *dataset_to_adjust,
+		                                                   reference_path, adj_path,
+		                                                   loop_closure_indices,
+		                                                   &relative_transform_vector,
+		                                                   &convergence_vector,
+		                                                   args.get<int>("n_corrections_when_reinit"),
+		                                                   args);
+	}
 	else
 		exit(printf("Error: invalid mode '%s'.\n", mode.c_str()));
 
 	save_output(args.get<string>("output"),
 	            *reference_dataset,
-	            *dataset_to_adjust,
 	            loop_closure_indices,
 	            relative_transform_vector,
 	            convergence_vector, 1);

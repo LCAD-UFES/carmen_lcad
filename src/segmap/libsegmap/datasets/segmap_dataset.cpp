@@ -26,7 +26,7 @@ using namespace Eigen;
 
 NewCarmenDataset::NewCarmenDataset(std::string path,
                                    std::string odom_calib_path,
-																	 std::string fused_odom_path,
+																	 std::string poses_path,
 																	 int gps_id,
 																	 NewCarmenDataset::SyncSensor sync_sensor,
 																	 NewCarmenDataset::SyncMode sync_mode,
@@ -47,7 +47,7 @@ NewCarmenDataset::NewCarmenDataset(std::string path,
 	// reading the log requires odom calibration data.
 	_load_log(path);
 
-	_load_poses(fused_odom_path, &_fused_odom);
+	_load_poses(poses_path, &_poses);
 	_update_data_with_poses();
 }
 
@@ -262,10 +262,17 @@ NewCarmenDataset::_load_poses(std::string &path, std::vector<Pose2d> *poses)
 void
 NewCarmenDataset::_update_data_with_poses()
 {
-	for (int i = 0; i < size(); i++)
+	assert(_poses.size() == _data.size() || _poses.size() == 0);
+
+	if (_poses.size() == _data.size())
 	{
-		if (i < _fused_odom.size()) at(i)->pose = _fused_odom[i];
-		else at(i)->pose = Pose2d(0, 0, 0);
+		for (int i = 0; i < size(); i++)
+			at(i)->pose = _poses[i];
+	}
+	else
+	{
+		for (int i = 0; i < size(); i++)
+			at(i)->pose = Pose2d(0, 0, 0);
 	}
 }
 
@@ -665,8 +672,11 @@ NewCarmenDataset::_parse_gps_position(vector<string> data, DataSample *sample)
 	Gdc_To_Utm_Converter::Init();
 	Gdc_To_Utm_Converter::Convert(gdc , utm);
 
-	sample->gps.x = utm.y;
-	sample->gps.y = -utm.x;
+	double offset_x = 7757735.177110;
+	double offset_y = -363558.484606;
+
+	sample->gps.x = utm.y - offset_x;
+	sample->gps.y = -utm.x - offset_y;
 
 	sample->gps_quality = atoi(data[7].c_str());
 	sample->gps_time = atof(data[data.size() - 3].c_str());
