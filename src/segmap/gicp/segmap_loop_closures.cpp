@@ -495,18 +495,21 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 	string adj_name = file_name_from_path(dataset_to_adjust_path);
 	string map_path = string("/tmp/map_") + adj_name;
 
+	int map_has_to_be_created = 0;
+	if (!boost::filesystem::exists(map_path))
+		map_has_to_be_created = 1;
+
 	GridMap map(map_path,
 							args.get<double>("tile_size"),
 							args.get<double>("tile_size"),
 							args.get<double>("resolution"),
-							GridMapTile::TYPE_VISUAL, 0);
+							GridMapTile::TYPE_VISUAL, 1);
 
-	// create map if necessary
-	if (!boost::filesystem::exists(map_path))
+	if (map_has_to_be_created)
 	{
-		printf("Creating map. It may take a while.");
+		printf("Creating map. It may take a while.\n");
 		SensorPreproc target_preproc = create_sensor_preproc(args, &target_dataset, target_dataset_path);
-		create_map(map, &target_dataset, args.get<int>("step"), target_preproc, args.get<double>("v_thresh"), 1);
+		create_map(map, &target_dataset, args.get<int>("step"), target_preproc, args.get<double>("v_thresh"), view);
 	}
 
 	ParticleFilter pf(args.get<int>("n_particles"),
@@ -564,7 +567,21 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 			for (int k = 0; k < n_corrections_when_reinit; k++)
 			{
 				pf.predict(0, 0, 0);
+				if (view)
+				{
+					adj_preproc.reinitialize(sample);
+					load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
+					run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+				}
+
 				pf.correct(dataset_to_adjust[i], &map, adj_preproc);
+
+				if (view)
+				{
+					adj_preproc.reinitialize(sample);
+					load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
+					run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+				}
 			}
 
 			is_first = 0;
@@ -573,7 +590,22 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 		{
 			dt = sample->time - dataset_to_adjust.at(prev_id)->time;
 			pf.predict(sample->v, sample->phi, dt);
+
+			if (view)
+			{
+				adj_preproc.reinitialize(sample);
+				load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
+				run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+			}
+
 			pf.correct(sample, &map, adj_preproc);
+
+			if (view)
+			{
+				adj_preproc.reinitialize(sample);
+				load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
+				run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+			}
 		}
 
 		Pose2d mean = pf.mean();
@@ -581,10 +613,9 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 
 		if (view)
 		{
+			adj_preproc.reinitialize(sample);
 			load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
-			pf_img = pf_view(pf, map, Pose2d(0,0,0), mean, cloud, 1);
-			viewer.show(pf_img, "pf_img", 640);
-			viewer.loop();
+			run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
 		}
 
 		loop_closure_indices.push_back(pair<int, int>(0, i));

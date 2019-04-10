@@ -63,6 +63,7 @@ main(int argc, char **argv)
 	add_default_gicp_args(args);
 	add_default_localizer_args(args);
 	add_default_mapper_args(args);
+	args.add<int>("step,s", "Number of data packages to skip", 1);
 	args.save_config_file(default_data_dir() + "/loop_between_logs_config.txt");
 	args.parse(argc, argv);
 

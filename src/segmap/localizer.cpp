@@ -126,9 +126,8 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 			last_reload = n;
 		}
 
-		//sample->pose = pf.mean();
-		//update_map(sample, &map, preproc);
-
+		sample->pose = pf.mean();
+		update_map(sample, &map, preproc);
 		//preproc.reinitialize(sample);
 		//load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
 		viewer(sample, pf, map, i, dataset->size(), cloud, s_viewer, timer.ellapsed(), view_flag);
@@ -154,7 +153,7 @@ main(int argc, char **argv)
 	NewCarmenDataset* dataset = create_dataset(log_path, "graphslam_to_map");
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 
-	GridMap map = create_grid_map(args, 0);
+	GridMap map = create_grid_map(args, 1);
 	ParticleFilter pf = create_particle_filter(args);
 
 	pf.seed(args.get<int>("seed"));
