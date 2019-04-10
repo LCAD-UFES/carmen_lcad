@@ -91,6 +91,13 @@ ParticleFilter::reset(double x, double y, double th)
 
 
 void
+ParticleFilter::reset(Pose2d &pose)
+{
+	reset(pose.x, pose.y, pose.th);
+}
+
+
+void
 ParticleFilter::predict(double v, double phi, double dt)
 {
 	double noisy_v, noisy_phi;

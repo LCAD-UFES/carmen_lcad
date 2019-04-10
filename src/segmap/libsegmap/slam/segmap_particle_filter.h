@@ -42,6 +42,7 @@ public:
 
 	void seed(int val);
 	void reset(double x, double y, double th);
+	void reset(Pose2d &pose);
 
 	void predict(double v, double phi, double dt);
 	double sensor_weight(pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud, GridMap &map);

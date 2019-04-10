@@ -57,7 +57,7 @@ main(int argc, char **argv)
 
 	args.add_positional<string>("target", "Reference log", 1);
 	args.add_positional<string>("source", "Log that will be adjusted to the reference log", 1);
-	args.add<string>("mode", "Technique for estimating displacement between loop closure poses [particle_filter | gicp]");
+	args.add<string>("mode", "Technique for estimating displacement between loop closure poses [particle_filter | gicp | localization]");
 	args.add<int>("n_corrections_when_reinit", "Number of correction steps when reinitializing particle filter", 10);
 	add_default_sensor_preproc_args(args);
 	add_default_gicp_args(args);
@@ -105,6 +105,17 @@ main(int argc, char **argv)
 																								&convergence_vector,
 																								args.get<int>("n_corrections_when_reinit"),
 																								args);
+	}
+	else if (mode.compare("localization") == 0)
+	{
+		estimate_displacements_with_particle_filter_in_map(*reference_dataset,
+		                                                   *dataset_to_adjust,
+		                                                   reference_path, adj_path,
+		                                                   loop_closure_indices,
+		                                                   &relative_transform_vector,
+		                                                   &convergence_vector,
+		                                                   args.get<int>("n_corrections_when_reinit"),
+		                                                   args);
 	}
 	else
 		exit(printf("Error: invalid mode '%s'.\n", mode.c_str()));

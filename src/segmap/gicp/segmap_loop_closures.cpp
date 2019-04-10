@@ -490,72 +490,111 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
                                                    int n_corrections_when_reinit,
                                                    CommandLineArguments &args)
 {
-	printf("Running displacement estimation using particle filters in a map.\n");
-
-	int i;
 	int view = args.get<int>("view");
-	int n_processed_clouds = 0;
-	int n = loop_closure_indices.size();
-
-	view = args.get<int>("view");
 
 	string adj_name = file_name_from_path(dataset_to_adjust_path);
-	PointCloudViewer viewer;
+	string map_path = string("/tmp/map_") + adj_name;
 
-#ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic, 5) default(none) private(i) \
-		shared(target_dataset, dataset_to_adjust, convergence_vector, relative_transform_vector, \
-					 loop_closure_indices, n_processed_clouds, n, view, args, \
-					 n_corrections_when_reinit, viewer, target_dataset_path, dataset_to_adjust_path, adj_name)
-#endif
-	for (i = 0; i < n; i++)
+	GridMap map(map_path,
+							args.get<double>("tile_size"),
+							args.get<double>("tile_size"),
+							args.get<double>("resolution"),
+							GridMapTile::TYPE_VISUAL, 0);
+
+	// create map if necessary
+	if (!boost::filesystem::exists(map_path))
 	{
+		printf("Creating map. It may take a while.");
 		SensorPreproc target_preproc = create_sensor_preproc(args, &target_dataset, target_dataset_path);
-		SensorPreproc adj_preproc = create_sensor_preproc(args, &dataset_to_adjust, dataset_to_adjust_path);
+		create_map(map, &target_dataset, args.get<int>("step"), target_preproc, args.get<double>("v_thresh"), 1);
+	}
 
-		GridMap map(string("/tmp/map_") + adj_name + "_" + std::to_string(i),
-								args.get<double>("tile_size"),
-								args.get<double>("tile_size"),
-								args.get<double>("resolution"),
-								GridMapTile::TYPE_VISUAL, 1);
+	ParticleFilter pf(args.get<int>("n_particles"),
+										ParticleFilter::WEIGHT_VISUAL,
+										args.get<double>("gps_xy_std"),
+										args.get<double>("gps_xy_std"),
+										degrees_to_radians(args.get<double>("gps_h_std")),
+										args.get<double>("v_std"),
+										degrees_to_radians(args.get<double>("phi_std")),
+										args.get<double>("odom_xy_std"),
+										args.get<double>("odom_xy_std"),
+										degrees_to_radians(args.get<double>("odom_h_std")),
+										args.get<double>("color_red_std"),
+										args.get<double>("color_green_std"),
+										args.get<double>("color_blue_std"));
 
-		ParticleFilter pf(args.get<int>("n_particles"),
-		                  ParticleFilter::WEIGHT_VISUAL,
-											args.get<double>("gps_xy_std"),
-											args.get<double>("gps_xy_std"),
-											degrees_to_radians(args.get<double>("gps_h_std")),
-											args.get<double>("v_std"),
-											degrees_to_radians(args.get<double>("phi_std")),
-											args.get<double>("odom_xy_std"),
-											args.get<double>("odom_xy_std"),
-											degrees_to_radians(args.get<double>("odom_h_std")),
-											args.get<double>("color_red_std"),
-											args.get<double>("color_green_std"),
-											args.get<double>("color_blue_std"));
+	cv::Mat pf_img;
+	PointCloudViewer viewer;
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
-		run_pf_step(target_dataset,
-		            dataset_to_adjust,
-		            loop_closure_indices[i].first,
-		            loop_closure_indices[i].second,
-		            &(relative_transform_vector->at(i)),
-		            &(convergence_vector->at(i)),
-		            target_preproc,
-		            adj_preproc,
-								pf, map,
-								viewer,
-								args.get<double>("dist_to_accumulate"),
-								n_corrections_when_reinit,
-		            view);
+	SensorPreproc adj_preproc = create_sensor_preproc(args, &dataset_to_adjust, dataset_to_adjust_path);
+	loop_closure_indices.clear();
+	relative_transform_vector->clear();
+	convergence_vector->clear();
 
-#ifdef _OPENMP
-#pragma omp critical
-#endif
+	Matrix<double, 4, 4>  world2origin = Pose2d::to_matrix(target_dataset[0]->pose).inverse();
+
+	// initialize particle filter
+	pf.reset(dataset_to_adjust[0]->pose.x,
+	         dataset_to_adjust[0]->pose.y,
+	         dataset_to_adjust[0]->pose.th);
+
+	map.reload(dataset_to_adjust[0]->pose.x,
+		         dataset_to_adjust[0]->pose.y);
+
+	int is_first = 1;
+	int prev_id = 0;
+	DataSample *sample;
+	double dt;
+
+	// estimate localization with particle filter
+	for (int i = 0; i < dataset_to_adjust.size(); i++)
+	{
+		sample = dataset_to_adjust[i];
+
+		if (fabs(sample->v) < args.get<double>("v_thresh"))
+			continue;
+
+		if (i % 50 == 0)
+			printf("Cloud %d of %d\n", i, dataset_to_adjust.size());
+
+		// reinitialize if the pose estimate get too far from the target path?
+		if (is_first)
 		{
-			n_processed_clouds++;
+			for (int k = 0; k < n_corrections_when_reinit; k++)
+			{
+				pf.predict(0, 0, 0);
+				pf.correct(dataset_to_adjust[i], &map, adj_preproc);
+			}
 
-			if (n_processed_clouds % 100 == 0)
-				printf("%d processed clouds of %d\n", n_processed_clouds, n);
+			is_first = 0;
 		}
+		else
+		{
+			dt = sample->time - dataset_to_adjust.at(prev_id)->time;
+			pf.predict(sample->v, sample->phi, dt);
+			pf.correct(sample, &map, adj_preproc);
+		}
+
+		Pose2d mean = pf.mean();
+		map.reload(mean.x, mean.y);
+
+		if (view)
+		{
+			load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
+			pf_img = pf_view(pf, map, Pose2d(0,0,0), mean, cloud, 1);
+			viewer.show(pf_img, "pf_img", 640);
+			viewer.loop();
+		}
+
+		loop_closure_indices.push_back(pair<int, int>(0, i));
+
+		// for compatibility issues, we have to specify the pose in relation to a sample in the target dataset.
+		Matrix<double, 4, 4>  pose_in_origin = world2origin * Pose2d::to_matrix(mean);
+		relative_transform_vector->push_back(pose_in_origin);
+		convergence_vector->push_back(1);
+
+		prev_id = i;
 	}
 }
 
