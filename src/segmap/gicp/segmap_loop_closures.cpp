@@ -41,7 +41,7 @@ show_flipped_img_in_viewer(PointCloudViewer &viewer, Mat &img)
 
 
 void
-run_viewer_if_necessary(Pose2d pose,
+run_viewer_if_necessary(Pose2d *pose,
 												GridMap &map,
 												ParticleFilter &pf,
 												PointCloud<PointXYZRGB>::Ptr cloud,
@@ -59,7 +59,7 @@ run_viewer_if_necessary(Pose2d pose,
 		else
 		{
 			img = map.to_image().clone();
-			draw_pose(map, img, pose, Scalar(0, 255, 0));
+			draw_pose(map, img, *pose, Scalar(0, 255, 0));
 		}
 
 		show_flipped_img_in_viewer(viewer, img);
@@ -310,15 +310,15 @@ run_pf_step(NewCarmenDataset &target_dataset,
 
 	//printf("Source: %lf %lf %lf\n", source_as_pose.x, source_as_pose.y, source_as_pose.th);
 	//viewer.set_step(1);
-	run_viewer_if_necessary(source_as_pose, map, pf, cloud, viewer, 1, 0, view);
+	run_viewer_if_necessary(&source_as_pose, map, pf, cloud, viewer, 1, 0, view);
 
 	for (int i = 0; i < n_corrections_when_reinit; i++)
 	{
 		pf.predict(0, 0, 0); // just to add a little noise
-		//run_viewer_if_necessary(source_as_pose, map, pf, cloud, viewer, 1, 1, view);
+		run_viewer_if_necessary(&source_as_pose, map, pf, cloud, viewer, 1, 1, view);
 
 		pf.correct(cloud, map, source_dataset[source_id]->gps);
-		//run_viewer_if_necessary(source_as_pose, map, pf, cloud, viewer, 1, 1, view);
+		//run_viewer_if_necessary(&source_as_pose, map, pf, cloud, viewer, 1, 1, view);
 	}
 
 	Pose2d estimate = pf.mean();
@@ -330,7 +330,7 @@ run_pf_step(NewCarmenDataset &target_dataset,
 
 	//cout << (*relative_transform) << endl;
 	//printf("Estimate: %lf %lf %lf\n\n", estimate.x, estimate.y, estimate.th);
-	run_viewer_if_necessary(source_as_pose, map, pf, cloud, viewer, 1, 1, view);
+	run_viewer_if_necessary(&source_as_pose, map, pf, cloud, viewer, 1, 1, view);
 }
 
 
@@ -558,7 +558,7 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 			{
 				preproc.reinitialize(sample);
 				load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
-				run_viewer_if_necessary(sample->pose, map, pf, cloud, viewer, 0, 0, view);
+				run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 0, 0, view);
 			}
 		}
 		else
@@ -581,7 +581,7 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 					{
 						preproc.reinitialize(sample);
 						load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
-						run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+						run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
 					}
 
 					pf.correct(dataset[i], &map, preproc);
@@ -590,7 +590,7 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 					{
 						preproc.reinitialize(sample);
 						load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
-						run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+						run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
 					}
 				}
 
@@ -605,7 +605,7 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 				{
 					preproc.reinitialize(sample);
 					load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
-					run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+					run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
 				}
 
 				pf.correct(sample, &map, preproc);
@@ -614,7 +614,7 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 				{
 					preproc.reinitialize(sample);
 					load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
-					run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+					run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
 				}
 			}
 
@@ -724,7 +724,7 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 				{
 					adj_preproc.reinitialize(sample);
 					load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
-					run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+					run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
 				}
 
 				pf.correct(dataset_to_adjust[i], &map, adj_preproc);
@@ -733,7 +733,7 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 				{
 					adj_preproc.reinitialize(sample);
 					load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
-					run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+					run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
 				}
 			}
 
@@ -748,7 +748,7 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 			{
 				adj_preproc.reinitialize(sample);
 				load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
-				run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+				run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
 			}
 
 			pf.correct(sample, &map, adj_preproc);
@@ -757,7 +757,7 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 			{
 				adj_preproc.reinitialize(sample);
 				load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
-				run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+				run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
 			}
 		}
 
@@ -768,7 +768,7 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 		{
 			adj_preproc.reinitialize(sample);
 			load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
-			run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+			run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
 		}
 
 		loop_closure_indices.push_back(pair<int, int>(0, i));

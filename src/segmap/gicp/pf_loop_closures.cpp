@@ -94,7 +94,7 @@ estimate_pose_with_particle_filter(DataSample *sample,
 		printf("* Reinitializing\n");
 		//viewer.set_step(1);
 		pf.reset(pose_guess.x, pose_guess.y, pose_guess.th);
-		run_viewer_if_necessary(pose_guess, map, pf, cloud, viewer, 1, 1, view);
+		run_viewer_if_necessary(&pose_guess, map, pf, cloud, viewer, 1, 1, view);
 
 		for (int i = 0; i < n_correction_steps_when_reinitializing; i++)
 		{
@@ -102,11 +102,11 @@ estimate_pose_with_particle_filter(DataSample *sample,
 			// the prediction is just to add a little bit of gaussian noise
 			// in every correction step.
 			pf.predict(0, 0, 0);
-			run_viewer_if_necessary(pose_guess, map, pf, cloud, viewer, 1, 1, view);
+			run_viewer_if_necessary(&pose_guess, map, pf, cloud, viewer, 1, 1, view);
 
 			printf("** Step %d - Correction\n", i);
 			pf.correct(cloud, map, sample->gps);
-			run_viewer_if_necessary(pose_guess, map, pf, cloud, viewer, 1, 1, view);
+			run_viewer_if_necessary(&pose_guess, map, pf, cloud, viewer, 1, 1, view);
 		}
 
 		printf("\n");
@@ -115,11 +115,11 @@ estimate_pose_with_particle_filter(DataSample *sample,
 	{
 		printf("* Prediction\n");
 		pf.predict(sample->v, sample->phi, dt);
-		run_viewer_if_necessary(pose_guess, map, pf, cloud, viewer, 1, 1, view);
+		run_viewer_if_necessary(&pose_guess, map, pf, cloud, viewer, 1, 1, view);
 
 		printf("* Correction\n");
 		pf.correct(cloud, map, sample->gps);
-		run_viewer_if_necessary(pose_guess, map, pf, cloud, viewer, 1, 1, view);
+		run_viewer_if_necessary(&pose_guess, map, pf, cloud, viewer, 1, 1, view);
 
 		printf("\n");
 	}
@@ -247,7 +247,7 @@ run_loop_closure_estimation(NewCarmenDataset &dataset, SensorPreproc &preproc, G
 		else
 		{
 			update_map(sample, &map, preproc);
-			run_viewer_if_necessary(current_pose, map, pf, NULL, viewer, 0, 1, view);
+			run_viewer_if_necessary(&current_pose, map, pf, NULL, viewer, 0, 1, view);
 			pf_reinit_required = 1;
 		}
 	}

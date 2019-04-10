@@ -202,11 +202,10 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 {
 	int i;
 
-	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
-
-	//#pragma omp parallel for default(none) private(i) shared(cloud, map, vel2car, v, phi)
+	//#pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
 	for (i = 0; i < _n; i++)
 	{
+		PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
 		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
 		//transform_pointcloud(cloud, transformed_cloud, _p[i], vel2car, v, phi);
 

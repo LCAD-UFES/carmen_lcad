@@ -25,7 +25,8 @@ using namespace pcl;
 void
 viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_total_steps,
 			 PointCloud<PointXYZRGB>::Ptr cloud,
-			 PointCloudViewer &s_viewer, double duration, int view_flag)
+			 PointCloudViewer &s_viewer, double duration, int view_flag,
+			 CarmenImageLoader &iloader)
 {
 	Pose2d gt = sample->pose;
 	Pose2d mean = pf.mean();
@@ -44,7 +45,7 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 		Mat view_img;
 		Mat pf_view_img;
 
-		Mat pf_img = pf_view(pf, map, gt, mean, cloud, 1);
+		Mat pf_img = pf_view(pf, map, &gt, mean, cloud, 1);
 
 		//Mat concat;
 		//hconcat(pf_view_img, view_img, concat);
@@ -56,6 +57,8 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 		Mat flipped;
 		flip(pf_img, flipped, 0);
 
+		Mat img = iloader.load(sample);
+		s_viewer.show(img, "img", 640);
 		s_viewer.show(flipped, "pf_viewer");
 		s_viewer.loop();
 	}
@@ -76,10 +79,10 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 	DataSample *sample;
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloudViewer s_viewer;
+	CarmenImageLoader iloader;
 	TimeCounter timer;
-	Pose2d pose;
 
-	Pose2d p0 = dataset->at(0)->pose;
+	Pose2d p0 = dataset->at(0)->gps;
 	pf.reset(p0.x, p0.y, p0.th);
 	map.reload(p0.x, p0.y);
 
@@ -113,8 +116,6 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 			//pf.correct(cloud, map, sample->gps);
 			pf.correct(sample, &map, preproc);
 
-		pose = pf.mean();
-
 		//printf("* Pose: %lf %lf %lf v: %lf n: %d last_reload: %d steps: %d\n", pose.x, pose.y, pose.th,
 		//fabs(sample->v), n, last_reload, steps_to_skip_map_reload);
 
@@ -122,15 +123,17 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 		// this prevents frequent (expensive) reloads when near to borders.
 		if ((fabs(sample->v) > 0.) && (n - last_reload > steps_to_skip_map_reload))
 		{
-			map.reload(pose.x, pose.y);
+			Pose2d mean = pf.mean();
+
+			map.reload(mean.x, mean.y);
 			last_reload = n;
 		}
 
-		sample->pose = pf.mean();
-		update_map(sample, &map, preproc);
+		//sample->pose = pf.mean();
+		//update_map(sample, &map, preproc);
 		//preproc.reinitialize(sample);
 		//load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
-		viewer(sample, pf, map, i, dataset->size(), cloud, s_viewer, timer.ellapsed(), view_flag);
+		viewer(sample, pf, map, i, dataset->size(), cloud, s_viewer, timer.ellapsed(), view_flag, iloader);
 
 		n++;
 	}
@@ -153,7 +156,7 @@ main(int argc, char **argv)
 	NewCarmenDataset* dataset = create_dataset(log_path, "graphslam_to_map");
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 
-	GridMap map = create_grid_map(args, 1);
+	GridMap map = create_grid_map(args, 0);
 	ParticleFilter pf = create_particle_filter(args);
 
 	pf.seed(args.get<int>("seed"));

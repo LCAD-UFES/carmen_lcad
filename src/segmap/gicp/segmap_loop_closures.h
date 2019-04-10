@@ -30,7 +30,7 @@ show_flipped_img_in_viewer(PointCloudViewer &viewer, cv::Mat &img);
 
 
 void
-run_viewer_if_necessary(Pose2d pose,
+run_viewer_if_necessary(Pose2d *pose,
 												GridMap &map,
 												ParticleFilter &pf,
 												pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,

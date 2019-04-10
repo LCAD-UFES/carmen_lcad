@@ -488,6 +488,7 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 	TimeCounter timer;
 	DataSample *sample;
 	PointCloudViewer viewer;
+	CarmenImageLoader iloader;
 	vector<double> times;
 
 	for (int i = 0; i < dataset->size(); i += step)
@@ -522,9 +523,11 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 			Mat map_view;
 			flip(map_img, map_view, 0);
 
+			Mat img = iloader.load(sample);
+
 			//viewer.clear();
 			//viewer.show(colored);
-			//viewer.show(img, "img", 640);
+			viewer.show(img, "img", 640);
 			//viewer.show(simg, "simg", 640);
 			//viewer.show(simg_view, "simg_view", 640);
 			viewer.show(map_view, "map", 640);
