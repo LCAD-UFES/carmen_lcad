@@ -195,7 +195,6 @@ pf_view(ParticleFilter &pf, GridMap &map,
 		PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
 
 		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(current_pose));
-
 		draw_pointcloud(map_img, transformed_cloud, map, 1, Scalar(0, 255, 0));
 		/*
 		for (int i = 0; i < transformed_cloud->size(); i++)

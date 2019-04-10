@@ -58,7 +58,7 @@ main(int argc, char **argv)
 	args.add_positional<string>("target", "Reference log", 1);
 	args.add_positional<string>("source", "Log that will be adjusted to the reference log", 1);
 	args.add<string>("mode", "Technique for estimating displacement between loop closure poses [particle_filter | gicp | localization]");
-	args.add<int>("n_corrections_when_reinit", "Number of correction steps when reinitializing particle filter", 10);
+	args.add<int>("n_corrections_when_reinit", "Number of correction steps when reinitializing particle filter", 20);
 	add_default_sensor_preproc_args(args);
 	add_default_gicp_args(args);
 	add_default_localizer_args(args);

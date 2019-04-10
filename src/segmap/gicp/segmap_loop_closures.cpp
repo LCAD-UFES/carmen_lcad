@@ -480,6 +480,159 @@ estimate_displacements_with_particle_filter(NewCarmenDataset &target_dataset,
 
 
 void
+estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
+																									string dataset_path,
+																									vector<pair<int, int>> &loop_closure_indices,
+																									vector<Matrix<double, 4, 4>> *relative_transform_vector,
+																									vector<int> *convergence_vector,
+																									int n_corrections_when_reinit,
+																									CommandLineArguments &args)
+{
+	int view = args.get<int>("view");
+
+	string name = file_name_from_path(dataset_path);
+	string map_path = string("/tmp/map_") + name;
+
+	GridMap map(map_path,
+							args.get<double>("tile_size"),
+							args.get<double>("tile_size"),
+							args.get<double>("resolution"),
+							GridMapTile::TYPE_VISUAL, 1);
+
+	ParticleFilter pf(args.get<int>("n_particles"),
+										ParticleFilter::WEIGHT_VISUAL,
+										args.get<double>("gps_xy_std"),
+										args.get<double>("gps_xy_std"),
+										degrees_to_radians(args.get<double>("gps_h_std")),
+										args.get<double>("v_std"),
+										degrees_to_radians(args.get<double>("phi_std")),
+										args.get<double>("odom_xy_std"),
+										args.get<double>("odom_xy_std"),
+										degrees_to_radians(args.get<double>("odom_h_std")),
+										args.get<double>("color_red_std"),
+										args.get<double>("color_green_std"),
+										args.get<double>("color_blue_std"));
+
+	cv::Mat pf_img;
+	PointCloudViewer viewer;
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+	SensorPreproc preproc = create_sensor_preproc(args, &dataset, dataset_path);
+	loop_closure_indices.clear();
+	relative_transform_vector->clear();
+	convergence_vector->clear();
+
+	Matrix<double, 4, 4>  world2origin = Pose2d::to_matrix(dataset[0]->pose).inverse();
+
+	map.reload(dataset[0]->pose.x,
+		         dataset[0]->pose.y);
+
+	int nn_id;
+	int is_init = 0;
+	int prev_id = 0;
+	DataSample *sample;
+	double dt;
+
+	for (int i = 0; i < dataset.size(); i++)
+	{
+		sample = dataset[i];
+
+		if (fabs(sample->v) < args.get<double>("v_thresh"))
+			continue;
+
+		search_for_loop_closure_using_pose_dist(dataset,
+																						sample->pose,
+																						sample->time,
+																						0, i,
+																						args.get<double>("loop_dist"),
+																						args.get<double>("time_dist"),
+																						&nn_id);
+
+		map.reload(sample->pose.x, sample->pose.y);
+
+		if (nn_id < 0)
+		{
+			update_map(sample, &map, preproc);
+
+			if (view)
+			{
+				preproc.reinitialize(sample);
+				load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+				run_viewer_if_necessary(sample->pose, map, pf, cloud, viewer, 0, 0, view);
+			}
+		}
+		else
+		{
+			Pose2d pf_pose = pf.mean();
+			double d = dist2d(pf_pose.x, pf_pose.y, sample->pose.x, sample->pose.y);
+
+			// TODO: turn the value into a parameter
+			if (d > 5.0 || !is_init)
+			{
+				// initialize particle filter
+				pf.reset(sample->pose.x,
+				         sample->pose.y,
+				         sample->pose.th);
+
+				for (int k = 0; k < n_corrections_when_reinit; k++)
+				{
+					pf.predict(0, 0, 0);
+					if (view)
+					{
+						preproc.reinitialize(sample);
+						load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+						run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+					}
+
+					pf.correct(dataset[i], &map, preproc);
+
+					if (view)
+					{
+						preproc.reinitialize(sample);
+						load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+						run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+					}
+				}
+
+				is_init = 1;
+			}
+			else
+			{
+				dt = sample->time - dataset.at(prev_id)->time;
+				pf.predict(sample->v, sample->phi, dt);
+
+				if (view)
+				{
+					preproc.reinitialize(sample);
+					load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+					run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+				}
+
+				pf.correct(sample, &map, preproc);
+
+				if (view)
+				{
+					preproc.reinitialize(sample);
+					load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+					run_viewer_if_necessary(Pose2d(0,0,0), map, pf, cloud, viewer, 1, 1, view);
+				}
+			}
+
+			Pose2d mean = pf.mean();
+			loop_closure_indices.push_back(pair<int, int>(0, i));
+
+			// for compatibility issues, we have to specify the pose in relation to a sample in the target dataset.
+			Matrix<double, 4, 4>  pose_in_origin = world2origin * Pose2d::to_matrix(mean);
+			relative_transform_vector->push_back(pose_in_origin);
+			convergence_vector->push_back(1);
+
+			prev_id = i;
+		}
+	}
+}
+
+
+void
 estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_dataset,
                                                    NewCarmenDataset &dataset_to_adjust,
                                                    string target_dataset_path,

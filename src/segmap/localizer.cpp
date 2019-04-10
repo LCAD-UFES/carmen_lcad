@@ -27,11 +27,13 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 			 PointCloud<PointXYZRGB>::Ptr cloud,
 			 PointCloudViewer &s_viewer, double duration, int view_flag)
 {
+	Pose2d gt = sample->pose;
 	Pose2d mean = pf.mean();
 	Pose2d mode = pf.mode();
 
 	printf("%d of %d ", step, n_total_steps);
 	printf("Mean: %lf %lf %lf ", mean.x, mean.y, mean.th);
+	printf("GT: %lf %lf %lf ", gt.x, gt.y, gt.th);
 	printf("Mode: %lf %lf %lf ", mode.x, mode.y, mode.th);
 	printf("Duration: %lf ", duration);
 	printf("\n");
@@ -42,9 +44,7 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 		Mat view_img;
 		Mat pf_view_img;
 
-		Pose2d gt_pose = sample->pose;
-
-		Mat pf_img = pf_view(pf, map, gt_pose, mean, cloud, 1);
+		Mat pf_img = pf_view(pf, map, gt, mean, cloud, 1);
 
 		//Mat concat;
 		//hconcat(pf_view_img, view_img, concat);
@@ -56,7 +56,7 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 		Mat flipped;
 		flip(pf_img, flipped, 0);
 
-		s_viewer.show(flipped, "bla");
+		s_viewer.show(flipped, "pf_viewer");
 		s_viewer.loop();
 	}
 }

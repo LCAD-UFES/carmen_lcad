@@ -1,6 +1,6 @@
 odom_calib = none
 fused_odom = none
-n_corrections_when_reinit = 10
+n_corrections_when_reinit = 20
 ignore_above_threshold = 1.79769e+308
 ignore_below_threshold = -1.79769e+308
 offset_x = 7.75789e+06

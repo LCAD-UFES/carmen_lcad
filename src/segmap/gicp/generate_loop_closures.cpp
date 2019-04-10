@@ -69,10 +69,10 @@ main(int argc, char **argv)
 {
 	CommandLineArguments args;
 	args.add_positional<std::string>("log_path", "Path of a log", 1);
-	args.add<string>("mode", "Technique for estimating displacement between loop closure poses [particle_fitler | gicp]");
+	args.add<string>("mode", "Technique for estimating displacement between loop closure poses [particle_fitler | gicp | localization]");
 	args.add<std::string>("odom_calib,o", "Odometry calibration file", "none");
 	args.add<std::string>("fused_odom,f", "Fused odometry file (optimized using graphslam)", "none");
-	args.add<int>("n_corrections_when_reinit", "Number of correction steps when reinitializing particle filter", 10);
+	args.add<int>("n_corrections_when_reinit", "Number of correction steps when reinitializing particle filter", 20);
 	add_default_sensor_preproc_args(args);
 	add_default_gicp_args(args);
 	add_default_localizer_args(args);
@@ -119,6 +119,16 @@ main(int argc, char **argv)
 																								&convergence_vector,
 																								args.get<int>("n_corrections_when_reinit"),
 																								args);
+	}
+	else if (mode.compare("localization") == 0)
+	{
+		estimate_loop_closures_with_particle_filter_in_map(dataset,
+																											log_path,
+																											loop_closure_indices,
+																											&relative_transform_vector,
+																											&convergence_vector,
+																											args.get<int>("n_corrections_when_reinit"),
+																											args);
 	}
 	else
 		exit(printf("Error: invalid mode '%s'.\n", mode.c_str()));
