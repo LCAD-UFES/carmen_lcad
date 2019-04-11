@@ -18,7 +18,10 @@ import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringReader;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Button botaoori;
     private Button botaodest;
+    private Button botaook;
     private TextView ori;
     private TextView dest;
     //private Button botaodest = new Button();
@@ -61,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
 
        botaoori = (Button) findViewById(R.id.but_ori);
        botaodest = (Button) findViewById(R.id.but_dest);
+       botaook = (Button) findViewById(R.id.but_ok);
        ori = (TextView) findViewById(R.id.textView);
        dest = (TextView) findViewById(R.id.textView2);
        tempori = "";
@@ -137,33 +142,37 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-    }
 
 
-
-    public void showPopUp(){
-
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.lista, data);
-
-        ListView lv = (ListView) findViewById(R.id.listview);
-
-        lv.setAdapter(adapter);
-
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        botaook.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-               /* Toast.makeText(getApplicationContext(),
-                        "Clicou no item " + position, Toast.LENGTH_LONG).show();
-            */
+            public void onClick(View view) {
+                Thread t = new Thread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        try {
+                            Socket soc = new Socket("10.42.0.25", 8000);
+                     // Abaixo eh para quando eh utilizado o android pelo emulador ao inves do celular
+                      // Socket soc = new Socket("10.0.2.2",8000);
+                            PrintWriter writer = new PrintWriter(soc.getOutputStream());
+                            writer.write("Origem: "+ tempori+"\tDestino: "+tempdest);
+                            writer.flush();
+                            writer.close();
+                        } catch (UnknownHostException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+
+                    }
+                });
+                t.start();
             }
 
         });
-
-        alertDialogStores = new AlertDialog.Builder(MainActivity.this)
-                .setView(lv)
-                .setTitle("Locais")
-                .show();
-
 
     }
 
