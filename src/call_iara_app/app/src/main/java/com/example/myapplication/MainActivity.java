@@ -22,6 +22,8 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
+
+
 public class MainActivity extends AppCompatActivity {
 
 
@@ -29,10 +31,10 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> data = new ArrayList<String>();
     private ArrayList<String> locais = new ArrayList<String>();
     String[] local;
+    String tempori;
+    String tempdest;
     AlertDialog alertDialogStores;
-    private boolean confori;
-    private boolean confdest;
-    Context context;
+
     private Button botaoori;
     private Button botaodest;
     private TextView ori;
@@ -51,17 +53,18 @@ public class MainActivity extends AppCompatActivity {
         locais.add(e.toString().split("\t")[0]);
         System.out.println(e.toString().split("\t")[0]);
         }
+
+
         data = (ArrayList<String>)locais.clone();
         local = locais.toArray(new String[locais.size()]);
-       // System.out.println(local[1]);
+        // System.out.println(local[1]);
 
        botaoori = (Button) findViewById(R.id.but_ori);
        botaodest = (Button) findViewById(R.id.but_dest);
        ori = (TextView) findViewById(R.id.textView);
        dest = (TextView) findViewById(R.id.textView2);
-       confori  = false;
-       confdest = false;
-
+       tempori = "";
+       tempdest = "";
 
 
         //System.out.println(locais);
@@ -69,35 +72,30 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("Locais Origem");
-                if(!confori){
-                    builder.setItems(local, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            ori.setText(local[which]);
-                            confori = true;
-                            locais.remove(local[which]);
-                            local = locais.toArray(new String[locais.size()]);
-                            System.out.println("-------------------------------");
-
-                        }
-                    });
-                }else{
-                    builder.setItems(local, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            ori.setText(local[which]);
-                            confori = false;
-                            locais = (ArrayList<String>) data.clone();
-                            locais.remove(local[which]);
-                            local = locais.toArray(new String[locais.size()]);
-                            System.out.println("################################");
-                        }
-                    });
-
-
+                locais = (ArrayList<String>) data.clone();
+                if(!tempori.equals("")){
+                    locais.remove(tempori);
 
                 }
+                if(!tempdest.equals("")){
+                    locais.remove(tempdest);
+
+                }
+                local = locais.toArray(new String[locais.size()]);
+
+                builder.setTitle("Locais Origem");
+                builder.setItems(local, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        ori.setText(local[which]);
+ //                        locais = (ArrayList<String>) data.clone();
+ //                        locais.remove(local[which]);
+ //                        local = locais.toArray(new String[locais.size()]);
+                       //  System.out.println("################################");
+                         tempori=local[which];
+
+                    }
+                });
 
                 AlertDialog alert = builder.create();
                 alert.show();
@@ -110,11 +108,28 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                locais = (ArrayList<String>) data.clone();
+                if(!tempori.equals("")){
+                    locais.remove(tempori);
+
+                }
+                if(!tempdest.equals("")){
+                    locais.remove(tempdest);
+
+                }
+                local = locais.toArray(new String[locais.size()]);
+
                 builder.setTitle("Locais Destino");
                 builder.setItems(local, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dest.setText(local[which]);
+
+   //                     locais.remove(local[which]);
+   //                   local = locais.toArray(new String[locais.size()]);
+                       // System.out.println("################################");
+                        tempdest=local[which];
+
                     }
                 });
                 AlertDialog alert = builder.create();
