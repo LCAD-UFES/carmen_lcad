@@ -29,6 +29,17 @@ public:
 		SEMANTIC,
 	};
 
+	class CompletePointData
+	{
+		int laser_id;
+		double h_angle, v_angle, range;
+		unsigned char raw_intensity;
+
+		pcl::PointXYZRGB world;
+		pcl::PointXYZRGB car;
+		pcl::PointXYZRGB sensor;
+	};
+
 	SensorPreproc(CarmenLidarLoader *vloader,
 								CarmenImageLoader *iloader,
 								SemanticSegmentationLoader *sloader,
@@ -47,6 +58,7 @@ public:
 	std::vector<pcl::PointXYZRGB> next_points_in_sensor();
 	std::vector<pcl::PointXYZRGB> next_points_in_world();
 	std::vector<pcl::PointXYZRGB> next_points_in_car();
+	std::vector<CompletePointData> next_points();
 	int size();
 
 protected:
@@ -95,6 +107,8 @@ protected:
 															 Eigen::Matrix<double, 4, 1> &p_world,
 															 double ignore_above_threshold,
 															 double ignore_below_threshold);
+
+	void _adjust_intensity(pcl::PointXYZRGB &point, Eigen::Matrix<double, 4, 1> &p_sensor, int *valid);
 
 	pcl::PointXYZRGB _create_point_and_intensity(Eigen::Matrix<double, 4, 1> &p_sensor,
 																							 Eigen::Matrix<double, 4, 1> &p_car,
