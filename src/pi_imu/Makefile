@@ -17,12 +17,9 @@ SOURCES = pi_imu_client_driver.cpp pi_imu_interface.cpp #pi_imu_viewer.cpp
 PUBLIC_BINARIES = pi_imu_client_driver#pi_imu_viewer
 
 PUBLIC_INCLUDES = pi_imu_messages.h pi_imu_interface.h
+PUBLIC_LIBRARIES = libpi_imu_interface.a
 PUBLIC_BINARIES = pi_imu_client_driver #pi_imu_viewer
 
-PUBLIC_LIBRARIES =
-
-PUBLIC_INCLUDES = pi_imu_interface.h pi_imu_messages.h
-PUBLIC_LIBRARIES = libpi_imu_interface.a
 TARGETS = pi_imu_client_driver libpi_imu_interface.a #pi_imu_viewer
 
 pi_imu_client_driver: pi_imu_client_driver.o  pi_imu_interface.o

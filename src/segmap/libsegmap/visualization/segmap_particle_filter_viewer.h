@@ -34,7 +34,7 @@ draw_pointcloud(cv::Mat &m, pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_c
 
 cv::Mat
 pf_view(ParticleFilter &pf, GridMap &map,
-				Pose2d current_pose,
+				Pose2d *current_pose,
 				Pose2d pf_pose,
 				pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
 				int draw_particles = 0);

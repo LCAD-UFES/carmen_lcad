@@ -181,7 +181,7 @@ draw_pointcloud(Mat &m, PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap 
 
 Mat
 pf_view(ParticleFilter &pf, GridMap &map,
-		 Pose2d current_pose,
+		 Pose2d *current_pose,
 		 Pose2d pf_pose,
 		 PointCloud<PointXYZRGB>::Ptr cloud,
 		 int draw_particles)
@@ -194,8 +194,16 @@ pf_view(ParticleFilter &pf, GridMap &map,
 	{
 		PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
 
-		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(current_pose));
-		draw_pointcloud(map_img, transformed_cloud, map, 1, Scalar(0, 255, 0));
+		if (current_pose != NULL)
+		{
+			transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(*current_pose));
+			draw_pointcloud(map_img, transformed_cloud, map, 1, Scalar(0, 255, 0));
+		}
+		/*
+		for (int i = 0; i < transformed_cloud->size(); i++)
+			transformed_cloud->at(i).g = 255;
+		draw_pointcloud(map_img, transformed_cloud, map, 1);
+		*/
 
 		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(pf_pose));
 
@@ -214,6 +222,11 @@ pf_view(ParticleFilter &pf, GridMap &map,
 		}
 
 		draw_pointcloud(map_img, transformed_cloud, map, 1, Scalar(0, 0, 255));
+		/*
+		for (int i = 0; i < transformed_cloud->size(); i++)
+			transformed_cloud->at(i).r = 255;
+		draw_pointcloud(map_img, transformed_cloud, map, 1);
+		*/
 	}
 
 	if (draw_particles)
@@ -222,8 +235,10 @@ pf_view(ParticleFilter &pf, GridMap &map,
 			draw_particle(map_img, pf._p[i], map, Scalar(255, 255, 255));
 	}
 
+	if (current_pose)
+		draw_pose(map, map_img, *current_pose, Scalar(0, 255, 0));
+
 	draw_pose(map, map_img, pf_pose, Scalar(0, 0, 255));
-	draw_pose(map, map_img, current_pose, Scalar(0, 255, 0));
 
 	return map_img;
 }

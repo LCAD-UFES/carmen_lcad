@@ -325,11 +325,11 @@ voice_interface_define_messages()
 
 
 void
-carmen_voice_interface_initialize(char *language_code)
+carmen_voice_interface_initialize(/*char *language_code*/)
 {
 	setlocale(LC_ALL, "pt_BR.UTF-8");
 
-	char *voice_interface_error = init_voice(language_code);
+	char *voice_interface_error = init_voice();
 	if (voice_interface_error != NULL)
 	{
 		printf("Error: could not initialize the voice interface.\n%s\n", voice_interface_error);
@@ -352,7 +352,7 @@ main (int argc, char **argv)
 //	carmen_param_check_version(argv[0]);
 	signal(SIGINT, shutdown_module);
 	voice_interface_define_messages();
-	carmen_voice_interface_initialize(argv[1]);
+	carmen_voice_interface_initialize();
 
 //	char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Oi Alberto!");
 //	if (voice_interface_speak_error)
@@ -389,9 +389,9 @@ main (int argc, char **argv)
 			char *voice_command = carmen_voice_interface_listen();
 			execute_voice_command(voice_command);
 
-		/*	snd_pcm_prepare(capture_handle);
+			snd_pcm_prepare(capture_handle);
 			snd_pcm_start(capture_handle);
-*/
+
 			printf("Awaiting hotword... \n\n");
 		}
 		else if (hotword_detection_result == 2) // error

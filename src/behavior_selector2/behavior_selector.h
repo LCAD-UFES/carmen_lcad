@@ -53,6 +53,7 @@ extern "C" {
 
 	carmen_ackerman_traj_point_t get_robot_pose();
 	double get_max_v();
+	void set_max_v(double v);
 	carmen_robot_ackerman_config_t *get_robot_config();
 
 	carmen_rddf_road_profile_message *get_last_rddf_message();

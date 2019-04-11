@@ -54,8 +54,7 @@ add_default_localizer_args(CommandLineArguments &args)
 	args.add<double>("color_blue_std", "Std of pixel color measurements", 10.);
 	args.add<int>("seed", "Seed for pseudo-random number generator", 0);
 	args.add<int>("correction_step", "Frequency in which correction takes place [<= 1 for always correcting]", 1);
-	args.add<double>("min_speed_for_reloading_map", "Do not perform map reloading from disk if velocity is smaller than this threshold", 0.5);
-	args.add<int>("steps_to_skip_map_reload", "Minimum number of steps to wait until a new map reload from disk", 10);
+	args.add<int>("steps_to_skip_map_reload", "Minimum number of steps to wait until a new map reload from disk", 5);
 
 	args.save_config_file(default_data_dir() + "/localizer_config.txt");
 }

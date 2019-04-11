@@ -29,7 +29,6 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
 														 Matrix<double, 3, 4> projection,
 														 Matrix<double, 4, 4> xsens2car,
 														 int use_xsens,
-														 Pose2d offset,
 														 IntensityMode imode,
 														 double ignore_above_threshold,
 														 double ignore_below_threshold)
@@ -42,7 +41,6 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
 	_projection = projection;
 	_xsens2car = xsens2car;
 	_use_xsens = use_xsens;
-	_offset = offset;
 	_imode = imode;
 	_n_lidar_shots = 0;
 
@@ -139,6 +137,53 @@ SensorPreproc::next_points_in_world()
 }
 
 
+// how to prevent this method of being a copy of _next_points?
+std::vector<SensorPreproc::CompletePointData>
+SensorPreproc::next_points()
+{
+	int valid;
+	double h, v, r, in;
+	LidarShot *shot;
+	PointXYZRGB point;
+	std::vector<SensorPreproc::CompletePointData> points;
+
+	if (_vloader->done())
+		return points;
+
+	shot = _vloader->next();
+
+	for (int i = 0; i < shot->n; i++)
+	{
+		CompletePointData p;
+
+		p.laser_id = i;
+		p.h_angle = shot->h_angle;
+		p.v_angle = shot->v_angles[i];
+		p.range = shot->ranges[i];
+		p.raw_intensity = shot->intensities[i];
+
+		_compute_point_in_different_references(p.h_angle, p.v_angle, p.range,
+																					 &_p_sensor, &_p_car, &_p_world);
+
+		_point_coords_from_mat(_p_car, &p.car);
+		_point_coords_from_mat(_p_sensor, &p.sensor);
+		_point_coords_from_mat(_p_world, &p.world);
+		_adjust_intensity(p.sensor, _p_sensor, &valid);
+
+		p.world.r = p.car.r = p.sensor.r;
+		p.world.g = p.car.g = p.sensor.g;
+		p.world.b = p.car.b = p.sensor.b;
+
+		if (_spherical_point_is_valid(h, v, r)
+				&& _point3d_is_valid(_p_sensor, _p_car, _p_world, _ignore_above_threshold, _ignore_below_threshold)
+				&& valid)
+			points.push_back(p);
+	}
+
+	return points;
+}
+
+
 int
 SensorPreproc::size()
 {
@@ -163,8 +208,8 @@ SensorPreproc::_compute_transform_car2world(DataSample *sample)
 		getEulerYPR(_r3x3, yaw, pitch, roll);
 	}
 
-	_car2world = pose6d_to_matrix((sample->pose.x - _offset.x),
-															(sample->pose.y - _offset.y),
+	_car2world = pose6d_to_matrix((sample->pose.x),
+															(sample->pose.y),
 															0., roll, pitch,
 															sample->pose.th);
 }
@@ -294,28 +339,14 @@ SensorPreproc::_point_coords_from_mat(Eigen::Matrix<double, 4, 1> &mat, PointXYZ
 }
 
 
-PointXYZRGB
-SensorPreproc::_create_point_and_intensity(Matrix<double, 4, 1> &p_sensor,
-																					 Matrix<double, 4, 1> &p_car,
-																					 Matrix<double, 4, 1> &p_world,
-																					 unsigned char intensity,
-																					 int *valid,
-																					 SensorReference ref)
+void
+SensorPreproc::_adjust_intensity(PointXYZRGB &point, Matrix<double, 4, 1> &p_sensor, int *valid)
 {
-	PointXYZRGB point;
-
-	if (ref == SENSOR_REFERENCE)
-		_point_coords_from_mat(p_sensor, &point);
-	else if (ref == CAR_REFERENCE)
-		_point_coords_from_mat(p_car, &point);
-	else
-		_point_coords_from_mat(p_world, &point);
-
 	// in INTENSITY mode, the point color is given by
 	// the intensity observed by the lidar.
 	if (_imode == INTENSITY)
 	{
-		unsigned char brightened = _brighten(intensity);
+		unsigned char brightened = _brighten(point.r);
 
 		point.r = brightened;
 		point.g = brightened;
@@ -341,6 +372,27 @@ SensorPreproc::_create_point_and_intensity(Matrix<double, 4, 1> &p_sensor,
 			point.r = _img.data[p + 2];
 		}
 	}
+}
+
+
+PointXYZRGB
+SensorPreproc::_create_point_and_intensity(Matrix<double, 4, 1> &p_sensor,
+																					 Matrix<double, 4, 1> &p_car,
+																					 Matrix<double, 4, 1> &p_world,
+																					 unsigned char intensity,
+																					 int *valid,
+																					 SensorReference ref)
+{
+	PointXYZRGB point;
+
+	if (ref == SENSOR_REFERENCE)
+		_point_coords_from_mat(p_sensor, &point);
+	else if (ref == CAR_REFERENCE)
+		_point_coords_from_mat(p_car, &point);
+	else
+		_point_coords_from_mat(p_world, &point);
+
+	_adjust_intensity(point, p_sensor, valid);
 
 	return point;
 }
@@ -403,4 +455,50 @@ void load_as_pointcloud(SensorPreproc &preproc,
 			cloud->push_back(points[j]);
 	}
 }
+
+
+pcl::PointXYZRGB
+transform_point(Eigen::Matrix<double, 4, 4> &t, pcl::PointXYZRGB &p_in)
+{
+	Eigen::Matrix<double, 4, 1> p_in_mat, p_out_mat;
+	pcl::PointXYZRGB p_out;
+
+	p_in_mat(0, 0) = p_in.x;
+	p_in_mat(1, 0) = p_in.y;
+	p_in_mat(2, 0) = p_in.z;
+	p_in_mat(3, 0) = 1.0;
+
+	p_out_mat = t * p_in_mat;
+
+	p_out.x = p_out_mat(0, 0) / p_out_mat(3, 0);
+	p_out.y = p_out_mat(1, 0) / p_out_mat(3, 0);
+	p_out.z = p_out_mat(2, 0) / p_out_mat(3, 0);
+
+	p_out.r = p_in.r;
+	p_out.g = p_in.g;
+	p_out.b = p_in.b;
+
+	return p_out;
+}
+
+
+pcl::PointXYZRGB
+transform_point(Pose2d &t, pcl::PointXYZRGB &p_in)
+{
+	pcl::PointXYZRGB p_out;
+
+	double c = cos(t.th);
+	double s = sin(t.th);
+
+	p_out.x = p_in.x * c + p_in.y * (-s) + t.x;
+	p_out.y = p_in.x * s + p_in.y * c + t.y;
+
+	p_out.z = p_in.z;
+	p_out.r = p_in.r;
+	p_out.g = p_in.g;
+	p_out.b = p_in.b;
+
+	return p_out;
+}
+
 

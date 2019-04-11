@@ -10,6 +10,7 @@
 
 #include <carmen/segmap_grid_map.h>
 #include <carmen/segmap_pose2d.h>
+#include <carmen/segmap_preproc.h>
 
 
 class ParticleFilter
@@ -24,6 +25,9 @@ public:
 
 	void _compute_weights(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, GridMap &map,
 	                      Pose2d &gps, int *max_id, int *min_id);
+
+	void _compute_weights(DataSample *sample, GridMap *map, SensorPreproc &preproc, int *max_id, int *min_id);
+
 	void _normalize_weights(int min_id, int max_id);
 	void _resample();
 
@@ -38,10 +42,12 @@ public:
 
 	void seed(int val);
 	void reset(double x, double y, double th);
+	void reset(Pose2d &pose);
 
 	void predict(double v, double phi, double dt);
 	double sensor_weight(pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
 	void correct(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, GridMap &map, Pose2d &gps);
+	void correct(DataSample *sample, GridMap *map, SensorPreproc &preproc);
 
 	Pose2d mean();
 	Pose2d mode();
@@ -69,6 +75,10 @@ public:
 	double _semantic_weight(pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
 	double _image_weight(pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
 	double _gps_weight(Pose2d &pose, Pose2d &gps);
+
+	double _semantic_point_weight(pcl::PointXYZRGB &point, GridMap *map);
+	double _image_point_weight(pcl::PointXYZRGB &point, GridMap *map);
+
 };
 
 

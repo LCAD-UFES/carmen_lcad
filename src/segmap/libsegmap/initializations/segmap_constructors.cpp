@@ -79,13 +79,22 @@ create_particle_filter(CommandLineArguments &args)
 
 
 NewCarmenDataset*
-create_dataset(string log_path)
+create_dataset(string log_path, string mode)
 {
-	string odom_calib_path = default_odom_calib_path(log_path.c_str());
-	string fused_odom_path = default_fused_odom_path(log_path.c_str());
-	string graphslam_path = default_graphslam_path(log_path.c_str());
+	string poses_path, odom_calib_path;
 
-	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, graphslam_path);
+	if (mode == "fused_odom")
+		poses_path = default_fused_odom_path(log_path.c_str());
+	else if (mode == "graphslam")
+		poses_path = default_graphslam_path(log_path.c_str());
+	else if (mode == "graphslam_to_map")
+		poses_path = default_graphslam_to_map_path(log_path.c_str());
+	else
+		exit(printf("Error: invalid mode '%s'.\n", mode.c_str()));
+
+	odom_calib_path = default_odom_calib_path(log_path.c_str());
+
+	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, poses_path);
 
 	return dataset;
 }
@@ -105,10 +114,13 @@ create_sensor_preproc(CommandLineArguments &args,
 
 	SensorPreproc preproc(vloader, iloader, sloader,
 												dataset->vel2cam(), dataset->vel2car(), dataset->projection_matrix(),
-												dataset->xsens2car(), args.get<int>("use_xsens"), dataset->at(0)->pose,
+												dataset->xsens2car(), args.get<int>("use_xsens"),
 												i_mode,
 												args.get<double>("ignore_above_threshold"),
 												args.get<double>("ignore_below_threshold"));
 
 	return preproc;
 }
+
+
+

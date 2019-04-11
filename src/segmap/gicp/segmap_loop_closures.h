@@ -30,17 +30,25 @@ show_flipped_img_in_viewer(PointCloudViewer &viewer, cv::Mat &img);
 
 
 void
-run_viewer_if_necessary(Pose2d pose,
+run_viewer_if_necessary(Pose2d *pose,
 												GridMap &map,
 												ParticleFilter &pf,
 												pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
 												PointCloudViewer &viewer,
 												int pf_was_updated,
+												int show_particles,
 												int view);
 
 
 Eigen::Matrix<double, 4, 4>
 compute_source2target_transform(Pose2d target_pose, Pose2d source_pose);
+
+
+void
+find_dataset_indices_for_accumulating_data(NewCarmenDataset &target_dataset,
+																					 int target_id,
+																					 double dist_accumulate_target_cloud,
+																					 int *start, int *end);
 
 
 void
@@ -96,7 +104,6 @@ run_pf_step(NewCarmenDataset &target_dataset,
 void
 save_output(std::string path,
             NewCarmenDataset &reference_dataset,
-            NewCarmenDataset &dataset_to_be_adjusted,
             std::vector<std::pair<int, int>> &indices,
             std::vector<Eigen::Matrix<double, 4, 4>> &relative_transform_vector,
             std::vector<int> &convergence_vector,
@@ -110,6 +117,16 @@ save_report_file(std::string path, std::vector<std::pair<int, int>> &loop_closur
 
 
 void
+estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
+																									std::string dataset_path,
+																									std::vector<std::pair<int, int>> &loop_closure_indices,
+																									std::vector<Eigen::Matrix<double, 4, 4>> *relative_transform_vector,
+																									std::vector<int> *convergence_vector,
+																									int n_corrections_when_reinit,
+																									CommandLineArguments &args);
+
+
+void
 estimate_displacements_with_particle_filter(NewCarmenDataset &target_dataset,
 																						NewCarmenDataset &dataset_to_adjust,
 																						std::string target_dataset_path,
@@ -119,6 +136,18 @@ estimate_displacements_with_particle_filter(NewCarmenDataset &target_dataset,
                                             std::vector<int> *convergence_vector,
 																						int n_corrections_when_reinit,
                                             CommandLineArguments &args);
+
+
+void
+estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_dataset,
+                                                   NewCarmenDataset &dataset_to_adjust,
+                                                   std::string target_dataset_path,
+                                                   std::string dataset_to_adjust_path,
+                                                   std::vector<std::pair<int, int>> &loop_closure_indices,
+                                                   std::vector<Eigen::Matrix<double, 4, 4>> *relative_transform_vector,
+                                                   std::vector<int> *convergence_vector,
+                                                   int n_corrections_when_reinit,
+                                                   CommandLineArguments &args);
 
 
 void

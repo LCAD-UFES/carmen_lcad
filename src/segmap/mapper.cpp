@@ -1,11 +1,9 @@
 
+#include <boost/filesystem.hpp>
 #include <carmen/segmap_dataset.h>
 #include <carmen/segmap_grid_map.h>
-#include <carmen/segmap_sensor_viewer.h>
-#include <carmen/segmap_particle_filter_viewer.h>
 #include <carmen/segmap_semantic_segmentation_viewer.h>
 #include <carmen/segmap_preproc.h>
-#include <carmen/util_time.h>
 #include <carmen/util_math.h>
 #include <carmen/command_line.h>
 #include "libsegmap/initializations/segmap_args.h"
@@ -14,66 +12,6 @@
 using namespace cv;
 using namespace std;
 using namespace pcl;
-
-
-void
-view(GridMap &map, DataSample *sample, Pose2d &offset, PointCloudViewer &viewer)
-{
-	Pose2d pose;
-	pose = sample->pose;
-
-	pose.x -= offset.x;
-	pose.y -= offset.y;
-
-	Mat map_img = map.to_image().clone();
-	draw_pose(map, map_img, pose, Scalar(0, 255, 0));
-
-	// flip vertically.
-	Mat map_view;
-	flip(map_img, map_view, 0);
-
-	//viewer.clear();
-	//viewer.show(colored);
-	//viewer.show(img, "img", 640);
-	//viewer.show(simg, "simg", 640);
-	//viewer.show(simg_view, "simg_view", 640);
-	viewer.show(map_view, "map", 640);
-	viewer.loop();
-}
-
-
-void
-create_map(GridMap &map, NewCarmenDataset *dataset, int step,
-					 SensorPreproc &preproc, Pose2d &offset, double skip_velocity_threshold)
-{
-	TimeCounter timer;
-	DataSample *sample;
-	PointCloudViewer viewer;
-	vector<double> times;
-
-	for (int i = 0; i < dataset->size(); i += step)
-	{
-		sample = dataset->at(i);
-
-		if (fabs(sample->v) < skip_velocity_threshold)
-			continue;
-
-		timer.start();
-
-		map.reload(sample->pose.x - offset.x, sample->pose.y - offset.y);
-		update_map(sample, &map, preproc);
-
-		times.push_back(timer.ellapsed());
-
-		if (times.size() % 50 == 0)
-			printf("Avg ellapsed %ld: %lf Current: %lf\n",
-						 times.size(),
-						 mean(times),
-						 times[times.size() - 1]);
-
-		view(map, sample, offset, viewer);
-	}
-}
 
 
 int
@@ -86,6 +24,7 @@ main(int argc, char **argv)
 	add_default_slam_args(args);
 	add_default_sensor_preproc_args(args);
 	add_default_mapper_args(args);
+	args.add<int>("view,v", "Flag to set visualization on or off", 1);
 	args.save_config_file(default_data_dir() + "/mapper_config.txt");
 	args.parse(argc, argv);
 
@@ -115,12 +54,11 @@ main(int argc, char **argv)
 
 	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, graphslam_path);
 
-	Pose2d offset = dataset->at(0)->pose;
-
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 
-	create_map(map, dataset, args.get<int>("step"), preproc, offset,
-						 args.get<double>("v_thresh"));
+	create_map(map, dataset, args.get<int>("step"), preproc,
+						 args.get<double>("v_thresh"),
+						 args.get<int>("view"));
 
 	printf("Done.\n");
 	return 0;

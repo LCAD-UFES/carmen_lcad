@@ -41,7 +41,7 @@ public:
 
 	NewCarmenDataset(std::string path,
 	                 std::string odom_calib_path = "",
-									 std::string fused_odom_path = "",
+									 std::string poses_path = "",
 									 int gps_id = 1,
 									 NewCarmenDataset::SyncSensor sync_sensor = SYNC_BY_CAMERA,
 									 NewCarmenDataset::SyncMode sync_mode = SYNC_BY_NEAREST,
@@ -90,7 +90,7 @@ protected:
 
 	OdomCalib _calib;
 	std::vector<DataSample*> _data;
-	std::vector<Pose2d> _fused_odom;
+	std::vector<Pose2d> _poses;
 
 	std::vector<std::string> _imu_messages;
 	std::vector<std::string> _gps_position_messages;

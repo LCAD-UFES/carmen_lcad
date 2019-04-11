@@ -32,6 +32,9 @@
 #include <carmen/util_io.h>
 #include <carmen/ackerman_motion_model.h>
 #include <carmen/segmap_loop_closures.h>
+#include <carmen/segmap_args.h>
+#include <carmen/segmap_conversions.h>
+#include <carmen/segmap_constructors.h>
 
 using namespace std;
 using namespace g2o;
@@ -41,13 +44,13 @@ class GraphSlamData
 {
 public:
 	NewCarmenDataset *dataset;
-	vector<LoopRestriction> loop_data, gicp_odom_data, gicp_fake_gps;
-	vector<LoopRestriction> pf_loop_data, pf_fake_gps;
+	vector<LoopRestriction> gicp_loop_data, gicp_odom_data, gicp_based_gps;
+	vector<LoopRestriction> pf_loop_data, pf_based_gps;
 
 	~GraphSlamData() { delete(dataset);	}
 
 	string log_file;
-	string loop_closure_file;
+	string gicp_loop_closure_file;
 	string pf_loop_closure_file;
 	string gicp_odom_file;
 	string gicp_map_file;
@@ -58,8 +61,10 @@ public:
 	int gps_id;
 	double gps_xy_std, gps_angle_std;
 	double odom_xy_std, odom_angle_std;
-	double loop_xy_std, loop_angle_std;
+	double gicp_loop_xy_std, gicp_loop_angle_std;
 	double gicp_to_map_xy_std, gicp_to_map_angle_std;
+	double pf_loop_xy_std, pf_loop_angle_std;
+	double pf_to_map_xy_std, pf_to_map_angle_std;
 	double gicp_odom_xy_std, gicp_odom_angle_std;
 
 	int n_iterations;
@@ -231,8 +236,6 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
 	DataSample *sample;
 	Matrix3d information;
 
-	gps0 = data.dataset->at(0)->gps;
-
 	for (int i = 0; i < data.dataset->size(); i++)
 	{
 		sample = data.dataset->at(i);
@@ -247,8 +250,8 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
 
 		information = create_information_matrix(xy_std, xy_std, th_std);
 
-		SE2 measure(sample->gps.x - gps0.x,
-		            sample->gps.y - gps0.y,
+		SE2 measure(sample->gps.x,
+		            sample->gps.y,
 		            angle);
 
 //		printf("GPS: measure: %lf %lf %lf x_std: %lf th_std: %lf\n",
@@ -265,15 +268,50 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
 
 
 void
-add_gps_gicp_edges(vector<LoopRestriction> &gicp_gps, SparseOptimizer *optimizer, double xy_std_mult, double th_std)
+add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction> &gicp_gps,
+																		SparseOptimizer *optimizer, double xy_std_mult, double th_std,
+                                    int check_for_outliers = 0)
 {
 	for (size_t i = 0; i < gicp_gps.size(); i += 1)
 	{
 		if (gicp_gps[i].converged)
 		{
-			SE2 measure(gicp_gps[i].transform[0] - gicp_gps[0].transform[0],
-			            gicp_gps[i].transform[1] - gicp_gps[0].transform[1],
+			SE2 measure(gicp_gps[i].transform[0],
+			            gicp_gps[i].transform[1],
 			            gicp_gps[i].transform[2]);
+
+			if (check_for_outliers)
+			{
+				int is_outlier;
+				is_outlier = 0;
+
+				if (i > 0)
+				{
+					// try and discard outliers
+					double dt = data.dataset->at(gicp_gps[i].to)->time - data.dataset->at(gicp_gps[i-1].to)->time;
+					double dx = gicp_gps[i].transform[0] - gicp_gps[i-1].transform[0];
+					double dy = gicp_gps[i].transform[1] - gicp_gps[i-1].transform[1];
+					double registr_th = atan2(dy, dx);
+
+					double gdx = data.dataset->at(gicp_gps[i].to)->gps.x - data.dataset->at(gicp_gps[i-1].to)->gps.x;
+					double gdy = data.dataset->at(gicp_gps[i].to)->gps.y - data.dataset->at(gicp_gps[i-1].to)->gps.y;
+					double gps_th = atan2(gdy, gdx);
+					double dth = fabs(g2o::normalize_theta(registr_th - gps_th));
+
+					double vx = fabs(dx / dt);
+					double vy = fabs(dy / dt);
+
+					if (fabs(vx - data.dataset->at(gicp_gps[i].to)->v) > 2.0
+							|| vy > 1.0
+							|| (data.dataset->at(gicp_gps[i].to)->v > 1.0 && dth > degrees_to_radians(20.)))
+						is_outlier = 1;
+				}
+
+				if (is_outlier)
+					continue;
+
+				printf("ADDING %lf %lf\n", gicp_gps[i].transform[0], gicp_gps[i].transform[1]);
+			}
 
 			Matrix3d information = create_information_matrix(xy_std_mult, xy_std_mult, th_std);
 
@@ -340,18 +378,21 @@ load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer)
 	add_vertices(dead_reckoning, optimizer);
 	add_odometry_edges(optimizer, dead_reckoning, data.odom_xy_std, deg2rad(data.odom_angle_std));
 
-	if (data.gicp_fake_gps.size() > 0 || data.pf_fake_gps.size() > 0)
+	if (data.gicp_based_gps.size() > 0 || data.pf_based_gps.size() > 0)
 	{
-		add_gps_gicp_edges(data.gicp_fake_gps, optimizer, data.gicp_to_map_xy_std, deg2rad(data.gicp_to_map_angle_std));
-		add_gps_gicp_edges(data.pf_fake_gps, optimizer, data.gicp_to_map_xy_std, deg2rad(data.gicp_to_map_angle_std));
+		add_gps_from_map_registration_edges(data, data.gicp_based_gps, optimizer,
+																				data.gicp_to_map_xy_std,
+																				deg2rad(data.gicp_to_map_angle_std));
+		add_gps_from_map_registration_edges(data, data.pf_based_gps, optimizer,
+																				data.pf_to_map_xy_std,
+																				deg2rad(data.pf_to_map_angle_std));
 	}
 	else
 		add_gps_edges(data, optimizer, data.gps_xy_std, deg2rad(data.gps_angle_std));
 
-	add_loop_closure_edges(data.loop_data, optimizer, data.loop_xy_std, deg2rad(data.loop_angle_std));
-	add_loop_closure_edges(data.pf_loop_data, optimizer, data.loop_xy_std, deg2rad(data.loop_angle_std));
+	add_loop_closure_edges(data.gicp_loop_data, optimizer, data.gicp_loop_xy_std, deg2rad(data.gicp_loop_angle_std));
+	add_loop_closure_edges(data.pf_loop_data, optimizer, data.pf_loop_xy_std, deg2rad(data.pf_loop_angle_std));
 	add_loop_closure_edges(data.gicp_odom_data, optimizer, data.gicp_odom_xy_std, deg2rad(data.gicp_odom_angle_std));
-
 }
 
 
@@ -362,7 +403,6 @@ save_corrected_vertices(GraphSlamData &data, SparseOptimizer *optimizer)
 	DataSample *sample;
 
 	FILE *f = safe_fopen(data.output_file.c_str(), "w");
-	Pose2d gps0 = data.dataset->at(0)->gps;
 
 	for (size_t i = 0; i < optimizer->vertices().size(); i++)
 	{
@@ -371,8 +411,8 @@ save_corrected_vertices(GraphSlamData &data, SparseOptimizer *optimizer)
 		VertexSE2* v = dynamic_cast<VertexSE2*>(optimizer->vertex(i));
 		SE2 pose = v->estimate();
 
-		x = pose.toVector().data()[0] + gps0.x;
-		y = pose.toVector().data()[1] + gps0.y;
+		x = pose.toVector().data()[0];
+		y = pose.toVector().data()[1];
 		th = pose.toVector().data()[2];
 
 		fprintf(f, "%ld %lf %lf %lf %lf %lf %lf\n", i, x, y, th, sample->image_time, sample->gps.x, sample->gps.y);
@@ -427,64 +467,85 @@ initialize_optimizer()
 
 
 void
-load_parameters(int argc, char **argv, GraphSlamData *data)
+parse_command_line(int argc, char **argv, CommandLineArguments &args, GraphSlamData *data)
 {
-	CommandLineArguments args;
-
-	args.add_positional<string>("log", "Path to a log", 1);
-	args.add_positional<string>("output", "Path to the output file", 1);
-	args.add<string>("odom_calib,o", "Path to the odometry calibration file", "none");
-	args.add<string>("loops,l", "Path to a file with loop closure relations", "none");
-	args.add<int>("gps_id", "Index of the gps to be used", 1);
-	args.add<string>("pf_loops", "Path to a file with loop closures estimated with particle filters", "none");
-	args.add<string>("gicp_odom", "Path to a file with odometry relations generated with GICP", "none");
-	args.add<string>("pf_to_map", "Path to a file with poses given by registration to an a priori map with particle filter", "none");
-	args.add<string>("gicp_to_map", "Path to a file with poses given by registration to an a priori map with gicp", "none");
-	args.add<double>("odom_xy_std", "Std in xy of odometry-based movement estimations (m)", 0.005);
-	args.add<double>("gps_xy_std", "Std in xy of gps measurements (m)", 10.0);
-	args.add<double>("loop_xy_std", "Std in xy of loop closure measurements (m)", 0.3);
-	args.add<double>("gicp_odom_xy_std", "Std in xy of odometry estimated using GICP (m)", 0.3);
-	args.add<double>("gicp_to_map_xy_std", "Std in xy of loop closure measurements in relation to a map (m)", 0.3);
-	args.add<double>("odom_angle_std", "Std of heading of odometry-based movement estimations (degrees)", 0.1);
-	args.add<double>("gps_angle_std", "Std of heading estimated using consecutive gps measurements when the car is moving (degrees)", 10);
-	args.add<double>("loop_angle_std", "Std of heading in loop closure measurements (degrees)", 3);
-	args.add<double>("gicp_odom_angle_std", "Std of heading when estimating odometry using GICP (degrees)", 3);
-	args.add<double>("gicp_to_map_angle_std", "Std of heading in loop closure in relation to a map (degrees)", 3);
-	args.add<double>("v_for_gps_heading", "Minimum velocity for estimating heading with consecutive GPS poses", 1.0);
-	args.add<double>("v_for_gps", "Minimum velocity for adding GPS edges (without this trick, positions in which v=0 can be overweighted)", 1.0);
-	args.add<string>("global_angle_mode", "Method for estimating global angle: [xsens, gps, consecutive_gps]", "consecutive_gps");
-	args.add<int>("n_iterations,n", "Number of optimization terations", 50);
-
-	char *carmen_path = getenv("CARMEN_HOME");
-	string config_path = string(carmen_path) + "/src/segmap/data/graphslam_config.txt";
-	args.save_config_file(config_path.c_str());
-
 	args.parse(argc, argv);
 
 	data->log_file = args.get<string>("log");
 	data->output_file = args.get<string>("output");
-	data->odom_calib_file = args.get<string>("odom_calib");
-	data->loop_closure_file = args.get<string>("loops");
-	data->pf_loop_closure_file = args.get<string>("pf_loops");
 	data->gps_id = args.get<int>("gps_id");
+	data->n_iterations = args.get<int>("n_iterations");
+
+	data->odom_calib_file = args.get<string>("odom_calib");
+	data->gicp_loop_closure_file = args.get<string>("gicp_loops");
+	data->pf_loop_closure_file = args.get<string>("pf_loops");
 	data->gicp_odom_file = args.get<string>("gicp_odom");
 	data->gicp_map_file = args.get<string>("gicp_to_map");
 	data->pf_to_map_file = args.get<string>("pf_to_map");
+
 	data->odom_xy_std = args.get<double>("odom_xy_std");
-	data->gps_xy_std = args.get<double>("gps_xy_std");
-	data->loop_xy_std = args.get<double>("loop_xy_std");
-	data->gicp_odom_xy_std = args.get<double>("gicp_odom_xy_std");
-	data->gicp_to_map_xy_std = args.get<double>("gicp_to_map_xy_std");
 	data->odom_angle_std = args.get<double>("odom_angle_std");
+
+	data->gps_xy_std = args.get<double>("gps_xy_std");
 	data->gps_angle_std = args.get<double>("gps_angle_std");
-	data->loop_angle_std = args.get<double>("loop_angle_std");
+
+	data->gicp_loop_xy_std = args.get<double>("gicp_loops_xy_std");
+	data->gicp_loop_angle_std = args.get<double>("gicp_loops_angle_std");
+
+	data->pf_loop_xy_std = args.get<double>("pf_loops_xy_std");
+	data->pf_loop_angle_std = args.get<double>("pf_loops_angle_std");
+
+	data->gicp_odom_xy_std = args.get<double>("gicp_odom_xy_std");
 	data->gicp_odom_angle_std = args.get<double>("gicp_odom_angle_std");
+
+	data->gicp_to_map_xy_std = args.get<double>("gicp_to_map_xy_std");
 	data->gicp_to_map_angle_std = args.get<double>("gicp_to_map_angle_std");
-	data->n_iterations = args.get<int>("n_iterations");
+
+	data->pf_to_map_xy_std = args.get<double>("pf_to_map_xy_std");
+	data->pf_to_map_angle_std = args.get<double>("pf_to_map_angle_std");
+
 	data->min_velocity_for_estimating_heading = args.get<double>("v_for_gps_heading");
 	data->min_velocity_for_considering_gps = args.get<double>("v_for_gps");
 	data->global_angle_mode = args.get<string>("global_angle_mode");
+}
 
+
+void
+add_graphslam_parameters(CommandLineArguments &args)
+{
+	args.add<int>("n_iterations,n", "Number of optimization terations", 50);
+
+	args.add<string>("odom_calib,o", "Path to the odometry calibration file", "none");
+	args.add<string>("gicp_loops,l", "Path to a file with loop closure relations", "none");
+	args.add<string>("pf_loops", "Path to a file with loop closures estimated with particle filters", "none");
+	args.add<string>("gicp_odom", "Path to a file with odometry relations generated with GICP", "none");
+	args.add<string>("pf_to_map", "Path to a file with poses given by registration to an a priori map with particle filter", "none");
+	args.add<string>("gicp_to_map", "Path to a file with poses given by registration to an a priori map with gicp", "none");
+
+	args.add<double>("odom_xy_std", "Std in xy of odometry-based movement estimations (m)", 0.005);
+	args.add<double>("odom_angle_std", "Std of heading of odometry-based movement estimations (degrees)", 0.1);
+
+	args.add<double>("gps_xy_std", "Std in xy of gps measurements (m)", 10.0);
+	args.add<double>("gps_angle_std", "Std of heading estimated using consecutive gps measurements when the car is moving (degrees)", 10);
+
+	args.add<double>("gicp_loops_xy_std", "Std in xy of loop closure measurements (m)", 0.3);
+	args.add<double>("gicp_loops_angle_std", "Std of heading in loop closure measurements (degrees)", 3);
+
+	args.add<double>("pf_loops_xy_std", "Std in xy of loop closure measurements (m)", 0.3);
+	args.add<double>("pf_loops_angle_std", "Std of heading in loop closure measurements (degrees)", 3);
+
+	args.add<double>("gicp_odom_xy_std", "Std in xy of odometry estimated using GICP (m)", 0.3);
+	args.add<double>("gicp_odom_angle_std", "Std of heading when estimating odometry using GICP (degrees)", 3);
+
+	args.add<double>("gicp_to_map_xy_std", "Std in xy of loop closure measurements in relation to a map (m)", 0.3);
+	args.add<double>("gicp_to_map_angle_std", "Std of heading in loop closure in relation to a map (degrees)", 3);
+
+	args.add<double>("pf_to_map_xy_std", "Std in xy of loop closure measurements in relation to a map (m)", 0.3);
+	args.add<double>("pf_to_map_angle_std", "Std of heading in loop closure in relation to a map (degrees)", 3);
+
+	args.add<double>("v_for_gps_heading", "Minimum velocity for estimating heading with consecutive GPS poses", 1.0);
+	args.add<double>("v_for_gps", "Minimum velocity for adding GPS edges (without this trick, positions in which v=0 can be overweighted)", 1.0);
+	args.add<string>("global_angle_mode", "Method for estimating global angle: [xsens, gps, consecutive_gps]", "consecutive_gps");
 }
 
 
@@ -492,8 +553,17 @@ int main(int argc, char **argv)
 {
 	srand(time(NULL));
 
+	CommandLineArguments args;
 	GraphSlamData data;
-	load_parameters(argc, argv, &data);
+
+	args.add_positional<string>("log", "Path to a log", 1);
+	args.add_positional<string>("output", "Path to the output file", 1);
+	args.add<int>("gps_id", "Index of the gps to be used", 1);
+	add_graphslam_parameters(args);
+	add_default_sensor_preproc_args(args);
+	args.save_config_file(default_data_dir() + "/graphslam_config.txt");
+
+	parse_command_line(argc, argv, args, &data);
 
 	// initialize optimizer (why does the initialization using the factory only works in the main?).
 	SparseOptimizer* optimizer;
@@ -503,12 +573,12 @@ int main(int argc, char **argv)
 	factory->registerType("EDGE_GPS", new HyperGraphElementCreator<EdgeGPS>);
 	optimizer = initialize_optimizer();
 
-	data.dataset = new NewCarmenDataset(data.log_file, data.odom_calib_file, "", data.gps_id);
-	read_loop_restrictions(data.loop_closure_file, &data.loop_data);
+	data.dataset = create_dataset(args.get<string>("log"));
+	read_loop_restrictions(data.gicp_loop_closure_file, &data.gicp_loop_data);
 	read_loop_restrictions(data.pf_loop_closure_file, &data.pf_loop_data);
 	read_loop_restrictions(data.gicp_odom_file, &data.gicp_odom_data);
-	read_loop_restrictions(data.gicp_map_file, &data.gicp_fake_gps);
-	read_loop_restrictions(data.pf_to_map_file, &data.pf_fake_gps);
+	read_loop_restrictions(data.gicp_map_file, &data.gicp_based_gps);
+	read_loop_restrictions(data.pf_to_map_file, &data.pf_based_gps);
 
 	load_data_to_optimizer(data, optimizer);
 

@@ -15,7 +15,8 @@
 #define GOAL_LIST_SIZE 1000
 #define MAX_ANNOTATIONS 50
 
-// #define PRINT_UDATMO_LOG
+//#define PRINT_UDATMO_LOG
+#define USE_DATMO_GOAL
 
 static carmen_robot_ackerman_config_t robot_config;
 static double distance_between_waypoints = 5;
@@ -132,6 +133,7 @@ add_goal_to_goal_list(int &goal_index, carmen_ackerman_traj_point_t &current_goa
 int
 try_avoiding_obstacle(int rddf_pose_index, double circle_radius, carmen_rddf_road_profile_message* rddf)
 {
+	//int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle_new(rddf->poses[rddf_pose_index], current_map, &robot_config);
 	int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[rddf_pose_index], circle_radius, current_map, &robot_config);
 
 	return (rddf_pose_hit_obstacle);
@@ -312,34 +314,39 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 	int last_obstacle_free_waypoint_index = 0;
 	double distance_car_pose_car_front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 
-//#ifdef PRINT_UDATMO_LOG
-//
-//	carmen_ackerman_traj_point_t front_obst = udatmo_get_moving_obstacle_position();
-//	double front_obst_velocity = udatmo_speed_front();
-//
-//	carmen_ackerman_traj_point_t left_obst = udatmo_get_moving_obstacle_position_left();
-//	double left_obst_velocity = udatmo_speed_left();
-//
-//	carmen_ackerman_traj_point_t right_obst = udatmo_get_moving_obstacle_position_right();
-//	double right_obst_velocity = udatmo_speed_right();
-//
-//	printf("%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", timestamp, robot_pose.x, robot_pose.y, robot_pose.v, robot_pose.theta, robot_pose.phi,
-//			front_obst.x, front_obst.y, front_obst_velocity,
-//			left_obst.x, left_obst.y, left_obst_velocity,
-//			right_obst.x, right_obst.y, right_obst_velocity);
-//#endif
+#ifdef PRINT_UDATMO_LOG
+
+	carmen_ackerman_traj_point_t front_obst = udatmo_get_moving_obstacle_position();
+	double front_obst_velocity = udatmo_speed_front();
+
+	carmen_ackerman_traj_point_t left_obst = udatmo_get_moving_obstacle_position_left();
+	double left_obst_velocity = udatmo_speed_left();
+
+	carmen_ackerman_traj_point_t right_obst = udatmo_get_moving_obstacle_position_right();
+	double right_obst_velocity = udatmo_speed_right();
+
+	printf("%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", timestamp, robot_pose.x, robot_pose.y, robot_pose.v, robot_pose.theta, robot_pose.phi,
+			front_obst.x, front_obst.y, front_obst_velocity,
+			left_obst.x, left_obst.y, left_obst_velocity,
+			right_obst.x, right_obst.y, right_obst_velocity);
+#endif
 
 	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses && goal_index < GOAL_LIST_SIZE; rddf_pose_index++)
 	{
 		double distance_from_car_to_rddf_point, distance_to_annotation, distance_to_last_obstacle_free_waypoint;
 		int rddf_pose_hit_obstacle, moving_object_in_front_index;
 
+
 		rddf_pose_hit_obstacle = get_parameters_for_filling_in_goal_list(moving_object_in_front_index, last_obstacle_index,
 				last_obstacle_free_waypoint_index, distance_from_car_to_rddf_point, distance_to_last_obstacle, distance_to_annotation,
 				distance_to_last_obstacle_free_waypoint,
 				rddf, rddf_pose_index, goal_index, current_goal, current_goal_rddf_index, timestamp);
+#ifndef USE_DATMO_GOAL
+		rddf_pose_hit_obstacle = 0;
+#endif
 
 		static double moving_obstacle_trasition = 0.0;
+#ifdef USE_DATMO_GOAL
 		if (moving_object_in_front_index != -1) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
 		{
 			double d = 0;
@@ -384,6 +391,12 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 			}
 			break;
 		}
+#else
+		if (0) {
+
+		}
+#endif
+
 		else if ((distance_from_car_to_rddf_point > (map_width / 3.0 - distance_car_pose_car_front)) ||
 				 ((rddf_pose_hit_obstacle == 2) && (rddf_pose_index > 10))) // Goal esta fora do mapa
 		{
@@ -614,6 +627,13 @@ double
 get_max_v()
 {
 	return (robot_config.max_v);
+}
+
+
+void
+set_max_v(double v)
+{
+	robot_config.max_v = v;
 }
 
 

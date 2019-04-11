@@ -29,6 +29,18 @@ public:
 		SEMANTIC,
 	};
 
+	class CompletePointData
+	{
+	public:
+		int laser_id;
+		double h_angle, v_angle, range;
+		unsigned char raw_intensity;
+
+		pcl::PointXYZRGB world;
+		pcl::PointXYZRGB car;
+		pcl::PointXYZRGB sensor;
+	};
+
 	SensorPreproc(CarmenLidarLoader *vloader,
 								CarmenImageLoader *iloader,
 								SemanticSegmentationLoader *sloader,
@@ -37,7 +49,6 @@ public:
 								Eigen::Matrix<double, 3, 4> projection,
 								Eigen::Matrix<double, 4, 4> xsens2car,
 								int use_xsens,
-								Pose2d offset,
 								IntensityMode imode = INTENSITY,
 								double ignore_above_threshold = DBL_MAX,
 								double ignore_below_threshold = -DBL_MAX);
@@ -48,6 +59,7 @@ public:
 	std::vector<pcl::PointXYZRGB> next_points_in_sensor();
 	std::vector<pcl::PointXYZRGB> next_points_in_world();
 	std::vector<pcl::PointXYZRGB> next_points_in_car();
+	std::vector<CompletePointData> next_points();
 	int size();
 
 protected:
@@ -60,7 +72,6 @@ protected:
 	Eigen::Matrix<double, 3, 4> _projection;
 	Eigen::Matrix<double, 4, 4> _xsens2car;
 	int _use_xsens;
-	Pose2d _offset;
 	IntensityMode _imode;
 	int _n_lidar_shots;
 
@@ -98,6 +109,8 @@ protected:
 															 double ignore_above_threshold,
 															 double ignore_below_threshold);
 
+	void _adjust_intensity(pcl::PointXYZRGB &point, Eigen::Matrix<double, 4, 1> &p_sensor, int *valid);
+
 	pcl::PointXYZRGB _create_point_and_intensity(Eigen::Matrix<double, 4, 1> &p_sensor,
 																							 Eigen::Matrix<double, 4, 1> &p_car,
 																							 Eigen::Matrix<double, 4, 1> &p_world,
@@ -121,5 +134,10 @@ void load_as_pointcloud(SensorPreproc &preproc,
 												pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
 												SensorPreproc::SensorReference ref);
 
+pcl::PointXYZRGB
+transform_point(Eigen::Matrix<double, 4, 4> &t, pcl::PointXYZRGB &p_in);
+
+pcl::PointXYZRGB
+transform_point(Pose2d &t, pcl::PointXYZRGB &p_in);
 
 #endif

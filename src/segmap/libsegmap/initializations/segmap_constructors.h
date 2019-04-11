@@ -12,7 +12,7 @@
 SensorPreproc::IntensityMode parse_intensity_mode(std::string map_type);
 GridMap create_grid_map(CommandLineArguments &args, int save_map);
 ParticleFilter create_particle_filter(CommandLineArguments &args);
-NewCarmenDataset* create_dataset(std::string log_path);
+NewCarmenDataset* create_dataset(std::string log_path, std::string mode = "graphslam");
 SensorPreproc create_sensor_preproc(CommandLineArguments &args,
 																		NewCarmenDataset *dataset,
 																		std::string log_path);
