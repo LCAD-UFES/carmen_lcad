@@ -9,6 +9,7 @@
 #include "libsegmap/initializations/segmap_args.h"
 #include <carmen/segmap_constructors.h>
 
+#include <carmen/util_io.h>
 #include <pcl/point_types.h>
 #include <Eigen/Core>
 #include <string>
@@ -18,11 +19,27 @@ using namespace std;
 using namespace pcl;
 using namespace Eigen;
 
+typedef unsigned char uchar;
 
-typedef SensorPreproc::CompletePointData Point;
-typedef vector<Point> PointVec;
-typedef map<int, PointVec> Row;
+
+class Reading
+{
+public:
+	uchar laser_id;
+	uchar intensity;
+
+	Reading() { laser_id = intensity = 0; }
+	Reading(uchar laser_id_val, uchar intensity_val)
+	{
+		laser_id = laser_id_val;
+		intensity = intensity_val;
+	}
+};
+
+typedef vector<Reading> ReadingVec;
+typedef map<int, ReadingVec> Row;
 typedef map<int, Row> Grid;
+
 
 class Calibrator
 {
@@ -47,9 +64,9 @@ public:
 		_col_it = _row_it->second.find(cx);
 
 		if (_col_it == _row_it->second.end())
-			_col_it = _row_it->second.insert(pair<int, PointVec>(cx, PointVec())).first;
+			_col_it = _row_it->second.insert(pair<int, ReadingVec>(cx, ReadingVec())).first;
 
-		_col_it->second.push_back(p);
+		_col_it->second.push_back(Reading(p.laser_id, p.raw_intensity));
 	}
 
 	static int cell_coord(double x, double resolution)
@@ -67,7 +84,71 @@ public:
 			for (uchar v = 0; v < 256; v++)
 				_support_table[i].push_back(pair<double, long>(0, 0));
 
-		// TODO! PAREI AQUI!!
+		// Integrate points to support table
+		for (_row_it = _cells.begin(); _row_it != _cells.end(); _row_it++)
+			for (_col_it = _row_it->second.begin(); _col_it != _row_it->second.end(); _col_it++)
+				integrate_cell_points_to_table(_col_it->second, &_support_table);
+	}
+
+	int
+	ids_and_intens_already_accounted(Reading r, vector<pair<int, uchar>> &ids_and_intens)
+	{
+		for (int i = 0; i < ids_and_intens.size(); i++)
+			if (ids_and_intens[i].first == r.laser_id && ids_and_intens[i].second == r.intensity)
+				return 1;
+
+		return 0;
+	}
+
+
+	void
+	integrate_cell_points_to_table(ReadingVec &readings, vector<vector<pair<double, long>>> *support_table)
+	{
+		vector<pair<int, uchar>> ids_and_intens;
+
+		for (int i = 0; i < readings.size(); i++)
+		{
+			double sum = 0;
+			int count = 0;
+
+			// to prevent adding cell values more than once.
+			if (ids_and_intens_already_accounted(readings[i], ids_and_intens))
+				continue;
+
+			for (int j = 0; j < readings.size(); j++)
+			{
+				if (readings[j].laser_id != readings[i].laser_id)
+				{
+					sum += (double) readings[j].intensity / (double) 255;
+					count++;
+				}
+			}
+
+			ids_and_intens.push_back(pair<int, uchar>(readings[i].laser_id, readings[i].intensity));
+		}
+	}
+
+	void save_calibration_table(const char *path)
+	{
+		FILE *f = safe_fopen("calib.txt", "w");
+
+		for (int i = 0; i < _support_table.size(); i++)
+		{
+			for (int j = 0; j < _support_table[i].size(); j++)
+			{
+				double calibrated_value = 0.0;
+
+				if (_support_table[i][j].second > 0)
+					calibrated_value = _support_table[i][j].first / (double) _support_table[i][j].second;
+
+				fprintf(f, "%d %d %lf %lf %d\n",
+								i, j, _support_table[i][j].first,
+								_support_table[i][j].second,
+								(int) 255 * calibrated_value);
+			}
+		}
+
+		fclose(f);
 	}
 
 protected:

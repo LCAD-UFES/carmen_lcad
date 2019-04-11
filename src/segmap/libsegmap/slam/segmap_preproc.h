@@ -31,6 +31,7 @@ public:
 
 	class CompletePointData
 	{
+	public:
 		int laser_id;
 		double h_angle, v_angle, range;
 		unsigned char raw_intensity;
