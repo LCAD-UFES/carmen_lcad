@@ -30,3 +30,4 @@ offset_y = -363561
 use_xsens = 1
 gps_id = 1
 intensity_mode = remission
+use_intensity_calibration = 0

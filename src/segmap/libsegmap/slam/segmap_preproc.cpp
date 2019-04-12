@@ -12,6 +12,7 @@
 #include <carmen/synchronized_data_package.h>
 #include <carmen/segmap_conversions.h>
 #include <carmen/segmap_definitions.h>
+#include <carmen/ackerman_motion_model.h>
 
 #include "segmap_preproc.h"
 
@@ -73,6 +74,12 @@ SensorPreproc::reinitialize(DataSample *sample)
 
 	_compute_transform_car2world(sample);
 	_n_lidar_shots = sample->n_laser_shots;
+
+	Pose2d step(0, 0, 0);
+	ackerman_motion_model(step, sample->v, sample->phi, TIME_SPENT_IN_EACH_SCAN);
+
+	_motion_correction = Pose2d::to_matrix(Pose2d(0, 0, 0));
+	_motion_correction_step = Pose2d::to_matrix(step);
 }
 
 
@@ -111,6 +118,8 @@ SensorPreproc::_next_points(SensorReference ref)
 		if (valid)
 			points.push_back(point);
 	}
+
+	_motion_correction *= _motion_correction_step;
 
 	return points;
 }
@@ -179,6 +188,8 @@ SensorPreproc::next_points()
 			points.push_back(p);
 	}
 
+	_motion_correction *= _motion_correction_step;
+
 	return points;
 }
 
@@ -229,7 +240,7 @@ SensorPreproc::_compute_point_in_different_references(double h_angle, double v_a
 	(*p_sensor)(2, 0) = z;
 	(*p_sensor)(3, 0) = 1;
 
-	(*p_car) = _vel2car * (*p_sensor);
+	(*p_car) = _motion_correction * _vel2car * (*p_sensor);
 	(*p_world) = _car2world * (*p_car);
 }
 

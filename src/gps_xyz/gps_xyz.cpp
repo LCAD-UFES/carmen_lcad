@@ -78,20 +78,23 @@ get_carmen_gps_gphdt_message(vector<carmen_gps_xyz_message> gps_xyz_message_queu
 	double angle = 1000.0;
 	int i;
 
-	for (i = gps_xyz_message_queue.size() / 2; i >= 0; i--)
+	if (gps_xyz_message_queue.size() > 0)
 	{
-		if (gps_xyz_message_queue[i].nr == GPS_REACH1)
+		for (i = gps_xyz_message_queue.size() / 2; i >= 0; i--)
 		{
-			for (int j = gps_xyz_message_queue.size() - 1; j >= 0; j--)
+			if (gps_xyz_message_queue[i].nr == GPS_REACH1)
 			{
-				if ((gps_xyz_message_queue[j].nr == GPS_REACH2) && (fabs(gps_xyz_message_queue[j].utc - gps_xyz_message_queue[i].utc) < SMALL_DELTA_T))
+				for (int j = gps_xyz_message_queue.size() - 1; j >= 0; j--)
 				{
-					angle = get_angle_between_gpss(gps_xyz_message_queue[j], gps_xyz_message_queue[i]);
-					break;
+					if ((gps_xyz_message_queue[j].nr == GPS_REACH2) && (fabs(gps_xyz_message_queue[j].utc - gps_xyz_message_queue[i].utc) < SMALL_DELTA_T))
+					{
+						angle = get_angle_between_gpss(gps_xyz_message_queue[j], gps_xyz_message_queue[i]);
+						break;
+					}
 				}
+				if (angle != 1000.0)
+					break;
 			}
-			if (angle != 1000.0)
-				break;
 		}
 	}
 

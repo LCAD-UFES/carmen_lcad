@@ -385,7 +385,7 @@ main(int argc, char **argv)
 {
 	if (argc != 3)
 	{
-		printf("Error. Wrong number of parameters.\n Usage: compute_velodyne_calibration_table calibration_file.txt calibration_file.bin\n");
+		printf("Error. Wrong number of parameters.\n Usage: compute_velodyne_calibration_table calibration_file.txt output_file.txt\n");
 		exit(1);
 	}
 

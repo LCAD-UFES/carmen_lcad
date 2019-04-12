@@ -72,6 +72,8 @@ protected:
 	Eigen::Matrix<double, 4, 4> _vel2car;
 	Eigen::Matrix<double, 3, 4> _projection;
 	Eigen::Matrix<double, 4, 4> _xsens2car;
+	Eigen::Matrix<double, 4, 4> _motion_correction;
+	Eigen::Matrix<double, 4, 4> _motion_correction_step;
 	int _use_xsens;
 	IntensityMode _imode;
 	int _n_lidar_shots;

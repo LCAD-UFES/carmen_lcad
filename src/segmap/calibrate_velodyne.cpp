@@ -53,9 +53,6 @@ public:
 
 	void add(SensorPreproc::CompletePointData &p)
 	{
-		if (p.range > 30.0)
-			return;
-
 		int cy = cell_coord(p.world.y, _resolution);
 		int cx = cell_coord(p.world.x, _resolution);
 
@@ -184,8 +181,8 @@ add_all_points(NewCarmenDataset *dataset, SensorPreproc &preproc, Calibrator *ca
 {
 	DataSample *sample;
 
-	//int n = dataset->size();
-	int n = 400;
+	int n = dataset->size();
+	//int n = 400;
 
 	for (int i = 0; i < n; i ++)
 	{
