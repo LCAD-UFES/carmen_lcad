@@ -53,6 +53,9 @@ public:
 
 	void add(SensorPreproc::CompletePointData &p)
 	{
+		if (p.range > 30.0)
+			return;
+
 		int cy = cell_coord(p.world.y, _resolution);
 		int cx = cell_coord(p.world.x, _resolution);
 
@@ -76,18 +79,28 @@ public:
 
 	void create_calibration_table()
 	{
+		printf("Creating calibration table\n");
+
 		// Initialize calibration table.
 		_support_table.clear();
 		_support_table = vector<vector<pair<double, long>>>(N_RAYS); // read this value.
 
 		for (int i = 0; i < N_RAYS; i++)
-			for (uchar v = 0; v < 256; v++)
-				_support_table[i].push_back(pair<double, long>(0, 0));
+		{
+			_support_table[i] = vector<pair<double, long>>(256);
+
+			for (int v = 0; v < 256; v++)
+				_support_table[i][v] = pair<double, long>(0, 0);
+		}
 
 		// Integrate points to support table
 		for (_row_it = _cells.begin(); _row_it != _cells.end(); _row_it++)
+		{
 			for (_col_it = _row_it->second.begin(); _col_it != _row_it->second.end(); _col_it++)
+			{
 				integrate_cell_points_to_table(_col_it->second, &_support_table);
+			}
+		}
 	}
 
 	int
@@ -99,7 +112,6 @@ public:
 
 		return 0;
 	}
-
 
 	void
 	integrate_cell_points_to_table(ReadingVec &readings, vector<vector<pair<double, long>>> *support_table)
@@ -124,13 +136,18 @@ public:
 				}
 			}
 
+			(*support_table)[readings[i].laser_id][readings[i].intensity].first += sum;
+			(*support_table)[readings[i].laser_id][readings[i].intensity].second += count;
 			ids_and_intens.push_back(pair<int, uchar>(readings[i].laser_id, readings[i].intensity));
 		}
 	}
 
-	void save_calibration_table(const char *path)
+	void
+	save_calibration_table(string path)
 	{
-		FILE *f = safe_fopen("calib.txt", "w");
+		printf("Saving calibration table\n");
+
+		FILE *f = safe_fopen(path.c_str(), "w");
 
 		for (int i = 0; i < _support_table.size(); i++)
 		{
@@ -141,10 +158,10 @@ public:
 				if (_support_table[i][j].second > 0)
 					calibrated_value = _support_table[i][j].first / (double) _support_table[i][j].second;
 
-				fprintf(f, "%d %d %lf %lf %d\n",
+				fprintf(f, "%d %d %lf %ld %d\n",
 								i, j, _support_table[i][j].first,
 								_support_table[i][j].second,
-								(int) 255 * calibrated_value);
+								(int) (255 * calibrated_value));
 			}
 		}
 
@@ -162,34 +179,23 @@ protected:
 };
 
 
-string
-poses_path_from_mode(string mode, string log_path)
-{
-	string path;
-
-	if (mode.compare("fused") == 0)
-		path = default_fused_odom_path(log_path.c_str());
-	else if (mode.compare("graphslam") == 0)
-		path = default_graphslam_path(log_path.c_str());
-	else if (mode.compare("graphslam_to_map") == 0)
-		path = default_graphslam_to_map_path(log_path.c_str());
-	else
-		exit(printf("Error: Invalid mode '%s'\n.", mode.c_str()));
-
-	return path;
-}
-
 void
 add_all_points(NewCarmenDataset *dataset, SensorPreproc &preproc, Calibrator *calib)
 {
 	DataSample *sample;
 
-	for (int i = 0; i < dataset->size(); i ++)
+	//int n = dataset->size();
+	int n = 400;
+
+	for (int i = 0; i < n; i ++)
 	{
 		sample = dataset->at(i);
 
 		if (fabs(sample->v) < 1.0)
 			continue;
+
+		if (i % 100 == 0)
+			printf("Accumulating points %.2lf%%\n", 100 * ((double) i / (double) dataset->size()));
 
 		preproc.reinitialize(sample);
 
@@ -209,14 +215,14 @@ run_calibration(CommandLineArguments &args)
 {
 	string log_path = args.get<string>("log_path");
 	string odom_calib_path = default_odom_calib_path(log_path.c_str());
-	string poses_path = poses_path_from_mode(args.get<string>("mode"), log_path);
 
-	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, poses_path);
+	NewCarmenDataset *dataset = create_dataset(log_path, args.get<string>("pose_mode"));
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 	Calibrator *calib = new Calibrator(args.get<double>("resolution"));
 
 	add_all_points(dataset, preproc, calib);
 	calib->create_calibration_table();
+	calib->save_calibration_table(args.get<string>("output"));
 
 	return calib;
 }
@@ -229,11 +235,17 @@ main(int argc, char **argv)
 
 	args.add_positional<string>("log_path", "Path to a log.", 1);
 	args.add_positional<string>("output", "Path to an output file.", 1);
-	args.add_positional<string>("pose_mode", "Type of pose to be used [fused | graphslam | graphslam_to_map]", 0.2);
-	args.add_positional<double>("resolution", "Grid map resolution", 0.2);
+	args.add<string>("pose_mode", "Type of pose to be used [fused | graphslam | graphslam_to_map]", "graphslam");
+	args.add<double>("resolution", "Grid map resolution", 0.2);
 	add_default_sensor_preproc_args(args);
-
 	args.parse(argc, argv);
+
+	if (args.get<string>("intensity_mode").compare("raw") != 0)
+		exit(printf("Error: please, use intensity_mode 'raw' for calibration.\n"));
+
+	if (args.get<int>("use_intensity_calibration"))
+		exit(printf("Error: please, set use_intensity_calibration to false.\n"));
+
 	run_calibration(args);
 
 	return 0;

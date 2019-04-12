@@ -27,6 +27,7 @@ public:
 		INTENSITY = 0,
 		COLOR,
 		SEMANTIC,
+		RAW_INTENSITY
 	};
 
 	class CompletePointData
@@ -109,7 +110,7 @@ protected:
 															 double ignore_above_threshold,
 															 double ignore_below_threshold);
 
-	void _adjust_intensity(pcl::PointXYZRGB &point, Eigen::Matrix<double, 4, 1> &p_sensor, int *valid);
+	void _adjust_intensity(pcl::PointXYZRGB *point, Eigen::Matrix<double, 4, 1> &p_sensor, unsigned char raw_intensity, int *valid);
 
 	pcl::PointXYZRGB _create_point_and_intensity(Eigen::Matrix<double, 4, 1> &p_sensor,
 																							 Eigen::Matrix<double, 4, 1> &p_car,

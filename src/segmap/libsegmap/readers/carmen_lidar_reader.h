@@ -11,7 +11,7 @@
 class CarmenLidarLoader
 {
 public:
-    CarmenLidarLoader();
+    CarmenLidarLoader(std::string lidar_calib_path = "");
     ~CarmenLidarLoader();
 
     void reinitialize(std::string &cloud_path, int n_rays);
@@ -31,6 +31,10 @@ protected:
 
     // num vertical lasers in the velodyne used at ufes.
     static const int _n_vert = 32;
+
+    unsigned char calibration_table[32][256];
+
+    void _initialize_calibration_table(std::string lidar_calib_path);
 };
 
 

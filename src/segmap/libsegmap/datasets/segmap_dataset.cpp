@@ -29,8 +29,7 @@ NewCarmenDataset::NewCarmenDataset(std::string path,
 																	 std::string poses_path,
 																	 int gps_id,
 																	 NewCarmenDataset::SyncSensor sync_sensor,
-																	 NewCarmenDataset::SyncMode sync_mode,
-                                   std::string intensity_calib_path)
+																	 NewCarmenDataset::SyncMode sync_mode)
 {
 	_gps_id = gps_id;
 	_sync_sensor = sync_sensor;
@@ -39,9 +38,6 @@ NewCarmenDataset::NewCarmenDataset(std::string path,
 	_velodyne_dir = string(path) + "_velodyne";
 	_images_dir = string(path) + "_bumblebee";
 
-	intensity_calibration = _allocate_calibration_table();
-
-	_load_intensity_calibration(intensity_calib_path);
 	_load_odometry_calibration(odom_calib_path);
 
 	// reading the log requires odom calibration data.
@@ -54,8 +50,6 @@ NewCarmenDataset::NewCarmenDataset(std::string path,
 
 NewCarmenDataset::~NewCarmenDataset()
 {
-	_free_calibration_table(intensity_calibration);
-
 	for (int i = 0; i < _data.size(); i++)
 		delete(_data[i]);
 }
@@ -274,95 +268,6 @@ NewCarmenDataset::_update_data_with_poses()
 		for (int i = 0; i < size(); i++)
 			at(i)->pose = Pose2d(0, 0, 0);
 	}
-}
-
-
-unsigned char***
-NewCarmenDataset::_allocate_calibration_table()
-{
-	unsigned char ***table = (unsigned char ***) calloc(32, sizeof(unsigned char **));
-
-	for (int i = 0; i < 32; i++)
-	{
-		table[i] = (unsigned char **) calloc(10, sizeof(unsigned char *));
-
-		for (int j = 0; j < 10; j++)
-		{
-			table[i][j] = (unsigned char *) calloc(256, sizeof(unsigned char));
-
-			// assign default values.
-			for (int k = 0; k < 256; k++)
-				table[i][j][k] = (unsigned char) k;
-		}
-	}
-
-	return table;
-}
-
-
-void 
-NewCarmenDataset::_free_calibration_table(unsigned char ***table)
-{
-	for (int i = 0; i < 32; i++)
-	{
-		for (int j = 0; j < 10; j++)
-			free(table[i][j]);
-
-		free(table[i]);
-	}
-
-	free(table);
-}
-
-
-void
-NewCarmenDataset::_load_intensity_calibration(std::string &path)
-{
-	FILE *calibration_file_bin = fopen(path.c_str(), "r");
-
-	if (calibration_file_bin == NULL)
-	{
-		fprintf(stderr, "Warning: failed to read intensity calibration from '%s'. Using uncalibrated values.\n", path.c_str());
-		return;
-	}
-
-	int laser, ray_size, intensity;
-	long accumulated_intennsity, count;
-	float val, max_val = 0.0, min_val = 255.0;
-
-	while (fscanf(calibration_file_bin, "%d %d %d %f %ld %ld", &laser, &ray_size, &intensity, &val, &accumulated_intennsity, &count) == 6)
-	{
-		intensity_calibration[laser][ray_size][intensity] = (uchar) val;
-
-		if (val > max_val)
-			max_val = val;
-
-		if (val < min_val)
-			min_val = val;
-	}
-
-	for (int i = 0; i < 32; i++)
-	{
-		for (int j = 0; j < 10; j++)
-		{
-			for (int k = 0; k < 256; k++)
-			{
-				val = intensity_calibration[i][j][k];
-				val = (val - min_val) / (max_val - min_val);
-
-				if (val > 1.0)
-					val = 1.0;
-
-				if (val < 0.0)
-					val = 0.0;
-
-				intensity_calibration[i][j][k] = (uchar) (val * 255.);
-			}
-		}
-	}
-
-	fclose(calibration_file_bin);
-	printf("Intensity calibration loaded from '%s'\n", path.c_str());
 }
 
 
@@ -721,3 +626,12 @@ default_graphslam_to_map_path(const char *log_path)
 	std::string log_name = file_name_from_path(log_path);
 	return (string("/dados/data2/data_") + log_name + string("/graphslam_to_map.txt"));
 }
+
+
+std::string
+default_intensity_calib_path(const char *log_path)
+{
+	std::string log_name = file_name_from_path(log_path);
+	return (string("/dados/data2/data_") + log_name + string("/intensity_calibration.txt"));
+}
+

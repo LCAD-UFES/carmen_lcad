@@ -1,12 +1,14 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <carmen/util_io.h>
 #include <carmen/util_math.h>
 #include <carmen/lidar_shot.h>
 #include <carmen/segmap_conversions.h>
 #include <carmen/carmen_lidar_reader.h>
 
+using namespace std;
 using namespace pcl;
 
 
@@ -21,7 +23,7 @@ static const double _velodyne_vertical_angles[32] =
 static const int velodyne_ray_order[32] = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31};
 
 
-CarmenLidarLoader::CarmenLidarLoader()
+CarmenLidarLoader::CarmenLidarLoader(string lidar_calib_path)
 {
 	_shot = new LidarShot(_n_vert);
 
@@ -35,6 +37,8 @@ CarmenLidarLoader::CarmenLidarLoader()
 
 	for (int i = 0; i < _n_vert; i++)
 		_shot->v_angles[i] = normalize_theta(degrees_to_radians(_velodyne_vertical_angles[i]));
+
+	_initialize_calibration_table(lidar_calib_path);
 }
 
 
@@ -45,6 +49,42 @@ CarmenLidarLoader::~CarmenLidarLoader()
 	if (_fptr)
 		fclose(_fptr);
 }
+
+
+void
+CarmenLidarLoader::_initialize_calibration_table(string lidar_calib_path)
+{
+	// initialize with default values
+	for (int i = 0; i < _n_vert; i++)
+		for (int j = 0; j < 256; j++)
+			calibration_table[i][j] = (unsigned char) j;
+
+	// if file exists, replace the table values with the ones from the file
+	FILE *f = fopen(lidar_calib_path.c_str(), "r");
+
+	if (f != NULL)
+	{
+		while (!feof(f))
+		{
+			int ray, intensity, calib;
+			double sum;
+			long count;
+
+			fscanf(f, "%d %d %lf %ld %d", &ray, &intensity, &sum, &count, &calib);
+
+			if (count > 10)
+				calibration_table[ray][intensity] = calib;
+		}
+
+		fclose(f);
+
+		fprintf(stderr, "Intensity calibration successfully loaded from '%s.\n", lidar_calib_path.c_str());
+	}
+	else
+		fprintf(stderr, "Warning: intensity calibration file '%s' not found. Using default values.\n",
+		        lidar_calib_path.c_str());
+}
+
 
 LidarShot*
 CarmenLidarLoader::next()
@@ -63,6 +103,7 @@ CarmenLidarLoader::next()
 		// reorder and convert range to meters
 		_shot->ranges[i] = ((double) _raw_ranges[velodyne_ray_order[i]]) / (double) 500.;
 		_shot->intensities[i] = _raw_intensities[velodyne_ray_order[i]];
+		_shot->intensities[i] = calibration_table[i][_shot->intensities[i]];
 	}
 
 	_n_readings++;

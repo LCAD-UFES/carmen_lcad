@@ -1,8 +1,7 @@
 
-#include "../initializations/segmap_args.h"
-
 #include <cstdlib>
 #include <string>
+#include <carmen/segmap_args.h>
 #include <carmen/command_line.h>
 
 using namespace std;
@@ -69,7 +68,8 @@ add_default_sensor_preproc_args(CommandLineArguments &args)
 	args.add<double>("offset_y", "Offset to subtract the pose (y-coord)", -363560.975411);
 	args.add<int>("use_xsens,x", "Whether or not to use pitch, and roll angles from xsens", 1);
 	args.add<int>("gps_id", "Id of the gps to be used", 1);
-	args.add<string>("intensity_mode,i", "What type of information to assign to LiDAR rays intensity [remission | visual | semantic]", "remission");
+	args.add<string>("intensity_mode,i", "What type of information to assign to LiDAR rays intensity [remission | visual | semantic | raw]", "remission");
+	args.add<int>("use_intensity_calibration", "Flag to choose using the velodyne calibration or not.", 0);
 
 	args.save_config_file(default_data_dir() + "/preproc_config.txt");
 }

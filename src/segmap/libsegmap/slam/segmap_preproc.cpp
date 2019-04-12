@@ -142,7 +142,6 @@ std::vector<SensorPreproc::CompletePointData>
 SensorPreproc::next_points()
 {
 	int valid;
-	double h, v, r, in;
 	LidarShot *shot;
 	PointXYZRGB point;
 	std::vector<SensorPreproc::CompletePointData> points;
@@ -168,13 +167,13 @@ SensorPreproc::next_points()
 		_point_coords_from_mat(_p_car, &p.car);
 		_point_coords_from_mat(_p_sensor, &p.sensor);
 		_point_coords_from_mat(_p_world, &p.world);
-		_adjust_intensity(p.sensor, _p_sensor, &valid);
+		_adjust_intensity(&p.sensor, _p_sensor, p.raw_intensity, &valid);
 
 		p.world.r = p.car.r = p.sensor.r;
 		p.world.g = p.car.g = p.sensor.g;
 		p.world.b = p.car.b = p.sensor.b;
 
-		if (_spherical_point_is_valid(h, v, r)
+		if (_spherical_point_is_valid(p.h_angle, p.v_angle, p.range)
 				&& _point3d_is_valid(_p_sensor, _p_car, _p_world, _ignore_above_threshold, _ignore_below_threshold)
 				&& valid)
 			points.push_back(p);
@@ -340,17 +339,20 @@ SensorPreproc::_point_coords_from_mat(Eigen::Matrix<double, 4, 1> &mat, PointXYZ
 
 
 void
-SensorPreproc::_adjust_intensity(PointXYZRGB &point, Matrix<double, 4, 1> &p_sensor, int *valid)
+SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sensor, unsigned char raw_intensity, int *valid)
 {
 	// in INTENSITY mode, the point color is given by
 	// the intensity observed by the lidar.
-	if (_imode == INTENSITY)
+	if (_imode == INTENSITY || _imode == RAW_INTENSITY)
 	{
-		unsigned char brightened = _brighten(point.r);
+		unsigned char intensity = raw_intensity;
 
-		point.r = brightened;
-		point.g = brightened;
-		point.b = brightened;
+		if (_imode == INTENSITY)
+			intensity = _brighten(intensity);
+
+		point->r = intensity;
+		point->g = intensity;
+		point->b = intensity;
 
 		*valid = 1;
 	}
@@ -367,9 +369,9 @@ SensorPreproc::_adjust_intensity(PointXYZRGB &point, Matrix<double, 4, 1> &p_sen
 		{
 			int p = 3 * (pos_pixel.y * _img.cols + pos_pixel.x);
 
-			point.b = _img.data[p];
-			point.g = _img.data[p + 1];
-			point.r = _img.data[p + 2];
+			point->b = _img.data[p];
+			point->g = _img.data[p + 1];
+			point->r = _img.data[p + 2];
 		}
 	}
 }
@@ -392,7 +394,7 @@ SensorPreproc::_create_point_and_intensity(Matrix<double, 4, 1> &p_sensor,
 	else
 		_point_coords_from_mat(p_world, &point);
 
-	_adjust_intensity(point, p_sensor, valid);
+	_adjust_intensity(&point, p_sensor, intensity, valid);
 
 	return point;
 }

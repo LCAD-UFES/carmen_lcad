@@ -20,6 +20,8 @@ parse_intensity_mode(string map_type)
 		return SensorPreproc::COLOR;
 	else if (map_type.compare("semantic") == 0)
 		return SensorPreproc::SEMANTIC;
+	else if (map_type.compare("raw") == 0)
+		return SensorPreproc::RAW_INTENSITY;
 	else
 		exit(printf("Error: invalid map type '%s'.\n", map_type.c_str()));
 }
@@ -78,20 +80,30 @@ create_particle_filter(CommandLineArguments &args)
 }
 
 
+string
+poses_path_from_mode(string mode, string log_path)
+{
+	string path;
+
+	if (mode.compare("fused") == 0)
+		path = default_fused_odom_path(log_path.c_str());
+	else if (mode.compare("graphslam") == 0)
+		path = default_graphslam_path(log_path.c_str());
+	else if (mode.compare("graphslam_to_map") == 0)
+		path = default_graphslam_to_map_path(log_path.c_str());
+	else
+		exit(printf("Error: Invalid mode '%s'\n.", mode.c_str()));
+
+	return path;
+}
+
+
 NewCarmenDataset*
 create_dataset(string log_path, string mode)
 {
 	string poses_path, odom_calib_path;
 
-	if (mode == "fused_odom")
-		poses_path = default_fused_odom_path(log_path.c_str());
-	else if (mode == "graphslam")
-		poses_path = default_graphslam_path(log_path.c_str());
-	else if (mode == "graphslam_to_map")
-		poses_path = default_graphslam_to_map_path(log_path.c_str());
-	else
-		exit(printf("Error: invalid mode '%s'.\n", mode.c_str()));
-
+	poses_path = poses_path_from_mode(mode, log_path);
 	odom_calib_path = default_odom_calib_path(log_path.c_str());
 
 	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, poses_path);
@@ -105,7 +117,14 @@ create_sensor_preproc(CommandLineArguments &args,
 											NewCarmenDataset *dataset,
 											string log_path)
 {
-	CarmenLidarLoader *vloader = new CarmenLidarLoader;
+	string icalib_path;
+
+	if (args.get<int>("use_intensity_calibration"))
+		icalib_path = default_intensity_calib_path(log_path.c_str());
+	else
+		icalib_path = "none";
+
+	CarmenLidarLoader *vloader = new CarmenLidarLoader(icalib_path);
 	CarmenImageLoader *iloader = new CarmenImageLoader;
 	SemanticSegmentationLoader *sloader = new SemanticSegmentationLoader(log_path);
 
