@@ -428,7 +428,6 @@ void HyperGraphSclamOptimizer::AddParametersVertices()
         // try to save the current vertex to the optimizer
         if (!optimizer->addVertex(odom_param))
         {
-
             throw std::runtime_error("Could not add the odom ackerman params calibration vertex to the optimizer!");
         }
     }

@@ -61,7 +61,7 @@ raspistill grava uma imgem e raspivid grava um video
 # Compile and test the pi_camera module on the Raspberry PI
 
 ```bash
- $ cd pi_camera/raspicam && mkdir build && cd build && cmake ..
+ $ cd ~/carmen_lcad/src/pi_camera/raspicam && mkdir build && cd build && cmake ..
  $ make
  $ sudo make install
  $ cd ../.. && mkdir build && cd build && cmake ..
@@ -117,7 +117,7 @@ raspistill grava uma imgem e raspivid grava um video
  
  ```bash
  $ ssh pi@192.168.1.15
- $ cd ~/pi_camera/build
+ $ cd ~/carmen_lcad/src/pi_camera/build
  $ ./pi_camera_server_driver
 ```
  Run the viewer on IARA
