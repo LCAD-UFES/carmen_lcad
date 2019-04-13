@@ -31,3 +31,5 @@ use_xsens = 1
 gps_id = 1
 intensity_mode = raw
 use_calib = 1
+gps_discontinuity_threshold = 0.5
+gps_min_cluster_size = 50

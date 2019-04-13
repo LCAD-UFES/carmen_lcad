@@ -5,31 +5,25 @@
 #include <vector>
 #include <cmath>
 
-#include "g2o/types/slam2d/se2.h"
-#include "g2o/types/slam2d/vertex_se2.h"
-#include "g2o/types/slam2d/edge_se2.h"
-#include "g2o/types/slam2d/types_slam2d.h"
-
-#include "g2o/apps/g2o_cli/dl_wrapper.h"
-#include "g2o/apps/g2o_cli/g2o_common.h"
-#include "g2o/core/sparse_optimizer.h"
-#include "g2o/core/block_solver.h"
-#include "g2o/core/factory.h"
-#include "g2o/core/optimization_algorithm_factory.h"
-#include "g2o/core/optimization_algorithm_gauss_newton.h"
-#include "g2o/core/optimization_algorithm_levenberg.h"
-#include "g2o/solvers/csparse/linear_solver_csparse.h"
-#include "g2o/solvers/pcg/linear_solver_pcg.h"
-#include "g2o/solvers/cholmod/linear_solver_cholmod.h"
-#include "g2o/stuff/macros.h"
-#include "g2o/core/optimizable_graph.h"
-
 #include "edge_gps_2D.h"
+#include <g2o/types/slam2d/se2.h>
+#include <g2o/types/slam2d/vertex_se2.h>
+#include <g2o/types/slam2d/edge_se2.h>
+#include <g2o/core/sparse_optimizer.h>
+
+#include <g2o/solvers/cholmod/linear_solver_cholmod.h>
+#include <g2o/core/block_solver.h>
+#include <g2o/core/solver.h>
+
+#include <g2o/core/optimization_algorithm_gauss_newton.h>
+#include <g2o/core/factory.h>
+
 #include <carmen/gicp.h>
 #include <carmen/command_line.h>
 
 #include <carmen/segmap_dataset.h>
 #include <carmen/util_io.h>
+#include <carmen/util_math.h>
 #include <carmen/ackerman_motion_model.h>
 #include <carmen/segmap_loop_closures.h>
 #include <carmen/segmap_args.h>
@@ -38,6 +32,9 @@
 
 using namespace std;
 using namespace g2o;
+
+typedef g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>> MyBlockSolver;
+typedef LinearSolverCholmod<MyBlockSolver::PoseMatrixType> MyCholmodSolver;
 
 
 class GraphSlamData
@@ -72,6 +69,8 @@ public:
 	double min_velocity_for_estimating_heading;
 	double min_velocity_for_considering_gps;
 	string global_angle_mode;
+
+	vector<int> gps_is_valid;
 
 protected:
 	void _load_parameters(char *config);
@@ -241,7 +240,7 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
 		sample = data.dataset->at(i);
 
 		// ignore the messages when the car is almost stopped.
-		if (fabs(sample->v) < data.min_velocity_for_considering_gps)
+		if (fabs(sample->v) < data.min_velocity_for_considering_gps || !data.gps_is_valid[i])
 			continue;
 
 		compute_angle_from_gps(data, i, th_std,
@@ -423,6 +422,80 @@ save_corrected_vertices(GraphSlamData &data, SparseOptimizer *optimizer)
 
 
 void
+detect_and_stamp_invalid_gps_measurements(GraphSlamData *data,
+																					double gps_discontinuity_threshold,
+																					int gps_min_cluster_size)
+{
+	double d;
+	vector<int> gps_group_ids;
+	DataSample *current, *previous;
+	int number_invalid_measurements;
+
+	// assume initially that all gps measurements are valid.
+	data->gps_is_valid = vector<int>(data->dataset->size(), 1);
+
+	previous = data->dataset->at(0);
+	gps_group_ids.push_back(0);
+
+	number_invalid_measurements = 0;
+
+	FILE *f = fopen("/tmp/invalid_gps.txt", "w");
+
+	for (int i = 1; i < data->dataset->size(); i++)
+	{
+		current = data->dataset->at(i);
+		d = dist2d(current->gps.x, current->gps.y, previous->gps.x, previous->gps.y);
+
+		// discountinuity detected
+		if (d > gps_discontinuity_threshold)
+		{
+			// if cluster is small, set all measurements from the group as invalid.
+			if (gps_group_ids.size() < gps_min_cluster_size)
+			{
+				for (int j = 0; j < gps_group_ids.size(); j++)
+				{
+					data->gps_is_valid[gps_group_ids[j]] = 0;
+
+					fprintf(f, "%lf %lf\n",
+									data->dataset->at(gps_group_ids[j])->gps.x,
+									data->dataset->at(gps_group_ids[j])->gps.y);
+				}
+
+				number_invalid_measurements += gps_group_ids.size();
+			}
+
+			gps_group_ids.clear();
+		}
+		else
+			gps_group_ids.push_back(i);
+	}
+
+	fprintf(stderr, "Percentage of invalid gps measurements: %lf%%\n",
+					100 * ((double) number_invalid_measurements / (double) data->dataset->size()));
+
+	fclose(f);
+}
+
+
+void
+initialize_g2o_stuff(g2o::Factory *factory, SparseOptimizer *optimizer)
+{
+	factory->registerType("EDGE_GPS", new HyperGraphElementCreator<EdgeGPS>);
+
+	MyCholmodSolver *cholmod_solver = new MyCholmodSolver();
+	cholmod_solver->setBlockOrdering(false);
+
+	g2o::Solver *solver = new MyBlockSolver(cholmod_solver);
+
+	g2o::OptimizationAlgorithm *optimization_algorithm =
+			new g2o::OptimizationAlgorithmGaussNewton(solver);
+
+	optimizer->setAlgorithm(optimization_algorithm);
+	optimizer->setVerbose(true);
+}
+
+
+void
 prepare_optimization(SparseOptimizer *optimizer)
 {
 	for (SparseOptimizer::VertexIDMap::const_iterator it = optimizer->vertices().begin(); it != optimizer->vertices().end(); ++it)
@@ -438,31 +511,23 @@ prepare_optimization(SparseOptimizer *optimizer)
 		OptimizableGraph::Edge* e = static_cast<OptimizableGraph::Edge*>(*it);
 		e->setRobustKernel(0);
 	}
+
+	optimizer->computeActiveErrors();
 }
 
 
-SparseOptimizer*
-initialize_optimizer()
+void
+free_g2o_stuff(g2o::Factory *factory,
+							SparseOptimizer* optimizer)
 {
-	SparseOptimizer *optimizer = new SparseOptimizer;
+  if (factory != nullptr)
+      g2o::Factory::destroy();
 
-	OptimizationAlgorithmFactory* solverFactory = OptimizationAlgorithmFactory::instance();
-	g2o::OptimizationAlgorithmProperty _currentOptimizationAlgorithmProperty;
-	// _currentOptimizationAlgorithmProperty.name = "lm_pcg";
-	_currentOptimizationAlgorithmProperty.name = "gn_var_cholmod";
-	_currentOptimizationAlgorithmProperty.requiresMarginalize = false;
-	// _currentOptimizationAlgorithmProperty.type = "PCG";
-	_currentOptimizationAlgorithmProperty.type = "CHOLMOD";
-	_currentOptimizationAlgorithmProperty.landmarkDim = -1;
-	_currentOptimizationAlgorithmProperty.poseDim = -1;
-	_currentOptimizationAlgorithmProperty.desc = ""; // "Gauss-Newton: Cholesky solver using CHOLMOD (variable blocksize)";
-
-	// OptimizationAlgorithm *solver = solverFactory->construct("lm_pcg", _currentOptimizationAlgorithmProperty);
-	OptimizationAlgorithm *solver = solverFactory->construct("gn_var_cholmod", _currentOptimizationAlgorithmProperty);
-
-	optimizer->setAlgorithm(solver);
-
-	return optimizer;
+  if (optimizer != nullptr)
+  {
+      optimizer->clear();
+      delete optimizer;
+  }
 }
 
 
@@ -549,6 +614,27 @@ add_graphslam_parameters(CommandLineArguments &args)
 }
 
 
+class Bla
+{
+public:
+
+	g2o::Factory *factory;
+	SparseOptimizer* optimizer;
+
+	Bla()
+	{
+		factory = g2o::Factory::instance();
+		optimizer = new SparseOptimizer;
+		initialize_g2o_stuff(factory, optimizer);
+	}
+
+	~Bla()
+	{
+		free_g2o_stuff(factory, optimizer);
+	}
+};
+
+
 int main(int argc, char **argv)
 {
 	srand(time(NULL));
@@ -561,35 +647,42 @@ int main(int argc, char **argv)
 	args.add<int>("gps_id", "Index of the gps to be used", 1);
 	add_graphslam_parameters(args);
 	add_default_sensor_preproc_args(args);
+	args.add<double>("gps_discontinuity_threshold", "Threshold for consireding detecting a jump in consecutive gps messages", 0.5);
+	args.add<int>("gps_min_cluster_size", "Minimum number of messages for keeping a group when a discountinuity is detected", 50);
 	args.save_config_file(default_data_dir() + "/graphslam_config.txt");
 
 	parse_command_line(argc, argv, args, &data);
 
-	// initialize optimizer (why does the initialization using the factory only works in the main?).
-	SparseOptimizer* optimizer;
-	DlWrapper dlSolverWrapper;
-	loadStandardSolver(dlSolverWrapper, argc, argv);
-	Factory* factory = Factory::instance();
-	factory->registerType("EDGE_GPS", new HyperGraphElementCreator<EdgeGPS>);
-	optimizer = initialize_optimizer();
+	//g2o::Factory *factory = g2o::Factory::instance();
+	//SparseOptimizer* optimizer = new SparseOptimizer;
+	//initialize_g2o_stuff(factory, optimizer);
+	Bla bla;
 
 	data.dataset = create_dataset(args.get<string>("log"));
+	if (data.dataset->size() <= 0)
+		exit(printf("Error: Empty dataset.\n"));
+
 	read_loop_restrictions(data.gicp_loop_closure_file, &data.gicp_loop_data);
 	read_loop_restrictions(data.pf_loop_closure_file, &data.pf_loop_data);
 	read_loop_restrictions(data.gicp_odom_file, &data.gicp_odom_data);
 	read_loop_restrictions(data.gicp_map_file, &data.gicp_based_gps);
 	read_loop_restrictions(data.pf_to_map_file, &data.pf_based_gps);
 
-	load_data_to_optimizer(data, optimizer);
+	detect_and_stamp_invalid_gps_measurements(&data,
+																						args.get<double>("gps_discontinuity_threshold"),
+																						args.get<int>("gps_min_cluster_size"));
+	load_data_to_optimizer(data, bla.optimizer);
 
-	optimizer->setVerbose(true);
-	prepare_optimization(optimizer);
-	optimizer->optimize(data.n_iterations);
+	bla.optimizer->setVerbose(true);
+	prepare_optimization(bla.optimizer);
+	bla.optimizer->optimize(data.n_iterations);
 	cerr << "OptimizationDone!" << endl;
 
 	// output
-	save_corrected_vertices(data, optimizer);
+	save_corrected_vertices(data, bla.optimizer);
 	cerr << "OutputSaved!" << endl;
+
+	//free_g2o_stuff(factory, optimizer);
 
 	return 0;
 }

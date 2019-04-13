@@ -31,7 +31,10 @@ LFLAGS += -lrobot_ackerman_interface -lobstacle_avoider_interface \
 		-lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface -llocalize_ackerman_core -llocalize_ackerman_interface \
 		-llocalize_ackerman_motion -lmap_server_interface -lgps_xyz_interface -lvisual_odometry_interface -lxsens_mtig_interface \
 		-lxsens_interface -lgps_nmea_interface
-LFLAGS += -L /usr/local/lib -lcholmod -lg2o_core -lg2o_stuff -lg2o_types_slam2d -lg2o_cli
+
+# g2o libs
+LFLAGS += -L/usr/local/lib -lcholmod -lg2o_core -lg2o_types_slam2d -lg2o_solver_cholmod -lg2o_stuff
+
 LFLAGS += -lvtkCommon -lvtkFiltering -lvtkRendering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
 		-lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter -lprob_models -lrotation_geometry
@@ -60,7 +63,7 @@ DEPS = ../libsegmap/types/libsegmap_types.a \
 	../util/libutil.a
 
 SOURCES = graphslam.cpp joint_graphslam.cpp graphslam_util.cpp view_path.cpp
-TARGETS = graphslam joint_graphslam view_path
+TARGETS = graphslam view_path # joint_graphslam
 
 graphslam: graphslam.o $(DEPS) 
 joint_graphslam: joint_graphslam.o graphslam_util.o $(DEPS)
