@@ -5,7 +5,6 @@
 #include <vector>
 #include <cmath>
 
-#include "edge_gps_2D.h"
 #include <g2o/types/slam2d/se2.h>
 #include <g2o/types/slam2d/vertex_se2.h>
 #include <g2o/types/slam2d/edge_se2.h>
@@ -17,6 +16,7 @@
 
 #include <g2o/core/optimization_algorithm_gauss_newton.h>
 #include <g2o/core/factory.h>
+#include "edge_gps_2D.h"
 
 #include <carmen/gicp.h>
 #include <carmen/command_line.h>
