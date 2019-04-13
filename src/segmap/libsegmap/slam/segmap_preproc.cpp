@@ -22,17 +22,82 @@ using namespace std;
 using namespace Eigen;
 
 
+// TODO: include prob_map.h to prevent copies of code
+float***
+load_calibration_table(const char *calibration_file)
+{
+	FILE *calibration_file_bin = fopen(calibration_file, "r");
+	if (!calibration_file_bin)
+		return (NULL);
+
+	float ***table;
+	table = (float ***) calloc(32, sizeof(float **));
+	for (int i = 0; i < 32; i++)
+	{
+		table[i] = (float **) calloc(10, sizeof(float *));
+		for (int j = 0; j < 10; j++)
+			table[i][j] = (float *) calloc(256, sizeof(float));
+	}
+	int laser, ray_size, intensity;
+	long accumulated_intennsity, count;
+	float val, max_val = 0.0, min_val = 255.0;
+	while (fscanf(calibration_file_bin, "%d %d %d %f %ld %ld", &laser, &ray_size, &intensity, &val, &accumulated_intennsity, &count) == 6)
+	{
+		table[laser][ray_size][intensity] = val;
+		if (val > max_val)
+			max_val = val;
+		if (val < min_val)
+			min_val = val;
+	}
+
+	for (int i = 0; i < 32; i++)
+	{
+		for (int j = 0; j < 10; j++)
+		{
+			for (int k = 0; k < 256; k++)
+			{
+				val = table[i][j][k];
+				val = (val - min_val) / (max_val - min_val);
+				if (val > 1.0)
+					val = 1.0;
+				if (val < 0.0)
+					val = 0.0;
+				table[i][j][k] = val;
+			}
+		}
+	}
+	fclose(calibration_file_bin);
+
+	return (table);
+}
+
+
+int
+get_distance_index(double distance)
+{	// Gera um indice para cada faixa de distancias. As faixas crescem de ~50% a cada intervalo. Indices de zero a 9 permitem distancias de zero a ~70 metros
+	if (distance < 3.5)
+		return (0);
+
+	int distance_index = (int) ((log(distance - 3.5 + 1.0) / log(1.45)) +  0.5);
+	if (distance_index > 9)
+		return (9);
+
+	return (distance_index);
+}
+
+
 SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
-														 CarmenImageLoader *iloader,
-														 SemanticSegmentationLoader *sloader,
-														 Matrix<double, 4, 4> vel2cam,
-														 Matrix<double, 4, 4> vel2car,
-														 Matrix<double, 3, 4> projection,
-														 Matrix<double, 4, 4> xsens2car,
-														 int use_xsens,
-														 IntensityMode imode,
-														 double ignore_above_threshold,
-														 double ignore_below_threshold)
+                             CarmenImageLoader *iloader,
+                             SemanticSegmentationLoader *sloader,
+                             Matrix<double, 4, 4> vel2cam,
+                             Matrix<double, 4, 4> vel2car,
+                             Matrix<double, 3, 4> projection,
+                             Matrix<double, 4, 4> xsens2car,
+                             int use_xsens,
+                             IntensityMode imode,
+                             std::string intensity_calib_path,
+                             double ignore_above_threshold,
+                             double ignore_below_threshold)
 {
 	_vloader = vloader;
 	_iloader = iloader;
@@ -44,6 +109,7 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
 	_use_xsens = use_xsens;
 	_imode = imode;
 	_n_lidar_shots = 0;
+	_vel2car_inverse = _vel2car.inverse();
 
 	_ignore_above_threshold = ignore_above_threshold;
 	_ignore_below_threshold = ignore_below_threshold;
@@ -51,6 +117,9 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
 	_p_sensor(3, 0) = 1.0;
 	_p_car(3, 0) = 1.0;
 	_p_world(3, 0) = 1.0;
+
+	//_initialize_calibration_table(lidar_calib_path);
+	calibration_table = load_calibration_table(intensity_calib_path.c_str());
 }
 
 
@@ -59,6 +128,16 @@ SensorPreproc::~SensorPreproc()
 	delete(_vloader);
 	delete(_iloader);
 	delete(_sloader);
+
+	for (int i = 0; i < 32; i++)
+	{
+		for (int r = 0; r < 10; r++)
+				free(calibration_table[i][r]);
+
+		free(calibration_table[i]);
+	}
+
+	free(calibration_table);
 }
 
 
@@ -95,6 +174,8 @@ SensorPreproc::_next_points(SensorReference ref)
 	if (_vloader->done())
 		return vector<pcl::PointXYZRGB>();
 
+	_corrected_vel2car = _motion_correction * _vel2car;
+
 	shot = _vloader->next();
 
 	for (int i = 0; i < shot->n; i++)
@@ -113,7 +194,7 @@ SensorPreproc::_next_points(SensorReference ref)
 		if (!_point3d_is_valid(_p_sensor, _p_car, _p_world, _ignore_above_threshold, _ignore_below_threshold))
 			continue;
 
-		point = _create_point_and_intensity(_p_sensor, _p_car, _p_world, in, &valid, ref);
+		point = _create_point_and_intensity(_p_sensor, _p_car, _p_world, in, &valid, ref, i);
 
 		if (valid)
 			points.push_back(point);
@@ -159,6 +240,7 @@ SensorPreproc::next_points()
 		return points;
 
 	shot = _vloader->next();
+	_corrected_vel2car = _motion_correction * _vel2car;
 
 	for (int i = 0; i < shot->n; i++)
 	{
@@ -171,12 +253,12 @@ SensorPreproc::next_points()
 		p.raw_intensity = shot->intensities[i];
 
 		_compute_point_in_different_references(p.h_angle, p.v_angle, p.range,
-																					 &_p_sensor, &_p_car, &_p_world);
+		                                       &_p_sensor, &_p_car, &_p_world);
 
 		_point_coords_from_mat(_p_car, &p.car);
 		_point_coords_from_mat(_p_sensor, &p.sensor);
 		_point_coords_from_mat(_p_world, &p.world);
-		_adjust_intensity(&p.sensor, _p_sensor, p.raw_intensity, &valid);
+		_adjust_intensity(&p.sensor, _p_sensor, p.raw_intensity, &valid, i);
 
 		p.world.r = p.car.r = p.sensor.r;
 		p.world.g = p.car.g = p.sensor.g;
@@ -219,17 +301,17 @@ SensorPreproc::_compute_transform_car2world(DataSample *sample)
 	}
 
 	_car2world = pose6d_to_matrix((sample->pose.x),
-															(sample->pose.y),
-															0., roll, pitch,
-															sample->pose.th);
+	                              (sample->pose.y),
+	                              0., roll, pitch,
+	                              sample->pose.th);
 }
 
 
 void
 SensorPreproc::_compute_point_in_different_references(double h_angle, double v_angle, double range,
-																										 Matrix<double, 4, 1> *p_sensor,
-																										 Matrix<double, 4, 1> *p_car,
-																										 Matrix<double, 4, 1> *p_world)
+                                                      Matrix<double, 4, 1> *p_sensor,
+                                                      Matrix<double, 4, 1> *p_car,
+                                                      Matrix<double, 4, 1> *p_world)
 {
 	double x, y, z;
 
@@ -240,8 +322,27 @@ SensorPreproc::_compute_point_in_different_references(double h_angle, double v_a
 	(*p_sensor)(2, 0) = z;
 	(*p_sensor)(3, 0) = 1;
 
-	(*p_car) = _motion_correction * _vel2car * (*p_sensor);
+	(*p_car) = _corrected_vel2car * (*p_sensor);
+	//(*p_car) = _vel2car * (*p_sensor);
+
+	// compute the corrected point position in sensor's reference
+	(*p_sensor) = _vel2car_inverse * (*p_car);
 	(*p_world) = _car2world * (*p_car);
+
+	(*p_car)(0, 0) /= (*p_car)(3, 0);
+	(*p_car)(1, 0) /= (*p_car)(3, 0);
+	(*p_car)(2, 0) /= (*p_car)(3, 0);
+	(*p_car)(3, 0) = 1.0;
+
+	(*p_sensor)(0, 0) /= (*p_car)(3, 0);
+	(*p_sensor)(1, 0) /= (*p_car)(3, 0);
+	(*p_sensor)(2, 0) /= (*p_car)(3, 0);
+	(*p_sensor)(3, 0) = 1.0;
+
+	(*p_world)(0, 0) /= (*p_car)(3, 0);
+	(*p_world)(1, 0) /= (*p_car)(3, 0);
+	(*p_world)(2, 0) /= (*p_car)(3, 0);
+	(*p_world)(3, 0) = 1.0;
 }
 
 
@@ -254,10 +355,10 @@ SensorPreproc::_spherical_point_is_valid(double h_angle, double v_angle, double 
 
 	int ray_is_range_max = (range >= 70.0) || (range < 1.0);
 
-  if (ray_is_range_max)
-  		return 0;
+	if (ray_is_range_max)
+		return 0;
 
-  return 1;
+	return 1;
 }
 
 
@@ -302,23 +403,23 @@ SensorPreproc::_move_xsens_to_car(Matrix<double, 3, 3> xsens)
 
 int
 SensorPreproc::_point3d_is_valid(Matrix<double, 4, 1> &p_sensor,
-																 Matrix<double, 4, 1> &p_car,
-																 Matrix<double, 4, 1> &p_world,
-																 double ignore_above_threshold,
-																 double ignore_below_threshold)
+                                 Matrix<double, 4, 1> &p_car,
+                                 Matrix<double, 4, 1> &p_world,
+                                 double ignore_above_threshold,
+                                 double ignore_below_threshold)
 {
 	int ray_hit_car = 0;
-	int safe_border_x = 0.5;
-	int safe_border_y = 1.0;
+	int safe_border_x = 2.0;
+	int safe_border_y = 2.0;
 
 	// test if the ray is inside the car area in x-axis direction.
 	// the conditions evaluate if the ray is between rear and rear axis, and between rear axis and front.
 	int x_test = (p_car(0, 0) > -(distance_between_rear_car_and_rear_wheels + safe_border_x))
-						&& (p_car(0, 0) < (car_length - distance_between_rear_car_and_rear_wheels + safe_border_x));
+								&& (p_car(0, 0) < (car_length - distance_between_rear_car_and_rear_wheels + safe_border_x));
 
 	// test if the ray is inside the car area in y-axis direction.
 	int y_test = (p_car(1, 0) > -(car_width / 2. + safe_border_y))
-						&& (p_car(1, 0) < (car_width / 2. + safe_border_y));
+								&& (p_car(1, 0) < (car_width / 2. + safe_border_y));
 
 	if (x_test && y_test)
 		ray_hit_car = 1;
@@ -333,7 +434,7 @@ SensorPreproc::_point3d_is_valid(Matrix<double, 4, 1> &p_sensor,
 			|| ray_contains_inf
 			|| ray_is_too_high
 			|| ray_is_too_low
-			)
+	)
 		return 0;
 
 	return 1;
@@ -349,17 +450,32 @@ SensorPreproc::_point_coords_from_mat(Eigen::Matrix<double, 4, 1> &mat, PointXYZ
 }
 
 
+unsigned char
+SensorPreproc::_get_calibrated_and_brighten_intensity(unsigned char raw_intensity, Matrix<double, 4, 1> &p_sensor, int laser_id)
+{
+	unsigned char intensity = raw_intensity;
+
+	double ray_size_in_the_floor = sqrt(pow(p_sensor(0, 0), 2) + pow(p_sensor(1, 0), 2));
+	int ray_distance_index = get_distance_index(ray_size_in_the_floor);
+	intensity = (unsigned char) (255 * calibration_table[laser_id][ray_distance_index][intensity]);
+
+	if (_imode == INTENSITY)
+		intensity = _brighten(intensity, 2);
+	else if (_imode == BRIGHT)
+		intensity = _brighten(intensity, 4);
+
+	return intensity;
+}
+
+
 void
-SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sensor, unsigned char raw_intensity, int *valid)
+SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sensor, unsigned char raw_intensity, int *valid, int laser_id)
 {
 	// in INTENSITY mode, the point color is given by
 	// the intensity observed by the lidar.
 	if (_imode == INTENSITY || _imode == RAW_INTENSITY)
 	{
-		unsigned char intensity = raw_intensity;
-
-		if (_imode == INTENSITY)
-			intensity = _brighten(intensity);
+		unsigned char intensity = _get_calibrated_and_brighten_intensity(raw_intensity, p_sensor, laser_id);
 
 		point->r = intensity;
 		point->g = intensity;
@@ -390,11 +506,12 @@ SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sen
 
 PointXYZRGB
 SensorPreproc::_create_point_and_intensity(Matrix<double, 4, 1> &p_sensor,
-																					 Matrix<double, 4, 1> &p_car,
-																					 Matrix<double, 4, 1> &p_world,
-																					 unsigned char intensity,
-																					 int *valid,
-																					 SensorReference ref)
+                                           Matrix<double, 4, 1> &p_car,
+                                           Matrix<double, 4, 1> &p_world,
+                                           unsigned char intensity,
+                                           int *valid,
+                                           SensorReference ref,
+                                           int laser_id)
 {
 	PointXYZRGB point;
 
@@ -405,7 +522,7 @@ SensorPreproc::_create_point_and_intensity(Matrix<double, 4, 1> &p_sensor,
 	else
 		_point_coords_from_mat(p_world, &point);
 
-	_adjust_intensity(&point, p_sensor, intensity, valid);
+	_adjust_intensity(&point, p_sensor, intensity, valid, laser_id);
 
 	return point;
 }
@@ -425,8 +542,8 @@ SensorPreproc::_brighten(unsigned char val, unsigned int multiplier)
 
 void
 SensorPreproc::_get_pixel_position(Matrix<double, 4, 1> &p_sensor,
-																	 cv::Mat &img, cv::Point *ppixel,
-																	 int *is_valid)
+                                   cv::Mat &img, cv::Point *ppixel,
+                                   int *is_valid)
 {
 	*is_valid = 0;
 
@@ -449,8 +566,8 @@ SensorPreproc::_get_pixel_position(Matrix<double, 4, 1> &p_sensor,
 
 
 void load_as_pointcloud(SensorPreproc &preproc,
-												pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
-												SensorPreproc::SensorReference ref)
+                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
+                        SensorPreproc::SensorReference ref)
 {
 	vector<PointXYZRGB> points;
 	cloud->clear();

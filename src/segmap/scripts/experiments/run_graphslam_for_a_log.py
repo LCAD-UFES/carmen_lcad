@@ -66,7 +66,7 @@ def run_loop_closures(carmen_path, log_path, output_dir, mode):
 		pf_output = " " + output_dir + "/pf_loops.txt"
 		run_command(cmd + pf_output + pf_args)
 	elif mode == "localization":
-		loc_args = " --mode localization --n_particles 50 --gps_xy_std 2.5 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 5.0 --n_corrections_when_reinit 20 --v_thresh %lf -v 1 " % (SKIP_WHEN_VELOCITY_IS_BELOW)
+		loc_args = " --mode localization --n_particles 200 --gps_xy_std 2.5 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 10.0 --n_corrections_when_reinit 20 --v_thresh %lf -v 1 --time_dist 10 " % (SKIP_WHEN_VELOCITY_IS_BELOW)
 		loc_output = " " + output_dir + "/localization_loops.txt"
 		run_command(cmd + loc_output + loc_args)
 	else:

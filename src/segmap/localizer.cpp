@@ -113,8 +113,8 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 			do_correction = 1;
 
 		if (do_correction)
-			//pf.correct(cloud, map, sample->gps);
-			pf.correct(sample, &map, preproc);
+			pf.correct(cloud, map, sample->gps);
+			//pf.correct(sample, &map, preproc);
 
 		//printf("* Pose: %lf %lf %lf v: %lf n: %d last_reload: %d steps: %d\n", pose.x, pose.y, pose.th,
 		//fabs(sample->v), n, last_reload, steps_to_skip_map_reload);

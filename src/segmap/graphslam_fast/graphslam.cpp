@@ -358,7 +358,7 @@ create_dead_reckoning(GraphSlamData &data, vector<SE2> &dead_reckoning)
 	{
 		sample = data.dataset->at(i);
 
-		dt = sample->image_time - data.dataset->at(i - 1)->image_time;
+		dt = sample->time - data.dataset->at(i - 1)->time;
 		ackerman_motion_model(pose, sample->v, sample->phi, dt);
 		//printf("Dead reckoning: %d dt: %lf v: %lf phi: %lf x: %lf y: %lf\n", i, dt, sample->v, sample->phi, pose.x, pose.y);
 		dead_reckoning.push_back(SE2(pose.x, pose.y, pose.th));
@@ -415,7 +415,7 @@ save_corrected_vertices(GraphSlamData &data, SparseOptimizer *optimizer)
 		y = pose.toVector().data()[1];
 		th = pose.toVector().data()[2];
 
-		fprintf(f, "%ld %lf %lf %lf %lf %lf %lf\n", i, x, y, th, sample->image_time, sample->gps.x, sample->gps.y);
+		fprintf(f, "%ld %lf %lf %lf %lf %lf %lf\n", i, x, y, th, sample->time, sample->gps.x, sample->gps.y);
 	}
 
 	fclose(f);

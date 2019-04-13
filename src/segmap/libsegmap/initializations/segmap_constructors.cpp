@@ -22,6 +22,8 @@ parse_intensity_mode(string map_type)
 		return SensorPreproc::SEMANTIC;
 	else if (map_type.compare("raw") == 0)
 		return SensorPreproc::RAW_INTENSITY;
+	else if (map_type.compare("bright") == 0)
+		return SensorPreproc::BRIGHT;
 	else
 		exit(printf("Error: invalid map type '%s'.\n", map_type.c_str()));
 }
@@ -119,24 +121,34 @@ create_sensor_preproc(CommandLineArguments &args,
 {
 	string icalib_path;
 
-	if (args.get<int>("use_intensity_calibration"))
+	if (args.get<int>("use_calib"))
 		icalib_path = default_intensity_calib_path(log_path.c_str());
 	else
 		icalib_path = "none";
 
-	CarmenLidarLoader *vloader = new CarmenLidarLoader(icalib_path);
+	CarmenLidarLoader *vloader = new CarmenLidarLoader();
 	CarmenImageLoader *iloader = new CarmenImageLoader;
 	SemanticSegmentationLoader *sloader = new SemanticSegmentationLoader(log_path);
 
 	SensorPreproc::IntensityMode i_mode;
 	i_mode = parse_intensity_mode(args.get<string>("intensity_mode"));
 
+	double above = args.get<double>("ignore_above_threshold");
+	double below = args.get<double>("ignore_below_threshold");
+
+	if (i_mode == SensorPreproc::SEMANTIC)
+	{
+		above = DBL_MAX;
+		below = -DBL_MAX;
+	}
+
 	SensorPreproc preproc(vloader, iloader, sloader,
 												dataset->vel2cam(), dataset->vel2car(), dataset->projection_matrix(),
 												dataset->xsens2car(), args.get<int>("use_xsens"),
 												i_mode,
-												args.get<double>("ignore_above_threshold"),
-												args.get<double>("ignore_below_threshold"));
+												icalib_path,
+												above,
+												below);
 
 	return preproc;
 }

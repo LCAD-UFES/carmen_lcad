@@ -35,7 +35,7 @@ show_flipped_img_in_viewer(PointCloudViewer &viewer, Mat &img)
 {
 	Mat flipped;
 	flip(img, flipped, 0);
-	viewer.show(flipped, "map", 640);
+	viewer.show(flipped, "map", 800);
 	viewer.loop();
 }
 
@@ -60,8 +60,14 @@ run_viewer_if_necessary(Pose2d *pose,
 		{
 			img = map.to_image().clone();
 			draw_pose(map, img, *pose, Scalar(0, 255, 0));
+			transformPointCloud(*cloud, *cloud, Pose2d::to_matrix(*pose));
+			draw_pointcloud(img, cloud, map, 1, Scalar(0, 255, 0));
 		}
 
+		viewer.clear();
+		PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
+		transformPointCloud(*cloud, *transformed, Pose2d::to_matrix(*pose));
+		viewer.show(cloud);
 		show_flipped_img_in_viewer(viewer, img);
 	}
 }
@@ -145,13 +151,17 @@ search_for_loop_closure_using_pose_dist(NewCarmenDataset &dataset,
                                         int to,
                                         double max_dist_threshold,
                                         double min_time_threshold,
-                                        int *nn_id)
+                                        int *nn_id,
+                                        double min_velocity)
 {
 	*nn_id = -1;
 	double min_dist = DBL_MAX;
 
 	for (int j = from; j < to; j++)
 	{
+		if (fabs(dataset[j]->v) < min_velocity)
+			continue;
+
 		double dx = reference_pose.x - dataset[j]->pose.x;
 		double dy = reference_pose.y - dataset[j]->pose.y;
 		double dt = fabs(reference_pose_time - dataset[j]->time);
@@ -316,9 +326,8 @@ run_pf_step(NewCarmenDataset &target_dataset,
 	{
 		pf.predict(0, 0, 0); // just to add a little noise
 		run_viewer_if_necessary(&source_as_pose, map, pf, cloud, viewer, 1, 1, view);
-
 		pf.correct(cloud, map, source_dataset[source_id]->gps);
-		//run_viewer_if_necessary(&source_as_pose, map, pf, cloud, viewer, 1, 1, view);
+		run_viewer_if_necessary(&source_as_pose, map, pf, cloud, viewer, 1, 1, view);
 	}
 
 	Pose2d estimate = pf.mean();
@@ -516,6 +525,7 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 	cv::Mat pf_img;
 	PointCloudViewer viewer;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr aux_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
 	SensorPreproc preproc = create_sensor_preproc(args, &dataset, dataset_path);
 	loop_closure_indices.clear();
@@ -546,28 +556,30 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 																						0, i,
 																						args.get<double>("loop_dist"),
 																						args.get<double>("time_dist"),
-																						&nn_id);
+																						&nn_id,
+																						args.get<double>("v_thresh"));
 
 		map.reload(sample->pose.x, sample->pose.y);
+		preproc.reinitialize(sample);
+		load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
 
 		if (nn_id < 0)
 		{
 			update_map(sample, &map, preproc);
 
 			if (view)
-			{
-				preproc.reinitialize(sample);
-				load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
 				run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 0, 0, view);
-			}
 		}
 		else
 		{
+
 			Pose2d pf_pose = pf.mean();
 			double d = dist2d(pf_pose.x, pf_pose.y, sample->pose.x, sample->pose.y);
 
 			// TODO: turn the value into a parameter
-			if (d > 5.0 || !is_init)
+			if (!is_init
+					|| d > 10.0
+					)
 			{
 				// initialize particle filter
 				pf.reset(sample->pose.x,
@@ -577,21 +589,14 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 				for (int k = 0; k < n_corrections_when_reinit; k++)
 				{
 					pf.predict(0, 0, 0);
-					if (view)
-					{
-						preproc.reinitialize(sample);
-						load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
-						run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
-					}
-
-					pf.correct(dataset[i], &map, preproc);
 
 					if (view)
-					{
-						preproc.reinitialize(sample);
-						load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
-						run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
-					}
+						run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 1, 1, view);
+
+					pf.correct(cloud, map, sample->gps);
+
+					if (view)
+						run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 1, 1, view);
 				}
 
 				is_init = 1;
@@ -602,20 +607,21 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 				pf.predict(sample->v, sample->phi, dt);
 
 				if (view)
-				{
-					preproc.reinitialize(sample);
-					load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
-					run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
-				}
+					run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 1, 1, view);
 
-				pf.correct(sample, &map, preproc);
+				pf.correct(cloud, map, sample->gps);
 
 				if (view)
-				{
-					preproc.reinitialize(sample);
-					load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
-					run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
-				}
+					run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 1, 1, view);
+
+				// uncomment for updating the map with the localization estimate.
+				/*
+				preproc.reinitialize(sample);
+				load_as_pointcloud(preproc, aux_cloud, SensorPreproc::CAR_REFERENCE);
+				transformPointCloud(*aux_cloud, *aux_cloud, Pose2d::to_matrix(pf.mean()));
+				for (int j = 0; j < aux_cloud->size(); j++)
+						map.add_point(aux_cloud->at(j));
+				*/
 			}
 
 			Pose2d mean = pf.mean();
@@ -714,27 +720,23 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 		if (i % 50 == 0)
 			printf("Cloud %d of %d\n", i, dataset_to_adjust.size());
 
+		adj_preproc.reinitialize(sample);
+		load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
+
 		// reinitialize if the pose estimate get too far from the target path?
 		if (is_first)
 		{
 			for (int k = 0; k < n_corrections_when_reinit; k++)
 			{
 				pf.predict(0, 0, 0);
-				if (view)
-				{
-					adj_preproc.reinitialize(sample);
-					load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
-					run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
-				}
-
-				pf.correct(dataset_to_adjust[i], &map, adj_preproc);
 
 				if (view)
-				{
-					adj_preproc.reinitialize(sample);
-					load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
 					run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
-				}
+
+				pf.correct(cloud, map, sample->gps);
+
+				if (view)
+					run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
 			}
 
 			is_first = 0;
@@ -745,31 +747,16 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 			pf.predict(sample->v, sample->phi, dt);
 
 			if (view)
-			{
-				adj_preproc.reinitialize(sample);
-				load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
 				run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
-			}
 
-			pf.correct(sample, &map, adj_preproc);
+			pf.correct(cloud, map, sample->gps);
 
 			if (view)
-			{
-				adj_preproc.reinitialize(sample);
-				load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
 				run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
-			}
 		}
 
 		Pose2d mean = pf.mean();
 		map.reload(mean.x, mean.y);
-
-		if (view)
-		{
-			adj_preproc.reinitialize(sample);
-			load_as_pointcloud(adj_preproc, cloud, SensorPreproc::CAR_REFERENCE);
-			run_viewer_if_necessary(NULL, map, pf, cloud, viewer, 1, 1, view);
-		}
 
 		loop_closure_indices.push_back(pair<int, int>(0, i));
 

@@ -201,11 +201,12 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 																 GridMap &map, Pose2d &gps, int *max_id, int *min_id)
 {
 	int i;
+	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
 
 	//#pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
 	for (i = 0; i < _n; i++)
 	{
-		PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
+		transformed_cloud->clear();
 		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
 		//transform_pointcloud(cloud, transformed_cloud, _p[i], vel2car, v, phi);
 
@@ -243,14 +244,14 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 {
 	int i;
 	double sum_weights, min_weight;
-	//double max_weight;
+	double max_weight;
 	(void) max_id;
 
 	min_weight = _w[min_id];
-	//max_weight = _w[max_id];
+	max_weight = _w[max_id];
 	sum_weights = 0.;
 
-	//fprintf(stderr, "\nDEBUG: Weights as positive values: ");
+	fprintf(stderr, "\nDEBUG: Weights as positive values: ");
 	for (i = 0; i < _n; i++)
 	{
 		//_w[i] = exp(_w[i] - max_weight) + (1. / (double) (3. * _n));
@@ -258,9 +259,9 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 		_w[i] -= min_weight;
 		sum_weights += _w[i];
 
-		//fprintf(stderr, "%.4lf ", _w[i]);
+		fprintf(stderr, "%.4lf ", _w[i]);
 	}
-	//fprintf(stderr, "\n");
+	fprintf(stderr, "\n");
 
 	//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[max_id]));
 	//for(int i = 0; i < transformed_cloud->size(); i++)
@@ -273,7 +274,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	//printf("Sum weights: %lf\n", sum_weights);
 
 	// normalize the weights
-	//fprintf(stderr, "\nDEBUG: Weights Normalized: ");
+	fprintf(stderr, "\nDEBUG: Weights Normalized: ");
 	for (i = 0; i < _n; i++)
 	{
 		if (fabs(sum_weights) < 1e-6)
@@ -284,9 +285,9 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 		assert(_w[i] >= 0);
 		_w_bef[i] = _w[i];
 
-		//fprintf(stderr, "%.4lf ", _w[i]);
+		fprintf(stderr, "%.4lf ", _w[i]);
 	}
-	//fprintf(stderr, "\n\n---------\n\n");
+	fprintf(stderr, "\n\n---------\n\n");
 }
 
 

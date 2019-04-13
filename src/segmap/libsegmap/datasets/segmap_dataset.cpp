@@ -381,7 +381,7 @@ NewCarmenDataset::_create_synchronized_data_package(double ref_time)
 
 	sample->v = sample->v * _calib.mult_v + _calib.add_v;
 	sample->phi = normalize_theta(sample->phi * _calib.mult_phi + _calib.add_phi);
-	sample->time = ref_time;
+	sample->time = sample->velodyne_time;
 
 	return sample;
 }
@@ -577,8 +577,8 @@ NewCarmenDataset::_parse_gps_position(vector<string> data, DataSample *sample)
 	Gdc_To_Utm_Converter::Init();
 	Gdc_To_Utm_Converter::Convert(gdc , utm);
 
-	double offset_x = 7757735.177110;
-	double offset_y = -363558.484606;
+	double offset_x = 7762735.177110;
+	double offset_y = -358558.484606;
 
 	sample->gps.x = utm.y - offset_x;
 	sample->gps.y = -utm.x - offset_y;
@@ -631,7 +631,8 @@ default_graphslam_to_map_path(const char *log_path)
 std::string
 default_intensity_calib_path(const char *log_path)
 {
-	std::string log_name = file_name_from_path(log_path);
-	return (string("/dados/data2/data_") + log_name + string("/intensity_calibration.txt"));
+	//std::string log_name = file_name_from_path(log_path);
+	//return (string("/dados/data2/data_") + log_name + string("/intensity_calibration.txt"));
+	return string(getenv("CARMEN_HOME")) + "/bin/calibration_table.txt";
 }
 

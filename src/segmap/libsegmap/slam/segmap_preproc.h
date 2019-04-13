@@ -27,7 +27,8 @@ public:
 		INTENSITY = 0,
 		COLOR,
 		SEMANTIC,
-		RAW_INTENSITY
+		RAW_INTENSITY,
+		BRIGHT,
 	};
 
 	class CompletePointData
@@ -51,6 +52,7 @@ public:
 								Eigen::Matrix<double, 4, 4> xsens2car,
 								int use_xsens,
 								IntensityMode imode = INTENSITY,
+								std::string intensity_calib_path = "none",
 								double ignore_above_threshold = DBL_MAX,
 								double ignore_below_threshold = -DBL_MAX);
 
@@ -70,15 +72,20 @@ protected:
 	SemanticSegmentationLoader *_sloader;
 	Eigen::Matrix<double, 4, 4> _vel2cam;
 	Eigen::Matrix<double, 4, 4> _vel2car;
+	Eigen::Matrix<double, 4, 4> _vel2car_inverse;
 	Eigen::Matrix<double, 3, 4> _projection;
 	Eigen::Matrix<double, 4, 4> _xsens2car;
 	Eigen::Matrix<double, 4, 4> _motion_correction;
 	Eigen::Matrix<double, 4, 4> _motion_correction_step;
+	Eigen::Matrix<double, 4, 4> _corrected_vel2car;
 	int _use_xsens;
 	IntensityMode _imode;
 	int _n_lidar_shots;
 
 	cv::Mat _img;
+
+  static const int _n_distance_indices = 10;
+  float ***calibration_table;
 
 	double _ignore_above_threshold;
 	double _ignore_below_threshold;
@@ -112,14 +119,15 @@ protected:
 															 double ignore_above_threshold,
 															 double ignore_below_threshold);
 
-	void _adjust_intensity(pcl::PointXYZRGB *point, Eigen::Matrix<double, 4, 1> &p_sensor, unsigned char raw_intensity, int *valid);
+	void _adjust_intensity(pcl::PointXYZRGB *point, Eigen::Matrix<double, 4, 1> &p_sensor, unsigned char raw_intensity, int *valid, int laser_id);
 
 	pcl::PointXYZRGB _create_point_and_intensity(Eigen::Matrix<double, 4, 1> &p_sensor,
 																							 Eigen::Matrix<double, 4, 1> &p_car,
 																							 Eigen::Matrix<double, 4, 1> &p_world,
 																							 unsigned char intensity,
 																							 int *valid,
-																							 SensorReference ref);
+																							 SensorReference ref,
+																							 int laser_id);
 
 	static unsigned char _brighten(unsigned char val, unsigned int multiplier = 5);
 
@@ -130,6 +138,9 @@ protected:
 	static void _point_coords_from_mat(Eigen::Matrix<double, 4, 1> &mat, pcl::PointXYZRGB *point);
 
 	std::vector<pcl::PointXYZRGB> _next_points(SensorReference ref);
+
+	unsigned char _get_calibrated_and_brighten_intensity(unsigned char raw_intensity, Eigen::Matrix<double, 4, 1> &p_sensor, int laser_id);
+
 };
 
 

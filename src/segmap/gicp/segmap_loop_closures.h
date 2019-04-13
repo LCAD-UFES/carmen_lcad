@@ -67,7 +67,8 @@ search_for_loop_closure_using_pose_dist(NewCarmenDataset &dataset,
                                         int to,
                                         double max_dist_threshold,
                                         double min_time_threshold,
-                                        int *nn_id);
+                                        int *nn_id,
+                                        double min_velocity = 0);
 
 
 void
