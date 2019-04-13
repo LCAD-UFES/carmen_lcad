@@ -473,7 +473,7 @@ SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sen
 {
 	// in INTENSITY mode, the point color is given by
 	// the intensity observed by the lidar.
-	if (_imode == INTENSITY || _imode == RAW_INTENSITY)
+	if (_imode == INTENSITY || _imode == RAW_INTENSITY || _imode == BRIGHT)
 	{
 		unsigned char intensity = _get_calibrated_and_brighten_intensity(raw_intensity, p_sensor, laser_id);
 

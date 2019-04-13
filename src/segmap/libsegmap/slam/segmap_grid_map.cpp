@@ -483,13 +483,15 @@ update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc)
 void
 create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 					 SensorPreproc &preproc, double skip_velocity_threshold,
-					 int view_flag)
+					 int view_flag, int img_width)
 {
 	TimeCounter timer;
 	DataSample *sample;
 	PointCloudViewer viewer;
 	CarmenImageLoader iloader;
 	vector<double> times;
+
+	viewer.set_step(0);
 
 	for (int i = 0; i < dataset->size(); i += step)
 	{
@@ -529,7 +531,7 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 			//viewer.show(img, "img", 640);
 			//viewer.show(simg, "simg", 640);
 			//viewer.show(simg_view, "simg_view", 640);
-			viewer.show(map_view, "map", 640);
+			viewer.show(map_view, "map", img_width);
 			viewer.loop();
 		}
 	}

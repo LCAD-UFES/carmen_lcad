@@ -247,6 +247,8 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
 		                       &angle,
 		                       &filtered_th_std);
 
+		sample->gps.th = angle;
+
 		information = create_information_matrix(xy_std, xy_std, th_std);
 
 		SE2 measure(sample->gps.x,
@@ -271,6 +273,9 @@ add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction>
 																		SparseOptimizer *optimizer, double xy_std_mult, double th_std,
                                     int check_for_outliers = 0)
 {
+
+	//int n_discarded = 0;
+
 	for (size_t i = 0; i < gicp_gps.size(); i += 1)
 	{
 		if (gicp_gps[i].converged)
@@ -278,6 +283,20 @@ add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction>
 			SE2 measure(gicp_gps[i].transform[0],
 			            gicp_gps[i].transform[1],
 			            gicp_gps[i].transform[2]);
+
+			/*
+			DataSample *sample = data.dataset->at(gicp_gps[i].to);
+
+			double dist_to_graphslam = dist2d(gicp_gps[i].transform[0],
+			                			            gicp_gps[i].transform[1],
+			                			            sample->gps.x,
+			                			            sample->gps.y);
+
+			if (dist_to_graphslam > 10.0)
+			{
+				n_discarded++;
+				continue;
+			}
 
 			if (check_for_outliers)
 			{
@@ -307,11 +326,14 @@ add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction>
 				}
 
 				if (is_outlier)
+				{
 					continue;
+				}
 
-				printf("ADDING %lf %lf\n", gicp_gps[i].transform[0], gicp_gps[i].transform[1]);
 			}
+			 */
 
+			//printf("ADDING %lf %lf\n", gicp_gps[i].transform[0], gicp_gps[i].transform[1]);
 			Matrix3d information = create_information_matrix(xy_std_mult, xy_std_mult, th_std);
 
 			EdgeGPS *edge_gps = new EdgeGPS;
@@ -321,18 +343,37 @@ add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction>
 			optimizer->addEdge(edge_gps);
 		}
 	}
+
+	//if (gicp_gps.size())
+		//printf("Discard %.2lf%% of the registration edges\n", 100 * (double) n_discarded / (double) gicp_gps.size());
 }
 
 
 void
-add_loop_closure_edges(vector<LoopRestriction> &loop_data, SparseOptimizer *optimizer, double xy_std, double th_std)
+add_loop_closure_edges(GraphSlamData &data, vector<LoopRestriction> &loop_data, SparseOptimizer *optimizer, double xy_std, double th_std)
 {
+	int n_discarded = 0;
 	Matrix3d information = create_information_matrix(xy_std, xy_std, th_std);
 
 	for (size_t i = 0; i < loop_data.size(); i++)
 	{
 		if (loop_data[i].converged)
 		{
+			DataSample *sample = data.dataset->at(loop_data[i].to);
+			DataSample *target_sample = data.dataset->at(loop_data[i].from);
+
+			g2o::SE2 target_pose(target_sample->pose.x, target_sample->pose.y, target_sample->pose.th);
+			g2o::SE2 source_pose(sample->pose.x, sample->pose.y, sample->pose.th);
+			g2o::SE2 source_in_target = target_pose.inverse() * source_pose;
+
+			if (fabs(source_in_target[0] - loop_data[i].transform[0]) > 5.0
+					|| fabs(source_in_target[1] - loop_data[i].transform[1]) > 5.0
+					)
+			{
+				n_discarded++;
+				continue;
+			}
+
 			EdgeSE2* edge = new EdgeSE2;
 			edge->vertices()[0] = optimizer->vertex(loop_data[i].from);
 			edge->vertices()[1] = optimizer->vertex(loop_data[i].to);
@@ -341,6 +382,9 @@ add_loop_closure_edges(vector<LoopRestriction> &loop_data, SparseOptimizer *opti
 			optimizer->addEdge(edge);
 		}
 	}
+
+	if (loop_data.size())
+		printf("Discard %.2lf%% loop closure edges\n", 100 * (double) n_discarded / (double) loop_data.size());
 }
 
 
@@ -386,12 +430,12 @@ load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer)
 																				data.pf_to_map_xy_std,
 																				deg2rad(data.pf_to_map_angle_std));
 	}
-	else
+	//else
 		add_gps_edges(data, optimizer, data.gps_xy_std, deg2rad(data.gps_angle_std));
 
-	add_loop_closure_edges(data.gicp_loop_data, optimizer, data.gicp_loop_xy_std, deg2rad(data.gicp_loop_angle_std));
-	add_loop_closure_edges(data.pf_loop_data, optimizer, data.pf_loop_xy_std, deg2rad(data.pf_loop_angle_std));
-	add_loop_closure_edges(data.gicp_odom_data, optimizer, data.gicp_odom_xy_std, deg2rad(data.gicp_odom_angle_std));
+	add_loop_closure_edges(data, data.gicp_loop_data, optimizer, data.gicp_loop_xy_std, deg2rad(data.gicp_loop_angle_std));
+	add_loop_closure_edges(data, data.pf_loop_data, optimizer, data.pf_loop_xy_std, deg2rad(data.pf_loop_angle_std));
+	add_loop_closure_edges(data, data.gicp_odom_data, optimizer, data.gicp_odom_xy_std, deg2rad(data.gicp_odom_angle_std));
 }
 
 
@@ -441,15 +485,29 @@ detect_and_stamp_invalid_gps_measurements(GraphSlamData *data,
 
 	FILE *f = fopen("/tmp/invalid_gps.txt", "w");
 
+	double dist_to_add_gps = 1.0;
+
 	for (int i = 1; i < data->dataset->size(); i++)
 	{
 		current = data->dataset->at(i);
+
 		d = dist2d(current->gps.x, current->gps.y, previous->gps.x, previous->gps.y);
+		Pose2d estimated_motion(0,0,0);
+		ackerman_motion_model(estimated_motion, current->v, current->phi, fabs(current->time - previous->time));
+		double d_estimated = sqrt(pow(estimated_motion.x, 2) + pow(estimated_motion.y, 2));
 
 		// discountinuity detected
-		if (d > gps_discontinuity_threshold)
+		if (fabs(d - d_estimated) > gps_discontinuity_threshold)
 		{
-			// if cluster is small, set all measurements from the group as invalid.
+			// current is set to invalid
+			data->gps_is_valid[i] = 0;
+			number_invalid_measurements += 1;
+
+			fprintf(f, "%lf %lf\n",
+							current->gps.x,
+							current->gps.y);
+
+			// if the previous cluster is small, set all measurements from the group as invalid.
 			if (gps_group_ids.size() < gps_min_cluster_size)
 			{
 				for (int j = 0; j < gps_group_ids.size(); j++)
@@ -468,7 +526,38 @@ detect_and_stamp_invalid_gps_measurements(GraphSlamData *data,
 		}
 		else
 			gps_group_ids.push_back(i);
+
+		previous = current;
 	}
+
+	/*
+	double accum_dist = 0;
+	int last_valid = 0;
+	DataSample *last_valid_sample;
+
+	for (int i = 1; i < data->dataset->size(); i++)
+	{
+		if (!data->gps_is_valid[i])
+			continue;
+
+		current = data->dataset->at(i);
+		last_valid_sample = data->dataset->at(last_valid);
+
+		d = dist2d(current->gps.x, current->gps.y, last_valid_sample->gps.x, last_valid_sample->gps.y);
+
+		if (d < dist_to_add_gps)
+		{
+			data->gps_is_valid[i] = 0;
+			number_invalid_measurements += 1;
+			fprintf(f, "%lf %lf\n",
+							current->gps.x,
+							current->gps.y);
+		}
+
+		if (data->gps_is_valid[i])
+			last_valid = i;
+	}
+	*/
 
 	fprintf(stderr, "Percentage of invalid gps measurements: %lf%%\n",
 					100 * ((double) number_invalid_measurements / (double) data->dataset->size()));

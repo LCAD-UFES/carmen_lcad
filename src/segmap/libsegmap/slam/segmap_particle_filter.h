@@ -51,6 +51,7 @@ public:
 
 	Pose2d mean();
 	Pose2d mode();
+	Pose2d std();
 
 	int _n;
 	Pose2d *_p;

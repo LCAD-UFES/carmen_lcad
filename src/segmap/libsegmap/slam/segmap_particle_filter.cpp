@@ -148,8 +148,8 @@ ParticleFilter::_image_point_weight(PointXYZRGB &point, GridMap *map)
 {
 	vector<double> v = map->read_cell(point);
 
-	return (-pow(((point.r - v[2]) / 255.) / _color_std_r, 2)) +
-				(-pow(((point.g - v[1]) / 255.) / _color_std_g, 2)) +
+	return //(-pow(((point.r - v[2]) / 255.) / _color_std_r, 2)) +
+				//(-pow(((point.g - v[1]) / 255.) / _color_std_g, 2)) +
 				(-pow(((point.b - v[0]) / 255.) / _color_std_b, 2));
 }
 
@@ -442,6 +442,35 @@ ParticleFilter::mean()
 
 	p.th = atan2(th_y, th_x);
 	return p;
+}
+
+
+Pose2d
+ParticleFilter::std()
+{
+	Pose2d s(0, 0, 0), m(0, 0, 0);
+	m = mean();
+
+	double diff_x = 0;
+	double diff_y = 0;
+	double diff_th = 0;
+
+	for(int i = 0; i < _n; i++)
+	{
+		diff_x = (_p[i].x - m.x);
+		diff_y = (_p[i].y - m.y);
+		diff_th = normalize_theta(_p[i].th - m.th);
+
+		s.x += pow(diff_x, 2);
+		s.y += pow(diff_y, 2);
+		s.th += pow(diff_th, 2);
+	}
+
+	s.x = sqrt(s.x / (double) _n);
+	s.y = sqrt(s.y / (double) _n);
+	s.th = sqrt(s.th / (double) _n);
+
+	return s;
 }
 
 

@@ -31,9 +31,11 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 	Pose2d gt = sample->pose;
 	Pose2d mean = pf.mean();
 	Pose2d mode = pf.mode();
+	Pose2d std = pf.std();
 
 	printf("%d of %d ", step, n_total_steps);
 	printf("Mean: %lf %lf %lf ", mean.x, mean.y, mean.th);
+	printf("Std: %lf %lf %lf ", std.x, std.y, std.th);
 	printf("GT: %lf %lf %lf ", gt.x, gt.y, gt.th);
 	printf("Mode: %lf %lf %lf ", mode.x, mode.y, mode.th);
 	printf("Duration: %lf ", duration);
@@ -58,7 +60,7 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 		flip(pf_img, flipped, 0);
 
 		Mat img = iloader.load(sample);
-		s_viewer.show(img, "img", 640);
+		s_viewer.show(img, "img", 400);
 		s_viewer.show(flipped, "pf_viewer");
 		s_viewer.loop();
 	}
@@ -89,6 +91,8 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 	int n = 0;
 	int do_correction;
 	int last_reload = 0;
+
+	s_viewer.set_step(0);
 
 	for (int i = step; i < dataset->size(); i += step)
 	{

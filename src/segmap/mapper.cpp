@@ -38,8 +38,8 @@ main(int argc, char **argv)
 	else
 		map_type = GridMapTile::TYPE_VISUAL;
 
-	if (boost::filesystem::exists(args.get<string>("map_path")))
-		boost::filesystem::remove_all(args.get<string>("map_path"));
+//	if (boost::filesystem::exists(args.get<string>("map_path")))
+//		boost::filesystem::remove_all(args.get<string>("map_path"));
 
 	GridMap map(args.get<string>("map_path"),
 							args.get<double>("tile_size"),
@@ -52,7 +52,7 @@ main(int argc, char **argv)
 
 	create_map(map, dataset, args.get<int>("step"), preproc,
 						 args.get<double>("v_thresh"),
-						 args.get<int>("view"));
+						 args.get<int>("view"), 640);
 
 	printf("Done.\n");
 	return 0;
