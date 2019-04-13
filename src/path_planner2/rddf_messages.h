@@ -152,6 +152,28 @@ extern "C"
 	#define CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_NAME "carmen_rddf_traffic_sign_message"
 	#define CARMEN_RDDF_TRAFFIC_SIGN_MESSAGE_FMT "{int,double,double,string}"
 
+    typedef struct
+	{
+        int number_of_poses;
+        int number_of_poses_back;
+        carmen_ackerman_traj_point_t *poses;
+        carmen_ackerman_traj_point_t *poses_back;
+        int *annotations;
+        int *annotations_codes;
+
+    	int tree_path_num;
+    	int tree_path_total_points;
+    	int* tree_path_sizes;
+    	double* tree_path_costs;
+    	carmen_ackerman_traj_point_t* flat_tree_path;
+
+		double timestamp;
+		char *host;
+	} carmen_rddf_multi_path_message;
+
+	#define CARMEN_RDDF_MULTI_PATH_MESSAGE_NAME "carmen_rddf_multi_path_message"
+	#define CARMEN_RDDF_MULTI_PATH_MESSAGE_FMT "{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, <int:1>, int, int, <int:7>, <double:7>, <{double,double,double,double,double}:8>, double, string}"
+
 #ifdef __cplusplus
 }
 #endif

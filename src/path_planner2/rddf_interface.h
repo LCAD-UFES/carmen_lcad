@@ -3,7 +3,7 @@
 #define _CARMEN_RDDF_INTERFACE_H_
 
 #include <carmen/carmen.h>
-#include <carmen/rddf_messages.h>
+#include "rddf_messages.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -19,6 +19,7 @@ extern "C"
     void carmen_rddf_subscribe_dynamic_annotation_message(carmen_rddf_dynamic_annotation_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
     void carmen_rddf_subscribe_annotation_message(carmen_rddf_annotation_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
     void carmen_rddf_subscribe_traffic_sign_message(carmen_rddf_traffic_sign_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+    void carmen_rddf_subscribe_multi_path_message(carmen_rddf_multi_path_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
     void carmen_rddf_unsubscribe_road_profile_message(carmen_handler_t handler);
     void carmen_rddf_unsubscribe_end_point_message(carmen_handler_t handler);
@@ -27,6 +28,7 @@ extern "C"
     void carmen_rddf_unsubscribe_dynamic_annotation_message(carmen_handler_t handler);
     void carmen_rddf_unsubscribe_annotation_message(carmen_handler_t handler);
     void carmen_rddf_unsubscribe_traffic_sign_message(carmen_handler_t handler);
+    void carmen_rddf_unsubscribe_multi_path_message(carmen_handler_t handler);
 
     void carmen_rddf_define_messages();
 
@@ -37,6 +39,7 @@ extern "C"
     void carmen_rddf_publish_dynamic_annotation_message(carmen_vector_3D_t annotation_point, double orientation, char *annotation_description, int annotation_type, int annotation_code, double timestamp);
     void carmen_rddf_publish_annotation_message(carmen_annotation_t *annotations, int num_annotations);
     void carmen_rddf_publish_traffic_sign_message(int traffic_sign_state, double traffic_sign_data);
+    void carmen_rddf_publish_multi_path_message(carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back, int num_poses, int num_poses_back, int *annotations, int *annotations_codes, int tree_path_num, int *tree_path_sizes, double *tree_path_costs, carmen_ackerman_traj_point_t **tree_path);
 
     char *get_traffic_sign_state_name(int state);
 

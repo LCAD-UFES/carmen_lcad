@@ -469,3 +469,43 @@ carmen_rddf_play_annotation_is_forward(carmen_point_t robot_pose, carmen_vector_
 	else
 		return (false);
 }
+
+bool
+carmen_unpack_multi_paths_message (carmen_rddf_multi_path_message *message, int *tree_path_num_ref, int **tree_path_sizes_ref,
+		double **tree_path_costs_ref, carmen_ackerman_traj_point_t ***multi_path_ref)
+{
+	//Renomeia as variaveis para ficar mais legivel
+	int &tree_path_num = *tree_path_num_ref;
+	int *&tree_path_sizes = *tree_path_sizes_ref;
+	double *&tree_path_costs = *tree_path_costs_ref;
+	carmen_ackerman_traj_point_t **&multi_path = *multi_path_ref;
+
+	if (message == NULL)
+		return (false);
+
+	if (tree_path_num >= 0)
+	{
+		for (int i = 0; i < tree_path_num; i++)
+			free(multi_path[i]);
+		free(multi_path);
+		free(tree_path_sizes);
+		free(tree_path_costs);
+	}
+
+	tree_path_num = message->tree_path_num;
+	multi_path = (carmen_ackerman_traj_point_t **) malloc(sizeof(carmen_ackerman_traj_point_t *) * tree_path_num);
+	tree_path_sizes = (int *) malloc(sizeof(int) * tree_path_num);
+	memcpy(tree_path_sizes, message->tree_path_sizes, sizeof(int) * tree_path_num);
+	tree_path_costs = (double *) malloc(sizeof(double) * tree_path_num);
+	memcpy(tree_path_costs, message->tree_path_costs, sizeof(double) * tree_path_num);
+
+	for(int i = 0, k = 0; i < tree_path_num; i++)
+	{
+		int path_size = message->tree_path_sizes[i];
+		multi_path[i] = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * path_size);
+		memcpy(multi_path[i], &message->flat_tree_path[k], sizeof(carmen_ackerman_traj_point_t) * path_size);
+		k += path_size;
+	}
+
+	return (true);
+}

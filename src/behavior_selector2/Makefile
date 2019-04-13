@@ -68,10 +68,10 @@ PUBLIC_LIBRARIES = \
 	libbehavior_selector_interface.a
 
 PUBLIC_BINARIES = \
-	behavior_selector
+	behavior_selector2
 
 TARGETS = \
-	behavior_selector \
+	behavior_selector2 \
 	libbehavior_selector_interface.a
 
 # If you set graphics support in configure.
@@ -86,7 +86,7 @@ LFLAGS += \
 	`pkg-config --libs gtkglext-1.0`
 endif
 
-behavior_selector: behavior_selector_main.o behavior_selector.o SampleFilter.o libbehavior_selector_interface.a
+behavior_selector2: behavior_selector_main.o behavior_selector.o SampleFilter.o libbehavior_selector_interface.a
 
 libbehavior_selector_interface.a: behavior_selector_interface.o
 

@@ -49,6 +49,7 @@ carmen_mapper_virtual_laser_message virtual_laser_message;
 
 //SampleFilter filter;
 SampleFilter filter2;
+SampleFilter filter3;
 
 extern bool wait_start_moving;
 
@@ -686,4 +687,5 @@ behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_
 
 	//SampleFilter_init(&filter);
 	SampleFilter_init(&filter2);
+	SampleFilter_init(&filter3);
 }

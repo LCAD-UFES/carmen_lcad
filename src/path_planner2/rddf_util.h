@@ -36,4 +36,7 @@ bool carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_p
 bool carmen_rddf_play_annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_t annotation_point);
 bool carmen_rddf_play_annotation_is_forward(carmen_point_t robot_pose, carmen_vector_3D_t annotation_point);
 
+bool carmen_unpack_multi_paths_message (carmen_rddf_multi_path_message *message, int *tree_path_num, int **tree_path_sizes,
+		double **tree_path_costs_ref, carmen_ackerman_traj_point_t ***multi_path_ref);
+
 #endif

@@ -81,8 +81,10 @@ static carmen_point_t carmen_rddf_nearest_waypoint_to_end_point;
 
 static carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead = NULL;
 static carmen_ackerman_traj_point_t *carmen_rddf_poses_back = NULL;
+static carmen_ackerman_traj_point_t *carmen_rddf_trace_back = NULL;
 static int carmen_rddf_num_poses_ahead = 0;
 static int carmen_rddf_num_poses_back = 0;
+static int carmen_rddf_num_trace_back = 0;
 static int *annotations_codes;
 static int *annotations;
 
@@ -1706,7 +1708,7 @@ pedestrian_avoider(carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead,carmen_
 	for (int i = 0; i < moving_objects->num_point_clouds; i++)
 	{
 		if (strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") != 0)
-			break;
+			continue;
 		
 		int nearest_rddf_point_index;
 		double nearest_distance = nearest_distance_to_rddf(carmen_rddf_poses_ahead,carmen_rddf_poses_back, carmen_rddf_num_poses_ahead,
@@ -1782,15 +1784,12 @@ pedestrian_avoider(carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead,carmen_
 }
 
 
-PyObject *python_frenet_planning;
-PyObject *python_frenet_find_optimal;
 PyObject *python_frenet_test;
 
 int
 init_python()
 {
 	Py_Initialize();
-	import_array();
 	printf("python started\n");
 	PyObject *python_module_name = PyUnicode_FromString((char *) "freenet_path_planner");
 	
@@ -1799,22 +1798,6 @@ init_python()
 	{
 		Py_Finalize();
 		exit (printf("Error: The python_module could not be loaded.\nMay be PYTHON_PATH is not set.\n"));
-	}
-
-	python_frenet_planning = PyObject_GetAttrString(python_module, (char *) "frenet_planning");
-	if (python_frenet_planning == NULL || !PyCallable_Check(python_frenet_planning))
-	{
-		Py_DECREF(python_module);
-		Py_Finalize();
-		exit (printf("Error: Could not load the python_frenet_planning function.\n"));
-	}
-
-	python_frenet_find_optimal = PyObject_GetAttrString(python_module, (char *) "frenet_find_optimal");
-	if (python_frenet_find_optimal == NULL || !PyCallable_Check(python_frenet_find_optimal))
-	{
-		Py_DECREF(python_module);
-		Py_Finalize();
-		exit (printf("Error: Could not load the python_frenet_find_optimal function.\n"));
 	}
 
 	python_frenet_test = PyObject_GetAttrString(python_module, (char *) "test");
@@ -1839,11 +1822,11 @@ convert_rddf_array(carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead, carmen
 	// 	PyObject *element = Py_BuildValue("[d,d]",carmen_rddf_poses_back[i].x,carmen_rddf_poses_back[i].y);
 	// 	PyList_Append(list, element);
 	// }
-	printf("Copying rddf_ahead\n");
 	for (int i=0; i<carmen_rddf_num_poses_ahead; i++)
 	{
 		PyObject *element = Py_BuildValue("[d,d]",carmen_rddf_poses_ahead[i].x,carmen_rddf_poses_ahead[i].y);
 		PyList_Append(list, element);
+		Py_DECREF(element);
 	}
 	return (PyListObject *)list;
 }
@@ -1860,6 +1843,7 @@ get_pedestrians(carmen_moving_objects_point_clouds_message *moving_objects)
 		{
 			PyObject *element = Py_BuildValue("[d,d]",moving_objects->point_clouds[i].object_pose.x,moving_objects->point_clouds[i].object_pose.y);
 			PyList_Append(list, element);
+			Py_DECREF(element);
 		}
 	}
 	return (PyListObject *)list;
@@ -1867,38 +1851,79 @@ get_pedestrians(carmen_moving_objects_point_clouds_message *moving_objects)
 
 int
 rewrite_rddf(carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead, 
-		PyObject* python_new_rddf, int new_rddf_size)
+		PyObject* python_new_rddf)
 {
+	int new_rddf_size = (int)PyList_Size(python_new_rddf);
 	for (int i=0; i < new_rddf_size; i++)
 	{
 		PyObject* item = PyList_GetItem(python_new_rddf, i);
 		carmen_rddf_poses_ahead[i].x = PyFloat_AsDouble(PyList_GetItem(item, 0));
 		carmen_rddf_poses_ahead[i].y = PyFloat_AsDouble(PyList_GetItem(item, 1));
 		carmen_rddf_poses_ahead[i].theta = PyFloat_AsDouble(PyList_GetItem(item, 2));
-		printf("%lf, %lf\n",carmen_rddf_poses_ahead[i].x, carmen_rddf_poses_ahead[i].y);
 	}
 	carmen_rddf_num_poses_ahead = new_rddf_size;
 	return new_rddf_size;
 }
 
-int
-frenet_planner(carmen_point_t robot_pose, carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead, carmen_ackerman_traj_point_t *carmen_rddf_poses_back, 
-		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back, carmen_moving_objects_point_clouds_message *moving_objects)
+static carmen_ackerman_traj_point_t** tree_path;
+static double* tree_path_costs;
+static int* tree_path_sizes;
+static int tree_path_num = -1;
+
+void
+fill_rddf_tree(PyObject* python_path_tree)
 {
+	if (tree_path_num >= 0)
+	{
+		for (int i=0; i<tree_path_num; i++)
+			free(tree_path[i]);
+		free(tree_path);
+		free(tree_path_sizes);
+		free(tree_path_costs);
+	}
 
-	// PyArrayObject* identifications = (PyArrayObject*)PyObject_CallFunctionObjArgs(
-	// 	python_frenet_planning, rddf_x, rddf_y, pose, vel, distance, c_d_d, c_d_dd, obstacle_list, NULL);
-	printf("Starting Planner\n");
-	if (carmen_rddf_poses_ahead == NULL || carmen_rddf_num_poses_ahead < 2)
-		return 0;	
-	
-//	carmen_vector_3D_t object;
-//	object.x = robot_pose.x;
-//	object.y = robot_pose.y;
-	static double last_min_dist = 0.0;
-	static double last_vel_dif = 0.0;
+	tree_path_num = (int)PyList_Size(python_path_tree);
+	tree_path = (carmen_ackerman_traj_point_t**) malloc(sizeof(carmen_ackerman_traj_point_t*)*tree_path_num);
+	tree_path_sizes = (int*) malloc(sizeof(int)*tree_path_num);
+	tree_path_costs = (double*) malloc(sizeof(double)*tree_path_num);
 
-	double minimum_dist = 1000.0;
+	PyObject* path_tuple = NULL;
+	PyObject* path = NULL;
+
+	for(int i=0; i<tree_path_num; i++)
+	{
+		path_tuple = PyList_GetItem(python_path_tree, i);
+		path = PyTuple_GetItem(path_tuple, 0);
+		tree_path_costs[i] = PyFloat_AsDouble(PyTuple_GetItem(path_tuple, 1));
+		int path_size = (int)PyList_Size(path);
+		tree_path[i] = (carmen_ackerman_traj_point_t*) malloc(sizeof(carmen_ackerman_traj_point_t)*path_size);
+
+		int k=0;
+		for(int j=0; j<path_size ; j++)
+		{
+			PyObject* python_point = PyList_GetItem(path, j);
+			carmen_ackerman_traj_point_t traj_point;
+			traj_point.x = PyFloat_AsDouble(PyList_GetItem(python_point, 0));
+			traj_point.y = PyFloat_AsDouble(PyList_GetItem(python_point, 1));
+			traj_point.theta = PyFloat_AsDouble(PyList_GetItem(python_point, 2));
+
+			if(j==0)
+				tree_path[i][0] = traj_point;
+			else if(DIST2D(traj_point,tree_path[i][k]) > 0.4)
+				tree_path[i][++k] = traj_point;
+		}
+		tree_path_sizes[i] = k;
+	}
+	if (path_tuple)
+		Py_DECREF(path_tuple);
+	if (path)
+		Py_DECREF(path);
+}
+
+double
+displace_from_path(carmen_point_t robot_pose, int carmen_rddf_num_poses_ahead, carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead)
+{
+	double minimum_dist = 1000.0, minimum_disp = 1000.0;
 	for (int i=1; i<carmen_rddf_num_poses_ahead; i++)
 	{
 		int piti = 0;
@@ -1908,38 +1933,100 @@ frenet_planner(carmen_point_t robot_pose, carmen_ackerman_traj_point_t *carmen_r
 		carmen_ackerman_traj_point_t p = carmen_get_point_nearest_to_trajectory(
 				&piti, carmen_rddf_poses_ahead[i-1], carmen_rddf_poses_ahead[i],
 				temp_car_pose, 0.1);
-		if (DIST2D(temp_car_pose, p) < minimum_dist)
+		if (DIST2D(temp_car_pose, p) < minimum_dist || piti == POINT_WITHIN_SEGMENT)
+		{
 			minimum_dist = DIST2D(temp_car_pose, p);
+			if (carmen_normalize_theta(carmen_rddf_poses_ahead[i].theta - atan2(p.y - temp_car_pose.y, p.x - temp_car_pose.x)) > 0)
+				minimum_disp = minimum_dist;
+			else
+				minimum_disp = -minimum_dist;
+		}
 	}
+	return minimum_disp;
+}
+
+int
+frenet_planner(carmen_point_t robot_pose, carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead, carmen_ackerman_traj_point_t *carmen_rddf_poses_back, 
+		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back)//, carmen_moving_objects_point_clouds_message *moving_objects)
+{
+
+	// PyArrayObject* identifications = (PyArrayObject*)PyObject_CallFunctionObjArgs(
+	// 	python_frenet_planning, rddf_x, rddf_y, pose, vel, distance, c_d_d, c_d_dd, obstacle_list, NULL);
+	if (carmen_rddf_poses_ahead == NULL || carmen_rddf_num_poses_ahead < 2)
+		return 0;	
+	
+//	carmen_vector_3D_t object;
+//	object.x = robot_pose.x;
+//	object.y = robot_pose.y;
+	static double last_vel_dif = 0.0;
+	static double last_timestamp = current_globalpos_msg->timestamp;
+
+	double minimum_dist = displace_from_path(robot_pose, carmen_rddf_num_poses_ahead, carmen_rddf_poses_ahead);
 	PyObject* python_displacement = PyFloat_FromDouble(minimum_dist);
 	
-	double vel_dif = minimum_dist - last_min_dist;
+	double vel_dif = current_globalpos_msg->v * sin(carmen_normalize_theta(robot_pose.theta - carmen_rddf_poses_ahead[0].theta));
 	PyObject* python_vel_displacement = PyFloat_FromDouble(vel_dif);
 	
-	double acc_dif = vel_dif - last_vel_dif;
+	double acc_dif = (vel_dif - last_vel_dif) / (current_globalpos_msg->timestamp - last_timestamp);
 	PyObject* python_acc_displacement = PyFloat_FromDouble(acc_dif);
 
 	PyListObject *python_rddf = convert_rddf_array(carmen_rddf_poses_ahead, carmen_rddf_poses_back,
 	 		carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);	
-	PyListObject *python_pedestrians = get_pedestrians(moving_objects);
+//	PyListObject *python_pedestrians = get_pedestrians(moving_objects);
+//	PyListObject *python_obstacles = get_obstacles(moving_objects);
 	PyObject* python_velocity = PyFloat_FromDouble(current_globalpos_msg->v);
-	printf("Calling Python Func\n");//,python_displacement, python_vel_displacement, python_acc_displacement);
-	PyObject* python_new_rddf = PyObject_CallFunctionObjArgs(python_frenet_test, python_rddf, python_pedestrians, 
+	PyObject* python_new_rddf = PyObject_CallFunctionObjArgs(python_frenet_test, python_rddf, //python_pedestrians,
 			python_velocity, python_displacement, python_vel_displacement, python_acc_displacement, NULL);
 
 	if (PyErr_Occurred())
         PyErr_Print();
 
-	int new_rddf_size = (int)PyList_Size(python_new_rddf);
-	printf("New RDDF size = %d\n", new_rddf_size);
+	int num_rddf_paths = (int)PyList_Size(python_new_rddf);
+//	printf("New RDDF size = %d\n", num_rddf_paths);
 
-	last_min_dist = minimum_dist;
 	last_vel_dif = vel_dif;
+	last_timestamp = current_globalpos_msg->timestamp;
 
-	if (new_rddf_size == 0)
+	if (num_rddf_paths == 0)
 		return 0;
-	
-	return rewrite_rddf(carmen_rddf_poses_ahead, python_new_rddf, new_rddf_size);
+
+	fill_rddf_tree(python_new_rddf);
+	//	PyObject* best_path = PyList_GetItem(python_new_rddf, 0);
+
+	// Recording trace
+	if (carmen_rddf_num_poses_back > 0)
+	{
+		if (carmen_rddf_trace_back == NULL)
+		{
+			carmen_rddf_trace_back = (carmen_ackerman_traj_point_t*) malloc(sizeof(carmen_ackerman_traj_point_t)*carmen_rddf_num_poses_back);
+			memcpy(carmen_rddf_trace_back, carmen_rddf_poses_back, sizeof(carmen_ackerman_traj_point_t)*carmen_rddf_num_poses_back);
+			carmen_rddf_num_trace_back = carmen_rddf_num_poses_back;
+		}
+		else
+		{
+			if (DIST2D(robot_pose,carmen_rddf_trace_back[0]) > 0.4)
+			{
+				for (int i=carmen_rddf_num_trace_back-1; i > 0; i--)
+					carmen_rddf_trace_back[i] = carmen_rddf_trace_back[i-1];
+				carmen_ackerman_traj_point_t new_rddf_pose;
+				new_rddf_pose.x = robot_pose.x;
+				new_rddf_pose.y = robot_pose.y;
+				new_rddf_pose.theta = robot_pose.theta;
+				carmen_rddf_trace_back[0] = new_rddf_pose;
+			}
+		}
+	}
+
+	//VERY IMPORTANT!! Force Python Garbage collector to free the references
+	Py_DECREF(python_displacement);
+	Py_DECREF(python_vel_displacement);
+	Py_DECREF(python_acc_displacement);
+	Py_DECREF(python_rddf);
+	Py_DECREF(python_velocity);
+	Py_DECREF(python_new_rddf);
+	//carmen_navigator_ackerman_plan_tree_message
+	//	return rewrite_rddf(carmen_rddf_poses_ahead, best_path);
+	return num_rddf_paths;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -2000,18 +2087,23 @@ static void
 carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
 {
 	// so publica rddfs quando a pose do robo ja estiver setada
-	if ((carmen_rddf_num_poses_ahead > 0) && (carmen_rddf_num_poses_back > 0))
+	if ((carmen_rddf_num_poses_ahead > 0) && (carmen_rddf_num_trace_back > 0))
 	{
 		clear_annotations();
 		set_annotations(robot_pose);
 
-		carmen_rddf_publish_road_profile_message(
+		//carmen_rddf_publish_road_profile_message(
+		carmen_rddf_publish_multi_path_message(
 			carmen_rddf_poses_ahead,
-			carmen_rddf_poses_back,
+			carmen_rddf_trace_back,
 			carmen_rddf_num_poses_ahead,
-			carmen_rddf_num_poses_back,
+			carmen_rddf_num_trace_back,
 			annotations,
-			annotations_codes);
+			annotations_codes,
+			tree_path_num,
+			tree_path_sizes,
+			tree_path_costs,
+			tree_path);
 
 		carmen_rddf_play_publish_annotation_queue();
 
@@ -2139,7 +2231,7 @@ pos_message_handler(carmen_point_t robot_pose, double timestamp)
 	// pedestrian_avoider(carmen_rddf_poses_ahead, carmen_rddf_poses_back, 
 	//  	carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back, moving_objects);
 	frenet_planner(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back, 
-	 	carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back, moving_objects);
+	 	carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);//, moving_objects);
 
 	carmen_rddf_play_publish_rddf_and_annotations(robot_pose);
 }
@@ -2288,6 +2380,7 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 		carmen_rddf_play_load_index(rddf_file_name);
 	}
 }
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 

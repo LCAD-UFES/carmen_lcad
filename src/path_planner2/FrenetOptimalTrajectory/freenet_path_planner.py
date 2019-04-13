@@ -21,9 +21,9 @@ import cubic_spline_planner
 # Parameter
 MAX_SPEED = 50.0 / 3.6  # maximum speed [m/s]
 MAX_ACCEL = 2.0  # maximum acceleration [m/ss]
-MAX_CURVATURE = 1.0  # maximum curvature [1/m]
+MAX_CURVATURE = 5.0  # maximum curvature [1/m]
 MAX_ROAD_WIDTH = 5.0  # maximum road width [m]
-D_ROAD_W = 0.2  # road width sampling length [m]
+D_ROAD_W = 0.35  # road width sampling length [m]
 DT = 0.2  # time tick [s]
 MAXT = 10.0  # max prediction time [m]
 MINT = 9.9  # min prediction time [m]
@@ -323,23 +323,18 @@ def generate_target_course(x, y):
 
     return rx, ry, ryaw, rk, csp
 
-def test(rddf, ob, c_speed, displacement, vel_dif, acc_dif):
-    ob = np.array(ob)
+def test(rddf, c_speed, displacement, vel_dif, acc_dif):
+    ob = np.array([])
     rddf = np.array(rddf)
     _, rddf_idx = np.unique(rddf, return_index=True, axis=0)
     rddf = rddf[np.sort(rddf_idx)]
 
     fplist = frenet_planning(rddf[:,0], rddf[:,1], 0.0, c_speed, displacement, vel_dif, acc_dif, ob, 3.0)
-    
-    print("[Python]",len(fplist)," Paths found")
-    if len(fplist) == 0:
-        print("[Python]Cant find any path, Reducing safety distance")
-        fplist = frenet_planning(rddf[:,0], rddf[:,1], 0.0, c_speed, displacement, vel_dif, acc_dif, ob,2.0)
-        if len(fplist) == 0:
-            print("[Python]Cant find any path at all")
-            return []
-
-    path = frenet_find_optimal(fplist)
+     
+#     if len(fplist) == 0:
+#         return []
+#
+#     path = frenet_find_optimal(fplist)
 
 #     plt.cla()
 #     plt.plot(rddf[:,0], rddf[:,1])
@@ -355,10 +350,20 @@ def test(rddf, ob, c_speed, displacement, vel_dif, acc_dif):
 #     plt.grid(True)
 #     plt.pause(0.000001)
 
-    path_x = np.array(path.x).reshape(len(path.x),1)
-    path_y = np.array(path.y).reshape(len(path.y),1)
-    path_yaw = np.array(path.yaw).reshape(len(path.yaw),1)
-    return np.concatenate((path_x, path_y, path_yaw), axis=1).tolist()
+#     path_x = np.array(path.x).reshape(len(path.x),1)
+#     path_y = np.array(path.y).reshape(len(path.y),1)
+#     path_yaw = np.array(path.yaw).reshape(len(path.yaw),1)
+#     return_path_list = [np.concatenate((path_x, path_y, path_yaw), axis=1).tolist()]
+    
+    return_path_list = []
+    
+    for fp in fplist:
+        path_x = np.array(fp.x).reshape(len(fp.x),1)
+        path_y = np.array(fp.y).reshape(len(fp.y),1)
+        path_yaw = np.array(fp.yaw).reshape(len(fp.yaw),1)
+        return_path_list += [(np.concatenate((path_x, path_y, path_yaw), axis=1).tolist(), fp.cf)]
+    
+    return return_path_list
   
 def main():
     print(__file__ + " start!!")
