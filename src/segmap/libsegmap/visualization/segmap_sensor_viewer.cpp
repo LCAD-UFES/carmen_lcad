@@ -62,7 +62,7 @@ PointCloudViewer::show(PointCloud<PointXYZRGB>::Ptr cloud, double r, double g, d
 void
 PointCloudViewer::show(Mat &img, const char *name, int resize_to_width)
 {
-	if (resize_to_width)
+	if (resize_to_width > 0)
 	{
 		double factor = (double) resize_to_width / (double) img.cols;
 		int w = img.cols * factor;

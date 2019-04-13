@@ -32,10 +32,12 @@ void
 draw_pointcloud(cv::Mat &m, pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud,
                 GridMap &map, int paint_points = 1, cv::Scalar color = cv::Scalar(0,0,0));
 
-void
-view(ParticleFilter &pf, GridMap &map, Pose2d current_pose,
-     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud, Eigen::Matrix<double, 4, 4> *vel2car,
-     double v, double phi, cv::Mat *pf_view_img);
+cv::Mat
+pf_view(ParticleFilter &pf, GridMap &map,
+				Pose2d *current_pose,
+				Pose2d pf_pose,
+				pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
+				int draw_particles = 0);
 
 void
 colorize_cloud_according_to_segmentation(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);

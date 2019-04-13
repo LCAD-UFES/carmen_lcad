@@ -34,7 +34,7 @@ protected:
 };
 
 
-void load_as_pointcloud(CarmenLidarLoader *loader, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
+//void load_as_pointcloud(CarmenLidarLoader *loader, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
 
 
 #endif

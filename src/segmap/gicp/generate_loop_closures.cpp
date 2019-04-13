@@ -14,187 +14,47 @@
 #include <carmen/segmap_conversions.h>
 #include <carmen/segmap_sensor_viewer.h>
 #include <carmen/carmen_lidar_reader.h>
+#include <carmen/segmap_preproc.h>
+#include <carmen/segmap_constructors.h>
+#include <carmen/segmap_args.h>
+#include <carmen/segmap_grid_map.h>
+#include <carmen/segmap_particle_filter.h>
+#include <carmen/segmap_particle_filter_viewer.h>
+#include <carmen/segmap_loop_closures.h>
 
 #include <carmen/command_line.h>
-
 #include "gicp.h"
 
+using namespace cv;
 using namespace std;
 using namespace pcl;
 using namespace Eigen;
 
 
-PointCloud<PointXYZRGB>::Ptr
-filter_pointcloud(PointCloud<PointXYZRGB>::Ptr raw_cloud)
-{
-	PointCloud<PointXYZRGB>::Ptr cloud = PointCloud<PointXYZRGB>::Ptr(new PointCloud<PointXYZRGB>);
-	cloud->clear();
-
-	for (int i = 0; i < raw_cloud->size(); i++)
-	{
-		if ((fabs(raw_cloud->at(i).x) > 5.0 || fabs(raw_cloud->at(i).y) > 2.0) // remove rays that hit car
-		    && raw_cloud->at(i).x < 70.0  // remove max range
-		    && raw_cloud->at(i).z > -1.3  // remove ground
-		    && raw_cloud->at(i).z < -0.  // remove tree tops
-		        )
-			cloud->push_back(raw_cloud->at(i));
-	}
-
-	return cloud;
-}
-
-
-Matrix<double, 4, 4>
-compute_vel2target(Pose2d pose, Pose2d &target, Matrix<double, 4, 4> &vel2car)
-{
-	// to prevent numerical issues
-	pose.x -= target.x;
-	pose.y -= target.y;
-
-	Matrix<double, 4, 4> world2target = pose3d_to_matrix(0., 0., target.th).inverse();
-	Matrix<double, 4, 4> source2world = Pose2d::to_matrix(pose);
-	Matrix<double, 4, 4> vel2target = world2target * source2world * vel2car;
-
-	return vel2target;
-}
-
-
-PointCloud<PointXYZRGB>::Ptr
-create_cloud(NewCarmenDataset &dataset, int id,
-						 Pose2d &target_pose, Matrix<double, 4, 4> &vel2car)
-{
-	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
-	PointCloud<PointXYZRGB>::Ptr moved(new PointCloud<PointXYZRGB>);
-
-	CarmenLidarLoader loader;
-	loader.reinitialize(dataset[id]->velodyne_path, dataset[id]->n_laser_shots);
-	load_as_pointcloud(&loader, cloud);
-	cloud = filter_pointcloud(cloud);
-
-	Pose2d pose = dataset[id]->pose;
-	Matrix<double, 4, 4> vel2target = compute_vel2target(pose, target_pose, vel2car);
-
-	pcl::transformPointCloud(*cloud, *moved, vel2target);
-
-	return moved;
-}
-
-
-void
-run_icp_step(NewCarmenDataset &dataset, int from, int to,
-						 Matrix<double, 4, 4> &vel2car,
-						 Matrix<double, 4, 4> *relative_transform,
-						 int *convergence_flag,
-						 bool view = false)
-{
-	PointCloud<PointXYZRGB>::Ptr aligned(new PointCloud<PointXYZRGB>);
-	PointCloud<PointXYZRGB>::Ptr source(new PointCloud<PointXYZRGB>);
-	PointCloud<PointXYZRGB>::Ptr target(new PointCloud<PointXYZRGB>);
-
-	Pose2d target_pose = dataset[from]->pose;
-
-	target = create_cloud(dataset, from, target_pose, vel2car);
-	source = create_cloud(dataset, to, target_pose, vel2car);
-
-	run_gicp(source, target, relative_transform, convergence_flag, aligned, 0.1);
-
-	if (view)
-	{
-		//PointCloud<PointXYZRGB>::Ptr aligned2(new PointCloud<PointXYZRGB>);
-		//PointCloud<PointXYZRGB>::Ptr source_moved(new PointCloud<PointXYZRGB>);
-
-		static PointCloudViewer *viewer = NULL;
-
-		if (viewer == NULL)
-			viewer = new PointCloudViewer(4);
-
-		viewer->clear();
-		viewer->show(target, 0, 1, 0);
-		viewer->show(source, 1, 0, 0);
-		viewer->show(aligned, 0, 0, 1);
-		viewer->loop();
-	}
-}
-
-
-void
-write_output(FILE *report_file, vector<pair<int, int>> &loop_closure_indices,
-             vector<Matrix<double, 4, 4>> &relative_transform_vector,
-             vector<int> &convergence_vector)
-{
-	for (int i = 0; i < loop_closure_indices.size(); i++)
-	{
-		fprintf(
-				report_file,
-		    "%d %d %d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
-		    loop_closure_indices[i].first, loop_closure_indices[i].second,
-		    convergence_vector[i], relative_transform_vector[i](0, 0),
-		    relative_transform_vector[i](0, 1), relative_transform_vector[i](0, 2),
-		    relative_transform_vector[i](0, 3), relative_transform_vector[i](1, 0),
-		    relative_transform_vector[i](1, 1), relative_transform_vector[i](1, 2),
-		    relative_transform_vector[i](1, 3), relative_transform_vector[i](2, 0),
-		    relative_transform_vector[i](2, 1), relative_transform_vector[i](2, 2),
-		    relative_transform_vector[i](2, 3), relative_transform_vector[i](3, 0),
-		    relative_transform_vector[i](3, 1), relative_transform_vector[i](3, 2),
-		    relative_transform_vector[i](3, 3));
-	}
-}
-
-
-void
-write_output_to_graphslam(FILE *out_file,
-													NewCarmenDataset &dataset, vector<pair<int, int>> &indices,
-													vector<Matrix<double, 4, 4>> &relative_transform_vector,
-													vector<int> &convergence_vector)
-{
-	Matrix<double, 4, 4> vel2target;
-	Matrix<double, 4, 4> vel2car = dataset.vel2car();
-	Matrix<double, 4, 4> corrected_pose;
-
-	for (int i = 0; i < indices.size(); i++)
-	{
-		Pose2d pose_target = dataset[indices[i].first]->pose;
-		Pose2d pose_source = dataset[indices[i].second]->pose;
-
-		vel2target = compute_vel2target(pose_source, pose_target, vel2car);
-		corrected_pose = relative_transform_vector[i] * vel2target;
-		Pose2d pose = Pose2d::from_matrix(corrected_pose);
-
-		fprintf(out_file, "%d %d %d %lf %lf %lf\n", indices[i].first, indices[i].second,
-		        convergence_vector[i], pose.x, pose.y, pose.th);
-	}
-}
-
-
 void
 detect_loop_closures(NewCarmenDataset &dataset, vector<pair<int, int>> *loop_closure_indices,
-                     double dist_threshold, double time_threshold, int step)
+                     double max_dist_threshold, double min_time_threshold, int step,
+                     double skip_v_threshold)
 {
 	printf("Detecting loop closures.\n");
+
+	int nn_id;
 
 	if (step <= 0)
 		step = 1;
 
 	for (int i = 0; i < dataset.size(); i += step)
 	{
-		double min_dist = DBL_MAX;
-		int nn_id = -1;
+		if (fabs(dataset[i]->v) < skip_v_threshold)
+			continue;
 
-		for (int j = i + 1; j < dataset.size(); j++)
-		{
-			double dx = dataset[i]->pose.x - dataset[j]->pose.x;
-			double dy = dataset[i]->pose.y - dataset[j]->pose.y;
-			double dt = fabs(dataset[i]->velodyne_time - dataset[j]->velodyne_time);
-
-			double dist = sqrt(pow(dx, 2) + pow(dy, 2));
-
-			// search for the nearest pose that obeys the distance and time constraints.
-			if ((dist < min_dist) && (dist < dist_threshold) && (dt > time_threshold))
-			{
-				min_dist = dist;
-				nn_id = j;
-			}
-		}
+		search_for_loop_closure_using_pose_dist(dataset,
+		                                        dataset[i]->pose,
+		                                        dataset[i]->time,
+		                                        i + 1, dataset.size(),
+		                                        max_dist_threshold,
+		                                        min_time_threshold,
+		                                        &nn_id);
 
 		if (nn_id >= 0)
 			loop_closure_indices->push_back(pair<int, int>(i, nn_id));
@@ -204,115 +64,82 @@ detect_loop_closures(NewCarmenDataset &dataset, vector<pair<int, int>> *loop_clo
 }
 
 
-void
-add_arguments_for_parsing(CommandLineArguments *args)
-{
-	args->add_positional<string>("log_path", "Path of a log", 1);
-	args->add_positional<string>("output", "Path of the output file", 1);
-	args->add<string>("odom_calib,o", "Odometry calibration file", "");
-	args->add<string>("fused_odom,f", "Fused odometry file (optimized using graphslam)", "");
-	args->add<int>("gps_id", "Id of the gps to be used", 1);
-	args->add<double>("voxel_size,x", "Size of voxels in voxel grid filter", 0.1);
-	args->add<double>("loop_dist,d", "Maximum distance (in meters) to assume two poses form a loop closure", 2.0);
-	args->add<double>("time_dist,t", "Minimum temporal difference (in seconds) to assume two poses form a loop closure (instead of being consecutive poses)", 60.0);
-	args->add<int>("subsampling,s", "Number of data packages to skip when looking for loop closures (<= 1 for using all packages)", 0);
-	args->add<string>("report_file,r", "Path to a file to save debug information", "/tmp/loop_closure_report.txt");
-	args->add<bool>("view,v", "Boolean to turn visualization on or off", false);
-	args->save_config_file("loop_closures_config.txt");
-}
-
-
-void
-run_icps(NewCarmenDataset &dataset,
-				 vector<pair<int, int>> &loop_closure_indices,
-				 vector<Matrix<double, 4, 4>> *relative_transform_vector,
-				 vector<int> *convergence_vector,
-				 bool view)
-{
-	printf("Running ICPs.\n");
-
-	int i;
-	int n_processed_clouds = 0;
-	int n = loop_closure_indices.size();
-
-	Matrix<double, 4, 4> vel2car = dataset.vel2car();
-
-#ifdef _OPENMP
-	#pragma omp parallel for default(none) private(i) \
-		shared(dataset, convergence_vector, relative_transform_vector, \
-		loop_closure_indices, n_processed_clouds, n, vel2car, view)
-#endif
-	for (i = 0; i < n; i++)
-	{
-		run_icp_step(dataset, loop_closure_indices[i].first,
-		             loop_closure_indices[i].second,
-								 vel2car,
-		             &(relative_transform_vector->at(i)),
-								 &(convergence_vector->at(i)),
-								 view);
-
-#ifdef _OPENMP
-		#pragma omp critical
-#endif
-		{
-			n_processed_clouds++;
-
-			if (n_processed_clouds % 100 == 0)
-				printf("%d processed clouds of %d\n", n_processed_clouds, n);
-		}
-	}
-}
-
-
 int
 main(int argc, char **argv)
 {
 	CommandLineArguments args;
-	add_arguments_for_parsing(&args);
+	args.add_positional<std::string>("log_path", "Path of a log", 1);
+	args.add<string>("mode", "Technique for estimating displacement between loop closure poses [particle_fitler | gicp | localization]");
+	args.add<std::string>("odom_calib,o", "Odometry calibration file", "none");
+	args.add<std::string>("fused_odom,f", "Fused odometry file (optimized using graphslam)", "none");
+	args.add<int>("n_corrections_when_reinit", "Number of correction steps when reinitializing particle filter", 20);
+	add_default_sensor_preproc_args(args);
+	add_default_gicp_args(args);
+	add_default_localizer_args(args);
+	add_default_mapper_args(args);
+	args.save_config_file(default_data_dir() + "/loop_closures_config.txt");
 	args.parse(argc, argv);
 
-	bool view = args.get<bool>("view");
 	string log_path = args.get<string>("log_path");
-
-	FILE *out_file = safe_fopen(args.get<string>("output").c_str(), "w");
-	FILE *report_file = safe_fopen(args.get<string>("report_file").c_str(), "w");
-
 	NewCarmenDataset dataset(log_path,
 	                         args.get<string>("odom_calib"),
 	                         args.get<string>("fused_odom"),
 	                         args.get<int>("gps_id"));
 
 	vector<pair<int, int>> loop_closure_indices;
-
 	detect_loop_closures(dataset,
 	                     &loop_closure_indices,
 	                     args.get<double>("loop_dist"),
 	                     args.get<double>("time_dist"),
-	                     args.get<int>("subsampling"));
+	                     args.get<int>("subsampling"),
+	                     args.get<double>("v_thresh"));
 
 	int size = dataset.size();
 	vector<Matrix<double, 4, 4>> relative_transform_vector(size);
 	vector<int> convergence_vector(size);
+	string mode = args.get<string>("mode");
 
-#ifdef _OPENMP
-	view = false;
-#endif
+	if (mode.compare("gicp") == 0)
+	{
+		estimate_displacements_with_gicp(dataset,
+																		 dataset,
+																		 log_path, log_path,
+																		 loop_closure_indices,
+																		 &relative_transform_vector,
+																		 &convergence_vector,
+																		 args);
+	}
+	else if (mode.compare("particle_filter") == 0)
+	{
+		estimate_displacements_with_particle_filter(dataset,
+																								dataset,
+																								log_path, log_path,
+																								loop_closure_indices,
+																								&relative_transform_vector,
+																								&convergence_vector,
+																								args.get<int>("n_corrections_when_reinit"),
+																								args);
+	}
+	else if (mode.compare("localization") == 0)
+	{
+		estimate_loop_closures_with_particle_filter_in_map(dataset,
+																											log_path,
+																											loop_closure_indices,
+																											&relative_transform_vector,
+																											&convergence_vector,
+																											args.get<int>("n_corrections_when_reinit"),
+																											args);
+	}
+	else
+		exit(printf("Error: invalid mode '%s'.\n", mode.c_str()));
 
-	run_icps(dataset,
-					 loop_closure_indices,
-					 &relative_transform_vector,
-					 &convergence_vector,
-					 view);
-
-	write_output(report_file, loop_closure_indices, relative_transform_vector,
-	             convergence_vector);
-
-	write_output_to_graphslam(out_file, dataset, loop_closure_indices,
-	                          relative_transform_vector, convergence_vector);
-
-	fclose (out_file);
-	fclose (report_file);
+	save_output(args.get<string>("output"),
+	            dataset,
+	            loop_closure_indices,
+	            relative_transform_vector,
+	            convergence_vector);
 
 	printf("Done.");
 	return 0;
 }
+

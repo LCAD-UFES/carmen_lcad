@@ -2,8 +2,8 @@
 #define _EDGE_GPS_2D_H_
 
 #include <Eigen/Core>
-#include "g2o/types/slam2d/vertex_se2.h"
-#include "g2o/core/base_unary_edge.h"
+#include <g2o/types/slam2d/vertex_se2.h>
+#include <g2o/core/base_unary_edge.h>
 #include <stdio.h>
 #include <math.h>
 #include <float.h>
@@ -15,7 +15,10 @@ namespace g2o
 	class EdgeGPS : public BaseUnaryEdge<3, SE2, VertexSE2>
 	{
 		public:
-			EdgeGPS()
+			// eigen operator
+			EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
+			EdgeGPS() : BaseUnaryEdge<3, SE2, VertexSE2>()
 			{
 			}
 

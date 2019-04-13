@@ -782,7 +782,6 @@ void HyperGraphSclamOptimizer::RemoveUndesiredDisplacements(double threshold)
 // remove gps messages
 void HyperGraphSclamOptimizer::MakeGPSSparse()
 {
-
     if (5 < gps_buffer.size())
     {
         // iterators

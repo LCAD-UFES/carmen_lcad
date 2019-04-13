@@ -3,8 +3,15 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sys/stat.h>
-#include <carmen/segmap_grid_map.h>
+#include <carmen/util_time.h>
 #include <carmen/util_math.h>
+
+#include <boost/filesystem.hpp>
+#include <carmen/segmap_preproc.h>
+#include <carmen/segmap_dataset.h>
+#include <carmen/segmap_sensor_viewer.h>
+#include <carmen/segmap_particle_filter_viewer.h>
+#include <carmen/segmap_grid_map.h>
 
 using namespace pcl;
 using namespace std;
@@ -303,6 +310,9 @@ GridMap::GridMap(string tiles_dir, double tile_height_meters, double tile_width_
 	_map_type = map_type;
 	_save_maps = save_maps;
 
+	if (!boost::filesystem::exists(tiles_dir))
+		boost::filesystem::create_directory(tiles_dir);
+
 	for (int i = 0; i < _N_TILES; i++)
 		for (int j = 0; j < _N_TILES; j++)
 			_tiles[i][j] = NULL;
@@ -453,3 +463,74 @@ GridMap::save()
 	}
 }
 
+
+
+void
+update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc)
+{
+	preproc.reinitialize(sample);
+
+	for (int i = 0; i < preproc.size(); i++)
+	{
+		vector<PointXYZRGB> points = preproc.next_points_in_world();
+
+		for (int j = 0; j < points.size(); j++)
+			map->add_point(points[j]);
+	}
+}
+
+
+void
+create_map(GridMap &map, NewCarmenDataset *dataset, int step,
+					 SensorPreproc &preproc, double skip_velocity_threshold,
+					 int view_flag)
+{
+	TimeCounter timer;
+	DataSample *sample;
+	PointCloudViewer viewer;
+	CarmenImageLoader iloader;
+	vector<double> times;
+
+	for (int i = 0; i < dataset->size(); i += step)
+	{
+		sample = dataset->at(i);
+
+		if (fabs(sample->v) < skip_velocity_threshold)
+			continue;
+
+		timer.start();
+
+		map.reload(sample->pose.x, sample->pose.y);
+		update_map(sample, &map, preproc);
+
+		times.push_back(timer.ellapsed());
+
+		if (view_flag)
+		{
+			if (times.size() % 50 == 0)
+				printf("Avg ellapsed %ld: %lf Current: %lf\n",
+							 times.size(),
+							 mean(times),
+							 times[times.size() - 1]);
+
+			Pose2d pose;
+			pose = sample->pose;
+
+			Mat map_img = map.to_image().clone();
+			draw_pose(map, map_img, pose, Scalar(0, 255, 0));
+
+			// flip vertically.
+			Mat map_view;
+			flip(map_img, map_view, 0);
+
+			//Mat img = iloader.load(sample);
+			//viewer.clear();
+			//viewer.show(colored);
+			//viewer.show(img, "img", 640);
+			//viewer.show(simg, "simg", 640);
+			//viewer.show(simg_view, "simg_view", 640);
+			viewer.show(map_view, "map", 640);
+			viewer.loop();
+		}
+	}
+}

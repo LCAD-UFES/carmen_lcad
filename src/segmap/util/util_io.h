@@ -10,5 +10,6 @@ FILE* safe_fopen(const char *path, const char *mode);
 
 std::vector<double> read_vector(char *name);
 std::string file_name_from_path(const char *path);
+std::string file_name_from_path(std::string &path);
 
 #endif

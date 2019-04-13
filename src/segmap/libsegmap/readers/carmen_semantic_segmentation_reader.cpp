@@ -13,7 +13,7 @@ using namespace std;
 using namespace cv;
 
 
-SemanticSegmentationLoader::SemanticSegmentationLoader(const char *log_path, const char *data_path)
+SemanticSegmentationLoader::SemanticSegmentationLoader(string log_path, string data_path)
 {
 	vector<string> log_path_splitted = string_split(log_path, "/");
 	string log_name = log_path_splitted[log_path_splitted.size() - 1];

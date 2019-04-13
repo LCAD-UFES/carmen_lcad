@@ -18,6 +18,9 @@ public:
 	double xsens_time;
 	double gps_time;
 
+	// timestamp of the sensor used for synchronization.
+	double time;
+
 	double v, phi;
 	int gps_quality;
 	int gps_orientation_quality;

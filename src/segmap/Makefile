@@ -3,7 +3,7 @@ include $(CARMEN_HOME)/src/Makefile.conf
 MODULE_NAME = SEG MAP MAIN
 MODULE_COMMENT = Main programs
 
-SUBDIRS += util libsegmap graphslam_fast gicp # scripts examples
+SUBDIRS += util libsegmap gicp graphslam_fast # scripts examples
 
 LINK = g++ 
 
@@ -24,28 +24,30 @@ LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal
 LFLAGS += -lboost_program_options -lboost_filesystem
 
 LFLAGS += -lsegmap_types -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
-	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models \
-	-lutil
+	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lsegmap_initializations \
+	-lutil 
 
-DEPS = libsegmap/types/libsegmap_types.a \
-	libsegmap/datasets/libsegmap_datasets.a \
-	libsegmap/readers/libsegmap_readers.a \
-	libsegmap/motion_models/libsegmap_motion_models.a \
-	libsegmap/slam/libsegmap_slam.a \
-	libsegmap/visualization/libsegmap_visualization.a \
-	libsegmap/readers/libsemap_readers.a \
-	util/libutil.a
+DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/datasets/libsegmap_datasets.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsegmap_readers.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/motion_models/libsegmap_motion_models.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/slam/libsegmap_slam.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/visualization/libsegmap_visualization.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsemap_readers.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/initializations/libsegmap_initializations.a \
+	$(CARMEN_HOME)/src/segmap/util/libutil.a
 
-SOURCES = mapper.cpp localizer.cpp  
+SOURCES = mapper.cpp localizer.cpp calibrate_velodyne.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = 
-TARGETS = mapper localizer  
+TARGETS = mapper localizer calibrate_velodyne
 
 # The libraries are added as dependencies to make the program be compiled when the libs are changed.
 # Without adding them as a dependency, we would have to do a make clean && make whenever we change a .cpp file.
 localizer: localizer.o $(DEPS) 
 mapper: mapper.o $(DEPS)
+calibrate_velodyne: calibrate_velodyne.o $(DEPS)
 
 include $(CARMEN_HOME)/src/Makefile.rules

@@ -50,10 +50,10 @@
 #include <vector>
 
 
-#define GPS_MESSAGE_QUEUE_SIZE 20
+#define GPS_MESSAGE_QUEUE_SIZE 10
 #define GPS_REACH1 2
 #define GPS_REACH2 3
-#define SMALL_DELTA_T 0.1
+#define SMALL_DELTA_T 0.02
 #define REFERENCE_ANGLE (M_PI / 2.0)
 
 using namespace std;
@@ -78,17 +78,23 @@ get_carmen_gps_gphdt_message(vector<carmen_gps_xyz_message> gps_xyz_message_queu
 	double angle = 1000.0;
 	int i;
 
-	for (i = gps_xyz_message_queue.size() - 1; i > 0; i--)
+	if (gps_xyz_message_queue.size() > 0)
 	{
-		if (gps_xyz_message_queue[i].nr == GPS_REACH1)
+		for (i = gps_xyz_message_queue.size() / 2; i >= 0; i--)
 		{
-			for (int j = gps_xyz_message_queue.size() - 1; j > 0; j--)
+			if (gps_xyz_message_queue[i].nr == GPS_REACH1)
 			{
-				if ((gps_xyz_message_queue[j].nr == GPS_REACH2) && (fabs(gps_xyz_message_queue[j].utc - gps_xyz_message_queue[i].utc) < SMALL_DELTA_T))
-					angle = get_angle_between_gpss(gps_xyz_message_queue[j], gps_xyz_message_queue[i]);
+				for (int j = gps_xyz_message_queue.size() - 1; j >= 0; j--)
+				{
+					if ((gps_xyz_message_queue[j].nr == GPS_REACH2) && (fabs(gps_xyz_message_queue[j].utc - gps_xyz_message_queue[i].utc) < SMALL_DELTA_T))
+					{
+						angle = get_angle_between_gpss(gps_xyz_message_queue[j], gps_xyz_message_queue[i]);
+						break;
+					}
+				}
+				if (angle != 1000.0)
+					break;
 			}
-			if (angle != 1000.0)
-				break;
 		}
 	}
 

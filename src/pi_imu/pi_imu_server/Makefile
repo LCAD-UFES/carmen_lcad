@@ -23,7 +23,7 @@
 
 # Compiler, tools and options
 
-RTIMULIBPATH  = ../../RTIMULib2/RTIMULib
+RTIMULIBPATH  = ../RTIMULib2/RTIMULib
 
 CC    			= gcc
 CXX   			= g++
@@ -167,6 +167,7 @@ $(OBJECTS_DIR)%.o : $(RTIMULIBPATH)/IMUDrivers/%.cpp $(DEPS)
 $(OBJECTS_DIR)pi_imu_server_driver.o : pi_imu_server_driver.cpp $(DEPS)
 	@$(CHK_DIR_EXISTS) objects/ || $(MKDIR) objects/
 	$(CXX) -c -o $@ pi_imu_server_driver.cpp $(CFLAGS) $(INCPATH)
+
 
 $(OBJECTS_DIR)pi_imu_test.o : pi_imu_test.cpp $(DEPS)
 	@$(CHK_DIR_EXISTS) objects/ || $(MKDIR) objects/

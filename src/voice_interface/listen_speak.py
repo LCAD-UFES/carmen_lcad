@@ -18,8 +18,9 @@ from six.moves import queue
 RATE = 16000
 CHUNK = int(RATE / 10)  # 100ms
 
-global LANGUAGE_CODE
+# global LANGUAGE_CODE
 
+"""
 def language(language_to_use):
     #Defines a global variable to the entire module
 
@@ -28,6 +29,7 @@ def language(language_to_use):
     elif language_to_use == "pt":
         LANGUAGE_CODE = 'pt-BR'
 
+"""
 class MicrophoneStream(object):
     """Opens a recording stream as a generator yielding the audio chunks."""
 
@@ -108,7 +110,7 @@ def speak(text, speech_file):
     # Build the voice request, select the language code ("pt-BR") and the ssml
     # voice gender ("neutral")
     voice = texttospeech.types.VoiceSelectionParams(
-        language_code = LANGUAGE_CODE,
+        language_code='pt-BR',
         ssml_gender=texttospeech.enums.SsmlVoiceGender.NEUTRAL)
 
     # Select the type of audio file you want returned
@@ -189,7 +191,7 @@ def listen():
     # Instancia um Speech Client
     client = speech.SpeechClient()
 
-    language_code = LANGUAGE_CODE #global variable
+    language_code='pt-BR' #global variable
     config = types.RecognitionConfig(
         encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=RATE,
