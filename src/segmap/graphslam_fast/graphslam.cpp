@@ -231,7 +231,6 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
               double xy_std, double th_std)
 {
 	double angle, filtered_th_std;
-	Pose2d gps0;
 	DataSample *sample;
 	Matrix3d information;
 
@@ -747,7 +746,7 @@ int main(int argc, char **argv)
 	//initialize_g2o_stuff(factory, optimizer);
 	Bla bla;
 
-	data.dataset = create_dataset(args.get<string>("log"));
+	data.dataset = create_dataset(args.get<string>("log"), args.get<double>("camera_latency"), "fused_odometry");
 	if (data.dataset->size() <= 0)
 		exit(printf("Error: Empty dataset.\n"));
 

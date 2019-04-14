@@ -47,7 +47,7 @@ main(int argc, char **argv)
 							args.get<double>("resolution"),
 							map_type, 1);
 
-	NewCarmenDataset *dataset = create_dataset(log_path, "graphslam");
+	NewCarmenDataset *dataset = create_dataset(log_path, args.get<double>("camera_latency"), "graphslam");
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 
 	create_map(map, dataset, args.get<int>("step"), preproc,

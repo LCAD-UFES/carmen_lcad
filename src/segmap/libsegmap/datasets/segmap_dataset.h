@@ -42,6 +42,7 @@ public:
 	NewCarmenDataset(std::string path,
 	                 std::string odom_calib_path = "",
 									 std::string poses_path = "",
+									 double camera_latency = 0.0,
 									 int gps_id = 1,
 									 NewCarmenDataset::SyncSensor sync_sensor = SYNC_BY_CAMERA,
 									 NewCarmenDataset::SyncMode sync_mode = SYNC_BY_NEAREST);
@@ -102,6 +103,8 @@ protected:
 	std::vector<double> _odom_times;
 	std::vector<double> _camera_times;
 	std::vector<double> _velodyne_times;
+
+	double _camera_latency;
 
 	// Returns a matrix to transfrom from the board to the car frame.
 	Eigen::Matrix<double, 4, 4> _board2car();

@@ -84,6 +84,7 @@ main(int argc, char **argv)
 	NewCarmenDataset dataset(log_path,
 	                         args.get<string>("odom_calib"),
 	                         args.get<string>("fused_odom"),
+	                         args.get<double>("camera_latency"),
 	                         args.get<int>("gps_id"));
 
 	vector<pair<int, int>> loop_closure_indices;

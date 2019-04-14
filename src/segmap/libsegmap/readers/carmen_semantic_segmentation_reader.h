@@ -10,7 +10,8 @@
 class SemanticSegmentationLoader
 {
 public:
-    SemanticSegmentationLoader(std::string log_path, std::string data_path="/dados/data");
+    SemanticSegmentationLoader(std::string log_path,
+                               std::string data_path="/dados/data");
     ~SemanticSegmentationLoader();
 
     cv::Mat load(DataSample *sample);
