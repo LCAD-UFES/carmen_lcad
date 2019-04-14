@@ -526,9 +526,9 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 			flip(map_img, map_view, 0);
 
 			Mat img = preproc.read_img(sample);
-			Mat simg = preproc.read_segmented_img(sample);
-			Mat seg_img = segmented_image_view(simg);
-			viewer.show(seg_img, "s_img", img_width);
+			//Mat simg = preproc.read_segmented_img(sample);
+			//Mat seg_img = segmented_image_view(simg);
+			//viewer.show(seg_img, "s_img", img_width);
 			viewer.show(img, "color_img", img_width);
 			viewer.show(map_view, "map", img_width);
 			viewer.loop();
