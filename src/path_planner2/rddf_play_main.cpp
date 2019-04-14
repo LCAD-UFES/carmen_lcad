@@ -23,6 +23,8 @@ using namespace std;
 #include <carmen/voice_interface_interface.h>
 #include <carmen/road_mapper.h>
 #include <carmen/grid_mapping.h>
+#include <carmen/rrt_planner_interface.h>
+#include <carmen/rrt_planner_message.h>
 
 #include "rddf_interface.h"
 #include "rddf_messages.h"
@@ -51,6 +53,7 @@ static bool use_road_map = false;
 static bool robot_pose_queued = false;
 static carmen_localize_ackerman_globalpos_message *current_globalpos_msg = NULL;
 static carmen_simulator_ackerman_truepos_message *current_truepos_msg = NULL;
+static carmen_base_ackerman_motion_command_message *current_motion_command_message = NULL;
 static carmen_map_p current_road_map = NULL;
 
 static char *carmen_rddf_filename = NULL;
@@ -1921,22 +1924,22 @@ fill_rddf_tree(PyObject* python_path_tree)
 }
 
 double
-displace_from_path(carmen_point_t robot_pose, int carmen_rddf_num_poses_ahead, carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead)
+displace_from_path(carmen_ackerman_motion_command_t robot_pose, int carmen_rddf_num_poses_ahead, carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead)
 {
 	double minimum_dist = 1000.0, minimum_disp = 1000.0;
 	for (int i=1; i<carmen_rddf_num_poses_ahead; i++)
 	{
 		int piti = 0;
-		carmen_ackerman_traj_point_t temp_car_pose;
-		temp_car_pose.x = robot_pose.x;
-		temp_car_pose.y = robot_pose.y;
+		carmen_ackerman_traj_point_t traj_robot_pose;
+		traj_robot_pose.x = robot_pose.x;
+		traj_robot_pose.y = robot_pose.y;
 		carmen_ackerman_traj_point_t p = carmen_get_point_nearest_to_trajectory(
 				&piti, carmen_rddf_poses_ahead[i-1], carmen_rddf_poses_ahead[i],
-				temp_car_pose, 0.1);
-		if (DIST2D(temp_car_pose, p) < minimum_dist || piti == POINT_WITHIN_SEGMENT)
+				traj_robot_pose, 0.1);
+		if (DIST2D(robot_pose, p) < minimum_dist || piti == POINT_WITHIN_SEGMENT)
 		{
-			minimum_dist = DIST2D(temp_car_pose, p);
-			if (carmen_normalize_theta(carmen_rddf_poses_ahead[i].theta - atan2(p.y - temp_car_pose.y, p.x - temp_car_pose.x)) > 0)
+			minimum_dist = DIST2D(robot_pose, p);
+			if (carmen_normalize_theta(carmen_rddf_poses_ahead[i].theta - atan2(p.y - robot_pose.y, p.x - robot_pose.x)) > 0)
 				minimum_disp = minimum_dist;
 			else
 				minimum_disp = -minimum_dist;
@@ -1944,6 +1947,38 @@ displace_from_path(carmen_point_t robot_pose, int carmen_rddf_num_poses_ahead, c
 	}
 	return minimum_disp;
 }
+
+carmen_ackerman_motion_command_t
+get_predicted_robot_pose(double time_ahead)
+{
+	carmen_ackerman_motion_command_t future_robot_pose;
+	if (!current_motion_command_message)
+	{
+		future_robot_pose.theta = current_globalpos_msg->globalpos.theta;
+		future_robot_pose.x = current_globalpos_msg->globalpos.x;
+		future_robot_pose.y = current_globalpos_msg->globalpos.y;
+		future_robot_pose.v = current_globalpos_msg->v;
+		future_robot_pose.phi = current_globalpos_msg->phi;
+		future_robot_pose.time = current_globalpos_msg->timestamp;
+		return future_robot_pose;
+	}
+
+	double target_time = current_globalpos_msg->timestamp+time_ahead;
+	for (int i = 0; i < current_motion_command_message->num_motion_commands; i++)
+	{
+		if (current_motion_command_message->motion_command[i].time >= target_time)
+			return current_motion_command_message->motion_command[i];
+	}
+
+	future_robot_pose.theta = current_globalpos_msg->globalpos.theta;
+	future_robot_pose.x = current_globalpos_msg->globalpos.x;
+	future_robot_pose.y = current_globalpos_msg->globalpos.y;
+	future_robot_pose.v = current_globalpos_msg->v;
+	future_robot_pose.phi = current_globalpos_msg->phi;
+	future_robot_pose.time = current_globalpos_msg->timestamp;
+	return future_robot_pose;
+}
+
 
 int
 frenet_planner(carmen_point_t robot_pose, carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead, carmen_ackerman_traj_point_t *carmen_rddf_poses_back, 
@@ -1958,16 +1993,19 @@ frenet_planner(carmen_point_t robot_pose, carmen_ackerman_traj_point_t *carmen_r
 //	carmen_vector_3D_t object;
 //	object.x = robot_pose.x;
 //	object.y = robot_pose.y;
-	static double last_vel_dif = 0.0;
+	static double last_vel = 0.0;
 	static double last_timestamp = current_globalpos_msg->timestamp;
 
-	double minimum_dist = displace_from_path(robot_pose, carmen_rddf_num_poses_ahead, carmen_rddf_poses_ahead);
+
+	carmen_ackerman_motion_command_t future_robot_pose = get_predicted_robot_pose(0.1);
+
+	double minimum_dist = displace_from_path(future_robot_pose, carmen_rddf_num_poses_ahead, carmen_rddf_poses_ahead);
 	PyObject* python_displacement = PyFloat_FromDouble(minimum_dist);
 	
-	double vel_dif = current_globalpos_msg->v * sin(carmen_normalize_theta(robot_pose.theta - carmen_rddf_poses_ahead[0].theta));
+	double vel_dif = future_robot_pose.v * sin(carmen_normalize_theta(future_robot_pose.theta - carmen_rddf_poses_ahead[0].theta));
 	PyObject* python_vel_displacement = PyFloat_FromDouble(vel_dif);
 	
-	double acc_dif = (vel_dif - last_vel_dif) / (current_globalpos_msg->timestamp - last_timestamp);
+	double acc_dif = (future_robot_pose.v - last_vel) * sin(carmen_normalize_theta(future_robot_pose.theta - carmen_rddf_poses_ahead[0].theta)) / (future_robot_pose.time - last_timestamp);
 	PyObject* python_acc_displacement = PyFloat_FromDouble(acc_dif);
 
 	PyListObject *python_rddf = convert_rddf_array(carmen_rddf_poses_ahead, carmen_rddf_poses_back,
@@ -1984,8 +2022,8 @@ frenet_planner(carmen_point_t robot_pose, carmen_ackerman_traj_point_t *carmen_r
 	int num_rddf_paths = (int)PyList_Size(python_new_rddf);
 //	printf("New RDDF size = %d\n", num_rddf_paths);
 
-	last_vel_dif = vel_dif;
-	last_timestamp = current_globalpos_msg->timestamp;
+	last_vel = future_robot_pose.v;
+	last_timestamp = future_robot_pose.time;
 
 	if (num_rddf_paths == 0)
 		return 0;
@@ -2381,6 +2419,25 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 	}
 }
 
+
+void
+carmen_motion_plan_handler(carmen_base_ackerman_motion_command_message *message)
+{
+	if (current_motion_command_message)
+	{
+		free(current_motion_command_message->motion_command);
+		free(current_motion_command_message->host);
+	}
+	else
+		current_motion_command_message = (carmen_base_ackerman_motion_command_message *) malloc(sizeof(carmen_base_ackerman_motion_command_message));
+
+	current_motion_command_message->motion_command = (carmen_ackerman_motion_command_p)malloc(sizeof(carmen_ackerman_motion_command_t) * message->num_motion_commands);
+	memcpy(current_motion_command_message->motion_command, message->motion_command, sizeof(carmen_ackerman_motion_command_t) * message->num_motion_commands);
+	current_motion_command_message->num_motion_commands = message->num_motion_commands;
+	current_motion_command_message->timestamp = message->timestamp;
+	current_motion_command_message->host = (char*)malloc(strlen(message->host));
+	strcpy(current_motion_command_message->host, message->host);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -2418,6 +2475,8 @@ carmen_rddf_play_subscribe_messages()
 	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) carmen_motion_plan_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

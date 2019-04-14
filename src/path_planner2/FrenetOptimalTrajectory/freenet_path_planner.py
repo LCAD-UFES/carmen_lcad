@@ -325,6 +325,7 @@ def generate_target_course(x, y):
 
 def test(rddf, c_speed, displacement, vel_dif, acc_dif):
     ob = np.array([])
+    acc_diff = 0
     rddf = np.array(rddf)
     _, rddf_idx = np.unique(rddf, return_index=True, axis=0)
     rddf = rddf[np.sort(rddf_idx)]
