@@ -65,12 +65,17 @@ public:
 	std::vector<CompletePointData> next_points();
 	int size();
 
-	cv::Mat read_img(DataSample *sample) { return _iloader->load(sample); }
-	cv::Mat read_segmented_img(DataSample *sample);
+	cv::Mat get_sample_img() { return _img; }
+	cv::Mat get_sample_semantic_img() { return _simg; }
+	cv::Mat get_sample_img_with_points() { return _img_with_points; }
+	cv::Mat get_sample_semantic_img_with_points() { return _simg_with_points; }
 
 	void set_lane_mark_detection(int on_or_off) { _lane_mark_detection_active = on_or_off; }
 
 protected:
+
+	cv::Mat read_img(DataSample *sample) { return _iloader->load(sample); }
+	cv::Mat read_segmented_img(DataSample *sample);
 
 	int _lane_mark_detection_active;
 	void _segment_lane_marks(cv::Mat &m, DataSample *sample);
@@ -91,6 +96,9 @@ protected:
 	int _n_lidar_shots;
 
 	cv::Mat _img;
+	cv::Mat _simg;
+	cv::Mat _img_with_points;
+	cv::Mat _simg_with_points;
 
   static const int _n_distance_indices = 10;
   float ***calibration_table;
@@ -140,7 +148,7 @@ protected:
 	static unsigned char _brighten(unsigned char val, unsigned int multiplier = 5);
 
 	void _get_pixel_position(Eigen::Matrix<double, 4, 1> &p_sensor,
-													 cv::Mat &img, cv::Point *ppixel,
+	                         int img_rows, int img_cols, cv::Point *ppixel,
 													 int *is_valid);
 
 	static void _point_coords_from_mat(Eigen::Matrix<double, 4, 1> &mat, pcl::PointXYZRGB *point);

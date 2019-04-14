@@ -13,6 +13,7 @@
 #include <carmen/segmap_conversions.h>
 #include <carmen/segmap_definitions.h>
 #include <carmen/ackerman_motion_model.h>
+#include <carmen/segmap_semantic_segmentation_viewer.h>
 
 #include "segmap_preproc.h"
 
@@ -147,10 +148,14 @@ SensorPreproc::reinitialize(DataSample *sample)
 {
 	_vloader->reinitialize(sample->velodyne_path, sample->n_laser_shots);
 
-	if (_imode == COLOR)
+	if (_imode == COLOR || _imode == SEMANTIC)
+	{
 		_img = read_img(sample);
-	else if (_imode == SEMANTIC)
-		_img = read_segmented_img(sample);
+		_img_with_points = _img.clone();
+
+		_simg = read_segmented_img(sample);
+		_simg_with_points = segmented_image_view(_simg);
+	}
 
 	_compute_transform_car2world(sample);
 	_n_lidar_shots = sample->n_laser_shots;
@@ -259,16 +264,21 @@ SensorPreproc::next_points()
 		_point_coords_from_mat(_p_car, &p.car);
 		_point_coords_from_mat(_p_sensor, &p.sensor);
 		_point_coords_from_mat(_p_world, &p.world);
-		_adjust_intensity(&p.sensor, _p_sensor, p.raw_intensity, &valid, i);
-
-		p.world.r = p.car.r = p.sensor.r;
-		p.world.g = p.car.g = p.sensor.g;
-		p.world.b = p.car.b = p.sensor.b;
 
 		if (_spherical_point_is_valid(p.h_angle, p.v_angle, p.range)
-				&& _point3d_is_valid(_p_sensor, _p_car, _p_world, _ignore_above_threshold, _ignore_below_threshold)
-				&& valid)
-			points.push_back(p);
+				&& _point3d_is_valid(_p_sensor, _p_car, _p_world, _ignore_above_threshold, _ignore_below_threshold))
+		{
+			_adjust_intensity(&p.sensor, _p_sensor, p.raw_intensity, &valid, i);
+
+			if (valid)
+			{
+				p.world.r = p.car.r = p.sensor.r;
+				p.world.g = p.car.g = p.sensor.g;
+				p.world.b = p.car.b = p.sensor.b;
+
+				points.push_back(p);
+			}
+		}
 	}
 
 	_motion_correction *= _motion_correction_step;
@@ -300,21 +310,20 @@ void
 SensorPreproc::_segment_lane_marks(Mat &m, DataSample *sample)
 {
 	double r, g, b, gray;
-	Mat bgr_img = read_img(sample);
 
-	int st = (int) (bgr_img.rows * ((double) 450. / 960.));
-	int end = (int) (bgr_img.rows * ((double) 730. / 960.));
+	int st = (int) (_img.rows * ((double) 450. / 960.));
+	int end = (int) (_img.rows * ((double) 750. / 960.));
 
 	for (int i = st; i < end; i++)
 	{
-		for (int j = 0; j < bgr_img.cols; j++)
+		for (int j = 0; j < _img.cols; j++)
 		{
-			b = bgr_img.data[3 * (i * bgr_img.cols + j)];
-			g = bgr_img.data[3 * (i * bgr_img.cols + j) + 1];
-			r = bgr_img.data[3 * (i * bgr_img.cols + j) + 2];
+			b = _img.data[3 * (i * _img.cols + j)];
+			g = _img.data[3 * (i * _img.cols + j) + 1];
+			r = _img.data[3 * (i * _img.cols + j) + 2];
 			gray = (b + g + r) / 3;
 
-			if (gray > 40)
+			if (gray > 40 && m.data[3 * (i * m.cols + j)] != 19)
 			{
 				m.data[3 * (i * m.cols + j)] = 20;
 				m.data[3 * (i * m.cols + j) + 1] = 20;
@@ -532,16 +541,24 @@ SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sen
 	else
 	{
 		cv::Point pos_pixel;
+		Mat *img_ptr = NULL;
 
-		_get_pixel_position(p_sensor, _img, &pos_pixel, valid);
+		if (_imode == COLOR) img_ptr = &_img;
+		else if (_imode == SEMANTIC) img_ptr = &_simg;
+		else exit(printf("Error: Invalid intensity mode '%d'\n", (int) _imode));
+
+		_get_pixel_position(p_sensor, img_ptr->rows, img_ptr->cols, &pos_pixel, valid);
 
 		if (*valid)
 		{
-			int p = 3 * (pos_pixel.y * _img.cols + pos_pixel.x);
+			int p = 3 * (pos_pixel.y * img_ptr->cols + pos_pixel.x);
 
-			point->b = _img.data[p];
-			point->g = _img.data[p + 1];
-			point->r = _img.data[p + 2];
+			point->b = img_ptr->data[p];
+			point->g = img_ptr->data[p + 1];
+			point->r = img_ptr->data[p + 2];
+
+			circle(_img_with_points, Point(pos_pixel.x, pos_pixel.y), 2, Scalar(0, 0, 255), -1);
+			circle(_simg_with_points, Point(pos_pixel.x, pos_pixel.y), 2, Scalar(0, 0, 255), -1);
 		}
 	}
 }
@@ -585,7 +602,7 @@ SensorPreproc::_brighten(unsigned char val, unsigned int multiplier)
 
 void
 SensorPreproc::_get_pixel_position(Matrix<double, 4, 1> &p_sensor,
-                                   cv::Mat &img, cv::Point *ppixel,
+                                   int img_rows, int img_cols, cv::Point *ppixel,
                                    int *is_valid)
 {
 	*is_valid = 0;
@@ -598,11 +615,11 @@ SensorPreproc::_get_pixel_position(Matrix<double, 4, 1> &p_sensor,
 	{
 		_p_pixel_homogeneous = _projection * _p_cam;
 
-		ppixel->y = (_p_pixel_homogeneous(1, 0) / _p_pixel_homogeneous(2, 0)) * img.rows;
-		ppixel->x = (_p_pixel_homogeneous(0, 0) / _p_pixel_homogeneous(2, 0)) * img.cols;
+		ppixel->y = (_p_pixel_homogeneous(1, 0) / _p_pixel_homogeneous(2, 0)) * img_rows;
+		ppixel->x = (_p_pixel_homogeneous(0, 0) / _p_pixel_homogeneous(2, 0)) * img_cols;
 
 		// check if the point is visible by the camera.
-		if (ppixel->x >= 0 && ppixel->x < img.cols && ppixel->y >= 0 && ppixel->y < img.rows)
+		if (ppixel->x >= 0 && ppixel->x < img_cols && ppixel->y >= 0 && ppixel->y < img_rows)
 			*is_valid = 1;
 	}
 }

@@ -12,7 +12,6 @@
 #include <carmen/segmap_grid_map.h>
 #include <carmen/segmap_sensor_viewer.h>
 #include <carmen/segmap_particle_filter_viewer.h>
-#include <carmen/segmap_semantic_segmentation_viewer.h>
 
 using namespace pcl;
 using namespace std;
@@ -525,12 +524,13 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 			Mat map_view;
 			flip(map_img, map_view, 0);
 
-			Mat img = preproc.read_img(sample);
-			//Mat simg = preproc.read_segmented_img(sample);
-			//Mat seg_img = segmented_image_view(simg);
-			//viewer.show(seg_img, "s_img", img_width);
+			Mat img = preproc.get_sample_img_with_points();
+			Mat simg = preproc.get_sample_semantic_img_with_points();
+
+			viewer.show(simg, "s_img", img_width);
 			viewer.show(img, "color_img", img_width);
 			viewer.show(map_view, "map", img_width);
+
 			viewer.loop();
 		}
 	}

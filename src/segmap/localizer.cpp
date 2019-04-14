@@ -39,6 +39,7 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 	printf("GT: %lf %lf %lf ", gt.x, gt.y, gt.th);
 	printf("Mode: %lf %lf %lf ", mode.x, mode.y, mode.th);
 	printf("Duration: %lf ", duration);
+	printf("Timestamp: %lf ", sample->time);
 	printf("\n");
 	fflush(stdout);
 
