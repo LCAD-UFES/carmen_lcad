@@ -27,6 +27,7 @@ using namespace Eigen;
 NewCarmenDataset::NewCarmenDataset(std::string path,
                                    std::string odom_calib_path,
 																	 std::string poses_path,
+																	 double camera_latency,
 																	 int gps_id,
 																	 NewCarmenDataset::SyncSensor sync_sensor,
 																	 NewCarmenDataset::SyncMode sync_mode)
@@ -34,6 +35,7 @@ NewCarmenDataset::NewCarmenDataset(std::string path,
 	_gps_id = gps_id;
 	_sync_sensor = sync_sensor;
 	_sync_mode = sync_mode;
+	_camera_latency = camera_latency;
 
 	_velodyne_dir = string(path) + "_velodyne";
 	_images_dir = string(path) + "_bumblebee";
@@ -377,7 +379,7 @@ NewCarmenDataset::_create_synchronized_data_package(double ref_time)
 		_parse_gps_orientation(_find_nearest(_gps_orientation_messages, _gps_orientation_times, ref_time), sample);
 
 	if (_camera_messages.size())
-		_parse_camera(_find_nearest(_camera_messages, _camera_times, ref_time), sample, _images_dir);
+		_parse_camera(_find_nearest(_camera_messages, _camera_times, ref_time + _camera_latency), sample, _images_dir);
 
 	sample->v = sample->v * _calib.mult_v + _calib.add_v;
 	sample->phi = normalize_theta(sample->phi * _calib.mult_phi + _calib.add_phi);

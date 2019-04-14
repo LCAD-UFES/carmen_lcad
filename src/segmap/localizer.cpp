@@ -31,9 +31,11 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 	Pose2d gt = sample->pose;
 	Pose2d mean = pf.mean();
 	Pose2d mode = pf.mode();
+	Pose2d std = pf.std();
 
 	printf("%d of %d ", step, n_total_steps);
 	printf("Mean: %lf %lf %lf ", mean.x, mean.y, mean.th);
+	printf("Std: %lf %lf %lf ", std.x, std.y, std.th);
 	printf("GT: %lf %lf %lf ", gt.x, gt.y, gt.th);
 	printf("Mode: %lf %lf %lf ", mode.x, mode.y, mode.th);
 	printf("Duration: %lf ", duration);
@@ -58,7 +60,7 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 		flip(pf_img, flipped, 0);
 
 		Mat img = iloader.load(sample);
-		s_viewer.show(img, "img", 640);
+		s_viewer.show(img, "img", 400);
 		s_viewer.show(flipped, "pf_viewer");
 		s_viewer.loop();
 	}
@@ -90,6 +92,8 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 	int do_correction;
 	int last_reload = 0;
 
+	s_viewer.set_step(0);
+
 	for (int i = step; i < dataset->size(); i += step)
 	{
 		sample = dataset->at(i);
@@ -105,16 +109,21 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 		preproc.reinitialize(sample);
 		load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
 
-		do_correction = 0;
+		// some times only half velodyne rays arrive, and if the rays are not visible by the camera,
+		// the cloud can be empty.
+		if (cloud->size() > 10)
+		{
+			do_correction = 0;
 
-		if (correction_step <= 1)
-			do_correction = 1;
-		else if (n % correction_step == 0)
-			do_correction = 1;
+			if (correction_step <= 1)
+				do_correction = 1;
+			else if (n % correction_step == 0)
+				do_correction = 1;
 
-		if (do_correction)
-			pf.correct(cloud, map, sample->gps);
-			//pf.correct(sample, &map, preproc);
+			if (do_correction)
+				pf.correct(cloud, map, sample->gps);
+				//pf.correct(sample, &map, preproc);
+		}
 
 		//printf("* Pose: %lf %lf %lf v: %lf n: %d last_reload: %d steps: %d\n", pose.x, pose.y, pose.th,
 		//fabs(sample->v), n, last_reload, steps_to_skip_map_reload);
@@ -153,7 +162,7 @@ main(int argc, char **argv)
 	args.parse(argc, argv);
 
 	string log_path = args.get<string>("log_path");
-	NewCarmenDataset* dataset = create_dataset(log_path, "graphslam_to_map");
+	NewCarmenDataset* dataset = create_dataset(log_path, args.get<double>("camera_latency"), "graphslam_to_map");
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 
 	GridMap map = create_grid_map(args, 0);

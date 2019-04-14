@@ -35,7 +35,7 @@ show_flipped_img_in_viewer(PointCloudViewer &viewer, Mat &img)
 {
 	Mat flipped;
 	flip(img, flipped, 0);
-	viewer.show(flipped, "map", 800);
+	viewer.show(flipped, "map", 400);
 	viewer.loop();
 }
 
@@ -64,10 +64,10 @@ run_viewer_if_necessary(Pose2d *pose,
 			draw_pointcloud(img, cloud, map, 1, Scalar(0, 255, 0));
 		}
 
-		viewer.clear();
-		PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
-		transformPointCloud(*cloud, *transformed, Pose2d::to_matrix(*pose));
-		viewer.show(cloud);
+		//viewer.clear();
+		//PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
+		//transformPointCloud(*cloud, *transformed, Pose2d::to_matrix(*pose));
+		//viewer.show(cloud);
 		show_flipped_img_in_viewer(viewer, img);
 	}
 }
@@ -543,6 +543,8 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 	DataSample *sample;
 	double dt;
 
+	viewer.set_step(0);
+
 	for (int i = 0; i < dataset.size(); i++)
 	{
 		sample = dataset[i];
@@ -668,7 +670,7 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 	{
 		printf("Creating map. It may take a while.\n");
 		SensorPreproc target_preproc = create_sensor_preproc(args, &target_dataset, target_dataset_path);
-		create_map(map, &target_dataset, args.get<int>("step"), target_preproc, args.get<double>("v_thresh"), view);
+		create_map(map, &target_dataset, args.get<int>("step"), target_preproc, args.get<double>("v_thresh"), view, 640);
 	}
 
 	ParticleFilter pf(args.get<int>("n_particles"),
@@ -709,13 +711,12 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 	DataSample *sample;
 	double dt;
 
+	viewer.set_step(0);
+
 	// estimate localization with particle filter
 	for (int i = 0; i < dataset_to_adjust.size(); i++)
 	{
 		sample = dataset_to_adjust[i];
-
-		if (fabs(sample->v) < args.get<double>("v_thresh"))
-			continue;
 
 		if (i % 50 == 0)
 			printf("Cloud %d of %d\n", i, dataset_to_adjust.size());

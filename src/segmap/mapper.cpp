@@ -38,8 +38,8 @@ main(int argc, char **argv)
 	else
 		map_type = GridMapTile::TYPE_VISUAL;
 
-	if (boost::filesystem::exists(args.get<string>("map_path")))
-		boost::filesystem::remove_all(args.get<string>("map_path"));
+//	if (boost::filesystem::exists(args.get<string>("map_path")))
+//		boost::filesystem::remove_all(args.get<string>("map_path"));
 
 	GridMap map(args.get<string>("map_path"),
 							args.get<double>("tile_size"),
@@ -47,12 +47,12 @@ main(int argc, char **argv)
 							args.get<double>("resolution"),
 							map_type, 1);
 
-	NewCarmenDataset *dataset = create_dataset(log_path, "graphslam");
+	NewCarmenDataset *dataset = create_dataset(log_path, args.get<double>("camera_latency"), "graphslam");
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 
 	create_map(map, dataset, args.get<int>("step"), preproc,
 						 args.get<double>("v_thresh"),
-						 args.get<int>("view"));
+						 args.get<int>("view"), 640);
 
 	printf("Done.\n");
 	return 0;

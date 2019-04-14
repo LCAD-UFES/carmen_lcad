@@ -237,6 +237,15 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	globalpos.pose.position.z = 0;
 	globalpos.velocity.x = v;
 	
+	printf("0 of 0 ");
+	printf("Mean: %lf %lf %lf ", globalpos.globalpos.x, globalpos.globalpos.y, globalpos.globalpos.theta);
+	printf("Std: %lf %lf %lf ", globalpos.globalpos_std.x, globalpos.globalpos_std.y, globalpos.globalpos_std.theta);
+	printf("GT: 0 0 0 ");
+	printf("Mode: 0 0 0 ");
+	printf("Duration: 0 ");
+	printf("\n");
+	fflush(stdout);
+
 	//globalpos.pose.orientation.pitch = globalpos.pose.orientation.roll = 0.0;
 
 	carmen_localize_ackerman_publish_globalpos_message(&globalpos);

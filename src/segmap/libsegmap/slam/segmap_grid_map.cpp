@@ -9,9 +9,10 @@
 #include <boost/filesystem.hpp>
 #include <carmen/segmap_preproc.h>
 #include <carmen/segmap_dataset.h>
+#include <carmen/segmap_grid_map.h>
 #include <carmen/segmap_sensor_viewer.h>
 #include <carmen/segmap_particle_filter_viewer.h>
-#include <carmen/segmap_grid_map.h>
+#include <carmen/segmap_semantic_segmentation_viewer.h>
 
 using namespace pcl;
 using namespace std;
@@ -483,13 +484,14 @@ update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc)
 void
 create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 					 SensorPreproc &preproc, double skip_velocity_threshold,
-					 int view_flag)
+					 int view_flag, int img_width)
 {
 	TimeCounter timer;
 	DataSample *sample;
 	PointCloudViewer viewer;
-	CarmenImageLoader iloader;
 	vector<double> times;
+
+	viewer.set_step(0);
 
 	for (int i = 0; i < dataset->size(); i += step)
 	{
@@ -523,13 +525,12 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 			Mat map_view;
 			flip(map_img, map_view, 0);
 
-			//Mat img = iloader.load(sample);
-			//viewer.clear();
-			//viewer.show(colored);
-			//viewer.show(img, "img", 640);
-			//viewer.show(simg, "simg", 640);
-			//viewer.show(simg_view, "simg_view", 640);
-			viewer.show(map_view, "map", 640);
+			Mat img = preproc.read_img(sample);
+			//Mat simg = preproc.read_segmented_img(sample);
+			//Mat seg_img = segmented_image_view(simg);
+			//viewer.show(seg_img, "s_img", img_width);
+			viewer.show(img, "color_img", img_width);
+			viewer.show(map_view, "map", img_width);
 			viewer.loop();
 		}
 	}

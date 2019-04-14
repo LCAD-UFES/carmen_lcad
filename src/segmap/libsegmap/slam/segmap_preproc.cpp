@@ -120,6 +120,7 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
 
 	//_initialize_calibration_table(lidar_calib_path);
 	calibration_table = load_calibration_table(intensity_calib_path.c_str());
+	_lane_mark_detection_active = 0;
 }
 
 
@@ -147,9 +148,9 @@ SensorPreproc::reinitialize(DataSample *sample)
 	_vloader->reinitialize(sample->velodyne_path, sample->n_laser_shots);
 
 	if (_imode == COLOR)
-		_img = _iloader->load(sample);
+		_img = read_img(sample);
 	else if (_imode == SEMANTIC)
-		_img = _sloader->load(sample);
+		_img = read_segmented_img(sample);
 
 	_compute_transform_car2world(sample);
 	_n_lidar_shots = sample->n_laser_shots;
@@ -281,6 +282,48 @@ SensorPreproc::size()
 {
 	return _n_lidar_shots;
 }
+
+
+Mat
+SensorPreproc::read_segmented_img(DataSample *sample)
+{
+	Mat seg_img = _sloader->load(sample);
+
+	if (_lane_mark_detection_active)
+		_segment_lane_marks(seg_img, sample);
+
+	return seg_img;
+}
+
+
+void
+SensorPreproc::_segment_lane_marks(Mat &m, DataSample *sample)
+{
+	double r, g, b, gray;
+	Mat bgr_img = read_img(sample);
+
+	int st = (int) (bgr_img.rows * ((double) 450. / 960.));
+	int end = (int) (bgr_img.rows * ((double) 730. / 960.));
+
+	for (int i = st; i < end; i++)
+	{
+		for (int j = 0; j < bgr_img.cols; j++)
+		{
+			b = bgr_img.data[3 * (i * bgr_img.cols + j)];
+			g = bgr_img.data[3 * (i * bgr_img.cols + j) + 1];
+			r = bgr_img.data[3 * (i * bgr_img.cols + j) + 2];
+			gray = (b + g + r) / 3;
+
+			if (gray > 40)
+			{
+				m.data[3 * (i * m.cols + j)] = 20;
+				m.data[3 * (i * m.cols + j) + 1] = 20;
+				m.data[3 * (i * m.cols + j) + 2] = 20;
+			}
+		}
+	}
+}
+
 
 
 void
@@ -473,7 +516,7 @@ SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sen
 {
 	// in INTENSITY mode, the point color is given by
 	// the intensity observed by the lidar.
-	if (_imode == INTENSITY || _imode == RAW_INTENSITY)
+	if (_imode == INTENSITY || _imode == RAW_INTENSITY || _imode == BRIGHT)
 	{
 		unsigned char intensity = _get_calibrated_and_brighten_intensity(raw_intensity, p_sensor, laser_id);
 

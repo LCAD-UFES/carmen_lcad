@@ -70,6 +70,8 @@ add_default_sensor_preproc_args(CommandLineArguments &args)
 	args.add<int>("gps_id", "Id of the gps to be used", 1);
 	args.add<string>("intensity_mode,i", "What type of information to assign to LiDAR rays intensity [remission | visual | semantic | raw | bright]", "raw");
 	args.add<int>("use_calib", "Flag to choose using the velodyne calibration or not.", 1);
+	args.add<int>("segment_lane_marks", "Flag for choosing to segment lane marks with threshold image processing.", 0);
+	args.add<double>("camera_latency", "Camera latency in seconds", 0.0);
 
 	args.save_config_file(default_data_dir() + "/preproc_config.txt");
 }

@@ -101,14 +101,14 @@ poses_path_from_mode(string mode, string log_path)
 
 
 NewCarmenDataset*
-create_dataset(string log_path, string mode)
+create_dataset(string log_path, double camera_latency, string mode)
 {
 	string poses_path, odom_calib_path;
 
 	poses_path = poses_path_from_mode(mode, log_path);
 	odom_calib_path = default_odom_calib_path(log_path.c_str());
 
-	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, poses_path);
+	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, poses_path, camera_latency);
 
 	return dataset;
 }
@@ -149,6 +149,8 @@ create_sensor_preproc(CommandLineArguments &args,
 												icalib_path,
 												above,
 												below);
+
+	preproc.set_lane_mark_detection(args.get<int>("segment_lane_marks"));
 
 	return preproc;
 }

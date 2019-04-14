@@ -70,8 +70,8 @@ main(int argc, char **argv)
 	string reference_path = args.get<string>("target");
 	string adj_path = args.get<string>("source");
 
-	NewCarmenDataset* reference_dataset = create_dataset(reference_path);
-	NewCarmenDataset* dataset_to_adjust = create_dataset(adj_path);
+	NewCarmenDataset* reference_dataset = create_dataset(reference_path, args.get<double>("camera_latency"));
+	NewCarmenDataset* dataset_to_adjust = create_dataset(adj_path, args.get<double>("camera_latency"));
 
 	vector<pair<int, int>> loop_closure_indices;
 	find_nearest_poses(*reference_dataset,

@@ -1881,7 +1881,7 @@ carmen_multi_path_message_handler(carmen_rddf_multi_path_message *message)
 	rddf_msg.annotations_codes = message->annotations_codes;
 	rddf_msg.number_of_poses = message->number_of_poses;
 	rddf_msg.number_of_poses_back = message->number_of_poses_back;
-	if (multi_path_costs[best_cost_idx] == DBL_MAX)
+	if (multi_path_costs[best_cost_idx] == DBL_MAX)// || multi_path_costs[best_cost_idx] < 3.0)
 		rddf_msg.poses = message->poses;
 	else
 		rddf_msg.poses = multi_paths[best_cost_idx];

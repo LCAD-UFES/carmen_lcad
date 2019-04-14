@@ -65,7 +65,15 @@ public:
 	std::vector<CompletePointData> next_points();
 	int size();
 
+	cv::Mat read_img(DataSample *sample) { return _iloader->load(sample); }
+	cv::Mat read_segmented_img(DataSample *sample);
+
+	void set_lane_mark_detection(int on_or_off) { _lane_mark_detection_active = on_or_off; }
+
 protected:
+
+	int _lane_mark_detection_active;
+	void _segment_lane_marks(cv::Mat &m, DataSample *sample);
 
 	CarmenLidarLoader *_vloader;
 	CarmenImageLoader *_iloader;

@@ -213,7 +213,7 @@ run_calibration(CommandLineArguments &args)
 	string log_path = args.get<string>("log_path");
 	string odom_calib_path = default_odom_calib_path(log_path.c_str());
 
-	NewCarmenDataset *dataset = create_dataset(log_path, args.get<string>("pose_mode"));
+	NewCarmenDataset *dataset = create_dataset(log_path, args.get<double>("camera_latency"), args.get<string>("pose_mode"));
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 	Calibrator *calib = new Calibrator(args.get<double>("resolution"));
 
