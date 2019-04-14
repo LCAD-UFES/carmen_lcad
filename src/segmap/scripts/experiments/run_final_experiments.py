@@ -10,7 +10,7 @@ def run_experiment(pair):
     localization_args = "--n_particles 200 --gps_xy_std 2.5 --gps_h_std 20 --color_red_std 1 --color_green_std 1 --color_blue_std 1"
     localization_cmd = "time ./localizer /dados/%s -m /tmp/semantic_map_%s -i semantic %s > localization_result_%s.txt" % (t, m, localization_args, t)
 
-    run_command(mapper_cmd)
+    #run_command(mapper_cmd)
     run_command(localization_cmd)    
 
 
