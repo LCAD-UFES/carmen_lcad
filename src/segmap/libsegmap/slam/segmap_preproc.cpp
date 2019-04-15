@@ -153,8 +153,11 @@ SensorPreproc::reinitialize(DataSample *sample)
 		_img = read_img(sample);
 		_img_with_points = _img.clone();
 
-		_simg = read_segmented_img(sample);
-		_simg_with_points = segmented_image_view(_simg);
+		if (_imode == SEMANTIC)
+		{
+			_simg = read_segmented_img(sample);
+			_simg_with_points = segmented_image_view(_simg);
+		}
 	}
 
 	_compute_transform_car2world(sample);
@@ -558,7 +561,9 @@ SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sen
 			point->r = img_ptr->data[p + 2];
 
 			circle(_img_with_points, Point(pos_pixel.x, pos_pixel.y), 2, Scalar(0, 0, 255), -1);
-			circle(_simg_with_points, Point(pos_pixel.x, pos_pixel.y), 2, Scalar(0, 0, 255), -1);
+
+			if (_simg_with_points.rows)
+				circle(_simg_with_points, Point(pos_pixel.x, pos_pixel.y), 2, Scalar(0, 0, 255), -1);
 		}
 	}
 }

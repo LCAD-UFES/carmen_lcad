@@ -506,14 +506,14 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 
 		times.push_back(timer.ellapsed());
 
+		if (times.size() % 50 == 0)
+			printf("Step %d of %d AvgStepDuration: %lf LastStepDuration: %lf\n",
+						 i, dataset->size(),
+						 mean(times),
+						 times[times.size() - 1]);
+
 		if (view_flag)
 		{
-			if (times.size() % 50 == 0)
-				printf("Avg ellapsed %ld: %lf Current: %lf\n",
-							 times.size(),
-							 mean(times),
-							 times[times.size() - 1]);
-
 			Pose2d pose;
 			pose = sample->pose;
 
@@ -527,7 +527,9 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 			Mat img = preproc.get_sample_img_with_points();
 			Mat simg = preproc.get_sample_semantic_img_with_points();
 
-			viewer.show(simg, "s_img", img_width);
+			if (simg.rows)
+				viewer.show(simg, "s_img", img_width);
+
 			viewer.show(img, "color_img", img_width);
 			viewer.show(map_view, "map", img_width);
 
