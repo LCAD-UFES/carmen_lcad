@@ -15,7 +15,7 @@ if __name__ == "__main__":
         cmds.append('python scripts/experiments/run_graphslam_for_a_log.py /dados/' + l)
 
     print("Running processes.")
-    run_command("rm -rf /tmp/map*")
+    #run_command("rm -rf /tmp/map*")
     process_pool = Pool(len(cmds))
     process_pool.map(run_command, cmds)
     print("Done.")

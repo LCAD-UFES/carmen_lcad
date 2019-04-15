@@ -1,5 +1,2 @@
-dist_rmse: 0.502434 dist_mean: 0.386365 dist_std: 0.103162
-% < 1m: 93.000515 % < 0.5m: 69.840453 % < 0.2m: 36.541431 % < 0.1m; 23.520329
-x_rmse: 0.338750 abs_x_mean: 0.249881 abs_x_std: 0.052311 dx_mean: -0.030184
-y_rmse: 0.371064 abs_y_mean: 0.179400 abs_y_std: 0.105504 dy_mean: -0.078120 
-th_rmse: 0.000000 abs_th_mean: 1.557446 abs_th_std: 0.001330 dth_mean: 1.561892
+dist_rmse	dist_mean	dist_std	%<2m	%<1m	%<0.5m	%<0.2m	x_rmse	abs_x_mean	abs_x_std	dx_mean	y_rmse	abs_y_mean	abs_y_std	dy_mean	abs_th_mean	abs_th_std	dth_mean
+0.482	0.374	0.092	100.000	95.681	74.087	34.961	0.386	0.272	0.075	-0.050	0.289	0.151	0.061	-0.079	0.011	0.609	-0.008

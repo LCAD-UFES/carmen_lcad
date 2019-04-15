@@ -500,7 +500,10 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 	int view = args.get<int>("view");
 
 	string name = file_name_from_path(dataset_path);
-	string map_path = string("/tmp/map_") + name;
+	string map_path = string("/dados/maps2/loop_map_") + name;
+
+	if (boost::filesystem::exists(map_path))
+		boost::filesystem::remove_all(map_path);
 
 	GridMap map(map_path,
 							args.get<double>("tile_size"),
@@ -653,24 +656,28 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 	int view = args.get<int>("view");
 
 	string adj_name = file_name_from_path(dataset_to_adjust_path);
-	string map_path = string("/tmp/map_") + adj_name;
+	string tgt_name = file_name_from_path(target_dataset_path);
+	string map_path = string("/dados/maps2/") + tgt_name + "_raw";
 
-	int map_has_to_be_created = 0;
-	if (!boost::filesystem::exists(map_path))
-		map_has_to_be_created = 1;
+	//int map_has_to_be_created = 0;
+	//if (!boost::filesystem::exists(map_path))
+		//map_has_to_be_created = 1;
+	assert(boost::filesystem::exists(map_path));
 
 	GridMap map(map_path,
 							args.get<double>("tile_size"),
 							args.get<double>("tile_size"),
 							args.get<double>("resolution"),
-							GridMapTile::TYPE_VISUAL, 1);
+							GridMapTile::TYPE_VISUAL, 0);
 
+	/*
 	if (map_has_to_be_created)
 	{
 		printf("Creating map. It may take a while.\n");
 		SensorPreproc target_preproc = create_sensor_preproc(args, &target_dataset, target_dataset_path);
 		create_map(map, &target_dataset, args.get<int>("step"), target_preproc, args.get<double>("v_thresh"), view, 640);
 	}
+	*/
 
 	ParticleFilter pf(args.get<int>("n_particles"),
 										ParticleFilter::WEIGHT_VISUAL,

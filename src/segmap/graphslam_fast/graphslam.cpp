@@ -228,19 +228,34 @@ compute_angle_from_gps(GraphSlamData &data, int i,
 
 void
 add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
-              double xy_std, double th_std)
+              double xy_std, double th_std, int gps_step)
 {
 	double angle, filtered_th_std;
 	DataSample *sample;
 	Matrix3d information;
 
-	for (int i = 0; i < data.dataset->size(); i++)
+	if (gps_step <= 1) gps_step = 1;
+
+	for (int i = 0; i < data.dataset->size(); i += gps_step)
 	{
 		sample = data.dataset->at(i);
 
 		// ignore the messages when the car is almost stopped.
 		if (fabs(sample->v) < data.min_velocity_for_considering_gps || !data.gps_is_valid[i])
 			continue;
+
+		if (i > 0)
+		{
+			double dist_from_previous_gps = dist2d(sample->gps.x, sample->gps.y,
+			                                       data.dataset->at(i - 1)->gps.x, data.dataset->at(i - 1)->gps.y);
+
+			// jump
+			if (dist_from_previous_gps > 20.0)
+			{
+				printf("Discarded gps %lf %lf\n", sample->gps.x, sample->gps.y);
+				continue;
+			}
+		}
 
 		compute_angle_from_gps(data, i, th_std,
 		                       &angle,
@@ -250,8 +265,8 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
 
 		information = create_information_matrix(xy_std, xy_std, th_std);
 
-		SE2 measure(sample->gps.x,
-		            sample->gps.y,
+		SE2 measure(sample->gps.x - data.dataset->at(0)->gps.x,
+		            sample->gps.y - data.dataset->at(0)->gps.y,
 		            angle);
 
 //		printf("GPS: measure: %lf %lf %lf x_std: %lf th_std: %lf\n",
@@ -414,7 +429,7 @@ create_dead_reckoning(GraphSlamData &data, vector<SE2> &dead_reckoning)
 
 
 void
-load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer)
+load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer, int gps_step)
 {
 	vector<SE2> dead_reckoning;
 
@@ -432,7 +447,7 @@ load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer)
 																				deg2rad(data.pf_to_map_angle_std));
 	}
 	//else
-		add_gps_edges(data, optimizer, data.gps_xy_std, deg2rad(data.gps_angle_std));
+		add_gps_edges(data, optimizer, data.gps_xy_std, deg2rad(data.gps_angle_std), gps_step);
 
 	add_loop_closure_edges(data, data.gicp_loop_data, optimizer, data.gicp_loop_xy_std, deg2rad(data.gicp_loop_angle_std));
 	add_loop_closure_edges(data, data.pf_loop_data, optimizer, data.pf_loop_xy_std, deg2rad(data.pf_loop_angle_std));
@@ -455,8 +470,8 @@ save_corrected_vertices(GraphSlamData &data, SparseOptimizer *optimizer)
 		VertexSE2* v = dynamic_cast<VertexSE2*>(optimizer->vertex(i));
 		SE2 pose = v->estimate();
 
-		x = pose.toVector().data()[0];
-		y = pose.toVector().data()[1];
+		x = pose.toVector().data()[0] + data.dataset->at(0)->gps.x;
+		y = pose.toVector().data()[1] + data.dataset->at(0)->gps.y;
 		th = pose.toVector().data()[2];
 
 		fprintf(f, "%ld %lf %lf %lf %lf %lf %lf\n", i, x, y, th, sample->time, sample->gps.x, sample->gps.y);
@@ -736,6 +751,7 @@ int main(int argc, char **argv)
 	add_default_sensor_preproc_args(args);
 	args.add<double>("gps_discontinuity_threshold", "Threshold for consireding detecting a jump in consecutive gps messages", 1.0);
 	args.add<int>("gps_min_cluster_size", "Minimum number of messages for keeping a group when a discountinuity is detected", 50);
+	args.add<int>("gps_step", "Number of steps to skip before adding a new gps edge.", 1);
 	args.save_config_file(default_data_dir() + "/graphslam_config.txt");
 
 	parse_command_line(argc, argv, args, &data);
@@ -763,7 +779,7 @@ int main(int argc, char **argv)
 																						args.get<int>("gps_min_cluster_size"));
 	 */
 
-	load_data_to_optimizer(data, bla.optimizer);
+	load_data_to_optimizer(data, bla.optimizer, args.get<int>("gps_step"));
 
 	bla.optimizer->setVerbose(true);
 	prepare_optimization(bla.optimizer);
