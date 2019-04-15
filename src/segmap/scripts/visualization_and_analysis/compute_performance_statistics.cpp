@@ -161,35 +161,52 @@ read_result(const string &path,
 
 
 void
-compute_auxiliary_values(ExperimentStatistics &e, vector<SE2> &gt,
-                         vector<SE2> &means,
-                         vector<double> &gt_times,
-                         vector<double> &times)
+compute_means_and_rmses(ExperimentStatistics &e,
+												vector<SE2> &gt,
+												vector<SE2> &means,
+												vector<double> &gt_times,
+												vector<double> &times)
 {
-	printf("Computing auxiliary data\n");
+	printf("Computing means and rmses\n");
+	int n = means.size();
 
 	// for each pose in the groundtruth, compute the estimated pose
 	// in the coordinate system given by the groundtruth pose.
 	for (int i = 0; i < means.size(); i++)
 	{
-		if (i % 500 == 0)
-			printf("%d of %ld\n", i, means.size());
-
 		//int gt_id = find_nearest(gt, means[i]);
 		int gt_id = find_most_sync(gt_times, times[i]);
-
 		SE2 est_in_gt_ref = gt[gt_id].inverse() * means[i];
 
 		double squared_dist = pow(est_in_gt_ref[0], 2) + pow(est_in_gt_ref[1], 2);
 		double dist = sqrt(squared_dist);
+		double angle_diff = g2o::normalize_theta(gt[gt_id][2] - means[i][2]);
 
 		e.estimates_in_gt_ref.push_back(est_in_gt_ref);
 
 		e.abs_diff_values.push_back(SE2(fabs(est_in_gt_ref[0]),
 		                                fabs(est_in_gt_ref[1]),
-		                                fabs(est_in_gt_ref[2])));
+		                                fabs(angle_diff)));
 
 		e.squared_dist_by_sample.push_back(squared_dist);
+
+		e.dist_rmse += e.squared_dist_by_sample[i];
+		e.dist_mean += sqrt(e.squared_dist_by_sample[i]);
+
+		e.x_rmse += pow(e.estimates_in_gt_ref[i][0], 2);
+		e.y_rmse += pow(e.estimates_in_gt_ref[i][1], 2);
+
+		e.abs_x_mean += fabs(e.estimates_in_gt_ref[i][0]);
+		e.abs_y_mean += fabs(e.estimates_in_gt_ref[i][1]);
+
+		e.dx_mean += e.estimates_in_gt_ref[i][0];
+		e.dy_mean += e.estimates_in_gt_ref[i][1];
+
+		e.mean_abs_th_x += sin(fabs(angle_diff));
+		e.mean_abs_th_y += cos(fabs(angle_diff));
+
+		e.mean_dth_x += sin(angle_diff);
+		e.mean_dth_y += cos(angle_diff);
 
 		if (dist < 1.0)
 			e.percentage_samples_below_1m++;
@@ -204,6 +221,27 @@ compute_auxiliary_values(ExperimentStatistics &e, vector<SE2> &gt,
 			e.percentage_samples_below_0_1m++;
 	}
 
+	e.dist_rmse = sqrt(e.dist_rmse / ((double) n));
+	e.dist_mean /= ((double) n);
+
+	e.abs_x_mean /= ((double) n);
+	e.abs_y_mean /= ((double) n);
+
+	e.dx_mean /= ((double) n);
+	e.dy_mean /= ((double) n);
+
+	e.x_rmse = sqrt(e.x_rmse / ((double) n));
+	e.y_rmse = sqrt(e.y_rmse / ((double) n));
+
+	e.mean_abs_th_x /= ((double) n);
+	e.mean_abs_th_y /= ((double) n);
+
+	e.mean_dth_x /= ((double) n);
+	e.mean_dth_y /= ((double) n);
+
+	e.th_mean = g2o::normalize_theta(atan2(e.mean_abs_th_y, e.mean_abs_th_x));
+	e.dth_mean = g2o::normalize_theta(atan2(e.mean_dth_y, e.mean_dth_x));
+
 	e.percentage_samples_below_1m /= ((double) means.size());
 	e.percentage_samples_below_0_5m /= ((double) means.size());
 	e.percentage_samples_below_0_2m /= ((double) means.size());
@@ -213,57 +251,6 @@ compute_auxiliary_values(ExperimentStatistics &e, vector<SE2> &gt,
 	e.percentage_samples_below_0_5m *= 100.;
 	e.percentage_samples_below_0_2m *= 100.;
 	e.percentage_samples_below_0_1m *= 100.;
-}
-
-
-void
-compute_means_and_rmse(ExperimentStatistics &e)
-{
-	printf("Computing means and rmse\n");
-
-	int n = e.estimates_in_gt_ref.size();
-
-	for (int i = 0; i < n; i++)
-	{
-		e.dist_mean += sqrt(e.squared_dist_by_sample[i]);
-
-		e.abs_x_mean += fabs(e.estimates_in_gt_ref[i][0]);
-		e.abs_y_mean += fabs(e.estimates_in_gt_ref[i][1]);
-
-		e.dx_mean += e.estimates_in_gt_ref[i][0];
-		e.dy_mean += e.estimates_in_gt_ref[i][1];
-
-		e.dist_rmse += e.squared_dist_by_sample[i];
-		e.x_rmse += pow(e.estimates_in_gt_ref[i][0], 2);
-		e.y_rmse += pow(e.estimates_in_gt_ref[i][1], 2);
-
-		e.mean_abs_th_x += sin(fabs(e.estimates_in_gt_ref[i][2]));
-		e.mean_abs_th_y += cos(fabs(e.estimates_in_gt_ref[i][2]));
-
-		e.mean_dth_x += sin(e.estimates_in_gt_ref[i][2]);
-		e.mean_dth_y += cos(e.estimates_in_gt_ref[i][2]);
-	}
-
-	e.dist_mean /= ((double) n);
-
-	e.abs_x_mean /= ((double) n);
-	e.abs_y_mean /= ((double) n);
-
-	e.dx_mean /= ((double) n);
-	e.dy_mean /= ((double) n);
-
-	e.dist_rmse = sqrt(e.dist_rmse / n);
-	e.x_rmse = sqrt(e.x_rmse / n);
-	e.y_rmse = sqrt(e.y_rmse / n);
-
-	e.mean_abs_th_x /= ((double) n);
-	e.mean_abs_th_y /= ((double) n);
-
-	e.mean_dth_x /= ((double) n);
-	e.mean_dth_y /= ((double) n);
-
-	e.th_mean = atan2(e.mean_abs_th_y, e.mean_abs_th_x);
-	e.dth_mean = atan2(e.mean_dth_y, e.mean_dth_x);
 }
 
 
@@ -280,8 +267,8 @@ compute_stds(ExperimentStatistics &e)
 		e.abs_x_std += pow(fabs(e.estimates_in_gt_ref[i][0]) - e.abs_x_mean, 2);
 		e.abs_y_std += pow(fabs(e.estimates_in_gt_ref[i][1]) - e.abs_y_mean, 2);
 
-		e.std_abs_th_x += pow(sin(fabs(e.estimates_in_gt_ref[i][2])) - e.mean_abs_th_x, 2);
-		e.std_abs_th_y += pow(cos(fabs(e.estimates_in_gt_ref[i][2])) - e.mean_abs_th_y, 2);
+		e.std_abs_th_x += pow(sin(e.abs_diff_values[i][2] - e.mean_abs_th_x), 2);
+		e.std_abs_th_y += pow(cos(e.abs_diff_values[i][2] - e.mean_abs_th_y), 2);
 	}
 
 	e.dist_std /= ((double) n);
@@ -289,8 +276,7 @@ compute_stds(ExperimentStatistics &e)
 	e.abs_y_std /= ((double) n);
 	e.std_abs_th_x /= ((double) n);
 	e.std_abs_th_y /= ((double) n);
-
-	e.th_std = atan2(e.std_abs_th_y, e.std_abs_th_x);
+	e.th_std = g2o::normalize_theta(atan2(e.std_abs_th_y, e.std_abs_th_x));
 }
 
 
@@ -305,8 +291,7 @@ compute_statistics(vector<SE2> &gt, vector<SE2> &means, vector<SE2> &stds,
 	//assert(gt.size() == means.size());
 
 	e.reset();
-	compute_auxiliary_values(e, gt, means, gt_times, times);
-	compute_means_and_rmse(e);
+	compute_means_and_rmses(e, gt, means, gt_times, times);
 	compute_stds(e);
 
 	return e;
@@ -329,11 +314,21 @@ save_statistics(ExperimentStatistics &e,
 		        sqrt(e.squared_dist_by_sample[i]));
 	}
 
-	fprintf(summary_f, "dist_rmse: %lf dist_mean: %lf dist_std: %lf\n", e.dist_rmse, e.dist_mean, e.dist_std);
-	fprintf(summary_f, "%% < 1m: %lf %% < 0.5m: %lf %% < 0.2m: %lf %% < 0.1m; %lf\n", e.percentage_samples_below_1m, e.percentage_samples_below_0_5m, e.percentage_samples_below_0_2m, e.percentage_samples_below_0_1m);
-	fprintf(summary_f, "x_rmse: %lf abs_x_mean: %lf abs_x_std: %lf dx_mean: %lf\n", e.x_rmse, e.abs_x_mean, e.abs_x_std, e.dx_mean);
-	fprintf(summary_f, "y_rmse: %lf abs_y_mean: %lf abs_y_std: %lf dy_mean: %lf \n", e.y_rmse, e.abs_y_mean, e.abs_y_std, e.dy_mean);
-	fprintf(summary_f, "th_rmse: %lf abs_th_mean: %lf abs_th_std: %lf dth_mean: %lf\n", e.th_rmse, e.th_mean, e.th_std, e.dth_mean);
+	fprintf(summary_f, "dist_rmse: %lf dist_mean: %lf dist_std: %lf\n",
+					e.dist_rmse, e.dist_mean, e.dist_std);
+
+	fprintf(summary_f, "%% < 1m: %lf %% < 0.5m: %lf %% < 0.2m: %lf %% < 0.1m: %lf\n",
+					e.percentage_samples_below_1m, e.percentage_samples_below_0_5m,
+					e.percentage_samples_below_0_2m, e.percentage_samples_below_0_1m);
+
+	fprintf(summary_f, "x_rmse: %lf abs_x_mean: %lf abs_x_std: %lf dx_mean: %lf\n",
+					e.x_rmse, e.abs_x_mean, e.abs_x_std, e.dx_mean);
+
+	fprintf(summary_f, "y_rmse: %lf abs_y_mean: %lf abs_y_std: %lf dy_mean: %lf \n",
+					e.y_rmse, e.abs_y_mean, e.abs_y_std, e.dy_mean);
+
+	fprintf(summary_f, "abs_th_mean: %lf abs_th_std: %lf dth_mean: %lf\n",
+					e.th_mean, e.th_std, e.dth_mean);
 
 	fclose(summary_f);
 	fclose(report_f);
