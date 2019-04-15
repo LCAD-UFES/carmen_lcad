@@ -148,9 +148,9 @@ ParticleFilter::_image_point_weight(PointXYZRGB &point, GridMap *map)
 {
 	vector<double> v = map->read_cell(point);
 
-	return //(-pow(((point.r - v[2]) / 255.) / _color_std_r, 2)) +
-				//(-pow(((point.g - v[1]) / 255.) / _color_std_g, 2)) +
-				(-pow(((point.b - v[0]) / 255.) / _color_std_b, 2));
+	return (-pow(((point.r - v[2]) / 255.) / _color_std_r, 2));
+				// + (-pow(((point.g - v[1]) / 255.) / _color_std_g, 2))
+				// + (-pow(((point.b - v[0]) / 255.) / _color_std_b, 2));
 }
 
 
@@ -222,10 +222,10 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 
 	*max_id = *min_id = 0;
 
-	//fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
+	fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
 	for (i = 0; i < _n; i++)
 	{
-		//fprintf(stderr, "%.4lf ", _w[i]);
+		fprintf(stderr, "%.4lf ", _w[i]);
 
 		if (_w[i] > _w[*max_id])
 			*max_id = i;
@@ -233,7 +233,7 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 		if (_w[i] < _w[*min_id])
 			*min_id = i;
 	}
-	//fprintf(stderr, "\n");
+	fprintf(stderr, "\n");
 
 	best = _p[*max_id];
 }
@@ -257,6 +257,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 		//_w[i] = exp(_w[i] - max_weight) + (1. / (double) (3. * _n));
 		//_w[i] = exp(_w[i]);
 		_w[i] -= min_weight;
+		//_w[i] = pow(_w[i], 3);
 		sum_weights += _w[i];
 
 		fprintf(stderr, "%.4lf ", _w[i]);

@@ -148,16 +148,16 @@ SensorPreproc::reinitialize(DataSample *sample)
 {
 	_vloader->reinitialize(sample->velodyne_path, sample->n_laser_shots);
 
-	if (_imode == COLOR || _imode == SEMANTIC)
+	if (_imode == COLOR)
 	{
 		_img = read_img(sample);
 		_img_with_points = _img.clone();
+	}
 
-		if (_imode == SEMANTIC)
-		{
-			_simg = read_segmented_img(sample);
-			_simg_with_points = segmented_image_view(_simg);
-		}
+	if (_imode == SEMANTIC)
+	{
+		_img = read_segmented_img(sample);
+		_img_with_points = segmented_image_view(_img);
 	}
 
 	_compute_transform_car2world(sample);
@@ -317,13 +317,15 @@ SensorPreproc::_segment_lane_marks(Mat &m, DataSample *sample)
 	int st = (int) (_img.rows * ((double) 450. / 960.));
 	int end = (int) (_img.rows * ((double) 750. / 960.));
 
+	Mat img = read_img(sample);
+
 	for (int i = st; i < end; i++)
 	{
-		for (int j = 0; j < _img.cols; j++)
+		for (int j = 0; j < img.cols; j++)
 		{
-			b = _img.data[3 * (i * _img.cols + j)];
-			g = _img.data[3 * (i * _img.cols + j) + 1];
-			r = _img.data[3 * (i * _img.cols + j) + 2];
+			b = img.data[3 * (i * img.cols + j)];
+			g = img.data[3 * (i * img.cols + j) + 1];
+			r = img.data[3 * (i * img.cols + j) + 2];
 			gray = (b + g + r) / 3;
 
 			if (gray > 40 && m.data[3 * (i * m.cols + j)] != 19)
@@ -544,26 +546,18 @@ SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sen
 	else
 	{
 		cv::Point pos_pixel;
-		Mat *img_ptr = NULL;
 
-		if (_imode == COLOR) img_ptr = &_img;
-		else if (_imode == SEMANTIC) img_ptr = &_simg;
-		else exit(printf("Error: Invalid intensity mode '%d'\n", (int) _imode));
-
-		_get_pixel_position(p_sensor, img_ptr->rows, img_ptr->cols, &pos_pixel, valid);
+		_get_pixel_position(p_sensor, _img.rows, _img.cols, &pos_pixel, valid);
 
 		if (*valid)
 		{
-			int p = 3 * (pos_pixel.y * img_ptr->cols + pos_pixel.x);
+			int p = 3 * (pos_pixel.y * _img.cols + pos_pixel.x);
 
-			point->b = img_ptr->data[p];
-			point->g = img_ptr->data[p + 1];
-			point->r = img_ptr->data[p + 2];
+			point->b = _img.data[p];
+			point->g = _img.data[p + 1];
+			point->r = _img.data[p + 2];
 
 			circle(_img_with_points, Point(pos_pixel.x, pos_pixel.y), 2, Scalar(0, 0, 255), -1);
-
-			if (_simg_with_points.rows)
-				circle(_simg_with_points, Point(pos_pixel.x, pos_pixel.y), 2, Scalar(0, 0, 255), -1);
 		}
 	}
 }

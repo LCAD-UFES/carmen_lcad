@@ -61,7 +61,7 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 		flip(pf_img, flipped, 0);
 
 		Mat img = iloader.load(sample);
-		s_viewer.show(img, "img", 400);
+		s_viewer.show(img, "img", 640);
 		s_viewer.show(flipped, "pf_viewer");
 		s_viewer.loop();
 	}

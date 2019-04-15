@@ -361,6 +361,7 @@ add_loop_closure_edges(GraphSlamData &data, vector<LoopRestriction> &loop_data, 
 			DataSample *sample = data.dataset->at(loop_data[i].to);
 			DataSample *target_sample = data.dataset->at(loop_data[i].from);
 
+			/*
 			g2o::SE2 target_pose(target_sample->pose.x, target_sample->pose.y, target_sample->pose.th);
 			g2o::SE2 source_pose(sample->pose.x, sample->pose.y, sample->pose.th);
 			g2o::SE2 source_in_target = target_pose.inverse() * source_pose;
@@ -372,6 +373,7 @@ add_loop_closure_edges(GraphSlamData &data, vector<LoopRestriction> &loop_data, 
 				n_discarded++;
 				continue;
 			}
+			*/
 
 			EdgeSE2* edge = new EdgeSE2;
 			edge->vertices()[0] = optimizer->vertex(loop_data[i].from);
@@ -473,9 +475,6 @@ detect_and_stamp_invalid_gps_measurements(GraphSlamData *data,
 	vector<int> gps_group_ids;
 	DataSample *current, *previous;
 	int number_invalid_measurements;
-
-	// assume initially that all gps measurements are valid.
-	data->gps_is_valid = vector<int>(data->dataset->size(), 1);
 
 	previous = data->dataset->at(0);
 	gps_group_ids.push_back(0);
@@ -735,7 +734,7 @@ int main(int argc, char **argv)
 	args.add<int>("gps_id", "Index of the gps to be used", 1);
 	add_graphslam_parameters(args);
 	add_default_sensor_preproc_args(args);
-	args.add<double>("gps_discontinuity_threshold", "Threshold for consireding detecting a jump in consecutive gps messages", 0.5);
+	args.add<double>("gps_discontinuity_threshold", "Threshold for consireding detecting a jump in consecutive gps messages", 1.0);
 	args.add<int>("gps_min_cluster_size", "Minimum number of messages for keeping a group when a discountinuity is detected", 50);
 	args.save_config_file(default_data_dir() + "/graphslam_config.txt");
 
@@ -746,7 +745,7 @@ int main(int argc, char **argv)
 	//initialize_g2o_stuff(factory, optimizer);
 	Bla bla;
 
-	data.dataset = create_dataset(args.get<string>("log"), args.get<double>("camera_latency"), "fused_odometry");
+	data.dataset = create_dataset(args.get<string>("log"), args.get<double>("camera_latency"), "fused");
 	if (data.dataset->size() <= 0)
 		exit(printf("Error: Empty dataset.\n"));
 
@@ -756,9 +755,14 @@ int main(int argc, char **argv)
 	read_loop_restrictions(data.gicp_map_file, &data.gicp_based_gps);
 	read_loop_restrictions(data.pf_to_map_file, &data.pf_based_gps);
 
+	// assume initially that all gps measurements are valid.
+	data.gps_is_valid = vector<int>(data.dataset->size(), 1);
+	/*
 	detect_and_stamp_invalid_gps_measurements(&data,
 																						args.get<double>("gps_discontinuity_threshold"),
 																						args.get<int>("gps_min_cluster_size"));
+	 */
+
 	load_data_to_optimizer(data, bla.optimizer);
 
 	bla.optimizer->setVerbose(true);

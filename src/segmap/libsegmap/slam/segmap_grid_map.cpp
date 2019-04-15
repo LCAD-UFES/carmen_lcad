@@ -525,12 +525,9 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 			flip(map_img, map_view, 0);
 
 			Mat img = preproc.get_sample_img_with_points();
-			Mat simg = preproc.get_sample_semantic_img_with_points();
+			if (img.rows)
+				viewer.show(img, "img", img_width);
 
-			if (simg.rows)
-				viewer.show(simg, "s_img", img_width);
-
-			viewer.show(img, "color_img", img_width);
 			viewer.show(map_view, "map", img_width);
 
 			viewer.loop();

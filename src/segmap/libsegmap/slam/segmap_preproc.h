@@ -66,9 +66,7 @@ public:
 	int size();
 
 	cv::Mat get_sample_img() { return _img; }
-	cv::Mat get_sample_semantic_img() { return _simg; }
 	cv::Mat get_sample_img_with_points() { return _img_with_points; }
-	cv::Mat get_sample_semantic_img_with_points() { return _simg_with_points; }
 
 	void set_lane_mark_detection(int on_or_off) { _lane_mark_detection_active = on_or_off; }
 
@@ -96,9 +94,7 @@ protected:
 	int _n_lidar_shots;
 
 	cv::Mat _img;
-	cv::Mat _simg;
 	cv::Mat _img_with_points;
-	cv::Mat _simg_with_points;
 
   static const int _n_distance_indices = 10;
   float ***calibration_table;

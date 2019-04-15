@@ -38,7 +38,7 @@ def run_graphslam(carmen_path, log_path, output_dir, mode):
 		
 	odom_calib = output_dir + "/odom_calib.txt" 
 	cmd = "%s %s %s -o %s %s" % (program, log_path, output_path, odom_calib, loops)
-	cmd += " --gps_xy_std 2.000000 --gps_angle_std 20.000000 --gicp_loops_xy_std 0.300000 --gicp_loops_angle_std 1.000000 --pf_loops_xy_std 0.020000 --pf_loops_angle_std 3.000000 --gps_discontinuity_threshold 0.5 --gps_min_cluster_size 50"
+	cmd += " --gps_xy_std 2.500000 --gps_angle_std 20.000000 --gicp_loops_xy_std 0.300000 --gicp_loops_angle_std 1.000000 --pf_loops_xy_std 0.030000 --pf_loops_angle_std 3.000000 --gps_discontinuity_threshold 0.5 --gps_min_cluster_size 50"
 	run_command(cmd)
 
 	# visualization
@@ -69,9 +69,9 @@ def run_loop_closures(carmen_path, log_path, output_dir, mode):
 		if 'aeroport' in log_path:
 			loop_closure_time = 10
 		else:
-			loop_closure_time = 60
+			loop_closure_time = 30
 	
-		loc_args = " --mode localization --n_particles 200 --gps_xy_std 2.5 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 10.0 --n_corrections_when_reinit 20 --v_thresh %lf -v 1 --time_dist %lf --v_std 0.5 --phi_std 1.0 --odom_xy_std 0.05 --odom_h_std 0.15 --color_red_std 1 --color_green_std 1 --color_blue_std 1" % (SKIP_WHEN_VELOCITY_IS_BELOW, loop_closure_time)
+		loc_args = " --mode localization --n_particles 200 --gps_xy_std 2.5 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 10.0 --n_corrections_when_reinit 20 --v_thresh %lf -v 1 --time_dist %lf --v_std 0.5 --phi_std 1.0 --odom_xy_std 0.02 --odom_h_std 0.15 --color_red_std 1 --color_green_std 1 --color_blue_std 1" % (SKIP_WHEN_VELOCITY_IS_BELOW, loop_closure_time)
 		loc_output = " " + output_dir + "/localization_loops.txt"
 		run_command(cmd + loc_output + loc_args)
 	else:

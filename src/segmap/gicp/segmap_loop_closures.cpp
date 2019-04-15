@@ -35,7 +35,7 @@ show_flipped_img_in_viewer(PointCloudViewer &viewer, Mat &img)
 {
 	Mat flipped;
 	flip(img, flipped, 0);
-	viewer.show(flipped, "map", 400);
+	viewer.show(flipped, "map", 640);
 	viewer.loop();
 }
 
@@ -579,9 +579,7 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 			double d = dist2d(pf_pose.x, pf_pose.y, sample->pose.x, sample->pose.y);
 
 			// TODO: turn the value into a parameter
-			if (!is_init
-					|| d > 10.0
-					)
+			if (!is_init || d > 10.0)
 			{
 				// initialize particle filter
 				pf.reset(sample->pose.x,
@@ -590,6 +588,7 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 
 				for (int k = 0; k < n_corrections_when_reinit; k++)
 				{
+					// just to add a little gaussian noise.
 					pf.predict(0, 0, 0);
 
 					if (view)
@@ -605,7 +604,7 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 			}
 			else
 			{
-				dt = sample->time - dataset.at(prev_id)->time;
+				dt = sample->time - dataset.at(i - 1)->time;
 				pf.predict(sample->v, sample->phi, dt);
 
 				if (view)
