@@ -52,7 +52,7 @@ if __name__ == "__main__":
 	for e in experiments:
 		logs_to_map.append([e['map'], 'semantic', True])
 		logs_to_map.append([e['map'], 'semantic', False])
-		#logs_to_map.append([e['map'], 'raw', False])
+		logs_to_map.append([e['map'], 'raw', False])
 		#logs_to_map.append([e['map'], 'visual'])
 	
 	process_pool = Pool(len(logs_to_map)) 

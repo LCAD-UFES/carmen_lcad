@@ -294,8 +294,8 @@ add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction>
 	{
 		if (gicp_gps[i].converged)
 		{
-			SE2 measure(gicp_gps[i].transform[0],
-			            gicp_gps[i].transform[1],
+			SE2 measure(gicp_gps[i].transform[0] - data.dataset->at(0)->gps.x,
+			            gicp_gps[i].transform[1] - data.dataset->at(0)->gps.y,
 			            gicp_gps[i].transform[2]);
 
 			/*

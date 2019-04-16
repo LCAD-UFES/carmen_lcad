@@ -131,16 +131,16 @@ read_odometry(const string &path,
 							vector<SE2> *odometry,
 							vector<double> *odometry_times)
 {
-	int n;
+	int id, n;
 	double v, phi, timestamp;
 
 	FILE *f = safe_fopen(path.c_str(), "r");
 
 	while (!feof(f))
 	{
-		n = fscanf(f, "%lf %lf %lf", &v, &phi, &timestamp);
+		n = fscanf(f, "%d %lf %lf %lf", &id, &v, &phi, &timestamp);
 
-		if (n == 3)
+		if (n == 4)
 		{
 			odometry->push_back(SE2(v, phi, 0));
 			odometry_times->push_back(timestamp);
@@ -255,8 +255,8 @@ compute_means_and_rmses(ExperimentStatistics &e,
 		//int gt_id = find_nearest(gt, means[i]);
 		int gt_id = find_most_sync(gt_times, means_times[i]);
 
-		double dt = means_times[i] - gt_times[i];
-		SE2 adjusted_pose = adjust_estimate_pose(means[i], odometry[i][0], odometry[i][1], dt);
+		//double dt = means_times[i] - gt_times[gt_id];
+		SE2 adjusted_pose = means[i]; //adjust_estimate_pose(means[i], odometry[i][0], odometry[i][1], dt);
 		SE2 est_in_gt_ref = gt[gt_id].inverse() * adjusted_pose;
 
 		double squared_dist = pow(est_in_gt_ref[0], 2) + pow(est_in_gt_ref[1], 2);
