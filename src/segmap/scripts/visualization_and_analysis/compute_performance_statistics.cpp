@@ -6,6 +6,7 @@
 #include <carmen/util_io.h>
 #include <carmen/util_math.h>
 #include <g2o/types/slam2d/se2.h>
+#include <carmen/ackerman_motion_model.h>
 
 using namespace std;
 using namespace g2o;
@@ -126,6 +127,31 @@ read_groundtruth(const string &path,
 
 
 void
+read_odometry(const string &path,
+							vector<SE2> *odometry,
+							vector<double> *odometry_times)
+{
+	int n;
+	double v, phi, timestamp;
+
+	FILE *f = safe_fopen(path.c_str(), "r");
+
+	while (!feof(f))
+	{
+		n = fscanf(f, "%lf %lf %lf", &v, &phi, &timestamp);
+
+		if (n == 3)
+		{
+			odometry->push_back(SE2(v, phi, 0));
+			odometry_times->push_back(timestamp);
+		}
+	}
+
+	fclose(f);
+}
+
+
+void
 read_result(const string &path,
             vector<SE2> *mean,
             vector<SE2> *std,
@@ -159,7 +185,7 @@ read_result(const string &path,
 	fclose(f);
 }
 
-
+/*
 void
 read_result2(const string &path,
             vector<SE2> *mean,
@@ -192,14 +218,32 @@ read_result2(const string &path,
 
 	fclose(f);
 }
+*/
+
+SE2
+adjust_estimate_pose(SE2 pose, double v, double phi, double dt)
+{
+	SE2 adjusted_pose;
+	double x, y, th;
+
+	x = pose[0];
+	y = pose[1];
+	th = pose[2];
+
+	ackerman_motion_model(x, y, th, v, phi, dt);
+	adjusted_pose = SE2(x, y, th);
+
+	return (adjusted_pose);
+}
 
 
 void
 compute_means_and_rmses(ExperimentStatistics &e,
 												vector<SE2> &gt,
-												vector<SE2> &means,
 												vector<double> &gt_times,
-												vector<double> &times)
+												vector<SE2> &means,
+												vector<double> &means_times,
+												vector<SE2> &odometry)
 {
 	printf("Computing means and rmses\n");
 	int n = means.size();
@@ -208,13 +252,16 @@ compute_means_and_rmses(ExperimentStatistics &e,
 	// in the coordinate system given by the groundtruth pose.
 	for (int i = 0; i < means.size(); i++)
 	{
-		int gt_id = find_nearest(gt, means[i]);
-		//int gt_id = find_most_sync(gt_times, times[i]);
-		SE2 est_in_gt_ref = gt[gt_id].inverse() * means[i];
+		//int gt_id = find_nearest(gt, means[i]);
+		int gt_id = find_most_sync(gt_times, means_times[i]);
+
+		double dt = means_times[i] - gt_times[i];
+		SE2 adjusted_pose = adjust_estimate_pose(means[i], odometry[i][0], odometry[i][1], dt);
+		SE2 est_in_gt_ref = gt[gt_id].inverse() * adjusted_pose;
 
 		double squared_dist = pow(est_in_gt_ref[0], 2) + pow(est_in_gt_ref[1], 2);
 		double dist = sqrt(squared_dist);
-		double angle_diff = g2o::normalize_theta(gt[gt_id][2] - means[i][2]);
+		double angle_diff = g2o::normalize_theta(gt[gt_id][2] - adjusted_pose[2]);
 
 		e.estimates_in_gt_ref.push_back(est_in_gt_ref);
 
@@ -315,8 +362,10 @@ compute_stds(ExperimentStatistics &e)
 
 
 ExperimentStatistics
-compute_statistics(vector<SE2> &gt, vector<SE2> &means, vector<SE2> &stds,
-                   vector<double> &gt_times, vector<double> &times)
+compute_statistics(vector<SE2> &gt, vector<double> &gt_times,
+									 vector<SE2> &means, vector<double> &means_times,
+									 vector<SE2> &stds,
+									 vector<SE2> odometry)
 {
 	ExperimentStatistics e;
 
@@ -325,7 +374,8 @@ compute_statistics(vector<SE2> &gt, vector<SE2> &means, vector<SE2> &stds,
 	//assert(gt.size() == means.size());
 
 	e.reset();
-	compute_means_and_rmses(e, gt, means, gt_times, times);
+
+	compute_means_and_rmses(e, gt, gt_times, means, means_times, odometry);
 	compute_stds(e);
 
 	return e;
@@ -363,21 +413,23 @@ save_statistics(ExperimentStatistics &e,
 int
 main(int argc, char **argv)
 {
-	vector<double> times, gt_times;
-	vector<SE2> gt, means, modes, stds;
+	vector<double> means_times, gt_times, odometry_times;
+	vector<SE2> gt, means, modes, stds, odometry;
 	ExperimentStatistics statistics;
 	CommandLineArguments args;
 
 	args.add_positional<string>("gt", "Path to the groundtruth file", 1);
 	args.add_positional<string>("result", "Path to the output file produced by the localization system", 1);
+	args.add_positional<string>("odometry", "Path to the odometry file", 1);
 	args.add_positional<string>("summary", "Output summary of statistics", 1);
 	args.add_positional<string>("report", "Output long report of statistics data", 1);
 	args.parse(argc, argv);
 
 	read_groundtruth(args.get<string>("gt"), &gt, &gt_times);
-	read_result(args.get<string>("result"), &means, &stds, &modes, &times);
+	read_result(args.get<string>("result"), &means, &stds, &modes, &means_times);
+	read_odometry(args.get<string>("odometry"), &odometry, &odometry_times);
 
-	statistics = compute_statistics(gt, means, stds, gt_times, times);
+	statistics = compute_statistics(gt, gt_times, means, means_times, stds, odometry);
 	save_statistics(statistics, args.get<string>("summary"), args.get<string>("report"));
 
 	printf("Done.\n");
