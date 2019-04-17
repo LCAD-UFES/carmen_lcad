@@ -529,7 +529,6 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 				viewer.show(img, "img", img_width);
 
 			viewer.show(map_view, "map", img_width);
-
 			viewer.loop();
 		}
 	}

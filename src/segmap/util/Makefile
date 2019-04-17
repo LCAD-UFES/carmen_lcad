@@ -21,6 +21,6 @@ PUBLIC_INCLUDES = command_line.h carmen_param_file.h util_io.h util_math.h util_
 PUBLIC_LIBRARIES = libutil.a
 TARGETS = libutil.a
 
-libutil.a: command_line.o carmen_param_file.o util_io.o util_math.o util_strings.o util_time.o
+libutil.a: util_io.o util_math.o util_strings.o util_time.o command_line.o carmen_param_file.o 
 
 include $(CARMEN_HOME)/src/Makefile.rules
