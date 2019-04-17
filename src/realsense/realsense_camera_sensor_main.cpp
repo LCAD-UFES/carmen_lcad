@@ -8,7 +8,6 @@
 
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 
-
 #define BUMBLEBEE_ID 7
 
 int stop_required = 0;
@@ -98,7 +97,7 @@ main(int argc, char **argv)
 
     rs2::config cfg;
     cfg.enable_stream(RS2_STREAM_COLOR, 0, rs_width, rs_height);
-    // cfg.enable_stream(RS2_STREAM_DEPTH, 0,640, 480);
+    cfg.enable_stream(RS2_STREAM_DEPTH, 0,640, 480);
     // cfg.enable_stream(RS2_STREAM_INFRARED, 0);
     // cfg.enable_stream(RS2_STREAM_INFRARED, 1);
 
@@ -110,21 +109,40 @@ main(int argc, char **argv)
     // If a device is capable to stream IMU data, both Gyro and Accelerometer are enabled by default
     pipe.start(cfg);
 
+	rs2::colorizer c;
+
+	//rs2::align align_to_depth(RS2_STREAM_DEPTH);
+	//rs2::align align_to_color(RS2_STREAM_COLOR);
+
+	// static bool first_time = true;
 	while (!stop_required)
 	{
-
+		unsigned char* depth_frame_data;
+		unsigned char* rgb_frame_data;
         rs2::frameset frames = pipe.wait_for_frames();
 
-        // rs2::frame depth_frame = frames.first(RS2_STREAM_DEPTH);
-        // if (depth_frame)
-        //     depth_frame.get_data(); // Pointer to depth pixels
+		//frames = align_to_depth.process(frames);
+		// frames = align_to_color.process(frames);
 
+        rs2::frame depth_frame = frames.first(RS2_STREAM_DEPTH);
+		
+		
         rs2::frame frame_color = frames.first(RS2_STREAM_COLOR);
         if (frame_color)
         {
-            unsigned char* rgb_frame_data = (unsigned char*) frame_color.get_data();
-            carmen_bumblebee_publish_stereoimage_message(rgb_frame_data,rgb_frame_data, rs_width, rs_height, 3);
+            rgb_frame_data = (unsigned char*) frame_color.get_data();
         }
+        
+        if (depth_frame)
+            depth_frame_data = (unsigned char*) c.colorize(depth_frame).get_data(); // Pointer to depth pixels
+
+		// if(first_time)
+		// {
+		// 	rs2_extrinsics e = depth_frame.get_extrinsics_to(frame_color);
+		// 	first_time = false;	
+		// }
+
+		carmen_bumblebee_publish_stereoimage_message(rgb_frame_data,depth_frame_data , rs_width, rs_height, 3);
         
 	}
 
