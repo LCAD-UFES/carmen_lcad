@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <math.h>
+#include <carmen/pi_imu_interface.h>
 
 #define PORT "3458"
 #define SOCKET_DATA_PACKET_SIZE	2048
@@ -13,6 +14,7 @@
 
 char *tcp_ip_address;
 
+#define do_logger true
 
 void
 carmen_xsens_define_messages()
@@ -23,6 +25,7 @@ carmen_xsens_define_messages()
     err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_QUAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_QUAT_FMT);
     carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_QUAT_NAME);
 }
+
 
 
 int
@@ -133,13 +136,15 @@ main(int argc, char **argv)
 	carmen_xsens_define_messages();
 
 	carmen_xsens_global_quat_message xsens_quat_message;
+	carmen_pi_imu_message_t pi_imu_message;
+
 	while (1)
 	{
 		unsigned char rpi_imu_data[SOCKET_DATA_PACKET_SIZE];
 		// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
 		valread = recv(pi_socket, rpi_imu_data, SOCKET_DATA_PACKET_SIZE, MSG_WAITALL);
 
-		if (valread == 0) // Connection lost due to server shutdown.
+		if (valread == 0 || valread == -1) // 0 Connection lost due to server shutdown -1 Could not connect
 		{
 			close(pi_socket);
 			pi_socket = trying_to_reconnect();
@@ -154,7 +159,23 @@ main(int argc, char **argv)
 				&(xsens_quat_message.quat_data.m_data[0]), &(xsens_quat_message.quat_data.m_data[1]), &(xsens_quat_message.quat_data.m_data[2]), &(xsens_quat_message.quat_data.m_data[3]),
 				&(xsens_quat_message.m_mag.x), &(xsens_quat_message.m_mag.y), &(xsens_quat_message.m_mag.z));
 
+		pi_imu_message.imu_vector->accel.x = xsens_quat_message.m_acc.x;
+		pi_imu_message.imu_vector->accel.y = xsens_quat_message.m_acc.y;
+		pi_imu_message.imu_vector->accel.z = xsens_quat_message.m_acc.z;
+		pi_imu_message.imu_vector->gyro.x = xsens_quat_message.m_gyr.x;
+		pi_imu_message.imu_vector->gyro.y = xsens_quat_message.m_gyr.y;
+		pi_imu_message.imu_vector->gyro.z = xsens_quat_message.m_gyr.z;
+		pi_imu_message.imu_vector->magnetometer.x = xsens_quat_message.m_mag.x;
+		pi_imu_message.imu_vector->magnetometer.y = xsens_quat_message.m_mag.y;
+		pi_imu_message.imu_vector->magnetometer.z = xsens_quat_message.m_mag.z;
+		pi_imu_message.timestamp = carmen_get_time();
+		pi_imu_message.host = carmen_get_host();
+
+	#ifdef do_logger
+		carmen_pi_imu_publish_message(&pi_imu_message);
+	#else
 		carmen_publish_xsens_quat_message(xsens_quat_message);
+	#endif
 //		printf("%lf\n", carmen_get_time());
 	}
 

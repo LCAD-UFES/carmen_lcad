@@ -417,7 +417,7 @@ fill_database_matrix(FILE *f_database_filenames, vector < vector<t_pattern> > &d
 static void
 read_parameters(int argc, char **argv)
 {
-	const char usage[] = "< -validate(to set valid images) or -s(to define classes) > <database_dir>/<database_file>.txt <database_classified_dir> < -f(for first classification) or -c(continue classifying)>";
+	const char usage[] = "< -validate(to set valid images) or -setclasses(to define classes) > <database_dir>/<database_file>.txt <database_classified_dir> < -f(for first classification) or -c(continue classifying)>";
 	if (argc < 4){
 		printf("Incorrect Input!.\nUsage:\n%s %s\n", argv[0], usage);
 		exit(1);

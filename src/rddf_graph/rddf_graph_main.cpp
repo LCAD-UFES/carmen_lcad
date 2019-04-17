@@ -160,7 +160,7 @@ main(int argc, char **argv)
 	int count_maps = carmen_grid_mapping_get_block_map_by_origin_x_y(road_map_folder, 'r', road_map_origin.x, road_map_origin.y, &road_map);
 	cout<<road_map.config.x_size<<" "<<road_map.config.y_size<<endl;
 	//carmen_grid_mapping_update_map_buffer(&road_map, 'r');
-
+	
 	if (count_maps > 0)
 	{
 		//show_road_map(&road_map,0,0);

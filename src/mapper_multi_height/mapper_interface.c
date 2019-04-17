@@ -239,6 +239,7 @@ carmen_mapper_publish_map_level_message(carmen_map_t *carmen_map, double timesta
 			message_name = CARMEN_MAPPER_MAP_MESSAGE_NAME;
 			break;
 		case 1:
+			printf("Publishing map level1\n");
 			message_name = CARMEN_MAPPER_MAP_LEVEL1_MESSAGE_NAME;
 			break;
 		default:

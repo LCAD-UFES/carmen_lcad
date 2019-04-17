@@ -1,30 +1,61 @@
 
 import os
 from multiprocessing import Pool
+from experiments import *
 
+def run_mapper(log_and_type):
+	log_name = log_and_type[0]
+	intensity_mode = log_and_type[1]
+	use_lane_segmentation = log_and_type[2]
+	
+	mapper_args = " -v 1 "
 
-def run_command(cmd):
-    os.system(cmd)
+	if (intensity_mode == 'semantic') and (not os.path.exists('/dados/data/data_%s/semantic' % log_name)):
+		print("Semantic segmentations not found for log '%s'. Skipping creation of semantic maps." % log_name)
+		return
+	
+	# we only want to create map using lane segmentation in airport logs
+	if ((use_lane_segmentation) and ("aeroporto" not in log_name)):
+		return
+	
+	map_path = "/dados/maps2/%s_%s" % (log_name, intensity_mode)
 
+	tag = ""
 
-def create_maps(experiments):
-    cmds = ["./mapper " + e['map'] for e in experiments]
-    process_pool = Pool(len(cmds)) 
-    process_pool.map(run_command, cmds)
+	if (intensity_mode == 'semantic') and (use_lane_segmentation) and ("aeroporto" in log_name):
+		mapper_args += " --segment_lane_marks 1 "
+		tag = "_with_lanes"
+	
+	if ("aeroporto" in log_name):
+		mapper_args += " --camera_latency 0.42 "
+	else:
+		mapper_args += " --camera_latency 0.0 "
 
+	map_path += tag
+	run_command("rm -rf %s/*" % map_path)
+
+	mapper_cmd = "time ./mapper /dados/%s --v_thresh 1 -i %s -m  %s %s" % (log_name, intensity_mode, map_path, mapper_args)
+	run_command(mapper_cmd)
+
+	map_img_path = map_path + "_complete.png"
+	create_complete_map_cmd = 'python scripts/visualization_and_analysis/generate_complete_map.py %s %s' % (map_path, map_img_path)
+	run_command(create_complete_map_cmd)
+	
 
 if __name__ == "__main__":
-    experiments = [
-        {'map': 'data_log_sao_paulo_brt_20170827.txt', 'test': ['data_log_sao_paulo_brt_20170827-2.txt']}
-        #{'map': "data_log_volta_da_ufes-20180112.txt", 
-        #'test': ["data_log_volta_da_ufes-20180112-2.txt", "data_log_volta_da_ufes-20180907-2.txt", 
-        #          "data_log-volta-da-ufes-20181206.txt", "data_log-volta-da-ufes-noite-20181130.txt"]},
-        #{'map': "data_log_dante_michelini-20181116.txt", 'test': ["data_log_dante_michelini-20181116-pista-esquerda.txt"]},
-        #{'map': 'data_log_aeroporto_vila_velha_20170726-2.txt', 'test': ['data_log_aeroporto_vila_velha_20170726.txt']},
-        #{'map': 'data_log-estacionamento-ambiental-20181208.txt', 
-        # 'test': ['data_log-volta-da-ufes-20181207-estacionamento_ambiental.txt', 'data_log-volta-da-ufes-20181206-estacionamento-test.txt']}, 
-        #{'map': 'data_log-jardim-da-penha-mapeamento-20181208.txt', 'test': ['data_log-jardim_da_penha-20181207-2.txt', 'data_log-jardim_da_penha-20181207.txt']}, 
-        #{'map': 'data_log_estacionamentos-20181130.txt', 'test': ['data_log-volta-da-ufes-20181206-honofre-test.txt', 'data_log_estacionamentos-20181130-test.txt']},
-    ]
-
-    create_maps(experiments)
+	global experiments
+	logs_to_map = []
+	
+	if not os.path.exists('/dados/maps2/'):
+		os.mkdir('/dados/maps2')
+	
+	for e in experiments:
+		logs_to_map.append([e['map'], 'semantic', True])
+		logs_to_map.append([e['map'], 'semantic', False])
+		logs_to_map.append([e['map'], 'raw', False])
+		#logs_to_map.append([e['map'], 'visual'])
+	
+	process_pool = Pool(len(logs_to_map)) 
+	process_pool.map(run_mapper, logs_to_map)
+	print("Done.")
+		

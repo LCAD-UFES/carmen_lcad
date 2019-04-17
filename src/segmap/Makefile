@@ -1,9 +1,9 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
-MODULE_NAME = SEG MAP
-MODULE_COMMENT = SLAM using semantic segmentation
+MODULE_NAME = SEG MAP MAIN
+MODULE_COMMENT = Main programs
 
-SUBDIRS += libsegmap graphslam_fast scripts
+SUBDIRS += util libsegmap gicp graphslam_fast # scripts examples
 
 LINK = g++ 
 
@@ -15,23 +15,39 @@ CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-comp
 # Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11
 IFLAGS += -std=c++11
 
-IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv` -lsegmap -lopencv_imgcodecs
+IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ \
+	-I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
+LFLAGS += `pkg-config --libs opencv` -lopencv_imgcodecs
 LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
 LFLAGS += -L /usr/lib -lvtkIO -lvtkFiltering -lvtkCommon -lvtkRendering -lvtkGraphics
-LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal -lboost_program_options
+LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal 
+LFLAGS += -lboost_program_options -lboost_filesystem
 
-SOURCES = localizer.cpp mapper.cpp test_mapper_mesh.cpp
+LFLAGS += -lsegmap_types -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
+	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lsegmap_initializations \
+	-lutil 
+
+DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/datasets/libsegmap_datasets.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsegmap_readers.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/motion_models/libsegmap_motion_models.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/slam/libsegmap_slam.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/visualization/libsegmap_visualization.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsemap_readers.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/initializations/libsegmap_initializations.a \
+	$(CARMEN_HOME)/src/segmap/util/libutil.a
+
+SOURCES = mapper.cpp localizer.cpp calibrate_velodyne.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = 
-TARGETS = localizer mapper test_mapper_mesh
+TARGETS = mapper localizer calibrate_velodyne
 
-# The libsegmap.a is added as a dependency to make the program be compiled when a .cpp file in the lib is changed.
-# Without adding the lib as a dependency, we would have to do a make clean && make whenever we change a .cpp file.
-localizer: localizer.o libsegmap/libsegmap.a
-mapper: mapper.o libsegmap/libsegmap.a
-test_mapper_mesh: test_mapper_mesh.o libsegmap/libsegmap.a
+# The libraries are added as dependencies to make the program be compiled when the libs are changed.
+# Without adding them as a dependency, we would have to do a make clean && make whenever we change a .cpp file.
+localizer: localizer.o $(DEPS) 
+mapper: mapper.o $(DEPS)
+calibrate_velodyne: calibrate_velodyne.o $(DEPS)
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

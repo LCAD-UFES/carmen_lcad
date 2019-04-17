@@ -32,7 +32,7 @@ IFLAGS += -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libviso2.3/src
 
 #boost
-LFLAGS += -lboost_system
+LFLAGS += -lboost_system -lboost_filesystem
 
 # PCL
 LFLAGS += -lpcl_common -lpcl_io -lpcl_registration -lpcl_features -lpcl_search -lpcl_filters -lpcl_visualization
@@ -51,6 +51,10 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libviso2.3/src -lviso
 
 # the messages library
 #LFLAGS += -L$(CARMEN_HOME)/src/hypergraphsclam/Messages/
+
+# Profile flags
+#CXXFLAGS += -pg
+#LFLAGS += -pg
 
 SUBDIRS = Helpers/ Messages/ src/ CustomEdges/
 

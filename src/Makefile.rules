@@ -41,11 +41,11 @@ install_libraries = $(SILENT) \
 
 install_libraries_so = \
 	for i in $(PUBLIC_LIBRARIES_SO) xxxx ; do \
-		if test -f $$i.1 && ! $(NEWER) $(SHARED_DIR)/$$i $$i.1 ; then \
+		if test -f $$i && ! $(NEWER) $(SHARED_DIR)/$$i $$i ; then \
 			echo "    ---- Copying $$i to $(SHARED_DIR)" ; \
 			export dir=`pwd` ; \
 			$(RM) -f $(SHARED_DIR)/$$i ; \
-			$(LN) -s $$dir/$$i.1 $(SHARED_DIR)/$$i ; \
+			$(LN) -s $$dir/$$i $(SHARED_DIR)/$$i ; \
 		fi; \
 	done 
 
@@ -288,7 +288,6 @@ phase3:
 phase4:
 	$(subdir_recurse)
 
-
 all:
 	$(subdir_recurse)
 	$(banner)
@@ -325,6 +324,7 @@ install:
 	$(subdir_recurse)
 	$(banner)
 	$(global_install_libraries)
+	$(global_install_libraries_so)
 	$(global_install_binaries)
 	$(global_install_includes)
 
@@ -415,18 +415,13 @@ tar-clean:
 	$(ECHO) "    ---- Compiling $< to $@ ("$(CXX)")"
 	$(SILENT) $(CXX) $(CXXFLAGS) $(IFLAGS) -c $< -o $@
 
-
 %.o:	%.cc
 	$(ECHO) "    ---- Compiling $< to $@ ("$(CXX)")"
 	$(SILENT) $(CXX) $(CXXFLAGS) $(IFLAGS) -c $< -o $@
 
-%.so.1:	
-	$(ECHO) "    ---- Archiving $^ into $@ ("$(CXX)")"
-	$(SILENT) $(CXX) -shared -o $@ $^
-
 %.so:	
 	$(ECHO) "    ---- Archiving $^ into $@ ("$(CXX)")"
-	$(SILENT) $(CXX) -shared -o $@ $^
+	$(SILENT) $(CXX) -shared -o $@ $^ $(LFLAGS)
 
 %.doxygen:	
 	$(ECHO) "    ---- Compiling $< (Doxygen)"

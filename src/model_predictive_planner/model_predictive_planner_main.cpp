@@ -421,7 +421,7 @@ build_and_follow_path(double timestamp)
 			//				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 			//		}
 		}
-		publish_plan_tree_for_navigator_gui(tree);
+		//publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
 	}
 }
@@ -449,7 +449,7 @@ build_and_follow_path_new(double timestamp)
 			//		else
 			//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 		}
-		publish_plan_tree_for_navigator_gui(tree);
+		//publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
 	}
 }

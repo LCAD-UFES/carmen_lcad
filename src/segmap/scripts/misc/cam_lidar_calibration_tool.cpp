@@ -8,7 +8,10 @@
 #include <carmen/segmap_sensors.h>
 #include <carmen/segmap_viewer.h>
 #include <carmen/segmap_util.h>
+#include <string>
 
+
+using namespace std;
 using namespace Eigen;
 using namespace cv;
 using namespace pcl;
@@ -16,9 +19,9 @@ using namespace pcl;
 
 void
 draw_laser_in_cam(PointCloud<PointXYZRGB>::Ptr cloud, 
-		 Matrix<double, 4, 4> &lidar2cam,
-		 Matrix<double, 3, 4> &projection,
-		 Mat &img)
+                  Matrix<double, 4, 4> &lidar2cam,
+                  Matrix<double, 3, 4> &projection,
+                  Mat &img)
 {
 	Mat orig = img.clone();
 	Matrix<double, 4, 1> plidar, pcam;
@@ -46,79 +49,83 @@ draw_laser_in_cam(PointCloud<PointXYZRGB>::Ptr cloud,
 int 
 main(int argc, char **argv)
 {
-    if (argc < 2)
-        exit(printf("Use %s <log path>\n", argv[0]));
+	if (argc < 2)
+		exit(printf("Use %s <log path>\n", argv[0]));
 
-    Matrix<double, 4, 1> point, pcam;
-    Matrix<double, 3, 1> hpixel;
-    Matrix<double, 4, 4> cam_wrt_velodyne, vel2cam;
+	Matrix<double, 4, 1> point, pcam;
+	Matrix<double, 3, 1> hpixel;
+	Matrix<double, 4, 4> cam_wrt_velodyne, vel2cam;
 
-    double droll = 0, dpitch = 0, dyaw = 0, dx = 0, dy = 0, dz = 0;
+	double droll = 0, dpitch = 0, dyaw = 0, dx = 0, dy = 0, dz = 0;
 
-    PointCloudViewer viewer;
-    DataSample *sample;
-    PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
-	NewCarmenDataset *dataset = new NewCarmenDataset(argv[1]);
+	PointCloudViewer viewer;
+	DataSample *sample;
+	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 
-    Matrix<double, 3, 4> projection = dataset->projection_matrix();
+	string odom_calib_path = default_odom_calib_path(argv[1]);
+	NewCarmenDataset dataset(argv[1], odom_calib_path);
 
-    double default_x = -0.020000;
-    double default_y = 0.125000;
-    double default_z = -0.27;
+	Matrix<double, 3, 4> projection = dataset.projection_matrix();
 
-    double default_roll = -0.015708;
-    double default_pitch = 0.048869;
-    double default_yaw = 0.005236;
+	double default_x = -0.020000;
+	double default_y = 0.125000;
+	double default_z = -0.27;
 
-    sample = dataset->next_data_package();
+	double default_roll = -0.015708;
+	double default_pitch = 0.048869;
+	double default_yaw = 0.005236;
 
-    while (1)
-    { 
-        double x, y, z;
-        x = default_x + dx;
-        y = default_y + dy;
-        z = default_z + dz;
+	int pos = 0;
+	sample = dataset[0];
 
-        double roll = default_roll + droll;
-        double pitch = default_pitch + dpitch;
-        double yaw = default_yaw + dyaw;
+	while (1)
+	{
+		double x, y, z;
+		x = default_x + dx;
+		y = default_y + dy;
+		z = default_z + dz;
 
-        printf("x: %lf y: %lf z: %lf roll: %lf pitch: %lf yaw: %lf\n", x, y, z, roll, pitch, yaw);
+		double roll = default_roll + droll;
+		double pitch = default_pitch + dpitch;
+		double yaw = default_yaw + dyaw;
 
-        cam_wrt_velodyne = pose6d_to_matrix(x, y, z, roll, pitch, yaw); 
-        vel2cam = cam_wrt_velodyne.inverse();
+		printf("x: %lf y: %lf z: %lf roll: %lf pitch: %lf yaw: %lf\n", x, y, z, roll, pitch, yaw);
 
-        CarmenLidarLoader loader(sample->velodyne_path.c_str(), sample->n_laser_shots,
-								 dataset->intensity_calibration);
+		cam_wrt_velodyne = pose6d_to_matrix(x, y, z, roll, pitch, yaw);
+		vel2cam = cam_wrt_velodyne.inverse();
+
+		CarmenLidarLoader loader(sample->velodyne_path.c_str(), sample->n_laser_shots,
+		                         dataset.intensity_calibration);
+
 		load_as_pointcloud(&loader, cloud);
-        printf("n points: %ld\n", cloud->size());
-        Mat img = load_image(sample);
+		printf("n points: %ld\n", cloud->size());
+		Mat img = load_image(sample);
 
-        draw_laser_in_cam(cloud, vel2cam, projection, img);
-        
-        char c = ' ';
+		draw_laser_in_cam(cloud, vel2cam, projection, img);
 
-        while (1)
-        {
-            imshow("img", img);
-            c = waitKey(50);        
+		char c = ' ';
 
-            if (c == 'q') { droll += DEG2RAD(0.1); break; }
-            if (c == 'a') { droll -= DEG2RAD(0.1); break; }
-            if (c == 'w') { dpitch += DEG2RAD(0.1); break; }
-            if (c == 's') { dpitch -= DEG2RAD(0.1); break; }
-            if (c == 'e') { dyaw += DEG2RAD(0.1); break; }
-            if (c == 'd') { dyaw -= DEG2RAD(0.1); break; }
-            if (c == 't') { dx += 0.01; break; }
-            if (c == 'g') { dx -= 0.01; break; }
-            if (c == 'y') { dy += 0.01; break; }
-            if (c == 'h') { dy -= 0.01; break; }
-            if (c == 'u') { dz += 0.01; break; }
-            if (c == 'j') { dz -= 0.01; break; }
-            if (c == 'p') { dx = dy = dz = droll = dpitch = dyaw = 0.; break; }
-            if (c == 'n') { sample = dataset->next_data_package(); break; }
-        }
-    }
+		while (1)
+		{
+			imshow("img", img);
+			c = waitKey(50);
 
-    return 0;
+			if (c == 'q') { droll += DEG2RAD(0.1); break; }
+			if (c == 'a') { droll -= DEG2RAD(0.1); break; }
+			if (c == 'w') { dpitch += DEG2RAD(0.1); break; }
+			if (c == 's') { dpitch -= DEG2RAD(0.1); break; }
+			if (c == 'e') { dyaw += DEG2RAD(0.1); break; }
+			if (c == 'd') { dyaw -= DEG2RAD(0.1); break; }
+			if (c == 't') { dx += 0.01; break; }
+			if (c == 'g') { dx -= 0.01; break; }
+			if (c == 'y') { dy += 0.01; break; }
+			if (c == 'h') { dy -= 0.01; break; }
+			if (c == 'u') { dz += 0.01; break; }
+			if (c == 'j') { dz -= 0.01; break; }
+			if (c == 'p') { dx = dy = dz = droll = dpitch = dyaw = 0.; break; }
+			if (c == 'n') { sample = dataset[++pos % dataset.size()]; break; }
+		}
+	}
+
+	return 0;
 }

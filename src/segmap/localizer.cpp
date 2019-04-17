@@ -1,106 +1,151 @@
 
-#include <ctime>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <vector>
-#include <deque>
 #include <string>
-#include <random>
-#include <iostream>
-#include <Eigen/Geometry>
 #include <opencv/cv.hpp>
-#include <opencv/highgui.h>
-#include <pcl/common/transforms.h>
-#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
-
-#include "libsegmap/segmap_car_config.h"
-#include "libsegmap/segmap_grid_map.h"
-#include "libsegmap/segmap_particle_filter.h"
-#include "libsegmap/segmap_pose2d.h"
-#include "libsegmap/segmap_util.h"
-#include "libsegmap/segmap_dataset.h"
-#include "libsegmap/segmap_viewer.h"
+#include <carmen/util_time.h>
+#include <carmen/util_math.h>
+#include <carmen/command_line.h>
+#include <carmen/segmap_preproc.h>
+#include <carmen/segmap_dataset.h>
+#include <carmen/segmap_particle_filter.h>
+#include <carmen/segmap_grid_map.h>
+#include <carmen/segmap_conversions.h>
+#include <carmen/segmap_particle_filter_viewer.h>
+#include <carmen/segmap_sensor_viewer.h>
+#include <carmen/segmap_args.h>
+#include <carmen/segmap_constructors.h>
 
 using namespace cv;
 using namespace std;
-using namespace Eigen;
 using namespace pcl;
 
 
 void
-run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset, char path_save_maps[])
+viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_total_steps,
+			 PointCloud<PointXYZRGB>::Ptr cloud,
+			 PointCloudViewer &s_viewer, double duration, int view_flag,
+			 CarmenImageLoader &iloader)
 {
+	Pose2d gt = sample->pose;
+	Pose2d mean = pf.mean();
+	Pose2d mode = pf.mode();
+	Pose2d std = pf.std();
+
+	printf("%d of %d ", step, n_total_steps);
+	printf("Mean: %lf %lf %lf ", mean.x, mean.y, mean.th);
+	printf("Std: %lf %lf %lf ", std.x, std.y, std.th);
+	printf("GT: %lf %lf %lf ", gt.x, gt.y, gt.th);
+	printf("Mode: %lf %lf %lf ", mode.x, mode.y, mode.th);
+	printf("Duration: %lf ", duration);
+	printf("Timestamp: %lf ", sample->time);
+	printf("\n");
+	fflush(stdout);
+
+	if (view_flag)
+	{
+		Mat view_img;
+		Mat pf_view_img;
+
+		Mat pf_img = pf_view(pf, map, &gt, mean, cloud, 1);
+
+		//Mat concat;
+		//hconcat(pf_view_img, view_img, concat);
+		////sprintf(img_name, "%s/step_%010d.png", path_save_maps, i);
+		//char text[32];
+		//sprintf(text, "DistGT: %.2lfm Vel: %.2lfm/s", dist2d(mean.x, mean.y, gt_pose.x, gt_pose.y), sample->v);
+		//putText(concat, text, Point(780, 700), FONT_HERSHEY_PLAIN, 1.3, Scalar(255,255,255), 1);
+		////imwrite(img_name, concat);
+		Mat flipped;
+		flip(pf_img, flipped, 0);
+
+		Mat img = iloader.load(sample);
+		s_viewer.show(img, "img", 640);
+		s_viewer.show(flipped, "pf_viewer");
+		s_viewer.loop();
+	}
+}
+
+
+void
+run_particle_filter(ParticleFilter &pf, GridMap &map,
+										NewCarmenDataset *dataset,
+										SensorPreproc &preproc,
+										int step,
+										double skip_velocity_threshold,
+										int correction_step,
+										int steps_to_skip_map_reload,
+										int view_flag)
+{
+	double dt;
+	DataSample *sample;
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
-	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
+	PointCloudViewer s_viewer;
+	CarmenImageLoader iloader;
+	Timer timer;
 
-	Pose2d p0 = dataset.data[0].pose;
-
-	pf.seed(time(NULL));
+	Pose2d p0 = dataset->at(0)->gps;
 	pf.reset(p0.x, p0.y, p0.th);
 	map.reload(p0.x, p0.y);
 
+	int n = 0;
+	int do_correction;
 	int last_reload = 0;
-	Matrix<double, 4, 4> vel2car = dataset.transform_vel2car();
-	int step = 1;
 
-	Mat view_img;
-	Mat pf_view_img;
-	char img_name[512];
+	s_viewer.set_step(0);
 
-	for (int i = step; i < dataset.data.size(); i += step)
+	for (int i = step; i < dataset->size(); i += step)
 	{
-	    //if (fabs(dataset.data[i].v) < 1.0) continue;
-		Pose2d gt_pose = dataset.data[i].pose_registered_to_map;
+		sample = dataset->at(i);
 
-		pf.predict(dataset.data[i - 1].v, dataset.data[i - 1].phi, dataset.data[i].image_time - dataset.data[i - step].image_time);
-		//view(pf, map, poses, gps, NULL, NULL);
-		dataset.load_fused_pointcloud_and_camera(i, cloud, dataset.data[i].v, dataset.data[i].phi, 1, &view_img);
+		if (fabs(sample->v) < skip_velocity_threshold)
+			continue;
 
-        //printf("Prediction\n");
-        //view(pf, map, gt_pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi);
+		timer.start();
 
-		//if (i % 1 == 0 && i > 0)
-		//if (i > 16)
-		//if (1)
-		//{
-			pf.correct(cloud, map, transformed_cloud, vel2car, dataset.data[i].gps, dataset.data[i].v, dataset.data[i].phi);
+		dt = sample->time - dataset->at(i - step)->time;
+		pf.predict(sample->v, sample->phi, dt);
 
+		preproc.reinitialize(sample);
+		load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+
+		// some times only half velodyne rays arrive, and if the rays are not visible by the camera,
+		// the cloud can be empty.
+		if (cloud->size() > 10)
+		{
+			do_correction = 0;
+
+			if (correction_step <= 1)
+				do_correction = 1;
+			else if (n % correction_step == 0)
+				do_correction = 1;
+
+			if (do_correction)
+				pf.correct(cloud, map, sample->gps);
+				//pf.correct(sample, &map, preproc);
+		}
+
+		//printf("* Pose: %lf %lf %lf v: %lf n: %d last_reload: %d steps: %d\n", pose.x, pose.y, pose.th,
+		//fabs(sample->v), n, last_reload, steps_to_skip_map_reload);
+
+		// only reload the map if the car is moving, and after a while.
+		// this prevents frequent (expensive) reloads when near to borders.
+		if ((fabs(sample->v) > 0.) && (n - last_reload > steps_to_skip_map_reload))
+		{
 			Pose2d mean = pf.mean();
-			Pose2d mode = pf.mode();
 
-			printf("Step: %d of %ld ", i + 1, dataset.data.size());
-			printf("GT_pose: %lf %lf %lf ", gt_pose.x, gt_pose.y, gt_pose.th);
-			printf("PF_Mean: %lf %lf %lf ", mean.x, mean.y, mean.th);
-			printf("PF_Mode: %lf %lf %lf ", mode.x, mode.y, mode.th);
-			printf("D_GT_MEAN: %lf ", dist2d(mean.x, mean.y, gt_pose.x, gt_pose.y));
-			printf("D_GT_MODE: %lf ", dist2d(mode.x, mode.y, gt_pose.x, gt_pose.y));
-			printf("O_GT_MEAN: %lf ", fabs(normalize_theta(mean.th - gt_pose.th)));
-			printf("O_GT_MODE: %lf ", fabs(normalize_theta(mode.th - gt_pose.th)));
-			printf("\n");
-			fflush(stdout);
+			map.reload(mean.x, mean.y);
+			last_reload = n;
+		}
 
-			if (dataset.data[i].v > 0.1 && (i - last_reload > 10))
-			{
-				map.reload(mean.x, mean.y);
-				last_reload = i;
-			}
-		//}
+		//sample->pose = pf.mean();
+		//update_map(sample, &map, preproc);
+		//preproc.reinitialize(sample);
+		//load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+		viewer(sample, pf, map, i, dataset->size(), cloud, s_viewer, timer.ellapsed(), view_flag, iloader);
 
-		//printf("Correction\n");
-		view(pf, map, gt_pose, cloud, transformed_cloud, &vel2car, dataset.data[i].v, dataset.data[i].phi, &pf_view_img);
-
-		Mat concat;
-		hconcat(pf_view_img, view_img, concat);
-		sprintf(img_name, "%s/step_%010d.png", path_save_maps, i);
-		char text[32];
-		sprintf(text, "DistGT: %.2lfm Vel: %.2lfm/s", dist2d(mean.x, mean.y, gt_pose.x, gt_pose.y), dataset.data[i].v);
-		putText(concat, text, Point(780, 700), FONT_HERSHEY_PLAIN, 1.3, Scalar(255,255,255), 1);
-		//imwrite(img_name, concat);
-		imshow("bla", concat);
-		waitKey(1);
+		n++;
 	}
 }
 
@@ -108,45 +153,33 @@ run_particle_filter(ParticleFilter &pf, GridMap &map, DatasetInterface &dataset,
 int
 main(int argc, char **argv)
 {
-	if (argc < 3)
-		exit(printf("Error: Use %s <test log data directory> <map log data directory>\n", argv[0]));
+	CommandLineArguments args;
 
-	char dataset_name[256];
-	char map_name[256];
+	add_default_slam_args(args);
+	add_default_sensor_preproc_args(args);
+	add_default_mapper_args(args);
+	add_default_localizer_args(args);
 
-	sprintf(dataset_name, "/dados/data/%s", argv[1]);
-	sprintf(map_name, "/dados/maps/map_%s", argv[2]);
-	printf("dataset_name: %s\n", dataset_name);
-	printf("map_name: %s\n", map_name);
+	args.add<int>("view,v", "Flag to set visualization on or off", 1);
 
-	char path_save_maps[256];
-	char cmd[256];
-	sprintf(path_save_maps, "/dados/localizer_imgs/%s", argv[1]);
-	sprintf(cmd, "rm -rf %s && mkdir %s", path_save_maps, path_save_maps);
-	system(cmd);
-	printf("path_save_maps: %s\n", path_save_maps);	
+	args.save_config_file(default_data_dir() + "/localizer_config.txt");
+	args.parse(argc, argv);
 
-	DatasetInterface *dataset;
-	dataset = new DatasetCarmen(dataset_name, 1);
+	string log_path = args.get<string>("log_path");
+	NewCarmenDataset* dataset = create_dataset(log_path, args.get<double>("camera_latency"), "graphslam_to_map");
+	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
+	GridMap map = create_grid_map(args, 0);
+	ParticleFilter pf = create_particle_filter(args);
 
-    /*
-    ParticleFilter::ParticleFilter(int n_particles, WeightType weight_type,
-		    double x_std, double y_std, double th_std,
-		    double v_std, double phi_std, double pred_x_std, double pred_y_std, double pred_th_std,
-		    double color_var_r, double color_var_g, double color_var_b)    
-    */
+	pf.seed(args.get<int>("seed"));
+	run_particle_filter(pf, map, dataset, preproc,
+											args.get<int>("step"),
+											args.get<double>("v_thresh"),
+											args.get<int>("correction_step"),
+											args.get<int>("steps_to_skip_map_reload"),
+											args.get<int>("view"));
 
-	ParticleFilter pf(30, ParticleFilter::WEIGHT_VISUAL, 
-			0.5, 0.5, degrees_to_radians(5),
-			0.2, degrees_to_radians(.5),
-			0.1, 0.1, degrees_to_radians(.5),
-			10., 10., 10.);
-
-	GridMap map(map_name, 50., 50., 0.2, GridMapTile::TYPE_VISUAL);
-	run_particle_filter(pf, map, *dataset, path_save_maps);
-
-	printf("Done\n");
+	printf("Done.\n");
 	return 0;
 }
-
 

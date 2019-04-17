@@ -606,19 +606,22 @@ mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 
 		if (update_and_merge_with_mapper_saved_maps)
 		{
-			carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', &map);
-			if (use_remission)
+			if (offline_map_available && map.complete_map != NULL && map.config.x_origin != 0.0)
 			{
-				carmen_grid_mapping_save_block_map_by_origin(map_path, 's', &sum_remission_map);
-				carmen_grid_mapping_save_block_map_by_origin(map_path, '2', &sum_sqr_remission_map);
-				carmen_grid_mapping_save_block_map_by_origin(map_path, 'c', &count_remission_map);
-			}
+				carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', &map);
+				if (use_remission)
+				{
+					carmen_grid_mapping_save_block_map_by_origin(map_path, 's', &sum_remission_map);
+					carmen_grid_mapping_save_block_map_by_origin(map_path, '2', &sum_sqr_remission_map);
+					carmen_grid_mapping_save_block_map_by_origin(map_path, 'c', &count_remission_map);
+				}
 
-			if (create_map_sum_and_count)
-			{
-				carmen_grid_mapping_save_block_map_by_origin(map_path, 'u', &sum_occupancy_map);
-				carmen_grid_mapping_save_block_map_by_origin(map_path, 'e', &mean_occupancy_map);
-				carmen_grid_mapping_save_block_map_by_origin(map_path, 'o', &count_occupancy_map);
+				if (create_map_sum_and_count)
+				{
+					carmen_grid_mapping_save_block_map_by_origin(map_path, 'u', &sum_occupancy_map);
+					carmen_grid_mapping_save_block_map_by_origin(map_path, 'e', &mean_occupancy_map);
+					carmen_grid_mapping_save_block_map_by_origin(map_path, 'o', &count_occupancy_map);
+				}
 			}
 
 			// get new map with integrated information of the old map
@@ -1071,19 +1074,22 @@ mapper_update_grid_map(carmen_point_t xt, double *zt, sensor_parameters_t *senso
 void
 mapper_save_current_map()
 {
-	carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', &map);
-	if (use_remission)
+	if (offline_map_available && map.complete_map != NULL && map.config.x_origin != 0.0)
 	{
-		carmen_grid_mapping_save_block_map_by_origin(map_path, 's', &sum_remission_map);
-		carmen_grid_mapping_save_block_map_by_origin(map_path, '2', &sum_sqr_remission_map);
-		carmen_grid_mapping_save_block_map_by_origin(map_path, 'c', &count_remission_map);
-	}
+		carmen_grid_mapping_save_block_map_by_origin(map_path, 'm', &map);
+		if (use_remission)
+		{
+			carmen_grid_mapping_save_block_map_by_origin(map_path, 's', &sum_remission_map);
+			carmen_grid_mapping_save_block_map_by_origin(map_path, '2', &sum_sqr_remission_map);
+			carmen_grid_mapping_save_block_map_by_origin(map_path, 'c', &count_remission_map);
+		}
 
-	if (create_map_sum_and_count)
-	{
-		carmen_grid_mapping_save_block_map_by_origin(map_path, 'u', &sum_occupancy_map);
-		carmen_grid_mapping_save_block_map_by_origin(map_path, 'e', &mean_occupancy_map);
-		carmen_grid_mapping_save_block_map_by_origin(map_path, 'o', &count_occupancy_map);
+		if (create_map_sum_and_count)
+		{
+			carmen_grid_mapping_save_block_map_by_origin(map_path, 'u', &sum_occupancy_map);
+			carmen_grid_mapping_save_block_map_by_origin(map_path, 'e', &mean_occupancy_map);
+			carmen_grid_mapping_save_block_map_by_origin(map_path, 'o', &count_occupancy_map);
+		}
 	}
 }
 
@@ -1091,18 +1097,13 @@ mapper_save_current_map()
 void
 mapper_periodically_save_current_map(double timestamp)
 {
-	if (!offline_map_available || map.complete_map == NULL || x_origin == 0.0)
-		return;
+	static double last_time = timestamp;
 
-	static double last_time = 0.0;
-	if (last_time == 0.0)
+	if ((timestamp - last_time) >= time_secs_between_map_save)
+	{
+		mapper_save_current_map();
 		last_time = timestamp;
-
-	if ((timestamp - last_time) < time_secs_between_map_save)
-		return;
-
-	mapper_save_current_map();
-	last_time = timestamp;
+	}
 }
 
 

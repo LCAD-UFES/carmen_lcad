@@ -191,11 +191,11 @@ namespace perls
             }
             
             //generate K matrix
-            this->m_Calib.K[i][0] = focal_length*scale_x;
+            this->m_Calib.K[i][0] = 489.439360; //focal_length*scale_x;
             this->m_Calib.K[i][1] = 0; 
             this->m_Calib.K[i][2] = camera_center_X;
             this->m_Calib.K[i][3] = 0;
-            this->m_Calib.K[i][4] = focal_length*scale_y;
+            this->m_Calib.K[i][4] = 489.436800; //focal_length*scale_y;
             this->m_Calib.K[i][5] = camera_center_Y;
             this->m_Calib.K[i][6] = 0; this->m_Calib.K[i][7] = 0; this->m_Calib.K[i][8] = 1;
             
@@ -267,14 +267,22 @@ namespace perls
             sprintf (imageName,"%s/%s%04d.%s", image_folder, image_base_name, imageIndex, image_type);	
             printf ("Loading file-: %s\n",imageName);
             
-            IplImage* iplimage = cvLoadImage (imageName, 0); //load image as grayscale.
+            #ifdef __DEBUG__
+                IplImage* iplimage = cvLoadImage (imageName, 1);
+            #else
+                IplImage* iplimage = cvLoadImage (imageName, 0); //load image as grayscale.
+            #endif
             if (iplimage == NULL)
             {
                printf ("Error: Cannot load Image: %s\n", imageName);
                return -1;
             }
             //gaussian smoothing of images
-            IplImage* out = cvCreateImage (cvGetSize(iplimage), IPL_DEPTH_8U, 1);
+            #ifdef __DEBUG__
+                IplImage* out = cvCreateImage (cvGetSize(iplimage), IPL_DEPTH_8U, 3);
+            #else
+                IplImage* out = cvCreateImage (cvGetSize(iplimage), IPL_DEPTH_8U, 1);
+            #endif
             cv::Mat outMat = cv::cvarrToMat(out);
             cv::Mat imageMat = cv::cvarrToMat(iplimage);
             cv::GaussianBlur (imageMat, outMat, cv::Size (3, 3), 0.75); 
@@ -456,10 +464,10 @@ namespace perls
                                     refc_sum = refc_sum + refc; 
                                     #ifdef _DEBUG_
                                       //Plot the 3D points on the image
-                                      if (point.z > -2.0)
+                                      if (point.z > -200.0)
                                       {
                                           CvPoint c0 = cvPoint (cvRound (u), cvRound (v));
-                                          cvCircle (debug_dest.image[j], c0, 2, CV_RGB(refc, 0, 0), -1, 4, 0); //-1, 8, 0);
+                                          cvCircle (debug_dest.image[j], c0, 2, CV_RGB(255-255*point.x/30, 0, 0), -1, 4, 0); //-1, 8, 0);
                                       }
                                     #endif
                                 }

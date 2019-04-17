@@ -53,7 +53,6 @@ GrabData::GrabData() :
     use_sick_loop(true),
     use_bumblebee_loop(true) {}
 
-
 // the main destructor
 GrabData::~GrabData()
 {
@@ -320,7 +319,6 @@ Eigen::Vector2d GrabData::GetFirstGPSPosition()
 // including the orientation from xsens sensor or the gps itself
 void GrabData::BuildGPSMeasures()
 {
-
     if (5 < messages.size())
     {
         // status reporting
@@ -346,6 +344,9 @@ void GrabData::BuildGPSMeasures()
 
                 // update the orientation
                 gps_pose->gps_measurement.setRotation(Eigen::Rotation2Dd(GetGPSOrientation(begin, it, end, gps_pose->timestamp)));
+
+                // move to local origin
+                gps_pose->gps_measurement = gps_pose->gps_measurement * StampedGPSPose::inv_gps_pose;
 
                 // let's take an advantage here
                 // gps_pose->est = gps_pose->gps_measurement;
@@ -1178,8 +1179,8 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
         StampedLidarPtrVector::iterator it(lidar_messages.begin());
 
         unsigned lmsize = lidar_messages.size();
-        unsigned percent = lmsize / 100;
         unsigned counter = 0;
+        // unsigned percent = lmsize / 100;
 
         while (end != it)
         {
@@ -1206,7 +1207,7 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
                 StampedLidarPtr lidar_loop = *next;
 
                 // compute the current distance
-                double distance = (current->gps_sync_estimate.translation() - lidar_loop->gps_sync_estimate.translation()).squaredNorm();
+                double distance = (current->gps_sync_estimate.translation() - lidar_loop->gps_sync_estimate.translation()).norm();
 
                 // the time difference
                 double dt = std::fabs(lidar_loop->timestamp - current->timestamp);
@@ -1562,9 +1563,8 @@ void GrabData::SaveGPSEstimates()
 
 
 // save lidar message
-void GrabData::SaveLidarEdges(const std::string &msg_name, std::ofstream &os, const StampedLidarPtrVector &lidar_messages)
+void GrabData::SaveLidarEdges(const std::string &msg_name, std::ofstream &os, const StampedLidarPtrVector &lidar_messages, bool use_lidar_odometry, bool use_lidar_loop)
 {
-
     if (!lidar_messages.empty())
     {
         // iterate over the lidar messages
@@ -1579,7 +1579,7 @@ void GrabData::SaveLidarEdges(const std::string &msg_name, std::ofstream &os, co
             // direct access
             StampedLidarPtr from = *current;
 
-            if (last_index > from->seq_id)
+            if (last_index > from->seq_id && use_lidar_odometry)
             {
                 // get the SE2 reference
                 g2o::SE2 &measurement(from->seq_measurement);
@@ -1588,7 +1588,7 @@ void GrabData::SaveLidarEdges(const std::string &msg_name, std::ofstream &os, co
                 os << msg_name << "_SEQ " << from->id << " " << from->seq_id << " " << std::fixed << measurement[0] << " " << measurement[1] << " " << measurement[2] << "\n";
 
             }
-            if (last_index > from->loop_closure_id)
+            if (last_index > from->loop_closure_id && use_lidar_loop)
             {
                 // get the SE2 reference
                 g2o::SE2 &measurement(from->loop_measurement);
@@ -1610,7 +1610,7 @@ void GrabData::SaveVisualOdometryEdges(std::ofstream &os)
 
     std::cout << "\tSaving all visual odometry edges..." << std::endl;
 
-    if (!bumblebee_messages.empty())
+    if (!bumblebee_messages.empty() && use_bumblebee_odometry)
     {
         // iterate over the lidar messages
         StampedBumblebeePtrVector::const_iterator end = bumblebee_messages.end();
@@ -1649,14 +1649,14 @@ void GrabData::SaveICPEdges(std::ofstream &os)
     std::cout << "\tSaving all SICK edges..." << std::endl;
 
     // the sick icp edges
-    SaveLidarEdges(std::string("SICK"), os, sick_messages);
+    SaveLidarEdges(std::string("SICK"), os, sick_messages, use_sick_odometry, use_sick_loop);
 
     std::cout << "\tSick edges saved!" << std::endl;
 
     std::cout << "\tSaving all Velodyne edges..." << std::endl;
 
     // the velodyne icp edges
-    SaveLidarEdges(std::string("VELODYNE"), os, velodyne_messages);
+    SaveLidarEdges(std::string("VELODYNE"), os, velodyne_messages, use_velodyne_odometry, use_velodyne_loop);
 
     std::cout << "\tVelodyne edges saved!" << std::endl;
 }
@@ -1794,8 +1794,10 @@ g2o::SE2 GrabData::GetSE2FromVisoMatrix(const Matrix &matrix)
 
 
 // configuration
-void GrabData::Configure(std::string config_filename)
+void GrabData::Configure(std::string config_filename, std::string carmen_home)
 {
+    std::cout << "Reading cofigure file '" << config_filename << "'" << std::endl;
+
     std::ifstream is(config_filename, std::ifstream::in);
     if (is.good())
     {
@@ -1804,7 +1806,6 @@ void GrabData::Configure(std::string config_filename)
 
         while (-1 != StringHelper::ReadLine(is, ss))
         {
-
             std::string str;
             ss >> str;
 
@@ -1852,33 +1853,51 @@ void GrabData::Configure(std::string config_filename)
             {
                 ss >> StampedOdometry::phiab;
             }
-            else if ("SAVE_ACCUMULATED_POINT_CLOUDS")
+            else if ("SAVE_ACCUMULATED_POINT_CLOUDS" == str)
             {
                 save_accumulated_point_clouds = true;
             }
-            else if ("DISABLE_VELODYNE_ODOMETRY")
+            else if ("DISABLE_VELODYNE_ODOMETRY" == str)
             {
+                std::cout << "Disabling lidar odometry" << std::endl;
                 use_velodyne_odometry = false;
             }
-            else if ("DISABLE_VELODYNE_LOOP")
+            else if ("DISABLE_VELODYNE_LOOP" == str)
             {
+                std::cout << "Disabling lidar loop closures" << std::endl;
                 use_velodyne_loop = false;
             }
-            else if ("DISABLE_SICK_ODOMETRY")
+            else if ("DISABLE_SICK_ODOMETRY" == str)
             {
+                std::cout << "Disabling sick odometry" << std::endl;
                 use_sick_odometry = false;
             }
-            else if ("DISABLE_SICK_LOOP")
+            else if ("DISABLE_SICK_LOOP" == str)
             {
+                std::cout << "Disabling sick loop closures" << std::endl;
                 use_sick_loop = false;
             }
-            else if ("DISABLE_BUMBLEBEE_ODOMETRY")
+            else if ("DISABLE_BUMBLEBEE_ODOMETRY" == str)
             {
+                std::cout << "Disabling visual odometry" << std::endl;
                 use_bumblebee_odometry = false;
             }
-            else if ("DISABLE_BUMBLEBEE_LOOP")
+            else if ("DISABLE_BUMBLEBEE_LOOP" == str)
             {
+                std::cout << "Disabling visual loop closures" << std::endl;
                 use_bumblebee_loop = false;
+            }
+            else if ("GPS_IDENTIFIER" == str)
+            {
+                ss >> StampedGPSPose::gps_id;
+
+                if ("0" == StampedGPSPose::gps_id) {
+                    StampedGPSPose::gps_id = "";
+                }
+
+                if (!StampedGPSPose::gps_id.empty()) {
+                    StampedGPSPose::gps_id = "_" + StampedGPSPose::gps_id; 
+                }
             }
         }
     }
@@ -1888,8 +1907,77 @@ void GrabData::Configure(std::string config_filename)
     }
 
     is.close();
+
+    SetGPSPose(carmen_home);
 }
 
+// get the gps antena position in relation to sensor board
+void GrabData::SetGPSPose(std::string carmen_home)
+{
+
+    std::ifstream is(carmen_home + "/src/carmen-ford-escape-sensor-box.ini");
+   
+    if (is.good())
+    {
+        int param_counter = 0;
+        double x = 0.0, y = 0.0, yaw = 0.0;
+        double sbx = 0.0, sby = 0.0, sbyaw = 0.0;
+
+        std::string gps_nmea = "gps_nmea";
+        std::stringstream ss;
+
+        while (-1 != StringHelper::ReadLine(is, ss) and 6 > param_counter)
+        {
+            std::string str;
+            ss >> str;
+
+            if (gps_nmea + StampedGPSPose::gps_id + "_x" == str)
+            {
+                ss >> x;
+                param_counter += 1;   
+            }
+            else if (gps_nmea + StampedGPSPose::gps_id + "_y" == str)
+            {
+                ss >> y;
+                param_counter += 1;   
+            }
+            else if (gps_nmea + StampedGPSPose::gps_id + "_yaw" == str)
+            {
+                ss >> yaw;
+                param_counter += 1;   
+            }
+            else if ("sensor_board_1_x" == str)
+            {
+                ss >> sbx;
+                param_counter += 1;
+            }
+            else if ("sensor_board_1_y" == str)
+            {
+                ss >> sby;
+                param_counter += 1;
+            }
+            else if ("sensor_board_1_yaw" == str)
+            {
+                ss >> sbyaw;
+                param_counter += 1;
+            }
+        }
+
+        if (6 == param_counter) 
+        {
+            g2o::SE2 sensor_board(sbx, sby, mrpt::math::wrapToPi<double>(sbyaw));
+            StampedGPSPose::inv_gps_pose.setTranslation(Eigen::Vector2d(x, y));
+            StampedGPSPose::inv_gps_pose.setRotation(Eigen::Rotation2Dd(mrpt::math::wrapToPi<double>(yaw)));
+            StampedGPSPose::inv_gps_pose = (sensor_board * StampedGPSPose::inv_gps_pose).inverse();            
+        }
+        else 
+        {
+            std::cout << "Could not read the gps parameters!" << std::endl;
+        }
+    }
+
+    is.close();
+}
 
 // the main process
 // it reads the entire log file and builds the hypergraph
@@ -1901,7 +1989,6 @@ bool GrabData::ParseLogFile(const std::string &input_filename)
     if (!logfile.is_open())
     {
         std::cerr << "Unable to open the input file: " << input_filename << "\n";
-
         return false;
     }
 
@@ -1960,17 +2047,17 @@ bool GrabData::ParseLogFile(const std::string &input_filename)
             // build a new GPS orientation message
             msg = new StampedGPSOrientation(msg_id);
         }
-        else if ("LASER_LDMRS_NEW" == tag)
+        else if ((use_sick_odometry or use_sick_loop) and "LASER_LDMRS_NEW" == tag)
         {
             // build a new sick message
             msg = new StampedSICK(msg_id);
         }
-        else if ("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3____" == tag)   // ZED eh FILE4. Os "_____" sao para nao considerar esta mensagem
+        else if ((use_bumblebee_odometry or use_bumblebee_loop) and "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3____" == tag)   // ZED eh FILE4. Os "_____" sao para nao considerar esta mensagem
         {
             // parse the Bumblebee stereo image message
             msg = new StampedBumblebee(msg_id);
         }
-        else if ("VELODYNE_PARTIAL_SCAN_IN_FILE" == tag || "VELODYNE_PARTIAL_SCAN" == tag)
+        else if ((use_velodyne_odometry or use_velodyne_loop) and ("VELODYNE_PARTIAL_SCAN_IN_FILE" == tag or "VELODYNE_PARTIAL_SCAN" == tag))
         {
             // build a new velodyne message
             msg = new StampedVelodyne(msg_id);
@@ -2024,7 +2111,6 @@ bool GrabData::ParseLogFile(const std::string &input_filename)
 // parser
 void GrabData::BuildHyperGraph()
 {
-
     if (!raw_messages.empty())
     {
         // sort all the messages by the timestamp
@@ -2043,32 +2129,51 @@ void GrabData::BuildHyperGraph()
         // build the initial estimates
         BuildOdometryEstimates();
 
-        // build the visual odometry measurements
-        BuildVisualOdometryMeasures();
-
-        // build the visual odometry estimates
-        BuildVisualOdometryEstimates();
+        if (use_bumblebee_odometry)
+        {
+            // build the visual odometry measurements
+            BuildVisualOdometryMeasures();
+         
+            // build the visual odometry estimates
+            BuildVisualOdometryEstimates();
+        }
 
         // the loop measurement is done after the gps synchronization
+        // For each velodyne message, the method searches for the GPS 
+        // poses with closest timestamp, and computes the velodyne pose
+        // if the car is in the GPS pose. It is a hack for plotting and 
+        // it does not interfere with the hypergraph optimization. 
         BuildLidarOdometryGPSEstimates();
 
-        // build the velodyne loop closure measurements
-        BuildLidarLoopClosureMeasures(velodyne_messages);
+        if (use_velodyne_loop) 
+        {
+            // build the velodyne loop closure measurements
+            BuildLidarLoopClosureMeasures(velodyne_messages);
+        }
 
-        // build the velodyne odometry measurements
-        BuildLidarOdometryMeasuresWithThreads(velodyne_messages);
+        if (use_velodyne_odometry)
+        {
+            // build the velodyne odometry measurements
+            BuildLidarOdometryMeasuresWithThreads(velodyne_messages);
+            
+            // build the velodyne odometry estimates
+            BuildRawLidarOdometryEstimates(velodyne_messages, used_velodyne);
+        }
 
-        // build the velodyne odometry estimates
-        BuildRawLidarOdometryEstimates(velodyne_messages, used_velodyne);
+        if (use_sick_loop)
+        {
+            // build the sick loop closure measMatrix4ures
+            BuildLidarLoopClosureMeasures(sick_messages);
+        }
 
-        // build the sick loop closure measMatrix4ures
-        BuildLidarLoopClosureMeasures(sick_messages);
+        if (use_sick_odometry)
+        {
+            // build the sick odometry measurements
+            BuildLidarOdometryMeasuresWithThreads(sick_messages);
 
-        // build the sick odometry measurements
-        BuildLidarOdometryMeasuresWithThreads(sick_messages);
-
-        // build the sick odometry estimates
-        BuildRawLidarOdometryEstimates(sick_messages, used_sick);
+            // build the sick odometry estimates
+            BuildRawLidarOdometryEstimates(sick_messages, used_sick);
+        }
     }
 }
 

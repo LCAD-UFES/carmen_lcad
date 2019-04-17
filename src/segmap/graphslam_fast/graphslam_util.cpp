@@ -11,10 +11,12 @@
 #include "edge_gps_2D.h"
 
 #include <Eigen/Core>
-#include <carmen/segmap_util.h>
 #include "graphslam_util.h"
+#include <carmen/ackerman_motion_model.h>
+
 
 using namespace g2o;
+using namespace std;
 using namespace Eigen;
 
 

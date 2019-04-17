@@ -1,18 +1,17 @@
-- Instruções do README:
+Resumo:
+
+Código para calibração entre câmera e LIDAR. Indicado para ajuste fino, pois necessita de um chute inicial já próximo do valor
+otimizado. No artigo correspondente, indica-se que é mais efetivo quando as imagens utilizadas possuem muitos objetos próximos.
+Nos testes realizados, mesmo com muitas imagens, o principal erro visível é no pitch, principalmente em objetos no alto.
+
+Vídeo contendo resultados em: https://youtu.be/WYltBETjuuM
+
+Ver adequações necessárias no código original no arquivo modificações.txt. Outras modificações foram feitas ao longo dos testes
+(ver commits no Github).
+
+- Instruções do README oficial:
 1. Go to build/ and run "cmake ../". It will generate the 
    required make files.
-  
-Modificação 1: arquivo mi-extrinsic-calib-1.0/src/calibration/Calibration.cpp
-. Trocar linhas 278 e 279 por:
-cv::Mat outMat = cv::cvarrToMat(out);
-cv::Mat imageMat = cv::cvarrToMat(iplimage);
-
-Modificação 2: arquivo mi-extrinsic-calib-1.0/src/calibration/Calibration.h
-. Trocar linhas 13 e 14 por:
-#include <opencv2/opencv.hpp>
-. No meu caso foi necessário por estar usando versão mais recente do OpenCV (versão 3.1.0)
-
-
 2. Run "make". It will generate the binary "mi-extrinsic-calib"
      in the directory bin/
 

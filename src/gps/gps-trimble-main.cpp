@@ -60,6 +60,10 @@
 //#define TCP_IP_PORT				"5018"
 #define INCOME_DATA_BUFFER_SIZE	1000
 
+#define GPS_REACH1 2
+#define GPS_REACH2 3
+
+
 int socketfd;
 
 
@@ -125,6 +129,7 @@ parse_hdt_info(char *first_nmea_string_end)
 
 	return (carmen_gps_parse_data(second_nmea_string_begining, strlen(second_nmea_string_begining)));
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -151,18 +156,18 @@ publish_carmen_gps_gphdt_message(int gps_number)
 int
 publish_carmen_gps_gpgga_message(int gps_number)
 {
-	static double previous_utc_gpgga = -1.0;
+//	static double previous_utc_gpgga = -1.0;
 	IPC_RETURN_TYPE err = IPC_OK;
 
 	if (carmen_extern_gpgga_ptr != NULL)
 	{
-		if (carmen_extern_gpgga_ptr->utc == previous_utc_gpgga)
-			return (0);
+//		if (carmen_extern_gpgga_ptr->utc == previous_utc_gpgga)
+//			return (0);
 
 		//presention_mode force GPS quality to the viewer3D shows velodyne message in indoor
 //		carmen_extern_gpgga_ptr->gps_quality = 4;
 
-		previous_utc_gpgga = carmen_extern_gpgga_ptr->utc;
+//		previous_utc_gpgga = carmen_extern_gpgga_ptr->utc;
 		carmen_extern_gpgga_ptr->nr = gps_number;
 
 		err = IPC_publishData (CARMEN_GPS_GPGGA_MESSAGE_NAME, carmen_extern_gpgga_ptr);
@@ -298,8 +303,8 @@ get_socketfd(char *address, char *port)
 int
 try_to_establish_socket_with_gps(int argc, char **argv)
 {
-	char* address = (char*) (TCP_IP_ADDRESS);
-	char* port = (char*) (TCP_IP_PORT);
+	char *address = (char *) (TCP_IP_ADDRESS);
+	char *port = (char *) (TCP_IP_PORT);
 	int gps_number = 1;
 
 	if (argc == 1)
@@ -312,7 +317,7 @@ try_to_establish_socket_with_gps(int argc, char **argv)
 	else if (argc > 3)
 	{
 		gps_number = atoi(argv[1]);
-		if ((gps_number != 2) && (gps_number != 3))
+		if ((gps_number != GPS_REACH1) && (gps_number != GPS_REACH2))
 		{
 			printf("Wrong gps_number parameter. See usage above.\n");
 			exit(1);

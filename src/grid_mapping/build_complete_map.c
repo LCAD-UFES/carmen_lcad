@@ -41,7 +41,7 @@ get_map_origin_by_filename(char *filename, double *x_origin, double *y_origin)
 	div_char = strrchr(map_name, '_');
 
 	if (div_char != NULL && (map_name[0] == 'm' || map_name[0] == 'g' || map_name[0] == 's' || map_name[0] == '2' || map_name[0] == 'c'
-			|| map_name[0] == 'u' || map_name[0] == 'o' || map_name[0] == 'e'))
+			|| map_name[0] == 'u' || map_name[0] == 'o' || map_name[0] == 'e' || (map_name[0] >= 'h' && map_name[0] <= 'l')))
 	{
 		aux = strrchr(map_name, '.');
 

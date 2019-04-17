@@ -1,0 +1,442 @@
+YELLOW_COLOR=\033[1;33m
+LIGHT_CYAN_COLOR=\033[1;36m
+NO_COLOR=\033[0m
+
+banner = $(SILENT) \
+	echo ; \
+	echo "****************************************************************" ; \
+	echo "* Module  : "$(MODULE_NAME) ; \
+	echo "* Path    : "`pwd` ; \
+	echo "* Comment : "$(MODULE_COMMENT) ; \
+	echo "****************************************************************" ; \
+
+subdir_recurse = $(SILENT) \
+	for i in $(SUBDIRS) xxxx ; do \
+		if [ -d $$i ] ; then \
+			if ! $(MAKE) -C $$i $@ ; then \
+                                exit -1; \
+                        fi; \
+		fi \
+	done
+
+install_includes = $(SILENT) \
+	for i in $(PUBLIC_INCLUDES) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(INC_DIR)/carmen/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(INC_DIR)/carmen" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(INC_DIR)/carmen/$$i ; \
+			$(LN) -s $$dir/$$i $(INC_DIR)/carmen/$$i ; \
+		fi; \
+	done 
+
+install_libraries = $(SILENT) \
+	for i in $(PUBLIC_LIBRARIES) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(LIB_DIR)/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(LIB_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(LIB_DIR)/$$i ; \
+			$(LN) -s $$dir/$$i $(LIB_DIR)/$$i ; \
+		fi; \
+	done 
+
+install_libraries_so = \
+	for i in $(PUBLIC_LIBRARIES_SO) xxxx ; do \
+		if test -f $$i.1 && ! $(NEWER) $(SHARED_DIR)/$$i $$i.1 ; then \
+			echo "    ---- Copying $$i to $(SHARED_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(SHARED_DIR)/$$i ; \
+			$(LN) -s $$dir/$$i.1 $(SHARED_DIR)/$$i ; \
+		fi; \
+	done 
+
+install_binaries = $(SILENT) \
+	for i in $(PUBLIC_BINARIES) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(BIN_DIR)/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(BIN_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(BIN_DIR)/$$i ; \
+			$(LN) -s $$dir/$$i $(BIN_DIR)/$$i ; \
+		fi; \
+	done 
+
+
+
+install_manpages = $(SILENT) \
+	for i in $(MAN_PAGES) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(MAN_DIR)/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(MAN_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(MAN_DIR)/$$i ; \
+			$(LN) -s $$dir/$$i $(MAN_DIR)/$$i ; \
+		fi; \
+	done
+
+install_glades = $(SILENT) \
+	for i in $(GLADE_FILES) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(GLADE_DIR)/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(GLADE_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(GLADE_DIR)/$$i ; \
+			$(CP) $$dir/$$i $(GLADE_DIR)/$$i ; \
+		fi; \
+	done 
+	
+compile_mae = $(SILENT) \
+	for i in $(MAE_FILES) xxxx ; do \
+		if test -f $$i; then \
+			output=`echo $$i | cut -d'.' -f 1`; \
+			echo "---- Compiling $$i to $$output.c ("mae")"; \
+			$(MAEHOME)/bin/netcomp -o $$output < $$i; \
+		fi; \
+	done
+
+clean_mae = $(SILENT) \
+        for i in $(MAE_FILES) xxxx ; do \
+                if test -f $$i; then \
+                        output=`echo $$i | cut -d'.' -f 1`; \
+                        echo "---- Cleaning $$output MAE generated files ("mae")"; \
+                        rm -rf $$output.c ; \
+			rm -rf $$output.h ; \
+                fi; \
+        done
+
+global_install_includes = $(SILENT) \
+	for i in $(PUBLIC_INCLUDES) xxxx ; do \
+		if test -f $$i && \
+		   ! $(NEWER) $(GLOBAL_INC_DIR)/carmen/$$i $$i ; then \
+			echo \
+			 "    ---- Copying $$i to $(GLOBAL_INC_DIR)/carmen" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(GLOBAL_INC_DIR)/carmen/$$i ; \
+			$(CP) $$dir/$$i $(GLOBAL_INC_DIR)/carmen/$$i ; \
+		fi; \
+	done 
+
+global_install_libraries = $(SILENT) \
+	for i in $(PUBLIC_LIBRARIES) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(GLOBAL_LIB_DIR)/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(GLOBAL_LIB_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(GLOBAL_LIB_DIR)/$$i ; \
+			$(CP) $$dir/$$i $(GLOBAL_LIB_DIR)/$$i ; \
+		fi; \
+	done 
+
+global_install_libraries_so = $(SILENT) \
+	for i in $(PUBLIC_LIBRARIES_SO) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(GLOBAL_SHARED_DIR)/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(GLOBAL_SHARED_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(GLOBAL_SHARED_DIR)/$$i ; \
+			$(CP) $$dir/$$i $(GLOBAL_SHARED_DIR)/$$i ; \
+		fi; \
+	done 
+
+global_install_binaries = $(SILENT) \
+	for i in $(PUBLIC_BINARIES) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(GLOBAL_BIN_DIR)/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(GLOBAL_BIN_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(GLOBAL_BIN_DIR)/$$i ; \
+			$(CP) $$dir/$$i $(GLOBAL_BIN_DIR)/$$i ; \
+		fi; \
+	done 
+
+global_install_manpages = $(SILENT) \
+	for i in $(MAN_PAGES) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(GLOBAL_MAN_DIR)/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(GLOBAL_MAN_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(GLOBAL_MAN_DIR)/$$i ; \
+			$(CP) $$dir/$$i $(GLOBAL_MAN_DIR)/$$i ; \
+		fi; \
+	done
+
+remove_includes = $(SILENT) \
+	for i in $(PUBLIC_INCLUDES) xxxx ; do \
+		if test ! "$$i" = "xxxx" ; then \
+			echo "    ---- Removing $$i from $(INC_DIR)/carmen" ; \
+			$(RM) -f $(INC_DIR)/carmen/$$i ; \
+		fi ; \
+	done 
+
+remove_libraries = $(SILENT) \
+	for i in $(PUBLIC_LIBRARIES) xxxx ; do \
+		if test ! "$$i" = "xxxx" ; then \
+			echo "    ---- Removing $$i from $(LIB_DIR)" ; \
+			$(RM) -f $(LIB_DIR)/$$i ; \
+		fi ; \
+	done 
+
+remove_libraries_so = $(SILENT) \
+	for i in $(PUBLIC_LIBRARIES_SO) xxxx ; do \
+		if test ! "$$i" = "xxxx" ; then \
+			echo "    ---- Removing $$i from $(SHARED_DIR)" ; \
+			$(RM) -f $(SHARED_DIR)/$$i ; \
+		fi ; \
+	done 
+
+remove_binaries = $(SILENT) \
+	for i in $(PUBLIC_BINARIES) xxxx ; do \
+		if test ! "$$i" = "xxxx" ; then \
+			echo "    ---- Removing $$i from $(BIN_DIR)" ; \
+			$(RM) -f $(BIN_DIR)/$$i ; \
+		fi ; \
+	done 
+
+remove_manpages = $(SILENT) \
+	for i in $(MAN_PAGES) xxxx ; do \
+		if test ! "$$i" = "xxxx" ; then \
+			echo "    ---- Removing $$i from $(MAN_DIR)" ; \
+			$(RM) -f $(MAN_DIR)/$$i ; \
+		fi ; \
+	done
+
+global_remove_includes = $(SILENT) \
+	for i in $(PUBLIC_INCLUDES) xxxx ; do \
+		if test ! "$$i" = "xxxx" ; then \
+			echo "    ---- Removing $$i from $(GLOBAL_INC_DIR)/carmen" ; \
+			$(RM) -f $(GLOBAL_INC_DIR)/carmen/$$i ; \
+		fi ; \
+	done 
+
+global_remove_libraries = $(SILENT) \
+	for i in $(PUBLIC_LIBRARIES) xxxx ; do \
+		if test ! "$$i" = "xxxx" ; then \
+			echo "    ---- Removing $$i from $(GLOBAL_LIB_DIR)" ; \
+			$(RM) -f $(GLOBAL_LIB_DIR)/$$i ; \
+		fi ; \
+	done 
+
+global_remove_binaries = $(SILENT) \
+	for i in $(PUBLIC_BINARIES) xxxx ; do \
+		if test ! "$$i" = "xxxx" ; then \
+			echo "    ---- Removing $$i from $(GLOBAL_BIN_DIR)" ; \
+			$(RM) -f $(GLOBAL_BIN_DIR)/$$i ; \
+		fi ; \
+	done 
+
+global_remove_manpages = $(SILENT) \
+	for i in $(MAN_PAGES) xxxx ; do \
+		if test ! "$$i" = "xxxx" ; then \
+			echo "    ---- Removing $$i from $(GLOBAL_MAN_DIR)" ; \
+			$(RM) -f $(GLOBAL_MAN_DIR)/$$i ; \
+		fi ; \
+	done
+
+libraries:
+	$(SILENT) for i in $(filter %.a, $(TARGETS)) $(filter %.so, $(TARGETS)) xxxx ; do \
+		if test ! "$$i" = "xxxx" ; then \
+			if ! $(MAKE) $$i ; then \
+                                exit -1; \
+                        fi; \
+		fi ; \
+	done 
+
+binaries:
+	$(SILENT) for i in $(filter-out %.a, $(TARGETS)) xxxx ; do \
+		if test ! "$$i" = "xxxx" ; then \
+			if ! $(MAKE) $$i ; then \
+                                exit -1; \
+                        fi; \
+		fi ; \
+	done 
+
+phase1:
+	$(subdir_recurse)
+	$(banner)
+	$(ECHO) ""
+	(>&2 echo "${YELLOW_COLOR}Entering : "`pwd`"${NO_COLOR}")
+	$(ECHO) "  --> Starting make"
+	$(compile_mae)
+	$(install_includes)
+	$(install_manpages)
+ifdef CARMEN_TEST
+ifneq (Makefile.depend, $(wildcard Makefile.depend))
+	$(SILENT) $(MAKE) depend  2>> error.out
+endif
+	$(SILENT) $(MAKE) libraries  2>> error.out
+else
+ifneq (Makefile.depend, $(wildcard Makefile.depend))
+	$(SILENT) $(MAKE) depend
+endif
+	$(SILENT) $(MAKE) libraries
+endif
+	$(install_libraries)
+	$(ECHO) "  <-- Make done"
+	(>&2 echo "${LIGHT_CYAN_COLOR}Leaving  : "`pwd`"${NO_COLOR}")
+
+phase2:
+	$(subdir_recurse)
+	$(banner)
+	$(ECHO) ""
+	(>&2 echo "${YELLOW_COLOR}Entering : "`pwd`"${NO_COLOR}")
+	$(ECHO) "  --> Starting make"
+ifdef CARMEN_TEST
+	$(SILENT) $(MAKE) binaries 2>> error.out
+else
+	$(SILENT) $(MAKE) binaries
+endif
+	$(install_binaries)
+	$(ECHO) "  <-- Make done"
+	(>&2 echo "${LIGHT_CYAN_COLOR}Leaving  : "`pwd`"${NO_COLOR}")
+
+phase3:
+	$(subdir_recurse)
+	$(install_libraries_so)
+
+phase4:
+	$(subdir_recurse)
+
+
+all:
+	$(subdir_recurse)
+	$(banner)
+	$(ECHO) ""
+	(>&2 echo "${YELLOW_COLOR}Entering : "`pwd`"${NO_COLOR}")
+	$(ECHO) "  --> Starting make"
+	$(compile_mae)
+	$(install_includes)
+	$(install_manpages)
+ifdef CARMEN_TEST
+ifneq (Makefile.depend, $(wildcard Makefile.depend))
+	$(SILENT) $(MAKE) depend 2>> error.out
+endif
+	$(SILENT) $(MAKE) libraries 2>> error.out
+else
+ifneq (Makefile.depend, $(wildcard Makefile.depend))
+	$(SILENT) $(MAKE) depend
+endif
+	$(SILENT) $(MAKE) libraries
+endif
+	$(install_libraries)
+	$(install_libraries_so)
+ifdef CARMEN_TEST
+	$(SILENT) $(MAKE) binaries 2>> error.out 
+else
+	$(SILENT) $(MAKE) binaries
+endif
+	$(install_binaries)
+	$(install_glades)
+	$(ECHO) "  <-- Make done"
+	(>&2 echo "${LIGHT_CYAN_COLOR}Leaving  : "`pwd`"${NO_COLOR}")
+
+install:
+	$(subdir_recurse)
+	$(banner)
+	$(global_install_libraries)
+	$(global_install_binaries)
+	$(global_install_includes)
+
+clean:
+	$(clean_mae)
+	$(subdir_recurse)
+	$(ECHO) "    ---- Cleaning up "$(MODULE_NAME)
+	$(SILENT) $(RM) *.o *.a *.so *.exe core a.out error.out Makefile.depend Makefile.depend.bak $(TARGETS) $(patsubst %.class,'%.class',$(CLASS_FILES))
+
+relink:
+	$(subdir_recurse)
+	$(SILENT) $(RM) $(filter-out %.a, $(TARGETS))
+	$(SILENT) for i in $(filter-out %.a, $(TARGETS)) ; do \
+		$(MAKE) $$i ; \
+	done
+
+distclean:
+	$(subdir_recurse)
+	$(ECHO) "    ---- Cleaning up "$(MODULE_NAME)
+	$(SILENT) $(RM) *.o *.a *.so *.exe *~ core a.out
+	$(SILENT) $(RM) Makefile.depend Makefile.depend.bak $(TARGETS) $(patsubst %.class,'%.class',$(CLASS_FILES))
+	$(remove_includes)
+	$(remove_manpages)
+	$(remove_libraries_so)
+	$(remove_libraries)
+	$(remove_binaries)
+	$(RM) core gmon.out *~ .\#* \#*
+
+export:
+	$(subdir_recurse)
+	$(install_includes)
+
+dep depend:
+	$(subdir_recurse)
+	$(ECHO) "    ---- Assigning dependencies in "$(MODULE_NAME)
+	$(SILENT) $(TOUCH) Makefile.depend
+	$(SILENT) if test ! "$(SOURCES)x" = x ; then \
+		$(CC) -M $(SOURCES) $(IFLAGS) $(filter -D%, $(CFLAGS)) > Makefile.depend ; \
+	fi
+	$(SILENT) $(RM) Makefile.depend.bak
+
+debug:
+	$(SILENT) $(MAKE) CARMEN_DEBUG=1 all
+checkup:
+	$(ECHO) "------ result of "$(MODULE_NAME)
+	$(CARMEN_HOME)/src/checkup.sh $(MODULE_NAME)
+loud:
+	$(SILENT) $(MAKE) MAKEFLAGS= LOUD=1 all
+
+
+# This isn't the rule that adds a directory to the tar ball.
+# That happens in the top-level tar rule using recursion.
+# All this does is remove the unwanted CVS and .cvsignore files.
+
+tar-clean:
+	$(subdir_recurse)
+	$(ECHO) "  Adding "$(MODULE_NAME)"..."
+	dir=$${PWD/#*carmen/}; \
+	cd $(CARMEN_HOME)/..; \
+	tar --delete -f $(CARMEN_HOME)/../carmen.tar carmen$$dir/CVS ; \
+	if [ -f carmen/$$dir/.cvsignore ] ; then \
+		tar --delete -f $(CARMEN_HOME)/../carmen.tar \
+		carmen$$dir/.cvsignore ; \
+	fi 
+
+.SUFFIXES: .c .o .a .so .C
+
+.PHONY:	   all clean dep debug
+
+%.o:	%.cu
+	$(ECHO) "    ---- Compiling $< to $@ ("$(NVCC)")"
+	$(SILENT) $(NVCC) $(CUDAFLAGS) -c $< -o $@
+
+%.o:	%.c
+	$(ECHO) "    ---- Compiling $< to $@ ("$(CC)")"
+	$(SILENT) $(CC) $(CFLAGS) $(IFLAGS) -c $< -o $@
+
+%.a:	
+	$(ECHO) "    ---- Archiving $^ into $@ ("$(AR)")"
+	$(SILENT) $(AR) $@ $^
+	$(SILENT) $(RANLIB) $@
+
+%.o:	%.C
+	$(ECHO) "    ---- Compiling $< to $@ ("$(CXX)")"
+	$(SILENT) $(CXX) $(CXXFLAGS) $(IFLAGS) -c $< -o $@
+
+%.o:	%.cpp
+	$(ECHO) "    ---- Compiling $< to $@ ("$(CXX)")"
+	$(SILENT) $(CXX) $(CXXFLAGS) $(IFLAGS) -c $< -o $@
+
+
+%.o:	%.cc
+	$(ECHO) "    ---- Compiling $< to $@ ("$(CXX)")"
+	$(SILENT) $(CXX) $(CXXFLAGS) $(IFLAGS) -c $< -o $@
+
+%.so.1:	
+	$(ECHO) "    ---- Archiving $^ into $@ ("$(CXX)")"
+	$(SILENT) $(CXX) -shared -o $@ $^
+
+%.so:	
+	$(ECHO) "    ---- Archiving $^ into $@ ("$(CXX)")"
+	$(SILENT) $(CXX) -shared -o $@ $^
+
+%.doxygen:	
+	$(ECHO) "    ---- Compiling $< (Doxygen)"
+	$(SILENT) $(DOXYGEN) $<
+
+%:	
+	$(ECHO) "    ---- Linking $^ to $@ ("$(LINK)")"
+	$(SILENT) $(LINK) $(CFLAGS) $(IFLAGS) $(filter %.o, $^) $(filter %.a, $^) -o $@ -L. $(patsubst lib%.a,-l%,$(filter %.a, $^)) $(LFLAGS) $(LFLAGS_POST)
+
+
+ifeq (Makefile.depend, $(wildcard Makefile.depend))
+include Makefile.depend
+endif

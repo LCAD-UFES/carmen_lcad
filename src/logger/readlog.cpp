@@ -1086,6 +1086,32 @@ char* carmen_string_to_xsens_quat_message(char* string, carmen_xsens_global_quat
 	return current_pos;
 }
 
+char* carmen_string_to_pi_imu_message(char* string, carmen_pi_imu_message_t* msg)
+{
+	char* current_pos = string;
+	if (strncmp(current_pos, "PI_IMU ", 7) == 0)
+		current_pos = carmen_next_word(current_pos);
+
+	msg->imu_vector->accel.x = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector->accel.y = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector->accel.z = CLF_READ_DOUBLE(&current_pos);
+
+	msg->imu_vector->magnetometer.x = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector->magnetometer.y = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector->magnetometer.z = CLF_READ_DOUBLE(&current_pos);
+
+	msg->imu_vector->gyro.x = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector->gyro.y = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector->gyro.z = CLF_READ_DOUBLE(&current_pos);
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+
+	copy_host_string(&msg->host, &current_pos);
+	//msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+
+	return current_pos;
+}
+
 char* carmen_string_to_xsens_matrix_message(char* string, carmen_xsens_global_matrix_message* msg)
 {
 	char* current_pos = string;
@@ -1292,14 +1318,19 @@ char* carmen_string_and_file_to_velodyne_partial_scan_message(char* string, carm
 
 	FILE *image_file = fopen(path, "rb");
 
-	for(i = 0; i < msg->number_of_32_laser_shots; i++)
+	if (image_file)
 	{
-		fread(&(msg->partial_scan[i].angle), sizeof(double), 1, image_file);
-	    fread(msg->partial_scan[i].distance, sizeof(short), 32, image_file);
-	    fread(msg->partial_scan[i].intensity, sizeof(char), 32, image_file);
-	}
+		for(i = 0; i < msg->number_of_32_laser_shots; i++)
+		{
+			fread(&(msg->partial_scan[i].angle), sizeof(double), 1, image_file);
+			fread(msg->partial_scan[i].distance, sizeof(short), 32, image_file);
+			fread(msg->partial_scan[i].intensity, sizeof(char), 32, image_file);
+		}
 
-    fclose(image_file);
+		fclose(image_file);
+	}
+	else
+		msg->number_of_32_laser_shots = 0;
 
 	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
 	copy_host_string(&msg->host, &current_pos);
@@ -1609,10 +1640,15 @@ char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string
 	{
 		FILE *image_file = fopen(path, "rb");
 
-		fread(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
-		fread(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
+		if (image_file)
+		{
+			fread(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
+			fread(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
 
-		fclose(image_file);
+			fclose(image_file);
+		}
+		else
+			msg->image_size = 0;
 	}
 
 	msg->timestamp = CLF_READ_DOUBLE(&current_pos);

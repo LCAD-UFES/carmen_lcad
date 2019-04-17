@@ -99,6 +99,8 @@ carmen_bumblebee_basic_stereoimage_message bumblebee_basic_stereoimage1, bumbleb
 
 carmen_web_cam_message web_cam_message;
 
+carmen_pi_imu_message_t pi_imu_message;
+
 carmen_base_ackerman_motion_command_message ackerman_motion_message;
 carmen_ultrasonic_sonar_sensor_message ultrasonic_message;
 
@@ -151,6 +153,7 @@ static logger_callback_t logger_callbacks[] =
 	{(char *) "VELODYNE_GPS", (char *) CARMEN_VELODYNE_GPS_MESSAGE_NAME, (converter_func) carmen_string_to_velodyne_gps_message, &velodyne_gps, 0},
 	{(char *) "XSENS_EULER", (char *) CARMEN_XSENS_GLOBAL_EULER_NAME, (converter_func) carmen_string_to_xsens_euler_message, &xsens_euler, 0},
 	{(char *) "XSENS_QUAT", (char *) CARMEN_XSENS_GLOBAL_QUAT_NAME, (converter_func) carmen_string_to_xsens_quat_message, &xsens_quat, 0},
+	{(char *) "PI_IMU", (char *) CARMEN_PI_IMU_NAME, (converter_func) carmen_string_to_pi_imu_message, &pi_imu_message, 0},
 	{(char *) "XSENS_MATRIX", (char *) CARMEN_XSENS_GLOBAL_MATRIX_NAME, (converter_func) carmen_string_to_xsens_matrix_message, &xsens_matrix, 0},
 	{(char *) "XSENS_MTIG", (char *) CARMEN_XSENS_MTIG_NAME, (converter_func) carmen_string_to_xsens_mtig_message, &xsens_mtig, 0},
 	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE1", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE1_NAME, (converter_func) carmen_string_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage1, 0},
@@ -272,6 +275,38 @@ update_playback_pose(char *message_name, void *message_data)
 }
 
 
+bool
+check_in_file_message(char *logger_message_name, char *logger_message_line)
+{
+	bool error = false;
+
+	error |= ((strcmp(logger_message_name, "VELODYNE_PARTIAL_SCAN_IN_FILE") == 0) && (velodyne_partial_scan.number_of_32_laser_shots <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE1") == 0) && (bumblebee_basic_stereoimage1.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE2") == 0) && (bumblebee_basic_stereoimage2.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3") == 0) && (bumblebee_basic_stereoimage3.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE4") == 0) && (bumblebee_basic_stereoimage4.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE5") == 0) && (bumblebee_basic_stereoimage5.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE6") == 0) && (bumblebee_basic_stereoimage6.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE7") == 0) && (bumblebee_basic_stereoimage7.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE8") == 0) && (bumblebee_basic_stereoimage8.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE9") == 0) && (bumblebee_basic_stereoimage9.image_size <= 0));
+
+	if (!error)
+		return true;
+
+	static double last_update = 0.0;
+	double current_time = carmen_get_time();
+
+	if (current_time - last_update > 2.0)
+	{
+		fprintf(stderr, "\nFILE NOT FOUND: %s\n", logger_message_line);
+		last_update = current_time;
+	}
+
+	return false;
+}
+
+
 int
 read_message(int message_num, int publish, int no_wait)
 {
@@ -316,6 +351,7 @@ read_message(int message_num, int publish, int no_wait)
 						wait_for_timestamp(playback_timestamp);
 
 					int do_not_publish = !g_publish_odometry && (strcmp(logger_callbacks[i].ipc_message_name, CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME) == 0);
+					do_not_publish |= !check_in_file_message(command, line);
 					if (!do_not_publish)
 						IPC_publishData(logger_callbacks[i].ipc_message_name, logger_callbacks[i].message_data);
 				}
@@ -635,6 +671,9 @@ void define_ipc_messages(void)
 	err = IPC_defineMsg(CARMEN_XSENS_MTIG_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_MTIG_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_MTIG_NAME);
 
+	err = IPC_defineMsg(CARMEN_PI_IMU_NAME, IPC_VARIABLE_LENGTH, CARMEN_PI_IMU_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_PI_IMU_NAME);
+
 	for (int camera = 1; camera <= 9; camera++)
 		carmen_bumblebee_basic_define_messages(camera);
 
@@ -930,6 +969,7 @@ int main(int argc, char **argv)
 	memset(&xsens_quat, 0, sizeof(xsens_quat));
 	memset(&xsens_matrix, 0, sizeof(xsens_matrix));
 	memset(&xsens_mtig, 0, sizeof(xsens_mtig));
+	memset(&pi_imu_message, 0, sizeof(pi_imu_message));
 	memset(&bumblebee_basic_stereoimage1, 0, sizeof(bumblebee_basic_stereoimage1));
 	memset(&bumblebee_basic_stereoimage2, 0, sizeof(bumblebee_basic_stereoimage2));
 	memset(&bumblebee_basic_stereoimage3, 0, sizeof(bumblebee_basic_stereoimage3));

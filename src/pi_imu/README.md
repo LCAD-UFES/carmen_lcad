@@ -1,4 +1,4 @@
-# Istall Raspbian on the Raspberry PI
+# Install Raspbian on the Raspberry PI
 
 - Baixe a imagem do sistema RASPBIAN STRETCH WITH DESKTOP no site do raspberry (https://www.raspberrypi.org/downloads/raspbian/)
 Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de comando.
@@ -137,8 +137,8 @@ Below you can see that a device is connected to the i2c bus which is using the a
 ```ini
  interface eth0
 
- static ip_address=192.168.0.15/24
- static routers=192.168.0.1
+ static ip_address=192.168.1.15/24
+ static routers=192.168.1.1
  static domain_name_servers=8.8.8.8
 ```
 
@@ -157,4 +157,4 @@ Below you can see that a device is connected to the i2c bus which is using the a
  $ ifconfig
 ```
 
- The eth0 inet addr must be 192.168.0.15
+ The eth0 inet addr must be 192.168.1.15

@@ -54,6 +54,7 @@ static int log_motioncmds = 0;
 static int log_kinect = 1;
 static int log_xsens = 1;
 static int log_xsens_mtig = 1;
+static int log_imu_pi = 1;
 static int log_bumblebee = 1;
 static int log_web_cam = 1;
 static int log_bumblebee_frames_to_save = 1;
@@ -81,6 +82,7 @@ void get_logger_params(int argc, char** argv) {
     {"logger", "kinect",      			CARMEN_PARAM_ONOFF, &log_kinect, 0, NULL},
     {"logger", "xsens",       			CARMEN_PARAM_ONOFF, &log_xsens, 0, NULL},
     {"logger", "xsens_mtig",  			CARMEN_PARAM_ONOFF, &log_xsens_mtig, 0, NULL},
+	{"logger", "imu_pi",  				CARMEN_PARAM_ONOFF, &log_imu_pi, 0, NULL},
     {"logger", "bumblebee",   			CARMEN_PARAM_ONOFF, &log_bumblebee, 0, NULL},
     {"logger", "web_cam",   			CARMEN_PARAM_ONOFF, &log_web_cam, 0, NULL},
     {"logger", "bumblebee_frames_to_save", CARMEN_PARAM_INT, &log_bumblebee_frames_to_save, 0, NULL},
@@ -291,6 +293,12 @@ void xsens_quat_handler(carmen_xsens_global_quat_message *msg)
 {
   //fprintf(stderr, "xq");
   carmen_logwrite_write_xsens_quat(msg, outfile, carmen_get_time() - logger_starttime);
+}
+
+void pi_imu_handler(carmen_pi_imu_message_t *msg)
+{
+  //fprintf(stderr, "xq");
+	carmen_logwrite_write_pi_imu( msg, outfile, carmen_get_time() - logger_starttime);
 }
 
 void xsens_euler_handler(carmen_xsens_global_euler_message *msg){
@@ -788,6 +796,13 @@ int main(int argc, char **argv)
 		 (carmen_handler_t) visual_odometry_handler,
 		 CARMEN_SUBSCRIBE_ALL);
 
+  }
+
+  if (log_imu_pi)
+  {
+	  carmen_pi_imu_subscribe(NULL,
+			  (carmen_handler_t) pi_imu_handler,
+			  CARMEN_SUBSCRIBE_ALL);
   }
 
   if (log_sonar)

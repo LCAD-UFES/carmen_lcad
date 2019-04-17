@@ -18,8 +18,8 @@ PACKAGES = ipc global param_daemon proccontrol robot_ackerman_gui laser-new  	\
 	   path_interpolator_planner kinect ultrasonic 		\
 	   odometry_calibration utilities visual_tracker	\
 	   visual_car_tracking model_predictive_planner utilities \
-	   moving_objects_simulator zed_camera2 graphslam hypergraphsclam \
-	   neural_object_detector road_mapper can_dump traffic_light # tracker_opentld tracker voice_interface 
+	   moving_objects_simulator zed_camera2 graphslam hypergraphsclam pi_imu pi_camera \
+	   road_mapper can_dump traffic_light # tracker_opentld tracker voice_interface neural_object_detector
 
 ifndef NO_CPP
 PACKAGES += carmenpp

@@ -519,6 +519,26 @@ void carmen_logwrite_write_xsens_quat(carmen_xsens_global_quat_message* msg,
 			msg->timestamp, msg->host, timestamp);
 }
 
+void carmen_logwrite_write_pi_imu(carmen_pi_imu_message_t* msg,
+			       carmen_FILE *outfile,
+			       double timestamp)
+{
+	carmen_fprintf(outfile, "PI_IMU ");
+	carmen_fprintf(outfile, "%lf ", msg->imu_vector->accel.x);
+	carmen_fprintf(outfile, "%lf ", msg->imu_vector->accel.y);
+	carmen_fprintf(outfile, "%lf ", msg->imu_vector->accel.z);
+
+	carmen_fprintf(outfile, "%lf ", msg->imu_vector->magnetometer.x);
+	carmen_fprintf(outfile, "%lf ", msg->imu_vector->magnetometer.y);
+	carmen_fprintf(outfile, "%lf ", msg->imu_vector->magnetometer.z);
+
+	carmen_fprintf(outfile, "%lf ", msg->imu_vector->gyro.x);
+	carmen_fprintf(outfile, "%lf ", msg->imu_vector->gyro.y);
+	carmen_fprintf(outfile, "%lf ", msg->imu_vector->gyro.z);
+
+	carmen_fprintf(outfile, "%lf %s %lf\n", msg->timestamp, msg->host, timestamp);
+}
+
 void carmen_logwrite_write_xsens_matrix(carmen_xsens_global_matrix_message* msg,
 		carmen_FILE *outfile, double timestamp)
 {

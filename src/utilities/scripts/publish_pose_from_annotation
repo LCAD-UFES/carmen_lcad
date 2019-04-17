@@ -1,0 +1,14 @@
+USAGE="Usage: $0 <annotation_file> <line_number>"
+FILE=$1
+LINE=$2
+! [ $# -eq 2 ] && echo "$USAGE" && exit
+! [ -f $FILE ] && echo "$FILE: No such file" && echo "$USAGE" && exit
+! [[ $LINE =~ ^[0-9]+$ ]] || [[ $LINE -eq 0 ]] && echo "$LINE: Not a valid line number" && echo "$USAGE" && exit
+MAXLINES=`wc -l $FILE | cut -d" " -f 1`
+[ $LINE -gt $MAXLINES ] && echo "File $FILE has only $MAXLINES lines" && echo "$USAGE" && exit
+LINETEXT=`head -n $LINE $FILE | tail -n 1`
+THETA=`echo $LINETEXT | cut -d" " -f 4`
+X=`echo $LINETEXT | cut -d" " -f 5`
+Y=`echo $LINETEXT | cut -d" " -f 6`
+$CARMEN_HOME/bin/util_publish_initial_pose $X $Y $THETA
+
