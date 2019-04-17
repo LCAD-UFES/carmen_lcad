@@ -17,36 +17,28 @@ using namespace pcl;
 int
 main(int argc, char **argv)
 {
-	int map_type;
 	string log_path;
+	string map_path;
 
 	CommandLineArguments args;
+
 	add_default_slam_args(args);
 	add_default_sensor_preproc_args(args);
 	add_default_mapper_args(args);
+
 	args.add<int>("view,v", "Flag to set visualization on or off", 1);
+	args.add<int>("clean_map", "Flag for choosing to delete or not previous maps of the same region", 0);
+
 	args.save_config_file(default_data_dir() + "/mapper_config.txt");
 	args.parse(argc, argv);
 
 	log_path = args.get<string>("log_path");
+	map_path = args.get<string>("map_path");
 
-	SensorPreproc::IntensityMode i_mode;
-	i_mode = parse_intensity_mode(args.get<string>("intensity_mode"));
+	if (args.get<int>("clean_map") && boost::filesystem::exists(map_path))
+		boost::filesystem::remove_all(map_path);
 
-	if (i_mode == SensorPreproc::SEMANTIC)
-		map_type = GridMapTile::TYPE_SEMANTIC;
-	else
-		map_type = GridMapTile::TYPE_VISUAL;
-
-//	if (boost::filesystem::exists(args.get<string>("map_path")))
-//		boost::filesystem::remove_all(args.get<string>("map_path"));
-
-	GridMap map(args.get<string>("map_path"),
-							args.get<double>("tile_size"),
-							args.get<double>("tile_size"),
-							args.get<double>("resolution"),
-							map_type, 1);
-
+	GridMap map = create_grid_map(args, 1);
 	NewCarmenDataset *dataset = create_dataset(log_path, args.get<double>("camera_latency"), "graphslam");
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 

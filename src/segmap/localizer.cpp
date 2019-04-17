@@ -154,23 +154,24 @@ int
 main(int argc, char **argv)
 {
 	CommandLineArguments args;
+
 	add_default_slam_args(args);
 	add_default_sensor_preproc_args(args);
 	add_default_mapper_args(args);
 	add_default_localizer_args(args);
+
 	args.add<int>("view,v", "Flag to set visualization on or off", 1);
+
 	args.save_config_file(default_data_dir() + "/localizer_config.txt");
 	args.parse(argc, argv);
 
 	string log_path = args.get<string>("log_path");
 	NewCarmenDataset* dataset = create_dataset(log_path, args.get<double>("camera_latency"), "graphslam_to_map");
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
-
 	GridMap map = create_grid_map(args, 0);
 	ParticleFilter pf = create_particle_filter(args);
 
 	pf.seed(args.get<int>("seed"));
-
 	run_particle_filter(pf, map, dataset, preproc,
 											args.get<int>("step"),
 											args.get<double>("v_thresh"),

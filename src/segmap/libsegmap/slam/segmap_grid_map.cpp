@@ -77,13 +77,13 @@ GridMapTile::_initialize_derivated_values()
 		_unknown[3] = 1.;
 	}
 	else
-		exit(printf("Map type '%d' not found.\n", _map_type));
+		exit(printf("Map type '%d' not found.\n", (int) _map_type));
 }
 
 
 GridMapTile::GridMapTile(double point_y, double point_x,
                          double height_meters, double width_meters,
-                         double resolution, int map_type, string tiles_dir,
+                         double resolution, GridMapTile::MapType map_type, string tiles_dir,
                          int save_maps)
 {
 	// map tile origin
@@ -112,7 +112,7 @@ GridMapTile::~GridMapTile()
 
 
 const char*
-GridMapTile::type2str(int map_type)
+GridMapTile::type2str(MapType map_type)
 {
 	if (map_type == TYPE_SEMANTIC)
 		return "semantic";
@@ -142,7 +142,7 @@ GridMapTile::save()
 	fprintf(fptr, "hm: %lf\n", _hm);
 	fprintf(fptr, "wm: %lf\n", _wm);
 	fprintf(fptr, "m_by_pixel: %lf\n", _m_by_pixel);
-	fprintf(fptr, "map_type: %d\n", _map_type);
+	fprintf(fptr, "map_type: %d\n", (int) _map_type);
 
 	fclose(fptr);
 
@@ -197,7 +197,7 @@ GridMapTile::add_point(PointXYZRGB &p)
 			_map[pos + (_n_fields_by_cell - 1)] = 1;
 		}
 		else
-			exit(printf("Error: map_type '%d' not defined.\n", _map_type));
+			exit(printf("Error: map_type '%d' not defined.\n", (int) _map_type));
 	}
 }
 
@@ -267,7 +267,7 @@ GridMapTile::cell2color(double *cell_vals)
 		}
 	}
 	else
-		exit(printf("Error: map_type '%d' not defined.\n", _map_type));
+		exit(printf("Error: map_type '%d' not defined.\n", (int) _map_type));
 
 	return color;
 }
@@ -300,7 +300,9 @@ GridMapTile::to_image()
 }
 
 
-GridMap::GridMap(string tiles_dir, double tile_height_meters, double tile_width_meters, double resolution, int map_type, int save_maps)
+GridMap::GridMap(string tiles_dir, double tile_height_meters,
+								 double tile_width_meters, double resolution,
+								 GridMapTile::MapType map_type, int save_maps)
 {
 	_tiles_dir = tiles_dir;
 	_tile_height_meters = tile_height_meters;
@@ -348,7 +350,8 @@ GridMapTile*
 GridMap::_reload_tile(double x, double y)
 {
 	return new GridMapTile(y, x, _tile_height_meters,
-	                       _tile_width_meters, m_by_pixels, _map_type, _tiles_dir, _save_maps);
+	                       _tile_width_meters, m_by_pixels,
+												 _map_type, _tiles_dir, _save_maps);
 }
 
 
