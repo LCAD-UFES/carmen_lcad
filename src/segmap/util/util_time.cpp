@@ -5,14 +5,14 @@
 
 
 void
-TimeCounter::start()
+Timer::start()
 {
-	_start = TimeCounter::time();
+	_start = Timer::time();
 }
 
 
 double
-TimeCounter::time()
+Timer::time()
 {
 	double t;
 	struct timeval tv;
@@ -25,7 +25,7 @@ TimeCounter::time()
 
 
 double
-TimeCounter::ellapsed()
+Timer::ellapsed()
 {
-	return TimeCounter::time() - _start;
+	return Timer::time() - _start;
 }

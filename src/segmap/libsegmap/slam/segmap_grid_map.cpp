@@ -488,7 +488,7 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 					 SensorPreproc &preproc, double skip_velocity_threshold,
 					 int view_flag, int img_width)
 {
-	TimeCounter timer;
+	Timer timer;
 	DataSample *sample;
 	PointCloudViewer viewer;
 	vector<double> times;

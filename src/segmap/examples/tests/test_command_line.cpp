@@ -10,7 +10,7 @@ using namespace std;
 int
 main(int argc, char **argv)
 {
-	TimeCounter timer;
+	Timer timer;
 	vector<string> paths;
 	CommandLineArguments args;
 

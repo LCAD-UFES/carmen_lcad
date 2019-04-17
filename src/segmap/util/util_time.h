@@ -5,7 +5,7 @@
 #include <ctime>
 
 
-class TimeCounter
+class Timer
 {
 public:
 	void start();

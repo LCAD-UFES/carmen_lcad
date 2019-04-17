@@ -83,7 +83,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloudViewer s_viewer;
 	CarmenImageLoader iloader;
-	TimeCounter timer;
+	Timer timer;
 
 	Pose2d p0 = dataset->at(0)->gps;
 	pf.reset(p0.x, p0.y, p0.th);
