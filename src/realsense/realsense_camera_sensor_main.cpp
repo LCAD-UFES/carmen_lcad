@@ -36,6 +36,32 @@ carmen_bumblebee_publish_stereoimage_message(unsigned char *rawLeft, unsigned ch
     carmen_bumblebee_basic_publish_message(BUMBLEBEE_ID, &stereo_msg);
 }
 
+void
+save_extrinsics(rs2::pipeline_profile& selection)
+{
+	auto ir1_stream = selection.get_stream(RS2_STREAM_COLOR, 0);
+	auto ir2_stream = selection.get_stream(RS2_STREAM_DEPTH, 0);
+	rs2_extrinsics e = ir1_stream.get_extrinsics_to(ir2_stream);
+	std::ofstream myfile;
+	myfile.open ("extrinsicsColortoDepth.txt");
+	myfile << "rotation:";
+	myfile << std::endl;
+	for(int x=0;x<9;x++) 
+	{
+		if (x%3==0 && x>0)
+			myfile << std::endl;
+
+		myfile << e.rotation[x] << " ";
+	}
+	myfile << std::endl;
+	myfile << "translation:";
+	myfile << std::endl;
+	for(int z=0;z<3;z++) 
+	{
+		myfile << e.translation[z] << " ";
+	}
+	myfile.close();
+}
 
 // bool 
 // can_render(const rs2::frame& f) const
@@ -116,10 +142,10 @@ main(int argc, char **argv)
 
 	rs2::colorizer c;
 	
+	save_extrinsics(selection);
 	//rs2::align align_to_depth(RS2_STREAM_DEPTH);
 	//rs2::align align_to_color(RS2_STREAM_COLOR);
 
-	static bool first_time = true;
 	while (!stop_required)
 	{
 		unsigned char* depth_frame_data;
@@ -140,33 +166,6 @@ main(int argc, char **argv)
         
         if (depth_frame)
             depth_frame_data = (unsigned char*) c.colorize(depth_frame).get_data(); // Pointer to depth pixels
-
-		if(first_time)
-		{
-			auto ir1_stream = selection.get_stream(RS2_STREAM_COLOR, 0);
-			auto ir2_stream = selection.get_stream(RS2_STREAM_DEPTH, 0);
-			rs2_extrinsics e = ir1_stream.get_extrinsics_to(ir2_stream);
-			std::ofstream myfile;
-  			myfile.open ("extrinsicsColortoDepth.txt");
-			myfile << "rotation:";
-			myfile << std::endl;
-			for(int x=0;x<9;x++) 
-			{
-				if (x%3==0 && x>0)
-					myfile << std::endl;
-
-				myfile << e.rotation[x] << " ";
-			}
-			myfile << std::endl;
-			myfile << "translation:";
-			myfile << std::endl;
-			for(int z=0;z<3;z++) 
-			{
-  				myfile << e.translation[z] << " ";
-			}
-  			myfile.close();
-			first_time = false;	
-		}
 
 		carmen_bumblebee_publish_stereoimage_message(rgb_frame_data,depth_frame_data , rs_width, rs_height, 3);
         
