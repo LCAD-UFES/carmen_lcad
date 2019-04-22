@@ -4,10 +4,11 @@
  *  Created on: 15 de abr de 2019
  *      Author: marcelo
  */
+#include <carmen/carmen.h>
 #include <carmen/pi_imu_interface.h>
 #include <carmen/pi_imu_messages.h>
 #include <carmen/xsens_messages.h>
-#include <carmen/carmen.h>
+#include <carmen/xsens_interface.h>
 #include <math.h>
 
 carmen_pi_imu_message_t *pi_imu_msg;
@@ -87,7 +88,8 @@ accelToEuler()
     rollPitchYaw.z = 0;
 }
 
-carmen_quaternion_t multiplyQuaternion(carmen_quaternion_t qa, carmen_quaternion_t qb)
+carmen_quaternion_t
+multiplyQuaternion(carmen_quaternion_t qa, carmen_quaternion_t qb)
 {
 	carmen_quaternion_t qc;
 
@@ -146,7 +148,7 @@ conjugate(carmen_quaternion_t q)
 }
 
 carmen_quaternion_t
-calculatePose(const carmen_vector_3D_t& accel, const carmen_vector_3D_t& mag, float magDeclination)
+calculatePose(const carmen_vector_3D_t& mag, float magDeclination)
 {
     carmen_quaternion_t m;
     carmen_quaternion_t q;
@@ -222,7 +224,8 @@ update_imu_msg_with_true_data(carmen_pi_imu_message_t *msg)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-void fill_xsens_message(carmen_xsens_global_quat_message *xsens, carmen_quaternion_t quat)
+void
+fill_xsens_message(carmen_xsens_global_quat_message *xsens, carmen_quaternion_t quat)
 {
     xsens->m_acc.x = pi_imu_msg->imu_vector->accel.x;
     xsens->m_acc.y = pi_imu_msg->imu_vector->accel.y;
@@ -239,6 +242,19 @@ void fill_xsens_message(carmen_xsens_global_quat_message *xsens, carmen_quaterni
     xsens->quat_data.m_data[3] = quat.q3;
     xsens->timestamp = carmen_get_time();
     xsens->host = carmen_get_host();
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+void
+carmen_publish_xsens_quat_message(carmen_xsens_global_quat_message xsens_quat_message)
+{
+	IPC_RETURN_TYPE err = IPC_publishData(CARMEN_XSENS_GLOBAL_QUAT_NAME, &xsens_quat_message);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_XSENS_GLOBAL_QUAT_NAME);
 }
 
 int
@@ -258,7 +274,7 @@ main(int argc, char *argv[])
     carmen_quaternion_t imu_quaternion;
     
     update_imu_msg_with_true_data(pi_imu_msg);
-    imu_quaternion = calculatePose(pi_imu_msg->imu_vector->accel, pi_imu_msg->imu_vector->magnetometer, 0.);
+    imu_quaternion = calculatePose(pi_imu_msg->imu_vector->magnetometer, 0.);
     fill_xsens_message(&xsens_quat_message, imu_quaternion);
 	carmen_publish_xsens_quat_message(xsens_quat_message);
     

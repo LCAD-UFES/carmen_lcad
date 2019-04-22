@@ -886,7 +886,7 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_path(carmen_ackerman_traj_point_t* new_path, int path_length, int path_id)
+	GtkGui::navigator_graphics_update_path(carmen_ackerman_traj_point_t *new_path, int path_length, int path_id)
 	{
 		int i, path_index;
 
@@ -905,7 +905,7 @@ namespace View
 
 		if (path_length > 0)
 		{
-			path_vector[path_index] = (carmen_world_point_t *)calloc(path_vector_size[path_index], sizeof(carmen_world_point_t));
+			path_vector[path_index] = (carmen_world_point_t *) calloc(path_vector_size[path_index], sizeof(carmen_world_point_t));
 			carmen_test_alloc(path_vector[path_index]);
 
 			for (i = 0; i < path_vector_size[path_index]; i++)
