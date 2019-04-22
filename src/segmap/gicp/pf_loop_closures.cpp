@@ -24,6 +24,8 @@
 
 #include <carmen/command_line.h>
 #include "gicp.h"
+#include <carmen/segmap_loop_closures.h>
+
 
 using namespace std;
 using namespace Eigen;
@@ -35,21 +37,6 @@ enum LoopClosureDetectionMethod
 	DETECT_USING_INTERSECTION_WITH_MAP = 0,
 	DETECT_BY_DIST_AND_TIME,
 };
-
-
-void
-update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc)
-{
-	preproc.reinitialize(sample);
-
-	for (int i = 0; i < preproc.size(); i++)
-	{
-		vector<PointXYZRGB> points = preproc.next_points_in_world();
-
-		for (int j = 0; j < points.size(); j++)
-			map->add_point(points[j]);
-	}
-}
 
 
 double
@@ -93,103 +80,137 @@ estimate_pose_with_particle_filter(DataSample *sample,
 																	 double dt,
 																	 int pf_reinit_required,
 																	 Pose2d &pose_guess,
-																	 Mat *pf_viewer_img,
+																	 PointCloudViewer &viewer,
+																	 int n_correction_steps_when_reinitializing,
 																	 int view)
 {
-	int n_correction_steps = 0;
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
-
-	if (pf_reinit_required)
-	{
-		pf.reset(pose_guess.x, pose_guess.y, pose_guess.th);
-		n_correction_steps = 1;
-	}
-	else
-	{
-		pf.predict(sample->v, sample->phi, dt);
-		n_correction_steps = 1;
-	}
 
 	preproc.reinitialize(sample);
 	load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
 
-	for (int i = 0; i < n_correction_steps; i++)
+	if (pf_reinit_required)
+	{
+		printf("* Reinitializing\n");
+		//viewer.set_step(1);
+		pf.reset(pose_guess.x, pose_guess.y, pose_guess.th);
+		run_viewer_if_necessary(&pose_guess, map, pf, cloud, viewer, 1, 1, view);
+
+		for (int i = 0; i < n_correction_steps_when_reinitializing; i++)
+		{
+			printf("** Step %d - Prediction\n", i);
+			// the prediction is just to add a little bit of gaussian noise
+			// in every correction step.
+			pf.predict(0, 0, 0);
+			run_viewer_if_necessary(&pose_guess, map, pf, cloud, viewer, 1, 1, view);
+
+			printf("** Step %d - Correction\n", i);
+			pf.correct(cloud, map, sample->gps);
+			run_viewer_if_necessary(&pose_guess, map, pf, cloud, viewer, 1, 1, view);
+		}
+
+		printf("\n");
+	}
+	else
+	{
+		printf("* Prediction\n");
+		pf.predict(sample->v, sample->phi, dt);
+		run_viewer_if_necessary(&pose_guess, map, pf, cloud, viewer, 1, 1, view);
+
+		printf("* Correction\n");
 		pf.correct(cloud, map, sample->gps);
+		run_viewer_if_necessary(&pose_guess, map, pf, cloud, viewer, 1, 1, view);
 
-	if (view)
-		(*pf_viewer_img) = pf_view(pf, map, pose_guess, pf.mode(), cloud, 1);
+		printf("\n");
+	}
 
-	return pf.mode();
+	return pf.mean();
 }
 
 
 int
-is_loop_closure(DataSample *sample, int sample_id,
-                NewCarmenDataset &dataset,
-                SensorPreproc &preproc, GridMap &map,
-                double intersection_threshold_for_loop_closure_detection,
-                LoopClosureDetectionMethod method)
+search_for_loop_closures(DataSample *sample, int sample_id,
+												 NewCarmenDataset &dataset,
+												 SensorPreproc &preproc, GridMap &map,
+												 double intersection_threshold_for_loop_closure_detection,
+												 LoopClosureDetectionMethod method,
+												 double max_dist_threshold,
+												 double min_time_threshold)
 {
+	int nn_id = -1;
+
 	if (method == DETECT_USING_INTERSECTION_WITH_MAP)
 	{
 		double percentage_points_that_hit_map;
 
 		// if there is enough intersection with the map, assume we detected a loop closure.
-		// the displacement is estimated using the particle filter.
 		percentage_points_that_hit_map =
 				compute_percentage_of_points_that_hit_map(sample, preproc, map);
 
 		printf("percentage_points_that_hit_map: %lf\n", percentage_points_that_hit_map);
 
 		if (percentage_points_that_hit_map > intersection_threshold_for_loop_closure_detection)
-			return 1;
+		{
+			// the loop closure constraint is created in relation to the nearest pose in previous
+			// visits to the region. Different from the next case, we do not impose restrictions
+			// on distance and time difference between poses.
+
+			search_for_loop_closure_using_pose_dist(dataset, sample->pose, sample->time,
+			                                        0, sample_id, DBL_MAX, -DBL_MAX, &nn_id);
+		}
 	}
 	else if (method == DETECT_BY_DIST_AND_TIME)
 	{
-		double dist, dt;
-		for (int i = 0; i < sample_id; i++)
-		{
-			dist = dist2d(sample->pose.x, sample->pose.y, dataset[i]->pose.x, dataset[i]->pose.y);
-			dt = fabs(sample->time - dataset[i]->time);
-
-			if (dist < 2.0 && dt > 10)
-				return 1;
-		}
+		search_for_loop_closure_using_pose_dist(dataset, sample->pose, sample->time,
+		                                        0, sample_id, max_dist_threshold,
+		                                        min_time_threshold, &nn_id);
 	}
 	else
 		exit(printf("Error: Invalid detection method '%d'\n", method));
 
-	return 0;
+	return nn_id;
+}
+
+
+Pose2d
+compute_relative_pose(Pose2d &reference, Pose2d &pose)
+{
+	Matrix<double, 4, 4> mat = Pose2d::to_matrix(reference).inverse() * Pose2d::to_matrix(pose);
+	return Pose2d::from_matrix(mat);
 }
 
 
 void
 run_loop_closure_estimation(NewCarmenDataset &dataset, SensorPreproc &preproc, GridMap &map,
-														ParticleFilter &pf, CommandLineArguments &args,
+														ParticleFilter &pf,
 														vector<pair<int, int>> *loop_closure_indices,
-														vector<Matrix<double, 4, 4>> *relative_transform_vector,
+														vector<Pose2d> *relative_transform_vector,
 														double intersection_threshold_for_loop_closure_detection,
-														int view)
+						                double max_dist_threshold,
+						                double min_time_threshold,
+														int n_corrections_when_reinit,
+														int step,
+														double v_thresh,
+														int view,
+														Pose2d offset)
 {
-	Mat viewer_img;
 	DataSample *sample;
 	Pose2d estimate;
 
-	int loop_detected;
+	int loop_id;
 	PointCloudViewer viewer;
-	Pose2d offset = dataset[0]->pose;
-	int step = args.get<int>("step");
-	double skip_velocity_threshold = args.get<double>("v_thresh");
 	int pf_reinit_required = 1;
 
 	vector<int> loop_indices;
 	vector<Pose2d> estimated_poses;
 
+	if (step <= 0) step = 1;
+
 	for (int i = step; i < dataset.size(); i += step)
 	{
 		sample = dataset[i];
 
-		if (fabs(sample->v) < skip_velocity_threshold)
+		if (fabs(sample->v) < v_thresh)
 			continue;
 
 		Pose2d current_pose = sample->pose;
@@ -198,49 +219,67 @@ run_loop_closure_estimation(NewCarmenDataset &dataset, SensorPreproc &preproc, G
 
 		map.reload(current_pose.x, current_pose.y);
 
-		loop_detected = is_loop_closure(sample, i, dataset, preproc, map,
-		                                intersection_threshold_for_loop_closure_detection,
-		                                DETECT_BY_DIST_AND_TIME);
+		loop_id = search_for_loop_closures(sample, i, dataset, preproc, map,
+																			 intersection_threshold_for_loop_closure_detection,
+																			 DETECT_BY_DIST_AND_TIME,
+												               max_dist_threshold,
+												               min_time_threshold);
 
-		if (loop_detected)
+		if (loop_id >= 0)
 		{
 			double dt = sample->time - dataset[i - step]->time;
 
 			estimate = estimate_pose_with_particle_filter(sample, preproc, map, pf, dt,
 																										pf_reinit_required, current_pose,
-																										&viewer_img, view);
+																										viewer,
+																										n_corrections_when_reinit,
+																										view);
 
-			loop_indices.push_back(i);
-			estimated_poses.push_back(estimate);
+			Pose2d loop_pose = dataset[loop_id]->pose;
+			loop_pose.x -= offset.x;
+			loop_pose.y -= offset.y;
 
-			//printf("LOOP %d %lf %lf %lf\n", i, estimate.x, estimate.y, estimate.th);
-			//sample->pose = estimate;
-			//sample->pose.x += offset.x;
-			//sample->pose.y += offset.y;
-			current_pose = estimate;
+			loop_closure_indices->push_back(pair<int, int>(loop_id, i));
+			relative_transform_vector->push_back(compute_relative_pose(loop_pose, estimate));
 
 			pf_reinit_required = 0;
 		}
 		else
 		{
 			update_map(sample, &map, preproc);
+			run_viewer_if_necessary(&current_pose, map, pf, NULL, viewer, 0, 1, view);
 			pf_reinit_required = 1;
 		}
-
-		if (pf_reinit_required && view)
-		{
-			viewer_img = map.to_image().clone();
-			draw_pose(map, viewer_img, current_pose, Scalar(0, 255, 0));
-		}
-
-		if (view)
-		{
-			Mat flipped;
-			flip(viewer_img, flipped, 0);
-			viewer.show(flipped, "map", 640);
-			viewer.loop();
-		}
 	}
+}
+
+
+void
+save_output(string path,
+						vector<pair<int, int>> &loop_closure_indices,
+						vector<Pose2d> &relative_transform_vector)
+{
+	FILE *f = safe_fopen(path.c_str(), "w");
+
+	for (int i = 0; i < loop_closure_indices.size(); i++)
+	{
+		fprintf(f, "%d %d 1 %lf %lf %lf\n",
+						loop_closure_indices[i].first,
+						loop_closure_indices[i].second,
+						relative_transform_vector[i].x,
+						relative_transform_vector[i].y,
+						relative_transform_vector[i].th);
+	}
+
+	fclose(f);
+}
+
+
+void
+remove_previous_map(string path)
+{
+	if (boost::filesystem::exists(path))
+		boost::filesystem::remove_all(path);
 }
 
 
@@ -249,16 +288,16 @@ main(int argc, char **argv)
 {
 	CommandLineArguments args;
 
-	add_default_slam_args(args);
-	args.add_positional<std::string>("output", "Path to the output file", 1);
-	args.add<std::string>("odom_calib,o", "Odometry calibration file", "");
-	args.add<std::string>("fused_odom,f", "Fused odometry file (optimized using graphslam)", "");
-	args.add<double>("inter_thresh", "Threshold for percentage of points that thit map for detecting a loop closure [0-1]", 0.5);
-	args.add<int>("view,v", "Flag to indicate if viewer should be on (potentially reducing performance)", 1);
+	args.add_positional<std::string>("log_path", "Path to a log", 1);
+	args.add<std::string>("odom_calib,o", "Odometry calibration file", "none");
+	args.add<std::string>("fused_odom,f", "Fused odometry file (optimized using graphslam)", "none");
+	args.add<double>("inter_thresh", "Threshold for percentage of points that thit map for detecting a loop closure [0-1]", 0.97);
+	args.add<int>("n_corrections_when_reinit", "Number of correction steps when reinitializing particle filter", 5);
 
 	add_default_sensor_preproc_args(args);
 	add_default_mapper_args(args);
 	add_default_localizer_args(args);
+	add_default_gicp_args(args);
 
 	args.save_config_file(default_data_dir() + "/pf_loop_closures_config.txt");
 	args.parse(argc, argv);
@@ -269,17 +308,31 @@ main(int argc, char **argv)
 	                         args.get<int>("gps_id"));
 
 	SensorPreproc preproc = create_sensor_preproc(args, &dataset, args.get<string>("log_path"));
+	remove_previous_map(args.get<string>("map_path"));
 	GridMap map = create_grid_map(args, 1);
 	ParticleFilter pf = create_particle_filter(args);
 
 	vector<pair<int, int>> loop_closure_indices;
-	vector<Matrix<double, 4, 4>> relative_transform_vector;
+	vector<Pose2d> relative_transform_vector;
 
-	run_loop_closure_estimation(dataset, preproc, map, pf, args,
+	Pose2d offset = Pose2d(args.get<double>("offset_x"),
+												 args.get<double>("offset_y"), 0);
+
+	run_loop_closure_estimation(dataset, preproc, map, pf,
 															&loop_closure_indices,
 															&relative_transform_vector,
 															args.get<double>("inter_thresh"),
-															args.get<int>("view"));
+															args.get<double>("loop_dist"),
+															args.get<double>("time_dist"),
+															args.get<int>("n_corrections_when_reinit"),
+															args.get<int>("subsampling"),
+															args.get<double>("v_thresh"),
+															args.get<int>("view"),
+															offset);
+
+	save_output(args.get<string>("output"),
+	            loop_closure_indices,
+	            relative_transform_vector);
 
 	printf("Done.");
 	return 0;

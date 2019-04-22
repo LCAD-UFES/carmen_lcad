@@ -27,6 +27,7 @@
 
 #include "graphslam_util.h"
 #include <carmen/segmap_dataset.h>
+#include <carmen/segmap_loop_closures.h>
 
 using namespace std;
 using namespace g2o;

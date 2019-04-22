@@ -31,7 +31,10 @@ LFLAGS += -lrobot_ackerman_interface -lobstacle_avoider_interface \
 		-lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface -llocalize_ackerman_core -llocalize_ackerman_interface \
 		-llocalize_ackerman_motion -lmap_server_interface -lgps_xyz_interface -lvisual_odometry_interface -lxsens_mtig_interface \
 		-lxsens_interface -lgps_nmea_interface
-LFLAGS += -L /usr/local/lib -lcholmod -lg2o_core -lg2o_stuff -lg2o_types_slam2d -lg2o_cli
+
+# g2o libs
+LFLAGS += -L/usr/local/lib -lcholmod -lg2o_core -lg2o_types_slam2d -lg2o_solver_cholmod -lg2o_stuff
+
 LFLAGS += -lvtkCommon -lvtkFiltering -lvtkRendering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
 		-lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter -lprob_models -lrotation_geometry
@@ -39,23 +42,28 @@ LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp -lvtkGraphics 
 LFLAGS += `pkg-config --libs opencv` -lboost_system
 
-IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
-LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal -lboost_program_options 
+LFLAGS += -lsegmap_initializations 
 
-LFLAGS += -lsegmap_types -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
-	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lutil
+IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
+LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal -lboost_program_options `pkg-config --libs opencv` 
+
+LFLAGS += -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
+	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lutil `pkg-config --libs opencv` -lboost_filesystem -lsegmap_types  
+
+LFLAGS += -lvtkRendering -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 DEPS = ../libsegmap/types/libsegmap_types.a \
 	../libsegmap/datasets/libsegmap_datasets.a \
 	../libsegmap/readers/libsegmap_readers.a \
 	../libsegmap/motion_models/libsegmap_motion_models.a \
+	../libsegmap/readers/libsemap_initializations.a \
 	../libsegmap/slam/libsegmap_slam.a \
 	../libsegmap/visualization/libsegmap_visualization.a \
 	../libsegmap/readers/libsemap_readers.a \
 	../util/libutil.a
 
 SOURCES = graphslam.cpp joint_graphslam.cpp graphslam_util.cpp view_path.cpp
-TARGETS = graphslam joint_graphslam view_path
+TARGETS = graphslam view_path # joint_graphslam
 
 graphslam: graphslam.o $(DEPS) 
 joint_graphslam: joint_graphslam.o graphslam_util.o $(DEPS)

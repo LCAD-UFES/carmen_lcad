@@ -1,4 +1,3 @@
-
 #include <carmen/carmen.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/path_planner_messages.h>
@@ -14,7 +13,11 @@
 #include <carmen/motion_planner_interface.h>
 #include <carmen/global_graphics.h>
 #include <carmen/navigator_ackerman_interface.h>
+#include <carmen/voice_interface_messages.h>
+#include <carmen/voice_interface_interface.h>
 #include <carmen/collision_detection.h>
+#include <carmen/moving_objects_messages.h>
+#include <carmen/moving_objects_interface.h>
 
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"
@@ -71,8 +74,16 @@ static carmen_obstacle_distance_mapper_compact_map_message *compact_lane_content
 static double original_behaviour_selector_central_lane_obstacles_safe_distance;
 static double original_model_predictive_planner_obstacles_safe_distance;
 
-int param_reverse_driving = 0;
+static double carmen_ini_max_velocity;
 
+static bool soft_stop_on = false;
+
+int multi_path_num = -1;
+int *multi_path_sizes;
+double *multi_path_costs;
+carmen_ackerman_traj_point_t **multi_paths;
+
+carmen_moving_objects_point_clouds_message *moving_objects = NULL;
 
 int
 compute_max_rddf_num_poses_ahead(carmen_ackerman_traj_point_t current_pose)
@@ -305,15 +316,16 @@ red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_ph
 {
 	static double last_red_timestamp = 0.0;
 
+	carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.5);
+
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-				&current_robot_pose_v_and_phi, false);
+				&displaced_robot_pose, false);
 
 	if (nearest_velocity_related_annotation == NULL)
 		return (false);
 
 	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
-	carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
 
 	carmen_annotation_t *nearest_traffic_light_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT,
 			last_rddf_annotation_message, &displaced_robot_pose);
@@ -473,8 +485,8 @@ compute_distance_within_rddf(carmen_vector_3D_t annotation_point, carmen_ackerma
 
 
 double
-set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
-		double timestamp)
+set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, int goal_type,
+		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi, double timestamp)
 {
 	static bool clearing_annotation = false;
 	static carmen_vector_3D_t previous_annotation_point = {0.0, 0.0, 0.0};
@@ -526,7 +538,10 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 		if (last_rddf_annotation_message_valid &&
 			(clearing_annotation ||
 			 (((distance_to_annotation < distance_to_act_on_annotation) ||
-			   (distance_to_annotation < distance_to_goal)) && annotation_ahead)))
+			   (distance_to_annotation < distance_to_goal)) && annotation_ahead) ||
+			   (((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) ||
+			     (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP))&&
+				(goal_type == ANNOTATION_GOAL2))))
 		{
 			if (!clearing_annotation)
 				previous_annotation_point = nearest_velocity_related_annotation->annotation_point;
@@ -535,6 +550,12 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 			goal->v = carmen_fmin(
 					get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation, distance_to_goal, distance_to_annotation),
 					goal->v);
+
+			if ((((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) ||
+				  (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP)) &&
+				 (goal_type == ANNOTATION_GOAL2)))
+				goal->v = get_velocity_at_next_annotation(nearest_velocity_related_annotation, *current_robot_pose_v_and_phi,
+						timestamp);
 		}
 
 		if (!annotation_ahead || (DIST2D(previous_annotation_point, nearest_velocity_related_annotation->annotation_point) > 0.0))
@@ -676,6 +697,65 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 }
 
 
+extern SampleFilter filter3;
+
+double
+pedestrian_distance(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double *pedestrian_v)
+{
+	double min_dist = 200.0;
+	*pedestrian_v = 0.0;
+	if (! moving_objects)
+		return (200.0);
+
+	for (int i = 0; i < moving_objects->num_point_clouds; i++)
+	{
+		if (strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") != 0)
+			continue;
+		if (!(carmen_rddf_play_annotation_is_forward(current_robot_pose_v_and_phi, moving_objects->point_clouds[i].object_pose)))
+			continue;
+		double distance = DIST2D(moving_objects->point_clouds[i].object_pose, current_robot_pose_v_and_phi) - 5.0; // distacia do eixo traseiro ate a frente
+		if (distance < min_dist)
+		{
+			min_dist = distance;
+			*pedestrian_v = moving_objects->point_clouds[i].linear_velocity * cos(carmen_normalize_theta(moving_objects->point_clouds[i].orientation - current_robot_pose_v_and_phi.theta));
+		}
+	}
+
+	if (min_dist < 0.0)
+		min_dist = 0.0;
+
+	return (min_dist);
+}
+
+
+double
+set_goal_velocity_according_to_pedestrian(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
+		int goal_type __attribute__ ((unused)), double timestamp __attribute__ ((unused)))
+{
+	double pedestrian_v;
+	double distance_to_pedestrian = pedestrian_distance(*current_robot_pose_v_and_phi, &pedestrian_v);
+
+	if (distance_to_pedestrian > 60.0)
+		return (goal->v);
+
+	SampleFilter_put(&filter3, pedestrian_v);
+//	double filtered_pedestrian_v = SampleFilter_get(&filter3);
+
+	goal->v = carmen_fmin(
+			get_velocity_at_goal(current_robot_pose_v_and_phi->v, 5/3.6, DIST2D_P(goal, current_robot_pose_v_and_phi), distance_to_pedestrian),
+			goal->v);
+
+//	FILE *caco = fopen("caco.txt", "a");
+//	fprintf(caco, "%lf %lf %lf %lf %lf %d %d %d %lf %lf %lf %d ", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance,
+//			desired_distance, behavior_selector_state_message.low_level_state, autonomous, goal_type,
+//			udatmo_speed_left(), udatmo_speed_right(), udatmo_speed_center(), udatmo_obstacle_detected(timestamp));
+//	fflush(caco);
+//	fclose(caco);
+
+	return (goal->v);
+}
+
+
 void
 set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
 		int goal_type, double timestamp)
@@ -687,14 +767,16 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 //	FILE *caco = fopen("caco3.txt", "a");
 //	fprintf(caco, "gv %lf  ", goal->v);
 
+	goal->v = set_goal_velocity_according_to_pedestrian(goal, current_robot_pose_v_and_phi, goal_type, timestamp);
+
 	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi, goal_type, timestamp);
 
 //	fprintf(caco, "gva %lf  ", goal->v);
-	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
-			road_profile_message.poses, road_profile_message.number_of_poses);
+//	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
+//			road_profile_message.poses, road_profile_message.number_of_poses);
 //	fprintf(caco, "gvdlc %lf  ", goal->v);
 
-	goal->v = set_goal_velocity_according_to_annotation(goal, current_robot_pose_v_and_phi, timestamp);
+	goal->v = set_goal_velocity_according_to_annotation(goal, goal_type, current_robot_pose_v_and_phi, timestamp);
 //	fprintf(caco, "gvda %lf ", goal->v);
 //	if (obstacle_avoider_active_recently)
 //		goal->v = carmen_fmin(2.5, goal->v);
@@ -1411,10 +1493,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			break;
 
 		case Stopping_At_Stop_Sign:
-//			if (udatmo_obstacle_detected(timestamp) &&
-//				(udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config()) < stop_sign_distance(current_robot_pose_v_and_phi)))
-//				decision_making_state_msg->low_level_state = Following_Moving_Object;
-			if ((current_robot_pose_v_and_phi.v < 0.15) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 2.0))
+			if ((fabs(current_robot_pose_v_and_phi.v) < 0.01) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 4.0))
 				decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
 			break;
 		case Stopped_At_Stop_Sign_S0:
@@ -1513,6 +1592,76 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 }
 
 
+carmen_ackerman_traj_point_t *
+check_soft_stop(carmen_ackerman_traj_point_t *first_goal, carmen_ackerman_traj_point_t *goal_list, int &goal_type)
+{
+	static bool soft_stop_in_progress = false;
+	static carmen_ackerman_traj_point_t soft_stop_goal;
+	static int soft_stop_goal_type;
+
+	if (soft_stop_on)
+	{
+		if (!soft_stop_in_progress)
+		{
+			soft_stop_goal = *first_goal;
+			soft_stop_goal_type = goal_type;
+			soft_stop_in_progress = true;
+		}
+		else
+		{
+			goal_list[0] = soft_stop_goal;
+			first_goal = &soft_stop_goal;
+			goal_type = soft_stop_goal_type;
+		}
+	}
+	else
+		soft_stop_in_progress = false;
+
+	return (first_goal);
+}
+
+static void
+define_plan_tree_message()
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_defineMsg(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, IPC_VARIABLE_LENGTH,
+			CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
+}
+
+static void
+publish_plan_tree_message()
+{
+	carmen_navigator_ackerman_plan_tree_message plan_tree_msg;
+	IPC_RETURN_TYPE err = IPC_OK;
+	static bool first_time = true;
+
+	if (first_time)
+	{
+		define_plan_tree_message();
+		first_time = false;
+	}
+
+	plan_tree_msg.num_edges = 0;
+
+	plan_tree_msg.p1 = NULL;
+	plan_tree_msg.p2 = NULL;
+	plan_tree_msg.mask = NULL;
+
+	plan_tree_msg.num_path = multi_path_num;
+	memcpy(plan_tree_msg.path_size,multi_path_sizes, sizeof(int)*multi_path_num);
+	for (int i=0; i<multi_path_num ; i++)
+		memcpy(plan_tree_msg.paths[i], multi_paths[i], sizeof(carmen_ackerman_traj_point_t)*multi_path_sizes[i]);
+
+	plan_tree_msg.timestamp = carmen_get_time();
+	plan_tree_msg.host = carmen_get_host();
+
+	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, &plan_tree_msg);
+	carmen_test_ipc(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
+}
+
+
 void
 select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
@@ -1527,10 +1676,12 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	int goal_list_size;
 	carmen_ackerman_traj_point_t *goal_list = behavior_selector_get_goal_list(&goal_list_size);
 	carmen_ackerman_traj_point_t *first_goal = &(goal_list[0]);
-	int *goal_type = behavior_selector_get_goal_type();
+	int goal_type = behavior_selector_get_goal_type()[0];
+
+	first_goal = check_soft_stop(first_goal, goal_list, goal_type);
 
 	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
-			first_goal, goal_type[0], timestamp);
+			first_goal, goal_type, timestamp);
 	if (error != 0)
 		carmen_die("State machine error code %d\n", error);
 
@@ -1538,10 +1689,10 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	static carmen_ackerman_traj_point_t *last_valid_goal_p = NULL;
 	if (goal_list_size > 0)
 	{
-		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type[0], timestamp);
+		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type, timestamp);
 		publish_goal_list(goal_list, goal_list_size, timestamp);
 
-		last_valid_goal = goal_list[0];
+		last_valid_goal = *first_goal;
 		last_valid_goal_p = &last_valid_goal;
 	}
 	else if (last_valid_goal_p != NULL)
@@ -1571,6 +1722,83 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 #endif
 
 	publish_current_state(behavior_selector_state_message);
+
+	publish_plan_tree_message();
+}
+
+//TODO: COLOCAR FUNC NO COLLISION_DETECTION
+//bool check_car_collision_to_point()
+//{
+//	if (distance_map == NULL)
+//	{
+//		printf("distance_map == NULL in trajectory_pose_hit_obstacle()\n");
+//		return (1);
+//	}
+//
+//	double initial_displacement, displacement_inc;
+//	double number_of_point = 5.0;
+//	get_initial_displacement_and_displacement_inc(&initial_displacement, &displacement_inc, circle_radius, number_of_point, robot_config);
+//
+//	for (double i = 0; i < number_of_point; i += 1.0)
+//	{
+//		double displacement = initial_displacement + i * displacement_inc;
+//		carmen_point_t displaced_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&trajectory_pose, displacement);
+//		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+//		//distance equals to -1.0 when the coordinates are outside of map
+//		if (distance != -1.0)
+//		{
+//			if (distance < circle_radius)
+//				return (1);
+//		}
+//		else
+//			return (2);
+//	}
+//
+//	return (0);
+//}
+
+void
+path_prunning()
+{
+	for (int i = 0; i < multi_path_num; i++)
+	{
+		for (int j = 0; j < multi_path_sizes[i]; j++)
+		{
+			if(trajectory_pose_hit_obstacle(multi_paths[i][j], 1.2, &distance_map, get_robot_config()))
+			{
+				multi_path_sizes[i] = 0;
+				multi_path_costs[i] = DBL_MAX;
+				break;
+			}
+			else if (moving_objects)
+			{
+				for (int k = 0; k < moving_objects->num_point_clouds; k++)
+				{
+					if (strcmp(moving_objects->point_clouds[k].model_features.model_name, "pedestrian") != 0)
+						continue;
+					carmen_position_t pedestrian_pose;
+					pedestrian_pose.x = moving_objects->point_clouds[k].object_pose.x;
+					pedestrian_pose.y = moving_objects->point_clouds[k].object_pose.y;
+//						printf("%lf --- %lf\n", pedestrian_pose.x, pedestrian_pose.y);
+//						printf("%lf --- %lf\n", multi_paths[i][j].x, multi_paths[i][j].y);
+					double distance_to_pedestrian = carmen_obstacle_avoider_compute_closest_car_distance_to_colliding_point(&multi_paths[i][j],
+							pedestrian_pose, *get_robot_config(), 3.0);
+
+//					if (distance_to_pedestrian < .1)
+//					{
+//						printf("%lf\n", distance_to_pedestrian);
+//						multi_path_sizes[i] = 0;
+//						multi_path_costs[i] = DBL_MAX;
+//						break;
+//					}
+					if (distance_to_pedestrian < 3.0)
+					{
+						multi_path_costs[i] += (3.0 - distance_to_pedestrian);
+					}
+				}
+			}
+		}
+	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1619,17 +1847,53 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 }
 
 
+//static void
+//rddf_handler(carmen_rddf_road_profile_message *rddf_msg)
+//{
+//	if (!necessary_maps_available)
+//		return;
+//
+//	behavior_selector_motion_planner_publish_path_message(rddf_msg, param_rddf_num_poses_by_car_velocity);
+//	last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
+//
+//	if (goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
+//		publish_behavior_selector_road_profile_message(rddf_msg);
+//}
+
+
 static void
-rddf_handler(carmen_rddf_road_profile_message *rddf_msg)
+carmen_multi_path_message_handler(carmen_rddf_multi_path_message *message)
 {
 	if (!necessary_maps_available)
 		return;
 
-	behavior_selector_motion_planner_publish_path_message(rddf_msg, param_rddf_num_poses_by_car_velocity);
+	carmen_unpack_multi_paths_message(message, &multi_path_num, &multi_path_sizes, &multi_path_costs, &multi_paths);
+	path_prunning();
+
+	carmen_rddf_road_profile_message rddf_msg;
+
+	int best_cost_idx = 0;
+	for (int i = 1; i < multi_path_num; i++)
+		if (multi_path_costs[i] < multi_path_costs[best_cost_idx])
+			best_cost_idx = i;
+
+	rddf_msg.annotations = message->annotations;
+	rddf_msg.annotations_codes = message->annotations_codes;
+	rddf_msg.number_of_poses = message->number_of_poses;
+	rddf_msg.number_of_poses_back = message->number_of_poses_back;
+	if (multi_path_costs[best_cost_idx] == DBL_MAX)// || multi_path_costs[best_cost_idx] < 3.0)
+		rddf_msg.poses = message->poses;
+	else
+		rddf_msg.poses = multi_paths[best_cost_idx];
+	rddf_msg.poses_back = message->poses_back;
+	rddf_msg.timestamp = message->timestamp;
+	rddf_msg.host = message->host;
+
+	behavior_selector_motion_planner_publish_path_message(&rddf_msg, param_rddf_num_poses_by_car_velocity);
 	last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 
 	if (goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
-		publish_behavior_selector_road_profile_message(rddf_msg);
+		publish_behavior_selector_road_profile_message(&rddf_msg);
 }
 
 
@@ -1780,10 +2044,39 @@ carmen_navigator_ackerman_status_message_handler(carmen_navigator_ackerman_statu
 
 
 static void
+carmen_voice_interface_command_message_handler(carmen_voice_interface_command_message *message)
+{
+	if (message->command_id == SET_SPEED)
+	{
+		if (strcmp(message->command, "MAX_SPEED") == 0)
+		{
+			set_max_v(carmen_ini_max_velocity);
+			soft_stop_on = false;
+		}
+		else if (strcmp(message->command, "0.0") == 0)
+		{
+			set_max_v(0.0);
+			soft_stop_on = true;
+		}
+
+		printf("New speed set by voice command: %lf\n", get_max_v());
+		fflush(stdout);
+	}
+}
+
+
+static void
 signal_handler(int signo __attribute__ ((unused)) )
 {
 	carmen_ipc_disconnect();
 	exit(0);
+}
+
+
+void
+carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message *moving_objects_point_clouds_message)
+{
+	moving_objects = moving_objects_point_clouds_message;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1804,9 +2097,9 @@ register_handlers()
 			(carmen_handler_t) obstacle_avoider_robot_hit_obstacle_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_rddf_subscribe_road_profile_message(
-			NULL,(carmen_handler_t)rddf_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+//	carmen_rddf_subscribe_road_profile_message(
+//			NULL,(carmen_handler_t)rddf_handler,
+//			CARMEN_SUBSCRIBE_LATEST);
 
 	if (!use_truepos)
 		carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -1859,6 +2152,12 @@ register_handlers()
 			(carmen_handler_t)remove_goal_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) carmen_navigator_ackerman_status_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_rddf_subscribe_multi_path_message(NULL, (carmen_handler_t) carmen_multi_path_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1928,7 +2227,6 @@ read_parameters(int argc, char **argv)
 		{(char *) "obstacle_avoider", 		  (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.obstacle_avoider_obstacles_safe_distance, 	1, NULL},
 		{(char *) "model_predictive_planner", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.model_predictive_planner_obstacles_safe_distance, 	1, NULL},
 		{(char *) "grid_mapping",      (char *) "map_width", CARMEN_PARAM_DOUBLE, &map_width, 	1, NULL},
-		{(char *) "behavior_selector", (char *) "reverse_driving", CARMEN_PARAM_ONOFF, &param_reverse_driving, 0, NULL}
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
 
@@ -1936,13 +2234,14 @@ read_parameters(int argc, char **argv)
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_t optional_param_list[] =
 	{
-		{(char *) "commandline", (char *) "activate_tracking", CARMEN_PARAM_ONOFF, &activate_tracking, 0, NULL}
+		{(char *) "commandline", (char *) "activate_tracking", CARMEN_PARAM_ONOFF, &activate_tracking, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 
 	param_distance_between_waypoints = distance_between_waypoints;
 	param_change_goal_distance = change_goal_distance;
 
+	carmen_ini_max_velocity = robot_config.max_v;
 	behavior_selector_initialize(robot_config, distance_between_waypoints, change_goal_distance, following_lane_planner, parking_planner);
 
 	if (param_goal_source_onoff)

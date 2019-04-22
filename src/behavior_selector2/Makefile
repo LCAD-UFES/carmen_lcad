@@ -14,6 +14,8 @@ IFLAGS += \
 	-I/usr/local/include/EXTERNAL/csparse/ \
 	-I/usr/local/include/g2o/
 
+IFLAGS += -I/usr/include/python3.5
+
 LFLAGS += \
 	-L$(CARMEN_HOME)/sharedlib/prob_models \
 	$(INTERFACE_LIBS) \
@@ -37,6 +39,7 @@ LFLAGS += \
 	-lobstacle_distance_mapper_interface \
 	-ludatmo \
 	-lmoving_objects_interface \
+	-lvoice_interface_interface `python3.5-config --libs` \
 	`pkg-config --libs opencv`
 	
 LFLAGS += -lrddf_util -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
@@ -65,10 +68,10 @@ PUBLIC_LIBRARIES = \
 	libbehavior_selector_interface.a
 
 PUBLIC_BINARIES = \
-	behavior_selector
+	behavior_selector2
 
 TARGETS = \
-	behavior_selector \
+	behavior_selector2 \
 	libbehavior_selector_interface.a
 
 # If you set graphics support in configure.
@@ -83,7 +86,7 @@ LFLAGS += \
 	`pkg-config --libs gtkglext-1.0`
 endif
 
-behavior_selector: behavior_selector_main.o behavior_selector.o SampleFilter.o libbehavior_selector_interface.a
+behavior_selector2: behavior_selector_main.o behavior_selector.o SampleFilter.o libbehavior_selector_interface.a
 
 libbehavior_selector_interface.a: behavior_selector_interface.o
 

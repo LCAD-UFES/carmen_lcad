@@ -1768,6 +1768,11 @@ carmen_rddf_play_load_index(char *rddf_filename)
 		else
 		{
 			FILE *fptr = fopen(rddf_filename, "r");
+			if (!fptr)
+			{
+				printf("Could not open file %s\n Exiting...\n", rddf_filename);
+				exit(1);
+			}
 
 			while (!feof(fptr))
 			{

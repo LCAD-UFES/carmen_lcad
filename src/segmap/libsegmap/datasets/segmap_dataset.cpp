@@ -26,36 +26,32 @@ using namespace Eigen;
 
 NewCarmenDataset::NewCarmenDataset(std::string path,
                                    std::string odom_calib_path,
-																	 std::string fused_odom_path,
+																	 std::string poses_path,
+																	 double camera_latency,
 																	 int gps_id,
 																	 NewCarmenDataset::SyncSensor sync_sensor,
-																	 NewCarmenDataset::SyncMode sync_mode,
-                                   std::string intensity_calib_path)
+																	 NewCarmenDataset::SyncMode sync_mode)
 {
 	_gps_id = gps_id;
 	_sync_sensor = sync_sensor;
 	_sync_mode = sync_mode;
+	_camera_latency = camera_latency;
 
 	_velodyne_dir = string(path) + "_velodyne";
 	_images_dir = string(path) + "_bumblebee";
 
-	intensity_calibration = _allocate_calibration_table();
-
-	_load_intensity_calibration(intensity_calib_path);
 	_load_odometry_calibration(odom_calib_path);
 
 	// reading the log requires odom calibration data.
 	_load_log(path);
 
-	_load_poses(fused_odom_path, &_fused_odom);
+	_load_poses(poses_path, &_poses);
 	_update_data_with_poses();
 }
 
 
 NewCarmenDataset::~NewCarmenDataset()
 {
-	_free_calibration_table(intensity_calibration);
-
 	for (int i = 0; i < _data.size(); i++)
 		delete(_data[i]);
 }
@@ -177,8 +173,6 @@ NewCarmenDataset::_board2car()
 void 
 NewCarmenDataset::_load_odometry_calibration(std::string &path)
 {
-	printf("Loading odometry calibration '%s'\n", path.c_str());
-
 	int success = false;
 
 	if (path.size() > 0)
@@ -203,12 +197,14 @@ NewCarmenDataset::_load_odometry_calibration(std::string &path)
 
 	if (!success)
 	{
-		fprintf(stderr, "Warning: fail to load odometry calibration from '%s'. Assuming default values.\n", path.c_str());
+		fprintf(stderr, "Warning: failed load odometry calibration from '%s'. Assuming default values.\n", path.c_str());
 
 		_calib.mult_phi = _calib.mult_v = 1.0;
 		_calib.add_phi = _calib.add_v = 0.;
 		_calib.init_angle = 0.;
 	}
+	else
+		printf("Odometry calibration successfully loaded from '%s'\n", path.c_str());
 
 	printf("Odom calibration: bias v: %lf %lf bias phi: %lf %lf\n", 
 				 _calib.mult_v, _calib.add_v, _calib.mult_phi, _calib.add_phi);
@@ -247,10 +243,6 @@ NewCarmenDataset::_load_poses(std::string &path, std::vector<Pose2d> *poses)
 
 			fclose(f);
 		}
-		else
-		{
-			fprintf(stderr, "Warning: failed to open file '%s'\n", path.c_str());
-		}
 	}
 
 	if (!success)
@@ -259,107 +251,25 @@ NewCarmenDataset::_load_poses(std::string &path, std::vector<Pose2d> *poses)
 		poses->clear();
 	}
 	else
-		fprintf(stderr, "Poses loaded from '%s'. Returning default values.\n", path.c_str());
+		fprintf(stderr, "Poses successfully loaded from '%s'.\n", path.c_str());
 }
 
 
 void
 NewCarmenDataset::_update_data_with_poses()
 {
-	for (int i = 0; i < size(); i++)
+	assert(_poses.size() == _data.size() || _poses.size() == 0);
+
+	if (_poses.size() == _data.size())
 	{
-		if (i < _fused_odom.size()) at(i)->pose = _fused_odom[i];
-		else at(i)->pose = Pose2d(0, 0, 0);
+		for (int i = 0; i < size(); i++)
+			at(i)->pose = _poses[i];
 	}
-}
-
-
-unsigned char***
-NewCarmenDataset::_allocate_calibration_table()
-{
-	unsigned char ***table = (unsigned char ***) calloc(32, sizeof(unsigned char **));
-
-	for (int i = 0; i < 32; i++)
+	else
 	{
-		table[i] = (unsigned char **) calloc(10, sizeof(unsigned char *));
-
-		for (int j = 0; j < 10; j++)
-		{
-			table[i][j] = (unsigned char *) calloc(256, sizeof(unsigned char));
-
-			// assign default values.
-			for (int k = 0; k < 256; k++)
-				table[i][j][k] = (unsigned char) k;
-		}
+		for (int i = 0; i < size(); i++)
+			at(i)->pose = Pose2d(0, 0, 0);
 	}
-
-	return table;
-}
-
-
-void 
-NewCarmenDataset::_free_calibration_table(unsigned char ***table)
-{
-	for (int i = 0; i < 32; i++)
-	{
-		for (int j = 0; j < 10; j++)
-			free(table[i][j]);
-
-		free(table[i]);
-	}
-
-	free(table);
-}
-
-
-void
-NewCarmenDataset::_load_intensity_calibration(std::string &path)
-{
-	FILE *calibration_file_bin = fopen(path.c_str(), "r");
-
-	if (calibration_file_bin == NULL)
-	{
-		fprintf(stderr, "Warning: failed to read intensity calibration from '%s'. Using uncalibrated values.\n", path.c_str());
-		return;
-	}
-
-	int laser, ray_size, intensity;
-	long accumulated_intennsity, count;
-	float val, max_val = 0.0, min_val = 255.0;
-
-	while (fscanf(calibration_file_bin, "%d %d %d %f %ld %ld", &laser, &ray_size, &intensity, &val, &accumulated_intennsity, &count) == 6)
-	{
-		intensity_calibration[laser][ray_size][intensity] = (uchar) val;
-
-		if (val > max_val)
-			max_val = val;
-
-		if (val < min_val)
-			min_val = val;
-	}
-
-	for (int i = 0; i < 32; i++)
-	{
-		for (int j = 0; j < 10; j++)
-		{
-			for (int k = 0; k < 256; k++)
-			{
-				val = intensity_calibration[i][j][k];
-				val = (val - min_val) / (max_val - min_val);
-
-				if (val > 1.0)
-					val = 1.0;
-
-				if (val < 0.0)
-					val = 0.0;
-
-				intensity_calibration[i][j][k] = (uchar) (val * 255.);
-			}
-		}
-	}
-
-	fclose(calibration_file_bin);
-	printf("Intensity calibration loaded from '%s'\n", path.c_str());
 }
 
 
@@ -469,11 +379,11 @@ NewCarmenDataset::_create_synchronized_data_package(double ref_time)
 		_parse_gps_orientation(_find_nearest(_gps_orientation_messages, _gps_orientation_times, ref_time), sample);
 
 	if (_camera_messages.size())
-		_parse_camera(_find_nearest(_camera_messages, _camera_times, ref_time), sample, _images_dir);
+		_parse_camera(_find_nearest(_camera_messages, _camera_times, ref_time + _camera_latency), sample, _images_dir);
 
 	sample->v = sample->v * _calib.mult_v + _calib.add_v;
 	sample->phi = normalize_theta(sample->phi * _calib.mult_phi + _calib.add_phi);
-	sample->time = ref_time;
+	sample->time = sample->velodyne_time;
 
 	return sample;
 }
@@ -669,8 +579,11 @@ NewCarmenDataset::_parse_gps_position(vector<string> data, DataSample *sample)
 	Gdc_To_Utm_Converter::Init();
 	Gdc_To_Utm_Converter::Convert(gdc , utm);
 
-	sample->gps.x = utm.y;
-	sample->gps.y = -utm.x;
+	double offset_x = 7762735.177110;
+	double offset_y = -358558.484606;
+
+	sample->gps.x = utm.y - offset_x;
+	sample->gps.y = -utm.x - offset_y;
 
 	sample->gps_quality = atoi(data[7].c_str());
 	sample->gps_time = atof(data[data.size() - 3].c_str());
@@ -715,3 +628,13 @@ default_graphslam_to_map_path(const char *log_path)
 	std::string log_name = file_name_from_path(log_path);
 	return (string("/dados/data2/data_") + log_name + string("/graphslam_to_map.txt"));
 }
+
+
+std::string
+default_intensity_calib_path(const char *log_path)
+{
+	//std::string log_name = file_name_from_path(log_path);
+	//return (string("/dados/data2/data_") + log_name + string("/intensity_calibration.txt"));
+	return string(getenv("CARMEN_HOME")) + "/bin/calibration_table.txt";
+}
+

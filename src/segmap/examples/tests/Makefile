@@ -27,9 +27,10 @@ DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsemap_readers.a \
 	$(CARMEN_HOME)/src/segmap/util/libutil.a
 
-SOURCES = test_segmap_dataset.cpp
-TARGETS = test_segmap_dataset
+SOURCES = test_segmap_dataset.cpp test_command_line.cpp
+TARGETS = test_command_line
 
 test_segmap_dataset: test_segmap_dataset.o $(DEPS)
+test_command_line: test_command_line.o $(DEPS)
 
 include $(CARMEN_HOME)/src/Makefile.rules

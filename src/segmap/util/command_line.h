@@ -4,9 +4,9 @@
 
 #include <vector>
 #include <string>
-#include <sstream>
 #include <cstdio>
 #include <cstdlib>
+#include <carmen/util_strings.h>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
@@ -29,6 +29,7 @@ public:
 	void add_positional(std::string name, std::string description, int nmax = -1);
 
 	void save_config_file(std::string path);
+	std::string help_message(const char *program_name);
 
 	void parse(int argc, char **argv);
 
@@ -37,19 +38,36 @@ public:
 
 protected:
 
+	class ArgumentWithDefaultValue
+	{
+	public:
+		std::string name;
+		std::string description;
+		std::string default_value;
+
+		ArgumentWithDefaultValue(std::string arg_name,
+														 std::string arg_description,
+														 std::string arg_default_value)
+		{
+			name = arg_name;
+			description = arg_description;
+			default_value = arg_default_value;
+		}
+	};
+
+
 	po::variables_map _args;
 	po::positional_options_description *_positional_args_for_parsing;
 	po::options_description *_positional_args;
-	po::options_description *_additional_args;
+	po::options_description *_non_positional_args;
 
 	std::string _config_path;
 	std::vector<std::string> _all_positional_args;
-
-	std::vector<std::pair<std::string, std::string>> _additional_args_and_default_values;
+	std::vector<std::string> _non_positional_args_without_default_values;
+	std::vector<ArgumentWithDefaultValue> _non_positional_args_and_default_values;
 
 	static std::string _filter_argument_name(std::string &pattern);
-
-	void _show_help_message_if_necessary(po::variables_map vmap, char *program_name);
+	std::vector<std::string> _find_missing_mandatory_arguments(po::variables_map &vmap);
 	void _read_args_from_config_file(po::options_description &config_file_options, po::variables_map *vmap);
 };
 
@@ -57,7 +75,7 @@ protected:
 template<class T> void
 CommandLineArguments::add(std::string pattern, std::string description, T default_value)
 {
-	_additional_args->add_options()(pattern.c_str(),
+	_non_positional_args->add_options()(pattern.c_str(),
 			po::value<T>()->default_value(default_value),
 			description.c_str());
 
@@ -66,21 +84,18 @@ CommandLineArguments::add(std::string pattern, std::string description, T defaul
 	std::string name, value;
 
 	name = _filter_argument_name(pattern);
+	value = to_string<T>(default_value);
 
-	// convert default value to string
-	std::stringstream serializer;
-	serializer << default_value;
-	value = serializer.str();
-
-	std::pair<std::string, std::string> name_and_val(name, value);
-	_additional_args_and_default_values.push_back(name_and_val);
+	po::option_description desc = _non_positional_args->find(name, 0);
+	_non_positional_args_and_default_values.push_back(ArgumentWithDefaultValue(name, description, value));
 }
 
 
 template<class T> void
 CommandLineArguments::add(std::string pattern, std::string description)
 {
-	_additional_args->add_options()(pattern.c_str(), po::value<T>(), description.c_str());
+	_non_positional_args_without_default_values.push_back(_filter_argument_name(pattern));
+	_non_positional_args->add_options()(pattern.c_str(), po::value<T>(), description.c_str());
 }
 
 

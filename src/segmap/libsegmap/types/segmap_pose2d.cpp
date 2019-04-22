@@ -16,8 +16,16 @@ Pose2d::Pose2d(double px, double py, double pth)
 }
 
 
+Pose2d::Pose2d(const Pose2d &p)
+{
+	x = p.x;
+	y = p.y;
+	th = p.th;
+}
+
+
 Pose2d
-Pose2d::operator=(Pose2d p)
+Pose2d::operator=(const Pose2d &p)
 {
 	x = p.x;
 	y = p.y;
@@ -27,7 +35,7 @@ Pose2d::operator=(Pose2d p)
 
 
 double
-Pose2d::theta_from_matrix(Matrix<double, 4, 4> &m)
+Pose2d::theta_from_matrix(const Matrix<double, 4, 4> &m)
 {
 	// extract rotation matrix
 	static Matrix<double, 3, 3> R;
@@ -53,7 +61,7 @@ Pose2d::theta_from_matrix(Matrix<double, 4, 4> &m)
 
 
 Pose2d
-Pose2d::from_matrix(Matrix<double, 4, 4> &m)
+Pose2d::from_matrix(const Matrix<double, 4, 4> &m)
 {
 	Pose2d p;
 
@@ -66,7 +74,7 @@ Pose2d::from_matrix(Matrix<double, 4, 4> &m)
 
 
 Matrix<double, 4, 4>
-Pose2d::to_matrix(Pose2d &p)
+Pose2d::to_matrix(const Pose2d &p)
 {
 	return pose6d_to_matrix(p.x, p.y, 0, 0, 0, p.th);
 }

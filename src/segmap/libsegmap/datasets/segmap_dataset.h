@@ -41,11 +41,11 @@ public:
 
 	NewCarmenDataset(std::string path,
 	                 std::string odom_calib_path = "",
-									 std::string fused_odom_path = "",
+									 std::string poses_path = "",
+									 double camera_latency = 0.0,
 									 int gps_id = 1,
 									 NewCarmenDataset::SyncSensor sync_sensor = SYNC_BY_CAMERA,
-									 NewCarmenDataset::SyncMode sync_mode = SYNC_BY_NEAREST,
-	                 std::string lidar_calib_path = "");
+									 NewCarmenDataset::SyncMode sync_mode = SYNC_BY_NEAREST);
 
 	~NewCarmenDataset();
 
@@ -63,8 +63,6 @@ public:
 
 	// Returns a matrix to transfrom from xsens to car frame.
 	Eigen::Matrix<double, 4, 4> xsens2car();
-
-	unsigned char ***intensity_calibration;
 
 	// Number of messages of the sensor used for synchronization.
 	// For example, if the velodyne is the reference sensor, the method returns
@@ -90,7 +88,7 @@ protected:
 
 	OdomCalib _calib;
 	std::vector<DataSample*> _data;
-	std::vector<Pose2d> _fused_odom;
+	std::vector<Pose2d> _poses;
 
 	std::vector<std::string> _imu_messages;
 	std::vector<std::string> _gps_position_messages;
@@ -106,12 +104,13 @@ protected:
 	std::vector<double> _camera_times;
 	std::vector<double> _velodyne_times;
 
+	double _camera_latency;
+
 	// Returns a matrix to transfrom from the board to the car frame.
 	Eigen::Matrix<double, 4, 4> _board2car();
 
 	void _load_log(std::string &path);
 	void _load_odometry_calibration(std::string &path);
-	void _load_intensity_calibration(std::string &path);
 	void _load_poses(std::string &path, std::vector<Pose2d> *poses);
 	void _update_data_with_poses();
 
@@ -130,9 +129,6 @@ protected:
 	static std::vector<std::string> _find_nearest(std::vector<std::string> &queue,
 																								std::vector<double> &times, double ref_time);
 
-	static unsigned char*** _allocate_calibration_table();
-	static void _free_calibration_table(unsigned char ***table);
-
 	static void _parse_odom(std::vector<std::string> data, DataSample *sample);
 	static void _parse_imu(std::vector<std::string> data, DataSample *sample);
 	static void _parse_velodyne(std::vector<std::string> data, DataSample *sample, std::string velodyne_path);
@@ -147,7 +143,7 @@ std::string default_odom_calib_path(const char *log_path);
 std::string default_fused_odom_path(const char *log_path);
 std::string default_graphslam_path(const char *log_path);
 std::string default_graphslam_to_map_path(const char *log_path);
-
+std::string default_intensity_calib_path(const char *log_path);
 
 #endif
 

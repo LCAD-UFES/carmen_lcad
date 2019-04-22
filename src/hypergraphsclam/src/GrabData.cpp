@@ -319,7 +319,6 @@ Eigen::Vector2d GrabData::GetFirstGPSPosition()
 // including the orientation from xsens sensor or the gps itself
 void GrabData::BuildGPSMeasures()
 {
-
     if (5 < messages.size())
     {
         // status reporting

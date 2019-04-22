@@ -25,6 +25,7 @@
 #include "RTIMULSM9DS0.h"
 #include "RTIMUSettings.h"
 
+#define do_log 1
 //  this sets the learning rate for compass running average calculation
 
 #define COMPASS_ALPHA 0.2f
@@ -506,11 +507,17 @@ bool RTIMULSM9DS0::IMURead()
 
 #endif
 
+#ifndef do_log
     RTMath::convertToVector(gyroData, m_imuData.gyro, m_gyroScale, false);
     RTMath::convertToVector(accelData, m_imuData.accel, m_accelScale, false);
     RTMath::convertToVector(compassData, m_imuData.compass, m_compassScale, false);
+#else
+    RTMath::convertToVector(gyroData, m_imuData.gyro, (RTFLOAT) 1.000000, false);
+	RTMath::convertToVector(accelData, m_imuData.accel, (RTFLOAT) 1.000000, false);
+	RTMath::convertToVector(compassData, m_imuData.compass, (RTFLOAT) 1.000000, false);
+#endif
 
-    //  sort out gyro axes and correct for bias
+	//  sort out gyro axes and correct for bias
 
     m_imuData.gyro.setX(m_imuData.gyro.x());
     m_imuData.gyro.setY(-m_imuData.gyro.y());

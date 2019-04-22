@@ -1,6 +1,6 @@
 # RASPBERRY SENSORBOX
 
- - To rum the xsens from the Raspberry PI:
+ - To run the xsens from the Raspberry PI:
 
 # Install Raspbian on the Raspberry PI
 
@@ -76,6 +76,43 @@ Obs: Nao baixe o arquivo LITE pois este possui apenas interface por linha de com
 
 - O make_pi assume que a variavel CENTRALHOST possui o valor 192.168.1.1. 
 Caso a rede que ira rodar o central tenha outro IP, altere o arquivo ~/.bashrc 
+
+# Make /dev/ttyUSB0 OK for read/write by xsens_MTi-G
+
+```bash
+ $ sudo apt-get update
+ $ sudo apt install setserial
+```
+
+Com o xsens conectado, execute:
+```bash
+ $ sudo usermod -a -G dialout pi
+ $ setserial /dev/ttyUSB0 low_latency 
+```
+
+Para tornar o comando setserial permanente, adicione ele ao /etc/rc.local .
+Para isso, inclua a linha "setserial /dev/ttyUSB0 low_latency" no fim do arquivo /etc/rc.local uma linha antes do "exit 0".
+Após um sudo reboot, tudo estará pronto para uso.
+
+# Para executar o xsens_mtig sem senha de um terminal ou a partir de um process
+
+Se o root da car01 ainda não tem uma chave pública para acessar os Pi, execute os comando abaixo para gera-la em ~/.ssh/id_rsa.pub (verifique se você já tem o arquivo para não gera-lo de novo)
+```bash
+ $ cd
+ $ ssh-keygen -t rsa
+```
+
+Copie a chave pública da car01 para os Pi com os comando abaixo
+```bash
+ $ cd
+ $ ssh pi@192.168.1.15 mkdir -p .ssh
+ $ cat .ssh/id_rsa.pub | ssh pi@192.168.1.15 'cat >> .ssh/authorized_keys'
+```
+
+Teste se funcionou com o comando abaixo
+```bash
+ $ ssh pi@192.168.1.15 'ls'
+```
 
 # Install pi_imu (optional)
 

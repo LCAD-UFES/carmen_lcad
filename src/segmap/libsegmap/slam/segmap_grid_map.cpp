@@ -3,9 +3,15 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sys/stat.h>
-#include <carmen/segmap_grid_map.h>
+#include <carmen/util_time.h>
 #include <carmen/util_math.h>
+
 #include <boost/filesystem.hpp>
+#include <carmen/segmap_preproc.h>
+#include <carmen/segmap_dataset.h>
+#include <carmen/segmap_grid_map.h>
+#include <carmen/segmap_sensor_viewer.h>
+#include <carmen/segmap_particle_filter_viewer.h>
 
 using namespace pcl;
 using namespace std;
@@ -71,13 +77,13 @@ GridMapTile::_initialize_derivated_values()
 		_unknown[3] = 1.;
 	}
 	else
-		exit(printf("Map type '%d' not found.\n", _map_type));
+		exit(printf("Map type '%d' not found.\n", (int) _map_type));
 }
 
 
 GridMapTile::GridMapTile(double point_y, double point_x,
                          double height_meters, double width_meters,
-                         double resolution, int map_type, string tiles_dir,
+                         double resolution, GridMapTile::MapType map_type, string tiles_dir,
                          int save_maps)
 {
 	// map tile origin
@@ -106,7 +112,7 @@ GridMapTile::~GridMapTile()
 
 
 const char*
-GridMapTile::type2str(int map_type)
+GridMapTile::type2str(MapType map_type)
 {
 	if (map_type == TYPE_SEMANTIC)
 		return "semantic";
@@ -136,7 +142,7 @@ GridMapTile::save()
 	fprintf(fptr, "hm: %lf\n", _hm);
 	fprintf(fptr, "wm: %lf\n", _wm);
 	fprintf(fptr, "m_by_pixel: %lf\n", _m_by_pixel);
-	fprintf(fptr, "map_type: %d\n", _map_type);
+	fprintf(fptr, "map_type: %d\n", (int) _map_type);
 
 	fclose(fptr);
 
@@ -191,7 +197,7 @@ GridMapTile::add_point(PointXYZRGB &p)
 			_map[pos + (_n_fields_by_cell - 1)] = 1;
 		}
 		else
-			exit(printf("Error: map_type '%d' not defined.\n", _map_type));
+			exit(printf("Error: map_type '%d' not defined.\n", (int) _map_type));
 	}
 }
 
@@ -261,7 +267,7 @@ GridMapTile::cell2color(double *cell_vals)
 		}
 	}
 	else
-		exit(printf("Error: map_type '%d' not defined.\n", _map_type));
+		exit(printf("Error: map_type '%d' not defined.\n", (int) _map_type));
 
 	return color;
 }
@@ -294,7 +300,9 @@ GridMapTile::to_image()
 }
 
 
-GridMap::GridMap(string tiles_dir, double tile_height_meters, double tile_width_meters, double resolution, int map_type, int save_maps)
+GridMap::GridMap(string tiles_dir, double tile_height_meters,
+								 double tile_width_meters, double resolution,
+								 GridMapTile::MapType map_type, int save_maps)
 {
 	_tiles_dir = tiles_dir;
 	_tile_height_meters = tile_height_meters;
@@ -342,7 +350,8 @@ GridMapTile*
 GridMap::_reload_tile(double x, double y)
 {
 	return new GridMapTile(y, x, _tile_height_meters,
-	                       _tile_width_meters, m_by_pixels, _map_type, _tiles_dir, _save_maps);
+	                       _tile_width_meters, m_by_pixels,
+												 _map_type, _tiles_dir, _save_maps);
 }
 
 
@@ -457,3 +466,73 @@ GridMap::save()
 	}
 }
 
+
+
+void
+update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc)
+{
+	preproc.reinitialize(sample);
+
+	for (int i = 0; i < preproc.size(); i++)
+	{
+		vector<PointXYZRGB> points = preproc.next_points_in_world();
+
+		for (int j = 0; j < points.size(); j++)
+			map->add_point(points[j]);
+	}
+}
+
+
+void
+create_map(GridMap &map, NewCarmenDataset *dataset, int step,
+					 SensorPreproc &preproc, double skip_velocity_threshold,
+					 int view_flag, int img_width)
+{
+	Timer timer;
+	DataSample *sample;
+	PointCloudViewer viewer;
+	vector<double> times;
+
+	viewer.set_step(0);
+
+	for (int i = 0; i < dataset->size(); i += step)
+	{
+		sample = dataset->at(i);
+
+		if (fabs(sample->v) < skip_velocity_threshold)
+			continue;
+
+		timer.start();
+
+		map.reload(sample->pose.x, sample->pose.y);
+		update_map(sample, &map, preproc);
+
+		times.push_back(timer.ellapsed());
+
+		if (times.size() % 50 == 0)
+			printf("Step %d of %d AvgStepDuration: %lf LastStepDuration: %lf\n",
+						 i, dataset->size(),
+						 mean(times),
+						 times[times.size() - 1]);
+
+		if (view_flag)
+		{
+			Pose2d pose;
+			pose = sample->pose;
+
+			Mat map_img = map.to_image().clone();
+			draw_pose(map, map_img, pose, Scalar(0, 255, 0));
+
+			// flip vertically.
+			Mat map_view;
+			flip(map_img, map_view, 0);
+
+			Mat img = preproc.get_sample_img_with_points();
+			if (img.rows)
+				viewer.show(img, "img", img_width);
+
+			viewer.show(map_view, "map", img_width);
+			viewer.loop();
+		}
+	}
+}

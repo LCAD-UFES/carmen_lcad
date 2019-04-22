@@ -50,4 +50,3 @@ SemanticSegmentationLoader::load(DataSample *sample)
 	return complete_img;
 }
 
-

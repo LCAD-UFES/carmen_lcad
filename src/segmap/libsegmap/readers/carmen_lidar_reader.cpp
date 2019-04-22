@@ -1,12 +1,14 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <carmen/util_io.h>
 #include <carmen/util_math.h>
 #include <carmen/lidar_shot.h>
 #include <carmen/segmap_conversions.h>
 #include <carmen/carmen_lidar_reader.h>
 
+using namespace std;
 using namespace pcl;
 
 
@@ -46,6 +48,42 @@ CarmenLidarLoader::~CarmenLidarLoader()
 		fclose(_fptr);
 }
 
+
+//void
+//CarmenLidarLoader::_initialize_calibration_table(string lidar_calib_path)
+//{
+//	// initialize with default values
+//	for (int i = 0; i < _n_vert; i++)
+//		for (int r = 0; r < _n_distance_indices; r++)
+//			for (int j = 0; j < 256; j++)
+//				calibration_table[i][r][j] = (unsigned char) j;
+//
+//	// if file exists, replace the table values with the ones from the file
+//	FILE *f = fopen(lidar_calib_path.c_str(), "r");
+//
+//	if (f != NULL)
+//	{
+//		while (!feof(f))
+//		{
+//			int laser_id, intensity, calib, ray_size_index;
+//			double sum;
+//			long count;
+//
+//			//fscanf(f, "%d %d %lf %ld %d", &ray, &intensity, &sum, &count, &calib);
+//			fscanf(f, "%d %d %lf %ld %d", &laser_id, &ray_size_index, &intensity, &calib, &sum, &count);
+//			calibration_table[laser_id][ray_size_index][intensity] = calib;
+//		}
+//
+//		fclose(f);
+//
+//		fprintf(stderr, "Intensity calibration successfully loaded from '%s.\n", lidar_calib_path.c_str());
+//	}
+//	else
+//		fprintf(stderr, "Warning: intensity calibration file '%s' not found. Using default values.\n",
+//		        lidar_calib_path.c_str());
+//}
+
+
 LidarShot*
 CarmenLidarLoader::next()
 {
@@ -56,13 +94,13 @@ CarmenLidarLoader::next()
 	fread(_raw_ranges, sizeof(unsigned short), _n_vert, _fptr);
 	fread(_raw_intensities, sizeof(unsigned char), _n_vert, _fptr);
 
+	// Note: the vertical angles are fixed and initialized in the constructor.
 	_shot->h_angle = -normalize_theta(degrees_to_radians(_shot->h_angle));
 
 	for (int i = 0; i < _n_vert; i++)
 	{
-		// reorder and convert range to meters
 		_shot->ranges[i] = ((double) _raw_ranges[velodyne_ray_order[i]]) / (double) 500.;
-		_shot->intensities[i] = _raw_intensities[velodyne_ray_order[i]];
+		_shot->intensities[i] =	_raw_intensities[velodyne_ray_order[i]];
 	}
 
 	_n_readings++;
@@ -97,31 +135,31 @@ CarmenLidarLoader::reinitialize(std::string &cloud_path, int n_rays)
 }
 
 
-void
-load_as_pointcloud(CarmenLidarLoader *loader, PointCloud<PointXYZRGB>::Ptr cloud)
-{
-	int i;
-	double x, y, z;
-	LidarShot *shot;
-
-	cloud->clear();
-
-	while (!loader->done())
-	{
-		shot = loader->next();
-
-		for (i = 0; i < shot->n; i++)
-		{
-			spherical2cartersian(shot->v_angles[i], shot->h_angle, shot->ranges[i], &x, &y, &z);
-
-			PointXYZRGB point;
-
-			point.x = (float) x;
-			point.y = (float) y;
-			point.z = (float) z;
-			point.r = point.g = point.b = (unsigned char) shot->intensities[i];
-
-			cloud->push_back(point);
-		}
-	}
-}
+//void
+//load_as_pointcloud(CarmenLidarLoader *loader, PointCloud<PointXYZRGB>::Ptr cloud)
+//{
+//	int i;
+//	double x, y, z;
+//	LidarShot *shot;
+//
+//	cloud->clear();
+//
+//	while (!loader->done())
+//	{
+//		shot = loader->next();
+//
+//		for (i = 0; i < shot->n; i++)
+//		{
+//			spherical2cartersian(shot->v_angles[i], shot->h_angle, shot->ranges[i], &x, &y, &z);
+//
+//			PointXYZRGB point;
+//
+//			point.x = (float) x;
+//			point.y = (float) y;
+//			point.z = (float) z;
+//			point.r = point.g = point.b = (unsigned char) shot->intensities[i];
+//
+//			cloud->push_back(point);
+//		}
+//	}
+//}
