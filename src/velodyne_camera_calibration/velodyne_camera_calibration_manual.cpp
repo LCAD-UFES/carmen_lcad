@@ -3,9 +3,25 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/io/ply_io.h>
+#include <pcl/visualization/cloud_viewer.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/extract_indices.h>
+
 #include "velodyne_camera_calibration.h"
 
 #include <iostream>
+
+//  #include <vtkAutoInit.h>
+//  VTK_MODULE_INIT(vtkRenderingOpenGL);
+//  VTK_MODULE_INIT(vtkInteractionStyle);
 
 int bumblebee_received = 0;
 
@@ -13,32 +29,105 @@ int camera_number;
 
 carmen_bumblebee_basic_stereoimage_message bumblebee_message;
 
+double velodyne_vertical_angles[32] =
+{
+		-30.6700000, -29.3300000, -28.0000000, -26.6700000, -25.3300000, -24.0000000, -22.6700000, -21.3300000,
+		-20.0000000, -18.6700000, -17.3300000, -16.0000000, -14.6700000, -13.3300000, -12.0000000, -10.6700000,
+		-9.3299999, -8.0000000, -6.6700001, -5.3299999, -4.0000000, -2.6700001, -1.3300000, 0.0000000, 1.3300000,
+		2.6700001, 4.0000000, 5.3299999, 6.6700001, 8.0000000, 9.3299999, 10.6700000
+};
+
+int velodyne_ray_order2[32] = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31};
+
 static carmen_pose_3D_t camera_pose; // Camera pose in relation to sensor board
 static carmen_pose_3D_t velodyne_pose; //velodyne pose in relation to sensor board
 
 static carmen_camera_parameters camera_parameters;
 
-struct vert_group {
+struct vert_group_2d {
     cv::Point points[4];
     int selected = 0;
-} vert;
+} vert_2D;
+
+struct vert_group_3d {
+    cv::Point3f points[4];
+    int selected = 0;
+} vert_3D;
+
+size_t count = 0; 
+
+pcl::PointXYZ
+compute_pointxyz_from_velodyne(double v_angle, double h_angle, double radius)
+{
+    // build a new point
+    pcl::PointXYZ point;
+
+	double cos_rot_angle = cos(h_angle);
+	double sin_rot_angle = sin(h_angle);
+
+	double cos_vert_angle = cos(v_angle);
+	double sin_vert_angle = sin(v_angle);
+
+	double xy_distance = radius * cos_vert_angle;
+
+	point.x = (xy_distance * cos_rot_angle);
+	point.y = (xy_distance * sin_rot_angle);
+	point.z = (radius * sin_vert_angle);
+
+    return point;
+}
 
 void CallBackFunc(int event, int x, int y, int flags, void *image)
 {
     cv::Mat *image_show = (cv::Mat *) image;
     if  ( event == cv::EVENT_LBUTTONDOWN )
     {
-        if (vert.selected < 4) {
-            vert.points[vert.selected].x = x;
-            vert.points[vert.selected].y = y;
-            vert.selected++;
+        if (vert_2D.selected < 4) {
+            vert_2D.points[vert_2D.selected].x = x;
+            vert_2D.points[vert_2D.selected].y = y;
+            vert_2D.selected++;
             cv::circle(*image_show, cv::Point(x, y), 5, cv::Scalar(0,0,255), -5);
             cv::imshow("My Window", *image_show);
-            if(vert.selected == 4) {
+            if(vert_2D.selected == 4) {
                 cv::destroyWindow("My Window");
             }
         }
     }
+}
+
+void pp_callback(const pcl::visualization::PointPickingEvent& event, void* viewer_void)
+{
+    float x,y,z;
+    event.getPoint(x,y,z);
+    if  (event.getPointIndex()!=-1)
+    {
+        if (vert_3D.selected < 4) {
+            vert_3D.points[vert_3D.selected].x = x;
+            vert_3D.points[vert_3D.selected].y = y;
+            vert_3D.points[vert_3D.selected].z = z;
+            vert_3D.selected++;
+            // cv::circle(*image_show, cv::Point(x, y), 5, cv::Scalar(0,0,255), -5);
+            // cv::imshow("My Window", *image_show);
+            // if(vert_3D.selected == 4) {
+            //     cv::destroyWindow("My Window");
+            // }
+        }
+    }
+}
+
+pcl::visualization::PCLVisualizer::Ptr simpleVis (pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud)
+{
+  // --------------------------------------------
+  // -----Open 3D viewer and add point cloud-----
+  // --------------------------------------------
+  pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+  viewer->setBackgroundColor (0, 0, 0);
+  viewer->addPointCloud<pcl::PointXYZ> (cloud, "sample cloud");
+  viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
+  viewer->addCoordinateSystem (1.0);
+  viewer->initCameraParameters ();
+  viewer->registerPointPickingCallback(pp_callback, NULL);
+  return (viewer);
 }
 
 void
@@ -144,41 +233,79 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 void
 bumblebee_basic_image_handler(carmen_bumblebee_basic_stereoimage_message *bumblebee_basic_message __attribute__ ((unused)))
 {
-	bumblebee_received = 1;
+	// bumblebee_received = 1;
 
-    cv::Mat camera_image(cv::Size(bumblebee_message.width, bumblebee_message.height), CV_8UC3, bumblebee_message.raw_right);
-    cv::Mat camera_image_show(cv::Size(bumblebee_message.width, bumblebee_message.height), CV_8UC3);
-    cv::cvtColor(camera_image,camera_image_show, CV_RGB2BGR);
+    // cv::Mat camera_image(cv::Size(bumblebee_message.width, bumblebee_message.height), CV_8UC3, bumblebee_message.raw_right);
+    // cv::Mat camera_image_show(cv::Size(bumblebee_message.width, bumblebee_message.height), CV_8UC3);
+    // cv::cvtColor(camera_image,camera_image_show, CV_RGB2BGR);
 
-    //Create a window
-     cv::namedWindow("My Window", 1);
+    // //Create a window
+    //  cv::namedWindow("My Window", 1);
 
-      //set the callback function for any mouse event
-     cv::setMouseCallback("My Window", CallBackFunc, &camera_image_show);
+    //   //set the callback function for any mouse event
+    //  cv::setMouseCallback("My Window", CallBackFunc, &camera_image_show);
 
-      //show the image
-     cv::imshow("My Window", camera_image_show);
+    //   //show the image
+    //  cv::imshow("My Window", camera_image_show);
 
-      // Wait until user press some key
-     cv::waitKey(0);
-     vert.selected = 0;
+    //   // Wait until user press some key
+    //  cv::waitKey(0);
+    //  vert_2D.selected = 0;
 
 
-     cout << "mouse x: " << vert.points[0].x << ", mouse y: " << vert.points[0].y << endl;
-     cout << "mouse x: " << vert.points[1].x << ", mouse y: " << vert.points[1].y << endl;
-     cout << "mouse x: " << vert.points[2].x << ", mouse y: " << vert.points[2].y << endl;
-     cout << "mouse x: " << vert.points[3].x << ", mouse y: " << vert.points[3].y << endl;
-     cout << endl;
+    //  cout << "mouse x: " << vert_2D.points[0].x << ", mouse y: " << vert_2D.points[0].y << endl;
+    //  cout << "mouse x: " << vert_2D.points[1].x << ", mouse y: " << vert_2D.points[1].y << endl;
+    //  cout << "mouse x: " << vert_2D.points[2].x << ", mouse y: " << vert_2D.points[2].y << endl;
+    //  cout << "mouse x: " << vert_2D.points[3].x << ", mouse y: " << vert_2D.points[3].y << endl;
+    //  cout << endl;
 }
 
 
 void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-    carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_message);
+    // carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_message);
 	// show_velodyne(velodyne_message);
-}
 
+    double h_angle, v_angle;
+	unsigned short distances[32];
+	double range;
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>), cloud_p (new pcl::PointCloud<pcl::PointXYZ>), cloud_f (new pcl::PointCloud<pcl::PointXYZ>),  cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);  // Fill in the cloud data
+
+    for(int i=0; i<velodyne_message->number_of_32_laser_shots; i++) {
+        h_angle = velodyne_message->partial_scan[i].angle;
+	    for(int j=0; j<32; j++) {
+            distances[j] = velodyne_message->partial_scan[i].distance[j];
+        }
+        h_angle = M_PI * h_angle / 180.;
+        
+        for (int j = 0; j < 32; j++)
+            // pritf("%d  ", velodyne_message->partial_scan[i].distance[j]);
+	    {
+	    	range = (double) distances[velodyne_ray_order2[j]] / 500.;
+	    	v_angle = velodyne_vertical_angles[j];
+	    	v_angle = M_PI * v_angle / 180.;
+
+	    	pcl::PointXYZ point = compute_pointxyz_from_velodyne(v_angle, -h_angle, range);
+            if(range < 10)
+	    	    cloud->push_back(point);
+	    }
+	}
+
+    pcl::visualization::PCLVisualizer::Ptr viewer;
+    viewer = simpleVis(cloud_filtered);
+
+    while (!viewer->wasStopped ())
+    {
+        viewer->spinOnce (100);
+    }
+    cout << "mouse x: " << vert_2D.points[0].x << ", mouse y: " << vert_2D.points[0].y << endl;
+    cout << "mouse x: " << vert_2D.points[1].x << ", mouse y: " << vert_2D.points[1].y << endl;
+    cout << "mouse x: " << vert_2D.points[2].x << ", mouse y: " << vert_2D.points[2].y << endl;
+    cout << "mouse x: " << vert_2D.points[3].x << ", mouse y: " << vert_2D.points[3].y << endl;
+    cout << endl;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
