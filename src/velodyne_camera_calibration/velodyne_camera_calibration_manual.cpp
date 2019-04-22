@@ -44,18 +44,17 @@ static carmen_pose_3D_t velodyne_pose; //velodyne pose in relation to sensor boa
 
 static carmen_camera_parameters camera_parameters;
 
-struct vert_group {
+struct vert_group_2d {
     cv::Point points[4];
     int selected = 0;
-} vert;
+} vert_2D;
+
+struct vert_group_3d {
+    cv::Point3f points[4];
+    int selected = 0;
+} vert_3D;
 
 size_t count = 0; 
-
-void 
-AreaPickingEventOccurred (const pcl::visualization::AreaPickingEvent& event_, void* viewer_void) 
-{ 
-    std::cout << "AreaPickingEvenOccured" << std::endl; 
-}
 
 pcl::PointXYZ
 compute_pointxyz_from_velodyne(double v_angle, double h_angle, double radius)
@@ -83,17 +82,52 @@ void CallBackFunc(int event, int x, int y, int flags, void *image)
     cv::Mat *image_show = (cv::Mat *) image;
     if  ( event == cv::EVENT_LBUTTONDOWN )
     {
-        if (vert.selected < 4) {
-            vert.points[vert.selected].x = x;
-            vert.points[vert.selected].y = y;
-            vert.selected++;
+        if (vert_2D.selected < 4) {
+            vert_2D.points[vert_2D.selected].x = x;
+            vert_2D.points[vert_2D.selected].y = y;
+            vert_2D.selected++;
             cv::circle(*image_show, cv::Point(x, y), 5, cv::Scalar(0,0,255), -5);
             cv::imshow("My Window", *image_show);
-            if(vert.selected == 4) {
+            if(vert_2D.selected == 4) {
                 cv::destroyWindow("My Window");
             }
         }
     }
+}
+
+void pp_callback(const pcl::visualization::PointPickingEvent& event, void* viewer_void)
+{
+    float x,y,z;
+    event.getPoint(x,y,z);
+    if  (event.getPointIndex()!=-1)
+    {
+        if (vert_3D.selected < 4) {
+            vert_3D.points[vert_3D.selected].x = x;
+            vert_3D.points[vert_3D.selected].y = y;
+            vert_3D.points[vert_3D.selected].z = z;
+            vert_3D.selected++;
+            // cv::circle(*image_show, cv::Point(x, y), 5, cv::Scalar(0,0,255), -5);
+            // cv::imshow("My Window", *image_show);
+            // if(vert_3D.selected == 4) {
+            //     cv::destroyWindow("My Window");
+            // }
+        }
+    }
+}
+
+pcl::visualization::PCLVisualizer::Ptr simpleVis (pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud)
+{
+  // --------------------------------------------
+  // -----Open 3D viewer and add point cloud-----
+  // --------------------------------------------
+  pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+  viewer->setBackgroundColor (0, 0, 0);
+  viewer->addPointCloud<pcl::PointXYZ> (cloud, "sample cloud");
+  viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
+  viewer->addCoordinateSystem (1.0);
+  viewer->initCameraParameters ();
+  viewer->registerPointPickingCallback(pp_callback, NULL);
+  return (viewer);
 }
 
 void
@@ -199,31 +233,31 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 void
 bumblebee_basic_image_handler(carmen_bumblebee_basic_stereoimage_message *bumblebee_basic_message __attribute__ ((unused)))
 {
-	bumblebee_received = 1;
+	// bumblebee_received = 1;
 
-    cv::Mat camera_image(cv::Size(bumblebee_message.width, bumblebee_message.height), CV_8UC3, bumblebee_message.raw_right);
-    cv::Mat camera_image_show(cv::Size(bumblebee_message.width, bumblebee_message.height), CV_8UC3);
-    cv::cvtColor(camera_image,camera_image_show, CV_RGB2BGR);
+    // cv::Mat camera_image(cv::Size(bumblebee_message.width, bumblebee_message.height), CV_8UC3, bumblebee_message.raw_right);
+    // cv::Mat camera_image_show(cv::Size(bumblebee_message.width, bumblebee_message.height), CV_8UC3);
+    // cv::cvtColor(camera_image,camera_image_show, CV_RGB2BGR);
 
-    //Create a window
-     cv::namedWindow("My Window", 1);
+    // //Create a window
+    //  cv::namedWindow("My Window", 1);
 
-      //set the callback function for any mouse event
-     cv::setMouseCallback("My Window", CallBackFunc, &camera_image_show);
+    //   //set the callback function for any mouse event
+    //  cv::setMouseCallback("My Window", CallBackFunc, &camera_image_show);
 
-      //show the image
-     cv::imshow("My Window", camera_image_show);
+    //   //show the image
+    //  cv::imshow("My Window", camera_image_show);
 
-      // Wait until user press some key
-     cv::waitKey(0);
-     vert.selected = 0;
+    //   // Wait until user press some key
+    //  cv::waitKey(0);
+    //  vert_2D.selected = 0;
 
 
-     cout << "mouse x: " << vert.points[0].x << ", mouse y: " << vert.points[0].y << endl;
-     cout << "mouse x: " << vert.points[1].x << ", mouse y: " << vert.points[1].y << endl;
-     cout << "mouse x: " << vert.points[2].x << ", mouse y: " << vert.points[2].y << endl;
-     cout << "mouse x: " << vert.points[3].x << ", mouse y: " << vert.points[3].y << endl;
-     cout << endl;
+    //  cout << "mouse x: " << vert_2D.points[0].x << ", mouse y: " << vert_2D.points[0].y << endl;
+    //  cout << "mouse x: " << vert_2D.points[1].x << ", mouse y: " << vert_2D.points[1].y << endl;
+    //  cout << "mouse x: " << vert_2D.points[2].x << ", mouse y: " << vert_2D.points[2].y << endl;
+    //  cout << "mouse x: " << vert_2D.points[3].x << ", mouse y: " << vert_2D.points[3].y << endl;
+    //  cout << endl;
 }
 
 
@@ -258,16 +292,20 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	    	    cloud->push_back(point);
 	    }
 	}
-    // pcl::visualization::PCLVisualizer viewer ("Visualizer"); 
-    // viewer.registerAreaPickingCallback (AreaPickingEventOccurred, (void*) &viewer);
 
-    // viewer.addPointCloud(cloud); 
+    pcl::visualization::PCLVisualizer::Ptr viewer;
+    viewer = simpleVis(cloud_filtered);
 
-    // while (!viewer.wasStopped ()) 
-    //     viewer.spinOnce (); 
-
+    while (!viewer->wasStopped ())
+    {
+        viewer->spinOnce (100);
+    }
+    cout << "mouse x: " << vert_2D.points[0].x << ", mouse y: " << vert_2D.points[0].y << endl;
+    cout << "mouse x: " << vert_2D.points[1].x << ", mouse y: " << vert_2D.points[1].y << endl;
+    cout << "mouse x: " << vert_2D.points[2].x << ", mouse y: " << vert_2D.points[2].y << endl;
+    cout << "mouse x: " << vert_2D.points[3].x << ", mouse y: " << vert_2D.points[3].y << endl;
+    cout << endl;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
