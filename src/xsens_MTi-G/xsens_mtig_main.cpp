@@ -69,7 +69,7 @@ read_parameters(int argc, char **argv)
 // Assumes initialized global MTComm class
 void 
 doMtSettings(xsens::Cmt3 &cmt3, CmtOutputMode &mode,
-		     CmtOutputSettings &settings, CmtDeviceId deviceIds[])
+		     CmtOutputSettings &settings, CmtDeviceId deviceIds[], bool reset_orientation)
 {
 	XsensResultValue res;
 	unsigned long mtCount = cmt3.getMtCount();
@@ -137,9 +137,23 @@ doMtSettings(xsens::Cmt3 &cmt3, CmtOutputMode &mode,
 	}
 
 	// start receiving data
-	printf("\nStarting to receive data\n");
 	res = cmt3.gotoMeasurement();
 	EXIT_ON_ERROR(res,"gotoMeasurement");
+
+	if (reset_orientation)
+	{
+		cmt3.resetOrientation(CMT_RESETORIENTATION_OBJECT, deviceIds[0]);
+
+		res = cmt3.gotoConfig();
+		EXIT_ON_ERROR(res,"gotoConfig");
+		cmt3.resetOrientation(CMT_RESETORIENTATION_STORE, deviceIds[0]);
+
+		res = cmt3.gotoMeasurement();
+		EXIT_ON_ERROR(res,"gotoMeasurement");
+
+		printf("\nReseting the orientation\n");
+	}
+	printf("\nStarting to receive data\n");
 }
 
 
@@ -499,7 +513,7 @@ read_data_from_xsens(void)
 
 
 static int 
-init_xsens(void)
+init_xsens(bool reset_orientation)
 {
 	mtCount = doHardwareScan(cmt3, deviceIds);
 
@@ -513,7 +527,7 @@ init_xsens(void)
 	mode = CMT_OUTPUTMODE_CALIB | CMT_OUTPUTMODE_ORIENT | CMT_OUTPUTMODE_STATUS | CMT_OUTPUTMODE_POSITION | CMT_OUTPUTMODE_VELOCITY | CMT_OUTPUTMODE_TEMP;//CMT_OUTPUTMODE_GPSPVT_PRESSURE;
 	settings = CMT_OUTPUTSETTINGS_ORIENTMODE_QUATERNION | CMT_OUTPUTSETTINGS_TIMESTAMP_SAMPLECNT | CMT_OUTPUTSETTINGS_DATAFORMAT_FP1632;
 
-	doMtSettings(cmt3, mode, settings, deviceIds);
+	doMtSettings(cmt3, mode, settings, deviceIds, reset_orientation);
 
 	return 1;
 }
@@ -542,7 +556,11 @@ main(int argc, char **argv)
 
 	signal(SIGINT, shutdown_module);
 
-	int xsens_initialized = init_xsens();
+	bool reset_orientation = false;
+	if ((argc == 2) && (strcmp(argv[1], (char *) "reset_orientation") == 0))
+		reset_orientation = true;
+
+	int xsens_initialized = init_xsens(reset_orientation);
 
 	if (xsens_initialized)
 		read_data_from_xsens();
