@@ -532,23 +532,33 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkCheckMenuItem" id="menuDisplay_ShowMotionPath">
+                      <object class="GtkCheckMenuItem" id="menuDisplay_ShowOAMotionPlan">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
-                        <property name="label" translatable="yes">Motion Path</property>
+                        <property name="label" translatable="yes">OA Motion Plan</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowMotionPath_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowOAMotionPlan_toggled" swapped="no"/>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkCheckMenuItem" id="menuDisplay_ShowCommandPath">
+                      <object class="GtkCheckMenuItem" id="menuDisplay_ShowMPPMotionPlan">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
-                        <property name="label" translatable="yes">Command Path</property>
+                        <property name="label" translatable="yes">MPP Motion Plan</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_menuDisplay_ShowCommandPath_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_menuDisplay_ShowMPPMotionPlan_toggled" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="menuDisplay_ShowCommandPlan">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="label" translatable="yes">Command Plan</property>
+                        <property name="use_underline">True</property>
+                        <signal name="toggled" handler="on_menuDisplay_ShowCommandPlan_toggled" swapped="no"/>
                       </object>
                     </child>
                     <child>

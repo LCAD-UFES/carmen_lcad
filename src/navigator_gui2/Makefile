@@ -23,7 +23,7 @@ LFLAGS += -lparam_interface -lipc -lglobal -lmap_graphics -lglobal_graphics -lma
 		  -lsimulator_ackerman_interface -llocalize_ackerman_interface -lnavigator_ackerman_interface \
 		  -lfused_odometry_interface -lmap_io -lrddf_interface -lmap_server_interface -lbehavior_selector_interface \
 		  -lrotation_geometry -lcar_panel -lrobot_ackerman_interface -lparking_assistant_interface \
-		  -lglm -lGL -lGLU -lglut -ltf -lmoving_objects_interface -llane_detector_interface
+		  -lglm -lGL -lGLU -lglut -ltf -lmoving_objects_interface -llane_detector_interface -lmodel_predictive_planner_interface
 LFLAGS += -L/usr/lib64/libkml -lrddf_util -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 
 CFLAGS += -Wno-unknown-pragmas

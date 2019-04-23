@@ -15,8 +15,9 @@ typedef struct
 	int    show_fused_odometry;
 	int	   show_gaussians;
 	int	   show_lasers;
-	int	   show_motion_path;
-	int	   show_command_path;
+	int	   show_oa_motion_plan;
+	int	   show_mpp_motion_plan;
+	int	   show_command_plan;
 	int	   show_dynamic_objects;
 	int	   show_dynamic_points;
 	int	   show_annotations;

@@ -29,6 +29,7 @@
 #include <carmen/dynamic_object_detector_interface.h>
 #include <carmen/moving_objects_interface.h>
 #include <carmen/lane_detector_interface.h>
+#include <carmen/model_predictive_planner_interface.h>
 #include <car_panel.h>
 
 #include <carmen/rddf_util.h>
@@ -136,8 +137,9 @@ namespace View
 			GtkCheckMenuItem* menuDisplay_ShowFusedOdometry;
 			GtkCheckMenuItem* menuDisplay_ShowGaussians;
 			GtkCheckMenuItem* menuDisplay_ShowLaserData;
-			GtkCheckMenuItem* menuDisplay_ShowMotionPath;
-			GtkCheckMenuItem* menuDisplay_ShowCommandPath;
+			GtkCheckMenuItem* menuDisplay_ShowOAMotionPlan;
+			GtkCheckMenuItem* menuDisplay_ShowMPPMotionPlan;
+			GtkCheckMenuItem* menuDisplay_ShowCommandPlan;
 			GtkCheckMenuItem* menuDisplay_ShowDynamicObjects;
 			GtkCheckMenuItem* menuDisplay_ShowDynamicPoints;
 			GtkCheckMenuItem* menuDisplay_ShowAnnotations;
@@ -259,15 +261,19 @@ namespace View
 		carmen_localize_ackerman_sensor_message	  sensor_msg;
 
 		int	 is_filming;
-		guint filming_timeout;
+		int filming_timeout;
 
 		carmen_navigator_ackerman_plan_message obstacle_avoider_msg;
 		carmen_world_point_t *obstacle_avoider_path;
 		int obstacle_avoider_path_size;
 
-		carmen_navigator_ackerman_plan_message motion_path_msg;
-		carmen_world_point_t *motion_path;
-		int motion_path_size;
+		carmen_navigator_ackerman_plan_message oa_motion_plan_msg;
+		carmen_world_point_t *oa_motion_plan;
+		int oa_motion_plan_size;
+
+		carmen_model_predictive_planner_motion_plan_message mpp_motion_plan_msg;
+		carmen_world_point_t *mpp_motion_plan;
+		int mpp_motion_plan_size;
 
 		carmen_mapper_virtual_laser_message virtual_laser_msg;
 
