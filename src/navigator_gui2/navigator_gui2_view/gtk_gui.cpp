@@ -195,8 +195,11 @@ namespace View
 		obstacle_avoider_path = NULL;
 		obstacle_avoider_path_size = 0;
 
-		motion_path = NULL;
-		motion_path_size = 0;
+		oa_motion_plan = NULL;
+		oa_motion_plan_size = 0;
+
+		mpp_motion_plan = NULL;
+		mpp_motion_plan_size = 0;
 
 		car_panel_gl = car_panel::get_instance(argc, argv);
 		
@@ -235,8 +238,9 @@ namespace View
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowFusedOdometry), nav_panel_config->show_fused_odometry);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowGaussians), nav_panel_config->show_gaussians);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowLaserData), nav_panel_config->show_lasers);
-		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowCommandPath), nav_panel_config->show_command_path);
-		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowMotionPath), nav_panel_config->show_motion_path);
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowCommandPlan), nav_panel_config->show_command_plan);
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowMPPMotionPlan), nav_panel_config->show_mpp_motion_plan);
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowOAMotionPlan), nav_panel_config->show_oa_motion_plan);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowDynamicObjects), nav_panel_config->show_dynamic_objects);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowDynamicPoints), nav_panel_config->show_dynamic_points);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowAnnotations), nav_panel_config->show_annotations);
@@ -306,11 +310,14 @@ namespace View
 		if (nav_panel_config->show_lasers)
 			carmen_localize_ackerman_subscribe_sensor_message(&sensor_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 
-		if (nav_panel_config->show_command_path)
+		if (nav_panel_config->show_command_plan)
 			carmen_obstacle_avoider_subscribe_path_message(&obstacle_avoider_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 
-		if (nav_panel_config->show_motion_path)
-			carmen_obstacle_avoider_subscribe_motion_planner_path_message(&motion_path_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+		if (nav_panel_config->show_oa_motion_plan)
+			carmen_obstacle_avoider_subscribe_motion_planner_path_message(&oa_motion_plan_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+
+		if (nav_panel_config->show_mpp_motion_plan)
+			carmen_model_predictive_planner_subscribe_motion_plan_message(&mpp_motion_plan_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 
 		if (nav_panel_config->show_dynamic_points)
 			carmen_mapper_subscribe_virtual_laser_message(&virtual_laser_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
@@ -447,7 +454,7 @@ namespace View
 		controls_.menuDisplay_DrawPath = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_DrawPath" ));
 		controls_.menuDisplay_DrawRobotWaipoints = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_DrawRobotWaipoints" ));
 		controls_.menuDisplay_DrawWaipoints = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_DrawWaipoints" ));
-		controls_.menuDisplay_ShowCommandPath = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowCommandPath" ));
+		controls_.menuDisplay_ShowCommandPlan = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowCommandPlan" ));
 		controls_.menuDisplay_ShowDynamicObjects = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowDynamicObjects" ));
 		controls_.menuDisplay_ShowDynamicPoints = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowDynamicPoints" ));
 		controls_.menuDisplay_ShowAnnotations = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowAnnotations" ));
@@ -457,7 +464,8 @@ namespace View
 		controls_.menuDisplay_ShowGaussians = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowGaussians" ));
 		controls_.menuDisplay_ShowLaserData = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowLaserData" ));
 		controls_.menuDisplay_ShowLateralOffset = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowLateralOffset" ));
-		controls_.menuDisplay_ShowMotionPath = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowMotionPath" ));
+		controls_.menuDisplay_ShowOAMotionPlan = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowOAMotionPlan" ));
+		controls_.menuDisplay_ShowMPPMotionPlan = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowMPPMotionPlan" ));
 		controls_.menuDisplay_ShowParticles = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowParticles" ));
 
 		controls_.menuSimulatorShowTruePosition = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSimulatorShowTruePosition" ));
