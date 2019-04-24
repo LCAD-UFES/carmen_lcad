@@ -39,7 +39,7 @@ def run_graphslam(carmen_path, log_path, output_dir, mode):
 	if ("brt" in log_path):
 		args = "--gps_xy_std 20.00000 --gps_angle_std 20.000000 --gicp_loops_xy_std 0.300000 --gicp_loops_angle_std 1.000000 --pf_loops_xy_std 0.030000 --pf_loops_angle_std 3.000000 --gps_discontinuity_threshold 0.5 --gps_min_cluster_size 50 --gps_step 50"
 	else:
-		args = " --gps_xy_std 2.500000 --gps_angle_std 20.000000 --gicp_loops_xy_std 0.300000 --gicp_loops_angle_std 1.000000 --pf_loops_xy_std 0.030000 --pf_loops_angle_std 3.000000 --gps_discontinuity_threshold 0.5 --gps_min_cluster_size 50"
+		args = " --gps_xy_std 2.500000 --gps_angle_std 20.000000 --gicp_loops_xy_std 0.300000 --gicp_loops_angle_std 1.000000 --pf_loops_xy_std 0.00010000 --pf_loops_angle_std 0.010000 --gps_discontinuity_threshold 0.5 --gps_min_cluster_size 50"
 		
 
 	odom_calib = output_dir + "/odom_calib.txt" 

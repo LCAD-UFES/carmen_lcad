@@ -52,15 +52,15 @@ LFLAGS += -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
 
 LFLAGS += -lvtkRendering -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
-DEPS = ../libsegmap/types/libsegmap_types.a \
-	../libsegmap/datasets/libsegmap_datasets.a \
-	../libsegmap/readers/libsegmap_readers.a \
-	../libsegmap/motion_models/libsegmap_motion_models.a \
-	../libsegmap/readers/libsemap_initializations.a \
-	../libsegmap/slam/libsegmap_slam.a \
-	../libsegmap/visualization/libsegmap_visualization.a \
-	../libsegmap/readers/libsemap_readers.a \
-	../util/libutil.a
+DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/datasets/libsegmap_datasets.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsegmap_readers.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/motion_models/libsegmap_motion_models.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsemap_initializations.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/slam/libsegmap_slam.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/visualization/libsegmap_visualization.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsemap_readers.a \
+	$(CARMEN_HOME)/src/segmap/util/libutil.a
 
 SOURCES = graphslam.cpp joint_graphslam.cpp graphslam_util.cpp view_path.cpp
 TARGETS = graphslam view_path # joint_graphslam

@@ -21,7 +21,7 @@ def save_complete_map(tiles_dir, output_image_path):
             if os.path.exists(name):
                 imgs.append(cv2.imread(name))
             else:
-                imgs.append(np.ones((250, 250, 3)) * 128)
+                imgs.append(np.ones((500, 500, 3)) * 128)
         concated.append(np.concatenate(imgs, axis=1))
         
     final_map = np.concatenate(concated, axis=0)

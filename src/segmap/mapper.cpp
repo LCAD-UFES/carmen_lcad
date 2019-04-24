@@ -6,7 +6,7 @@
 #include <carmen/segmap_preproc.h>
 #include <carmen/util_math.h>
 #include <carmen/command_line.h>
-#include "libsegmap/initializations/segmap_args.h"
+#include <carmen/segmap_args.h>
 #include <carmen/segmap_constructors.h>
 
 using namespace cv;
@@ -46,13 +46,14 @@ main(int argc, char **argv)
 							args.get<double>("tile_size"),
 							args.get<double>("resolution"),
 							map_type, 1);
-
-	NewCarmenDataset *dataset = create_dataset(log_path, args.get<double>("camera_latency"), "graphslam");
+																																																																																																																																								
+	//NewCarmenDataset *dataset = create_dataset(log_path, args.get<double>("camera_latency"), "graphslam");
+	NewCarmenDataset *dataset = create_dataset(log_path, args.get<double>("camera_latency"), "fused");
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 
 	create_map(map, dataset, args.get<int>("step"), preproc,
 						 args.get<double>("v_thresh"),
-						 args.get<int>("view"), 640);
+						 args.get<int>("view"), 950);
 
 	printf("Done.\n");
 	return 0;
