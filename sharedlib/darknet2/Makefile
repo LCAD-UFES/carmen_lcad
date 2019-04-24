@@ -1,4 +1,4 @@
-include ../../src/Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 MODULE_NAME = DARKNET
 MODULE_COMMENT = darknet dnn 
@@ -91,13 +91,15 @@ $(OBJDIR)%.o: %.cu $(DEPS)
 PUBLIC_INCLUDES = carmen_darknet_interface.hpp
 
 obj:
+	echo "Ahoooyy"
 	mkdir -p obj
 lib:
 	mkdir -p lib
 
-clean: clean_darknet
+#clean: clean_darknet
 
-clean_darknet:
-	rm -rf $(OBJS) $(SLIB) $(ALIB) $(EXEC) $(EXECOBJ) $(OBJDIR)/*
+#clean_darknet:
+	#rm -rf $(OBJS) $(SLIB) $(ALIB) $(EXEC) $(EXECOBJ) $(OBJDIR)/*
 
-include ../../src/Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules
+

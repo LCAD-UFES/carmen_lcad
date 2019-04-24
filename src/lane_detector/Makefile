@@ -1,4 +1,4 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 MODULE_NAME = Lane Detector
 MODULE_COMMENT = Detect lane using convolutional neural networks.
@@ -10,7 +10,7 @@ CXXFLAGS += -Wno-sign-compare -DUSE_OPENCV -g
 
 IFLAGS += `pkg-config opencv --cflags` -std=c++11 -DNO_NVML -g
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -DUSE_OPENCV -DNO_NVML
-#IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet2
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet2
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet/lib
 LFLAGS += -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
@@ -33,7 +33,7 @@ PUBLIC_INCLUDES = lane_detector_interface.h lane_detector_messages.h
 PUBLIC_LIBRARIES = liblane_detector_interface.a
 PUBLIC_BINARIES = lane_detector
 
-TARGETS = darknet velodyne_camera_calibration camera_boxes_to_world liblane_detector_interface.a lane_detector  #libDetectNet.a
+TARGETS = darknet velodyne_camera_calibration camera_boxes_to_world liblane_detector_interface.a lane_detector #libDetectNet.a
 # TARGETS = velodyne_camera_calibration camera_boxes_to_world libDbscan.a neural_car_detector
 
 #rules
@@ -52,7 +52,7 @@ velodyne_camera_calibration:
 camera_boxes_to_world:
 	$(MAKE) -C $(CARMEN_HOME)/src/camera_boxes_to_world
 
-clean: clean_velodyne_camera_calibration clean_camera_boxes_to_world #clean_darknet
+clean: clean_velodyne_camera_calibration clean_camera_boxes_to_world clean_darknet
 
 clean_velodyne_camera_calibration:
 	$(MAKE) clean -C $(CARMEN_HOME)/src/velodyne_camera_calibration
@@ -60,8 +60,8 @@ clean_velodyne_camera_calibration:
 clean_camera_boxes_to_world:
 	$(MAKE) clean -C $(CARMEN_HOME)/src/camera_boxes_to_world
 	
-#clean_darknet:
-	#$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/darknet
+clean_darknet:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/darknet2
 	
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules
 
