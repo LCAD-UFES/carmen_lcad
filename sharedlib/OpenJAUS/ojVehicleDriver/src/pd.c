@@ -156,8 +156,8 @@ void pdProcessMessage(OjCmpt pd, JausMessage message)
 {
 	ReportComponentStatusMessage reportComponentStatus;
 	ReportPlatformSpecificationsMessage reportPlatformSpecifications;
-	SetWrenchEffortMessage setWrenchEffort;
-	SetDiscreteDevicesMessage setDiscreteDevices;
+//	SetWrenchEffortMessage setWrenchEffort;
+//	SetDiscreteDevicesMessage setDiscreteDevices;
 	QueryPlatformSpecificationsMessage queryPlatformSpecifications;
 	JausAddress address;
 	JausMessage txMessage;
@@ -200,76 +200,76 @@ void pdProcessMessage(OjCmpt pd, JausMessage message)
 			break;
 
 		case JAUS_SET_WRENCH_EFFORT:
-			setWrenchEffort = setWrenchEffortMessageFromJausMessage(message);
-			if (setWrenchEffort)
-			{
-				if ((1 << JAUS_WRENCH_PV_PROPULSIVE_LINEAR_X_BIT) & setWrenchEffort->presenceVector)
-					data->setWrenchEffort->propulsiveLinearEffortXPercent = setWrenchEffort->propulsiveLinearEffortXPercent;
-				if ((1 << JAUS_WRENCH_PV_PROPULSIVE_LINEAR_Y_BIT) & setWrenchEffort->presenceVector)
-					data->setWrenchEffort->propulsiveLinearEffortYPercent = setWrenchEffort->propulsiveLinearEffortYPercent;
-				if ((1 << JAUS_WRENCH_PV_PROPULSIVE_LINEAR_Z_BIT) & setWrenchEffort->presenceVector)
-					data->setWrenchEffort->propulsiveLinearEffortZPercent = setWrenchEffort->propulsiveLinearEffortZPercent;
-
-				if ((1 << JAUS_WRENCH_PV_PROPULSIVE_ROTATIONAL_X_BIT) & setWrenchEffort->presenceVector)
-					data->setWrenchEffort->propulsiveRotationalEffortXPercent = setWrenchEffort->propulsiveRotationalEffortXPercent;
-				if ((1 << JAUS_WRENCH_PV_PROPULSIVE_ROTATIONAL_Y_BIT) & setWrenchEffort->presenceVector)
-					data->setWrenchEffort->propulsiveRotationalEffortYPercent = setWrenchEffort->propulsiveRotationalEffortYPercent;
-				if ((1 << JAUS_WRENCH_PV_PROPULSIVE_ROTATIONAL_Z_BIT) & setWrenchEffort->presenceVector)
-					data->setWrenchEffort->propulsiveRotationalEffortZPercent = setWrenchEffort->propulsiveRotationalEffortZPercent;
-
-				if ((1 << JAUS_WRENCH_PV_RESISTIVE_LINEAR_X_BIT) & setWrenchEffort->presenceVector)
-					data->setWrenchEffort->resistiveLinearEffortXPercent = setWrenchEffort->resistiveLinearEffortXPercent;
-				if ((1 << JAUS_WRENCH_PV_RESISTIVE_LINEAR_Y_BIT) & setWrenchEffort->presenceVector)
-					data->setWrenchEffort->resistiveLinearEffortYPercent = setWrenchEffort->resistiveLinearEffortYPercent;
-				if ((1 << JAUS_WRENCH_PV_RESISTIVE_LINEAR_Z_BIT) & setWrenchEffort->presenceVector)
-					data->setWrenchEffort->resistiveLinearEffortZPercent = setWrenchEffort->resistiveLinearEffortZPercent;
-
-				if ((1 << JAUS_WRENCH_PV_RESISTIVE_ROTATIONAL_X_BIT) & setWrenchEffort->presenceVector)
-					data->setWrenchEffort->resistiveRotationalEffortXPercent = setWrenchEffort->resistiveRotationalEffortXPercent;
-				if ((1 << JAUS_WRENCH_PV_RESISTIVE_ROTATIONAL_Y_BIT) & setWrenchEffort->presenceVector)
-					data->setWrenchEffort->resistiveRotationalEffortYPercent = setWrenchEffort->resistiveRotationalEffortYPercent;
-				if ((1 << JAUS_WRENCH_PV_RESISTIVE_ROTATIONAL_Z_BIT) & setWrenchEffort->presenceVector)
-					data->setWrenchEffort->resistiveRotationalEffortZPercent = setWrenchEffort->resistiveRotationalEffortZPercent;
-
-				send_efforts(data->setWrenchEffort->propulsiveLinearEffortXPercent, data->setWrenchEffort->resistiveLinearEffortXPercent,
-						data->setWrenchEffort->propulsiveRotationalEffortZPercent);
-
-				setWrenchEffortMessageDestroy(setWrenchEffort);
-			}
+//			setWrenchEffort = setWrenchEffortMessageFromJausMessage(message);
+//			if (setWrenchEffort)
+//			{
+//				if ((1 << JAUS_WRENCH_PV_PROPULSIVE_LINEAR_X_BIT) & setWrenchEffort->presenceVector)
+//					data->setWrenchEffort->propulsiveLinearEffortXPercent = setWrenchEffort->propulsiveLinearEffortXPercent;
+//				if ((1 << JAUS_WRENCH_PV_PROPULSIVE_LINEAR_Y_BIT) & setWrenchEffort->presenceVector)
+//					data->setWrenchEffort->propulsiveLinearEffortYPercent = setWrenchEffort->propulsiveLinearEffortYPercent;
+//				if ((1 << JAUS_WRENCH_PV_PROPULSIVE_LINEAR_Z_BIT) & setWrenchEffort->presenceVector)
+//					data->setWrenchEffort->propulsiveLinearEffortZPercent = setWrenchEffort->propulsiveLinearEffortZPercent;
+//
+//				if ((1 << JAUS_WRENCH_PV_PROPULSIVE_ROTATIONAL_X_BIT) & setWrenchEffort->presenceVector)
+//					data->setWrenchEffort->propulsiveRotationalEffortXPercent = setWrenchEffort->propulsiveRotationalEffortXPercent;
+//				if ((1 << JAUS_WRENCH_PV_PROPULSIVE_ROTATIONAL_Y_BIT) & setWrenchEffort->presenceVector)
+//					data->setWrenchEffort->propulsiveRotationalEffortYPercent = setWrenchEffort->propulsiveRotationalEffortYPercent;
+//				if ((1 << JAUS_WRENCH_PV_PROPULSIVE_ROTATIONAL_Z_BIT) & setWrenchEffort->presenceVector)
+//					data->setWrenchEffort->propulsiveRotationalEffortZPercent = setWrenchEffort->propulsiveRotationalEffortZPercent;
+//
+//				if ((1 << JAUS_WRENCH_PV_RESISTIVE_LINEAR_X_BIT) & setWrenchEffort->presenceVector)
+//					data->setWrenchEffort->resistiveLinearEffortXPercent = setWrenchEffort->resistiveLinearEffortXPercent;
+//				if ((1 << JAUS_WRENCH_PV_RESISTIVE_LINEAR_Y_BIT) & setWrenchEffort->presenceVector)
+//					data->setWrenchEffort->resistiveLinearEffortYPercent = setWrenchEffort->resistiveLinearEffortYPercent;
+//				if ((1 << JAUS_WRENCH_PV_RESISTIVE_LINEAR_Z_BIT) & setWrenchEffort->presenceVector)
+//					data->setWrenchEffort->resistiveLinearEffortZPercent = setWrenchEffort->resistiveLinearEffortZPercent;
+//
+//				if ((1 << JAUS_WRENCH_PV_RESISTIVE_ROTATIONAL_X_BIT) & setWrenchEffort->presenceVector)
+//					data->setWrenchEffort->resistiveRotationalEffortXPercent = setWrenchEffort->resistiveRotationalEffortXPercent;
+//				if ((1 << JAUS_WRENCH_PV_RESISTIVE_ROTATIONAL_Y_BIT) & setWrenchEffort->presenceVector)
+//					data->setWrenchEffort->resistiveRotationalEffortYPercent = setWrenchEffort->resistiveRotationalEffortYPercent;
+//				if ((1 << JAUS_WRENCH_PV_RESISTIVE_ROTATIONAL_Z_BIT) & setWrenchEffort->presenceVector)
+//					data->setWrenchEffort->resistiveRotationalEffortZPercent = setWrenchEffort->resistiveRotationalEffortZPercent;
+//
+//				send_efforts(data->setWrenchEffort->propulsiveLinearEffortXPercent, data->setWrenchEffort->resistiveLinearEffortXPercent,
+//						data->setWrenchEffort->propulsiveRotationalEffortZPercent);
+//
+//				setWrenchEffortMessageDestroy(setWrenchEffort);
+//			}
 			break;
 
 		case JAUS_SET_DISCRETE_DEVICES:
-			setDiscreteDevices = setDiscreteDevicesMessageFromJausMessage(message);
-			if(setDiscreteDevices)
-			{
-				if ((1 << JAUS_DEVICES_PV_PROPULSION_BIT) & setDiscreteDevices->presenceVector)
-				{
-					// TODO: @@@ Alberto: Ver pagina 66 do manual
-					data->setDiscreteDevices->mainPropulsion = setDiscreteDevices->mainPropulsion;
-					data->setDiscreteDevices->mainFuelSupply = setDiscreteDevices->mainFuelSupply;
-					// Mandar comandos para a IARA aqui
- 				}
-				if ((1 << JAUS_DEVICES_PV_PARKING_BIT) & setDiscreteDevices->presenceVector)
-				{
-					// Nao usados pela Torc - Ver pagina 66 do manual. A horn eh controlada pelo Signals Drive (sd.c)
-					data->setDiscreteDevices->parkingBrake = setDiscreteDevices->parkingBrake;
-					data->setDiscreteDevices->horn = setDiscreteDevices->horn;
- 				}
-				if ((1 << JAUS_DEVICES_PV_GEAR_BIT) & setDiscreteDevices->presenceVector)
-				{
-					data->setDiscreteDevices->gear = setDiscreteDevices->gear;
-
-					if (data->setDiscreteDevices->gear == 1) // Low
-						gear_can_command = 0x04;
-					else if (data->setDiscreteDevices->gear == 2) // Drive
-						gear_can_command = 0x03;
-					else if (data->setDiscreteDevices->gear == 128) // Neutral
-						gear_can_command = 0x02;
-					else if (data->setDiscreteDevices->gear == 129) // Reverse
-						gear_can_command = 0x01;
- 				}
-				setDiscreteDevicesMessageDestroy(setDiscreteDevices);
-			}
+//			setDiscreteDevices = setDiscreteDevicesMessageFromJausMessage(message);
+//			if(setDiscreteDevices)
+//			{
+//				if ((1 << JAUS_DEVICES_PV_PROPULSION_BIT) & setDiscreteDevices->presenceVector)
+//				{
+//					// TODO: @@@ Alberto: Ver pagina 66 do manual
+//					data->setDiscreteDevices->mainPropulsion = setDiscreteDevices->mainPropulsion;
+//					data->setDiscreteDevices->mainFuelSupply = setDiscreteDevices->mainFuelSupply;
+//					// Mandar comandos para a IARA aqui
+// 				}
+//				if ((1 << JAUS_DEVICES_PV_PARKING_BIT) & setDiscreteDevices->presenceVector)
+//				{
+//					// Nao usados pela Torc - Ver pagina 66 do manual. A horn eh controlada pelo Signals Drive (sd.c)
+//					data->setDiscreteDevices->parkingBrake = setDiscreteDevices->parkingBrake;
+//					data->setDiscreteDevices->horn = setDiscreteDevices->horn;
+// 				}
+//				if ((1 << JAUS_DEVICES_PV_GEAR_BIT) & setDiscreteDevices->presenceVector)
+//				{
+//					data->setDiscreteDevices->gear = setDiscreteDevices->gear;
+//
+//					if (data->setDiscreteDevices->gear == 1) // Low
+//						gear_can_command = 0x04;
+//					else if (data->setDiscreteDevices->gear == 2) // Drive
+//						gear_can_command = 0x03;
+//					else if (data->setDiscreteDevices->gear == 128) // Neutral
+//						gear_can_command = 0x02;
+//					else if (data->setDiscreteDevices->gear == 129) // Reverse
+//						gear_can_command = 0x01;
+// 				}
+//				setDiscreteDevicesMessageDestroy(setDiscreteDevices);
+//			}
 			break;
 
 		case JAUS_QUERY_PLATFORM_SPECIFICATIONS:

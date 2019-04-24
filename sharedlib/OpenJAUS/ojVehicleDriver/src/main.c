@@ -409,7 +409,7 @@ void update_wheels_speed(struct can_frame frame)
 void update_car_speed(struct can_frame frame)
 {
 	car_speed = ((double) frame.data[0] * 256.0 + (double) frame.data[1]) * DESOUZA_GUIDOLINI_CONSTANT;
-	speed_signal = (((double) frame.data[6] * 256.0 + (double) frame.data[7]) > 0x286C)? 1.0: -1.0;
+	speed_signal = (((double) frame.data[6] * 256.0 + (double) frame.data[7]) > 0x0800)? 1.0: -1.0;
 	car_speed *= speed_signal;
 }
 
@@ -427,9 +427,17 @@ double wheel_speed_moving_average(double *wheel_speed)
 
 void update_steering_angle(struct can_frame frame)
 {
+//	printf("0x%x 0x%x 0x%x 0x%x\n", frame.data[0], frame.data[1], frame.data[2], frame.data[3]);
 //	steering_angle = -(((double) frame.data[2] * 256.0 + (double) frame.data[3]) - 20015.0) / 28200.0;
-	steering_angle_sensor = frame.data[2] * 256.0 + frame.data[3];
-	steering_angle_auxiliary_sensor = frame.data[0] * 256.0 + frame.data[1];
+
+	// IARA
+//	steering_angle_sensor = frame.data[2] * 256.0 + frame.data[3];
+//	steering_angle_auxiliary_sensor = frame.data[0] * 256.0 + frame.data[1];
+
+	// Ford Fusion
+	steering_angle_sensor = frame.data[0] * 256.0 + frame.data[1];
+	steering_angle_auxiliary_sensor = frame.data[2] * 256.0 + frame.data[3]; // Nao sei se tem a mesma funcao que na IARA... Aparentemente nao
+
 	double val = (double) (steering_angle_sensor - steering_angle_sensor_zero);
 	double phi;
 	if (val > 0.0)
@@ -469,10 +477,10 @@ void update_Car_state(struct can_frame frame)
 	if (frame.can_id == 0x216) // Odometro das rodas. Frequencia de 60Hz no Ford Escape Hybrid
 		update_wheels_speed(frame);
 
-	if (frame.can_id == 0x425) // Velocidade da IARA. Frequencia de 60Hz no Ford Escape Hybrid
+	if (frame.can_id == 0x415) // Velocidade da IARA. Frequencia de 60Hz no Ford Escape Hybrid
 		update_car_speed(frame);
 
-	if (frame.can_id == 0x80) // Angulo do volante
+	if (frame.can_id == 0x76) // Angulo do volante
 		update_steering_angle(frame);
 
 	if (frame.can_id == 0x431) // Setas acionadas manualmente e estado das portas (abertas/fechadas)

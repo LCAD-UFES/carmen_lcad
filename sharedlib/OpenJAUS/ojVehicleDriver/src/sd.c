@@ -38,7 +38,7 @@ extern int turn_signal;
 void sdProcessMessage(OjCmpt sd, JausMessage message)
 {
 	ReportComponentStatusMessage reportComponentStatus;
-	SetSignalsMessage setSignals;
+//	SetSignalsMessage setSignals;
 	JausAddress address;
 	PdData *data;
 
@@ -79,44 +79,44 @@ void sdProcessMessage(OjCmpt sd, JausMessage message)
 			break;
 
 		case JAUS_SET_SIGNALS:
-			setSignals = setSignalsMessageFromJausMessage(message);
-			if(setSignals)
-			{
-				if ((1 << JAUS_SIGNALS_PV_TURN_SIGNAL_BIT) & setSignals->presenceVector)
-				{
-					data->setSignals->turnSignal = setSignals->turnSignal;
-
-					struct can_frame frame;
-					frame.can_id = 0x400;
-					frame.can_dlc = 2; // numero de bytes
-					frame.data[0] = data->setSignals->turnSignal << 5;
-					frame.data[1] = data->setSignals->hornStatus;
-					if (out_can_sockfd != -1)
-						send_frame(out_can_sockfd, &frame);
-				}
-				if ((1 << JAUS_SIGNALS_PV_HORN_BIT) & setSignals->presenceVector)
-				{
-					data->setSignals->hornPeriodOff = setSignals->hornPeriodOff;
-					data->setSignals->hornPeriodOn = setSignals->hornPeriodOn;
-					data->setSignals->hornStatus = setSignals->hornStatus;
-
-					struct can_frame frame;
-					frame.can_id = 0x400;
-					frame.can_dlc = 2; // numero de bytes
-					frame.data[0] = data->setSignals->turnSignal << 5;
-					frame.data[1] = data->setSignals->hornStatus;
-					if (out_can_sockfd != -1)
-						send_frame(out_can_sockfd, &frame);
-				}
-				if ((1 << JAUS_SIGNALS_PV_HEADLIGHTS_BIT) & setSignals->presenceVector)
-				{
-					data->setSignals->headlightsStatus = setSignals->headlightsStatus;
-					data->setSignals->lightsPeriodOff = setSignals->lightsPeriodOff;
-					data->setSignals->lightsPeriodOn = setSignals->lightsPeriodOn;
-					// Mandar comandos para a IARA aqui
-				}
-				setSignalsMessageDestroy(setSignals);
-			}
+//			setSignals = setSignalsMessageFromJausMessage(message);
+//			if(setSignals)
+//			{
+//				if ((1 << JAUS_SIGNALS_PV_TURN_SIGNAL_BIT) & setSignals->presenceVector)
+//				{
+//					data->setSignals->turnSignal = setSignals->turnSignal;
+//
+//					struct can_frame frame;
+//					frame.can_id = 0x400;
+//					frame.can_dlc = 2; // numero de bytes
+//					frame.data[0] = data->setSignals->turnSignal << 5;
+//					frame.data[1] = data->setSignals->hornStatus;
+//					if (out_can_sockfd != -1)
+//						send_frame(out_can_sockfd, &frame);
+//				}
+//				if ((1 << JAUS_SIGNALS_PV_HORN_BIT) & setSignals->presenceVector)
+//				{
+//					data->setSignals->hornPeriodOff = setSignals->hornPeriodOff;
+//					data->setSignals->hornPeriodOn = setSignals->hornPeriodOn;
+//					data->setSignals->hornStatus = setSignals->hornStatus;
+//
+//					struct can_frame frame;
+//					frame.can_id = 0x400;
+//					frame.can_dlc = 2; // numero de bytes
+//					frame.data[0] = data->setSignals->turnSignal << 5;
+//					frame.data[1] = data->setSignals->hornStatus;
+//					if (out_can_sockfd != -1)
+//						send_frame(out_can_sockfd, &frame);
+//				}
+//				if ((1 << JAUS_SIGNALS_PV_HEADLIGHTS_BIT) & setSignals->presenceVector)
+//				{
+//					data->setSignals->headlightsStatus = setSignals->headlightsStatus;
+//					data->setSignals->lightsPeriodOff = setSignals->lightsPeriodOff;
+//					data->setSignals->lightsPeriodOn = setSignals->lightsPeriodOn;
+//					// Mandar comandos para a IARA aqui
+//				}
+//				setSignalsMessageDestroy(setSignals);
+//			}
 			break;
 
 		default:
