@@ -1,4 +1,7 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
+
+MODULE_NAME = NAVIGATOR ACKERMAN
+MODULE_COMMENT = The motion planner
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
@@ -16,17 +19,12 @@ ifeq (Fedora release 14 (Laughlin),$(SO_DISTRO))
   LFLAGS += -lX11
 endif
 
-
-MODULE_NAME = NAVIGATOR ACKERMAN
-MODULE_COMMENT = The motion planner!
-
 SOURCES = navigator_ackerman.c conventional_ackerman.c conventional_astar_ackerman.c rs.cpp path_optimization_ackerman.c FH/fh.c FH/fib.c planner_ackerman.c navigator_ackerman_ipc.c \
 	navigator_ackerman_interface.c trajectory_ackerman.c map_ackerman_modify.c \
 	navigator_ackerman_test.c \
 navigator_precomputed_cost_ackerman.c
 
-PUBLIC_INCLUDES = navigator_ackerman_messages.h navigator_ackerman_interface.h navigator_ackerman.h \
-	planner_ackerman_interface.h
+PUBLIC_INCLUDES = navigator_ackerman_messages.h navigator_ackerman_interface.h navigator_ackerman.h planner_ackerman_interface.h
 PUBLIC_LIBRARIES =  libnavigator_ackerman_interface.a libconventional_ackerman.a
 
 PUBLIC_BINARIES = navigator_ackerman
@@ -71,4 +69,4 @@ clean: clean_prob_models
 clean_prob_models:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/prob_models/
 	
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

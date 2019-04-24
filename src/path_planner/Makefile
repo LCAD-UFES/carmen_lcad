@@ -1,33 +1,33 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
+
+MODULE_NAME = PATH PLANNER
+MODULE_COMMENT = Path Planer
 
 LINK = g++
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
-IFLAGS +=
 LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc \
 	-lmap_interface -lgrid_mapping -lmapper_interface \
 	-lparam_interface -lX11 \
 	-llocalize_ackerman_interface  -lmap_io -lprob_models -lobstacle_distance_mapper_interface\
 	-lsimulator_ackerman_interface -lobstacle_avoider_interface -lrddf_interface -lrobot_ackerman_interface \
 	-lmotion_planner_interface -lcollision_detection -lmap_server_interface -lbehavior_selector_interface -lrotation_geometry  -lrddf_interface
-CFLAGS += #-pg
-CXXFLAGS += -std=c++0x #-pg
-
-MODULE_NAME = PATH PLANNER
-MODULE_COMMENT = Path Planer pow!
+CXXFLAGS += -std=c++0x 
 
 SOURCES = navigator_astar.cpp conventional_ackerman.c conventional_astar_ackerman.cpp rs.cpp FH/fh.cpp FH/fib.cpp MessageControl.cpp navigator_ackerman_ipc.c \
 	navigator_astar_interface.c trajectory_ackerman.c navigator_precomputed_cost_ackerman.c path_planner_interface.c
 
-PUBLIC_INCLUDES = path_planner_interface.h path_planner_messages.h navigator_astar_interface.h navigator_astar.hpp MessageControl.hpp
-PUBLIC_LIBRARIES =  libnavigator_astar_interface.a libconventional_ackerman.a libpath_planner_interface.a
-
+PUBLIC_INCLUDES = path_planner_messages.h path_planner_interface.h navigator_astar_interface.h navigator_astar.hpp MessageControl.hpp
+PUBLIC_LIBRARIES = libnavigator_astar_interface.a libconventional_ackerman.a libpath_planner_interface.a
 PUBLIC_BINARIES = path_planner
 
-TARGETS =  libprob_models.a libnavigator_astar_interface.a libpath_planner_interface.a path_planner navigator_precomputed_cost_ackerman startgoal_simulator\
- libconventional_ackerman.a
+## 
+## IMPORTANT: The 'path_planner' program is not being compiled because the struct 'carmen_navigator_config_t' defined at
+## 'navigator_ackerman/navigator_ackerman.h' has changed and the source of the program was not updated.
+## 
+TARGETS =  libprob_models.a libnavigator_astar_interface.a libpath_planner_interface.a libconventional_ackerman.a navigator_precomputed_cost_ackerman startgoal_simulator # path_planner 
 
 PUBLIC_LIBRARIES_SO = libnavigator_astar_interface.so
 ifndef NO_PYTHON
@@ -65,4 +65,4 @@ clean: clean_prob_models
 clean_prob_models:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/prob_models/
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

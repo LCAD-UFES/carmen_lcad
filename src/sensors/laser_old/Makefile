@@ -1,6 +1,6 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
-MODULE_NAME = "LASER"
+MODULE_NAME = "LASER OLD"
 MODULE_COMMENT = "SICK Laser Module"
 
 CFLAGS +=
@@ -17,7 +17,7 @@ ifndef NO_LIBJPEG
 CFLAGS +=
 IFLAGS += `$(GTK_CONFIG) --cflags` 
 LFLAGS += -lparam_interface -lipc -lglobal -lglobal_graphics \
-	`$(GTK_CONFIG) --libs` -lmap_graphics -ljpeg
+	`$(GTK_CONFIG) --libs` -lmap_graphics -ljpeg -lX11 -lXext
 SOURCES += laserview.c
 PUBLIC_INCLUDES += 
 PUBLIC_LIBRARIES += 
@@ -45,4 +45,4 @@ laserview:		laserview.o liblaser_interface.a
 
 # rules
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

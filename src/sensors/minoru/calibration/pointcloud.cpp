@@ -18,6 +18,7 @@
 */
 
 #include "pointcloud.h"
+#include <opencv2/calib3d/calib3d_c.h>
 
 CvMat* pointcloud::matMul(const CvMat* A, const CvMat* B) 
 {

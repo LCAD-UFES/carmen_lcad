@@ -1883,9 +1883,9 @@ register_handlers()
 	carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	// **************************************************
-	// filipe:: TODO: criar funcoes de subscribe no interfaces!
+	// Some good soul could create subscribe functions (or use if they already exist) 
+	// in the appropriate interface files to replace the following calls to the low level API.
 	// **************************************************
-
     carmen_subscribe_message((char *) CARMEN_PATH_PLANNER_ROAD_PROFILE_MESSAGE_NAME,
 			(char *) CARMEN_PATH_PLANNER_ROAD_PROFILE_MESSAGE_FMT,
 			NULL, sizeof (carmen_path_planner_road_profile_message),

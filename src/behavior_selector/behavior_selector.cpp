@@ -1,9 +1,3 @@
-/*
- * behavior_selector.c
- *
- *  Created on: 28/09/2012
- *      Author: romulo
- */
 
 #include <carmen/collision_detection.h>
 #include <carmen/obstacle_distance_mapper_interface.h>

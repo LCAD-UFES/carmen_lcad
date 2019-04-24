@@ -1,4 +1,4 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 MODULE_NAME = "CAMERA"
 MODULE_COMMENT = "General Camera Module"
@@ -71,4 +71,4 @@ camera_view:		camera_view.o libcamera_interface.a
 
 # rules
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

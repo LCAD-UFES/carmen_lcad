@@ -1,4 +1,4 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 MODULE_NAME = "LOG FILTER"
 MODULE_COMMENT = "LOG FILTER Module"
@@ -27,6 +27,6 @@ ifndef NO_PYTHON
 TARGETS += 
 endif
 
-log_filter: log_filter_main.o ../kinect/kinect_util.o
+log_filter: log_filter_main.o 
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

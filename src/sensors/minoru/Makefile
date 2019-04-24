@@ -1,4 +1,4 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 # Module name and description
 MODULE_NAME = MINORU_PACKAGE
@@ -24,7 +24,7 @@ IFLAGS +=
 LFLAGS += -lminoru -lminorucalib
 
 IFLAGS += `pkg-config --cflags opencv`
-CFLAGS += `pkg-config --libs opencv`
+LFLAGS += `pkg-config --libs opencv`
 
 # Source code files (.c, .cpp) 
 SOURCES = minoru_main.cpp minoru_interface.c
@@ -47,7 +47,7 @@ endif
 
 ifndef NO_GRAPHICS
 IFLAGS += `$(GTK_CONFIG) --cflags` 
-LFLAGS += `$(GTK_CONFIG) --libs` -lglobal_graphics
+LFLAGS += `$(GTK_CONFIG) --libs` -lglobal_graphics -lglib-2.0
 SOURCES += minoru_view.c
 PUBLIC_BINARIES += minoru_view
 TARGETS += minoru_view
@@ -77,4 +77,4 @@ clean_minoru:
 
 # rules
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

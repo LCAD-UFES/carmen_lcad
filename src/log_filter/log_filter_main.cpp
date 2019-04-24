@@ -1,12 +1,4 @@
 
-/**
- * @description
- * This code have been created to filter some messages of the log
- * The messages of the chosen sensor are saved to a file
- *
- * @author filipe mutz
- */
-
 #include <stdio.h>
 #include <string.h>
 #include <opencv/cv.h>
@@ -24,7 +16,7 @@
 #include <carmen/localize_ackerman_messages.h>
 #include <carmen/stereo_util.h>
 #include <carmen/xsens_interface.h>
-#include "../kinect/kinect_util.h"
+#include <carmen/kinect_util.h>
 
 #include <tf.h>
 

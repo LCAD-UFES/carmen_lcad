@@ -1,6 +1,6 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
-MODULE_NAME = "LASER"
+MODULE_NAME = "LASER NEW"
 MODULE_COMMENT = "The new laser module for SICK and Hokuyo lasers"
 
 CFLAGS += -DLASER_USE_PTHREAD -std=gnu99 
@@ -73,4 +73,4 @@ laserclient:            laserclient.o liblaser_interface.a
 
 
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

@@ -24,7 +24,7 @@ PUBLIC_LIBRARIES = liblaser_ldmrs_interface.a liblaser_ldmrs_utils.a
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = laser_ldmrs
 
-TARGETS = libsickldmrs liblaser_ldmrs_interface.a laser_ldmrs
+TARGETS = libsickldmrs liblaser_ldmrs_interface.a liblaser_ldmrs_utils.a laser_ldmrs
 
 PUBLIC_LIBRARIES_SO = liblaser_ldmrs_interface.so 
 

@@ -1,4 +1,4 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 # Module name and description
 MODULE_NAME = DYNAMIC_OBJECT_DETECTOR
@@ -48,4 +48,4 @@ dynamic_object_detector:	dynamic_object_detector_main.o libdynamic_object_detect
 
 # rules
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

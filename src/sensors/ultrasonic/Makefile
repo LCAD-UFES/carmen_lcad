@@ -1,4 +1,4 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 # Module name and description
 MODULE_NAME = ULTRASONIC_SENSOR
@@ -50,4 +50,4 @@ ultrasonic:	ultrasonic_filter_main.o libultrasonic_filter_interface.a
 ultrasonic_viewer: ultrasonic_viewer_main.o
 
 # rules
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

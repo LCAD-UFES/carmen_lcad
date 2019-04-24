@@ -1,4 +1,4 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 # Module name and description
 MODULE_NAME = WEB_CAM_PACKAGE
@@ -26,4 +26,4 @@ libweb_cam_interface.a: web_cam_interface.o
 web_cam: web_cam_interface.o web_cam_main.o
 web_cam_test: web_cam_test.o web_cam_interface.o
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

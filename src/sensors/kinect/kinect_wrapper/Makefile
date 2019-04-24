@@ -31,7 +31,7 @@ kinect_glmain.o: kinect_glmain.c
 	g++ $(CFLAGS) $(INC) $(LIBS) -lkinect_wrapper -c $<
 
 copy:
-	cp $(LIBRARY) ../
+	cp $(LIBRARY) ..
 	
 clean:
 	rm -rf *.o $(LIBRARY) $(PROGRAM)

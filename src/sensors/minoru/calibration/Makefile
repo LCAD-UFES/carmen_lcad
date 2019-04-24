@@ -1,4 +1,4 @@
-include ../../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 # Module name and description
 MODULE_NAME = MINORU_CALIB_PACKAGE
@@ -22,7 +22,7 @@ IFLAGS +=
 LFLAGS += -lminoru -lminorucalib -lelas
 
 IFLAGS += `pkg-config --cflags opencv`
-CFLAGS += `pkg-config --libs opencv`
+LFLAGS += `pkg-config --libs opencv`
 
 # Source code files (.c, .cpp) 
 SOURCES = main.cpp anyoption.cpp drawing.cpp fast.cpp gridmap3d.cpp linefit.cpp motionmodel.cpp pointcloud.cpp polynomial.cpp stereo.cpp stereodense.cpp
@@ -42,4 +42,4 @@ libminorucalib.a:
 
 # rules
 
-include ../../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

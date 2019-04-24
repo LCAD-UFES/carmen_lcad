@@ -1,5 +1,4 @@
-#CARMEN_HOME = ../../../
-include ../../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 MODULE_NAME = "FAKECAM"
 MODULE_COMMENT = "Publishes images from a file"
@@ -13,4 +12,4 @@ libfakecam.a: fakecam.o
 
 # rules
 
-include ../../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

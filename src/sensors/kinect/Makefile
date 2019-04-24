@@ -1,4 +1,4 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK=g++
 CFLAGS += -std=c99
@@ -50,7 +50,7 @@ kinect_view: kinect_view.o libkinect_interface.a
 
 kinect_laser: kinect_laser.o libkinect_interface.a
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules
 
 clean: clean_kinect_wrapper
 

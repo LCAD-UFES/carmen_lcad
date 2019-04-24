@@ -193,7 +193,7 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 }
 
 static void
-carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_message *message)
+carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_map_message *message)
 {
 	printf("carmen_obstacle_distance_mapper_message_handler\n");
 	messageControl.carmen_planner_ackerman_setDistanceMap(message);
