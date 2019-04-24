@@ -62,6 +62,7 @@ TARGETS = \
 	road_mapper_display_map \
 	road_mapper_log_tracker
 
+ifneq (, $(bash which nvcc))
 ifdef CAFFE_ENET_HOME
 
 CXXFLAGS += -DUSE_CAFFE
@@ -87,6 +88,7 @@ TARGETS += \
 	road_mapper_road_inference_main
 
 endif
+endif
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -109,8 +111,9 @@ road_mapper_image_splitter: road_mapper_image_splitter.o
 road_mapper_display_map: road_mapper_display_map.o road_mapper.o road_mapper_utils.o
 road_mapper_log_tracker: road_mapper_log_tracker.o
 
+ifneq (, $(bash which nvcc))
 ifdef CAFFE_ENET_HOME
 road_mapper_road_inference_main: road_mapper_road_inference_main.o road_mapper.o road_mapper_utils.o
 endif
-
+endif
 include ../Makefile.rules

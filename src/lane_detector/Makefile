@@ -33,7 +33,12 @@ PUBLIC_INCLUDES = lane_detector_interface.h lane_detector_messages.h
 PUBLIC_LIBRARIES = liblane_detector_interface.a
 PUBLIC_BINARIES = lane_detector
 
-TARGETS = darknet velodyne_camera_calibration camera_boxes_to_world liblane_detector_interface.a lane_detector #libDetectNet.a
+TARGETS += darknet liblane_detector_interface.a 
+
+# only compile the programs if the nvcc program exists the executables 
+ifneq (, $(bash which nvcc))
+TARGETS += velodyne_camera_calibration camera_boxes_to_world lane_detector #libDetectNet.a
+endif
 # TARGETS = velodyne_camera_calibration camera_boxes_to_world libDbscan.a neural_car_detector
 
 #rules
