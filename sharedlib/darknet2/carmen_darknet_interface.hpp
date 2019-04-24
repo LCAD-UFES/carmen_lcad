@@ -1,3 +1,7 @@
+
+#ifndef __DARKNET_INTERFACE_H__
+#define __DARKNET_INTERFACE_H__
+
 #include <vector>
 
 
@@ -33,3 +37,5 @@ run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_nam
 
 void
 run_YOLO_VOC_Pascal(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold, char* file_path);
+
+#endif

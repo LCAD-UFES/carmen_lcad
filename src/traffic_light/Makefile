@@ -13,15 +13,19 @@ SUBDIRS += TLightStateRecog
 
 IFLAGS +=  -std=c++11 -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
 
-LFLAGS += -L$(CUDA_LIBS)
 LFLAGS += -lpthread -fopenmp -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 	 -ltime_profile -lbumblebee_basic_interface -lstereo_interface \
 	 -llocalize_ackerman_interface -lrddf_interface -lwnn 
 
-LFLAGS += -ldlib -lboost_system  -lgomp -lcudart -lcuda -lcurand -lcublas -lcudnn -lcusolver
+LFLAGS += -ldlib -lboost_system  -lgomp 
 
 IFLAGS += `pkg-config opencv --cflags`
 LFLAGS += `pkg-config opencv --libs`
+
+ifneq (, $(shell which nvcc))
+
+LFLAGS += -L$(CUDA_LIBS)
+LFLAGS += -lcudart -lcuda -lcurand -lcublas -lcudnn -lcusolver
 
 ifdef CAFFE_HOME
 IFLAGS += -I$(CAFFE_HOME)/include -I$(CAFFE_HOME)/build/src/ -I/usr/local/cuda/include 
@@ -32,6 +36,8 @@ PUBLIC_INCLUDES += squeezenet_tlight.h
 PUBLIC_LIBRARIES += libsqueezenet_tlight.a
 TARGETS += libsqueezenet_tlight.a
 CXXFLAGS += -DUSE_CAFFE
+endif
+
 endif
 
 
@@ -47,7 +53,11 @@ PUBLIC_LIBRARIES = libtraffic_light_interface.a
 PUBLIC_BINARIES = traffic_light log_generate_images
 
 #TARGETS = libtraffic_light_interface.a  traffic_light mapping_traffic_light log_generate_images
-TARGETS = libtraffic_light_interface.a  traffic_light log_generate_images #traffic_light_annotation_tool tlight_train tlight_evaluate_train
+TARGETS = libtraffic_light_interface.a  
+
+ifneq (, $(shell which nvcc))
+TARGETS += traffic_light log_generate_images #traffic_light_annotation_tool tlight_train tlight_evaluate_train
+endif
 
 PUBLIC_LIBRARIES_SO = libtraffic_light_interface.so
 

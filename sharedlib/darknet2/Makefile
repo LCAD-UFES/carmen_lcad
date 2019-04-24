@@ -68,7 +68,13 @@ EXECOBJ = $(addprefix $(OBJDIR), $(EXECOBJA))
 OBJS = $(addprefix $(OBJDIR), $(OBJ))
 DEPS = $(wildcard src/*.h) Makefile include/darknet.h
 
-all: obj lib $(SLIB) $(ALIB) $(EXEC)
+PUBLIC_INCLUDES = carmen_darknet_interface.hpp
+
+ifneq (, $(shell which nvcc))
+ALL_DEPS = obj lib $(SLIB) $(ALIB) $(EXEC)
+endif
+
+all: $(ALL_DEPS)
 
 $(EXEC): $(EXECOBJ) $(ALIB)
 	$(CC) $(COMMON) $(CFLAGS) $^ -o $@ $(LDFLAGS) $(ALIB)
@@ -88,10 +94,7 @@ $(OBJDIR)%.o: %.c $(DEPS)
 $(OBJDIR)%.o: %.cu $(DEPS)
 	$(NVCC) $(ARCH) $(COMMON) --compiler-options "$(CFLAGS)" -c $< -o $@
 
-PUBLIC_INCLUDES = carmen_darknet_interface.hpp
-
 obj:
-	echo "Ahoooyy"
 	mkdir -p obj
 lib:
 	mkdir -p lib
