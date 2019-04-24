@@ -22,7 +22,7 @@ LFLAGS += -ldlib -lboost_system  -lgomp
 IFLAGS += `pkg-config opencv --cflags`
 LFLAGS += `pkg-config opencv --libs`
 
-ifneq (, $(bash which nvcc))
+ifneq (, $(shell which nvcc))
 
 LFLAGS += -L$(CUDA_LIBS)
 LFLAGS += -lcudart -lcuda -lcurand -lcublas -lcudnn -lcusolver
@@ -55,7 +55,7 @@ PUBLIC_BINARIES = traffic_light log_generate_images
 #TARGETS = libtraffic_light_interface.a  traffic_light mapping_traffic_light log_generate_images
 TARGETS = libtraffic_light_interface.a  
 
-ifneq (, $(bash which nvcc))
+ifneq (, $(shell which nvcc))
 TARGETS += traffic_light log_generate_images #traffic_light_annotation_tool tlight_train tlight_evaluate_train
 endif
 

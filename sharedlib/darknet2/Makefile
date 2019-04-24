@@ -70,7 +70,7 @@ DEPS = $(wildcard src/*.h) Makefile include/darknet.h
 
 PUBLIC_INCLUDES = carmen_darknet_interface.hpp
 
-ifneq (, $(bash which nvcc))
+ifneq (, $(shell which nvcc))
 ALL_DEPS = obj lib $(SLIB) $(ALIB) $(EXEC)
 endif
 
