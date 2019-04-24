@@ -188,11 +188,15 @@ void on_menuDisplay_ShowLaserData_toggled (GtkCheckMenuItem* togglebutton,
 		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuDisplay_ShowMotionPath_toggled (GtkCheckMenuItem* togglebutton,
+void on_menuDisplay_ShowOAMotionPlan_toggled (GtkCheckMenuItem* togglebutton,
 		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuDisplay_ShowCommandPath_toggled (GtkCheckMenuItem* togglebutton,
+void on_menuDisplay_ShowMPPMotionPlan_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
+void on_menuDisplay_ShowCommandPlan_toggled (GtkCheckMenuItem* togglebutton,
 		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT

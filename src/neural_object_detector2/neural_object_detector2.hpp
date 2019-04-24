@@ -28,8 +28,8 @@
 
 #include <cstdlib>
 #include <fstream>
-#include "Darknet.hpp"
-//#include <carmen/carmen_darknet_interface.hpp>
+//#include "Darknet.hpp"
+#include <carmen/carmen_darknet_interface.hpp>
 
 #define SHOW_DETECTIONS
 

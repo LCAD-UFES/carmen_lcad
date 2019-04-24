@@ -25,10 +25,12 @@ using namespace std;
 #include <carmen/grid_mapping.h>
 #include <carmen/rrt_planner_interface.h>
 #include <carmen/rrt_planner_message.h>
+#include <carmen/obstacle_distance_mapper_interface.h>
 
 #include "rddf_interface.h"
 #include "rddf_messages.h"
 #include "rddf_index.h"
+#include "stehs_planner.h"
 
 #include <kml/base/file.h>
 #include <kml/engine.h>
@@ -55,6 +57,10 @@ static carmen_localize_ackerman_globalpos_message *current_globalpos_msg = NULL;
 static carmen_simulator_ackerman_truepos_message *current_truepos_msg = NULL;
 static carmen_base_ackerman_motion_command_message *current_motion_command_message = NULL;
 static carmen_map_p current_road_map = NULL;
+carmen_rddf_end_point_message *final_goal;
+bool there_is_final_goal = false;
+carmen_obstacle_distance_mapper_map_message distance_map;
+
 
 static char *carmen_rddf_filename = NULL;
 
@@ -2121,27 +2127,34 @@ carmen_rddf_play_publish_annotation_queue()
 }
 
 
-static void
-carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
+void
+carmen_rddf_play_publish_frenet_rddf_and_annotations(carmen_point_t robot_pose)
 {
-	// so publica rddfs quando a pose do robo ja estiver setada
-	if ((carmen_rddf_num_poses_ahead > 0) && (carmen_rddf_num_trace_back > 0))
+	if ((carmen_rddf_num_poses_ahead > 0) && (carmen_rddf_num_trace_back > 0))     // Only publishes the rddf after receiving a robot pose
 	{
 		clear_annotations();
 		set_annotations(robot_pose);
 
-		//carmen_rddf_publish_road_profile_message(
-		carmen_rddf_publish_multi_path_message(
-			carmen_rddf_poses_ahead,
-			carmen_rddf_trace_back,
-			carmen_rddf_num_poses_ahead,
-			carmen_rddf_num_trace_back,
-			annotations,
-			annotations_codes,
-			tree_path_num,
-			tree_path_sizes,
-			tree_path_costs,
-			tree_path);
+		carmen_rddf_publish_multi_path_message(carmen_rddf_poses_ahead, carmen_rddf_trace_back, carmen_rddf_num_poses_ahead, carmen_rddf_num_trace_back,
+				annotations, annotations_codes, tree_path_num, tree_path_sizes, tree_path_costs, tree_path);
+
+		carmen_rddf_play_publish_annotation_queue();
+
+		carmen_rddf_publish_traffic_sign_message(state_traffic_sign_code, state_traffic_sign_curvature);
+	}
+}
+
+
+void
+carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
+{
+	if (carmen_rddf_num_poses_ahead > 0 && carmen_rddf_num_poses_back > 0)         // Only publishes the rddf after receiving a robot pose
+	{
+		clear_annotations();
+		set_annotations(robot_pose);
+
+		carmen_rddf_publish_road_profile_message(carmen_rddf_poses_ahead, carmen_rddf_poses_back, carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back,
+				annotations, annotations_codes);
 
 		carmen_rddf_play_publish_annotation_queue();
 
@@ -2155,6 +2168,8 @@ carmen_rddf_publish_road_profile_around_end_point(carmen_ackerman_traj_point_t *
 {
 	carmen_rddf_publish_road_profile_around_end_point_message(poses_around_end_point, num_poses_acquired);
 }
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -2220,6 +2235,8 @@ carmen_rddf_play_load_index(char *rddf_filename)
 	}
 	carmen_rddf_load_index(rddf_filename);
 }
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -2232,7 +2249,7 @@ carmen_rddf_play_load_index(char *rddf_filename)
 
 
 static void
-pos_message_handler(carmen_point_t robot_pose, double timestamp)
+pos_message_handler(carmen_point_t robot_pose, double velocity, double timestamp)
 {
 	if (use_road_map)
 	{
@@ -2240,38 +2257,32 @@ pos_message_handler(carmen_point_t robot_pose, double timestamp)
 		if (robot_pose_queued)
 			return;
 		check_reset_traffic_sign_state(robot_pose);
-		carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_by_road_map(
-				robot_pose,
-				current_road_map,
-				carmen_rddf_poses_ahead,
-				carmen_rddf_poses_back,
-				&carmen_rddf_num_poses_back,
-				carmen_rddf_num_poses_ahead_max);
+
+		carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_by_road_map(robot_pose, current_road_map, carmen_rddf_poses_ahead,
+				carmen_rddf_poses_back, &carmen_rddf_num_poses_back, carmen_rddf_num_poses_ahead_max);
 	}
 	else
 	{
-		carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_ahead(
-				robot_pose.x,
-				robot_pose.y,
-				robot_pose.theta,
-				timestamp,
-				carmen_rddf_poses_ahead,
-				carmen_rddf_poses_back,
-				&carmen_rddf_num_poses_back,
-				carmen_rddf_num_poses_ahead_max,
-				annotations);
+		carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_ahead(robot_pose.x, robot_pose.y, robot_pose.theta, timestamp,
+				carmen_rddf_poses_ahead, carmen_rddf_poses_back, &carmen_rddf_num_poses_back, carmen_rddf_num_poses_ahead_max, annotations);
 	}
 
 	annotations_to_publish.clear();
 	carmen_check_for_annotations(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back,
 			carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back, timestamp);
 
-	// pedestrian_avoider(carmen_rddf_poses_ahead, carmen_rddf_poses_back, 
+	// pedestrian_avoider(carmen_rddf_poses_ahead, carmen_rddf_poses_back,
 	//  	carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back, moving_objects);
-	frenet_planner(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back, 
-	 	carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);//, moving_objects);
+	//frenet_planner(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back, carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);//, moving_objects);
+	//carmen_rddf_play_publish_frenet_rddf_and_annotations(robot_pose);
 
 	carmen_rddf_play_publish_rddf_and_annotations(robot_pose);
+
+//	if (there_is_final_goal && velocity < 0.2)
+//	{
+//		velocity = 2;
+//		compute_rddf_using_stehs_planner(&robot_pose, &final_goal->point, &distance_map);
+//	}
 }
 
 
@@ -2280,7 +2291,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	carmen_rddf_pose_initialized = 1;
 	current_globalpos_msg = msg;
-	pos_message_handler(msg->globalpos, msg->timestamp);
+	pos_message_handler(msg->globalpos, msg->v, msg->timestamp);
 }
 
 
@@ -2289,7 +2300,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 {
 	carmen_rddf_pose_initialized = 1;
 	current_truepos_msg = msg;
-	pos_message_handler(msg->truepose, msg->timestamp);
+	pos_message_handler(msg->truepose, msg->v, msg->timestamp);
 }
 
 
@@ -2335,28 +2346,21 @@ road_map_handler(carmen_map_server_road_map_message *msg)
 void
 carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
 {
+	final_goal = rddf_end_point_message; // Ranik
+	there_is_final_goal = true;
+
 	if (rddf_end_point_message->number_of_poses > 1)
 	{
-		carmen_rddf_play_find_and_publish_poses_around_end_point(
-				rddf_end_point_message->point.x,
-				rddf_end_point_message->point.y,
-				rddf_end_point_message->point.theta,
-				rddf_end_point_message->number_of_poses,
-				rddf_end_point_message->timestamp
-		);
+		carmen_rddf_play_find_and_publish_poses_around_end_point(rddf_end_point_message->point.x, rddf_end_point_message->point.y, rddf_end_point_message->point.theta,
+				rddf_end_point_message->number_of_poses, rddf_end_point_message->timestamp);
 
 		carmen_rddf_end_point = rddf_end_point_message->point;
 		carmen_rddf_end_point_is_set = 1;
 	}
 	else
 	{
-		carmen_rddf_play_find_and_publish_poses_around_end_point(
-				rddf_end_point_message->point.x,
-				rddf_end_point_message->point.y,
-				rddf_end_point_message->point.theta,
-				rddf_end_point_message->number_of_poses,
-				rddf_end_point_message->timestamp
-		);
+		carmen_rddf_play_find_and_publish_poses_around_end_point(rddf_end_point_message->point.x,rddf_end_point_message->point.y, rddf_end_point_message->point.theta,
+				rddf_end_point_message->number_of_poses, rddf_end_point_message->timestamp);
 
 		carmen_rddf_nearest_waypoint_to_end_point = rddf_end_point_message->point;
 		carmen_rddf_nearest_waypoint_is_set = 1;
@@ -2438,6 +2442,29 @@ carmen_motion_plan_handler(carmen_base_ackerman_motion_command_message *message)
 	current_motion_command_message->host = (char*)malloc(strlen(message->host));
 	strcpy(current_motion_command_message->host, message->host);
 }
+
+static void
+carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
+{
+	static carmen_obstacle_distance_mapper_compact_map_message *compact_distance_map = NULL;  // TODO is it possible to remove this line and the if
+
+	if (compact_distance_map == NULL)
+	{
+		carmen_obstacle_distance_mapper_create_new_map(&distance_map, message->config, message->host, message->timestamp);
+		compact_distance_map = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
+		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
+		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
+	}
+	else
+	{
+		carmen_obstacle_distance_mapper_clear_distance_map_message_using_compact_map(&distance_map, compact_distance_map, DISTANCE_MAP_HUGE_DISTANCE);
+		carmen_obstacle_distance_mapper_free_compact_distance_map(compact_distance_map);
+		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
+		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
+	}
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -2460,13 +2487,9 @@ carmen_rddf_play_subscribe_messages()
 	if (use_road_map)
 		carmen_map_server_subscribe_road_map(NULL, (carmen_handler_t) road_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
-//	carmen_rddf_subscribe_nearest_waypoint_message(NULL,
-//			(carmen_handler_t) carmen_rddf_play_nearest_waypoint_message_handler,
-//			CARMEN_SUBSCRIBE_LATEST);
+//	carmen_rddf_subscribe_nearest_waypoint_message(NULL, (carmen_handler_t) carmen_rddf_play_nearest_waypoint_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_rddf_subscribe_end_point_message(NULL,
-			(carmen_handler_t) carmen_rddf_play_end_point_message_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) carmen_rddf_play_end_point_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_traffic_light_subscribe(traffic_lights_camera, NULL, (carmen_handler_t) carmen_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -2477,6 +2500,8 @@ carmen_rddf_play_subscribe_messages()
 	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) carmen_motion_plan_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_obstacle_distance_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -2619,7 +2644,7 @@ main(int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	carmen_rddf_play_get_parameters(argc, argv);
-	init_python();
+//	init_python();
 	carmen_rddf_play_initialize();
 	carmen_rddf_define_messages();
 	carmen_rddf_play_subscribe_messages();

@@ -9,6 +9,7 @@
 #include <sstream>
 #include <boost/program_options.hpp>
 
+
 namespace po = boost::program_options;
 using namespace std;
 
@@ -16,11 +17,11 @@ using namespace std;
 CommandLineArguments::CommandLineArguments()
 {
 	_positional_args = new po::options_description("Positional Arguments");
-	_additional_args = new po::options_description("Additional Arguments");
+	_non_positional_args = new po::options_description("Additional Arguments");
 	_positional_args_for_parsing = new po::positional_options_description();
 
-	_additional_args->add_options()("help,h", "produce help message");
-	_additional_args->add_options()("config,c", po::value<string>(&_config_path)->default_value(""), "config file");
+	_non_positional_args->add_options()("help,h", "produce help message");
+	_non_positional_args->add_options()("config,c", po::value<string>(&_config_path)->default_value(""), "config file");
 }
 
 
@@ -28,7 +29,7 @@ CommandLineArguments::~CommandLineArguments()
 {
 	delete(_positional_args_for_parsing);
 	delete(_positional_args);
-	delete(_additional_args);
+	delete(_non_positional_args);
 }
 
 
@@ -59,38 +60,54 @@ CommandLineArguments::save_config_file(std::string path)
 	if (f == NULL)
 		exit(printf("Error: unable to save config file '%s'\n", path.c_str()));
 
-	for (int i = 0; i < _additional_args_and_default_values.size(); i++)
+	for (int i = 0; i < _non_positional_args_and_default_values.size(); i++)
 	{
-		fprintf(f, "%s = %s\n",
-						_additional_args_and_default_values[i].first.c_str(),
-						_additional_args_and_default_values[i].second.c_str());
+		fprintf(f, "# %s\n%s = %s\n",
+						_non_positional_args_and_default_values[i].description.c_str(),
+						_non_positional_args_and_default_values[i].name.c_str(),
+						_non_positional_args_and_default_values[i].default_value.c_str());
 	}
 
 	fclose(f);
 }
 
 
-void
-CommandLineArguments::_show_help_message_if_necessary(po::variables_map vmap, char *program_name)
+std::string
+CommandLineArguments::help_message(const char *program_name)
 {
-	int required_args_are_missing = 0;
-	std::string all_args_str = "";
+	std::string msg;
+	std::string positional_args_as_str = "";
 
 	// check if positional arguments are missing
 	for (int i = 0; i < _all_positional_args.size(); i++)
-	{
-		all_args_str = all_args_str + " " + _all_positional_args[i];
+		positional_args_as_str += " " + _all_positional_args[i];
 
+	msg += "\nUsage: ";
+	msg += program_name;
+	msg += " [additional args] " + positional_args_as_str + "\n\n";
+	msg += to_string(*_non_positional_args);
+	msg += "\n";
+
+	return msg;
+}
+
+
+vector<string>
+CommandLineArguments::_find_missing_mandatory_arguments(po::variables_map &vmap)
+{
+	vector<string> missing_arguments;
+
+	// check if positional arguments are missing
+	for (int i = 0; i < _all_positional_args.size(); i++)
 		if (vmap.count(_all_positional_args[i]) == 0)
-			required_args_are_missing = 1;
-	}
+			missing_arguments.push_back(_all_positional_args[i]);
 
-	if (vmap.count("help") || required_args_are_missing)
-	{
-		std::cerr << std::endl << "Usage: " << program_name << " [additional args] " << all_args_str << std::endl;
-		std::cerr << std::endl << *_additional_args << std::endl;
-		exit(-1);
-	}
+	// check if non-positional, but mandatory arguments are missing
+	for (int i = 0; i < _non_positional_args_without_default_values.size(); i++)
+		if (vmap.count(_non_positional_args_without_default_values[i]) == 0)
+			missing_arguments.push_back(_non_positional_args_without_default_values[i]);
+
+	return missing_arguments;
 }
 
 
@@ -114,14 +131,25 @@ CommandLineArguments::_read_args_from_config_file(po::options_description &confi
 void
 CommandLineArguments::parse(int argc, char **argv)
 {
+	vector<string> missing_arguments;
 	po::options_description all_options;
-	all_options.add(*_positional_args).add(*_additional_args);
+	all_options.add(*_positional_args).add(*_non_positional_args);
 
 	// parse arguments from command line
 	store(po::command_line_parser(argc, argv).options(all_options).positional(*_positional_args_for_parsing).run(), _args);
 	notify(_args);
 
 	_read_args_from_config_file(all_options, &_args);
-	_show_help_message_if_necessary(_args, argv[0]);
+	missing_arguments = _find_missing_mandatory_arguments(_args);
+
+	if (_args.count("help") || missing_arguments.size() > 0)
+	{
+		for (string arg : missing_arguments)
+			cerr << "Error: Missing mandatory argument '" << arg << "'" << endl;
+
+		cerr << help_message(argv[0]) << endl;
+		exit(-1);
+	}
+
 }
 

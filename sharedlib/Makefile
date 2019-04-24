@@ -1,4 +1,4 @@
-include ../src/Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 PACKAGES = alglib darknet gl_plotter libbee libclustering libcontrol libelas libkinfu libminorucalib libsickldmrs2 libstereovgram \
 	   libtf/src libvelodyne libviso2.3/src OpenJAUS pso libcarmodel libcmt libkalman libminoru libsickldmrs libstereo prob_models Deeplab

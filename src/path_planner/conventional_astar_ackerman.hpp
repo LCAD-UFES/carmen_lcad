@@ -72,7 +72,7 @@ public:
 	carmen_behavior_selector_state_t current_state;//TODO extern
 	carmen_map_t *carmen_planner_map;//TODO extern
 	carmen_navigator_ackerman_astar_t astar_config;//TODO extern
-	carmen_obstacle_distance_mapper_message *distanceMap = NULL;
+	carmen_obstacle_distance_mapper_map_message *distanceMap = NULL;
 
 	int astar_call_cont;
 	int cont_nos_abertos_novos;

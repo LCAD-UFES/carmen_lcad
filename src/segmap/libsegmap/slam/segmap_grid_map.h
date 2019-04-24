@@ -20,6 +20,12 @@
 class GridMapTile
 {
 public:
+	enum MapType
+	{
+		TYPE_SEMANTIC = 0,
+		TYPE_VISUAL
+	};
+
 	// make these attributes private
 	// they are used in the view function
 	double _hm, _wm, _xo, _yo;
@@ -29,12 +35,9 @@ public:
 	double *_map;
 	CityScapesColorMap _color_map;
 
-	static const int TYPE_SEMANTIC = 0;
-	static const int TYPE_VISUAL = 1;
-
 	std::vector<double> _unknown;
 	int _n_fields_by_cell;
-	int _map_type;
+	MapType _map_type;
 	std::string _tiles_dir;
 	int _save_maps;
 
@@ -44,12 +47,12 @@ public:
 
 	GridMapTile(double point_y, double point_x,
 			double height_meters, double width_meters,
-			double resolution, int map_type, std::string tiles_dir,
+			double resolution, MapType map_type, std::string tiles_dir,
 			int save_maps=0);
 
 	~GridMapTile();
 
-	static const char* type2str(int map_type);
+	static const char* type2str(MapType map_type);
 
 	void save();
 	void add_point(pcl::PointXYZRGB &p);
@@ -68,7 +71,7 @@ public:
 	double _tile_height_meters;
 	double _tile_width_meters;
 	int _middle_tile;
-	int _map_type;
+	GridMapTile::MapType _map_type;
 	int _save_maps;
 
 	double m_by_pixels;
@@ -79,7 +82,10 @@ public:
 
 	GridMapTile *_tiles[_N_TILES][_N_TILES];
 
-	GridMap(std::string tiles_dir, double tile_height_meters, double tile_width_meters, double resolution, int map_type, int save_maps=0);
+	GridMap(std::string tiles_dir, double tile_height_meters,
+					double tile_width_meters, double resolution,
+					GridMapTile::MapType map_type, int save_maps=0);
+
 	~GridMap();
 	GridMapTile* _reload_tile(double x, double y);
 	void _reload_tiles(double robot_x, double robot_y);

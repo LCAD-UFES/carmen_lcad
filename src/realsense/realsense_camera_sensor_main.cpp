@@ -8,6 +8,10 @@
 
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 
+// basic file operations
+#include <iostream>
+#include <fstream>
+// using namespace std;
 
 #define BUMBLEBEE_ID 7
 
@@ -32,6 +36,32 @@ carmen_bumblebee_publish_stereoimage_message(unsigned char *rawLeft, unsigned ch
     carmen_bumblebee_basic_publish_message(BUMBLEBEE_ID, &stereo_msg);
 }
 
+void
+save_extrinsics(rs2::pipeline_profile& selection)
+{
+	auto ir1_stream = selection.get_stream(RS2_STREAM_COLOR, 0);
+	auto ir2_stream = selection.get_stream(RS2_STREAM_DEPTH, 0);
+	rs2_extrinsics e = ir1_stream.get_extrinsics_to(ir2_stream);
+	std::ofstream myfile;
+	myfile.open ("extrinsicsColortoDepth.txt");
+	myfile << "rotation:";
+	myfile << std::endl;
+	for(int x=0;x<9;x++) 
+	{
+		if (x%3==0 && x>0)
+			myfile << std::endl;
+
+		myfile << e.rotation[x] << " ";
+	}
+	myfile << std::endl;
+	myfile << "translation:";
+	myfile << std::endl;
+	for(int z=0;z<3;z++) 
+	{
+		myfile << e.translation[z] << " ";
+	}
+	myfile.close();
+}
 
 // bool 
 // can_render(const rs2::frame& f) const
@@ -98,7 +128,7 @@ main(int argc, char **argv)
 
     rs2::config cfg;
     cfg.enable_stream(RS2_STREAM_COLOR, 0, rs_width, rs_height);
-    // cfg.enable_stream(RS2_STREAM_DEPTH, 0,640, 480);
+    cfg.enable_stream(RS2_STREAM_DEPTH, 0,640, 480);
     // cfg.enable_stream(RS2_STREAM_INFRARED, 0);
     // cfg.enable_stream(RS2_STREAM_INFRARED, 1);
 
@@ -108,23 +138,36 @@ main(int argc, char **argv)
     // Start streaming with default recommended configuration
     // The default video configuration contains Depth and Color streams
     // If a device is capable to stream IMU data, both Gyro and Accelerometer are enabled by default
-    pipe.start(cfg);
+    rs2::pipeline_profile selection = pipe.start(cfg);
+
+	rs2::colorizer c;
+	
+	save_extrinsics(selection);
+	//rs2::align align_to_depth(RS2_STREAM_DEPTH);
+	//rs2::align align_to_color(RS2_STREAM_COLOR);
 
 	while (!stop_required)
 	{
-
+		unsigned char* depth_frame_data;
+		unsigned char* rgb_frame_data;
         rs2::frameset frames = pipe.wait_for_frames();
 
-        // rs2::frame depth_frame = frames.first(RS2_STREAM_DEPTH);
-        // if (depth_frame)
-        //     depth_frame.get_data(); // Pointer to depth pixels
+		//frames = align_to_depth.process(frames);
+		// frames = align_to_color.process(frames);
 
+        rs2::frame depth_frame = frames.first(RS2_STREAM_DEPTH);
+		
+		
         rs2::frame frame_color = frames.first(RS2_STREAM_COLOR);
         if (frame_color)
         {
-            unsigned char* rgb_frame_data = (unsigned char*) frame_color.get_data();
-            carmen_bumblebee_publish_stereoimage_message(rgb_frame_data,rgb_frame_data, rs_width, rs_height, 3);
+            rgb_frame_data = (unsigned char*) frame_color.get_data();
         }
+        
+        if (depth_frame)
+            depth_frame_data = (unsigned char*) c.colorize(depth_frame).get_data(); // Pointer to depth pixels
+
+		carmen_bumblebee_publish_stereoimage_message(rgb_frame_data,depth_frame_data , rs_width, rs_height, 3);
         
 	}
 

@@ -672,10 +672,11 @@ main(int argc, char **argv)
     std::string trained_file = "snapshot_iter_21600.caffemodel";
     /**** YOLO PARAMETERS ****/
     std::string darknet_home = std::getenv("DARKNET_HOME"); /*< get environment variable pointing path of darknet*/
+    std::string carmen_home = std::getenv("CARMEN_HOME");
     if (darknet_home.empty())
         printf("Cannot find darknet path. Check if you have correctly set DARKNET_HOME environment variable.\n");
-    std::string cfg_filename =  "/home/vinicius/yolov3-voc_lane.cfg";
-    std::string weight_filename = darknet_home + "2/backup/yolov3-voc_lane_15000.weights";
+    std::string cfg_filename = carmen_home + "/src/lane_detector/yolov3-voc_lane.cfg";
+    std::string weight_filename = darknet_home + "2/backup/yolov3-voc_lane_14000.weights";
     std::string voc_names = darknet_home + "/data/lane.names";
     obj_names = objects_names_from_file(voc_names);
     darknet = initialize_YOLO((char*) cfg_filename.c_str(),(char*) weight_filename.c_str());

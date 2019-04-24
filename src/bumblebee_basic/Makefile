@@ -1,8 +1,7 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 MODULE_NAME = BUMBLEBEE_BASIC
 MODULE_COMMENT = Bumblebee2 Basic Camera Module
-
 
 LINK = g++
 
@@ -35,8 +34,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src \
 	`$(GTK_CONFIG) --libs` 
 	
 
-SOURCES = bumblebee_basic_main.cpp bumblebee_basic_interface.c \
- bumblebee_basic_simulator.c bumblebee_basic_flycap_main.cpp bumblebee_basic_view.cpp 
+SOURCES = bumblebee_basic_main.cpp bumblebee_basic_interface.c bumblebee_basic_simulator.c bumblebee_basic_flycap_main.cpp bumblebee_basic_view.cpp 
 PUBLIC_INCLUDES = bumblebee_basic_messages.h bumblebee_basic_interface.h
 PUBLIC_LIBRARIES = libbumblebee_basic_interface.a 
 PUBLIC_BINARIES = bumblebee_basic bumblebee_basic_simulator bumblebee_basic_flycap
@@ -65,4 +63,4 @@ clean: clean_libbee
 clean_libbee:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libbee
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

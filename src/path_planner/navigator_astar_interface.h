@@ -146,3 +146,5 @@ carmen_navigator_ackerman_subscribe_astar_goal_list_message(carmen_navigator_ack
 
 #endif
 // @}
+
+

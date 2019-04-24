@@ -1,4 +1,4 @@
-include ../../src/Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 MODULE_NAME = LIBMINORUCALIB
 MODULE_COMMENT = Lib Minoru Calib
@@ -26,4 +26,4 @@ libminorucalib.a: camcalib.o rectify.o cvex/cvex.o cvex/CvexCameraCalibration.o 
 libminorucalib.so.1: camcalib.o rectify.o cvex/cvex.o cvex/CvexCameraCalibration.o cvex/CvexStereoCameraCalibration.o
 
 # rules
-include ../../src/Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

@@ -20,19 +20,25 @@ LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basi
 LFLAGS += -lpcl_common -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_registration -lpcl_surface -lpcl_io -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization \
 			-lpcl_segmentation
 
-SOURCES = velodyne_camera_calibration_main.cpp velodyne_camera_publish_range.cpp velodyne_camera_calibration.cpp velodyne_camera_calibration_manual.cpp
+SOURCES = velodyne_camera_calibration_main.cpp velodyne_camera_publish_range.cpp velodyne_camera_calibration.cpp
 
 PUBLIC_INCLUDES = velodyne_camera_calibration.h
 PUBLIC_LIBRARIES = libvelodyne_camera_calibration.a
 PUBLIC_BINARIES = 
-TARGETS = velodyne_camera_calibration_main velodyne_camera_calibration_manual velodyne_camera_publish_range libvelodyne_camera_calibration.a
+TARGETS = visual_tracker velodyne_camera_calibration_main velodyne_camera_publish_range libvelodyne_camera_calibration.a
+
+visual_tracker:
+	$(MAKE) -C $(CARMEN_HOME)/src/visual_tracker
+
+clean: clean_visual_tracker
+
+clean_visual_tracker:
+	$(MAKE) clean -C $(CARMEN_HOME)/src/visual_tracker
 
 velodyne_camera_calibration_main: velodyne_camera_calibration_main.o libvelodyne_camera_calibration.a
-
-velodyne_camera_calibration_manual: velodyne_camera_calibration_manual.o libvelodyne_camera_calibration.a
-
 velodyne_camera_publish_range: velodyne_camera_publish_range.o libvelodyne_camera_calibration.a
-
 libvelodyne_camera_calibration.a: velodyne_camera_calibration.o
+
+
 
 include ../Makefile.rules

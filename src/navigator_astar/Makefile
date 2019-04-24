@@ -19,14 +19,14 @@ MODULE_NAME = NAVIGATOR A*
 MODULE_COMMENT = The motion A* planner!
 
 SOURCES = navigator_astar.cpp conventional_ackerman.c conventional_astar_ackerman.cpp rs.cpp FH/fh.cpp FH/fib.cpp MessageControl.cpp navigator_ackerman_ipc.c \
-	navigator_astar_interface.c trajectory_ackerman.c navigator_precomputed_cost_ackerman.c
+	navigator_astar_interface.c trajectory_ackerman.c navigator_precomputed_cost_ackerman.c path_planner_interface.c
 
-PUBLIC_INCLUDES = navigator_astar_messages.h navigator_astar_interface.h navigator_astar.hpp MessageControl.hpp
-PUBLIC_LIBRARIES =  libnavigator_astar_interface.a libconventional_ackerman.a
+PUBLIC_INCLUDES = path_planner_messages.h path_planner_interface.h navigator_astar_messages.h navigator_astar_interface.h navigator_astar.hpp MessageControl.hpp 
+PUBLIC_LIBRARIES = libpath_planner_interface.a libnavigator_astar_interface.a libconventional_ackerman.a
 
 PUBLIC_BINARIES = navigator_astar
 
-TARGETS =  libprob_models.a libnavigator_astar_interface.a navigator_astar navigator_precomputed_cost_ackerman startgoal_simulator\
+TARGETS =  libprob_models.a libpath_planner_interface.a libnavigator_astar_interface.a navigator_astar navigator_precomputed_cost_ackerman startgoal_simulator\
  libconventional_ackerman.a
 
 PUBLIC_LIBRARIES_SO = libnavigator_astar_interface.so
@@ -42,6 +42,8 @@ navigator_astar: navigator_astar.o navigator_ackerman_ipc.o conventional_ackerma
 	trajectory_ackerman.o libnavigator_astar_interface.a
 
 navigator_precomputed_cost_ackerman:  navigator_precomputed_cost_ackerman.o FH/fh.o
+
+libpath_planner_interface.a: path_planner_interface.o
 
 libnavigator_astar_interface.a: navigator_astar_interface.o
 

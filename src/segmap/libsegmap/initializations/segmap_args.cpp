@@ -3,8 +3,55 @@
 #include <string>
 #include <carmen/segmap_args.h>
 #include <carmen/command_line.h>
+#include <carmen/segmap_preproc.h>
+#include <carmen/segmap_grid_map.h>
+#include <carmen/segmap_particle_filter.h>
 
 using namespace std;
+
+
+SensorPreproc::IntensityMode
+parse_intensity_mode(string map_type)
+{
+	if (map_type.compare("remission") == 0)
+		return SensorPreproc::INTENSITY;
+	else if (map_type.compare("visual") == 0)
+		return SensorPreproc::COLOR;
+	else if (map_type.compare("semantic") == 0)
+		return SensorPreproc::SEMANTIC;
+	else if (map_type.compare("raw") == 0)
+		return SensorPreproc::RAW_INTENSITY;
+	else if (map_type.compare("bright") == 0)
+		return SensorPreproc::BRIGHT;
+	else
+		exit(printf("Error: invalid map type '%s'.\n", map_type.c_str()));
+}
+
+
+GridMapTile::MapType
+map_type_from_intensity_mode(SensorPreproc::IntensityMode i_mode)
+{
+	if (i_mode == SensorPreproc::SEMANTIC)
+		return GridMapTile::TYPE_SEMANTIC;
+	else
+		return GridMapTile::TYPE_VISUAL;
+}
+
+
+ParticleFilter::WeightType
+parse_weight_type(CommandLineArguments &args)
+{
+	ParticleFilter::WeightType w_type;
+
+	if (args.get<int>("use_gps_weight"))
+		w_type = ParticleFilter::WEIGHT_GPS;
+	else if (args.get<string>("intensity_mode").compare("semantic") == 0)
+		w_type = ParticleFilter::WEIGHT_SEMANTIC;
+	else
+		w_type = ParticleFilter::WEIGHT_VISUAL;
+
+	return w_type;
+}
 
 
 string

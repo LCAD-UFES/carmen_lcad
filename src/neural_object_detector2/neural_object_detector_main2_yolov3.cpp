@@ -14,7 +14,7 @@ char **classes_names;
 void *network_struct;
 //*********//
 
-
+cv::Mat or_image;
 int camera;
 int camera_side;
 int qtd_crops;
@@ -34,11 +34,13 @@ tf::Transformer transformer_sick;
 
 string str_folder_name;
 string str_folder_image_name;
+string str_folder_image_name_original;
 string str_folder_image_name_slices;
 string str_folder_image_name_slices_rddf_filtered;
 string str_folder_image_name_slices_rddf_full;
 string str_folder_image_name_rddf_full;
 string str_folder_image_name_rddf_filtered;
+string str_folder_image_name_slices_and_detection;
 
 const unsigned int maxPositions = 50;
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
@@ -46,7 +48,7 @@ vector<carmen_velodyne_partial_scan_message> velodyne_vector;
 
 carmen_laser_ldmrs_new_message* sick_laser_message;
 carmen_velodyne_partial_scan_message sick_message_arrange;
-vector<carmen_velodyne_partial_scan_message> sick_vector;
+vector<carmen_laser_ldmrs_new_message> sick_vector;
 
 
 //Detector *darknet;
@@ -72,7 +74,8 @@ SampleFilter filter2;
 
 carmen_playback_command_message command_of_playback;
 
-
+#define CAM_DELAY 0.2
+#define MAX_POSITIONS 10
 // This function find the closest velodyne message with the camera message
 carmen_velodyne_partial_scan_message
 find_velodyne_most_sync_with_cam(double bumblebee_timestamp)  // TODO is this necessary?
@@ -772,7 +775,8 @@ transform_bounding_boxes_of_slices (vector< vector<bbox_t> > bounding_boxes_of_s
 		}
 	}
 
-	return (bboxes)
+	return (bboxes);
+}
 
 vector<bbox_t>
 get_predictions_of_slices (int i, cv::Mat image)
@@ -1001,29 +1005,29 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
     bbox_t gt;
     char classe[50];
     float x1, x2, y1, y2;
-    if (access(groundtruth_folder.c_str(), F_OK) == 0)
-    {
-    	//cout<<groundtruth_folder<<" show"<<endl;
-    	FILE *f;
-    	f = fopen (groundtruth_folder.c_str(), "r");
-    	//int yy = fscanf (f, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2);
-    	//yy = yy;
+    // if (access(groundtruth_folder.c_str(), F_OK) == 0)
+    // {
+    // 	//cout<<groundtruth_folder<<" show"<<endl;
+    // 	FILE *f;
+    // 	f = fopen (groundtruth_folder.c_str(), "r");
+    // 	//int yy = fscanf (f, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2);
+    // 	//yy = yy;
 
-    	while (fscanf (f, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2) != EOF)
-    	{
-    		gt.x = (int)x1;
-    		gt.y = (int)y1;
-    		gt.w = (int)(x2 - x1);
-    		gt.h = (int)(y2 - y1);
-    		cv::rectangle(scene_slices[0],
-    				cv::Point(gt.x, gt.y),
-					cv::Point(gt.x + gt.w, gt.y + gt.h),
-					Scalar(0, 255, 0), 3);
-    	}
+    // 	while (fscanf (f, "%s %f %f %f %f", classe, &x1, &y1, &x2, &y2) != EOF)
+    // 	{
+    // 		gt.x = (int)x1;
+    // 		gt.y = (int)y1;
+    // 		gt.w = (int)(x2 - x1);
+    // 		gt.h = (int)(y2 - y1);
+    // 		cv::rectangle(scene_slices[0],
+    // 				cv::Point(gt.x, gt.y),
+	// 				cv::Point(gt.x + gt.w, gt.y + gt.h),
+	// 				Scalar(0, 255, 0), 3);
+    // 	}
 
-    }
-    else
-    	exit(0);
+    // }
+    // else
+    // 	exit(0);
 
     string name;
     for (int i = 0; i < qtd_crops; i++)
@@ -1450,10 +1454,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     vector<cv::Scalar> colors;
     vector<cv::Mat> scene_slices;
     vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
-    if (strcmp(detection_type,"-ss") == 0)
-    	img = src_image.data;
+    if (strcmp(detection_type,"-ss") == 0){
+    	//img = src_image.data;
     	bounding_boxes_of_slices_in_original_image = run_YOLO(src_image.data, src_image.cols, src_image.rows, network_struct, classes_names, 0.5);//darknet->detect(src_image, 0.2);
-    	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, &rgb_image, start_time, fps, rddf_points_in_image, "Original Detection");
+    	detections(bounding_boxes_of_slices_in_original_image, image_msg, velodyne_sync_with_cam, src_image, &rgb_image, start_time, fps, rddf_points_in_image_filtered, "Original Detection");
     	colors = get_slice_colors (1);
     }
     else if (strcmp(detection_type,"-cs") == 0)
@@ -1494,7 +1498,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         string str_gt_path (gt_path);
         string groundtruth_folder = str_gt_path + "-r.txt";
 
-        if (access(groundtruth_folder.c_str(), F_OK) == 0)
+        //if (access(groundtruth_folder.c_str(), F_OK) == 0)
         	show_detections_alberto(transform_factor_of_slice_to_original_frame ,scene_slices, bounding_boxes_of_slices, bounding_boxes_of_slices_in_original_image,
         			rddf_points_in_image_filtered, image_msg->timestamp);
 
@@ -1692,6 +1696,30 @@ create_folders()
 		}
 
 	}
+}
+
+
+void
+subscribe_messages()
+{
+    carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    //carmen_subscribe_playback_info_message(NULL, (carmen_handler_t) playback_command_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_laser_subscribe_ldmrs_new_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_new_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    //carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+
+
+    carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
+        			NULL, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

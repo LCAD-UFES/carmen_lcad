@@ -477,24 +477,36 @@ void on_menuDisplay_ShowLaserData_toggled (GtkCheckMenuItem* togglebutton __attr
 }
 
 //extern "C" G_MODULE_EXPORT
-void on_menuDisplay_ShowMotionPath_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+void on_menuDisplay_ShowOAMotionPlan_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
-	global_gui->nav_panel_config->show_motion_path = gtk_check_menu_item_get_active(togglebutton);
+	global_gui->nav_panel_config->show_oa_motion_plan = gtk_check_menu_item_get_active(togglebutton);
 
-	if (global_gui->nav_panel_config->show_motion_path)
-		carmen_obstacle_avoider_subscribe_motion_planner_path_message(&global_gui->motion_path_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+	if (global_gui->nav_panel_config->show_oa_motion_plan)
+		carmen_obstacle_avoider_subscribe_motion_planner_path_message(&global_gui->oa_motion_plan_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 	else
 		carmen_obstacle_avoider_subscribe_motion_planner_path_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
 }
 
 //extern "C" G_MODULE_EXPORT
-void on_menuDisplay_ShowCommandPath_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+void on_menuDisplay_ShowMPPMotionPlan_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
-	global_gui->nav_panel_config->show_command_path = gtk_check_menu_item_get_active(togglebutton);
+	global_gui->nav_panel_config->show_mpp_motion_plan = gtk_check_menu_item_get_active(togglebutton);
 
-	if (global_gui->nav_panel_config->show_command_path)
+	if (global_gui->nav_panel_config->show_mpp_motion_plan)
+		carmen_model_predictive_planner_subscribe_motion_plan_message(&global_gui->mpp_motion_plan_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+	else
+		carmen_model_predictive_planner_subscribe_motion_plan_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuDisplay_ShowCommandPlan_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui __attribute__ ((unused)))
+{
+	global_gui->nav_panel_config->show_command_plan = gtk_check_menu_item_get_active(togglebutton);
+
+	if (global_gui->nav_panel_config->show_command_plan)
 		carmen_obstacle_avoider_subscribe_path_message(&global_gui->obstacle_avoider_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 	else
 		carmen_obstacle_avoider_subscribe_path_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
@@ -1113,32 +1125,57 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 	//do some animation when the user is placing something (like robot or goal)
 	global_gui->draw_placing_animation(the_map_view);
 
-	if (global_gui->nav_panel_config->show_motion_path)
+	if (global_gui->nav_panel_config->show_oa_motion_plan)
 	{
-		if ((global_gui->motion_path != NULL) || (global_gui->motion_path_size < global_gui->motion_path_msg.path_length))
+		if ((global_gui->oa_motion_plan != NULL) || (global_gui->oa_motion_plan_size < global_gui->oa_motion_plan_msg.path_length))
 		{
-			free(global_gui->motion_path);
-			global_gui->motion_path = NULL;
+			free(global_gui->oa_motion_plan);
+			global_gui->oa_motion_plan = NULL;
 		}
 
-		global_gui->motion_path_size = global_gui->motion_path_msg.path_length;
+		global_gui->oa_motion_plan_size = global_gui->oa_motion_plan_msg.path_length;
 
-		if (global_gui->motion_path == NULL)
-			global_gui->motion_path = (carmen_world_point_t*) malloc(sizeof(carmen_world_point_t) * global_gui->motion_path_size);
+		if (global_gui->oa_motion_plan == NULL)
+			global_gui->oa_motion_plan = (carmen_world_point_t*) malloc(sizeof(carmen_world_point_t) * global_gui->oa_motion_plan_size);
 
 		int i;
-		for (i = 0; i < global_gui->motion_path_msg.path_length; i++)
+		for (i = 0; i < global_gui->oa_motion_plan_msg.path_length; i++)
 		{
-			global_gui->motion_path[i].pose.x	   = global_gui->motion_path_msg.path[i].x;
-			global_gui->motion_path[i].pose.y	   = global_gui->motion_path_msg.path[i].y;
-			global_gui->motion_path[i].pose.theta  = global_gui->motion_path_msg.path[i].theta;
-			global_gui->motion_path[i].map 		   = global_gui->controls_.map_view->internal_map;
+			global_gui->oa_motion_plan[i].pose.x	   = global_gui->oa_motion_plan_msg.path[i].x;
+			global_gui->oa_motion_plan[i].pose.y	   = global_gui->oa_motion_plan_msg.path[i].y;
+			global_gui->oa_motion_plan[i].pose.theta  = global_gui->oa_motion_plan_msg.path[i].theta;
+			global_gui->oa_motion_plan[i].map 		   = global_gui->controls_.map_view->internal_map;
 		}
 
-		global_gui->draw_path(global_gui->motion_path, global_gui->motion_path_size, carmen_green, carmen_green, the_map_view);
+		global_gui->draw_path(global_gui->oa_motion_plan, global_gui->oa_motion_plan_size, carmen_green, carmen_green, the_map_view);
 	}
 
-	if (global_gui->nav_panel_config->show_command_path)
+	if (global_gui->nav_panel_config->show_mpp_motion_plan)
+	{
+		if ((global_gui->mpp_motion_plan != NULL) || (global_gui->mpp_motion_plan_size < global_gui->mpp_motion_plan_msg.plan_length))
+		{
+			free(global_gui->mpp_motion_plan);
+			global_gui->mpp_motion_plan = NULL;
+		}
+
+		global_gui->mpp_motion_plan_size = global_gui->mpp_motion_plan_msg.plan_length;
+
+		if (global_gui->mpp_motion_plan == NULL)
+			global_gui->mpp_motion_plan = (carmen_world_point_t*) malloc(sizeof(carmen_world_point_t) * global_gui->mpp_motion_plan_size);
+
+		int i;
+		for (i = 0; i < global_gui->mpp_motion_plan_msg.plan_length; i++)
+		{
+			global_gui->mpp_motion_plan[i].pose.x	   = global_gui->mpp_motion_plan_msg.plan[i].x;
+			global_gui->mpp_motion_plan[i].pose.y	   = global_gui->mpp_motion_plan_msg.plan[i].y;
+			global_gui->mpp_motion_plan[i].pose.theta  = global_gui->mpp_motion_plan_msg.plan[i].theta;
+			global_gui->mpp_motion_plan[i].map 		   = global_gui->controls_.map_view->internal_map;
+		}
+
+		global_gui->draw_path(global_gui->mpp_motion_plan, global_gui->mpp_motion_plan_size, carmen_blue, carmen_green, the_map_view);
+	}
+
+	if (global_gui->nav_panel_config->show_command_plan)
 	{
 		if ((global_gui->obstacle_avoider_path != NULL) || (global_gui->obstacle_avoider_path_size < global_gui->obstacle_avoider_msg.path_length))
 		{

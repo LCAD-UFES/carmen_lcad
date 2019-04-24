@@ -12,6 +12,7 @@
 #include <carmen/grid_mapping.h>
 #include <carmen/moving_objects_interface.h>
 #include <carmen/lane_detector_interface.h>
+#include <carmen/model_predictive_planner_interface.h>
 
 #include <carmen/navigator_gui2_interface.h>
 #include <carmen/parking_assistant_interface.h>
@@ -881,6 +882,8 @@ carmen_parse_polygon_file (carmen_polygon_config_t *poly_config, char* poly_file
 {
 	FILE *poly;
 	poly = fopen(poly_file, "r");
+	if (poly == NULL)
+		printf("Deu Ruim\n");
 	fscanf(poly,"%lf\n",&(poly_config->displacement));
 	fscanf(poly,"%d\n",&(poly_config->n_points));
 	poly_config->points = (double*) malloc(poly_config->n_points*2*sizeof(double));
@@ -888,6 +891,7 @@ carmen_parse_polygon_file (carmen_polygon_config_t *poly_config, char* poly_file
 	for (i=0; i<poly_config->n_points; i++)
 	{
 		fscanf(poly,"%lf %lf\n",&(poly_config->points[2*i]),&(poly_config->points[2*i+1]));
+		printf("%lf %lf\n",poly_config->points[2*i], poly_config->points[2*i+1]);
 	}
 	fclose(poly);
 }
@@ -921,8 +925,9 @@ read_parameters(int argc, char *argv[],
 		{(char *) "navigator_panel", (char *) "show_simulator_objects", CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_simulator_objects), 1, NULL},
 		{(char *) "navigator_panel", (char *) "show_true_pos",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_true_pos),		1, NULL},
 		{(char *) "navigator_panel", (char *) "show_tracked_objects",	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_tracked_objects),	1, NULL},
-		{(char *) "navigator_panel", (char *) "show_command_path",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_command_path),	1, NULL},
-		{(char *) "navigator_panel", (char *) "show_motion_path",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_motion_path),	1, NULL},
+		{(char *) "navigator_panel", (char *) "show_command_plan",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_command_plan),	1, NULL},
+		{(char *) "navigator_panel", (char *) "show_mpp_motion_plan",	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_mpp_motion_plan),	1, NULL},
+		{(char *) "navigator_panel", (char *) "show_oa_motion_plan",	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_oa_motion_plan),	1, NULL},
 		{(char *) "navigator_panel", (char *) "show_dynamic_points",	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_dynamic_points),	1, NULL},
 		{(char *) "navigator_panel", (char *) "show_dynamic_objects",	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_dynamic_objects),	1, NULL},
 		{(char *) "navigator_panel", (char *) "show_annotations",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_annotations),	1, NULL},
@@ -954,18 +959,21 @@ read_parameters(int argc, char *argv[],
 		{(char *) "robot", (char *) "polygon_file",CARMEN_PARAM_STRING, &(poly_file), 0, NULL},
 	};
 
+	printf("DEBUG!\n");
 	carmen_param_allow_unfound_variables(1);
 	num_items = sizeof(param_ackerman_list) / sizeof(param_ackerman_list[0]);
 	carmen_param_install_params(argc, argv, param_ackerman_list, num_items);
 	carmen_param_allow_unfound_variables(0);
-
+	printf("DEBUG!!\n");
 	carmen_parse_polygon_file(poly_config, poly_file);
+		printf("DEBUG!!!\n");
 
 	carmen_param_t param_cmd_list[] =
 	{
 		{(char *) "commandline", (char *) "map_path", CARMEN_PARAM_STRING, &map_path, 0, NULL},
 	};
 
+	printf("DEBUG!!!!\n");
 	num_items = sizeof(param_cmd_list) / sizeof(param_cmd_list[0]);
 
 	carmen_param_allow_unfound_variables(1);
@@ -1076,6 +1084,7 @@ main(int argc, char *argv[])
 	signal(SIGINT, nav_shutdown);
 
 	read_parameters(argc, argv, &robot_config, &poly_config, &nav_config, &nav_panel_config);
+	printf("Parameters Ready\n");
 	carmen_grid_mapping_init_parameters(0.2, 150);
 
 	// Esta incializacao evita que o valgrind reclame de varias variaveis nao inicializadas
