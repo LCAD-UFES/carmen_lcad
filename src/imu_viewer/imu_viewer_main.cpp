@@ -10,9 +10,11 @@
 #include <carmen/xsens_messages.h>
 #include <carmen/rotation_geometry.h>
 #include <carmen/gps_xyz_interface.h>
+#include <math.h>
+
 carmen_xsens_global_quat_message *xsens_quat_message, *data;
 carmen_xsens_global_message *data_pose, *pose;
-
+carmen_pi_imu_message_t *imu_msg;
 
 rotation_matrix *
 create_rotation_matrix_from_quaternions_new(carmen_xsens_quat quat)
@@ -116,6 +118,19 @@ xsens_global_euler_message_handler(carmen_xsens_global_euler_message *xsens_glob
 	data_pose->m_yaw = carmen_degrees_to_radians(xsens_global_euler_message->euler_data.m_yaw);
 }
 
+void
+imu_handler(carmen_pi_imu_message_t* msg)
+{
+	imu_msg->imu_vector->accel.x = msg->imu_vector->accel.x * 0.000244;
+	imu_msg->imu_vector->accel.y = msg->imu_vector->accel.y * 0.000244;
+	imu_msg->imu_vector->accel.z = msg->imu_vector->accel.z * 0.000244;
+	imu_msg->imu_vector->magnetometer.x	= msg->imu_vector->magnetometer.x * 0.014;
+	imu_msg->imu_vector->magnetometer.y	= msg->imu_vector->magnetometer.y * 0.014;
+	imu_msg->imu_vector->magnetometer.z	= msg->imu_vector->magnetometer.z * 0.014;
+	imu_msg->imu_vector->gyro.z = msg->imu_vector->gyro.z * 0.0175 * (M_PI / 180.);
+	imu_msg->imu_vector->gyro.z = msg->imu_vector->gyro.z * 0.0175 * (M_PI / 180.);
+	imu_msg->imu_vector->gyro.z = msg->imu_vector->gyro.z * 0.0175 * (M_PI / 180.);
+}
 
 void
 shutdown_module(int signo)
@@ -149,6 +164,7 @@ main(int argc, char *argv[])
 
 	data = (carmen_xsens_global_quat_message*) calloc (1, sizeof (carmen_xsens_global_quat_message));
 	data_pose = (carmen_xsens_global_message*) calloc(1, sizeof (carmen_xsens_global_message));
+	imu_msg = (carmen_pi_imu_message_t*) calloc(1, sizeof (carmen_pi_imu_message_t));
 
 	carmen_xsens_subscribe_xsens_global_quat_message(NULL,
 			(carmen_handler_t) xsens_quat_message_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -162,5 +178,6 @@ main(int argc, char *argv[])
 
     return (a.exec());
 }
+
 
 
