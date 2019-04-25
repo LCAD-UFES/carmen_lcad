@@ -12,10 +12,10 @@
 
 
 template<class T>
-class Statistics
+class DistributionInterface
 {
 public:
-	virtual ~Statistics() { }
+	virtual ~DistributionInterface() { }
 	virtual void update(const T &sample) = 0;
 	virtual double likelihood(const T &sample) = 0;
 
@@ -26,7 +26,7 @@ public:
 
 // virtual void color(unsigned char *r, unsigned char *g, unsigned char *b) = 0;
 
-class Bernoulli : public Statistics<bool>
+class Bernoulli : public DistributionInterface<bool>
 {
 public:
 	double n_true, n_total;
@@ -56,7 +56,7 @@ public:
 };
 
 
-class Categorical : public Statistics<int>
+class Categorical : public DistributionInterface<int>
 {
 public:
 	std::map<int, int> categories_count;
@@ -110,30 +110,159 @@ public:
 };
 
 
-void update_distribution(Bernoulli *distribution, pcl::PointXYZRGB &point)
+class Gaussian : public DistributionInterface<double>
 {
-	distribution->update(point.r);
-}
+public:
+	double sum_squared, mean, std;
+	long int n;
+
+	Gaussian()
+	{
+		sum_squared = mean = std = 0.0;
+		n = 0;
+	}
+
+	virtual void update(const double &sample)
+	{
+		//SUM(i=1..n){values[i]^2} - period*(average^2)
+		sum_squared += pow(sample, 2);
+		mean = (sample + n * mean) / ((double) (n + 1));
+		std = sqrt(sum_squared / (n + 1) - pow(mean, 2));
+		n++;
+	}
+
+	virtual double likelihood(const double &sample)
+	{
+		if (std > 0)
+		{
+			double multiplier = 1. / (std * sqrt(2.0 * M_PI));
+			double exponent = -0.5 * pow((sample - mean) / std, 2);
+			return multiplier * exp(exponent);
+		}
+		else
+		{
+			// if std = 0.0, then we have no uncertainty about the mean.
+			if (sample == mean)
+				return 1.0;
+			else
+				return 0.0;
+		}
+	}
+};
 
 
-void update_distribution(Categorical *distribution, pcl::PointXYZRGB &point)
+class CellInterface
 {
-	distribution->update(point.r);
-}
+public:
+	virtual ~CellInterface() {}
+	virtual void update(const pcl::PointXYZRGB &point) = 0;
+	virtual double likelihood(const pcl::PointXYZRGB &point) = 0;
+	virtual cv::Scalar get_color() = 0;
+};
 
 
-cv::Scalar get_color(Bernoulli *distribution)
+class OccupancyCell : public CellInterface
 {
-	unsigned char color = (unsigned char) (distribution->likelihood(1) * 255.0);
-	return cv::Scalar(color, color, color);
-}
+public:
+	Bernoulli statistics;
+
+	virtual void update(const pcl::PointXYZRGB &point)
+	{
+		statistics.update(point.r);
+	}
+
+	virtual double likelihood(const pcl::PointXYZRGB &point)
+	{
+		return statistics.likelihood(point.r);
+	}
+
+	cv::Scalar get_color()
+	{
+		unsigned char color = (unsigned char) (statistics.likelihood(1) * 255.0);
+		return cv::Scalar(color, color, color);
+	}
+};
 
 
-cv::Scalar get_color(Categorical *distribution)
+class SemanticCell : public CellInterface
 {
-	CityScapesColorMap colormap;
-	return colormap.color(distribution->most_likely());
-}
+public:
+	Categorical statistics;
+
+	virtual void update(const pcl::PointXYZRGB &point)
+	{
+		statistics.update(point.r);
+	}
+
+	virtual double likelihood(const pcl::PointXYZRGB &point)
+	{
+		return statistics.likelihood(point.r);
+	}
+
+	cv::Scalar get_color()
+	{
+		CityScapesColorMap colormap;
+		return colormap.color(statistics.most_likely());
+	}
+};
+
+
+class ReflectivityCell : public CellInterface
+{
+public:
+	Gaussian statistics;
+
+	virtual void update(const pcl::PointXYZRGB &point)
+	{
+		statistics.update(point.r);
+	}
+
+	virtual double likelihood(const pcl::PointXYZRGB &point)
+	{
+		return statistics.likelihood(point.r);
+	}
+
+	cv::Scalar get_color()
+	{
+		unsigned char color = (unsigned char) statistics.mean;
+		return cv::Scalar(color, color, color);
+	}
+};
+
+
+// Important: this class assumes that the dimensions are independent.
+class ColorCell : public CellInterface
+{
+public:
+	Gaussian r_statistics, g_statistics, b_statistics;
+
+	virtual void update(const pcl::PointXYZRGB &point)
+	{
+		r_statistics.update(point.r);
+		g_statistics.update(point.g);
+		b_statistics.update(point.b);
+	}
+
+	virtual double likelihood(const pcl::PointXYZRGB &point)
+	{
+		double l = 1.0;
+
+		l *= r_statistics.likelihood(point.r);
+		l *= g_statistics.likelihood(point.g);
+		l *= b_statistics.likelihood(point.b);
+
+		return l;
+	}
+
+	cv::Scalar get_color()
+	{
+		unsigned char r = (unsigned char) r_statistics.mean;
+		unsigned char g = (unsigned char) g_statistics.mean;
+		unsigned char b = (unsigned char) b_statistics.mean;
+		return cv::Scalar(b, g, r);
+	}
+};
+
 
 /**
  * Convention that classes that represent cell values must follow:
@@ -148,9 +277,75 @@ cv::Scalar get_color(Categorical *distribution)
 class KeyGeneratorInterface
 {
 public:
-	virtual ~KeyGeneratorInterface();
-	virtual int coordinates_to_key(double x, double y, double z);
-	virtual void key_to_coordinates(int key, double *x, double *y, double *z);
+	virtual ~KeyGeneratorInterface() {}
+	virtual unsigned long coordinates_to_key(int cx, int cy, int cz);
+	virtual void key_to_coordinates(unsigned long key, int *cx, int *cy, int *cz);
+};
+
+class KeyGen2D
+{
+public:
+	int offset;
+
+	KeyGen2D() { offset = 32; }
+
+	virtual ~KeyGen2D() {}
+
+	virtual unsigned long coordinates_to_key(int cx, int cy, int cz __attribute__((unused)))
+	{
+		unsigned long key = 0;
+
+		key |= (unsigned long) cx;
+		key <<= offset;
+		key |= (unsigned long) cy;
+
+		return key;
+	}
+
+	virtual void key_to_coordinates(unsigned long key, int *cx, int *cy, int *cz)
+	{
+		*cx = *cy = *cz = 0;
+		*cy = key & 0x00000000FFFFFFFF;
+		key >>= offset;
+		*cx = key & 0x00000000FFFFFFFF;
+	}
+};
+
+
+class KeyGen3D
+{
+public:
+	int offset;
+
+	KeyGen3D()
+	{
+		offset = 20;
+	}
+
+	virtual ~KeyGen3D() {}
+
+	virtual unsigned long coordinates_to_key(int cx, int cy, int cz)
+	{
+		unsigned long key = 0;
+
+		key |= (unsigned long) cx;
+		key <<= offset;
+		key |= (unsigned long) cy;
+		key <<= offset;
+		key |= (unsigned long) cz;
+
+		return key;
+	}
+
+	virtual void key_to_coordinates(unsigned long key, int *cx, int *cy, int *cz)
+	{
+		*cx = *cy = *cz = 0;
+		*cz = key & 0x00000000000FFFFF;
+		key >>= offset;
+		*cy = key & 0x00000000000FFFFF;
+		key >>= offset;
+		*cx = key & 0x00000000000FFFFF;
+	}
 };
 
 
@@ -161,13 +356,22 @@ public:
 	HashGridMap() { }
 	~HashGridMap() { }
 
-	void add(pcl::PointXYZRGB &point)
+	void add(const pcl::PointXYZRGB &point)
 	{
-		update_distribution(&test_distr, point);
+		cell.update(point);
 	}
 
-	//void add(std::vector<pcl::PointXYZRGB> &point);
-	//void add(pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud);
+	void add(const std::vector<pcl::PointXYZRGB> &points)
+	{
+		for (int i = 0; i < points.size(); i++)
+			add(points[i]);
+	}
+
+	void add(pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud)
+	{
+		for (int i = 0; i < point_cloud->size(); i++)
+			add(point_cloud->at(i));
+	}
 
 	//std::vector<double> get(pcl::PointXYZRGB point);
 
@@ -183,7 +387,7 @@ public:
 	//T* at(int i);
 	//T* operator[](int i);
 
-	T test_distr;
+	T cell;
 
 protected:
 
