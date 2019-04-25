@@ -46,7 +46,7 @@
 #define BACK_RIGHT	2
 #define BACK_LEFT	3
 // Metros por revolucao do pneu ~= 2.2375 m
-#define METERS_BY_ODOMETRY_COUNT	0.0255
+#define METERS_BY_ODOMETRY_COUNT	0.01559375 // IARA 0.0255, Ford Fusion 19.96/(5*256)
 #define MAX_ODOMETER 10000
 #define ODOMETER_FIFO_SIZE 12
 
@@ -86,9 +86,13 @@ int calibrate_steering_wheel_zero_angle = 0;
 int calibrate_steering_wheel_zero_torque = 0;
 int steering_angle_sensor = 20000.0 + 30.0;
 int steering_angle_auxiliary_sensor = 0xFFFC;
-int steering_angle_sensor_zero = 20000.0 + 30.0;
+int steering_angle_sensor_zero = 16000.0;
+
+char steering_angle_sensor_zero_file_name[1024];
 
 int steering_wheel_zero_torque = -30;
+
+char steering_wheel_zero_torque_file_name[1024];
 
 
 // Refresh screen in curses mode
@@ -267,7 +271,7 @@ char getUserInput()
 
 void init_modules()
 {
-//	usleep(1000000); // Espera um segundo para o NodeManager entrar
+	usleep(1000000); // Espera um segundo para o NodeManager entrar
 
 	pd = pdCreate();
 	if (!pd)
@@ -406,11 +410,18 @@ void update_wheels_speed(struct can_frame frame)
 		wheel_speed_index = 0;
 }
 
+
 void update_car_speed(struct can_frame frame)
 {
 	car_speed = ((double) frame.data[0] * 256.0 + (double) frame.data[1]) * DESOUZA_GUIDOLINI_CONSTANT;
-	speed_signal = (((double) frame.data[6] * 256.0 + (double) frame.data[7]) > 0x0800)? 1.0: -1.0;
+//	speed_signal = (((double) frame.data[6] * 256.0 + (double) frame.data[7]) > 0x0800)? 1.0: -1.0; // Com can da IARA
 	car_speed *= speed_signal;
+}
+
+
+void update_speed_signal(struct can_frame frame)
+{
+	speed_signal = (frame.data[1] == 0x2C)? -1.0: 1.0; // Marcha reh do Ford Fusion
 }
 
 
@@ -485,6 +496,9 @@ void update_Car_state(struct can_frame frame)
 
 	if (frame.can_id == 0x431) // Setas acionadas manualmente e estado das portas (abertas/fechadas)
 		update_signals(frame);
+
+	if (frame.can_id == 0x171) // Cambio do Ford Fusion
+		update_speed_signal(frame);
 
 //	if (frame.can_id == 0x216) // Safe Stop?
 //		update_wheels_speed(frame);
@@ -570,7 +584,7 @@ void calibrate_steering_wheel_zero_angle_state_machine()
 		if (steering_angle_auxiliary_sensor != 0xFFFC)
 		{
 			steering_angle_sensor_zero = steering_angle_sensor - 2550;
-			FILE *steering_angle_sensor_zero_file = fopen("/home/pi/steering_angle_sensor_zero_file.txt", "w");
+			FILE *steering_angle_sensor_zero_file = fopen(steering_angle_sensor_zero_file_name, "w");
 			if (steering_angle_sensor_zero_file)
 			{
 				fprintf(steering_angle_sensor_zero_file, "%d\n", steering_angle_sensor_zero);
@@ -695,7 +709,7 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 		double zero_torque_correction = round((delta_t_clockwise - delta_t_counter_clockwise) * ZERO_TORQUE_CORRECTION_FACTOR);
 		if (fabs(zero_torque_correction) < 1.0)
 		{
-			FILE *steering_wheel_zero_torque_file = fopen("/home/pi/steering_wheel_zero_torque_file.txt", "w");
+			FILE *steering_wheel_zero_torque_file = fopen(steering_wheel_zero_torque_file_name, "w");
 			if (steering_wheel_zero_torque_file)
 			{
 				fprintf(steering_wheel_zero_torque_file, "%d\n", steering_wheel_zero_torque);
@@ -736,13 +750,17 @@ int main(int argCount, char **argString)
 	if (interface_active)
 		setupTerminal();
 
-	FILE *steering_angle_sensor_zero_file = fopen("/home/pi/steering_angle_sensor_zero_file.txt", "r");
+	strcpy(steering_angle_sensor_zero_file_name, getenv("CARMEN_HOME"));
+	strcat(steering_angle_sensor_zero_file_name, "/sharedlib/OpenJAUS/ojVehicleDriver/steering_angle_sensor_zero_file.txt");
+	FILE *steering_angle_sensor_zero_file = fopen(steering_angle_sensor_zero_file_name, "r");
 	if (steering_angle_sensor_zero_file)
 	{
 		fscanf(steering_angle_sensor_zero_file, "%d\n", &steering_angle_sensor_zero);
 		fclose(steering_angle_sensor_zero_file);
 	}
-	FILE *steering_wheel_zero_torque_file = fopen("/home/pi/steering_wheel_zero_torque_file.txt", "r");
+	strcpy(steering_wheel_zero_torque_file_name, getenv("CARMEN_HOME"));
+	strcat(steering_wheel_zero_torque_file_name, "/sharedlib/OpenJAUS/ojVehicleDriver/steering_wheel_zero_torque_file.txt");
+	FILE *steering_wheel_zero_torque_file = fopen(steering_wheel_zero_torque_file_name, "r");
 	if (steering_wheel_zero_torque_file)
 	{
 		fscanf(steering_wheel_zero_torque_file, "%d\n", &steering_wheel_zero_torque);

@@ -492,6 +492,7 @@ torc_report_velocity_state_message_handler(OjCmpt XGV_CCU __attribute__ ((unused
 	if (reportVelocityState)
 	{
 		// A media da velocidade das radas trazeiras ee mais correta. A velocidade abaixo ee a media das rodas dianteiras mais um ruido estranho...
+		printf("g_XGV_velocity %lf   g_XGV_left_rear_wheel_speed %lf\n", g_XGV_velocity, g_XGV_left_rear_wheel_speed);
 		// g_XGV_velocity = reportVelocityState->velocityXMps;
 #ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
 		FILE *caco = fopen("ford_dump.txt", "a");
@@ -748,7 +749,7 @@ torc_report_wheels_speed_message_handler(OjCmpt XGV_CCU __attribute__ ((unused))
 #endif
 		g_XGV_velocity = (g_XGV_right_rear_wheel_speed + g_XGV_left_rear_wheel_speed) / 2.0;
 
-//		printf("WHEELS (RF, LF, RR, LR, ts): %lf, %lf, %lf, %lf, %lf\n", 
+//		printf("WHEELS (RF, LF, RR, LR, ts): %lf, %lf, %lf, %lf, %lf\n",
 //				g_XGV_right_front_wheel_speed, g_XGV_left_front_wheel_speed,
 //				g_XGV_right_rear_wheel_speed, g_XGV_left_rear_wheel_speed, carmen_get_time());
 
