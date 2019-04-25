@@ -617,8 +617,12 @@ SensorPreproc::_get_pixel_position(Matrix<double, 4, 1> &p_sensor,
 		ppixel->y = (_p_pixel_homogeneous(1, 0) / _p_pixel_homogeneous(2, 0)) * img_rows;
 		ppixel->x = (_p_pixel_homogeneous(0, 0) / _p_pixel_homogeneous(2, 0)) * img_cols;
 
+		// check if the point is in the area to be ignored.
+		int point_hit_car = ppixel->y > (img_rows * (380. / 480.));
+		int point_hit_sky = ppixel->y < (img_rows * (40. / 480.));		
+		
 		// check if the point is visible by the camera.
-		if (ppixel->x >= 0 && ppixel->x < img_cols && ppixel->y >= 0 && ppixel->y < img_rows)
+		if (ppixel->x >= 0 && ppixel->x < img_cols && ppixel->y >= 0 && ppixel->y < img_rows && !point_hit_car && !point_hit_sky)
 			*is_valid = 1;
 	}
 }

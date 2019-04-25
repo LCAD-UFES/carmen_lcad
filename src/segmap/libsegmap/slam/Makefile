@@ -13,11 +13,11 @@ IFLAGS += -std=c++11
 IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ \
 	-I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
 
-SOURCES = segmap_grid_map.cpp segmap_particle_filter.cpp segmap_preproc.cpp
-PUBLIC_INCLUDES = segmap_grid_map.h segmap_particle_filter.h segmap_preproc.h
+SOURCES = segmap_grid_map.cpp segmap_particle_filter.cpp segmap_preproc.cpp segmap_hash_map.cpp
+PUBLIC_INCLUDES = segmap_grid_map.h segmap_particle_filter.h segmap_preproc.h segmap_hash_map.h
 PUBLIC_LIBRARIES = libsegmap_slam.a
 PUBLIC_BINARIES = 
-TARGETS = libsegmap_slam.a
+TARGETS = libsegmap_slam.a 
 
 libsegmap_slam.a: segmap_grid_map.o segmap_particle_filter.o segmap_preproc.o
 
