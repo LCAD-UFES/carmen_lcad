@@ -267,7 +267,7 @@ namespace perls
             sprintf (imageName,"%s/%s%04d.%s", image_folder, image_base_name, imageIndex, image_type);	
             printf ("Loading file-: %s\n",imageName);
             
-            #ifdef __DEBUG__
+            #ifdef _DEBUG_
                 IplImage* iplimage = cvLoadImage (imageName, 1);
             #else
                 IplImage* iplimage = cvLoadImage (imageName, 0); //load image as grayscale.
@@ -278,7 +278,7 @@ namespace perls
                return -1;
             }
             //gaussian smoothing of images
-            #ifdef __DEBUG__
+            #ifdef _DEBUG_
                 IplImage* out = cvCreateImage (cvGetSize(iplimage), IPL_DEPTH_8U, 3);
             #else
                 IplImage* out = cvCreateImage (cvGetSize(iplimage), IPL_DEPTH_8U, 1);
