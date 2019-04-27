@@ -33,12 +33,12 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/pso -lpso++ -fopenmp
 LFLAGS += `pkg-config --libs opencv`	  
 LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 
-SOURCES = grab_data_for_calibration.cpp calibrate_bias.cpp calibrate_bias_from_log.cpp
+SOURCES = grab_data_for_calibration.cpp calibrate_bias.cpp calibrate_bias_from_log.cpp filter_data_for_calibration.cpp calibrate_bias_from_log_with_neural_phi.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = grab_data_for_calibration calibrate_bias calibrate_bias_from_log
-TARGETS = libpso++.a grab_data_for_calibration calibrate_bias calibrate_bias_from_log
+PUBLIC_BINARIES = grab_data_for_calibration calibrate_bias calibrate_bias_from_log filter_data_for_calibration calibrate_bias_from_log_with_neural_phi
+TARGETS = libpso++.a calibrate_bias calibrate_bias_from_log filter_data_for_calibration grab_data_for_calibration calibrate_bias_from_log_with_neural_phi
 
 libpso++.a:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/pso/
@@ -50,5 +50,7 @@ clean_pso:
 grab_data_for_calibration: grab_data_for_calibration.o
 calibrate_bias: calibrate_bias.o
 calibrate_bias_from_log: calibrate_bias_from_log.o
+filter_data_for_calibration: filter_data_for_calibration.o
+calibrate_bias_from_log_with_neural_phi: calibrate_bias_from_log_with_neural_phi.o
 
 include ../Makefile.rules

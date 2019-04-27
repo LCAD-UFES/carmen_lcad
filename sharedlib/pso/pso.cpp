@@ -224,6 +224,7 @@ gaussian_random_pso(double mean, double std)
   return mean + std * z;
 }
 
+
 void
 ParticleSwarmOptimization::_update_particles()
 {
