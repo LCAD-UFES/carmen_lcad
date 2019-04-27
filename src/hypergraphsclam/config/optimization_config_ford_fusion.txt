@@ -1,0 +1,75 @@
+
+-- covariâncias
+-- quanto menor mais confianca ordem de x10 (XX YY - pose) (HH - orientação)
+-- UNIDADE DA VARIANCIA NOS DESLOCAMENTOS: METROS AO QUADRADO - AREA
+-- UNIDADE DA VARIANCIA NA ORIENTACAO: RADIANOS AO QUADRADO
+-- XX == VARIANCIA DE X EM RELACAO A X
+-- YY == VARIANCIA DE Y EM RELACAO A Y
+-- HH == VARIANCIA DO HEADING EM RELACAO AO HEADING
+
+-- ODOMETRY displacement
+ODOMETRY_XX_VAR 0.1
+ODOMETRY_YY_VAR 0.1
+ODOMETRY_HH_VAR 0.005
+
+-- SICK ICP
+SICK_ICP_XX_VAR 0.8
+SICK_ICP_YY_VAR 0.8
+SICK_ICP_HH_VAR 0.4
+
+-- SICK ICP LOOP
+SICK_LOOP_ICP_XX_VAR 0.75
+SICK_LOOP_ICP_YY_VAR 0.7
+SICK_LOOP_ICP_HH_VAR 0.25
+
+-- VELODYNE ICP
+VELODYNE_ICP_XX_VAR 1.5
+VELODYNE_ICP_YY_VAR 1.5
+VELODYNE_ICP_HH_VAR 0.2
+
+-- VELODYNE ICP LOOP
+VELODYNE_LOOP_ICP_XX_VAR 1.5
+VELODYNE_LOOP_ICP_YY_VAR 1.5
+VELODYNE_LOOP_ICP_HH_VAR 0.1
+
+XSENS_CONSTRAINT_VAR 0.785398163397448278999490867136
+
+-- VISUAL ODOMETRY D
+VISUAL_XX_VAR 0.25
+VISUAL_YY_VAR.25
+VISUAL_HH_VAR 0.125
+
+-- Multiplicado do desvio padrao- quanto maior, menor a confianca no GPS - 125 ta confiando bem pouco no multiplier 
+GPS_POSE_STD_MULTIPLIER 100.5
+GPS_POSE_HH_STD 150.75
+
+-- special edge: two messages with same timestamp value - Nao precisa mecher, basicamente nao deixa o otimizador mexer em nos da mesma mensagem (GPS-HEADING)
+-- SPECIAL_ODOMETRY_INFORMATION 100
+
+-- how many bias calibration nodes - 1 ou 2, mais que isso desnecessario - Vendo nos plots pra saber qual fica melhor
+ODOM_ACKERMAN_PARAMS_VERTICES 1
+
+-- how many outer iterations - Na pratica resolve-se com 1 loop so 
+OPTIMIZER_OUTER_ITERATIONS 1
+
+-- how many pose optimization iterations
+OPTIMIZER_INNER_POSE_ITERATIONS 40
+
+-- how many bias calibration iterations
+OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS 10
+
+-- the min clustering distance (GPS)
+FAKE_GPS_CLUSTERING_DISTANCE 0.1
+
+-- 
+
+-- edges configuration - disable, enable edges - Comente para dizer quais voce nao quer usar como aresta.
+-- USE_VELODYNE_SEQ
+USE_VELODYNE_LOOP
+-- USE_BUMBLEBEE_SEQ
+-- USE_BUMBLEBEE_LOOP
+-- USE_SICK_SEQ
+-- USE_SICK_LOOP
+USE_GPS
+USE_ODOMETRY
+

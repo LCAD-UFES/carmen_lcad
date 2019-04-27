@@ -18,6 +18,7 @@ using namespace std;
 
 
 #define MAX_LINE_LENGTH (5*4000000)
+#define INITIAL_LOG_LINE 10000
 
 
 class Line
@@ -148,6 +149,15 @@ read_data(char *filename, int gps_to_use)
 
 	FILE *f = fopen(filename, "r");
 
+	for (int i = 0; i < INITIAL_LOG_LINE; i++)
+	{
+		if (!fgets(line, MAX_LINE_LENGTH - 1, f))
+		{
+			printf("EOF in log at read_data(). The log has less than %d lines\n", INITIAL_LOG_LINE);
+			exit(1);
+		}
+	}
+
 	vector<carmen_robot_ackerman_velocity_message> odoms;
 
 	if (f != NULL)
@@ -195,14 +205,51 @@ estimate_theta(PsoData *pso_data, int id)
 		double dy = pso_data->lines[i].gps_y - pso_data->lines[id].gps_y;
 		double dx = pso_data->lines[i].gps_x - pso_data->lines[id].gps_x;
 
-		double d = sqrt(pow(dx, 2) +
-		                pow(dy, 2));
+		double d = sqrt(pow(dx, 2) + pow(dy, 2));
 
 		if (d > 5)
 			return atan2(dy, dx);
 	}
 
 	exit(printf("Error: unable of finding a reasonable initial angle."));
+}
+
+
+static double
+factor(double x)
+{
+	double value = 1.0 / (1.0 + fabs(x * x));
+	return (value);
+}
+
+
+static double
+factor2(double x)
+{
+	double abs_x = fabs(x);
+	double a = 0.3;
+	double b = 0.5;
+	double c = 0.5;
+	double value = exp(-(pow(abs_x - a, 2) / (b * b))) * tanh(abs_x) * c + abs_x;
+
+	if (x > 0)
+		return value;
+	else
+		return -value;
+}
+
+
+void
+ackerman_model(double &x, double &y, double &yaw, double v, double phi, double dt)
+{
+	double new_phi = phi / (1.0 + v * v * 0.000); // underster IARA
+//	new_phi = new_phi * factor(6.0 * new_phi);
+	new_phi = new_phi + factor2(6.0 * new_phi);
+
+	x = x + dt * v * cos(yaw);
+	y = y + dt * v * sin(yaw);
+	yaw = yaw + dt * (v / 2.85) * tan(new_phi);
+	yaw = carmen_normalize_theta(yaw);
 }
 
 
@@ -240,10 +287,7 @@ print_result(double *particle, FILE *f_report)
 		v = pso_data->lines[i].v * particle[0] + particle[1];
 		phi = carmen_normalize_theta(pso_data->lines[i].phi * particle[2] + particle[3]);
 
-		x = x + dt * v * cos(yaw);
-		y = y + dt * v * sin(yaw);
-		yaw = yaw + dt * (v / 2.625 /* L */) * tan(phi);
-		yaw = carmen_normalize_theta(yaw);
+		ackerman_model(x, y, yaw, v, phi, dt);
 
 		x_withoutbias = x_withoutbias + dt * pso_data->lines[i].v * cos(yaw_withoutbias);
 		y_withoutbias = y_withoutbias + dt * pso_data->lines[i].v * sin(yaw_withoutbias);
@@ -276,7 +320,7 @@ fitness(double *particle, void *data)
 	x = 0;
 	y = 0;
 
-	yaw = particle[4]; 
+	yaw = particle[4];
 	//yaw = estimate_theta(pso_data, 0);
 
 	for (i = 1; i < pso_data->lines.size(); i++)
@@ -289,11 +333,7 @@ fitness(double *particle, void *data)
 		// phi = raw_phi * mult_bias + add_bias
 		phi = carmen_normalize_theta(pso_data->lines[i].phi * particle[2] + particle[3]);
 
-		// ackermann prediction
-		x = x + dt * v * cos(yaw);
-		y = y + dt * v * sin(yaw);
-		yaw = yaw + dt * (v / 2.625 /* L */) * tan(phi);
-		yaw = carmen_normalize_theta(yaw);
+		ackerman_model(x, y, yaw, v, phi, dt);
 
 		// translate the starting pose of gps to zero to avoid floating point numerical instability
 		gps_x = pso_data->lines[i].gps_x - pso_data->lines[0].gps_x;
@@ -342,8 +382,8 @@ set_limits(int dim)
 	// v multiplicative bias
 	//limits[0][0] = 0.95; //0.5;
 	//limits[0][1] = 1.05; //1.5;
-	limits[0][0] = 0.99999;
-	limits[0][1] = 1.00001;
+	limits[0][0] = 0.979999;
+	limits[0][1] = 1.2001;
 
 	// v additive bias
 	limits[1][0] = -0.00000001;
@@ -351,7 +391,7 @@ set_limits(int dim)
 
 	// phi multiplicative bias
 	limits[2][0] = 0.9;
-	limits[2][1] = 1.1;
+	limits[2][1] = 1.5;
 
 	// phi additive bias
 	limits[3][0] = -carmen_degrees_to_radians(5.);
@@ -396,13 +436,13 @@ main(int argc, char **argv)
 
 	optimizer.Optimize();
 
-	fprintf(f_calibration, "bias v: %lf %lf bias phi: %lf %lf Initial Angle: %lf\n",
+	fprintf(f_calibration, "v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf\n",
 	        optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
 	        optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
 	        optimizer.GetBestSolution()[4]
 	);
 
-	fprintf(stderr, "bias v: %lf %lf bias phi: %lf %lf Initial Angle: %lf\n",
+	fprintf(stderr, "v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf\n",
 	        optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
 	        optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
 	        optimizer.GetBestSolution()[4]
