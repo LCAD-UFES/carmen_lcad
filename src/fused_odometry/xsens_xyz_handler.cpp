@@ -514,7 +514,7 @@ measure_weight_orientation(carmen_fused_odometry_state_vector xt, void *zt_v, ca
 	sensor_vector_xsens_xyz *zt = (sensor_vector_xsens_xyz *) zt_v;
 	carmen_point_t std = get_std_error(&xsens_handler, fused_odometry_parameters);
 
-	double diff_yaw = carmen_normalize_theta(xt.pose.orientation.yaw - (zt->orientation.yaw - xt.xsens_yaw_bias));
+	double diff_yaw = carmen_normalize_theta(xt.pose.orientation.yaw - (zt->orientation.yaw + xt.xsens_yaw_bias));
 	double weight_yaw = exp(-(diff_yaw * diff_yaw / (2.0 * std.theta * std.theta)));
 
 	return weight_yaw;
@@ -603,12 +603,12 @@ xsens_xyz_message_handler(carmen_xsens_xyz_message *xsens_xyz)
 	{
 		if (xsens_handler.gps_performance_changed)
 		{
-			xsens_handler.gps_performance_degradation = 40.0;
+			xsens_handler.gps_performance_degradation = 10.0;
 			xsens_handler.gps_performance_changed = 0;
 		}
 		if (xsens_handler.gps_orientation_performance_changed)
 		{
-			xsens_handler.gps_orientation_performance_degradation = 40.0;
+			xsens_handler.gps_orientation_performance_degradation = 10.0;
 			xsens_handler.gps_orientation_performance_changed = 0;
 		}
 		prediction(sensor_vector->timestamp, fused_odometry_parameters);

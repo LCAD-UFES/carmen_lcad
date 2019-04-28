@@ -491,9 +491,9 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
 
 
 static void
-xsens_matrix_message_handler(carmen_xsens_global_matrix_message* xsens_matrix_message)
+xsens_matrix_message_handler(carmen_xsens_global_matrix_message *xsens_matrix_message)
 {
-    rotation_matrix* xsens_matrix = create_rotation_matrix_from_matrix_inverse(xsens_matrix_message->matrix_data.m_data);
+    rotation_matrix *xsens_matrix = create_rotation_matrix_from_matrix_inverse(xsens_matrix_message->matrix_data.m_data);
     xsens_orientation = get_angles_from_rotation_matrix(xsens_matrix);
     destroy_rotation_matrix(xsens_matrix);
 }
@@ -537,7 +537,7 @@ xsens_xyz_message_handler(carmen_xsens_xyz_message *xsens_xyz)
 
     xsens_xyz_trail[next_xsens_xyz_trail] = new_pos;
 
-    rotation_matrix* xsens_matrix = create_rotation_matrix_from_quaternions(xsens_xyz->quat);
+    rotation_matrix *xsens_matrix = create_rotation_matrix_from_quaternions(xsens_xyz->quat);
     xsens_orientation = get_angles_from_rotation_matrix(xsens_matrix);
 
     destroy_rotation_matrix(xsens_matrix);
@@ -553,7 +553,7 @@ xsens_xyz_message_handler(carmen_xsens_xyz_message *xsens_xyz)
 static void
 xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 {
-    carmen_quaternion_t quat = {xsens_mti->quat_data.m_data[0], xsens_mti->quat_data.m_data[1], xsens_mti->quat_data.m_data[1], xsens_mti->quat_data.m_data[3]};
+    carmen_quaternion_t quat = {xsens_mti->quat_data.m_data[0], xsens_mti->quat_data.m_data[1], xsens_mti->quat_data.m_data[2], xsens_mti->quat_data.m_data[3]};
     rotation_matrix *xsens_matrix = create_rotation_matrix_from_quaternions(quat);
 
     xsens_orientation = get_angles_from_rotation_matrix(xsens_matrix);
@@ -2357,6 +2357,7 @@ draw_loop(window *w)
         if (draw_xsens_orientation_flag)
         {
             glColor3f(0.4, 1.0, 0.4);
+//            printf("%lf %lf\n", xsens_orientation.yaw, car_fused_pose.orientation.yaw);
             draw_xsens_orientation(xsens_orientation, xsens_yaw_bias, xsens_pose, sensor_board_1_pose, car_fused_pose);
             glColor3f(1.0, 0.4, 0.4);
             draw_xsens_orientation(xsens_orientation, 0.0, xsens_pose, sensor_board_1_pose, car_fused_pose);
@@ -2377,9 +2378,7 @@ draw_loop(window *w)
         }
 
         if (draw_car_flag)
-        {
             draw_car_at_pose(car_drawer, car_fused_pose);
-        }
 
         if (draw_stereo_cloud_flag)
         {
@@ -2587,6 +2586,7 @@ draw_loop_for_picking(window *w)
         if (draw_xsens_orientation_flag)
         {
             glColor3f(0.4, 1.0, 0.4);
+//            printf("%lf %lf\n", xsens_orientation.yaw, car_fused_pose.orientation.yaw);
             draw_xsens_orientation(xsens_orientation, xsens_yaw_bias, xsens_pose, sensor_board_1_pose, car_fused_pose);
             glColor3f(1.0, 0.4, 0.4);
             draw_xsens_orientation(xsens_orientation, 0.0, xsens_pose, sensor_board_1_pose, car_fused_pose);

@@ -70,9 +70,9 @@ sample_motion_model(carmen_fused_odometry_particle x_t_1, carmen_fused_odometry_
 
 	x_t.state.pose.orientation.yaw = x_t_1.state.pose.orientation.yaw + (x_t.state.velocity.x * tan(x_t.state.phi) / L) * dt;
 	x_t.state.pose.orientation.yaw = carmen_normalize_theta(x_t.state.pose.orientation.yaw);
-	if (0) // (fabs(ut.v) > fused_odometry_parameters->minimum_speed_for_correction) && ut.gps_available)
+	if (0)//(fabs(ut.v) > fused_odometry_parameters->minimum_speed_for_correction) && ut.gps_available)
 	{
-		x_t.state.xsens_yaw_bias = x_t_1.state.xsens_yaw_bias * 0.9999 + carmen_gaussian_random(0.0, fused_odometry_parameters->xsens_yaw_bias_noise);
+		x_t.state.xsens_yaw_bias = x_t_1.state.xsens_yaw_bias + carmen_gaussian_random(0.0, fused_odometry_parameters->xsens_yaw_bias_noise);
 		if (x_t.state.xsens_yaw_bias > fused_odometry_parameters->xsens_maximum_yaw_bias)
 		{
 			x_t.state.xsens_yaw_bias = fused_odometry_parameters->xsens_maximum_yaw_bias;
@@ -223,10 +223,7 @@ prediction(double timestamp, carmen_fused_odometry_parameters *fused_odometry_pa
 	{	
 		double dt = timestamp - xt[i].state.timestamp;
 
-//		xt[i] = sample_motion_model(xt[i], ut, dt / 2.0, fused_odometry_parameters);
-//		xt[i] = sample_motion_model(xt[i], ut, dt / 2.0, fused_odometry_parameters);
 		xt[i] = sample_motion_model(xt[i], ut, dt, fused_odometry_parameters);
-
 		xt[i].state.timestamp = timestamp;
 	}
 
