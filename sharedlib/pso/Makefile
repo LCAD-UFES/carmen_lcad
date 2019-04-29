@@ -1,8 +1,11 @@
 include ../../src/Makefile.conf
 
 LINK = g++
-CFLAGS += -Wall -fopenmp
-CXXFLAGS += -fopenmp
+# ATENCAO! Para usar OpenMP a sua fitness fucntion precisa ser thread safe!
+#CFLAGS += -Wall -fopenmp
+#CXXFLAGS += -fopenmp
+CFLAGS += -Wall
+CXXFLAGS += 
 IFLAGS +=
 LFLAGS += -lglobal
 
