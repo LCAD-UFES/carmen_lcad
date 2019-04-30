@@ -545,36 +545,23 @@ get_gps_to_car_transform(CarmenParamFile *params, int gps_to_use, int board_to_u
 	double board_x, board_y, board_z, board_roll, board_pitch, board_yaw;
 	Transform board2car, gps2board;
 
-	if (gps_to_use == 1)
-	{
-		fprintf(stderr, "** Warning: We're assuming that the chosen GPS is the one from the sensor_board.\n");
-		gps_x = params->get<double>("gps_nmea_x");
-		gps_y = params->get<double>("gps_nmea_y");
-		gps_z = params->get<double>("gps_nmea_z");
-		gps_yaw = params->get<double>("gps_nmea_yaw");
-		gps_pitch = params->get<double>("gps_nmea_pitch");
-		gps_roll = params->get<double>("gps_nmea_roll");
-	}
-	else
-	{
-		sprintf(param_name, "gps_nmea_%d_x", gps_to_use);
-		gps_x = params->get<double>(param_name);
+	sprintf(param_name, "gps_nmea_%d_x", gps_to_use);
+	gps_x = params->get<double>(param_name);
 
-		sprintf(param_name, "gps_nmea_%d_y", gps_to_use);
-		gps_y = params->get<double>(param_name);
+	sprintf(param_name, "gps_nmea_%d_y", gps_to_use);
+	gps_y = params->get<double>(param_name);
 
-		sprintf(param_name, "gps_nmea_%d_z", gps_to_use);
-		gps_z = params->get<double>(param_name);
+	sprintf(param_name, "gps_nmea_%d_z", gps_to_use);
+	gps_z = params->get<double>(param_name);
 
-		sprintf(param_name, "gps_nmea_%d_yaw", gps_to_use);
-		gps_yaw = params->get<double>(param_name);
+	sprintf(param_name, "gps_nmea_%d_yaw", gps_to_use);
+	gps_yaw = params->get<double>(param_name);
 
-		sprintf(param_name, "gps_nmea_%d_pitch", gps_to_use);
-		gps_pitch = params->get<double>(param_name);
+	sprintf(param_name, "gps_nmea_%d_pitch", gps_to_use);
+	gps_pitch = params->get<double>(param_name);
 
-		sprintf(param_name, "gps_nmea_%d_roll", gps_to_use);
-		gps_roll = params->get<double>(param_name);
-		}
+	sprintf(param_name, "gps_nmea_%d_roll", gps_to_use);
+	gps_roll = params->get<double>(param_name);
 
 	sprintf(param_name, "sensor_board_%d_x", board_to_use);
 	board_x = params->get<double>(param_name);
