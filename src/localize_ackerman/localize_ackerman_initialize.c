@@ -195,7 +195,7 @@ carmen_localize_ackerman_particle_filter_initialize(carmen_localize_ackerman_par
 
 	filter->initialized = 0;
 	filter->first_odometry = 1;
-	filter->global_mode = 0;
+	filter->converged = 0;
 	filter->distance_travelled = 0;
 
 	filter->param->laser_skip = 0; /* will be automatically initialized later on */
@@ -321,7 +321,7 @@ carmen_localize_ackerman_initialize_particles_uniform(carmen_localize_ackerman_p
 	}
 	filter->initialized = 1;
 	filter->first_odometry = 1;
-	filter->global_mode = 1;
+	filter->converged = 1;
 	filter->distance_travelled = 0;
 	fprintf(stderr, "\rDoing global localization... (%.1f%% complete)\n\n",
 			100.0);
@@ -332,19 +332,22 @@ void
 carmen_localize_ackerman_initialize_particles_gaussians(carmen_localize_ackerman_particle_filter_p filter,
 		int num_modes, carmen_point_t *mean, carmen_point_t *std)
 {
-	int i, j, each, start, end;
+	int i, j, n_particles_per_mode, start, end;
 	double x, y, theta, phi_bias;
 
-	each = (int) floor(filter->param->num_particles / (double) num_modes);
+	// Currently, num_modes is always equals to 1. See localize_ackerman_interface.cpp, function 'carmen_localize_ackerman_initialize_gaussian_time_command'.
+	// This initialization function is called in xsens_xyz_handler.cpp (fused_odometry module), function 'globalpos_ackerman_initialize_from_xsens'.
+	n_particles_per_mode = (int) floor(filter->param->num_particles / (double) num_modes);
 
 	for (i = 0; i < num_modes; i++)
 	{
-		start = i * each;
+		start = i * n_particles_per_mode;
 
+		// num particles is not necessarily multiple of num modes.
 		if(i == num_modes - 1)
 			end = filter->param->num_particles;
 		else
-			end = (i + 1) * each;
+			end = (i + 1) * n_particles_per_mode;
 
 		for (j = start; j < end; j++)
 		{
@@ -379,10 +382,10 @@ carmen_localize_ackerman_initialize_particles_gaussians(carmen_localize_ackerman
 	filter->first_odometry = 1;
 
 	//	if (num_modes < 2)
-	if (0) // @@@ Alberto: mudancca de significado de global_mode para que indique apenas que nao convergiu
-		filter->global_mode = 0;
+	if (0)
+		filter->converged = 0;
 	else
-		filter->global_mode = 1;
+		filter->converged = 1;
 
 	filter->distance_travelled = 0;
 }
@@ -448,7 +451,7 @@ carmen_localize_ackerman_initialize_particles_manual(carmen_localize_ackerman_pa
 	}
 	filter->initialized = 1;
 	filter->first_odometry = 1;
-	filter->global_mode = 0;
+	filter->converged = 0;
 	filter->distance_travelled = 0;
 }
 

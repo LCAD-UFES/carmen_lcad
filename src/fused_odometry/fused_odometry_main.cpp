@@ -184,7 +184,7 @@ correct_fused_odometry_timming_and_publish()
 
 
 static void 
-register_ipc_messages(void)
+define_ipc_messages(void)
 {
 	IPC_RETURN_TYPE err;
 
@@ -405,7 +405,7 @@ main(int argc, char** argv)
 
 	initialize_carmen_parameters(argc, argv, &fused_odometry_parameters);
 
-	register_ipc_messages();
+	define_ipc_messages();
 
 	carmen_fused_odometry_initialize(&fused_odometry_parameters);
 

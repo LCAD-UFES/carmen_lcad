@@ -30,6 +30,10 @@
 #include "localize_ackerman_messages.h"
 #include <carmen/robot_ackerman_messages.h>
 
+
+static const unsigned int timeout = 5000;
+
+
 void
 carmen_localize_ackerman_subscribe_globalpos_message(carmen_localize_ackerman_globalpos_message 
 		*globalpos,
@@ -42,11 +46,13 @@ carmen_localize_ackerman_subscribe_globalpos_message(carmen_localize_ackerman_gl
 			handler, subscribe_how);
 }
 
+
 void
 carmen_localize_ackerman_unsubscribe_globalpos_message(carmen_handler_t handler)
 {
 	carmen_unsubscribe_message(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME, handler);
 }
+
 
 void
 carmen_localize_ackerman_subscribe_particle_message(carmen_localize_ackerman_particle_message 
@@ -60,11 +66,13 @@ carmen_localize_ackerman_subscribe_particle_message(carmen_localize_ackerman_par
 			handler, subscribe_how);
 }
 
+
 void
 carmen_localize_ackerman_unsubscribe_particle_message(carmen_handler_t handler)
 {
 	carmen_unsubscribe_message(CARMEN_LOCALIZE_ACKERMAN_PARTICLE_NAME, handler);
 }
+
 
 void 
 carmen_localize_ackerman_subscribe_particle_prediction_message(carmen_localize_ackerman_particle_message
@@ -77,11 +85,13 @@ carmen_localize_ackerman_subscribe_particle_prediction_message(carmen_localize_a
 			handler, subscribe_how);
 }
 
+
 void
 carmen_localize_ackerman_unsubscribe_particle_prediction_message(carmen_handler_t handler)
 {
 	carmen_unsubscribe_message(CARMEN_LOCALIZE_ACKERMAN_PARTICLE_PREDICTION_NAME, handler);
 }
+
 
 void 
 carmen_localize_ackerman_subscribe_particle_correction_message(carmen_localize_ackerman_particle_message
@@ -94,11 +104,13 @@ carmen_localize_ackerman_subscribe_particle_correction_message(carmen_localize_a
 			handler, subscribe_how);
 }
 
+
 void
 carmen_localize_ackerman_unsubscribe_particle_correction_message(carmen_handler_t handler)
 {
 	carmen_unsubscribe_message(CARMEN_LOCALIZE_ACKERMAN_PARTICLE_CORRECTION_NAME, handler);
 }
+
 
 void
 carmen_localize_ackerman_subscribe_sensor_message(carmen_localize_ackerman_sensor_message 
@@ -112,11 +124,13 @@ carmen_localize_ackerman_subscribe_sensor_message(carmen_localize_ackerman_senso
 			handler, subscribe_how);
 }
 
+
 void
 carmen_localize_ackerman_unsubscribe_sensor_message(carmen_handler_t handler)
 {
 	carmen_unsubscribe_message(CARMEN_LOCALIZE_ACKERMAN_SENSOR_NAME, handler);
 }
+
 
 void
 carmen_localize_ackerman_subscribe_initialize_message(carmen_localize_ackerman_initialize_message 
@@ -131,11 +145,13 @@ carmen_localize_ackerman_subscribe_initialize_message(carmen_localize_ackerman_i
 			handler, subscribe_how);
 }
 
+
 void
 carmen_localize_ackerman_unsubscribe_initialize_message(carmen_handler_t handler)
 {
 	carmen_unsubscribe_message(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME, handler);
 }
+
 
 void
 carmen_localize_ackerman_subscribe_initialize_placename_message(carmen_localize_ackerman_initialize_placename_message 
@@ -150,120 +166,114 @@ carmen_localize_ackerman_subscribe_initialize_placename_message(carmen_localize_
 			handler, subscribe_how);
 }
 
+
 void
 carmen_localize_ackerman_unsubscribe_initialize_placename_message(carmen_handler_t handler)
 {
 	carmen_unsubscribe_message(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_PLACENAME_NAME, handler);
 }
 
-static unsigned int timeout = 5000;
 
 void 
-carmen_localize_ackerman_initialize_gaussian_command(carmen_point_t mean,
-		carmen_point_t std)
+carmen_localize_ackerman_initialize_gaussian_command(carmen_point_t mean, carmen_point_t std)
 {
 	static carmen_localize_ackerman_initialize_message init;
 	static int first = 1;
 	IPC_RETURN_TYPE err;
 
-	if(first)
+	if (first)
 	{
-		err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME,
-				IPC_VARIABLE_LENGTH,
-				CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_FMT);
-		carmen_test_ipc_exit(err, "Could not define message",
-				CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);
-
+		err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME, IPC_VARIABLE_LENGTH, CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);
 		first = 0;
 	}
+
 	init.timestamp = carmen_get_time();
 	init.host = carmen_get_host();
-
 	init.distribution = CARMEN_INITIALIZE_GAUSSIAN;
 	init.num_modes = 1;
 	init.mean = &mean;
 	init.std = &std;
+
 	err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME, &init);
 	carmen_test_ipc(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);
 }
+
 
 void
-carmen_localize_ackerman_initialize_gaussian_time_command(carmen_point_t mean,
-		carmen_point_t std, double timestamp)
+carmen_localize_ackerman_initialize_gaussian_time_command(carmen_point_t mean, carmen_point_t std, double timestamp)
 {
 	static carmen_localize_ackerman_initialize_message init;
 	static int first = 1;
 	IPC_RETURN_TYPE err;
 
-	if(first)
+	if (first)
 	{
-		err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME,
-				IPC_VARIABLE_LENGTH,
-				CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_FMT);
-		carmen_test_ipc_exit(err, "Could not define message",
-				CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);
-
+		err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME, IPC_VARIABLE_LENGTH, CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);
 		first = 0;
 	}
+
 	init.timestamp = timestamp;
 	init.host = carmen_get_host();
-
 	init.distribution = CARMEN_INITIALIZE_GAUSSIAN;
 	init.num_modes = 1;
 	init.mean = &mean;
 	init.std = &std;
+
 	err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME, &init);
 	carmen_test_ipc(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);
 }
 
-void carmen_localize_ackerman_initialize_uniform_command(void)
+
+void
+carmen_localize_ackerman_initialize_uniform_command(void)
 {
 	static carmen_localize_ackerman_initialize_message init;
 	static int first = 1;
 	IPC_RETURN_TYPE err;
 
-	if(first)
+	if (first)
 	{
-		err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME,
-				IPC_VARIABLE_LENGTH,
-				CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_FMT);
-		carmen_test_ipc_exit(err, "Could not define message",
-				CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);
-
+		err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME, IPC_VARIABLE_LENGTH, CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);
 		first = 0;
 	}
+
 	init.timestamp = carmen_get_time();
 	init.host = carmen_get_host();
-
 	init.distribution = CARMEN_INITIALIZE_UNIFORM;
 	init.num_modes = 0;
 	init.mean = NULL;
 	init.std = NULL;
+
 	err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME, &init);
 	carmen_test_ipc(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);
 }
 
-void carmen_localize_ackerman_initialize_placename_command(char *placename)
+
+void
+carmen_localize_ackerman_initialize_placename_command(char *placename)
 {
 	static carmen_localize_ackerman_initialize_placename_message init;
 	static int first = 1;
 	IPC_RETURN_TYPE err;
 
-	if(first) {
-		err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_PLACENAME_NAME,
-				IPC_VARIABLE_LENGTH,
-				CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_PLACENAME_FMT);
-		carmen_test_ipc_exit(err, "Could not define message",
-				CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_PLACENAME_NAME);
+	if(first)
+	{
+		err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_PLACENAME_NAME, IPC_VARIABLE_LENGTH, CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_PLACENAME_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_PLACENAME_NAME);
 		first = 0;
 	}
+
 	init.timestamp = carmen_get_time();
 	init.host = carmen_get_host();
 	init.placename = placename;
+
 	err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_PLACENAME_NAME, &init);
-	carmen_test_ipc(err, "Could not publish",
-			CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_PLACENAME_NAME);
+	carmen_test_ipc(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_PLACENAME_NAME);
 }
+
 
 void
 carmen_localize_ackerman_correct_laser(carmen_robot_ackerman_laser_message *laser,
@@ -279,34 +289,35 @@ carmen_localize_ackerman_correct_laser(carmen_robot_ackerman_laser_message *lase
 	dtheta = laser->laser_pose.theta - globalpos->odometrypos.theta;
 
 	dt = sqrt(dx * dx + dy * dy);
-	backwards = (dx * cos(laser->laser_pose.theta) +
-			dy * sin(laser->laser_pose.theta) < 0);
+	backwards = (dx * cos(laser->laser_pose.theta) + dy * sin(laser->laser_pose.theta) < 0);
 
 	/* The dr1/dr2 code becomes unstable if dt is too small. */
-	if(dt < 0.05) {
-		dr1 = carmen_normalize_theta(laser->laser_pose.theta -
-				globalpos->odometrypos.theta) / 2.0;
+	if (dt < 0.05)
+	{
+		dr1 = carmen_normalize_theta(laser->laser_pose.theta - globalpos->odometrypos.theta) / 2.0;
 		dr2 = dr1;
-	} else {
-		if(backwards)
-			dr1 = carmen_normalize_theta(atan2(-dy, -dx)-
-					globalpos->odometrypos.theta);
+	}
+	else
+	{
+		if (backwards)
+			dr1 = carmen_normalize_theta(atan2(-dy, -dx) - globalpos->odometrypos.theta);
 		else
-			dr1 = carmen_normalize_theta(atan2(dy, dx)-
-					globalpos->odometrypos.theta);
+			dr1 = carmen_normalize_theta(atan2(dy, dx) - globalpos->odometrypos.theta);
+
 		dr2 = carmen_normalize_theta(dtheta - dr1);
 	}
-	if(backwards)
+
+	if (backwards)
 		dt = -dt;
-	laser->laser_pose.x = globalpos->globalpos.x + dt *
-			cos(globalpos->globalpos.theta + dr1);
-	laser->laser_pose.y = globalpos->globalpos.y + dt *
-			sin(globalpos->globalpos.theta + dr1);
-	laser->laser_pose.theta =
-			carmen_normalize_theta(globalpos->globalpos.theta + dr1 + dr2);
+
+	laser->laser_pose.x = globalpos->globalpos.x + dt * cos(globalpos->globalpos.theta + dr1);
+	laser->laser_pose.y = globalpos->globalpos.y + dt * sin(globalpos->globalpos.theta + dr1);
+	laser->laser_pose.theta = carmen_normalize_theta(globalpos->globalpos.theta + dr1 + dr2);
 }
 
-int carmen_localize_ackerman_get_map(int global, carmen_map_t *map) 
+
+int
+carmen_localize_ackerman_get_map(int global, carmen_map_t *map)
 {
 	IPC_RETURN_TYPE err;
 	carmen_localize_ackerman_map_query_message msg;
@@ -324,11 +335,8 @@ int carmen_localize_ackerman_get_map(int global, carmen_map_t *map)
 
 	if (!initialized)
 	{
-		err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_MAP_QUERY_NAME,
-				IPC_VARIABLE_LENGTH,
-				CARMEN_LOCALIZE_ACKERMAN_MAP_QUERY_FMT);
-		carmen_test_ipc_exit(err, "Could not define message",
-				CARMEN_LOCALIZE_ACKERMAN_MAP_QUERY_NAME);
+		err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_MAP_QUERY_NAME, IPC_VARIABLE_LENGTH, CARMEN_LOCALIZE_ACKERMAN_MAP_QUERY_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_LOCALIZE_ACKERMAN_MAP_QUERY_NAME);
 		initialized = 1;
 	}
 
@@ -336,8 +344,7 @@ int carmen_localize_ackerman_get_map(int global, carmen_map_t *map)
 	msg.timestamp = carmen_get_time();
 	msg.host = carmen_get_host();
 
-	err = IPC_queryResponseData(CARMEN_LOCALIZE_ACKERMAN_MAP_QUERY_NAME, &msg,
-			(void **)&response, timeout);
+	err = IPC_queryResponseData(CARMEN_LOCALIZE_ACKERMAN_MAP_QUERY_NAME, &msg, (void **)&response, timeout);
 	carmen_test_ipc(err, "Could not get map", CARMEN_LOCALIZE_ACKERMAN_MAP_QUERY_NAME);
 
 #ifndef NO_ZLIB
@@ -381,46 +388,45 @@ int carmen_localize_ackerman_get_map(int global, carmen_map_t *map)
 		}
 		else
 			free(response->data);
+
 		free(response);
 	}
 
 	return 0;
 }
 
-int carmen_localize_ackerman_get_globalpos(carmen_localize_ackerman_globalpos_message 
-		**globalpos)
+
+int
+carmen_localize_ackerman_get_globalpos(carmen_localize_ackerman_globalpos_message **globalpos)
 {
 	IPC_RETURN_TYPE err;
 	carmen_localize_ackerman_globalpos_query_message *msg;
 	static int initialized = 0;
 
-	if(!initialized) {
-		err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_QUERY_NAME,
-				IPC_VARIABLE_LENGTH,
-				CARMEN_DEFAULT_MESSAGE_FMT);
-		carmen_test_ipc_exit(err, "Could not define message",
-				CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_QUERY_NAME);
+	if(!initialized)
+	{
+		err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_QUERY_NAME, IPC_VARIABLE_LENGTH, CARMEN_DEFAULT_MESSAGE_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_QUERY_NAME);
 		initialized = 1;
 	}
 
 	msg = carmen_default_message_create();
-	err = IPC_queryResponseData(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_QUERY_NAME, msg,
-			(void **)globalpos,
-			timeout);
-	carmen_test_ipc_return_int(err, "Could not query localize globalpos",
-			CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_QUERY_NAME);
+	err = IPC_queryResponseData(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_QUERY_NAME, msg, (void **)globalpos, timeout);
+	carmen_test_ipc_return_int(err, "Could not query localize globalpos", CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_QUERY_NAME);
+
 	return 0;
 }
+
 
 void
 carmen_localize_ackerman_define_globalpos_messages()
 {
 	IPC_RETURN_TYPE err;
 
-	err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME, IPC_VARIABLE_LENGTH,
-			CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_FMT);
+	err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME, IPC_VARIABLE_LENGTH, CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
 }
+
 
 void
 carmen_localize_ackerman_publish_globalpos_message(carmen_localize_ackerman_globalpos_message *message)
@@ -431,6 +437,7 @@ carmen_localize_ackerman_publish_globalpos_message(carmen_localize_ackerman_glob
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
 }
 
+
 void
 carmen_localize_ackerman_publish_particles_message(carmen_localize_ackerman_particle_message *message)
 {
@@ -440,6 +447,7 @@ carmen_localize_ackerman_publish_particles_message(carmen_localize_ackerman_part
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_PARTICLE_NAME);
 }
 
+
 void
 carmen_localize_ackerman_publish_sensor_message(carmen_localize_ackerman_sensor_message *message)
 {
@@ -448,3 +456,5 @@ carmen_localize_ackerman_publish_sensor_message(carmen_localize_ackerman_sensor_
 	err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_SENSOR_NAME, message);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_SENSOR_NAME);
 }
+
+

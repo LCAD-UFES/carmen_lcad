@@ -131,6 +131,7 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 
 	filter->distance_travelled += fabs(v * dt);
 
+	// This kind of elitism may introduce a bias in the filter.
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
 		if (i != 0)
@@ -146,6 +147,8 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 			if (fabs(v) > 0.05)
 			{
 				filter->particles[i].phi_bias += carmen_gaussian_random(0.0, filter->param->phi_bias_std);
+
+				// 0.0175 radians is approx 1 degree
 				filter->particles[i].phi_bias = carmen_clamp(-0.0175 / 2.0, filter->particles[i].phi_bias, 0.0175 / 2.0);
 			}
 			phi_step = phi + filter->particles[i].phi_bias + carmen_gaussian_random(0.0,
@@ -380,9 +383,9 @@ carmen_localize_ackerman_incorporate_laser(carmen_localize_ackerman_particle_fil
 			forward_offset, num_readings, laser_maxrange, backwards);
 
 	/* test for global mode */
-	//filter->global_mode = global_mode_test(filter);
+	//filter->converged = converged_test(filter);
 
-//	if (filter->global_mode)
+//	if (filter->converged)
 //	{
 //		compute_weight_of_each_laser_reading_using_global_map(filter, map, laser_x, laser_y, num_readings);
 //	}
@@ -2441,7 +2444,7 @@ carmen_localize_ackerman_summarize_swarm(carmen_localize_ackerman_particle_filte
 	double total_weight = 0;
 	int i;
 
-	summary->converged = 1;//!filter->global_mode;
+	summary->converged = 1;//!filter->converged;
 
 	/* compute mean particle pose */
 	mean_x = 0;
@@ -2496,7 +2499,7 @@ carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_fi
 	double total_weight = 0;
 	int i;
 
-	summary->converged = 1;//!filter->global_mode;
+	summary->converged = 1;//!filter->converged;
 
 	/* compute mean particle pose */
 	mean_x = 0.0;
@@ -2578,7 +2581,7 @@ carmen_localize_ackerman_summarize(carmen_localize_ackerman_particle_filter_p fi
 	double total_weight = 0;
 	int i, x, y;
 
-	summary->converged = 1;//!filter->global_mode;
+	summary->converged = 1;//!filter->converged;
 
 	weights = (double *)calloc(filter->param->num_particles, sizeof(double));
 	carmen_test_alloc(weights);

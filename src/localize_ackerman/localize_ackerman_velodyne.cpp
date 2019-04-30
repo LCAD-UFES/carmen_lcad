@@ -415,7 +415,6 @@ localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne
 	static rotation_matrix *r_matrix_car_to_global = NULL;
 	r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, local_pose.orientation);
 
-
 	if (velodyne_params->use_remission)
 		initialize_local_compacted_mean_remission_map(&local_compacted_mean_remission_map, &local_map);
 
@@ -430,7 +429,6 @@ localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne
 	}
 
 	velodyne_data->last_timestamp = velodyne_message->timestamp;
-
 	return (1);
 }
 

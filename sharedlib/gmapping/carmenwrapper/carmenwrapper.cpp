@@ -374,7 +374,7 @@ void summarize_particles(carmen_localize_particle_filter_p filter,
   float total_weight = 0;
   int i;//, x, y;
 
-  summary->converged = !filter->global_mode;
+  summary->converged = !filter->converged;
 
   weights = (float *)calloc(filter->param->num_particles, sizeof(float));
 
@@ -536,7 +536,7 @@ void CarmenWrapper::init_localize_filter(int argc, char **argv, int num_particle
 	localize_filter = carmen_localize_particle_filter_new(&localize_param);
 	localize_filter->initialized = 1;
 	localize_filter->first_odometry = 1;
-	localize_filter->global_mode = 1;
+	localize_filter->converged = 1;
 	localize_filter->distance_travelled = 0;
 
 	carmen_localize_subscribe_initialize_message(NULL,
@@ -578,7 +578,7 @@ void localize_frontlaser_handler(carmen_robot_laser_message *flaser)
   }else{
 	  localize_filter->initialized = 1;
 	  localize_filter->first_odometry = 1;
-	  localize_filter->global_mode = 1;
+	  localize_filter->converged = 1;
 	  localize_filter->distance_travelled = 0;
   }
 }
