@@ -1,38 +1,74 @@
-gps_id = 1
+# Number of optimization terations
 n_iterations = 50
+# Path to the odometry calibration file
 odom_calib = none
+# Path to a file with loop closure relations
 gicp_loops = none
+# Path to a file with loop closures estimated with particle filters
 pf_loops = none
+# Path to a file with odometry relations generated with GICP
 gicp_odom = none
+# Path to a file with poses given by registration to an a priori map with particle filter
 pf_to_map = none
+# Path to a file with poses given by registration to an a priori map with gicp
 gicp_to_map = none
+# Std in xy of odometry-based movement estimations (m)
 odom_xy_std = 0.005
+# Std of heading of odometry-based movement estimations (degrees)
 odom_angle_std = 0.1
+# Std in xy of gps measurements (m)
 gps_xy_std = 10
+# Std of heading estimated using consecutive gps measurements when the car is moving (degrees)
 gps_angle_std = 10
+# Std in xy of loop closure measurements (m)
 gicp_loops_xy_std = 0.3
+# Std of heading in loop closure measurements (degrees)
 gicp_loops_angle_std = 3
+# Std in xy of loop closure measurements (m)
 pf_loops_xy_std = 0.3
+# Std of heading in loop closure measurements (degrees)
 pf_loops_angle_std = 3
+# Std in xy of odometry estimated using GICP (m)
 gicp_odom_xy_std = 0.3
+# Std of heading when estimating odometry using GICP (degrees)
 gicp_odom_angle_std = 3
+# Std in xy of loop closure measurements in relation to a map (m)
 gicp_to_map_xy_std = 0.3
+# Std of heading in loop closure in relation to a map (degrees)
 gicp_to_map_angle_std = 3
+# Std in xy of loop closure measurements in relation to a map (m)
 pf_to_map_xy_std = 0.3
+# Std of heading in loop closure in relation to a map (degrees)
 pf_to_map_angle_std = 3
+# Minimum velocity for estimating heading with consecutive GPS poses
 v_for_gps_heading = 1
+# Minimum velocity for adding GPS edges (without this trick, positions in which v=0 can be overweighted)
 v_for_gps = 1
+# Method for estimating global angle: [xsens, gps, consecutive_gps]
 global_angle_mode = consecutive_gps
+# Ignore points with z-coord (in sensor reference) above this threshold
 ignore_above_threshold = -0.3
+# Ignore points with z-coord (in sensor reference) below this threshold
 ignore_below_threshold = -1.79769e+308
+# Offset to subtract the pose (x-coord)
 offset_x = 7.75789e+06
+# Offset to subtract the pose (y-coord)
 offset_y = -363561
+# Whether or not to use pitch, and roll angles from xsens
 use_xsens = 1
+# Id of the gps to be used
 gps_id = 1
+# What type of information to assign to LiDAR rays intensity [remission | visual | semantic | raw | bright]
 intensity_mode = raw
+# Flag to choose using the velodyne calibration or not.
 use_calib = 1
+# Flag for choosing to segment lane marks with threshold image processing.
 segment_lane_marks = 0
+# Camera latency in seconds
 camera_latency = 0
+# Threshold for consireding detecting a jump in consecutive gps messages
 gps_discontinuity_threshold = 1
+# Minimum number of messages for keeping a group when a discountinuity is detected
 gps_min_cluster_size = 50
+# Number of steps to skip before adding a new gps edge.
 gps_step = 1

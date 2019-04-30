@@ -33,7 +33,7 @@ ParticleSwarmOptimization::~ParticleSwarmOptimization()
 
 
 void
-ParticleSwarmOptimization::Optimize(void interaction_function(double *))
+ParticleSwarmOptimization::Optimize(void (*interaction_function)(ParticleSwarmOptimization *opt, void *data))
 {
 	int num_iteractions = 0;
 
@@ -58,7 +58,7 @@ ParticleSwarmOptimization::Optimize(void interaction_function(double *))
 			num_iteractions, _max_iteractions, -_gbest_fitness);
 
 		if (interaction_function)
-			interaction_function(_gbest);
+			(*interaction_function)(this, _data);
 
 		num_iteractions++;
 	}

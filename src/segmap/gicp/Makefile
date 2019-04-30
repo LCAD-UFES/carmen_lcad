@@ -21,7 +21,7 @@ IFLAGS += `pkg-config --cflags opencv`
 
 # SEGMAP PART 1
 LFLAGS += -lsegmap_initializations -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
-	-lsegmap_readers -lsegmap_motion_models -lutil 
+	-lsegmap_readers -lsegmap_motion_models -lcarmen_util 
 
 LFLAGS += -L/usr/local/lib  
 LFLAGS += `pkg-config --libs opencv`
@@ -61,7 +61,7 @@ DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/slam/libsegmap_slam.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/visualization/libsegmap_visualization.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/initializations/libsegmap_initializations.a \
-	$(CARMEN_HOME)/src/segmap/util/libutil.a
+	$(CARMEN_HOME)/src/utilities/libcarmen_util/libcarmen_util.a
 
 libsegmap_loop_closures.a: gicp.o segmap_loop_closures.o
 generate_loop_closures: generate_loop_closures.o gicp.o segmap_loop_closures.o $(DEPS)

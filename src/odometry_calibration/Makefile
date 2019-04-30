@@ -1,4 +1,4 @@
-include ../Makefile.conf
+include $(CARMEN_HOME)/src/Makefile.conf
 
 MODULE_NAME = ODOMETRY_CALIBRATION
 MODULE_COMMENT = Module to calibrate the bias of the Odometry
@@ -7,6 +7,8 @@ LINK = g++
 
 CFLAGS += -std=c11
 CXXFLAGS += -std=c++11
+
+SUBDIRS += $(CARMEN_HOME)/src/utilities/libcarmen_util $(CARMEN_HOME)/sharedlib/pso/
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
 LFLAGS += -lglobal -lipc -llocalize_ackerman_interface -lfused_odometry_interface -lvelodyne_interface -lparam_interface -lGL -lglut -lGLU \
@@ -33,20 +35,14 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/pso
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/pso -lpso++ -fopenmp
 LFLAGS += `pkg-config --libs opencv`	  
 LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
+LFLAGS += -lcarmen_util -lboost_program_options
 
 SOURCES = grab_data_for_calibration.cpp calibrate_bias.cpp calibrate_bias_from_log.cpp filter_data_for_calibration.cpp # calibrate_bias_from_log_with_neural_phi.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = grab_data_for_calibration calibrate_bias calibrate_bias_from_log filter_data_for_calibration calibrate_bias_from_log_with_neural_phi
-TARGETS = libpso++.a calibrate_bias calibrate_bias_from_log filter_data_for_calibration grab_data_for_calibration # calibrate_bias_from_log_with_neural_phi
-
-libpso++.a:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/pso/
-
-clean: clean_pso
-clean_pso:
-	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/pso/	
+TARGETS = calibrate_bias calibrate_bias_from_log filter_data_for_calibration grab_data_for_calibration # calibrate_bias_from_log_with_neural_phi
 
 grab_data_for_calibration: grab_data_for_calibration.o
 calibrate_bias: calibrate_bias.o
@@ -54,4 +50,4 @@ calibrate_bias_from_log: calibrate_bias_from_log.o
 filter_data_for_calibration: filter_data_for_calibration.o
 calibrate_bias_from_log_with_neural_phi: calibrate_bias_from_log_with_neural_phi.o
 
-include ../Makefile.rules
+include $(CARMEN_HOME)/src/Makefile.rules

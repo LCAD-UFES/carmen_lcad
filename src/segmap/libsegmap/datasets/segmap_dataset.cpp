@@ -188,6 +188,15 @@ NewCarmenDataset::_load_odometry_calibration(std::string &path)
 										 &_calib.add_phi,
 										 &_calib.init_angle);
 
+			/*
+			int n = fscanf(f, "v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf",
+										 &_calib.mult_v,
+										 &_calib.add_v,
+										 &_calib.mult_phi,
+										 &_calib.add_phi,
+										 &_calib.init_angle);
+			*/
+
 			if (n == 5)
 				success = true;
 
