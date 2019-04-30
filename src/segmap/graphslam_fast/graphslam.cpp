@@ -716,27 +716,6 @@ add_graphslam_parameters(CommandLineArguments &args)
 }
 
 
-class Bla
-{
-public:
-
-	g2o::Factory *factory;
-	SparseOptimizer* optimizer;
-
-	Bla()
-	{
-		factory = g2o::Factory::instance();
-		optimizer = new SparseOptimizer;
-		initialize_g2o_stuff(factory, optimizer);
-	}
-
-	~Bla()
-	{
-		free_g2o_stuff(factory, optimizer);
-	}
-};
-
-
 int main(int argc, char **argv)
 {
 	srand(time(NULL));
@@ -746,7 +725,6 @@ int main(int argc, char **argv)
 
 	args.add_positional<string>("log", "Path to a log", 1);
 	args.add_positional<string>("output", "Path to the output file", 1);
-	args.add<int>("gps_id", "Index of the gps to be used", 1);
 	add_graphslam_parameters(args);
 	add_default_sensor_preproc_args(args);
 	args.add<double>("gps_discontinuity_threshold", "Threshold for consireding detecting a jump in consecutive gps messages", 1.0);
@@ -756,10 +734,9 @@ int main(int argc, char **argv)
 
 	parse_command_line(argc, argv, args, &data);
 
-	//g2o::Factory *factory = g2o::Factory::instance();
-	//SparseOptimizer* optimizer = new SparseOptimizer;
-	//initialize_g2o_stuff(factory, optimizer);
-	Bla bla;
+	g2o::Factory *factory = g2o::Factory::instance();
+	SparseOptimizer* optimizer = new SparseOptimizer;
+	initialize_g2o_stuff(factory, optimizer);
 
 	data.dataset = create_dataset(args.get<string>("log"), args.get<double>("camera_latency"), "fused");
 	if (data.dataset->size() <= 0)
@@ -779,18 +756,18 @@ int main(int argc, char **argv)
 																						args.get<int>("gps_min_cluster_size"));
 	 */
 
-	load_data_to_optimizer(data, bla.optimizer, args.get<int>("gps_step"));
+	load_data_to_optimizer(data, optimizer, args.get<int>("gps_step"));
 
-	bla.optimizer->setVerbose(true);
-	prepare_optimization(bla.optimizer);
-	bla.optimizer->optimize(data.n_iterations);
+	optimizer->setVerbose(true);
+	prepare_optimization(optimizer);
+	optimizer->optimize(data.n_iterations);
 	cerr << "OptimizationDone!" << endl;
 
 	// output
-	save_corrected_vertices(data, bla.optimizer);
+	save_corrected_vertices(data, optimizer);
 	cerr << "OutputSaved!" << endl;
 
-	//free_g2o_stuff(factory, optimizer);
+	free_g2o_stuff(factory, optimizer);
 
 	return 0;
 }

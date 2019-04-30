@@ -3,7 +3,7 @@ include $(CARMEN_HOME)/src/Makefile.conf
 MODULE_NAME = SEG MAP MAIN
 MODULE_COMMENT = Main programs
 
-SUBDIRS += util libsegmap gicp graphslam_fast # scripts examples
+SUBDIRS += libsegmap gicp graphslam_fast # scripts examples
 
 LINK = g++ 
 
@@ -25,7 +25,7 @@ LFLAGS += -lboost_program_options -lboost_filesystem
 
 LFLAGS += -lsegmap_types -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
 	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lsegmap_initializations \
-	-lutil 
+	-lcarmen_util 
 
 DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/datasets/libsegmap_datasets.a \
@@ -35,7 +35,7 @@ DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/visualization/libsegmap_visualization.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsemap_readers.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/initializations/libsegmap_initializations.a \
-	$(CARMEN_HOME)/src/segmap/util/libutil.a
+	$(CARMEN_HOME)/src/utilities/libcarmen_util/libcarmen_util.a
 
 SOURCES = mapper.cpp localizer.cpp calibrate_velodyne.cpp
 

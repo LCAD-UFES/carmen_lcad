@@ -10,7 +10,7 @@ public:
 	ParticleSwarmOptimization(double (*fitness_function)(double *particle, void *data), double **limits, int dim, void *data = NULL, int num_particles = 70, int max_iteractions = 100);
 	~ParticleSwarmOptimization();
 	
-	void Optimize();
+	void Optimize(void (*interaction_function)(ParticleSwarmOptimization *opt, void *data) = NULL);
 	double GetBestFitness();
 	double *GetBestSolution();
 	double *GetErrorEvolution();
@@ -27,6 +27,7 @@ protected:
 	void _update_pbest();
 	void _update_gbest();
 	void _update_particles();
+	int _put_a_random_particle_near_gbest();
 	void _copy(double from[], double to[]);
 	
 	int _max_iteractions; 

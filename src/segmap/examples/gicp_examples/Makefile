@@ -26,7 +26,7 @@ LFLAGS += -lboost_system -lboost_program_options -lboost_thread-mt
 # SEGMAP PART 1
 LFLAGS += -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
 	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models \
-	-lutil
+	-lcarmen_util
 
 LFLAGS += -lvtkCommon -lvtkFiltering -lvtkRendering -lpcl_common -lpcl_surface -lpcl_io \
 	-lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \

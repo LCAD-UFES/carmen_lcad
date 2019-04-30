@@ -25,8 +25,9 @@ public:
 	template<class T>
 	void add(std::string pattern, std::string description);
 
+	// use nmax <= 0 for assigning an unlimited number of values for the argument.
 	template<class T>
-	void add_positional(std::string name, std::string description, int nmax = -1);
+	void add_positional(std::string name, std::string description, int nmax = 1);
 
 	void save_config_file(std::string path);
 	std::string help_message(const char *program_name);

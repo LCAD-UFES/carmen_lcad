@@ -48,4 +48,4 @@ DISABLE_BUMBLEBEE_LOOP
 
 
 -- indica qual gps a utilizar
-GPS_IDENTIFIER 1
+GPS_IDENTIFIER 2

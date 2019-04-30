@@ -75,13 +75,7 @@ def read_data(path):
 	return data
 	
 
-if __name__ == "__main__":
-	if len(sys.argv) < 2:
-		print("\nUse python %s <log path>\n" % sys.argv[0])
-	else:
-		data = read_data(sys.argv[1])
-		#data = np.random.random((100, 6))
-
+def run_with_full_graph(data):
 		variables, loss = generate_graph(data)
 		print('graph generated.')
 		
@@ -116,4 +110,47 @@ if __name__ == "__main__":
 				plt.plot(p[:,0], p[:,1], 'b.', gps[:,0], gps[:,1], 'r.')
 				plt.show()
 			"""
+
+
+def transform_to_d_coordinate_system(ref, next):
+	dx = next[3] - ref[3]
+	dy = next[4] - ref[4]
+	angle = np.arctan2(dy, dx)
+
+	ref_rot2d = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+	ref_translation = np.array([ref[3], ref[4]])
+	next_point = np.array([next[3], next[4]])
+	next_in_ref_coordinate_system = np.matmul(np.linalg.inv(ref_rot2d), (next_point - ref_translation))
+
+	return next_in_ref_coordinate_system
+
+
+def remove_low_velocity_samples_and_add_auxiliar_info(data):
+	filtered_data = []
+	for i in range(len(data)):
+		d = data[i]
+		if abs(d[0]) > 1.0:
+			next = data[i + 1]
+			gx, gy = transform_to_d_coordinate_system(d, next)
+			filtered_data.append(list(d) + [gx, gy])
+			print(filtered_data[-1])
+			input()
+	return np.array(filtered_data)
+
+
+def run_with_local_optimization(data):
+	data = remove_low_velocity_samples_and_add_auxiliar_info(data)
+
+	
+
+
+if __name__ == "__main__":
+	if len(sys.argv) < 2:
+		print("\nUse python %s <data path>\n" % sys.argv[0])
+	else:
+		data = read_data(sys.argv[1])
+		#data = np.random.random((100, 6))
+		
+		#run_with_full_graph(data)
+		run_with_local_optimization(data)
 

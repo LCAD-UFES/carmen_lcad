@@ -33,7 +33,7 @@ ParticleSwarmOptimization::~ParticleSwarmOptimization()
 
 
 void
-ParticleSwarmOptimization::Optimize()
+ParticleSwarmOptimization::Optimize(void (*interaction_function)(ParticleSwarmOptimization *opt, void *data))
 {
 	int num_iteractions = 0;
 
@@ -43,10 +43,22 @@ ParticleSwarmOptimization::Optimize()
 		_update_pbest();
 		_update_gbest();
 		_update_particles();
+//		int random_particle = _put_a_random_particle_near_gbest();
+//		if ((num_iteractions % 200) == 0)
+//		{
+//			printf("***************************************************************************\n");
+//			_initialize_velocities();
+//			_randomize_particles();
+//			_initialize_pbest();
+//			_copy(_particles[random_particle], _gbest);
+//		}
 		_error[num_iteractions] = _gbest_fitness;
 
 		fprintf(stderr, "Iteraction: %d of %d GbestFitness: %lf\n", 
 			num_iteractions, _max_iteractions, -_gbest_fitness);
+
+		if (interaction_function)
+			(*interaction_function)(this, _data);
 
 		num_iteractions++;
 	}
@@ -140,7 +152,7 @@ ParticleSwarmOptimization::_randomize_particles()
 	{
 		for (j = 0; j < _dim; j++)
 		{
-			_particles[i][j] = ((double) rand() / (double) RAND_MAX) * (_limits[j][1] - _limits[j][0]) + (_limits[j][0]);
+			_particles[i][j] = ((double) rand() / (double) RAND_MAX) * (_limits[j][1] - _limits[j][0]) + _limits[j][0];
 		}
 	}
 }
@@ -176,7 +188,8 @@ ParticleSwarmOptimization::_evaluate_fitness()
 	int i;
 
 	// it's highly parallelizable!!
-	#pragma omp parallel for default(shared) private(i)
+	// ATENCAO! Para usar OpenMP a sua fitness fucntion precisa ser thread safe!
+//	#pragma omp parallel for default(shared) private(i)
 	for (i = 0; i < _num_particles; i++)
 		_fitness[i] = _fitness_function(_particles[i], _data);
 }
@@ -221,7 +234,48 @@ gaussian_random_pso(double mean, double std)
   double u = 1.0 - rand() * norm;                  /* can't let u == 0 */
   double v = rand() * norm;
   double z = sqrt(-2.0 * log(u)) * cos(2.0 * M_PI * v);
-  return mean + std * z;
+  return (mean + std * z);
+}
+
+
+int
+ParticleSwarmOptimization::_put_a_random_particle_near_gbest()
+{
+//	static bool first_time = true;
+//	static double *previous_gbest;
+//
+//	if (first_time)
+//	{
+//		previous_gbest = (double *) calloc (_dim, sizeof(double));
+//		_copy(_gbest, previous_gbest);
+//
+//		first_time = false;
+//		return;
+//	}
+
+	int random_particle = rand() % _num_particles;
+	_copy(_gbest, _particles[random_particle]);
+	int j = rand() % _dim;
+//	for (int j = 0; j < _dim; j++)
+	{
+		_particles[random_particle][j] = _gbest[j] + (_gbest[j] - _particles[random_particle][j]) * 0.01 * (2.0 * ((double) rand() / (double) RAND_MAX) - 1.0);
+		_particles[random_particle][j] += (_limits[j][1] - _limits[j][0]) * 0.01 * (2.0 * ((double) rand() / (double) RAND_MAX) - 1.0);
+		// check for particle limits
+		if (_particles[random_particle][j] > _limits[j][1])
+			_particles[random_particle][j] = _limits[j][1];
+		if (_particles[random_particle][j] < _limits[j][0])
+			_particles[random_particle][j] = _limits[j][0];
+
+//		_velocities[random_particle][j] = 0.0;
+	}
+	for (int j = 0; j < _dim; j++)
+	{
+		printf("%lf %lf\n", _particles[random_particle][j], _gbest[j]);
+		_velocities[random_particle][j] = 0.0;
+	}
+	printf("\n");
+
+	return (random_particle);
 }
 
 
@@ -237,7 +291,7 @@ ParticleSwarmOptimization::_update_particles()
 	double c2 = 2.05;
 	double c1 = 2.05;
 	double phi = c1 + c2;
-	double constriction = 2 / fabs((2 - phi - sqrt(pow(phi, 2) - 4 * phi)));
+	double constriction = 2.0 / fabs((2.0 - phi - sqrt(pow(phi, 2.0) - 4.0 * phi)));
 
 	for (i = 0; i < _num_particles; i++)
 	{

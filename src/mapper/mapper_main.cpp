@@ -981,6 +981,44 @@ get_sensors_param(int argc, char **argv)
 
 
 void
+get_highest_sensor()
+{
+	highest_sensor = 0.0;
+
+	for (int i = 0; i < number_of_sensors; i++)
+		if (sensors_params[i].alive && sensors_params[i].height > highest_sensor)
+			highest_sensor = sensors_params[i].height;
+}
+
+
+void
+get_sensors_param_pose_handler(__attribute__((unused)) char *module, __attribute__((unused)) char *variable, __attribute__((unused)) char *value)
+{
+	if (sensors_params[0].alive && strcmp(sensors_params[0].name, "velodyne") == 0)
+	{
+		sensors_params[0].pose = velodyne_pose;
+		free(sensors_params[0].sensor_to_support_matrix);
+		sensors_params[0].sensor_to_support_matrix = create_rotation_matrix(sensors_params[0].pose.orientation);
+	}
+
+	for (int i = 0; i < number_of_sensors; i++)
+	{
+		if (sensors_params[i].alive && strcmp(sensors_params[i].name, "laser_ldmrs") != 0)
+		{
+			sensors_params[i].sensor_support_pose = sensor_board_1_pose;
+			free(sensors_params[i].support_to_car_matrix);
+			sensors_params[i].support_to_car_matrix = create_rotation_matrix(sensors_params[i].sensor_support_pose.orientation);
+			sensors_params[i].sensor_robot_reference = carmen_change_sensor_reference(
+					sensors_params[i].sensor_support_pose.position, sensors_params[i].pose.position, sensors_params[i].support_to_car_matrix);
+			sensors_params[i].height = sensors_params[i].sensor_robot_reference.z + robot_wheel_radius;
+		}
+	}
+
+	get_highest_sensor();
+}
+
+
+void
 override_mapping_mode_params(int argc, char **argv)
 {
 	if (mapping_mode == 0)
@@ -1042,12 +1080,12 @@ read_parameters(int argc, char **argv,
 		{(char *) "robot",  (char *) "vertical_displacement_from_center", CARMEN_PARAM_DOUBLE, &robot_vertical_displacement_from_center, 0, NULL},
 		{(char *) "robot",  (char *) "wheel_radius", CARMEN_PARAM_DOUBLE, &(robot_wheel_radius), 0, NULL},
 
-		{(char *) "sensor_board_1",  (char *) "x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x),	0, NULL},
-		{(char *) "sensor_board_1",  (char *) "y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y),	0, NULL},
-		{(char *) "sensor_board_1",  (char *) "z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z),	0, NULL},
-		{(char *) "sensor_board_1",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.roll),0, NULL},
-		{(char *) "sensor_board_1",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.pitch),0, NULL},
-		{(char *) "sensor_board_1",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.yaw),	0, NULL},
+		{(char *) "sensor_board_1",  (char *) "x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x),	1, get_sensors_param_pose_handler},
+		{(char *) "sensor_board_1",  (char *) "y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y),	1, get_sensors_param_pose_handler},
+		{(char *) "sensor_board_1",  (char *) "z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z),	1, get_sensors_param_pose_handler},
+		{(char *) "sensor_board_1",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.roll),   1, get_sensors_param_pose_handler},
+		{(char *) "sensor_board_1",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.pitch), 1, get_sensors_param_pose_handler},
+		{(char *) "sensor_board_1",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.yaw),	  1, get_sensors_param_pose_handler},
 
 		{(char *) "front_bullbar",  (char *) "x", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.position.x),	0, NULL},
 		{(char *) "front_bullbar",  (char *) "y", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.position.y),	0, NULL},
@@ -1056,12 +1094,12 @@ read_parameters(int argc, char **argv,
 		{(char *) "front_bullbar",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.orientation.pitch),0, NULL},
 		{(char *) "front_bullbar",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.orientation.yaw),	0, NULL},
 
-		{(char *) "velodyne",  (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
-		{(char *) "velodyne",  (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
-		{(char *) "velodyne",  (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 0, NULL},
-		{(char *) "velodyne",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
-		{(char *) "velodyne",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
-		{(char *) "velodyne",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
+		{(char *) "velodyne",  (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 1, get_sensors_param_pose_handler},
+		{(char *) "velodyne",  (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 1, get_sensors_param_pose_handler},
+		{(char *) "velodyne",  (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 1, get_sensors_param_pose_handler},
+		{(char *) "velodyne",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll),   1, get_sensors_param_pose_handler},
+		{(char *) "velodyne",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 1, get_sensors_param_pose_handler},
+		{(char *) "velodyne",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw),     1, get_sensors_param_pose_handler},
 
 		{(char *) "laser_ldmrs",  (char *) "x", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.position.x), 0, NULL},
 		{(char *) "laser_ldmrs",  (char *) "y", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.position.y), 0, NULL},

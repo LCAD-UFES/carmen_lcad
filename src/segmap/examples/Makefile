@@ -14,7 +14,7 @@ LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization
 LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system
 LFLAGS += -L /usr/lib -lvtkIO -lvtkFiltering -lvtkCommon -lvtkRendering -lvtkGraphics
 LFLAGS += `pkg-config --libs opencv`
-LFLAGS += -lutil -lsegmap_utils
+LFLAGS += -lcarmen_util -lsegmap_utils
 
 SOURCES = carmen_param_file_test.cpp
 	#example_project_vel_to_cam_ufes.cpp example_project_vel_to_cam.cpp \

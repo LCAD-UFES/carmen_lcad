@@ -51,6 +51,8 @@ compute_new_average_state(carmen_fused_odometry_particle *xt)
 {
 	carmen_fused_odometry_particle_message average_message;
 	// this is necessary to take true average of angles
+	double xsens_yaw_bias_x = 0.0;
+	double xsens_yaw_bias_y = 0.0;
 	double roll_x = 0.0;
 	double roll_y = 0.0;
 	double pitch_x = 0.0;
@@ -80,7 +82,8 @@ compute_new_average_state(carmen_fused_odometry_particle *xt)
 		average_message.pose.position.y += 		xt[m].state.pose.position.y * invM;
 		average_message.pose.position.z += 		xt[m].state.pose.position.z * invM;
 
-		average_message.xsens_yaw_bias += 		xt[m].state.xsens_yaw_bias * invM;
+		xsens_yaw_bias_x += cos(xt[m].state.xsens_yaw_bias) * invM;
+		xsens_yaw_bias_y += sin(xt[m].state.xsens_yaw_bias) * invM;
 
 		average_message.velocity.x += 			xt[m].state.velocity.x * invM;
 		average_message.velocity.y += 			xt[m].state.velocity.y * invM;
@@ -99,6 +102,8 @@ compute_new_average_state(carmen_fused_odometry_particle *xt)
 		yaw_x += 	cos(xt[m].state.pose.orientation.yaw) * invM;
 		yaw_y += 	sin(xt[m].state.pose.orientation.yaw) * invM;	
 	}
+
+	average_message.xsens_yaw_bias = atan2(xsens_yaw_bias_y, xsens_yaw_bias_x);
 
 	average_message.pose.orientation.roll = atan2(roll_y, roll_x);
 	average_message.pose.orientation.pitch = atan2(pitch_y, pitch_x);
@@ -312,26 +317,22 @@ finalize_fused_odometry()
 	destroy_xsens_xyz_handler(xsens_xyz_h);
 	
 	if (use_viso_odometry)
-	{
 		destroy_visual_odometry_handler(viso_h);
-	}
 
 	if (use_car_odometry)
-	{
 		destroy_car_odometry_handler(car_odom_h);
-	}
 }
 
 
-void
-fused_odometry_main_loop(void)
-{
-	while (1)
-	{
-		correct_fused_odometry_timming_and_publish();
-		carmen_ipc_sleep(1.0 / fused_odometry_frequency);
-	}	
-}
+//void
+//fused_odometry_main_loop(void)
+//{
+//	while (1)
+//	{
+//		correct_fused_odometry_timming_and_publish();
+//		carmen_ipc_sleep(1.0 / fused_odometry_frequency);
+//	}
+//}
 
 
 static void 

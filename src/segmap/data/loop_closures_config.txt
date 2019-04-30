@@ -1,39 +1,78 @@
+# Odometry calibration file
 odom_calib = none
+# Fused odometry file (optimized using graphslam)
 fused_odom = none
+# Number of correction steps when reinitializing particle filter
 n_corrections_when_reinit = 20
+# Ignore points with z-coord (in sensor reference) above this threshold
 ignore_above_threshold = -0.3
+# Ignore points with z-coord (in sensor reference) below this threshold
 ignore_below_threshold = -1.79769e+308
+# Offset to subtract the pose (x-coord)
 offset_x = 7.75789e+06
+# Offset to subtract the pose (y-coord)
 offset_y = -363561
+# Whether or not to use pitch, and roll angles from xsens
 use_xsens = 1
+# Id of the gps to be used
 gps_id = 1
+# What type of information to assign to LiDAR rays intensity [remission | visual | semantic | raw | bright]
 intensity_mode = raw
+# Flag to choose using the velodyne calibration or not.
 use_calib = 1
+# Flag for choosing to segment lane marks with threshold image processing.
 segment_lane_marks = 0
+# Camera latency in seconds
 camera_latency = 0
+# Size of voxels in voxel grid filter
 voxel_size = 0.05
+# Maximum distance (in meters) to assume two poses form a loop closure
 loop_dist = 2
+# Minimum temporal difference (in seconds) to assume two poses form a loop closure (instead of being consecutive poses)
 time_dist = 60
+# Number of data packages to skip when looking for loop closures (<= 1 for using all packages)
 subsampling = 0
+# Path to a file to save debug information
 report_file = /tmp/loop_closure_report.txt
+# Boolean to turn visualization on or off
 view = 0
+# Skip data packages with absolute velocity below this theshold
 v_thresh = 1
+# Distance to accumulate clouds
 dist_to_accumulate = 2
+# Number of particles
 n_particles = 30
+# Flag to choose if GPS data should be used for weighting particles
 use_gps_weight = 0
+# Flag to choose if the map should be used for weighting particles
 use_map_weight = 1
+# Std of gps position (m)
 gps_xy_std = 0.5
+# Std of gps heading estimates (degrees)
 gps_h_std = 5
+# Std of linear velocity measurements (m/s)
 v_std = 0.2
+# Std of steering wheel angle measurements (degrees)
 phi_std = 0.5
+# Std of dead reckoning position estimates (m)
 odom_xy_std = 0.1
+# Std of dead reckoning heading estimates (degrees)
 odom_h_std = 0.5
+# Std of pixel color measurements
 color_red_std = 10
+# Std of pixel color measurements
 color_green_std = 10
+# Std of pixel color measurements
 color_blue_std = 10
+# Seed for pseudo-random number generator
 seed = 0
+# Frequency in which correction takes place [<= 1 for always correcting]
 correction_step = 1
+# Minimum number of steps to wait until a new map reload from disk
 steps_to_skip_map_reload = 5
+# Map resolution
 resolution = 0.2
+# Map tiles size
 tile_size = 50
+# Path to save the maps
 map_path = /tmp/map
