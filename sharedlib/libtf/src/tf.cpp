@@ -334,8 +334,8 @@ int Transformer::walkToTopParent(F& f, Time time, CompactFrameID target_id, Comp
 }
 
 
-
-bool Transformer::setTransform(const StampedTransform& transform, const std::string& authority)
+bool
+Transformer::setTransform(const StampedTransform& transform, const std::string& authority)
 {
   StampedTransform mapped_transform((tf::Transform)transform, transform.stamp_, transform.frame_id_, transform.child_frame_id_);
   mapped_transform.child_frame_id_ = assert_resolved(tf_prefix_, transform.child_frame_id_);
@@ -376,6 +376,8 @@ bool Transformer::setTransform(const StampedTransform& transform, const std::str
 
   {
     boost::recursive_mutex::scoped_lock lock(frame_mutex_);
+
+    // Search for the index of the
     CompactFrameID frame_number = lookupOrInsertFrameNumber(mapped_transform.child_frame_id_);
     TimeCache* frame = getFrame(frame_number);
     if (frame == NULL)

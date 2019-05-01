@@ -44,11 +44,13 @@ PUBLIC_LIBRARIES =
 PUBLIC_BINARIES = grab_data_for_calibration calibrate_bias calibrate_bias_from_log filter_data_for_calibration calibrate_bias_from_log_with_neural_phi 
 TARGETS = calibrate_bias calibrate_bias_from_log filter_data_for_calibration grab_data_for_calibration tf_test # calibrate_bias_from_log_with_neural_phi
 
+LIBS_DEPS = $(CARMEN_HOME)/lib/libtf.a $(CARMEN_HOME)/lib/libpso++.a $(CARMEN_HOME)/lib/libcarmen_util.a 
+
 grab_data_for_calibration: grab_data_for_calibration.o
 calibrate_bias: calibrate_bias.o
-calibrate_bias_from_log: calibrate_bias_from_log.o
+calibrate_bias_from_log: calibrate_bias_from_log.o $(LIBS_DEPS)
 filter_data_for_calibration: filter_data_for_calibration.o
-calibrate_bias_from_log_with_neural_phi: calibrate_bias_from_log_with_neural_phi.o
-tf_test: tf_test.o
+#calibrate_bias_from_log_with_neural_phi: calibrate_bias_from_log_with_neural_phi.o
+tf_test: tf_test.o $(LIBS_DEPS)
 
 include $(CARMEN_HOME)/src/Makefile.rules

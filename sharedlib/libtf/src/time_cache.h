@@ -97,6 +97,7 @@ class TimeCache
   TimeCache(Duration max_storage_time = Duration().fromNSec(DEFAULT_MAX_STORAGE_TIME));
 
   bool getData(Time time, TransformStorage & data_out, std::string* error_str = 0);
+  TransformStorage* getDataPtr(Time time);
   bool insertData(const TransformStorage& new_data);
   void clearList();
   CompactFrameID getParent(Time time, std::string* error_str);
