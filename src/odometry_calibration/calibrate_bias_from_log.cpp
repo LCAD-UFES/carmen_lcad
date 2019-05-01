@@ -49,7 +49,7 @@ typedef struct
 	vector<Line> lines;
 	double distance_between_front_and_rear_axles;
 	double max_steering_angle;
-	Transform gps2car;
+	Transform car2gps;
 }PsoData;
 
 
@@ -321,16 +321,16 @@ compute_optimized_odometry_pose(double &x, double &y, double &yaw, double *parti
 
 
 void
-transform_gps_to_car(double *gps_x, double *gps_y, Transform &gps2car)
+transform_car_to_gps(double car_x, double car_y, double *gps_x, double *gps_y, Transform &car2gps)
 {
 	Vector3 p_car;
 	Vector3 p_gps;
 
-	p_gps = Vector3(*gps_x, *gps_y, 0);
-	p_car = gps2car * p_gps;
+	p_car = Vector3(car_x, car_y, 0);
+	p_gps = car2gps * p_car;
 
-	*gps_x = p_car.getX();
-	*gps_y = p_car.getY();
+	*gps_x = p_gps.getX();
+	*gps_y = p_gps.getY();
 }
 
 
@@ -352,6 +352,7 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data)
 //	fprintf(stderr, "Initial angle: %lf\n", yaw);
 
 	double dt_gps_and_odom_acc = 0.0;
+	double gps_x_from_odom, gps_y_from_odom;
 
 	for (uint i = 1; i < pso_data->lines.size(); i++)
 	{
@@ -366,12 +367,13 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data)
 			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[0].gps_x;
 			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[0].gps_y;
 
-			transform_gps_to_car(&gps_x, &gps_y, pso_data->gps2car);
+			//transform_gps_to_car(&gps_x, &gps_y, pso_data->gps2car);
+			transform_car_to_gps(x, y, &gps_x_from_odom, &gps_y_from_odom, pso_data->car2gps);
 
 			double dt_gps_and_odom = fabs(pso_data->lines[i].time - pso_data->lines[i].gps_time);
 			dt_gps_and_odom_acc += dt_gps_and_odom;
 
-			fprintf(f_report, "DATA %lf %lf %lf %lf %lf %lf %lf %lf\n", x, y, gps_x, gps_y, x_withoutbias, y_withoutbias, dt_gps_and_odom, dt_gps_and_odom_acc);
+			fprintf(f_report, "DATA %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", gps_x_from_odom, gps_y_from_odom, gps_x, gps_y, x_withoutbias, y_withoutbias, dt_gps_and_odom, dt_gps_and_odom_acc, x, y);
 		}
 	}
 }
@@ -391,6 +393,9 @@ fitness(double *particle, void *data)
 
 	double error = 0.0;
 	double count = 0;
+
+	double gps_x_from_odom, gps_y_from_odom;
+
 	for (uint i = 1; i < pso_data->lines.size(); i++)
 	{
 		double v = compute_optimized_odometry_pose(x, y, yaw, particle, pso_data, i);
@@ -402,11 +407,11 @@ fitness(double *particle, void *data)
 
 			// Uncomment the printfs for visualizing the result of the gps data transformation:
 			//printf("Before: %.2lf %.2lf ", gps_x, gps_y);
-			transform_gps_to_car(&gps_x, &gps_y, pso_data->gps2car);
+			transform_car_to_gps(x, y, &gps_x_from_odom, &gps_y_from_odom, pso_data->car2gps);
 			//printf("After: %.2lf %.2lf\n", gps_x, gps_y);
 
 			// add the error
-			error += sqrt(pow(x - gps_x, 2.0) + pow(y - gps_y, 2.0));
+			error += sqrt(pow(gps_x_from_odom - gps_x, 2.0) + pow(gps_y_from_odom - gps_y, 2.0));
 
 			// reinforce consistency between heading direction and heading estimated using gps
 			double gps_yaw = atan2(pso_data->lines[i].gps_y - pso_data->lines[i - 1].gps_y,
@@ -538,7 +543,7 @@ print_optimization_report(FILE* f_calibration, FILE* f_report, ParticleSwarmOpti
 
 
 Transform
-get_gps_to_car_transform(CarmenParamFile *params, int gps_to_use, int board_to_use)
+get_car_to_gps_transform(CarmenParamFile *params, int gps_to_use, int board_to_use)
 {
 	char param_name[1024];
 	double gps_x, gps_y, gps_z, gps_roll, gps_pitch, gps_yaw;
@@ -584,15 +589,15 @@ get_gps_to_car_transform(CarmenParamFile *params, int gps_to_use, int board_to_u
 	gps2board = Transform(Quaternion(gps_yaw, gps_pitch, gps_roll), Vector3(gps_x, gps_y, gps_z));
 	board2car = Transform(Quaternion(board_yaw, board_pitch, board_roll), Vector3(board_x, board_y, board_z));
 
-	return (board2car * gps2board);
+	return (board2car * gps2board).inverse();
 }
 
 
 void
-define_and_parse_args(int argc, char **argv, CommandLineArguments *args)
+declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 {
 	args->add_positional<string>("log_path", "Path to a log");
-	args->add_positional<string>("param_file", "Path to a file containing system parameters");
+	args->add_positional<string>("carmen_ini", "Path to a file containing system parameters");
 	args->add_positional<string>("output_calibration", "Path to an output calibration file");
 	args->add_positional<string>("output_poses", "Path to a file in which poses will be saved for debug");
 	args->add<int>("gps_to_use", "Id of the gps that will be used for the calibration", 1);
@@ -615,7 +620,7 @@ main(int argc, char **argv)
 	PsoData pso_data;
 	CarmenParamFile *params;
 
-	define_and_parse_args(argc, argv, &args);
+	declare_and_parse_args(argc, argv, &args);
 
 	int gps_to_use = args.get<int>("gps_to_use");
 	int board_to_use = args.get<int>("board_to_use");
@@ -625,11 +630,11 @@ main(int argc, char **argv)
 						args.get<int>("max_log_lines"),
 						&pso_data);
 
-	params = new CarmenParamFile(args.get<string>("param_file").c_str());
+	params = new CarmenParamFile(args.get<string>("carmen_ini").c_str());
 
 	pso_data.max_steering_angle = params->get<double>("robot_max_steering_angle");
 	pso_data.distance_between_front_and_rear_axles = params->get<double>("robot_distance_between_front_and_rear_axles");
-	pso_data.gps2car = get_gps_to_car_transform(params, gps_to_use, board_to_use);
+	pso_data.car2gps = get_car_to_gps_transform(params, gps_to_use, board_to_use);
 
 	acc = gsl_interp_accel_alloc();
 	const gsl_interp_type *type = gsl_interp_cspline;
