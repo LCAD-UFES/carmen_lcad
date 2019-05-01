@@ -49,7 +49,9 @@ typedef struct
 	vector<Line> lines;
 	double distance_between_front_and_rear_axles;
 	double max_steering_angle;
-	Transform car2gps;
+	Transformer *tf_transformer;
+	string sensor_board_name;
+	string gps_name;
 }PsoData;
 
 
@@ -212,6 +214,64 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 }
 
 
+Transform
+read_object_pose_by_name_from_carmen_ini(CarmenParamFile *params, string object_name)
+{
+	double x, y, z, roll, pitch, yaw;
+
+	x = params->get<double>(object_name + "_x");
+	y = params->get<double>(object_name + "_y");
+	z = params->get<double>(object_name + "_z");
+	roll = params->get<double>(object_name + "_roll");
+	pitch = params->get<double>(object_name + "_pitch");
+	yaw = params->get<double>(object_name + "_yaw");
+
+	return Transform(Quaternion(yaw, pitch, roll), Vector3(x, y, z));
+}
+
+
+void
+define_relative_pose_from_transform(string coordinate_system_name,
+																		string object_name,
+																		Transformer *transformer,
+																		Transform object_pose)
+{
+	string transform_name = object_name + "_to_" + coordinate_system_name;
+	tf::StampedTransform s_pose(object_pose, tf::Time(0), "/" + coordinate_system_name, "/" + object_name);
+	transformer->setTransform(s_pose, transform_name);
+	//printf("Frames: %s\n", transformer->allFramesAsString().c_str());
+}
+
+
+void
+define_relative_pose(string coordinate_system_name, string object_name, Transformer *transformer,
+										 double x, double y, double z, double roll, double pitch, double yaw)
+{
+	Transform object_pose(Quaternion(yaw, pitch, roll), Vector3(x, y, z));
+	define_relative_pose_from_transform(coordinate_system_name, object_name, transformer, object_pose);
+}
+
+
+void
+initialize_car_objects_poses_in_transformer(CarmenParamFile *params, PsoData *pso_data,
+																						int gps_to_use, int board_to_use)
+{
+	char gps_name[128];
+	char board_name[128];
+
+	sprintf(gps_name, "gps_nmea_%d", gps_to_use);
+	sprintf(board_name, "sensor_board_%d", board_to_use);
+
+	define_relative_pose("world", "car", pso_data->tf_transformer, 0, 0, 0, 0, 0, 0);
+
+	define_relative_pose_from_transform("car", "board", pso_data->tf_transformer,
+																			read_object_pose_by_name_from_carmen_ini(params, board_name));
+
+	define_relative_pose_from_transform("board", "gps", pso_data->tf_transformer,
+																			read_object_pose_by_name_from_carmen_ini(params, gps_name));
+}
+
+
 double
 estimate_theta(PsoData *pso_data, int id)
 {
@@ -352,7 +412,9 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data)
 //	fprintf(stderr, "Initial angle: %lf\n", yaw);
 
 	double dt_gps_and_odom_acc = 0.0;
+
 	double gps_x_from_odom, gps_y_from_odom;
+	tf::StampedTransform gps_in_world;
 
 	for (uint i = 1; i < pso_data->lines.size(); i++)
 	{
@@ -367,8 +429,13 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data)
 			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[0].gps_x;
 			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[0].gps_y;
 
+			define_relative_pose("world", "car", pso_data->tf_transformer, x, y, 0, 0, 0, yaw);
+			pso_data->tf_transformer->lookupTransform("/world", "/gps", tf::Time(0), gps_in_world);
+			gps_x_from_odom = gps_in_world.getOrigin().x();
+			gps_y_from_odom = gps_in_world.getOrigin().y();
+
 			//transform_gps_to_car(&gps_x, &gps_y, pso_data->gps2car);
-			transform_car_to_gps(x, y, &gps_x_from_odom, &gps_y_from_odom, pso_data->car2gps);
+			//transform_car_to_gps(x, y, &gps_x_from_odom, &gps_y_from_odom, pso_data->car2gps);
 
 			double dt_gps_and_odom = fabs(pso_data->lines[i].time - pso_data->lines[i].gps_time);
 			dt_gps_and_odom_acc += dt_gps_and_odom;
@@ -395,10 +462,13 @@ fitness(double *particle, void *data)
 	double count = 0;
 
 	double gps_x_from_odom, gps_y_from_odom;
+	tf::StampedTransform gps_in_world;
+	tf::Transform odom_transf;
 
 	for (uint i = 1; i < pso_data->lines.size(); i++)
 	{
 		double v = compute_optimized_odometry_pose(x, y, yaw, particle, pso_data, i);
+
 		if (v > 1.0)
 		{
 			// translate the starting pose of gps to zero to avoid floating point numerical instability
@@ -407,7 +477,14 @@ fitness(double *particle, void *data)
 
 			// Uncomment the printfs for visualizing the result of the gps data transformation:
 			//printf("Before: %.2lf %.2lf ", gps_x, gps_y);
-			transform_car_to_gps(x, y, &gps_x_from_odom, &gps_y_from_odom, pso_data->car2gps);
+			odom_transf.setOrigin(Vector3(x, y, 0));
+			odom_transf.setRotation(Quaternion(yaw, 0, 0));
+			define_relative_pose_from_transform("world", "car", pso_data->tf_transformer, odom_transf);
+			pso_data->tf_transformer->lookupTransform("/world", "/gps", tf::Time(0), gps_in_world);
+			gps_x_from_odom = gps_in_world.getOrigin().x();
+			gps_y_from_odom = gps_in_world.getOrigin().y();
+
+			//transform_car_to_gps(x, y, &gps_x_from_odom, &gps_y_from_odom, pso_data->car2gps);
 			//printf("After: %.2lf %.2lf\n", gps_x, gps_y);
 
 			// add the error
@@ -542,57 +619,6 @@ print_optimization_report(FILE* f_calibration, FILE* f_report, ParticleSwarmOpti
 }
 
 
-Transform
-get_car_to_gps_transform(CarmenParamFile *params, int gps_to_use, int board_to_use)
-{
-	char param_name[1024];
-	double gps_x, gps_y, gps_z, gps_roll, gps_pitch, gps_yaw;
-	double board_x, board_y, board_z, board_roll, board_pitch, board_yaw;
-	Transform board2car, gps2board;
-
-	sprintf(param_name, "gps_nmea_%d_x", gps_to_use);
-	gps_x = params->get<double>(param_name);
-
-	sprintf(param_name, "gps_nmea_%d_y", gps_to_use);
-	gps_y = params->get<double>(param_name);
-
-	sprintf(param_name, "gps_nmea_%d_z", gps_to_use);
-	gps_z = params->get<double>(param_name);
-
-	sprintf(param_name, "gps_nmea_%d_yaw", gps_to_use);
-	gps_yaw = params->get<double>(param_name);
-
-	sprintf(param_name, "gps_nmea_%d_pitch", gps_to_use);
-	gps_pitch = params->get<double>(param_name);
-
-	sprintf(param_name, "gps_nmea_%d_roll", gps_to_use);
-	gps_roll = params->get<double>(param_name);
-
-	sprintf(param_name, "sensor_board_%d_x", board_to_use);
-	board_x = params->get<double>(param_name);
-
-	sprintf(param_name, "sensor_board_%d_y", board_to_use);
-	board_y = params->get<double>(param_name);
-
-	sprintf(param_name, "sensor_board_%d_z", board_to_use);
-	board_z = params->get<double>(param_name);
-
-	sprintf(param_name, "sensor_board_%d_yaw", board_to_use);
-	board_yaw = params->get<double>(param_name);
-
-	sprintf(param_name, "sensor_board_%d_pitch", board_to_use);
-	board_pitch = params->get<double>(param_name);
-
-	sprintf(param_name, "sensor_board_%d_roll", board_to_use);
-	board_roll = params->get<double>(param_name);
-
-	gps2board = Transform(Quaternion(gps_yaw, gps_pitch, gps_roll), Vector3(gps_x, gps_y, gps_z));
-	board2car = Transform(Quaternion(board_yaw, board_pitch, board_roll), Vector3(board_x, board_y, board_z));
-
-	return (board2car * gps2board).inverse();
-}
-
-
 void
 declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 {
@@ -634,7 +660,8 @@ main(int argc, char **argv)
 
 	pso_data.max_steering_angle = params->get<double>("robot_max_steering_angle");
 	pso_data.distance_between_front_and_rear_axles = params->get<double>("robot_distance_between_front_and_rear_axles");
-	pso_data.car2gps = get_car_to_gps_transform(params, gps_to_use, board_to_use);
+	pso_data.tf_transformer = new tf::Transformer(false);
+	initialize_car_objects_poses_in_transformer(params, &pso_data, gps_to_use, board_to_use);
 
 	acc = gsl_interp_accel_alloc();
 	const gsl_interp_type *type = gsl_interp_cspline;
@@ -662,7 +689,12 @@ main(int argc, char **argv)
 
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
+
 	delete(params);
+	delete(pso_data.tf_transformer);
+
+	fprintf(stderr, "Press a key to finish...\n");
+	getchar();
 
 	return (0);
 }

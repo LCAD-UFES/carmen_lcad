@@ -337,12 +337,10 @@ int Transformer::walkToTopParent(F& f, Time time, CompactFrameID target_id, Comp
 
 bool Transformer::setTransform(const StampedTransform& transform, const std::string& authority)
 {
-
   StampedTransform mapped_transform((tf::Transform)transform, transform.stamp_, transform.frame_id_, transform.child_frame_id_);
   mapped_transform.child_frame_id_ = assert_resolved(tf_prefix_, transform.child_frame_id_);
   mapped_transform.frame_id_ = assert_resolved(tf_prefix_, transform.frame_id_);
 
- 
   bool error_exists = false;
   if (mapped_transform.child_frame_id_ == mapped_transform.frame_id_)
   {
