@@ -488,6 +488,7 @@ fitness(double *particle, void *data)
 				first_sample = i - 1;
 
 			compute_optimized_odometry_pose(x, y, yaw, particle, pso_data, i);
+
 			// translate the starting pose of gps to zero to avoid floating point numerical instability
 			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[(uint) first_sample].gps_x;
 			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[(uint) first_sample].gps_y;
