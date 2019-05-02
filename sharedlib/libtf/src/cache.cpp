@@ -190,23 +190,6 @@ void TimeCache::interpolate(const TransformStorage& one, const TransformStorage&
 }
 
 
-TransformStorage*
-TimeCache::getDataPtr(Time time)
-{
-  TransformStorage* p_temp_1 = NULL;
-  TransformStorage* p_temp_2 = NULL;
-
-  int num_nodes = findClosest(p_temp_1, p_temp_2, time, 0);
-
-  if (p_temp_1->stamp_ == time)
-  	return p_temp_1;
-  else if (p_temp_2->stamp_ == time)
-  	return p_temp_2;
-  else
-  	return NULL;
-}
-
-
 bool TimeCache::getData(Time time, TransformStorage & data_out, std::string* error_str) //returns false if data not available
 {
   TransformStorage* p_temp_1 = NULL;
@@ -254,7 +237,6 @@ CompactFrameID TimeCache::getParent(Time time, std::string* error_str)
   return p_temp_1->frame_id_;
 }
 
-#include <cstdio>
 
 bool TimeCache::insertData(const TransformStorage& new_data)
 {
@@ -272,7 +254,6 @@ bool TimeCache::insertData(const TransformStorage& new_data)
   {
     if (storage_it->stamp_ <= new_data.stamp_)
     {
-    	/*
 			if ((storage_it->stamp_ == new_data.stamp_)
 					&& (storage_it->child_frame_id_ == new_data.child_frame_id_)
 					&& (storage_it->frame_id_ == new_data.frame_id_))
@@ -281,7 +262,6 @@ bool TimeCache::insertData(const TransformStorage& new_data)
 				storage_it->translation_ = new_data.translation_;
 				return true;
 			}
-			*/
 
     	break;
     }
@@ -289,7 +269,6 @@ bool TimeCache::insertData(const TransformStorage& new_data)
     storage_it++;
   }
 
-  //printf("Insert\n");
   storage_.insert(storage_it, new_data);
 
   pruneList();
