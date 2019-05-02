@@ -432,18 +432,23 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data)
 
 	double dt_gps_and_odom_acc = 0.0;
 
+	int first_sample = -1;
 	for (uint i = 1; i < pso_data->lines.size(); i++)
 	{
-		double v = compute_optimized_odometry_pose(x, y, yaw, particle, pso_data, i);
-
+		double v = pso_data->lines[i].v * particle[0] + particle[1];
 		if (v > 1.0)
 		{
+			if (first_sample == -1)
+				first_sample = i - 1;
+
+			compute_optimized_odometry_pose(x, y, yaw, particle, pso_data, i);
+
 			double dt = pso_data->lines[i].gps_time - pso_data->lines[i - 1].gps_time;
 			ackerman_model(unoptimized_x, unoptimized_y, unoptimized_yaw, pso_data->lines[i].v, pso_data->lines[i].phi, dt,
 										 pso_data->distance_between_front_and_rear_axles);
 
-			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[0].gps_x;
-			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[0].gps_y;
+			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[(uint) first_sample].gps_x;
+			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[(uint) first_sample].gps_y;
 
 			double odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y;
 			get_gps_pose_given_odomentry_pose(odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y, x, y, yaw, pso_data);
@@ -473,15 +478,19 @@ fitness(double *particle, void *data)
 	double error = 0.0;
 	double count = 0;
 
+	int first_sample = -1;
 	for (uint i = 1; i < pso_data->lines.size(); i++)
 	{
-		double v = compute_optimized_odometry_pose(x, y, yaw, particle, pso_data, i);
-
+		double v = pso_data->lines[i].v * particle[0] + particle[1];
 		if (v > 1.0)
 		{
+			if (first_sample == -1)
+				first_sample = i - 1;
+
+			compute_optimized_odometry_pose(x, y, yaw, particle, pso_data, i);
 			// translate the starting pose of gps to zero to avoid floating point numerical instability
-			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[0].gps_x;
-			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[0].gps_y;
+			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[(uint) first_sample].gps_x;
+			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[(uint) first_sample].gps_y;
 
 			double odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y;
 			get_gps_pose_given_odomentry_pose(odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y, x, y, yaw, pso_data);
