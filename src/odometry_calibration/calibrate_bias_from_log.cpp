@@ -30,6 +30,8 @@ using namespace tf;
 gsl_interp_accel *acc;
 gsl_spline *phi_spline;
 
+FILE *gnuplot_pipe;
+
 
 class Line
 {
@@ -429,7 +431,7 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data)
 			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[0].gps_x;
 			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[0].gps_y;
 
-			define_relative_pose("world", "car", pso_data->tf_transformer, x, y, 0, 0, 0, yaw);
+			define_relative_pose("world", "car", pso_data->tf_transformer, x, y, 0.0, 0.0, 0.0, yaw);
 			pso_data->tf_transformer->lookupTransform("/world", "/gps", tf::Time(0), gps_in_world);
 			gps_x_from_odom = gps_in_world.getOrigin().x();
 			gps_y_from_odom = gps_in_world.getOrigin().y();
@@ -477,8 +479,8 @@ fitness(double *particle, void *data)
 
 			// Uncomment the printfs for visualizing the result of the gps data transformation:
 			//printf("Before: %.2lf %.2lf ", gps_x, gps_y);
-			odom_transf.setOrigin(Vector3(x, y, 0));
-			odom_transf.setRotation(Quaternion(yaw, 0, 0));
+			odom_transf.setOrigin(Vector3(x, y, 0.0));
+			odom_transf.setRotation(Quaternion(0.0, 0.0, yaw));
 			define_relative_pose_from_transform("world", "car", pso_data->tf_transformer, odom_transf);
 			pso_data->tf_transformer->lookupTransform("/world", "/gps", tf::Time(0), gps_in_world);
 			gps_x_from_odom = gps_in_world.getOrigin().x();
@@ -491,9 +493,9 @@ fitness(double *particle, void *data)
 			error += sqrt(pow(gps_x_from_odom - gps_x, 2.0) + pow(gps_y_from_odom - gps_y, 2.0));
 
 			// reinforce consistency between heading direction and heading estimated using gps
-			double gps_yaw = atan2(pso_data->lines[i].gps_y - pso_data->lines[i - 1].gps_y,
-								   pso_data->lines[i].gps_x - pso_data->lines[i - 1].gps_x);
-
+//			double gps_yaw = atan2(pso_data->lines[i].gps_y - pso_data->lines[i - 1].gps_y,
+//								   pso_data->lines[i].gps_x - pso_data->lines[i - 1].gps_x);
+//
 //			error += 200.0 * fabs(carmen_normalize_theta(gps_yaw - yaw));
 			count += 1.0;
 		}
@@ -564,7 +566,6 @@ void
 plot_graph(ParticleSwarmOptimization *optimizer, void *data)
 {
 	static bool first_time = true;
-	static FILE *gnuplot_pipe;
 	double *particle;
 	PsoData *pso_data;
 
@@ -588,8 +589,8 @@ plot_graph(ParticleSwarmOptimization *optimizer, void *data)
 	print_result(particle, gnuplot_data_file, pso_data);
 	fclose(gnuplot_data_file);
 	fprintf(gnuplot_pipe, "plot "
-			"'./gnuplot_data.txt' u 2:3 w l,"
-			"'./gnuplot_data.txt' u 4:5 w l\n");
+			"'./gnuplot_data.txt' u 2:3 w l t 'optimized_odometry',"
+			"'./gnuplot_data.txt' u 4:5 w l t 'gps'\n");
 
 	fflush(gnuplot_pipe);
 }
@@ -695,6 +696,8 @@ main(int argc, char **argv)
 
 	fprintf(stderr, "Press a key to finish...\n");
 	getchar();
+
+	fclose(gnuplot_pipe);
 
 	return (0);
 }

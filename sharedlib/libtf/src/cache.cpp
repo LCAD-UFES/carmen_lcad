@@ -196,7 +196,7 @@ TimeCache::getDataPtr(Time time)
   TransformStorage* p_temp_1 = NULL;
   TransformStorage* p_temp_2 = NULL;
 
-  int num_nodes = findClosest(p_temp_1, p_temp_2, time, 0);
+  findClosest(p_temp_1, p_temp_2, time, 0);
 
   if (p_temp_1->stamp_ == time)
   	return p_temp_1;
@@ -272,16 +272,14 @@ bool TimeCache::insertData(const TransformStorage& new_data)
   {
     if (storage_it->stamp_ <= new_data.stamp_)
     {
-    	/*
-			if ((storage_it->stamp_ == new_data.stamp_)
-					&& (storage_it->child_frame_id_ == new_data.child_frame_id_)
-					&& (storage_it->frame_id_ == new_data.frame_id_))
-			{
-				storage_it->rotation_ = new_data.rotation_;
-				storage_it->translation_ = new_data.translation_;
-				return true;
-			}
-			*/
+		if ((storage_it->stamp_ == new_data.stamp_)
+				&& (storage_it->child_frame_id_ == new_data.child_frame_id_)
+				&& (storage_it->frame_id_ == new_data.frame_id_))
+		{
+			storage_it->rotation_ = new_data.rotation_;
+			storage_it->translation_ = new_data.translation_;
+			return true;
+		}
 
     	break;
     }
