@@ -1560,6 +1560,23 @@ localize_map_correlation_correction_with_outlier_rejection(carmen_localize_acker
 }
 
 
+//void
+//localize_neural_correction(carmen_localize_ackerman_particle_filter_p filter,
+//		carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map)
+//{
+//	if (generate_neural_ground_truth)
+//	{
+//		for (int i = 1; i < filter->param->num_particles; i++)
+//		{
+//			carmen_point_t delta_pose = get_delta_pose(filter->particles[i], filter->particles[0]);
+//			save_delta_pose(delta_pose);
+//			save_ofline_map(localize_map, );
+//			save_online_map();
+//		}
+//	}
+//}
+
+
 static double
 carmen_localize_ackerman_function_velodyne_evaluation(
 		carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p map,
@@ -1931,6 +1948,7 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 		case 6:
 			cosine_correction_with_remission_map_and_log_likelihood(filter, localize_map, local_mean_remission_map, local_map);
 			break;
+
 		case 7:
 //			localize_map_mahalanobis_correction_with_remission_map(filter, localize_map, local_mean_remission_map);
 			localize_map_mahalanobis_correction_with_remission_map_and_outlier_rejection(filter, localize_map, local_mean_remission_map);
@@ -1964,6 +1982,40 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 //			free(temp_map.complete_map);
 //			free(temp_map.map);
 			break;
+
+//		case 8:
+//					// The localize_map used in this function must be in log_odds and the local_map in probabilities
+//		//			localize_map_correlation_correction(filter, localize_map, local_map);
+//					localize_neural_correction(filter, localize_map, local_map);
+//					// para ver este mapa no navigator_gui2 coloque CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT na linha 930 de gtk_gui.cpp
+//		//			carmen_moving_objects_map_message moving_objects_map_message;
+//		//			moving_objects_map_message.complete_map = localize_map->complete_prob;
+//		//			moving_objects_map_message.size = localize_map->config.x_size * localize_map->config.y_size;
+//		//			moving_objects_map_message.config = localize_map->config;
+//		//			moving_objects_map_message.timestamp = carmen_get_time();
+//		//			moving_objects_map_message.host = carmen_get_host();
+//		//			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
+//
+//		//			carmen_moving_objects_map_message moving_objects_map_message;
+//		//			carmen_map_t temp_map;
+//		//			carmen_grid_mapping_create_new_map(&temp_map, local_map->config.x_size, local_map->config.y_size, local_map->config.resolution);
+//		//			memset(temp_map.complete_map, 0, temp_map.config.x_size * temp_map.config.y_size * sizeof(double));
+//		//			carmen_prob_models_uncompress_compact_map(&temp_map, local_map);
+//		//			moving_objects_map_message.complete_map = temp_map.complete_map;
+//		//			moving_objects_map_message.size = temp_map.config.x_size * temp_map.config.y_size;
+//		//			moving_objects_map_message.config = temp_map.config;
+//		//			moving_objects_map_message.timestamp = carmen_get_time();
+//		//			moving_objects_map_message.host = carmen_get_host();
+//		//			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
+//		//			free(temp_map.complete_map);
+//		//			free(temp_map.map);
+//
+//		//			carmen_map_t temp_map;
+//		//			temp_map.config = localize_map->config;
+//		//			temp_map.complete_map = localize_map->complete_prob;
+//		//			temp_map.map = localize_map->prob;
+//		//			carmen_grid_mapping_save_map((char *) "test.map", &temp_map);
+//					break;
 	}
 }
 
