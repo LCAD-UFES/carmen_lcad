@@ -689,7 +689,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		carmen_localize_ackerman_initialize_particles_gaussians(filter, 1, &(summary.mean), &g_std);
 
 
-	display_maps();             // Ranik Display a crop of local and offline maps
+	//display_maps();             // Ranik Display a crop of local and offline maps
 }
 
 
