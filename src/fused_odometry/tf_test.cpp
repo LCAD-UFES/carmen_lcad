@@ -74,15 +74,18 @@ int main()
 	transformer.lookupTransform("/world", "/camera", tf::Time(0), camera_to_world);
 	//printf("Camera pose with respect to world  : x: % 6.2f, y: % 6.2f, z: % 6.2f\n", camera_to_world.getOrigin().x(), camera_to_world.getOrigin().y(), camera_to_world.getOrigin().z());
 
-	for (double z = 0.0; z < 10.0; z += 1.0)
-	{		
-		world_to_car.setOrigin(tf::Vector3(z, 0.0, 0.0));
-		world_to_car.setRotation(tf::Quaternion(0.0, 0.0, 0.0));
+	for (double n = 0.0; n < 100.0 * 100.0; n += 1.0)
+	{
+		for (double z = 0.0; z < 100000.0; z += 1.0)
+		{
+			world_to_car.setOrigin(tf::Vector3(z, 0.0, 0.0));
+			world_to_car.setRotation(tf::Quaternion(0.0, 0.0, 0.0));
 
-		transformer.setTransform(tf::StampedTransform(world_to_car, tf::Time(0), "/world", "/car"));
+			transformer.setTransform(tf::StampedTransform(world_to_car, tf::Time(0), "/world", "/car"));
 
-		transformer.lookupTransform("/world", "/camera", tf::Time(0), camera_to_world);
-		//printf("Camera pose with respect to world  : x: % 6.2f, y: % 6.2f, z: % 6.2f\n", camera_to_world.getOrigin().x(), camera_to_world.getOrigin().y(), camera_to_world.getOrigin().z());
+			transformer.lookupTransform("/world", "/camera", tf::Time(0), camera_to_world);
+			//printf("Camera pose with respect to world  : x: % 6.2f, y: % 6.2f, z: % 6.2f\n", camera_to_world.getOrigin().x(), camera_to_world.getOrigin().y(), camera_to_world.getOrigin().z());
+		}
 	}
 
 	transformer.lookupTransform("/car", "/gps", tf::Time(0), camera_to_world);

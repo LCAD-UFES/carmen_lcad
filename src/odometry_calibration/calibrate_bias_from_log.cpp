@@ -30,6 +30,8 @@ using namespace tf;
 gsl_interp_accel *acc;
 gsl_spline *phi_spline;
 
+FILE *gnuplot_pipe;
+
 
 class Line
 {
@@ -49,7 +51,9 @@ typedef struct
 	vector<Line> lines;
 	double distance_between_front_and_rear_axles;
 	double max_steering_angle;
-	Transform gps2car;
+	Transformer *tf_transformer;
+	string sensor_board_name;
+	string gps_name;
 }PsoData;
 
 
@@ -212,6 +216,45 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 }
 
 
+Transform
+read_object_pose_by_name_from_carmen_ini(CarmenParamFile *params, string object_name)
+{
+	double x, y, z, roll, pitch, yaw;
+
+	x = params->get<double>(object_name + "_x");
+	y = params->get<double>(object_name + "_y");
+	z = params->get<double>(object_name + "_z");
+	roll = params->get<double>(object_name + "_roll");
+	pitch = params->get<double>(object_name + "_pitch");
+	yaw = params->get<double>(object_name + "_yaw");
+
+	return Transform(Quaternion(yaw, pitch, roll), Vector3(x, y, z));
+}
+
+
+void
+initialize_car_objects_poses_in_transformer(CarmenParamFile *params, PsoData *pso_data,
+																						int gps_to_use, int board_to_use)
+{
+	char gps_name[128];
+	char board_name[128];
+
+	sprintf(gps_name, "gps_nmea_%d", gps_to_use);
+	sprintf(board_name, "sensor_board_%d", board_to_use);
+
+	pso_data->tf_transformer->setTransform(tf::StampedTransform(read_object_pose_by_name_from_carmen_ini(params, board_name), tf::Time(0), "/car", "/board"));
+	pso_data->tf_transformer->setTransform(tf::StampedTransform(read_object_pose_by_name_from_carmen_ini(params, gps_name), tf::Time(0), "/board", "/gps"));
+
+	tf::StampedTransform a_to_b;
+	pso_data->tf_transformer->lookupTransform("/car", "/board", tf::Time(0), a_to_b);
+	printf("board with respect to car: x: %lf, y: %lf, z: %lf\n", a_to_b.getOrigin().x(), a_to_b.getOrigin().y(), a_to_b.getOrigin().z());
+	pso_data->tf_transformer->lookupTransform("/board", "/gps", tf::Time(0), a_to_b);
+	printf("gps with respect to board: x: %lf, y: %lf, z: %lf\n", a_to_b.getOrigin().x(), a_to_b.getOrigin().y(), a_to_b.getOrigin().z());
+	pso_data->tf_transformer->lookupTransform("/car", "/gps", tf::Time(0), a_to_b);
+	printf("gps with respect to car: x: %lf, y: %lf, z: %lf\n", a_to_b.getOrigin().x(), a_to_b.getOrigin().y(), a_to_b.getOrigin().z());
+}
+
+
 double
 estimate_theta(PsoData *pso_data, int id)
 {
@@ -321,30 +364,66 @@ compute_optimized_odometry_pose(double &x, double &y, double &yaw, double *parti
 
 
 void
-transform_gps_to_car(double *gps_x, double *gps_y, Transform &gps2car)
+transform_car_to_gps(double car_x, double car_y, double *gps_x, double *gps_y, Transform &car2gps)
 {
 	Vector3 p_car;
 	Vector3 p_gps;
 
-	p_gps = Vector3(*gps_x, *gps_y, 0);
-	p_car = gps2car * p_gps;
+	p_car = Vector3(car_x, car_y, 0);
+	p_gps = car2gps * p_car;
 
-	*gps_x = p_car.getX();
-	*gps_y = p_car.getY();
+	*gps_x = p_gps.getX();
+	*gps_y = p_gps.getY();
+}
+
+
+void
+get_gps_pose_given_odomentry_pose(double &gps_x, double &gps_y, double x, double y, double yaw, PsoData *pso_data)
+{
+	tf::Transform world_to_car;
+	world_to_car.setOrigin(Vector3(x, y, 0.0));
+	world_to_car.setRotation(Quaternion(yaw, 0.0, 0.0));
+	pso_data->tf_transformer->setTransform(tf::StampedTransform(world_to_car, tf::Time(0), "/world", "/car"));
+
+	tf::StampedTransform world_to_gps;
+	pso_data->tf_transformer->lookupTransform("/world", "/gps", tf::Time(0), world_to_gps);
+
+	gps_x = world_to_gps.getOrigin().x();
+	gps_y = world_to_gps.getOrigin().y();
+}
+
+
+void
+get_odomentry_pose_given_gps_pose(double &x, double &y, double gps_x, double gps_y, double yaw, PsoData *pso_data)
+{
+//	tf::Transform world_to_gps;
+//	world_to_gps.setOrigin(Vector3(gps_x, gps_y, 0.0));
+//	world_to_gps.setRotation(Quaternion(yaw, 0.0, 0.0));
+//	pso_data->tf_transformer->setTransform(tf::StampedTransform(world_to_gps, tf::Time(0), "/origin", "/gps"));
+
+	tf::StampedTransform gps_to_car;
+	pso_data->tf_transformer->lookupTransform("/gps", "/car", tf::Time(0), gps_to_car);
+
+	double x_ = gps_to_car.getOrigin().x();
+	double y_ = gps_to_car.getOrigin().y();
+	x = x_ * cos(yaw) - y_ * sin(yaw);
+	y = x_ * sin(yaw) + y_ * cos(yaw);
 }
 
 
 void
 print_result(double *particle, FILE *f_report, PsoData *pso_data)
 {
-	double x = 0.0;
-	double y = 0.0;
 	double yaw = particle[4];
-	double yaw_withoutbias = yaw;
+	double x;
+	double y;
+	get_odomentry_pose_given_gps_pose(x, y, 0.0, 0.0, yaw, pso_data); // gps comecca na pose zero
+
+	double unoptimized_yaw = yaw;
 	//yaw = yaw_withoutbias = estimate_theta(pso_data, 0);
 
-	double x_withoutbias = 0.0;
-	double y_withoutbias = 0.0;
+	double unoptimized_x = 0.0;
+	double unoptimized_y = 0.0;
 
 	compute_phi_spline(particle[5], particle[6], pso_data->max_steering_angle);
 
@@ -353,25 +432,32 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data)
 
 	double dt_gps_and_odom_acc = 0.0;
 
+	int first_sample = -1;
 	for (uint i = 1; i < pso_data->lines.size(); i++)
 	{
-		double v = compute_optimized_odometry_pose(x, y, yaw, particle, pso_data, i);
-
+		double v = pso_data->lines[i].v * particle[0] + particle[1];
 		if (v > 1.0)
 		{
+			if (first_sample == -1)
+				first_sample = i - 1;
+
+			compute_optimized_odometry_pose(x, y, yaw, particle, pso_data, i);
+
 			double dt = pso_data->lines[i].gps_time - pso_data->lines[i - 1].gps_time;
-			ackerman_model(x_withoutbias, y_withoutbias, yaw_withoutbias, pso_data->lines[i].v, pso_data->lines[i].phi, dt,
+			ackerman_model(unoptimized_x, unoptimized_y, unoptimized_yaw, pso_data->lines[i].v, pso_data->lines[i].phi, dt,
 										 pso_data->distance_between_front_and_rear_axles);
 
-			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[0].gps_x;
-			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[0].gps_y;
+			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[(uint) first_sample].gps_x;
+			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[(uint) first_sample].gps_y;
 
-			transform_gps_to_car(&gps_x, &gps_y, pso_data->gps2car);
+			double odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y;
+			get_gps_pose_given_odomentry_pose(odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y, x, y, yaw, pso_data);
 
 			double dt_gps_and_odom = fabs(pso_data->lines[i].time - pso_data->lines[i].gps_time);
 			dt_gps_and_odom_acc += dt_gps_and_odom;
 
-			fprintf(f_report, "DATA %lf %lf %lf %lf %lf %lf %lf %lf\n", x, y, gps_x, gps_y, x_withoutbias, y_withoutbias, dt_gps_and_odom, dt_gps_and_odom_acc);
+			fprintf(f_report, "DATA %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+					odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y, gps_x, gps_y, unoptimized_x, unoptimized_y, dt_gps_and_odom, dt_gps_and_odom_acc, x, y);
 		}
 	}
 }
@@ -382,36 +468,41 @@ fitness(double *particle, void *data)
 {
 	PsoData *pso_data = (PsoData *) data;
 
-	double x = 0.0;
-	double y = 0.0;
 	double yaw = particle[4];
-	//yaw = estimate_theta(pso_data, 0);
-
+	double x;
+	double y;
+	get_odomentry_pose_given_gps_pose(x, y, 0.0, 0.0, yaw, pso_data); // gps comecca na pose zero
+	
 	compute_phi_spline(particle[5], particle[6], pso_data->max_steering_angle);
 
 	double error = 0.0;
 	double count = 0;
+
+	int first_sample = -1;
 	for (uint i = 1; i < pso_data->lines.size(); i++)
 	{
-		double v = compute_optimized_odometry_pose(x, y, yaw, particle, pso_data, i);
+		double v = pso_data->lines[i].v * particle[0] + particle[1];
 		if (v > 1.0)
 		{
-			// translate the starting pose of gps to zero to avoid floating point numerical instability
-			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[0].gps_x;
-			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[0].gps_y;
+			if (first_sample == -1)
+				first_sample = i - 1;
 
-			// Uncomment the printfs for visualizing the result of the gps data transformation:
-			//printf("Before: %.2lf %.2lf ", gps_x, gps_y);
-			transform_gps_to_car(&gps_x, &gps_y, pso_data->gps2car);
-			//printf("After: %.2lf %.2lf\n", gps_x, gps_y);
+			compute_optimized_odometry_pose(x, y, yaw, particle, pso_data, i);
+
+			// translate the starting pose of gps to zero to avoid floating point numerical instability
+			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[(uint) first_sample].gps_x;
+			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[(uint) first_sample].gps_y;
+
+			double odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y;
+			get_gps_pose_given_odomentry_pose(odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y, x, y, yaw, pso_data);
 
 			// add the error
-			error += sqrt(pow(x - gps_x, 2.0) + pow(y - gps_y, 2.0));
+			error += sqrt(pow(odometry_in_gps_coordinates_x - gps_x, 2.0) + pow(odometry_in_gps_coordinates_y - gps_y, 2.0));
 
 			// reinforce consistency between heading direction and heading estimated using gps
-			double gps_yaw = atan2(pso_data->lines[i].gps_y - pso_data->lines[i - 1].gps_y,
-								   pso_data->lines[i].gps_x - pso_data->lines[i - 1].gps_x);
-
+//			double gps_yaw = atan2(pso_data->lines[i].gps_y - pso_data->lines[i - 1].gps_y,
+//								   pso_data->lines[i].gps_x - pso_data->lines[i - 1].gps_x);
+//
 //			error += 200.0 * fabs(carmen_normalize_theta(gps_yaw - yaw));
 			count += 1.0;
 		}
@@ -482,7 +573,6 @@ void
 plot_graph(ParticleSwarmOptimization *optimizer, void *data)
 {
 	static bool first_time = true;
-	static FILE *gnuplot_pipe;
 	double *particle;
 	PsoData *pso_data;
 
@@ -506,8 +596,9 @@ plot_graph(ParticleSwarmOptimization *optimizer, void *data)
 	print_result(particle, gnuplot_data_file, pso_data);
 	fclose(gnuplot_data_file);
 	fprintf(gnuplot_pipe, "plot "
-			"'./gnuplot_data.txt' u 2:3 w l,"
-			"'./gnuplot_data.txt' u 4:5 w l\n");
+			"'./gnuplot_data.txt' u 10:11 w l lt rgb 'blue'  t 'odometry in car coordinates',"
+			"'./gnuplot_data.txt' u 2:3 w l   lt rgb 'green' t 'odometry in gps coordinates',"
+			"'./gnuplot_data.txt' u 4:5 w l   lt rgb 'red'   t 'gps'\n");
 
 	fflush(gnuplot_pipe);
 }
@@ -537,62 +628,11 @@ print_optimization_report(FILE* f_calibration, FILE* f_report, ParticleSwarmOpti
 }
 
 
-Transform
-get_gps_to_car_transform(CarmenParamFile *params, int gps_to_use, int board_to_use)
-{
-	char param_name[1024];
-	double gps_x, gps_y, gps_z, gps_roll, gps_pitch, gps_yaw;
-	double board_x, board_y, board_z, board_roll, board_pitch, board_yaw;
-	Transform board2car, gps2board;
-
-	sprintf(param_name, "gps_nmea_%d_x", gps_to_use);
-	gps_x = params->get<double>(param_name);
-
-	sprintf(param_name, "gps_nmea_%d_y", gps_to_use);
-	gps_y = params->get<double>(param_name);
-
-	sprintf(param_name, "gps_nmea_%d_z", gps_to_use);
-	gps_z = params->get<double>(param_name);
-
-	sprintf(param_name, "gps_nmea_%d_yaw", gps_to_use);
-	gps_yaw = params->get<double>(param_name);
-
-	sprintf(param_name, "gps_nmea_%d_pitch", gps_to_use);
-	gps_pitch = params->get<double>(param_name);
-
-	sprintf(param_name, "gps_nmea_%d_roll", gps_to_use);
-	gps_roll = params->get<double>(param_name);
-
-	sprintf(param_name, "sensor_board_%d_x", board_to_use);
-	board_x = params->get<double>(param_name);
-
-	sprintf(param_name, "sensor_board_%d_y", board_to_use);
-	board_y = params->get<double>(param_name);
-
-	sprintf(param_name, "sensor_board_%d_z", board_to_use);
-	board_z = params->get<double>(param_name);
-
-	sprintf(param_name, "sensor_board_%d_yaw", board_to_use);
-	board_yaw = params->get<double>(param_name);
-
-	sprintf(param_name, "sensor_board_%d_pitch", board_to_use);
-	board_pitch = params->get<double>(param_name);
-
-	sprintf(param_name, "sensor_board_%d_roll", board_to_use);
-	board_roll = params->get<double>(param_name);
-
-	gps2board = Transform(Quaternion(gps_yaw, gps_pitch, gps_roll), Vector3(gps_x, gps_y, gps_z));
-	board2car = Transform(Quaternion(board_yaw, board_pitch, board_roll), Vector3(board_x, board_y, board_z));
-
-	return (board2car * gps2board);
-}
-
-
 void
-define_and_parse_args(int argc, char **argv, CommandLineArguments *args)
+declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 {
 	args->add_positional<string>("log_path", "Path to a log");
-	args->add_positional<string>("param_file", "Path to a file containing system parameters");
+	args->add_positional<string>("carmen_ini", "Path to a file containing system parameters");
 	args->add_positional<string>("output_calibration", "Path to an output calibration file");
 	args->add_positional<string>("output_poses", "Path to a file in which poses will be saved for debug");
 	args->add<int>("gps_to_use", "Id of the gps that will be used for the calibration", 1);
@@ -615,7 +655,7 @@ main(int argc, char **argv)
 	PsoData pso_data;
 	CarmenParamFile *params;
 
-	define_and_parse_args(argc, argv, &args);
+	declare_and_parse_args(argc, argv, &args);
 
 	int gps_to_use = args.get<int>("gps_to_use");
 	int board_to_use = args.get<int>("board_to_use");
@@ -625,11 +665,13 @@ main(int argc, char **argv)
 						args.get<int>("max_log_lines"),
 						&pso_data);
 
-	params = new CarmenParamFile(args.get<string>("param_file").c_str());
+	params = new CarmenParamFile(args.get<string>("carmen_ini").c_str());
 
 	pso_data.max_steering_angle = params->get<double>("robot_max_steering_angle");
 	pso_data.distance_between_front_and_rear_axles = params->get<double>("robot_distance_between_front_and_rear_axles");
-	pso_data.gps2car = get_gps_to_car_transform(params, gps_to_use, board_to_use);
+
+	pso_data.tf_transformer = new tf::Transformer(false);
+	initialize_car_objects_poses_in_transformer(params, &pso_data, gps_to_use, board_to_use);
 
 	acc = gsl_interp_accel_alloc();
 	const gsl_interp_type *type = gsl_interp_cspline;
@@ -651,13 +693,19 @@ main(int argc, char **argv)
 	optimizer.Optimize(plot_graph);
 
 	print_optimization_report(f_calibration, f_report, optimizer);
-	// DEBUG: it prints the calibrated odometry, gps and raw odometry
 	print_result(optimizer.GetBestSolution(), f_report, &pso_data);
 	print_phi_spline(phi_spline, acc, pso_data.max_steering_angle, true);
 
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
+
 	delete(params);
+	delete(pso_data.tf_transformer);
+
+	fprintf(stderr, "Press a key to finish...\n");
+	getchar();
+
+	fclose(gnuplot_pipe);
 
 	return (0);
 }

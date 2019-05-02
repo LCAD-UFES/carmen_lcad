@@ -118,7 +118,7 @@ typedef struct {
 } carmen_localize_ackerman_param_t, *carmen_localize_ackerman_param_p;
 
 typedef struct {
-  int initialized, first_odometry, global_mode;
+  int initialized, first_odometry, converged;
   carmen_localize_ackerman_param_p param;
   carmen_localize_ackerman_particle_ipc_p particles;
   carmen_localize_ackerman_particle_ipc_p swarm_velocity;

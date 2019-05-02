@@ -296,6 +296,12 @@ public:
   // Get the state of using_dedicated_thread_
   bool isUsingDedicatedThread() { return using_dedicated_thread_;};
 
+  TimeCache* getFrameCarmen(const std::string &frame_name) const
+  {
+  	int frame_number = lookupFrameNumber(frame_name);
+    return getFrame(frame_number);
+  }
+
 protected:
 
   /** \brief The internal storage class for ReferenceTransform.

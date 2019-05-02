@@ -839,6 +839,7 @@ carmen_xsens_subscribe_xsens_global_quat_message_handler(carmen_xsens_global_qua
 	xsens_global_quat_message = message;
 }
 
+
 static void
 carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_initialize_message *initialize_msg)
 {
@@ -1442,7 +1443,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 
 
 int 
-register_ipc_messages(void)
+define_ipc_messages(void)
 {
 	IPC_RETURN_TYPE err;
 
@@ -1487,7 +1488,6 @@ subscribe_to_ipc_message()
 	IPC_RETURN_TYPE err;
 
 	carmen_localize_ackerman_subscribe_initialize_message(NULL, (carmen_handler_t) carmen_localize_ackerman_initialize_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
 	carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_odometry_handler,	CARMEN_SUBSCRIBE_LATEST);
 
 	/* Subscribe to front and rear laser messages */
@@ -1506,6 +1506,7 @@ subscribe_to_ipc_message()
 		carmen_map_server_subscribe_localize_map_message(NULL, (carmen_handler_t) localize_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 
 		/* subscribe to map request message */
+		// TODO: create proper subscribe messages. Check with Alberto if there is a reason for doing these subscribes with the low level API.
 		err = IPC_subscribe(CARMEN_LOCALIZE_ACKERMAN_MAP_QUERY_NAME, map_query_handler, NULL);
 		carmen_test_ipc(err, "Could not subscribe", CARMEN_LOCALIZE_ACKERMAN_MAP_QUERY_NAME);
 		IPC_setMsgQueueLength(CARMEN_LOCALIZE_ACKERMAN_MAP_QUERY_NAME, 1);
@@ -1638,9 +1639,8 @@ main(int argc, char **argv)
 	init_localize_map();
 	init_local_maps(map_params);
 
-	register_ipc_messages();
+	define_ipc_messages();
 	subscribe_to_ipc_message();
-
 	carmen_ipc_dispatch();
 
 	return 0;

@@ -8,7 +8,7 @@ LINK = g++
 CFLAGS += -std=c11
 CXXFLAGS += -std=c++11
 
-SUBDIRS += $(CARMEN_HOME)/src/utilities/libcarmen_util $(CARMEN_HOME)/sharedlib/pso/
+SUBDIRS += $(CARMEN_HOME)/src/utilities/libcarmen_util $(CARMEN_HOME)/sharedlib/pso/ $(CARMEN_HOME)/sharedlib/libtf/src
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
 LFLAGS += -lglobal -lipc -llocalize_ackerman_interface -lfused_odometry_interface -lvelodyne_interface -lparam_interface -lGL -lglut -lGLU \
@@ -37,17 +37,20 @@ LFLAGS += `pkg-config --libs opencv`
 LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 LFLAGS += -lcarmen_util -lboost_program_options
 
-SOURCES = grab_data_for_calibration.cpp calibrate_bias.cpp calibrate_bias_from_log.cpp filter_data_for_calibration.cpp # calibrate_bias_from_log_with_neural_phi.cpp
+SOURCES = grab_data_for_calibration.cpp calibrate_bias.cpp calibrate_bias_from_log.cpp filter_data_for_calibration.cpp tf_test.cpp # calibrate_bias_from_log_with_neural_phi.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = grab_data_for_calibration calibrate_bias calibrate_bias_from_log filter_data_for_calibration calibrate_bias_from_log_with_neural_phi
-TARGETS = calibrate_bias calibrate_bias_from_log filter_data_for_calibration grab_data_for_calibration # calibrate_bias_from_log_with_neural_phi
+PUBLIC_BINARIES = grab_data_for_calibration calibrate_bias calibrate_bias_from_log filter_data_for_calibration calibrate_bias_from_log_with_neural_phi 
+TARGETS = calibrate_bias calibrate_bias_from_log filter_data_for_calibration grab_data_for_calibration tf_test # calibrate_bias_from_log_with_neural_phi
+
+LIBS_DEPS = $(CARMEN_HOME)/lib/libtf.a $(CARMEN_HOME)/lib/libpso++.a $(CARMEN_HOME)/lib/libcarmen_util.a 
 
 grab_data_for_calibration: grab_data_for_calibration.o
 calibrate_bias: calibrate_bias.o
-calibrate_bias_from_log: calibrate_bias_from_log.o
+calibrate_bias_from_log: calibrate_bias_from_log.o $(LIBS_DEPS)
 filter_data_for_calibration: filter_data_for_calibration.o
-calibrate_bias_from_log_with_neural_phi: calibrate_bias_from_log_with_neural_phi.o
+#calibrate_bias_from_log_with_neural_phi: calibrate_bias_from_log_with_neural_phi.o
+tf_test: tf_test.o $(LIBS_DEPS)
 
 include $(CARMEN_HOME)/src/Makefile.rules

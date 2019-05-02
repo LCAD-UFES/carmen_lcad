@@ -189,6 +189,7 @@ void TimeCache::interpolate(const TransformStorage& one, const TransformStorage&
   output.child_frame_id_ = one.child_frame_id_;
 }
 
+
 bool TimeCache::getData(Time time, TransformStorage & data_out, std::string* error_str) //returns false if data not available
 {
   TransformStorage* p_temp_1 = NULL;
@@ -236,6 +237,7 @@ CompactFrameID TimeCache::getParent(Time time, std::string* error_str)
   return p_temp_1->frame_id_;
 }
 
+
 bool TimeCache::insertData(const TransformStorage& new_data)
 {
   L_TransformStorage::iterator storage_it = storage_.begin();
@@ -248,13 +250,25 @@ bool TimeCache::insertData(const TransformStorage& new_data)
     }
   }
 
-
   while(storage_it != storage_.end())
   {
     if (storage_it->stamp_ <= new_data.stamp_)
-      break;
+    {
+			if ((storage_it->stamp_ == new_data.stamp_)
+					&& (storage_it->child_frame_id_ == new_data.child_frame_id_)
+					&& (storage_it->frame_id_ == new_data.frame_id_))
+			{
+				storage_it->rotation_ = new_data.rotation_;
+				storage_it->translation_ = new_data.translation_;
+				return true;
+			}
+
+    	break;
+    }
+
     storage_it++;
   }
+
   storage_.insert(storage_it, new_data);
 
   pruneList();
