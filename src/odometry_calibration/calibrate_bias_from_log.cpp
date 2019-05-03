@@ -24,8 +24,14 @@
 using namespace std;
 using namespace tf;
 
-#define MAX_LINE_LENGTH (5*4000000)
+#define MAX_LINE_LENGTH (5 * 4000000)
 #define NUM_PHI_SPLINE_KNOTS 3
+
+int gps_to_use;
+int board_to_use;
+int use_non_linear_phi;
+int n_params;
+double **limits;
 
 gsl_interp_accel *acc;
 gsl_spline *phi_spline;
@@ -289,7 +295,7 @@ estimate_theta(PsoData *pso_data, int id)
 void
 ackerman_model(double &x, double &y, double &yaw, double v, double phi, double dt, double L)
 {
-	double new_phi = phi / (1.0 + v * v * 0.000); // underster IARA
+	double new_phi = phi / (1.0 + v * v * 0.00); // underster IARA
 //	new_phi = new_phi * factor(6.0 * new_phi);
 
 	x = x + dt * v * cos(yaw);
@@ -349,11 +355,13 @@ compute_optimized_odometry_pose(double &x, double &y, double &yaw, double *parti
 
 	// phi = raw_phi + add_bias
 	double phi = pso_data->lines[i].phi + particle[3];
-	if (phi < 0.0)
-		phi = -gsl_spline_eval(phi_spline, -phi, acc);
-	else
-		phi = gsl_spline_eval(phi_spline, phi, acc);
-
+	if (use_non_linear_phi)
+	{
+		if (phi < 0.0)
+			phi = -gsl_spline_eval(phi_spline, -phi, acc);
+		else
+			phi = gsl_spline_eval(phi_spline, phi, acc);
+	}
 	// phi = raw_phi * mult_bias
 	phi = phi * particle[2];
 
@@ -425,7 +433,8 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data)
 	double unoptimized_x = 0.0;
 	double unoptimized_y = 0.0;
 
-	compute_phi_spline(particle[5], particle[6], pso_data->max_steering_angle);
+	if (use_non_linear_phi)
+		compute_phi_spline(particle[5], particle[6], pso_data->max_steering_angle);
 
 	fprintf(f_report, "Initial angle: %lf\n", yaw);
 //	fprintf(stderr, "Initial angle: %lf\n", yaw);
@@ -473,7 +482,8 @@ fitness(double *particle, void *data)
 	double y;
 	get_odomentry_pose_given_gps_pose(x, y, 0.0, 0.0, yaw, pso_data); // gps comecca na pose zero
 	
-	compute_phi_spline(particle[5], particle[6], pso_data->max_steering_angle);
+	if (use_non_linear_phi)
+		compute_phi_spline(particle[5], particle[6], pso_data->max_steering_angle);
 
 	double error = 0.0;
 	double count = 0;
@@ -528,7 +538,7 @@ alloc_limits(int dim)
 }
 
 
-double**
+double **
 set_limits(int dim)
 {
 	double **limits;
@@ -557,13 +567,16 @@ set_limits(int dim)
 	limits[4][0] = -M_PI;
 	limits[4][1] = M_PI;
 
-	// k1 of phi spline
-	limits[5][0] = -0.3;
-	limits[5][1] = +0.3;
+	if (use_non_linear_phi)
+	{
+		// k1 of phi spline
+		limits[5][0] = -0.3;
+		limits[5][1] = +0.3;
 
-	// k1 of phi spline
-	limits[6][0] = -0.15;
-	limits[6][1] = +0.15;
+		// k1 of phi spline
+		limits[6][0] = -0.15;
+		limits[6][1] = +0.15;
+	}
 
 	return (limits);
 }
@@ -637,6 +650,7 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add_positional<string>("output_poses", "Path to a file in which poses will be saved for debug");
 	args->add<int>("gps_to_use", "Id of the gps that will be used for the calibration", 1);
 	args->add<int>("board_to_use", "Id of the sensor board that will be used for the calibration", 1);
+	args->add<int>("use_non_linear_phi", "0 - linear phi; 1 - use a spline to map phi to a new phi", 0);
 	args->add<int>("n_particles,n", "Number of particles", 500);
 	args->add<int>("n_iterations,i", "Number of iterations", 300);
 	args->add<int>("initial_log_line,l", "Number of lines to skip in the beggining of the log file", 1);
@@ -646,39 +660,44 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 }
 
 
+void
+initialize_parameters(PsoData &pso_data, CommandLineArguments args, CarmenParamFile *carmen_ini_params)
+{
+	gps_to_use = args.get<int>("gps_to_use");
+	board_to_use = args.get<int>("board_to_use");
+
+	use_non_linear_phi = args.get<int>("use_non_linear_phi");
+	if (use_non_linear_phi)
+		n_params = 7;
+	else
+		n_params = 5;
+	limits = set_limits(n_params);
+
+	pso_data.max_steering_angle = carmen_ini_params->get<double>("robot_max_steering_angle");
+	pso_data.distance_between_front_and_rear_axles = carmen_ini_params->get<double>("robot_distance_between_front_and_rear_axles");
+	pso_data.tf_transformer = new tf::Transformer(false);
+	initialize_car_objects_poses_in_transformer(carmen_ini_params, &pso_data, gps_to_use, board_to_use);
+
+	acc = gsl_interp_accel_alloc();
+	const gsl_interp_type *type = gsl_interp_cspline;
+	phi_spline = gsl_spline_alloc(type, NUM_PHI_SPLINE_KNOTS);
+}
+
+
 int 
 main(int argc, char **argv)
 {
-	int n_params;
-	double **limits;
 	CommandLineArguments args;
-	PsoData pso_data;
-	CarmenParamFile *params;
 
 	declare_and_parse_args(argc, argv, &args);
-
-	int gps_to_use = args.get<int>("gps_to_use");
-	int board_to_use = args.get<int>("board_to_use");
+	CarmenParamFile *carmen_ini_params = new CarmenParamFile(args.get<string>("carmen_ini").c_str());
+	PsoData pso_data;
+	initialize_parameters(pso_data, args, carmen_ini_params);
 
 	read_data(args.get<string>("log_path").c_str(), gps_to_use,
 						args.get<int>("initial_log_line"),
 						args.get<int>("max_log_lines"),
 						&pso_data);
-
-	params = new CarmenParamFile(args.get<string>("carmen_ini").c_str());
-
-	pso_data.max_steering_angle = params->get<double>("robot_max_steering_angle");
-	pso_data.distance_between_front_and_rear_axles = params->get<double>("robot_distance_between_front_and_rear_axles");
-
-	pso_data.tf_transformer = new tf::Transformer(false);
-	initialize_car_objects_poses_in_transformer(params, &pso_data, gps_to_use, board_to_use);
-
-	acc = gsl_interp_accel_alloc();
-	const gsl_interp_type *type = gsl_interp_cspline;
-	phi_spline = gsl_spline_alloc(type, NUM_PHI_SPLINE_KNOTS);
-
-	n_params = 7;
-	limits = set_limits(n_params);
 
 	FILE *f_calibration = safe_fopen(args.get<string>("output_calibration").c_str(), "w");
 	FILE *f_report = safe_fopen(args.get<string>("output_poses").c_str(), "w");
@@ -694,12 +713,13 @@ main(int argc, char **argv)
 
 	print_optimization_report(f_calibration, f_report, optimizer);
 	print_result(optimizer.GetBestSolution(), f_report, &pso_data);
-	print_phi_spline(phi_spline, acc, pso_data.max_steering_angle, true);
+	if (use_non_linear_phi)
+		print_phi_spline(phi_spline, acc, pso_data.max_steering_angle, true);
 
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
 
-	delete(params);
+	delete(carmen_ini_params);
 	delete(pso_data.tf_transformer);
 
 	fprintf(stderr, "Press a key to finish...\n");
@@ -709,4 +729,3 @@ main(int argc, char **argv)
 
 	return (0);
 }
-
