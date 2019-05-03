@@ -40,8 +40,8 @@ VISUAL_YY_VAR.25
 VISUAL_HH_VAR 0.125
 
 -- Multiplicado do desvio padrao- quanto maior, menor a confianca no GPS - 125 ta confiando bem pouco no multiplier 
-GPS_POSE_STD_MULTIPLIER 30.5
-GPS_POSE_HH_STD 150.75
+GPS_POSE_STD_MULTIPLIER 10.5
+GPS_POSE_HH_STD 15.75
 
 -- special edge: two messages with same timestamp value - Nao precisa mecher, basicamente nao deixa o otimizador mexer em nos da mesma mensagem (GPS-HEADING)
 -- SPECIAL_ODOMETRY_INFORMATION 100

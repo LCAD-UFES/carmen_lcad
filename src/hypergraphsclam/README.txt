@@ -21,14 +21,20 @@ Alem disso, apagar os arquivos antigos nessas pastas
 ==============================================================================
 
 ==============================================================================
-1. Calibre a odometria:
-https://github.com/LCAD-UFES/carmen_lcad/tree/master/src/odometry_calibration
+1. Calibre a odometria. Documentação:
+ https://github.com/LCAD-UFES/carmen_lcad/tree/master/src/odometry_calibration
+ou
+ ~/carmen_lcad/src/odometry_calibration/README.txt
 
-Os bias de saída da calibração devem ser colocados no arquivo src/hypergraphsclam/config/parser_config.txt em:
+Os dados de saída da calibração devem ser colocados no arquivo src/hypergraphsclam/config/parser_config.txt em:
+ V_MULT_ODOMETRY_BIAS <primeiro parâmetro do bias v da saída da calibração>
+ PHI_MULT_ODOMETRY_BIAS <primeiro parâmetro do bias phi da saída da calibração>
+ PHI_ADD_ODOMETRY_BIAS <segundo parâmetro do bias phi da saída da calibração>
+e no carmen.ini:
+ robot_v_multiplier
+ robot_phi_multiplier
+ robot_phi_bias
 
-V_MULT_ODOMETRY_BIAS <primeiro parâmetro do bias v da saída da calibração>
-PHI_MULT_ODOMETRY_BIAS <primeiro parâmetro do bias phi da saída da calibração>
-PHI_ADD_ODOMETRY_BIAS <segundo parâmetro do bias phi da saída da calibração>
 ==============================================================================
 
 2. Execute o parser do log (ele leh o log e constroi um hypergrafo) dentro da pasta src/hypergraphsclam/
