@@ -508,7 +508,7 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data,
 	{
 		double v = pso_data->lines[i].v * particle[0] + particle[1];
 
-		//if (fabs(v) > 1.0)
+		if (fabs(v) > 1.0)
 		{
 			if (first_sample == -1)
 				first_sample = i - 1;
@@ -560,7 +560,7 @@ fitness(double *particle, void *data)
 	{
 		double v = pso_data->lines[i].v * particle[0] + particle[1];
 
-		//if (fabs(v) > 1.0)
+		if (fabs(v) > 1.0)
 		{
 			if (first_sample == -1)
 				first_sample = i - 1;
@@ -640,7 +640,7 @@ save_poses_in_graphslam_format(ParticleSwarmOptimization &optimizer, PsoData *ps
 	{
 		double v = pso_data->velodyne_data[i].v * particle[0] + particle[1];
 
-		//if (fabs(v) > 1.0)
+		if (fabs(v) > 1.0)
 		{
 			double dt = pso_data->velodyne_data[i].velodyne_timestamp - pso_data->velodyne_data[i - 1].velodyne_timestamp;
 			compute_optimized_odometry_pose(x, y, yaw, particle, v, pso_data->velodyne_data[i].phi, dt,
