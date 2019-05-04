@@ -481,7 +481,8 @@ get_odomentry_pose_given_gps_pose(double &x, double &y, /* double gps_x, double 
 
 
 void
-print_result(double *particle, FILE *f_report, PsoData *pso_data)
+print_result(double *particle, FILE *f_report, PsoData *pso_data,
+						 int *id_first_pose)
 {
 	double yaw = particle[4];
 	double x;
@@ -501,12 +502,13 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data)
 //	fprintf(stderr, "Initial angle: %lf\n", yaw);
 
 	double dt_gps_and_odom_acc = 0.0;
-
 	int first_sample = -1;
+
 	for (uint i = 1; i < pso_data->lines.size(); i++)
 	{
 		double v = pso_data->lines[i].v * particle[0] + particle[1];
-		if (v > 1.0)
+
+		if (fabs(v) > 1.0)
 		{
 			if (first_sample == -1)
 				first_sample = i - 1;
@@ -518,8 +520,8 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data)
 			ackerman_model(unoptimized_x, unoptimized_y, unoptimized_yaw, pso_data->lines[i].v, pso_data->lines[i].phi, dt,
 										 pso_data->distance_between_front_and_rear_axles);
 
-			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[(uint) first_sample].gps_x;
-			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[(uint) first_sample].gps_y;
+			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[first_sample].gps_x;
+			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[first_sample].gps_y;
 
 			double odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y;
 			get_gps_pose_given_odomentry_pose(odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y, x, y, yaw, pso_data);
@@ -531,6 +533,8 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data)
 					odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y, gps_x, gps_y, unoptimized_x, unoptimized_y, dt_gps_and_odom, dt_gps_and_odom_acc, x, y);
 		}
 	}
+
+	*id_first_pose = first_sample;
 }
 
 
@@ -551,10 +555,12 @@ fitness(double *particle, void *data)
 	double count = 0;
 
 	int first_sample = -1;
+
 	for (uint i = 1; i < pso_data->lines.size(); i++)
 	{
 		double v = pso_data->lines[i].v * particle[0] + particle[1];
-		if (v > 1.0)
+
+		if (fabs(v) > 1.0)
 		{
 			if (first_sample == -1)
 				first_sample = i - 1;
@@ -564,8 +570,8 @@ fitness(double *particle, void *data)
 																			pso_data->distance_between_front_and_rear_axles);
 
 			// translate the starting pose of gps to zero to avoid floating point numerical instability
-			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[(uint) first_sample].gps_x;
-			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[(uint) first_sample].gps_y;
+			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[first_sample].gps_x;
+			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[first_sample].gps_y;
 
 			double odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y;
 			get_gps_pose_given_odomentry_pose(odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y, x, y, yaw, pso_data);
@@ -587,8 +593,30 @@ fitness(double *particle, void *data)
 }
 
 
+int
+find_nearest_time_to_gps(PsoData *pso_data, int id_gps)
+{
+	double gps_time = pso_data->lines[id_gps].gps_time;
+	int near = 0;
+	double smallest_dt = DBL_MAX;
+
+	for (int i = 0; i < pso_data->velodyne_data.size(); i++)
+	{
+		double dt = fabs(pso_data->velodyne_data[i].velodyne_timestamp - gps_time);
+
+		if (dt < smallest_dt)
+		{
+			smallest_dt = dt;
+			near = i;
+		}
+	}
+
+	return near;
+}
+
 void
-save_poses_in_graphslam_format(ParticleSwarmOptimization &optimizer, PsoData *pso_data, const string &path)
+save_poses_in_graphslam_format(ParticleSwarmOptimization &optimizer, PsoData *pso_data, const string &path,
+															 int id_first_sample)
 {
 	if (path.size() <= 0)
 		return;
@@ -606,23 +634,20 @@ save_poses_in_graphslam_format(ParticleSwarmOptimization &optimizer, PsoData *ps
 	if (use_non_linear_phi)
 		compute_phi_spline(particle[5], particle[6], pso_data->max_steering_angle);
 
-	int first_sample = -1;
+	int first_sample = find_nearest_time_to_gps(pso_data, id_first_sample);
 
 	for (uint i = 1; i < pso_data->velodyne_data.size(); i++)
 	{
 		double v = pso_data->velodyne_data[i].v * particle[0] + particle[1];
 
-		if (v > 1.0)
+		if (fabs(v) > 1.0)
 		{
-			if (first_sample == -1)
-				first_sample = i - 1;
-
 			double dt = pso_data->velodyne_data[i].velodyne_timestamp - pso_data->velodyne_data[i - 1].velodyne_timestamp;
 			compute_optimized_odometry_pose(x, y, yaw, particle, v, pso_data->velodyne_data[i].phi, dt,
 																			pso_data->distance_between_front_and_rear_axles);
 
-			double global_x = x + pso_data->lines[(uint) first_sample].gps_x;
-			double global_y = y + pso_data->lines[(uint) first_sample].gps_y;
+			double global_x = x + pso_data->lines[first_sample].gps_x;
+			double global_y = y + pso_data->lines[first_sample].gps_y;
 
 			fprintf(fptr, "%lf %lf %lf %lf\n", global_x, global_y, yaw,
 							pso_data->velodyne_data[i].velodyne_timestamp);
@@ -655,21 +680,19 @@ plot_graph(ParticleSwarmOptimization *optimizer, void *data)
 //		fprintf(gnuplot_pipe, "set ylabel 'effort'\n");
 	}
 
+	int first_sample;
 	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
-	print_result(particle, gnuplot_data_file, pso_data);
+	print_result(particle, gnuplot_data_file, pso_data, &first_sample);
 	fclose(gnuplot_data_file);
 
-	double offset_x = pso_data->lines[0].gps_x;
-	double offset_y = pso_data->lines[0].gps_y;
-
-	save_poses_in_graphslam_format(*optimizer, pso_data, "/tmp/graph_poses.txt");
+	save_poses_in_graphslam_format(*optimizer, pso_data, "/tmp/graph_poses.txt", first_sample);
 
 	fprintf(gnuplot_pipe, "plot "
 			"'./gnuplot_data.txt' u 10:11 w l lt rgb 'blue'  t 'odometry in car coordinates',"
 			"'./gnuplot_data.txt' u 2:3 w l   lt rgb 'green' t 'odometry in gps coordinates',"
 			"'./gnuplot_data.txt' u 4:5 w l   lt rgb 'red'   t 'gps',"
 			"'/tmp/graph_poses.txt' u ($1 - %lf):($2 - %lf) w l lt rgb 'black' t 'odometry in graphslam format'\n",
-			offset_x, offset_y);
+			pso_data->lines[first_sample].gps_x, pso_data->lines[first_sample].gps_y);
 
 	fflush(gnuplot_pipe);
 }
@@ -765,7 +788,7 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add_positional<string>("carmen_ini", "Path to a file containing system parameters");
 	args->add_positional<string>("output_calibration", "Path to an output calibration file");
 	args->add_positional<string>("output_poses", "Path to a file in which poses will be saved for debug");
-	args->add<string>("graph_poses", "Path to a file in which the dead-reck. with calibrated odometry will be saved in graphslam format.", "");
+	args->add_positional<string>("poses_opt", "Path to a file in which the poses will be saved in graphslam format");
 	args->add<int>("gps_to_use", "Id of the gps that will be used for the calibration", 1);
 	args->add<int>("board_to_use", "Id of the sensor board that will be used for the calibration", 1);
 	args->add<int>("use_non_linear_phi", "0 - linear phi; 1 - use a spline to map phi to a new phi", 0);
@@ -830,9 +853,10 @@ main(int argc, char **argv)
 
 	optimizer.Optimize(plot_graph);
 
+	int first_sample;
 	print_optimization_report(f_calibration, f_report, optimizer);
-	print_result(optimizer.GetBestSolution(), f_report, &pso_data);
-	save_poses_in_graphslam_format(optimizer, &pso_data, args.get<string>("graph_poses"));
+	print_result(optimizer.GetBestSolution(), f_report, &pso_data, &first_sample);
+	save_poses_in_graphslam_format(optimizer, &pso_data, args.get<string>("poses_opt"), first_sample);
 	plot_graph(&optimizer, (void *) &pso_data);
 
 	if (use_non_linear_phi)
@@ -847,6 +871,6 @@ main(int argc, char **argv)
 	fprintf(stderr, "Press a key to finish...\n");
 	getchar();
 
-	fclose(gnuplot_pipe);
+	//fclose(gnuplot_pipe);
 	return (0);
 }
