@@ -54,16 +54,17 @@ public:
 
 typedef struct
 {
-	double timestamp;
+	double velodyne_timestamp;
+	double odometry_timestamp;
 	double v;
 	double phi;
-} VelodyneData;
+} VelodyneAndOdom;
 
 
 typedef struct
 {
 	vector<Line> lines;
-	vector<VelodyneData> velodyne_data;
+	vector<VelodyneAndOdom> velodyne_data;
 	double distance_between_front_and_rear_axles;
 	double max_steering_angle;
 	Transformer *tf_transformer;
@@ -76,22 +77,20 @@ carmen_robot_ackerman_velocity_message
 read_odometry(FILE *f)
 {
 	carmen_robot_ackerman_velocity_message m;
-
 	fscanf(f, "%lf %lf %lf", &m.v, &m.phi, &m.timestamp);
-
 	return (m);
 }
 
 
-VelodyneData
+VelodyneAndOdom
 read_velodyne_data(FILE *f)
 {
-	VelodyneData velodyne_data;
+	VelodyneAndOdom velodyne_data;
 	char scan_file_name[2048];
 	int num_shots;
 
 	memset(&velodyne_data, 0, sizeof(velodyne_data));
-	fscanf(f, "%s %d %lf", scan_file_name, &num_shots, &(velodyne_data.timestamp));
+	fscanf(f, "%s %d %lf", scan_file_name, &num_shots, &(velodyne_data.velodyne_timestamp));
 
 	return (velodyne_data);
 }
@@ -156,18 +155,17 @@ read_gps(FILE *f, int gps_to_use)
 }
 
 
-void
-process_gps(carmen_gps_xyz_message &m, vector<carmen_robot_ackerman_velocity_message> &odoms, PsoData *pso_data)
+size_t
+search_for_odom_with_nearest_timestamp(vector<carmen_robot_ackerman_velocity_message> &odoms, double reference_timestamp)
 {
-	if (odoms.size() == 0 || m.timestamp == 0)
-		return;
-
 	size_t i = odoms.size() - 1;
 	size_t near = i;
-	double smaler_time_distance = m.timestamp;
+	double smaler_time_distance = reference_timestamp;
+
 	do
 	{
-		double time_distance = fabs(m.timestamp - odoms[i].timestamp);
+		double time_distance = fabs(reference_timestamp - odoms[i].timestamp);
+
 		if (time_distance < smaler_time_distance)
 		{
 			near = i;
@@ -179,6 +177,18 @@ process_gps(carmen_gps_xyz_message &m, vector<carmen_robot_ackerman_velocity_mes
 
 		i--;
 	} while (i != 0);
+
+	return near;
+}
+
+
+void
+process_gps(carmen_gps_xyz_message &m, vector<carmen_robot_ackerman_velocity_message> &odoms, PsoData *pso_data)
+{
+	if (odoms.size() == 0 || m.timestamp == 0)
+		return;
+
+	size_t near = search_for_odom_with_nearest_timestamp(odoms, m.timestamp);
 
 	Line l;
 
@@ -195,35 +205,18 @@ process_gps(carmen_gps_xyz_message &m, vector<carmen_robot_ackerman_velocity_mes
 
 
 void
-process_velodyne_data(PsoData *pso_data, vector<carmen_robot_ackerman_velocity_message> &odoms, VelodyneData velodyne_data)
+process_velodyne_data(PsoData *pso_data, vector<carmen_robot_ackerman_velocity_message> &odoms, VelodyneAndOdom velodyne_data)
 {
-	if (odoms.size() == 0 || velodyne_data.timestamp == 0)
+	if (odoms.size() == 0 || velodyne_data.velodyne_timestamp == 0)
 		return;
 
-	size_t i = odoms.size() - 1;
-	size_t near = i;
-	double smaler_time_distance = velodyne_data.timestamp;
-	do
-	{
-		double time_distance = fabs(velodyne_data.timestamp - odoms[i].timestamp);
-		if (time_distance < smaler_time_distance)
-		{
-			near = i;
-			smaler_time_distance = time_distance;
-		}
+	size_t near = search_for_odom_with_nearest_timestamp(odoms, velodyne_data.velodyne_timestamp);
 
-		if (time_distance > 5.0)
-			break;
+	velodyne_data.v = odoms[near].v;
+	velodyne_data.phi = odoms[near].phi;
+	velodyne_data.odometry_timestamp = odoms[near].timestamp;
 
-		i--;
-	} while (i != 0);
-
-	VelodyneData vd;
-
-	vd.v = odoms[near].v;
-	vd.phi = odoms[near].phi;
-
-	pso_data->velodyne_data.push_back(vd);
+	pso_data->velodyne_data.push_back(velodyne_data);
 }
 
 
@@ -275,7 +268,7 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 		}
 		else if (!strcmp(tag, "VELODYNE_PARTIAL_SCAN_IN_FILE"))
 		{
-			VelodyneData velodyne_data = read_velodyne_data(f);
+			VelodyneAndOdom velodyne_data = read_velodyne_data(f);
 			process_velodyne_data(pso_data, odoms, velodyne_data);
 		}
 		else
@@ -417,14 +410,12 @@ compute_phi_spline(double particle_a, double particle_b, double max_steering_ang
 
 
 double
-compute_optimized_odometry_pose(double &x, double &y, double &yaw, double *particle, PsoData *pso_data, int i)
+compute_optimized_odometry_pose(double &x, double &y, double &yaw, double *particle,
+																double optimized_v, double raw_phi, double dt, double L)
 {
-	double dt = pso_data->lines[i].gps_time - pso_data->lines[i - 1].gps_time;
-	// v = raw_v * mult_bias + add_bias
-	double v = pso_data->lines[i].v * particle[0] + particle[1];
-
 	// phi = raw_phi + add_bias
-	double phi = pso_data->lines[i].phi + particle[3];
+	double phi = raw_phi + particle[3];
+
 	if (use_non_linear_phi)
 	{
 		if (phi < 0.0)
@@ -435,9 +426,9 @@ compute_optimized_odometry_pose(double &x, double &y, double &yaw, double *parti
 	// phi = raw_phi * mult_bias
 	phi = phi * particle[2];
 
-	ackerman_model(x, y, yaw, v, phi, dt, pso_data->distance_between_front_and_rear_axles);
+	ackerman_model(x, y, yaw, optimized_v, phi, dt, L);
 
-	return (v);
+	return (optimized_v);
 }
 
 
@@ -520,9 +511,10 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data)
 			if (first_sample == -1)
 				first_sample = i - 1;
 
-			compute_optimized_odometry_pose(x, y, yaw, particle, pso_data, i);
-
 			double dt = pso_data->lines[i].gps_time - pso_data->lines[i - 1].gps_time;
+			compute_optimized_odometry_pose(x, y, yaw, particle, v, pso_data->lines[i].phi, dt,
+																			pso_data->distance_between_front_and_rear_axles);
+
 			ackerman_model(unoptimized_x, unoptimized_y, unoptimized_yaw, pso_data->lines[i].v, pso_data->lines[i].phi, dt,
 										 pso_data->distance_between_front_and_rear_axles);
 
@@ -567,7 +559,9 @@ fitness(double *particle, void *data)
 			if (first_sample == -1)
 				first_sample = i - 1;
 
-			compute_optimized_odometry_pose(x, y, yaw, particle, pso_data, i);
+			double dt = pso_data->lines[i].gps_time - pso_data->lines[i - 1].gps_time;
+			compute_optimized_odometry_pose(x, y, yaw, particle, v, pso_data->lines[i].phi, dt,
+																			pso_data->distance_between_front_and_rear_axles);
 
 			// translate the starting pose of gps to zero to avoid floating point numerical instability
 			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[(uint) first_sample].gps_x;
@@ -590,6 +584,118 @@ fitness(double *particle, void *data)
 
 	// pso only maximizes, so we use as fitness the inverse of the error.
 	return (-error / count);
+}
+
+
+void
+save_poses_in_graphslam_format(ParticleSwarmOptimization &optimizer, PsoData *pso_data, const string &path)
+{
+	if (path.size() <= 0)
+		return;
+
+	double *particle = optimizer.GetBestSolution();
+	FILE *fptr = safe_fopen(path.c_str(), "w");
+
+	double yaw = particle[4];
+
+	double x;
+	double y;
+
+	get_odomentry_pose_given_gps_pose(x, y, yaw, pso_data); // gps comecca na pose zero
+
+	if (use_non_linear_phi)
+		compute_phi_spline(particle[5], particle[6], pso_data->max_steering_angle);
+
+	int first_sample = -1;
+
+	for (uint i = 1; i < pso_data->velodyne_data.size(); i++)
+	{
+		double v = pso_data->velodyne_data[i].v * particle[0] + particle[1];
+
+		if (v > 1.0)
+		{
+			if (first_sample == -1)
+				first_sample = i - 1;
+
+			double dt = pso_data->velodyne_data[i].velodyne_timestamp - pso_data->velodyne_data[i - 1].velodyne_timestamp;
+			compute_optimized_odometry_pose(x, y, yaw, particle, v, pso_data->velodyne_data[i].phi, dt,
+																			pso_data->distance_between_front_and_rear_axles);
+
+			double global_x = x + pso_data->lines[(uint) first_sample].gps_x;
+			double global_y = y + pso_data->lines[(uint) first_sample].gps_y;
+
+			fprintf(fptr, "%lf %lf %lf %lf\n", global_x, global_y, yaw,
+							pso_data->velodyne_data[i].velodyne_timestamp);
+		}
+	}
+
+	fclose(fptr);
+}
+
+
+void
+plot_graph(ParticleSwarmOptimization *optimizer, void *data)
+{
+	static bool first_time = true;
+	double *particle;
+
+	PsoData *pso_data = (PsoData *) data;
+	particle = optimizer->GetBestSolution();
+
+	if (first_time)
+	{
+		first_time = false;
+
+		gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipe, "set size square\n");
+		fprintf(gnuplot_pipe, "set size ratio -1\n");
+//		fprintf(gnuplot_pipe, "set xrange [0:70]\n");
+//		fprintf(gnuplot_pipe, "set yrange [-10:10]\n");
+//		fprintf(gnuplot_pipe, "set xlabel 'senconds'\n");
+//		fprintf(gnuplot_pipe, "set ylabel 'effort'\n");
+	}
+
+	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
+	print_result(particle, gnuplot_data_file, pso_data);
+	fclose(gnuplot_data_file);
+
+	double offset_x = pso_data->lines[0].gps_x;
+	double offset_y = pso_data->lines[0].gps_y;
+
+	save_poses_in_graphslam_format(*optimizer, pso_data, "/tmp/graph_poses.txt");
+
+	fprintf(gnuplot_pipe, "plot "
+			"'./gnuplot_data.txt' u 10:11 w l lt rgb 'blue'  t 'odometry in car coordinates',"
+			"'./gnuplot_data.txt' u 2:3 w l   lt rgb 'green' t 'odometry in gps coordinates',"
+			"'./gnuplot_data.txt' u 4:5 w l   lt rgb 'red'   t 'gps',"
+			"'/tmp/graph_poses.txt' u ($1 - %lf):($2 - %lf) w l lt rgb 'black' t 'odometry in graphslam format'\n",
+			offset_x, offset_y);
+
+	fflush(gnuplot_pipe);
+}
+
+
+void
+print_optimization_report(FILE* f_calibration, FILE* f_report, ParticleSwarmOptimization &optimizer)
+{
+	fprintf(f_calibration,
+			"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf,  k1: %lf,  k2: %lf\n",
+			optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
+			optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
+			optimizer.GetBestSolution()[4], optimizer.GetBestSolution()[5],
+			optimizer.GetBestSolution()[6]);
+
+	fprintf(stderr,
+			"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf,  k1: %lf,  k2: %lf\n",
+			optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
+			optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
+			optimizer.GetBestSolution()[4], optimizer.GetBestSolution()[5],
+			optimizer.GetBestSolution()[6]);
+
+	fprintf(f_report, "Fitness (MSE): %lf\n", optimizer.GetBestFitness());
+	fprintf(f_report, "Fitness (SQRT(MSE)): %lf\n", sqrt(fabs(optimizer.GetBestFitness())));
+	fprintf(stderr, "Fitness (MSE): %lf\n", optimizer.GetBestFitness());
+	fprintf(stderr, "Fitness (SQRT(MSE)): %lf\n", sqrt(fabs(optimizer.GetBestFitness())));
 }
 
 
@@ -653,70 +759,13 @@ set_limits(int dim)
 
 
 void
-plot_graph(ParticleSwarmOptimization *optimizer, void *data)
-{
-	static bool first_time = true;
-	double *particle;
-
-	PsoData *pso_data = (PsoData *) data;
-	particle = optimizer->GetBestSolution();
-
-	if (first_time)
-	{
-		first_time = false;
-
-		gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
-		fprintf(gnuplot_pipe, "set size square\n");
-		fprintf(gnuplot_pipe, "set size ratio -1\n");
-//		fprintf(gnuplot_pipe, "set xrange [0:70]\n");
-//		fprintf(gnuplot_pipe, "set yrange [-10:10]\n");
-//		fprintf(gnuplot_pipe, "set xlabel 'senconds'\n");
-//		fprintf(gnuplot_pipe, "set ylabel 'effort'\n");
-	}
-
-	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
-	print_result(particle, gnuplot_data_file, pso_data);
-	fclose(gnuplot_data_file);
-	fprintf(gnuplot_pipe, "plot "
-			"'./gnuplot_data.txt' u 10:11 w l lt rgb 'blue'  t 'odometry in car coordinates',"
-			"'./gnuplot_data.txt' u 2:3 w l   lt rgb 'green' t 'odometry in gps coordinates',"
-			"'./gnuplot_data.txt' u 4:5 w l   lt rgb 'red'   t 'gps'\n");
-
-	fflush(gnuplot_pipe);
-}
-
-
-void
-print_optimization_report(FILE* f_calibration, FILE* f_report, ParticleSwarmOptimization &optimizer)
-{
-	fprintf(f_calibration,
-			"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf,  k1: %lf,  k2: %lf\n",
-			optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
-			optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
-			optimizer.GetBestSolution()[4], optimizer.GetBestSolution()[5],
-			optimizer.GetBestSolution()[6]);
-
-	fprintf(stderr,
-			"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf,  k1: %lf,  k2: %lf\n",
-			optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
-			optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
-			optimizer.GetBestSolution()[4], optimizer.GetBestSolution()[5],
-			optimizer.GetBestSolution()[6]);
-
-	fprintf(f_report, "Fitness (MSE): %lf\n", optimizer.GetBestFitness());
-	fprintf(f_report, "Fitness (SQRT(MSE)): %lf\n", sqrt(fabs(optimizer.GetBestFitness())));
-	fprintf(stderr, "Fitness (MSE): %lf\n", optimizer.GetBestFitness());
-	fprintf(stderr, "Fitness (SQRT(MSE)): %lf\n", sqrt(fabs(optimizer.GetBestFitness())));
-}
-
-
-void
 declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 {
 	args->add_positional<string>("log_path", "Path to a log");
 	args->add_positional<string>("carmen_ini", "Path to a file containing system parameters");
 	args->add_positional<string>("output_calibration", "Path to an output calibration file");
 	args->add_positional<string>("output_poses", "Path to a file in which poses will be saved for debug");
+	args->add<string>("graph_poses", "Path to a file in which the dead-reck. with calibrated odometry will be saved in graphslam format.", "");
 	args->add<int>("gps_to_use", "Id of the gps that will be used for the calibration", 1);
 	args->add<int>("board_to_use", "Id of the sensor board that will be used for the calibration", 1);
 	args->add<int>("use_non_linear_phi", "0 - linear phi; 1 - use a spline to map phi to a new phi", 0);
@@ -761,6 +810,7 @@ main(int argc, char **argv)
 	declare_and_parse_args(argc, argv, &args);
 	CarmenParamFile *carmen_ini_params = new CarmenParamFile(args.get<string>("carmen_ini").c_str());
 	PsoData pso_data;
+
 	initialize_parameters(pso_data, args, carmen_ini_params);
 
 	read_data(args.get<string>("log_path").c_str(), gps_to_use,
@@ -782,7 +832,9 @@ main(int argc, char **argv)
 
 	print_optimization_report(f_calibration, f_report, optimizer);
 	print_result(optimizer.GetBestSolution(), f_report, &pso_data);
+	save_poses_in_graphslam_format(optimizer, &pso_data, args.get<string>("graph_poses"));
 	plot_graph(&optimizer, (void *) &pso_data);
+
 	if (use_non_linear_phi)
 		print_phi_spline(phi_spline, acc, pso_data.max_steering_angle, true);
 
@@ -796,6 +848,5 @@ main(int argc, char **argv)
 	getchar();
 
 	fclose(gnuplot_pipe);
-
 	return (0);
 }
