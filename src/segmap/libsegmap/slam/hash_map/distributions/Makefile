@@ -11,7 +11,7 @@ CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-comp
 IFLAGS += -std=c++11
 
 SOURCES = segmap_bernoulli.cpp segmap_categorical.cpp segmap_gaussian.cpp
-PUBLIC_INCLUDES = segmap_distribution_interface.h segmap_bernoulli.h segmap_categorical.h segmap_gaussian.h 
+PUBLIC_INCLUDES = segmap_distribution_interface.h segmap_bernoulli.h segmap_categorical.h segmap_gaussian.h
 PUBLIC_LIBRARIES = libsegmap_distributions.a 
 PUBLIC_BINARIES = 
 TARGETS = libsegmap_distributions.a 

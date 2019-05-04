@@ -1,18 +1,20 @@
 
-#ifndef __SEGMAP_REFLECTIVITY_CELL_H__
-#define __SEGMAP_REFLECTIVITY_CELL_H__
+#ifndef __SEGMAP_COLOR_CELL_H__
+#define __SEGMAP_COLOR_CELL_H__
 
 #include <cstdio>
 #include <opencv/cv.h>
 #include <pcl/point_types.h>
-#include <carmen/segmap_gaussian.h>
+#include <carmen/segmap_grayscale_cell.h>
 #include <carmen/segmap_cell_interface.h>
 
 
-class ReflectivityCell : public CellInterface
+class ColorCell : public CellInterface
 {
 public:
-	Gaussian statistics;
+	GrayscaleCell red_cell;
+	GrayscaleCell green_cell;
+	GrayscaleCell blue_cell;
 
 	virtual void add(const pcl::PointXYZRGB &point);
 	virtual double log_likelihood(const pcl::PointXYZRGB &point);
@@ -20,7 +22,6 @@ public:
 	virtual void write(FILE *fptr);
 	virtual void read(FILE *fptr);
 };
-
 
 
 #endif

@@ -1,24 +1,24 @@
 
 #include <carmen/segmap_cell_interface.h>
-#include <carmen/segmap_reflectivity_cell.h>
+#include "segmap_grayscale_cell.h"
 
 
 void
-ReflectivityCell::add(const pcl::PointXYZRGB &point)
+GrayscaleCell::add(const pcl::PointXYZRGB &point)
 {
 	statistics.update(point.r);
 }
 
 
 double
-ReflectivityCell::log_likelihood(const pcl::PointXYZRGB &point)
+GrayscaleCell::log_likelihood(const pcl::PointXYZRGB &point)
 {
 	return statistics.log_likelihood(point.r);
 }
 
 
 cv::Scalar
-ReflectivityCell::get_color()
+GrayscaleCell::get_color()
 {
 	unsigned char color = (unsigned char) statistics.mean;
 	return cv::Scalar(color, color, color);
@@ -26,7 +26,7 @@ ReflectivityCell::get_color()
 
 
 void
-ReflectivityCell::write(FILE *fptr)
+GrayscaleCell::write(FILE *fptr)
 {
 	fwrite(&statistics.mean, sizeof(statistics.mean), 1, fptr);
 	fwrite(&statistics.std, sizeof(statistics.std), 1, fptr);
@@ -36,7 +36,7 @@ ReflectivityCell::write(FILE *fptr)
 
 
 void
-ReflectivityCell::read(FILE *fptr)
+GrayscaleCell::read(FILE *fptr)
 {
 	fread(&statistics.mean, sizeof(statistics.mean), 1, fptr);
 	fread(&statistics.std, sizeof(statistics.std), 1, fptr);

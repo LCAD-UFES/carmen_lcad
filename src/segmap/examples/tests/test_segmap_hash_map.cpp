@@ -7,11 +7,13 @@
 #include <carmen/command_line.h>
 #include <carmen/segmap_constructors.h>
 #include <carmen/segmap_hash_map.h>
-#include <carmen/segmap_reflectivity_cell.h>
 #include <carmen/segmap_sensor_viewer.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <opencv/cv.h>
+
+#include <carmen/segmap_grayscale_cell.h>
+#include <carmen/segmap_color_cell.h>
 
 using namespace std;
 using namespace pcl;
@@ -62,9 +64,9 @@ main(int argc, char **argv)
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloudViewer viewer;
 
-	HashGridMap<ReflectivityCell> map(200, 200, 0.2,
-																		dataset->at(0)->pose.y - 100.0,
-																		dataset->at(0)->pose.x - 100.0);
+	HashGridMap<ColorCell> map(200, 200, 0.2,
+														 dataset->at(0)->pose.y - 100.0,
+														 dataset->at(0)->pose.x - 100.0);
 
 	viewer.set_step(1);
 
@@ -88,19 +90,6 @@ main(int argc, char **argv)
 		//viewer.show(cloud);
 		viewer.loop();
 	}
-
-	/*
-	pcl::PointXYZRGB point;
-
-	for (int i = 0; i < 100; i++)
-	{
-		point.r = rand() % 255;
-		point.g = rand() % 255;
-		point.b = rand() % 255;
-
-		map.add(point);
-	}
-	*/
 
 	printf("Done.\n");
 	return 0;
