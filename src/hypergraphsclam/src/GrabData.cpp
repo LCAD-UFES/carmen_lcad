@@ -943,7 +943,7 @@ void GrabData::BuildLidarMeasuresMT()
 
                 if (0 == counter % percent)
                 {
-                    std::cout << "=" << std::flush;
+                    std::cout << counter / percent << "%\n" << std::flush;
                 }
             }
 
