@@ -15,6 +15,11 @@ Como modificar dinamicamente os parâmetros de carmen-ford-escape.ini (sem parar
       };
    Cada elemento deste vetor corresponde a um parâmetro que será lido de carmen-ford-escape.ini. 
    Juntando-se o conteúdo das duas primeiras colunas, temos o nome do parâmetro (p.ex.: "mapper_velodyne_locc").
+   NOTA: O nome do módulo que aparece na primeira coluna não pode conter sublinhado (_). Se contiver, transfira o restante do nome para a segunda coluna.
+         Por exemplo, em vez de:
+         {(char *) "behavior_selector", (char *) "change_goal_distance", CARMEN_PARAM_DOUBLE, &change_goal_distance, 0, NULL},
+	 Utilize:
+         {(char *) "behavior", (char *) "selector_change_goal_distance", CARMEN_PARAM_DOUBLE, &change_goal_distance, 0, NULL},
    A terceira coluna indica o tipo de valor que será lido: INT (inteiro), DOUBLE (ponto flutuante), ONOFF (1 ou 0 inteiro), STR (caracteres), FILE ou DIR.
    A quarta coluna indica o ponteiro da variável que receberá o valor lido. Preferencialmente deve-se utilizar variável global.
    A quinta coluna indica se a variável será modificada dinamicamente no programa. Coloque valor 1 caso queira habilitar isto.
@@ -30,6 +35,7 @@ Como modificar dinamicamente os parâmetros de carmen-ford-escape.ini (sem parar
 2. Com o IPC central e o módulo "param_daemon" em execução, para modificar dinamicamente os parâmetros de carmen-ford-escape.ini, execute o programa "param_edit".
    Este programa abre uma janela com o título "Param Editor".
    No quadro à esquerda da janela, selecione o módulo desejado.
+   NOTA: Se não aparecer nada no quadro à direita da janela, clique no menu superior "View > Expert Params"
    No quadro à direita da janela, selecione o parâmetro desejado e modifique o seu valor, seguido pela tecla "Enter".
    Aparecerá a mensagem no rodapé da janela: "Saving parameters... done".
    *Bug Alert*: O comando "Ctrl+S" (File > Save ini) não está salvando todos os parâmetros em arquivo.
