@@ -13,12 +13,13 @@ IFLAGS += -std=c++11
 IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ \
 	-I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
 	
-SOURCES = segmap_occupancy_cell.cpp segmap_grayscale_cell.cpp segmap_color_cell.cpp
-PUBLIC_INCLUDES = segmap_cell_interface.h segmap_occupancy_cell.h segmap_grayscale_cell.h segmap_color_cell.h
+SOURCES = segmap_occupancy_cell.cpp segmap_grayscale_cell.cpp segmap_color_cell.cpp segmap_height_cell.cpp
+PUBLIC_INCLUDES = segmap_cell_interface.h segmap_occupancy_cell.h segmap_grayscale_cell.h segmap_color_cell.h \
+	segmap_height_cell.h
 PUBLIC_LIBRARIES = libsegmap_cells.a
 PUBLIC_BINARIES = 
 TARGETS = libsegmap_cells.a 
 
-libsegmap_cells.a: segmap_occupancy_cell.o segmap_grayscale_cell.o segmap_color_cell.o 
+libsegmap_cells.a: segmap_occupancy_cell.o segmap_grayscale_cell.o segmap_color_cell.o segmap_height_cell.o 
 
 include $(CARMEN_HOME)/src/Makefile.rules

@@ -9,6 +9,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <carmen/segmap_colormaps.h>
+#include <carmen/util_io.h>
 
 /*
 
@@ -106,6 +107,8 @@ public:
 	void add(const pcl::PointXYZRGB &point);
 	void add(const std::vector<pcl::PointXYZRGB> &points);
 	void add(pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud);
+	void save(const char *path);
+	void load(const char *path);
 };
 
 
@@ -180,6 +183,80 @@ HashGridMap<CellType>::add(pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud)
 {
 	for (int i = 0; i < point_cloud->size(); i++)
 		add(point_cloud->at(i));
+}
+
+
+template<class CellType> void
+HashGridMap<CellType>::save(const char *path)
+{
+	FILE *fptr = safe_fopen(path, "wb");
+
+	int id;
+	long n;
+
+	n = _cells.size();
+	fwrite(&n, sizeof(n), 1, fptr);
+
+	typename std::map<int, std::map<int, CellType>>::iterator col_it;
+	typename std::map<int, CellType>::iterator cell_it;
+
+	for (col_it = _cells.begin(); col_it != _cells.end(); col_it++)
+	{
+		id = col_it->first;
+		fwrite(&id, sizeof(id), 1, fptr);
+
+		n = col_it->second.size();
+		fwrite(&n, sizeof(n), 1, fptr);
+
+		for (cell_it = col_it->second.begin(); cell_it != col_it->second.end(); cell_it++)
+		{
+			id = cell_it->first;
+			fwrite(&id, sizeof(id), 1, fptr);
+
+			cell_it->second.write(fptr);
+		}
+	}
+
+	fclose(fptr);
+}
+
+
+template<class CellType> void
+HashGridMap<CellType>::load(const char *path)
+{
+	FILE *fptr = fopen(path, "rb");
+
+	if (fptr == NULL)
+	{
+		fprintf(stderr, "Warning: Unable to load map '%s'\n", path);
+		return;
+	}
+
+	int id;
+	long n, k;
+
+	fread(&n, sizeof(n), 1, fptr);
+
+	typename std::map<int, std::map<int, CellType>>::iterator col_it;
+	typename std::map<int, CellType>::iterator cell_it;
+
+	for (int i = 0; i < n; i++)
+	{
+		fread(&id, sizeof(id), 1, fptr);
+
+		col_it = _cells.insert(std::pair<int, std::map<int, CellType>>(id, std::map<int, CellType>())).first;
+
+		fread(&k, sizeof(k), 1, fptr);
+
+		for (int j = 0; j < k; j++)
+		{
+			fread(&id, sizeof(id), 1, fptr);
+			cell_it = col_it->second.insert(std::pair<int, CellType>(id, CellType())).first;
+			cell_it->second.read(fptr);
+		}
+	}
+
+	fclose(fptr);
 }
 
 
