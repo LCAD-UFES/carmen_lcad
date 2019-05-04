@@ -54,21 +54,46 @@ public:
 
 typedef struct
 {
+	double timestamp;
+	double v;
+	double phi;
+} VelodyneData;
+
+
+typedef struct
+{
 	vector<Line> lines;
+	vector<VelodyneData> velodyne_data;
 	double distance_between_front_and_rear_axles;
 	double max_steering_angle;
 	Transformer *tf_transformer;
 	string sensor_board_name;
 	string gps_name;
-}PsoData;
+} PsoData;
 
 
 carmen_robot_ackerman_velocity_message
 read_odometry(FILE *f)
 {
 	carmen_robot_ackerman_velocity_message m;
+
 	fscanf(f, "%lf %lf %lf", &m.v, &m.phi, &m.timestamp);
-	return m;
+
+	return (m);
+}
+
+
+VelodyneData
+read_velodyne_data(FILE *f)
+{
+	VelodyneData velodyne_data;
+	char scan_file_name[2048];
+	int num_shots;
+
+	memset(&velodyne_data, 0, sizeof(velodyne_data));
+	fscanf(f, "%s %d %lf", scan_file_name, &num_shots, &(velodyne_data.timestamp));
+
+	return (velodyne_data);
 }
 
 
@@ -137,12 +162,23 @@ process_gps(carmen_gps_xyz_message &m, vector<carmen_robot_ackerman_velocity_mes
 	if (odoms.size() == 0 || m.timestamp == 0)
 		return;
 
-	int near = 0;
-	for (size_t i = 0; i < odoms.size(); i++)
+	size_t i = odoms.size() - 1;
+	size_t near = i;
+	double smaler_time_distance = m.timestamp;
+	do
 	{
-		if (fabs(m.timestamp - odoms[i].timestamp) < fabs(m.timestamp - odoms[near].timestamp))
+		double time_distance = fabs(m.timestamp - odoms[i].timestamp);
+		if (time_distance < smaler_time_distance)
+		{
 			near = i;
-	}
+			smaler_time_distance = time_distance;
+		}
+
+		if (time_distance > 5.0)
+			break;
+
+		i--;
+	} while (i != 0);
 
 	Line l;
 
@@ -154,11 +190,40 @@ process_gps(carmen_gps_xyz_message &m, vector<carmen_robot_ackerman_velocity_mes
 	l.gps_yaw = 0.;
 	l.gps_time = m.timestamp;
 
-	// DEBUG:
-	//printf("%lf %lf %lf %lf %lf %lf\n", l.v, l.phi, l.time, l.gps_x, l.gps_y, l.gps_time);
-
 	pso_data->lines.push_back(l);
-	odoms.clear();
+}
+
+
+void
+process_velodyne_data(PsoData *pso_data, vector<carmen_robot_ackerman_velocity_message> &odoms, VelodyneData velodyne_data)
+{
+	if (odoms.size() == 0 || velodyne_data.timestamp == 0)
+		return;
+
+	size_t i = odoms.size() - 1;
+	size_t near = i;
+	double smaler_time_distance = velodyne_data.timestamp;
+	do
+	{
+		double time_distance = fabs(velodyne_data.timestamp - odoms[i].timestamp);
+		if (time_distance < smaler_time_distance)
+		{
+			near = i;
+			smaler_time_distance = time_distance;
+		}
+
+		if (time_distance > 5.0)
+			break;
+
+		i--;
+	} while (i != 0);
+
+	VelodyneData vd;
+
+	vd.v = odoms[near].v;
+	vd.phi = odoms[near].phi;
+
+	pso_data->velodyne_data.push_back(vd);
 }
 
 
@@ -207,6 +272,11 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 		{
 			carmen_robot_ackerman_velocity_message m = read_odometry(f);
 			odoms.push_back(m);
+		}
+		else if (!strcmp(tag, "VELODYNE_PARTIAL_SCAN_IN_FILE"))
+		{
+			VelodyneData velodyne_data = read_velodyne_data(f);
+			process_velodyne_data(pso_data, odoms, velodyne_data);
 		}
 		else
 			fscanf(f, "%[^\n]\n", line);
@@ -402,7 +472,7 @@ get_gps_pose_given_odomentry_pose(double &gps_x, double &gps_y, double x, double
 
 
 void
-get_odomentry_pose_given_gps_pose(double &x, double &y, double gps_x, double gps_y, double yaw, PsoData *pso_data)
+get_odomentry_pose_given_gps_pose(double &x, double &y, /* double gps_x, double gps_y, */ double yaw, PsoData *pso_data)
 {
 //	tf::Transform world_to_gps;
 //	world_to_gps.setOrigin(Vector3(gps_x, gps_y, 0.0));
@@ -425,7 +495,7 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data)
 	double yaw = particle[4];
 	double x;
 	double y;
-	get_odomentry_pose_given_gps_pose(x, y, 0.0, 0.0, yaw, pso_data); // gps comecca na pose zero
+	get_odomentry_pose_given_gps_pose(x, y, yaw, pso_data); // gps comecca na pose zero
 
 	double unoptimized_yaw = yaw;
 	//yaw = yaw_withoutbias = estimate_theta(pso_data, 0);
@@ -480,7 +550,7 @@ fitness(double *particle, void *data)
 	double yaw = particle[4];
 	double x;
 	double y;
-	get_odomentry_pose_given_gps_pose(x, y, 0.0, 0.0, yaw, pso_data); // gps comecca na pose zero
+	get_odomentry_pose_given_gps_pose(x, y, yaw, pso_data); // gps comecca na pose zero
 	
 	if (use_non_linear_phi)
 		compute_phi_spline(particle[5], particle[6], pso_data->max_steering_angle);
@@ -587,9 +657,8 @@ plot_graph(ParticleSwarmOptimization *optimizer, void *data)
 {
 	static bool first_time = true;
 	double *particle;
-	PsoData *pso_data;
 
-	pso_data = (PsoData *) data;
+	PsoData *pso_data = (PsoData *) data;
 	particle = optimizer->GetBestSolution();
 
 	if (first_time)
@@ -713,6 +782,7 @@ main(int argc, char **argv)
 
 	print_optimization_report(f_calibration, f_report, optimizer);
 	print_result(optimizer.GetBestSolution(), f_report, &pso_data);
+	plot_graph(&optimizer, (void *) &pso_data);
 	if (use_non_linear_phi)
 		print_phi_spline(phi_spline, acc, pso_data.max_steering_angle, true);
 
