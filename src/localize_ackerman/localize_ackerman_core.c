@@ -1052,15 +1052,16 @@ compute_particles_weights_with_outlier_rejection(carmen_localize_ackerman_map_t 
 {
 	double map_center_x = (double) local_map->config.x_size * 0.5;
 	double map_center_y = (double) local_map->config.y_size * 0.5;
-	double small_log_odds;
+	double small_log_weight;
 
 	if (filter->param->use_log_odds)
-		small_log_odds = log(filter->param->tracking_beam_minlikelihood / (1.0 - filter->param->tracking_beam_minlikelihood));
+		small_log_weight = log(filter->param->tracking_beam_minlikelihood / (1.0 - filter->param->tracking_beam_minlikelihood));
 	else
-		small_log_odds = log(filter->param->tracking_beam_minlikelihood);
+		small_log_weight = log(filter->param->tracking_beam_minlikelihood);
 
 	int *count = NULL;
 	int num_readings = local_map->number_of_known_points_on_the_map;
+
 	if (num_readings > 0)
 		count = (int *) calloc(num_readings, sizeof(int));
 
@@ -1097,9 +1098,9 @@ compute_particles_weights_with_outlier_rejection(carmen_localize_ackerman_map_t 
 			if (global_cell.x >= 0 && global_cell.y >= 0 && global_cell.x < localize_map->config.x_size && global_cell.y < localize_map->config.y_size)
 				filter->temp_weights[i][laser_reading] = localize_map->prob[global_cell.x][global_cell.y];
 			else
-				filter->temp_weights[i][laser_reading] = small_log_odds;
+				filter->temp_weights[i][laser_reading] = small_log_weight;
 
-			if (filter->temp_weights[i][laser_reading] <= small_log_odds) // Provavelmente bateu no vazio
+			if (filter->temp_weights[i][laser_reading] <= small_log_weight) // Provavelmente bateu no vazio
 				count[laser_reading] += 1;
 
 //			virtual_laser_message.positions[laser_reading].x = global_cell.x * localize_map->config.resolution + localize_map->config.x_origin;
@@ -1741,13 +1742,14 @@ mahalanobis_distance_with_outlier_rejection(carmen_localize_ackerman_map_t *loca
 {
 	double map_center_x = (double) local_map->config.x_size * 0.5;
 	double map_center_y = (double) local_map->config.y_size * 0.5;
-	double small_log_odds;
+	double small_log_weight;
 
 	int use_log_odds = filter->param->use_log_odds;
+
 	if (use_log_odds)
-		small_log_odds = log(filter->param->tracking_beam_minlikelihood / (1.0 - filter->param->tracking_beam_minlikelihood));
+		small_log_weight = log(filter->param->tracking_beam_minlikelihood / (1.0 - filter->param->tracking_beam_minlikelihood));
 	else
-		small_log_odds = log(filter->param->tracking_beam_minlikelihood);
+		small_log_weight = log(filter->param->tracking_beam_minlikelihood);
 
 	int *count = NULL;
 	int num_readings = local_map->number_of_known_points_on_the_map;
@@ -1791,7 +1793,7 @@ mahalanobis_distance_with_outlier_rejection(carmen_localize_ackerman_map_t *loca
 
 				if ((mean_map_val <= 0.0) || (cell_val == 0.0))
 				{
-					temp_weights[i][laser_reading] = small_log_odds;
+					temp_weights[i][laser_reading] = small_log_weight;
 				}
 				else
 				{
@@ -1799,17 +1801,20 @@ mahalanobis_distance_with_outlier_rejection(carmen_localize_ackerman_map_t *loca
 					if (use_log_odds)
 					{
 						double p = (1.0 / sqrt(2.0 * M_PI * variance)) * exp(-exponent);
-						temp_weights[i][laser_reading] = log(p / (1.0 - p)); // nao esta funcionando pois p fica maior que 1.0 devido ao denominador acima
+
+						// nao esta funcionando pois p fica maior que 1.0 devido ao denominador acima
+						// pq o p fica maior que 1?
+						temp_weights[i][laser_reading] = log(p / (1.0 - p));
 					}
 					else
 						temp_weights[i][laser_reading] = -(exponent);// + 0.5 * log(2.0 * M_PI * variance)); // log da probabilidade: https://www.wolframalpha.com/input/?i=log((1%2Fsqr(2*p*v))*exp(-((x-m)%5E2)%2F(2*v))
 				}
-				if (temp_weights[i][laser_reading] <= small_log_odds)
+				if (temp_weights[i][laser_reading] <= small_log_weight)
 					count[laser_reading] += 1;
 			}
 			else
 			{
-				temp_weights[i][laser_reading] = small_log_odds;
+				temp_weights[i][laser_reading] = small_log_weight;
 				count[laser_reading] += 1;
 			}
 		}

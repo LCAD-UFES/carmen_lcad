@@ -605,6 +605,7 @@ carmen_prob_models_get_maximum_probability_of_cells_hit_by_rays(carmen_map_t *ma
 			if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y))
 			{
 				probability_from_log_odds = carmen_prob_models_log_odds_to_probabilistic(sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]);
+
 				if (map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] < probability_from_log_odds)
 					map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = probability_from_log_odds;
 			}
