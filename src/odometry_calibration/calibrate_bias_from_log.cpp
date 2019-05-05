@@ -26,6 +26,7 @@ using namespace tf;
 
 #define MAX_LINE_LENGTH (5 * 4000000)
 #define NUM_PHI_SPLINE_KNOTS 3
+#define MIN_VELOCITY 0.5
 
 int gps_to_use;
 int board_to_use;
@@ -508,7 +509,7 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data, int *id_first_
 	{
 		double v = pso_data->lines[i - 1].v * particle[0] + particle[1];
 
-		if (fabs(v) > 1.0)
+		if (fabs(v) > MIN_VELOCITY)
 		{
 			double gps_x;
 			double gps_y;
@@ -579,7 +580,7 @@ fitness(double *particle, void *data)
 	for (uint i = 1; i < pso_data->lines.size(); i++)
 	{
 		double v = pso_data->lines[i - 1].v * particle[0] + particle[1];
-		if (fabs(v) > 1.0)
+		if (fabs(v) > MIN_VELOCITY)
 		{
 			if (first_sample == -1)
 				first_sample = i - 1;
@@ -648,7 +649,7 @@ save_poses_in_graphslam_format(ParticleSwarmOptimization &optimizer, PsoData *ps
 	{
 		double v = pso_data->lines[i - 1].v * particle[0] + particle[1];
 
-		if (fabs(v) > 1.0)
+		if (fabs(v) > MIN_VELOCITY)
 		{
 			double global_x;
 			double global_y;
@@ -728,19 +729,36 @@ plot_graph(ParticleSwarmOptimization *optimizer, void *data)
 void
 print_optimization_report(FILE* f_calibration, FILE* f_report, ParticleSwarmOptimization &optimizer)
 {
-	fprintf(f_calibration,
-			"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf,  k1: %lf,  k2: %lf\n",
-			optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
-			optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
-			optimizer.GetBestSolution()[4], optimizer.GetBestSolution()[5],
-			optimizer.GetBestSolution()[6]);
+	if (use_non_linear_phi)
+	{
+		fprintf(f_calibration,
+				"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf,  k1: %lf,  k2: %lf\n",
+				optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
+				optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
+				optimizer.GetBestSolution()[4], optimizer.GetBestSolution()[5],
+				optimizer.GetBestSolution()[6]);
 
-	fprintf(stderr,
-			"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf,  k1: %lf,  k2: %lf\n",
-			optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
-			optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
-			optimizer.GetBestSolution()[4], optimizer.GetBestSolution()[5],
-			optimizer.GetBestSolution()[6]);
+		fprintf(stderr,
+				"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf,  k1: %lf,  k2: %lf\n",
+				optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
+				optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
+				optimizer.GetBestSolution()[4], optimizer.GetBestSolution()[5],
+				optimizer.GetBestSolution()[6]);
+	}
+	else
+	{
+		fprintf(f_calibration,
+				"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf\n",
+				optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
+				optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
+				optimizer.GetBestSolution()[4]);
+
+		fprintf(stderr,
+				"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf\n",
+				optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
+				optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
+				optimizer.GetBestSolution()[4]);
+	}
 
 	fprintf(f_report, "Fitness (MSE): %lf\n", optimizer.GetBestFitness());
 	fprintf(f_report, "Fitness (SQRT(MSE)): %lf\n", sqrt(fabs(optimizer.GetBestFitness())));
@@ -829,12 +847,12 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 
 
 void
-initialize_parameters(PsoData &pso_data, CommandLineArguments args, CarmenParamFile *carmen_ini_params)
+initialize_parameters(PsoData &pso_data, CommandLineArguments *args, CarmenParamFile *carmen_ini_params)
 {
-	gps_to_use = args.get<int>("gps_to_use");
-	board_to_use = args.get<int>("board_to_use");
+	gps_to_use = args->get<int>("gps_to_use");
+	board_to_use = args->get<int>("board_to_use");
 
-	use_non_linear_phi = args.get<int>("use_non_linear_phi");
+	use_non_linear_phi = args->get<int>("use_non_linear_phi");
 	if (use_non_linear_phi)
 		n_params = 7;
 	else
@@ -861,7 +879,7 @@ main(int argc, char **argv)
 	CarmenParamFile *carmen_ini_params = new CarmenParamFile(args.get<string>("carmen_ini").c_str());
 	PsoData pso_data;
 
-	initialize_parameters(pso_data, args, carmen_ini_params);
+	initialize_parameters(pso_data, &args, carmen_ini_params);
 
 	read_data(args.get<string>("log_path").c_str(), gps_to_use,
 						args.get<int>("initial_log_line"),
@@ -873,6 +891,15 @@ main(int argc, char **argv)
 
 	srand(time(NULL));
 	srand(rand()); // ??
+
+//	double x = 0.0;
+//	double y = 0.0;
+//	double yaw = 0.0;
+//	get_odomentry_pose_given_gps_pose(x, y, yaw, &pso_data); // gps comecca na pose zero
+//	double odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y;
+//	get_gps_pose_given_odomentry_pose(odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y, x, y, yaw, &pso_data);
+//	printf("x = %lf, y = %lf, g_x = %lf, g_y = %lf\n", x, y, odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y);
+//	getchar();
 
 	ParticleSwarmOptimization optimizer(fitness, limits, n_params, &pso_data,
 																			args.get<int>("n_particles"),
