@@ -49,6 +49,9 @@ public:
 	double gps_y;
 	double gps_yaw;
 	double gps_time;
+	double opt_odom_x;
+	double opt_odom_y;
+	double opt_odom_yaw;
 };
 
 
@@ -409,7 +412,7 @@ compute_phi_spline(double particle_a, double particle_b, double max_steering_ang
 }
 
 
-double
+void
 compute_optimized_odometry_pose(double &x, double &y, double &yaw, double *particle,
 																double optimized_v, double raw_phi, double dt, double L)
 {
@@ -427,8 +430,6 @@ compute_optimized_odometry_pose(double &x, double &y, double &yaw, double *parti
 	phi = phi * particle[2];
 
 	ackerman_model(x, y, yaw, optimized_v, phi, dt, L);
-
-	return (optimized_v);
 }
 
 
@@ -481,8 +482,7 @@ get_odomentry_pose_given_gps_pose(double &x, double &y, /* double gps_x, double 
 
 
 void
-print_result(double *particle, FILE *f_report, PsoData *pso_data,
-						 int *id_first_pose)
+print_result(double *particle, FILE *f_report, PsoData *pso_data, int *id_first_pose)
 {
 	double yaw = particle[4];
 	double x;
@@ -506,28 +506,49 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data,
 
 	for (uint i = 1; i < pso_data->lines.size(); i++)
 	{
-		double v = pso_data->lines[i].v * particle[0] + particle[1];
+		double v = pso_data->lines[i - 1].v * particle[0] + particle[1];
 
 		if (fabs(v) > 1.0)
 		{
+			double gps_x;
+			double gps_y;
+			double dt_gps_and_odom;
+			double odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y;
 			if (first_sample == -1)
+			{
 				first_sample = i - 1;
+				gps_x = 0.0;
+				gps_y = 0.0;
+
+				get_gps_pose_given_odomentry_pose(odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y, x, y, yaw, pso_data);
+				pso_data->lines[first_sample].opt_odom_x = x;
+				pso_data->lines[first_sample].opt_odom_y = y;
+				pso_data->lines[first_sample].opt_odom_yaw = yaw;
+
+				dt_gps_and_odom = fabs(pso_data->lines[first_sample].time - pso_data->lines[first_sample].gps_time);
+				dt_gps_and_odom_acc += dt_gps_and_odom;
+
+				fprintf(f_report, "DATA %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+						odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y, gps_x, gps_y, unoptimized_x, unoptimized_y, dt_gps_and_odom, dt_gps_and_odom_acc, x, y);
+			}
 
 			double dt = pso_data->lines[i].gps_time - pso_data->lines[i - 1].gps_time;
 			compute_optimized_odometry_pose(x, y, yaw, particle, v, pso_data->lines[i].phi, dt,
 																			pso_data->distance_between_front_and_rear_axles);
+			pso_data->lines[i].opt_odom_x = x;
+			pso_data->lines[i].opt_odom_y = y;
+			pso_data->lines[i].opt_odom_yaw = yaw;
+
+			gps_x = pso_data->lines[i].gps_x - pso_data->lines[first_sample].gps_x;
+			gps_y = pso_data->lines[i].gps_y - pso_data->lines[first_sample].gps_y;
+
+			get_gps_pose_given_odomentry_pose(odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y, x, y, yaw, pso_data);
+
+			dt_gps_and_odom = fabs(pso_data->lines[i].time - pso_data->lines[i].gps_time);
+			dt_gps_and_odom_acc += dt_gps_and_odom;
 
 			ackerman_model(unoptimized_x, unoptimized_y, unoptimized_yaw, pso_data->lines[i].v, pso_data->lines[i].phi, dt,
 										 pso_data->distance_between_front_and_rear_axles);
-
-			double gps_x = pso_data->lines[i].gps_x - pso_data->lines[first_sample].gps_x;
-			double gps_y = pso_data->lines[i].gps_y - pso_data->lines[first_sample].gps_y;
-
-			double odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y;
-			get_gps_pose_given_odomentry_pose(odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y, x, y, yaw, pso_data);
-
-			double dt_gps_and_odom = fabs(pso_data->lines[i].time - pso_data->lines[i].gps_time);
-			dt_gps_and_odom_acc += dt_gps_and_odom;
 
 			fprintf(f_report, "DATA %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
 					odometry_in_gps_coordinates_x, odometry_in_gps_coordinates_y, gps_x, gps_y, unoptimized_x, unoptimized_y, dt_gps_and_odom, dt_gps_and_odom_acc, x, y);
@@ -555,11 +576,9 @@ fitness(double *particle, void *data)
 	double count = 0;
 
 	int first_sample = -1;
-
 	for (uint i = 1; i < pso_data->lines.size(); i++)
 	{
-		double v = pso_data->lines[i].v * particle[0] + particle[1];
-
+		double v = pso_data->lines[i - 1].v * particle[0] + particle[1];
 		if (fabs(v) > 1.0)
 		{
 			if (first_sample == -1)
@@ -596,23 +615,14 @@ fitness(double *particle, void *data)
 size_t
 find_nearest_time_to_gps(PsoData *pso_data, int id_gps)
 {
-	double gps_time = pso_data->lines[id_gps].gps_time;
-	size_t near = 0;
-	double smallest_dt = DBL_MAX;
+	size_t i = 0;
 
-	for (size_t i = 0; i < pso_data->velodyne_data.size(); i++)
-	{
-		double dt = fabs(pso_data->velodyne_data[i].velodyne_timestamp - gps_time);
+	while (pso_data->velodyne_data[i].velodyne_timestamp < pso_data->lines[id_gps].gps_time)
+		i++;
 
-		if (dt < smallest_dt)
-		{
-			smallest_dt = dt;
-			near = i;
-		}
-	}
-
-	return near;
+	return (i);
 }
+
 
 void
 save_poses_in_graphslam_format(ParticleSwarmOptimization &optimizer, PsoData *pso_data, const string &path,
@@ -624,33 +634,50 @@ save_poses_in_graphslam_format(ParticleSwarmOptimization &optimizer, PsoData *ps
 	double *particle = optimizer.GetBestSolution();
 	FILE *fptr = safe_fopen(path.c_str(), "w");
 
-	double yaw = particle[4];
-
+	double yaw;
 	double x;
 	double y;
-
-	get_odomentry_pose_given_gps_pose(x, y, yaw, pso_data); // gps comecca na pose zero
 
 	if (use_non_linear_phi)
 		compute_phi_spline(particle[5], particle[6], pso_data->max_steering_angle);
 
-	size_t first_sample = find_nearest_time_to_gps(pso_data, id_first_sample);
-
-	for (uint i = first_sample; i < pso_data->velodyne_data.size(); i++)
+	int first_sample = -1;
+	size_t velodyne_sample;
+	double timestamp;
+	for (uint i = 1; i < pso_data->lines.size(); i++)
 	{
-		double v = pso_data->velodyne_data[i].v * particle[0] + particle[1];
+		double v = pso_data->lines[i - 1].v * particle[0] + particle[1];
 
 		if (fabs(v) > 1.0)
 		{
-			double dt = pso_data->velodyne_data[i].velodyne_timestamp - pso_data->velodyne_data[i - 1].velodyne_timestamp;
-			compute_optimized_odometry_pose(x, y, yaw, particle, v, pso_data->velodyne_data[i].phi, dt,
-																			pso_data->distance_between_front_and_rear_axles);
+			double global_x;
+			double global_y;
 
-			double global_x = x + pso_data->lines[first_sample].gps_x;
-			double global_y = y + pso_data->lines[first_sample].gps_y;
+			if (first_sample == -1)
+			{
+				first_sample = i - 1;
+				velodyne_sample = find_nearest_time_to_gps(pso_data, id_first_sample);
+			}
 
-			fprintf(fptr, "%lf %lf %lf %lf\n", global_x, global_y, yaw,
-							pso_data->velodyne_data[i].velodyne_timestamp);
+			x = pso_data->lines[i - 1].opt_odom_x;
+			y = pso_data->lines[i - 1].opt_odom_y;
+			yaw = pso_data->lines[i - 1].opt_odom_yaw;
+
+			timestamp = pso_data->lines[i - 1].gps_time;
+			while (timestamp < pso_data->lines[i].gps_time)
+			{
+				double dt = pso_data->velodyne_data[velodyne_sample].velodyne_timestamp - timestamp;
+				compute_optimized_odometry_pose(x, y, yaw, particle, pso_data->velodyne_data[velodyne_sample].v, pso_data->velodyne_data[velodyne_sample].phi, dt,
+																				pso_data->distance_between_front_and_rear_axles);
+				global_x = x + pso_data->lines[first_sample].gps_x;
+				global_y = y + pso_data->lines[first_sample].gps_y;
+
+				fprintf(fptr, "%lf %lf %lf %lf\n", global_x, global_y, yaw,
+								pso_data->velodyne_data[velodyne_sample].velodyne_timestamp);
+
+				timestamp = pso_data->velodyne_data[velodyne_sample].velodyne_timestamp;
+				velodyne_sample++;
+			}
 		}
 	}
 
@@ -871,6 +898,7 @@ main(int argc, char **argv)
 	fprintf(stderr, "Press a key to finish...\n");
 	getchar();
 
-	//fclose(gnuplot_pipe);
+	fclose(gnuplot_pipe);
+
 	return (0);
 }
