@@ -26,7 +26,7 @@ using namespace tf;
 
 #define MAX_LINE_LENGTH (5 * 4000000)
 #define NUM_PHI_SPLINE_KNOTS 3
-#define MIN_VELOCITY 0.5
+#define MIN_VELOCITY 0.03
 
 int gps_to_use;
 int board_to_use;
@@ -53,6 +53,7 @@ public:
 	double opt_odom_x;
 	double opt_odom_y;
 	double opt_odom_yaw;
+	bool opt_odom_valid;
 };
 
 
@@ -509,6 +510,7 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data, int *id_first_
 	{
 		double v = pso_data->lines[i - 1].v * particle[0] + particle[1];
 
+		pso_data->lines[i].opt_odom_valid = false;
 		if (fabs(v) > MIN_VELOCITY)
 		{
 			double gps_x;
@@ -525,6 +527,7 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data, int *id_first_
 				pso_data->lines[first_sample].opt_odom_x = x;
 				pso_data->lines[first_sample].opt_odom_y = y;
 				pso_data->lines[first_sample].opt_odom_yaw = yaw;
+				pso_data->lines[first_sample].opt_odom_valid = true;
 
 				dt_gps_and_odom = fabs(pso_data->lines[first_sample].time - pso_data->lines[first_sample].gps_time);
 				dt_gps_and_odom_acc += dt_gps_and_odom;
@@ -539,6 +542,7 @@ print_result(double *particle, FILE *f_report, PsoData *pso_data, int *id_first_
 			pso_data->lines[i].opt_odom_x = x;
 			pso_data->lines[i].opt_odom_y = y;
 			pso_data->lines[i].opt_odom_yaw = yaw;
+			pso_data->lines[i].opt_odom_valid = true;
 
 			gps_x = pso_data->lines[i].gps_x - pso_data->lines[first_sample].gps_x;
 			gps_y = pso_data->lines[i].gps_y - pso_data->lines[first_sample].gps_y;
@@ -660,12 +664,15 @@ save_poses_in_graphslam_format(ParticleSwarmOptimization &optimizer, PsoData *ps
 				velodyne_sample = find_nearest_time_to_gps(pso_data, id_first_sample);
 			}
 
+			if (!pso_data->lines[i - 1].opt_odom_valid)
+				continue;
+
 			x = pso_data->lines[i - 1].opt_odom_x;
 			y = pso_data->lines[i - 1].opt_odom_y;
 			yaw = pso_data->lines[i - 1].opt_odom_yaw;
 
 			timestamp = pso_data->lines[i - 1].gps_time;
-			while (timestamp < pso_data->lines[i].gps_time)
+			while ((timestamp < pso_data->lines[i].gps_time) && (velodyne_sample < pso_data->velodyne_data.size()))
 			{
 				double dt = pso_data->velodyne_data[velodyne_sample].velodyne_timestamp - timestamp;
 				compute_optimized_odometry_pose(x, y, yaw, particle, pso_data->velodyne_data[velodyne_sample].v, pso_data->velodyne_data[velodyne_sample].phi, dt,
