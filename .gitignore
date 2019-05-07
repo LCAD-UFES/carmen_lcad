@@ -566,4 +566,5 @@ src/neural_mapper/generate_gt/neural_mapper_dataset_generator
 src/neural_mapper/generate_gt/neural_mapper_dataset_generator.o
 src/neural_mapper/generate_gt/Makefile.depend
 src/mapper2/mapper2
-
+.kdev4*
+*.kdev4*
