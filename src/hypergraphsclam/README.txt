@@ -5,22 +5,6 @@ Informações dos arquivos gerados pelo HYPERGRAPHSCLAM:
 Como fazer o mapa com o HYPERGRAPHSCLAM
 
 ==============================================================================
-0. Verifique se no seu computador tem as seguintes pastas, caso não tenha crie:
-
-    ```
-    mkdir /dados/tmp
-    mkdir /dados/tmp/sick
-    mkdir /dados/tmp/velodyne
-    mkdir /dados/tmp/lgm
-    mkdir /dados/tmp/lgm/sick
-    mkdir /dados/tmp/lgm/velodyne
-    mkdir /dados/tmp/images
-    ```
-
-Alem disso, apagar os arquivos antigos nessas pastas
-==============================================================================
-
-==============================================================================
 1. Calibre a odometria. Documentação:
  https://github.com/LCAD-UFES/carmen_lcad/tree/master/src/odometry_calibration
 ou

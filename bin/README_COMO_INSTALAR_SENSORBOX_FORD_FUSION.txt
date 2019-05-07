@@ -6,6 +6,7 @@ O que levar:
 - nobreak
 - CANario
 - Extensao
+- Limpador de OBD2
 
 
 Medidas para posicionamento da sensorbox:

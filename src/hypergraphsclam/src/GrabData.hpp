@@ -34,7 +34,7 @@ namespace hyper {
 
 #define MAXIMUM_VEL_SCANS 0
 #define LOOP_REQUIRED_TIME 300.0
-#define LOOP_REQUIRED_SQR_DISTANCE 25.0
+#define LOOP_REQUIRED_DISTANCE 5.0
 #define ICP_THREADS_POOL_SIZE 12
 #define ICP_THREAD_BLOCK_SIZE 400
 #define LIDAR_ODOMETRY_MIN_DISTANCE 0.3
@@ -103,7 +103,7 @@ namespace hyper {
             // parameters
             unsigned maximum_vel_scans;
             double loop_required_time;
-            double loop_required_sqr_distance;
+            double loop_required_distance;
             unsigned icp_threads_pool_size;
             unsigned icp_thread_block_size;
             double lidar_odometry_min_distance;

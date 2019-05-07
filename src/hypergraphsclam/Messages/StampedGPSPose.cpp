@@ -74,16 +74,16 @@ bool StampedGPSPose::FromCarmenLog(std::stringstream &ss)
         switch (quality)
         {
             case 1:
-                gps_std = 16.0;
+                gps_std = 20.0;
                 break;
             case 2:
-                gps_std = 4.0;
+                gps_std = 20.0;
                 break;
             case 4:
-                gps_std = 0.4;
+                gps_std = 1.0;
                 break;
             case 5:
-                gps_std = 0.1;
+                gps_std = 2.5;
                 break;
             default:
                 gps_std = std::numeric_limits<double>::max();

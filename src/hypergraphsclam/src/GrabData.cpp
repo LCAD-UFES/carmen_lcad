@@ -39,7 +39,7 @@ GrabData::GrabData() :
     dmax(std::numeric_limits<double>::max()),
     maximum_vel_scans(MAXIMUM_VEL_SCANS),
     loop_required_time(LOOP_REQUIRED_TIME),
-    loop_required_sqr_distance(LOOP_REQUIRED_SQR_DISTANCE),
+    loop_required_distance(LOOP_REQUIRED_DISTANCE),
     icp_threads_pool_size(ICP_THREADS_POOL_SIZE),
     icp_thread_block_size(ICP_THREAD_BLOCK_SIZE),
     lidar_odometry_min_distance(LIDAR_ODOMETRY_MIN_DISTANCE),
@@ -1212,7 +1212,9 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
                 // the time difference
                 double dt = std::fabs(lidar_loop->timestamp - current->timestamp);
 
-                if (min_dist > distance && loop_required_time < dt && loop_required_sqr_distance > distance)
+//                printf("min_dist %lf, distance %lf, loop_required_time %lf, dt %lf, loop_required_distance %lf, distance %lf\n",
+//                		min_dist, distance, loop_required_time, dt, loop_required_distance, distance);
+                if ((min_dist > distance) && (loop_required_time < dt) && (loop_required_distance > distance))
                 {
                     min_dist = distance;
                     loop = next;
@@ -1817,9 +1819,9 @@ void GrabData::Configure(std::string config_filename, std::string carmen_home)
             {
                 ss >> loop_required_time;
             }
-            else  if ("LOOP_REQUIRED_SQR_DISTANCE" == str)
+            else  if ("LOOP_REQUIRED_DISTANCE" == str)
             {
-                ss >> loop_required_sqr_distance;
+                ss >> loop_required_distance;
             }
             else  if ("ICP_THREADS_POOL_SIZE" == str)
             {
