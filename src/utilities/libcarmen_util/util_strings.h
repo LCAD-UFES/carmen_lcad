@@ -7,7 +7,7 @@
 #include <sstream>
 
 std::vector<std::string> string_split(std::string s, std::string pattern);
-
+std::string replace(const std::string &base, const std::string &from, const std::string &to);
 
 template<class T>
 std::string to_string(T value)

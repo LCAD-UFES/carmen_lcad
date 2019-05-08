@@ -181,24 +181,31 @@ NewCarmenDataset::_load_odometry_calibration(std::string &path)
 
 		if (f != NULL)
 		{
-			int n = fscanf(f, "bias v: %lf %lf bias phi: %lf %lf Initial Angle: %lf",
-										 &_calib.mult_v,
-										 &_calib.add_v,
-										 &_calib.mult_phi,
-										 &_calib.add_phi,
-										 &_calib.init_angle);
+			string line = read_line(f);
+			vector<string> tokens = string_split(line, " ");
+			
+			// "bias v: %lf %lf bias phi: %lf %lf Initial Angle: %lf"
+			if (tokens.size() == 11)
+			{
+				_calib.mult_v = from_string<double>(tokens[2]);
+				_calib.add_v = from_string<double>(tokens[3]);
+				_calib.mult_phi = from_string<double>(tokens[6]);
+				_calib.add_phi = from_string<double>(tokens[7]);
+				_calib.init_angle = from_string<double>(tokens[10]);
 
-			/*
-			int n = fscanf(f, "v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf",
-										 &_calib.mult_v,
-										 &_calib.add_v,
-										 &_calib.mult_phi,
-										 &_calib.add_phi,
-										 &_calib.init_angle);
-			*/
-
-			if (n == 5)
 				success = true;
+			}
+			// "v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf"
+			else if (tokens.size() == 13)
+			{
+				_calib.mult_v = from_string<double>(replace(tokens[3], "(", ""));
+				_calib.add_v = from_string<double>(replace(tokens[4], "),", ""));
+				_calib.mult_phi = from_string<double>(replace(tokens[8], "(", ""));
+				_calib.add_phi = from_string<double>(replace(tokens[9], "),", ""));
+				_calib.init_angle = from_string<double>(tokens[12]);
+
+				success = true;
+			}
 
 			fclose(f);
 		}

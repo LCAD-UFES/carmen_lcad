@@ -56,3 +56,18 @@ file_name_from_path(std::string &path)
 {
 	return file_name_from_path(path.c_str());
 }
+
+
+std::string 
+read_line(FILE *fptr)
+{
+	char c;
+	std::string line;
+	
+	while ((!feof(fptr)) && ((c = fgetc(fptr)) != '\n'))
+		line.push_back(c);
+		
+	return line;
+}
+
+

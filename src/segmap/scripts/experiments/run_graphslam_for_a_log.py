@@ -7,9 +7,11 @@ from experiments import *
 
 def run_odom_calib(carmen_path, log_path, output_dir):
 	program = carmen_path + "/src/odometry_calibration/calibrate_bias_from_log"
+	param_file = carmen_path + "/src/carmen-ford-escape.ini"
 	output_path = output_dir + "/odom_calib.txt" 
 	report_path = output_dir + "/report_odom_calib.txt" 
-	cmd = "%s %s %s %s" % (program, log_path, output_path, report_path)
+	poses_opt_path = output_dir + "/poses-opt_odom_calib.txt" 	
+	cmd = "%s %s %s %s %s %s" % (program, log_path, param_file, output_path, report_path, poses_opt_path)
 	run_command(cmd)
 
 	# visualization
