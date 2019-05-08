@@ -50,7 +50,7 @@ LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal -
 LFLAGS += -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
 	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lcarmen_util `pkg-config --libs opencv` -lboost_filesystem -lsegmap_types  
 
-LFLAGS += -lsegmap_cells -lsegmap_distributions
+#LFLAGS += -lsegmap_cells -lsegmap_distributions
 
 LFLAGS += -lvtkRendering -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
