@@ -62,11 +62,11 @@ DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsemap_readers.a \
 	$(CARMEN_HOME)/src/utilities/libcarmen_util/libcarmen_util.a
 
-SOURCES = graphslam.cpp joint_graphslam.cpp graphslam_util.cpp view_path.cpp
+SOURCES = graphslam.cpp graphslam_util.cpp view_path.cpp #joint_graphslam.cpp 
 TARGETS = graphslam view_path # joint_graphslam
 
 graphslam: graphslam.o $(DEPS) 
-joint_graphslam: joint_graphslam.o graphslam_util.o $(DEPS)
+#joint_graphslam: joint_graphslam.o graphslam_util.o $(DEPS)
 view_path: view_path.o $(DEPS)
 
 include $(CARMEN_HOME)/src/Makefile.rules

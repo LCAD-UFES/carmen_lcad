@@ -11,7 +11,8 @@ def run_odom_calib(carmen_path, log_path, output_dir):
 	output_path = output_dir + "/odom_calib.txt" 
 	report_path = output_dir + "/report_odom_calib.txt" 
 	poses_opt_path = output_dir + "/poses-opt_odom_calib.txt" 	
-	cmd = "%s %s %s %s %s %s" % (program, log_path, param_file, output_path, report_path, poses_opt_path)
+	additional_args = " -n 200 -i 50 --view 0 --max_multiplicative_v 1.000001 --min_multiplicative_v 1.0 --max_multiplicative_phi 1.1 --min_multiplicative_phi 0.9 --max_additive_phi 0.2 --min_additive_phi -0.2 "
+	cmd = "%s %s %s %s %s %s %s" % (program, log_path, param_file, output_path, report_path, poses_opt_path, additional_args)
 	run_command(cmd)
 
 	# visualization

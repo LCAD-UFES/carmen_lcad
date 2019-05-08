@@ -50,7 +50,7 @@ LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal -
 LFLAGS += -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
 	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lcarmen_util `pkg-config --libs opencv` -lboost_filesystem -lsegmap_types  
 
-LFLAGS += -lsegmap_cells -lsegmap_distributions
+#LFLAGS += -lsegmap_cells -lsegmap_distributions
 
 LFLAGS += -lvtkRendering -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
@@ -66,11 +66,11 @@ DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/slam/hash_map/cells/libsegmap_cells.a \
 	$(CARMEN_HOME)/src/utilities/libcarmen_util/libcarmen_util.a 
 
-SOURCES = test_segmap_dataset.cpp test_command_line.cpp test_segmap_hash_map.cpp
-TARGETS = test_command_line test_segmap_hash_map
+SOURCES = test_segmap_dataset.cpp test_command_line.cpp #test_segmap_hash_map.cpp
+TARGETS = test_command_line #test_segmap_hash_map
 
 test_segmap_dataset: test_segmap_dataset.o $(DEPS)
 test_command_line: test_command_line.o $(DEPS)
-test_segmap_hash_map: test_segmap_hash_map.o $(DEPS)
+#test_segmap_hash_map: test_segmap_hash_map.o $(DEPS)
 
 include $(CARMEN_HOME)/src/Makefile.rules

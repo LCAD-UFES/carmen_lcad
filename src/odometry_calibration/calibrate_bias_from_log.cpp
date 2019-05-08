@@ -75,6 +75,7 @@ typedef struct
 	Transformer *tf_transformer;
 	string sensor_board_name;
 	string gps_name;
+	int view_active;
 } PsoData;
 
 
@@ -700,6 +701,10 @@ plot_graph(ParticleSwarmOptimization *optimizer, void *data)
 	double *particle;
 
 	PsoData *pso_data = (PsoData *) data;
+
+	if (!pso_data->view_active)
+		return;
+
 	particle = optimizer->GetBestSolution();
 
 	if (first_time)
@@ -790,7 +795,7 @@ alloc_limits(int dim)
 
 
 double **
-set_limits(int dim)
+set_limits(int dim, CommandLineArguments *args)
 {
 	double **limits;
 
@@ -799,20 +804,20 @@ set_limits(int dim)
 	// v multiplicative bias
 	//limits[0][0] = 0.95; //0.5;
 	//limits[0][1] = 1.05; //1.5;
-	limits[0][0] = 0.979999;
-	limits[0][1] = 1.3001;
+	limits[0][0] = args->get<double>("min_multiplicative_v");
+	limits[0][1] = args->get<double>("max_multiplicative_v");
 
 	// v additive bias
 	limits[1][0] = -0.00000001;
 	limits[1][1] = 0.00000001;
 
 	// phi multiplicative bias
-	limits[2][0] = 0.55;
-	limits[2][1] = 2.5;
+	limits[2][0] = args->get<double>("min_multiplicative_phi");
+	limits[2][1] = args->get<double>("max_multiplicative_phi");
 
 	// phi additive bias
-	limits[3][0] = -carmen_degrees_to_radians(2.);
-	limits[3][1] = carmen_degrees_to_radians(2.);
+	limits[3][0] = carmen_degrees_to_radians(args->get<double>("min_additive_phi"));
+	limits[3][1] = carmen_degrees_to_radians(args->get<double>("max_additive_phi"));
 
 	// Initial angle
 	limits[4][0] = -M_PI;
@@ -821,12 +826,12 @@ set_limits(int dim)
 	if (use_non_linear_phi)
 	{
 		// k1 of phi spline
-		limits[5][0] = -0.3;
-		limits[5][1] = +0.3;
+		limits[5][0] = args->get<double>("min_k1");
+		limits[5][1] = args->get<double>("max_k1");
 
-		// k1 of phi spline
-		limits[6][0] = -0.15;
-		limits[6][1] = +0.15;
+		// k2 of phi spline
+		limits[6][0] = args->get<double>("min_k2");
+		limits[6][1] = args->get<double>("max_k2");
 	}
 
 	return (limits);
@@ -848,6 +853,17 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<int>("n_iterations,i", "Number of iterations", 300);
 	args->add<int>("initial_log_line,l", "Number of lines to skip in the beggining of the log file", 1);
 	args->add<int>("max_log_lines,m", "Maximum number of lines to read from the log file", -1);
+	args->add<int>("view", "Flag indicating if the visualization should run or not.", 1);
+	args->add<double>("min_multiplicative_v", "Lower limit of velocity multiplier", 0.979999);
+	args->add<double>("max_multiplicative_v", "Upper limit of velocity multiplier", 1.3001);
+	args->add<double>("min_multiplicative_phi", "Lower limit of phi multiplier", 0.55);
+	args->add<double>("max_multiplicative_phi", "Upper limit of phi multiplier", 2.5);
+	args->add<double>("min_additive_phi", "Lower limit of phi additive bias (degrees)", -2);
+	args->add<double>("max_additive_phi", "Upper limit of phi additive bias (degrees)", 2);
+	args->add<double>("min_k1", "Lower limit of k1 spline coefficient", -0.3);
+	args->add<double>("max_k1", "Upper limit of k1 spline coefficient", 0.3);
+	args->add<double>("min_k2", "Lower limit of k2 spline coefficient", -0.15);
+	args->add<double>("max_k2", "Upper limit of k2 spline coefficient", 0.15);
 	args->save_config_file("odom_calib_config.txt");
 	args->parse(argc, argv);
 }
@@ -860,11 +876,13 @@ initialize_parameters(PsoData &pso_data, CommandLineArguments *args, CarmenParam
 	board_to_use = args->get<int>("board_to_use");
 
 	use_non_linear_phi = args->get<int>("use_non_linear_phi");
+
 	if (use_non_linear_phi)
 		n_params = 7;
 	else
 		n_params = 5;
-	limits = set_limits(n_params);
+
+	limits = set_limits(n_params, args);
 
 	pso_data.max_steering_angle = carmen_ini_params->get<double>("robot_max_steering_angle");
 	pso_data.distance_between_front_and_rear_axles = carmen_ini_params->get<double>("robot_distance_between_front_and_rear_axles");
@@ -892,6 +910,8 @@ main(int argc, char **argv)
 						args.get<int>("initial_log_line"),
 						args.get<int>("max_log_lines"),
 						&pso_data);
+
+	pso_data.view_active = args.get<int>("view");
 
 	FILE *f_calibration = safe_fopen(args.get<string>("output_calibration").c_str(), "w");
 	FILE *f_report = safe_fopen(args.get<string>("output_poses").c_str(), "w");
@@ -929,10 +949,12 @@ main(int argc, char **argv)
 	delete(carmen_ini_params);
 	delete(pso_data.tf_transformer);
 
-	fprintf(stderr, "Press a key to finish...\n");
-	getchar();
-
-	fclose(gnuplot_pipe);
+	if (args.get<int>("view"))
+	{
+		fprintf(stderr, "Press a key to finish...\n");
+		getchar();
+		fclose(gnuplot_pipe);
+	}
 
 	return (0);
 }
