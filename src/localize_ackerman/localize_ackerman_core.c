@@ -1047,8 +1047,9 @@ map_particle_correction(carmen_localize_ackerman_map_t *localize_map, carmen_com
 //#include <carmen/global_graphics.h>
 
 static void
-compute_particles_weights_with_outlier_rejection(carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map,
-		carmen_localize_ackerman_particle_filter_p filter)
+compute_particles_weights_with_outlier_rejection(carmen_localize_ackerman_map_t *localize_map,
+                                                 carmen_compact_map_t *local_map,
+                                                 carmen_localize_ackerman_particle_filter_p filter)
 {
 	double map_center_x = (double) local_map->config.x_size * 0.5;
 	double map_center_y = (double) local_map->config.y_size * 0.5;
