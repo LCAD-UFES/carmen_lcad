@@ -408,7 +408,7 @@ localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne
 	carmen_pose_3D_t local_pose;
 
 	local_pose.position.x = (local_map.config.x_size * local_map.config.resolution) * 0.5;
-	local_pose.position.y = (local_map.config.x_size * local_map.config.resolution) * 0.5;
+	local_pose.position.y = (local_map.config.y_size * local_map.config.resolution) * 0.5;
 	local_pose.position.z = 0;
 	local_pose.orientation.pitch = local_pose.orientation.roll = local_pose.orientation.yaw = 0.0;
 

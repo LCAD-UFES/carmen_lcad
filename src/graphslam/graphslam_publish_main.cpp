@@ -61,7 +61,10 @@ find_more_synchronized_pose(double timestamp)
 		}
 	}
 
-	return index_min_time_diff;
+	if (index_min_time_diff >= ((int) poses_array.size() - 1))
+		return (-1);
+	else
+		return (index_min_time_diff);
 }
 
 
@@ -104,7 +107,6 @@ assembly_and_publish_fused_odometry_message(carmen_point_t point, double timesta
 	message.pose.orientation.yaw = point.theta;
 	message.pose.position.x = point.x;
 	message.pose.position.y = point.y;
-	message.velocity.x = v;
 
 	message.gps_position_at_turn_on.x = poses_array[0].first.x;
 	message.gps_position_at_turn_on.y = poses_array[0].first.y;
@@ -132,7 +134,6 @@ assembly_and_publish_fused_odometry_particles(carmen_point_t point, double times
 	message.pose.orientation.yaw = point.theta;
 	message.pose.position.x = point.x;
 	message.pose.position.y = point.y;
-	message.velocity.x = v;
 
 	message.gps_position_at_turn_on.x = poses_array[0].first.x;
 	message.gps_position_at_turn_on.y = poses_array[0].first.y;

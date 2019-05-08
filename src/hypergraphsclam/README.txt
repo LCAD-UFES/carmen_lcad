@@ -5,30 +5,20 @@ Informações dos arquivos gerados pelo HYPERGRAPHSCLAM:
 Como fazer o mapa com o HYPERGRAPHSCLAM
 
 ==============================================================================
-0. Verifique se no seu computador tem as seguintes pastas, caso não tenha crie:
+1. Calibre a odometria. Documentação:
+ https://github.com/LCAD-UFES/carmen_lcad/tree/master/src/odometry_calibration
+ou
+ ~/carmen_lcad/src/odometry_calibration/README.txt
 
-    ```
-    mkdir /dados/tmp
-    mkdir /dados/tmp/sick
-    mkdir /dados/tmp/velodyne
-    mkdir /dados/tmp/lgm
-    mkdir /dados/tmp/lgm/sick
-    mkdir /dados/tmp/lgm/velodyne
-    mkdir /dados/tmp/images
-    ```
+Os dados de saída da calibração devem ser colocados no arquivo src/hypergraphsclam/config/parser_config.txt em:
+ V_MULT_ODOMETRY_BIAS <primeiro parâmetro do bias v da saída da calibração>
+ PHI_MULT_ODOMETRY_BIAS <primeiro parâmetro do bias phi da saída da calibração>
+ PHI_ADD_ODOMETRY_BIAS <segundo parâmetro do bias phi da saída da calibração>
+e no carmen.ini:
+ robot_v_multiplier
+ robot_phi_multiplier
+ robot_phi_bias
 
-Alem disso, apagar os arquivos antigos nessas pastas
-==============================================================================
-
-==============================================================================
-1. Calibre a odometria:
-https://github.com/LCAD-UFES/carmen_lcad/tree/master/src/odometry_calibration
-
-Os bias de saída da calibração devem ser colocados no arquivo src/hypergraphsclam/config/parser_config.txt em:
-
-V_MULT_ODOMETRY_BIAS <primeiro parâmetro do bias v da saída da calibração>
-PHI_MULT_ODOMETRY_BIAS <primeiro parâmetro do bias phi da saída da calibração>
-PHI_ADD_ODOMETRY_BIAS <segundo parâmetro do bias phi da saída da calibração>
 ==============================================================================
 
 2. Execute o parser do log (ele leh o log e constroi um hypergrafo) dentro da pasta src/hypergraphsclam/

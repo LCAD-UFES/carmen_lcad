@@ -74,7 +74,9 @@ namespace hyper {
 #define DEFAULT_OPTIMIZER_INNER_POSE_ITERATIONS 30
 #define DEFAULT_OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS 5
 
-#define DEFAULT_FAKE_GPS_CLUSTERING_DISTANCE 0.85
+#define DEFAULT_FAKE_GPS_CLUSTERING_DISTANCE 0.0
+#define DEFAULT_GPS_SPARSITY_THRESHOLD 0.0
+
 
 typedef g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>> HyperBlockSolver;
 typedef g2o::LinearSolverCholmod<HyperBlockSolver::PoseMatrixType> HyperCholmodSolver;
@@ -124,6 +126,9 @@ class HyperGraphSclamOptimizer {
 
         // default fake gps clustering
         double fake_gps_clustering_distance;
+
+        // sparsity threshold u
+        double gps_sparsity_threshold;
 
         // use the gps
         bool use_gps;

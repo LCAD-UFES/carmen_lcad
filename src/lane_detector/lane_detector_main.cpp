@@ -6,7 +6,6 @@
  */
 
 #include <carmen/carmen.h>
-#include<carmen/global.h>
 #include <carmen/bumblebee_basic_interface.h>
 #include <carmen/velodyne_interface.h>
 #include <carmen/velodyne_camera_calibration.h>
@@ -23,9 +22,8 @@
 
 // Module specific
 //#include "DetectNet.hpp"
-
+#include <carmen/carmen_darknet_interface.hpp> /*< Yolo V2 */
 #include "lane_detector.hpp"
-#include <carmen/tf.h>
 
 #include <carmen/lane_detector_messages.h>
 #include <carmen/lane_detector_interface.h>
@@ -34,13 +32,9 @@
 #include <fstream>
 #include <math.h>
 #include <algorithm>
-#include "velodyne_camera_calibration_lane.h"
 
 #define SHOW_DETECTIONS
 #define SHOW_BBOX true
-
-carmen_velodyne_partial_scan_message *velodyne_message_arrange;
-
 // camera number and side
 int camera;
 int camera_side;
@@ -51,16 +45,15 @@ carmen_pose_3D_t camera_pose;
 
 // velodyne buffer
 const unsigned int maxPositions = 50;
-
+carmen_velodyne_partial_scan_message *velodyne_message_arrange;
+std::vector<carmen_velodyne_partial_scan_message> velodyne_vector;
 std::vector<string> classifications;
 #define USE_YOLO_V2 publish	1
 #define USE_DETECTNET 	0
 
-std::vector<carmen_velodyne_partial_scan_message> velodyne_vector1;
 
 void *darknet;
 std::vector<std::string> obj_names;
-
 
 
 // Moving objects message
@@ -71,6 +64,12 @@ carmen_point_t globalpos;
  This function find the closest velodyne message with the camera message
  */
 
+typedef struct
+{
+	unsigned int a;
+	unsigned int b;
+	unsigned int c;
+}lines;
 
 bool
 function_to_order_left (carmen_velodyne_points_in_cam_with_obstacle_t i, carmen_velodyne_points_in_cam_with_obstacle_t j)
@@ -90,7 +89,39 @@ function_to_order_right (carmen_velodyne_points_in_cam_with_obstacle_t i, carmen
 		return (i.velodyne_points_in_cam.ipy > j.velodyne_points_in_cam.ipy);
 }
 
+carmen_velodyne_partial_scan_message
+find_velodyne_most_sync_with_cam(double bumblebee_timestamp)
+{
+    carmen_velodyne_partial_scan_message velodyne;
+    double minTimestampDiff = DBL_MAX;
+    int minTimestampIndex = -1;
+    for (unsigned int i = 0; i < velodyne_vector.size(); i++)
+    {
+        if (fabs(velodyne_vector[i].timestamp - bumblebee_timestamp) < minTimestampDiff)
+        {
+            minTimestampIndex = i;
+            minTimestampDiff = fabs(velodyne_vector[i].timestamp - bumblebee_timestamp);
+        }
+    }
+    velodyne = velodyne_vector[minTimestampIndex];
+    return (velodyne);
+}
 
+
+lines
+get_line(unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2)
+{
+	// Line Equation a = yA - yB, b = xB - xA, c = xAyB - xByA
+	unsigned int a = y1 - y2;
+	unsigned int b = x2 - x1;
+	unsigned int c = (x1 * y2) - (x2 * y1);
+
+	lines line_aux;
+	line_aux.a = a;
+	line_aux.b = b;
+	line_aux.c = c;
+	return line_aux;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -107,6 +138,46 @@ register_ipc_messages(void)
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_LANE_NAME);
 }
 
+lines
+construct_the_line(bbox_t &predictions, bool left_or_right)
+{
+	lines line;
+	if (left_or_right)
+	{
+		line = get_line(predictions.x, predictions.y + predictions.h, predictions.x + predictions.w, predictions.y) ;
+	}else
+	{
+		line = get_line(predictions.x, predictions.y, predictions.x + predictions.w, predictions.y + predictions.h);
+	}
+
+	return line;
+}
+
+double
+calculate_the_distance_point_to_the_line (lines line_aux, carmen_velodyne_points_in_cam_with_obstacle_t point_aux)
+{
+	double distance = (abs(line_aux.a * point_aux.velodyne_points_in_cam.ipx + line_aux.b * point_aux.velodyne_points_in_cam.ipy + line_aux.c)
+			/ sqrt(line_aux.a * line_aux.a + line_aux.b * line_aux.b));
+	return distance;
+}
+
+std::vector<carmen_velodyne_points_in_cam_with_obstacle_t>
+locate_the_candidate_points_in_the_bounding_box(bbox_t &predictions,
+		std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> &laser_points_in_camera_box_list,
+		bool left_or_right)
+{
+	lines line_aux = construct_the_line(predictions, left_or_right);
+	std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> candidate_points;
+	for (int j = 0; j < laser_points_in_camera_box_list.size(); j++)
+	{
+		double distance_aux = calculate_the_distance_point_to_the_line(line_aux, laser_points_in_camera_box_list[j]);
+		if (distance_aux <= 5)
+		{
+			candidate_points.push_back(laser_points_in_camera_box_list[j]);
+		}
+	}
+	return candidate_points;
+}
 
 void
 seting_part_of_the_lane_message(carmen_vector_3D_t p1, int i, int idx_pt1,
@@ -200,27 +271,6 @@ lane_publish_messages(double _timestamp, std::vector<bbox_t> &predictions, std::
 	free(message.lane_vector);
 	return vector_candidate_points;classifications.push_back("sem");
 }
-
-tf::Point
-move_to_camera_reference(tf::Point p3d_velodyne_reference, carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose)
-{
-    tf::Transform pose_velodyne_in_board(
-            tf::Quaternion(velodyne_pose.orientation.yaw, velodyne_pose.orientation.pitch, velodyne_pose.orientation.roll),
-            tf::Vector3(velodyne_pose.position.x, velodyne_pose.position.y, velodyne_pose.position.z));
-
-    tf::Transform pose_camera_in_board(
-            tf::Quaternion(camera_pose.orientation.yaw, camera_pose.orientation.pitch, camera_pose.orientation.roll),
-            tf::Vector3(camera_pose.position.x, camera_pose.position.y, camera_pose.position.z));
-
-
-	tf::Transform velodyne_frame_to_board_frame = pose_velodyne_in_board;
-	tf::Transform board_frame_to_camera_frame = pose_camera_in_board.inverse();
-
-	return board_frame_to_camera_frame * velodyne_frame_to_board_frame * p3d_velodyne_reference;
-}
-
-
-
 
 
 std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> >
@@ -386,7 +436,7 @@ detection_of_the_lanes(std::vector<bounding_box> &bouding_boxes_list, cv::Mat& r
 	unsigned int x_min = 10000, x_max = 0;
 	for (int i = 0; i < predictions.size(); i++)
 	{
-		/*switch (predictions[i].obj_id)
+		switch (predictions[i].obj_id)
 		{
 			case 0:
 				classifications.push_back("sem");
@@ -414,7 +464,8 @@ detection_of_the_lanes(std::vector<bounding_box> &bouding_boxes_list, cv::Mat& r
 				break;
 			default:
 				classifications.push_back("erro");
-		}*/
+		}
+		/*
 		switch (predictions[i].obj_id)
 		{
 			case 0:
@@ -467,7 +518,7 @@ detection_of_the_lanes(std::vector<bounding_box> &bouding_boxes_list, cv::Mat& r
 				break;
 			default:
 				classifications.push_back("erro");
-		}
+		}*/
 
 		printf("%d\n",predictions[i].obj_id);
 		if (predictions[i].x < x_min)
@@ -508,29 +559,6 @@ detection_of_the_lanes(std::vector<bounding_box> &bouding_boxes_list, cv::Mat& r
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-void
-velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
-{
-    velodyne_message_arrange = velodyne_message;
-    carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_message_arrange);
-
-    carmen_velodyne_partial_scan_message velodyne_copy;
-
-    velodyne_copy.host = velodyne_message_arrange->host;
-    velodyne_copy.number_of_32_laser_shots = velodyne_message_arrange->number_of_32_laser_shots;
-    velodyne_copy.partial_scan = (carmen_velodyne_32_laser_shot *) malloc(
-            sizeof(carmen_velodyne_32_laser_shot) * velodyne_message_arrange->number_of_32_laser_shots);
-    memcpy(velodyne_copy.partial_scan, velodyne_message_arrange->partial_scan,
-           sizeof(carmen_velodyne_32_laser_shot) * velodyne_message_arrange->number_of_32_laser_shots);
-    velodyne_copy.timestamp = velodyne_message_arrange->timestamp;
-
-    velodyne_vector1.push_back(velodyne_copy);
-
-    if (velodyne_vector1.size() > maxPositions) {
-        free(velodyne_vector1.begin()->partial_scan);
-        velodyne_vector1.erase(velodyne_vector1.begin());
-    }
-}
 
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
@@ -548,7 +576,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	}
     carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
 
-    if (velodyne_vector1.size() > 0)
+    if (velodyne_vector.size() > 0)
         velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp);
     else
         return;
@@ -567,6 +595,29 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 }
 
 
+void
+velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
+{
+    velodyne_message_arrange = velodyne_message;
+    carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_message_arrange);
+
+    carmen_velodyne_partial_scan_message velodyne_copy;
+
+    velodyne_copy.host = velodyne_message_arrange->host;
+    velodyne_copy.number_of_32_laser_shots = velodyne_message_arrange->number_of_32_laser_shots;
+    velodyne_copy.partial_scan = (carmen_velodyne_32_laser_shot *) malloc(
+            sizeof(carmen_velodyne_32_laser_shot) * velodyne_message_arrange->number_of_32_laser_shots);
+    memcpy(velodyne_copy.partial_scan, velodyne_message_arrange->partial_scan,
+           sizeof(carmen_velodyne_32_laser_shot) * velodyne_message_arrange->number_of_32_laser_shots);
+    velodyne_copy.timestamp = velodyne_message_arrange->timestamp;
+
+    velodyne_vector.push_back(velodyne_copy);
+
+    if (velodyne_vector.size() > maxPositions) {
+        free(velodyne_vector.begin()->partial_scan);
+        velodyne_vector.erase(velodyne_vector.begin());
+    }
+}
 
 void
 shutdown_module(int signo)
@@ -672,10 +723,9 @@ main(int argc, char **argv)
     std::string trained_file = "snapshot_iter_21600.caffemodel";
     /**** YOLO PARAMETERS ****/
     std::string darknet_home = std::getenv("DARKNET_HOME"); /*< get environment variable pointing path of darknet*/
-    std::string carmen_home = std::getenv("CARMEN_HOME");
     if (darknet_home.empty())
         printf("Cannot find darknet path. Check if you have correctly set DARKNET_HOME environment variable.\n");
-    std::string cfg_filename = carmen_home + "/src/lane_detector/yolov3-voc_lane.cfg";
+    std::string cfg_filename =  "/home/vinicius/yolov3-voc_lane.cfg";
     std::string weight_filename = darknet_home + "2/backup/yolov3-voc_lane_14000.weights";
     std::string voc_names = darknet_home + "/data/lane.names";
     obj_names = objects_names_from_file(voc_names);

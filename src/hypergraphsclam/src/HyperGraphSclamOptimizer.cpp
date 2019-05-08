@@ -45,6 +45,7 @@ HyperGraphSclamOptimizer::HyperGraphSclamOptimizer(int argc, char **argv) :
         internal_loop(DEFAULT_OPTIMIZER_INNER_POSE_ITERATIONS),
         optimizer_inner_odom_calib_iterations(DEFAULT_OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS),
         fake_gps_clustering_distance(DEFAULT_FAKE_GPS_CLUSTERING_DISTANCE),
+		gps_sparsity_threshold(DEFAULT_GPS_SPARSITY_THRESHOLD),
         use_gps(false),
         use_velodyne_seq(false),
         use_velodyne_loop(false),
@@ -222,6 +223,10 @@ void HyperGraphSclamOptimizer::ArgsParser(int argc, char **argv)
                 else if ("FAKE_GPS_CLUSTERING_DISTANCE" == str)
                 {
                     ss >> fake_gps_clustering_distance;
+                }
+                else if ("GPS_SPARSITY_THRESHOLD" == str)
+                {
+                	ss >> gps_sparsity_threshold;
                 }
                 else if ("USE_GPS" == str)
                 {
@@ -800,7 +805,7 @@ void HyperGraphSclamOptimizer::MakeGPSSparse()
 
             double diff = (next_t - last_t).norm();
 
-            if (fake_gps_clustering_distance > diff)
+            if (gps_sparsity_threshold > diff)
             {
                 g2o::EdgeGPS* gps(*next);
                 gps_buffer.erase(next);
@@ -825,13 +830,22 @@ void HyperGraphSclamOptimizer::MakeGPSSparse()
 void HyperGraphSclamOptimizer::GPSFiltering()
 {
     // no displacement
-    RemoveUndesiredDisplacements(1.2f);
+    if (0.01 < fake_gps_clustering_distance)
+    {
+		RemoveUndesiredDisplacements(fake_gps_clustering_distance);
+    }
 
     // sparse!
-    MakeGPSSparse();
+    if (0.01 < gps_sparsity_threshold)
+    {
+    	MakeGPSSparse();
+    }
 
     // no displacement
-    RemoveUndesiredDisplacements(1.2f);
+    if (0.01 < fake_gps_clustering_distance)
+    {
+		RemoveUndesiredDisplacements(fake_gps_clustering_distance);
+    }
 }
 
 
@@ -1315,6 +1329,8 @@ void HyperGraphSclamOptimizer::SaveCorrectedVertices()
     // iterators
     g2o::SparseOptimizer::VertexIDMap::iterator it(optimizer->vertices().begin());
     g2o::SparseOptimizer::VertexIDMap::iterator end(optimizer->vertices().end());
+
+    // std::sort(optimizer->vertices().begin(), optimizer->vertices().end(), [] () {});
 
     while (end != it)
     {
