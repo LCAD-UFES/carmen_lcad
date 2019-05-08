@@ -3,7 +3,7 @@
 
 #include "g2o/types/slam2d/se2.h"
 #include "g2o/core/sparse_optimizer.h"
-#include <carmen/segmap_dataset_old.h>
+//#include <carmen/segmap_dataset_old.h>
 #include <Eigen/Core>
 
 // TODO: Add to a configuration file.
@@ -21,8 +21,10 @@ create_information_matrix(double x_std, double y_std, double z_std);
 double
 gps_std_from_quality(int quality);
 
+/*
 void
 create_dead_reckoning(DatasetCarmen &dataset, std::vector<g2o::SE2> &dead_reckoning);
+*/
 
 void
 add_relative_edge(int vertex_from, int vertex_to, g2o::SE2 relative_pose,
@@ -44,9 +46,11 @@ initialize_optimizer();
 void
 run_optimization(g2o::SparseOptimizer* optimizer);
 
+/*
 void
 save_corrected_vertices(DatasetCarmen &data, std::vector<int> &vertices_ids,
 												g2o::SparseOptimizer *optimizer, std::string filename,
 												double offset_x, double offset_y);
+*/
 
 #endif

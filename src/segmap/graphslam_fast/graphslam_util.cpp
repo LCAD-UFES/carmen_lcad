@@ -72,7 +72,7 @@ gps_std_from_quality(int quality)
 	return gps_std;
 }
 
-
+/*
 void
 create_dead_reckoning(DatasetCarmen &dataset, vector<SE2> &dead_reckoning)
 {
@@ -94,7 +94,7 @@ create_dead_reckoning(DatasetCarmen &dataset, vector<SE2> &dead_reckoning)
         dead_reckoning.push_back(SE2(x, y, th));
 	}
 }
-
+*/
 
 void
 add_relative_edge(
@@ -190,6 +190,7 @@ run_optimization(SparseOptimizer* optimizer)
 }
 
 
+/*
 void
 save_corrected_vertices(
 	DatasetCarmen &data, 
@@ -226,4 +227,4 @@ save_corrected_vertices(
 	fclose(f);	
 }
 
-
+*/
