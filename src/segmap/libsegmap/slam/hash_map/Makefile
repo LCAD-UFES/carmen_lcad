@@ -14,10 +14,12 @@ IFLAGS += -std=c++11
 IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ \
 	-I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
 
-SOURCES = 
-PUBLIC_INCLUDES = segmap_hash_map.h
-PUBLIC_LIBRARIES = 
+SOURCES = segmap_abstract_map.cpp
+PUBLIC_INCLUDES = segmap_hash_map.h segmap_abstract_map.h
+PUBLIC_LIBRARIES = libsegmap_hash_map.a
 PUBLIC_BINARIES = 
-TARGETS = 
+TARGETS = libsegmap_hash_map.a
+
+libsegmap_hash_map.a: segmap_abstract_map.o
 
 include $(CARMEN_HOME)/src/Makefile.rules
