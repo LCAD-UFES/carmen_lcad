@@ -10,6 +10,7 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <carmen/segmap_colormaps.h>
 #include <carmen/util_io.h>
+#include "segmap_abstract_map.h"
 
 /*
 
@@ -82,48 +83,28 @@ public:
 
 
 template<class CellType>
-class HashGridMap
+class HashGridMap : public AbstractMap
 {
 public:
-	CellType cell;
-
-	std::map<int, std::map<int, CellType>> _cells;
-
-	double _pixels_by_m;
-	double _m_by_pixel; // m by pixels
-	double _x_origin;
-	double _y_origin;
-	int _width_m;
-	int _height_m;
-	int _width;
-	int _height;
-
-	HashGridMap(int height, int width, double resolution,
-							double y_origin, double x_origin);
+	HashGridMap(const GridMapHeader &header);
 	~HashGridMap();
 
-	static int _get_index_from_value(double val, double offset, double n_elems_by_val);
+	// inherit the overloads for the add method from the superclass
+	// see https://stackoverflow.com/questions/5636289/overloaded-method-not-seen-in-subclass
+	using AbstractMap::add;
 
-	void add(const pcl::PointXYZRGB &point);
-	void add(const std::vector<pcl::PointXYZRGB> &points);
-	void add(pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud);
-	void save(const char *path);
-	void load(const char *path);
+	virtual void add(const pcl::PointXYZRGB &point);
+	virtual void save(const char *path);
+	virtual void load(const char *path);
+	void iterate(void function_to_iterate(int row, int col, CellType &cell, void *data), void *data);
+
+	std::map<int, std::map<int, CellType>> _cells;
 };
 
 
 template<class CellType>
-HashGridMap<CellType>::HashGridMap(int height, int width, double resolution,
-																	 double y_origin, double x_origin)
+HashGridMap<CellType>::HashGridMap(const GridMapHeader &header) : AbstractMap(header)
 {
-	_width_m = width;
-	_height_m = height;
-	_m_by_pixel = resolution;
-	_pixels_by_m = 1.0 / resolution;
-	_width = _width_m * _pixels_by_m;
-	_height = _height_m * _pixels_by_m;
-	_y_origin = y_origin;
-	_x_origin = x_origin;
 }
 
 
@@ -133,24 +114,18 @@ HashGridMap<CellType>::~HashGridMap()
 }
 
 
-template<class CellType> int
-HashGridMap<CellType>::_get_index_from_value(double val, double offset, double n_elems_by_val)
-{
-	return (val - offset) * n_elems_by_val;
-}
-
-
 template<class CellType> void
 HashGridMap<CellType>::add(const pcl::PointXYZRGB &point)
 {
-	int xc = _get_index_from_value(point.x, _x_origin, _pixels_by_m);
-	int yc = _get_index_from_value(point.y, _y_origin, _pixels_by_m);
-
-	// check if point is inside the map
-	if (xc < 0 || xc >= _width || yc < 0 || yc >= _height)
+	// point is outside the map
+	if (!_header->contains(point))
 		return;
 
-	// To understand the need of "typename" see https://stackoverflow.com/questions/610245/where-and-why-do-i-have-to-put-the-template-and-typename-keywords/613132#613132
+	int xc = _header->index_from_coordinate(point.x, _header->_x_origin, _header->_pixels_by_m);
+	int yc = _header->index_from_coordinate(point.y, _header->_y_origin, _header->_pixels_by_m);
+
+	// To understand why we have to use "typename" here see:
+	// https://stackoverflow.com/questions/610245/where-and-why-do-i-have-to-put-the-template-and-typename-keywords/613132#613132
 	typename std::map<int, std::map<int, CellType>>::iterator col_it;
 	typename std::map<int, CellType>::iterator cell_it;
 
@@ -167,22 +142,6 @@ HashGridMap<CellType>::add(const pcl::PointXYZRGB &point)
 		cell_it = col_it->second.insert(std::pair<int, CellType>(xc, CellType())).first;
 
 	cell_it->second.add(point);
-}
-
-
-template<class CellType> void
-HashGridMap<CellType>::add(const std::vector<pcl::PointXYZRGB> &points)
-{
-	for (int i = 0; i < points.size(); i++)
-		add(points[i]);
-}
-
-
-template<class CellType> void
-HashGridMap<CellType>::add(pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud)
-{
-	for (int i = 0; i < point_cloud->size(); i++)
-		add(point_cloud->at(i));
 }
 
 
@@ -257,6 +216,27 @@ HashGridMap<CellType>::load(const char *path)
 	}
 
 	fclose(fptr);
+}
+
+
+template<class CellType> void
+HashGridMap<CellType>::iterate(void function_to_iterate(int row, int col, CellType &cell, void *data), void *data)
+{
+	int row, col;
+
+	typename std::map<int, std::map<int, CellType>>::iterator col_it;
+	typename std::map<int, CellType>::iterator cell_it;
+
+	for (col_it = _cells.begin(); col_it != _cells.end(); col_it++)
+	{
+		row = col_it->first;
+
+		for (cell_it = col_it->second.begin(); cell_it != col_it->second.end(); cell_it++)
+		{
+			col = cell_it->first;
+			function_to_iterate(row, col, cell_it->second, data);
+		}
+	}
 }
 
 
