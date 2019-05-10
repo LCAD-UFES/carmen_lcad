@@ -1,12 +1,14 @@
 O que levar:
 
+- Ventosa com os 4 parafusos
 - Trena metalica
 - Fita crepe
 - Cabo com as garras da bateria
-- nobreak
+- Nobreak
 - CANario
 - Extensao
 - Limpador de OBD2
+- Multímetro
 
 
 Medidas para posicionamento da sensorbox:
