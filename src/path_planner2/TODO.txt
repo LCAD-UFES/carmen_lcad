@@ -1,0 +1,4 @@
+- Para estabilizar os path plans o path_planner precisa saber qual dos multiplos paths o behavior_selector escolheu em timestamp anterior.
+-- De posse do timestamp e do id, i, do path do referido timestamp (tem que guardar os conjuntos de paths produzidos num set de timestamps anteriores), o path planner:
+--- Calcula onde o robo estária neste instante (ou seja, no timestamp atual) no path_i e assume que o robo está neste ponto.
+--- Calcula um novo set de paths a partir deste ponto e publica com o timestamp atual.
