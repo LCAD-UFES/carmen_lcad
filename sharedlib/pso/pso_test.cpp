@@ -5,7 +5,7 @@
 
 
 double 
-fitness(double *particle, void *data __attribute__ ((unused)))
+fitness(double *particle, void *data __attribute__ ((unused)), int particle_id __attribute__ ((unused)))
 {
 	int i;
 	double x;

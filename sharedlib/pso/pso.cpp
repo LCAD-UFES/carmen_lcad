@@ -7,7 +7,8 @@
 #include <time.h>
 #include <carmen/carmen.h>
 
-ParticleSwarmOptimization::ParticleSwarmOptimization(double (*fitness_function)(double *particle, void *data), double **limits, int dim, void *data, int num_particles, int max_iteractions)
+
+ParticleSwarmOptimization::ParticleSwarmOptimization(double (*fitness_function)(double *particle, void *data, int particle_id), double **limits, int dim, void *data, int num_particles, int max_iteractions)
 {
 	srand(time(NULL));
 
@@ -33,7 +34,7 @@ ParticleSwarmOptimization::~ParticleSwarmOptimization()
 
 
 void
-ParticleSwarmOptimization::Optimize(void (*interaction_function)(ParticleSwarmOptimization *opt, void *data))
+ParticleSwarmOptimization::Optimize(void (*interaction_function)(ParticleSwarmOptimization *opt, void *data, int particle_id))
 {
 	int num_iteractions = 0;
 
@@ -58,7 +59,7 @@ ParticleSwarmOptimization::Optimize(void (*interaction_function)(ParticleSwarmOp
 			num_iteractions, _max_iteractions, -_gbest_fitness);
 
 		if (interaction_function)
-			(*interaction_function)(this, _data);
+			(*interaction_function)(this, _data, _best_particle_id);
 
 		num_iteractions++;
 	}
@@ -83,6 +84,13 @@ double*
 ParticleSwarmOptimization::GetErrorEvolution()
 {
 	return _error;
+}
+
+
+int
+ParticleSwarmOptimization::GetBestParticleId()
+{
+	return _best_particle_id;
 }
 
 
@@ -149,12 +157,8 @@ ParticleSwarmOptimization::_randomize_particles()
 	int i, j;
 
 	for (i = 0; i < _num_particles; i++)
-	{
 		for (j = 0; j < _dim; j++)
-		{
 			_particles[i][j] = ((double) rand() / (double) RAND_MAX) * (_limits[j][1] - _limits[j][0]) + _limits[j][0];
-		}
-	}
 }
 
 
@@ -166,9 +170,7 @@ ParticleSwarmOptimization::_initialize_pbest()
 	for (i = 0; i < _num_particles; i++)
 	{
 		for (j = 0; j < _dim; j++)
-		{
 			_pbest[i][j] = _particles[i][j];
-		}
 
 		_pbest_fitness[i] = -DBL_MAX;
 	}
@@ -179,6 +181,7 @@ void
 ParticleSwarmOptimization::_intialize_gbest()
 {
 	_gbest_fitness = -DBL_MAX;
+	_best_particle_id = -1;
 }
 
 
@@ -189,9 +192,9 @@ ParticleSwarmOptimization::_evaluate_fitness()
 
 	// it's highly parallelizable!!
 	// ATENCAO! Para usar OpenMP a sua fitness fucntion precisa ser thread safe!
-//	#pragma omp parallel for default(shared) private(i)
+	#pragma omp parallel for default(shared) private(i)
 	for (i = 0; i < _num_particles; i++)
-		_fitness[i] = _fitness_function(_particles[i], _data);
+		_fitness[i] = _fitness_function(_particles[i], _data, i);
 }
 
 
@@ -222,6 +225,7 @@ ParticleSwarmOptimization::_update_gbest()
 		{
 			_gbest_fitness = _fitness[i];
 			_copy(_particles[i], _gbest);			
+			_best_particle_id = i;
 		}
 	}
 }
@@ -328,7 +332,5 @@ ParticleSwarmOptimization::_copy(double from[], double to[])
 	int i;
 
 	for (i = 0; i < _dim; i++)
-	{
 		to[i] = from[i];
-	}
 }

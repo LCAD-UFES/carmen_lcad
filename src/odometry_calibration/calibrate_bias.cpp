@@ -141,7 +141,7 @@ print_result(double *particle)
 
 
 double 
-fitness(double *particle, void *data)
+fitness(double *particle, void *data, int particle_id __attribute__ ((unused)))
 {
 	uint i;
 	double error;
