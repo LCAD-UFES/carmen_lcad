@@ -2,7 +2,7 @@
 MAXIMUM_VEL_SCANS 0
 
 -- how many seconds to consider a loop closure - Tempo para considerar que duas nuvens fecham loop
-LOOP_REQUIRED_TIME 50.0
+LOOP_REQUIRED_TIME 655.0
 
 -- how many meters to consider a loop closure - Distancia para considerar que duas nuvens fecham loop
 LOOP_REQUIRED_DISTANCE 5.0
@@ -29,13 +29,13 @@ CURVATURE_REQUIRED_TIME 0.0001
 -- Se quiser mais rapido, pode rodar o odometry calibration. porem nao parece ser muito necessario.
 -- Initial odometry bias guess, the default values are: v_mult = 1.0, phi_mult = 1.0 and phi_add = 0.0
 -- You can pick this values from a previous calibration result
-V_MULT_ODOMETRY_BIAS 1.051375
-PHI_MULT_ODOMETRY_BIAS 1.085621 
-PHI_ADD_ODOMETRY_BIAS 0.002812
+V_MULT_ODOMETRY_BIAS 1.043695
+PHI_MULT_ODOMETRY_BIAS 1.137153 
+PHI_ADD_ODOMETRY_BIAS -0.000216
 
 
 -- Descomente os argumentos abaixo para desabilitar a construcao das respectivas arestas
-DISABLE_VELODYNE_ODOMETRY
+-- DISABLE_VELODYNE_ODOMETRY
 -- DISABLE_VELODYNE_LOOP
 DISABLE_SICK_ODOMETRY
 DISABLE_SICK_LOOP
@@ -49,4 +49,4 @@ DISABLE_BUMBLEBEE_LOOP
 
 
 -- indica qual gps a utilizar
-GPS_IDENTIFIER 2
+GPS_IDENTIFIER 3

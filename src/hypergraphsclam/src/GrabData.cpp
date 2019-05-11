@@ -1917,7 +1917,7 @@ void GrabData::Configure(std::string config_filename, std::string carmen_home)
 void GrabData::SetGPSPose(std::string carmen_home)
 {
 
-    std::ifstream is(carmen_home + "/src/carmen-ford-escape-sensor-box.ini");
+    std::ifstream is(carmen_home + "/src/carmen-ford-fusion.ini");
    
     if (is.good())
     {
