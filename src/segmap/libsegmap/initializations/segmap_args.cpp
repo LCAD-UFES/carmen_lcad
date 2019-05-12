@@ -111,8 +111,8 @@ add_default_sensor_preproc_args(CommandLineArguments &args)
 {
 	args.add<double>("ignore_above_threshold", "Ignore points with z-coord (in sensor reference) above this threshold", -0.3);
 	args.add<double>("ignore_below_threshold", "Ignore points with z-coord (in sensor reference) below this threshold", -DBL_MAX);
-	args.add<double>("offset_x", "Offset to subtract the pose (x-coord)", 7757888.199148);
-	args.add<double>("offset_y", "Offset to subtract the pose (y-coord)", -363560.975411);
+	args.add<double>("offset_x", "Offset to subtract the pose (x-coord)", 0); //7757888.199148);
+	args.add<double>("offset_y", "Offset to subtract the pose (y-coord)", 0); //-363560.975411);
 	args.add<int>("use_xsens,x", "Whether or not to use pitch, and roll angles from xsens", 1);
 	args.add<int>("gps_id", "Id of the gps to be used", 1);
 	args.add<string>("intensity_mode,i", "What type of information to assign to LiDAR rays intensity [remission | visual | semantic | raw | bright]", "raw");
