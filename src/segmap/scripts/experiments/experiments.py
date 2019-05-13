@@ -15,6 +15,7 @@ experiments = [
     
 
 DATA_DIR = "/dados/data2/"
+GPS_TO_USE = 1
 GPS_XY_STD = 2.0
 GPS_H_STD = 10.0
 GICP_LOOPS_XY_STD = 0.3
@@ -37,10 +38,11 @@ def create_output_dir(log_path):
 
 def run_command(cmd):
     print('\n\n--------------\n')
-    print(cmd)
+    print('** COMMAND:\n\n', cmd, '\n\n** OUTPUT:\n')
     ret = os.system(cmd)
     
     # graphslam gives a segfault in the end
     if ('graphslam' not in cmd) and (ret != 0):
         print("Error: Failed to execute command.")
         sys.exit(0)
+
