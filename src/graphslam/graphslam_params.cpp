@@ -30,8 +30,10 @@ sensor_parameters_t velodyne_params;
 sensor_data_t velodyne_data;
 double highest_point;
 bool use_fused_odometry = false;
+int gps_to_use = 1;
 
 int number_of_threads = 1;
+
 
 void
 init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char ***intensity)
@@ -384,6 +386,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 			{(char*)"velodyne", (char*)"pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
 			{(char*)"velodyne", (char*)"yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
 			{(char*)"velodyne", (char*)"vertical_resolution", CARMEN_PARAM_INT, &velodyne_params.vertical_resolution, 0, NULL},
+			{(char*)"velodyne", (char*)"time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &velodyne_params.time_spent_by_each_scan, 0, NULL},
 			{(char*)"localize_ackerman", (char*) "velodyne_laser_max_range", CARMEN_PARAM_DOUBLE, &velodyne_params.range_max, 0, NULL},
 			{(char*)"slam_icp", (char*) "highest_point", CARMEN_PARAM_DOUBLE, &highest_point, 0, NULL},
 	};
@@ -483,9 +486,10 @@ read_parameters_without_mapper(int argc, char **argv, carmen_localize_ackerman_p
 			{(char *)"velodyne", (char*)"pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
 			{(char *)"velodyne", (char*)"yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
 			{(char *)"velodyne", (char*)"vertical_resolution", CARMEN_PARAM_INT, &velodyne_params.vertical_resolution, 0, NULL},
-			{(char*)"localize_ackerman", (char*) "velodyne_laser_max_range", CARMEN_PARAM_DOUBLE, &velodyne_params.range_max, 0, NULL},
+			{(char *)"velodyne", (char*)"time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &velodyne_params.time_spent_by_each_scan, 0, NULL},
+			{(char *)"localize_ackerman", (char*) "velodyne_laser_max_range", CARMEN_PARAM_DOUBLE, &velodyne_params.range_max, 0, NULL},
 
-			{(char*)"localize_ackerman",  (char*)"number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL},
+			{(char *)"localize_ackerman",  (char*)"number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL},
 			{(char *)"localize_ackerman", (char*)"safe_range_above_sensors", CARMEN_PARAM_DOUBLE, &safe_range_above_sensors, 0, NULL},
 			{(char *)"localize_ackerman", (char*)"correction_type", CARMEN_PARAM_INT, &correction_type, 0, NULL},
 
@@ -502,7 +506,7 @@ read_parameters_without_mapper(int argc, char **argv, carmen_localize_ackerman_p
 			{(char *)"gps_nmea", (char*)"roll", CARMEN_PARAM_DOUBLE, &gps_pose.orientation.roll, 0, NULL},
 			{(char *)"gps_nmea", (char*)"pitch", CARMEN_PARAM_DOUBLE, &gps_pose.orientation.pitch, 0, NULL},
 			{(char *)"gps_nmea", (char*)"yaw", CARMEN_PARAM_DOUBLE, &gps_pose.orientation.yaw, 0, NULL},
-			{(char*)"slam_icp", (char*) "highest_point", CARMEN_PARAM_DOUBLE, &highest_point, 0, NULL}
+			{(char *)"slam_icp", (char*) "highest_point", CARMEN_PARAM_DOUBLE, &highest_point, 0, NULL}
 	};
 
 
@@ -516,8 +520,9 @@ read_parameters_without_mapper(int argc, char **argv, carmen_localize_ackerman_p
 
 	carmen_param_t param_optional_list[] =
 	{
-		{(char *)"localize_ackerman", (char*)"use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
-		{(char *)"commandline", 	  (char*)"use_fused_odometry", CARMEN_PARAM_ONOFF, &use_fused_odometry, 0, NULL},
+		{(char *)"localize_ackerman", (char *)"use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
+		{(char *)"commandline", 	  (char *)"use_fused_odometry", CARMEN_PARAM_ONOFF, &use_fused_odometry, 0, NULL},
+		{(char *)"commandline", 	  (char *)"gps_to_use", CARMEN_PARAM_INT, &gps_to_use, 0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));

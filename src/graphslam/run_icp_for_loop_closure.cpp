@@ -387,7 +387,7 @@ add_icp_restriction(int i, int j)
 
 
 void
-process_data()
+process_data(double dist_for_detecting_loop_closure, double time_difference_for_detecting_loop_closure)
 {
 	uint i, j;
 	double dist;
@@ -417,14 +417,14 @@ process_data()
 
 			dist = sqrt(pow(delta_x, 2) + pow(delta_y, 2));
 
-			if ((dist < min_dist) && (fabs(delta_t) > 30.0)) // Tempo e distancia para detectar fechamento de loop. Alberto: TODO - passar o tempo como parametro. 
+			if ((dist < min_dist) && (fabs(delta_t) > time_difference_for_detecting_loop_closure)) // Tempo e distancia para detectar fechamento de loop. Alberto: TODO - passar o tempo como parametro.
 			{
 				min_dist = dist;
 				loop_id = j;
 			}
 		}
 
-		if (min_dist < 4.0)
+		if (min_dist < dist_for_detecting_loop_closure)
 		{
 			fprintf(stderr, "Pose %d de %d: %lf ", i, (int) input_data.size(), 100.0 * (double) i / (double) input_data.size());
 			gettimeofday(&t1, NULL);
@@ -472,16 +472,25 @@ main(int argc, char **argv)
 {
 	if (argc < 4)
 	{
-		printf("Use %s <input-file> <velodyne-dir> <output_file>\n", argv[0]);
+		printf("Use %s <input-file> <velodyne-dir> <output_file> <dist_for_detecting_loop_closure (meters)> <time_difference_for_detecting_loop_closure (seconds)>\n", argv[0]);
 		exit(1);
 	}
 
+	double dist_for_detecting_loop_closure = 4.0;
+	double time_difference_for_detecting_loop_closure = 120.0;
+
 	char *input_file = argv[1];
+
+	if (argc >= 5)
+		dist_for_detecting_loop_closure = atof(argv[4]);
+
+	if (argc >= 6)
+		time_difference_for_detecting_loop_closure = atof(argv[5]);
 
 	initialize_global_variables(argv);
 	initialize_icp();
 	read_data(input_file);
-	process_data();
+	process_data(dist_for_detecting_loop_closure, time_difference_for_detecting_loop_closure);
 	clean_data();
 
 	printf("Pressione crtl+c para terminar.\n");

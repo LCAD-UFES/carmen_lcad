@@ -46,14 +46,9 @@ static const int GPS_QUEUE_MAX_SIZE = 100;
 static const int XSENS_QUEUE_MAX_SIZE = 100;
 static const int ODOMETRY_QUEUE_MAX_SIZE = 100;
 
-int gps_queue_current_position;
-int xsens_queue_current_position;
-int odometry_queue_current_position;
-int gps_stds_queue_current_position;
-int gps_orientation_queue_current_position;
-int gps_orientation_valid_position;
-
 extern bool use_fused_odometry;
+extern int gps_to_use;
+extern double distance_between_front_and_rear_axles;
 
 
 double
@@ -79,7 +74,7 @@ shutdown_grab_data(int sign)
 	}
 }
 
-
+/*
 int
 find_nearest_xsens(double time)
 {
@@ -156,7 +151,7 @@ find_nearest_odometry(double time)
 
 
 int
-find_nearest_fused_gps(double time)
+find_nearest_gps(double time)
 {
 	uint i;
 	int id;
@@ -167,9 +162,9 @@ find_nearest_fused_gps(double time)
 
 	for (i = 0; i < gps_queue.size(); i++)
 	{
-		time_diff = fabs(time - gps_queue[i].time);
+		time_diff = gps_queue[i].time - time;
 
-		if (time_diff < min_time_diff)
+		if ((fabs(time_diff) < min_time_diff) && (time_diff > 0.0))
 		{
 			min_time_diff = time_diff;
 			id = i;
@@ -177,6 +172,31 @@ find_nearest_fused_gps(double time)
 	}
 
 	return id;
+}
+*/
+
+template<class message_type> int
+find_nearest_message(vector<message_type> &queue, double reference_sensor_time, const char *sensor_name)
+{
+	int i;
+	double time_diff;
+
+	int last = queue.size() - 1;
+
+	for (i = last; i >= 0; i--)
+	{
+		time_diff = reference_sensor_time - queue[i].time;
+
+		if (time_diff > 0.0)
+		{
+			if (time_diff > 0.2)
+				printf("Warning: %s time_diff > 0.2\n", sensor_name);
+
+			return i;
+		}
+	}
+
+	return (-1);
 }
 
 
@@ -190,7 +210,7 @@ measure_time_to_accumulate_cloud(carmen_velodyne_partial_scan_message *velodyne_
 	timeval t1, t2;
 	gettimeofday(&t1, NULL);
 
-	accumulate_clouds(velodyne_message, velodyne_path);
+	accumulate_clouds(velodyne_message, velodyne_path, 0, 0);
 
 	gettimeofday(&t2, NULL);
 	elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
@@ -204,18 +224,9 @@ measure_time_to_accumulate_cloud(carmen_velodyne_partial_scan_message *velodyne_
 
 
 template<class T> void
-add_message_to_queue(vector<T> &queue, T message, int &current_pos, int max_size)
+add_message_to_queue(vector<T> &queue, T message, int max_size __attribute__((unused)))
 {
-	if ((int) queue.size() < max_size)
-	{
-		queue.push_back(message);
-		current_pos = queue.size();
-	}
-	else
-	{
-		current_pos = current_pos % max_size;
-		queue[current_pos] = message;
-	}
+	queue.push_back(message);
 }
 
 
@@ -224,7 +235,7 @@ ackerman_prediction(carmen_pose_3D_t *pose, double v, double phi, double dt)
 {
 	pose->position.x = pose->position.x + dt * v * cos(pose->orientation.yaw);
 	pose->position.y = pose->position.y + dt * v * sin(pose->orientation.yaw);
-	pose->orientation.yaw = pose->orientation.yaw + dt * (v / 2.61874 /* L */) * tan(phi);
+	pose->orientation.yaw = pose->orientation.yaw + dt * (v / distance_between_front_and_rear_axles) * tan(phi);
 	pose->orientation.yaw = carmen_normalize_theta(pose->orientation.yaw);
 }
 
@@ -261,29 +272,35 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 
 	//printf("*** GPS Queue size: %ld Odom Queue size: %ld\n", gps_queue.size(), odometry_queue.size());
 
-	int gpsid = find_nearest_fused_gps(velodyne_message->timestamp);
-	int odomid = find_nearest_odometry(velodyne_message->timestamp);
-	int orid = find_nearest_gps_orientation(velodyne_message->timestamp);
+	//int gpsid = find_nearest_gps(velodyne_message->timestamp);
+	//int odomid = find_nearest_odometry(velodyne_message->timestamp);
+	//int orid = find_nearest_gps_orientation(velodyne_message->timestamp);
+	int gpsid = find_nearest_message<StampedPose>(gps_queue, velodyne_message->timestamp, "gps to velodyne");
+	int odomid = find_nearest_message<StampedOdometry>(odometry_queue, velodyne_message->timestamp, "odometry to velodyne");
+	//int orid = find_nearest_message<StampedOrientation>(gps_orientation_queue, velodyne_message->timestamp, "gps orientation to velodyne");
 
-	if ((gpsid >= 0) && (odomid >= 0) && (orid >= 0))
+	if ((gpsid >= 0) && (odomid >= 0)) // && (orid >= 0))
 	{
 		if (!is_first) // ignore the first message to get a valid last_time
 		{
-			dt = fabs(velodyne_message->timestamp - last_time);
-			dt_gps = fabs(velodyne_message->timestamp - gps_queue[gpsid].time);
+			dt = velodyne_message->timestamp - last_time;
+			dt_gps = velodyne_message->timestamp - gps_queue[gpsid].time;
+
 			gps_pose = gps_queue[gpsid].pose;
-			gps_orientation = gps_orientation_queue[orid].orientation.yaw;
-			gps_orientation_valid = gps_orientation_valid_queue[orid];
+			// gps_orientation = gps_orientation_queue[orid].orientation.yaw;
+			// gps_orientation_valid = gps_orientation_valid_queue[orid];
+			gps_orientation = gps_pose.orientation.yaw;
+			gps_orientation_valid = 1;
 
 			double gps_std = gps_queue_stds[gpsid];
 
 			if ((dt <= 0) || (dt_gps <= 0))// || (odometry_queue[odomid].v < 0.05))
-				return;
+				printf("** ERROR: UNPREDICTED PROBLEM\n");
 
 			ackerman_prediction(&dead_reckoning, odometry_queue[odomid].v, odometry_queue[odomid].phi, dt);
 			ackerman_prediction(&gps_pose, odometry_queue[odomid].v, odometry_queue[odomid].phi, dt_gps);
 
-			int saved_ok = accumulate_clouds(velodyne_message, velodyne_path);
+			int saved_ok = accumulate_clouds(velodyne_message, velodyne_path, odometry_queue[odomid].v, odometry_queue[odomid].phi);
 
 			if (saved_ok)
 				//write_sensor_data(dead_reckoning, gps_pose, velodyne_message->timestamp, gps_std, gps_pose.orientation.yaw);
@@ -308,10 +325,11 @@ gps_xyz_message_handler(carmen_gps_xyz_message *message)
 	int xsid;
 	double yaw, pitch, roll;
 
-	if (message->nr != 1)
+	if (message->nr != gps_to_use)
 		return;
 
-	xsid = find_nearest_xsens(message->timestamp);
+	//xsid = find_nearest_xsens(message->timestamp);
+	xsid = find_nearest_message<StampedOrientation>(xsens_queue, message->timestamp, "xsens to gps");
 
 	if (xsid < 0)
 		return;
@@ -337,14 +355,22 @@ gps_xyz_message_handler(carmen_gps_xyz_message *message)
 
 		StampedPose pose;
 
-		pose.pose.position.x = rotgps.getOrigin().x();
-		pose.pose.position.y = rotgps.getOrigin().y();
-		pose.pose.position.z = rotgps.getOrigin().z();
+		// pose.pose.position.x = rotgps.getOrigin().x();
+		// pose.pose.position.y = rotgps.getOrigin().y();
+		// pose.pose.position.z = rotgps.getOrigin().z();
+		// pose.pose.orientation.roll = roll;
+		// pose.pose.orientation.pitch = pitch;
+		// pose.pose.orientation.yaw = yaw;
 
-		pose.pose.orientation.roll = roll;
-		pose.pose.orientation.pitch = pitch;
-		pose.pose.orientation.yaw = yaw;
-
+		pose.pose.position.x = message->x;
+		pose.pose.position.y = message->y;
+		pose.pose.position.z = 0.0;
+		pose.pose.orientation.roll = 0.0;
+		pose.pose.orientation.pitch = 0.0;
+		if (gps_queue.size() > 0)
+			pose.pose.orientation.yaw = atan2(message->y - gps_queue[gps_queue.size() - 1].pose.position.y, message->x - gps_queue[gps_queue.size() - 1].pose.position.x);
+		else
+			pose.pose.orientation.yaw = 0.0;
 		pose.time = message->timestamp;
 
 		double gps_std;
@@ -375,11 +401,8 @@ gps_xyz_message_handler(carmen_gps_xyz_message *message)
 				gps_std = DBL_MAX;
 		}
 
-		add_message_to_queue<double>(gps_queue_stds, gps_std,
-				gps_stds_queue_current_position, GPS_QUEUE_MAX_SIZE);
-
-		add_message_to_queue<StampedPose>(gps_queue, pose,
-				gps_queue_current_position, GPS_QUEUE_MAX_SIZE);
+		add_message_to_queue<double>(gps_queue_stds, gps_std, GPS_QUEUE_MAX_SIZE);
+		add_message_to_queue<StampedPose>(gps_queue, pose, GPS_QUEUE_MAX_SIZE);
 	}
 }
 
@@ -393,8 +416,7 @@ base_ackermann_handler(carmen_base_ackerman_odometry_message *odometry)
 	odom.phi = odometry->phi;
 	odom.time = odometry->timestamp;
 
-	add_message_to_queue<StampedOdometry>(odometry_queue, odom,
-			odometry_queue_current_position, ODOMETRY_QUEUE_MAX_SIZE);
+	add_message_to_queue<StampedOdometry>(odometry_queue, odom, ODOMETRY_QUEUE_MAX_SIZE);
 }
 
 
@@ -409,8 +431,7 @@ xsens_mtig_message_handler(carmen_xsens_mtig_message* xsens_mtig)
 	Matrix3x3(q).getEulerYPR(data.orientation.yaw, data.orientation.pitch, data.orientation.roll);
 	data.time = xsens_mtig->timestamp;
 
-	add_message_to_queue<StampedOrientation>(xsens_queue, data,
-			xsens_queue_current_position, XSENS_QUEUE_MAX_SIZE);
+	add_message_to_queue<StampedOrientation>(xsens_queue, data, XSENS_QUEUE_MAX_SIZE);
 }
 
 
@@ -427,8 +448,7 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 	Matrix3x3(q).getEulerYPR(data.orientation.yaw, data.orientation.pitch, data.orientation.roll);
 	data.time = xsens_mti->timestamp;
 
-	add_message_to_queue<StampedOrientation>(xsens_queue, data,
-			xsens_queue_current_position, XSENS_QUEUE_MAX_SIZE);
+	add_message_to_queue<StampedOrientation>(xsens_queue, data, XSENS_QUEUE_MAX_SIZE);
 }
 
 
@@ -445,11 +465,8 @@ gps_orientation_handler(carmen_gps_gphdt_message *message)
 	data.orientation.roll = 0;
 	data.time = message->timestamp;
 
-	add_message_to_queue<StampedOrientation>(gps_orientation_queue, data,
-			gps_orientation_queue_current_position, GPS_QUEUE_MAX_SIZE);
-
-	add_message_to_queue<int>(gps_orientation_valid_queue, message->valid,
-			gps_orientation_valid_position, GPS_QUEUE_MAX_SIZE);
+	add_message_to_queue<StampedOrientation>(gps_orientation_queue, data, GPS_QUEUE_MAX_SIZE);
+	add_message_to_queue<int>(gps_orientation_valid_queue, message->valid, GPS_QUEUE_MAX_SIZE);
 }
 
 
@@ -483,6 +500,9 @@ get_particles_std(carmen_fused_odometry_particle_message *msg)
 static void
 fused_odometry_particle_message_handler(carmen_fused_odometry_particle_message *msg)
 {
+	if (!use_fused_odometry)
+		return;
+
 	StampedPose pose;
 
 	pose.pose.position.x = msg->pose.position.x;
@@ -495,12 +515,10 @@ fused_odometry_particle_message_handler(carmen_fused_odometry_particle_message *
 
 	pose.time = msg->timestamp;
 
-	add_message_to_queue<StampedPose>(gps_queue, pose,
-			gps_queue_current_position, GPS_QUEUE_MAX_SIZE);
+	add_message_to_queue<StampedPose>(gps_queue, pose, GPS_QUEUE_MAX_SIZE);
 
 	double gps_std = get_particles_std(msg);
-	add_message_to_queue<double>(gps_queue_stds, gps_std,
-			gps_stds_queue_current_position, GPS_QUEUE_MAX_SIZE);
+	add_message_to_queue<double>(gps_queue_stds, gps_std, GPS_QUEUE_MAX_SIZE);
 
 	StampedOrientation data;
 
@@ -509,11 +527,8 @@ fused_odometry_particle_message_handler(carmen_fused_odometry_particle_message *
 	data.orientation.roll = msg->pose.orientation.roll;
 	data.time = msg->timestamp;
 
-	add_message_to_queue<StampedOrientation>(gps_orientation_queue, data,
-			gps_orientation_queue_current_position, GPS_QUEUE_MAX_SIZE);
-
-	add_message_to_queue<int>(gps_orientation_valid_queue, (gps_std < 0.5)? 1 : 0,
-			gps_orientation_valid_position, GPS_QUEUE_MAX_SIZE);
+	add_message_to_queue<StampedOrientation>(gps_orientation_queue, data, GPS_QUEUE_MAX_SIZE);
+	add_message_to_queue<int>(gps_orientation_valid_queue, (gps_std < 0.5)? 1 : 0, GPS_QUEUE_MAX_SIZE);
 }
 
 
@@ -571,13 +586,6 @@ main(int argc, char **argv)
 		printf("Use %s <velodyne-path> <output-filename>\n", argv[0]);
 		exit(0);
 	}
-
-	gps_queue_current_position = 0;
-	xsens_queue_current_position = 0;
-	odometry_queue_current_position = 0;
-	gps_stds_queue_current_position = 0;
-	gps_orientation_queue_current_position = 0;
-	gps_orientation_valid_position = 0;
 
 	initialize_global_variables(argv);
 	carmen_randomize(&argc, &argv);

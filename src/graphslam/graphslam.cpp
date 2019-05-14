@@ -156,16 +156,16 @@ r2d(double angle)
 
 
 void
-add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure, double gps_std)
+add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure, double gps_std_from_quality_flag, double gps_xy_std_multiplier)
 {
 	Matrix3d cov;
 	Matrix3d information;
 
-	cov.data()[0] = pow(gps_std * 25.0, 2); // Alberto
+	cov.data()[0] = pow(gps_std_from_quality_flag * gps_xy_std_multiplier, 2); // Alberto
 	cov.data()[1] = 0;
 	cov.data()[2] = 0;
 	cov.data()[3] = 0;
-	cov.data()[4] = pow(gps_std * 25.0, 2);
+	cov.data()[4] = pow(gps_std_from_quality_flag * gps_xy_std_multiplier, 2);
 	cov.data()[5] = 0;
 	cov.data()[6] = 0;
 	cov.data()[7] = 0;
@@ -204,20 +204,20 @@ add_vertices(SparseOptimizer *optimizer)
 
 
 void
-add_odometry_edges(SparseOptimizer *optimizer)
+add_odometry_edges(SparseOptimizer *optimizer, double odom_xy_std, double odom_orient_std)
 {
 	Matrix3d cov;
 	Matrix3d information;
 
-	cov.data()[0] = pow(0.1, 2);
+	cov.data()[0] = pow(odom_xy_std, 2);
 	cov.data()[1] = 0;
 	cov.data()[2] = 0;
 	cov.data()[3] = 0;
-	cov.data()[4] = pow(0.1, 2);
+	cov.data()[4] = pow(odom_xy_std, 2);
 	cov.data()[5] = 0;
 	cov.data()[6] = 0;
 	cov.data()[7] = 0;
-	cov.data()[8] = pow(0.009, 2);
+	cov.data()[8] = pow(odom_orient_std, 2);
 
 	information = cov.inverse();
 
@@ -229,7 +229,7 @@ add_odometry_edges(SparseOptimizer *optimizer)
 		double dist = sqrt(pow(measure[0], 2) + pow(measure[1], 2));
 		total_dist += dist;
 
-		dist = dist * (1.045); // Alberto 1.0293
+//		dist = dist * (1.045); // Alberto 1.0293
 		measure.setTranslation(Vector2d(dist * cos(measure[2]), dist * sin(measure[2])));
 
 		if (abs(input_data[i + 1].time - input_data[i].time) > 10)
@@ -325,7 +325,7 @@ find_loop_with_gps(SE2 pose, double time)
 
 
 void
-add_gps_edges(SparseOptimizer *optimizer)
+add_gps_edges(SparseOptimizer *optimizer, double gps_xy_std_multiplier)
 {
 //	int is_first = 1;
 	SE2 diff(0, 0, 0);
@@ -336,7 +336,7 @@ add_gps_edges(SparseOptimizer *optimizer)
 	for (size_t i = 0; i < input_data.size(); i++)
 	{
 		double gps_yaw = input_data[i].gps_yaw;
-		double gps_std = input_data[i].gps_std;
+		double gps_std_from_quality_flag = input_data[i].gps_std;
 		SE2 gmeasure = input_data[i].gps;
 		SE2 measure(gmeasure[0] - input_data[0].gps[0], gmeasure[1] - input_data[0].gps[1], gps_yaw /*gmeasure[2]*/); // subtract the first gps
 
@@ -366,7 +366,7 @@ add_gps_edges(SparseOptimizer *optimizer)
 //			 ((fabs(diff[2]) < 0.35))) // && (sqrt(pow(diff[0], 2) + pow(diff[1], 2)) < 1.0)))
 		{
 			VertexSE2 *v = dynamic_cast<VertexSE2*>(optimizer->vertices()[i]);
-			add_gps_edge(optimizer, v, measure, gps_std);
+			add_gps_edge(optimizer, v, measure, gps_std_from_quality_flag, gps_xy_std_multiplier);
 		}
 //		else
 //			printf("Attention to GPS %d: %lf %lf %lf!!\n", (int) i, diff[0], diff[1], diff[2]);
@@ -485,7 +485,7 @@ add_icp_edges(SparseOptimizer *optimizer)
 
 
 void
-load_data_to_optimizer(SparseOptimizer *optimizer)
+load_data_to_optimizer(SparseOptimizer *optimizer, double gps_xy_std_multiplier, double odom_xy_std, double odom_orient_std)
 {
 	// read_data("data-log_voltadaufes-20130916-with-icp-processed.txt");
 	// read_data("data-log_voltadaufes-20130916-odom-processed-without-icp.txt");
@@ -496,8 +496,8 @@ load_data_to_optimizer(SparseOptimizer *optimizer)
 	read_loop_restrictions(loops_file);
 
 	add_vertices(optimizer);
-	add_odometry_edges(optimizer);
-	add_gps_edges(optimizer);
+	add_odometry_edges(optimizer, odom_xy_std, odom_orient_std);
+	add_gps_edges(optimizer, gps_xy_std_multiplier);
 	add_loop_closure_edges(optimizer);
 	// add_icp_edges(optimizer);
 	// exit(0);
@@ -586,16 +586,28 @@ initialize_optimizer()
 }
 
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	if (argc < 4)
-	{
-		exit(printf("Use %s <input-file> <loops-file> <saida.txt>\n", argv[0]));
-	}
+		exit(printf("Use %s <input-file> <loops-file> <saida.txt> <gps_xy_std_multiplier (meters)> <odom_xy_std (meters)> <odom_orient_std (degrees)>\n", argv[0]));
 
 	input_file = argv[1];
 	loops_file = argv[2];
 	out_file = argv[3];
+
+	double gps_xy_std_multiplier = 5.0;
+	double odom_xy_std = 0.1;
+	double odom_orient_std = 0.009;
+
+	if (argc >= 5)
+		gps_xy_std_multiplier = atof(argv[4]);
+
+	if (argc >= 6)
+		odom_xy_std = atof(argv[5]);
+
+	if (argc >= 7)
+		odom_orient_std = carmen_degrees_to_radians(atof(argv[6]));
 
 	SparseOptimizer* optimizer;
 
@@ -607,12 +619,12 @@ int main(int argc, char **argv)
 	factory->registerType("EDGE_GPS", new HyperGraphElementCreator<EdgeGPS>);
 
 	optimizer = initialize_optimizer();
-	load_data_to_optimizer(optimizer);
+	load_data_to_optimizer(optimizer, gps_xy_std_multiplier, odom_xy_std, odom_orient_std);
 
 	optimizer->setVerbose(true);
 	cerr << "Optimizing" << endl;
 	prepare_optimization(optimizer);
-	optimizer->optimize(20);
+	optimizer->optimize(100);
 	cerr << "OptimizationDone!" << endl;
 	save_corrected_vertices(optimizer);
 	cerr << "OutputSaved!" << endl;

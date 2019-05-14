@@ -691,6 +691,52 @@ save_poses_in_graphslam_format(ParticleSwarmOptimization &optimizer, PsoData *ps
 
 
 void
+print_optimization_report(FILE *f_calibration, FILE *f_report, ParticleSwarmOptimization *optimizer)
+{
+	if (use_non_linear_phi)
+	{
+		if (f_calibration)
+			fprintf(f_calibration,
+					"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf,  k1: %lf,  k2: %lf\n",
+					optimizer->GetBestSolution()[0], optimizer->GetBestSolution()[1],
+					optimizer->GetBestSolution()[2], optimizer->GetBestSolution()[3],
+					optimizer->GetBestSolution()[4], optimizer->GetBestSolution()[5],
+					optimizer->GetBestSolution()[6]);
+
+		fprintf(stderr,
+				"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf,  k1: %lf,  k2: %lf\n",
+				optimizer->GetBestSolution()[0], optimizer->GetBestSolution()[1],
+				optimizer->GetBestSolution()[2], optimizer->GetBestSolution()[3],
+				optimizer->GetBestSolution()[4], optimizer->GetBestSolution()[5],
+				optimizer->GetBestSolution()[6]);
+	}
+	else
+	{
+		if (f_calibration)
+			fprintf(f_calibration,
+					"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf\n",
+					optimizer->GetBestSolution()[0], optimizer->GetBestSolution()[1],
+					optimizer->GetBestSolution()[2], optimizer->GetBestSolution()[3],
+					optimizer->GetBestSolution()[4]);
+
+		fprintf(stderr,
+				"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf\n",
+				optimizer->GetBestSolution()[0], optimizer->GetBestSolution()[1],
+				optimizer->GetBestSolution()[2], optimizer->GetBestSolution()[3],
+				optimizer->GetBestSolution()[4]);
+	}
+
+	if (f_report)
+	{
+		fprintf(f_report, "Fitness (MSE): %lf\n", optimizer->GetBestFitness());
+		fprintf(f_report, "Fitness (SQRT(MSE)): %lf\n", sqrt(fabs(optimizer->GetBestFitness())));
+		fprintf(stderr, "Fitness (MSE): %lf\n", optimizer->GetBestFitness());
+		fprintf(stderr, "Fitness (SQRT(MSE)): %lf\n", sqrt(fabs(optimizer->GetBestFitness())));
+	}
+}
+
+
+void
 plot_graph(ParticleSwarmOptimization *optimizer, void *data, int particle_id)
 {
 	static bool first_time = true;
@@ -731,47 +777,8 @@ plot_graph(ParticleSwarmOptimization *optimizer, void *data, int particle_id)
 			pso_data->lines[first_sample].gps_x, pso_data->lines[first_sample].gps_y);
 
 	fflush(gnuplot_pipe);
-}
 
-
-void
-print_optimization_report(FILE* f_calibration, FILE* f_report, ParticleSwarmOptimization &optimizer)
-{
-	if (use_non_linear_phi)
-	{
-		fprintf(f_calibration,
-				"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf,  k1: %lf,  k2: %lf\n",
-				optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
-				optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
-				optimizer.GetBestSolution()[4], optimizer.GetBestSolution()[5],
-				optimizer.GetBestSolution()[6]);
-
-		fprintf(stderr,
-				"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf,  k1: %lf,  k2: %lf\n",
-				optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
-				optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
-				optimizer.GetBestSolution()[4], optimizer.GetBestSolution()[5],
-				optimizer.GetBestSolution()[6]);
-	}
-	else
-	{
-		fprintf(f_calibration,
-				"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf\n",
-				optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
-				optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
-				optimizer.GetBestSolution()[4]);
-
-		fprintf(stderr,
-				"v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf\n",
-				optimizer.GetBestSolution()[0], optimizer.GetBestSolution()[1],
-				optimizer.GetBestSolution()[2], optimizer.GetBestSolution()[3],
-				optimizer.GetBestSolution()[4]);
-	}
-
-	fprintf(f_report, "Fitness (MSE): %lf\n", optimizer.GetBestFitness());
-	fprintf(f_report, "Fitness (SQRT(MSE)): %lf\n", sqrt(fabs(optimizer.GetBestFitness())));
-	fprintf(stderr, "Fitness (MSE): %lf\n", optimizer.GetBestFitness());
-	fprintf(stderr, "Fitness (SQRT(MSE)): %lf\n", sqrt(fabs(optimizer.GetBestFitness())));
+	print_optimization_report(NULL, NULL, optimizer);
 }
 
 
@@ -935,7 +942,7 @@ main(int argc, char **argv)
 	optimizer.Optimize(plot_graph);
 
 	int first_sample;
-	print_optimization_report(f_calibration, f_report, optimizer);
+	print_optimization_report(f_calibration, f_report, &optimizer);
 	print_result(optimizer.GetBestSolution(), f_report, &pso_data, &first_sample, optimizer.GetBestParticleId());
 	save_poses_in_graphslam_format(optimizer, &pso_data, args.get<string>("poses_opt"), first_sample, optimizer.GetBestParticleId());
 	plot_graph(&optimizer, (void *) &pso_data, optimizer.GetBestParticleId());

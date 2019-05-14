@@ -39,13 +39,14 @@ LFLAGS += `pkg-config --libs opencv`
 LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp 
 
-SOURCES = grab_data.cpp velodyne_util.cpp graphslam.cpp run_icp_for_loop_closure.cpp graphslam_publish_main.cpp graphslam_params.cpp multimap_optimization.cpp multimap_matching.cpp gen_data_to_plot.cpp
+SOURCES = grab_data.cpp velodyne_util.cpp graphslam.cpp run_icp_for_loop_closure.cpp graphslam_publish_main.cpp graphslam_params.cpp multimap_optimization.cpp multimap_matching.cpp gen_data_to_plot.cpp pointcloud_viewer.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = grab_data run_icp_for_loop_closure graphslam graphslam_publish multimap_matching multimap_optimization
-TARGETS = grab_data graphslam run_icp_for_loop_closure graphslam_publish multimap_matching multimap_optimization gen_data_to_plot #run_icp   
+PUBLIC_BINARIES = grab_data run_icp_for_loop_closure graphslam graphslam_publish multimap_matching multimap_optimization pointcloud_viewer
+TARGETS = grab_data graphslam run_icp_for_loop_closure graphslam_publish multimap_matching multimap_optimization gen_data_to_plot pointcloud_viewer #run_icp   
 
+pointcloud_viewer: pointcloud_viewer.o
 run_icp: run_icp.o
 graphslam: graphslam.o
 graphslam_publish: graphslam_publish_main.o

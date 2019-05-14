@@ -310,7 +310,7 @@ save_pointcloud_to_file(char *filename, pcl::PointCloud<pcl::PointXYZRGB>::Ptr p
 
 
 int
-accumulate_clouds(carmen_velodyne_partial_scan_message *velodyne_message, char *velodyne_storage_dir)
+accumulate_clouds(carmen_velodyne_partial_scan_message *velodyne_message, char *velodyne_storage_dir, double v, double phi)
 {
 	static char cloud_name[1024];
 	static int first_iteraction = 1;
@@ -319,9 +319,8 @@ accumulate_clouds(carmen_velodyne_partial_scan_message *velodyne_message, char *
 	static rotation_matrix *r_matrix_car_to_global;
 	int current_point_cloud_index;
 
-	carmen_vector_3D_t robot_velocity = {0.0, 0.0, 0.0};
+	carmen_vector_3D_t robot_velocity = {v, 0.0, 0.0};
 	double pose_timestamp = 0.0;
-	double phi = 0.0;
 
 	if (first_iteraction)
 	{
