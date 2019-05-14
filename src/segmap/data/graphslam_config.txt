@@ -51,9 +51,9 @@ ignore_above_threshold = -0.3
 # Ignore points with z-coord (in sensor reference) below this threshold
 ignore_below_threshold = -1.79769e+308
 # Offset to subtract the pose (x-coord)
-offset_x = 7.75789e+06
+offset_x = 0
 # Offset to subtract the pose (y-coord)
-offset_y = -363561
+offset_y = 0
 # Whether or not to use pitch, and roll angles from xsens
 use_xsens = 1
 # Id of the gps to be used
