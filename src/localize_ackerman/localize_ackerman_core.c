@@ -131,7 +131,6 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 
 	filter->distance_travelled += fabs(v * dt);
 
-	// This kind of elitism may introduce a bias in the filter.
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
 		if (i != 0)
@@ -146,6 +145,9 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 
 			if (fabs(v) > 0.05)
 			{
+				// This update is similar to one used in "Map-Based Precision Vehicle Localization in Urban Environments" for updating the gps bias. 
+				// In this paper, however, an additional factor is used for slowly pulling the bias towards zero. 
+				// Using the rule from the paper, the update would be: phi = phi * gamma + N(0, phi_bias_std), where gamma = 0.9999.
 				filter->particles[i].phi_bias += carmen_gaussian_random(0.0, filter->param->phi_bias_std);
 
 				// 0.0175 radians is approx 1 degree
@@ -162,9 +164,13 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 			filter->particles[i].y = robot_pose.position.y + carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
 			filter->particles[i].theta = carmen_normalize_theta(
 					robot_pose.orientation.yaw + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
+			filter->particles[i].phi = phi_step;
+			filter->particles[i].v = v_step;
 		}
 		else
-		{	// Keep the mean particle of the previous run intact
+		{
+			// Keep the mean particle of the previous run intact
+			// Note: This kind of elitism may introduce a bias in the filter.
 			robot_pose.position.x = filter->particles[i].x;
 			robot_pose.position.y = filter->particles[i].y;
 			robot_pose.orientation.yaw = filter->particles[i].theta;
@@ -177,6 +183,8 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 			filter->particles[i].x = robot_pose.position.x;
 			filter->particles[i].y = robot_pose.position.y;
 			filter->particles[i].theta = carmen_normalize_theta(robot_pose.orientation.yaw);
+			filter->particles[i].phi = phi_step;
+			filter->particles[i].v = v_step;
 		}
 	}
 }
