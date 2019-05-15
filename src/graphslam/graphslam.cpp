@@ -632,12 +632,12 @@ get_transform_from_car_to_gps(CarmenParamFile &params, int gps_id)
 	string gps_name_str = string(gps_name);
 
 	gps2board = pose6d_to_matrix(
-		params.get<double>(gps_name_str + "_x"),
-		params.get<double>(gps_name_str + "_y"),
-		params.get<double>(gps_name_str + "_z"),
-		params.get<double>(gps_name_str + "_roll"),
-		params.get<double>(gps_name_str + "_pitch"),
-		params.get<double>(gps_name_str + "_yaw")
+		params.get<double>(gps_name_str + string("_x")),
+		params.get<double>(gps_name_str + string("_y")),
+		params.get<double>(gps_name_str + string("_z")),
+		params.get<double>(gps_name_str + string("_roll")),
+		params.get<double>(gps_name_str + string("_pitch")),
+		params.get<double>(gps_name_str + string("_yaw"))
 	);
 
 	board2car = pose6d_to_matrix(
@@ -664,6 +664,8 @@ main(int argc, char **argv)
 	input_file = argv[1];
 	CarmenParamFile params = CarmenParamFile(argv[2]);
 	int gps_id = atoi(argv[3]);
+	//params.print();
+	Matrix<double, 4, 4> car2gps = get_transform_from_car_to_gps(params, gps_id);
 
 	loops_file = argv[4];
 	out_file = argv[5];
@@ -689,10 +691,9 @@ main(int argc, char **argv)
 	loadStandardSolver(dlSolverWrapper, argc, argv);
 	Factory* factory = Factory::instance();
 	factory->registerType("EDGE_GPS", new HyperGraphElementCreator<EdgeGPS>);
+	factory->registerType("EDGE_GPS_NEW", new HyperGraphElementCreator<EdgeGPSNew>);
 
 	optimizer = initialize_optimizer();
-
-	Matrix<double, 4, 4> car2gps = get_transform_from_car_to_gps(params, gps_id);
 	load_data_to_optimizer(optimizer, gps_xy_std_multiplier, odom_xy_std, odom_orient_std, car2gps);
 
 	optimizer->setVerbose(true);

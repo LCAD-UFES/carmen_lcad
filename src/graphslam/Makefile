@@ -48,7 +48,7 @@ TARGETS = grab_data graphslam run_icp_for_loop_closure graphslam_publish multima
 
 pointcloud_viewer: pointcloud_viewer.o
 run_icp: run_icp.o
-graphslam: graphslam.o
+graphslam: graphslam.o $(CARMEN_HOME)/src/utilities/libcarmen_util/libcarmen_util.a
 graphslam_publish: graphslam_publish_main.o
 run_icp_for_loop_closure: run_icp_for_loop_closure.o
 grab_data: grab_data.o velodyne_util.o graphslam_params.o

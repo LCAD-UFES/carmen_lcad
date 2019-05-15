@@ -15,6 +15,7 @@ class CarmenParamFile
 public:
 	CarmenParamFile(const char *path);
 	template<typename T> T get(std::string name);
+	void print();
 
 protected:
 	std::map<std::string, std::string> _params;
@@ -24,6 +25,10 @@ protected:
 template<typename T> T
 CarmenParamFile::get(std::string name)
 {
+	//printf("name: %s\n", name.c_str());
+	//printf("_params.size(): %ld\n", _params.size());
+	//printf("_params.count(%s): %ld\n", name.c_str(), _params.count(name));
+
 	if (_params.count(name) == 0)
 		exit(printf("Error: parameter '%s' not found.\n", name.c_str()));
 
