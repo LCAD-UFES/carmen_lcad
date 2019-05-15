@@ -73,14 +73,34 @@ create_particle_filter(CommandLineArguments &args)
 
 
 NewCarmenDataset*
-create_dataset(string log_path, double camera_latency, string mode)
+create_dataset(string log_path, CommandLineArguments &args, string pose_mode)
 {
+	double camera_latency = args.get<double>("camera_latency");
+	string intensity_mode = args.get<string>("intensity_mode");
+
 	string poses_path, odom_calib_path;
 
-	poses_path = poses_path_from_pose_mode(mode, log_path);
+	poses_path = poses_path_from_pose_mode(pose_mode, log_path);
 	odom_calib_path = default_odom_calib_path(log_path.c_str());
 
-	NewCarmenDataset *dataset = new NewCarmenDataset(log_path, odom_calib_path, poses_path, camera_latency);
+	NewCarmenDataset::SyncSensor sync_sensor;
+	SensorPreproc::IntensityMode i_mode;
+	i_mode = parse_intensity_mode(intensity_mode);
+
+	if (i_mode == SensorPreproc::COLOR || i_mode == SensorPreproc::SEMANTIC)
+		sync_sensor = NewCarmenDataset::SYNC_BY_CAMERA;
+	else
+		sync_sensor = NewCarmenDataset::SYNC_BY_VELODYNE;
+
+	int gps_id = args.get<int>("gps_id");
+
+	NewCarmenDataset *dataset = new NewCarmenDataset(
+			log_path,
+			args.get<string>("param_file"),
+			odom_calib_path,
+			poses_path, camera_latency,
+			gps_id,
+			sync_sensor);
 
 	return dataset;
 }
@@ -108,7 +128,7 @@ create_sensor_preproc(CommandLineArguments &args,
 	double above = args.get<double>("ignore_above_threshold");
 	double below = args.get<double>("ignore_below_threshold");
 
-	if (i_mode == SensorPreproc::SEMANTIC)
+	if (i_mode == SensorPreproc::SEMANTIC || i_mode == SensorPreproc::COLOR)
 	{
 		above = DBL_MAX;
 		below = -DBL_MAX;

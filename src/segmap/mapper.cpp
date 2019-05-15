@@ -39,7 +39,7 @@ main(int argc, char **argv)
 		boost::filesystem::remove_all(map_path);
 
 	GridMap map = create_grid_map(args, 1);
-	NewCarmenDataset *dataset = create_dataset(log_path, args.get<double>("camera_latency"), "graphslam");
+	NewCarmenDataset *dataset = create_dataset(log_path, args, "graphslam");
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 
 	create_map(map, dataset, args.get<int>("step"), preproc,

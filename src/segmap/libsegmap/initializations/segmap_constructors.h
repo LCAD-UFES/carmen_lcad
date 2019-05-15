@@ -12,7 +12,7 @@
 std::string poses_path_from_pose_mode(std::string mode, std::string log_path);
 GridMap create_grid_map(CommandLineArguments &args, int save_map);
 ParticleFilter create_particle_filter(CommandLineArguments &args);
-NewCarmenDataset* create_dataset(std::string log_path, double camera_latency, std::string mode = "graphslam");
+NewCarmenDataset* create_dataset(std::string log_path, CommandLineArguments &args, std::string pose_mode);
 SensorPreproc create_sensor_preproc(CommandLineArguments &args,
 																		NewCarmenDataset *dataset,
 																		std::string log_path);

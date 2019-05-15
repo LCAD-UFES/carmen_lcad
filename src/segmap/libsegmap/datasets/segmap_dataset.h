@@ -12,6 +12,7 @@
 #include <carmen/synchronized_data_package.h>
 #include <carmen/odom_calib_data.h>
 #include <carmen/segmap_pose2d.h>
+#include <carmen/carmen_param_file.h>
 
 
 class NewCarmenDataset
@@ -40,6 +41,7 @@ public:
 	};
 
 	NewCarmenDataset(std::string path,
+									 std::string carmen_ini,
 	                 std::string odom_calib_path = "",
 									 std::string poses_path = "",
 									 double camera_latency = 0.0,
@@ -64,6 +66,12 @@ public:
 	// Returns a matrix to transfrom from xsens to car frame.
 	Eigen::Matrix<double, 4, 4> xsens2car();
 
+	// Returns a matrix to transfrom from gps to car frame.
+	Eigen::Matrix<double, 4, 4> car2gps();
+
+	// Returns a matrix to transfrom from gps to car frame.
+	Eigen::Matrix<double, 4, 4> gps2car();
+
 	// Number of messages of the sensor used for synchronization.
 	// For example, if the velodyne is the reference sensor, the method returns
 	// the number of velodyne messages in the log.
@@ -87,6 +95,7 @@ protected:
 	int _gps_id;
 
 	OdomCalib _calib;
+	CarmenParamFile *_params;
 	std::vector<DataSample*> _data;
 	std::vector<Pose2d> _poses;
 

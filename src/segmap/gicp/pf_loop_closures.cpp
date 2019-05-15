@@ -289,6 +289,7 @@ main(int argc, char **argv)
 	CommandLineArguments args;
 
 	args.add_positional<std::string>("log_path", "Path to a log", 1);
+	args.add_positional<string>("param_file", "Path to the carmen.ini file", 1);
 	args.add<std::string>("odom_calib,o", "Odometry calibration file", "none");
 	args.add<std::string>("fused_odom,f", "Fused odometry file (optimized using graphslam)", "none");
 	args.add<double>("inter_thresh", "Threshold for percentage of points that thit map for detecting a loop closure [0-1]", 0.97);
@@ -302,12 +303,8 @@ main(int argc, char **argv)
 	args.save_config_file(default_data_dir() + "/pf_loop_closures_config.txt");
 	args.parse(argc, argv);
 
-	NewCarmenDataset dataset(args.get<string>("log_path"),
-	                         args.get<string>("odom_calib"),
-	                         args.get<string>("fused_odom"),
-	                         args.get<int>("gps_id"));
-
-	SensorPreproc preproc = create_sensor_preproc(args, &dataset, args.get<string>("log_path"));
+	NewCarmenDataset *dataset = create_dataset(args.get<string>("log_path"), args, "fused_odom");
+	SensorPreproc preproc = create_sensor_preproc(args, dataset, args.get<string>("log_path"));
 	remove_previous_map(args.get<string>("map_path"));
 	GridMap map = create_grid_map(args, 1);
 	ParticleFilter pf = create_particle_filter(args);
@@ -318,7 +315,7 @@ main(int argc, char **argv)
 	Pose2d offset = Pose2d(args.get<double>("offset_x"),
 												 args.get<double>("offset_y"), 0);
 
-	run_loop_closure_estimation(dataset, preproc, map, pf,
+	run_loop_closure_estimation(*dataset, preproc, map, pf,
 															&loop_closure_indices,
 															&relative_transform_vector,
 															args.get<double>("inter_thresh"),

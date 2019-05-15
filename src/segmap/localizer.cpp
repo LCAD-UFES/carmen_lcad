@@ -166,7 +166,7 @@ main(int argc, char **argv)
 	args.parse(argc, argv);
 
 	string log_path = args.get<string>("log_path");
-	NewCarmenDataset* dataset = create_dataset(log_path, args.get<double>("camera_latency"), "graphslam_to_map");
+	NewCarmenDataset* dataset = create_dataset(log_path, args, "graphslam_to_map");
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 	GridMap map = create_grid_map(args, 0);
 	ParticleFilter pf = create_particle_filter(args);
