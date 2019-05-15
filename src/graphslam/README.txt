@@ -1,5 +1,26 @@
 Como criar um mapa usando GraphSLAM [usando o process]:
 
+1. Execute a calibração da odometria como descrito em $CARMEN_HOME/src/odometry_calibration/README.txt
+2. Crie o diretorio $CARMEN_HOME/bin/tmp
+3. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Como criar um mapa usando GraphSLAM [usando o process]:
+
 #  Antes de executar os passos abaixo, leia o ../src/odometry_calibration/README.txt e execute os passos de lá
 
 #  Nos casos em que o navigator_gui2 eh usado abaixo, certifique-se de que o mapa corrente no menu Maps da interface do navigator_gui2 eh o Map.
