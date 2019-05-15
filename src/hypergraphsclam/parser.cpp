@@ -25,7 +25,7 @@ prepare_all_directories()
 int 
 main (int argc, char **argv) 
 {
-    if (argc != 3) 
+    if (3 > argc) 
     {
         // error
         std::cout << "Usage: ./parser <log_file> <output_file>" << std::endl;
@@ -37,9 +37,6 @@ main (int argc, char **argv)
     // read the input filenames
     std::string input_file(argv[1]);
     std::string output_file(argv[2]);
-
-    // std::cout << "Input file: " << input_file << "\n";
-    // std::cout << "Output file: " << output_file << "\n";
 
     std::string carmen_home(getenv("CARMEN_HOME"));
     std::string config_filename = 3 < argc ? std::string(argv[3]) : carmen_home + "/src/hypergraphsclam/config/parser_config.txt";
@@ -72,6 +69,4 @@ main (int argc, char **argv)
     std::cout << "Done!\n";
 
     return 0;
-
-
 }

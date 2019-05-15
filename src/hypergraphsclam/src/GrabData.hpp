@@ -119,6 +119,8 @@ namespace hyper {
             bool use_sick_loop;
             bool use_bumblebee_loop;
 
+            bool use_fake_gps;
+
             // separate the gps, sick and velodyne messages
             void SeparateMessages();
 
@@ -165,11 +167,14 @@ namespace hyper {
             // iterate over the entire message list and build the measures and estimates
             void BuildGPSMeasures();
 
+            // iterate over the entire gps list and build the angles based on gps positions
+            void BuildFakeGPSMeasures();
+
             // iterate over the entire message list and build the measures and estimates
             void BuildOdometryMeasures();
 
             // build the initial estimates
-            void BuildOdometryEstimates();
+            void BuildOdometryEstimates(bool gps_based);
 
             // build an icp measure
             bool BuildLidarOdometryMeasure(
@@ -236,7 +241,7 @@ namespace hyper {
             void SaveXSENSEdges(std::ofstream &os);
 
             // save the gps edges
-            void SaveGPSEstimates();
+            void SaveGPSEstimates(std::string filename, bool original);
 
             // save icp edges
             void SaveLidarEdges(const std::string &msg_name, std::ofstream &os, const StampedLidarPtrVector &lidar_messages, bool use_lidar_odometry, bool use_lidar_loop);

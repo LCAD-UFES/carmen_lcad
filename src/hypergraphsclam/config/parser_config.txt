@@ -8,10 +8,10 @@ LOOP_REQUIRED_TIME 655.0
 LOOP_REQUIRED_DISTANCE 5.0
 
 -- how many threads the ICP (Interative Closest Point) method can use (typically the number of cores of your machine)
-ICP_THREADS_POOL_SIZE 24
+ICP_THREADS_POOL_SIZE 6
 
 -- each thread will take 400 clouds and execute the sensor movement estimates - Pior caso é usar 1 pois vai ser demorado pacas De 200 em diante é legal vai mais rapido muito grande tbm estraga
-ICP_THREAD_BLOCK_SIZE 400
+ICP_THREAD_BLOCK_SIZE 1200
 
 -- the distace parameter to find the next point cloud - Basicamente pula nuvens para diminuir ruido entre leituras, por exemplo carro parado(tem um tratamento mais completo no código para o caso de carro parado)
 --Tirado de um paper
@@ -29,14 +29,13 @@ CURVATURE_REQUIRED_TIME 0.0001
 -- Se quiser mais rapido, pode rodar o odometry calibration. porem nao parece ser muito necessario.
 -- Initial odometry bias guess, the default values are: v_mult = 1.0, phi_mult = 1.0 and phi_add = 0.0
 -- You can pick this values from a previous calibration result
-V_MULT_ODOMETRY_BIAS 1.045192
-PHI_MULT_ODOMETRY_BIAS 1.061054
-PHI_ADD_ODOMETRY_BIAS -0.000029
-
+V_MULT_ODOMETRY_BIAS 1.042872
+PHI_MULT_ODOMETRY_BIAS 1.069150
+PHI_ADD_ODOMETRY_BIAS -0.000079
 
 -- Descomente os argumentos abaixo para desabilitar a construcao das respectivas arestas
--- DISABLE_VELODYNE_ODOMETRY
--- DISABLE_VELODYNE_LOOP
+DISABLE_VELODYNE_ODOMETRY
+DISABLE_VELODYNE_LOOP
 DISABLE_SICK_ODOMETRY
 DISABLE_SICK_LOOP
 DISABLE_BUMBLEBEE_ODOMETRY
@@ -47,6 +46,8 @@ DISABLE_BUMBLEBEE_LOOP
 -- Make sure you have enough space available in your hard drive (3x the log size)
 -- SAVE_ACCUMULATED_POINT_CLOUDS
 
-
 -- indica qual gps a utilizar
-GPS_IDENTIFIER 2
+GPS_IDENTIFIER 3
+
+-- USE THE FAKE GPS
+USE_FAKE_GPS

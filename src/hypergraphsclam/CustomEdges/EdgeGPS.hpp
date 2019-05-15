@@ -48,8 +48,8 @@ class EdgeGPS : public BaseUnaryEdge<3, SE2, VertexSE2> {
 
             const VertexSE2* v = dynamic_cast<const VertexSE2*>(_vertices[0]);
 
-            // SE2 delta = _inverseFakeMeasurement * (v->estimate());
-            SE2 delta = _inverseMeasurement * (v->estimate());
+            SE2 delta = _inverseFakeMeasurement * (v->estimate());
+            // SE2 delta = _inverseMeasurement * (v->estimate());
 
             _error = delta.toVector();
 
