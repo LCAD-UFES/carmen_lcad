@@ -625,20 +625,28 @@ initialize_optimizer()
 Eigen::Matrix<double, 4, 4>
 get_transform_from_car_to_gps(CarmenParamFile &params, int gps_id)
 {
-	Eigen::Matrix<double, 4, 4> board2car, gps2board, car2gps;
+	Eigen::Matrix<double, 4, 4> board2car, gps2board, gps2car, car2gps;
 
 	char gps_name[128];
 	sprintf(gps_name, "gps_nmea_%d", gps_id);
 	string gps_name_str = string(gps_name);
 
 	gps2board = pose6d_to_matrix(
-		params.get<double>(gps_name_str + string("_x")),
-		params.get<double>(gps_name_str + string("_y")),
-		params.get<double>(gps_name_str + string("_z")),
-		params.get<double>(gps_name_str + string("_roll")),
-		params.get<double>(gps_name_str + string("_pitch")),
-		params.get<double>(gps_name_str + string("_yaw"))
+		params.get<double>(gps_name_str + "_x"),
+		params.get<double>(gps_name_str + "_y"),
+		params.get<double>(gps_name_str + "_z"),
+		params.get<double>(gps_name_str + "_roll"),
+		params.get<double>(gps_name_str + "_pitch"),
+		params.get<double>(gps_name_str + "_yaw")
 	);
+
+	printf("gps2board -> x: %lf y: %lf z: %lf roll: %lf pitch: %lf yaw: %lf\n",
+				params.get<double>(gps_name_str + "_x"),
+				params.get<double>(gps_name_str + "_y"),
+				params.get<double>(gps_name_str + "_z"),
+				params.get<double>(gps_name_str + "_roll"),
+				params.get<double>(gps_name_str + "_pitch"),
+				params.get<double>(gps_name_str + "_yaw"));
 
 	board2car = pose6d_to_matrix(
 		params.get<double>("sensor_board_1_x"),
@@ -649,7 +657,27 @@ get_transform_from_car_to_gps(CarmenParamFile &params, int gps_id)
 		params.get<double>("sensor_board_1_yaw")
 	);
 
-	car2gps = (board2car * gps2board).inverse();
+	printf("board2car -> x: %lf y: %lf z: %lf roll: %lf pitch: %lf yaw: %lf\n",
+					params.get<double>("sensor_board_1_x"),
+					params.get<double>("sensor_board_1_y"),
+					params.get<double>("sensor_board_1_z"),
+					params.get<double>("sensor_board_1_roll"),
+					params.get<double>("sensor_board_1_pitch"),
+					params.get<double>("sensor_board_1_yaw"));
+
+	gps2car = board2car * gps2board;
+
+	printf("gps2car -> x: %lf y: %lf z: %lf\n",
+					gps2car(0, 3),
+					gps2car(1, 3),
+					gps2car(2, 3));
+
+	car2gps = gps2car.inverse();
+
+	printf("car2gps -> x: %lf y: %lf z: %lf\n",
+				 car2gps(0, 3),
+				 car2gps(1, 3),
+				 car2gps(2, 3));
 
 	return (car2gps);
 }
