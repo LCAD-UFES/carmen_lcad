@@ -65,6 +65,7 @@ void
 add_default_slam_args(CommandLineArguments &args)
 {
 	args.add_positional<string>("log_path", "Path of a log", 1);
+	args.add_positional<string>("param_file", "Path to the carmen.ini file", 1);
 	args.add<double>("v_thresh", "Skip data packages with absolute velocity below this theshold", 0);
 	args.add<int>("step,s", "Number of data packages to skip", 1);
 }

@@ -23,6 +23,9 @@
 #include "g2o/core/optimizable_graph.h"
 
 #include "edge_gps_2D.h"
+#include "edge_gps_2D_new.h"
+#include <carmen/carmen_param_file.h>
+#include <Eigen/Core>
 
 using namespace std;
 using namespace g2o;
@@ -64,6 +67,33 @@ vector<pair<SE2, double> > gps;
 char *input_file;
 char *loops_file;
 char *out_file;
+
+
+Matrix<double, 4, 4>
+pose6d_to_matrix(double x, double y, double z, double roll, double pitch, double yaw)
+{
+	Matrix<double, 3, 3> Rx, Ry, Rz, R;
+	Matrix<double, 4, 4> T;
+
+	double rx, ry, rz;
+
+	rx = roll;
+	ry = pitch;
+	rz = yaw;
+
+    Rx << 1, 0, 0, 0, cos(rx), -sin(rx), 0, sin(rx), cos(rx);
+    Ry << cos(ry), 0, sin(ry), 0, 1, 0, -sin(ry), 0, cos(ry);
+    Rz << cos(rz), -sin(rz), 0, sin(rz), cos(rz), 0, 0, 0, 1;
+    R  = Rz * Ry * Rx;
+
+    T << R(0, 0), R(0, 1), R(0, 2), x,
+    	R(1, 0), R(1, 1), R(1, 2), y,
+		R(2, 0), R(2, 1), R(2, 2), z,
+		0, 0, 0, 1;
+
+    return T;
+}
+
 
 void
 read_data(char *filename)
@@ -156,7 +186,9 @@ r2d(double angle)
 
 
 void
-add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure, double gps_std_from_quality_flag, double gps_xy_std_multiplier)
+add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure,
+						 double gps_std_from_quality_flag, double gps_xy_std_multiplier,
+						 Matrix<double, 4, 4> &car2gps)
 {
 	Matrix3d cov;
 	Matrix3d information;
@@ -174,7 +206,8 @@ add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure, double gps_s
 
 	information = cov.inverse();
 
-	EdgeGPS *edge_gps = new EdgeGPS;
+	EdgeGPSNew *edge_gps = new EdgeGPSNew;
+	edge_gps->set_car2gps(car2gps);
 	edge_gps->vertices()[0] = optimizer->vertex(v->id());
 	edge_gps->setMeasurement(measure);
 	edge_gps->setInformation(information);
@@ -325,7 +358,7 @@ find_loop_with_gps(SE2 pose, double time)
 
 
 void
-add_gps_edges(SparseOptimizer *optimizer, double gps_xy_std_multiplier)
+add_gps_edges(SparseOptimizer *optimizer, double gps_xy_std_multiplier, Matrix<double, 4, 4> &car2gps)
 {
 //	int is_first = 1;
 	SE2 diff(0, 0, 0);
@@ -366,7 +399,7 @@ add_gps_edges(SparseOptimizer *optimizer, double gps_xy_std_multiplier)
 //			 ((fabs(diff[2]) < 0.35))) // && (sqrt(pow(diff[0], 2) + pow(diff[1], 2)) < 1.0)))
 		{
 			VertexSE2 *v = dynamic_cast<VertexSE2*>(optimizer->vertices()[i]);
-			add_gps_edge(optimizer, v, measure, gps_std_from_quality_flag, gps_xy_std_multiplier);
+			add_gps_edge(optimizer, v, measure, gps_std_from_quality_flag, gps_xy_std_multiplier, car2gps);
 		}
 //		else
 //			printf("Attention to GPS %d: %lf %lf %lf!!\n", (int) i, diff[0], diff[1], diff[2]);
@@ -485,7 +518,10 @@ add_icp_edges(SparseOptimizer *optimizer)
 
 
 void
-load_data_to_optimizer(SparseOptimizer *optimizer, double gps_xy_std_multiplier, double odom_xy_std, double odom_orient_std)
+load_data_to_optimizer(
+		SparseOptimizer *optimizer, double gps_xy_std_multiplier,
+		double odom_xy_std, double odom_orient_std,
+		Matrix<double, 4, 4> &car2gps)
 {
 	// read_data("data-log_voltadaufes-20130916-with-icp-processed.txt");
 	// read_data("data-log_voltadaufes-20130916-odom-processed-without-icp.txt");
@@ -497,7 +533,7 @@ load_data_to_optimizer(SparseOptimizer *optimizer, double gps_xy_std_multiplier,
 
 	add_vertices(optimizer);
 	add_odometry_edges(optimizer, odom_xy_std, odom_orient_std);
-	add_gps_edges(optimizer, gps_xy_std_multiplier);
+	add_gps_edges(optimizer, gps_xy_std_multiplier, car2gps);
 	add_loop_closure_edges(optimizer);
 	// add_icp_edges(optimizer);
 	// exit(0);
@@ -586,28 +622,64 @@ initialize_optimizer()
 }
 
 
+Eigen::Matrix<double, 4, 4>
+get_transform_from_car_to_gps(CarmenParamFile &params, int gps_id)
+{
+	Eigen::Matrix<double, 4, 4> board2car, gps2board, car2gps;
+
+	char gps_name[128];
+	sprintf(gps_name, "gps_nmea_%d", gps_id);
+	string gps_name_str = string(gps_name);
+
+	gps2board = pose6d_to_matrix(
+		params.get<double>(gps_name_str + "_x"),
+		params.get<double>(gps_name_str + "_y"),
+		params.get<double>(gps_name_str + "_z"),
+		params.get<double>(gps_name_str + "_roll"),
+		params.get<double>(gps_name_str + "_pitch"),
+		params.get<double>(gps_name_str + "_yaw")
+	);
+
+	board2car = pose6d_to_matrix(
+		params.get<double>("sensor_board_1_x"),
+		params.get<double>("sensor_board_1_y"),
+		params.get<double>("sensor_board_1_z"),
+		params.get<double>("sensor_board_1_roll"),
+		params.get<double>("sensor_board_1_pitch"),
+		params.get<double>("sensor_board_1_yaw")
+	);
+
+	car2gps = (board2car * gps2board).inverse();
+
+	return (car2gps);
+}
+
+
 int
 main(int argc, char **argv)
 {
-	if (argc < 4)
-		exit(printf("Use %s <input-file> <loops-file> <saida.txt> <gps_xy_std_multiplier (meters)> <odom_xy_std (meters)> <odom_orient_std (degrees)>\n", argv[0]));
+	if (argc < 6)
+		exit(printf("Use %s <input-file> <carmen_ini> <gps_id> <loops-file> <saida.txt> <gps_xy_std_multiplier (meters)> <odom_xy_std (meters)> <odom_orient_std (degrees)>\n", argv[0]));
 
 	input_file = argv[1];
-	loops_file = argv[2];
-	out_file = argv[3];
+	CarmenParamFile params = CarmenParamFile(argv[2]);
+	int gps_id = atoi(argv[3]);
+
+	loops_file = argv[4];
+	out_file = argv[5];
 
 	double gps_xy_std_multiplier = 5.0;
 	double odom_xy_std = 0.1;
 	double odom_orient_std = 0.009;
 
-	if (argc >= 5)
-		gps_xy_std_multiplier = atof(argv[4]);
-
-	if (argc >= 6)
-		odom_xy_std = atof(argv[5]);
-
 	if (argc >= 7)
-		odom_orient_std = carmen_degrees_to_radians(atof(argv[6]));
+		gps_xy_std_multiplier = atof(argv[6]);
+
+	if (argc >= 8)
+		odom_xy_std = atof(argv[7]);
+
+	if (argc >= 9)
+		odom_orient_std = carmen_degrees_to_radians(atof(argv[8]));
 
 	SparseOptimizer* optimizer;
 
@@ -619,7 +691,9 @@ main(int argc, char **argv)
 	factory->registerType("EDGE_GPS", new HyperGraphElementCreator<EdgeGPS>);
 
 	optimizer = initialize_optimizer();
-	load_data_to_optimizer(optimizer, gps_xy_std_multiplier, odom_xy_std, odom_orient_std);
+
+	Matrix<double, 4, 4> car2gps = get_transform_from_car_to_gps(params, gps_id);
+	load_data_to_optimizer(optimizer, gps_xy_std_multiplier, odom_xy_std, odom_orient_std, car2gps);
 
 	optimizer->setVerbose(true);
 	cerr << "Optimizing" << endl;

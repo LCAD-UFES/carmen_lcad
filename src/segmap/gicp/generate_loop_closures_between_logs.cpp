@@ -57,6 +57,7 @@ main(int argc, char **argv)
 
 	args.add_positional<string>("target", "Reference log", 1);
 	args.add_positional<string>("source", "Log that will be adjusted to the reference log", 1);
+	args.add_positional<string>("param_file", "Path to the carmen.ini file", 1);
 	args.add<string>("mode", "Technique for estimating displacement between loop closure poses [particle_filter | gicp | localization]");
 	args.add<int>("n_corrections_when_reinit", "Number of correction steps when reinitializing particle filter", 20);
 	add_default_sensor_preproc_args(args);
@@ -70,8 +71,8 @@ main(int argc, char **argv)
 	string reference_path = args.get<string>("target");
 	string adj_path = args.get<string>("source");
 
-	NewCarmenDataset* reference_dataset = create_dataset(reference_path, args.get<double>("camera_latency"));
-	NewCarmenDataset* dataset_to_adjust = create_dataset(adj_path, args.get<double>("camera_latency"));
+	NewCarmenDataset* reference_dataset = create_dataset(reference_path, args, "graphslam");
+	NewCarmenDataset* dataset_to_adjust = create_dataset(adj_path, args, "graphslam");
 
 	vector<pair<int, int>> loop_closure_indices;
 	find_nearest_poses(*reference_dataset,

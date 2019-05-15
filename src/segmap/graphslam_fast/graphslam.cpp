@@ -244,6 +244,9 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
 		if (fabs(sample->v) < data.min_velocity_for_considering_gps || !data.gps_is_valid[i])
 			continue;
 
+		if (fabs(sample->gps_time - sample->velodyne_time) > 0.1)
+			continue;
+
 		if (i > 0)
 		{
 			double dist_from_previous_gps = dist2d(sample->gps.x, sample->gps.y,
@@ -273,7 +276,8 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
 //					 measure[0], measure[1], angle,
 //					 xy_std, filtered_th_std);
 
-		EdgeGPS *edge_gps = new EdgeGPS;
+		EdgeGPS *edge_gps = new EdgeGPS();
+		edge_gps->set_car2gps(data.dataset->car2gps());
 		edge_gps->vertices()[0] = optimizer->vertex(i);
 		edge_gps->setMeasurement(measure);
 		edge_gps->setInformation(information);
@@ -286,6 +290,8 @@ void
 add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction> &gicp_gps,
 																		SparseOptimizer *optimizer, double xy_std_mult, double th_std)
 {
+	Eigen::Matrix<double, 4, 4> identity = Eigen::Matrix<double, 4, 4>::Identity();
+
 	for (size_t i = 0; i < gicp_gps.size(); i += 1)
 	{
 		if (gicp_gps[i].converged)
@@ -297,7 +303,8 @@ add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction>
 			//printf("ADDING %lf %lf\n", gicp_gps[i].transform[0], gicp_gps[i].transform[1]);
 			Matrix3d information = create_information_matrix(xy_std_mult, xy_std_mult, th_std);
 
-			EdgeGPS *edge_gps = new EdgeGPS;
+			EdgeGPS *edge_gps = new EdgeGPS();
+			edge_gps->set_car2gps(identity);
 			edge_gps->vertices()[0] = optimizer->vertex(gicp_gps[i].to);
 			edge_gps->setMeasurement(measure);
 			edge_gps->setInformation(information);
@@ -558,7 +565,7 @@ parse_command_line(int argc, char **argv, CommandLineArguments &args, GraphSlamD
 {
 	args.parse(argc, argv);
 
-	data->log_file = args.get<string>("log");
+	data->log_file = args.get<string>("log_path");
 	data->output_file = args.get<string>("output");
 	data->gps_id = args.get<int>("gps_id");
 	data->n_iterations = args.get<int>("n_iterations");
@@ -643,7 +650,8 @@ int main(int argc, char **argv)
 	CommandLineArguments args;
 	GraphSlamData data;
 
-	args.add_positional<string>("log", "Path to a log", 1);
+	args.add_positional<string>("log_path", "Path to a log", 1);
+	args.add_positional<string>("param_file", "Path to the carmen.ini file", 1);
 	args.add_positional<string>("output", "Path to the output file", 1);
 	add_graphslam_parameters(args);
 	add_default_sensor_preproc_args(args);
@@ -658,7 +666,8 @@ int main(int argc, char **argv)
 	SparseOptimizer* optimizer = new SparseOptimizer;
 	initialize_g2o_stuff(factory, optimizer);
 
-	data.dataset = create_dataset(args.get<string>("log"), args.get<double>("camera_latency"), "fused");
+	data.dataset = create_dataset(args.get<string>("log_path"), args, "fused");
+
 	if (data.dataset->size() <= 0)
 		exit(printf("Error: Empty dataset.\n"));
 

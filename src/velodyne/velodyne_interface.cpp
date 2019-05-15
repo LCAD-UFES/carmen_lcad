@@ -286,3 +286,65 @@ carmen_velodyne_variable_scan_update_points(carmen_velodyne_variable_scan_messag
 		}
 	}
 }
+
+
+
+carmen_velodyne_variable_scan_message*
+carmen_velodyne_alloc_variable_velodyne_message_and_shots(int n_shots)
+{
+	carmen_velodyne_variable_scan_message *message =
+			(carmen_velodyne_variable_scan_message *)
+				calloc(1, sizeof(carmen_velodyne_variable_scan_message));
+
+	message->partial_scan = (carmen_velodyne_shot*) calloc (n_shots, sizeof(carmen_velodyne_shot));
+	return message;
+}
+
+
+void
+carmen_velodyne_alloc_shot(carmen_velodyne_shot *shot, int shot_size)
+{
+	shot->distance = (unsigned short*) calloc (shot_size, sizeof(unsigned short));
+	shot->intensity = (unsigned char*) calloc (shot_size, sizeof(unsigned char));
+}
+
+
+carmen_velodyne_variable_scan_message*
+carmen_velodyne_copy_variable_velodyne_message(
+		carmen_velodyne_variable_scan_message *message)
+{
+	carmen_velodyne_variable_scan_message *copy =
+			carmen_velodyne_alloc_variable_velodyne_message_and_shots(message->number_of_shots);
+
+	copy->host = message->host;
+	copy->timestamp = message->timestamp;
+	copy->number_of_shots = message->number_of_shots;
+
+	for (int i = 0; i < message->number_of_shots; i++)
+	{
+		copy->partial_scan[i].angle = message->partial_scan[i].angle;
+		copy->partial_scan[i].shot_size = message->partial_scan[i].shot_size;
+
+		carmen_velodyne_alloc_shot(&(copy->partial_scan[i]), message->partial_scan[i].shot_size);
+
+		memcpy(copy->partial_scan[i].distance, message->partial_scan[i].distance, message->partial_scan[i].shot_size * sizeof(unsigned short));
+		memcpy(copy->partial_scan[i].intensity, message->partial_scan[i].intensity, message->partial_scan[i].shot_size * sizeof(unsigned char));
+	}
+
+	return copy;
+}
+
+
+void
+carmen_velodyne_free_variable_velodyne_message(
+		carmen_velodyne_variable_scan_message *message)
+{
+	for (int i = 0; i < message->number_of_shots; i++)
+	{
+		free(message->partial_scan[i].distance);
+		free(message->partial_scan[i].intensity);
+	}
+
+	free(message->partial_scan);
+	free(message);
+}

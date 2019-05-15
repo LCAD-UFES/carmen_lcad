@@ -12,10 +12,16 @@ experiments = [
 #        {'map': 'log_estacionamentos-20181130.txt', 'test': ['log-volta-da-ufes-20181206-honofre-test.txt', 'log_estacionamentos-20181130-test.txt']},
         {'map': 'log_sao_paulo_brt_20170827.txt', 'test': ['log_sao_paulo_brt_20170827-2.txt']},
     ]
-    
 
+carmen_path = os.getenv("CARMEN_HOME")	 
+# raw | visual | semantic | remission | bright
+INTENSITY_MODE = "raw"
 DATA_DIR = "/dados/data2/"
-GPS_TO_USE = 1
+PARAM_FILE = carmen_path + "/src/carmen-ford-fusion.ini"
+GPS_TO_USE = 2
+#PARAM_FILE = carmen_path + "/src/carmen-ford-escape.ini"
+#GPS_TO_USE = 1
+
 GPS_XY_STD = 2.0
 GPS_H_STD = 10.0
 GICP_LOOPS_XY_STD = 0.3

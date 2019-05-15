@@ -6,14 +6,13 @@ from experiments import *
 
 
 def run_odom_calib(carmen_path, log_path, output_dir):
-	global GPS_TO_USE
+	global GPS_TO_USE, PARAM_FILE
 	program = carmen_path + "/src/odometry_calibration/calibrate_bias_from_log"
-	param_file = carmen_path + "/src/carmen-ford-escape.ini"
 	output_path = output_dir + "/odom_calib.txt" 
 	report_path = output_dir + "/report_odom_calib.txt" 
 	poses_opt_path = output_dir + "/poses-opt_odom_calib.txt" 	
-	additional_args = " -n 100 -i 20 --view 0 --max_multiplicative_v 1.000001 --min_multiplicative_v 1.0 --max_multiplicative_phi 1.1 --min_multiplicative_phi 0.9 --max_additive_phi 0.2 --min_additive_phi -0.2 --gps_to_use %d " % GPS_TO_USE
-	cmd = "%s %s %s %s %s %s %s" % (program, log_path, param_file, output_path, report_path, poses_opt_path, additional_args)
+	additional_args = " -n 50 -i 100 --view 0 --max_multiplicative_v 1.000001 --min_multiplicative_v 1.0 --max_multiplicative_phi 1.1 --min_multiplicative_phi 0.9 --max_additive_phi 0.2 --min_additive_phi -0.2 --gps_to_use %d " % GPS_TO_USE
+	cmd = "%s %s %s %s %s %s %s" % (program, log_path, PARAM_FILE, output_path, report_path, poses_opt_path, additional_args)
 	run_command(cmd)
 
 	# visualization
@@ -25,7 +24,7 @@ def run_odom_calib(carmen_path, log_path, output_dir):
 
 # mode = [fused_odom | graphslam]
 def run_graphslam(carmen_path, log_path, output_dir, mode):
-	global GPS_XY_STD, GPS_H_STD, LOOPS_XY_STD, LOOPS_H_STD, GPS_TO_USE
+	global GPS_XY_STD, GPS_H_STD, LOOPS_XY_STD, LOOPS_H_STD, GPS_TO_USE, INTENSITY_MODE, PARAM_FILE
 	
 	program = carmen_path + "/src/segmap/graphslam_fast/graphslam"
 
@@ -46,9 +45,10 @@ def run_graphslam(carmen_path, log_path, output_dir, mode):
 		args = " --gps_xy_std 2.500000 --gps_angle_std 20.000000 --gicp_loops_xy_std 0.300000 --gicp_loops_angle_std 1.000000 --pf_loops_xy_std 0.005 --pf_loops_angle_std 0.05 --gps_discontinuity_threshold 0.5 --gps_min_cluster_size 50"
 		
 	args += " --gps_id %d" % GPS_TO_USE
+	args += " -i " + INTENSITY_MODE
 
 	odom_calib = output_dir + "/odom_calib.txt" 
-	cmd = "%s %s %s -o %s %s %s" % (program, log_path, output_path, odom_calib, loops, args)
+	cmd = "%s %s %s %s -o %s %s %s" % (program, log_path, PARAM_FILE, output_path, odom_calib, loops, args)
 	run_command(cmd)
 
 	# visualization
@@ -58,13 +58,13 @@ def run_graphslam(carmen_path, log_path, output_dir, mode):
 
 
 def run_loop_closures(carmen_path, log_path, output_dir, mode):
-	global IGNORE_POINTS_ABOVE, IGNORE_POINTS_BELOW, SKIP_WHEN_VELOCITY_IS_BELOW, GPS_TO_USE
+	global IGNORE_POINTS_ABOVE, IGNORE_POINTS_BELOW, SKIP_WHEN_VELOCITY_IS_BELOW, GPS_TO_USE, INTENSITY_MODE, PARAM_FILE
 
 	program = carmen_path + "/src/segmap/gicp/generate_loop_closures"
 	odom_calib = output_dir + "/odom_calib.txt" 
 	fused_odom = output_dir + "/fused_odom.txt"
 	
-	cmd = "%s %s -o %s -f %s --gps_id %d" % (program, log_path, odom_calib, fused_odom, GPS_TO_USE)
+	cmd = "%s %s %s -o %s -f %s --gps_id %d -i %s" % (program, log_path, PARAM_FILE, odom_calib, fused_odom, GPS_TO_USE, INTENSITY_MODE)
 	
 	if mode == "gicp":
 		gicp_args = " --mode gicp --dist_to_accumulate 2.0 --ignore_above_threshold %lf --ignore_below_threshold %lf --v_thresh %lf" % (IGNORE_POINTS_ABOVE, IGNORE_POINTS_BELOW, SKIP_WHEN_VELOCITY_IS_BELOW)

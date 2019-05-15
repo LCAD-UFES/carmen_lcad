@@ -69,6 +69,7 @@ main(int argc, char **argv)
 {
 	CommandLineArguments args;
 	args.add_positional<std::string>("log_path", "Path of a log", 1);
+	args.add_positional<std::string>("param_file", "Path of the carmen.ini file", 1);
 	args.add<string>("mode", "Technique for estimating displacement between loop closure poses [particle_fitler | gicp | localization]");
 	args.add<std::string>("odom_calib,o", "Odometry calibration file", "none");
 	args.add<std::string>("fused_odom,f", "Fused odometry file (optimized using graphslam)", "none");
@@ -81,29 +82,25 @@ main(int argc, char **argv)
 	args.parse(argc, argv);
 
 	string log_path = args.get<string>("log_path");
-	NewCarmenDataset dataset(log_path,
-	                         args.get<string>("odom_calib"),
-	                         args.get<string>("fused_odom"),
-	                         args.get<double>("camera_latency"),
-	                         args.get<int>("gps_id"));
+	NewCarmenDataset *dataset = create_dataset(log_path, args, "fused");
 
 	vector<pair<int, int>> loop_closure_indices;
-	detect_loop_closures(dataset,
+	detect_loop_closures(*dataset,
 	                     &loop_closure_indices,
 	                     args.get<double>("loop_dist"),
 	                     args.get<double>("time_dist"),
 	                     args.get<int>("subsampling"),
 	                     args.get<double>("v_thresh"));
 
-	int size = dataset.size();
+	int size = dataset->size();
 	vector<Matrix<double, 4, 4>> relative_transform_vector(size);
 	vector<int> convergence_vector(size);
 	string mode = args.get<string>("mode");
 
 	if (mode.compare("gicp") == 0)
 	{
-		estimate_displacements_with_gicp(dataset,
-																		 dataset,
+		estimate_displacements_with_gicp(*dataset,
+																		 *dataset,
 																		 log_path, log_path,
 																		 loop_closure_indices,
 																		 &relative_transform_vector,
@@ -112,8 +109,8 @@ main(int argc, char **argv)
 	}
 	else if (mode.compare("particle_filter") == 0)
 	{
-		estimate_displacements_with_particle_filter(dataset,
-																								dataset,
+		estimate_displacements_with_particle_filter(*dataset,
+																								*dataset,
 																								log_path, log_path,
 																								loop_closure_indices,
 																								&relative_transform_vector,
@@ -123,7 +120,7 @@ main(int argc, char **argv)
 	}
 	else if (mode.compare("localization") == 0)
 	{
-		estimate_loop_closures_with_particle_filter_in_map(dataset,
+		estimate_loop_closures_with_particle_filter_in_map(*dataset,
 																											log_path,
 																											loop_closure_indices,
 																											&relative_transform_vector,
@@ -135,7 +132,7 @@ main(int argc, char **argv)
 		exit(printf("Error: invalid mode '%s'.\n", mode.c_str()));
 
 	save_output(args.get<string>("output"),
-	            dataset,
+	            *dataset,
 	            loop_closure_indices,
 	            relative_transform_vector,
 	            convergence_vector);

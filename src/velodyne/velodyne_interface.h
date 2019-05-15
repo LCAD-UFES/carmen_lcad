@@ -79,6 +79,24 @@ double
 carmen_velodyne_estimate_shot_time(double sensor_last_timestamp, double sensor_timestamp, int shot_index, int number_of_shots);
 
 
+/* Note: the individual shots still have to be alloc'd using the alloc shot function */
+carmen_velodyne_variable_scan_message *
+carmen_velodyne_alloc_variable_velodyne_message_and_shots(int n_shots);
+
+
+void
+carmen_velodyne_alloc_shot(carmen_velodyne_shot *shot, int shot_size);
+
+
+carmen_velodyne_variable_scan_message *
+carmen_velodyne_copy_variable_velodyne_message(
+		carmen_velodyne_variable_scan_message *message);
+
+
+void
+carmen_velodyne_free_variable_velodyne_message(
+		carmen_velodyne_variable_scan_message *message);
+
 
 #ifdef __cplusplus
 }

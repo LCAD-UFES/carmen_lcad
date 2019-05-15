@@ -25,6 +25,7 @@ using namespace Eigen;
 
 
 NewCarmenDataset::NewCarmenDataset(std::string path,
+																	 std::string carmen_ini,
                                    std::string odom_calib_path,
 																	 std::string poses_path,
 																	 double camera_latency,
@@ -32,6 +33,8 @@ NewCarmenDataset::NewCarmenDataset(std::string path,
 																	 NewCarmenDataset::SyncSensor sync_sensor,
 																	 NewCarmenDataset::SyncMode sync_mode)
 {
+
+	printf("sync_sensor: %d\n", sync_sensor);
 	_gps_id = gps_id;
 	_sync_sensor = sync_sensor;
 	_sync_mode = sync_mode;
@@ -40,6 +43,7 @@ NewCarmenDataset::NewCarmenDataset(std::string path,
 	_velodyne_dir = string(path) + "_velodyne";
 	_images_dir = string(path) + "_bumblebee";
 
+	_params = new CarmenParamFile(carmen_ini.c_str());
 	_load_odometry_calibration(odom_calib_path);
 
 	// reading the log requires odom calibration data.
@@ -54,6 +58,8 @@ NewCarmenDataset::~NewCarmenDataset()
 {
 	for (int i = 0; i < _data.size(); i++)
 		delete(_data[i]);
+
+	delete(_params);
 }
 
 
@@ -147,7 +153,17 @@ Matrix<double, 4, 4>
 NewCarmenDataset::vel2car()
 {
 	Matrix<double, 4, 4> velodyne2board;
-	velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
+
+	//velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
+	velodyne2board = pose6d_to_matrix(
+		_params->get<double>("velodyne_x"),
+		_params->get<double>("velodyne_y"),
+		_params->get<double>("velodyne_z"),
+		_params->get<double>("velodyne_roll"),
+		_params->get<double>("velodyne_pitch"),
+		_params->get<double>("velodyne_yaw")
+	);
+
 	return _board2car() * velodyne2board;
 }
 
@@ -156,8 +172,51 @@ Matrix<double, 4, 4>
 NewCarmenDataset::xsens2car()
 {
 	Matrix<double, 4, 4> xsens2board;
-	xsens2board = pose6d_to_matrix(0.175, -0.01, 0.25, 0, 0, 0);
+
+	//xsens2board = pose6d_to_matrix(0.175, -0.01, 0.25, 0, 0, 0);
+	xsens2board = pose6d_to_matrix(
+		_params->get<double>("xsens_x"),
+		_params->get<double>("xsens_y"),
+		_params->get<double>("xsens_z"),
+		_params->get<double>("xsens_roll"),
+		_params->get<double>("xsens_pitch"),
+		_params->get<double>("xsens_yaw")
+	);
+
+
 	return _board2car() * xsens2board;
+}
+
+
+// Returns a matrix to transfrom from gps to car frame.
+Eigen::Matrix<double, 4, 4>
+NewCarmenDataset::car2gps()
+{
+	Matrix<double, 4, 4> gps2car_t = gps2car();
+	return gps2car_t.inverse();
+}
+
+
+Eigen::Matrix<double, 4, 4>
+NewCarmenDataset::gps2car()
+{
+	Matrix<double, 4, 4> gps2board;
+
+	char gps_name[128];
+	sprintf(gps_name, "gps_nmea_%d", _gps_id);
+	string gps_name_str = string(gps_name);
+
+	//gps2board = pose6d_to_matrix(0.175, -0.01, 0.25, 0, 0, 0);
+	gps2board = pose6d_to_matrix(
+		_params->get<double>(gps_name_str + "_x"),
+		_params->get<double>(gps_name_str + "_y"),
+		_params->get<double>(gps_name_str + "_z"),
+		_params->get<double>(gps_name_str + "_roll"),
+		_params->get<double>(gps_name_str + "_pitch"),
+		_params->get<double>(gps_name_str + "_yaw")
+	);
+
+	return _board2car() * gps2board;
 }
 
 
@@ -165,7 +224,17 @@ Eigen::Matrix<double, 4, 4>
 NewCarmenDataset::_board2car()
 {
 	Matrix<double, 4, 4> board2car;
-	board2car = pose6d_to_matrix(0.572, 0, 1.394, 0.0, 0.0122173048, 0.0);
+
+	//board2car = pose6d_to_matrix(0.572, 0, 1.394, 0.0, 0.0122173048, 0.0);
+	board2car = pose6d_to_matrix(
+		_params->get<double>("sensor_board_1_x"),
+		_params->get<double>("sensor_board_1_y"),
+		_params->get<double>("sensor_board_1_z"),
+		_params->get<double>("sensor_board_1_roll"),
+		_params->get<double>("sensor_board_1_pitch"),
+		_params->get<double>("sensor_board_1_yaw")
+	);
+
 	return board2car;
 }
 
