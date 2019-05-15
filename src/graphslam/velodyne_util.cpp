@@ -243,7 +243,8 @@ add_velodyne_spherical_points_to_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::P
 
 		for(k = 0; k < velodyne_params->vertical_resolution; k++)
 		{
-			carmen_vector_3D_t point = get_global_point_from_velodyne_point(v_zt->sphere_points[i + k], velodyne_params, r_matrix_car_to_global, robot_pose->position);
+			//carmen_vector_3D_t point = get_global_point_from_velodyne_point(v_zt->sphere_points[i + k], velodyne_params, r_matrix_car_to_global, robot_pose->position);
+			carmen_vector_3D_t point = get_global_point_from_velodyne_point(v_zt->sphere_points[i + k], velodyne_params, r_matrix_car_to_global, robot_interpolated_position.position);
 
 			if (point_is_valid(v_zt->sphere_points[i + k], velodyne_params))
 				add_velodyne_point_to_pointcloud(pointcloud, intensity[i + k], point);
