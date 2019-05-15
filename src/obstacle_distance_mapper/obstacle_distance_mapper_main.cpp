@@ -203,7 +203,7 @@ obstacle_distance_mapper_publish_compact_cost_map(double timestamp)
 	build_obstacle_cost_map(&cost_map, distance_map.config, &distance_map, obstacle_cost_distance);
 	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
 
-	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
+//	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
 	{
 		carmen_map_server_publish_compact_cost_map_message(&compacted_cost_map,	timestamp);
 //		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, &compacted_cost_map, 0.0);
