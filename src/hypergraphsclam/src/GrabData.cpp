@@ -1858,7 +1858,7 @@ g2o::SE2 GrabData::GetSE2FromVisoMatrix(const Matrix &matrix)
 
 
 // configuration
-void GrabData::Configure(std::string config_filename, std::string carmen_home)
+void GrabData::Configure(std::string config_filename, std::string carmen_ini)
 {
     std::cout << "Reading cofigure file '" << config_filename << "'" << std::endl;
 
@@ -1959,6 +1959,7 @@ void GrabData::Configure(std::string config_filename, std::string carmen_home)
             {
                 ss >> StampedGPSPose::gps_id;
 
+
                 if ("0" == StampedGPSPose::gps_id) {
                     StampedGPSPose::gps_id = "";
                 }
@@ -1966,6 +1967,7 @@ void GrabData::Configure(std::string config_filename, std::string carmen_home)
                 if (!StampedGPSPose::gps_id.empty()) {
                     StampedGPSPose::gps_id = "_" + StampedGPSPose::gps_id; 
                 }
+                std::cout << "The gps id: " << StampedGPSPose::gps_id << std::endl;
             }
         }
     }
@@ -1976,19 +1978,18 @@ void GrabData::Configure(std::string config_filename, std::string carmen_home)
 
     is.close();
 
-    SetGPSPose(carmen_home);
+    SetGPSPose(carmen_ini);
 }
 
 // get the gps antena position in relation to sensor board
-void GrabData::SetGPSPose(std::string carmen_home)
+void GrabData::SetGPSPose(std::string carmen_ini)
 {
-
-    std::ifstream is(carmen_home + "/src/carmen-ford-fusion.ini");
+    std::ifstream is(carmen_ini);
    
     if (is.good())
     {
         int param_counter = 0;
-        double x = 0.0, y = 0.0, yaw = 0.0;
+        double x   = 0.0, y   = 0.0, yaw   = 0.0;
         double sbx = 0.0, sby = 0.0, sbyaw = 0.0;
 
         std::string gps_nmea = "gps_nmea";
@@ -2299,7 +2300,7 @@ void GrabData::SaveEstimates()
 {
 
     // rebuild odometry estimates without GPS
-    // BuildOdometryEstimates(false);
+    BuildOdometryEstimates(false);
 
     // save the raw odometry estimate to external file
     SaveOdometryEstimates("raw_odometry.txt", true);

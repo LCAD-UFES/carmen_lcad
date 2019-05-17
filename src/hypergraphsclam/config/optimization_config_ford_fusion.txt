@@ -23,13 +23,13 @@ SICK_LOOP_ICP_YY_VAR 0.7
 SICK_LOOP_ICP_HH_VAR 0.25
 
 -- VELODYNE ICP
-VELODYNE_ICP_XX_VAR 50.5
-VELODYNE_ICP_YY_VAR 50.5
-VELODYNE_ICP_HH_VAR 10.0
+VELODYNE_ICP_XX_VAR 0.5
+VELODYNE_ICP_YY_VAR 0.5
+VELODYNE_ICP_HH_VAR 0.25
 
 -- VELODYNE ICP LOOP
-VELODYNE_LOOP_ICP_XX_VAR 50.8
-VELODYNE_LOOP_ICP_YY_VAR 50.8
+VELODYNE_LOOP_ICP_XX_VAR 15.8
+VELODYNE_LOOP_ICP_YY_VAR 15.8
 VELODYNE_LOOP_ICP_HH_VAR 10.15
 
 XSENS_CONSTRAINT_VAR 0.785398163397448278999490867136
@@ -54,7 +54,7 @@ ODOM_ACKERMAN_PARAMS_VERTICES 1
 -- (i)  O otimizador otimiza as poses OPTIMIZER_INNER_POSE_ITERATIONS vezes e, com isso, gera todas as informações usadas para gerar o arquivo poses-opt-<seu log>.
 -- (ii) Depois, otimiza a calibração da odometria OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS vezes e repete este passo (ii) e o passo (i) OPTIMIZER_OUTER_ITERATIONS-1 vezes.
 -- Com OPTIMIZER_OUTER_ITERATIONS igual a 1, o sistema opera bem e a recalibração da odometria não é utilizada.
-OPTIMIZER_OUTER_ITERATIONS 1
+OPTIMIZER_OUTER_ITERATIONS 3
 
 -- how many pose optimization iterations
 OPTIMIZER_INNER_POSE_ITERATIONS 20
@@ -72,7 +72,7 @@ FAKE_GPS_CLUSTERING_DISTANCE 1.5
 -- a distância mínima entre as leituras do GPS,
 -- leituras sequenciais com distância inferior são removidas
 -- 0.0 desativa essa opção e nenhuma mensagem de GPS é removida com base nessa opção
-GPS_SPARSITY_THRESHOLD 0.1 
+GPS_SPARSITY_THRESHOLD 0.0
 
 -- edges configuration - disable, enable edges - Comente para dizer quais voce nao quer usar como aresta.
 -- USE_VELODYNE_SEQ

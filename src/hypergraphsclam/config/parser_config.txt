@@ -29,17 +29,18 @@ CURVATURE_REQUIRED_TIME 0.0001
 -- Se quiser mais rapido, pode rodar o odometry calibration. porem nao parece ser muito necessario.
 -- Initial odometry bias guess, the default values are: v_mult = 1.0, phi_mult = 1.0 and phi_add = 0.0
 -- You can pick this values from a previous calibration result
-V_MULT_ODOMETRY_BIAS 1.042872
-PHI_MULT_ODOMETRY_BIAS 1.069150
-PHI_ADD_ODOMETRY_BIAS -0.000079
+
+V_MULT_ODOMETRY_BIAS 1.0462134659 # 1.047728
+PHI_MULT_ODOMETRY_BIAS 1.0088440426 # 1.062799
+PHI_ADD_ODOMETRY_BIAS 0.0000132927 # -0.000043
 
 -- Descomente os argumentos abaixo para desabilitar a construcao das respectivas arestas
-DISABLE_VELODYNE_ODOMETRY
-DISABLE_VELODYNE_LOOP
+-- DISABLE_VELODYNE_ODOMETRY
+-- DISABLE_VELODYNE_LOOP
 DISABLE_SICK_ODOMETRY
 DISABLE_SICK_LOOP
-DISABLE_BUMBLEBEE_ODOMETRY
-DISABLE_BUMBLEBEE_LOOP
+-- DISABLE_BUMBLEBEE_ODOMETRY
+-- DISABLE_BUMBLEBEE_LOOP
 
 -- So para visualizacao
 -- Save the accumulated point clouds, uncomment the line below in order to save the accumulated clouds

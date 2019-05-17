@@ -40,12 +40,13 @@ main (int argc, char **argv)
 
     std::string carmen_home(getenv("CARMEN_HOME"));
     std::string config_filename = 3 < argc ? std::string(argv[3]) : carmen_home + "/src/hypergraphsclam/config/parser_config.txt";
+    std::string carmen_ini = 4 < argc ? std::string(argv[4]) : carmen_home + "/src/carmen-ford-escape.ini";
 
     // create a grab data object
     hyper::GrabData gd;
 
     // configure it
-    gd.Configure(config_filename, carmen_home);
+    gd.Configure(config_filename, carmen_ini);
 
     // try to process the log file
     if (gd.ParseLogFile(input_file)) 

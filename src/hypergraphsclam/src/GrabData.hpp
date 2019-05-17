@@ -282,7 +282,7 @@ namespace hyper {
             ~GrabData();
 
             // configuration
-            void Configure(std::string config_filename, std::string carmen_home);
+            void Configure(std::string config_filename, std::string carmen_ini);
 
             // parse the log file
             bool ParseLogFile(const std::string &input_filename);
