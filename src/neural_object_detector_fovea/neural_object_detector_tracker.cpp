@@ -1,8 +1,6 @@
 #include "neural_object_detector.hpp"
 
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#include <Python.h>
-//#include <numpy/arrayobject.h>
 
 int camera;
 int camera_side;
@@ -229,36 +227,6 @@ pedestrian create_pedestrian(int t_id)
 }
 
 void
-update_pedestrians(short* pedestrian_python, double timestamp)
-{
-	for (int i=0; i<pedestrian_tracks.size(); i++)
-	{
-		pedestrian_tracks[i].active=false;
-	}
-	for (int i=1; i<=pedestrian_python[0]*5; i+=5)
-	{
-		int p_id = (pedestrian_python+i)[4];
-		int j=0;
-		for(; j<pedestrian_tracks.size(); j++)
-		{
-			if(pedestrian_tracks[j].track_id == p_id)
-			{
-				update_pedestrian_bbox(&pedestrian_tracks[j],pedestrian_python+i);
-				pedestrian_tracks[j].last_timestamp = timestamp;
-				break;
-			}
-		}
-		if (j == pedestrian_tracks.size())
-		{
-			pedestrian new_p = create_pedestrian(p_id);
-			update_pedestrian_bbox(&new_p,pedestrian_python+i);
-			new_p.last_timestamp = timestamp;
-			pedestrian_tracks.push_back(new_p);
-		}
-	}
-}
-
-void
 clean_pedestrians(double timestamp, double max_time)
 {
 	for (vector<pedestrian>::iterator it=pedestrian_tracks.begin(); it != pedestrian_tracks.end();)
@@ -272,109 +240,6 @@ clean_pedestrians(double timestamp, double max_time)
 		}
 	}
 }
-///////////////////////////////////////////////////
-//////// Python
-// PyObject *python_pedestrian_tracker_function;
-// npy_intp image_dimensions[3];
-
-// void
-// init_python(int image_width, int image_height)
-// {
-// 	Py_Initialize();
-// 	import_array();
-
-// 	PyObject *python_module_name = PyString_FromString((char *) "pedestrian_tracker");
-
-// 	PyObject *python_module = PyImport_Import(python_module_name);
-
-// 	if (python_module == NULL)
-// 	{
-// 		Py_Finalize();
-// 		exit (printf("Error: The python_module could not be loaded.\nMay be PYTHON_PATH is not set.\n"));
-// 	}
-// 	Py_DECREF(python_module_name);
-
-// 	PyObject *python_set_image_settings_function = PyObject_GetAttrString(python_module, (char *) "set_image_settings");
-
-// 	if (python_set_image_settings_function == NULL || !PyCallable_Check(python_set_image_settings_function))
-// 	{
-// 		Py_Finalize();
-// 		exit (printf("Error: Could not load the python_set_image_settings_function.\n"));
-// 	}
-
-// 	PyObject *python_arguments = Py_BuildValue("(ii)", image_width, image_height);               // Generic function, create objects from C values by a format string
-
-// 	PyObject_CallObject(python_set_image_settings_function, python_arguments);
-
-// 	Py_DECREF(python_arguments);
-// 	Py_DECREF(python_set_image_settings_function);
-
-// 	python_pedestrian_tracker_function = PyObject_GetAttrString(python_module, (char *) "run_pedestrian_tracker");
-
-// 	if (python_pedestrian_tracker_function == NULL || !PyCallable_Check(python_pedestrian_tracker_function))
-// 	{
-// 		Py_DECREF(python_module);
-// 		Py_Finalize();
-// 		exit (printf("Error: Could not load the python_semantic_segmentation_function.\n"));
-// 	}
-
-// 	image_dimensions[0] = image_height;           //create shape for numpy array
-// 	image_dimensions[1] = image_width;
-// 	image_dimensions[2] = 3;
-// }
-
-
-// float*
-// convert_predtions_array(vector<bbox_t> predictions)
-// {
-// 	unsigned int size = predictions.size();
-
-// 	float *array = (float*) malloc(size * 4 * sizeof(float));
-
-// 	for (int i = 0; i < size; i++)
-// 	{
-// 		array[i*4]     = predictions[i].x;
-// 		array[i*4 + 1] = predictions[i].y;
-// 		array[i*4 + 2] = predictions[i].w;
-// 		array[i*4 + 3] = predictions[i].h;
-// 	}
-
-// 	return (array);
-// }
-
-
-// void
-// call_python_function(unsigned char *image, vector<bbox_t> predictions, double timestamp)
-// {
-// 	npy_intp predictions_dimensions[2] = {(int)predictions.size(), 4};
-
-
-// 	PyObject* numpy_image_array = PyArray_SimpleNewFromData(3, image_dimensions, NPY_UBYTE, image);        //convert testVector to a numpy array
-
-// 	float *array = convert_predtions_array(predictions);
-
-// 	PyObject* numpy_predictions_array = PyArray_SimpleNewFromData(2, predictions_dimensions, NPY_FLOAT, array);
-
-// 	PyArrayObject* identifications = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpy_image_array, numpy_predictions_array, NULL);
-
-// 	short *predict = (short*)PyArray_DATA(identifications);
-// 	if (predict == NULL)
-// 	{
-// 		Py_Finalize();
-// 		exit (printf("Error: The predctions erro.\n"));
-// 	}
-
-// 	update_pedestrians(predict,timestamp);
-
-// 	if (PyErr_Occurred())
-//         PyErr_Print();
-
-// 	free(array);
-// 	Py_DECREF(numpy_image_array);
-// 	Py_DECREF(numpy_predictions_array);
-// 	Py_DECREF(identifications);
-// }
-///////////////
 
 void
 carmen_translte_2d(double *x, double *y, double offset_x, double offset_y)
@@ -1002,10 +867,6 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
 	predictions = filter_predictions_of_interest(predictions);
 
-	//////// Python
-	//call_python_function(open_cv_image.data, predictions, image_msg->timestamp);
-	///////////////
-
 	// vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose,
 	// 		image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_parameters, &transformer_sick,
@@ -1231,10 +1092,6 @@ initializer()
 	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
 
 	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
-
-	//init_python(1280, 960);
-	//init_python(1280, 480);
-	printf("------- Python Tracker Ready -------\n");
 }
 
 

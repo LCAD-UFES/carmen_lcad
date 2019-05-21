@@ -1,6 +1,5 @@
 #include "neural_object_detector.hpp"
 
-
 int camera;
 int camera_side;
 char **classes_names;
