@@ -11,7 +11,7 @@ def run_odom_calib(carmen_path, log_path, output_dir):
 	output_path = output_dir + "/odom_calib.txt" 
 	report_path = output_dir + "/report_odom_calib.txt" 
 	poses_opt_path = output_dir + "/poses-opt_odom_calib.txt" 	
-	additional_args = " -n 50 -i 100 --view 0 --max_multiplicative_v 1.000001 --min_multiplicative_v 1.0 --max_multiplicative_phi 1.1 --min_multiplicative_phi 0.9 --max_additive_phi 0.2 --min_additive_phi -0.2 --gps_to_use %d " % GPS_TO_USE
+	additional_args = " -n 50 -i 100 --view 0 --max_multiplicative_v 1.1 --min_multiplicative_v 0.9 --max_multiplicative_phi 1.2 --min_multiplicative_phi 0.8 --max_additive_phi 0.2 --min_additive_phi -0.2 --gps_to_use %d " % GPS_TO_USE
 	cmd = "%s %s %s %s %s %s %s" % (program, log_path, PARAM_FILE, output_path, report_path, poses_opt_path, additional_args)
 	run_command(cmd)
 
@@ -42,7 +42,7 @@ def run_graphslam(carmen_path, log_path, output_dir, mode):
 	if ("brt" in log_path):
 		args = "--gps_xy_std 20.00000 --gps_angle_std 20.000000 --gicp_loops_xy_std 0.300000 --gicp_loops_angle_std 1.000000 --pf_loops_xy_std 0.030000 --pf_loops_angle_std 3.000000 --gps_discontinuity_threshold 0.5 --gps_min_cluster_size 50 --gps_step 50"
 	else:
-		args = " --gps_xy_std 2.500000 --gps_angle_std 20.000000 --gicp_loops_xy_std 0.300000 --gicp_loops_angle_std 1.000000 --pf_loops_xy_std 0.005 --pf_loops_angle_std 0.05 --gps_discontinuity_threshold 0.5 --gps_min_cluster_size 50"
+		args = " --gps_xy_std 2.500000 --gps_angle_std 20.000000 --gicp_loops_xy_std 0.300000 --gicp_loops_angle_std 1.000000 --pf_loops_xy_std 0.0005 --pf_loops_angle_std 0.005 --gps_discontinuity_threshold 0.5 --gps_min_cluster_size 50"
 		
 	args += " --gps_id %d" % GPS_TO_USE
 	args += " -i " + INTENSITY_MODE
@@ -72,7 +72,7 @@ def run_loop_closures(carmen_path, log_path, output_dir, mode):
 		run_command(cmd + gicp_output + gicp_args)
 
 	elif mode == "particle_filter":
-		pf_args = " --mode particle_filter --n_particles 50 --gps_xy_std 2.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 5.0 --n_corrections_when_reinit 20 --v_thresh %lf" % (SKIP_WHEN_VELOCITY_IS_BELOW)
+		pf_args = " --mode particle_filter --n_particles 200 --gps_xy_std 5.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 5.0 --n_corrections_when_reinit 20 --v_thresh %lf" % (SKIP_WHEN_VELOCITY_IS_BELOW)
 		pf_output = " " + output_dir + "/pf_loops.txt"
 		run_command(cmd + pf_output + pf_args)
 	elif mode == "localization":
@@ -81,7 +81,7 @@ def run_loop_closures(carmen_path, log_path, output_dir, mode):
 		else:
 			loop_closure_time = 60
 	
-		loc_args = " --mode localization --n_particles 200 --gps_xy_std 2.5 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 10.0 --n_corrections_when_reinit 20 --v_thresh %lf -v 1 --time_dist %lf --v_std 0.5 --phi_std 1.0 --odom_xy_std 0.02 --odom_h_std 0.15 --color_red_std 5 --color_green_std 5 --color_blue_std 5" % (SKIP_WHEN_VELOCITY_IS_BELOW, loop_closure_time)
+		loc_args = " --mode localization --n_particles 500 --gps_xy_std 3.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 10.0 --n_corrections_when_reinit 20 --v_thresh %lf -v 1 --time_dist %lf --v_std 1.0 --phi_std 1.0 --odom_xy_std 0.1 --odom_h_std 1.0 --color_red_std 1 --color_green_std 1 --color_blue_std 1" % (SKIP_WHEN_VELOCITY_IS_BELOW, loop_closure_time)
 		loc_output = " " + output_dir + "/localization_loops.txt"
 		run_command(cmd + loc_output + loc_args + " > /dev/null 2>&1")
 	else:

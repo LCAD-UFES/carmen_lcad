@@ -49,7 +49,7 @@ NewCarmenDataset::NewCarmenDataset(std::string path,
 	// reading the log requires odom calibration data.
 	_load_log(path);
 
-	_load_poses(poses_path, &_poses);
+	_load_poses(poses_path, &_poses, &_poses_times);
 	_update_data_with_poses();
 }
 
@@ -125,11 +125,12 @@ NewCarmenDataset::projection_matrix()
 	// Rotation to change the reference system from x: forward, y: left, z: up to x: right, y: down, z: forward.
 	R = pose6d_to_matrix(0., 0., 0., -M_PI/2., 0, -M_PI/2).inverse();
 
-	double fx_factor = 0.764749;
-	double fy_factor = 1.01966;
-	double cu_factor = 0.505423;
-	double cv_factor = 0.493814;
-	double pixel_size = 0.00000375;
+	// TODO: read camera number from command line.
+	double fx_factor = _params->get<double>("bumblebee_basic3_fx");
+	double fy_factor = _params->get<double>("bumblebee_basic3_fy");
+	double cu_factor = _params->get<double>("bumblebee_basic3_cu");
+	double cv_factor = _params->get<double>("bumblebee_basic3_cv");
+	double pixel_size = _params->get<double>("bumblebee_basic3_pixel_size");
 
 	double fx_meters = fx_factor * pixel_size;
 	double fy_meters = fy_factor * pixel_size;
@@ -137,7 +138,7 @@ NewCarmenDataset::projection_matrix()
 	double cu = cu_factor;
 	double cv = cv_factor;
 
-	// see http://www.cvlibs.net/publications/Geiger2013IJRR.pdf
+	// See http://www.cvlibs.net/publications/Geiger2013IJRR.pdf
 	// Note: Storing cu and cv in the 3rd column instead of the 4th is a trick.
 	// To compute the pixel coordinates we divide the first two
 	// dimensions of the point in homogeneous coordinates by the third one (which is Z).
@@ -297,7 +298,7 @@ NewCarmenDataset::_load_odometry_calibration(std::string &path)
 
 
 void
-NewCarmenDataset::_load_poses(std::string &path, std::vector<Pose2d> *poses)
+NewCarmenDataset::_load_poses(std::string &path, std::vector<Pose2d> *poses, std::vector<double> *poses_times)
 {
 	bool success = false;
 	char dummy[64];
@@ -311,20 +312,23 @@ NewCarmenDataset::_load_poses(std::string &path, std::vector<Pose2d> *poses)
 			while (!feof(f))
 			{
 				Pose2d pose;
+				double timestamp;
 
-				fscanf(f, "\n%s %lf %lf %lf %s %s %s\n",
+				fscanf(f, "\n%s %lf %lf %lf %lf %s %s\n",
 							 dummy, &pose.x, &pose.y, &pose.th,
-							 dummy, dummy, dummy);
+							 &timestamp, dummy, dummy);
 
 				//printf("%lf %lf %lf\n", pose.x, pose.y, pose.th);
 				poses->push_back(pose);
+				poses_times->push_back(timestamp);
+
 			}
 
-			if (poses->size() == size())
+			if (poses->size() >= size())
 				success = 1;
-			else
-				fprintf(stderr, "Warning: number of poses %ld is different from log size %d\n",
-								poses->size(), size());
+
+			if (poses->size() != size())
+				fprintf(stderr, "Warning: number of poses %ld is different from log size %d\n", poses->size(), size());
 
 			fclose(f);
 		}
@@ -343,17 +347,33 @@ NewCarmenDataset::_load_poses(std::string &path, std::vector<Pose2d> *poses)
 void
 NewCarmenDataset::_update_data_with_poses()
 {
-	assert(_poses.size() == _data.size() || _poses.size() == 0);
+	// Probably an old or incorrect poses' file. In the for below, the
+	// poses of the data packages are set to zero when the vector _poses
+	// is empty.
+	if (_poses.size() < _data.size())
+		_poses.clear();
 
-	if (_poses.size() == _data.size())
+	for (int i = 0; i < _data.size(); i++)
 	{
-		for (int i = 0; i < size(); i++)
-			at(i)->pose = _poses[i];
-	}
-	else
-	{
-		for (int i = 0; i < size(); i++)
+		double min_dt = DBL_MAX;
+		int id_most_sync_pose = -1;
+
+		// search for the most synchronized psoe
+		for (int j = 0; j < _poses.size(); j++)
+		{
+			double dt = fabs(_poses_times[j] - _data[i]->time);
+
+			if (dt < min_dt)
+			{
+				min_dt = dt;
+				id_most_sync_pose = j;
+			}
+		}
+
+		if (id_most_sync_pose == -1)
 			at(i)->pose = Pose2d(0, 0, 0);
+		else
+			at(i)->pose = _poses[id_most_sync_pose];
 	}
 }
 
