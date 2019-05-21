@@ -10,6 +10,8 @@ CXXFLAGS += -Wno-deprecated -Wno-deprecated-declarations
 CFLAGS += -std=c11
 CXXFLAGS += -std=c++11
 
+SUBDIRS += $(CARMEN_HOME)/src/utilities/libcarmen_util
+
 # Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11
 IFLAGS += -std=c++11
 
@@ -38,6 +40,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_p
 LFLAGS += `pkg-config --libs opencv`	  
 LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lgomp -lcarmen_util
+LFLAGS += -lcarmen_util -lboost_program_options
 
 SOURCES = grab_data.cpp velodyne_util.cpp graphslam.cpp run_icp_for_loop_closure.cpp graphslam_publish_main.cpp graphslam_params.cpp multimap_optimization.cpp multimap_matching.cpp gen_data_to_plot.cpp pointcloud_viewer.cpp
 

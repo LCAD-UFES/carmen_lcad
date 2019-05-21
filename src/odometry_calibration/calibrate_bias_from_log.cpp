@@ -38,6 +38,8 @@ gsl_interp_accel *acc;
 
 FILE *gnuplot_pipe;
 
+#define GPS_LATENCY 0.17
+
 
 class Line
 {
@@ -155,6 +157,8 @@ read_gps(FILE *f, int gps_to_use)
 
 		m.x = utm.y;
 		m.y = -utm.x;
+
+		m.timestamp = m.timestamp - GPS_LATENCY;
 	}
 
 	return m;
@@ -166,6 +170,7 @@ search_for_odom_with_nearest_timestamp(vector<carmen_robot_ackerman_velocity_mes
 {
 	size_t i = odoms.size() - 1;
 	size_t near = i;
+
 	double smaler_time_distance = reference_timestamp;
 
 	do
@@ -277,8 +282,8 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 			VelodyneAndOdom velodyne_data = read_velodyne_data(f);
 			process_velodyne_data(pso_data, odoms, velodyne_data);
 		}
-		else
-			fscanf(f, "%[^\n]\n", line);
+
+		fscanf(f, "%[^\n]\n", line);
 
 		num_lines++;
 	}
@@ -468,16 +473,12 @@ get_gps_pose_given_odomentry_pose(double &gps_x, double &gps_y, double x, double
 void
 get_odomentry_pose_given_gps_pose(double &x, double &y, /* double gps_x, double gps_y, */ double yaw, Transformer *tf_transformer)
 {
-//	tf::Transform world_to_gps;
-//	world_to_gps.setOrigin(Vector3(gps_x, gps_y, 0.0));
-//	world_to_gps.setRotation(Quaternion(yaw, 0.0, 0.0));
-//	pso_data->tf_transformer->setTransform(tf::StampedTransform(world_to_gps, tf::Time(0), "/origin", "/gps"));
-
 	tf::StampedTransform gps_to_car;
 	tf_transformer->lookupTransform("/gps", "/car", tf::Time(0), gps_to_car);
 
 	double x_ = gps_to_car.getOrigin().x();
 	double y_ = gps_to_car.getOrigin().y();
+	// transformacao da pose do carro do sistema de coordenadas do gps para o mundo assumindo que a translacao eh zero.
 	x = x_ * cos(yaw) - y_ * sin(yaw);
 	y = x_ * sin(yaw) + y_ * cos(yaw);
 }

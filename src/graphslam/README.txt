@@ -2,21 +2,44 @@ Como criar um mapa usando GraphSLAM [usando o process]:
 
 1. Execute a calibração da odometria como descrito em $CARMEN_HOME/src/odometry_calibration/README.txt
 2. Crie o diretorio $CARMEN_HOME/bin/tmp
-3. 
+3. Rode o process-volta_da_ufes_playback_viewer_3D_map_generation.ini ou outro equivalente. Lembre-se de colocar nele o seu log e o rddf desejado.
+
+3.1 Você pode delimitar o trecho de interesse do log escolhendo no playback control o tempo inicial e final. Exemplo t 10:100 (tempo inicial 10s tempo final 100s).
+    Para saber o tempo final de seu log coloque t 100000000 no playback control (onde 100000000 é um número grande) que ele dirá qual o tempo final.
+
+3.2 Ligue no PROCCONTROL GUI o programa Step_0 (clique o botão Step_0 e ecolha Start Program) para limpar o diretório $CARMEN_HOME/bin/tmp.
+
+3.3 Ligue no PROCCONTROL GUI o programa Step_1 (clique o botão Step_1 e ecolha Start Program) e rode o seu log completamente ou no trecho de tempo de interesse em velocidade 
+    (Speed do playback control) compatível com o hardware onde você estiver trabalhando. 
+    Quando terminar de rodar o log, termine o Step_1 escolhendo Stop Program no botão Step_1.
+
+    Este passo gera o arquivo tmp/sync.txt, que você pode examinar com o gnuplot (ver campos de cada linha na função build_optimization_graph() de graphslam.cpp):
+     gnuplot> set size square; set size ratio -1; plot "tmp/sync.txt" u 4:5 w l t 'gps xyz'
+
+3.4 Se você desejar tratar fechamento de loops, clique no botão Step_2 escolha Show Output (para saber quando o programa terminou) e, em seguida, 
+    clique no botão Step_2 e escolha Start Program. Quando o programa terminar, clique no botão Step_2 e escolha Stop Program.
+    Para delimitar o trecho a ser considerado para fechamento de loops, use os parâmetros do programa que é rodado no Step_2:
+    ./run_icp_for_loop_closure <input-file> <velodyne-dir> <output_file> <dist_for_detecting_loop_closure (meters)> <time_difference_for_detecting_loop_closure (seconds)>
+    Para não considerar loops, use uma diferença de tempo maior que o tamanho total do log.
+
+    Este passo produz o arquivo tmp/loops.txt (ver campos de cada linha na função build_optimization_graph() de graphslam.cpp).
+
+3.5 Clique no botão Step_3 escolha Show Output (para saber quando o programa terminou) e, em seguida, clique no botão Step_3 e escolha Start Program para otimizar suas poses 
+    com o graphslam. Quando o programa terminar, clique no botão Step_3 e escolha Stop Program.
+
+    Este passo produz o arquivo tmp/poses_opt.txt, que você pode examinar com o gnuplot (ver campos de cada linha na função save_corrected_vertices() de graphslam.cpp):
+     set size square; set size ratio -1; plot "tmp/sync.txt" u 4:5 w l t 'gps xyz', "tmp/poses_opt.txt" u 1:2 w l t 'car'
+
+3.6 Limpe o diretório de mapas temporários (../data/mapper_teste2) usando o CleanMap. Ele roda muito rápido. Assim, basta escolher Start Program e depois Stop Program.
+
+3.7 Para construir seu mapa no diretório ../data/mapper_teste2, rode o Step_4 e reinicie seu log no início do trecho de intesse. Rode o log por todo o trecho de 
+    interesse em velocidade (Speed do playback control) compatível com o hardware onde você estiver trabalhando.
+    Pronto. Seu mapa estará disponível em ../data/mapper_teste2. Mate o proccontrol e examine seu mapa com um proccontrol de playback_viewer_3D.ini apropriado.
 
 
+==============================================================================================================================================================================
 
-
-
-
-
-
-
-
-
-
-
-
+Documentação antiga.
 
 
 Como criar um mapa usando GraphSLAM [usando o process]:

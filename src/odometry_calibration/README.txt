@@ -7,6 +7,8 @@ Como calibrar a odometria:
 	Notas:
 		- Para saber os parametros do programa execute ele sem nenhum parametro
 		- Rode mais de uma vez e observe qual a melhor calibração no gráfico final
+		- Você pode delimitar o tempo inicial e final a ser considerado no log verificando o tempo no fim de cada linha do log e 
+		  o número da linha do tempo inicial e final. Use as flags -l <linha inicial>  e -m <numero de linhas a partir da linha inicial>.
 
 3. Altere as variaveis abaixo no carmen-ford-escape.ini de acordo com os Resultados do calibrate_bias_from_log:
 robot_phi_multiplier				1.056087

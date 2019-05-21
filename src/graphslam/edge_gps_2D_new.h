@@ -1,12 +1,13 @@
 #ifndef _EDGE_GPS_2D_NEW_H_
 #define _EDGE_GPS_2D_NEW_H_
 
-#include <Eigen/Core>
 #include <g2o/types/slam2d/vertex_se2.h>
 #include <g2o/core/base_unary_edge.h>
 #include <stdio.h>
 #include <math.h>
 #include <float.h>
+#include <carmen/tf.h>
+
 
 using namespace Eigen;
 
@@ -20,57 +21,35 @@ namespace g2o
 
 			EdgeGPSNew() : BaseUnaryEdge<3, SE2, VertexSE2>()
 			{
-				_car2gps = Matrix<double, 4, 4>();
-
-				_car2gps(0, 0) = 1;
-				_car2gps(0, 1) = 0;
-				_car2gps(0, 2) = 0;
-				_car2gps(0, 3) = 0;
-
-				_car2gps(1, 0) = 0;
-				_car2gps(1, 1) = 1;
-				_car2gps(1, 2) = 0;
-				_car2gps(1, 3) = 0;
-
-				_car2gps(2, 0) = 0;
-				_car2gps(2, 1) = 0;
-				_car2gps(2, 2) = 1;
-				_car2gps(2, 3) = 0;
-
-				_car2gps(3, 0) = 0;
-				_car2gps(3, 1) = 0;
-				_car2gps(3, 2) = 0;
-				_car2gps(3, 3) = 1;
+				_transformer = NULL;
 			}
 
-			void set_car2gps(Matrix<double, 4, 4> car2gps)
+			void set_car2gps(tf::Transformer *transformer)
 			{
-				_car2gps = Matrix<double, 4, 4>(car2gps);
+				_transformer = transformer;
 			}
 
 			void computeError()
 			{
-				const VertexSE2* v = dynamic_cast<const VertexSE2*>(_vertices[0]);
-				Matrix<double, 4, 1> p_car, p_gps;
-
+				const VertexSE2 *v = dynamic_cast<const VertexSE2 *>(_vertices[0]);
 				SE2 pose = v->estimate();
-				SE2 gps_measurement_in_estimated_car = pose.inverse() * _measurement;
 
-				p_car[0] = gps_measurement_in_estimated_car[0];
-				p_car[1] = gps_measurement_in_estimated_car[1];
-				p_car[2] = 0;
-				p_car[3] = 1;
-
-				p_gps = _car2gps * p_car;
+				tf::Transform world_to_car;
+				tf::StampedTransform world_to_gps;
+				world_to_car.setOrigin(tf::Vector3(pose[0], pose[1], 0.0));
+				world_to_car.setRotation(tf::Quaternion(pose[2], 0.0, 0.0));
+				_transformer->setTransform(tf::StampedTransform(world_to_car, tf::Time(0), "/world", "/car"));
+				_transformer->lookupTransform("/world", "/gps", tf::Time(0), world_to_gps);
+//				printf("%d, yaw = %lf, world_to_gps: x: %lf, y: %lf, z: %lf, mx: %lf, my: %lf\n",
+//						v->id(), carmen_radians_to_degrees(pose[2]),
+//						world_to_gps.getOrigin().x(), world_to_gps.getOrigin().y(), world_to_gps.getOrigin().z(),
+//						_measurement[0], _measurement[1]);
 
 				_error = g2o::Vector3D(
-						p_gps(0, 0) / p_gps(3, 0),
-						p_gps(1, 0) / p_gps(3, 0),
+						world_to_gps.getOrigin().x() - _measurement[0],
+						world_to_gps.getOrigin().y() - _measurement[1],
 						0.0
 					);
-
-				//SE2 delta = _measurement.inverse() * (v->estimate());
-				//_error = delta.toVector();
 			}
 
 			virtual bool read(std::istream& is)
@@ -108,7 +87,7 @@ namespace g2o
 			}
 
 
-			Matrix<double, 4, 4> _car2gps;
+			tf::Transformer *_transformer;
 	};
 }
 

@@ -31,6 +31,7 @@ sensor_data_t velodyne_data;
 double highest_point;
 bool use_fused_odometry = false;
 int gps_to_use = 1;
+double gps_latency = 0.0;
 
 int number_of_threads = 1;
 
@@ -523,6 +524,7 @@ read_parameters_without_mapper(int argc, char **argv, carmen_localize_ackerman_p
 		{(char *)"localize_ackerman", (char *)"use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
 		{(char *)"commandline", 	  (char *)"use_fused_odometry", CARMEN_PARAM_ONOFF, &use_fused_odometry, 0, NULL},
 		{(char *)"commandline", 	  (char *)"gps_to_use", CARMEN_PARAM_INT, &gps_to_use, 0, NULL},
+		{(char *)"commandline", 	  (char *)"gps_latency", CARMEN_PARAM_DOUBLE, &gps_latency, 0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));

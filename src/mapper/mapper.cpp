@@ -517,7 +517,6 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 
 			if (use_neural_mapper)
 			{
-
 				if (generate_neural_mapper_dataset)
 				{
 					bool get_next_map = neural_mapper_compute_travelled_distance(&neural_mapper_car_position_according_to_map, neural_mapper_robot_pose,

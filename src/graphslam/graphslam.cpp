@@ -22,13 +22,18 @@
 #include "g2o/stuff/macros.h"
 #include "g2o/core/optimizable_graph.h"
 
+#include <carmen/carmen_param_file.h>
+#include <carmen/command_line.h>
+#include <carmen/tf.h>
+
 #include "edge_gps_2D.h"
 #include "edge_gps_2D_new.h"
-#include <carmen/carmen_param_file.h>
-#include <Eigen/Core>
 
+
+using namespace tf;
 using namespace std;
 using namespace g2o;
+
 
 class Line
 {
@@ -57,42 +62,10 @@ vector<pair<int, int> > gps_to_odometry;
 vector<pair<SE2, double> > odometry;
 vector<pair<SE2, double> > gps;
 
-#define BEGIN_ID 100000
-#define END_ID 100000
-//#define BEGIN_ID 6120
-//#define END_ID 6140
-//#define BEGIN_ID 5120
-//#define END_ID 5140
-
-char *input_file;
-char *loops_file;
-char *out_file;
-
-
-Matrix<double, 4, 4>
-pose6d_to_matrix(double x, double y, double z, double roll, double pitch, double yaw)
-{
-	Matrix<double, 3, 3> Rx, Ry, Rz, R;
-	Matrix<double, 4, 4> T;
-
-	double rx, ry, rz;
-
-	rx = roll;
-	ry = pitch;
-	rz = yaw;
-
-    Rx << 1, 0, 0, 0, cos(rx), -sin(rx), 0, sin(rx), cos(rx);
-    Ry << cos(ry), 0, sin(ry), 0, 1, 0, -sin(ry), 0, cos(ry);
-    Rz << cos(rz), -sin(rz), 0, sin(rz), cos(rz), 0, 0, 0, 1;
-    R  = Rz * Ry * Rx;
-
-    T << R(0, 0), R(0, 1), R(0, 2), x,
-    	R(1, 0), R(1, 1), R(1, 2), y,
-		R(2, 0), R(2, 1), R(2, 2), z,
-		0, 0, 0, 1;
-
-    return T;
-}
+char input_file[1024];
+char loops_file[1024];
+char carmen_ini_file[1024];
+char out_file[1024];
 
 
 void
@@ -115,6 +88,13 @@ read_data(char *filename)
 
 	while(!feof(f))
 	{
+		// x, y, theta da odometria (pos base_ackerman)
+		// x, y, theta do gps_xyz
+		// 0.0, 0.0, 0.0 - não usado mais
+		// timestamp do Velodyne
+		// gps_std (ver gps_xyz_message_handler() em grab_data.cpp)
+		// gps_yaw - mesmo que o theta de gps_xyz, acima
+		// gps_orientation_valid - flag que diz se o yaw do gps é valido
 		n = fscanf(f, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %d\n",
 			&ox, &oy, &otheta,
 			&gx, &gy, &gtheta,
@@ -163,9 +143,8 @@ read_loop_restrictions(char *filename)
 	{
 		LoopRestriction l;
 
-		n = fscanf(f, "%d %d %lf %lf %lf\n",
-			&l.from, &l.to, &x, &y, &theta
-		);
+		// índice de uma núvem do Velodyne, índice de outra núvem do Velodyne, deslocamento x, y, theta da primeira para a segunda núvem
+		n = fscanf(f, "%d %d %lf %lf %lf\n", &l.from, &l.to, &x, &y, &theta);
 
 		if (n == 5)
 		{
@@ -178,57 +157,30 @@ read_loop_restrictions(char *filename)
 }
 
 
-double
-r2d(double angle)
-{
-	return (angle * 180.0) / M_PI;
-}
-
-
 void
-add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure,
-						 double gps_std_from_quality_flag, double gps_xy_std_multiplier,
-						 Matrix<double, 4, 4> &car2gps)
-{
-	Matrix3d cov;
-	Matrix3d information;
-
-	cov.data()[0] = pow(gps_std_from_quality_flag * gps_xy_std_multiplier, 2); // Alberto
-	cov.data()[1] = 0;
-	cov.data()[2] = 0;
-	cov.data()[3] = 0;
-	cov.data()[4] = pow(gps_std_from_quality_flag * gps_xy_std_multiplier, 2);
-	cov.data()[5] = 0;
-	cov.data()[6] = 0;
-	cov.data()[7] = 0;
-	cov.data()[8] = pow(3.14 * 1000000, 2);
-	//cov.data()[8] = pow(yaw_std, 2);
-
-	information = cov.inverse();
-
-	EdgeGPSNew *edge_gps = new EdgeGPSNew;
-	edge_gps->set_car2gps(car2gps);
-	edge_gps->vertices()[0] = optimizer->vertex(v->id());
-	edge_gps->setMeasurement(measure);
-	edge_gps->setInformation(information);
-	optimizer->addEdge(edge_gps);
-}
-
-
-void
-add_vertices(SparseOptimizer *optimizer)
+add_and_initialize_vertices(SparseOptimizer *optimizer, tf::Transformer *transformer)
 {
 	uint i;
 
+	tf::StampedTransform gps_to_car;
+	transformer->lookupTransform("/gps", "/car", tf::Time(0), gps_to_car);
+//	printf("gps with respect to car: x: %lf, y: %lf, z: %lf\n", gps_to_car.getOrigin().x(), gps_to_car.getOrigin().y(), gps_to_car.getOrigin().z());
+
+	double x_ = gps_to_car.getOrigin().x();
+	double y_ = gps_to_car.getOrigin().y();
+
 	for (i = 0; i < input_data.size(); i++)
 	{
-		SE2 estimate(
-			input_data[i].gps.toVector()[0] - input_data[0].gps.toVector()[0],
-			input_data[i].gps.toVector()[1] - input_data[0].gps.toVector()[1],
-			input_data[i].gps.toVector()[2]
-		);
+		double yaw = input_data[i].gps[2];
+		double car_pose_in_the_world_x = x_ * cos(yaw) - y_ * sin(yaw) + input_data[i].gps[0];
+		double car_pose_in_the_world_y = x_ * sin(yaw) + y_ * cos(yaw) + input_data[i].gps[1];
 
-		VertexSE2* vertex = new VertexSE2;
+		// Cada estimate é o valor inicial de um vértice que representa (é) uma pose do carro quando a núvem de pontos do Velodyne i foi capturada.
+		SE2 estimate(car_pose_in_the_world_x - input_data[0].gps[0],
+					 car_pose_in_the_world_y - input_data[0].gps[1],
+					 yaw);
+
+		VertexSE2 *vertex = new VertexSE2;
 		vertex->setId(i);
 		vertex->setEstimate(estimate);
 		optimizer->addVertex(vertex);
@@ -257,110 +209,57 @@ add_odometry_edges(SparseOptimizer *optimizer, double odom_xy_std, double odom_o
 	double total_dist = 0.0;
 	for (size_t i = 0; i < (input_data.size() - 1); i++)
 	{
+		// Na linha abaixo, o "*" é um overload do * que calcula a delta_odometria (delta_x, delta_y, delta_theta) entre a odometria i + 1 e i.
 		SE2 measure = input_data[i].odom.inverse() * input_data[i + 1].odom;
+
+		EdgeSE2 *edge = new EdgeSE2;
+		edge->vertices()[0] = optimizer->vertex(i);
+		edge->vertices()[1] = optimizer->vertex(i + 1);
+		edge->setMeasurement(measure);
+		edge->setInformation(information);
+		optimizer->addEdge(edge);
 
 		double dist = sqrt(pow(measure[0], 2) + pow(measure[1], 2));
 		total_dist += dist;
-
-//		dist = dist * (1.045); // Alberto 1.0293
-		measure.setTranslation(Vector2d(dist * cos(measure[2]), dist * sin(measure[2])));
-
-		if (abs(input_data[i + 1].time - input_data[i].time) > 10)
-			continue;
-
-		if (i >= BEGIN_ID && i <= END_ID)
-		{
-			// SE2 bla_teste = input_data[BEGIN_ID].odom.inverse() * input_data[i + 1].odom;
-			SE2 bla_teste = input_data[i + 1].odom;
-
-			bla_teste.setTranslation(Vector2d(
-				input_data[i + 1].odom[0] - input_data[BEGIN_ID].odom[0],
-				input_data[i + 1].odom[1] - input_data[BEGIN_ID].odom[1]
-			));
-
-			SE2 rot_gps = input_data[0].gps;
-			rot_gps.setTranslation(Vector2d(0, 0));
-
-			bla_teste = rot_gps * bla_teste;
-
-			printf("odom: %d %lf %lf %lf\n", (int) i + 1, bla_teste[0], bla_teste[1], carmen_radians_to_degrees(bla_teste[2]));
-		 }
-
-//		if ((fabs(measure[2]) < 0.35)) // && (sqrt(pow(measure[0], 2) + pow(measure[1], 2)) < 1.0))
-		{
-			EdgeSE2* edge = new EdgeSE2;
-			edge->vertices()[0] = optimizer->vertex(i);
-			edge->vertices()[1] = optimizer->vertex(i + 1);
-			edge->setMeasurement(measure);
-			edge->setInformation(information);
-			optimizer->addEdge(edge);
-		}
-//		else
-//			printf("Attention to odometry %d: %lf %lf %lf\n", (int) i, measure[0], measure[1], measure[2]);
 	}
 
 	printf("total_dist odom: %lf\n", total_dist);
 }
 
 
-int
-find_nearest_gps(double time)
+void
+add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure,
+						 double gps_std_from_quality_flag, double gps_xy_std_multiplier,
+						 tf::Transformer *transformer)
 {
-	uint i;
-	int id;
-	double time_diff;
-	double min_time_diff = DBL_MAX;
+	Matrix3d cov;
+	Matrix3d information;
 
-	id = -1;
+	cov.data()[0] = pow(gps_std_from_quality_flag * gps_xy_std_multiplier, 2);
+	cov.data()[1] = 0;
+	cov.data()[2] = 0;
+	cov.data()[3] = 0;
+	cov.data()[4] = pow(gps_std_from_quality_flag * gps_xy_std_multiplier, 2);
+	cov.data()[5] = 0;
+	cov.data()[6] = 0;
+	cov.data()[7] = 0;
+	cov.data()[8] = pow(3.14 * 1000000, 2);
+	//cov.data()[8] = pow(yaw_std, 2);
 
-	for (i = 0; i < gps.size(); i++)
-	{
-		time_diff = fabs(time - gps[i].second);
+	information = cov.inverse();
 
-		if (time_diff < min_time_diff)
-		{
-			min_time_diff = time_diff;
-			id = i;
-		}
-	}
-
-	return id;
-}
-
-
-int
-find_loop_with_gps(SE2 pose, double time)
-{
-	uint i;
-	int id;
-	double dist;
-	double time_diff;
-	double min_dist = DBL_MAX;
-
-	id = -1;
-
-	for (i = 0; i < gps_to_odometry.size(); i++)
-	{
-		int pgps = gps_to_odometry[i].first;
-
-		time_diff = fabs(time - gps[pgps].second);
-		dist = sqrt(pow(gps[pgps].first[0] - pose[0], 2) + pow(gps[pgps].first[1] - pose[1], 2));
-
-		if ((dist < min_dist) && (dist < 3.0) && (time_diff > 120.0))
-		{
-			min_dist = dist;
-			id = i;
-		}
-	}
-
-	return id;
+	EdgeGPSNew *edge_gps = new EdgeGPSNew;
+	edge_gps->set_car2gps(transformer);
+	edge_gps->vertices()[0] = optimizer->vertex(v->id());
+	edge_gps->setMeasurement(measure);
+	edge_gps->setInformation(information);
+	optimizer->addEdge(edge_gps);
 }
 
 
 void
-add_gps_edges(SparseOptimizer *optimizer, double gps_xy_std_multiplier, Matrix<double, 4, 4> &car2gps)
+add_gps_edges(SparseOptimizer *optimizer, double gps_xy_std_multiplier, tf::Transformer *transformer)
 {
-//	int is_first = 1;
 	SE2 diff(0, 0, 0);
 	SE2 last_measure(0, 0, 0);
 
@@ -373,39 +272,17 @@ add_gps_edges(SparseOptimizer *optimizer, double gps_xy_std_multiplier, Matrix<d
 		SE2 gmeasure = input_data[i].gps;
 		SE2 measure(gmeasure[0] - input_data[0].gps[0], gmeasure[1] - input_data[0].gps[1], gps_yaw /*gmeasure[2]*/); // subtract the first gps
 
+		VertexSE2 *v = dynamic_cast<VertexSE2*>(optimizer->vertices()[i]);
+		add_gps_edge(optimizer, v, measure, gps_std_from_quality_flag, gps_xy_std_multiplier, transformer);
+
+		last_measure = measure;
+
 		if (i > 0)
 		{
 			SE2 step = last_measure.inverse() * measure;
 			double dist = sqrt(pow(step[0], 2) + pow(step[1], 2));
 			total_dist += dist;
 		}
-
-		if (i >= BEGIN_ID && i <= END_ID)
-		{
-			// SE2 bla_teste = input_data[BEGIN_ID].gps.inverse() * gmeasure;
-			SE2 bla_teste = gmeasure;
-
-			bla_teste.setTranslation(Vector2d(
-				gmeasure[0] - input_data[BEGIN_ID].gps[0],
-				gmeasure[1] - input_data[BEGIN_ID].gps[1]
-			));
-
-			printf("gps: %d %lf %lf %lf\n", (int) i, bla_teste[0], bla_teste[1], carmen_radians_to_degrees(bla_teste[2]));
-		}
-
-//		diff = last_measure.inverse() * measure;
-
-//		if ( (is_first) ||
-//			 ((fabs(diff[2]) < 0.35))) // && (sqrt(pow(diff[0], 2) + pow(diff[1], 2)) < 1.0)))
-		{
-			VertexSE2 *v = dynamic_cast<VertexSE2*>(optimizer->vertices()[i]);
-			add_gps_edge(optimizer, v, measure, gps_std_from_quality_flag, gps_xy_std_multiplier, car2gps);
-		}
-//		else
-//			printf("Attention to GPS %d: %lf %lf %lf!!\n", (int) i, diff[0], diff[1], diff[2]);
-
-//		is_first = 0;
-		last_measure = measure;
 	}
 
 	printf("Total dist gps: %lf\n", total_dist);
@@ -413,20 +290,20 @@ add_gps_edges(SparseOptimizer *optimizer, double gps_xy_std_multiplier, Matrix<d
 
 
 void
-add_loop_closure_edges(SparseOptimizer *optimizer)
+add_loop_closure_edges(SparseOptimizer *optimizer, double loop_xy_std, double loop_orient_std)
 {
 	Matrix3d cov;
 	Matrix3d information;
 
-	cov.data()[0] = pow(3.0, 2);
+	cov.data()[0] = pow(loop_xy_std, 2);	// xy std
 	cov.data()[1] = 0;
 	cov.data()[2] = 0;
 	cov.data()[3] = 0;
-	cov.data()[4] = pow(3.0, 2);
+	cov.data()[4] = pow(loop_xy_std, 2);	// xy std
 	cov.data()[5] = 0;
 	cov.data()[6] = 0;
 	cov.data()[7] = 0;
-	cov.data()[8] = pow(0.60, 2);
+	cov.data()[8] = pow(loop_orient_std, 2);	// yaw std (radians)
 
 	information = cov.inverse();
 
@@ -442,101 +319,73 @@ add_loop_closure_edges(SparseOptimizer *optimizer)
 }
 
 
-void
-add_icp_edges(SparseOptimizer *optimizer)
-{
-	Matrix3d cov;
-	Matrix3d information;
-
-	cov.data()[0] = pow(1.0, 2);
-	cov.data()[1] = 0;
-	cov.data()[2] = 0;
-	cov.data()[3] = 0;
-	cov.data()[4] = pow(1.0, 2);
-	cov.data()[5] = 0;
-	cov.data()[6] = 0;
-	cov.data()[7] = 0;
-	cov.data()[8] = pow(0.09, 2);
-
-	information = cov.inverse();
-
-	// debug:
-	SE2 accum(0, 0, 0);
-	SE2 accum_base;
-	double total_dist = 0;
-
-	for (size_t i = 0; i < (input_data.size() - 1); i++)
-	{
-		SE2 measure = input_data[i + 1].icp;
-
-		if (i == BEGIN_ID)
-			accum_base = accum;
-
-		if (i >= BEGIN_ID && i <= END_ID)
-		{
-			// SE2 bla_teste = accum_base.inverse() * accum;
-
-			SE2 bla_teste = accum;
-
-			bla_teste.setTranslation(Vector2d(
-				accum[0] - accum_base[0],
-				accum[1] - accum_base[1]
-			));
-
-			SE2 rot_gps = input_data[0].gps;
-			rot_gps.setTranslation(Vector2d(0, 0));
-			bla_teste = rot_gps * bla_teste;
-
-			printf("icp: %d %lf %lf %lf\n", (int) i + 1, bla_teste[0], bla_teste[1], carmen_radians_to_degrees(bla_teste[2]));
-		}
-
-		double dist = sqrt(pow(measure[0], 2) + pow(measure[1], 2));
-		total_dist += dist;
-
-		dist = dist * 1.65; // (3715.809434 / 2047.590339);
-		//measure.setTranslation(Vector2d(dist * cos(measure[2]), dist * sin(measure[2])));
-
-//		if ((fabs(measure[2]) < 0.35)) // && (sqrt(pow(measure[0], 2) + pow(measure[1], 2)) < 1.0))
-//		{
-			EdgeSE2* edge = new EdgeSE2;
-			edge->vertices()[0] = optimizer->vertex(i);
-			edge->vertices()[1] = optimizer->vertex(i + 1);
-			edge->setMeasurement(measure);
-			edge->setInformation(information);
-			optimizer->addEdge(edge);
-//		}
-//		else
-//			printf("Attention to icp %d: %lf %lf %lf\n", (int) i, measure[0], measure[1], measure[2]);
-
-		// debug:
-		accum = accum * measure;
-		//printf("%lf %lf\n", accum[0], accum[1]);
-	}
-
-	printf("total dist icp: %lf\n", total_dist);
-}
+//void
+//add_icp_edges(SparseOptimizer *optimizer)
+//{
+//	Matrix3d cov;
+//	Matrix3d information;
+//
+//	cov.data()[0] = pow(1.0, 2);
+//	cov.data()[1] = 0;
+//	cov.data()[2] = 0;
+//	cov.data()[3] = 0;
+//	cov.data()[4] = pow(1.0, 2);
+//	cov.data()[5] = 0;
+//	cov.data()[6] = 0;
+//	cov.data()[7] = 0;
+//	cov.data()[8] = pow(0.09, 2);
+//
+//	information = cov.inverse();
+//
+//	for (size_t i = 0; i < (input_data.size() - 1); i++)
+//	{
+//		SE2 measure = input_data[i + 1].icp;
+//
+//		EdgeSE2 *edge = new EdgeSE2;
+//		edge->vertices()[0] = optimizer->vertex(i);
+//		edge->vertices()[1] = optimizer->vertex(i + 1);
+//		edge->setMeasurement(measure);
+//		edge->setInformation(information);
+//		optimizer->addEdge(edge);
+//	}
+//}
 
 
 void
-load_data_to_optimizer(
-		SparseOptimizer *optimizer, double gps_xy_std_multiplier,
+build_optimization_graph(SparseOptimizer *optimizer,
+		double gps_xy_std_multiplier,
 		double odom_xy_std, double odom_orient_std,
-		Matrix<double, 4, 4> &car2gps)
+		double loop_xy_std, double loop_orient_std,
+		tf::Transformer *transformer)
 {
-	// read_data("data-log_voltadaufes-20130916-with-icp-processed.txt");
-	// read_data("data-log_voltadaufes-20130916-odom-processed-without-icp.txt");
-	// read_data("data-log_voltadaufes-20130916-odomevel-processed-with-icp.txt");
-	// read_data("data-log_voltadaufes-20130916-ramdisk-processed-with-icp.txt");
-	// read_data("data-log_voltadaufes-20130916-ramdisk-processed-with-icp-pred-odom.txt");
+	// A fução read_data(), abaixo, lê a saída do grab_data, que é uma arquivo txt (sync.txt)) onde cada linha contém um vetor
+	// com vários dados sincronizados (projetando ackerman) com cada núvem de pontos do Velodyne, sendo eles:
+	// x, y, theta da odometria (pós base_ackerman)
+	// x, y, theta do gps_xyz
+	// 0.0, 0.0, 0.0 - não usado mais
+	// timestamp do Velodyne
+	// gps_std (ver gps_xyz_message_handler() em grab_data.cpp)
+	// gps_yaw - mesmo que o theta de gps_xyz, acima
+	// gps_orientation_valid - flag que diz se o yaw do gps é valido
 	read_data(input_file);
+
+	// A fução read_loop_restrictions(), abaixo, lê a saída do run_icp_for_loop_closure, que é uma arquivo txt onde cada linha
+	// contém o vetor:
+	// índice de uma núvem do Velodyne, índice de outra núvem do Velodyne, deslocamento x, y, theta da primeira para a
+	// segunda núvem (as outras coordenadas são jogadas fora - não há uma projeção explicita para o plano x, y)
 	read_loop_restrictions(loops_file);
 
-	add_vertices(optimizer);
+	// Cria e inicializa vértices de um grafo, onde cada vertice é a pose (x, y, theta) do carro
+	add_and_initialize_vertices(optimizer, transformer);
+
+	// Para cada par de vértices, adiciona uma aresta de odometria, que é um delta_x, delta_y, delta_theta.
 	add_odometry_edges(optimizer, odom_xy_std, odom_orient_std);
-	add_gps_edges(optimizer, gps_xy_std_multiplier, car2gps);
-	add_loop_closure_edges(optimizer);
+
+	// Para cada par de vértices, adiciona uma aresta de gps, que é um x, y, theta.
+	add_gps_edges(optimizer, gps_xy_std_multiplier, transformer);
+
+	add_loop_closure_edges(optimizer, loop_xy_std, loop_orient_std);
 	// add_icp_edges(optimizer);
-	// exit(0);
 
 	optimizer->save("poses_before.g2o");
 	cout << "load complete!" << endl;
@@ -544,34 +393,36 @@ load_data_to_optimizer(
 
 
 void
-save_corrected_vertices(SparseOptimizer *optimizer)
+save_corrected_vertices(SparseOptimizer *optimizer, tf::Transformer *transformer)
 {
-	// FILE *f = fopen("poses_after.txt", "w");
 	FILE *f = fopen(out_file, "w");
 
 	if (f == NULL)
 		exit(printf("File '%s' couldn't be opened!\n", out_file));
 
-	// VertexSE2* vtest = dynamic_cast<VertexSE2*>(optimizer->vertex(5190));
+	VertexSE2 *v = dynamic_cast<VertexSE2*>(optimizer->vertex(0));
+	SE2 car_pose_0 = v->estimate();
+
+	tf::StampedTransform gps_to_car;
+	transformer->lookupTransform("/gps", "/car", tf::Time(0), gps_to_car);
+//	printf("gps with respect to car: x: %lf, y: %lf, z: %lf\n", gps_to_car.getOrigin().x(), gps_to_car.getOrigin().y(), gps_to_car.getOrigin().z());
+
+	double x_ = gps_to_car.getOrigin().x();
+	double y_ = gps_to_car.getOrigin().y();
+	double yaw = car_pose_0[2];
+	double car_pose_0_in_the_world_x = x_ * cos(yaw) - y_ * sin(yaw) + input_data[0].gps[0];
+	double car_pose_0_in_the_world_y = x_ * sin(yaw) + y_ * cos(yaw) + input_data[0].gps[1];
+//	printf("car_pose_0_in_the_world (%lf, %lf)\n", car_pose_0_in_the_world_x, car_pose_0_in_the_world_y);
 
 	for (size_t i = 0; i < optimizer->vertices().size(); i++)
 	{
-		VertexSE2* v = dynamic_cast<VertexSE2*>(optimizer->vertex(i));
+		v = dynamic_cast<VertexSE2*>(optimizer->vertex(i));
 		SE2 pose = v->estimate();
 
-		pose.setTranslation(Vector2d(v->estimate()[0] + input_data[0].gps[0], v->estimate()[1] + input_data[0].gps[1]));
+		pose.setTranslation(Vector2d(v->estimate()[0] + car_pose_0_in_the_world_x, v->estimate()[1] + car_pose_0_in_the_world_y));
 		pose.setRotation(Rotation2Dd(v->estimate()[2]));
 
-		if (i >= BEGIN_ID && i <= END_ID)
-		{
-			VertexSE2* vbla = dynamic_cast<VertexSE2*>(optimizer->vertex(BEGIN_ID));
-			SE2 bla_teste = vbla->estimate().inverse() * v->estimate();
-			printf("graph: %d %lf %lf %lf\n", (int) i, bla_teste[0], bla_teste[1], carmen_radians_to_degrees(bla_teste[2]));
-		}
-
 		fprintf(f, "%lf %lf %lf %lf\n", pose.toVector().data()[0], pose.toVector().data()[1], pose.toVector().data()[2], input_data[i].time);
-		// fprintf(f, "%lf %lf %lf %lf %d\n", vertex_data[0], vertex_data[1], vertex_data[2], input_data[i].time, (int) i);
-		// fprintf(f, "%lf %lf %lf %lf\n", input_data[i].odom[0], input_data[i].odom[1], input_data[i].odom[2], input_data[i].time);
 	}
 
 	fclose(f);
@@ -602,7 +453,7 @@ initialize_optimizer()
 {
 	SparseOptimizer *optimizer = new SparseOptimizer;
 
-	OptimizationAlgorithmFactory* solverFactory = OptimizationAlgorithmFactory::instance();
+	OptimizationAlgorithmFactory *solverFactory = OptimizationAlgorithmFactory::instance();
 	g2o::OptimizationAlgorithmProperty _currentOptimizationAlgorithmProperty;
 	// _currentOptimizationAlgorithmProperty.name = "lm_pcg";
 	_currentOptimizationAlgorithmProperty.name = "gn_var_cholmod";
@@ -618,124 +469,129 @@ initialize_optimizer()
 
 	optimizer->setAlgorithm(solver);
 
-	return optimizer;
+	return (optimizer);
 }
 
 
-Eigen::Matrix<double, 4, 4>
-get_transform_from_car_to_gps(CarmenParamFile &params, int gps_id)
+tf::Transform
+read_object_pose_by_name_from_carmen_ini(CarmenParamFile *params, string object_name)
 {
-	Eigen::Matrix<double, 4, 4> board2car, gps2board, gps2car, car2gps;
+	double x, y, z, roll, pitch, yaw;
 
+	x = params->get<double>(object_name + "_x");
+	y = params->get<double>(object_name + "_y");
+	z = params->get<double>(object_name + "_z");
+	roll = params->get<double>(object_name + "_roll");
+	pitch = params->get<double>(object_name + "_pitch");
+	yaw = params->get<double>(object_name + "_yaw");
+
+	return tf::Transform(tf::Quaternion(yaw, pitch, roll), tf::Vector3(x, y, z));
+}
+
+
+void
+initialize_tf_transfoms(CarmenParamFile *params, Transformer *transformer, int gps_id)
+{
 	char gps_name[128];
+
 	sprintf(gps_name, "gps_nmea_%d", gps_id);
-	string gps_name_str = string(gps_name);
 
-	gps2board = pose6d_to_matrix(
-		params.get<double>(gps_name_str + "_x"),
-		params.get<double>(gps_name_str + "_y"),
-		params.get<double>(gps_name_str + "_z"),
-		params.get<double>(gps_name_str + "_roll"),
-		params.get<double>(gps_name_str + "_pitch"),
-		params.get<double>(gps_name_str + "_yaw")
-	);
+	transformer->setTransform(tf::StampedTransform(read_object_pose_by_name_from_carmen_ini(params, "sensor_board_1"), tf::Time(0), "/car", "/board"));
+	transformer->setTransform(tf::StampedTransform(read_object_pose_by_name_from_carmen_ini(params, gps_name), tf::Time(0), "/board", "/gps"));
 
-	printf("gps2board -> x: %lf y: %lf z: %lf roll: %lf pitch: %lf yaw: %lf\n",
-				params.get<double>(gps_name_str + "_x"),
-				params.get<double>(gps_name_str + "_y"),
-				params.get<double>(gps_name_str + "_z"),
-				params.get<double>(gps_name_str + "_roll"),
-				params.get<double>(gps_name_str + "_pitch"),
-				params.get<double>(gps_name_str + "_yaw"));
-
-	board2car = pose6d_to_matrix(
-		params.get<double>("sensor_board_1_x"),
-		params.get<double>("sensor_board_1_y"),
-		params.get<double>("sensor_board_1_z"),
-		params.get<double>("sensor_board_1_roll"),
-		params.get<double>("sensor_board_1_pitch"),
-		params.get<double>("sensor_board_1_yaw")
-	);
-
-	printf("board2car -> x: %lf y: %lf z: %lf roll: %lf pitch: %lf yaw: %lf\n",
-					params.get<double>("sensor_board_1_x"),
-					params.get<double>("sensor_board_1_y"),
-					params.get<double>("sensor_board_1_z"),
-					params.get<double>("sensor_board_1_roll"),
-					params.get<double>("sensor_board_1_pitch"),
-					params.get<double>("sensor_board_1_yaw"));
-
-	gps2car = board2car * gps2board;
-
-	printf("gps2car -> x: %lf y: %lf z: %lf\n",
-					gps2car(0, 3),
-					gps2car(1, 3),
-					gps2car(2, 3));
-
-	car2gps = gps2car.inverse();
-
-	printf("car2gps -> x: %lf y: %lf z: %lf\n",
-				 car2gps(0, 3),
-				 car2gps(1, 3),
-				 car2gps(2, 3));
-
-	return (car2gps);
+//	tf::StampedTransform a_to_b;
+//	transformer->lookupTransform("/car", "/board", tf::Time(0), a_to_b);
+//	printf("board with respect to car: x: %lf, y: %lf, z: %lf\n", a_to_b.getOrigin().x(), a_to_b.getOrigin().y(), a_to_b.getOrigin().z());
+//	transformer->lookupTransform("/board", "/gps", tf::Time(0), a_to_b);
+//	printf("gps with respect to board: x: %lf, y: %lf, z: %lf\n", a_to_b.getOrigin().x(), a_to_b.getOrigin().y(), a_to_b.getOrigin().z());
+//	transformer->lookupTransform("/car", "/gps", tf::Time(0), a_to_b);
+//	printf("gps with respect to car: x: %lf, y: %lf, z: %lf\n", a_to_b.getOrigin().x(), a_to_b.getOrigin().y(), a_to_b.getOrigin().z());
 }
 
 
-int
-main(int argc, char **argv)
+void
+graphslam(int gps_id, double gps_xy_std_multiplier,
+		double odom_xy_std, double odom_orient_std,
+		double loop_xy_std, double loop_orient_std,
+		int argc, char **argv)
 {
-	if (argc < 6)
-		exit(printf("Use %s <input-file> <carmen_ini> <gps_id> <loops-file> <saida.txt> <gps_xy_std_multiplier (meters)> <odom_xy_std (meters)> <odom_orient_std (degrees)>\n", argv[0]));
-
-	input_file = argv[1];
-	CarmenParamFile params = CarmenParamFile(argv[2]);
-	int gps_id = atoi(argv[3]);
-	//params.print();
-	Matrix<double, 4, 4> car2gps = get_transform_from_car_to_gps(params, gps_id);
-
-	loops_file = argv[4];
-	out_file = argv[5];
-
-	double gps_xy_std_multiplier = 5.0;
-	double odom_xy_std = 0.1;
-	double odom_orient_std = 0.009;
-
-	if (argc >= 7)
-		gps_xy_std_multiplier = atof(argv[6]);
-
-	if (argc >= 8)
-		odom_xy_std = atof(argv[7]);
-
-	if (argc >= 9)
-		odom_orient_std = carmen_degrees_to_radians(atof(argv[8]));
-
-	SparseOptimizer* optimizer;
-
 	srand(time(NULL));
+
+	CarmenParamFile *params = new CarmenParamFile(carmen_ini_file);
+	tf::Transformer *transformer = new tf::Transformer(false);
+	initialize_tf_transfoms(params, transformer, gps_id);
 
 	DlWrapper dlSolverWrapper;
 	loadStandardSolver(dlSolverWrapper, argc, argv);
-	Factory* factory = Factory::instance();
+
+	Factory *factory = Factory::instance();
 	factory->registerType("EDGE_GPS", new HyperGraphElementCreator<EdgeGPS>);
 	factory->registerType("EDGE_GPS_NEW", new HyperGraphElementCreator<EdgeGPSNew>);
 
-	optimizer = initialize_optimizer();
-	load_data_to_optimizer(optimizer, gps_xy_std_multiplier, odom_xy_std, odom_orient_std, car2gps);
-
+	SparseOptimizer *optimizer = initialize_optimizer();
+	build_optimization_graph(optimizer, gps_xy_std_multiplier, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, transformer);
 	optimizer->setVerbose(true);
+
 	cerr << "Optimizing" << endl;
 	prepare_optimization(optimizer);
-	optimizer->optimize(100);
+	optimizer->optimize(50);
 	cerr << "OptimizationDone!" << endl;
-	save_corrected_vertices(optimizer);
+
+	delete (transformer);
+	transformer = new tf::Transformer(false);
+	delete (params);
+	params = new CarmenParamFile(carmen_ini_file);
+	initialize_tf_transfoms(params, transformer, gps_id);
+	save_corrected_vertices(optimizer, transformer);
+
 	cerr << "OutputSaved!" << endl;
 
 	printf("Programa terminado normalmente. Tecle Ctrl+C para terminar\n");
 	fflush(stdout);
 	getchar();
 	fprintf(stderr, "\n\n **** IGNORE O SEG FAULT ABAIXO. ELE EH CAUSADO PELO DESTRUTOR DO DLWRAPPER DO G2O!\n");
+}
+
+
+void
+declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
+{
+	args->add_positional<string>("sync.txt", "Synchronized sensors data");
+	args->add_positional<string>("loops.txt", "Points cloud pairs closing loops");
+	args->add_positional<string>("carmen.ini", "Path to a file containing system parameters");
+	args->add_positional<string>("poses_opt.txt", "Path to a file in which the poses will be saved in graphslam format");
+	args->add<int>("gps_to_use", "Id of the gps that will be used for the calibration", 1);
+	args->add<double>("gps_xy_std_multiplier", "Multiplier of the standard deviation of the gps position (times meters)", 5.0);
+	args->add<double>("odom_xy_std", "Odometry position (x, y) standard deviation (meters)", 0.1);
+	args->add<double>("odom_orient_std", "Odometry orientation (yaw) standard deviation (degrees)", 1.0);
+	args->add<double>("loop_xy_std", "Loop closure delta position (x, y) standard deviation (meters)", 3.0);
+	args->add<double>("loop_orient_std", "Loop closure orientation (yaw) standard deviation (degrees)", 34.0);
+
+	args->save_config_file("graphslam_config.txt");
+	args->parse(argc, argv);
+}
+
+
+int
+main(int argc, char **argv)
+{
+	CommandLineArguments args;
+
+	declare_and_parse_args(argc, argv, &args);
+
+	strcpy(input_file, (char *) args.get<string>("sync.txt").c_str());
+	strcpy(loops_file, (char *) args.get<string>("loops.txt").c_str());
+	strcpy(carmen_ini_file, (char *) args.get<string>("carmen.ini").c_str());
+	strcpy(out_file, (char *) args.get<string>("poses_opt.txt").c_str());
+
+	int gps_id = args.get<int>("gps_to_use");
+	double gps_xy_std_multiplier = 	args.get<double>("gps_xy_std_multiplier");
+	double odom_xy_std = args.get<double>("odom_xy_std");
+	double odom_orient_std = carmen_degrees_to_radians(args.get<double>("odom_orient_std"));
+	double loop_xy_std = args.get<double>("loop_xy_std");
+	double loop_orient_std = carmen_degrees_to_radians(args.get<double>("loop_orient_std"));
+
+	graphslam(gps_id, gps_xy_std_multiplier, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, argc, argv);
 	
-	return 0;
+	return (0);
 }

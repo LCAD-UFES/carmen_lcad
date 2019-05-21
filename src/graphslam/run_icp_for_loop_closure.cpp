@@ -11,6 +11,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include <Eigen/Core>
 #include <pcl/io/ply_io.h>
+#include <pcl/io/pcd_io.h>
 #include "g2o/types/slam2d/se2.h"
 
 #include <tf.h>
@@ -31,9 +32,13 @@ typedef struct
 	double timestamp;
 }Line;
 
+typedef struct
+{
+	uint i;
+	int loop_id;
+} LoopPair;
+
 char *velodyne_storage_dir;
-// "/media/OS/Users/Filipe/Desktop/log_voltadaufes-20140320-3.txt/";
-// char *velodyne_storage_dir = "/media/OS/Users/Filipe/Desktop/ramdisk";
 pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> gicp;
 vector<Line> input_data;
 
@@ -136,12 +141,21 @@ save_clouds_for_debug(pcl::PointCloud<pcl::PointXYZRGB> source_pointcloud, pcl::
 	static int id_icp_call = 1;
 	char name[1024];
 
-	sprintf(name, "%s/%05d_source.ply", velodyne_storage_dir, id_icp_call);
-	pcl::io::savePLYFile(name, source_pointcloud);
-	sprintf(name, "%s/%05d_target.ply", velodyne_storage_dir, id_icp_call);
-	pcl::io::savePLYFile(name, target_pointcloud);
-	sprintf(name, "%s/%05d_result.ply", velodyne_storage_dir, id_icp_call);
-	pcl::io::savePLYFile(name, out_pcl_pointcloud_transformed);
+	sprintf(name, "%s/%05d_source.pcd", velodyne_storage_dir, id_icp_call);
+	for (uint i = 0; i < (source_pointcloud.width * source_pointcloud.height); i++)
+		source_pointcloud.points[i].r = 255;
+	pcl::io::savePCDFileASCII(name, source_pointcloud);
+
+	sprintf(name, "%s/%05d_target.pcd", velodyne_storage_dir, id_icp_call);
+	for (uint i = 0; i < (target_pointcloud.width * target_pointcloud.height); i++)
+		target_pointcloud.points[i].g = 255;
+	pcl::io::savePCDFileASCII(name, target_pointcloud);
+
+	sprintf(name, "%s/%05d_result.pcd", velodyne_storage_dir, id_icp_call);
+	for (uint i = 0; i < (out_pcl_pointcloud_transformed.width * out_pcl_pointcloud_transformed.height); i++)
+		out_pcl_pointcloud_transformed.points[i].b = 255;
+	pcl::io::savePCDFileASCII(name, out_pcl_pointcloud_transformed);
+
 	printf("Saved: %s\n", name);
 
 	id_icp_call++;
@@ -154,17 +168,23 @@ perform_icp(pcl::PointCloud<pcl::PointXYZRGB>::Ptr source_pointcloud, pcl::Point
 	pcl::PointCloud<pcl::PointXYZRGB> out_pcl_pointcloud;
 	pcl::PointCloud<pcl::PointXYZRGB> out_pcl_pointcloud_transformed;
 
-	gicp.setInputCloud(source_pointcloud);
-	gicp.setInputTarget(target_pointcloud);
-	gicp.align(out_pcl_pointcloud);
-	(*measured_pose_out) = gicp.getFinalTransformation().cast<double>();
-
-	pcl::transformPointCloud(out_pcl_pointcloud, out_pcl_pointcloud_transformed, (*measured_pose_out));
-	// save_clouds_for_debug(*source_pointcloud, *target_pointcloud, out_pcl_pointcloud_transformed);
-
-	if(gicp.hasConverged())
+	if ((source_pointcloud->size() > 20) && (target_pointcloud->size() > 20))
 	{
-		return 1;
+		gicp.setInputCloud(source_pointcloud);
+		gicp.setInputTarget(target_pointcloud);
+		gicp.align(out_pcl_pointcloud);
+		if (gicp.hasConverged())
+		{
+			(*measured_pose_out) = gicp.getFinalTransformation().cast<double>();
+
+			Eigen::Matrix<double, 4, 4> transf(*measured_pose_out);
+		//	Eigen::Matrix<double, 4, 4> transf2(transf.inverse());
+			pcl::transformPointCloud(*source_pointcloud, out_pcl_pointcloud_transformed, transf);
+
+			save_clouds_for_debug(*source_pointcloud, *target_pointcloud, out_pcl_pointcloud_transformed);
+
+			return 1;
+		}
 	}
 
 	return 0;
@@ -201,7 +221,8 @@ load_pointcloud_from_file(char *filename, pcl::PointCloud<pcl::PointXYZRGB>::Ptr
 		p3D.g = (unsigned char) g;
 		p3D.b = (unsigned char) b;
 
-		pointcloud->push_back(p3D);
+		if ((p3D.z > 0.0) && (sqrt(p3D.x * p3D.x + p3D.y * p3D.y) < 30.0))
+			pointcloud->push_back(p3D);
 	}
 
 	fclose(f);
@@ -294,7 +315,8 @@ LeafSize(pcl::PointCloud<pcl::PointXYZRGB>::Ptr inputPointCloud, double size)
        grid.setLeafSize(size, size, size);
        grid.setInputCloud(inputPointCloud);
        grid.filter(*outputPointCloud);
-       return outputPointCloud;
+
+       return (outputPointCloud);
 }
 
 
@@ -364,10 +386,7 @@ add_icp_restriction(int i, int j)
 
 		transform_pcl_pose_to_carmen_pose(T, &transform);
 
-		fprintf(output_file, "%d %d %lf %lf %lf\n", i, j,
-			transform.position.x, transform.position.y,
-			transform.orientation.yaw
-		);
+		fprintf(output_file, "%d %d %lf %lf %lf\n", i, j, transform.position.x, transform.position.y, transform.orientation.yaw);
 
 		fflush(output_file);
 	}
@@ -382,7 +401,6 @@ add_icp_restriction(int i, int j)
 
 	source_pointcloud_leafed->clear();
 	target_pointcloud_leafed->clear();
-
 }
 
 
@@ -390,32 +408,21 @@ void
 process_data(double dist_for_detecting_loop_closure, double time_difference_for_detecting_loop_closure)
 {
 	uint i, j;
-	double dist;
-	double delta_x;
-	double delta_y;
-	double delta_t;
-
-	int n = 0;
-	double acc = 0;
-	double elapsedTime;
-	timeval t1, t2;
-	double min_dist;
 	int loop_id;
-
-	int num_loops_found = 0;
+	vector<LoopPair> loop_pair_v;
 
 	for (i = 0; i < input_data.size(); i++)
 	{
 		loop_id = -1;
-		min_dist = DBL_MAX;
+		double min_dist = DBL_MAX;
 
 		for (j = (i + 1); j < input_data.size(); j++)
 		{
-			delta_x = input_data[i].gps_pose.position.x - input_data[j].gps_pose.position.x;
-			delta_y = input_data[i].gps_pose.position.y - input_data[j].gps_pose.position.y;
-			delta_t = input_data[i].timestamp - input_data[j].timestamp;
+			double delta_x = input_data[i].gps_pose.position.x - input_data[j].gps_pose.position.x;
+			double delta_y = input_data[i].gps_pose.position.y - input_data[j].gps_pose.position.y;
+			double delta_t = input_data[i].timestamp - input_data[j].timestamp;
 
-			dist = sqrt(pow(delta_x, 2) + pow(delta_y, 2));
+			double dist = sqrt(pow(delta_x, 2) + pow(delta_y, 2));
 
 			if ((dist < min_dist) && (fabs(delta_t) > time_difference_for_detecting_loop_closure)) // Tempo e distancia para detectar fechamento de loop. Alberto: TODO - passar o tempo como parametro.
 			{
@@ -426,37 +433,29 @@ process_data(double dist_for_detecting_loop_closure, double time_difference_for_
 
 		if (min_dist < dist_for_detecting_loop_closure)
 		{
-			fprintf(stderr, "Pose %d de %d: %lf ", i, (int) input_data.size(), 100.0 * (double) i / (double) input_data.size());
-			gettimeofday(&t1, NULL);
-
-			num_loops_found++;
-			add_icp_restriction(i, loop_id);
-
-			gettimeofday(&t2, NULL);
-			elapsedTime = (t2.tv_sec - t1.tv_sec);
-			elapsedTime += (t2.tv_usec - t1.tv_usec) / (1000.0 * 1000.0);   // us to s
-
-			n += 1.0;
-			acc += elapsedTime;
-
-			fprintf(stderr, " time step: %lf mean: %lf\n", elapsedTime, acc / n);
+			LoopPair loop_pair = {i, loop_id};
+			loop_pair_v.push_back(loop_pair);
 		}
 	}
 
-	printf("num loops found: %d\n", num_loops_found);
-}
+	int r = 0;
+	for (uint k = 0; k < loop_pair_v.size(); k++)
+	{
+		i = loop_pair_v[k].i;
+		loop_id = loop_pair_v[k].loop_id;
+		fprintf(stderr, "Loop pair (%d -> %d); %d de %ld (%.1lf%%)\n",
+				i, loop_id, i, loop_pair_v.size(), 100.0 * (double) i / (double) loop_pair_v.size());
 
+		if (((k + 1) < (loop_pair_v.size() - 1)) && (loop_id == loop_pair_v[k + 1].loop_id))
+		{
+			r++;
+			continue; // remove duplicated pairs
+		}
 
-void
-initialize_global_variables(char **argv)
-{
-	velodyne_storage_dir = argv[2];
-	output_filename = argv[3];
+		add_icp_restriction(i, loop_id);
+	}
 
-	output_file = fopen(output_filename, "w");
-
-	if (output_file == NULL)
-		exit(printf("Unable to open file '%s'", output_filename));
+	printf("num loops found: %ld; num loops used: %ld\n", loop_pair_v.size(), loop_pair_v.size() - r);
 }
 
 
@@ -481,17 +480,23 @@ main(int argc, char **argv)
 
 	char *input_file = argv[1];
 
+	velodyne_storage_dir = argv[2];
+
+	output_file = fopen(argv[3], "w");
+	if (output_file == NULL)
+		exit(printf("Unable to open file '%s'", output_filename));
+
 	if (argc >= 5)
 		dist_for_detecting_loop_closure = atof(argv[4]);
 
 	if (argc >= 6)
 		time_difference_for_detecting_loop_closure = atof(argv[5]);
 
-	initialize_global_variables(argv);
 	initialize_icp();
 	read_data(input_file);
 	process_data(dist_for_detecting_loop_closure, time_difference_for_detecting_loop_closure);
-	clean_data();
+
+	fclose(output_file);
 
 	printf("Pressione crtl+c para terminar.\n");
 	fflush(stdout);
@@ -499,4 +504,3 @@ main(int argc, char **argv)
 
 	return 0;
 }
-
