@@ -17,10 +17,10 @@ carmen_path = os.getenv("CARMEN_HOME")
 # raw | visual | semantic | remission | bright
 INTENSITY_MODE = "raw"
 DATA_DIR = "/dados/data2/"
-PARAM_FILE = carmen_path + "/src/carmen-ford-fusion.ini"
-GPS_TO_USE = 2
-#PARAM_FILE = carmen_path + "/src/carmen-ford-escape.ini"
-#GPS_TO_USE = 1
+#PARAM_FILE = carmen_path + "/src/carmen-ford-fusion.ini"
+#GPS_TO_USE = 2
+PARAM_FILE = carmen_path + "/src/carmen-ford-escape.ini"
+GPS_TO_USE = 1
 
 GPS_XY_STD = 2.0
 GPS_H_STD = 10.0

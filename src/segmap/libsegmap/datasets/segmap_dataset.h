@@ -98,6 +98,7 @@ protected:
 	CarmenParamFile *_params;
 	std::vector<DataSample*> _data;
 	std::vector<Pose2d> _poses;
+	std::vector<double> _poses_times;
 
 	std::vector<std::string> _imu_messages;
 	std::vector<std::string> _gps_position_messages;
@@ -120,7 +121,7 @@ protected:
 
 	void _load_log(std::string &path);
 	void _load_odometry_calibration(std::string &path);
-	void _load_poses(std::string &path, std::vector<Pose2d> *poses);
+	void _load_poses(std::string &path, std::vector<Pose2d> *poses, std::vector<double> *poses_times);
 	void _update_data_with_poses();
 
 	void _load_synchronizing_by_nearest(FILE *fptr);
