@@ -45,11 +45,11 @@ namespace g2o
 //						world_to_gps.getOrigin().x(), world_to_gps.getOrigin().y(), world_to_gps.getOrigin().z(),
 //						_measurement[0], _measurement[1]);
 
-				_error = g2o::Vector3D(
-						world_to_gps.getOrigin().x() - _measurement[0],
-						world_to_gps.getOrigin().y() - _measurement[1],
-						0.0
-					);
+
+
+				_error = SE2(world_to_gps.getOrigin().x() - _measurement[0],
+				             world_to_gps.getOrigin().y() - _measurement[1],
+				             0.0).toVector();
 			}
 
 			virtual bool read(std::istream& is)
