@@ -25,8 +25,6 @@
 #include "util.h"
 #include "publisher_util.h"
 #include "model_predictive_planner.h"
-#include "model_predictive_planner_message.h"
-#include "model_predictive_planner_interface.h"
 
 #define DIST_SQR(x1,y1,x2,y2) ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
 
@@ -423,8 +421,7 @@ build_and_follow_path(double timestamp)
 			//				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 			//		}
 		}
-		if (tree.num_paths && compute_plan(&tree).size())
-			carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
+		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
 	}
 }
@@ -452,8 +449,7 @@ build_and_follow_path_new(double timestamp)
 			//		else
 			//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 		}
-		if (tree.num_paths && compute_plan(&tree).size())
-					carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
+		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
 	}
 }
@@ -882,7 +878,6 @@ main(int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
-	carmen_model_predictive_planner_define_all();
 
 	memset(&goal_list_message, 0, sizeof(goal_list_message));
 

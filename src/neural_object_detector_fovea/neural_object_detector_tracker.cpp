@@ -547,7 +547,7 @@ show_LIDAR(Mat &image, vector<vector<image_cartesian>> points_lists, int r, int 
 	for (unsigned int i = 0; i < points_lists.size(); i++)
 	{
 		for (unsigned int j = 0; j < points_lists[i].size(); j++)
-			circle(image, Point(points_lists[i][j].image_x, points_lists[i][j].image_y), 1, cvScalar(b, g, r), 1, 8, 0);
+			circle(image, Point(points_lists[i][j].image_x, points_lists[i][j].image_y), 3, cvScalar(b, g, r), 1, 8, 0);
 	}
 }
 
@@ -621,7 +621,7 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
 	show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
     show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
-    resize(image, image, Size(640, 240));
+    resize(image, image, Size(640, 360));
     imshow("Neural Object Detector", image);
     //imwrite("Image.jpg", image);
     waitKey(1);
@@ -843,7 +843,7 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
 
-	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, pose);
+/*	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, pose);
 
 	rddf_points_in_image_filtered = get_rddf_points_in_image_filtered_by_meters_spacement(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, camera_pose, board_pose,
 			globalpos, last_rddf_poses, closest_rddf, camera_parameters, image_msg->width, image_msg->height);
@@ -865,7 +865,7 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 	}
 
 	bounding_boxes_of_crops_in_original_image = transform_bounding_boxes_of_crops(bounding_boxes_of_crops, transform_factor_of_slice_to_original_frame, open_cv_image,
-			classes_names);
+			classes_names);*/
 
 
 	vector<carmen_velodyne_points_in_cam_t> sick_points = carmen_sick_camera_calibration_lasers_points_in_camera(sick_laser_message,
@@ -884,8 +884,8 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 	vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
 	predictions = filter_predictions_of_interest(predictions);
 
-	// vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose,
-	// 		image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+//	 vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose,
+//	 		image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_parameters, &transformer_sick,
 			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 
@@ -930,9 +930,6 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
-	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
-	carmen_laser_ldmrs_new_message sick_sync_with_cam;
-
 	if (image_msg == NULL)
 		return;
 
