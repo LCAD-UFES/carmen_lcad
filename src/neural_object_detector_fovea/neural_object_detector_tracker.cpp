@@ -821,6 +821,9 @@ publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clo
 void
 process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned char *img)
 {
+	meters_spacement = 15;
+	qtd_crops = 0;
+
 	double fps;
 	static double start_time = 0.0;
 	int crop_x = 0;
