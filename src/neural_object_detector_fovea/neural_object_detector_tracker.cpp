@@ -23,7 +23,7 @@ carmen_pose_3D_t camera_pose;
 carmen_pose_3D_t board_pose;
 carmen_pose_3D_t bullbar_pose;
 carmen_pose_3D_t sick_pose;
-tf::Transformer transformer_world;
+tf::Transformer transformer;
 tf::Transformer transformer_sick;
 
 vector<debug_infos> closest_rddf;
@@ -843,7 +843,7 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
 
-	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer_world, pose);
+	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, pose);
 
 	rddf_points_in_image_filtered = get_rddf_points_in_image_filtered_by_meters_spacement(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, camera_pose, board_pose,
 			globalpos, last_rddf_poses, closest_rddf, camera_parameters, image_msg->width, image_msg->height);
@@ -1145,6 +1145,7 @@ read_parameters(int argc, char **argv)
 void
 initializer()
 {
+	initialize_transformations(board_pose, camera_pose, &transformer);
 	initialize_sick_transformations(board_pose, camera_pose, bullbar_pose, sick_pose, &transformer_sick);
 
 	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
