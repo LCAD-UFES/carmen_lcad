@@ -2,8 +2,15 @@
 
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
+carmen_point_t globalpos;
+carmen_pose_3D_t pose;
+carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
+carmen_laser_ldmrs_new_message sick_sync_with_cam;
+
 int camera;
 int camera_side;
+int qtd_crops;
+double meters_spacement;
 char **classes_names;
 void *network_struct;
 carmen_localize_ackerman_globalpos_message *globalpos_msg;
@@ -16,7 +23,11 @@ carmen_pose_3D_t camera_pose;
 carmen_pose_3D_t board_pose;
 carmen_pose_3D_t bullbar_pose;
 carmen_pose_3D_t sick_pose;
+tf::Transformer transformer_world;
 tf::Transformer transformer_sick;
+
+vector<debug_infos> closest_rddf;
+
 
 vector<carmen_velodyne_partial_scan_message> velodyne_vector; //used to correct camera delay
 vector<carmen_laser_ldmrs_new_message> sick_vector; //used to correct camera delay
@@ -679,8 +690,8 @@ build_detected_objects_message(vector<pedestrian> predictions, vector<vector<ima
 				p.z = points_lists[i][j].cartesian_z;
 
 				carmen_translte_2d(&p.x, &p.y, board_pose.position.x, board_pose.position.y);
-				carmen_rotate_2d  (&p.x, &p.y, globalpos_msg->globalpos.theta);
-				carmen_translte_2d(&p.x, &p.y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
+				carmen_rotate_2d  (&p.x, &p.y, globalpos.theta);
+				carmen_translte_2d(&p.x, &p.y, globalpos.x, globalpos.y);
 
 				msg.point_clouds[l].points[j] = p;
 			}
@@ -766,8 +777,8 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 
 				//carmen_translte_3d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, &points_inside_bbox[i][j].cartesian_z, board_pose.position.x, board_pose.position.y, board_pose.position.z);
 				carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, board_pose.position.x, board_pose.position.y);
-				carmen_rotate_2d  (&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos_msg->globalpos.theta);
-				carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
+				carmen_rotate_2d  (&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos.theta);
+				carmen_translte_2d(&points_inside_bbox[i][j].cartesian_x, &points_inside_bbox[i][j].cartesian_y, globalpos.x, globalpos.y);
 
 				traffic_light_points.push_back(points_inside_bbox[i][j]);
 				//printf("%lf %lf\n", points_inside_bbox[i][j].cartesian_x, points_inside_bbox[i][j].cartesian_y);
@@ -807,54 +818,57 @@ publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clo
 }
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           //
-// Handlers                                                                                  //
-//                                                                                           //
-///////////////////////////////////////////////////////////////////////////////////////////////
 void
-image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
+process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned char *img)
 {
-	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
-	carmen_laser_ldmrs_new_message sick_sync_with_cam;
-
-	if (image_msg == NULL)
-		return;
-
-	if (velodyne_vector.size() > 0)
-		velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp);
-	else
-		return;
-
-	if (sick_vector.size() > 0)
-		sick_sync_with_cam = find_sick_most_sync_with_cam(image_msg->timestamp);
-	else
-		return;
-
-
 	double fps;
 	static double start_time = 0.0;
-	unsigned char *img;
-
-	if (camera_side == 0)
-		img = image_msg->raw_left;
-	else
-		img = image_msg->raw_right;
-
 	int crop_x = 0;
 	int crop_y = 0;
 	int crop_w = image_msg->width;// 1280;
 	int crop_h = image_msg->height;//400; // 500;
+	vector<carmen_position_t> rddf_points_in_image_filtered;
+	vector<carmen_position_t> rddf_points_in_image_full;
+	vector<double> distances_of_rddf_from_car;
+	vector<cv::Mat> scene_crops;
+	t_transform_factor t;
+	vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
+	vector<vector<bbox_t>> bounding_boxes_of_crops;
+	vector<bbox_t> bounding_boxes_of_crops_in_original_image;
 
 	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
 
+	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer_world, pose);
+
+	rddf_points_in_image_filtered = get_rddf_points_in_image_filtered_by_meters_spacement(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, camera_pose, board_pose,
+			globalpos, last_rddf_poses, closest_rddf, camera_parameters, image_msg->width, image_msg->height);
+	rddf_points_in_image_full = get_rddf_points_in_image_full(world_to_camera_pose, last_rddf_poses, camera_parameters, image_msg->width, image_msg->height);
+
+	scene_crops.push_back(open_cv_image);
+	t.scale_factor_x = 1;
+	t.scale_factor_y = 1;
+	t.translate_factor_x = 0;
+	t.translate_factor_y = 0;
+	transform_factor_of_slice_to_original_frame.push_back(t);
+	get_image_crops(scene_crops, transform_factor_of_slice_to_original_frame, open_cv_image, rddf_points_in_image_filtered, distances_of_rddf_from_car);
+
+	for (int i = 0; i < qtd_crops; i++)
+	{
+		vector<bbox_t> predictions;
+		predictions = get_predictions_of_crops(i, scene_crops[i], network_struct, classes_names);
+		bounding_boxes_of_crops.push_back(predictions);
+	}
+
+	bounding_boxes_of_crops_in_original_image = transform_bounding_boxes_of_crops(bounding_boxes_of_crops, transform_factor_of_slice_to_original_frame, open_cv_image,
+			classes_names);
+
 
 	vector<carmen_velodyne_points_in_cam_t> sick_points = carmen_sick_camera_calibration_lasers_points_in_camera(sick_laser_message,
-																   camera_parameters,
-																   &transformer_sick,
-																   open_cv_image.cols, open_cv_image.rows);
+			camera_parameters,
+			&transformer_sick,
+			open_cv_image.cols, open_cv_image.rows);
 	vector<image_cartesian> new_sick_points;
 	for (int i = 0; i < sick_points.size(); i++)
 	{
@@ -884,12 +898,12 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 		{
 			//carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, board_pose.position.x, board_pose.position.y);
 			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, bullbar_pose.position.x, bullbar_pose.position.y); //bullbar if the points are from sick, board if the points are from velodyne
-			carmen_rotate_2d  (&positions[i].cartesian_x, &positions[i].cartesian_y, carmen_normalize_theta(globalpos_msg->globalpos.theta));
-			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
+			carmen_rotate_2d  (&positions[i].cartesian_x, &positions[i].cartesian_y, carmen_normalize_theta(globalpos.theta));
+			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, globalpos.x, globalpos.y);
 
 			//update_world_position(&pedestrian_tracks[i],positions[i].cartesian_x,positions[i].cartesian_y,image_msg->timestamp);
-//			printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f \n",
-//					pedestrian_tracks[i].track_id, pedestrian_tracks[i].velocity,pedestrian_tracks[i].orientation,abs(pedestrian_tracks[i].orientation - globalpos_msg->globalpos.theta));
+			//			printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f \n",
+			//					pedestrian_tracks[i].track_id, pedestrian_tracks[i].velocity,pedestrian_tracks[i].orientation,abs(pedestrian_tracks[i].orientation - globalpos.theta));
 		}
 	}
 	clean_pedestrians(image_msg->timestamp, 1.0);
@@ -901,6 +915,43 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
 	show_detections(open_cv_image, pedestrian_tracks, predictions, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+void
+image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
+{
+	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
+	carmen_laser_ldmrs_new_message sick_sync_with_cam;
+
+	if (image_msg == NULL)
+		return;
+
+	if (velodyne_vector.size() > 0)
+		velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp);
+	else
+		return;
+
+	if (sick_vector.size() > 0)
+		sick_sync_with_cam = find_sick_most_sync_with_cam(image_msg->timestamp);
+	else
+		return;
+
+
+	unsigned char *img;
+
+	if (camera_side == 0)
+		img = image_msg->raw_left;
+	else
+		img = image_msg->raw_right;
+
+	process_frame(image_msg, img);
 }
 
 
@@ -980,6 +1031,10 @@ void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
 	globalpos_msg = globalpos_message;
+	pose = globalpos_message->pose;
+	globalpos.theta = globalpos_message->globalpos.theta;
+	globalpos.x = globalpos_message->globalpos.x;
+	globalpos.y = globalpos_message->globalpos.y;
 }
 
 

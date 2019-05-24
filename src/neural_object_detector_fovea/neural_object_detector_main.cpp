@@ -480,7 +480,6 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
 	//printf("Cont %d\n", count);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Publishers                                                                                //
@@ -498,44 +497,12 @@ publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clo
 }
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           //
-// Handlers                                                                                  //
-//                                                                                           //
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
 void
-image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
+process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned char *img,
+		int crop_x, int crop_y, int crop_w, int crop_h, unsigned char *cropped_img)
 {
-	if (image_msg == NULL)
-		return;
-
 	double fps;
 	static double start_time = 0.0;
-	unsigned char *img;
-
-	if (camera_side == 0)
-		img = image_msg->raw_left;
-	else
-		img = image_msg->raw_right;
-
-	//	int crop_x = image_msg->width * 0.25;
-	//	int crop_y = image_msg->height * 0.25;
-	//	int crop_w = image_msg->width * 0.50;
-	//	int crop_h = image_msg->height * 0.5;
-
-	int crop_x = 0;
-	int crop_y = 0;
-	int crop_w = image_msg->width;// 1280;
-	int crop_h = image_msg->height;//400; // 500;
-
-	unsigned char *cropped_img = crop_raw_image(image_msg->width, image_msg->height, img, crop_x, crop_y, crop_w, crop_h);
-
-	//Mat open_cv_image = Mat(crop_h, crop_w, CV_8UC3, cropped_img, 0);
-	//imshow("Neural Object Detector", open_cv_image);
-    //waitKey(1);
 
 	vector<bbox_t> predictions = run_YOLO(img, crop_w, crop_h, network_struct, classes_names, 0.5);
 	predictions = filter_predictions_of_interest(predictions);
@@ -572,6 +539,41 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	circle(open_cv_image, Point((int)object_on_image.x, (int)object_on_image.y), 5.0, Scalar(255, 255, 0), -1, 8);
 
 	display(open_cv_image, predictions, points, points_inside_bbox, filtered_points, fps, crop_w, crop_h);
+}
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+void
+image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
+{
+	if (image_msg == NULL)
+		return;
+
+	unsigned char *img;
+
+	if (camera_side == 0)
+		img = image_msg->raw_left;
+	else
+		img = image_msg->raw_right;
+
+	int crop_x = 0;
+	int crop_y = 0;
+	int crop_w = image_msg->width;// 1280;
+	int crop_h = image_msg->height;//400; // 500;
+
+	unsigned char *cropped_img = crop_raw_image(image_msg->width, image_msg->height, img, crop_x, crop_y, crop_w, crop_h);
+
+	process_frame(image_msg, img, crop_x, crop_y, crop_w, crop_h, cropped_img);
 }
 
 

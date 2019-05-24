@@ -41,7 +41,7 @@ check_rect_inside_image (cv::Rect rec, cv::Mat img)
 
 
 void
-get_image_slices(vector<cv::Mat> &scene_slices, vector<t_transform_factor> &transform_factor_of_slice_to_original_frame,
+get_image_crops(vector<cv::Mat> &scene_crops, vector<t_transform_factor> &transform_factor_of_slice_to_original_frame,
 		cv::Mat image, vector<carmen_position_t> rddf_points_in_image_filtered,
 		vector<double> distances_of_rddf_from_car)
 {
@@ -55,8 +55,8 @@ get_image_slices(vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tran
 	double mult_scale_y = 0;
 
 	float first_crop_percentage = 0.6;
-	int image_size_x = scene_slices[0].cols * first_crop_percentage;
-	int image_size_y = scene_slices[0].rows * first_crop_percentage;
+	int image_size_x = scene_crops[0].cols * first_crop_percentage;
+	int image_size_y = scene_crops[0].rows * first_crop_percentage;
 	double scale = image_size_y * 0.75;
 	top_left_point.x = static_cast<double>(rddf_points_in_image_filtered[0].x) - (image_size_x/2);
 	top_left_point.y = static_cast<double>(rddf_points_in_image_filtered[0].y)-scale;
@@ -65,22 +65,22 @@ get_image_slices(vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tran
 	{
 		roi = image(rec);
 		im = roi.clone();
-		mult_scale_x += double(scene_slices[0].cols) / double(im.cols);
-		mult_scale_y += double(scene_slices[0].rows) / double(im.rows);
+		mult_scale_x += double(scene_crops[0].cols) / double(im.cols);
+		mult_scale_y += double(scene_crops[0].rows) / double(im.rows);
 		t.scale_factor_x = mult_scale_x;
 		t.scale_factor_y = mult_scale_y;
 		sum_transform_x += top_left_point.x;
 		sum_transform_y += top_left_point.y;
 		t.translate_factor_x = sum_transform_x;
 		t.translate_factor_y = sum_transform_y;
-		scene_slices.push_back(im);
+		scene_crops.push_back(im);
 		transform_factor_of_slice_to_original_frame.push_back(t);
 	}
 
 	for (int i = 1; i < rddf_points_in_image_filtered.size(); i++)
 	{
-		image_size_x = (scene_slices[0].cols * first_crop_percentage) / (i + 1);
-		image_size_y = (scene_slices[0].rows * first_crop_percentage) / (i + 1);
+		image_size_x = (scene_crops[0].cols * first_crop_percentage) / (i + 1);
+		image_size_y = (scene_crops[0].rows * first_crop_percentage) / (i + 1);
 		if (image_size_x > 1)//
 		{
 			double scale = image_size_y * (0.75);
@@ -91,15 +91,15 @@ get_image_slices(vector<cv::Mat> &scene_slices, vector<t_transform_factor> &tran
 			{
 				roi = image(rec);
 				im = roi.clone();
-				mult_scale_x = double(scene_slices[0].cols) / double(im.cols);
-				mult_scale_y = double(scene_slices[0].rows) / double(im.rows);
+				mult_scale_x = double(scene_crops[0].cols) / double(im.cols);
+				mult_scale_y = double(scene_crops[0].rows) / double(im.rows);
 				t.scale_factor_x = mult_scale_x;
 				t.scale_factor_y = mult_scale_y;
 				sum_transform_x = top_left_point.x;
 				sum_transform_y = top_left_point.y;
 				t.translate_factor_x = sum_transform_x;
 				t.translate_factor_y = sum_transform_y;
-				scene_slices.push_back(im);
+				scene_crops.push_back(im);
 				transform_factor_of_slice_to_original_frame.push_back(t);
 			}
 
@@ -172,7 +172,7 @@ get_closest_rddf_index(double *camera_pose_x, double *camera_pose_y, carmen_pose
 
 
 vector<carmen_position_t>
-get_rddf_points_in_image(double meters_spacement, vector<double> &distances_of_rddf_from_car, tf::StampedTransform world_to_camera_pose,
+get_rddf_points_in_image_filtered_by_meters_spacement(double meters_spacement, vector<double> &distances_of_rddf_from_car, tf::StampedTransform world_to_camera_pose,
 		carmen_pose_3D_t camera_pose, carmen_pose_3D_t board_pose, carmen_point_t globalpos,
 		carmen_behavior_selector_road_profile_message last_rddf_poses, vector<debug_infos> closest_rddf, carmen_camera_parameters camera_parameters,
 		int img_width, int img_height)
@@ -226,7 +226,7 @@ get_rddf_points_in_image(double meters_spacement, vector<double> &distances_of_r
 
 
 vector<bbox_t>
-get_predictions_of_slices (int i, cv::Mat image, void *network_struct, char **classes_names)
+get_predictions_of_crops (int i, cv::Mat image, void *network_struct, char **classes_names)
 {
 	vector<bbox_t> predictions;
 	stringstream ss;
@@ -292,7 +292,7 @@ calc_percentage_of_rectangles_intersection(cv::Point l1, cv::Point r1, cv::Point
 
 
 vector<bbox_t>
-transform_bounding_boxes_of_slices (vector< vector<bbox_t> > bounding_boxes_of_slices, vector<t_transform_factor> transform_factor_of_slice_to_original_frame,
+transform_bounding_boxes_of_crops (vector< vector<bbox_t> > bounding_boxes_of_crops, vector<t_transform_factor> transform_factor_of_slice_to_original_frame,
 		cv::Mat or_image, char **classes_names)
 {
 	cv::Mat img;
@@ -302,21 +302,21 @@ transform_bounding_boxes_of_slices (vector< vector<bbox_t> > bounding_boxes_of_s
 	bool intersects_with_bboxes = false;
 	bool rect_dont_intersects = false;
 	bool intersect;
-	for (int i = 0; i < bounding_boxes_of_slices.size(); i++)
+	for (int i = 0; i < bounding_boxes_of_crops.size(); i++)
 	{
-		for (int j = 0; j < bounding_boxes_of_slices[i].size(); j++)
+		for (int j = 0; j < bounding_boxes_of_crops[i].size(); j++)
 		{
 			intersect = false;
 
-			int obj_id = bounding_boxes_of_slices[i][j].obj_id;
+			int obj_id = bounding_boxes_of_crops[i][j].obj_id;
 			string obj_name;
 			obj_name = classes_names[obj_id];
 
 			if (obj_name.compare("car") == 0)
 			{
-				b = bounding_boxes_of_slices[i][j];
-				b.x = bounding_boxes_of_slices[i][j].x + transform_factor_of_slice_to_original_frame[i].translate_factor_x;
-				b.y = bounding_boxes_of_slices[i][j].y + transform_factor_of_slice_to_original_frame[i].translate_factor_y;
+				b = bounding_boxes_of_crops[i][j];
+				b.x = bounding_boxes_of_crops[i][j].x + transform_factor_of_slice_to_original_frame[i].translate_factor_x;
+				b.y = bounding_boxes_of_crops[i][j].y + transform_factor_of_slice_to_original_frame[i].translate_factor_y;
 
 				cv::Point l1; //top left
 				l1.x = b.x;
@@ -362,8 +362,8 @@ transform_bounding_boxes_of_slices (vector< vector<bbox_t> > bounding_boxes_of_s
 
 
 void
-show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_original_frame, vector<cv::Mat> scene_slices,
-		vector<vector<bbox_t>> bounding_boxes_of_slices, vector<bbox_t> predictions,
+show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_original_frame, vector<cv::Mat> scene_crops,
+		vector<vector<bbox_t>> bounding_boxes_of_crops, vector<bbox_t> predictions,
 		vector<carmen_position_t> rddf_points_in_image_filtered, int qtd_crops, char **classes_names, char *groundtruth_path, double image_timestamp)
 {
 	printf("******************************************\n");
@@ -403,7 +403,7 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
     // 		gt.y = (int)y1;
     // 		gt.w = (int)(x2 - x1);
     // 		gt.h = (int)(y2 - y1);
-    // 		cv::rectangle(scene_slices[0],
+    // 		cv::rectangle(scene_crops[0],
     // 				cv::Point(gt.x, gt.y),
 	// 				cv::Point(gt.x + gt.w, gt.y + gt.h),
 	// 				Scalar(0, 255, 0), 3);
@@ -425,12 +425,12 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 		ss << i;
 		name = "Foveated Detection" + ss.str();
 
-    	for (int j = 0; j < bounding_boxes_of_slices[i].size(); j++)
+    	for (int j = 0; j < bounding_boxes_of_crops[i].size(); j++)
     	{
-    		//cout<<bounding_boxes_of_slices[i].size()<<endl;
+    		//cout<<bounding_boxes_of_crops[i].size()<<endl;
 
-    		bbox_t b = bounding_boxes_of_slices[i][j];
-    		bbox_t b_print = bounding_boxes_of_slices[i][j];
+    		bbox_t b = bounding_boxes_of_crops[i][j];
+    		bbox_t b_print = bounding_boxes_of_crops[i][j];
     		b_print.x = b_print.x + transform_factor_of_slice_to_original_frame[i].translate_factor_x;
     		b_print.y = b_print.y + transform_factor_of_slice_to_original_frame[i].translate_factor_y;
 
@@ -439,7 +439,7 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 
     		//sprintf(confianca, "%d  %.3f", predictions.at(i).obj_id, predictions.at(i).prob);
 
-    		int obj_id = bounding_boxes_of_slices[i][j].obj_id;
+    		int obj_id = bounding_boxes_of_crops[i][j].obj_id;
 
     		string obj_name;
     		obj_name = classes_names[obj_id];
@@ -450,7 +450,7 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 					object_color = cv::Scalar(0, 0, 255);
 					line_tickness = 2;
 
-					cv::rectangle(scene_slices[i],
+					cv::rectangle(scene_crops[i],
 							cv::Point(b.x, b.y),
 							cv::Point(b.x + b.w, b.y + b.h),
 							object_color, line_tickness);
@@ -518,7 +518,7 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
     		for (int l = 0; l < rddf_points_in_image_filtered.size(); l++)
     		{
 
-    			cv::circle(scene_slices[0], cv::Point(rddf_points_in_image_filtered[l].x, rddf_points_in_image_filtered[l].y), 3.5, cv::Scalar(0, 255, 255), thickness, lineType);
+    			cv::circle(scene_crops[0], cv::Point(rddf_points_in_image_filtered[l].x, rddf_points_in_image_filtered[l].y), 3.5, cv::Scalar(0, 255, 255), thickness, lineType);
     		}
     		for (int k = 0; k < predictions.size(); k++)
     		{
@@ -557,7 +557,7 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
     			iou = calc_percentage_of_rectangles_intersection (l1, r1, l2, r2);
 
 //    			if (iou > 50)
-//    				cv::rectangle(scene_slices[0],
+//    				cv::rectangle(scene_crops[0],
 //    						cv::Point(predictions[k].x, predictions[k].y),
 //							cv::Point(predictions[k].x + predictions[k].w, predictions[k].y + predictions[k].h),
 //							Scalar(255, 255, 0), 3);
@@ -571,7 +571,7 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 
     			//if ((is_in_rddf_filtered == rddf_points_in_image_filtered.size()))
     				//					if (iou > 50)
-    				cv::rectangle(scene_slices[0],
+    				cv::rectangle(scene_crops[0],
     						cv::Point(predictions[k].x, predictions[k].y),
 							cv::Point(predictions[k].x + predictions[k].w, predictions[k].y + predictions[k].h),
 							Scalar(0, 255, 255), 3);
@@ -579,7 +579,7 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
     		}
 
     	}
-    	cv:Mat aux_img = scene_slices[i];
+    	cv:Mat aux_img = scene_crops[i];
     	if (i == 0)
     		cv::resize(aux_img, aux_img, Size(1152, 691));
     	else
@@ -592,46 +592,46 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 
 
 vector<cv::Scalar>
-get_slice_colors (unsigned int slices_size)
+get_slice_colors (unsigned int crops_size)
 {
 	vector<cv::Scalar> colors;
 	cv::Scalar color;
-	if (slices_size <= 1)
+	if (crops_size <= 1)
 	{
 		color = cv::Scalar (0, 0, 255);
 		colors.push_back(color);
 	}
-	if (slices_size <= 2)
+	if (crops_size <= 2)
 	{
 		color = cv::Scalar (0, 255, 0);
 		colors.push_back(color);
 	}
-	if (slices_size <= 3)
+	if (crops_size <= 3)
 	{
 		color = cv::Scalar (255, 0, 0);
 		colors.push_back(color);
 	}
-	if (slices_size <= 4)
+	if (crops_size <= 4)
 	{
 		color = cv::Scalar (255, 255, 0);
 		colors.push_back(color);
 	}
-	if (slices_size <= 5)
+	if (crops_size <= 5)
 	{
 		color = cv::Scalar (255, 0, 255);
 		colors.push_back(color);
 	}
-	if (slices_size <= 6)
+	if (crops_size <= 6)
 	{
 		color = cv::Scalar (0, 255, 255);
 		colors.push_back(color);
 	}
-	if (slices_size <= 7)
+	if (crops_size <= 7)
 	{
 		color = cv::Scalar (0, 0, 0);
 		colors.push_back(color);
 	}
-	if (slices_size <= 8)
+	if (crops_size <= 8)
 	{
 		color = cv::Scalar (255, 255, 255);
 		colors.push_back(color);
