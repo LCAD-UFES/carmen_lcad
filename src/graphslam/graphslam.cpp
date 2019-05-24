@@ -169,22 +169,27 @@ add_and_initialize_vertices(SparseOptimizer *optimizer, tf::Transformer *transfo
 	double x_ = gps_to_car.getOrigin().x();
 	double y_ = gps_to_car.getOrigin().y();
 
+//	FILE *caco = fopen("caco.txt", "w");
 	for (i = 0; i < input_data.size(); i++)
 	{
-		double yaw = input_data[i].gps[2];
-		double car_pose_in_the_world_x = x_ * cos(yaw) - y_ * sin(yaw) + input_data[i].gps[0];
-		double car_pose_in_the_world_y = x_ * sin(yaw) + y_ * cos(yaw) + input_data[i].gps[1];
+		double gps_yaw = input_data[i].gps[2];
+		double gps_x = input_data[i].gps[0] - input_data[0].gps[0];
+		double gps_y = input_data[i].gps[1] - input_data[0].gps[1];
+		double car_pose_in_the_world_x = x_ * cos(gps_yaw) - y_ * sin(gps_yaw) + gps_x;
+		double car_pose_in_the_world_y = x_ * sin(gps_yaw) + y_ * cos(gps_yaw) + gps_y;
+
+//		fprintf(caco, "%lf %lf %lf %lf\n", gps_x + input_data[0].gps[0], gps_y + input_data[0].gps[1],
+//				car_pose_in_the_world_x + input_data[0].gps[0], car_pose_in_the_world_y + input_data[0].gps[1]);
 
 		// Cada estimate é o valor inicial de um vértice que representa (é) uma pose do carro quando a núvem de pontos do Velodyne i foi capturada.
-		SE2 estimate(car_pose_in_the_world_x - input_data[0].gps[0],
-					 car_pose_in_the_world_y - input_data[0].gps[1],
-					 yaw);
+		SE2 estimate(car_pose_in_the_world_x, car_pose_in_the_world_y, gps_yaw);
 
 		VertexSE2 *vertex = new VertexSE2;
 		vertex->setId(i);
 		vertex->setEstimate(estimate);
 		optimizer->addVertex(vertex);
 	}
+//	fclose(caco);
 }
 
 
@@ -243,7 +248,7 @@ add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure,
 	cov.data()[5] = 0;
 	cov.data()[6] = 0;
 	cov.data()[7] = 0;
-	cov.data()[8] = pow(3.14 * 1000000, 2);
+	cov.data()[8] = pow(3.14 / 40.0, 2);
 	//cov.data()[8] = pow(yaw_std, 2);
 
 	information = cov.inverse();
@@ -309,7 +314,7 @@ add_loop_closure_edges(SparseOptimizer *optimizer, double loop_xy_std, double lo
 
 	for (size_t i = 0; i < loop_data.size(); i++)
 	{
-		EdgeSE2* edge = new EdgeSE2;
+		EdgeSE2 *edge = new EdgeSE2;
 		edge->vertices()[0] = optimizer->vertex(loop_data[i].from);
 		edge->vertices()[1] = optimizer->vertex(loop_data[i].to);
 		edge->setMeasurement(loop_data[i].transform);
