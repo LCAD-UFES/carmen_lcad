@@ -3,8 +3,14 @@ include $(CARMEN_HOME)/src/Makefile.conf
 MODULE_NAME = DARKNET
 MODULE_COMMENT = darknet dnn 
 
+ifeq ($(shell which nvcc),)
+GPU=0
+CUDNN=0
+else
 GPU=1
 CUDNN=1
+endif
+
 OPENCV=0
 OPENMP=1
 DEBUG=0
@@ -70,9 +76,7 @@ DEPS = $(wildcard src/*.h) Makefile include/darknet.h
 
 PUBLIC_INCLUDES = carmen_darknet_interface.hpp
 
-ifneq (, $(shell which nvcc))
 ALL_DEPS = obj lib $(SLIB) $(ALIB) $(EXEC)
-endif
 
 all: $(ALL_DEPS)
 
@@ -105,4 +109,3 @@ lib:
 	#rm -rf $(OBJS) $(SLIB) $(ALIB) $(EXEC) $(EXECOBJ) $(OBJDIR)/*
 
 include $(CARMEN_HOME)/src/Makefile.rules
-

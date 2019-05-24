@@ -48,7 +48,7 @@ static const int ODOMETRY_QUEUE_MAX_SIZE = 100;
 extern bool use_fused_odometry;
 extern int gps_to_use;
 extern double gps_latency;
-
+extern double initial_odometry_angle;
 extern double distance_between_front_and_rear_axles;
 
 
@@ -131,7 +131,7 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 	int gps_orientation_valid;
 	static double last_time;
 	static bool is_first = true;
-	static carmen_pose_3D_t dead_reckoning = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+	static carmen_pose_3D_t dead_reckoning = {{0.0, 0.0, 0.0}, {0.0, 0.0, initial_odometry_angle}};
 
 	int gpsid = find_nearest_message<StampedPose>(gps_queue, velodyne_message->timestamp, "gps to velodyne");
 	int odomid = find_nearest_message<StampedOdometry>(odometry_queue, velodyne_message->timestamp, "odometry to velodyne");

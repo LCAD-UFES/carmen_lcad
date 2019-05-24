@@ -31,6 +31,11 @@ namespace g2o
 
 			void computeError()
 			{
+//				static int count = 0;
+//				static FILE *caco;
+//				if (count == 0)
+//					caco = fopen("caco.txt", "w");
+
 				const VertexSE2 *v = dynamic_cast<const VertexSE2 *>(_vertices[0]);
 				SE2 pose = v->estimate();
 
@@ -40,16 +45,17 @@ namespace g2o
 				world_to_car.setRotation(tf::Quaternion(pose[2], 0.0, 0.0));
 				_transformer->setTransform(tf::StampedTransform(world_to_car, tf::Time(0), "/world", "/car"));
 				_transformer->lookupTransform("/world", "/gps", tf::Time(0), world_to_gps);
-//				printf("%d, yaw = %lf, world_to_gps: x: %lf, y: %lf, z: %lf, mx: %lf, my: %lf\n",
-//						v->id(), carmen_radians_to_degrees(pose[2]),
-//						world_to_gps.getOrigin().x(), world_to_gps.getOrigin().y(), world_to_gps.getOrigin().z(),
-//						_measurement[0], _measurement[1]);
-
-
 
 				_error = SE2(world_to_gps.getOrigin().x() - _measurement[0],
 				             world_to_gps.getOrigin().y() - _measurement[1],
 				             0.0).toVector();
+
+//				if (count < 18839)
+//					fprintf(caco, "%lf %lf %lf %lf %lf %lf\n",
+//							pose[0], pose[1], world_to_gps.getOrigin().x(), world_to_gps.getOrigin().y(), _measurement[0], _measurement[1]);
+//				else if (count == 18839)
+//					fclose(caco);
+//				count++;
 			}
 
 			virtual bool read(std::istream& is)
