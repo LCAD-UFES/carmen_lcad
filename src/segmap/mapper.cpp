@@ -44,7 +44,7 @@ main(int argc, char **argv)
 
 	create_map(map, dataset, args.get<int>("step"), preproc,
 						 args.get<double>("v_thresh"),
-						 args.get<int>("view"), 950);
+						 args.get<int>("view"), 600);
 
 	printf("Done.\n");
 	return 0;

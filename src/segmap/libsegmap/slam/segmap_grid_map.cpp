@@ -490,6 +490,7 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 {
 	Timer timer;
 	DataSample *sample;
+	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
 	PointCloudViewer viewer;
 	vector<double> times;
 
@@ -523,6 +524,9 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 			Mat map_img = map.to_image().clone();
 			draw_pose(map, map_img, pose, Scalar(0, 255, 0));
 
+			preproc.reinitialize(sample);
+			load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+
 			// flip vertically.
 			Mat map_view;
 			flip(map_img, map_view, 0);
@@ -531,6 +535,8 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 			if (img.rows)
 				viewer.show(img, "img", img_width);
 
+			viewer.clear();
+			viewer.show(cloud);
 			viewer.show(map_view, "map", img_width);
 			viewer.loop();
 		}
