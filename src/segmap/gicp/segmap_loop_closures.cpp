@@ -64,10 +64,11 @@ run_viewer_if_necessary(Pose2d *pose,
 			draw_pointcloud(img, cloud, map, 1, Scalar(0, 255, 0));
 		}
 
-		//viewer.clear();
+		viewer.clear();
 		//PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
 		//transformPointCloud(*cloud, *transformed, Pose2d::to_matrix(*pose));
-		//viewer.show(cloud);
+		viewer.show(cloud);
+		//viewer.set_camera_pose(pose->x, pose->y);
 		show_flipped_img_in_viewer(viewer, img);
 	}
 }
@@ -577,7 +578,6 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 		}
 		else
 		{
-
 			Pose2d pf_pose = pf.mean();
 			double d = dist2d(pf_pose.x, pf_pose.y, sample->pose.x, sample->pose.y);
 

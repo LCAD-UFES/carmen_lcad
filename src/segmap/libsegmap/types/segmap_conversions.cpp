@@ -135,7 +135,7 @@ cartersian2spherical(double x, double y, double z,
 
 
 void
-getEulerYPR(Matrix<double, 3, 3> &m_el, double& yaw, double& pitch, double& roll, unsigned int solution_number)
+getEulerYPR(Matrix<double, 3, 3> &m_el, double &yaw, double &pitch, double &roll, unsigned int solution_number)
 {
 	struct Euler
 	{

@@ -40,6 +40,7 @@ PointCloudViewer::show(PointCloud<PointXYZRGB>::Ptr cloud, double r, double g, d
 		_cloud_viewer = new pcl::visualization::PCLVisualizer("CloudViewer");
 		_cloud_viewer->setBackgroundColor(_br, _bg, _bb);
 		_cloud_viewer->addCoordinateSystem(2.);
+		//_cloud_viewer->initCameraParameters();
 	}
 
 	sprintf(cloud_name, "cloud%d", _n_clouds);
@@ -111,3 +112,13 @@ PointCloudViewer::clear()
 	_n_clouds = 0;
 }
 
+
+void
+PointCloudViewer::set_camera_pose(double x, double y)
+{
+	if (_cloud_viewer)
+	{
+		_cloud_viewer->setCameraPosition(x - 5.0, y - 5.0, 10.0, 0, 0, 0, 0);
+		_cloud_viewer->updateCamera();
+	}
+}
