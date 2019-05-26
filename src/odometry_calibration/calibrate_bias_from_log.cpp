@@ -161,7 +161,7 @@ read_gps(FILE *f, int gps_to_use)
 		m.timestamp = m.timestamp - GPS_LATENCY;
 	}
 
-	return m;
+	return (m);
 }
 
 

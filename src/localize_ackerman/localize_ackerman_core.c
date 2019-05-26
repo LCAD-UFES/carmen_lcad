@@ -2616,9 +2616,9 @@ carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_fi
 	summary->std.y = sqrt(std_y / filter->param->num_particles);
 	summary->std.theta = sqrt(std_theta / filter->param->num_particles);
 
+	summary->xy_cov = sqrt(xy_cov / filter->param->num_particles);
 	// @@@ Alberto: temporario para teste dos beneficios de se usar mean_phi_bias no pipe de controle
-//	summary->xy_cov = sqrt(xy_cov / filter->param->num_particles);
-	summary->xy_cov = mean_phi_bias;
+//	summary->xy_cov = mean_phi_bias;
 
 	// Add mean particle to the pool
 	filter->particles[0].x = summary->mean.x;

@@ -624,9 +624,9 @@ globalpos_ack_handler(carmen_localize_ackerman_globalpos_message *msg)
 		return;
 
 	if (goal_set)
-		gui->navigator_graphics_update_display(&new_robot, &last_goal, autonomous);
+		gui->navigator_graphics_update_display(&new_robot, msg, &last_goal, autonomous);
 	else
-		gui->navigator_graphics_update_display(&new_robot, NULL, autonomous);
+		gui->navigator_graphics_update_display(&new_robot, msg, NULL, autonomous);
 }
 
 
@@ -656,10 +656,10 @@ navigator_ackerman_status_handler(carmen_navigator_ackerman_status_message *msg)
 	{
 		last_goal = msg->goal;
 
-		gui->navigator_graphics_update_display(NULL, &last_goal, msg->autonomous);
+		gui->navigator_graphics_update_display(NULL, NULL, &last_goal, msg->autonomous);
 	}
 	else
-		gui->navigator_graphics_update_display(NULL, NULL, msg->autonomous);
+		gui->navigator_graphics_update_display(NULL, NULL, NULL, msg->autonomous);
 }
 
 

@@ -513,6 +513,7 @@ namespace View
 		controls_.labelGridCell = GTK_LABEL(gtk_builder_get_object(builder, "labelGridCell" ));
 		controls_.labelValue = GTK_LABEL(gtk_builder_get_object(builder, "labelValue" ));
 		controls_.labelDistTraveled = GTK_LABEL(gtk_builder_get_object(builder, "labelDistTraveled" ));
+		controls_.labelGlobalPosTimeStamp = GTK_LABEL(gtk_builder_get_object(builder, "labelGlobalPosTimeStamp" ));
 		controls_.labelLowLevelState = GTK_LABEL(gtk_builder_get_object(builder, "labelLowLevelState" ));
 		controls_.labelTrafficSignState = GTK_LABEL(gtk_builder_get_object(builder, "labelTrafficSignState" ));
 
@@ -707,7 +708,8 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_display(carmen_traj_point_p	new_robot,
+	GtkGui::navigator_graphics_update_display(carmen_traj_point_p new_robot,
+			carmen_localize_ackerman_globalpos_message *current_globalpos,
 			carmen_ackerman_traj_point_t *new_goal,
 			int					autonomous)
 	{
@@ -720,6 +722,9 @@ namespace View
 
 		if (!this->controls_.map_view->internal_map)
 			return;
+
+		if (current_globalpos)
+			globalpos = current_globalpos;
 
 		adjust_distance = carmen_fmax
 				(this->controls_.map_view->internal_map->config.x_size / (double)this->controls_.map_view->port_size_x,
@@ -779,6 +784,9 @@ namespace View
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelGoal), buffer);
 
 			set_distance_traveled(robot.pose, robot_traj.t_vel);
+
+			sprintf(buffer, "globalpos timestamp: %lf", globalpos->timestamp);
+			gtk_label_set_text(GTK_LABEL(this->controls_.labelGlobalPosTimeStamp), buffer);
 		}
 
 		last_navigator_update = carmen_get_time();
@@ -856,9 +864,7 @@ namespace View
 		int index;
 
 		if (this->controls_.map_view->internal_map == NULL)
-		{
 			return;
-		}
 
 		if (this->path != NULL)
 		{
@@ -1164,9 +1170,7 @@ namespace View
 		int index;
 
 		if (this->controls_.map_view->internal_map == NULL)
-		{
 			return;
-		}
 
 		if (this->plan_tree_p1 != NULL)
 		{
@@ -1290,16 +1294,11 @@ namespace View
 	GtkGui::get_state_code(char* state_name)
 	{
 		if (strcmp(state_name, "Following Lane") == 0)
-		{
 			return 0;
-		} else if(strcmp(state_name, "Parking") == 0)
-		{
+		else if(strcmp(state_name, "Parking") == 0)
 			return 1;
-		}
 		else if(strcmp(state_name, "Human Intervention") == 0)
-		{
 			return 2;
-		}
 
 		return -1;
 	}
@@ -1577,9 +1576,8 @@ namespace View
 		double angle;
 
 		if ((placement_status == ORIENTING_ROBOT) ||
-				((placement_status == NO_PLACEMENT) &&
-						(((event->button == 2) && (event->state & GDK_CONTROL_MASK)) ||
-								((event->button == 3) && (event->state & GDK_CONTROL_MASK)))))
+			((placement_status == NO_PLACEMENT) && (((event->button == 2) && (event->state & GDK_CONTROL_MASK)) ||
+			((event->button == 3) && (event->state & GDK_CONTROL_MASK)))))
 		{
 			placement_status = NO_PLACEMENT;
 
@@ -2102,9 +2100,7 @@ namespace View
 		carmen_world_point_t mean;
 
 		if (!nav_panel_config->show_gaussians || (particle_msg.particles == NULL))
-		{
 			return;
-		}
 
 		mean = robot;
 		mean.pose.x		= globalpos->globalpos.x;
@@ -2126,9 +2122,7 @@ namespace View
 		dot_size = 3 * pixel_size;
 
 		if (!nav_panel_config->show_lasers)
-		{
 			return;
-		}
 
 		particle = robot;
 
@@ -2183,14 +2177,10 @@ namespace View
 	GtkGui::draw_robot(GtkMapViewer *the_map_view)
 	{
 		if (!nav_panel_config->show_particles && !nav_panel_config->show_gaussians)
-		{
 			draw_robot_shape(the_map_view, &robot, TRUE, &robot_colour);
-		}
 
 		if (!nav_panel_config->show_gaussians)
-		{
 			draw_robot_shape(the_map_view, &robot, FALSE, &carmen_black);
-		}
 
 		draw_orientation_mark(the_map_view, &robot);
 	}
@@ -2204,14 +2194,10 @@ namespace View
 		for (index = 1; index < num_plan_tree_points; index++)
 		{
 			if (plan_tree_p1->map == NULL)
-			{
 				break;
-			}
 
 			if (plan_tree_p2->map == NULL)
-			{
 				break;
-			}
 
 			//carmen_map_graphics_draw_line(the_map_view, &tree_colour, plan_tree_p1 + index, plan_tree_p2 + index);
 			//		time_of_simulator_update = carmen_get_time();
@@ -2329,9 +2315,7 @@ namespace View
 	GtkGui::draw_simulated_robot(GtkMapViewer *the_map_view)
 	{
 		if (!nav_panel_config->show_true_pos || (simulator_trueposition.map == NULL))
-		{
 			return;
-		}
 
 		draw_robot_shape(the_map_view, &simulator_trueposition, TRUE, &carmen_blue);
 		draw_robot_shape(the_map_view, &simulator_trueposition, FALSE, &carmen_black);
@@ -2461,16 +2445,14 @@ namespace View
 			for (int i = 0; i < lane_markings_msg->lane_vector_size; i++)
 			{
 				if (lane_markings_msg->lane_vector[i].left == 1)
-				{
 					left.push_back(lane_markings_msg->lane_vector[i]);
-				}else
-				{
+				else
 					right.push_back(lane_markings_msg->lane_vector[i]);
-				}
 			}
 			carmen_lane_detector_lane_t anterior_left;
 			carmen_lane_detector_lane_t anterior_right;
 			if (left.size() > 1)
+			{
 				for (i = 0; i < left.size(); i++)
 				{
 					carmen_world_point_t start, end;
@@ -2493,7 +2475,9 @@ namespace View
 					anterior_left = left[i];
 
 				}
+			}
 			if (right.size() > 1)
+			{
 				for (i = 0; i < right.size(); i++)
 				{
 					carmen_world_point_t start, end;
@@ -2522,6 +2506,7 @@ namespace View
 					}
 					anterior_right = right[i];
 				}
+			}
 			display_needs_updating = 1;
 			right.clear();
 			left.clear();
@@ -2624,9 +2609,7 @@ namespace View
 				(placement_status != ORIENTING_PERSON) &&
 				(placement_status != ORIENTING_FINAL_GOAL) &&
 				(placement_status != ORIENTING_SIMULATOR))
-		{
 			return;
-		}
 
 		/* Everything from here down is only used if we are orienting something.
 		     We have to draw the object itself (the robot, person, whatever) since
@@ -2754,31 +2737,21 @@ namespace View
 	}
 
 	void
-	GtkGui::draw_robot_shape(GtkMapViewer *the_map_view,
-			carmen_world_point_t *location, int filled,
-			GdkColor *colour)
+	GtkGui::draw_robot_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour)
 	{
 		if (!robot_config->rectangular)
-		{
 			draw_differential_shape(the_map_view, location, filled, colour);
-		}
 		else
-		{
 			draw_ackerman_shape(the_map_view, location, filled, colour);
-		}
 	}
 
 	void
 	GtkGui::draw_orientation_mark(GtkMapViewer *the_map_view, carmen_world_point_t *robot_pose)
 	{
 		if (!robot_config->rectangular)
-		{
 			draw_differential_orientation_mark(the_map_view, robot_pose);
-		}
 		else
-		{
 			draw_ackerman_orientation_mark(the_map_view, robot_pose);
-		}
 	}
 
 	void
@@ -2821,21 +2794,16 @@ namespace View
 	}
 
 	void
-	GtkGui::draw_differential_shape(GtkMapViewer *the_map_view,
-			carmen_world_point_t *location, int filled,
-			GdkColor *colour)
+	GtkGui::draw_differential_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour)
 	{
 		double robot_radius;
 		robot_radius = robot_config->width / 2.0;
 
-		carmen_map_graphics_draw_circle(the_map_view, colour, filled,
-				location, robot_radius);
+		carmen_map_graphics_draw_circle(the_map_view, colour, filled, location, robot_radius);
 	}
 
 	void
-	GtkGui::draw_ackerman_shape(GtkMapViewer *the_map_view,
-			carmen_world_point_t *location, int filled,
-			GdkColor *colour)
+	GtkGui::draw_ackerman_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour)
 	{
 //		double width2, length, dist_rear_car_rear_wheels;
 //
@@ -2887,13 +2855,10 @@ namespace View
 		initial_point = *robot_pose;
 
 		radius = initial_point;
-		radius.pose.x = radius.pose.x +
-				cos(radius.pose.theta) * robot_config->width / 2.0;
-		radius.pose.y = radius.pose.y +
-				sin(radius.pose.theta) * robot_config->width / 2.0;
+		radius.pose.x = radius.pose.x + cos(radius.pose.theta) * robot_config->width / 2.0;
+		radius.pose.y = radius.pose.y + sin(radius.pose.theta) * robot_config->width / 2.0;
 
-		carmen_map_graphics_draw_line(the_map_view, &carmen_black,
-				&initial_point, &radius);
+		carmen_map_graphics_draw_line(the_map_view, &carmen_black, &initial_point, &radius);
 	}
 
 	void
@@ -2989,9 +2954,7 @@ namespace View
 	GtkGui::world_point_to_global_world_point(carmen_world_point_t *world_point)
 	{
 		if (!world_point || !world_point->map)
-		{
 			return;
-		}
 
 		world_point->pose.x += world_point->map->config.x_origin;
 		world_point->pose.y += world_point->map->config.y_origin;

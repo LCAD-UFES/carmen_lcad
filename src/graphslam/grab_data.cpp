@@ -158,9 +158,9 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 			ackerman_prediction(&dead_reckoning, odometry_queue[odomid].v, odometry_queue[odomid].phi, dt);
 			ackerman_prediction(&gps_pose, odometry_queue[odomid].v, odometry_queue[odomid].phi, dt_gps);
 
-			int saved_ok = accumulate_clouds(velodyne_message, velodyne_path, odometry_queue[odomid].v, odometry_queue[odomid].phi);
+//			int saved_ok = accumulate_clouds(velodyne_message, velodyne_path, odometry_queue[odomid].v, odometry_queue[odomid].phi);
 
-			if (saved_ok)
+			if (1)//saved_ok)
 				write_sensor_data(dead_reckoning, gps_pose, velodyne_message->timestamp, gps_std, gps_orientation, gps_orientation_valid);
 		}
 		else

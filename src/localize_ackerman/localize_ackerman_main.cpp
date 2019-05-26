@@ -119,6 +119,9 @@ int number_of_threads = 1;
 bool global_localization_requested = false;
 
 char *calibration_file = NULL;
+char *save_globalpos_file = NULL;
+FILE *globalpos_file = NULL;
+double save_globalpos_timestamp = 0.0;
 
 
 static int
@@ -239,6 +242,15 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	
 	//globalpos.pose.orientation.pitch = globalpos.pose.orientation.roll = 0.0;
 
+	if (save_globalpos_file)
+	{
+		if (globalpos_file == NULL)
+			globalpos_file = fopen(save_globalpos_file, "w");
+		if (globalpos_file && (timestamp >= save_globalpos_timestamp))
+			fprintf(globalpos_file, "%lf %lf %lf %lf %lf %lf %lf\n",
+					globalpos.pose.position.x, globalpos.pose.position.y, globalpos.pose.position.z,
+					globalpos.pose.orientation.yaw, v, phi, timestamp);
+	}
 	carmen_localize_ackerman_publish_globalpos_message(&globalpos);
 }
 
@@ -336,6 +348,16 @@ publish_globalpos_on_mapping_mode(carmen_fused_odometry_message *msg, double tim
 		globalpos.globalpos.x = globalpos.pose.position.x;
 		globalpos.globalpos.y = globalpos.pose.position.y;
 		globalpos.globalpos.theta = globalpos.pose.orientation.yaw;
+
+		if (save_globalpos_file)
+		{
+			if (globalpos_file == NULL)
+				globalpos_file = fopen(save_globalpos_file, "w");
+			if (globalpos_file && (timestamp >= save_globalpos_timestamp))
+				fprintf(globalpos_file, "%lf %lf %lf %lf %lf %lf %lf\n",
+						globalpos.globalpos.x, globalpos.globalpos.y, 0.0,
+						globalpos.globalpos.theta, globalpos.v, globalpos.phi, timestamp);
+		}
 
 		err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME, &globalpos);
 		carmen_test_ipc_exit(err, "Could not publish",	CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
@@ -978,6 +1000,9 @@ shutdown_localize(int x)
 {
 	if (x == SIGINT)
 	{
+		if (globalpos_file)
+			fclose(globalpos_file);
+
 		carmen_verbose("Disconnecting from IPC network.\n");
 		exit(1);
 	}
@@ -1409,7 +1434,9 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 		{(char *) "localize_ackerman", (char *) "use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
 		{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
 		{(char *) "commandline", (char *) "velodyne_viewer", CARMEN_PARAM_ONOFF, &velodyne_viewer, 0, NULL},
-		{(char *) "commandline", (char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL}
+		{(char *) "commandline", (char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
+		{(char *) "commandline", (char *) "save_globalpos_file", CARMEN_PARAM_STRING, &save_globalpos_file, 0, NULL},
+		{(char *) "commandline", (char *) "save_globalpos_timestamp", CARMEN_PARAM_DOUBLE, &save_globalpos_timestamp, 0, NULL}
 	};
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));

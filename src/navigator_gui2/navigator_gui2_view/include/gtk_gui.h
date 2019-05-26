@@ -119,6 +119,7 @@ namespace View
 			GtkLabel *labelGridCell;
 			GtkLabel *labelValue;
 			GtkLabel *labelDistTraveled;
+			GtkLabel *labelGlobalPosTimeStamp;
 			GtkLabel *labelLowLevelState;
 			GtkLabel *labelTrafficSignState;
 
@@ -314,7 +315,7 @@ namespace View
 						carmen_navigator_config_t *nav_conf_param, carmen_navigator_panel_config_t *nav_panel_conf_param);
 
 		int navigator_graphics_update_map();
-		void navigator_graphics_update_display(carmen_traj_point_p	new_robot, carmen_ackerman_traj_point_t *new_goal, int autonomous);
+		void navigator_graphics_update_display(carmen_traj_point_p new_robot, carmen_localize_ackerman_globalpos_message *current_globalpos, carmen_ackerman_traj_point_t *new_goal, int autonomous);
 		void set_distance_traveled(carmen_point_t robot_pose, double velocity);
 		void navigator_graphics_update_goal_list(carmen_ackerman_traj_point_t* goal_list, int size);
 		void navigator_graphics_update_waypoint_list(carmen_ackerman_traj_point_t* waypoint_list, int size);

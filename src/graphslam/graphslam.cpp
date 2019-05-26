@@ -551,7 +551,7 @@ graphslam(int gps_id, double gps_xy_std_multiplier,
 
 	cerr << "OutputSaved!" << endl;
 
-	printf("Programa terminado normalmente. Tecle Ctrl+C para terminar\n");
+	printf("Programa concluído normalmente. Tecle Ctrl+C para terminar\n");
 	fflush(stdout);
 	getchar();
 	fprintf(stderr, "\n\n **** IGNORE O SEG FAULT ABAIXO. ELE EH CAUSADO PELO DESTRUTOR DO DLWRAPPER DO G2O!\n");
