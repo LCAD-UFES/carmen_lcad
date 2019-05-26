@@ -160,9 +160,13 @@ create_information_matrix(double x_std, double y_std, double z_std)
 
 
 void
-add_odometry_edges(SparseOptimizer *optimizer, vector<SE2> &dead_reckoning, double xy_std, double th_std)
+add_odometry_edges(SparseOptimizer *optimizer, vector<SE2> &dead_reckoning, double xy_std, double th_std,
+									 GraphSlamData &data)
 {
 	Matrix3d information = create_information_matrix(xy_std, xy_std, th_std);
+	Matrix3d xsens_information = create_information_matrix(10e6, 10e6, degrees_to_radians(0.01));
+	double roll, pitch, yaw_i, yaw_im1;
+	Matrix<double, 3, 3> mat;
 
 	for (size_t i = 1; i < dead_reckoning.size(); i++)
 	{
@@ -180,6 +184,21 @@ add_odometry_edges(SparseOptimizer *optimizer, vector<SE2> &dead_reckoning, doub
 		edge->setMeasurement(measure);
 		edge->setInformation(information);
 		optimizer->addEdge(edge);
+
+		mat = data.dataset->at(i)->xsens.toRotationMatrix();
+		getEulerYPR(mat, yaw_i, pitch, roll);
+
+		mat = data.dataset->at(i - 1)->xsens.toRotationMatrix();
+		getEulerYPR(mat, yaw_im1, pitch, roll);
+
+		SE2 xsens_measure(0, 0, carmen_normalize_theta(yaw_i - yaw_im1));
+
+		EdgeSE2* edge_xsens = new EdgeSE2;
+		edge_xsens->vertices()[0] = optimizer->vertex(i - 1);
+		edge_xsens->vertices()[1] = optimizer->vertex(i);
+		edge_xsens->setMeasurement(xsens_measure);
+		edge_xsens->setInformation(xsens_information);
+		optimizer->addEdge(edge_xsens);
 	}
 }
 
@@ -290,8 +309,6 @@ void
 add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction> &gicp_gps,
 																		SparseOptimizer *optimizer, double xy_std_mult, double th_std)
 {
-	Eigen::Matrix<double, 4, 4> identity = Eigen::Matrix<double, 4, 4>::Identity();
-
 	for (size_t i = 0; i < gicp_gps.size(); i += 1)
 	{
 		if (gicp_gps[i].converged)
@@ -304,7 +321,6 @@ add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction>
 			Matrix3d information = create_information_matrix(xy_std_mult, xy_std_mult, th_std);
 
 			EdgeGPS *edge_gps = new EdgeGPS();
-			edge_gps->set_car2gps(identity);
 			edge_gps->vertices()[0] = optimizer->vertex(gicp_gps[i].to);
 			edge_gps->setMeasurement(measure);
 			edge_gps->setInformation(information);
@@ -364,7 +380,7 @@ load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer, int gps_
 
 	create_dead_reckoning(data, dead_reckoning);
 	add_vertices(dead_reckoning, optimizer);
-	add_odometry_edges(optimizer, dead_reckoning, data.odom_xy_std, deg2rad(data.odom_angle_std));
+	add_odometry_edges(optimizer, dead_reckoning, data.odom_xy_std, deg2rad(data.odom_angle_std), data);
 
 	if (data.gicp_based_gps.size() > 0 || data.pf_based_gps.size() > 0)
 	{

@@ -66,9 +66,11 @@ DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/slam/hash_map/cells/libsegmap_cells.a \
 	$(CARMEN_HOME)/src/utilities/libcarmen_util/libcarmen_util.a 
 
-SOURCES = test_segmap_dataset.cpp test_command_line.cpp #test_segmap_hash_map.cpp
-TARGETS = test_command_line #test_segmap_hash_map
+SOURCES = test_xsens_vs_gps_angle.cpp #test_segmap_dataset.cpp test_command_line.cpp test_changing_camera_position_pcl.cpp #test_segmap_hash_map.cpp
+TARGETS = test_xsens_vs_gps_angle # test_command_line test_changing_camera_position_pcl #test_segmap_hash_map
 
+test_xsens_vs_gps_angle: test_xsens_vs_gps_angle.o $(DEPS)
+test_changing_camera_position_pcl: test_changing_camera_position_pcl.o $(DEPS) 
 test_segmap_dataset: test_segmap_dataset.o $(DEPS)
 test_command_line: test_command_line.o $(DEPS)
 #test_segmap_hash_map: test_segmap_hash_map.o $(DEPS)

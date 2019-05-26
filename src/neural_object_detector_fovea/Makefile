@@ -20,17 +20,15 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
 		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration \
 		  -llaser_ldmrs_interface -llaser_ldmrs_utils `python2.7-config --libs`
 
-SOURCES = neural_object_detector_main.cpp neural_object_detector_simulator.cpp neural_object_detector_tracker.cpp
+SOURCES = neural_object_detector_simulator.cpp neural_object_detector_tracker.cpp neural_object_detector.cpp
 
-PUBLIC_BINARIES = neural_object_detector neural_object_detector_simulator neural_object_detector_tracker
+PUBLIC_BINARIES = neural_object_detector_simulator neural_object_detector_tracker
 
-TARGETS = darknet2 neural_object_detector neural_object_detector_simulator neural_object_detector_tracker
-
-neural_object_detector: neural_object_detector_main.o
+TARGETS = darknet2 neural_object_detector_simulator neural_object_detector_tracker
 
 neural_object_detector_simulator: neural_object_detector_simulator.o
 
-neural_object_detector_tracker: neural_object_detector_tracker.o
+neural_object_detector_tracker: neural_object_detector_tracker.o neural_object_detector.o
 
 darknet2:
 	#$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2

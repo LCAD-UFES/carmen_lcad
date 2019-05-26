@@ -51,22 +51,24 @@ namespace g2o
 			void computeError()
 			{
 				const VertexSE2* v = dynamic_cast<const VertexSE2*>(_vertices[0]);
-				Matrix<double, 4, 1> p_car, p_gps;
+				Matrix<double, 4, 1> gps_in_car_coordinate_system_homogeneous;
+				Matrix<double, 4, 1> gps_in_gps_coordinate_system_homogeneous;
 
 				SE2 pose = v->estimate();
-				SE2 gps_measurement_in_estimated_car = pose.inverse() * _measurement;
+				SE2 gps_in_car_coordinate_system = pose.inverse() * _measurement;
 
-				p_car[0] = gps_measurement_in_estimated_car[0];
-				p_car[1] = gps_measurement_in_estimated_car[1];
-				p_car[2] = 0;
-				p_car[3] = 1;
+				gps_in_car_coordinate_system_homogeneous[0] = gps_in_car_coordinate_system[0];
+				gps_in_car_coordinate_system_homogeneous[1] = gps_in_car_coordinate_system[1];
+				gps_in_car_coordinate_system_homogeneous[2] = 0;
+				gps_in_car_coordinate_system_homogeneous[3] = 1;
 
-				p_gps = _car2gps * p_car;
+				gps_in_gps_coordinate_system_homogeneous = _car2gps * gps_in_car_coordinate_system_homogeneous;
 
+				// if the pose is correct, the gps measurement in the gps coordinate system will be zero.
 				_error = g2o::Vector3D(
-						p_gps(0, 0) / p_gps(3, 0),
-						p_gps(1, 0) / p_gps(3, 0),
-						0.0
+						gps_in_gps_coordinate_system_homogeneous(0, 0) / gps_in_gps_coordinate_system_homogeneous(3, 0),
+						gps_in_gps_coordinate_system_homogeneous(1, 0) / gps_in_gps_coordinate_system_homogeneous(3, 0),
+						0.0 // angle
 					);
 
 				//SE2 delta = _measurement.inverse() * (v->estimate());
@@ -75,13 +77,14 @@ namespace g2o
 
 			virtual bool read(std::istream& is)
 			{
+				int i, j;
 				double data[3];
 				is >> data[0] >> data[1] >> data[2];
 				_measurement = SE2(data[0], data[1], data[2]);
 
-				for (int i = 0; i < 2; i++)
+				for (i = 0; i < 2; i++)
 				{
-					for (int j = i; j < 2; j++)
+					for (j = i; j < 2; j++)
 					{
 						is >> information()(i, j);
 
@@ -90,20 +93,39 @@ namespace g2o
 					}
 				}
 
+				for (i = 0; i < 4; i++)
+				{
+					for (j = i; j < 4; j++)
+					{
+						is >> _car2gps(i, j);
+					}
+				}
+
 				return true;
 			}
 
 			virtual bool write(std::ostream& os) const
 			{
+				int i, j;
+
 				os << _measurement[0] << " " << _measurement[1] << " " << _measurement[2];
 
-				for (int i = 0; i < 2; ++i)
+				for (i = 0; i < 2; ++i)
 				{
-					for (int j = i; j < 2; ++j)
+					for (j = i; j < 2; ++j)
 					{
 						os << " " << information()(i, j);
 					}
 				}
+
+				for (i = 0; i < 4; ++i)
+				{
+					for (j = i; j < 4; ++j)
+					{
+						os << " " << _car2gps(i, j);
+					}
+				}
+
 				return os.good();
 			}
 

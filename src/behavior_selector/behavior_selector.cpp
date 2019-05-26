@@ -1,3 +1,9 @@
+/*
+ * behavior_selector.c
+ *
+ *  Created on: 28/09/2012
+ *      Author: romulo
+ */
 
 #include <carmen/collision_detection.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
@@ -127,7 +133,6 @@ add_goal_to_goal_list(int &goal_index, carmen_ackerman_traj_point_t &current_goa
 int
 try_avoiding_obstacle(int rddf_pose_index, double circle_radius, carmen_rddf_road_profile_message* rddf)
 {
-	//int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle_new(rddf->poses[rddf_pose_index], current_map, &robot_config);
 	int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[rddf_pose_index], circle_radius, current_map, &robot_config);
 
 	return (rddf_pose_hit_obstacle);

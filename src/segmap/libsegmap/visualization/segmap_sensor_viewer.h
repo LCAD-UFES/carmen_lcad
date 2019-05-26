@@ -19,6 +19,7 @@ public:
 	void show(cv::Mat &img, const char *name, int resize_to_width=-1);
 	void loop();
 	void clear();
+	void set_camera_pose(double x, double y);
 
 protected:
 	pcl::visualization::PCLVisualizer *_cloud_viewer;
