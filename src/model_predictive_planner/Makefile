@@ -36,12 +36,14 @@ LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface 
 			
 			
 SOURCES = model_predictive_planner_main.cpp model_predictive_planner.cpp trajectory_lookup_table.cpp \
-		model_predictive_planner_optimizer.cpp global_state.cpp publisher_util.cpp util.cpp pose.cpp command.cpp
+		model_predictive_planner_optimizer.cpp global_state.cpp publisher_util.cpp util.cpp pose.cpp command.cpp\
+		model_predictive_planner_interface.c
 
 PUBLIC_BINARIES = model_predictive_planner
-PUBLIC_LIBRARIES = 
+PUBLIC_LIBRARIES = libmodel_predictive_planner_interface.a
+PUBLIC_INCLUDES = model_predictive_planner_interface.h model_predictive_planner_message.h
 
-TARGETS = libcarmodel model_predictive_planner
+TARGETS = libcarmodel model_predictive_planner libmodel_predictive_planner_interface.a
 
 libcarmodel:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarmodel
@@ -50,7 +52,10 @@ clean_libcarmodel:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcarmodel
 
 model_predictive_planner: model_predictive_planner_main.o model_predictive_planner.o trajectory_lookup_table.o \
-	model_predictive_planner_optimizer.o global_state.o publisher_util.o util.o pose.o command.o
+	model_predictive_planner_optimizer.o global_state.o publisher_util.o util.o pose.o command.o model_predictive_planner_interface.o
+
+
+libmodel_predictive_planner_interface.a: model_predictive_planner_interface.o
 
 trajectory_lookup_table: trajectory_lookup_table.o
 
