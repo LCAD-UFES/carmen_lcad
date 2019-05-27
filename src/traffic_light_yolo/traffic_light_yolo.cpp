@@ -43,13 +43,18 @@ map<int,Scalar> tl_rgy_colors = {
     {1, Scalar(0, 255, 0)},
     {2, Scalar(0, 255, 255)},
 };
-
 map<int,string> tl_rgy_labels = {
     {0, "red"},
     {1, "green"},
     {2, "yellow"},
 };
 
+map<int,Scalar> tl_code_colors = {
+    {RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED,    Scalar(255, 0, 0)},
+    {RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN,  Scalar(0, 255, 0)},
+    {RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_YELLOW, Scalar(255, 255, 0)},
+    {RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF,    Scalar(50, 50, 50)},
+};
 map<int,char const*> tl_code_names = {
     {RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED,    "RED"},
     {RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN,  "GREEN"},
@@ -68,11 +73,13 @@ bool marker_point_found = false;
 
 // These control what is displayed on the window. They are variables because it would be super cool to change them according to command line options in the future.
 bool DRAW_FPS = false;
-bool DRAW_TEXTBACKGROUND = true;
+bool DRAW_TEXT = true;
+bool DRAW_TEXT_BACKGROUND = true;
 bool DRAW_BBS = true; // Falso para criar o GT.
 bool DRAW_CLOSE_TLS = true; // Falso para criar o GT.
 bool DRAW_CIRCLE_THRESHOLD = true;
 bool DRAW_LIDAR_POINTS = false;
+bool DRAW_FINAL_PREDICTION = true; // Falso para criar o GT.
 bool RUN_YOLO = true; // Falso para criar o GT.
 bool RUN_RANDOM_FOREST = true; // Falso para criar o GT.
 bool COMPUTE_TL_POSES = false;
@@ -290,7 +297,25 @@ predictions_to_str(vector<bbox_t> predictions) {
 }
 
 void
-display(Mat image, vector<bbox_t> predictions, double fps, unsigned int image_width, unsigned int image_height, vector<image_cartesian> lidar_points)
+draw_final_prediction(Mat image, int tl_code)
+{
+    Size image_size = image.size();
+    int margin = 10;
+    int circle_radius = 50;
+    int circle_x = image_size.width - circle_radius - margin;
+    int circle_y = image_size.height - circle_radius - margin;
+    Scalar color(203,192,255); // Pink by default.
+    if (tl_code_colors.find(tl_code) != tl_code_colors.end())
+    {
+        color = tl_code_colors[tl_code];
+    }
+
+    circle(image, Point(circle_x, circle_y), circle_radius, color, -1);
+
+}
+
+void
+display(Mat image, vector<bbox_t> predictions, double fps, vector<image_cartesian> lidar_points)
 {
     char object_info[25];
     char frame_rate[25];
@@ -312,44 +337,39 @@ display(Mat image, vector<bbox_t> predictions, double fps, unsigned int image_wi
     {
         for (unsigned int i = 0; i < predictions.size(); i++)
         {
-            string class_name = classes_names[predictions[i].obj_id];
-            // cerr << "predictions[i].obj_id" << predictions[i].obj_id << endl;
-            if ((FINAL_CLASS_SET == RGY) && (tl_rgy_labels.find(predictions[i].obj_id) != tl_rgy_labels.end()))
-            {
-                // cerr << "tl_rgy_labels[predictions[i].obj_id]" << tl_rgy_labels[predictions[i].obj_id] << endl;
-                class_name = tl_rgy_labels[predictions[i].obj_id];
-            }
-
-            snprintf(object_info, 25, "%d %s %d", predictions[i].obj_id, class_name.c_str(), (int)predictions[i].prob);
-
             Scalar bb_color = Scalar(255,255,255);
             if (tl_rgy_colors.find(predictions[i].obj_id) != tl_rgy_colors.end()) {
                 bb_color = tl_rgy_colors[predictions[i].obj_id];
             }
             rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)), bb_color, 1);
 
-            if (DRAW_TEXTBACKGROUND)
-            {
-                //Drawing backgound into text
-                int baseline=0;
-                Size textSize = getTextSize(object_info, FONT_HERSHEY_PLAIN, 1, 1, &baseline);
-                baseline += 1;
-                // center the text
-                Point textPoint = Point(predictions[i].x + 1, predictions[i].y - 3);
-                // draw the box
-                rectangle(image, textPoint + Point(textSize.width, -textSize.height), textPoint + Point(0, 1), Scalar(0,0,0), -1);
-                // ... and the baseline first
-                //line(image, textPoint + Point(0, 1), textPoint + Point(textSize.width, 1), Scalar(0, 0, 255));
-            }
+            if (DRAW_TEXT) {
+                string class_name = classes_names[predictions[i].obj_id];
+                if ((FINAL_CLASS_SET == RGY) && (tl_rgy_labels.find(predictions[i].obj_id) != tl_rgy_labels.end()))
+                {
+                    class_name = tl_rgy_labels[predictions[i].obj_id];
+                }
 
-            putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, bb_color, 1);
+                snprintf(object_info, 25, "%d %s %d", predictions[i].obj_id, class_name.c_str(), (int)predictions[i].prob);
+
+                if (DRAW_TEXT_BACKGROUND)
+                {
+                    //Drawing backgound into text
+                    int baseline=0;
+                    Size textSize = getTextSize(object_info, FONT_HERSHEY_PLAIN, 1, 1, &baseline);
+                    baseline += 1;
+                    // center the text
+                    Point textPoint = Point(predictions[i].x + 1, predictions[i].y - 3);
+                    // draw the box
+                    rectangle(image, textPoint + Point(textSize.width, -textSize.height), textPoint + Point(0, 1), Scalar(0,0,0), -1);
+                    // ... and the baseline first
+                    //line(image, textPoint + Point(0, 1), textPoint + Point(textSize.width, 1), Scalar(0, 0, 255));
+                }
+
+                putText(image, object_info/*(char*) "Obj"*/, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, bb_color, 1);
+            }
         }
     }
-
-    //show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
-    //show_LIDAR_points(image, points, 255, 0, 0);
-    //show_LIDAR(image, points_inside_bbox, 0, 0, 255);                 // Blue points are all points inside the bbox
-    //show_LIDAR(image, filtered_points, 0, 255, 0);                        // Green points are filtered points
 
     // resize(image, image, Size(640, 480));
     imshow("Yolo Traffic Light", image);
@@ -787,6 +807,8 @@ get_main_traffic_light(vector<bbox_t> predictions,  vector<carmen_position_t> tf
             main_traffic_light->color = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;            //RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF
         else if (main_bbox.obj_id == 1)                                                    //RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_RIGHT
             main_traffic_light->color = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN;          //RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT
+        else if (main_bbox.obj_id == 2)                                                    //RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_RIGHT
+            main_traffic_light->color = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_YELLOW;         //RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT
     }
 
     return (main_traffic_light);
@@ -949,6 +971,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
                 carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotations_on_image, tl_threshold);
                 publish_traffic_lights(&traffic_light_message);
 
+                if (DRAW_FINAL_PREDICTION)
+                {
+                    draw_final_prediction(open_cv_image, traffic_light_message.traffic_lights->color);
+                }
+
                 char const* tl_code_name = tl_code_names[traffic_light_message.traffic_lights->color];
                 snprintf(final_prediction_line, line_size, "timestamp(image)=%lf; distance=%lf; tl_state=%s\n", image_msg->timestamp, distance_to_tf, tl_code_name);
                 snprintf(gt_prep_line, line_size,          "timestamp(image)=%lf; distance=%lf; tl_state=\n", image_msg->timestamp, distance_to_tf);
@@ -1005,7 +1032,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         circle(open_cv_image, Point((int)screen_marker.x, (int)screen_marker.y), 3.0, Scalar(100, 100, 255), -1, 8);
     }
 
-    display(open_cv_image, predictions, fps, RESIZED_W, RESIZED_H, lidar_points);
+    display(open_cv_image, predictions, fps, lidar_points);
 }
 
 
