@@ -1,12 +1,34 @@
-#include "neural_object_detector.hpp"
+#include <carmen/carmen.h>
+#include <carmen/carmen_darknet_interface.hpp>
+#include <carmen/bumblebee_basic_interface.h>
+#include <carmen/velodyne_interface.h>
+#include <carmen/velodyne_camera_calibration.h>
+#include <carmen/moving_objects_messages.h>
+#include <carmen/moving_objects_interface.h>
+#include <carmen/traffic_light_interface.h>
+#include <carmen/traffic_light_messages.h>
+#include <carmen/rddf_messages.h>
+#include <carmen/laser_ldmrs_utils.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/ml.hpp>
 #include <sys/stat.h>
+#include <cmath>
+#include <vector>
+#include <string>
+#include <iostream>
+#include <cstdlib>
+#include <fstream>
+
+using namespace std;
+using namespace cv;
+using namespace cv::ml;
 
 const char * CARMEN_HOME = std::getenv("CARMEN_HOME");
 int camera;
 int camera_side;
 char **classes_names;
 void *network_struct;
-// cv::ml::RTrees* rf = cv::ml::RTrees::create();
 Ptr<ml::RTrees> rf;
 carmen_localize_ackerman_globalpos_message *globalpos_msg = NULL;
 carmen_velodyne_partial_scan_message *velodyne_msg = NULL;
