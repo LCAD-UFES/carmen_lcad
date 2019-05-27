@@ -1,0 +1,10 @@
+# Multiplier of the standard deviation of the gps position (times meters)
+gps_xy_std_multiplier = 5
+# Odometry position (x, y) standard deviation (meters)
+odom_xy_std = 0.1
+# Odometry orientation (yaw) standard deviation (degrees)
+odom_orient_std = 1
+# Loop closure delta position (x, y) standard deviation (meters)
+loop_xy_std = 3
+# Loop closure orientation (yaw) standard deviation (degrees)
+loop_orient_std = 34

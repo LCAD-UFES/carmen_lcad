@@ -1,0 +1,40 @@
+# Id of the gps that will be used for the calibration
+gps_to_use = 3
+# Id of the sensor board that will be used for the calibration
+board_to_use = 1
+# 0 - linear phi; 1 - use a spline to map phi to a new phi
+use_non_linear_phi = 0
+# Number of particles
+n_particles = 500
+# Number of iterations
+n_iterations = 300
+# Number of lines to skip in the beggining of the log file
+initial_log_line = 1
+# Maximum number of lines to read from the log file
+max_log_lines = -1
+# Flag indicating if the visualization should run or not.
+view = 1
+# Lower limit of velocity multiplier
+min_multiplicative_v = 0.979999
+# Upper limit of velocity multiplier
+max_multiplicative_v = 1.3001
+# Lower limit of phi multiplier
+min_multiplicative_phi = 0.55
+# Upper limit of phi multiplier
+max_multiplicative_phi = 2.5
+# Lower limit of phi additive bias (degrees)
+min_additive_phi = -2
+# Upper limit of phi additive bias (degrees)
+max_additive_phi = 2
+# Lower limit of gps latency (seconds)
+min_gps_latency = 0
+# Upper limit of gps latency (seconds)
+max_gps_latency = 0.3
+# Lower limit of k1 spline coefficient
+min_k1 = -0.3
+# Upper limit of k1 spline coefficient
+max_k1 = 0.3
+# Lower limit of k2 spline coefficient
+min_k2 = -0.15
+# Upper limit of k2 spline coefficient
+max_k2 = 0.15

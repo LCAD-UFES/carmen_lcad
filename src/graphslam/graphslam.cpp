@@ -1,4 +1,6 @@
 #include <carmen/carmen.h>
+#include <carmen/util_io.h>
+
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -564,16 +566,16 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add_positional<string>("sync.txt", "Synchronized sensors data");
 	args->add_positional<string>("loops.txt", "Points cloud pairs closing loops");
 	args->add_positional<string>("carmen.ini", "Path to a file containing system parameters");
+	args->add_positional<string>("calibrated_odometry.txt", "Path to a file containing the odometry calibration data");
 	args->add_positional<string>("poses_opt.txt", "Path to a file in which the poses will be saved in graphslam format");
-	args->add<int>("gps_to_use", "Id of the gps that will be used for the calibration", 1);
 	args->add<double>("gps_xy_std_multiplier", "Multiplier of the standard deviation of the gps position (times meters)", 5.0);
 	args->add<double>("odom_xy_std", "Odometry position (x, y) standard deviation (meters)", 0.1);
 	args->add<double>("odom_orient_std", "Odometry orientation (yaw) standard deviation (degrees)", 1.0);
 	args->add<double>("loop_xy_std", "Loop closure delta position (x, y) standard deviation (meters)", 3.0);
 	args->add<double>("loop_orient_std", "Loop closure orientation (yaw) standard deviation (degrees)", 34.0);
 
-	args->save_config_file("graphslam_config.txt");
 	args->parse(argc, argv);
+	args->save_config_file("graphslam_config_default.txt");
 }
 
 
@@ -589,7 +591,13 @@ main(int argc, char **argv)
 	strcpy(carmen_ini_file, (char *) args.get<string>("carmen.ini").c_str());
 	strcpy(out_file, (char *) args.get<string>("poses_opt.txt").c_str());
 
-	int gps_id = args.get<int>("gps_to_use");
+	FILE *odometry_calibration_file = safe_fopen(args.get<string>("calibrated_odometry.txt").c_str(), "r");
+	double v_multiplier, v_bias, phi_multiplier, phi_bias, initial_angle, gps_latency, L;
+	int gps_to_use;
+	fscanf(odometry_calibration_file, "v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf, GPS to use: %d, GPS Latency: %lf, L: %lf",
+			&v_multiplier, &v_bias, &phi_multiplier, &phi_bias, &initial_angle, &gps_to_use, &gps_latency, &L);
+	int gps_id = gps_to_use;
+
 	double gps_xy_std_multiplier = 	args.get<double>("gps_xy_std_multiplier");
 	double odom_xy_std = args.get<double>("odom_xy_std");
 	double odom_orient_std = carmen_degrees_to_radians(args.get<double>("odom_orient_std"));

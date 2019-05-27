@@ -1,8 +1,10 @@
 Como calibrar a odometria:
 
 1. compile o modulo odometry_calibration
+2. Vá para o diretório bin
+ cd $CARMEN_HOME/bin
 2. Execute o programa:
- ./calibrate_bias_from_log --gps_to_use 2 --use_non_linear_phi 0 -i 300 /dados/log_estacionameno_ambiental_20190503-ford-fusion-2.txt ../carmen-ford-fusion.ini caco.txt poses.txt poses_opt.txt
+ ./calibrate_bias_from_log --gps_to_use 2 --use_non_linear_phi 0 -i 300 /dados/log_estacionameno_ambiental_20190503-ford-fusion-2.txt ../src/carmen-ford-fusion.ini caco.txt poses.txt poses_opt.txt
 
 	Notas:
 		- Para saber os parametros do programa execute ele sem nenhum parametro
