@@ -877,12 +877,12 @@ set_limits(int dim, CommandLineArguments *args)
 	limits[3][1] = carmen_degrees_to_radians(args->get<double>("max_additive_phi"));
 
 	// Initial angle
-	limits[4][0] = -M_PI;
-	limits[4][1] = M_PI;
+	limits[4][0] = carmen_degrees_to_radians(args->get<double>("min_initial_angle"));
+	limits[4][1] = carmen_degrees_to_radians(args->get<double>("max_initial_angle"));
 
 	// GPS latency
-	limits[5][0] = 0.0;
-	limits[5][1] = 0.3;
+	limits[5][0] = args->get<double>("min_gps_latency");
+	limits[5][1] = args->get<double>("max_gps_latency");
 
 	if (use_non_linear_phi)
 	{
@@ -921,6 +921,8 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<double>("max_multiplicative_phi", "Upper limit of phi multiplier", 2.5);
 	args->add<double>("min_additive_phi", "Lower limit of phi additive bias (degrees)", -2);
 	args->add<double>("max_additive_phi", "Upper limit of phi additive bias (degrees)", 2);
+	args->add<double>("min_initial_angle", "Lower limit of initial angle (degrees)", -180);
+	args->add<double>("max_initial_angle", "Upper limit of initial angle (degrees)", 180);
 	args->add<double>("min_gps_latency", "Lower limit of gps latency (seconds)", 0.0);
 	args->add<double>("max_gps_latency", "Upper limit of gps latency (seconds)", 0.3);
 	args->add<double>("min_k1", "Lower limit of k1 spline coefficient", -0.3);

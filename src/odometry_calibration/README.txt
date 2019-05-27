@@ -7,8 +7,8 @@ Como calibrar a odometria:
  ./calibrate_bias_from_log --gps_to_use 2 --use_non_linear_phi 0 -i 300 /dados/log_estacionameno_ambiental_20190503-ford-fusion-2.txt ../src/carmen-ford-fusion.ini caco.txt poses.txt poses_opt.txt
 
 	Notas:
-		- Para saber os parametros do programa execute ele sem nenhum parametro
-		- Rode mais de uma vez e observe qual a melhor calibração no gráfico final
+		- Para saber os parametros do programa execute ele sem nenhum parametro.
+		- No uso do dia-a-dia, rode o programa mais de uma vez e observe qual a melhor calibração no gráfico final (o método é probabilístico).
 		- Você pode delimitar o tempo inicial e final a ser considerado no log verificando o tempo no fim de cada linha do log e 
 		  o número da linha do tempo inicial e final. Use as flags -l <linha inicial>  e -m <numero de linhas a partir da linha inicial>.
 

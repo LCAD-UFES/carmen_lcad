@@ -1,6 +1,7 @@
 Como criar um mapa usando GraphSLAM:
 
-1. Rode o process-volta_da_ufes_playback_viewer_3D_map_generation.ini (ou outro equivalente ajustado para o seu caso). Lembre-se de colocar nele o seu log (em todos os lugares que precisa) e o rddf desejado.
+1. Rode o process-volta_da_ufes_playback_viewer_3D_map_generation.ini (ou outro equivalente ajustado para o seu caso). 
+   Lembre-se de colocar nele o seu log, o rddf desejado, e carmen ini em todos os lugares que precisa.
 
 2. Ligue e desligue, no PROCCONTROL GUI, o botão ClTmpDir (clique o botão ClTmpDir e ecolha Start Program, e depois Stop Program) para inicializar o diretório $CARMEN_HOME/bin/tmp.
  

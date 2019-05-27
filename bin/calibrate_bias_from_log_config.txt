@@ -1,5 +1,5 @@
 # Id of the gps that will be used for the calibration
-gps_to_use = 3
+gps_to_use = 2
 # Id of the sensor board that will be used for the calibration
 board_to_use = 1
 # 0 - linear phi; 1 - use a spline to map phi to a new phi
@@ -26,8 +26,12 @@ max_multiplicative_phi = 2.5
 min_additive_phi = -2
 # Upper limit of phi additive bias (degrees)
 max_additive_phi = 2
+# Lower limit of initial angle (degrees)
+min_initial_angle = -180
+# Upper limit of initial angle (degrees)
+max_initial_angle = 180
 # Lower limit of gps latency (seconds)
-min_gps_latency = 0
+min_gps_latency = 0.17
 # Upper limit of gps latency (seconds)
 max_gps_latency = 0.3
 # Lower limit of k1 spline coefficient
