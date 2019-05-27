@@ -8,7 +8,8 @@ CXXFLAGS = -std=c++11
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/python2.7 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
+# LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
@@ -20,21 +21,13 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
 		  -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvelodyne_camera_calibration \
 		  -ltraffic_light_interface -lpython2.7 -llaser_ldmrs_interface -llaser_ldmrs_utils
 
-SOURCES = neural_object_detector_main.cpp neural_object_detector_simulator.cpp neural_object_detector_traffic_light.cpp neural_object_detector_test.cpp neural_object_detector_tracker.cpp
+SOURCES = neural_object_detector_traffic_light.cpp
 
-PUBLIC_BINARIES = neural_object_detector neural_object_detector_simulator neural_object_detector_traffic_light neural_object_detector_tracker
+TARGETS = neural_object_detector_traffic_light
 
-TARGETS = darknet2 neural_object_detector neural_object_detector_simulator neural_object_detector_traffic_light  neural_object_detector_test neural_object_detector_tracker
-
-neural_object_detector: neural_object_detector_main.o
-
-neural_object_detector_simulator: neural_object_detector_simulator.o
+PUBLIC_BINARIES = neural_object_detector_traffic_light
 
 neural_object_detector_traffic_light: neural_object_detector_traffic_light.o
-
-neural_object_detector_test: neural_object_detector_test.o
-
-neural_object_detector_tracker: neural_object_detector_tracker.o
 
 darknet2:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2

@@ -1,9 +1,13 @@
 #include "neural_object_detector.hpp"
+#include <sys/stat.h>
 
+const char * CARMEN_HOME = std::getenv("CARMEN_HOME");
 int camera;
 int camera_side;
 char **classes_names;
 void *network_struct;
+// cv::ml::RTrees* rf = cv::ml::RTrees::create();
+Ptr<ml::RTrees> rf;
 carmen_localize_ackerman_globalpos_message *globalpos_msg = NULL;
 carmen_velodyne_partial_scan_message *velodyne_msg = NULL;
 carmen_camera_parameters camera_parameters;
@@ -12,9 +16,16 @@ carmen_pose_3D_t camera_pose;
 carmen_pose_3D_t board_pose;
 tf::Transformer transformer;
 
-map<int,Scalar> tl_colors = {
+map<int,Scalar> tl_rgy_colors = {
     {0, Scalar(0, 0, 255)},
     {1, Scalar(0, 255, 0)},
+    {2, Scalar(0, 255, 255)},
+};
+
+map<int,string> tl_rgy_labels = {
+    {0, "red"},
+    {1, "green"},
+    {2, "yellow"},
 };
 
 map<int,char const*> tl_code_names = {
@@ -41,9 +52,17 @@ bool DRAW_CLOSE_TLS = true; // Falso para criar o GT.
 bool DRAW_CIRCLE_THRESHOLD = true;
 bool DRAW_LIDAR_POINTS = false;
 bool RUN_YOLO = true; // Falso para criar o GT.
+bool RUN_RANDOM_FOREST = true; // Falso para criar o GT.
 bool COMPUTE_TL_POSES = false;
 bool PRINT_FINAL_PREDICTION = true; // Falso para criar o GT.
 bool PRINT_GT_PREP = false;
+enum class_set {
+    RG, // The only classes are Red and Green.
+    RGY, // The only classes are Red, Green and Yellow.
+    COCO, // All COCO classes.
+};
+class_set YOLO_CLASS_SET = COCO;
+class_set FINAL_CLASS_SET = RGY;
 
 #define TRAFFIC_LIGHT_GROUPING_TRESHOLD 20 // Distance in meters to consider traffic light position
 // #define MAX_TRAFFIC_LIGHT_DIST 100
@@ -61,6 +80,66 @@ bool PRINT_GT_PREP = false;
 // #define RESIZED_H 960
 #define RESIZED_W 640
 #define RESIZED_H 480
+
+vector<Mat>
+make_box_views(Mat img, vector<bbox_t> predictions)
+{
+    vector<Mat> views;
+    for (bbox_t &pred : predictions)
+    {
+        // Mat view(img, Rect(pred.x, pred.y, pred.w, pred.h));
+        Mat view = img(Rect(pred.x, pred.y, pred.w, pred.h));
+        views.push_back(view);
+    }
+    return (views);
+}
+
+void
+save_mats_as_images(vector<Mat> matrices, string dest_dir)
+{
+    string file_path;
+    int i = 0;
+    for (Mat &m : matrices)
+    {
+        std::ostringstream oss;
+        oss << dest_dir << "/" << i << ".png";
+        file_path = oss.str();
+        imwrite(file_path, m);
+        i++;
+    }
+}
+
+/**
+ * Resize the detection crops and pack them into a single Mat, the way Jean's random forest is expecting.
+ * i.e., a single image per row, and BGR values of row after row put together on a single row.
+ **/
+Mat
+pack_images_together(vector<Mat> imgs)
+{
+    Size new_size(10, 30);
+    vector<Mat> single_row_imgs;
+    for (int i = 0; i < imgs.size(); i++)
+    {
+        Mat resized_img(new_size, imgs[0].type());
+        resize(imgs[i], resized_img, new_size);
+        Mat single_row_img = resized_img.reshape(1,1);
+        single_row_imgs.push_back(single_row_img);
+    }
+    Mat concatenated;
+    vconcat(single_row_imgs, concatenated);
+    concatenated.convertTo(concatenated, CV_32F);
+    return concatenated;
+}
+
+// vector<int>
+// make_rf_classifications(vector<Mat> imgs) {
+//     vector<int> class_predictions(imgs.size())
+//     for (size_t i = 0; i < imgs.size(); i++)
+//     {
+//         rf.predict()
+//     }
+    
+// }
 
 double
 compute_distance_to_the_traffic_light()
@@ -168,6 +247,26 @@ show_all_points(Mat &image, unsigned int image_width, unsigned int image_height,
             circle(image, Point(all_points[i].ipx - crop_x, all_points[i].ipy - crop_y), 1, cvScalar(0, 0, 255), 5, 8, 0);
 }
 
+/** For debugging. */
+string
+predictions_to_str(vector<bbox_t> predictions) {
+    ostringstream oss;
+    oss << "vector<bbox_t> (size=" << predictions.size() << "):" << endl;
+    for (size_t i = 0; i < predictions.size(); i++)
+    {
+        oss << " -"
+            << " x=" << predictions[i].x
+            << " y=" << predictions[i].y
+            << " w=" << predictions[i].w
+            << " h=" << predictions[i].h
+            << " prob=" << predictions[i].prob
+            << " obj_id=" << predictions[i].obj_id
+            << " track_id=" << predictions[i].track_id
+            << endl;
+    }
+    return oss.str();
+}
+
 void
 display(Mat image, vector<bbox_t> predictions, double fps, unsigned int image_width, unsigned int image_height, vector<image_cartesian> lidar_points)
 {
@@ -183,7 +282,7 @@ display(Mat image, vector<bbox_t> predictions, double fps, unsigned int image_wi
 
     if (DRAW_FPS)
     {
-        sprintf(frame_rate, "FPS = %.2f", fps);
+        snprintf(frame_rate, 25, "FPS = %.2f", fps);
         putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
     }
 
@@ -191,11 +290,19 @@ display(Mat image, vector<bbox_t> predictions, double fps, unsigned int image_wi
     {
         for (unsigned int i = 0; i < predictions.size(); i++)
         {
-            sprintf(object_info, "%d %s %d", predictions[i].obj_id, classes_names[predictions[i].obj_id], (int)predictions[i].prob);
+            string class_name = classes_names[predictions[i].obj_id];
+            // cerr << "predictions[i].obj_id" << predictions[i].obj_id << endl;
+            if ((FINAL_CLASS_SET == RGY) && (tl_rgy_labels.find(predictions[i].obj_id) != tl_rgy_labels.end()))
+            {
+                // cerr << "tl_rgy_labels[predictions[i].obj_id]" << tl_rgy_labels[predictions[i].obj_id] << endl;
+                class_name = tl_rgy_labels[predictions[i].obj_id];
+            }
+
+            snprintf(object_info, 25, "%d %s %d", predictions[i].obj_id, class_name.c_str(), (int)predictions[i].prob);
 
             Scalar bb_color = Scalar(255,255,255);
-            if (tl_colors.find(predictions[i].obj_id) != tl_colors.end()) {
-              bb_color = tl_colors[predictions[i].obj_id];
+            if (tl_rgy_colors.find(predictions[i].obj_id) != tl_rgy_colors.end()) {
+                bb_color = tl_rgy_colors[predictions[i].obj_id];
             }
             rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)), bb_color, 1);
 
@@ -699,7 +806,6 @@ publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clo
 static void
 publish_traffic_lights(carmen_traffic_light_message *traffic_light_message)
 {
-    // print("image_timestamp=;tl_state=;distance=", )
     carmen_traffic_light_publish_message(camera, traffic_light_message);
 }
 
@@ -745,6 +851,28 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         fprintf(stderr, "==============================\n");
         fprintf(stderr, "WARNING: YOLO is not running!!\n");
         fprintf(stderr, "==============================\n");
+    }
+
+    // Filter irrelevant COCO classes, when using the COCO model.
+    // This may be unnecessary overhead. We could just ignore the other classes...
+    if (YOLO_CLASS_SET == COCO) {
+        auto new_end = std::remove_if(predictions.begin(), predictions.end(),
+            [](bbox_t bb){return bb.obj_id != 9;});
+        predictions.erase(new_end, predictions.end());
+    }
+
+    if (RUN_RANDOM_FOREST) {
+        vector<Mat> views = make_box_views(open_cv_image, predictions);
+        // mkdir("/tmp/tf_bboxes", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH); // Debugging...
+        // save_mats_as_images(views, "/tmp/tf_bboxes"); // Debugging...
+        Mat imgs_data = pack_images_together(views);
+        Mat rf_predictions;
+        rf->predict(imgs_data, rf_predictions);
+        rf_predictions -= 1; // Jean did it so 1=red, 2=green, 3=yellow... weird.
+        for (size_t i = 0; i < predictions.size(); i++)
+        {
+            predictions[i].obj_id = static_cast<int>(rf_predictions.at<float>(i));
+        }
     }
 
     fps = 1.0 / (carmen_get_time() - start_time);
@@ -916,7 +1044,8 @@ load_traffic_light_annotation_file(char* path)
 
     int annotation_type, annotation_code;
     char line[1024], annotation_description[1024];
-
+    cerr << "INFO: Loading traffic light annotation file: " << path << endl;
+    cerr << "INFO: Traffic light annotations (yaw, x, y, z):" << endl;
     while (fgets(line, 1023, annotation_file) != NULL)
     {
         // Strips # comments off.
@@ -1008,21 +1137,70 @@ onMouse(int event, int x, int y, int, void*)
     }
 }
 
+inline bool
+file_exists(const std::string& name)
+{
+    struct stat buffer;
+    return (stat (name.c_str(), &buffer) == 0);
+}
+
+inline bool
+file_exists_and_is_not_empty(const std::string& name)
+{
+    struct stat buffer;
+    return ((stat(name.c_str(), &buffer) == 0) && (buffer.st_size > 0));
+}
+
+inline void
+file_ok_or_error(const std::string& name) {
+    if (!file_exists_and_is_not_empty(name)) {
+        cerr << "ERROR: File does not exist or is empty '" << name << "'!\n";
+        exit(1);
+    }
+}
 
 void
 initializer()
 {
     initialize_transformations(board_pose, camera_pose, &transformer);
 
-    classes_names = get_classes_names((char*) "../sharedlib/darknet2/data/traffic_light.names");
-    network_struct = initialize_YOLO((char*) "../sharedlib/darknet2/cfg/traffic_light.cfg", (char*) "../sharedlib/darknet2/yolov3_traffic_light_rgo.weights");
-    //network_struct = initialize_YOLO((char*) "../sharedlib/darknet2/cfg/yolov3-nrgr-10000-const-lr-1e-4.cfg", (char*) "../sharedlib/darknet2/yolov3-nrgr-10000-const-lr-1e-4_15000.weights");
+    // string darknet_names_file_path, darknet_cfg_file_path, darknet_weights_file_path;
+    char darknet_names_file_path[1024], darknet_cfg_file_path[1024], darknet_weights_file_path[1024];
 
-    // classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
-    // network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
+    /** YOLOv3 treinada pelo Possatti. */
+    // darknet_names_file_path = "../sharedlib/darknet2/data/traffic_light.names";
+    // darknet_cfg_file_path = "../sharedlib/darknet2/cfg/traffic_light.cfg";
+    // darknet_weights_file_path = "../sharedlib/darknet2/yolov3_traffic_light_rgo.weights";
+
+    /** YOLOv3 treinada no COCO. */
+    sprintf(darknet_names_file_path, "%s/%s", CARMEN_HOME, "sharedlib/darknet2/data/coco.names");
+    sprintf(darknet_cfg_file_path, "%s/%s", CARMEN_HOME, "sharedlib/darknet2/cfg/yolov3.cfg");
+    sprintf(darknet_weights_file_path, "%s/%s", CARMEN_HOME, "sharedlib/darknet2/yolov3.weights");
+
+    file_ok_or_error(darknet_names_file_path);
+    file_ok_or_error(darknet_cfg_file_path);
+    file_ok_or_error(darknet_weights_file_path);
+
+    cerr << "INFO: Darknet class names file: " << darknet_names_file_path << endl;
+    cerr << "INFO: Darknet CFG file: " << darknet_cfg_file_path << endl;
+    cerr << "INFO: Darknet weights: " << darknet_cfg_file_path << endl;
+
+    // classes_names = get_classes_names(const_cast<char*>(darknet_names_file_path.c_str()));
+    // network_struct = initialize_YOLO(const_cast<char*>(darknet_cfg_file_path.c_str()), const_cast<char*>(darknet_weights_file_path.c_str()));
+
+    classes_names = get_classes_names(darknet_names_file_path);
+    network_struct = initialize_YOLO(darknet_cfg_file_path, darknet_weights_file_path);
+
+    // Load Random Forest.
+    char * rf_weights_path;
+    sprintf(rf_weights_path, "%s/%s", CARMEN_HOME, "data/ml_models/traffic_lights/random_forest_classifier/cv_rtrees_weights_tl_rgy.yml");
+    cerr << "INFO: Weights for OpenCV's RTrees: " << rf_weights_path << endl;
+    rf = StatModel::load<RTrees>(rf_weights_path);
 
     //namedWindow("Neural Object Detector", WINDOW_AUTOSIZE);
     setMouseCallback("Yolo Traffic Light", onMouse);
+
+    cerr << "INFO: Initialization done." << endl;
 }
 
 
@@ -1038,16 +1216,14 @@ initializer()
 //    return err;
 //}
 
-
 int
 main(int argc, char **argv)
 {
     carmen_ipc_initialize(argc, argv);
 
-    camera = atoi(argv[1]);
-
     read_parameters(argc, argv);
 
+    camera = atoi(argv[1]);
     carmen_traffic_light_define_messages(camera);
 
     subscribe_messages();
