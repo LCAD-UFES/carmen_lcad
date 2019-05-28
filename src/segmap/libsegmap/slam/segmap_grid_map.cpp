@@ -491,7 +491,7 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 	Timer timer;
 	DataSample *sample;
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
-	PointCloudViewer viewer;
+	PointCloudViewer viewer(4, 0.0, 0.0, 1.0);
 	vector<double> times;
 
 	viewer.set_step(0);
@@ -531,7 +531,7 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 			Mat map_view;
 			flip(map_img, map_view, 0);
 
-			Mat img = preproc.get_sample_img_with_points();
+			Mat img = preproc.get_sample_img();
 			if (img.rows)
 				viewer.show(img, "img", img_width);
 

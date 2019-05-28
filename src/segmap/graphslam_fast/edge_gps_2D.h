@@ -65,11 +65,19 @@ namespace g2o
 				gps_in_gps_coordinate_system_homogeneous = _car2gps * gps_in_car_coordinate_system_homogeneous;
 
 				// if the pose is correct, the gps measurement in the gps coordinate system will be zero.
+				/*
 				_error = g2o::Vector3D(
 						gps_in_gps_coordinate_system_homogeneous(0, 0) / gps_in_gps_coordinate_system_homogeneous(3, 0),
 						gps_in_gps_coordinate_system_homogeneous(1, 0) / gps_in_gps_coordinate_system_homogeneous(3, 0),
 						0.0 // angle
 					);
+				*/
+				
+				_error = SE2(
+							gps_in_gps_coordinate_system_homogeneous(0, 0) / gps_in_gps_coordinate_system_homogeneous(3, 0),
+							gps_in_gps_coordinate_system_homogeneous(1, 0) / gps_in_gps_coordinate_system_homogeneous(3, 0),
+				            0.0).toVector();
+
 
 				//SE2 delta = _measurement.inverse() * (v->estimate());
 				//_error = delta.toVector();

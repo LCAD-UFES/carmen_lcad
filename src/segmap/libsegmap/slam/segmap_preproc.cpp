@@ -154,10 +154,15 @@ SensorPreproc::reinitialize(DataSample *sample)
 		_img_with_points = _img.clone();
 	}
 
-	if (_imode == SEMANTIC)
+	else if (_imode == SEMANTIC)
 	{
 		_img = read_segmented_img(sample);
 		_img_with_points = segmented_image_view(_img);
+	}
+	
+	else
+	{
+		_img = _img_with_points = read_img(sample);
 	}
 
 	_compute_transform_car2world(sample);
@@ -465,6 +470,8 @@ SensorPreproc::_point3d_is_valid(Matrix<double, 4, 1> &p_sensor,
                                  double ignore_above_threshold,
                                  double ignore_below_threshold)
 {
+	return 1;
+	
 	int ray_hit_car = 0;
 	int safe_border_x = 2.0;
 	int safe_border_y = 2.0;

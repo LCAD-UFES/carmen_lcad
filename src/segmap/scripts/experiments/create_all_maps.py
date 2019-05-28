@@ -1,7 +1,9 @@
 
+
 import os
 from multiprocessing import Pool
 from experiments import *
+
 
 def run_mapper(log_and_type):
 	log_name = log_and_type[0]
@@ -34,7 +36,7 @@ def run_mapper(log_and_type):
 	map_path += tag
 	run_command("rm -rf %s/*" % map_path)
 
-	mapper_cmd = "time ./mapper /dados/%s --v_thresh 1 -i %s -m  %s %s" % (log_name, intensity_mode, map_path, mapper_args)
+	mapper_cmd = "time ./mapper /dados/%s ../carmen-ford-escape.ini --v_thresh 1 -i %s -m  %s %s" % (log_name, intensity_mode, map_path, mapper_args)
 	run_command(mapper_cmd)
 
 	map_img_path = map_path + "_complete.png"
@@ -53,7 +55,7 @@ if __name__ == "__main__":
 		logs_to_map.append([e['map'], 'semantic', True])
 		logs_to_map.append([e['map'], 'semantic', False])
 		logs_to_map.append([e['map'], 'raw', False])
-		#logs_to_map.append([e['map'], 'visual'])
+		logs_to_map.append([e['map'], 'visual', False])
 	
 	process_pool = Pool(len(logs_to_map)) 
 	process_pool.map(run_mapper, logs_to_map)
