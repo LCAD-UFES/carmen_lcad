@@ -64,10 +64,10 @@ run_viewer_if_necessary(Pose2d *pose,
 			draw_pointcloud(img, cloud, map, 1, Scalar(0, 255, 0));
 		}
 
-		viewer.clear();
+		//viewer.clear();
 		//PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
 		//transformPointCloud(*cloud, *transformed, Pose2d::to_matrix(*pose));
-		viewer.show(cloud);
+		//viewer.show(cloud);
 		//viewer.set_camera_pose(pose->x, pose->y);
 		show_flipped_img_in_viewer(viewer, img);
 	}
@@ -512,6 +512,12 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 							args.get<double>("resolution"),
 							GridMapTile::TYPE_VISUAL, 1);
 
+	GridMap map_for_viewing(map_path,
+													args.get<double>("tile_size"),
+													args.get<double>("tile_size"),
+													args.get<double>("resolution"),
+													GridMapTile::TYPE_VISUAL, 1);
+
 	ParticleFilter pf(args.get<int>("n_particles"),
 										ParticleFilter::WEIGHT_VISUAL,
 										args.get<double>("gps_xy_std"),
@@ -535,8 +541,6 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 	loop_closure_indices.clear();
 	relative_transform_vector->clear();
 	convergence_vector->clear();
-
-	Matrix<double, 4, 4>  world2origin = Pose2d::to_matrix(dataset[0]->pose).inverse();
 
 	map.reload(dataset[0]->pose.x,
 		         dataset[0]->pose.y);
@@ -566,15 +570,18 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 																						args.get<double>("v_thresh"));
 
 		map.reload(sample->pose.x, sample->pose.y);
+		map_for_viewing.reload(sample->pose.x, sample->pose.y);
+
 		preproc.reinitialize(sample);
 		load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
 
 		if (nn_id < 0)
 		{
 			update_map(sample, &map, preproc);
+			update_map(sample, &map_for_viewing, preproc);
 
 			if (view)
-				run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 0, 0, view);
+				run_viewer_if_necessary(&sample->pose, map_for_viewing, pf, cloud, viewer, 0, 0, view);
 		}
 		else
 		{
@@ -595,12 +602,12 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 					pf.predict(0, 0, 0);
 
 					if (view)
-						run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 1, 1, view);
+						run_viewer_if_necessary(&sample->pose, map_for_viewing, pf, cloud, viewer, 1, 1, view);
 
 					pf.correct(cloud, map, sample->gps);
 
 					if (view)
-						run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 1, 1, view);
+						run_viewer_if_necessary(&sample->pose, map_for_viewing, pf, cloud, viewer, 1, 1, view);
 				}
 
 				is_init = 1;
@@ -611,29 +618,28 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 				pf.predict(sample->v, sample->phi, dt);
 
 				if (view)
-					run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 1, 1, view);
+					run_viewer_if_necessary(&sample->pose, map_for_viewing, pf, cloud, viewer, 1, 1, view);
 
 				pf.correct(cloud, map, sample->gps);
 
-				if (view)
-					run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 1, 1, view);
-
 				// uncomment for updating the map with the localization estimate.
-				/*
 				preproc.reinitialize(sample);
 				load_as_pointcloud(preproc, aux_cloud, SensorPreproc::CAR_REFERENCE);
 				transformPointCloud(*aux_cloud, *aux_cloud, Pose2d::to_matrix(pf.mean()));
 				for (int j = 0; j < aux_cloud->size(); j++)
-						map.add_point(aux_cloud->at(j));
-				*/
+					map_for_viewing.add_point(aux_cloud->at(j));
+
+				if (view)
+					run_viewer_if_necessary(&sample->pose, map_for_viewing, pf, cloud, viewer, 1, 1, view);
 			}
 
 			Pose2d mean = pf.mean();
-			loop_closure_indices.push_back(pair<int, int>(0, i));
+			loop_closure_indices.push_back(pair<int, int>(nn_id, i));
 
 			// for compatibility issues, we have to specify the pose in relation to a sample in the target dataset.
-			Matrix<double, 4, 4>  pose_in_origin = world2origin * Pose2d::to_matrix(mean);
-			relative_transform_vector->push_back(pose_in_origin);
+			Matrix<double, 4, 4>  world2nn = Pose2d::to_matrix(dataset[nn_id]->pose).inverse();
+			Matrix<double, 4, 4>  pose_in_nn = world2nn * Pose2d::to_matrix(mean);
+			relative_transform_vector->push_back(pose_in_nn);
 			convergence_vector->push_back(1);
 
 			prev_id = i;

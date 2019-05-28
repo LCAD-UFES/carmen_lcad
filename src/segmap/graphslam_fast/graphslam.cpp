@@ -185,6 +185,7 @@ add_odometry_edges(SparseOptimizer *optimizer, vector<SE2> &dead_reckoning, doub
 		edge->setInformation(information);
 		optimizer->addEdge(edge);
 
+		/*
 		mat = data.dataset->at(i)->xsens.toRotationMatrix();
 		getEulerYPR(mat, yaw_i, pitch, roll);
 
@@ -199,6 +200,7 @@ add_odometry_edges(SparseOptimizer *optimizer, vector<SE2> &dead_reckoning, doub
 		edge_xsens->setMeasurement(xsens_measure);
 		edge_xsens->setInformation(xsens_information);
 		optimizer->addEdge(edge_xsens);
+		*/
 	}
 }
 

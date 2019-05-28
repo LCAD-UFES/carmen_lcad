@@ -5,6 +5,7 @@ from experiments import *
 
 
 def main(log_path):
+    global PARAM_FILE
     output_dir = create_output_dir(log_path)
     poses_path = output_dir + "/graphslam.txt"
     carmen_path = os.getenv("CARMEN_HOME")     
@@ -20,7 +21,7 @@ def main(log_path):
     if os.path.exists(map_path):
         os.system("rm -r " + map_path)
     
-    cmd = carmen_path + "/src/segmap/mapper %s -m %s --v_thresh %lf" % (log_path, map_path, SKIP_WHEN_VELOCITY_IS_BELOW)
+    cmd = carmen_path + "/src/segmap/mapper %s %s -m %s --v_thresh %lf" % (log_path, PARAM_FILE, map_path, SKIP_WHEN_VELOCITY_IS_BELOW)
     run_command(cmd)
     
     # visualization
