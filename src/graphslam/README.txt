@@ -47,8 +47,12 @@ Como criar um mapa usando GraphSLAM:
 6. Se você desejar fechamento de loops, gere o arquivo tmp/loops.txt da seguinte forma:
 
 6.1. Delimite o trecho a ser considerado para fechamento de loops usando o process-volta_da_ufes_playback_viewer_3D.ini (ou equivalente).
-     Para isso, identifique no playback control o momento inicial (segundo_inicial_1) e final (segundo_final_1) da primeira passada em uma região, e o momento inicial (segundo_inicial_2) 
-     e final (segundo_final_2) da segunda passada na mesma região.
+     Para isso, identifique no playback control o momento inicial (segundo_inicial_1) da primeira passada em uma região. 
+     De pausa no playback control no segundo_inicial_1, copie a "globalpos timestamp:" (seção Indicators do navigator_gui2; para copiar, 
+     marque com o número com o mouse, clique com o botão da direita e ecolha copiar), e cole no process-volta_da_ufes_playback_viewer_3D.ini 
+     como o parâmetro -save_globalpos_timestamp do localize_ackmerman.
+     
+     Em seguida, encontre o momento inicial (segundo_inicial_2) e final (segundo_final_2) da segunda passada na mesma região.
 
 6.2. Rode o process-volta_da_ufes_playback_viewer_3D_map_generation.ini novamente (ou outro equivalente ajustado para o seu caso) e:
 
@@ -58,7 +62,9 @@ Como criar um mapa usando GraphSLAM:
        Quando terminar de rodar, o arquivo tmp/gp1.txt será gerado pelo localizer e conterá a globalpos da segunda passada na região de loop.
 
 6.2.3. Gere poses (globalpos) da primeira passada pela região de loop com o localizer matando o processo anterior e rodando o process-volta_da_ufes_playback_viewer_3D.ini.  
-       Escolha no playback control "Message play:stop" t XXXX, onde XXXX é um momento (segundo) antes de segundo_inicial_1, e tecle play. 
+       Escolha no playback control "Message play:stop" t XXXX, onde XXXX é um momento (segundo) alguns segundos antes de segundo_inicial_1 (cujo globalpos timestamp
+       você colocou como parâmetro -save_globalpos_timestamp do localize_ackmerman), e tecle play.
+ 
        Ajuste a pose do robô no mapa (use o play e o stop) a garanta uma boa localização antes do segundo_inicial_1. Depois, deixe rodar o log observando
        a pose do robô no mapa - ele deve percorrer uma região que garanta boa localização no mapa da região de loop gerado no passo 6.2.2.
        Quando terminar de rodar, o arquivo tmp/gp2.txt terá sido gerado pelo localizer e conterá a globalpos da primeira passada na região de loop.
@@ -68,9 +74,9 @@ Como criar um mapa usando GraphSLAM:
        gerar o arquivo tmp/loops.txt (ver campos de cada linha na função build_optimization_graph() de graphslam.cpp).
 
 7. Clique no botão GSlam escolha Show Output (para saber quando o programa terminou) e, em seguida, clique no botão GSlam e escolha Start Program para otimizar suas poses 
-    com o graphslam. Quando o programa terminar, clique no botão GSlam e escolha Stop Program.
+   com o graphslam. Quando o programa terminar, clique no botão GSlam e escolha Stop Program.
 
-    Este passo produz a versão final do arquivo tmp/poses_opt.txt, que você pode examinar com o gnuplot (ver campos de cada linha na função save_corrected_vertices() de graphslam.cpp):
+   Este passo produz a versão final do arquivo tmp/poses_opt.txt, que você pode examinar com o gnuplot (ver campos de cada linha na função save_corrected_vertices() de graphslam.cpp):
      gnuplot> set size square; set size ratio -1; plot "tmp/sync.txt" u 4:5 w l t 'gps xyz', "tmp/poses_opt.txt" u 1:2 w l t 'car'
 
 8. Limpe o diretório de mapas temporários (../data/mapper_teste2) usando o CleanMap. Ele roda muito rápido. Assim, basta escolher Start Program e depois Stop Program.
