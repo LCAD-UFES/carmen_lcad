@@ -27,7 +27,7 @@ Como criar um mapa usando GraphSLAM:
    botão GrabData e ecolhendo Start Program. 
    Esta ação vai rodar o comando abaixo:
      ./grab_data_from_log /dados/log_gpx_20190510_ford_fusion-6.txt tmp/calibrated_odometry.txt tmp/sync.txt
-   Quando o programa terminar, clique no botão Step_1 e escolha Stop Program.
+   Quando o programa terminar, clique no botão GrabData e escolha Stop Program.
    Você pode examinar o arquivo tmp/sync.txt com o gnuplot (ver campos de cada linha na função build_optimization_graph() de graphslam.cpp):
      gnuplot
      gnuplot> set size square; set size ratio -1; plot "tmp/sync.txt" u 4:5 w l t 'gps xyz'
@@ -47,22 +47,22 @@ Como criar um mapa usando GraphSLAM:
 6. Se você desejar fechamento de loops, gere o arquivo tmp/loops.txt da seguinte forma:
 
 6.1. Delimite o trecho a ser considerado para fechamento de loops usando o process-volta_da_ufes_playback_viewer_3D.ini (ou equivalente).
-     Para isso, identifique no playback control o momento inicial (segundo_inicial_1) da primeira passada em uma região. 
+     Para isso, identifique no playback control o momento inicial (segundo_inicial_1) da primeira passada em uma região (ESSA SERÁ A PRIMEIRA PASSADA!). No log de volta da ufes, esse costuma ser logo quando o     carro comeca a andar. 
      De pausa no playback control no segundo_inicial_1, copie a "globalpos timestamp:" (seção Indicators do navigator_gui2; para copiar, 
      marque com o número com o mouse, clique com o botão da direita e ecolha copiar), e cole no process-volta_da_ufes_playback_viewer_3D.ini 
      como o parâmetro -save_globalpos_timestamp do localize_ackmerman.
      
-     Em seguida, encontre o momento inicial (segundo_inicial_2) e final (segundo_final_2) da segunda passada na mesma região.
+     Em seguida, encontre o momento inicial (Campo Time do plaback_control) (segundo_inicial_2) e final (segundo_final_2) da segunda passada na mesma região (ESSA SERÁ A SEGUNDA PASSADA!). Esse é o momento em que o carro passa novamente próximo ao segundo_inicial_1 até o fim do log (no caso de um log volta da UFES).
 
 6.2. Rode o process-volta_da_ufes_playback_viewer_3D_map_generation.ini novamente (ou outro equivalente ajustado para o seu caso) e:
 
 6.2.1. Limpe o diretório de mapas temporários (../data/mapper_teste2) clicando no botão CleanMap. Ele roda muito rápido. Assim, basta escolher Start Program e depois Stop Program.
 
 6.2.2. Faça o mapa da segunda passada na região de loop ligando o PubPoses, escolhendo, no playback control, "Message play:stop" t segundo_inicial_2:segundo_final_2, e teclando play. 
-       Quando terminar de rodar, o arquivo tmp/gp1.txt será gerado pelo localizer e conterá a globalpos da segunda passada na região de loop.
+       Quando terminar de rodar, o arquivo tmp/gp1.txt será gerado pelo localizer e conterá a globalpos da segunda passada na região de loop. Mate este processo.
 
-6.2.3. Gere poses (globalpos) da primeira passada pela região de loop com o localizer matando o processo anterior e rodando o process-volta_da_ufes_playback_viewer_3D.ini.  
-       Escolha no playback control "Message play:stop" t XXXX, onde XXXX é um momento (segundo) alguns segundos antes de segundo_inicial_1 (cujo globalpos timestamp
+6.2.3. Gere poses (globalpos) da primeira passada pela região de loop com o localizer rodando o process-volta_da_ufes_playback_viewer_3D.ini.  
+       Escolha no playback control "Message play:stop" t XXXX, onde XXXX é um momento (segundo) alguns segundos (~15segs antes) antes de segundo_inicial_1 (cujo globalpos timestamp
        você colocou como parâmetro -save_globalpos_timestamp do localize_ackmerman), e tecle play.
  
        Ajuste a pose do robô no mapa (use o play e o stop) a garanta uma boa localização antes do segundo_inicial_1. Depois, deixe rodar o log observando
