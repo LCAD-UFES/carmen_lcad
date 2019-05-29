@@ -709,7 +709,7 @@ filter_predictions_of_interest(vector<bbox_t> &predictions)
 
 	for (unsigned int i = 0; i < predictions.size(); i++)
 	{
-		if (predictions[i].obj_id == 0)// ||  // person
+		if (predictions[i].obj_id == 2)// ||  // person
 //			i == 1 ||  // bicycle
 //			i == 2 ||  // car
 //			i == 3 ||  // motorbike
@@ -819,6 +819,28 @@ publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clo
 
 
 void
+transform_predictions_in_pedestrian_type(vector <bbox_t>predictions, double timestamp)
+{
+	pedestrian_tracks.clear();
+	pedestrian p;
+	for (int i = 0; i < predictions.size(); i++)
+	{
+		p.track_id = 0;
+		p.active = true;
+		p.circular_idx = 0;
+		p.last_timestamp = timestamp;
+		p.x = predictions[i].x;
+		p.y = predictions[i].y;
+		p.w = predictions[i].w;
+		p.h = predictions[i].h;
+		p.velocity = 0;
+		p.orientation = 0;
+		pedestrian_tracks.push_back(p);
+	}
+}
+
+
+void
 process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned char *img)
 {
 	meters_spacement = 15;
@@ -883,6 +905,8 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 
 	vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
 	predictions = filter_predictions_of_interest(predictions);
+	transform_predictions_in_pedestrian_type(predictions, image_msg->timestamp);
+
 
 //	 vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose,
 //	 		image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
@@ -908,12 +932,17 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 			//			printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f \n",
 			//					pedestrian_tracks[i].track_id, pedestrian_tracks[i].velocity,pedestrian_tracks[i].orientation,abs(pedestrian_tracks[i].orientation - globalpos.theta));
 		}
+		double dist;
+		dist = euclidean_distance(positions[i].cartesian_x, globalpos.x, positions[i].cartesian_y, globalpos.y);
+		cout<<"Dist: "<<dist<<endl;
+		//cout<<"x: "<<positions[i].cartesian_x<<" "<<"y: "<<positions[i].cartesian_y<<endl;
 	}
-	clean_pedestrians(image_msg->timestamp, 1.0);
 
-	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
+	//clean_pedestrians(image_msg->timestamp, 1.0);
 
-	publish_moving_objects_message(image_msg->timestamp, &msg);
+	//carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
+
+	//publish_moving_objects_message(image_msg->timestamp, &msg);
 
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
