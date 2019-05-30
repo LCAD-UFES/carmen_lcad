@@ -24,14 +24,13 @@ typedef struct
 
 typedef struct
 {
-	carmen_imu_t *imu_vector;
+	carmen_imu_t imu_vector;
 	double timestamp;
 	char *host;
 } carmen_pi_imu_message_t;
 
 #define CARMEN_PI_IMU_NAME 	"carmen_pi_imu_message"
-#define CARMEN_PI_IMU_FMT 	"{<{{double,double,double},{double,double,double},{double,double,double}}:1>,double,string}"
-
+#define CARMEN_PI_IMU_FMT 	"{{{double,double,double},{double,double,double},{double,double,double}},double,string}"
 
 #ifdef __cplusplus
 }

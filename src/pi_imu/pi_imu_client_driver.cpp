@@ -14,7 +14,7 @@
 
 char *tcp_ip_address;
 
-#define do_logger true
+#define do_logger false
 
 void
 carmen_xsens_define_messages()
@@ -24,6 +24,16 @@ carmen_xsens_define_messages()
     /* register xsens's global message */
     err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_QUAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_QUAT_FMT);
     carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_QUAT_NAME);
+}
+
+void
+carmen_pi_imu_define_messages()
+{
+    IPC_RETURN_TYPE err;
+
+    /* register xsens's global message */
+    err = IPC_defineMsg(CARMEN_PI_IMU_NAME, IPC_VARIABLE_LENGTH, CARMEN_PI_IMU_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_PI_IMU_NAME);
 }
 
 
@@ -45,7 +55,7 @@ stablished_connection_with_server()
 	host_info.ai_family = AF_UNSPEC;     // IP version not specified. Can be both.
 	host_info.ai_socktype = SOCK_STREAM; // Use SOCK_STREAM for TCP or SOCK_DGRAM for UDP.
 
-	status = getaddrinfo("192.168.0.15", PORT, &host_info, &host_info_list);
+	status = getaddrinfo("192.168.1.15", PORT, &host_info, &host_info_list);
 
 	if (status != 0)
 	{
@@ -98,9 +108,18 @@ carmen_publish_xsens_quat_message(carmen_xsens_global_quat_message xsens_quat_me
 	xsens_quat_message.m_acc.z = xsens_quat_message.m_acc.z * G;
 	xsens_quat_message.m_temp = 0.0;
 	xsens_quat_message.m_count = 0;
-
+	//printf("ei\n");
 	IPC_RETURN_TYPE err = IPC_publishData(CARMEN_XSENS_GLOBAL_QUAT_NAME, &xsens_quat_message);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_XSENS_GLOBAL_QUAT_NAME);
+}
+
+void
+publish_pi_imu_message(carmen_pi_imu_message_t message)
+{
+	IPC_RETURN_TYPE err;
+    err = IPC_publishData(CARMEN_PI_IMU_NAME, &message);
+	//printf("oi\n");
+    carmen_test_ipc_exit(err, "Could not publish!", CARMEN_PI_IMU_NAME);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -133,17 +152,20 @@ main(int argc, char **argv)
 
 	int valread;
 
-	carmen_xsens_define_messages();
+	
 
+		carmen_pi_imu_define_messages();
+		carmen_xsens_define_messages();
 	carmen_xsens_global_quat_message xsens_quat_message;
 	carmen_pi_imu_message_t pi_imu_message;
+	//pi_imu_message.imu_vector = (carmen_imu_t*) calloc (1, sizeof (carmen_imu_t));
 
 	while (1)
 	{
+
 		unsigned char rpi_imu_data[SOCKET_DATA_PACKET_SIZE];
 		// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
 		valread = recv(pi_socket, rpi_imu_data, SOCKET_DATA_PACKET_SIZE, MSG_WAITALL);
-
 		if (valread == 0 || valread == -1) // 0 Connection lost due to server shutdown -1 Could not connect
 		{
 			close(pi_socket);
@@ -156,27 +178,25 @@ main(int argc, char **argv)
 		sscanf((char *) rpi_imu_data, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf*\n",
 				&(xsens_quat_message.m_acc.x), &(xsens_quat_message.m_acc.y), &(xsens_quat_message.m_acc.z),
 				&(xsens_quat_message.m_gyr.x), &(xsens_quat_message.m_gyr.y), &(xsens_quat_message.m_gyr.z),
-				&(xsens_quat_message.quat_data.m_data[0]), &(xsens_quat_message.quat_data.m_data[1]), &(xsens_quat_message.quat_data.m_data[2]), &(xsens_quat_message.quat_data.m_data[3]),
-				&(xsens_quat_message.m_mag.x), &(xsens_quat_message.m_mag.y), &(xsens_quat_message.m_mag.z));
-
-		pi_imu_message.imu_vector->accel.x = xsens_quat_message.m_acc.x;
-		pi_imu_message.imu_vector->accel.y = xsens_quat_message.m_acc.y;
-		pi_imu_message.imu_vector->accel.z = xsens_quat_message.m_acc.z;
-		pi_imu_message.imu_vector->gyro.x = xsens_quat_message.m_gyr.x;
-		pi_imu_message.imu_vector->gyro.y = xsens_quat_message.m_gyr.y;
-		pi_imu_message.imu_vector->gyro.z = xsens_quat_message.m_gyr.z;
-		pi_imu_message.imu_vector->magnetometer.x = xsens_quat_message.m_mag.x;
-		pi_imu_message.imu_vector->magnetometer.y = xsens_quat_message.m_mag.y;
-		pi_imu_message.imu_vector->magnetometer.z = xsens_quat_message.m_mag.z;
+				&(xsens_quat_message.quat_data.m_data[0]), &(xsens_quat_message.quat_data.m_data[1]), 
+				&(xsens_quat_message.quat_data.m_data[2]), &(xsens_quat_message.quat_data.m_data[3]),
+				&(xsens_quat_message.m_mag.x), &(xsens_quat_message.m_mag.y), 
+				&(xsens_quat_message.m_mag.z));
+		//printf("%lf\n", xsens_quat_message.m_acc.x);
+		pi_imu_message.imu_vector.accel.x = xsens_quat_message.m_acc.x;
+		pi_imu_message.imu_vector.accel.y = xsens_quat_message.m_acc.y;
+		pi_imu_message.imu_vector.accel.z = xsens_quat_message.m_acc.z;
+		pi_imu_message.imu_vector.gyro.x =  xsens_quat_message.m_gyr.x;
+		pi_imu_message.imu_vector.gyro.y = xsens_quat_message.m_gyr.y;
+		pi_imu_message.imu_vector.gyro.z = xsens_quat_message.m_gyr.z;
+		pi_imu_message.imu_vector.magnetometer.x = xsens_quat_message.m_mag.x;
+		pi_imu_message.imu_vector.magnetometer.y = xsens_quat_message.m_mag.y;
+		pi_imu_message.imu_vector.magnetometer.z = xsens_quat_message.m_mag.z;
 		pi_imu_message.timestamp = carmen_get_time();
 		pi_imu_message.host = carmen_get_host();
 
-	#ifdef do_logger
-		carmen_pi_imu_publish_message(&pi_imu_message);
-	#else
+		publish_pi_imu_message(pi_imu_message);
 		carmen_publish_xsens_quat_message(xsens_quat_message);
-	#endif
-//		printf("%lf\n", carmen_get_time());
 	}
 
 	return (0);
