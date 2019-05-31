@@ -12,7 +12,8 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include -DBOOST_SIGNALS_NO_DE
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib
 
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface
-LFLAGS += -llocalize_ackerman_interface -ltraffic_light_interface -ltf -lboost_system -lboost_signals
+LFLAGS += -llocalize_ackerman_interface -ltraffic_light_interface -ltf
+LFLAGS += -lboost_system -lboost_signals -lboost_program_options
 LFLAGS += -lvelodyne_camera_calibration -lmoving_objects_interface
 LFLAGS += `pkg-config --libs opencv`
 LFLAGS += -ldarknet2
