@@ -1,2 +1,0 @@
-dist_rmse	dist_mean	dist_std	%<2m	%<1m	%<0.5m	%<0.2m	x_rmse	abs_x_mean	abs_x_std	dx_mean	y_rmse	abs_y_mean	abs_y_std	dy_mean	abs_th_mean	abs_th_std	dth_mean
-0.716	0.512	0.251	98.544	86.643	60.064	31.657	0.570	0.345	0.206	0.093	0.434	0.277	0.111	-0.068	0.012	0.609	-0.002

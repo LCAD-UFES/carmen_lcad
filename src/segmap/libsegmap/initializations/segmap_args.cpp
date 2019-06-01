@@ -19,8 +19,6 @@ parse_intensity_mode(string map_type)
 		return SensorPreproc::COLOR;
 	else if (map_type.compare("semantic") == 0)
 		return SensorPreproc::SEMANTIC;
-	else if (map_type.compare("raw") == 0)
-		return SensorPreproc::RAW_INTENSITY;
 	else if (map_type.compare("bright") == 0)
 		return SensorPreproc::BRIGHT;
 	else
@@ -116,10 +114,11 @@ add_default_sensor_preproc_args(CommandLineArguments &args)
 	args.add<double>("offset_y", "Offset to subtract the pose (y-coord)", 0); //-363560.975411);
 	args.add<int>("use_xsens,x", "Whether or not to use pitch, and roll angles from xsens", 1);
 	args.add<int>("gps_id", "Id of the gps to be used", 1);
-	args.add<string>("intensity_mode,i", "What type of information to assign to LiDAR rays intensity [remission | visual | semantic | raw | bright]", "raw");
+	args.add<string>("intensity_mode,i", "What type of information to assign to LiDAR rays intensity [remission | visual | semantic | bright]", "remission");
 	args.add<int>("use_calib", "Flag to choose using the velodyne calibration or not.", 1);
 	args.add<int>("segment_lane_marks", "Flag for choosing to segment lane marks with threshold image processing.", 0);
 	args.add<double>("camera_latency", "Camera latency in seconds", 0.0);
+	args.add<int>("use_semantic_remapping", "Flag to use semantic remapping or not.", 1);
 
 	args.save_config_file(default_data_dir() + "/preproc_config.txt");
 }

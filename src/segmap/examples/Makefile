@@ -16,13 +16,13 @@ LFLAGS += -L /usr/lib -lvtkIO -lvtkFiltering -lvtkCommon -lvtkRendering -lvtkGra
 LFLAGS += `pkg-config --libs opencv`
 LFLAGS += -lcarmen_util -lsegmap_utils
 
-SOURCES = carmen_param_file_test.cpp
+SOURCES = example_project_vel_to_cam_ufes.cpp #carmen_param_file_test.cpp
 	#example_project_vel_to_cam_ufes.cpp example_project_vel_to_cam.cpp \
 	#example_oxmts2poses.cpp example_euler2rotation_and_transforms.cpp \
 	#example_view_ufes_data.cpp example_view_kitti_as_map.cpp example_view_xsens.cpp \
 	#test_mapper_mesh.cpp 
 
-TARGETS = carmen_param_file_test
+TARGETS = example_project_vel_to_cam_ufes #carmen_param_file_test
 	#example_project_vel_to_cam_ufes example_project_vel_to_cam \
 	#example_oxmts2poses example_euler2rotation_and_transforms \
 	#example_view_ufes_data example_view_kitti_as_map example_view_xsens test_mapper_mesh

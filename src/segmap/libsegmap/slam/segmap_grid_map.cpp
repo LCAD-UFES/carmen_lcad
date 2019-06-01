@@ -11,6 +11,7 @@
 #include <carmen/segmap_dataset.h>
 #include <carmen/segmap_grid_map.h>
 #include <carmen/segmap_sensor_viewer.h>
+#include <carmen/segmap_semantic_segmentation_viewer.h>
 #include <carmen/segmap_particle_filter_viewer.h>
 
 using namespace pcl;
@@ -491,7 +492,7 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 	Timer timer;
 	DataSample *sample;
 	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
-	PointCloudViewer viewer(4, 0.0, 0.0, 1.0);
+	PointCloudViewer viewer(2, 0.2, 0.8, 1.0);
 	vector<double> times;
 
 	viewer.set_step(0);
@@ -524,19 +525,21 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 			Mat map_img = map.to_image().clone();
 			draw_pose(map, map_img, pose, Scalar(0, 255, 0));
 
+			viewer.clear();
+
 			preproc.reinitialize(sample);
 			load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+			viewer.show(cloud);
 
 			// flip vertically.
 			Mat map_view;
 			flip(map_img, map_view, 0);
 
-			Mat img = preproc.get_sample_img();
+			Mat img = preproc.get_sample_img_with_points();
+
 			if (img.rows)
 				viewer.show(img, "img", img_width);
 
-			viewer.clear();
-			viewer.show(cloud);
 			viewer.show(map_view, "map", img_width);
 			viewer.loop();
 		}

@@ -63,16 +63,17 @@ public:
 	double pf_loop_xy_std, pf_loop_angle_std;
 	double pf_to_map_xy_std, pf_to_map_angle_std;
 	double gicp_odom_xy_std, gicp_odom_angle_std;
+	double xsens_angle_std;
 
 	int n_iterations;
 
 	double min_velocity_for_estimating_heading;
 	double min_velocity_for_considering_gps;
 	string global_angle_mode;
+	double gps_jump_threshold;
+	double max_time_diff_from_gps_to_velodyne;
+	int use_xsens;
 
-	vector<int> gps_is_valid;
-
-protected:
 	void _load_parameters(char *config);
 };
 
@@ -160,23 +161,14 @@ create_information_matrix(double x_std, double y_std, double z_std)
 
 
 void
-add_odometry_edges(SparseOptimizer *optimizer, vector<SE2> &dead_reckoning, double xy_std, double th_std,
-									 GraphSlamData &data)
+add_odometry_edges(SparseOptimizer *optimizer, vector<SE2> &dead_reckoning, double xy_std, double th_std)
 {
 	Matrix3d information = create_information_matrix(xy_std, xy_std, th_std);
-	Matrix3d xsens_information = create_information_matrix(10e6, 10e6, degrees_to_radians(0.01));
-	double roll, pitch, yaw_i, yaw_im1;
-	Matrix<double, 3, 3> mat;
 
 	for (size_t i = 1; i < dead_reckoning.size(); i++)
 	{
 		SE2 prev_inv = dead_reckoning[i - 1].inverse();
 		SE2 measure = prev_inv * dead_reckoning[i];
-
-//		printf("i: %lf %lf %lf prev_inv: %lf %lf %lf measure: %lf %lf %lf\n",
-//					 dead_reckoning[i][0],dead_reckoning[i][1], dead_reckoning[i][2],
-//					 prev_inv[0], prev_inv[1],prev_inv[2],
-//					 measure[0], measure[1], measure[2]);
 
 		EdgeSE2* edge = new EdgeSE2;
 		edge->vertices()[0] = optimizer->vertex(i - 1);
@@ -184,15 +176,32 @@ add_odometry_edges(SparseOptimizer *optimizer, vector<SE2> &dead_reckoning, doub
 		edge->setMeasurement(measure);
 		edge->setInformation(information);
 		optimizer->addEdge(edge);
+	}
+}
 
-		/*
+
+void
+add_xsens_edges(SparseOptimizer *optimizer, GraphSlamData &data)
+{
+	Matrix3d xsens_information = create_information_matrix(10e6, 10e6, degrees_to_radians(data.xsens_angle_std));
+	double dummy_x, dummy_y;
+	double roll, pitch, yaw_i, yaw_im1;
+	Matrix<double, 3, 3> mat;
+
+	for (size_t i = 1; i < data.dataset->size(); i++)
+	{
 		mat = data.dataset->at(i)->xsens.toRotationMatrix();
 		getEulerYPR(mat, yaw_i, pitch, roll);
 
 		mat = data.dataset->at(i - 1)->xsens.toRotationMatrix();
 		getEulerYPR(mat, yaw_im1, pitch, roll);
 
-		SE2 xsens_measure(0, 0, carmen_normalize_theta(yaw_i - yaw_im1));
+		// these values are not considered because the stds in x and y are very high, but
+		// we add values that make some sense just for safety.
+		dummy_x = data.dataset->at(i)->gps.x - data.dataset->at(0)->gps.x;
+		dummy_y = data.dataset->at(i)->gps.y - data.dataset->at(0)->gps.y;
+
+		SE2 xsens_measure(dummy_x, dummy_y, carmen_normalize_theta(yaw_i - yaw_im1));
 
 		EdgeSE2* edge_xsens = new EdgeSE2;
 		edge_xsens->vertices()[0] = optimizer->vertex(i - 1);
@@ -200,27 +209,20 @@ add_odometry_edges(SparseOptimizer *optimizer, vector<SE2> &dead_reckoning, doub
 		edge_xsens->setMeasurement(xsens_measure);
 		edge_xsens->setInformation(xsens_information);
 		optimizer->addEdge(edge_xsens);
-		*/
 	}
 }
 
 
 void
-compute_angle_from_gps(GraphSlamData &data, int i,
-                       double th_std,
-                       double *angle,
-                       double *filtered_th_std)
+get_gps_angle(GraphSlamData &data, int i,
+              double th_std,
+              double *angle,
+              double *filtered_th_std)
 {
 
 	DataSample *sample = data.dataset->at(i);
 
-	if (data.global_angle_mode.compare("xsens") == 0)
-	{
-		Matrix<double, 3, 1> ypr = sample->xsens.toRotationMatrix().eulerAngles(2, 1, 0);
-		*angle = ypr(0, 0);
-		*filtered_th_std = th_std;
-	}
-	else if (data.global_angle_mode.compare("gps") == 0)
+	if (data.global_angle_mode.compare("gps") == 0)
 	{
 		*angle = sample->gps.th;
 		*filtered_th_std = th_std;
@@ -251,51 +253,51 @@ void
 add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
               double xy_std, double th_std, int gps_step)
 {
+	int n_discarded_gps;
 	double angle, filtered_th_std;
 	DataSample *sample;
 	Matrix3d information;
 
-	if (gps_step <= 1) gps_step = 1;
+	if (gps_step <= 1)
+		gps_step = 1;
+
+	n_discarded_gps = 0;
 
 	for (int i = 0; i < data.dataset->size(); i += gps_step)
 	{
 		sample = data.dataset->at(i);
 
 		// ignore the messages when the car is almost stopped.
-		if (fabs(sample->v) < data.min_velocity_for_considering_gps || !data.gps_is_valid[i])
+		if (fabs(sample->v) < data.min_velocity_for_considering_gps)
 			continue;
 
-		if (fabs(sample->gps_time - sample->velodyne_time) > 0.1)
+		// skip gps messages if they are too far away in time.
+		if (fabs(sample->gps_time - sample->velodyne_time) > data.max_time_diff_from_gps_to_velodyne)
 			continue;
 
+		// skip messages if we detect a jump
 		if (i > 0)
 		{
 			double dist_from_previous_gps = dist2d(sample->gps.x, sample->gps.y,
-			                                       data.dataset->at(i - 1)->gps.x, data.dataset->at(i - 1)->gps.y);
+			                                       data.dataset->at(i - 1)->gps.x,
+			                                       data.dataset->at(i - 1)->gps.y);
 
-			// jump
-			if (dist_from_previous_gps > 20.0)
+			// jump detection
+			if (dist_from_previous_gps > data.gps_jump_threshold)
 			{
+				n_discarded_gps++;
 				printf("Discarded gps %lf %lf\n", sample->gps.x, sample->gps.y);
 				continue;
 			}
 		}
 
-		compute_angle_from_gps(data, i, th_std,
-		                       &angle,
-		                       &filtered_th_std);
-
+		get_gps_angle(data, i, th_std, &angle, &filtered_th_std);
 		sample->gps.th = angle;
 
 		information = create_information_matrix(xy_std, xy_std, th_std);
-
 		SE2 measure(sample->gps.x - data.dataset->at(0)->gps.x,
 		            sample->gps.y - data.dataset->at(0)->gps.y,
 		            angle);
-
-//		printf("GPS: measure: %lf %lf %lf x_std: %lf th_std: %lf\n",
-//					 measure[0], measure[1], angle,
-//					 xy_std, filtered_th_std);
 
 		EdgeGPS *edge_gps = new EdgeGPS();
 		edge_gps->set_car2gps(data.dataset->car2gps());
@@ -304,6 +306,8 @@ add_gps_edges(GraphSlamData &data, SparseOptimizer *optimizer,
 		edge_gps->setInformation(information);
 		optimizer->addEdge(edge_gps);
 	}
+
+	fprintf(stderr, "Number of gps messages discarded: %d\n", n_discarded_gps);
 }
 
 
@@ -376,13 +380,14 @@ create_dead_reckoning(GraphSlamData &data, vector<SE2> &dead_reckoning)
 
 
 void
-load_data_to_optimizer(GraphSlamData &data, SparseOptimizer* optimizer, int gps_step)
+create_graph_using_log_data(GraphSlamData &data, SparseOptimizer* optimizer, int gps_step)
 {
 	vector<SE2> dead_reckoning;
 
 	create_dead_reckoning(data, dead_reckoning);
 	add_vertices(dead_reckoning, optimizer);
-	add_odometry_edges(optimizer, dead_reckoning, data.odom_xy_std, deg2rad(data.odom_angle_std), data);
+	add_odometry_edges(optimizer, dead_reckoning, data.odom_xy_std, deg2rad(data.odom_angle_std));
+	add_xsens_edges(optimizer, data);
 
 	if (data.gicp_based_gps.size() > 0 || data.pf_based_gps.size() > 0)
 	{
@@ -423,102 +428,6 @@ save_corrected_vertices(GraphSlamData &data, SparseOptimizer *optimizer)
 
 		fprintf(f, "%ld %lf %lf %lf %lf %lf %lf\n", i, x, y, th, sample->time, sample->gps.x, sample->gps.y);
 	}
-
-	fclose(f);
-}
-
-
-void
-detect_and_stamp_invalid_gps_measurements(GraphSlamData *data,
-																					double gps_discontinuity_threshold,
-																					int gps_min_cluster_size)
-{
-	double d;
-	vector<int> gps_group_ids;
-	DataSample *current, *previous;
-	int number_invalid_measurements;
-
-	previous = data->dataset->at(0);
-	gps_group_ids.push_back(0);
-
-	number_invalid_measurements = 0;
-
-	FILE *f = fopen("/tmp/invalid_gps.txt", "w");
-
-	for (int i = 1; i < data->dataset->size(); i++)
-	{
-		current = data->dataset->at(i);
-
-		d = dist2d(current->gps.x, current->gps.y, previous->gps.x, previous->gps.y);
-		Pose2d estimated_motion(0,0,0);
-		ackerman_motion_model(estimated_motion, current->v, current->phi, fabs(current->time - previous->time));
-		double d_estimated = sqrt(pow(estimated_motion.x, 2) + pow(estimated_motion.y, 2));
-
-		// discountinuity detected
-		if (fabs(d - d_estimated) > gps_discontinuity_threshold)
-		{
-			// current is set to invalid
-			data->gps_is_valid[i] = 0;
-			number_invalid_measurements += 1;
-
-			fprintf(f, "%lf %lf\n",
-							current->gps.x,
-							current->gps.y);
-
-			// if the previous cluster is small, set all measurements from the group as invalid.
-			if (gps_group_ids.size() < gps_min_cluster_size)
-			{
-				for (int j = 0; j < gps_group_ids.size(); j++)
-				{
-					data->gps_is_valid[gps_group_ids[j]] = 0;
-
-					fprintf(f, "%lf %lf\n",
-									data->dataset->at(gps_group_ids[j])->gps.x,
-									data->dataset->at(gps_group_ids[j])->gps.y);
-				}
-
-				number_invalid_measurements += gps_group_ids.size();
-			}
-
-			gps_group_ids.clear();
-		}
-		else
-			gps_group_ids.push_back(i);
-
-		previous = current;
-	}
-
-	/*
-	double accum_dist = 0;
-	int last_valid = 0;
-	DataSample *last_valid_sample;
-
-	for (int i = 1; i < data->dataset->size(); i++)
-	{
-		if (!data->gps_is_valid[i])
-			continue;
-
-		current = data->dataset->at(i);
-		last_valid_sample = data->dataset->at(last_valid);
-
-		d = dist2d(current->gps.x, current->gps.y, last_valid_sample->gps.x, last_valid_sample->gps.y);
-
-		if (d < dist_to_add_gps)
-		{
-			data->gps_is_valid[i] = 0;
-			number_invalid_measurements += 1;
-			fprintf(f, "%lf %lf\n",
-							current->gps.x,
-							current->gps.y);
-		}
-
-		if (data->gps_is_valid[i])
-			last_valid = i;
-	}
-	*/
-
-	fprintf(stderr, "Percentage of invalid gps measurements: %lf%%\n",
-					100 * ((double) number_invalid_measurements / (double) data->dataset->size()));
 
 	fclose(f);
 }
@@ -588,6 +497,7 @@ parse_command_line(int argc, char **argv, CommandLineArguments &args, GraphSlamD
 	data->gps_id = args.get<int>("gps_id");
 	data->n_iterations = args.get<int>("n_iterations");
 
+	data->use_xsens = args.get<int>("use_xsens");
 	data->odom_calib_file = args.get<string>("odom_calib");
 	data->gicp_loop_closure_file = args.get<string>("gicp_loops");
 	data->pf_loop_closure_file = args.get<string>("pf_loops");
@@ -616,6 +526,10 @@ parse_command_line(int argc, char **argv, CommandLineArguments &args, GraphSlamD
 	data->pf_to_map_xy_std = args.get<double>("pf_to_map_xy_std");
 	data->pf_to_map_angle_std = args.get<double>("pf_to_map_angle_std");
 
+	data->xsens_angle_std = args.get<double>("xsens_angle_std");
+	data->gps_jump_threshold = args.get<double>("gps_jump_threshold");
+	data->max_time_diff_from_gps_to_velodyne = args.get<double>("max_time_diff_from_gps_to_velodyne");
+
 	data->min_velocity_for_estimating_heading = args.get<double>("v_for_gps_heading");
 	data->min_velocity_for_considering_gps = args.get<double>("v_for_gps");
 	data->global_angle_mode = args.get<string>("global_angle_mode");
@@ -626,6 +540,8 @@ void
 add_graphslam_parameters(CommandLineArguments &args)
 {
 	args.add<int>("n_iterations,n", "Number of optimization terations", 50);
+
+	args.add<int>("use_xsens", "Flag indicating if xsens should be used or not", 0);
 
 	args.add<string>("odom_calib,o", "Path to the odometry calibration file", "none");
 	args.add<string>("gicp_loops,l", "Path to a file with loop closure relations", "none");
@@ -653,11 +569,16 @@ add_graphslam_parameters(CommandLineArguments &args)
 	args.add<double>("gicp_to_map_angle_std", "Std of heading in loop closure in relation to a map (degrees)", 3);
 
 	args.add<double>("pf_to_map_xy_std", "Std in xy of loop closure measurements in relation to a map (m)", 0.3);
-	args.add<double>("pf_to_map_angle_std", "Std of heading in loop closure in relation to a map (degrees)", 3);
+	args.add<double>("pf_to_map_angle_std", "Std of heading in loop closure in relation to a map (degrees)", 3.0);
+
+	args.add<double>("xsens_angle_std", "Std of yaw measurements from xsens (degrees)", 10.0);
+
+	args.add<double>("gps_jump_threshold", "Distance between consecutive gps measurements for detecting a jump (m)", 5.0);
+	args.add<double>("max_time_diff_from_gps_to_velodyne", "Threshold for ignoring gps messages when they are apart in time from velodyne messages (seconds)", 0.2);
 
 	args.add<double>("v_for_gps_heading", "Minimum velocity for estimating heading with consecutive GPS poses", 1.0);
 	args.add<double>("v_for_gps", "Minimum velocity for adding GPS edges (without this trick, positions in which v=0 can be overweighted)", 1.0);
-	args.add<string>("global_angle_mode", "Method for estimating global angle: [xsens, gps, consecutive_gps]", "consecutive_gps");
+	args.add<string>("global_angle_mode", "Method for estimating the car orientation in gps poses: [gps, consecutive_gps]", "consecutive_gps");
 }
 
 
@@ -673,8 +594,6 @@ int main(int argc, char **argv)
 	args.add_positional<string>("output", "Path to the output file", 1);
 	add_graphslam_parameters(args);
 	add_default_sensor_preproc_args(args);
-	args.add<double>("gps_discontinuity_threshold", "Threshold for consireding detecting a jump in consecutive gps messages", 1.0);
-	args.add<int>("gps_min_cluster_size", "Minimum number of messages for keeping a group when a discountinuity is detected", 50);
 	args.add<int>("gps_step", "Number of steps to skip before adding a new gps edge.", 1);
 	args.save_config_file(default_data_dir() + "/graphslam_config.txt");
 
@@ -695,16 +614,7 @@ int main(int argc, char **argv)
 	read_loop_restrictions(data.gicp_map_file, &data.gicp_based_gps);
 	read_loop_restrictions(data.pf_to_map_file, &data.pf_based_gps);
 
-	// assume initially that all gps measurements are valid.
-	data.gps_is_valid = vector<int>(data.dataset->size(), 1);
-	/*
-	// not working.
-	detect_and_stamp_invalid_gps_measurements(&data,
-																						args.get<double>("gps_discontinuity_threshold"),
-																						args.get<int>("gps_min_cluster_size"));
-	 */
-
-	load_data_to_optimizer(data, optimizer, args.get<int>("gps_step"));
+	create_graph_using_log_data(data, optimizer, args.get<int>("gps_step"));
 
 	optimizer->setVerbose(true);
 	prepare_optimization(optimizer);
@@ -716,7 +626,6 @@ int main(int argc, char **argv)
 	cerr << "OutputSaved!" << endl;
 
 	free_g2o_stuff(factory, optimizer);
-
 	return 0;
 }
 

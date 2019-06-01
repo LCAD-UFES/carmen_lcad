@@ -547,7 +547,7 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 
 	int nn_id;
 	int is_init = 0;
-	int prev_id = 0;
+	//int prev_id = 0;
 	DataSample *sample;
 	double dt;
 
@@ -642,7 +642,7 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 			relative_transform_vector->push_back(pose_in_nn);
 			convergence_vector->push_back(1);
 
-			prev_id = i;
+			//prev_id = i;
 		}
 	}
 }
