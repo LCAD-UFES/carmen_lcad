@@ -4,9 +4,9 @@ import sys
 
 
 experiments = [
-#        {'map': "log_volta_da_ufes-20180112.txt", 'test': ["log-volta-da-ufes-20181206.txt"]},
-        {'map': "log_volta_da_ufes-20180112.txt", 'test': ["log_volta_da_ufes-20180112-2.txt"]},
-#        {'map': 'log_aeroporto_vila_velha_20170726-2.txt', 'test': ['log_aeroporto_vila_velha_20170726.txt']},
+        {'map': "log_volta_da_ufes-20180112.txt", 'test': ["log-volta-da-ufes-20181206.txt", "log-volta-da-ufes-noite-20181130.txt"]},
+#        {'map': "log_volta_da_ufes-20180112.txt", 'test': ["log_volta_da_ufes-20180112-2.txt"]},
+        {'map': 'log_aeroporto_vila_velha_20170726-2.txt', 'test': ['log_aeroporto_vila_velha_20170726.txt']},
 #        {'map': 'log-jardim-da-penha-mapeamento-20181208.txt', 'test': ['log-jardim_da_penha-20181207.txt']}, 
 #        {'map': "log_dante_michelini-20181116.txt", 'test': ["log_dante_michelini-20181116-pista-esquerda.txt"]},
 #        {'map': 'log-estacionamento-ambiental-20181208.txt', 'test': [
@@ -23,7 +23,7 @@ experiments = [
 carmen_path = os.getenv("CARMEN_HOME")	 
 # raw | visual | semantic | remission | bright
 INTENSITY_MODE = "remission"
-DATA_DIR = "/dados/data2/"
+DATA_DIR = "/home/filipe/carmen_lcad/src/segmap_results/results_thesis/"
 #PARAM_FILE = carmen_path + "/src/carmen-ford-fusion.ini"
 #GPS_TO_USE = 2
 PARAM_FILE = carmen_path + "/src/carmen-ford-escape.ini"

@@ -663,7 +663,7 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 
 	string adj_name = file_name_from_path(dataset_to_adjust_path);
 	string tgt_name = file_name_from_path(target_dataset_path);
-	string map_path = string("/dados/maps2/") + tgt_name + "_raw";
+	string map_path = string("/dados/maps2/") + tgt_name + "_remission";
 
 	//int map_has_to_be_created = 0;
 	//if (!boost::filesystem::exists(map_path))

@@ -190,6 +190,10 @@ GridMapTile::add_point(PointXYZRGB &p)
 		}
 		else if (_map_type == TYPE_SEMANTIC)
 		{
+			// invalid class 
+			if (p.r == 19)
+				return;
+		
 			// increment the class count
 			_map[pos + p.r]++;
 			// increment the number of rays that hit the cell
