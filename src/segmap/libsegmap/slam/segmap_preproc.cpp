@@ -616,7 +616,7 @@ SensorPreproc::_brighten(unsigned char val, unsigned int multiplier)
 		return brightened;
 }
 
-/*
+///*
 void
 SensorPreproc::_get_pixel_position(Matrix<double, 4, 1> &p_sensor,
                                    int img_rows, int img_cols, cv::Point *ppixel,
@@ -626,27 +626,32 @@ SensorPreproc::_get_pixel_position(Matrix<double, 4, 1> &p_sensor,
 
 	_p_cam = _vel2cam * p_sensor;
 
+	// as the camera coordinate system is rotated, the z coordinate points forward.
+	double point_position_forward = _p_cam(2, 0) / _p_cam(3, 0);
+	double point_position_rightwards = _p_cam(0, 0) / _p_cam(3, 0);
+
 	// test to check if the point is in front of the camera.
 	// points behind the camera can also be projected into the image plan.
-	if (_p_cam(0, 0) / _p_cam(3, 0) > 0)
+	if (point_position_forward > 0)
 	{
 		_p_pixel_homogeneous = _projection * _p_cam;
 
 		ppixel->y = (_p_pixel_homogeneous(1, 0) / _p_pixel_homogeneous(2, 0)) * img_rows;
 		ppixel->x = (_p_pixel_homogeneous(0, 0) / _p_pixel_homogeneous(2, 0)) * img_cols;
 
-		// check if the point is in the area to be ignored.
-		int point_hit_car = 0; //ppixel->y > (img_rows * (380. / 480.));
-		int point_hit_sky = 0; //ppixel->y < (img_rows * (40. / 480.));
+		// Because of the way the sensors are mounted, the first 5 velodyne lasers hit the
+		// floor, but when projected to the image plane, they intercept the car. The car
+		// occludes the region the lasers hit when looking from the camera position.
+		int point_hit_the_car = (point_position_forward < 5.5) && (point_position_rightwards < 3.0 && point_position_rightwards > -2.5);
 
-		// check if the point is visible by the camera.
-		if (ppixel->x >= 0 && ppixel->x < img_cols && ppixel->y >= 0 && ppixel->y < img_rows && !point_hit_car && !point_hit_sky)
+		// Check if the point is visible by the camera and do not intercept the car.
+		if (ppixel->x >= 0 && ppixel->x < img_cols && ppixel->y >= 0 && ppixel->y < img_rows && !point_hit_the_car)
 			*is_valid = 1;
 	}
 }
-*/
+//*/
 
-
+/*
 void
 SensorPreproc::_get_pixel_position(Matrix<double, 4, 1> &p_sensor,
                                    int img_rows, int img_cols, cv::Point *ppixel,
@@ -690,9 +695,8 @@ SensorPreproc::_get_pixel_position(Matrix<double, 4, 1> &p_sensor,
 		*is_valid = 1;
 	else
 		*is_valid = 0;
-
 }
-
+*/
 
 void
 load_as_pointcloud(SensorPreproc &preproc,

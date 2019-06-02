@@ -126,7 +126,10 @@ NewCarmenDataset::vel2cam()
 	// *****************************************************
 	// Transform from manual calibration.
 	// *****************************************************
-	return pose6d_to_matrix(0.04, 0.115, -0.27, -0.052360, -0.034907, 0.008727).inverse();
+	//return pose6d_to_matrix(0.04, 0.115, -0.27, -M_PI/2 - 0.052360, -0.034907, -M_PI/2 + 0.008727).inverse();
+
+	// We add -M_PI/2 in the roll and yaw to change the reference system from x: forward, y: left, z: up to x: right, y: down, z: forward.
+	return pose6d_to_matrix(0.04, 0.115, -0.27, (-M_PI/2 - 0.052360), -0.034907, (-M_PI/2 + 0.008727)).inverse();
 }
 
 
@@ -134,10 +137,6 @@ Matrix<double, 3, 4>
 NewCarmenDataset::projection_matrix()
 {
 	Matrix<double, 3, 4> projection;
-	Matrix<double, 4, 4> R;
-
-	// Rotation to change the reference system from x: forward, y: left, z: up to x: right, y: down, z: forward.
-	R = pose6d_to_matrix(0., 0., 0., -M_PI/2., 0, -M_PI/2).inverse();
 
 	// TODO: read camera number from command line.
 	double fx_factor = _params->get<double>("bumblebee_basic3_fx");
@@ -160,7 +159,7 @@ NewCarmenDataset::projection_matrix()
 			0, fy_meters / pixel_size, cv, 0,
 			0, 0, 1, 0.;
 
-	return projection * R;				  
+	return projection;
 }
 
 
@@ -240,7 +239,6 @@ NewCarmenDataset::_board2car()
 {
 	Matrix<double, 4, 4> board2car;
 
-	//board2car = pose6d_to_matrix(0.572, 0, 1.394, 0.0, 0.0122173048, 0.0);
 	board2car = pose6d_to_matrix(
 		_params->get<double>("sensor_board_1_x"),
 		_params->get<double>("sensor_board_1_y"),
