@@ -541,8 +541,6 @@ add_graphslam_parameters(CommandLineArguments &args)
 {
 	args.add<int>("n_iterations,n", "Number of optimization terations", 50);
 
-	args.add<int>("use_xsens", "Flag indicating if xsens should be used or not", 0);
-
 	args.add<string>("odom_calib,o", "Path to the odometry calibration file", "none");
 	args.add<string>("gicp_loops,l", "Path to a file with loop closure relations", "none");
 	args.add<string>("pf_loops", "Path to a file with loop closures estimated with particle filters", "none");

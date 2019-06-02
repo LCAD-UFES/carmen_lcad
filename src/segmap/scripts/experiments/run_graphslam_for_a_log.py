@@ -11,7 +11,7 @@ def run_odom_calib(carmen_path, log_path, output_dir):
 	output_path = output_dir + "/odom_calib.txt" 
 	report_path = output_dir + "/report_odom_calib.txt" 
 	poses_opt_path = output_dir + "/poses-opt_odom_calib.txt" 	
-	additional_args = " -n 50 -i 100 --view 0 --max_multiplicative_v 1.1 --min_multiplicative_v 0.9 --max_multiplicative_phi 1.1 --min_multiplicative_phi 0.9 --max_additive_phi 0.2 --min_additive_phi -0.2 --gps_to_use %d " % GPS_TO_USE
+	additional_args = " -n 100 -i 30 --view 0 --max_multiplicative_v 1.001 --min_multiplicative_v 1.00 --max_multiplicative_phi 1.1 --min_multiplicative_phi 0.9 --max_additive_phi 0.2 --min_additive_phi -0.2 --gps_to_use %d " % GPS_TO_USE
 	cmd = "%s %s %s %s %s %s %s" % (program, log_path, PARAM_FILE, output_path, report_path, poses_opt_path, additional_args)
 	run_command(cmd)
 
@@ -40,9 +40,9 @@ def run_graphslam(carmen_path, log_path, output_dir, mode):
 		raise Exception("Invalid mode '%s'" % mode)
 
 	if ("brt" in log_path):
-		args = "--gps_xy_std 20.00000 --gps_angle_std 20.000000 --gicp_loops_xy_std 0.300000 --gicp_loops_angle_std 1.000000 --pf_loops_xy_std 0.030000 --pf_loops_angle_std 3.000000 --gps_discontinuity_threshold 0.5 --gps_min_cluster_size 50 --gps_step 50"
+		args = "--gps_xy_std 20.00000 --gps_angle_std 20.000000 --pf_loops_xy_std 0.030000 --pf_loops_angle_std 3.000000 --gps_step 50"
 	else:
-		args = " --gps_xy_std 3.000000 --gps_angle_std 30.000000 --gicp_loops_xy_std 0.300000 --gicp_loops_angle_std 1.000000 --pf_loops_xy_std 0.0001 --pf_loops_angle_std 0.01 --gps_discontinuity_threshold 0.5 --gps_min_cluster_size 50"
+		args = " --gps_xy_std 2.000000 --gps_angle_std 20.000000 --pf_loops_xy_std 0.001 --pf_loops_angle_std 0.01"
 		
 	args += " --gps_id %d" % GPS_TO_USE
 	args += " -i " + INTENSITY_MODE

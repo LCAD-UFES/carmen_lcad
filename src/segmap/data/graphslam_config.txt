@@ -40,11 +40,17 @@ gicp_to_map_angle_std = 3
 pf_to_map_xy_std = 0.3
 # Std of heading in loop closure in relation to a map (degrees)
 pf_to_map_angle_std = 3
+# Std of yaw measurements from xsens (degrees)
+xsens_angle_std = 10
+# Distance between consecutive gps measurements for detecting a jump (m)
+gps_jump_threshold = 5
+# Threshold for ignoring gps messages when they are apart in time from velodyne messages (seconds)
+max_time_diff_from_gps_to_velodyne = 0.2
 # Minimum velocity for estimating heading with consecutive GPS poses
 v_for_gps_heading = 1
 # Minimum velocity for adding GPS edges (without this trick, positions in which v=0 can be overweighted)
 v_for_gps = 1
-# Method for estimating global angle: [xsens, gps, consecutive_gps]
+# Method for estimating the car orientation in gps poses: [gps, consecutive_gps]
 global_angle_mode = consecutive_gps
 # Ignore points with z-coord (in sensor reference) above this threshold
 ignore_above_threshold = -0.3
@@ -58,17 +64,15 @@ offset_y = 0
 use_xsens = 1
 # Id of the gps to be used
 gps_id = 1
-# What type of information to assign to LiDAR rays intensity [remission | visual | semantic | raw | bright]
-intensity_mode = raw
+# What type of information to assign to LiDAR rays intensity [remission | visual | semantic | bright]
+intensity_mode = remission
 # Flag to choose using the velodyne calibration or not.
 use_calib = 1
 # Flag for choosing to segment lane marks with threshold image processing.
 segment_lane_marks = 0
 # Camera latency in seconds
 camera_latency = 0
-# Threshold for consireding detecting a jump in consecutive gps messages
-gps_discontinuity_threshold = 1
-# Minimum number of messages for keeping a group when a discountinuity is detected
-gps_min_cluster_size = 50
+# Flag to use semantic remapping or not.
+use_semantic_remapping = 1
 # Number of steps to skip before adding a new gps edge.
 gps_step = 1
