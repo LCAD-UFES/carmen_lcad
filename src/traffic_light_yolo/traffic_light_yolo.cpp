@@ -1108,7 +1108,7 @@ load_traffic_light_annotation_file(char* path)
         if (scan_count == 7
             && strcmp("RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT", annotation_description) == 0)
         {
-            printf("%lf %lf %lf %lf\n", pose.orientation.yaw, pose.position.x, pose.position.y, pose.position.z);
+            fprintf(stderr, "%lf %lf %lf %lf\n", pose.orientation.yaw, pose.position.x, pose.position.y, pose.position.z);
             pose.orientation.roll = 0.0;
             pose.orientation.pitch = 0.0;
             annotation_vector.push_back(pose);

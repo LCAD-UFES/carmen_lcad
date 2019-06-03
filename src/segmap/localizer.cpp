@@ -26,7 +26,8 @@ void
 viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_total_steps,
 			 PointCloud<PointXYZRGB>::Ptr cloud,
 			 PointCloudViewer &s_viewer, double duration, int view_flag,
-			 CarmenImageLoader &iloader)
+			 CarmenImageLoader &iloader,
+			 string save_dir)
 {
 	Pose2d gt = sample->pose;
 	Pose2d mean = pf.mean();
@@ -64,6 +65,13 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 		s_viewer.show(img, "img", 640);
 		s_viewer.show(flipped, "pf_viewer");
 		s_viewer.loop();
+
+		if (save_dir.compare("") != 0)
+		{
+			char output_img_path[512];
+			sprintf(output_img_path, "%s/%06d.png", save_dir.c_str(), step);
+			imwrite(output_img_path, flipped);
+		}
 	}
 }
 
@@ -76,7 +84,8 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 										double skip_velocity_threshold,
 										int correction_step,
 										int steps_to_skip_map_reload,
-										int view_flag)
+										int view_flag,
+										string save_dir)
 {
 	double dt;
 	DataSample *sample;
@@ -85,7 +94,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 	CarmenImageLoader iloader;
 	Timer timer;
 
-	Pose2d p0 = dataset->at(0)->gps;
+	Pose2d p0 = dataset->at(0)->pose;
 	pf.reset(p0.x, p0.y, p0.th);
 	map.reload(p0.x, p0.y);
 
@@ -143,7 +152,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 		//update_map(sample, &map, preproc);
 		//preproc.reinitialize(sample);
 		//load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
-		viewer(sample, pf, map, i, dataset->size(), cloud, s_viewer, timer.ellapsed(), view_flag, iloader);
+		viewer(sample, pf, map, i, dataset->size(), cloud, s_viewer, timer.ellapsed(), view_flag, iloader, save_dir);
 
 		n++;
 	}
@@ -172,12 +181,22 @@ main(int argc, char **argv)
 	ParticleFilter pf = create_particle_filter(args);
 
 	pf.seed(args.get<int>("seed"));
+
+	string save_dir = args.get<string>("save_dir");
+
+	if (save_dir.compare("") != 0)
+	{
+		boost::filesystem::remove_all(save_dir);
+		boost::filesystem::create_directory(save_dir);
+	}
+
 	run_particle_filter(pf, map, dataset, preproc,
 											args.get<int>("step"),
 											args.get<double>("v_thresh"),
 											args.get<int>("correction_step"),
 											args.get<int>("steps_to_skip_map_reload"),
-											args.get<int>("view"));
+											args.get<int>("view"),
+											save_dir);
 
 	printf("Done.\n");
 	return 0;

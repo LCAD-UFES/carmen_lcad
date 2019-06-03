@@ -114,7 +114,7 @@ create_sensor_preproc(CommandLineArguments &args,
 	string icalib_path;
 
 	if (args.get<int>("use_calib"))
-		icalib_path = default_intensity_calib_path(log_path.c_str());
+		icalib_path = default_intensity_calib_path();
 	else
 		icalib_path = "none";
 
@@ -143,6 +143,7 @@ create_sensor_preproc(CommandLineArguments &args,
 												below);
 
 	preproc.set_lane_mark_detection(args.get<int>("segment_lane_marks"));
+	preproc.set_semantic_remapping_flag(args.get<int>("use_semantic_remapping"));
 
 	return preproc;
 }

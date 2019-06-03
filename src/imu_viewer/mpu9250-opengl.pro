@@ -12,7 +12,7 @@ SOURCES +=      mainwindow.cpp
 SOURCES +=      objectgl.cpp
 
 INCLUDEPATH +=	$(CARMEN_HOME)/include
-LIBS +=			-L$(CARMEN_HOME)/lib -lxsens_interface -lparam_interface -lipc -lglobal -lgps_xyz_interface -lrotation_geometry -lxml2 -lz -lm
+LIBS +=			-L$(CARMEN_HOME)/lib -lxsens_interface -lparam_interface -lipc -lglobal -lgps_xyz_interface -lrotation_geometry -lxml2 -lz -lm -lpi_imu_interface
 
 HEADERS +=      mainwindow.h
 HEADERS +=      objectgl.h
