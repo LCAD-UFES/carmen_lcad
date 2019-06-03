@@ -1157,6 +1157,16 @@ show_help(string program_name, po::options_description options_description)
 }
 
 void
+debug_args(int argc, char **argv) {
+    cerr << "args: ";
+    for (size_t i = 0; i < argc; i++)
+    {
+        cerr << argv[i] << " ";
+    }
+    cerr << endl;
+}
+
+void
 read_parameters(int argc, char **argv)
 {
     /**
@@ -1207,7 +1217,6 @@ read_parameters(int argc, char **argv)
         ;
 
     po::variables_map vm;
-    // po::store(parse_command_line(argc, argv, desc), vm);
     auto parsed = po::command_line_parser(argc, argv)
         .positional(pos_desc)
         .options(opts_desc)
@@ -1217,18 +1226,14 @@ read_parameters(int argc, char **argv)
     if (vm.count("help")) {
         show_help(argv[0], opts_desc);
         exit(0);
-    } else if (vm["camera_number"].empty()) {
-        cerr << "ERROR: Missing mandatory argument 'camera_number'!" << endl << endl;
-        show_help(argv[0], opts_desc);
-        exit(1);
-    } else if (vm["camera_side"].empty()) {
-        cerr << "ERROR: Missing mandatory argument 'camera_side'!" << endl << endl;
-        show_help(argv[0], opts_desc);
-        exit(1);
-    } else if (vm["annotation_path"].empty()) {
-        cerr << "ERROR: Missing mandatory argument 'annotation_path'!" << endl << endl;
-        show_help(argv[0], opts_desc);
-        exit(1);
+    }
+    vector<string> mandatory_args = {"camera_number", "camera_side", "annotation_path"};
+    for (string arg: mandatory_args) {
+        if (vm[arg].empty()) {
+            cerr << "ERROR: Missing mandatory argument '" << arg << "'!" << endl << endl;
+            show_help(argv[0], opts_desc);
+            exit(1);
+        }
     }
 
     camera = vm["camera_number"].as<int>();
@@ -1322,6 +1327,7 @@ initializer()
     //namedWindow("Yolo Traffic Light", WINDOW_AUTOSIZE);
     setMouseCallback("Yolo Traffic Light", onMouse);
 
+    cerr << "INFO: Using confidence threshold of '" << params.yolo_thresh << "' for YOLO." << endl;
     cerr << "INFO: Initialization done." << endl;
 }
 
@@ -1332,7 +1338,6 @@ main(int argc, char **argv)
 
     read_parameters(argc, argv);
 
-    camera = atoi(argv[1]);
     carmen_traffic_light_define_messages(camera);
 
     subscribe_messages();
