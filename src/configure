@@ -468,9 +468,9 @@ sub set_laser_link {
     unlink "laser";
   }
   if ($oldlaser) {
-    system('ln -s laser-old laser');
+    system('ln -s sensors/laser_old laser');
   } else {
-    system('ln -f -s laser-new laser');
+    system('ln -f -s sensors/laser_new laser');
   }
 }
 
