@@ -730,8 +730,8 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 	{
 		sample = dataset_to_adjust[i];
 
-		if (fabs(sample->v) < 1.0)
-			continue;
+		//if (fabs(sample->v) < 1.0)
+			//continue;
 
 		if (i % 50 == 0)
 			printf("Cloud %d of %d\n", i, dataset_to_adjust.size());

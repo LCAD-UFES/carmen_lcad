@@ -52,10 +52,10 @@ if __name__ == "__main__":
 		os.mkdir('/dados/maps2')
 	
 	for e in experiments:
-		logs_to_map.append([e['map'], 'semantic', True])
-		logs_to_map.append([e['map'], 'semantic', False])
-		#logs_to_map.append([e['map'], 'remission', False])
-		#logs_to_map.append([e['map'], 'visual', False])
+		#logs_to_map.append([e['map'], 'semantic', True])
+		#logs_to_map.append([e['map'], 'semantic', False])
+		logs_to_map.append([e['map'], 'remission', False])
+		logs_to_map.append([e['map'], 'visual', False])
 	
 	process_pool = Pool(len(logs_to_map)) 
 	process_pool.map(run_mapper, logs_to_map)

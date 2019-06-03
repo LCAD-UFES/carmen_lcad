@@ -100,6 +100,7 @@ add_default_localizer_args(CommandLineArguments &args)
 	args.add<int>("seed", "Seed for pseudo-random number generator", 0);
 	args.add<int>("correction_step", "Frequency in which correction takes place [<= 1 for always correcting]", 1);
 	args.add<int>("steps_to_skip_map_reload", "Minimum number of steps to wait until a new map reload from disk", 5);
+	args.add<string>("save_dir", "Directory for saving images of the localization execution", "");
 
 	args.save_config_file(default_data_dir() + "/localizer_config.txt");
 }

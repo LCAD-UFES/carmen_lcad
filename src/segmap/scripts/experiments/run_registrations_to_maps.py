@@ -26,7 +26,7 @@ if __name__ == "__main__":
 			else:
 				args = "--gps_xy_std 2.00000 --gps_angle_std 20.000000 --pf_loops_xy_std 0.001 --pf_loops_angle_std 0.01"
 
-			cmd = "/home/filipe/carmen_lcad/src/segmap/graphslam_fast/graphslam /dados/%s /dados/data2//data_%s//graphslam_to_map.txt -o /dados/data2//data_%s//odom_calib.txt -l /dados/data2//data_%s//loops.txt --pf_loops /dados/data2//data_%s//localization_loops.txt --pf_to_map /dados/data2/data_%s/pf_loops_to_map.txt %s --pf_to_map_xy_std 0.2 --pf_to_map_angle_std 2" % (t, t, t, t, t, t, args)
+			cmd = "/home/filipe/carmen_lcad/src/segmap/graphslam_fast/graphslam /dados/%s ../carmen-ford-escape.ini /dados/data2//data_%s//graphslam_to_map.txt -o /dados/data2//data_%s//odom_calib.txt -l /dados/data2//data_%s//loops.txt --pf_loops /dados/data2//data_%s//localization_loops.txt --pf_to_map /dados/data2/data_%s/pf_loops_to_map.txt %s --pf_to_map_xy_std 0.2 --pf_to_map_angle_std 2" % (t, t, t, t, t, t, args)
 			
 			#print(cmd)
 			#print()
