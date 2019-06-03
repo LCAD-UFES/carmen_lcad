@@ -1,4 +1,4 @@
 darknet
 lib/
-*.weights
-
+yolov3.weights
+yolov3_traffic_light_rgo.weights
