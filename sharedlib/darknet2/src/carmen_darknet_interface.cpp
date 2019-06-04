@@ -180,7 +180,7 @@ convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigned char
 }
 
 std::vector<bbox_t>
-run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold=0.5, float hier_thresh=0.5)
+run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold, float hier_thresh)
 {
         float nms = 0.45;
         int nboxes = 0;
