@@ -25,6 +25,7 @@ carmen_pose_3D_t bullbar_pose;
 carmen_pose_3D_t sick_pose;
 tf::Transformer transformer;
 tf::Transformer transformer_sick;
+tf::StampedTransform world_to_camera_pose;
 
 vector<debug_infos> closest_rddf;
 
@@ -865,12 +866,10 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
 
-/*	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, pose);
-
 	rddf_points_in_image_filtered = get_rddf_points_in_image_filtered_by_meters_spacement(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, camera_pose, board_pose,
 			globalpos, last_rddf_poses, closest_rddf, camera_parameters, image_msg->width, image_msg->height);
 	rddf_points_in_image_full = get_rddf_points_in_image_full(world_to_camera_pose, last_rddf_poses, camera_parameters, image_msg->width, image_msg->height);
-
+/*
 	scene_crops.push_back(open_cv_image);
 	t.scale_factor_x = 1;
 	t.scale_factor_y = 1;
@@ -943,6 +942,14 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 	//carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
 
 	//publish_moving_objects_message(image_msg->timestamp, &msg);
+
+	int thickness = -1;
+	int lineType = 8;
+	for (unsigned int i = 0; i < rddf_points_in_image_full.size(); i++)
+	{
+		//if (i % 2 == 0)
+			cv::circle(open_cv_image, cv::Point(rddf_points_in_image_full[i].x, rddf_points_in_image_full[i].y), 3.5, cv::Scalar(0, 255, 255), thickness, lineType);
+	}
 
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
@@ -1064,6 +1071,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	globalpos.theta = globalpos_message->globalpos.theta;
 	globalpos.x = globalpos_message->globalpos.x;
 	globalpos.y = globalpos_message->globalpos.y;
+	world_to_camera_pose = get_world_to_camera_transformation(&transformer, pose);
 }
 
 
