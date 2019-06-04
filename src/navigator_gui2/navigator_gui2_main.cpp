@@ -939,7 +939,7 @@ read_parameters(int argc, char *argv[],
 		{(char *) "navigator_panel", (char *) "localize_std_theta",		CARMEN_PARAM_DOUBLE, &localize_std.theta,							1, NULL},
 		{(char *) "navigator_panel", (char *) "map",					CARMEN_PARAM_STRING, &(navigator_panel_config->map),				0, NULL},
 		{(char *) "navigator_panel", (char *) "superimposed_map",		CARMEN_PARAM_STRING, &(navigator_panel_config->superimposed_map),	0, NULL},
-		{(char *) "mapper",			 (char *) "height_max_level",		CARMEN_PARAM_STRING, &height_max_level,								0, NULL},
+		{(char *) "mapper",			 (char *) "height_max_level",		CARMEN_PARAM_INT, &height_max_level,								0, NULL},
 	};
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
