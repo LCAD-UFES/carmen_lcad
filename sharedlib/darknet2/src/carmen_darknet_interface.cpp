@@ -181,7 +181,7 @@ convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigned char
 
 
 std::vector<bbox_t>
-run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold=0.5, float hier_thresh=0.5)
+run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold)
 {
 	float nms = 0.45;
 	int nboxes = 0;
@@ -196,12 +196,12 @@ run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_nam
 
 	network_predict(net, X);
 
-	detection *dets = get_network_boxes(net, img.w, img.h, threshold, hier_thresh, 0, 1, &nboxes);
+	detection *dets = get_network_boxes(net, img.w, img.h, threshold, threshold, 0, 1, &nboxes);
 
 	if (nms)    // Remove coincident bboxes
 		do_nms_sort(dets, nboxes, net->layers[net->n-1].classes, nms);
 
-	std::vector<bbox_t> bbox_vector = extract_predictions(img, dets, nboxes, threshold, net->layers[net->n-1].classes, classes_names);
+	std::vector<bbox_t> bbox_vector = extract_predictions(img, dets, nboxes, 0.5, net->layers[net->n-1].classes, classes_names);
 
 	free_detections(dets, nboxes);
 	free_image(sized);
