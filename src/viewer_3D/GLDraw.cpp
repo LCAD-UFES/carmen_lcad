@@ -393,7 +393,7 @@ draw_xsens_orientation (carmen_orientation_3D_t xsens_orientation, double xsens_
     glPushMatrix ();
 
     glTranslatef (xsens_global_position.x, xsens_global_position.y, xsens_global_position.z);
-    glRotatef (carmen_radians_to_degrees (xsens_orientation.yaw - xsens_yaw_bias), 0.0f, 0.0f, 1.0f);
+    glRotatef (carmen_radians_to_degrees (carmen_normalize_theta(xsens_orientation.yaw - xsens_yaw_bias)), 0.0f, 0.0f, 1.0f);
     glRotatef (carmen_radians_to_degrees (xsens_orientation.pitch), 0.0f, 1.0f, 0.0f);
     glRotatef (carmen_radians_to_degrees (xsens_orientation.roll), 1.0f, 0.0f, 0.0f);
 

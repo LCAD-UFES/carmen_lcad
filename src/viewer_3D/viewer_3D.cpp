@@ -197,6 +197,7 @@ static carmen_vector_3D_t first_map_origin;
 
 static carmen_orientation_3D_t xsens_orientation;
 static double xsens_yaw_bias;
+static double magnetic_declination = 0.0;
 
 double orientation;
 static carmen_vector_3D_t annotation_point;
@@ -2050,6 +2051,8 @@ init_stuff(int argc, char** argv)
             {(char*) "xsens", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.pitch), 0, NULL},
             {(char*) "xsens", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.yaw), 0, NULL},
 
+			{(char*) "xsens", (char*) "magnetic_declination", CARMEN_PARAM_DOUBLE, &magnetic_declination, 0, NULL},
+
             {(char*) "laser", (char*) "num_laser_devices", CARMEN_PARAM_INT, &num_laser_devices, 0, NULL},
 
             {(char*) "laser", (char*) "x", CARMEN_PARAM_DOUBLE, &(laser_pose.position.x), 0, NULL},
@@ -2141,6 +2144,8 @@ init_stuff(int argc, char** argv)
             {(char*) "xsens", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.pitch), 0, NULL},
             {(char*) "xsens", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.yaw), 0, NULL},
 
+			{(char*) "xsens", (char*) "magnetic_declination", CARMEN_PARAM_DOUBLE, &magnetic_declination, 0, NULL},
+
             {(char*) "laser", (char*) "x", CARMEN_PARAM_DOUBLE, &(laser_pose.position.x), 0, NULL},
             {(char*) "laser", (char*) "y", CARMEN_PARAM_DOUBLE, &(laser_pose.position.y), 0, NULL},
             {(char*) "laser", (char*) "z", CARMEN_PARAM_DOUBLE, &(laser_pose.position.z), 0, NULL},
@@ -2173,6 +2178,8 @@ init_stuff(int argc, char** argv)
         num_items = sizeof (param_list) / sizeof (param_list[0]);
         carmen_param_install_params(argc, argv, param_list, num_items);
     }
+
+	magnetic_declination = carmen_degrees_to_radians(magnetic_declination);
 
     init_moving_objects_point_clouds();
     init_laser();
@@ -2358,9 +2365,10 @@ draw_loop(window *w)
         {
             glColor3f(0.4, 1.0, 0.4);
 //            printf("%lf %lf\n", xsens_orientation.yaw, car_fused_pose.orientation.yaw);
-            draw_xsens_orientation(xsens_orientation, xsens_yaw_bias, xsens_pose, sensor_board_1_pose, car_fused_pose);
-            glColor3f(1.0, 0.4, 0.4);
-            draw_xsens_orientation(xsens_orientation, 0.0, xsens_pose, sensor_board_1_pose, car_fused_pose);
+//            draw_xsens_orientation(xsens_orientation, xsens_yaw_bias, xsens_pose, sensor_board_1_pose, car_fused_pose);
+            draw_xsens_orientation(xsens_orientation, magnetic_declination, xsens_pose, sensor_board_1_pose, car_fused_pose);
+//            glColor3f(1.0, 0.4, 0.4);
+//            draw_xsens_orientation(xsens_orientation, 0.0, xsens_pose, sensor_board_1_pose, car_fused_pose);
         }
         //draw_orientation_instruments(car_fused_pose.orientation, 1.0, 1.0, 0.0);
         //draw_orientation_instruments(xsens_orientation, xsens_yaw_bias, 1.0, 0.5, 0.0);
