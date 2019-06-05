@@ -147,6 +147,7 @@ get_closest_rddf_index(double *camera_pose_x, double *camera_pose_y, carmen_pose
 		carmen_point_t globalpos, carmen_behavior_selector_road_profile_message last_rddf_poses)
 {
 	carmen_point_t globalpos_in_camera;
+	cout<<last_rddf_poses.number_of_poses<<endl;
 
 	*camera_pose_x = camera_pose.position.x;
 	*camera_pose_y = camera_pose.position.y;
@@ -154,7 +155,6 @@ get_closest_rddf_index(double *camera_pose_x, double *camera_pose_y, carmen_pose
 	carmen_translate_2d(camera_pose_x, camera_pose_y, board_pose.position.x, board_pose.position.y);
 	carmen_rotate_2d  (camera_pose_x, camera_pose_y, carmen_normalize_theta(globalpos.theta));
 	carmen_translate_2d(camera_pose_x, camera_pose_y, globalpos.x, globalpos.y);
-
 
 	int index_aux;
 	double distance, min_distance = DBL_MAX;
@@ -181,11 +181,9 @@ get_rddf_points_in_image_filtered_by_meters_spacement(double meters_spacement, v
 	carmen_position_t p;
 	vector<carmen_position_t> rddf_points_in_image_filtered;
 	debug_infos d;
-
 	int inicial_rddf_index;
 	double camera_pose_x, camera_pose_y;
 	inicial_rddf_index = get_closest_rddf_index(&camera_pose_x, &camera_pose_y, camera_pose, board_pose, globalpos, last_rddf_poses);
-
 	d.i = inicial_rddf_index;
 	d.rddf_pos.x = last_rddf_poses.poses[inicial_rddf_index].x;
 	d.rddf_pos.y = last_rddf_poses.poses[inicial_rddf_index].y;

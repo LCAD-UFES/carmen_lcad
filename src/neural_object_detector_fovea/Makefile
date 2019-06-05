@@ -31,7 +31,7 @@ neural_object_detector_simulator: neural_object_detector_simulator.o
 neural_object_detector_tracker: neural_object_detector_tracker.o neural_object_detector.o
 
 darknet2:
-	#$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2
 
 
 include ../Makefile.rules

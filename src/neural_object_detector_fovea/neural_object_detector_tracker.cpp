@@ -25,6 +25,7 @@ carmen_pose_3D_t bullbar_pose;
 carmen_pose_3D_t sick_pose;
 tf::Transformer transformer;
 tf::Transformer transformer_sick;
+tf::StampedTransform world_to_camera_pose;
 
 vector<debug_infos> closest_rddf;
 
@@ -844,7 +845,7 @@ void
 process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned char *img)
 {
 	meters_spacement = 15;
-	qtd_crops = 0;
+	qtd_crops = 4;
 
 	double fps;
 	static double start_time = 0.0;
@@ -865,8 +866,6 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
 
-/*	tf::StampedTransform world_to_camera_pose = get_world_to_camera_transformation(&transformer, pose);
-
 	rddf_points_in_image_filtered = get_rddf_points_in_image_filtered_by_meters_spacement(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, camera_pose, board_pose,
 			globalpos, last_rddf_poses, closest_rddf, camera_parameters, image_msg->width, image_msg->height);
 	rddf_points_in_image_full = get_rddf_points_in_image_full(world_to_camera_pose, last_rddf_poses, camera_parameters, image_msg->width, image_msg->height);
@@ -878,8 +877,10 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 	t.translate_factor_y = 0;
 	transform_factor_of_slice_to_original_frame.push_back(t);
 	get_image_crops(scene_crops, transform_factor_of_slice_to_original_frame, open_cv_image, rddf_points_in_image_filtered, distances_of_rddf_from_car);
+	imshow("crop", scene_crops[3]);
 
-	for (int i = 0; i < qtd_crops; i++)
+
+/*	for (int i = 0; i < qtd_crops; i++)
 	{
 		vector<bbox_t> predictions;
 		predictions = get_predictions_of_crops(i, scene_crops[i], network_struct, classes_names);
@@ -903,7 +904,7 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 		new_sick_points.push_back(new_point);
 	} //DEIXAR ATÉ PEDRO DAR OK QUE PODE APAGAR!!!!!!!!!
 
-	vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
+	vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.5);
 	predictions = filter_predictions_of_interest(predictions);
 	transform_predictions_in_pedestrian_type(predictions, image_msg->timestamp);
 
@@ -927,14 +928,19 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, bullbar_pose.position.x, bullbar_pose.position.y); //bullbar if the points are from sick, board if the points are from velodyne
 			carmen_rotate_2d  (&positions[i].cartesian_x, &positions[i].cartesian_y, carmen_normalize_theta(globalpos.theta));
 			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, globalpos.x, globalpos.y);
+			double dist;
+			dist = euclidean_distance(positions[i].cartesian_x, globalpos.x, positions[i].cartesian_y, globalpos.y);
+			cout<<"Dist: "<<dist<<endl;
 
 			//update_world_position(&pedestrian_tracks[i],positions[i].cartesian_x,positions[i].cartesian_y,image_msg->timestamp);
 			//			printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f \n",
 			//					pedestrian_tracks[i].track_id, pedestrian_tracks[i].velocity,pedestrian_tracks[i].orientation,abs(pedestrian_tracks[i].orientation - globalpos.theta));
 		}
-		double dist;
-		dist = euclidean_distance(positions[i].cartesian_x, globalpos.x, positions[i].cartesian_y, globalpos.y);
-		cout<<"Dist: "<<dist<<endl;
+		else
+		{
+			cout<<"no pos"<<endl;
+		}
+
 		//cout<<"x: "<<positions[i].cartesian_x<<" "<<"y: "<<positions[i].cartesian_y<<endl;
 	}
 
@@ -943,6 +949,14 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 	//carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
 
 	//publish_moving_objects_message(image_msg->timestamp, &msg);
+
+	int thickness = -1;
+	int lineType = 8;
+	for (unsigned int i = 0; i < rddf_points_in_image_filtered.size(); i++)
+	{
+		//if (i % 2 == 0)
+			cv::circle(open_cv_image, cv::Point(rddf_points_in_image_filtered[i].x, rddf_points_in_image_filtered[i].y), 3.5, cv::Scalar(255, 255, 0), thickness, lineType);
+	}
 
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
@@ -1064,6 +1078,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	globalpos.theta = globalpos_message->globalpos.theta;
 	globalpos.x = globalpos_message->globalpos.x;
 	globalpos.y = globalpos_message->globalpos.y;
+	world_to_camera_pose = get_world_to_camera_transformation(&transformer, pose);
 }
 
 
@@ -1085,6 +1100,8 @@ shutdown_module(int signo)
 void
 subscribe_messages()
 {
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
     carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
@@ -1094,7 +1111,6 @@ subscribe_messages()
 
     carmen_laser_subscribe_ldmrs_new_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_new_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1173,10 +1189,23 @@ initializer()
 {
 	initialize_transformations(board_pose, camera_pose, &transformer);
 	initialize_sick_transformations(board_pose, camera_pose, bullbar_pose, sick_pose, &transformer_sick);
+	char carmen_home[512] = "";
+	char *carmen_home_p = &carmen_home[0];
+	carmen_home_p = getenv("CARMEN_HOME");
+	char classes[1024];
+	char cfg[1024];
+	char weights[1024];
 
-	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
+	strcpy(classes, carmen_home_p);
+	strcpy(cfg, carmen_home_p);
+	strcpy(weights, carmen_home_p);
 
-	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
+	strcat(classes,"/sharedlib/darknet2/data/coco.names");
+	classes_names = get_classes_names((char*) classes);
+
+	strcat(cfg,"/sharedlib/darknet2/cfg/yolov3.cfg");
+	strcat(weights,"/sharedlib/darknet2/yolov3.weights");
+	network_struct = initialize_YOLO((char*) cfg, (char*) weights);
 }
 
 
