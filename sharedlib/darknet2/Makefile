@@ -103,9 +103,9 @@ obj:
 lib:
 	mkdir -p lib
 
-#clean: clean_darknet
+clean: clean_darknet
 
-#clean_darknet:
-	#rm -rf $(OBJS) $(SLIB) $(ALIB) $(EXEC) $(EXECOBJ) $(OBJDIR)/*
+clean_darknet:
+	rm -rf $(OBJS) $(SLIB) $(ALIB) $(EXEC) $(EXECOBJ) $(OBJDIR)/*
 
 include $(CARMEN_HOME)/src/Makefile.rules

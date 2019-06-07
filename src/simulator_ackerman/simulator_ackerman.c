@@ -137,17 +137,20 @@ publish_odometry(double timestamp)
 		first = 0;
 	}
 
-	odometry.x = simulator_config->odom_pose.x;
-	odometry.y = simulator_config->odom_pose.y;
+	odometry.x     = simulator_config->odom_pose.x;
+	odometry.y     = simulator_config->odom_pose.y;
 	odometry.theta = simulator_config->odom_pose.theta;
-
-	odometry.v = simulator_config->v;
-	odometry.phi = simulator_config->phi;
-
+	odometry.v     = simulator_config->v;
+	odometry.phi   = simulator_config->phi;
 	odometry.timestamp = timestamp;
+
+//	printf ("%lf %lf %lf %lf %lf\n", odometry.x, odometry.y, odometry.theta, odometry.v, odometry.phi);
+
 	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
-	carmen_test_ipc(err, "Could not publish base_odometry_message",
-			CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
+	carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
+
+//	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_2_NAME, &odometry);
+//	carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_2_NAME);
 }
 
 
@@ -168,9 +171,9 @@ publish_truepos(double timestamp)
 	truepos.v = simulator_config->v;
 	truepos.phi = simulator_config->phi;
 	truepos.timestamp = timestamp;
+
 	err = IPC_publishData(CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME, &truepos);
-	carmen_test_ipc(err, "Could not publish simualator_truepos_message",
-			CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME);
+	carmen_test_ipc(err, "Could not publish simualator_truepos_message", CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME);
 }
 
 
@@ -669,6 +672,9 @@ subscribe_to_relevant_messages()
 
 	carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
 
+	// Handler redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
+	//carmen_base_ackerman_subscribe_motion_command_2(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
+
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 #ifdef __USE_RL_CONTROL
@@ -704,6 +710,13 @@ initialize_ipc(void)
 			CARMEN_BASE_ACKERMAN_ODOMETRY_FMT);
 	if (err != IPC_OK)
 		return -1;
+
+	// Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
+//	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_ODOMETRY_2_NAME,
+//			IPC_VARIABLE_LENGTH,
+//			CARMEN_BASE_ACKERMAN_ODOMETRY_2_FMT);
+//	if (err != IPC_OK)
+//		return -1;
 
 	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_VELOCITY_NAME,
 			IPC_VARIABLE_LENGTH,
