@@ -122,6 +122,19 @@ carmen_robot_ackerman_subscribe_velocity_message(carmen_robot_ackerman_velocity_
 }
 
 
+// Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
+void
+carmen_robot_ackerman_subscribe_velocity_message_2(carmen_robot_ackerman_velocity_message *msg,
+	carmen_handler_t handler,
+	carmen_subscribe_t subscribe_how)
+{
+	carmen_subscribe_message(CARMEN_ROBOT_ACKERMAN_VELOCITY_2_NAME,
+		CARMEN_ROBOT_ACKERMAN_VELOCITY_2_FMT,
+		msg, sizeof(carmen_robot_ackerman_velocity_message),
+		handler, subscribe_how);
+}
+
+
 void
 carmen_robot_ackerman_subscribe_motion_command(carmen_robot_ackerman_motion_command_message *motion_command,
 		carmen_handler_t handler,

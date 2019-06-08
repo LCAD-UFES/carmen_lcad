@@ -31,14 +31,22 @@
 
 void
 carmen_base_ackerman_subscribe_odometry_message(carmen_base_ackerman_odometry_message *odometry,
-				       carmen_handler_t handler,
-				       carmen_subscribe_t subscribe_how)
+				       carmen_handler_t handler, carmen_subscribe_t subscribe_how)
 {
-  carmen_subscribe_message(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME,
-                           CARMEN_BASE_ACKERMAN_ODOMETRY_FMT,
-                           odometry, sizeof(carmen_base_ackerman_odometry_message),
-			   handler, subscribe_how);
+  carmen_subscribe_message(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, CARMEN_BASE_ACKERMAN_ODOMETRY_FMT,
+                           odometry, sizeof(carmen_base_ackerman_odometry_message), handler, subscribe_how);
 }
+
+
+// Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
+void
+carmen_base_ackerman_subscribe_odometry_message_2(carmen_base_ackerman_odometry_message *odometry,
+				       carmen_handler_t handler, carmen_subscribe_t subscribe_how)
+{
+  carmen_subscribe_message(CARMEN_BASE_ACKERMAN_ODOMETRY_2_NAME, CARMEN_BASE_ACKERMAN_ODOMETRY_2_FMT,
+                           odometry, sizeof(carmen_base_ackerman_odometry_message), handler, subscribe_how);
+}
+
 
 void
 carmen_base_ackerman_unsubscribe_odometry_message(carmen_handler_t handler)
@@ -46,15 +54,13 @@ carmen_base_ackerman_unsubscribe_odometry_message(carmen_handler_t handler)
   carmen_unsubscribe_message(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, handler);
 }
 
+
 void
 carmen_base_ackerman_subscribe_motion_command(carmen_base_ackerman_motion_command_message *motion_command,
-				     carmen_handler_t handler,
-				     carmen_subscribe_t subscribe_how)
+				     carmen_handler_t handler, carmen_subscribe_t subscribe_how)
 {
-	carmen_subscribe_message(CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME,
-                	   CARMEN_BASE_ACKERMAN_MOTION_COMMAND_FMT,
-                	   motion_command, sizeof(carmen_base_ackerman_motion_command_message),
-			   handler, subscribe_how);
+	carmen_subscribe_message(CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME, CARMEN_BASE_ACKERMAN_MOTION_COMMAND_FMT,
+                	   motion_command, sizeof(carmen_base_ackerman_motion_command_message), handler, subscribe_how);
 }
 
 
@@ -67,11 +73,8 @@ carmen_base_ackerman_publish_motion_command(carmen_ackerman_motion_command_p mot
 
 	if (first_time)
 	{
-		err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME,
-			      IPC_VARIABLE_LENGTH,
-			      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_FMT);
-		carmen_test_ipc_exit(err, "Could not define message",
-			       CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME);
+		err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME, IPC_VARIABLE_LENGTH, CARMEN_BASE_ACKERMAN_MOTION_COMMAND_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME);
 		first_time = 0;
 	}
 
@@ -82,7 +85,41 @@ carmen_base_ackerman_publish_motion_command(carmen_ackerman_motion_command_p mot
 	msg.host = carmen_get_host();
 
 	err = IPC_publishData(CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME, &msg);
-	carmen_test_ipc(err, "Could not publish",
-		  CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME);
+	carmen_test_ipc(err, "Could not publish", CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME);
+}
+
+
+// Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
+void
+carmen_base_ackerman_subscribe_motion_command_2(carmen_base_ackerman_motion_command_message *motion_command,
+				     carmen_handler_t handler, carmen_subscribe_t subscribe_how)
+{
+	carmen_subscribe_message(CARMEN_BASE_ACKERMAN_MOTION_COMMAND_2_NAME, CARMEN_BASE_ACKERMAN_MOTION_COMMAND_2_FMT,
+                	   motion_command, sizeof(carmen_base_ackerman_motion_command_message), handler, subscribe_how);
+}
+
+
+void
+carmen_base_ackerman_publish_motion_command_2(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp)
+{
+	IPC_RETURN_TYPE err;
+	static carmen_base_ackerman_motion_command_message msg;
+	static int first_time = 1;
+
+	if (first_time)
+	{
+		err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_MOTION_COMMAND_2_NAME, IPC_VARIABLE_LENGTH, CARMEN_BASE_ACKERMAN_MOTION_COMMAND_2_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_BASE_ACKERMAN_MOTION_COMMAND_2_NAME);
+		first_time = 0;
+	}
+
+	msg.motion_command = motion_command;
+	msg.num_motion_commands = num_motion_commands;
+
+	msg.timestamp = timestamp;
+	msg.host = carmen_get_host();
+
+	err = IPC_publishData(CARMEN_BASE_ACKERMAN_MOTION_COMMAND_2_NAME, &msg);
+	carmen_test_ipc(err, "Could not publish", CARMEN_BASE_ACKERMAN_MOTION_COMMAND_2_NAME);
 }
 
