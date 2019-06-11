@@ -96,7 +96,7 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
  cd ~
  git clone https://github.com/Picovoice/Porcupine.git
  cd Porcupine
- ./tools/optimizer/linux/x86_64/pv_porcupine_optimizer -r resources/ -p linux -o . -w "ok e ara"
+ ./tools/optimizer/linux/x86_64/pv_porcupine_optimizer -r resources/optimizer_data/ -p linux -o . -w "ok e ara"
  export SYSTEM=linux
  export MACHINE=x86_64
  cd demo/alsa
