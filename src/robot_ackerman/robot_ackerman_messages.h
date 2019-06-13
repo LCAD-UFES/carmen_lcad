@@ -122,6 +122,11 @@ typedef struct {
 #define      CARMEN_ROBOT_ACKERMAN_VELOCITY_FMT          "{double,double,double,string}"
 
 
+// Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
+#define      CARMEN_ROBOT_ACKERMAN_VELOCITY_2_NAME         "carmen_robot_ackerman_vel_2"
+#define      CARMEN_ROBOT_ACKERMAN_VELOCITY_2_FMT          "{double,double,double,string}"
+
+
 typedef struct {
   int trajectory_length;
   carmen_ackerman_traj_point_t *trajectory;

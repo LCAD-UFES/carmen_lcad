@@ -2,6 +2,8 @@
 
 #define PORT 3457
 
+int server_fd;
+
 
 void
 extract_camera_configuration(char *cam_config, int &image_width, int &image_height, int &frame_rate, int &brightness, int &contrast)
@@ -54,8 +56,6 @@ set_camera_configurations(raspicam::RaspiCam &RpiCamera, int image_width, int im
 	}
 }
 
-
-int server_fd;
 
 int
 connect_with_client(raspicam::RaspiCam &RpiCamera, char* cam_config, int &image_width, int &image_height,
