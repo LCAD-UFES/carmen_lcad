@@ -24,7 +24,32 @@ The filter of cansniffer FILTER can be a single CAN-ID or a CAN-ID/Bitmask:
 +000000<ENTER> - add all CAN-IDs
 -000000<ENTER> - remove all CAN-IDs
 
-= Resultados
+= In order to record this type of received CAN data to file (including timestamp), use:
+
+$ candump -l vcan0
+
+The resulting file will be named like: candump-2015-03-20_123001.log
+
+= In order to print logfiles in a user friendly format:
+
+$ log2asc -I candump-2015-03-20_123001.log vcan0
+
+= Recorded CAN log files can also be re-played back to the same or another CAN interface:
+
+$ canplayer -I candump-2015-03-20_123001.log
+
+= If you need to use another can interface than defined in the logfile, use the expression CANinterfaceToUse=CANinterfaceInFile. This example also prints the frames:
+
+$ canplayer vcan0=can1 -v -I candump-2015-03-20_123001.log
+
+https://sgframework.readthedocs.io/en/latest/cantutorial.html
+
+
+
+
+
+### Resultados Ford Fusion
+
 216 - odometro das rodas (ja no codigo)
 76  - angulo do volante (ja no codigo)
 230 - cambio: 
@@ -51,9 +76,6 @@ The filter of cansniffer FILTER can be a single CAN-ID or a CAN-ID/Bitmask:
   can0  082   [8]  51 08 15 9C 82 80 40 00 - 180 graus a direita
   can0  082   [8]  AE 08 16 20 80 80 40 00 - 90 graus a esquerda
   can0  082   [8]  AE 08 16 28 7F 80 40 00 - 180 graus a esquerda
-
-
-
 
 
 

@@ -64,7 +64,7 @@ connect_with_client()
 
 
 void
-extract_motion_command_vetor_from_socket_and_send_msg(float *msg)
+extract_motion_command_vetor_from_socket_and_send_msg(double *msg)
 {
 	int size = (int)msg[0];
 	carmen_ackerman_motion_command_t motion_command[size];
@@ -109,7 +109,7 @@ shutdown_module(int x)            // Handles ctrl+c
 int
 main(int argc, char **argv)
 {
-	float msg[9616]; // 2 + 6 * 200 * 8
+	double msg[1202]; // 2 + 6 * 200
 	int result = 0;
 
 	carmen_ipc_initialize(argc, argv);

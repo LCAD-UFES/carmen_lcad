@@ -56,7 +56,7 @@ connect_with_client()
 
 
 void
-build_odometry_socket_msg(carmen_base_ackerman_odometry_message *msg, float *array)
+build_odometry_socket_msg(carmen_base_ackerman_odometry_message *msg, double *array)
 {
 	array[0] = msg->x;
 	array[1] = msg->y;
@@ -79,9 +79,7 @@ build_odometry_socket_msg(carmen_base_ackerman_odometry_message *msg, float *arr
 void
 base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
 {
-	float array[40];
-
-	//printf("Chegou!!!\n");
+	double array[5];
 
 	build_odometry_socket_msg(msg, array);
 
@@ -91,7 +89,7 @@ base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
 	if (pi_socket == 0)
 		pi_socket = connect_with_client();
 
-//	printf ("%lf %lf %lf %lf %lf\n", array[0], array[1], array[2], array[3], array[4]);
+	//printf ("%lf %lf %lf %lf %lf\n", array[0], array[1], array[2], array[3], array[4]);
 
 	result = send(pi_socket, array, 40, MSG_NOSIGNAL);					// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
 
@@ -104,20 +102,30 @@ base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
 }
 
 
-//void
-//robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message)
-//{
-//
-////	carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
-////						robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
-////						0.0, v_multiplier, phi_bias, phi_multiplier);
-////	// Filipe: Nao deveria ter um normalize theta nessa atualizacao do phi? Sugestao abaixo:
-////	// car_config->phi = carmen_normalize_theta(robot_ackerman_velocity_message->phi * phi_multiplier + phi_bias);
-////
-////	carmen_simulator_ackerman_recalc_pos(car_config);
-////
-////	publish_carmen_base_ackerman_odometry_message(robot_ackerman_velocity_message->timestamp);
-//}
+void
+robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *msg)
+{
+	double array[5];
+	static int pi_socket = 0;
+	int result = 0;
+
+	if (pi_socket == 0)
+		pi_socket = connect_with_client();
+
+	array[0] = msg->v;
+	array[1] = msg->phi;
+
+	//printf ("v: %lf phi: %lf\n", array[0], array[1]);
+
+	result = send(pi_socket, array, 40, MSG_NOSIGNAL);					// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
+
+	if (result == 0 || result == -1)									// 0 Connection lost due to server shutdown -1 Could not connect
+	{
+		close(pi_socket);
+		pi_socket = connect_with_client();
+		return;
+	}
+}
 
 
 static void

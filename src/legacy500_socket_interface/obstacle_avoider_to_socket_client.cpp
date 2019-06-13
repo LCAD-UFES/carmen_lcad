@@ -106,7 +106,7 @@ stablished_connection_with_server()
 
 
 void
-build_socket_message(carmen_base_ackerman_motion_command_message *motion_command_message, float *array)
+build_socket_message(carmen_base_ackerman_motion_command_message *motion_command_message, double *array)
 {
 	int size = motion_command_message->num_motion_commands;
 
@@ -126,15 +126,15 @@ build_socket_message(carmen_base_ackerman_motion_command_message *motion_command
 
 
 void
-send_motion_command_via_socket(float* array)
+send_motion_command_via_socket(double* array)
 {
 	static int pi_socket = 0;
 	int result = 0;
 
 	if (pi_socket == 0)
 		pi_socket = stablished_connection_with_server();
-
-	result = send(pi_socket, array, 9616, MSG_NOSIGNAL);					// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
+																							// 2 + 6 * 200
+	result = send(pi_socket, array, 9616, MSG_NOSIGNAL);									// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
 
 	if (result == 0 || result == -1)														// 0 Connection lost due to server shutdown -1 Could not connect
 	{
@@ -163,7 +163,7 @@ motion_command_handler(carmen_base_ackerman_motion_command_message *motion_comma
 	if (motion_command_message->num_motion_commands > NUM_MOTION_COMMANDS_PER_VECTOR)
 		motion_command_message->num_motion_commands = NUM_MOTION_COMMANDS_PER_VECTOR;
 
-	float array[9616]; // 2 + 6 * 200 * 8
+	double array[1202]; // 2 + 200
 	build_socket_message(motion_command_message, array);
 
 	send_motion_command_via_socket(array);
