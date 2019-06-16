@@ -102,8 +102,21 @@ struct can_dump
 };
 
 struct can_dump can_dump_record[10000];
-#define NUM_MONITORED_CAN_IDS 4
+
+#define NUM_MONITORED_CAN_IDS 	4
 int monitored_can_ids[NUM_MONITORED_CAN_IDS] = {0x0C2, 0x0D0, 0x3D0, 0x729};
+
+#define MONITORED_CAN_MESSAGE_QUEUE_SIZE 	5
+int monitored_can_message_queue[MONITORED_CAN_MESSAGE_QUEUE_SIZE];
+int monitored_can_message_queue_in_idx = 0;
+int monitored_can_message_queue_out_idx = 0;
+
+#define COMPRESS_DELTA_T		0.005
+#define FIRST_CAN_DUMP_RECORD	(103 - 1)
+#define LAST_CAN_DUMP_RECORD	(4074 - 1)
+#define LOOP_CAN_DUMP_RECORD	(163 - 1)
+
+int can_dump_record_idx = FIRST_CAN_DUMP_RECORD;
 
 
 // Refresh screen in curses mode
@@ -503,9 +516,72 @@ int monitored_can_id(int can_id)
 	return (0);
 }
 
-void send_can_messages_after_monitored_can_message(int m_can_id)
+void send_can_messages_after_monitored_can_message()
 {
+	static int sending_messages = 0;
+	static double last_message_time = 0.0;
 
+	if (sending_messages)
+	{
+		if ((ojGetTimeSec() - last_message_time) >
+			(can_dump_record[can_dump_record_idx].timestamp - can_dump_record[can_dump_record_idx - 1].timestamp - COMPRESS_DELTA_T))
+		{
+			send_frame(out_can_sockfd, &(can_dump_record[can_dump_record_idx].frame));
+
+			printf("%d - (%lf) %s %03x#", can_dump_record_idx, ojGetTimeSec(),
+					can_dump_record[can_dump_record_idx].can_port, can_dump_record[can_dump_record_idx].frame.can_id);
+			for (int j = 0; j < can_dump_record[can_dump_record_idx].frame.can_dlc; j++)
+				printf("%02x", can_dump_record[can_dump_record_idx].frame.data[j]);
+			printf("\n");
+
+			can_dump_record_idx++;
+			if (can_dump_record_idx > LAST_CAN_DUMP_RECORD)
+				can_dump_record_idx = LOOP_CAN_DUMP_RECORD;
+
+			if (monitored_can_id(can_dump_record[can_dump_record_idx].frame.can_id))
+			{
+				monitored_can_message_queue_out_idx++;
+				printf("dequeue: in %d, out %d\n", monitored_can_message_queue_in_idx, monitored_can_message_queue_out_idx);
+				fflush(stdout);
+				if (monitored_can_message_queue_out_idx >= MONITORED_CAN_MESSAGE_QUEUE_SIZE)
+					monitored_can_message_queue_out_idx = 0;
+
+				sending_messages = 0;
+			}
+
+			last_message_time = ojGetTimeSec();
+		}
+	}
+	else
+	{
+		while (monitored_can_id(can_dump_record[can_dump_record_idx].frame.can_id))
+		{
+			printf("* %d - (%lf) %s %03x#", can_dump_record_idx, ojGetTimeSec(),
+					can_dump_record[can_dump_record_idx].can_port, can_dump_record[can_dump_record_idx].frame.can_id);
+			for (int j = 0; j < can_dump_record[can_dump_record_idx].frame.can_dlc; j++)
+				printf("%02x", can_dump_record[can_dump_record_idx].frame.data[j]);
+			printf("\n");
+
+			can_dump_record_idx++;
+		}
+
+		sending_messages = 1;
+		last_message_time = ojGetTimeSec();
+	}
+}
+
+void enqueue_monitored_can_message(int m_can_id)
+{
+	monitored_can_message_queue[monitored_can_message_queue_in_idx++] = m_can_id;
+
+	if (monitored_can_message_queue_in_idx >= MONITORED_CAN_MESSAGE_QUEUE_SIZE)
+		monitored_can_message_queue_in_idx = 0;
+
+	printf("enqueue: in %d, out %d\n", monitored_can_message_queue_in_idx, monitored_can_message_queue_out_idx);
+	fflush(stdout);
+
+	if (monitored_can_message_queue_in_idx == monitored_can_message_queue_out_idx)
+		exit(printf("Error: monitored_can_message_queue full\n"));
 }
 
 void update_Car_state(struct can_frame frame)
@@ -526,7 +602,7 @@ void update_Car_state(struct can_frame frame)
 		update_speed_signal(frame);
 
 	if (monitored_can_id(frame.can_id))
-		send_can_messages_after_monitored_can_message(frame.can_id);
+		enqueue_monitored_can_message(frame.can_id);
 
 //	if (frame.can_id == 0x216) // Safe Stop?
 //		update_wheels_speed(frame);
@@ -771,11 +847,12 @@ void load_can_dump(FILE *can_dump_file)
 			payload[j * 2] = '\0';
 		}
 
-		printf("%d x - %s", i, line);
-		printf("%d y - (%lf) %s %03x#", i, can_dump_record[i].timestamp, can_dump_record[i].can_port, can_dump_record[i].frame.can_id);
-		for (int j = 0; j < payload_size; j++)
-			printf("%02x", can_dump_record[i].frame.data[j]);
-		printf("\n");
+//		printf("%d x - %s", i, line);
+//		printf("%d y - (%lf) %s %03x#", i, can_dump_record[i].timestamp, can_dump_record[i].can_port, can_dump_record[i].frame.can_id);
+//		for (int j = 0; j < payload_size; j++)
+//			printf("%02x", can_dump_record[i].frame.data[j]);
+//		printf("\n");
+
 		i++;
 	}
 }
@@ -850,7 +927,10 @@ int main(int argCount, char **argString)
 			else if (calibrate_steering_wheel_zero_torque)
 				calibrate_steering_wheel_zero_torque_state_machine();
 
-			ojSleepMsec(5);
+			if (monitored_can_message_queue_in_idx != monitored_can_message_queue_out_idx)
+				send_can_messages_after_monitored_can_message();
+
+			usleep(100);
 		}
 	}
 
