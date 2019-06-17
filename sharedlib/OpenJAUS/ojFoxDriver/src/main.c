@@ -113,10 +113,12 @@ int monitored_can_message_queue_out_idx = 0;
 
 #define COMPRESS_DELTA_T		0.005
 #define FIRST_CAN_DUMP_RECORD	(103 - 1)
-#define LAST_CAN_DUMP_RECORD	(4074 - 1)
-#define LOOP_CAN_DUMP_RECORD	(163 - 1)
+#define LAST_CAN_DUMP_RECORD	(357 - 1)
+#define LOOP_CAN_DUMP_RECORD	(131 - 1)
 
-int can_dump_record_idx = FIRST_CAN_DUMP_RECORD;
+int can_dump_record_idx = 1;
+
+static pthread_mutex_t monitored_can_message_queue_lock = PTHREAD_MUTEX_INITIALIZER;
 
 
 // Refresh screen in curses mode
@@ -521,6 +523,8 @@ void send_can_messages_after_monitored_can_message()
 	static int sending_messages = 0;
 	static double last_message_time = 0.0;
 
+	pthread_mutex_lock(&monitored_can_message_queue_lock);
+
 	if (sending_messages)
 	{
 		if ((ojGetTimeSec() - last_message_time) >
@@ -528,11 +532,12 @@ void send_can_messages_after_monitored_can_message()
 		{
 			send_frame(out_can_sockfd, &(can_dump_record[can_dump_record_idx].frame));
 
-			printf("%d - (%lf) %s %03x#", can_dump_record_idx, ojGetTimeSec(),
+			printf("send %d - (%lf) %s %03x#", can_dump_record_idx, ojGetTimeSec(),
 					can_dump_record[can_dump_record_idx].can_port, can_dump_record[can_dump_record_idx].frame.can_id);
 			for (int j = 0; j < can_dump_record[can_dump_record_idx].frame.can_dlc; j++)
 				printf("%02x", can_dump_record[can_dump_record_idx].frame.data[j]);
 			printf("\n");
+			fflush(stdout);
 
 			can_dump_record_idx++;
 			if (can_dump_record_idx > LAST_CAN_DUMP_RECORD)
@@ -561,6 +566,7 @@ void send_can_messages_after_monitored_can_message()
 			for (int j = 0; j < can_dump_record[can_dump_record_idx].frame.can_dlc; j++)
 				printf("%02x", can_dump_record[can_dump_record_idx].frame.data[j]);
 			printf("\n");
+			fflush(stdout);
 
 			can_dump_record_idx++;
 		}
@@ -568,20 +574,59 @@ void send_can_messages_after_monitored_can_message()
 		sending_messages = 1;
 		last_message_time = ojGetTimeSec();
 	}
+
+	pthread_mutex_unlock(&monitored_can_message_queue_lock);
 }
 
-void enqueue_monitored_can_message(int m_can_id)
+void send_initial_can_messages()
 {
-	monitored_can_message_queue[monitored_can_message_queue_in_idx++] = m_can_id;
+	static double last_message_time = 0.0;
+
+	pthread_mutex_lock(&monitored_can_message_queue_lock);
+
+	if ((ojGetTimeSec() - last_message_time) >
+		(can_dump_record[can_dump_record_idx].timestamp - can_dump_record[can_dump_record_idx - 1].timestamp - COMPRESS_DELTA_T))
+	{
+		send_frame(out_can_sockfd, &(can_dump_record[can_dump_record_idx].frame));
+
+		printf("init send %d - (%lf) %s %03x#", can_dump_record_idx, ojGetTimeSec(),
+				can_dump_record[can_dump_record_idx].can_port, can_dump_record[can_dump_record_idx].frame.can_id);
+		for (int j = 0; j < can_dump_record[can_dump_record_idx].frame.can_dlc; j++)
+			printf("%02x", can_dump_record[can_dump_record_idx].frame.data[j]);
+		printf("\n");
+		fflush(stdout);
+
+		can_dump_record_idx++;
+		if (can_dump_record_idx >= FIRST_CAN_DUMP_RECORD)
+			can_dump_record_idx = 1;
+
+		last_message_time = ojGetTimeSec();
+	}
+
+	pthread_mutex_unlock(&monitored_can_message_queue_lock);
+}
+
+void enqueue_monitored_can_message(struct can_frame frame)
+{
+	pthread_mutex_lock(&monitored_can_message_queue_lock);
+
+	monitored_can_message_queue[monitored_can_message_queue_in_idx++] = frame.can_id;
 
 	if (monitored_can_message_queue_in_idx >= MONITORED_CAN_MESSAGE_QUEUE_SIZE)
 		monitored_can_message_queue_in_idx = 0;
 
 	printf("enqueue: in %d, out %d\n", monitored_can_message_queue_in_idx, monitored_can_message_queue_out_idx);
+	printf("recv %d - (%lf) %s %03x#", can_dump_record_idx, ojGetTimeSec(),
+			can_dump_record[can_dump_record_idx].can_port, frame.can_id);
+	for (int j = 0; j < frame.can_dlc; j++)
+		printf("%02x", frame.data[j]);
+	printf("\n");
 	fflush(stdout);
 
 	if (monitored_can_message_queue_in_idx == monitored_can_message_queue_out_idx)
 		exit(printf("Error: monitored_can_message_queue full\n"));
+
+	pthread_mutex_unlock(&monitored_can_message_queue_lock);
 }
 
 void update_Car_state(struct can_frame frame)
@@ -602,7 +647,7 @@ void update_Car_state(struct can_frame frame)
 		update_speed_signal(frame);
 
 	if (monitored_can_id(frame.can_id))
-		enqueue_monitored_can_message(frame.can_id);
+		enqueue_monitored_can_message(frame);
 
 //	if (frame.can_id == 0x216) // Safe Stop?
 //		update_wheels_speed(frame);
@@ -876,7 +921,7 @@ int main(int argCount, char **argString)
 		out_can_sockfd = init_can(argString[2]);
 	}
 
-	init_modules();
+//	init_modules();
 
 	if (interface_active)
 		setupTerminal();
@@ -904,6 +949,7 @@ int main(int argCount, char **argString)
 	FILE *can_dump_file = fopen(can_dump_file_name, "r");
 	load_can_dump(can_dump_file);
 
+	int send_init_sequence = 1;
 	mainRunning = TRUE;
 	while(mainRunning)
 	{
@@ -928,7 +974,23 @@ int main(int argCount, char **argString)
 				calibrate_steering_wheel_zero_torque_state_machine();
 
 			if (monitored_can_message_queue_in_idx != monitored_can_message_queue_out_idx)
+			{
+				if (send_init_sequence)
+				{
+					send_init_sequence = 0;
+					can_dump_record_idx = FIRST_CAN_DUMP_RECORD;
+				}
 				send_can_messages_after_monitored_can_message();
+				printf(".");
+				fflush(stdout);
+			}
+			else
+			{
+				if (send_init_sequence)
+					send_initial_can_messages();
+				printf(";");
+				fflush(stdout);
+			}
 
 			usleep(100);
 		}
