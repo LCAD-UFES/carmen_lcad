@@ -116,9 +116,10 @@ int monitored_can_message_queue_out_idx = 0;
 #define LAST_CAN_DUMP_RECORD	(357 - 1)
 #define LOOP_CAN_DUMP_RECORD	(131 - 1)
 
-int can_dump_record_idx = 1;
+//int can_dump_record_idx = 1;
+int can_dump_record_idx = FIRST_CAN_DUMP_RECORD;
 
-static pthread_mutex_t monitored_can_message_queue_lock = PTHREAD_MUTEX_INITIALIZER;
+//static pthread_mutex_t monitored_can_message_queue_lock = PTHREAD_MUTEX_INITIALIZER;
 
 
 // Refresh screen in curses mode
@@ -523,7 +524,7 @@ void send_can_messages_after_monitored_can_message()
 	static int sending_messages = 0;
 	static double last_message_time = 0.0;
 
-	pthread_mutex_lock(&monitored_can_message_queue_lock);
+//	pthread_mutex_lock(&monitored_can_message_queue_lock);
 
 	if (sending_messages)
 	{
@@ -575,14 +576,14 @@ void send_can_messages_after_monitored_can_message()
 		last_message_time = ojGetTimeSec();
 	}
 
-	pthread_mutex_unlock(&monitored_can_message_queue_lock);
+//	pthread_mutex_unlock(&monitored_can_message_queue_lock);
 }
 
 void send_initial_can_messages()
 {
 	static double last_message_time = 0.0;
 
-	pthread_mutex_lock(&monitored_can_message_queue_lock);
+//	pthread_mutex_lock(&monitored_can_message_queue_lock);
 
 	if ((ojGetTimeSec() - last_message_time) >
 		(can_dump_record[can_dump_record_idx].timestamp - can_dump_record[can_dump_record_idx - 1].timestamp - COMPRESS_DELTA_T))
@@ -603,12 +604,12 @@ void send_initial_can_messages()
 		last_message_time = ojGetTimeSec();
 	}
 
-	pthread_mutex_unlock(&monitored_can_message_queue_lock);
+//	pthread_mutex_unlock(&monitored_can_message_queue_lock);
 }
 
 void enqueue_monitored_can_message(struct can_frame frame)
 {
-	pthread_mutex_lock(&monitored_can_message_queue_lock);
+//	pthread_mutex_lock(&monitored_can_message_queue_lock);
 
 	monitored_can_message_queue[monitored_can_message_queue_in_idx++] = frame.can_id;
 
@@ -626,7 +627,7 @@ void enqueue_monitored_can_message(struct can_frame frame)
 	if (monitored_can_message_queue_in_idx == monitored_can_message_queue_out_idx)
 		exit(printf("Error: monitored_can_message_queue full\n"));
 
-	pthread_mutex_unlock(&monitored_can_message_queue_lock);
+//	pthread_mutex_unlock(&monitored_can_message_queue_lock);
 }
 
 void update_Car_state(struct can_frame frame)
@@ -672,6 +673,7 @@ void *can_in_read_thread_func(void *unused)
 		{
 			recv_frame(in_can_sockfd, &frame);
 			update_Car_state(frame);
+//			usleep(10);
 		}
 	}
 
@@ -688,6 +690,7 @@ void *can_out_read_thread_func(void *unused)
 		{
 			recv_frame(out_can_sockfd, &frame);
 			update_Torc_state(frame);
+//			usleep(10);
 		}
 	}
 
@@ -949,7 +952,8 @@ int main(int argCount, char **argString)
 	FILE *can_dump_file = fopen(can_dump_file_name, "r");
 	load_can_dump(can_dump_file);
 
-	int send_init_sequence = 1;
+//	int send_init_sequence = 1;
+	int send_init_sequence = 0;
 	mainRunning = TRUE;
 	while(mainRunning)
 	{
@@ -968,10 +972,10 @@ int main(int argCount, char **argString)
 				first_time = false;
 			}
 
-			if (calibrate_steering_wheel_zero_angle)
-				calibrate_steering_wheel_zero_angle_state_machine();
-			else if (calibrate_steering_wheel_zero_torque)
-				calibrate_steering_wheel_zero_torque_state_machine();
+//			if (calibrate_steering_wheel_zero_angle)
+//				calibrate_steering_wheel_zero_angle_state_machine();
+//			else if (calibrate_steering_wheel_zero_torque)
+//				calibrate_steering_wheel_zero_torque_state_machine();
 
 			if (monitored_can_message_queue_in_idx != monitored_can_message_queue_out_idx)
 			{
