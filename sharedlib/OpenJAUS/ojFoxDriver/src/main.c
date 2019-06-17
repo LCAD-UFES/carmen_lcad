@@ -106,14 +106,14 @@ struct can_dump can_dump_record[10000];
 #define NUM_MONITORED_CAN_IDS 	4
 int monitored_can_ids[NUM_MONITORED_CAN_IDS] = {0x0C2, 0x0D0, 0x3D0, 0x729};
 
-#define MONITORED_CAN_MESSAGE_QUEUE_SIZE 	5
+#define MONITORED_CAN_MESSAGE_QUEUE_SIZE 	15
 int monitored_can_message_queue[MONITORED_CAN_MESSAGE_QUEUE_SIZE];
 int monitored_can_message_queue_in_idx = 0;
 int monitored_can_message_queue_out_idx = 0;
 
-#define COMPRESS_DELTA_T		0.005
+#define COMPRESS_DELTA_T		0.001
 #define FIRST_CAN_DUMP_RECORD	(103 - 1)
-#define LAST_CAN_DUMP_RECORD	(357 - 1)
+#define LAST_CAN_DUMP_RECORD	(4074 - 1)
 #define LOOP_CAN_DUMP_RECORD	(131 - 1)
 
 //int can_dump_record_idx = 1;
@@ -528,9 +528,11 @@ void send_can_messages_after_monitored_can_message()
 
 	if (sending_messages)
 	{
+		printf(".");
 		if ((ojGetTimeSec() - last_message_time) >
 			(can_dump_record[can_dump_record_idx].timestamp - can_dump_record[can_dump_record_idx - 1].timestamp - COMPRESS_DELTA_T))
 		{
+			printf("+");
 			send_frame(out_can_sockfd, &(can_dump_record[can_dump_record_idx].frame));
 
 			printf("send %d - (%lf) %s %03x#", can_dump_record_idx, ojGetTimeSec(),
@@ -547,10 +549,10 @@ void send_can_messages_after_monitored_can_message()
 			if (monitored_can_id(can_dump_record[can_dump_record_idx].frame.can_id))
 			{
 				monitored_can_message_queue_out_idx++;
-				printf("dequeue: in %d, out %d\n", monitored_can_message_queue_in_idx, monitored_can_message_queue_out_idx);
-				fflush(stdout);
 				if (monitored_can_message_queue_out_idx >= MONITORED_CAN_MESSAGE_QUEUE_SIZE)
 					monitored_can_message_queue_out_idx = 0;
+				printf("dequeue: in %d, out %d\n", monitored_can_message_queue_in_idx, monitored_can_message_queue_out_idx);
+				fflush(stdout);
 
 				sending_messages = 0;
 			}
@@ -560,6 +562,7 @@ void send_can_messages_after_monitored_can_message()
 	}
 	else
 	{
+		printf("#");
 		while (monitored_can_id(can_dump_record[can_dump_record_idx].frame.can_id))
 		{
 			printf("* %d - (%lf) %s %03x#", can_dump_record_idx, ojGetTimeSec(),
@@ -985,7 +988,6 @@ int main(int argCount, char **argString)
 					can_dump_record_idx = FIRST_CAN_DUMP_RECORD;
 				}
 				send_can_messages_after_monitored_can_message();
-				printf(".");
 				fflush(stdout);
 			}
 			else
@@ -996,7 +998,7 @@ int main(int argCount, char **argString)
 				fflush(stdout);
 			}
 
-			usleep(100);
+			usleep(10);
 		}
 	}
 
