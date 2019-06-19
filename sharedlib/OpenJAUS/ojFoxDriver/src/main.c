@@ -532,15 +532,15 @@ void send_can_messages_after_monitored_can_message()
 		if ((ojGetTimeSec() - last_message_time) >
 			(can_dump_record[can_dump_record_idx].timestamp - can_dump_record[can_dump_record_idx - 1].timestamp - COMPRESS_DELTA_T))
 		{
-			printf("+");
-			send_frame(out_can_sockfd, &(can_dump_record[can_dump_record_idx].frame));
-
 			printf("send %d - (%lf) %s %03x#", can_dump_record_idx, ojGetTimeSec(),
 					can_dump_record[can_dump_record_idx].can_port, can_dump_record[can_dump_record_idx].frame.can_id);
 			for (int j = 0; j < can_dump_record[can_dump_record_idx].frame.can_dlc; j++)
 				printf("%02x", can_dump_record[can_dump_record_idx].frame.data[j]);
 			printf("\n");
 			fflush(stdout);
+
+			send_frame(out_can_sockfd, &(can_dump_record[can_dump_record_idx].frame));
+			printf("+");
 
 			can_dump_record_idx++;
 			if (can_dump_record_idx > LAST_CAN_DUMP_RECORD)
