@@ -1,7 +1,7 @@
 TARGET	= ./bin/ojCanStimulus
 CCFLAGS	= -Wall -fno-strict-aliasing -c -g -I ./include/ -I ../libjaus/include/ -I ../libopenJaus/include/ -I ../ojIARASim/include
-LFLAGS	= -L ../libjaus/lib/ -L ../libopenJaus/lib/ -L ../ojIARASim/lib/
-LIBS	= -lpthread -lopenJaus -ljaus -lojIARASim
+LFLAGS	= -L ../libjaus/lib/ -L ../libopenJaus/lib/ -L ../ojIARASim/lib/ -L ../ojTorc/lib/
+LIBS	= -lpthread -lopenJaus -ljaus -lojIARASim -lojTorc
 
 SOURCES = ./src/main.c
 
