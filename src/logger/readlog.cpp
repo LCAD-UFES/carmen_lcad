@@ -1021,7 +1021,7 @@ char *carmen_string_to_kinect_video_message(char *string,
 
 char* carmen_string_to_xsens_euler_message(char* string, carmen_xsens_global_euler_message* msg)
 {
-	char* current_pos = string;
+	char *current_pos = string;
 
 	if (strncmp(current_pos, "XSENS_EULER ", 12) == 0){
 		current_pos = carmen_next_word(current_pos);
@@ -1055,7 +1055,7 @@ char* carmen_string_to_xsens_euler_message(char* string, carmen_xsens_global_eul
 
 char* carmen_string_to_xsens_quat_message(char* string, carmen_xsens_global_quat_message* msg)
 {
-	char* current_pos = string;
+	char *current_pos = string;
 	if (strncmp(current_pos, "XSENS_QUAT ", 11) == 0)
 		current_pos = carmen_next_word(current_pos);
 
@@ -1088,7 +1088,7 @@ char* carmen_string_to_xsens_quat_message(char* string, carmen_xsens_global_quat
 
 char* carmen_string_to_pi_imu_message(char* string, carmen_pi_imu_message_t* msg)
 {
-	char* current_pos = string;
+	char *current_pos = string;
 	if (strncmp(current_pos, "PI_IMU ", 7) == 0)
 		current_pos = carmen_next_word(current_pos);
 
@@ -1104,6 +1104,12 @@ char* carmen_string_to_pi_imu_message(char* string, carmen_pi_imu_message_t* msg
 	msg->imu_vector.gyro.y = CLF_READ_DOUBLE(&current_pos);
 	msg->imu_vector.gyro.z = CLF_READ_DOUBLE(&current_pos);
 
+	msg->imu_vector.quat_data.m_data[0] = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector.quat_data.m_data[1] = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector.quat_data.m_data[2] = CLF_READ_DOUBLE(&current_pos);
+	msg->imu_vector.quat_data.m_data[3] = CLF_READ_DOUBLE(&current_pos);
+
+
 	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
 
 	copy_host_string(&msg->host, &current_pos);
@@ -1114,7 +1120,7 @@ char* carmen_string_to_pi_imu_message(char* string, carmen_pi_imu_message_t* msg
 
 char* carmen_string_to_xsens_matrix_message(char* string, carmen_xsens_global_matrix_message* msg)
 {
-	char* current_pos = string;
+	char *current_pos = string;
 	if (strncmp(current_pos, "XSENS_MATRIX ", 13) == 0)
 		current_pos = carmen_next_word(current_pos);
 
@@ -1154,7 +1160,7 @@ char* carmen_string_to_xsens_matrix_message(char* string, carmen_xsens_global_ma
 
 char* carmen_string_to_xsens_mtig_message(char* string, carmen_xsens_mtig_message* msg)
 {
-	char* current_pos = string;
+	char *current_pos = string;
 	if (strncmp(current_pos, "XSENS_MTIG ", 11) == 0)
 		current_pos = carmen_next_word(current_pos);
 

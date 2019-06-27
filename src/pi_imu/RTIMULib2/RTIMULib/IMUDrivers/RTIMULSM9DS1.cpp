@@ -204,7 +204,7 @@ bool RTIMULSM9DS1::setGyroSampleRate()
         #ifndef do_log
         	m_gyroScale = (RTFLOAT)0.00875 * RTMATH_DEGREE_TO_RAD;
 		#else
-        	m_gyroScale = (RTFLOAT)1.00000 * RTMATH_DEGREE_TO_RAD;;
+        	m_gyroScale = (RTFLOAT)1.00000;
 		#endif
 
         break;
@@ -214,7 +214,7 @@ bool RTIMULSM9DS1::setGyroSampleRate()
 		#ifndef do_log
         	m_gyroScale = (RTFLOAT)0.0175 * RTMATH_DEGREE_TO_RAD;
 		#else
-        	m_gyroScale = (RTFLOAT)1.00000 * RTMATH_DEGREE_TO_RAD;;
+        	m_gyroScale = (RTFLOAT)1.00000;
 		#endif
 
         break;
@@ -224,7 +224,7 @@ bool RTIMULSM9DS1::setGyroSampleRate()
 		#ifndef do_log
         	m_gyroScale = (RTFLOAT)0.07 * RTMATH_DEGREE_TO_RAD;
 		#else
-        	m_gyroScale = (RTFLOAT)1.00000 * RTMATH_DEGREE_TO_RAD;;
+        	m_gyroScale = (RTFLOAT)1.00000;
 		#endif
 
         break;

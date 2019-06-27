@@ -19,6 +19,7 @@ typedef struct
 	carmen_vector_3D_t accel;
 	carmen_vector_3D_t gyro;
 	carmen_vector_3D_t magnetometer;
+	carmen_xsens_quat quat_data;
 } carmen_imu_t;
 
 
@@ -30,7 +31,7 @@ typedef struct
 } carmen_pi_imu_message_t;
 
 #define CARMEN_PI_IMU_NAME 	"carmen_pi_imu_message"
-#define CARMEN_PI_IMU_FMT 	"{{{double,double,double},{double,double,double},{double,double,double}},double,string}"
+#define CARMEN_PI_IMU_FMT 	"{{{double,double,double}, {double,double,double}, {double,double,double}, { [double: 4] }}, double, string}"
 
 #ifdef __cplusplus
 }

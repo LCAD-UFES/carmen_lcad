@@ -154,8 +154,9 @@ main(int argc, char **argv)
 
 	
 
-		carmen_pi_imu_define_messages();
-		carmen_xsens_define_messages();
+	carmen_pi_imu_define_messages();
+	carmen_xsens_define_messages();
+
 	carmen_xsens_global_quat_message xsens_quat_message;
 	carmen_pi_imu_message_t pi_imu_message;
 	//pi_imu_message.imu_vector = (carmen_imu_t*) calloc (1, sizeof (carmen_imu_t));
@@ -192,11 +193,15 @@ main(int argc, char **argv)
 		pi_imu_message.imu_vector.magnetometer.x = xsens_quat_message.m_mag.x;
 		pi_imu_message.imu_vector.magnetometer.y = xsens_quat_message.m_mag.y;
 		pi_imu_message.imu_vector.magnetometer.z = xsens_quat_message.m_mag.z;
+		pi_imu_message.imu_vector.quat_data.m_data[0] = xsens_quat_message.quat_data.m_data[0];
+		pi_imu_message.imu_vector.quat_data.m_data[1] = xsens_quat_message.quat_data.m_data[1];
+		pi_imu_message.imu_vector.quat_data.m_data[2] = xsens_quat_message.quat_data.m_data[2];
+		pi_imu_message.imu_vector.quat_data.m_data[3] = xsens_quat_message.quat_data.m_data[3];
 		pi_imu_message.timestamp = carmen_get_time();
 		pi_imu_message.host = carmen_get_host();
 
 		publish_pi_imu_message(pi_imu_message);
-		carmen_publish_xsens_quat_message(xsens_quat_message);
+		//carmen_publish_xsens_quat_message(xsens_quat_message);
 	}
 
 	return (0);

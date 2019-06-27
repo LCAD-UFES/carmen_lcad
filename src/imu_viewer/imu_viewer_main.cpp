@@ -3,7 +3,6 @@
 
 //#include <QtGui/QApplication>
 #include <QtWidgets/QApplication>
-#include "mainwindow.h"
 #include <carmen/carmen.h>
 #include <carmen/xsens_mtig_interface.h>
 #include <carmen/xsens_interface.h>
@@ -11,11 +10,11 @@
 #include <carmen/rotation_geometry.h>
 #include <carmen/gps_xyz_interface.h>
 #include <math.h>
-#include<carmen/pi_imu_messages.h>
-#include<carmen/param_interface.h>
+#include <carmen/param_interface.h>
+#include "mainwindow.h"
 
 carmen_xsens_global_quat_message *xsens_quat_message, *data;
-carmen_xsens_global_message *data_pose, *pose;
+carmen_xsens_global_message *data_pose, *data_pose_pi, *pose;
 carmen_pi_imu_message_t *imu_msg;
 
 rotation_matrix *
@@ -136,6 +135,14 @@ imu_handler(carmen_pi_imu_message_t* msg)
 			imu_msg->imu_vector.accel.x, imu_msg->imu_vector.accel.y, imu_msg->imu_vector.accel.z,
 			imu_msg->imu_vector.gyro.x, imu_msg->imu_vector.gyro.y, imu_msg->imu_vector.gyro.z,
 			imu_msg->imu_vector.magnetometer.x, imu_msg->imu_vector.magnetometer.y, imu_msg->imu_vector.magnetometer.z);
+
+	rotation_matrix *r_mat = create_rotation_matrix_from_quaternions_new(imu_msg->imu_vector.quat_data);
+	carmen_orientation_3D_t euler_angles = get_angles_from_rotation_matrix_new(r_mat);//, xsens_quat_message);
+	destroy_rotation_matrix(r_mat);
+
+	data_pose_pi->m_roll = euler_angles.roll;
+	data_pose_pi->m_pitch = euler_angles.pitch;
+	data_pose_pi->m_yaw = euler_angles.yaw;
 }
 
 void
@@ -180,8 +187,9 @@ main(int argc, char *argv[])
 
 	QApplication a(argc, argv);
     MainWindow w(0,800,600, data, data_pose);
-
+	MainWindowPI wpi(0,800,600, imu_msg, data_pose_pi);
     w.show();
+	wpi.show();
 
     return (a.exec());
 }

@@ -536,6 +536,12 @@ void carmen_logwrite_write_pi_imu(carmen_pi_imu_message_t* msg,
 	carmen_fprintf(outfile, "%lf ", msg->imu_vector.gyro.y);
 	carmen_fprintf(outfile, "%lf ", msg->imu_vector.gyro.z);
 
+	carmen_fprintf(outfile, "%lf ", msg->imu_vector.quat_data.m_data[0]);
+	carmen_fprintf(outfile, "%lf ", msg->imu_vector.quat_data.m_data[1]);
+	carmen_fprintf(outfile, "%lf ", msg->imu_vector.quat_data.m_data[2]);
+	carmen_fprintf(outfile, "%lf ", msg->imu_vector.quat_data.m_data[3]);
+
+
 	carmen_fprintf(outfile, "%lf %s %lf\n", msg->timestamp, msg->host, timestamp);
 }
 

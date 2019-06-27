@@ -1,5 +1,4 @@
 #include <carmen/carmen.h>
-#include <carmen/pi_imu_messages.h>
 #include <carmen/pi_imu_interface.h>
 #include <iostream>
 
