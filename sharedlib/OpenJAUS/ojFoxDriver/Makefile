@@ -1,5 +1,5 @@
-TARGET	= 	./bin/ojVehicleDriver
-TARGETSO = 	./lib/libojVehicleDriver.so
+TARGET	= 	./bin/ojFoxDriver
+TARGETSO = 	./lib/libojFoxDriver.so
 
 CCFLAGS	=	-fPIC -Wall -fno-strict-aliasing -c -g -I ./include/ -I ../libjaus/include/ -I ../libopenJaus/include/ -I ../ojTorc/include
 LFLAGS	=	-L ../libjaus/lib/ -L ../libopenJaus/lib/ -L ../ojTorc/lib/

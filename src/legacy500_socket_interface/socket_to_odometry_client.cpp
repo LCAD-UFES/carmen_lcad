@@ -49,7 +49,7 @@ stablished_connection_with_server()
 
 
 void
-extract_odometry_from_socket_and_send_msg(float *array)
+extract_odometry_from_socket_and_send_base_ackerman_msg(double *array)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_base_ackerman_odometry_message odometry;
@@ -66,6 +66,23 @@ extract_odometry_from_socket_and_send_msg(float *array)
 
 	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
 	carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
+}
+
+
+void
+extract_odometry_from_socket_and_send_robot_ackerman_msg(double *array)
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+	carmen_robot_ackerman_velocity_message odometry;
+
+	odometry.v     = array[3];
+	odometry.phi   = array[4];
+
+//	printf ("%lf %lf %lf %lf %lf\n", array[0], array[1], array[2], array[3], array[4]);
+
+	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &odometry);
+	carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
+
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -102,11 +119,12 @@ initialize_ipc(void)
 {
 	IPC_RETURN_TYPE err;
 
-	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME,
-			IPC_VARIABLE_LENGTH,
-			CARMEN_BASE_ACKERMAN_ODOMETRY_FMT);
-	if (err != IPC_OK)
-		return -1;
+	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, IPC_VARIABLE_LENGTH, CARMEN_BASE_ACKERMAN_ODOMETRY_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
+
+	err = IPC_defineMsg(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, IPC_VARIABLE_LENGTH, CARMEN_BASE_ACKERMAN_ODOMETRY_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
+
 
 	return 0;
 }
@@ -115,7 +133,7 @@ initialize_ipc(void)
 int
 main(int argc, char **argv)
 {
-	float array[40];
+	double array[5];
 	int result = 0;
 
 	carmen_ipc_initialize(argc, argv);
@@ -144,7 +162,7 @@ main(int argc, char **argv)
 		}
 		else
 		{
-			extract_odometry_from_socket_and_send_msg(array);
+			extract_odometry_from_socket_and_send_base_ackerman_msg(array);
 		}
 	}
 	return (0);
