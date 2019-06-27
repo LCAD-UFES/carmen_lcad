@@ -198,9 +198,9 @@ MainWindow::handleAbout()
 }
 
 // Open the 'about' dialog box
-/*void
+void
 MainWindowPI::handleAbout()
 {
     QMessageBox::information(this,"About OpenGL Frame","<H2>OpenGL Frame</H2>2011<BR>Supported by the Cart-O-Matic project (ANR CAROTTE)<BR>University of Angers (France,Europe)<BR>Designed by Philippe Lucidarme <BR> Contact: philippe.lucidarme@univ-angers.fr. ");
-}*/
+}
 
