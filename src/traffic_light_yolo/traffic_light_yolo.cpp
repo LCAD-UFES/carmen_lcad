@@ -12,6 +12,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/ml.hpp>
+#include <boost/program_options.hpp>
 #include <sys/stat.h>
 #include <cmath>
 #include <vector>
@@ -23,8 +24,10 @@
 using namespace std;
 using namespace cv;
 using namespace cv::ml;
+namespace po = boost::program_options;
 
 const char * CARMEN_HOME = std::getenv("CARMEN_HOME");
+string CARMEN_HOME_STR = string(CARMEN_HOME);
 int camera;
 int camera_side;
 char **classes_names;
@@ -66,49 +69,76 @@ vector <carmen_pose_3D_t> annotation_vector;
 vector <carmen_pose_3D_t> nearests_traffic_lights_vector;
 
 image_cartesian marker_picked_point;
-// carmen_pose_3D_t picked_point;
 Point screen_marker = Point(0,0);
 bool screen_marker_set = false;
 bool marker_point_found = false;
 
-// These control what is displayed on the window. They are variables because it would be super cool to change them according to command line options in the future.
-bool DRAW_FPS = false;
-bool DRAW_TEXT = true;
-bool DRAW_TEXT_BACKGROUND = true;
-bool DRAW_BBS = true; // Falso para criar o GT.
-bool DRAW_CLOSE_TLS = true; // Falso para criar o GT.
-bool DRAW_CIRCLE_THRESHOLD = true;
-bool DRAW_LIDAR_POINTS = false;
-bool DRAW_FINAL_PREDICTION = true; // Falso para criar o GT.
-bool RUN_YOLO = true; // Falso para criar o GT.
-bool RUN_RANDOM_FOREST = true; // Falso para criar o GT.
-bool COMPUTE_TL_POSES = false;
-bool PRINT_FINAL_PREDICTION = true; // Falso para criar o GT.
-bool PRINT_GT_PREP = false;
-enum class_set {
-    RG, // The only classes are Red and Green.
-    RGY, // The only classes are Red, Green and Yellow.
-    COCO, // All COCO classes.
-};
-class_set YOLO_CLASS_SET = COCO;
-class_set FINAL_CLASS_SET = RGY;
+typedef struct {
+    string annotation_path;
+
+    // string preset; // Loads some default values. "possatti", "possatti_rf", "coco_rf"
+
+    string yolo_cfg;
+    string yolo_names;
+    string yolo_weights;
+    float yolo_thresh;
+
+    string rf_weights;
+
+    string yolo_class_set;
+    string final_class_set;
+
+    bool draw_fps;
+    bool draw_text;
+    bool draw_text_background;
+    bool draw_bbs; // Falso para criar o GT.
+    bool draw_close_tls; // Falso para criar o GT.
+    bool draw_circle_threshold;
+    bool draw_lidar_points;
+    bool draw_final_prediction; // Falso para criar o GT.
+    bool run_yolo; // Falso para criar o GT.
+    bool run_random_forest; // Falso para criar o GT.
+    bool compute_tl_poses;
+    bool print_final_prediction; // Falso para criar o GT.
+    bool print_gt_prep;
+} traffic_light_yolo_params;
+traffic_light_yolo_params params;
 
 #define TRAFFIC_LIGHT_GROUPING_TRESHOLD 20 // Distance in meters to consider traffic light position
-// #define MAX_TRAFFIC_LIGHT_DIST 100
-#define MAX_TRAFFIC_LIGHT_DIST 110 // For annotating ground truth.
+#define MAX_TRAFFIC_LIGHT_DIST 100
+// #define MAX_TRAFFIC_LIGHT_DIST 110 // For annotating ground truth.
 #define MIN_TRAFFIC_LIGHT_THRESHOLD 10 // 30
 #define MAX_TRAFFIC_LIGHT_THRESHOLD 90 // 1000
 #define DEFAULT_TRAFFIC_LIGHT_THRESHOLD 60 // pixels
 #define TRAFFIC_LIGHT_IMAGE_THRESHOLD 1.5 // meters
 #define ORIENTATION_RESTRICTION 60 // degrees
 #define CAMERA_HFOV_2 20 // Camera hfov / 2 = 33
-#define CONFIDENCE_THRESHOLD 0.2
 
-
-// #define RESIZED_W 1280
-// #define RESIZED_H 960
 #define RESIZED_W 640
 #define RESIZED_H 480
+
+
+inline bool
+file_exists(const std::string& name)
+{
+    struct stat buffer;
+    return (stat (name.c_str(), &buffer) == 0);
+}
+
+inline bool
+file_exists_and_is_not_empty(const std::string& name)
+{
+    struct stat buffer;
+    return ((stat(name.c_str(), &buffer) == 0) && (buffer.st_size > 0));
+}
+
+inline void
+file_ok_or_error(const std::string& name) {
+    if (!file_exists_and_is_not_empty(name)) {
+        cerr << "ERROR: File does not exist or is empty '" << name << "'!\n";
+        exit(1);
+    }
+}
 
 vector<Mat>
 make_box_views(Mat img, vector<bbox_t> predictions)
@@ -184,7 +214,7 @@ compute_distance_to_the_traffic_light()
     {
             double distance = sqrt(pow(globalpos_msg->globalpos.x - annotation_vector[i].position.x, 2) +
                             pow(globalpos_msg->globalpos.y - annotation_vector[i].position.y, 2));
-            // if (distance < nearest_traffic_light_distance)
+
             if (distance <= MAX_TRAFFIC_LIGHT_DIST && distance < nearest_traffic_light_distance)
             {
                 bool orientation_ok = fabs(carmen_radians_to_degrees(globalpos_msg->globalpos.theta - annotation_vector[i].orientation.yaw)) < ORIENTATION_RESTRICTION ? 1 : 0;
@@ -320,20 +350,20 @@ display(Mat image, vector<bbox_t> predictions, double fps, vector<image_cartesia
     char object_info[25];
     char frame_rate[25];
 
-    if (DRAW_LIDAR_POINTS)
+    if (params.draw_lidar_points)
     {
         show_LIDAR_points(image, lidar_points, 100, 255, 100, 1);
     }
 
     cvtColor(image, image, COLOR_RGB2BGR);
 
-    if (DRAW_FPS)
+    if (params.draw_fps)
     {
         snprintf(frame_rate, 25, "FPS = %.2f", fps);
         putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
     }
 
-    if (DRAW_BBS)
+    if (params.draw_bbs)
     {
         for (unsigned int i = 0; i < predictions.size(); i++)
         {
@@ -343,16 +373,16 @@ display(Mat image, vector<bbox_t> predictions, double fps, vector<image_cartesia
             }
             rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)), bb_color, 1);
 
-            if (DRAW_TEXT) {
+            if (params.draw_text) {
                 string class_name = classes_names[predictions[i].obj_id];
-                if ((FINAL_CLASS_SET == RGY) && (tl_rgy_labels.find(predictions[i].obj_id) != tl_rgy_labels.end()))
+                if ((params.final_class_set == "RGY") && (tl_rgy_labels.find(predictions[i].obj_id) != tl_rgy_labels.end()))
                 {
                     class_name = tl_rgy_labels[predictions[i].obj_id];
                 }
 
                 snprintf(object_info, 25, "%d %s %d", predictions[i].obj_id, class_name.c_str(), (int)predictions[i].prob);
 
-                if (DRAW_TEXT_BACKGROUND)
+                if (params.draw_text_background)
                 {
                     //Drawing backgound into text
                     int baseline=0;
@@ -889,8 +919,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     }
 
     vector<bbox_t> predictions;
-    if (RUN_YOLO) {
-        predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, CONFIDENCE_THRESHOLD);
+    if (params.run_yolo) {
+        predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, params.yolo_thresh);
     } else {
         fprintf(stderr, "==============================\n");
         fprintf(stderr, "WARNING: YOLO is not running!!\n");
@@ -899,20 +929,20 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     // Filter irrelevant COCO classes, when using the COCO model.
     // This may be unnecessary overhead. We could just ignore the other classes...
-    if (YOLO_CLASS_SET == COCO) {
+    if (params.yolo_class_set == "COCO") {
         auto new_end = std::remove_if(predictions.begin(), predictions.end(),
             [](bbox_t bb){return bb.obj_id != 9;});
         predictions.erase(new_end, predictions.end());
     }
 
-    if (RUN_RANDOM_FOREST) {
+    if (params.run_random_forest) {
         vector<Mat> views = make_box_views(open_cv_image, predictions);
         // mkdir("/tmp/tf_bboxes", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH); // Debugging...
         // save_mats_as_images(views, "/tmp/tf_bboxes"); // Debugging...
         Mat imgs_data = pack_images_together(views);
         Mat rf_predictions;
         rf->predict(imgs_data, rf_predictions);
-        rf_predictions -= 1; // Jean did it so 1=red, 2=green, 3=yellow... weird.
+        rf_predictions -= 1; // Jean did it so that 1=red, 2=green, 3=yellow... weird.
         for (size_t i = 0; i < predictions.size(); i++)
         {
             predictions[i].obj_id = static_cast<int>(rf_predictions.at<float>(i));
@@ -951,7 +981,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
                 if (tl_on_cam.x >= 0 && tl_on_cam.y >= 0 && tl_on_cam.x < RESIZED_W && tl_on_cam.y < RESIZED_H) {
                     tf_annotations_on_image.push_back(tl_on_cam);
 
-                    if (DRAW_CIRCLE_THRESHOLD)
+                    if (params.draw_circle_threshold)
                     {
                         // circle(open_cv_image, Point((int)tf_annotations_on_image[i].x, (int)tf_annotations_on_image[i].y), 3, Scalar(255, 255, 0), -1, 8);
                         // circle(open_cv_image, Point((int)tf_annotations_on_image[i].x, (int)tf_annotations_on_image[i].y), compute_threshold(), Scalar(255, 255, 0), 1, 8);
@@ -961,7 +991,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
             }
 
             // if (predictions.size() > 0 && COMPUTE_TL_POSES)
-            if (COMPUTE_TL_POSES)
+            if (params.compute_tl_poses)
             {
                 // FIXME: Quase certeza que da pra tirar o `predictions.size() > 0`.
                 compute_traffic_light_pose(predictions, RESIZED_W, RESIZED_H, crop_x, crop_y, crop_w, crop_h, lidar_points);
@@ -971,7 +1001,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
                 carmen_traffic_light_message traffic_light_message = build_traffic_light_message(image_msg, predictions, tf_annotations_on_image, tl_threshold);
                 publish_traffic_lights(&traffic_light_message);
 
-                if (DRAW_FINAL_PREDICTION)
+                if (params.draw_final_prediction)
                 {
                     draw_final_prediction(open_cv_image, traffic_light_message.traffic_lights->color);
                 }
@@ -987,14 +1017,14 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
             snprintf(gt_prep_line, line_size,          "timestamp(image)=%lf; distance=NaN; tl_state=\n", image_msg->timestamp);
         }
 
-        if (PRINT_FINAL_PREDICTION) {
+        if (params.print_final_prediction) {
             printf("%s", final_prediction_line);
-        } else if (PRINT_GT_PREP) {
+        } else if (params.print_gt_prep) {
             printf("%s", gt_prep_line);
         }
 
         // @possatti Debug TL annotations within a distance.
-        if (DRAW_CLOSE_TLS)
+        if (params.draw_close_tls)
         {
             for (unsigned int i = 0; i < annotation_vector.size(); i++)
             {
@@ -1012,7 +1042,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
             }
         }
 
-        if (COMPUTE_TL_POSES)
+        if (params.compute_tl_poses)
         {
             compute_picked_point(lidar_points);
         }
@@ -1082,10 +1112,10 @@ void
 load_traffic_light_annotation_file(char* path)
 {
     carmen_pose_3D_t pose;
-    
-    std::ifstream ifile(path);
-    if (!(bool)ifile) {
-        printf("Neural Object Detector: File %s doesn't exist.\n", path);
+
+    if (!file_exists(path))
+    {
+        printf("Neural Object Detector: File '%s' doesn't exist.\n", path);
         exit(1);
     }
 
@@ -1118,17 +1148,96 @@ load_traffic_light_annotation_file(char* path)
     fclose(annotation_file);
 }
 
+void
+show_help(string program_name, po::options_description options_description)
+{
+    cerr << "Usage: " << program_name << " [options] <camera_number> <camera_side> <annotation_path>" << endl;
+    cerr << endl;
+    cerr << options_description << endl;
+}
+
+void
+debug_args(int argc, char **argv) {
+    cerr << "args: ";
+    for (size_t i = 0; i < argc; i++)
+    {
+        cerr << argv[i] << " ";
+    }
+    cerr << endl;
+}
 
 void
 read_parameters(int argc, char **argv)
 {
-    if ((argc != 4))
-        carmen_die("%s: Wrong number of parameters. neural_object_detector requires 3 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)> <rddf_file_path>\n", argv[0], argc - 1, argv[0]);
+    /**
+     * I'm using short and long options like: `-l` and `--long-option` which
+     * is the default in boost and is more common for unix. But I understand
+     * that this differs from the style currently being used with param_daemon.
+     * In case we want to change it in the future, `allow_long_disguise` should
+     * be used: https://stackoverflow.com/a/7233840
+     **/
+    po::positional_options_description pos_desc;
+    pos_desc.add("camera_number", 1);
+    pos_desc.add("camera_side", 1);
+    pos_desc.add("annotation_path", 1);
 
-    camera = atoi(argv[1]);             // Define the camera to be used
-    camera_side = atoi(argv[2]);        // 0 For left image 1 for right image
+    po::options_description opts_desc{"Options"};
+    opts_desc.add_options()
+        ("help,h", "Help screen.")
 
-    load_traffic_light_annotation_file(argv[3]);
+        // These first will be positional arguments.
+        ("camera_number", po::value<int>(), "Which camera should be used")
+        ("camera_side", po::value<int>(), "Choose 0 for left image, or 1 for right image.")
+        ("annotation_path", po::value<string>(&params.annotation_path))
+
+        // ("preset", value<string>(&params.preset)->default_value("possatti"), "Easy way to load some default values for yolo and random forest.")
+        ("yolo_cfg", po::value<string>(&params.yolo_cfg)->default_value(CARMEN_HOME_STR+"/sharedlib/darknet2/cfg/yolov3.cfg"))
+        ("yolo_names", po::value<string>(&params.yolo_names)->default_value(CARMEN_HOME_STR+"/sharedlib/darknet2/data/coco.names"))
+        ("yolo_weights", po::value<string>(&params.yolo_weights)->default_value(CARMEN_HOME_STR+"/sharedlib/darknet2/yolov3.weights"))
+        ("yolo_thresh", po::value<float>(&params.yolo_thresh)->default_value(0.2), "Only boxes with confidence above the threshold will be used.")
+
+        ("rf_weights", po::value<string>(&params.rf_weights)->default_value(CARMEN_HOME_STR+"/data/ml_models/traffic_lights/random_forest_classifier/cv_rtrees_weights_tl_rgy.yml"))
+
+        ("yolo_class_set", po::value<string>(&params.yolo_class_set)->default_value("COCO"))
+        ("final_class_set", po::value<string>(&params.final_class_set)->default_value("RGY"))
+
+        ("draw_fps",               po::value<bool>(&params.draw_fps)->default_value(false))
+        ("draw_text",              po::value<bool>(&params.draw_text)->default_value(true))
+        ("draw_text_background",   po::value<bool>(&params.draw_text_background)->default_value(true))
+        ("draw_bbs",               po::value<bool>(&params.draw_bbs)->default_value(true)) // Falso para criar o GT.
+        ("draw_close_tls",         po::value<bool>(&params.draw_close_tls)->default_value(true)) // Falso para criar o GT.
+        ("draw_circle_threshold",  po::value<bool>(&params.draw_circle_threshold)->default_value(true))
+        ("draw_lidar_points",      po::value<bool>(&params.draw_lidar_points)->default_value(false))
+        ("draw_final_prediction",  po::value<bool>(&params.draw_final_prediction)->default_value(true)) // Falso para criar o GT.
+        ("run_yolo",               po::value<bool>(&params.run_yolo)->default_value(true)) // Falso para criar o GT.
+        ("run_random_forest",      po::value<bool>(&params.run_random_forest)->default_value(true)) // Falso para criar o GT.
+        ("compute_tl_poses",       po::value<bool>(&params.compute_tl_poses)->default_value(false))
+        ("print_final_prediction", po::value<bool>(&params.print_final_prediction)->default_value(true)) // Falso para criar o GT.
+        ("print_gt_prep",          po::value<bool>(&params.print_gt_prep)->default_value(false))
+        ;
+
+    po::variables_map vm;
+    auto parsed = po::command_line_parser(argc, argv)
+        .positional(pos_desc)
+        .options(opts_desc)
+        .run();
+    po::store(parsed, vm);
+    po::notify(vm);
+    if (vm.count("help")) {
+        show_help(argv[0], opts_desc);
+        exit(0);
+    }
+    vector<string> mandatory_args = {"camera_number", "camera_side", "annotation_path"};
+    for (string arg: mandatory_args) {
+        if (vm[arg].empty()) {
+            cerr << "ERROR: Missing mandatory argument '" << arg << "'!" << endl << endl;
+            show_help(argv[0], opts_desc);
+            exit(1);
+        }
+    }
+
+    camera = vm["camera_number"].as<int>();
+    camera_side = vm["camera_side"].as<int>();
 
     int num_items;
 
@@ -1186,84 +1295,41 @@ onMouse(int event, int x, int y, int, void*)
     }
 }
 
-inline bool
-file_exists(const std::string& name)
-{
-    struct stat buffer;
-    return (stat (name.c_str(), &buffer) == 0);
-}
-
-inline bool
-file_exists_and_is_not_empty(const std::string& name)
-{
-    struct stat buffer;
-    return ((stat(name.c_str(), &buffer) == 0) && (buffer.st_size > 0));
-}
-
-inline void
-file_ok_or_error(const std::string& name) {
-    if (!file_exists_and_is_not_empty(name)) {
-        cerr << "ERROR: File does not exist or is empty '" << name << "'!\n";
-        exit(1);
-    }
-}
-
 void
 initializer()
 {
     initialize_transformations(board_pose, camera_pose, &transformer);
 
-    // string darknet_names_file_path, darknet_cfg_file_path, darknet_weights_file_path;
-    char darknet_names_file_path[1024], darknet_cfg_file_path[1024], darknet_weights_file_path[1024];
+    load_traffic_light_annotation_file(const_cast<char*>(params.annotation_path.c_str()));
 
-    /** YOLOv3 treinada pelo Possatti. */
-    // darknet_names_file_path = "../sharedlib/darknet2/data/traffic_light.names";
-    // darknet_cfg_file_path = "../sharedlib/darknet2/cfg/traffic_light.cfg";
-    // darknet_weights_file_path = "../sharedlib/darknet2/yolov3_traffic_light_rgo.weights";
+    if (params.run_yolo)
+    {
+        file_ok_or_error(params.yolo_names);
+        file_ok_or_error(params.yolo_cfg);
+        file_ok_or_error(params.yolo_weights);
 
-    /** YOLOv3 treinada no COCO. */
-    sprintf(darknet_names_file_path, "%s/%s", CARMEN_HOME, "sharedlib/darknet2/data/coco.names");
-    sprintf(darknet_cfg_file_path, "%s/%s", CARMEN_HOME, "sharedlib/darknet2/cfg/yolov3.cfg");
-    sprintf(darknet_weights_file_path, "%s/%s", CARMEN_HOME, "sharedlib/darknet2/yolov3.weights");
+        cerr << "INFO: Darknet class names file: " << params.yolo_names << endl;
+        cerr << "INFO: Darknet CFG file: " << params.yolo_cfg << endl;
+        cerr << "INFO: Darknet weights: " << params.yolo_weights << endl;
 
-    file_ok_or_error(darknet_names_file_path);
-    file_ok_or_error(darknet_cfg_file_path);
-    file_ok_or_error(darknet_weights_file_path);
+        classes_names = get_classes_names(const_cast<char*>(params.yolo_names.c_str()));
+        network_struct = initialize_YOLO(const_cast<char*>(params.yolo_cfg.c_str()), const_cast<char*>(params.yolo_weights.c_str()));
+    }
 
-    cerr << "INFO: Darknet class names file: " << darknet_names_file_path << endl;
-    cerr << "INFO: Darknet CFG file: " << darknet_cfg_file_path << endl;
-    cerr << "INFO: Darknet weights: " << darknet_cfg_file_path << endl;
+    if (params.run_random_forest)
+    {
+        file_ok_or_error(params.rf_weights);
+        cerr << "INFO: Weights for OpenCV's RTrees: " << params.rf_weights << endl;
+        cerr << "INFO: Loading weights for random forest... " << endl;
+        rf = StatModel::load<RTrees>(params.rf_weights);
+    }
 
-    // classes_names = get_classes_names(const_cast<char*>(darknet_names_file_path.c_str()));
-    // network_struct = initialize_YOLO(const_cast<char*>(darknet_cfg_file_path.c_str()), const_cast<char*>(darknet_weights_file_path.c_str()));
-
-    classes_names = get_classes_names(darknet_names_file_path);
-    network_struct = initialize_YOLO(darknet_cfg_file_path, darknet_weights_file_path);
-
-    // Load Random Forest.
-    char * rf_weights_path;
-    sprintf(rf_weights_path, "%s/%s", CARMEN_HOME, "data/ml_models/traffic_lights/random_forest_classifier/cv_rtrees_weights_tl_rgy.yml");
-    cerr << "INFO: Weights for OpenCV's RTrees: " << rf_weights_path << endl;
-    rf = StatModel::load<RTrees>(rf_weights_path);
-
-    //namedWindow("Neural Object Detector", WINDOW_AUTOSIZE);
+    //namedWindow("Yolo Traffic Light", WINDOW_AUTOSIZE);
     setMouseCallback("Yolo Traffic Light", onMouse);
 
+    cerr << "INFO: Using confidence threshold of '" << params.yolo_thresh << "' for YOLO." << endl;
     cerr << "INFO: Initialization done." << endl;
 }
-
-
-//IPC_RETURN_TYPE
-//carmen_traffic_light_define_messages(int camera)
-//{
-//    IPC_RETURN_TYPE err;
-//
-//    char *message_name = carmen_traffic_light_message_name(camera);
-//    err = IPC_defineMsg(message_name, IPC_VARIABLE_LENGTH, CARMEN_TRAFFIC_LIGHT_FMT);
-//    carmen_test_ipc_exit(err, "Could not define", message_name);
-//    free(message_name);
-//    return err;
-//}
 
 int
 main(int argc, char **argv)
@@ -1272,7 +1338,6 @@ main(int argc, char **argv)
 
     read_parameters(argc, argv);
 
-    camera = atoi(argv[1]);
     carmen_traffic_light_define_messages(camera);
 
     subscribe_messages();

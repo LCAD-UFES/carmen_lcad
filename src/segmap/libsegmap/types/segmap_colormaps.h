@@ -18,6 +18,28 @@ public:
 	{
 		n_classes = 21;
 
+		// road 0
+		// sidewalk 1
+		// building 2
+		// wall 3
+		// fence 4
+		// pole 5
+		// traffic_light 6
+		// traffic_sign 7
+		// vegetation 8
+		// terrain 9
+		// sky 10
+		// person 11
+		// rider 12
+		// car 13
+		// truck 14
+		// bus 15
+		// train 16
+		// motorcycle 17
+		// bicycle 18
+		// unknown 19
+		// lane marks 20
+
 		_colors.push_back(cv::Scalar(128, 64, 128));
 		_colors.push_back(cv::Scalar(244, 35, 232));
 		_colors.push_back(cv::Scalar(70, 70, 70));

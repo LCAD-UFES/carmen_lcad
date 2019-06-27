@@ -16,14 +16,16 @@ offset_y = 0
 use_xsens = 1
 # Id of the gps to be used
 gps_id = 1
-# What type of information to assign to LiDAR rays intensity [remission | visual | semantic | raw | bright]
-intensity_mode = raw
+# What type of information to assign to LiDAR rays intensity [remission | visual | semantic | bright]
+intensity_mode = remission
 # Flag to choose using the velodyne calibration or not.
 use_calib = 1
 # Flag for choosing to segment lane marks with threshold image processing.
 segment_lane_marks = 0
 # Camera latency in seconds
 camera_latency = 0
+# Flag to use semantic remapping or not.
+use_semantic_remapping = 1
 # Size of voxels in voxel grid filter
 voxel_size = 0.05
 # Maximum distance (in meters) to assume two poses form a loop closure

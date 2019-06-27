@@ -4,7 +4,7 @@
 
 #include <carmen/carmen.h>
 #include <carmen/bumblebee_basic_interface.h>
-// #include "opencv2/opencv.hpp"
+//#include "opencv2/opencv.hpp"
 
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 
@@ -12,12 +12,12 @@
 #include <iostream>
 #include <fstream>
 // using namespace std;
-
 #define BUMBLEBEE_ID 7
 
 int stop_required = 0;
 int rs_height = 0;
 int rs_width = 0;
+int rs_flip = 0;
 
 void
 carmen_bumblebee_publish_stereoimage_message(unsigned char *rawLeft, unsigned char *rawRight, int width, int height, int channels)
@@ -99,18 +99,45 @@ static int read_parameters(int argc, char **argv)
 
 	sprintf(bb_name, "bumblebee_basic%d", BUMBLEBEE_ID);
 
+	carmen_param_allow_unfound_variables(1);
 	carmen_param_t param_list[] =
 	{
 		// {(char*) "commandline", (char*) "height", CARMEN_PARAM_INT, &rs_height, 0, NULL},
 		// {(char*) "commandline", (char*) "width", CARMEN_PARAM_INT, &rs_width, 0, NULL},
 		{bb_name, (char*) "height", CARMEN_PARAM_INT, &rs_height, 0, NULL},
 		{bb_name, (char*) "width", CARMEN_PARAM_INT, &rs_width, 0, NULL},
+		{(char*) "commandline", (char*) "flip", CARMEN_PARAM_ONOFF, &rs_flip, 0, NULL},
+		//{bb_name, (char*) "flip", CARMEN_PARAM_ONOFF, &rs_flip, 0, NULL},
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
+	carmen_param_allow_unfound_variables(0);
 	return 0;
+}
+
+
+unsigned char *
+rotate_raw_image(int image_width, int image_height, unsigned char *raw_image)
+{
+	unsigned char *flipped_image = (unsigned char *) malloc (image_width * image_height * 3 * sizeof(unsigned char));  // Only works for 3 channels image
+
+	image_height   = image_height * image_width * 3;
+	image_width   *= 3;
+
+	for (int line = 0, index = 0; line < image_height; line += image_width)
+	{
+		for (int column = 0; column < image_width; column += 3)
+		{
+				flipped_image[index]     = raw_image[(image_height - line - image_width) + (image_width - 3 - column)];
+				flipped_image[index + 1] = raw_image[(image_height - line - image_width) + (image_width - 3 - column) + 1];
+				flipped_image[index + 2] = raw_image[(image_height - line - image_width) + (image_width - 3 - column) + 2];
+
+				index += 3;
+		}
+	}
+	return (flipped_image);
 }
 
 int
@@ -120,7 +147,6 @@ main(int argc, char **argv)
 	carmen_param_check_version(argv[0]);
 	signal(SIGINT, shutdown_module);
 	read_parameters(argc, argv);
-
 	carmen_bumblebee_basic_define_messages(BUMBLEBEE_ID);
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// https://github.com/IntelRealSense/librealsense/blob/master/examples/capture/rs-capture.cpp
@@ -141,11 +167,9 @@ main(int argc, char **argv)
     rs2::pipeline_profile selection = pipe.start(cfg);
 
 	rs2::colorizer c;
-	
 	save_extrinsics(selection);
 	//rs2::align align_to_depth(RS2_STREAM_DEPTH);
 	//rs2::align align_to_color(RS2_STREAM_COLOR);
-
 	while (!stop_required)
 	{
 		unsigned char* depth_frame_data;
@@ -156,23 +180,28 @@ main(int argc, char **argv)
 		// frames = align_to_color.process(frames);
 
         rs2::frame depth_frame = frames.first(RS2_STREAM_DEPTH);
-		
-		
         rs2::frame frame_color = frames.first(RS2_STREAM_COLOR);
         if (frame_color)
-        {
             rgb_frame_data = (unsigned char*) frame_color.get_data();
-        }
         
         if (depth_frame)
             depth_frame_data = (unsigned char*) c.colorize(depth_frame).get_data(); // Pointer to depth pixels
 
-		carmen_bumblebee_publish_stereoimage_message(rgb_frame_data,depth_frame_data , rs_width, rs_height, 3);
-        
+        if (rs_flip)
+        {
+        	rgb_frame_data = rotate_raw_image(rs_width,rs_height,rgb_frame_data);
+        	depth_frame_data = rotate_raw_image(rs_width,rs_height,depth_frame_data);
+
+        	carmen_bumblebee_publish_stereoimage_message(rgb_frame_data,depth_frame_data , rs_width, rs_height, 3);
+
+        	free(rgb_frame_data);
+        	free(depth_frame_data);
+        }
+        else
+        	carmen_bumblebee_publish_stereoimage_message(rgb_frame_data,depth_frame_data , rs_width, rs_height, 3);
+
+
 	}
-
-	
-
 	return 0;
 }
 

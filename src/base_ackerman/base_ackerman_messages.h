@@ -53,6 +53,10 @@ typedef struct {
 #define	CARMEN_BASE_ACKERMAN_ODOMETRY_NAME	"carmen_base_ackerman_odometry"
 #define	CARMEN_BASE_ACKERMAN_ODOMETRY_FMT	"{double,double,double,double,double,double,string}"
 
+// Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
+#define	CARMEN_BASE_ACKERMAN_ODOMETRY_2_NAME	"carmen_base_ackerman_odometry_2"
+#define	CARMEN_BASE_ACKERMAN_ODOMETRY_2_FMT	"{double,double,double,double,double,double,string}"
+
 typedef struct {
 	double v, phi;
 	double timestamp;
@@ -72,6 +76,11 @@ typedef struct
 
 #define      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME         "carmen_base_ackerman_motion_command"
 #define      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_FMT          "{int,<{double,double,double,double,double,double}:1>,double,string}"
+
+// Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
+#define      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_2_NAME         "carmen_base_ackerman_motion_command_2"
+#define      CARMEN_BASE_ACKERMAN_MOTION_COMMAND_2_FMT          "{int,<{double,double,double,double,double,double}:1>,double,string}"
+
 
 #ifdef __cplusplus
 }

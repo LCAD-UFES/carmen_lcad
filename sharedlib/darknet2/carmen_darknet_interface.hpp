@@ -30,9 +30,8 @@ get_classes_names(char *classes_names_file);
 void*
 initialize_YOLO(char *cfg_file_name, char *weights_file_name);
 
-
 std::vector<bbox_t>
-run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold);
+run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold=0.5, float hier_thresh=0.5);
 
 
 void

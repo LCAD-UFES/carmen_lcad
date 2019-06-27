@@ -20,8 +20,8 @@ def process_image(png_filename):
     #enhancer = ImageEnhance.Brightness(raw_img_teste)
     #raw_img_teste = enhancer.enhance(1.0)
     width, height = raw_img_teste.size
-    #img_teste = raw_img_teste.crop((0, int((50/480)*height), width, height-int((110/480) * height)))
-    img_teste = raw_img_teste
+    img_teste = raw_img_teste.crop((0, int((50/480)*height), width, height-int((110/480) * height)))
+    #img_teste = raw_img_teste
     init = time.time()
     resized_im, seg_map = model.run(img_teste)
     print('Time to run model:', time.time() - init, end=' ')

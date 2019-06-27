@@ -244,11 +244,13 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 {
 	int i;
 	double sum_weights, min_weight;
-	double max_weight;
+	//double max_weight;
+
 	(void) max_id;
+	//(void) max_weight;
 
 	min_weight = _w[min_id];
-	max_weight = _w[max_id];
+	//max_weight = _w[max_id];
 	sum_weights = 0.;
 
 	fprintf(stderr, "\nDEBUG: Weights as positive values: ");

@@ -26,6 +26,23 @@ using namespace std;
 using namespace cv;
 
 
+//Pedestrian related funcitons and structs --------
+#define P_BUFF_SIZE 10
+
+struct pedestrian
+{
+	int track_id;
+	double velocity;
+	double orientation;
+	unsigned int x, y, w, h;
+	double last_timestamp;
+	bool active;
+	double timestamp[P_BUFF_SIZE];
+	double x_world[P_BUFF_SIZE];
+	double y_world[P_BUFF_SIZE];
+	unsigned int circular_idx;// should be changed only for update_world_position function
+};
+
 
 typedef struct
 {
@@ -90,7 +107,7 @@ get_rddf_points_in_image_filtered_by_meters_spacement(double meters_spacement, v
 
 
 vector<bbox_t>
-get_predictions_of_crops (int i, cv::Mat image, void *network_struct, char **classes_names);
+get_predictions_of_crops (int i, cv::Mat image, void *network_struct, char **classes_names, float threshhold);
 
 
 float
@@ -120,6 +137,17 @@ get_slice_colors (unsigned int crops_size);
 //save_detections(double timestamp, vector<bbox_t> bounding_boxes_of_crops_in_original_image, cv::Mat rgb_image,
 //				vector<cv::Mat> scene_crops, vector<cv::Scalar> colors, vector<t_transform_factor> transform_factor_of_slice_to_original_frame,
 //				vector<carmen_position_t> rddf_points_in_image_filtered, vector<carmen_position_t> rddf_points_in_image_full);
+
+
+void
+show_LIDAR(Mat &image, vector<vector<image_cartesian>> points_lists, int r, int g, int b);
+
+
+void
+show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predictions, vector<image_cartesian> points,
+		vector<vector<image_cartesian>> points_inside_bbox,	vector<vector<image_cartesian>> filtered_points, double fps,
+		unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y,
+		unsigned int crop_width, unsigned int crop_height);
 
 
 

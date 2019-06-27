@@ -179,36 +179,35 @@ convert_image_msg_to_darknet_image(unsigned int w, unsigned int h, unsigned char
     return (image);
 }
 
-
 std::vector<bbox_t>
-run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold)
+run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold, float hier_thresh)
 {
-	float nms = 0.45;
-	int nboxes = 0;
+        float nms = 0.45;
+        int nboxes = 0;
 
-	network *net = (network*) net_config;
+        network *net = (network*) net_config;
 
-	image img = convert_image_msg_to_darknet_image(w, h, data);
+        image img = convert_image_msg_to_darknet_image(w, h, data);
 
-	image sized = letterbox_image(img, net->w, net->h);
+        image sized = letterbox_image(img, net->w, net->h);
 
-	float *X = sized.data;
+        float *X = sized.data;
 
-	network_predict(net, X);
+        network_predict(net, X);
 
-	detection *dets = get_network_boxes(net, img.w, img.h, threshold, threshold, 0, 1, &nboxes);
+        detection *dets = get_network_boxes(net, img.w, img.h, threshold, hier_thresh, 0, 1, &nboxes);
 
-	if (nms)    // Remove coincident bboxes
-		do_nms_sort(dets, nboxes, net->layers[net->n-1].classes, nms);
+        // Remove coincident bboxes
+        if (nms)
+            do_nms_sort(dets, nboxes, net->layers[net->n-1].classes, nms);
 
-	std::vector<bbox_t> bbox_vector = extract_predictions(img, dets, nboxes, 0.5, net->layers[net->n-1].classes, classes_names);
+        std::vector<bbox_t> bbox_vector = extract_predictions(img, dets, nboxes, threshold, net->layers[net->n-1].classes, classes_names);
 
-	free_detections(dets, nboxes);
-	free_image(sized);
-	free_image(img);
-	return (bbox_vector);
+        free_detections(dets, nboxes);
+        free_image(sized);
+        free_image(img);
+        return (bbox_vector);
 }
-
 
 void
 save_predictions_to_file_VOC_pascal(detection *dets, int num, float thresh, int classes_number, char **classes_names, char* file_path)

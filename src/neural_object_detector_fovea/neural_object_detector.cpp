@@ -155,7 +155,6 @@ get_closest_rddf_index(double *camera_pose_x, double *camera_pose_y, carmen_pose
 	carmen_rotate_2d  (camera_pose_x, camera_pose_y, carmen_normalize_theta(globalpos.theta));
 	carmen_translate_2d(camera_pose_x, camera_pose_y, globalpos.x, globalpos.y);
 
-
 	int index_aux;
 	double distance, min_distance = DBL_MAX;
 	for (int i = 0; i < last_rddf_poses.number_of_poses; i++)
@@ -181,11 +180,9 @@ get_rddf_points_in_image_filtered_by_meters_spacement(double meters_spacement, v
 	carmen_position_t p;
 	vector<carmen_position_t> rddf_points_in_image_filtered;
 	debug_infos d;
-
 	int inicial_rddf_index;
 	double camera_pose_x, camera_pose_y;
 	inicial_rddf_index = get_closest_rddf_index(&camera_pose_x, &camera_pose_y, camera_pose, board_pose, globalpos, last_rddf_poses);
-
 	d.i = inicial_rddf_index;
 	d.rddf_pos.x = last_rddf_poses.poses[inicial_rddf_index].x;
 	d.rddf_pos.y = last_rddf_poses.poses[inicial_rddf_index].y;
@@ -226,7 +223,7 @@ get_rddf_points_in_image_filtered_by_meters_spacement(double meters_spacement, v
 
 
 vector<bbox_t>
-get_predictions_of_crops (int i, cv::Mat image, void *network_struct, char **classes_names)
+get_predictions_of_crops (int i, cv::Mat image, void *network_struct, char **classes_names, float threshhold)
 {
 	vector<bbox_t> predictions;
 	stringstream ss;
@@ -236,7 +233,7 @@ get_predictions_of_crops (int i, cv::Mat image, void *network_struct, char **cla
 	cv::Mat rgb_image = image;
 	unsigned char *img;
 	img = image.data;
-	predictions = run_YOLO(img, image.cols, image.rows, network_struct, classes_names, 0.5);//darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
+	predictions = run_YOLO(img, image.cols, image.rows, network_struct, classes_names, 0.5);
 	return (predictions);
 }
 
@@ -292,7 +289,7 @@ calc_percentage_of_rectangles_intersection(cv::Point l1, cv::Point r1, cv::Point
 
 
 vector<bbox_t>
-transform_bounding_boxes_of_crops (vector< vector<bbox_t> > bounding_boxes_of_crops, vector<t_transform_factor> transform_factor_of_slice_to_original_frame,
+transform_predictions_of_crops (vector< vector<bbox_t> > predictions_of_crops, vector<t_transform_factor> transform_factor_of_slice_to_original_frame,
 		cv::Mat or_image, char **classes_names)
 {
 	cv::Mat img;
@@ -302,21 +299,21 @@ transform_bounding_boxes_of_crops (vector< vector<bbox_t> > bounding_boxes_of_cr
 	bool intersects_with_bboxes = false;
 	bool rect_dont_intersects = false;
 	bool intersect;
-	for (int i = 0; i < bounding_boxes_of_crops.size(); i++)
+	for (int i = 0; i < predictions_of_crops.size(); i++)
 	{
-		for (int j = 0; j < bounding_boxes_of_crops[i].size(); j++)
+		for (int j = 0; j < predictions_of_crops[i].size(); j++)
 		{
 			intersect = false;
 
-			int obj_id = bounding_boxes_of_crops[i][j].obj_id;
+			int obj_id = predictions_of_crops[i][j].obj_id;
 			string obj_name;
 			obj_name = classes_names[obj_id];
 
 			if (obj_name.compare("car") == 0)
 			{
-				b = bounding_boxes_of_crops[i][j];
-				b.x = bounding_boxes_of_crops[i][j].x + transform_factor_of_slice_to_original_frame[i].translate_factor_x;
-				b.y = bounding_boxes_of_crops[i][j].y + transform_factor_of_slice_to_original_frame[i].translate_factor_y;
+				b = predictions_of_crops[i][j];
+				b.x = predictions_of_crops[i][j].x + transform_factor_of_slice_to_original_frame[i].translate_factor_x;
+				b.y = predictions_of_crops[i][j].y + transform_factor_of_slice_to_original_frame[i].translate_factor_y;
 
 				cv::Point l1; //top left
 				l1.x = b.x;
@@ -363,7 +360,7 @@ transform_bounding_boxes_of_crops (vector< vector<bbox_t> > bounding_boxes_of_cr
 
 void
 show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_original_frame, vector<cv::Mat> scene_crops,
-		vector<vector<bbox_t>> bounding_boxes_of_crops, vector<bbox_t> predictions,
+		vector<vector<bbox_t>> predictions_of_crops, vector<bbox_t> predictions,
 		vector<carmen_position_t> rddf_points_in_image_filtered, int qtd_crops, char **classes_names, char *groundtruth_path, double image_timestamp)
 {
 	printf("******************************************\n");
@@ -425,12 +422,12 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 		ss << i;
 		name = "Foveated Detection" + ss.str();
 
-    	for (int j = 0; j < bounding_boxes_of_crops[i].size(); j++)
+    	for (int j = 0; j < predictions_of_crops[i].size(); j++)
     	{
-    		//cout<<bounding_boxes_of_crops[i].size()<<endl;
+    		//cout<<predictions_of_crops[i].size()<<endl;
 
-    		bbox_t b = bounding_boxes_of_crops[i][j];
-    		bbox_t b_print = bounding_boxes_of_crops[i][j];
+    		bbox_t b = predictions_of_crops[i][j];
+    		bbox_t b_print = predictions_of_crops[i][j];
     		b_print.x = b_print.x + transform_factor_of_slice_to_original_frame[i].translate_factor_x;
     		b_print.y = b_print.y + transform_factor_of_slice_to_original_frame[i].translate_factor_y;
 
@@ -439,7 +436,7 @@ show_detections_alberto(vector<t_transform_factor> transform_factor_of_slice_to_
 
     		//sprintf(confianca, "%d  %.3f", predictions.at(i).obj_id, predictions.at(i).prob);
 
-    		int obj_id = bounding_boxes_of_crops[i][j].obj_id;
+    		int obj_id = predictions_of_crops[i][j].obj_id;
 
     		string obj_name;
     		obj_name = classes_names[obj_id];
@@ -741,3 +738,65 @@ get_slice_colors (unsigned int crops_size)
 //		exit(0);
 //	}
 //}
+
+
+void
+show_LIDAR(Mat &image, vector<vector<image_cartesian>> points_lists, int r, int g, int b)
+{
+	for (unsigned int i = 0; i < points_lists.size(); i++)
+	{
+		for (unsigned int j = 0; j < points_lists[i].size(); j++)
+			circle(image, Point(points_lists[i][j].image_x, points_lists[i][j].image_y), 3, cvScalar(b, g, r), 1, 8, 0);
+	}
+}
+
+
+void
+show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predictions, vector<image_cartesian> points,
+		vector<vector<image_cartesian>> points_inside_bbox,	vector<vector<image_cartesian>> filtered_points, double fps,
+		unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y,
+		unsigned int crop_width, unsigned int crop_height)
+{
+	char object_info[25];
+    char frame_rate[25];
+
+    cvtColor(image, image, COLOR_RGB2BGR);
+
+    sprintf(frame_rate, "FPS = %.2f", fps);
+
+    putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
+
+
+    for (unsigned int i = 0; i < predictions.size(); i++)
+	{
+		rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
+				Scalar(255, 0, 255), 4);
+	}
+
+    for (unsigned int i = 0; i < pedestrian.size(); i++)
+    {
+    	if (pedestrian[i].active)
+    	{
+			sprintf(object_info, "%d Person", pedestrian[i].track_id);
+
+			rectangle(image, Point(pedestrian[i].x, pedestrian[i].y), Point((pedestrian[i].x + pedestrian[i].w), (pedestrian[i].y + pedestrian[i].h)),
+							Scalar(255, 255, 0), 4);
+
+			putText(image, object_info, Point(pedestrian[i].x + 1, pedestrian[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+
+
+    	}
+	}
+
+//	show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
+	vector<vector<image_cartesian>> lidar_points;
+	lidar_points.push_back(points);
+    show_LIDAR(image, lidar_points, 255, 0, 0);
+	show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
+    show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
+
+    resize(image, image, Size(640, 360));
+    imshow("Neural Object Detector", image);
+    //imwrite("Image.jpg", image);
+    waitKey(1);
+}

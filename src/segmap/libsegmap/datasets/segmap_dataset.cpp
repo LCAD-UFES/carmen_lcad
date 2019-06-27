@@ -100,19 +100,36 @@ NewCarmenDataset::vel2cam()
 	// *****************************************************
 	// Transform according to carmen parameters file.
 	// *****************************************************
-	//Matrix<double, 4, 4> velodyne2board;
-	//Matrix<double, 4, 4> cam2board;
-	//
-	//velodyne2board = pose6d_to_matrix(0.145, 0., 0.48, 0.0, -0.0227, -0.01);
-	//cam2board = pose6d_to_matrix(0.245, -0.04, 0.210, -0.017453, 0.026037, -0.023562 + carmen_degrees_to_radians(1.35));
-	//
-	//_vel2cam = projection * pose6d_to_matrix(0.04, 0.115, -0.27, -M_PI/2-0.052360, -0.034907, -M_PI/2-0.008727).inverse();
-	//return cam2board.inverse() * velodyne2board;
+	// Matrix<double, 4, 4> velodyne2board;
+	// Matrix<double, 4, 4> cam2board;
+  //
+	// velodyne2board = pose6d_to_matrix(
+	// 		_params->get<double>("velodyne_x"),
+	// 		_params->get<double>("velodyne_y"),
+	// 		_params->get<double>("velodyne_z"),
+	// 		_params->get<double>("velodyne_roll"),
+	// 		_params->get<double>("velodyne_pitch"),
+	// 		_params->get<double>("velodyne_yaw")
+	// );
+  //
+	// cam2board = pose6d_to_matrix(
+	// 		_params->get<double>("camera3_x"),
+	// 		_params->get<double>("camera3_y"),
+	// 		_params->get<double>("camera3_z"),
+	// 		_params->get<double>("camera3_roll"),
+	// 		_params->get<double>("camera3_pitch"),
+	// 		_params->get<double>("camera3_yaw")
+	// );
+  //
+	// return cam2board.inverse() * velodyne2board;
 
 	// *****************************************************
 	// Transform from manual calibration.
 	// *****************************************************
-	return pose6d_to_matrix(-0.020000, 0.125000, -0.27, -0.015708, 0.048869, 0.005236).inverse();
+	//return pose6d_to_matrix(0.04, 0.115, -0.27, -M_PI/2 - 0.052360, -0.034907, -M_PI/2 + 0.008727).inverse();
+
+	// We add -M_PI/2 in the roll and yaw to change the reference system from x: forward, y: left, z: up to x: right, y: down, z: forward.
+	return pose6d_to_matrix(0.04, 0.115, -0.27, (-M_PI/2 - 0.052360), -0.034907, (-M_PI/2 + 0.008727)).inverse();
 }
 
 
@@ -120,10 +137,6 @@ Matrix<double, 3, 4>
 NewCarmenDataset::projection_matrix()
 {
 	Matrix<double, 3, 4> projection;
-	Matrix<double, 4, 4> R;
-
-	// Rotation to change the reference system from x: forward, y: left, z: up to x: right, y: down, z: forward.
-	R = pose6d_to_matrix(0., 0., 0., -M_PI/2., 0, -M_PI/2).inverse();
 
 	// TODO: read camera number from command line.
 	double fx_factor = _params->get<double>("bumblebee_basic3_fx");
@@ -146,7 +159,7 @@ NewCarmenDataset::projection_matrix()
 			0, fy_meters / pixel_size, cv, 0,
 			0, 0, 1, 0.;
 
-	return projection * R;				  
+	return projection;
 }
 
 
@@ -226,7 +239,6 @@ NewCarmenDataset::_board2car()
 {
 	Matrix<double, 4, 4> board2car;
 
-	//board2car = pose6d_to_matrix(0.572, 0, 1.394, 0.0, 0.0122173048, 0.0);
 	board2car = pose6d_to_matrix(
 		_params->get<double>("sensor_board_1_x"),
 		_params->get<double>("sensor_board_1_y"),
@@ -267,6 +279,17 @@ NewCarmenDataset::_load_odometry_calibration(std::string &path)
 			}
 			// "v (multiplier bias): (%lf %lf),  phi (multiplier bias): (%lf %lf),  Initial Angle: %lf"
 			else if (tokens.size() == 13)
+			{
+				_calib.mult_v = from_string<double>(replace(tokens[3], "(", ""));
+				_calib.add_v = from_string<double>(replace(tokens[4], "),", ""));
+				_calib.mult_phi = from_string<double>(replace(tokens[8], "(", ""));
+				_calib.add_phi = from_string<double>(replace(tokens[9], "),", ""));
+				_calib.init_angle = from_string<double>(tokens[12]);
+
+				success = true;
+			}
+			// v (multiplier bias): (1.000000 0.000000),  phi (multiplier bias): (0.836674 0.008727),  Initial Angle: 2.617994, GPS to use: 1, GPS Latency: 0.101225, L: 2.625000
+			else if (tokens.size() == 22)
 			{
 				_calib.mult_v = from_string<double>(replace(tokens[3], "(", ""));
 				_calib.add_v = from_string<double>(replace(tokens[4], "),", ""));
@@ -736,10 +759,8 @@ default_graphslam_to_map_path(const char *log_path)
 
 
 std::string
-default_intensity_calib_path(const char *log_path)
+default_intensity_calib_path()
 {
-	//std::string log_name = file_name_from_path(log_path);
-	//return (string("/dados/data2/data_") + log_name + string("/intensity_calibration.txt"));
 	return string(getenv("CARMEN_HOME")) + "/bin/calibration_table.txt";
 }
 

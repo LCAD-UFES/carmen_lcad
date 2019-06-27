@@ -8,21 +8,6 @@ carmen_point_t globalpos;
 
 bool go_msg_absent;
 
-#define P_BUFF_SIZE 10
-
-struct pedestrian
-{
-	int track_id;
-	double velocity;
-	double orientation;
-	unsigned int x, y, w, h;
-	double last_timestamp;
-	bool active;
-	double timestamp[P_BUFF_SIZE];
-	double x_world[P_BUFF_SIZE];
-	double y_world[P_BUFF_SIZE];
-	unsigned int circular_idx;// should be changed only for update_world_position function
-};
 
 struct fake_pedestrian
 {

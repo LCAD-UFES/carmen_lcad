@@ -1,5 +1,8 @@
 include ../Makefile.conf
 
+MODULE_NAME = SIMULATOR ACKERMAN
+MODULE_COMMENT = "simulates the readings of a ackerman robot on a map"
+
 LINK = g++
 
 CFLAGS += -DOLD_MOTION_MODEL -std=c99
@@ -17,9 +20,6 @@ LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobst
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol
-
-MODULE_NAME = SIMULATOR ACKERMAN
-MODULE_COMMENT = "simulates the readings of a ackerman robot on a map"
 
 SOURCES = simulator_ackerman.c objects_ackerman.c simulator_ackerman_simulation.c simulator_ackerman_test.c \
 	simulator_ackerman_interface.c
