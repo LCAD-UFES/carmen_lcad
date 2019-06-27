@@ -80,23 +80,6 @@ find_sick_most_sync_with_cam(double bumblebee_timestamp)  // TODO is this necess
 }
 
 
-//Pedestrian related funcitons and structs --------
-#define P_BUFF_SIZE 10
-
-struct pedestrian
-{
-	int track_id;
-	double velocity;
-	double orientation;
-	unsigned int x, y, w, h;
-	double last_timestamp;
-	bool active;
-	double timestamp[P_BUFF_SIZE];
-	double x_world[P_BUFF_SIZE];
-	double y_world[P_BUFF_SIZE];
-	unsigned int circular_idx;// should be changed only for update_world_position function
-};
-
 vector<pedestrian> pedestrian_tracks;
 
 double
@@ -543,16 +526,6 @@ show_LIDAR_points(Mat &image, vector<image_cartesian> all_points)
 
 
 void
-show_LIDAR(Mat &image, vector<vector<image_cartesian>> points_lists, int r, int g, int b)
-{
-	for (unsigned int i = 0; i < points_lists.size(); i++)
-	{
-		for (unsigned int j = 0; j < points_lists[i].size(); j++)
-			circle(image, Point(points_lists[i][j].image_x, points_lists[i][j].image_y), 3, cvScalar(b, g, r), 1, 8, 0);
-	}
-}
-
-void
 show_LIDAR_deepth(Mat &image, vector<vector<image_cartesian>> points_lists, int r, int g, int b, int rt, int gt, int bt, double max_range)
 {
 	for (unsigned int i = 0; i < points_lists.size(); i++)
@@ -578,54 +551,6 @@ show_all_points(Mat &image, unsigned int image_width, unsigned int image_height,
 	for (unsigned int i = 0; i < all_points.size(); i++)
 		if (all_points[i].ipx >= crop_x && all_points[i].ipx <= max_x && all_points[i].ipy >= crop_y && all_points[i].ipy <= max_y)
 			circle(image, Point(all_points[i].ipx - crop_x, all_points[i].ipy - crop_y), 1, cvScalar(0, 0, 255), 1, 8, 0);
-}
-
-void
-show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
-		vector<vector<image_cartesian>> filtered_points, double fps, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
-{
-	char object_info[25];
-    char frame_rate[25];
-
-    cvtColor(image, image, COLOR_RGB2BGR);
-
-    sprintf(frame_rate, "FPS = %.2f", fps);
-
-    putText(image, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
-
-
-    for (unsigned int i = 0; i < predictions.size(); i++)
-	{
-		rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
-				Scalar(255, 0, 255), 4);
-	}
-
-    for (unsigned int i = 0; i < pedestrian.size(); i++)
-    {
-    	if (pedestrian[i].active)
-    	{
-			sprintf(object_info, "%d Person", pedestrian[i].track_id);
-
-			rectangle(image, Point(pedestrian[i].x, pedestrian[i].y), Point((pedestrian[i].x + pedestrian[i].w), (pedestrian[i].y + pedestrian[i].h)),
-							Scalar(255, 255, 0), 4);
-
-			putText(image, object_info, Point(pedestrian[i].x + 1, pedestrian[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
-
-
-    	}
-	}
-
-//	show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
-	vector<vector<image_cartesian>> lidar_points;
-	lidar_points.push_back(points);
-    show_LIDAR(image, lidar_points, 255, 0, 0);
-	show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
-    show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
-
-    resize(image, image, Size(640, 360));
-    imshow("Neural Object Detector", image);
-    //imwrite("Image.jpg", image);
-    waitKey(1);
 }
 
 
@@ -844,8 +769,8 @@ transform_predictions_in_pedestrian_type(vector <bbox_t>predictions, double time
 void
 process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned char *img)
 {
-	meters_spacement = 15;
-	qtd_crops = 4;
+	meters_spacement = 5;
+	qtd_crops = 0;
 
 	double fps;
 	static double start_time = 0.0;
@@ -859,8 +784,9 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 	vector<cv::Mat> scene_crops;
 	t_transform_factor t;
 	vector<t_transform_factor> transform_factor_of_slice_to_original_frame;
-	vector<vector<bbox_t>> bounding_boxes_of_crops;
-	vector<bbox_t> bounding_boxes_of_crops_in_original_image;
+	vector<vector<bbox_t>> predictions_of_crops;
+	vector<vector<pedestrian>> predictions_of_crops_in_pestrian_t;
+	vector<bbox_t> predictions_of_crops_in_original_image;
 
 	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
@@ -877,24 +803,30 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 	t.translate_factor_y = 0;
 	transform_factor_of_slice_to_original_frame.push_back(t);
 	get_image_crops(scene_crops, transform_factor_of_slice_to_original_frame, open_cv_image, rddf_points_in_image_filtered, distances_of_rddf_from_car);
-	imshow("crop", scene_crops[3]);
+	//imshow("crop", scene_crops[3]);
 
 
-/*	for (int i = 0; i < qtd_crops; i++)
+	for (int i = 0; i <= qtd_crops; i++)
 	{
 		vector<bbox_t> predictions;
-		predictions = get_predictions_of_crops(i, scene_crops[i], network_struct, classes_names);
-		bounding_boxes_of_crops.push_back(predictions);
+		predictions = get_predictions_of_crops(i, scene_crops[i], network_struct, classes_names, 0.5);
+		predictions = filter_predictions_of_interest(predictions);
+		transform_predictions_in_pedestrian_type(predictions, image_msg->timestamp);
+		predictions_of_crops_in_pestrian_t.push_back(pedestrian_tracks);
+		predictions_of_crops.push_back(predictions);
 	}
 
-	bounding_boxes_of_crops_in_original_image = transform_bounding_boxes_of_crops(bounding_boxes_of_crops, transform_factor_of_slice_to_original_frame, open_cv_image,
+	/*predictions_of_crops_in_original_image = transform_predictions_of_crops(predictions_of_crops, transform_factor_of_slice_to_original_frame, open_cv_image,
 			classes_names);*/
 
+
+	//vector<image_cartesian> new_sick_points = get_sick_points_in_image ()
 
 	vector<carmen_velodyne_points_in_cam_t> sick_points = carmen_sick_camera_calibration_lasers_points_in_camera(sick_laser_message,
 			camera_parameters,
 			&transformer_sick,
 			open_cv_image.cols, open_cv_image.rows);
+
 	vector<image_cartesian> new_sick_points;
 	for (int i = 0; i < sick_points.size(); i++)
 	{
@@ -904,9 +836,9 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 		new_sick_points.push_back(new_point);
 	} //DEIXAR ATÉ PEDRO DAR OK QUE PODE APAGAR!!!!!!!!!
 
-	vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.5);
-	predictions = filter_predictions_of_interest(predictions);
-	transform_predictions_in_pedestrian_type(predictions, image_msg->timestamp);
+	//vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.5);
+
+
 
 
 //	 vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose,
@@ -914,7 +846,7 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 	vector<image_cartesian> points = sick_camera_calibration_fuse_camera_lidar(&sick_sync_with_cam, camera_parameters, &transformer_sick,
 			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 
-	vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(pedestrian_tracks, points); // TODO remover bbox que nao tenha nenhum ponto
+	vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions_of_crops_in_pestrian_t[0], points); // TODO remover bbox que nao tenha nenhum ponto
 
 	vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
 
@@ -932,7 +864,7 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 			dist = euclidean_distance(positions[i].cartesian_x, globalpos.x, positions[i].cartesian_y, globalpos.y);
 			cout<<"Dist: "<<dist<<endl;
 
-			//update_world_position(&pedestrian_tracks[i],positions[i].cartesian_x,positions[i].cartesian_y,image_msg->timestamp);
+			//update_world_position(&predictions_of_crops_in_pestrian_t[0][i],positions[i].cartesian_x,positions[i].cartesian_y,image_msg->timestamp);
 			//			printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f \n",
 			//					pedestrian_tracks[i].track_id, pedestrian_tracks[i].velocity,pedestrian_tracks[i].orientation,abs(pedestrian_tracks[i].orientation - globalpos.theta));
 		}
@@ -960,7 +892,7 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
-	show_detections(open_cv_image, pedestrian_tracks, predictions, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
+	show_detections(open_cv_image,predictions_of_crops_in_pestrian_t[0], predictions_of_crops[0], points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
 
 }
 
