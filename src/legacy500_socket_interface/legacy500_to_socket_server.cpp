@@ -144,7 +144,11 @@ shutdown_module(int x)            // Handles ctrl+c
 int
 subscribe_to_relevant_messages()
 {
+	// Message published by simulator_ackerman
 	carmen_base_ackerman_subscribe_odometry_message_2(NULL, (carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	// Message published by ford_escape_hybrid
+	carmen_robot_ackerman_subscribe_velocity_message_2(NULL, (carmen_handler_t) robot_ackerman_velocity_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	return (0);
 }

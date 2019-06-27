@@ -5,7 +5,8 @@
 
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
 
-#define tcp_ip_address "10.9.8.181"
+//#define tcp_ip_address "10.9.8.181"
+#define tcp_ip_address "192.168.0.1"
 
 #define PORT "3457"
 
@@ -157,6 +158,8 @@ send_motion_command_via_socket(double* array)
 void
 motion_command_handler(carmen_base_ackerman_motion_command_message *motion_command_message)
 {
+	//printf("Motion command!/n");
+
 	if (motion_command_message->num_motion_commands < 1)
 			return;
 

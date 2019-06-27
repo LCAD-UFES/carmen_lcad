@@ -5,7 +5,8 @@
 
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
 
-#define tcp_ip_address "10.9.8.181"
+//#define tcp_ip_address "10.9.8.181"
+#define tcp_ip_address "192.168.0.1"
 
 #define PORT "3458"
 
@@ -75,10 +76,12 @@ extract_odometry_from_socket_and_send_robot_ackerman_msg(double *array)
 	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_robot_ackerman_velocity_message odometry;
 
-	odometry.v     = array[3];
-	odometry.phi   = array[4];
+	odometry.v     = array[0];
+	odometry.phi   = array[1];
+	odometry.timestamp = carmen_get_time();
+	odometry.host  = carmen_get_host();
 
-//	printf ("%lf %lf %lf %lf %lf\n", array[0], array[1], array[2], array[3], array[4]);
+	//printf ("%lf %lf %lf %lf %lf\n", array[0], array[1], array[2], array[3], array[4]);
 
 	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &odometry);
 	carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
@@ -119,10 +122,10 @@ initialize_ipc(void)
 {
 	IPC_RETURN_TYPE err;
 
-	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, IPC_VARIABLE_LENGTH, CARMEN_BASE_ACKERMAN_ODOMETRY_FMT);
-	carmen_test_ipc_exit(err, "Could not define", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
+//	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, IPC_VARIABLE_LENGTH, CARMEN_BASE_ACKERMAN_ODOMETRY_FMT);
+//	carmen_test_ipc_exit(err, "Could not define", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
 
-	err = IPC_defineMsg(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, IPC_VARIABLE_LENGTH, CARMEN_BASE_ACKERMAN_ODOMETRY_FMT);
+	err = IPC_defineMsg(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, IPC_VARIABLE_LENGTH, CARMEN_ROBOT_ACKERMAN_VELOCITY_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
 
 
@@ -162,7 +165,8 @@ main(int argc, char **argv)
 		}
 		else
 		{
-			extract_odometry_from_socket_and_send_base_ackerman_msg(array);
+//			extract_odometry_from_socket_and_send_base_ackerman_msg(array);
+			extract_odometry_from_socket_and_send_robot_ackerman_msg(array);
 		}
 	}
 	return (0);
