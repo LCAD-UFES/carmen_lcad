@@ -16,6 +16,7 @@ Makefile.depend
 data/map*/*.bmp
 data/map_ida_guarapari-20170403-2.tar.gz
 data/map_ida_guarapari-20170403-2/*
+bin/traffic_light_yolo
 bin/traffic_light_annotation_tool
 bin/debug.txt
 bin/out.txt
@@ -384,6 +385,7 @@ src/xsens_MTi-G/subscribe_xsens_mtig
 src/xsens_MTi-G/xsens_mtig
 src/laser-ldmrs/laser_ldmrs
 src/obstacle_distance_mapper/obstacle_distance_mapper
+.vscode/
 .cproject
 .project
 bin/gnuplot_path

@@ -47,9 +47,9 @@ map<int,Scalar> tl_rgy_colors = {
     {2, Scalar(0, 255, 255)},
 };
 map<int,string> tl_rgy_labels = {
-    {0, "red"},
-    {1, "green"},
-    {2, "yellow"},
+    {0, "Red"},
+    {1, "Green"},
+    {2, "Yellow"},
 };
 
 map<int,Scalar> tl_code_colors = {
@@ -75,8 +75,6 @@ bool marker_point_found = false;
 
 typedef struct {
     string annotation_path;
-
-    // string preset; // Loads some default values. "possatti", "possatti_rf", "coco_rf"
 
     string yolo_cfg;
     string yolo_names;
@@ -113,6 +111,9 @@ traffic_light_yolo_params params;
 #define TRAFFIC_LIGHT_IMAGE_THRESHOLD 1.5 // meters
 #define ORIENTATION_RESTRICTION 60 // degrees
 #define CAMERA_HFOV_2 20 // Camera hfov / 2 = 33
+
+// #define RESIZED_W 1280//640
+// #define RESIZED_H 960//480
 
 #define RESIZED_W 640
 #define RESIZED_H 480
@@ -374,10 +375,14 @@ display(Mat image, vector<bbox_t> predictions, double fps, vector<image_cartesia
             rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)), bb_color, 1);
 
             if (params.draw_text) {
-                string class_name = classes_names[predictions[i].obj_id];
-                if ((params.final_class_set == "RGY") && (tl_rgy_labels.find(predictions[i].obj_id) != tl_rgy_labels.end()))
-                {
-                    class_name = tl_rgy_labels[predictions[i].obj_id];
+                string class_name = "no_label_found"; // Will be overriden.
+                if (params.run_random_forest) {
+                    if ((params.final_class_set == "RGY") && (tl_rgy_labels.find(predictions[i].obj_id) != tl_rgy_labels.end()))
+                    {
+                        class_name = tl_rgy_labels[predictions[i].obj_id];
+                    }
+                } else {
+                    class_name = classes_names[predictions[i].obj_id];
                 }
 
                 snprintf(object_info, 25, "%d %s %d", predictions[i].obj_id, class_name.c_str(), (int)predictions[i].prob);
@@ -940,6 +945,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         // mkdir("/tmp/tf_bboxes", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH); // Debugging...
         // save_mats_as_images(views, "/tmp/tf_bboxes"); // Debugging...
         Mat imgs_data = pack_images_together(views);
+
         Mat rf_predictions;
         rf->predict(imgs_data, rf_predictions);
         rf_predictions -= 1; // Jean did it so that 1=red, 2=green, 3=yellow... weird.
@@ -948,7 +954,6 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
             predictions[i].obj_id = static_cast<int>(rf_predictions.at<float>(i));
         }
     }
-
     fps = 1.0 / (carmen_get_time() - start_time);
     start_time = carmen_get_time();
 
@@ -1190,15 +1195,14 @@ read_parameters(int argc, char **argv)
         ("camera_side", po::value<int>(), "Choose 0 for left image, or 1 for right image.")
         ("annotation_path", po::value<string>(&params.annotation_path))
 
-        // ("preset", value<string>(&params.preset)->default_value("possatti"), "Easy way to load some default values for yolo and random forest.")
-        ("yolo_cfg", po::value<string>(&params.yolo_cfg)->default_value(CARMEN_HOME_STR+"/sharedlib/darknet2/cfg/yolov3.cfg"))
-        ("yolo_names", po::value<string>(&params.yolo_names)->default_value(CARMEN_HOME_STR+"/sharedlib/darknet2/data/coco.names"))
-        ("yolo_weights", po::value<string>(&params.yolo_weights)->default_value(CARMEN_HOME_STR+"/sharedlib/darknet2/yolov3.weights"))
+        ("yolo_cfg", po::value<string>(&params.yolo_cfg)->default_value(CARMEN_HOME_STR+"/data/traffic_light/yolov3/yolov3-tl-red-green.cfg"))
+        ("yolo_names", po::value<string>(&params.yolo_names)->default_value(CARMEN_HOME_STR+"/data/traffic_light/yolov3/rg.names"))
+        ("yolo_weights", po::value<string>(&params.yolo_weights)->default_value(CARMEN_HOME_STR+"/data/traffic_light/yolov3/yolov3-tl-red-green.weights"))
         ("yolo_thresh", po::value<float>(&params.yolo_thresh)->default_value(0.2), "Only boxes with confidence above the threshold will be used.")
 
-        ("rf_weights", po::value<string>(&params.rf_weights)->default_value(CARMEN_HOME_STR+"/data/ml_models/traffic_lights/random_forest_classifier/cv_rtrees_weights_tl_rgy.yml"))
+        ("rf_weights", po::value<string>(&params.rf_weights)->default_value(CARMEN_HOME_STR+"/data/traffic_light/random_forest/cv_rtrees_weights_tl_rgy.yml"))
 
-        ("yolo_class_set", po::value<string>(&params.yolo_class_set)->default_value("COCO"))
+        ("yolo_class_set", po::value<string>(&params.yolo_class_set)->default_value("RG"))
         ("final_class_set", po::value<string>(&params.final_class_set)->default_value("RGY"))
 
         ("draw_fps",               po::value<bool>(&params.draw_fps)->default_value(false))
@@ -1210,7 +1214,7 @@ read_parameters(int argc, char **argv)
         ("draw_lidar_points",      po::value<bool>(&params.draw_lidar_points)->default_value(false))
         ("draw_final_prediction",  po::value<bool>(&params.draw_final_prediction)->default_value(true)) // Falso para criar o GT.
         ("run_yolo",               po::value<bool>(&params.run_yolo)->default_value(true)) // Falso para criar o GT.
-        ("run_random_forest",      po::value<bool>(&params.run_random_forest)->default_value(true)) // Falso para criar o GT.
+        ("run_random_forest",      po::value<bool>(&params.run_random_forest)->default_value(false)) // Falso para criar o GT.
         ("compute_tl_poses",       po::value<bool>(&params.compute_tl_poses)->default_value(false))
         ("print_final_prediction", po::value<bool>(&params.print_final_prediction)->default_value(true)) // Falso para criar o GT.
         ("print_gt_prep",          po::value<bool>(&params.print_gt_prep)->default_value(false))
