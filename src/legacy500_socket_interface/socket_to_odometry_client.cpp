@@ -6,7 +6,8 @@
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
 
 //#define tcp_ip_address "10.9.8.181"
-#define tcp_ip_address "192.168.0.1"
+//char *tcp_ip_address = "192.168.0.1";
+char *tcp_ip_address = (char *) "127.0.0.1";
 
 #define PORT "3458"
 
@@ -37,7 +38,7 @@ stablished_connection_with_server()
 	}
 	status = connect(pi_socket, host_info_list->ai_addr, host_info_list->ai_addrlen);
 
-	if(status < 0)
+	if (status < 0)
 	{
 		printf("--- Connection Failed! ---\n");
 		return (-1);
@@ -68,10 +69,18 @@ extract_odometry_from_socket_and_send_base_ackerman_msg(double *array)
 	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
 	carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void
-extract_odometry_from_socket_and_send_robot_ackerman_msg(double *array)
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Publishers                                                                                   //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+static void
+publish_robot_ackerman_velocity_message(double *array)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_robot_ackerman_velocity_message odometry;
@@ -166,7 +175,7 @@ main(int argc, char **argv)
 		else
 		{
 //			extract_odometry_from_socket_and_send_base_ackerman_msg(array);
-			extract_odometry_from_socket_and_send_robot_ackerman_msg(array);
+			publish_robot_ackerman_velocity_message(array);
 		}
 	}
 	return (0);

@@ -6,7 +6,8 @@
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
 
 //#define tcp_ip_address "10.9.8.181"
-#define tcp_ip_address "192.168.0.1"
+//char *tcp_ip_address = "192.168.0.1";
+char *tcp_ip_address = (char *) "127.0.0.1";
 
 #define PORT "3457"
 
