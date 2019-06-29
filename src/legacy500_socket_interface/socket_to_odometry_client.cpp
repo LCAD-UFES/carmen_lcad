@@ -5,7 +5,6 @@
 
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
 
-//#define tcp_ip_address "10.9.8.181"
 //char *tcp_ip_address = "192.168.0.1";
 char *tcp_ip_address = (char *) "127.0.0.1";
 
@@ -131,9 +130,6 @@ initialize_ipc(void)
 {
 	IPC_RETURN_TYPE err;
 
-//	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, IPC_VARIABLE_LENGTH, CARMEN_BASE_ACKERMAN_ODOMETRY_FMT);
-//	carmen_test_ipc_exit(err, "Could not define", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
-
 	err = IPC_defineMsg(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, IPC_VARIABLE_LENGTH, CARMEN_ROBOT_ACKERMAN_VELOCITY_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
 
@@ -149,13 +145,13 @@ main(int argc, char **argv)
 	int result = 0;
 
 	carmen_ipc_initialize(argc, argv);
-
 	carmen_param_check_version(argv[0]);
-
 	signal(SIGINT, shutdown_module);
-
 	if (initialize_ipc() < 0)
 		carmen_die("Error in initializing ipc...\n");
+
+	if (argc == 2)
+		tcp_ip_address = argv[1];
 
 	int pi_socket = stablished_connection_with_server();
 
@@ -174,7 +170,6 @@ main(int argc, char **argv)
 		}
 		else
 		{
-//			extract_odometry_from_socket_and_send_base_ackerman_msg(array);
 			publish_robot_ackerman_velocity_message(array);
 		}
 	}

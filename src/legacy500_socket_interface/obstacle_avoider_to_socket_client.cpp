@@ -5,54 +5,10 @@
 
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
 
-//#define tcp_ip_address "10.9.8.181"
 //char *tcp_ip_address = "192.168.0.1";
 char *tcp_ip_address = (char *) "127.0.0.1";
 
 #define PORT "3457"
-
-
-int
-apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands)
-{
-	int i, j;
-
-	for (i = 0; i < nun_motion_commands; i++)
-	{
-		j = i;
-		for (double lat = 0.0; lat < 0.2; j++)
-		{
-			if (j >= nun_motion_commands)
-				break;
-			lat += current_motion_command_vector[j].time;
-		}
-		if (j >= nun_motion_commands)
-			break;
-		current_motion_command_vector[i].phi = current_motion_command_vector[j].phi;
-//		current_motion_command_vector[i].phi = current_motion_command_vector[j].phi;
-//		current_motion_command_vector[i].v = current_motion_command_vector[j].v;
-//		current_motion_command_vector[i].x = current_motion_command_vector[j].x;
-//		current_motion_command_vector[i].y = current_motion_command_vector[j].y;
-//		current_motion_command_vector[i].theta = current_motion_command_vector[j].theta;
-//		current_motion_command_vector[i].time = current_motion_command_vector[j].time;
-	}
-
-	for (i = 0; i < nun_motion_commands; i++)
-	{
-		j = i;
-		for (double lat = 0.0; lat < 0.6; j++)
-		{
-			if (j >= nun_motion_commands)
-				break;
-			lat += current_motion_command_vector[j].time;
-		}
-		if (j >= nun_motion_commands)
-			break;
-		current_motion_command_vector[i].v = current_motion_command_vector[j].v;
-	}
-
-	return (i);
-}
 
 
 int
@@ -91,20 +47,6 @@ stablished_connection_with_server()
 
 	return (pi_socket);
 }
-
-
-//int
-//trying_to_reconnect()
-//{
-//	int pi_socket = stablished_connection_with_server();
-//
-//	while (pi_socket == -1)
-//	{
-//		sleep(3);
-//		pi_socket = stablished_connection_with_server();
-//	}
-//	return (pi_socket);
-//}
 
 
 void
@@ -203,30 +145,15 @@ subscribe_to_relevant_messages()
 }
 
 
-//static int
-//initialize_ipc(void)
-//{
-//	IPC_RETURN_TYPE err;
-//
-//	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME, IPC_VARIABLE_LENGTH, CARMEN_BASE_ACKERMAN_MOTION_COMMAND_FMT);
-//	if (err != IPC_OK)
-//		return -1;
-//
-//	return 0;
-//}
-
-
 int
 main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
-
 	carmen_param_check_version(argv[0]);
-
 	signal(SIGINT, shutdown_module);
 
-//	if (initialize_ipc() < 0)
-//		carmen_die("Error in initializing ipc...\n");
+	if (argc == 2)
+		tcp_ip_address = argv[1];
 
 	if (subscribe_to_relevant_messages() < 0)
 		carmen_die("Error subscribing to messages...\n");

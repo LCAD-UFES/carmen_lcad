@@ -60,6 +60,9 @@ static int use_velocity_nn = 1;
 static int use_phi_nn = 1;
 
 static int simulate_legacy_500 = 0;
+static int connected_to_iron_bird = 0;
+static double iron_bird_v = 0.0;
+static double iron_bird_phi = 0.0;
 
 
 static void
@@ -153,7 +156,7 @@ publish_odometry(double timestamp)
 		err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
 		carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
 	}
-	else
+	else if (simulate_legacy_500 && !connected_to_iron_bird)
 	{
 		carmen_robot_ackerman_velocity_message robot_ackerman_velocity_message;
 		robot_ackerman_velocity_message.v = simulator_config->v;
@@ -322,7 +325,7 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 
 	// Existem duas versoes dessa funcao, uma em base_ackerman_simulation e
 	// outra em simulator_ackerman_simulation.
-	carmen_simulator_ackerman_recalc_pos(simulator_config, use_velocity_nn, use_phi_nn);
+	carmen_simulator_ackerman_recalc_pos(simulator_config, use_velocity_nn, use_phi_nn, connected_to_iron_bird, iron_bird_v, iron_bird_phi);
 	carmen_simulator_ackerman_update_objects(simulator_config);
 
 	if (!use_truepos)
@@ -438,8 +441,7 @@ set_truepose_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 		return;
 
 	formatter = IPC_msgInstanceFormatter(msgRef);
-	IPC_unmarshallData(formatter, callData, &msg,
-			sizeof(carmen_simulator_ackerman_set_truepose_message));
+	IPC_unmarshallData(formatter, callData, &msg, sizeof(carmen_simulator_ackerman_set_truepose_message));
 	IPC_freeByteArray(callData);
 
 	simulator_config->true_pose.x = msg.pose.x;
@@ -463,8 +465,7 @@ clear_objects_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 		return;
 
 	formatter = IPC_msgInstanceFormatter(msgRef);
-	IPC_unmarshallData(formatter, callData, &msg,
-			sizeof(carmen_default_message));
+	IPC_unmarshallData(formatter, callData, &msg, sizeof(carmen_default_message));
 	IPC_freeByteArray(callData);
 
 	// carmen_simulator_ackerman_clear_objects();
@@ -571,6 +572,14 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 
 
 static void
+base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *msg)
+{
+	iron_bird_v = msg->v;
+	iron_bird_phi = msg->phi;
+}
+
+
+static void
 truepos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 		void *clientData __attribute__ ((unused)))
 {
@@ -654,26 +663,22 @@ subscribe_to_relevant_messages()
 {
 	IPC_RETURN_TYPE err;
 
-	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_SET_TRUEPOSE_NAME,
-			set_truepose_handler, NULL);
+	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_SET_TRUEPOSE_NAME, set_truepose_handler, NULL);
 	if (err != IPC_OK)
 		return -1;
 	IPC_setMsgQueueLength(CARMEN_SIMULATOR_ACKERMAN_SET_TRUEPOSE_NAME, 100);
 
-	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_SET_OBJECT_NAME,
-			set_object_handler, NULL);
+	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_SET_OBJECT_NAME, set_object_handler, NULL);
 	if (err != IPC_OK)
 		return -1;
 	IPC_setMsgQueueLength(CARMEN_SIMULATOR_ACKERMAN_SET_OBJECT_NAME, 100);
 
-	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_CLEAR_OBJECTS_NAME,
-			clear_objects_handler, NULL);
+	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_CLEAR_OBJECTS_NAME, clear_objects_handler, NULL);
 	if (err != IPC_OK)
 		return -1;
 	IPC_setMsgQueueLength(CARMEN_SIMULATOR_ACKERMAN_CLEAR_OBJECTS_NAME, 1);
 
-	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_QUERY_NAME,
-			truepos_query_handler, NULL);
+	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_QUERY_NAME, truepos_query_handler, NULL);
 	if (err != IPC_OK)
 		return -1;
 
@@ -685,8 +690,11 @@ subscribe_to_relevant_messages()
 
 	if (!simulate_legacy_500)
 		carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
-	else
+	else if (simulate_legacy_500 && !connected_to_iron_bird)
 		carmen_base_ackerman_subscribe_motion_command_2(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	if (simulate_legacy_500 && connected_to_iron_bird)
+		carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -902,7 +910,8 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_t optional_param_list[] =
 	{
-		{(char *) "commandline", (char *) "simulate_legacy_500", CARMEN_PARAM_ONOFF, &simulate_legacy_500, 0, NULL}
+			{(char *) "commandline", (char *) "simulate_legacy_500", CARMEN_PARAM_ONOFF, &simulate_legacy_500, 0, NULL},
+			{(char *) "commandline", (char *) "connected_to_iron_bird", CARMEN_PARAM_ONOFF, &connected_to_iron_bird, 0, NULL}
 	};
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 
