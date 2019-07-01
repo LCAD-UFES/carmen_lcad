@@ -912,8 +912,8 @@ get_initial_displacement_and_displacement_inc(double *initial_displacement, doub
 
 //This Function expected the points to check in local coordinates, if you need use global coordinates, just set localizer_pose as 0.0
 double
-carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles_new(carmen_point_t *localizer_pose, carmen_point_t local_point_to_check, // point_to_check_in_respect_to_car,
-carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map, double circle_radius)
+carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t *localizer_pose, carmen_point_t local_point_to_check, // point_to_check_in_respect_to_car,
+carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map, double safety_distance)
 {
 	check_collision_config_initialization();
 
@@ -927,7 +927,7 @@ carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map
 		//distance equals to -1.0 when the coordinates are outside of map
 		if (distance != -1.0)
 		{
-			double delta = distance - global_collision_config.markers[i].radius - (circle_radius - 1.0);
+			double delta = distance - (global_collision_config.markers[i].radius + safety_distance);
 			if (delta < 0.0)
 				proximity_to_obstacles += delta * delta;
 		}
@@ -937,7 +937,7 @@ carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map
 
 
 double
-carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t *localizer_pose, carmen_point_t local_point_to_check, // point_to_check_in_respect_to_car,
+carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles_old(carmen_point_t *localizer_pose, carmen_point_t local_point_to_check, // point_to_check_in_respect_to_car,
 		carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map, double circle_radius)
 {
 	double initial_displacement, displacement_inc;
@@ -964,7 +964,7 @@ carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t
 
 
 int
-trajectory_pose_hit_obstacle_new(carmen_ackerman_traj_point_t trajectory_pose, double circle_radius,
+trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, double safety_distance,
 carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
 {
 	check_collision_config_initialization();
@@ -983,7 +983,7 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 		//distance equals to -1.0 when the coordinates are outside of map
 		if (distance != -1.0)
 		{
-			if (distance < global_collision_config.markers[i].radius + circle_radius - 1.0)
+			if (distance < global_collision_config.markers[i].radius + safety_distance)
 				return (1);
 		}
 		else
@@ -993,7 +993,7 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 }
 
 int
-trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, double circle_radius,
+trajectory_pose_hit_obstacle_old(carmen_ackerman_traj_point_t trajectory_pose, double circle_radius,
 		carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
 {
 	if (distance_map == NULL)

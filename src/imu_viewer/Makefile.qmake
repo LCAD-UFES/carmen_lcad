@@ -33,7 +33,7 @@ MOVE          = mv -f
 TAR           = tar -cf
 COMPRESS      = gzip -9f
 DISTNAME      = imu_viewer1.0.0
-DISTDIR = /home/alberto/carmen_lcad/src/imu_viewer/imu_viewer1.0.0
+DISTDIR = /mnt/dados/carmen_lcad/src/imu_viewer/imu_viewer1.0.0
 LINK          = g++
 LFLAGS        = -m64 -Wl,-O1
 LIBS          = $(SUBLIBS) -L/usr/X11R6/lib64 -L$(CARMEN_HOME)/lib -lxsens_interface -lparam_interface -lipc -lglobal -lgps_xyz_interface -lrotation_geometry -lxml2 -lz -lm -lpi_imu_interface -lQt5OpenGL -lQt5Widgets -lQt5Gui -lQt5Core -lGL -lpthread 
@@ -334,7 +334,6 @@ moc_mainwindow.cpp: objectgl.h \
 		$(CARMEN_HOME)/include/carmen/param_messages.h \
 		$(CARMEN_HOME)/include/carmen/laser_messages.h \
 		$(CARMEN_HOME)/include/carmen/laser_interface.h \
-		../../include/carmen/laser_messages.h \
 		$(CARMEN_HOME)/include/carmen/laser_ldmrs_messages.h \
 		$(CARMEN_HOME)/include/carmen/laser_ldmrs_interface.h \
 		$(CARMEN_HOME)/include/carmen/keyctrl.h \
@@ -354,7 +353,6 @@ moc_mainwindow.cpp: objectgl.h \
 		$(CARMEN_HOME)/include/carmen/pantilt_interface.h \
 		$(CARMEN_HOME)/include/carmen/imu_messages.h \
 		$(CARMEN_HOME)/include/carmen/imu_interface.h \
-		../../include/carmen/imu_messages.h \
 		$(CARMEN_HOME)/include/carmen/velodyne_messages.h \
 		$(CARMEN_HOME)/include/carmen/velodyne_interface.h \
 		$(CARMEN_HOME)/include/carmen/bumblebee_basic_interface.h \
@@ -363,17 +361,14 @@ moc_mainwindow.cpp: objectgl.h \
 		$(CARMEN_HOME)/include/carmen/stereo_messages.h \
 		$(CARMEN_HOME)/include/carmen/kinect_messages.h \
 		$(CARMEN_HOME)/include/carmen/kinect_interface.h \
-		../../include/carmen/kinect_messages.h \
 		$(CARMEN_HOME)/include/carmen/kinect_util.h \
 		$(CARMEN_HOME)/include/carmen/xsens_messages.h \
 		$(CARMEN_HOME)/include/carmen/xsens_interface.h \
-		../../include/carmen/xsens_messages.h \
 		$(CARMEN_HOME)/include/carmen/xsens_mtig_interface.h \
 		$(CARMEN_HOME)/include/carmen/xsens_mtig_messages.h \
 		$(CARMEN_HOME)/include/carmen/logger_messages.h \
 		$(CARMEN_HOME)/include/carmen/logger.h \
 		$(CARMEN_HOME)/include/carmen/logger_interface.h \
-		../../include/carmen/logger_messages.h \
 		$(CARMEN_HOME)/include/carmen/writelog.h \
 		$(CARMEN_HOME)/include/carmen/web_cam_interface.h \
 		$(CARMEN_HOME)/include/carmen/web_cam_messages.h \
@@ -394,46 +389,35 @@ moc_mainwindow.cpp: objectgl.h \
 		$(CARMEN_HOME)/include/carmen/road_mapper_messages.h \
 		$(CARMEN_HOME)/include/carmen/road_mapper.h \
 		$(CARMEN_HOME)/include/carmen/robot_ackerman_interface.h \
-		../../include/carmen/robot_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/simulator_ackerman_interface.h \
-		../../include/carmen/simulator_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/localize_ackerman_interface.h \
-		../../include/carmen/localize_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/localize_ackerman_motion.h \
 		$(CARMEN_HOME)/include/carmen/navigator_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/navigator_ackerman_interface.h \
 		$(CARMEN_HOME)/include/carmen/navigator_ackerman.h \
 		$(CARMEN_HOME)/include/carmen/behavior_selector_interface.h \
-		../../include/carmen/behavior_selector_messages.h \
+		/home/sarcinellirenan/carmen_lcad/include/carmen/behavior_selector_messages.h \
 		$(CARMEN_HOME)/include/carmen/navigator_gui_messages.h \
 		$(CARMEN_HOME)/include/carmen/navigator_gui_interface.h \
-		../../include/carmen/navigator_gui_messages.h \
 		$(CARMEN_HOME)/include/carmen/map_server_messages.h \
 		$(CARMEN_HOME)/include/carmen/mapper_messages.h \
 		$(CARMEN_HOME)/include/carmen/map_server_interface.h \
 		$(CARMEN_HOME)/include/carmen/localize_ackerman_core.h \
 		$(CARMEN_HOME)/include/carmen/fused_odometry_messages.h \
-		../../include/carmen/localize_ackerman_motion.h \
-		../../include/carmen/localize_ackerman_likelihood_map.h \
-		../../include/carmen/localize_ackerman_core.h \
 		$(CARMEN_HOME)/include/carmen/localize_ackerman_likelihood_map.h \
 		$(CARMEN_HOME)/include/carmen/mapper_interface.h \
-		../../include/carmen/mapper_messages.h \
 		$(CARMEN_HOME)/include/carmen/rotation_geometry.h \
 		$(CARMEN_HOME)/include/carmen/base_ackerman_interface.h \
-		../../include/carmen/base_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/ford_escape_hybrid_interface.h \
-		../../include/carmen/ford_escape_hybrid_messages.h \
 		$(CARMEN_HOME)/include/carmen/can_dump_interface.h \
 		$(CARMEN_HOME)/include/carmen/ultrasonic_filter_interface.h \
 		$(CARMEN_HOME)/include/carmen/localize_neural_messages.h \
 		$(CARMEN_HOME)/include/carmen/localize_neural_interface.h \
-		../../include/carmen/localize_neural_messages.h \
 		mainwindow.h
-	/usr/lib/x86_64-linux-gnu/qt5/bin/moc $(DEFINES) -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++-64 -I/home/alberto/carmen_lcad/src/imu_viewer -I'/home/alberto/carmen_lcad/src/imu_viewer/$(CARMEN_HOME)/include' -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/5 -I/usr/include/x86_64-linux-gnu/c++/5 -I/usr/include/c++/5/backward -I/usr/lib/gcc/x86_64-linux-gnu/5/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include mainwindow.h -o moc_mainwindow.cpp
+	/usr/lib/x86_64-linux-gnu/qt5/bin/moc $(DEFINES) -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++-64 -I/mnt/dados/carmen_lcad/src/imu_viewer -I'/mnt/dados/carmen_lcad/src/imu_viewer/$(CARMEN_HOME)/include' -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/5 -I/usr/include/x86_64-linux-gnu/c++/5 -I/usr/include/c++/5/backward -I/usr/lib/gcc/x86_64-linux-gnu/5/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include mainwindow.h -o moc_mainwindow.cpp
 
 moc_objectgl.cpp: objectgl.h
-	/usr/lib/x86_64-linux-gnu/qt5/bin/moc $(DEFINES) -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++-64 -I/home/alberto/carmen_lcad/src/imu_viewer -I'/home/alberto/carmen_lcad/src/imu_viewer/$(CARMEN_HOME)/include' -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/5 -I/usr/include/x86_64-linux-gnu/c++/5 -I/usr/include/c++/5/backward -I/usr/lib/gcc/x86_64-linux-gnu/5/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include objectgl.h -o moc_objectgl.cpp
+	/usr/lib/x86_64-linux-gnu/qt5/bin/moc $(DEFINES) -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++-64 -I/mnt/dados/carmen_lcad/src/imu_viewer -I'/mnt/dados/carmen_lcad/src/imu_viewer/$(CARMEN_HOME)/include' -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/5 -I/usr/include/x86_64-linux-gnu/c++/5 -I/usr/include/c++/5/backward -I/usr/lib/gcc/x86_64-linux-gnu/5/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include objectgl.h -o moc_objectgl.cpp
 
 compiler_moc_source_make_all:
 compiler_moc_source_clean:
@@ -459,7 +443,6 @@ compiler_clean: compiler_moc_header_clean
 		$(CARMEN_HOME)/include/carmen/param_messages.h \
 		$(CARMEN_HOME)/include/carmen/laser_messages.h \
 		$(CARMEN_HOME)/include/carmen/laser_interface.h \
-		../../include/carmen/laser_messages.h \
 		$(CARMEN_HOME)/include/carmen/laser_ldmrs_messages.h \
 		$(CARMEN_HOME)/include/carmen/laser_ldmrs_interface.h \
 		$(CARMEN_HOME)/include/carmen/keyctrl.h \
@@ -479,7 +462,6 @@ compiler_clean: compiler_moc_header_clean
 		$(CARMEN_HOME)/include/carmen/pantilt_interface.h \
 		$(CARMEN_HOME)/include/carmen/imu_messages.h \
 		$(CARMEN_HOME)/include/carmen/imu_interface.h \
-		../../include/carmen/imu_messages.h \
 		$(CARMEN_HOME)/include/carmen/velodyne_messages.h \
 		$(CARMEN_HOME)/include/carmen/velodyne_interface.h \
 		$(CARMEN_HOME)/include/carmen/bumblebee_basic_interface.h \
@@ -488,17 +470,14 @@ compiler_clean: compiler_moc_header_clean
 		$(CARMEN_HOME)/include/carmen/stereo_messages.h \
 		$(CARMEN_HOME)/include/carmen/kinect_messages.h \
 		$(CARMEN_HOME)/include/carmen/kinect_interface.h \
-		../../include/carmen/kinect_messages.h \
 		$(CARMEN_HOME)/include/carmen/kinect_util.h \
 		$(CARMEN_HOME)/include/carmen/xsens_messages.h \
 		$(CARMEN_HOME)/include/carmen/xsens_interface.h \
-		../../include/carmen/xsens_messages.h \
 		$(CARMEN_HOME)/include/carmen/xsens_mtig_interface.h \
 		$(CARMEN_HOME)/include/carmen/xsens_mtig_messages.h \
 		$(CARMEN_HOME)/include/carmen/logger_messages.h \
 		$(CARMEN_HOME)/include/carmen/logger.h \
 		$(CARMEN_HOME)/include/carmen/logger_interface.h \
-		../../include/carmen/logger_messages.h \
 		$(CARMEN_HOME)/include/carmen/writelog.h \
 		$(CARMEN_HOME)/include/carmen/web_cam_interface.h \
 		$(CARMEN_HOME)/include/carmen/web_cam_messages.h \
@@ -519,41 +498,30 @@ compiler_clean: compiler_moc_header_clean
 		$(CARMEN_HOME)/include/carmen/road_mapper_messages.h \
 		$(CARMEN_HOME)/include/carmen/road_mapper.h \
 		$(CARMEN_HOME)/include/carmen/robot_ackerman_interface.h \
-		../../include/carmen/robot_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/simulator_ackerman_interface.h \
-		../../include/carmen/simulator_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/localize_ackerman_interface.h \
-		../../include/carmen/localize_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/localize_ackerman_motion.h \
 		$(CARMEN_HOME)/include/carmen/navigator_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/navigator_ackerman_interface.h \
 		$(CARMEN_HOME)/include/carmen/navigator_ackerman.h \
 		$(CARMEN_HOME)/include/carmen/behavior_selector_interface.h \
-		../../include/carmen/behavior_selector_messages.h \
+		/home/sarcinellirenan/carmen_lcad/include/carmen/behavior_selector_messages.h \
 		$(CARMEN_HOME)/include/carmen/navigator_gui_messages.h \
 		$(CARMEN_HOME)/include/carmen/navigator_gui_interface.h \
-		../../include/carmen/navigator_gui_messages.h \
 		$(CARMEN_HOME)/include/carmen/map_server_messages.h \
 		$(CARMEN_HOME)/include/carmen/mapper_messages.h \
 		$(CARMEN_HOME)/include/carmen/map_server_interface.h \
 		$(CARMEN_HOME)/include/carmen/localize_ackerman_core.h \
 		$(CARMEN_HOME)/include/carmen/fused_odometry_messages.h \
-		../../include/carmen/localize_ackerman_motion.h \
-		../../include/carmen/localize_ackerman_likelihood_map.h \
-		../../include/carmen/localize_ackerman_core.h \
 		$(CARMEN_HOME)/include/carmen/localize_ackerman_likelihood_map.h \
 		$(CARMEN_HOME)/include/carmen/mapper_interface.h \
-		../../include/carmen/mapper_messages.h \
 		$(CARMEN_HOME)/include/carmen/rotation_geometry.h \
 		$(CARMEN_HOME)/include/carmen/base_ackerman_interface.h \
-		../../include/carmen/base_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/ford_escape_hybrid_interface.h \
-		../../include/carmen/ford_escape_hybrid_messages.h \
 		$(CARMEN_HOME)/include/carmen/can_dump_interface.h \
 		$(CARMEN_HOME)/include/carmen/ultrasonic_filter_interface.h \
 		$(CARMEN_HOME)/include/carmen/localize_neural_messages.h \
 		$(CARMEN_HOME)/include/carmen/localize_neural_interface.h \
-		../../include/carmen/localize_neural_messages.h \
 		mainwindow.h \
 		objectgl.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o ./imu_viewer_main.o imu_viewer_main.cpp
@@ -570,7 +538,6 @@ compiler_clean: compiler_moc_header_clean
 		$(CARMEN_HOME)/include/carmen/param_messages.h \
 		$(CARMEN_HOME)/include/carmen/laser_messages.h \
 		$(CARMEN_HOME)/include/carmen/laser_interface.h \
-		../../include/carmen/laser_messages.h \
 		$(CARMEN_HOME)/include/carmen/laser_ldmrs_messages.h \
 		$(CARMEN_HOME)/include/carmen/laser_ldmrs_interface.h \
 		$(CARMEN_HOME)/include/carmen/keyctrl.h \
@@ -590,7 +557,6 @@ compiler_clean: compiler_moc_header_clean
 		$(CARMEN_HOME)/include/carmen/pantilt_interface.h \
 		$(CARMEN_HOME)/include/carmen/imu_messages.h \
 		$(CARMEN_HOME)/include/carmen/imu_interface.h \
-		../../include/carmen/imu_messages.h \
 		$(CARMEN_HOME)/include/carmen/velodyne_messages.h \
 		$(CARMEN_HOME)/include/carmen/velodyne_interface.h \
 		$(CARMEN_HOME)/include/carmen/bumblebee_basic_interface.h \
@@ -599,17 +565,14 @@ compiler_clean: compiler_moc_header_clean
 		$(CARMEN_HOME)/include/carmen/stereo_messages.h \
 		$(CARMEN_HOME)/include/carmen/kinect_messages.h \
 		$(CARMEN_HOME)/include/carmen/kinect_interface.h \
-		../../include/carmen/kinect_messages.h \
 		$(CARMEN_HOME)/include/carmen/kinect_util.h \
 		$(CARMEN_HOME)/include/carmen/xsens_messages.h \
 		$(CARMEN_HOME)/include/carmen/xsens_interface.h \
-		../../include/carmen/xsens_messages.h \
 		$(CARMEN_HOME)/include/carmen/xsens_mtig_interface.h \
 		$(CARMEN_HOME)/include/carmen/xsens_mtig_messages.h \
 		$(CARMEN_HOME)/include/carmen/logger_messages.h \
 		$(CARMEN_HOME)/include/carmen/logger.h \
 		$(CARMEN_HOME)/include/carmen/logger_interface.h \
-		../../include/carmen/logger_messages.h \
 		$(CARMEN_HOME)/include/carmen/writelog.h \
 		$(CARMEN_HOME)/include/carmen/web_cam_interface.h \
 		$(CARMEN_HOME)/include/carmen/web_cam_messages.h \
@@ -630,41 +593,30 @@ compiler_clean: compiler_moc_header_clean
 		$(CARMEN_HOME)/include/carmen/road_mapper_messages.h \
 		$(CARMEN_HOME)/include/carmen/road_mapper.h \
 		$(CARMEN_HOME)/include/carmen/robot_ackerman_interface.h \
-		../../include/carmen/robot_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/simulator_ackerman_interface.h \
-		../../include/carmen/simulator_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/localize_ackerman_interface.h \
-		../../include/carmen/localize_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/localize_ackerman_motion.h \
 		$(CARMEN_HOME)/include/carmen/navigator_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/navigator_ackerman_interface.h \
 		$(CARMEN_HOME)/include/carmen/navigator_ackerman.h \
 		$(CARMEN_HOME)/include/carmen/behavior_selector_interface.h \
-		../../include/carmen/behavior_selector_messages.h \
+		/home/sarcinellirenan/carmen_lcad/include/carmen/behavior_selector_messages.h \
 		$(CARMEN_HOME)/include/carmen/navigator_gui_messages.h \
 		$(CARMEN_HOME)/include/carmen/navigator_gui_interface.h \
-		../../include/carmen/navigator_gui_messages.h \
 		$(CARMEN_HOME)/include/carmen/map_server_messages.h \
 		$(CARMEN_HOME)/include/carmen/mapper_messages.h \
 		$(CARMEN_HOME)/include/carmen/map_server_interface.h \
 		$(CARMEN_HOME)/include/carmen/localize_ackerman_core.h \
 		$(CARMEN_HOME)/include/carmen/fused_odometry_messages.h \
-		../../include/carmen/localize_ackerman_motion.h \
-		../../include/carmen/localize_ackerman_likelihood_map.h \
-		../../include/carmen/localize_ackerman_core.h \
 		$(CARMEN_HOME)/include/carmen/localize_ackerman_likelihood_map.h \
 		$(CARMEN_HOME)/include/carmen/mapper_interface.h \
-		../../include/carmen/mapper_messages.h \
 		$(CARMEN_HOME)/include/carmen/rotation_geometry.h \
 		$(CARMEN_HOME)/include/carmen/base_ackerman_interface.h \
-		../../include/carmen/base_ackerman_messages.h \
 		$(CARMEN_HOME)/include/carmen/ford_escape_hybrid_interface.h \
-		../../include/carmen/ford_escape_hybrid_messages.h \
 		$(CARMEN_HOME)/include/carmen/can_dump_interface.h \
 		$(CARMEN_HOME)/include/carmen/ultrasonic_filter_interface.h \
 		$(CARMEN_HOME)/include/carmen/localize_neural_messages.h \
-		$(CARMEN_HOME)/include/carmen/localize_neural_interface.h \
-		../../include/carmen/localize_neural_messages.h
+		$(CARMEN_HOME)/include/carmen/localize_neural_interface.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o ./mainwindow.o mainwindow.cpp
 
 ./objectgl.o: objectgl.cpp objectgl.h
