@@ -321,14 +321,17 @@ compute_proximity_to_obstacles_using_distance_map(vector<carmen_ackerman_path_po
 	double proximity_to_obstacles_for_path = 0.0;
 	double circle_radius = GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance; // metade da largura do carro + um espacco de guarda
 	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
+
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
 		carmen_point_t point_to_check = {path[i].x, path[i].y, path[i].theta};
-		proximity_to_obstacles_for_path += carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
+		double proximity_point = carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
 				point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius);
+		proximity_to_obstacles_for_path += proximity_point;
 //		carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 //		getchar();
 	}
+
 	return (proximity_to_obstacles_for_path);
 }
 

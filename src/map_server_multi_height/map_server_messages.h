@@ -24,7 +24,9 @@ typedef carmen_mapper_map_message carmen_map_server_offline_map_message;
 
 #define CARMEN_MAP_SERVER_OFFLINE_MAP_NAME 	"carmen_map_server_offline_map_message"
 #define CARMEN_MAP_SERVER_OFFLINE_MAP_FMT 	CARMEN_MAPPER_MAP_MESSAGE_FMT
-#define CARMEN_MAP_SERVER_OFFLINE_MAP_LEVEL1_NAME 	"carmen_map_server_offline_map_level1_message"
+
+#define CARMEN_MAP_SERVER_MULTI_HEIGHT_OFFLINE_MAP_NAME(level) 	(level ? "carmen_map_server_offline_map_level"#level"_message" : "carmen_map_server_offline_map_message")
+#define CARMEN_MAP_SERVER_MULTI_HEIGHT_OFFLINE_MAP_FMT			CARMEN_MAPPER_MAP_MESSAGE_FMT
 
 typedef carmen_mapper_map_message carmen_map_server_road_map_message;
 
@@ -35,6 +37,9 @@ typedef carmen_mapper_compact_map_message carmen_map_server_compact_cost_map_mes
 
 #define CARMEN_MAP_SERVER_COMPACT_COST_MAP_NAME 	"carmen_map_server_compact_cost_map_message"
 #define CARMEN_MAP_SERVER_COMPACT_COST_MAP_FMT 	CARMEN_MAPPER_COMPACT_MAP_MESSAGE_FMT
+
+#define CARMEN_MAP_SERVER_MULTI_HEIGHT_COMPACT_COST_MAP_NAME(level) 	(level ? "carmen_map_server_offline_map_level"#level"_message" : "carmen_map_server_compact_cost_map_message")
+#define CARMEN_MAP_SERVER_MULTI_HEIGHT_COMPACT_COST_MAP_FMT				CARMEN_MAPPER_COMPACT_MAP_MESSAGE_FMT
 
 typedef carmen_mapper_compact_map_message carmen_map_server_compact_lane_map_message;
 
@@ -58,7 +63,10 @@ typedef enum {
 typedef carmen_mapper_map_message carmen_map_server_cost_map;
 
 #define CARMEN_MAP_SERVER_COST_MAP_NAME		"carmen_map_server_cost_map_name"
-#define CARMEN_MAP_SERVER_COST_MAP_FMT CARMEN_MAPPER_MAP_MESSAGE_FMT
+#define CARMEN_MAP_SERVER_COST_MAP_FMT		CARMEN_MAPPER_MAP_MESSAGE_FMT
+
+#define CARMEN_MAP_SERVER_MULTI_HEIGHT_COST_MAP_NAME(level)	(level ? "carmen_map_server_cost_map_level"#level"_name" : "carmen_map_server_cost_map_name")
+#define CARMEN_MAP_SERVER_MULTI_HEIGHT_COST_MAP_FMT			CARMEN_MAPPER_MAP_MESSAGE_FMT
 //#define CARMEN_MAP_SERVER_COST_MAP_FMT		"{<double:2>, int, {int, int, double, [byte:64], string, double, double}, int, double, string}"
 
 typedef carmen_mapper_map_message carmen_map_server_lane_map;

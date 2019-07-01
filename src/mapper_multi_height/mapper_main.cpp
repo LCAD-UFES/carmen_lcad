@@ -263,7 +263,8 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		camera3_ready = 0;
 
 		publish_map(globalpos_message->timestamp);
-		publish_virtual_scan(globalpos_message->timestamp);
+		if (height_level == 0)
+			publish_virtual_scan(globalpos_message->timestamp);
 	}
 }
 
@@ -1194,14 +1195,11 @@ subscribe_to_ipc_messages()
 	if (sensors_params[9].alive)
 		carmen_stereo_velodyne_subscribe_scan_message(9, NULL, (carmen_handler_t)velodyne_variable_scan_message_handler9, CARMEN_SUBSCRIBE_LATEST);
 
-	switch (height_level)
-	{
-		case 1:
-			carmen_map_server_subscribe_offline_map_level1(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
-			break;
-		default:
-			carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
-	}
+	if (height_level)
+		carmen_map_server_subscribe_multi_height_offline_map(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST, height_level);
+	else
+		carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
+
 //	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	if (!use_truepos) // This flag is for a special kind of operation where the sensor pipeline listen to the globalpos and the planning pipeline to the truepos
