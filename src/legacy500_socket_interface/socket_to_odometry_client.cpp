@@ -47,27 +47,6 @@ stablished_connection_with_server()
 
 	return (pi_socket);
 }
-
-
-void
-extract_odometry_from_socket_and_send_base_ackerman_msg(double *array)
-{
-	IPC_RETURN_TYPE err = IPC_OK;
-	carmen_base_ackerman_odometry_message odometry;
-
-	odometry.x     = array[0];
-	odometry.y     = array[1];
-	odometry.theta = array[2];
-	odometry.v     = array[3];
-	odometry.phi   = array[4];
-	odometry.host  = carmen_get_host();
-	odometry.timestamp = carmen_get_time();
-
-//	printf ("%lf %lf %lf %lf %lf\n", array[0], array[1], array[2], array[3], array[4]);
-
-	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
-	carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
-}
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
