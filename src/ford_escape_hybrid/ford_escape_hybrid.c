@@ -204,7 +204,7 @@ publish_car_status()
 	//	11 (27) Steering needs initialization* F: initialized, T: uninitialized
 	//	        Steering initialization waiting F: initialized, T: user must init
 	//	        on user input* steering manually or press OK
-	//msg.g_XGV_component_status = g_XGV_component_status;
+	msg.g_XGV_component_status = g_XGV_component_status;
 
 	msg.g_XGV_main_propulsion = g_XGV_main_propulsion;
 	msg.g_XGV_main_fuel_supply = g_XGV_main_fuel_supply;
