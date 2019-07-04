@@ -658,7 +658,8 @@ get_robot_config(carmen_simulator_ackerman_config_t *simulator_config)
 
 
 void
-carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulator_config, int use_velocity_nn, int use_phi_nn)
+carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulator_config,
+		int use_velocity_nn, int use_phi_nn, int connected_to_iron_bird, double iron_bird_v, double iron_bird_phi)
 {
 	carmen_point_t new_odom;
 	carmen_point_t new_true;
@@ -666,13 +667,24 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 
 	update_target_v_and_target_phi(simulator_config);
 
-	// Velocity must be calculated before phi
-	if (use_velocity_nn) v = compute_new_velocity_with_ann(simulator_config);
-	else v = compute_new_velocity(simulator_config);
+	if (connected_to_iron_bird)
+	{
+		v = iron_bird_v;
+		phi = iron_bird_phi;
+	}
+	else
+	{
+		// Velocity must be calculated before phi
+		if (use_velocity_nn)
+			v = compute_new_velocity_with_ann(simulator_config);
+		else
+			v = compute_new_velocity(simulator_config);
 
-	if (use_phi_nn) phi = compute_new_phi_with_ann(simulator_config); // + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05));
-	else phi = compute_new_phi(simulator_config); // + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
-
+		if (use_phi_nn)
+			phi = compute_new_phi_with_ann(simulator_config); // + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05));
+		else
+			phi = compute_new_phi(simulator_config); // + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
+	}
 #ifdef PLOT_VELOCITY
 	pid_plot_velocity(simulator_config->v, simulator_config->target_v, 15.0, "vel");
 #endif

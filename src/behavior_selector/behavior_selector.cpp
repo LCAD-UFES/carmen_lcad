@@ -18,6 +18,9 @@
 //#define PRINT_UDATMO_LOG
 #define USE_DATMO_GOAL
 
+//uncomment return 0 to enable overtaking
+//#define OVERTAKING
+
 static carmen_robot_ackerman_config_t robot_config;
 static double distance_between_waypoints = 5;
 static carmen_ackerman_traj_point_t robot_pose;
@@ -135,6 +138,9 @@ try_avoiding_obstacle(int rddf_pose_index, double circle_radius, carmen_rddf_roa
 {
 	int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[rddf_pose_index], circle_radius, current_map, &robot_config);
 
+#ifdef OVERTAKING
+	return 0;
+#endif
 	return (rddf_pose_hit_obstacle);
 
 //	if (rddf_pose_hit_obstacle == 1)

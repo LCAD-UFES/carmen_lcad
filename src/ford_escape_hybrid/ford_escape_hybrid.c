@@ -263,6 +263,10 @@ publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned lon
 
 		err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &robot_ackerman_velocity_message);
 		carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
+
+		// Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
+		//err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_2_NAME, &robot_ackerman_velocity_message);
+		//carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_2_NAME);
 	}
 
 	if ((heartbeat % 10) == 0)
@@ -973,6 +977,10 @@ subscribe_to_relevant_messages()
 			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) base_ackerman_motion_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	// Handler redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
+	//carmen_base_ackerman_subscribe_motion_command_2(NULL, (carmen_handler_t) (carmen_handler_t) base_ackerman_motion_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 	carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_odometry_message_handler,	CARMEN_SUBSCRIBE_LATEST);
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }

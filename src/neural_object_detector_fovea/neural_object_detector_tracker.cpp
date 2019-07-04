@@ -862,7 +862,18 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, globalpos.x, globalpos.y);
 			double dist;
 			dist = euclidean_distance(positions[i].cartesian_x, globalpos.x, positions[i].cartesian_y, globalpos.y);
-			cout<<"Dist: "<<dist<<endl;
+			cout<<dist;
+			for (int j = 0; j < predictions_of_crops_in_pestrian_t[0].size(); j++)
+			{
+				int x, y, x2, y2;
+				x = predictions_of_crops_in_pestrian_t[0][j].x;
+				y = predictions_of_crops_in_pestrian_t[0][j].y;
+				x2 = predictions_of_crops_in_pestrian_t[0][j].x+predictions_of_crops_in_pestrian_t[0][j].w;
+				y2 = predictions_of_crops_in_pestrian_t[0][j].y+predictions_of_crops_in_pestrian_t[0][j].h;
+				cout<<" "<<(predictions_of_crops_in_pestrian_t[0][j].x +predictions_of_crops_in_pestrian_t[0][j].w)*(predictions_of_crops_in_pestrian_t[0][j].y+predictions_of_crops_in_pestrian_t[0][j].h)<<endl;
+				//cout<<x<<" "<<y<<" "<<x2<<" "<<y2<<endl;
+			}
+
 
 			//update_world_position(&predictions_of_crops_in_pestrian_t[0][i],positions[i].cartesian_x,positions[i].cartesian_y,image_msg->timestamp);
 			//			printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f \n",
@@ -875,6 +886,7 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 
 		//cout<<"x: "<<positions[i].cartesian_x<<" "<<"y: "<<positions[i].cartesian_y<<endl;
 	}
+
 
 	//clean_pedestrians(image_msg->timestamp, 1.0);
 

@@ -59,6 +59,11 @@ static int use_truepos = 0;
 static int use_velocity_nn = 1;
 static int use_phi_nn = 1;
 
+static int simulate_legacy_500 = 0;
+static int connected_to_iron_bird = 0;
+static double iron_bird_v = 0.0;
+static double iron_bird_phi = 0.0;
+
 
 static void
 carmen_destroy_simulator_map(carmen_map_t *map)
@@ -137,20 +142,31 @@ publish_odometry(double timestamp)
 		first = 0;
 	}
 
-	odometry.x     = simulator_config->odom_pose.x;
-	odometry.y     = simulator_config->odom_pose.y;
-	odometry.theta = simulator_config->odom_pose.theta;
-	odometry.v     = simulator_config->v;
-	odometry.phi   = simulator_config->phi;
-	odometry.timestamp = timestamp;
+	if (!simulate_legacy_500)
+	{
+		odometry.x     = simulator_config->odom_pose.x;
+		odometry.y     = simulator_config->odom_pose.y;
+		odometry.theta = simulator_config->odom_pose.theta;
+		odometry.v     = simulator_config->v;
+		odometry.phi   = simulator_config->phi;
+		odometry.timestamp = timestamp;
 
-//	printf ("%lf %lf %lf %lf %lf\n", odometry.x, odometry.y, odometry.theta, odometry.v, odometry.phi);
+//		printf ("%lf %lf %lf %lf %lf\n", odometry.x, odometry.y, odometry.theta, odometry.v, odometry.phi);
 
-	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
-	carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
+		err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
+		carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
+	}
+	else if (simulate_legacy_500 && !connected_to_iron_bird)
+	{
+		carmen_robot_ackerman_velocity_message robot_ackerman_velocity_message;
+		robot_ackerman_velocity_message.v = simulator_config->v;
+		robot_ackerman_velocity_message.phi = simulator_config->phi;
+		robot_ackerman_velocity_message.timestamp = timestamp;
+		robot_ackerman_velocity_message.host = carmen_get_host();
 
-//	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_2_NAME, &odometry);
-//	carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_2_NAME);
+		err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_2_NAME, &robot_ackerman_velocity_message);
+		carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_2_NAME);
+	}
 }
 
 
@@ -309,7 +325,7 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 
 	// Existem duas versoes dessa funcao, uma em base_ackerman_simulation e
 	// outra em simulator_ackerman_simulation.
-	carmen_simulator_ackerman_recalc_pos(simulator_config, use_velocity_nn, use_phi_nn);
+	carmen_simulator_ackerman_recalc_pos(simulator_config, use_velocity_nn, use_phi_nn, connected_to_iron_bird, iron_bird_v, iron_bird_phi);
 	carmen_simulator_ackerman_update_objects(simulator_config);
 
 	if (!use_truepos)
@@ -425,8 +441,7 @@ set_truepose_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 		return;
 
 	formatter = IPC_msgInstanceFormatter(msgRef);
-	IPC_unmarshallData(formatter, callData, &msg,
-			sizeof(carmen_simulator_ackerman_set_truepose_message));
+	IPC_unmarshallData(formatter, callData, &msg, sizeof(carmen_simulator_ackerman_set_truepose_message));
 	IPC_freeByteArray(callData);
 
 	simulator_config->true_pose.x = msg.pose.x;
@@ -450,8 +465,7 @@ clear_objects_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 		return;
 
 	formatter = IPC_msgInstanceFormatter(msgRef);
-	IPC_unmarshallData(formatter, callData, &msg,
-			sizeof(carmen_default_message));
+	IPC_unmarshallData(formatter, callData, &msg, sizeof(carmen_default_message));
 	IPC_freeByteArray(callData);
 
 	// carmen_simulator_ackerman_clear_objects();
@@ -558,6 +572,14 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 
 
 static void
+base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *msg)
+{
+	iron_bird_v = msg->v;
+	iron_bird_phi = msg->phi;
+}
+
+
+static void
 truepos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 		void *clientData __attribute__ ((unused)))
 {
@@ -641,26 +663,22 @@ subscribe_to_relevant_messages()
 {
 	IPC_RETURN_TYPE err;
 
-	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_SET_TRUEPOSE_NAME,
-			set_truepose_handler, NULL);
+	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_SET_TRUEPOSE_NAME, set_truepose_handler, NULL);
 	if (err != IPC_OK)
 		return -1;
 	IPC_setMsgQueueLength(CARMEN_SIMULATOR_ACKERMAN_SET_TRUEPOSE_NAME, 100);
 
-	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_SET_OBJECT_NAME,
-			set_object_handler, NULL);
+	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_SET_OBJECT_NAME, set_object_handler, NULL);
 	if (err != IPC_OK)
 		return -1;
 	IPC_setMsgQueueLength(CARMEN_SIMULATOR_ACKERMAN_SET_OBJECT_NAME, 100);
 
-	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_CLEAR_OBJECTS_NAME,
-			clear_objects_handler, NULL);
+	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_CLEAR_OBJECTS_NAME, clear_objects_handler, NULL);
 	if (err != IPC_OK)
 		return -1;
 	IPC_setMsgQueueLength(CARMEN_SIMULATOR_ACKERMAN_CLEAR_OBJECTS_NAME, 1);
 
-	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_QUERY_NAME,
-			truepos_query_handler, NULL);
+	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_QUERY_NAME, truepos_query_handler, NULL);
 	if (err != IPC_OK)
 		return -1;
 
@@ -670,10 +688,13 @@ subscribe_to_relevant_messages()
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
+	if (!simulate_legacy_500)
+		carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
+	else if (simulate_legacy_500 && !connected_to_iron_bird)
+		carmen_base_ackerman_subscribe_motion_command_2(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	// Handler redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
-	//carmen_base_ackerman_subscribe_motion_command_2(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
+	if (simulate_legacy_500 && connected_to_iron_bird)
+		carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -705,18 +726,22 @@ initialize_ipc(void)
 	if (err != IPC_OK)
 		return -1;
 
-	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME,
-			IPC_VARIABLE_LENGTH,
-			CARMEN_BASE_ACKERMAN_ODOMETRY_FMT);
-	if (err != IPC_OK)
-		return -1;
-
-	// Message redefined to insert a module between the obstacle_avoider and the ford_escape_hybrid
-//	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_ODOMETRY_2_NAME,
-//			IPC_VARIABLE_LENGTH,
-//			CARMEN_BASE_ACKERMAN_ODOMETRY_2_FMT);
-//	if (err != IPC_OK)
-//		return -1;
+	if (!simulate_legacy_500)
+	{
+		err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME,
+				IPC_VARIABLE_LENGTH,
+				CARMEN_BASE_ACKERMAN_ODOMETRY_FMT);
+		if (err != IPC_OK)
+			return -1;
+	}
+	else
+	{
+		err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_ODOMETRY_2_NAME,
+				IPC_VARIABLE_LENGTH,
+				CARMEN_BASE_ACKERMAN_ODOMETRY_2_FMT);
+		if (err != IPC_OK)
+			return -1;
+	}
 
 	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_VELOCITY_NAME,
 			IPC_VARIABLE_LENGTH,
@@ -879,8 +904,17 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 
 	fill_laser_config_data( &(config->front_laser_config) );
 
-	if(config->use_rear_laser)
+	if (config->use_rear_laser)
 		fill_laser_config_data( &(config->rear_laser_config));
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_t optional_param_list[] =
+	{
+			{(char *) "commandline", (char *) "simulate_legacy_500", CARMEN_PARAM_ONOFF, &simulate_legacy_500, 0, NULL},
+			{(char *) "commandline", (char *) "connected_to_iron_bird", CARMEN_PARAM_ONOFF, &connected_to_iron_bird, 0, NULL}
+	};
+	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
+
 
 
 	// TODO REMOVER ESTA PARTE E LER OS PARAMETROS DIRETAMENTE PARA O ROBO_CONFIG

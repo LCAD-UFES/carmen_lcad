@@ -28,6 +28,8 @@ using namespace g2o;
 int print_to_debug = 0;
 int plot_to_debug = 0;
 
+//#define PLOT_COLLISION
+
 //-----------Funcoes para extrair dados do Experimento------------------------
 double
 dist(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
@@ -114,6 +116,56 @@ save_experiment_data(carmen_behavior_selector_road_profile_message *goal_list_me
 }
 
 //------------------------------------------------------------
+
+void
+plot_path_and_colisions_points(vector<carmen_ackerman_path_point_t> &robot_path, vector<carmen_ackerman_path_point_t> &collision_points)
+{
+//	plot data Table - Last TCP - Optmizer tcp - Lane
+	//Plot Optmizer step tcp and lane?
+
+	#define DELTA_T (1.0 / 40.0)
+
+//	#define PAST_SIZE 300
+	static bool first_time = true;
+	static FILE *gnuplot_pipeMP;
+
+
+	if (first_time)
+	{
+		first_time = false;
+
+		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
+//		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
+//		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
+//		fprintf(gnuplot_pipe, "set ytics nomirror\n");
+//		fprintf(gnuplot_pipe, "set y2tics\n");
+		fprintf(gnuplot_pipeMP, "set tics out\n");
+	}
+
+	FILE *gnuplot_data_file = fopen("gnuplot_data_path.txt", "w");
+	FILE *gnuplot_data_lane = fopen("gnuplot_data_colision.txt", "w");
+
+	for (unsigned int i = 0; i < robot_path.size(); i++)
+		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %lf %lf %lf\n", robot_path.at(i).x, robot_path.at(i).y, 1.0 * cos(robot_path.at(i).theta), 1.0 * sin(robot_path.at(i).theta), robot_path.at(i).theta, robot_path.at(i).phi, robot_path.at(i).time);
+	for (unsigned int i = 0; i < collision_points.size(); i++)
+		fprintf(gnuplot_data_lane, "%lf %lf\n", collision_points.at(i).x, collision_points.at(i).y);
+//		fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf %lf\n", collision_points.at(i).x, collision_points.at(i).y, 1.0 * cos(collision_points.at(i).theta), 1.0 * sin(collision_points.at(i).theta), collision_points.at(i).theta, collision_points.at(i).phi, collision_points.at(i).time);
+
+	fclose(gnuplot_data_file);
+	fclose(gnuplot_data_lane);
+
+//	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
+
+	fprintf(gnuplot_pipeMP, "plot "
+			"'./gnuplot_data_path.txt' using 1:2 w lines title 'robot_path',"
+			"'./gnuplot_data_colision.txt' using 1:2 title 'Collision'\n");
+
+	fflush(gnuplot_pipeMP);
+}
 
 
 void
@@ -543,6 +595,8 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 	double circle_radius = GlobalState::robot_config.obstacle_avoider_obstacles_safe_distance; // metade da largura do carro + um espacco de guarda
 	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
 
+	vector<carmen_ackerman_path_point_t> hit_points;
+
 	double max_circle_invasion = 0.0;
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
@@ -555,10 +609,19 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 		{
 			double circle_invasion = sqrt(carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
 					point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius));
+			if (circle_invasion > 0)
+					hit_points.push_back(path[i]); //pra plotar
+
 			if (circle_invasion > max_circle_invasion)
 				max_circle_invasion = circle_invasion;
 		}
 	}
+	if(!hit_points.size())
+		hit_points.push_back(path[0]);
+
+#ifdef PLOT_COLLISION
+	plot_path_and_colisions_points(path, hit_points);
+#endif
 
 	if ((GlobalState::distance_map != NULL) && (max_circle_invasion > 0.0))// GlobalState::distance_map->config.resolution / 2.0))
 	{
@@ -711,10 +774,11 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		return (false);
 	}
 
-	move_path_to_current_robot_pose(path, localizer_pose);
 
 	if (path_has_collision_or_phi_exceeded(path))
 		return (false);
+
+	move_path_to_current_robot_pose(path, localizer_pose);
 
 	// Para evitar que o fim do path bata em obstáculos devido a atrazo na propagacao da posicao atual deles
 	remove_some_poses_at_the_end_of_the_path(path);

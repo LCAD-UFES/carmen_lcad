@@ -381,7 +381,7 @@ publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, 
 		strcpy(current_map->config.origin, "from_param_daemon");
 		carmen_map_server_publish_offline_map_message(current_map, timestamp);
 		for (int i=0; i < max_height_level; i++)
-			carmen_map_server_publish_offline_multi_height_map_message(&height_maps[i], timestamp, i+1);
+			carmen_map_server_publish_multi_height_offline_map_message(&height_maps[i], timestamp, i+1);
 		carmen_map_server_publish_road_map_message(current_road_map, timestamp);
 		offline_map_published = 1;
 		construct_compressed_lane_map();
@@ -689,7 +689,7 @@ define_messages()
 
 	carmen_mapper_define_messages();
 	carmen_map_server_define_offline_map_message();
-	carmen_map_server_define_offline_map_level1_message();
+	carmen_map_server_define_multi_height_offline_map_message(max_height_level);
 	carmen_map_server_define_road_map_message();
 	// carmen_map_server_define_cost_map_message();
 	carmen_map_server_define_compact_lane_map_message();
@@ -840,7 +840,7 @@ main(int argc, char **argv)
 		carmen_map_server_publish_localize_map_message(&localize_map);
 		for (int i=0; i < max_height_level; i++)
 		{
-			carmen_map_server_publish_offline_multi_height_map_message(&height_maps[i], timestamp, i+1);
+			carmen_map_server_publish_multi_height_offline_map_message(&height_maps[i], timestamp, i+1);
 		}
 		if (publish_grid_mapping_map_at_startup)
 			carmen_mapper_publish_map_message(current_map, timestamp);

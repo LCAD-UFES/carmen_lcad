@@ -141,27 +141,24 @@ shutdown_module(int x)            // Handles ctrl+c
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Inicializations                                                                              //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 int
 subscribe_to_relevant_messages()
 {
+	// Message published by simulator_ackerman
 	carmen_base_ackerman_subscribe_odometry_message_2(NULL, (carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	// Message published by ford_escape_hybrid
+	carmen_robot_ackerman_subscribe_velocity_message_2(NULL, (carmen_handler_t) robot_ackerman_velocity_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	return (0);
 }
-
-
-//int
-//initialize_ipc(void)
-//{
-//	IPC_RETURN_TYPE err;
-//
-//	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_ODOMETRY_2_NAME, IPC_VARIABLE_LENGTH, CARMEN_BASE_ACKERMAN_ODOMETRY_2_NAME);
-//
-//	if (err != IPC_OK)
-//		return -1;
-//
-//	return 0;
-//}
 
 
 int
@@ -172,9 +169,6 @@ main(int argc, char **argv)
 	carmen_param_check_version(argv[0]);
 
 	signal(SIGINT, shutdown_module);
-
-//	if (initialize_ipc() < 0)
-//		carmen_die("Error in initializing ipc...\n");
 
 	if (subscribe_to_relevant_messages() < 0)
 		carmen_die("Error subscribing to messages...\n");
