@@ -15,7 +15,7 @@
 #define GOAL_LIST_SIZE 1000
 #define MAX_ANNOTATIONS 50
 
-//#define PRINT_UDATMO_LOG
+#define PRINT_UDATMO_LOG
 #define USE_DATMO_GOAL
 
 //uncomment return 0 to enable overtaking
