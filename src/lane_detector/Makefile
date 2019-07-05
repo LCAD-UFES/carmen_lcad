@@ -23,7 +23,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib
 #LFLAGS += -L $(NVCAFFE_HOME)/build/lib -lcaffe-nv \
 #		-L /usr/local/cuda/lib64 -lglog -lprotobuf -L/usr/local/lib
 
-SOURCES = lane_detector.cpp lane_detector_main.cpp lane_detector_interface.cpp velodyne_camera_calibration.cpp # DetectNet.cpp 
+SOURCES = lane_detector.cpp lane_detector_main.cpp lane_detector_interface.cpp #velodyne_camera_calibration.cpp # DetectNet.cpp 
 # SOURCES = dbscan.cpp neural_car_detector.cpp neural_car_detector_main.cpp
 
 PUBLIC_INCLUDES = lane_detector_interface.h lane_detector_messages.h
