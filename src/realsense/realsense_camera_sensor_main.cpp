@@ -15,8 +15,8 @@
 #define BUMBLEBEE_ID 7
 
 int stop_required = 0;
-int rs_height = 0;
-int rs_width = 0;
+int rs_height = 720;
+int rs_width = 1280;
 int rs_flip = 0;
 
 void
@@ -154,7 +154,9 @@ main(int argc, char **argv)
 
     rs2::config cfg;
     cfg.enable_stream(RS2_STREAM_COLOR, 0, rs_width, rs_height);
-    cfg.enable_stream(RS2_STREAM_DEPTH, 0,640, 480);
+//    cfg.enable_stream(RS2_STREAM_COLOR, 0, 1920, 1080);
+//    cfg.enable_stream(RS2_STREAM_DEPTH, 0,640, 480);
+    cfg.enable_stream(RS2_STREAM_DEPTH, 0,1280, 720);
     // cfg.enable_stream(RS2_STREAM_INFRARED, 0);
     // cfg.enable_stream(RS2_STREAM_INFRARED, 1);
 
