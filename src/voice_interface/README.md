@@ -109,7 +109,7 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
 
 "Hotword detected!"
 
-### 6.1 Para uso no CARMEN
+### 6.1 To use on CARMEN
 
 ```sh
  cp ~/carmen_packages/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_interface_data/hotword_oi_iara.ppn
@@ -177,7 +177,23 @@ python3 -m rasa_nlu.server --path models --response_log logs
 python3 -m rasa_nlu.server --path models --response_log logs
 ```
  - Run ./voice_interface
- 
+
+
+If this error appears:
+"[ERROR] keyword file has incorrect format or belongs to a different platform
+[ERROR] loading keyword file #0 failed with 'INVALID_ARGUMENT'
+Failed to initialize Porcupine
+Error: could not initialize porcupine.
+Cound not start porcupine"
+
+Remove the libpv file:
+```sh
+rm -rf ~/carmen_lcad/lib/libpv_porcupine.a
+```
+and repeat the topic 6.1 of this README
+
+
+
 You'll need a microphone and a speaker.
 ### 9. Problems to be solved (TTS/STT)
 
