@@ -1,5 +1,5 @@
 # Id of the gps that will be used for the calibration
-gps_to_use = 1
+gps_to_use = 3
 # Id of the sensor board that will be used for the calibration
 board_to_use = 1
 # 0 - linear phi; 1 - use a spline to map phi to a new phi
@@ -14,6 +14,10 @@ initial_log_line = 1
 max_log_lines = -1
 # Flag indicating if the visualization should run or not.
 view = 1
+# Initial time to consider for odometry calibration
+initial_time = 33.0
+# Final time to consider for odometry calibration
+final_time = 978.0
 # Lower limit of velocity multiplier
 min_multiplicative_v = 0.979999
 # Upper limit of velocity multiplier
@@ -31,7 +35,7 @@ min_initial_angle = -180
 # Upper limit of initial angle (degrees)
 max_initial_angle = 180
 # Lower limit of gps latency (seconds)
-min_gps_latency = 0.0
+min_gps_latency = 0.15
 # Upper limit of gps latency (seconds)
 max_gps_latency = 0.3
 # Lower limit of k1 spline coefficient
