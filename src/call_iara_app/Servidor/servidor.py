@@ -23,6 +23,16 @@ def TrataRDDF(rddf):
        lista[x][0] = lista[x][0][11:].replace("_"," ")
     return lista
 
+def recebida(mensagem):
+    mensagem = mensagem.split(";;")
+    print(mensagem)
+
+def cancelada(mensagem):
+    mensagem = mensagem.split(";;")
+    print(mensagem)
+
+
+
 listageral = TrataRDDF(rddf)
 #print listageral
 tratado = ''.join(str(x) for x in listageral)
@@ -36,16 +46,24 @@ tcp.listen(1)
 
 while True:
     con, cliente = tcp.accept()
-    print('Conectado por', cliente)
+#    print('Conectado por', cliente)
     while True:
         msg = con.recv(1024)
         if not msg:
             break
-        print(cliente, msg)
-        if(msg == "First"):
+#        print(cliente, msg)
+        if(msg[:5] == "First"):
             con.send(tratado)
+            print("Cliente ",msg[5:]," recebeu os locais.")
         elif(msg[:3]=="666"):
             con.send("Requisicao enviada com sucesso!")
+            recebida(msg[4:])
+            print("Requisicao recebida: ",msg[4:])
+        elif(msg[:3]=="999"):
+            con.send("Requisicao cancelada!") 
+            cancelada(msg[4:])
+            print("Requisicao cancelada: ",msg[4:])
+
         else:
             con.send("Socket nao planejado: "+msg)
 #    print 'Finalizando conexao do cliente', cliente

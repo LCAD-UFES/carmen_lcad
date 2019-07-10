@@ -94,9 +94,9 @@
         android:layout_marginLeft="162dp"
         android:layout_marginEnd="161dp"
         android:layout_marginRight="161dp"
-        android:layout_marginBottom="64dp"
-        android:text="OK"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:text="Solicitar"
+        android:textSize="13sp"
+        app:layout_constraintBottom_toTopOf="@+id/but_peg"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView3" />
@@ -119,19 +119,16 @@
         app:layout_constraintTop_toBottomOf="@+id/but_ok"
         app:layout_constraintVertical_bias="1.0" />
 
-    <Button
-        android:id="@+id/but_ip"
-        android:layout_width="80dp"
-        android:layout_height="38dp"
-        android:layout_marginStart="324dp"
-        android:layout_marginLeft="324dp"
-        android:layout_marginTop="52dp"
-        android:layout_marginEnd="7dp"
-        android:layout_marginRight="7dp"
-        android:layout_marginBottom="190dp"
-        android:text="IP"
-        app:layout_constraintBottom_toTopOf="@+id/textView"
+    <view
+        class="android.support.v7.widget.LinearLayoutCompat"
+        id="@+id/view"
+        android:layout_width="413dp"
+        android:layout_height="176dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="17dp"
+        app:layout_constraintBottom_toTopOf="@+id/but_ori"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:onClick="secreto"/>
 </android.support.constraint.ConstraintLayout>
