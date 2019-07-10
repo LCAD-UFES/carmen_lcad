@@ -10,6 +10,9 @@ char *tcp_ip_address = (char *) "127.0.0.1";
 
 #define PORT "3458"
 
+//#define USE_TCP_IP
+
+#ifdef USE_TCP_IP
 
 int
 stablished_connection_with_server()
@@ -47,6 +50,37 @@ stablished_connection_with_server()
 
 	return (pi_socket);
 }
+
+#else
+
+int
+stablished_connection_with_server()
+{
+    int new_socket;
+    struct sockaddr_in address;
+
+    // Creating socket file descriptor
+    if ((new_socket = socket(AF_INET, SOCK_DGRAM, 0)) == 0)
+    {
+        perror("--- Socket Failed ---\n");
+        return (-1);
+    }
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(atoi(PORT));
+
+    // Forcefully attaching socket to the port defined
+    if (bind(new_socket, (struct sockaddr *) &address, sizeof(address)) < 0)
+    {
+        perror("--- Bind Failed ---\n");
+        return (-1);
+    }
+    printf("--- Bind successful! ---\n");
+
+	return (new_socket);
+}
+#endif
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -67,8 +101,6 @@ publish_robot_ackerman_velocity_message(double *array)
 	odometry.phi   = array[1];
 	odometry.timestamp = carmen_get_time();
 	odometry.host  = carmen_get_host();
-
-	//printf ("%lf %lf %lf %lf %lf\n", array[0], array[1], array[2], array[3], array[4]);
 
 	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &odometry);
 	carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
@@ -136,8 +168,8 @@ main(int argc, char **argv)
 
 	while (1)
 	{
+#ifdef USE_TCP_IP
 		result = recv(pi_socket, array, 40, MSG_WAITALL); // The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
-
 //		printf ("Result %d\n", result);
 //		printf ("%lf %lf %lf %lf %lf\n", array[0], array[1], array[2], array[3], array[4]);
 
@@ -151,6 +183,15 @@ main(int argc, char **argv)
 		{
 			publish_robot_ackerman_velocity_message(array);
 		}
+#else
+	    struct sockaddr_in client_address;
+	    socklen_t len = sizeof(struct sockaddr_in);
+		result = recvfrom(pi_socket, (char *) array, 40, 0, (struct sockaddr *) &client_address, &len);
+
+		if (result > 0)
+			publish_robot_ackerman_velocity_message(array);
+
+#endif
 	}
 	return (0);
 }

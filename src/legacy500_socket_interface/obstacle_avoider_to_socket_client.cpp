@@ -1,18 +1,20 @@
 #include <carmen/carmen.h>
 #include <control.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
 
-//char *tcp_ip_address = "192.168.0.1";
-char *tcp_ip_address = (char *) "127.0.0.1";
+//char *ip_address = "192.168.0.1";
+char *ip_address = (char *) "127.0.0.1";
 
 #define PORT "3457"
 
 
 int
-stablished_connection_with_server()
+stablished_connection_with_server_tcp_ip()
 {
 	struct addrinfo host_info;       // The struct that getaddrinfo() fills up with data.
 	struct addrinfo *host_info_list; // Pointer to the to the linked list of host_info's.
@@ -28,7 +30,7 @@ stablished_connection_with_server()
 	host_info.ai_family = AF_UNSPEC;     // IP version not specified. Can be both.
 	host_info.ai_socktype = SOCK_STREAM; // Use SOCK_STREAM for TCP or SOCK_DGRAM for UDP.
 
-	status = getaddrinfo(tcp_ip_address, PORT, &host_info, &host_info_list);
+	status = getaddrinfo(ip_address, PORT, &host_info, &host_info_list);
 
 	if (status != 0)
 	{
@@ -46,6 +48,39 @@ stablished_connection_with_server()
 	printf("--- Connection established successfully! ---\n");
 
 	return (pi_socket);
+}
+
+
+int
+stablished_connection_with_server(struct sockaddr_in *client_address)
+{
+    int new_socket;
+//    struct sockaddr_in address;
+
+    // Creating socket file descriptor
+    if ((new_socket = socket(AF_INET, SOCK_DGRAM, 0)) == 0)
+    {
+        perror("--- Socket Failed ---\n");
+        return (-1);
+    }
+
+//    address.sin_family = AF_INET;
+//    address.sin_addr.s_addr = INADDR_ANY;
+//    address.sin_port = htons(atoi(PORT));
+
+    // Forcefully attaching socket to the port defined
+//    if (bind(new_socket, (struct sockaddr *) &address, sizeof(address)) < 0)
+//    {
+//        perror("--- Bind Failed ---\n");
+//        return (-1);
+//    }
+//    printf("--- Bind successful! ---\n");
+
+    client_address->sin_family = AF_INET;
+    client_address->sin_addr.s_addr = inet_addr(ip_address);
+    client_address->sin_port = htons(atoi(PORT));
+
+	return (new_socket);
 }
 
 
@@ -70,23 +105,35 @@ build_socket_message(carmen_base_ackerman_motion_command_message *motion_command
 
 
 void
-send_motion_command_via_socket(double* array)
+send_motion_command_via_socket_tcp_ip(double* array)
 {
 	static int pi_socket = 0;
 	int result = 0;
 
 	if (pi_socket == 0)
-		pi_socket = stablished_connection_with_server();
+		pi_socket = stablished_connection_with_server_tcp_ip();
 																							// 2 + 6 * 200
 	result = send(pi_socket, array, 9616, MSG_NOSIGNAL);									// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
 
 	if (result == 0 || result == -1)														// 0 Connection lost due to server shutdown -1 Could not connect
 	{
 		close(pi_socket);
-		pi_socket = stablished_connection_with_server();
+		pi_socket = stablished_connection_with_server_tcp_ip();
 		return;
 	}
 	//printf("Sent %lf --- %lf --- %lf\n", array[0], array[1], array[2]);
+}
+
+
+void
+send_motion_command_via_socket(double* array)
+{
+	static struct sockaddr_in client_address;
+	static int pi_socket = 0;
+	if (pi_socket == 0)
+		pi_socket = stablished_connection_with_server(&client_address);
+
+	sendto(pi_socket, (void *) array, 9616, 0, (struct sockaddr *) &client_address, sizeof(struct sockaddr_in));
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -153,7 +200,7 @@ main(int argc, char **argv)
 	signal(SIGINT, shutdown_module);
 
 	if (argc == 2)
-		tcp_ip_address = argv[1];
+		ip_address = argv[1];
 
 	if (subscribe_to_relevant_messages() < 0)
 		carmen_die("Error subscribing to messages...\n");

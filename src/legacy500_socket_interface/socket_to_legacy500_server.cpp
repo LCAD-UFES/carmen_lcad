@@ -5,8 +5,11 @@
 
 #define PORT 3457
 
-int server_fd;
+//#define USE_TCP_IP
 
+#ifdef USE_TCP_IP
+
+int server_fd;
 
 int
 connect_with_client()
@@ -53,6 +56,37 @@ connect_with_client()
 
 	return (new_socket);
 }
+
+#else
+
+int
+connect_with_client()
+{
+    int new_socket;
+    struct sockaddr_in address;
+
+    // Creating socket file descriptor
+    if ((new_socket = socket(AF_INET, SOCK_DGRAM, 0)) == 0)
+    {
+        perror("--- Socket Failed ---\n");
+        return (-1);
+    }
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
+
+    // Forcefully attaching socket to the port defined
+    if (bind(new_socket, (struct sockaddr *) &address, sizeof(address)) < 0)
+    {
+        perror("--- Bind Failed ---\n");
+        return (-1);
+    }
+    printf("--- Bind successful! ---\n");
+
+	return (new_socket);
+}
+#endif
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -120,6 +154,7 @@ main(int argc, char **argv)
 
 	while (1)
 	{
+#ifdef USE_TCP_IP
 		result = recv(pi_socket, msg, 9616, MSG_WAITALL); // The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
 
 		if (result == -1 || result == 0)
@@ -134,6 +169,14 @@ main(int argc, char **argv)
 		{
 			extract_motion_command_vetor_from_socket_and_send_msg(msg);
 		}
+#else
+	    struct sockaddr_in client_address;
+	    socklen_t len = sizeof(struct sockaddr_in);
+		result = recvfrom(pi_socket, (char *) msg, 9616, 0, (struct sockaddr *) &client_address, &len);
+
+		if (result > 0)
+			extract_motion_command_vetor_from_socket_and_send_msg(msg);
+#endif
     }
 
    return (0);
