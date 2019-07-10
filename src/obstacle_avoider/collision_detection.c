@@ -869,8 +869,8 @@ carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *g
 //}
 
 void
-check_collision_config_initialization(){
-
+check_collision_config_initialization()
+{
 	static int collision_config_initialized = 0;
 	char* collision_file;
 	int i;
@@ -891,13 +891,14 @@ check_collision_config_initialization(){
 	fscanf(collision_file_pointer,"%d", &(global_collision_config.n_markers));
 	global_collision_config.markers = (carmen_collision_marker_t*) malloc(global_collision_config.n_markers*sizeof(carmen_collision_marker_t));
 
-	for (i=0; i<global_collision_config.n_markers; i++)
+	for (i = 0; i < global_collision_config.n_markers; i++)
 		fscanf(collision_file_pointer,"%lf %lf %lf %lf", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
 				&global_collision_config.markers[i].radius, &global_collision_config.markers[i].hight);
 
 	fclose(collision_file_pointer);
 	collision_config_initialized = 1;
 }
+
 
 void
 get_initial_displacement_and_displacement_inc(double *initial_displacement, double *displacement_inc, double circle_radius, double number_of_point,
