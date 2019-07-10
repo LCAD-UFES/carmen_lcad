@@ -1,30 +1,25 @@
 package com.example.myapplication;
 
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.LayoutInflater;
+import android.text.InputType;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListView;
+import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
-
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-
+import java.util.Scanner;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -36,13 +31,21 @@ public class MainActivity extends AppCompatActivity {
     String[] local;
     String tempori;
     String tempdest;
-    AlertDialog alertDialogStores;
+    String enderecoip;
+    private ArrayList<String> arquivo = new ArrayList<String>();
+//    AlertDialog alertDialogStores;
 
     private Button botaoori;
     private Button botaodest;
     private Button botaook;
+    private Button botaopeg;
+    private Button botaoip;
+
+
     private TextView ori;
     private TextView dest;
+    private TextView resposta;
+
     //private Button botaodest = new Button();
     //private Button botaoook = new Button();
 
@@ -51,25 +54,23 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        data = LerArquivo();
         //Separa os nomes dos locais
-        for (String e: data){
-        locais.add(e.toString().split("\t")[0]);
-        System.out.println(e.toString().split("\t")[0]);
-        }
-
-
-        data = (ArrayList<String>)locais.clone();
-        local = locais.toArray(new String[locais.size()]);
         // System.out.println(local[1]);
 
        botaoori = (Button) findViewById(R.id.but_ori);
        botaodest = (Button) findViewById(R.id.but_dest);
        botaook = (Button) findViewById(R.id.but_ok);
-       ori = (TextView) findViewById(R.id.textView);
+       botaopeg = (Button) findViewById(R.id.but_peg);
+       botaoip = (Button) findViewById(R.id.but_ip);
+
+
+        ori = (TextView) findViewById(R.id.textView);
        dest = (TextView) findViewById(R.id.textView2);
+       resposta = (TextView) findViewById(R.id.textView3);
+
        tempori = "";
        tempdest = "";
+       enderecoip = "192.168.108.78";
 
 
         //System.out.println(locais);
@@ -93,11 +94,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         ori.setText(local[which]);
- //                        locais = (ArrayList<String>) data.clone();
- //                        locais.remove(local[which]);
- //                        local = locais.toArray(new String[locais.size()]);
-                       //  System.out.println("################################");
-                         tempori=local[which];
+                        tempori=local[which];
 
                     }
                 });
@@ -129,10 +126,6 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dest.setText(local[which]);
-
-   //                     locais.remove(local[which]);
-   //                   local = locais.toArray(new String[locais.size()]);
-                       // System.out.println("################################");
                         tempdest=local[which];
 
                     }
@@ -145,39 +138,175 @@ public class MainActivity extends AppCompatActivity {
 
 
         botaook.setOnClickListener(new View.OnClickListener() {
+            boolean enviado = false;
+            String mensagem = null;
+            String retorno = null;
+            //int ret = 0;
             @Override
             public void onClick(View view) {
-                Thread t = new Thread(new Runnable() {
+                if (ori.getText().length()<4 || dest.getText().length()<4) {
+                    displayExceptionMessage("Preencha todos os campos");
+                } else {
+                    Thread t = new Thread(new Runnable() {
 
-                    @Override
-                    public void run() {
-                        try {
-                            Socket soc = new Socket("10.42.0.25", 8000);
-                     // Abaixo eh para quando eh utilizado o android pelo emulador ao inves do celular
-                      // Socket soc = new Socket("10.0.2.2",8000);
-                            PrintWriter writer = new PrintWriter(soc.getOutputStream());
-                            writer.write("Origem: "+ tempori+"\tDestino: "+tempdest);
-                            writer.flush();
-                            writer.close();
-                        } catch (UnknownHostException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
+                        @Override
+                        public void run() {
+                            try {
+
+                                //   Socket soc = new Socket("10.42.0.25", 8000);
+                                // Abaixo eh para quando eh utilizado o android pelo emulador ao inves do celular
+                                Socket soc = new Socket(enderecoip, 8000);
+                                PrintWriter writer = new PrintWriter(soc.getOutputStream());
+                                mensagem = "666 Origem: " + tempori + "\tDestino: " + tempdest;
+                                writer.write(mensagem);
+                                writer.flush();
+                                enviado = true;
+                                //retorno = receberMensagem();
+                                Scanner entrada = new Scanner(soc.getInputStream());
+                                retorno = entrada.nextLine();
+
+                                displayExceptionMessage(retorno);
+                                writer.close();
+                                entrada.close();
+                                soc.close();
+
+                            } catch (UnknownHostException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                                final String erro = e.getMessage();
+                                displayExceptionMessage(erro);
+                            } catch (IOException e) {
+                                // TODO Auto-generated catch block
+                                final String erro = e.getMessage();
+                                displayExceptionMessage(erro);
+                                e.printStackTrace();
+                            }
+
                         }
-
-                    }
-                });
-                t.start();
+                    });
+                    t.start();
+                }
             }
 
         });
+
+        botaopeg.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                RecebeArquivo();
+                if (arquivo.size()>1) {
+                    data = arquivo;
+                    for (String e : data) {
+                        locais.add(e.split(",")[0]);
+//                        System.out.println(e.split(",")[0]);
+                    }
+                    data = (ArrayList<String>) locais.clone();
+                    local = locais.toArray(new String[locais.size()]);
+                    displayExceptionMessage("Locais capturados!");
+                    botaopeg.setEnabled(false);
+                }
+            }
+
+        });
+
+        botaoip.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("Digite o IP do servidor: ");
+                final EditText input = new EditText(MainActivity.this);
+                input.setInputType(InputType.TYPE_CLASS_TEXT);
+                builder.setView(input);
+                input.setText(enderecoip);
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if(!input.getText().toString().equals(""))
+                        enderecoip = input.getText().toString();
+                        //System.out.println(enderecoip);
+                    }
+                });
+                builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+                AlertDialog alert = builder.create();
+                alert.show();
+
+            }
+
+
+        });
+
 
     }
 
 
 
+
+    public void displayExceptionMessage(final String msg) {
+        //Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                resposta.setText(msg);
+            }
+        });
+    }
+
+
+    private void RecebeArquivo(){
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+
+                    //   Socket soc = new Socket("10.42.0.25", 8000);
+                    // Abaixo eh para quando eh utilizado o android pelo emulador ao inves do celular
+                    Socket soc = new Socket(enderecoip,8000);
+                    PrintWriter writer = new PrintWriter(soc.getOutputStream());
+                    writer.write("First");
+                    writer.flush();
+                    Scanner entrada = new Scanner(soc.getInputStream());
+                    CapturaArquivo(entrada.nextLine());
+                    writer.close();
+                    entrada.close();
+                    soc.close();
+
+                } catch (UnknownHostException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                    final String erro = e.getMessage();
+                    displayExceptionMessage(erro);
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    final String erro = e.getMessage();
+                    displayExceptionMessage(erro);
+                    e.printStackTrace();
+                } catch(Exception e){
+                    final String erro = e.getMessage();
+                    displayExceptionMessage(erro);
+                    e.printStackTrace();
+                }
+
+            }
+        });
+        t.start();
+    }
+
+
+    public void CapturaArquivo(String arq){
+
+         arquivo = new ArrayList<String>(Arrays.asList(arq.split(";;")));
+
+    }
+
+    }
+
+
+/*
     private ArrayList LerArquivo(){
     String Arquivo = "# Stop perto do LCAD\n" +
             "# RDDF_ANNOTATION_TYPE_STOP\t\t\t4\t0\t0.662\t\t7757722.8\t-363567.4\t0.0\n" +
@@ -612,8 +741,7 @@ public class MainActivity extends AppCompatActivity {
         return lista;
     }
 
+*/
 
 
 
-
-}
