@@ -25,11 +25,15 @@ def TrataRDDF(rddf):
 
 def recebida(mensagem):
     mensagem = mensagem.split(";;")
-    print(mensagem)
+    print("RDDF_PLACE_"+mensagem[0].replace(" ","_"))    
+    print("RDDF_PLACE_"+mensagem[1].replace(" ","_"))
 
 def cancelada(mensagem):
     mensagem = mensagem.split(";;")
-    print(mensagem)
+    print("RDDF_PLACE_"+mensagem[0].replace(" ","_"))    
+    print("RDDF_PLACE_"+mensagem[1].replace(" ","_"))
+
+
 
 
 

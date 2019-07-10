@@ -169,14 +169,14 @@ public class MainActivity extends AppCompatActivity {
                                 .setMessage("Realmente deseja cancelar?")
                                 .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                                     public void onClick(DialogInterface dialog, int whichButton) {
-                                        mensagem = "999 " + tempori + ";; " + tempdest + ";; Cliente: " + enderecolocal;
+                                        mensagem = "999 " + tempori + ";;" + tempdest + ";; Cliente: " + enderecolocal;
                                         Conexao(mensagem);
                                         enviado = false;
                                         botaook.setText("Solicitar");
                                     }})
                                 .setNegativeButton(android.R.string.no, null).show();
                     }else {
-                        mensagem = "666 " + tempori + ";; " + tempdest + ";; Cliente: " + enderecolocal;
+                        mensagem = "666 " + tempori + ";;" + tempdest + ";; Cliente: " + enderecolocal;
                         Conexao(mensagem);
                         enviado = true;
                         botaook.setText("Cancelar");
