@@ -256,7 +256,8 @@ skip_first_lines(FILE *f, int initial_log_line, char line[])
 
 
 void
-read_data(const char *filename, int gps_to_use, int initial_log_line, int max_log_lines, PsoData *pso_data)
+read_data(const char *filename, int gps_to_use, int initial_log_line, int max_log_lines,
+		double initial_time, double final_time, PsoData *pso_data)
 {
 	static char tag[256];
 	static char line[MAX_LINE_LENGTH];
@@ -272,6 +273,8 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 
 	skip_first_lines(f, initial_log_line, line);
 
+	double first_gps_timestamp = 0.0;
+
 	num_lines = 0;
 	while(!feof(f) && num_lines < max_log_lines)
 	{
@@ -280,18 +283,25 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 		if (!strcmp(tag, "NMEAGGA"))
 		{
 			carmen_gps_xyz_message m = read_gps(f, gps_to_use);
-			process_gps_data(m, odoms, pso_data);
+			if (first_gps_timestamp == 0.0)
+				first_gps_timestamp = m.timestamp;
+			if ((m.timestamp >= (first_gps_timestamp + initial_time)) && (m.timestamp <= (first_gps_timestamp + final_time)))
+				process_gps_data(m, odoms, pso_data);
 		}
-		else if (!strcmp(tag, "ROBOTVELOCITY_ACK"))
+		else if (!strcmp(tag, "ROBOTVELOCITY_ACK") && (first_gps_timestamp != 0.0))
 		{
 			carmen_robot_ackerman_velocity_message m = read_odometry(f);
-			odoms.push_back(m);
-			process_odometry_data(pso_data, m);
+			if ((m.timestamp >= (first_gps_timestamp + initial_time)) && (m.timestamp <= (first_gps_timestamp + final_time)))
+			{
+				odoms.push_back(m);
+				process_odometry_data(pso_data, m);
+			}
 		}
-		else if (!strcmp(tag, "VELODYNE_PARTIAL_SCAN_IN_FILE"))
+		else if (!strcmp(tag, "VELODYNE_PARTIAL_SCAN_IN_FILE") && (first_gps_timestamp != 0.0))
 		{
 			VelodyneData velodyne_data = read_velodyne_data(f);
-			process_velodyne_data(pso_data, odoms, velodyne_data);
+			if ((velodyne_data.velodyne_timestamp >= (first_gps_timestamp + initial_time)) && (velodyne_data.velodyne_timestamp <= (first_gps_timestamp + final_time)))
+				process_velodyne_data(pso_data, odoms, velodyne_data);
 		}
 
 		fscanf(f, "%[^\n]\n", line);
@@ -915,6 +925,8 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<int>("initial_log_line,l", "Number of lines to skip in the beggining of the log file", 1);
 	args->add<int>("max_log_lines,m", "Maximum number of lines to read from the log file", -1);
 	args->add<int>("view", "Flag indicating if the visualization should run or not.", 1);
+	args->add<double>("initial_time", "Initial time to consider for odometry calibration", 0.0);
+	args->add<double>("final_time", "Final time to consider for odometry calibration", 9999999999999.0);
 	args->add<double>("min_multiplicative_v", "Lower limit of velocity multiplier", 0.979999);
 	args->add<double>("max_multiplicative_v", "Upper limit of velocity multiplier", 1.3001);
 	args->add<double>("min_multiplicative_phi", "Lower limit of phi multiplier", 0.55);
@@ -980,6 +992,8 @@ main(int argc, char **argv)
 	read_data(args.get<string>("log_path").c_str(), gps_to_use,
 						args.get<int>("initial_log_line"),
 						args.get<int>("max_log_lines"),
+						args.get<double>("initial_time"),
+						args.get<double>("final_time"),
 						&pso_data);
 
 	pso_data.view_active = args.get<int>("view");
