@@ -98,7 +98,7 @@ publish_robot_ackerman_velocity_message(double *array)
 	carmen_robot_ackerman_velocity_message odometry;
 
 	odometry.v     = array[0];
-	odometry.phi   = array[1];
+	odometry.phi   = array[1] * -0.01745329252;
 	odometry.timestamp = carmen_get_time();
 	odometry.host  = carmen_get_host();
 
