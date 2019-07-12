@@ -82,13 +82,13 @@ public class MainActivity extends AppCompatActivity {
 
        tempori = "";
        tempdest = "";
-       enderecoip = "192.168.108.78";
+       enderecoip = "192.168.108.66";
        enderecolocal = "";
        while(enderecolocal.equals(""))
            enderecolocal = getLocalIpAddress();
 
 
-        Conexao("First "+enderecolocal);
+        Conexao("3;"+enderecolocal);
 
         //System.out.println(locais);
         botaoori.setOnClickListener(new View.OnClickListener() {
@@ -169,14 +169,14 @@ public class MainActivity extends AppCompatActivity {
                                 .setMessage("Realmente deseja cancelar?")
                                 .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                                     public void onClick(DialogInterface dialog, int whichButton) {
-                                        mensagem = "999 " + tempori + ";;" + tempdest + ";; Cliente: " + enderecolocal;
+                                        mensagem = "1;" + tempori + ";" + tempdest + ";" + enderecolocal;
                                         Conexao(mensagem);
                                         enviado = false;
                                         botaook.setText("Solicitar");
                                     }})
                                 .setNegativeButton(android.R.string.no, null).show();
                     }else {
-                        mensagem = "666 " + tempori + ";;" + tempdest + ";; Cliente: " + enderecolocal;
+                        mensagem = "2;" + tempori + ";" + tempdest + ";" + enderecolocal;
                         Conexao(mensagem);
                         enviado = true;
                         botaook.setText("Cancelar");
@@ -190,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                // while(arquivo.size()<3)
-               Conexao("First "+enderecolocal);
+               Conexao("3;"+enderecolocal);
 
             }
 
