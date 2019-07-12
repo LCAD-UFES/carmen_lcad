@@ -33,20 +33,17 @@ define_messages()
 int
 main(int argc, char **argv)
 {
-	double initial_timestamp, time_passed;
 	carmen_point_t pose;
 	int time = 4;
 
 	if (argc < 4)
 	{
-		printf("Use %s <x> <y> <theta> <OPTIONAL period>\n "
-				"Period the program remains publishing the initial pose\n", argv[0]); // Period the program remains publishing the initial pose
+		printf("Use %s <x> <y> <theta> <OPTIONAL wait_time in seconds>\n "
+				"Time to wait before publishing the initial pose\n", argv[0]);
 		exit(-1);
 	}
 	if (argc == 5)
-	{
 		time = atoi(argv[4]);
-	}
 
 	pose.x = atof(argv[1]);
 	pose.y = atof(argv[2]);
@@ -54,18 +51,11 @@ main(int argc, char **argv)
 
 	carmen_ipc_initialize(argc, argv);
 
-	double sleep_time = (10.0) * 10e5;
-	initial_timestamp = carmen_get_time();
+	sleep(time);
+	publish_starting_pose(pose);
 
 	while (1)
-	{
-		time_passed = (carmen_get_time() - initial_timestamp);
-
-		if (time_passed < time)
-			publish_starting_pose(pose);
-		else
-			usleep((int) sleep_time);
-	}
+		sleep(10); // Para não morrer nunca e não gastar CPU
 
 	return 0;
 }
