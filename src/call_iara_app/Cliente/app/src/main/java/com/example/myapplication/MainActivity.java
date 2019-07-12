@@ -259,7 +259,7 @@ public class MainActivity extends AppCompatActivity {
 
                     //   Socket soc = new Socket("10.42.0.25", 8000);
                     // Abaixo eh para quando eh utilizado o android pelo emulador ao inves do celular
-                    soc = new Socket(enderecoip, 8000);
+                    soc = new Socket(getIP(), 8000);
                     writer = new PrintWriter(soc.getOutputStream());
                     soc.setSoTimeout(3000);
                     writer.write(msg);
