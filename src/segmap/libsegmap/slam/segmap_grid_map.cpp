@@ -501,7 +501,7 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 
 	viewer.set_step(1);
 
-	for (int i = 1000; i < dataset->size(); i += 50)
+	for (int i = 0; i < dataset->size(); i += step)
 	{
 		sample = dataset->at(i);
 

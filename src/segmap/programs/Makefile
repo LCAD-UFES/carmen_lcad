@@ -33,19 +33,18 @@ DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/initializations/libsegmap_initializations.a \
 	$(CARMEN_HOME)/src/utilities/libcarmen_util/libcarmen_util.a
 
-SOURCES = mapper.cpp localizer.cpp velodyne_calibration_save_data.cpp velodyne_calibration_compute_calibration_table.cpp
+SOURCES = mapper.cpp localizer.cpp velodyne_calibration_save_data.cpp 
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = 
-TARGETS = mapper localizer velodyne_calibration_save_data velodyne_calibration_compute_calibration_table
+TARGETS = mapper localizer velodyne_calibration_save_data 
 
 # The libraries are added as dependencies to make the program be compiled when the libs are changed.
 # Without adding them as a dependency, we would have to do a make clean && make whenever we change a .cpp file.
 localizer: localizer.o $(DEPS) 
 mapper: mapper.o $(DEPS)
 velodyne_calibration_save_data: velodyne_calibration_save_data.o $(DEPS)
-velodyne_calibration_compute_calibration_table: velodyne_calibration_compute_calibration_table.o $(DEPS)
 
 include $(CARMEN_HOME)/src/Makefile.rules
 
