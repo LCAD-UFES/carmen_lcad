@@ -6,7 +6,7 @@
 #include <carmen/segmap_preproc.h>
 #include <carmen/util_math.h>
 #include <carmen/command_line.h>
-#include "libsegmap/initializations/segmap_args.h"
+#include <carmen/segmap_args.h>
 #include <carmen/segmap_constructors.h>
 
 #include <carmen/util_io.h>

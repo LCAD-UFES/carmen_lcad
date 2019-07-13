@@ -20,7 +20,8 @@ public:
 	{
 		WEIGHT_GPS,
 		WEIGHT_SEMANTIC,
-		WEIGHT_VISUAL
+		WEIGHT_VISUAL,
+		WEIGHT_NMI
 	};
 
 	void _compute_weights(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, GridMap &map,

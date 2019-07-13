@@ -216,8 +216,8 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 			_w[i] = _image_weight(transformed_cloud, map);
 		else if (_weight_type == WEIGHT_GPS)
 			_w[i] = _gps_weight(_p[i], gps);
-		else if (_weight_type == WEIGHT_NMI)
-			_w[i] = _image_weight(transformed_cloud, map);
+		//else if (_weight_type == WEIGHT_NMI)
+			//_w[i] = _image_weight(transformed_cloud, map);
 		else
 			exit(printf("Error: unknown type of particle weighting.\n"));
 
