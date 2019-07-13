@@ -499,9 +499,9 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 	PointCloudViewer viewer(2, 0.2, 0.8, 1.0);
 	vector<double> times;
 
-	viewer.set_step(0);
+	viewer.set_step(1);
 
-	for (int i = 0; i < dataset->size(); i += step)
+	for (int i = 1000; i < dataset->size(); i += 50)
 	{
 		sample = dataset->at(i);
 
@@ -532,7 +532,7 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 			viewer.clear();
 
 			preproc.reinitialize(sample);
-			load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+			load_as_pointcloud(preproc, cloud, SensorPreproc::WORLD_REFERENCE);
 			viewer.show(cloud);
 
 			// flip vertically.

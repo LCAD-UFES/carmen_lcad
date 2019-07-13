@@ -66,9 +66,27 @@ reallocate_message_if_necessary(carmen_velodyne_variable_scan_message **message_
     (*message_ptr) = message;
 }
 
+#include <opencv/cv.hpp>
+//#include <opencv/highgui.h>
+
+using namespace cv;
+
+void
+update_color(Mat &img, int row, int col, unsigned char intensity, unsigned char refl, unsigned char noise)
+{
+	int p;
+	
+	p = row * img.cols + col;
+	img.data[p] = intensity;
+	p = (64 + row) * img.cols + col;
+	img.data[p] = refl;	
+	p = (128 + row) * img.cols + col;	
+	img.data[p] = noise;
+}
+
 
 void 
-build_and_publish_variable_velodyne_message(uint8_t* buf) 
+build_and_publish_variable_velodyne_message(uint8_t* buf, Mat &viewer) 
 {
     static carmen_velodyne_variable_scan_message *message = NULL;
 
@@ -78,9 +96,9 @@ build_and_publish_variable_velodyne_message(uint8_t* buf)
     static int64_t scan_ts = -1L;
 
     int index = 0;
-
+    
     // This is the solution used by ouster to store the packets until a complete
-    // scan is complete. TODO: develop a a more elegant (and efficient, is possible) solution.
+    // scan is complete. TODO: develop a a more elegant (and efficient, if possible) solution.
     for (int icol = 0; icol < OS1::columns_per_buffer; icol++) 
     {
         const uint8_t* col_buf = OS1::nth_col(icol, buf);
@@ -108,6 +126,9 @@ build_and_publish_variable_velodyne_message(uint8_t* buf)
                     {
                         message->partial_scan[i].distance[j] = (unsigned short) 0;
                         message->partial_scan[i].intensity[j] = (unsigned short) 0;
+                        
+                        // update 1
+						update_color(viewer, j, i, 0, 0, 0);
                     }
                 }
 
@@ -115,6 +136,8 @@ build_and_publish_variable_velodyne_message(uint8_t* buf)
                 message->host = carmen_get_host();
                 message->timestamp = carmen_get_time(); // @filipe: use sensor timestamp
                 carmen_velodyne_publish_variable_scan_message(message, ouster_sensor_id);
+                imshow("viewer", viewer);
+                waitKey(1);
                 index = 0;
             }
 
@@ -132,6 +155,9 @@ build_and_publish_variable_velodyne_message(uint8_t* buf)
             {
                 message->partial_scan[i].distance[j] = (unsigned short) 0;
                 message->partial_scan[i].intensity[j] = (unsigned short) 0;
+                
+                // update 2
+                update_color(viewer, j, i, 0, 0, 0);
             }
         }
 
@@ -159,6 +185,10 @@ build_and_publish_variable_velodyne_message(uint8_t* buf)
             // than what it is possible to store in the message.
             message->partial_scan[m_id].distance[ipx] = (unsigned short) range;
             message->partial_scan[m_id].intensity[ipx] = (unsigned char) intensity;
+
+	        // update 3
+	        update_color(viewer, ipx, m_id, OS1::px_signal_photons(px_buf), OS1::px_reflectivity(px_buf), OS1::px_noise_photons(px_buf));
+	        //update_color(viewer, ipx, m_id, 0, 0, 0);
         }
     }
 }
@@ -271,6 +301,7 @@ main(int argc, char** argv)
 
     uint8_t lidar_buf[OS1::lidar_packet_bytes + 1];
     uint8_t imu_buf[OS1::imu_packet_bytes + 1];
+    Mat viewer = Mat::zeros(3 * 64, W, CV_8UC1);
 
     while (true) 
     {
@@ -287,7 +318,7 @@ main(int argc, char** argv)
             // The function 'build_and_publish_variable_velodyne_message' store the packets in a buffer
             // and publishes a message when a complete scan is obtained.
             if (OS1::read_lidar_packet(*cli, lidar_buf))
-                build_and_publish_variable_velodyne_message(lidar_buf);
+                build_and_publish_variable_velodyne_message(lidar_buf, viewer);
         }
         else if (st & OS1::IMU_DATA) 
         {

@@ -71,7 +71,7 @@ inline bool operator<=(const version& u, const version& v) {
 struct sensor_info {
     std::string hostname;
     std::string sn;
-    version fw_rev;
+    std::string fw_rev;
     lidar_mode mode;
     std::vector<double> beam_azimuth_angles;
     std::vector<double> beam_altitude_angles;
@@ -134,7 +134,7 @@ std::shared_ptr<client> init_client(const std::string& hostname,
  * LIDAR_DATA) is true if lidar data is ready to read, and (s & IMU_DATA) is
  * true if imu data is ready to read
  */
-client_state poll_client(const client& cli);
+client_state poll_client(const client& cli, int timeout_sec = 1);
 
 /**
  * Read lidar data from the sensor. Will block for up to a second if no data is
