@@ -7,8 +7,9 @@
 #include <string.h>
 #include "call_iara_app_messages.h"
 
+
 void
-retorna(char *allrddf)
+get_annotation_from_rddf(char *allrddf)
 {
 	FILE *stream;
 	char *line = NULL;
@@ -41,8 +42,9 @@ retorna(char *allrddf)
 	fclose(stream);
 }
 
+
 void
-montamensagem(char * buffer)
+publish_app_solicitation_message(char * buffer)
 {
 	carmen_app_solicitation_message mensagem;
 	char temp[MAXSIZE];
@@ -100,7 +102,7 @@ main(int argc , char *argv[])
 	char buffer[MAXSIZE];
 	char rddf[3000];
 	int cont;
-	retorna(rddf);
+	get_annotation_from_rddf(rddf);
 
 	//Create socket
 	socket_desc = socket(AF_INET , SOCK_STREAM , 0);
@@ -143,12 +145,12 @@ main(int argc , char *argv[])
 			case '2':
 				printf("Solicitação de serviço: %s\n",buffer);
 				message = "Requisição solicitada";
-				montamensagem(buffer);
+				publish_app_solicitation_message(buffer);
 				break;
 			case '1':
 				printf("Cancelamento de serviço: %s\n",buffer);
 				message = "Requisição cancelada";
-				montamensagem(buffer);
+				publish_app_solicitation_message(buffer);
 				break;
 			default:
 				printf("Condição impossível: %s\n",buffer);
