@@ -38,6 +38,9 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> data = new ArrayList<String>();
     private ArrayList<String> locais = new ArrayList<String>();
     private ArrayList<String> arquivo = new ArrayList<String>();
+    //private ArrayList<ArrayList<String>> arquivo = new ArrayList<ArrayList<String>>();
+    private ArrayList<String> arquivo2 = new ArrayList<String>();
+
     private String[] local;
 
     private String tempori;
@@ -82,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
 
        tempori = "";
        tempdest = "";
-       enderecoip = "192.168.108.66";
+       enderecoip = "192.168.108.165";
        enderecolocal = "";
        while(enderecolocal.equals(""))
            enderecolocal = getLocalIpAddress();
@@ -144,7 +147,6 @@ public class MainActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         dest.setText(local[which]);
                         tempdest=local[which];
-
                     }
                 });
                 AlertDialog alert = builder.create();
@@ -167,16 +169,16 @@ public class MainActivity extends AppCompatActivity {
                         new AlertDialog.Builder(MainActivity.this)
                                 .setTitle("Cancelar solicitação")
                                 .setMessage("Realmente deseja cancelar?")
-                                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                .setPositiveButton("Sim", new DialogInterface.OnClickListener() {
                                     public void onClick(DialogInterface dialog, int whichButton) {
-                                        mensagem = "1;" + tempori + ";" + tempdest + ";" + enderecolocal;
+                                        mensagem = "1;" + "RDDF_PLACE_"+(tempori).replaceAll(" ","_") + ";" + "RDDF_PLACE_"+(tempdest).replaceAll(" ","_") + ";" + enderecolocal+";";
                                         Conexao(mensagem);
                                         enviado = false;
                                         botaook.setText("Solicitar");
                                     }})
-                                .setNegativeButton(android.R.string.no, null).show();
+                                .setNegativeButton("Não", null).show();
                     }else {
-                        mensagem = "2;" + tempori + ";" + tempdest + ";" + enderecolocal;
+                        mensagem = "2;" + "RDDF_PLACE_"+(tempori).replaceAll(" ","_") + ";" + "RDDF_PLACE_"+(tempdest).replaceAll(" ","_") + ";" + enderecolocal+";";
                         Conexao(mensagem);
                         enviado = true;
                         botaook.setText("Cancelar");
@@ -270,9 +272,10 @@ public class MainActivity extends AppCompatActivity {
                     if(entrada.hasNext())
                         resposta = entrada.nextLine();
                     // System.out.println("Resposta: "+resposta);
-                    if(msg.substring(0,5).equals("First") && arquivo.size()<3) {
-                        System.out.println(msg.substring(0,5));
+                    if(msg.substring(0,1).equals("3") && arquivo.size()<3) {
+                        System.out.println(msg.substring(0,1));
                         System.out.println(msg);
+//                        System.out.println(resposta);
                         CapturaArquivo(resposta);
                     }else{
                         displayExceptionMessage(resposta);
@@ -301,7 +304,11 @@ public class MainActivity extends AppCompatActivity {
 
     public void CapturaArquivo(String arq){
 
-         arquivo = new ArrayList<String>(Arrays.asList(arq.split(";;")));
+//         arquivo = new ArrayList<String>(Arrays.asList(arq.split(";;")));
+        arquivo2 = new ArrayList<String>(Arrays.asList(arq.split("#")));
+        for(String e: arquivo2){
+            arquivo.add(e.split("\\t+")[0]);
+        }
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -309,7 +316,7 @@ public class MainActivity extends AppCompatActivity {
                 if(!arquivo.isEmpty()) {
                     data = arquivo;
                     for (String e : data) {
-                        locais.add(e.split(",")[0]);
+                        locais.add(e.split(",")[0].substring(11).replaceAll("_"," "));
 //                        System.out.println(e.split(",")[0]);
                     }
                     data = (ArrayList<String>) locais.clone();
