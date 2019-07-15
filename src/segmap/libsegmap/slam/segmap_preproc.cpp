@@ -186,7 +186,7 @@ SensorPreproc::reinitialize(DataSample *sample)
 	_n_lidar_shots = sample->n_laser_shots;
 
 	Pose2d step(0, 0, 0);
-	ackerman_motion_model(step, sample->v, sample->phi, TIME_SPENT_IN_EACH_SCAN);
+	//ackerman_motion_model(step, sample->v, sample->phi, TIME_SPENT_IN_EACH_SCAN);
 	_motion_correction_step = Pose2d::to_matrix(step);
 
 	_motion_correction = Pose2d::to_matrix(Pose2d(0, 0, 0));

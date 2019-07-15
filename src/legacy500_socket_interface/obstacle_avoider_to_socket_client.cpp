@@ -6,6 +6,7 @@
 #include <netdb.h>
 
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
+#define NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND (1 + NUM_MOTION_COMMANDS_PER_VECTOR * 6)
 
 //char *ip_address = "192.168.0.1";
 char *ip_address = (char *) "127.0.0.1";
@@ -89,17 +90,16 @@ build_socket_message(carmen_base_ackerman_motion_command_message *motion_command
 {
 	int size = motion_command_message->num_motion_commands;
 
-	array[0] = double(size);
-	array[1] = DBL_MAX;
+	array[0] = size;
 
 	for (int i = 0; i < size; i++)
 	{
-		array[(i * 6) + 2] = motion_command_message->motion_command[i].x;
-		array[(i * 6) + 3] = motion_command_message->motion_command[i].y;
-		array[(i * 6) + 4] = motion_command_message->motion_command[i].theta;
-		array[(i * 6) + 5] = motion_command_message->motion_command[i].v;
-		array[(i * 6) + 6] = motion_command_message->motion_command[i].phi;
-		array[(i * 6) + 7] = motion_command_message->motion_command[i].time;
+		array[(i * 6) + 1] = motion_command_message->motion_command[i].x;
+		array[(i * 6) + 2] = motion_command_message->motion_command[i].y;
+		array[(i * 6) + 3] = motion_command_message->motion_command[i].theta;
+		array[(i * 6) + 4] = motion_command_message->motion_command[i].v;
+		array[(i * 6) + 5] = motion_command_message->motion_command[i].phi;
+		array[(i * 6) + 6] = motion_command_message->motion_command[i].time;
 	}
 }
 
@@ -112,16 +112,16 @@ send_motion_command_via_socket_tcp_ip(double* array)
 
 	if (pi_socket == 0)
 		pi_socket = stablished_connection_with_server_tcp_ip();
-																							// 2 + 6 * 200
-	result = send(pi_socket, array, 9616, MSG_NOSIGNAL);									// The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
 
-	if (result == 0 || result == -1)														// 0 Connection lost due to server shutdown -1 Could not connect
+	result = send(pi_socket, array, NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND * sizeof(double), MSG_NOSIGNAL);
+
+	if (result <= 0)
 	{
 		close(pi_socket);
 		pi_socket = stablished_connection_with_server_tcp_ip();
+
 		return;
 	}
-	//printf("Sent %lf --- %lf --- %lf\n", array[0], array[1], array[2]);
 }
 
 
@@ -133,7 +133,7 @@ send_motion_command_via_socket(double* array)
 	if (pi_socket == 0)
 		pi_socket = stablished_connection_with_server(&client_address);
 
-	sendto(pi_socket, (void *) array, 9616, 0, (struct sockaddr *) &client_address, sizeof(struct sockaddr_in));
+	sendto(pi_socket, (void *) array, NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND * sizeof(double), 0, (struct sockaddr *) &client_address, sizeof(struct sockaddr_in));
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -148,15 +148,13 @@ send_motion_command_via_socket(double* array)
 void
 motion_command_handler(carmen_base_ackerman_motion_command_message *motion_command_message)
 {
-	//printf("Motion command!/n");
-
 	if (motion_command_message->num_motion_commands < 1)
 			return;
 
 	if (motion_command_message->num_motion_commands > NUM_MOTION_COMMANDS_PER_VECTOR)
 		motion_command_message->num_motion_commands = NUM_MOTION_COMMANDS_PER_VECTOR;
 
-	double array[1202]; // 2 + 200
+	double array[NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND];
 	build_socket_message(motion_command_message, array);
 
 	send_motion_command_via_socket(array);

@@ -72,6 +72,8 @@ seed = 0
 correction_step = 1
 # Minimum number of steps to wait until a new map reload from disk
 steps_to_skip_map_reload = 5
+# Directory for saving images of the localization execution
+save_dir = 
 # Map resolution
 resolution = 0.2
 # Map tiles size
