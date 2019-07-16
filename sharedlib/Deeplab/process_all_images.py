@@ -49,7 +49,7 @@ def read_carmen_img(path, nr, nc):
     size = 3 * nr * nc
     f.seek(size)
     img = np.fromfile(f, dtype=np.uint8).reshape((nr, nc, 3))
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    #img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     f.close()
 
     return img
@@ -99,7 +99,7 @@ if __name__ == "__main__":
                 cv2.imwrite(result_path, result)
 
             consumed_time = time.time() - init 
-            print(count, 'of', len(all_lines), img_path, 'consumed_time:', consumed_time)
+            print(count, 'of', len(all_lines), img_path, "result:", result_path, 'consumed_time:', consumed_time)
             count += 1
 
 

@@ -15,7 +15,7 @@ parse_intensity_mode(string map_type)
 {
 	if (map_type.compare("remission") == 0)
 		return SensorPreproc::INTENSITY;
-	else if (map_type.compare("visual") == 0)
+	else if (map_type.compare("visual") == 0 || map_type.compare("ecc") == 0)
 		return SensorPreproc::COLOR;
 	else if (map_type.compare("semantic") == 0)
 		return SensorPreproc::SEMANTIC;
@@ -45,6 +45,8 @@ parse_weight_type(CommandLineArguments &args)
 		w_type = ParticleFilter::WEIGHT_GPS;
 	else if (args.get<string>("intensity_mode").compare("semantic") == 0)
 		w_type = ParticleFilter::WEIGHT_SEMANTIC;
+	else if (args.get<string>("intensity_mode").compare("ecc") == 0)
+		w_type = ParticleFilter::WEIGHT_ECC;
 	else
 		w_type = ParticleFilter::WEIGHT_VISUAL;
 
