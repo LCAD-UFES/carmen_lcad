@@ -15,6 +15,7 @@
 #include <carmen/ackerman_motion_model.h>
 #include <carmen/segmap_semantic_segmentation_viewer.h>
 
+#include <carmen/util_io.h>
 #include "segmap_preproc.h"
 
 using namespace cv;
@@ -107,6 +108,29 @@ get_distance_index(double distance)
 }
 
 
+void
+load_calibration_table_tf(const char *calib_file_path, float calibration_table_tf[32][256])
+{
+	FILE *fptr = safe_fopen(calib_file_path, "r");
+
+	int nr, nc;
+
+	fscanf(fptr, "%d %d", &nr, &nc);
+
+	for (int i = 0; i < nr; i++)
+	{
+		for (int j = 0; j < nc; j++)
+		{
+			fscanf(fptr, "%f", &(calibration_table_tf[i][j]));
+			//printf("%.2f ", calibration_table_tf[i][j]);
+		}
+		//printf("\n");
+	}
+
+	fclose(fptr);
+}
+
+
 SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
                              CarmenImageLoader *iloader,
                              SemanticSegmentationLoader *sloader,
@@ -141,6 +165,8 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
 
 	//_initialize_calibration_table(lidar_calib_path);
 	calibration_table = load_calibration_table(intensity_calib_path.c_str());
+	//load_calibration_table_tf("poly_calib_table.txt", calibration_table_tf);
+
 	_lane_mark_detection_active = 0;
 
 	_use_semantic_remapping = 0;
@@ -533,6 +559,18 @@ SensorPreproc::_get_calibrated_intensity(unsigned char raw_intensity, Matrix<dou
 }
 
 
+unsigned char
+SensorPreproc::_get_calibrated_intensity_tf(unsigned char raw_intensity, Matrix<double, 4, 1> &p_sensor, int laser_id)
+{
+	float c = (255.0 * calibration_table_tf[laser_id][raw_intensity]);
+
+	if (c < 0) c = 0;
+	if (c > 255) c = 255;
+
+	return (unsigned char) c;
+}
+
+
 void
 SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sensor, unsigned char raw_intensity, int *valid, int laser_id)
 {
@@ -540,6 +578,7 @@ SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sen
 	if (_imode == INTENSITY || _imode == BRIGHT)
 	{
 		unsigned char intensity = _get_calibrated_intensity(raw_intensity, p_sensor, laser_id);
+		//unsigned char intensity = _get_calibrated_intensity_tf(raw_intensity, p_sensor, laser_id);
 
 		if (_imode == BRIGHT)
 			intensity = _brighten(intensity, 2);
@@ -615,6 +654,7 @@ SensorPreproc::_brighten(unsigned char val, unsigned int multiplier)
 	else
 		return brightened;
 }
+
 
 ///*
 void

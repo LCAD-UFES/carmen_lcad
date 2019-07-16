@@ -529,8 +529,7 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 			Mat map_img = map.to_image().clone();
 			draw_pose(map, map_img, pose, Scalar(0, 255, 0));
 
-			viewer.clear();
-
+			//viewer.clear();
 			preproc.reinitialize(sample);
 			load_as_pointcloud(preproc, cloud, SensorPreproc::WORLD_REFERENCE);
 			viewer.show(cloud);

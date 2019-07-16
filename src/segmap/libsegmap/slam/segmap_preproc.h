@@ -13,59 +13,6 @@
 #include <carmen/carmen_semantic_segmentation_reader.h>
 
 
-class CityscapesObjectClassMapper
-{
-public:
-	static unsigned char transform_object_class(unsigned int object_class)
-	{
-		if (object_class == 0) return 0;
-
-		// road 0
-		// sidewalk 1
-		// building 2
-		// wall 3
-		// fence 4
-		// pole 5
-		// traffic_light 6
-		// traffic_sign 7
-		// vegetation 8
-		// terrain 9
-		// sky 10
-		// person 11
-		// rider 12
-		// car 13
-		// truck 14
-		// bus 15
-		// train 16
-		// motorcycle 17
-		// bicycle 18
-
-		// Deeplabv3+ usually mistakes the classes sidewalk and terrain, so we map them to the same class.
-		if (object_class == 1 || object_class == 8)
-			return 8;
-
-		// building, wall, fence -> building
-		if (object_class == 2 || object_class == 3 || object_class == 4)
-			return 2;
-
-		// traffic_light, traffic_sign, pole -> traffic_sign
-		if (object_class == 6 || object_class == 7 || object_class == 5)
-			return 6;
-
-		// person, rider, bicycle -> unknown (disconsidered for localization and mapping)
-		if (object_class == 11 || object_class == 12)
-			return 6;
-
-		// we assume that these vehicles are only located in road-like places.
-		// car, trucks, bus, train, motorcycle -> road
-		if (object_class == 13 || object_class == 14 || object_class == 15 || object_class == 16 || object_class == 17)
-			return 19;
-
-		return object_class;
-	}
-};
-
-
 class SensorPreproc
 {
 public:
@@ -155,6 +102,7 @@ public:
 
   static const int _n_distance_indices = 10;
   float ***calibration_table;
+  float calibration_table_tf[32][256];
 
 	double _ignore_above_threshold;
 	double _ignore_below_threshold;
@@ -209,7 +157,7 @@ public:
 	std::vector<pcl::PointXYZRGB> _next_points(SensorReference ref);
 
 	unsigned char _get_calibrated_intensity(unsigned char raw_intensity, Eigen::Matrix<double, 4, 1> &p_sensor, int laser_id);
-
+	unsigned char _get_calibrated_intensity_tf(unsigned char raw_intensity, Eigen::Matrix<double, 4, 1> &p_sensor, int laser_id);
 };
 
 
