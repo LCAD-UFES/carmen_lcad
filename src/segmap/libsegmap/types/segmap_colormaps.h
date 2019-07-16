@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <opencv/cv.hpp>
+#include <carmen/segmap_definitions.h>
 
 
 class CityScapesColorMap
@@ -65,6 +66,7 @@ public:
 
 	cv::Scalar color(int index)
 	{
+		index = CityscapesObjectClassMapper::transform_object_class(index);
 		return _colors[index % _colors.size()];
 	}
 };
