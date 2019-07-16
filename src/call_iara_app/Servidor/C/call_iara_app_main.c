@@ -28,16 +28,14 @@ get_annotation_from_rddf(char *allrddf)
 		while ((read = getline(&line, &len, stream)) != -1)
 		{
 			if(strstr(line,"RDDF_PLACE")){
-				//			line[ strlen(line)-1 ] ='#';
-				if(line[strlen(line)-sizeof(char)] == '\n'){
-					//  			printf("%c\n",line[strlen(line)-sizeof(char)]);
+
+				if(line[strlen(line)-sizeof(char)] == '\n')
 					line[strlen(line)-sizeof(char)] = '#';
-				}
+
 				strcat(allrddf,line);
 			}
 		}
 	}
-	//	printf("%s\n",allrddf);
 	free(line);
 	fclose(stream);
 }
@@ -46,7 +44,7 @@ get_annotation_from_rddf(char *allrddf)
 void
 publish_app_solicitation_message(char * buffer)
 {
-	carmen_app_solicitation_message mensagem;
+	carmen_app_solicitation_message message_received;
 	char temp[MAXSIZE];
 	bzero(temp,MAXSIZE);
 	int cont = 0;
@@ -58,22 +56,22 @@ publish_app_solicitation_message(char * buffer)
 			switch(cont)
 			{
 			case 1:
-				mensagem.reqnumber = temp[0] - '0';
+				message_received.reqnumber = temp[0] - '0';
 				bzero(temp,MAXSIZE);
 				index = 0;
 				break;
 			case 2:
-				strcpy(mensagem.origem,temp);
+				strcpy(message_received.origin,temp);
 				bzero(temp,MAXSIZE);
 				index = 0;
 				break;
 			case 3:
-				strcpy(mensagem.destino,temp);
+				strcpy(message_received.destination,temp);
 				bzero(temp,MAXSIZE);
 				index = 0;
 				break;
 			case 4:
-				strcpy(mensagem.ipcliente,temp);
+				strcpy(message_received.ipclient,temp);
 				bzero(temp,MAXSIZE);
 				index = 0;
 				break;
@@ -84,25 +82,21 @@ publish_app_solicitation_message(char * buffer)
 			index++;
 		}
 	}
-	printf("Número da requisição: %d\n",mensagem.reqnumber);
-	printf("Origem: %s\n",mensagem.origem);
-	printf("Destino: %s\n",mensagem.destino);
-	printf("IP do cliente: %s\n",mensagem.ipcliente);
+	printf("Número da requisição: %d\n",message_received.reqnumber);
+	printf("Origem: %s\n",message_received.origin);
+	printf("Destino: %s\n",message_received.destination);
+	printf("IP do cliente: %s\n",message_received.ipclient);
 	printf("\n");
-
 }
 
 
-int
-main(int argc , char *argv[])
+void
+initiate_server(char * rddf_annotation)
 {
-	int socket_desc , new_socket , c, r;
+	int socket_desc , new_socket , c;
 	struct sockaddr_in server , client;
 	char *message;
 	char buffer[MAXSIZE];
-	char rddf[3000];
-	int cont;
-	get_annotation_from_rddf(rddf);
 
 	//Create socket
 	socket_desc = socket(AF_INET , SOCK_STREAM , 0);
@@ -120,7 +114,6 @@ main(int argc , char *argv[])
 	if( bind(socket_desc,(struct sockaddr *)&server , sizeof(server)) < 0)
 	{
 		puts("bind failed");
-		return 1;
 	}
 	puts("bind done");
 
@@ -135,26 +128,30 @@ main(int argc , char *argv[])
 		{
 			//puts("Connection accepted");
 			bzero(buffer,MAXSIZE);
-			r = read(new_socket, buffer, sizeof(buffer));
+			read(new_socket, buffer, sizeof(buffer));
 			switch(buffer[0])
 			{
 			case '3':
 				printf("Requisição de rddf: %s\n",buffer);
-				message = rddf;
+				message = rddf_annotation;
 				break;
 			case '2':
 				printf("Solicitação de serviço: %s\n",buffer);
-				message = "Requisição solicitada";
+				message = (char *) "Requisição solicitada";
 				publish_app_solicitation_message(buffer);
+				choose_rddf();
+				publish_voice_interface_command_message(rddf_to_place, SET_COURSE);
+				carmen_navigator_ackerman_go();
 				break;
 			case '1':
 				printf("Cancelamento de serviço: %s\n",buffer);
-				message = "Requisição cancelada";
+				message = (char *) "Requisição cancelada";
 				publish_app_solicitation_message(buffer);
+				carmen_navigator_ackerman_stop();
 				break;
 			default:
 				printf("Condição impossível: %s\n",buffer);
-				message = "Condição teóricamente impossível.";
+				message = (char *) "Condição teóricamente impossível.";
 			}
 			write(new_socket , message , strlen(message));
 
@@ -162,9 +159,45 @@ main(int argc , char *argv[])
 			if (new_socket<0)
 			{
 				perror("accept failed");
-				return 1;
 			}
 		}
 	}
+}
+
+
+char *
+choose_rddf_file(carmen_app_solicitation_message message)
+{
+
+	static char rddf_file_name[2048];
+	//criar arquivos RDDF partindo do lcad ate o destino:
+			//lcad X estacionamento ambiental
+			//lcad X teatro
+			//lcad X lagoa
+	//setar o nome do arquivo na variável rddf_file_name
+
+
+
+	strcpy(rddf_file_name, rddf);
+
+
+
+	return (rddf_file_name);
+
+}
+
+
+void
+
+
+
+
+int
+main(/*int argc , char *argv[]*/)
+{
+	char rddf_annotation[3000];
+	get_annotation_from_rddf(rddf_annotation);
+	initiate_server(rddf_annotation);
+
 	return 0;
 }

@@ -11,7 +11,7 @@ LINK = g++
 #CFLAGS += -Wall `pkg-config --cflags opencv`
 #CXXFLAGS += -Wall `pkg-config --cflags opencv` -std=c++11
 
-SOURCES = call_iara_app_main.cpp 
+SOURCES = call_iara_app_main.c 
 PUBLIC_INCLUDES = call_iara_app_messages.h
 PUBLIC_BINARIES = call_iara_main
 TARGETS = call_iara_main

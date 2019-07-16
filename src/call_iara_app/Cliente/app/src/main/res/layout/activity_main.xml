@@ -4,7 +4,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/appbackground"
     tools:context=".MainActivity">
 
 
@@ -120,15 +119,30 @@
         app:layout_constraintVertical_bias="1.0" />
 
     <view
+        android:id="@+id/view"
         class="android.support.v7.widget.LinearLayoutCompat"
-        id="@+id/view"
         android:layout_width="413dp"
         android:layout_height="176dp"
         android:layout_marginTop="2dp"
         android:layout_marginBottom="17dp"
+        android:onClick="secreto"
         app:layout_constraintBottom_toTopOf="@+id/but_ori"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="354dp"
+        android:layout_height="175dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/but_ori"
+        app:layout_constraintEnd_toEndOf="@+id/view"
+        app:layout_constraintStart_toStartOf="@+id/view"
         app:layout_constraintTop_toTopOf="parent"
-        android:onClick="secreto"/>
+        app:srcCompat="@drawable/lcadlogo" />
+
 </android.support.constraint.ConstraintLayout>
