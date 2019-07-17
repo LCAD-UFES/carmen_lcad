@@ -21,7 +21,7 @@ public:
 		WEIGHT_GPS,
 		WEIGHT_SEMANTIC,
 		WEIGHT_VISUAL,
-		WEIGHT_NMI
+		WEIGHT_ECC
 	};
 
 	void _compute_weights(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, GridMap &map,
@@ -81,6 +81,11 @@ public:
 	double _semantic_point_weight(pcl::PointXYZRGB &point, GridMap *map);
 	double _image_point_weight(pcl::PointXYZRGB &point, GridMap *map);
 
+	double _ecc_weight(pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
+
+	double *_color_histogram;
+	double *_map_histogram;
+	double *_joint_histogram;
 };
 
 

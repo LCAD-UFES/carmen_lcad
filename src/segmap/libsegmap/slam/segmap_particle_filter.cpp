@@ -53,6 +53,10 @@ ParticleFilter::ParticleFilter(int n_particles, WeightType weight_type,
 	_color_std_r = color_std_r / 255.;
 	_color_std_g = color_std_g / 255.;
 	_color_std_b = color_std_b / 255.;
+
+	_color_histogram = (double*) calloc (256, sizeof(double));
+	_map_histogram = (double*) calloc (256, sizeof(double));
+	_joint_histogram = (double*) calloc (256 * 256, sizeof(double));
 }
 
 
@@ -62,6 +66,9 @@ ParticleFilter::~ParticleFilter()
 	free(_w);
 	free(_p_bef);
 	free(_w_bef);
+	free(_color_histogram);
+	free(_map_histogram);
+	free(_joint_histogram);
 }
 
 
@@ -196,6 +203,77 @@ ParticleFilter::_gps_weight(Pose2d &pose, Pose2d &gps)
 }
 
 
+double
+ParticleFilter::_ecc_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map)
+{
+	PointXYZRGB point;
+	vector<double> cell;
+	int n_valid = 0;
+
+	memset(_color_histogram, 0, 256 * sizeof(double));
+	memset(_map_histogram, 0, 256 * sizeof(double));
+	memset(_joint_histogram, 0, 256 * 256 * sizeof(double));
+
+	// compute histograms
+	for (int i = 0; i < transformed_cloud->size(); i++)
+	{
+		point = transformed_cloud->at(i);
+		cell = map.read_cell(point);
+
+		//if (cell[3] > 0)
+		{
+			int pc = (point.r + point.g + point.b) / 3.0;
+			int mc = (cell[0] + cell[1] + cell[2]) / 3.0;
+
+			_color_histogram[pc]++;
+			_map_histogram[mc]++;
+			_joint_histogram[pc * 256 + mc]++;
+
+			n_valid++;
+
+			//printf("i: %d pc: %d mc: %d n_valid: %d\n", i, pc, mc, n_valid);
+		}
+	}
+
+	// compute entropies
+	double prob_color, prob_map, prob_joint;
+	double img_entropy = 0.0;
+	double map_entropy = 0.0;
+	double joint_entropy = 0.0;
+
+	for (int i = 0; i < 256; i++)
+	{
+		prob_color = _color_histogram[i] / n_valid;
+		prob_map = _map_histogram[i] / n_valid;
+
+		if (prob_color > 0)
+			img_entropy += prob_color * log(prob_color);
+
+		if (prob_map > 0)
+			map_entropy += prob_map * log(prob_map);
+
+		//printf("i: %d prob_color: %lf prob_map: %lf img_entropy: %lf map_entropy: %lf\n",
+		       //i, prob_color, prob_map, img_entropy, map_entropy);
+
+		for (int j = 0; j < 256; j++)
+		{
+			prob_joint = _joint_histogram[i * 255 + j] / n_valid;
+
+			if (prob_joint > 0)
+				joint_entropy += prob_joint * log(prob_joint);
+		}
+	}
+
+//	printf("joint_entropy: %lf img_entropy: %lf map_entropy: %lf ecc: %lf\n",
+//	       joint_entropy, img_entropy, map_entropy,
+//	       2.0 - (2 * joint_entropy) / (img_entropy + map_entropy));
+
+	// Entropy Correlation Coefficient (ECC) see "http://ijsetr.org/wp-content/uploads/2016/05/IJSETR-VOL-5-ISSUE-5-1700-1703.pdf"
+	// return 2.0 - (2 * joint_entropy) / (img_entropy + map_entropy);
+	return (img_entropy + map_entropy) / (joint_entropy);
+}
+
+
 void
 ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 																 GridMap &map, Pose2d &gps, int *max_id, int *min_id)
@@ -203,7 +281,7 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 	int i;
 	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
 
-	//#pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
+	// #pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
 	for (i = 0; i < _n; i++)
 	{
 		transformed_cloud->clear();
@@ -216,8 +294,8 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 			_w[i] = _image_weight(transformed_cloud, map);
 		else if (_weight_type == WEIGHT_GPS)
 			_w[i] = _gps_weight(_p[i], gps);
-		//else if (_weight_type == WEIGHT_NMI)
-			//_w[i] = _image_weight(transformed_cloud, map);
+		else if (_weight_type == WEIGHT_ECC)
+			_w[i] = _ecc_weight(transformed_cloud, map);
 		else
 			exit(printf("Error: unknown type of particle weighting.\n"));
 
