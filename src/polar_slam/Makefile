@@ -3,6 +3,7 @@ include ../Makefile.conf
 MODULE_NAME = POLAR SLAM
 MODULE_COMMENT = Polar SLAM
 
+CXXFLAGS += -std=c++11
 LINK = g++
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I$(CARMEN_HOME)/sharedlib/prob_models  -fopenmp 

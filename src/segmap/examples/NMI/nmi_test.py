@@ -34,9 +34,9 @@ def NMI(img_a, raw_img_b):
 	for i in range(len(hist_a)):
 		print("bin %d: %d %d prob: %.2f %.2f" % (i, hist_a[i], hist_b[i], prob_a[i], prob_b[i]))
 	
-	entropy_a = np.sum([p * np.log(p) for p in prob_a if p > 0.0])
-	entropy_b = np.sum([p * np.log(p) for p in prob_b if p > 0.0])
-	entropy_ab = np.sum([p * np.log(p) for p in np.ravel(prob_ab) if p > 0.0])		
+	entropy_a = -np.sum([p * np.log(p) for p in prob_a if p > 0.0])
+	entropy_b = -np.sum([p * np.log(p) for p in prob_b if p > 0.0])
+	entropy_ab = -np.sum([p * np.log(p) for p in np.ravel(prob_ab) if p > 0.0])		
 	
 	print("entropy_a: %.2lf" % entropy_a)
 	print("entropy_b: %.2lf" % entropy_b)

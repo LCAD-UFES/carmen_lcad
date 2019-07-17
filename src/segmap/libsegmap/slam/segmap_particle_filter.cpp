@@ -29,7 +29,8 @@ ParticleFilter::_gauss()
 ParticleFilter::ParticleFilter(int n_particles, WeightType weight_type,
 															 double x_std, double y_std, double th_std,
 															 double v_std, double phi_std, double pred_x_std, double pred_y_std, double pred_th_std,
-															 double color_std_r, double color_std_g, double color_std_b)
+															 double color_std_r, double color_std_g, double color_std_b,
+															 int ecc_n_bins)
 {
 	_n = n_particles;
 	_weight_type = weight_type;
@@ -54,9 +55,11 @@ ParticleFilter::ParticleFilter(int n_particles, WeightType weight_type,
 	_color_std_g = color_std_g / 255.;
 	_color_std_b = color_std_b / 255.;
 
-	_color_histogram = (double*) calloc (256, sizeof(double));
-	_map_histogram = (double*) calloc (256, sizeof(double));
-	_joint_histogram = (double*) calloc (256 * 256, sizeof(double));
+	_color_histogram = (double*) calloc (ecc_n_bins, sizeof(double));
+	_map_histogram = (double*) calloc (ecc_n_bins, sizeof(double));
+	_joint_histogram = (double*) calloc (ecc_n_bins * ecc_n_bins, sizeof(double));
+	_ecc_n_bins = ecc_n_bins;
+	_ecc_pixel_step = 256 / _ecc_n_bins;
 }
 
 
@@ -155,9 +158,9 @@ ParticleFilter::_image_point_weight(PointXYZRGB &point, GridMap *map)
 {
 	vector<double> v = map->read_cell(point);
 
-	return (-pow(((point.r - v[2]) / 255.) / _color_std_r, 2));
-				// + (-pow(((point.g - v[1]) / 255.) / _color_std_g, 2))
-				// + (-pow(((point.b - v[0]) / 255.) / _color_std_b, 2));
+	return (-pow(((point.r - v[2]) / 255.) / _color_std_r, 2))
+				 + (-pow(((point.g - v[1]) / 255.) / _color_std_g, 2))
+				 + (-pow(((point.b - v[0]) / 255.) / _color_std_b, 2));
 }
 
 
@@ -210,9 +213,9 @@ ParticleFilter::_ecc_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Grid
 	vector<double> cell;
 	int n_valid = 0;
 
-	memset(_color_histogram, 0, 256 * sizeof(double));
-	memset(_map_histogram, 0, 256 * sizeof(double));
-	memset(_joint_histogram, 0, 256 * 256 * sizeof(double));
+	memset(_color_histogram, 0, _ecc_n_bins * sizeof(double));
+	memset(_map_histogram, 0, _ecc_n_bins * sizeof(double));
+	memset(_joint_histogram, 0, _ecc_n_bins * _ecc_n_bins * sizeof(double));
 
 	// compute histograms
 	for (int i = 0; i < transformed_cloud->size(); i++)
@@ -220,14 +223,17 @@ ParticleFilter::_ecc_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Grid
 		point = transformed_cloud->at(i);
 		cell = map.read_cell(point);
 
-		//if (cell[3] > 0)
+		//if (cell[3] > 1.0)
 		{
 			int pc = (point.r + point.g + point.b) / 3.0;
 			int mc = (cell[0] + cell[1] + cell[2]) / 3.0;
 
+			pc = pc / _ecc_pixel_step;
+			mc = mc / _ecc_pixel_step;
+
 			_color_histogram[pc]++;
 			_map_histogram[mc]++;
-			_joint_histogram[pc * 256 + mc]++;
+			_joint_histogram[pc * _ecc_n_bins + mc]++;
 
 			n_valid++;
 
@@ -241,7 +247,7 @@ ParticleFilter::_ecc_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Grid
 	double map_entropy = 0.0;
 	double joint_entropy = 0.0;
 
-	for (int i = 0; i < 256; i++)
+	for (int i = 0; i < _ecc_n_bins; i++)
 	{
 		prob_color = _color_histogram[i] / n_valid;
 		prob_map = _map_histogram[i] / n_valid;
@@ -255,22 +261,27 @@ ParticleFilter::_ecc_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Grid
 		//printf("i: %d prob_color: %lf prob_map: %lf img_entropy: %lf map_entropy: %lf\n",
 		       //i, prob_color, prob_map, img_entropy, map_entropy);
 
-		for (int j = 0; j < 256; j++)
+		for (int j = 0; j < _ecc_n_bins; j++)
 		{
-			prob_joint = _joint_histogram[i * 255 + j] / n_valid;
+			prob_joint = _joint_histogram[i * _ecc_n_bins + j] / n_valid;
 
 			if (prob_joint > 0)
 				joint_entropy += prob_joint * log(prob_joint);
 		}
 	}
 
+	img_entropy = -img_entropy;
+	map_entropy = -map_entropy;
+	joint_entropy = -joint_entropy;
+
 //	printf("joint_entropy: %lf img_entropy: %lf map_entropy: %lf ecc: %lf\n",
 //	       joint_entropy, img_entropy, map_entropy,
 //	       2.0 - (2 * joint_entropy) / (img_entropy + map_entropy));
 
 	// Entropy Correlation Coefficient (ECC) see "http://ijsetr.org/wp-content/uploads/2016/05/IJSETR-VOL-5-ISSUE-5-1700-1703.pdf"
-	// return 2.0 - (2 * joint_entropy) / (img_entropy + map_entropy);
-	return (img_entropy + map_entropy) / (joint_entropy);
+	return pow(2.0 - (2 * joint_entropy) / (img_entropy + map_entropy), 5.0);
+
+	//return (img_entropy + map_entropy) / (joint_entropy);
 }
 
 

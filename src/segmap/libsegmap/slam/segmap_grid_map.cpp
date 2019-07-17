@@ -532,7 +532,7 @@ create_map(GridMap &map, NewCarmenDataset *dataset, int step,
 			//viewer.clear();
 			preproc.reinitialize(sample);
 			load_as_pointcloud(preproc, cloud, SensorPreproc::WORLD_REFERENCE);
-			viewer.show(cloud);
+			//viewer.show(cloud);
 
 			// flip vertically.
 			Mat map_view;

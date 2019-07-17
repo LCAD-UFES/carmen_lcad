@@ -37,7 +37,8 @@ public:
 	               double x_std, double y_std, double th_std,
 	               double v_std, double phi_std,
 	               double pred_x_std, double pred_y_std, double pred_th_std,
-	               double color_var_r, double color_var_g, double color_var_b);
+	               double color_var_r, double color_var_g, double color_var_b,
+	               int ecc_n_bins = 64);
 
 	~ParticleFilter();
 
@@ -83,6 +84,8 @@ public:
 
 	double _ecc_weight(pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
 
+	int _ecc_pixel_step;
+	int _ecc_n_bins;
 	double *_color_histogram;
 	double *_map_histogram;
 	double *_joint_histogram;

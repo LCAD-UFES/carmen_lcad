@@ -328,11 +328,11 @@ update_current_and_last_velodyne(carmen_velodyne_partial_scan_message *velodyne_
 void
 velodyne_message_handler()
 {
-	free_landmarks(&landmarks);
+	//free_landmarks(&landmarks);
 
 	arrange_velodyne_vertical_angles_to_true_position();
-	landmarks = detect_new_landmarks();
-	landmark_map.add(&landmarks);
+	//landmarks = detect_new_landmarks();
+	//landmark_map.add(&landmarks);
 
 	update_current_and_last_velodyne(&velodyne_message_g);
 
@@ -343,6 +343,8 @@ velodyne_message_handler()
 void
 localize_message_handler()
 {
+	return;
+
 	if (first_localize_ackerman_globalpos)
 	{
 		localize_ackerman_first_globalpos_x = globalpos_message.globalpos.x;
