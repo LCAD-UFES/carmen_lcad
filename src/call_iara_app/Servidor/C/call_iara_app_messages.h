@@ -1,4 +1,5 @@
 #include <carmen/carmen.h>
+#include <carmen/voice_interface_interface.h>
 #ifndef CARMEN_APP_SOLICITATION_MESSAGES_H
 #define CARMEN_APP_SOLICITATION_MESSAGES_H
 
