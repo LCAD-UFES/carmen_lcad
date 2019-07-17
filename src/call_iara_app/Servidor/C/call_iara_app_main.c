@@ -116,8 +116,8 @@ choose_rddf_file(carmen_app_solicitation_message message)
 	char *condition = message.origin;
 //	char buffer[MAXSIZE];
 	bzero(rddf_file_name,2048);
-	strcat(rddf_file_name,getenv("CARMEN_HOME"));
-	strcat(rddf_file_name,"/data/rdnf/");
+	//strcat(rddf_file_name,getenv("CARMEN_HOME"));
+	strcat(rddf_file_name,"data/rndf/");
 	//criar arquivos RDDF partindo do lcad ate o destino:
 			//lcad X estacionamento ambiental
 			//lcad X teatro
