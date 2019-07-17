@@ -1,3 +1,7 @@
+#include <carmen/carmen.h>
+#include <carmen/voice_interface_interface.h>
+#include <carmen/voice_interface_messages.h>
+#include "call_iara_app_messages.h"
 #include<stdio.h>
 #include<string.h>
 #include<sys/socket.h>
@@ -5,9 +9,7 @@
 #include<unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <carmen/carmen.h>
-#include <carmen/voice_interface_interface.h>
-#include "call_iara_app_messages.h"
+
 
 void
 publish_voice_app_command_message(const char *command, int command_id)
@@ -133,7 +135,7 @@ choose_rddf_file(carmen_app_solicitation_message message)
 	}
 	//Estacionamento Ambiental
 	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_CANTINA_CT")  == 0){
-		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025-lcad-estacionamento-ambiental");
+		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025-lcad-estacionamento-ambiental.txt");
 		return rddf_file_name;
 	}
 	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_LAGO") == 0){
@@ -212,7 +214,7 @@ initiate_server(char * rddf_annotation)
 				printf("Cancelamento de serviço: %s\n",buffer);
 				message = (char *) "Requisição cancelada";
 				solicitation_message = publish_app_solicitation_message(buffer);
-//				carmen_navigator_ackerman_stop();
+				carmen_navigator_ackerman_stop();
 				break;
 			default:
 				printf("Condição impossível: %s\n",buffer);
@@ -230,12 +232,38 @@ initiate_server(char * rddf_annotation)
 }
 
 
-int
-main(/*int argc , char *argv[]*/)
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+void
+shutdown_module(int signo)
 {
+    if (signo == SIGINT) {
+        carmen_ipc_disconnect();
+        printf("Call Iara Server: Disconnected.\n");
+        exit(0);
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+int
+main(int argc , char **argv)
+{
+	carmen_ipc_initialize(argc, argv);
+
+	signal(SIGINT, shutdown_module);
+
 	char rddf_annotation[3000];
+
 	get_annotation_from_rddf(rddf_annotation);
+
 	initiate_server(rddf_annotation);
+
+	carmen_ipc_dispatch();
 
 	return 0;
 }
