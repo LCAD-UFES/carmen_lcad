@@ -59,7 +59,7 @@ def NMI(img_a, raw_img_b):
 
 
 if __name__ == "__main__":
-	paths = ["b1.png", "b2.png", "b3.png", "b4.png", "b4.5.png", "b5.png", "b6.png"]
+	paths = ["b1.png", "b12.png", "b13.png", "b4.png", "b4.5.png"] #, "b2.png", "b3.png", "b5.png", "b6.png"]
 	imgs = [cv2.imread(p) for p in paths]
 
 	#NMI(cv2.imread("b1.png"), cv2.imread("b1.png"))
