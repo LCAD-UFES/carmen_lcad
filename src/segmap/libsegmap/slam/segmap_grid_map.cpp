@@ -31,6 +31,7 @@ GridMapTile::_initialize_map()
 	        _xo, _yo);
 
 	_map = (double *) calloc (_h * _w * _n_fields_by_cell, sizeof(double));
+	_observed_cells.clear();
 
 	struct stat buffer;
 
@@ -39,6 +40,19 @@ GridMapTile::_initialize_map()
 		FILE *fptr = fopen(name, "rb");
 		fread(_map, sizeof(double), _h * _w * _n_fields_by_cell, fptr);
 		fclose(fptr);
+
+		for (int i = 0; i < _h; i++)
+		{
+			for (int j = 0; j < _w; j++)
+			{
+				int p = _n_fields_by_cell * (i * _w + j);
+				double *cell = &(_map[p]);
+
+				if (((_map_type == GridMapTile::TYPE_SEMANTIC) && (cell[_unknown.size() - 1] > 0.0)) ||
+						((_map_type == GridMapTile::TYPE_VISUAL) && (cell[3] > 1.0)))
+					_observed_cells.insert(p);
+			}
+		}
 	}
 	else
 	{
@@ -203,6 +217,9 @@ GridMapTile::add_point(PointXYZRGB &p)
 		}
 		else
 			exit(printf("Error: map_type '%d' not defined.\n", (int) _map_type));
+
+		// we have to add the position to the set in the end because of the return in the SEMANTIC update.
+		_observed_cells.insert(pos);
 	}
 }
 
@@ -220,10 +237,17 @@ GridMapTile::contains(double x, double y)
 vector<double>
 GridMapTile::read_cell(PointXYZRGB &p)
 {
+	return read_cell(p.x, p.y);
+}
+
+
+vector<double>
+GridMapTile::read_cell(double x_world, double y_world)
+{
 	int px, py, pos;
 
-	px = (p.x - _xo) * _pixels_by_m;
-	py = (p.y - _yo) * _pixels_by_m;
+	px = (x_world - _xo) * _pixels_by_m;
+	py = (y_world - _yo) * _pixels_by_m;
 
 	static vector<double> v(_unknown);
 
@@ -414,14 +438,21 @@ GridMap::add_point(PointXYZRGB &p)
 vector<double>
 GridMap::read_cell(PointXYZRGB &p)
 {
+	return read_cell(p.x, p.y);
+}
+
+
+vector<double>
+GridMap::read_cell(double x_world, double y_world)
+{
 	int i, j;
 
 	for (i = 0; i < _N_TILES; i++)
 	{
 		for (j = 0; j < _N_TILES; j++)
 		{
-			if (_tiles[i][j]->contains(p.x, p.y))
-				return _tiles[i][j]->read_cell(p);
+			if (_tiles[i][j]->contains(x_world, y_world))
+				return _tiles[i][j]->read_cell(x_world, y_world);
 		}
 	}
 

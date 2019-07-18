@@ -78,7 +78,7 @@ public:
 };
 
 
-const double distance_between_front_and_rear_axles = 2.625;
+//const double distance_between_front_and_rear_axles = 2.625;
 
 
 void

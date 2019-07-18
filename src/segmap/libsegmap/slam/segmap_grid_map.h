@@ -16,6 +16,8 @@
 #include <carmen/segmap_colormaps.h>
 #include <carmen/segmap_preproc.h>
 
+#include <unordered_set>
+
 
 class GridMapTile
 {
@@ -34,6 +36,7 @@ public:
 	int _h, _w;
 	double *_map;
 	CityScapesColorMap _color_map;
+	std::unordered_set<int> _observed_cells;
 
 	std::vector<double> _unknown;
 	int _n_fields_by_cell;
@@ -58,6 +61,7 @@ public:
 	void add_point(pcl::PointXYZRGB &p);
 	bool contains(double x, double y);
 	std::vector<double> read_cell(pcl::PointXYZRGB &p);
+	std::vector<double> read_cell(double x_world, double y_world);
 	cv::Mat to_image();
 };
 
@@ -92,6 +96,7 @@ public:
 	void reload(double robot_x, double robot_y);
 	void add_point(pcl::PointXYZRGB &p);
 	std::vector<double> read_cell(pcl::PointXYZRGB &p);
+	std::vector<double> read_cell(double x_world, double y_world);
 	cv::Mat to_image();
 	void save();
 

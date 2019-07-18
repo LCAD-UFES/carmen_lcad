@@ -5,6 +5,7 @@
 
 #include <Eigen/Core>
 
+#include <opencv/cv.hpp>
 #include <pcl/common/transforms.h>
 
 #include <carmen/util_math.h>
@@ -138,29 +139,26 @@ ParticleFilter::predict(double v, double phi, double dt)
 
 
 double
-ParticleFilter::_semantic_point_weight(PointXYZRGB &point, GridMap *map)
+ParticleFilter::_semantic_point_weight(int class_id, vector<double> &cell)
 {
 	double count;
-	vector<double> v = map->read_cell(point);
 
 	// cell observed at least once.
 	// TODO: what to do when the cell was never observed?
-	count = v[v.size() - 2];
+	count = cell[cell.size() - 2];
 	assert(count != 0);
 
 	// log probability of the observed class.
-	return log(v[point.r] / count); // * den;;
+	return log(cell[class_id] / count); // * den;;
 }
 
 
 double
-ParticleFilter::_image_point_weight(PointXYZRGB &point, GridMap *map)
+ParticleFilter::_image_point_weight(double r, double g, double b, vector<double> &cell)
 {
-	vector<double> v = map->read_cell(point);
-
-	return (-pow(((point.r - v[2]) / 255.) / _color_std_r, 2))
-				 + (-pow(((point.g - v[1]) / 255.) / _color_std_g, 2))
-				 + (-pow(((point.b - v[0]) / 255.) / _color_std_b, 2));
+	return (-pow(((r - cell[2]) / 255.) / _color_std_r, 2))
+				 + (-pow(((g - cell[1]) / 255.) / _color_std_g, 2))
+				 + (-pow(((b - cell[0]) / 255.) / _color_std_b, 2));
 }
 
 
@@ -174,7 +172,11 @@ ParticleFilter::_semantic_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud,
 	//double den = 1. / (double) transformed_cloud->size();
 
 	for (int i = 0; i < transformed_cloud->size(); i += 1)
-		unnorm_log_prob += _semantic_point_weight(transformed_cloud->at(i), &map);
+	{
+		point = transformed_cloud->at(i);
+		vector<double> cell = map.read_cell(point);
+		unnorm_log_prob += _semantic_point_weight(point.r, cell);
+	}
 
 	if (transformed_cloud->size() > 0)
 		unnorm_log_prob /= (double) transformed_cloud->size();
@@ -190,7 +192,11 @@ ParticleFilter::_image_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Gr
 	PointXYZRGB point;
 
 	for (int i = 0; i < transformed_cloud->size(); i++)
-		unnorm_log_prob += _image_point_weight(transformed_cloud->at(i), &map);
+	{
+		point = transformed_cloud->at(i);
+		vector<double> cell = map.read_cell(point);
+		unnorm_log_prob += _image_point_weight(point.r, point.g, point.b, cell);
+	}
 
 	if (transformed_cloud->size() > 0)
 		unnorm_log_prob /= (double) transformed_cloud->size();
@@ -286,30 +292,147 @@ ParticleFilter::_ecc_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Grid
 
 
 void
+draw_tile(cv::Mat &img, GridMapTile *tile, int i, int j)
+{
+	int r_offset = i * tile->_h;
+	int c_offset = j * tile->_w;
+
+	for (const int& p : tile->_observed_cells)
+	{
+		int cell_y = (p / tile->_n_fields_by_cell) / tile->_w;
+		int cell_x = (p / tile->_n_fields_by_cell) % tile->_w;
+
+		int y = cell_y + r_offset;
+		int x = cell_x + c_offset;
+
+		img.data[y * img.cols + x] = 255;
+	}
+}
+
+
+void
+view_observed_cells(GridMap &map)
+{
+	int h = map.height_meters * map.pixels_by_m;
+	int w = map.width_meters * map.pixels_by_m;
+
+	cv::Mat img = cv::Mat::zeros(h, w, CV_8UC1);
+
+	for (int i = 0; i < map._N_TILES; i++)
+		for (int j = 0; j < map._N_TILES; j++)
+			draw_tile(img, map._tiles[i][j], i, j);
+
+	cv::imshow("observed", img);
+	cv::waitKey(1);
+}
+
+
+vector<double>
+ParticleFilter::_get_cell_value_in_offline_map(int cell_linearized_position_in_inst_map, GridMapTile *tile, GridMap &map,
+                                               double cos_particle_th, double sin_particle_th, double particle_x, double particle_y)
+{
+	// cells' x and y position in the instantaneous map
+	int cell_y_tile = (cell_linearized_position_in_inst_map / tile->_n_fields_by_cell) / tile->_w;
+	int cell_x_tile = (cell_linearized_position_in_inst_map / tile->_n_fields_by_cell) % tile->_w;
+
+	// cell position in meters assuming the origin is in the car
+	double dy = cell_y_tile * tile->_m_by_pixel + tile->_yo;
+	double dx = cell_x_tile * tile->_m_by_pixel + tile->_xo;
+
+	// point position in the world
+	double wx = (int) (dx * cos_particle_th - dy * sin_particle_th + particle_x);
+	double wy = (int) (dx * sin_particle_th + dy * cos_particle_th + particle_y);
+
+	return map.read_cell(wx, wy);
+}
+
+
+double
+ParticleFilter::_weight_between_cells(double *inst_cell, vector<double> &off_cell)
+{
+	if (_weight_type == WEIGHT_SEMANTIC)
+	{
+		int most_likely_class = 0;
+
+		for (int i = 1; i < (off_cell.size() - 2); i++)
+			if (off_cell[i] > off_cell[most_likely_class])
+				most_likely_class = i;
+
+		return _semantic_point_weight(most_likely_class, off_cell);
+	}
+	else if (_weight_type == WEIGHT_VISUAL)
+	{
+		return _image_point_weight(inst_cell[0], inst_cell[1], inst_cell[2], off_cell);
+	}
+//	else if (_weight_type == WEIGHT_GPS)
+//		_w[i] = _gps_weight(_p[i], gps);
+//	else if (_weight_type == WEIGHT_ECC)
+//		_w[i] = _ecc_weight(transformed_cloud, map);
+	else
+		exit(printf("Error: unknown type of particle weighting.\n"));
+}
+
+
+double
+ParticleFilter::_compute_particle_weight(GridMap &instantaneous_map, GridMap &map, Pose2d &gps, Pose2d &particle_pose)
+{
+	double particle_weight = 0.0;
+
+	// computed once for efficiency
+	double sin_th = sin(particle_pose.th);
+	double cos_th = cos(particle_pose.th);
+
+	// for each tile
+	for (int i = 0; i < map._N_TILES; i++)
+	{
+		for (int j = 0; j < map._N_TILES; j++)
+		{
+			GridMapTile *tile = instantaneous_map._tiles[i][j];
+
+			// for each observed cell in the tile
+			for (const int& cell_linearized_position_in_inst_map : tile->_observed_cells)
+			{
+				// cell in instantaneuos map
+				double *inst_cell = &(tile->_map[cell_linearized_position_in_inst_map]);
+
+				// cell in offline map
+				vector<double> off_cell = _get_cell_value_in_offline_map(cell_linearized_position_in_inst_map,
+				                                                         tile, map, sin_th, cos_th,
+				                                                         particle_pose.x, particle_pose.y);
+
+				particle_weight += _weight_between_cells(inst_cell, off_cell);
+
+			}
+		}
+	}
+
+	return particle_weight;
+}
+
+
+void
 ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 																 GridMap &map, Pose2d &gps, int *max_id, int *min_id)
 {
 	int i;
 	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
 
+	//view_observed_cells(map);
+	GridMap instantaneous_map("/tmp/", map._tile_height_meters,
+	                          map._tile_width_meters, map.m_by_pixels,
+	                					map._map_type);
+
+	instantaneous_map.reload(0, 0);
+	for (i = 0; i < cloud->size(); i++)
+		instantaneous_map.add_point(cloud->at(i));
+
 	// #pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
 	for (i = 0; i < _n; i++)
 	{
-		transformed_cloud->clear();
-		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
+		//transformed_cloud->clear();
+		//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
 		//transform_pointcloud(cloud, transformed_cloud, _p[i], vel2car, v, phi);
-
-		if (_weight_type == WEIGHT_SEMANTIC)
-			_w[i] = _semantic_weight(transformed_cloud, map);
-		else if (_weight_type == WEIGHT_VISUAL)
-			_w[i] = _image_weight(transformed_cloud, map);
-		else if (_weight_type == WEIGHT_GPS)
-			_w[i] = _gps_weight(_p[i], gps);
-		else if (_weight_type == WEIGHT_ECC)
-			_w[i] = _ecc_weight(transformed_cloud, map);
-		else
-			exit(printf("Error: unknown type of particle weighting.\n"));
-
+		_w[i] = _compute_particle_weight(instantaneous_map, map, gps, _p[i]);
 		_p_bef[i] = _p[i];
 	}
 
@@ -450,11 +573,12 @@ ParticleFilter::_compute_weights(DataSample *sample, GridMap *map, SensorPreproc
 				for (int i = 0; i < _n; i++)
 				{
 					p = transform_point(particles_poses[i], points[j]);
+					vector<double> cell = map->read_cell(p);
 
 					if (_weight_type == WEIGHT_SEMANTIC)
-						_w[i] += _semantic_point_weight(p, map);
+						_w[i] += _semantic_point_weight(p.r, cell);
 					else if (_weight_type == WEIGHT_VISUAL)
-						_w[i] += _image_point_weight(p, map);
+						_w[i] += _image_point_weight(p.r, p.g, p.b, cell);
 				}
 
 				n_points++;

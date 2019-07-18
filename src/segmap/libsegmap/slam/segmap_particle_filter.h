@@ -79,8 +79,13 @@ public:
 	double _image_weight(pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
 	double _gps_weight(Pose2d &pose, Pose2d &gps);
 
-	double _semantic_point_weight(pcl::PointXYZRGB &point, GridMap *map);
-	double _image_point_weight(pcl::PointXYZRGB &point, GridMap *map);
+	double _compute_particle_weight(GridMap &instantaneous_map, GridMap &map, Pose2d &gps, Pose2d &particle_pose);
+	std::vector<double> _get_cell_value_in_offline_map(int cell_linearized_position_in_inst_map, GridMapTile *tile, GridMap &map,
+	                                                   double cos_particle_th, double sin_particle_th, double particle_x, double particle_y);
+	double _weight_between_cells(double *inst_cell, std::vector<double> &off_cell);
+
+	double _semantic_point_weight(int class_id, std::vector<double> &cell);
+	double _image_point_weight(double r, double g, double b, std::vector<double> &cell);
 
 	double _ecc_weight(pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
 
