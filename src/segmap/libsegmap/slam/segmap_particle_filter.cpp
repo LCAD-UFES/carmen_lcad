@@ -362,7 +362,7 @@ ParticleFilter::_weight_between_cells(double *inst_cell, vector<double> &off_cel
 	}
 	else if (_weight_type == WEIGHT_VISUAL)
 	{
-		return _image_point_weight(inst_cell[0], inst_cell[1], inst_cell[2], off_cell);
+		return _image_point_weight(inst_cell[2], inst_cell[1], inst_cell[0], off_cell);
 	}
 //	else if (_weight_type == WEIGHT_GPS)
 //		_w[i] = _gps_weight(_p[i], gps);
@@ -418,7 +418,7 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
 
 	//view_observed_cells(map);
-	GridMap instantaneous_map("/tmp/", map._tile_height_meters,
+	GridMap instantaneous_map("/tmp/local_map", map._tile_height_meters,
 	                          map._tile_width_meters, map.m_by_pixels,
 	                					map._map_type);
 
@@ -429,10 +429,11 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 	// #pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
 	for (i = 0; i < _n; i++)
 	{
-		//transformed_cloud->clear();
-		//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
-		//transform_pointcloud(cloud, transformed_cloud, _p[i], vel2car, v, phi);
-		_w[i] = _compute_particle_weight(instantaneous_map, map, gps, _p[i]);
+		transformed_cloud->clear();
+		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
+		_w[i] = _image_weight(transformed_cloud, map);
+		// _w[i] = _compute_particle_weight(instantaneous_map, map, gps, _p[i]);
+
 		_p_bef[i] = _p[i];
 	}
 
