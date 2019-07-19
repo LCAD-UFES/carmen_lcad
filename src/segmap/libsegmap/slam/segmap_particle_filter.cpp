@@ -329,19 +329,21 @@ view_observed_cells(GridMap &map)
 
 vector<double>
 ParticleFilter::_get_cell_value_in_offline_map(int cell_linearized_position_in_inst_map, GridMapTile *tile, GridMap &map,
-                                               double cos_particle_th, double sin_particle_th, double particle_x, double particle_y)
+                                               double sin_particle_th, double cos_particle_th, double particle_x, double particle_y)
 {
 	// cells' x and y position in the instantaneous map
 	int cell_y_tile = (cell_linearized_position_in_inst_map / tile->_n_fields_by_cell) / tile->_w;
 	int cell_x_tile = (cell_linearized_position_in_inst_map / tile->_n_fields_by_cell) % tile->_w;
 
 	// cell position in meters assuming the origin is in the car
-	double dy = cell_y_tile * tile->_m_by_pixel + tile->_yo;
-	double dx = cell_x_tile * tile->_m_by_pixel + tile->_xo;
+	// we sum half the cell under the assumption that the cell position is in its center.
+	double half_cell = map.m_by_pixels / 2.0;
+	double dy = cell_y_tile * tile->_m_by_pixel + tile->_yo + half_cell;
+	double dx = cell_x_tile * tile->_m_by_pixel + tile->_xo + half_cell;
 
 	// point position in the world
-	double wx = (int) (dx * cos_particle_th - dy * sin_particle_th + particle_x);
-	double wy = (int) (dx * sin_particle_th + dy * cos_particle_th + particle_y);
+	double wx = dx * cos_particle_th - dy * sin_particle_th + particle_x;
+	double wy = dx * sin_particle_th + dy * cos_particle_th + particle_y;
 
 	return map.read_cell(wx, wy);
 }
@@ -410,6 +412,26 @@ ParticleFilter::_compute_particle_weight(GridMap &instantaneous_map, GridMap &ma
 }
 
 
+cv::Mat
+view_point_cloud_as_image(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map)
+{
+	cv::Mat img = cv::Mat::zeros(map.height_meters * map.pixels_by_m, map.width_meters * map.pixels_by_m, CV_8UC3);
+
+	for (int i = 0; i < transformed_cloud->size(); i++)
+	{
+		PointXYZRGB point = transformed_cloud->at(i);
+
+		int x = (point.x - map.xo) * map.pixels_by_m;
+		int y = (point.y - map.yo) * map.pixels_by_m;
+
+		if (x >= 0 && x < img.cols && y >= 0 && y < img.rows)
+			img.data[3 * (y * img.cols + x) + 2] = 255;
+	}
+
+	return img;
+}
+
+
 void
 ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 																 GridMap &map, Pose2d &gps, int *max_id, int *min_id)
@@ -417,7 +439,6 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 	int i;
 	PointCloud<PointXYZRGB>::Ptr transformed_cloud(new PointCloud<PointXYZRGB>);
 
-	//view_observed_cells(map);
 	GridMap instantaneous_map("/tmp/local_map", map._tile_height_meters,
 	                          map._tile_width_meters, map.m_by_pixels,
 	                					map._map_type);
@@ -426,14 +447,16 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud,
 	for (i = 0; i < cloud->size(); i++)
 		instantaneous_map.add_point(cloud->at(i));
 
+	// view_observed_cells(instantaneous_map);
+
 	// #pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
 	for (i = 0; i < _n; i++)
 	{
-		transformed_cloud->clear();
-		transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
-		_w[i] = _image_weight(transformed_cloud, map);
-		// _w[i] = _compute_particle_weight(instantaneous_map, map, gps, _p[i]);
+		//transformed_cloud->clear();
+		//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
+		//_w[i] = _image_weight(transformed_cloud, map);
 
+		_w[i] = _compute_particle_weight(instantaneous_map, map, gps, _p[i]);
 		_p_bef[i] = _p[i];
 	}
 
