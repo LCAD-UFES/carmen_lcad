@@ -5,8 +5,9 @@ MODULE_COMMENT = Main programs
 
 LINK = g++ 
 
-CXXFLAGS += -fopenmp
-IFLAGS += -fopenmp
+CXXFLAGS += -fopenmp -pg
+IFLAGS += -fopenmp -pg
+LFLAGS += -pg
 
 CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-compare -std=c++11
 # Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11

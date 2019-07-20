@@ -49,7 +49,8 @@ GridMapTile::_initialize_map()
 				double *cell = &(_map[p]);
 
 				if (((_map_type == GridMapTile::TYPE_SEMANTIC) && (cell[_unknown.size() - 1] > 0.0)) ||
-						((_map_type == GridMapTile::TYPE_VISUAL) && (cell[3] > 1.0)))
+						((_map_type == GridMapTile::TYPE_VISUAL) && (cell[3] > 1.0)) ||
+						((_map_type == GridMapTile::TYPE_OCCUPANCY) && (cell[2] > 0.0)))
 					_observed_cells.insert(p);
 			}
 		}
@@ -90,6 +91,11 @@ GridMapTile::_initialize_derivated_values()
 		_n_fields_by_cell = 4;
 		_unknown = vector<double>(_n_fields_by_cell, 128.);
 		_unknown[3] = 1.;
+	}
+	else if (_map_type == GridMapTile::TYPE_OCCUPANCY)
+	{
+		_n_fields_by_cell = 2;
+		_unknown = vector<double>(_n_fields_by_cell, 0.0);
 	}
 	else
 		exit(printf("Map type '%d' not found.\n", (int) _map_type));
@@ -133,6 +139,8 @@ GridMapTile::type2str(MapType map_type)
 		return "semantic";
 	else if (map_type == TYPE_VISUAL)
 		return "visual";
+	else if (map_type == TYPE_OCCUPANCY)
+		return "occupancy";
 	else
 		exit(printf("Map type '%d' not found.\n", map_type));
 }
@@ -215,6 +223,18 @@ GridMapTile::add_point(PointXYZRGB &p)
 			// set the cell as observed.
 			_map[pos + (_n_fields_by_cell - 1)] = 1;
 		}
+		else if (_map_type == TYPE_OCCUPANCY)
+		{
+			if (p.r > 0.5)
+			{
+				// when we observe an obstacle we count it 5 times to 
+				// make it hard to be erased.
+				_map[pos] += 5;
+				_map[pos + 1] += 5;
+			}
+			else
+				_map[pos + 1]++;
+		}
 		else
 			exit(printf("Error: map_type '%d' not defined.\n", (int) _map_type));
 
@@ -269,6 +289,24 @@ GridMapTile::read_cell(double x_world, double y_world)
 }
 
 
+double*
+GridMapTile::read_cell_ref(double x_world, double y_world)
+{
+	int px, py, pos;
+
+	px = (x_world - _xo) * _pixels_by_m;
+	py = (y_world - _yo) * _pixels_by_m;
+
+	if (px >= 0 && px < _w && py >= 0 && py < _h)
+	{
+		pos = _n_fields_by_cell * (py * _w + px);
+		return (_map + pos);
+	}
+	else
+		return 0;
+}
+
+
 Scalar
 GridMapTile::cell2color(double *cell_vals)
 {
@@ -293,6 +331,19 @@ GridMapTile::cell2color(double *cell_vals)
 			color[0] = 128;
 			color[1] = 128;
 			color[2] = 128;
+		}
+	}
+	else if (_map_type == TYPE_OCCUPANCY)
+	{
+		if (cell_vals[_n_fields_by_cell - 1] == 0)
+		{
+			color[0] = 255;
+			color[1] = 0;
+			color[2] = 0;
+		}
+		else
+		{
+			color[0] = color[1] = color[2] = (unsigned char) (255 * (1.0 - cell_vals[0] / cell_vals[1]));
 		}
 	}
 	else
@@ -435,6 +486,138 @@ GridMap::add_point(PointXYZRGB &p)
 }
 
 
+
+double
+compute_expected_delta_ray(double h, double r1, double theta)
+{
+	double a = r1 * sin(acos(h / r1));
+	double alpha = asin(a / r1);
+	double expected_delta_ray = ((sin(alpha + theta) * h) / sin(M_PI / 2.0 + alpha + theta)) - a;
+	return (expected_delta_ray);
+}
+
+ 
+double
+compute_obstacle_evidence(SensorPreproc::CompletePointData &prev, SensorPreproc::CompletePointData &curr)
+{
+	// velodyne.z + sensor_board.z + (wheel_radius / 2.0)
+	// TODO: read it from param file.
+	const double sensor_height = 0.48 + 1.394 + 0.14;
+	double sigma = 0.45;
+
+	double measured_dray_floor = sqrt(pow(curr.car.x, 2) + pow(curr.car.y, 2)) - sqrt(pow(prev.car.x, 2) + pow(prev.car.y, 2));
+	double diff_vert_angle = normalize_theta(curr.v_angle - prev.v_angle);
+	double expected_dray_floor = compute_expected_delta_ray(sensor_height, prev.range, diff_vert_angle);
+	double obstacle_evidence = (expected_dray_floor - measured_dray_floor) / expected_dray_floor;
+
+	// if the obstacle evidence is higher than 0.4, the point is 
+	// classified as obstacle (return 1), else it is classified as free (return 0).
+	if (abs(obstacle_evidence) > 0.4) // valor ad-hoc
+		return 1;
+	else
+		return 0;
+
+	// Testa se tem um obstaculo com um buraco embaixo
+	// ??? Alberto's powerful black magic...
+	/* 
+	obstacle_evidence = (obstacle_evidence > 1.0)? 1.0: obstacle_evidence;
+	double p0 = exp(-1.0 / sigma);
+	double p_obstacle = (exp(-pow(1.0 - obstacle_evidence, 2) / sigma) - p0) / (1.0 - p0);
+	
+	if (p_obstacle > 1.0) p_obstacle = 1.0;
+	else if (p_obstacle < 0.0) p_obstacle = 0.0;
+	
+	return p_obstacle;
+	*/
+}
+
+
+void
+GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &points)
+{
+	int first_valid = -1;
+	int last_valid = -1;
+	int nearest_obstacle = -1;
+
+	double obstacle_prob;
+	std::vector<double> obstacle_probs;
+	PointXYZRGB point;
+
+	if (points[0].valid)
+	{
+		first_valid = 0;
+		last_valid = 0;
+	}
+
+	for (int i = 1; i < points.size(); i++)
+	{
+		if (points[i].valid)
+		{
+			if (first_valid == -1)
+				first_valid = i;
+			
+			if (i > last_valid)
+				last_valid = i;
+		}
+
+		if (points[i-1].valid && points[i].valid)
+		{
+			obstacle_prob = compute_obstacle_evidence(points[i-1], points[i]);
+			obstacle_probs.push_back(obstacle_prob);
+
+			if (obstacle_prob > 0.5 && nearest_obstacle == -1)
+				nearest_obstacle = i;
+
+			point = PointXYZRGB(points[i].world);
+			point.r = point.g = point.b = obstacle_prob;
+			add_point(point);
+		}
+	}
+
+	// raycast until the nearest cell that hit an obstacle
+	if ((first_valid >= 0) && (first_valid != last_valid))
+	{
+		int update_until_range_max = 0;
+
+		// if all points were classified as free.
+		if (nearest_obstacle == -1)
+		{
+			nearest_obstacle = last_valid;
+			update_until_range_max = 1;
+		}
+
+		double dx = points[nearest_obstacle].world.x - points[0].world.x;
+		double dy = points[nearest_obstacle].world.y - points[0].world.y;
+		double d = sqrt(pow(dx, 2) + pow(dy, 2));
+
+		double dx_cells = dx * pixels_by_m - pixels_by_m;
+		double dy_cells = dy * pixels_by_m - pixels_by_m;
+		double n_cells_in_line = sqrt(pow(dx_cells, 2) + pow(dy_cells, 2));
+
+		//printf("dx: %lf dy: %lf dxc: %lf dxy: %lf nc: %lf\n", dx, dy, dx_cells, dy_cells, n_cells_in_line);
+
+		dx /= n_cells_in_line;
+		dy /= n_cells_in_line;
+
+		//printf("after dx: %lf dy: %lf\n", dx, dy);
+
+		// if all points were classified as free, we 
+		// in increase the number of visited cells until MAX_RANGE.
+		if (update_until_range_max)
+			n_cells_in_line *= (MAX_RANGE / d);
+
+		for (int i = 0; i < (n_cells_in_line - 2); i++)
+		{
+			point.x = points[0].world.x + dx * i;
+			point.y = points[0].world.y + dy * i;
+			// set the point as free
+			point.r = point.g = point.b = 0;
+			add_point(point);
+		}
+	}
+}
+
+
 vector<double>
 GridMap::read_cell(PointXYZRGB &p)
 {
@@ -458,6 +641,24 @@ GridMap::read_cell(double x_world, double y_world)
 
 	//printf("Warning: trying to read a cell that is not in the current map tiles! Returning unknown.\n");
 	return _tiles[0][0]->_unknown;
+}
+
+
+double *
+GridMap::read_cell_ref(double x_world, double y_world)
+{
+	int i, j;
+
+	for (i = 0; i < _N_TILES; i++)
+	{
+		for (j = 0; j < _N_TILES; j++)
+		{
+			if (_tiles[i][j]->contains(x_world, y_world))
+				return _tiles[i][j]->read_cell_ref(x_world, y_world);
+		}
+	}
+
+	return 0;
 }
 
 
@@ -503,7 +704,6 @@ GridMap::save()
 }
 
 
-
 void
 update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc)
 {
@@ -511,10 +711,18 @@ update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc)
 
 	for (int i = 0; i < preproc.size(); i++)
 	{
-		vector<PointXYZRGB> points = preproc.next_points_in_world();
+		if (map->_map_type == GridMapTile::TYPE_OCCUPANCY)
+		{
+			std::vector<SensorPreproc::CompletePointData> points = preproc.next_points();
+			map->add_occupancy_shot(points);
+		}
+		else
+		{
+			vector<PointXYZRGB> points = preproc.next_points_in_world();
 
-		for (int j = 0; j < points.size(); j++)
-			map->add_point(points[j]);
+			for (int j = 0; j < points.size(); j++)
+				map->add_point(points[j]);
+		}
 	}
 }
 

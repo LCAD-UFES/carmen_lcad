@@ -7,9 +7,10 @@ MODULE_COMMENT = Classes and functions related to slam
 LINK = g++ 
 #SUBDIRS += hash_map
 
-CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-compare -std=c++11 
+CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-compare -std=c++11 -pg 
 # Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11
-IFLAGS += -std=c++11
+IFLAGS += -std=c++11 -pg
+LFLAGS += -pg
 
 IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ \
 	-I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`

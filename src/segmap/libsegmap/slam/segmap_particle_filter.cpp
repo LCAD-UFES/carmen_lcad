@@ -163,6 +163,15 @@ ParticleFilter::_image_point_weight(double r, double g, double b, vector<double>
 
 
 double
+ParticleFilter::_image_point_weight(double r, double g, double b, double *cell)
+{
+	return (-pow(((r - cell[2]) / 255.) / _color_std_r, 2))
+				 + (-pow(((g - cell[1]) / 255.) / _color_std_g, 2))
+				 + (-pow(((b - cell[0]) / 255.) / _color_std_b, 2));
+}
+
+
+double
 ParticleFilter::_semantic_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map)
 {
 	double unnorm_log_prob = 0.;
@@ -327,7 +336,7 @@ view_observed_cells(GridMap &map)
 }
 
 
-vector<double>
+double *
 ParticleFilter::_get_cell_value_in_offline_map(int cell_linearized_position_in_inst_map, GridMapTile *tile, GridMap &map,
                                                double sin_particle_th, double cos_particle_th, double particle_x, double particle_y)
 {
@@ -345,22 +354,25 @@ ParticleFilter::_get_cell_value_in_offline_map(int cell_linearized_position_in_i
 	double wx = dx * cos_particle_th - dy * sin_particle_th + particle_x;
 	double wy = dx * sin_particle_th + dy * cos_particle_th + particle_y;
 
-	return map.read_cell(wx, wy);
+	//return map.read_cell(wx, wy);
+	return map.read_cell_ref(wx, wy);
 }
 
 
 double
-ParticleFilter::_weight_between_cells(double *inst_cell, vector<double> &off_cell)
+ParticleFilter::_weight_between_cells(double *inst_cell, double *off_cell)
 {
 	if (_weight_type == WEIGHT_SEMANTIC)
 	{
 		int most_likely_class = 0;
 
+		/*
 		for (int i = 1; i < (off_cell.size() - 2); i++)
 			if (off_cell[i] > off_cell[most_likely_class])
 				most_likely_class = i;
 
 		return _semantic_point_weight(most_likely_class, off_cell);
+		*/
 	}
 	else if (_weight_type == WEIGHT_VISUAL)
 	{
@@ -398,9 +410,12 @@ ParticleFilter::_compute_particle_weight(GridMap &instantaneous_map, GridMap &ma
 				double *inst_cell = &(tile->_map[cell_linearized_position_in_inst_map]);
 
 				// cell in offline map
-				vector<double> off_cell = _get_cell_value_in_offline_map(cell_linearized_position_in_inst_map,
+				double *off_cell = _get_cell_value_in_offline_map(cell_linearized_position_in_inst_map,
 				                                                         tile, map, sin_th, cos_th,
 				                                                         particle_pose.x, particle_pose.y);
+
+				if (off_cell == 0)
+					continue;
 
 				particle_weight += _weight_between_cells(inst_cell, off_cell);
 

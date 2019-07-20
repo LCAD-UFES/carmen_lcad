@@ -308,6 +308,7 @@ SensorPreproc::next_points()
 		p.v_angle = shot->v_angles[i];
 		p.range = shot->ranges[i];
 		p.raw_intensity = shot->intensities[i];
+		p.valid = 0;
 
 		_compute_point_in_different_references(p.h_angle, p.v_angle, p.range,
 		                                       &_p_sensor, &_p_car, &_p_world);
@@ -326,7 +327,7 @@ SensorPreproc::next_points()
 				p.world.r = p.car.r = p.sensor.r;
 				p.world.g = p.car.g = p.sensor.g;
 				p.world.b = p.car.b = p.sensor.b;
-
+				p.valid = 1;
 				points.push_back(p);
 			}
 		}

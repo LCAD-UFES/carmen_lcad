@@ -29,6 +29,8 @@ parse_intensity_mode(string map_type)
 GridMapTile::MapType
 map_type_from_intensity_mode(SensorPreproc::IntensityMode i_mode)
 {
+	return GridMapTile::TYPE_OCCUPANCY;
+	
 	if (i_mode == SensorPreproc::SEMANTIC)
 		return GridMapTile::TYPE_SEMANTIC;
 	else

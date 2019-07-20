@@ -36,10 +36,11 @@ write_points_to_file(FILE *fptr, SensorPreproc &preproc)
 		{
 			point = shot[j];
 
-			fprintf(fptr, "%d %d %lf %lf %lf %lf %lf %d %d\n",
-							point.laser_id, point.raw_intensity, point.range, point.h_angle,
-							point.world.x, point.world.y, point.world.z,
-							(int) (point.world.x), (int)(point.world.y / 0.2));
+			if (point.valid)
+				fprintf(fptr, "%d %d %lf %lf %lf %lf %lf %d %d\n",
+								point.laser_id, point.raw_intensity, point.range, point.h_angle,
+								point.world.x, point.world.y, point.world.z,
+								(int) (point.world.x), (int)(point.world.y / 0.2));
 		}
 	}
 }

@@ -25,7 +25,8 @@ public:
 	enum MapType
 	{
 		TYPE_SEMANTIC = 0,
-		TYPE_VISUAL
+		TYPE_VISUAL,
+		TYPE_OCCUPANCY,
 	};
 
 	// make these attributes private
@@ -62,6 +63,9 @@ public:
 	bool contains(double x, double y);
 	std::vector<double> read_cell(pcl::PointXYZRGB &p);
 	std::vector<double> read_cell(double x_world, double y_world);
+
+	double *read_cell_ref(double x_world, double y_world);
+
 	cv::Mat to_image();
 };
 
@@ -94,9 +98,15 @@ public:
 	GridMapTile* _reload_tile(double x, double y);
 	void _reload_tiles(double robot_x, double robot_y);
 	void reload(double robot_x, double robot_y);
+
 	void add_point(pcl::PointXYZRGB &p);
+	void add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &points);
+
 	std::vector<double> read_cell(pcl::PointXYZRGB &p);
 	std::vector<double> read_cell(double x_world, double y_world);
+
+	double *read_cell_ref(double x_world, double y_world);
+
 	cv::Mat to_image();
 	void save();
 

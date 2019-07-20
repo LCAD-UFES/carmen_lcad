@@ -42,6 +42,8 @@ public:
 		pcl::PointXYZRGB world;
 		pcl::PointXYZRGB car;
 		pcl::PointXYZRGB sensor;
+
+		int valid;
 	};
 
 	SensorPreproc(CarmenLidarLoader *vloader,
@@ -113,6 +115,7 @@ public:
 	Eigen::Matrix<double, 3, 3> _r3x3;
 	Eigen::Matrix<double, 4, 4> _r4x4;
 
+	// point in different coordinate systems
 	Eigen::Matrix<double, 4, 1> _p_sensor;
 	Eigen::Matrix<double, 4, 1> _p_car;
 	Eigen::Matrix<double, 4, 1> _p_cam;
