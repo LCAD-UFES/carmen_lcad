@@ -446,10 +446,9 @@ estimate_displacements_with_particle_filter(NewCarmenDataset &target_dataset,
 								args.get<double>("tile_size"),
 								args.get<double>("tile_size"),
 								args.get<double>("resolution"),
-								GridMapTile::TYPE_VISUAL, 1);
+								GridMapTile::TYPE_REFLECTIVITY, 1);
 
 		ParticleFilter pf(args.get<int>("n_particles"),
-		                  ParticleFilter::WEIGHT_VISUAL,
 											args.get<double>("gps_xy_std"),
 											args.get<double>("gps_xy_std"),
 											degrees_to_radians(args.get<double>("gps_h_std")),
@@ -460,7 +459,11 @@ estimate_displacements_with_particle_filter(NewCarmenDataset &target_dataset,
 											degrees_to_radians(args.get<double>("odom_h_std")),
 											args.get<double>("color_red_std"),
 											args.get<double>("color_green_std"),
-											args.get<double>("color_blue_std"));
+											args.get<double>("color_blue_std"),
+											args.get<double>("reflectivity_std")
+											);
+
+		pf.set_use_map_weight(1);
 
 		run_pf_step(target_dataset,
 		            dataset_to_adjust,
@@ -510,16 +513,15 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 							args.get<double>("tile_size"),
 							args.get<double>("tile_size"),
 							args.get<double>("resolution"),
-							GridMapTile::TYPE_VISUAL, 1);
+							GridMapTile::TYPE_REFLECTIVITY, 1);
 
 	GridMap map_for_viewing(map_path,
 													args.get<double>("tile_size"),
 													args.get<double>("tile_size"),
 													args.get<double>("resolution"),
-													GridMapTile::TYPE_VISUAL, 1);
+													GridMapTile::TYPE_REFLECTIVITY, 1);
 
 	ParticleFilter pf(args.get<int>("n_particles"),
-										ParticleFilter::WEIGHT_VISUAL,
 										args.get<double>("gps_xy_std"),
 										args.get<double>("gps_xy_std"),
 										degrees_to_radians(args.get<double>("gps_h_std")),
@@ -530,7 +532,11 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 										degrees_to_radians(args.get<double>("odom_h_std")),
 										args.get<double>("color_red_std"),
 										args.get<double>("color_green_std"),
-										args.get<double>("color_blue_std"));
+										args.get<double>("color_blue_std"),
+										args.get<double>("reflectivity_std")
+										);
+
+	pf.set_use_map_weight(1);
 
 	cv::Mat pf_img;
 	PointCloudViewer viewer;
@@ -674,7 +680,7 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 							args.get<double>("tile_size"),
 							args.get<double>("tile_size"),
 							args.get<double>("resolution"),
-							GridMapTile::TYPE_VISUAL, 0);
+							GridMapTile::TYPE_REFLECTIVITY, 0);
 
 	/*
 	if (map_has_to_be_created)
@@ -686,7 +692,6 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 	*/
 
 	ParticleFilter pf(args.get<int>("n_particles"),
-										ParticleFilter::WEIGHT_VISUAL,
 										args.get<double>("gps_xy_std"),
 										args.get<double>("gps_xy_std"),
 										degrees_to_radians(args.get<double>("gps_h_std")),
@@ -697,7 +702,11 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 										degrees_to_radians(args.get<double>("odom_h_std")),
 										args.get<double>("color_red_std"),
 										args.get<double>("color_green_std"),
-										args.get<double>("color_blue_std"));
+										args.get<double>("color_blue_std"),
+										args.get<double>("reflectivity_std")
+										);
+
+	pf.set_use_map_weight(1);
 
 	cv::Mat pf_img;
 	PointCloudViewer viewer;

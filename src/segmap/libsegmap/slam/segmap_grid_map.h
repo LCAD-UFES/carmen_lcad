@@ -27,6 +27,7 @@ public:
 		TYPE_SEMANTIC = 0,
 		TYPE_VISUAL,
 		TYPE_OCCUPANCY,
+		TYPE_REFLECTIVITY,
 	};
 
 	// make these attributes private

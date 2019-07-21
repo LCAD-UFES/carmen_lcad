@@ -16,8 +16,8 @@ offset_y = 0
 use_xsens = 1
 # Id of the gps to be used
 gps_id = 1
-# What type of information to assign to LiDAR rays intensity [remission | visual | semantic | bright]
-intensity_mode = remission
+# intensity mode [reflectivity, camera, semantic]
+intensity_mode = reflectivity
 # Flag to choose using the velodyne calibration or not.
 use_calib = 1
 # Flag for choosing to segment lane marks with threshold image processing.
@@ -43,11 +43,13 @@ v_thresh = 1
 # Distance to accumulate clouds
 dist_to_accumulate = 2
 # Number of particles
-n_particles = 30
+n_particles = 50
 # Flag to choose if GPS data should be used for weighting particles
 use_gps_weight = 0
 # Flag to choose if the map should be used for weighting particles
 use_map_weight = 1
+# Flag to choose if the ECC should be used for weighting particles
+use_ecc_weight = 0
 # Std of gps position (m)
 gps_xy_std = 0.5
 # Std of gps heading estimates (degrees)
@@ -61,11 +63,13 @@ odom_xy_std = 0.1
 # Std of dead reckoning heading estimates (degrees)
 odom_h_std = 0.5
 # Std of pixel color measurements
-color_red_std = 10
+color_red_std = 3
 # Std of pixel color measurements
-color_green_std = 10
+color_green_std = 3
 # Std of pixel color measurements
-color_blue_std = 10
+color_blue_std = 3
+# Std of pixel color measurements
+reflectivity_std = 3
 # Seed for pseudo-random number generator
 seed = 0
 # Frequency in which correction takes place [<= 1 for always correcting]
@@ -80,3 +84,5 @@ resolution = 0.2
 tile_size = 50
 # Path to save the maps
 map_path = /tmp/map
+# [semantic, colour, occupancy, reflectivity]
+map_type = reflectivity

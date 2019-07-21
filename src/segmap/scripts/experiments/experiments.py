@@ -21,11 +21,8 @@ experiments = [
 
 
 carmen_path = os.getenv("CARMEN_HOME")	 
-# raw | visual | semantic | remission | bright
-INTENSITY_MODE = "remission"
+INTENSITY_MODE = "reflectivity"
 DATA_DIR = "/dados/data2/"
-#PARAM_FILE = carmen_path + "/src/carmen-ford-fusion.ini"
-#GPS_TO_USE = 2
 PARAM_FILE = carmen_path + "/src/carmen-ford-escape.ini"
 GPS_TO_USE = 1
 

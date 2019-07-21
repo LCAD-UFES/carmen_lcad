@@ -16,7 +16,8 @@ LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization
 SOURCES = lidar_shot.cpp odom_calib_data.cpp synchronized_data_package.cpp \
 	segmap_pose2d.cpp segmap_conversions.cpp
 PUBLIC_INCLUDES = lidar_shot.h odom_calib_data.h synchronized_data_package.h \
-	segmap_pose2d.h segmap_definitions.h segmap_conversions.h segmap_colormaps.h
+	segmap_pose2d.h segmap_definitions.h segmap_conversions.h segmap_colormaps.h \
+	segmap_operation_mode.h
 PUBLIC_LIBRARIES = libsegmap_types.a
 PUBLIC_BINARIES = 
 TARGETS = libsegmap_types.a

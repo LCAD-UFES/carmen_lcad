@@ -139,7 +139,7 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
                              Matrix<double, 3, 4> projection,
                              Matrix<double, 4, 4> xsens2car,
                              int use_xsens,
-                             IntensityMode imode,
+                             IntensityMode intensity_mode,
                              std::string intensity_calib_path,
                              double ignore_above_threshold,
                              double ignore_below_threshold)
@@ -152,7 +152,7 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
 	_projection = projection;
 	_xsens2car = xsens2car;
 	_use_xsens = use_xsens;
-	_imode = imode;
+	_intensity_mode = intensity_mode;
 	_n_lidar_shots = 0;
 	_vel2car_inverse = _vel2car.inverse();
 
@@ -168,7 +168,6 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
 	//load_calibration_table_tf("poly_calib_table.txt", calibration_table_tf);
 
 	_lane_mark_detection_active = 0;
-
 	_use_semantic_remapping = 0;
 }
 
@@ -196,13 +195,13 @@ SensorPreproc::reinitialize(DataSample *sample)
 {
 	_vloader->reinitialize(sample->velodyne_path, sample->n_laser_shots);
 
-	if (_imode == COLOR)
+	if (_intensity_mode == CAMERA)
 	{
 		_img = read_img(sample);
 		_img_with_points = _img.clone();
 	}
 
-	else if (_imode == SEMANTIC)
+	else if (_intensity_mode == SEMANTIC)
 	{
 		_img = read_segmented_img(sample);
 		_img_with_points = segmented_image_view(_img);
@@ -576,18 +575,11 @@ void
 SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sensor, unsigned char raw_intensity, int *valid, int laser_id)
 {
 	// in INTENSITY mode, the point color is given by the intensity observed by the lidar.
-	if (_imode == INTENSITY || _imode == BRIGHT)
+	if (_intensity_mode == REFLECTIVITY)
 	{
 		unsigned char intensity = _get_calibrated_intensity(raw_intensity, p_sensor, laser_id);
 		//unsigned char intensity = _get_calibrated_intensity_tf(raw_intensity, p_sensor, laser_id);
-
-		if (_imode == BRIGHT)
-			intensity = _brighten(intensity, 2);
-
-		point->r = intensity;
-		point->g = intensity;
-		point->b = intensity;
-
+		point->r = point->g = point->b = intensity;
 		*valid = 1;
 	}
 
@@ -608,12 +600,8 @@ SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sen
 			point->g = _img.data[p + 1];
 			point->r = _img.data[p + 2];
 
-			if (_imode == SEMANTIC)
-			{
-				point->b = CityscapesObjectClassMapper::transform_object_class(point->b);
-				point->g = CityscapesObjectClassMapper::transform_object_class(point->g);
-				point->r = CityscapesObjectClassMapper::transform_object_class(point->r);
-			}
+			if (_intensity_mode == SEMANTIC)
+				point->b = point->g = point->r = CityscapesObjectClassMapper::transform_object_class(point->b);
 
 			circle(_img_with_points, Point(pos_pixel.x, pos_pixel.y), 2, Scalar(0, 0, 255), -1);
 		}

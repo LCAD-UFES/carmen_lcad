@@ -48,9 +48,12 @@ GridMapTile::_initialize_map()
 				int p = _n_fields_by_cell * (i * _w + j);
 				double *cell = &(_map[p]);
 
-				if (((_map_type == GridMapTile::TYPE_SEMANTIC) && (cell[_unknown.size() - 1] > 0.0)) ||
-						((_map_type == GridMapTile::TYPE_VISUAL) && (cell[3] > 1.0)) ||
-						((_map_type == GridMapTile::TYPE_OCCUPANCY) && (cell[2] > 0.0)))
+				if (
+					((_map_type == GridMapTile::TYPE_SEMANTIC) && (cell[_unknown.size() - 1] > 0.0)) ||
+					((_map_type == GridMapTile::TYPE_VISUAL) && (cell[3] > 1.0)) ||
+					((_map_type == GridMapTile::TYPE_OCCUPANCY) && (cell[2] > 2.0)) ||
+					((_map_type == GridMapTile::TYPE_REFLECTIVITY) && (cell[2] > 1.0)) 
+					)
 					_observed_cells.insert(p);
 			}
 		}
@@ -92,10 +95,19 @@ GridMapTile::_initialize_derivated_values()
 		_unknown = vector<double>(_n_fields_by_cell, 128.);
 		_unknown[3] = 1.;
 	}
+	else if (_map_type == GridMapTile::TYPE_REFLECTIVITY)
+	{
+		_n_fields_by_cell = 2;
+		_unknown = vector<double>(_n_fields_by_cell, 128.);
+		_unknown[1] = 1.;
+	}
 	else if (_map_type == GridMapTile::TYPE_OCCUPANCY)
 	{
 		_n_fields_by_cell = 2;
-		_unknown = vector<double>(_n_fields_by_cell, 0.0);
+		_unknown = vector<double>(2, 0.0);
+		// initialize cells with two readings with one occupied measurement.
+		_unknown[0] = 1;
+		_unknown[1] = 2;
 	}
 	else
 		exit(printf("Map type '%d' not found.\n", (int) _map_type));
@@ -141,6 +153,8 @@ GridMapTile::type2str(MapType map_type)
 		return "visual";
 	else if (map_type == TYPE_OCCUPANCY)
 		return "occupancy";
+	else if (map_type == TYPE_REFLECTIVITY)
+		return "reflectivity";
 	else
 		exit(printf("Map type '%d' not found.\n", map_type));
 }
@@ -209,6 +223,14 @@ GridMapTile::add_point(PointXYZRGB &p)
 			_map[pos + 1] = _map[pos + 1] * (1. - weight) + p.g * weight;
 			_map[pos + 2] = _map[pos + 2] * (1. - weight) + p.r * weight;
 			_map[pos + 3] += 1;
+		}
+		else if (_map_type == TYPE_REFLECTIVITY)
+		{
+			double weight;
+			weight = 1. / (double) _map[pos + 1];
+
+			_map[pos + 0] = _map[pos + 0] * (1. - weight) + p.r * weight;
+			_map[pos + 1] += 1;
 		}
 		else if (_map_type == TYPE_SEMANTIC)
 		{
@@ -311,43 +333,52 @@ Scalar
 GridMapTile::cell2color(double *cell_vals)
 {
 	Scalar color;
+	int cell_was_observed = 0;
 
 	if (_map_type == TYPE_VISUAL)
 	{
-		color[0] = (unsigned char) cell_vals[0];
-		color[1] = (unsigned char) cell_vals[1];
-		color[2] = (unsigned char) cell_vals[2];
+		if (cell_vals[_n_fields_by_cell - 1] > 1.0)
+		{
+			color[0] = (unsigned char) cell_vals[0];
+			color[1] = (unsigned char) cell_vals[1];
+			color[2] = (unsigned char) cell_vals[2];
+			cell_was_observed = 1;
+		}
+	}
+	else if (_map_type == TYPE_REFLECTIVITY)
+	{
+		if (cell_vals[1] > 1.0)
+		{
+			color[0] = color[1] = color[2] = cell_vals[0];
+			cell_was_observed = 1;
+		}
 	}
 	else if (_map_type == TYPE_SEMANTIC)
 	{
 		if (cell_vals[_n_fields_by_cell - 1])
 		{
 			Scalar rgb = _color_map.color(argmax(cell_vals, _n_fields_by_cell - 2));
-			Scalar bgr(rgb[2], rgb[1], rgb[0]);
-			return bgr;
-		}
-		else
-		{
-			color[0] = 128;
-			color[1] = 128;
-			color[2] = 128;
+			color = Scalar(rgb[2], rgb[1], rgb[0]);
+			cell_was_observed = 1;
 		}
 	}
 	else if (_map_type == TYPE_OCCUPANCY)
 	{
-		if (cell_vals[_n_fields_by_cell - 1] == 0)
-		{
-			color[0] = 255;
-			color[1] = 0;
-			color[2] = 0;
-		}
-		else
+		if (cell_vals[_n_fields_by_cell - 1] > 2.0)
 		{
 			color[0] = color[1] = color[2] = (unsigned char) (255 * (1.0 - cell_vals[0] / cell_vals[1]));
+			cell_was_observed = 1;
 		}
 	}
 	else
 		exit(printf("Error: map_type '%d' not defined.\n", (int) _map_type));
+
+	if (!cell_was_observed)
+	{
+		color[0] = 255;
+		color[1] = 0;
+		color[2] = 0;
+	}
 
 	return color;
 }
@@ -392,7 +423,7 @@ GridMap::GridMap(string tiles_dir, double tile_height_meters,
 	_map_type = map_type;
 	_save_maps = save_maps;
 
-	if (!boost::filesystem::exists(tiles_dir))
+	if (save_maps && !boost::filesystem::exists(tiles_dir))
 		boost::filesystem::create_directory(tiles_dir);
 
 	for (int i = 0; i < _N_TILES; i++)
@@ -503,7 +534,6 @@ compute_obstacle_evidence(SensorPreproc::CompletePointData &prev, SensorPreproc:
 	// velodyne.z + sensor_board.z + (wheel_radius / 2.0)
 	// TODO: read it from param file.
 	const double sensor_height = 0.48 + 1.394 + 0.14;
-	double sigma = 0.45;
 
 	double measured_dray_floor = sqrt(pow(curr.car.x, 2) + pow(curr.car.y, 2)) - sqrt(pow(prev.car.x, 2) + pow(prev.car.y, 2));
 	double diff_vert_angle = normalize_theta(curr.v_angle - prev.v_angle);
@@ -520,6 +550,7 @@ compute_obstacle_evidence(SensorPreproc::CompletePointData &prev, SensorPreproc:
 	// Testa se tem um obstaculo com um buraco embaixo
 	// ??? Alberto's powerful black magic...
 	/* 
+	double sigma = 0.45;
 	obstacle_evidence = (obstacle_evidence > 1.0)? 1.0: obstacle_evidence;
 	double p0 = exp(-1.0 / sigma);
 	double p_obstacle = (exp(-pow(1.0 - obstacle_evidence, 2) / sigma) - p0) / (1.0 - p0);

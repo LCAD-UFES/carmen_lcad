@@ -17,19 +17,18 @@ class SensorPreproc
 {
 public:
 
-	enum SensorReference
-	{
-		SENSOR_REFERENCE,
-		CAR_REFERENCE,
-		WORLD_REFERENCE
-	};
-
 	enum IntensityMode
 	{
-		INTENSITY = 0,
-		COLOR,
-		SEMANTIC,
-		BRIGHT,
+		REFLECTIVITY = 0,
+		CAMERA,
+		SEMANTIC, 
+	};
+
+	enum SensorReference
+	{
+		SENSOR_REFERENCE = 0,
+		CAR_REFERENCE,
+		WORLD_REFERENCE
 	};
 
 	class CompletePointData
@@ -54,7 +53,7 @@ public:
 								Eigen::Matrix<double, 3, 4> projection,
 								Eigen::Matrix<double, 4, 4> xsens2car,
 								int use_xsens,
-								IntensityMode imode = INTENSITY,
+								IntensityMode sync_sensor = REFLECTIVITY,
 								std::string intensity_calib_path = "none",
 								double ignore_above_threshold = DBL_MAX,
 								double ignore_below_threshold = -DBL_MAX);
@@ -75,7 +74,7 @@ public:
 
 	void set_lane_mark_detection(int on_or_off) { _lane_mark_detection_active = on_or_off; }
 
-	IntensityMode _imode;
+	IntensityMode _intensity_mode;
 
 	cv::Mat read_img(DataSample *sample) { return _iloader->load(sample); }
 	cv::Mat read_segmented_img(DataSample *sample);
