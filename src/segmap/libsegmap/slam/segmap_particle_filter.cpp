@@ -212,6 +212,13 @@ ParticleFilter::_reflectivity_point_weight(double reflectivity, vector<double> &
 
 
 double
+ParticleFilter::_occupancy_point_weight(double is_obstacle, vector<double> &cell)
+{
+	return _occupancy_point_weight(is_obstacle, cell.data());
+}
+
+
+double
 ParticleFilter::_reflectivity_point_weight(double reflectivity, double *cell)
 {
 	return -pow(((reflectivity - cell[0]) / 255.) / _reflectivity_std, 2);
@@ -224,6 +231,28 @@ ParticleFilter::_image_point_weight(double r, double g, double b, double *cell)
 	return (-pow(((r - cell[2]) / 255.) / _color_std_r, 2))
 				 + (-pow(((g - cell[1]) / 255.) / _color_std_g, 2))
 				 + (-pow(((b - cell[0]) / 255.) / _color_std_b, 2));
+}
+
+
+double
+ParticleFilter::_occupancy_point_weight(double is_obstacle, double *cell)
+{
+	double p = 0.5; 
+
+	if (cell[1] > 0)
+	{
+		// prob of measuring an obstacle
+		p = (cell[0] / cell[1]);
+		
+		// if the measurement is not an obstacle, we return the opposite prob.
+		if (!is_obstacle)
+			p = 1 - p;
+	}
+
+	// just to prevent numerical instabilities.
+	if (p == 0) p = 1e-6;
+
+	return log(p);
 }
 
 
@@ -450,6 +479,11 @@ ParticleFilter::_weight_between_cells(double *inst_cell, double *off_cell, GridM
 	{
 		return _reflectivity_point_weight(inst_cell[0], off_cell);
 	}
+	else if (map_type == GridMapTile::TYPE_OCCUPANCY)
+	{
+		return _occupancy_point_weight(inst_cell[0], off_cell);
+	}
+
 //	else if (_weight_type == WEIGHT_GPS)
 //		_w[i] = _gps_weight(_p[i], gps);
 //	else if (_weight_type == WEIGHT_ECC)

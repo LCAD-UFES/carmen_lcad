@@ -195,7 +195,7 @@ SensorPreproc::reinitialize(DataSample *sample)
 {
 	_vloader->reinitialize(sample->velodyne_path, sample->n_laser_shots);
 
-	if (_intensity_mode == CAMERA)
+	if (_intensity_mode == COLOUR)
 	{
 		_img = read_img(sample);
 		_img_with_points = _img.clone();

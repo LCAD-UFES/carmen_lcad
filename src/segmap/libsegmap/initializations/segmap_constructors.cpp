@@ -85,7 +85,7 @@ create_dataset(string log_path, CommandLineArguments &args, string pose_mode)
 	SensorPreproc::IntensityMode i_mode;
 	i_mode = parse_intensity_mode(intensity_mode);
 
-	if (i_mode == SensorPreproc::CAMERA || i_mode == SensorPreproc::SEMANTIC)
+	if (i_mode == SensorPreproc::COLOUR || i_mode == SensorPreproc::SEMANTIC)
 		sync_sensor = NewCarmenDataset::SYNC_BY_CAMERA;
 	else
 		sync_sensor = NewCarmenDataset::SYNC_BY_VELODYNE;
@@ -126,7 +126,7 @@ create_sensor_preproc(CommandLineArguments &args,
 	double above = args.get<double>("ignore_above_threshold");
 	double below = args.get<double>("ignore_below_threshold");
 
-//	if (i_mode == SensorPreproc::SEMANTIC || i_mode == SensorPreproc::CAMERA)
+//	if (i_mode == SensorPreproc::SEMANTIC || i_mode == SensorPreproc::COLOUR)
 //	{
 //		above = DBL_MAX;
 //		below = -DBL_MAX;

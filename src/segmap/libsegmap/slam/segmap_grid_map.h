@@ -82,6 +82,7 @@ public:
 	int _middle_tile;
 	GridMapTile::MapType _map_type;
 	int _save_maps;
+	int _map_initialized;
 
 	double m_by_pixels;
 	double pixels_by_m;
@@ -111,6 +112,7 @@ public:
 	cv::Mat to_image();
 	void save();
 
+	void _check_if_map_was_initialized();
 	void _free_tiles();
 };
 

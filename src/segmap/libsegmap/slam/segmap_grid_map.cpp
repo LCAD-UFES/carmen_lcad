@@ -435,6 +435,8 @@ GridMap::GridMap(string tiles_dir, double tile_height_meters,
 	height_meters = _tile_height_meters * _N_TILES;
 	width_meters = _tile_width_meters * _N_TILES;
 	xo = yo = 0;
+
+	_map_initialized = 0;
 }
 
 
@@ -495,12 +497,24 @@ GridMap::reload(double robot_x, double robot_y)
 
 	if (!_tiles[_middle_tile][_middle_tile]->contains(robot_x, robot_y))
 		_reload_tiles(robot_x, robot_y);
+	
+	_map_initialized = 1;
+}
+
+
+void
+GridMap::_check_if_map_was_initialized()
+{
+	if (!_map_initialized)
+		exit(printf("Error: initialize the map using the method reload before using it.\n"));
 }
 
 
 void
 GridMap::add_point(PointXYZRGB &p)
 {
+	_check_if_map_was_initialized();
+
 	int i, j;
 
 	for (i = 0; i < _N_TILES; i++)
@@ -566,6 +580,8 @@ compute_obstacle_evidence(SensorPreproc::CompletePointData &prev, SensorPreproc:
 void
 GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &points)
 {
+	_check_if_map_was_initialized();
+
 	int first_valid = -1;
 	int last_valid = -1;
 	int nearest_obstacle = -1;
@@ -654,6 +670,7 @@ GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &point
 vector<double>
 GridMap::read_cell(PointXYZRGB &p)
 {
+	_check_if_map_was_initialized();
 	return read_cell(p.x, p.y);
 }
 
@@ -661,6 +678,8 @@ GridMap::read_cell(PointXYZRGB &p)
 vector<double>
 GridMap::read_cell(double x_world, double y_world)
 {
+	_check_if_map_was_initialized();
+
 	int i, j;
 
 	for (i = 0; i < _N_TILES; i++)
@@ -680,6 +699,8 @@ GridMap::read_cell(double x_world, double y_world)
 double *
 GridMap::read_cell_ref(double x_world, double y_world)
 {
+	_check_if_map_was_initialized();
+
 	int i, j;
 
 	for (i = 0; i < _N_TILES; i++)
@@ -698,6 +719,8 @@ GridMap::read_cell_ref(double x_world, double y_world)
 Mat
 GridMap::to_image()
 {
+	_check_if_map_was_initialized();
+
 	Mat middle_tile = _tiles[1][1]->to_image();
 	int h = middle_tile.rows;
 	int w = middle_tile.cols;

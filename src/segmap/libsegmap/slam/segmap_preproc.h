@@ -20,7 +20,7 @@ public:
 	enum IntensityMode
 	{
 		REFLECTIVITY = 0,
-		CAMERA,
+		COLOUR,
 		SEMANTIC, 
 	};
 

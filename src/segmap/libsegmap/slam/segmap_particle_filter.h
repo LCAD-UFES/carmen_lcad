@@ -90,16 +90,16 @@ public:
 	double _semantic_point_weight(int class_id, std::vector<double> &cell);
 	double _image_point_weight(double r, double g, double b, std::vector<double> &cell);
 	double _reflectivity_point_weight(double reflectivity, std::vector<double> &cell);
-	
+	double _occupancy_point_weight(double is_obstacle, std::vector<double> &cell);
+
 	double _image_point_weight(double r, double g, double b, double *cell);
 	double _reflectivity_point_weight(double reflectivity, double *cell);
 	double _semantic_point_weight(int class_id, double *cell, int n_classes);
-
+	double _occupancy_point_weight(double is_obstacle, double *cell);
 
 	void _reset_histograms();
 	void _update_histogram(double *inst_cell, double *off_cell, GridMapTile::MapType map_type);
 	double _compute_log_ecc_from_histograms();
-
 
 	int _ecc_pixel_step;
 	int _ecc_n_bins;

@@ -15,8 +15,8 @@ parse_intensity_mode(string intensity_mode)
 {
 	if (intensity_mode.compare("reflectivity") == 0)
 		return SensorPreproc::REFLECTIVITY;
-	else if (intensity_mode.compare("camera") == 0)
-		return SensorPreproc::CAMERA;
+	else if (intensity_mode.compare("colour") == 0)
+		return SensorPreproc::COLOUR;
 	else if (intensity_mode.compare("semantic") == 0)
 		return SensorPreproc::SEMANTIC;
 	else
@@ -123,7 +123,7 @@ add_default_sensor_preproc_args(CommandLineArguments &args)
 	args.add<double>("offset_y", "Offset to subtract the pose (y-coord)", 0); //-363560.975411);
 	args.add<int>("use_xsens,x", "Whether or not to use pitch, and roll angles from xsens", 1);
 	args.add<int>("gps_id", "Id of the gps to be used", 1);
-	args.add<string>("intensity_mode,i", "intensity mode [reflectivity, camera, semantic]", "reflectivity");
+	args.add<string>("intensity_mode,i", "intensity mode [reflectivity, colour, semantic]", "reflectivity");
 	args.add<int>("use_calib", "Flag to choose using the velodyne calibration or not.", 1);
 	args.add<int>("segment_lane_marks", "Flag for choosing to segment lane marks with threshold image processing.", 0);
 	args.add<double>("camera_latency", "Camera latency in seconds", 0.0);
