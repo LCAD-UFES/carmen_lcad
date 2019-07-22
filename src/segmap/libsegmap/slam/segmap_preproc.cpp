@@ -211,7 +211,7 @@ SensorPreproc::reinitialize(DataSample *sample)
 	_n_lidar_shots = sample->n_laser_shots;
 
 	Pose2d step(0, 0, 0);
-	//ackerman_motion_model(step, sample->v, sample->phi, TIME_SPENT_IN_EACH_SCAN);
+	ackerman_motion_model(step, sample->v, sample->phi, TIME_SPENT_IN_EACH_SCAN);
 	_motion_correction_step = Pose2d::to_matrix(step);
 
 	_motion_correction = Pose2d::to_matrix(Pose2d(0, 0, 0));
@@ -601,7 +601,7 @@ SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sen
 			point->r = _img.data[p + 2];
 
 			if (_intensity_mode == SEMANTIC)
-				point->b = point->g = point->r = CityscapesObjectClassMapper::transform_object_class(point->b);
+				point->b = point->g = point->r = CityscapesObjectClassMapper::transform_object_class(point->r);
 
 			circle(_img_with_points, Point(pos_pixel.x, pos_pixel.y), 2, Scalar(0, 0, 255), -1);
 		}

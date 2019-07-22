@@ -104,7 +104,7 @@ GridMapTile::_initialize_derivated_values()
 	else if (_map_type == GridMapTile::TYPE_OCCUPANCY)
 	{
 		_n_fields_by_cell = 2;
-		_unknown = vector<double>(2, 0.0);
+		_unknown = vector<double>(_n_fields_by_cell, 0.0);
 		// initialize cells with two readings with one occupied measurement.
 		_unknown[0] = 1;
 		_unknown[1] = 2;
@@ -533,7 +533,7 @@ compute_obstacle_evidence(SensorPreproc::CompletePointData &prev, SensorPreproc:
 {
 	// velodyne.z + sensor_board.z + (wheel_radius / 2.0)
 	// TODO: read it from param file.
-	const double sensor_height = 0.48 + 1.394 + 0.14;
+	const double sensor_height = 2.152193;
 
 	double measured_dray_floor = sqrt(pow(curr.car.x, 2) + pow(curr.car.y, 2)) - sqrt(pow(prev.car.x, 2) + pow(prev.car.y, 2));
 	double diff_vert_angle = normalize_theta(curr.v_angle - prev.v_angle);
@@ -617,12 +617,13 @@ GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &point
 			update_until_range_max = 1;
 		}
 
-		double dx = points[nearest_obstacle].world.x - points[0].world.x;
-		double dy = points[nearest_obstacle].world.y - points[0].world.y;
+		double dx = points[nearest_obstacle].world.x - points[first_valid].world.x;
+		double dy = points[nearest_obstacle].world.y - points[first_valid].world.y;
 		double d = sqrt(pow(dx, 2) + pow(dy, 2));
 
-		double dx_cells = dx * pixels_by_m - pixels_by_m;
-		double dy_cells = dy * pixels_by_m - pixels_by_m;
+		// the -2 is to prevent raycasting over the cell that contains an obstacle
+		double dx_cells = dx * pixels_by_m - 2;
+		double dy_cells = dy * pixels_by_m - 2;
 		double n_cells_in_line = sqrt(pow(dx_cells, 2) + pow(dy_cells, 2));
 
 		//printf("dx: %lf dy: %lf dxc: %lf dxy: %lf nc: %lf\n", dx, dy, dx_cells, dy_cells, n_cells_in_line);
@@ -637,10 +638,11 @@ GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &point
 		if (update_until_range_max)
 			n_cells_in_line *= (MAX_RANGE / d);
 
+		// the -2 is to prevent raycasting over the cell that contains an obstacle.
 		for (int i = 0; i < (n_cells_in_line - 2); i++)
 		{
-			point.x = points[0].world.x + dx * i;
-			point.y = points[0].world.y + dy * i;
+			point.x = points[first_valid].world.x + dx * i;
+			point.y = points[first_valid].world.y + dy * i;
 			// set the point as free
 			point.r = point.g = point.b = 0;
 			add_point(point);
