@@ -285,7 +285,7 @@ SensorPreproc::next_points_in_world()
 
 // how to prevent this method of being a copy of _next_points?
 std::vector<SensorPreproc::CompletePointData>
-SensorPreproc::next_points()
+SensorPreproc::next_points_for_occupancy_mapping()
 {
 	int valid;
 	LidarShot *shot;
@@ -322,14 +322,13 @@ SensorPreproc::next_points()
 			_adjust_intensity(&p.sensor, _p_sensor, p.raw_intensity, &valid, i);
 
 			if (valid)
-			{
-				p.world.r = p.car.r = p.sensor.r;
-				p.world.g = p.car.g = p.sensor.g;
-				p.world.b = p.car.b = p.sensor.b;
 				p.valid = 1;
-				points.push_back(p);
-			}
 		}
+
+		p.world.r = p.car.r = p.sensor.r;
+		p.world.g = p.car.g = p.sensor.g;
+		p.world.b = p.car.b = p.sensor.b;
+		points.push_back(p);
 	}
 
 	_motion_correction *= _motion_correction_step;

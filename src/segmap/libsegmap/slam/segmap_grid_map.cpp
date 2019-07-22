@@ -582,6 +582,8 @@ GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &point
 {
 	_check_if_map_was_initialized();
 
+	assert(points.size() == 32);
+
 	int first_valid = -1;
 	int last_valid = -1;
 	int nearest_obstacle = -1;
@@ -607,9 +609,9 @@ GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &point
 				last_valid = i;
 		}
 
-		if (points[i-1].valid && points[i].valid)
+		if (points[i - 1].valid && points[i].valid)
 		{
-			obstacle_prob = compute_obstacle_evidence(points[i-1], points[i]);
+			obstacle_prob = compute_obstacle_evidence(points[i - 1], points[i]);
 			obstacle_probs.push_back(obstacle_prob);
 
 			if (obstacle_prob > 0.5 && nearest_obstacle == -1)
@@ -635,7 +637,6 @@ GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &point
 
 		double dx = points[nearest_obstacle].world.x - points[first_valid].world.x;
 		double dy = points[nearest_obstacle].world.y - points[first_valid].world.y;
-		double d = sqrt(pow(dx, 2) + pow(dy, 2));
 
 		// the -2 is to prevent raycasting over the cell that contains an obstacle
 		double dx_cells = dx * pixels_by_m - 2;
@@ -652,7 +653,12 @@ GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &point
 		// if all points were classified as free, we 
 		// in increase the number of visited cells until MAX_RANGE.
 		if (update_until_range_max)
+		{
+			double d = sqrt(pow(points[nearest_obstacle].sensor.x, 2) + 
+							pow(points[nearest_obstacle].sensor.y, 2));
+							
 			n_cells_in_line *= (MAX_RANGE / d);
+		}
 
 		// the -2 is to prevent raycasting over the cell that contains an obstacle.
 		for (int i = 0; i < (n_cells_in_line - 2); i++)
@@ -769,7 +775,7 @@ update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc)
 	{
 		if (map->_map_type == GridMapTile::TYPE_OCCUPANCY)
 		{
-			std::vector<SensorPreproc::CompletePointData> points = preproc.next_points();
+			std::vector<SensorPreproc::CompletePointData> points = preproc.next_points_for_occupancy_mapping();
 			map->add_occupancy_shot(points);
 		}
 		else

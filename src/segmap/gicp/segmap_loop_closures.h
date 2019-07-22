@@ -14,7 +14,6 @@
 #include <carmen/segmap_particle_filter.h>
 #include <carmen/command_line.h>
 
-
 class LoopRestriction
 {
 public:

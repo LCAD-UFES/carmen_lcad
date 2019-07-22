@@ -556,6 +556,7 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 	//int prev_id = 0;
 	DataSample *sample;
 	double dt;
+	
 
 	viewer.set_step(0);
 

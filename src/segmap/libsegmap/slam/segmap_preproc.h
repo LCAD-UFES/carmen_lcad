@@ -64,7 +64,7 @@ public:
 	std::vector<pcl::PointXYZRGB> next_points_in_sensor();
 	std::vector<pcl::PointXYZRGB> next_points_in_world();
 	std::vector<pcl::PointXYZRGB> next_points_in_car();
-	std::vector<CompletePointData> next_points();
+	std::vector<CompletePointData> next_points_for_occupancy_mapping();
 	int size();
 
 	void set_semantic_remapping_flag(int flag) { _use_semantic_remapping = flag; }

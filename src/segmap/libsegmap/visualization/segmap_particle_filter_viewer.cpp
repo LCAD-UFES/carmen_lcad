@@ -234,7 +234,7 @@ pf_view(ParticleFilter &pf, GridMap &map,
 		Scalar particle_color = Scalar(255, 255, 255);
 
 		if (map._map_type == GridMapTile::TYPE_OCCUPANCY)
-			particle_color = Scalar(50, 50, 255);
+			particle_color = Scalar(255, 0, 255);
 
 		for (int i = 0; i < pf._n; i++)
 		{

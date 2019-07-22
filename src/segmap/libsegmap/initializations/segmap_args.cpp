@@ -117,7 +117,7 @@ add_default_localizer_args(CommandLineArguments &args)
 void
 add_default_sensor_preproc_args(CommandLineArguments &args)
 {
-	args.add<double>("ignore_above_threshold", "Ignore points with z-coord (in sensor reference) above this threshold", DBL_MAX);
+	args.add<double>("ignore_above_threshold", "Ignore points with z-coord (in sensor reference) above this threshold", -0.3);
 	args.add<double>("ignore_below_threshold", "Ignore points with z-coord (in sensor reference) below this threshold", -DBL_MAX);
 	args.add<double>("offset_x", "Offset to subtract the pose (x-coord)", 0); //7757888.199148);
 	args.add<double>("offset_y", "Offset to subtract the pose (y-coord)", 0); //-363560.975411);
