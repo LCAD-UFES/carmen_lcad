@@ -22,6 +22,7 @@ public:
 		REFLECTIVITY = 0,
 		COLOUR,
 		SEMANTIC, 
+		ALL
 	};
 
 	enum SensorReference
@@ -37,12 +38,16 @@ public:
 		int laser_id;
 		double h_angle, v_angle, range;
 		unsigned char raw_intensity;
+		unsigned char calibrated_intensity;
+		cv::Scalar colour;
+		int semantic_class;
 
-		pcl::PointXYZRGB world;
 		pcl::PointXYZRGB car;
 		pcl::PointXYZRGB sensor;
+		pcl::PointXYZRGB world;
 
 		int valid;
+		int visible_by_cam;
 	};
 
 	SensorPreproc(CarmenLidarLoader *vloader,
@@ -64,13 +69,13 @@ public:
 	std::vector<pcl::PointXYZRGB> next_points_in_sensor();
 	std::vector<pcl::PointXYZRGB> next_points_in_world();
 	std::vector<pcl::PointXYZRGB> next_points_in_car();
-	std::vector<CompletePointData> next_points_for_occupancy_mapping();
+	std::vector<CompletePointData> next_points_with_full_information();
 	int size();
 
 	void set_semantic_remapping_flag(int flag) { _use_semantic_remapping = flag; }
 
-	cv::Mat get_sample_img() { return _img; }
-	cv::Mat get_sample_img_with_points() { return _img_with_points; }
+	//cv::Mat get_sample_img() { return _img; }
+	//cv::Mat get_sample_img_with_points() { return _img_with_points; }
 
 	void set_lane_mark_detection(int on_or_off) { _lane_mark_detection_active = on_or_off; }
 
@@ -100,6 +105,15 @@ public:
 
 	cv::Mat _img;
 	cv::Mat _img_with_points;
+
+	cv::Mat _semantic_img;
+	cv::Mat _semantic_img_with_points;
+
+	int _load_img;
+	int _load_semantic_img;
+
+	void set_load_img_flag(int load_img_or_not) { _load_img = load_img_or_not; }
+	void set_load_semantic_img_flag(int load_img_or_not) { _load_semantic_img = load_img_or_not;  }
 
   static const int _n_distance_indices = 10;
   float ***calibration_table;
@@ -138,13 +152,14 @@ public:
 															 double ignore_above_threshold,
 															 double ignore_below_threshold);
 
-	void _adjust_intensity(pcl::PointXYZRGB *point, Eigen::Matrix<double, 4, 1> &p_sensor, unsigned char raw_intensity, int *valid, int laser_id);
+	void _adjust_intensity(Eigen::Matrix<double, 4, 1> &p_sensor, unsigned char raw_intensity, int *visible_by_cam, int laser_id,
+	                       unsigned char *calibrated_intensity, cv::Scalar *colour, int *point_class);
 
 	pcl::PointXYZRGB _create_point_and_intensity(Eigen::Matrix<double, 4, 1> &p_sensor,
 																							 Eigen::Matrix<double, 4, 1> &p_car,
 																							 Eigen::Matrix<double, 4, 1> &p_world,
 																							 unsigned char intensity,
-																							 int *valid,
+																							 int *visible_by_cam,
 																							 SensorReference ref,
 																							 int laser_id);
 

@@ -63,7 +63,16 @@ add_default_mapper_args(CommandLineArguments &args)
 	// map parameters
 	args.add<double>("resolution,r", "Map resolution", 0.2);
 	args.add<double>("tile_size,t", "Map tiles size", 50);
-	args.add<string>("map_path,m", "Path to save the maps", "/tmp/map");
+	args.add<int>("save_maps", "Flag for choosing to save or not the maps", 1);
+	args.add<int>("clean_map", "Flag for choosing to delete or not previous maps of the same region", 0);
+
+	args.add<int>("view,v", "Flag to set visualization on or off", 1);
+	args.add<int>("viewer_width", "Width of the map's visualization", 600);
+	args.add<int>("view_pointcloud", "Visualization flag.", 1);
+	args.add<int>("view_imgs", "Visualization flag.", 1);
+	args.add<int>("start_paused", "Flag for choosing to pause the viewer or not in the beginning", 1);
+
+	//args.add<string>("map_path,m", "Path to save the maps", "/tmp/map");
 
 	/* 
 	// The following approach seems more correct...
@@ -71,9 +80,8 @@ add_default_mapper_args(CommandLineArguments &args)
 	args.add<int>("create_occupancy_map", "Wheter or not to create occupancy maps.", 0);
 	args.add<int>("create_colour_map", "Wheter or not to create colour maps.", 0);
 	args.add<int>("create_semantic_map", "Wheter or not to create semantic maps.", 0);
-	*/
-
 	args.add<string>("map_type", "[semantic, colour, occupancy, reflectivity]", "reflectivity");
+	*/
 
 	args.save_config_file(default_data_dir() + "/mapper_config.txt");
 }

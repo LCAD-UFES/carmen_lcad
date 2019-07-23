@@ -30,7 +30,7 @@ write_points_to_file(FILE *fptr, SensorPreproc &preproc)
 
 	for (int i = 0; i < preproc.size(); i++)
 	{
-		shot = preproc.next_points_for_occupancy_mapping();
+		shot = preproc.next_points_with_full_information();
 
 		for (int j = 0; j < shot.size(); j++)
 		{

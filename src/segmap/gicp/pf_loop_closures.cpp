@@ -20,6 +20,7 @@
 #include <carmen/segmap_grid_map.h>
 #include <carmen/segmap_particle_filter.h>
 #include <carmen/segmap_particle_filter_viewer.h>
+#include <carmen/segmap_map_builder.h>
 #include <carmen/util_math.h>
 
 #include <carmen/command_line.h>
@@ -206,6 +207,17 @@ run_loop_closure_estimation(NewCarmenDataset &dataset, SensorPreproc &preproc, G
 
 	if (step <= 0) step = 1;
 
+	GridMap *visual_map = NULL, *semantic_map = NULL, *occupancy_map = NULL, *reflectivity_map = NULL;
+
+	if (map._map_type == GridMapTile::TYPE_OCCUPANCY)
+		occupancy_map = &map;
+	else if (map._map_type == GridMapTile::TYPE_SEMANTIC)
+		semantic_map = &map;
+	if (map._map_type == GridMapTile::TYPE_REFLECTIVITY)
+		reflectivity_map= &map;
+	if (map._map_type == GridMapTile::TYPE_VISUAL)
+		visual_map = &map;
+
 	for (int i = step; i < dataset.size(); i += step)
 	{
 		sample = dataset[i];
@@ -246,7 +258,8 @@ run_loop_closure_estimation(NewCarmenDataset &dataset, SensorPreproc &preproc, G
 		}
 		else
 		{
-			update_map(sample, &map, preproc);
+			//update_map(sample, &map, preproc);
+			update_maps(sample, preproc, visual_map, reflectivity_map, semantic_map, occupancy_map);
 			run_viewer_if_necessary(&current_pose, map, pf, NULL, viewer, 0, 1, view);
 			pf_reinit_required = 1;
 		}

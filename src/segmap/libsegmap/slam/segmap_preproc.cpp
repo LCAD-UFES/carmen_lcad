@@ -169,6 +169,9 @@ SensorPreproc::SensorPreproc(CarmenLidarLoader *vloader,
 
 	_lane_mark_detection_active = 0;
 	_use_semantic_remapping = 0;
+
+	_load_img = (_intensity_mode == COLOUR);
+	_load_semantic_img = (_intensity_mode == SEMANTIC);
 }
 
 
@@ -195,25 +198,25 @@ SensorPreproc::reinitialize(DataSample *sample)
 {
 	_vloader->reinitialize(sample->velodyne_path, sample->n_laser_shots);
 
-	if (_intensity_mode == COLOUR)
+	if (_intensity_mode == COLOUR || _load_img)
 	{
 		_img = read_img(sample);
 		_img_with_points = _img.clone();
 	}
 
-	else if (_intensity_mode == SEMANTIC)
+	if (_intensity_mode == SEMANTIC || _load_semantic_img)
 	{
-		_img = read_segmented_img(sample);
-		_img_with_points = segmented_image_view(_img);
+		_semantic_img = read_segmented_img(sample);
+		_semantic_img_with_points = segmented_image_view(_semantic_img);
 	}
 
 	_compute_transform_car2world(sample);
 	_n_lidar_shots = sample->n_laser_shots;
 
 	Pose2d step(0, 0, 0);
+	// correction applied for each shot
 	ackerman_motion_model(step, sample->v, sample->phi, TIME_SPENT_IN_EACH_SCAN);
 	_motion_correction_step = Pose2d::to_matrix(step);
-
 	_motion_correction = Pose2d::to_matrix(Pose2d(0, 0, 0));
 }
 
@@ -221,7 +224,7 @@ SensorPreproc::reinitialize(DataSample *sample)
 vector<pcl::PointXYZRGB>
 SensorPreproc::_next_points(SensorReference ref)
 {
-	int valid;
+	int visible_by_cam;
 	double h, v, r, in;
 	LidarShot *shot;
 	PointXYZRGB point;
@@ -250,9 +253,9 @@ SensorPreproc::_next_points(SensorReference ref)
 		if (!_point3d_is_valid(_p_sensor, _p_car, _p_world, _ignore_above_threshold, _ignore_below_threshold))
 			continue;
 
-		point = _create_point_and_intensity(_p_sensor, _p_car, _p_world, in, &valid, ref, i);
+		point = _create_point_and_intensity(_p_sensor, _p_car, _p_world, in, &visible_by_cam, ref, i);
 
-		if (valid)
+		if (_intensity_mode == REFLECTIVITY || visible_by_cam)
 			points.push_back(point);
 	}
 
@@ -285,11 +288,9 @@ SensorPreproc::next_points_in_world()
 
 // how to prevent this method of being a copy of _next_points?
 std::vector<SensorPreproc::CompletePointData>
-SensorPreproc::next_points_for_occupancy_mapping()
+SensorPreproc::next_points_with_full_information()
 {
-	int valid;
 	LidarShot *shot;
-	PointXYZRGB point;
 	std::vector<SensorPreproc::CompletePointData> points;
 
 	if (_vloader->done())
@@ -319,15 +320,13 @@ SensorPreproc::next_points_for_occupancy_mapping()
 		if (_spherical_point_is_valid(p.h_angle, p.v_angle, p.range)
 				&& _point3d_is_valid(_p_sensor, _p_car, _p_world, _ignore_above_threshold, _ignore_below_threshold))
 		{
-			_adjust_intensity(&p.sensor, _p_sensor, p.raw_intensity, &valid, i);
+			p.valid = 1;
 
-			if (valid)
-				p.valid = 1;
+			//_adjust_intensity(&p.sensor, _p_sensor, p.raw_intensity, &valid, i);
+			_adjust_intensity(_p_sensor, p.raw_intensity, &p.visible_by_cam, i,
+			                  &p.calibrated_intensity, &p.colour, &p.semantic_class);
 		}
 
-		p.world.r = p.car.r = p.sensor.r;
-		p.world.g = p.car.g = p.sensor.g;
-		p.world.b = p.car.b = p.sensor.b;
 		points.push_back(p);
 	}
 
@@ -571,38 +570,67 @@ SensorPreproc::_get_calibrated_intensity_tf(unsigned char raw_intensity, Matrix<
 
 
 void
-SensorPreproc::_adjust_intensity(PointXYZRGB *point, Matrix<double, 4, 1> &p_sensor, unsigned char raw_intensity, int *valid, int laser_id)
+SensorPreproc::_adjust_intensity(Matrix<double, 4, 1> &p_sensor, unsigned char raw_intensity,
+                                 int *visible_by_cam, int laser_id, unsigned char *calibrated_intensity,
+                                 Scalar *colour, int *point_class)
 {
 	// in INTENSITY mode, the point color is given by the intensity observed by the lidar.
-	if (_intensity_mode == REFLECTIVITY)
-	{
-		unsigned char intensity = _get_calibrated_intensity(raw_intensity, p_sensor, laser_id);
+	//if (_intensity_mode == REFLECTIVITY)
+	//{
+	*calibrated_intensity = _get_calibrated_intensity(raw_intensity, p_sensor, laser_id);
+
 		//unsigned char intensity = _get_calibrated_intensity_tf(raw_intensity, p_sensor, laser_id);
-		point->r = point->g = point->b = intensity;
-		*valid = 1;
-	}
+		//point->r = point->g = point->b = intensity;
+		//*visible_by_cam = 1;
+	//}
 
 	// In the SEMANTIC and VISUAL modes, the point color
 	// is obtained by projecting the points in the image,
 	// and returning the respective pixel color.
-	else
+	//else
+	*visible_by_cam = 0;
+	colour->val[0] = 0;
+	colour->val[1] = 0;
+	colour->val[2] = 0;
+	*point_class = 19; // invalid class (add an enum)
+
+	cv::Point pos_pixel;
+	int p = -1;
+
+	if (_intensity_mode == COLOUR || _load_img)
 	{
-		cv::Point pos_pixel;
-
-		_get_pixel_position(p_sensor, _img.rows, _img.cols, &pos_pixel, valid);
-
-		if (*valid)
+		// just to prevent dying when the image is not present in the computer.
+		if (_img.rows > 0)
 		{
-			int p = 3 * (pos_pixel.y * _img.cols + pos_pixel.x);
+			_get_pixel_position(p_sensor, _img.rows, _img.cols, &pos_pixel, visible_by_cam);
 
-			point->b = _img.data[p];
-			point->g = _img.data[p + 1];
-			point->r = _img.data[p + 2];
+			if (*visible_by_cam)
+			{
+				p = 3 * (pos_pixel.y * _img.cols + pos_pixel.x);
 
-			if (_intensity_mode == SEMANTIC)
-				point->b = point->g = point->r = CityscapesObjectClassMapper::transform_object_class(point->r);
+				colour->val[0] = _img.data[p];
+				colour->val[1] = _img.data[p + 1];
+				colour->val[2] = _img.data[p + 2];
 
-			circle(_img_with_points, Point(pos_pixel.x, pos_pixel.y), 2, Scalar(0, 0, 255), -1);
+				circle(_img_with_points, Point(pos_pixel.x, pos_pixel.y), 2, Scalar(0, 0, 255), -1);
+			}
+		}
+	}
+
+	if (_intensity_mode == SEMANTIC || _load_semantic_img)
+	{
+		// just to prevent dying when the image is not present in the computer.
+		if (_semantic_img.rows > 0)
+		{
+			_get_pixel_position(p_sensor, _semantic_img.rows, _semantic_img.cols, &pos_pixel, visible_by_cam);
+
+			if (*visible_by_cam)
+			{
+				p = 3 * (pos_pixel.y * _semantic_img.cols + pos_pixel.x);
+
+				*point_class = CityscapesObjectClassMapper::transform_object_class(_semantic_img.data[p]);
+				circle(_semantic_img_with_points, Point(pos_pixel.x, pos_pixel.y), 2, Scalar(0, 0, 255), -1);
+			}
 		}
 	}
 }
@@ -613,10 +641,14 @@ SensorPreproc::_create_point_and_intensity(Matrix<double, 4, 1> &p_sensor,
                                            Matrix<double, 4, 1> &p_car,
                                            Matrix<double, 4, 1> &p_world,
                                            unsigned char intensity,
-                                           int *valid,
+                                           int *visible_by_cam,
                                            SensorReference ref,
                                            int laser_id)
 {
+	unsigned char calibrated_intensity;
+	Scalar colour;
+	int point_class;
+
 	PointXYZRGB point;
 
 	if (ref == SENSOR_REFERENCE)
@@ -626,7 +658,20 @@ SensorPreproc::_create_point_and_intensity(Matrix<double, 4, 1> &p_sensor,
 	else
 		_point_coords_from_mat(p_world, &point);
 
-	_adjust_intensity(&point, p_sensor, intensity, valid, laser_id);
+	//_adjust_intensity(&point, p_sensor, intensity, valid, laser_id);
+	_adjust_intensity(p_sensor, intensity, visible_by_cam, laser_id,
+	                  &calibrated_intensity, &colour, &point_class);
+
+	if (_intensity_mode == REFLECTIVITY)
+		point.r = point.g = point.b = calibrated_intensity;
+	else if (_intensity_mode == SEMANTIC)
+		point.r = point.g = point.b = point_class;
+	else
+	{
+		point.r = colour[2];
+		point.g = colour[1];
+		point.b = colour[0];
+	}
 
 	return point;
 }

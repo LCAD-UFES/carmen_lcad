@@ -116,12 +116,6 @@ public:
 	void _free_tiles();
 };
 
-// utility function for updating the map with a point cloud.
-void update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc);
 
-void
-create_map(GridMap &map, NewCarmenDataset *dataset, int step,
-					 SensorPreproc &preproc, double skip_velocity_threshold,
-					 int view_flag, int img_width);
 
 #endif

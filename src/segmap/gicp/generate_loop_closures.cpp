@@ -120,13 +120,14 @@ main(int argc, char **argv)
 	}
 	else if (mode.compare("localization") == 0)
 	{
-		estimate_loop_closures_with_particle_filter_in_map(*dataset,
-																											log_path,
-																											loop_closure_indices,
-																											&relative_transform_vector,
-																											&convergence_vector,
-																											args.get<int>("n_corrections_when_reinit"),
-																											args);
+		estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detection(
+				*dataset,
+				log_path,
+				loop_closure_indices,
+				&relative_transform_vector,
+				&convergence_vector,
+				args.get<int>("n_corrections_when_reinit"),
+				args);
 	}
 	else
 		exit(printf("Error: invalid mode '%s'.\n", mode.c_str()));

@@ -22,7 +22,7 @@ LFLAGS += -lboost_program_options -lboost_filesystem
 
 LFLAGS += -lsegmap_types -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
 	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lsegmap_initializations \
-	-lcarmen_util 
+	-lcarmen_util -lsegmap_slam_high_level
 
 DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/datasets/libsegmap_datasets.a \
@@ -32,6 +32,7 @@ DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/visualization/libsegmap_visualization.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsemap_readers.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/initializations/libsegmap_initializations.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/slam_high_level/libsegmap_slam_high_level.a \
 	$(CARMEN_HOME)/src/utilities/libcarmen_util/libcarmen_util.a
 
 SOURCES = mapper.cpp localizer.cpp velodyne_calibration_save_data.cpp 

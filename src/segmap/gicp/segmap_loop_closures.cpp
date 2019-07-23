@@ -17,8 +17,12 @@
 #include <carmen/segmap_preproc.h>
 #include <carmen/segmap_conversions.h>
 #include <carmen/segmap_constructors.h>
+#include <carmen/segmap_map_builder.h>
 #include <carmen/command_line.h>
 #include "gicp.h"
+
+#include <unordered_map>
+#include <unordered_set>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -584,8 +588,10 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 
 		if (nn_id < 0)
 		{
-			update_map(sample, &map, preproc);
-			update_map(sample, &map_for_viewing, preproc);
+			// update_map(sample, &map, preproc);
+			//update_map(sample, &map_for_viewing, preproc);
+			update_maps(sample, preproc, NULL, &map, NULL, NULL);
+			update_maps(sample, preproc, NULL, &map_for_viewing, NULL, NULL);
 
 			if (view)
 				run_viewer_if_necessary(&sample->pose, map_for_viewing, pf, cloud, viewer, 0, 0, view);
@@ -651,6 +657,177 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 
 			//prev_id = i;
 		}
+	}
+}
+
+
+void
+detect_loop_closures(NewCarmenDataset &dataset, CommandLineArguments &args,
+                     std::unordered_map<int, int> *loop_closures,
+                     std::unordered_set<int> *poses_for_mapping)
+{
+	double d, dt, loop_dist, time_dist, min_v;
+	DataSample *sample_i, *sample_j;
+
+	loop_dist = args.get<double>("loop_dist");
+	time_dist = args.get<double>("time_dist");
+	min_v = args.get<double>("v_thresh");
+
+	for (int i = 0; i < dataset.size(); i++)
+	{
+		sample_i = dataset[i];
+
+		if (fabs(sample_i->v) < min_v || sample_i->v < 0.0)
+			continue;
+
+		int nn = -1;
+		double nn_d = DBL_MAX;
+
+		for (int j = 0; j < i; j++)
+		{
+			sample_j = dataset[j];
+
+			if (fabs(sample_j->v) < min_v || sample_j->v < 0.0)
+				continue;
+
+      d = dist2d(sample_i->pose.x, sample_i->pose.y, sample_j->pose.x, sample_j->pose.y);
+      dt = fabs(sample_i->time - sample_j->time);
+
+      if ((d < loop_dist) && (dt > time_dist) && (d < nn_d))
+      {
+      	nn_d = d;
+				nn = j;
+      }
+		}
+
+		// todo: try to use all loop closures instead of using only the nearest.
+		if (nn != -1)
+		{
+			// if the pose is not a loop closure, add it to the set of poses
+			// to be used for mapping.
+			if (loop_closures->find(nn) == loop_closures->end())
+				poses_for_mapping->insert(nn);
+
+			loop_closures->insert(pair<int, int>(i, nn));
+		}
+	}
+}
+
+
+void
+do_prediction_and_correction(ParticleFilter &pf, DataSample *sample, double v, double phi, double dt,
+                             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, GridMap &map,
+                             PointCloudViewer &viewer, int view)
+{
+	pf.predict(v, phi, dt);
+
+	if (view)
+		run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 1, 1, view);
+
+	pf.correct(cloud, map, sample->gps);
+
+	if (view)
+		run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 1, 1, view);
+}
+
+
+void
+estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detection(
+		NewCarmenDataset &dataset, string dataset_path, vector<pair<int, int>> &loop_closure_indices,
+		vector<Matrix<double, 4, 4>> *relative_transform_vector, vector<int> *convergence_vector,
+		int n_corrections_when_reinit, CommandLineArguments &args)
+{
+	// http://www.cplusplus.com/reference/unordered_map/unordered_map/
+	std::unordered_map<int, int> loop_closures;
+	std::unordered_map<int, int>::iterator it;
+	// http://www.cplusplus.com/reference/unordered_set/unordered_set/
+	std::unordered_set<int> poses_for_mapping;
+
+	detect_loop_closures(dataset, args, &loop_closures, &poses_for_mapping);
+	SensorPreproc preproc = create_sensor_preproc(args, &dataset, dataset_path);
+
+	string dir_to_save_maps = "/tmp/loop_closure_maps/";
+
+	if (!boost::filesystem::exists(dir_to_save_maps))
+		boost::filesystem::create_directory(dir_to_save_maps);
+
+	create_map(&dataset, preproc, args, dir_to_save_maps, vector<int>(poses_for_mapping.begin(), poses_for_mapping.end()));
+
+	int view = args.get<int>("view");
+
+	string name = file_name_from_path(dataset_path);
+	string map_path = string("/dados/maps2/loop_map_") + name;
+
+	if (boost::filesystem::exists(map_path))
+		boost::filesystem::remove_all(map_path);
+
+	// reload map after creating it.
+	GridMap map(map_path, args.get<double>("tile_size"), args.get<double>("tile_size"), args.get<double>("resolution"), GridMapTile::TYPE_REFLECTIVITY, 0);
+
+	ParticleFilter pf(args.get<int>("n_particles"),
+	                  args.get<double>("gps_xy_std"), args.get<double>("gps_xy_std"), degrees_to_radians(args.get<double>("gps_h_std")),
+										args.get<double>("v_std"), degrees_to_radians(args.get<double>("phi_std")),
+										args.get<double>("odom_xy_std"), args.get<double>("odom_xy_std"), degrees_to_radians(args.get<double>("odom_h_std")),
+										args.get<double>("color_red_std"), args.get<double>("color_green_std"), args.get<double>("color_blue_std"),
+										args.get<double>("reflectivity_std")
+										);
+
+	Pose2d mean;
+	DataSample *sample;
+	PointCloudViewer viewer;
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+	loop_closure_indices.clear();
+	relative_transform_vector->clear();
+	convergence_vector->clear();
+	pf.set_use_map_weight(1);
+
+	int is_init = 1;
+
+	// TODO: turn the value into a parameter
+	const double DIST_FOR_JUMP_DETECTION = 10.0;
+
+	for (it = loop_closures.begin(); it != loop_closures.end(); it++)
+	{
+		sample = dataset[it->first];
+		map.reload(sample->pose.x, sample->pose.y);
+
+		preproc.reinitialize(sample);
+		load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+
+		mean = pf.mean();
+		double d = dist2d(mean.x, mean.y, sample->pose.x, sample->pose.y);
+
+		// we reinitialize the particle filter at the beginning and when the
+		// current pose is distant from the previous pf pose.
+		if (is_init || d > DIST_FOR_JUMP_DETECTION)
+		{
+			// initialize particle filter
+			pf.reset(sample->pose.x, sample->pose.y, sample->pose.th);
+
+			for (int k = 0; k < n_corrections_when_reinit; k++)
+				do_prediction_and_correction(pf, sample, 0, 0, 0, cloud, map, viewer, view);
+
+			is_init = 0;
+		}
+		else
+		{
+			if (it->first > 0)
+			{
+				double dt = sample->time - dataset.at(it->first - 1)->time;
+				do_prediction_and_correction(pf, sample, sample->v, sample->phi, dt, cloud, map, viewer, view);
+			}
+		}
+
+		mean = pf.mean();
+
+		// for compatibility issues, we have to specify the pose in relation to a sample in the target dataset.
+		Matrix<double, 4, 4>  world2nn = Pose2d::to_matrix(dataset[it->second]->pose).inverse();
+		Matrix<double, 4, 4>  pose_in_nn = world2nn * Pose2d::to_matrix(mean);
+
+		loop_closure_indices.push_back(pair<int, int>(it->second, it->first));
+		relative_transform_vector->push_back(pose_in_nn);
+		convergence_vector->push_back(1);
 	}
 }
 

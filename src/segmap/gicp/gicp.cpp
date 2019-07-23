@@ -65,7 +65,6 @@ add_default_gicp_args(CommandLineArguments &args)
 	args.add<double>("time_dist,t", "Minimum temporal difference (in seconds) to assume two poses form a loop closure (instead of being consecutive poses)", 60.0);
 	args.add<int>("subsampling,s", "Number of data packages to skip when looking for loop closures (<= 1 for using all packages)", 0);
 	args.add<std::string>("report_file,r", "Path to a file to save debug information", "/tmp/loop_closure_report.txt");
-	args.add<int>("view,v", "Boolean to turn visualization on or off", 0);
 	args.add<double>("v_thresh", "Skip data packages with absolute velocity below this theshold", 1.0);
 	args.add<double>("dist_to_accumulate", "Distance to accumulate clouds", 2.0);
 }

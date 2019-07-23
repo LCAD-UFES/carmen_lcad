@@ -125,6 +125,11 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 																									int n_corrections_when_reinit,
 																									CommandLineArguments &args);
 
+void
+estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detection(
+		NewCarmenDataset &dataset, std::string dataset_path, std::vector<std::pair<int, int>> &loop_closure_indices,
+		std::vector<Eigen::Matrix<double, 4, 4>> *relative_transform_vector, std::vector<int> *convergence_vector,
+		int n_corrections_when_reinit, CommandLineArguments &args);
 
 void
 estimate_displacements_with_particle_filter(NewCarmenDataset &target_dataset,

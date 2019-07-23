@@ -531,7 +531,6 @@ GridMap::add_point(PointXYZRGB &p)
 }
 
 
-
 double
 compute_expected_delta_ray(double h, double r1, double theta)
 {
@@ -765,87 +764,3 @@ GridMap::save()
 	}
 }
 
-
-void
-update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc)
-{
-	preproc.reinitialize(sample);
-
-	for (int i = 0; i < preproc.size(); i++)
-	{
-		if (map->_map_type == GridMapTile::TYPE_OCCUPANCY)
-		{
-			std::vector<SensorPreproc::CompletePointData> points = preproc.next_points_for_occupancy_mapping();
-			map->add_occupancy_shot(points);
-		}
-		else
-		{
-			vector<PointXYZRGB> points = preproc.next_points_in_world();
-
-			for (int j = 0; j < points.size(); j++)
-				map->add_point(points[j]);
-		}
-	}
-}
-
-
-void
-create_map(GridMap &map, NewCarmenDataset *dataset, int step,
-					 SensorPreproc &preproc, double skip_velocity_threshold,
-					 int view_flag, int img_width)
-{
-	Timer timer;
-	DataSample *sample;
-	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
-	PointCloudViewer viewer(2, 0.2, 0.8, 1.0);
-	vector<double> times;
-
-	viewer.set_step(1);
-
-	for (int i = 0; i < dataset->size(); i += step)
-	{
-		sample = dataset->at(i);
-
-		if (fabs(sample->v) < skip_velocity_threshold)
-			continue;
-
-		timer.start();
-
-		map.reload(sample->pose.x, sample->pose.y);
-		update_map(sample, &map, preproc);
-
-		times.push_back(timer.ellapsed());
-
-		if (times.size() % 50 == 0)
-			printf("Step %d of %d AvgStepDuration: %lf LastStepDuration: %lf\n",
-						 i, dataset->size(),
-						 mean(times),
-						 times[times.size() - 1]);
-
-		if (view_flag)
-		{
-			Pose2d pose;
-			pose = sample->pose;
-
-			Mat map_img = map.to_image().clone();
-			draw_pose(map, map_img, pose, Scalar(0, 255, 0));
-
-			//viewer.clear();
-			preproc.reinitialize(sample);
-			load_as_pointcloud(preproc, cloud, SensorPreproc::WORLD_REFERENCE);
-			//viewer.show(cloud);
-
-			// flip vertically.
-			Mat map_view;
-			flip(map_img, map_view, 0);
-
-			Mat img = preproc.get_sample_img_with_points();
-
-			if (img.rows)
-				viewer.show(img, "img", img_width);
-
-			viewer.show(map_view, "map", img_width);
-			viewer.loop();
-		}
-	}
-}
