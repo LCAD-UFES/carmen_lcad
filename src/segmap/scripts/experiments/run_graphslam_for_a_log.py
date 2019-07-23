@@ -67,12 +67,12 @@ def run_loop_closures(carmen_path, log_path, output_dir, mode):
 	cmd = "%s %s %s -o %s -f %s --gps_id %d -i %s" % (program, log_path, PARAM_FILE, odom_calib, fused_odom, GPS_TO_USE, INTENSITY_MODE)
 	
 	if mode == "gicp":
-		gicp_args = " --mode gicp --dist_to_accumulate 2.0 --ignore_above_threshold %lf --ignore_below_threshold %lf --v_thresh %lf --clean_map 1" % (IGNORE_POINTS_ABOVE, IGNORE_POINTS_BELOW, SKIP_WHEN_VELOCITY_IS_BELOW)
+		gicp_args = " --mode gicp --dist_to_accumulate 2.0 --ignore_above_threshold %lf --ignore_below_threshold %lf --v_thresh %lf --clean_map 1 --view_imgs 0 --view_pointcloud 0" % (IGNORE_POINTS_ABOVE, IGNORE_POINTS_BELOW, SKIP_WHEN_VELOCITY_IS_BELOW)
 		gicp_output = " " + output_dir + "/loops.txt"
 		run_command(cmd + gicp_output + gicp_args)
 
 	elif mode == "particle_filter":
-		pf_args = " --mode particle_filter --n_particles 200 --gps_xy_std 5.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 5.0 --n_corrections_when_reinit 20 --v_thresh %lf --clean_map 1" % (SKIP_WHEN_VELOCITY_IS_BELOW)
+		pf_args = " --mode particle_filter --n_particles 200 --gps_xy_std 5.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 5.0 --n_corrections_when_reinit 20 --v_thresh %lf --clean_map 1 --view_imgs 0 --view_pointcloud 0" % (SKIP_WHEN_VELOCITY_IS_BELOW)
 		pf_output = " " + output_dir + "/pf_loops.txt"
 		run_command(cmd + pf_output + pf_args)
 	elif mode == "localization":
@@ -82,7 +82,7 @@ def run_loop_closures(carmen_path, log_path, output_dir, mode):
 		#else:
 			#loop_closure_time = 30
 	
-		loc_args = " --mode localization --n_particles 200 --gps_xy_std 3.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 10.0 --n_corrections_when_reinit 20 --v_thresh %lf -v 1 --time_dist %lf --v_std 1.0 --phi_std 1.0 --odom_xy_std 0.1 --odom_h_std 1.0 --color_red_std 3 --color_green_std 3 --color_blue_std 3 --reflectivity_std 3 --use_map_weight 1 --clean_map 1" % (SKIP_WHEN_VELOCITY_IS_BELOW, loop_closure_time)
+		loc_args = " --mode localization --n_particles 200 --gps_xy_std 3.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 10.0 --n_corrections_when_reinit 20 --v_thresh %lf -v 1 --time_dist %lf --v_std 1.0 --phi_std 1.0 --odom_xy_std 0.1 --odom_h_std 1.0 --color_red_std 3 --color_green_std 3 --color_blue_std 3 --reflectivity_std 3 --use_map_weight 1 --clean_map 1 --view_imgs 0 --view_pointcloud 0" % (SKIP_WHEN_VELOCITY_IS_BELOW, loop_closure_time)
 		loc_output = " " + output_dir + "/localization_loops.txt"
 		run_command(cmd + loc_output + loc_args + " > /dev/null 2>&1")
 	else:
