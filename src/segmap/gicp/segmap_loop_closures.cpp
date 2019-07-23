@@ -23,7 +23,7 @@
 
 #include <vector>
 #include <algorithm>
-#include <unordered_map>
+#include <map>
 #include <set>
 
 #ifdef _OPENMP
@@ -664,33 +664,43 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 
 
 void
-expand_area_around_point(NewCarmenDataset &dataset, std::set<int> *poses_for_mapping, int idx)
+expand_area_around_point(NewCarmenDataset &dataset, std::set<int> *poses_for_mapping, int idx, std::map<int, int> *loop_closures)
 {
 	// todo: turn this value into a command line argument
-	const double SIZE_EXPANSION = 20.0;  // meters
+	const double SIZE_EXPANSION = 50.0;  // meters
 
+	for (int i = 0; i < dataset.size(); i++)
+	{
+		double d = dist2d(dataset[idx]->pose.x, dataset[idx]->pose.y, dataset[i]->pose.x, dataset[i]->pose.y);
+
+		if (d < SIZE_EXPANSION && loop_closures->find(i) == loop_closures->end())
+			poses_for_mapping->insert(i);
+	}
+
+	/*
 	// expand to the left
 	double d = 0.0;
-	
+
 	for (int i = (idx - 1); i >= 0 && d < SIZE_EXPANSION; i--)
 	{
 		poses_for_mapping->insert(i);
-		d += dist2d(dataset[i]->pose.x, dataset[i]->pose.y, dataset[i + 1]->pose.x dataset[i + 1]->pose.y);
+		d += dist2d(dataset[i]->pose.x, dataset[i]->pose.y, dataset[i + 1]->pose.x, dataset[i + 1]->pose.y);
 	}
 
 	// expand to the right
 	d = 0.0;
 
-	for (int i = (idx + 1); i < dataset->size() && d < SIZE_EXPANSION; i++)
+	for (int i = (idx + 1); i < dataset.size() && d < SIZE_EXPANSION; i++)
 	{
 		poses_for_mapping->insert(i);
-		d += dist2d(dataset[i]->pose.x, dataset[i]->pose.y, dataset[i - 1]->pose.x dataset[i - 1]->pose.y);
+		d += dist2d(dataset[i]->pose.x, dataset[i]->pose.y, dataset[i - 1]->pose.x, dataset[i - 1]->pose.y);
 	}
+	*/
 }
 
 
 void
-increase_mapped_area(std::set<int> *poses_for_mapping, NewCarmenDataset &dataset)
+increase_mapped_area(std::set<int> *poses_for_mapping, NewCarmenDataset &dataset, std::map<int, int> *loop_closures)
 {
 	// the set stores the values sorted. Because of that, the vector created
 	// below is already sorted.
@@ -699,25 +709,24 @@ increase_mapped_area(std::set<int> *poses_for_mapping, NewCarmenDataset &dataset
 	for (int i = 0; i < initial_set.size(); i++)
 	{
 		int point_should_be_expanded = 0;
+		int sample_idx = initial_set[i];
+		int previous_idx = initial_set[i - 1];
+		int next_idx = initial_set[i + 1];
 
 		if ((i == 0) || (i == initial_set.size() - 1))
 			point_should_be_expanded = 1;
-		else if ((initial_set[i] - 1 != initial_set[i - 1]) || (initial_set[i] + 1 != initial_set[i + 1]))
+		else if ((sample_idx - 1 != previous_idx) || (sample_idx + 1 != next_idx))
 			point_should_be_expanded = 1;
 
 		if (point_should_be_expanded)
-			expand_area_around_point(dataset, poses_for_mapping, i);
+			expand_area_around_point(dataset, poses_for_mapping, sample_idx, loop_closures);
 	}
-
-	poses_for_mapping->clear();
-
-	
 }
 
 
 void
 detect_loop_closures(NewCarmenDataset &dataset, CommandLineArguments &args,
-                     std::unordered_map<int, int> *loop_closures,
+                     std::map<int, int> *loop_closures,
                      std::set<int> *poses_for_mapping)
 {
 	double d, dt, loop_dist, time_dist, min_v;
@@ -766,7 +775,7 @@ detect_loop_closures(NewCarmenDataset &dataset, CommandLineArguments &args,
 		}
 	}
 
-	increase_mapped_area(poses_for_mapping, dataset);
+	increase_mapped_area(poses_for_mapping, dataset, loop_closures);
 }
 
 
@@ -793,10 +802,9 @@ estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detec
 		vector<Matrix<double, 4, 4>> *relative_transform_vector, vector<int> *convergence_vector,
 		int n_corrections_when_reinit, CommandLineArguments &args)
 {
-	// http://www.cplusplus.com/reference/unordered_map/unordered_map/
-	std::unordered_map<int, int> loop_closures;
-	std::unordered_map<int, int>::iterator it;
-	// http://www.cplusplus.com/reference/unordered_set/unordered_set/
+	// IMPORTANT: these data structures sort the keys and the code below assumes it!!
+	std::map<int, int> loop_closures;
+	std::map<int, int>::iterator it;
 	std::set<int> poses_for_mapping;
 
 	detect_loop_closures(dataset, args, &loop_closures, &poses_for_mapping);
@@ -811,14 +819,14 @@ estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detec
 
 	int view = args.get<int>("view");
 
-	string name = file_name_from_path(dataset_path);
-	string map_path = string("/dados/maps2/loop_map_") + name;
-
-	if (boost::filesystem::exists(map_path))
-		boost::filesystem::remove_all(map_path);
+	string log_name = file_name_from_path(dataset_path);
+	string map_path = dir_to_save_maps + "/map_reflectivity_" + log_name;
 
 	// reload map after creating it.
-	GridMap map(map_path, args.get<double>("tile_size"), args.get<double>("tile_size"), args.get<double>("resolution"), GridMapTile::TYPE_REFLECTIVITY, 0);
+	GridMap reflectivity_map(map_path, args.get<double>("tile_size"), args.get<double>("tile_size"), args.get<double>("resolution"), GridMapTile::TYPE_REFLECTIVITY, 0);
+	//GridMap semantic_map(map_path, args.get<double>("tile_size"), args.get<double>("tile_size"), args.get<double>("resolution"), GridMapTile::TYPE_SEMANTIC, 0);
+	//GridMap occupancy_map(map_path, args.get<double>("tile_size"), args.get<double>("tile_size"), args.get<double>("resolution"), GridMapTile::TYPE_OCCUPANCY, 0);
+	//GridMap colour_map(map_path, args.get<double>("tile_size"), args.get<double>("tile_size"), args.get<double>("resolution"), GridMapTile::TYPE_VISUAL, 0);
 
 	ParticleFilter pf(args.get<int>("n_particles"),
 	                  args.get<double>("gps_xy_std"), args.get<double>("gps_xy_std"), degrees_to_radians(args.get<double>("gps_h_std")),
