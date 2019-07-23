@@ -21,8 +21,10 @@
 #include <carmen/command_line.h>
 #include "gicp.h"
 
+#include <vector>
+#include <algorithm>
 #include <unordered_map>
-#include <unordered_set>
+#include <set>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -662,9 +664,61 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 
 
 void
+expand_area_around_point(NewCarmenDataset &dataset, std::set<int> *poses_for_mapping, int idx)
+{
+	// todo: turn this value into a command line argument
+	const double SIZE_EXPANSION = 20.0;  // meters
+
+	// expand to the left
+	double d = 0.0;
+	
+	for (int i = (idx - 1); i >= 0 && d < SIZE_EXPANSION; i--)
+	{
+		poses_for_mapping->insert(i);
+		d += dist2d(dataset[i]->pose.x, dataset[i]->pose.y, dataset[i + 1]->pose.x dataset[i + 1]->pose.y);
+	}
+
+	// expand to the right
+	d = 0.0;
+
+	for (int i = (idx + 1); i < dataset->size() && d < SIZE_EXPANSION; i++)
+	{
+		poses_for_mapping->insert(i);
+		d += dist2d(dataset[i]->pose.x, dataset[i]->pose.y, dataset[i - 1]->pose.x dataset[i - 1]->pose.y);
+	}
+}
+
+
+void
+increase_mapped_area(std::set<int> *poses_for_mapping, NewCarmenDataset &dataset)
+{
+	// the set stores the values sorted. Because of that, the vector created
+	// below is already sorted.
+	vector<int> initial_set(poses_for_mapping->begin(), poses_for_mapping->end());
+
+	for (int i = 0; i < initial_set.size(); i++)
+	{
+		int point_should_be_expanded = 0;
+
+		if ((i == 0) || (i == initial_set.size() - 1))
+			point_should_be_expanded = 1;
+		else if ((initial_set[i] - 1 != initial_set[i - 1]) || (initial_set[i] + 1 != initial_set[i + 1]))
+			point_should_be_expanded = 1;
+
+		if (point_should_be_expanded)
+			expand_area_around_point(dataset, poses_for_mapping, i);
+	}
+
+	poses_for_mapping->clear();
+
+	
+}
+
+
+void
 detect_loop_closures(NewCarmenDataset &dataset, CommandLineArguments &args,
                      std::unordered_map<int, int> *loop_closures,
-                     std::unordered_set<int> *poses_for_mapping)
+                     std::set<int> *poses_for_mapping)
 {
 	double d, dt, loop_dist, time_dist, min_v;
 	DataSample *sample_i, *sample_j;
@@ -711,6 +765,8 @@ detect_loop_closures(NewCarmenDataset &dataset, CommandLineArguments &args,
 			loop_closures->insert(pair<int, int>(i, nn));
 		}
 	}
+
+	increase_mapped_area(poses_for_mapping, dataset);
 }
 
 
@@ -741,7 +797,7 @@ estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detec
 	std::unordered_map<int, int> loop_closures;
 	std::unordered_map<int, int>::iterator it;
 	// http://www.cplusplus.com/reference/unordered_set/unordered_set/
-	std::unordered_set<int> poses_for_mapping;
+	std::set<int> poses_for_mapping;
 
 	detect_loop_closures(dataset, args, &loop_closures, &poses_for_mapping);
 	SensorPreproc preproc = create_sensor_preproc(args, &dataset, dataset_path);
