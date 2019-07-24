@@ -49,8 +49,7 @@ def create_output_dir(log_path):
 def run_command(cmd):
     print('\n\n--------------\n')
     print('** COMMAND:\n\n', cmd, '\n\n** OUTPUT:\n')
-    ret = 0#os.system(cmd)
-    return
+    ret = os.system(cmd)
     
     # graphslam gives a segfault in the end
     if ('graphslam' not in cmd) and (ret != 0):

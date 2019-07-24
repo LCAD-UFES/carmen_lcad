@@ -697,11 +697,11 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &ma
 		exit(printf("Error: set at least one way of computing the particles' weights.\n"));
 
 	// todo: avoid creating this structure when using only gps for computing the particle weights.
-	string tiles_dir = get_tiles_dir(map);
+	string tiles_dir = ""; //get_tiles_dir(map);
 	
 	GridMap instantaneous_map(tiles_dir, map._tile_height_meters,
 	                          map._tile_width_meters, map.m_by_pixels, 
-							  map._map_type, 1);
+							  map._map_type, 0);
 
 	if (use_map_weight || use_ecc_weight)
 	{
@@ -710,9 +710,9 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &ma
 			instantaneous_map.add_point(cloud->at(i));
 	}
 
-	cv::Mat map_img = instantaneous_map.to_image();
-	cv::imshow("inst_map", map_img);
-	cv::waitKey(1);
+	//cv::Mat map_img = instantaneous_map.to_image();
+	//cv::imshow("inst_map", map_img);
+	//cv::waitKey(1);
 
 	// view_observed_cells(instantaneous_map);
 
@@ -843,11 +843,11 @@ ParticleFilter::_compute_weights(DataSample *sample, GridMap &map, SensorPreproc
 		exit(printf("Error: set at least one way of computing the particles' weights.\n"));
 
 	// todo: avoid creating this structure when using only gps for computing the particle weights.
-	string tiles_dir = get_tiles_dir(map);
+	string tiles_dir = ""; // get_tiles_dir(map);
 	
 	GridMap instantaneous_map(tiles_dir, map._tile_height_meters,
 	                          map._tile_width_meters, map.m_by_pixels, 
-							  map._map_type, 1);
+							  map._map_type, 0);
 
 	if (use_map_weight || use_ecc_weight)
 	{
@@ -855,9 +855,9 @@ ParticleFilter::_compute_weights(DataSample *sample, GridMap &map, SensorPreproc
 		create_instantaneous_map(sample, preproc, &instantaneous_map, 0);
 	}
 
-	cv::Mat map_img = instantaneous_map.to_image();
-	cv::imshow("inst_map", map_img);
-	cv::waitKey(1);
+	// cv::Mat map_img = instantaneous_map.to_image();
+	// cv::imshow("inst_map", map_img);
+	// cv::waitKey(1);
 
 	// view_observed_cells(instantaneous_map);
 

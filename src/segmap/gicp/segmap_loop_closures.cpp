@@ -707,7 +707,7 @@ void
 expand_area_around_point(NewCarmenDataset &dataset, std::set<int> *poses_for_mapping, int idx, std::map<int, int> *loop_closures)
 {
 	// todo: turn this value into a command line argument
-	const double SIZE_EXPANSION = 50.0;  // meters
+	const double SIZE_EXPANSION = 20.0;  // meters
 
 	for (int i = 0; i < dataset.size(); i++)
 	{
@@ -740,7 +740,7 @@ expand_area_around_point(NewCarmenDataset &dataset, std::set<int> *poses_for_map
 
 
 void
-increase_mapped_area(std::set<int> *poses_for_mapping, NewCarmenDataset &dataset, std::map<int, int> *loop_closures)
+grow_mapped_area(std::set<int> *poses_for_mapping, NewCarmenDataset &dataset, std::map<int, int> *loop_closures)
 {
 	// the set stores the values sorted. Because of that, the vector created
 	// below is already sorted.
@@ -815,7 +815,7 @@ detect_loop_closures(NewCarmenDataset &dataset, CommandLineArguments &args,
 		}
 	}
 
-	increase_mapped_area(poses_for_mapping, dataset, loop_closures);
+	//grow_mapped_area(poses_for_mapping, dataset, loop_closures);
 }
 
 
@@ -855,9 +855,6 @@ reinitialize_particle_filter(ParticleFilter &pf, GridMap &map, SensorPreproc &pr
 Pose2d
 update_particle_filter(ParticleFilter &pf, GridMap &map, SensorPreproc &preproc, PointCloudViewer &viewer, int view,
                        NewCarmenDataset &dataset, DataSample *sample, std::map<int, int>::iterator it, int is_init,
-                       vector<pair<int, int>> &loop_closure_indices,
-                       vector<Matrix<double, 4, 4>> *relative_transform_vector,
-                       vector<int> *convergence_vector,
                        int n_corrections_when_reinit)
 {
 	// TODO: turn the value into a parameter
@@ -925,7 +922,6 @@ run_particle_filter(string map_path,
 		sample = adj_dataset[it->first];
 
 		mean = update_particle_filter(pf, map, preproc, viewer, args.get<int>("view"), adj_dataset, sample, it, is_init,
-		                              loop_closure_indices, relative_transform_vector, convergence_vector,
 		                              n_corrections_when_reinit);
 
 		// for compatibility issues, we have to specify the pose in relation to a sample in the target dataset.
@@ -974,28 +970,30 @@ estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detec
 	                    GridMapTile::TYPE_OCCUPANCY, "reflectivity",
 	                    loop_closure_indices, relative_transform_vector, convergence_vector,
 	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
-	                    dataset_path, dir_to_save_maps);
+	                    dataset_path);
 
 	map_path = dir_to_save_maps + "/map_reflectivity_" + log_name;
 	run_particle_filter(map_path,
 	                    GridMapTile::TYPE_REFLECTIVITY, "reflectivity",
 	                    loop_closure_indices, relative_transform_vector, convergence_vector,
 	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
-	                    dataset_path, dir_to_save_maps);
+	                    dataset_path);
 
 	map_path = dir_to_save_maps + "/map_visual_" + log_name;
 	run_particle_filter(map_path,
 	                    GridMapTile::TYPE_VISUAL, "colour",
 	                    loop_closure_indices, relative_transform_vector, convergence_vector,
 	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
-	                    dataset_path, dir_to_save_maps);
+	                    dataset_path);
 
+/*
 	map_path = dir_to_save_maps + "/map_semantic_" + log_name;
 	run_particle_filter(map_path,
 	                    GridMapTile::TYPE_SEMANTIC, "semantic",
 	                    loop_closure_indices, relative_transform_vector, convergence_vector,
 	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
-	                    dataset_path, dir_to_save_maps);
+	                    dataset_path);
+*/
 }
 
 
@@ -1010,8 +1008,6 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
                                                    int n_corrections_when_reinit,
                                                    CommandLineArguments &args)
 {
-	int view = args.get<int>("view");
-
 	string adj_name = file_name_from_path(dataset_to_adjust_path);
 	string tgt_name = file_name_from_path(target_dataset_path);
 	string dir_maps_are_saved = "/dados/maps2/";
@@ -1022,12 +1018,41 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 		//map_has_to_be_created = 1;
 	assert(boost::filesystem::exists(map_path));
 
-	map_path = dir_to_save_maps + "/map_" + tgt_name + "_occupancy";
+	std::map<int, int> loop_closures;
+
+	for (int i = 0; i < dataset_to_adjust.size(); i++)
+		loop_closures.insert(pair<int, int>(i, 0));
+
+	map_path = dir_maps_are_saved + "/map_" + tgt_name + "_occupancy";
 	run_particle_filter(map_path,
-											GridMapTile::TYPE_OCCUPANCY, "reflectivity",
-											loop_closure_indices, relative_transform_vector, convergence_vector,
-											n_corrections_when_reinit, args, dataset, dataset, loop_closures,
-											dataset_path, dir_to_save_maps);
+						GridMapTile::TYPE_OCCUPANCY, "reflectivity",
+						loop_closure_indices, relative_transform_vector, convergence_vector,
+						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
+						dataset_to_adjust_path);
+
+	map_path = dir_maps_are_saved + "/map_" + tgt_name + "_reflectivity";
+	run_particle_filter(map_path,
+						GridMapTile::TYPE_REFLECTIVITY, "reflectivity",
+						loop_closure_indices, relative_transform_vector, convergence_vector,
+						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
+						dataset_to_adjust_path);
+
+/*
+	map_path = dir_maps_are_saved + "/map_" + tgt_name + "_semantic";
+	run_particle_filter(map_path,
+						GridMapTile::TYPE_SEMANTIC, "semantic",
+						loop_closure_indices, relative_transform_vector, convergence_vector,
+						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
+						dataset_to_adjust_path);
+ */
+
+	map_path = dir_maps_are_saved + "/map_" + tgt_name + "_visual";
+	run_particle_filter(map_path,
+						GridMapTile::TYPE_VISUAL, "colour",
+						loop_closure_indices, relative_transform_vector, convergence_vector,
+						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
+						dataset_to_adjust_path);
+
 	/*
 	if (map_has_to_be_created)
 	{
@@ -1037,6 +1062,7 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 	}
 	*/
 
+	/*
 	ParticleFilter pf(args.get<int>("n_particles"),
 										args.get<double>("gps_xy_std"),
 										args.get<double>("gps_xy_std"),
@@ -1138,6 +1164,7 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 
 		prev_id = i;
 	}
+	*/
 }
 
 
