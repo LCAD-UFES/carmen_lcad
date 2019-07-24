@@ -191,7 +191,7 @@ ParticleFilter::_semantic_point_weight(int class_id, double *cell, int n_classes
 
 	// cell observed at least once.
 	// TODO: what to do when the cell was never observed?
-	count = cell[n_classes + 1];
+	count = cell[n_classes];
 	assert(count != 0);
 
 	// log probability of the observed class.

@@ -93,7 +93,7 @@ view_pointcloud = 1
 # Visualization flag.
 view_imgs = 1
 # Flag for choosing to pause the viewer or not in the beginning
-start_paused = 1
+start_paused = 0
 # Flag for choosing to build or not this type of map.
 build_occupancy_map = 1
 # Flag for choosing to build or not this type of map.

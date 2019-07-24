@@ -815,7 +815,7 @@ detect_loop_closures(NewCarmenDataset &dataset, CommandLineArguments &args,
 		}
 	}
 
-	//grow_mapped_area(poses_for_mapping, dataset, loop_closures);
+	grow_mapped_area(poses_for_mapping, dataset, loop_closures);
 }
 
 
