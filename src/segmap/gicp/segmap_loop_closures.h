@@ -27,6 +27,17 @@ public:
 void
 show_flipped_img_in_viewer(PointCloudViewer &viewer, cv::Mat &img);
 
+void
+run_viewer_if_necessary(Pose2d *pose,
+												GridMap &map,
+												ParticleFilter &pf,
+												DataSample *sample,
+												SensorPreproc &preproc,
+												PointCloudViewer &viewer,
+												int pf_was_updated,
+												int show_particles,
+												int view);
+
 
 void
 run_viewer_if_necessary(Pose2d *pose,

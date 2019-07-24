@@ -76,7 +76,7 @@ def run_loop_closures(carmen_path, log_path, output_dir, mode):
 		pf_output = " " + output_dir + "/pf_loops.txt"
 		run_command(cmd + pf_output + pf_args)
 	elif mode == "localization":
-    	loop_closure_time = 10
+		loop_closure_time = 10
 		#if 'aeroport' in log_path:
 			#loop_closure_time = 10
 		#else:

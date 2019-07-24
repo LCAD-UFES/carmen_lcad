@@ -26,54 +26,11 @@ using namespace cv;
 
 
 void
-update_maps(DataSample *sample, SensorPreproc &preproc, GridMap *visual_map, GridMap *reflectivity_map, GridMap *semantic_map, GridMap *occupancy_map)
-{
-	PointXYZRGB point;
-	std::vector<SensorPreproc::CompletePointData> points;
-	preproc.reinitialize(sample);
-
-	for (int i = 0; i < preproc.size(); i++)
-	{
-		points = preproc.next_points_with_full_information();
-
-		if (occupancy_map)
-			occupancy_map->add_occupancy_shot(points);
-
-		for (int j = 0; j < points.size(); j++)
-		{
-			if (points[j].valid)
-			{
-				if (visual_map && points[j].visible_by_cam)
-				{
-					point = points[j].world;
-					point.r = points[j].colour[2];
-					point.g = points[j].colour[1];
-					point.b = points[j].colour[0];
-					visual_map->add_point(point);
-				}
-
-				if (semantic_map && points[j].visible_by_cam)
-				{
-					point = points[j].world;
-					point.r = point.g = point.b = points[j].semantic_class;
-					semantic_map->add_point(point);
-				}
-
-				if (reflectivity_map)
-				{
-					point = points[j].world;
-					point.r = point.g = point.b = points[j].calibrated_intensity;
-					reflectivity_map->add_point(point);
-				}
-			}
-		}
-	}
-}
-
-
-void
 view_one_map(DataSample *sample, PointCloudViewer &viewer, GridMap *map, int img_width, const char *name)
 {
+	if (map == NULL)
+		return;
+
 	Mat map_img = map->to_image().clone();
 	draw_pose(*map, map_img, sample->pose, Scalar(0, 255, 0));
 
@@ -156,14 +113,14 @@ create_map(NewCarmenDataset *dataset,
 	}
 
 	GridMap *visual_map = new GridMap(map_path + "map_visual_" + log_name, tile_size, tile_size, resolution, GridMapTile::TYPE_VISUAL, save_map);
-	GridMap *semantic_map = new GridMap(map_path + "map_semantic_" + log_name, tile_size, tile_size, resolution, GridMapTile::TYPE_SEMANTIC, save_map);
+	//GridMap *semantic_map = new GridMap(map_path + "map_semantic_" + log_name, tile_size, tile_size, resolution, GridMapTile::TYPE_SEMANTIC, save_map);
 	GridMap *occupancy_map = new GridMap(map_path + "map_occupancy_" + log_name, tile_size, tile_size, resolution, GridMapTile::TYPE_OCCUPANCY, save_map);
 	GridMap *reflectivity_map = new GridMap(map_path + "map_reflectivity_" + log_name, tile_size, tile_size, resolution, GridMapTile::TYPE_REFLECTIVITY, save_map);
 
 	viewer.set_step(args.get<int>("start_paused"));
 
 	preproc.set_load_img_flag(1);
-	preproc.set_load_semantic_img_flag(1);
+	//preproc.set_load_semantic_img_flag(1);
 
 	for (int i = 0; i < samples_to_map.size(); i++)
 	{
@@ -175,11 +132,13 @@ create_map(NewCarmenDataset *dataset,
 		timer.start();
 
 		visual_map->reload(sample->pose.x, sample->pose.y);
-		semantic_map->reload(sample->pose.x, sample->pose.y);
+		//semantic_map->reload(sample->pose.x, sample->pose.y);
 		occupancy_map->reload(sample->pose.x, sample->pose.y);
 		reflectivity_map->reload(sample->pose.x, sample->pose.y);
 
-		update_maps(sample, preproc, visual_map, reflectivity_map, semantic_map, occupancy_map);
+		update_maps(sample, preproc, visual_map, reflectivity_map, 
+					NULL, //semantic_map, 
+					occupancy_map);
 
 		times.push_back(timer.ellapsed());
 
@@ -190,19 +149,20 @@ create_map(NewCarmenDataset *dataset,
 		if (view_flag)
 		{
 			view_maps(sample, preproc, viewer, visual_map,
-			          reflectivity_map, semantic_map,
+			          reflectivity_map, 
+					  NULL, //semantic_map,
 			          occupancy_map, img_width, view_pointcloud,
 			          view_imgs);
 		}
 	}
 
 	visual_map->save();
-	semantic_map->save();
+	//semantic_map->save();
 	occupancy_map->save();
 	reflectivity_map->save();
 
 	delete(visual_map);
-	delete(semantic_map);
+	//delete(semantic_map);
 	delete(occupancy_map);
 	delete(reflectivity_map);
 

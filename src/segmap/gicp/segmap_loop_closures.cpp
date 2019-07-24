@@ -50,6 +50,46 @@ void
 run_viewer_if_necessary(Pose2d *pose,
 												GridMap &map,
 												ParticleFilter &pf,
+												DataSample *sample,
+												SensorPreproc &preproc,
+												PointCloudViewer &viewer,
+												int pf_was_updated,
+												int show_particles,
+												int view)
+{
+	if (view)
+	{
+		Mat img;
+
+		PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
+		preproc.reinitialize(sample);
+		load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+		
+
+		if (pf_was_updated)
+			img = pf_view(pf, map, pose, pf.mean(), cloud, show_particles);
+		else
+		{
+			img = map.to_image().clone();
+			draw_pose(map, img, *pose, Scalar(0, 255, 0));
+			transformPointCloud(*cloud, *cloud, Pose2d::to_matrix(*pose));
+			draw_pointcloud(img, cloud, map, 1, Scalar(0, 255, 0));
+		}
+
+		//viewer.clear();
+		//PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
+		//transformPointCloud(*cloud, *transformed, Pose2d::to_matrix(*pose));
+		//viewer.show(cloud);
+		//viewer.set_camera_pose(pose->x, pose->y);
+		show_flipped_img_in_viewer(viewer, img);
+	}
+}
+
+
+void
+run_viewer_if_necessary(Pose2d *pose,
+												GridMap &map,
+												ParticleFilter &pf,
 												PointCloud<PointXYZRGB>::Ptr cloud,
 												PointCloudViewer &viewer,
 												int pf_was_updated,
@@ -781,15 +821,19 @@ detect_loop_closures(NewCarmenDataset &dataset, CommandLineArguments &args,
 
 void
 do_prediction_and_correction(ParticleFilter &pf, DataSample *sample, double v, double phi, double dt,
-                             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, GridMap &map,
+                             SensorPreproc &preproc, GridMap &map,
                              PointCloudViewer &viewer, int view)
 {
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+	preproc.reinitialize(sample);
+	load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE); 
+
 	pf.predict(v, phi, dt);
 
 	if (view)
 		run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 1, 1, view);
 
-	pf.correct(cloud, map, sample->gps);
+	pf.correct(sample, map, preproc);
 
 	if (view)
 		run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 1, 1, view);
@@ -797,19 +841,19 @@ do_prediction_and_correction(ParticleFilter &pf, DataSample *sample, double v, d
 
 
 void
-reinitialize_particle_filter(ParticleFilter &pf, GridMap &map, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, PointCloudViewer &viewer, int view,
+reinitialize_particle_filter(ParticleFilter &pf, GridMap &map, SensorPreproc &preproc, PointCloudViewer &viewer, int view,
                              DataSample *sample, int n_corrections_when_reinit)
 {
 	// initialize particle filter
 	pf.reset(sample->pose.x, sample->pose.y, sample->pose.th);
 
 	for (int k = 0; k < n_corrections_when_reinit; k++)
-		do_prediction_and_correction(pf, sample, 0, 0, 0, cloud, map, viewer, view);
+		do_prediction_and_correction(pf, sample, 0, 0, 0, preproc, map, viewer, view);
 }
 
 
 void
-update_particle_filter(ParticleFilter &pf, GridMap &map, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, PointCloudViewer &viewer, int view,
+update_particle_filter(ParticleFilter &pf, GridMap &map, SensorPreproc &preproc, PointCloudViewer &viewer, int view,
                        NewCarmenDataset &dataset, DataSample *sample, std::map<int, int>::iterator it, int is_init,
                        vector<pair<int, int>> &loop_closure_indices,
                        vector<Matrix<double, 4, 4>> *relative_transform_vector,
@@ -827,13 +871,13 @@ update_particle_filter(ParticleFilter &pf, GridMap &map, pcl::PointCloud<pcl::Po
 	double d = dist2d(mean.x, mean.y, sample->pose.x, sample->pose.y);
 
 	if (is_init || d > DIST_FOR_JUMP_DETECTION)
-		reinitialize_particle_filter(pf, map, cloud, viewer, view, sample, n_corrections_when_reinit);
+		reinitialize_particle_filter(pf, map, preproc, viewer, view, sample, n_corrections_when_reinit);
 	else
 	{
 		if (it->first > 0)
 		{
 			double dt = fabs(sample->time - dataset.at(it->first - 1)->time);
-			do_prediction_and_correction(pf, sample, sample->v, sample->phi, dt, cloud, map, viewer, view);
+			do_prediction_and_correction(pf, sample, sample->v, sample->phi, dt, preproc, map, viewer, view);
 		}
 	}
 
@@ -884,11 +928,10 @@ run_particle_filter(string map_type_as_string, GridMapTile::MapType map_type, st
 	for (it = loop_closures.begin(); it != loop_closures.end(); it++)
 	{
 		sample = dataset[it->first];
-		preproc.reinitialize(sample);
-		load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
 
-		update_particle_filter(pf, map, cloud, viewer, args.get<int>("view"), dataset, sample, it, is_init,
-		                       loop_closure_indices, relative_transform_vector, convergence_vector, n_corrections_when_reinit);
+		update_particle_filter(pf, map, preproc, viewer, args.get<int>("view"), dataset, sample, it, is_init,
+		                       loop_closure_indices, relative_transform_vector, convergence_vector, 
+							   n_corrections_when_reinit);
 
 		is_init = 0;
 	}
@@ -911,9 +954,10 @@ estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detec
 	string dir_to_save_maps = "/tmp/loop_closure_maps/";
 
 	if (!boost::filesystem::exists(dir_to_save_maps))
+	{
 		boost::filesystem::create_directory(dir_to_save_maps);
-
-	create_map(&dataset, preproc, args, dir_to_save_maps, vector<int>(poses_for_mapping.begin(), poses_for_mapping.end()));
+		create_map(&dataset, preproc, args, dir_to_save_maps, vector<int>(poses_for_mapping.begin(), poses_for_mapping.end()));
+	}
 
 	string log_name = file_name_from_path(dataset_path);
 
@@ -921,12 +965,12 @@ estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detec
 	relative_transform_vector->clear();
 	convergence_vector->clear();
 
-	run_particle_filter("reflectivity", GridMapTile::TYPE_REFLECTIVITY, "reflectivity", log_name,
+	run_particle_filter("occupancy", GridMapTile::TYPE_OCCUPANCY, "reflectivity", log_name,
 	                    loop_closure_indices, relative_transform_vector, convergence_vector,
 	                    n_corrections_when_reinit, args, dataset, loop_closures,
 	                    dataset_path, dir_to_save_maps);
 
-	run_particle_filter("occupancy", GridMapTile::TYPE_OCCUPANCY, "reflectivity", log_name,
+	run_particle_filter("reflectivity", GridMapTile::TYPE_REFLECTIVITY, "reflectivity", log_name,
 	                    loop_closure_indices, relative_transform_vector, convergence_vector,
 	                    n_corrections_when_reinit, args, dataset, loop_closures,
 	                    dataset_path, dir_to_save_maps);
@@ -936,11 +980,12 @@ estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detec
 	                    n_corrections_when_reinit, args, dataset, loop_closures,
 	                    dataset_path, dir_to_save_maps);
 
+/*
 	run_particle_filter("semantic", GridMapTile::TYPE_SEMANTIC, "semantic", log_name,
 	                    loop_closure_indices, relative_transform_vector, convergence_vector,
 	                    n_corrections_when_reinit, args, dataset, loop_closures,
 	                    dataset_path, dir_to_save_maps);
-
+ */
 }
 
 

@@ -116,24 +116,16 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 		dt = sample->time - dataset->at(i - step)->time;
 		pf.predict(sample->v, sample->phi, dt);
 
-		preproc.reinitialize(sample);
-		load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+		do_correction = 0;
 
-		// some times only half velodyne rays arrive, and if the rays are not visible by the camera,
-		// the cloud can be empty.
-		if (cloud->size() > 10)
-		{
-			do_correction = 0;
+		if (correction_step <= 1)
+			do_correction = 1;
+		else if (n % correction_step == 0)
+			do_correction = 1;
 
-			if (correction_step <= 1)
-				do_correction = 1;
-			else if (n % correction_step == 0)
-				do_correction = 1;
-
-			if (do_correction)
-				pf.correct(cloud, map, sample->gps);
-				//pf.correct(sample, &map, preproc);
-		}
+		if (do_correction)
+			//pf.correct(cloud, map, sample->gps);
+			pf.correct(sample, map, preproc);
 
 		//printf("* Pose: %lf %lf %lf v: %lf n: %d last_reload: %d steps: %d\n", pose.x, pose.y, pose.th,
 		//fabs(sample->v), n, last_reload, steps_to_skip_map_reload);
@@ -169,7 +161,8 @@ main(int argc, char **argv)
 	add_default_mapper_args(args);
 	add_default_localizer_args(args);
 
-	args.add<int>("view,v", "Flag to set visualization on or off", 1);
+	args.add<string>("map_path,m", "Dir with tiles of a map", "/tmp/map");
+	args.add<string>("map_type", "", "reflectivity");
 
 	args.save_config_file(default_data_dir() + "/localizer_config.txt");
 	args.parse(argc, argv);

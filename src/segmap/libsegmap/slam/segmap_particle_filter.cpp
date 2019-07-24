@@ -13,6 +13,10 @@
 #include <carmen/segmap_particle_filter.h>
 #include <carmen/segmap_preproc.h>
 #include <cassert>
+#include <carmen/util_io.h>
+#include <carmen/util_strings.h>
+#include <carmen/util_time.h>
+#include <boost/filesystem.hpp>
 
 using namespace Eigen;
 using namespace pcl;
@@ -212,9 +216,9 @@ ParticleFilter::_reflectivity_point_weight(double reflectivity, vector<double> &
 
 
 double
-ParticleFilter::_occupancy_point_weight(double is_obstacle, vector<double> &cell)
+ParticleFilter::_occupancy_point_weight(double prob_obstacle, vector<double> &cell)
 {
-	return _occupancy_point_weight(is_obstacle, cell.data());
+	return _occupancy_point_weight(prob_obstacle, cell.data());
 }
 
 
@@ -235,7 +239,7 @@ ParticleFilter::_image_point_weight(double r, double g, double b, double *cell)
 
 
 double
-ParticleFilter::_occupancy_point_weight(double is_obstacle, double *cell)
+ParticleFilter::_occupancy_point_weight(double prob_obstacle, double *cell)
 {
 	double p = 0.5; 
 
@@ -245,12 +249,13 @@ ParticleFilter::_occupancy_point_weight(double is_obstacle, double *cell)
 		p = (cell[0] / cell[1]);
 		
 		// if the measurement is not an obstacle, we return the opposite prob.
-		if (!is_obstacle)
+		if (prob_obstacle < 0.5)
 			p = 1 - p;
 	}
 
 	// just to prevent numerical instabilities.
-	if (p == 0) p = 1e-6;
+	if (p == 0) 
+		p = 1e-6;
 
 	return log(p);
 }
@@ -481,7 +486,8 @@ ParticleFilter::_weight_between_cells(double *inst_cell, double *off_cell, GridM
 	}
 	else if (map_type == GridMapTile::TYPE_OCCUPANCY)
 	{
-		return _occupancy_point_weight(inst_cell[0], off_cell);
+		double prob_obstacle = inst_cell[0] / inst_cell[1];
+		return _occupancy_point_weight(prob_obstacle, off_cell);
 	}
 
 //	else if (_weight_type == WEIGHT_GPS)
@@ -645,6 +651,42 @@ view_point_cloud_as_image(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMa
 }
 
 
+string
+map_type_to_string(GridMapTile::MapType map_type)
+{
+	if (map_type == GridMapTile::TYPE_OCCUPANCY)
+		return "occupancy";
+	else if (map_type == GridMapTile::TYPE_REFLECTIVITY)
+		return "reflectivity";
+	else if (map_type == GridMapTile::TYPE_SEMANTIC)
+		return "semantic";
+	else if (map_type == GridMapTile::TYPE_VISUAL)
+		return "visual";
+
+	return "unknown";
+}
+
+
+string
+get_tiles_dir(GridMap &map)
+{
+	string s = "/tmp/" + map_type_to_string(map._map_type) + "_";
+	string map_dir;
+
+	do
+	{
+		char name[128];
+		sprintf(name, "%d", rand());
+		map_dir = s + string(name);
+	} while (boost::filesystem::exists(map_dir));
+	
+	printf("Creating dir for instantaneous map: %s\n", map_dir.c_str());
+	printf("result: %d\n", boost::filesystem::create_directory(map_dir));
+
+	return map_dir;
+}
+
+
 void
 ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &map, Pose2d &gps, int *max_id, int *min_id)
 {
@@ -655,9 +697,11 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &ma
 		exit(printf("Error: set at least one way of computing the particles' weights.\n"));
 
 	// todo: avoid creating this structure when using only gps for computing the particle weights.
-	GridMap instantaneous_map("/tmp/local_map", map._tile_height_meters,
+	string tiles_dir = get_tiles_dir(map);
+	
+	GridMap instantaneous_map(tiles_dir, map._tile_height_meters,
 	                          map._tile_width_meters, map.m_by_pixels, 
-							  map._map_type);
+							  map._map_type, 1);
 
 	if (use_map_weight || use_ecc_weight)
 	{
@@ -665,6 +709,10 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &ma
 		for (int i = 0; i < cloud->size(); i++)
 			instantaneous_map.add_point(cloud->at(i));
 	}
+
+	cv::Mat map_img = instantaneous_map.to_image();
+	cv::imshow("inst_map", map_img);
+	cv::waitKey(1);
 
 	// view_observed_cells(instantaneous_map);
 
@@ -786,66 +834,50 @@ ParticleFilter::_resample()
 }
 
 
-/* 
-// todo: reviver.
-
 void
-ParticleFilter::_compute_weights(DataSample *sample, GridMap *map, SensorPreproc &preproc, int *max_id, int *min_id)
+ParticleFilter::_compute_weights(DataSample *sample, GridMap &map, SensorPreproc &preproc, int *max_id, int *min_id)
 {
-	exit(printf("Error: use the method that receives as input point clouds for computing particles' weights.\n"));
+	int i;
+
+	if (!use_gps_weight && !use_map_weight && !use_ecc_weight)
+		exit(printf("Error: set at least one way of computing the particles' weights.\n"));
+
+	// todo: avoid creating this structure when using only gps for computing the particle weights.
+	string tiles_dir = get_tiles_dir(map);
 	
-	int i, n_points;
-	pcl::PointXYZRGB p;
+	GridMap instantaneous_map(tiles_dir, map._tile_height_meters,
+	                          map._tile_width_meters, map.m_by_pixels, 
+							  map._map_type, 1);
 
-	if (_weight_type == WEIGHT_GPS)
+	if (use_map_weight || use_ecc_weight)
 	{
-		for (i = 0; i < _n; i++)
-			_w[i] = _gps_weight(_p[i], sample->gps);
+		instantaneous_map.reload(0, 0);
+		create_instantaneous_map(sample, preproc, &instantaneous_map, 0);
 	}
-	else
+
+	cv::Mat map_img = instantaneous_map.to_image();
+	cv::imshow("inst_map", map_img);
+	cv::waitKey(1);
+
+	// view_observed_cells(instantaneous_map);
+
+	// #pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
+	for (int i = 0; i < _n; i++)
 	{
-		n_points = 0;
+		//transformed_cloud->clear();
+		//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
+		//_w[i] = _image_weight(transformed_cloud, map);
 
-		preproc.reinitialize(sample);
-
-		vector<Matrix<double, 4, 4>> particles_poses;
-		for (i = 0; i < _n; i++)
-			particles_poses.push_back(Pose2d::to_matrix(_p[i]));
-
-		for (int k = 0; k < preproc.size(); k++)
-		{
-			vector<PointXYZRGB> points = preproc.next_points_in_car();
-
-			for (int j = 0; j < points.size(); j++)
-			{
-				for (int i = 0; i < _n; i++)
-				{
-					p = transform_point(particles_poses[i], points[j]);
-					vector<double> cell = map->read_cell(p);
-
-					if (_weight_type == WEIGHT_SEMANTIC)
-						_w[i] += _semantic_point_weight(p.r, cell);
-					else if (_weight_type == WEIGHT_VISUAL)
-						_w[i] += _image_point_weight(p.r, p.g, p.b, cell);
-				}
-
-				n_points++;
-			}
-		}
-
-		//for (int i = 0; i < _n; i++)
-		//_w[i] /= (double) n_points;
+		_w[i] = _compute_particle_weight(instantaneous_map, map, sample->gps, _p[i]);
+		_p_bef[i] = _p[i];
 	}
 
 	*max_id = *min_id = 0;
 
-	//fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
+	fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
 	for (i = 0; i < _n; i++)
 	{
-		// copy the particle value before resampling
-		_p_bef[i] = _p[i];
-
-		//fprintf(stderr, "%.4lf ", _w[i]);
+		fprintf(stderr, "%.4lf ", _w[i]);
 
 		if (_w[i] > _w[*max_id])
 			*max_id = i;
@@ -853,11 +885,10 @@ ParticleFilter::_compute_weights(DataSample *sample, GridMap *map, SensorPreproc
 		if (_w[i] < _w[*min_id])
 			*min_id = i;
 	}
-	//fprintf(stderr, "\n");
+	fprintf(stderr, "\n");
 
 	best = _p[*max_id];
 }
-*/
 
 
 void
@@ -872,11 +903,8 @@ ParticleFilter::correct(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &map, Pose2d
 }
 
 
-/*
-// todo: reviver.
-
 void
-ParticleFilter::correct(DataSample *sample, GridMap *map, SensorPreproc &preproc)
+ParticleFilter::correct(DataSample *sample, GridMap &map, SensorPreproc &preproc)
 {
 	int max_id = 0;
 	int min_id = 0;
@@ -885,7 +913,6 @@ ParticleFilter::correct(DataSample *sample, GridMap *map, SensorPreproc &preproc
 	_normalize_weights(min_id, max_id);
 	_resample();
 }
-*/
 
 
 Pose2d

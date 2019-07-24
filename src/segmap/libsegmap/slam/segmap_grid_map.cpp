@@ -577,7 +577,8 @@ compute_obstacle_evidence(SensorPreproc::CompletePointData &prev, SensorPreproc:
 
 
 void
-GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &points)
+GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &points, int do_raycast,
+							int use_world_ref)
 {
 	_check_if_map_was_initialized();
 
@@ -616,14 +617,18 @@ GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &point
 			if (obstacle_prob > 0.5 && nearest_obstacle == -1)
 				nearest_obstacle = i;
 
-			point = PointXYZRGB(points[i].world);
+			if (use_world_ref)
+				point = PointXYZRGB(points[i].world);
+			else
+				point = PointXYZRGB(points[i].car);
+
 			point.r = point.g = point.b = obstacle_prob;
 			add_point(point);
 		}
 	}
 
 	// raycast until the nearest cell that hit an obstacle
-	if ((first_valid >= 0) && (first_valid != last_valid))
+	if (do_raycast && (first_valid >= 0) && (first_valid != last_valid))
 	{
 		int update_until_range_max = 0;
 
@@ -634,8 +639,18 @@ GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &point
 			update_until_range_max = 1;
 		}
 
-		double dx = points[nearest_obstacle].world.x - points[first_valid].world.x;
-		double dy = points[nearest_obstacle].world.y - points[first_valid].world.y;
+		double dx, dy;
+
+		if (use_world_ref)
+		{
+			dx = points[nearest_obstacle].world.x - points[first_valid].world.x;
+			dy = points[nearest_obstacle].world.y - points[first_valid].world.y;
+		}
+		else
+		{
+			dx = points[nearest_obstacle].car.x - points[first_valid].car.x;
+			dy = points[nearest_obstacle].car.y - points[first_valid].car.y;
+		}
 
 		// the -2 is to prevent raycasting over the cell that contains an obstacle
 		double dx_cells = dx * pixels_by_m - 2;
@@ -662,8 +677,17 @@ GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &point
 		// the -2 is to prevent raycasting over the cell that contains an obstacle.
 		for (int i = 0; i < (n_cells_in_line - 2); i++)
 		{
-			point.x = points[first_valid].world.x + dx * i;
-			point.y = points[first_valid].world.y + dy * i;
+			if (use_world_ref)
+			{
+				point.x = points[first_valid].world.x + dx * i;
+				point.y = points[first_valid].world.y + dy * i;
+			}
+			else
+			{
+				point.x = points[first_valid].car.x + dx * i;
+				point.y = points[first_valid].car.y + dy * i;
+			}
+
 			// set the point as free
 			point.r = point.g = point.b = 0;
 			add_point(point);
@@ -764,3 +788,94 @@ GridMap::save()
 	}
 }
 
+
+void
+update_maps(DataSample *sample, SensorPreproc &preproc, GridMap *visual_map, GridMap *reflectivity_map, GridMap *semantic_map, GridMap *occupancy_map)
+{
+	PointXYZRGB point;
+	std::vector<SensorPreproc::CompletePointData> points;
+	preproc.reinitialize(sample);
+
+	for (int i = 0; i < preproc.size(); i++)
+	{
+		points = preproc.next_points_with_full_information();
+
+		if (occupancy_map)
+			occupancy_map->add_occupancy_shot(points);
+
+		for (int j = 0; j < points.size(); j++)
+		{
+			if (points[j].valid)
+			{
+				if (visual_map && points[j].visible_by_cam)
+				{
+					point = points[j].world;
+					point.r = points[j].colour[2];
+					point.g = points[j].colour[1];
+					point.b = points[j].colour[0];
+					visual_map->add_point(point);
+				}
+
+				if (semantic_map && points[j].visible_by_cam)
+				{
+					point = points[j].world;
+					point.r = point.g = point.b = points[j].semantic_class;
+					semantic_map->add_point(point);
+				}
+
+				if (reflectivity_map)
+				{
+					point = points[j].world;
+					point.r = point.g = point.b = points[j].calibrated_intensity;
+					reflectivity_map->add_point(point);
+				}
+			}
+		}
+	}
+}
+
+
+void 
+create_instantaneous_map(DataSample *sample, SensorPreproc &preproc, GridMap *inst_map, int do_raycast)
+{
+	PointXYZRGB point;
+	std::vector<SensorPreproc::CompletePointData> points;
+	preproc.reinitialize(sample);
+
+	for (int i = 0; i < preproc.size(); i++)
+	{
+		points = preproc.next_points_with_full_information();
+
+		if (inst_map->_map_type == GridMapTile::TYPE_OCCUPANCY)
+			inst_map->add_occupancy_shot(points, do_raycast, 0);
+
+		for (int j = 0; j < points.size(); j++)
+		{
+			if (points[j].valid)
+			{
+				if (inst_map->_map_type == GridMapTile::TYPE_VISUAL && points[j].visible_by_cam)
+				{
+					point = points[j].car;
+					point.r = points[j].colour[2];
+					point.g = points[j].colour[1];
+					point.b = points[j].colour[0];
+					inst_map->add_point(point);
+				}
+
+				if (inst_map->_map_type == GridMapTile::TYPE_SEMANTIC && points[j].visible_by_cam)
+				{
+					point = points[j].car;
+					point.r = point.g = point.b = points[j].semantic_class;
+					inst_map->add_point(point);
+				}
+
+				if (inst_map->_map_type == GridMapTile::TYPE_REFLECTIVITY)
+				{
+					point = points[j].car;
+					point.r = point.g = point.b = points[j].calibrated_intensity;
+					inst_map->add_point(point);
+				}
+			}
+		}
+	}
+}

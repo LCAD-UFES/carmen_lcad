@@ -20,7 +20,7 @@ public:
 	void _compute_weights(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, GridMap &map,
 	                      Pose2d &gps, int *max_id, int *min_id);
 
-	//void _compute_weights(DataSample *sample, GridMap *map, SensorPreproc &preproc, int *max_id, int *min_id);
+	void _compute_weights(DataSample *sample, GridMap &map, SensorPreproc &preproc, int *max_id, int *min_id);
 
 	void _normalize_weights(int min_id, int max_id);
 	void _resample();
@@ -43,7 +43,7 @@ public:
 	void predict(double v, double phi, double dt);
 	double sensor_weight(pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
 	void correct(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, GridMap &map, Pose2d &gps);
-	//void correct(DataSample *sample, GridMap *map, SensorPreproc &preproc);
+	void correct(DataSample *sample, GridMap &map, SensorPreproc &preproc);
 
 	Pose2d mean();
 	Pose2d mode();
@@ -90,12 +90,12 @@ public:
 	double _semantic_point_weight(int class_id, std::vector<double> &cell);
 	double _image_point_weight(double r, double g, double b, std::vector<double> &cell);
 	double _reflectivity_point_weight(double reflectivity, std::vector<double> &cell);
-	double _occupancy_point_weight(double is_obstacle, std::vector<double> &cell);
+	double _occupancy_point_weight(double prob_obstacle, std::vector<double> &cell);
 
 	double _image_point_weight(double r, double g, double b, double *cell);
 	double _reflectivity_point_weight(double reflectivity, double *cell);
 	double _semantic_point_weight(int class_id, double *cell, int n_classes);
-	double _occupancy_point_weight(double is_obstacle, double *cell);
+	double _occupancy_point_weight(double prob_obstacle, double *cell);
 
 	void _reset_histograms();
 	void _update_histogram(double *inst_cell, double *off_cell, GridMapTile::MapType map_type);

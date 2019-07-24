@@ -10,9 +10,6 @@
 #include <carmen/segmap_sensor_viewer.h>
 
 
-// utility function for updating the map with a point cloud.
-void update_maps(DataSample *sample, SensorPreproc &preproc, GridMap *visual_map, GridMap *reflectivity_map, GridMap *semantic_map, GridMap *occupancy_map);
-
 void
 view_one_map(DataSample *sample, PointCloudViewer &viewer, GridMap *map, int img_width, const char *name);
 
