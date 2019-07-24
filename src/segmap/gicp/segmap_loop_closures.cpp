@@ -914,6 +914,8 @@ run_particle_filter(string map_path,
 	PointCloudViewer viewer;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
+	viewer.set_step(args.get<int>("start_paused"));
+
 	int is_init = 1;
 	std::map<int, int>::iterator it;
 
@@ -986,14 +988,12 @@ estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detec
 	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
 	                    dataset_path);
 
-/*
 	map_path = dir_to_save_maps + "/map_semantic_" + log_name;
 	run_particle_filter(map_path,
 	                    GridMapTile::TYPE_SEMANTIC, "semantic",
 	                    loop_closure_indices, relative_transform_vector, convergence_vector,
 	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
 	                    dataset_path);
-*/
 }
 
 
@@ -1037,14 +1037,12 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
 						dataset_to_adjust_path);
 
-/*
 	map_path = dir_maps_are_saved + "/map_" + tgt_name + "_semantic";
 	run_particle_filter(map_path,
 						GridMapTile::TYPE_SEMANTIC, "semantic",
 						loop_closure_indices, relative_transform_vector, convergence_vector,
 						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
 						dataset_to_adjust_path);
- */
 
 	map_path = dir_maps_are_saved + "/map_" + tgt_name + "_visual";
 	run_particle_filter(map_path,

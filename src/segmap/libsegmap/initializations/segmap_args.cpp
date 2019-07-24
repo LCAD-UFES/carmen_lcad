@@ -62,7 +62,7 @@ add_default_mapper_args(CommandLineArguments &args)
 {
 	// map parameters
 	args.add<double>("resolution,r", "Map resolution", 0.2);
-	args.add<double>("tile_size,t", "Map tiles size", 50);
+	args.add<double>("tile_size,t", "Map tiles size", 70);
 	args.add<int>("save_maps", "Flag for choosing to save or not the maps", 1);
 	args.add<int>("clean_map", "Flag for choosing to delete or not previous maps of the same region", 0);
 
@@ -70,7 +70,12 @@ add_default_mapper_args(CommandLineArguments &args)
 	args.add<int>("viewer_width", "Width of the map's visualization", 600);
 	args.add<int>("view_pointcloud", "Visualization flag.", 1);
 	args.add<int>("view_imgs", "Visualization flag.", 1);
-	args.add<int>("start_paused", "Flag for choosing to pause the viewer or not in the beginning", 1);
+	args.add<int>("start_paused", "Flag for choosing to pause the viewer or not in the beginning", 0);
+
+	args.add<int>("build_occupancy_map", "Flag for choosing to build or not this type of map.", 1);
+	args.add<int>("build_semantic_map", "Flag for choosing to build or not this type of map.", 1);
+	args.add<int>("build_visual_map", "Flag for choosing to build or not this type of map.", 1);
+	args.add<int>("build_reflectivity_map", "Flag for choosing to build or not this type of map.", 1);
 
 	//args.add<string>("map_path,m", "Path to save the maps", "/tmp/map");
 

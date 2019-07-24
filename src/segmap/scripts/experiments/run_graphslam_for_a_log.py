@@ -64,7 +64,7 @@ def run_loop_closures(carmen_path, log_path, output_dir, mode):
 	odom_calib = output_dir + "/odom_calib.txt" 
 	fused_odom = output_dir + "/fused_odom.txt"
 	
-	cmd = "%s %s %s -o %s -f %s --gps_id %d -i %s" % (program, log_path, PARAM_FILE, odom_calib, fused_odom, GPS_TO_USE, INTENSITY_MODE)
+	cmd = " --start_paused 0 %s %s %s -o %s -f %s --gps_id %d -i %s" % (program, log_path, PARAM_FILE, odom_calib, fused_odom, GPS_TO_USE, INTENSITY_MODE)
 	
 	if mode == "gicp":
 		gicp_args = " --mode gicp --dist_to_accumulate 2.0 --ignore_above_threshold %lf --ignore_below_threshold %lf --v_thresh %lf --clean_map 1 --view_imgs 0 --view_pointcloud 0" % (IGNORE_POINTS_ABOVE, IGNORE_POINTS_BELOW, SKIP_WHEN_VELOCITY_IS_BELOW)

@@ -112,15 +112,29 @@ create_map(NewCarmenDataset *dataset,
 		boost::filesystem::remove_all(map_path + "map_reflectivity_" + log_name);
 	}
 
-	GridMap *visual_map = new GridMap(map_path + "map_visual_" + log_name, tile_size, tile_size, resolution, GridMapTile::TYPE_VISUAL, save_map);
-	//GridMap *semantic_map = new GridMap(map_path + "map_semantic_" + log_name, tile_size, tile_size, resolution, GridMapTile::TYPE_SEMANTIC, save_map);
-	GridMap *occupancy_map = new GridMap(map_path + "map_occupancy_" + log_name, tile_size, tile_size, resolution, GridMapTile::TYPE_OCCUPANCY, save_map);
-	GridMap *reflectivity_map = new GridMap(map_path + "map_reflectivity_" + log_name, tile_size, tile_size, resolution, GridMapTile::TYPE_REFLECTIVITY, save_map);
+
+	GridMap *visual_map = NULL;
+	GridMap *semantic_map = NULL;
+	GridMap *occupancy_map = NULL;
+	GridMap *reflectivity_map = NULL;
+
+
+	if (args.get<int>("build_occupancy_map"))
+		occupancy_map = new GridMap(map_path + "map_occupancy_" + log_name, tile_size, tile_size, resolution, GridMapTile::TYPE_OCCUPANCY, save_map);
+
+	if (args.get<int>("build_visual_map"))
+		visual_map = new GridMap(map_path + "map_visual_" + log_name, tile_size, tile_size, resolution, GridMapTile::TYPE_VISUAL, save_map);
+
+	if (args.get<int>("build_semantic_map"))
+		semantic_map = new GridMap(map_path + "map_semantic_" + log_name, tile_size, tile_size, resolution, GridMapTile::TYPE_SEMANTIC, save_map);
+
+	if (args.get<int>("build_reflectivity_map"))
+		reflectivity_map = new GridMap(map_path + "map_reflectivity_" + log_name, tile_size, tile_size, resolution, GridMapTile::TYPE_REFLECTIVITY, save_map);
 
 	viewer.set_step(args.get<int>("start_paused"));
 
 	preproc.set_load_img_flag(1);
-	//preproc.set_load_semantic_img_flag(1);
+	preproc.set_load_semantic_img_flag(1);
 
 	for (int i = 0; i < samples_to_map.size(); i++)
 	{
@@ -131,14 +145,22 @@ create_map(NewCarmenDataset *dataset,
 
 		timer.start();
 
-		visual_map->reload(sample->pose.x, sample->pose.y);
-		//semantic_map->reload(sample->pose.x, sample->pose.y);
-		occupancy_map->reload(sample->pose.x, sample->pose.y);
-		reflectivity_map->reload(sample->pose.x, sample->pose.y);
+		if (args.get<int>("build_occupancy_map"))
+			occupancy_map->reload(sample->pose.x, sample->pose.y);
 
-		update_maps(sample, preproc, visual_map, reflectivity_map, 
-					NULL, //semantic_map, 
-					occupancy_map);
+		if (args.get<int>("build_visual_map"))
+			visual_map->reload(sample->pose.x, sample->pose.y);
+
+		if (args.get<int>("build_semantic_map"))
+			semantic_map->reload(sample->pose.x, sample->pose.y);
+
+		if (args.get<int>("build_reflectivity_map"))
+			reflectivity_map->reload(sample->pose.x, sample->pose.y);
+
+		update_maps(sample, preproc, visual_map,
+		            reflectivity_map,
+								semantic_map,
+								occupancy_map);
 
 		times.push_back(timer.ellapsed());
 
@@ -150,21 +172,35 @@ create_map(NewCarmenDataset *dataset,
 		{
 			view_maps(sample, preproc, viewer, visual_map,
 			          reflectivity_map, 
-					  NULL, //semantic_map,
+			          semantic_map,
 			          occupancy_map, img_width, view_pointcloud,
 			          view_imgs);
 		}
 	}
 
-	visual_map->save();
-	//semantic_map->save();
-	occupancy_map->save();
-	reflectivity_map->save();
+	if (args.get<int>("build_occupancy_map"))
+	{
+		occupancy_map->save();
+		delete(occupancy_map);
+	}
 
-	delete(visual_map);
-	//delete(semantic_map);
-	delete(occupancy_map);
-	delete(reflectivity_map);
+	if (args.get<int>("build_visual_map"))
+	{
+		visual_map->save();
+		delete(visual_map);
+	}
+
+	if (args.get<int>("build_semantic_map"))
+	{
+		semantic_map->save();
+		delete(semantic_map);
+	}
+
+	if (args.get<int>("build_reflectivity_map"))
+	{
+		reflectivity_map->save();
+		delete(reflectivity_map);
+	}
 
 	destroyAllWindows();
 }
