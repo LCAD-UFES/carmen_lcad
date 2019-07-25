@@ -4,15 +4,25 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <stdio.h>
 
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
 #define NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND (1 + NUM_MOTION_COMMANDS_PER_VECTOR * 6)
 
-//char *ip_address = "192.168.0.1";
-char *ip_address = (char *) "127.0.0.1";
+#define DEFAULT_PORT_NUMBER 3457
+#define DEFAULT_IP_ADDRESS "127.0.0.1"
 
-#define PORT "3457"
+char *ip_address = (char *) DEFAULT_IP_ADDRESS;
+int port_number = DEFAULT_PORT_NUMBER;
+bool bit_enabled = false;
 
+char *help_msg = "Usage: ./obstacle_avoider_to_socket_client [options]\n"
+			"This application sends motion commands to the Integration Server via UDP\n"
+			"Available options:\n"
+			"-ip_address <ip>\tIntegration Server IP address (default: 127.0.0.1)\n"
+			"-port_number <port>\tIntegration Server is listening for UDP datagrams at this port number (default: 3457)\n"
+			"-bit\t\t\tBuit-in test\n"
+			"-help\t\t\tPrint this help message\n";
 
 int
 stablished_connection_with_server_tcp_ip()
@@ -31,7 +41,9 @@ stablished_connection_with_server_tcp_ip()
 	host_info.ai_family = AF_UNSPEC;     // IP version not specified. Can be both.
 	host_info.ai_socktype = SOCK_STREAM; // Use SOCK_STREAM for TCP or SOCK_DGRAM for UDP.
 
-	status = getaddrinfo(ip_address, PORT, &host_info, &host_info_list);
+	char temp[256];
+	sprintf(temp, "%d", port_number);
+	status = getaddrinfo(ip_address, temp, &host_info, &host_info_list);
 
 	if (status != 0)
 	{
@@ -79,7 +91,7 @@ stablished_connection_with_server(struct sockaddr_in *client_address)
 
     client_address->sin_family = AF_INET;
     client_address->sin_addr.s_addr = inet_addr(ip_address);
-    client_address->sin_port = htons(atoi(PORT));
+    client_address->sin_port = htons(port_number);
 
 	return (new_socket);
 }
@@ -176,6 +188,46 @@ shutdown_module(int x)            // Handles ctrl+c
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                              //
+// Built-in tests                                                                               //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
+void
+socket_test(int size, double xmin, double xmax, double ymin, double ymax, double thetamin, double thetamax, double vmin, double vmax, double phimin, double phimax, double timemin, double timemax)
+{
+	double array[NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND];
+	double x = xmin, deltax = (xmax - xmin)/size;;
+	double y = ymin, deltay = (ymax - ymin)/size;;
+	double theta = thetamin, deltatheta = (thetamax - thetamin)/size;;
+	double v = vmin, deltav = (vmax - vmin)/size;
+	double phi = phimin, deltaphi = (phimax - phimin)/size;
+	double time = timemin, deltatime = (timemax - timemin)/size;
+
+	array[0] = size;
+	printf ("n: %d\n", (int) array[0]);
+	for (int i = 0; i < size; i++)
+	{
+		array[(i * 6) + 1] = x;
+		array[(i * 6) + 2] = y;
+		array[(i * 6) + 3] = theta;
+		array[(i * 6) + 4] = v;
+		array[(i * 6) + 5] = phi;
+		array[(i * 6) + 6] = time;
+		x += deltax;
+		y += deltay;
+		theta += deltatheta;
+		v += deltav;
+		phi += deltaphi;
+		time += deltatime;
+
+		printf ("i: %d >>> x: %lf y: %lf theta: %lf v: %lf phi: %lf time: %lf\n", i, x, y, theta, v, phi, time);
+	}
+
+	send_motion_command_via_socket(array);
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
 // Inicializations                                                                              //
 //                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -190,20 +242,72 @@ subscribe_to_relevant_messages()
 }
 
 
+void parse_args(int argc, char **argv)
+{
+	for (int i = 1; i < argc; i++)
+	{
+		bool valid_arg = false;
+		
+		if (strcmp(argv[i], "-ip_address") == 0)
+		{
+			if (argc > ++i)
+			{
+				ip_address = argv[i];
+				printf ("ip_address: %s\n", ip_address);
+				valid_arg = true;
+			}
+		}
+		else if (strcmp(argv[i], "-port_number") == 0)
+		{
+			if (argc > ++i)
+			{
+				port_number = atoi(argv[i]);
+				printf ("port_number: %d\n", port_number);
+				valid_arg = true;
+			}
+		}
+		else if (strcmp(argv[i], "-bit") == 0)
+		{
+			bit_enabled = true;
+			printf ("bit: true");
+			valid_arg = true;
+		}
+		else if (strcmp(argv[i], "-help") == 0)
+		{
+			printf("%s\n", help_msg);
+			exit(0);
+		}
+		
+
+		if (!valid_arg)
+		{
+			printf("%s\n", help_msg);
+			exit(-1);
+		}
+	}
+}
+
+
 int
 main(int argc, char **argv)
 {
-	carmen_ipc_initialize(argc, argv);
-	carmen_param_check_version(argv[0]);
-	signal(SIGINT, shutdown_module);
+	parse_args(argc, argv);
 
-	if (argc == 2)
-		ip_address = argv[1];
+	if (bit_enabled)
+	{
+		socket_test(80, -10.0, 10.0, -5.0, 5.0, -3.0, 3.0, 0.0, 10.0, -2.0, 2.0, 0.1, 1.0);
+	}
+	else
+	{
+		carmen_ipc_initialize(argc, argv);
+		carmen_param_check_version(argv[0]);
+		signal(SIGINT, shutdown_module);
 
-	if (subscribe_to_relevant_messages() < 0)
-		carmen_die("Error subscribing to messages...\n");
+		if (subscribe_to_relevant_messages() < 0)
+			carmen_die("Error subscribing to messages...\n");
 
-	carmen_ipc_dispatch();
+		carmen_ipc_dispatch();
+	}
 
 	exit(0);
 }

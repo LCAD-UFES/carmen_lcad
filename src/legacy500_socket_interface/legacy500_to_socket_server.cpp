@@ -166,7 +166,10 @@ robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *msg)
 		pi_socket = connect_with_client(&client_address);
 
 	array[0] = msg->v;
+	//array[1] = msg->phi / (-0.01745329252); // This workaround is not necessary anymore. The Socket App application at the Integration Server was fixed up.
 	array[1] = msg->phi;
+
+	//printf ("v: %lf phi: %lf\n", array[0], array[1]);
 
 	sendto(pi_socket, (void *) array, 40, 0, (struct sockaddr *) &client_address, sizeof(struct sockaddr_in));
 }

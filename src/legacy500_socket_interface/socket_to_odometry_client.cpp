@@ -98,7 +98,8 @@ publish_robot_ackerman_velocity_message(double *array)
 	carmen_robot_ackerman_velocity_message odometry;
 
 	odometry.v     = array[0];
-	odometry.phi   = array[1] * -0.01745329252;
+	//odometry.phi   = array[1] * -0.01745329252; // This workaround is not necessary anymore. The Socket App application at the Integration Server was fixed up.,
+	odometry.phi   = array[1];
 	odometry.timestamp = carmen_get_time();
 	odometry.host  = carmen_get_host();
 
