@@ -570,3 +570,6 @@ src/neural_mapper/generate_gt/Makefile.depend
 src/mapper2/mapper2
 .kdev4*
 *.kdev4*
+data/voice_interface_data/hotword_oi_iara.ppn
+data/voice_interface_data/porcupine_params.pv
+bin/voice_interface
