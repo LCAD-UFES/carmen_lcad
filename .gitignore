@@ -3,6 +3,7 @@ bin/line_follower_main
 src/line_follower/line_follower_main
 sharedlib/libvoice/voice_test
 bin/zed*
+bin/legacy_500*
 include/*
 .idea/
 *.o
