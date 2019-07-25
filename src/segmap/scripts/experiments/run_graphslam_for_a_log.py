@@ -11,7 +11,7 @@ def run_odom_calib(carmen_path, log_path, output_dir):
 	output_path = output_dir + "/odom_calib.txt" 
 	report_path = output_dir + "/report_odom_calib.txt" 
 	poses_opt_path = output_dir + "/poses-opt_odom_calib.txt" 	
-	additional_args = " -n 100 -i 30 --view 0 --max_multiplicative_v 1.001 --min_multiplicative_v 1.00 --max_multiplicative_phi 1.1 --min_multiplicative_phi 0.9 --max_additive_phi 0.2 --min_additive_phi -0.2 --gps_to_use %d " % GPS_TO_USE
+	additional_args = " -n 200 -i 50 --view 0 --max_multiplicative_v 1.3 --min_multiplicative_v 0.7 --max_multiplicative_phi 1.3 --min_multiplicative_phi 0.7 --max_additive_phi 0.5 --min_additive_phi -0.5 --gps_to_use %d " % GPS_TO_USE
 	cmd = "%s %s %s %s %s %s %s" % (program, log_path, PARAM_FILE, output_path, report_path, poses_opt_path, additional_args)
 	run_command(cmd)
 
@@ -64,24 +64,28 @@ def run_loop_closures(carmen_path, log_path, output_dir, mode):
 	odom_calib = output_dir + "/odom_calib.txt" 
 	fused_odom = output_dir + "/fused_odom.txt"
 	
-	cmd = "%s %s %s -o %s -f %s --gps_id %d -i %s" % (program, log_path, PARAM_FILE, odom_calib, fused_odom, GPS_TO_USE, INTENSITY_MODE)
+	cmd = " %s %s %s -o %s -f %s --gps_id %d -i %s --start_paused 0 " % (program, log_path, PARAM_FILE, odom_calib, fused_odom, GPS_TO_USE, INTENSITY_MODE)
 	
 	if mode == "gicp":
-		gicp_args = " --mode gicp --dist_to_accumulate 2.0 --ignore_above_threshold %lf --ignore_below_threshold %lf --v_thresh %lf" % (IGNORE_POINTS_ABOVE, IGNORE_POINTS_BELOW, SKIP_WHEN_VELOCITY_IS_BELOW)
+		gicp_args = " --mode gicp --dist_to_accumulate 2.0 --ignore_above_threshold %lf --ignore_below_threshold %lf --v_thresh %lf --clean_map 1 --view_imgs 0 --view_pointcloud 0" % (IGNORE_POINTS_ABOVE, IGNORE_POINTS_BELOW, SKIP_WHEN_VELOCITY_IS_BELOW)
 		gicp_output = " " + output_dir + "/loops.txt"
 		run_command(cmd + gicp_output + gicp_args)
 
 	elif mode == "particle_filter":
-		pf_args = " --mode particle_filter --n_particles 200 --gps_xy_std 5.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 5.0 --n_corrections_when_reinit 20 --v_thresh %lf" % (SKIP_WHEN_VELOCITY_IS_BELOW)
+		pf_args = " --mode particle_filter --n_particles 200 --gps_xy_std 5.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 5.0 --n_corrections_when_reinit 20 --v_thresh %lf --clean_map 1 --view_imgs 0 --view_pointcloud 0" % (SKIP_WHEN_VELOCITY_IS_BELOW)
 		pf_output = " " + output_dir + "/pf_loops.txt"
 		run_command(cmd + pf_output + pf_args)
 	elif mode == "localization":
-		if 'aeroport' in log_path:
-			loop_closure_time = 10
+		loop_closure_time = 10
+
+		if 'aeroport' in log_path or 'noite' in log_path:
+			#loop_closure_time = 10
+    		camera_latency = 0.3
 		else:
-			loop_closure_time = 30
+			#loop_closure_time = 30
+    		camera_latency = 0.0
 	
-		loc_args = " --mode localization --n_particles 200 --gps_xy_std 3.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 10.0 --n_corrections_when_reinit 20 --v_thresh %lf -v 1 --time_dist %lf --v_std 1.0 --phi_std 1.0 --odom_xy_std 0.1 --odom_h_std 1.0 --color_red_std 1 --color_green_std 1 --color_blue_std 1" % (SKIP_WHEN_VELOCITY_IS_BELOW, loop_closure_time)
+		loc_args = " --mode localization --n_particles 200 --gps_xy_std 3.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 10.0 --n_corrections_when_reinit 20 --v_thresh %lf -v 1 --time_dist %lf --v_std 1.0 --phi_std 1.0 --odom_xy_std 0.1 --odom_h_std 1.0 --color_red_std 3 --color_green_std 3 --color_blue_std 3 --reflectivity_std 3 --use_map_weight 1 --clean_map 1 --view_imgs 0 --view_pointcloud 0 --tile_size 70 --camera_latency %lf" % (SKIP_WHEN_VELOCITY_IS_BELOW, loop_closure_time, camera_latency)
 		loc_output = " " + output_dir + "/localization_loops.txt"
 		run_command(cmd + loc_output + loc_args + " > /dev/null 2>&1")
 	else:

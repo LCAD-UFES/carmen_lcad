@@ -44,6 +44,7 @@ parse_command_line_args(int argc, char **argv)
 	CommandLineArguments args;
 
 	args.add_positional<string>("log", "Path to a log", 1);
+	args.add_positional<string>("param_file", "Path to a carmen.ini file", 1);
 	add_default_sensor_preproc_args(args);
 	args.parse(argc, argv);
 
@@ -62,7 +63,7 @@ main(int argc, char **argv)
 	CommandLineArguments args = parse_command_line_args(argc, argv);
 	string log_path = args.get<string>("log");
 	
-	NewCarmenDataset *dataset = create_dataset(log_path, args.get<double>("camera_latency"), "graphslam");
+	NewCarmenDataset *dataset = create_dataset(log_path, args, "graphslam");
 	SensorPreproc preproc = create_sensor_preproc(args, dataset, log_path);
 
 	for (int i = 1; i < dataset->size(); i += 1)
@@ -76,8 +77,7 @@ main(int argc, char **argv)
 		print_sample_info(data_package);
 		preproc.reinitialize(data_package);
 		load_as_pointcloud(preproc, cloud, SensorPreproc::WORLD_REFERENCE);
-		img = preproc.get_sample_img();
-
+		img = preproc.read_img(data_package);
 		viewer.show(img, "img", 640);
 		viewer.show(cloud);
 		viewer.loop();

@@ -16,6 +16,8 @@
 #include <carmen/segmap_colormaps.h>
 #include <carmen/segmap_preproc.h>
 
+#include <unordered_set>
+
 
 class GridMapTile
 {
@@ -23,7 +25,9 @@ public:
 	enum MapType
 	{
 		TYPE_SEMANTIC = 0,
-		TYPE_VISUAL
+		TYPE_VISUAL,
+		TYPE_OCCUPANCY,
+		TYPE_REFLECTIVITY,
 	};
 
 	// make these attributes private
@@ -34,6 +38,7 @@ public:
 	int _h, _w;
 	double *_map;
 	CityScapesColorMap _color_map;
+	std::unordered_set<int> _observed_cells;
 
 	std::vector<double> _unknown;
 	int _n_fields_by_cell;
@@ -58,6 +63,10 @@ public:
 	void add_point(pcl::PointXYZRGB &p);
 	bool contains(double x, double y);
 	std::vector<double> read_cell(pcl::PointXYZRGB &p);
+	std::vector<double> read_cell(double x_world, double y_world);
+
+	double *read_cell_ref(double x_world, double y_world);
+
 	cv::Mat to_image();
 };
 
@@ -73,6 +82,7 @@ public:
 	int _middle_tile;
 	GridMapTile::MapType _map_type;
 	int _save_maps;
+	int _map_initialized;
 
 	double m_by_pixels;
 	double pixels_by_m;
@@ -90,20 +100,26 @@ public:
 	GridMapTile* _reload_tile(double x, double y);
 	void _reload_tiles(double robot_x, double robot_y);
 	void reload(double robot_x, double robot_y);
+
 	void add_point(pcl::PointXYZRGB &p);
+	void add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &points,
+							int do_raycast = 1, int use_world_ref = 1);
+
 	std::vector<double> read_cell(pcl::PointXYZRGB &p);
+	std::vector<double> read_cell(double x_world, double y_world);
+
+	double *read_cell_ref(double x_world, double y_world);
+
 	cv::Mat to_image();
 	void save();
 
+	void _check_if_map_was_initialized();
 	void _free_tiles();
 };
 
-// utility function for updating the map with a point cloud.
-void update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc);
 
-void
-create_map(GridMap &map, NewCarmenDataset *dataset, int step,
-					 SensorPreproc &preproc, double skip_velocity_threshold,
-					 int view_flag, int img_width);
+// utility function for updating the map with a point cloud.
+void update_maps(DataSample *sample, SensorPreproc &preproc, GridMap *visual_map, GridMap *reflectivity_map, GridMap *semantic_map, GridMap *occupancy_map);
+void create_instantaneous_map(DataSample *sample, SensorPreproc &preproc, GridMap *map, int do_raycast);
 
 #endif

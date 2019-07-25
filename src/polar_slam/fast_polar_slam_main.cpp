@@ -35,7 +35,7 @@ OdometryMotionModelParams odometry_model_params;
 BeanRangeFinderMeasurementModelParams laser_model_params;
 
 // debug
-struct timeval start, end;
+struct timeval start, end_bla;
 
 carmen_fast_polar_slam_best_particle_message best_particle_message;
 carmen_fast_polar_slam_particles_message particles_message;
@@ -54,8 +54,8 @@ start_count_time()
 void
 show_time_ellapsed()
 {
-	gettimeofday(&end, NULL);
-	double ellapsed = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
+	gettimeofday(&end_bla, NULL);
+	double ellapsed = (end_bla.tv_sec - start.tv_sec) * 1000000 + (end_bla.tv_usec - start.tv_usec);
 	printf("\ttime ellapsed: %.6lf s\n", ellapsed / 1000000.0);
 }
 

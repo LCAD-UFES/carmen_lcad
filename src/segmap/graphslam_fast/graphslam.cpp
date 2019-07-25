@@ -78,8 +78,7 @@ public:
 };
 
 
-const double distance_between_front_and_rear_axles = 2.625;
-
+//const double distance_between_front_and_rear_axles = 2.625;
 
 void
 read_loop_restrictions(string &filename, vector<LoopRestriction> *loop_data)
@@ -92,6 +91,8 @@ read_loop_restrictions(string &filename, vector<LoopRestriction> *loop_data)
 		return;
 
 	f = fopen(filename.c_str(), "r");
+	int n_discarded = 0;
+	int n_total = 0;
 
 	if (f != NULL)
 	{
@@ -105,8 +106,18 @@ read_loop_restrictions(string &filename, vector<LoopRestriction> *loop_data)
 
 			if (n == 6)
 			{
-				l.transform = SE2(x, y, theta);
-				loop_data->push_back(l);
+				double d = sqrt(pow(x, 2) + pow(y, 2));
+				double dth = fabs(theta);
+
+				if (d < 5.0 && dth < deg2rad(10.0))
+				{
+					l.transform = SE2(x, y, theta);
+					loop_data->push_back(l);
+				}
+				else
+					n_discarded++;
+				
+				n_total++;
 			}
 		}
 
@@ -114,6 +125,9 @@ read_loop_restrictions(string &filename, vector<LoopRestriction> *loop_data)
 	}
 	else
 		fprintf(stderr, "Warning: ignoring loop closure file '%s'\n", filename.c_str());
+
+	printf("N loop closures discarded: %d of %d (%.2lf%%)\n", 
+			n_discarded, n_total, ((double) n_discarded / (double) n_total) * 100.0);
 }
 
 

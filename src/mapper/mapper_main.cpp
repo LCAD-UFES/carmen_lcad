@@ -826,6 +826,8 @@ get_sensors_param(int argc, char **argv)
 			sensors_params[0].sensor_support_pose.position, sensors_params[0].pose.position, sensors_params[0].support_to_car_matrix);
 	sensors_params[0].height = sensors_params[0].sensor_robot_reference.z + robot_wheel_radius;
 
+	printf("Velodyne height: %lf\n", sensors_params[0].height);
+
 	if (sensors_params[0].height > highest_sensor)
 		highest_sensor = sensors_params[0].height;
 

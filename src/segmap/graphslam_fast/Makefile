@@ -48,18 +48,18 @@ IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/
 LFLAGS += -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lglobal -lboost_program_options `pkg-config --libs opencv` 
 
 LFLAGS += -lsegmap_datasets -lsegmap_readers -lsegmap_slam \
-	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lcarmen_util `pkg-config --libs opencv` -lboost_filesystem -lsegmap_types  
+	-lsegmap_visualization -lsegmap_readers -lsegmap_motion_models -lcarmen_util `pkg-config --libs opencv` -lboost_filesystem -lsegmap_types -lsegmap_slam_high_level
 
 LFLAGS += -lvtkRendering -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
-	$(CARMEN_HOME)/src/segmap/libsegmap/datasets/libsegmap_datasets.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsegmap_readers.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/datasets/libsegmap_datasets.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/motion_models/libsegmap_motion_models.a \
-	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsemap_initializations.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/slam/libsegmap_slam.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/visualization/libsegmap_visualization.a \
-	$(CARMEN_HOME)/src/segmap/libsegmap/readers/libsemap_readers.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/initializations/libsegmap_initializations.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/slam_high_level/libsegmap_slam_high_level.a \
 	$(CARMEN_HOME)/src/utilities/libcarmen_util/libcarmen_util.a
 
 SOURCES = graphslam.cpp graphslam_util.cpp view_path.cpp #joint_graphslam.cpp 

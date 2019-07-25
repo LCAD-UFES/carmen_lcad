@@ -236,7 +236,7 @@ carmen_prob_models_create_compact_map(carmen_compact_map_t *cmap, carmen_map_t *
 		if (map->complete_map[i] != value)
 		{
 			cmap->coord_x[k] = i / map->config.x_size;
-			cmap->coord_y[k] = i % map->config.y_size;
+			cmap->coord_y[k] = i % map->config.y_size; // nao deveria ser x_size??
 			cmap->value[k] = map->complete_map[i];
 			k++;
 		}

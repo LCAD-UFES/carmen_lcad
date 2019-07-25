@@ -81,21 +81,25 @@ main(int argc, char **argv)
 	args.save_config_file(default_data_dir() + "/loop_closures_config.txt");
 	args.parse(argc, argv);
 
+	string mode = args.get<string>("mode");
 	string log_path = args.get<string>("log_path");
 	NewCarmenDataset *dataset = create_dataset(log_path, args, "fused");
 
 	vector<pair<int, int>> loop_closure_indices;
-	detect_loop_closures(*dataset,
-	                     &loop_closure_indices,
-	                     args.get<double>("loop_dist"),
-	                     args.get<double>("time_dist"),
-	                     args.get<int>("subsampling"),
-	                     args.get<double>("v_thresh"));
+
+	if (mode.compare("localization") != 0)
+	{
+		detect_loop_closures(*dataset,
+												 &loop_closure_indices,
+												 args.get<double>("loop_dist"),
+												 args.get<double>("time_dist"),
+												 args.get<int>("subsampling"),
+												 args.get<double>("v_thresh"));
+	}
 
 	int size = dataset->size();
 	vector<Matrix<double, 4, 4>> relative_transform_vector(size);
 	vector<int> convergence_vector(size);
-	string mode = args.get<string>("mode");
 
 	if (mode.compare("gicp") == 0)
 	{
@@ -120,13 +124,14 @@ main(int argc, char **argv)
 	}
 	else if (mode.compare("localization") == 0)
 	{
-		estimate_loop_closures_with_particle_filter_in_map(*dataset,
-																											log_path,
-																											loop_closure_indices,
-																											&relative_transform_vector,
-																											&convergence_vector,
-																											args.get<int>("n_corrections_when_reinit"),
-																											args);
+		estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detection(
+				*dataset,
+				log_path,
+				loop_closure_indices,
+				&relative_transform_vector,
+				&convergence_vector,
+				args.get<int>("n_corrections_when_reinit"),
+				args);
 	}
 	else
 		exit(printf("Error: invalid mode '%s'.\n", mode.c_str()));

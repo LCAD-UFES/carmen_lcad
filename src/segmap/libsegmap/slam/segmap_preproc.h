@@ -13,76 +13,23 @@
 #include <carmen/carmen_semantic_segmentation_reader.h>
 
 
-class CityscapesObjectClassMapper
-{
-public:
-	static unsigned char transform_object_class(unsigned int object_class)
-	{
-		if (object_class == 0) return 0;
-
-		// road 0
-		// sidewalk 1
-		// building 2
-		// wall 3
-		// fence 4
-		// pole 5
-		// traffic_light 6
-		// traffic_sign 7
-		// vegetation 8
-		// terrain 9
-		// sky 10
-		// person 11
-		// rider 12
-		// car 13
-		// truck 14
-		// bus 15
-		// train 16
-		// motorcycle 17
-		// bicycle 18
-
-		// Deeplabv3+ usually mistakes the classes sidewalk and terrain, so we map them to the same class.
-		if (object_class == 1 || object_class == 8)
-			return 8;
-
-		// building, wall, fence -> building
-		if (object_class == 2 || object_class == 3 || object_class == 4)
-			return 2;
-
-		// traffic_light, traffic_sign, pole -> traffic_sign
-		if (object_class == 6 || object_class == 7 || object_class == 5)
-			return 6;
-
-		// person, rider, bicycle -> unknown (disconsidered for localization and mapping)
-		if (object_class == 11 || object_class == 12)
-			return 6;
-
-		// we assume that these vehicles are only located in road-like places.
-		// car, trucks, bus, train, motorcycle -> road
-		if (object_class == 13 || object_class == 14 || object_class == 15 || object_class == 16 || object_class == 17)
-			return 19;
-
-		return object_class;
-	}
-};
-
-
 class SensorPreproc
 {
 public:
 
-	enum SensorReference
-	{
-		SENSOR_REFERENCE,
-		CAR_REFERENCE,
-		WORLD_REFERENCE
-	};
-
 	enum IntensityMode
 	{
-		INTENSITY = 0,
-		COLOR,
-		SEMANTIC,
-		BRIGHT,
+		REFLECTIVITY = 0,
+		COLOUR,
+		SEMANTIC, 
+		ALL
+	};
+
+	enum SensorReference
+	{
+		SENSOR_REFERENCE = 0,
+		CAR_REFERENCE,
+		WORLD_REFERENCE
 	};
 
 	class CompletePointData
@@ -91,10 +38,16 @@ public:
 		int laser_id;
 		double h_angle, v_angle, range;
 		unsigned char raw_intensity;
+		unsigned char calibrated_intensity;
+		cv::Scalar colour;
+		int semantic_class;
 
-		pcl::PointXYZRGB world;
 		pcl::PointXYZRGB car;
 		pcl::PointXYZRGB sensor;
+		pcl::PointXYZRGB world;
+
+		int valid;
+		int visible_by_cam;
 	};
 
 	SensorPreproc(CarmenLidarLoader *vloader,
@@ -105,7 +58,7 @@ public:
 								Eigen::Matrix<double, 3, 4> projection,
 								Eigen::Matrix<double, 4, 4> xsens2car,
 								int use_xsens,
-								IntensityMode imode = INTENSITY,
+								IntensityMode sync_sensor = REFLECTIVITY,
 								std::string intensity_calib_path = "none",
 								double ignore_above_threshold = DBL_MAX,
 								double ignore_below_threshold = -DBL_MAX);
@@ -116,17 +69,17 @@ public:
 	std::vector<pcl::PointXYZRGB> next_points_in_sensor();
 	std::vector<pcl::PointXYZRGB> next_points_in_world();
 	std::vector<pcl::PointXYZRGB> next_points_in_car();
-	std::vector<CompletePointData> next_points();
+	std::vector<CompletePointData> next_points_with_full_information();
 	int size();
 
 	void set_semantic_remapping_flag(int flag) { _use_semantic_remapping = flag; }
 
-	cv::Mat get_sample_img() { return _img; }
-	cv::Mat get_sample_img_with_points() { return _img_with_points; }
+	//cv::Mat get_sample_img() { return _img; }
+	//cv::Mat get_sample_img_with_points() { return _img_with_points; }
 
 	void set_lane_mark_detection(int on_or_off) { _lane_mark_detection_active = on_or_off; }
 
-	IntensityMode _imode;
+	IntensityMode _intensity_mode;
 
 	cv::Mat read_img(DataSample *sample) { return _iloader->load(sample); }
 	cv::Mat read_segmented_img(DataSample *sample);
@@ -153,8 +106,18 @@ public:
 	cv::Mat _img;
 	cv::Mat _img_with_points;
 
+	cv::Mat _semantic_img;
+	cv::Mat _semantic_img_with_points;
+
+	int _load_img;
+	int _load_semantic_img;
+
+	void set_load_img_flag(int load_img_or_not) { _load_img = load_img_or_not; }
+	void set_load_semantic_img_flag(int load_img_or_not) { _load_semantic_img = load_img_or_not;  }
+
   static const int _n_distance_indices = 10;
   float ***calibration_table;
+  float calibration_table_tf[32][256];
 
 	double _ignore_above_threshold;
 	double _ignore_below_threshold;
@@ -165,6 +128,7 @@ public:
 	Eigen::Matrix<double, 3, 3> _r3x3;
 	Eigen::Matrix<double, 4, 4> _r4x4;
 
+	// point in different coordinate systems
 	Eigen::Matrix<double, 4, 1> _p_sensor;
 	Eigen::Matrix<double, 4, 1> _p_car;
 	Eigen::Matrix<double, 4, 1> _p_cam;
@@ -188,13 +152,14 @@ public:
 															 double ignore_above_threshold,
 															 double ignore_below_threshold);
 
-	void _adjust_intensity(pcl::PointXYZRGB *point, Eigen::Matrix<double, 4, 1> &p_sensor, unsigned char raw_intensity, int *valid, int laser_id);
+	void _adjust_intensity(Eigen::Matrix<double, 4, 1> &p_sensor, unsigned char raw_intensity, int *visible_by_cam, int laser_id,
+	                       unsigned char *calibrated_intensity, cv::Scalar *colour, int *point_class);
 
 	pcl::PointXYZRGB _create_point_and_intensity(Eigen::Matrix<double, 4, 1> &p_sensor,
 																							 Eigen::Matrix<double, 4, 1> &p_car,
 																							 Eigen::Matrix<double, 4, 1> &p_world,
 																							 unsigned char intensity,
-																							 int *valid,
+																							 int *visible_by_cam,
 																							 SensorReference ref,
 																							 int laser_id);
 
@@ -209,7 +174,7 @@ public:
 	std::vector<pcl::PointXYZRGB> _next_points(SensorReference ref);
 
 	unsigned char _get_calibrated_intensity(unsigned char raw_intensity, Eigen::Matrix<double, 4, 1> &p_sensor, int laser_id);
-
+	unsigned char _get_calibrated_intensity_tf(unsigned char raw_intensity, Eigen::Matrix<double, 4, 1> &p_sensor, int laser_id);
 };
 
 

@@ -64,8 +64,8 @@ offset_y = 0
 use_xsens = 1
 # Id of the gps to be used
 gps_id = 1
-# What type of information to assign to LiDAR rays intensity [remission | visual | semantic | bright]
-intensity_mode = remission
+# intensity mode [reflectivity, colour, semantic]
+intensity_mode = reflectivity
 # Flag to choose using the velodyne calibration or not.
 use_calib = 1
 # Flag for choosing to segment lane marks with threshold image processing.
