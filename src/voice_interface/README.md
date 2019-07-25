@@ -119,6 +119,10 @@ https://github.com/GoogleCloudPlatform/python-docs-samples
  ln -s ~/carmen_packages/Porcupine/libpv_porcupine.a $CARMEN_HOME/lib/libpv_porcupine.a
 ```
 
+- Note:
+
+"update_porcupine_files.sh" does all the commands above, if the license of Porcupine expired.
+
 # 7. Using RASA
 [RASA Docs](https://www.rasa.com/docs/)
 
@@ -167,9 +171,7 @@ pipeline: "tensorflow_embedding"
 python3 -m rasa_nlu.server --path models --response_log logs
 ```
 
-### 8. Tips
-
-- Running Voice Interface:
+### 8. Running Voice Interface
 
  - Start central;
  - Initiate server with:
@@ -177,21 +179,6 @@ python3 -m rasa_nlu.server --path models --response_log logs
 python3 -m rasa_nlu.server --path models --response_log logs
 ```
  - Run ./voice_interface
-
-
-If this error appears:
-"[ERROR] keyword file has incorrect format or belongs to a different platform
-[ERROR] loading keyword file #0 failed with 'INVALID_ARGUMENT'
-Failed to initialize Porcupine
-Error: could not initialize porcupine.
-Cound not start porcupine"
-
-Remove the libpv file:
-```sh
-rm -rf ~/carmen_lcad/lib/libpv_porcupine.a
-```
-and repeat the topic 6.1 of this README
-
 
 
 You'll need a microphone and a speaker.

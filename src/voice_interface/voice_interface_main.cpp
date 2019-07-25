@@ -11,6 +11,7 @@
 #include <curl/curl.h>
 #include <jsoncpp/json/json.h>
 #include <locale.h>
+#include <unistd.h>
 #include "voice_interface.h"
 #include "porcupine_keyword.h"
 
@@ -339,8 +340,18 @@ carmen_voice_interface_initialize(/*char *language_code*/)
 	char *porcupine_error = initialize_porcupine();
 	if (porcupine_error != NULL)
 	{
-		printf("Error: could not initialize porcupine.\n%s\n", porcupine_error);
-		exit(1);
+		printf("Updating Porcupine...");
+		char *update_porcupine_path[2];
+		update_porcupine_path[0] = (char*)"$CARMEN_HOME/src/voice_interface/update_porcupine_files.sh";
+		update_porcupine_path[1] = NULL;
+		execve(update_porcupine_path[0], update_porcupine_path, NULL);
+
+		char *retrying_porcupine = initialize_porcupine();
+		if (retrying_porcupine != NULL)
+		{
+			printf("Error: could not initialize porcupine.\n%s\n", porcupine_error);
+			exit(1);
+		}
 	}
 }
 
@@ -356,20 +367,11 @@ main (int argc, char **argv)
 
 //	char *voice_interface_speak_error = carmen_voice_interface_speak((char *) "Oi Alberto!");
 //	if (voice_interface_speak_error)
-//		printf("%s \n", voice_interface_speak_error);
+	//	printf("%s \n", voice_interface_speak_error);
+	//}
 
-	/*
-	if (strcmp (argv[1], "en") == 0){
-		printf("Awaiting hotword... \n\n");
-	}else{
-		if (strcmp (argv[1], "pt") == 0){
-			printf("Aguardando hotword.... \n\n ");
-		}else{
-			return(printf("Use: ./voice_interface en or pt \n"));
+	printf("Awaiting hotword... \n\n");
 
-		}
-	}
-	*/
 
 	while (true)
 	{
