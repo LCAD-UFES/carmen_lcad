@@ -286,6 +286,11 @@ static double distance_between_front_and_rear_axles;
 
 static int force_velodyne_flag = 0;
 
+// store original background color defined in ini file
+static double g_b_red;
+static double g_b_green;
+static double g_b_blue;
+
 static carmen_vector_3D_t
 get_position_offset(void)
 {
@@ -2203,6 +2208,9 @@ init_stuff(int argc, char** argv)
     init_drawers(argc, argv, bumblebee_basic_width, bumblebee_basic_height);
 
     set_background_color(b_red, b_green, b_blue);
+    g_b_red = b_red;
+    g_b_green = b_green;
+    g_b_blue = b_blue;
 }
 
 
@@ -3069,12 +3077,9 @@ set_flag_viewer_3D(int flag_num, int value)
     case 31:
     	velodyne_remission_flag = value;
         if(value)
-        {
             set_background_color(0, 0, 255);
-            point_size = 5.0f;
-        }
         else
-            set_background_color(255, 255, 255);
+            set_background_color(g_b_red, g_b_green, g_b_blue);
         break;
     }
 }
