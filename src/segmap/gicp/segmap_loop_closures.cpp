@@ -776,6 +776,8 @@ detect_loop_closures(NewCarmenDataset &dataset, CommandLineArguments &args,
 	time_dist = args.get<double>("time_dist");
 	min_v = args.get<double>("v_thresh");
 
+	int pos_first_loop_closure = -1;
+
 	for (int i = 0; i < dataset.size(); i++)
 	{
 		sample_i = dataset[i];
@@ -806,16 +808,28 @@ detect_loop_closures(NewCarmenDataset &dataset, CommandLineArguments &args,
 		// todo: try to use all loop closures instead of using only the nearest.
 		if (nn != -1)
 		{
+			if (pos_first_loop_closure == -1)
+				pos_first_loop_closure = i;
+
 			// if the pose is not a loop closure, add it to the set of poses
 			// to be used for mapping.
 			if (loop_closures->find(nn) == loop_closures->end())
 				poses_for_mapping->insert(nn);
 
-			loop_closures->insert(pair<int, int>(i, nn));
+			d = dist2d(sample_i->pose.x, sample_i->pose.y, 
+							dataset[pos_first_loop_closure]->pose.x, 
+							dataset[pos_first_loop_closure]->pose.y);
+
+			dt = fabs(sample_i->time - dataset[pos_first_loop_closure]->time);
+
+			// if to enforce that we only start mapping when the car
+			// is over an area that is mapped. 
+			if (d > 20.0 || dt > 10.0)
+				loop_closures->insert(pair<int, int>(i, nn));
 		}
 	}
 
-	grow_mapped_area(poses_for_mapping, dataset, loop_closures);
+	//grow_mapped_area(poses_for_mapping, dataset, loop_closures);
 }
 
 
@@ -907,7 +921,10 @@ run_particle_filter(string map_path,
 	                  args.get<double>("reflectivity_std")
 	);
 
-	pf.set_use_map_weight(1);
+	if (map_type == GridMapTile::TYPE_VISUAL)
+		pf.set_use_ecc_weight(1);
+	else
+		pf.set_use_map_weight(1);
 
 	Pose2d mean;
 	DataSample *sample;
@@ -967,19 +984,19 @@ estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detec
 	relative_transform_vector->clear();
 	convergence_vector->clear();
 
-	map_path = dir_to_save_maps + "/map_occupancy_" + log_name;
-	run_particle_filter(map_path,
-	                    GridMapTile::TYPE_OCCUPANCY, "reflectivity",
-	                    loop_closure_indices, relative_transform_vector, convergence_vector,
-	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
-	                    dataset_path);
-
-	map_path = dir_to_save_maps + "/map_reflectivity_" + log_name;
-	run_particle_filter(map_path,
-	                    GridMapTile::TYPE_REFLECTIVITY, "reflectivity",
-	                    loop_closure_indices, relative_transform_vector, convergence_vector,
-	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
-	                    dataset_path);
+//	map_path = dir_to_save_maps + "/map_occupancy_" + log_name;
+//	run_particle_filter(map_path,
+//	                    GridMapTile::TYPE_OCCUPANCY, "reflectivity",
+//	                    loop_closure_indices, relative_transform_vector, convergence_vector,
+//	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
+//	                    dataset_path);
+//
+//	map_path = dir_to_save_maps + "/map_reflectivity_" + log_name;
+//	run_particle_filter(map_path,
+//	                    GridMapTile::TYPE_REFLECTIVITY, "reflectivity",
+//	                    loop_closure_indices, relative_transform_vector, convergence_vector,
+//	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
+//	                    dataset_path);
 
 	map_path = dir_to_save_maps + "/map_visual_" + log_name;
 	run_particle_filter(map_path,

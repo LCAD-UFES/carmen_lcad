@@ -80,10 +80,10 @@ def run_loop_closures(carmen_path, log_path, output_dir, mode):
 
 		if 'aeroport' in log_path or 'noite' in log_path:
 			#loop_closure_time = 10
-    		camera_latency = 0.3
+			camera_latency = 0.3
 		else:
 			#loop_closure_time = 30
-    		camera_latency = 0.0
+			camera_latency = 0.0
 	
 		loc_args = " --mode localization --n_particles 200 --gps_xy_std 3.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 10.0 --n_corrections_when_reinit 20 --v_thresh %lf -v 1 --time_dist %lf --v_std 1.0 --phi_std 1.0 --odom_xy_std 0.1 --odom_h_std 1.0 --color_red_std 3 --color_green_std 3 --color_blue_std 3 --reflectivity_std 3 --use_map_weight 1 --clean_map 1 --view_imgs 0 --view_pointcloud 0 --tile_size 70 --camera_latency %lf" % (SKIP_WHEN_VELOCITY_IS_BELOW, loop_closure_time, camera_latency)
 		loc_output = " " + output_dir + "/localization_loops.txt"
