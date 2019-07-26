@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
 #define NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND (1 + NUM_MOTION_COMMANDS_PER_VECTOR * 6)
@@ -12,16 +13,30 @@
 #define DEFAULT_PORT_NUMBER 3457
 #define DEFAULT_IP_ADDRESS "127.0.0.1"
 
-char *ip_address = (char *) DEFAULT_IP_ADDRESS;
-int port_number = DEFAULT_PORT_NUMBER;
-bool bit_enabled = false;
+//#define MIN(a,b) ((a <= b) ? a : b)
+//#define MAX(a,b) ((a >= b) ? a : b)
+#define RAD2DEG(a) (a / 0.01745329252)
+#define DEG2RAD(a) (a * 0.01745329252)
 
-char *help_msg = "Usage: ./obstacle_avoider_to_socket_client [options]\n"
+static char *ip_address = (char *) DEFAULT_IP_ADDRESS;
+static int port_number = DEFAULT_PORT_NUMBER;
+typedef enum selected_bit_enum
+{
+	BIT_NONE = 0,
+	BIT_SOCKET = 1,
+	BIT_VELOCITY = 2,
+	BIT_STEERING_ANGLE = 3,
+	BIT_COMMAND_OVERRIDE = 4,
+	BIT_MANUAL = 5
+} selected_bit_t;
+static selected_bit_t selected_bit = BIT_NONE;
+
+static const char * const help_msg = "Usage: ./obstacle_avoider_to_socket_client [options]\n"
 			"This application sends motion commands to the Integration Server via UDP\n"
 			"Available options:\n"
 			"-ip_address <ip>\tIntegration Server IP address (default: 127.0.0.1)\n"
 			"-port_number <port>\tIntegration Server is listening for UDP datagrams at this port number (default: 3457)\n"
-			"-bit\t\t\tBuit-in test\n"
+			"-bit SOCKET|VELOCITY|STEERING_ANGLE|COMMAND_OVERRIDE|MANUAL\tBuilt-in tests\n"
 			"-help\t\t\tPrint this help message\n";
 
 int
@@ -111,6 +126,7 @@ build_socket_message(carmen_base_ackerman_motion_command_message *motion_command
 		array[(i * 6) + 3] = motion_command_message->motion_command[i].theta;
 		array[(i * 6) + 4] = motion_command_message->motion_command[i].v;
 		array[(i * 6) + 5] = motion_command_message->motion_command[i].phi;
+		//array[(i * 6) + 5] = -RAD2DEG(motion_command_message->motion_command[i].phi);
 		array[(i * 6) + 6] = motion_command_message->motion_command[i].time;
 	}
 }
@@ -191,19 +207,19 @@ shutdown_module(int x)            // Handles ctrl+c
 // Built-in tests                                                                               //
 //                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
-void
+static void
 socket_test(int size, double xmin, double xmax, double ymin, double ymax, double thetamin, double thetamax, double vmin, double vmax, double phimin, double phimax, double timemin, double timemax)
 {
 	double array[NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND];
-	double x = xmin, deltax = (xmax - xmin)/size;;
-	double y = ymin, deltay = (ymax - ymin)/size;;
-	double theta = thetamin, deltatheta = (thetamax - thetamin)/size;;
-	double v = vmin, deltav = (vmax - vmin)/size;
-	double phi = phimin, deltaphi = (phimax - phimin)/size;
-	double time = timemin, deltatime = (timemax - timemin)/size;
+	double x = xmin, deltax = (xmax - xmin)/(size - 1);
+	double y = ymin, deltay = (ymax - ymin)/(size - 1);
+	double theta = thetamin, deltatheta = (thetamax - thetamin)/(size - 1);
+	double v = vmin, deltav = (vmax - vmin)/(size - 1);
+	double phi = phimin, deltaphi = (phimax - phimin)/(size - 1);
+	double time = timemin, deltatime = (timemax - timemin)/(size - 1);
 
 	array[0] = size;
-	printf ("n: %d\n", (int) array[0]);
+	printf ("number_of_motion_commands: %d\n", (int) array[0]);
 	for (int i = 0; i < size; i++)
 	{
 		array[(i * 6) + 1] = x;
@@ -212,6 +228,7 @@ socket_test(int size, double xmin, double xmax, double ymin, double ymax, double
 		array[(i * 6) + 4] = v;
 		array[(i * 6) + 5] = phi;
 		array[(i * 6) + 6] = time;
+		printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i, x, y, theta, RAD2DEG(theta), v, phi, RAD2DEG(phi), time);
 		x += deltax;
 		y += deltay;
 		theta += deltatheta;
@@ -219,10 +236,200 @@ socket_test(int size, double xmin, double xmax, double ymin, double ymax, double
 		phi += deltaphi;
 		time += deltatime;
 
-		printf ("i: %d >>> x: %lf y: %lf theta: %lf v: %lf phi: %lf time: %lf\n", i, x, y, theta, v, phi, time);
 	}
 
 	send_motion_command_via_socket(array);
+}
+
+static void
+velocity_test(int size, double max_speed, int ramp_size, int step_size)
+{
+	double array[NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND];
+	int i = 0;
+	double x = .0, y = .0, theta = .0, phi = .0, time = 0.1;
+
+	double delta_speed = max_speed/ramp_size;
+	double speed = .0;
+
+	array[0] = size;
+	printf ("number_of_motion_commands: %d\n", (int) array[0]);
+	for (; i < size-1; i++)
+	{
+		array[(i * 6) + 1] = x;
+		array[(i * 6) + 2] = y;
+		array[(i * 6) + 3] = theta;
+		array[(i * 6) + 4] = speed;
+		array[(i * 6) + 5] = phi;
+		array[(i * 6) + 6] = time;
+		printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i, x, y, theta, RAD2DEG(theta), speed, phi, RAD2DEG(phi), time);
+
+		if (i <= step_size)
+			speed = MIN(speed+delta_speed, max_speed);
+		else
+			speed = MAX(speed-delta_speed, 0.0);
+	}
+	speed = 0;
+	array[(i * 6) + 1] = x;
+	array[(i * 6) + 2] = y;
+	array[(i * 6) + 3] = theta;
+	array[(i * 6) + 4] = speed;
+	array[(i * 6) + 5] = phi;
+	array[(i * 6) + 6] = time;
+	printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i, x, y, theta, RAD2DEG(theta), speed, phi, RAD2DEG(phi), time);
+
+	send_motion_command_via_socket(array);
+}
+
+static void
+steering_test(const int size1, const int size2, const int size3, const double phi1, const double phi2)
+{
+	double array[NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND];
+	int i = 0;
+
+	double x = .0, y = .0, theta = .0, speed = .0, time = 0.1;
+
+	if (size1 + size2 + size3 > NUM_MOTION_COMMANDS_PER_VECTOR)
+	{
+		printf ("ERROR: steering_test number of commands exceeds maximum: %d + %d + %d = %d.\n", size1, size2, size3, size1+size2+size3);
+		return;
+	}
+
+	array[0] = size1 + size2 + size3;
+	printf ("number_of_motion_commands: %d\n", (int) array[0]);
+	printf ("to the right...\n");
+	for (; i < size1; i++)
+	{
+		array[(i * 6) + 1] = x;
+		array[(i * 6) + 2] = y;
+		array[(i * 6) + 3] = theta;
+		array[(i * 6) + 4] = speed;
+		array[(i * 6) + 5] = phi1;
+		array[(i * 6) + 6] = time;
+		printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i, x, y, theta, RAD2DEG(theta), speed, phi1, RAD2DEG(phi1), time);
+	}
+	printf ("to the left...\n");
+	for (; i < size1+size2; i++)
+	{
+		array[(i * 6) + 1] = x;
+		array[(i * 6) + 2] = y;
+		array[(i * 6) + 3] = theta;
+		array[(i * 6) + 4] = speed;
+		array[(i * 6) + 5] = phi2;
+		array[(i * 6) + 6] = time;
+		printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i, x, y, theta, RAD2DEG(theta), speed, phi2, RAD2DEG(phi2), time);
+	}
+	printf ("neutral...\n");
+	for (; i < size1+size2+size3; i++)
+	{
+		array[(i * 6) + 1] = x;
+		array[(i * 6) + 2] = y;
+		array[(i * 6) + 3] = theta;
+		array[(i * 6) + 4] = speed;
+		array[(i * 6) + 5] = .0;
+		array[(i * 6) + 6] = time;
+		printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i, x, y, theta, RAD2DEG(theta), speed, .0, RAD2DEG(.0), time);
+	}
+
+	send_motion_command_via_socket(array);
+}
+
+static void
+command_override_test(int number_motion_commands, double override_rate)
+{
+	double sleep_time = 1e6/override_rate;
+
+	for (int i = 0; i < number_motion_commands; i++)
+	{
+		printf("overrides: %d sleep_time: %lf secs\n", i, sleep_time/1e6);
+		socket_test(10, -10.0, 10.0, -5.0, 5.0, -3.0, 3.0, 0.0, 10.0, -2.0, 2.0, 0.1, 1.0);
+		usleep(sleep_time);
+	}
+}
+
+static void
+manual_test()
+{
+	double array[NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND];
+	double v = .0;
+	double phi = .0;
+	while (1)
+	{
+		printf("Enter desired speed and steering angle:\n");
+		printf("v = ? [m/s]\n");
+		scanf("%lf", &v);
+		printf("phi = ? [deg]\n");
+		scanf("%lf", &phi);
+
+		// Number of commands
+		array[0] = 3.0;
+		
+		// First command
+		array[1] = 3.0;
+		array[2] = 3.0;
+		array[3] = 3.0;
+		array[4] = v;
+		array[5] = DEG2RAD(phi);
+		array[6] = 5.0;
+
+		// Second command
+		array[7] = 2.0;
+		array[8] = 2.0;
+		array[9] = 2.0;
+		array[10] = v;
+		array[11] = DEG2RAD(phi);
+		array[12] = 5.0;
+
+		// Third command
+		array[13] = 1.0;
+		array[14] = 1.0;
+		array[15] = 1.0;
+		array[16] = v;
+		array[17] = DEG2RAD(phi);
+		array[18] = 5.0;
+
+		send_motion_command_via_socket(array);
+	}
+}
+
+
+static void
+execute_test(void)
+{
+	switch (selected_bit)
+	{
+	case BIT_NONE:
+		printf("Nothing to do.\n");
+		break;
+
+	case BIT_SOCKET:
+		socket_test(10, -10.0, 10.0, -5.0, 5.0, -3.0, 3.0, 0.0, 10.0, -2.0, 2.0, 1.0, 1.0);
+		printf("BIT socket done.\n");
+		break;
+
+	case BIT_VELOCITY:
+		velocity_test(200, 40, 50, 100);
+		printf("BIT velocity done.\n");
+		break;
+
+	case BIT_STEERING_ANGLE:
+		steering_test(50, 50, 100, 1.0, -1.0);
+		printf("BIT steering angle done.\n");
+		break;
+
+	case BIT_COMMAND_OVERRIDE:
+		command_override_test(10, 20.0);
+		printf("BIT command override done.\n");
+		break;
+
+	case BIT_MANUAL:
+		manual_test();
+		printf("BIT manual done.\n");
+		break;
+
+	default:
+		printf("ERROR: Invalid buint-in test selected: %d.\n", selected_bit);
+		break;
+	}
 }
 
 
@@ -268,9 +475,39 @@ void parse_args(int argc, char **argv)
 		}
 		else if (strcmp(argv[i], "-bit") == 0)
 		{
-			bit_enabled = true;
-			printf ("bit: true");
-			valid_arg = true;
+			if (argc > ++i)
+			{
+				if (strcmp(argv[i], "SOCKET") == 0)
+				{
+					selected_bit = BIT_SOCKET;
+					printf ("bit: SOCKET\n");
+					valid_arg = true;
+				}
+				else if (strcmp(argv[i], "VELOCITY") == 0)
+				{
+					selected_bit = BIT_VELOCITY;
+					printf ("bit: VELOCITY\n");
+					valid_arg = true;
+				}
+				else if (strcmp(argv[i], "STEERING_ANGLE") == 0)
+				{
+					selected_bit = BIT_STEERING_ANGLE;
+					printf ("bit: STEERING_ANGLE\n");
+					valid_arg = true;
+				}
+				else if (strcmp(argv[i], "COMMAND_OVERRIDE") == 0)
+				{
+					selected_bit = BIT_COMMAND_OVERRIDE;
+					printf ("bit: COMMAND_OVERRIDE\n");
+					valid_arg = true;
+				}
+				else if (strcmp(argv[i], "MANUAL") == 0)
+				{
+					selected_bit = BIT_MANUAL;
+					printf ("bit: MANUAL\n");
+					valid_arg = true;
+				}
+			}
 		}
 		else if (strcmp(argv[i], "-help") == 0)
 		{
@@ -278,7 +515,6 @@ void parse_args(int argc, char **argv)
 			exit(0);
 		}
 		
-
 		if (!valid_arg)
 		{
 			printf("%s\n", help_msg);
@@ -292,10 +528,9 @@ int
 main(int argc, char **argv)
 {
 	parse_args(argc, argv);
-
-	if (bit_enabled)
+	if (selected_bit != BIT_NONE)
 	{
-		socket_test(80, -10.0, 10.0, -5.0, 5.0, -3.0, 3.0, 0.0, 10.0, -2.0, 2.0, 0.1, 1.0);
+		execute_test();
 	}
 	else
 	{
@@ -308,6 +543,7 @@ main(int argc, char **argv)
 
 		carmen_ipc_dispatch();
 	}
+
 
 	exit(0);
 }
