@@ -1,3 +1,7 @@
+// Saves pointclouds from the log in txt files
+// First line: number of points (needs later correction)
+// Other lines: x y z intensity (of each point)
+
 #include <carmen/carmen.h>
 #include <carmen/velodyne_interface.h>
 #include <string>
@@ -34,7 +38,7 @@ write_pointcloud_txt(carmen_velodyne_partial_scan_message *velodyne_message)
             double h = carmen_normalize_theta(carmen_degrees_to_radians(-velodyne_message->partial_scan[i].angle));
             double range = (((double) velodyne_message->partial_scan[i].distance[j]) / 500.0);
 			double intensity = (((double) velodyne_message->partial_scan[i].intensity[j]));
-            if(range > 0 && range < 200)
+            if(range > 0 && range < 200) // this causes n_points to become wrong (needs later correction)
             {
                 tf::Point point = spherical_to_cartesian(h, v, range);
                 point_cloud_file << point.x() << " " << point.y() << " " << point.z() << " " << intensity << "\n";
