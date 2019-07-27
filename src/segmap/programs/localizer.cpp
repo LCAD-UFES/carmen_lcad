@@ -164,7 +164,6 @@ main(int argc, char **argv)
 	args.add<string>("map_path,m", "Dir with tiles of a map", "/tmp/map");
 	args.add<string>("map_type", "", "reflectivity");
 
-	args.save_config_file(default_data_dir() + "/localizer_config.txt");
 	args.parse(argc, argv);
 
 	string log_path = args.get<string>("log_path");

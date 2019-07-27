@@ -61,12 +61,13 @@ ParticleFilter::ParticleFilter(int n_particles,
 	_color_std_b = color_std_b / 255.0;
 
 	_reflectivity_std = reflectivity_var / 255.0;
-
 	_color_histogram = (double*) calloc (ecc_n_bins, sizeof(double));
 	_map_histogram = (double*) calloc (ecc_n_bins, sizeof(double));
 	_joint_histogram = (double*) calloc (ecc_n_bins * ecc_n_bins, sizeof(double));
 	_ecc_n_bins = ecc_n_bins;
-	_ecc_pixel_step = 256 / _ecc_n_bins;
+	_ecc_pixel_step = (int) ((double) 256 / (double) _ecc_n_bins);
+
+	assert(_ecc_pixel_step > 0);
 
 	use_gps_weight = 0;
 	use_map_weight = 0;
@@ -366,6 +367,8 @@ ParticleFilter::_ecc_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Grid
 		}
 	}
 
+	assert(n_valid > 0);
+
 	// compute entropies
 	double prob_color, prob_map, prob_joint;
 	double img_entropy = 0.0;
@@ -403,8 +406,16 @@ ParticleFilter::_ecc_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Grid
 //	       joint_entropy, img_entropy, map_entropy,
 //	       2.0 - (2 * joint_entropy) / (img_entropy + map_entropy));
 
+	double sum_img_map_entropies = img_entropy + map_entropy;
+
+	if (sum_img_map_entropies == 0)
+		sum_img_map_entropies = 2e-5;
+
+	if (joint_entropy == 0)
+		joint_entropy = 1e-5;
+
 	// Entropy Correlation Coefficient (ECC) see "http://ijsetr.org/wp-content/uploads/2016/05/IJSETR-VOL-5-ISSUE-5-1700-1703.pdf"
-	return log(2.0 - (2 * joint_entropy) / (img_entropy + map_entropy));
+	return log(2.0 - (2 * joint_entropy) / sum_img_map_entropies);
 
 	//return (img_entropy + map_entropy) / (joint_entropy);
 }
@@ -547,10 +558,15 @@ ParticleFilter::_compute_log_ecc_from_histograms()
 	double map_entropy = 0.0;
 	double joint_entropy = 0.0;
 
+	assert(_n_histogram_points > 0);
+
 	for (int i = 0; i < _ecc_n_bins; i++)
 	{
 		prob_color = _color_histogram[i] / _n_histogram_points;
 		prob_map = _map_histogram[i] / _n_histogram_points;
+
+		assert(prob_color >= 0 && prob_color <= 1);
+		assert(prob_map >= 0 && prob_map <= 1);
 
 		if (prob_color > 0)
 			img_entropy += prob_color * log(prob_color);
@@ -562,6 +578,8 @@ ParticleFilter::_compute_log_ecc_from_histograms()
 		{
 			prob_joint = _joint_histogram[i * _ecc_n_bins + j] / _n_histogram_points;
 
+			assert(prob_joint >= 0 && prob_joint <= 1);
+
 			if (prob_joint > 0)
 				joint_entropy += prob_joint * log(prob_joint);
 		}
@@ -571,8 +589,22 @@ ParticleFilter::_compute_log_ecc_from_histograms()
 	map_entropy = -map_entropy;
 	joint_entropy = -joint_entropy;
 
+	double sum_img_map_entropies = img_entropy + map_entropy;
+
+	if (joint_entropy == 0 && (img_entropy != 0 || map_entropy != 0))
+		exit(printf("Error: inconsistent entropies: joint entropy: %lf img_entropy: %lf map_entropy: %lf\n", joint_entropy, img_entropy, map_entropy));
+
+	if (sum_img_map_entropies == 0)
+		sum_img_map_entropies = 1e-6;
+
+	if (joint_entropy == 0)
+		joint_entropy = 1e-6;
+
+	if (joint_entropy == sum_img_map_entropies)
+		return 1e-6;
+
 	// Entropy Correlation Coefficient (ECC) see "http://ijsetr.org/wp-content/uploads/2016/05/IJSETR-VOL-5-ISSUE-5-1700-1703.pdf"
-	return log(2.0 - (2 * joint_entropy) / (img_entropy + map_entropy));
+	return 2.0 - (2 * joint_entropy) / sum_img_map_entropies;
 }
 
 
@@ -698,33 +730,44 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &ma
 
 	// todo: avoid creating this structure when using only gps for computing the particle weights.
 	string tiles_dir = ""; //get_tiles_dir(map);
-	
-	GridMap instantaneous_map(tiles_dir, map._tile_height_meters,
-	                          map._tile_width_meters, map.m_by_pixels, 
-							  map._map_type, 0);
 
-	if (use_map_weight || use_ecc_weight)
+	if (cloud->size() == 0)
 	{
-		instantaneous_map.reload(0, 0);
-		for (int i = 0; i < cloud->size(); i++)
-			instantaneous_map.add_point(cloud->at(i));
+		for (int i = 0; i < _n; i++)
+		{
+			_w[i] = 1.0 / (double) _n;
+			_p_bef[i] = _p[i];
+		}
 	}
-
-	//cv::Mat map_img = instantaneous_map.to_image();
-	//cv::imshow("inst_map", map_img);
-	//cv::waitKey(1);
-
-	// view_observed_cells(instantaneous_map);
-
-	// #pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
-	for (int i = 0; i < _n; i++)
+	else
 	{
-		//transformed_cloud->clear();
-		//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
-		//_w[i] = _image_weight(transformed_cloud, map);
+		GridMap instantaneous_map(tiles_dir, map._tile_height_meters,
+															map._tile_width_meters, map.m_by_pixels,
+									map._map_type, 0);
 
-		_w[i] = _compute_particle_weight(instantaneous_map, map, gps, _p[i]);
-		_p_bef[i] = _p[i];
+		if (use_map_weight || use_ecc_weight)
+		{
+			instantaneous_map.reload(0, 0);
+			for (int i = 0; i < cloud->size(); i++)
+				instantaneous_map.add_point(cloud->at(i));
+		}
+
+		//cv::Mat map_img = instantaneous_map.to_image();
+		//cv::imshow("inst_map", map_img);
+		//cv::waitKey(1);
+
+		// view_observed_cells(instantaneous_map);
+
+		// #pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
+		for (int i = 0; i < _n; i++)
+		{
+			//transformed_cloud->clear();
+			//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
+			//_w[i] = _image_weight(transformed_cloud, map);
+	
+			_w[i] = _compute_particle_weight(instantaneous_map, map, gps, _p[i]);
+			_p_bef[i] = _p[i];
+		}
 	}
 
 	*max_id = *min_id = 0;

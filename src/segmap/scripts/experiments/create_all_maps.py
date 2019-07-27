@@ -5,12 +5,8 @@ from multiprocessing import Pool
 from experiments import *
 
 
-def run_mapper(log_and_type):
-	log_name = log_and_type[0]
-	intensity_mode = log_and_type[1]
-	use_lane_segmentation = log_and_type[2]
-	
-	mapper_args = " -v 1 "
+def run_mapper(log_name, intensity_mode, map_type, use_lane_segmentation):
+	mapper_args = " -v 1 " 
 
 	if (intensity_mode == 'semantic') and (not os.path.exists('/dados/data/data_%s/semantic' % log_name)):
 		print("Semantic segmentations not found for log '%s'. Skipping creation of semantic maps." % log_name)
@@ -28,8 +24,8 @@ def run_mapper(log_and_type):
 		mapper_args += " --segment_lane_marks 1 "
 		tag = "_with_lanes"
 	
-	if ("aeroporto" in log_name):
-		mapper_args += " --camera_latency 0.42 "
+	if 'aeroport' in log_name or 'noite' in log_name:
+		mapper_args += " --camera_latency 0.3 "
 	else:
 		mapper_args += " --camera_latency 0.0 "
 
@@ -52,10 +48,11 @@ if __name__ == "__main__":
 		os.mkdir('/dados/maps2')
 	
 	for e in experiments:
-		#logs_to_map.append([e['map'], 'semantic', True])
-		#logs_to_map.append([e['map'], 'semantic', False])
-		logs_to_map.append([e['map'], 'remission', False])
-		logs_to_map.append([e['map'], 'visual', False])
+		logs_to_map.append([e['map'], 'semantic', 'semantic', True])
+		logs_to_map.append([e['map'], 'semantic', 'semantic', False])
+		logs_to_map.append([e['map'], 'reflectivity', False])
+		logs_to_map.append([e['map'], 'colour', 'colour', False])
+		logs_to_map.append([e['map'], 'reflectivity', 'occupancy', False])
 	
 	process_pool = Pool(len(logs_to_map)) 
 	process_pool.map(run_mapper, logs_to_map)

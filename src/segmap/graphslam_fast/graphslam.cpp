@@ -106,10 +106,10 @@ read_loop_restrictions(string &filename, vector<LoopRestriction> *loop_data)
 
 			if (n == 6)
 			{
-				double d = sqrt(pow(x, 2) + pow(y, 2));
-				double dth = fabs(theta);
+				//double d = sqrt(pow(x, 2) + pow(y, 2));
+				//double dth = fabs(theta);
 
-				if (d < 5.0 && dth < deg2rad(10.0))
+				if (1) //d < 5.0 && dth < deg2rad(10.0))
 				{
 					l.transform = SE2(x, y, theta);
 					loop_data->push_back(l);
@@ -353,7 +353,8 @@ add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction>
 void
 add_loop_closure_edges(vector<LoopRestriction> &loop_data, SparseOptimizer *optimizer, double xy_std, double th_std)
 {
-	Matrix3d information = create_information_matrix(xy_std, xy_std, th_std);
+	Matrix3d velodyne_information = create_information_matrix(xy_std, xy_std, th_std);
+	Matrix3d camera_information = create_information_matrix(5.0, 30.0, th_std);
 
 	for (size_t i = 0; i < loop_data.size(); i++)
 	{
@@ -363,7 +364,12 @@ add_loop_closure_edges(vector<LoopRestriction> &loop_data, SparseOptimizer *opti
 			edge->vertices()[0] = optimizer->vertex(loop_data[i].from);
 			edge->vertices()[1] = optimizer->vertex(loop_data[i].to);
 			edge->setMeasurement(loop_data[i].transform);
-			edge->setInformation(information);
+
+			if (loop_data[i].converged == 1 || loop_data[i].converged == 2)
+				edge->setInformation(velodyne_information);
+			else
+				edge->setInformation(camera_information);
+
 			optimizer->addEdge(edge);
 		}
 	}
@@ -607,7 +613,6 @@ int main(int argc, char **argv)
 	add_graphslam_parameters(args);
 	add_default_sensor_preproc_args(args);
 	args.add<int>("gps_step", "Number of steps to skip before adding a new gps edge.", 1);
-	args.save_config_file(default_data_dir() + "/graphslam_config.txt");
 
 	parse_command_line(argc, argv, args, &data);
 
