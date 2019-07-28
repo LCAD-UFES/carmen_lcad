@@ -873,7 +873,8 @@ create_instantaneous_map(DataSample *sample, SensorPreproc &preproc, GridMap *in
 					inst_map->add_point(point);
 				}
 
-				if (inst_map->_map_type == GridMapTile::TYPE_REFLECTIVITY)
+				// valid = 2 means that the points is too high or too low.
+				if (inst_map->_map_type == GridMapTile::TYPE_REFLECTIVITY && points[j].valid != 2)
 				{
 					point = points[j].car;
 					point.r = point.g = point.b = points[j].calibrated_intensity;

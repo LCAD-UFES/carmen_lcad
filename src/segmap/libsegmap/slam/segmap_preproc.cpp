@@ -642,10 +642,6 @@ SensorPreproc::_adjust_intensity(Matrix<double, 4, 1> &p_sensor, unsigned char r
 
 				*point_class = CityscapesObjectClassMapper::transform_object_class(_semantic_img.data[p]);
 
-				colour->val[0] = _img.data[p];
-				colour->val[1] = _img.data[p + 1];
-				colour->val[2] = _img.data[p + 2];
-
 				circle(_semantic_img_with_points, Point(pos_pixel.x, pos_pixel.y), 2, Scalar(0, 0, 255), -1);
 			}
 		}

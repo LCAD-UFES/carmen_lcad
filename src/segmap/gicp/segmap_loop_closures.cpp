@@ -116,6 +116,7 @@ run_viewer_if_necessary(Pose2d *pose,
 		//transformPointCloud(*cloud, *transformed, Pose2d::to_matrix(*pose));
 		//viewer.show(cloud);
 		//viewer.set_camera_pose(pose->x, pose->y);
+
 		Mat flipped;
 		flip(img, flipped, 0);
 		viewer.show(flipped, "map", 640);
@@ -982,6 +983,9 @@ run_particle_filter(string map_path,
 			convergence_vector->push_back(3);
 		else if (map_type == GridMapTile::TYPE_SEMANTIC)
 			convergence_vector->push_back(4);
+		else
+			// just for detecting bugs
+			convergence_vector->push_back(-1);
 
 		is_init = 0;
 	}
@@ -1032,14 +1036,14 @@ estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detec
 	relative_transform_vector->clear();
 	convergence_vector->clear();
 
-	map_path = dir_to_save_maps + "/map_occupancy_" + log_name;
-	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_occupancy_" + log_name;
-	remove_and_create_dir(dir_to_dump_imgs);
-	run_particle_filter(map_path,
-	                    GridMapTile::TYPE_OCCUPANCY, "reflectivity",
-	                    loop_closure_indices, relative_transform_vector, convergence_vector,
-	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
-	                    dataset_path, dir_to_dump_imgs);
+//	map_path = dir_to_save_maps + "/map_occupancy_" + log_name;
+//	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_occupancy_" + log_name;
+//	remove_and_create_dir(dir_to_dump_imgs);
+//	run_particle_filter(map_path,
+//	                    GridMapTile::TYPE_OCCUPANCY, "reflectivity",
+//	                    loop_closure_indices, relative_transform_vector, convergence_vector,
+//	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
+//	                    dataset_path, dir_to_dump_imgs);
 
 	map_path = dir_to_save_maps + "/map_reflectivity_" + log_name;
 	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_reflectivity_" + log_name;
