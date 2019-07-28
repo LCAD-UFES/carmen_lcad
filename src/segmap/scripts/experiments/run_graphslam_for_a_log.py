@@ -41,7 +41,9 @@ def run_graphslam(carmen_path, log_path, output_dir, mode, config_dir):
 		raise Exception("Invalid mode '%s'" % mode)
 
 	if ("brt" in log_path):
-		args = "--gps_xy_std 20.00000 --gps_angle_std 20.000000 --pf_loops_xy_std 0.030000 --pf_loops_angle_std 3.000000 --gps_step 50"
+		args = "--gps_xy_std 20.00000 --gps_angle_std 20.000000 --pf_loops_xy_std 0.10000 --pf_loops_angle_std 3.000000 --gps_step 50"
+	elif ("jardim" in log_path):
+		args = "--gps_xy_std 5.00000 --gps_angle_std 20.000000 --pf_loops_xy_std 0.1 --pf_loops_angle_std 1.000000 "	
 	else:
 		args = " --gps_xy_std 2.000000 --gps_angle_std 20.000000 --pf_loops_xy_std 0.1 --pf_loops_angle_std 1.0 "
 		

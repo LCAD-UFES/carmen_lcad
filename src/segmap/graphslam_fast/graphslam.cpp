@@ -365,10 +365,10 @@ add_loop_closure_edges(vector<LoopRestriction> &loop_data, SparseOptimizer *opti
 			edge->vertices()[1] = optimizer->vertex(loop_data[i].to);
 			edge->setMeasurement(loop_data[i].transform);
 
-//			if (loop_data[i].converged == 1 || loop_data[i].converged == 2)
+			if (loop_data[i].converged == 1 || loop_data[i].converged == 2)
 				edge->setInformation(velodyne_information);
-//			else
-//				edge->setInformation(camera_information);
+			else
+				edge->setInformation(camera_information);
 
 			optimizer->addEdge(edge);
 		}
