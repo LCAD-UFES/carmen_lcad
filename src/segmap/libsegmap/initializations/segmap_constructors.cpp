@@ -131,11 +131,11 @@ create_sensor_preproc(CommandLineArguments &args,
 	double above = args.get<double>("ignore_above_threshold");
 	double below = args.get<double>("ignore_below_threshold");
 
-//	if (i_mode == SensorPreproc::SEMANTIC || i_mode == SensorPreproc::COLOUR)
-//	{
-//		above = DBL_MAX;
-//		below = -DBL_MAX;
-//	}
+	if (i_mode == SensorPreproc::SEMANTIC || i_mode == SensorPreproc::COLOUR)
+	{
+		above = DBL_MAX;
+		below = -DBL_MAX;
+	}
 
 	SensorPreproc preproc(vloader, iloader, sloader,
 												dataset->vel2cam(), dataset->vel2car(), dataset->projection_matrix(),
