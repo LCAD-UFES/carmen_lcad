@@ -117,8 +117,8 @@ def main(log_path, skip_until):
 #		run_loop_closures(carmen_path, log_path, output_dir, 'gicp')
 #	if (not skip_until) or (skip_until <= 4):
 #		run_loop_closures(carmen_path, log_path, output_dir, 'particle_filter')
-	if (not skip_until) or (skip_until <= 5):
-		run_loop_closures(carmen_path, log_path, output_dir, 'localization', config_dir)
+#	if (not skip_until) or (skip_until <= 5):
+#		run_loop_closures(carmen_path, log_path, output_dir, 'localization', config_dir)
 	if (not skip_until) or (skip_until <= 6):
 		run_graphslam(carmen_path, log_path, output_dir, "graphslam", config_dir)
 	if skip_until and skip_until > 6:

@@ -1085,6 +1085,10 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
                                                    int n_corrections_when_reinit,
                                                    CommandLineArguments &args)
 {
+	loop_closure_indices.clear();
+	relative_transform_vector->clear();
+	convergence_vector->clear();
+
 	string adj_name = file_name_from_path(dataset_to_adjust_path);
 	string tgt_name = file_name_from_path(target_dataset_path);
 	string map_path;
