@@ -592,7 +592,10 @@ GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &point
 	std::vector<double> obstacle_probs;
 	PointXYZRGB point;
 
-	if (points[0].valid)
+	/**
+	 * THE VALID ATTRIBUTE IS 2 WHEN THE POINT IS TOO HIGH OR TOO LOW (HENCE INVALID).
+	 */
+	if (points[0].valid == 1)
 	{
 		first_valid = 0;
 		last_valid = 0;
@@ -600,7 +603,7 @@ GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &point
 
 	for (int i = 1; i < points.size(); i++)
 	{
-		if (points[i].valid)
+		if (points[i].valid == 1)
 		{
 			if (first_valid == -1)
 				first_valid = i;
@@ -609,7 +612,7 @@ GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &point
 				last_valid = i;
 		}
 
-		if (points[i - 1].valid && points[i].valid)
+		if (points[i - 1].valid == 1 && points[i].valid == 1)
 		{
 			obstacle_prob = compute_obstacle_evidence(points[i - 1], points[i]);
 			obstacle_probs.push_back(obstacle_prob);
@@ -823,7 +826,8 @@ update_maps(DataSample *sample, SensorPreproc &preproc, GridMap *visual_map, Gri
 					semantic_map->add_point(point);
 				}
 
-				if (reflectivity_map)
+				// valid = 2 means that the point is too high or too low
+				if (reflectivity_map && points[j].valid != 2)
 				{
 					point = points[j].world;
 					point.r = point.g = point.b = points[j].calibrated_intensity;
