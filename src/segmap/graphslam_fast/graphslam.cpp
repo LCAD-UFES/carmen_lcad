@@ -109,7 +109,7 @@ read_loop_restrictions(string &filename, vector<LoopRestriction> *loop_data)
 				double d = sqrt(pow(x, 2) + pow(y, 2));
 				double dth = fabs(theta);
 
-				if (d < 10.0 && dth < deg2rad(20.0))
+				if (1) //(d < 20.0 && dth < deg2rad(20.0))
 				{
 					l.transform = SE2(x, y, theta);
 					loop_data->push_back(l);

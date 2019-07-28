@@ -168,7 +168,7 @@ create_map(NewCarmenDataset *dataset,
 			printf("Step %d of %ld AvgStepDuration: %lf LastStepDuration: %lf\n",
 						 i, samples_to_map.size(), mean(times), times[times.size() - 1]);
 
-		if (view_flag && i % 40 == 0)
+		if (view_flag && i % 1 == 0)
 		{
 			view_maps(sample, preproc, viewer, visual_map,
 			          reflectivity_map, 

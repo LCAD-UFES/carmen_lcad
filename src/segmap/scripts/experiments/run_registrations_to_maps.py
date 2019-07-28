@@ -23,6 +23,8 @@ if __name__ == "__main__":
 			
 			if ("brt" in t):
 				args = "--gps_xy_std 50.00000 --gps_angle_std 50.000000 --pf_loops_xy_std 0.1 --pf_loops_angle_std 0.1  --gps_step 50"
+			elif ("jardim" in t):
+				args = "--gps_xy_std 5.00000 --gps_angle_std 20.000000 --pf_loops_xy_std 0.1 --pf_loops_angle_std 0.1"
 			else:
 				args = "--gps_xy_std 2.00000 --gps_angle_std 20.000000 --pf_loops_xy_std 0.1 --pf_loops_angle_std 0.1 "
 
