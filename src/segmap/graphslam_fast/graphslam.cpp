@@ -106,10 +106,10 @@ read_loop_restrictions(string &filename, vector<LoopRestriction> *loop_data)
 
 			if (n == 6)
 			{
-				//double d = sqrt(pow(x, 2) + pow(y, 2));
-				//double dth = fabs(theta);
+				double d = sqrt(pow(x, 2) + pow(y, 2));
+				double dth = fabs(theta);
 
-				if (1) //d < 5.0 && dth < deg2rad(10.0))
+				if (d < 10.0 && dth < deg2rad(20.0))
 				{
 					l.transform = SE2(x, y, theta);
 					loop_data->push_back(l);
@@ -358,17 +358,17 @@ add_loop_closure_edges(vector<LoopRestriction> &loop_data, SparseOptimizer *opti
 
 	for (size_t i = 0; i < loop_data.size(); i++)
 	{
-		if (loop_data[i].converged)
+		if (loop_data[i].converged == 1 || loop_data[i].converged == 2)
 		{
 			EdgeSE2* edge = new EdgeSE2;
 			edge->vertices()[0] = optimizer->vertex(loop_data[i].from);
 			edge->vertices()[1] = optimizer->vertex(loop_data[i].to);
 			edge->setMeasurement(loop_data[i].transform);
 
-			if (loop_data[i].converged == 1 || loop_data[i].converged == 2)
+//			if (loop_data[i].converged == 1 || loop_data[i].converged == 2)
 				edge->setInformation(velodyne_information);
-			else
-				edge->setInformation(camera_information);
+//			else
+//				edge->setInformation(camera_information);
 
 			optimizer->addEdge(edge);
 		}
