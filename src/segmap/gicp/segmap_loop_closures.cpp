@@ -1036,14 +1036,14 @@ estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detec
 	relative_transform_vector->clear();
 	convergence_vector->clear();
 
-//	map_path = dir_to_save_maps + "/map_occupancy_" + log_name;
-//	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_occupancy_" + log_name;
-//	remove_and_create_dir(dir_to_dump_imgs);
-//	run_particle_filter(map_path,
-//	                    GridMapTile::TYPE_OCCUPANCY, "reflectivity",
-//	                    loop_closure_indices, relative_transform_vector, convergence_vector,
-//	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
-//	                    dataset_path, dir_to_dump_imgs);
+	map_path = dir_to_save_maps + "/map_occupancy_" + log_name;
+	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_occupancy_" + log_name;
+	remove_and_create_dir(dir_to_dump_imgs);
+	run_particle_filter(map_path,
+	                    GridMapTile::TYPE_OCCUPANCY, "reflectivity",
+	                    loop_closure_indices, relative_transform_vector, convergence_vector,
+	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
+	                    dataset_path, dir_to_dump_imgs);
 
 	map_path = dir_to_save_maps + "/map_reflectivity_" + log_name;
 	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_reflectivity_" + log_name;
