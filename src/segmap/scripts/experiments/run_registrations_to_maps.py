@@ -15,7 +15,7 @@ if __name__ == "__main__":
 		m = e['map']
 		for t in e['test']:
 		
-			cmd = "time ./gicp/generate_loop_closures_between_logs /dados/%s /dados/%s %s /dados/data2/data_%s/pf_loops_to_map.txt --mode localization --n_particles 200 --gps_xy_std 5.0 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 5.0 --n_corrections_when_reinit 20 --v_thresh 1 -v 1 --time_dist 0 --color_red_std 3 --color_green_std 3 --color_blue_std 3 --reflectivity_std 3 --use_map_weight 1 --clean_map 0 --view_imgs 0 --view_pointcloud 0 " % (m, t, param_file, t)
+			cmd = "time ./gicp/generate_loop_closures_between_logs /dados/%s /dados/%s %s /dados/data2/data_%s/pf_loops_to_map.txt --mode localization --n_particles 200 --gps_xy_std 2.5 --gps_h_std 20 --dist_to_accumulate 20.0 --loop_dist 5.0 --n_corrections_when_reinit 20 --v_thresh 1 -v 1 --time_dist 0 --color_red_std 3 --color_green_std 3 --color_blue_std 3 --reflectivity_std 3 --use_map_weight 1 --clean_map 0 --view_imgs 0 --view_pointcloud 0 " % (m, t, param_file, t)
 			registration_cmds.append(cmd + " > /dev/null 2>&1")
 
 			#print(cmd)
@@ -36,8 +36,8 @@ if __name__ == "__main__":
 		print(c)
 
 	print("Running processes.")
-	#process_pool = Pool(len(registration_cmds))
-	#process_pool.map(run_command, registration_cmds)
+	process_pool = Pool(len(registration_cmds))
+	process_pool.map(run_command, registration_cmds)
 	process_pool = Pool(len(graphslam_cmds))
 	process_pool.map(run_command, graphslam_cmds)
 	print("Done.")

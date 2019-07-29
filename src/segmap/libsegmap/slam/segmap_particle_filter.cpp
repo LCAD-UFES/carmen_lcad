@@ -772,10 +772,11 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &ma
 
 	*max_id = *min_id = 0;
 
-	fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
+	//fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
 	for (i = 0; i < _n; i++)
 	{
-		fprintf(stderr, "%.4lf ", _w[i]);
+		assert(!isinf(_w[i]) && !isnan(_w[i]));
+		//fprintf(stderr, "%.4lf ", _w[i]);
 
 		if (_w[i] > _w[*max_id])
 			*max_id = i;
@@ -783,7 +784,7 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &ma
 		if (_w[i] < _w[*min_id])
 			*min_id = i;
 	}
-	fprintf(stderr, "\n");
+	//fprintf(stderr, "\n");
 
 	best = _p[*max_id];
 }
@@ -803,7 +804,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	//max_weight = _w[max_id];
 	sum_weights = 0.;
 
-	fprintf(stderr, "\nDEBUG: Weights as positive values: ");
+	//fprintf(stderr, "\nDEBUG: Weights as positive values: ");
 	for (i = 0; i < _n; i++)
 	{
 		//_w[i] = exp(_w[i] - max_weight) + (1. / (double) (3. * _n));
@@ -812,9 +813,10 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 		//_w[i] = pow(_w[i], 3);
 		sum_weights += _w[i];
 
-		fprintf(stderr, "%.4lf ", _w[i]);
+		assert(!isinf(_w[i]) && !isnan(_w[i]));
+		//fprintf(stderr, "%.4lf ", _w[i]);
 	}
-	fprintf(stderr, "\n");
+	//fprintf(stderr, "\n");
 
 	//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[max_id]));
 	//for(int i = 0; i < transformed_cloud->size(); i++)
@@ -827,7 +829,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	//printf("Sum weights: %lf\n", sum_weights);
 
 	// normalize the weights
-	fprintf(stderr, "\nDEBUG: Weights Normalized: ");
+	//fprintf(stderr, "\nDEBUG: Weights Normalized: ");
 	for (i = 0; i < _n; i++)
 	{
 		if (fabs(sum_weights) < 1e-6)
@@ -835,12 +837,12 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 		else
 			_w[i] /= sum_weights;
 
-		assert(_w[i] >= 0);
+		assert(_w[i] >= 0 && !isinf(_w[i]) && !isnan(_w[i]));
 		_w_bef[i] = _w[i];
 
-		fprintf(stderr, "%.4lf ", _w[i]);
+		//fprintf(stderr, "%.4lf ", _w[i]);
 	}
-	fprintf(stderr, "\n\n---------\n\n");
+	//fprintf(stderr, "\n\n---------\n\n");
 }
 
 
@@ -917,10 +919,11 @@ ParticleFilter::_compute_weights(DataSample *sample, GridMap &map, SensorPreproc
 
 	*max_id = *min_id = 0;
 
-	fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
+	//fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
 	for (i = 0; i < _n; i++)
 	{
-		fprintf(stderr, "%.4lf ", _w[i]);
+		assert(!isnan(_w[i]) && !isinf(_w[i]));
+		//fprintf(stderr, "%.4lf ", _w[i]);
 
 		if (_w[i] > _w[*max_id])
 			*max_id = i;
@@ -928,7 +931,7 @@ ParticleFilter::_compute_weights(DataSample *sample, GridMap &map, SensorPreproc
 		if (_w[i] < _w[*min_id])
 			*min_id = i;
 	}
-	fprintf(stderr, "\n");
+	//fprintf(stderr, "\n");
 
 	best = _p[*max_id];
 }

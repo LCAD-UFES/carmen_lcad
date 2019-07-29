@@ -345,7 +345,7 @@ add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction>
 			double dist = dist2d(data.dataset->at(gicp_gps[i].to)->pose.x, data.dataset->at(gicp_gps[i].to)->pose.y, gicp_gps[i].transform[0], gicp_gps[i].transform[1]);
 			double diff_angle = fabs(g2o::normalize_theta(gicp_gps[i].transform[2] - data.dataset->at(gicp_gps[i].to)->pose.th));
 
-			printf("%d pose: %lf %lf %lf fake_gps: %lf %lf %lf\n dist: %lf diff_angle: %lf", i,
+			printf("%d pose: %lf %lf %lf fake_gps: %lf %lf %lf dist: %lf diff_angle: %lf\n", i,
 			       data.dataset->at(gicp_gps[i].to)->pose.x, data.dataset->at(gicp_gps[i].to)->pose.y, data.dataset->at(gicp_gps[i].to)->pose.th,
 			       gicp_gps[i].transform[0], gicp_gps[i].transform[1], gicp_gps[i].transform[2],
 			       dist, rad2deg(diff_angle));

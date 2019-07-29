@@ -947,6 +947,7 @@ run_particle_filter(string map_path,
 	else
 		pf.set_use_map_weight(1);
 
+	int view;
 	Pose2d mean;
 	DataSample *sample;
 	PointCloudViewer viewer;
@@ -959,14 +960,29 @@ run_particle_filter(string map_path,
 	string img_path;
 	char number_with_zeros[32];
 
+	int iteration_count = 0;
+
 	for (it = loop_closures.begin(); it != loop_closures.end(); it++)
 	{
 		sample = adj_dataset[it->first];
 
-		sprintf(number_with_zeros, "%06d", it->first);
-		img_path = dir_to_dump_imgs + "/" + string(number_with_zeros) + ".png";
-		mean = update_particle_filter(pf, map, preproc, viewer, args.get<int>("view"), adj_dataset, sample, it, is_init,
+		if (iteration_count++ % 10 == 0)
+		{
+			sprintf(number_with_zeros, "%06d", it->first);
+			img_path = dir_to_dump_imgs + "/" + string(number_with_zeros) + ".png";
+			view = args.get<int>("view");
+		}
+		else
+		{
+			img_path = "";
+			view = 0;
+		}
+
+		mean = update_particle_filter(pf, map, preproc, viewer, view, adj_dataset, sample, it, is_init,
 		                              n_corrections_when_reinit, img_path);
+
+		//printf("Id: %d Mean: %lf %lf %lf Pose: %lf %lf %lf\n", it->first, mean.x, mean.y, mean.th,
+		       //adj_dataset[it->first]->pose.x, adj_dataset[it->first]->pose.y, adj_dataset[it->first]->pose.th);
 
 		// for compatibility issues, we have to specify the pose in relation to a sample in the target dataset.
 		Matrix<double, 4, 4>  world2nn = Pose2d::to_matrix(tgt_dataset[it->second]->pose).inverse();
@@ -1054,23 +1070,23 @@ estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detec
 	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
 	                    dataset_path, dir_to_dump_imgs);
 
-	map_path = dir_to_save_maps + "/map_visual_" + log_name;
-	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_colour_" + log_name;
-	remove_and_create_dir(dir_to_dump_imgs);
-	run_particle_filter(map_path,
-	                    GridMapTile::TYPE_VISUAL, "colour",
-	                    loop_closure_indices, relative_transform_vector, convergence_vector,
-	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
-	                    dataset_path, dir_to_dump_imgs);
-
-	map_path = dir_to_save_maps + "/map_semantic_" + log_name;
-	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_semantic_" + log_name;
-	remove_and_create_dir(dir_to_dump_imgs);
-	run_particle_filter(map_path,
-	                    GridMapTile::TYPE_SEMANTIC, "semantic",
-	                    loop_closure_indices, relative_transform_vector, convergence_vector,
-	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
-	                    dataset_path, dir_to_dump_imgs);
+//	map_path = dir_to_save_maps + "/map_visual_" + log_name;
+//	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_colour_" + log_name;
+//	remove_and_create_dir(dir_to_dump_imgs);
+//	run_particle_filter(map_path,
+//	                    GridMapTile::TYPE_VISUAL, "colour",
+//	                    loop_closure_indices, relative_transform_vector, convergence_vector,
+//	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
+//	                    dataset_path, dir_to_dump_imgs);
+//
+//	map_path = dir_to_save_maps + "/map_semantic_" + log_name;
+//	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_semantic_" + log_name;
+//	remove_and_create_dir(dir_to_dump_imgs);
+//	run_particle_filter(map_path,
+//	                    GridMapTile::TYPE_SEMANTIC, "semantic",
+//	                    loop_closure_indices, relative_transform_vector, convergence_vector,
+//	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
+//	                    dataset_path, dir_to_dump_imgs);
 }
 
 
@@ -1100,7 +1116,12 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 	std::map<int, int> loop_closures;
 
 	for (int i = 0; i < dataset_to_adjust.size(); i++)
-		loop_closures.insert(pair<int, int>(i, 0));
+	// for (int i = 0; loop_closures.size() < 100; i++)
+	{
+		// avoid poses in which the car is stopped or moving backwards.
+		if (dataset_to_adjust[i]->v > 1.0)
+			loop_closures.insert(pair<int, int>(i, 0));
+	}
 
 	string dir_maps_are_saved = "/dados/maps2/";
 	string dir_to_save_all_imgs = "/tmp/gt_imgs_" + adj_name + "/";
@@ -1109,15 +1130,15 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 	if (!boost::filesystem::exists(dir_to_save_all_imgs))
 		boost::filesystem::create_directory(dir_to_save_all_imgs);
 
-//	map_path = dir_maps_are_saved + "/map_occupancy_" + tgt_name;
-//	assert(boost::filesystem::exists(map_path));
-//	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_occupancy_" + adj_name;
-//	remove_and_create_dir(dir_to_dump_imgs);
-//	run_particle_filter(map_path,
-//						GridMapTile::TYPE_OCCUPANCY, "reflectivity",
-//						loop_closure_indices, relative_transform_vector, convergence_vector,
-//						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
-//						dataset_to_adjust_path, dir_to_dump_imgs);
+	map_path = dir_maps_are_saved + "/map_occupancy_" + tgt_name;
+	assert(boost::filesystem::exists(map_path));
+	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_occupancy_" + adj_name;
+	remove_and_create_dir(dir_to_dump_imgs);
+	run_particle_filter(map_path,
+						GridMapTile::TYPE_OCCUPANCY, "reflectivity",
+						loop_closure_indices, relative_transform_vector, convergence_vector,
+						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
+						dataset_to_adjust_path, dir_to_dump_imgs);
 
 	map_path = dir_maps_are_saved + "/map_reflectivity_" + tgt_name;
 	assert(boost::filesystem::exists(map_path));
