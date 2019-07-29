@@ -1104,19 +1104,20 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 
 	string dir_maps_are_saved = "/dados/maps2/";
 	string dir_to_save_all_imgs = "/tmp/gt_imgs_" + adj_name + "/";
+	string dir_to_dump_imgs;
 
 	if (!boost::filesystem::exists(dir_to_save_all_imgs))
 		boost::filesystem::create_directory(dir_to_save_all_imgs);
 
-	map_path = dir_maps_are_saved + "/map_occupancy_" + tgt_name;
-	assert(boost::filesystem::exists(map_path));
-	string dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_occupancy_" + adj_name;
-	remove_and_create_dir(dir_to_dump_imgs);
-	run_particle_filter(map_path,
-						GridMapTile::TYPE_OCCUPANCY, "reflectivity",
-						loop_closure_indices, relative_transform_vector, convergence_vector,
-						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
-						dataset_to_adjust_path, dir_to_dump_imgs);
+//	map_path = dir_maps_are_saved + "/map_occupancy_" + tgt_name;
+//	assert(boost::filesystem::exists(map_path));
+//	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_occupancy_" + adj_name;
+//	remove_and_create_dir(dir_to_dump_imgs);
+//	run_particle_filter(map_path,
+//						GridMapTile::TYPE_OCCUPANCY, "reflectivity",
+//						loop_closure_indices, relative_transform_vector, convergence_vector,
+//						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
+//						dataset_to_adjust_path, dir_to_dump_imgs);
 
 	map_path = dir_maps_are_saved + "/map_reflectivity_" + tgt_name;
 	assert(boost::filesystem::exists(map_path));
@@ -1128,25 +1129,25 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
 						dataset_to_adjust_path, dir_to_dump_imgs);
 
-	map_path = dir_maps_are_saved + "/map_visual_" + tgt_name;
-	assert(boost::filesystem::exists(map_path));
-	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_colour_" + adj_name;
-	remove_and_create_dir(dir_to_dump_imgs);
-	run_particle_filter(map_path,
-						GridMapTile::TYPE_VISUAL, "colour",
-						loop_closure_indices, relative_transform_vector, convergence_vector,
-						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
-						dataset_to_adjust_path, dir_to_dump_imgs);
-
-	map_path = dir_maps_are_saved + "/map_semantic_" + tgt_name;
-	assert(boost::filesystem::exists(map_path));
-	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_semantic_" + adj_name;
-	remove_and_create_dir(dir_to_dump_imgs);
-	run_particle_filter(map_path,
-						GridMapTile::TYPE_SEMANTIC, "semantic",
-						loop_closure_indices, relative_transform_vector, convergence_vector,
-						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
-						dataset_to_adjust_path, dir_to_dump_imgs);
+//	map_path = dir_maps_are_saved + "/map_visual_" + tgt_name;
+//	assert(boost::filesystem::exists(map_path));
+//	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_colour_" + adj_name;
+//	remove_and_create_dir(dir_to_dump_imgs);
+//	run_particle_filter(map_path,
+//						GridMapTile::TYPE_VISUAL, "colour",
+//						loop_closure_indices, relative_transform_vector, convergence_vector,
+//						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
+//						dataset_to_adjust_path, dir_to_dump_imgs);
+//
+//	map_path = dir_maps_are_saved + "/map_semantic_" + tgt_name;
+//	assert(boost::filesystem::exists(map_path));
+//	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_semantic_" + adj_name;
+//	remove_and_create_dir(dir_to_dump_imgs);
+//	run_particle_filter(map_path,
+//						GridMapTile::TYPE_SEMANTIC, "semantic",
+//						loop_closure_indices, relative_transform_vector, convergence_vector,
+//						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
+//						dataset_to_adjust_path, dir_to_dump_imgs);
 
 	/*
 	if (map_has_to_be_created)

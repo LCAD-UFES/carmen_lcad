@@ -32,6 +32,9 @@ if __name__ == "__main__":
 			
 			graphslam_cmds.append(cmd)
 
+	for c in registration_cmds:
+		print(c)
+
 	print("Running processes.")
 	#process_pool = Pool(len(registration_cmds))
 	#process_pool.map(run_command, registration_cmds)
