@@ -133,8 +133,11 @@ create_map(NewCarmenDataset *dataset,
 
 	viewer.set_step(args.get<int>("start_paused"));
 
-	preproc.set_load_img_flag(1);
-	preproc.set_load_semantic_img_flag(1);
+	if (args.get<int>("build_visual_map"))
+		preproc.set_load_img_flag(1);
+	
+	if (args.get<int>("build_semantic_map"))
+		preproc.set_load_semantic_img_flag(1);
 
 	for (int i = 0; i < samples_to_map.size(); i++)
 	{
@@ -168,7 +171,7 @@ create_map(NewCarmenDataset *dataset,
 			printf("Step %d of %ld AvgStepDuration: %lf LastStepDuration: %lf\n",
 						 i, samples_to_map.size(), mean(times), times[times.size() - 1]);
 
-		if (view_flag)
+		if (view_flag && i % 1 == 0)
 		{
 			view_maps(sample, preproc, viewer, visual_map,
 			          reflectivity_map, 

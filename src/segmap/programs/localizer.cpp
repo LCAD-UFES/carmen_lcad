@@ -61,9 +61,9 @@ viewer(DataSample *sample, ParticleFilter &pf, GridMap &map, int step, int n_tot
 		Mat flipped;
 		flip(pf_img, flipped, 0);
 
-		Mat img = iloader.load(sample);
-		s_viewer.show(img, "img", 640);
-		s_viewer.show(flipped, "pf_viewer");
+		//Mat img = iloader.load(sample);
+		//s_viewer.show(img, "img", 640);
+		s_viewer.show(flipped, "pf_viewer", 640);
 		s_viewer.loop();
 
 		if (save_dir.compare("") != 0)
@@ -142,8 +142,8 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 
 		//sample->pose = pf.mean();
 		//update_map(sample, &map, preproc);
-		//preproc.reinitialize(sample);
-		//load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+		preproc.reinitialize(sample);
+		load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
 		viewer(sample, pf, map, i, dataset->size(), cloud, s_viewer, timer.ellapsed(), view_flag, iloader, save_dir);
 
 		n++;
@@ -164,7 +164,6 @@ main(int argc, char **argv)
 	args.add<string>("map_path,m", "Dir with tiles of a map", "/tmp/map");
 	args.add<string>("map_type", "", "reflectivity");
 
-	args.save_config_file(default_data_dir() + "/localizer_config.txt");
 	args.parse(argc, argv);
 
 	string log_path = args.get<string>("log_path");

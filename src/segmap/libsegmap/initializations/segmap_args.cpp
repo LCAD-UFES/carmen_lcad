@@ -68,8 +68,8 @@ add_default_mapper_args(CommandLineArguments &args)
 
 	args.add<int>("view,v", "Flag to set visualization on or off", 1);
 	args.add<int>("viewer_width", "Width of the map's visualization", 600);
-	args.add<int>("view_pointcloud", "Visualization flag.", 1);
-	args.add<int>("view_imgs", "Visualization flag.", 1);
+	args.add<int>("view_pointcloud", "Visualization flag.", 0);
+	args.add<int>("view_imgs", "Visualization flag.", 0);
 	args.add<int>("start_paused", "Flag for choosing to pause the viewer or not in the beginning", 0);
 
 	args.add<int>("build_occupancy_map", "Flag for choosing to build or not this type of map.", 1);
@@ -88,7 +88,6 @@ add_default_mapper_args(CommandLineArguments &args)
 	args.add<string>("map_type", "[semantic, colour, occupancy, reflectivity]", "reflectivity");
 	*/
 
-	args.save_config_file(default_data_dir() + "/mapper_config.txt");
 }
 
 
@@ -123,7 +122,6 @@ add_default_localizer_args(CommandLineArguments &args)
 	
 	args.add<string>("save_dir", "Directory for saving images of the localization execution", "");
 
-	args.save_config_file(default_data_dir() + "/localizer_config.txt");
 }
 
 
@@ -142,6 +140,5 @@ add_default_sensor_preproc_args(CommandLineArguments &args)
 	args.add<double>("camera_latency", "Camera latency in seconds", 0.0);
 	args.add<int>("use_semantic_remapping", "Flag to use semantic remapping or not.", 1);
 
-	args.save_config_file(default_data_dir() + "/preproc_config.txt");
 }
 
