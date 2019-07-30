@@ -39,7 +39,7 @@ PointCloudViewer::show(PointCloud<PointXYZRGB>::Ptr cloud, double r, double g, d
 	{
 		_cloud_viewer = new pcl::visualization::PCLVisualizer("CloudViewer");
 		_cloud_viewer->setBackgroundColor(_br, _bg, _bb);
-		_cloud_viewer->addCoordinateSystem(2.);
+		//_cloud_viewer->addCoordinateSystem(2.);
 		//_cloud_viewer->initCameraParameters();
 	}
 

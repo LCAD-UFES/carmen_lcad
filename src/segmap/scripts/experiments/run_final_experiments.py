@@ -28,7 +28,7 @@ def run_experiment(pair):
 	else:
 		localization_args += " --camera_latency 0.0 "
 	
-	localization_cmd = "time ./localizer /dados/%s ../carmen-ford-escape.ini -m %s -i %s %s --save_dir imgs_localizer_%s > %s 2> /dev/null" % (t, map_path, mode, localization_args, t, output)
+	localization_cmd = "time ./localizer /dados/%s ../carmen-ford-escape.ini -m %s -i %s %s --save_dir imgs_localizer_%s_%s > %s 2> /dev/null" % (t, map_path, mode, localization_args, mode, t, output)
 	run_command(localization_cmd)	
 
 

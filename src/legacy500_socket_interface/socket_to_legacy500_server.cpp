@@ -5,8 +5,14 @@
 
 #define PORT 3457
 
-int server_fd;
+#define	NUM_MOTION_COMMANDS_PER_VECTOR	200
+#define NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND (1 + NUM_MOTION_COMMANDS_PER_VECTOR * 6)
 
+//#define USE_TCP_IP
+
+#ifdef USE_TCP_IP
+
+int server_fd;
 
 int
 connect_with_client()
@@ -53,6 +59,37 @@ connect_with_client()
 
 	return (new_socket);
 }
+
+#else
+
+int
+connect_with_client()
+{
+    int new_socket;
+    struct sockaddr_in address;
+
+    // Creating socket file descriptor
+    if ((new_socket = socket(AF_INET, SOCK_DGRAM, 0)) == 0)
+    {
+        perror("--- Socket Failed ---\n");
+        return (-1);
+    }
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
+
+    // Forcefully attaching socket to the port defined
+    if (bind(new_socket, (struct sockaddr *) &address, sizeof(address)) < 0)
+    {
+        perror("--- Bind Failed ---\n");
+        return (-1);
+    }
+    printf("--- Bind successful! ---\n");
+
+	return (new_socket);
+}
+#endif
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -66,17 +103,17 @@ connect_with_client()
 void
 extract_motion_command_vetor_from_socket_and_send_msg(double *msg)
 {
-	int size = (int)msg[0];
+	int size = msg[0];
 	carmen_ackerman_motion_command_t motion_command[size];
 
 	for (int i = 0; i < size; i++)
 	{
-		motion_command[i].x     = msg[(i * 6) + 2];
-		motion_command[i].y     = msg[(i * 6) + 3];
-		motion_command[i].theta = msg[(i * 6) + 4];
-		motion_command[i].v     = msg[(i * 6) + 5];
-		motion_command[i].phi   = msg[(i * 6) + 6];
-		motion_command[i].time  = msg[(i * 6) + 7];
+		motion_command[i].x     = msg[(i * 6) + 1];
+		motion_command[i].y     = msg[(i * 6) + 2];
+		motion_command[i].theta = msg[(i * 6) + 3];
+		motion_command[i].v     = msg[(i * 6) + 4];
+		motion_command[i].phi   = msg[(i * 6) + 5];
+		motion_command[i].time  = msg[(i * 6) + 6];
 	}
 
 	carmen_base_ackerman_publish_motion_command_2(motion_command, size, carmen_get_time());
@@ -107,7 +144,7 @@ shutdown_module(int x)            // Handles ctrl+c
 int
 main(int argc, char **argv)
 {
-	double msg[1202]; // 2 + 6 * 200
+	double msg[NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND];
 	int result = 0;
 
 	carmen_ipc_initialize(argc, argv);
@@ -120,7 +157,8 @@ main(int argc, char **argv)
 
 	while (1)
 	{
-		result = recv(pi_socket, msg, 9616, MSG_WAITALL); // The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
+#ifdef USE_TCP_IP
+		result = recv(pi_socket, msg, NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND * sizeof(double), MSG_WAITALL); // The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
 
 		if (result == -1 || result == 0)
 		{
@@ -134,6 +172,14 @@ main(int argc, char **argv)
 		{
 			extract_motion_command_vetor_from_socket_and_send_msg(msg);
 		}
+#else
+	    struct sockaddr_in client_address;
+	    socklen_t len = sizeof(struct sockaddr_in);
+		result = recvfrom(pi_socket, (char *) msg, NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND * sizeof(double), 0, (struct sockaddr *) &client_address, &len);
+
+		if (result > 0)
+			extract_motion_command_vetor_from_socket_and_send_msg(msg);
+#endif
     }
 
    return (0);

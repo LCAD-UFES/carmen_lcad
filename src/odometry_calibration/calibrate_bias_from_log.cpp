@@ -942,7 +942,6 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<double>("min_k2", "Lower limit of k2 spline coefficient", -0.15);
 	args->add<double>("max_k2", "Upper limit of k2 spline coefficient", 0.15);
 	args->parse(argc, argv);
-	args->save_config_file("odom_calib_default_config.txt");
 }
 
 

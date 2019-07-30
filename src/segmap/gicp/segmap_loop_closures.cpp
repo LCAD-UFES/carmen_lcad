@@ -17,8 +17,14 @@
 #include <carmen/segmap_preproc.h>
 #include <carmen/segmap_conversions.h>
 #include <carmen/segmap_constructors.h>
+#include <carmen/segmap_map_builder.h>
 #include <carmen/command_line.h>
 #include "gicp.h"
+
+#include <vector>
+#include <algorithm>
+#include <map>
+#include <set>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -44,11 +50,52 @@ void
 run_viewer_if_necessary(Pose2d *pose,
 												GridMap &map,
 												ParticleFilter &pf,
-												PointCloud<PointXYZRGB>::Ptr cloud,
+												DataSample *sample,
+												SensorPreproc &preproc,
 												PointCloudViewer &viewer,
 												int pf_was_updated,
 												int show_particles,
 												int view)
+{
+	if (view)
+	{
+		Mat img;
+
+		PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
+		preproc.reinitialize(sample);
+		load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
+		
+
+		if (pf_was_updated)
+			img = pf_view(pf, map, pose, pf.mean(), cloud, show_particles);
+		else
+		{
+			img = map.to_image().clone();
+			draw_pose(map, img, *pose, Scalar(0, 255, 0));
+			transformPointCloud(*cloud, *cloud, Pose2d::to_matrix(*pose));
+			draw_pointcloud(img, cloud, map, 1, Scalar(0, 255, 0));
+		}
+
+		//viewer.clear();
+		//PointCloud<PointXYZRGB>::Ptr transformed(new PointCloud<PointXYZRGB>);
+		//transformPointCloud(*cloud, *transformed, Pose2d::to_matrix(*pose));
+		//viewer.show(cloud);
+		//viewer.set_camera_pose(pose->x, pose->y);
+		show_flipped_img_in_viewer(viewer, img);
+	}
+}
+
+
+void
+run_viewer_if_necessary(Pose2d *pose,
+												GridMap &map,
+												ParticleFilter &pf,
+												PointCloud<PointXYZRGB>::Ptr cloud,
+												PointCloudViewer &viewer,
+												int pf_was_updated,
+												int show_particles,
+												int view,
+												string path_to_save)
 {
 	if (view)
 	{
@@ -69,7 +116,14 @@ run_viewer_if_necessary(Pose2d *pose,
 		//transformPointCloud(*cloud, *transformed, Pose2d::to_matrix(*pose));
 		//viewer.show(cloud);
 		//viewer.set_camera_pose(pose->x, pose->y);
-		show_flipped_img_in_viewer(viewer, img);
+
+		Mat flipped;
+		flip(img, flipped, 0);
+		viewer.show(flipped, "map", 640);
+		viewer.loop();
+
+		if (path_to_save.size() > 0)
+			imwrite(path_to_save, flipped);
 	}
 }
 
@@ -446,10 +500,9 @@ estimate_displacements_with_particle_filter(NewCarmenDataset &target_dataset,
 								args.get<double>("tile_size"),
 								args.get<double>("tile_size"),
 								args.get<double>("resolution"),
-								GridMapTile::TYPE_VISUAL, 1);
+								GridMapTile::TYPE_REFLECTIVITY, 1);
 
 		ParticleFilter pf(args.get<int>("n_particles"),
-		                  ParticleFilter::WEIGHT_VISUAL,
 											args.get<double>("gps_xy_std"),
 											args.get<double>("gps_xy_std"),
 											degrees_to_radians(args.get<double>("gps_h_std")),
@@ -460,7 +513,11 @@ estimate_displacements_with_particle_filter(NewCarmenDataset &target_dataset,
 											degrees_to_radians(args.get<double>("odom_h_std")),
 											args.get<double>("color_red_std"),
 											args.get<double>("color_green_std"),
-											args.get<double>("color_blue_std"));
+											args.get<double>("color_blue_std"),
+											args.get<double>("reflectivity_std")
+											);
+
+		pf.set_use_map_weight(1);
 
 		run_pf_step(target_dataset,
 		            dataset_to_adjust,
@@ -510,16 +567,15 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 							args.get<double>("tile_size"),
 							args.get<double>("tile_size"),
 							args.get<double>("resolution"),
-							GridMapTile::TYPE_VISUAL, 1);
+							GridMapTile::TYPE_REFLECTIVITY, 1);
 
 	GridMap map_for_viewing(map_path,
 													args.get<double>("tile_size"),
 													args.get<double>("tile_size"),
 													args.get<double>("resolution"),
-													GridMapTile::TYPE_VISUAL, 1);
+													GridMapTile::TYPE_REFLECTIVITY, 1);
 
 	ParticleFilter pf(args.get<int>("n_particles"),
-										ParticleFilter::WEIGHT_VISUAL,
 										args.get<double>("gps_xy_std"),
 										args.get<double>("gps_xy_std"),
 										degrees_to_radians(args.get<double>("gps_h_std")),
@@ -530,7 +586,11 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 										degrees_to_radians(args.get<double>("odom_h_std")),
 										args.get<double>("color_red_std"),
 										args.get<double>("color_green_std"),
-										args.get<double>("color_blue_std"));
+										args.get<double>("color_blue_std"),
+										args.get<double>("reflectivity_std")
+										);
+
+	pf.set_use_map_weight(1);
 
 	cv::Mat pf_img;
 	PointCloudViewer viewer;
@@ -550,6 +610,7 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 	//int prev_id = 0;
 	DataSample *sample;
 	double dt;
+	
 
 	viewer.set_step(0);
 
@@ -577,8 +638,10 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 
 		if (nn_id < 0)
 		{
-			update_map(sample, &map, preproc);
-			update_map(sample, &map_for_viewing, preproc);
+			// update_map(sample, &map, preproc);
+			//update_map(sample, &map_for_viewing, preproc);
+			update_maps(sample, preproc, NULL, &map, NULL, NULL);
+			update_maps(sample, preproc, NULL, &map_for_viewing, NULL, NULL);
 
 			if (view)
 				run_viewer_if_necessary(&sample->pose, map_for_viewing, pf, cloud, viewer, 0, 0, view);
@@ -649,6 +712,385 @@ estimate_loop_closures_with_particle_filter_in_map(NewCarmenDataset &dataset,
 
 
 void
+expand_area_around_point(NewCarmenDataset &dataset, std::set<int> *poses_for_mapping, int idx, std::map<int, int> *loop_closures)
+{
+	// todo: turn this value into a command line argument
+	const double SIZE_EXPANSION = 20.0;  // meters
+
+	for (int i = 0; i < dataset.size(); i++)
+	{
+		double d = dist2d(dataset[idx]->pose.x, dataset[idx]->pose.y, dataset[i]->pose.x, dataset[i]->pose.y);
+
+		if (d < SIZE_EXPANSION && loop_closures->find(i) == loop_closures->end())
+			poses_for_mapping->insert(i);
+	}
+
+	/*
+	// expand to the left
+	double d = 0.0;
+
+	for (int i = (idx - 1); i >= 0 && d < SIZE_EXPANSION; i--)
+	{
+		poses_for_mapping->insert(i);
+		d += dist2d(dataset[i]->pose.x, dataset[i]->pose.y, dataset[i + 1]->pose.x, dataset[i + 1]->pose.y);
+	}
+
+	// expand to the right
+	d = 0.0;
+
+	for (int i = (idx + 1); i < dataset.size() && d < SIZE_EXPANSION; i++)
+	{
+		poses_for_mapping->insert(i);
+		d += dist2d(dataset[i]->pose.x, dataset[i]->pose.y, dataset[i - 1]->pose.x, dataset[i - 1]->pose.y);
+	}
+	*/
+}
+
+
+void
+grow_mapped_area(std::set<int> *poses_for_mapping, NewCarmenDataset &dataset, std::map<int, int> *loop_closures)
+{
+	// the set stores the values sorted. Because of that, the vector created
+	// below is already sorted.
+	vector<int> initial_set(poses_for_mapping->begin(), poses_for_mapping->end());
+
+	for (int i = 0; i < initial_set.size(); i++)
+	{
+		int point_should_be_expanded = 0;
+		int sample_idx = initial_set[i];
+		int previous_idx = initial_set[i - 1];
+		int next_idx = initial_set[i + 1];
+
+		if ((i == 0) || (i == initial_set.size() - 1))
+			point_should_be_expanded = 1;
+		else if ((sample_idx - 1 != previous_idx) || (sample_idx + 1 != next_idx))
+			point_should_be_expanded = 1;
+
+		if (point_should_be_expanded)
+			expand_area_around_point(dataset, poses_for_mapping, sample_idx, loop_closures);
+	}
+}
+
+
+void
+detect_loop_closures(NewCarmenDataset &dataset, CommandLineArguments &args,
+                     std::map<int, int> *loop_closures,
+                     std::set<int> *poses_for_mapping)
+{
+	double d, dt, loop_dist, time_dist, min_v;
+	DataSample *sample_i, *sample_j;
+
+	loop_dist = args.get<double>("loop_dist");
+	time_dist = args.get<double>("time_dist");
+	min_v = args.get<double>("v_thresh");
+
+	int pos_first_loop_closure = -1;
+
+	for (int i = 0; i < dataset.size(); i++)
+	{
+		sample_i = dataset[i];
+
+		if (fabs(sample_i->v) < min_v || sample_i->v < 0.0)
+			continue;
+
+		int nn = -1;
+		double nn_d = DBL_MAX;
+
+		for (int j = 0; j < i; j++)
+		{
+			sample_j = dataset[j];
+
+			if (fabs(sample_j->v) < min_v || sample_j->v < 0.0)
+				continue;
+
+      d = dist2d(sample_i->pose.x, sample_i->pose.y, sample_j->pose.x, sample_j->pose.y);
+      dt = fabs(sample_i->time - sample_j->time);
+
+      if ((d < loop_dist) && (dt > time_dist) && (d < nn_d))
+      {
+      	nn_d = d;
+				nn = j;
+      }
+		}
+
+		if (nn != -1)
+			loop_closures->insert(pair<int, int>(i, nn));
+		else
+			poses_for_mapping->insert(i);
+
+		// todo: try to use all loop closures instead of using only the nearest.
+		// The following code try to select a subset of the datasets for creating maps. Only
+		// loop closure regions should be mapped, in principle. However, the code is not working yet.
+		// When using images, the car is initially in a pose that is not mapped (the images only
+		// observe ~10m ahead of the car), and it causes divergence in the localization.
+		// IMPORTANT: the code works nicely with remission and occupancy maps.
+		/*
+		if (nn != -1)
+		{
+			if (pos_first_loop_closure == -1)
+				pos_first_loop_closure = i;
+
+			// if the pose is not a loop closure, add it to the set of poses
+			// to be used for mapping.
+			if (loop_closures->find(nn) == loop_closures->end())
+				poses_for_mapping->insert(nn);
+
+			d = dist2d(sample_i->pose.x, sample_i->pose.y, 
+							dataset[pos_first_loop_closure]->pose.x, 
+							dataset[pos_first_loop_closure]->pose.y);
+
+			dt = fabs(sample_i->time - dataset[pos_first_loop_closure]->time);
+
+			// if to enforce that we only start mapping when the car
+			// is over an area that is mapped.
+			if (d > 20.0 || time_dist > 10.0)
+				loop_closures->insert(pair<int, int>(i, nn));
+		}
+		*/
+	}
+
+	//grow_mapped_area(poses_for_mapping, dataset, loop_closures);
+}
+
+
+void
+do_prediction_and_correction(ParticleFilter &pf, DataSample *sample, double v, double phi, double dt,
+                             SensorPreproc &preproc, GridMap &map,
+                             PointCloudViewer &viewer, int view, string img_path)
+{
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+	preproc.reinitialize(sample);
+	load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE); 
+
+	pf.predict(v, phi, dt);
+
+	if (view)
+		run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 1, 1, view);
+
+	pf.correct(sample, map, preproc);
+
+	if (view)
+		run_viewer_if_necessary(&sample->pose, map, pf, cloud, viewer, 1, 1, view, img_path);
+}
+
+
+void
+reinitialize_particle_filter(ParticleFilter &pf, GridMap &map, SensorPreproc &preproc, PointCloudViewer &viewer, int view,
+                             DataSample *sample, int n_corrections_when_reinit, string img_path)
+{
+	// initialize particle filter
+	pf.reset(sample->pose.x, sample->pose.y, sample->pose.th);
+
+	for (int k = 0; k < n_corrections_when_reinit; k++)
+		do_prediction_and_correction(pf, sample, 0, 0, 0, preproc, map, viewer, view, img_path);
+}
+
+
+Pose2d
+update_particle_filter(ParticleFilter &pf, GridMap &map, SensorPreproc &preproc, PointCloudViewer &viewer, int view,
+                       NewCarmenDataset &dataset, DataSample *sample, std::map<int, int>::iterator it, int is_init,
+                       int n_corrections_when_reinit, string img_path)
+{
+	// TODO: turn the value into a parameter
+	const double DIST_FOR_JUMP_DETECTION = 10.0;
+
+	Pose2d mean;
+
+	map.reload(sample->pose.x, sample->pose.y);
+
+	mean = pf.mean();
+	double d = dist2d(mean.x, mean.y, sample->pose.x, sample->pose.y);
+
+	if (is_init || d > DIST_FOR_JUMP_DETECTION)
+		reinitialize_particle_filter(pf, map, preproc, viewer, view, sample, n_corrections_when_reinit, img_path);
+	else
+	{
+		if (it->first > 0)
+		{
+			double dt = fabs(sample->time - dataset.at(it->first - 1)->time);
+			do_prediction_and_correction(pf, sample, sample->v, sample->phi, dt, preproc, map, viewer, view, img_path);
+		}
+	}
+
+	return pf.mean();
+}
+
+
+void
+run_particle_filter(string map_path,
+                    GridMapTile::MapType map_type,
+                    string imode,
+                    vector<pair<int, int>> &loop_closure_indices,
+                		vector<Matrix<double, 4, 4>> *relative_transform_vector, vector<int> *convergence_vector,
+                		int n_corrections_when_reinit,
+                		CommandLineArguments &args,
+                		NewCarmenDataset &tgt_dataset,
+                		NewCarmenDataset &adj_dataset,
+                		std::map<int, int> &loop_closures,
+                		string &adj_dataset_path,
+                		string &dir_to_dump_imgs)
+{
+	SensorPreproc preproc = create_sensor_preproc(args, &adj_dataset, adj_dataset_path, imode);
+
+	GridMap map(map_path, args.get<double>("tile_size"), args.get<double>("tile_size"), args.get<double>("resolution"), map_type, 0);
+
+	ParticleFilter pf(args.get<int>("n_particles"),
+	                  args.get<double>("gps_xy_std"), args.get<double>("gps_xy_std"), degrees_to_radians(args.get<double>("gps_h_std")),
+	                  args.get<double>("v_std"), degrees_to_radians(args.get<double>("phi_std")),
+	                  args.get<double>("odom_xy_std"), args.get<double>("odom_xy_std"), degrees_to_radians(args.get<double>("odom_h_std")),
+	                  args.get<double>("color_red_std"), args.get<double>("color_green_std"), args.get<double>("color_blue_std"),
+	                  args.get<double>("reflectivity_std")
+	);
+
+	if (map_type == GridMapTile::TYPE_VISUAL)
+		pf.set_use_ecc_weight(1);
+	else
+		pf.set_use_map_weight(1);
+
+	int view;
+	Pose2d mean;
+	DataSample *sample;
+	PointCloudViewer viewer;
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+	viewer.set_step(args.get<int>("start_paused"));
+
+	int is_init = 1;
+	std::map<int, int>::iterator it;
+	string img_path;
+	char number_with_zeros[32];
+
+	int iteration_count = 0;
+
+	for (it = loop_closures.begin(); it != loop_closures.end(); it++)
+	{
+		sample = adj_dataset[it->first];
+
+		if (iteration_count++ % 10 == 0)
+		{
+			sprintf(number_with_zeros, "%06d", it->first);
+			img_path = dir_to_dump_imgs + "/" + string(number_with_zeros) + ".png";
+			view = args.get<int>("view");
+		}
+		else
+		{
+			img_path = "";
+			view = 0;
+		}
+
+		mean = update_particle_filter(pf, map, preproc, viewer, view, adj_dataset, sample, it, is_init,
+		                              n_corrections_when_reinit, img_path);
+
+		//printf("Id: %d Mean: %lf %lf %lf Pose: %lf %lf %lf\n", it->first, mean.x, mean.y, mean.th,
+		       //adj_dataset[it->first]->pose.x, adj_dataset[it->first]->pose.y, adj_dataset[it->first]->pose.th);
+
+		// for compatibility issues, we have to specify the pose in relation to a sample in the target dataset.
+		Matrix<double, 4, 4>  world2nn = Pose2d::to_matrix(tgt_dataset[it->second]->pose).inverse();
+		Matrix<double, 4, 4>  pose_in_nn = world2nn * Pose2d::to_matrix(mean);
+
+		loop_closure_indices.push_back(pair<int, int>(it->second, it->first));
+		relative_transform_vector->push_back(pose_in_nn);
+
+		if (map_type == GridMapTile::TYPE_OCCUPANCY)
+			convergence_vector->push_back(1);
+		else if (map_type == GridMapTile::TYPE_REFLECTIVITY)
+			convergence_vector->push_back(2);
+		else if (map_type == GridMapTile::TYPE_VISUAL)
+			convergence_vector->push_back(3);
+		else if (map_type == GridMapTile::TYPE_SEMANTIC)
+			convergence_vector->push_back(4);
+		else
+			// just for detecting bugs
+			convergence_vector->push_back(-1);
+
+		is_init = 0;
+	}
+}
+
+
+void
+remove_and_create_dir(string dir)
+{
+	if (boost::filesystem::exists(dir))
+		boost::filesystem::remove_all(dir);
+
+	boost::filesystem::create_directory(dir);
+}
+
+
+void
+estimate_loop_closures_with_particle_filter_in_map_with_smart_loop_closure_detection(
+		NewCarmenDataset &dataset, string dataset_path, vector<pair<int, int>> &loop_closure_indices,
+		vector<Matrix<double, 4, 4>> *relative_transform_vector, vector<int> *convergence_vector,
+		int n_corrections_when_reinit, CommandLineArguments &args)
+{
+	// IMPORTANT: these data structures sort the keys and the code below assumes it!!
+	std::map<int, int> loop_closures;
+	std::set<int> poses_for_mapping;
+
+	detect_loop_closures(dataset, args, &loop_closures, &poses_for_mapping);
+	SensorPreproc preproc = create_sensor_preproc(args, &dataset, dataset_path);
+
+	string log_name = file_name_from_path(dataset_path);
+
+	string dir_to_save_maps = "/tmp/lc_maps_" + log_name + "/";
+	string dir_to_save_all_imgs = "/tmp/lc_imgs_" + log_name + "/";
+
+	if (!boost::filesystem::exists(dir_to_save_maps) || args.get<int>("clean_map"))
+	{
+		boost::filesystem::create_directory(dir_to_save_maps);
+		create_map(&dataset, preproc, args, dir_to_save_maps, vector<int>(poses_for_mapping.begin(), poses_for_mapping.end()));
+	}
+
+	if (!boost::filesystem::exists(dir_to_save_all_imgs))
+		boost::filesystem::create_directory(dir_to_save_all_imgs);
+
+	string map_path;
+	string dir_to_dump_imgs;
+
+	loop_closure_indices.clear();
+	relative_transform_vector->clear();
+	convergence_vector->clear();
+
+	map_path = dir_to_save_maps + "/map_occupancy_" + log_name;
+	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_occupancy_" + log_name;
+	remove_and_create_dir(dir_to_dump_imgs);
+	run_particle_filter(map_path,
+	                    GridMapTile::TYPE_OCCUPANCY, "reflectivity",
+	                    loop_closure_indices, relative_transform_vector, convergence_vector,
+	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
+	                    dataset_path, dir_to_dump_imgs);
+
+	map_path = dir_to_save_maps + "/map_reflectivity_" + log_name;
+	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_reflectivity_" + log_name;
+	remove_and_create_dir(dir_to_dump_imgs);
+	run_particle_filter(map_path,
+	                    GridMapTile::TYPE_REFLECTIVITY, "reflectivity",
+	                    loop_closure_indices, relative_transform_vector, convergence_vector,
+	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
+	                    dataset_path, dir_to_dump_imgs);
+
+//	map_path = dir_to_save_maps + "/map_visual_" + log_name;
+//	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_colour_" + log_name;
+//	remove_and_create_dir(dir_to_dump_imgs);
+//	run_particle_filter(map_path,
+//	                    GridMapTile::TYPE_VISUAL, "colour",
+//	                    loop_closure_indices, relative_transform_vector, convergence_vector,
+//	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
+//	                    dataset_path, dir_to_dump_imgs);
+//
+//	map_path = dir_to_save_maps + "/map_semantic_" + log_name;
+//	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_semantic_" + log_name;
+//	remove_and_create_dir(dir_to_dump_imgs);
+//	run_particle_filter(map_path,
+//	                    GridMapTile::TYPE_SEMANTIC, "semantic",
+//	                    loop_closure_indices, relative_transform_vector, convergence_vector,
+//	                    n_corrections_when_reinit, args, dataset, dataset, loop_closures,
+//	                    dataset_path, dir_to_dump_imgs);
+}
+
+
+void
 estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_dataset,
                                                    NewCarmenDataset &dataset_to_adjust,
                                                    string target_dataset_path,
@@ -659,22 +1101,74 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
                                                    int n_corrections_when_reinit,
                                                    CommandLineArguments &args)
 {
-	int view = args.get<int>("view");
+	loop_closure_indices.clear();
+	relative_transform_vector->clear();
+	convergence_vector->clear();
 
 	string adj_name = file_name_from_path(dataset_to_adjust_path);
 	string tgt_name = file_name_from_path(target_dataset_path);
-	string map_path = string("/dados/maps2/") + tgt_name + "_remission";
+	string map_path;
 
 	//int map_has_to_be_created = 0;
 	//if (!boost::filesystem::exists(map_path))
 		//map_has_to_be_created = 1;
-	assert(boost::filesystem::exists(map_path));
 
-	GridMap map(map_path,
-							args.get<double>("tile_size"),
-							args.get<double>("tile_size"),
-							args.get<double>("resolution"),
-							GridMapTile::TYPE_VISUAL, 0);
+	std::map<int, int> loop_closures;
+
+	for (int i = 0; i < dataset_to_adjust.size(); i++)
+	// for (int i = 0; loop_closures.size() < 100; i++)
+	{
+		// avoid poses in which the car is stopped or moving backwards.
+		if (dataset_to_adjust[i]->v > 1.0)
+			loop_closures.insert(pair<int, int>(i, 0));
+	}
+
+	string dir_maps_are_saved = "/dados/maps2/";
+	string dir_to_save_all_imgs = "/tmp/gt_imgs_" + adj_name + "/";
+	string dir_to_dump_imgs;
+
+	if (!boost::filesystem::exists(dir_to_save_all_imgs))
+		boost::filesystem::create_directory(dir_to_save_all_imgs);
+
+	map_path = dir_maps_are_saved + "/map_occupancy_" + tgt_name;
+	assert(boost::filesystem::exists(map_path));
+	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_occupancy_" + adj_name;
+	remove_and_create_dir(dir_to_dump_imgs);
+	run_particle_filter(map_path,
+						GridMapTile::TYPE_OCCUPANCY, "reflectivity",
+						loop_closure_indices, relative_transform_vector, convergence_vector,
+						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
+						dataset_to_adjust_path, dir_to_dump_imgs);
+
+	map_path = dir_maps_are_saved + "/map_reflectivity_" + tgt_name;
+	assert(boost::filesystem::exists(map_path));
+	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_reflectivity_" + adj_name;
+	remove_and_create_dir(dir_to_dump_imgs);
+	run_particle_filter(map_path,
+						GridMapTile::TYPE_REFLECTIVITY, "reflectivity",
+						loop_closure_indices, relative_transform_vector, convergence_vector,
+						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
+						dataset_to_adjust_path, dir_to_dump_imgs);
+
+//	map_path = dir_maps_are_saved + "/map_visual_" + tgt_name;
+//	assert(boost::filesystem::exists(map_path));
+//	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_colour_" + adj_name;
+//	remove_and_create_dir(dir_to_dump_imgs);
+//	run_particle_filter(map_path,
+//						GridMapTile::TYPE_VISUAL, "colour",
+//						loop_closure_indices, relative_transform_vector, convergence_vector,
+//						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
+//						dataset_to_adjust_path, dir_to_dump_imgs);
+//
+//	map_path = dir_maps_are_saved + "/map_semantic_" + tgt_name;
+//	assert(boost::filesystem::exists(map_path));
+//	dir_to_dump_imgs = dir_to_save_all_imgs + "/imgs_semantic_" + adj_name;
+//	remove_and_create_dir(dir_to_dump_imgs);
+//	run_particle_filter(map_path,
+//						GridMapTile::TYPE_SEMANTIC, "semantic",
+//						loop_closure_indices, relative_transform_vector, convergence_vector,
+//						n_corrections_when_reinit, args, target_dataset, dataset_to_adjust, loop_closures,
+//						dataset_to_adjust_path, dir_to_dump_imgs);
 
 	/*
 	if (map_has_to_be_created)
@@ -685,8 +1179,8 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 	}
 	*/
 
+	/*
 	ParticleFilter pf(args.get<int>("n_particles"),
-										ParticleFilter::WEIGHT_VISUAL,
 										args.get<double>("gps_xy_std"),
 										args.get<double>("gps_xy_std"),
 										degrees_to_radians(args.get<double>("gps_h_std")),
@@ -697,7 +1191,11 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 										degrees_to_radians(args.get<double>("odom_h_std")),
 										args.get<double>("color_red_std"),
 										args.get<double>("color_green_std"),
-										args.get<double>("color_blue_std"));
+										args.get<double>("color_blue_std"),
+										args.get<double>("reflectivity_std")
+										);
+
+	pf.set_use_map_weight(1);
 
 	cv::Mat pf_img;
 	PointCloudViewer viewer;
@@ -783,6 +1281,7 @@ estimate_displacements_with_particle_filter_in_map(NewCarmenDataset &target_data
 
 		prev_id = i;
 	}
+	*/
 }
 
 

@@ -33,17 +33,13 @@ poses_path_from_pose_mode(string pose_mode, string log_path)
 GridMap
 create_grid_map(CommandLineArguments &args, int save_map)
 {
-	SensorPreproc::IntensityMode i_mode;
-	GridMapTile::MapType m_type;
-
-	i_mode = parse_intensity_mode(args.get<string>("intensity_mode"));
-	m_type = map_type_from_intensity_mode(i_mode);
+	GridMapTile::MapType map_type = parse_map_type(args.get<string>("map_type"));
 
 	GridMap map(args.get<string>("map_path"),
 							args.get<double>("tile_size"),
 							args.get<double>("tile_size"),
 							args.get<double>("resolution"),
-							m_type, save_map);
+							map_type, save_map);
 
 	return map;
 }
@@ -52,21 +48,23 @@ create_grid_map(CommandLineArguments &args, int save_map)
 ParticleFilter
 create_particle_filter(CommandLineArguments &args)
 {
-	ParticleFilter::WeightType w_type;
-	w_type = parse_weight_type(args);
-
-	ParticleFilter pf(args.get<int>("n_particles"), w_type,
-										args.get<double>("gps_xy_std"),
-										args.get<double>("gps_xy_std"),
-										degrees_to_radians(args.get<double>("gps_h_std")),
-										args.get<double>("v_std"),
-										degrees_to_radians(args.get<double>("phi_std")),
-										args.get<double>("odom_xy_std"),
-										args.get<double>("odom_xy_std"),
-										degrees_to_radians(args.get<double>("odom_h_std")),
-										args.get<double>("color_red_std"),
-										args.get<double>("color_green_std"),
-										args.get<double>("color_blue_std"));
+	ParticleFilter pf(args.get<int>("n_particles"), 
+					args.get<double>("gps_xy_std"),
+					args.get<double>("gps_xy_std"),
+					degrees_to_radians(args.get<double>("gps_h_std")),
+					args.get<double>("v_std"),
+					degrees_to_radians(args.get<double>("phi_std")),
+					args.get<double>("odom_xy_std"),
+					args.get<double>("odom_xy_std"),
+					degrees_to_radians(args.get<double>("odom_h_std")),
+					args.get<double>("color_red_std"),
+					args.get<double>("color_green_std"),
+					args.get<double>("color_blue_std"),
+					args.get<double>("reflectivity_std"));
+	
+	pf.set_use_gps_weight(args.get<int>("use_gps_weight"));
+	pf.set_use_ecc_weight(args.get<int>("use_ecc_weight"));
+	pf.set_use_map_weight(args.get<int>("use_map_weight"));
 
 	return pf;
 }
@@ -87,7 +85,7 @@ create_dataset(string log_path, CommandLineArguments &args, string pose_mode)
 	SensorPreproc::IntensityMode i_mode;
 	i_mode = parse_intensity_mode(intensity_mode);
 
-	if (i_mode == SensorPreproc::COLOR || i_mode == SensorPreproc::SEMANTIC)
+	if (i_mode == SensorPreproc::COLOUR || i_mode == SensorPreproc::SEMANTIC)
 		sync_sensor = NewCarmenDataset::SYNC_BY_CAMERA;
 	else
 		sync_sensor = NewCarmenDataset::SYNC_BY_VELODYNE;
@@ -109,7 +107,8 @@ create_dataset(string log_path, CommandLineArguments &args, string pose_mode)
 SensorPreproc
 create_sensor_preproc(CommandLineArguments &args,
 											NewCarmenDataset *dataset,
-											string log_path)
+											string log_path,
+											string overcome_imode)
 {
 	string icalib_path;
 
@@ -123,12 +122,16 @@ create_sensor_preproc(CommandLineArguments &args,
 	SemanticSegmentationLoader *sloader = new SemanticSegmentationLoader(log_path);
 
 	SensorPreproc::IntensityMode i_mode;
-	i_mode = parse_intensity_mode(args.get<string>("intensity_mode"));
+
+	if (overcome_imode.size() > 0)
+		i_mode = parse_intensity_mode(overcome_imode);
+	else
+		i_mode = parse_intensity_mode(args.get<string>("intensity_mode"));
 
 	double above = args.get<double>("ignore_above_threshold");
 	double below = args.get<double>("ignore_below_threshold");
 
-	if (i_mode == SensorPreproc::SEMANTIC || i_mode == SensorPreproc::COLOR)
+	if (i_mode == SensorPreproc::SEMANTIC || i_mode == SensorPreproc::COLOUR)
 	{
 		above = DBL_MAX;
 		below = -DBL_MAX;

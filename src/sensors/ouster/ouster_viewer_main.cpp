@@ -78,7 +78,7 @@ variable_scan_handler(carmen_velodyne_variable_scan_message *message)
     }
 
     viewer->addPointCloud(cloud, "cloud");
-    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "cloud");
+    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "cloud");
     viewer->spinOnce();
 
     static int count = 0;

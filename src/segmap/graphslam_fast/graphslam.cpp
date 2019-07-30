@@ -78,11 +78,10 @@ public:
 };
 
 
-const double distance_between_front_and_rear_axles = 2.625;
-
+//const double distance_between_front_and_rear_axles = 2.625;
 
 void
-read_loop_restrictions(string &filename, vector<LoopRestriction> *loop_data)
+read_loop_restrictions(string &filename, vector<LoopRestriction> *loop_data, int filter = 0)
 {
 	int n;
 	FILE *f;
@@ -92,6 +91,8 @@ read_loop_restrictions(string &filename, vector<LoopRestriction> *loop_data)
 		return;
 
 	f = fopen(filename.c_str(), "r");
+	int n_discarded = 0;
+	int n_total = 0;
 
 	if (f != NULL)
 	{
@@ -105,8 +106,18 @@ read_loop_restrictions(string &filename, vector<LoopRestriction> *loop_data)
 
 			if (n == 6)
 			{
-				l.transform = SE2(x, y, theta);
-				loop_data->push_back(l);
+				double d = sqrt(pow(x, 2) + pow(y, 2));
+				double dth = fabs(theta);
+
+				if (1) //filter && ((d < 6.0) && (dth < deg2rad(30.0))))
+				{
+					l.transform = SE2(x, y, theta);
+					loop_data->push_back(l);
+				}
+				else
+					n_discarded++;
+				
+				n_total++;
 			}
 		}
 
@@ -114,6 +125,9 @@ read_loop_restrictions(string &filename, vector<LoopRestriction> *loop_data)
 	}
 	else
 		fprintf(stderr, "Warning: ignoring loop closure file '%s'\n", filename.c_str());
+
+	printf("N loop closures discarded: %d of %d (%.2lf%%)\n", 
+			n_discarded, n_total, ((double) n_discarded / (double) n_total) * 100.0);
 }
 
 
@@ -315,9 +329,11 @@ void
 add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction> &gicp_gps,
 																		SparseOptimizer *optimizer, double xy_std_mult, double th_std)
 {
+	int n_discarded = 0;
+
 	for (size_t i = 0; i < gicp_gps.size(); i += 1)
 	{
-		if (gicp_gps[i].converged)
+		if (gicp_gps[i].converged == 1 || gicp_gps[i].converged == 2)
 		{
 			SE2 measure(gicp_gps[i].transform[0] - data.dataset->at(0)->gps.x,
 			            gicp_gps[i].transform[1] - data.dataset->at(0)->gps.y,
@@ -326,6 +342,20 @@ add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction>
 			//printf("ADDING %lf %lf\n", gicp_gps[i].transform[0], gicp_gps[i].transform[1]);
 			Matrix3d information = create_information_matrix(xy_std_mult, xy_std_mult, th_std);
 
+			double dist = dist2d(data.dataset->at(gicp_gps[i].to)->pose.x, data.dataset->at(gicp_gps[i].to)->pose.y, gicp_gps[i].transform[0], gicp_gps[i].transform[1]);
+			double diff_angle = fabs(g2o::normalize_theta(gicp_gps[i].transform[2] - data.dataset->at(gicp_gps[i].to)->pose.th));
+
+			printf("%d pose: %lf %lf %lf fake_gps: %lf %lf %lf dist: %lf diff_angle: %lf\n", i,
+			       data.dataset->at(gicp_gps[i].to)->pose.x, data.dataset->at(gicp_gps[i].to)->pose.y, data.dataset->at(gicp_gps[i].to)->pose.th,
+			       gicp_gps[i].transform[0], gicp_gps[i].transform[1], gicp_gps[i].transform[2],
+			       dist, rad2deg(diff_angle));
+
+			if (dist > 20.0 || diff_angle > deg2rad(30.0))
+			{
+				n_discarded++;
+				continue;
+			}
+
 			EdgeGPS *edge_gps = new EdgeGPS();
 			edge_gps->vertices()[0] = optimizer->vertex(gicp_gps[i].to);
 			edge_gps->setMeasurement(measure);
@@ -333,23 +363,31 @@ add_gps_from_map_registration_edges(GraphSlamData &data, vector<LoopRestriction>
 			optimizer->addEdge(edge_gps);
 		}
 	}
+
+	printf("** %d of %d (%lf) fake_gps discarded\n", n_discarded, gicp_gps.size(), 100 * ((double) n_discarded / (double) gicp_gps.size()));
 }
 
 
 void
 add_loop_closure_edges(vector<LoopRestriction> &loop_data, SparseOptimizer *optimizer, double xy_std, double th_std)
 {
-	Matrix3d information = create_information_matrix(xy_std, xy_std, th_std);
+	Matrix3d velodyne_information = create_information_matrix(xy_std, xy_std, th_std);
+	Matrix3d camera_information = create_information_matrix(5.0, 30.0, th_std);
 
 	for (size_t i = 0; i < loop_data.size(); i++)
 	{
-		if (loop_data[i].converged)
+		if (loop_data[i].converged == 1 || loop_data[i].converged == 2)
 		{
 			EdgeSE2* edge = new EdgeSE2;
 			edge->vertices()[0] = optimizer->vertex(loop_data[i].from);
 			edge->vertices()[1] = optimizer->vertex(loop_data[i].to);
 			edge->setMeasurement(loop_data[i].transform);
-			edge->setInformation(information);
+
+			if (loop_data[i].converged == 1 || loop_data[i].converged == 2)
+				edge->setInformation(velodyne_information);
+			else
+				edge->setInformation(camera_information);
+
 			optimizer->addEdge(edge);
 		}
 	}
@@ -398,7 +436,7 @@ create_graph_using_log_data(GraphSlamData &data, SparseOptimizer* optimizer, int
 																				data.pf_to_map_xy_std,
 																				deg2rad(data.pf_to_map_angle_std));
 	}
-	//else
+	else
 		add_gps_edges(data, optimizer, data.gps_xy_std, deg2rad(data.gps_angle_std), gps_step);
 
 	add_loop_closure_edges(data.gicp_loop_data, optimizer, data.gicp_loop_xy_std, deg2rad(data.gicp_loop_angle_std));
@@ -593,7 +631,6 @@ int main(int argc, char **argv)
 	add_graphslam_parameters(args);
 	add_default_sensor_preproc_args(args);
 	args.add<int>("gps_step", "Number of steps to skip before adding a new gps edge.", 1);
-	args.save_config_file(default_data_dir() + "/graphslam_config.txt");
 
 	parse_command_line(argc, argv, args, &data);
 
@@ -610,7 +647,7 @@ int main(int argc, char **argv)
 	read_loop_restrictions(data.pf_loop_closure_file, &data.pf_loop_data);
 	read_loop_restrictions(data.gicp_odom_file, &data.gicp_odom_data);
 	read_loop_restrictions(data.gicp_map_file, &data.gicp_based_gps);
-	read_loop_restrictions(data.pf_to_map_file, &data.pf_based_gps);
+	read_loop_restrictions(data.pf_to_map_file, &data.pf_based_gps, 1);
 
 	create_graph_using_log_data(data, optimizer, args.get<int>("gps_step"));
 

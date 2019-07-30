@@ -43,7 +43,7 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
 	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
 	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils -lmoving_objects_interface
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lsegmap_slam_high_level
 
 SOURCES = generate_loop_closures.cpp gicp.cpp generate_loop_closures_between_logs.cpp pf_loop_closures.cpp \
 	segmap_loop_closures.cpp
@@ -61,6 +61,7 @@ DEPS = $(CARMEN_HOME)/src/segmap/libsegmap/types/libsegmap_types.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/slam/libsegmap_slam.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/visualization/libsegmap_visualization.a \
 	$(CARMEN_HOME)/src/segmap/libsegmap/initializations/libsegmap_initializations.a \
+	$(CARMEN_HOME)/src/segmap/libsegmap/slam_high_level/libsegmap_slam_high_level.a \
 	$(CARMEN_HOME)/src/utilities/libcarmen_util/libcarmen_util.a
 
 libsegmap_loop_closures.a: gicp.o segmap_loop_closures.o

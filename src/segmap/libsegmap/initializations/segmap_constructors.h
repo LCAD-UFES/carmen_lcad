@@ -15,6 +15,7 @@ ParticleFilter create_particle_filter(CommandLineArguments &args);
 NewCarmenDataset* create_dataset(std::string log_path, CommandLineArguments &args, std::string pose_mode);
 SensorPreproc create_sensor_preproc(CommandLineArguments &args,
 																		NewCarmenDataset *dataset,
-																		std::string log_path);
+																		std::string log_path,
+																		std::string overcome_imode = "");
 
 #endif

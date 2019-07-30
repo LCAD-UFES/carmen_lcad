@@ -511,6 +511,9 @@ NewCarmenDataset::_create_synchronized_data_package(double ref_time)
 
 	sample->v = sample->v * _calib.mult_v + _calib.add_v;
 	sample->phi = normalize_theta(sample->phi * _calib.mult_phi + _calib.add_phi);
+
+	// The poses are associated with velodyne times. In order to match poses 
+	// and data packages, we set the packages time to be the velodyne time.
 	sample->time = sample->velodyne_time;
 
 	return sample;
@@ -559,6 +562,9 @@ NewCarmenDataset::_add_message_to_queue(string line)
 
 		// ignore lines with less than 4 fields separated by spaces.
 		if (splitted.size() < 4)
+			return;
+		
+		if (splitted[0][0] == '#')
 			return;
 
 		double time = atof(splitted[splitted.size() - 3].c_str());

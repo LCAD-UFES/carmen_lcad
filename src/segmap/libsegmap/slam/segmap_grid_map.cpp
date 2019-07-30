@@ -31,6 +31,7 @@ GridMapTile::_initialize_map()
 	        _xo, _yo);
 
 	_map = (double *) calloc (_h * _w * _n_fields_by_cell, sizeof(double));
+	_observed_cells.clear();
 
 	struct stat buffer;
 
@@ -39,6 +40,23 @@ GridMapTile::_initialize_map()
 		FILE *fptr = fopen(name, "rb");
 		fread(_map, sizeof(double), _h * _w * _n_fields_by_cell, fptr);
 		fclose(fptr);
+
+		for (int i = 0; i < _h; i++)
+		{
+			for (int j = 0; j < _w; j++)
+			{
+				int p = _n_fields_by_cell * (i * _w + j);
+				double *cell = &(_map[p]);
+
+				if (
+					((_map_type == GridMapTile::TYPE_SEMANTIC) && (cell[_unknown.size() - 1] > 0.0)) ||
+					((_map_type == GridMapTile::TYPE_VISUAL) && (cell[3] > 1.0)) ||
+					((_map_type == GridMapTile::TYPE_OCCUPANCY) && (cell[2] > 2.0)) ||
+					((_map_type == GridMapTile::TYPE_REFLECTIVITY) && (cell[2] > 1.0)) 
+					)
+					_observed_cells.insert(p);
+			}
+		}
 	}
 	else
 	{
@@ -76,6 +94,20 @@ GridMapTile::_initialize_derivated_values()
 		_n_fields_by_cell = 4;
 		_unknown = vector<double>(_n_fields_by_cell, 128.);
 		_unknown[3] = 1.;
+	}
+	else if (_map_type == GridMapTile::TYPE_REFLECTIVITY)
+	{
+		_n_fields_by_cell = 2;
+		_unknown = vector<double>(_n_fields_by_cell, 128.);
+		_unknown[1] = 1.;
+	}
+	else if (_map_type == GridMapTile::TYPE_OCCUPANCY)
+	{
+		_n_fields_by_cell = 2;
+		_unknown = vector<double>(_n_fields_by_cell, 0.0);
+		// initialize cells with two readings with one occupied measurement.
+		_unknown[0] = 1;
+		_unknown[1] = 2;
 	}
 	else
 		exit(printf("Map type '%d' not found.\n", (int) _map_type));
@@ -119,6 +151,10 @@ GridMapTile::type2str(MapType map_type)
 		return "semantic";
 	else if (map_type == TYPE_VISUAL)
 		return "visual";
+	else if (map_type == TYPE_OCCUPANCY)
+		return "occupancy";
+	else if (map_type == TYPE_REFLECTIVITY)
+		return "reflectivity";
 	else
 		exit(printf("Map type '%d' not found.\n", map_type));
 }
@@ -188,6 +224,14 @@ GridMapTile::add_point(PointXYZRGB &p)
 			_map[pos + 2] = _map[pos + 2] * (1. - weight) + p.r * weight;
 			_map[pos + 3] += 1;
 		}
+		else if (_map_type == TYPE_REFLECTIVITY)
+		{
+			double weight;
+			weight = 1. / (double) _map[pos + 1];
+
+			_map[pos + 0] = _map[pos + 0] * (1. - weight) + p.r * weight;
+			_map[pos + 1] += 1;
+		}
 		else if (_map_type == TYPE_SEMANTIC)
 		{
 			// invalid class 
@@ -201,8 +245,23 @@ GridMapTile::add_point(PointXYZRGB &p)
 			// set the cell as observed.
 			_map[pos + (_n_fields_by_cell - 1)] = 1;
 		}
+		else if (_map_type == TYPE_OCCUPANCY)
+		{
+			if (p.r > 0.5)
+			{
+				// when we observe an obstacle we count it 5 times to 
+				// make it hard to be erased.
+				_map[pos] += 5;
+				_map[pos + 1] += 5;
+			}
+			else
+				_map[pos + 1]++;
+		}
 		else
 			exit(printf("Error: map_type '%d' not defined.\n", (int) _map_type));
+
+		// we have to add the position to the set in the end because of the return in the SEMANTIC update.
+		_observed_cells.insert(pos);
 	}
 }
 
@@ -220,10 +279,17 @@ GridMapTile::contains(double x, double y)
 vector<double>
 GridMapTile::read_cell(PointXYZRGB &p)
 {
+	return read_cell(p.x, p.y);
+}
+
+
+vector<double>
+GridMapTile::read_cell(double x_world, double y_world)
+{
 	int px, py, pos;
 
-	px = (p.x - _xo) * _pixels_by_m;
-	py = (p.y - _yo) * _pixels_by_m;
+	px = (x_world - _xo) * _pixels_by_m;
+	py = (y_world - _yo) * _pixels_by_m;
 
 	static vector<double> v(_unknown);
 
@@ -245,34 +311,74 @@ GridMapTile::read_cell(PointXYZRGB &p)
 }
 
 
+double*
+GridMapTile::read_cell_ref(double x_world, double y_world)
+{
+	int px, py, pos;
+
+	px = (x_world - _xo) * _pixels_by_m;
+	py = (y_world - _yo) * _pixels_by_m;
+
+	if (px >= 0 && px < _w && py >= 0 && py < _h)
+	{
+		pos = _n_fields_by_cell * (py * _w + px);
+		return (_map + pos);
+	}
+	else
+		return 0;
+}
+
+
 Scalar
 GridMapTile::cell2color(double *cell_vals)
 {
 	Scalar color;
+	int cell_was_observed = 0;
 
 	if (_map_type == TYPE_VISUAL)
 	{
-		color[0] = (unsigned char) cell_vals[0];
-		color[1] = (unsigned char) cell_vals[1];
-		color[2] = (unsigned char) cell_vals[2];
+		if (cell_vals[_n_fields_by_cell - 1] > 1.0)
+		{
+			color[0] = (unsigned char) cell_vals[0];
+			color[1] = (unsigned char) cell_vals[1];
+			color[2] = (unsigned char) cell_vals[2];
+			cell_was_observed = 1;
+		}
+	}
+	else if (_map_type == TYPE_REFLECTIVITY)
+	{
+		if (cell_vals[1] > 1.0)
+		{
+			color[0] = color[1] = color[2] = cell_vals[0];
+			cell_was_observed = 1;
+		}
 	}
 	else if (_map_type == TYPE_SEMANTIC)
 	{
 		if (cell_vals[_n_fields_by_cell - 1])
 		{
 			Scalar rgb = _color_map.color(argmax(cell_vals, _n_fields_by_cell - 2));
-			Scalar bgr(rgb[2], rgb[1], rgb[0]);
-			return bgr;
+			color = Scalar(rgb[2], rgb[1], rgb[0]);
+			cell_was_observed = 1;
 		}
-		else
+	}
+	else if (_map_type == TYPE_OCCUPANCY)
+	{
+		if (cell_vals[_n_fields_by_cell - 1] > 2.0)
 		{
-			color[0] = 128;
-			color[1] = 128;
-			color[2] = 128;
+			color[0] = color[1] = color[2] = (unsigned char) (255 * (1.0 - cell_vals[0] / cell_vals[1]));
+			cell_was_observed = 1;
 		}
 	}
 	else
 		exit(printf("Error: map_type '%d' not defined.\n", (int) _map_type));
+
+	if (!cell_was_observed)
+	{
+		color[0] = 255;
+		color[1] = 0;
+		color[2] = 0;
+	}
 
 	return color;
 }
@@ -317,7 +423,7 @@ GridMap::GridMap(string tiles_dir, double tile_height_meters,
 	_map_type = map_type;
 	_save_maps = save_maps;
 
-	if (!boost::filesystem::exists(tiles_dir))
+	if (save_maps && !boost::filesystem::exists(tiles_dir))
 		boost::filesystem::create_directory(tiles_dir);
 
 	for (int i = 0; i < _N_TILES; i++)
@@ -329,6 +435,8 @@ GridMap::GridMap(string tiles_dir, double tile_height_meters,
 	height_meters = _tile_height_meters * _N_TILES;
 	width_meters = _tile_width_meters * _N_TILES;
 	xo = yo = 0;
+
+	_map_initialized = 0;
 }
 
 
@@ -389,12 +497,24 @@ GridMap::reload(double robot_x, double robot_y)
 
 	if (!_tiles[_middle_tile][_middle_tile]->contains(robot_x, robot_y))
 		_reload_tiles(robot_x, robot_y);
+	
+	_map_initialized = 1;
+}
+
+
+void
+GridMap::_check_if_map_was_initialized()
+{
+	if (!_map_initialized)
+		exit(printf("Error: initialize the map using the method reload before using it.\n"));
 }
 
 
 void
 GridMap::add_point(PointXYZRGB &p)
 {
+	_check_if_map_was_initialized();
+
 	int i, j;
 
 	for (i = 0; i < _N_TILES; i++)
@@ -411,17 +531,195 @@ GridMap::add_point(PointXYZRGB &p)
 }
 
 
+double
+compute_expected_delta_ray(double h, double r1, double theta)
+{
+	double a = r1 * sin(acos(h / r1));
+	double alpha = asin(a / r1);
+	double expected_delta_ray = ((sin(alpha + theta) * h) / sin(M_PI / 2.0 + alpha + theta)) - a;
+	return (expected_delta_ray);
+}
+
+ 
+double
+compute_obstacle_evidence(SensorPreproc::CompletePointData &prev, SensorPreproc::CompletePointData &curr)
+{
+	// velodyne.z + sensor_board.z + (wheel_radius / 2.0)
+	// TODO: read it from param file.
+	const double sensor_height = 2.152193;
+
+	double measured_dray_floor = sqrt(pow(curr.car.x, 2) + pow(curr.car.y, 2)) - sqrt(pow(prev.car.x, 2) + pow(prev.car.y, 2));
+	double diff_vert_angle = normalize_theta(curr.v_angle - prev.v_angle);
+	double expected_dray_floor = compute_expected_delta_ray(sensor_height, prev.range, diff_vert_angle);
+	double obstacle_evidence = (expected_dray_floor - measured_dray_floor) / expected_dray_floor;
+
+	// if the obstacle evidence is higher than 0.4, the point is 
+	// classified as obstacle (return 1), else it is classified as free (return 0).
+	if (abs(obstacle_evidence) > 0.4) // valor ad-hoc
+		return 1;
+	else
+		return 0;
+
+	// Testa se tem um obstaculo com um buraco embaixo
+	// ??? Alberto's powerful black magic...
+	/* 
+	double sigma = 0.45;
+	obstacle_evidence = (obstacle_evidence > 1.0)? 1.0: obstacle_evidence;
+	double p0 = exp(-1.0 / sigma);
+	double p_obstacle = (exp(-pow(1.0 - obstacle_evidence, 2) / sigma) - p0) / (1.0 - p0);
+	
+	if (p_obstacle > 1.0) p_obstacle = 1.0;
+	else if (p_obstacle < 0.0) p_obstacle = 0.0;
+	
+	return p_obstacle;
+	*/
+}
+
+
+void
+GridMap::add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &points, int do_raycast,
+							int use_world_ref)
+{
+	_check_if_map_was_initialized();
+
+	assert(points.size() == 32);
+
+	int first_valid = -1;
+	int last_valid = -1;
+	int nearest_obstacle = -1;
+
+	double obstacle_prob;
+	std::vector<double> obstacle_probs;
+	PointXYZRGB point;
+
+	/**
+	 * THE VALID ATTRIBUTE IS 2 WHEN THE POINT IS TOO HIGH OR TOO LOW (HENCE INVALID).
+	 */
+	if (points[0].valid == 1)
+	{
+		first_valid = 0;
+		last_valid = 0;
+	}
+
+	for (int i = 1; i < points.size(); i++)
+	{
+		if (points[i].valid == 1)
+		{
+			if (first_valid == -1)
+				first_valid = i;
+			
+			if (i > last_valid)
+				last_valid = i;
+		}
+
+		if (points[i - 1].valid == 1 && points[i].valid == 1)
+		{
+			obstacle_prob = compute_obstacle_evidence(points[i - 1], points[i]);
+			obstacle_probs.push_back(obstacle_prob);
+
+			if (obstacle_prob > 0.5 && nearest_obstacle == -1)
+				nearest_obstacle = i;
+
+			if (use_world_ref)
+				point = PointXYZRGB(points[i].world);
+			else
+				point = PointXYZRGB(points[i].car);
+
+			point.r = point.g = point.b = obstacle_prob;
+			add_point(point);
+		}
+	}
+
+	// raycast until the nearest cell that hit an obstacle
+	if (do_raycast && (first_valid >= 0) && (first_valid != last_valid))
+	{
+		int update_until_range_max = 0;
+
+		// if all points were classified as free.
+		if (nearest_obstacle == -1)
+		{
+			nearest_obstacle = last_valid;
+			update_until_range_max = 1;
+		}
+
+		double dx, dy;
+
+		if (use_world_ref)
+		{
+			dx = points[nearest_obstacle].world.x - points[first_valid].world.x;
+			dy = points[nearest_obstacle].world.y - points[first_valid].world.y;
+		}
+		else
+		{
+			dx = points[nearest_obstacle].car.x - points[first_valid].car.x;
+			dy = points[nearest_obstacle].car.y - points[first_valid].car.y;
+		}
+
+		// the -2 is to prevent raycasting over the cell that contains an obstacle
+		double dx_cells = dx * pixels_by_m - 2;
+		double dy_cells = dy * pixels_by_m - 2;
+		double n_cells_in_line = sqrt(pow(dx_cells, 2) + pow(dy_cells, 2));
+
+		//printf("dx: %lf dy: %lf dxc: %lf dxy: %lf nc: %lf\n", dx, dy, dx_cells, dy_cells, n_cells_in_line);
+
+		dx /= n_cells_in_line;
+		dy /= n_cells_in_line;
+
+		//printf("after dx: %lf dy: %lf\n", dx, dy);
+
+		// if all points were classified as free, we 
+		// in increase the number of visited cells until MAX_RANGE.
+		if (update_until_range_max)
+		{
+			double d = sqrt(pow(points[nearest_obstacle].sensor.x, 2) + 
+							pow(points[nearest_obstacle].sensor.y, 2));
+							
+			n_cells_in_line *= (MAX_RANGE / d);
+		}
+
+		// the -2 is to prevent raycasting over the cell that contains an obstacle.
+		for (int i = 0; i < (n_cells_in_line - 2); i++)
+		{
+			if (use_world_ref)
+			{
+				point.x = points[first_valid].world.x + dx * i;
+				point.y = points[first_valid].world.y + dy * i;
+			}
+			else
+			{
+				point.x = points[first_valid].car.x + dx * i;
+				point.y = points[first_valid].car.y + dy * i;
+			}
+
+			// set the point as free
+			point.r = point.g = point.b = 0;
+			add_point(point);
+		}
+	}
+}
+
+
 vector<double>
 GridMap::read_cell(PointXYZRGB &p)
 {
+	_check_if_map_was_initialized();
+	return read_cell(p.x, p.y);
+}
+
+
+vector<double>
+GridMap::read_cell(double x_world, double y_world)
+{
+	_check_if_map_was_initialized();
+
 	int i, j;
 
 	for (i = 0; i < _N_TILES; i++)
 	{
 		for (j = 0; j < _N_TILES; j++)
 		{
-			if (_tiles[i][j]->contains(p.x, p.y))
-				return _tiles[i][j]->read_cell(p);
+			if (_tiles[i][j]->contains(x_world, y_world))
+				return _tiles[i][j]->read_cell(x_world, y_world);
 		}
 	}
 
@@ -430,9 +728,31 @@ GridMap::read_cell(PointXYZRGB &p)
 }
 
 
+double *
+GridMap::read_cell_ref(double x_world, double y_world)
+{
+	_check_if_map_was_initialized();
+
+	int i, j;
+
+	for (i = 0; i < _N_TILES; i++)
+	{
+		for (j = 0; j < _N_TILES; j++)
+		{
+			if (_tiles[i][j]->contains(x_world, y_world))
+				return _tiles[i][j]->read_cell_ref(x_world, y_world);
+		}
+	}
+
+	return 0;
+}
+
+
 Mat
 GridMap::to_image()
 {
+	_check_if_map_was_initialized();
+
 	Mat middle_tile = _tiles[1][1]->to_image();
 	int h = middle_tile.rows;
 	int w = middle_tile.cols;
@@ -472,80 +792,95 @@ GridMap::save()
 }
 
 
-
 void
-update_map(DataSample *sample, GridMap *map, SensorPreproc &preproc)
+update_maps(DataSample *sample, SensorPreproc &preproc, GridMap *visual_map, GridMap *reflectivity_map, GridMap *semantic_map, GridMap *occupancy_map)
 {
+	PointXYZRGB point;
+	std::vector<SensorPreproc::CompletePointData> points;
 	preproc.reinitialize(sample);
 
 	for (int i = 0; i < preproc.size(); i++)
 	{
-		vector<PointXYZRGB> points = preproc.next_points_in_world();
+		points = preproc.next_points_with_full_information();
+
+		if (occupancy_map)
+			occupancy_map->add_occupancy_shot(points);
 
 		for (int j = 0; j < points.size(); j++)
-			map->add_point(points[j]);
+		{
+			if (points[j].valid)
+			{
+				if (visual_map && points[j].visible_by_cam)
+				{
+					point = points[j].world;
+					point.r = points[j].colour[2];
+					point.g = points[j].colour[1];
+					point.b = points[j].colour[0];
+					visual_map->add_point(point);
+				}
+
+				if (semantic_map && points[j].visible_by_cam)
+				{
+					point = points[j].world;
+					point.r = point.g = point.b = points[j].semantic_class;
+					semantic_map->add_point(point);
+				}
+
+				// valid = 2 means that the point is too high or too low
+				if (reflectivity_map && points[j].valid != 2)
+				{
+					point = points[j].world;
+					point.r = point.g = point.b = points[j].calibrated_intensity;
+					reflectivity_map->add_point(point);
+				}
+			}
+		}
 	}
 }
 
 
-void
-create_map(GridMap &map, NewCarmenDataset *dataset, int step,
-					 SensorPreproc &preproc, double skip_velocity_threshold,
-					 int view_flag, int img_width)
+void 
+create_instantaneous_map(DataSample *sample, SensorPreproc &preproc, GridMap *inst_map, int do_raycast)
 {
-	Timer timer;
-	DataSample *sample;
-	PointCloud<PointXYZRGB>::Ptr cloud(new PointCloud<PointXYZRGB>);
-	PointCloudViewer viewer(2, 0.2, 0.8, 1.0);
-	vector<double> times;
+	PointXYZRGB point;
+	std::vector<SensorPreproc::CompletePointData> points;
+	preproc.reinitialize(sample);
 
-	viewer.set_step(0);
-
-	for (int i = 0; i < dataset->size(); i += step)
+	for (int i = 0; i < preproc.size(); i++)
 	{
-		sample = dataset->at(i);
+		points = preproc.next_points_with_full_information();
 
-		if (fabs(sample->v) < skip_velocity_threshold)
-			continue;
+		if (inst_map->_map_type == GridMapTile::TYPE_OCCUPANCY)
+			inst_map->add_occupancy_shot(points, do_raycast, 0);
 
-		timer.start();
-
-		map.reload(sample->pose.x, sample->pose.y);
-		update_map(sample, &map, preproc);
-
-		times.push_back(timer.ellapsed());
-
-		if (times.size() % 50 == 0)
-			printf("Step %d of %d AvgStepDuration: %lf LastStepDuration: %lf\n",
-						 i, dataset->size(),
-						 mean(times),
-						 times[times.size() - 1]);
-
-		if (view_flag)
+		for (int j = 0; j < points.size(); j++)
 		{
-			Pose2d pose;
-			pose = sample->pose;
+			if (points[j].valid)
+			{
+				if (inst_map->_map_type == GridMapTile::TYPE_VISUAL && points[j].visible_by_cam)
+				{
+					point = points[j].car;
+					point.r = points[j].colour[2];
+					point.g = points[j].colour[1];
+					point.b = points[j].colour[0];
+					inst_map->add_point(point);
+				}
 
-			Mat map_img = map.to_image().clone();
-			draw_pose(map, map_img, pose, Scalar(0, 255, 0));
+				if (inst_map->_map_type == GridMapTile::TYPE_SEMANTIC && points[j].visible_by_cam)
+				{
+					point = points[j].car;
+					point.r = point.g = point.b = points[j].semantic_class;
+					inst_map->add_point(point);
+				}
 
-			viewer.clear();
-
-			preproc.reinitialize(sample);
-			load_as_pointcloud(preproc, cloud, SensorPreproc::CAR_REFERENCE);
-			viewer.show(cloud);
-
-			// flip vertically.
-			Mat map_view;
-			flip(map_img, map_view, 0);
-
-			Mat img = preproc.get_sample_img_with_points();
-
-			if (img.rows)
-				viewer.show(img, "img", img_width);
-
-			viewer.show(map_view, "map", img_width);
-			viewer.loop();
+				// valid = 2 means that the points is too high or too low.
+				if (inst_map->_map_type == GridMapTile::TYPE_REFLECTIVITY && points[j].valid != 2)
+				{
+					point = points[j].car;
+					point.r = point.g = point.b = points[j].calibrated_intensity;
+					inst_map->add_point(point);
+				}
+			}
 		}
 	}
 }

@@ -8,9 +8,8 @@
 #include <carmen/segmap_particle_filter.h>
 #include <carmen/command_line.h>
 
-SensorPreproc::IntensityMode parse_intensity_mode(std::string map_type);
-GridMapTile::MapType map_type_from_intensity_mode(SensorPreproc::IntensityMode i_mode);
-ParticleFilter::WeightType parse_weight_type(CommandLineArguments &args);
+SensorPreproc::IntensityMode parse_intensity_mode(std::string intensity_mode);
+GridMapTile::MapType parse_map_type(std::string map_type);
 
 std::string default_data_dir();
 
