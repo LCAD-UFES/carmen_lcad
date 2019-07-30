@@ -79,6 +79,7 @@ Examples of the Text-to-Speech and Speech-to-Text APIs:
 
 Using Python3 (3.5.2 or greater)
 ```sh
+ python3 -m pip install --upgrade setuptools wheel
  pip3 install --upgrade google-cloud-texttospeech
  pip3 install --upgrade google-cloud-speech
  sudo apt-get install portaudio19-dev

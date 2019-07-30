@@ -12,7 +12,7 @@ echo "Copying files..."
 cp $CARMEN_PACKAGES/Porcupine/ok\ e\ ara_linux.ppn $CARMEN_HOME/data/voice_interface_data/hotword_oi_iara.ppn
 cp $CARMEN_PACKAGES/Porcupine/lib/common/porcupine_params.pv $CARMEN_HOME/data/voice_interface_data/
 cp $CARMEN_PACKAGES/Porcupine/include/picovoice.h $CARMEN_HOME/src/voice_interface/
-cp $CARMEN_PACKAGES/Porcupine/lib/linux/x86_64/libpv_porcupine.a libpv_porcupine.a
+cp $CARMEN_PACKAGES/Porcupine/lib/linux/x86_64/libpv_porcupine.a $CARMEN_HOME/src/voice_interface/libpv_porcupine.a
 
 echo "Linking file..."
 ln -s $CARMEN_PACKAGES/Porcupine/libpv_porcupine.a $CARMEN_HOME/lib/libpv_porcupine.a
