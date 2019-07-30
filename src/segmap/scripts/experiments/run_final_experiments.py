@@ -15,7 +15,7 @@ def run_experiment(pair):
 	    add_args = "--use_ecc_weight 0 --use_map_weight 1"
 	
 	
-	localization_args = "--n_particles 200 --gps_xy_std 2.5 --gps_h_std 20 --color_red_std 1 --color_green_std 1 --color_blue_std 1 " + add_args
+	localization_args = "--n_particles 200 --gps_xy_std 2.5 --gps_h_std 20 --color_red_std 3 --color_green_std 3 --color_blue_std 3 --reflectivity_std 3 " + add_args
 	
 	map_path = "/dados/maps2/map_%s_%s" % (mode, m)
 	
