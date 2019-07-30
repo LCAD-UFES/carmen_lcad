@@ -4,6 +4,8 @@ import cv2
 import sys
 import numpy as np
 
+TILE_SIZE = 70
+
 def save_complete_map(tiles_dir, output_image_path):
     
     all_imgs = [f for f in os.listdir(tiles_dir) if f[-3:] == 'png']
@@ -14,14 +16,17 @@ def save_complete_map(tiles_dir, output_image_path):
     min_h, max_h = np.min(origins[:, 1]), np.max(origins[:, 1])
 
     concated = []
-    for h in np.arange(min_h, max_h+50, 50):
+    for h in np.arange(min_h, max_h+TILE_SIZE, TILE_SIZE):
         imgs = []
-        for w in np.arange(min_w, max_w+50, 50):
+        for w in np.arange(min_w, max_w+TILE_SIZE, TILE_SIZE):
             name = tiles_dir + '/%s_%f_%f.png' % (tag, w, h)
             if os.path.exists(name):
                 imgs.append(cv2.imread(name))
             else:
-                imgs.append(np.ones((250, 250, 3)) * 128)
+                sz = int(TILE_SIZE / 0.2)
+                empty_tile = np.zeros((sz, sz, 3))
+                empty_tile[:,:,0] = 255
+                imgs.append(empty_tile)
         concated.append(np.concatenate(imgs, axis=1))
         
     final_map = np.concatenate(concated, axis=0)

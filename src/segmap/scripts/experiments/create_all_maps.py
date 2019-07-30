@@ -24,8 +24,10 @@ def run_mapper(log_name, intensity_mode, map_type, use_lane_segmentation):
 		mapper_args += " --segment_lane_marks 1 "
 		tag = "_with_lanes"
 	
-	if 'aeroport' in log_name or 'noite' in log_name:
-		mapper_args += " --camera_latency 0.3 "
+	if 'aeroport' in log_name:
+		mapper_args += " --camera_latency 0.43 "
+	elif 'noite' in log_name:
+		mapper_args += " --camera_latency 0.3 "	
 	else:
 		mapper_args += " --camera_latency 0.0 "
 

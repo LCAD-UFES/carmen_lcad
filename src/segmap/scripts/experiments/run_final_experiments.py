@@ -29,7 +29,9 @@ def run_experiment(pair):
 	else:
 		output = "localization_%s_%s.txt" % (mode, t)
 	
-	if ("aeroporto" in t or "aeroporto" in m or "noite" in t):
+	if ("aeroporto" in t or "aeroporto" in m):
+		localization_args += " --camera_latency 0.43 "
+	elif ("noite" in t):
 		localization_args += " --camera_latency 0.3 "
 	else:
 		localization_args += " --camera_latency 0.0 "

@@ -84,7 +84,9 @@ def run_loop_closures(carmen_path, log_path, output_dir, mode, config_dir):
 		#if ('aeroport' in log_path) or ('estac' in log_path) or ('ambient' in log_path) or ('honof' in log_path):
 			#loop_closure_time = 10
 
-		if 'aeroport' in log_path or 'noite' in log_path:
+		if 'aeroport' in log_path:
+			camera_latency = 0.43
+		elif 'noite' in log_path:
 			camera_latency = 0.3
 		else:
 			camera_latency = 0.0
