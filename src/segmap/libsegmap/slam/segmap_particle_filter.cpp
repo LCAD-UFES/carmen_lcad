@@ -891,7 +891,7 @@ ParticleFilter::_compute_weights(DataSample *sample, GridMap &map, SensorPreproc
 	string tiles_dir = ""; // get_tiles_dir(map);
 	
 	GridMap instantaneous_map(tiles_dir, map._tile_height_meters,
-	                          map._tile_width_meters, map.m_by_pixels, 
+	                          map._tile_width_meters, map.m_by_pixels,
 							  map._map_type, 0);
 
 	if (use_map_weight || use_ecc_weight)
@@ -906,15 +906,32 @@ ParticleFilter::_compute_weights(DataSample *sample, GridMap &map, SensorPreproc
 
 	// view_observed_cells(instantaneous_map);
 
-	// #pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
-	for (int i = 0; i < _n; i++)
-	{
-		//transformed_cloud->clear();
-		//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
-		//_w[i] = _image_weight(transformed_cloud, map);
+	int n_visible_cells = 0;
 
-		_w[i] = _compute_particle_weight(instantaneous_map, map, sample->gps, _p[i]);
-		_p_bef[i] = _p[i];
+	for (int i = 0; i < instantaneous_map._N_TILES; i++)
+		for (int j = 0; j < instantaneous_map._N_TILES; j++)
+			n_visible_cells += instantaneous_map._tiles[i][j]->_observed_cells.size();
+
+	if (n_visible_cells < 10)
+	{
+		for (int i = 0; i < _n; i++)
+		{
+			_w[i] = 1.0 / (double) _n;
+			_p_bef[i] = _p[i];
+		}
+	}
+	else
+	{
+		// #pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
+		for (int i = 0; i < _n; i++)
+		{
+			//transformed_cloud->clear();
+			//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
+			//_w[i] = _image_weight(transformed_cloud, map);
+
+			_w[i] = _compute_particle_weight(instantaneous_map, map, sample->gps, _p[i]);
+			_p_bef[i] = _p[i];
+		}
 	}
 
 	*max_id = *min_id = 0;
