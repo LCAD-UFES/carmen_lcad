@@ -65,6 +65,7 @@ create_particle_filter(CommandLineArguments &args)
 	pf.set_use_gps_weight(args.get<int>("use_gps_weight"));
 	pf.set_use_ecc_weight(args.get<int>("use_ecc_weight"));
 	pf.set_use_map_weight(args.get<int>("use_map_weight"));
+	pf.set_outlier_rejection_rate(args.get<double>("rejection_rate"));
 
 	return pf;
 }

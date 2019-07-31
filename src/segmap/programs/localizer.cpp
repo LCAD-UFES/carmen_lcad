@@ -94,7 +94,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 	CarmenImageLoader iloader;
 	Timer timer;
 
-	Pose2d p0 = dataset->at(0)->pose;
+	Pose2d p0 = dataset->at(8500)->pose;
 	pf.reset(p0.x, p0.y, p0.th);
 	map.reload(p0.x, p0.y);
 
@@ -104,7 +104,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 
 	s_viewer.set_step(0);
 
-	for (int i = step; i < dataset->size(); i += step)
+	for (int i = 8500; i < dataset->size(); i += step)
 	{
 		sample = dataset->at(i);
 

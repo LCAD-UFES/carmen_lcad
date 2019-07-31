@@ -73,6 +73,7 @@ ParticleFilter::ParticleFilter(int n_particles,
 	use_map_weight = 0;
 	use_ecc_weight = 0;
 
+	_rejection_thresh = 1.0;
 }
 
 
@@ -663,6 +664,134 @@ ParticleFilter::_compute_particle_weight(GridMap &instantaneous_map, GridMap &ma
 }
 
 
+double
+ParticleFilter::_compute_ecc_weight(GridMap &instantaneous_map, GridMap &map, Pose2d &particle_pose)
+{
+	_reset_histograms();
+
+	double sin_th = sin(particle_pose.th);
+	double cos_th = cos(particle_pose.th);
+
+	// for each tile
+	for (int i = 0; i < map._N_TILES; i++)
+	{
+		for (int j = 0; j < map._N_TILES; j++)
+		{
+			GridMapTile *tile = instantaneous_map._tiles[i][j];
+
+			// for each observed cell in the tile
+			for (const int& cell_linearized_position_in_inst_map : tile->_observed_cells)
+			{
+				// cell in instantaneuos map
+				double *inst_cell = &(tile->_map[cell_linearized_position_in_inst_map]);
+
+				// cell in offline map
+				double *off_cell = _get_cell_value_in_offline_map(cell_linearized_position_in_inst_map,
+				                                                  tile, map, sin_th, cos_th,
+				                                                  particle_pose.x, particle_pose.y);
+
+				if (off_cell == 0)
+					continue;
+
+				_update_histogram(inst_cell, off_cell, tile->_map_type);
+			}
+		}
+	}
+
+	return _compute_log_ecc_from_histograms();
+}
+
+
+double
+ParticleFilter::_low_log_likelihood_threshold_by_map_type(GridMapTile::MapType map_type, int num_classes)
+{
+	if (map_type == GridMapTile::TYPE_OCCUPANCY)
+		return log(1.0 / 10.0);
+	else if (map_type == GridMapTile::TYPE_REFLECTIVITY)
+		return -pow((30. / 255.) / _reflectivity_std, 2); // we consider an error of 30 as an outlier.
+	else if (map_type == GridMapTile::TYPE_SEMANTIC)
+		return log(1.0 / (10.0 + num_classes)); // a classe nunca foi observada em 10 leituras
+	else if (map_type == GridMapTile::TYPE_VISUAL)
+		return -3 * pow((30. / 255.) / _reflectivity_std, 2); // we consider an error of 30 as an outlier.
+
+	return 0.0;
+}
+
+
+void
+ParticleFilter::_compute_all_particles_weights_with_outlier_rejection(GridMap &instantaneous_map, GridMap &map, Pose2d &gps, double rejection_thresh)
+{
+	// initialize the particles weights, compute the gps_weight or the ecc_weight if necessary, and store the previous value of the pose.
+	for (int i = 0; i < _n; i++)
+	{
+		_w[i] = 0.0;
+
+		if (use_gps_weight)
+			_w[i] += _gps_weight(_p[i], gps);
+		else if (use_ecc_weight)
+			_w[i] += _compute_ecc_weight(instantaneous_map, map, _p[i]);
+
+		_p_bef[i] = _p[i];
+	}
+
+	double particle_probs[_n];
+	int n_rejected_rays = 0, n_total_rays = 0;
+
+	// compute map weight with outlier rejection.
+	if (use_map_weight)
+	{
+		// for each tile
+		for (int i = 0; i < map._N_TILES; i++)
+		{
+			for (int j = 0; j < map._N_TILES; j++)
+			{
+				GridMapTile *tile = instantaneous_map._tiles[i][j];
+
+				// for each observed cell in the tile
+				for (const int& cell_linearized_position_in_inst_map : tile->_observed_cells)
+				{
+					int n_parts_with_low_prob = 0;
+
+					for (int p_id = 0; p_id < _n; p_id++)
+					{
+						// cell in instantaneuos map
+						double *inst_cell = &(tile->_map[cell_linearized_position_in_inst_map]);
+
+						// cell in offline map
+						double *off_cell = _get_cell_value_in_offline_map(cell_linearized_position_in_inst_map,
+																				tile, map, sin(_p[p_id].th), cos(_p[p_id].th), _p[p_id].x, _p[p_id].y);
+
+						if (off_cell == 0)
+							particle_probs[p_id] = 0;
+						else
+							particle_probs[p_id] = _weight_between_cells(inst_cell, off_cell, tile->_map_type, tile->_color_map.n_classes);
+
+						if (particle_probs[p_id] < _low_log_likelihood_threshold_by_map_type(tile->_map_type, tile->_color_map.n_classes))
+							n_parts_with_low_prob++;
+					}
+
+					double ratio_low_prob_parts = (double) n_parts_with_low_prob / (double) _n;
+
+					//printf("%d %d %lf %lf\n", n_parts_with_low_prob, _n, ratio_low_prob_parts, rejection_thresh);
+
+					if (ratio_low_prob_parts <= rejection_thresh)
+					{
+						for (int p_id = 0; p_id < _n; p_id++)
+							_w[p_id] += particle_probs[p_id];
+					}
+					else
+						n_rejected_rays++;
+
+					n_total_rays++;
+				}
+			}
+		}
+
+		printf("#rejected rays: %d of %d (%.3lf)\n", n_rejected_rays, n_total_rays, 100.0 * ((double) n_rejected_rays / (double) n_total_rays));
+	}
+}
+
+
 cv::Mat
 view_point_cloud_as_image(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map)
 {
@@ -759,6 +888,8 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &ma
 		// view_observed_cells(instantaneous_map);
 
 		// #pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
+		_compute_all_particles_weights_with_outlier_rejection(instantaneous_map, map, gps, _rejection_thresh);
+		/*
 		for (int i = 0; i < _n; i++)
 		{
 			//transformed_cloud->clear();
@@ -768,6 +899,7 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &ma
 			_w[i] = _compute_particle_weight(instantaneous_map, map, gps, _p[i]);
 			_p_bef[i] = _p[i];
 		}
+		*/
 	}
 
 	*max_id = *min_id = 0;
@@ -892,7 +1024,7 @@ ParticleFilter::_compute_weights(DataSample *sample, GridMap &map, SensorPreproc
 	
 	GridMap instantaneous_map(tiles_dir, map._tile_height_meters,
 	                          map._tile_width_meters, map.m_by_pixels,
-							  map._map_type, 0);
+	                          map._map_type, 0);
 
 	if (use_map_weight || use_ecc_weight)
 	{
@@ -923,6 +1055,9 @@ ParticleFilter::_compute_weights(DataSample *sample, GridMap &map, SensorPreproc
 	else
 	{
 		// #pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
+		_compute_all_particles_weights_with_outlier_rejection(instantaneous_map, map, sample->gps, _rejection_thresh);
+
+		/*
 		for (int i = 0; i < _n; i++)
 		{
 			//transformed_cloud->clear();
@@ -932,6 +1067,7 @@ ParticleFilter::_compute_weights(DataSample *sample, GridMap &map, SensorPreproc
 			_w[i] = _compute_particle_weight(instantaneous_map, map, sample->gps, _p[i]);
 			_p_bef[i] = _p[i];
 		}
+		*/
 	}
 
 	*max_id = *min_id = 0;

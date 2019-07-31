@@ -119,6 +119,7 @@ add_default_localizer_args(CommandLineArguments &args)
 	args.add<int>("seed", "Seed for pseudo-random number generator", 0);
 	args.add<int>("correction_step", "Frequency in which correction takes place [<= 1 for always correcting]", 1);
 	args.add<int>("steps_to_skip_map_reload", "Minimum number of steps to wait until a new map reload from disk", 5);
+	args.add<double>("rejection_rate", "Percentage of particles for which the prob of a sample has to be low to reject it.", 1.0);
 	
 	args.add<string>("save_dir", "Directory for saving images of the localization execution", "");
 

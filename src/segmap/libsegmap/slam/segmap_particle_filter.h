@@ -22,6 +22,12 @@ public:
 
 	void _compute_weights(DataSample *sample, GridMap &map, SensorPreproc &preproc, int *max_id, int *min_id);
 
+	double _low_log_likelihood_threshold_by_map_type(GridMapTile::MapType map_type, int n_classes);
+	void _compute_all_particles_weights_with_outlier_rejection(GridMap &instantaneous_map, GridMap &map, Pose2d &gps, double rejection_thresh);
+
+	double _compute_ecc_weight(GridMap &instantaneous_map, GridMap &map, Pose2d &particle_pose);
+
+
 	void _normalize_weights(int min_id, int max_id);
 	void _resample();
 
@@ -45,6 +51,8 @@ public:
 	void correct(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, GridMap &map, Pose2d &gps);
 	void correct(DataSample *sample, GridMap &map, SensorPreproc &preproc);
 
+	void set_outlier_rejection_rate(double rejection_rate) { _rejection_thresh = rejection_rate; }
+
 	Pose2d mean();
 	Pose2d mode();
 	Pose2d std();
@@ -56,6 +64,8 @@ public:
 	// p and w before resampling
 	Pose2d *_p_bef;
 	double *_w_bef;
+
+	double _rejection_thresh;
 
 	int use_gps_weight;
 	int use_map_weight;
