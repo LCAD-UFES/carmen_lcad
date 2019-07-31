@@ -104,7 +104,7 @@ run_particle_filter(ParticleFilter &pf, GridMap &map,
 
 	s_viewer.set_step(0);
 
-	for (int i = 0; i < dataset->size(); i += step)
+	for (int i = step; i < dataset->size(); i += step)
 	{
 		sample = dataset->at(i);
 

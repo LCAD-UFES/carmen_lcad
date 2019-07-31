@@ -45,7 +45,7 @@ def run_experiment(pair):
 	    i_mode = "colour"
 	    m_type = "colour"
 	
-	localization_cmd = "time ./programs/localizer /dados/%s ../carmen-ford-escape.ini -m %s --map_type %s -i %s %s --save_dir imgs_localizer_%s_%s > %s 2> /dev/null" % (t, map_path, m_type, i_mode, localization_args, mode, t, output)
+	localization_cmd = "time ./programs/localizer /dados/%s ../carmen-ford-escape.ini -m %s --map_type %s -i %s %s --save_dir imgs_localizer_%s_%s " % (t, map_path, m_type, i_mode, localization_args, mode, t)
 	run_command(localization_cmd)	
 
 
