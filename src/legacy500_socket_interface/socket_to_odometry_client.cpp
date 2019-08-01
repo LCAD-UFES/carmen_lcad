@@ -5,82 +5,51 @@
 
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
 
-//char *tcp_ip_address = "192.168.0.1";
-char *tcp_ip_address = (char *) "127.0.0.1";
+#define DEFAULT_PORT_NUMBER 3458
 
-#define PORT "3458"
+static int port_number = DEFAULT_PORT_NUMBER;
 
-//#define USE_TCP_IP
+typedef enum selected_bit_enum
+{
+	BIT_NONE = 0,
+	BIT_SOCKET = 1,
+} selected_bit_t;
+static selected_bit_t selected_bit = BIT_NONE;
 
-#ifdef USE_TCP_IP
+static const char * const help_msg = "Usage: ./socket_to_odometry_client [options]\n"
+		"This application receives odometry from the Integration Server via UDP\n"
+		"Available options:\n"
+		"-port_number <port>\tThis process is listening for UDP datagrams at this port number (default: 3458)\n"
+		"-bit SOCKET\t\tBuilt-in tests\n"
+		"-help\t\t\tPrint this help message\n";
 
 int
 stablished_connection_with_server()
 {
-	struct addrinfo host_info;       // The struct that getaddrinfo() fills up with data.
-	struct addrinfo *host_info_list; // Pointer to the to the linked list of host_info's.
-	int pi_socket = 0, status;
+	int new_socket;
+	struct sockaddr_in address;
 
-	if ((pi_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	// Creating socket file descriptor
+	if ((new_socket = socket(AF_INET, SOCK_DGRAM, 0)) == 0)
 	{
-		printf("--- Socket creation error! ---\n");
-		return -1;
-	}
-	memset(&host_info, 0, sizeof host_info);
-
-	host_info.ai_family = AF_UNSPEC;     // IP version not specified. Can be both.
-	host_info.ai_socktype = SOCK_STREAM; // Use SOCK_STREAM for TCP or SOCK_DGRAM for UDP.
-
-	status = getaddrinfo(tcp_ip_address, PORT, &host_info, &host_info_list);
-
-	if (status != 0)
-	{
-		printf("--- Get_Addrinfo ERROR! ---\n");
-		return (-1);
-	}
-	status = connect(pi_socket, host_info_list->ai_addr, host_info_list->ai_addrlen);
-
-	if (status < 0)
-	{
-		printf("--- Connection Failed! ---\n");
+		perror("--- Socket Failed ---\n");
 		return (-1);
 	}
 
-	printf("--- Connection established successfully! ---\n");
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = INADDR_ANY;
+	address.sin_port = htons(port_number);
 
-	return (pi_socket);
-}
-
-#else
-
-int
-stablished_connection_with_server()
-{
-    int new_socket;
-    struct sockaddr_in address;
-
-    // Creating socket file descriptor
-    if ((new_socket = socket(AF_INET, SOCK_DGRAM, 0)) == 0)
-    {
-        perror("--- Socket Failed ---\n");
-        return (-1);
-    }
-
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(atoi(PORT));
-
-    // Forcefully attaching socket to the port defined
-    if (bind(new_socket, (struct sockaddr *) &address, sizeof(address)) < 0)
-    {
-        perror("--- Bind Failed ---\n");
-        return (-1);
-    }
-    printf("--- Bind successful! ---\n");
+	// Forcefully attaching socket to the port defined
+	if (bind(new_socket, (struct sockaddr *) &address, sizeof(address)) < 0)
+	{
+		perror("--- Bind Failed ---\n");
+		return (-1);
+	}
+	printf("--- Bind successful! ---\n");
 
 	return (new_socket);
 }
-#endif
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -132,6 +101,49 @@ shutdown_module(int x)            // Handles ctrl+c
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                              //
+// Built-in tests                                                                               //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+static void
+socket_test(void)
+{
+	double array[2];
+	int local_socket = stablished_connection_with_server();
+	
+	int result = recvfrom(local_socket, (void *) array, sizeof(array), 0, NULL, NULL);
+
+	printf("Received %d bytes\n", result);
+	printf("  v = %f m/s\n", array[0]);
+	printf("  phi = %f rad\n", array[1]);
+}
+
+
+static void
+execute_test(void)
+{
+	switch (selected_bit)
+	{
+	case BIT_NONE:
+		printf("Nothing to do.\n");
+		break;
+
+	case BIT_SOCKET:
+		socket_test();
+		printf("BIT socket done.\n");
+		break;
+
+	default:
+		printf("ERROR: Invalid buint-in test selected: %d.\n", selected_bit);
+		break;
+	}
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
 // Inicializations                                                                              //
 //                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -149,50 +161,75 @@ initialize_ipc(void)
 	return 0;
 }
 
+void parse_args(int argc, char **argv)
+{
+	for (int i = 1; i < argc; i++)
+	{
+		bool valid_arg = false;
+		
+		if (strcmp(argv[i], "-port_number") == 0)
+		{
+			if (argc > ++i)
+			{
+				port_number = atoi(argv[i]);
+				printf ("port_number: %d\n", port_number);
+				valid_arg = true;
+			}
+		}
+		else if (strcmp(argv[i], "-bit") == 0)
+		{
+			if (argc > ++i)
+			{
+				if (strcmp(argv[i], "SOCKET") == 0)
+				{
+					selected_bit = BIT_SOCKET;
+					printf ("bit: SOCKET\n");
+					valid_arg = true;
+				}
+			}
+		}
+		else if (strcmp(argv[i], "-help") == 0)
+		{
+			printf("%s\n", help_msg);
+			exit(0);
+		}
+		
+		if (!valid_arg)
+		{
+			printf("%s\n", help_msg);
+			exit(-1);
+		}
+	}
+}
 
 int
 main(int argc, char **argv)
 {
-	double array[5];
-	int result = 0;
-
-	carmen_ipc_initialize(argc, argv);
-	carmen_param_check_version(argv[0]);
-	signal(SIGINT, shutdown_module);
-	if (initialize_ipc() < 0)
-		carmen_die("Error in initializing ipc...\n");
-
-	if (argc == 2)
-		tcp_ip_address = argv[1];
-
-	int pi_socket = stablished_connection_with_server();
-
-	while (1)
+	parse_args(argc, argv);
+	if (selected_bit != BIT_NONE)
 	{
-#ifdef USE_TCP_IP
-		result = recv(pi_socket, array, 40, MSG_WAITALL); // The socket returns the number of bytes read, 0 in case of connection lost, -1 in case of error
-//		printf ("Result %d\n", result);
-//		printf ("%lf %lf %lf %lf %lf\n", array[0], array[1], array[2], array[3], array[4]);
+		execute_test();
+	}
+	else
+	{
+		double array[5];
+		int result = 0;
 
-		if (result == -1 || result == 0)
+		carmen_ipc_initialize(argc, argv);
+		carmen_param_check_version(argv[0]);
+		signal(SIGINT, shutdown_module);
+		if (initialize_ipc() < 0)
+			carmen_die("Error in initializing ipc...\n");
+
+		int pi_socket = stablished_connection_with_server();
+
+		while (1)
 		{
-			printf("--- Disconnected ---\n");
-			sleep(3);
-			pi_socket = stablished_connection_with_server();
-		}
-		else
-		{
-			publish_robot_ackerman_velocity_message(array);
-		}
-#else
-	    struct sockaddr_in client_address;
-	    socklen_t len = sizeof(struct sockaddr_in);
-		result = recvfrom(pi_socket, (char *) array, 40, 0, (struct sockaddr *) &client_address, &len);
+			result = recvfrom(pi_socket, (void *) array, sizeof(array), 0, NULL, NULL);
 
-		if (result > 0)
-			publish_robot_ackerman_velocity_message(array);
-
-#endif
+			if (result > 0)
+				publish_robot_ackerman_velocity_message(array);
+		}
 	}
 	return (0);
 }
