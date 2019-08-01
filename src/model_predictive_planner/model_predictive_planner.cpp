@@ -774,11 +774,11 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		return (false);
 	}
 
+	move_path_to_current_robot_pose(path, localizer_pose);
 
 	if (path_has_collision_or_phi_exceeded(path))
 		return (false);
 
-	move_path_to_current_robot_pose(path, localizer_pose);
 
 	// Para evitar que o fim do path bata em obstáculos devido a atrazo na propagacao da posicao atual deles
 	remove_some_poses_at_the_end_of_the_path(path);
