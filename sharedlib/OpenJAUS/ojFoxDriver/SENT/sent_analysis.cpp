@@ -29,7 +29,7 @@ main (int argc, char **argv)
 
 			if (state == 5)
 			{
-				value -= 750;
+//				value -= 750;
 				if (value > 2047)
 					value = value - 4097;
 //				if (value & 0x800)
@@ -49,7 +49,7 @@ main (int argc, char **argv)
 			if (state == 8)
 			{
 				value = ((value << 8) & 0xf00) | (value & 0xf0) | (value >> 8); // troca a ordem dos nibbles
-				value += 750;
+//				value += 750;
 				if (value > 2047)
 					value = value - 4097;
 
