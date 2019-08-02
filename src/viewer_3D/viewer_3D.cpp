@@ -3081,6 +3081,9 @@ set_flag_viewer_3D(int flag_num, int value)
         else
             set_background_color(g_b_red, g_b_green, g_b_blue);
         break;
+    case 32:
+        force_velodyne_flag = value;
+        break;
     }
 }
 

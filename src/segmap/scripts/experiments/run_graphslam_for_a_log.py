@@ -84,7 +84,9 @@ def run_loop_closures(carmen_path, log_path, output_dir, mode, config_dir):
 		#if ('aeroport' in log_path) or ('estac' in log_path) or ('ambient' in log_path) or ('honof' in log_path):
 			#loop_closure_time = 10
 
-		if 'aeroport' in log_path or 'noite' in log_path:
+		if 'aeroport' in log_path:
+			camera_latency = 0.43
+		elif 'noite' in log_path:
 			camera_latency = 0.3
 		else:
 			camera_latency = 0.0
@@ -117,8 +119,8 @@ def main(log_path, skip_until):
 #		run_loop_closures(carmen_path, log_path, output_dir, 'gicp')
 #	if (not skip_until) or (skip_until <= 4):
 #		run_loop_closures(carmen_path, log_path, output_dir, 'particle_filter')
-#	if (not skip_until) or (skip_until <= 5):
-#		run_loop_closures(carmen_path, log_path, output_dir, 'localization', config_dir)
+	if (not skip_until) or (skip_until <= 5):
+		run_loop_closures(carmen_path, log_path, output_dir, 'localization', config_dir)
 	if (not skip_until) or (skip_until <= 6):
 		run_graphslam(carmen_path, log_path, output_dir, "graphslam", config_dir)
 	if skip_until and skip_until > 6:
