@@ -62,6 +62,7 @@ protected:
 	po::options_description *_positional_args;
 	po::options_description *_non_positional_args;
 
+	std::string _save_path;
 	std::string _config_path;
 	std::vector<std::string> _all_positional_args;
 	std::vector<std::string> _non_positional_args_without_default_values;

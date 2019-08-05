@@ -65,6 +65,7 @@ create_particle_filter(CommandLineArguments &args)
 	pf.set_use_gps_weight(args.get<int>("use_gps_weight"));
 	pf.set_use_ecc_weight(args.get<int>("use_ecc_weight"));
 	pf.set_use_map_weight(args.get<int>("use_map_weight"));
+	pf.set_outlier_rejection_rate(args.get<double>("rejection_rate"));
 
 	return pf;
 }
@@ -107,7 +108,8 @@ create_dataset(string log_path, CommandLineArguments &args, string pose_mode)
 SensorPreproc
 create_sensor_preproc(CommandLineArguments &args,
 											NewCarmenDataset *dataset,
-											string log_path)
+											string log_path,
+											string overcome_imode)
 {
 	string icalib_path;
 
@@ -121,16 +123,20 @@ create_sensor_preproc(CommandLineArguments &args,
 	SemanticSegmentationLoader *sloader = new SemanticSegmentationLoader(log_path);
 
 	SensorPreproc::IntensityMode i_mode;
-	i_mode = parse_intensity_mode(args.get<string>("intensity_mode"));
+
+	if (overcome_imode.size() > 0)
+		i_mode = parse_intensity_mode(overcome_imode);
+	else
+		i_mode = parse_intensity_mode(args.get<string>("intensity_mode"));
 
 	double above = args.get<double>("ignore_above_threshold");
 	double below = args.get<double>("ignore_below_threshold");
 
-//	if (i_mode == SensorPreproc::SEMANTIC || i_mode == SensorPreproc::COLOUR)
-//	{
-//		above = DBL_MAX;
-//		below = -DBL_MAX;
-//	}
+	if (i_mode == SensorPreproc::SEMANTIC || i_mode == SensorPreproc::COLOUR)
+	{
+		above = DBL_MAX;
+		below = -DBL_MAX;
+	}
 
 	SensorPreproc preproc(vloader, iloader, sloader,
 												dataset->vel2cam(), dataset->vel2car(), dataset->projection_matrix(),

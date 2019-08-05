@@ -143,8 +143,8 @@ init_buttons(interface_drawer* i_drawer) {
     i_drawer->butt[23].text = "GPS Axis";
 
     i_drawer->butt[24].text = "Neural Localizer";
-    i_drawer->butt[25].text = "Empty";
-    i_drawer->butt[26].text = "Empty";
+    i_drawer->butt[25].text = "Vldyn Remission";
+    i_drawer->butt[26].text = "Force Velodyne";
     i_drawer->butt[27].text = "Empty";
     i_drawer->butt[28].text = "Empty";
     i_drawer->butt[29].text = "Empty";
@@ -388,7 +388,17 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y) {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(30, i_drawer->butt[i].state);
-                }else if (i_drawer->butt[i].code == 32) // Traffic Light
+                } else if (i_drawer->butt[i].code == 25) // Remission (works on pointcloud from Velodyne VBO)
+                {
+                    i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+                    set_flag_viewer_3D(31, i_drawer->butt[i].state);
+                } else if (i_drawer->butt[i].code == 26) // Force Velodyne
+                {
+                    i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+                    set_flag_viewer_3D(32, i_drawer->butt[i].state);
+                } else if (i_drawer->butt[i].code == 32) // Traffic Light
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 

@@ -13,6 +13,10 @@
 #include <carmen/segmap_particle_filter.h>
 #include <carmen/segmap_preproc.h>
 #include <cassert>
+#include <carmen/util_io.h>
+#include <carmen/util_strings.h>
+#include <carmen/util_time.h>
+#include <boost/filesystem.hpp>
 
 using namespace Eigen;
 using namespace pcl;
@@ -57,17 +61,19 @@ ParticleFilter::ParticleFilter(int n_particles,
 	_color_std_b = color_std_b / 255.0;
 
 	_reflectivity_std = reflectivity_var / 255.0;
-
 	_color_histogram = (double*) calloc (ecc_n_bins, sizeof(double));
 	_map_histogram = (double*) calloc (ecc_n_bins, sizeof(double));
 	_joint_histogram = (double*) calloc (ecc_n_bins * ecc_n_bins, sizeof(double));
 	_ecc_n_bins = ecc_n_bins;
-	_ecc_pixel_step = 256 / _ecc_n_bins;
+	_ecc_pixel_step = (int) ((double) 256 / (double) _ecc_n_bins);
+
+	assert(_ecc_pixel_step > 0);
 
 	use_gps_weight = 0;
 	use_map_weight = 0;
 	use_ecc_weight = 0;
 
+	_rejection_thresh = 1.0;
 }
 
 
@@ -187,7 +193,7 @@ ParticleFilter::_semantic_point_weight(int class_id, double *cell, int n_classes
 
 	// cell observed at least once.
 	// TODO: what to do when the cell was never observed?
-	count = cell[n_classes + 1];
+	count = cell[n_classes];
 	assert(count != 0);
 
 	// log probability of the observed class.
@@ -212,9 +218,9 @@ ParticleFilter::_reflectivity_point_weight(double reflectivity, vector<double> &
 
 
 double
-ParticleFilter::_occupancy_point_weight(double is_obstacle, vector<double> &cell)
+ParticleFilter::_occupancy_point_weight(double prob_obstacle, vector<double> &cell)
 {
-	return _occupancy_point_weight(is_obstacle, cell.data());
+	return _occupancy_point_weight(prob_obstacle, cell.data());
 }
 
 
@@ -235,7 +241,7 @@ ParticleFilter::_image_point_weight(double r, double g, double b, double *cell)
 
 
 double
-ParticleFilter::_occupancy_point_weight(double is_obstacle, double *cell)
+ParticleFilter::_occupancy_point_weight(double prob_obstacle, double *cell)
 {
 	double p = 0.5; 
 
@@ -245,12 +251,13 @@ ParticleFilter::_occupancy_point_weight(double is_obstacle, double *cell)
 		p = (cell[0] / cell[1]);
 		
 		// if the measurement is not an obstacle, we return the opposite prob.
-		if (!is_obstacle)
+		if (prob_obstacle < 0.5)
 			p = 1 - p;
 	}
 
 	// just to prevent numerical instabilities.
-	if (p == 0) p = 1e-6;
+	if (p == 0) 
+		p = 1e-6;
 
 	return log(p);
 }
@@ -361,6 +368,8 @@ ParticleFilter::_ecc_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Grid
 		}
 	}
 
+	assert(n_valid > 0);
+
 	// compute entropies
 	double prob_color, prob_map, prob_joint;
 	double img_entropy = 0.0;
@@ -398,8 +407,16 @@ ParticleFilter::_ecc_weight(PointCloud<PointXYZRGB>::Ptr transformed_cloud, Grid
 //	       joint_entropy, img_entropy, map_entropy,
 //	       2.0 - (2 * joint_entropy) / (img_entropy + map_entropy));
 
+	double sum_img_map_entropies = img_entropy + map_entropy;
+
+	if (sum_img_map_entropies == 0)
+		sum_img_map_entropies = 2e-5;
+
+	if (joint_entropy == 0)
+		joint_entropy = 1e-5;
+
 	// Entropy Correlation Coefficient (ECC) see "http://ijsetr.org/wp-content/uploads/2016/05/IJSETR-VOL-5-ISSUE-5-1700-1703.pdf"
-	return log(2.0 - (2 * joint_entropy) / (img_entropy + map_entropy));
+	return log(2.0 - (2 * joint_entropy) / sum_img_map_entropies);
 
 	//return (img_entropy + map_entropy) / (joint_entropy);
 }
@@ -481,7 +498,8 @@ ParticleFilter::_weight_between_cells(double *inst_cell, double *off_cell, GridM
 	}
 	else if (map_type == GridMapTile::TYPE_OCCUPANCY)
 	{
-		return _occupancy_point_weight(inst_cell[0], off_cell);
+		double prob_obstacle = inst_cell[0] / inst_cell[1];
+		return _occupancy_point_weight(prob_obstacle, off_cell);
 	}
 
 //	else if (_weight_type == WEIGHT_GPS)
@@ -541,10 +559,15 @@ ParticleFilter::_compute_log_ecc_from_histograms()
 	double map_entropy = 0.0;
 	double joint_entropy = 0.0;
 
+	assert(_n_histogram_points > 0);
+
 	for (int i = 0; i < _ecc_n_bins; i++)
 	{
 		prob_color = _color_histogram[i] / _n_histogram_points;
 		prob_map = _map_histogram[i] / _n_histogram_points;
+
+		assert(prob_color >= 0 && prob_color <= 1);
+		assert(prob_map >= 0 && prob_map <= 1);
 
 		if (prob_color > 0)
 			img_entropy += prob_color * log(prob_color);
@@ -556,6 +579,8 @@ ParticleFilter::_compute_log_ecc_from_histograms()
 		{
 			prob_joint = _joint_histogram[i * _ecc_n_bins + j] / _n_histogram_points;
 
+			assert(prob_joint >= 0 && prob_joint <= 1);
+
 			if (prob_joint > 0)
 				joint_entropy += prob_joint * log(prob_joint);
 		}
@@ -565,8 +590,22 @@ ParticleFilter::_compute_log_ecc_from_histograms()
 	map_entropy = -map_entropy;
 	joint_entropy = -joint_entropy;
 
+	double sum_img_map_entropies = img_entropy + map_entropy;
+
+	if (joint_entropy == 0 && (img_entropy != 0 || map_entropy != 0))
+		exit(printf("Error: inconsistent entropies: joint entropy: %lf img_entropy: %lf map_entropy: %lf\n", joint_entropy, img_entropy, map_entropy));
+
+	if (sum_img_map_entropies == 0)
+		sum_img_map_entropies = 1e-6;
+
+	if (joint_entropy == 0)
+		joint_entropy = 1e-6;
+
+	if (joint_entropy == sum_img_map_entropies)
+		return 1e-6;
+
 	// Entropy Correlation Coefficient (ECC) see "http://ijsetr.org/wp-content/uploads/2016/05/IJSETR-VOL-5-ISSUE-5-1700-1703.pdf"
-	return log(2.0 - (2 * joint_entropy) / (img_entropy + map_entropy));
+	return 2.0 - (2 * joint_entropy) / sum_img_map_entropies;
 }
 
 
@@ -625,6 +664,134 @@ ParticleFilter::_compute_particle_weight(GridMap &instantaneous_map, GridMap &ma
 }
 
 
+double
+ParticleFilter::_compute_ecc_weight(GridMap &instantaneous_map, GridMap &map, Pose2d &particle_pose)
+{
+	_reset_histograms();
+
+	double sin_th = sin(particle_pose.th);
+	double cos_th = cos(particle_pose.th);
+
+	// for each tile
+	for (int i = 0; i < map._N_TILES; i++)
+	{
+		for (int j = 0; j < map._N_TILES; j++)
+		{
+			GridMapTile *tile = instantaneous_map._tiles[i][j];
+
+			// for each observed cell in the tile
+			for (const int& cell_linearized_position_in_inst_map : tile->_observed_cells)
+			{
+				// cell in instantaneuos map
+				double *inst_cell = &(tile->_map[cell_linearized_position_in_inst_map]);
+
+				// cell in offline map
+				double *off_cell = _get_cell_value_in_offline_map(cell_linearized_position_in_inst_map,
+				                                                  tile, map, sin_th, cos_th,
+				                                                  particle_pose.x, particle_pose.y);
+
+				if (off_cell == 0)
+					continue;
+
+				_update_histogram(inst_cell, off_cell, tile->_map_type);
+			}
+		}
+	}
+
+	return _compute_log_ecc_from_histograms();
+}
+
+
+double
+ParticleFilter::_low_log_likelihood_threshold_by_map_type(GridMapTile::MapType map_type, int num_classes)
+{
+	if (map_type == GridMapTile::TYPE_OCCUPANCY)
+		return log(1.0 / 10.0);
+	else if (map_type == GridMapTile::TYPE_REFLECTIVITY)
+		return -pow((30. / 255.) / _reflectivity_std, 2); // we consider an error of 30 as an outlier.
+	else if (map_type == GridMapTile::TYPE_SEMANTIC)
+		return log(1.0 / (10.0 + num_classes)); // a classe nunca foi observada em 10 leituras
+	else if (map_type == GridMapTile::TYPE_VISUAL)
+		return -3 * pow((30. / 255.) / _reflectivity_std, 2); // we consider an error of 30 as an outlier.
+
+	return 0.0;
+}
+
+
+void
+ParticleFilter::_compute_all_particles_weights_with_outlier_rejection(GridMap &instantaneous_map, GridMap &map, Pose2d &gps, double rejection_thresh)
+{
+	// initialize the particles weights, compute the gps_weight or the ecc_weight if necessary, and store the previous value of the pose.
+	for (int i = 0; i < _n; i++)
+	{
+		_w[i] = 0.0;
+
+		if (use_gps_weight)
+			_w[i] += _gps_weight(_p[i], gps);
+		else if (use_ecc_weight)
+			_w[i] += _compute_ecc_weight(instantaneous_map, map, _p[i]);
+
+		_p_bef[i] = _p[i];
+	}
+
+	double particle_probs[_n];
+	int n_rejected_rays = 0, n_total_rays = 0;
+
+	// compute map weight with outlier rejection.
+	if (use_map_weight)
+	{
+		// for each tile
+		for (int i = 0; i < map._N_TILES; i++)
+		{
+			for (int j = 0; j < map._N_TILES; j++)
+			{
+				GridMapTile *tile = instantaneous_map._tiles[i][j];
+
+				// for each observed cell in the tile
+				for (const int& cell_linearized_position_in_inst_map : tile->_observed_cells)
+				{
+					int n_parts_with_low_prob = 0;
+
+					for (int p_id = 0; p_id < _n; p_id++)
+					{
+						// cell in instantaneuos map
+						double *inst_cell = &(tile->_map[cell_linearized_position_in_inst_map]);
+
+						// cell in offline map
+						double *off_cell = _get_cell_value_in_offline_map(cell_linearized_position_in_inst_map,
+																				tile, map, sin(_p[p_id].th), cos(_p[p_id].th), _p[p_id].x, _p[p_id].y);
+
+						if (off_cell == 0)
+							particle_probs[p_id] = 0;
+						else
+							particle_probs[p_id] = _weight_between_cells(inst_cell, off_cell, tile->_map_type, tile->_color_map.n_classes);
+
+						if (particle_probs[p_id] < _low_log_likelihood_threshold_by_map_type(tile->_map_type, tile->_color_map.n_classes))
+							n_parts_with_low_prob++;
+					}
+
+					double ratio_low_prob_parts = (double) n_parts_with_low_prob / (double) _n;
+
+					//printf("%d %d %lf %lf\n", n_parts_with_low_prob, _n, ratio_low_prob_parts, rejection_thresh);
+
+					if (ratio_low_prob_parts <= rejection_thresh)
+					{
+						for (int p_id = 0; p_id < _n; p_id++)
+							_w[p_id] += particle_probs[p_id];
+					}
+					else
+						n_rejected_rays++;
+
+					n_total_rays++;
+				}
+			}
+		}
+
+		printf("#rejected rays: %d of %d (%.3lf)\n", n_rejected_rays, n_total_rays, 100.0 * ((double) n_rejected_rays / (double) n_total_rays));
+	}
+}
+
+
 cv::Mat
 view_point_cloud_as_image(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMap &map)
 {
@@ -645,6 +812,42 @@ view_point_cloud_as_image(PointCloud<PointXYZRGB>::Ptr transformed_cloud, GridMa
 }
 
 
+string
+map_type_to_string(GridMapTile::MapType map_type)
+{
+	if (map_type == GridMapTile::TYPE_OCCUPANCY)
+		return "occupancy";
+	else if (map_type == GridMapTile::TYPE_REFLECTIVITY)
+		return "reflectivity";
+	else if (map_type == GridMapTile::TYPE_SEMANTIC)
+		return "semantic";
+	else if (map_type == GridMapTile::TYPE_VISUAL)
+		return "visual";
+
+	return "unknown";
+}
+
+
+string
+get_tiles_dir(GridMap &map)
+{
+	string s = "/tmp/" + map_type_to_string(map._map_type) + "_";
+	string map_dir;
+
+	do
+	{
+		char name[128];
+		sprintf(name, "%d", rand());
+		map_dir = s + string(name);
+	} while (boost::filesystem::exists(map_dir));
+	
+	printf("Creating dir for instantaneous map: %s\n", map_dir.c_str());
+	printf("result: %d\n", boost::filesystem::create_directory(map_dir));
+
+	return map_dir;
+}
+
+
 void
 ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &map, Pose2d &gps, int *max_id, int *min_id)
 {
@@ -655,36 +858,57 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &ma
 		exit(printf("Error: set at least one way of computing the particles' weights.\n"));
 
 	// todo: avoid creating this structure when using only gps for computing the particle weights.
-	GridMap instantaneous_map("/tmp/local_map", map._tile_height_meters,
-	                          map._tile_width_meters, map.m_by_pixels, 
-							  map._map_type);
+	string tiles_dir = ""; //get_tiles_dir(map);
 
-	if (use_map_weight || use_ecc_weight)
+	if (cloud->size() == 0)
 	{
-		instantaneous_map.reload(0, 0);
-		for (int i = 0; i < cloud->size(); i++)
-			instantaneous_map.add_point(cloud->at(i));
+		for (int i = 0; i < _n; i++)
+		{
+			_w[i] = 1.0 / (double) _n;
+			_p_bef[i] = _p[i];
+		}
 	}
-
-	// view_observed_cells(instantaneous_map);
-
-	// #pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
-	for (int i = 0; i < _n; i++)
+	else
 	{
-		//transformed_cloud->clear();
-		//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
-		//_w[i] = _image_weight(transformed_cloud, map);
+		GridMap instantaneous_map(tiles_dir, map._tile_height_meters,
+															map._tile_width_meters, map.m_by_pixels,
+									map._map_type, 0);
 
-		_w[i] = _compute_particle_weight(instantaneous_map, map, gps, _p[i]);
-		_p_bef[i] = _p[i];
+		if (use_map_weight || use_ecc_weight)
+		{
+			instantaneous_map.reload(0, 0);
+			for (int i = 0; i < cloud->size(); i++)
+				instantaneous_map.add_point(cloud->at(i));
+		}
+
+		//cv::Mat map_img = instantaneous_map.to_image();
+		//cv::imshow("inst_map", map_img);
+		//cv::waitKey(1);
+
+		// view_observed_cells(instantaneous_map);
+
+		// #pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
+		_compute_all_particles_weights_with_outlier_rejection(instantaneous_map, map, gps, _rejection_thresh);
+		/*
+		for (int i = 0; i < _n; i++)
+		{
+			//transformed_cloud->clear();
+			//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
+			//_w[i] = _image_weight(transformed_cloud, map);
+	
+			_w[i] = _compute_particle_weight(instantaneous_map, map, gps, _p[i]);
+			_p_bef[i] = _p[i];
+		}
+		*/
 	}
 
 	*max_id = *min_id = 0;
 
-	fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
+	//fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
 	for (i = 0; i < _n; i++)
 	{
-		fprintf(stderr, "%.4lf ", _w[i]);
+		assert(!isinf(_w[i]) && !isnan(_w[i]));
+		//fprintf(stderr, "%.4lf ", _w[i]);
 
 		if (_w[i] > _w[*max_id])
 			*max_id = i;
@@ -692,7 +916,7 @@ ParticleFilter::_compute_weights(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &ma
 		if (_w[i] < _w[*min_id])
 			*min_id = i;
 	}
-	fprintf(stderr, "\n");
+	//fprintf(stderr, "\n");
 
 	best = _p[*max_id];
 }
@@ -712,7 +936,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	//max_weight = _w[max_id];
 	sum_weights = 0.;
 
-	fprintf(stderr, "\nDEBUG: Weights as positive values: ");
+	//fprintf(stderr, "\nDEBUG: Weights as positive values: ");
 	for (i = 0; i < _n; i++)
 	{
 		//_w[i] = exp(_w[i] - max_weight) + (1. / (double) (3. * _n));
@@ -721,9 +945,10 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 		//_w[i] = pow(_w[i], 3);
 		sum_weights += _w[i];
 
-		fprintf(stderr, "%.4lf ", _w[i]);
+		assert(!isinf(_w[i]) && !isnan(_w[i]));
+		//fprintf(stderr, "%.4lf ", _w[i]);
 	}
-	fprintf(stderr, "\n");
+	//fprintf(stderr, "\n");
 
 	//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[max_id]));
 	//for(int i = 0; i < transformed_cloud->size(); i++)
@@ -736,7 +961,7 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 	//printf("Sum weights: %lf\n", sum_weights);
 
 	// normalize the weights
-	fprintf(stderr, "\nDEBUG: Weights Normalized: ");
+	//fprintf(stderr, "\nDEBUG: Weights Normalized: ");
 	for (i = 0; i < _n; i++)
 	{
 		if (fabs(sum_weights) < 1e-6)
@@ -744,12 +969,12 @@ ParticleFilter::_normalize_weights(int min_id, int max_id)
 		else
 			_w[i] /= sum_weights;
 
-		assert(_w[i] >= 0);
+		assert(_w[i] >= 0 && !isinf(_w[i]) && !isnan(_w[i]));
 		_w_bef[i] = _w[i];
 
-		fprintf(stderr, "%.4lf ", _w[i]);
+		//fprintf(stderr, "%.4lf ", _w[i]);
 	}
-	fprintf(stderr, "\n\n---------\n\n");
+	//fprintf(stderr, "\n\n---------\n\n");
 }
 
 
@@ -786,55 +1011,63 @@ ParticleFilter::_resample()
 }
 
 
-/* 
-// todo: reviver.
-
 void
-ParticleFilter::_compute_weights(DataSample *sample, GridMap *map, SensorPreproc &preproc, int *max_id, int *min_id)
+ParticleFilter::_compute_weights(DataSample *sample, GridMap &map, SensorPreproc &preproc, int *max_id, int *min_id)
 {
-	exit(printf("Error: use the method that receives as input point clouds for computing particles' weights.\n"));
-	
-	int i, n_points;
-	pcl::PointXYZRGB p;
+	int i;
 
-	if (_weight_type == WEIGHT_GPS)
+	if (!use_gps_weight && !use_map_weight && !use_ecc_weight)
+		exit(printf("Error: set at least one way of computing the particles' weights.\n"));
+
+	// todo: avoid creating this structure when using only gps for computing the particle weights.
+	string tiles_dir = ""; // get_tiles_dir(map);
+	
+	GridMap instantaneous_map(tiles_dir, map._tile_height_meters,
+	                          map._tile_width_meters, map.m_by_pixels,
+	                          map._map_type, 0);
+
+	if (use_map_weight || use_ecc_weight)
 	{
-		for (i = 0; i < _n; i++)
-			_w[i] = _gps_weight(_p[i], sample->gps);
+		instantaneous_map.reload(0, 0);
+		create_instantaneous_map(sample, preproc, &instantaneous_map, 0);
+	}
+
+	// cv::Mat map_img = instantaneous_map.to_image();
+	// cv::imshow("inst_map", map_img);
+	// cv::waitKey(1);
+
+	// view_observed_cells(instantaneous_map);
+
+	int n_visible_cells = 0;
+
+	for (int i = 0; i < instantaneous_map._N_TILES; i++)
+		for (int j = 0; j < instantaneous_map._N_TILES; j++)
+			n_visible_cells += instantaneous_map._tiles[i][j]->_observed_cells.size();
+
+	if (n_visible_cells < 10)
+	{
+		for (int i = 0; i < _n; i++)
+		{
+			_w[i] = 1.0 / (double) _n;
+			_p_bef[i] = _p[i];
+		}
 	}
 	else
 	{
-		n_points = 0;
+		// #pragma omp parallel for default(none) private(i) shared(cloud, map, _p)
+		_compute_all_particles_weights_with_outlier_rejection(instantaneous_map, map, sample->gps, _rejection_thresh);
 
-		preproc.reinitialize(sample);
-
-		vector<Matrix<double, 4, 4>> particles_poses;
-		for (i = 0; i < _n; i++)
-			particles_poses.push_back(Pose2d::to_matrix(_p[i]));
-
-		for (int k = 0; k < preproc.size(); k++)
+		/*
+		for (int i = 0; i < _n; i++)
 		{
-			vector<PointXYZRGB> points = preproc.next_points_in_car();
+			//transformed_cloud->clear();
+			//transformPointCloud(*cloud, *transformed_cloud, Pose2d::to_matrix(_p[i]));
+			//_w[i] = _image_weight(transformed_cloud, map);
 
-			for (int j = 0; j < points.size(); j++)
-			{
-				for (int i = 0; i < _n; i++)
-				{
-					p = transform_point(particles_poses[i], points[j]);
-					vector<double> cell = map->read_cell(p);
-
-					if (_weight_type == WEIGHT_SEMANTIC)
-						_w[i] += _semantic_point_weight(p.r, cell);
-					else if (_weight_type == WEIGHT_VISUAL)
-						_w[i] += _image_point_weight(p.r, p.g, p.b, cell);
-				}
-
-				n_points++;
-			}
+			_w[i] = _compute_particle_weight(instantaneous_map, map, sample->gps, _p[i]);
+			_p_bef[i] = _p[i];
 		}
-
-		//for (int i = 0; i < _n; i++)
-		//_w[i] /= (double) n_points;
+		*/
 	}
 
 	*max_id = *min_id = 0;
@@ -842,9 +1075,7 @@ ParticleFilter::_compute_weights(DataSample *sample, GridMap *map, SensorPreproc
 	//fprintf(stderr, "\nDEBUG: Unormalized particle weights: ");
 	for (i = 0; i < _n; i++)
 	{
-		// copy the particle value before resampling
-		_p_bef[i] = _p[i];
-
+		assert(!isnan(_w[i]) && !isinf(_w[i]));
 		//fprintf(stderr, "%.4lf ", _w[i]);
 
 		if (_w[i] > _w[*max_id])
@@ -857,7 +1088,6 @@ ParticleFilter::_compute_weights(DataSample *sample, GridMap *map, SensorPreproc
 
 	best = _p[*max_id];
 }
-*/
 
 
 void
@@ -872,11 +1102,8 @@ ParticleFilter::correct(PointCloud<PointXYZRGB>::Ptr cloud, GridMap &map, Pose2d
 }
 
 
-/*
-// todo: reviver.
-
 void
-ParticleFilter::correct(DataSample *sample, GridMap *map, SensorPreproc &preproc)
+ParticleFilter::correct(DataSample *sample, GridMap &map, SensorPreproc &preproc)
 {
 	int max_id = 0;
 	int min_id = 0;
@@ -885,7 +1112,6 @@ ParticleFilter::correct(DataSample *sample, GridMap *map, SensorPreproc &preproc
 	_normalize_weights(min_id, max_id);
 	_resample();
 }
-*/
 
 
 Pose2d

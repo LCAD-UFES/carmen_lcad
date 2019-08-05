@@ -79,7 +79,7 @@ save_dir =
 # Map resolution
 resolution = 0.2
 # Map tiles size
-tile_size = 50
+tile_size = 70
 # Flag for choosing to save or not the maps
 save_maps = 1
 # Flag for choosing to delete or not previous maps of the same region
@@ -93,4 +93,12 @@ view_pointcloud = 1
 # Visualization flag.
 view_imgs = 1
 # Flag for choosing to pause the viewer or not in the beginning
-start_paused = 1
+start_paused = 0
+# Flag for choosing to build or not this type of map.
+build_occupancy_map = 1
+# Flag for choosing to build or not this type of map.
+build_semantic_map = 1
+# Flag for choosing to build or not this type of map.
+build_visual_map = 1
+# Flag for choosing to build or not this type of map.
+build_reflectivity_map = 1

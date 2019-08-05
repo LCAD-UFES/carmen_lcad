@@ -55,7 +55,7 @@ global_angle_mode = consecutive_gps
 # Ignore points with z-coord (in sensor reference) above this threshold
 ignore_above_threshold = -0.3
 # Ignore points with z-coord (in sensor reference) below this threshold
-ignore_below_threshold = -5
+ignore_below_threshold = -1.79769e+308
 # Offset to subtract the pose (x-coord)
 offset_x = 0
 # Offset to subtract the pose (y-coord)

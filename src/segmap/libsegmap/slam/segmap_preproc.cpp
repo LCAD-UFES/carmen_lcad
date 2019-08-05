@@ -250,12 +250,17 @@ SensorPreproc::_next_points(SensorReference ref)
 
 		_compute_point_in_different_references(h, v, r, &_p_sensor, &_p_car, &_p_world);
 
-		if (!_point3d_is_valid(_p_sensor, _p_car, _p_world, _ignore_above_threshold, _ignore_below_threshold))
+		if (!_point3d_is_valid(_p_sensor, _p_car, _p_world, DBL_MAX, -DBL_MAX))
 			continue;
+
+		int ray_is_too_high = _p_sensor(2, 0) > _ignore_above_threshold;
+		int ray_is_too_low = _p_sensor(2, 0) < _ignore_below_threshold;
+
+		int point_height_is_invalid = (ray_is_too_high || ray_is_too_low);
 
 		point = _create_point_and_intensity(_p_sensor, _p_car, _p_world, in, &visible_by_cam, ref, i);
 
-		if (_intensity_mode == REFLECTIVITY || visible_by_cam)
+		if ((_intensity_mode == REFLECTIVITY && !point_height_is_invalid) || visible_by_cam)
 			points.push_back(point);
 	}
 
@@ -318,9 +323,16 @@ SensorPreproc::next_points_with_full_information()
 		_point_coords_from_mat(_p_world, &p.world);
 
 		if (_spherical_point_is_valid(p.h_angle, p.v_angle, p.range)
-				&& _point3d_is_valid(_p_sensor, _p_car, _p_world, _ignore_above_threshold, _ignore_below_threshold))
+				&& _point3d_is_valid(_p_sensor, _p_car, _p_world, DBL_MAX, -DBL_MAX))
 		{
-			p.valid = 1;
+			int ray_is_too_high = _p_sensor(2, 0) > _ignore_above_threshold;
+			int ray_is_too_low = _p_sensor(2, 0) < _ignore_below_threshold;
+
+			// GAMBIARRA
+			if (ray_is_too_high || ray_is_too_low)
+				p.valid = 2;
+			else
+				p.valid = 1;
 
 			//_adjust_intensity(&p.sensor, _p_sensor, p.raw_intensity, &valid, i);
 			_adjust_intensity(_p_sensor, p.raw_intensity, &p.visible_by_cam, i,
@@ -629,6 +641,7 @@ SensorPreproc::_adjust_intensity(Matrix<double, 4, 1> &p_sensor, unsigned char r
 				p = 3 * (pos_pixel.y * _semantic_img.cols + pos_pixel.x);
 
 				*point_class = CityscapesObjectClassMapper::transform_object_class(_semantic_img.data[p]);
+
 				circle(_semantic_img_with_points, Point(pos_pixel.x, pos_pixel.y), 2, Scalar(0, 0, 255), -1);
 			}
 		}

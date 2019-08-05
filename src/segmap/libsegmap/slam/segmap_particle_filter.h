@@ -20,7 +20,13 @@ public:
 	void _compute_weights(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, GridMap &map,
 	                      Pose2d &gps, int *max_id, int *min_id);
 
-	//void _compute_weights(DataSample *sample, GridMap *map, SensorPreproc &preproc, int *max_id, int *min_id);
+	void _compute_weights(DataSample *sample, GridMap &map, SensorPreproc &preproc, int *max_id, int *min_id);
+
+	double _low_log_likelihood_threshold_by_map_type(GridMapTile::MapType map_type, int n_classes);
+	void _compute_all_particles_weights_with_outlier_rejection(GridMap &instantaneous_map, GridMap &map, Pose2d &gps, double rejection_thresh);
+
+	double _compute_ecc_weight(GridMap &instantaneous_map, GridMap &map, Pose2d &particle_pose);
+
 
 	void _normalize_weights(int min_id, int max_id);
 	void _resample();
@@ -43,7 +49,9 @@ public:
 	void predict(double v, double phi, double dt);
 	double sensor_weight(pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud, GridMap &map);
 	void correct(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, GridMap &map, Pose2d &gps);
-	//void correct(DataSample *sample, GridMap *map, SensorPreproc &preproc);
+	void correct(DataSample *sample, GridMap &map, SensorPreproc &preproc);
+
+	void set_outlier_rejection_rate(double rejection_rate) { _rejection_thresh = rejection_rate; }
 
 	Pose2d mean();
 	Pose2d mode();
@@ -56,6 +64,8 @@ public:
 	// p and w before resampling
 	Pose2d *_p_bef;
 	double *_w_bef;
+
+	double _rejection_thresh;
 
 	int use_gps_weight;
 	int use_map_weight;
@@ -90,12 +100,12 @@ public:
 	double _semantic_point_weight(int class_id, std::vector<double> &cell);
 	double _image_point_weight(double r, double g, double b, std::vector<double> &cell);
 	double _reflectivity_point_weight(double reflectivity, std::vector<double> &cell);
-	double _occupancy_point_weight(double is_obstacle, std::vector<double> &cell);
+	double _occupancy_point_weight(double prob_obstacle, std::vector<double> &cell);
 
 	double _image_point_weight(double r, double g, double b, double *cell);
 	double _reflectivity_point_weight(double reflectivity, double *cell);
 	double _semantic_point_weight(int class_id, double *cell, int n_classes);
-	double _occupancy_point_weight(double is_obstacle, double *cell);
+	double _occupancy_point_weight(double prob_obstacle, double *cell);
 
 	void _reset_histograms();
 	void _update_histogram(double *inst_cell, double *off_cell, GridMapTile::MapType map_type);

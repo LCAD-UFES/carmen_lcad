@@ -27,6 +27,17 @@ public:
 void
 show_flipped_img_in_viewer(PointCloudViewer &viewer, cv::Mat &img);
 
+void
+run_viewer_if_necessary(Pose2d *pose,
+												GridMap &map,
+												ParticleFilter &pf,
+												DataSample *sample,
+												SensorPreproc &preproc,
+												PointCloudViewer &viewer,
+												int pf_was_updated,
+												int show_particles,
+												int view);
+
 
 void
 run_viewer_if_necessary(Pose2d *pose,
@@ -36,7 +47,8 @@ run_viewer_if_necessary(Pose2d *pose,
 												PointCloudViewer &viewer,
 												int pf_was_updated,
 												int show_particles,
-												int view);
+												int view,
+												std::string path_to_save = "");
 
 
 Eigen::Matrix<double, 4, 4>

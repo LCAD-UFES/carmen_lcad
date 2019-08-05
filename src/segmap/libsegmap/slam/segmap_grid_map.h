@@ -102,7 +102,8 @@ public:
 	void reload(double robot_x, double robot_y);
 
 	void add_point(pcl::PointXYZRGB &p);
-	void add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &points);
+	void add_occupancy_shot(std::vector<SensorPreproc::CompletePointData> &points,
+							int do_raycast = 1, int use_world_ref = 1);
 
 	std::vector<double> read_cell(pcl::PointXYZRGB &p);
 	std::vector<double> read_cell(double x_world, double y_world);
@@ -117,5 +118,8 @@ public:
 };
 
 
+// utility function for updating the map with a point cloud.
+void update_maps(DataSample *sample, SensorPreproc &preproc, GridMap *visual_map, GridMap *reflectivity_map, GridMap *semantic_map, GridMap *occupancy_map);
+void create_instantaneous_map(DataSample *sample, SensorPreproc &preproc, GridMap *map, int do_raycast);
 
 #endif

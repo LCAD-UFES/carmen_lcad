@@ -227,6 +227,7 @@ static int draw_localize_ackerman_flag;
 static int draw_annotation_flag;
 static int draw_moving_objects_flag;
 static int draw_gps_axis_flag;
+static int velodyne_remission_flag;
 
 static int follow_car_flag;
 static int zero_z_flag;
@@ -284,6 +285,11 @@ static double time_spent_by_each_scan;
 static double distance_between_front_and_rear_axles;
 
 static int force_velodyne_flag = 0;
+
+// store original background color defined in ini file
+static double g_b_red;
+static double g_b_green;
+static double g_b_blue;
 
 static carmen_vector_3D_t
 get_position_offset(void)
@@ -697,12 +703,16 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_sc
 			carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position,
 					&r_matrix_car_to_global);
 			velodyne_points->points[i * (vertical_size) + j - range_max_points] = point_global_position;
-			velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
-					car_interpolated_position.position);
-//			velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_intensity(velodyne_message->partial_scan[i].intensity[j]);
+            if(!velodyne_remission_flag)
+            {
+                velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
+                        car_interpolated_position.position);
+            } else
+            {
+                velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_intensity(velodyne_message->partial_scan[i].intensity[j]);   
+            }
 		}
 	}
-
 	return (range_max_points);
 }
 
@@ -1862,6 +1872,7 @@ init_flags(void)
     draw_annotation_flag = 0;
     draw_moving_objects_flag = 0;
     draw_gps_axis_flag = 1;
+    velodyne_remission_flag = 0;
 #ifdef TEST_LANE_ANALYSIS
     draw_lane_analysis_flag = 1;
 #endif
@@ -1893,6 +1904,7 @@ init_flags(void)
 //    draw_annotation_flag = 0;
 //    draw_moving_objects_flag = 0;
 //    draw_gps_axis_flag = 0;
+//    velodyne_remission_flag = 0;
 //#ifdef TEST_LANE_ANALYSIS
 //    draw_lane_analysis_flag = 1;
 //#endif
@@ -2196,6 +2208,9 @@ init_stuff(int argc, char** argv)
     init_drawers(argc, argv, bumblebee_basic_width, bumblebee_basic_height);
 
     set_background_color(b_red, b_green, b_blue);
+    g_b_red = b_red;
+    g_b_green = b_green;
+    g_b_blue = b_blue;
 }
 
 
@@ -2415,7 +2430,7 @@ draw_loop(window *w)
 
         if (draw_velodyne_flag == 1)
         {
-            if (draw_annotation_flag)
+            if (draw_annotation_flag || velodyne_remission_flag)
                 glPointSize(5);
             draw_velodyne_points(velodyne_points, velodyne_size);
             glPointSize(point_size);
@@ -2423,7 +2438,7 @@ draw_loop(window *w)
         else if (draw_velodyne_flag == 2)
         {
             //draw_velodyne_points(&(velodyne_points[last_velodyne_position]), 1);
-            if (draw_annotation_flag)
+            if (draw_annotation_flag || velodyne_remission_flag)
                 glPointSize(5);
             draw_point_cloud(velodyne_drawer);
             glPointSize(point_size);
@@ -3058,6 +3073,16 @@ set_flag_viewer_3D(int flag_num, int value)
     	break;
     case 30:
     	draw_localize_image_flag = value;
+        break;
+    case 31:
+    	velodyne_remission_flag = value;
+        if(value)
+            set_background_color(0, 0, 255);
+        else
+            set_background_color(g_b_red, g_b_green, g_b_blue);
+        break;
+    case 32:
+        force_velodyne_flag = value;
         break;
     }
 }

@@ -62,15 +62,20 @@ add_default_mapper_args(CommandLineArguments &args)
 {
 	// map parameters
 	args.add<double>("resolution,r", "Map resolution", 0.2);
-	args.add<double>("tile_size,t", "Map tiles size", 50);
+	args.add<double>("tile_size,t", "Map tiles size", 70);
 	args.add<int>("save_maps", "Flag for choosing to save or not the maps", 1);
 	args.add<int>("clean_map", "Flag for choosing to delete or not previous maps of the same region", 0);
 
 	args.add<int>("view,v", "Flag to set visualization on or off", 1);
 	args.add<int>("viewer_width", "Width of the map's visualization", 600);
-	args.add<int>("view_pointcloud", "Visualization flag.", 1);
-	args.add<int>("view_imgs", "Visualization flag.", 1);
-	args.add<int>("start_paused", "Flag for choosing to pause the viewer or not in the beginning", 1);
+	args.add<int>("view_pointcloud", "Visualization flag.", 0);
+	args.add<int>("view_imgs", "Visualization flag.", 0);
+	args.add<int>("start_paused", "Flag for choosing to pause the viewer or not in the beginning", 0);
+
+	args.add<int>("build_occupancy_map", "Flag for choosing to build or not this type of map.", 1);
+	args.add<int>("build_semantic_map", "Flag for choosing to build or not this type of map.", 1);
+	args.add<int>("build_visual_map", "Flag for choosing to build or not this type of map.", 1);
+	args.add<int>("build_reflectivity_map", "Flag for choosing to build or not this type of map.", 1);
 
 	//args.add<string>("map_path,m", "Path to save the maps", "/tmp/map");
 
@@ -83,7 +88,6 @@ add_default_mapper_args(CommandLineArguments &args)
 	args.add<string>("map_type", "[semantic, colour, occupancy, reflectivity]", "reflectivity");
 	*/
 
-	args.save_config_file(default_data_dir() + "/mapper_config.txt");
 }
 
 
@@ -115,10 +119,10 @@ add_default_localizer_args(CommandLineArguments &args)
 	args.add<int>("seed", "Seed for pseudo-random number generator", 0);
 	args.add<int>("correction_step", "Frequency in which correction takes place [<= 1 for always correcting]", 1);
 	args.add<int>("steps_to_skip_map_reload", "Minimum number of steps to wait until a new map reload from disk", 5);
+	args.add<double>("rejection_rate", "Percentage of particles for which the prob of a sample has to be low to reject it.", 1.0);
 	
 	args.add<string>("save_dir", "Directory for saving images of the localization execution", "");
 
-	args.save_config_file(default_data_dir() + "/localizer_config.txt");
 }
 
 
@@ -137,6 +141,5 @@ add_default_sensor_preproc_args(CommandLineArguments &args)
 	args.add<double>("camera_latency", "Camera latency in seconds", 0.0);
 	args.add<int>("use_semantic_remapping", "Flag to use semantic remapping or not.", 1);
 
-	args.save_config_file(default_data_dir() + "/preproc_config.txt");
 }
 

@@ -26,6 +26,9 @@ class CityscapesObjectClassMapper
 public:
 	static unsigned char transform_object_class(unsigned int object_class)
 	{
+		return object_class;
+
+		/*
 		if (object_class == 0) return 0;
 
 		// CLASSES:
@@ -73,6 +76,7 @@ public:
 			return 19;
 
 		return object_class;
+		*/
 	}
 };
 

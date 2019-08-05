@@ -27,7 +27,6 @@ main(int argc, char **argv)
 	add_default_sensor_preproc_args(args);
 	add_default_mapper_args(args);
 
-	args.save_config_file(default_data_dir() + "/mapper_config.txt");
 	args.parse(argc, argv);
 
 	log_path = args.get<string>("log_path");

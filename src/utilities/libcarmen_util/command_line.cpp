@@ -20,6 +20,7 @@ CommandLineArguments::CommandLineArguments()
 	_non_positional_args = new po::options_description("Additional Arguments");
 	_positional_args_for_parsing = new po::positional_options_description();
 
+	_non_positional_args->add_options()("save", po::value<string>(&_save_path)->default_value(""), "path to save the config file.");
 	_non_positional_args->add_options()("help,h", "produce help message");
 	_non_positional_args->add_options()("config,c", po::value<string>(&_config_path)->default_value(""), "config file");
 }
@@ -151,5 +152,7 @@ CommandLineArguments::parse(int argc, char **argv)
 		exit(-1);
 	}
 
+	if (_save_path.size() > 0)
+		save_config_file(_save_path);
 }
 
