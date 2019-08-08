@@ -628,3 +628,5 @@ src/sensors/laser_new/sick_laser_init_500k
 src/sensors/laser_new/sick_laser_test
 src/utilities/central_log_view/central_log_view
 
+/sharedlib/OpenJAUS/ojFoxDriver/SENT/docs/src/DM330018_Starter_Kit_Demo.X/build/
+/sharedlib/OpenJAUS/ojFoxDriver/SENT/docs/src/DM330018_Starter_Kit_Demo.X/dist/
