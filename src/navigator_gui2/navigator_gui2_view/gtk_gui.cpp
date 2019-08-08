@@ -1056,8 +1056,9 @@ namespace View
 			sprintf(buffer, "Origin: (%ld, %ld)", (long int) new_map->config.x_origin, (long int) new_map->config.y_origin);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelOrigin), buffer);
 
-			if(!log_first_it)
-				navigator_graphics_start_recording_message_received();
+			//Descomentar para gravacao automatica
+//			if(!log_first_it)
+//				navigator_graphics_start_recording_message_received();
 
 		}
 	}
@@ -3124,23 +3125,23 @@ namespace View
 	void
 	GtkGui::navigator_graphics_start_recording_message_received()
 	{
-/*
+
 
 		gtk_toggle_button_set_active(this->controls_.buttonRecord, true);
 		GtkWidget *label = GTK_BIN(this->controls_.buttonRecord)->child;
 		gtk_label_set_text(GTK_LABEL(label), "Recording");
 		log_map_is_ready = 1;
-		*/
+
 	}
 
 	void
 	GtkGui::navigator_graphics_pause_recording_message_received()
 	{
-	/*
+
 		gtk_toggle_button_set_active(this->controls_.buttonRecord, false);
 		GtkWidget *label = GTK_BIN(this->controls_.buttonRecord)->child;
 		gtk_label_set_text(GTK_LABEL(label), "Record");
 		log_map_is_ready = 0;
-		*/
+
 	}
 }
