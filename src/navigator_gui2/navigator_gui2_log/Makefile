@@ -1,9 +1,8 @@
-include ../Makefile.conf
+include ../../Makefile.conf
 
 # Module name and description
-MODULE_NAME = NAVIGATOR GUI 2
-MODULE_COMMENT = Carmen Navigation Tool
-SUBDIRS = navigator_gui2_view
+MODULE_NAME = NAVIGATOR GUI 2 LOG
+MODULE_COMMENT = Carmen Navigation Tool Log
 
 LINK = g++
 
@@ -32,30 +31,7 @@ CFLAGS += -Wno-unknown-pragmas
 CXXFLAGS += -Wno-unknown-pragmas
 
 # Source code files (.c, .cpp) 
-SOURCES = navigator_gui2_main.cpp navigator_gui2_interface.c
-
-# Public headers, linked to 'carmen/include/carmen/'.
-PUBLIC_INCLUDES = navigator_gui2_messages.h navigator_gui2_interface.h
-
-# Public libraries, linked to 'carmen/lib'.
-PUBLIC_LIBRARIES = libnavigator_gui2_interface.a
-
-# Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-PUBLIC_BINARIES = navigator_gui2
-
-TARGETS = libnavigator_gui2_interface.a navigator_gui2
-PUBLIC_LIBRARIES_SO = libnavigator_gui2_interface.so
-
-ifndef NO_PYTHON
-TARGETS += libnavigator_gui2_interface.so.1
-endif
-
-# If you set graphics support in configure.
-ifndef NO_GRAPHICS
-IFLAGS += -Inavigator_gui2_view/include
-IFLAGS += -I/usr/include/libglade-2.0/
-
-GLADE_FILES = navigator_gui2.glade
+SOURCES = image_ready.cpp
 
 #Carmen Global Graphic Library and Gtk+2 Graphics Libraries
 LFLAGS += -lglobal_graphics
@@ -64,14 +40,8 @@ IFLAGS += `pkg-config --cflags gtkglext-1.0`
 LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
 LFLAGS += `pkg-config --libs gtkglext-1.0`
 
-endif
-
-libnavigator_gui2_interface.a:	navigator_gui2_interface.o
-
-libnavigator_gui2_interface.so.1:	navigator_gui2_interface.o
-
-navigator_gui2: navigator_gui2_main.o libnavigator_gui2_interface.a navigator_gui2_view/libnavigator_gui2_view.a
+image_ready: image_ready.o 
 
 # rules
 
-include ../Makefile.rules
+include ../../Makefile.rules

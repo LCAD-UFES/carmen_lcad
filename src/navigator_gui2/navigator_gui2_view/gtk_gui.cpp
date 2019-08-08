@@ -3,7 +3,6 @@
 extern void
 mapper_handler(carmen_mapper_map_message *message);
 
-
 GdkColor *
 build_color_gradient()
 {
@@ -525,6 +524,12 @@ namespace View
 		GdkColor color;
 		gdk_color_parse ("red", &color);
 		gtk_widget_modify_bg(GTK_WIDGET(controls_.buttonGo), GTK_STATE_NORMAL, &color);
+
+		controls_.buttonRecord = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonRecord" ));
+		gdk_color_parse ("yellow", &color);
+		gtk_widget_modify_bg(GTK_WIDGET(controls_.buttonRecord), GTK_STATE_NORMAL, &color);
+		gdk_color_parse ("green", &color);
+		gtk_widget_modify_bg(GTK_WIDGET(controls_.buttonRecord), GTK_STATE_ACTIVE, &color);
 
 		carmen_graphics_setup_colors();
 		robot_colour  = DEFAULT_ROBOT_COLOUR;
@@ -1050,6 +1055,10 @@ namespace View
 
 			sprintf(buffer, "Origin: (%ld, %ld)", (long int) new_map->config.x_origin, (long int) new_map->config.y_origin);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelOrigin), buffer);
+
+			if(!log_first_it)
+				navigator_graphics_start_recording_message_received();
+
 		}
 	}
 
@@ -1330,6 +1339,9 @@ namespace View
 		char buffer[2048];
 		strcpy(buffer, "Low Level State: ");
 		strcat(buffer, get_low_level_state_name(msg.low_level_state));
+
+//		strcpy(ndata.low_level_state_navigator,buffer);
+
 		gtk_label_set_text(GTK_LABEL(this->controls_.labelLowLevelState), buffer);
 	}
 
@@ -1345,6 +1357,7 @@ namespace View
 				sprintf(buffer, "%s/%s", buffer, get_traffic_sign_state_name(actual_state));
 			sprintf(buffer, "%s   %.3lf (%.3lf deg/m)", buffer, msg.traffic_sign_data, carmen_radians_to_degrees(msg.traffic_sign_data));
 		}
+//		strcpy(ndata.traffic_sign_state_navigator,buffer);
 		gtk_label_set_text(GTK_LABEL(this->controls_.labelTrafficSignState), buffer);
 	}
 
@@ -1515,12 +1528,65 @@ namespace View
 	}
 
 	void
+	GtkGui::save_to_image(GtkMapViewer* mapv)
+	{
+		if(!log_first_it)
+		{
+			char log_date[100];
+			memset(log_buffer,'\0',1000*sizeof(char));
+			memset(log_path,'\0',(255)*sizeof(char));
+			memset(log_date,'\0',(100)*sizeof(char));
+
+			time_t t = time(NULL);
+			struct tm tm = *localtime(&t);
+			snprintf(log_date, sizeof(log_date), "%d-%d-%d_%d:%d:%d",tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+			snprintf(log_buffer, sizeof(log_buffer), "%s/data/navigator_gui2_log/%s", getenv("CARMEN_HOME"), log_date);
+			mkdir(log_buffer, 0777);
+			snprintf(log_buffer, sizeof(log_buffer), "%s/data/navigator_gui2_log/%s/pictures", getenv("CARMEN_HOME"), log_date);
+			mkdir(log_buffer, 0777);
+			snprintf(log_path, sizeof(log_path), "%s/data/navigator_gui2_log/%s/log_file.txt", getenv("CARMEN_HOME"), log_date);
+
+			file_log = fopen(log_path, "a");
+
+			if(NULL == file_log)
+			{
+				printf("Erro ao abrir o arquivo log_file.txt no método save_to_image (gtk_gui.cpp)\n");
+				exit(1);
+			}
+			snprintf(log_path, sizeof(log_path), "%s/data/navigator_gui2_log/%s/", getenv("CARMEN_HOME"), log_date);
+
+			log_first_it = 1;
+			log_counter = 0;
+		}
+
+		GdkPixbuf * pixbuf = gdk_pixbuf_get_from_drawable(NULL, mapv->drawing_pixmap, NULL, 0, 0, 0, 0, -1, -1);
+
+		if(NULL != pixbuf)
+		{
+			GError *error;
+			error = NULL;
+
+			snprintf(log_buffer,sizeof(log_buffer),"%spictures/%d.jpg", log_path, log_counter);
+			gdk_pixbuf_save(pixbuf, log_buffer, "jpeg", &error, NULL);
+
+			snprintf(log_buffer, sizeof(log_buffer),"%d#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#Go Button = %d#", log_counter, gtk_label_get_text(GTK_LABEL(this->controls_.labelOrigin)), gtk_label_get_text(GTK_LABEL(this->controls_.labelRobot)), gtk_label_get_text(GTK_LABEL(this->controls_.labelFusedOdometry)), gtk_label_get_text(GTK_LABEL(this->controls_.labelVelocity)), gtk_label_get_text(GTK_LABEL(this->controls_.labelGoal)), gtk_label_get_text(GTK_LABEL(this->controls_.labelGridCell)), gtk_label_get_text(GTK_LABEL(this->controls_.labelValue)), gtk_label_get_text(GTK_LABEL(this->controls_.labelGlobalPosTimeStamp)), gtk_label_get_text(GTK_LABEL(this->controls_.labelLowLevelState)), gtk_label_get_text(GTK_LABEL(this->controls_.labelTrafficSignState)), log_button_go );
+			fprintf(file_log,"%s\n", log_buffer);
+			log_counter++;
+			g_clear_object(&pixbuf);
+			g_clear_object(&error);
+		}
+
+	}
+
+	void
 	GtkGui::do_redraw(void)
 	{
 		if (this->display_needs_updating &&
 				((carmen_get_time() - this->time_of_last_redraw > 0.025) || ALWAYS_REDRAW))
 		{
 			carmen_map_graphics_redraw(this->controls_.map_view);
+			if(log_map_is_ready)
+				save_to_image(this->controls_.map_view);
 			this->time_of_last_redraw	   = carmen_get_time();
 			this->display_needs_updating = 0;
 		}
@@ -1562,6 +1628,7 @@ namespace View
 			placement_status = ORIENTING_ROBOT;
 			cursor = gdk_cursor_new(GDK_EXCHANGE);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
+
 
 			return TRUE;
 		}
@@ -3037,6 +3104,7 @@ namespace View
 		gtk_toggle_button_set_active(this->controls_.buttonGo, true);
 		GtkWidget *label = GTK_BIN(this->controls_.buttonGo)->child;
 		gtk_label_set_text(GTK_LABEL(label), "Stop");
+		log_button_go = 1;
 	}
 
 	void
@@ -3050,5 +3118,36 @@ namespace View
 		gtk_toggle_button_set_active(this->controls_.buttonGo, false);
 		GtkWidget *label = GTK_BIN(this->controls_.buttonGo)->child;
 		gtk_label_set_text(GTK_LABEL(label), "Go");
+		log_button_go = 0;
+	}
+
+	void
+	GtkGui::navigator_graphics_start_recording_message_received()
+	{
+/*
+		GdkColor color;
+
+		gdk_color_parse("green", &color);
+		gtk_widget_modify_bg(GTK_WIDGET(this->controls_.buttonRecord), GTK_STATE_NORMAL, &color);
+*/
+		gtk_toggle_button_set_active(this->controls_.buttonRecord, true);
+		GtkWidget *label = GTK_BIN(this->controls_.buttonRecord)->child;
+		gtk_label_set_text(GTK_LABEL(label), "Recording");
+		log_map_is_ready = 1;
+	}
+
+	void
+	GtkGui::navigator_graphics_pause_recording_message_received()
+	{
+	/*
+		GdkColor color;
+
+		gdk_color_parse ("yellow", &color);
+		gtk_widget_modify_bg(GTK_WIDGET(this->controls_.buttonRecord), GTK_STATE_NORMAL, &color);
+*/
+		gtk_toggle_button_set_active(this->controls_.buttonRecord, false);
+		GtkWidget *label = GTK_BIN(this->controls_.buttonRecord)->child;
+		gtk_label_set_text(GTK_LABEL(label), "Record");
+		log_map_is_ready = 0;
 	}
 }

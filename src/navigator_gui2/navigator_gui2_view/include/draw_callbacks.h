@@ -24,7 +24,6 @@
 
 #include "gtk_gui.h"
 
-
 namespace View
 {
 
@@ -278,8 +277,14 @@ void on_buttonClearGoals_clicked(GtkWidget *widget, GtkGui* gui);
 extern "C" G_MODULE_EXPORT
 void on_buttonGo_clicked(GtkWidget *widget, GtkGui* gui);
 
+//extern "C" G_MODULE_EXPORT
+//void on_buttonGo_entered(GtkWidget *widget, GtkGui* gui);
+
 extern "C" G_MODULE_EXPORT
-void on_buttonGo_entered(GtkWidget *widget, GtkGui* gui);
+void on_buttonRecord_clicked(GtkWidget *widget, GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
+void on_buttonRecord_entered(GtkWidget *widget, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
 void on_buttonPlaceFinalGoal_clicked(GtkWidget *widget, GtkGui* gui);

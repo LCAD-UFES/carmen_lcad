@@ -35,6 +35,10 @@
 #include <carmen/rddf_util.h>
 #include <carmen/carmen_gps_wrapper.h>
 
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#include "opencv2/opencv.hpp"
+
 #define DEFAULT_ROBOT_COLOUR 	carmen_red
 #define DEFAULT_GOAL_COLOUR 	carmen_yellow
 #define DEFAULT_PATH_COLOUR 	carmen_light_blue
@@ -128,6 +132,8 @@ namespace View
 			GtkToggleButton* buttonSyncMode;
 			GtkToggleButton* buttonNextTick;
 			GtkToggleButton* buttonGo;
+			GtkToggleButton* buttonRecord;
+
 
 			GtkCheckMenuItem* menuDisplay_TrackRobot;
 			GtkCheckMenuItem* menuDisplay_DrawPath;
@@ -293,12 +299,22 @@ namespace View
 
 		car_panel *car_panel_gl;
 
+		char log_buffer[1000];
+		char log_path[255];
+		int log_counter;
+		int log_button_go;
+		int log_first_it;
+		int log_map_is_ready;
+		FILE *file_log;
+
+
 		void ConfigureMenu();
 		void ConfigureMapViewer();
 		void InitializePathVector();
 		int get_algorithm_code(char *algorithm_name);
 		int get_goal_source_code(char* goal_source_name);
 		int get_state_code(char* state_name);
+		void save_to_image(GtkMapViewer* mapv);
 		void do_redraw(void);
 		void label_autonomy_button(char *str);
 		void change_cursor(GdkColor *fg, GdkColor *bg);
@@ -414,6 +430,8 @@ namespace View
 
 		void navigator_graphics_go_message_received();
 		void navigator_graphics_stop_message_received();
+		void navigator_graphics_start_recording_message_received();
+		void navigator_graphics_pause_recording_message_received();
 	};
 }
 
