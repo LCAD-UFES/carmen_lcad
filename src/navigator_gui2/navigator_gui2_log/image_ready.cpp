@@ -61,12 +61,12 @@ main(int argc, char *argv[])
 
 	memset(temp,'\0',1024*sizeof(char));
 
-	snprintf(temp,sizeof(temp),"%s/data/navigator_gui2_log/pictures_ready",getenv("CARMEN_HOME"));
+	snprintf(temp,sizeof(temp),"/dados/navigator_gui2_log/pictures_ready");
 	struct stat sb;
 	if(!(stat(temp, &sb) == 0))
 		mkdir(temp,0777);
 
-	snprintf(temp,sizeof(temp),"rm %s/data/navigator_gui2_log/pictures_ready/*",getenv("CARMEN_HOME"));
+	snprintf(temp,sizeof(temp),"rm /dados/navigator_gui2_log/pictures_ready/*");
 	system(temp);
 
 	while(std::getline(file,line))
@@ -97,7 +97,7 @@ main(int argc, char *argv[])
 			}
 
 			cv::line( concat, cv::Point( width, text_height+10 - dist ), cv::Point( width+550, text_height+10 - dist), cv::Scalar( 0, 0, 0 ), 3, 8 );
-			snprintf(temp,sizeof(temp),"%s/data/navigator_gui2_log/pictures_ready/%09d.png",getenv("CARMEN_HOME"),count);
+			snprintf(temp,sizeof(temp),"/dados/navigator_gui2_log/pictures_ready/%09d.png",count);
 			cv::imwrite(temp,concat);
 			if(count%31==0)
 				printf("%d imagens processadas.\n",count);
@@ -110,7 +110,7 @@ main(int argc, char *argv[])
 	file.close();
 //	snprintf(temp,sizeof(temp),"rm %s/data/navigator_gui2_log/video_log_navigator.mp4",getenv("CARMEN_HOME"));
 //	system(temp);
-	snprintf(temp,sizeof(temp),"ffmpeg -framerate 25 -pattern_type glob -i %s/data/navigator_gui2_log/pictures_ready/'*.png' %svideo_log_%s.mp4",getenv("CARMEN_HOME"),folder_dir, video_log_name.c_str());
+	snprintf(temp,sizeof(temp),"ffmpeg -framerate 25 -pattern_type glob -i /dados/navigator_gui2_log/pictures_ready/'*.png' %svideo_log_%s.mp4",folder_dir, video_log_name.c_str());
 	system(temp);
 
 	return 0;

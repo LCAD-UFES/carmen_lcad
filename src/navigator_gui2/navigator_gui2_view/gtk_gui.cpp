@@ -1540,11 +1540,11 @@ namespace View
 			time_t t = time(NULL);
 			struct tm tm = *localtime(&t);
 			snprintf(log_date, sizeof(log_date), "%d-%d-%d_%d:%d:%d",tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-			snprintf(log_buffer, sizeof(log_buffer), "%s/data/navigator_gui2_log/%s", getenv("CARMEN_HOME"), log_date);
+			snprintf(log_buffer, sizeof(log_buffer), "/dados/navigator_gui2_log/%s", log_date);
 			mkdir(log_buffer, 0777);
-			snprintf(log_buffer, sizeof(log_buffer), "%s/data/navigator_gui2_log/%s/pictures", getenv("CARMEN_HOME"), log_date);
+			snprintf(log_buffer, sizeof(log_buffer), "/dados/navigator_gui2_log/%s/pictures", log_date);
 			mkdir(log_buffer, 0777);
-			snprintf(log_path, sizeof(log_path), "%s/data/navigator_gui2_log/%s/log_file.txt", getenv("CARMEN_HOME"), log_date);
+			snprintf(log_path, sizeof(log_path), "/dados/navigator_gui2_log/%s/log_file.txt", log_date);
 
 			file_log = fopen(log_path, "a");
 
@@ -1553,7 +1553,7 @@ namespace View
 				printf("Erro ao abrir o arquivo log_file.txt no método save_to_image (gtk_gui.cpp)\n");
 				exit(1);
 			}
-			snprintf(log_path, sizeof(log_path), "%s/data/navigator_gui2_log/%s/", getenv("CARMEN_HOME"), log_date);
+			snprintf(log_path, sizeof(log_path), "/dados/navigator_gui2_log/%s/", log_date);
 
 			log_first_it = 1;
 			log_counter = 0;
@@ -3125,29 +3125,22 @@ namespace View
 	GtkGui::navigator_graphics_start_recording_message_received()
 	{
 /*
-		GdkColor color;
 
-		gdk_color_parse("green", &color);
-		gtk_widget_modify_bg(GTK_WIDGET(this->controls_.buttonRecord), GTK_STATE_NORMAL, &color);
-*/
 		gtk_toggle_button_set_active(this->controls_.buttonRecord, true);
 		GtkWidget *label = GTK_BIN(this->controls_.buttonRecord)->child;
 		gtk_label_set_text(GTK_LABEL(label), "Recording");
 		log_map_is_ready = 1;
+		*/
 	}
 
 	void
 	GtkGui::navigator_graphics_pause_recording_message_received()
 	{
 	/*
-		GdkColor color;
-
-		gdk_color_parse ("yellow", &color);
-		gtk_widget_modify_bg(GTK_WIDGET(this->controls_.buttonRecord), GTK_STATE_NORMAL, &color);
-*/
 		gtk_toggle_button_set_active(this->controls_.buttonRecord, false);
 		GtkWidget *label = GTK_BIN(this->controls_.buttonRecord)->child;
 		gtk_label_set_text(GTK_LABEL(label), "Record");
 		log_map_is_ready = 0;
+		*/
 	}
 }
