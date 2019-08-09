@@ -25,6 +25,7 @@ main(int argc, char *argv[])
 	char buffer[255];
 	char folder_dir[255];
 	char folder_name[255];
+	char frame_nome[100];
 	char *split;
 	char *cstr;
 	int count, width, height;
@@ -33,6 +34,7 @@ main(int argc, char *argv[])
 	float font_size = 0.5;
 
 	memset(buffer,'\0',255*sizeof(char));
+	memset(frame_nome, '0', 100*sizeof(char));
 
 	if(argv[1][strlen(argv[1])-1]!='/')
 		snprintf(folder_dir,sizeof(folder_dir),"%s/", argv[1]);
@@ -88,6 +90,9 @@ main(int argc, char *argv[])
 			offset = cv::Mat(height, 550, CV_8UC3, cv::Scalar(255, 255, 255));
 			cv::hconcat(image, offset, concat);
 			text_height = (height/2 - 100);
+
+			snprintf(frame_nome, sizeof(frame_nome), "Imagem: %d.jpg", count);
+
 			split = std::strtok(NULL,"#");
 			cv::line( concat, cv::Point( width, text_height-20 ), cv::Point( width+550, text_height-20), cv::Scalar( 0, 0, 0 ), 3, 8 );
 			while(split!=NULL){
@@ -96,6 +101,8 @@ main(int argc, char *argv[])
 				split = std::strtok(NULL,"#");
 			}
 
+			cv::putText(concat, frame_nome, cv::Point(width+10,text_height), cv::FONT_HERSHEY_SIMPLEX, font_size, cv::Scalar(0,0,0), 1);
+			text_height+=dist;
 			cv::line( concat, cv::Point( width, text_height+10 - dist ), cv::Point( width+550, text_height+10 - dist), cv::Scalar( 0, 0, 0 ), 3, 8 );
 			snprintf(temp,sizeof(temp),"/dados/navigator_gui2_log/pictures_ready/%09d.png",count);
 			cv::imwrite(temp,concat);
@@ -110,7 +117,7 @@ main(int argc, char *argv[])
 	file.close();
 //	snprintf(temp,sizeof(temp),"rm %s/data/navigator_gui2_log/video_log_navigator.mp4",getenv("CARMEN_HOME"));
 //	system(temp);
-	snprintf(temp,sizeof(temp),"ffmpeg -framerate 25 -pattern_type glob -i /dados/navigator_gui2_log/pictures_ready/'*.png' %svideo_log_%s.mp4",folder_dir, video_log_name.c_str());
+	snprintf(temp,sizeof(temp),"ffmpeg -framerate 20 -pattern_type glob -i /dados/navigator_gui2_log/pictures_ready/'*.png' %svideo_log_%s.mp4",folder_dir, video_log_name.c_str());
 	system(temp);
 
 	return 0;
