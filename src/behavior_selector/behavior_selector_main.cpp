@@ -765,7 +765,7 @@ compute_simulated_objects(double timestamp)
 
 	if (initial_time == 0.0)
 	{
-		previous_pose = rddf->poses[rddf->number_of_poses - 1];
+		previous_pose = rddf->poses[rddf->number_of_poses / 5];
 		previous_timestamp = timestamp;
 		initial_time = timestamp;
 		return &previous_pose;

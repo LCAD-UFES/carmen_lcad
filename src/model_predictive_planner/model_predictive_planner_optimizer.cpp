@@ -245,10 +245,10 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 		if ((i < my_params->path_point_nearest_to_lane.size()) &&
 			(my_params->path_point_nearest_to_lane.at(i) < my_params->detailed_lane.size()))
 		{
-			distance = dist(move_to_front_axle(path.at(i)),
-										 my_params->detailed_lane.at(my_params->path_point_nearest_to_lane.at(i)));
-//			distance = dist(path.at(my_params->path_point_nearest_to_lane.at(i)),
-//										 my_params->detailed_lane.at(i));
+//			distance = dist(move_to_front_axle(path.at(i)),
+//					my_params->detailed_lane.at(my_params->path_point_nearest_to_lane.at(i)));
+			distance = dist(path.at(i),
+					my_params->detailed_lane.at(my_params->path_point_nearest_to_lane.at(i)));
 			total_points += 1.0;
 		}
 		else
@@ -275,16 +275,17 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 		if (path.at(j).v < 0.0)
 			continue;
 
-		carmen_ackerman_path_point_t front_axle = move_to_front_axle(path.at(j));
+//		carmen_ackerman_path_point_t front_axle = move_to_front_axle(path.at(j));
 
 		// consider the first point as the nearest one
 		unsigned int index = 0;
-		double min_dist = dist(front_axle, param->detailed_lane.at(index));
+//		double min_dist = dist(front_axle, param->detailed_lane.at(index));
+		double min_dist = dist(path.at(j), param->detailed_lane.at(index));
 
 		for (unsigned int i = 1; i < param->detailed_lane.size(); i++)
 		{
-			double distance = dist(front_axle, param->detailed_lane.at(i));
-//			distance = dist(path.at(j), param->detailed_lane.at(i));
+//			double distance = dist(front_axle, param->detailed_lane.at(i));
+			double distance = dist(path.at(j), param->detailed_lane.at(i));
 
 			if (distance < min_dist)
 			{
@@ -319,14 +320,14 @@ double
 compute_proximity_to_obstacles_using_distance_map(vector<carmen_ackerman_path_point_t> path)
 {
 	double proximity_to_obstacles_for_path = 0.0;
-	double circle_radius = GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance; // metade da largura do carro + um espacco de guarda
+	double safety_distance = GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance;
 	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
 
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
 		carmen_point_t point_to_check = {path[i].x, path[i].y, path[i].theta};
 		double proximity_point = carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
-				point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius);
+				point_to_check, GlobalState::robot_config, GlobalState::distance_map, safety_distance);
 		proximity_to_obstacles_for_path += proximity_point;
 //		carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 //		getchar();
@@ -506,7 +507,7 @@ my_g(const gsl_vector *x, void *params)
 	double w1, w2, w3, w4, w5, w6, result; //, w7;
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
-		w1 = 30.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 3.0; w6 = 0.0025; //w7 = 1.0;
+		w1 = 30.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 20.0; w6 = 0.0025; //w7 = 1.0;
 		if (td.dist < 7.0)
 			w2 *= exp(td.dist - 7.0);
 		result = (
@@ -1327,7 +1328,8 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 {
 	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete, tcp_copy;
 	ObjectiveFunctionParams params;
-	params.detailed_lane = move_detailed_lane_to_front_axle(detailed_lane);
+//	params.detailed_lane = move_detailed_lane_to_front_axle(detailed_lane);
+	params.detailed_lane = detailed_lane;
 	params.use_lane = use_lane;
 
 	bool optmize_time_and_acc = false;
