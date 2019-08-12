@@ -2658,7 +2658,7 @@ namespace View
 			if (rddf_annotation_msg.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PLACE_OF_INTEREST)
 			{
 				format_annotation_description(text, rddf_annotation_msg.annotations[i].annotation_description);
-				GdkFont *text_font = gdk_font_load("-*-courier-bold-r-normal--0-0-0-0-p-0-iso8859-1");
+				GdkFont *text_font = gdk_font_load("-*-courier*-bold-r-normal--0-0-0-0-*-0-iso8859-1");
 				carmen_map_graphics_draw_string(the_map_view, &carmen_red, text_font, &world_point, text);
 			}
 		}

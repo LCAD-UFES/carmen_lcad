@@ -1,0 +1,31 @@
+#include "obstacle_avoider_messages.h"
+
+#ifndef CARMEN_OBSTACLE_AVOIDER_INTERFACE_H
+#define CARMEN_OBSTACLE_AVOIDER_INTERFACE_H
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void carmen_obstacle_avoider_publish_base_ackerman_motion_command(carmen_ackerman_motion_command_p motion_commands, int num_motion_commands, double timestamp);
+
+void carmen_obstacle_avoider_publish_motion_planner_path(carmen_navigator_ackerman_plan_message msg);
+
+void carmen_obstacle_avoider_publish_path(carmen_navigator_ackerman_plan_message msg);
+
+void carmen_obstacle_avoider_subscribe_motion_planner_path_message(carmen_navigator_ackerman_plan_message *msg, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void carmen_obstacle_avoider_subscribe_path_message(carmen_navigator_ackerman_plan_message *msg, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void carmen_robot_ackerman_subscribe_road_velocity_control_message(carmen_robot_ackerman_road_velocity_control_message *msg, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void carmen_obstacle_avoider_publish_robot_hit_obstacle_message(int robot_hit_obstacle);
+
+void carmen_obstacle_avoider_subscribe_robot_hit_obstacle_message(carmen_obstacle_avoider_robot_will_hit_obstacle_message *msg, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
