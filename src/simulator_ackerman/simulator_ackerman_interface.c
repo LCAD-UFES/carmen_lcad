@@ -42,9 +42,27 @@ carmen_simulator_ackerman_subscribe_truepos_message(carmen_simulator_ackerman_tr
 }
 
 void
+carmen_simulator_ackerman_subscribe_external_truepos_message(carmen_simulator_ackerman_truepos_message
+					    *truepos,
+					    carmen_handler_t handler,
+					    carmen_subscribe_t subscribe_how)
+{
+  carmen_subscribe_message(CARMEN_SIMULATOR_ACKERMAN_EXTERNAL_TRUEPOSE_NAME,
+		  	  	  	  	   CARMEN_SIMULATOR_ACKERMAN_EXTERNAL_TRUEPOSE_FMT,
+                           truepos, sizeof(carmen_simulator_ackerman_truepos_message),
+			   handler, subscribe_how);
+}
+
+void
 carmen_simulator_ackerman_unsubscribe_truepos_message(carmen_handler_t handler)
 {
   carmen_unsubscribe_message(CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME, handler);
+}
+
+void
+carmen_simulator_ackerman_unsubscribe_external_truepos_message(carmen_handler_t handler)
+{
+  carmen_unsubscribe_message(CARMEN_SIMULATOR_ACKERMAN_EXTERNAL_TRUEPOSE_NAME, handler);
 }
 
 void
@@ -249,4 +267,24 @@ carmen_simulator_ackerman_set_truepose(carmen_point_t *point)
 		  CARMEN_SIMULATOR_ACKERMAN_SET_TRUEPOSE_NAME);
 
   return 0;
+}
+
+int
+carmen_simulator_ackerman_publish_external_truepose(carmen_simulator_ackerman_truepos_message *msg)
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+	static int initialized = 0;
+
+	if (!initialized)
+	{
+		err = IPC_defineMsg(CARMEN_SIMULATOR_ACKERMAN_EXTERNAL_TRUEPOSE_NAME,
+				IPC_VARIABLE_LENGTH, CARMEN_SIMULATOR_ACKERMAN_EXTERNAL_TRUEPOSE_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_SIMULATOR_ACKERMAN_EXTERNAL_TRUEPOSE_NAME);
+		initialized = 1;
+	}
+
+	err = IPC_publishData(CARMEN_SIMULATOR_ACKERMAN_EXTERNAL_TRUEPOSE_NAME, msg);
+	carmen_test_ipc(err, "Could not publish", CARMEN_SIMULATOR_ACKERMAN_EXTERNAL_TRUEPOSE_NAME);
+
+	return (0);
 }
