@@ -212,7 +212,6 @@ obstacle_distance_mapper_publish_compact_cost_map(double timestamp)
 {
 	build_obstacle_cost_map(&cost_map, distance_map.config, &distance_map, obstacle_cost_distance);
 	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
-
 	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
 	{
 		carmen_map_server_publish_multi_height_compact_cost_map_message(&compacted_cost_map, timestamp, height_level);
@@ -236,7 +235,8 @@ carmen_mapper_map_message_handler(carmen_mapper_map_message *msg)
 {
 //	obstacle_distance_mapper_publish_distance_map(msg);
 	build_distance_map(msg);
-	obstacle_distance_mapper_publish_compact_cost_map(msg->timestamp);
+	if (height_level ==0)
+		obstacle_distance_mapper_publish_compact_cost_map(msg->timestamp);
 	obstacle_distance_mapper_publish_compact_distance_and_compact_lane_contents_maps(msg);
 //	obstacle_distance_mapper_publish_compact_cost_map(msg->timestamp, &compact_distance_map);
 
@@ -347,9 +347,9 @@ main(int argc, char **argv)
 	carmen_param_check_version(argv[0]);
 
 	signal(SIGINT, shutdown_module);
-	register_handlers();
 
 	read_parameters(argc, argv);
+	register_handlers();
 
 	carmen_ipc_dispatch();
 

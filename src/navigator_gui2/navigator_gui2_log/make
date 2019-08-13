@@ -1,0 +1,4 @@
+#!/bin/bash
+g++ image_ready.cpp `pkg-config --cflags gtk+-2.0 gmodule-export-2.0` `pkg-config --cflags gtkglext-1.0` `pkg-config --libs gtk+-2.0 gmodule-export-2.0` `pkg-config --libs gtkglext-1.0` `pkg-config --cflags opencv` `pkg-config --libs opencv` -o image_ready
+
+

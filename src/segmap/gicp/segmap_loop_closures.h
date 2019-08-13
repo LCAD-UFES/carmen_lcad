@@ -47,7 +47,8 @@ run_viewer_if_necessary(Pose2d *pose,
 												PointCloudViewer &viewer,
 												int pf_was_updated,
 												int show_particles,
-												int view);
+												int view,
+												std::string path_to_save = "");
 
 
 Eigen::Matrix<double, 4, 4>

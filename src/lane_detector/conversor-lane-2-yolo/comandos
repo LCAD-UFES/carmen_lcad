@@ -1,0 +1,44 @@
+#!/bin/bash
+./conversor /dados/lane_detection/Base_Rodrigo BR_S01
+
+./conversor /dados/lane_detection/Base_Rodrigo BR_S02
+
+./conversor /dados/lane_detection/Base_Rodrigo GRI_S01
+
+./conversor /dados/lane_detection/Base_Rodrigo GRI_S02
+
+./conversor /dados/lane_detection/Base_Rodrigo ROD_S01
+
+./conversor /dados/lane_detection/Base_Rodrigo ROD_S02
+
+./conversor /dados/lane_detection/Base_Rodrigo ROD_S03
+
+./conversor /dados/lane_detection/Base_Rodrigo VIX_S01
+
+./conversor /dados/lane_detection/Base_Rodrigo VIX_S02
+
+./conversor /dados/lane_detection/Base_Rodrigo VIX_S03
+
+./conversor /dados/lane_detection/Base_Rodrigo VIX_S04
+
+./conversor /dados/lane_detection/Base_Rodrigo VIX_S05
+
+./conversor /dados/lane_detection/Base_Rodrigo VIX_S06
+
+./conversor /dados/lane_detection/Base_Rodrigo VIX_S07
+
+./conversor /dados/lane_detection/Base_Rodrigo VIX_S08
+
+./conversor /dados/lane_detection/Base_Rodrigo VIX_S09
+
+./conversor /dados/lane_detection/Base_Rodrigo VIX_S10
+
+./conversor /dados/lane_detection/Base_Rodrigo VIX_S11
+
+./conversor /dados/lane_detection/Base_Rodrigo VV_S01
+
+./conversor /dados/lane_detection/Base_Rodrigo VV_S02
+
+./conversor /dados/lane_detection/Base_Rodrigo VV_S03
+
+./conversor /dados/lane_detection/Base_Rodrigo VV_S04

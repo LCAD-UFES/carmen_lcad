@@ -78,7 +78,6 @@ main(int argc, char **argv)
 	add_default_gicp_args(args);
 	add_default_localizer_args(args);
 	add_default_mapper_args(args);
-	args.save_config_file(default_data_dir() + "/loop_closures_config.txt");
 	args.parse(argc, argv);
 
 	string mode = args.get<string>("mode");

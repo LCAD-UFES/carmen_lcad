@@ -1,0 +1,24 @@
+Mensagemde angulo do volante:
+can0       09F   [8]  94 0C 59 00 00 00 00 00
+                            10 32		// ordem dos nibbles de angulo (0 1 2 e 3. O nibble 3 tem no sinal no último bit)
+                                     10 32	// ordem dos nibbles de torc (0 1 2 e 3. O nibble 3 tem no sinal no último bit)
+
+Mensagemde angulo incompleta:
+can0       086   [8]  94 0C 59 00 00 00 00 00
+                            10  2		// ordem dos nibbles de angulo (0 1 e 2)
+                               0  21		// ordem dos nibbles de torc (0 1 e 2)
+
+
+Mensagem parking assit
+can0       3DD   [8]  88 2C 10 18 00 49 02 00
+                            XX			// fica 10, mas passa a 90 por quatro mensagens quando desliga o parking assist (botao) -> ~5 Hz
+
+can0       497   [8]  00 60 00 00 46 57 00 60
+                         XX			// fica 60, mas passa a 70 por quatro mensagens quando desliga o parking assist (botao) -> ~5 Hz
+
+
+can0       48E   [8]  00 00 00 00 C0 01 00 00
+				  XX XX		// park assist desligado
+can0       48E   [8]  00 00 00 00 E0 00 00 00
+				  XX XX		// park assist ligado
+

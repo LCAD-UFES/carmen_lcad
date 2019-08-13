@@ -623,6 +623,8 @@ read_localize_parameters(int argc, char **argv)
 static void
 read_map_server_parameters(int argc, char **argv)
 {
+	double robot_width, obstacle_avoider_obstacles_safe_distance;
+
 	carmen_param_t param_list[] = {
 		{"map_server", "initial_waiting_time", 					CARMEN_PARAM_DOUBLE, &initial_waiting_time, 0, NULL},
 		{"map_server", "map_grid_res", 							CARMEN_PARAM_DOUBLE, &map_grid_res, 0, NULL},
@@ -632,9 +634,14 @@ read_map_server_parameters(int argc, char **argv)
 		{"map_server", "publish_google_map", 					CARMEN_PARAM_ONOFF, &publish_google_map, 1, NULL},
 		{"behavior_selector", "use_truepos", 					CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
 		{"model_predictive_planner", "obstacles_safe_distance",	CARMEN_PARAM_DOUBLE, &lane_width, 1, NULL},
+		{"obstacle_avoider", "obstacles_safe_distance",			CARMEN_PARAM_DOUBLE, &obstacle_avoider_obstacles_safe_distance, 1, NULL},
+		{"robot", "width",										CARMEN_PARAM_DOUBLE, &robot_width, 1, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	// @@@ Alberto: Mudancca abaixo para acomodar as coisas novas feitas pelo Renan. lane_width vai ficar igual aa metade largura do carro mais a distancia de segurancca do MPP
+	lane_width += (robot_width + 2.0 * obstacle_avoider_obstacles_safe_distance) / 2.0;
 }
 
 

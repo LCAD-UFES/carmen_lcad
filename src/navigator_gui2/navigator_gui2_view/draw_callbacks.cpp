@@ -4,7 +4,6 @@
 extern void
 mapper_handler(carmen_mapper_map_message *message);
 
-
 namespace View
 {
 
@@ -788,6 +787,47 @@ void on_buttonGo_entered(GtkWidget *widget __attribute__((unused)),
 }
 
 //extern "C" G_MODULE_EXPORT
+void on_buttonRecord_clicked(GtkWidget *widget __attribute__((unused)),
+					   GtkGui* gui)
+{
+	GdkColor color;
+	if (GTK_TOGGLE_BUTTON(global_gui->controls_.buttonRecord)->active)
+	{
+		gdk_color_parse ("green", &color);
+		gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonRecord), GTK_STATE_NORMAL, &color);
+		gui->navigator_graphics_start_recording_message_received();
+	}
+	else
+	{
+		gdk_color_parse ("yellow", &color);
+		gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonRecord), GTK_STATE_NORMAL, &color);
+		gui->navigator_graphics_pause_recording_message_received();
+	}
+
+//	if (global_gui->global_view)
+//		global_gui->global_view = 0;
+}
+
+//extern "C" G_MODULE_EXPORT
+/*
+void on_buttonRecord_entered(GtkWidget *widget __attribute__((unused)),
+					   GtkGui* gui)
+{
+	GdkColor color;
+
+	if (GTK_TOGGLE_BUTTON(global_gui->controls_.buttonRecord)->active)
+		{
+			gdk_color_parse ("gray", &color);
+			gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonRecord), GTK_STATE_PRELIGHT, &color);
+		}
+		else
+		{
+			gdk_color_parse ("green", &color);
+			gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonRecord), GTK_STATE_PRELIGHT, &color);
+		}
+}
+*/
+//extern "C" G_MODULE_EXPORT
 void on_buttonPlaceFinalGoal_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -847,6 +887,7 @@ gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 			{
 				sprintf(buffer, "Value: %.4f", the_map->map[point.x][point.y]);
 			}
+
 			gtk_label_set_text(GTK_LABEL(global_gui->controls_.labelValue), buffer);
 		}
 	}

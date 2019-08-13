@@ -841,10 +841,10 @@ navigator_ackerman_stop_message_handler()
 	gui->navigator_graphics_stop_message_received();
 }
 
-
 static void
 nav_shutdown(int signo __attribute__ ((unused)))
 {
+
 	static int done = 0;
 
 	if (!done)

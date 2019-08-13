@@ -13,13 +13,15 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I../../car_panel_gui/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L../../car_panel_gui/
 
+IFLAGS += `pkg-config --cflags opencv`
+
 LFLAGS += -L/usr/local/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -lparam_interface -lipc -lglobal -lmap_graphics -lglobal_graphics -lmap_interface -lprob_models \
 		  -lgrid_mapping -lbase_interface -lgeometry -lobstacle_avoider_interface \
 		  -ldynamic_object_detector_interface -lmapper_interface \
 		  -lsimulator_ackerman_interface -llocalize_ackerman_interface -lnavigator_ackerman_interface -lnavigator_interface \
 		  -lfused_odometry_interface -lmap_io -lrddf_interface -lmap_server_interface -lbehavior_selector_interface \
-		  -lrotation_geometry -lcar_panel -lrobot_ackerman_interface \
+		  -lrotation_geometry -lcar_panel -lrobot_ackerman_interface `pkg-config --libs opencv` \
 		  -lglm -lGL -lGLU -lglut -ltf
 LFLAGS += -L/usr/lib64/libkml -lrddf_util -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 
