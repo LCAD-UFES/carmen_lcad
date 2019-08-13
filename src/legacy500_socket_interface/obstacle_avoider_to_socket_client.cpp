@@ -16,8 +16,8 @@
 
 //#define MIN(a,b) ((a <= b) ? a : b)
 //#define MAX(a,b) ((a >= b) ? a : b)
-#define RAD2DEG(a) (a / 0.01745329252)
-#define DEG2RAD(a) (a * 0.01745329252)
+//#define RAD2DEG(a) (a / 0.01745329252)
+//#define DEG2RAD(a) (a * 0.01745329252)
 
 static char *ip_address = (char *) DEFAULT_IP_ADDRESS;
 static int port_number = DEFAULT_PORT_NUMBER;
@@ -77,7 +77,6 @@ build_socket_message(carmen_base_ackerman_motion_command_message *motion_command
 		array[(i * 6) + 3] = motion_command_message->motion_command[i].theta;
 		array[(i * 6) + 4] = motion_command_message->motion_command[i].v;
 		array[(i * 6) + 5] = motion_command_message->motion_command[i].phi;
-		//array[(i * 6) + 5] = -RAD2DEG(motion_command_message->motion_command[i].phi);
 		array[(i * 6) + 6] = motion_command_message->motion_command[i].time;
 	}
 }
@@ -158,7 +157,7 @@ socket_test(int size, double xmin, double xmax, double ymin, double ymax, double
 		array[(i * 6) + 4] = v;
 		array[(i * 6) + 5] = phi;
 		array[(i * 6) + 6] = time;
-		printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i, x, y, theta, RAD2DEG(theta), v, phi, RAD2DEG(phi), time);
+		printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i, x, y, theta, carmen_radians_to_degrees(theta), v, phi, carmen_radians_to_degrees(phi), time);
 		x += deltax;
 		y += deltay;
 		theta += deltatheta;
@@ -190,7 +189,7 @@ velocity_test(void)
 		array[(i * 6) + 4] = speed[i];
 		array[(i * 6) + 5] = phi;
 		array[(i * 6) + 6] = time;
-		printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i, x, y, theta, RAD2DEG(theta), speed[i], phi, RAD2DEG(phi), time);
+		printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i, x, y, theta, carmen_radians_to_degrees(theta), speed[i], phi, carmen_radians_to_degrees(phi), time);
 	}
 
 	send_motion_command_via_socket(array);
@@ -214,9 +213,9 @@ steering_test(void)
 		array[(i * 6) + 2] = y;
 		array[(i * 6) + 3] = theta;
 		array[(i * 6) + 4] = speed;
-		array[(i * 6) + 5] = DEG2RAD(phi_deg[i]);
+		array[(i * 6) + 5] = carmen_degrees_to_radians(phi_deg[i]);
 		array[(i * 6) + 6] = time;
-		printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i, x, y, theta, RAD2DEG(theta), speed, DEG2RAD(phi_deg[i]), phi_deg[i], time);
+		printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i, x, y, theta, carmen_radians_to_degrees(theta), speed, carmen_degrees_to_radians(phi_deg[i]), phi_deg[i], time);
 	}
 
 	send_motion_command_via_socket(array);
@@ -237,7 +236,7 @@ max_velocity_test(double max_speed)
 	array[4] = speed;
 	array[5] = phi;
 	array[6] = time;
-	printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i, x, y, theta, RAD2DEG(theta), speed, phi, RAD2DEG(phi), time);
+	printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i, x, y, theta, carmen_radians_to_degrees(theta), speed, phi, carmen_radians_to_degrees(phi), time);
 	send_motion_command_via_socket(array);
 }
 
@@ -329,7 +328,7 @@ manual_test()
 		array[2] = 0.0;
 		array[3] = 0.0;
 		array[4] = v;
-		array[5] = DEG2RAD(phi);
+		array[5] = carmen_degrees_to_radians(phi);
 		array[6] = time;
 
 		/*

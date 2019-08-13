@@ -1,4 +1,5 @@
 #include <carmen/carmen.h>
+#include <carmen/carmen_gps.h>
 #include <control.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -6,6 +7,9 @@
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
 
 #define DEFAULT_PORT_NUMBER 3458
+
+//#define RAD2DEG(a) (a / 0.01745329252)
+//#define DEG2RAD(a) (a * 0.01745329252)
 
 static int port_number = DEFAULT_PORT_NUMBER;
 
@@ -66,15 +70,53 @@ publish_robot_ackerman_velocity_message(double *array)
 	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_robot_ackerman_velocity_message odometry;
 
-	odometry.v     = array[0];
-	//odometry.phi   = array[1] * -0.01745329252; // This workaround is not necessary anymore. The Socket App application at the Integration Server was fixed up.,
-	odometry.phi   = array[1];
+	odometry.v   = array[0];
+	odometry.phi = carmen_normalize_theta(array[1]);
+
 	odometry.timestamp = carmen_get_time();
 	odometry.host  = carmen_get_host();
 
+	//printf("Odometry: %lf [m/s] %lf [rad]\n", odometry.v, odometry.phi);
+
 	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &odometry);
 	carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
+}
 
+
+static void
+publish_simulator_ackerman_external_truepose_message(double *array)
+{
+	carmen_simulator_ackerman_truepos_message truepose;
+
+	truepose.v     			= array[0];
+	truepose.phi   			= carmen_normalize_theta(array[1]);
+	truepose.truepose.theta	= carmen_normalize_theta(array[2]);
+
+	double altitude	 = array[3];
+	double latitude  = array[4];
+	double longitude = array[5];
+
+	printf("True pose (v, phi, theta): %lf [m/s] %lf [rad] %lf [rad]\n", truepose.v, truepose.phi, truepose.truepose.theta);
+	printf("True pose (lat, lon, alt): %lf [deg] %lf [deg] %lf [m]\n", latitude, longitude, altitude);
+
+	// Transformando o z utilizando como altitude o sea_level
+	Gdc_Coord_3d gdc = Gdc_Coord_3d(latitude, longitude, altitude);
+
+	Utm_Coord_3d utm;
+	Gdc_To_Utm_Converter::Init();
+	Gdc_To_Utm_Converter::Convert(gdc, utm);
+
+	truepose.truepose.x	= utm.y;
+	truepose.truepose.y	= -utm.x;
+
+	printf("True pose (x, y): %lf [m] %lf [m]\n", truepose.truepose.x, truepose.truepose.y);
+
+	truepose.odometrypose = truepose.truepose;
+
+	truepose.timestamp = carmen_get_time();
+	truepose.host  = carmen_get_host();
+
+	carmen_simulator_ackerman_publish_external_truepose(&truepose);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -109,14 +151,34 @@ shutdown_module(int x)            // Handles ctrl+c
 static void
 socket_test(void)
 {
-	double array[2];
+	double array[6];
 	int local_socket = stablished_connection_with_server();
 	
 	int result = recvfrom(local_socket, (void *) array, sizeof(array), 0, NULL, NULL);
 
+	double v     = array[0];
+	double phi   = array[1];
+	double theta = carmen_normalize_theta(array[2]);
+
+	double altitude	 = array[3];
+	double latitude  = array[4];
+	double longitude = array[5];
+
+	double normalized_theta = carmen_normalize_theta(theta);
+	Gdc_Coord_3d gdc = Gdc_Coord_3d(latitude, longitude, altitude);
+
+	Utm_Coord_3d utm;
+	Gdc_To_Utm_Converter::Init();
+	Gdc_To_Utm_Converter::Convert(gdc, utm);
+
 	printf("Received %d bytes\n", result);
-	printf("  v = %f m/s\n", array[0]);
-	printf("  phi = %f rad\n", array[1]);
+	printf("  long = %f deg (%f UTM)\n", longitude, utm.y);
+	printf("  lat = %f deg (%f UTM)\n", latitude, -utm.x);
+	printf("  phi = %f rad (%f deg)\n", phi, -carmen_radians_to_degrees(phi));
+	printf("  v = %f m/s\n", v);
+	printf("  theta = %f rad (%f deg)\n", theta, -carmen_radians_to_degrees(theta));
+	printf("  normalized theta = %f rad (%f deg)\n", normalized_theta, -carmen_radians_to_degrees(normalized_theta));
+	printf("  alt = %f m\n", altitude);
 }
 
 
@@ -212,7 +274,7 @@ main(int argc, char **argv)
 	}
 	else
 	{
-		double array[5];
+		double array[10];
 		int result = 0;
 
 		carmen_ipc_initialize(argc, argv);
@@ -226,9 +288,16 @@ main(int argc, char **argv)
 		while (1)
 		{
 			result = recvfrom(pi_socket, (void *) array, sizeof(array), 0, NULL, NULL);
-
+			
+			//printf("Received %d bytes\n", result);
+			//printf("  v = %f m/s\n", array[0]);
+			//printf("  phi = %f rad\n", array[1]);
+			
 			if (result > 0)
+			{
 				publish_robot_ackerman_velocity_message(array);
+				publish_simulator_ackerman_external_truepose_message(array);
+			}
 		}
 	}
 	return (0);
