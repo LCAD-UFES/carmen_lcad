@@ -200,6 +200,9 @@ data/rndf/rddf-log_voltadaufes-20140806-2.kml.y.index
 data/rndf/rndf_log_voltadaufes-20140418-estacionamento.kml.timestamp.index
 data/rndf/rndf_log_voltadaufes-20140418-estacionamento.kml.x.index
 data/rndf/rndf_log_voltadaufes-20140418-estacionamento.kml.y.index
+data/rndf/rddf-log_volta_da_ufes-20190625-contrario.txt.timestamp.index
+data/rndf/rddf-log_volta_da_ufes-20190625-contrario.txt.x.index
+data/rndf/rddf-log_volta_da_ufes-20190625-contrario.txt.y.index
 sharedlib/OpenJAUS/libjaus/lib/libjaus.so
 sharedlib/OpenJAUS/libopenJaus/lib/libopenJaus.so
 sharedlib/OpenJAUS/ojNodeManager/bin/ojNodeManager
@@ -401,6 +404,25 @@ src/legacy500_socket_interface/legacy500_to_socket_server
 src/legacy500_socket_interface/obstacle_avoider_to_socket_client
 src/legacy500_socket_interface/socket_to_legacy500_server
 src/legacy500_socket_interface/socket_to_odometry_client
+src/pi_imu/copy_imu_data_to_xsens
+src/sensors/camera/camera_cvcam
+src/sensors/camera/camera_fakecam
+src/sensors/camera/camera_view
+src/sensors/kinect/kinect
+src/sensors/kinect/kinect_laser
+src/sensors/kinect/kinect_mrds
+src/sensors/kinect/kinect_view
+src/sensors/minoru/calibration/minorucalib
+src/sensors/minoru/minoru
+src/sensors/minoru/minoru_view
+src/sensors/ouster/ouster
+src/sensors/ouster/ouster_viewer
+src/sensors/ultrasonic/ultrasonic
+src/sensors/ultrasonic/ultrasonic_viewer
+src/sensors/web_cam/web_cam
+src/sensors/web_cam/web_cam_test
+src/velodyne_camera_calibration/save_velodyne_txt
+src/voice_interface/libvoice/voice_test
 .vscode/
 .cproject
 .project
@@ -643,6 +665,8 @@ src/sensors/laser_new/s300_laser_test
 src/sensors/laser_new/sick_laser_init_500k
 src/sensors/laser_new/sick_laser_test
 src/utilities/central_log_view/central_log_view
+src/tracker/tracker.h
+src/tracker/tracker.c
 
 /sharedlib/OpenJAUS/ojFoxDriver/SENT/docs/src/DM330018_Starter_Kit_Demo.X/build/
 /sharedlib/OpenJAUS/ojFoxDriver/SENT/docs/src/DM330018_Starter_Kit_Demo.X/dist/
