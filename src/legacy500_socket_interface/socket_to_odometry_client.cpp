@@ -82,7 +82,52 @@ publish_robot_ackerman_velocity_message(double *array)
 	carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
 }
 
+//#define TRUE_POSE_CORRECTION
 
+#ifdef TRUE_POSE_CORRECTION
+// Displacement between the AHRS pose (lat, lon, alt, theta) and the middle of rear axle along the airplane longitudinal axis
+#define LONGITUDINAL_OFFSET     4.0 // [m]
+
+// Heading bias: the heading is in the range [-pi, pi]  and the zero is aligned to the y-axis (North)
+#define HEADING_BIAS           	.0  // [rad]
+
+static void
+publish_simulator_ackerman_external_truepose_message(double *array)
+{
+	carmen_simulator_ackerman_truepos_message truepose;
+
+	truepose.v     			= array[0];
+	truepose.phi   			= carmen_normalize_theta(array[1]);
+	truepose.truepose.theta	= carmen_normalize_theta(array[2]-HEADING_BIAS);
+
+	double altitude	 = array[3];
+	double latitude  = array[4];
+	double longitude = array[5];
+
+	//printf("True pose (v, phi, theta): %lf [m/s] %lf [rad] %lf [rad]\n", truepose.v, truepose.phi, truepose.truepose.theta);
+	//printf("True pose (lat, lon, alt): %lf [deg] %lf [deg] %lf [m]\n", latitude, longitude, altitude);
+
+	// Transformando o z utilizando como altitude o sea_level
+	Gdc_Coord_3d gdc = Gdc_Coord_3d(latitude, longitude, altitude);
+
+	Utm_Coord_3d utm;
+	Gdc_To_Utm_Converter::Init();
+	Gdc_To_Utm_Converter::Convert(gdc, utm);
+
+	truepose.truepose.x =   utm.y - LONGITUDINAL_OFFSET*cos(truepose.truepose.theta);
+	truepose.truepose.y = -(utm.x - LONGITUDINAL_OFFSET*sin(truepose.truepose.theta));
+
+	//printf("True pose (x, y): %lf [m] %lf [m]\n", truepose.truepose.x, truepose.truepose.y);
+
+	truepose.odometrypose = truepose.truepose;
+
+	truepose.timestamp = carmen_get_time();
+	truepose.host  = carmen_get_host();
+
+	carmen_simulator_ackerman_publish_external_truepose(&truepose);
+}
+
+#else
 static void
 publish_simulator_ackerman_external_truepose_message(double *array)
 {
@@ -96,8 +141,8 @@ publish_simulator_ackerman_external_truepose_message(double *array)
 	double latitude  = array[4];
 	double longitude = array[5];
 
-	printf("True pose (v, phi, theta): %lf [m/s] %lf [rad] %lf [rad]\n", truepose.v, truepose.phi, truepose.truepose.theta);
-	printf("True pose (lat, lon, alt): %lf [deg] %lf [deg] %lf [m]\n", latitude, longitude, altitude);
+	//printf("True pose (v, phi, theta): %lf [m/s] %lf [rad] %lf [rad]\n", truepose.v, truepose.phi, truepose.truepose.theta);
+	//printf("True pose (lat, lon, alt): %lf [deg] %lf [deg] %lf [m]\n", latitude, longitude, altitude);
 
 	// Transformando o z utilizando como altitude o sea_level
 	Gdc_Coord_3d gdc = Gdc_Coord_3d(latitude, longitude, altitude);
@@ -109,7 +154,7 @@ publish_simulator_ackerman_external_truepose_message(double *array)
 	truepose.truepose.x	= utm.y;
 	truepose.truepose.y	= -utm.x;
 
-	printf("True pose (x, y): %lf [m] %lf [m]\n", truepose.truepose.x, truepose.truepose.y);
+	//printf("True pose (x, y): %lf [m] %lf [m]\n", truepose.truepose.x, truepose.truepose.y);
 
 	truepose.odometrypose = truepose.truepose;
 
@@ -118,6 +163,8 @@ publish_simulator_ackerman_external_truepose_message(double *array)
 
 	carmen_simulator_ackerman_publish_external_truepose(&truepose);
 }
+#endif
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
