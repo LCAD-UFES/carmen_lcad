@@ -384,7 +384,7 @@ carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_dist
 
 	obstacle_avoider_update_map(&distance_map);
 
-	display_map(&distance_map, "Obstacle Map");
+	//display_map(&distance_map, "Obstacle Map"); //DEBUG
 
 	necessary_maps_available = 1;
 }
@@ -412,7 +412,7 @@ carmen_obstacle_distance_mapper_compact_map_level1_message_handler(carmen_obstac
 
 	obstacle_avoider_update_map_level1(&distance_map);
 
-	display_map(&distance_map, "Obstacle Map Level1");
+	// display_map(&distance_map, "Obstacle Map Level1"); //DEBUG
 
 	necessary_maps_available = 1;
 }
