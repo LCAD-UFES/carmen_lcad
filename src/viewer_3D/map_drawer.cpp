@@ -11,10 +11,13 @@
 struct map_drawer
 {
 	GLuint* vertex_buffer_ids;
+	GLuint* lvl1_vertex_buffer_ids;
 	GLuint* color_buffer_ids;
 	int* buffer_sizes;
+	int* lvl1_buffer_sizes;
 
-	carmen_map_t* maps;	
+	carmen_map_t* maps;
+	carmen_map_t* lvl1_maps;
 	int max_num_maps;
 	int next_map;
 };
@@ -29,19 +32,26 @@ create_map_drawer(void)
 	m_drawer->next_map = 0;
 
 	m_drawer->maps = (carmen_map_t*)malloc(m_drawer->max_num_maps * sizeof(carmen_map_t));
+	m_drawer->lvl1_maps = (carmen_map_t*)malloc(m_drawer->max_num_maps * sizeof(carmen_map_t));
 	m_drawer->vertex_buffer_ids = (GLuint*)malloc((m_drawer->max_num_maps) * sizeof(GLuint));
+	m_drawer->lvl1_vertex_buffer_ids = (GLuint*)malloc((m_drawer->max_num_maps) * sizeof(GLuint));
 	m_drawer->color_buffer_ids = (GLuint*)malloc((m_drawer->max_num_maps) * sizeof(GLuint));
 	m_drawer->buffer_sizes = (int*)malloc((m_drawer->max_num_maps) * sizeof(int));
+	m_drawer->lvl1_buffer_sizes = (int*)malloc((m_drawer->max_num_maps) * sizeof(int));
 
 	int i;
 	for(i=0; i < m_drawer->max_num_maps; i++)
 	{
 		m_drawer->buffer_sizes[i] = 0;
+		m_drawer->lvl1_buffer_sizes[i] = 0;
 		m_drawer->maps[i].config.x_size = 0;
-		m_drawer->maps[i].config.y_size = 0;		
+		m_drawer->maps[i].config.y_size = 0;
+		m_drawer->lvl1_maps[i].config.x_size = 0;
+		m_drawer->lvl1_maps[i].config.y_size = 0;
 	}
 
 	glGenBuffers(m_drawer->max_num_maps, m_drawer->vertex_buffer_ids);
+	glGenBuffers(m_drawer->max_num_maps, m_drawer->lvl1_vertex_buffer_ids);
 	glGenBuffers(m_drawer->max_num_maps, m_drawer->color_buffer_ids);
 
 	return m_drawer;
@@ -52,13 +62,17 @@ void
 destroy_map_drawer(map_drawer* m_drawer)
 {
 	glDeleteBuffers(m_drawer->max_num_maps, m_drawer->vertex_buffer_ids);
+	glDeleteBuffers(m_drawer->max_num_maps, m_drawer->lvl1_vertex_buffer_ids);
 	glDeleteBuffers(m_drawer->max_num_maps, m_drawer->color_buffer_ids);
 
 	free(m_drawer->vertex_buffer_ids);
+	free(m_drawer->lvl1_vertex_buffer_ids);
 	free(m_drawer->color_buffer_ids);
 	free(m_drawer->buffer_sizes);
+	free(m_drawer->lvl1_buffer_sizes);
 
 	free(m_drawer->maps);
+	free(m_drawer->lvl1_maps);
 
 	free(m_drawer);
 }
@@ -198,24 +212,22 @@ add_map_message(map_drawer* m_drawer, carmen_map_t map)
 
 
 void
-add_map_message(map_drawer* m_drawer, carmen_mapper_map_message *message)
+add_map_level1_message(map_drawer* m_drawer, carmen_mapper_map_message *message)
 {
 	carmen_map_t map;
 
 	map.complete_map = message->complete_map;
 	map.config = message->config;
 	
-	m_drawer->maps[m_drawer->next_map] = map;
+	m_drawer->lvl1_maps[m_drawer->next_map] = map;
 
 	int total_size = getTotalObstacles(map);
 	float* vertex_data = create_vertex_data(map, total_size);
-	glBindBuffer(GL_ARRAY_BUFFER, m_drawer->vertex_buffer_ids[m_drawer->next_map]);
+	glBindBuffer(GL_ARRAY_BUFFER, m_drawer->lvl1_vertex_buffer_ids[m_drawer->next_map]);
 	glBufferData(GL_ARRAY_BUFFER, total_size * (6 * 4 * 2 * 3) * sizeof(float), vertex_data, GL_STATIC_DRAW);
 	free(vertex_data);
 
-	m_drawer->buffer_sizes[m_drawer->next_map] = total_size * 6 * 4;
-	m_drawer->next_map = (m_drawer->next_map + 1) % m_drawer->max_num_maps;
-
+	m_drawer->lvl1_buffer_sizes[m_drawer->next_map] = total_size * 6 * 4;
 	glBindBuffer(GL_ARRAY_BUFFER,0);
 }
 
@@ -326,8 +338,6 @@ draw_map_VBO(map_drawer *m_drawer, carmen_vector_3D_t offset)
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(2);	
 
-		glColor3d(1.0, 0.0, 0.0);
-
 		int i;
 		for (i = 0; i < m_drawer->max_num_maps; i++)
 		{	
@@ -336,14 +346,31 @@ draw_map_VBO(map_drawer *m_drawer, carmen_vector_3D_t offset)
 				double offset_x = m_drawer->maps[i].config.x_origin - offset.x;
 				double offset_y = m_drawer->maps[i].config.y_origin - offset.y;
 				double offset_z = 0.0;//-offset.z;
-	
+
+				glColor3d(1.0, 0.0, 0.0);
 				glTranslated(offset_x, offset_y, offset_z);
 
 				glBindBuffer(GL_ARRAY_BUFFER, m_drawer->vertex_buffer_ids[i]);
 				glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
 				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3 * sizeof(float)));
 				glDrawArrays(GL_QUADS, 0, m_drawer->buffer_sizes[i]);
+
+			glPopMatrix();
+			glPushMatrix();
+
+				offset_x = m_drawer->maps[i].config.x_origin - offset.x;
+				offset_y = m_drawer->maps[i].config.y_origin - offset.y;
+				offset_z = 1.0;//-offset.z;
+
+				glColor3d(0.0, 1.0, 0.0);
+				glTranslated(offset_x, offset_y, offset_z);
+
+				glBindBuffer(GL_ARRAY_BUFFER, m_drawer->lvl1_vertex_buffer_ids[i]);
+				glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
+				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3 * sizeof(float)));
+				glDrawArrays(GL_QUADS, 0, m_drawer->lvl1_buffer_sizes[i]);
 				
+
 			glPopMatrix();
 		}	
 
@@ -372,6 +399,14 @@ draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset)
 			glTranslated(offset_x, offset_y, offset_z);
 
 			draw_single_map(m_drawer->maps[i]);
+
+			offset_x = m_drawer->maps[i].config.x_origin - offset.x;
+			offset_y = m_drawer->maps[i].config.y_origin - offset.y;
+			offset_z = 10.0;//-offset.z;
+
+			glTranslated(offset_x, offset_y, offset_z);
+
+			draw_single_map(m_drawer->lvl1_maps[i]);
 
 		glPopMatrix();
 	}
