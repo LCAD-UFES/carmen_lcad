@@ -114,6 +114,17 @@ extract_motion_command_vetor_from_socket_and_send_msg(double *msg)
 		motion_command[i].v     = msg[(i * 6) + 4];
 		motion_command[i].phi   = msg[(i * 6) + 5];
 		motion_command[i].time  = msg[(i * 6) + 6];
+
+//		printf ("i: %d >>> x: %lf [m] y: %lf [m] theta: %lf [rad] (%lf [deg]) v: %lf [m/s] phi: %lf [rad] (%lf [deg]) time: %lf [s]\n", i,
+//				motion_command[i].x,
+//				motion_command[i].y,
+//				motion_command[i].theta,
+//				carmen_radians_to_degrees(motion_command[i].theta),
+//				motion_command[i].v,
+//				motion_command[i].phi,
+//				carmen_radians_to_degrees(motion_command[i].phi),
+//				motion_command[i].time);
+
 	}
 
 	carmen_base_ackerman_publish_motion_command_2(motion_command, size, carmen_get_time());
