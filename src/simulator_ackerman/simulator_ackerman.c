@@ -328,6 +328,8 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 	// outra em simulator_ackerman_simulation.
 	if (!use_external_true_pose)
 		carmen_simulator_ackerman_recalc_pos(simulator_config, use_velocity_nn, use_phi_nn, connected_to_iron_bird, iron_bird_v, iron_bird_phi);
+	else
+		update_target_v_and_target_phi(simulator_config);
 
 	carmen_simulator_ackerman_update_objects(simulator_config);
 
@@ -766,22 +768,22 @@ subscribe_to_relevant_messages()
 	if (err != IPC_OK)
 		return -1;
 
-	if (use_external_true_pose)
-		carmen_simulator_ackerman_subscribe_external_truepos_message(NULL, (carmen_handler_t) external_truepose_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
 	memset(&init_msg, 0, sizeof(carmen_localize_ackerman_initialize_message));
 
 	carmen_localize_ackerman_subscribe_initialize_message(&init_msg, (carmen_handler_t) localize_initialize_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	if (!simulate_legacy_500)
+	if ((!simulate_legacy_500) || (simulate_legacy_500 && connected_to_iron_bird && use_external_true_pose))
 		carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
 	else if (simulate_legacy_500 && !connected_to_iron_bird)
 		carmen_base_ackerman_subscribe_motion_command_2(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	if (simulate_legacy_500 && connected_to_iron_bird)
 		carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	if (use_external_true_pose)
+		carmen_simulator_ackerman_subscribe_external_truepos_message(NULL, (carmen_handler_t) external_truepose_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
