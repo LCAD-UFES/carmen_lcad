@@ -1,11 +1,11 @@
 /**********************************************************************
- * © 2014 Microchip Technology Inc.
+ * ï¿½ 2014 Microchip Technology Inc.
  *
  * FileName:        33EV_main_v11.c
  * Version:         1.1 (added UART) THIS IS THE PRODUCTION RELEASE CODE
  * Dependencies:    no header file is used
  * Processor:       dsPIC33EV256GM106
- * Compiler:        MPLAB® XC16 V1.23 or higher (dsPIC33EV support required)
+ * Compiler:        MPLABï¿½ XC16 V1.23 or higher (dsPIC33EV support required)
  *
  * SOFTWARE LICENSE AGREEMENT:
  * Microchip Technology Incorporated ("Microchip") retains all ownership and
@@ -46,12 +46,10 @@
  * Software designed to be loaded to the dsPIC33EV256GM106 Starter Kit
  *
  * What the demo does:
- * a) CAN, LIN and SENT are all available and switch, pot, and temperature data transmitted out all 3
+ * a) CAN and SENT are all available and switch, pot, and temperature data transmitted out all 3
  * b) The active HW interface transmits every 1sec the pot voltage, switch status and the temp in C
  * c) LEDs active when associated switch is pressed in Transmitter mode
  * d) CAN is setup for 250kbps speed with 10 Tq per bit
- * e) LIN baudrate is 4800, and the analyzer timeout should be set to 1000ms
- * f) The LIN interface requires application of external +12VDC to the BAT terminal.
  *
  * The default POR state is board is in TRANSMIT mode. This is indicated by the 3 LEDs flashing 1-2-3-2-1.
  * If any of the 3 user switches are depressed longer than 100ms while MCLR is pressed,
@@ -166,7 +164,6 @@ _FDMT(DMTEN_DISABLE);   // no deadman timer  <<< *** New feature, important to D
 
 #define NUM_DIGITS 5               // floating point digits to print
 #define STRING_BUFFER_SIZE 64      // arbitrary length message buffer
-#define LIN_MESSAGE_SIZE 8         // message size of the received LIN demo message
 
 volatile unsigned int ecan1MsgBuf[NUM_OF_ECAN_BUFFERS][8]
 __attribute__((aligned(NUM_OF_ECAN_BUFFERS * 16)));
@@ -192,10 +189,11 @@ typedef struct{
 void rxECAN(mID *message);
 void clearRxFlags(unsigned char buffer_number);
 void InitSENT1_TX(void);
+void InitSENT2_TX(void);
 void InitSENT1_RX(void);
+void InitSENT2_RX(void);
 void oscConfig(void);
 void clearIntrflags(void);
-void ecan1WriteMessage(void);
 void init_hw(void);
 void delay_10ms(unsigned char num);
 void Delayus(int);
@@ -204,10 +202,7 @@ void LED_Transmit(void);
 void LED_Receive(void);
 void ADCInit(void);
 void ADCConvert(int);
-void InitLIN_TX(void);
-void InitLIN_RX(void);
 void InitMonitor(void);
-void LIN_Transmit(void);
 void Calc_Checksum(int);
 void InitCAN(void);
 void CAN_Transmit(void);
@@ -215,115 +210,33 @@ void Transmit_Data(void);
 void Receive_Data(void);
 void ftoa(float, char*);
 void Can_RX_to_UART(void);
-void Lin_RX_to_UART(void);
-void Sent_RX_to_UART(void);
+void Sent1_RX_to_UART(void);
 
 // send a character to the serial port
 void putU2(int);
 void putsU2(char*);
 
 volatile int channel, PotValue, TempValue, AverageValue, i;
-volatile int f_tick, s_tick, p0, p1, id_byte, data_byte, checksum, lin_index, lin_start;
-volatile int tickTime = 50;             // Tick time in us
-volatile float peripheralClk = 39.77;   // in Mhz
+volatile int f_tick, s_tick, p0, p1, id_byte, data_byte, checksum;
+volatile float tickTime = 2.0 * 0.8181;	// Tick time in us
+volatile float peripheralClk = 2.0 * 39.77;	// in Mhz
 volatile float Pot_Volts;
-volatile char can_rx, sent_rx, lin_rx;  // receive message flags
+volatile char can_rx, sent1_rx, sent2_rx;  // receive message flags
+volatile char can_tx, sent1_tx, sent2_tx;  // transmit message flags
 
 char Buf_result[NUM_DIGITS + 2];        // digits + '.' and allow for '-'
 char *pBuf;                             // buffer for ASCII result of a float
 char s[STRING_BUFFER_SIZE];             // s[] holds a string to transmit
-volatile unsigned int LIN_RXBUF[LIN_MESSAGE_SIZE]; // buffer of the received LIN message
 unsigned char mode;
 unsigned int ascii_lo, ascii_hi, hex_dig;
 
-volatile int datal;
-volatile int datah;
+volatile int sent1dath;
+volatile int sent1datl;
+
+volatile int sent2dath;
+volatile int sent2datl;
 
 mID canRxMessage;
-
-int main(void)
-{
-
-    // Configure Oscillator Clock Source
-    oscConfig();
-
-    // Clear Interrupt Flags
-    clearIntrflags();
-
-    // Initialize hardware on the board
-    init_hw();
-
-    // Initialize the monitor UART2 module
-    InitMonitor();
-
-    // Test to see if we are in TRANSMIT or RECIEVE mode for the demo, show LEDs
-    Test_Mode();
-
-    if (mode == TRANSMIT)
-    {
-        LED_Transmit();
-    }
-    else
-    {
-        LED_Receive();
-        while ((SW1 == 0) | (SW2 == 0) | (SW3 == 0)); // wait to release all keys
-        LED1 = 0; // initialize LEDs to all off
-        LED2 = 0;
-        LED3 = 0;
-    }
-    // Initialize the ADC converter
-    ADCInit();
-
-    // Initialize the modules for receive or transmit
-
-    if (mode == TRANSMIT)
-    {
-        InitSENT1_TX();
-        InitLIN_TX();
-    }
-    else
-    {
-        InitSENT1_RX();
-        InitLIN_RX();
-    }
-
-
-    // Initialize the CAN module
-        InitCAN();
-
-    // main loop: every 4 Timer1 ticks (1sec), scan the sensors and transmit the data
-    // or wait for a Receive interrupt from 1 of the 3 interfaces
-    //
-    s_tick = 0;
-    while (1)
-    {
-        if (mode == RECEIVE)
-        {
-     /* check to see when a message is received and move the message
-		into RAM and parse the message */
-		if(canRxMessage.buffer_status == CAN_BUF_FULL)
-		{
-			rxECAN(&canRxMessage);
-
-			/* reset the flag when done */
-			canRxMessage.buffer_status = CAN_BUF_EMPTY;
-        }
-       
-            Receive_Data();
-            s_tick = 0;
-        }
-        else if (mode == TRANSMIT)
-        {
- //
- // wait for the 250ms timer. User can accumulate s_ticks to get longer delays
- //
-            while (s_tick <= 3);        // wait for 1 second
-            s_tick = 0;                 // clear flag
-            Transmit_Data();
-
-        }
-    }
-}
 //
 // Transmit Mode sequence
 //
@@ -352,21 +265,26 @@ void Transmit_Data(void)
 
     U2STAbits.UTXEN = 1;
     putsU2("***TRANSMITTING ON-BOARD SENSOR VALUES***");
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
 
     putsU2("Local Pot Voltage: Reading = ");
 
     for (i = 0; i <= (NUM_DIGITS - 1); i++)
     {
-        while (U2STAbits.TRMT == 0);
+        while (U2STAbits.TRMT == 0)
+            ;
         U2TXREG = Buf_result[i];
     }
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
 
     //
@@ -392,21 +310,26 @@ void Transmit_Data(void)
 
     for (i = 0; i <= (NUM_DIGITS - 1); i++)
     {
-        while (U2STAbits.TRMT == 0);
+        while (U2STAbits.TRMT == 0)
+            ;
         U2TXREG = Buf_result[i];
     }
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
     //
     // test print the 3 switch statuses
     //
 
     putsU2("Local Switch status");
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
     // ON = pressed  OFF = up
     if (SW1)
@@ -417,9 +340,11 @@ void Transmit_Data(void)
     {
         putsU2("SW1: ON");
     }
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
 
     // ON = pressed  OFF = up
@@ -431,9 +356,11 @@ void Transmit_Data(void)
     {
         putsU2("SW2: ON");
     }
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
 
     // ON = pressed  OFF = up
@@ -445,9 +372,11 @@ void Transmit_Data(void)
     {
         putsU2("SW3: ON");
     }
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
     //
     // Format data packets and send out the SENT port
@@ -457,51 +386,16 @@ void Transmit_Data(void)
     SENT1STATbits.TXEN = 1; // note!!! Datasheet has different name than .H file
     Delayus(8000);
     SENT1STATbits.TXEN = 0; // note!!! Datasheet has different name than .H file
-    //
-    // format and send out the LIN port
-    //
-    LIN_Transmit();
-    Delayus(8000);
+
     //
     // format and send out the CAN port
     //
     // In order for the demo to run, the CAN controller needs an ACK signal
-    // If you desire to run the demo for SENT/LIN only, then comment out the
+    // If you desire to run the demo for SENT only, then comment out the
     // following line of code and recompile
     
-//    CAN_Transmit();     // Transmit CAN. COMMENT OUT FOR LIN/SENT ONLY!!
+//    CAN_Transmit();     // Transmit CAN. COMMENT OUT FOR SENT ONLY!!
     Delayus(1000);
-
-}
-
-void InitSENT1_RX(void)
-{
-
-    // This example code receives SENT data and saves it to variables.
-    // Initialize PPS for SENT RX
-
-    RPINR44 = 0x4500;           // SENT1 RX (RPINR44) to RP69 (RD5 pin)
-    _TRISD5 = 1;                // SENT1 RX as input
-
-    // Set up SENT interrupts
-    IPC45bits.SENT1IP = 6;      // SENT TX/RX completion interrupt priority
-    IFS11bits.SENT1IF = 0;      // Clear SENT TX/RX completion interrupt flag
-    IEC11bits.SENT1IE = 1;      // Enable SENT TX/RX completion interrupt
-
-    IPC45bits.SENT1EIP = 6;     // SENT ERROR interrupt priority
-    IFS11bits.SENT1EIF = 0;     // Clear SENT ERROR interrupt flag
-    IEC11bits.SENT1EIE = 1;     // Enable SENT ERROR interrupt
-
-    // Initialize SENT registers for receive mode
-    SENT1CON3 = (int)(8 * peripheralClk * tickTime * 0.80); // Set SYNCMIN
-    SENT1CON2 = (int)(8 * peripheralClk * tickTime * 1.20); // Set SYNCMAX
-    SENT1CON1bits.CRCEN = 1;    // CRC enable, 0=off, 1=on
-    SENT1CON1bits.PPP = 0;      // Pause, 0=off, 1=on
-    SENT1CON1bits.NIBCNT = 6;   // Number of data nibbles
-    SENT1CON1bits.RCVEN = 1;    // RX mode, 0=tx, 1=rx
-
-    // Enable SENT module, begin reception of data
-    SENT1CON1bits.SNTEN = 1;
 
 }
 
@@ -515,23 +409,11 @@ void Receive_Data(void)
         Can_RX_to_UART();
         can_rx = 0;
     }
-    else
-    {
-        if (sent_rx == 1)
-        {
-            Sent_RX_to_UART();
-            sent_rx = 0;            // clear message flag
-            lin_start = 0;
-        }
-        else
-        {
-            if (lin_rx == 1)
-            {
-                Lin_RX_to_UART();
-                lin_rx = 0;
-            }
-        }
-    }
+    else if (sent1_rx == 1)
+	{
+		Sent1_RX_to_UART();
+		sent1_rx = 0;            // clear message flag
+	}
 }
 
 void clearIntrflags(void)
@@ -591,9 +473,11 @@ void Can_RX_to_UART(void)
         while (U2STAbits.TRMT == 0);
         U2TXREG = Buf_result[i];
     }
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
 
     putsU2("Remote Temperature: ");
@@ -601,7 +485,7 @@ void Can_RX_to_UART(void)
     //
     //  print the temperature reading out the UART
     //
-    datal = ((canRxMessage.data[2]) | (canRxMessage.data[3] << 8));
+    int datal = ((canRxMessage.data[2]) | (canRxMessage.data[3] << 8));
     Pot_Volts = (float)((datal - 368) / 15.974);
     //
     // convert to ASCII
@@ -613,16 +497,20 @@ void Can_RX_to_UART(void)
         while (U2STAbits.TRMT == 0);
         U2TXREG = Buf_result[i];
     }
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
 
     putsU2("Remote Switch Status");
 
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
     // ON = pressed  OFF = up
     if ((canRxMessage.data[0] & 0x4) == 0)
@@ -633,9 +521,11 @@ void Can_RX_to_UART(void)
     {
         putsU2("SW3: ON");
     }
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
 
     // ON = pressed  OFF = up
@@ -647,9 +537,11 @@ void Can_RX_to_UART(void)
     {
         putsU2("SW2: ON");
     }
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
 
     // ON = pressed  OFF = up
@@ -662,9 +554,11 @@ void Can_RX_to_UART(void)
         putsU2("SW1: ON");
     }
 
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
     //
     // toggle LED 1 to show CAN message reveived
@@ -677,143 +571,21 @@ void Can_RX_to_UART(void)
     LED1 = 0;
 }
 
-void Lin_RX_to_UART(void)
+void Sent1_RX_to_UART(void)
 {
-    // LIN message out the monitor UART
-    //
-    U2STAbits.UTXEN = 1;
-    putsU2("*** REMOTE LIN MESSAGE ID = ");
-   //
-    // display remote ID byte
-    //
-    hex_dig = (char)(LIN_RXBUF[1] & 0x3f);  // strip parity bits
-    ascii_hi = hex_dig & 0xF0;              // Obtain the upper 4 bits (MSBs) of hex number
-    ascii_hi = (ascii_hi >> 4) + 0x30;      // ASCII conversion
-    ascii_lo = (hex_dig & 0x0F) + 0x30;     // Obtain the lower 4 bits (LSBs) of hex number
-   
-    putU2(ascii_hi);
-    putU2(ascii_lo);                    // send out the ID byte as ASCII
-    putsU2(" RECEIVED ***");
-    while (U2STAbits.TRMT == 0);
-    U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
-    U2TXREG = 0x0d;
-    putsU2("Remote Pot Voltage: ");
-
-    PotValue = ((LIN_RXBUF[6]) | (LIN_RXBUF[5] << 8));
-    Pot_Volts = (float)(PotValue * (float)5.0 / (float)4096.0);
-    //
-    // convert to ASCII
-    //
-    pBuf = Buf_result;
-    ftoa(Pot_Volts, pBuf);
-    for (i = 0; i <= (NUM_DIGITS - 1); i++)
-    {
-        while (U2STAbits.TRMT == 0);
-        U2TXREG = Buf_result[i];
-    }
-    while (U2STAbits.TRMT == 0);
-    U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
-    U2TXREG = 0x0d;
-
-    putsU2("Remote Temperature: ");
-
-    //
-    //  print the temperature reading out the UART
-    //
-    datal = ((LIN_RXBUF[4]) | (LIN_RXBUF[3] << 8));
-    Pot_Volts = (float)((datal - 368) / 15.974);
-    //
-    // convert to ASCII
-    //
-    pBuf = Buf_result;
-    ftoa(Pot_Volts, pBuf);
-    for (i = 0; i <= (NUM_DIGITS - 1); i++)
-    {
-        while (U2STAbits.TRMT == 0);
-        U2TXREG = Buf_result[i];
-    }
-    while (U2STAbits.TRMT == 0);
-    U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
-    U2TXREG = 0x0d;
-
-    putsU2("Remote Switch Status");
-
-    while (U2STAbits.TRMT == 0);
-    U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
-    U2TXREG = 0x0d;
-    // ON = pressed  OFF = up
-    if ((LIN_RXBUF[2] & 0x1) == 0)
-    {
-        putsU2("SW3: OFF ");
-    }
-    else
-    {
-        putsU2("SW3: ON");
-    }
-    while (U2STAbits.TRMT == 0);
-    U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
-    U2TXREG = 0x0d;
-
-    // ON = pressed  OFF = up
-    if ((LIN_RXBUF[2] & 0x2) == 0)
-    {
-        putsU2("SW2: OFF ");
-    }
-    else
-    {
-        putsU2("SW2: ON");
-    }
-    while (U2STAbits.TRMT == 0);
-    U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
-    U2TXREG = 0x0d;
-
-    // ON = pressed  OFF = up
-    if ((LIN_RXBUF[2] & 0x4) == 0)
-    {
-        putsU2("SW1: OFF ");
-    }
-    else
-    {
-        putsU2("SW1: ON");
-    }
-
-    while (U2STAbits.TRMT == 0);
-    U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
-    U2TXREG = 0x0d;
-
-    //
-    // toggle LED 2 to show LIN message reveived
-    //
-    LED2 = 1;
-    //
-    // wait 100ms, turn off LED3
-    //
-    delay_10ms(10);
-    LED2 = 0;
-
-}
-
-void Sent_RX_to_UART(void)
-{
-
     // SENT message out the monitor UART
     //
     U2STAbits.UTXEN = 1;
     putsU2("*** REMOTE SENT MESSAGE RECEIVED ***");
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
     putsU2("Remote Pot Voltage:");
 
-    PotValue = (datah & 0xFFF);
+    PotValue = (sent1datl & 0xFFF);
     Pot_Volts = (float)(PotValue * (float)5.0 / (float)4096.0);
     //
     // convert to ASCII
@@ -822,12 +594,15 @@ void Sent_RX_to_UART(void)
     ftoa(Pot_Volts, pBuf);
     for (i = 0; i <= (NUM_DIGITS - 1); i++)
     {
-        while (U2STAbits.TRMT == 0);
+        while (U2STAbits.TRMT == 0)
+            ;
         U2TXREG = Buf_result[i];
     }
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
 
     putsU2("Remote Temperature: ");
@@ -835,7 +610,7 @@ void Sent_RX_to_UART(void)
     //
     //  print the temperature reading out the UART
     //
-    Pot_Volts = (float)((datal - 368) / 15.974);
+    Pot_Volts = (float)((sent1dath - 368) / 15.974);
     //
     // convert to ASCII
     //
@@ -843,22 +618,27 @@ void Sent_RX_to_UART(void)
     ftoa(Pot_Volts, pBuf);
     for (i = 0; i <= (NUM_DIGITS - 1); i++)
     {
-        while (U2STAbits.TRMT == 0);
+        while (U2STAbits.TRMT == 0)
+            ;
         U2TXREG = Buf_result[i];
     }
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
 
     putsU2("Remote Switch Status");
 
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
     // ON = pressed  OFF = up
-    if (((datah & 0x4000) >> 14) == 0)
+    if (((sent1datl & 0x4000) >> 14) == 0)
     {
         putsU2("SW3: OFF ");
     }
@@ -866,13 +646,15 @@ void Sent_RX_to_UART(void)
     {
         putsU2("SW3: ON");
     }
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
 
     // ON = pressed  OFF = up
-    if (((datah & 0x2000) >> 13) == 0)
+    if (((sent1datl & 0x2000) >> 13) == 0)
     {
         putsU2("SW2: OFF ");
     }
@@ -880,13 +662,15 @@ void Sent_RX_to_UART(void)
     {
         putsU2("SW2: ON");
     }
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
 
     // ON = pressed  OFF = up
-    if (((datah & 0x1000) >> 12) == 0)
+    if (((sent1datl & 0x1000) >> 12) == 0)
     {
         putsU2("SW1: OFF ");
     }
@@ -895,9 +679,11 @@ void Sent_RX_to_UART(void)
         putsU2("SW1: ON");
     }
 
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0a;
-    while (U2STAbits.TRMT == 0);
+    while (U2STAbits.TRMT == 0)
+        ;
     U2TXREG = 0x0d;
 
     //
@@ -914,8 +700,6 @@ void Sent_RX_to_UART(void)
 
 void init_hw(void)
 {
-    int j;
-
     // set up the LED and switch ports
 
     TRISLED1 = 0;
@@ -928,13 +712,6 @@ void init_hw(void)
     ANSELC = ANSELC & 0xFC3F;   // (re)set the 3 switch bits + CAN due to error in v1.20 header
     s_tick = 0;
     f_tick = 0;                 // the timer ticks
-    lin_index = 0;
-    lin_start = 0;
-    for (j = 0; j < 8; j++)
-    {
-        LIN_RXBUF[j] = 0;
-    }
-
 
     //
     // Timer 1 to generate an interrupt every 250ms
@@ -946,7 +723,7 @@ void init_hw(void)
     PR1 = 39062;                // Load the period value (250ms/(256*25ns))
     IPC0bits.T1IP = 0x03;       // Set Timer 1 Interrupt Priority Level
     IFS0bits.T1IF = 0;          // Clear Timer 1 Interrupt Flag
-    IEC0bits.T1IE = 1;          // Enable Timer1 interrupt
+//    IEC0bits.T1IE = 1;          // Enable Timer1 interrupt
 
     //
     // Timer 2 to generate an interrupt every 10ms
@@ -959,8 +736,25 @@ void init_hw(void)
     PR2 = 1562;                 // Load the period value (10ms/(256*25ns))
     IPC1bits.T2IP = 0x02;       // Set Timer 2 Interrupt Priority Level
     IFS0bits.T2IF = 0;          // Clear Timer 2 Interrupt Flag
-    IEC0bits.T2IE = 1;          // Enable Timer2 interrupt
+//    IEC0bits.T2IE = 1;          // Enable Timer2 interrupt
 
+    T2CONbits.TON = 1;          // Start Timer2
+    T1CONbits.TON = 1;          // Start Timer1
+
+    //
+    // Timer 2 to generate an interrupt every 0.4us
+    //
+    T3CONbits.TON = 0;          // Disable Timer3
+    T3CONbits.TCS = 0;          // Select internal instruction cycle clock
+    T3CONbits.TGATE = 0;        // Disable Gated Timer mode
+    T3CONbits.TCKPS = 0;      	// Select 1:1 Prescaler
+    TMR3 = 0x00;                // Clear timer register
+    PR3 = 256;                 	// Load the period value (400ns/(1*25ns))
+    IPC2bits.T3IP = 0x02;       // Set Timer 3 Interrupt Priority Level
+    IFS0bits.T3IF = 0;          // Clear Timer 3 Interrupt Flag
+    IEC0bits.T3IE = 1;          // Enable Timer 3 interrupt
+
+    T3CONbits.TON = 1;          // Start Timer3
     T2CONbits.TON = 1;          // Start Timer2
     T1CONbits.TON = 1;          // Start Timer1
 }
@@ -1031,6 +825,68 @@ void LED_Transmit(void)
     LED1 = 0;
 }
 
+void InitSENT1_RX(void)
+{
+    // This example code receives SENT data and saves it to variables.
+    // Initialize PPS for SENT RX
+
+    RPINR44 = 0x4500;           // SENT1 RX (RPINR44) to RP69 (RD5 pin)
+    _TRISD5 = 1;                // SENT1 RX as input
+
+    // Set up SENT interrupts
+    IPC45bits.SENT1IP = 6;      // SENT TX/RX completion interrupt priority
+    IFS11bits.SENT1IF = 0;      // Clear SENT TX/RX completion interrupt flag
+    IEC11bits.SENT1IE = 1;      // Enable SENT TX/RX completion interrupt
+
+    IPC45bits.SENT1EIP = 6;     // SENT ERROR interrupt priority
+    IFS11bits.SENT1EIF = 0;     // Clear SENT ERROR interrupt flag
+    IEC11bits.SENT1EIE = 1;     // Enable SENT ERROR interrupt
+
+    // Initialize SENT registers for receive mode
+    SENT1CON3 = (int)(8 * peripheralClk * tickTime * 0.80); // Set SYNCMIN
+    SENT1CON2 = (int)(8 * peripheralClk * tickTime * 1.20); // Set SYNCMAX
+    SENT1CON1bits.CRCEN = 1;    // CRC enable, 0=off, 1=on
+    SENT1CON1bits.PPP = 1;      // Pause, 0=off, 1=on
+    SENT1CON1bits.NIBCNT = 6;   // Number of data nibbles
+    SENT1CON1bits.RCVEN = 1;    // RX mode, 0=tx, 1=rx
+
+    // Enable SENT module, begin reception of data
+    SENT1CON1bits.SNTEN = 1;
+
+    sent1_rx = 0;
+}
+
+void InitSENT2_RX(void)
+{
+    // This example code receives SENT data and saves it to variables.
+    // Initialize PPS for SENT RX
+
+    RPINR45 = 0x46;             // SENT2 RX (RPINR45) to RP70 (RD6 pin)
+    _TRISD6 = 1;                // SENT2 RX as input
+
+    // Set up SENT interrupts
+    IPC46bits.SENT2IP = 6;      // SENT TX/RX completion interrupt priority
+    IFS11bits.SENT2IF = 0;      // Clear SENT TX/RX completion interrupt flag
+    IEC11bits.SENT2IE = 1;      // Enable SENT TX/RX completion interrupt
+
+    IPC46bits.SENT2EIP = 6;     // SENT ERROR interrupt priority
+    IFS11bits.SENT2EIF = 0;     // Clear SENT ERROR interrupt flag
+    IEC11bits.SENT2EIE = 1;     // Enable SENT ERROR interrupt
+
+    // Initialize SENT registers for receive mode
+    SENT2CON3 = (int)(8 * peripheralClk * tickTime * 0.80); // Set SYNCMIN
+    SENT2CON2 = (int)(8 * peripheralClk * tickTime * 1.20); // Set SYNCMAX
+    SENT2CON1bits.CRCEN = 1;    // CRC enable, 0=off, 1=on
+    SENT2CON1bits.PPP = 1;      // Pause, 0=off, 1=on
+    SENT2CON1bits.NIBCNT = 6;   // Number of data nibbles
+    SENT2CON1bits.RCVEN = 1;    // RX mode, 0=tx, 1=rx
+
+    // Enable SENT module, begin reception of data
+    SENT2CON1bits.SNTEN = 1;
+
+    sent2_rx = 0;
+}
+
 void InitSENT1_TX(void)
 {
     //
@@ -1052,17 +908,49 @@ void InitSENT1_TX(void)
     SENT1CON2 = (int)(tickTime * peripheralClk) - 1;
     SENT1CON1bits.TXM = 1;       // sync handshaking mode
     SENT1CON1bits.CRCEN = 1;     // CRC enable, 0=off, 1=on
-    SENT1CON1bits.PPP = 0;       // Pause, 0=off, 1=on
+    SENT1CON1bits.PPP = 1;       // Pause, 0=off, 1=on
+    SENT2CON3 = (int)(200 + 27 * 6); // FrameTime
     SENT1CON1bits.NIBCNT = 6;    // nibbles of data
     SENT1CON1bits.SNTEN = 1;     // enable SENT module
     SENT1DATH = 0;
     SENT1DATL = 0;              // initialize the SENT data registers
 
+    sent1_tx = 0;
+}
+
+void InitSENT2_TX(void)
+{
+    //
+    // initialize the SENT hardware port on the Starter Kit
+    //
+    RPOR8bits.RP70R = 0x3A;     // Alberto: map SENT2 transmitter to Starter Kit LIN output
+    _TRISD6 = 0;                // Alberto: digital output pin
+
+    // Set up SENT interrupts
+    IPC46bits.SENT2IP = 5;      // SENT TX/RX completion interrupt priority
+    IFS11bits.SENT2IF = 0;      // Clear SENT TX/RX completion interrup flag
+    IEC11bits.SENT2IE = 1;      // Enable SENT TX/RX completion interrupt
+
+    IPC46bits.SENT2EIP = 6;     // SENT ERROR interrupt priority
+    IFS11bits.SENT2EIF = 0;     // Clear SENT ERROR interrup flag
+    IEC11bits.SENT2EIE = 1;     // Enable SENT ERROR interrupt
+
+    // Initialize SENT registers for transmit mode (no frame time specified due to no pause)
+    SENT2CON2 = (int)(tickTime * peripheralClk) - 1;
+    SENT2CON1bits.TXM = 1;       // sync handshaking mode
+    SENT2CON1bits.CRCEN = 1;     // CRC enable, 0=off, 1=on
+    SENT1CON1bits.PPP = 1;       // Pause, 0=off, 1=on
+    SENT2CON3 = 122 + 27 * 6; // FrameTime
+    SENT2CON1bits.NIBCNT = 6;    // nibbles of data
+    SENT2CON1bits.SNTEN = 1;     // enable SENT module
+    SENT2DATH = 0;
+    SENT2DATL = 0;              // initialize the SENT data registers
+
+    sent2_tx = 0;
 }
 
 void oscConfig(void)
 {
-
     //  Configure Oscillator to operate the device at 80MHz/40MIPs
     // 	Fosc= Fin*M/(N1*N2), Fcy=Fosc/2
     // 	Fosc= 8M*40/(2*2)=80Mhz for 8M input clock
@@ -1071,13 +959,12 @@ void oscConfig(void)
    
     CLKDIVbits.PLLPOST = 0;     // N1=2
     CLKDIVbits.PLLPRE = 0;      // N2=2
-    PLLFBD = 38;                // M=(40-2), Fcyc = 40MHz for ECAN baud timer
+    PLLFBD = 38 * 2;                // M=(40-2), Fcyc = 40MHz for ECAN baud timer
 
 
     // Disable Watch Dog Timer
 
     RCONbits.SWDTEN = 0;
-
 }
 
 void InitCAN(void)
@@ -1098,7 +985,8 @@ void InitCAN(void)
 
     C1CTRL1bits.REQOP = 4;
 
-    while (C1CTRL1bits.OPMODE != 4);
+    while (C1CTRL1bits.OPMODE != 4)
+    	;
     C1CTRL1bits.WIN = 0;
 
     /* Set up the CAN module for 250kbps speed with 10 Tq per bit. */
@@ -1126,7 +1014,6 @@ void InitCAN(void)
     DMA0CONbits.CHEN = 0x1;
 
     /* initialise the DMA channel 2 for ECAN Rx */
-;
     /* setup channel 2 for peripheral indirect addressing mode
     normal operation, word operation and select as Rx to peripheral */
     DMA2CON = 0x0020;
@@ -1180,7 +1067,8 @@ void InitCAN(void)
 
     // Place the ECAN module in Normal mode.
     C1CTRL1bits.REQOP = 0;
-    while (C1CTRL1bits.OPMODE != 0);
+    while (C1CTRL1bits.OPMODE != 0)
+    	;
 
     //
     // CAN RX interrupt enable - 'double arm' since 2-level nested interrupt
@@ -1220,7 +1108,8 @@ void CAN_Transmit(void)
     Nop();
     Nop();
     Nop();
-    while (C1TR01CONbits.TXREQ0 == 1);
+    while (C1TR01CONbits.TXREQ0 == 1)
+    	;
     // Message was placed successfully on the bus, return
 }
 
@@ -1237,7 +1126,6 @@ void ADCInit(void) // will set 12bit, 4.96us/sample or 202KS/sec
 
     AD1CON3bits.ADCS = 8;   // 9 Tcy = 1TAD (so TAD = 9*25ns = 225ns = 4.44MHz)
     AD1CON3bits.SAMC = 8;   // set auto sample time as 8TAD = 1.8us
-
 
     AD1CON1bits.AD12B = 1;  // 12-bit conversion, 14TAD convert time
 
@@ -1276,74 +1164,12 @@ void ADCConvert(int channel)
         Nop();
         Nop();
         Nop();
-        while (!_AD1IF);
+        while (!_AD1IF)
+        	;
         AverageValue = AverageValue + ADC1BUF0;
     }
 
     AverageValue = AverageValue >> 2;
-
-}
-
-void InitLIN_TX(void)
-//
-// the LIN UART is UART1 of the 'GM106
-//
-{
-    ANSEL_LIN = 0;
-    TRISLINTXE = 0;
-    TRISLINCS = 0;
-    LIN_TXE = 1;            // enable LIN transmitter
-    LIN_CS = 1;             // enable LIN interface MCP2021A
-    //
-    // map LIN_TX pin to port RD6, which is remappable RP70
-    // map LIN_RX pin to port RD8, which is remappable RPI72
-    //
-    RPOR8bits.RP70R = 0x01; // map LIN transmitter to pin RD6, hi byte
-    _TRISD6 = 0;            // digital output pin
-
-    RPINR18 = 0x48;         // map LIN receiver to pin RD8
-    _TRISD8 = 1;            // digital input pin
-    //
-    // set up the UART for LIN_BRGVAL baud, 1 start, 1 stop, no parity
-    //
-    U1MODEbits.STSEL = 0;   // 1-Stop bit
-    U1MODEbits.PDSEL = 0;   // No Parity, 8-Data bits
-    U1MODEbits.ABAUD = 0;   // Auto-Baud disabled
-    U1MODEbits.BRGH = 0;    // Standard-Speed mode
-    U1BRG = LIN_BRGVAL;     // Baud Rate setting for 9600
-    U1STAbits.UTXISEL0 = 1; // Interrupt after one TX done
-    U1STAbits.UTXISEL1 = 0;
-    IEC0bits.U1TXIE = 1;    // Enable UART TX interrupt
-    U1MODEbits.UARTEN = 1;  // Enable UART (this bit must be set *BEFORE* UTXEN)
-
-}
-
-void InitLIN_RX(void)
-//
-// the LIN UART is UART1 of the 'GM106
-//
-{
-    ANSEL_LIN = 0;
-    TRISLINCS = 0;
-    LIN_TXE = 0;                    // disable LIN transmitter
-    LIN_CS = 1;                     // enable LIN interface MCP2021A
-    //
-    // map LIN_RX pin to port RD8, which is remappable RPI72
-    RPINR18 = 0x48;                 // map LIN receiver to pin RD8
-    _TRISD8 = 1;                    // digital input pin
-    //
-    // set up the UART for LIN_BRGVAL baud, 1 start, 1 stop, no parity
-    //
-    U1MODEbits.STSEL = 0;           // 1-Stop bit
-    U1MODEbits.PDSEL = 0;           // No Parity, 8-Data bits
-    U1MODEbits.ABAUD = 0;           // Auto-Baud disabled
-    U1MODEbits.BRGH = 0;            // Standard-Speed mode
-    U1BRG = LIN_BRGVAL;             // Baud Rate setting
-    U1STAbits.URXISEL = 0;          // Interrupt after one RX done
-    IEC0bits.U1RXIE = 1;            // Enable UART1 RX interrupt
-    IEC4bits.U1EIE = 1;             // Enable Error (Framing) Interrupt for BREAK
-    U1MODEbits.UARTEN = 1;          // Enable UART1
-
 }
 
 void InitMonitor(void)
@@ -1370,97 +1196,6 @@ void InitMonitor(void)
 
 }
 
-void LIN_Transmit(void)
-{
-    //
-    // send break followed by 0x55 'autobaud' byte
-    //
-    while (U1STAbits.TRMT == 0);    // wait for transmitter empty
-    while (U1STAbits.UTXBRK == 1);  // wait for HW to clear the previous BREAK
-    U1STAbits.UTXEN = 1;            // Enable UART TX
-    U1STAbits.UTXBRK = 1;           // set the BREAK bit
-    U1TXREG = 0;                    // dummy write to trigger UART transmit
-    Nop();                          // must wait 1 instruction cycle
-    U1TXREG = 0x55;                 // AUTO-BAUD sync character per J2602 spec
-
-    //
-    // send the LIN_MESSAGE_ID byte, is arbitrary but must be in the range 0x00 to 0x3B
-    // there are also 2 parity bits sent
-    p0 = (LIN_ID & 0x01) ^ ((LIN_ID & 0x02) >> 1) ^ ((LIN_ID & 0x04) >> 2) ^ ((LIN_ID & 0x10) >> 4);
-    p0 = p0 & 0x01; // get bit value
-    p1 = ~(((LIN_ID & 0x02) >> 1) ^ ((LIN_ID & 0x08) >> 3) ^ ((LIN_ID & 0x10) >> 4) ^ ((LIN_ID & 0x20) >> 5));
-    p1 = p1 & 0x01; // get the bit value
-    //
-    // form protected ID byte and transmit it
-    // the bit stuffing is optional, used here to test LIN receiver hardware
-    //
-    while (U1STAbits.TRMT == 0);                // wait for transmitter empty
-    Delayus(LIN_BIT_TIME * LIN_BIT_STUFF);      // wait for idle time stuff
-    id_byte = (p1 << 7) | (p0 << 6) | LIN_ID;   // stuff parity bits into proper places
-    U1TXREG = id_byte;                          // transmit the protected ID byte
-    Delayus(LIN_BIT_TIME * LIN_BIT_STUFF);      // wait for idle time stuff
-    //
-    // transmit the data bytes as follows:
-    //  byte #1: 0000 0 SW3 SW2 SW1 [stuff idle time]
-    //  byte #2: TEMP HIGH [stuff idle time]
-    //  byte #3: TEMP LOW [stuff idle time]
-    //  byte #4: POT HIGH [stuff idle time]
-    //  byte #5: POT LOW [stuff idle time]
-    //  byte #6: enhanced checksum (includes protected ID Byte)
-    //
-    // note that the total idle bit stuffing time cannot exceed 40% of the nominal time per LIN specification
-    // in this example, the nominal message frame is 92 total bits, with 28 (4 x 7) idle stuffed bits or 30.4%
-    // This time can be increased/decreased by changing the value for LIN_BIT_STUFF
-    //
-    checksum = id_byte;                     // initial checksum value (limited to a byte value)
-    //
-    // form Byte #1
-    //
-    data_byte = (~SW1 & 1) | ((~SW2 & 1) << 1) | ((~SW3 & 1) << 2); // switch data, leading zeros
-    Calc_Checksum(data_byte);
-    while (U1STAbits.TRMT == 0);            // wait for transmitter empty
-    U1TXREG = data_byte;                    // send it
-    //
-    // form Byte #2
-    //
-    data_byte = (TempValue & 0xFF00) >> 8;  // upper byte, temperature reading
-    Calc_Checksum(data_byte);
-    while (U1STAbits.TRMT == 0);            // wait for transmitter empty
-    Delayus(LIN_BIT_TIME * LIN_BIT_STUFF);  // wait for idle time stuff
-    U1TXREG = data_byte;                    // send it
-    //
-    // form Byte #3
-    //
-    data_byte = TempValue & 0xFF;           // lower byte, temperature reading
-    Calc_Checksum(data_byte);
-    while (U1STAbits.TRMT == 0);            // wait for transmitter empty
-    Delayus(LIN_BIT_TIME * LIN_BIT_STUFF);  // wait for idle time stuff
-    U1TXREG = data_byte;                    // send it
-    //
-    // form Byte #4
-    //
-    data_byte = (PotValue & 0xFF00) >> 8;   // upper byte, trim pot reading
-    Calc_Checksum(data_byte);
-    while (U1STAbits.TRMT == 0);            // wait for transmitter empty
-    Delayus(LIN_BIT_TIME * LIN_BIT_STUFF);  // wait for idle time stuff
-    U1TXREG = data_byte;                    // send it
-    //
-    // form Byte #5
-    //
-    data_byte = PotValue & 0xFF;            // lower byte, trim pot reading
-    Calc_Checksum(data_byte);
-    while (U1STAbits.TRMT == 0);            // wait for transmitter empty
-    Delayus(LIN_BIT_TIME * LIN_BIT_STUFF);  // wait for idle time stuff
-    U1TXREG = data_byte;                    // send it
-    //
-    // the last byte in the frame is the checksum
-    //
-    checksum = (~checksum) & 0xFF;          // invert, byte value
-    while (U1STAbits.TRMT == 0);            // wait for transmitter empty
-    Delayus(LIN_BIT_TIME * LIN_BIT_STUFF);  // wait for idle time stuff
-    U1TXREG = checksum;                     // send it
-}
-
 void Calc_Checksum(int data_byte)
 {
     checksum = checksum + data_byte;        // add next
@@ -1473,7 +1208,8 @@ void Calc_Checksum(int data_byte)
 void delay_10ms(unsigned char num)
 {
     f_tick = 0;                         //f_tick increments every 10ms
-    while (f_tick < num);               // wait here until 'num' ticks occur
+    while (f_tick < num)
+    	;               // wait here until 'num' ticks occur
     f_tick = 0;
 }
 
@@ -1523,14 +1259,82 @@ void ftoa(float f, char *buf)
     }
     for (ix = 1; ix < (NUM_DIGITS + 1); ix++)
     {
-        num = (int)f;
+        num = (int) f;
         f = f - num;
         buf[pos++] = '0' + num;
-        if (dp == 0) buf[pos++] = '.';
+        if (dp == 0)
+        	buf[pos++] = '.';
         f = f * 10.0;
         dp--;
     }
 }
+
+//*****************************************************************************
+//
+// int to ASCII
+//
+// Converts an int number to ASCII. Note that buf must be
+// large enough to hold result (in this case (NUM_DIGITS + 1) digits; please note that space is required for "-")
+//
+// value is the int number.
+// buf is the buffer in which the resulting string is placed.
+//
+// itoa(-123, buffer) returns "-123" in buffer
+//
+//
+//*****************************************************************************
+
+void
+itoa(int value, char *buffer)
+{
+    int original = value;        // save original value
+
+    if (value < 0)                 // if it's negative, note that and take the absolute value
+        value = -value;
+
+    int c = NUM_DIGITS;
+    do                             // write least significant digit of value that's left
+    {
+        buffer[c] = (value % 10) + '0';
+        c--;
+        value /= 10;
+    } while (value && (c > 0));
+
+    if (original < 0)
+        buffer[c] = '-';
+}
+
+//*****************************************************************************
+//
+// short int to ASCII (hex)
+//
+// Converts an int number to an hex ASCII number. Note that buf must be
+// large enough to hold result (in this case 4 digits)
+//
+// value is the int number.
+// buf is the buffer in which the resulting string is placed.
+//
+// short_int_to_hex_ascii(10, buffer) returns "A" in buffer
+//
+//
+//*****************************************************************************
+
+void
+short_int_to_hex_ascii(int value, char *buffer)
+{
+    int c = 4 - 1;
+    do
+    {
+    	int nibble = value & 0xf;
+    	if (nibble < 10)
+    		buffer[c] = nibble + '0';
+    	else
+    		buffer[c] = (nibble - 10) + 'A';
+        c--;
+        value = value >> 4;
+    } while (c >= 0);
+}
+
 
 void putsU2(char *s)
 {
@@ -1542,7 +1346,8 @@ void putsU2(char *s)
 
 void putU2(int c)
 {
-    while (U2STAbits.UTXBF); // wait while Tx buffer full
+    while (U2STAbits.UTXBF)
+    	; // wait while Tx buffer full
     U2TXREG = c;
 }
 
@@ -1639,7 +1444,7 @@ void rxECAN(mID *message)
 /******************************************************************************
 *
 *    Function:			clearRxFlags
-*    Description:       clears the rxfull flag after the message is read
+*    Description:       clears CAN the rxfull flag after the message is read
 *
 *    Arguments:			buffer number to clear
 ******************************************************************************/
@@ -1656,8 +1461,8 @@ void clearRxFlags(unsigned char buffer_number)
 	else if((C1RXFUL1bits.RXFUL3) && (buffer_number==3))
 		/* clear flag */
 		C1RXFUL1bits.RXFUL3=0;
-	else;
-
+	else
+		;
 }
 
 /* code for Timer1 ISR, called every 250ms*/
@@ -1675,93 +1480,188 @@ void __attribute__((__interrupt__, no_auto_psv)) _T2Interrupt(void)
     f_tick++; // we increment the variable f_tick
 
     IFS0bits.T2IF = 0; //Clear Timer2 interrupt flag
+}
 
+
+#define SYNC_PULSE 		1
+#define STATUS_NIBBLE	2
+#define NIBBLE1			3
+#define NIBBLE2			4
+#define NIBBLE3			5
+#define NIBBLE4			6
+#define NIBBLE5			7
+#define NIBBLE6			8
+#define SENT_CRC		9
+#define SENT_PAUSE		10
+
+volatile int g_status_nibble,
+			 g_nibble1, g_nibble2, g_nibble3,
+			 g_nibble4, g_nibble5, g_nibble6,
+			 g_crc;
+
+volatile int g_state = SYNC_PULSE;
+volatile int g_tick_counter = 0;
+volatile int g_sending_a_sent_frame = 0;
+volatile int g_sent_quarter_tick = 0;
+
+
+int
+send_sent_package()
+{
+	int sent_output;
+
+	if (g_tick_counter < 5)
+		sent_output = 0;
+	else
+		sent_output = 1;
+
+	switch (g_state)
+	{
+		case SYNC_PULSE:
+			if (g_tick_counter >= 56)
+			{
+				g_state = STATUS_NIBBLE;
+				g_tick_counter = 0;
+			}
+			break;
+		case STATUS_NIBBLE:
+			if (g_tick_counter >= (12 + g_status_nibble))
+			{
+				g_state = NIBBLE1;
+				g_tick_counter = 0;
+			}
+			break;
+		case NIBBLE1:
+			if (g_tick_counter >= (12 + g_nibble1))
+			{
+				g_state = NIBBLE2;
+				g_tick_counter = 0;
+			}
+			break;
+		case NIBBLE2:
+			if (g_tick_counter >= (12 + g_nibble2))
+			{
+				g_state = NIBBLE3;
+				g_tick_counter = 0;
+			}
+			break;
+		case NIBBLE3:
+			if (g_tick_counter >= (12 + g_nibble3))
+			{
+				g_state = NIBBLE4;
+				g_tick_counter = 0;
+			}
+			break;
+		case NIBBLE4:
+			if (g_tick_counter >= (12 + g_nibble4))
+			{
+				g_state = NIBBLE5;
+				g_tick_counter = 0;
+			}
+			break;
+		case NIBBLE5:
+			if (g_tick_counter >= (12 + g_nibble5))
+			{
+				g_state = NIBBLE6;
+				g_tick_counter = 0;
+			}
+			break;
+		case NIBBLE6:
+			if (g_tick_counter >= (12 + g_nibble6))
+			{
+				g_state = SENT_CRC;
+				g_tick_counter = 0;
+			}
+			break;
+		case SENT_CRC:
+			if (g_tick_counter >= (12 + g_crc))
+			{
+				g_state = SENT_PAUSE;
+				g_tick_counter = 0;
+			}
+			break;
+		case SENT_PAUSE:
+			if (g_tick_counter >= 12)	// minimum size pause pulse
+			{
+				g_state = SYNC_PULSE;
+				g_sending_a_sent_frame = 0;
+				g_tick_counter = 0;
+				g_sent_quarter_tick = 0;
+
+				return (1);
+			}
+			break;
+	}
+	g_tick_counter++;
+
+	return (sent_output);
+}
+
+int old = 0;
+
+/* code for Timer3 ISR, called every ~0.5us*/
+void __attribute__((__interrupt__, no_auto_psv)) _T3Interrupt(void)
+{
+//	if (g_sending_a_sent_frame)
+//	{
+//		if (g_sent_quarter_tick == 0)
+//			LED3 = send_sent_package();
+//
+//		if (g_sending_a_sent_frame)	// else -> acabou o frame
+//		{
+//			if (g_sent_quarter_tick < 3)
+//				g_sent_quarter_tick++;
+//			else
+//				g_sent_quarter_tick = 0;
+//		}
+//	}
+//	else
+//		LED3 = 1;
+
+//	LED3 = SW3;
+
+	if (old)
+		old = 0;
+	else
+		old = 1;
+
+	LED3 = old;
+
+	IFS0bits.T3IF = 0; //Clear Timer3 interrupt flag
 }
 
 void __attribute__((interrupt, no_auto_psv))_C1Interrupt(void)
 {
     IFS2bits.C1IF = 0; // clear interrupt flag
     if (C1INTFbits.TBIF)
-    {
         C1INTFbits.TBIF = 0;
-    }
 
     if (C1INTFbits.RBIF)
     {
-
-    /*check to see if buffer 1 is full */
-    if(C1RXFUL1bits.RXFUL1)
-    {
-    /* set the buffer full flag and the buffer received flag */
-    canRxMessage.buffer_status = CAN_BUF_FULL;
-    canRxMessage.buffer = 1;
-    can_rx = 1;
-    }
-    C1INTFbits.RBIF = 0;
+		/*check to see if buffer 1 is full */
+		if(C1RXFUL1bits.RXFUL1)
+		{
+			/* set the buffer full flag and the buffer received flag */
+			canRxMessage.buffer_status = CAN_BUF_FULL;
+			canRxMessage.buffer = 1;
+			can_rx = 1;
+		}
+		C1INTFbits.RBIF = 0;
     }
 }
 
 void __attribute__((interrupt, no_auto_psv)) _U1TXInterrupt(void)
 {
-    while (U1STAbits.TRMT == 0); // wait for transmitter empty
+    while (U1STAbits.TRMT == 0)
+    	; // wait for transmitter empty
     IFS0bits.U1TXIF = 0; // Clear TX1 Interrupt flag
 }
 
 void __attribute__((interrupt, no_auto_psv)) _U2TXInterrupt(void)
 {
-    while (U2STAbits.TRMT == 0); // wait for transmitter empty
+    while (U2STAbits.TRMT == 0)
+    	; // wait for transmitter empty
     IFS1bits.U2TXIF = 0; // Clear TX2 Interrupt flag
-}
-
-void __attribute__((interrupt, no_auto_psv)) _U1RXInterrupt(void)
-{
-    //
-    // LIN message received
-    //
-    //
-    // is it a SYNCH (0x55) which is start of message?
-    //
-    // A Framing Error *must* immediately proceed!!
-    //
-       datal = U1RXREG;
-    if ((datal == 0x55) && (lin_start == 1) && (lin_index == 0))
-    {
-        lin_start = 2;
-        LIN_RXBUF[lin_index] = datal & 0xFF;    // get the SYNCH byte for fun
-        lin_index++;                            // ready for ID byte reveive
-
-    }
-        //
-        // is part of the LIN message
-        //
-
-    else if (lin_start == 2)
-    {
-        LIN_RXBUF[lin_index] = datal & 0x00FF;   // get the data byte
-        lin_index++;
-        if (lin_index == LIN_MESSAGE_SIZE)
-        {
-            lin_rx = 1;
-            lin_index = 0;
-            lin_start = 0;
-        }
-    }
-    IFS0bits.U1RXIF = 0;                // Clear RX1 Interrupt flag
-}
-
-void __attribute__((interrupt, no_auto_psv)) _U1ErrInterrupt(void)
-{
-    //
-    // a LIN 'BREAK' (13 consecutive '0's) will generate a Framing Error
-    // ***NOTE*** This ISR MUST be at a higher priority than U1RX ISR in order
-    // to test for framing error prior to testing for SYNC byte
-    //
-
-    if (U1STAbits.FERR == 1)
-    {
-        lin_start = 1;          // first message detection phase
-    }
-    IFS4bits.U1EIF = 0;         // Clear LIN Error Flag
 }
 
 void __attribute__((interrupt, no_auto_psv)) _U2RXInterrupt(void)
@@ -1777,15 +1677,43 @@ void __attribute__((__interrupt__, __auto_psv__)) _SENT1Interrupt(void)
     /* Interrupt Service Routine code goes here */
     if (SENT1CON1bits.RCVEN == 1) // was a RX message?
     {
-        // Read data from SENT registers
-        datal = (SENT1DATL >> 4); // Format to 12 bit data
-        datah = SENT1DATH; // switch data + pot
+        // Read data from SENT registers.
+    	// Note that the order of the bits of the sent message have nothing to do with the name of the registers (SENT1DATL and SENT1DATH).
+    	// Please see the dsPIC33EVXXXGM00X/10X FAMILY manual, page 245
+        sent1datl = SENT1DATL;	// DATA4<3:0> DATA5<3:0> DATA6<3:0> CRC<3:0>
+        sent1dath = SENT1DATH;	// STAT<3:0>  DATA1<3:0> DATA2<3:0> DATA3<3:0>
 
-        sent_rx = 1; // a message was received
-    };
+        sent1_rx = 1; // a message was received
+    }
+    else
+    	sent2_tx = 1;
 
     IFS11bits.SENT1IF = 0; // clear interrupt flag
 }
+
+/******************************************************************************
+ * Function:        SENT2 Tx/Rx Interrupt
+ *****************************************************************************/
+void __attribute__((__interrupt__, __auto_psv__)) _SENT2Interrupt(void)
+{
+    /* Interrupt Service Routine code goes here */
+    if (SENT2CON1bits.RCVEN == 1) // was a RX message?
+    {
+        // Read data from SENT registers.
+    	// Note that the order of the bits of the sent message have nothing to do with the name of the registers (SENT1DATL and SENT1DATH).
+    	// Please see the dsPIC33EVXXXGM00X/10X FAMILY manual, page 245
+        sent2datl = SENT2DATL;	// DATA4<3:0> DATA5<3:0> DATA6<3:0> CRC<3:0>
+        sent2dath = SENT2DATH;	// STAT<3:0>  DATA1<3:0> DATA2<3:0> DATA3<3:0>
+
+        sent2_rx = 1; // a message was received
+    }
+    else
+    	sent2_tx = 1;
+
+    IFS11bits.SENT2IF = 0; // clear interrupt flag
+}
+
+int previous_led3 = 0;
 
 /******************************************************************************
  * Function:        SENT1 error interrupt
@@ -1795,11 +1723,36 @@ void __attribute__((__interrupt__, __auto_psv__)) _SENT1ERRInterrupt(void)
     // Sent Error handling code here
 
     IFS11bits.SENT1EIF = 0; // Clear interrupt flag.
-    LED1 = 1;
-    LED2 = 1;
-    LED3 = 1;
-    while (1); // sit here if error
+//    LED1 = 1;
+//    LED2 = 1;
+//    LED3 = 1;
+//    Delayus(2);
+    if (previous_led3)
+    	previous_led3 = 0;
+    else
+    	previous_led3 = 1;
+    LED3 = previous_led3;
+//    while (1)
+//    	; // sit here if error
 }
+
+/******************************************************************************
+ * Function:        SENT2 error interrupt
+ *****************************************************************************/
+void __attribute__((__interrupt__, __auto_psv__)) _SENT2ERRInterrupt(void)
+{
+    // Sent Error handling code here
+
+    IFS11bits.SENT2EIF = 0; // Clear interrupt flag.
+//    LED1 = 1;
+//    LED2 = 1;
+//    LED3 = 1;
+//    Delayus(2);
+//    LED3 = 0;
+//    while (1)
+//    	; // sit here if error
+}
+
 //------------------------------------------------------------------------------
 //    DMA interrupt handlers
 //------------------------------------------------------------------------------
@@ -1830,7 +1783,8 @@ void __attribute__((interrupt, auto_psv)) _DefaultInterrupt(void)
     LED2 = 1;
     LED3 = 1;
 
-    while (1);
+    while (1)
+    	;
 }
 
 void __attribute__((interrupt, auto_psv)) _OscillatorFail(void)
@@ -1839,7 +1793,8 @@ void __attribute__((interrupt, auto_psv)) _OscillatorFail(void)
     LED2 = 1;
     LED3 = 1;
 
-    while (1);
+    while (1)
+    	;
 }
 
 void __attribute__((interrupt, no_auto_psv)) _MathError(void)
@@ -1848,7 +1803,8 @@ void __attribute__((interrupt, no_auto_psv)) _MathError(void)
     LED2 = 1;
     LED3 = 1;
 
-    while (1);
+    while (1)
+    	;
 }
 
 void __attribute__((interrupt, no_auto_psv)) _StackError(void)
@@ -1857,7 +1813,8 @@ void __attribute__((interrupt, no_auto_psv)) _StackError(void)
     LED2 = 1;
     LED3 = 1;
 
-    while (1);
+    while (1)
+    	;
 }
 
 void __attribute__((interrupt, no_auto_psv)) _AddressError(void)
@@ -1866,9 +1823,282 @@ void __attribute__((interrupt, no_auto_psv)) _AddressError(void)
     LED2 = 1;
     LED3 = 1;
 
-    while (1);
+    while (1)
+    	;
 
 }
 
 
+void
+Receive_SENT1(int *status_nibble, int *nibble123, int *nibble456, int *crc_nibble)
+{
+    while (sent1_rx != 1)
+    	;
+	sent1_rx = 0;            // clear message flag
 
+	*status_nibble = sent1dath >> 12;
+
+	int value = (sent1dath & 0xFFF);
+	if (value > 2047)
+		value = value - 4096; // extensao de sinal
+	*nibble123 = value;
+
+	*crc_nibble = sent1datl & 0xf;
+	value = ((sent1datl >> 4) & 0xFFF);
+	value = ((value << 8) & 0xf00) | (value & 0xf0) | ((value >> 8) & 0xf); // troca a ordem dos nibbles
+	if (value > 2047)
+		value = value - 4096; // extensao de sinal
+	*nibble456 = value;
+}
+
+
+void
+Transmit_SENT2(int status_nibble, int nibbles123, int nibbles456)
+{
+	int value = (nibbles123 & 0xFFF) | (status_nibble << 12);
+    SENT2DATH = value;
+
+	value = nibbles456 & 0xFFF;
+	value = ((value << 8) & 0xf00) | (value & 0xf0) | ((value >> 8) & 0xf); // troca a ordem dos nibbles
+    SENT2DATL = value << 4;
+
+    SENT2STATbits.TXEN = 1; // note!!! Datasheet has different name than .H file
+    while (sent2_tx != 1)
+    	;
+    SENT2STATbits.TXEN = 0; // note!!! Datasheet has different name than .H file
+    sent2_tx = 0;
+}
+
+
+void
+Transmit_via_interrupt_based_sent(int status_nibble, int nibbles123, int nibbles456, int crc_nibble)
+{
+	if (g_sending_a_sent_frame)
+		return;
+
+	g_status_nibble = status_nibble;
+	g_nibble1 = (nibbles123 >> 8) & 0xf;
+	g_nibble2 = (nibbles123 >> 4) & 0xf;
+	g_nibble3 = (nibbles123) & 0xf;
+
+	int value = nibbles456 & 0xFFF;
+	value = ((value << 8) & 0xf00) | (value & 0xf0) | ((value >> 8) & 0xf); // troca a ordem dos nibbles
+	g_nibble4 = (value >> 8) & 0xf;
+	g_nibble5 = (value >> 4) & 0xf;
+	g_nibble6 = (value) & 0xf;
+
+	g_crc = crc_nibble;
+
+	g_sending_a_sent_frame = 1;
+}
+
+
+void
+print_two_values(int value1, int value2)
+{
+	// TWO_VALUES_SIZE = 2 * (digits + '.' and allow for '-') + 2 ' ' + \n\r\0
+#define TWO_VALUES_SIZE	(2 * (NUM_DIGITS + 2) + 2 + 3)
+
+	static int printing = 0;
+	static char two_values[TWO_VALUES_SIZE];
+
+	if (!printing)
+	{
+		for (i = 0; i < TWO_VALUES_SIZE - 3; i++)
+			two_values[i] = ' ';
+		two_values[i] = '\n'; i++;
+		two_values[i] = '\r'; i++;
+		two_values[i] = '\0';
+
+		itoa(value1, two_values);
+		itoa(value2, two_values + (NUM_DIGITS + 4));
+//		short_int_to_hex_ascii(value1, two_values);
+//		short_int_to_hex_ascii(value2, two_values + (NUM_DIGITS + 4));
+
+		printing = TWO_VALUES_SIZE;
+	}
+
+    if ((U2STAbits.TRMT == 1) && printing) // UART livre && existem caracteres para imprimir
+    {
+        U2STAbits.UTXEN = 1;
+    	U2TXREG = two_values[TWO_VALUES_SIZE - printing];	// coloca um caracter na UART
+    	printing--;
+    }
+}
+
+
+void
+steering_wheel_bypass(void)
+{
+	LED1 = 1;	// desativa saida 1 de SENT2 (ver diagrama do hardware do Alberto)
+	LED2 = 1;	// desativa saida 2 de SENT2 (ver diagrama do hardware do Alberto)
+
+	while (1)
+	{
+		int status_nibble, nibble123, nibble456, crc_nibble;
+		Receive_SENT1(&status_nibble, &nibble123, &nibble456, &crc_nibble);
+
+//		print_two_values(nibble123, nibble456);
+
+		Transmit_via_interrupt_based_sent(status_nibble, nibble123, nibble456, crc_nibble);
+
+		LED1 = 0;
+		Transmit_SENT2(status_nibble, nibble123, nibble456);
+		LED1 = 1;
+
+
+//		LED2 = 0;
+//		Transmit_SENT2(status_nibble, -nibble123, -nibble456);
+//		LED2 = 1;
+	}
+}
+
+
+void
+steering_wheel_bypass_new(void)
+{
+	LED1 = 0;	// ativa saida 1 de SENT2 (ver diagrama do hardware do Alberto)
+	LED2 = 1;	// desativa saida 2 de SENT2 (ver diagrama do hardware do Alberto)
+
+	while (1)
+	{
+		int pwm_pulse = SW3 & 1;
+		LED3 = pwm_pulse;
+	}
+}
+
+
+void
+steering_wheel_control(void)
+{
+	LED1 = 1;	// desativa saida 1 de SENT2 (ver diagrama do hardware do Alberto)
+	LED2 = 1;	// desativa saida 2 de SENT2 (ver diagrama do hardware do Alberto)
+
+	float torc;
+	while (1)
+	{
+		int status_nibble, nibble123, nibble456, crc_nibble;
+		Receive_SENT1(&status_nibble, &nibble123, &nibble456, &crc_nibble);
+
+		// O nibble456 = nibble123 * a + b
+		// Pegando dois pontos dos dados colhidos, foram montadas as equacoes abaixo e computados os valores de a e b:
+		//  https://www.wolframalpha.com/input/?i=Solve%5B%7B530%3D%3D1292a%2Bb,+1798%3D1931a%2Bb%7D,+%7Ba,+b%7D%5D
+		float a = 1.984;	// 1268 / 639
+		float b = 2034.0;	// 1299586 / 639
+		float exact_nibble456_float = nibble123 * a - b;
+		if (exact_nibble456_float < -2048.0)	// Os nibbles tem sinal e soh tem 12 bits
+			exact_nibble456_float = exact_nibble456_float + 4096.0;
+ 
+		// le o petenciomentro, que retorna em AverageValue um valor entre zero e 4095
+	    ADCConvert(19);	// 19 eh o codigo do pontenciomentro no hardware
+	    torc = 0.05 * (AverageValue - 4096 / 2);
+
+	    nibble456 = exact_nibble456_float + torc;
+	    // Os nibbles tem sinal e soh tem 12 bits
+		if (nibble456 > 2047)				// 2047 = (2 ^ 12) / 2 - 1
+			nibble456 = nibble456 - 4096;	// 4096 = (2 ^ 12)
+		if (nibble456 < -2048)
+			nibble456 = nibble456 + 4096;
+
+		LED1 = 0;
+	    Delayus(10);
+		Transmit_SENT2(status_nibble, nibble123, nibble456);
+	    Delayus(10);
+		LED1 = 1;
+
+		LED2 = 0;
+	    Delayus(10);
+		Transmit_SENT2(status_nibble, -nibble123, -nibble456);
+	    Delayus(10);
+		LED2 = 1;
+	}
+}
+
+
+int main(void)
+{
+
+    // Configure Oscillator Clock Source
+    oscConfig();
+
+    // Clear Interrupt Flags
+    clearIntrflags();
+
+    // Initialize hardware on the board
+    init_hw();
+
+    // Initialize the monitor UART2 module
+    InitMonitor();
+
+    // Test to see if we are in TRANSMIT or RECIEVE mode for the demo, show LEDs
+//    Test_Mode();
+    mode = RECEIVE;
+
+//    if (mode == TRANSMIT)
+//    {
+//        LED_Transmit();
+//    }
+//    else
+//    {
+//        LED_Receive();
+//        while ((SW1 == 0) | (SW2 == 0) | (SW3 == 0))
+//        	; // wait to release all keys
+//        LED1 = 0; // initialize LEDs to all off
+//        LED2 = 0;
+//        LED3 = 0;
+//    }
+//    // Initialize the ADC converter
+//    ADCInit();
+
+    // Initialize the modules for receive or transmit
+
+    if (mode == TRANSMIT)
+    {
+        InitSENT1_TX();
+        InitSENT2_RX();
+    }
+    else
+    {
+        InitSENT1_RX();
+        InitSENT2_TX();
+    }
+
+    // Initialize the CAN module
+//    InitCAN();
+
+    steering_wheel_bypass();
+//    steering_wheel_control();
+
+    // main loop: every 4 Timer1 ticks (1sec), scan the sensors and transmit the data
+    // or wait for a Receive interrupt from 1 of the 3 interfaces
+    //
+    s_tick = 0;
+    while (1)
+    {
+        if (mode == RECEIVE)
+        {
+        /* check to see when a message is received and move the message
+           into RAM and parse the message */
+           if (canRxMessage.buffer_status == CAN_BUF_FULL)
+           {
+               rxECAN(&canRxMessage);
+
+               /* reset the flag when done */
+               canRxMessage.buffer_status = CAN_BUF_EMPTY;
+           }
+
+            Receive_Data();
+            s_tick = 0;
+        }
+        else if (mode == TRANSMIT)
+        {
+            //
+            // wait for the 250ms timer. User can accumulate s_ticks to get longer delays
+            //
+            while (s_tick <= 3)
+                ;        // wait for 1 second
+            s_tick = 0;                 // clear flag
+            Transmit_Data();
+        }
+    }
+}

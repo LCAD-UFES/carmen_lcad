@@ -887,7 +887,7 @@ check_collision_config_initialization()
 	carmen_param_install_params(0, NULL, param_list, sizeof(param_list)/sizeof(param_list[0]));
 
 	collision_file_pointer = fopen(collision_file, "r");
-	setlocale(LC_NUMERIC, "C");
+//	setlocale(LC_NUMERIC, "C");
 	fscanf(collision_file_pointer,"%d", &(global_collision_config.n_markers));
 	global_collision_config.markers = (carmen_collision_marker_t*) malloc(global_collision_config.n_markers*sizeof(carmen_collision_marker_t));
 	fscanf(collision_file_pointer,"%d", &(global_max_height_level));
