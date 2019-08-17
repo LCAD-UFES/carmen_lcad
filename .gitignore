@@ -679,3 +679,7 @@ src/tracker/tracker.c
 
 /sharedlib/OpenJAUS/ojFoxDriver/SENT/docs/src/DM330018_Starter_Kit_Demo.X/build/
 /sharedlib/OpenJAUS/ojFoxDriver/SENT/docs/src/DM330018_Starter_Kit_Demo.X/dist/
+
+src/imu_viewer/Makefile.qmake
+src/imu_viewer/moc_mainwindow.cpp
+src/imu_viewer/moc_objectgl.cpp
