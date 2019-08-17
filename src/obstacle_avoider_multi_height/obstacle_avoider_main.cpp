@@ -5,7 +5,7 @@
 #include "obstacle_avoider_messages.h"
 #include "obstacle_avoider_interface.h"
 #include "obstacle_avoider.h"
-
+#include <opencv2/highgui/highgui.hpp>
 
 static int necessary_maps_available = 0;
 
@@ -327,6 +327,39 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 //	necessary_maps_available = 1;
 //}
 
+void
+display_map(carmen_obstacle_distance_mapper_map_message *distance_map, char* map_name)
+{
+	if (distance_map->complete_x_offset == NULL)
+		return;
+
+	unsigned int width = distance_map->config.x_size;
+	unsigned int height = distance_map->config.y_size;
+	unsigned int size = width * height;
+	unsigned char map[size];
+
+	for (unsigned int i = 0; i < size; ++i)
+	{
+		unsigned int row = (height - 1) - i % height;
+
+		unsigned int col = i / height;
+
+		unsigned int index = row * width + col;
+
+		if (0.0 == distance_map->complete_x_offset[i] && 0.0 == distance_map->complete_y_offset[i])
+		{
+			map[index] = 0;
+		} else
+		{
+			map[index] = 255;
+		}
+	}
+
+	cv::Mat img(width, height, CV_8UC1, map);
+
+	cv::imshow(map_name, img);
+	cv::waitKey(1);
+}
 
 static void
 carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
@@ -350,6 +383,8 @@ carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_dist
 	}
 
 	obstacle_avoider_update_map(&distance_map);
+
+	//display_map(&distance_map, "Obstacle Map"); //DEBUG
 
 	necessary_maps_available = 1;
 }
@@ -376,6 +411,8 @@ carmen_obstacle_distance_mapper_compact_map_level1_message_handler(carmen_obstac
 	}
 
 	obstacle_avoider_update_map_level1(&distance_map);
+
+	// display_map(&distance_map, "Obstacle Map Level1"); //DEBUG
 
 	necessary_maps_available = 1;
 }
