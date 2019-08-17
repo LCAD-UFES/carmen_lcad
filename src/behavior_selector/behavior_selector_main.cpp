@@ -718,10 +718,16 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 void
 set_behaviours_parameters(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
-	if (fabs(current_robot_pose_v_and_phi.v) < param_distance_interval)
-		change_distance_between_waypoints_and_goals(param_distance_between_waypoints, param_change_goal_distance);
-	else
-		change_distance_between_waypoints_and_goals(4.0 * fabs(current_robot_pose_v_and_phi.v), 4.0 * fabs(current_robot_pose_v_and_phi.v));
+	double distance_between_waypoints = param_distance_between_waypoints;
+	double change_goal_distance = param_change_goal_distance;
+	if (fabs(current_robot_pose_v_and_phi.v) > param_distance_interval)
+	{
+		if ((4.0 * fabs(current_robot_pose_v_and_phi.v)) > distance_between_waypoints)
+			distance_between_waypoints = 4.0 * fabs(current_robot_pose_v_and_phi.v);
+		if ((4.0 * fabs(current_robot_pose_v_and_phi.v)) > change_goal_distance)
+			change_goal_distance = 4.0 * fabs(current_robot_pose_v_and_phi.v);
+	}
+	change_distance_between_waypoints_and_goals(distance_between_waypoints, change_goal_distance);
 
 	behavior_selector_update_robot_pose(current_robot_pose_v_and_phi);
 

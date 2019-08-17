@@ -61,6 +61,7 @@ static int use_phi_nn = 1;
 
 static int simulate_legacy_500 = 0;
 static int connected_to_iron_bird = 0;
+static int use_external_true_pose = 0;
 static double iron_bird_v = 0.0;
 static double iron_bird_phi = 0.0;
 
@@ -325,7 +326,9 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 
 	// Existem duas versoes dessa funcao, uma em base_ackerman_simulation e
 	// outra em simulator_ackerman_simulation.
-	carmen_simulator_ackerman_recalc_pos(simulator_config, use_velocity_nn, use_phi_nn, connected_to_iron_bird, iron_bird_v, iron_bird_phi);
+	if (!use_external_true_pose)
+		carmen_simulator_ackerman_recalc_pos(simulator_config, use_velocity_nn, use_phi_nn, connected_to_iron_bird, iron_bird_v, iron_bird_phi);
+
 	carmen_simulator_ackerman_update_objects(simulator_config);
 
 	if (!use_truepos)
@@ -563,11 +566,45 @@ offline_map_update_handler(carmen_map_server_offline_map_message *offline_map_me
 	necessary_maps_available = 1;
 }
 
+//#define DUMP_GLOBALPOS_TO_FILE
+
+#ifdef DUMP_GLOBALPOS_TO_FILE
+#include <stdio.h>
+#endif
 
 static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
+#ifdef DUMP_GLOBALPOS_TO_FILE
+	static FILE *file = NULL;
+
+	if (file == NULL)
+	{
+		file = fopen("./globalpos.csv","w");
+
+		if (file == NULL)
+		{
+			printf("Error: cannot open file ./globalpos.csv\n");
+			exit(-1);
+		}
+
+		fprintf(file, "# timestamp globalpos.x globalpos.y globalpos.theta odometrypos.x odometrypos.y odometrypos.theta v phi\n");
+	}
+#endif
+
 	simulator_config->global_pos = *msg;
+
+#ifdef DUMP_GLOBALPOS_TO_FILE
+	fprintf(file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf\n", simulator_config->global_pos.timestamp,
+			simulator_config->global_pos.globalpos.x,
+			simulator_config->global_pos.globalpos.y,
+			simulator_config->global_pos.globalpos.theta,
+			simulator_config->global_pos.odometrypos.x,
+			simulator_config->global_pos.odometrypos.y,
+			simulator_config->global_pos.odometrypos.theta,
+			simulator_config->global_pos.v,
+			simulator_config->global_pos.phi);
+#endif
 }
 
 
@@ -576,6 +613,52 @@ base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *ms
 {
 	iron_bird_v = msg->v;
 	iron_bird_phi = msg->phi;
+}
+
+//#define DUMP_EXTERNAL_TRUEPOS_TO_FILE
+
+#ifdef DUMP_EXTERNAL_TRUEPOS_TO_FILE
+#include <stdio.h>
+#endif
+
+static void
+external_truepose_message_handler(carmen_simulator_ackerman_truepos_message *msg)
+{
+#ifdef DUMP_EXTERNAL_TRUEPOS_TO_FILE
+	static FILE *file = NULL;
+
+	if (file == NULL)
+	{
+		file = fopen("./external_truepos.csv","w");
+
+		if (file == NULL)
+		{
+			printf("Error: cannot open file ./external_truepos.csv\n");
+			exit(-1);
+		}
+
+		fprintf(file, "# timestamp true_pose.x true_pose.y true_pose.theta odom_pose.x odom_pose.y odom_pose.theta v phi\n");
+	}
+#endif
+
+	simulator_config->true_pose = msg->truepose;
+	simulator_config->odom_pose = msg->odometrypose;
+	simulator_config->v = msg->v;
+	simulator_config->phi = msg->phi;
+
+#ifdef DUMP_GLOBALPOS_TO_FILE
+	double timestamp = msg->timestamp;
+
+	fprintf(file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf\n", timestamp,
+			simulator_config->true_pose.x,
+			simulator_config->true_pose.y,
+			simulator_config->true_pose.theta,
+			simulator_config->odom_pose.x,
+			simulator_config->odom_pose.y,
+			simulator_config->odom_pose.theta,
+			simulator_config->v,
+			simulator_config->phi);
+#endif
 }
 
 
@@ -681,6 +764,9 @@ subscribe_to_relevant_messages()
 	err = IPC_subscribe(CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_QUERY_NAME, truepos_query_handler, NULL);
 	if (err != IPC_OK)
 		return -1;
+
+	if (use_external_true_pose)
+		carmen_simulator_ackerman_subscribe_external_truepos_message(NULL, (carmen_handler_t) external_truepose_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	memset(&init_msg, 0, sizeof(carmen_localize_ackerman_initialize_message));
 
@@ -788,6 +874,12 @@ initialize_ipc(void)
 	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME,
 			IPC_VARIABLE_LENGTH,
 			CARMEN_BASE_ACKERMAN_MOTION_COMMAND_FMT);
+	if (err != IPC_OK)
+		return -1;
+
+	err = IPC_defineMsg(CARMEN_SIMULATOR_ACKERMAN_EXTERNAL_TRUEPOSE_NAME,
+			IPC_VARIABLE_LENGTH,
+			CARMEN_SIMULATOR_ACKERMAN_EXTERNAL_TRUEPOSE_FMT);
 	if (err != IPC_OK)
 		return -1;
 
@@ -911,7 +1003,8 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 	carmen_param_t optional_param_list[] =
 	{
 			{(char *) "commandline", (char *) "simulate_legacy_500", CARMEN_PARAM_ONOFF, &simulate_legacy_500, 0, NULL},
-			{(char *) "commandline", (char *) "connected_to_iron_bird", CARMEN_PARAM_ONOFF, &connected_to_iron_bird, 0, NULL}
+			{(char *) "commandline", (char *) "connected_to_iron_bird", CARMEN_PARAM_ONOFF, &connected_to_iron_bird, 0, NULL},
+			{(char *) "commandline", (char *) "use_external_true_pose", CARMEN_PARAM_ONOFF, &use_external_true_pose, 0, NULL}
 	};
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 

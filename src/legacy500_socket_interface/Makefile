@@ -9,7 +9,7 @@ CFLAGS += -std=c99
 IFLAGS += -I$(CARMEN_HOME)/include/carmen
 
 LFLAGS += -lbase_ackerman_interface -lrobot_ackerman_interface -lparam_interface -lobstacle_avoider -lglobal -lipc -lfused_odometry_interface -lcollision_detection \
--lford_escape_hybrid_interface -lobstacle_avoider_interface
+	-lford_escape_hybrid_interface -lobstacle_avoider_interface -lsimulator_ackerman_interface
 
 SOURCES = obstacle_avoider_to_socket_client.cpp socket_to_legacy500_server.cpp legacy500_to_socket_server.cpp socket_to_odometry_client.cpp
 

@@ -74,6 +74,18 @@ void carmen_simulator_ackerman_clear_objects(void);
 
 void carmen_simulator_ackerman_next_tick(void);
 
+void
+carmen_simulator_ackerman_subscribe_external_truepos_message(carmen_simulator_ackerman_truepos_message
+					    *truepos,
+					    carmen_handler_t handler,
+					    carmen_subscribe_t subscribe_how);
+
+void
+carmen_simulator_ackerman_unsubscribe_external_truepos_message(carmen_handler_t handler);
+
+int
+carmen_simulator_ackerman_publish_external_truepose(carmen_simulator_ackerman_truepos_message *msg);
+
 #ifdef __cplusplus
 }
 #endif

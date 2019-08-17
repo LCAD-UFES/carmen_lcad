@@ -154,6 +154,32 @@ robot_ackerman_velocity_handler_tcp_ip(carmen_robot_ackerman_velocity_message *m
 	}
 }
 
+#define SEND_TRUEPOSE
+
+#ifdef SEND_TRUEPOSE
+void
+robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *msg)
+{
+	double array[6];
+
+	static struct sockaddr_in client_address;
+	static int pi_socket = 0;
+	if (pi_socket == 0)
+		pi_socket = connect_with_client(&client_address);
+
+	array[0] = msg->v;
+	array[1] = msg->phi;
+	array[2] = 1.0;
+	array[3] = 2.0;
+	array[4] = 3.0;
+	array[5] = 4.0;
+
+	//printf ("v: %lf phi: %lf\n", array[0], array[1]);
+
+	sendto(pi_socket, (void *) array, 48, 0, (struct sockaddr *) &client_address, sizeof(struct sockaddr_in));
+}
+
+#else
 
 void
 robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *msg)
@@ -168,9 +194,11 @@ robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *msg)
 	array[0] = msg->v;
 	array[1] = msg->phi;
 
+	//printf ("v: %lf phi: %lf\n", array[0], array[1]);
+
 	sendto(pi_socket, (void *) array, 40, 0, (struct sockaddr *) &client_address, sizeof(struct sockaddr_in));
 }
-
+#endif
 
 static void
 shutdown_module(int x)            // Handles ctrl+c
