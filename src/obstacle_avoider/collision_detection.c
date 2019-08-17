@@ -887,13 +887,14 @@ check_collision_config_initialization()
 	carmen_param_install_params(0, NULL, param_list, sizeof(param_list)/sizeof(param_list[0]));
 
 	collision_file_pointer = fopen(collision_file, "r");
-	setlocale(LC_NUMERIC, "C");
+//	setlocale(LC_NUMERIC, "C");
 	fscanf(collision_file_pointer,"%d", &(global_collision_config.n_markers));
 	global_collision_config.markers = (carmen_collision_marker_t*) malloc(global_collision_config.n_markers*sizeof(carmen_collision_marker_t));
+	fscanf(collision_file_pointer,"%d", &(global_max_height_level));
 
 	for (i = 0; i < global_collision_config.n_markers; i++)
-		fscanf(collision_file_pointer,"%lf %lf %lf %lf", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
-				&global_collision_config.markers[i].radius, &global_collision_config.markers[i].hight);
+		fscanf(collision_file_pointer,"%lf %lf %lf %d", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
+				&global_collision_config.markers[i].radius, &global_collision_config.markers[i].height_level);
 
 	fclose(collision_file_pointer);
 	collision_config_initialized = 1;
@@ -914,7 +915,7 @@ get_initial_displacement_and_displacement_inc(double *initial_displacement, doub
 //This Function expected the points to check in local coordinates, if you need use global coordinates, just set localizer_pose as 0.0
 double
 carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t *localizer_pose, carmen_point_t local_point_to_check, // point_to_check_in_respect_to_car,
-carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map, double safety_distance)
+carmen_robot_ackerman_config_t robot_config __attribute__ ((unused)), carmen_obstacle_distance_mapper_map_message *distance_map, double safety_distance)
 {
 	check_collision_config_initialization();
 
@@ -966,7 +967,7 @@ carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles_old(carmen_poi
 
 int
 trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, double safety_distance,
-carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
+carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config __attribute__ ((unused)))
 {
 	check_collision_config_initialization();
 
