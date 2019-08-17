@@ -8,9 +8,6 @@
 
 #define DEFAULT_PORT_NUMBER 3458
 
-//#define RAD2DEG(a) (a / 0.01745329252)
-//#define DEG2RAD(a) (a * 0.01745329252)
-
 static int port_number = DEFAULT_PORT_NUMBER;
 
 typedef enum selected_bit_enum
