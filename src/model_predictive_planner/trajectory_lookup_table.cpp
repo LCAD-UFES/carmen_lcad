@@ -56,7 +56,7 @@ has_valid_discretization(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd
 
 
 TrajectoryLookupTable::TrajectoryControlParameters
-search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
+search_lookup_table_old(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
 {
 	// TODO: pegar a media de todas as leituras ponderada pela distancia para o td.
 	// Tem que passar o td ao inves do tdd.
@@ -80,6 +80,98 @@ search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
 			return (tcp);
 	}
 	tdd.dist += 1;
+
+	tdd.theta += 1;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.theta -= 2;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.theta += 1;
+
+	tdd.d_yaw += 1;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.d_yaw -= 2;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.d_yaw += 1;
+
+	tdd.phi_i += 1;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.phi_i -= 2;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.phi_i += 1;
+
+	tdd.v_i += 1;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.v_i -= 2;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.v_i += 1;
+
+	tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+	return (tcp);
+}
+
+
+TrajectoryLookupTable::TrajectoryControlParameters
+search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
+{
+	// TODO: pegar a media de todas as leituras ponderada pela distancia para o td.
+	// Tem que passar o td ao inves do tdd.
+	TrajectoryLookupTable::TrajectoryControlParameters tcp;
+	tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+	if (tcp.valid)
+		return (tcp);
+
+	int dist = tdd.dist;
+	for (int i = -4; i < 5; i++)
+	{
+		tdd.dist = dist + i;
+		if (has_valid_discretization(tdd))
+		{
+			tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+			if (tcp.valid)
+				return (tcp);
+		}
+	}
+	tdd.dist = dist;
 
 	tdd.theta += 1;
 	if (has_valid_discretization(tdd))
