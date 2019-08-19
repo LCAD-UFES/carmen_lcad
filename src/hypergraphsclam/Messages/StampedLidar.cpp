@@ -93,9 +93,7 @@ void StampedLidar::SavePointCloud(const std::string &cloud_path, const PointClou
     std::ofstream output(cloud_path, std::ofstream::out);
 
     if (!output.is_open()) {
-
         throw std::runtime_error("Could not open the output file\n");
-
     }
 
     // points vector access

@@ -7,15 +7,17 @@
 #include <cmath>
 #include <map>
 #include <utility>
+#include <list>
 
 #include <g2o/types/slam2d/se2.h>
 #include <g2o/types/slam2d/vertex_se2.h>
 #include <g2o/types/slam2d/edge_se2.h>
 
+#include <g2o/core/solver.h>
+#include <g2o/core/block_solver.h>
 #include <g2o/core/sparse_optimizer.h>
 #include <g2o/solvers/cholmod/linear_solver_cholmod.h>
-#include <g2o/core/block_solver.h>
-#include <g2o/core/solver.h>
+#include "g2o/solvers/csparse/linear_solver_csparse.h"
 #include <g2o/core/optimization_algorithm_gauss_newton.h>
 #include <g2o/core/optimization_algorithm_levenberg.h>
 #include <g2o/core/optimization_algorithm_dogleg.h>
@@ -77,8 +79,7 @@ namespace hyper {
 #define DEFAULT_FAKE_GPS_CLUSTERING_DISTANCE 0.0
 #define DEFAULT_GPS_SPARSITY_THRESHOLD 0.0
 
-
-typedef g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>> HyperBlockSolver;
+typedef g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>>  HyperBlockSolver;
 typedef g2o::LinearSolverCholmod<HyperBlockSolver::PoseMatrixType> HyperCholmodSolver;
 
 class HyperGraphSclamOptimizer {

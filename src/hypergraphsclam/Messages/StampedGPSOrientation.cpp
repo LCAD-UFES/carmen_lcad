@@ -23,6 +23,8 @@ bool StampedGPSOrientation::FromCarmenLog(std::stringstream &ss)
     // get the timestamp
     ss >> StampedMessage::timestamp;
 
+    StampedMessage::timestamp += StampedGPSOrientation::delay;
+
     return true;
 }
 
@@ -32,3 +34,6 @@ StampedMessageType StampedGPSOrientation::GetType()
 {
     return StampedGPSOrientationMessage;
 }
+
+
+double StampedGPSOrientation::delay = 0.0;

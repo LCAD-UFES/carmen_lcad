@@ -219,6 +219,7 @@ src/Makefile.vars
 src/Makefile~
 src/base_ackerman/base_ackerman
 src/behavior_selector/behavior_selector
+src/behavior_selector_multi_height/behavior_selector
 src/bumblebee_basic/bumblebee_basic
 src/bumblebee_basic/bumblebee_basic_flycap
 src/bumblebee_basic/bumblebee_basic_simulator
@@ -307,15 +308,20 @@ src/logger/logger
 src/logger/playback
 src/logger/playback_control
 src/map_server/map_server
+src/map_server_multi_height/map_server
 src/map_server/slice_map
+src/map_server_multi_height/slice_map
 src/mapeditor/map_editor
 src/mapper/convert_maps_from_float_to_double
+src/mapper_multi_height2/convert_maps_from_float_to_double
 src/mapper/mapper
+src/mapper_multi_height2/mapper
 src/maptools/map
 src/maptools/map_test
 src/maptools/maptool
 src/model_predictive_planner/model_predictive_planner
 src/model_predictive_planner/vel.txt
+src/model_predictive_planner_multi_height/model_predictive_planner
 src/moving_objects/libmoving_objects_interface.a
 src/motion_planner/motion_planner
 src/moving_objects/moving_objects
@@ -333,6 +339,8 @@ src/navigator_gui/navigator_gui
 src/navigator_gui2/navigator_gui2
 src/navigator_spline/navigator_spline
 src/obstacle_avoider/obstacle_avoider
+src/obstacle_avoider_multi_height/obstacle_avoider
+src/obstacle_avoider_multi_height/obstacle_avoider_test
 src/pantilt/pantilt
 src/pantilt/pantilt-test
 src/param_daemon/param_daemon
@@ -400,6 +408,7 @@ src/xsens_MTi-G/subscribe_xsens_mtig
 src/xsens_MTi-G/xsens_mtig
 src/laser-ldmrs/laser_ldmrs
 src/obstacle_distance_mapper/obstacle_distance_mapper
+src/obstacle_distance_mapper_multi_height/obstacle_distance_mapper
 src/legacy500_socket_interface/legacy500_to_socket_server
 src/legacy500_socket_interface/obstacle_avoider_to_socket_client
 src/legacy500_socket_interface/socket_to_legacy500_server
@@ -670,3 +679,7 @@ src/tracker/tracker.c
 
 /sharedlib/OpenJAUS/ojFoxDriver/SENT/docs/src/DM330018_Starter_Kit_Demo.X/build/
 /sharedlib/OpenJAUS/ojFoxDriver/SENT/docs/src/DM330018_Starter_Kit_Demo.X/dist/
+
+src/imu_viewer/Makefile.qmake
+src/imu_viewer/moc_mainwindow.cpp
+src/imu_viewer/moc_objectgl.cpp

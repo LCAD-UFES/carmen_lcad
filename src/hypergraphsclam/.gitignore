@@ -1,0 +1,6 @@
+.settings/
+.cproject
+.project
+.svn
+*kate.swp
+tmp/

@@ -199,11 +199,11 @@ static void
 steering_test(void)
 {
 	double array[NUM_DOUBLES_IN_SOCKET_MOTION_COMMAND];
-	const double phi_deg[] = {-60.0, -45.0, -30.0, -15.0, -10.0, -5.0, 0.0, 5.0, 10.0, 15.0, 30.0, 45.0, 60.0, 0.0};
+	const double phi_deg[] = {-30.0, -25.0, -20.0, -15.0, -10.0, -5.0, 0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 0.0};
 	const int size = sizeof(phi_deg)/sizeof(double);
 	int i;
 
-	double x = .0, y = .0, theta = .0, speed = .0, time = 10.0;
+	double x = .0, y = .0, theta = .0, speed = .1, time = 10.0;
 
 	array[0] = size;
 	printf ("number_of_motion_commands: %d\n", (int) array[0]);

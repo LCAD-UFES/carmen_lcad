@@ -31,6 +31,9 @@ void carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *si
 void carmen_simulator_ackerman_calc_laser_msg(carmen_laser_laser_message *flaser,
 		carmen_simulator_ackerman_config_t *simulator_config, int is_rear_laser);
 
+void
+update_target_v_and_target_phi(carmen_simulator_ackerman_config_t *simulator_config);
+
 #ifdef __cplusplus
 }
 #endif

@@ -516,7 +516,26 @@ filter_path(vector<carmen_ackerman_path_point_t> &path)
 	for (i = 1; (i < path.size()) && (i < (count + 1)); i += 2)
 		path.erase(path.begin() + i);
 
-	if (GlobalState::ford_escape_online)
+	// TODO: remove this workaround
+//	if (GlobalState::ford_escape_online)
+	if (1)
+	{
+		path_time = 0.0;
+		count = 0;
+		for (i = 0; (i < path.size()) && (path_time < 0.6); i += 2)
+		{
+			if ((i + 1) < path.size())
+			{
+				path[i].time += path[i + 1].time;
+				path_time += path[i].time;
+				count++;
+			}
+		}
+		for (i = 1; (i < path.size()) && (i < (count + 1)); i += 2)
+			path.erase(path.begin() + i);
+	}
+
+	if(0)
 	{
 		path_time = 0.0;
 		count = 0;
