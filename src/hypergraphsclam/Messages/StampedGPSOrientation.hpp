@@ -15,6 +15,9 @@ namespace hyper {
             // basic constructor
             StampedGPSOrientation(unsigned msg_id);
 
+            // the gps message delay
+            static double delay;
+
             // basic destructor
             ~StampedGPSOrientation();
 

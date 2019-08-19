@@ -12,7 +12,7 @@
 using namespace hyper;
 
 // basic constructor
-StampedGPSPose::StampedGPSPose(unsigned msg_id) : StampedMessage(msg_id), gps_measurement(0.0, 0.0, M_PI), gps_std(0.0) {}
+StampedGPSPose::StampedGPSPose(unsigned msg_id) : StampedMessage(msg_id), gps_measurement(0.0, 0.0, 0.0), gps_std(0.0), gps_id("0") {}
 
 // basic destructor
 StampedGPSPose::~StampedGPSPose() {}
@@ -25,13 +25,10 @@ bool StampedGPSPose::FromCarmenLog(std::stringstream &ss)
     char lt_orientation, lg_orientation;
     int quality;
 
-    std::string gid;
-
     // get the gps id
-    ss >> gid;
-    gid = "_" + gid;
-
-    if (gps_id == gid)
+    ss >> gps_id;
+    
+    if (StampedGPSPose::gps_pose_delays.end() != StampedGPSPose::gps_pose_delays.find(gps_id))
     {
         // discards the second value
         SkipValues(ss, 1);
@@ -62,6 +59,8 @@ bool StampedGPSPose::FromCarmenLog(std::stringstream &ss)
 
         // get the timestamp
         ss >> StampedMessage::timestamp;
+
+        StampedMessage::timestamp += StampedGPSPose::gps_pose_delays[gps_id].second;
 
         // @Filipe: desvios padrao para cada modo do GPS Trimble.
         // @Filipe: OBS: Multipliquei os stds por 2 no switch abaixo para dar uma folga.
@@ -111,7 +110,9 @@ bool StampedGPSPose::FromCarmenLog(std::stringstream &ss)
         // update the measure without orientation
         gps_measurement.setTranslation(Eigen::Vector2d(utm.y, -utm.x));
 
-        gps_measurement = gps_measurement;
+        // WARNING
+        // WE NEED TO TAKE CARE OF THE YAW VALUES
+        gps_measurement = gps_measurement * StampedGPSPose::gps_pose_delays[gps_id].first;
 
         // set the estimate
         StampedMessage::est = gps_measurement;
@@ -130,5 +131,4 @@ StampedMessageType StampedGPSPose::GetType()
 }
 
 // the external identifier
-std::string StampedGPSPose::gps_id = "_1";
-g2o::SE2 StampedGPSPose::inv_gps_pose = g2o::SE2(0.0, 0.0, 0.0);
+std::unordered_map<std::string, std::pair<g2o::SE2, double>> StampedGPSPose::gps_pose_delays;
