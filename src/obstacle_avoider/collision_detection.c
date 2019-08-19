@@ -888,7 +888,9 @@ check_collision_config_initialization()
 
 	collision_file_pointer = fopen(collision_file, "r");
 	setlocale(LC_NUMERIC, "C");
+	int max_h_level;
 	fscanf(collision_file_pointer,"%d", &(global_collision_config.n_markers));
+	fscanf(collision_file_pointer,"%d", &max_h_level);
 	global_collision_config.markers = (carmen_collision_marker_t*) malloc(global_collision_config.n_markers*sizeof(carmen_collision_marker_t));
 
 	for (i = 0; i < global_collision_config.n_markers; i++)
