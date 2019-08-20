@@ -41,7 +41,7 @@ VISUAL_HH_VAR 0.125
 
 -- Os multiplicadores abaixo multiplicam o desvio padrao (metros) informado pelo proprio GPS como um codigo (ver gps_nmea_messages.h) de acordo com a recepcao corrente.
 -- Os codigos sao convertidos para desvio padrao como: 1 - 20.0; 2 - 20.0; 4 - 1.0; 5 - 2.5.
-GPS_POSE_STD_MULTIPLIER 1.0
+GPS_POSE_STD_MULTIPLIER 10.0
 GPS_POSE_HH_STD 2.0
 
 -- special edge: two messages with same timestamp value - Nao precisa mecher, basicamente nao deixa o otimizador mexer em nos da mesma mensagem (GPS-HEADING)

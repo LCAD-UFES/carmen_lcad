@@ -61,7 +61,11 @@ OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS 10
 -- the min clustering distance (GPS)
 FAKE_GPS_CLUSTERING_DISTANCE 0.1
 
--- 
+-- the sparsity value
+-- a distância mínima entre as leituras do GPS,
+-- leituras sequenciais com distância inferior são removidas
+-- 0.0 desativa essa opção e nenhuma mensagem de GPS é removida com base nessa opção
+GPS_SPARSITY_THRESHOLD 0.0
 
 -- edges configuration - disable, enable edges - Comente para dizer quais voce nao quer usar como aresta.
 -- USE_VELODYNE_SEQ

@@ -31,14 +31,12 @@ main (int argc, char **argv)
 			{
 //				value -= 750;
 				if (value > 2047)
-					value = value - 4097;
-//				if (value & 0x800)
-//					value = value | ~0xfff; // extensao de sinal
+					value = value - 4096;
 
 				printf("%d\n", value);
 			}
 		}
-		else
+		else if (sensor == 2)
 		{
 			if ((state > 4) && (state <= 7))
 			{
@@ -48,14 +46,22 @@ main (int argc, char **argv)
 
 			if (state == 8)
 			{
-				value = ((value << 8) & 0xf00) | (value & 0xf0) | (value >> 8); // troca a ordem dos nibbles
+				value = ((value << 8) & 0xf00) | (value & 0xf0) | ((value >> 8) & 0xf); // troca a ordem dos nibbles
 //				value += 750;
 				if (value > 2047)
-					value = value - 4097;
+					value = value - 4096;
 
 				printf("%d\n", value);
 //				printf("0x%x\n", value);
 			}
+		}
+		else	// sensor == 3 -> status nibble
+		{
+			if (state == 1)
+				value = nibble & 0xf;
+
+			if (state == 1)
+				printf("%d\n", value);
 		}
 	}
 }

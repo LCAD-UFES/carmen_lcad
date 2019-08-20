@@ -1477,30 +1477,30 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
     }
 }
 
-//static void
-//mapper_map_message_handler(carmen_mapper_map_message *message)
-//{
-////    double time_since_last_draw = carmen_get_time() - lastDisplayTime;
-//
-//    if (!first_map_received)
-//    {
-//        first_map_received = 1;
-//        first_map_origin.x = message->config.x_origin;
-//        first_map_origin.y = message->config.y_origin;
-//        first_map_origin.z = 0.0;
-//    }
-//    else if ((first_map_origin.x == 0.0) && (first_map_origin.y == 0.0) && ((message->config.x_origin != 0.0) || (message->config.y_origin != 0.0)))
-//    {
-//        first_map_origin.x = message->config.x_origin;
-//        first_map_origin.y = message->config.y_origin;
-//        first_map_origin.z = 0.0;
-//    }
-//
-//    if (draw_map_flag)// && (time_since_last_draw < 1.0 / 30.0))
-//    {
-//        add_map_message(m_drawer, message);
-//    }
-//}
+static void
+mapper_map_message_handler(carmen_mapper_map_message *message)
+{
+//    double time_since_last_draw = carmen_get_time() - lastDisplayTime;
+
+    if (!first_map_received)
+    {
+        first_map_received = 1;
+        first_map_origin.x = message->config.x_origin;
+        first_map_origin.y = message->config.y_origin;
+        first_map_origin.z = 0.0;
+    }
+    else if ((first_map_origin.x == 0.0) && (first_map_origin.y == 0.0) && ((message->config.x_origin != 0.0) || (message->config.y_origin != 0.0)))
+    {
+        first_map_origin.x = message->config.x_origin;
+        first_map_origin.y = message->config.y_origin;
+        first_map_origin.z = 0.0;
+    }
+
+    if (draw_map_flag)// && (time_since_last_draw < 1.0 / 30.0))
+    {
+        add_map_level1_message(m_drawer, message);
+    }
+}
 
 static void
 plan_message_handler(carmen_navigator_ackerman_plan_message *message)
@@ -2816,9 +2816,9 @@ subscribe_ipc_messages(void)
                                                       (carmen_handler_t) sick_variable_scan_message_handler,
                                                       CARMEN_SUBSCRIBE_LATEST);
 
-//    carmen_mapper_subscribe_map_message(NULL,
-//                                          (carmen_handler_t) mapper_map_message_handler,
-//                                          CARMEN_SUBSCRIBE_LATEST);
+    carmen_mapper_subscribe_map_level1_message(NULL,
+                                          (carmen_handler_t) mapper_map_message_handler,
+                                          CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_compact_cost_map(NULL,
 													(carmen_handler_t) map_server_compact_cost_map_message_handler,

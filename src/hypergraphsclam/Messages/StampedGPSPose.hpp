@@ -1,8 +1,10 @@
 #ifndef HYPERGRAPHSLAM_STAMPED_GPS_POSE_HPP
 #define HYPERGRAPHSLAM_STAMPED_GPS_POSE_HPP
 
-#include <vector>
 #include <sstream>
+#include <utility>
+#include <vector>
+#include <unordered_map>
 
 #include <StampedMessage.hpp>
 
@@ -13,16 +15,16 @@ namespace hyper {
 		public:
 
 			// the gps relative displacement wrt the car
-			static g2o::SE2 inv_gps_pose;
+			static std::unordered_map<std::string, std::pair<g2o::SE2, double>> gps_pose_delays;
 
-			// the external identifier
-			static std::string gps_id;
-			
 			// the gps measure
 			g2o::SE2 gps_measurement;
 
 			// the standard deviation value
 			double gps_std;
+
+			// the gps id from carmen log
+			std::string gps_id;
 
 			// basic constructor
 			StampedGPSPose(unsigned msg_id);

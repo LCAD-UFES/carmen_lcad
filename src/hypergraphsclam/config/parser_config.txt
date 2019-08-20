@@ -11,7 +11,7 @@ LOOP_REQUIRED_DISTANCE 5.0
 ICP_THREADS_POOL_SIZE 6
 
 -- each thread will take 400 clouds and execute the sensor movement estimates - Pior caso é usar 1 pois vai ser demorado pacas De 200 em diante é legal vai mais rapido muito grande tbm estraga
-ICP_THREAD_BLOCK_SIZE 1200
+ICP_THREAD_BLOCK_SIZE 300
 
 -- the distace parameter to find the next point cloud - Basicamente pula nuvens para diminuir ruido entre leituras, por exemplo carro parado(tem um tratamento mais completo no código para o caso de carro parado)
 --Tirado de um paper
@@ -26,20 +26,26 @@ ICP_TRANSLATION_CONFIDENCE_FACTOR 1.00
 -- Nao Lembro
 CURVATURE_REQUIRED_TIME 0.0001
 
+-- vehicle model parameters
+DISTANCE_BETWEEN_AXLES 2.85
+MAX_STEERING_ANGLE 0.5337
+UNDERSTEER 0.0015
+KMAX 0.17857142857
+
 -- Se quiser mais rapido, pode rodar o odometry calibration. porem nao parece ser muito necessario.
 -- Initial odometry bias guess, the default values are: v_mult = 1.0, phi_mult = 1.0 and phi_add = 0.0
 -- You can pick this values from a previous calibration result
 
-V_MULT_ODOMETRY_BIAS 1.0462134659 # 1.047728
-PHI_MULT_ODOMETRY_BIAS 1.0088440426 # 1.062799
-PHI_ADD_ODOMETRY_BIAS 0.0000132927 # -0.000043
+V_MULT_ODOMETRY_BIAS 1.0009751921 # 1.0462134659 # 1.047728
+PHI_MULT_ODOMETRY_BIAS 0.9905334177 # 1.0088440426 # 1.062799
+PHI_ADD_ODOMETRY_BIAS -0.0033735522 # 0.0000132927 # -0.000043
 
 -- Descomente os argumentos abaixo para desabilitar a construcao das respectivas arestas
 -- DISABLE_VELODYNE_ODOMETRY
 -- DISABLE_VELODYNE_LOOP
 DISABLE_SICK_ODOMETRY
 DISABLE_SICK_LOOP
--- DISABLE_BUMBLEBEE_ODOMETRY
+DISABLE_BUMBLEBEE_ODOMETRY
 -- DISABLE_BUMBLEBEE_LOOP
 
 -- So para visualizacao
@@ -47,8 +53,11 @@ DISABLE_SICK_LOOP
 -- Make sure you have enough space available in your hard drive (3x the log size)
 -- SAVE_ACCUMULATED_POINT_CLOUDS
 
--- indica qual gps a utilizar
-GPS_IDENTIFIER 3
+-- indica quais gps a utilizar, um por um
+-- no caso abaixo, vamos usar o 0 e o 1
+-- o primeiro inteiro é o identificador e o segundo valor (double) é o delay do gps
+-- GPS_IDENTIFIER 0 0.0
+GPS_IDENTIFIER 1 0.0
 
 -- USE THE FAKE GPS
 USE_FAKE_GPS

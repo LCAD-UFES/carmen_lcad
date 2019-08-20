@@ -38,7 +38,7 @@ typedef struct
 	double 	x;
 	double 	y;
 	double 	radius;
-	double 	hight;
+	int 	height_level;
 } carmen_collision_marker_t;
 
 typedef struct

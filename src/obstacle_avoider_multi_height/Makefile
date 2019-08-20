@@ -12,7 +12,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 LFLAGS += -lglobal -lgeometry -lparam_interface -lipc -llocalize_ackerman_interface -lmap_interface -lrobot_ackerman_interface \
 		-lmap_server_interface -lconventional_ackerman -lbase_ackerman_interface -lbehavior_selector_interface -lgrid_mapping \
 		-lmap_io -lmap_util -lmap_interface -lmapper_interface -lprob_models  -llocalize_ackerman_interface -lrotation_geometry \
-		-lcarmodel -lm -lsimulator_ackerman_interface -lobstacle_distance_mapper_interface
+		-lcarmodel -lm -lsimulator_ackerman_interface -lobstacle_distance_mapper_interface `pkg-config --libs opencv`
 		
 CFLAGS += -std=c99 # -O4
 
@@ -20,7 +20,7 @@ MODULE_NAME = OBSTACLE_AVOIDER_DAEMON
 MODULE_COMMENT = Module integrating all robot sensors and configuration
 
 SOURCES = obstacle_avoider.c obstacle_avoider_interface.c \
-	obstacle_avoider_main.c collision_detection.c obstacle_avoider_test.c 
+	obstacle_avoider_main.cpp collision_detection.c obstacle_avoider_test.c 
 	#collision_detection_test.cpp
 	
 PUBLIC_INCLUDES = obstacle_avoider_interface.h obstacle_avoider_messages.h collision_detection.h

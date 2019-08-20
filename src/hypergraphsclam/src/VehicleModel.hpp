@@ -9,15 +9,13 @@ namespace hyper {
 
 class VehicleModel {
 
-    private:
+    public:
 
         // a simple configuration
         static double max_steering_angle;
         static double axle_distance;
         static double understeer;
         static double kmax;
-
-    public:
 
         // base constructor
         VehicleModel();

@@ -736,7 +736,7 @@ carmen_collision_detection_in_car_coordinate_frame(const carmen_point_t point, c
 	double coss, sine;
 
 	sincos(point.theta, &sine, &coss);
-	double x_disp = point.x + x * coss + y * sine;
+	double x_disp = point.x + x * coss - y * sine;
 	double y_disp = point.y + x * sine + y * coss;
 
 	sincos(localizer_pose->theta, &sine, &coss);
@@ -768,7 +768,7 @@ carmen_collision_detection_pose_according_to_car_orientation(carmen_ackerman_tra
 	double coss, sine;
 
 	sincos(car_pose->theta, &sine, &coss);
-	displaced_car_pose.x = car_pose->x + x * coss + y * sine;
+	displaced_car_pose.x = car_pose->x + x * coss - y * sine;
 	displaced_car_pose.y = car_pose->y + x * sine + y * coss;
 
 	displaced_car_pose.theta = car_pose->theta;
@@ -888,12 +888,15 @@ check_collision_config_initialization()
 
 	collision_file_pointer = fopen(collision_file, "r");
 	setlocale(LC_NUMERIC, "C");
+	int max_h_level;
 	fscanf(collision_file_pointer,"%d", &(global_collision_config.n_markers));
+	fscanf(collision_file_pointer,"%d", &max_h_level);
 	global_collision_config.markers = (carmen_collision_marker_t*) malloc(global_collision_config.n_markers*sizeof(carmen_collision_marker_t));
+	fscanf(collision_file_pointer,"%d", &(global_max_height_level));
 
 	for (i = 0; i < global_collision_config.n_markers; i++)
-		fscanf(collision_file_pointer,"%lf %lf %lf %lf", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
-				&global_collision_config.markers[i].radius, &global_collision_config.markers[i].hight);
+		fscanf(collision_file_pointer,"%lf %lf %lf %d", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
+				&global_collision_config.markers[i].radius, &global_collision_config.markers[i].height_level);
 
 	fclose(collision_file_pointer);
 	collision_config_initialized = 1;
@@ -914,7 +917,7 @@ get_initial_displacement_and_displacement_inc(double *initial_displacement, doub
 //This Function expected the points to check in local coordinates, if you need use global coordinates, just set localizer_pose as 0.0
 double
 carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t *localizer_pose, carmen_point_t local_point_to_check, // point_to_check_in_respect_to_car,
-carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map, double safety_distance)
+carmen_robot_ackerman_config_t robot_config __attribute__ ((unused)), carmen_obstacle_distance_mapper_map_message *distance_map, double safety_distance)
 {
 	check_collision_config_initialization();
 
@@ -966,7 +969,7 @@ carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles_old(carmen_poi
 
 int
 trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, double safety_distance,
-carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
+carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config __attribute__ ((unused)))
 {
 	check_collision_config_initialization();
 
@@ -985,7 +988,13 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 		if (distance != -1.0)
 		{
 			if (distance < global_collision_config.markers[i].radius + safety_distance)
+			{
+//				virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
+//				virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
+//				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
+//				virtual_laser_message.num_positions++;
 				return (1);
+			}
 		}
 		else
 			return (2);
