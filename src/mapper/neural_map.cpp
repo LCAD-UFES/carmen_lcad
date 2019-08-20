@@ -7,6 +7,7 @@
 
 #include "neural_map.h"
 
+// TODO Colocar caminhos fixos parametro global
 
 Neural_map::Neural_map(){}
 
@@ -254,15 +255,52 @@ Neural_map_queue::map_to_png(carmen_map_t complete_map, char* csv_name, bool is_
 	else
 	{
 	// jeito mais rapido de gravar com Opencv
-	cv::Mat png_mat = cv::Mat(complete_map.config.x_size, complete_map.config.y_size, CV_64FC1, *png_map.map);
-	cv::imwrite(png_file_name, png_mat);
+		cv::Mat png_mat = cv::Mat(complete_map.config.x_size, complete_map.config.y_size, CV_64FC1, *png_map.map);
+		cv::imwrite(png_file_name, png_mat);
 	}
 
 }
 
 
 void
-Neural_map_queue::save_map(carmen_map_t map, char* map_name, char* path, bool is_label, double rotation, double map_max, int map_index)
+Neural_map_queue::save_map_as_binary_file(carmen_map_t map, char* map_name, char* path, bool is_label, double rotation, __attribute__((unused)) double map_max, int map_index)
+{
+	FILE *map_file;
+	char name[500];
+	int map_size = map.config.x_size*map.config.y_size;
+	//sprintf(name, "%s/%lf_%s_%0.3lf_%0.3lf_%.2lf_%0.6lf", path, timestamp, map_name, x_meters_position_on_map, y_meters_position_on_map, resolution, angle);
+	if(!is_label)
+		sprintf(name, "%s/data/%d_%d_%lf_%s", path, map_index, map_size, rotation, map_name);
+	else
+		sprintf(name, "%s/labels/%d_%d_%lf_%s", path, map_index, map_size, rotation, map_name);
+
+	map_file= fopen(name, "wb");
+	if(map.complete_map != NULL)
+		fwrite(map.complete_map, map_size, sizeof(double), map_file);
+	else
+		printf("não deu \n");
+	//printf("%s\n", name);
+	//map_to_csv(map, name);
+	//	map_to_png(map, name, is_label, map_max, -1);
+
+	fclose(map_file);
+
+//TODO Salvar o ground truth como png para comparar visualmente tambem - Lembrar que o mapa i j = opencv j i
+	if(is_label)
+	{
+		sprintf(name, "%s/labels/%d_%lf_view", path, map_index, rotation);
+		map_to_png(map, name, false, 3, 1, true);
+	}
+
+//	sprintf(name, "%s/labels/%d_%lf_view", path, map_index, rotation);
+//	map_file = fopen(gt, "wb");
+//	map_to_png(map, name, false, 3, 1, true);
+
+}
+
+
+void
+Neural_map_queue::save_map_as_png(carmen_map_t map, char* map_name, char* path, bool is_label, double rotation, double map_max, int map_index)
 {
 	char name[500];
 	//sprintf(name, "%s/%lf_%s_%0.3lf_%0.3lf_%.2lf_%0.6lf", path, timestamp, map_name, x_meters_position_on_map, y_meters_position_on_map, resolution, angle);
@@ -401,12 +439,30 @@ Neural_map_queue::export_png(char* path, int map_index)
 	//save_map(*export_map.raw_max_hight_map, (char *) "max", path, false, this->neural_maps[n_maps-1].rotation);
 	//save_map(*export_map.raw_mean_hight_map, (char *) "mean", path, false, this->neural_maps[n_maps-1].rotation);
 	//save_map(*export_map.raw_square_sum_map, (char *) "std", path, false, this->neural_maps[n_maps-1].rotation);
-	this->save_map(output_map.raw_number_of_lasers_map, (char *) "numb", path, false, this->neural_maps[0].rotation, 50, map_index);
-	this->save_map(output_map.raw_min_hight_map, (char *) "min", path, false, this->neural_maps[0].rotation, 5, map_index);
-	this->save_map(output_map.raw_max_hight_map, (char *) "max", path, false, this->neural_maps[0].rotation, 5, map_index);
-	this->save_map(output_map.raw_mean_hight_map, (char *) "mean", path, false, this->neural_maps[0].rotation, 5, map_index);
-	this->save_map(output_map.raw_square_sum_map, (char *) "std", path, false, this->neural_maps[0].rotation, 20, map_index);
-	this->save_map(output_map.neural_mapper_occupancy_map, (char *) "label", path, true, this->neural_maps[0].rotation, 0, map_index);
+	this->save_map_as_png(output_map.raw_number_of_lasers_map, (char *) "numb", path, false, this->neural_maps[0].rotation, 50, map_index);
+	this->save_map_as_png(output_map.raw_min_hight_map, (char *) "min", path, false, this->neural_maps[0].rotation, 5, map_index);
+	this->save_map_as_png(output_map.raw_max_hight_map, (char *) "max", path, false, this->neural_maps[0].rotation, 5, map_index);
+	this->save_map_as_png(output_map.raw_mean_hight_map, (char *) "mean", path, false, this->neural_maps[0].rotation, 5, map_index);
+	this->save_map_as_png(output_map.raw_square_sum_map, (char *) "std", path, false, this->neural_maps[0].rotation, 20, map_index);
+	this->save_map_as_png(output_map.neural_mapper_occupancy_map, (char *) "label", path, true, this->neural_maps[0].rotation, 0, map_index);
+	this->output_map.clear_maps();
+}
+
+
+void
+Neural_map_queue::export_as_binary_file(char* path, int map_index)
+{
+	acumulate_maps();
+	//save_map(*export_map.raw_min_hight_map, (char *) "min", path, false, this->neural_maps[n_maps-1].rotation);
+	//save_map(*export_map.raw_max_hight_map, (char *) "max", path, false, this->neural_maps[n_maps-1].rotation);
+	//save_map(*export_map.raw_mean_hight_map, (char *) "mean", path, false, this->neural_maps[n_maps-1].rotation);
+	//save_map(*export_map.raw_square_sum_map, (char *) "std", path, false, this->neural_maps[n_maps-1].rotation);
+	this->save_map_as_binary_file(output_map.raw_number_of_lasers_map, (char *) "numb", path, false, this->neural_maps[0].rotation, 50, map_index);
+	this->save_map_as_binary_file(output_map.raw_min_hight_map, (char *) "min", path, false, this->neural_maps[0].rotation, 5, map_index);
+	this->save_map_as_binary_file(output_map.raw_max_hight_map, (char *) "max", path, false, this->neural_maps[0].rotation, 5, map_index);
+	this->save_map_as_binary_file(output_map.raw_mean_hight_map, (char *) "mean", path, false, this->neural_maps[0].rotation, 5, map_index);
+	this->save_map_as_binary_file(output_map.raw_square_sum_map, (char *) "std", path, false, this->neural_maps[0].rotation, 20, map_index);
+	this->save_map_as_binary_file(output_map.neural_mapper_occupancy_map, (char *) "label", path, true, this->neural_maps[0].rotation, 0, map_index);
 	this->output_map.clear_maps();
 }
 

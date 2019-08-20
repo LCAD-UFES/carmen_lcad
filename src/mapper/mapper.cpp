@@ -515,7 +515,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 					sensor_params->log_odds.log_odds_l0);
 //			carmen_grid_mapping_save_map((char *) "test.map", &map);
 
-			if (use_neural_mapper)
+			if (use_neural_mapper)//To generate the dataset to use in Neural Mapper training.
 			{
 				if (generate_neural_mapper_dataset)
 				{
@@ -523,8 +523,9 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 							x_origin, y_origin, neural_mapper_data_pace);
 
 					neural_mapper_update_output_map(offline_map, neural_mapper_car_position_according_to_map);
-					char neural_mapper_dataset_path[1024] = "/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/imgs_teste/";
-					neural_mapper_export_dataset_as_png(get_next_map, neural_mapper_dataset_path);
+					char neural_mapper_dataset_path[1024] = "/dados/neural_mapper/data_13-08-19/";
+//					neural_mapper_export_dataset_as_png(get_next_map, neural_mapper_dataset_path);
+					neural_mapper_export_dataset_as_binary_file(get_next_map, neural_mapper_dataset_path);
 				}
 				neural_mapper_update_queue_and_clear_maps();
 			}

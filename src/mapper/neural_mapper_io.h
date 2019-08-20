@@ -22,6 +22,7 @@
 
 void neural_mapper_initialize(int max_distance_meters, int num_clouds, carmen_map_config_t map_config);
 void neural_mapper_export_dataset_as_png(bool get_next_map, char path[]);
+void neural_mapper_export_dataset_as_binary_file(bool get_next_map, char path[]);
 void neural_mapper_update_queue_and_clear_maps();
 bool neural_mapper_compute_travelled_distance(carmen_position_t *neural_mapper_car_position_according_to_map, carmen_pose_3D_t neural_mapper_robot_pose,
 											 double x_origin, double y_origin, int neural_mapper_data_pace);

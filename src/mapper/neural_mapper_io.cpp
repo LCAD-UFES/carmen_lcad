@@ -34,6 +34,17 @@ neural_mapper_export_dataset_as_png(bool get_next_map, char path[])
 
 
 void
+neural_mapper_export_dataset_as_binary_file(bool get_next_map, char path[])
+{
+	if (get_next_map)
+	{
+		neural_mapper_acumulator->export_as_binary_file(path, map_index);
+		map_index++;
+	}
+}
+
+
+void
 neural_mapper_update_queue_and_clear_maps()
 {
 	neural_mapper_acumulator->push(new_neural_map);
