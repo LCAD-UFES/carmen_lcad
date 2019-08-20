@@ -34,6 +34,9 @@ static int log_mode = 0;
 
 static double last_behaviour_selector_compact_lane_contents_message_timestamp = 0.0;
 
+//extern carmen_mapper_virtual_laser_message virtual_laser_message;
+//#define MAX_VIRTUAL_LASER_SAMPLES 10000
+
 //static void
 //consume_motion_command_time(int motion_command_vetor)
 //{
@@ -181,6 +184,8 @@ obstacle_avoider_timer_handler()
 					num_motion_commands_in_vector[motion_command_vetor], timestamp_of_motion_commands_vector[motion_command_vetor]);
 			time_of_last_call = carmen_get_time();
 		}
+//		carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
+//		virtual_laser_message.num_positions = 0;
 	}
 }
 
@@ -513,6 +518,11 @@ main(int argc, char **argv)
 
 	carmen_ipc_addPeriodicTimer(1.0 / carmen_obstacle_avoider_collision_avoidance_frequency, (TIMER_HANDLER_TYPE) obstacle_avoider_timer_handler, NULL);
 	carmen_ipc_addPeriodicTimer(1.0 / carmen_obstacle_avoider_collision_avoidance_frequency, (TIMER_HANDLER_TYPE) check_message_absence_timeout_timer_handler, NULL);
+
+//	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
+//	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
+//	virtual_laser_message.colors = (char *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(char));
+//	virtual_laser_message.host = carmen_get_host();
 
 	carmen_ipc_dispatch();
 

@@ -736,7 +736,7 @@ carmen_collision_detection_in_car_coordinate_frame(const carmen_point_t point, c
 	double coss, sine;
 
 	sincos(point.theta, &sine, &coss);
-	double x_disp = point.x + x * coss + y * sine;
+	double x_disp = point.x + x * coss - y * sine;
 	double y_disp = point.y + x * sine + y * coss;
 
 	sincos(localizer_pose->theta, &sine, &coss);
@@ -768,7 +768,7 @@ carmen_collision_detection_pose_according_to_car_orientation(carmen_ackerman_tra
 	double coss, sine;
 
 	sincos(car_pose->theta, &sine, &coss);
-	displaced_car_pose.x = car_pose->x + x * coss + y * sine;
+	displaced_car_pose.x = car_pose->x + x * coss - y * sine;
 	displaced_car_pose.y = car_pose->y + x * sine + y * coss;
 
 	displaced_car_pose.theta = car_pose->theta;
@@ -988,7 +988,13 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 		if (distance != -1.0)
 		{
 			if (distance < global_collision_config.markers[i].radius + safety_distance)
+			{
+//				virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
+//				virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
+//				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
+//				virtual_laser_message.num_positions++;
 				return (1);
+			}
 		}
 		else
 			return (2);
