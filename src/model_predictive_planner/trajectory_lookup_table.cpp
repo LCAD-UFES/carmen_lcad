@@ -722,8 +722,8 @@ double steering_delay_queue_size = 1000;
 vector <steering_delay_t> steering_delay_queue;
 
 
-static double
-compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &command,
+double
+compute_path_via_simulation_new(carmen_ackerman_traj_point_t &robot_state, Command &command,
 		vector<carmen_ackerman_path_point_t> &path,
 		TrajectoryLookupTable::TrajectoryControlParameters tcp,
 		gsl_spline *phi_spline, gsl_interp_accel *acc, double v0, double i_phi, double delta_t)
@@ -817,7 +817,7 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 
 
 double
-compute_path_via_simulation_old(carmen_ackerman_traj_point_t &robot_state, Command &command,
+compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &command,
 		vector<carmen_ackerman_path_point_t> &path,
 		TrajectoryLookupTable::TrajectoryControlParameters tcp,
 		gsl_spline *phi_spline, gsl_interp_accel *acc, double v0, double i_phi, double delta_t)
