@@ -35,6 +35,10 @@ carmen_behavior_selector_road_profile_message goal_list_message;
 
 static int update_lookup_table = 0;
 
+extern double steering_delay;
+extern double steering_delay_queue_size;
+extern vector <steering_delay_t> steering_delay_queue;
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -384,6 +388,16 @@ build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
 
 
 void
+add_to_steering_delay_queue(double phi, double timestamp)
+{
+	steering_delay_t phi_command = {phi, timestamp};
+	steering_delay_queue.push_back(phi_command);
+	if (steering_delay_queue.size() > steering_delay_queue_size)
+		steering_delay_queue.erase(steering_delay_queue.begin());
+}
+
+
+void
 build_and_follow_path(double timestamp)
 {
 	list<RRT_Path_Edge> path_follower_path;
@@ -395,12 +409,15 @@ build_and_follow_path(double timestamp)
 		if (distance_to_goal < 0.5 && GlobalState::robot_config.max_v < 0.07 && GlobalState::last_odometry.v < 0.03)
 		{
 			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
+			add_to_steering_delay_queue(GlobalState::last_odometry.phi, timestamp);
 		}
 		else
 		{
 			vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
 			if (tree.num_paths > 0 && path.size() > 0)
 			{
+				add_to_steering_delay_queue(path[0].phi, timestamp);
+
 				path_follower_path = build_path_follower_path(path);
 				publish_model_predictive_rrt_path_message(path_follower_path, timestamp);
 				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);

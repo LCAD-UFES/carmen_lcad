@@ -153,6 +153,13 @@ public:
 };
 
 
+typedef struct
+{
+	double phi;
+	double timestamp;
+} steering_delay_t;
+
+
 void save_trajectory_lookup_table();
 TrajectoryLookupTable::TrajectoryDimensions convert_to_trajectory_dimensions(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd,
 		TrajectoryLookupTable::TrajectoryControlParameters tcp);
