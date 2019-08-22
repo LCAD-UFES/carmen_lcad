@@ -33,13 +33,13 @@ build_constant_trajectory()
 void
 build_step_trajectory()
 {
-	for (int i = 0; i < 60; i++)
+	for (int i = 0; i < 100; i++)
 	{
 		motion_commands_vector[i].v = 0.0;
 		motion_commands_vector[i].phi = 0.0;
 		motion_commands_vector[i].time = 0.05;
 	}
-	for (int i = 61; i < 180; i++)
+	for (int i = 100; i < NUM_MOTION_COMMANDS_PER_VECTOR; i++)
 	{
 		motion_commands_vector[i].v = 0.0;
 		motion_commands_vector[i].phi += 2.5;
@@ -75,9 +75,9 @@ build_ramp_trajectory()
 void
 publish_trajectory()
 {
-	//build_step_trajectory();
+	build_step_trajectory();
 
-	build_ramp_trajectory();
+//	build_ramp_trajectory();
 
 	printf("FOI/n");
 	carmen_robot_ackerman_publish_motion_command(motion_commands_vector, NUM_MOTION_COMMANDS_PER_VECTOR, carmen_get_time());
