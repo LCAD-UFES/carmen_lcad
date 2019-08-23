@@ -485,7 +485,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 		first = 0;
 	}
 
-#pragma omp parallel num_threads(number_of_threads)
+//#pragma omp parallel num_threads(number_of_threads)
 	{
 		log_odds_snapshot_map = carmen_prob_models_check_if_new_log_odds_snapshot_map_allocation_is_needed(log_odds_snapshot_map, &map);
 		//set_map_equal_offline_map(&map);
@@ -1035,8 +1035,9 @@ mapper_publish_map(double timestamp)
 //	printf("n = %d\n", virtual_laser_message.num_positions);
 }
 
+
 int
-carmen_parse_collision_file (double **polygon)
+carmen_parse_collision_file(double **polygon)
 {
 	FILE *poly;
 	int n_points, h_lvl;
@@ -1045,10 +1046,8 @@ carmen_parse_collision_file (double **polygon)
 	carmen_param_allow_unfound_variables(0);
 	carmen_param_t param_list[] =
 	{
-//			{"robot", "polygon_file", CARMEN_PARAM_STRING, &poly_file, 1, NULL},
-			{"robot", "collision_file", CARMEN_PARAM_STRING, &poly_file, 1, NULL},
-	};
-	carmen_param_install_params(0, NULL, param_list, sizeof(param_list)/sizeof(param_list[0]));
+	{ (char *) "robot", (char *) "collision_file", CARMEN_PARAM_STRING, &poly_file, 1, NULL }, };
+	carmen_param_install_params(0, NULL, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
 	poly = fopen(poly_file, "r");
 	setlocale(LC_NUMERIC, "C");
@@ -1057,13 +1056,13 @@ carmen_parse_collision_file (double **polygon)
 	{
 		printf("Can not load Col File\n");
 	}
-	fscanf(poly,"%d\n",&n_points);
-	fscanf(poly,"%d\n",&h_lvl);
-	*polygon = (double*) malloc(n_points*4*sizeof(double));
-	for (int i=0; i< n_points; i++)
+	fscanf(poly, "%d\n", &n_points);
+	fscanf(poly, "%d\n", &h_lvl);
+	*polygon = (double*) malloc(n_points * 4 * sizeof(double));
+	for (int i = 0; i < n_points; i++)
 	{
-		fscanf(poly,"%lf %lf %lf %lf\n",*polygon+(4*i),*polygon+(4*i+1), *polygon+(4*i+2), *polygon+(4*i+3));
-		printf("%lf %lf %lf %lf\n",(*polygon)[4*i],(*polygon)[4*i+1],(*polygon)[4*i+2],(*polygon)[4*i+3]);
+		fscanf(poly, "%lf %lf %lf %lf\n", *polygon + (4 * i), *polygon + (4 * i + 1), *polygon + (4 * i + 2), *polygon + (4 * i + 3));
+		printf("%lf %lf %lf %lf\n", (*polygon)[4 * i], (*polygon)[4 * i + 1], (*polygon)[4 * i + 2], (*polygon)[4 * i + 3]);
 	}
 	fclose(poly);
 
@@ -1075,44 +1074,47 @@ void
 carmen_mapper_update_cells_bellow_robot(carmen_point_t pose, carmen_map_t *map, double prob)
 {
 	static int load_polygon = 1;
-	static double *collision;
+	static double *collision_model_circles;
 	static int col_n_points = 0;
 
 	if (load_polygon)
 	{
-		col_n_points = carmen_parse_collision_file(&collision);
+		col_n_points = carmen_parse_collision_file(&collision_model_circles);
 		load_polygon = 0;
 		printf("Col Loaded\n");
 	}
 
-	double tmp_collision [4*col_n_points];
-	int grid_collision [4*col_n_points];
+	double collision_model_circles_center_in_world[4 * col_n_points];
+	int collision_model_circles_center_in_map[4 * col_n_points];
 
-	for (int i=0; i<col_n_points; i++)
+	for (int i = 0; i < col_n_points; i++)
 	{
-		tmp_collision[4*i]   = collision[4*i]*cos(pose.theta)+collision[4*i+1]*sin(pose.theta);
-		tmp_collision[4*i+1] = collision[4*i]*sin(pose.theta)-collision[4*i+1]*cos(pose.theta);
+		collision_model_circles_center_in_world[4 * i] = collision_model_circles[4 * i] * cos(pose.theta) + collision_model_circles[4 * i + 1] * sin(pose.theta);
+		collision_model_circles_center_in_world[4 * i + 1] = collision_model_circles[4 * i] * sin(pose.theta) - collision_model_circles[4 * i + 1] * cos(pose.theta);
 	}
 	for (int i = 0; i < col_n_points; i++)
 	{
-		grid_collision[4*i]   = (tmp_collision[4*i] + pose.x - map->config.x_origin) / map->config.resolution;
-		grid_collision[4*i+1] = (tmp_collision[4*i+1] + pose.y - map->config.y_origin) / map->config.resolution;
+		collision_model_circles_center_in_map[4 * i] = (collision_model_circles_center_in_world[4 * i] + pose.x - map->config.x_origin) / map->config.resolution;
+		collision_model_circles_center_in_map[4 * i + 1] = (collision_model_circles_center_in_world[4 * i + 1] + pose.y - map->config.y_origin) / map->config.resolution;
 	}
-	for (int i=0; i<col_n_points; i++)
+	for (int i = 0; i < col_n_points; i++)
 	{
-		int pix_radius = ceil(collision[4*i+2]/map->config.resolution);
+		int pix_radius = ceil(collision_model_circles[4 * i + 2] / map->config.resolution);
 		for (int j = -pix_radius; j <= pix_radius; j++)
 		{
 			for (int k = -pix_radius; k <= pix_radius; k++)
 			{
-				if (grid_collision[4*i]+j >= 0 && grid_collision[4*i]+j < map->config.x_size && grid_collision[4*i+1]+k >= 0 && grid_collision[4*i+1]+k < map->config.y_size && j*j+k*k <= pix_radius*pix_radius )
-				{
-					map->complete_map[(int)(grid_collision[4*i]+j) * map->config.y_size + (int)(grid_collision[4*i+1]+k)] = prob;
-				}
+				if ((collision_model_circles_center_in_map[4 * i] + j >= 0) &&
+					(collision_model_circles_center_in_map[4 * i] + j < map->config.x_size) &&
+					(collision_model_circles_center_in_map[4 * i + 1] + k >= 0) &&
+					(collision_model_circles_center_in_map[4 * i + 1] + k < map->config.y_size) &&
+					(j * j + k * k <= pix_radius * pix_radius))
+					map->complete_map[(int) (collision_model_circles_center_in_map[4 * i] + j) * map->config.y_size + (int) (collision_model_circles_center_in_map[4 * i + 1] + k)] = prob;
 			}
 		}
 	}
 }
+
 
 void
 mapper_set_robot_pose_into_the_map(carmen_localize_ackerman_globalpos_message *globalpos_message, int UPDATE_CELLS_BELOW_CAR)

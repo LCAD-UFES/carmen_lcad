@@ -1,5 +1,6 @@
 #include <carmen/global.h>
 #include <carmen/carmen.h>
+#include <locale.h>
 #include "prob_measurement_model.h"
 #include "prob_map.h"
 #include <vector>
@@ -1651,7 +1652,7 @@ carmen_prob_models_compute_expected_delta_ray2(double ray_size, int ray_index, d
 
 
 int
-carmen_prob_models_ray_hit_the_robot(double distance_between_rear_robot_and_rear_wheels, double robot_length, double robot_width, double x, double y)
+carmen_prob_models_ray_hit_the_robot_old(double distance_between_rear_robot_and_rear_wheels, double robot_length, double robot_width, double x, double y)
 {
 	/* car corners position
 	 	 front
@@ -1680,6 +1681,71 @@ carmen_prob_models_ray_hit_the_robot(double distance_between_rear_robot_and_rear
 		return 1;
 
 	return 0;
+}
+
+
+static int
+carmen_parse_collision_file(double **polygon)
+{
+	FILE *poly;
+	int n_points, h_lvl;
+	char *poly_file;
+
+	carmen_param_allow_unfound_variables(0);
+	carmen_param_t param_list[] =
+	{
+			{ (char *) "robot", (char *) "collision_file", CARMEN_PARAM_STRING, &poly_file, 1, NULL }
+	};
+	carmen_param_install_params(0, NULL, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	poly = fopen(poly_file, "r");
+	setlocale(LC_NUMERIC, "C");
+
+	if (poly == NULL)
+		printf("Can not load Col File\n");
+
+	fscanf(poly, "%d\n", &n_points);
+	fscanf(poly, "%d\n", &h_lvl);
+	*polygon = (double *) malloc(n_points * 4 * sizeof(double));
+	for (int i = 0; i < n_points; i++)
+	{
+		fscanf(poly, "%lf %lf %lf %lf\n", *polygon + (4 * i), *polygon + (4 * i + 1), *polygon + (4 * i + 2), *polygon + (4 * i + 3));
+		printf("%lf %lf %lf %lf\n", (*polygon)[4 * i], (*polygon)[4 * i + 1], (*polygon)[4 * i + 2], (*polygon)[4 * i + 3]);
+	}
+	fclose(poly);
+
+	return n_points;
+}
+
+
+int
+carmen_prob_models_ray_hit_the_robot(double distance_between_rear_robot_and_rear_wheels __attribute__ ((unused)),
+		double robot_length __attribute__ ((unused)), double robot_width __attribute__ ((unused)),
+		double x, double y)
+{
+	static int load_polygon = 1;
+	static double *collision_model_circles;
+	static int col_n_points = 0;
+
+	if (load_polygon)
+	{
+		col_n_points = carmen_parse_collision_file(&collision_model_circles);
+		load_polygon = 0;
+		printf("Col Loaded\n");
+	}
+
+	for (int i = 0; i < col_n_points; i++)
+	{
+		double center_x = collision_model_circles[i * 4];
+		double center_y = collision_model_circles[i * 4 + 1];
+		double radius = collision_model_circles[i * 4 + 2];
+
+		double distance = sqrt((x - center_x) * (x - center_x) + (y - center_y) * (y - center_y));
+		if (distance < (radius + 0.8))
+			return (1);
+	}
+
+	return (0);
 }
 
 

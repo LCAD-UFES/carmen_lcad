@@ -236,22 +236,21 @@ add_odometry_edges(SparseOptimizer *optimizer, double odom_xy_std, double odom_o
 
 void
 add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure,
-						 double gps_std_from_quality_flag, double gps_xy_std_multiplier,
+						 double gps_std_from_quality_flag, double gps_xy_std_multiplier, double gps_yaw_std,
 						 tf::Transformer *transformer)
 {
 	Matrix3d cov;
 	Matrix3d information;
 
-	cov.data()[0] = pow(gps_std_from_quality_flag * gps_xy_std_multiplier, 2);
+	cov.data()[0] = pow(gps_std_from_quality_flag * gps_xy_std_multiplier, 2.0);
 	cov.data()[1] = 0;
 	cov.data()[2] = 0;
 	cov.data()[3] = 0;
-	cov.data()[4] = pow(gps_std_from_quality_flag * gps_xy_std_multiplier, 2);
+	cov.data()[4] = pow(gps_std_from_quality_flag * gps_xy_std_multiplier, 2.0);
 	cov.data()[5] = 0;
 	cov.data()[6] = 0;
 	cov.data()[7] = 0;
-	cov.data()[8] = pow(3.14 / 40.0, 2);
-	//cov.data()[8] = pow(yaw_std, 2);
+	cov.data()[8] = pow(carmen_degrees_to_radians(gps_yaw_std), 2.0);
 
 	information = cov.inverse();
 
@@ -265,7 +264,7 @@ add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure,
 
 
 void
-add_gps_edges(SparseOptimizer *optimizer, double gps_xy_std_multiplier, tf::Transformer *transformer)
+add_gps_edges(SparseOptimizer *optimizer, double gps_xy_std_multiplier, double gps_yaw_std, tf::Transformer *transformer)
 {
 	SE2 diff(0, 0, 0);
 	SE2 last_measure(0, 0, 0);
@@ -280,7 +279,7 @@ add_gps_edges(SparseOptimizer *optimizer, double gps_xy_std_multiplier, tf::Tran
 		SE2 measure(gmeasure[0] - input_data[0].gps[0], gmeasure[1] - input_data[0].gps[1], gps_yaw /*gmeasure[2]*/); // subtract the first gps
 
 		VertexSE2 *v = dynamic_cast<VertexSE2*>(optimizer->vertices()[i]);
-		add_gps_edge(optimizer, v, measure, gps_std_from_quality_flag, gps_xy_std_multiplier, transformer);
+		add_gps_edge(optimizer, v, measure, gps_std_from_quality_flag, gps_xy_std_multiplier, gps_yaw_std, transformer);
 
 		last_measure = measure;
 
@@ -360,7 +359,7 @@ add_loop_closure_edges(SparseOptimizer *optimizer, double loop_xy_std, double lo
 
 void
 build_optimization_graph(SparseOptimizer *optimizer,
-		double gps_xy_std_multiplier,
+		double gps_xy_std_multiplier, double gps_yaw_std,
 		double odom_xy_std, double odom_orient_std,
 		double loop_xy_std, double loop_orient_std,
 		tf::Transformer *transformer)
@@ -389,7 +388,7 @@ build_optimization_graph(SparseOptimizer *optimizer,
 	add_odometry_edges(optimizer, odom_xy_std, odom_orient_std);
 
 	// Para cada par de vértices, adiciona uma aresta de gps, que é um x, y, theta.
-	add_gps_edges(optimizer, gps_xy_std_multiplier, transformer);
+	add_gps_edges(optimizer, gps_xy_std_multiplier, gps_yaw_std, transformer);
 
 	add_loop_closure_edges(optimizer, loop_xy_std, loop_orient_std);
 	// add_icp_edges(optimizer);
@@ -517,7 +516,7 @@ initialize_tf_transfoms(CarmenParamFile *params, Transformer *transformer, int g
 
 
 void
-graphslam(int gps_id, double gps_xy_std_multiplier,
+graphslam(int gps_id, double gps_xy_std_multiplier, double gps_yaw_std,
 		double odom_xy_std, double odom_orient_std,
 		double loop_xy_std, double loop_orient_std,
 		int argc, char **argv)
@@ -536,7 +535,7 @@ graphslam(int gps_id, double gps_xy_std_multiplier,
 	factory->registerType("EDGE_GPS_NEW", new HyperGraphElementCreator<EdgeGPSNew>);
 
 	SparseOptimizer *optimizer = initialize_optimizer();
-	build_optimization_graph(optimizer, gps_xy_std_multiplier, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, transformer);
+	build_optimization_graph(optimizer, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, transformer);
 	optimizer->setVerbose(true);
 
 	cerr << "Optimizing" << endl;
@@ -569,6 +568,7 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add_positional<string>("calibrated_odometry.txt", "Path to a file containing the odometry calibration data");
 	args->add_positional<string>("poses_opt.txt", "Path to a file in which the poses will be saved in graphslam format");
 	args->add<double>("gps_xy_std_multiplier", "Multiplier of the standard deviation of the gps position (times meters)", 5.0);
+	args->add<double>("gps_yaw_std", "GPS yaw standard deviation (degrees)", 1000.0);
 	args->add<double>("odom_xy_std", "Odometry position (x, y) standard deviation (meters)", 0.1);
 	args->add<double>("odom_orient_std", "Odometry orientation (yaw) standard deviation (degrees)", 1.0);
 	args->add<double>("loop_xy_std", "Loop closure delta position (x, y) standard deviation (meters)", 3.0);
@@ -599,12 +599,13 @@ main(int argc, char **argv)
 	int gps_id = gps_to_use;
 
 	double gps_xy_std_multiplier = 	args.get<double>("gps_xy_std_multiplier");
+	double gps_yaw_std = args.get<double>("gps_yaw_std");
 	double odom_xy_std = args.get<double>("odom_xy_std");
 	double odom_orient_std = carmen_degrees_to_radians(args.get<double>("odom_orient_std"));
 	double loop_xy_std = args.get<double>("loop_xy_std");
 	double loop_orient_std = carmen_degrees_to_radians(args.get<double>("loop_orient_std"));
 
-	graphslam(gps_id, gps_xy_std_multiplier, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, argc, argv);
+	graphslam(gps_id, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, argc, argv);
 	
 	return (0);
 }
