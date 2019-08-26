@@ -709,7 +709,8 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_sc
                         car_interpolated_position.position);
             } else
             {
-                velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_intensity(velodyne_message->partial_scan[i].intensity[j]);   
+            	double remission_value = 2*velodyne_message->partial_scan[i].intensity[j];
+                velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_intensity(remission_value);
             }
 		}
 	}
@@ -3078,6 +3079,7 @@ set_flag_viewer_3D(int flag_num, int value)
         break;
     case 31:
     	velodyne_remission_flag = value;
+    	draw_velodyne_flag = 2;
         if(value)
             set_background_color(0, 0, 0);
         else
