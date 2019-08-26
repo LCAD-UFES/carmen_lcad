@@ -107,6 +107,20 @@ read_velodyne_data(FILE *f)
 }
 
 
+carmen_xsens_global_quat_message
+read_xsens_data(FILE *f)
+{
+	carmen_xsens_global_quat_message m;
+	fscanf(f, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %hd %lf",
+			&m.m_acc.x, &m.m_acc.y, &m.m_acc.z,
+			&m.m_gyr.x, &m.m_gyr.y, &m.m_gyr.z,
+			&m.m_mag.x, &m.m_mag.y, &m.m_mag.z,
+			&m.quat_data.m_data[0], &m.quat_data.m_data[1], &m.quat_data.m_data[2], &m.quat_data.m_data[3],
+			&m.m_temp, &m.m_count, &m.timestamp);
+	return (m);
+}
+
+
 carmen_gps_xyz_message
 read_gps(FILE *f, int gps_to_use)
 {
@@ -241,6 +255,26 @@ process_odometry_data(PsoData *pso_data, carmen_robot_ackerman_velocity_message 
 }
 
 
+FILE *
+process_xsens_data(carmen_xsens_global_quat_message *xsens_mti)
+{
+	static FILE *yaw_file = NULL;
+
+	if (!yaw_file)
+		yaw_file = fopen("yaw_file.txt", "w");
+
+    carmen_quaternion_t quat = {xsens_mti->quat_data.m_data[0], xsens_mti->quat_data.m_data[1], xsens_mti->quat_data.m_data[2], xsens_mti->quat_data.m_data[3]};
+    rotation_matrix *xsens_matrix = create_rotation_matrix_from_quaternions(quat);
+
+    carmen_orientation_3D_t xsens_orientation = get_angles_from_rotation_matrix(xsens_matrix);
+    fprintf(yaw_file, "%lf %lf %lf %lf\n", xsens_mti->timestamp, xsens_orientation.roll, xsens_orientation.pitch, xsens_orientation.yaw);
+
+    destroy_rotation_matrix(xsens_matrix);
+
+    return (yaw_file);
+}
+
+
 void
 skip_first_lines(FILE *f, int initial_log_line, char line[])
 {
@@ -275,6 +309,7 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 
 	double first_gps_timestamp = 0.0;
 
+//	FILE *yaw_file = NULL;
 	num_lines = 0;
 	while(!feof(f) && num_lines < max_log_lines)
 	{
@@ -303,6 +338,12 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 			if ((velodyne_data.velodyne_timestamp >= (first_gps_timestamp + initial_time)) && (velodyne_data.velodyne_timestamp <= (first_gps_timestamp + final_time)))
 				process_velodyne_data(pso_data, odoms, velodyne_data);
 		}
+//		else if (!strcmp(tag, "XSENS_QUAT") && (first_gps_timestamp != 0.0))
+//		{
+//			carmen_xsens_global_quat_message xsens_data = read_xsens_data(f);
+//			if ((xsens_data.timestamp >= (first_gps_timestamp + initial_time)) && (xsens_data.timestamp <= (first_gps_timestamp + final_time)))
+//				yaw_file = process_xsens_data(&xsens_data);
+//		}
 
 		fscanf(f, "%[^\n]\n", line);
 
@@ -310,6 +351,9 @@ read_data(const char *filename, int gps_to_use, int initial_log_line, int max_lo
 	}
 
 	fclose(f);
+//	fclose(yaw_file);
+//	exit(0);
+
 	printf("Done.\n");
 
 	if (pso_data->gps_data.size() <= 0)

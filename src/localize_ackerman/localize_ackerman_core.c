@@ -1856,7 +1856,7 @@ mahalanobis_distance_with_outlier_rejection(carmen_localize_ackerman_map_t *loca
 //			discarded++;
 	}
 
-//	printf("discarded %lf, count %d, total %d\n", (double) discarded / (double) num_readings, discarded, num_readings);
+//	printf("percentage discarded %lf, discarded %d, num_readings %d\n", (double) discarded / (double) num_readings, discarded, num_readings);
 	for (int i = 0; i < filter->param->num_particles; i++)
 		filter->particles[i].weight *= filter->param->particles_normalize_factor;
 
@@ -1985,10 +1985,10 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 //			moving_objects_map_message.host = carmen_get_host();
 //			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
 //			free(new_map_x);
-
+//
 //			carmen_moving_objects_map_message moving_objects_map_message;
 //			carmen_map_t temp_map;
-//			carmen_grid_mapping_create_new_map(&temp_map, local_map->config.x_size, local_map->config.y_size, local_map->config.resolution, 'c');
+//			carmen_grid_mapping_create_new_map(&temp_map, local_mean_remission_map->config.x_size, local_mean_remission_map->config.y_size, local_mean_remission_map->config.resolution, 'c');
 //			carmen_prob_models_uncompress_compact_map(&temp_map, local_mean_remission_map);
 //			moving_objects_map_message.complete_map = temp_map.complete_map;
 //			moving_objects_map_message.size = temp_map.config.x_size * temp_map.config.y_size;

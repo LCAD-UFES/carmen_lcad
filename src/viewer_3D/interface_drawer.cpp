@@ -272,6 +272,8 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y) {
                     else
                         i_drawer->butt[i].state = 0;
 
+                    if(i_drawer->butt[25].state)
+                    	i_drawer->butt[25].state = 0;
                     set_flag_viewer_3D(2, i_drawer->butt[i].state);
                 } else if (i_drawer->butt[i].code == 9) // velodyne VBO
                 {
@@ -280,6 +282,8 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y) {
                     else
                         i_drawer->butt[i].state = 0;
 
+                    if(i_drawer->butt[25].state)
+                        i_drawer->butt[25].state = 0;
                     set_flag_viewer_3D(2, i_drawer->butt[i].state);
                 } else if (i_drawer->butt[i].code == 10) // velodyne
                 {
@@ -288,6 +292,8 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y) {
                     else
                         i_drawer->butt[i].state = 0;
 
+                    if(i_drawer->butt[25].state)
+                        i_drawer->butt[25].state = 0;
                     set_flag_viewer_3D(2, i_drawer->butt[i].state);
                 } else if (i_drawer->butt[i].code == 11) // variable velodyne
                 {

@@ -47,12 +47,14 @@ Como criar um mapa usando GraphSLAM:
 6. Se você desejar fechamento de loops, gere o arquivo tmp/loops.txt da seguinte forma:
 
 6.1. Delimite o trecho a ser considerado para fechamento de loops usando o process-volta_da_ufes_playback_viewer_3D.ini (ou equivalente).
-     Para isso, identifique no playback control o momento inicial (segundo_inicial_1) da primeira passada em uma região (ESSA SERÁ A PRIMEIRA PASSADA!). No log de volta da ufes, esse costuma ser logo quando o     carro comeca a andar. 
+     Para isso, identifique no playback control o momento inicial (segundo_inicial_1) da primeira passada em uma região (ESSA SERÁ A PRIMEIRA PASSADA!). 
+     No log de volta da ufes, esse costuma ser logo quando o carro comeca a andar. 
      De pausa no playback control no segundo_inicial_1, copie a "globalpos timestamp:" (seção Indicators do navigator_gui2; para copiar, 
-     marque com o número com o mouse, clique com o botão da direita e ecolha copiar), e cole no process-volta_da_ufes_playback_viewer_3D.ini 
+     marque o número com o mouse, clique com o botão da direita e ecolha copiar), e cole no process-volta_da_ufes_playback_viewer_3D.ini 
      como o parâmetro -save_globalpos_timestamp do localize_ackmerman.
      
-     Em seguida, encontre o momento inicial (Campo Time do plaback_control) (segundo_inicial_2) e final (segundo_final_2) da segunda passada na mesma região (ESSA SERÁ A SEGUNDA PASSADA!). Esse é o momento em que o carro passa novamente próximo ao segundo_inicial_1 até o fim do log (no caso de um log volta da UFES).
+     Em seguida, encontre o momento inicial (campo Time do plaback_control) (segundo_inicial_2) e final (segundo_final_2) da segunda passada na mesma região (ESSA SERÁ A SEGUNDA PASSADA!). 
+     Esse é o momento em que o carro passa novamente próximo ao segundo_inicial_1 até o fim do log (no caso de um log volta da UFES).
 
 6.2. Rode o process-volta_da_ufes_playback_viewer_3D_map_generation.ini novamente (ou outro equivalente ajustado para o seu caso) e:
 

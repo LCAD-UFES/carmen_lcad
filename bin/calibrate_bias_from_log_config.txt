@@ -15,21 +15,21 @@ max_log_lines = -1
 # Flag indicating if the visualization should run or not.
 view = 1
 # Initial time to consider for odometry calibration
-initial_time = 33.0
+initial_time = 60
 # Final time to consider for odometry calibration
-final_time = 978.0
+final_time = 1059
 # Lower limit of velocity multiplier
-min_multiplicative_v = 0.979999
+min_multiplicative_v = 0.6
 # Upper limit of velocity multiplier
-max_multiplicative_v = 1.3001
+max_multiplicative_v = 1.5001
 # Lower limit of phi multiplier
 min_multiplicative_phi = 0.55
 # Upper limit of phi multiplier
 max_multiplicative_phi = 2.5
 # Lower limit of phi additive bias (degrees)
-min_additive_phi = -2
+min_additive_phi = -20
 # Upper limit of phi additive bias (degrees)
-max_additive_phi = 2
+max_additive_phi = 20
 # Lower limit of initial angle (degrees)
 min_initial_angle = -180
 # Upper limit of initial angle (degrees)
