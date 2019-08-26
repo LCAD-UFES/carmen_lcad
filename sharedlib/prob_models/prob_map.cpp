@@ -701,7 +701,7 @@ static void
 update_intensity_of_cells(carmen_map_t *sum_remission_map,
 		carmen_map_t *sum_sqr_remission_map, carmen_map_t *count_remission_map,
 		sensor_data_t *sensor_data, sensor_parameters_t *sensor_params,
-		double highest_sensor, double safe_range_above_sensors, int ray, cell_coords_t *map_cells_hit_by_rays, int thread_id, double safe_height_from_ground = 0.0)
+		double highest_sensor, double safe_range_above_sensors, int ray, cell_coords_t *map_cells_hit_by_rays, int thread_id, double safe_height_from_ground = -10.0)
 {
 	cell_coords_t cell_hit_by_ray;
 
@@ -755,7 +755,7 @@ update_intensity_of_cells(carmen_map_t *sum_remission_map,
 static void
 update_intensity_of_cells(carmen_compact_map_t *mean_remission_compact_map,
 		sensor_data_t *sensor_data, sensor_parameters_t *sensor_params,
-		double highest_sensor, double safe_range_above_sensors, int ray, cell_coords_t *map_cells_hit_by_rays, int thread_id, double safe_height_from_ground = 0.0)
+		double highest_sensor, double safe_range_above_sensors, int ray, cell_coords_t *map_cells_hit_by_rays, int thread_id, double safe_height_from_ground = -10.0)
 {
 	cell_coords_t cell_hit_by_ray;
 
