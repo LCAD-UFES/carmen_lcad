@@ -2920,6 +2920,8 @@ set_flag_viewer_3D(int flag_num, int value)
 
     case 2:
         draw_velodyne_flag = value;
+        set_background_color(g_b_red, g_b_green, g_b_blue);
+        velodyne_remission_flag = 0;
         break;
 
     case 3:
@@ -3077,7 +3079,7 @@ set_flag_viewer_3D(int flag_num, int value)
     case 31:
     	velodyne_remission_flag = value;
         if(value)
-            set_background_color(0, 0, 255);
+            set_background_color(0, 0, 0);
         else
             set_background_color(g_b_red, g_b_green, g_b_blue);
         break;
