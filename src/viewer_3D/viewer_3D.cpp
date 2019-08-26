@@ -285,6 +285,7 @@ static double time_spent_by_each_scan;
 static double distance_between_front_and_rear_axles;
 
 static int force_velodyne_flag = 0;
+static double remission_multiplier = 2;
 
 // store original background color defined in ini file
 static double g_b_red;
@@ -709,7 +710,7 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_sc
                         car_interpolated_position.position);
             } else
             {
-            	double remission_value = 2*velodyne_message->partial_scan[i].intensity[j];
+            	double remission_value = remission_multiplier*velodyne_message->partial_scan[i].intensity[j];
                 velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_intensity(remission_value);
             }
 		}
@@ -2909,6 +2910,7 @@ distance_near(carmen_vector_3D_t annotation_pose, carmen_vector_3D_t delete_pose
 void
 set_flag_viewer_3D(int flag_num, int value)
 {
+	static int old_velodyne_flag = 0;
     switch (flag_num)
     {
     case 0:
@@ -3079,11 +3081,18 @@ set_flag_viewer_3D(int flag_num, int value)
         break;
     case 31:
     	velodyne_remission_flag = value;
-    	draw_velodyne_flag = 2;
+
         if(value)
+        {
+        	old_velodyne_flag = draw_velodyne_flag;
             set_background_color(0, 0, 0);
+        	draw_velodyne_flag = 2;
+        }
         else
+        {
             set_background_color(g_b_red, g_b_green, g_b_blue);
+            draw_velodyne_flag = old_velodyne_flag;
+        }
         break;
     case 32:
         force_velodyne_flag = value;
@@ -3398,6 +3407,7 @@ void read_parameters(int argc, char **argv)
 	carmen_param_t param_list[] =
 	{
 		{(char *) "commandline",	(char *) "fv_flag",		CARMEN_PARAM_ONOFF,	&(force_velodyne_flag),		0, NULL},
+		{(char *) "commandline",	(char *) "remission_multiplier",		CARMEN_PARAM_DOUBLE, &(remission_multiplier),		0, NULL},
 	};
 
 	carmen_param_allow_unfound_variables(1);
