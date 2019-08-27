@@ -32,7 +32,7 @@ bool StampedOdometry::FromCarmenLog(std::stringstream &ss)
     ss >> StampedOdometry::timestamp;
 
     // filtering
-    if (0.0011 > std::fabs(v))
+    if (0.001 > std::fabs(v))
     {
         v = 0.0;
     }

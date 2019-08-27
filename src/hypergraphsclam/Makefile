@@ -38,7 +38,10 @@ LFLAGS += -lboost_system -lboost_filesystem
 LFLAGS += -lpcl_common -lpcl_io -lpcl_registration -lpcl_features -lpcl_search -lpcl_filters -lpcl_visualization
 
 # g2o libs
-LFLAGS += -L/usr/local/lib -lcholmod -lg2o_core -lg2o_types_slam2d -lg2o_solver_cholmod -lg2o_stuff
+LFLAGS += -L/usr/local/lib -lcholmod -lg2o_core -lg2o_types_slam2d -lg2o_solver_cholmod -lg2o_solver_csparse -lg2o_stuff 
+
+# g2o libs...
+LFLAGS += -lcxsparse -lg2o_csparse_extension -lcsparse
 
 # the carmen libraries
 LFLAGS += -lglobal
@@ -73,10 +76,6 @@ SOURCES = 	Helpers/StringHelper.cpp \
 			src/HyperGraphSclamOptimizer.cpp \
 			parser.cpp \
 			hypergraphsclam.cpp
-
-#PUBLIC_INCLUDES =
-#PUBLIC_LIBRARIES =
-#PUBLIC_BINARIES = hypergraphsclam parser
 
 TARGETS = libviso hypergraphsclam parser
 

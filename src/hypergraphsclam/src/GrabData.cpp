@@ -1,6 +1,7 @@
 #include <GrabData.hpp>
 #include <StampedMessageType.hpp>
 
+#include <list>
 #include <cmath>
 #include <thread>
 #include <iterator>
@@ -8,13 +9,11 @@
 #include <utility>
 #include <limits>
 #include <unistd.h>
-#include <list>
 
 #include <viso_stereo.h>
 #include <png++/png.hpp>
 
 using namespace hyper;
-
 
 // the main constructor
 GrabData::GrabData() :
@@ -61,12 +60,7 @@ GrabData::~GrabData()
     Clear();
 }
 
-
 // PRIVATE METHODS
-
-
-// clear the messages
-
 
 // separate the gps and velodyne
 void GrabData::SeparateMessages()
@@ -118,7 +112,7 @@ void GrabData::SeparateMessages()
         if (nullptr != odom)
         {
             // does it have a valid velocity?
-            valid_velocity = 0.005 < std::fabs(odom->v);
+            valid_velocity = 0.001 < std::fabs(odom->v);
             zeros = valid_velocity ? max_zeros : zeros - 1;
         }
 
@@ -322,10 +316,8 @@ void GrabData::BuildGPSMeasures()
 {
     if (5 < messages.size())
     {
-        // status reporting
         std::cout << "Start building the GPS measurements and estimates\n";
 
-        // helpers
         StampedMessagePtrVector::iterator end(messages.end());
         StampedMessagePtrVector::iterator begin(messages.begin());
         StampedMessagePtrVector::iterator prev(messages.end());
@@ -333,30 +325,20 @@ void GrabData::BuildGPSMeasures()
         StampedMessagePtrVector::iterator next(messages.begin());
         ++next;
 
-        // find the first gps position
         gps_origin = GetFirstGPSPosition();
+        std::cout << "GPS ORIGIN: " << gps_origin.transpose() << std::endl;
 
         while (end != curr)
         {
-            // downcasting
             StampedGPSPosePtr gps_pose = dynamic_cast<StampedGPSPosePtr>(*curr);
 
             if (nullptr != gps_pose)
             {
-                // update the reference frame
                 gps_pose->gps_measurement.setTranslation(gps_pose->gps_measurement.translation() - gps_origin);
-
-                // update the orientation
                 gps_pose->gps_measurement.setRotation(Eigen::Rotation2Dd(GetGPSOrientation(begin, curr, end, gps_pose->timestamp)));
-
-                gps_pose->gps_measurement = gps_pose->gps_measurement * StampedGPSPose::inv_gps_pose;
             }
-
-            // go to the next message
             ++curr;
         }
-
-        // status reporting
         std::cout << "GPS measurements and estimates were built successfully\n";
     }
 }
@@ -366,12 +348,9 @@ void GrabData::BuildFakeGPSMeasures()
 {
     if (5 < messages.size())
     {
-        // status reporting
         std::cout << "Start building the fake GPS measurements and estimates\n";
 
-        // helpers
         StampedGPSPosePtrVector::iterator end(gps_messages.end());
-        StampedGPSPosePtrVector::iterator begin(gps_messages.begin());
         StampedGPSPosePtrVector::iterator prev(gps_messages.end());
         StampedGPSPosePtrVector::iterator curr(gps_messages.begin());
         StampedGPSPosePtrVector::iterator next(gps_messages.begin());
@@ -380,7 +359,7 @@ void GrabData::BuildFakeGPSMeasures()
         StampedGPSPosePtr prev_gps, curr_gps, next_gps;
         Eigen::Vector2d diff;
 
-        while (end != curr)
+        while (end != next)
         {
             curr_gps = *curr;
             next_gps = *next;
@@ -406,8 +385,6 @@ void GrabData::BuildFakeGPSMeasures()
         {
             curr_gps = *curr;
             curr_gps->gps_measurement.setTranslation(curr_gps->gps_measurement.translation() - gps_origin);
-
-            curr_gps->gps_measurement = curr_gps->gps_measurement * StampedGPSPose::inv_gps_pose;
             ++curr;
         }
 
@@ -1597,27 +1574,17 @@ void GrabData::SaveGPSEstimates(std::string filename, bool original = false)
             throw std::runtime_error("Could not open the gps estimate output file!");
         }
 
-        // helpers
         StampedGPSPosePtrVector::iterator end = gps_messages.end();
         StampedGPSPosePtrVector::iterator current = gps_messages.begin();
 
-        g2o::SE2 gps_pose = StampedGPSPose::inv_gps_pose.inverse();
-
         while (end != current)
         {
-            // direct access
+            g2o::SE2 &gps_pose = StampedGPSPose::gps_pose_delays[(*current)->gps_id].first;
+
             g2o::SE2 gps_measurement = original ? (*current)->gps_measurement * gps_pose : (*current)->gps_measurement;
-
-            // get the orientation
             double yaw = gps_measurement[2];
-
-            // the translation
             Eigen::Vector2d position(gps_measurement.translation() + gps_origin);
-
-            // write the gps mesaure
             ofs << std::fixed << position[0] << " " << position[1] << " " << yaw << " " << std::cos(yaw) << " " << std::sin(yaw) << "\n";
-
-            // go to the next messages
             ++current;
         }
 
@@ -1905,6 +1872,22 @@ void GrabData::Configure(std::string config_filename, std::string carmen_ini)
             {
                 ss >> icp_translation_confidence_factor;
             }
+            else if ("DISTANCE_BETWEEN_AXLES" == str)
+            {
+                ss >> VehicleModel::axle_distance;
+            }
+            else if ("MAX_STEERING_ANGLE" == str)
+            {
+                ss >> VehicleModel::max_steering_angle;
+            }
+            else if ("UNDERSTEER" == str)
+            {
+                ss >> VehicleModel::understeer;
+            }
+            else if ("KMAX" == str)
+            {
+                ss >> VehicleModel::kmax;
+            }
             else if ("V_MULT_ODOMETRY_BIAS" == str)
             {
                 ss >> StampedOdometry::vmb;
@@ -1957,17 +1940,14 @@ void GrabData::Configure(std::string config_filename, std::string carmen_ini)
             }
             else if ("GPS_IDENTIFIER" == str)
             {
-                ss >> StampedGPSPose::gps_id;
-
-
-                if ("0" == StampedGPSPose::gps_id) {
-                    StampedGPSPose::gps_id = "";
+                std::string gps_id;
+                double delay { 0.0 };
+                ss >> gps_id;
+                ss >> delay;
+                if (!gps_id.empty())
+                {
+                    StampedGPSPose::gps_pose_delays.emplace(gps_id, std::pair<g2o::SE2, double>(g2o::SE2(0.0,0.0,0.0), delay));
                 }
-
-                if (!StampedGPSPose::gps_id.empty()) {
-                    StampedGPSPose::gps_id = "_" + StampedGPSPose::gps_id; 
-                }
-                std::cout << "The gps id: " << StampedGPSPose::gps_id << std::endl;
             }
         }
     }
@@ -1981,67 +1961,70 @@ void GrabData::Configure(std::string config_filename, std::string carmen_ini)
     SetGPSPose(carmen_ini);
 }
 
-// get the gps antena position in relation to sensor board
+
 void GrabData::SetGPSPose(std::string carmen_ini)
 {
     std::ifstream is(carmen_ini);
-   
-    if (is.good())
+
+    if (is.good()) 
     {
-        int param_counter = 0;
-        double x   = 0.0, y   = 0.0, yaw   = 0.0;
-        double sbx = 0.0, sby = 0.0, sbyaw = 0.0;
-
-        std::string gps_nmea = "gps_nmea";
         std::stringstream ss;
+        double sbx, sby, sbyaw;
+        g2o::SE2 sensor_board_pose { 0.0, 0.0, 0.0};
+        std::unordered_map<std::string, std::pair<std::string, unsigned>> keys;
+        std::vector<std::pair<std::string, unsigned>> sufix { {"_x", 0}, {"_y", 1}, {"_yaw", 2} };
 
-        while (-1 != StringHelper::ReadLine(is, ss) and 6 > param_counter)
+        std::unordered_map<std::string, Eigen::Vector3d> transforms;
+
+        for (auto &entry : StampedGPSPose::gps_pose_delays)
+        {
+            transforms.emplace(entry.first, Eigen::Vector3d {0.0, 0.0, 0.0});
+
+            for (auto &s : sufix)
+            {
+                std::string k("gps_nmea" + ("0" != entry.first ? "_" + entry.first + s.first : s.first));
+                keys.emplace(k, std::pair<std::string, unsigned>(entry.first, s.second));
+            }
+        }
+
+        while (-1 != StringHelper::ReadLine(is, ss))
         {
             std::string str;
             ss >> str;
 
-            if (gps_nmea + StampedGPSPose::gps_id + "_x" == str)
+            if (keys.end() != keys.find(str))
             {
-                ss >> x;
-                param_counter += 1;   
-            }
-            else if (gps_nmea + StampedGPSPose::gps_id + "_y" == str)
-            {
-                ss >> y;
-                param_counter += 1;   
-            }
-            else if (gps_nmea + StampedGPSPose::gps_id + "_yaw" == str)
-            {
-                ss >> yaw;
-                param_counter += 1;   
+                std::pair<std::string, unsigned> &strp { keys[str] };
+                Eigen::Vector3d &transform { transforms[strp.first] };
+                double value;
+                ss >> value;
+                transform[strp.second] = value;
             }
             else if ("sensor_board_1_x" == str)
             {
                 ss >> sbx;
-                param_counter += 1;
             }
             else if ("sensor_board_1_y" == str)
             {
                 ss >> sby;
-                param_counter += 1;
             }
             else if ("sensor_board_1_yaw" == str)
             {
                 ss >> sbyaw;
-                param_counter += 1;
+                
             }
         }
 
-        if (6 == param_counter) 
+        sensor_board_pose.setTranslation(Eigen::Vector2d {sbx, sby});
+        sensor_board_pose.setRotation(Eigen::Rotation2Dd(mrpt::math::wrapToPi<double>(sbyaw)));
+
+        for (auto &entry : StampedGPSPose::gps_pose_delays)
         {
-            g2o::SE2 sensor_board(sbx, sby, mrpt::math::wrapToPi<double>(sbyaw));
-            StampedGPSPose::inv_gps_pose.setTranslation(Eigen::Vector2d(x, y));
-            StampedGPSPose::inv_gps_pose.setRotation(Eigen::Rotation2Dd(mrpt::math::wrapToPi<double>(yaw)));
-            StampedGPSPose::inv_gps_pose = (sensor_board * StampedGPSPose::inv_gps_pose).inverse();            
-        }
-        else 
-        {
-            std::cout << "Could not read the gps parameters!" << std::endl;
+            Eigen::Vector3d &transform { transforms[entry.first]};
+
+            entry.second.first.setTranslation(Eigen::Vector2d(transform[0], transform[1]));
+            entry.second.first.setRotation(Eigen::Rotation2Dd(mrpt::math::wrapToPi<double>(transform[2])));
+            entry.second.first = (sensor_board_pose * entry.second.first).inverse();
         }
     }
 

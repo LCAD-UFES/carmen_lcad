@@ -45,7 +45,7 @@ HyperGraphSclamOptimizer::HyperGraphSclamOptimizer(int argc, char **argv) :
         internal_loop(DEFAULT_OPTIMIZER_INNER_POSE_ITERATIONS),
         optimizer_inner_odom_calib_iterations(DEFAULT_OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS),
         fake_gps_clustering_distance(DEFAULT_FAKE_GPS_CLUSTERING_DISTANCE),
-		(DEFAULT_GPS_SPARSITY_THRESHOLD),
+		gps_sparsity_threshold(DEFAULT_GPS_SPARSITY_THRESHOLD),
         use_gps(false),
         use_velodyne_seq(false),
         use_velodyne_loop(false),
@@ -314,12 +314,12 @@ void HyperGraphSclamOptimizer::RegisterCustomTypes()
 // initialize the sparse optimizer
 void HyperGraphSclamOptimizer::InitializeOptimizer()
 {
+    
     // creates a new sparse optimizer in memmory
-    optimizer = new g2o::SparseOptimizer;
+    optimizer = new g2o::SparseOptimizer();
 
     // allocate a new cholmod solver
     std::unique_ptr<HyperCholmodSolver> cholmod_solver(new HyperCholmodSolver());
-    // HyperCholmodSolver *cholmod_solver = new HyperCholmodSolver();
 
     // the block ordering
     cholmod_solver->setBlockOrdering(false);
@@ -331,7 +331,7 @@ void HyperGraphSclamOptimizer::InitializeOptimizer()
     g2o::OptimizationAlgorithm *optimization_algorithm = new g2o::OptimizationAlgorithmGaussNewton(std::move(solver));
 
     // set the cholmod solver
-    optimizer->setAlgorithm(optimization_algorithm);
+    optimizer->setAlgorithm(solver);
 
     // set the verbose mode
     optimizer->setVerbose(true);
@@ -1332,9 +1332,8 @@ void HyperGraphSclamOptimizer::SaveCorrectedVertices()
     g2o::SparseOptimizer::VertexIDMap::iterator end(optimizer->vertices().end());
 
     std::map<double, g2o::VertexSE2*> sorted_vertices;
-  
-      while (end != it)
-      {
+    while (end != it)
+    {
         g2o::VertexSE2 *v = dynamic_cast<g2o::VertexSE2*>(it->second);
 
         if (nullptr != v && start_id < unsigned(v->id()))
@@ -1379,9 +1378,6 @@ void HyperGraphSclamOptimizer::SaveCorrectedVertices()
             default:
                 break;
         }
-
-        // go to the next vertex
-        ++it;
     }
    
     // close the output files
