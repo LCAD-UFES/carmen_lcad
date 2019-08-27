@@ -65,6 +65,7 @@ int update_and_merge_with_snapshot_map;
 int decay_to_offline_map;
 int create_map_sum_and_count;
 int use_remission;
+int mapper_save_map;
 
 carmen_pose_3D_t sensor_board_1_pose;
 carmen_pose_3D_t front_bullbar_pose;
@@ -277,7 +278,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		publish_virtual_scan(globalpos_message->timestamp);
 	}
 
-	if (update_and_merge_with_mapper_saved_maps && time_secs_between_map_save > 0.0)
+	if (update_and_merge_with_mapper_saved_maps && time_secs_between_map_save > 0.0 && mapper_save_map)
 		mapper_periodically_save_current_map(globalpos_message->timestamp);
 }
 
@@ -536,7 +537,7 @@ shutdown_module(int signo)
 {
 	if (signo == SIGINT)
 	{
-		if (update_and_merge_with_mapper_saved_maps)
+		if (update_and_merge_with_mapper_saved_maps && mapper_save_map)
 			mapper_save_current_map();
 
 		if (sensors_params[0].save_calibration_file)
@@ -1090,6 +1091,7 @@ read_parameters(int argc, char **argv,
 		{(char *) "mapper",  (char *) "update_cells_below_car", CARMEN_PARAM_ONOFF, &update_cells_below_car, 0, NULL},
 		{(char *) "mapper",  (char *) "decay_to_offline_map", CARMEN_PARAM_ONOFF, &decay_to_offline_map, 0, NULL},
 		{(char *) "mapper",  (char *) "create_map_sum_and_count", CARMEN_PARAM_ONOFF, &create_map_sum_and_count, 0, NULL},
+		{(char *) "mapper",  (char *) "save_map", CARMEN_PARAM_ONOFF, &mapper_save_map, 0, NULL},
 		{(char *) "mapper",  (char *) "use_remission", CARMEN_PARAM_ONOFF, &use_remission, 0, NULL},
 		{(char *) "mapper",  (char *) "use_remission_threshold", CARMEN_PARAM_ONOFF, &use_remission_threshold, 0, NULL },
 		{(char *) "mapper",  (char *) "remission_threshold", CARMEN_PARAM_DOUBLE, &remission_threshold, 0, NULL},

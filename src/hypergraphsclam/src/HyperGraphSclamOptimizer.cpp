@@ -45,7 +45,7 @@ HyperGraphSclamOptimizer::HyperGraphSclamOptimizer(int argc, char **argv) :
         internal_loop(DEFAULT_OPTIMIZER_INNER_POSE_ITERATIONS),
         optimizer_inner_odom_calib_iterations(DEFAULT_OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS),
         fake_gps_clustering_distance(DEFAULT_FAKE_GPS_CLUSTERING_DISTANCE),
-		gps_sparsity_threshold(DEFAULT_GPS_SPARSITY_THRESHOLD),
+		(DEFAULT_GPS_SPARSITY_THRESHOLD),
         use_gps(false),
         use_velodyne_seq(false),
         use_velodyne_loop(false),
@@ -318,16 +318,17 @@ void HyperGraphSclamOptimizer::InitializeOptimizer()
     optimizer = new g2o::SparseOptimizer;
 
     // allocate a new cholmod solver
-    HyperCholmodSolver *cholmod_solver = new HyperCholmodSolver();
+    std::unique_ptr<HyperCholmodSolver> cholmod_solver(new HyperCholmodSolver());
+    // HyperCholmodSolver *cholmod_solver = new HyperCholmodSolver();
 
     // the block ordering
     cholmod_solver->setBlockOrdering(false);
 
     // the base solver
-    g2o::Solver *solver = new HyperBlockSolver(cholmod_solver);
+    std::unique_ptr<g2o::Solver> solver(new HyperBlockSolver(std::move(cholmod_solver)));
 
     // the base solver
-    g2o::OptimizationAlgorithm *optimization_algorithm = new g2o::OptimizationAlgorithmGaussNewton(solver);
+    g2o::OptimizationAlgorithm *optimization_algorithm = new g2o::OptimizationAlgorithmGaussNewton(std::move(solver));
 
     // set the cholmod solver
     optimizer->setAlgorithm(optimization_algorithm);
@@ -1330,51 +1331,59 @@ void HyperGraphSclamOptimizer::SaveCorrectedVertices()
     g2o::SparseOptimizer::VertexIDMap::iterator it(optimizer->vertices().begin());
     g2o::SparseOptimizer::VertexIDMap::iterator end(optimizer->vertices().end());
 
-    // std::sort(optimizer->vertices().begin(), optimizer->vertices().end(), [] () {});
-
-    while (end != it)
-    {
-        // downcast to the base vertex
-        g2o::VertexSE2* v = dynamic_cast<g2o::VertexSE2*>(it->second);
+    std::map<double, g2o::VertexSE2*> sorted_vertices;
+  
+      while (end != it)
+      {
+        g2o::VertexSE2 *v = dynamic_cast<g2o::VertexSE2*>(it->second);
 
         if (nullptr != v && start_id < unsigned(v->id()))
         {
             Eigen::Vector3d p(v->estimate().toVector());
+            double t = id_time_type_map.at(v->id()).first;
+            sorted_vertices[t] = v;
+        }
+        ++it;
+    }
 
-            // build the base
-            p[0] += gps_origin[0];
-            p[1] += gps_origin[1];
+    for (std::pair<const double, g2o::VertexSE2*> &entry: sorted_vertices)
+    {
+        g2o::VertexSE2 *v = entry.second;
+        Eigen::Vector3d p(v->estimate().toVector());
 
-            double a = p[2];
-            double sina = std::sin(a) * 0.05;
-            double cosa = std::cos(a) * 0.05;
+        // build the base
+        p[0] += gps_origin[0];
+        p[1] += gps_origin[1];
 
-            std::pair<double, unsigned> time_type(id_time_type_map.at(unsigned(v->id())));
-            double t = time_type.first;
-            StampedMessageType msg_type = StampedMessageType(time_type.second);
+        double a = p[2];
+        double sina = std::sin(a) * 0.05;
+        double cosa = std::cos(a) * 0.05;
 
-            // write to the output file
-            car_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
+        std::pair<double, unsigned> time_type {id_time_type_map.at(unsigned(v->id())) };
+        double t = time_type.first;
+        StampedMessageType msg_type = StampedMessageType(time_type.second);
 
-            switch (msg_type)
-            {
-                case StampedVelodyneMessage:
-                    velodyne_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
-                    break;
-                case StampedBumblebeeMessage:
-                    bumblebee_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
-                    break;
-                case StampedSICKMessage:
-                    sick_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
-                default:
-                    break;
-            }
+        // write to the output file
+        car_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
+
+        switch (msg_type)
+        {
+            case StampedVelodyneMessage:
+                velodyne_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
+                break;
+            case StampedBumblebeeMessage:
+                bumblebee_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
+                break;
+            case StampedSICKMessage:
+                sick_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
+            default:
+                break;
         }
 
         // go to the next vertex
         ++it;
     }
-
+   
     // close the output files
     car_poses.close();
     velodyne_poses.close();
