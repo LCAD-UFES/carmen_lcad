@@ -344,7 +344,7 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 	static unsigned int counter = 0;
 	if (publish_laser_flag && ((counter % 2) == 0) && !use_truepos)
 	{
-		pid_plot_phi(simulator_config->phi, simulator_config->target_phi, 0.55, "phi");
+//		pid_plot_phi(simulator_config->phi, simulator_config->target_phi, 0.55, "phi");
 		publish_frontlaser(timestamp);
 		publish_rearlaser(timestamp);
 	}
