@@ -257,7 +257,7 @@ void keyRelease(int code);
 static int argc_g;
 static char** argv_g;
 
-void init_stuff(int argc, char** argv);
+void read_parameters_and_init_stuff(int argc, char** argv);
 void destroy_stuff();
 
 static carmen_download_map_message download_map_message;
@@ -291,6 +291,9 @@ static double remission_multiplier = 2;
 static double g_b_red;
 static double g_b_green;
 static double g_b_blue;
+
+float ***remission_calibration_table;
+
 
 static carmen_vector_3D_t
 get_position_offset(void)
@@ -533,7 +536,7 @@ xsens_xyz_message_handler(carmen_xsens_xyz_message *xsens_xyz)
     if (last_timestamp != 0.0 && fabs(xsens_xyz->timestamp - last_timestamp) > 3.0)
     {
         destroy_stuff();
-        init_stuff(argc_g, argv_g);
+        read_parameters_and_init_stuff(argc_g, argv_g);
         last_timestamp = 0.0;
         return;
     }
@@ -661,15 +664,15 @@ create_point_colors_height(carmen_vector_3D_t point, carmen_vector_3D_t car_posi
 carmen_vector_3D_t
 create_point_colors_intensity(double intensity)
 {
-        carmen_vector_3D_t colors;
+	carmen_vector_3D_t colors;
 
-        double intensity_normalized = 2.0 * (intensity / 255.0);
+	double intensity_normalized = intensity / 255.0;
 
-        colors.x = intensity_normalized;
-        colors.y = intensity_normalized;
-        colors.z = intensity_normalized;
+	colors.x = intensity_normalized;
+	colors.y = intensity_normalized;
+	colors.z = intensity_normalized;
 
-        return colors;
+	return (colors);
 }
 
 
@@ -704,13 +707,27 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_sc
 			carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position,
 					&r_matrix_car_to_global);
 			velodyne_points->points[i * (vertical_size) + j - range_max_points] = point_global_position;
-            if(!velodyne_remission_flag)
+            if (!velodyne_remission_flag)
             {
                 velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
                         car_interpolated_position.position);
-            } else
+            }
+            else
             {
-            	double remission_value = remission_multiplier*velodyne_message->partial_scan[i].intensity[j];
+            	int intensity = velodyne_message->partial_scan[i].intensity[j];
+            	if (remission_calibration_table)
+            	{
+            		static int velodyne_ray_order[32] = {0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23, 8, 24, 9, 25, 10, 26,
+            				11, 27, 12, 28, 13, 29, 14, 30, 15, 31};
+
+                	double ray_angle = carmen_degrees_to_radians(vertical_correction[j]);
+                	double ray_size_in_the_floor = ((double) velodyne_message->partial_scan[i].distance[j] / 500.0) * cos(ray_angle);
+                	int distance_index = get_distance_index(ray_size_in_the_floor);
+                	int ray = velodyne_ray_order[j];
+            		intensity = (int) round(remission_calibration_table[ray][distance_index][intensity] * 255.0);
+            	}
+
+            	double remission_value = remission_multiplier * intensity;
                 velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_intensity(remission_value);
             }
 		}
@@ -1963,7 +1980,7 @@ destroy_drawers()
 }
 
 void
-init_stuff(int argc, char** argv)
+read_parameters_and_init_stuff(int argc, char** argv)
 {
     int num_items;
     int horizontal_resolution;
@@ -2213,6 +2230,20 @@ init_stuff(int argc, char** argv)
     g_b_red = b_red;
     g_b_green = b_green;
     g_b_blue = b_blue;
+
+    char *calibration_file = NULL;
+
+    carmen_param_t param_list[] =
+	{
+		{(char *) "commandline",	(char *) "fv_flag",		CARMEN_PARAM_ONOFF,	&(force_velodyne_flag),		0, NULL},
+		{(char *) "commandline",	(char *) "remission_multiplier",		CARMEN_PARAM_DOUBLE, &(remission_multiplier),		0, NULL},
+		{(char *) "commandline", 	(char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
+	};
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	remission_calibration_table = load_calibration_table(calibration_file);
 }
 
 
@@ -3402,17 +3433,6 @@ keyRelease(int code)
     code = code; // just to make gcc happy
 }
 
-void read_parameters(int argc, char **argv)
-{
-	carmen_param_t param_list[] =
-	{
-		{(char *) "commandline",	(char *) "fv_flag",		CARMEN_PARAM_ONOFF,	&(force_velodyne_flag),		0, NULL},
-		{(char *) "commandline",	(char *) "remission_multiplier",		CARMEN_PARAM_DOUBLE, &(remission_multiplier),		0, NULL},
-	};
-
-	carmen_param_allow_unfound_variables(1);
-	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
-}
 
 int
 main(int argc, char** argv)
@@ -3426,9 +3446,7 @@ main(int argc, char** argv)
     carmen_ipc_initialize(argc_g, argv_g);
     carmen_param_check_version(argv[0]);
 
-    read_parameters(argc, argv);
-
-    init_stuff(argc_g, argv_g);
+    read_parameters_and_init_stuff(argc_g, argv_g);
 
     subscribe_ipc_messages();
 
