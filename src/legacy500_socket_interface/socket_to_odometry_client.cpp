@@ -340,7 +340,7 @@ main(int argc, char **argv)
 			if (result > 0)
 			{
 				publish_robot_ackerman_velocity_message(array);
-				publish_simulator_ackerman_external_truepose_message(array);
+//				publish_simulator_ackerman_external_truepose_message(array);
 			}
 		}
 	}

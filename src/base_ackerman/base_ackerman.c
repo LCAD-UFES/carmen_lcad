@@ -31,6 +31,7 @@
 #include "base_ackerman.h"
 #include "base_ackerman_simulation.h"
 #include "base_ackerman_messages.h"
+#include <control.h>
 
 
 // Global variables
@@ -89,6 +90,39 @@ publish_carmen_base_ackerman_odometry_message(double timestamp)
 }
 
 
+void
+add_legacy_adometry_limitations(double *odometry_v, double *odometry_phi, double raw_v, double raw_phi, double timestamp)
+{
+	static double previous_timestamp = 0.0;
+	static double previous_raw_v = 0.0;
+	static double previous_raw_phi = 0.0;
+
+	if (previous_timestamp == 0.0)
+	{
+		*odometry_v = previous_raw_v = raw_v;
+		*odometry_phi = previous_raw_phi = raw_phi;
+
+		previous_timestamp = timestamp;
+	}
+	else
+	{
+		if ((timestamp - previous_timestamp) >= 0.1)
+		{
+			if (raw_v > 1.5)
+				previous_raw_v = raw_v;
+			else if (raw_v > 0.7)
+				previous_raw_v = raw_v * 0.7 + fabs(carmen_gaussian_random(0.0, raw_v * 0.1));
+			else
+				previous_raw_v = 0.06;
+			previous_raw_phi = raw_phi;
+			previous_timestamp = timestamp;
+		}
+		*odometry_v = previous_raw_v;
+		*odometry_phi = previous_raw_phi;
+	}
+	pid_plot_phi(*odometry_v, raw_v, 10.0, "phi");
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //																								//
@@ -100,11 +134,13 @@ publish_carmen_base_ackerman_odometry_message(double timestamp)
 static void
 robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message)
 {
-
 	if (simulate_legacy_500 && !connected_to_iron_bird)
-		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
+//		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
+//							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
+//							0.0, 1.0, 0.0, 1.0);
+		add_legacy_adometry_limitations(&(car_config->v), &(car_config->phi),
 							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
-							0.0, 1.0, 0.0, 1.0);
+							robot_ackerman_velocity_message->timestamp);
 	else
 		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
 							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
