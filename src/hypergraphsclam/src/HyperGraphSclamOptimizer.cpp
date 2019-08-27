@@ -331,7 +331,7 @@ void HyperGraphSclamOptimizer::InitializeOptimizer()
     g2o::OptimizationAlgorithm *optimization_algorithm = new g2o::OptimizationAlgorithmGaussNewton(std::move(solver));
 
     // set the cholmod solver
-    optimizer->setAlgorithm(solver);
+    optimizer->setAlgorithm(optimization_algorithm);
 
     // set the verbose mode
     optimizer->setVerbose(true);
