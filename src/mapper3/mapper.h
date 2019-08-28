@@ -26,8 +26,8 @@ void mapper_update_grid_map(carmen_point_t xt, double *zt, sensor_parameters_t *
 void mapper_save_current_map();
 void mapper_periodically_save_current_map(double timestamp);
 void mapper_initialize(carmen_map_config_t *map_config, carmen_robot_ackerman_config_t main_car_config, bool use_remission_threshold);
-void mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin);
-void mapper_change_map_origin_to_another_map_block_with_clones(carmen_position_t *map_origin);
+void mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin, bool save_map);
+void mapper_change_map_origin_to_another_map_block_with_clones(carmen_position_t *map_origin, bool save_map);
 int run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global);
 int run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global, double remission_threshold);
 void map_decay_to_offline_map(carmen_map_t *current_map);

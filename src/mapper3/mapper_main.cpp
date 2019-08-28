@@ -411,9 +411,9 @@ offline_map_handler(carmen_map_server_offline_map_message *msg)
 	offline_map->config = msg->config;
 
 	if (use_remission_threshold)
-		mapper_change_map_origin_to_another_map_block_with_clones(&map_origin);
+		mapper_change_map_origin_to_another_map_block_with_clones(&map_origin, mapper_save_map);
 	else
-		mapper_change_map_origin_to_another_map_block(&map_origin);
+		mapper_change_map_origin_to_another_map_block(&map_origin, mapper_save_map);
 
 	if (merge_with_offline_map)
 		mapper_merge_online_map_with_offline_map(offline_map);
@@ -1343,8 +1343,6 @@ main(int argc, char **argv)
 	initialize_transforms();
 
 	mapper_initialize(&map_config, car_config, use_remission_threshold);
-
-	printf("Vamos ver: %f\n", remission_threshold);
 
 	/* Register messages */
 	define_mapper_messages();
