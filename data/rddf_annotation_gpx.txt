@@ -1,0 +1,24 @@
+#### Anotacoes GPX
+# Curvas 10km/h Code 3
+# Taxway 20km/h Code 5
+# Runway 40km/h Code 7
+
+# Inicio Curva Direita Saida do Patio
+RDDF_ANNOTATION_TYPE_SPEED_LIMIT	7	3	2.459	7591191.33 -768578.96	0.0
+
+# Fim Curva Direita Saida do Patio
+RDDF_ANNOTATION_TYPE_SPEED_LIMIT	7	5	0.000	7591230.62 -768546.51 	0.0
+
+# Inicio Curva Final Taxyway Alfa
+RDDF_ANNOTATION_TYPE_SPEED_LIMIT	7	3	0.185	7592404.33 -768547.24	0.0
+
+# Fim Curva Final Taxyway Alfa
+RDDF_ANNOTATION_TYPE_SPEED_LIMIT	7	5	1.577	7592442.86 -768510.00	0.0
+
+# Inicio Curva Entrada Runway
+RDDF_ANNOTATION_TYPE_SPEED_LIMIT	7	3	1.792	7592443.03 -768386.06	0.0
+
+# Fim Curva Entrada Runway
+RDDF_ANNOTATION_TYPE_SPEED_LIMIT	7	7	7592394.02 -768346.77 3.126	0.0
+
+
