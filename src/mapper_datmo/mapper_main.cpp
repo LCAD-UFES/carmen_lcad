@@ -481,6 +481,8 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
 	int thread_id = omp_get_thread_num();
 
+	carmen_map_p map = get_the_map();
+
 	vector<image_cartesian> points;
 	vector<vector<carmen_vector_2D_t>> points_on_ground;
 
@@ -570,14 +572,19 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 
 		if (is_moving_obstacle)
 		{
-			for (unsigned int j = 0; j < filtered_points[i].size(); j++)
+			for (unsigned int j = 1	; j < filtered_points[i].size(); j++)
 			{
 				int p = filtered_points[i][j].shot_number * sensor_params->vertical_resolution + filtered_points[i][j].ray_number;
-				sensor_data->points[cloud_index].sphere_points[p].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
+//				sensor_data->points[cloud_index].sphere_points[p].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
 				filter_datmo_count++;
 
-				//printf ("%d %d\n", filtered_points[i][j].shot_number, filtered_points[i][j].ray_number);
-				printf ("%lf %lf\n", (double) (points_on_ground[filtered_points[i][j].shot_number][filtered_points[i][j].ray_number].x - map_config.x_origin) / map_config.resolution, (double) (points_on_ground[filtered_points[i][j].shot_number][filtered_points[i][j].ray_number].y - map_config.y_origin) / map_config.resolution);
+				int px = (double) (points_on_ground[filtered_points[i][j].shot_number][filtered_points[i][j].ray_number].x - map_config.x_origin) / map_config.resolution;
+				int py = (double) (points_on_ground[filtered_points[i][j].shot_number][filtered_points[i][j].ray_number].y - map_config.y_origin) / map_config.resolution;
+
+				if (px < 0 || px > map_config.x_size || py < 0 || py > map_config.y_size)
+					printf ("%d %d\n", px, py);
+				else
+					map->map[px][py] = 0.0;
 
 				if (verbose >= 2)
 				{
@@ -607,7 +614,7 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 
 
 void
-erase_moving_obstacles_cells_old2(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
+erase_moving_obstacles_cells_old(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
 {
 	camera_filter_count[camera_index]++;
 	int filter_datmo_count = 0;
@@ -705,7 +712,6 @@ erase_moving_obstacles_cells_old2(sensor_parameters_t *sensor_params, sensor_dat
 				break;
 			}
 		}
-
 		if (is_moving_obstacle)
 		{
 			for (unsigned int j = 0; j < filtered_points[i].size(); j++)
@@ -750,69 +756,6 @@ erase_moving_obstacles_cells_old2(sensor_parameters_t *sensor_params, sensor_dat
 	}
 	if (filter_datmo_count)
 		camera_datmo_count[camera_index]++;
-}
-
-
-void
-erase_moving_obstacles_cells_old(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
-{
-	camera_filter_count[camera_index]++;
-	int image_width  = camera_data[camera_index].width[image_index];
-	int image_height = camera_data[camera_index].height[image_index];
-	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
-	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
-	double cu = camera_params[camera_index].cu_factor * image_width;
-	double cv = camera_params[camera_index].cv_factor * image_height;
-	int cloud_index = sensor_data->point_cloud_index;
-	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
-	int thread_id = omp_get_thread_num();
-
-	//vector<carmen_vector_2D_t> moving_objecst_cells_vector;
-
-	for (int j = 0; j < number_of_laser_shots; j++)
-	{
-		int scan_index = j * sensor_params->vertical_resolution;
-		double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
-
-		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
-			continue;
-
-		//if (horizontal_angle > M_PI_2 || horizontal_angle < M_PI_2 ) // Disregard laser shots out of the camera's field of view
-		//	continue;
-
-		get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
-
-		for (int i = 1; i < sensor_params->vertical_resolution; i++)
-		{
-			double vertical_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle;
-			double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
-
-			tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
-			tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
-
-			int image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
-			int image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
-
-			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
-			double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
-
-			if ((prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) &&                                                                            // Laser ray probably hit an obstacle
-				(camera_data[camera_index].semantic[image_index] != NULL) && (image_x >= 0 && image_x <= image_width && image_y >= 0 && image_y <= image_height) && // Disregard laser rays out of the image window
-				(camera_data[camera_index].semantic[image_index][image_x + (image_y * image_width)] >= 11))                                                         // 0 to 10 : Static objects >= 11 Moving Objects
-			{
-				printf ("PIF %lf %lf\n", sensor_data->ray_position_in_the_floor[thread_id][i].x, sensor_data->ray_position_in_the_floor[thread_id][i].y);
-				moving_objecst_cells_vector.push_back(sensor_data->ray_position_in_the_floor[thread_id][i]);
-			}
-		}
-	}
-	if (verbose >= 2)
-	{
-//		printf ("S %d\n", (int) moving_objecst_cells_vector.size());
-		//imshow("Image Semantic Segmentation", cv::Mat(camera_data[camera_index].height[image_index], camera_data[camera_index].width[image_index], CV_8UC1, camera_data[camera_index].semantic[image_index], 0));
-		//imshow("Image Semantic Segmentation", camera_image_semantic[camera_index]);
-		//cv::waitKey(1);
-		cv_draw_map(moving_objecst_cells_vector);
-	}
 }
 
 

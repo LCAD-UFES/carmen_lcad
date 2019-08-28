@@ -110,8 +110,8 @@ add_legacy_adometry_limitations(double *odometry_v, double *odometry_phi, double
 		{
 			if (raw_v > 1.5)
 				previous_raw_v = raw_v;
-			else if (raw_v > 0.3)
-				previous_raw_v = raw_v * 0.8 + carmen_gaussian_random(raw_v * 0.8, 0.4);
+			else if (raw_v > 0.7)
+				previous_raw_v = raw_v * 0.7 + fabs(carmen_gaussian_random(0.0, raw_v * 0.1));
 			else
 				previous_raw_v = 0.06;
 			previous_raw_phi = raw_phi;
@@ -120,7 +120,7 @@ add_legacy_adometry_limitations(double *odometry_v, double *odometry_phi, double
 		*odometry_v = previous_raw_v;
 		*odometry_phi = previous_raw_phi;
 	}
-	pid_plot_phi(*odometry_v, raw_v, 8.0, "phi");
+//	pid_plot_phi(*odometry_v, raw_v, 10.0, "phi");
 }
 
 
@@ -135,12 +135,12 @@ static void
 robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message)
 {
 	if (simulate_legacy_500 && !connected_to_iron_bird)
-		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
-							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
-							0.0, 1.0, 0.0, 1.0);
-//		add_legacy_adometry_limitations(&(car_config->v), &(car_config->phi),
+//		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
 //							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
-//							robot_ackerman_velocity_message->timestamp);
+//							0.0, 1.0, 0.0, 1.0);
+		add_legacy_adometry_limitations(&(car_config->v), &(car_config->phi),
+							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
+							robot_ackerman_velocity_message->timestamp);
 	else
 		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
 							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,

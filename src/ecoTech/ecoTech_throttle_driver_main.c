@@ -1,7 +1,7 @@
 #include "ADS1256_DAC8235.h"
 
 
-#define MAX_ANALOG_EFFORT_VALUE 3.1
+#define MAX_ANALOG_EFFORT_VALUE 3.1           // Value that corresponds to 5v (the signal that is sent to emulate the pedal)
 
 
 void
@@ -10,7 +10,7 @@ program_termintaion_handler(int signo)
 	printf("Program exited...\n");
 
 	digitalWrite(SIGNAL_RELAY_PIN, LOW);
-	DAC8532_Out_Voltage(channel_A, 0.0);
+	DAC8532_Out_Voltage(DAC0, 0.0);
 
     DEV_ModuleExit();
 
@@ -19,7 +19,7 @@ program_termintaion_handler(int signo)
 
 
 int
-test_board(void)
+test_board(void)            // Change the led's color based on the potentiometer and print all the 8 AD input values
 {
     UDOUBLE ADC[8], i;
     float x;
@@ -39,15 +39,16 @@ test_board(void)
     while(1)
     {
         ADS1256_GetAll(ADC);
-        for(i=0;i<8;i++){
+        for(i = 0; i < 8; i++)
+        {
             printf("%d %f\r\n",i,ADC[i]*5.0/0x7fffff);
         }
 
         x = (ADC[0] >> 7)*5.0/0xffff;
         printf(" %f \r\n", x);
         printf("\33[9A");//Move the cursor up 8 lines
-        DAC8532_Out_Voltage(channel_B, (x));
-        DAC8532_Out_Voltage(channel_A, (3.3 - x));
+        DAC8532_Out_Voltage(DAC1, (x));
+        DAC8532_Out_Voltage(DAC0, (3.3 - x));
 
     }
     return 0;
@@ -84,40 +85,76 @@ set_on_off_wire_state(double analog_pedal_signal)
 }
 
 
+void
+initialize_board ()
+{
+	wiringPiSetup();
+	pinMode(SIGNAL_RELAY_PIN, OUTPUT);
+	pinMode(CONTROL_ON_OFF_RELAY_PIN, OUTPUT);
+	pinMode(SIGNAL_ON_OFF_RELAY_PIN, OUTPUT);
+	DEV_ModuleInit();
+}
+
+
 int
 main(void)
 {
 	UDOUBLE ADC_pedal_value_read;
 	double effort = 0.0, analog_pedal_signal = 0.0;
+	unsigned int test_flag = 0, autonomous_mode = 0, autonomous_state = 0;
 	char key;
 
 	signal(SIGINT, program_termintaion_handler);
 
-	wiringPiSetup();
-	pinMode(SIGNAL_RELAY_PIN, OUTPUT);
-	DEV_ModuleInit();
+	initialize_board ();
 
 	while(1)
 	{
-		key = getchar();
-
-		if (key == 'w' && effort <= 100)
-			effort += 5;
-		else if (key == 's' && effort >= 0)
-			effort -= 5;
-
 		effort = check_effort_range(effort);
 
 		analog_pedal_signal = (effort * MAX_ANALOG_EFFORT_VALUE) / 100;
 
-		set_on_off_wire_state(analog_pedal_signal);
+		if (autonomous_mode == autonomous_state)
+		{
+			if (test_flag)
+			{
+				key = getchar();
 
-		DAC8532_Out_Voltage(channel_A, analog_pedal_signal);
-		printf ("Effort: %f\n", analog_pedal_signal);
+				if (key == 'w' && effort <= 100)
+					effort += 5;
+				else if (key == 's' && effort >= 0)
+					effort -= 5;
+			}
+//			else
+//			{
+//				effort =    ; // TODO receber o effort do carmen
+//			}
 
-		delay(500);
+			set_on_off_wire_state(analog_pedal_signal);
+
+			DAC8532_Out_Voltage(DAC0, analog_pedal_signal);
+
+			printf ("Effort: %f\n", analog_pedal_signal);
+
+
+			delay(500);
+		}
+//		else
+//		{
+//			ADC_pedal_value_read = ADS1256_GetChannalValue(0);
+//			double signal_diff = abs(ADC_pedal_value_read - analog_pedal_signal);
+//
+//			if (signal_diff > (MAX_ANALOG_EFFORT_VALUE / 10))
+//			{
+//				int i = round (signal_diff / MAX_ANALOG_EFFORT_VALUE);
+//				for (; i > 0; i--)
+//				{
+//
+//				}
+//			}
+//
+//		}
 	}
 
 	return 0;
 }
-
