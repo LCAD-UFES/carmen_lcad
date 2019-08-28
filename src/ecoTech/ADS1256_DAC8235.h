@@ -11,8 +11,8 @@
 #include <string.h>
 
 
-#define channel_A   0x30
-#define channel_B   0x34
+#define DAC0   0x30
+#define DAC1   0x34
 
 #define DAC_Value_MAX  65535
 #define DAC_VREF  3.3
@@ -20,11 +20,13 @@
 #define UWORD   uint16_t
 #define UDOUBLE uint32_t
 
-#define DEV_RST_PIN           18
-#define DEV_CS_PIN            22
-#define DEV_CS1_PIN           23
-#define DEV_DRDY_PIN          17
-#define SIGNAL_RELAY_PIN       7
+#define DEV_RST_PIN                   18
+#define DEV_CS_PIN                    22
+#define DEV_CS1_PIN                   23
+#define DEV_DRDY_PIN                  17
+#define SIGNAL_RELAY_PIN               7
+#define CONTROL_ON_OFF_RELAY_PIN       3
+#define SIGNAL_ON_OFF_RELAY_PIN        2
 
 #define DEV_Digital_Write(_pin, _value) bcm2835_gpio_write(_pin, _value)
 #define DEV_Digital_Read(_pin) bcm2835_gpio_lev(_pin)
