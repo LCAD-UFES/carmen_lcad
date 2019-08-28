@@ -27,7 +27,7 @@ ICP_TRANSLATION_CONFIDENCE_FACTOR 1.00
 CURVATURE_REQUIRED_TIME 0.0001
 
 -- vehicle model parameters
-DISTANCE_BETWEEN_AXLES 2.85
+DISTANCE_BETWEEN_AXLES 2.625
 MAX_STEERING_ANGLE 0.5337
 UNDERSTEER 0.0015
 KMAX 0.17857142857
@@ -36,9 +36,9 @@ KMAX 0.17857142857
 -- Initial odometry bias guess, the default values are: v_mult = 1.0, phi_mult = 1.0 and phi_add = 0.0
 -- You can pick this values from a previous calibration result
 
-V_MULT_ODOMETRY_BIAS 1.0009751921 # 1.0462134659 # 1.047728
-PHI_MULT_ODOMETRY_BIAS 0.9905334177 # 1.0088440426 # 1.062799
-PHI_ADD_ODOMETRY_BIAS -0.0033735522 # 0.0000132927 # -0.000043
+V_MULT_ODOMETRY_BIAS 0.987954 # 0.990062 
+PHI_MULT_ODOMETRY_BIAS 0.989310 # 0.928001
+PHI_ADD_ODOMETRY_BIAS 0.000542 # 0.000476
 
 -- Descomente os argumentos abaixo para desabilitar a construcao das respectivas arestas
 DISABLE_VELODYNE_ODOMETRY
@@ -57,7 +57,7 @@ DISABLE_BUMBLEBEE_LOOP
 -- no caso abaixo, vamos usar o 0 e o 1
 -- o primeiro inteiro é o identificador e o segundo valor (double) é o delay do gps
 -- GPS_IDENTIFIER 0 0.0
-GPS_IDENTIFIER 1 0.0
+GPS_IDENTIFIER 1 0.150020
 
 -- USE THE FAKE GPS
 USE_FAKE_GPS
