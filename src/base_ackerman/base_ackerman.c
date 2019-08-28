@@ -120,7 +120,7 @@ add_legacy_adometry_limitations(double *odometry_v, double *odometry_phi, double
 		*odometry_v = previous_raw_v;
 		*odometry_phi = previous_raw_phi;
 	}
-	pid_plot_phi(*odometry_v, raw_v, 10.0, "phi");
+//	pid_plot_phi(*odometry_v, raw_v, 10.0, "phi");
 }
 
 
