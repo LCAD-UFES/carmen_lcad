@@ -141,7 +141,7 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 
 			v_step = v + carmen_gaussian_random(0.0,
 					fabs(filter->param->velocity_noise_velocity * v) +
-					fabs(filter->param->velocity_noise_phi * phi));
+					fabs(filter->param->velocity_noise_phi * phi) + filter->param->v_uncertainty_at_zero_v);
 
 			if (fabs(v) > 0.05)
 			{
@@ -1823,7 +1823,8 @@ mahalanobis_distance_with_outlier_rejection(carmen_localize_ackerman_map_t *loca
 				}
 				else
 				{
-					double exponent = (cell_val - mean_map_val) * (cell_val - mean_map_val) / (2.0 * variance);
+					double exponent = (cell_val - mean_map_val) * (cell_val - mean_map_val) /
+							(filter->param->remission_variance_multiplier * variance);
 					if (use_log_odds)
 					{
 						double p = (1.0 / sqrt(2.0 * M_PI * variance)) * exp(-exponent);

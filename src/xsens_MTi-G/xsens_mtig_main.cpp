@@ -404,8 +404,8 @@ make_xsens_mti_quat_message(CmtQuat qat_data, CmtCalData caldata, double tdata)
 	return xsens_quat_message;
 }
 
-static int 
-read_data_from_xsens(void)
+int
+read_data_from_xsens_old(void)
 {	
 	double tdata = 0.0;
 
@@ -511,10 +511,50 @@ read_data_from_xsens(void)
 	}
 }
 
+static int
+read_data_from_xsens(void)
+{
+	while (1)
+	{
+		carmen_xsens_global_quat_message message = {-0.076347, 0.022741, 9.856972,
+													 0.150156, -0.005627, -0.002592,
+													 0.988643, -0.278449, -0.101014,
+													 0.281111, 0.022601, 0.002073, 0.006112,
+													 60.500000, 0,
+													 carmen_get_time(),
+													 carmen_get_host()};
+		publish_mti_quat_message(message);
+		carmen_ipc_sleep(0.01);
+	}
+}
+
+
+int
+init_xsens_old(bool reset_orientation)
+{
+	mtCount = doHardwareScan(cmt3, deviceIds);
+
+	if (mtCount == 0)
+	{
+		printf("xsens not found\n");
+		cmt3.closePort();
+		return 0;
+	}
+
+	mode = CMT_OUTPUTMODE_CALIB | CMT_OUTPUTMODE_ORIENT | CMT_OUTPUTMODE_STATUS | CMT_OUTPUTMODE_POSITION | CMT_OUTPUTMODE_VELOCITY | CMT_OUTPUTMODE_TEMP;//CMT_OUTPUTMODE_GPSPVT_PRESSURE;
+	settings = CMT_OUTPUTSETTINGS_ORIENTMODE_QUATERNION | CMT_OUTPUTSETTINGS_TIMESTAMP_SAMPLECNT | CMT_OUTPUTSETTINGS_DATAFORMAT_FP1632;
+
+	doMtSettings(cmt3, mode, settings, deviceIds, reset_orientation);
+
+	return 1;
+}
+
 
 static int 
 init_xsens(bool reset_orientation)
 {
+	return (1);
+
 	mtCount = doHardwareScan(cmt3, deviceIds);
 
 	if (mtCount == 0) 

@@ -554,7 +554,7 @@ carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, 
 			if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y))
 				if (sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0)
 				{
-					if(count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] == -1.0)
+					if (count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] == -1.0)
 					{
 						count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = 0.0;
 						sum_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = 0.0;
@@ -634,7 +634,7 @@ carmen_prob_models_update_log_odds_of_cells_hit_by_ldmrs_rays(carmen_map_t *log_
 }
 
 
-static int
+int
 get_distance_index(double distance)
 {	// Gera um indice para cada faixa de distancias. As faixas crescem de ~50% a cada intervalo. Indices de zero a 9 permitem distancias de zero a ~70 metros
 	if (distance < 3.5)

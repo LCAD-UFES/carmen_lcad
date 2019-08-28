@@ -30,7 +30,8 @@
 static int necessary_maps_available = 0;
 static bool obstacle_avoider_active_recently = false;
 static int activate_tracking = 0;
-
+static bool keep_speed_limit = false;
+double last_speed_limit;
 
 double param_distance_between_waypoints;
 double param_change_goal_distance;
@@ -550,6 +551,10 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 		if (!annotation_ahead || (DIST2D(previous_annotation_point, nearest_velocity_related_annotation->annotation_point) > 0.0))
 			clearing_annotation = false;
 
+		if (annotation_ahead && (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+				(distance_to_annotation < 10.0))
+			last_speed_limit = velocity_at_next_annotation;
+
 //		FILE *caco = fopen("caco4.txt", "a");
 //		fprintf(caco, "ca %d, aa %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf, aif %d, dg %.1lf, av %.1lf, ts %lf\n", clearing_annotation, annotation_ahead,
 //				distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi->v,
@@ -686,6 +691,15 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 }
 
 
+double
+set_goal_velocity_according_to_last_speed_limit_annotation(carmen_ackerman_traj_point_t *goal)
+{
+	goal->v = carmen_fmin(last_speed_limit, goal->v);
+
+	return (goal->v);
+}
+
+
 void
 set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
 		int goal_type, double timestamp)
@@ -705,6 +719,10 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 //	fprintf(caco, "gvdlc %lf  ", goal->v);
 
 	goal->v = set_goal_velocity_according_to_annotation(goal, goal_type, current_robot_pose_v_and_phi, timestamp);
+
+	if (keep_speed_limit)
+		goal->v = set_goal_velocity_according_to_last_speed_limit_annotation(goal);
+
 //	fprintf(caco, "gvda %lf ", goal->v);
 //	if (obstacle_avoider_active_recently)
 //		goal->v = carmen_fmin(2.5, goal->v);
@@ -2003,14 +2021,15 @@ read_parameters(int argc, char **argv)
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_t optional_param_list[] =
 	{
-		{(char *) "commandline", (char *) "activate_tracking", CARMEN_PARAM_ONOFF, &activate_tracking, 0, NULL}
+		{(char *) "commandline",       (char *) "activate_tracking", CARMEN_PARAM_ONOFF, &activate_tracking, 0, NULL},
+		{(char *) "behavior_selector", (char *) "keep_speed_limit", CARMEN_PARAM_ONOFF, &keep_speed_limit, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 
 	param_distance_between_waypoints = distance_between_waypoints;
 	param_change_goal_distance = change_goal_distance;
 
-	carmen_ini_max_velocity = robot_config.max_v;
+	carmen_ini_max_velocity = last_speed_limit = robot_config.max_v;
 	behavior_selector_initialize(robot_config, distance_between_waypoints, change_goal_distance, following_lane_planner, parking_planner);
 
 	if (param_goal_source_onoff)

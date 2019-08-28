@@ -296,6 +296,8 @@ void carmen_prob_models_initialize_distance_map(carmen_prob_models_distance_map 
 
 float ***load_calibration_table(char *calibration_file);
 
+int get_distance_index(double distance);
+
 #ifdef __cplusplus
 }
 #endif
