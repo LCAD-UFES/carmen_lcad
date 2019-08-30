@@ -2,10 +2,14 @@
 MAXIMUM_VEL_SCANS 0
 
 -- how many seconds to consider a loop closure - Tempo para considerar que duas nuvens fecham loop
-LOOP_REQUIRED_TIME 655.0
+LOOP_REQUIRED_TIME 400.0
 
 -- how many meters to consider a loop closure - Distancia para considerar que duas nuvens fecham loop
 LOOP_REQUIRED_DISTANCE 5.0
+
+-- uncomment this line if you want to consider only loop closures with same direction (both car poses should points to same direction)
+-- the angle distance must be less than PI/2
+USE_RESTRICTED_LOOPS
 
 -- how many threads the ICP (Interative Closest Point) method can use (typically the number of cores of your machine)
 ICP_THREADS_POOL_SIZE 6
@@ -35,14 +39,13 @@ KMAX 0.17857142857
 -- Se quiser mais rapido, pode rodar o odometry calibration. porem nao parece ser muito necessario.
 -- Initial odometry bias guess, the default values are: v_mult = 1.0, phi_mult = 1.0 and phi_add = 0.0
 -- You can pick this values from a previous calibration result
-
-V_MULT_ODOMETRY_BIAS 0.987954 # 0.990062 
-PHI_MULT_ODOMETRY_BIAS 0.989310 # 0.928001
-PHI_ADD_ODOMETRY_BIAS 0.000542 # 0.000476
+V_MULT_ODOMETRY_BIAS  1.031492 #  1.000817 # 0.987988 # 0.990951 # 0.9930780333 # 0.987572 # 0.9932045124 # 0.9963951027 # 0.993317 # 0.987954 # 0.990062 
+PHI_MULT_ODOMETRY_BIAS 0.971004 # 0.983818 # 0.989296 # 0.987387 # 1.0643171397 # 0.989561 # 1.0625951194 # 0.9126063668 # 0.919940 # 0.989310 # 0.928001
+PHI_ADD_ODOMETRY_BIAS -0.001425 # 0.000354 # 0.000542 # 0.000446 # -0.0013772715 # 0.000534 # -0.0012960942 # 0.0004726542 # 0.000512 # 0.000542 # 0.000476
 
 -- Descomente os argumentos abaixo para desabilitar a construcao das respectivas arestas
 DISABLE_VELODYNE_ODOMETRY
-DISABLE_VELODYNE_LOOP
+-- DISABLE_VELODYNE_LOOP
 DISABLE_SICK_ODOMETRY
 DISABLE_SICK_LOOP
 DISABLE_BUMBLEBEE_ODOMETRY
@@ -57,7 +60,7 @@ DISABLE_BUMBLEBEE_LOOP
 -- no caso abaixo, vamos usar o 0 e o 1
 -- o primeiro inteiro é o identificador e o segundo valor (double) é o delay do gps
 -- GPS_IDENTIFIER 0 0.0
-GPS_IDENTIFIER 1 0.150020
+GPS_IDENTIFIER 1 0.0
 
 -- USE THE FAKE GPS
 USE_FAKE_GPS

@@ -51,7 +51,8 @@ GrabData::GrabData() :
     use_velodyne_loop(true),
     use_sick_loop(true),
     use_bumblebee_loop(true),
-    use_fake_gps(false) {}
+    use_fake_gps(false),
+    use_restricted_loops(false) {}
 
 // the main destructor
 GrabData::~GrabData()
@@ -734,8 +735,11 @@ bool GrabData::BuildLidarLoopMeasure(
     {
         // get the desired transformation
         loop_measurement = GetSE2FromEigenMatrix(gicp.getFinalTransformation());
-
-        return true;
+		g2o::Vector3 v = loop_measurement.toVector();
+		if (0.001 < std::fabs(v[0]) || 0.001 < std::fabs(v[1]) || 0.001 < std::fabs(v[2]))
+		{
+			return true;
+		}
     }
 
     // invalid
@@ -1261,32 +1265,39 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
 
             if (end != loop)
             {
-                // the current cloud
-                pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
+				double a(current->est.rotation().angle());
+				double b((*loop)->est.rotation().angle());
+				
+				if (M_PI / 2 > mrpt::math::angDistance<double>(a, b) || !use_restricted_loops)
+				{
+					// the current cloud
+					pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
 
-                // try to open the current cloud
-                if (-1 == pcl::io::loadPCDFile(current->path, *current_cloud))
-                {
-                    throw std::runtime_error("Could not open the source cloud");
-                }
+					// try to open the current cloud
+					if (-1 == pcl::io::loadPCDFile(current->path, *current_cloud))
+					{
+						throw std::runtime_error("Could not open the source cloud");
+					}
 
-                // found it
-                StampedLidarPtr lidar_loop = *loop;
+					// found it
+					StampedLidarPtr lidar_loop = *loop;
 
-                // load the loop cloud
-                pcl::PointCloud<pcl::PointXYZHSV>::Ptr loop_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
+					// load the loop cloud
+					pcl::PointCloud<pcl::PointXYZHSV>::Ptr loop_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
 
-                // try to open the next cloud
-                if (-1 == pcl::io::loadPCDFile(lidar_loop->path, *loop_cloud))
-                {
-                    throw std::runtime_error("Could not open the target cloud");
-                }
+					// try to open the next cloud
+					if (-1 == pcl::io::loadPCDFile(lidar_loop->path, *loop_cloud))
+					{
+						throw std::runtime_error("Could not open the target cloud");
+					}
 
-                // try the icp method
-                if (BuildLidarLoopMeasure(gicp, min_dist * 2.0, current_cloud, loop_cloud, current->loop_measurement))
-                {
-                    current->loop_closure_id = lidar_loop->id;
-                }
+					// try the icp method
+					if (BuildLidarLoopMeasure(gicp, min_dist * 2.0, current_cloud, loop_cloud, current->loop_measurement))
+					{
+						current->loop_closure_id = lidar_loop->id;
+					}
+				}
+				
             }
 
             // go to the next message
@@ -1938,6 +1949,10 @@ void GrabData::Configure(std::string config_filename, std::string carmen_ini)
             {
                 use_fake_gps = true;
             }
+            else if ("USE_RESTRICTED_LOOPS" == str)
+			{
+				use_restricted_loops = true;
+			}
             else if ("GPS_IDENTIFIER" == str)
             {
                 std::string gps_id;
@@ -2185,8 +2200,7 @@ void GrabData::BuildHyperGraph()
         // build odometry measurements
         BuildOdometryMeasures();
 
-        // build the initial estimates
-        BuildOdometryEstimates(use_fake_gps);
+        
 
         if (use_bumblebee_odometry)
         {
@@ -2202,9 +2216,9 @@ void GrabData::BuildHyperGraph()
         // poses with closest timestamp, and computes the velodyne pose
         // if the car is in the GPS pose. It is a hack for plotting and 
         // it does not interfere with the hypergraph optimization. 
-        BuildLidarOdometryGPSEstimates();
+        // BuildLidarOdometryGPSEstimates();
 
-        if (use_velodyne_loop) 
+        if (use_velodyne_loop)
         {
             // build the velodyne loop closure measurements
             BuildLidarLoopClosureMeasures(velodyne_messages);
@@ -2212,9 +2226,12 @@ void GrabData::BuildHyperGraph()
 
         if (use_velodyne_odometry)
         {
-            // build the velodyne odometry measurements
+			// build the initial estimates
+			BuildOdometryEstimates(false);
+
+			// build the velodyne odometry measurements
             BuildLidarOdometryMeasuresWithThreads(velodyne_messages);
-            
+
             // build the velodyne odometry estimates
             BuildRawLidarOdometryEstimates(velodyne_messages, used_velodyne);
         }
@@ -2227,12 +2244,18 @@ void GrabData::BuildHyperGraph()
 
         if (use_sick_odometry)
         {
+			// build the initial estimates
+			BuildOdometryEstimates(false);
+
             // build the sick odometry measurements
             BuildLidarOdometryMeasuresWithThreads(sick_messages);
 
             // build the sick odometry estimates
             BuildRawLidarOdometryEstimates(sick_messages, used_sick);
         }
+
+        // rebuild the initial estimates
+		BuildOdometryEstimates(use_fake_gps);
     }
 }
 

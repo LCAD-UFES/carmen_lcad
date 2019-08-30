@@ -120,6 +120,8 @@ namespace hyper {
             bool use_bumblebee_loop;
 
             bool use_fake_gps;
+			
+			bool use_restricted_loops;
 
             // separate the gps, sick and velodyne messages
             void SeparateMessages();
