@@ -736,7 +736,7 @@ carmen_collision_detection_in_car_coordinate_frame(const carmen_point_t point, c
 	double coss, sine;
 
 	sincos(point.theta, &sine, &coss);
-	double x_disp = point.x + x * coss + y * sine;
+	double x_disp = point.x + x * coss - y * sine;
 	double y_disp = point.y + x * sine + y * coss;
 
 	sincos(localizer_pose->theta, &sine, &coss);
@@ -768,7 +768,7 @@ carmen_collision_detection_pose_according_to_car_orientation(carmen_ackerman_tra
 	double coss, sine;
 
 	sincos(car_pose->theta, &sine, &coss);
-	displaced_car_pose.x = car_pose->x + x * coss + y * sine;
+	displaced_car_pose.x = car_pose->x + x * coss - y * sine;
 	displaced_car_pose.y = car_pose->y + x * sine + y * coss;
 
 	displaced_car_pose.theta = car_pose->theta;
@@ -887,8 +887,10 @@ check_collision_config_initialization()
 	carmen_param_install_params(0, NULL, param_list, sizeof(param_list)/sizeof(param_list[0]));
 
 	collision_file_pointer = fopen(collision_file, "r");
-//	setlocale(LC_NUMERIC, "C");
+	setlocale(LC_NUMERIC, "C");
+	int max_h_level;
 	fscanf(collision_file_pointer,"%d", &(global_collision_config.n_markers));
+	fscanf(collision_file_pointer,"%d", &max_h_level);
 	global_collision_config.markers = (carmen_collision_marker_t*) malloc(global_collision_config.n_markers*sizeof(carmen_collision_marker_t));
 	fscanf(collision_file_pointer,"%d", &(global_max_height_level));
 
