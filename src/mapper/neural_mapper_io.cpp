@@ -152,22 +152,22 @@ neural_mapper_update_output_map(carmen_map_t offline_map, carmen_position_t car_
 			int j_on_mapper = (j + round(car_position.y/0.2) - round(neural_mapper_max_distance_meters/0.2));
 			if(i_on_mapper < 1050 && i_on_mapper >= 0 && j_on_mapper < 1050 && j_on_mapper >= 0)
 			{
-				// labels: unknown = 1; empty = 2; occupied = 3;
+				// labels: unknown = 0 (antes era 1); empty = 1 (antes era)2; occupied = 2 (antes era 3);
 				// unknown
 				if(offline_map.map[i_on_mapper][j_on_mapper] < 0.0)
 				{
-					new_neural_map.neural_mapper_occupancy_map.map[i][j] = 1;
+					new_neural_map.neural_mapper_occupancy_map.map[i][j] = 0;
 				}
 				// occupied
 				else if(offline_map.map[i_on_mapper][j_on_mapper] >= 0.5)
-					new_neural_map.neural_mapper_occupancy_map.map[i][j] = 3; // 3
+					new_neural_map.neural_mapper_occupancy_map.map[i][j] = 2; // 3
 				// empty
 				else
 					//printf("Valor de vazio? %lf\n", offline_map.map[i_on_mapper][j_on_mapper]);
-					new_neural_map.neural_mapper_occupancy_map.map[i][j] = 2; // 2
+					new_neural_map.neural_mapper_occupancy_map.map[i][j] = 1; // 2
 			}
 			else
-				new_neural_map.neural_mapper_occupancy_map.map[i][j] = 1;
+				new_neural_map.neural_mapper_occupancy_map.map[i][j] = 0;
 		}
 	}
 
