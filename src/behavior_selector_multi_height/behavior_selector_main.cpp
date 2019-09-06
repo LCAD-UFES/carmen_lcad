@@ -1734,30 +1734,33 @@ carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_dist
 	necessary_maps_available = 1;
 }
 
-
+static carmen_obstacle_distance_mapper_compact_map_message *compact_distance_map_level1 = NULL;
 static void
 carmen_obstacle_distance_mapper_compact_map_level1_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
 {
+	printf("ALGUMACOISA\n");
 	if (compact_lane_contents == NULL)
 		return;
-
-	if (compact_distance_map == NULL)
+	printf("ALGUMACOISA1\n");
+	if (compact_distance_map_level1 == NULL)
 	{
-		compact_distance_map = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
-		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
+		compact_distance_map_level1 = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
+		printf("OUTRACOISA\n");
+		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map_level1, message);
+		printf("OUTRACOISA1\n");
 		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
+		printf("OUTRACOISA2\n");
 	}
 	else
 	{
-		carmen_obstacle_distance_mapper_clear_distance_map_message_using_compact_map(&distance_map, compact_distance_map, DISTANCE_MAP_HUGE_DISTANCE);
+		carmen_obstacle_distance_mapper_clear_distance_map_message_using_compact_map(&distance_map, compact_distance_map_level1, DISTANCE_MAP_HUGE_DISTANCE);
 		carmen_obstacle_distance_mapper_free_compact_distance_map(compact_distance_map);
 		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
 		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
 	}
 
 	behavior_selector_update_map_level1(&distance_map);
-
-	necessary_maps_available = 1;
+	printf("ALGUMACOISA2\n");
 }
 
 

@@ -1006,6 +1006,7 @@ carmen_obstacle_distance_mapper_map_message *distance_map , carmen_robot_ackerma
 				global_collision_config.markers[i].x, global_collision_config.markers[i].y);
 		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
 		//distance equals to -1.0 when the coordinates are outside of map
+
 		if (distance != -1.0)
 		{
 			if (distance < global_collision_config.markers[i].radius + safety_distance)
@@ -1022,6 +1023,10 @@ trajectory_pose_hit_obstacle_multi_height(carmen_ackerman_traj_point_t trajector
 carmen_obstacle_distance_mapper_map_message **distance_maps , carmen_robot_ackerman_config_t *robot_config)
 {
 	check_collision_config_initialization();
+
+	for (int i = 0; i < global_max_height_level; i++)
+		if (distance_maps[i] == NULL)
+				return (1);
 
 	for (int i = 0; i < global_collision_config.n_markers; i++)
 	{
