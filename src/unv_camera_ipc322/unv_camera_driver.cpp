@@ -36,9 +36,9 @@ void signal_handler(int sig)
 
 int read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_message *msg)
 {
-	if (argc != 2)
+	if (argc != 3)
 		carmen_die(
-			"--- Wrong number of parameters. ---\nUsage: %s <camera_number>\n",
+			"--- Wrong number of parameters. ---\nUsage: %s <camera_number> <tcp_ip_address>\n",
 			argv[0]);
 
 	// int frame_rate, brightness, contrast,
@@ -115,8 +115,6 @@ int main(int argc, char **argv)
 		cout << "Error opening video stream or file" << endl;
 		return -1;
 	}
-
-	
 
 	while (1)
 	{
