@@ -889,14 +889,17 @@ check_collision_config_initialization()
 	collision_file_pointer = fopen(collision_file, "r");
 	setlocale(LC_NUMERIC, "C");
 	int max_h_level;
-	fscanf(collision_file_pointer,"%d", &(global_collision_config.n_markers));
-	fscanf(collision_file_pointer,"%d", &max_h_level);
+	fscanf(collision_file_pointer,"%d\n", &(global_collision_config.n_markers));
 	global_collision_config.markers = (carmen_collision_marker_t*) malloc(global_collision_config.n_markers*sizeof(carmen_collision_marker_t));
-	fscanf(collision_file_pointer,"%d", &(global_max_height_level));
+	fscanf(collision_file_pointer,"%d\n", &(global_max_height_level));
 
 	for (i = 0; i < global_collision_config.n_markers; i++)
-		fscanf(collision_file_pointer,"%lf %lf %lf %d", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
+	{
+		fscanf(collision_file_pointer,"%lf %lf %lf %d\n", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
 				&global_collision_config.markers[i].radius, &global_collision_config.markers[i].height_level);
+		printf("%lf %lf %lf %d\n", global_collision_config.markers[i].x , global_collision_config.markers[i].y,
+				global_collision_config.markers[i].radius, global_collision_config.markers[i].height_level);
+	}
 
 	fclose(collision_file_pointer);
 	collision_config_initialized = 1;
