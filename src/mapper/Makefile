@@ -85,8 +85,7 @@ convert_maps_from_float_to_double: convert_maps_from_float_to_double.o
 
 compute_velodyne_calibration_table: compute_velodyne_calibration_table.o
 
-neural_mapper_dataset_check: neural_mapper_dataset_check.cpp.o
-
+#neural_mapper_dataset_check: neural_mapper_dataset_check.cpp.o
 
 # rules
 

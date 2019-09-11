@@ -109,37 +109,66 @@ def show_dataset(dataset_tensor):
     cv2.waitKey(0)
 
 
-def fixed_normalize(img, map, new_max_value, max_value, min):
+def fixed_normalize_to_img(map, new_max_value, max_value, min):
     img_map = np.zeros((600, 600, 3), np.uint8)
 
     for i in range(600):
         for j in range(600):
             new_val = map[j][i].item()
-            if new_val < -1:
-                img_map[j][i][0] = -1
-                img_map[j][i][1] = -1
-                img_map[j][i][2] = -1
+            # print(new_val)
+            if new_val < min:
+                img_map[j][i][0] = min
+                img_map[j][i][1] = min
+                img_map[j][i][2] = min
             cel_pixel = (new_val - min) * new_max_value / (max_value - min)
-            img[j][i][0] = cel_pixel
-            img[j][i][1] = cel_pixel
-            img[j][i][2] = cel_pixel
-    return img
+            img_map[j][i][0] = cel_pixel
+            img_map[j][i][1] = cel_pixel
+            img_map[j][i][2] = cel_pixel
+    return img_map
+
+
+def fixed_normalize(map, new_max_value, max_value, min_value):
+    img_map = np.zeros((600, 600))
+
+    for i in range(600):
+        for j in range(600):
+            new_val = map[j][i].item()
+            # print(new_val)
+            if new_val < min_value:
+                img_map[j][i] = min_value
+            cel_pixel = (new_val - min_value) * new_max_value / (max_value - min_value)
+            img_map[j][i] = cel_pixel
+    return img_map
+
+
+def print_values(map):
+    for i in range(600):
+        for j in range(600):
+            new_val = map[j][i].item()
+            print(new_val)
+
+def get_min_and_max_values_to_normalize(metric_type):
+    map_min = -10.0
+    if metric_type == 'max':
+        map_max = 1.852193
+    elif metric_type == 'numb':
+        map_max = 64.0
+        map_min = 0.0
+    elif metric_type == 'min':
+        map_max = 1.852193
+    elif metric_type == 'mean':
+        map_max = 1.852193
+    elif metric_type == 'std':
+        map_max = 15.0
+        map_min = -1.0
+
+    return map_max, map_min
 
 
 def convert_metric_map_to_image(metric_map, metric_type):
-    map_min = -1.0
-    if metric_type == 'max':
-        map_max = 5.0
-    elif metric_type == 'numb':
-        map_max = 50
-    elif metric_type == 'min':
-        map_max = 5
-    elif metric_type == 'mean':
-        map_max = 5
-    elif metric_type == 'std':
-        map_max = 20
-    img = np.zeros((600, 600, 3), np.uint8)
-    img = fixed_normalize(img, metric_map, 255.0, map_max, map_min)
+# TODO Pegar das variáveis
+    map_max, map_min = get_min_and_max_values_to_normalize(metric_type)
+    img = fixed_normalize_to_img(metric_map, 255.0, map_max, map_min)
     return img
 
 
@@ -152,15 +181,36 @@ def getDatasetList(file_name):
     return content
 
 
-def file_to_tensor(img_x_dim, img_y_dim, file):
+def file_raw_to_tensor(img_x_dim, img_y_dim, file, metric_type):
     numpy_file = np.fromfile(file, dtype=float)
-    data_tensor = torch.from_numpy(numpy_file.reshape(img_x_dim, img_y_dim))
+    max_value, min_value = get_min_and_max_values_to_normalize(metric_type)
+    reshaped = numpy_file.reshape(img_x_dim, img_y_dim)
+    normalized_data = fixed_normalize(reshaped, 1.0, max_value, min_value)
+    data_tensor = torch.from_numpy(normalized_data)
     return data_tensor
 
 
+def file_to_tensor(img_x_dim, img_y_dim, file):
+    numpy_file = np.fromfile(file, dtype=float)
+    reshaped = numpy_file.reshape(img_x_dim, img_y_dim)
+    data_tensor = torch.from_numpy(reshaped)
+    return data_tensor
+
+
+def label_file_to_tensor(img_x_dim, img_y_dim, file):
+    numpy_file = np.fromfile(file, dtype=float)
+
+    reshaped = numpy_file.reshape(img_x_dim, img_y_dim)
+    weight = np.array([len(np.where(reshaped == t)[0]) for t in np.unique(reshaped)])
+
+    data_tensor = torch.from_numpy(reshaped)
+
+    return data_tensor, weight
+
+
 def load_bach_data(dataset_list, data_path, target_path, last_element, batch_size,
-                   input_dimensions, img_x_dim, img_y_dim):
-    # batch_weight = np.zeros(n_classes)#??
+                   input_dimensions, img_x_dim, img_y_dim, n_classes):
+    batch_weight = np.zeros(n_classes)
     dataset_size = len(dataset_list)
 
     if (dataset_size - (last_element + batch_size)) <= 0:
@@ -181,9 +231,13 @@ def load_bach_data(dataset_list, data_path, target_path, last_element, batch_siz
         data[j][3] = (file_to_tensor(img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_numb'))
         data[j][4] = (file_to_tensor(img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_std'))
 
-        tmp = file_to_tensor(img_x_dim, img_y_dim, (target_path + str(dataset_list[last_element]) + '_label2'))
+        tmp, new_weights = label_file_to_tensor(img_x_dim, img_y_dim, (target_path + str(dataset_list[last_element]) + '_label'))
         target[j] = tmp
         last_element = last_element + 1
+        batch_weight = batch_weight + new_weights
+        max_weight = max(batch_weight)
+        batch_weight = max_weight / batch_weight
+
         # cv2.imshow('window', labels_to_img(target[j].numpy()))
         # cv2.waitKey(0)
         # batch_weight = batch_weight + new_weights
@@ -198,10 +252,10 @@ def load_bach_data(dataset_list, data_path, target_path, last_element, batch_siz
     # ziped = list(zip(dataset, weights))
     # shuffle(ziped)
     # dataset, weights = zip(*ziped)
-    return data, target, last_element
+    return data, target, last_element, batch_weight
 
 
-def train(interval_save_model, iterations, model, device, train_list, dataset_config, optimizer, epoch, batch_size):
+def train(interval_save_model, iterations, model, device, train_list, dataset_config, optimizer, epoch, batch_size, n_classes):
     #class_weights = torch.FloatTensor(weights).cuda()
 
     model.train()
@@ -209,28 +263,28 @@ def train(interval_save_model, iterations, model, device, train_list, dataset_co
     for batch_idx in range(iterations):
         if last_element < (len(train_list)):
             # print("Loading batch ", batch_idx, " of ", iterations, '\n The last element loaded was: ', last_element)
-            data, target, last_element = load_bach_data(train_list, dataset_config['train_path'],
+            data, target, last_element, weights = load_bach_data(train_list, dataset_config['train_path'],
                                                         dataset_config['target_path'],
                                                         last_element, batch_size, input_channels,
-                                                        img_width, img_height)
+                                                        img_width, img_height, n_classes)
 
             # show_dataset(data)
             # cv2.imshow('Target', labels_to_img(target[batch_idx].numpy()))
             # cv2.waitKey(-1)
-            #TODO: NORMALIZAR OS DADOS
+            #TODO: Dados já estão sendo gerados de 0 a 1
+
             #TODO: Padronizar os dados
             data = data.to(device)
             target = target.to(device)
-
             # print("Fowarding")
             output = model(data)
             #print(weights)
             #weights = [1, 1, 5]
-            # batch_weight = torch.FloatTensor(weights).cuda()
-            # out_loss = F.cross_entropy(output, target, weight=batch_weight)
+            batch_weight = torch.FloatTensor(weights).cuda()
+            out_loss = F.cross_entropy(output, target, weight=batch_weight)
             # print("Calculating Cross_entropy")
 
-            out_loss = F.cross_entropy(output, target)
+            # out_loss = F.cross_entropy(output, target)
             # print(out_loss.item())
             # print("Cleaning grads")
             optimizer.zero_grad()
@@ -247,8 +301,8 @@ def train(interval_save_model, iterations, model, device, train_list, dataset_co
                 pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
                 imgPred = pred[0]
                 imgPred = imgPred.cpu().float()
-                cv2.imshow('Predicted', labels_to_img(imgPred[0].numpy()))
-                cv2.waitKey(10)
+                cv2.imwrite('/dados/neural_mapper/data_13-08-19/results/img' + str(epoch) + '.png', labels_to_img(imgPred[0].numpy()))
+
                 #imgTarget = torch.FloatTensor(1, 424, 424)
                 #imgTarget[0] = target[0]
                 #imgTarget = imgTarget.cpu().float()
@@ -258,9 +312,9 @@ def train(interval_save_model, iterations, model, device, train_list, dataset_co
                 #showOutput(imgTarget)
 
 
-
 if __name__ == '__main__':
 
+    # TODO Fazer um função pra isso:
     # Load config and initializations
     config_file = configparser.ConfigParser()
     config_file.read('config.ini')
@@ -269,10 +323,14 @@ if __name__ == '__main__':
 
     train_list = getDatasetList(dataset_config['train_list'])
     test_list = getDatasetList(dataset_config['test_list'])
+    #TODO Escrever no parametro [max_normalize_std] e max_normalize_numb, os valores pra esse dataset
 
     batch_size = int(dnn_config['batch_size'])
+    decay_step_size = int(dnn_config['step_size'])
+    decay_rate = int(dnn_config['decay_rate'])
     iterations = math.ceil(len(train_list) / batch_size)
     input_channels = int(dataset_config['channels'])
+    n_classes = int(dnn_config['classes'])
     img_width = int(dataset_config['img_width'])
     img_height = int(dataset_config['img_height'])
     use_cuda = int(dnn_config['use_cuda'])
@@ -280,11 +338,13 @@ if __name__ == '__main__':
     epochs = int(dnn_config['epochs'])
     interval_save_model = int(dnn_config['interval_save_model'])
     random_seed = int(dnn_config['manual_seed'])
+    learning_rate = float(dnn_config['learning_rate'])
+    dropout_prob = float(dnn_config['dropout_prob'])
     # CUDA_LAUNCH_BLOCKING = 1
 
     use_cuda = use_cuda and torch.cuda.is_available()
     # TODO: Arrumar pra escolher pelo parametro
-    device = torch.device("cuda") #torch.device(("cuda:" + device_number) if use_cuda else "cpu")
+    device = torch.device("cuda") # torch.device(("cuda:" + device_number) if use_cuda else "cpu")
     print(torch.cuda.current_device(), torch.cuda.get_device_capability(int(device_number)))
     print('Using Device: ', device)
 
@@ -297,21 +357,30 @@ if __name__ == '__main__':
         print('Data Shuffled')
 
     # load model
-    model = M.FCNN(n_input=input_channels, n_output=int(dnn_config['classes'])).to(device)
+    model = M.FCNN(n_input=input_channels, n_output=n_classes, prob_drop=dropout_prob).to(device)
     print('Model loaded', model)
 
     if dnn_config['use_trained_model'] is not "":
         model.load_state_dict(torch.load(dnn_config['use_trained_model']))
         print("Using model: ", dnn_config['use_trained_model'])
-
-    optimizer = optim.Adam(model.parameters(), lr=float(dnn_config['learning_rate']))
+    print("Learning rate: ", learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     print('Iniciando treino por ', epochs, 'epocas')
 
     for epoch in range(1, epochs + 1):
-        print(epochs, 'Epoch')
-        train(interval_save_model, iterations, model, device, train_list, dataset_config, optimizer, epoch, batch_size)
-        #test(args, model, device, test_list, epoch, args.test_batch_size)
+        train(interval_save_model, iterations, model, device, train_list,
+              dataset_config, optimizer, epoch, batch_size, n_classes)
+        # test(args, model, device, test_list, epoch, args.test_batch_size)
+
+        if epoch % decay_step_size == 0:
+            first = 1
+            for g in optimizer.param_groups:
+                if first:
+                    print("Learning rate decay from: ", str(g['lr']), "to: ", g['lr'] / decay_rate)
+                    first = 0
+
+                g['lr'] /= decay_rate
 
         if epoch % dnn_config.getint('interval_save_model') == 0:
             print('Saving model at:', dnn_config['save_models'])

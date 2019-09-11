@@ -282,7 +282,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 				robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_strong_slow_down_annotation, tid, use_remission);
 
 		if (use_neural_mapper)
-			neural_mapper_update_input_maps(sensor_data, sensor_params, tid, log_odds_snapshot_map, map_config, x_origin, y_origin);
+			neural_mapper_update_input_maps(sensor_data, sensor_params, tid, log_odds_snapshot_map, map_config, x_origin, y_origin, highest_sensor, safe_range_above_sensors);
 
 //		fprintf(plot_data, "%lf %lf %lf",
 //				sensor_data->ray_origin_in_the_floor[tid][1].x,

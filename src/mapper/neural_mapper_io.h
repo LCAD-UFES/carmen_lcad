@@ -29,7 +29,8 @@ bool neural_mapper_compute_travelled_distance(carmen_position_t *neural_mapper_c
 int neural_mapper_update_output_map(carmen_map_t offline_map, carmen_position_t car_pose);
 void neural_mapper_update_inputs_maps_with_new_point(int x_index, int y_index, double z_meters);
 int neural_mapper_update_input_maps(sensor_data_t * sensor_data, sensor_parameters_t *sensor_params, int thread_id,
-									carmen_map_t *log_odds_snapshot_map, carmen_map_config_t map_config, double x_origin, double y_origin);
+		carmen_map_t *log_odds_snapshot_map, carmen_map_config_t map_config, double x_origin, double y_origin,
+		double highest_sensor, double safe_range_above_sensors);
 
 
 #endif /* MAPPER_NEURAL_MAPPER_IO_H_ */
