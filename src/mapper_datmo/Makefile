@@ -29,6 +29,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2
 # Deeplab
 IFLAGS += -I/usr/include/python2.7
 LFLAGS += -ldeeplab -lpython2.7
+LFLAGS += -lsqueeze_seg -lpython2.7
 
 #OPENCV
 IFLAGS += -DUSE_OPENCV
@@ -65,7 +66,7 @@ PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = mapper_datmo compute_velodyne_calibration_table
-TARGETS = convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a compute_maps_difference compute_maps_changes
+TARGETS = convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a compute_maps_difference compute_maps_changes libsqueeze_seg.a
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -100,6 +101,10 @@ libprob_models.a:
 
 libdeeplab.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/Deeplab/
+
+libsqueeze_seg.a: 
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src/
+
 
 clean: clean_prob_models
 
