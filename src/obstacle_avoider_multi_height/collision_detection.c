@@ -889,14 +889,17 @@ check_collision_config_initialization()
 	collision_file_pointer = fopen(collision_file, "r");
 	setlocale(LC_NUMERIC, "C");
 	int max_h_level;
-	fscanf(collision_file_pointer,"%d", &(global_collision_config.n_markers));
-	fscanf(collision_file_pointer,"%d", &max_h_level);
+	fscanf(collision_file_pointer,"%d\n", &(global_collision_config.n_markers));
 	global_collision_config.markers = (carmen_collision_marker_t*) malloc(global_collision_config.n_markers*sizeof(carmen_collision_marker_t));
-	fscanf(collision_file_pointer,"%d", &(global_max_height_level));
+	fscanf(collision_file_pointer,"%d\n", &(global_max_height_level));
 
 	for (i = 0; i < global_collision_config.n_markers; i++)
-		fscanf(collision_file_pointer,"%lf %lf %lf %d", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
+	{
+		fscanf(collision_file_pointer,"%lf %lf %lf %d\n", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
 				&global_collision_config.markers[i].radius, &global_collision_config.markers[i].height_level);
+		printf("%lf %lf %lf %d\n", global_collision_config.markers[i].x , global_collision_config.markers[i].y,
+				global_collision_config.markers[i].radius, global_collision_config.markers[i].height_level);
+	}
 
 	fclose(collision_file_pointer);
 	collision_config_initialized = 1;
@@ -1006,6 +1009,7 @@ carmen_obstacle_distance_mapper_map_message *distance_map , carmen_robot_ackerma
 				global_collision_config.markers[i].x, global_collision_config.markers[i].y);
 		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
 		//distance equals to -1.0 when the coordinates are outside of map
+
 		if (distance != -1.0)
 		{
 			if (distance < global_collision_config.markers[i].radius + safety_distance)
@@ -1022,6 +1026,10 @@ trajectory_pose_hit_obstacle_multi_height(carmen_ackerman_traj_point_t trajector
 carmen_obstacle_distance_mapper_map_message **distance_maps , carmen_robot_ackerman_config_t *robot_config)
 {
 	check_collision_config_initialization();
+
+	for (int i = 0; i < global_max_height_level; i++)
+		if (distance_maps[i] == NULL)
+				return (1);
 
 	for (int i = 0; i < global_collision_config.n_markers; i++)
 	{

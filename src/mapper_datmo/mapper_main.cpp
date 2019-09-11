@@ -25,6 +25,7 @@
 #include <carmen/ultrasonic_filter_interface.h>
 #include <carmen/parking_assistant_interface.h>
 #include <carmen/libdeeplab.h>
+#include <carmen/libsqueeze_seg.h>
 #include <omp.h>
 #include "mapper.h"
 #include <sys/stat.h>
@@ -485,6 +486,7 @@ erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *
 
 	vector<image_cartesian> points;
 	vector<vector<carmen_vector_2D_t>> points_on_ground;
+
 
 	for (int j = 0; j < number_of_laser_shots; j++)
 	{
@@ -1148,7 +1150,7 @@ static void
 laser_ldrms_new_message_handler(carmen_laser_ldmrs_new_message *laser)
 {
 	sensor_msg_count[LASER_LDMRS]++;
-
+	libsqueeze_seg_test();
 //	FILE *f = fopen("scan.txt", "a");
 //	fprintf(f, "\n\n%d %lf %lf %d %f %f %d \n\n",
 //			laser->scan_number,
@@ -2144,6 +2146,7 @@ read_camera_parameters(int argc, char **argv)
 		active_cameras++;
 		get_camera_param(argc, argv, i);
 	}
+//	libsqueeze_seg_test();
 	if (active_cameras == 0)
 		fprintf(stderr, "No cameras active for datmo\n\n");
 	else
