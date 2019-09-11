@@ -932,23 +932,23 @@ void GrabData::BuildLidarMeasuresMT()
                 pcl::PointCloud<pcl::PointXYZHSV>::Ptr next_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
 
                 // try to open the next cloud
-               if (-1 == pcl::io::loadPCDFile(next->path, *next_cloud))
+				if (-1 == pcl::io::loadPCDFile(next->path, *next_cloud))
                 {
                     throw std::runtime_error("Could not open the target cloud");
                 }
 
-                // get the factor
-                double cf = double(int(current->speed * (next->timestamp - current->timestamp) * 100.0)) * 0.02;
-
                 double dt = next->timestamp - current->timestamp;
                 if (dt > 0 && dt < 600)
                 {
-                    // the odometry guess
-                    g2o::SE2 odom(current->est.inverse() * next->est);
+					// get the factor
+					double cf = double(int(current->speed * (next->timestamp - current->timestamp) * 100.0)) * 0.02;
 
                     if (0.0 != cf)
                     {
-                        if (BuildLidarOdometryMeasure(gicp, grid_filtering, cf, odom, current_cloud, next_cloud, current->seq_measurement))
+						// the odometry guess
+						g2o::SE2 odom(current->est.inverse() * next->est);
+
+						if (BuildLidarOdometryMeasure(gicp, grid_filtering, cf, odom, current_cloud, next_cloud, current->seq_measurement))
                         {
                             // set the base id
                             current->seq_id = next->id;
@@ -1815,7 +1815,6 @@ Eigen::Matrix4f GrabData::BuildEigenMatrixFromSE2(const g2o::SE2 &transform)
 // build g2o SE2 from Eigen matrix
 g2o::SE2 GrabData::GetSE2FromEigenMatrix(const Eigen::Matrix4f &matrix)
 {
-
     return g2o::SE2(matrix(0, 3), matrix(1, 3), std::atan2(matrix(1, 0), matrix(0, 0)));
 }
 

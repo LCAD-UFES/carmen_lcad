@@ -1358,7 +1358,7 @@ void HyperGraphSclamOptimizer::SaveCorrectedVertices()
         double sina = std::sin(a) * 0.05;
         double cosa = std::cos(a) * 0.05;
 
-        std::pair<double, unsigned> time_type {id_time_type_map.at(unsigned(v->id())) };
+        std::pair<double, unsigned> time_type { id_time_type_map.at(unsigned(v->id())) };
         double t = time_type.first;
         StampedMessageType msg_type = StampedMessageType(time_type.second);
 
@@ -1367,13 +1367,13 @@ void HyperGraphSclamOptimizer::SaveCorrectedVertices()
 
         switch (msg_type)
         {
-            case StampedVelodyneMessage:
+			case StampedMessageType::StampedVelodyneMessage:
                 velodyne_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
                 break;
-            case StampedBumblebeeMessage:
+			case StampedMessageType::StampedBumblebeeMessage:
                 bumblebee_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
                 break;
-            case StampedSICKMessage:
+			case StampedMessageType::StampedSICKMessage:
                 sick_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
             default:
                 break;
