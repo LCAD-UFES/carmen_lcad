@@ -255,7 +255,7 @@ def load_bach_data(dataset_list, data_path, target_path, last_element, batch_siz
     return data, target, last_element, batch_weight
 
 
-def train(interval_save_model, iterations, model, device, train_list, dataset_config, optimizer, epoch, batch_size, n_classes):
+def train(interval_save_model, iterations, model, device, train_list, dataset_config, dnn_config, optimizer, epoch, batch_size, n_classes, img_width, img_height, input_channels):
     #class_weights = torch.FloatTensor(weights).cuda()
 
     model.train()
@@ -283,35 +283,61 @@ def train(interval_save_model, iterations, model, device, train_list, dataset_co
             batch_weight = torch.FloatTensor(weights).cuda()
             out_loss = F.cross_entropy(output, target, weight=batch_weight)
             # print("Calculating Cross_entropy")
-
-            # out_loss = F.cross_entropy(output, target)
             # print(out_loss.item())
             # print("Cleaning grads")
             optimizer.zero_grad()
             # print("Backward")
-
             out_loss.backward()
             # print("weights update")
             optimizer.step()
             if batch_idx % interval_save_model == 0:
-                print('Loss: ', out_loss.item(), '\tTrain Epoch: {} [{}/{} ({:.0f}%)]'.format(epoch, batch_idx * len(data), len(train_list),
+                log_treino = ('Loss: {:.10f} Train Epoch: {} [{}/{} ({:.0f}%)]\n'.format(out_loss.item(), epoch, batch_idx * len(data), len(train_list),
                     epoch, batch_idx * len(data), len(train_list),
                     100. * batch_idx * len(data) / len(train_list)))
-            if epoch % 10 == 0:
+                arq = open(dnn_config['save_log_files']+'Train_averange.txt', 'a')
+                arq.write(log_treino)
+                arq.close()
+                print(log_treino)
+
+            if epoch % 50 == 0:
                 pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
                 imgPred = pred[0]
                 imgPred = imgPred.cpu().float()
                 cv2.imwrite('/dados/neural_mapper/data_13-08-19/results/img' + str(epoch) + '.png', labels_to_img(imgPred[0].numpy()))
 
-                #imgTarget = torch.FloatTensor(1, 424, 424)
-                #imgTarget[0] = target[0]
-                #imgTarget = imgTarget.cpu().float()
-                #saveImage(imgPred, debug_img_path + '/predic_epoch' + str(epoch) + '.png')
-                #saveImage(imgTarget, debug_img_path + '/target_epoch' + str(epoch) + '.png')
-                # showOutput2(imgPred, "pred")
-                #showOutput(imgTarget)
 
-
+def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config, n_classes, img_width, img_height, input_channels):
+    print("Testing!")
+    model.eval()
+    test_loss = 0
+    correct = 0
+    last_element = 0
+    with torch.no_grad():
+        for batch_idx in range(math.floor(len(test_list)/batch_size)):
+            if last_element < (len(train_list)):
+                data, target, last_element, weights = load_bach_data(test_list, dataset_config['test_path'],
+                                                            dataset_config['target_path'],
+                                                            last_element, batch_size, input_channels,
+                                                            img_width, img_height, n_classes)
+                data = data.to(device)
+                target = target.long().to(device)
+                output = model(data)
+                batch_weight = torch.FloatTensor(weights).cuda()
+                test_loss += F.cross_entropy(output, target, reduction="sum").item() # sum up batch loss
+                pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
+                correct += pred.eq(target.view_as(pred)).sum().item()
+        #    test_loss /= len(test_loader.dataset)
+        test_loss /= (len(test_list)*batch_size*img_width*img_height)
+        texto = ('Test set: epoch {} Average loss {:.10f}, Accuracy: {}/{} {:.6f}\n'.format(epoch,
+            test_loss, correct, len(test_list)*img_width*img_height,
+            correct / (len(test_list)*img_width*img_height)))
+        arq = open(dnn_config['save_log_files']+'Test_averange.txt', 'a')
+        arq.write(texto)
+        
+        arq.close()
+        print(texto)
+        
+    
 if __name__ == '__main__':
 
     # TODO Fazer um função pra isso:
@@ -370,8 +396,8 @@ if __name__ == '__main__':
 
     for epoch in range(1, epochs + 1):
         train(interval_save_model, iterations, model, device, train_list,
-              dataset_config, optimizer, epoch, batch_size, n_classes)
-        # test(args, model, device, test_list, epoch, args.test_batch_size)
+              dataset_config, dnn_config, optimizer, epoch, batch_size, n_classes, img_width, img_height, input_channels)
+        test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config, n_classes, img_width, img_height, input_channels)
 
         if epoch % decay_step_size == 0:
             first = 1
@@ -379,7 +405,6 @@ if __name__ == '__main__':
                 if first:
                     print("Learning rate decay from: ", str(g['lr']), "to: ", g['lr'] / decay_rate)
                     first = 0
-
                 g['lr'] /= decay_rate
 
         if epoch % dnn_config.getint('interval_save_model') == 0:
