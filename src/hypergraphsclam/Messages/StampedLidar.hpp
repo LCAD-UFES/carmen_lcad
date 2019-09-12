@@ -66,7 +66,13 @@ class StampedLidar : virtual public StampedMessage {
         // the loop cloure id
         unsigned loop_closure_id;
 
-        // the basic constructor
+		// the external loop restriction measure
+		g2o::SE2 external_loop_measurement;
+
+		// the external loop closure id
+		unsigned external_loop_closure_id;
+
+		// the basic constructor
         StampedLidar(unsigned msg_id, const std::string &base_path);
 
         // the basic destructor

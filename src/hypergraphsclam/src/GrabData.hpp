@@ -42,8 +42,9 @@ namespace hyper {
 #define ICP_TRANSLATION_CONFIDENCE_FACTOR 1.00
 #define CURVATURE_REQUIRED_TIME 0.0001
 
-    // define the gicp
-    typedef pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZHSV, pcl::PointXYZHSV> GeneralizedICP;
+	// define the gicp
+	using GeneralizedICP = pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZHSV, pcl::PointXYZHSV>;
+	// typedef pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZHSV, pcl::PointXYZHSV> GeneralizedICP;
 
     class GrabData
     {
@@ -114,13 +115,13 @@ namespace hyper {
             bool use_velodyne_odometry;
             bool use_sick_odometry;
             bool use_bumblebee_odometry;
-            
+
             bool use_velodyne_loop;
             bool use_sick_loop;
             bool use_bumblebee_loop;
 
             bool use_fake_gps;
-			
+
 			bool use_restricted_loops;
 
             // separate the gps, sick and velodyne messages
@@ -224,6 +225,9 @@ namespace hyper {
             // compute the loop closure measure
             void BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messages);
 
+			// compute the external loop closure measure
+			void BuildExternalLidarLoopClosureMeasures(StampedLidarPtrvector &internal_messages, StampedLidarPtrVector &external_messages);
+
             // compute the bumblebee measure
             void BuildVisualOdometryMeasures();
 
@@ -287,12 +291,15 @@ namespace hyper {
             void Configure(std::string config_filename, std::string carmen_ini);
 
             // parse the log file
-            bool ParseLogFile(const std::string &input_filename);
+			unsigned ParseLogFile(const std::string &input_filename, unsigned msg_id);
 
             // sync all messages and process each one
             // it builds the all estimates and measures
             // and constructs the hypergraph
             void BuildHyperGraph();
+
+			// build external loop closures - different logs version
+			void BuildExternalLoopClosures(GrabData &gd);
 
             // save the hyper graph to the output file
             void SaveHyperGraph(const std::string &output_filename);

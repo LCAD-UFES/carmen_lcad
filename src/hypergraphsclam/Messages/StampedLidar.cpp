@@ -31,7 +31,10 @@ StampedLidar::StampedLidar(unsigned msg_id, const std::string &base_path) :
     lidar_estimate(0.0, 0.0, 0.0),
     gps_sync_estimate(0.0, 0.0, 0.0),
     loop_measurement(0.0, 0.0, 0.0),
-    loop_closure_id(std::numeric_limits<unsigned>::max()) {
+    loop_closure_id(std::numeric_limits<unsigned>::max()),
+	external_loop_measurement(0.0, 0.0, 0.0),
+	external_loop_closure_id(std::numeric_limits<unsigned>::max())
+{
 
     // set the default leaf size
     StampedLidar::grid_filtering.setLeafSize(vg_leaf, vg_leaf, vg_leaf);

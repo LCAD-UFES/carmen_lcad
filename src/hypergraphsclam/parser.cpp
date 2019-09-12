@@ -1,4 +1,5 @@
 #include <string>
+#include <array>
 #include <unistd.h>
 #include <GrabData.hpp>
 #include <StampedGPSPose.hpp>
@@ -20,91 +21,124 @@ prepare_all_directories()
     std::cout << "Necessary directories created." << std::endl;
 }
 
-std::vector<std::string> log_list_parser(std::string log_list_filename)
+std::vector<std::array<std::string, 3>> log_list_parser(std::string log_list_filename)
 {
-	std::vector<std::string> log_list();
-	
+	std::vector<std::array<std::string, 3>> log_list();
+
 	std::ifstream file(log_list_filename);
 
     if (file.is_open())
 	{
 		std::string current_line;
-		
+
 		while(-1 != hyper::StringHelper::ReadLine(file, current_line))
 		{
-			log_list.push_back(current_line);
+			std::stringstream ss(current_line);
+
+			std::string log;
+			std::string parser_config_file;
+			std::string carmen_ini;
+
+			ss >> log;
+			ss >> parser_config_file;
+			ss >> carmen_ini;
+
+			if (log.empty() || parser_config_file.empty() || carmen_ini.empty())
+			{
+				std::cerr << "Invalid line! Take a look in your input file!" << std::endl;
+			}
+			else
+			{
+				log_list.emplace_back(std::array<std::string, 3> { log, parser_config_file, carmen_ini });
+			}
 		}
 	}
     else
 	{
-        std::cerr << "Unable to open the input file: " << log_list_filename << "\n";
+        std::cerr << "Unable to open the log list file: " << log_list_filename << "\n";
     }
 
     return log_list;
 }
 
-int 
-main (int argc, char **argv) 
+
+bool
+parse_logs(std::vector<hyper::GrabData> &gds, std::vector<std::array<std::string, 3>> &logs)
 {
-    if (2 > argc) 
+	unsigned last_id = 6;
+
+	for (std::array<std::string, 3> &input_files : logs)
+	{
+		gds.emplace_back(hyper::GrabData());
+
+		hyper::GrabData &gd = gds.back();
+
+		gd.Configure(input_files[1], input_files[2]);
+
+		last_id = gd.ParseLogFile(input_files[0], last_id);
+
+		if (0 < last_id)
+		{
+			gd.BuildHyperGraph();
+		}
+		else
+		{
+			std::cerr << "Could not parse the log file: " << input_files[0] << std::endl;
+			return false;
+		}
+	}
+	return true;
+}
+
+
+void
+build_loop_closures(std::vector<hyper::GrabData> &gds)
+{
+	std::vector<hyper::GrabData>::iterator end(gds.end());
+	std::vector<hyper::GrabData>::iterator curr(gds.begin());
+	std::vector<hyper::GrabData>::iterator prev(curr++);
+
+	while (end != curr)
+	{
+		curr->BuildExternalLoopClosures(*prev);
+		prev = curr++;
+	}
+}
+
+void
+save_hyper_graphs(std::vector<hyper::GrabData> &gds)
+{
+	for (hyper::GrabData &gd : gds)
+	{
+		// save the hyper graph
+		gd.SaveHyperGraph();
+		gd.SaveEstimates();
+		gd.Clear();
+	}
+}
+
+
+int
+main (int argc, char **argv)
+{
+    if (2 > argc)
     {
-        std::cout << "Usage: ./parser <log_list_filepath> [parser_config_filepath] [carmen_ini_filepath]" << std::endl;
+        std::cout << "Usage: ./parser <log_list_file_path>" << std::endl;
         return -1;
     }
 
     prepare_all_directories();
-	
-    std::string carmen_home(getenv("CARMEN_HOME"));
-
-	std::string config_filename = 2 < argc ? std::string(argv[3]) : carmen_home + "/src/hypergraphsclam/config/parser_config.txt";
-    std::string carmen_ini = 3 < argc ? std::string(argv[4]) : carmen_home + "/src/carmen-ford-escape.ini";
 
 	std::vector<hyper::GrabData> gds(0);
-	std::vector<std::string> logs = log_list_parser(argv[1]);
+	std::vector<std::array<std::string, 3>> logs(log_list_parser(argv[1]));
 
-	for (std::string &input_file : logs)
+	if (parse_logs(gds, logs))
 	{
-		gds.emplace_back(hyper::GrabData());
-		
-		hyper::GrabData &gd = gds.back();
-		
-		gd.Configure(config_filename, carmen_ini);
-		
-		if (gd.ParseLogFile(input_file)
-		{
-			gd.BuildHyperGraph();
-		}
-		
+		build_loop_closures(gds);
+		save_hyper_graphs(gds);
 	}
-	
-	
-	
-    // create a grab data object
-    hyper::GrabData gd;
 
-    // configure it
-    gd.Configure(config_filename, carmen_ini);
-
-    // try to process the log file
-    if (gd.ParseLogFile(input_file)) 
-    {
-        // build the hyper graph
-        gd.BuildHyperGraph();
-
-        // save the hyper graph
-        gd.SaveHyperGraph(output_file);
-
-        // save extra info
-        gd.SaveEstimates();
-    } 
-    else 
-    {
-        std::cout << "Error! Could not parse the log file!\n";
-    }
-
-    // close everything
-    gd.Clear();
-    std::cout << "Done!\n";
+	std::cout << "Done!\n";
 
     return 0;
 }

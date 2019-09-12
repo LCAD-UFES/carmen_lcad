@@ -73,8 +73,7 @@ namespace hyper {
             // a static method to compare pointers of stamped messages
             static bool compare(StampedMessage *a, StampedMessage *b)
             {
-                if (NULL != a && NULL != b) { return a->timestamp < b->timestamp; }
-                return false;
+				return nullptr != a && nullptr != b && a->timestamp < b->timestamp;
             }
 
             // get the message type

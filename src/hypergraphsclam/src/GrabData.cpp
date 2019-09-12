@@ -13,6 +13,8 @@
 #include <viso_stereo.h>
 #include <png++/png.hpp>
 
+#include <pcl/kdtree/kdtree_flann.h>
+
 using namespace hyper;
 
 // the main constructor
@@ -368,7 +370,7 @@ void GrabData::BuildFakeGPSMeasures()
 
             diff = next_gps->gps_measurement.translation() - prev_gps->gps_measurement.translation();
             curr_gps->gps_measurement.setRotation(Eigen::Rotation2Dd(std::atan2(diff[1], diff[0])));
-            
+
             prev = curr;
             curr = next;
             ++next;
@@ -499,9 +501,7 @@ void GrabData::BuildOdometryMeasures()
                     }
                 }
 
-                // precompute the delta tim
                 double dt = next_msg->timestamp - current_msg->timestamp;
-
                 if (dt > 0 && dt < 600)
                 {
                     // get the current odometry measurement
@@ -1267,7 +1267,7 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
             {
 				double a(current->est.rotation().angle());
 				double b((*loop)->est.rotation().angle());
-				
+
 				if (M_PI / 2 > mrpt::math::angDistance<double>(a, b) || !use_restricted_loops)
 				{
 					// the current cloud
@@ -1297,7 +1297,7 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
 						current->loop_closure_id = lidar_loop->id;
 					}
 				}
-				
+
             }
 
             // go to the next message
@@ -1308,6 +1308,84 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
         std::cout << "Lidar loop closure measurements done!\n";
     }
 }
+
+void GrabData::BuildExternalLidarLoopClosureMeasures(StampedLidarPtrvector &internal_messages, StampedLidarPtrVector &external_messages)
+{
+	if (!internal_messages.empty() and !external_messages.empty())
+	{
+		// report
+        std::cout << "Start building the loop closure measurements from internal messages with size: " << internal_messages.size() << " to external messages with size: " << external_messages.size() << "\n";
+
+        // the pcl point cloud ICP solver
+        GeneralizedICP gicp;
+
+        // set the default gicp configuration
+        gicp.setEuclideanFitnessEpsilon(1e-06);
+        gicp.setTransformationEpsilon(1e-06);
+        gicp.setMaximumIterations(2000);
+
+		pcl::KdTreeFLANN<pcl::PointXY> kdtree;
+		pcl::PointCloud<pcl::PointXY> cloud;
+		std::unordered_map<int, StampedLidarPtr> refs;
+
+		cloud.clear();
+		for (StampedLidarPtr lidar : external_messages)
+		{
+			const Eigen::Vector2d &position(lidar->gps_sync_estimate.translation());
+			cloud.push_back(pcl::PointXY { position[0], position[1] });
+			refs[cloud.size() - 1] = lidar;
+		}
+
+		kdtree.setInputCloud(cloud);
+
+		double min_step = 0.5f;
+		Eigen::Vector2d prev { 0.0, 0.0 };
+		std::vector<int> nearestId(1);
+		std::vector<float> nearestDistance(1);
+
+		for (StampedLidarPtr internal : internal_messages)
+		{
+			const Eigen::Vector2d &position(internal->gps_sync_estimate.translation());
+
+			Eigen::Vector2d diff(position - prev);
+
+			prev = position;
+
+			pcl::PointXY xy { position[0], position[1] };
+
+			if (0 < kdtree.nearestKSearch(xy, 1, nearestId, nearestDistance))
+			{
+				float nd = nearestDistance.front();
+
+				if (nd < loop_required_distance)
+				{
+					pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
+
+					if (-1 == pcl::io::loadPCDFile(internal->path, *current_cloud))
+					{
+						throw std::runtime_error("Could not open the source cloud");
+					}
+
+					StampedLidarPtr external(refs[nearestId.front()]);
+
+					pcl::PointCloud<pcl::PointXYZHSV>::Ptr loop_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
+
+					if (-1 == pcl::io::loadPCDFile(external->path, *loop_cloud))
+					{
+						throw std::runtime_error("Could not open the target cloud");
+					}
+
+					// try the icp method
+					if (BuildLidarLoopMeasure(gicp, nd * 2.0, current_cloud, loop_cloud, internal->external_loop_measurement))
+					{
+						internal->external_loop_closure_id = external->id;
+					}
+				}
+			}
+		}
+	}
+}
+
 
 
 // compute the bumblebee measurement
@@ -1980,7 +2058,7 @@ void GrabData::SetGPSPose(std::string carmen_ini)
 {
     std::ifstream is(carmen_ini);
 
-    if (is.good()) 
+    if (is.good())
     {
         std::stringstream ss;
         double sbx, sby, sbyaw;
@@ -2025,7 +2103,7 @@ void GrabData::SetGPSPose(std::string carmen_ini)
             else if ("sensor_board_1_yaw" == str)
             {
                 ss >> sbyaw;
-                
+
             }
         }
 
@@ -2047,7 +2125,7 @@ void GrabData::SetGPSPose(std::string carmen_ini)
 
 // the main process
 // it reads the entire log file and builds the hypergraph
-bool GrabData::ParseLogFile(const std::string &input_filename)
+unsigned GrabData::ParseLogFile(const std::string &input_filename, unsigned msg_id)
 {
     // the input file stream
     std::ifstream logfile(input_filename);
@@ -2055,7 +2133,7 @@ bool GrabData::ParseLogFile(const std::string &input_filename)
     if (!logfile.is_open())
     {
         std::cerr << "Unable to open the input file: " << input_filename << "\n";
-        return false;
+        return 0;
     }
 
     // status report
@@ -2069,10 +2147,6 @@ bool GrabData::ParseLogFile(const std::string &input_filename)
 
     // how many velodyne messages
     unsigned vldn_msgs = 0;
-
-    // the msg id
-    // we must start with 6
-    unsigned msg_id = 6;
 
     // how many messages
     unsigned vel_scans = 0 == maximum_vel_scans ? std::numeric_limits<unsigned>::max() : maximum_vel_scans;
@@ -2170,86 +2244,58 @@ bool GrabData::ParseLogFile(const std::string &input_filename)
     std::cout << std::endl;
 
     // success!
-    return true;
+    return msg_id;
 }
-
 
 // parser
 void GrabData::BuildHyperGraph()
 {
     if (!raw_messages.empty())
     {
-        // sort all the messages by the timestamp
         std::sort(raw_messages.begin(), raw_messages.end(), StampedMessage::compare);
 
-        // separate all messages after the sorting process
         SeparateMessages();
 
         // build the gps measurements
         // also moves the global position to local considering the first position as origin
         if (use_fake_gps)
-        {
             BuildFakeGPSMeasures();
-        }
         else
-        {
             BuildGPSMeasures();
-        }
 
-        // build odometry measurements
         BuildOdometryMeasures();
 
-        
 
         if (use_bumblebee_odometry)
         {
-            // build the visual odometry measurements
             BuildVisualOdometryMeasures();
-         
-            // build the visual odometry estimates
             BuildVisualOdometryEstimates();
         }
 
         // the loop measurement is done after the gps synchronization
-        // For each velodyne message, the method searches for the GPS 
+        // For each velodyne message, the method searches for the GPS
         // poses with closest timestamp, and computes the velodyne pose
-        // if the car is in the GPS pose. It is a hack for plotting and 
-        // it does not interfere with the hypergraph optimization. 
-        // BuildLidarOdometryGPSEstimates();
+        // if the car is in the GPS pose. It is a hack for plotting and
+        // it does not interfere with the hypergraph optimization.
+        BuildLidarOdometryGPSEstimates();
 
         if (use_velodyne_loop)
-        {
-            // build the velodyne loop closure measurements
             BuildLidarLoopClosureMeasures(velodyne_messages);
-        }
 
         if (use_velodyne_odometry)
         {
-			// build the initial estimates
 			BuildOdometryEstimates(false);
-
-			// build the velodyne odometry measurements
             BuildLidarOdometryMeasuresWithThreads(velodyne_messages);
-
-            // build the velodyne odometry estimates
             BuildRawLidarOdometryEstimates(velodyne_messages, used_velodyne);
         }
 
         if (use_sick_loop)
-        {
-            // build the sick loop closure measMatrix4ures
             BuildLidarLoopClosureMeasures(sick_messages);
-        }
 
         if (use_sick_odometry)
         {
-			// build the initial estimates
 			BuildOdometryEstimates(false);
-
-            // build the sick odometry measurements
             BuildLidarOdometryMeasuresWithThreads(sick_messages);
-
-            // build the sick odometry estimates
             BuildRawLidarOdometryEstimates(sick_messages, used_sick);
         }
 
@@ -2258,6 +2304,16 @@ void GrabData::BuildHyperGraph()
     }
 }
 
+
+// build loop closures - different log version
+void GrabData::BuildExternalLoopClosures(GrabData &gd)
+{
+	if (use_velodyne_loop)
+		BuildExternalLidarLoopClosureMeasures(velodyne_messages, gd.velodyne_messages);
+
+	if (use_sick_loop)
+		BuildExternalLidarLoopClosureMeasures(sick_messages, gd.sick_messages);
+}
 
 // save the hyper graph to the output file
 void GrabData::SaveHyperGraph(const std::string &output_filename)
