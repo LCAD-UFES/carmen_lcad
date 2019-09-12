@@ -63,6 +63,49 @@ GrabData::~GrabData()
     Clear();
 }
 
+// the move constructor
+GrabData::GrabData(GrabData &&gd) :
+    raw_messages(std::move(gd.raw_messages)),
+    messages(std::move(gd.messages)),
+    gps_messages(std::move(gd.gps_messages)),
+    xsens_messages(std::move(gd.xsens_messages)),
+    velodyne_messages(std::move(gd.velodyne_messages)),
+    used_velodyne(std::move(gd.used_velodyne)),
+    sick_messages(std::move(gd.sick_messages)),
+    point_cloud_lidar_messages(nullptr),
+    odometry_messages(std::move(gd.odometry_messages)),
+    bumblebee_messages(std::move(gd.bumblebee_messages)),
+    used_frames(std::move(gd.used_frames)),
+    gps_origin(gd.gps_origin),
+    icp_start_index(gd.icp_start_index),
+    icp_end_index(gd.icp_end_index),
+    icp_mutex(),
+    first_last_mutex(),
+    error_increment_mutex(),
+    icp_errors(gd.icp_errors),
+    dmax(gd.dmax),
+    maximum_vel_scans(gd.maximum_vel_scans),
+    loop_required_time(gd.loop_required_time),
+    loop_required_distance(gd.loop_required_distance),
+    icp_threads_pool_size(gd.icp_threads_pool_size),
+    icp_thread_block_size(gd.icp_thread_block_size),
+    lidar_odometry_min_distance(gd.lidar_odometry_min_distance),
+    visual_odometry_min_distance(gd.visual_odometry_min_distance),
+    icp_translation_confidence_factor(gd.icp_translation_confidence_factor),
+    save_accumulated_point_clouds(gd.save_accumulated_point_clouds),
+    use_velodyne_odometry(gd.use_velodyne_odometry),
+    use_sick_odometry(gd.use_sick_odometry),
+    use_bumblebee_odometry(gd.use_bumblebee_odometry),
+    use_velodyne_loop(gd.use_velodyne_loop),
+    use_sick_loop(gd.use_sick_loop),
+    use_bumblebee_loop(gd.use_bumblebee_loop),
+    use_fake_gps(gd.use_fake_gps),
+    use_restricted_loops(gd.use_restricted_loops)
+{
+	Clear();
+}
+
+
 // PRIVATE METHODS
 
 // separate the gps and velodyne
@@ -355,9 +398,8 @@ void GrabData::BuildFakeGPSMeasures()
 
         StampedGPSPosePtrVector::iterator end(gps_messages.end());
         StampedGPSPosePtrVector::iterator prev(gps_messages.end());
-        StampedGPSPosePtrVector::iterator curr(gps_messages.begin());
         StampedGPSPosePtrVector::iterator next(gps_messages.begin());
-        ++next;
+        StampedGPSPosePtrVector::iterator curr(next++);
 
         StampedGPSPosePtr prev_gps, curr_gps, next_gps;
         Eigen::Vector2d diff;
@@ -375,8 +417,6 @@ void GrabData::BuildFakeGPSMeasures()
             curr = next;
             ++next;
         }
-
-        diff = curr_gps->gps_measurement.translation() - prev_gps->gps_measurement.translation();
 
         curr_gps->gps_measurement.setRotation(prev_gps->gps_measurement.rotation());
 
@@ -533,19 +573,21 @@ void GrabData::BuildOdometryEstimates(bool gps_based)
         StampedMessagePtrVector::iterator end(messages.end());
         StampedMessagePtrVector::iterator it(messages.begin());
 
-        StampedGPSPosePtr first_gps_pose = nullptr;
+		double distance = 0.0f;
+
+		StampedGPSPosePtr gps = nullptr;
 
         // forward to the first gps pose
         while (end != it)
         {
             // try to downcast
-            first_gps_pose = dynamic_cast<StampedGPSPosePtr>(*it);
+            gps = dynamic_cast<StampedGPSPosePtr>(*it);
 
-            if (nullptr != first_gps_pose)
+            if (nullptr != gps)
             {
                 // set the first gps pose estimate
-                first_gps_pose->est = first_gps_pose->gps_measurement;
-                first_gps_pose->raw_est = first_gps_pose->gps_measurement;
+                gps->est = gps->gps_measurement;
+                gps->raw_est = gps->gps_measurement;
                 break;
             }
 
@@ -591,18 +633,19 @@ void GrabData::BuildOdometryEstimates(bool gps_based)
             StampedMessagePtr current = *a;
             StampedMessagePtr next = *b;
 
-            StampedGPSPosePtr m_gps = dynamic_cast<StampedGPSPosePtr>(next);
+			// set the initial estimate
+			next->est = current->est * (current->odom_measurement);
+			next->raw_est = current->raw_est * (current->raw_measurement);
 
-            if (gps_based && nullptr != m_gps)
+			distance += current->odom_measurement.translation().norm();
+
+			StampedGPSPosePtr m_gps = dynamic_cast<StampedGPSPosePtr>(next);
+
+            if (gps_based && nullptr != m_gps && 2.0f < distance)
             {
                 next->est = m_gps->gps_measurement;
                 next->raw_est = m_gps->gps_measurement;
-            }
-            else
-            {
-                // set the initial estimate
-                next->est = current->est * (current->odom_measurement);
-                next->raw_est = current->raw_est * (current->raw_measurement);
+				distance = 0.0f;
             }
 
             // go to the next messages
@@ -691,14 +734,13 @@ bool GrabData::BuildLidarOdometryMeasure(
         }
         else
         {
-            // report
-            std::cout << "Error: " << translation_difference << " is greater than " << icp_translation_confidence_factor << " or " << cf
-                << " is lesser than zero and icp is greater, let's see icp matrix: \n" << icp_guess << std::endl;
+            std::cerr << "Error: " << translation_difference << " is greater than " << icp_translation_confidence_factor;
+			std::cerr << " or " << cf << " is lesser than zero and icp is greater, let's see icp matrix: \n" << icp_guess << std::endl;
         }
     }
     else
     {
-        std::cout << "Error: It hasn't converged!" << std::endl;
+        std::cerr << "Error: It hasn't converged!" << std::endl;
     }
 
     // invalid
@@ -1268,7 +1310,7 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
 				double a(current->est.rotation().angle());
 				double b((*loop)->est.rotation().angle());
 
-				if (M_PI / 2 > mrpt::math::angDistance<double>(a, b) || !use_restricted_loops)
+				if (!use_restricted_loops || M_PI_2 > mrpt::math::angDistance<double>(a, b))
 				{
 					// the current cloud
 					pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
@@ -1309,7 +1351,7 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
     }
 }
 
-void GrabData::BuildExternalLidarLoopClosureMeasures(StampedLidarPtrvector &internal_messages, StampedLidarPtrVector &external_messages)
+void GrabData::BuildExternalLidarLoopClosureMeasures(StampedLidarPtrVector &internal_messages, StampedLidarPtrVector &external_messages)
 {
 	if (!internal_messages.empty() and !external_messages.empty())
 	{
@@ -1325,23 +1367,22 @@ void GrabData::BuildExternalLidarLoopClosureMeasures(StampedLidarPtrvector &inte
         gicp.setMaximumIterations(2000);
 
 		pcl::KdTreeFLANN<pcl::PointXY> kdtree;
-		pcl::PointCloud<pcl::PointXY> cloud;
+		pcl::PointCloud<pcl::PointXY>::Ptr cloud(new pcl::PointCloud<pcl::PointXY>());
 		std::unordered_map<int, StampedLidarPtr> refs;
 
-		cloud.clear();
+		cloud->clear();
 		for (StampedLidarPtr lidar : external_messages)
 		{
 			const Eigen::Vector2d &position(lidar->gps_sync_estimate.translation());
-			cloud.push_back(pcl::PointXY { position[0], position[1] });
-			refs[cloud.size() - 1] = lidar;
+			cloud->push_back(pcl::PointXY { (float) position[0], (float) position[1] });
+			refs[cloud->size() - 1] = lidar;
 		}
 
-		kdtree.setInputCloud(cloud);
-
-		double min_step = 0.5f;
 		Eigen::Vector2d prev { 0.0, 0.0 };
 		std::vector<int> nearestId(1);
 		std::vector<float> nearestDistance(1);
+
+		kdtree.setInputCloud(cloud);
 
 		for (StampedLidarPtr internal : internal_messages)
 		{
@@ -1351,7 +1392,7 @@ void GrabData::BuildExternalLidarLoopClosureMeasures(StampedLidarPtrvector &inte
 
 			prev = position;
 
-			pcl::PointXY xy { position[0], position[1] };
+			pcl::PointXY xy { (float) position[0], (float) position[1] };
 
 			if (0 < kdtree.nearestKSearch(xy, 1, nearestId, nearestDistance))
 			{
@@ -1359,26 +1400,32 @@ void GrabData::BuildExternalLidarLoopClosureMeasures(StampedLidarPtrvector &inte
 
 				if (nd < loop_required_distance)
 				{
-					pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
-
-					if (-1 == pcl::io::loadPCDFile(internal->path, *current_cloud))
-					{
-						throw std::runtime_error("Could not open the source cloud");
-					}
-
 					StampedLidarPtr external(refs[nearestId.front()]);
 
-					pcl::PointCloud<pcl::PointXYZHSV>::Ptr loop_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
+					double a(internal->gps_sync_estimate.rotation().angle());
+					double b(external->gps_sync_estimate.rotation().angle());
 
-					if (-1 == pcl::io::loadPCDFile(external->path, *loop_cloud))
+					if (!use_restricted_loops || M_PI_2 > mrpt::math::angDistance<double>(a, b))
 					{
-						throw std::runtime_error("Could not open the target cloud");
-					}
+						pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
 
-					// try the icp method
-					if (BuildLidarLoopMeasure(gicp, nd * 2.0, current_cloud, loop_cloud, internal->external_loop_measurement))
-					{
-						internal->external_loop_closure_id = external->id;
+						if (-1 == pcl::io::loadPCDFile(internal->path, *current_cloud))
+						{
+							throw std::runtime_error("Could not open the source cloud");
+						}
+
+						pcl::PointCloud<pcl::PointXYZHSV>::Ptr loop_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
+
+						if (-1 == pcl::io::loadPCDFile(external->path, *loop_cloud))
+						{
+							throw std::runtime_error("Could not open the target cloud");
+						}
+
+						// try the icp method
+						if (BuildLidarLoopMeasure(gicp, nd * 2.0, current_cloud, loop_cloud, internal->external_loop_measurement))
+						{
+							internal->external_loop_closure_id = external->id;
+						}
 					}
 				}
 			}
@@ -1687,47 +1734,45 @@ void GrabData::SaveLidarEdges(const std::string &msg_name, std::ofstream &os, co
 {
     if (!lidar_messages.empty())
     {
-        // iterate over the lidar messages
-        StampedLidarPtrVector::const_iterator end = lidar_messages.end();
-        StampedLidarPtrVector::const_iterator current = lidar_messages.begin();
-
-        // limit index
         unsigned last_index = raw_messages.size();
-
-        while (end != current)
+        for (StampedLidarPtr from : lidar_messages)
         {
-            // direct access
-            StampedLidarPtr from = *current;
-
             if (last_index > from->seq_id && use_lidar_odometry)
             {
-                // get the SE2 reference
                 g2o::SE2 &measurement(from->seq_measurement);
-
-                // save the icp measurement
                 os << msg_name << "_SEQ " << from->id << " " << from->seq_id << " " << std::fixed << measurement[0] << " " << measurement[1] << " " << measurement[2] << "\n";
-
             }
             if (last_index > from->loop_closure_id && use_lidar_loop)
             {
-                // get the SE2 reference
                 g2o::SE2 &measurement(from->loop_measurement);
-
-                // save the icp measurement
                 os << msg_name << "_LOOP " << from->id << " " << from->loop_closure_id << " " << std::fixed << measurement[0] << " " << measurement[1] << " " << measurement[2] << "\n";
-
             }
-            // go to the next message
-            ++current;
         }
     }
+}
+
+
+// save lidar message
+void GrabData::SaveExternalLidarEdges(const std::string &msg_name, std::ofstream &os, const StampedLidarPtrVector &lidar_messages)
+{
+    if (!lidar_messages.empty())
+    {
+        // limit index
+		for (StampedLidarPtr from : lidar_messages)
+		{
+			if (std::numeric_limits<unsigned>::max() > from->external_loop_closure_id)
+			{
+				g2o::SE2 &measurement(from->external_loop_measurement);
+				os << msg_name << "_EXTERNAL_LOOP " << from->id << " " << from->external_loop_closure_id << " " << std::fixed << measurement[0] << " " << measurement[1] << " " << measurement[2] << "\n";
+			}
+		}
+	}
 }
 
 
 // save all the edges containgin icp measurements, from SICK and Velodyne sensors
 void GrabData::SaveVisualOdometryEdges(std::ofstream &os)
 {
-
     std::cout << "\tSaving all visual odometry edges..." << std::endl;
 
     if (!bumblebee_messages.empty() && use_bumblebee_odometry)
@@ -1830,13 +1875,13 @@ void GrabData::SaveRawLidarEstimates(const std::string &filename, const StampedL
 
 
 // save the visual odometry estimates
-void GrabData::SaveVisualOdometryEstimates()
+void GrabData::SaveVisualOdometryEstimates(const std::string &filename)
 {
 
     if (5 < used_frames.size())
     {
         // open the visual odometry output file
-        std::ofstream ofs("visual_odometry.txt", std::ofstream::out);
+        std::ofstream ofs(filename, std::ofstream::out);
 
         if (!ofs.good())
         {
@@ -2265,6 +2310,8 @@ void GrabData::BuildHyperGraph()
 
         BuildOdometryMeasures();
 
+        // rebuild the initial estimates
+		BuildOdometryEstimates(use_fake_gps);
 
         if (use_bumblebee_odometry)
         {
@@ -2284,7 +2331,6 @@ void GrabData::BuildHyperGraph()
 
         if (use_velodyne_odometry)
         {
-			BuildOdometryEstimates(false);
             BuildLidarOdometryMeasuresWithThreads(velodyne_messages);
             BuildRawLidarOdometryEstimates(velodyne_messages, used_velodyne);
         }
@@ -2294,13 +2340,9 @@ void GrabData::BuildHyperGraph()
 
         if (use_sick_odometry)
         {
-			BuildOdometryEstimates(false);
             BuildLidarOdometryMeasuresWithThreads(sick_messages);
             BuildRawLidarOdometryEstimates(sick_messages, used_sick);
         }
-
-        // rebuild the initial estimates
-		BuildOdometryEstimates(use_fake_gps);
     }
 }
 
@@ -2316,73 +2358,68 @@ void GrabData::BuildExternalLoopClosures(GrabData &gd)
 }
 
 // save the hyper graph to the output file
-void GrabData::SaveHyperGraph(const std::string &output_filename)
+void GrabData::SaveHyperGraph(std::ofstream &os)
 {
     if (5 < messages.size())
     {
-        // open the file
-        std::ofstream out(output_filename, std::ofstream::out);
+		// save all vertex
+		// IT MUST BECOME FIRST
+		// so the edges list can use the vertices ids
+		SaveAllVertices(os);
 
-        if (out.is_open())
-        {
-            // save all vertex
-            // IT MUST BECOME FIRST
-            // so the edges list can use the vertices ids
-            SaveAllVertices(out);
+		// save the odometry edges
+		SaveOdometryEdges(os);
 
-            // save the odometry edges
-            SaveOdometryEdges(out);
+		// save the GPS edges
+		SaveGPSEdges(os);
 
-            // save the GPS edges
-            SaveGPSEdges(out);
+		// save the xsens edges
+		SaveXSENSEdges(os);
 
-            // save the xsens edges
-            SaveXSENSEdges(out);
+		// save the visual odometry edges
+		SaveVisualOdometryEdges(os);
 
-            // save the visual odometry edges
-            SaveVisualOdometryEdges(out);
-
-            // save the icp edges
-            SaveICPEdges(out);
-        }
-        else
-        {
-            throw std::runtime_error("Could not open the output file\n");
-        }
-
-        // close the output file
-        out.close();
+		// save the icp edges
+		SaveICPEdges(os);
     }
 }
 
+// save the external lidar loops
+void GrabData::SaveExternalLidarLoopEdges(std::ofstream &os)
+{
+	if (5 < messages.size())
+	{
+		if (use_velodyne_loop)
+			SaveExternalLidarEdges(std::string("VELODYNE"), os, velodyne_messages);
+
+		if (use_sick_loop)
+			SaveExternalLidarEdges(std::string("SICK"), os, sick_messages);
+	}
+}
 
 // save the extra estimates
-void GrabData::SaveEstimates()
+void GrabData::SaveEstimates(std::string &base)
 {
-
-    // rebuild odometry estimates without GPS
-    BuildOdometryEstimates(false);
-
     // save the raw odometry estimate to external file
-    SaveOdometryEstimates("raw_odometry.txt", true);
+    SaveOdometryEstimates(base + "raw_odometry.txt", true);
 
     // save the odometry estimate to external file
-    SaveOdometryEstimates("odometry.txt", false);
+    SaveOdometryEstimates(base + "odometry.txt", false);
 
     // save the gps estimate to gps.txt file
-    SaveGPSEstimates("gps.txt", false);
+    SaveGPSEstimates(base + "gps.txt", false);
 
     // save the original gps
-    SaveGPSEstimates("gps_original.txt", true);
+    SaveGPSEstimates(base + "gps_original.txt", true);
 
     // save the visual odometry estimates
-    SaveVisualOdometryEstimates();
+    SaveVisualOdometryEstimates(base + "visual_odometry.txt");
 
     // save the velodyne estimates to the velodyne.txt file
-    SaveRawLidarEstimates("velodyne.txt", used_velodyne);
+    SaveRawLidarEstimates(base + "velodyne.txt", used_velodyne);
 
     // save the sick estimates
-    SaveRawLidarEstimates("sick.txt", used_sick);
+    SaveRawLidarEstimates(base + "sick.txt", used_sick);
 }
 
 

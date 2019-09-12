@@ -226,7 +226,7 @@ namespace hyper {
             void BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messages);
 
 			// compute the external loop closure measure
-			void BuildExternalLidarLoopClosureMeasures(StampedLidarPtrvector &internal_messages, StampedLidarPtrVector &external_messages);
+			void BuildExternalLidarLoopClosureMeasures(StampedLidarPtrVector &internal_messages, StampedLidarPtrVector &external_messages);
 
             // compute the bumblebee measure
             void BuildVisualOdometryMeasures();
@@ -252,6 +252,9 @@ namespace hyper {
             // save icp edges
             void SaveLidarEdges(const std::string &msg_name, std::ofstream &os, const StampedLidarPtrVector &lidar_messages, bool use_lidar_odometry, bool use_lidar_loop);
 
+			// save the external lidar loop edges
+			void SaveExternalLidarEdges(const std::string &msg_name, std::ofstream &os, const StampedLidarPtrVector &lidar_messages);
+
             // save visual odometry edges
             void SaveVisualOdometryEdges(std::ofstream &os);
 
@@ -262,7 +265,7 @@ namespace hyper {
             void SaveRawLidarEstimates(const std::string &filename, const StampedLidarPtrVector &lidar_messages);
 
             // save the visual odometry estimates
-            void SaveVisualOdometryEstimates();
+            void SaveVisualOdometryEstimates(const std::string &filename);
 
             // build Eigen homogeneous matrix from g2o SE2
             Eigen::Matrix4f BuildEigenMatrixFromSE2(const g2o::SE2 &transform);
@@ -273,9 +276,6 @@ namespace hyper {
             // get SE2 transform from libviso homogeneous coordinate matrix
             g2o::SE2 GetSE2FromVisoMatrix(const Matrix &matrix);
 
-            // removing the copy constructor
-            GrabData(const GrabData&) = delete;
-
             // removing the assignment operator overloading
             void operator=(const GrabData&);
 
@@ -283,6 +283,9 @@ namespace hyper {
 
             // the main constructor
             GrabData();
+
+			// the move constructor
+			GrabData(GrabData &&gd);
 
             // the main destructor
             ~GrabData();
@@ -302,10 +305,13 @@ namespace hyper {
 			void BuildExternalLoopClosures(GrabData &gd);
 
             // save the hyper graph to the output file
-            void SaveHyperGraph(const std::string &output_filename);
+            void SaveHyperGraph(std::ofstream &os);
+
+			// save the external lidar loops
+			void SaveExternalLidarLoopEdges(std::ofstream &os);
 
             // save the estimates to external files
-            void SaveEstimates();
+            void SaveEstimates(std::string &base);
 
             // clear the entire object
             void Clear();

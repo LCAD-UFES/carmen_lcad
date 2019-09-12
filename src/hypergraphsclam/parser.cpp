@@ -1,9 +1,10 @@
 #include <string>
 #include <array>
 #include <unistd.h>
+#include <boost/filesystem/operations.hpp>
+
 #include <GrabData.hpp>
 #include <StampedGPSPose.hpp>
-#include <boost/filesystem/operations.hpp>
 #include <StringHelper.hpp>
 
 void
@@ -11,7 +12,7 @@ prepare_all_directories()
 {
     // remove the directory contents recursively, and then removes the directory.
     boost::filesystem::remove_all("/dados/tmp");
-    boost::filesystem::create_directory("/dados/tmp");
+	boost::filesystem::create_directory("/dados/tmp");
     boost::filesystem::create_directory("/dados/tmp/sick");
     boost::filesystem::create_directory("/dados/tmp/velodyne");
     boost::filesystem::create_directory("/dados/tmp/lgm");
@@ -23,25 +24,23 @@ prepare_all_directories()
 
 std::vector<std::array<std::string, 3>> log_list_parser(std::string log_list_filename)
 {
-	std::vector<std::array<std::string, 3>> log_list();
+	std::vector<std::array<std::string, 3>> log_list;
 
 	std::ifstream file(log_list_filename);
 
     if (file.is_open())
 	{
-		std::string current_line;
+		std::stringstream current_line;
 
 		while(-1 != hyper::StringHelper::ReadLine(file, current_line))
 		{
-			std::stringstream ss(current_line);
-
 			std::string log;
 			std::string parser_config_file;
 			std::string carmen_ini;
 
-			ss >> log;
-			ss >> parser_config_file;
-			ss >> carmen_ini;
+			current_line >> log;
+			current_line >> parser_config_file;
+			current_line >> carmen_ini;
 
 			if (log.empty() || parser_config_file.empty() || carmen_ini.empty())
 			{
@@ -106,15 +105,53 @@ build_loop_closures(std::vector<hyper::GrabData> &gds)
 }
 
 void
+save_separated_graph(hyper::GrabData &gd, unsigned b)
+{
+	std::stringstream ss;
+	std::string base;
+	ss << b;
+	ss >> base;
+	base += "_";
+
+	std::ofstream sync(base + "sync.txt");;
+	if (!sync.is_open())
+	{
+		std::cerr << "Could not open the separated sync.txt output file!" << std::endl;
+		return;
+	}
+
+	gd.SaveHyperGraph(sync);
+
+	gd.SaveEstimates(base);
+}
+
+void
 save_hyper_graphs(std::vector<hyper::GrabData> &gds)
 {
+	std::ofstream sync("sync.txt");
+
+	if (!sync.is_open())
+	{
+		std::cerr << "Could not open the sync.txt output file!" << std::endl;
+		return;
+	}
+
+	unsigned b = 1;
+
 	for (hyper::GrabData &gd : gds)
 	{
-		// save the hyper graph
-		gd.SaveHyperGraph();
-		gd.SaveEstimates();
-		gd.Clear();
+		// save the hyper graph in a global file
+		gd.SaveHyperGraph(sync);
+
+		save_separated_graph(gd, b++);
 	}
+
+	for (hyper::GrabData &gd : gds)
+	{
+		gd.SaveExternalLidarLoopEdges(sync);
+	}
+
+	sync.close();
 }
 
 
@@ -137,6 +174,9 @@ main (int argc, char **argv)
 		build_loop_closures(gds);
 		save_hyper_graphs(gds);
 	}
+
+	for (hyper::GrabData &gd : gds)
+		gd.Clear();
 
 	std::cout << "Done!\n";
 
