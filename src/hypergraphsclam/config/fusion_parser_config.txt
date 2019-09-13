@@ -60,7 +60,8 @@ DISABLE_BUMBLEBEE_LOOP
 -- no caso abaixo, vamos usar o 0 e o 1
 -- o primeiro inteiro é o identificador e o segundo valor (double) é o delay do gps
 -- GPS_IDENTIFIER 0 0.0
-GPS_IDENTIFIER 1 0.0
+GPS_IDENTIFIER 2 0.0
+-- GPS_IDENTIFIER 3 0.0
 
 -- USE THE FAKE GPS
 USE_FAKE_GPS
