@@ -2389,7 +2389,7 @@ void GrabData::BuildHyperGraph()
         // it does not interfere with the hypergraph optimization.
         BuildLidarOdometryGPSEstimates();
 
-        if (use_velodyne_loop and false)
+        if (use_velodyne_loop)
             BuildLidarLoopClosureMeasures(velodyne_messages);
 
         if (use_velodyne_odometry)
@@ -2398,7 +2398,7 @@ void GrabData::BuildHyperGraph()
             BuildRawLidarOdometryEstimates(velodyne_messages, used_velodyne);
         }
 
-        if (use_sick_loop and false)
+        if (use_sick_loop)
             BuildLidarLoopClosureMeasures(sick_messages);
 
         if (use_sick_odometry)
