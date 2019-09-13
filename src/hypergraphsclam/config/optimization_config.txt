@@ -1,4 +1,3 @@
-
 -- covariâncias
 -- quanto menor mais confianca ordem de x10 (XX YY - pose) (HH - orientação)
 -- UNIDADE DA VARIANCIA NOS DESLOCAMENTOS: METROS AO QUADRADO - AREA
@@ -53,10 +52,10 @@ ODOM_ACKERMAN_PARAMS_VERTICES 1
 OPTIMIZER_OUTER_ITERATIONS 2
 
 -- how many pose optimization iterations
-OPTIMIZER_INNER_POSE_ITERATIONS 10
+OPTIMIZER_INNER_POSE_ITERATIONS 30
 
 -- how many bias calibration iterations
-OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS 10
+OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS 20
 
 -- the min clustering distance (GPS)
 -- Distância para considerar no clustering.

@@ -1023,7 +1023,7 @@ void HyperGraphSclamOptimizer::ManageHypergraphRegion(std::vector<g2o::VertexSE2
         v->setFixed(status);
     }
 
-    if (status)
+    if (!status)
     {
         optimizer->initializeOptimization();
         optimizer->computeActiveErrors();
@@ -1039,7 +1039,6 @@ void HyperGraphSclamOptimizer::PrepareIndividualOptimization()
         v->setMarginalized(true);
         v->setFixed(true);
     }
-    optimizer->initializeOptimization();
 }
 
 
@@ -1426,9 +1425,12 @@ void HyperGraphSclamOptimizer::OptimizationLoop()
         for (std::pair<const std::string, std::vector<g2o::VertexSE2*>> &entry : logs)
         {
             std::vector<g2o::VertexSE2*> &vs(entry.second);
-            std::cout << "Current gid: " << entry.first << " and size:" << vs.size() << std::endl;
+            std::cout << "Current gid: " << entry.first << " and size: " << vs.size() << std::endl;
+
             ManageHypergraphRegion(vs, false);
+
             optimizer->optimize(internal_loop);
+
             ManageHypergraphRegion(vs, true);
         }
 
