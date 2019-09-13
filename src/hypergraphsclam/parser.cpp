@@ -64,11 +64,12 @@ std::vector<std::array<std::string, 3>> log_list_parser(std::string log_list_fil
 bool
 parse_logs(std::vector<hyper::GrabData> &gds, std::vector<std::array<std::string, 3>> &logs)
 {
+	unsigned gid = 1;
     unsigned last_id = 6;
 
     for (std::array<std::string, 3> &input_files : logs)
     {
-        gds.emplace_back(hyper::GrabData());
+        gds.emplace_back(hyper::GrabData(gid++));
 
         hyper::GrabData &gd = gds.back();
 
@@ -91,18 +92,11 @@ parse_logs(std::vector<hyper::GrabData> &gds, std::vector<std::array<std::string
 
 
 void
-build_loop_closures(std::vector<hyper::GrabData> &gds)
+build_loop_closures(std::vector<hyper::GrabData> &gds, double external_loop_required_distance)
 {
-	// TODO 1 -> 2 -> 3 ... -> n then 2 -> 3 -> ... n then 3 -> 4 -> ... -> n
-    std::vector<hyper::GrabData>::iterator end(gds.end());
-    std::vector<hyper::GrabData>::iterator curr(gds.begin());
-    std::vector<hyper::GrabData>::iterator prev(curr++);
-
-    while (end != curr)
-    {
-        curr->BuildExternalLoopClosures(*prev);
-        prev = curr++;
-    }
+	for (unsigned i = 0; i < gds.size(); ++i)
+		for (unsigned j = i + 1; j < gds.size(); ++j)
+			gds[i].BuildExternalLoopClosures(gds[j], external_loop_required_distance);
 }
 
 void
@@ -121,7 +115,7 @@ save_separated_graph(hyper::GrabData &gd, unsigned b)
         return;
     }
 
-    gd.SaveHyperGraph(sync);
+    gd.SaveHyperGraph(sync, false);
 
     gd.SaveEstimates(base);
 }
@@ -142,7 +136,7 @@ save_hyper_graphs(std::vector<hyper::GrabData> &gds)
     for (hyper::GrabData &gd : gds)
     {
         // save the hyper graph in a global file
-        gd.SaveHyperGraph(sync);
+        gd.SaveHyperGraph(sync, true);
 
         save_separated_graph(gd, b++);
     }
@@ -161,18 +155,28 @@ main (int argc, char **argv)
 {
     if (2 > argc)
     {
-        std::cout << "Usage: ./parser <log_list_file_path>" << std::endl;
+        std::cout << "Usage: ./parser <log_list_file_path> [external_loop_required_distance]" << std::endl;
         return -1;
     }
 
     prepare_all_directories();
 
-    std::vector<hyper::GrabData> gds(0);
+	double external_loop_required_distance = 5.0f;
+
+	if (2 < argc)
+	{
+		std::stringstream ss;
+		std::string elmd(argv[2]);
+		ss << elmd;
+		ss >> external_loop_required_distance;
+	}
+
+    std::vector<hyper::GrabData> gds;
     std::vector<std::array<std::string, 3>> logs(log_list_parser(argv[1]));
 
     if (parse_logs(gds, logs))
     {
-        build_loop_closures(gds);
+        build_loop_closures(gds, external_loop_required_distance);
         save_hyper_graphs(gds);
     }
 

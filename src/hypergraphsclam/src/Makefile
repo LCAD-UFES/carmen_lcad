@@ -8,10 +8,10 @@ MODULE_COMMENT =
 CXXFLAGS += -std=c++11 -O3 -Wno-deprecated-declarations
 
 IFLAGS += -I$(CARMEN_HOME)/src/hypergraphsclam/src \
-			-I$(CARMEN_HOME)/src/hypergraphsclam/Helpers \
-			-I$(CARMEN_HOME)/src/hypergraphsclam/Messages \
-			-I$(CARMEN_HOME)/src/hypergraphsclam/CustomEdges \
-			-I$(CARMEN_HOME)/src/hypergraphsclam/src \
+	-I$(CARMEN_HOME)/src/hypergraphsclam/Helpers \
+	-I$(CARMEN_HOME)/src/hypergraphsclam/Messages \
+	-I$(CARMEN_HOME)/src/hypergraphsclam/CustomElements \
+	-I$(CARMEN_HOME)/src/hypergraphsclam/src \
 
 #cheating
 IFLAGS += -std=c++11 -O3

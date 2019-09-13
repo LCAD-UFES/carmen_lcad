@@ -51,10 +51,55 @@ GrabData::GrabData() :
     use_sick_odometry(true),
     use_bumblebee_odometry(true),
     use_velodyne_loop(true),
+    use_external_velodyne_loop(false),
     use_sick_loop(true),
+    use_external_sick_loop(false),
     use_bumblebee_loop(true),
     use_fake_gps(false),
-    use_restricted_loops(false) {}
+    use_restricted_loops(false),
+    grab_data_id(0) {}
+
+// the main constructor
+GrabData::GrabData(unsigned _gid) :
+    raw_messages(0),
+    messages(0),
+    gps_messages(0),
+    xsens_messages(0),
+    velodyne_messages(0),
+    used_velodyne(0),
+    sick_messages(0),
+    point_cloud_lidar_messages(nullptr),
+    odometry_messages(0),
+    bumblebee_messages(0),
+    used_frames(0),
+    gps_origin(0.0, 0.0),
+    icp_start_index(0),
+    icp_end_index(0),
+    icp_mutex(),
+    first_last_mutex(),
+    error_increment_mutex(),
+    icp_errors(0),
+    dmax(std::numeric_limits<double>::max()),
+    maximum_vel_scans(MAXIMUM_VEL_SCANS),
+    loop_required_time(LOOP_REQUIRED_TIME),
+    loop_required_distance(LOOP_REQUIRED_DISTANCE),
+    icp_threads_pool_size(ICP_THREADS_POOL_SIZE),
+    icp_thread_block_size(ICP_THREAD_BLOCK_SIZE),
+    lidar_odometry_min_distance(LIDAR_ODOMETRY_MIN_DISTANCE),
+    visual_odometry_min_distance(VISUAL_ODOMETRY_MIN_DISTANCE),
+    icp_translation_confidence_factor(ICP_TRANSLATION_CONFIDENCE_FACTOR),
+    save_accumulated_point_clouds(false),
+    use_velodyne_odometry(true),
+    use_sick_odometry(true),
+    use_bumblebee_odometry(true),
+    use_velodyne_loop(true),
+    use_external_velodyne_loop(false),
+    use_sick_loop(true),
+    use_external_sick_loop(false),
+    use_bumblebee_loop(true),
+    use_fake_gps(false),
+    use_restricted_loops(false),
+    grab_data_id(_gid) {}
 
 // the main destructor
 GrabData::~GrabData()
@@ -97,10 +142,13 @@ GrabData::GrabData(GrabData &&gd) :
     use_sick_odometry(gd.use_sick_odometry),
     use_bumblebee_odometry(gd.use_bumblebee_odometry),
     use_velodyne_loop(gd.use_velodyne_loop),
+    use_external_velodyne_loop(gd.use_velodyne_loop),
     use_sick_loop(gd.use_sick_loop),
+    use_external_sick_loop(gd.use_sick_loop),
     use_bumblebee_loop(gd.use_bumblebee_loop),
     use_fake_gps(gd.use_fake_gps),
-    use_restricted_loops(gd.use_restricted_loops)
+    use_restricted_loops(gd.use_restricted_loops),
+    grab_data_id(gd.grab_data_id)
 {
 }
 
@@ -639,7 +687,7 @@ void GrabData::BuildOdometryEstimates(bool gps_based)
 
             StampedGPSPosePtr m_gps = dynamic_cast<StampedGPSPosePtr>(next);
 
-            if (gps_based && nullptr != m_gps && 2.0f < distance)
+            if (gps_based && nullptr != m_gps && 3.0f < distance)
             {
                 next->est = m_gps->gps_measurement;
                 next->raw_est = m_gps->gps_measurement;
@@ -1349,7 +1397,11 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
     }
 }
 
-void GrabData::BuildExternalLidarLoopClosureMeasures(StampedLidarPtrVector &internal_messages, StampedLidarPtrVector &external_messages)
+bool GrabData::BuildExternalLidarLoopClosureMeasures(
+	StampedLidarPtrVector &internal_messages,
+	StampedLidarPtrVector &external_messages,
+	Eigen::Vector2d external_gps_origin,
+	double external_loop_required_distance)
 {
     if (!internal_messages.empty() and !external_messages.empty())
     {
@@ -1371,12 +1423,11 @@ void GrabData::BuildExternalLidarLoopClosureMeasures(StampedLidarPtrVector &inte
         cloud->clear();
         for (StampedLidarPtr lidar : external_messages)
         {
-            const Eigen::Vector2d &position(lidar->gps_sync_estimate.translation());
+            const Eigen::Vector2d position(lidar->gps_sync_estimate.translation() + external_gps_origin);
             cloud->push_back(pcl::PointXY { (float) position[0], (float) position[1] });
             refs[cloud->size() - 1] = lidar;
         }
 
-        Eigen::Vector2d prev { 0.0, 0.0 };
         std::vector<int> nearestId(1);
         std::vector<float> nearestDistance(1);
 
@@ -1384,11 +1435,7 @@ void GrabData::BuildExternalLidarLoopClosureMeasures(StampedLidarPtrVector &inte
 
         for (StampedLidarPtr internal : internal_messages)
         {
-            const Eigen::Vector2d &position(internal->gps_sync_estimate.translation());
-
-            Eigen::Vector2d diff(position - prev);
-
-            prev = position;
+            const Eigen::Vector2d position(internal->gps_sync_estimate.translation() + gps_origin);
 
             pcl::PointXY xy { (float) position[0], (float) position[1] };
 
@@ -1396,7 +1443,7 @@ void GrabData::BuildExternalLidarLoopClosureMeasures(StampedLidarPtrVector &inte
             {
                 float nd = nearestDistance.front();
 
-                if (nd < loop_required_distance)
+                if (external_loop_required_distance > nd)
                 {
                     StampedLidarPtr external(refs[nearestId.front()]);
 
@@ -1428,7 +1475,10 @@ void GrabData::BuildExternalLidarLoopClosureMeasures(StampedLidarPtrVector &inte
                 }
             }
         }
-    }
+
+		return true;
+	}
+    return false;
 }
 
 
@@ -1523,14 +1573,17 @@ void GrabData::BuildVisualOdometryMeasures()
 
 
 // save all vertices to the external file
-void GrabData::SaveAllVertices(std::ofstream &os)
+void GrabData::SaveAllVertices(std::ofstream &os, bool global = false)
 {
     // helpers
     StampedMessagePtrVector::iterator it = messages.begin();
     StampedMessagePtrVector::iterator end = messages.end();
 
     // save the gps origin
-    os << "GPS_ORIGIN " << std::fixed << gps_origin[0] << " " << gps_origin[1] << "\n";
+	if (global)
+		os << "GPS_ORIGIN 0.0 0.0\n";
+	else
+		os << "GPS_ORIGIN " << std::fixed << gps_origin[0] << " " << gps_origin[1] << "\n";
 
     // save the vertices ammount
     os << "VERTICES_QUANTITY " << messages.size() << "\n";
@@ -1540,8 +1593,13 @@ void GrabData::SaveAllVertices(std::ofstream &os)
         // direct acccess
         StampedMessagePtr m = *it;
 
+		Eigen::Vector2d position(m->est.translation());
+
+		if (global)
+			position += gps_origin;
+
         // write the estimate id and initial value
-        os << "VERTEX " << m->id << " " << std::fixed << m->est[0] << " " << m->est[1] << " " << m->est[2] << " " << m->timestamp << " " << int(m->GetType())<< "\n";
+        os << "VERTEX " << grab_data_id << " " << m->id << " " << std::fixed << position[0] << " " << position[1] << " " << m->est[2] << " " << m->timestamp << " " << int(m->GetType())<< "\n";
 
         // go to the next message
         ++it;
@@ -1646,7 +1704,7 @@ void GrabData::SaveOdometryEstimates(const std::string &output_filename, bool ra
 
 
 // save the gps edges
-void GrabData::SaveGPSEdges(std::ofstream &os)
+void GrabData::SaveGPSEdges(std::ofstream &os, bool global = false)
 {
     std::cout << "Saving all GPS edges..." << std::endl;
 
@@ -1660,10 +1718,13 @@ void GrabData::SaveGPSEdges(std::ofstream &os)
         StampedGPSPosePtr gps = *current;
 
         // measurement direct access
-        const g2o::SE2 &measurement(gps->gps_measurement);
+		Eigen::Vector2d position(gps->gps_measurement.translation());
+
+		if (global)
+			position += gps_origin;
 
         // write the gps mesaure
-        os << "GPS_EDGE " << gps->id << " " << std::fixed << measurement[0] << " " << measurement[1] << " " << measurement[2] << " " << gps->gps_std << "\n";
+        os << "GPS_EDGE " << gps->id << " " << std::fixed << position[0] << " " << position[1] << " " << gps->gps_measurement[2] << " " << gps->gps_std << "\n";
 
         // go to the next messages
         ++current;
@@ -2328,7 +2389,7 @@ void GrabData::BuildHyperGraph()
         // it does not interfere with the hypergraph optimization.
         BuildLidarOdometryGPSEstimates();
 
-        if (use_velodyne_loop)
+        if (use_velodyne_loop and false)
             BuildLidarLoopClosureMeasures(velodyne_messages);
 
         if (use_velodyne_odometry)
@@ -2337,7 +2398,7 @@ void GrabData::BuildHyperGraph()
             BuildRawLidarOdometryEstimates(velodyne_messages, used_velodyne);
         }
 
-        if (use_sick_loop)
+        if (use_sick_loop and false)
             BuildLidarLoopClosureMeasures(sick_messages);
 
         if (use_sick_odometry)
@@ -2350,31 +2411,28 @@ void GrabData::BuildHyperGraph()
 
 
 // build loop closures - different log version
-void GrabData::BuildExternalLoopClosures(GrabData &gd)
+void GrabData::BuildExternalLoopClosures(GrabData &gd, double external_loop_required_distance = 5.0f)
 {
-    if (use_velodyne_loop)
-        BuildExternalLidarLoopClosureMeasures(velodyne_messages, gd.velodyne_messages);
-
-    if (use_sick_loop)
-        BuildExternalLidarLoopClosureMeasures(sick_messages, gd.sick_messages);
+    use_external_velodyne_loop = BuildExternalLidarLoopClosureMeasures(velodyne_messages, gd.velodyne_messages, gd.gps_origin, external_loop_required_distance);
+    use_external_sick_loop = BuildExternalLidarLoopClosureMeasures(sick_messages, gd.sick_messages, gd.gps_origin, external_loop_required_distance);
 }
 
 
 // save the hyper graph to the output file
-void GrabData::SaveHyperGraph(std::ofstream &os)
+void GrabData::SaveHyperGraph(std::ofstream &os, bool global = false)
 {
     if (5 < messages.size())
     {
         // save all vertex
         // IT MUST BECOME FIRST
         // so the edges list can use the vertices ids
-        SaveAllVertices(os);
+        SaveAllVertices(os, global);
 
         // save the odometry edges
         SaveOdometryEdges(os);
 
         // save the GPS edges
-        SaveGPSEdges(os);
+        SaveGPSEdges(os, global);
 
         // save the xsens edges
         SaveXSENSEdges(os);
@@ -2393,10 +2451,10 @@ void GrabData::SaveExternalLidarLoopEdges(std::ofstream &os)
 {
     if (5 < messages.size())
     {
-        if (use_velodyne_loop)
+        if (use_external_velodyne_loop)
             SaveExternalLidarEdges(std::string("VELODYNE"), os, velodyne_messages);
 
-        if (use_sick_loop)
+        if (use_external_sick_loop)
             SaveExternalLidarEdges(std::string("SICK"), os, sick_messages);
     }
 }

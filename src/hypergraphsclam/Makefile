@@ -5,15 +5,15 @@ MODULE_COMMENT = Sensor Calibration
 
 LINK = g++
 
-CXXFLAGS += -std=c++11 -g -O0 -Wno-deprecated-declarations
+CXXFLAGS += -std=c++11 -O2 -Wno-deprecated-declarations
 
 #cheating
-IFLAGS += -std=c++11 -O0 -g
+IFLAGS += -std=c++11 -O2
 
 IFLAGS += -I$(CARMEN_HOME)/src/hypergraphsclam \
 	-I$(CARMEN_HOME)/src/hypergraphsclam/Helpers \
 	-I$(CARMEN_HOME)/src/hypergraphsclam/Messages \
-	-I$(CARMEN_HOME)/src/hypergraphsclam/CustomEdges \
+	-I$(CARMEN_HOME)/src/hypergraphsclam/CustomElements \
 	-I$(CARMEN_HOME)/src/hypergraphsclam/src
 
 IFLAGS += -I/usr/include/
@@ -60,7 +60,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libviso2.3/src -lviso
 #CXXFLAGS += -pg
 #LFLAGS += -pg
 
-SUBDIRS = Helpers/ Messages/ src/ CustomEdges/
+SUBDIRS = Helpers/ Messages/ src/ CustomElements/
 
 SOURCES = Helpers/StringHelper.cpp \
 	Helpers/SimpleLidarSegmentation.cpp \

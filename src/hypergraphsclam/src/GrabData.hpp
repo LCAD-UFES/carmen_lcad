@@ -117,12 +117,16 @@ namespace hyper {
             bool use_bumblebee_odometry;
 
             bool use_velodyne_loop;
+			bool use_external_velodyne_loop;
             bool use_sick_loop;
+			bool use_external_sick_loop;
             bool use_bumblebee_loop;
 
             bool use_fake_gps;
 
 			bool use_restricted_loops;
+
+			unsigned grab_data_id;
 
             // separate the gps, sick and velodyne messages
             void SeparateMessages();
@@ -226,13 +230,17 @@ namespace hyper {
             void BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messages);
 
 			// compute the external loop closure measure
-			void BuildExternalLidarLoopClosureMeasures(StampedLidarPtrVector &internal_messages, StampedLidarPtrVector &external_messages);
+			bool BuildExternalLidarLoopClosureMeasures(
+				StampedLidarPtrVector &internal_messages,
+				StampedLidarPtrVector &external_messages,
+				Eigen::Vector2d external_gps_origin,
+				double external_loop_required_distance);
 
             // compute the bumblebee measure
             void BuildVisualOdometryMeasures();
 
             // save all vertices to the external file
-            void SaveAllVertices(std::ofstream &os);
+            void SaveAllVertices(std::ofstream &os, bool global);
 
             // save the odometry edges
             void SaveOdometryEdges(std::ofstream &os);
@@ -241,7 +249,7 @@ namespace hyper {
             void SaveOdometryEstimates(const std::string &output_filename, bool raw_version = false);
 
             // save the gps edges
-            void SaveGPSEdges(std::ofstream &os);
+            void SaveGPSEdges(std::ofstream &os, bool global);
 
             // save the xsens edges
             void SaveXSENSEdges(std::ofstream &os);
@@ -281,8 +289,10 @@ namespace hyper {
 
         public:
 
-            // the main constructor
             GrabData();
+
+            // the main constructor
+            GrabData(unsigned _gid);
 
 			// the move constructor
 			GrabData(GrabData &&gd);
@@ -302,10 +312,10 @@ namespace hyper {
             void BuildHyperGraph();
 
 			// build external loop closures - different logs version
-			void BuildExternalLoopClosures(GrabData &gd);
+			void BuildExternalLoopClosures(GrabData &gd, double external_loop_required_distance);
 
             // save the hyper graph to the output file
-            void SaveHyperGraph(std::ofstream &os);
+            void SaveHyperGraph(std::ofstream &os, bool global);
 
 			// save the external lidar loops
 			void SaveExternalLidarLoopEdges(std::ofstream &os);

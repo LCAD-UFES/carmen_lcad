@@ -12,6 +12,8 @@
 #include <g2o/types/slam2d/se2.h>
 #include <g2o/types/slam2d/vertex_se2.h>
 #include <g2o/types/slam2d/edge_se2.h>
+#include <g2o/core/factory.h>
+#include <g2o/core/hyper_dijkstra.h>
 
 #include <g2o/core/solver.h>
 #include <g2o/core/block_solver.h>
@@ -21,9 +23,6 @@
 #include <g2o/core/optimization_algorithm_gauss_newton.h>
 #include <g2o/core/optimization_algorithm_levenberg.h>
 #include <g2o/core/optimization_algorithm_dogleg.h>
-
-#include <g2o/core/factory.h>
-#include <g2o/core/hyper_dijkstra.h>
 
 // custom edges
 #include <EdgeGPS.hpp>
@@ -79,8 +78,8 @@ namespace hyper {
 #define DEFAULT_FAKE_GPS_CLUSTERING_DISTANCE 0.0
 #define DEFAULT_GPS_SPARSITY_THRESHOLD 0.0
 
-typedef g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1>> HyperBlockSolver;
-typedef g2o::LinearSolverCholmod<HyperBlockSolver::PoseMatrixType> HyperCholmodSolver;
+using HyperBlockSolver = g2o::BlockSolver<g2o::BlockSolverTraits<-1, -1> > ;
+using HyperCholmodSolver = g2o::LinearSolverCholmod<HyperBlockSolver::PoseMatrixType>;
 
 class HyperGraphSclamOptimizer {
 
@@ -176,6 +175,8 @@ class HyperGraphSclamOptimizer {
         // hack
         std::list<g2o::EdgeGPS*> gps_buffer;
 
+        std::map<std::string, std::vector<g2o::VertexSE2*> > logs;
+
         // the ids offsets given the initial calibration vertices
         unsigned vertex_id_offset;
 
@@ -254,6 +255,9 @@ class HyperGraphSclamOptimizer {
 
         // manage the hypergraph region
         void ManageHypergraphRegion(std::vector<g2o::VertexSE2*> &group, bool status);
+
+        // disable all vertices
+        void PrepareIndividualOptimization();
 
         // reset the graph to the pose estimation
         void PreparePrevOptimization();
