@@ -24,6 +24,10 @@ prepare_all_directories()
 
 std::vector<std::array<std::string, 3>> log_list_parser(std::string log_list_filename)
 {
+    std::string carmen_home(getenv("CARMEN_HOME"));
+    std::string carmen_src_folder(carmen_home + "/src/");
+    std::string config_folder(carmen_src_folder + "/hypergraphsclam/config/");
+
     std::vector<std::array<std::string, 3>> log_list;
 
     std::ifstream file(log_list_filename);
@@ -48,7 +52,7 @@ std::vector<std::array<std::string, 3>> log_list_parser(std::string log_list_fil
             }
             else
             {
-                log_list.emplace_back(std::array<std::string, 3> { log, parser_config_file, carmen_ini });
+                log_list.emplace_back(std::array<std::string, 3> { log, config_folder + parser_config_file, carmen_src_folder + carmen_ini });
             }
         }
     }

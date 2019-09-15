@@ -1481,6 +1481,7 @@ void HyperGraphSclamOptimizer::Clear()
 {
     // clear the id timestamps map
     id_time_type_map.clear();
+    logs.clear();
 
     if (nullptr != factory)
     {
