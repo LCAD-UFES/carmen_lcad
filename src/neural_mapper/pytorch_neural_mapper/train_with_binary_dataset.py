@@ -23,46 +23,6 @@ import cv2
 import model as M
 
 
-# def load_train_data(dataset_list, bachsize):
-#     file = open(file_name)
-#     content = file.read()
-#     content_list = content.split('\n')
-#
-#     def load_data2(batch_size, batch_idx, dataset_list, data_path, target_path):
-#         batch_weight = np.zeros(n_classes)
-#         dataset_size = len(dataset_list)
-#         n = math.floor(dataset_size / batch_size)
-#         data = torch.zeros(batch_size, input_dimensions, img_x_dim, img_y_dim)
-#         target = torch.zeros(batch_size, img_x_dim, img_y_dim, dtype=torch.int64)
-#
-#         for j in range(batch_size):
-#             # + 1 se indice comeca em 1
-#             # print(batch_idx*batch_size + j)
-#             data[j][0] = png2tensor(data_path + str(dataset_list[batch_idx * batch_size + j]) + '_max.png')[
-#                 0]  # + 1) + '_max.png')
-#             data[j][1] = png2tensor(data_path + str(dataset_list[batch_idx * batch_size + j]) + '_mean.png')[
-#                 0]  # + 1) + '_mean.png')
-#             data[j][2] = png2tensor(data_path + str(dataset_list[batch_idx * batch_size + j]) + '_min.png')[
-#                 0]  # + 1) + '_min.png')
-#             data[j][3] = png2tensor(data_path + str(dataset_list[batch_idx * batch_size + j]) + '_numb.png')[
-#                 0]  # + 1) + '_numb.png')
-#             data[j][4] = png2tensor(data_path + str(dataset_list[batch_idx * batch_size + j]) + '_std.png')[
-#                 0]  # + 1) + '_std.png')
-#             tmp, new_weights = png2target(target_path + str(dataset_list[batch_idx * batch_size + j]) + '_label.png')
-#             target[j] = tmp[0]
-#             batch_weight = batch_weight + new_weights
-#         max_weight = max(batch_weight)
-#         batch_weight = max_weight / batch_weight
-#         # normalize weights
-#         # max_w = max(batch_weight)
-#         # min_w = min(batch_weight)
-#         # batch_weight = (batch_weight - 1)*10/(max_w - 1) + 1
-#         # print(weights)
-#         # ziped = list(zip(dataset, weights))
-#         # shuffle(ziped)
-#         # dataset, weights = zip(*ziped)
-#         return data, target, batch_weight
-
 def tensor2rgbimage(tensor):
     img = tensor.permute(1,2,0).numpy()
     height, width = img.shape[:2]
@@ -416,23 +376,3 @@ if __name__ == '__main__':
     config_log_file_name = dnn_config['save_log_files'] + 'config' + str(epochs) + '.ini'
     with open(config_log_file_name, 'w') as configfile:  # type: TextIO
         config_file.write(configfile)
-    #
-    # # print("Batch_size: ", batch_size, " batch_interations: ", batch_iterations, " Train_set: ", len(dataset_list))
-    # for i in range(epochs):
-    #
-    #
-    #
-    # show_dataset(data)
-
-    # load_model()
-    #
-    # load_train_data(dataset_train_list, bachsize)
-    # load_test_data(dataset_test_list)
-    #
-    # train()
-    # test()
-    # debug()
-    # Exemplo como gravar o arquivo de configuração usado em um arquivo
-    # config_log_file_name = metrics_config['save_log_files'] + 'config' +
-    # with open('config2.ini', 'w') as configfile:
-    #     config_file.write(configfile)
