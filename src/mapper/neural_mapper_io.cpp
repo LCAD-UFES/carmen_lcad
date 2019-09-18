@@ -34,6 +34,17 @@ neural_mapper_export_dataset_as_png(bool get_next_map, char path[])
 
 
 void
+neural_mapper_export_dataset_as_binary_file(bool get_next_map, char path[])
+{
+	if (get_next_map)
+	{
+		neural_mapper_acumulator->export_as_binary_file(path, map_index);
+		map_index++;
+	}
+}
+
+
+void
 neural_mapper_update_queue_and_clear_maps()
 {
 	neural_mapper_acumulator->push(new_neural_map);
@@ -68,8 +79,8 @@ neural_mapper_update_inputs_maps_with_new_point(int x_index, int y_index, double
 {
 
     // update number of points
-    if (new_neural_map.raw_number_of_lasers_map.map[x_index][y_index]==-1)
-    	new_neural_map.raw_number_of_lasers_map.map[x_index][y_index] = 1;
+    if (new_neural_map.raw_number_of_lasers_map.map[x_index][y_index]==-1.0)
+    	new_neural_map.raw_number_of_lasers_map.map[x_index][y_index] = 1.0;
     else
 	    new_neural_map.raw_number_of_lasers_map.map[x_index][y_index]++;
     int n = new_neural_map.raw_number_of_lasers_map.map[x_index][y_index];
@@ -100,7 +111,8 @@ neural_mapper_update_inputs_maps_with_new_point(int x_index, int y_index, double
 
 int
 neural_mapper_update_input_maps(sensor_data_t * sensor_data, sensor_parameters_t *sensor_params, int thread_id,
-		carmen_map_t *log_odds_snapshot_map, carmen_map_config_t map_config, double x_origin, double y_origin)
+		carmen_map_t *log_odds_snapshot_map, carmen_map_config_t map_config, double x_origin, double y_origin,
+		double highest_sensor, double safe_range_above_sensors)
 {
 
 	for (int i = 0; i < sensor_params->vertical_resolution; i++)
@@ -117,10 +129,14 @@ neural_mapper_update_input_maps(sensor_data_t * sensor_data, sensor_parameters_t
 		double y_meters_distance = abs(sensor_data->ray_position_in_the_floor[thread_id][i].y - sensor_data->ray_origin_in_the_floor[thread_id][i].y);
 		double distance_meters = (sqrt(pow(x_meters_distance,2)+pow(y_meters_distance,2)));
 		//printf("Distances = %d %d and max = %d\n", x_meters_distance, y_meters_distance, neural_mapper_max_distance_meters);
-
+		bool unaceptable_height = carmen_prob_models_unaceptable_height(z, highest_sensor, safe_range_above_sensors);
 		//printf("%lf \n", z);
-		if(distance_meters < neural_mapper_max_distance_meters && x_ray_index >= 0 && x_ray_index < int(2*neural_mapper_max_distance_meters/map_config.resolution) && y_ray_index >= 0 && y_ray_index < int(2*neural_mapper_max_distance_meters/map_config.resolution) && z < 5 && z > -10)
+		if(distance_meters < neural_mapper_max_distance_meters && x_ray_index >= 0 &&
+				x_ray_index < int(2*neural_mapper_max_distance_meters/map_config.resolution) &&
+				y_ray_index >= 0 && y_ray_index < int(2*neural_mapper_max_distance_meters/map_config.resolution) &&
+				!(unaceptable_height))
 		{
+//			printf("z: %lf", z);
 			//update_neural_mapper_inputs_maps_with_new_point(x_ray_index, y_ray_index, z, remission);
 			neural_mapper_update_inputs_maps_with_new_point(x_ray_index, y_ray_index, z);
 		}
@@ -141,22 +157,22 @@ neural_mapper_update_output_map(carmen_map_t offline_map, carmen_position_t car_
 			int j_on_mapper = (j + round(car_position.y/0.2) - round(neural_mapper_max_distance_meters/0.2));
 			if(i_on_mapper < 1050 && i_on_mapper >= 0 && j_on_mapper < 1050 && j_on_mapper >= 0)
 			{
-				// labels: unknown = 1; empty = 2; occupied = 3;
+				// labels: unknown = 0 (antes era 1); empty = 1 (antes era)2; occupied = 2 (antes era 3);
 				// unknown
 				if(offline_map.map[i_on_mapper][j_on_mapper] < 0.0)
 				{
-					new_neural_map.neural_mapper_occupancy_map.map[i][j] = 1;
+					new_neural_map.neural_mapper_occupancy_map.map[i][j] = 0;
 				}
 				// occupied
 				else if(offline_map.map[i_on_mapper][j_on_mapper] >= 0.5)
-					new_neural_map.neural_mapper_occupancy_map.map[i][j] = 3; // 3
+					new_neural_map.neural_mapper_occupancy_map.map[i][j] = 2; // 3
 				// empty
 				else
 					//printf("Valor de vazio? %lf\n", offline_map.map[i_on_mapper][j_on_mapper]);
-					new_neural_map.neural_mapper_occupancy_map.map[i][j] = 2; // 2
+					new_neural_map.neural_mapper_occupancy_map.map[i][j] = 1; // 2
 			}
 			else
-				new_neural_map.neural_mapper_occupancy_map.map[i][j] = 1;
+				new_neural_map.neural_mapper_occupancy_map.map[i][j] = 0;
 		}
 	}
 
