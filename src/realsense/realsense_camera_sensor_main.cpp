@@ -196,8 +196,8 @@ main(int argc, char **argv)
 	/////////////////////////////////////////////////////////////////////////////////////////
 
     rs2::config cfg;
-//    cfg.enable_stream(RS2_STREAM_COLOR, 0, rs_width, rs_height);
-//    cfg.enable_stream(RS2_STREAM_DEPTH, 0,rs_width, rs_height, RS2_FORMAT_DISPARITY16);
+    cfg.enable_stream(RS2_STREAM_COLOR, 0, rs_width, rs_height);
+    cfg.enable_stream(RS2_STREAM_DEPTH, 0,rs_width, rs_height);
 
     carmen_stereo_velodyne_define_messages(BUMBLEBEE_ID);
 
@@ -282,7 +282,7 @@ main(int argc, char **argv)
 
         cv::medianBlur(depthMat, depthMat, 5);
 
-        convert_stereo_depth_to_velodyne_beams(instance, (unsigned short*)depthMat.data, rs_height, rs_width, scan, 200000 , 0, rs_height, 0, rs_width, rgb_frame_data);
+        convert_stereo_depth_to_velodyne_beams(instance, (unsigned short*)depthMat.data, rs_height, rs_width, scan, 5000 , 0, rs_height, 80, rs_width, rgb_frame_data);
 
         velodyne_partial_scan.timestamp = timestamp;
 
