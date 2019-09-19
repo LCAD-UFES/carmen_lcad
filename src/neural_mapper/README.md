@@ -5,6 +5,24 @@
 
 This code generates the input dataset for neural mapper training.
 
+Dataset format:
+ 
+The input data are five statistics from velodyne point cloud. Each statistic is a binary file:
+	number of points
+	max high
+	min high
+	mean high
+	std high
+Each cell in the binary file is a float [0-1], correspond to the value inside the cell  with resolution R and Width(W) x High(H) defined in meters by command line parameter
+The total resolution is WxHxR
+
+The ground truth is a copy of the camen offline map using the occupation probability as 3 classes, where:
+	undefined cels with -1 are the class 0.
+	Free space with probability < 0.5 are class 1
+	Occupied cels with probability >= 0.5 are the class 2     
+
+TODO:Include mean ray intensity (remission?)
+
 Como usar:
 Antes crie as pasta que irão receber o dataset com os seguintes diretorios:
  -Pasta_dataset
@@ -72,16 +90,6 @@ Para mais detalhes:
  -> colocar na variavel outpath o caminho onde deseja que o banco de dados processado seja gerado
  -> alterar variavel radius para o raio em metros escolhido quando se gera o metadado
  -> rodar com: python parse_neural_mapper_metadata.py
- 
-The input dataset are six statistics from velodyne point cloud. Each statistic is a csv file:
-	number of points
-	max high
-	min high
-	mean high
-	std high
-	bean intensity
-Each cell in the csv file, correspond to the value inside the cell with resolution R and Width(W) x High(H) defined in meters by command line parameter
-The total resolution is WxHxR
 
 #### Deprecated dataset generation (deactivated)
 Running
