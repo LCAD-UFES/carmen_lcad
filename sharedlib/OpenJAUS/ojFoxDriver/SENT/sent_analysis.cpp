@@ -58,10 +58,22 @@ main (int argc, char **argv)
 		else	// sensor == 3 -> status nibble
 		{
 			if (state == 1)
-				value = nibble & 0xf;
+			{
+				static int first_time = 1;
+				static int status_info = 0;
 
-			if (state == 1)
-				printf("%d\n", value);
+				if (((nibble & 0xf) == 8) && first_time)
+				{
+					first_time = 0;
+				}
+				else if ((nibble & 0xf) == 8)
+				{
+					printf("0x%x\n", status_info);
+					status_info = 0;
+				}
+				else
+					status_info = (status_info << 1) | ((nibble & 0xf) / 4);
+			}
 		}
 	}
 }

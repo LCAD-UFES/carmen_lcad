@@ -218,7 +218,7 @@ void putsU2(char*);
 
 volatile int channel, PotValue, TempValue, AverageValue, i;
 volatile int f_tick, s_tick, p0, p1, id_byte, data_byte, checksum;
-volatile float tickTime = 2.0 * 0.8181;	// Tick time in us
+volatile float tickTime = 2.0 * 0.80;	// Tick time in us
 volatile float peripheralClk = 2.0 * 39.77;	// in Mhz
 volatile float Pot_Volts;
 volatile char can_rx, sent1_rx, sent2_rx;  // receive message flags
@@ -738,8 +738,8 @@ void init_hw(void)
     IFS0bits.T2IF = 0;          // Clear Timer 2 Interrupt Flag
 //    IEC0bits.T2IE = 1;          // Enable Timer2 interrupt
 
-    T2CONbits.TON = 1;          // Start Timer2
-    T1CONbits.TON = 1;          // Start Timer1
+    T2CONbits.TON = 0;          // Start Timer2 if 1
+    T1CONbits.TON = 0;          // Start Timer1 if 1
 
     //
     // Timer 2 to generate an interrupt every 0.4us
@@ -754,9 +754,9 @@ void init_hw(void)
     IFS0bits.T3IF = 0;          // Clear Timer 3 Interrupt Flag
     IEC0bits.T3IE = 1;          // Enable Timer 3 interrupt
 
-    T3CONbits.TON = 1;          // Start Timer3
-    T2CONbits.TON = 1;          // Start Timer2
-    T1CONbits.TON = 1;          // Start Timer1
+    T3CONbits.TON = 0;          // Start Timer3 if 1
+    T2CONbits.TON = 0;          // Start Timer2 if 1
+    T1CONbits.TON = 0;          // Start Timer1 if 1
 }
 
 void Test_Mode(void)
@@ -901,7 +901,7 @@ void InitSENT1_TX(void)
     IEC11bits.SENT1IE = 1;      // Enable SENT TX/RX completion interrupt
 
     IPC45bits.SENT1EIP = 6;     // SENT ERROR interrupt priority
-    IFS11bits.SENT1EIF = 0;     // Clear SENT ERROR interrup flag
+    IFS11bits.SENT1EIF = 0;     // Clear SENT ERROR interrupt flag
     IEC11bits.SENT1EIE = 1;     // Enable SENT ERROR interrupt
 
     // Initialize SENT registers for transmit mode (no frame time specified due to no pause)
@@ -940,7 +940,7 @@ void InitSENT2_TX(void)
     SENT2CON1bits.TXM = 1;       // sync handshaking mode
     SENT2CON1bits.CRCEN = 1;     // CRC enable, 0=off, 1=on
     SENT1CON1bits.PPP = 1;       // Pause, 0=off, 1=on
-    SENT2CON3 = 122 + 27 * 6; // FrameTime
+    SENT2CON3 = 122 + 27 * 6;    // FrameTime
     SENT2CON1bits.NIBCNT = 6;    // nibbles of data
     SENT2CON1bits.SNTEN = 1;     // enable SENT module
     SENT2DATH = 0;
@@ -1625,7 +1625,7 @@ void __attribute__((__interrupt__, no_auto_psv)) _T3Interrupt(void)
 	else
 		old = 1;
 
-	LED3 = old;
+//	LED3 = old;
 
 	IFS0bits.T3IF = 0; //Clear Timer3 interrupt flag
 }
@@ -1843,12 +1843,13 @@ Receive_SENT1(int *status_nibble, int *nibble123, int *nibble456, int *crc_nibbl
 		value = value - 4096; // extensao de sinal
 	*nibble123 = value;
 
-	*crc_nibble = sent1datl & 0xf;
 	value = ((sent1datl >> 4) & 0xFFF);
 	value = ((value << 8) & 0xf00) | (value & 0xf0) | ((value >> 8) & 0xf); // troca a ordem dos nibbles
 	if (value > 2047)
 		value = value - 4096; // extensao de sinal
 	*nibble456 = value;
+
+	*crc_nibble = sent1datl & 0xf;
 }
 
 
@@ -1930,21 +1931,30 @@ print_two_values(int value1, int value2)
 void
 steering_wheel_bypass(void)
 {
-	LED1 = 1;	// desativa saida 1 de SENT2 (ver diagrama do hardware do Alberto)
-	LED2 = 1;	// desativa saida 2 de SENT2 (ver diagrama do hardware do Alberto)
+	LED3 = 0;	// Chaveia sempre que recebe uma mensagem sent com ERRO
+
+	LED1 = 1;	// Chaveia para inicializacao
+	LED2 = 1;	// Manda 1 para a saida SENT1 para inicializacao
+
+	int status_nibble, nibble123, nibble456, crc_nibble;
+	Receive_SENT1(&status_nibble, &nibble123, &nibble456, &crc_nibble);
+
+	LED2 = 0;	// Ativa a marca de zero
+	Delayus(816+330);
+	LED2 = 1;	// Desativa a marca de zero
+	Delayus(165+47);
+
+	LED1 = 0;	// Chaveia para sent
 
 	while (1)
 	{
-		int status_nibble, nibble123, nibble456, crc_nibble;
 		Receive_SENT1(&status_nibble, &nibble123, &nibble456, &crc_nibble);
+
+		Transmit_SENT2(status_nibble, nibble123, nibble456);
 
 //		print_two_values(nibble123, nibble456);
 
-		Transmit_via_interrupt_based_sent(status_nibble, nibble123, nibble456, crc_nibble);
-
-		LED1 = 0;
-		Transmit_SENT2(status_nibble, nibble123, nibble456);
-		LED1 = 1;
+//		Transmit_via_interrupt_based_sent(status_nibble, nibble123, nibble456, crc_nibble);
 
 
 //		LED2 = 0;
@@ -1954,65 +1964,65 @@ steering_wheel_bypass(void)
 }
 
 
-void
-steering_wheel_bypass_new(void)
-{
-	LED1 = 0;	// ativa saida 1 de SENT2 (ver diagrama do hardware do Alberto)
-	LED2 = 1;	// desativa saida 2 de SENT2 (ver diagrama do hardware do Alberto)
+//void
+//steering_wheel_bypass_new(void)
+//{
+//	LED1 = 0;	// ativa saida 1 de SENT2 (ver diagrama do hardware do Alberto)
+//	LED2 = 1;	// desativa saida 2 de SENT2 (ver diagrama do hardware do Alberto)
+//
+//	while (1)
+//	{
+//		int pwm_pulse = SW3 & 1;
+//		LED3 = pwm_pulse;
+//	}
+//}
 
-	while (1)
-	{
-		int pwm_pulse = SW3 & 1;
-		LED3 = pwm_pulse;
-	}
-}
 
-
-void
-steering_wheel_control(void)
-{
-	LED1 = 1;	// desativa saida 1 de SENT2 (ver diagrama do hardware do Alberto)
-	LED2 = 1;	// desativa saida 2 de SENT2 (ver diagrama do hardware do Alberto)
-
-	float torc;
-	while (1)
-	{
-		int status_nibble, nibble123, nibble456, crc_nibble;
-		Receive_SENT1(&status_nibble, &nibble123, &nibble456, &crc_nibble);
-
-		// O nibble456 = nibble123 * a + b
-		// Pegando dois pontos dos dados colhidos, foram montadas as equacoes abaixo e computados os valores de a e b:
-		//  https://www.wolframalpha.com/input/?i=Solve%5B%7B530%3D%3D1292a%2Bb,+1798%3D1931a%2Bb%7D,+%7Ba,+b%7D%5D
-		float a = 1.984;	// 1268 / 639
-		float b = 2034.0;	// 1299586 / 639
-		float exact_nibble456_float = nibble123 * a - b;
-		if (exact_nibble456_float < -2048.0)	// Os nibbles tem sinal e soh tem 12 bits
-			exact_nibble456_float = exact_nibble456_float + 4096.0;
- 
-		// le o petenciomentro, que retorna em AverageValue um valor entre zero e 4095
-	    ADCConvert(19);	// 19 eh o codigo do pontenciomentro no hardware
-	    torc = 0.05 * (AverageValue - 4096 / 2);
-
-	    nibble456 = exact_nibble456_float + torc;
-	    // Os nibbles tem sinal e soh tem 12 bits
-		if (nibble456 > 2047)				// 2047 = (2 ^ 12) / 2 - 1
-			nibble456 = nibble456 - 4096;	// 4096 = (2 ^ 12)
-		if (nibble456 < -2048)
-			nibble456 = nibble456 + 4096;
-
-		LED1 = 0;
-	    Delayus(10);
-		Transmit_SENT2(status_nibble, nibble123, nibble456);
-	    Delayus(10);
-		LED1 = 1;
-
-		LED2 = 0;
-	    Delayus(10);
-		Transmit_SENT2(status_nibble, -nibble123, -nibble456);
-	    Delayus(10);
-		LED2 = 1;
-	}
-}
+//void
+//steering_wheel_control(void)
+//{
+//	LED1 = 1;	// desativa saida 1 de SENT2 (ver diagrama do hardware do Alberto)
+//	LED2 = 1;	// desativa saida 2 de SENT2 (ver diagrama do hardware do Alberto)
+//
+//	float torc;
+//	while (1)
+//	{
+//		int status_nibble, nibble123, nibble456, crc_nibble;
+//		Receive_SENT1(&status_nibble, &nibble123, &nibble456, &crc_nibble);
+//
+//		// O nibble456 = nibble123 * a + b
+//		// Pegando dois pontos dos dados colhidos, foram montadas as equacoes abaixo e computados os valores de a e b:
+//		//  https://www.wolframalpha.com/input/?i=Solve%5B%7B530%3D%3D1292a%2Bb,+1798%3D1931a%2Bb%7D,+%7Ba,+b%7D%5D
+//		float a = 1.984;	// 1268 / 639
+//		float b = 2034.0;	// 1299586 / 639
+//		float exact_nibble456_float = nibble123 * a - b;
+//		if (exact_nibble456_float < -2048.0)	// Os nibbles tem sinal e soh tem 12 bits
+//			exact_nibble456_float = exact_nibble456_float + 4096.0;
+//
+//		// le o petenciomentro, que retorna em AverageValue um valor entre zero e 4095
+//	    ADCConvert(19);	// 19 eh o codigo do pontenciomentro no hardware
+//	    torc = 0.05 * (AverageValue - 4096 / 2);
+//
+//	    nibble456 = exact_nibble456_float + torc;
+//	    // Os nibbles tem sinal e soh tem 12 bits
+//		if (nibble456 > 2047)				// 2047 = (2 ^ 12) / 2 - 1
+//			nibble456 = nibble456 - 4096;	// 4096 = (2 ^ 12)
+//		if (nibble456 < -2048)
+//			nibble456 = nibble456 + 4096;
+//
+//		LED1 = 0;
+//	    Delayus(10);
+//		Transmit_SENT2(status_nibble, nibble123, nibble456);
+//	    Delayus(10);
+//		LED1 = 1;
+//
+//		LED2 = 0;
+//	    Delayus(10);
+//		Transmit_SENT2(status_nibble, -nibble123, -nibble456);
+//	    Delayus(10);
+//		LED2 = 1;
+//	}
+//}
 
 
 int main(void)
