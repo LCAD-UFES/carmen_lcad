@@ -39,27 +39,6 @@ carmen_bumblebee_publish_stereoimage_message(unsigned char *rawLeft, unsigned ch
 }
 
 void
-carmen_laser_ldmrs_publish_depth_as_laser_message( rs2::points point_cloud, double width, double height, double timestamp)
-{
-
-    double vertical_pixels_angle = 57.0/width;
-    double horizontal_pixels_angle = 86.0/height;
-
-    carmen_laser_ldmrs_message laser_msg;
-
-    laser_msg.start_angle = -28.5;
-    laser_msg.end_angle = 28.5;
-    laser_msg.scan_points = 480.0*640.0;
-    laser_msg.angle_ticks_per_rotation = 640.0;
-    laser_msg.scan_start_time = timestamp;
-    laser_msg.host = carmen_get_host();
-	laser_msg.timestamp = timestamp;
-
-
-    carmen_laser_publish_ldmrs(&laser_msg);
-}
-
-void
 save_extrinsics(rs2::pipeline_profile& selection)
 {
 	auto ir1_stream = selection.get_stream(RS2_STREAM_COLOR, 0);
@@ -217,15 +196,16 @@ main(int argc, char **argv)
 
 	rs2::colorizer c;
 	save_extrinsics(selection);
-	unsigned char* depth_color_frame_data;
-	unsigned short *depth_frame_data;
-	unsigned char* rgb_frame_data;
+	unsigned char* depth_color_frame_data = NULL;
+	unsigned short *depth_frame_data = NULL;
+	unsigned char* rgb_frame_data = NULL;
 
-	float depth_frame_float[rs_width*rs_height];
-	carmen_velodyne_shot *scan = alloc_velodyne_shot_scan_vector(rs_width, rs_height);
+	float stride_x = 10.0, stride_y = 20.0;
+
+	carmen_velodyne_shot *scan = alloc_velodyne_shot_scan_vector(rs_width/stride_x, rs_height/stride_y);
 	carmen_velodyne_variable_scan_message velodyne_partial_scan;
 	velodyne_partial_scan.host = carmen_get_host();
-	velodyne_partial_scan.number_of_shots = rs_width;
+	velodyne_partial_scan.number_of_shots = rs_width/stride_x;
 	velodyne_partial_scan.partial_scan = scan;
 
 	stereo_util instance = get_stereo_instance(BUMBLEBEE_ID, rs_width, rs_height);
@@ -264,6 +244,9 @@ main(int argc, char **argv)
             depth_color_frame_data = (unsigned char*) c.colorize(depth_frame).get_data(); // Pointer to depth pixels
         }
 
+        if(!rgb_frame_data || !depth_frame_data)
+        	continue;
+
         double timestamp = carmen_get_time();
 
 //        if (rs_flip)
@@ -282,7 +265,7 @@ main(int argc, char **argv)
 
         cv::medianBlur(depthMat, depthMat, 5);
 
-        convert_stereo_depth_to_velodyne_beams(instance, (unsigned short*)depthMat.data, rs_height, rs_width, scan, 5000 , 0, rs_height, 80, rs_width, rgb_frame_data);
+        convert_stereo_depth_to_velodyne_beams(instance, (unsigned short*)depthMat.data, rs_height, rs_width, scan, 5000 , 0, rs_height, 80, rs_width, rgb_frame_data, stride_x, stride_y);
 
         velodyne_partial_scan.timestamp = timestamp;
 
