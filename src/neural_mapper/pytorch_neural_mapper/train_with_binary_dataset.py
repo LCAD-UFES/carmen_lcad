@@ -11,7 +11,7 @@ import torch
 import torch.optim as optim
 import numpy as np
 import torch.nn.functional as F
-
+from torchvision import transforms
 import math
 from random import shuffle
 
@@ -21,6 +21,9 @@ import cv2
 
 # our nn model.py
 import model as M
+
+#transforms.Normalize(mean for each channel, std for each chanel)
+TRANSFORMS = transforms.Normalize([0.485, 0.456, 0.406, 0.456, 0.456], [0.229, 0.229, 0.229, 0.224, 0.225])
 
 
 def tensor2rgbimage(tensor):
@@ -150,10 +153,12 @@ def file_raw_to_tensor(img_x_dim, img_y_dim, file, metric_type):
     return data_tensor
 
 
-def file_to_tensor(img_x_dim, img_y_dim, file):
+def file_to_tensor(transforms, img_x_dim, img_y_dim, file):
     numpy_file = np.fromfile(file, dtype=float)
     reshaped = numpy_file.reshape(img_x_dim, img_y_dim)
     data_tensor = torch.from_numpy(reshaped)
+    if transforms != None:
+        data_tensor = transforms(data_tensor)
     return data_tensor
 
 
@@ -168,7 +173,7 @@ def label_file_to_tensor(img_x_dim, img_y_dim, file):
     return data_tensor, weight
 
 
-def load_bach_data(dataset_list, data_path, target_path, last_element, batch_size,
+def load_bach_data(transforms, dataset_list, data_path, target_path, last_element, batch_size,
                    input_dimensions, img_x_dim, img_y_dim, n_classes):
     batch_weight = np.zeros(n_classes)
     dataset_size = len(dataset_list)
@@ -185,11 +190,11 @@ def load_bach_data(dataset_list, data_path, target_path, last_element, batch_siz
         # print(batch_size)
         # print("lastele: ", last_element, " j:", j)
 
-        data[j][0] = (file_to_tensor(img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_max'))
-        data[j][1] = (file_to_tensor(img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_mean'))
-        data[j][2] = (file_to_tensor(img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_min'))
-        data[j][3] = (file_to_tensor(img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_numb'))
-        data[j][4] = (file_to_tensor(img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_std'))
+        data[j][0] = (file_to_tensor(transforms, img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_max'))
+        data[j][1] = (file_to_tensor(transforms, img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_mean'))
+        data[j][2] = (file_to_tensor(transforms, img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_min'))
+        data[j][3] = (file_to_tensor(transforms, img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_numb'))
+        data[j][4] = (file_to_tensor(transforms, img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_std'))
 
         tmp, new_weights = label_file_to_tensor(img_x_dim, img_y_dim, (target_path + str(dataset_list[last_element]) + '_label'))
         target[j] = tmp
@@ -223,7 +228,7 @@ def train(interval_save_model, iterations, model, device, train_list, dataset_co
     for batch_idx in range(iterations):
         if last_element < (len(train_list)):
             # print("Loading batch ", batch_idx, " of ", iterations, '\n The last element loaded was: ', last_element)
-            data, target, last_element, weights = load_bach_data(train_list, dataset_config['train_path'],
+            data, target, last_element, weights = load_bach_data(TRANSFORMS, train_list, dataset_config['train_path'],
                                                         dataset_config['target_path'],
                                                         last_element, batch_size, input_channels,
                                                         img_width, img_height, n_classes)
@@ -275,7 +280,7 @@ def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config
     with torch.no_grad():
         for batch_idx in range(math.floor(len(test_list)/batch_size)):
             if last_element < (len(train_list)):
-                data, target, last_element, weights = load_bach_data(test_list, dataset_config['test_path'],
+                data, target, last_element, weights = load_bach_data(TRANSFORMS, test_list, dataset_config['test_path'],
                                                             dataset_config['target_path'],
                                                             last_element, batch_size, input_channels,
                                                             img_width, img_height, n_classes)
@@ -336,7 +341,7 @@ if __name__ == '__main__':
 
     # optimizer parameter?
     torch.manual_seed(random_seed)
-
+    
     if dataset_config.getboolean('shuffle_data'):
         shuffle(train_list)
         shuffle(test_list)

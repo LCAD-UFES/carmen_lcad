@@ -1,5 +1,7 @@
 Como criar um mapa usando GraphSLAM:
 
+Compile os módulos graphslam e o odometry_calibration
+
 1. Rode o process-volta_da_ufes_playback_viewer_3D_map_generation.ini (ou outro equivalente ajustado para o seu caso). 
    Lembre-se de colocar nele o seu log, o rddf desejado, e carmen ini em todos os lugares que precisa.
 
@@ -8,10 +10,10 @@ Como criar um mapa usando GraphSLAM:
 3. Execute a calibração da odometria clicando, no PROCCONTROL GUI, no botão CalibOdo e escolhendo Show Output (para saber quando o programa terminou) e, em seguida, clicando no 
    botão CalibOdo e ecolhendo Start Program. 
 	Notas:
-		- Rode mais de uma vez e observe qual a melhor calibração no gráfico final.
-		- Você pode delimitar o tempo inicial e final a ser considerado no log verificando o tempo no playback control e escolhendo apropriadamente (tempo, não timestamp). 
+		- Você DEVE delimitar o "tempo inicial" e "final" a ser considerado no log verificando o tempo no playback control e escolhendo apropriadamente (TEMPO, não timestamp).
 		- Alternativamente, use as flags -l <linha inicial>  e -m <numero de linhas a partir da linha inicial> do arquivo $CARMEN_HOME/bin/calibrate_bias_from_log_config.txt
 		- Existem outras opções importantes no $CARMEN_HOME/bin/calibrate_bias_from_log_config.txt
+		- Rode mais de uma vez e observe qual a melhor calibração no gráfico final.
 
 3.1. Altere as variaveis abaixo no carmen-ford-escape.ini de acordo com os Resultados do calibrate_bias_from_log (tmp/calibrated_odometry.txt):
 	robot_phi_multiplier				1.056087
@@ -46,11 +48,11 @@ Como criar um mapa usando GraphSLAM:
 
 6. Se você desejar fechamento de loops, gere o arquivo tmp/loops.txt da seguinte forma:
 
-6.1. Delimite o trecho a ser considerado para fechamento de loops usando o process-volta_da_ufes_playback_viewer_3D.ini (ou equivalente).
+6.1. Delimite o trecho a ser considerado para fechamento de loops usando o process-volta_da_ufes_playback_viewer_3D_loopclosure.ini (ou equivalente).
      Para isso, identifique no playback control o momento inicial (segundo_inicial_1) da primeira passada em uma região (ESSA SERÁ A PRIMEIRA PASSADA!). 
      No log de volta da ufes, esse costuma ser logo quando o carro comeca a andar. 
      De pausa no playback control no segundo_inicial_1, copie a "globalpos timestamp:" (seção Indicators do navigator_gui2; para copiar, 
-     marque o número com o mouse, clique com o botão da direita e ecolha copiar), e cole no process-volta_da_ufes_playback_viewer_3D.ini 
+     marque o número com o mouse, clique com o botão da direita e ecolha copiar), e cole no process-volta_da_ufes_playback_viewer_3D_loopclosure.ini 
      como o parâmetro -save_globalpos_timestamp do localize_ackmerman.
      
      Em seguida, encontre o momento inicial (campo Time do plaback_control) (segundo_inicial_2) e final (segundo_final_2) da segunda passada na mesma região (ESSA SERÁ A SEGUNDA PASSADA!). 
@@ -60,14 +62,16 @@ Como criar um mapa usando GraphSLAM:
 
 6.2.1. Limpe o diretório de mapas temporários (../data/mapper_teste2) clicando no botão CleanMap. Ele roda muito rápido. Assim, basta escolher Start Program e depois Stop Program.
 
+6.2.1.1. Verifique no process se o map_server está apontando para ../data/mapper_teste2
+
 6.2.2. Faça o mapa da segunda passada na região de loop ligando o PubPoses, escolhendo, no playback control, "Message play:stop" t segundo_inicial_2:segundo_final_2, e teclando play. 
        Quando terminar de rodar, o arquivo tmp/gp1.txt será gerado pelo localizer e conterá a globalpos da segunda passada na região de loop. Mate este processo.
 
-6.2.3. Gere poses (globalpos) da primeira passada pela região de loop com o localizer rodando o process-volta_da_ufes_playback_viewer_3D.ini.  
+6.2.3. Gere poses (globalpos) da primeira passada pela região de loop com o localizer rodando o process-volta_da_ufes_playback_viewer_3D_loopclosure.ini  
        Escolha no playback control "Message play:stop" t XXXX, onde XXXX é um momento (segundo) alguns segundos (~15segs antes) antes de segundo_inicial_1 (cujo globalpos timestamp
-       você colocou como parâmetro -save_globalpos_timestamp do localize_ackmerman), e tecle play.
+       você colocou como parâmetro -save_globalpos_timestamp do localize_ackmerman e verifique se no parametro -save_globalpos_file está tmp/gp2.txt), e tecle play.
  
-       Ajuste a pose do robô no mapa (use o play e o stop) a garanta uma boa localização antes do segundo_inicial_1. Depois, deixe rodar o log observando
+       Ajuste a pose do robô no mapa (use o play e o stop) e garanta uma boa localização antes do segundo_inicial_1. Depois, deixe rodar o log observando
        a pose do robô no mapa - ele deve percorrer uma região que garanta boa localização no mapa da região de loop gerado no passo 6.2.2.
        Quando terminar de rodar, o arquivo tmp/gp2.txt terá sido gerado pelo localizer e conterá a globalpos da primeira passada na região de loop.
 
@@ -87,6 +91,8 @@ Como criar um mapa usando GraphSLAM:
    interesse em velocidade (Speed do playback control) compatível com o hardware onde você estiver trabalhando.
    Pronto. Seu mapa estará disponível em ../data/mapper_teste2. Mate o proccontrol e examine seu mapa com um proccontrol de playback_viewer_3D.ini apropriado.
 
+10. Finalmente se o mapa estiver em condições de produção, mova para o data usando o padrão de nome de pasta de mapas, e copie os arquivos da pasta tmp para a pasta $CARMEN_HOME/data/graphslam/ assim as poses originais do mapa serão preservadas
+        cp $CARMEN_HOME/bin/tmp  $CARMEN_HOME/data/graphslam/poses_opt_<log_usado>
 
 ==============================================================================================================================================================================
 
