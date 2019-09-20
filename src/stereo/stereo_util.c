@@ -49,6 +49,12 @@ stereo_util get_stereo_instance(int camera, int width, int height)
   char *camera_model_key = (char*)malloc(128 * sizeof(char));
   carmen_test_alloc(camera_model_key);
 
+  char *stereo_stride_x_key = (char*)malloc(128 * sizeof(char));
+  carmen_test_alloc(stereo_stride_x_key);
+
+  char *stereo_stride_y_key = (char*)malloc(128 * sizeof(char));
+  carmen_test_alloc(stereo_stride_y_key);
+
   sprintf(width_key, "basic%d_width", camera);
   sprintf(height_key, "basic%d_height", camera);
   sprintf(fx_key, "basic%d_fx", camera);
@@ -57,6 +63,8 @@ stereo_util get_stereo_instance(int camera, int width, int height)
   sprintf(yc_key, "basic%d_cv", camera);
   sprintf(baseline_key, "basic%d_baseline", camera);
   sprintf(camera_model_key, "basic%d_model", camera);
+  sprintf(stereo_stride_x_key, "basic%d_stereo_stride_x", camera);
+  sprintf(stereo_stride_y_key, "basic%d_stereo_stride_y", camera);
 
   double xc_percent, yc_percent, fx_percent, fy_percent;
   char *camera_model_value = (char*)malloc(128 * sizeof(char));
@@ -70,7 +78,9 @@ stereo_util get_stereo_instance(int camera, int width, int height)
       {(char*)"bumblebee", (char*)xc_key, CARMEN_PARAM_DOUBLE, &xc_percent, 0, NULL},
       {(char*)"bumblebee", (char*)yc_key, CARMEN_PARAM_DOUBLE, &yc_percent, 0, NULL},
       {(char*)"bumblebee", (char*)baseline_key, CARMEN_PARAM_DOUBLE, &instance.baseline, 0, NULL},
-      {(char*)"bumblebee", (char*)camera_model_key, CARMEN_PARAM_STRING, &camera_model_value, 0, NULL}
+      {(char*)"bumblebee", (char*)camera_model_key, CARMEN_PARAM_STRING, &camera_model_value, 0, NULL},
+      {(char*)"bumblebee", (char*)stereo_stride_x_key, CARMEN_PARAM_STRING, &camera_model_value, 0, NULL},
+      {(char*)"bumblebee", (char*)stereo_stride_y_key, CARMEN_PARAM_STRING, &camera_model_value, 0, NULL},
   };
 
   int num_items = sizeof(param_list) / sizeof(param_list[0]);

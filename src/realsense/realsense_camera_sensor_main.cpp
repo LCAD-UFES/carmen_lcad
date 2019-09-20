@@ -200,7 +200,7 @@ main(int argc, char **argv)
 	unsigned short *depth_frame_data = NULL;
 	unsigned char* rgb_frame_data = NULL;
 
-	float stride_x = 10.0, stride_y = 20.0;
+	float stride_x = 10.0, stride_y = 10.0;
 
 	carmen_velodyne_shot *scan = alloc_velodyne_shot_scan_vector(rs_width/stride_x, rs_height/stride_y);
 	carmen_velodyne_variable_scan_message velodyne_partial_scan;
