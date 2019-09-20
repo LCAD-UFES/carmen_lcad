@@ -88,6 +88,9 @@ extern int steering_wheel_zero_torque;
 
 int gear_can_command = 0;
 
+extern double g_break_effort;
+
+
 double wheel_speed_moving_average(double *wheel_speed);
 
 
@@ -120,6 +123,8 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 	else if (breaks_effort < 0.0)
 		breaks_effort = 0.0;
 	frame.data[1] = (int) (2.0 * breaks_effort + 0.5); // breaks
+
+	g_break_effort = breaks_effort;
 
 	// Steering
 	if (steering_effort > 100.0)
