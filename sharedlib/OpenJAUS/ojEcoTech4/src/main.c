@@ -22,6 +22,8 @@
 
 #include <pthread.h>
 
+#include <pigpio.h>
+
 #define CLEAR "clear"
 
 #include "pd.h"
@@ -47,12 +49,19 @@
 #define BACK_LEFT	3
 // Metros por revolucao do pneu ~= 2.2375 m
 #define METERS_BY_ODOMETRY_COUNT	0.0255
-#define MAX_ODOMETER 10000
-#define ODOMETER_FIFO_SIZE 12
+#define MAX_ODOMETER 				10000
+#define ODOMETER_FIFO_SIZE 			12
 
-#define DEFAULT_STRING_LENGTH 128
+#define DEFAULT_STRING_LENGTH 		128
 #define KEYBOARD_LOCK_TIMEOUT_SEC	60.0
 
+// Breaks
+#define	PUSHBREAKS			 4 // GPIO  4, pino  7
+#define	PULLBREAKS			27 // GPIO 27, pino 13
+#define	HALL2_EXTENDING		22 // GPIO 22, pino 15
+#define	HALL1_TRANSITION	23 // GPIO 23, pino 16, signal leads when extending
+
+// main loop and interface
 static int mainRunning = FALSE;
 static int verbose = FALSE; // Se verdadeiro, printf() funciona; caso contrario, nao.
 static int keyboardLock = FALSE;
@@ -704,7 +713,66 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	}
 }
 
-int main(int argCount, char **argString)
+static int hall_ticks = 0;
+
+void
+hall_transition_interrupt(int gpio, int level, uint32_t tick)
+{
+	if (gpioRead(HALL2_EXTENDING))
+		hall_ticks++;
+	else
+		hall_ticks--;
+}
+
+
+void
+init_breaks()
+{
+	if (gpioInitialise() < 0)
+		exit(printf("Error: Could initialize GPIO\n"));
+
+	gpioSetMode(PUSHBREAKS, PI_OUTPUT);
+	gpioSetMode(PULLBREAKS, PI_OUTPUT);
+	gpioSetMode(HALL1_TRANSITION, PI_INPUT);
+	gpioSetMode(HALL2_EXTENDING, PI_INPUT);
+
+	gpioSetISRFunc(HALL1_TRANSITION, RISING_EDGE, 0, hall_transition_interrupt);
+
+	printf("hall = %d\n\r", gpioRead(HALL2_EXTENDING));
+	printf("hall_ticks %d\n\r", hall_ticks);
+
+	gpioWrite(PUSHBREAKS, PI_HIGH);
+	gpioWrite(PULLBREAKS, PI_LOW);
+	ojSleepMsec(1000);
+	printf("hall_ticks %d\n\r", hall_ticks);
+
+	gpioWrite(PUSHBREAKS, PI_LOW);
+	gpioWrite(PULLBREAKS, PI_LOW);
+	ojSleepMsec(5);
+
+	int previous_hall_ticks;
+	do
+	{
+		previous_hall_ticks = hall_ticks;
+		gpioWrite(PUSHBREAKS, PI_LOW);
+		gpioWrite(PULLBREAKS, PI_HIGH);
+		ojSleepMsec(500);
+		gpioWrite(PUSHBREAKS, PI_LOW);
+		gpioWrite(PULLBREAKS, PI_LOW);
+	} while (previous_hall_ticks != hall_ticks);
+	hall_ticks = 0;
+
+	printf("hall_ticks %d\n\r", hall_ticks);
+
+	gpioWrite(PUSHBREAKS, PI_LOW);
+	gpioWrite(PULLBREAKS, PI_LOW);
+
+	ojSleepMsec(3000);
+}
+
+
+int
+main(int argCount, char **argString)
 {
 	pthread_t can_in_read_thread, can_out_read_thread;
 
@@ -740,6 +808,8 @@ int main(int argCount, char **argString)
 		fscanf(steering_wheel_zero_torque_file, "%d\n", &steering_wheel_zero_torque);
 		fclose(steering_wheel_zero_torque_file);
 	}
+
+	init_breaks();
 
 	mainRunning = TRUE;
 	while(mainRunning)
@@ -778,6 +848,8 @@ int main(int argCount, char **argString)
 		close(in_can_sockfd);
 		close(out_can_sockfd);
 	}
+
+	gpioTerminate();
 
 	return (0);
 }
