@@ -56,14 +56,23 @@
 #define KEYBOARD_LOCK_TIMEOUT_SEC	60.0
 
 // Breaks
-#define MAX_HALL_TICKS		200
-#define MIN_HALL_TICKS_DIFF	1
-#define BREAKS_TIME_TO_STOP	0.2
+#define MAX_HALL_TICKS			360
+#define MAX_HALL_TICKS_SET		200
+#define MIN_HALL_TICKS_DIFF		1
+#define BREAKS_TIME_TO_STOP		0.2
 
-#define	PUSHBREAKS			 4 // GPIO  4, pino  7
-#define	PULLBREAKS			27 // GPIO 27, pino 13
-#define	HALL2_EXTENDING		22 // GPIO 22, pino 15
-#define	HALL1_TRANSITION	23 // GPIO 23, pino 16, signal leads when extending
+#define BREAKS_PWM_FREQUENCY	50		// http://abyz.me.uk/rpi/pigpio/cif.html#gpioSetPWMfrequency
+#define BREAKS_PWM_RANGE		1000	// http://abyz.me.uk/rpi/pigpio/cif.html#gpioSetPWMrange
+
+#define BREAKS_PID_Kp 			1.0
+#define BREAKS_PID_Ki 			1.0
+#define BREAKS_PID_Kd 			0.0
+
+#define	PUSHBREAKS			 	4  	// GPIO  4, pino  7
+#define	PULLBREAKS				27 	// GPIO 27, pino 13
+#define	HALL2_EXTENDING			22 	// GPIO 22, pino 15
+#define	HALL1_TRANSITION		23 	// GPIO 23, pino 16, signal leads when extending
+
 
 double g_break_effort = 0.0;
 
@@ -786,14 +795,21 @@ init_breaks()
 	gpioWrite(PUSHBREAKS, PI_LOW);
 	gpioWrite(PULLBREAKS, PI_LOW);
 
-	ojSleepMsec(3000);
+	int freq = gpioSetPWMfrequency(PUSHBREAKS, BREAKS_PWM_FREQUENCY);
+	int range = gpioSetPWMrange(PUSHBREAKS, BREAKS_PWM_RANGE);
+	int range2 = gpioGetPWMrange(PUSHBREAKS);
+	int real_range = gpioGetPWMrealRange(PUSHBREAKS);
+	printf("freq = %d, range = %d, range2 = %d, real_range = %d\n", freq, range, range2, real_range);
+
+	gpioPWM(PUSHBREAKS, BREAKS_PWM_RANGE / 4);
+	ojSleepMsec(30000);
 }
 
 
 int
 get_hall_ticks_from_break_effort(double break_effort)
 {
-	int hall_ticks = break_effort * (double) MAX_HALL_TICKS / 100.0; // 100.0 eh o maximo de break_effort
+	int hall_ticks = break_effort * (double) MAX_HALL_TICKS_SET / 100.0; // 100.0 eh o maximo de break_effort
 
 	return (hall_ticks);
 }
@@ -845,10 +861,71 @@ apply_break_effort(double current_hall_ticks_velocity, int hall_ticks_diff)
 }
 
 
+double
+carmen_clamp(double X, double Y, double Z)
+{
+	if (Y < X)
+		return (X);
+	else if (Y > Z)
+		return (Z);
+	return (Y);
+}
+
+
+double
+breaks_pid(double desired_hall_ticks, double current_hall_ticks, int manual_override)
+{
+	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
+	static double 	error_t_1 = 0.0;	// error in time t-1
+	static double 	integral_t = 0.0;
+	static double 	integral_t_1 = 0.0;
+	static double 	u_t = 0.0;			// u(t)	-> actuation in time t
+	static double	previous_t = 0.0;
+
+	if (previous_t == 0.0)
+	{
+		previous_t = ojGetTimeSec();
+		return (0.0);
+	}
+	double t = ojGetTimeSec();
+	double delta_t = t - previous_t;
+
+	if (delta_t < (0.7 * (1.0 / 40.0)))
+		return (u_t);
+
+	double error_t = desired_hall_ticks - current_hall_ticks;
+
+	if (manual_override == 0)
+		integral_t = integral_t + error_t * delta_t;
+	else
+		integral_t = integral_t_1 = 0.0;
+
+	double derivative_t = (error_t - error_t_1) / delta_t;
+
+	u_t = BREAKS_PID_Kp * error_t +
+		  BREAKS_PID_Ki * integral_t +
+		  BREAKS_PID_Kd * derivative_t;
+
+	error_t_1 = error_t;
+
+	// Anti windup
+	if ((u_t < -100.0) || (u_t > 100.0))
+		integral_t = integral_t_1;
+	integral_t_1 = integral_t;
+
+	previous_t = t;
+
+	u_t = carmen_clamp(-100.0, u_t, 100.0);
+
+	return (u_t);
+}
+
+
 void
 update_breaks()
 {
 	int desired_hall_ticks = get_hall_ticks_from_break_effort(g_break_effort);
+	mvprintw(29, 0, "hall_ticks = %d\n\r", g_hall_ticks);
 	mvprintw(30, 0, "desired_hall_ticks = %d\n\r", desired_hall_ticks);
 	int hall_ticks_diff = desired_hall_ticks - g_hall_ticks;
 	mvprintw(31, 0, "hall_ticks_diff = %d\n\r", hall_ticks_diff);
