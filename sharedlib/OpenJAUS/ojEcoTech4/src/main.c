@@ -56,6 +56,10 @@
 #define KEYBOARD_LOCK_TIMEOUT_SEC	60.0
 
 // Breaks
+#define MAX_HALL_TICKS		200
+#define MIN_HALL_TICKS_DIFF	3
+#define BREAKS_TIME_TO_STOP	0.05
+
 #define	PUSHBREAKS			 4 // GPIO  4, pino  7
 #define	PULLBREAKS			27 // GPIO 27, pino 13
 #define	HALL2_EXTENDING		22 // GPIO 22, pino 15
@@ -715,15 +719,28 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	}
 }
 
-static int g_hall_ticks = 0;
+int g_hall_ticks = 0;
+double g_last_hall_ticks_timestamp = 0.0;
+double g_previous_last_hall_ticks_timestamp = 0.0;
+int g_breaks_extending = 0;
+
 
 void
 hall_transition_interrupt(int gpio, int level, uint32_t tick)
 {
 	if (gpioRead(HALL2_EXTENDING))
+	{
 		g_hall_ticks++;
+		g_breaks_extending = 1;
+	}
 	else
+	{
 		g_hall_ticks--;
+		g_breaks_extending = 0;
+	}
+
+	g_previous_last_hall_ticks_timestamp = g_last_hall_ticks_timestamp;
+	g_last_hall_ticks_timestamp = ojGetTimeSec();
 }
 
 
@@ -773,6 +790,61 @@ init_breaks()
 }
 
 
+int
+get_hall_ticks_from_break_effort(double break_effort)
+{
+	int hall_ticks = break_effort * (double) MAX_HALL_TICKS / 100.0; // 100.0 eh o maximo de break_effort
+
+	return (hall_ticks);
+}
+
+
+double
+get_current_hall_ticks_velocity()
+{
+	if ((g_last_hall_ticks_timestamp == 0.0) || (g_previous_last_hall_ticks_timestamp == 0.0) ||
+		(g_last_hall_ticks_timestamp == g_previous_last_hall_ticks_timestamp))
+		return (0.0);
+
+	double v = 1.0 / (g_last_hall_ticks_timestamp - g_previous_last_hall_ticks_timestamp);
+
+	if (g_breaks_extending)
+		return (v);
+	else
+		return (-v);
+}
+
+
+void
+apply_break_effort(double current_hall_ticks_velocity, int hall_ticks_diff)
+{
+	if (hall_ticks_diff > 0)
+	{
+		ojSleepMsec(5);
+		gpioWrite(PUSHBREAKS, PI_HIGH);
+		gpioWrite(PULLBREAKS, PI_LOW);
+
+		if (hall_ticks_diff < (current_hall_ticks_velocity * BREAKS_TIME_TO_STOP))
+		{
+			gpioWrite(PUSHBREAKS, PI_LOW);
+			gpioWrite(PULLBREAKS, PI_LOW);
+		}
+	}
+	else
+	{
+		ojSleepMsec(5);
+		gpioWrite(PUSHBREAKS, PI_LOW);
+		gpioWrite(PULLBREAKS, PI_HIGH);
+
+		if (-hall_ticks_diff < (-current_hall_ticks_velocity * BREAKS_TIME_TO_STOP))
+		{
+			gpioWrite(PUSHBREAKS, PI_LOW);
+			gpioWrite(PULLBREAKS, PI_LOW);
+		}
+	}
+}
+
+
 void
 update_breaks()
 {
@@ -785,11 +857,9 @@ update_breaks()
 		int hall_ticks_diff = desired_hall_ticks - g_hall_ticks;
 		if (abs(hall_ticks_diff) > MIN_HALL_TICKS_DIFF)
 		{
-			double current_hall_ticks_velocity = get_current_hall_ticks_velocity(g_hall_ticks, previous_timestamp);
+			double current_hall_ticks_velocity = get_current_hall_ticks_velocity();
 			if (hall_ticks_diff > 0)
-				push_breaks(current_hall_ticks_velocity, hall_ticks_diff);
-			else
-				pull_breaks(current_hall_ticks_velocity, hall_ticks_diff);
+				apply_break_effort(current_hall_ticks_velocity, hall_ticks_diff);
 		}
 		previous_g_break_effort = g_break_effort;
 	}
