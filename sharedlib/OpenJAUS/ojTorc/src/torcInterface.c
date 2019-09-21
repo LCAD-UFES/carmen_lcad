@@ -187,6 +187,7 @@ print_interface()
 	mvprintw(row++, col, "   w - Wrench Efforts Mode");
 	mvprintw(row++, col, "   m - Motion Profiles Mode");
 	mvprintw(row++, col, "   Up, Down, Left Wright - Throttle and Steering");
+	mvprintw(row++, col, "   b, B - Breaks+, Breaks-");
 	mvprintw(row++, col, "   SPACE - Maximum Brake, Minimum Throttle, Central Steering");
 	mvprintw(row++, col, "   a, s, d, f - Gear: L, D, N, R");
 	mvprintw(row++, col, "   z, x - Engine: On, Off");
@@ -481,6 +482,18 @@ user_interface(OjCmpt XGV_CCU)
 
 				case 'K':
 					factor *= 2.0;
+					break;
+
+				case 'b':
+					g_brakes_command += factor * (MAX_BRAKES - MIN_BRAKES) / 100.0;
+					if (g_brakes_command > MAX_BRAKES)
+						g_brakes_command = MAX_BRAKES;
+					break;
+
+				case 'B':
+					g_brakes_command -= factor * (MAX_BRAKES - MIN_BRAKES) / 100.0;
+					if (g_brakes_command < MIN_BRAKES)
+						g_brakes_command = MIN_BRAKES;
 					break;
 
 				default:

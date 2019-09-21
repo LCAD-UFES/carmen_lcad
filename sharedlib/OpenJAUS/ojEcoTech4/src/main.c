@@ -57,8 +57,8 @@
 
 // Breaks
 #define MAX_HALL_TICKS		200
-#define MIN_HALL_TICKS_DIFF	3
-#define BREAKS_TIME_TO_STOP	0.05
+#define MIN_HALL_TICKS_DIFF	1
+#define BREAKS_TIME_TO_STOP	0.2
 
 #define	PUSHBREAKS			 4 // GPIO  4, pino  7
 #define	PULLBREAKS			27 // GPIO 27, pino 13
@@ -269,7 +269,7 @@ char getUserInput()
 	else
 	{
 		choice = getch(); // Get the key that the user has selected
-		updateScreen(keyboardLock, choice);
+//		updateScreen(keyboardLock, choice);
 		if(choice > -1)
 		{
 			parseUserInput(choice);
@@ -806,7 +806,7 @@ get_current_hall_ticks_velocity()
 		(g_last_hall_ticks_timestamp == g_previous_last_hall_ticks_timestamp))
 		return (0.0);
 
-	double v = 1.0 / (g_last_hall_ticks_timestamp - g_previous_last_hall_ticks_timestamp);
+	double v = 1.0 / ((ojGetTimeSec() - g_last_hall_ticks_timestamp) + (g_last_hall_ticks_timestamp - g_previous_last_hall_ticks_timestamp));
 
 	if (g_breaks_extending)
 		return (v);
@@ -848,23 +848,14 @@ apply_break_effort(double current_hall_ticks_velocity, int hall_ticks_diff)
 void
 update_breaks()
 {
-	static double previous_g_break_effort = 0.0;
-	static double previous_timestamp = 0.0;
-
-	if ((previous_timestamp != 0.0) && (g_break_effort != previous_g_break_effort))
-	{
-		int desired_hall_ticks = get_hall_ticks_from_break_effort(g_break_effort);
-		int hall_ticks_diff = desired_hall_ticks - g_hall_ticks;
-		if (abs(hall_ticks_diff) > MIN_HALL_TICKS_DIFF)
-		{
-			double current_hall_ticks_velocity = get_current_hall_ticks_velocity();
-			if (hall_ticks_diff > 0)
-				apply_break_effort(current_hall_ticks_velocity, hall_ticks_diff);
-		}
-		previous_g_break_effort = g_break_effort;
-	}
-	previous_timestamp = ojGetTimeSec();
-	previous_g_break_effort = g_break_effort;
+	int desired_hall_ticks = get_hall_ticks_from_break_effort(g_break_effort);
+	mvprintw(30, 0, "desired_hall_ticks = %d\n\r", desired_hall_ticks);
+	int hall_ticks_diff = desired_hall_ticks - g_hall_ticks;
+	mvprintw(31, 0, "hall_ticks_diff = %d\n\r", hall_ticks_diff);
+	double current_hall_ticks_velocity = get_current_hall_ticks_velocity();
+	mvprintw(32, 0, "current_hall_ticks_velocity = %lf\n\r", current_hall_ticks_velocity);
+	if (abs(hall_ticks_diff) > MIN_HALL_TICKS_DIFF)
+		apply_break_effort(current_hall_ticks_velocity, hall_ticks_diff);
 }
 
 
@@ -914,7 +905,7 @@ main(int argCount, char **argString)
 		if (interface_active)
 		{
 			getUserInput();
-			ojSleepMsec(100);
+			ojSleepMsec(5);
 		}
 		else
 		{
