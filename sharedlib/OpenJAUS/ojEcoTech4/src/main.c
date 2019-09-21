@@ -800,8 +800,10 @@ init_breaks()
 	int range2 = gpioGetPWMrange(PUSHBREAKS);
 	int real_range = gpioGetPWMrealRange(PUSHBREAKS);
 	printf("freq = %d, range = %d, range2 = %d, real_range = %d\n", freq, range, range2, real_range);
+	gpioSetPWMfrequency(PULLBREAKS, BREAKS_PWM_FREQUENCY);
+	gpioSetPWMrange(PULLBREAKS, BREAKS_PWM_RANGE);
 
-	gpioPWM(PUSHBREAKS, BREAKS_PWM_RANGE / 4);
+//	gpioPWM(PUSHBREAKS, BREAKS_PWM_RANGE / 4);
 	ojSleepMsec(30000);
 }
 
@@ -809,7 +811,7 @@ init_breaks()
 int
 get_hall_ticks_from_break_effort(double break_effort)
 {
-	int hall_ticks = break_effort * (double) MAX_HALL_TICKS_SET / 100.0; // 100.0 eh o maximo de break_effort
+	int hall_ticks = round(break_effort * (double) MAX_HALL_TICKS_SET / 100.0); // 100.0 eh o maximo de break_effort
 
 	return (hall_ticks);
 }
@@ -832,7 +834,7 @@ get_current_hall_ticks_velocity()
 
 
 void
-apply_break_effort(double current_hall_ticks_velocity, int hall_ticks_diff)
+apply_break_effort_old(double current_hall_ticks_velocity, int hall_ticks_diff)
 {
 	if (hall_ticks_diff > 0)
 	{
@@ -857,6 +859,40 @@ apply_break_effort(double current_hall_ticks_velocity, int hall_ticks_diff)
 			gpioWrite(PUSHBREAKS, PI_LOW);
 			gpioWrite(PULLBREAKS, PI_LOW);
 		}
+	}
+}
+
+
+void
+apply_break_effort(double ut)
+{
+	static int push = 0;
+
+	if (ut >= 0.0)
+	{
+		if (!push)
+		{
+			gpioPWM(PULLBREAKS, 0);
+			ojSleepMsec(3);
+			push = 1;
+		}
+		int pwm = round(ut * (double) BREAKS_PWM_RANGE / 100.0);
+		if (pwm > BREAKS_PWM_RANGE)
+			pwm = BREAKS_PWM_RANGE;
+		gpioPWM(PUSHBREAKS, pwm);
+	}
+	else
+	{
+		if (push)
+		{
+			gpioPWM(PUSHBREAKS, 0);
+			ojSleepMsec(3);
+			push = 0;
+		}
+		int pwm = round(-ut * (double) BREAKS_PWM_RANGE / 100.0);
+		if (pwm > BREAKS_PWM_RANGE)
+			pwm = BREAKS_PWM_RANGE;
+		gpioPWM(PULLBREAKS, pwm);
 	}
 }
 
@@ -890,8 +926,8 @@ breaks_pid(double desired_hall_ticks, double current_hall_ticks, int manual_over
 	double t = ojGetTimeSec();
 	double delta_t = t - previous_t;
 
-	if (delta_t < (0.7 * (1.0 / 40.0)))
-		return (u_t);
+//	if (delta_t < (0.7 * (1.0 / 40.0)))
+//		return (u_t);
 
 	double error_t = desired_hall_ticks - current_hall_ticks;
 
@@ -922,7 +958,7 @@ breaks_pid(double desired_hall_ticks, double current_hall_ticks, int manual_over
 
 
 void
-update_breaks()
+update_breaks_old()
 {
 	int desired_hall_ticks = get_hall_ticks_from_break_effort(g_break_effort);
 	mvprintw(29, 0, "hall_ticks = %d\n\r", g_hall_ticks);
@@ -932,7 +968,19 @@ update_breaks()
 	double current_hall_ticks_velocity = get_current_hall_ticks_velocity();
 	mvprintw(32, 0, "current_hall_ticks_velocity = %lf\n\r", current_hall_ticks_velocity);
 	if (abs(hall_ticks_diff) > MIN_HALL_TICKS_DIFF)
-		apply_break_effort(current_hall_ticks_velocity, hall_ticks_diff);
+		apply_break_effort_old(current_hall_ticks_velocity, hall_ticks_diff);
+}
+
+
+void
+update_breaks()
+{
+	mvprintw(29, 0, "hall_ticks = %d\n\r", g_hall_ticks);
+	int desired_hall_ticks = get_hall_ticks_from_break_effort(g_break_effort);
+	mvprintw(30, 0, "desired_hall_ticks = %d\n\r", desired_hall_ticks);
+	mvprintw(31, 0, "hall_ticks_diff = %d\n\r", desired_hall_ticks - g_hall_ticks);
+	double ut = breaks_pid(desired_hall_ticks, g_hall_ticks);
+	apply_break_effort(ut);
 }
 
 
