@@ -3,7 +3,13 @@ TARGETSO = 	./lib/ojEcoTech4.so
 
 CCFLAGS	=	-fPIC -Wall -fno-strict-aliasing -c -g -I ./include/ -I ../libjaus/include/ -I ../libopenJaus/include/ -I ../ojTorc/include
 LFLAGS	=	-L ../libjaus/lib/ -L ../libopenJaus/lib/ -L ../ojTorc/lib/
-LIBS	=	-lopenJaus -ljaus -lpthread -lcurses -lojTorc -lpigpio
+LIBS	=	-lopenJaus -ljaus -lpthread -lcurses -lojTorc
+
+machine = $(shell uname -a)
+ifeq (raspberrypi,$(findstring raspberrypi,$(machine)))
+  CCFLAGS += -DRASPBERRY_PI
+  LIBS	  += -lpigpio
+endif
 
 SOURCES =	./src/main.c \
 		./src/pd.c \
