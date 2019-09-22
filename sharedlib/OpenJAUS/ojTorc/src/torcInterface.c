@@ -485,13 +485,13 @@ user_interface(OjCmpt XGV_CCU)
 					break;
 
 				case 'b':
-					g_brakes_command += factor * (MAX_BRAKES - MIN_BRAKES) / 100.0;
+					g_brakes_command += factor * (MAX_BRAKES - MIN_BRAKES) / 200.0;
 					if (g_brakes_command > MAX_BRAKES)
 						g_brakes_command = MAX_BRAKES;
 					break;
 
 				case 'B':
-					g_brakes_command -= factor * (MAX_BRAKES - MIN_BRAKES) / 100.0;
+					g_brakes_command -= factor * (MAX_BRAKES - MIN_BRAKES) / 200.0;
 					if (g_brakes_command < MIN_BRAKES)
 						g_brakes_command = MIN_BRAKES;
 					break;
