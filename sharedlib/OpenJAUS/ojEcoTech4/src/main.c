@@ -56,22 +56,25 @@
 #define KEYBOARD_LOCK_TIMEOUT_SEC	60.0
 
 // Breaks
-#define MAX_HALL_TICKS			360
-#define MAX_HALL_TICKS_SET		200
-#define MIN_HALL_TICKS_DIFF		1
-#define BREAKS_TIME_TO_STOP		0.2
+#define MAX_HALL_TICKS			(2 * 360)
+#define MAX_HALL_TICKS_SET		400
+#define MIN_HALL_TICKS_SET		20
 
 #define BREAKS_PWM_FREQUENCY	50		// http://abyz.me.uk/rpi/pigpio/cif.html#gpioSetPWMfrequency
 #define BREAKS_PWM_RANGE		1000	// http://abyz.me.uk/rpi/pigpio/cif.html#gpioSetPWMrange
 
-#define BREAKS_PID_Kp 			1.0
-#define BREAKS_PID_Ki 			1.0
+#define BREAKS_PID_Kp 			25.0
+#define BREAKS_PID_Ki 			0.05
 #define BREAKS_PID_Kd 			0.0
+#define BREAKS_MIN_ut			15.0
+#define BREAKS_MAX_ut			100.0
 
 #define	PUSHBREAKS			 	4  	// GPIO  4, pino  7
 #define	PULLBREAKS				27 	// GPIO 27, pino 13
 #define	HALL2_EXTENDING			22 	// GPIO 22, pino 15
 #define	HALL1_TRANSITION		23 	// GPIO 23, pino 16, signal leads when extending
+
+FILE *pid_data;
 
 
 double g_break_effort = 0.0;
@@ -737,19 +740,163 @@ int g_breaks_extending = 0;
 void
 hall_transition_interrupt(int gpio, int level, uint32_t tick)
 {
-	if (gpioRead(HALL2_EXTENDING))
+	if (level == 1) // change to high (a rising edge)
 	{
-		g_hall_ticks++;
-		g_breaks_extending = 1;
+		if (gpioRead(HALL2_EXTENDING))
+		{
+			g_hall_ticks++;
+			g_breaks_extending = 1;
+		}
+		else
+		{
+			g_hall_ticks--;
+			g_breaks_extending = 0;
+		}
 	}
 	else
 	{
-		g_hall_ticks--;
-		g_breaks_extending = 0;
+		if (gpioRead(HALL2_EXTENDING))
+		{
+			g_hall_ticks--;
+			g_breaks_extending = 1;
+		}
+		else
+		{
+			g_hall_ticks++;
+			g_breaks_extending = 0;
+		}
 	}
 
 	g_previous_last_hall_ticks_timestamp = g_last_hall_ticks_timestamp;
 	g_last_hall_ticks_timestamp = ojGetTimeSec();
+}
+
+
+int
+get_hall_ticks_from_break_effort(double break_effort)
+{
+	int hall_ticks = MIN_HALL_TICKS_SET + round(break_effort * (double) (MAX_HALL_TICKS_SET - MIN_HALL_TICKS_SET) / 100.0); // 100.0 eh o maximo de break_effort
+
+	return (hall_ticks);
+}
+
+
+void
+apply_break_effort(double ut)
+{
+	static int push = 0;
+
+	if (ut > BREAKS_MIN_ut)
+	{
+		if (!push)
+		{
+			gpioPWM(PULLBREAKS, 0);
+			ojSleepMsec(1);
+			push = 1;
+		}
+		int pwm = round(ut * (double) BREAKS_PWM_RANGE / BREAKS_MAX_ut);
+		if (pwm > BREAKS_PWM_RANGE)
+			pwm = BREAKS_PWM_RANGE;
+		gpioPWM(PUSHBREAKS, pwm);
+	}
+	else if (ut < -BREAKS_MIN_ut)
+	{
+		if (push)
+		{
+			gpioPWM(PUSHBREAKS, 0);
+			ojSleepMsec(1);
+			push = 0;
+		}
+		int pwm = round(-ut * (double) BREAKS_PWM_RANGE / BREAKS_MAX_ut);
+		if (pwm > BREAKS_PWM_RANGE)
+			pwm = BREAKS_PWM_RANGE;
+		gpioPWM(PULLBREAKS, pwm);
+	}
+	else
+	{
+		gpioPWM(PUSHBREAKS, 0);
+		gpioPWM(PULLBREAKS, 0);
+	}
+}
+
+
+double
+carmen_clamp(double X, double Y, double Z)
+{
+	if (Y < X)
+		return (X);
+	else if (Y > Z)
+		return (Z);
+	return (Y);
+}
+
+
+double
+breaks_pid(double desired_hall_ticks, double current_hall_ticks, int manual_override)
+{
+	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
+	static double 	error_t_1 = 0.0;	// error in time t-1
+	static double 	integral_t = 0.0;
+	static double 	integral_t_1 = 0.0;
+	static double 	u_t = 0.0;			// u(t)	-> actuation in time t
+	static double	previous_t = 0.0;
+	static double	initial_t;
+
+	if (previous_t == 0.0)
+	{
+		initial_t = previous_t = ojGetTimeSec();
+		return (0.0);
+	}
+	double t = ojGetTimeSec();
+	double delta_t = t - previous_t;
+
+//	if (delta_t < (0.7 * (1.0 / 40.0)))
+//		return (u_t);
+
+	double error_t = desired_hall_ticks - current_hall_ticks;
+
+	if (manual_override == 0)
+		integral_t = integral_t + error_t * delta_t;
+	else
+		integral_t = integral_t_1 = 0.0;
+
+	double derivative_t = (error_t - error_t_1) / delta_t;
+
+	u_t = BREAKS_PID_Kp * error_t +
+		  BREAKS_PID_Ki * integral_t +
+		  BREAKS_PID_Kd * derivative_t;
+
+	error_t_1 = error_t;
+
+	// Anti windup
+	if ((u_t < -BREAKS_MAX_ut) || (u_t > BREAKS_MAX_ut))
+		integral_t = integral_t_1;
+	integral_t_1 = integral_t;
+
+	previous_t = t;
+
+	u_t = carmen_clamp(-BREAKS_MAX_ut, u_t, BREAKS_MAX_ut);
+
+	fprintf(pid_data, "BREAKS (c_ht, d_ht, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+			current_hall_ticks, desired_hall_ticks, error_t, integral_t, derivative_t, u_t, t - initial_t);
+	fflush(pid_data);
+
+	return (u_t);
+}
+
+
+void
+update_breaks()
+{
+	static int count = 0;
+
+	mvprintw(29, 0, "hall_ticks = %d, count = %d\n\r", g_hall_ticks, count++);
+	int desired_hall_ticks = get_hall_ticks_from_break_effort(g_break_effort);
+	mvprintw(30, 0, "desired_hall_ticks = %d\n\r", desired_hall_ticks);
+	mvprintw(31, 0, "hall_ticks_diff = %d\n\r", desired_hall_ticks - g_hall_ticks);
+	double ut = breaks_pid(desired_hall_ticks, g_hall_ticks, 0);
+	mvprintw(32, 0, "ut = %lf\n\r", ut);
+	apply_break_effort(ut);
 }
 
 
@@ -764,19 +911,19 @@ init_breaks()
 	gpioSetMode(HALL1_TRANSITION, PI_INPUT);
 	gpioSetMode(HALL2_EXTENDING, PI_INPUT);
 
-	gpioSetISRFunc(HALL1_TRANSITION, RISING_EDGE, 0, hall_transition_interrupt);
+	gpioSetISRFunc(HALL1_TRANSITION, EITHER_EDGE, 0, hall_transition_interrupt);
 
 	printf("hall = %d\n\r", gpioRead(HALL2_EXTENDING));
 	printf("g_hall_ticks %d\n\r", g_hall_ticks);
 
-	gpioWrite(PUSHBREAKS, PI_HIGH);
-	gpioWrite(PULLBREAKS, PI_LOW);
-	ojSleepMsec(1000);
-	printf("g_hall_ticks %d\n\r", g_hall_ticks);
+//	gpioWrite(PUSHBREAKS, PI_HIGH);
+//	gpioWrite(PULLBREAKS, PI_LOW);
+//	ojSleepMsec(1000);
+//	printf("g_hall_ticks %d\n\r", g_hall_ticks);
 
-	gpioWrite(PUSHBREAKS, PI_LOW);
-	gpioWrite(PULLBREAKS, PI_LOW);
-	ojSleepMsec(5);
+//	gpioWrite(PUSHBREAKS, PI_LOW);
+//	gpioWrite(PULLBREAKS, PI_LOW);
+//	ojSleepMsec(5);
 
 	int previous_g_hall_ticks;
 	do
@@ -803,184 +950,19 @@ init_breaks()
 	gpioSetPWMfrequency(PULLBREAKS, BREAKS_PWM_FREQUENCY);
 	gpioSetPWMrange(PULLBREAKS, BREAKS_PWM_RANGE);
 
+	double initial_time = ojGetTimeSec();
+	double t = initial_time;
+	while ((t - initial_time) < 3.0)
+	{
+		ojSleepMsec(5);
+		double ut = breaks_pid(MIN_HALL_TICKS_SET, g_hall_ticks, 0);
+		apply_break_effort(ut);
+		t = ojGetTimeSec();
+	}
+	g_hall_ticks = MIN_HALL_TICKS_SET;
+
 //	gpioPWM(PUSHBREAKS, BREAKS_PWM_RANGE / 4);
-	ojSleepMsec(30000);
-}
-
-
-int
-get_hall_ticks_from_break_effort(double break_effort)
-{
-	int hall_ticks = round(break_effort * (double) MAX_HALL_TICKS_SET / 100.0); // 100.0 eh o maximo de break_effort
-
-	return (hall_ticks);
-}
-
-
-double
-get_current_hall_ticks_velocity()
-{
-	if ((g_last_hall_ticks_timestamp == 0.0) || (g_previous_last_hall_ticks_timestamp == 0.0) ||
-		(g_last_hall_ticks_timestamp == g_previous_last_hall_ticks_timestamp))
-		return (0.0);
-
-	double v = 1.0 / ((ojGetTimeSec() - g_last_hall_ticks_timestamp) + (g_last_hall_ticks_timestamp - g_previous_last_hall_ticks_timestamp));
-
-	if (g_breaks_extending)
-		return (v);
-	else
-		return (-v);
-}
-
-
-void
-apply_break_effort_old(double current_hall_ticks_velocity, int hall_ticks_diff)
-{
-	if (hall_ticks_diff > 0)
-	{
-		ojSleepMsec(5);
-		gpioWrite(PUSHBREAKS, PI_HIGH);
-		gpioWrite(PULLBREAKS, PI_LOW);
-
-		if (hall_ticks_diff < (current_hall_ticks_velocity * BREAKS_TIME_TO_STOP))
-		{
-			gpioWrite(PUSHBREAKS, PI_LOW);
-			gpioWrite(PULLBREAKS, PI_LOW);
-		}
-	}
-	else
-	{
-		ojSleepMsec(5);
-		gpioWrite(PUSHBREAKS, PI_LOW);
-		gpioWrite(PULLBREAKS, PI_HIGH);
-
-		if (-hall_ticks_diff < (-current_hall_ticks_velocity * BREAKS_TIME_TO_STOP))
-		{
-			gpioWrite(PUSHBREAKS, PI_LOW);
-			gpioWrite(PULLBREAKS, PI_LOW);
-		}
-	}
-}
-
-
-void
-apply_break_effort(double ut)
-{
-	static int push = 0;
-
-	if (ut >= 0.0)
-	{
-		if (!push)
-		{
-			gpioPWM(PULLBREAKS, 0);
-			ojSleepMsec(3);
-			push = 1;
-		}
-		int pwm = round(ut * (double) BREAKS_PWM_RANGE / 100.0);
-		if (pwm > BREAKS_PWM_RANGE)
-			pwm = BREAKS_PWM_RANGE;
-		gpioPWM(PUSHBREAKS, pwm);
-	}
-	else
-	{
-		if (push)
-		{
-			gpioPWM(PUSHBREAKS, 0);
-			ojSleepMsec(3);
-			push = 0;
-		}
-		int pwm = round(-ut * (double) BREAKS_PWM_RANGE / 100.0);
-		if (pwm > BREAKS_PWM_RANGE)
-			pwm = BREAKS_PWM_RANGE;
-		gpioPWM(PULLBREAKS, pwm);
-	}
-}
-
-
-double
-carmen_clamp(double X, double Y, double Z)
-{
-	if (Y < X)
-		return (X);
-	else if (Y > Z)
-		return (Z);
-	return (Y);
-}
-
-
-double
-breaks_pid(double desired_hall_ticks, double current_hall_ticks, int manual_override)
-{
-	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
-	static double 	error_t_1 = 0.0;	// error in time t-1
-	static double 	integral_t = 0.0;
-	static double 	integral_t_1 = 0.0;
-	static double 	u_t = 0.0;			// u(t)	-> actuation in time t
-	static double	previous_t = 0.0;
-
-	if (previous_t == 0.0)
-	{
-		previous_t = ojGetTimeSec();
-		return (0.0);
-	}
-	double t = ojGetTimeSec();
-	double delta_t = t - previous_t;
-
-//	if (delta_t < (0.7 * (1.0 / 40.0)))
-//		return (u_t);
-
-	double error_t = desired_hall_ticks - current_hall_ticks;
-
-	if (manual_override == 0)
-		integral_t = integral_t + error_t * delta_t;
-	else
-		integral_t = integral_t_1 = 0.0;
-
-	double derivative_t = (error_t - error_t_1) / delta_t;
-
-	u_t = BREAKS_PID_Kp * error_t +
-		  BREAKS_PID_Ki * integral_t +
-		  BREAKS_PID_Kd * derivative_t;
-
-	error_t_1 = error_t;
-
-	// Anti windup
-	if ((u_t < -100.0) || (u_t > 100.0))
-		integral_t = integral_t_1;
-	integral_t_1 = integral_t;
-
-	previous_t = t;
-
-	u_t = carmen_clamp(-100.0, u_t, 100.0);
-
-	return (u_t);
-}
-
-
-void
-update_breaks_old()
-{
-	int desired_hall_ticks = get_hall_ticks_from_break_effort(g_break_effort);
-	mvprintw(29, 0, "hall_ticks = %d\n\r", g_hall_ticks);
-	mvprintw(30, 0, "desired_hall_ticks = %d\n\r", desired_hall_ticks);
-	int hall_ticks_diff = desired_hall_ticks - g_hall_ticks;
-	mvprintw(31, 0, "hall_ticks_diff = %d\n\r", hall_ticks_diff);
-	double current_hall_ticks_velocity = get_current_hall_ticks_velocity();
-	mvprintw(32, 0, "current_hall_ticks_velocity = %lf\n\r", current_hall_ticks_velocity);
-	if (abs(hall_ticks_diff) > MIN_HALL_TICKS_DIFF)
-		apply_break_effort_old(current_hall_ticks_velocity, hall_ticks_diff);
-}
-
-
-void
-update_breaks()
-{
-	mvprintw(29, 0, "hall_ticks = %d\n\r", g_hall_ticks);
-	int desired_hall_ticks = get_hall_ticks_from_break_effort(g_break_effort);
-	mvprintw(30, 0, "desired_hall_ticks = %d\n\r", desired_hall_ticks);
-	mvprintw(31, 0, "hall_ticks_diff = %d\n\r", desired_hall_ticks - g_hall_ticks);
-	double ut = breaks_pid(desired_hall_ticks, g_hall_ticks);
-	apply_break_effort(ut);
+//	ojSleepMsec(30000);
 }
 
 
@@ -1022,6 +1004,7 @@ main(int argCount, char **argString)
 		fclose(steering_wheel_zero_torque_file);
 	}
 
+	pid_data = fopen("pid_data.txt", "w");
 	init_breaks();
 
 	mainRunning = TRUE;
@@ -1051,6 +1034,8 @@ main(int argCount, char **argString)
 		}
 		update_breaks();
 	}
+
+	fclose(pid_data);
 
 	if (interface_active)
 		cleanupConsole();
