@@ -58,16 +58,16 @@
 #define KEYBOARD_LOCK_TIMEOUT_SEC	60.0
 
 // Breaks
-#define MAX_HALL_TICKS			(2 * 360)
-#define MAX_HALL_TICKS_SET		400
-#define MIN_HALL_TICKS_SET		20
+#define MAX_HALL_TICKS			(4 * 360)
+#define MAX_HALL_TICKS_SET		(2 * 400)
+#define MIN_HALL_TICKS_SET		(2 * 40)
 
 #define BREAKS_PWM_FREQUENCY	50		// http://abyz.me.uk/rpi/pigpio/cif.html#gpioSetPWMfrequency
 #define BREAKS_PWM_RANGE		1000	// http://abyz.me.uk/rpi/pigpio/cif.html#gpioSetPWMrange
 
-#define BREAKS_PID_Kp 			25.0
-#define BREAKS_PID_Ki 			0.05
-#define BREAKS_PID_Kd 			0.0
+#define BREAKS_PID_Kp 			10.0
+#define BREAKS_PID_Ki 			0.0
+#define BREAKS_PID_Kd 			0.1
 #define BREAKS_MIN_ut			15.0
 #define BREAKS_MAX_ut			100.0
 
@@ -736,11 +736,15 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 #ifdef RASPBERRY_PI
 
 int g_hall_ticks = 0;
+int g_possible_hall_tick_miss = 0;
+int g_tick = 0;
 
 
 void
 hall_transition_interrupt(int gpio, int level, uint32_t tick)
 {
+	double t = ojGetTimeSec();
+
 	if (gpio != HALL1_TRANSITION)
 		return;
 
@@ -758,6 +762,37 @@ hall_transition_interrupt(int gpio, int level, uint32_t tick)
 		else
 			g_hall_ticks++;
 	}
+	if (ojGetTimeSec() - t > 0.0005)
+		g_possible_hall_tick_miss++;
+
+	g_tick = tick;
+}
+
+
+void
+hall_extending_interrupt(int gpio, int level, uint32_t tick)
+{
+	double t = ojGetTimeSec();
+
+	if (gpio != HALL2_EXTENDING)
+		return;
+
+	if (level == 0) // changed to low (a falling edge)
+	{
+		if (gpioRead(HALL1_TRANSITION))
+			g_hall_ticks++;
+		else
+			g_hall_ticks--;
+	}
+	else
+	{
+		if (gpioRead(HALL1_TRANSITION))
+			g_hall_ticks--;
+		else
+			g_hall_ticks++;
+	}
+	if (ojGetTimeSec() - t > 0.0005)
+		g_possible_hall_tick_miss++;
 }
 
 
@@ -886,6 +921,8 @@ update_breaks()
 	mvprintw(31, 0, "hall_ticks_diff = %d\n\r", desired_hall_ticks - g_hall_ticks);
 	double ut = breaks_pid(desired_hall_ticks, g_hall_ticks, 0);
 	mvprintw(32, 0, "ut = %lf\n\r", ut);
+	mvprintw(33, 0, "g_possible_hall_tick_miss = %d\n\r", g_possible_hall_tick_miss);
+	mvprintw(34, 0, "g_tick = %d\n\r", g_tick);
 	apply_break_effort(ut);
 }
 
@@ -902,6 +939,7 @@ init_breaks()
 	gpioSetMode(HALL2_EXTENDING, PI_INPUT);
 
 	gpioSetISRFunc(HALL1_TRANSITION, EITHER_EDGE, 0, hall_transition_interrupt);
+	gpioSetISRFunc(HALL2_EXTENDING, EITHER_EDGE, 0, hall_extending_interrupt);
 
 //	printf("hall = %d\n\r", gpioRead(HALL2_EXTENDING));
 //	printf("g_hall_ticks %d\n\r", g_hall_ticks);
