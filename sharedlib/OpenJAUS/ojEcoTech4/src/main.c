@@ -22,7 +22,9 @@
 
 #include <pthread.h>
 
+#ifdef RASPBERRY_PI
 #include <pigpio.h>
+#endif
 
 #define CLEAR "clear"
 
@@ -127,7 +129,7 @@ void updateScreen(int keyboardLock, int keyPress)
 	static int lastChoice = '1';
 	JausAddress address;
 
-	if(!keyboardLock && keyPress != -1 && keyPress != 27 && keyPress != 12) // 27 = ESC, 12 = Ctrl+l
+	if (!keyboardLock && keyPress != -1 && keyPress != 27 && keyPress != 12) // 27 = ESC, 12 = Ctrl+l
 		lastChoice = keyPress;
 
 	clear();
@@ -157,7 +159,7 @@ void updateScreen(int keyboardLock, int keyPress)
 			mvprintw(row++,col,"PD State:\t%s", jausStateGetString(ojCmptGetState(pd)));
 
 			row++;
-			if(ojCmptHasController(pd))
+			if (ojCmptHasController(pd))
 			{
 				address = ojCmptGetControllerAddress(pd);
 				jausAddressToString(address, string);
@@ -269,7 +271,7 @@ char getUserInput()
 	char retVal = FALSE;
 	int choice = -1;
 
-	if(verbose)
+	if (verbose)
 	{
 		choice = getc(stdin);
 		if(choice > -1)
@@ -282,7 +284,7 @@ char getUserInput()
 	{
 		choice = getch(); // Get the key that the user has selected
 //		updateScreen(keyboardLock, choice);
-		if(choice > -1)
+		if (choice > -1)
 		{
 			parseUserInput(choice);
 			retVal = TRUE;
@@ -731,44 +733,31 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	}
 }
 
+#ifdef RASPBERRY_PI
+
 int g_hall_ticks = 0;
-double g_last_hall_ticks_timestamp = 0.0;
-double g_previous_last_hall_ticks_timestamp = 0.0;
-int g_breaks_extending = 0;
 
 
 void
 hall_transition_interrupt(int gpio, int level, uint32_t tick)
 {
-	if (level == 1) // change to high (a rising edge)
+	if (gpio != HALL1_TRANSITION)
+		return;
+
+	if (level == 1) // changed to high (a rising edge)
 	{
 		if (gpioRead(HALL2_EXTENDING))
-		{
 			g_hall_ticks++;
-			g_breaks_extending = 1;
-		}
 		else
-		{
 			g_hall_ticks--;
-			g_breaks_extending = 0;
-		}
 	}
 	else
 	{
 		if (gpioRead(HALL2_EXTENDING))
-		{
 			g_hall_ticks--;
-			g_breaks_extending = 1;
-		}
 		else
-		{
 			g_hall_ticks++;
-			g_breaks_extending = 0;
-		}
 	}
-
-	g_previous_last_hall_ticks_timestamp = g_last_hall_ticks_timestamp;
-	g_last_hall_ticks_timestamp = ojGetTimeSec();
 }
 
 
@@ -840,11 +829,12 @@ breaks_pid(double desired_hall_ticks, double current_hall_ticks, int manual_over
 	static double 	integral_t_1 = 0.0;
 	static double 	u_t = 0.0;			// u(t)	-> actuation in time t
 	static double	previous_t = 0.0;
-	static double	initial_t;
+//	static double	initial_t;
 
 	if (previous_t == 0.0)
 	{
-		initial_t = previous_t = ojGetTimeSec();
+//		initial_t = previous_t = ojGetTimeSec();
+		previous_t = ojGetTimeSec();
 		return (0.0);
 	}
 	double t = ojGetTimeSec();
@@ -877,9 +867,9 @@ breaks_pid(double desired_hall_ticks, double current_hall_ticks, int manual_over
 
 	u_t = carmen_clamp(-BREAKS_MAX_ut, u_t, BREAKS_MAX_ut);
 
-	fprintf(pid_data, "BREAKS (c_ht, d_ht, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-			current_hall_ticks, desired_hall_ticks, error_t, integral_t, derivative_t, u_t, t - initial_t);
-	fflush(pid_data);
+//	fprintf(pid_data, "BREAKS (c_ht, d_ht, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//			current_hall_ticks, desired_hall_ticks, error_t, integral_t, derivative_t, u_t, t - initial_t);
+//	fflush(pid_data);
 
 	return (u_t);
 }
@@ -913,17 +903,8 @@ init_breaks()
 
 	gpioSetISRFunc(HALL1_TRANSITION, EITHER_EDGE, 0, hall_transition_interrupt);
 
-	printf("hall = %d\n\r", gpioRead(HALL2_EXTENDING));
-	printf("g_hall_ticks %d\n\r", g_hall_ticks);
-
-//	gpioWrite(PUSHBREAKS, PI_HIGH);
-//	gpioWrite(PULLBREAKS, PI_LOW);
-//	ojSleepMsec(1000);
+//	printf("hall = %d\n\r", gpioRead(HALL2_EXTENDING));
 //	printf("g_hall_ticks %d\n\r", g_hall_ticks);
-
-//	gpioWrite(PUSHBREAKS, PI_LOW);
-//	gpioWrite(PULLBREAKS, PI_LOW);
-//	ojSleepMsec(5);
 
 	int previous_g_hall_ticks;
 	do
@@ -937,7 +918,7 @@ init_breaks()
 	} while (previous_g_hall_ticks != g_hall_ticks);
 	g_hall_ticks = 0;
 
-	printf("g_hall_ticks %d\n\r", g_hall_ticks);
+//	printf("g_hall_ticks %d\n\r", g_hall_ticks);
 
 	gpioWrite(PUSHBREAKS, PI_LOW);
 	gpioWrite(PULLBREAKS, PI_LOW);
@@ -960,11 +941,8 @@ init_breaks()
 		t = ojGetTimeSec();
 	}
 	g_hall_ticks = MIN_HALL_TICKS_SET;
-
-//	gpioPWM(PUSHBREAKS, BREAKS_PWM_RANGE / 4);
-//	ojSleepMsec(30000);
 }
-
+#endif
 
 int
 main(int argCount, char **argString)
@@ -1004,11 +982,13 @@ main(int argCount, char **argString)
 		fclose(steering_wheel_zero_torque_file);
 	}
 
-	pid_data = fopen("pid_data.txt", "w");
+#ifdef RASPBERRY_PI
+//	pid_data = fopen("pid_data.txt", "w");
 	init_breaks();
+#endif
 
 	mainRunning = TRUE;
-	while(mainRunning)
+	while (mainRunning)
 	{
 		if (interface_active)
 		{
@@ -1032,10 +1012,12 @@ main(int argCount, char **argString)
 
 			ojSleepMsec(5);
 		}
+#ifdef RASPBERRY_PI
 		update_breaks();
+#endif
 	}
 
-	fclose(pid_data);
+//	fclose(pid_data);
 
 	if (interface_active)
 		cleanupConsole();
@@ -1048,7 +1030,9 @@ main(int argCount, char **argString)
 		close(out_can_sockfd);
 	}
 
+#ifdef RASPBERRY_PI
 	gpioTerminate();
+#endif
 
 	return (0);
 }
