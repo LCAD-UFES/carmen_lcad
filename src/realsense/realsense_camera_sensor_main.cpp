@@ -200,15 +200,13 @@ main(int argc, char **argv)
 	unsigned short *depth_frame_data = NULL;
 	unsigned char* rgb_frame_data = NULL;
 
-	float stride_x = 10.0, stride_y = 10.0;
+	stereo_util instance = get_stereo_instance(BUMBLEBEE_ID, rs_width, rs_height);
 
-	carmen_velodyne_shot *scan = alloc_velodyne_shot_scan_vector(rs_width/stride_x, rs_height/stride_y);
+	carmen_velodyne_shot *scan = alloc_velodyne_shot_scan_vector(rs_width/instance.stereo_stride_x, rs_height/ instance.stereo_stride_y);
 	carmen_velodyne_variable_scan_message velodyne_partial_scan;
 	velodyne_partial_scan.host = carmen_get_host();
-	velodyne_partial_scan.number_of_shots = rs_width/stride_x;
+	velodyne_partial_scan.number_of_shots = rs_width/instance.stereo_stride_x;
 	velodyne_partial_scan.partial_scan = scan;
-
-	stereo_util instance = get_stereo_instance(BUMBLEBEE_ID, rs_width, rs_height);
 
 	rs2::hole_filling_filter hole_filter;
 
@@ -265,7 +263,7 @@ main(int argc, char **argv)
 
         cv::medianBlur(depthMat, depthMat, 5);
 
-        convert_stereo_depth_to_velodyne_beams(instance, (unsigned short*)depthMat.data, rs_height, rs_width, scan, 5000 , 0, rs_height, 80, rs_width, rgb_frame_data, stride_x, stride_y);
+        convert_stereo_depth_to_velodyne_beams(instance, (unsigned short*)depthMat.data, rs_height, rs_width, scan, 5000 , 0, rs_height, 80, rs_width, rgb_frame_data);
 
         velodyne_partial_scan.timestamp = timestamp;
 
