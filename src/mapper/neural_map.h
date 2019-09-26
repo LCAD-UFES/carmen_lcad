@@ -66,8 +66,11 @@ public:
 	Neural_map_queue();
 	Neural_map_queue(int n_maps, int size_x, int size_y, double resolution, int dist);
 	carmen_map_t fixed_normalize_map(carmen_map_t value_map, double new_max, double last_max, double min);
+	carmen_map_t fixed_normalize_map_2(carmen_map_t value_map, double new_max, double last_max, double min);
 	void map_to_png(carmen_map_t complete_map, char* csv_name, bool is_label, double map_max, double map_min, bool rgb_color=false);
-	void save_map(carmen_map_t map, char* map_name, char* path, bool is_label, double rotation, double map_max, int max_index);
+	void save_map_as_png(carmen_map_t map, char* map_name, char* path, bool is_label, double rotation, double map_max, int map_index);
+	void save_map_as_binary_file(carmen_map_t map, char* map_name, char* path, bool is_label, double rotation, double map_max, int map_index);
+	void export_as_binary_file(char* path, int map_index);
 	void update(Neural_map new_map, int pos);
 	void push(Neural_map new_map);
 	void acumulate_maps();
@@ -77,6 +80,7 @@ public:
 	cv::Mat map_to_png2(carmen_map_t complete_map, bool is_label, double map_max, double map_min, bool rgb_map);
 	void foward_map(carmen_map_t map, char* map_name, char* path, bool is_label, double rotation, double map_max, int max_index);
 	void map_to_png3(carmen_map_t complete_map, char* csv_name, double map_max, double map_min);
+	void map_to_binary_file(carmen_map_t complete_map, char* csv_name, bool is_label, double map_max, double map_min, bool rgb_color=false);
 
 };
 

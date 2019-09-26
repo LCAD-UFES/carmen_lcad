@@ -25,7 +25,11 @@ sudo ifup wlan1
 - Mude o endereco do servidor de pacotes (do apt-get) comentando a linha existente e adicionando a <linha> abaixo no arquivo indicado abaixo:
  <linha> deb http://linorg.usp.br/raspbian/raspbian/ stretch main contrib non-free rpi
  sudo nano /etc/apt/sources.list 
-	
+
+- Instale editores de codigo
+ sudo apt-get install eclipse-cdt
+ sudo apt-get install gedit
+
 - Instale libs necessarias
  sudo apt-get install libncurses5-dev
  sudo apt-get install nmap

@@ -97,7 +97,7 @@ carmen_laser_ldmrs_object *ldmrs_objects_tracking;
 /************************************************************************
  * TODO: A variavel abaixo esta hard code, colocar para ser lida de algum lugar
  * **********************************************************************/
-static int camera = 3;
+static int camera = 7;
 
 static point_cloud *velodyne_points;
 static int last_velodyne_position;

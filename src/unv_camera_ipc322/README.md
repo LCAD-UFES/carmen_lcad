@@ -23,3 +23,17 @@ Qualquer mudança no tamanho da imagem no menu de Video & Audio da câmera, deve
 ~/carmen_lcad/bin$ ./central
 ~/carmen_lcad/bin$ ./proccontrol process-volta_da_ufes_playback_viewer_3D.ini
 ~/carmen_lcad/bin$ ./unv_camera_client_driver 2 192.168.0.23
+
+#---------------------
+# Com qualquer camera que tenha protocolo RTSP, faça:
+
+Intelbras VIP 3220 B
+Usando o canal extra, compressão MJPEG, 640x480, 30fps, taxa de bit 6144 e latência de 1 décimo de segundo: 
+./rtsp_camera_driver 10 rtsp://admin:lcad123456@192.168.0.108:554/cam/realmonitor?channel=1\&subtype=1
+
+Mainstream, H264H, 1280x720, 15fps, 1280 bit e latência de 3 décimos de segundo:
+./rtsp_camera_driver 10 rtsp://admin:lcad123456@192.168.0.108:554/cam/realmonitor?channel=1\&subtype=0
+
+UNV Camera 
+
+./rtsp_camera_driver 2 rtsp://admin:123456@192.168.0.23/media/video1.cgi?.mjpg

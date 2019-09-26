@@ -4,7 +4,9 @@
 
 #include <carmen/carmen.h>
 #include <carmen/bumblebee_basic_interface.h>
-//#include "opencv2/opencv.hpp"
+#include <carmen/stereo_velodyne.h>
+#include <carmen/stereo_velodyne_interface.h>
+#include "opencv2/opencv.hpp"
 
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 
@@ -20,11 +22,11 @@ int rs_width = 1280;
 int rs_flip = 0;
 
 void
-carmen_bumblebee_publish_stereoimage_message(unsigned char *rawLeft, unsigned char *rawRight, int width, int height, int channels)
+carmen_bumblebee_publish_stereoimage_message(unsigned char *rawLeft, unsigned char *rawRight, int width, int height, int channels, double timestamp)
 {
 	carmen_bumblebee_basic_stereoimage_message stereo_msg;
 
-	stereo_msg.timestamp = carmen_get_time();
+	stereo_msg.timestamp = timestamp;
     stereo_msg.host = carmen_get_host();
     stereo_msg.image_size = width * height * channels;
     stereo_msg.width = width;
@@ -140,6 +142,26 @@ rotate_raw_image(int image_width, int image_height, unsigned char *raw_image)
 	return (flipped_image);
 }
 
+carmen_velodyne_shot *
+alloc_velodyne_shot_scan_vector(int horizontal_resolution_l, int vertical_resolution_l)
+{
+	int i;
+
+	carmen_velodyne_shot *vector = (carmen_velodyne_shot *) malloc(horizontal_resolution_l * sizeof(carmen_velodyne_shot));
+	carmen_test_alloc(vector);
+
+	for (i = 0; i < horizontal_resolution_l; i++)
+	{
+		vector[i].distance = (unsigned short *) calloc(vertical_resolution_l, sizeof(unsigned short));
+		carmen_test_alloc(vector[i].distance);
+		vector[i].intensity = (unsigned char *) calloc(vertical_resolution_l, sizeof(unsigned char));
+		carmen_test_alloc(vector[i].distance);
+		vector[i].shot_size = vertical_resolution_l;
+	}
+
+	return (vector);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -154,11 +176,15 @@ main(int argc, char **argv)
 
     rs2::config cfg;
     cfg.enable_stream(RS2_STREAM_COLOR, 0, rs_width, rs_height);
-//    cfg.enable_stream(RS2_STREAM_COLOR, 0, 1920, 1080);
-//    cfg.enable_stream(RS2_STREAM_DEPTH, 0,640, 480);
-    cfg.enable_stream(RS2_STREAM_DEPTH, 0,1280, 720);
-    // cfg.enable_stream(RS2_STREAM_INFRARED, 0);
-    // cfg.enable_stream(RS2_STREAM_INFRARED, 1);
+    cfg.enable_stream(RS2_STREAM_DEPTH, 0,rs_width, rs_height);
+
+    carmen_stereo_velodyne_define_messages(BUMBLEBEE_ID);
+
+	// Declare pointcloud object, for calculating pointclouds and texture mappings
+	rs2::pointcloud pc;
+	// We want the points object to be persistent so we can display the last cloud when a frame drops
+	rs2::points points;
+
 
     // Declare RealSense pipeline, encapsulating the actual device and sensors
     rs2::pipeline pipe;
@@ -170,39 +196,79 @@ main(int argc, char **argv)
 
 	rs2::colorizer c;
 	save_extrinsics(selection);
-	//rs2::align align_to_depth(RS2_STREAM_DEPTH);
-	//rs2::align align_to_color(RS2_STREAM_COLOR);
+	unsigned char* depth_color_frame_data = NULL;
+	unsigned short *depth_frame_data = NULL;
+	unsigned char* rgb_frame_data = NULL;
+
+	stereo_util instance = get_stereo_instance(BUMBLEBEE_ID, rs_width, rs_height);
+
+	carmen_velodyne_shot *scan = alloc_velodyne_shot_scan_vector(rs_width/instance.stereo_stride_x, rs_height/ instance.stereo_stride_y);
+	carmen_velodyne_variable_scan_message velodyne_partial_scan;
+	velodyne_partial_scan.host = carmen_get_host();
+	velodyne_partial_scan.number_of_shots = rs_width/instance.stereo_stride_x;
+	velodyne_partial_scan.partial_scan = scan;
+
+	rs2::hole_filling_filter hole_filter;
+
+//	Configuration
+	rs2::depth_sensor depth_sensor = selection.get_device().first<rs2::depth_sensor>();
+	depth_sensor.set_option(RS2_OPTION_EMITTER_ENABLED, 1.f);
+	depth_sensor.set_option(RS2_OPTION_LASER_POWER, depth_sensor.get_option_range(RS2_OPTION_LASER_POWER).max);
+	//depth_sensor.set_option(RS2_OPTION_ACCURACY, depth_sensor.get_option_range(RS2_OPTION_ACCURACY).max);
+
+//
+	rs2_intrinsics int_param = selection.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>().get_intrinsics();
+
+	printf("fx = %f\tfy = %f\tppx = %f\tppy = %f\n", int_param.fx/int_param.width , int_param.fy/int_param.height, int_param.ppx/int_param.width, int_param.ppy/int_param.height);
+
 	while (!stop_required)
 	{
-		unsigned char* depth_frame_data;
-		unsigned char* rgb_frame_data;
         rs2::frameset frames = pipe.wait_for_frames();
 
 		//frames = align_to_depth.process(frames);
 		// frames = align_to_color.process(frames);
 
-        rs2::frame depth_frame = frames.first(RS2_STREAM_DEPTH);
-        rs2::frame frame_color = frames.first(RS2_STREAM_COLOR);
+        rs2::depth_frame depth_frame = frames.get_depth_frame();
+        rs2::video_frame frame_color = frames.get_color_frame();
+
+        depth_frame = hole_filter.process(depth_frame);
+
         if (frame_color)
             rgb_frame_data = (unsigned char*) frame_color.get_data();
-        
+
         if (depth_frame)
-            depth_frame_data = (unsigned char*) c.colorize(depth_frame).get_data(); // Pointer to depth pixels
-
-        if (rs_flip)
         {
-        	rgb_frame_data = rotate_raw_image(rs_width,rs_height,rgb_frame_data);
-        	depth_frame_data = rotate_raw_image(rs_width,rs_height,depth_frame_data);
-
-        	carmen_bumblebee_publish_stereoimage_message(rgb_frame_data,depth_frame_data , rs_width, rs_height, 3);
-
-        	free(rgb_frame_data);
-        	free(depth_frame_data);
+            depth_frame_data = (unsigned short *) depth_frame.get_data(); // Pointer to depth pixels
+            depth_color_frame_data = (unsigned char*) c.colorize(depth_frame).get_data(); // Pointer to depth pixels
         }
-        else
-        	carmen_bumblebee_publish_stereoimage_message(rgb_frame_data,depth_frame_data , rs_width, rs_height, 3);
 
+        if(!rgb_frame_data || !depth_frame_data)
+        	continue;
 
+        double timestamp = carmen_get_time();
+
+//        if (rs_flip)
+//        {
+//        	rgb_frame_data = rotate_raw_image(rs_width,rs_height,rgb_frame_data);
+//        	depth_frame_data = rotate_raw_image(rs_width,rs_height,depth_frame_data);
+//
+//        	carmen_bumblebee_publish_stereoimage_message( (unsigned char*) rgb_frame_data, (unsigned char*) depth_frame_data , rs_width, rs_height, 3, timestamp);
+//
+//        	free(rgb_frame_data);
+//        	free(depth_frame_data);
+//        }
+//        else
+
+        cv::Mat depthMat(rs_height, rs_width, CV_16UC1, depth_frame_data);
+
+        cv::medianBlur(depthMat, depthMat, 5);
+
+        convert_stereo_depth_to_velodyne_beams(instance, (unsigned short*)depthMat.data, rs_height, rs_width, scan, 5000 , 0, rs_height, 80, rs_width, rgb_frame_data);
+
+        velodyne_partial_scan.timestamp = timestamp;
+
+		carmen_bumblebee_publish_stereoimage_message(rgb_frame_data, depth_color_frame_data, rs_width, rs_height, 3, timestamp);
+		carmen_stereo_velodyne_publish_message(BUMBLEBEE_ID, &velodyne_partial_scan);
 	}
 	return 0;
 }
