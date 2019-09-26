@@ -404,8 +404,9 @@ make_xsens_mti_quat_message(CmtQuat qat_data, CmtCalData caldata, double tdata)
 	return xsens_quat_message;
 }
 
+
 int
-read_data_from_xsens_old(void)
+read_data_from_xsens(void)
 {	
 	double tdata = 0.0;
 
@@ -511,8 +512,9 @@ read_data_from_xsens_old(void)
 	}
 }
 
-static int
-read_data_from_xsens(void)
+
+int
+read_data_from_xsens_without_xsens(void)
 {
 	while (1)
 	{

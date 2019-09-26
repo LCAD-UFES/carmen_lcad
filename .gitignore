@@ -683,3 +683,4 @@ src/tracker/tracker.c
 src/imu_viewer/Makefile.qmake
 src/imu_viewer/moc_mainwindow.cpp
 src/imu_viewer/moc_objectgl.cpp
+/.metadata/
