@@ -179,6 +179,7 @@ bin/socket_to_legacy500_server
 bin/socket_to_odometry_client
 bin/minoru
 bin/minoru_view
+bin/realsense_camera_main
 bin/minorucalib
 bin/ouster
 bin/ouster_viewer
