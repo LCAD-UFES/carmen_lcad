@@ -48,6 +48,8 @@ static double reset_time = 0;
 static double relative_wheelbase;
 static double relative_wheelsize;
 
+static double rotation_theta;
+
 static int use_hardware_integrator = 1;
 static int use_sonar = 1;
 static int use_bumper = 1;
@@ -383,7 +385,12 @@ velocity_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 static void
 base_ackerman_subscribe_motion_command_handler(carmen_base_ackerman_motion_command_message *motion_command_message)
 {
-	carmen_ackerman_motion_command_p vel = motion_command_message[0].motion_command;
+	carmen_ackerman_motion_command_p vel;
+	vel = motion_command_message[0].motion_command;
+	double L = 0.18; // Distancia entre eixos.
+	double delta_theta;
+
+
 	int base_err;
 	if(vel->v == 0 && vel->phi == 0)
 	    {
@@ -427,7 +434,9 @@ base_ackerman_subscribe_motion_command_handler(carmen_base_ackerman_motion_comma
 	  do
 	    {
 //		  printf("%.2f, %.2f \n",vel->v, vel->phi);
-	      base_err = carmen_base_direct_set_velocity(vel->v, vel->phi);
+		  printf("%.2f; %.2f ;;\n", odometry.theta, rotation_theta );
+		  delta_theta = (vel->v / L) * tan(vel->phi);
+	      base_err = carmen_base_direct_set_velocity(vel->v, delta_theta);
 	      last_motion_command = carmen_get_time();
 	      if (base_err < 0)
 		initialize_robot();
@@ -681,6 +690,8 @@ carmen_base_run(void)
 	initialize_robot();
       else
 	integrate_odometry(displacement, rotation, tv, rv);
+      //THIAGO TESTANDO THETA
+      rotation_theta=rotation;
     } else {
       base_err = carmen_base_direct_get_integrated_state
 	(&(odometry.x), &(odometry.y), &(odometry.theta), &(odometry.tv), 
@@ -796,7 +807,7 @@ main(int argc, char **argv)
 
   while(1) {
     if (carmen_base_run() == 1)
-      fprintf(stderr, ".");
+//      fprintf(stderr, ".");
     carmen_ipc_sleep(0.1);
   }
 
