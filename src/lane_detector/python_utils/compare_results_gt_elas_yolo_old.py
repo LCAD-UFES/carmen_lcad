@@ -3,6 +3,7 @@ import os
 import math
 import cv2
 
+# Mudar esta funcao para ler os pontos do ground truth e gerar um lista dupla (direita esquerda)
 
 def read_groud_truth_points(gt_dir, gt_file_name):
 	print gt_dir + gt_file_name
@@ -60,6 +61,9 @@ def read_and_convert_4_points_coordinates(predictions_dir, gt_file_name, image_w
 		predictions_list.append(prediction[:])
 		del prediction[:]
 		
+	# Modificar essa funcao para retornar uma lista dupla (todos os pontos direita e todos os pontos da esquerda)
+
+
 	return predictions_list
 
 
