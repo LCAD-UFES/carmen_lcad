@@ -381,8 +381,9 @@ velocity_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 }
 
 static void
-base_ackerman_subscribe_motion_command_handler(carmen_ackerman_motion_command_t *vel)
+base_ackerman_subscribe_motion_command_handler(carmen_base_ackerman_motion_command_message *motion_command_message)
 {
+	carmen_ackerman_motion_command_p vel = motion_command_message[0].motion_command;
 	int base_err;
 	if(vel->v == 0 && vel->phi == 0)
 	    {
@@ -425,6 +426,7 @@ base_ackerman_subscribe_motion_command_handler(carmen_ackerman_motion_command_t 
 
 	  do
 	    {
+//		  printf("%.2f, %.2f \n",vel->v, vel->phi);
 	      base_err = carmen_base_direct_set_velocity(vel->v, vel->phi);
 	      last_motion_command = carmen_get_time();
 	      if (base_err < 0)
@@ -554,8 +556,8 @@ carmen_base_initialize_ipc(void)
                        CARMEN_BASE_BINARY_COMMAND_NAME);
   IPC_setMsgQueueLength(CARMEN_BASE_BINARY_COMMAND_NAME, 1);
 
-  //carmen_base_ackerman_subscribe_motion_command(NULL,
-  	//			     (carmen_handler_t) base_ackerman_subscribe_motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
+  carmen_base_ackerman_subscribe_motion_command(NULL,
+  				     (carmen_handler_t) base_ackerman_subscribe_motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
 
   return IPC_No_Error;
 }

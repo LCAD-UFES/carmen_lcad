@@ -33,11 +33,11 @@
 //usar a mensagem do obstacle avoider
 #include <carmen/obstacle_avoider_interface.h>
 
-#include <carmen/base_interface.h>
+//#include <carmen/base_interface.h>
 
 
 static double min_max_tv = 0.0;// , min_max_rv = 0.0;
-static double max_max_tv = 0.8, max_max_rv = 0.6;
+static double max_max_tv = 1.8, max_max_rv = 0.6;
 
 static double max_allowed_tv = 1.5, max_allowed_rv = 1.5;
 
@@ -47,32 +47,29 @@ static int throttle_mode=0;
 
 void define_messages()
 {
-	/*
-	IPC_RETURN_TYPE err;
-	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_VELOCITY_NAME,
-			IPC_VARIABLE_LENGTH,
-			CARMEN_BASE_ACKERMAN_VELOCITY_FMT);
-	carmen_test_ipc_exit(err, "Could not define message",
-			CARMEN_BASE_ACKERMAN_VELOCITY_NAME);
-*/
-
+/*
 	IPC_RETURN_TYPE err;
 		err = IPC_defineMsg(CARMEN_BASE_VELOCITY_NAME,
 				IPC_VARIABLE_LENGTH,
 				CARMEN_BASE_VELOCITY_FMT);
 		carmen_test_ipc_exit(err, "Could not define message",
 				CARMEN_BASE_VELOCITY_NAME);
-	 /*
+
+*/
+	 
 	IPC_RETURN_TYPE err;
+
 	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME, IPC_VARIABLE_LENGTH,
 			CARMEN_BASE_ACKERMAN_MOTION_COMMAND_FMT);
 	carmen_test_ipc_exit(err, "Could not define message", CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME);
-	*/
+	
 }
 
 void send_base_velocity_command(double tv, double rv)
 {
-	/*
+
+
+	
 	// New Message
 	IPC_RETURN_TYPE err;
 	static carmen_base_ackerman_velocity_message v;
@@ -106,16 +103,18 @@ void send_base_velocity_command(double tv, double rv)
 	message_pioneer[0].theta = 0.0;
 	message_pioneer[0].time = 1.0;
 
-	// err = IPC_publishData(CARMEN_BASE_ACKERMAN_VELOCITY_NAME, &v);
-	// carmen_test_ipc(err, "Could not publish", CARMEN_BASE_ACKERMAN_VELOCITY_NAME);
+
+
+	//err = IPC_publishData(CARMEN_BASE_ACKERMAN_VELOCITY_NAME, &v);
+	//carmen_test_ipc(err, "Could not publish", CARMEN_BASE_ACKERMAN_VELOCITY_NAME);
 	carmen_obstacle_avoider_publish_base_ackerman_motion_command(message_pioneer, num_commands, v.timestamp);
 	free(message_pioneer);
 
 
-	*/
+	
 
 	// Old Message
-
+/*
 	IPC_RETURN_TYPE err;
 		static carmen_base_velocity_message v;
 
@@ -139,6 +138,7 @@ void send_base_velocity_command(double tv, double rv)
 
 		err = IPC_publishData(CARMEN_BASE_VELOCITY_NAME, &v);
 		carmen_test_ipc(err, "Could not publish", CARMEN_BASE_VELOCITY_NAME);
+*/
 }
 
 void sig_handler(int x)
