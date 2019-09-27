@@ -91,6 +91,7 @@ int ok_to_publish = 0;
 int number_of_threads = 1;
 
 int camera3_ready = 0;
+int camera7_ready = 0;
 
 /******variables for neural_mapper dataset*****/
 int use_neural_mapper = 0;
@@ -263,8 +264,11 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 			include_sensor_data_into_map(LASER_LDMRS, globalpos_message);
 		if (sensors_params[3].alive && camera3_ready)	// camera 3
 			include_sensor_data_into_map(3, globalpos_message);
+		if (sensors_params[7].alive && camera7_ready)	// camera 3
+			include_sensor_data_into_map(7, globalpos_message);
 
 		camera3_ready = 0;
+		camera7_ready = 0;
 
 		publish_map(globalpos_message->timestamp);
 		publish_virtual_scan(globalpos_message->timestamp);
@@ -405,7 +409,7 @@ velodyne_variable_scan_message_handler6(carmen_velodyne_variable_scan_message *m
 static void
 velodyne_variable_scan_message_handler7(carmen_velodyne_variable_scan_message *message)
 {
-	mapper_velodyne_variable_scan(7, message);
+	camera7_ready = mapper_velodyne_variable_scan(7, message);
 }
 
 
