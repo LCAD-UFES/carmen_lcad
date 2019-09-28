@@ -737,7 +737,6 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 
 int g_hall_ticks = 0;
 int g_possible_hall_tick_miss = 0;
-int g_tick = 0;
 
 
 void
@@ -762,10 +761,8 @@ hall_transition_interrupt(int gpio, int level, uint32_t tick)
 		else
 			g_hall_ticks++;
 	}
-	if (ojGetTimeSec() - t > 0.0005)
+	if (ojGetTimeSec() - t > 0.0015)
 		g_possible_hall_tick_miss++;
-
-	g_tick = tick;
 }
 
 
@@ -922,7 +919,6 @@ update_breaks()
 	double ut = breaks_pid(desired_hall_ticks, g_hall_ticks, 0);
 	mvprintw(32, 0, "ut = %lf\n\r", ut);
 	mvprintw(33, 0, "g_possible_hall_tick_miss = %d\n\r", g_possible_hall_tick_miss);
-	mvprintw(34, 0, "g_tick = %d\n\r", g_tick);
 	apply_break_effort(ut);
 }
 
