@@ -4,23 +4,31 @@ import math
 import cv2
 
 # Mudar esta funcao para ler os pontos do ground truth e gerar um lista dupla (direita esquerda)
-
+#check
 def read_groud_truth_points(gt_dir, gt_file_name):
-	print gt_dir + gt_file_name
+	print (gt_dir + gt_file_name)
 	
 	gt_file = open(gt_dir + gt_file_name, "r")
 	file_content = gt_file.readlines()
 	
-	gt_ponts_list = []
-	
+	gt_points_list = []
+	count = 0
+	gt_points_left = []
+	gt_points_right = []
 	for line in file_content:
 		line = line.strip().split()
 		line[0] = int(line[0])
 		line[1] = int(line[1])
-		gt_ponts_list.append(line[:])
-		
-	return gt_ponts_list
-
+		if count < 4:
+			gt_points_left.append(line[:])
+		else:
+			gt_points_right.append(line[:])
+		count = count + 1
+		#print(gt_points_right)
+	gt_points_list.append(gt_points_left[:])
+	gt_points_list.append(gt_points_right[:])
+	#print(gt_points_list)
+	return gt_points_list
 
 def dist(x1, y1, x2, y2):
 	dx = x1 - x2
@@ -30,39 +38,69 @@ def dist(x1, y1, x2, y2):
 
 
 def read_and_convert_4_points_coordinates(predictions_dir, gt_file_name, image_width, image_heigth):
-	print predictions_dir + gt_file_name
+	print (predictions_dir + gt_file_name)
 	predictions_files_list = open(predictions_dir + gt_file_name, "r")
 	content = predictions_files_list.readlines()
 	
 	prediction = []
 	predictions_list = []
+	predictions_list_left = []
+	predictions_list_right = []
+	xmin = 999999
+	xmax = 0
+	for line in content:
+		line = line.replace('\n', '').rsplit(' ')
+		if (int((float(line[1]) - (float(line[3]) / 2)) * image_width) < xmin):
+			xmin = int((float(line[1]) - (float(line[3]) / 2)) * image_width)
+		if (int((float(line[1]) + (float(line[3]) / 2)) * image_width) > xmax):
+			xmax = int((float(line[1]) + (float(line[3]) / 2)) * image_width) 
+    
+	#print ("xmin = ",xmin)
+	#print ("xmax = ",xmax)
 	
 	for line in content:
 		line = line.replace('\n', '').rsplit(' ')
-		
+		#print(line)
 		prediction.append(int((float(line[1]) - (float(line[3]) / 2)) * image_width))
 		prediction.append(int((float(line[2]) - (float(line[4]) / 2)) * image_heigth))
-		predictions_list.append(prediction[:])
+		if (int(float(line[1]) * image_width) > xmin + (xmax - xmin) / 2):
+			predictions_list_right.append(prediction[:])
+		else:
+			predictions_list_left.append(prediction[:])
+		#print(predictions_list)
 		del prediction[:]
 		
 		prediction.append(int((float(line[1]) + (float(line[3]) / 2)) * image_width))
 		prediction.append(int((float(line[2]) + (float(line[4]) / 2)) * image_heigth))
-		predictions_list.append(prediction[:])
+		if (int(float(line[1]) * image_width) > xmin + (xmax - xmin) / 2):
+			predictions_list_right.append(prediction[:])
+		else:
+			predictions_list_left.append(prediction[:])
+		#print(predictions_list)
 		del prediction[:]
 		
 		prediction.append(int((float(line[1]) - (float(line[3]) / 2)) * image_width))
 		prediction.append(int((float(line[2]) + (float(line[4]) / 2)) * image_heigth))
-		predictions_list.append(prediction[:])
+		if (int(float(line[1]) * image_width) > xmin + (xmax - xmin) / 2):
+			predictions_list_right.append(prediction[:])
+		else:
+			predictions_list_left.append(prediction[:])
+		#print(predictions_list)
 		del prediction[:]
 		
 		prediction.append(int((float(line[1]) + (float(line[3]) / 2)) * image_width))
 		prediction.append(int((float(line[2]) - (float(line[4]) / 2)) * image_heigth))
-		
-		predictions_list.append(prediction[:])
+		if (int(float(line[1]) * image_width) > xmin + (xmax - xmin) / 2):
+			predictions_list_right.append(prediction[:])
+		else:
+			predictions_list_left.append(prediction[:])
+		#print(predictions_list)
 		del prediction[:]
-		
+	predictions_list.append(predictions_list_left[:])
+	predictions_list.append(predictions_list_right[:])
+	#print(predictions_list)
 	# Modificar essa funcao para retornar uma lista dupla (todos os pontos direita e todos os pontos da esquerda)
-
+	#check
 
 	return predictions_list
 
@@ -190,14 +228,14 @@ def compute_error(gt_points, predictions_points):
 	error += returned[0]
 	chosen_points_list.append(returned[1])
 
-	print 'Error: ' + str(error)
+	print ('Error: ' + str(error))
 	
 	return error, chosen_points_list
 
 
 if __name__ == "__main__":
 	if len(sys.argv) < 5 or len(sys.argv) > 9:
-		print "\nUse: python", sys.argv[0], "ground_truth_dir predictions1_dir predictions2_dir image_width image_heigth -show images_path (optional) -format jpg (optional)\n"
+		print ("\nUse: python", sys.argv[0], "ground_truth_dir predictions1_dir predictions2_dir image_width image_heigth -show images_path (optional) -format jpg (optional)\n")
 	else:
 		if not sys.argv[1].endswith('/'):
 			sys.argv[1] += '/'
@@ -206,8 +244,8 @@ if __name__ == "__main__":
 		if not sys.argv[3].endswith('/'):
 			sys.argv[3] += '/'
 			
-		image_width  = int(sys.argv[4])
-		image_heigth = int(sys.argv[5])
+		image_width  = int(sys.argv[4]) #640 #int(sys.argv[4])
+		image_heigth = int(sys.argv[5]) #480 #int(sys.argv[5])
 		
 		images_path = find_image_path()
 		
@@ -236,7 +274,7 @@ if __name__ == "__main__":
 			if images_path:
 				show_image(gt_points, predictions_points, returned[1], returned_2[1], gt_file_name, images_path)
 			
-		print 'TOTAL Error: ' + str(error/cont)
+		print ('TOTAL Error: ' + str(error/cont))
 		
 		
 		
