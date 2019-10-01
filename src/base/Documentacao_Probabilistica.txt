@@ -1,0 +1,12 @@
+Instalamos o carmen do site: http://carmen.sourceforge.net/getting_carmen.html
+Depois instalamos o carmen_lcad seguindo o tutorial (Não instalamos o CUDA): https://github.com/LCAD-UFES/carmen_lcad/wiki/Installing-Carmen-LCAD-on-Ubuntu-16.04
+Foi copiado a pasta "base" do carmen original para dentro da pasta ~/carmen_lcad/src/
+Modificamos o código ~/carmen_lcad/src/joystick/wingman_control.c para que o método send_base_velocity_command seja capaz de enviar uma mensagem do tipo carmen_base_ackerman_velocity_message e realizar o publish dessa mensagem. Também foi modificado o método define_messages para que seja definido as mensagens do tipo CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME. Também foi comentado algumas sessões do método main para que a opção "throttle_mode" não seja utilizado, já que não será necessária para a nossa aplicação (e sua ativação estava causando bugs no funcionamento).
+
+
+Fazer mapa
+process-onofre-pionner.ini
+log.ini
+carmen-pionner.ini
+navigate.ini
+Modelo do viewer 3d e no navigator_gui2
