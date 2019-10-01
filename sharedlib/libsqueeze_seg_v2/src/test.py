@@ -59,7 +59,7 @@ def save_txt(data, f):
         # Writing out a break to indicate different slices...
         outfile.write('# New slice\n')
 
-def detect():
+def squeeze_seg_process_point_cloud(dims, point_cloud):
   """Detect LiDAR data."""
 
   os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.gpu
