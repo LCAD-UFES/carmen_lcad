@@ -23,8 +23,23 @@ robot_acceleration
 robot_deceleration
 robot_distance_between_front_and_rear_axles
 "
-
+Foi criado o process-volta_no_ct9_log_sensorbox.ini
 Criada pasta pioneer_p3dx em bin com o arquivo de colisão do robô. Trocado o parâmetro robot_collision_file e foi ligada a opção show_collision_range em carmen-ford-escape-sensorbox.ini, para representar o robô como um círculo no navigator_gui.
+Ao executar o process-volta_no_ct9_log_sensorbox.ini, o viewer 3d informava erro no arquivo de parâmetros carmen-pioneer-sensorbox.ini. Foi verificado e incluído as seguintes sessões no arquivo (retirado do arquivo carmen-ford-escape.ini):
+"
+-#--------- Bumblebee Basic 7 REALSENSE ------------
+#--------- Stereo Velodyne 7 (Realsense)------------
+#----------- Camera 7 - RealSense ------------
+"
+E então foi alterado alguns parâmetros do Robot Ackermann para as medidas feitas para o pioneer. Os parâmetros alterados foram:
+"
+robot_max_velocity
+robot_distance_between_rear_wheels
+robot_distance_between_rear_car_and_rear_wheels
+robot_distance_between_front_car_and_front_wheels
+robot_distance_between_rearview
+robot_turning_radius
+"
 
 
 Fazer mapa
