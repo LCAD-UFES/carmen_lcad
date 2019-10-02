@@ -20,7 +20,7 @@ def kitti_squeezeSeg_config():
                                     [ 0.58,  0.72,  0.88]])
 
   mc.BATCH_SIZE         = 40
-  mc.AZIMUTH_LEVEL      = 512
+  mc.AZIMUTH_LEVEL      = 1024
   mc.ZENITH_LEVEL       = 32
 
   mc.FOCAL_GAMMA        = 2.0

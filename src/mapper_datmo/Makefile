@@ -12,6 +12,10 @@ CXXFLAGS += -std=c++11
 #CFLAGS += -g -pg
 LINK = g++
 
+# Application specific libSqueezeSegV2
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src  -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src  `python2.7-config --libs`
+
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
@@ -29,6 +33,8 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2
 # Deeplab
 IFLAGS += -I/usr/include/python2.7
 LFLAGS += -ldeeplab -lpython2.7
+
+#SqueezeSeg
 LFLAGS += -lsqueeze_seg -lpython2.7
 
 #OPENCV
