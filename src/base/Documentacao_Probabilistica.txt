@@ -40,6 +40,14 @@ robot_distance_between_front_car_and_front_wheels
 robot_distance_between_rearview
 robot_turning_radius
 "
+Foi criado o método publish_odometry_message no base_main.c (necessário dar include no <carmen/robot_ackerman_interface.h>) e dar define nas mensagens tipo CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME.
+Foi criado o process-pioneer_sensorbox_playback_viewer_3D.ini e ao executá-lo, foi necessário incluir no carmen-pioneer-sensorbox.ini os seguintes parâmetros:
+"
+localize_v_uncertainty_at_zero_v
+localize_remission_variance_multiplier
+"
+Foi executado o process-volta_no_ct9_log_sensorbox.ini para realizar a gravação do log.
+Foi verificado que o log foi gravado ao executar o process-pioneer_sensorbox_playback_viewer_3D.ini
 
 
 Fazer mapa

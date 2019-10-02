@@ -30,6 +30,7 @@
 #include <carmen/drive_low_level.h>
 #include <carmen/base_interface.h>
 #include <carmen/base_ackerman_interface.h>
+#include <carmen/robot_ackerman_interface.h>
 
 #ifdef BASE_HAS_ARM
 #include <carmen/arm_messages.h> 
@@ -448,6 +449,18 @@ base_ackerman_subscribe_motion_command_handler(carmen_base_ackerman_motion_comma
 
 
 }
+void
+publish_odometry_message(carmen_base_odometry_message current_odometry)
+{
+	IPC_RETURN_TYPE err;
+	carmen_robot_ackerman_velocity_message odometry_message;
+	odometry_message.v = current_odometry.tv;
+	odometry_message.phi = (odometry_message.v/ distance_between_front_and_rear_axles) * tan(current_odometry.rv);
+	odometry_message.host = current_odometry.host;
+	odometry_message.timestamp = current_odometry.timestamp;
+	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &odometry_message);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_ROBOT_ACKERMAN_VELOCITY_FMT);
+}
 
 
 static void
@@ -550,6 +563,10 @@ carmen_base_initialize_ipc(void)
                       CARMEN_BASE_BINARY_DATA_FMT);
   carmen_test_ipc_exit(err, "Could not define", 
                        CARMEN_BASE_BINARY_DATA_NAME);
+
+  err = IPC_defineMsg(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, IPC_VARIABLE_LENGTH,
+		  CARMEN_ROBOT_ACKERMAN_VELOCITY_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
 
   /* setup incoming message handlers */
 
@@ -719,6 +736,7 @@ carmen_base_run(void)
   err = IPC_publishData(CARMEN_BASE_ODOMETRY_NAME, &odometry);
   carmen_test_ipc_exit(err, "Could not publish", 
 		       CARMEN_BASE_ODOMETRY_NAME);
+  publish_odometry_message(odometry);
   
   if (use_sonar) {
     carmen_warn("s");  
