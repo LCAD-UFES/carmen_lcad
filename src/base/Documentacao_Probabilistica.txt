@@ -24,6 +24,7 @@ robot_deceleration
 robot_distance_between_front_and_rear_axles
 "
 
+Criada pasta pioneer_p3dx em bin com o arquivo de colisão do robô. Trocado o parâmetro robot_collision_file e foi ligada a opção show_collision_range em carmen-ford-escape-sensorbox.ini, para representar o robô como um círculo no navigator_gui.
 
 
 Fazer mapa
