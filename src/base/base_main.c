@@ -63,7 +63,7 @@ static double last_motion_command = 0;
 
 static double motion_timeout = 1;
 static int odometry_inverted;
-
+static double distance_between_front_and_rear_axles;
 static char *model_name;
 static char *dev_name;
 static char* sonar_offset_string = 0;
@@ -274,7 +274,9 @@ read_parameters(int argc, char **argv)
     {"robot", "acceleration", CARMEN_PARAM_DOUBLE, 
      &(robot_config.acceleration), 1, NULL},
     {"robot", "deceleration", CARMEN_PARAM_DOUBLE, 
-     &(deceleration), 1, NULL}};
+     &(deceleration), 1, NULL},
+	 {"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE,
+	      &(distance_between_front_and_rear_axles), 1, NULL}};
 
   carmen_param_t extra_params[] = {
     {"base", "relative_wheelsize", CARMEN_PARAM_DOUBLE, 
@@ -387,7 +389,7 @@ base_ackerman_subscribe_motion_command_handler(carmen_base_ackerman_motion_comma
 {
 	carmen_ackerman_motion_command_p vel;
 	vel = motion_command_message[0].motion_command;
-	double L = 0.18; // Distancia entre eixos.
+//	double L = distance_between_front_and_rear_axles; // Distancia entre eixos.
 	double delta_theta;
 
 
@@ -423,6 +425,7 @@ base_ackerman_subscribe_motion_command_handler(carmen_base_ackerman_motion_comma
 
 	  if (odometry_inverted)
 	    vel->v *= -1;
+	  	vel->phi *= -1; // trecho acrescentado por Gabriel Hendrix
 	  if (!use_hardware_integrator)
 	    {
 	      vel->v /= relative_wheelsize;
@@ -434,8 +437,8 @@ base_ackerman_subscribe_motion_command_handler(carmen_base_ackerman_motion_comma
 	  do
 	    {
 //		  printf("%.2f, %.2f \n",vel->v, vel->phi);
-		  printf("%.2f; %.2f ;;\n", odometry.theta, rotation_theta );
-		  delta_theta = (vel->v / L) * tan(vel->phi);
+//		  printf("%.2f; %.2f ;;\n", odometry.theta, rotation_theta);
+		  delta_theta = (vel->v / distance_between_front_and_rear_axles) * tan(vel->phi);
 	      base_err = carmen_base_direct_set_velocity(vel->v, delta_theta);
 	      last_motion_command = carmen_get_time();
 	      if (base_err < 0)
@@ -622,6 +625,7 @@ integrate_odometry(double displacement, double rotation, double tv, double rv)
   odometry.x += displacement * cos (odometry.theta+0.5*rotation);
   odometry.y += displacement * sin (odometry.theta+0.5*rotation);
   odometry.theta = carmen_normalize_theta(odometry.theta+rotation);
+  printf("{%.2f, %.2f, %.2f}\n", odometry.x, odometry.y, odometry.theta);
 }
 
 
@@ -690,8 +694,7 @@ carmen_base_run(void)
 	initialize_robot();
       else
 	integrate_odometry(displacement, rotation, tv, rv);
-      //THIAGO TESTANDO THETA
-      rotation_theta=rotation;
+
     } else {
       base_err = carmen_base_direct_get_integrated_state
 	(&(odometry.x), &(odometry.y), &(odometry.theta), &(odometry.tv), 

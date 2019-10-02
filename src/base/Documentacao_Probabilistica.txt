@@ -2,6 +2,27 @@ Instalamos o carmen do site: http://carmen.sourceforge.net/getting_carmen.html
 Depois instalamos o carmen_lcad seguindo o tutorial (Não instalamos o CUDA): https://github.com/LCAD-UFES/carmen_lcad/wiki/Installing-Carmen-LCAD-on-Ubuntu-16.04
 Foi copiado a pasta "base" do carmen original para dentro da pasta ~/carmen_lcad/src/
 Modificamos o código ~/carmen_lcad/src/joystick/wingman_control.c para que o método send_base_velocity_command seja capaz de enviar uma mensagem do tipo carmen_base_ackerman_velocity_message e realizar o publish dessa mensagem. Também foi modificado o método define_messages para que seja definido as mensagens do tipo CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME. Também foi comentado algumas sessões do método main para que a opção "throttle_mode" não seja utilizado, já que não será necessária para a nossa aplicação (e sua ativação estava causando bugs no funcionamento).
+Foi copiado o /src/carmen-ford-escape-sensorbox.ini para outro arquivo com o nome carmen-pioneer-sensorbox.ini. Nesse novo arquivo, foi inserido os seguintes parâmetros:
+"
+base_type
+base_dev
+base_model
+base_motion_timeout
+base_use_hardware_integrator
+base_relative_wheelsize
+base_relative_wheelbase
+robot_odometry_inverted
+"
+Foi modificado os seguintes parâmetros:
+"
+robot_length
+robot_width
+robot_vertical_displacement_from_center
+robot_acceleration
+robot_deceleration
+robot_distance_between_front_and_rear_axles
+"
+
 
 
 Fazer mapa

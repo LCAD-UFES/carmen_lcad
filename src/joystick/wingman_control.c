@@ -93,7 +93,7 @@ void send_base_velocity_command(double tv, double rv)
 		v.phi = -max_allowed_rv;
 
 
-	if (1)
+	if (0)
 		fprintf(stderr,"%.2f %.2f\n",v.v, v.phi);
 
 	message_pioneer[0].v = v.v;
@@ -186,8 +186,8 @@ int main(int argc, char **argv)
 
 	fprintf(stderr,"1. Set the \"throttle control\" to zero (to the left)\n2. Press \"START\" button to activate the joystick.\n");
 
-	if (throttle_mode)
-		fprintf(stderr,"3. Use the \"throttle control\" to control the speed!\n\n");
+//	if (throttle_mode)
+//		fprintf(stderr,"3. Use the \"throttle control\" to control the speed!\n\n");
 
 	f_timestamp = carmen_get_time();
 	while(1) {
@@ -198,7 +198,7 @@ int main(int argc, char **argv)
 
 			//      max_rv = min_max_rv + (-joystick.axes[2] + 32767.0) / (32767.0 * 2.0) * (max_max_rv - min_max_rv);
 
-			if (throttle_mode) {
+/*			if (throttle_mode) {
 				command_tv = max_tv;
 
 				if(joystick.axes[6] && command_tv > 0)
@@ -208,7 +208,7 @@ int main(int argc, char **argv)
 						fabs(joystick.axes[0] / 32767.0) > 0.25)
 					command_tv = 0;
 			}
-			else
+			else */
 				command_tv = +1 * joystick.axes[1] / 32767.0 * max_max_tv;
 
 			if (joystick.axes[3])
@@ -226,10 +226,11 @@ int main(int argc, char **argv)
 					command_tv = 0;
 				if(command_rv < 0.13 && command_rv > -0.13)
 					command_rv = 0;
+//				printf("%.2f, %.2f\n", command_tv, command_rv);
 				send_base_velocity_command(command_tv, command_rv);
 
 			}
-
+/*
 			if (joystick.buttons[7] || joystick.buttons[9] || joystick.buttons[10] ||
 					joystick.buttons[6]) {
 				throttle_mode = !throttle_mode;
@@ -239,7 +240,7 @@ int main(int argc, char **argv)
 				else
 					fprintf(stderr,"\n");
 			}
-
+*/
 			if (joystick.buttons[8]) {
 				joystick_activated = !joystick_activated;
 				if (joystick_activated)
