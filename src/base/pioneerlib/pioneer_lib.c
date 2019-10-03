@@ -41,6 +41,9 @@ static int pioneer_version = 0;
 static double angle_conv_factor, dist_conv_factor, vel_conv_factor;
 static double range_conv_factor, diff_conv_factor, vel2_divisor;
 
+//variavel que armazena o theta -> alterado por Cavalcante(Thiago)
+static double theta_joselito;
+
 /*** Some pioneer internal constants.  I have them defined here since the ***/
 /*** outside world doesn't need to know about them.                       ***/
 
@@ -123,6 +126,10 @@ int pioneer_vel2(int vl, int vr) ;
 
 
 /*** TABLE OF CONTENTS ***/
+
+double getThetaJoselito(){
+	return theta_joselito;
+}
 
 /*** Higher-level robot functions ***/
 
@@ -657,7 +664,6 @@ carmen_base_direct_get_state(double *displacement, double *rotation,
       delta_x = pioneer_delta_x * dist_conv_factor / 1000.0;
       delta_y = pioneer_delta_y * dist_conv_factor / 1000.0;
       delta_theta = theta - prev_theta;
-
       if (theta < prev_theta && prev_theta - theta > M_PI)
 	delta_theta = (theta + M_PI) - (prev_theta - M_PI);
       else if (theta > prev_theta && theta - prev_theta > M_PI)
@@ -680,6 +686,8 @@ carmen_base_direct_get_state(double *displacement, double *rotation,
   pioneer_prev_y     = pioneer_y;
   prev_theta         = theta;
 
+  theta_joselito = theta; //adicionado por Cavalcante (Thiago)
+//  printf("%f -- %d\n",theta_joselito,theta_joselito);
   vl = pioneer_buf_to_int(raw_state.vl) * vel_conv_factor / 1000;
   vr = pioneer_buf_to_int(raw_state.vr) * vel_conv_factor / 1000;
 
@@ -719,7 +727,7 @@ carmen_base_direct_get_state(double *displacement, double *rotation,
   
   return 0;
 }
-
+// falta criar a funcao que retorna o raw_state
 int
 carmen_base_direct_get_integrated_state(double *x, double *y, double *theta,
 					double *tv, double *rv)
