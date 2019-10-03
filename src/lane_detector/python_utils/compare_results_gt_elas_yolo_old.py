@@ -6,7 +6,7 @@ import cv2
 # Mudar esta funcao para ler os pontos do ground truth e gerar um lista dupla (direita esquerda)
 #check
 def read_groud_truth_points(gt_dir, gt_file_name):
-	print (gt_dir + gt_file_name)
+	#print (gt_dir + gt_file_name)
 	
 	gt_file = open(gt_dir + gt_file_name, "r")
 	file_content = gt_file.readlines()
@@ -60,42 +60,21 @@ def read_and_convert_4_points_coordinates(predictions_dir, gt_file_name, image_w
 	
 	for line in content:
 		line = line.replace('\n', '').rsplit(' ')
-		#print(line)
-		prediction.append(int((float(line[1]) - (float(line[3]) / 2)) * image_width))
-		prediction.append(int((float(line[2]) - (float(line[4]) / 2)) * image_heigth))
 		if (int(float(line[1]) * image_width) > xmin + (xmax - xmin) / 2):
+			prediction.append(int((float(line[1]) + (float(line[3]) / 2)) * image_width))
+			prediction.append(int((float(line[2]) + (float(line[4]) / 2)) * image_heigth))
+			prediction.append(int((float(line[1]) - (float(line[3]) / 2)) * image_width))
+			prediction.append(int((float(line[2]) - (float(line[4]) / 2)) * image_heigth))	
 			predictions_list_right.append(prediction[:])
 		else:
+			prediction.append(int((float(line[1]) - (float(line[3]) / 2)) * image_width))
+			prediction.append(int((float(line[2]) + (float(line[4]) / 2)) * image_heigth))
+			prediction.append(int((float(line[1]) + (float(line[3]) / 2)) * image_width))
+			prediction.append(int((float(line[2]) - (float(line[4]) / 2)) * image_heigth))
 			predictions_list_left.append(prediction[:])
 		#print(predictions_list)
 		del prediction[:]
-		
-		prediction.append(int((float(line[1]) + (float(line[3]) / 2)) * image_width))
-		prediction.append(int((float(line[2]) + (float(line[4]) / 2)) * image_heigth))
-		if (int(float(line[1]) * image_width) > xmin + (xmax - xmin) / 2):
-			predictions_list_right.append(prediction[:])
-		else:
-			predictions_list_left.append(prediction[:])
-		#print(predictions_list)
-		del prediction[:]
-		
-		prediction.append(int((float(line[1]) - (float(line[3]) / 2)) * image_width))
-		prediction.append(int((float(line[2]) + (float(line[4]) / 2)) * image_heigth))
-		if (int(float(line[1]) * image_width) > xmin + (xmax - xmin) / 2):
-			predictions_list_right.append(prediction[:])
-		else:
-			predictions_list_left.append(prediction[:])
-		#print(predictions_list)
-		del prediction[:]
-		
-		prediction.append(int((float(line[1]) + (float(line[3]) / 2)) * image_width))
-		prediction.append(int((float(line[2]) - (float(line[4]) / 2)) * image_heigth))
-		if (int(float(line[1]) * image_width) > xmin + (xmax - xmin) / 2):
-			predictions_list_right.append(prediction[:])
-		else:
-			predictions_list_left.append(prediction[:])
-		#print(predictions_list)
-		del prediction[:]
+
 	predictions_list.append(predictions_list_left[:])
 	predictions_list.append(predictions_list_right[:])
 	#print(predictions_list)
@@ -112,27 +91,39 @@ def find_image_path():
 	return ""
 
 
-def show_image(gt_points, predictions_points, chosen_points_list, chosen_points_list_2, gt_file_path, images_path):
+#def show_image(gt_points, predictions_points, chosen_points_list, chosen_points_list_2, gt_file_path, images_path):
+def show_image(gt_points, predictions_points,  gt_file_path, images_path):	
 	img = cv2.imread(images_path + gt_file_name.replace('txt', 'png'))
-	
+	print(images_path)
+
 	#for p in predictions_points:
 		#cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (0,0,255), 2)
+	for i in range(len(predictions_points[0])):
+		tuple_of_points_0 = (int(predictions_points[0][i][0]), int(predictions_points[0][i][1]))
+		tuple_of_points_1 = (int(predictions_points[0][i][2]), int(predictions_points[0][i][3]))
+		cv2.circle(img, tuple_of_points_0, 1, (0, 0, 255), 10)
+		cv2.circle(img, tuple_of_points_1, 1, (0, 0, 255), 10)
+	
+	for i in range(len(predictions_points[1])):
+		tuple_of_points_0 = (int(predictions_points[1][i][0]), int(predictions_points[1][i][1]))
+		tuple_of_points_1 = (int(predictions_points[1][i][2]), int(predictions_points[1][i][3]))
+		cv2.circle(img, tuple_of_points_0, 1, (0, 255, 0), 10)
+		cv2.circle(img, tuple_of_points_1, 1, (0, 255, 0), 10)
+	
+	#imprime os pontos do groundthruth em linhas
+	for i in range(len(gt_points)):
+		for j in (range(len(gt_points[i]) - 1)):
+			tuple_of_points_0 = (int(gt_points[i][j][0]), int(gt_points[i][j][1]))
+			tuple_of_points_1 = (int(gt_points[i][j+1][0]), int(gt_points[i][j+1][1]))
+			cv2.line(img, tuple_of_points_0, tuple_of_points_1, (255,0,0), 1)
+			j = j + 1
+
+	
+	#for p in chosen_points_list:
+	#	cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (0,255,255), 2)
 		
-	for p in gt_points:
-		cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (255,0,0), 2)
-		
-	cv2.line(img, (gt_points[0][0], gt_points[0][1]), (gt_points[1][0], gt_points[1][1]), (255,0,0), 1)
-	cv2.line(img, (gt_points[1][0], gt_points[1][1]), (gt_points[2][0], gt_points[2][1]), (255,0,0), 1)
-	cv2.line(img, (gt_points[2][0], gt_points[2][1]), (gt_points[3][0], gt_points[3][1]), (255,0,0), 1)
-	cv2.line(img, (gt_points[4][0], gt_points[4][1]), (gt_points[5][0], gt_points[5][1]), (255,0,0), 1)
-	cv2.line(img, (gt_points[5][0], gt_points[5][1]), (gt_points[6][0], gt_points[6][1]), (255,0,0), 1)
-	cv2.line(img, (gt_points[6][0], gt_points[6][1]), (gt_points[7][0], gt_points[7][1]), (255,0,0), 1)
-		
-	for p in chosen_points_list:
-		cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (0,255,255), 2)
-		
-	for p in chosen_points_list_2:
-		cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (0,0,255), 2)
+	#for p in chosen_points_list_2:
+	#	cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (0,0,255), 2)
 		
 	while (1):
 		cv2.imshow('Lane Detector Compute Error', img)
@@ -234,20 +225,20 @@ def compute_error(gt_points, predictions_points):
 
 
 if __name__ == "__main__":
-	if len(sys.argv) < 5 or len(sys.argv) > 9:
-		print ("\nUse: python", sys.argv[0], "ground_truth_dir predictions1_dir predictions2_dir image_width image_heigth -show images_path (optional) -format jpg (optional)\n")
-	else:
+	#if len(sys.argv) < 5 or len(sys.argv) > 9:
+		#print ("\nUse: python", sys.argv[0], "ground_truth_dir predictions1_dir predictions2_dir image_width image_heigth -show images_path (optional) -format jpg (optional)\n")
+	#else:
 		if not sys.argv[1].endswith('/'):
 			sys.argv[1] += '/'
 		if not sys.argv[2].endswith('/'):
 			sys.argv[2] += '/'
-		if not sys.argv[3].endswith('/'):
-			sys.argv[3] += '/'
+		#if not sys.argv[3].endswith('/'):
+			#sys.argv[3] += '/'
 			
-		image_width  = int(sys.argv[4]) #640 #int(sys.argv[4])
-		image_heigth = int(sys.argv[5]) #480 #int(sys.argv[5])
+		image_width  = 640 #640 #int(sys.argv[4])
+		image_heigth = 480 #480 #int(sys.argv[5])
 		
-		images_path = find_image_path()
+		images_path = sys.argv[2].replace('labels', 'images')
 		
 		gt_files_list = [l for l in os.listdir(sys.argv[1])]
 		gt_files_list.sort()
@@ -259,22 +250,23 @@ if __name__ == "__main__":
 				continue
 				
 			gt_points = read_groud_truth_points(sys.argv[1], gt_file_name)
-			
+			#print(gt_points[0][1])
 			predictions_points = read_and_convert_4_points_coordinates(sys.argv[2], gt_file_name, image_width, image_heigth)
 			
-			predictions_points_2 = read_and_convert_4_points_coordinates(sys.argv[3], gt_file_name, image_width, image_heigth)
+			#print(predictions_points[0][0][1])
+			#predictions_points_2 = read_and_convert_4_points_coordinates(sys.argv[3], gt_file_name, image_width, image_heigth)
 			
-			returned = compute_error(gt_points, predictions_points)
+			#returned = compute_error(gt_points, predictions_points)
 			
-			returned_2 = compute_error(gt_points, predictions_points_2)
+			#returned_2 = compute_error(gt_points, predictions_points_2)
 			
-			error += returned[0]
+			#error += returned[0]
 			cont += 1
 			
-			if images_path:
-				show_image(gt_points, predictions_points, returned[1], returned_2[1], gt_file_name, images_path)
-			
-		print ('TOTAL Error: ' + str(error/cont))
+			#if images_path:
+				#show_image(gt_points, predictions_points, returned[1], returned_2[1], gt_file_name, images_path)
+			show_image(gt_points, predictions_points, gt_file_name, images_path)
+		#print ('TOTAL Error: ' + str(error/cont))
 		
 		
 		
