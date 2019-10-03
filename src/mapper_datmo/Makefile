@@ -14,7 +14,7 @@ LINK = g++
 
 # Application specific libSqueezeSegV2
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src  -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src  `python2.7-config --libs`
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp

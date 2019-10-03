@@ -19,7 +19,7 @@ def kitti_squeezeSeg_config():
                                     [ 0.66,  0.55,  0.71],
                                     [ 0.58,  0.72,  0.88]])
 
-  mc.BATCH_SIZE         = 40
+  mc.BATCH_SIZE         = 4
   mc.AZIMUTH_LEVEL      = 1024
   mc.ZENITH_LEVEL       = 32
 
