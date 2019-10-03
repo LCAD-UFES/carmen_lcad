@@ -154,7 +154,10 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 	frame.data[3] = steering_byte1; // Steering
 
 	if (out_can_sockfd != -1)
+	{
+		printf("sending efforts\n");
 		send_frame(out_can_sockfd, &frame);
+	}
 }
 
 void pdProcessMessage(OjCmpt pd, JausMessage message)

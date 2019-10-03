@@ -283,7 +283,7 @@ char getUserInput()
 	else
 	{
 		choice = getch(); // Get the key that the user has selected
-//		updateScreen(keyboardLock, choice);
+		updateScreen(keyboardLock, choice);
 		if (choice > -1)
 		{
 			parseUserInput(choice);
@@ -995,7 +995,9 @@ main(int argCount, char **argString)
 	else
 	{
 		in_can_sockfd = init_can(argString[1]);
+		printf("%s initialized. in_can_sockfd = %d\n", argString[1], in_can_sockfd);
 		out_can_sockfd = init_can(argString[2]);
+		printf("%s initialized. out_can_sockfd = %d\n", argString[2], out_can_sockfd);
 	}
 
 	init_modules();
@@ -1034,6 +1036,7 @@ main(int argCount, char **argString)
 			static int first_time = true;
 			if (first_time)
 			{
+				printf("Creating can threads.\n");
 				pthread_create(&can_in_read_thread, NULL, can_in_read_thread_func, NULL);
 				pthread_create(&can_out_read_thread, NULL, can_out_read_thread_func, NULL);
 				first_time = false;
