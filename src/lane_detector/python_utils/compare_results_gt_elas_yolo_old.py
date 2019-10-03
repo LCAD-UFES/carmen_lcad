@@ -92,12 +92,14 @@ def find_image_path():
 
 
 #def show_image(gt_points, predictions_points, chosen_points_list, chosen_points_list_2, gt_file_path, images_path):
-def show_image(gt_points, predictions_points,  gt_file_path, images_path):	
+def show_image(gt_points, predictions_points, predictions_points_2, gt_file_path, images_path):	
 	img = cv2.imread(images_path + gt_file_name.replace('txt', 'png'))
 	print(images_path)
 
 	#for p in predictions_points:
 		#cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (0,0,255), 2)
+	
+	#imprime os pontos da yolo em circulos
 	for i in range(len(predictions_points[0])):
 		tuple_of_points_0 = (int(predictions_points[0][i][0]), int(predictions_points[0][i][1]))
 		tuple_of_points_1 = (int(predictions_points[0][i][2]), int(predictions_points[0][i][3]))
@@ -110,12 +112,25 @@ def show_image(gt_points, predictions_points,  gt_file_path, images_path):
 		cv2.circle(img, tuple_of_points_0, 1, (0, 255, 0), 10)
 		cv2.circle(img, tuple_of_points_1, 1, (0, 255, 0), 10)
 	
+	#imprime os pontos do ELAS em circulos
+	for i in range(len(predictions_points_2[0])):
+		tuple_of_points_0 = (int(predictions_points_2[0][i][0]), int(predictions_points_2[0][i][1]))
+		tuple_of_points_1 = (int(predictions_points_2[0][i][2]), int(predictions_points_2[0][i][3]))
+		cv2.circle(img, tuple_of_points_0, 1, (0, 255, 255), 10)
+		cv2.circle(img, tuple_of_points_1, 1, (0, 255, 255), 10)
+	
+	for i in range(len(predictions_points_2[1])):
+		tuple_of_points_0 = (int(predictions_points_2[1][i][0]), int(predictions_points_2[1][i][1]))
+		tuple_of_points_1 = (int(predictions_points_2[1][i][2]), int(predictions_points_2[1][i][3]))
+		cv2.circle(img, tuple_of_points_0, 1, (255, 255, 0), 10)
+		cv2.circle(img, tuple_of_points_1, 1, (255, 255, 0), 10)
+	
 	#imprime os pontos do groundthruth em linhas
 	for i in range(len(gt_points)):
 		for j in (range(len(gt_points[i]) - 1)):
 			tuple_of_points_0 = (int(gt_points[i][j][0]), int(gt_points[i][j][1]))
 			tuple_of_points_1 = (int(gt_points[i][j+1][0]), int(gt_points[i][j+1][1]))
-			cv2.line(img, tuple_of_points_0, tuple_of_points_1, (255,0,0), 1)
+			cv2.line(img, tuple_of_points_0, tuple_of_points_1, (255,0,0), 2)
 			j = j + 1
 
 	
@@ -232,8 +247,8 @@ if __name__ == "__main__":
 			sys.argv[1] += '/'
 		if not sys.argv[2].endswith('/'):
 			sys.argv[2] += '/'
-		#if not sys.argv[3].endswith('/'):
-			#sys.argv[3] += '/'
+		if not sys.argv[3].endswith('/'):
+			sys.argv[3] += '/'
 			
 		image_width  = 640 #640 #int(sys.argv[4])
 		image_heigth = 480 #480 #int(sys.argv[5])
@@ -250,11 +265,10 @@ if __name__ == "__main__":
 				continue
 				
 			gt_points = read_groud_truth_points(sys.argv[1], gt_file_name)
-			#print(gt_points[0][1])
+			
 			predictions_points = read_and_convert_4_points_coordinates(sys.argv[2], gt_file_name, image_width, image_heigth)
 			
-			#print(predictions_points[0][0][1])
-			#predictions_points_2 = read_and_convert_4_points_coordinates(sys.argv[3], gt_file_name, image_width, image_heigth)
+			predictions_points_2 = read_and_convert_4_points_coordinates(sys.argv[3], gt_file_name, image_width, image_heigth)
 			
 			#returned = compute_error(gt_points, predictions_points)
 			
@@ -265,8 +279,5 @@ if __name__ == "__main__":
 			
 			#if images_path:
 				#show_image(gt_points, predictions_points, returned[1], returned_2[1], gt_file_name, images_path)
-			show_image(gt_points, predictions_points, gt_file_name, images_path)
+			show_image(gt_points, predictions_points, predictions_points_2, gt_file_name, images_path)
 		#print ('TOTAL Error: ' + str(error/cont))
-		
-		
-		
