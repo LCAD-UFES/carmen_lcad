@@ -473,29 +473,27 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 	double timestamp = sensor_data->last_timestamp;
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
-	int i, j, k, line;
-	int max_k = 1024;
-	unsigned int number_of_points = sensor_params->vertical_resolution * max_k;
+	int i, j, line;
+	int shots_to_squeeze = 1024;
+	unsigned int number_of_points = sensor_params->vertical_resolution * shots_to_squeeze;
 	float squeeze[number_of_points * 5];
 	float* return_array;
 
-//	printf("Vertical res: %d number of points: %d\n", sensor_params->vertical_resolution, number_of_points);
+	//printf("Laser Shots: %d number of points: %d\n", number_of_laser_shots, number_of_points);
 
-//	std::cout << "Mounting matrix for SqueezeSeg\n";
-//	if (number_of_laser_shots >= max_k) {
+	std::cout << "Mounting matrix for SqueezeSeg\n";
 	point_cloud_file.open("SqueezeSeg/" + std::to_string(timestamp) + ".txt");
 	point_cloud_file << "#Array shape: (32, 1024, 5)\n";
 
 	for (i = sensor_params->vertical_resolution, line = 0; i > 0; i--)
 	{
-		for (j = 0; j < max_k; j++, line++)
+		for (j = 0; j < shots_to_squeeze; j++, line++)
 		{
 			unsigned int scan_index = j * sensor_params->vertical_resolution;
 			double vertical_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle;
 			double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
 			double processed_intensity = (double) (sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i]) / 255.0;
 			double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
-
 			if (range > 0 && range < 200) // this causes n_points to become wrong (needs later correction)
 			{
 				tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
@@ -521,12 +519,12 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 			}
 		}
 
-		if (j % max_k == 0 && j > 0)
+		if (j % shots_to_squeeze == 0 && j > 0)
 			point_cloud_file  << "# New slice\n";
 	}
 	point_cloud_file.close();
-	if(line == (max_k * 32))
-		return_array = libsqueeze_seg_process_point_cloud(number_of_points, &squeeze[0]);
+	if(number_of_laser_shots >= shots_to_squeeze)
+		return_array = libsqueeze_seg_process_point_cloud(sensor_params->vertical_resolution, shots_to_squeeze, &squeeze[0], sensor_data->last_timestamp);
 }
 
 void
