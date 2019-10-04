@@ -40,6 +40,7 @@ initialize_python_context()
 float*
 libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze, float* point_cloud, double timestamp)
 {
+	printf("libsqueeze_seg_process_point_cloud\t");
 	npy_intp dims[3] = {vertical_resolution, shots_to_squeeze, 5};
 	double time[1];
 	time[0] = timestamp;

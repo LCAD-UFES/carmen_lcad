@@ -9,6 +9,7 @@ import os.path
 import sys
 import time
 import glob
+#import cv2
 
 import numpy as np
 from tabulate import tabulate
@@ -63,6 +64,7 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     #print('After predict')
     depth_map = Image.fromarray(
         (255 * _normalize(lidar[:, :, 3])).astype(np.uint8))
+    #cv2.imshow('depth_map', depth_map)
     depth_map.save(
         os.path.join(base_path + '/samples_out/', 'in_' + str(timestamp.item(0)) + '.png'))
     label_map = Image.fromarray(
@@ -74,6 +76,7 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     )
     blend_map.save(
         os.path.join(base_path + '/samples_out/', 'out_' + str(timestamp.item(0)) + '.png'))
+    #cv2.imshow('blend_map', blend_map)
     return pred_cls[0]
 
 
