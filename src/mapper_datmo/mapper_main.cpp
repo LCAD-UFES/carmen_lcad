@@ -481,7 +481,7 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 
 	//printf("Laser Shots: %d number of points: %d\n", number_of_laser_shots, number_of_points);
 
-	std::cout << "Mounting matrix for SqueezeSeg\n";
+	//std::cout << "Mounting matrix for SqueezeSeg\n";
 	point_cloud_file.open("SqueezeSeg/" + std::to_string(timestamp) + ".txt");
 	point_cloud_file << "#Array shape: (32, 1024, 5)\n";
 
@@ -492,7 +492,9 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 			unsigned int scan_index = j * sensor_params->vertical_resolution;
 			double vertical_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle;
 			double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
+			//printf("Before intensity;");
 			double processed_intensity = (double) (sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i]) / 255.0;
+			//printf("After intensity\n");
 			double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
 			if (range > 0 && range < 200) // this causes n_points to become wrong (needs later correction)
 			{
@@ -500,7 +502,7 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 				double x = round(point.x() * 100.0) / 100.0;
 				double y = round(point.y() * 100.0) / 100.0;
 				double z = round(point.z() * 100.0) / 100.0;
-//				double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
+				//				double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
 				squeeze[line * 5] = (float) x;
 				squeeze[(line * 5) + 1] = (float) y;
 				squeeze[(line * 5) + 2] = (float) z;
