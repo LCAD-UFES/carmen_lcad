@@ -23,7 +23,7 @@ from utils.util import *
 from nets import *
 #sys.argv = sys.argv[:1]
 carmen_home = os.getenv("CARMEN_HOME")
-base_path = carmen_home + '/sharedlib/libsqueeze_seg_v2/src'
+base_path = carmen_home + '/sharedlib/libsqueeze_seg_v2/'
 """Loads pretrained SqueezeSegV2 model."""
 mc = kitti_squeezeSeg_config()
 mc.LOAD_PRETRAINED_MODEL = False
@@ -33,7 +33,7 @@ graph = tf.Graph().as_default()
 sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
 saver = tf.train.Saver(model.model_params)
 saver.restore(sess, base_path +
-                   '/model/SqueezeSegV2/model.ckpt-30700')
+                   'src/model/SqueezeSegV2/model.ckpt-30700')
 print("Pretrained model Loaded!")
 
 def _normalize(x):
@@ -66,7 +66,7 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
         (255 * _normalize(lidar[:, :, 3])).astype(np.uint8))
     #cv2.imshow('depth_map', depth_map)
     depth_map.save(
-        os.path.join(base_path + '/samples_out/', 'in_' + str(timestamp.item(0)) + '.png'))
+        os.path.join(base_path + 'data/samples_out/', 'in_' + str(timestamp.item(0)) + '.png'))
     label_map = Image.fromarray(
         (255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8))
     blend_map = Image.blend(
@@ -75,7 +75,7 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
         alpha=0.4
     )
     blend_map.save(
-        os.path.join(base_path + '/samples_out/', 'out_' + str(timestamp.item(0)) + '.png'))
+        os.path.join(base_path + 'data/samples_out/', 'out_' + str(timestamp.item(0)) + '.png'))
     #cv2.imshow('blend_map', blend_map)
     return pred_cls[0]
 
