@@ -36,7 +36,7 @@ graph = tf.Graph().as_default()
 sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
 saver = tf.train.Saver(model.model_params)
 saver.restore(sess, base_path +
-                   'data/model/SqueezeSegV2/model.ckpt-30700')
+                   'data/SqueezeSegV2/model.ckpt-30700')
 print("Pretrained Model and Tensorflow loaded!")
 
 def _normalize(x):
