@@ -3,7 +3,7 @@
 #include <numpy/arrayobject.h>
 #include "libsqueeze_seg.h"
 #include <iostream>
-#include <chrono>
+
 
 PyObject *python_libsqueeze_seg_process_point_cloud_function;
 
@@ -54,11 +54,11 @@ libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze
 	PyObject* numpyTimestamp = PyArray_SimpleNewFromData(1, dimstamp, NPY_DOUBLE, &time[0]);
 	PyObject* numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_FLOAT, point_cloud);
 	//PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunction(python_libsqueeze_seg_process_point_cloud_function, (char *) "(O)", numpyArray, numpyTimestamp);
-    auto t1 = std::chrono::high_resolution_clock::now();
+    //auto t1 = std::chrono::high_resolution_clock::now();
 	PyArrayObject* python_result_array = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_libsqueeze_seg_process_point_cloud_function, numpyArray, numpyTimestamp, NULL);
-    auto t2 = std::chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
-    std::cout << "Inference Duration: " << duration << "ms" << std::endl;
+    //auto t2 = std::chrono::high_resolution_clock::now();
+	//auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
+    //std::cout << "Inference Duration: " << duration << "ms" << std::endl;
 	
 	float *result_array = (float*)PyArray_DATA(python_result_array);
 

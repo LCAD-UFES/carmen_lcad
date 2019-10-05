@@ -25,14 +25,14 @@ bash
 ```
 
 ###Installing virtualenv
-./create_env.sh
+:~/carmen_lcad/bin$ /$CARMEN_HOME/sharedlib/libsqueeze_seg_v2/create_env.sh
 
 #Activating virtualenv
-source squeezeseg_env/bin/activate
+:~/carmen_lcad/bin$ source $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/squeezeseg_env/bin/activate
 
 ### Testing
 For testing porpouses, start with SqueezeSegV2 example:
-python ./src/demo.py
+~/carmen_lcad/sharedlib/libsqueeze_seg_v2$ python ./src/demo.py
 
 #Using SqueezeSegV2 with carmen:
 

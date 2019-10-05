@@ -12,7 +12,6 @@ import glob
 #import cv2
 
 import numpy as np
-from tabulate import tabulate
 from six.moves import xrange
 import tensorflow as tf
 from PIL import Image
@@ -24,19 +23,23 @@ from nets import *
 #sys.argv = sys.argv[:1]
 
 """Loads Path for LibSqueezeSegV2"""
+
 carmen_home = os.getenv("CARMEN_HOME")
 base_path = carmen_home + '/sharedlib/libsqueeze_seg_v2/'
+
 """Loads pretrained SqueezeSegV2 model."""
 mc = kitti_squeezeSeg_config()
 mc.LOAD_PRETRAINED_MODEL = False
 mc.BATCH_SIZE = 1
 model = SqueezeSeg(mc)
+
 """Loads Tensorflow with SqueezeSegV2 Model"""
 graph = tf.Graph().as_default()
 sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
 saver = tf.train.Saver(model.model_params)
 saver.restore(sess, base_path +
-                   'data/SqueezeSegV2/model.ckpt-30700')
+              'data/SqueezeSegV2/model.ckpt-30700')
+
 print("Pretrained Model and Tensorflow loaded!")
 
 def _normalize(x):
