@@ -6,7 +6,7 @@ virtualenv -p /usr/bin/python2 squeezeseg_env
 source squeezeseg_env/bin/activate
 
 # Instalando as dependencias necessarias para rodar o squeezeseg
-python2 -m pip install -r ../requirements.txt
+pip install -r requirements.txt
 
 # Desativando o virtualenv
 #deactivate
