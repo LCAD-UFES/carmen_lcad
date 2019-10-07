@@ -56,6 +56,21 @@ Run mapper_datmo:
 Push Playback button. The results from segmentation will be at samples_out:
 $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/data/samples_out/
 
+```
+:~/carmen_lcad/bin$ ./mapper_datmo -map_path ../data/mapper_teste2 -camera5 right -verbose 2 -file_warnings off
+```
+
+### Caso tenho o problema: 
+
+Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
+
+Baixe o tensorflow obdecendo aos requisitos da tabela no seguinte link:
+https://github.com/lakshayg/tensorflow-build
+
+Execute o comando, subistituindo o caminho pelo caminho do arquivo baixado:
+pip install --ignore-installed --upgrade /path/to/binary.whl
+
+
 ### Useful links
 
 https://stackoverflow.com/questions/8998499/virtual-environments-and-embedding-python
