@@ -22,35 +22,48 @@ from utils.util import *
 from nets import *
 #sys.argv = sys.argv[:1]
 
-"""Loads Path for LibSqueezeSegV2"""
 
-carmen_home = os.getenv("CARMEN_HOME")
-base_path = carmen_home + '/sharedlib/libsqueeze_seg_v2/'
+global mc
+global model
+global sess
 
-"""Loads pretrained SqueezeSegV2 model."""
-mc = kitti_squeezeSeg_config()
-mc.LOAD_PRETRAINED_MODEL = False
-mc.BATCH_SIZE = 1
-model = SqueezeSeg(mc)
 
-"""Loads Tensorflow with SqueezeSegV2 Model"""
-graph = tf.Graph().as_default()
-sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
-saver = tf.train.Saver(model.model_params)
-saver.restore(sess, base_path +
-              'data/SqueezeSegV2/model.ckpt-30700')
+def initialize(vertical_resolution, shots_to_squeeze):
+    global mc
+    global model
+    global sess
 
-print("Pretrained Model and Tensorflow loaded!")
+    mc = kitti_squeezeSeg_config()
+    mc.ZENITH_LEVEL = vertical_resolution
+    mc.AZIMUTH_LEVEL = shots_to_squeeze
+
+    mc.LOAD_PRETRAINED_MODEL = False
+    mc.BATCH_SIZE = 1
+    model = SqueezeSeg(mc)
+
+    graph = tf.Graph().as_default()
+    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
+    saver = tf.train.Saver(model.model_params)
+    saver.restore(sess, os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/SqueezeSegV2/model.ckpt-30700')
+
+    print ("\n\n-------------------------------------------------------")
+    print ("       Pretrained Model and Tensorflow loaded!")
+    print ("-------------------------------------------------------\n\n")
+
 
 def _normalize(x):
     return (x - x.min())/(x.max() - x.min())
 
 
 def squeeze_seg_process_point_cloud(lidar, timestamp):
-    """Detect LiDAR data."""
+    global mc
+    global model
+    global sess
+
     #print("timestamp={}".format(timestamp.item(0)))
     #print("lidar.shape={}, mc.zenith={}, mc.azimuth={}".format(
     #    lidar.shape, mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL))
+
     lidar_mask = np.reshape(
         (lidar[:, :, 4] > 0),
         [mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL, 1]
@@ -68,20 +81,13 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
         }
     )
     #print('After predict')
-    depth_map = Image.fromarray(
-        (255 * _normalize(lidar[:, :, 3])).astype(np.uint8))
-    
-    depth_map.save(
-        os.path.join(base_path + 'data/samples_out/', 'in_' + str(timestamp.item(0)) + '.png'))
-    label_map = Image.fromarray(
-        (255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8))
-    blend_map = Image.blend(
-        depth_map.convert('RGBA'),
-        label_map.convert('RGBA'),
-        alpha=0.4
-    )
-    blend_map.save(
-        os.path.join(base_path + 'data/samples_out/', 'out_' + str(timestamp.item(0)) + '.png'))
+    '''depth_map = Image.fromarray((255 * _normalize(lidar[:, :, 3])).astype(np.uint8))
+    depth_map.save(os.path.join('/home/lcad/carmen_lcad/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'in_' + str(timestamp.item(0)) + '.png'))
+    label_map = Image.fromarray((255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8))
+    blend_map = Image.blend(depth_map.convert('RGBA'), label_map.convert('RGBA'), alpha=0.4)
+    blend_map.save(os.path.join('/home/lcad/carmen_lcad/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'out_' + str(timestamp.item(0)) + '.png'))'''
+	
+	#print ((255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8))
     
     return pred_cls[0]
 

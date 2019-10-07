@@ -9,4 +9,4 @@ source squeezeseg_env/bin/activate
 pip install -r $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/requirements.txt
 
 # Desativando o virtualenv
-#deactivate
+deactivate

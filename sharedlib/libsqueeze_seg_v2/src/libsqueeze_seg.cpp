@@ -24,6 +24,20 @@ initialize_python_context()
 	}
 	Py_DECREF(python_module_name);
 
+	PyObject *python_initialize_function = PyObject_GetAttrString(python_module, (char *) "initialize");
+
+	if (python_initialize_function == NULL || !PyCallable_Check(python_initialize_function))
+	{
+		Py_Finalize();
+		exit (printf("Error: Could not load the python_initialize_function.\n"));
+	}
+	PyObject *python_arguments = Py_BuildValue("(ii)", 32, 1024);
+
+	PyObject_CallObject(python_initialize_function, python_arguments);
+
+	Py_DECREF(python_arguments);
+	Py_DECREF(python_initialize_function);
+
 	python_libsqueeze_seg_process_point_cloud_function = PyObject_GetAttrString(python_module, (char *) "squeeze_seg_process_point_cloud");
 
 	if (python_libsqueeze_seg_process_point_cloud_function == NULL || !PyCallable_Check(python_libsqueeze_seg_process_point_cloud_function))
@@ -40,7 +54,7 @@ initialize_python_context()
 float*
 libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze, float* point_cloud, double timestamp)
 {
-	printf("libsqueeze_seg_process_point_cloud\t");
+	printf("libsqueeze_seg_process_point_cloud\n");
 	npy_intp dims[3] = {vertical_resolution, shots_to_squeeze, 5};
 	double time[1];
 	time[0] = timestamp;
