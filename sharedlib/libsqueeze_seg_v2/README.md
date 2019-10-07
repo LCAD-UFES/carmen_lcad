@@ -65,6 +65,7 @@ $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/data/samples_out/
 Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
 
 Baixe o tensorflow obdecendo aos requisitos da tabela no seguinte link:
+
 https://github.com/lakshayg/tensorflow-build
 
 Execute o comando, subistituindo o caminho pelo caminho do arquivo baixado:
