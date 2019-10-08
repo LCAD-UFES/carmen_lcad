@@ -9,6 +9,7 @@ import os.path
 import sys
 import time
 import glob
+import cv2
 
 import numpy as np
 from six.moves import xrange
@@ -20,14 +21,12 @@ from imdb import kitti
 from utils.util import *
 from nets import *
 
-'''Only importing matplotlib for view'''
-import matplotlib.pyplot as plt
-from matplotlib import gridspec
 
 '''Defining global variables'''
 global mc
 global model
 global sess
+
 
 '''Initialize tensorflow and model within specific vertical resolution and number shots to squeeze'''
 def initialize(vertical_resolution, shots_to_squeeze):
@@ -90,7 +89,15 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     label_map = Image.fromarray((255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8))
     blend_map = Image.blend(depth_map.convert('RGBA'), label_map.convert('RGBA'), alpha=0.4)
     #blend_map.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'blend_map' + str(timestamp.item(0)) + '.png'))
-	
+    alpha = 0.5
+    beta = (1.0 - alpha)
+    src1 = (255 * _normalize(lidar[:, :, 3])).astype(np.uint8)
+    src2 = (255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8)
+    dst = np.uint8(alpha*(src1[:,:,None])+beta*(src2))
+    #dst = cv2.addWeighted(src1[:,:,None], alpha, src2, beta, 0.0)
+    cv2.imshow("Blend Map", dst)
+    cv2.waitKey(50)
+    
     #print(len(pred_cls[0])) #= 32
     #print(len(pred_cls[0][0])) #= 1024
     #print(type(pred_cls[0][0][0])) int64

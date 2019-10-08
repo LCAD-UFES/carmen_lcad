@@ -68,9 +68,11 @@ Baixe o tensorflow obdecendo aos requisitos da tabela no seguinte link:
 
 https://github.com/lakshayg/tensorflow-build
 
-Execute o comando, subistituindo o caminho pelo caminho do arquivo baixado:
+Execute o comando, substituindo o caminho pelo caminho do arquivo baixado:
 pip install --ignore-installed --upgrade /path/to/binary.whl
 
+Para instalar o opencv no python, com virtualenv:
+python -m pip install opencv-python
 
 ### Useful links
 

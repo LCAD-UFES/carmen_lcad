@@ -31,7 +31,7 @@ initialize_python_context()
 		Py_Finalize();
 		exit (printf("Error: Could not load the python_initialize_function.\n"));
 	}
-	PyObject *python_arguments = Py_BuildValue("(ii)", 32, 1024);
+	PyObject *python_arguments = Py_BuildValue("(ii)", 32, 512);
 
 	PyObject_CallObject(python_initialize_function, python_arguments);
 
@@ -65,7 +65,9 @@ libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze
 	//PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunction(python_libsqueeze_seg_process_point_cloud_function, (char *) "(O)", numpyArray, numpyTimestamp);
     //auto t1 = std::chrono::high_resolution_clock::now();
 	PyArrayObject* python_result_array = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_libsqueeze_seg_process_point_cloud_function, numpyArray, numpyTimestamp, NULL);
-    //auto t2 = std::chrono::high_resolution_clock::now();
+	if (PyErr_Occurred())
+	        PyErr_Print();
+	//auto t2 = std::chrono::high_resolution_clock::now();
 	//auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
     //std::cout << "Inference Duration: " << duration << "ms" << std::endl;
 	
