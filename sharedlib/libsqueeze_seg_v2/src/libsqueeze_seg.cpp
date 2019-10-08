@@ -77,18 +77,6 @@ libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze
 	Py_DECREF(numpyArray);
 	Py_DECREF(python_result_array);
 
-//	for (int i = 0; i < vertical_resolution; i++){
-//		for (int j = 0; j < shots_to_squeeze; j++)
-//			printf("%d\t", result_array[i * vertical_resolution + j]);
-//		printf("\n");
-//	}
-
 	return result_array;
 }
 
-
-void
-libsqueeze_seg_test()
-{
-	printf("SqueezeSeg included\n");
-}

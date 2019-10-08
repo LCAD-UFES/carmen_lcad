@@ -482,7 +482,7 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 	printf("Laser Shots: %d number of points: %d\n", number_of_laser_shots, number_of_points);
 	if(number_of_laser_shots >= shots_to_squeeze)
 	{
-		printf("Mounting matrix\n");
+		//printf("Mounting matrix\n");
 		//point_cloud_file.open("SqueezeSeg/" + std::to_string(timestamp) + ".txt");
 		//point_cloud_file << "#Array shape: (32, 1024, 5)\n";
 
@@ -540,7 +540,7 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 				}
 			}
 		}
-		printf("The final value of line is %d\n", line);
+		//printf("The final value of line is %d\n", line);
 
 	}
 }
