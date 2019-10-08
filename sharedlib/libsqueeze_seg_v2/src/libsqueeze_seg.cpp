@@ -51,7 +51,7 @@ initialize_python_context()
 
 }
 
-float*
+int*
 libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze, float* point_cloud, double timestamp)
 {
 	printf("libsqueeze_seg_process_point_cloud\n");
@@ -60,11 +60,6 @@ libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze
 	time[0] = timestamp;
 	npy_intp dimstamp[1] = {1};
 	
-//	for (unsigned int i = 0; i < number_of_points; i++){
-//		for (unsigned int j = 0; j < 5; j++)
-//			printf("%.2f\t", point_cloud[(i * 5) + j]);
-//		printf("\n");
-//	}
 	PyObject* numpyTimestamp = PyArray_SimpleNewFromData(1, dimstamp, NPY_DOUBLE, &time[0]);
 	PyObject* numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_FLOAT, point_cloud);
 	//PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunction(python_libsqueeze_seg_process_point_cloud_function, (char *) "(O)", numpyArray, numpyTimestamp);
@@ -74,14 +69,19 @@ libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze
 	//auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
     //std::cout << "Inference Duration: " << duration << "ms" << std::endl;
 	
-	float *result_array = (float*)PyArray_DATA(python_result_array);
+	int *result_array = (int*)PyArray_DATA(python_result_array);
 
 	if (PyErr_Occurred())
         PyErr_Print();
 
 	Py_DECREF(numpyArray);
 	Py_DECREF(python_result_array);
-	//exit(0);
+
+//	for (int i = 0; i < vertical_resolution; i++){
+//		for (int j = 0; j < shots_to_squeeze; j++)
+//			printf("%d\t", result_array[i * vertical_resolution + j]);
+//		printf("\n");
+//	}
 
 	return result_array;
 }

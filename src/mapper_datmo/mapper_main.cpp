@@ -469,7 +469,7 @@ vector<carmen_vector_2D_t> moving_objecst_cells_vector;
 void
 erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
 {
-	ofstream point_cloud_file;
+	//ofstream point_cloud_file;
 	double timestamp = sensor_data->last_timestamp;
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
@@ -477,14 +477,14 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 	int shots_to_squeeze = 1024;
 	unsigned int number_of_points = sensor_params->vertical_resolution * shots_to_squeeze;
 	float squeeze[number_of_points * 5];
-	float* return_array;
+	double* return_array;
 
 	printf("Laser Shots: %d number of points: %d\n", number_of_laser_shots, number_of_points);
 	if(number_of_laser_shots >= shots_to_squeeze)
 	{
 		printf("Mounting matrix\n");
-		point_cloud_file.open("SqueezeSeg/" + std::to_string(timestamp) + ".txt");
-		point_cloud_file << "#Array shape: (32, 1024, 5)\n";
+		//point_cloud_file.open("SqueezeSeg/" + std::to_string(timestamp) + ".txt");
+		//point_cloud_file << "#Array shape: (32, 1024, 5)\n";
 
 		for (i = sensor_params->vertical_resolution, line = 0; i > 0; i--)
 		{
@@ -509,25 +509,39 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 					squeeze[(line * 5) + 2] = (float) z;
 					squeeze[(line * 5) + 3] = (float) processed_intensity;
 					squeeze[(line * 5) + 4] = (float) range;
-					point_cloud_file << std::fixed << std::setprecision(2) << x
-							<< "\t" << y << "\t" << z << "\t" << processed_intensity
-							<< "\t" << range << "\n";
+					//point_cloud_file << std::fixed << std::setprecision(2) << x
+					//		<< "\t" << y << "\t" << z << "\t" << processed_intensity
+					//		<< "\t" << range << "\n";
 				} else {
 					squeeze[line * 5] = 0.0;
 					squeeze[(line * 5) + 1] = 0.0;
 					squeeze[(line * 5) + 2] = 0.0;
 					squeeze[(line * 5) + 3] = 0.0;
 					squeeze[(line * 5) + 4] = 0.0;
-					point_cloud_file << "0.00\t0.00\t0.00\t0.00\t0.00\n";
+					//point_cloud_file << "0.00\t0.00\t0.00\t0.00\t0.00\n";
 				}
 			}
 
-			if (j % shots_to_squeeze == 0 && j > 0)
-				point_cloud_file  << "# New slice\n";
+			//if (j % shots_to_squeeze == 0 && j > 0)
+			//	point_cloud_file  << "# New slice\n";
 		}
-		point_cloud_file.close();
-
+		//point_cloud_file.close();
 		return_array = libsqueeze_seg_process_point_cloud(sensor_params->vertical_resolution, shots_to_squeeze, &squeeze[0], sensor_data->last_timestamp);
+		// Is an array with 32 positions with 1024 values
+		// lets decode to the same positions we have readed
+		for (i = sensor_params->vertical_resolution, line = 0; i > 0; i--)
+		{
+			for (j = 0; j < shots_to_squeeze; j++, line++)
+			{
+				if (return_array[i * sensor_params->vertical_resolution + j] != 0){
+					unsigned int scan_index = j * sensor_params->vertical_resolution;
+					sensor_data->points[cloud_index].sphere_points[scan_index + i].length = 0.0;
+					sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i] = 0.0;
+					sensor_data->processed_intensity[sensor_data->point_cloud_index][scan_index + i] = 0.0;
+				}
+			}
+		}
+
 	}
 }
 

@@ -9,7 +9,6 @@ import os.path
 import sys
 import time
 import glob
-#import cv2
 
 import numpy as np
 from six.moves import xrange
@@ -20,19 +19,23 @@ from config import *
 from imdb import kitti
 from utils.util import *
 from nets import *
-#sys.argv = sys.argv[:1]
 
+'''Only importing matplotlib for view'''
+import matplotlib.pyplot as plt
+from matplotlib import gridspec
 
+'''Defining global variables'''
 global mc
 global model
 global sess
 
-
+'''Initialize tensorflow and model within specific vertical resolution and number shots to squeeze'''
 def initialize(vertical_resolution, shots_to_squeeze):
     global mc
     global model
     global sess
 
+    '''Loads squeezeseg config and changes the zenith and azimuth level'''
     mc = kitti_squeezeSeg_config()
     mc.ZENITH_LEVEL = vertical_resolution
     mc.AZIMUTH_LEVEL = shots_to_squeeze
@@ -41,6 +44,7 @@ def initialize(vertical_resolution, shots_to_squeeze):
     mc.BATCH_SIZE = 1
     model = SqueezeSeg(mc)
 
+    '''Loads tensorflow'''
     graph = tf.Graph().as_default()
     sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     saver = tf.train.Saver(model.model_params)
@@ -81,13 +85,15 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
         }
     )
     #print('After predict')
-    '''depth_map = Image.fromarray((255 * _normalize(lidar[:, :, 3])).astype(np.uint8))
-    depth_map.save(os.path.join('/home/lcad/carmen_lcad/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'in_' + str(timestamp.item(0)) + '.png'))
+    depth_map = Image.fromarray((255 * _normalize(lidar[:, :, 3])).astype(np.uint8))
+    #depth_map.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'depth_map_' + str(timestamp.item(0)) + '.png'))
     label_map = Image.fromarray((255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8))
     blend_map = Image.blend(depth_map.convert('RGBA'), label_map.convert('RGBA'), alpha=0.4)
-    blend_map.save(os.path.join('/home/lcad/carmen_lcad/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'out_' + str(timestamp.item(0)) + '.png'))'''
+    blend_map.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'blend_map' + str(timestamp.item(0)) + '.png'))
 	
-	#print ((255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8))
+    #print(len(pred_cls[0])) = 32
+    #print(len(pred_cls[0][0])) = 1024
+    #print(type(pred_cls[0][0][0])) int64
     
     return pred_cls[0]
 
