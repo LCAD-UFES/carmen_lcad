@@ -477,7 +477,7 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 	int shots_to_squeeze = 1024;
 	unsigned int number_of_points = sensor_params->vertical_resolution * shots_to_squeeze;
 	float squeeze[number_of_points * 5];
-	double* return_array;
+	int* return_array;
 
 	printf("Laser Shots: %d number of points: %d\n", number_of_laser_shots, number_of_points);
 	if(number_of_laser_shots >= shots_to_squeeze)
