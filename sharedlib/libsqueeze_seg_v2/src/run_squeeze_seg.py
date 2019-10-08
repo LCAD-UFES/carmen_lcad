@@ -89,10 +89,10 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     #depth_map.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'depth_map_' + str(timestamp.item(0)) + '.png'))
     label_map = Image.fromarray((255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8))
     blend_map = Image.blend(depth_map.convert('RGBA'), label_map.convert('RGBA'), alpha=0.4)
-    blend_map.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'blend_map' + str(timestamp.item(0)) + '.png'))
+    #blend_map.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'blend_map' + str(timestamp.item(0)) + '.png'))
 	
-    #print(len(pred_cls[0])) = 32
-    #print(len(pred_cls[0][0])) = 1024
+    #print(len(pred_cls[0])) #= 32
+    #print(len(pred_cls[0][0])) #= 1024
     #print(type(pred_cls[0][0][0])) int64
     
     return pred_cls[0]

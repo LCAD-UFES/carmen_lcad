@@ -527,20 +527,20 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 		}
 		//point_cloud_file.close();
 		return_array = libsqueeze_seg_process_point_cloud(sensor_params->vertical_resolution, shots_to_squeeze, &squeeze[0], sensor_data->last_timestamp);
-		// Is an array with 32 positions with 1024 values
+		// It is an array with 32 positions and 1024 values
 		// lets decode to the same positions we have readed
 		for (i = sensor_params->vertical_resolution, line = 0; i > 0; i--)
 		{
 			for (j = 0; j < shots_to_squeeze; j++, line++)
 			{
-				if (return_array[i * sensor_params->vertical_resolution + j] != 0){
+				if (return_array[line] != 0){
 					unsigned int scan_index = j * sensor_params->vertical_resolution;
 					sensor_data->points[cloud_index].sphere_points[scan_index + i].length = 0.0;
 					sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i] = 0.0;
-					sensor_data->processed_intensity[sensor_data->point_cloud_index][scan_index + i] = 0.0;
 				}
 			}
 		}
+		printf("The final value of line is %d\n", line);
 
 	}
 }
