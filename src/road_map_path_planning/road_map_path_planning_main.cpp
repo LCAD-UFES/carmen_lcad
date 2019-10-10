@@ -45,7 +45,7 @@ read_parameters(int argc, char **argv)
 		params.python_command = "python3 osmnx/osp_test.py '" +string(params.locale)+","+string(params.city)+","+string(params.country)+"' "
 								+ string(params.graph_type) + " " + string(params.plot);
 
-		cout<< params.python_command<<endl;
+		//cout<< params.python_command<<endl;
 
 	}
 }
