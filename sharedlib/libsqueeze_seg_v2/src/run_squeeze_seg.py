@@ -89,14 +89,25 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     label_map = Image.fromarray((255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8))
     blend_map = Image.blend(depth_map.convert('RGBA'), label_map.convert('RGBA'), alpha=0.4)
     #blend_map.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'blend_map' + str(timestamp.item(0)) + '.png'))
-    alpha = 0.5
+    alpha = 0.4
     beta = (1.0 - alpha)
     src1 = (255 * _normalize(lidar[:, :, 3])).astype(np.uint8)
     src2 = (255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8)
     dst = np.uint8(alpha*(src1[:,:,None])+beta*(src2))
     #dst = cv2.addWeighted(src1[:,:,None], alpha, src2, beta, 0.0)
-    cv2.imshow("Blend Map", dst)
-    cv2.waitKey(50)
+    arr = np.zeros_like(dst)
+    arr[:,:,0] = src1[:,:]
+    arr[:,:,1] = src1[:,:]
+    arr[:,:,2] = src1[:,:]
+    img = np.concatenate((arr, dst), axis=0)
+    #resize img
+    scale_percent = 200 # percent of original size
+    width = int(img.shape[1] * scale_percent / 100)
+    height = int(img.shape[0] * scale_percent / 100)
+    dim = (width, height)
+    resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+    cv2.imshow("SqueezeSegV2", resized)
+    cv2.waitKey(100)
     
     #print(len(pred_cls[0])) #= 32
     #print(len(pred_cls[0][0])) #= 1024
