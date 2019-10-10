@@ -8,11 +8,12 @@
 #ifndef MAPPER_lib_neural_mapper_py_H_
 #define MAPPER_lib_neural_mapper_py_H_
 
+#include <carmen/carmen.h>
+#include <carmen/map.h>
 
 void
-initialize_inference_context_mapper();
+initialize_inference_context_mapper_();
 
-unsigned char*
-process_image_nm(int width, int height, unsigned char *image1, unsigned char *image2, unsigned char *image3, unsigned char *image4, unsigned char *image5);
-
+double*
+process_map_neural_mapper(int size, carmen_map_t *map_max, carmen_map_t *map_mean, carmen_map_t *map_min, carmen_map_t *map_numb, carmen_map_t *map_std);
 #endif /*MAPPER_lib_neural_mapper_py_H_ */

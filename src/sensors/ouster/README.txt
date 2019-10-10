@@ -1,6 +1,6 @@
 
 
-## IMPORTANT: see doc/ouster_manuals/info-uteis.txt
+## IMPORTANT: see doc/ouster_manuals/info-uteis.txt - To use connected on pc, you need to use a DHCP program (see the manual)
 
 
 # how to run the driver: 

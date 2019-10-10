@@ -34,11 +34,11 @@ neural_mapper_export_dataset_as_png(bool get_next_map, char path[])
 
 
 void
-neural_mapper_export_dataset_as_binary_file(bool get_next_map, char path[])
+neural_mapper_export_dataset_as_binary_file(bool get_next_map, char path[], double current_timestamp, carmen_pose_3D_t neural_mapper_robot_pose)
 {
 	if (get_next_map)
 	{
-		neural_mapper_acumulator->export_as_binary_file(path, map_index);
+		neural_mapper_acumulator->export_as_binary_file(path, map_index, current_timestamp, neural_mapper_robot_pose);
 		map_index++;
 	}
 }
@@ -177,4 +177,15 @@ neural_mapper_update_output_map(carmen_map_t offline_map, carmen_position_t car_
 	}
 
 	return 0;
+}
+
+cv::Mat
+neural_map_run_foward(int size)
+{
+	printf("Entrei aqui\n");
+	cv::Mat a;
+	neural_mapper_acumulator->foward_map(size);
+	printf("Voltou hein\n");
+	return a;
+
 }

@@ -1376,6 +1376,9 @@ main(int argc, char **argv)
 
 	mapper_initialize(&map_config, car_config);
 
+	if (use_neural_mapper)
+		initialize_inference_context_mapper_();
+
 	/* Register messages */
 	define_mapper_messages();
 

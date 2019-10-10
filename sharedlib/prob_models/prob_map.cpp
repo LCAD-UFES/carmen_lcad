@@ -247,6 +247,19 @@ carmen_prob_models_create_compact_map(carmen_compact_map_t *cmap, carmen_map_t *
 
 
 void
+carmen_prob_models_save_compact_map_as_binary_file(carmen_compact_map_t *cmap, char *path)
+{
+	FILE *map_file;
+	map_file = fopen(path, "wb");
+	fwrite(cmap->coord_x, cmap->number_of_known_points_on_the_map, sizeof(int), map_file);
+	fwrite(cmap->coord_y, cmap->number_of_known_points_on_the_map, sizeof(int), map_file);
+	fwrite(cmap->value, cmap->number_of_known_points_on_the_map, sizeof(double),map_file);
+	fclose(map_file);
+
+}
+
+
+void
 carmen_prob_models_initialize_cost_map(carmen_map_t *cost_map, carmen_map_config_t config, double resolution)
 {
 	cost_map->config.resolution = resolution;

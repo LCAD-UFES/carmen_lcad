@@ -175,11 +175,12 @@ def file_npz_to_tensor(file):
     return data_tensor
 
 
-def file_to_tensor(img_x_dim, img_y_dim, file):
+def file_to_tensor(transforms, img_x_dim, img_y_dim, file):
     numpy_file = np.fromfile(file, dtype=float)
     reshaped = numpy_file.reshape(img_x_dim, img_y_dim)
     data_tensor = torch.from_numpy(reshaped)
-    
+    if transforms != None:
+        data_tensor = transforms(data_tensor)
     return data_tensor
 
 
@@ -190,7 +191,7 @@ def label_file_npz_to_tensor(file):
 
     weight = np.array([len(np.where(normalized_data == t)[0]) for t in np.unique(normalized_data)])
     data_tensor = torch.from_numpy(normalized_data)
-#     print(weight.shape)
+
     return data_tensor, weight
 
 
@@ -309,7 +310,7 @@ def train(interval_save_model, iterations, model, device, train_list, dataset_co
                 cv2.imwrite(dnn_config['save_log_files'] + 'img' + str(epoch) + '.png', labels_to_img(imgPred[0].numpy(), img_width))
 
 
-def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config, n_classes, img_width, img_height, input_channels, interval_save_model):
+def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config, n_classes, img_width, img_height, input_channels):
     global TRANSFORMS
     print("Testing!")
     model.eval()
@@ -318,7 +319,7 @@ def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config
     last_element = 0
     with torch.no_grad():
         for batch_idx in range(math.floor(len(test_list)/batch_size)):
-            if last_element < (len(train_list)):
+            if last_element < (len(test_list)):
                 data, target, last_element, weights = load_bach_data(TRANSFORMS, test_list, dataset_config['test_path'],
                                                             dataset_config['target_path'],
                                                             last_element, batch_size, input_channels,
@@ -330,6 +331,11 @@ def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config
                 test_loss += F.cross_entropy(output, target, reduction="sum").item() # sum up batch loss
                 pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
                 correct += pred.eq(target.view_as(pred)).sum().item()
+                imgPred = pred[0]
+                imgPred = imgPred.cpu().float()
+                target = target.cpu().float()
+                cv2.imwrite(dnn_config['save_log_files'] + 'img' + str(batch_idx) + '.png', labels_to_img(imgPred[0].numpy(), img_width))
+                cv2.imwrite(dnn_config['save_log_files'] + 'label' + str(batch_idx) + '.png', labels_to_img(target[0].numpy(), img_width))
         #    test_loss /= len(test_loader.dataset)
         test_loss /= (len(test_list)*batch_size*img_width*img_height)
         texto = ('Test set: epoch {} Average loss {:.10f}, Accuracy: {}/{} {:.6f}\n'.format(epoch,
@@ -341,54 +347,36 @@ def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config
         arq.close()
         print(texto)
         
-        if epoch % interval_save_model == 0:
-                imgPred = pred[0]
-                imgPred = imgPred.cpu().float()
-                cv2.imwrite(dnn_config['save_log_files'] + 'img_predicted' + str(epoch) + '.png', labels_to_img(imgPred[0].numpy(), img_width))
-        
     
 if __name__ == '__main__':
 
     # TODO Fazer um função pra isso:
     # Load config and initializations
     config_file = configparser.ConfigParser()
-    config_file.read('config.ini')
+    config_file.read('config_test.ini')
     dataset_config = config_file['DATASET']
     dnn_config = config_file['DNN']
 
-    train_list = getDatasetList(dataset_config['train_list'])
     test_list = getDatasetList(dataset_config['test_list'])
     #TODO Escrever no parametro [max_normalize_std] e max_normalize_numb, os valores pra esse dataset
 
     batch_size = int(dnn_config['batch_size'])
-    decay_step_size = int(dnn_config['step_size'])
-    decay_rate = int(dnn_config['decay_rate'])
-    iterations = math.ceil(len(train_list) / batch_size)
     input_channels = int(dataset_config['channels'])
     n_classes = int(dnn_config['classes'])
     img_width = int(dataset_config['img_width'])
     img_height = int(dataset_config['img_height'])
     use_cuda = int(dnn_config['use_cuda'])
     device_number = dnn_config['device']
-    epochs = int(dnn_config['epochs'])
     interval_save_model = int(dnn_config['interval_save_model'])
     random_seed = int(dnn_config['manual_seed'])
-    learning_rate = float(dnn_config['learning_rate'])
     dropout_prob = float(dnn_config['dropout_prob'])
     # CUDA_LAUNCH_BLOCKING = 1
 
     use_cuda = use_cuda and torch.cuda.is_available()
     # TODO: Arrumar pra escolher pelo parametro
     device = torch.device("cuda") # torch.device(("cuda:" + device_number) if use_cuda else "cpu")
-#   print(torch.cuda.current_device(), torch.cuda.get_device_capability(int(device_number)))
+    print(torch.cuda.current_device(), torch.cuda.get_device_capability(int(device_number)))
     print('Using Device: ', device)
-
-    config_log_file_name = dnn_config['save_log_files'] + 'config' + str(epochs) + '.ini'
-    with open(config_log_file_name, 'w') as configfile:  # type: TextIO
-        config_file.write(configfile)
-
-    # optimizer parameter?
-    torch.manual_seed(random_seed)
     
     if dataset_config.getboolean('shuffle_data'):
         shuffle(train_list)
@@ -402,29 +390,10 @@ if __name__ == '__main__':
     if dnn_config['use_trained_model'] is not "":
         model.load_state_dict(torch.load(dnn_config['use_trained_model']))
         print("Using model: ", dnn_config['use_trained_model'])
-    print("Learning rate: ", learning_rate)
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-    print('Iniciando treino por ', epochs, 'epocas')
+    print('Iniciando Test \n')
 
-    for epoch in range(1, epochs + 1):
-        inicio = time.time()
-        train(interval_save_model, iterations, model, device, train_list,
-              dataset_config, dnn_config, optimizer, epoch, batch_size, n_classes, img_width, img_height, input_channels)
-        print("\nTempo total 1 epoca: ", time.time() - inicio)
-        test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config, n_classes, img_width, img_height, input_channels, interval_save_model)
-
-        if epoch % decay_step_size == 0:
-            first = 1
-            for g in optimizer.param_groups:
-                if first:
-                    print("Learning rate decay from: ", str(g['lr']), "to: ", g['lr'] / decay_rate)
-                    first = 0
-                g['lr'] /= decay_rate
-
-        if epoch % dnn_config.getint('interval_save_model') == 0:
-            print('Saving model at:', dnn_config['save_models'])
-            torch.save(model.state_dict(), dnn_config['save_models'] + str(epoch) + '.model')
-
-    print("cabou")
-    torch.save(model.state_dict(), dnn_config['save_models'] + str(epoch) + '.model')
+    inicio = time.time()
+    epoch = 1
+    test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config, n_classes, img_width, img_height, input_channels)
+    print("\nTempo total 1 epoca: ", time.time() - inicio)

@@ -4,10 +4,12 @@
  *  Created on: Nov 29, 2018
  *      Author: vinicius
  */
-#include "lib_neural_mapper_py.h"
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+
 
 #include <Python.h>
 #include <numpy/arrayobject.h>
+#include "lib_neural_mapper_py.h"
 #include <opencv/cv.hpp>
 
 
@@ -17,9 +19,10 @@ PyObject *python_mapper_segmentation_function;
 
 //Adaptar para as minhas funcoes de inferencia
 void
-initialize_inference_context_mapper()
+initialize_inference_context_mapper_()
 {
 	Py_Initialize();
+	printf("python neural mapper started \n");
 
 	#define NUMPY_IMPORT_ARRAY_RETVAL
 
@@ -34,7 +37,6 @@ initialize_inference_context_mapper()
 		Py_Finalize();
 		exit(printf("Error: The python_module neural_map_inference could not be loaded.\nMaybe PYTHONPATH is not set.\n"));
 	}
-	Py_DECREF(python_module_name);
 
 	python_mapper_segmentation_function = PyObject_GetAttrString(python_module, (char *) "process_image");
 
@@ -44,39 +46,64 @@ initialize_inference_context_mapper()
 		Py_Finalize();
 		exit (printf("Error: Could not load the python_mapper_segmentation_function.\n"));
 	}
-
 }
 
 
-unsigned char*
-process_image_nm(int width, int height, unsigned char *image1, unsigned char *image2, unsigned char *image3, unsigned char *image4, unsigned char *image5)
+PyListObject *
+convert_rddf_array(int size, double *a)
+{
+	PyObject *list = Py_BuildValue("[]");
+
+	for (int i=0; i<size; i++)
+	{
+//		printf("%lf \n", a[i]);
+		PyObject *element = Py_BuildValue("(d)", a[i]);
+		PyList_Append(list, element);
+		Py_DECREF(element);
+	}
+	return (PyListObject *)list;
+}
+
+
+double*
+process_map_neural_mapper(int size, carmen_map_t *map_max, carmen_map_t *map_mean, carmen_map_t *map_min, carmen_map_t *map_numb, carmen_map_t *map_std)
 {
 	//create shape for numpy array
-	npy_intp dims[3] = {height, width, 3};
+	int total_size = size*size;
+	npy_intp dims[1] = {total_size};
+	printf("Test size:%d  \n", total_size);
 
-	PyObject* numpyArray1 = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image1); //NPY_DOUBLE, image1);
-	PyObject* numpyArray2 = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image2); //NPY_DOUBLE, image2);
-	PyObject* numpyArray3 = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image3); //NPY_DOUBLE, image3);
-	PyObject* numpyArray4 = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image4); //NPY_DOUBLE, image4);
-	PyObject* numpyArray5 = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image5); //NPY_DOUBLE, image5);
+//	PyListObject *python_a1 = convert_rddf_array(size, image1);
+//	PyListObject *python_a2 = convert_rddf_array(size, image2);
+//	PyListObject *python_a3 = convert_rddf_array(size, image3);
+//	PyListObject *python_a4 = convert_rddf_array(size, image4);
+//	PyListObject *python_a5 = convert_rddf_array(size, image5);
+
+	PyObject* numpyArray1 = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, map_max->complete_map);
+	PyObject* numpyArray2 = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, map_mean->complete_map);
+	PyObject* numpyArray3 = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, map_min->complete_map);
+	PyObject* numpyArray4 = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, map_numb->complete_map);
+	PyObject* numpyArray5 = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, map_std->complete_map);
 	//Um numpyArraypra cada
 
-	PyObject* return_array;
-
-	return_array = PyObject_CallFunction(python_mapper_segmentation_function, (char *) "(OOOOO)", numpyArray1, numpyArray2, numpyArray3, numpyArray4, numpyArray5);
-
-
-	unsigned char *z = (unsigned char*) PyArray_DATA(return_array);
+	PyArrayObject* return_array;
+	return_array = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_mapper_segmentation_function, numpyArray1, numpyArray2, numpyArray3, numpyArray4, numpyArray5, NULL);
+//	return_array = PyObject_CallFunction(python_mapper_segmentation_function, (char *) "(OOOOO)", numpyArray1, numpyArray2, numpyArray3, numpyArray4, numpyArray5);
 
 	if (PyErr_Occurred())
         PyErr_Print();
+
+
+
+//	float *result_array = (float*)PyArray_DATA(python_result_array);
+	double *z = (double*) PyArray_DATA(return_array);
 
 	Py_DECREF(numpyArray1);
 	Py_DECREF(numpyArray2);
 	Py_DECREF(numpyArray3);
 	Py_DECREF(numpyArray4);
 	Py_DECREF(numpyArray5);
-	// Py_DECREF(return_array);
+	Py_DECREF(return_array);
 
 	return z;
 }
