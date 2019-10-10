@@ -19,6 +19,7 @@ Foi modificado os seguintes parâmetros:
 robot_length
 robot_width
 robot_vertical_displacement_from_center
+robot_wheel_radius
 robot_acceleration
 robot_deceleration
 robot_distance_between_front_and_rear_axles
@@ -40,6 +41,16 @@ robot_distance_between_front_car_and_front_wheels
 robot_distance_between_rearview
 robot_turning_radius
 "
+Também foram alterados parâmetros da sensor board:
+"
+sensor_board_1_x
+sensor_board_1_y
+sensor_board_1_z
+sensor_board_1_yaw
+sensor_board_1_pitch
+sensor_board_1_roll
+"
+
 Foi criado o método publish_odometry_message no base_main.c (necessário dar include no <carmen/robot_ackerman_interface.h>) e dar define nas mensagens tipo CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME.
 Foi criado o process-pioneer_sensorbox_playback_viewer_3D.ini e ao executá-lo, foi necessário incluir no carmen-pioneer-sensorbox.ini os seguintes parâmetros:
 "

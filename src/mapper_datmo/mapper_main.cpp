@@ -469,26 +469,26 @@ vector<carmen_vector_2D_t> moving_objecst_cells_vector;
 void
 erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
 {
-	ofstream point_cloud_file;
+	//ofstream point_cloud_file;
 	double timestamp = sensor_data->last_timestamp;
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
 	int i, j, line;
-	int shots_to_squeeze = 1024;
+	int shots_to_squeeze = 512;
 	unsigned int number_of_points = sensor_params->vertical_resolution * shots_to_squeeze;
 	float squeeze[number_of_points * 5];
-	float* return_array;
+	int* return_array;
 
 	printf("Laser Shots: %d number of points: %d\n", number_of_laser_shots, number_of_points);
 	if(number_of_laser_shots >= shots_to_squeeze)
 	{
-		printf("Mounting matrix\n");
-		point_cloud_file.open("SqueezeSeg/" + std::to_string(timestamp) + ".txt");
-		point_cloud_file << "#Array shape: (32, 1024, 5)\n";
+		//printf("Mounting matrix\n");
+		//point_cloud_file.open("SqueezeSeg/" + std::to_string(timestamp) + ".txt");
+		//point_cloud_file << "#Array shape: (32, 1024, 5)\n";
 
 		for (i = sensor_params->vertical_resolution, line = 0; i > 0; i--)
 		{
-			for (j = 0; j < shots_to_squeeze; j++, line++)
+			for (j = 0; j < shots_to_squeeze; j++)
 			{
 				unsigned int scan_index = j * sensor_params->vertical_resolution;
 				double vertical_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle;
@@ -497,37 +497,54 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 				double processed_intensity = (double) (sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i]) / 255.0;
 				//printf("After intensity\n");
 				double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
-				if (range > 0 && range < 200) // this causes n_points to become wrong (needs later correction)
-				{
-					tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
-					double x = round(point.x() * 100.0) / 100.0;
-					double y = round(point.y() * 100.0) / 100.0;
-					double z = round(point.z() * 100.0) / 100.0;
-					//				double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
-					squeeze[line * 5] = (float) x;
-					squeeze[(line * 5) + 1] = (float) y;
-					squeeze[(line * 5) + 2] = (float) z;
-					squeeze[(line * 5) + 3] = (float) processed_intensity;
-					squeeze[(line * 5) + 4] = (float) range;
-					point_cloud_file << std::fixed << std::setprecision(2) << x
-							<< "\t" << y << "\t" << z << "\t" << processed_intensity
-							<< "\t" << range << "\n";
-				} else {
-					squeeze[line * 5] = 0.0;
-					squeeze[(line * 5) + 1] = 0.0;
-					squeeze[(line * 5) + 2] = 0.0;
-					squeeze[(line * 5) + 3] = 0.0;
-					squeeze[(line * 5) + 4] = 0.0;
-					point_cloud_file << "0.00\t0.00\t0.00\t0.00\t0.00\n";
+				if (horizontal_angle > -3.14){
+					if (range > 0 && range < 200) // this causes n_points to become wrong (needs later correction)
+					{
+						tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+						double x = round(point.x() * 100.0) / 100.0;
+						double y = round(point.y() * 100.0) / 100.0;
+						double z = round(point.z() * 100.0) / 100.0;
+						//				double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
+						squeeze[line * 5] = (float) x;
+						squeeze[(line * 5) + 1] = (float) y;
+						squeeze[(line * 5) + 2] = (float) z;
+						squeeze[(line * 5) + 3] = (float) processed_intensity;
+						squeeze[(line * 5) + 4] = (float) range;
+						//point_cloud_file << std::fixed << std::setprecision(2) << x
+						//		<< "\t" << y << "\t" << z << "\t" << processed_intensity
+						//		<< "\t" << range << "\n";
+					} else {
+						squeeze[line * 5] = 0.0;
+						squeeze[(line * 5) + 1] = 0.0;
+						squeeze[(line * 5) + 2] = 0.0;
+						squeeze[(line * 5) + 3] = 0.0;
+						squeeze[(line * 5) + 4] = 0.0;
+						//point_cloud_file << "0.00\t0.00\t0.00\t0.00\t0.00\n";
+					}
+					line++;
 				}
 			}
 
-			if (j % shots_to_squeeze == 0 && j > 0)
-				point_cloud_file  << "# New slice\n";
+			//if (j % shots_to_squeeze == 0 && j > 0)
+			//	point_cloud_file  << "# New slice\n";
 		}
-		point_cloud_file.close();
-
+		//point_cloud_file.close();
 		return_array = libsqueeze_seg_process_point_cloud(sensor_params->vertical_resolution, shots_to_squeeze, &squeeze[0], sensor_data->last_timestamp);
+		// It is an array with 32 positions and 1024 values
+		// lets decode to the same positions we have readed
+		for (i = sensor_params->vertical_resolution, line = 0; i > 0; i--)
+		{
+			for (j = 0; j < shots_to_squeeze; j++, line++)
+			{
+				if (return_array[line] != 0){
+					unsigned int scan_index = j * sensor_params->vertical_resolution;
+					sensor_data->points[cloud_index].sphere_points[scan_index + i].length = 0.0;
+					sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i] = 0.0;
+				}
+			}
+		}
+		//printf("The final value of line is %d\n", line);
+
 	}
 }
 
