@@ -1,14 +1,15 @@
-import os
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 from datetime import datetime
+
+import os
 import os.path
 import sys
 import time
-import glob    
+import glob
+import cv2
 
 import numpy as np
 from six.moves import xrange
@@ -20,92 +21,98 @@ from imdb import kitti
 from utils.util import *
 from nets import *
 
-FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string(
-        'checkpoint', './data/SqueezeSegV2/model.ckpt-30700',
-        """Path to the model parameter file.""")
-tf.app.flags.DEFINE_string(
-        'input_path', './data/samples/*',
-        """Input lidar scan to be detected. Can process glob input such as """
-        """./data/samples/*.npy or single input.""")
-tf.app.flags.DEFINE_string(
-        'out_dir', './data/samples_out/', """Directory to dump output.""")
-tf.app.flags.DEFINE_string('gpu', '0', """gpu id.""")
+'''Defining global variables'''
+global mc
+global model
+global sess
 
-def _normalize(x):
-  return (x - x.min())/(x.max() - x.min())
 
-def squeeze_seg_process_point_cloud(carmen_lidar_point_cloud):
+'''Initialize tensorflow and model within specific vertical resolution and number shots to squeeze'''
+def initialize(vertical_resolution, shots_to_squeeze):
+    global mc
+    global model
+    global sess
 
-  os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.gpu
-
-  with tf.Graph().as_default():
+    '''Loads squeezeseg config and changes the zenith and azimuth level'''
     mc = kitti_squeezeSeg_config()
+    mc.ZENITH_LEVEL = vertical_resolution
+    mc.AZIMUTH_LEVEL = shots_to_squeeze
+
     mc.LOAD_PRETRAINED_MODEL = False
-    mc.BATCH_SIZE = 1 # TODO(bichen): fix this hard-coded batch size.
+    mc.BATCH_SIZE = 1
     model = SqueezeSeg(mc)
 
+    '''Loads tensorflow'''
+    graph = tf.Graph().as_default()
+    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     saver = tf.train.Saver(model.model_params)
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-      saver.restore(sess, FLAGS.checkpoint)
-      for f in glob.iglob(FLAGS.input_path):
-        lidar = np.loadtxt(f, delimiter = '\t')
-        print (lidar.shape)
-        lidar = lidar.reshape((mc.ZENITH_LEVEL,mc.AZIMUTH_LEVEL,5))
-        # print (lidar.shape)
-        # lidar = np.load(f).astype(np.float32, copy=False)[:, :, :5]
-        # save_txt(lidar, f)
-        lidar_mask = np.reshape(
-            (lidar[:, :, 4] > 0),
-            [mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL, 1]
-        )
-        print(lidar_mask.shape)
-        lidar = (lidar - mc.INPUT_MEAN)/mc.INPUT_STD
-        lidar = np.append(lidar, lidar_mask, axis=2)
-        pred_cls = sess.run(
-            model.pred_cls,
-            feed_dict={
-                model.lidar_input:[lidar],
-                model.keep_prob: 1.0,
-                model.lidar_mask:[lidar_mask]
-            }
-        )
+    saver.restore(sess, os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/SqueezeSegV2/model.ckpt-30700')
 
-        return pred_cls
-
-        # save the data
-#        file_name = f.strip('.npy').split('/')[-1]
-        # np.save(
-        #     os.path.join(FLAGS.out_dir, 'pred_'+file_name+'.npy'),
-        #     pred_cls[0]
-        # )
-        #np.savetxt('foo'+file_name+'.csv', pred_cls[0].shape, delimiter=",")
-
-        # save the plot
-#        depth_map = Image.fromarray(
-#            (255 * _normalize(lidar[:, :, 3])).astype(np.uint8))
-#        depth_map.save(
-#            os.path.join(FLAGS.out_dir, 'in_'+file_name+'.png'))
-
-#        label_map = Image.fromarray(
-#            (255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8))
-
-#        blend_map = Image.blend(
-#            depth_map.convert('RGBA'),
-#            label_map.convert('RGBA'),
-#            alpha=0.4
-#        )
-
-#        blend_map.save(
-#            os.path.join(FLAGS.out_dir, 'out_'+file_name+'.png'))
+    print ("\n\n-------------------------------------------------------")
+    print ("       Pretrained Model and Tensorflow loaded!")
+    print ("-------------------------------------------------------\n\n")
 
 
-#def main(argv=None):
-#  if not tf.gfile.Exists(FLAGS.out_dir):
-#    tf.gfile.MakeDirs(FLAGS.out_dir)
-#  detect()
-#  print('Detection output written to {}'.format(FLAGS.out_dir))
+def _normalize(x):
+    return (x - x.min())/(x.max() - x.min())
 
-#if __name__ == '__main__':
-#    tf.app.run()
+
+def squeeze_seg_process_point_cloud(lidar, timestamp):
+    global mc
+    global model
+    global sess
+
+    #print("timestamp={}".format(timestamp.item(0)))
+    #print("lidar.shape={}, mc.zenith={}, mc.azimuth={}".format(
+    #    lidar.shape, mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL))
+
+    lidar_mask = np.reshape(
+        (lidar[:, :, 4] > 0),
+        [mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL, 1]
+    )
+    #print("lidar_mask.shape={}".format(lidar_mask.shape))
+    lidar = (lidar - mc.INPUT_MEAN)/mc.INPUT_STD
+    lidar = np.append(lidar, lidar_mask, axis=2)
+    #print('Before predict')
+    pred_cls = sess.run(
+        model.pred_cls,
+        feed_dict={
+            model.lidar_input: [lidar],
+            model.keep_prob: 1.0,
+            model.lidar_mask: [lidar_mask]
+        }
+    )
+    #print('After predict')
+    depth_map = Image.fromarray((255 * _normalize(lidar[:, :, 3])).astype(np.uint8))
+    #depth_map.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'depth_map_' + str(timestamp.item(0)) + '.png'))
+    label_map = Image.fromarray((255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8))
+    blend_map = Image.blend(depth_map.convert('RGBA'), label_map.convert('RGBA'), alpha=0.4)
+    #blend_map.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'blend_map' + str(timestamp.item(0)) + '.png'))
+    alpha = 0.4
+    beta = (1.0 - alpha)
+    src1 = (255 * _normalize(lidar[:, :, 3])).astype(np.uint8)
+    src2 = (255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8)
+    dst = np.uint8(alpha*(src1[:,:,None])+beta*(src2))
+    #dst = cv2.addWeighted(src1[:,:,None], alpha, src2, beta, 0.0)
+    arr = np.zeros_like(dst)
+    arr[:,:,0] = src1[:,:]
+    arr[:,:,1] = src1[:,:]
+    arr[:,:,2] = src1[:,:]
+    img = np.concatenate((arr, dst), axis=0)
+    #resize img
+    scale_percent = 200 # percent of original size
+    width = int(img.shape[1] * scale_percent / 100)
+    height = int(img.shape[0] * scale_percent / 100)
+    dim = (width, height)
+    resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+    cv2.imshow("SqueezeSegV2", resized)
+    cv2.waitKey(100)
+    
+    #print(len(pred_cls[0])) #= 32
+    #print(len(pred_cls[0][0])) #= 1024
+    #print(type(pred_cls[0][0][0])) int64
+    
+    return pred_cls[0]
+
+

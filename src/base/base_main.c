@@ -30,6 +30,7 @@
 #include <carmen/drive_low_level.h>
 #include <carmen/base_interface.h>
 #include <carmen/base_ackerman_interface.h>
+#include <carmen/robot_ackerman_interface.h>
 
 #ifdef BASE_HAS_ARM
 #include <carmen/arm_messages.h> 
@@ -63,7 +64,7 @@ static double last_motion_command = 0;
 
 static double motion_timeout = 1;
 static int odometry_inverted;
-
+static double distance_between_front_and_rear_axles;
 static char *model_name;
 static char *dev_name;
 static char* sonar_offset_string = 0;
@@ -274,7 +275,9 @@ read_parameters(int argc, char **argv)
     {"robot", "acceleration", CARMEN_PARAM_DOUBLE, 
      &(robot_config.acceleration), 1, NULL},
     {"robot", "deceleration", CARMEN_PARAM_DOUBLE, 
-     &(deceleration), 1, NULL}};
+     &(deceleration), 1, NULL},
+	 {"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE,
+	      &(distance_between_front_and_rear_axles), 1, NULL}};
 
   carmen_param_t extra_params[] = {
     {"base", "relative_wheelsize", CARMEN_PARAM_DOUBLE, 
@@ -387,7 +390,7 @@ base_ackerman_subscribe_motion_command_handler(carmen_base_ackerman_motion_comma
 {
 	carmen_ackerman_motion_command_p vel;
 	vel = motion_command_message[0].motion_command;
-	double L = 0.18; // Distancia entre eixos.
+//	double L = distance_between_front_and_rear_axles; // Distancia entre eixos.
 	double delta_theta;
 
 
@@ -423,6 +426,7 @@ base_ackerman_subscribe_motion_command_handler(carmen_base_ackerman_motion_comma
 
 	  if (odometry_inverted)
 	    vel->v *= -1;
+	  	vel->phi *= -1; // trecho acrescentado por Gabriel Hendrix
 	  if (!use_hardware_integrator)
 	    {
 	      vel->v /= relative_wheelsize;
@@ -434,8 +438,8 @@ base_ackerman_subscribe_motion_command_handler(carmen_base_ackerman_motion_comma
 	  do
 	    {
 //		  printf("%.2f, %.2f \n",vel->v, vel->phi);
-		  printf("%.2f; %.2f ;;\n", odometry.theta, rotation_theta );
-		  delta_theta = (vel->v / L) * tan(vel->phi);
+//		  printf("%.2f; %.2f ;;\n", odometry.theta, rotation_theta);
+		  delta_theta = (vel->v / distance_between_front_and_rear_axles) * tan(vel->phi);
 	      base_err = carmen_base_direct_set_velocity(vel->v, delta_theta);
 	      last_motion_command = carmen_get_time();
 	      if (base_err < 0)
@@ -444,6 +448,18 @@ base_ackerman_subscribe_motion_command_handler(carmen_base_ackerman_motion_comma
 	  while (base_err < 0);
 
 
+}
+void
+publish_odometry_message(carmen_base_odometry_message current_odometry)
+{
+	IPC_RETURN_TYPE err;
+	carmen_robot_ackerman_velocity_message odometry_message;
+	odometry_message.v = current_odometry.tv;
+	odometry_message.phi = (odometry_message.v/ distance_between_front_and_rear_axles) * tan(current_odometry.rv);
+	odometry_message.host = current_odometry.host;
+	odometry_message.timestamp = current_odometry.timestamp;
+	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &odometry_message);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_ROBOT_ACKERMAN_VELOCITY_FMT);
 }
 
 
@@ -548,6 +564,10 @@ carmen_base_initialize_ipc(void)
   carmen_test_ipc_exit(err, "Could not define", 
                        CARMEN_BASE_BINARY_DATA_NAME);
 
+  err = IPC_defineMsg(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, IPC_VARIABLE_LENGTH,
+		  CARMEN_ROBOT_ACKERMAN_VELOCITY_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
+
   /* setup incoming message handlers */
 
   err = IPC_subscribe(CARMEN_BASE_VELOCITY_NAME, velocity_handler, NULL);
@@ -622,6 +642,7 @@ integrate_odometry(double displacement, double rotation, double tv, double rv)
   odometry.x += displacement * cos (odometry.theta+0.5*rotation);
   odometry.y += displacement * sin (odometry.theta+0.5*rotation);
   odometry.theta = carmen_normalize_theta(odometry.theta+rotation);
+  printf("{%.2f, %.2f, %.2f}\n", odometry.x, odometry.y, odometry.theta);
 }
 
 
@@ -690,8 +711,7 @@ carmen_base_run(void)
 	initialize_robot();
       else
 	integrate_odometry(displacement, rotation, tv, rv);
-      //THIAGO TESTANDO THETA
-      rotation_theta=rotation;
+
     } else {
       base_err = carmen_base_direct_get_integrated_state
 	(&(odometry.x), &(odometry.y), &(odometry.theta), &(odometry.tv), 
@@ -716,6 +736,7 @@ carmen_base_run(void)
   err = IPC_publishData(CARMEN_BASE_ODOMETRY_NAME, &odometry);
   carmen_test_ipc_exit(err, "Could not publish", 
 		       CARMEN_BASE_ODOMETRY_NAME);
+  publish_odometry_message(odometry);
   
   if (use_sonar) {
     carmen_warn("s");  

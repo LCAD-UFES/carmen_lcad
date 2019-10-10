@@ -35,6 +35,9 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <iostream> //Para salvar arquivos
+#include <fstream> //Para salvar arquivos
+
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 
@@ -462,6 +465,87 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 
 vector<carmen_vector_2D_t> moving_objecst_cells_vector;
 
+void
+fill_view_vector(double horizontal_angle, double vertical_angle, double range, double processed_intensity, float* view, int line)
+{
+	if (range > 0 && range < 200) // this causes n_points to become wrong (needs later correction)
+	{
+		tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+		double x = round(point.x() * 100.0) / 100.0;
+		double y = round(point.y() * 100.0) / 100.0;
+		double z = round(point.z() * 100.0) / 100.0;
+		//double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
+		view[line * 5] = (float) x;
+		view[(line * 5) + 1] = (float) y;
+		view[(line * 5) + 2] = (float) z;
+		view[(line * 5) + 3] = (float) processed_intensity;
+		view[(line * 5) + 4] = (float) range;
+	} else {
+		view[line * 5] = 0.0;
+		view[(line * 5) + 1] = 0.0;
+		view[(line * 5) + 2] = 0.0;
+		view[(line * 5) + 3] = 0.0;
+		view[(line * 5) + 4] = 0.0;
+	}
+}
+
+void
+erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
+{
+	//ofstream point_cloud_file;
+	double timestamp = sensor_data->last_timestamp;
+	int cloud_index = sensor_data->point_cloud_index;
+	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
+	int i, j, line;
+	int shots_to_squeeze = 1024;
+	int number_of_points = sensor_params->vertical_resolution * shots_to_squeeze;
+	float squeeze[number_of_points * 5];
+	int* return_squeeze_array;
+
+	printf("Laser Shots: %d number of points: %d\n", number_of_laser_shots, number_of_points);
+	if(number_of_laser_shots >= shots_to_squeeze)
+	{
+		printf("Mounting matrix\n");
+		//point_cloud_file.open("SqueezeSeg/" + std::to_string(timestamp) + ".txt");
+		//point_cloud_file << "#Array shape: (32, 1024, 5)\n";
+
+		for (i = sensor_params->vertical_resolution, line = 0; i > 0; i--)
+		{
+			for (j = 0; j < shots_to_squeeze; j++, line++)
+			{
+				unsigned int scan_index = j * sensor_params->vertical_resolution;
+				double vertical_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle;
+				double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
+				//printf("Before intensity;");
+				double processed_intensity = (double) (sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i]) / 255.0;
+				//printf("After intensity\n");
+				double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
+
+				//Mounting Full View
+				fill_view_vector(horizontal_angle, vertical_angle, range, processed_intensity, &squeeze[0], line);
+			}
+		}
+
+		//point_cloud_file.close();
+		// Interpolling the points
+		return_squeeze_array = libsqueeze_seg_process_point_cloud(sensor_params->vertical_resolution, shots_to_squeeze, &squeeze[0], sensor_data->last_timestamp);
+		// It is an array with 32 positions and 1024 values
+		// lets decode to the same positions we have readed
+		for (i = sensor_params->vertical_resolution, line = 0; i > 0; i--)
+		{
+			for (j = 0; j < shots_to_squeeze; j++, line++)
+			{
+				if (return_squeeze_array[line] != 0){
+					unsigned int scan_index = j * sensor_params->vertical_resolution;
+					sensor_data->points[cloud_index].sphere_points[scan_index + i].length = 0.0;
+					sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i] = 0.0;
+				}
+			}
+		}
+//		printf("The final value of line is %d\n", line);
+
+	}
+}
 
 void
 erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
@@ -878,8 +962,8 @@ filter_sensor_data_using_image_semantic_segmentation(sensor_parameters_t *sensor
 			continue;
 
 		//filter_sensor_data_using_one_image(sensor_params, sensor_data, camera, nearest_index);
-		erase_moving_obstacles_cells(sensor_params, sensor_data, camera, nearest_index);
-
+		//erase_moving_obstacles_cells(sensor_params, sensor_data, camera, nearest_index);
+		erase_moving_obstacles_cells_squeezeseg(sensor_params, sensor_data);
 		filter_cameras++;
 	}
 
@@ -1150,7 +1234,6 @@ static void
 laser_ldrms_new_message_handler(carmen_laser_ldmrs_new_message *laser)
 {
 	sensor_msg_count[LASER_LDMRS]++;
-	libsqueeze_seg_test();
 //	FILE *f = fopen("scan.txt", "a");
 //	fprintf(f, "\n\n%d %lf %lf %d %f %f %d \n\n",
 //			laser->scan_number,
@@ -2146,12 +2229,13 @@ read_camera_parameters(int argc, char **argv)
 		active_cameras++;
 		get_camera_param(argc, argv, i);
 	}
-//	libsqueeze_seg_test();
 	if (active_cameras == 0)
 		fprintf(stderr, "No cameras active for datmo\n\n");
 	else
 	if (process_semantic)
+	{
 		initialize_inference_context();
+	}
 }
 
 
@@ -2470,6 +2554,9 @@ main(int argc, char **argv)
 
 	/* Initialize all the relevant parameters */
 	read_parameters(argc, argv, &map_config, &car_config);
+
+	/* Register Python Context for SqueezeSeg*/
+	initialize_python_context();
 
 	initialize_transforms();
 
