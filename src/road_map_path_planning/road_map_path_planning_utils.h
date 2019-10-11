@@ -72,6 +72,7 @@ struct type_osmnx
 	char *country;
 	char *graph_type;
 	char *plot;
+	char *route;
 	string python_command;
 };
 typedef type_osmnx t_osmnx;
