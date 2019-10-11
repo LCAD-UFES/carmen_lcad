@@ -31,7 +31,7 @@ initialize_python_context()
 		Py_Finalize();
 		exit (printf("Error: Could not load the python_initialize_function.\n"));
 	}
-	PyObject *python_arguments = Py_BuildValue("(ii)", 32, 512);
+	PyObject *python_arguments = Py_BuildValue("(ii)", 32, 1024);
 
 	PyObject_CallObject(python_initialize_function, python_arguments);
 
