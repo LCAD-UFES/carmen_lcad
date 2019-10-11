@@ -46,3 +46,5 @@ max_k1 = 0.3
 min_k2 = -0.15
 # Upper limit of k2 spline coefficient
 max_k2 = 0.15
+# Flag indicating if you should use Only Odometry for mapping (1 for only odometry)
+only_odometry = 0

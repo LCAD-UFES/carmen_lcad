@@ -796,6 +796,80 @@ save_poses_in_graphslam_format(ParticleSwarmOptimization &optimizer, PsoData *ps
 	return (accumulated_latency / (double) (pso_data->gps_data.size() - 1));
 }
 
+/*Function to generate poses_opt.txt without GPS*/
+double
+save_poses_in_odometry_format(ParticleSwarmOptimization &optimizer, PsoData *pso_data, const string &path, int id_first_sample, int particle_id)
+{
+	if (path.size() <= 0)
+		return (0.0);
+
+	double *particle = optimizer.GetBestSolution();
+	FILE *fptr = safe_fopen(path.c_str(), "w");
+
+	double yaw;
+	double x;
+	double y;
+
+	if (use_non_linear_phi)
+		compute_phi_spline(particle[6], particle[7], pso_data->max_steering_angle, pso_data, particle_id);
+
+	int first_sample = -1;
+	size_t velodyne_sample;
+	double timestamp;
+	double accumulated_latency = 0.0;
+	for (uint i = 1; i < pso_data->gps_data.size(); i++)
+	{
+		accumulated_latency += measured_latency(i - 1, particle[5], pso_data);
+
+		double v = latency_corrected_odometry(i - 1, particle[5], pso_data).v * particle[0] + particle[1];
+
+		if (fabs(v) > MIN_VELOCITY)
+		{
+			double global_x;
+			double global_y;
+
+			if (first_sample == -1)
+			{
+				first_sample = i - 1;
+				velodyne_sample = find_nearest_time_to_gps(pso_data, id_first_sample, particle[5]);
+			}
+
+			if (!pso_data->gps_data[i - 1].opt_odom_valid)
+				continue;
+			// Aqui tem que mexer para usar somente os dados da odometria
+			//Pegar as posições x, y, yaw com v phi timestamp e L
+			//(double &x, double &y, double &yaw, double v, double phi, double dt, double L)
+			double L=0.18;
+			ackerman_model(x, y, yaw, pso_data->odometry_data[i-1].v, pso_data->odometry_data[i-1].phi, pso_data->odometry_data[i-1].odometry_timestamp, L);
+			//x = pso_data->gps_data[i - 1].opt_odom_x;
+			//;;y = pso_data->gps_data[i - 1].opt_odom_y;
+			//yaw = pso_data->gps_data[i - 1].opt_odom_yaw;
+			//timestamp = pso_data->gps_data[i - 1].gps_timestamp;
+
+			while ((timestamp < pso_data->gps_data[i].gps_timestamp) && (velodyne_sample < pso_data->velodyne_data.size()))
+			{
+				double dt = pso_data->velodyne_data[velodyne_sample].velodyne_timestamp - timestamp;
+				compute_optimized_odometry_pose(x, y, yaw, particle,
+						pso_data->odometry_data[pso_data->velodyne_data[velodyne_sample].odometry_idx].v,		// supoe-se zero latencia entre velodyne e odometria
+						pso_data->odometry_data[pso_data->velodyne_data[velodyne_sample].odometry_idx].phi,		// supoe-se zero latencia entre velodyne e odometria
+						dt, pso_data->distance_between_front_and_rear_axles, pso_data->phi_spline[particle_id]);
+				global_x = x + pso_data->gps_data[first_sample].gps_x;
+				global_y = y + pso_data->gps_data[first_sample].gps_y;
+
+				fprintf(fptr, "%lf %lf %lf %lf\n", global_x, global_y, yaw,
+								pso_data->velodyne_data[velodyne_sample].velodyne_timestamp);
+
+				timestamp = pso_data->velodyne_data[velodyne_sample].velodyne_timestamp;
+				velodyne_sample++;
+			}
+		}
+	}
+
+	fclose(fptr);
+
+	return (accumulated_latency / (double) (pso_data->gps_data.size() - 1));
+}
+
 
 void
 print_optimization_report(FILE *f_calibration, FILE *f_report, ParticleSwarmOptimization *optimizer)
@@ -985,6 +1059,7 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<double>("max_k1", "Upper limit of k1 spline coefficient", 0.3);
 	args->add<double>("min_k2", "Lower limit of k2 spline coefficient", -0.15);
 	args->add<double>("max_k2", "Upper limit of k2 spline coefficient", 0.15);
+	args->add<int>("only_odometry", "Flag indicating if you should use Only Odometry for mapping (1 for only odometry)", 0);
 	args->parse(argc, argv);
 }
 
@@ -1055,7 +1130,13 @@ main(int argc, char **argv)
 	print_optimization_report(f_calibration, f_report, &optimizer);
 	print_result(optimizer.GetBestSolution(), f_report, &pso_data, &first_sample, optimizer.GetBestParticleId());
 	plot_graph(&optimizer, (void *) &pso_data, optimizer.GetBestParticleId());
+
+	if (!only_odometry)
+	{
 	/*double gps_latency = */ save_poses_in_graphslam_format(optimizer, &pso_data, args.get<string>("poses_opt"), first_sample, optimizer.GetBestParticleId());
+	}else{
+		save_poses_in_odometry_format(optimizer, &pso_data, args.get<string>("poses_opt"), first_sample, optimizer.GetBestParticleId());
+	}
 //	printf("latency = %lf\n", gps_latency);
 	if (use_non_linear_phi)
 		print_phi_spline(pso_data.phi_spline[optimizer.GetBestParticleId()], acc, pso_data.max_steering_angle, true);
