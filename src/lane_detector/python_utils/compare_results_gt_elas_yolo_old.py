@@ -3,8 +3,7 @@ import os
 import math
 import cv2
 
-# Mudar esta funcao para ler os pontos do ground truth e gerar um lista dupla (direita esquerda)
-#check
+
 def read_groud_truth_points(gt_dir, gt_file_name):
 	#print (gt_dir + gt_file_name)
 	
@@ -77,8 +76,6 @@ def read_and_convert_4_points_coordinates(predictions_dir, gt_file_name, image_w
 	predictions_list.append(predictions_list_left[:])
 	predictions_list.append(predictions_list_right[:])
 	#print(predictions_list)
-	# Modificar essa funcao para retornar uma lista dupla (todos os pontos direita e todos os pontos da esquerda)
-	#check
 
 	return predictions_list
 
@@ -89,15 +86,10 @@ def find_image_path():
 			return sys.argv[i + 1]
 	return ""
 
-#fazer codigo para printar os bound_boxes da yolo no vizualizador 
 
-#def show_image(gt_points, predictions_points, chosen_points_list, chosen_points_list_2, gt_file_path, images_path):
 def show_image(gt_points, predictions_points, predictions_points_2, gt_file_path, images_path):	
 	img = cv2.imread(images_path + gt_file_name.replace('txt', 'png'))
 	print(images_path)
-
-	#for p in predictions_points:
-		#cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (0,0,255), 2)
 	
 	#imprime os pontos da yolo em circulos
 	for i in range(len(predictions_points[0])):
@@ -132,14 +124,17 @@ def show_image(gt_points, predictions_points, predictions_points_2, gt_file_path
 			tuple_of_points_1 = (int(gt_points[i][j+1][0]), int(gt_points[i][j+1][1]))
 			cv2.line(img, tuple_of_points_0, tuple_of_points_1, (255,0,0), 2)
 			j = j + 1
-
 	
-	#for p in chosen_points_list:
-	#	cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (0,255,255), 2)
-		
-	#for p in chosen_points_list_2:
-	#	cv2.rectangle(img, (p[0]-1, p[1]-1), (p[0]+1, p[1]+1), (0,0,255), 2)
-		
+	for i in range(len(predictions_points[0])):
+		tuple_of_points_0 = (int(predictions_points[0][i][0]), int(predictions_points[0][i][1]))
+		tuple_of_points_1 = (int(predictions_points[0][i][2]), int(predictions_points[0][i][3]))
+		cv2.rectangle(img, tuple_of_points_0, tuple_of_points_1, (255, 0, 255), 10)
+	
+	for i in range(len(predictions_points[1])):
+		tuple_of_points_0 = (int(predictions_points[1][i][0]), int(predictions_points[1][i][1]))
+		tuple_of_points_1 = (int(predictions_points[1][i][2]), int(predictions_points[1][i][3]))
+		cv2.rectangle(img, tuple_of_points_0, tuple_of_points_1, (255, 0, 255), 10)
+
 	while (1):
 		cv2.imshow('Lane Detector Compute Error', img)
 		key = cv2.waitKey(0) & 0xff
@@ -185,20 +180,17 @@ def distance_point_line2(p1, p2, p):
 def comppute_point_to_line_error(line_p1, line_p2, predictions_points):
 	min_dist = 999999
 	distance = 0.0
-	#for p in predictions_points:
-	#print(line_p1[0])
 	aux = 0
 	point = []
 	distance = dist(line_p1[0], line_p1[1], predictions_points[0], predictions_points[1])
-	#distance = math.sqrt(((line_p1[0] - p[0]) * (line_p1[0] - p[0])) + (
-	#	(line_p1[1] - p[1]) * (line_p1[1] - p[1])))
+
 	if distance < min_dist:
 		aux = 0
 		min_dist = distance
 
-	distance = dist(line_p1[0], line_p1[1], predictions_points[2], predictions_points[3])
-	#distance = math.sqrt(((line_p1[0] - p[0]) * (line_p1[0] - p[0])) + (
-	#	(line_p1[1] - p[1]) * (line_p1[1] - p[1])))
+	distance = dist(line_p2[0], line_p2[1], predictions_points[2], predictions_points[3])
+	
+
 	if distance < min_dist:
 		aux = 1
 		min_dist = distance
@@ -219,7 +211,6 @@ def compute_error(gt_points, predictions_points):
 
 	for i in (range(len(gt_points[0]) - 1)):
 		for j in (range(len(predictions_points[0]))):
-			#print(gt_points[0][i + 1])
 			returned = comppute_point_to_line_error(gt_points[0][i], gt_points[0][i+1], 
 				predictions_points[0][j])
 			error += returned[0]
@@ -231,39 +222,6 @@ def compute_error(gt_points, predictions_points):
 				predictions_points[1][j])
 			error += returned[0]
 			chosen_points_list.append(returned[1])
-
-	"""
-	returned = comppute_point_to_line_error(gt_points[0], gt_points[1], predictions_points)   # Top Left
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-	
-	returned = comppute_point_to_line_error(gt_points[1], gt_points[2], predictions_points)
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-	
-	returned = comppute_point_to_line_error(gt_points[2], gt_points[3], predictions_points)
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-	
-	returned = comppute_point_to_line_error(gt_points[3], gt_points[2], predictions_points)   # Botton Left
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-	
-	returned = comppute_point_to_line_error(gt_points[4], gt_points[5], predictions_points)   # Top Right
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-	
-	returned = comppute_point_to_line_error(gt_points[5], gt_points[6], predictions_points)
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-	
-	returned = comppute_point_to_line_error(gt_points[6], gt_points[7], predictions_points)
-	error += returned[0]
-	chosen_points_list.append(returned[1])
-	
-	returned = comppute_point_to_line_error(gt_points[7], gt_points[6], predictions_points)   # Botton Right
-	error += returned[0]
-	chosen_points_list.append(returned[1])"""
 
 	print ('Error: ' + str(error))
 	
@@ -310,5 +268,5 @@ if __name__ == "__main__":
 			
 			#if images_path:
 				#show_image(gt_points, predictions_points, returned[1], returned_2[1], gt_file_name, images_path)
-			#show_image(gt_points, predictions_points, predictions_points_2, gt_file_name, images_path)
+			show_image(gt_points, predictions_points, predictions_points_2, gt_file_name, images_path)
 		print ('TOTAL Error: ' + str(error/cont))
