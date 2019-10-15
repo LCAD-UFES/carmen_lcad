@@ -20,6 +20,8 @@ from config import *
 from imdb import kitti
 from utils.util import *
 from nets import *
+from setuptools.sandbox import ExceptionSaver
+from IN import MCAST_BLOCK_SOURCE
 
 
 '''Defining global variables'''
@@ -27,13 +29,12 @@ global mc
 global model
 global sess
 
-
 '''Initialize tensorflow and model within specific vertical resolution and number shots to squeeze'''
 def initialize(vertical_resolution, shots_to_squeeze):
     global mc
     global model
     global sess
-
+    
     '''Loads squeezeseg config and changes the zenith and azimuth level'''
     mc = kitti_squeezeSeg_config()
     mc.ZENITH_LEVEL = vertical_resolution
@@ -42,12 +43,13 @@ def initialize(vertical_resolution, shots_to_squeeze):
     mc.LOAD_PRETRAINED_MODEL = False
     mc.BATCH_SIZE = 1
     model = SqueezeSeg(mc)
-
+    
     '''Loads tensorflow'''
     graph = tf.Graph().as_default()
     sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     saver = tf.train.Saver(model.model_params)
-    saver.restore(sess, os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/SqueezeSegV2/model.ckpt-30700')
+    saver.restore(sess, os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/SqueezeSegV2/model.ckpt-30700')  
+    
 
     print ("\n\n-------------------------------------------------------")
     print ("       Pretrained Model and Tensorflow loaded!")
@@ -57,24 +59,38 @@ def initialize(vertical_resolution, shots_to_squeeze):
 def _normalize(x):
     return (x - x.min())/(x.max() - x.min())
 
+def generate_lidar_images(lidar, pred_cls):
+    global mc
+    alpha = 0.4
+    beta = (1.0 - alpha)
+    src1 = (255 * _normalize(lidar[:, :, 3])).astype(np.uint8)
+    src2 = (255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8)
+    dst = np.uint8(alpha*(src1[:,:,None])+beta*(src2))
+    arr = np.zeros_like(dst)
+    arr[:,:,0] = src1[:,:]
+    arr[:,:,1] = src1[:,:]
+    arr[:,:,2] = src1[:,:]
+    img = np.concatenate((arr, dst), axis=0)
+    #resize img
+    scale_percent = 120 # percent of original size
+    width = int(img.shape[1] * scale_percent / 100)
+    height = int(img.shape[0] * scale_percent / 100)
+    dim = (width, height)
+    resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+    return resized
 
-def squeeze_seg_process_point_cloud(lidar, timestamp):
+def run_model(lidar):
     global mc
     global model
     global sess
-
-    #print("timestamp={}".format(timestamp.item(0)))
-    #print("lidar.shape={}, mc.zenith={}, mc.azimuth={}".format(
-    #    lidar.shape, mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL))
-
+    print("lidar.shape={}, mc.zenith={}, mc.azimuth={}".format(
+        lidar.shape, mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL))
     lidar_mask = np.reshape(
         (lidar[:, :, 4] > 0),
         [mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL, 1]
     )
-    #print("lidar_mask.shape={}".format(lidar_mask.shape))
     lidar = (lidar - mc.INPUT_MEAN)/mc.INPUT_STD
     lidar = np.append(lidar, lidar_mask, axis=2)
-    #print('Before predict')
     pred_cls = sess.run(
         model.pred_cls,
         feed_dict={
@@ -83,36 +99,37 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
             model.lidar_mask: [lidar_mask]
         }
     )
-    #print('After predict')
-    depth_map = Image.fromarray((255 * _normalize(lidar[:, :, 3])).astype(np.uint8))
-    #depth_map.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'depth_map_' + str(timestamp.item(0)) + '.png'))
-    label_map = Image.fromarray((255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8))
-    blend_map = Image.blend(depth_map.convert('RGBA'), label_map.convert('RGBA'), alpha=0.4)
-    #blend_map.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', 'blend_map' + str(timestamp.item(0)) + '.png'))
-    alpha = 0.4
-    beta = (1.0 - alpha)
-    src1 = (255 * _normalize(lidar[:, :, 3])).astype(np.uint8)
-    src2 = (255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8)
-    dst = np.uint8(alpha*(src1[:,:,None])+beta*(src2))
-    #dst = cv2.addWeighted(src1[:,:,None], alpha, src2, beta, 0.0)
-    arr = np.zeros_like(dst)
-    arr[:,:,0] = src1[:,:]
-    arr[:,:,1] = src1[:,:]
-    arr[:,:,2] = src1[:,:]
-    img = np.concatenate((arr, dst), axis=0)
-    #resize img
-    scale_percent = 200 # percent of original size
-    width = int(img.shape[1] * scale_percent / 100)
-    height = int(img.shape[0] * scale_percent / 100)
-    dim = (width, height)
-    resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
-    cv2.imshow("SqueezeSegV2", resized)
-    cv2.waitKey(100)
+    return pred_cls
     
-    #print(len(pred_cls[0])) #= 32
-    #print(len(pred_cls[0][0])) #= 1024
-    #print(type(pred_cls[0][0][0])) int64
-    
-    return pred_cls[0]
+def squeeze_seg_process_point_cloud(lidar, timestamp):
+    pred_cls = run_model(lidar)
+    resized = generate_lidar_images(lidar,pred_cls)
+    lidar_save = Image.fromarray(resized).convert('RGBA')
+    lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + '_full' + '.png'))
 
+    cv2.imshow("Slices", resized)
+    cv2.waitKey(100)
+        
+    return pred_cls[0]
+    
+    #make copies for test
+#     lidar1 = lidar[:,:512,:]
+#     lidar2 = lidar[:,512:,:]
+#     
+#     pred_cls_lidar1 = run_model(lidar1)
+#     pred_cls_lidar2 = run_model(lidar2)
+#     
+#     img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
+#     img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
+#     
+#     img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=1)
+#     
+#     cv2.imshow("Slices", img_to_test)
+#     cv2.waitKey(100)
+#     lidar_save = Image.fromarray(img_to_test).convert('RGBA')
+#     lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + '_slices' + '.png'))
+#     
+#     pred_cls = np.hstack((pred_cls_lidar1[0], pred_cls_lidar2[0]))
+#     
+    #return pred_cls
 
