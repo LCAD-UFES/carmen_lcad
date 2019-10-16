@@ -44,7 +44,7 @@ def initialize(vertical_resolution, shots_to_squeeze):
     model = SqueezeSeg(mc)
      
     '''Loads tensorflow'''
-    graph = tf.Graph().as_default()
+    tf.Graph().as_default()
     sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     saver = tf.train.Saver(model.model_params)
     saver.restore(sess, os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/SqueezeSegV2/model.ckpt-30700')  
@@ -70,7 +70,7 @@ def generate_lidar_images(lidar, pred_cls):
     arr[:,:,2] = src1[:,:]
     img = np.concatenate((arr, dst), axis=0)
     #resize img
-    scale_percent = 130 # percent of original size
+    scale_percent = 180 # percent of original size
     width = int(img.shape[1] * scale_percent / 100)
     height = int(img.shape[0] * scale_percent / 100)
     dim = (width, height)
@@ -123,7 +123,7 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
     img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
      
-    img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=1)
+    img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=0)
      
     cv2.imshow("Slices", img_to_test)
     cv2.waitKey(100)
