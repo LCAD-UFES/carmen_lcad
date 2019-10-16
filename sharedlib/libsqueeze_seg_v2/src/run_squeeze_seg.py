@@ -23,7 +23,6 @@ from nets import *
 from setuptools.sandbox import ExceptionSaver
 from IN import MCAST_BLOCK_SOURCE
 
-
 '''Defining global variables'''
 global mc
 global model
@@ -38,19 +37,18 @@ def initialize(vertical_resolution, shots_to_squeeze):
     '''Loads squeezeseg config and changes the zenith and azimuth level'''
     mc = kitti_squeezeSeg_config()
     mc.ZENITH_LEVEL = vertical_resolution
-    mc.AZIMUTH_LEVEL = shots_to_squeeze
-
+    #mc.AZIMUTH_LEVEL = shots_to_squeeze
+ 
     mc.LOAD_PRETRAINED_MODEL = False
     mc.BATCH_SIZE = 1
     model = SqueezeSeg(mc)
-    
+     
     '''Loads tensorflow'''
     graph = tf.Graph().as_default()
     sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     saver = tf.train.Saver(model.model_params)
     saver.restore(sess, os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/SqueezeSegV2/model.ckpt-30700')  
-    
-
+     
     print ("\n\n-------------------------------------------------------")
     print ("       Pretrained Model and Tensorflow loaded!")
     print ("-------------------------------------------------------\n\n")
@@ -72,7 +70,7 @@ def generate_lidar_images(lidar, pred_cls):
     arr[:,:,2] = src1[:,:]
     img = np.concatenate((arr, dst), axis=0)
     #resize img
-    scale_percent = 120 # percent of original size
+    scale_percent = 130 # percent of original size
     width = int(img.shape[1] * scale_percent / 100)
     height = int(img.shape[0] * scale_percent / 100)
     dim = (width, height)
@@ -100,36 +98,41 @@ def run_model(lidar):
         }
     )
     return pred_cls
-    
-def squeeze_seg_process_point_cloud(lidar, timestamp):
-    pred_cls = run_model(lidar)
-    resized = generate_lidar_images(lidar,pred_cls)
-    lidar_save = Image.fromarray(resized).convert('RGBA')
-    lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + '_full' + '.png'))
 
-    cv2.imshow("Slices", resized)
-    cv2.waitKey(100)
-        
-    return pred_cls[0]
+def squeeze_seg_process_point_cloud(lidar, timestamp):
+    
+#     pred_cls = run_model(lidar)
+#     resized = generate_lidar_images(lidar,pred_cls)
+#     lidar_save = Image.fromarray(resized).convert('RGBA')
+#     lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + '_full' + '.png'))
+# 
+#     cv2.imshow("Slices", resized)
+#     cv2.waitKey(100)
+#         
+#     return pred_cls[0]
     
     #make copies for test
-#     lidar1 = lidar[:,:512,:]
-#     lidar2 = lidar[:,512:,:]
-#     
-#     pred_cls_lidar1 = run_model(lidar1)
-#     pred_cls_lidar2 = run_model(lidar2)
-#     
-#     img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
-#     img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
-#     
-#     img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=1)
-#     
-#     cv2.imshow("Slices", img_to_test)
-#     cv2.waitKey(100)
-#     lidar_save = Image.fromarray(img_to_test).convert('RGBA')
-#     lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + '_slices' + '.png'))
-#     
-#     pred_cls = np.hstack((pred_cls_lidar1[0], pred_cls_lidar2[0]))
-#     
-    #return pred_cls
+    lidar1 = lidar[:,255:767,:]
+    lidarp1 = lidar[:,767:,:]
+    lidarp2 = lidar[:,:255,:]
+    lidar2 = np.hstack((lidarp1, lidarp2))
+     
+    pred_cls_lidar1 = run_model(lidar1)
+    pred_cls_lidar2 = run_model(lidar2)
+     
+    img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
+    img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
+     
+    img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=1)
+     
+    cv2.imshow("Slices", img_to_test)
+    cv2.waitKey(100)
+    lidar_save = Image.fromarray(img_to_test).convert('RGBA')
+    lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + '_slices' + '.png'))
+    #print(pred_cls_lidar2[0].shape)
+    pred_cls = np.hstack((pred_cls_lidar2[0][:,255:],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:255]))
+    print("pred_cls.shape={}".format(
+        pred_cls.shape))
+     
+    return pred_cls
 
