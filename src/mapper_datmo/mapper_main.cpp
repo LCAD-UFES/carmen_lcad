@@ -476,7 +476,7 @@ fill_view_vector(double horizontal_angle, double vertical_angle, double range, d
 		double z = round(point.z() * 100.0) / 100.0;
 		//double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
 		view[line * 5] = (float) x;
-		view[(line * 5) + 1] = (float) -y;
+		view[(line * 5) + 1] = (float) y;
 		view[(line * 5) + 2] = (float) z;
 		view[(line * 5) + 3] = (float) intensity;
 		view[(line * 5) + 4] = (float) range;
@@ -519,7 +519,7 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 				//printf("Before intensity;");
 				double intensity = (double) (sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i]) / 100.0;
 				//printf("After intensity\n");
-				double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
+				double horizontal_angle = sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
 
 				//Mounting Full View
 				fill_view_vector(horizontal_angle, vertical_angle, range, intensity, &squeeze[0], line);
