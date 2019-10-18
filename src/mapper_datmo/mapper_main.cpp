@@ -466,7 +466,7 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 vector<carmen_vector_2D_t> moving_objecst_cells_vector;
 
 void
-fill_view_vector(double horizontal_angle, double vertical_angle, double range, double processed_intensity, float* view, int line)
+fill_view_vector(double horizontal_angle, double vertical_angle, double range, double intensity, float* view, int line)
 {
 	if (range > 0 && range < 200) // this causes n_points to become wrong (needs later correction)
 	{
@@ -476,9 +476,9 @@ fill_view_vector(double horizontal_angle, double vertical_angle, double range, d
 		double z = round(point.z() * 100.0) / 100.0;
 		//double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
 		view[line * 5] = (float) x;
-		view[(line * 5) + 1] = (float) y;
+		view[(line * 5) + 1] = (float) -y;
 		view[(line * 5) + 2] = (float) z;
-		view[(line * 5) + 3] = (float) processed_intensity;
+		view[(line * 5) + 3] = (float) intensity;
 		view[(line * 5) + 4] = (float) range;
 	} else {
 		view[line * 5] = 0.0;
@@ -517,17 +517,16 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 				double vertical_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle;
 				double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
 				//printf("Before intensity;");
-				double processed_intensity = (double) (sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i]) / 255.0;
+				double intensity = (double) (sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i]) / 100.0;
 				//printf("After intensity\n");
 				double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
 
 				//Mounting Full View
-				fill_view_vector(horizontal_angle, vertical_angle, range, processed_intensity, &squeeze[0], line);
+				fill_view_vector(horizontal_angle, vertical_angle, range, intensity, &squeeze[0], line);
 			}
 		}
 
 		//point_cloud_file.close();
-		// Interpolling the points
 		return_squeeze_array = libsqueeze_seg_process_point_cloud(sensor_params->vertical_resolution, shots_to_squeeze, &squeeze[0], sensor_data->last_timestamp);
 		// It is an array with 32 positions and 1024 values
 		// lets decode to the same positions we have readed
