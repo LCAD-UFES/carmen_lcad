@@ -226,7 +226,7 @@ int main(int argc, char **argv)
 					command_tv = 0;
 				if(command_rv < 0.13 && command_rv > -0.13)
 					command_rv = 0;
-//				printf("%.2f, %.2f\n", command_tv, command_rv);
+				printf("%.2f, %.2f\n", command_tv, command_rv);
 				send_base_velocity_command(command_tv, command_rv);
 
 			}
