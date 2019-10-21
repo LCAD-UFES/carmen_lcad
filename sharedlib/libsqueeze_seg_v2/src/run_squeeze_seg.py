@@ -132,10 +132,10 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
 #     return pred_cls[0]
     
     #make copies for test
-    lidar1 = lidar[:,255:767,:]
+    lidar1 = lidar[:,271:783,:]
     save_txt(lidar1, str(timestamp.item(0)))
-    lidarp1 = lidar[:,767:,:]
-    lidarp2 = lidar[:,:255,:]
+    lidarp1 = lidar[:,783:,:]
+    lidarp2 = lidar[:,:271,:]
     lidar2 = np.hstack((lidarp1, lidarp2))
      
     pred_cls_lidar1 = run_model(lidar1)
@@ -152,7 +152,7 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     lidar_save = Image.fromarray(img_lidar1).convert('RGBA')
     lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + '_slices' + '.png'))
     #print(pred_cls_lidar2[0].shape)
-    pred_cls = np.hstack((pred_cls_lidar2[0][:,255:],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:255]))
+    pred_cls = np.hstack((pred_cls_lidar2[0][:,271:],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:271]))
     print("pred_cls.shape={}".format(
         pred_cls.shape))
      

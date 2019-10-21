@@ -9,6 +9,7 @@
 #include <tf.h>
 #include <iostream>
 #include <fstream>
+#include <carmen/libsqueeze_seg.h>
 
 using namespace tf;
 
@@ -24,53 +25,65 @@ inline double round(double val)
         return ceil(val - 0.5);
     return floor(val + 0.5);
 }
+
+void
+fill_view_vector(double horizontal_angle, double vertical_angle, double range, double intensity, double* view, int line)
+{
+	if (range > 0 && range < 200) // this causes n_points to become wrong (needs later correction)
+	{
+		tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+		double x = round(point.x() * 100.0) / 100.0;
+		double y = round(point.y() * 100.0) / 100.0;
+		double z = round(point.z() * 100.0) / 100.0;
+		intensity = intensity / 1000.0;
+		intensity = round(intensity * 100.0) / 100.0;
+		double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
+		view[line * 5] = x;
+		view[(line * 5) + 1] = y;
+		view[(line * 5) + 2] = z;
+		view[(line * 5) + 3] = intensity;
+		view[(line * 5) + 4] = raiz_soma_quadrados;
+	} else {
+		view[line * 5] = 0.0;
+		view[(line * 5) + 1] = 0.0;
+		view[(line * 5) + 2] = 0.0;
+		view[(line * 5) + 3] = 0.0;
+		view[(line * 5) + 4] = 0.0;
+	}
+}
+
+
 void write_pointcloud_txt(carmen_velodyne_partial_scan_message *velodyne_message)
 {
     double timestamp = velodyne_message->timestamp;
     ofstream point_cloud_file;
-    point_cloud_file.open("SqueezeSegV2/" + std::to_string(timestamp) + ".txt");
+    //point_cloud_file.open("SqueezeSegV2/" + std::to_string(timestamp) + ".txt");
     // int n_points = 32 * velodyne_message->number_of_32_laser_shots;
-    point_cloud_file << "#Array shape: (32, 16384, 5)\n";
-    int i, j, k;
-    int max_k = 512;
+    //point_cloud_file << "#Array shape: (32, 1024, 5)\n";
+    int i, j, line;
+    int shots_to_squeeze = 1024;
+    int number_of_points = 32 * shots_to_squeeze;
+    double squeeze[number_of_points * 5];
+    int* return_squeeze_array;
     cout << velodyne_message->number_of_32_laser_shots << " numero de capturas\n";
-    for (j = 32; j > 0; j--)
+    for (j = 32, line = 0; j > 0; j--)
     {
-        for (i = 0, k = 0; i < velodyne_message->number_of_32_laser_shots && k < max_k; i++)
+        for (i = 0; i < shots_to_squeeze; i++, line++)
         {
 
-            double v = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[j]));
-            double h = carmen_normalize_theta(carmen_degrees_to_radians(-velodyne_message->partial_scan[i].angle));
+            double vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[j]));
+            double horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(-velodyne_message->partial_scan[i].angle));
             double range = (((double)velodyne_message->partial_scan[i].distance[j]) / 500.0);
             double intensity = ((double)velodyne_message->partial_scan[i].intensity[j]) * 10;
             double angle = velodyne_message->partial_scan[i].angle;
-            // Catch points in frontal angle
-            if (angle < 90 || angle > 270)
-            {
-                if (range > 0 && range < 200) // this causes n_points to become wrong (needs later correction)
-                {
-                    tf::Point point = spherical_to_cartesian(h, v, range);
-                    double x = round(point.x() * 100.0) / 100.0;
-                    double y = round(point.y() * 100.0) / 100.0;
-                    double z = round(point.z() * 100.0) / 100.0;
-                    intensity = intensity / 1000.0;
-                    intensity = round(intensity * 100.0) / 100.0;
-                    // range = round( range * 100.0) / 100.0;
-                    double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
-                    point_cloud_file << std::fixed << std::setprecision(2) << x << "\t" << y << "\t" << z << "\t" << intensity << "\t" << raiz_soma_quadrados << "\n";
-                }
-                else
-                {
-                    // Couldnt find a point, so, zeros.
-                    point_cloud_file << "0.00\t0.00\t0.00\t0.00\t0.00\n";
-                }
-                k += 1;
-            }
+            fill_view_vector(horizontal_angle, vertical_angle, range, intensity, &squeeze[0], line);
+
         }
-        if (k % max_k == 0 && k > 0)
-            point_cloud_file << "# New slice\n";
+        //if (line % shots_to_squeeze == 0 && line > 0)
+           // point_cloud_file << "# New slice\n";
     }
-    point_cloud_file.close();
+    return_squeeze_array = libsqueeze_seg_process_point_cloud(32, shots_to_squeeze, &squeeze[0], timestamp);
+    //point_cloud_file.close();
 }
 
 void velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
@@ -82,6 +95,10 @@ void velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message 
 int main(int argc, char **argv)
 {
     carmen_ipc_initialize(argc, argv);
+
+	/* Register Python Context for SqueezeSeg*/
+	initialize_python_context();
+
 
     carmen_velodyne_subscribe_partial_scan_message(NULL,
                                                    (carmen_handler_t)velodyne_partial_scan_message_handler,
