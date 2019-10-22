@@ -60,7 +60,7 @@ def _normalize(x):
 def save_txt(data, file_name):
   
   # Write the array to disk
-  with open(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_IARA/', file_name+'.txt'), 'w') as outfile:
+  with open(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_IARA/', file_name+'_ok.txt'), 'w') as outfile:
     # I'm writing a header here just for the sake of readability
     # Any line starting with "#" will be ignored by numpy.loadtxt
     outfile.write('# Array shape: {0}\n'.format(data.shape))
@@ -135,16 +135,23 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     lidar1 = lidar[:,271:783,:]
     save_txt(lidar1, str(timestamp.item(0)))
     lidarp1 = lidar[:,783:,:]
-    lidarp2 = lidar[:,:271,:]
+    shape_last_part = (lidar.shape[1] - 783) #300
+    shape_to_complete = mc.AZIMUTH_LEVEL - shape_last_part #212
+    shape_to_squeeze = shape_to_complete + mc.AZIMUTH_LEVEL
+    lidarp2 = lidar[:,:shape_to_complete,:]
     lidar2 = np.hstack((lidarp1, lidarp2))
-     
+    '''Has to do something between 212 to 271'''
+    lidar3 = lidar[:,shape_to_complete:shape_to_squeeze,:]
+    
     pred_cls_lidar1 = run_model(lidar1)
     pred_cls_lidar2 = run_model(lidar2)
+    pred_cls_lidar3 = run_model(lidar3)
      
     img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
     img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
+    img_lidar3 = generate_lidar_images(lidar3,pred_cls_lidar3)
      
-    img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=0)
+    img_to_test = np.concatenate((img_lidar1, img_lidar2, img_lidar3), axis=0)
      
     cv2.imshow("Slices", img_to_test)
     cv2.waitKey(100)
@@ -152,7 +159,7 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     lidar_save = Image.fromarray(img_lidar1).convert('RGBA')
     lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + '_slices' + '.png'))
     #print(pred_cls_lidar2[0].shape)
-    pred_cls = np.hstack((pred_cls_lidar2[0][:,271:],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:271]))
+    pred_cls = np.hstack((pred_cls_lidar2[0][:,shape_to_complete:],pred_cls_lidar3[0][:,shape_to_complete:271],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:shape_to_complete]))
     print("pred_cls.shape={}".format(
         pred_cls.shape))
      

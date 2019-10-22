@@ -56,17 +56,18 @@ fill_view_vector(double horizontal_angle, double vertical_angle, double range, d
 void write_pointcloud_txt(carmen_velodyne_partial_scan_message *velodyne_message)
 {
     double timestamp = velodyne_message->timestamp;
-    ofstream point_cloud_file;
+    //ofstream point_cloud_file;
     //point_cloud_file.open("SqueezeSegV2/" + std::to_string(timestamp) + ".txt");
     // int n_points = 32 * velodyne_message->number_of_32_laser_shots;
     //point_cloud_file << "#Array shape: (32, 1024, 5)\n";
     int i, j, line;
-    int shots_to_squeeze = 1024;
-    int number_of_points = 32 * shots_to_squeeze;
+    int shots_to_squeeze = velodyne_message->number_of_32_laser_shots;
+    int vertical_resolution = 32;
+    int number_of_points = vertical_resolution * shots_to_squeeze;
     double squeeze[number_of_points * 5];
     int* return_squeeze_array;
     cout << velodyne_message->number_of_32_laser_shots << " numero de capturas\n";
-    for (j = 32, line = 0; j > 0; j--)
+    for (j = vertical_resolution, line = 0; j > 0; j--)
     {
         for (i = 0; i < shots_to_squeeze; i++, line++)
         {
@@ -82,7 +83,7 @@ void write_pointcloud_txt(carmen_velodyne_partial_scan_message *velodyne_message
         //if (line % shots_to_squeeze == 0 && line > 0)
            // point_cloud_file << "# New slice\n";
     }
-    return_squeeze_array = libsqueeze_seg_process_point_cloud(32, shots_to_squeeze, &squeeze[0], timestamp);
+    return_squeeze_array = libsqueeze_seg_process_point_cloud(vertical_resolution, shots_to_squeeze, &squeeze[0], timestamp);
     //point_cloud_file.close();
 }
 

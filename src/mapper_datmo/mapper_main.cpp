@@ -465,21 +465,30 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 
 vector<carmen_vector_2D_t> moving_objecst_cells_vector;
 
-void
-fill_view_vector(double horizontal_angle, double vertical_angle, double range, double intensity, float* view, int line)
+inline double round(double val)
 {
-	if (range > 0 && range < 200) // this causes n_points to become wrong (needs later correction)
+    if (val < 0)
+        return ceil(val - 0.5);
+    return floor(val + 0.5);
+}
+
+void
+fill_view_vector(double horizontal_angle, double vertical_angle, double range, double intensity, double* view, int line)
+{
+	if (range > 0.0 && range < 70.0) // this causes n_points to become wrong (needs later correction)
 	{
 		tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
 		double x = round(point.x() * 100.0) / 100.0;
 		double y = round(point.y() * 100.0) / 100.0;
 		double z = round(point.z() * 100.0) / 100.0;
-		//double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
-		view[line * 5] = (float) x;
-		view[(line * 5) + 1] = (float) y;
-		view[(line * 5) + 2] = (float) z;
-		view[(line * 5) + 3] = (float) intensity;
-		view[(line * 5) + 4] = (float) range;
+		//intensity = intensity / 1000.0;
+		intensity = round(intensity * 100.0) / 100.0;
+		double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
+		view[line * 5] = x;
+		view[(line * 5) + 1] = y;
+		view[(line * 5) + 2] = z;
+		view[(line * 5) + 3] = intensity;
+		view[(line * 5) + 4] = raiz_soma_quadrados;
 	} else {
 		view[line * 5] = 0.0;
 		view[(line * 5) + 1] = 0.0;
@@ -497,13 +506,13 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
 	int i, j, line;
-	int shots_to_squeeze = 1024;
-	int number_of_points = sensor_params->vertical_resolution * shots_to_squeeze;
-	float squeeze[number_of_points * 5];
+	int min_shots = 1024;
+	int number_of_points = sensor_params->vertical_resolution * number_of_laser_shots;
+	double squeeze[number_of_points * 5];
 	int* return_squeeze_array;
 
 	printf("Laser Shots: %d number of points: %d\n", number_of_laser_shots, number_of_points);
-	if(number_of_laser_shots >= shots_to_squeeze)
+	if(number_of_laser_shots >= min_shots)
 	{
 		printf("Mounting matrix\n");
 		//point_cloud_file.open("SqueezeSeg/" + std::to_string(timestamp) + ".txt");
@@ -511,15 +520,15 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 
 		for (i = sensor_params->vertical_resolution, line = 0; i > 0; i--)
 		{
-			for (j = 0; j < shots_to_squeeze; j++, line++)
+			for (j = 0; j < number_of_laser_shots; j++, line++)
 			{
 				unsigned int scan_index = j * sensor_params->vertical_resolution;
 				double vertical_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle;
 				double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
 				//printf("Before intensity;");
-				double intensity = (double) (sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i]) / 100.0;
+				double intensity = (double) (sensor_data->intensity[cloud_index][scan_index + i]) / 100.0;
 				//printf("After intensity\n");
-				double horizontal_angle = sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
+				double horizontal_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].horizontal_angle;
 
 				//Mounting Full View
 				fill_view_vector(horizontal_angle, vertical_angle, range, intensity, &squeeze[0], line);
@@ -527,17 +536,17 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 		}
 
 		//point_cloud_file.close();
-		return_squeeze_array = libsqueeze_seg_process_point_cloud(sensor_params->vertical_resolution, shots_to_squeeze, &squeeze[0], sensor_data->last_timestamp);
+		return_squeeze_array = libsqueeze_seg_process_point_cloud(sensor_params->vertical_resolution, number_of_laser_shots, &squeeze[0], sensor_data->last_timestamp);
 		// It is an array with 32 positions and 1024 values
 		// lets decode to the same positions we have readed
 		for (i = sensor_params->vertical_resolution, line = 0; i > 0; i--)
 		{
-			for (j = 0; j < shots_to_squeeze; j++, line++)
+			for (j = 0; j < number_of_laser_shots; j++, line++)
 			{
 				if (return_squeeze_array[line] != 0){
 					unsigned int scan_index = j * sensor_params->vertical_resolution;
 					sensor_data->points[cloud_index].sphere_points[scan_index + i].length = 0.0;
-					sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i] = 0.0;
+					sensor_data->intensity[cloud_index][scan_index + i] = 0.0;
 				}
 			}
 		}
