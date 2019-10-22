@@ -2,10 +2,10 @@
 
 
 t_route
-load_route_from_file()
+load_route_from_file(char *route_filename)
 {
 	t_route r;
-	FILE *f = fopen("route.txt", "r");
+	FILE *f = fopen(route_filename, "r");
 	fscanf(f, "%d\n", &r.route_size);
 	r.route = (int*) malloc (r.route_size*sizeof(int));
 	int cont = 0;
@@ -68,8 +68,8 @@ plot_state(vector<carmen_rddf_waypoint> rddf_points, t_graph graph, vector<int> 
 	for (unsigned int i = 0; i < rddf_points.size(); i++)
 		fprintf(gnuplot_data_rddf, "%lf %lf\n", rddf_points[i].pose.x, rddf_points[i].pose.y);
 
-
-		fprintf(gnuplot_data_closest, "%lf %lf\n", rddf_points[indices[0]].pose.x, rddf_points[indices[0]].pose.y);
+	for (unsigned int i = 0; i < indices.size(); i++)
+		fprintf(gnuplot_data_closest, "%lf %lf\n", rddf_points[indices[i]].pose.x, rddf_points[indices[i]].pose.y);
 
 	fclose(gnuplot_data_graph);
 	fclose(gnuplot_data_rddf);
@@ -87,9 +87,10 @@ plot_state(vector<carmen_rddf_waypoint> rddf_points, t_graph graph, vector<int> 
 
 
 void
-get_closest_points_from_osm_in_rddf (vector<carmen_rddf_waypoint> rddf_points, t_graph graph)
+get_closest_points_from_osm_in_rddf (vector<carmen_rddf_waypoint> rddf_points, t_graph graph, t_route r)
 {
 	vector<Point2f> cloud2d;
+	vector<int> indices;
 	Point2d p;
 	for (int i = 0; i < rddf_points.size(); i++)
 	{
@@ -100,13 +101,22 @@ get_closest_points_from_osm_in_rddf (vector<carmen_rddf_waypoint> rddf_points, t
 
 	flann::KDTreeIndexParams indexParams;
 	flann::Index kdtree(Mat(cloud2d).reshape(1), indexParams);
-	vector<float> query;
-	query.push_back(graph.nodes[0].point.x);
-	query.push_back(graph.nodes[0].point.y);
-	vector<int> indices;
-	vector<float> dists;
-	kdtree.knnSearch(query, indices, dists, 1);
-	cout<<"Closest point of "<<graph.nodes[0].point.x<<" , "<<graph.nodes[0].point.y<<" is "<<rddf_points[indices[0]].pose.x<<" , "<<rddf_points[indices[0]].pose.y<<endl;
+
+	for (int i = 0; i < r.route_size; i++)
+	{
+		vector<float> query;
+		//query.push_back(graph.nodes[r.route[0]].point.x);
+		//query.push_back(graph.nodes[r.route[0]].point.y);
+		query.push_back(graph.nodes[r.route[i]].point.x);
+		query.push_back(graph.nodes[r.route[i]].point.y);
+		vector<int> ind;
+		vector<float> dists;
+		kdtree.knnSearch(query, ind, dists, 1);
+		indices.push_back(ind[0]);
+		printf("Closest point of %lf x %lf is %lf x %lf\n", graph.nodes[0].point.x, graph.nodes[0].point.y, rddf_points[ind[0]].pose.x, rddf_points[ind[0]].pose.y);
+	}
+
+//cout<<"Closest point of "<<graph.nodes[0].point.x<<" , "<<graph.nodes[0].point.y<<" is "<<rddf_points[indices[0]].pose.x<<" , "<<rddf_points[indices[0]].pose.y<<endl;
 	plot_state (rddf_points, graph, indices);
 	getchar();
 }
@@ -191,6 +201,7 @@ void
 process_graph (string python_command)
 {
 	t_graph graph;
+	t_route route;
 	vector<carmen_rddf_waypoint> rddf_points;
 	string rddf_filename = "/home/pedro/carmen_lcad/data/rndf/rddf_log_volta_da_ufes-201903025.txt";
 
@@ -199,6 +210,7 @@ process_graph (string python_command)
 	system("clear");
 
 	graph = read_graph_file("graph.txt");
+	route = load_route_from_file("route.txt");
 	load_rddf_file (rddf_points, rddf_filename);
 
 //	printf("%d %d\n", graph.qtd_nodes, graph.qtd_edges);
@@ -214,6 +226,6 @@ process_graph (string python_command)
 //	}
 
 	graph = convert_from_lon_lat_nodes_to_utm_nodes(graph);
-	get_closest_points_from_osm_in_rddf (rddf_points, graph);
+	get_closest_points_from_osm_in_rddf (rddf_points, graph, route);
 
 }

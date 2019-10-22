@@ -31,8 +31,8 @@ static void
 read_parameters(int argc, char **argv)
 //read_parameters(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused)))
 {
-	const char usage[] = "<locale>, <city>, <country>, <simplify graph: 0 or 1?>, <plot graph: 0 or 1>";
-	if (argc < 6){
+	const char usage[] = "<locale>, <city>, <country>, <simplify graph: 0 or 1?>, <plot graph: 0 or 1>, <generate route: 0 or 1>";
+	if (argc < 7){
 		printf("Incorrect Input!.\nUsage:\n%s %s\n", argv[0], usage);
 		exit(1);
 	}
@@ -42,8 +42,9 @@ read_parameters(int argc, char **argv)
 		params.country = argv[3];
 		params.graph_type = argv[4];
 		params.plot = argv[5];
+		params.route = argv[6];
 		params.python_command = "python3 osmnx/osp_test.py '" +string(params.locale)+","+string(params.city)+","+string(params.country)+"' "
-								+ string(params.graph_type) + " " + string(params.plot);
+								+ string(params.graph_type) + " " + string(params.plot) + " " + string(params.route);
 
 		//cout<< params.python_command<<endl;
 

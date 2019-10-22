@@ -52,7 +52,7 @@ initialize_python_context()
 }
 
 int*
-libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze, float* point_cloud, double timestamp)
+libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze, double* point_cloud, double timestamp)
 {
 	printf("libsqueeze_seg_process_point_cloud\n");
 	npy_intp dims[3] = {vertical_resolution, shots_to_squeeze, 5};
@@ -61,7 +61,7 @@ libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze
 	npy_intp dimstamp[1] = {1};
 	
 	PyObject* numpyTimestamp = PyArray_SimpleNewFromData(1, dimstamp, NPY_DOUBLE, &time[0]);
-	PyObject* numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_FLOAT, point_cloud);
+	PyObject* numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_DOUBLE, point_cloud);
 	//PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunction(python_libsqueeze_seg_process_point_cloud_function, (char *) "(O)", numpyArray, numpyTimestamp);
     //auto t1 = std::chrono::high_resolution_clock::now();
 	PyArrayObject* python_result_array = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_libsqueeze_seg_process_point_cloud_function, numpyArray, numpyTimestamp, NULL);

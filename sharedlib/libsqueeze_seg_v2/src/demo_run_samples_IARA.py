@@ -59,6 +59,12 @@ def save_txt(data, f):
         # Writing out a break to indicate different slices...
         outfile.write('# New slice\n')
 
+def get_concat_v(im1, im2):
+    dst = Image.new('RGB', (im1.width, im1.height + im2.height))
+    dst.paste(im1, (0, 0))
+    dst.paste(im2, (0, im1.height))
+    return dst
+
 def detect():
   """Detect LiDAR data."""
 
@@ -67,7 +73,7 @@ def detect():
   with tf.Graph().as_default():
     mc = kitti_squeezeSeg_config()
     mc.ZENITH_LEVEL = 32
-    mc.AZIMUTH_LEVEL = 1024
+    mc.AZIMUTH_LEVEL = 512
     mc.LOAD_PRETRAINED_MODEL = False
     mc.BATCH_SIZE = 1 # TODO(bichen): fix this hard-coded batch size.
     model = SqueezeSeg(mc)
@@ -99,7 +105,8 @@ def detect():
         )
 
         # save the data
-        file_name = f.strip('.npy').split('/')[-1]
+        file_name = f.strip('.txt').split('/')[-1]
+        
         # np.save(
         #     os.path.join(FLAGS.out_dir, 'pred_'+file_name+'.npy'),
         #     pred_cls[0]
@@ -109,8 +116,8 @@ def detect():
         # save the plot
         depth_map = Image.fromarray(
             (255 * _normalize(lidar[:, :, 3])).astype(np.uint8))
-        depth_map.save(
-            os.path.join(FLAGS.out_dir, 'in_'+file_name+'.png'))
+        #depth_map.save(
+        #    os.path.join(FLAGS.out_dir, 'in_'+file_name+'.png'))
 
         label_map = Image.fromarray(
             (255 * visualize_seg(pred_cls, mc)[0]).astype(np.uint8))
@@ -121,8 +128,12 @@ def detect():
             alpha=0.4
         )
 
-        blend_map.save(
-            os.path.join(FLAGS.out_dir, 'out_'+file_name+'.png'))
+        #blend_map.save(
+        #    os.path.join(FLAGS.out_dir, 'out_'+file_name+'.png'))
+        dst = get_concat_v(depth_map, blend_map)
+        dst.save(
+            os.path.join(FLAGS.out_dir, file_name+'_out.png'))
+        
 
 
 def main(argv=None):

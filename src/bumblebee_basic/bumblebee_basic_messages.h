@@ -24,6 +24,8 @@ typedef struct {
   double timestamp;
   char *host;
 } carmen_bumblebee_basic_stereoimage_message;
+
+
 #define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_NAME       "carmen_bumblebe_basic_stereoimage"
 #define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_FMT        "{int,int,int,int,<ubyte:3>,<ubyte:3>,double,string}"
 
