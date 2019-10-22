@@ -179,3 +179,13 @@ no_dist 284800
 no_dist 284800
 no_dist 284800
 no_dist 284160
+
+
+
+
+else
+		{
+			cout<<"no_dist ";
+			for (int j = 0; j < predictions_of_crops[0].size(); j++){
+				cout << (predictions_of_crops[0][j].x + predictions_of_crops[0][j].w) * (predictions_of_crops[0][j].y + predictions_of_crops[0][j].h) << endl;
+			}
