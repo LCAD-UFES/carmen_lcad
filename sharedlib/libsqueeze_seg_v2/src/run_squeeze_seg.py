@@ -57,6 +57,26 @@ def initialize(vertical_resolution, shots_to_squeeze):
 def _normalize(x):
     return (x - x.min())/(x.max() - x.min())
 
+def save_txt(data, file_name):
+  
+  # Write the array to disk
+  with open(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_IARA/', file_name+'.txt'), 'w') as outfile:
+    # I'm writing a header here just for the sake of readability
+    # Any line starting with "#" will be ignored by numpy.loadtxt
+    outfile.write('# Array shape: {0}\n'.format(data.shape))
+
+    # Iterating through a ndimensional array produces slices along
+    # the last axis. This is equivalent to data[i,:,:] in this case
+    for data_slice in data:
+
+        # The formatting string indicates that I'm writing out
+        # the values in left-justified columns 7 characters in width
+        # with 2 decimal places.  
+        np.savetxt(outfile, data_slice, fmt='%-7.2f', delimiter='\t')
+
+        # Writing out a break to indicate different slices...
+        outfile.write('# New slice\n')
+
 def generate_lidar_images(lidar, pred_cls):
     global mc
     alpha = 0.4
@@ -112,9 +132,10 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
 #     return pred_cls[0]
     
     #make copies for test
-    lidar1 = lidar[:,255:767,:]
-    lidarp1 = lidar[:,767:,:]
-    lidarp2 = lidar[:,:255,:]
+    lidar1 = lidar[:,271:783,:]
+    save_txt(lidar1, str(timestamp.item(0)))
+    lidarp1 = lidar[:,783:,:]
+    lidarp2 = lidar[:,:271,:]
     lidar2 = np.hstack((lidarp1, lidarp2))
      
     pred_cls_lidar1 = run_model(lidar1)
@@ -127,10 +148,11 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
      
     cv2.imshow("Slices", img_to_test)
     cv2.waitKey(100)
-    lidar_save = Image.fromarray(img_to_test).convert('RGBA')
+    #lidar_save = Image.fromarray(img_to_test).convert('RGBA')
+    lidar_save = Image.fromarray(img_lidar1).convert('RGBA')
     lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + '_slices' + '.png'))
     #print(pred_cls_lidar2[0].shape)
-    pred_cls = np.hstack((pred_cls_lidar2[0][:,255:],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:255]))
+    pred_cls = np.hstack((pred_cls_lidar2[0][:,271:],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:271]))
     print("pred_cls.shape={}".format(
         pred_cls.shape))
      

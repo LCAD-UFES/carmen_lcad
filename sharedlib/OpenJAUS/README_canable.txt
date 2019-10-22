@@ -1,7 +1,13 @@
 = Instalações
 sudo apt-get install can-utils
 
-= Ativar para uso
+= Ativar para uso com firmware novo (candleLight -> melhor: ver https://canable.io/getting-started.html#alt-firmware). Seguir
+  procedimento para instalacao de firmware descrito em: https://github.com/cxandy/AZSMZ-USB2CAN/tree/master/Firmware (baixar 
+  software para Windows do site: https://github.com/cxandy/AZSMZ-USB2CAN/blob/master/Firmware/DfuSe_Demo_V3.0.5_Setup.exe 
+  e usar o firmware: https://github.com/cxandy/AZSMZ-USB2CAN/blob/master/Firmware/gsusb_canable.dfu)
+sudo ip link set can0 up type can bitrate 500000
+
+= Ativar para uso (firmware velho; ver acima)
 sudo slcand -o -c -s6 /dev/ttyACM0 can0
 sudo ifconfig can0 up
 
