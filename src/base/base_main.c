@@ -455,9 +455,15 @@ publish_odometry_message(carmen_base_odometry_message current_odometry)
 	IPC_RETURN_TYPE err;
 	carmen_robot_ackerman_velocity_message odometry_message;
 	odometry_message.v = current_odometry.tv;
-	odometry_message.phi = (odometry_message.v/ distance_between_front_and_rear_axles) * tan(current_odometry.rv);
+	//odometry_message.phi = (odometry_message.v/ distance_between_front_and_rear_axles) * tan(current_odometry.rv);
+	if(odometry_message.v == 0.0)
+		odometry_message.phi = 0.0;
+	else
+		odometry_message.phi = atan((distance_between_front_and_rear_axles/odometry_message.v) * current_odometry.rv);
+
 	odometry_message.host = current_odometry.host;
 	odometry_message.timestamp = current_odometry.timestamp;
+	//printf("v= %.2f, phi= %.2f\n",odometry_message.v,odometry_message.phi);
 	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &odometry_message);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_ROBOT_ACKERMAN_VELOCITY_FMT);
 }
@@ -642,7 +648,7 @@ integrate_odometry(double displacement, double rotation, double tv, double rv)
   odometry.x += displacement * cos (odometry.theta+0.5*rotation);
   odometry.y += displacement * sin (odometry.theta+0.5*rotation);
   odometry.theta = carmen_normalize_theta(odometry.theta+rotation);
-  printf("{%.2f, %.2f, %.2f}\n", odometry.x, odometry.y, odometry.theta);
+//printf("{%.2f, %.2f, %.2f}\n", odometry.x, odometry.y, odometry.theta);
 }
 
 

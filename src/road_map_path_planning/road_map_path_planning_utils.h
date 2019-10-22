@@ -44,6 +44,7 @@ struct type_edge
 };
 typedef type_edge t_edge;
 
+
 struct type_node
 {
 	int node_id;
@@ -52,6 +53,7 @@ struct type_node
 	carmen_position_t point;
 };
 typedef type_node t_node;
+
 
 struct type_graph
 {
@@ -62,6 +64,7 @@ struct type_graph
 };
 typedef type_graph t_graph;
 
+
 struct type_osmnx
 {
 	char *locale;
@@ -69,9 +72,19 @@ struct type_osmnx
 	char *country;
 	char *graph_type;
 	char *plot;
+	char *route;
 	string python_command;
 };
 typedef type_osmnx t_osmnx;
+
+
+struct type_route
+{
+	int route_size;
+	int *route;
+};
+typedef type_route t_route;
+
 
 t_graph read_graph_file(char *graph_filename);
 void process_graph (string python_command);

@@ -677,7 +677,7 @@ src/sensors/laser_new/sick_laser_test
 src/utilities/central_log_view/central_log_view
 src/tracker/tracker.h
 src/tracker/tracker.c
-
+/src/mapper/neural_mapper_dataset_check
 /sharedlib/OpenJAUS/ojFoxDriver/SENT/docs/src/DM330018_Starter_Kit_Demo.X/build/
 /sharedlib/OpenJAUS/ojFoxDriver/SENT/docs/src/DM330018_Starter_Kit_Demo.X/dist/
 

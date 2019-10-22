@@ -119,7 +119,7 @@ class ModelSkeleton:
     mc = self.mc
     with tf.variable_scope('interpret_output') as scope:
       self.prob = tf.multiply(
-          tf.nn.softmax(self.output_prob, dim=-1), self.lidar_mask,
+          tf.nn.softmax(self.output_prob, axis=-1), self.lidar_mask,
           name='pred_prob')
       self.pred_cls = tf.argmax(self.prob, axis=3, name='pred_cls')
 
@@ -783,7 +783,7 @@ class ModelSkeleton:
 
       for it in range(num_iterations):
         unary = tf.nn.softmax(
-            inputs, dim=-1, name='unary_term_at_iter_{}'.format(it))
+            inputs, axis=-1, name='unary_term_at_iter_{}'.format(it))
 
         ang_output, bi_output = self._locally_connected_layer(
             'message_passing_iter_{}'.format(it), unary,

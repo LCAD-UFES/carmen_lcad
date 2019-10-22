@@ -1,141 +1,213 @@
 import os
 import sys
 import torch
-import model as M
+import model_inference as M
 import numpy as np
-from PIL import Image
+# from PIL import Image
 import cv2
 from torchvision import datasets, transforms
-from posix import wait
-from cv2 import waitKey
+# from posix import wait
 
+# 
+# 
 
+TRANSFORMS = None #transforms.Normalize([0.0128, 0.0119, 0.0077, 0.0019, 0.0010], [0.0821, 0.0739, 0.0591, 0.0170, 0.0100])
 device = torch.device("cuda:0")
 carmen_home = os.getenv("CARMEN_HOME")
-saved_path = carmen_home + '/src/neural_mapper/pytorch_neural_mapper/saved_models/69imgs_epoch17.model'
-images_converted = 0
-model = M.FCNN(n_output=3)
-model.load_state_dict(torch.load(saved_path))
-model = model.eval()
+model_path = '/mnt/ssd/neural_mapper_train/volta_da_ufes-20190915_augmented/Experimentos/Nao_Normalizado/45_epocas/models/45.model'
+input_channels = 5
+n_classes = 3
+dropout_prob = 0.0
+model = M.FCNN(n_input=input_channels, n_output=n_classes, prob_drop=dropout_prob).to(device)
+model.load_state_dict(torch.load(model_path))
+model.eval()
+# images_converted = 0
+# model = M.FCNN(n_output=3)
+# model.load_state_dict(torch.load(saved_path))
+# model = model.eval()
 
-def png2tensor(img):
-    img2tensor = transforms.ToTensor()
-    return img2tensor(img)
+# def png2tensor(img):
+#     img2tensor = transforms.ToTensor()
+#     return img2tensor(img)
+# 
+# def tensor2png(tensor):
+#     trans = transforms.ToPILImage()
+#     return trans(tensor)
+# 
+# 
+# def save_to_debug(data, imgPred):
+#     print("aqui foi\n")
+#     imgData = data[0][3].numpy()
+#     img2 = (imgData)*255/3
+#     img2 = cv2.cvtColor(img2, cv2.COLOR_GRAY2BGR)
+#     img_map = np.zeros((600,600,3), np.uint8)
+#     img_map[np.where(((img2 != [0])).all(axis = 2))] = np.array([0,255,0])
+#     imPredShow = tensor2rgbimage(imgPred)
+#     imgs_comb = np.hstack((img_map, imPredShow))
+#     cv2.imwrite(str(images_converted) + '_Combined.png',  imgs_comb)
+#     
+# 
+# def tensor2rgbimage(tensor):
+#     img = tensor.permute(1,2,0).numpy()
+#     height, width = img.shape[:2]
+#     img_map = np.zeros((width,height,3), np.uint8)
+#     #print(np.where((img == [1]).all(axis = 2)))
+#     img_map[np.where((img == [0]).all(axis = 2))] = np.array([255,120,0])
+#     img_map[np.where((img == [1]).all(axis = 2))] = np.array([255,255,255])
+#     img_map[np.where((img == [2]).all(axis = 2))] = np.array([0,0,0])
+# 
+#     return img_map
+# 
+def fixed_normalize_cell(value_map, new_max, last_max, min):
+    new_val = value_map
+    if(new_val < min):
+        new_val = min
+    normalized = (new_val-min)*(new_max)/(last_max-min)
+    #printf("max = %lf | min = %lf | norm_max = %d | norm_min = %d\n", max, min, normalized[max_index], normalized[min_index]);
+    return normalized
 
-def tensor2png(tensor):
-    trans = transforms.ToPILImage()
-    return trans(tensor)
+def normalize_maps():
+    for i in range(size):
+        for j in range(size):
+            new_data[0][i][j] = fixed_normalize_cell(data[0][i][j], 1.0, 1.852193, map_min) #max
+            new_data[1][i][j] = fixed_normalize_cell(data[1][i][j], 1.0, 1.852193, map_min) #mean
+            new_data[2][i][j] = fixed_normalize_cell(data[2][i][j], 1.0, 1.852193, map_min) #min
+            new_data[3][i][j] = fixed_normalize_cell(data[3][i][j], 1.0, 64,        map_min) #numb
+            new_data[4][i][j] = fixed_normalize_cell(data[4][i][j], 1.0, 15,       map_min) #std
+    return new_data
+            
+
+def labels_to_img(numpy_image, size):
+    reshaped = numpy_image
+    img = np.zeros((size, size, 3), np.uint8)
+    for i in range(size):
+        # print("")
+        for j in range(size):
+            if reshaped[i][j] == 0:
+                img[i][j] = np.array([255, 120, 0])
+            elif reshaped[i][j] == 1.0:
+                img[i][j] = np.array([255, 255, 255])
+            elif reshaped[i][j] == 2.0:
+                img[i][j] = np.array([0, 0, 0])
+    return img
 
 
-def save_to_debug(data, imgPred):
-    print("aqui foi\n")
-    imgData = data[0][3].numpy()
-    img2 = (imgData)*255/3
-    img2 = cv2.cvtColor(img2, cv2.COLOR_GRAY2BGR)
-    img_map = np.zeros((600,600,3), np.uint8)
-    img_map[np.where(((img2 != [0])).all(axis = 2))] = np.array([0,255,0])
-    imPredShow = tensor2rgbimage(imgPred)
-    imgs_comb = np.hstack((img_map, imPredShow))
-    cv2.imwrite(str(images_converted) + '_Combined.png',  imgs_comb)
-    
+def convert_metric_map_to_image(metric_map, metric_type, size):
+# TODO Pegar das variáveis
+    map_max = 1
+    map_min = 0
+    img = fixed_normalize_to_img(metric_map, 255.0, map_max, map_min, size)
+    return img
 
-def tensor2rgbimage(tensor):
-    img = tensor.permute(1,2,0).numpy()
-    height, width = img.shape[:2]
-    img_map = np.zeros((width,height,3), np.uint8)
-    #print(np.where((img == [1]).all(axis = 2)))
-    img_map[np.where((img == [0]).all(axis = 2))] = np.array([255,120,0])
-    img_map[np.where((img == [1]).all(axis = 2))] = np.array([255,255,255])
-    img_map[np.where((img == [2]).all(axis = 2))] = np.array([0,0,0])
 
+def get_raw_min_and_max_values_to_normalize(metric_type):
+    map_min = -1.0
+    if metric_type == 'max':
+        map_max = 1.852193
+    elif metric_type == 'numb':
+        map_max = 64.0
+        map_min = 0.0
+    elif metric_type == 'min':
+        map_max = 1.852193
+    elif metric_type == 'mean':
+        map_max = 1.852193
+    elif metric_type == 'std':
+        map_max = 15.0
+        map_min = -1.0
+
+    return map_max, map_min
+
+
+def convert_raw_metric_map_to_image(metric_map, metric_type, size):
+# TODO Pegar das variáveis
+    map_max, map_min = get_raw_min_and_max_values_to_normalize(metric_type)
+    img = fixed_normalize_to_img(metric_map, 255.0, map_max, map_min, size)
+    return img
+
+def fixed_normalize_to_img(map, new_max_value, max_value, min, size):
+    img_map = np.zeros((size, size, 3), np.uint8)
+
+    for i in range(size):
+        for j in range(size):
+            new_val = map[j][i]
+#             print("{:f}".format(new_val))
+            if new_val < min:
+                img_map[j][i][0] = min
+                img_map[j][i][1] = min
+                img_map[j][i][2] = min
+            cel_pixel = int((new_val - min) * new_max_value / (max_value - min))
+            img_map[j][i][0] = cel_pixel
+            img_map[j][i][1] = cel_pixel
+            img_map[j][i][2] = cel_pixel
     return img_map
 
-def load_data2(batch_size, batch_idx, dataset_list, data_path, target_path):
-    batch_weight = np.zeros(n_classes)
-    dataset_size = len(dataset_list)
-    n = math.floor(dataset_size/batch_size)
-    data = torch.zeros(batch_size, input_dimensions, img_x_dim, img_y_dim)
-    target = torch.zeros(batch_size, img_x_dim, img_y_dim, dtype=torch.int64)
 
-    for j in range(batch_size):
-        # + 1 se indice comeca em 1 
-#         print(batch_idx*batch_size + j)
-        data[j][0] = png2tensor(data_path + str(dataset_list[batch_idx*batch_size + j]) + '_max.png')[0]# + 1) + '_max.png')
-        data[j][1] = png2tensor(data_path + str(dataset_list[batch_idx*batch_size + j]) + '_mean.png')[0]# + 1) + '_mean.png')
-        data[j][2] = png2tensor(data_path + str(dataset_list[batch_idx*batch_size + j]) + '_min.png')[0]# + 1) + '_min.png')
-        data[j][3] = png2tensor(data_path + str(dataset_list[batch_idx*batch_size + j]) + '_numb.png')[0]# + 1) + '_numb.png')
-        data[j][4] = png2tensor(data_path + str(dataset_list[batch_idx*batch_size + j]) + '_std.png')[0]# + 1) + '_std.png')
-        tmp, new_weights = png2target(target_path + str(dataset_list[batch_idx*batch_size + j]) + '_label.png')
-        target[j] = tmp[0]
-        batch_weight = batch_weight + new_weights
-    max_weight = max(batch_weight)
-    batch_weight = max_weight/batch_weight
-    return data, target , batch_weight
+def file_to_numpy(img_x_dim, img_y_dim, file):
+    reshaped = numpy_file.reshape(img_x_dim, img_y_dim)
+    return reshaped
 
 
-def process_image(carmen_image1, carmen_image2, carmen_image3, carmen_image4, carmen_image5):
-    data = torch.zeros(1, 5, 600, 600) #dimensoes do tensor que usamos
-    # quebrar em 5 imagens
-    # img_teste = Image.fromarray(carmen_image)
-    # data = torch.from_numpy(carmen_image).float().to('cuda:0')
-    print('AMEM! \n')
-    print(carmen_image1.shape)
+def load_bach_predict_data(transforms, map_max, map_mean, map_min, map_numb, map_std, input_dimensions, img_x_dim, img_y_dim, n_classes):
 
-    #cv2.imshow("img1", carmen_image1)
-    #cv2.waitKey(1)
+    data = torch.zeros(1, input_dimensions, img_x_dim, img_y_dim)
     
-    img1 = Image.fromarray(carmen_image1)
-    img2 = Image.fromarray(carmen_image2)
-    img3 = Image.fromarray(carmen_image3)
-    img4 = Image.fromarray(carmen_image4)
-    img5 = Image.fromarray(carmen_image5)
+    data[0][0] = torch.from_numpy(map_max.reshape(img_x_dim, img_y_dim))
+    data[0][1] = torch.from_numpy(map_mean.reshape(img_x_dim, img_y_dim))
+    data[0][2] = torch.from_numpy(map_min.reshape(img_x_dim, img_y_dim))
+    data[0][3] = torch.from_numpy(map_numb.reshape(img_x_dim, img_y_dim))
+    data[0][4] = torch.from_numpy(map_std.reshape(img_x_dim, img_y_dim))
     
-    #img1.show("img1_bla")
-    
-#     img.save("teste.png")
-#      img2tensor(img)img2tensor = transforms.ToTensor()
-#     np.asarray(carmen_image)
-#     cv2.waitKey(0)
-    print("Converteu to PIL!")
-    sys.stdout.flush()
+    if transforms != None:
+        data[0] = transforms(data[0])
+        
+#         cv2.imshow('window', labels_to_img(target[j].numpy(), img_x_dim))
+#         cv2.waitKey(0)
+        # batch_weight = batch_weight + new_weights
+    # cv2.imshow('Max', convert_metric_map_to_image(data[0][0], 'max', size))
+    return data
 
-    data[0][0] = png2tensor(img1)[0] #max
-    data[0][1] = png2tensor(img2)[0] #mean
-    data[0][2] = png2tensor(img3)[0] #min
-    data[0][3] = png2tensor(img4)[0] #numb
-    data[0][4] = png2tensor(img5)[0] #std
-    print('Converteu! \n')
-    output = model(data)
-    ##Tratar depois as probabilidades certinho
-    pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
-    imgPred = pred[0]
-    # imgPred = (imgPred + 1)*255/3
-    imgPred = imgPred.cpu().float()
-    mapper = imgPred.permute(1,2,0).numpy()
-    mapper = mapper.astype(np.uint8)
-    save_to_debug(data, imgPred)
-    
-    return mapper
 
+def process_image(map_max, map_mean, map_min, map_numb, map_std):
+    global TRANSFORMS
+    global input_channels
+    global n_classes
+    global model_path
+    global model
+    
+    h = 600
+    w = 600
+    
+    print("Testing!")
+#     map_max =  map_max.reshape(h,w)
+#     map_mean = map_mean.reshape(h,w)
+#     map_min =  map_min.reshape(h,w)
+#     map_numb = map_numb.reshape(h,w)
+#     map_std =  map_std.reshape(h,w)
+    print('Using Device: ', device)
+    data = load_bach_predict_data(TRANSFORMS, map_max, map_mean, map_min, map_numb, map_std, input_channels, w, h, n_classes)
+#     cv2.imshow('Max', convert_metric_map_to_image(data[0][0], 'max', w))
+#     cv2.imshow('Mean', convert_metric_map_to_image(data[0][1], 'mean', w))
+#     cv2.imshow('Min', convert_metric_map_to_image(data[0][2], 'min', w))
+#     cv2.imshow('Numb', convert_metric_map_to_image(data[0][3], 'numb', w))
+#     cv2.imshow('Std', convert_metric_map_to_image(data[0][4], 'std', w))
+#     cv2.waitKey(100)
+    
+    with torch.no_grad():
+        data = data.to(device)
+        output = model(data)
+#         preditction = output
+#         predicted_map = preditction[0].cpu()
+       
+        pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
+        imgPred = pred[0]
+        imgPred = imgPred.cpu().float()
+    cv2.imshow("No Python", labels_to_img(imgPred[0].numpy(), h))
+    
+    cv2.waitKey(100)
+    print(imgPred[0].numpy().dtype)
+    
+    return (imgPred[0]).numpy().astype(np.float64).flatten()
 ################Para Debug
-# if __name__ == '__main__':
-#   c1 = '/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/circle_NOTACUMULATED/teste/data/1323_max.png'
-#   c2 = '/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/circle_NOTACUMULATED/teste/data/1323_mean.png'
-#   c3 = '/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/circle_NOTACUMULATED/teste/data/1323_min.png'
-#   c4 = '/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/circle_NOTACUMULATED/teste/data/1323_numb.png'
-#   c5 = '/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/circle_NOTACUMULATED/teste/data/1323_std.png'
-#   
-#   img = process_image(c1,c2,c3,c4,c5)
-# #   # print(img)
-#   height, width = img.shape[:2]
-#   img_map = np.zeros((width,height,3), np.uint8)
-#   img_map[np.where((img == [0]).all(axis = 2))] = np.array([255,120,0])
-#   img_map[np.where((img == [1]).all(axis = 2))] = np.array([0,0,0])
-#   img_map[np.where((img == [2]).all(axis = 2))] = np.array([255,255,255])
-# 
-#   cv2.imshow("Janela", img_map)
-
-#   cv2.waitKey(0)
 
 
 

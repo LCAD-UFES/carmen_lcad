@@ -11,19 +11,18 @@ import glob
 import numpy as np
 import math
 
-# Rotaciona todas as imagens do banco de dados, deixando no formato de nomes apropriado para treinamento
+# Limita ground thruth ao raio do laser de todas as imagens passadas pela lista, deixando no formato de nomes apropriado para treinamento
 # Nao cria pastas padrao
-in_path = '/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/60mts_guarapari'
-out_path = '/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/60mts_guarapari_circ'
+in_path = '/dados/neural_mapper/data_13-08-19/data'
+out_path = '/dados/neural_mapper/data_13-08-19/ciculado'
+img_list = '/dados/neural_mapper/data_13-08-19/data/' 
 
 data_in_path = in_path + '/data/'
 label_in_path = in_path + '/labels/'
 
 size = 600
 
-	#0_min
-
-def circle(img, radius, is_label):
+def circle(img, radius):
 	out_img = img
 	for i in range(img.shape[0]):
 		for j in range(img.shape[1]):
@@ -31,15 +30,20 @@ def circle(img, radius, is_label):
 			x = j-radius
 			k = math.sqrt((x*x) + (y*y))
 			if(k > radius):
-				if(is_label):
-					out_img[i,j] = 1
-				else:
-					out_img[i,j] = 0
+				out_img[i,j] = 0
 	return out_img
 
-filenames = glob.glob(data_in_path + '*.png')
-for file in glob.glob(label_in_path + '*.png'):
-	filenames.append(file)
+def getDatasetList(file_name):
+    file = open(file_name)
+    content = file.read().splitlines()
+    return content
+   
+def file_to_numpy(img_x_dim, img_y_dim, file):
+    numpy_file = np.fromfile(file, dtype=float)
+    reshaped = numpy_file.reshape(img_x_dim, img_y_dim)
+    return reshaped
+
+filenames = getDatasetList(file_name)
 
 for file in filenames:
 	index = (file.split('_')[-3]).split('/')[-1]

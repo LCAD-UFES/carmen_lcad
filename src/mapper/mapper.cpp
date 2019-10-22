@@ -517,15 +517,21 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 
 			if (use_neural_mapper)//To generate the dataset to use in Neural Mapper training.
 			{
+				if (!generate_neural_mapper_dataset)
+				{
+					if (offline_map.complete_map != NULL)
+						neural_map_run_foward(600);
+				}
+
 				if (generate_neural_mapper_dataset)
 				{
 					bool get_next_map = neural_mapper_compute_travelled_distance(&neural_mapper_car_position_according_to_map, neural_mapper_robot_pose,
 							x_origin, y_origin, neural_mapper_data_pace);
 
 					neural_mapper_update_output_map(offline_map, neural_mapper_car_position_according_to_map);
-					char neural_mapper_dataset_path[1024] = "/dados/neural_mapper/data_13-08-19/";
+					char neural_mapper_dataset_path[1024] = "/dados/neural_mapper/volta_da_ufes-201909/";
 //					neural_mapper_export_dataset_as_png(get_next_map, neural_mapper_dataset_path);
-					neural_mapper_export_dataset_as_binary_file(get_next_map, neural_mapper_dataset_path);
+					neural_mapper_export_dataset_as_binary_file(get_next_map, neural_mapper_dataset_path, sensor_data->current_timestamp, neural_mapper_robot_pose);
 				}
 				neural_mapper_update_queue_and_clear_maps();
 			}

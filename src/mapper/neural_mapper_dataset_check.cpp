@@ -88,7 +88,8 @@ map_to_png_check(carmen_map_t complete_map, bool is_label, double map_max, doubl
 	{
 	// jeito mais rapido de gravar com Opencv
 		cv::Mat png_mat = cv::Mat(complete_map.config.x_size, complete_map.config.y_size, CV_64FC1, *png_map.map);
-		cv::imwrite("/dados/neural_mapper/data_13-08-19/data/1_0.680134_std.png", png_mat);
+		cv::imwrite("/dados/neural_mapper/volta_da_ufes-20190915/debug/43_1102500_0.654072_7757757.357126_-363540.953333_1568555086.511842_std.png", png_mat);
+		png_mat.release();
 	}
 }
 
@@ -96,13 +97,14 @@ int
 main()
 {
 	FILE *binary_map;
-	binary_map = fopen("/dados/neural_mapper/data_13-08-19/data/1_0.680134_std", "rb");
-	int size_map = 600*600;
+	binary_map = fopen("/dados/neural_mapper/volta_da_ufes-20190915/data/43_1102500_0.654072_7757757.357126_-363540.953333_1568555086.511842_std", "rb");
+	int img_size = 1050;
+	int size_map = img_size*img_size;
 	carmen_map_t map;
-	carmen_grid_mapping_create_new_map(&map, 600, 600, 0.2, 'm');
+	carmen_grid_mapping_create_new_map(&map, img_size, img_size, 0.2, 'm');
 
 	fread(map.complete_map, size_map, sizeof(double), binary_map);
-	map_to_png_check(map, 0, 20.0, -1.0, false);
+	map_to_png_check(map, 0, 15.0, -1.0, false);
 	fclose(binary_map);
 
 	return 0;

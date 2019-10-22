@@ -14,6 +14,7 @@ import torch.nn.functional as F
 from torchvision import transforms
 import math
 from random import shuffle
+import scipy.sparse
 
 import configparser
 
@@ -21,9 +22,12 @@ import cv2
 
 # our nn model.py
 import model as M
+from _testbuffer import ndarray
+from cupshelpers.ppds import normalize
+import time
 
 #transforms.Normalize(mean for each channel, std for each chanel)
-TRANSFORMS = transforms.Normalize([0.485, 0.456, 0.406, 0.456, 0.456], [0.229, 0.229, 0.229, 0.224, 0.225])
+TRANSFORMS = transforms.Normalize([0.0128, 0.0119, 0.0077, 0.0019, 0.0010], [0.0821, 0.0739, 0.0591, 0.0170, 0.0100])
 
 
 def tensor2rgbimage(tensor):
@@ -38,21 +42,21 @@ def tensor2rgbimage(tensor):
     return img_map
 
 
-def load_labels_fromfile_as_img(dataset_config):
+def load_labels_fromfile_as_img(dataset_config, size):
     for n in train_list:
         file = (dataset_config['target_path'] + n + '_label')
         numpy_file = np.fromfile(file, dtype=float)
-        reshaped = numpy_file.reshape(600, 600)
-        img = labels_to_img(reshaped)
+        reshaped = numpy_file.reshape(size, size)
+        img = labels_to_img(reshaped, size)
     return img
 
 
-def labels_to_img(numpy_image):
+def labels_to_img(numpy_image, size):
     reshaped = numpy_image
-    img = np.zeros((600, 600, 3), np.uint8)
-    for i in range(600):
+    img = np.zeros((size, size, 3), np.uint8)
+    for i in range(size):
         # print("")
-        for j in range(600):
+        for j in range(size):
             if reshaped[i][j] == 0:
                 img[i][j] = np.array([255, 120, 0])
             elif reshaped[i][j] == 1.0:
@@ -62,21 +66,21 @@ def labels_to_img(numpy_image):
     return img
 
 
-def show_dataset(dataset_tensor):
+def show_dataset(dataset_tensor, size):
 
-    cv2.imshow('Max', convert_metric_map_to_image(dataset_tensor[1][0], 'max'))
-    cv2.imshow('Mean', convert_metric_map_to_image(dataset_tensor[1][1], 'mean'))
-    cv2.imshow('Min', convert_metric_map_to_image(dataset_tensor[1][2], 'min'))
-    cv2.imshow('Numb', convert_metric_map_to_image(dataset_tensor[1][3], 'numb'))
-    cv2.imshow('Std', convert_metric_map_to_image(dataset_tensor[1][4], 'std'))
+    cv2.imshow('Max', convert_metric_map_to_image(dataset_tensor[1][0], 'max', size))
+    cv2.imshow('Mean', convert_metric_map_to_image(dataset_tensor[1][1], 'mean', size))
+    cv2.imshow('Min', convert_metric_map_to_image(dataset_tensor[1][2], 'min', size))
+    cv2.imshow('Numb', convert_metric_map_to_image(dataset_tensor[1][3], 'numb', size))
+    cv2.imshow('Std', convert_metric_map_to_image(dataset_tensor[1][4], 'std', size))
     cv2.waitKey(0)
 
 
-def fixed_normalize_to_img(map, new_max_value, max_value, min):
-    img_map = np.zeros((600, 600, 3), np.uint8)
+def fixed_normalize_to_img(map, new_max_value, max_value, min, size):
+    img_map = np.zeros((size, size, 3), np.uint8)
 
-    for i in range(600):
-        for j in range(600):
+    for i in range(size):
+        for j in range(size):
             new_val = map[j][i].item()
             # print(new_val)
             if new_val < min:
@@ -90,11 +94,11 @@ def fixed_normalize_to_img(map, new_max_value, max_value, min):
     return img_map
 
 
-def fixed_normalize(map, new_max_value, max_value, min_value):
-    img_map = np.zeros((600, 600))
+def fixed_normalize(map, new_max_value, max_value, min_value, size):
+    img_map = np.zeros((size, size))
 
-    for i in range(600):
-        for j in range(600):
+    for i in range(size):
+        for j in range(size):
             new_val = map[j][i].item()
             # print(new_val)
             if new_val < min_value:
@@ -104,13 +108,14 @@ def fixed_normalize(map, new_max_value, max_value, min_value):
     return img_map
 
 
-def print_values(map):
-    for i in range(600):
-        for j in range(600):
+def print_values(map, size):
+    for i in range(size):
+        for j in range(size):
             new_val = map[j][i].item()
             print(new_val)
 
-def get_min_and_max_values_to_normalize(metric_type):
+
+def get_raw_min_and_max_values_to_normalize(metric_type):
     map_min = -10.0
     if metric_type == 'max':
         map_max = 1.852193
@@ -128,10 +133,18 @@ def get_min_and_max_values_to_normalize(metric_type):
     return map_max, map_min
 
 
-def convert_metric_map_to_image(metric_map, metric_type):
+def convert_raw_metric_map_to_image(metric_map, metric_type, size):
 # TODO Pegar das variáveis
-    map_max, map_min = get_min_and_max_values_to_normalize(metric_type)
-    img = fixed_normalize_to_img(metric_map, 255.0, map_max, map_min)
+    map_max, map_min = get_raw_min_and_max_values_to_normalize(metric_type)
+    img = fixed_normalize_to_img(metric_map, 255.0, map_max, map_min, size)
+    return img
+
+
+def convert_metric_map_to_image(metric_map, metric_type, size):
+# TODO Pegar das variáveis
+    map_max = 1
+    map_min = 0
+    img = fixed_normalize_to_img(metric_map, 255.0, map_max, map_min, size)
     return img
 
 
@@ -153,13 +166,32 @@ def file_raw_to_tensor(img_x_dim, img_y_dim, file, metric_type):
     return data_tensor
 
 
-def file_to_tensor(transforms, img_x_dim, img_y_dim, file):
+def file_npz_to_tensor(file):
+    sparse_matrix = scipy.sparse.load_npz(file)
+    normalized_data = sparse_matrix.todense()
+    normalized_data = np.array(normalized_data)
+    data_tensor = torch.from_numpy(normalized_data)
+    
+    return data_tensor
+
+
+def file_to_tensor(img_x_dim, img_y_dim, file):
     numpy_file = np.fromfile(file, dtype=float)
     reshaped = numpy_file.reshape(img_x_dim, img_y_dim)
     data_tensor = torch.from_numpy(reshaped)
-    if transforms != None:
-        data_tensor = transforms(data_tensor)
+    
     return data_tensor
+
+
+def label_file_npz_to_tensor(file):
+    sparse_matrix = scipy.sparse.load_npz(file)
+    normalized_data = sparse_matrix.todense()
+    normalized_data = np.array(normalized_data)
+
+    weight = np.array([len(np.where(normalized_data == t)[0]) for t in np.unique(normalized_data)])
+    data_tensor = torch.from_numpy(normalized_data)
+#     print(weight.shape)
+    return data_tensor, weight
 
 
 def label_file_to_tensor(img_x_dim, img_y_dim, file):
@@ -190,23 +222,26 @@ def load_bach_data(transforms, dataset_list, data_path, target_path, last_elemen
         # print(batch_size)
         # print("lastele: ", last_element, " j:", j)
 
-        data[j][0] = (file_to_tensor(transforms, img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_max'))
-        data[j][1] = (file_to_tensor(transforms, img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_mean'))
-        data[j][2] = (file_to_tensor(transforms, img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_min'))
-        data[j][3] = (file_to_tensor(transforms, img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_numb'))
-        data[j][4] = (file_to_tensor(transforms, img_x_dim, img_y_dim, data_path + str(dataset_list[last_element]) + '_std'))
-
-        tmp, new_weights = label_file_to_tensor(img_x_dim, img_y_dim, (target_path + str(dataset_list[last_element]) + '_label'))
+        data[j][0] = (file_npz_to_tensor(data_path + str(dataset_list[last_element]) + '_max.npz'))
+        data[j][1] = (file_npz_to_tensor(data_path + str(dataset_list[last_element]) + '_mean.npz'))
+        data[j][2] = (file_npz_to_tensor(data_path + str(dataset_list[last_element]) + '_min.npz'))
+        data[j][3] = (file_npz_to_tensor(data_path + str(dataset_list[last_element]) + '_numb.npz'))
+        data[j][4] = (file_npz_to_tensor(data_path + str(dataset_list[last_element]) + '_std.npz'))
+        
+        if transforms != None:
+            data[j] = transforms(data[j])
+            
+        tmp, new_weights = label_file_npz_to_tensor((target_path + str(dataset_list[last_element]) + '_label.npz'))
         target[j] = tmp
         last_element = last_element + 1
         batch_weight = batch_weight + new_weights
         max_weight = max(batch_weight)
         batch_weight = max_weight / batch_weight
 
-        # cv2.imshow('window', labels_to_img(target[j].numpy()))
-        # cv2.waitKey(0)
+#         cv2.imshow('window', labels_to_img(target[j].numpy(), img_x_dim))
+#         cv2.waitKey(0)
         # batch_weight = batch_weight + new_weights
-    # cv2.imshow('Max', convert_metric_map_to_image(data[0][0], 'max'))
+    # cv2.imshow('Max', convert_metric_map_to_image(data[0][0], 'max', size))
     # max_weight = max(batch_weight)
     # batch_weight = max_weight / batch_weight
     # normalize weights
@@ -222,7 +257,7 @@ def load_bach_data(transforms, dataset_list, data_path, target_path, last_elemen
 
 def train(interval_save_model, iterations, model, device, train_list, dataset_config, dnn_config, optimizer, epoch, batch_size, n_classes, img_width, img_height, input_channels):
     #class_weights = torch.FloatTensor(weights).cuda()
-
+    global TRANSFORMS
     model.train()
     last_element = 0
     for batch_idx in range(iterations):
@@ -233,7 +268,7 @@ def train(interval_save_model, iterations, model, device, train_list, dataset_co
                                                         last_element, batch_size, input_channels,
                                                         img_width, img_height, n_classes)
 
-            # show_dataset(data)
+#             show_dataset(data, img_width)
             # cv2.imshow('Target', labels_to_img(target[batch_idx].numpy()))
             # cv2.waitKey(-1)
             #TODO: Dados já estão sendo gerados de 0 a 1
@@ -241,12 +276,15 @@ def train(interval_save_model, iterations, model, device, train_list, dataset_co
             #TODO: Padronizar os dados
             data = data.to(device)
             target = target.to(device)
-            # print("Fowarding")
+            inicio = time.time()
+#             print("\nFowarding")
             output = model(data)
+#             print("\nTempo Foward: ", time.time() - inicio)
             #print(weights)
             #weights = [1, 1, 5]
             batch_weight = torch.FloatTensor(weights).cuda()
             out_loss = F.cross_entropy(output, target, weight=batch_weight)
+#             out_loss = F.cross_entropy(output, target)
             # print("Calculating Cross_entropy")
             # print(out_loss.item())
             # print("Cleaning grads")
@@ -264,14 +302,15 @@ def train(interval_save_model, iterations, model, device, train_list, dataset_co
                 arq.close()
                 print(log_treino)
 
-            if epoch % 50 == 0:
+            if epoch % interval_save_model == 0:
                 pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
                 imgPred = pred[0]
                 imgPred = imgPred.cpu().float()
-                cv2.imwrite('/dados/neural_mapper/data_13-08-19/results/img' + str(epoch) + '.png', labels_to_img(imgPred[0].numpy()))
+                cv2.imwrite(dnn_config['save_log_files'] + 'img' + str(epoch) + '.png', labels_to_img(imgPred[0].numpy(), img_width))
 
 
-def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config, n_classes, img_width, img_height, input_channels):
+def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config, n_classes, img_width, img_height, input_channels, interval_save_model):
+    global TRANSFORMS
     print("Testing!")
     model.eval()
     test_loss = 0
@@ -301,6 +340,11 @@ def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config
         
         arq.close()
         print(texto)
+        
+        if epoch % interval_save_model == 0:
+                imgPred = pred[0]
+                imgPred = imgPred.cpu().float()
+                cv2.imwrite(dnn_config['save_log_files'] + 'img_predicted' + str(epoch) + '.png', labels_to_img(imgPred[0].numpy(), img_width))
         
     
 if __name__ == '__main__':
@@ -336,8 +380,12 @@ if __name__ == '__main__':
     use_cuda = use_cuda and torch.cuda.is_available()
     # TODO: Arrumar pra escolher pelo parametro
     device = torch.device("cuda") # torch.device(("cuda:" + device_number) if use_cuda else "cpu")
-    print(torch.cuda.current_device(), torch.cuda.get_device_capability(int(device_number)))
+#   print(torch.cuda.current_device(), torch.cuda.get_device_capability(int(device_number)))
     print('Using Device: ', device)
+
+    config_log_file_name = dnn_config['save_log_files'] + 'config' + str(epochs) + '.ini'
+    with open(config_log_file_name, 'w') as configfile:  # type: TextIO
+        config_file.write(configfile)
 
     # optimizer parameter?
     torch.manual_seed(random_seed)
@@ -360,9 +408,11 @@ if __name__ == '__main__':
     print('Iniciando treino por ', epochs, 'epocas')
 
     for epoch in range(1, epochs + 1):
+        inicio = time.time()
         train(interval_save_model, iterations, model, device, train_list,
               dataset_config, dnn_config, optimizer, epoch, batch_size, n_classes, img_width, img_height, input_channels)
-        test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config, n_classes, img_width, img_height, input_channels)
+        print("\nTempo total 1 epoca: ", time.time() - inicio)
+        test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config, n_classes, img_width, img_height, input_channels, interval_save_model)
 
         if epoch % decay_step_size == 0:
             first = 1
@@ -378,6 +428,3 @@ if __name__ == '__main__':
 
     print("cabou")
     torch.save(model.state_dict(), dnn_config['save_models'] + str(epoch) + '.model')
-    config_log_file_name = dnn_config['save_log_files'] + 'config' + str(epochs) + '.ini'
-    with open(config_log_file_name, 'w') as configfile:  # type: TextIO
-        config_file.write(configfile)

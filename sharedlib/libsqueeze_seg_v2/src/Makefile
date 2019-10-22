@@ -1,8 +1,8 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK = g++
-CFLAGS += 
-CXXFLAGS += -std=c++11
+CFLAGS += -std=c++11
+CXXFLAGS += -std=gnu++11
 
 MODULE_NAME = SqueezeSeg V2 Neural Network
 MODULE_COMMENT = Semantic segmentation of LiDAR point cloud
