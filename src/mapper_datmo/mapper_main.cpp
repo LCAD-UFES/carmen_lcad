@@ -481,14 +481,13 @@ fill_view_vector(double horizontal_angle, double vertical_angle, double range, d
 		double x = round(point.x() * 100.0) / 100.0;
 		double y = round(point.y() * 100.0) / 100.0;
 		double z = round(point.z() * 100.0) / 100.0;
-		//intensity = intensity / 1000.0;
 		intensity = round(intensity * 100.0) / 100.0;
-		double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
+		//double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
 		view[line * 5] = x;
 		view[(line * 5) + 1] = y;
 		view[(line * 5) + 2] = z;
 		view[(line * 5) + 3] = intensity;
-		view[(line * 5) + 4] = raiz_soma_quadrados;
+		view[(line * 5) + 4] = range;
 	} else {
 		view[line * 5] = 0.0;
 		view[(line * 5) + 1] = 0.0;
@@ -511,10 +510,10 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 	double squeeze[number_of_points * 5];
 	int* return_squeeze_array;
 
-	printf("Laser Shots: %d number of points: %d\n", number_of_laser_shots, number_of_points);
+	printf("Shots: %d from %lf\n", number_of_laser_shots, number_of_points, sensor_data->last_timestamp);
 	if(number_of_laser_shots >= min_shots)
 	{
-		printf("Mounting matrix\n");
+		printf("Mounting matrix from %lf\n", sensor_data->last_timestamp);
 		//point_cloud_file.open("SqueezeSeg/" + std::to_string(timestamp) + ".txt");
 		//point_cloud_file << "#Array shape: (32, 1024, 5)\n";
 
@@ -528,7 +527,7 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 				//printf("Before intensity;");
 				double intensity = (double) (sensor_data->intensity[cloud_index][scan_index + i]) / 100.0;
 				//printf("After intensity\n");
-				double horizontal_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].horizontal_angle;
+				double horizontal_angle = sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
 
 				//Mounting Full View
 				fill_view_vector(horizontal_angle, vertical_angle, range, intensity, &squeeze[0], line);
@@ -539,6 +538,7 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 		return_squeeze_array = libsqueeze_seg_process_point_cloud(sensor_params->vertical_resolution, number_of_laser_shots, &squeeze[0], sensor_data->last_timestamp);
 		// It is an array with 32 positions and 1024 values
 		// lets decode to the same positions we have readed
+		printf("Analysis of return matrix from %lf\n", sensor_data->last_timestamp);
 		for (i = sensor_params->vertical_resolution, line = 0; i > 0; i--)
 		{
 			for (j = 0; j < number_of_laser_shots; j++, line++)
