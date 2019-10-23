@@ -76,6 +76,10 @@ def save_txt(data, file_name):
 
         # Writing out a break to indicate different slices...
         outfile.write('# New slice\n')
+        
+def save_lidar_image(img_file, timestamp):
+    lidar_save = Image.fromarray(img_file).convert('RGBA')
+    lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + '_slices' + '.png'))
 
 def generate_lidar_images(lidar, pred_cls):
     global mc
@@ -101,8 +105,8 @@ def run_model(lidar):
     global mc
     global model
     global sess
-    print("lidar.shape={}, mc.zenith={}, mc.azimuth={}".format(
-        lidar.shape, mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL))
+    #print("lidar.shape={}, mc.zenith={}, mc.azimuth={}".format(
+    #    lidar.shape, mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL))
     lidar_mask = np.reshape(
         (lidar[:, :, 4] > 0),
         [mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL, 1]
@@ -120,26 +124,13 @@ def run_model(lidar):
     return pred_cls
 
 def squeeze_seg_process_point_cloud(lidar, timestamp):
-    
-#     pred_cls = run_model(lidar)
-#     resized = generate_lidar_images(lidar,pred_cls)
-#     lidar_save = Image.fromarray(resized).convert('RGBA')
-#     lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + '_full' + '.png'))
-# 
-#     cv2.imshow("Slices", resized)
-#     cv2.waitKey(100)
-#         
-#     return pred_cls[0]
-    
-    #make copies for test
-    print(lidar.shape)
-    lidar1 = lidar[:,271:783,:]
     #save_txt(lidar, str(timestamp.item(0)))
+    lidar1 = lidar[:,271:783,:]
     lidarp1 = lidar[:,783:,:]
     shape_last_part = lidar.shape[1] - 783 #300
     shape_to_complete = mc.AZIMUTH_LEVEL - shape_last_part #212
     shape_to_squeeze = shape_to_complete + mc.AZIMUTH_LEVEL
-    print ("shape_last_part=" + str(shape_last_part) + " shape_complete=" + str(shape_to_complete) + " shape_to_squeeze=" + str(shape_to_squeeze))
+    #print ("shape_last_part=" + str(shape_last_part) + " shape_complete=" + str(shape_to_complete) + " shape_to_squeeze=" + str(shape_to_squeeze))
     lidarp2 = lidar[:,:shape_to_complete,:]
     lidar2 = np.hstack((lidarp1, lidarp2))
     '''Has to do something between 212 to 271'''
@@ -157,10 +148,8 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
      
     cv2.imshow("Slices", img_to_test)
     cv2.waitKey(100)
-    #lidar_save = Image.fromarray(img_to_test).convert('RGBA')
-    lidar_save = Image.fromarray(img_lidar1).convert('RGBA')
-    lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + '_slices' + '.png'))
-    #print(pred_cls_lidar2[0].shape)
+    #save_lidar_image(img_to_test, timestamp)
+    
     pred_cls = np.hstack((pred_cls_lidar2[0][:,shape_to_complete:],pred_cls_lidar3[0][:,shape_to_complete:271],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:shape_to_complete]))
     print("pred_cls.shape={}".format(
         pred_cls.shape))
