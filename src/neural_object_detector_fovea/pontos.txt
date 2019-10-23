@@ -182,10 +182,9 @@ no_dist 284160
 
 
 
-
 else
 		{
-			cout<<"no_dist ";
+//			cout<<"no_dist ";
 			for (int j = 0; j < predictions_of_crops[0].size(); j++){
-				cout << (predictions_of_crops[0][j].x + predictions_of_crops[0][j].w) * (predictions_of_crops[0][j].y + predictions_of_crops[0][j].h) << endl;
-			}
+				cout << -8.91945638051591*pow(10,-45)*pow((predictions_of_crops[0][j].x + predictions_of_crops[0][j].w) * (predictions_of_crops[0][j].y + predictions_of_crops[0][j].h),9.0) + 3.58083829253595*pow(10,-38)*pow((predictions_of_crops[0][j].x + predictions_of_crops[0][j].w) * (predictions_of_crops[0][j].y + predictions_of_crops[0][j].h),8.0) - 6.35009226641819*pow(10,-32)*pow((predictions_of_crops[0][j].x + predictions_of_crops[0][j].w) * (predictions_of_crops[0][j].y + predictions_of_crops[0][j].h),7.0) + 6.52781674555335*pow(10,-26)*pow((predictions_of_crops[0][j].x + predictions_of_crops[0][j].w) * (predictions_of_crops[0][j].y + predictions_of_crops[0][j].h),6.0) - 4.28644001525549*pow(10,-20)*pow((predictions_of_crops[0][j].x + predictions_of_crops[0][j].w) * (predictions_of_crops[0][j].y + predictions_of_crops[0][j].h),5.0) + 1.86431458728448*pow(10,-14)*pow((predictions_of_crops[0][j].x + predictions_of_crops[0][j].w) * (predictions_of_crops[0][j].y + predictions_of_crops[0][j].h),4.0) - 5.37036146883361*pow(10,-9)*pow((predictions_of_crops[0][j].x + predictions_of_crops[0][j].w) * (predictions_of_crops[0][j].y + predictions_of_crops[0][j].h),3.0) + 0.000987951458734913*pow((predictions_of_crops[0][j].x + predictions_of_crops[0][j].w) * (predictions_of_crops[0][j].y + predictions_of_crops[0][j].h),2.0) - 105.320501040228*(predictions_of_crops[0][j].x + predictions_of_crops[0][j].w) * (predictions_of_crops[0][j].y + predictions_of_crops[0][j].h) + 4957372.79563129 << " " << (predictions_of_crops[0][j].x + predictions_of_crops[0][j].w) * (predictions_of_crops[0][j].y + predictions_of_crops[0][j].h) << endl;
+		}
