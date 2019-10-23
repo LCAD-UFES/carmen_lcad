@@ -133,7 +133,7 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     #print ("shape_last_part=" + str(shape_last_part) + " shape_complete=" + str(shape_to_complete) + " shape_to_squeeze=" + str(shape_to_squeeze))
     lidarp2 = lidar[:,:shape_to_complete,:]
     lidar2 = np.hstack((lidarp1, lidarp2))
-    '''Has to do something between 212 to 271'''
+    '''Has to do something between 212 to 271, so do lidar3'''
     lidar3 = lidar[:,shape_to_complete:shape_to_squeeze,:]
     
     pred_cls_lidar1 = run_model(lidar1)
