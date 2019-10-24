@@ -96,7 +96,7 @@ def generate_lidar_images(lidar, pred_cls):
     #resize img
     scale_percent = 180 # percent of original size
     width = int(img.shape[1] * scale_percent / 100)
-    height = int(img.shape[0] * scale_percent / 100) * 4
+    height = int(img.shape[0] * scale_percent / 100) * 2
     dim = (width, height)
     resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
     return resized
@@ -206,7 +206,7 @@ def squeeze_seg_process_point_cloud_interpolations(lidar, timestamp):
     cv2.waitKey(100)
     return pred_cls_lidar1
 
-def squeeze_seg_process_point_cloud(lidar, timestamp):
+def squeeze_seg_process_point_cloud_raw(lidar, timestamp):
     tag = "_Normal"
     save_txt(lidar, str(timestamp.item(0)), tag)
     lidar1 = lidar[:,271:783,:]
@@ -219,8 +219,9 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     cv2.waitKey(100)
     return pred_cls_lidar1
 
-def squeeze_seg_process_point_cloud_2(lidar, timestamp):
-    #save_txt(lidar, str(timestamp.item(0)))
+def squeeze_seg_process_point_cloud(lidar, timestamp):
+    tag = "_NormalFull"
+    save_txt(lidar, str(timestamp.item(0)), tag)
     lidar1 = lidar[:,271:783,:]
     lidarp1 = lidar[:,783:,:]
     shape_last_part = lidar.shape[1] - 783 #300
@@ -244,7 +245,7 @@ def squeeze_seg_process_point_cloud_2(lidar, timestamp):
      
     cv2.imshow("Slices", img_to_test)
     cv2.waitKey(100)
-    #save_lidar_image(img_to_test, timestamp)
+    save_lidar_image(img_to_test, timestamp, tag)
     
     pred_cls = np.hstack((pred_cls_lidar2[0][:,shape_to_complete:],pred_cls_lidar3[0][:,shape_to_complete:271],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:shape_to_complete]))
     print("pred_cls.shape={}".format(

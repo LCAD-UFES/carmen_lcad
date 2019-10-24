@@ -532,42 +532,25 @@ erase_moving_obstacles_cells_squeezeseg(sensor_parameters_t *sensor_params, sens
 
 				//Mounting Full View Matrix
 				fill_view_vector(horizontal_angle, vertical_angle, range, intensity, &squeeze[0], line);
-
-				/*For doubling points on horizontal*/
-//				line++;
-//				fill_view_vector(horizontal_angle, vertical_angle, range, intensity, &squeeze[0], line);
 			}
-			/*For doubling points on vertical*/
-//			for (j = 0; j < number_of_laser_shots; j++, line++)
-//			{
-//				unsigned int scan_index = j * sensor_params->vertical_resolution;
-//				double vertical_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle;
-//				double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
-//				double intensity = (double) (sensor_data->intensity[cloud_index][scan_index + i]) / 100.0;
-//				double horizontal_angle = sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
-//
-//				//Mounting Full View Matrix
-//				fill_view_vector(horizontal_angle, vertical_angle, range, intensity, &squeeze[0], line);
-//			}
 		}
 		return_squeeze_array = libsqueeze_seg_process_point_cloud(sensor_params->vertical_resolution, number_of_laser_shots, &squeeze[0], sensor_data->last_timestamp);
-//		return_squeeze_array = libsqueeze_seg_process_point_cloud(sensor_params->vertical_resolution * 2, number_of_laser_shots, &squeeze[0], sensor_data->last_timestamp);
 
-		printf("Analysis of return matrix from timestamp %lf\n", sensor_data->last_timestamp);
+		printf("Analysis of return matrix for timestamp %lf\n", sensor_data->last_timestamp);
 
 		/* Lets decode to the same positions we have readed, and here we erase moving objects */
-//		for (i = sensor_params->vertical_resolution, line = 0; i > 0; i--)
-//		{
-//			for (j = 0; j < number_of_laser_shots; j++, line++)
-//			{
-//				if (return_squeeze_array[line] != 0)
-//				{
-//					unsigned int scan_index = j * sensor_params->vertical_resolution;
-//					sensor_data->points[cloud_index].sphere_points[scan_index + i].length = 0.0;
-//					sensor_data->intensity[cloud_index][scan_index + i] = 0.0;
-//				}
-//			}
-//		}
+		for (i = sensor_params->vertical_resolution, line = 0; i > 0; i--)
+		{
+			for (j = 0; j < number_of_laser_shots; j++, line++)
+			{
+				if (return_squeeze_array[line] != 0)
+				{
+					unsigned int scan_index = j * sensor_params->vertical_resolution;
+					sensor_data->points[cloud_index].sphere_points[scan_index + i].length = 0.0;
+					sensor_data->intensity[cloud_index][scan_index + i] = 0.0;
+				}
+			}
+		}
 	}
 }
 
