@@ -28,6 +28,9 @@
 
 #include <carmen/carmen.h>
 #include <opencv2/highgui/highgui.hpp>
+#include <iostream>
+#include <fstream>
+#include <math.h>
 
 //byte numbers
 #define GET_LOW_ORDER_NIBBLE(x) (int_to_nibble_hex[x & 0xf])
@@ -891,15 +894,105 @@ void carmen_logwrite_write_to_file_velodyne(
 	carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
 }
 
+void carmen_logwrite_write_to_file_velodyne_variable(
+		carmen_velodyne_variable_scan_message* msg, int velodyne_number, carmen_FILE *outfile,
+		double timestamp, char *log_filename)
+{
+	const double HIGH_LEVEL_SUBDIR_TIME = 100.0 * 100.0; // new each 100 x 100 seconds
+	const double LOW_LEVEL_SUBDIR_TIME = 100.0; // new each 100 seconds
+
+	int high_level_subdir = ((int) (msg->timestamp / HIGH_LEVEL_SUBDIR_TIME))
+			* HIGH_LEVEL_SUBDIR_TIME;
+	int low_level_subdir = ((int) (msg->timestamp / LOW_LEVEL_SUBDIR_TIME))
+			* LOW_LEVEL_SUBDIR_TIME;
+
+	int i;
+	static char directory[1024];
+	static char subdir[1024];
+	static char path[1024];
+
+	/**
+	 * TODO: @Filipe: Check if the mkdir call is time consuming.
+	 */
+	sprintf(directory, "%s_velodyne%d", log_filename, velodyne_number);
+	mkdir(directory, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(subdir, "%s/%d", directory, high_level_subdir);
+	mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(subdir, "%s/%d/%d", directory, high_level_subdir, low_level_subdir);
+	mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(path, "%s/%lf.pointcloud", subdir, msg->timestamp);
+
+	FILE *image_file = fopen(path, "wb");
+
+	for (i = 0; i < msg->number_of_shots; i++)
+	{
+		fwrite(&(msg->partial_scan[i].angle), sizeof(double), 1, image_file);
+		fwrite(msg->partial_scan[i].distance, sizeof(short), msg->partial_scan->shot_size, image_file);
+		fwrite(msg->partial_scan[i].intensity, sizeof(char), msg->partial_scan->shot_size, image_file);
+	}
+
+	fclose(image_file);
+
+	//novo arquivo de log do velodyne
+	//para salvar o .xyz do velodyne ao mesmo tempo que gera o log
+	/*
+	static char path2[1024];
+
+	sprintf(path2, "%s/%lf.xyz", subdir, msg->timestamp);
+
+	std::ofstream o(path2);
+
+	static double vertical_correction[32];
+	static double vc_16[32] = {-15.0, 1.0, -13.0, 3.0, -11.0, 5.0, -9.0, 7.0, -7.0, 9.0, -5.0, 11.0, -3.0, 13.0, -1.0, 15.0,
+								0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+	static double vc_32[32] = {-30.67, -9.3299999, -29.33, -8.0, -28.0, -6.6700001, -26.67, -5.3299999, -25.33, -4.0, -24.0, -2.6700001, -22.67, -1.33, -21.33, 0.0,
+			-20.0, 1.33, -18.67, 2.6700001, -17.33, 4.0, -16.0, 5.3299999, -14.67, 6.6700001, -13.33, 8.0, -12.0, 9.3299999, -10.67, 10.67};
+	if(msg->partial_scan->shot_size == 16)
+		memcpy(vertical_correction, vc_16, sizeof(vc_16));
+	else if (msg->partial_scan->shot_size == 32)
+		memcpy(vertical_correction, vc_32, sizeof(vc_32));
+
+	for (int i = 0; i < msg->number_of_shots; i++)
+	{
+		for (int j = 0; j < msg->partial_scan->shot_size; j++)
+		{
+			double v_angle = (carmen_degrees_to_radians(vertical_correction[j]));
+
+			double range = (double) msg->partial_scan[i].distance[j];
+
+			double h_angle = (carmen_degrees_to_radians(msg->partial_scan[i].angle));
+
+			double x, y, z;
+			x = range * cos(v_angle) * cos(h_angle);
+			y = range * cos(v_angle) * sin(h_angle);
+			z = range * sin(v_angle);
+
+			o << x << "\t" << y << "\t" << z << std::endl;
+		}
+		o << std::endl;
+	}
+
+	o.close();
+	*/
+	//fim do novo arquivo
+
+	carmen_fprintf(outfile, "VELODYNE_VARIABLE_SCAN_IN_FILE%d %s %d %d %d ", velodyne_number, path,
+			velodyne_number, msg->partial_scan->shot_size, msg->number_of_shots);
+	carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
+}
+
 char *hex_char_distance_and_intensity_variable;
 
 void carmen_logwrite_write_variable_velodyne_scan(
-		carmen_velodyne_variable_scan_message* msg, carmen_FILE* outfile,
+		carmen_velodyne_variable_scan_message* msg, int velodyne_number, carmen_FILE* outfile,
 		double timestamp)
 {
 	int i, j, k, angle;
 
-	carmen_fprintf(outfile, "VARIABLE_VELODYNE_SCAN ");
+	carmen_fprintf(outfile, "VARIABLE_VELODYNE_SCAN%d ", velodyne_number);
 	carmen_fprintf(outfile, "%d ", msg->number_of_shots);
 	carmen_fprintf(outfile, "%d ", msg->partial_scan[0].shot_size);
 
