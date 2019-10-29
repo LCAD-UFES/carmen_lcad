@@ -46,3 +46,6 @@ max_k1 = 0.3
 min_k2 = -0.15
 # Upper limit of k2 spline coefficient
 max_k2 = 0.15
+#sem gps
+only_odometry = 1
+
