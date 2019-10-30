@@ -94,9 +94,9 @@ def generate_lidar_images(lidar, pred_cls):
     arr[:,:,2] = src1[:,:]
     img = np.concatenate((arr, dst), axis=0)
     #resize img
-    scale_percent = 150 # percent of original size
+    scale_percent = 200 # percent of original size
     width = int(img.shape[1] * scale_percent / 100)
-    height = int(img.shape[0] * scale_percent / 100) 
+    height = int(img.shape[0] * scale_percent / 100) * 2
     dim = (width, height)
     resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
     return resized
