@@ -94,9 +94,9 @@ def generate_lidar_images(lidar, pred_cls):
     arr[:,:,2] = src1[:,:]
     img = np.concatenate((arr, dst), axis=0)
     #resize img
-    scale_percent = 180 # percent of original size
+    scale_percent = 150 # percent of original size
     width = int(img.shape[1] * scale_percent / 100)
-    height = int(img.shape[0] * scale_percent / 100) * 2
+    height = int(img.shape[0] * scale_percent / 100) 
     dim = (width, height)
     resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
     return resized
@@ -220,7 +220,7 @@ def squeeze_seg_process_point_cloud_raw(lidar, timestamp):
     return pred_cls_lidar1
 
 def squeeze_seg_process_point_cloud(lidar, timestamp):
-    tag = "_NormalFull"
+    tag = ""
     save_txt(lidar, str(timestamp.item(0)), tag)
     lidar1 = lidar[:,271:783,:]
     lidarp1 = lidar[:,783:,:]
@@ -241,15 +241,17 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
     #img_lidar3 = generate_lidar_images(lidar3,pred_cls_lidar3)
      
-    img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=0)
+    #img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=0)
      
-    cv2.imshow("Slices", img_to_test)
+    cv2.imshow("Front View", img_lidar1)
+    cv2.imshow("Rear View", img_lidar2)
     cv2.waitKey(100)
-    save_lidar_image(img_to_test, timestamp, tag)
+    save_lidar_image(img_lidar1, timestamp, tag)
+    save_lidar_image(img_lidar2, timestamp, "_r")
     
     pred_cls = np.hstack((pred_cls_lidar2[0][:,shape_to_complete:],pred_cls_lidar3[0][:,shape_to_complete:271],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:shape_to_complete]))
-    print("pred_cls.shape={}".format(
-        pred_cls.shape))
+   # print("pred_cls.shape={}".format(
+   #     pred_cls.shape))
      
     return pred_cls
 
