@@ -37,7 +37,7 @@
 
 
 static double min_max_tv = 0.0;// , min_max_rv = 0.0;
-static double max_max_tv = 1.8, max_max_rv = 0.6;
+static double max_max_tv = 1.8, max_max_rv = 0.2;
 
 static double max_allowed_tv = 1.5, max_allowed_rv = 1.5;
 
@@ -93,8 +93,10 @@ void send_base_velocity_command(double tv, double rv)
 		v.phi = -max_allowed_rv;
 
 
+
 	if (0)
 		fprintf(stderr,"%.2f %.2f\n",v.v, v.phi);
+
 
 	message_pioneer[0].v = v.v;
 	message_pioneer[0].phi = v.phi;
@@ -195,7 +197,8 @@ int main(int argc, char **argv)
 		if(carmen_get_joystick_state(&joystick) >= 0) {
 
 			max_tv = min_max_tv + (-joystick.axes[2] + 32767.0) / (32767.0 * 2.0) * (max_max_tv - min_max_tv);
-
+			double velocidade =  joystick.axes[1] + ((joystick.axes[1]<0)-(joystick.axes[1]>0))*4000;
+			double angulo_roda =joystick.axes[3] +1000 + ((joystick.axes[3]<0)-(joystick.axes[3]>0))*4000;
 			//      max_rv = min_max_rv + (-joystick.axes[2] + 32767.0) / (32767.0 * 2.0) * (max_max_rv - min_max_rv);
 
 /*			if (throttle_mode) {
@@ -209,10 +212,10 @@ int main(int argc, char **argv)
 					command_tv = 0;
 			}
 			else */
-				command_tv = +1 * joystick.axes[1] / 32767.0 * max_max_tv;
+				command_tv = +1 * velocidade / 28767.0 * max_max_tv;
 
 			if (joystick.axes[3])
-				command_rv = -1 * joystick.axes[3] / 32767.0 * max_max_rv;
+				command_rv = -1 * angulo_roda / 28767.0 * max_max_rv;
 			else
 				command_rv = 0;
 
@@ -222,10 +225,10 @@ int main(int argc, char **argv)
 			//command_tv = +1 * joystick.axes[1] / 32767.0 * max_tv;
 
 			if (joystick_activated){
-				if(command_tv < 0.07 && command_tv > -0.07)
-					command_tv = 0;
-				if(command_rv < 0.13 && command_rv > -0.13)
-					command_rv = 0;
+//				if(command_tv < 0.07 && command_tv > -0.07)
+//					command_tv = 0;
+//				if(command_rv < 0.13 && command_rv > -0.13)
+//					command_rv = 0;
 				fprintf(stderr,"%.2f, %.2f\n", command_tv, command_rv);
 				send_base_velocity_command(command_tv, command_rv);
 
@@ -239,6 +242,21 @@ int main(int argc, char **argv)
 					fprintf(stderr,"Use the \"throttle control\" to control the speed!\n");
 				else
 					fprintf(stderr,"\n");
+			}
+*/
+
+
+
+
+
+
+
+/*
+			if (joystick.buttons[3]){
+				system("espeak -v pt -s 200 -p 60 'Mamãe!'");
+			}
+			if (joystick.buttons[2]){
+				system("espeak -v pt -s 100 -p 0 'Mamãe!'");
 			}
 */
 			if (joystick.buttons[8]) {
