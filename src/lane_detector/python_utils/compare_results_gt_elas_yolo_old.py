@@ -338,6 +338,7 @@ if __name__ == "__main__":
 		yolo_path = yolo_path + "/" + str(yolo_path_split[-2]) + "/"
 		#print(yolo_path)
 		error = 0
+		error_elas = 0
 		cont = 0
 		error_array = []
 		array_numbers = []
@@ -346,7 +347,8 @@ if __name__ == "__main__":
 				if not gt_file_name.endswith('.txt'):
 					continue
 				gt_points = read_groud_truth_points(sys.argv[1], gt_file_name)
-
+				#if (int(number_of_folder) == 9000):
+					#continue
 				#gt_points_yolo = transform_groud_truth_points_to_yolo(gt_points)
 				
 				#print (gt_points_yolo)
@@ -367,12 +369,14 @@ if __name__ == "__main__":
 				if (float(returned[0]) > 500.0):
 					continue
 				cont += 1
-				
+				if (int(number_of_folder) == 20000 and float(returned_2[0]) < 500.0):
+					error_elas += returned_2[0]
 				#if images_path:
 					#show_image(gt_points, predictions_points, returned[1], returned_2[1], gt_file_name, images_path)
 				#show_image(gt_points, predictions_points, predictions_points_2, gt_file_name, images_path)
 			#print(number_of_folder)
-			print ('TOTAL Error: ' + str(error/cont))
+			print ('TOTAL Error Yolo: ' + str(error/cont))
+			print ('TOTAL Error ELAS: ' + str((error_elas * 20)/cont))
 			error_array.append(int(error/cont))
 			array_numbers.append(int(number_of_folder))
 			number_of_folder = number_of_folder + 1000
