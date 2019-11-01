@@ -49,6 +49,12 @@ const int RSLIDAR_MSG_BUFFER_SIZE = 1248;
 typedef struct rslidar_param
 {
 	std::string device_ip;
+	std::string model;
+	double rpm;            ///< device rotation rate (RPMs)
+	int msop_port;
+	int difop_udp_port;
+	int npackets;
+	double cut_angle;
 }  __attribute__((packed)) rslidar_param_t ;
 
 typedef struct rslidarPacket

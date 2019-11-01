@@ -2,7 +2,7 @@ import sys
 import os
 import math
 import cv2
-
+import matplotlib.pyplot as plt
 
 def read_groud_truth_points(gt_dir, gt_file_name):
 	#print (gt_dir + gt_file_name)
@@ -27,6 +27,74 @@ def read_groud_truth_points(gt_dir, gt_file_name):
 	gt_points_list.append(gt_points_left[:])
 	gt_points_list.append(gt_points_right[:])
 	#print(gt_points_list)
+	return gt_points_list
+
+def transform_groud_truth_points_to_yolo(gt_points_list):
+	yolo_points_list_left = []
+	yolo_points_list_right = []
+	yolo_points_list = []
+	points = []
+	for i in range(len(gt_points_list[0]) - 1):
+		points.append(float((gt_points_list[0][i + 1][0] + gt_points_list[0][i][0])) / (2.0 * 640.0))
+		points.append(float((gt_points_list[0][i + 1][1] + gt_points_list[0][i][1])) / (2.0 * 480.0))
+		points.append(abs(float((gt_points_list[0][i + 1][1] - gt_points_list[0][i][1])) / 480.0))
+		points.append(abs(float((gt_points_list[0][i + 1][0] - gt_points_list[0][i][0])) / 640.0))
+		yolo_points_list_left.append(points[:])
+		del points[:]
+	
+	for i in range(len(gt_points_list[1]) - 1):
+		points.append(float((gt_points_list[1][i + 1][0] + gt_points_list[1][i][0])) / (2.0 * 640.0))
+		points.append(float((gt_points_list[1][i + 1][1] + gt_points_list[1][i][1])) / (2.0 * 480.0))
+		points.append(abs(float((gt_points_list[1][i + 1][1] - gt_points_list[1][i][1])) / 480.0))
+		points.append(abs(float((gt_points_list[1][i + 1][0] - gt_points_list[1][i][0])) / 640.0))
+		yolo_points_list_right.append(points[:])
+		del points[:]
+	
+	yolo_points_list.append(yolo_points_list_left[:])
+	yolo_points_list.append(yolo_points_list_right[:])
+	return yolo_points_list
+
+def transform_yolo_points_groundtruth_to_coordinates(gt_dir, gt_file_name):
+	points = []
+	gt_points_list = []
+	gt_points_list_left = []
+	gt_points_list_right = []
+	gt_file = open(gt_dir + gt_file_name, "r")
+	file_content = gt_file.readlines()
+	
+	i = 0
+	for line in file_content:
+		line = line.strip().split()
+		if (i == 0):
+			points.append(int((float(line[0]) + (float(line[2]) / 2)) * 640.0))
+			points.append(int((float(line[1]) - (float(line[3]) / 2)) * 480.0))
+			gt_points_list_left.append(points[:])
+		del(points[:])
+		i = i + 1
+		points.append(int((float(line[0]) - (float(line[2]) / 2)) * 640.0))
+		points.append(int((float(line[1]) + (float(line[3]) / 2)) * 480.0))
+		gt_points_list_left.append(points[:])
+		del(points[:])
+		if (i == 3):
+			break
+	
+	i = 0
+	for line in file_content:
+		line = line.strip().split()
+		if (i == 3):
+			points.append(int((float(line[0]) - (float(line[2]) / 2)) * 640.0))
+			points.append(int((float(line[1]) - (float(line[3]) / 2)) * 480.0))
+			gt_points_list_right.append(points[:])
+		del (points[:])
+		i = i + 1
+		if (i > 3):
+			points.append(int((float(line[0]) + (float(line[2]) / 2)) * 640.0))
+			points.append(int((float(line[1]) + (float(line[3]) / 2)) * 480.0))
+			gt_points_list_right.append(points[:])
+			del (points[:])
+		
+	gt_points_list.append(gt_points_list_left[:])
+	gt_points_list.append(gt_points_list_right[:])
 	return gt_points_list
 
 def dist(x1, y1, x2, y2):
@@ -91,50 +159,54 @@ def show_image(gt_points, predictions_points, predictions_points_2, gt_file_path
 	img = cv2.imread(images_path + gt_file_name.replace('txt', 'png'))
 	print(images_path)
 	
-	#imprime os pontos da yolo em circulos
-	for i in range(len(predictions_points[0])):
-		tuple_of_points_0 = (int(predictions_points[0][i][0]), int(predictions_points[0][i][1]))
-		tuple_of_points_1 = (int(predictions_points[0][i][2]), int(predictions_points[0][i][3]))
-		cv2.circle(img, tuple_of_points_0, 1, (0, 0, 255), 10)
-		cv2.circle(img, tuple_of_points_1, 1, (0, 0, 255), 10)
-	
-	for i in range(len(predictions_points[1])):
-		tuple_of_points_0 = (int(predictions_points[1][i][0]), int(predictions_points[1][i][1]))
-		tuple_of_points_1 = (int(predictions_points[1][i][2]), int(predictions_points[1][i][3]))
-		cv2.circle(img, tuple_of_points_0, 1, (0, 255, 0), 10)
-		cv2.circle(img, tuple_of_points_1, 1, (0, 255, 0), 10)
-	
-	#imprime os pontos do ELAS em circulos
-	for i in range(len(predictions_points_2[0])):
-		tuple_of_points_0 = (int(predictions_points_2[0][i][0]), int(predictions_points_2[0][i][1]))
-		tuple_of_points_1 = (int(predictions_points_2[0][i][2]), int(predictions_points_2[0][i][3]))
-		cv2.circle(img, tuple_of_points_0, 1, (0, 255, 255), 10)
-		cv2.circle(img, tuple_of_points_1, 1, (0, 255, 255), 10)
-	
-	for i in range(len(predictions_points_2[1])):
-		tuple_of_points_0 = (int(predictions_points_2[1][i][0]), int(predictions_points_2[1][i][1]))
-		tuple_of_points_1 = (int(predictions_points_2[1][i][2]), int(predictions_points_2[1][i][3]))
-		cv2.circle(img, tuple_of_points_0, 1, (255, 255, 0), 10)
-		cv2.circle(img, tuple_of_points_1, 1, (255, 255, 0), 10)
 	
 	#imprime os pontos do groundthruth em linhas
 	for i in range(len(gt_points)):
 		for j in (range(len(gt_points[i]) - 1)):
 			tuple_of_points_0 = (int(gt_points[i][j][0]), int(gt_points[i][j][1]))
 			tuple_of_points_1 = (int(gt_points[i][j+1][0]), int(gt_points[i][j+1][1]))
-			cv2.line(img, tuple_of_points_0, tuple_of_points_1, (255,0,0), 2)
+			cv2.line(img, tuple_of_points_0, tuple_of_points_1, (255,0,0), 1)
 			j = j + 1
 	
+	#imprime os bound boxes da yolo
 	for i in range(len(predictions_points[0])):
 		tuple_of_points_0 = (int(predictions_points[0][i][0]), int(predictions_points[0][i][1]))
 		tuple_of_points_1 = (int(predictions_points[0][i][2]), int(predictions_points[0][i][3]))
-		cv2.rectangle(img, tuple_of_points_0, tuple_of_points_1, (255, 0, 255), 10)
+		cv2.rectangle(img, tuple_of_points_0, tuple_of_points_1, (255, 0, 255), 2)
 	
 	for i in range(len(predictions_points[1])):
 		tuple_of_points_0 = (int(predictions_points[1][i][0]), int(predictions_points[1][i][1]))
 		tuple_of_points_1 = (int(predictions_points[1][i][2]), int(predictions_points[1][i][3]))
-		cv2.rectangle(img, tuple_of_points_0, tuple_of_points_1, (255, 0, 255), 10)
+		cv2.rectangle(img, tuple_of_points_0, tuple_of_points_1, (255, 0, 255), 2)
 
+
+	
+	#imprime os pontos do ELAS em circulos
+	for i in range(len(predictions_points_2[0])):
+		tuple_of_points_0 = (int(predictions_points_2[0][i][0]), int(predictions_points_2[0][i][1]))
+		tuple_of_points_1 = (int(predictions_points_2[0][i][2]), int(predictions_points_2[0][i][3]))
+		cv2.circle(img, tuple_of_points_0, 1, (0, 255, 255), 5)
+		cv2.circle(img, tuple_of_points_1, 1, (0, 255, 255), 5)
+	
+	for i in range(len(predictions_points_2[1])):
+		tuple_of_points_0 = (int(predictions_points_2[1][i][0]), int(predictions_points_2[1][i][1]))
+		tuple_of_points_1 = (int(predictions_points_2[1][i][2]), int(predictions_points_2[1][i][3]))
+		cv2.circle(img, tuple_of_points_0, 1, (0, 255, 255), 5)
+		cv2.circle(img, tuple_of_points_1, 1, (0, 255, 255), 5)
+
+	#imprime os pontos da yolo em circulos
+	for i in range(len(predictions_points[0])):
+		tuple_of_points_0 = (int(predictions_points[0][i][0]), int(predictions_points[0][i][1]))
+		tuple_of_points_1 = (int(predictions_points[0][i][2]), int(predictions_points[0][i][3]))
+		cv2.circle(img, tuple_of_points_0, 1, (0, 0, 255), 2)
+		cv2.circle(img, tuple_of_points_1, 1, (0, 0, 255), 2)
+	
+	for i in range(len(predictions_points[1])):
+		tuple_of_points_0 = (int(predictions_points[1][i][0]), int(predictions_points[1][i][1]))
+		tuple_of_points_1 = (int(predictions_points[1][i][2]), int(predictions_points[1][i][3]))
+		cv2.circle(img, tuple_of_points_0, 1, (0, 0, 255), 2)
+		cv2.circle(img, tuple_of_points_1, 1, (0, 0, 255), 2)	
+	
 	while (1):
 		cv2.imshow('Lane Detector Compute Error', img)
 		key = cv2.waitKey(0) & 0xff
@@ -205,7 +277,7 @@ def comppute_point_to_line_error(line_p1, line_p2, predictions_points):
 	
 	return returned[0], point
 
-def compute_error(gt_points, predictions_points):
+def compute_error(gt_points, predictions_points, aux):
 	error = 0
 	chosen_points_list = []
 
@@ -222,9 +294,12 @@ def compute_error(gt_points, predictions_points):
 				predictions_points[1][j])
 			error += returned[0]
 			chosen_points_list.append(returned[1])
-
-	print ('Error: ' + str(error))
-	
+	if aux == 0:
+		if (float(error) < 500.0):
+			print ('Error Yolo: ' + str(error))
+	else:
+		if (float(error) < 500.0):
+			print ('Error ELAS: ' + str(error))
 	return error, chosen_points_list
 
 
@@ -241,32 +316,73 @@ if __name__ == "__main__":
 			
 		image_width  = 640 #640 #int(sys.argv[4])
 		image_heigth = 480 #480 #int(sys.argv[5])
-		
-		images_path = sys.argv[2].replace('labels', 'images')
-		
-		gt_files_list = [l for l in os.listdir(sys.argv[1])]
+		images_path = sys.argv[1]
+		images_path = images_path.split('/')
+		images_path = str(images_path[- 2])
+		images_path = "/media/marcelo/edae3a16-98bf-41d6-ac90-bf57de7594c3/Base_Rodrigo/" + images_path + "/images/"
+		gt_files_list = [l for l in os.listdir(sys.argv[2])]
 		gt_files_list.sort()
-		
+		yolo_path = sys.argv[2]
+		yolo_path_split = yolo_path.split('/')
+		number_of_folder = int(yolo_path_split[-3])
+		#print(number_of_folder)
+		#print(yolo_path_split[-2])
+		yolo_path = ""
+		for i in range(len(yolo_path_split) - 3):
+			#if  i == 0:
+			#	i = i +1
+			yolo_path =  yolo_path + "/" + str(yolo_path_split[i])
+		base_yolo = yolo_path
+		#print(yolo_path)
+		yolo_path = yolo_path + "/" + str(number_of_folder)
+		yolo_path = yolo_path + "/" + str(yolo_path_split[-2]) + "/"
+		#print(yolo_path)
 		error = 0
 		cont = 0
-		for gt_file_name in gt_files_list:
-			if not gt_file_name.endswith('.txt'):
-				continue
+		error_array = []
+		array_numbers = []
+		for i in range(20):
+			for gt_file_name in gt_files_list:
+				if not gt_file_name.endswith('.txt'):
+					continue
+				gt_points = read_groud_truth_points(sys.argv[1], gt_file_name)
+
+				#gt_points_yolo = transform_groud_truth_points_to_yolo(gt_points)
 				
-			gt_points = read_groud_truth_points(sys.argv[1], gt_file_name)
-			
-			predictions_points = read_and_convert_4_points_coordinates(sys.argv[2], gt_file_name, image_width, image_heigth)
-			
-			predictions_points_2 = read_and_convert_4_points_coordinates(sys.argv[3], gt_file_name, image_width, image_heigth)
-			
-			returned = compute_error(gt_points, predictions_points)
-			
-			returned_2 = compute_error(gt_points, predictions_points_2)
-			
-			error += returned[0]
-			cont += 1
-			
-			#if images_path:
-				#show_image(gt_points, predictions_points, returned[1], returned_2[1], gt_file_name, images_path)
-			show_image(gt_points, predictions_points, predictions_points_2, gt_file_name, images_path)
-		print ('TOTAL Error: ' + str(error/cont))
+				#print (gt_points_yolo)
+
+				#gt_points_true = transform_yolo_points_groundtruth_to_coordinates(sys.argv[1], gt_file_name)
+
+				#print (gt_points_true)
+				predictions_points = read_and_convert_4_points_coordinates(yolo_path, gt_file_name, image_width, image_heigth)
+				
+				predictions_points_2 = read_and_convert_4_points_coordinates(sys.argv[3], gt_file_name, image_width, image_heigth)
+				
+				#print (predictions_points)
+				#returned = compute_error(gt_points_true, predictions_points)
+				returned = compute_error(gt_points, predictions_points, 0)
+				returned_2 = compute_error(gt_points, predictions_points_2, 1)
+				if (float(returned[0]) < 500.0):
+					error += returned[0]
+				if (float(returned[0]) > 500.0):
+					continue
+				cont += 1
+				
+				#if images_path:
+					#show_image(gt_points, predictions_points, returned[1], returned_2[1], gt_file_name, images_path)
+				#show_image(gt_points, predictions_points, predictions_points_2, gt_file_name, images_path)
+			#print(number_of_folder)
+			print ('TOTAL Error: ' + str(error/cont))
+			error_array.append(int(error/cont))
+			array_numbers.append(int(number_of_folder))
+			number_of_folder = number_of_folder + 1000
+			yolo_path = base_yolo
+			yolo_path = yolo_path + "/" + str(number_of_folder)
+			yolo_path = yolo_path + "/" + str(yolo_path_split[-2]) + "/"
+		plt.plot(array_numbers, error_array)
+		plt.xlabel('Número da pasta')
+		plt.ylabel('TOTAL Error')
+		titulo = "Error da pasta " + yolo_path_split[-2]
+		plt.title(str(titulo))
+		plt.show()
+		
