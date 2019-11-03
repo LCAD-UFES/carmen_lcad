@@ -2,7 +2,7 @@ include ../Makefile.conf
 
 # Module name and description
 MODULE_NAME = VELODYNE2
-MODULE_COMMENT = Velodyne LIDAR Module
+MODULE_COMMENT = Velodyne2 LIDAR Module for variable_message
 
 LINK = g++
 
@@ -17,28 +17,28 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne2
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lparam_interface -lipc -lglobal -lvelodyne_interface -lvelodyne -lrotation_geometry
+LFLAGS += -lparam_interface -lipc -lglobal -lvelodyne_interface
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -pthread
 CFLAGS += -Wall
 
 # Source code files (.c, .cpp) 
-SOURCES = velodyne_main.cpp velodyne_interface.cpp velodyne_transforms.cpp tf_helper.cpp
+SOURCES = lidars_main.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
-PUBLIC_INCLUDES = velodyne_messages.h velodyne_interface.h velodyne_mean_error.h velodyne_transforms.h
+PUBLIC_INCLUDES =
 
 # Public libraries, linked to 'carmen/lib'.
-PUBLIC_LIBRARIES = libvelodyne_interface.a libvelodyne_transforms.a
+PUBLIC_LIBRARIES =
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-PUBLIC_BINARIES = velodyne
+PUBLIC_BINARIES = lidars
 
-TARGETS = libvelodyne_interface.a velodyne libvelodyne.a libvelodyne_transforms.a
-PUBLIC_LIBRARIES_SO = libvelodyne_interface.so libvelodyne_transforms.so
-
-ifndef NO_PYTHON
-TARGETS += libvelodyne_interface.so.1
-endif
+TARGETS = lidars libvelodyne2.a
+PUBLIC_LIBRARIES_SO = 
+#
+#ifndef NO_PYTHON
+#TARGETS += libvelodyne_interface.so.1
+#endif
 
 # If you set graphics support in configure (only for GTK).
 ifndef NO_GRAPHICS
@@ -49,16 +49,16 @@ TARGETS +=
 SOURCES += 
 endif
 
-libvelodyne.a: 
+libvelodyne2.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libvelodyne2 
-libvelodyne_transforms.a: velodyne_transforms.o tf_helper.o
-libvelodyne_interface.a: velodyne_interface.o
+#libvelodyne_transforms.a: velodyne_transforms.o tf_helper.o
+#libvelodyne_interface.a: velodyne_interface.o
 #libvelodyne_interface.a: velodyne_interface.o tf_helper.o
 
-libvelodyne_interface.so.1:	velodyne_interface.o 
-libvelodyne_transforms.so.1:  velodyne_transforms.o tf_helper.o
+#libvelodyne_interface.so.1:	velodyne_interface.o 
+#libvelodyne_transforms.so.1:  velodyne_transforms.o tf_helper.o
 
-velodyne: velodyne_main.o libvelodyne_interface.a 
+lidars: lidars_main.o $(CARMEN_HOME)/sharedlib/libvelodyne2/libvelodyne2.a
 
 clean: clean_libvelodyne2
 
