@@ -27,25 +27,6 @@ carmen_velodyne_subscribe_partial_scan_message(carmen_velodyne_partial_scan_mess
 										 carmen_handler_t handler,
 										 carmen_subscribe_t subscribe_how);
 
-//void
-//carmen_velodyne_subscribe_variable_scan_message(carmen_velodyne_variable_scan_message *message,
-//		carmen_handler_t handler,
-//		carmen_subscribe_t subscribe_how);
-//
-//void
-//carmen_velodyne_subscribe_variable_scan_message1(carmen_velodyne_variable_scan_message *message,
-//		carmen_handler_t handler,
-//		carmen_subscribe_t subscribe_how);
-//
-//void
-//carmen_velodyne_subscribe_variable_scan_message2(carmen_velodyne_variable_scan_message *message,
-//		carmen_handler_t handler,
-//		carmen_subscribe_t subscribe_how);
-//
-//void
-//carmen_velodyne_subscribe_variable_scan_message3(carmen_velodyne_variable_scan_message *message,
-//		carmen_handler_t handler,
-//		carmen_subscribe_t subscribe_how);
 
 void
 carmen_velodyne_unsubscribe_partial_scan_message(carmen_handler_t handler);

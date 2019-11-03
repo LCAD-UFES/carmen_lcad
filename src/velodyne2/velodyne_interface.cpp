@@ -1,11 +1,8 @@
-//#include "velodyne_interface.h"
 
 
 #include <string.h>
 #include <carmen/carmen.h>
-//#include <carmen/rotation_geometry.h>
 #include <carmen/velodyne_messages.h>
-//#include "tf_helper.h"
 
 int velodyne_vertical_correction_size = 32;
 /*Antigo
@@ -100,52 +97,6 @@ carmen_velodyne_unsubscribe_partial_scan_message(carmen_handler_t handler)
 	carmen_unsubscribe_message((char*) CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_NAME, handler);
 }
 
-//void
-//carmen_velodyne_subscribe_variable_scan_message(carmen_velodyne_variable_scan_message *message,
-//		carmen_handler_t handler,
-//		carmen_subscribe_t subscribe_how)
-//{
-//	carmen_subscribe_message((char*) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME,
-//			(char*) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT,
-//			message, sizeof(carmen_velodyne_variable_scan_message),
-//			handler, subscribe_how);
-//}
-
-//void
-//carmen_velodyne_subscribe_variable_scan_message1(carmen_velodyne_variable_scan_message *message,
-//		carmen_handler_t handler,
-//		carmen_subscribe_t subscribe_how)
-//{
-//	carmen_subscribe_message((char*) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE1_NAME,
-//			(char*) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE1_FMT,
-//			message, sizeof(carmen_velodyne_variable_scan_message),
-//			handler, subscribe_how);
-//}
-//
-//void
-//carmen_velodyne_subscribe_variable_scan_message2(carmen_velodyne_variable_scan_message *message,
-//		carmen_handler_t handler,
-//		carmen_subscribe_t subscribe_how)
-//{
-//	carmen_subscribe_message((char*) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE2_NAME,
-//			(char*) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE2_FMT,
-//			message, sizeof(carmen_velodyne_variable_scan_message),
-//			handler, subscribe_how);
-//}
-//
-//void
-//carmen_velodyne_subscribe_variable_scan_message3(carmen_velodyne_variable_scan_message *message,
-//		carmen_handler_t handler,
-//		carmen_subscribe_t subscribe_how)
-//{
-//	carmen_subscribe_message((char*) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE3_NAME,
-//			(char*) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE3_FMT,
-//			message, sizeof(carmen_velodyne_variable_scan_message),
-//			handler, subscribe_how);
-//}
-
-
-
 void
 carmen_velodyne_create_variable_velodyne_message_name(int sensor_id, char message_name[])
 {
@@ -238,15 +189,6 @@ carmen_velodyne_define_messages()
 
 	err = IPC_defineMsg(CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME);
-
-//	err = IPC_defineMsg(CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE1_NAME, IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE1_FMT);
-//	carmen_test_ipc_exit(err, "Could not define", CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE1_NAME);
-//
-//	err = IPC_defineMsg(CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE2_NAME, IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE2_FMT);
-//	carmen_test_ipc_exit(err, "Could not define", CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE2_NAME);
-//
-//	err = IPC_defineMsg(CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE3_NAME, IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE3_FMT);
-//	carmen_test_ipc_exit(err, "Could not define", CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE3_NAME);
 
 	char message_name[64];
 
