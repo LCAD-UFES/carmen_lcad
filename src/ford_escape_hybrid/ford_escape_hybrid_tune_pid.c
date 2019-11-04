@@ -278,10 +278,10 @@ build_trajectory_sinusoidal_phi()
 		motion_commands_vector[i].phi = max_phi * sin(frequency * t);
 		motion_commands_vector[i].time = delta_t;
 
-		//printf("%lf   %lf\n", frequency * t, motion_commands_vector[i].phi);
+		printf("%lf   %lf\n", frequency * t, motion_commands_vector[i].phi);
 	}
 
-	//printf("i = %d, NUM_MOTION_COMMANDS_PER_VECTOR = %d\n", i, NUM_MOTION_COMMANDS_PER_VECTOR);
+	printf("i = %d, NUM_MOTION_COMMANDS_PER_VECTOR = %d\n", i, NUM_MOTION_COMMANDS_PER_VECTOR);
 	send_trajectory_to_robot();
 }
 

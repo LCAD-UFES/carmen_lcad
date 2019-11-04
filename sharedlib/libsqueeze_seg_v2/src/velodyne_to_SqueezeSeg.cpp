@@ -35,14 +35,13 @@ fill_view_vector(double horizontal_angle, double vertical_angle, double range, d
 		double x = round(point.x() * 100.0) / 100.0;
 		double y = round(point.y() * 100.0) / 100.0;
 		double z = round(point.z() * 100.0) / 100.0;
-		intensity = intensity / 1000.0;
 		intensity = round(intensity * 100.0) / 100.0;
-		double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
+		//double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
 		view[line * 5] = x;
 		view[(line * 5) + 1] = y;
 		view[(line * 5) + 2] = z;
 		view[(line * 5) + 3] = intensity;
-		view[(line * 5) + 4] = raiz_soma_quadrados;
+		view[(line * 5) + 4] = range;
 	} else {
 		view[line * 5] = 0.0;
 		view[(line * 5) + 1] = 0.0;
@@ -75,7 +74,7 @@ void write_pointcloud_txt(carmen_velodyne_partial_scan_message *velodyne_message
             double vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[j]));
             double horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(-velodyne_message->partial_scan[i].angle));
             double range = (((double)velodyne_message->partial_scan[i].distance[j]) / 500.0);
-            double intensity = ((double)velodyne_message->partial_scan[i].intensity[j]) * 10;
+            double intensity = ((double)velodyne_message->partial_scan[i].intensity[j]) / 100.0;
             double angle = velodyne_message->partial_scan[i].angle;
             fill_view_vector(horizontal_angle, vertical_angle, range, intensity, &squeeze[0], line);
 
