@@ -61,12 +61,15 @@ def onclick(event):
 def plot_graph(G):
     
     global qtd_clicks
-    fig, ax = ox.plot_graph(G, show=False, close=False)
+    nc = ['r' if (osmid==ox.get_nearest_node(G, (-20.273804, -40.306124))) else 'b' for osmid in G.nodes()]
+    nz = [36 if (osmid==ox.get_nearest_node(G, (-20.273804, -40.306124))) else 13 for osmid in G.nodes()]
+#fig, ax = ox.plot_graph(G, node_color='w', node_edgecolor='k', node_size=30, node_zorder=3, edge_color=ec, edge_linewidth=3)
+    fig, ax = ox.plot_graph(G, node_color=nc, node_size = nz, show=False, close=False)
     cid = fig.canvas.mpl_connect('button_press_event', onclick)
     #print(type(fig))
     #plt.imshow(fig)
     plt.show(block = False)
-    plt.pause(10)
+    plt.pause(5)
     plt.close(fig)
 
 
@@ -75,7 +78,8 @@ def get_graph ():
     #G = ox.graph_from_place('UFES, Vitoria, BR', network_type='drive', simplify=False)
     print (sys.argv[1], sys.argv[2], sys.argv[3])
     G = ox.graph_from_place(sys.argv[1], network_type='drive', simplify=int(sys.argv[2]))
-    
+   # G = ox.graph_from_point((-20.273804, -40.306124), distance = 500, network_type='drive', simplify=int(sys.argv[2]))
+      
     #print(*dir(G), sep = "\n")
     #print(G.adjacency)
     
@@ -105,8 +109,8 @@ def get_route (G, G_proj, nodes_proj, edges_proj):
         #texto = str(dict[osmid]) + " " + str(osmid) + " " + str(lon) + " " + str(lat) + "\n" 
         #print(texto)
 
-    orig_node = ox.get_nearest_node(G, clicks[0])
-    dest_node = ox.get_nearest_node(G, clicks[1])
+    orig_node = ox.get_nearest_node(G, (-20.273804, -40.306124))
+    dest_node = ox.get_nearest_node(G, clicks[0])
     
     #find the route between these nodes then plot it
     route = nx.shortest_path(G, orig_node, dest_node, weight='length')
