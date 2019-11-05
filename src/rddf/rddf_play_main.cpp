@@ -442,7 +442,7 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 				crosswalk_state = Free_Crosswalk;
 				return (false);
 			}
-			else if (current_globalpos_msg->v < 0.15 && DIST2D(current_globalpos_msg->globalpos, desplaced_crosswalk_pose) < 12.0) // || dist stop point < 2.0
+			else if (current_globalpos_msg->v < 0.15 && DIST2D(current_globalpos_msg->globalpos, desplaced_crosswalk_pose) < 20.0) // || dist stop point < 2.0
 			{
 				crosswalk_state = Stopped_Busy_Crosswalk;
 			}
@@ -519,7 +519,7 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 		if ((dist < 100.0) && orientation_ok)
 		{
 			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
-			if (pedestrian_track_busy(moving_objects, annotation_read_from_file[annotation_index]))
+			if (pedestrian_track_busy_new(moving_objects, annotation_read_from_file[annotation_index]))
 				annotation_i.annotation.annotation_code = RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_BUSY;
 			else
 				annotation_i.annotation.annotation_code = RDDF_ANNOTATION_CODE_NONE;
