@@ -3,6 +3,7 @@
 #include <carmen/voice_interface_messages.h>
 #include <carmen/rddf_interface.h>
 #include "call_iara_app_messages.h"
+#include "../../road_map_path_planning_utils.h"
 #include <carmen/carmen_gps.h>
 #include <vector>
 #include <iostream>
@@ -14,6 +15,7 @@
 #include<unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <Python.h>
 
 using namespace std;
 
@@ -205,18 +207,46 @@ publish_app_solicitation_message(char * buffer)
 //}
 
 
-char *
-choose_rddf_file(carmen_app_solicitation_message message, vector<carmen_annotation_t> annotations)
+void
+call_osmnx_python_func (Gdc_Coord_3d origin_gdc, Gdc_Coord_3d destination_gdc)
 {
-	static char rddf_file_name[2048];
-	double lat_origin, lon_origin;
+	Py_Initialize();
+	PyObject *python_module_name = PyUnicode_FromString((char *) "osp_test");
+	PyObject *python_module = PyImport_Import(python_module_name);
+	if (PyErr_Occurred())
+		PyErr_Print();
+	if (python_module == NULL)
+	{
+		Py_Finalize();
+		exit (printf("Error: The python_module could not be loaded.\nMay be PYTHON_PATH is not set.\n"));
+	}
+	Py_DECREF(python_module_name);
+
+	PyObject *python_get_route_lat_lon_function = PyObject_GetAttrString(python_module, (char *) "get_route_lat_lon");
+
+	if (python_get_route_lat_lon_function == NULL || !PyCallable_Check(python_get_route_lat_lon_function))
+	{
+		Py_Finalize();
+		exit (printf("Error: Could not load the python_get_route_lat_lon_function.\n"));
+	}
+
+	PyObject *python_arguments = Py_BuildValue("(dddd)", origin_gdc.latitude, origin_gdc.longitude, destination_gdc.latitude, destination_gdc.longitude);               // Generic function, create objects from C values by a format string
+
+	PyObject_CallObject(python_get_route_lat_lon_function, python_arguments);
+	if (PyErr_Occurred())
+		PyErr_Print();
+
+	Py_DECREF(python_arguments);
+	Py_DECREF(python_get_route_lat_lon_function);
+}
+
+
+void
+get_origin_and_destination_in_lat_lon (carmen_app_solicitation_message message, vector<carmen_annotation_t> annotations, Gdc_Coord_3d &origin_gdc, Gdc_Coord_3d &destination_gdc)
+{
 	Utm_Coord_3d utm;
 	utm.zone = 24;
 	utm.hemisphere_north = false;
-	Gdc_Coord_3d origin_gdc;
-	Gdc_Coord_3d destination_gdc;
-	double lat_dest, lon_dest;
-
 	for (unsigned int i = 0; i < annotations.size(); i++)
 	{
 		if (strcmp(message.origin, annotations[i].annotation_description) == 0)
@@ -226,10 +256,10 @@ choose_rddf_file(carmen_app_solicitation_message message, vector<carmen_annotati
 			utm.z = annotations[i].annotation_point.z;
 			Utm_To_Gdc_Converter::Init();
 			Utm_To_Gdc_Converter::Convert(utm, origin_gdc);
-//			printf("%lf X %lf\n", annotations[i].annotation_point.x, annotations[i].annotation_point.y);
+			//			printf("%lf X %lf\n", annotations[i].annotation_point.x, annotations[i].annotation_point.y);
 //			printf("%lf X %lf\n", utm.x, utm.y);
 //			printf("%lf X %lf\n", origin_gdc.latitude, origin_gdc.longitude);
-//			getchar();
+			//			getchar();
 		}
 		if (strcmp(message.destination, annotations[i].annotation_description) == 0)
 		{
@@ -237,14 +267,33 @@ choose_rddf_file(carmen_app_solicitation_message message, vector<carmen_annotati
 			utm.y = annotations[i].annotation_point.x;
 			utm.z = annotations[i].annotation_point.z;
 			Utm_To_Gdc_Converter::Init();
-			Utm_To_Gdc_Converter::Convert(utm, origin_gdc);
-//			printf("%lf X %lf\n", annotations[i].annotation_point.x, annotations[i].annotation_point.y);
+			Utm_To_Gdc_Converter::Convert(utm, destination_gdc);
+			//			printf("%lf X %lf\n", annotations[i].annotation_point.x, annotations[i].annotation_point.y);
 //			printf("%lf X %lf\n", utm.x, utm.y);
-//			printf("%lf X %lf\n", origin_gdc.latitude, origin_gdc.longitude);
+//			printf("%lf X %lf\n", destination_gdc.latitude, destination_gdc.longitude);
 		}
 	}
+}
 
 
+char *
+set_rddf_file(carmen_app_solicitation_message message, vector<carmen_annotation_t> annotations)
+{
+	static char rddf_file_name[2048];
+	Gdc_Coord_3d origin_gdc;
+	Gdc_Coord_3d destination_gdc;
+
+
+	get_origin_and_destination_in_lat_lon (message, annotations, origin_gdc, destination_gdc);
+
+	call_osmnx_python_func (origin_gdc, destination_gdc);
+
+
+
+
+
+
+//	getchar();
 	//return (rddf_file_name);
 	return "0";
 
@@ -302,7 +351,7 @@ initiate_server(char * rddf_annotation, vector<carmen_annotation_t> annotations)
 				printf("Solicitação de serviço: %s\n",buffer);
 				message = (char *) "Requisição solicitada";
 				solicitation_message = publish_app_solicitation_message(buffer);
-				rddf_file = (char *) choose_rddf_file(solicitation_message, annotations);
+				rddf_file = (char *) set_rddf_file(solicitation_message, annotations);
 				printf("Testando arquivo rddf: %s\n\n",rddf_file);
 				publish_voice_app_command_message(rddf_file, SET_COURSE);
 				carmen_navigator_ackerman_go();
