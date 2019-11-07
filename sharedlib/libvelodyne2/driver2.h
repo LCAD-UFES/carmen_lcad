@@ -12,8 +12,8 @@
  *  ROS driver interface for the Velodyne 3D LIDARs
  */
 
-#ifndef _VELODYNE_DRIVER_H_
-#define _VELODYNE_DRIVER_H_
+#ifndef _VELODYNE2_DRIVER_H_
+#define _VELODYNE2_DRIVER_H_
 
 #include <string>
 #include <carmen/carmen.h>
@@ -77,4 +77,4 @@ private:
 
 } // namespace velodyne_driver
 
-#endif // _VELODYNE_DRIVER_H_
+#endif // _VELODYNE2_DRIVER_H_

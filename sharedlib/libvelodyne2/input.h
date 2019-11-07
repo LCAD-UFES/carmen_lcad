@@ -18,8 +18,8 @@
  *                      from a PCAP dump file
  */
 
-#ifndef __VELODYNE_INPUT_H
-#define __VELODYNE_INPUT_H
+#ifndef __VELODYNE2_INPUT_H
+#define __VELODYNE2_INPUT_H
 
 #include <unistd.h>
 #include <stdio.h>
@@ -130,4 +130,4 @@ private:
 };
 } // velodyne_driver namespace
 
-#endif // __VELODYNE_INPUT_H
+#endif // __VELODYNE2_INPUT_H

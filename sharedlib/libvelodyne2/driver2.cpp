@@ -12,11 +12,12 @@
  *  ROS driver implementation for the Velodyne 3D LIDARs
  */
 
+#include "driver2.h"
+
 #include <string>
 #include <stdlib.h>
 #include <cmath>
 
-#include "driver.h"
 
 
 namespace velodyne_driver
