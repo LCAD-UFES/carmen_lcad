@@ -12,7 +12,7 @@ Arquivo poly.txt (só pro navigator_gui- desenhar o quadrado do carro)
 
 displacement 
 n points poligono
-X1 Y2
+X1 Y1
 Xn Yn
 
 ExplicaçõeS:
