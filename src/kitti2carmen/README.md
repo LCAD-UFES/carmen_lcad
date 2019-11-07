@@ -14,7 +14,7 @@ Para ordenar o log os timestamps é necessário rodar o comando abaixo:
 	awk '{print $NF,$0}' log.txt | sort | cut -f2- -d' ' > log_ordenado.txt
 	
 O arquivo log_ordenado.txt pode ser usado no playback do carmen.
-
+Atualmente a mensagem utilizada é a partial scan, se caso o código da variable_scan for reativado, o numero do velodyne deverá ser adicionado no kitti2carmen_main.cpp no na variável kitty_velodyne_number, atualmente = 9
 O carmen-ford-escape.ini deve ter os parâmetros do carro da KITTI como mostrado no paper:
 http://www.cvlibs.net/publications/Geiger2013IJRR.pdf
 

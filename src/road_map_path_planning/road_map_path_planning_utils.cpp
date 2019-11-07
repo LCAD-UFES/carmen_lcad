@@ -2,10 +2,10 @@
 
 
 t_route
-load_route_from_file(char *route_filename)
+load_route_from_file(string route_filename)
 {
 	t_route r;
-	FILE *f = fopen(route_filename, "r");
+	FILE *f = fopen(route_filename.c_str(), "r");
 	fscanf(f, "%d\n", &r.route_size);
 	r.route = (int*) malloc (r.route_size*sizeof(int));
 	int cont = 0;
@@ -31,7 +31,7 @@ print_route_coordinates_in_carmen_coordinates(t_route r, t_graph graph)
 
 
 void
-plot_state(vector<carmen_rddf_waypoint> rddf_points, t_graph graph, vector<int> indices)
+plot_state(t_forest forest, t_graph graph, vector<int> indices, int forest_index)
 {
 //	plot data Table - Last TCP - Optmizer tcp - Lane
 	//Plot Optmizer step tcp and lane?
@@ -62,14 +62,16 @@ plot_state(vector<carmen_rddf_waypoint> rddf_points, t_graph graph, vector<int> 
 	FILE *gnuplot_data_rddf = fopen("gnuplot_data_rddf.txt", "w");
 	FILE *gnuplot_data_closest = fopen("gnuplot_data_closest.txt", "w");
 
-	for (unsigned int i = 0; i < graph.qtd_nodes; i++)
+	for (int i = 0; i < graph.qtd_nodes; i++)
 		fprintf(gnuplot_data_graph, "%lf %lf\n", graph.nodes[i].point.x, graph.nodes[i].point.y);
 
-	for (unsigned int i = 0; i < rddf_points.size(); i++)
-		fprintf(gnuplot_data_rddf, "%lf %lf\n", rddf_points[i].pose.x, rddf_points[i].pose.y);
+//	cout<<"Forest size: "<<forest.rddfs.size()<<endl;
+	for (unsigned int i = 0; i < forest.rddfs.size(); i++)
+		for (unsigned int j = 0; j < forest.rddfs[i].size(); j++)
+			fprintf(gnuplot_data_rddf, "%lf %lf\n", forest.rddfs[i][j].pose.x, forest.rddfs[i][j].pose.y);
 
 	for (unsigned int i = 0; i < indices.size(); i++)
-		fprintf(gnuplot_data_closest, "%lf %lf\n", rddf_points[indices[i]].pose.x, rddf_points[indices[i]].pose.y);
+		fprintf(gnuplot_data_closest, "%lf %lf\n", forest.rddfs[forest_index][indices[i]].pose.x, forest.rddfs[forest_index][indices[i]].pose.y);
 
 	fclose(gnuplot_data_graph);
 	fclose(gnuplot_data_rddf);
@@ -86,38 +88,119 @@ plot_state(vector<carmen_rddf_waypoint> rddf_points, t_graph graph, vector<int> 
 }
 
 
+double
+calc_theta_diff (double angle_x, double angle_y)
+{
+	return atan2(sin(angle_x-angle_y), cos(angle_x-angle_y));
+
+}
+
+
 void
-get_closest_points_from_osm_in_rddf (vector<carmen_rddf_waypoint> rddf_points, t_graph graph, t_route r)
+knn (vector<int> &indices, vector<carmen_rddf_waypoint> rddf, double query_x, double query_y)
 {
 	vector<Point2f> cloud2d;
-	vector<int> indices;
 	Point2d p;
-	for (int i = 0; i < rddf_points.size(); i++)
+	vector<float> query;
+	query.push_back(query_x);
+	query.push_back(query_y);
+	for (unsigned int i = 0; i < rddf.size(); i++)
 	{
-		p.x = rddf_points[i].pose.x;
-		p.y = rddf_points[i].pose.y;
+		p.x = rddf[i].pose.x;
+		p.y = rddf[i].pose.y;
 		cloud2d.push_back(p);
 	}
+	rddf.clear();
 
 	flann::KDTreeIndexParams indexParams;
 	flann::Index kdtree(Mat(cloud2d).reshape(1), indexParams);
 
+	vector<int> ind;
+	vector<float> dists;
+	kdtree.knnSearch(query, ind, dists, 1);
+	indices.push_back(ind[0]);
+}
+
+
+double
+calc_theta (double x1, double y1, double x, double y)
+{
+	double theta = carmen_normalize_theta(atan2((y1 - y), (x1 - x)));
+	return theta;
+}
+
+
+void
+get_closest_points_from_osm_in_rddf (t_forest forest, t_graph graph, t_route r)
+{
+	//calcular o theta do primeiro ponto da rota  OK!
+	//fazer knn do primeiro ponto da rota com todos os pontos do rddf 1 OK!
+	//calcular a diferença angular do ponto da roda com ambos os rddfs: https://stackoverflow.com/questions/1878907/the-smallest-difference-between-2-angles
+	//fazer knn do primeiro ponto da rota com todos os pontos do rddf n OK!
+	//setar para o rddf com a menor diferença angular
+
+//	vector<Point2f> cloud2d;
+	vector<int> indices;
+	int forest_index = 0;
+	double minor_angle = 99999.9;
+//	Point2d p;
+
+	double theta_of_first_route_point = calc_theta(graph.nodes[r.route[1]].point.x, graph.nodes[r.route[1]].point.y, graph.nodes[r.route[0]].point.x,
+			graph.nodes[r.route[0]].point.y);
+//	cout<<"Theta "<<theta_of_first_route_point<<endl;
+
+	for (unsigned int i = 0; i < forest.rddfs.size(); i++)
+	{
+		knn (indices, forest.rddfs[i], graph.nodes[r.route[0]].point.x, graph.nodes[r.route[0]].point.y);
+//		cout<<"Theta Closest "<<i<<": "<<forest.rddfs[i][indices[0]].pose.theta<<endl;
+		double theta_diff = calc_theta_diff(forest.rddfs[i][indices[0]].pose.theta, theta_of_first_route_point);
+//		cout<<"if "<<abs(theta_diff)<<" < "<<minor_angle<<endl;
+		if (abs(theta_diff) < minor_angle)
+		{
+//			cout<<"\ttroquei!"<<endl;
+			minor_angle = abs(theta_diff);
+			forest_index = i;
+		}
+//		cout<<indices[i]<<endl;
+	}
+//	cout<<"Chosen rddf in forest: "<<forest_index<<endl;
+
+	indices.clear();
 	for (int i = 0; i < r.route_size; i++)
 	{
-		vector<float> query;
-		//query.push_back(graph.nodes[r.route[0]].point.x);
-		//query.push_back(graph.nodes[r.route[0]].point.y);
-		query.push_back(graph.nodes[r.route[i]].point.x);
-		query.push_back(graph.nodes[r.route[i]].point.y);
-		vector<int> ind;
-		vector<float> dists;
-		kdtree.knnSearch(query, ind, dists, 1);
-		indices.push_back(ind[0]);
-		printf("Closest point of %lf x %lf is %lf x %lf\n", graph.nodes[0].point.x, graph.nodes[0].point.y, rddf_points[ind[0]].pose.x, rddf_points[ind[0]].pose.y);
+		knn (indices, forest.rddfs[forest_index], graph.nodes[r.route[i]].point.x, graph.nodes[r.route[i]].point.y);
 	}
 
+
+//	for (unsigned int i = 0; i < forest.rddfs.size(); i++)
+//	{
+//		for (unsigned int j = 0; j < forest.rddfs[1].size(); j++)
+//		{
+//			p.x = forest.rddfs[1][j].pose.x;
+//			p.y = forest.rddfs[1][j].pose.y;
+//			cloud2d.push_back(p);
+//		}
+//	}
+
+//	flann::KDTreeIndexParams indexParams;
+//	flann::Index kdtree(Mat(cloud2d).reshape(1), indexParams);
+
+//	for (int i = 0; i < r.route_size; i++)
+//	{
+//		vector<float> query;
+//		//query.push_back(graph.nodes[r.route[0]].point.x);
+//		//query.push_back(graph.nodes[r.route[0]].point.y);
+//		query.push_back(graph.nodes[r.route[i]].point.x);
+//		query.push_back(graph.nodes[r.route[i]].point.y);
+//		vector<int> ind;
+//		vector<float> dists;
+//		kdtree.knnSearch(query, ind, dists, 1);
+//		indices.push_back(ind[0]);
+//		//printf("Closest point of %lf x %lf is %lf x %lf\n", graph.nodes[0].point.x, graph.nodes[0].point.y, rddf_points[ind[0]].pose.x, rddf_points[ind[0]].pose.y);
+//	}
+
 //cout<<"Closest point of "<<graph.nodes[0].point.x<<" , "<<graph.nodes[0].point.y<<" is "<<rddf_points[indices[0]].pose.x<<" , "<<rddf_points[indices[0]].pose.y<<endl;
-	plot_state (rddf_points, graph, indices);
+	plot_state (forest, graph, indices, forest_index);
 	getchar();
 }
 
@@ -140,32 +223,42 @@ convert_from_lon_lat_nodes_to_utm_nodes(t_graph graph)
 }
 
 
-void
-load_rddf_file (vector<carmen_rddf_waypoint> &rddf_points, string rddf_filename)
+t_forest
+load_rddf_files (t_forest rddf_points, vector <string> rddf_filename)
 {
 	FILE *fr;
-	carmen_rddf_waypoint w;
-	fr = fopen(rddf_filename.c_str(), "r");
-	if (fr == NULL)
-	{
-		cout<<"Error to open file: "<<rddf_filename<<endl;
-		exit(0);
-	}
-	else
-	{
-		while (!feof(fr))
+
+	for (unsigned int i = 0; i < rddf_filename.size(); i++){
+		fr = fopen(rddf_filename[i].c_str(), "r");
+		if (fr == NULL)
 		{
-			fscanf (fr, "%lf %lf %lf %lf %lf %lf\n", &w.pose.x, &w.pose.y, &w.pose.theta, &w.driver_velocity, &w.phi, &w.timestamp);
-			rddf_points.push_back(w);
+			cout<<"Error to open file: "<<rddf_filename[i]<<endl;
+			exit(0);
 		}
-		fclose (fr);
+		else
+		{
+			vector <carmen_rddf_waypoint> rddf;
+			carmen_rddf_waypoint w;
+//			cout<<"Abri "<<rddf_filename[i];
+			while (!feof(fr))
+			{
+				fscanf (fr, "%lf %lf %lf %lf %lf %lf\n", &w.pose.x, &w.pose.y, &w.pose.theta, &w.driver_velocity, &w.phi, &w.timestamp);
+				rddf.push_back(w);
+			}
+			fclose (fr);
+			rddf_points.rddfs.push_back(rddf);
+//			cout<<" com linhas = "<<rddf_points.rddfs[i].size()<<endl;
+		}
+
 	}
+
+	return rddf_points;
 
 }
 
 
 t_graph
-read_graph_file(char *graph_filename)
+read_graph_file(string graph_filename)
 {
 	t_graph graph;
 	t_node node;
@@ -173,7 +266,7 @@ read_graph_file(char *graph_filename)
 	FILE *graph_file;
 	int cont = 0;
 
-	graph_file = fopen(graph_filename, "r");
+	graph_file = fopen(graph_filename.c_str(), "r");
 	fscanf(graph_file, "%d %d\n", &graph.qtd_nodes, &graph.qtd_edges);
 
 	graph.nodes = (t_node*) malloc (graph.qtd_nodes * sizeof(t_node));
@@ -200,10 +293,19 @@ read_graph_file(char *graph_filename)
 void
 process_graph (string python_command)
 {
+//	+ " " + to_string(current_gps_info.latitude)
+//									+ " " + to_string(current_gps_info.longitude)
+	string s;
 	t_graph graph;
 	t_route route;
-	vector<carmen_rddf_waypoint> rddf_points;
-	string rddf_filename = "/home/pedro/carmen_lcad/data/rndf/rddf_log_volta_da_ufes-201903025.txt";
+	t_forest rddf_points;
+	s = "/home/pedro/carmen_lcad/data/rndf/rddf_log_volta_da_ufes-201903025.txt";
+	vector <string> rddf_filename;
+	rddf_filename.push_back(s);
+	s.clear();
+	s = "/home/pedro/carmen_lcad/data/rndf/rddf-log_volta_da_ufes-20190915-contrario.txt";
+	rddf_filename.push_back(s);
+	cout<<rddf_filename[0]<<endl<<rddf_filename[1]<<endl;
 
 
 	system(python_command.c_str());
@@ -211,7 +313,8 @@ process_graph (string python_command)
 
 	graph = read_graph_file("graph.txt");
 	route = load_route_from_file("route.txt");
-	load_rddf_file (rddf_points, rddf_filename);
+	rddf_points = load_rddf_files (rddf_points, rddf_filename);
+
 
 //	printf("%d %d\n", graph.qtd_nodes, graph.qtd_edges);
 //
@@ -226,6 +329,7 @@ process_graph (string python_command)
 //	}
 
 	graph = convert_from_lon_lat_nodes_to_utm_nodes(graph);
+
 	get_closest_points_from_osm_in_rddf (rddf_points, graph, route);
 
 }

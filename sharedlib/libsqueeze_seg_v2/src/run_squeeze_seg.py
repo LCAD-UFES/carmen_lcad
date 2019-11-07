@@ -57,10 +57,10 @@ def initialize(vertical_resolution, shots_to_squeeze):
 def _normalize(x):
     return (x - x.min())/(x.max() - x.min())
 
-def save_txt(data, file_name):
+def save_txt(data, file_name, tag):
   
   # Write the array to disk
-  with open(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_IARA/', file_name+'_ok.txt'), 'w') as outfile:
+  with open(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_IARA/', file_name+ tag +'.txt'), 'w') as outfile:
     # I'm writing a header here just for the sake of readability
     # Any line starting with "#" will be ignored by numpy.loadtxt
     outfile.write('# Array shape: {0}\n'.format(data.shape))
@@ -76,6 +76,10 @@ def save_txt(data, file_name):
 
         # Writing out a break to indicate different slices...
         outfile.write('# New slice\n')
+        
+def save_lidar_image(img_file, timestamp, tag):
+    lidar_save = Image.fromarray(img_file).convert('RGBA')
+    lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + tag + '.png'))
 
 def generate_lidar_images(lidar, pred_cls):
     global mc
@@ -90,9 +94,9 @@ def generate_lidar_images(lidar, pred_cls):
     arr[:,:,2] = src1[:,:]
     img = np.concatenate((arr, dst), axis=0)
     #resize img
-    scale_percent = 180 # percent of original size
+    scale_percent = 200 # percent of original size
     width = int(img.shape[1] * scale_percent / 100)
-    height = int(img.shape[0] * scale_percent / 100)
+    height = int(img.shape[0] * scale_percent / 100) * 2
     dim = (width, height)
     resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
     return resized
@@ -101,8 +105,8 @@ def run_model(lidar):
     global mc
     global model
     global sess
-    print("lidar.shape={}, mc.zenith={}, mc.azimuth={}".format(
-        lidar.shape, mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL))
+    #print("lidar.shape={}, mc.zenith={}, mc.azimuth={}".format(
+    #    lidar.shape, mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL))
     lidar_mask = np.reshape(
         (lidar[:, :, 4] > 0),
         [mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL, 1]
@@ -119,28 +123,114 @@ def run_model(lidar):
     )
     return pred_cls
 
-def squeeze_seg_process_point_cloud(lidar, timestamp):
-    
-#     pred_cls = run_model(lidar)
-#     resized = generate_lidar_images(lidar,pred_cls)
-#     lidar_save = Image.fromarray(resized).convert('RGBA')
-#     lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + '_full' + '.png'))
-# 
-#     cv2.imshow("Slices", resized)
-#     cv2.waitKey(100)
-#         
-#     return pred_cls[0]
-    
-    #make copies for test
+def squeeze_seg_process_point_cloud_doubled(lidar, timestamp):
+    tag = "_AllDoubled"
+    save_txt(lidar, str(timestamp.item(0)), tag)
+    lidar1 = lidar[:,798:1310,:]
+    pred_cls_lidar1 = run_model(lidar1)
+    img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
+#     lidar2 = lidar[:,1054:1566,:]
+#     pred_cls_lidar2 = run_model(lidar2)
+#     img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
+#     img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=1)
+    save_lidar_image(img_lidar1, timestamp, tag)
+    cv2.imshow("Slice doubling", img_lidar1)
+    cv2.waitKey(100)
+    return pred_cls_lidar1
+
+def squeeze_seg_process_point_cloud_vertical(lidar, timestamp):
+    tag = "_VerticalDoubled"
+    save_txt(lidar, str(timestamp.item(0)), tag)
     lidar1 = lidar[:,271:783,:]
-    save_txt(lidar1, str(timestamp.item(0)))
+    pred_cls_lidar1 = run_model(lidar1)
+    img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
+#     lidar2 = lidar[:,1054:1566,:]
+#     pred_cls_lidar2 = run_model(lidar2)
+#     img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
+#     img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=1)
+    save_lidar_image(img_lidar1, timestamp, tag)
+    cv2.imshow("Slice doubling", img_lidar1)
+    cv2.waitKey(100)
+    return pred_cls_lidar1
+
+def vertical_interpolation(lidar):
+    s = (lidar.shape[0]*2, lidar.shape[1], lidar.shape[2])
+    lidar_new = np.zeros(s)
+    i = 0
+    for x in range(lidar.shape[0]-1):
+        first_set = lidar[x,:,:]
+        second_set = lidar[x+1,:,:]
+        middle_set = (first_set + second_set) / 2.0
+        lidar_new[i] = first_set
+        lidar_new[i+1] = middle_set
+        lidar_new[i+2] = second_set
+        i = i + 2
+    #print(lidar_new.shape)
+    return lidar_new
+
+def horizontal_interpolation(lidar):
+    s = (lidar.shape[0], lidar.shape[1]*2, lidar.shape[2])
+    s2 = (1, 5)
+    lidar_new = np.zeros(s)
+    line = np.zeros(s2)
+    #print(lidar_new.shape)
+    for x in range(lidar.shape[0]):
+        first_line = lidar[x,:,:]
+        sum_line = lidar[x,1:,:]
+        horizontal_line = np.concatenate((sum_line, line),axis=0)
+        mean = (first_line + horizontal_line)/2.0
+        i = 0
+        for y in range(lidar.shape[1]):
+            lidar_new[x][i] = first_line[y]
+            lidar_new[x][i+1] = mean[y]
+            i = i + 2
+    #print(lidar_new.shape)
+    return lidar_new
+
+def squeeze_seg_process_point_cloud_interpolations(lidar, timestamp):
+    tag = "_VerticalHorizontalInterpolation"
+    save_txt(lidar, str(timestamp.item(0)), tag)
+    #lidar1 = lidar[:,271:783,:]
+    lidar_interpolated = vertical_interpolation(lidar)
+    lidar_horizontal = horizontal_interpolation(lidar_interpolated)
+    #lidar1 = lidar_interpolated[:,271:783,:]
+    lidar1 = lidar_horizontal[:,798:1310,:]
+    
+    #lidar1 = scipy.ndimage.zoom(x, 0.5)
+    print("lidar1.shape={}".format(
+        lidar1.shape))
+    pred_cls_lidar1 = run_model(lidar1)
+    img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
+    save_lidar_image(img_lidar1, timestamp, tag)
+    cv2.imshow("Slice doubling", img_lidar1)
+    cv2.waitKey(100)
+    return pred_cls_lidar1
+
+def squeeze_seg_process_point_cloud_raw(lidar, timestamp):
+    tag = "_Normal"
+    save_txt(lidar, str(timestamp.item(0)), tag)
+    lidar1 = lidar[:,271:783,:]
+    print("lidar1.shape={}".format(
+        lidar1.shape))
+    pred_cls_lidar1 = run_model(lidar1)
+    img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
+    save_lidar_image(img_lidar1, timestamp, tag)
+    cv2.imshow("Slice", img_lidar1)
+    cv2.waitKey(100)
+    return pred_cls_lidar1
+
+def squeeze_seg_process_point_cloud(lidar, timestamp):
+    tag = ""
+    save_txt(lidar, str(timestamp.item(0)), tag)
+    lidar1 = lidar[:,271:783,:]
     lidarp1 = lidar[:,783:,:]
-    shape_last_part = (lidar.shape[1] - 783) #300
+    shape_last_part = lidar.shape[1] - 783 #300
     shape_to_complete = mc.AZIMUTH_LEVEL - shape_last_part #212
     shape_to_squeeze = shape_to_complete + mc.AZIMUTH_LEVEL
+    #print ("shape_last_part=" + str(shape_last_part) + " shape_complete=" + str(shape_to_complete) + " shape_to_squeeze=" + str(shape_to_squeeze))
     lidarp2 = lidar[:,:shape_to_complete,:]
     lidar2 = np.hstack((lidarp1, lidarp2))
-    '''Has to do something between 212 to 271'''
+    '''Has to do something between 212 to 271, so do lidar3'''
     lidar3 = lidar[:,shape_to_complete:shape_to_squeeze,:]
     
     pred_cls_lidar1 = run_model(lidar1)
@@ -149,19 +239,19 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
      
     img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
     img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
-    img_lidar3 = generate_lidar_images(lidar3,pred_cls_lidar3)
+    #img_lidar3 = generate_lidar_images(lidar3,pred_cls_lidar3)
      
-    img_to_test = np.concatenate((img_lidar1, img_lidar2, img_lidar3), axis=0)
+    #img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=0)
      
-    cv2.imshow("Slices", img_to_test)
+    cv2.imshow("Front View", img_lidar1)
+    cv2.imshow("Rear View", img_lidar2)
     cv2.waitKey(100)
-    #lidar_save = Image.fromarray(img_to_test).convert('RGBA')
-    lidar_save = Image.fromarray(img_lidar1).convert('RGBA')
-    lidar_save.save(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_out/', str(timestamp.item(0)) + '_slices' + '.png'))
-    #print(pred_cls_lidar2[0].shape)
+    save_lidar_image(img_lidar1, timestamp, tag)
+    save_lidar_image(img_lidar2, timestamp, "_r")
+    
     pred_cls = np.hstack((pred_cls_lidar2[0][:,shape_to_complete:],pred_cls_lidar3[0][:,shape_to_complete:271],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:shape_to_complete]))
-    print("pred_cls.shape={}".format(
-        pred_cls.shape))
+   # print("pred_cls.shape={}".format(
+   #     pred_cls.shape))
      
     return pred_cls
 

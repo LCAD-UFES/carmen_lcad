@@ -1421,6 +1421,72 @@ char* carmen_string_to_variable_velodyne_scan_message(char* string, carmen_velod
 }
 
 
+char* carmen_string_and_file_to_variable_velodyne_scan_message(char* string, carmen_velodyne_variable_scan_message* msg)
+{
+	int i, shot_size;
+//	int velodyne_number;
+	char *current_pos = string;
+
+	/*if (strncmp(current_pos, "VELODYNE_VARIABLE_SCAN_IN_FILE1", 31) == 0 ||
+		strncmp(current_pos, "VELODYNE_VARIABLE_SCAN_IN_FILE2", 31) == 0 ||
+		strncmp(current_pos, "VELODYNE_VARIABLE_SCAN_IN_FILE3", 31) == 0)
+		current_pos += 31;*/
+
+	static char path[1024];
+
+	CLF_READ_STRING(path, &current_pos);
+
+//	velodyne_number = CLF_READ_INT(&current_pos);
+	shot_size = CLF_READ_INT(&current_pos);
+	msg->number_of_shots = CLF_READ_INT(&current_pos);
+
+	// store the number of laser shots allocated to avoid unecessary reallocs
+
+	//codigo comentado pois estava dando problema para dois velodynes devido a variavel num_laser_shots_allocated nao ser para cada velodyne para cada mensagem seguida, portanto, sempre recria a variavel msg
+	/*static int num_laser_shots_allocated = 0;
+
+	if(msg->partial_scan == NULL)
+	{
+		msg->partial_scan = (carmen_velodyne_shot*) malloc (msg->number_of_shots * sizeof(carmen_velodyne_shot));
+		for (int i=0; i<msg->number_of_shots; i++)
+		{
+			msg->partial_scan[i].distance = (unsigned short*)malloc(shot_size*sizeof(unsigned short));
+			msg->partial_scan[i].intensity = (unsigned char*)malloc(shot_size*sizeof(unsigned char));
+		}
+
+		num_laser_shots_allocated = msg->number_of_shots;
+	}
+	else if (num_laser_shots_allocated != msg->number_of_shots)
+	{*/
+		//verificar se a recriacao do vetor esta correta
+		msg->partial_scan = (carmen_velodyne_shot*) realloc (msg->partial_scan, msg->number_of_shots * sizeof(carmen_velodyne_shot));
+		for (int i=0; i<msg->number_of_shots; i++)
+		{
+			msg->partial_scan[i].distance = (unsigned short*)malloc(shot_size*sizeof(unsigned short));
+			msg->partial_scan[i].intensity = (unsigned char*)malloc(shot_size*sizeof(unsigned char));
+		}
+		//num_laser_shots_allocated = msg->number_of_shots;
+	//}
+
+	FILE *image_file = fopen(path, "rb");
+
+	for(i = 0; i < msg->number_of_shots; i++)
+	{
+		fread(&(msg->partial_scan[i].angle), sizeof(double), 1, image_file);
+		fread(msg->partial_scan[i].distance, sizeof(unsigned short), shot_size, image_file);
+		fread(msg->partial_scan[i].intensity, sizeof(unsigned char), shot_size, image_file);
+		msg->partial_scan[i].shot_size = shot_size;
+	}
+
+	fclose(image_file);
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+
+	return current_pos;
+}
+
+
 char* carmen_string_to_velodyne_gps_message(char* string, carmen_velodyne_gps_message* msg)
 {
 	char *current_pos = string;

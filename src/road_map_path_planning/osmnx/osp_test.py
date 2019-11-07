@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as colors
 import numpy as np
-from sklearn.neighbors import KDTree
-ox.config(use_cache=True, log_console=True)
+#from sklearn.neighbors import KDTree
+ox.config(use_cache=False, log_console=True)
 ox.__version__
 
 qtd_clicks = 0
@@ -61,12 +61,15 @@ def onclick(event):
 def plot_graph(G):
     
     global qtd_clicks
-    fig, ax = ox.plot_graph(G, show=False, close=False)
+    nc = ['r' if (osmid==ox.get_nearest_node(G, (-20.273804, -40.306124))) else 'b' for osmid in G.nodes()]
+    nz = [36 if (osmid==ox.get_nearest_node(G, (-20.273804, -40.306124))) else 13 for osmid in G.nodes()]
+#fig, ax = ox.plot_graph(G, node_color='w', node_edgecolor='k', node_size=30, node_zorder=3, edge_color=ec, edge_linewidth=3)
+    fig, ax = ox.plot_graph(G, node_color=nc, node_size = nz, show=False, close=False)
     cid = fig.canvas.mpl_connect('button_press_event', onclick)
     #print(type(fig))
     #plt.imshow(fig)
     plt.show(block = False)
-    plt.pause(10)
+    plt.pause(5)
     plt.close(fig)
 
 
@@ -75,7 +78,8 @@ def get_graph ():
     #G = ox.graph_from_place('UFES, Vitoria, BR', network_type='drive', simplify=False)
     print (sys.argv[1], sys.argv[2], sys.argv[3])
     G = ox.graph_from_place(sys.argv[1], network_type='drive', simplify=int(sys.argv[2]))
-    
+   # G = ox.graph_from_point((-20.273804, -40.306124), distance = 500, network_type='drive', simplify=int(sys.argv[2]))
+      
     #print(*dir(G), sep = "\n")
     #print(G.adjacency)
     
@@ -88,6 +92,61 @@ def get_graph ():
         plot_graph(G)       
     
     return G, G_proj, nodes_proj, edges_proj
+
+def get_graph_from_client ():
+    # get a graph for some city
+    G = ox.graph_from_place('Universidade Federal do Espirito Santo, Vitoria, BR', network_type='drive', simplify=False)
+    #print (sys.argv[1], sys.argv[2], sys.argv[3])
+    #G = ox.graph_from_place(sys.argv[1], network_type='drive', simplify=int(sys.argv[2]))
+   # G = ox.graph_from_point((-20.273804, -40.306124), distance = 500, network_type='drive', simplify=int(sys.argv[2]))
+      
+    #print(*dir(G), sep = "\n")
+    #print(G.adjacency)
+    
+    G_proj = ox.project_graph(G) #Project a graph from lat-long to the UTM zone appropriate for its geographic location.
+    nodes_proj, edges_proj = ox.graph_to_gdfs(G_proj) #Convert a graph into node and/or edge GeoDataFrames
+    #print(edges_proj)
+    save_graph_file(nodes_proj, edges_proj)
+    
+    #if int(sys.argv[3]) == 1:
+    #    plot_graph(G)       
+    
+    return G, G_proj, nodes_proj, edges_proj
+
+
+def get_route_lat_lon (origin_gdc_lat, origin_gdc_lon, dest_gdc_lat, dest_gdc_lon):
+    #print(origin_gdc_lat)
+    #print(origin_gdc_lon)
+    #print(dest_gdc_lat)
+    #print(dest_gdc_lon)
+    G, G_proj, nodes_proj, edges_proj = get_graph_from_client();
+    #print(clicks[0])
+    #print('\n')
+    #print(clicks[1])
+    dict = {}
+    i = 0
+    for osmid, lon, lat in zip(nodes_proj['osmid'],nodes_proj['lon'], nodes_proj['lat']):
+        dict.update({osmid:i}) 
+        i+=1
+        #texto = str(dict[osmid]) + " " + str(osmid) + " " + str(lon) + " " + str(lat) + "\n" 
+        #print(texto)
+
+    orig_node = ox.get_nearest_node(G, (origin_gdc_lat, origin_gdc_lon))
+    dest_node = ox.get_nearest_node(G, (dest_gdc_lat, dest_gdc_lon))
+    #print(orig_node)
+    #print(dest_node)
+    
+    #find the route between these nodes then plot it
+    route = nx.shortest_path(G, orig_node, dest_node, weight='length')
+    #print(route)
+    f = open("route.txt", 'w')
+    texto = str(len(route)) + "\n"
+    f.write(texto)
+    for i in range(len(route)):
+        texto = str(dict[route[i]]) + "\n"
+        #print(dict[route[i]])
+        f.write(texto)       
+    fig, ax = ox.plot_graph_route(G, route, node_size=0)
     
 
 def get_route (G, G_proj, nodes_proj, edges_proj):
@@ -105,8 +164,8 @@ def get_route (G, G_proj, nodes_proj, edges_proj):
         #texto = str(dict[osmid]) + " " + str(osmid) + " " + str(lon) + " " + str(lat) + "\n" 
         #print(texto)
 
-    orig_node = ox.get_nearest_node(G, clicks[0])
-    dest_node = ox.get_nearest_node(G, clicks[1])
+    orig_node = ox.get_nearest_node(G, (-20.273804, -40.306124))
+    dest_node = ox.get_nearest_node(G, clicks[0])
     
     #find the route between these nodes then plot it
     route = nx.shortest_path(G, orig_node, dest_node, weight='length')
@@ -125,10 +184,10 @@ def get_route (G, G_proj, nodes_proj, edges_proj):
     
 
 
-G, G_proj, nodes_proj, edges_proj = get_graph();
+#G, G_proj, nodes_proj, edges_proj = get_graph();
 
-if int(sys.argv[4]) == 1:
-    get_route (G, G_proj, nodes_proj, edges_proj)
+#if int(sys.argv[4]) == 1:
+#    get_route (G, G_proj, nodes_proj, edges_proj)
 
 #print(*dir(nodes_proj), sep = "\n")
 #print(nodes_proj.head())

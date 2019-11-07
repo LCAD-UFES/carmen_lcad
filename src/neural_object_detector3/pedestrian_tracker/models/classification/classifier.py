@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import cv2
 from distutils.version import LooseVersion
@@ -41,7 +42,8 @@ class PatchClassifier(object):
     def __init__(self, gpu=0):
         self.gpu = gpu
 
-        ckpt = 'pedestrian_tracker/data/squeezenet_small40_coco_mot16_ckpt_10.h5'
+	carmen_home = os.getenv("CARMEN_HOME")
+        ckpt = carmen_home+'/src/neural_object_detector3/pedestrian_tracker/data/squeezenet_small40_coco_mot16_ckpt_10.h5'
         model = CLSModel(extractor='squeezenet')
 
         # from mcmtt.network.experiments.rfcn_cls2 import Model as CLSModel
