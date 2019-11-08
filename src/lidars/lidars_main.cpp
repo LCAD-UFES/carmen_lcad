@@ -3,8 +3,8 @@
 #include <vector>
 #include <boost/algorithm/string.hpp>
 
-#include <driver.h>
-#include "velodyne_interface.h"
+#include <carmen/velodyne_interface.h>
+#include <driver2.h>
 
 using namespace std;
 

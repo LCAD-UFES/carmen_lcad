@@ -7,7 +7,7 @@ LINK = g++
 CXXFLAGS += -g
 LFLAGS += -lipc -lglobal
  
-SOURCES = input.cpp #driver.cpp main.cpp
+SOURCES = input.cpp rsdriver.cpp main.cpp
 TARGETS = test librobosense.a 
 
 ifndef NO_PYTHON
@@ -16,9 +16,9 @@ endif
 
 test: main.o librobosense.a
 
-librobosense.a: input.o #driver.o
+librobosense.a: input.o rsdriver.o
 
-librobosense.so.1: input.o #driver.o
+librobosense.so.1: input.o rsdriver.o
 
 clean: clean_librobosense
 
