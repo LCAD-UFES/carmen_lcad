@@ -21,6 +21,8 @@ using namespace std;
 
 #include "g2o/types/slam2d/se2.h"
 
+#include <locale.h>
+
 using namespace g2o;
 
 kmldom::KmlFactory *factory;
@@ -320,6 +322,7 @@ carmen_rddf_play_copy_kml(kmldom::PlacemarkPtr waypoint, carmen_fused_odometry_m
 carmen_rddf_waypoint *
 carmen_rddf_play_load_rddf_from_file(char *rddf_filename, int *out_waypoint_vector_size)
 {
+	setlocale(LC_NUMERIC, "C");
 	unsigned int i, n;
 	carmen_fused_odometry_message message;
 
@@ -361,6 +364,11 @@ carmen_rddf_play_load_rddf_from_file(char *rddf_filename, int *out_waypoint_vect
 
 		while (!feof(fptr))
 		{
+			if (!fptr)
+			{
+				printf("Could not open file %s\n Exiting...\n", rddf_filename);
+				exit(1);
+			}
 			memset(&message, 0, sizeof(message));
 
 			fscanf(fptr, "%lf %lf %lf %lf %lf %lf\n",

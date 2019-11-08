@@ -532,7 +532,7 @@ read_data_from_xsens_without_xsens(void)
 
 
 int
-init_xsens_old(bool reset_orientation)
+init_xsens(bool reset_orientation)
 {
 	mtCount = doHardwareScan(cmt3, deviceIds);
 
@@ -552,8 +552,8 @@ init_xsens_old(bool reset_orientation)
 }
 
 
-static int 
-init_xsens(bool reset_orientation)
+int
+init_xsens_new(bool reset_orientation)
 {
 	return (1);
 
@@ -604,6 +604,7 @@ main(int argc, char **argv)
 
 	int xsens_initialized = init_xsens(reset_orientation);
 
+//	read_data_from_xsens_without_xsens();
 	if (xsens_initialized)
 		read_data_from_xsens();
 

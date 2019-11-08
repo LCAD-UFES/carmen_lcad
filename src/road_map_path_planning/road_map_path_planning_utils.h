@@ -96,6 +96,15 @@ struct type_route
 typedef type_route t_route;
 
 
+t_route load_route_from_file(string route_filename);
+void print_route_coordinates_in_carmen_coordinates(t_route r, t_graph graph);
+void plot_state(t_forest forest, t_graph graph, vector<int> indices, int forest_index);
+double calc_theta_diff (double angle_x, double angle_y);
+void knn (vector<int> &indices, vector<carmen_rddf_waypoint> rddf, double query_x, double query_y);
+double calc_theta (double x1, double y1, double x, double y);
+void get_closest_points_from_osm_in_rddf (t_forest forest, t_graph graph, t_route r);
+t_graph convert_from_lon_lat_nodes_to_utm_nodes(t_graph graph);
+t_forest load_rddf_files (t_forest rddf_points, vector <string> rddf_filename);
 t_graph read_graph_file(string graph_filename);
 void process_graph (string python_command);
 
