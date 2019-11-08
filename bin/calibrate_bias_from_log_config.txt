@@ -1,5 +1,5 @@
 # Id of the gps that will be used for the calibration
-gps_to_use = 1
+gps_to_use = 3
 # Id of the sensor board that will be used for the calibration
 board_to_use = 1
 # 0 - linear phi; 1 - use a spline to map phi to a new phi
@@ -46,6 +46,4 @@ max_k1 = 0.3
 min_k2 = -0.15
 # Upper limit of k2 spline coefficient
 max_k2 = 0.15
-#sem gps
-only_odometry = 1
 
