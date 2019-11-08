@@ -36,7 +36,8 @@
 #include <control.h>
 #include "ford_escape_hybrid.h"
 
-#define FORD_ESCAPE_COMMUNICATION_DUMP
+//#define FORD_ESCAPE_COMMUNICATION_DUMP
+#define PLOT_PHI
 
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
 
@@ -692,7 +693,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 						-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
 						delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG, ford_escape_hybrid_config->filtered_v);
 			}
-			#ifdef PLOT
+			#ifdef PLOT_PHI
 					pid_plot_phi(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), 0.55, "phi");
 			#endif
 		}
