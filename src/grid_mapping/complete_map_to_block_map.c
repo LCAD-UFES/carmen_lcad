@@ -82,15 +82,20 @@ main(int argc, char **argv)
 			count_map.config.x_origin = block_map.config.x_origin = floor(complete_map.config.x_origin + x);
 			count_map.config.y_origin = block_map.config.y_origin = floor(complete_map.config.y_origin + y);
 
-			if ((block_map.config.x_origin + block_size_in_meters) > floor(complete_map.config.x_origin + complete_map.config.x_size * complete_map.config.resolution) ||
-					(block_map.config.y_origin + block_size_in_meters) > floor(complete_map.config.y_origin + complete_map.config.y_size * complete_map.config.resolution))
+			if ((block_map.config.x_origin + block_size_in_meters) >
+					floor(complete_map.config.x_origin + ((complete_map.config.x_size >= block_map.config.x_size)? complete_map.config.x_size: block_map.config.x_size) * complete_map.config.resolution) ||
+				(block_map.config.y_origin + block_size_in_meters) >
+					floor(complete_map.config.y_origin + ((complete_map.config.y_size >= block_map.config.y_size)? complete_map.config.y_size: block_map.config.y_size) * complete_map.config.resolution))
 				continue;
 
 			for (int x_index = 0; x_index < block_map.config.x_size; x_index++)
 			{
 				for (int y_index = 0; y_index < block_map.config.y_size; y_index++)
 				{
-					block_map.map[x_index][y_index] = complete_map.map[(int)(x / complete_map.config.resolution) + x_index][(int)(y / complete_map.config.resolution) + y_index];
+					if ((x_index < complete_map.config.x_size) && (y_index < complete_map.config.y_size))
+						block_map.map[x_index][y_index] = complete_map.map[(int)(x / complete_map.config.resolution) + x_index][(int)(y / complete_map.config.resolution) + y_index];
+					else
+						block_map.map[x_index][y_index] = -1;
 					count_map.map[x_index][y_index] = 1.0;
 				}
 			}
