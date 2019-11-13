@@ -4,7 +4,7 @@ from scipy import interpolate
 import os
 import math
 
-xy = "7757737.982150 -363557.244595".split(" ")
+xyt = "7757737.982150 -363557.244595 0.65748".split(" ")
 
 def find_position(x, y, data):
     finded = []
@@ -18,8 +18,9 @@ def find_position(x, y, data):
             first = True
     return finded
 
-x = float(xy[0])
-y = float(xy[1])
+x_iara = float(xyt[0])
+y_iara = float(xyt[1])
+t_iara = float(xyt[2])
 
 text_file = open(os.environ["CARMEN_HOME"]+"/data/rndf/rddf-log_volta_da_ufes-20191003.txt", "r")
 
@@ -31,7 +32,7 @@ data = []
 for i in range(len(all_text)-1):
     data.append(all_text[i].split(" "))
 
-positions = find_position(x, y, data)
+positions = find_position(x_iara, y_iara, data)
 print("Pontos x y encontrados em: ")
 print(positions)
 
@@ -46,7 +47,11 @@ for i in range(positions[0][0], positions[0][0]+150):
     points_y.append(float(data[i][1])-float(positions[0][2]))
 #    print(float(data[i][0])-float(positions[0][1]), float(data[i][1])-float(positions[0][2]))
 
-theta = math.atan2(points_y[1] - points_y[0], points_x[1] - points_x[0])
+#theta = math.atan2(points_y[1] - points_y[0], points_x[1] - points_x[0])
+theta = float(positions[0][3])
+dtheta = t_iara - theta
+
+print(theta,dtheta)
 #print(theta)
 c, s = np.cos(theta), np.sin(theta)
 R = np.array(((c,s), (-s, c)))
@@ -58,6 +63,8 @@ for i in range(len(points_x)):
     res = np.matmul(R,np.array([points_x[i], points_y[i]]))
     points_x[i] = res[0]
     points_y[i] = res[1]
+dy = np.matmul(R,np.array([x_iara-float(positions[0][1]), y_iara-float(positions[0][2])]))[1]
+print(dy)
 
 arr = np.arange(np.amin(points_x), np.amax(points_x), 0.01)
 s = interpolate.CubicSpline(points_x, points_y)
@@ -70,4 +77,5 @@ ax.plot(points_x, points_y, 'bo', label='Data Point')
 ax.plot(arr, s(arr), 'r-', label='Cubic Spline', lw=1)
 
 ax.legend()
+plt.axis("square")
 plt.show()
