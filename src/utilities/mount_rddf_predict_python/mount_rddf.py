@@ -1,22 +1,21 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
+from scipy import spatial
 import os
 import math
 
-xyt = "7757737.982150 -363557.244595 0.65748".split(" ")
+xyt = "7757803.113726 -363522.333953 -0.111268".split(" ")
 
 def find_position(x, y, data):
-    finded = []
-    first = True
-    for i in range(len(data)):
-        if(float(data[i][0]) >= x and float(data[i][1]) >= y):
-            if(first):
-                finded.append([i, data[i][0], data[i][1], data[i][2]])
-                first = False
-        else:
-            first = True
-    return finded
+    points = np.zeros((len(data), 2))
+    for idx, pose in enumerate(data):
+        points[idx][0] = pose[0]
+        points[idx][1] = pose[1]
+    ref = [x, y]
+    idx = spatial.KDTree(points).query(ref)[1]
+    return idx, data[idx]
+    
 
 x_iara = float(xyt[0])
 y_iara = float(xyt[1])
@@ -36,19 +35,17 @@ positions = find_position(x_iara, y_iara, data)
 print("Pontos x y encontrados em: ")
 print(positions)
 
-if(len(positions)>1):
-    print("A função de busca encontrou múltiplos pontos parecidos.")
 
 points_x = []
 points_y = []
 # Obtenção dos pontos relativos ao primeiro ponto do rddf
-for i in range(positions[0][0], positions[0][0]+150):
-    points_x.append(float(data[i][0])-float(positions[0][1]))
-    points_y.append(float(data[i][1])-float(positions[0][2]))
+for i in range(positions[0], positions[0]+150):
+    points_x.append(float(data[i][0])-float(positions[1][0]))
+    points_y.append(float(data[i][1])-float(positions[1][1]))
 #    print(float(data[i][0])-float(positions[0][1]), float(data[i][1])-float(positions[0][2]))
 
 #theta = math.atan2(points_y[1] - points_y[0], points_x[1] - points_x[0])
-theta = float(positions[0][3])
+theta = float(positions[1][2])
 dtheta = t_iara - theta
 
 print(theta,dtheta)
@@ -63,7 +60,7 @@ for i in range(len(points_x)):
     res = np.matmul(R,np.array([points_x[i], points_y[i]]))
     points_x[i] = res[0]
     points_y[i] = res[1]
-dy = np.matmul(R,np.array([x_iara-float(positions[0][1]), y_iara-float(positions[0][2])]))[1]
+dy = np.matmul(R,np.array([x_iara-float(positions[1][0]), y_iara-float(positions[1][1])]))[1]
 print(dy)
 
 arr = np.arange(np.amin(points_x), np.amax(points_x), 0.01)
