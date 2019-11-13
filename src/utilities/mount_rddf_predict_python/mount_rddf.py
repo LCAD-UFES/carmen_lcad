@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
 import os
+import math
 
 xy = "7757737.982150 -363557.244595".split(" ")
 
@@ -43,17 +44,27 @@ points_y = []
 for i in range(positions[0][0], positions[0][0]+150):
     points_x.append(float(data[i][0])-float(positions[0][1]))
     points_y.append(float(data[i][1])-float(positions[0][2]))
-    print(float(data[i][0])-float(positions[0][1]), float(data[i][1])-float(positions[0][2]))
+#    print(float(data[i][0])-float(positions[0][1]), float(data[i][1])-float(positions[0][2]))
+
+theta = math.atan2(points_y[1] - points_y[0], points_x[1] - points_x[0])
+#print(theta)
+c, s = np.cos(theta), np.sin(theta)
+R = np.array(((c,s), (-s, c)))
 
 points_x = np.array(points_x)
 points_y = np.array(points_y)
+
+for i in range(len(points_x)):
+    res = np.matmul(R,np.array([points_x[i], points_y[i]]))
+    points_x[i] = res[0]
+    points_y[i] = res[1]
 
 arr = np.arange(np.amin(points_x), np.amax(points_x), 0.01)
 s = interpolate.CubicSpline(points_x, points_y)
 fig, ax = plt.subplots(1, 1)
 
 # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.CubicSpline.html
-print(s.c)
+#print(s.c)
 
 ax.plot(points_x, points_y, 'bo', label='Data Point')
 ax.plot(arr, s(arr), 'r-', label='Cubic Spline', lw=1)
