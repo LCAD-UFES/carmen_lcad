@@ -338,19 +338,14 @@ Neural_map_queue::convert_predicted_to_log_ods_snapshot_map(carmen_map_t* log_od
 	float map_resolution = this->output_map.resolution;
 	int radius = (velodyne_max_range/map_resolution);
 	int new_size = x_size;
-
+	double prob = -1.0;
 	for (int i = 0; i < y_size; i++)
 	{
 		for (int j = 0; j < x_size; j++)
 		{
-//			printf("ou aqui\n");
-			int y = i-center;
-			int x = j-center;
-			int k = sqrt((x*x) + (y*y));
-			if(k < radius)
 			{
-				int l = round(i - (center - radius));
-				int m = round(j - (center - radius));
+				int l = abs(round(i - (center + radius)));
+				int m = abs(round(j - (center + radius)));
 //				printf("L M: %d %d \n", l, m);
 //				printf("I J: %d %d \n", i, j);
 				pixel = image_prob->at<cv::Vec3d>(i,j);
@@ -359,9 +354,15 @@ Neural_map_queue::convert_predicted_to_log_ods_snapshot_map(carmen_map_t* log_od
 				if(pixel[0] > pixel[1] && pixel[0] > pixel[2])
 					log_ods_snapshot->map[l][m] = carmen_prob_models_probabilistic_to_log_odds(-1.0);
 				else if(pixel[1] > pixel[0] && pixel[1] > pixel[2])
-					log_ods_snapshot->map[l][m] = carmen_prob_models_probabilistic_to_log_odds(pixel[1]/(pixel[1]+pixel[2]));
+				{
+					prob = 1.0 - (pixel[1]/(pixel[1]+pixel[2]));
+					log_ods_snapshot->map[l][m] = carmen_prob_models_probabilistic_to_log_odds(prob);
+				}
 				else
-					log_ods_snapshot->map[l][m] = carmen_prob_models_probabilistic_to_log_odds(pixel[2]/(pixel[2]+pixel[1]));
+				{
+					prob =(pixel[2]/(pixel[2]+pixel[1]));
+					log_ods_snapshot->map[l][m] = carmen_prob_models_probabilistic_to_log_odds(prob);
+				}
 			}
 		}
 	}
