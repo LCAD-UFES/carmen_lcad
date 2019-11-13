@@ -11,10 +11,10 @@ from torchvision import datasets, transforms
 # 
 # 
 
-TRANSFORMS = None #transforms.Normalize([0.0128, 0.0119, 0.0077, 0.0019, 0.0010], [0.0821, 0.0739, 0.0591, 0.0170, 0.0100])
+TRANSFORMS = transforms.Normalize([0.0128, 0.0119, 0.0077, 0.0019, 0.0010], [0.0821, 0.0739, 0.0591, 0.0170, 0.0100])
 device = torch.device("cuda:0")
 carmen_home = os.getenv("CARMEN_HOME")
-model_path = '/mnt/ssd/neural_mapper_train/volta_da_ufes-20190915_augmented/Experimentos/Nao_Normalizado/45_epocas/models/45.model'
+model_path = '50.model'
 input_channels = 5
 n_classes = 3
 dropout_prob = 0.0
@@ -194,19 +194,25 @@ def process_image(map_max, map_mean, map_min, map_numb, map_std):
     
     with torch.no_grad():
         data = data.to(device)
-        output = model(data)
+        output, prob_softmax = model(data)
 #         preditction = output
 #         predicted_map = preditction[0].cpu()
        
-        pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
+        pred = prob_softmax.max(1, keepdim=True)[1] # get the index of the max log-probability
         imgPred = pred[0]
         imgPred = imgPred.cpu().float()
+        
     cv2.imshow("No Python", labels_to_img(imgPred[0].numpy(), h))
-    
     cv2.waitKey(100)
-    print(imgPred[0].numpy().dtype)
+    result = prob_softmax.cpu()
+    result2 = result[0].permute(1,2,0)
+    print(result2.numpy().dtype)
+    print(result2.numpy().shape)
+#     print(result2[0,0,:3])
     
-    return (imgPred[0]).numpy().astype(np.float64).flatten()
+#     cv2.imshow("No Python", result.numpy())
+    
+    return (result2.numpy().astype(np.float64).flatten())
 ################Para Debug
 
 
