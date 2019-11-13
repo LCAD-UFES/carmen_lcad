@@ -14,12 +14,12 @@ from torchvision import datasets, transforms
 TRANSFORMS = transforms.Normalize([0.0128, 0.0119, 0.0077, 0.0019, 0.0010], [0.0821, 0.0739, 0.0591, 0.0170, 0.0100])
 device = torch.device("cuda:0")
 carmen_home = os.getenv("CARMEN_HOME")
-model_path = '50.model'
+model_path = '/src/mapper/50.model'
 input_channels = 5
 n_classes = 3
 dropout_prob = 0.0
 model = M.FCNN(n_input=input_channels, n_output=n_classes, prob_drop=dropout_prob).to(device)
-model.load_state_dict(torch.load(model_path))
+model.load_state_dict(torch.load(carmen_home+model_path))
 model.eval()
 # images_converted = 0
 # model = M.FCNN(n_output=3)
