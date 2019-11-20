@@ -95,16 +95,23 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 		printf("rddf: %.2f %.2f %.2f\n", last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta);
 		printf("image: %f\n\n", bumb_latest_timestamp);
 
-		SE2 robot_pose(last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta);
+		double dtheta = globalpos.theta - last_rddf_poses.poses[index_aux].theta;
+
+		SE2 rddf_pose(last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta);
 
 		for (int i = 0; i < last_rddf_poses.number_of_poses; i++)
 		{
 			SE2 lane_in_world_reference(last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, last_rddf_poses.poses[i].theta);
-			SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
-			last_rddf_poses.poses[i].x = lane_in_car_reference[0];
-			last_rddf_poses.poses[i].y = lane_in_car_reference[0];
-			last_rddf_poses.poses[i].theta = lane_in_car_reference[0];
+			SE2 lane_in_rddf_reference = rddf_pose.inverse() * lane_in_world_reference;
+			last_rddf_poses.poses[i].x = lane_in_rddf_reference[0];
+			last_rddf_poses.poses[i].y = lane_in_rddf_reference[0];
+			last_rddf_poses.poses[i].theta = lane_in_rddf_reference[0];
 		}
+
+		SE2 car_in_world_reference(globalpos.x, globalpos.y, globalpos.theta);
+		SE2 car_in_rddf_reference = rddf_pose.inverse() * car_in_world_reference;
+
+		double dy = car_in_rddf_reference[1];
 
 		SplineControlParams spc = optimize_spline_knots(&last_rddf_poses);
 
