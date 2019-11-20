@@ -113,7 +113,7 @@ int monitored_can_message_queue_out_idx = 0;
 
 #define COMPRESS_DELTA_T		0.001
 #define FIRST_CAN_DUMP_RECORD	(103 - 1)
-#define LAST_CAN_DUMP_RECORD	(4074 - 1)
+#define LAST_CAN_DUMP_RECORD	(16000 - 1)
 #define LOOP_CAN_DUMP_RECORD	(131 - 1)
 
 //int can_dump_record_idx = 1;
@@ -951,7 +951,8 @@ int main(int argCount, char **argString)
 
 	char can_dump_file_name[1024];
 	strcpy(can_dump_file_name, getenv("CARMEN_HOME"));
-	strcat(can_dump_file_name, "/sharedlib/OpenJAUS/ojFoxDriver/candump-2019-06-13_163031.log");
+//	strcat(can_dump_file_name, "/sharedlib/OpenJAUS/ojFoxDriver/candump-2019-06-13_163031.log");
+	strcat(can_dump_file_name, "/sharedlib/OpenJAUS/ojFoxDriver/log_can_fox_20190704-filtrado.log");
 	FILE *can_dump_file = fopen(can_dump_file_name, "r");
 	load_can_dump(can_dump_file);
 
