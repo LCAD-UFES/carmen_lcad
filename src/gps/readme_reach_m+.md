@@ -5,7 +5,9 @@ Correction input
 Serial
 
 Device: UART
+
 Baud rate: 9600
+
 Format: RTCM3
 
 Position output
@@ -13,7 +15,9 @@ Position output
 Serial
 
 Device: USB-to-PC
+
 Baud rate: 115200
+
 Format: NMEA
 
 ---------------------------------------------------
