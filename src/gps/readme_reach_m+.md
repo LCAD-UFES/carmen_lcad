@@ -5,9 +5,7 @@ Correction input
 Serial
 
 Device: UART
-
-Baud rate: 115200
-
+Baud rate: 9600
 Format: RTCM3
 
 Position output
@@ -15,9 +13,7 @@ Position output
 Serial
 
 Device: USB-to-PC
-
 Baud rate: 115200
-
 Format: NMEA
 
 ---------------------------------------------------
@@ -41,7 +37,7 @@ https://github.com/tomojitakasu/RTKLIB/issues/99
 
 cd RTKLIB/app/str2str/gcc
 
-sudo ./str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyS0:115200:8:n:1:off
+sudo ./str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyS0:9600:8:n:1:off
 
 ---------------------------------------------------
 Configuring the GPIO serial port on Raspberry 3 
