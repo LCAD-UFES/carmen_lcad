@@ -112,15 +112,16 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 		SE2 car_in_rddf_reference = rddf_pose.inverse() * car_in_world_reference;
 
 		double dy = car_in_rddf_reference[1];
-
-		SplineControlParams spc = optimize_spline_knots(&last_rddf_poses);
-
-		printf("dy = %f\ndtheta = %f\n\nposes:\n", dy, dtheta);
-		printf("k1 = %f, k2 = %f, k3 = %f\n", spc.k1, spc.k2, spc.k3);
+/*
 		for (int i = 0; i < last_rddf_poses.number_of_poses; i++)
 		{
 			printf("%f %f %f\n", last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, last_rddf_poses.poses[i].theta);
 		}
+		*/
+		SplineControlParams spc = optimize_spline_knots(&last_rddf_poses);
+
+		printf("dy = %f\ndtheta = %f\n\nposes:\n", dy, dtheta);
+		printf("k1 = %f, k2 = %f, k3 = %f\n", spc.k1, spc.k2, spc.k3);
 
 		save_to_txt(globalpos.x, globalpos.y, globalpos.theta, globalpos_message->timestamp, last_rddf_poses.poses[index_aux].x,
 				last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta, bumb_latest_timestamp);
@@ -134,7 +135,7 @@ shutdown_module(int signo)
     if (signo == SIGINT) {
     	fclose(file_log);
         carmen_ipc_disconnect();
-        printf("Subscribe_example: Disconnected.\n");
+        printf("Rddf_predict: Disconnected.\n");
         exit(0);
     }
 }

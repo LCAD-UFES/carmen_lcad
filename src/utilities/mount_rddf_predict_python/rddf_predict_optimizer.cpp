@@ -1,7 +1,7 @@
 #include "rddf_predict_optimizer.h"
 
 #define MAX_ERROR 0.00001
-#define XTOTAL 20
+#define XTOTAL 30
 
 void
 get_optimization_params(SplineControlParams *spc, ObjectiveFunctionParams &params, carmen_behavior_selector_road_profile_message *rddf_poses)
@@ -33,10 +33,15 @@ compute_distance_from_spline_to_rddf(SplineControlParams spc, carmen_ackerman_tr
 	gsl_spline_init(phi_spline, knots_x, knots_y, 4);
 	int i = 0;
 	double total_distance = 0;
+	double spline_y;
 	while (rddf_poses[i].x <=30)
 	{
 		double spline_x = rddf_poses[i].x;
-		double spline_y = gsl_spline_eval(phi_spline, spline_x, acc);
+		//Foi colocado essa condição pois o erro acontecia quando spline_x<0
+		if(spline_x>0)
+			spline_y = gsl_spline_eval(phi_spline, spline_x, acc);
+//		else
+//			printf("---- %f\n",spline_x);
 		double distance = euclidean_distance_optimizer(rddf_poses[i].x, spline_x, rddf_poses[i].y, spline_y);
 		total_distance += distance*distance;
 		i++;
