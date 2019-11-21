@@ -75,7 +75,6 @@ print(s[0].shape)
 print(s[1].shape)
 print(s[0])
 print(s[1])
-
 ax.plot(points_x, points_y, 'bo', label='Data Point')
 ax.plot(arr, ynew, 'r-', label='Cubic Spline', lw=1)
 

@@ -9,6 +9,7 @@
 #include <gsl/gsl_multimin.h>
 #include <carmen/carmen.h>
 
+
 struct SplineControlParams
 {
 	bool valid;
@@ -25,17 +26,6 @@ struct ObjectiveFunctionParams
 	carmen_ackerman_traj_point_t * rddf_poses;
 	double plan_cost;
 	int xtotal;
-};
-
-struct TrajectoryDimensions
-{
-	double dist;	// Distance traveled in polar coordinates
-	double theta;	// Angle in polar coordinates
-	double d_yaw;	// Displacement in yaw
-	double phi_i;	// Initial steering wheel angle
-	double v_i;		// Initial velocity
-
-	struct TrajectoryControlParameters control_parameters;
 };
 
 SplineControlParams
