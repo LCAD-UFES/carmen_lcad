@@ -5,8 +5,6 @@ from scipy import spatial
 import os
 import math
 
-xyt = "7757803.113726 -363522.333953 -0.111268".split(" ")
-
 def find_position(x, y, data):
     points = np.zeros((len(data), 2))
     for idx, pose in enumerate(data):
@@ -15,15 +13,18 @@ def find_position(x, y, data):
     ref = [x, y]
     idx = spatial.KDTree(points).query(ref)[1]
     return idx, data[idx]
-    
+
+text_file = open(os.environ["CARMEN_HOME"]+"/data/rndf/rddf-log_volta_da_ufes-20191003.txt", "r")
+all_text = text_file.read().split("\n")
+text_file.close()
+
+
+xyt = "7757803.113726 -363522.333953 -0.111268".split(" ")
 
 x_iara = float(xyt[0])
 y_iara = float(xyt[1])
 t_iara = float(xyt[2])
 
-text_file = open(os.environ["CARMEN_HOME"]+"/data/rndf/rddf-log_volta_da_ufes-20191003.txt", "r")
-
-all_text = text_file.read().split("\n")
 data = []
 
 # -1 porque ao realizar o split anterior, ele considera o \n da última linha e cria uma lista vazia
@@ -34,7 +35,6 @@ for i in range(len(all_text)-1):
 positions = find_position(x_iara, y_iara, data)
 print("Pontos x y encontrados em: ")
 print(positions)
-
 
 points_x = []
 points_y = []
@@ -64,14 +64,19 @@ dy = np.matmul(R,np.array([x_iara-float(positions[1][0]), y_iara-float(positions
 print(dy)
 
 arr = np.arange(np.amin(points_x), np.amax(points_x), 0.01)
-s = interpolate.CubicSpline(points_x, points_y)
+s = interpolate.splrep(points_x, points_y, task=-1, t=np.array([points_x[37], points_x[112]]))
+ynew = interpolate.splev(arr, s, der=0)
 fig, ax = plt.subplots(1, 1)
 
 # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.CubicSpline.html
 #print(s.c)
 
+print(s[0].shape)
+print(s[1].shape)
+print(s[0])
+print(s[1])
 ax.plot(points_x, points_y, 'bo', label='Data Point')
-ax.plot(arr, s(arr), 'r-', label='Cubic Spline', lw=1)
+ax.plot(arr, ynew, 'r-', label='Cubic Spline', lw=1)
 
 ax.legend()
 plt.axis("square")

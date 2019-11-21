@@ -142,6 +142,9 @@ carmen_map_config_t map_config;
 char *calibration_file = NULL;
 char *save_calibration_file = NULL;
 
+int *velodyne_segmented = NULL;
+carmen_velodyne_partial_scan_message *velodyne_seg;
+
 static char *segmap_dirname = (char *) "/dados/log_dante_michelini-20181116.txt_segmap";
 
 
@@ -471,6 +474,149 @@ vector<carmen_vector_2D_t> moving_objecst_cells_vector;
  * Functions: round, fill_view_vector, erase_moving_obstacles_cells_squeezeseg
  * It uses the libsqueeze_seg.cpp and run_squeeze_seg.py
  * */
+int 
+object_class_for_sensor_data_squeezeseg(int number_of_laser_shots, int vertical_resolution, int i, int j)
+{
+	int line = (vertical_resolution - i) * number_of_laser_shots + j;
+	return velodyne_segmented[line];
+	// for (i = vertical_resolution, line = 0; i > 0; i--)
+	// {
+	// 	for (j = 0; j < number_of_laser_shots; j++, line++)
+	// 	{
+	// 		if (j == horizontal && i == vertical)
+	// 		{
+	// 			return velodyne_segmented[line];
+	// 		}
+	// 	}
+	// }
+	// return 0;
+}
+
+int 
+object_class_for_velodyne_message_squeezeseg(int vertical_resolution, carmen_velodyne_partial_scan_message *velodyne_message, int vertical, int horizontal)
+{
+	int line = (vertical_resolution - vertical) * velodyne_message->number_of_32_laser_shots + horizontal;
+	return velodyne_segmented[line];
+}
+
+void
+filter_sensor_data_using_pointcloud(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
+{
+	cout << "filter_sensor_data_using_pointcloud running" << endl;
+	//camera_filter_count[camera_index]++;
+	//int filter_datmo_count = 0;
+	cv::Scalar laser_ray_color;
+	int cloud_index = sensor_data->point_cloud_index;
+	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
+	int image_width = number_of_laser_shots;
+	int image_height = sensor_params->vertical_resolution;
+	/*int image_width  = camera_data[camera_index].width[image_index];
+	int image_height = camera_data[camera_index].height[image_index];
+	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
+	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
+	double cu = camera_params[camera_index].cu_factor * image_width;
+	double cv = camera_params[camera_index].cv_factor * image_height;*/
+	double map_resolution = map_config.resolution;
+	int img_planar_depth = (double) 0.5 * sensor_params->range_max / map_resolution;
+	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
+	//cv::Mat img = camera_image_semantic[camera_index];
+		
+	int thread_id = omp_get_thread_num();
+
+	//vector<image_cartesian> points;
+	//cout << "number of laser shots=" << number_of_laser_shots << endl << "img_planar_depth=" << img_planar_depth << endl;
+	int min_shots = 1024;
+	if (number_of_laser_shots > min_shots)
+	{
+		for (int i = 0; i < number_of_laser_shots; i++)
+		{
+			int scan_index = i * sensor_params->vertical_resolution;
+			double horizontal_angle = carmen_normalize_theta(-sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle);
+
+			//	if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+			//		continue;
+
+			get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
+
+			for (int j = 1; j < sensor_params->vertical_resolution; j++)
+			{
+				double vertical_angle = carmen_normalize_theta(sensor_data->points[cloud_index].sphere_points[scan_index + j].vertical_angle);
+				double range = sensor_data->points[cloud_index].sphere_points[scan_index + j].length;
+
+				tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+				// tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
+
+				// int image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
+				// int image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
+
+				double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][j];
+				double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
+				//cout << "o valor de logodds foi " << prob << endl;
+				if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
+				{
+					//if (sensor_data->intensity[cloud_index][scan_index + i] > 0.0)
+					//{ //Laser ray hit a moving object
+					if (verbose >= 2)
+					{
+						int line = (sensor_params->vertical_resolution - j) * number_of_laser_shots + i;
+						int px = (double)velodyne_p3d.y() / map_resolution + img_planar_depth;
+						int py = (double)img_planar.rows - 1 - velodyne_p3d.x() / map_resolution;
+						
+						//cout << "y: " << velodyne_p3d.y() << " x: " << velodyne_p3d.x() << " line: " << line << " velodyne_segmented: " << velodyne_segmented[line] << endl;
+						// double vertical_angle_1 = carmen_normalize_theta(carmen_degrees_to_radians(sensors_params[VELODYNE].vertical_correction[j]));
+						// double horizontal_angle_1 = carmen_normalize_theta(carmen_degrees_to_radians(-velodyne_seg->partial_scan[i].angle));
+						// double range_1 = (((double)velodyne_seg->partial_scan[i].distance[sensors_params[VELODYNE].ray_order[j]]) / 500.0);
+						// tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+						// if (i==820){
+						// 	cout << "v.h: " << i << " v.v: " << j << " line: " << line << " shots: " << number_of_laser_shots << endl;
+						// 	cout << "px: " << point.x() << " vx: " << velodyne_p3d.x() << " line: " << line << endl;
+						// 	cout << "py: " << point.y() << " vy: " << velodyne_p3d.y() << endl;
+						// }
+						if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
+						{
+							img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 255);
+							if (velodyne_segmented[line] > 0)
+							{
+								//Squeezeseg segmentation
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 255, 0);
+							}
+						}
+						//if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
+						//	img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(cluster_color[i][0], cluster_color[i][1], cluster_color[i][2]);
+					}
+					//}
+				}
+				// int px = (double)velodyne_p3d.y() / map_resolution + img_planar_depth;
+				// int py = (double)img_planar.rows - 1 - velodyne_p3d.x() / map_resolution;
+				// if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
+				// {
+					// int line = (sensor_params->vertical_resolution - j) * number_of_laser_shots + i;
+					/*double vertical_angle_1 = carmen_normalize_theta(carmen_degrees_to_radians(sensors_params[VELODYNE].vertical_correction[j]));
+            		double horizontal_angle_1 = carmen_normalize_theta(carmen_degrees_to_radians(-velodyne_seg->partial_scan[i].angle));
+            		double range_1 = (((double)velodyne_seg->partial_scan[i].distance[sensors_params[VELODYNE].ray_order[j]]) / 500.0);
+					tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+					cout << "px: " << point.x() << " vx: " << velodyne_p3d.x() << " line: " << line << endl;
+					cout << "py: " << point.y() << " vy: " << velodyne_p3d.y() << endl;*/
+					//if (i==820)
+					//	cout << "v.h: " << i << " v.v: " << j << " line: " << line << " shots: " << number_of_laser_shots << endl;
+					
+					// if (velodyne_segmented[line] > 0)
+					// {
+					// 	//Squeezeseg segmentation
+					// 	img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 255, 0);
+					// }
+				// }
+			}
+		}
+		if (verbose >= 2)
+		{
+			//imshow("Image Semantic Segmentation", img);
+			resize(img_planar, img_planar, cv::Size(0, 0), 3.5, 3.5, cv::INTER_NEAREST);
+			imshow("Pointcloud Semantic Map", img_planar);
+			cv::waitKey(1);
+		}
+	}
+}
 
 inline double round(double val)
 {
@@ -504,7 +650,8 @@ fill_view_vector(double horizontal_angle, double vertical_angle, double range, d
 	}
 }
 
-void erase_moving_obstacles_cells_squeezeseg(int sensor_number, carmen_velodyne_partial_scan_message *velodyne_message)
+int *
+erase_moving_obstacles_cells_squeezeseg(int sensor_number, carmen_velodyne_partial_scan_message *velodyne_message)
 {
     double timestamp = velodyne_message->timestamp;
     int line;
@@ -512,7 +659,7 @@ void erase_moving_obstacles_cells_squeezeseg(int sensor_number, carmen_velodyne_
     int vertical_resolution = sensors_params[sensor_number].vertical_resolution;
     int number_of_points = vertical_resolution * shots_to_squeeze;
     double squeeze[number_of_points * 5];
-    int* return_squeeze_array;
+    //int* return_squeeze_array;
     printf("Shots: %d from timestamp %lf\n", velodyne_message->number_of_32_laser_shots, timestamp);
     for (int j = vertical_resolution, line = 0; j > 0; j--)
     {
@@ -523,10 +670,17 @@ void erase_moving_obstacles_cells_squeezeseg(int sensor_number, carmen_velodyne_
             double range = (((double)velodyne_message->partial_scan[i].distance[sensors_params[sensor_number].ray_order[j]]) / 500.0);
             double intensity = ((double)velodyne_message->partial_scan[i].intensity[sensors_params[sensor_number].ray_order[j]]) / 100.0;
             fill_view_vector(horizontal_angle, vertical_angle, range, intensity, &squeeze[0], line);
+			// if (i==820){
+			// 	tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+			// 	cout << "h: " << i << " v: " << j << " line: " << line << " shots: " << shots_to_squeeze << " x: " << point.x() << "y: " << point.y() << endl;
+			// }
         }
     }
-    return_squeeze_array = libsqueeze_seg_process_point_cloud(vertical_resolution, shots_to_squeeze, &squeeze[0], timestamp);
-    
+	velodyne_seg = velodyne_message;
+    velodyne_segmented = libsqueeze_seg_process_point_cloud(vertical_resolution, shots_to_squeeze, &squeeze[0], timestamp);
+	return velodyne_segmented;
+	//return return_squeeze_array;
+    /*
 	printf("Analysis of return matrix for timestamp %lf\n", timestamp);
 	for (int j = vertical_resolution, line = 0; j > 0; j--)
 	{
@@ -538,8 +692,10 @@ void erase_moving_obstacles_cells_squeezeseg(int sensor_number, carmen_velodyne_
 				velodyne_message->partial_scan[i].intensity[sensors_params[sensor_number].ray_order[j]] = 0.0;
 			}
 		}
-	}
+	}*/
 }
+
+
 
 void
 erase_moving_obstacles_cells(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
@@ -1022,6 +1178,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 ////Used in Article
 //	if (filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]) > 0)
 //		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+	//Showing squeezeseg classification
+	filter_sensor_data_using_pointcloud(&sensors_params[sensor_number], &sensors_data[sensor_number]);
 
 ////New - Erase cells occupied by moving obstacles
 	if (check_lidar_camera_max_timestamp_difference(&sensors_data[sensor_number]))
@@ -1205,7 +1363,7 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-	erase_moving_obstacles_cells_squeezeseg(VELODYNE, velodyne_message);
+	velodyne_segmented = erase_moving_obstacles_cells_squeezeseg(VELODYNE, velodyne_message);
 	sensor_msg_count[VELODYNE]++;
 	mapper_velodyne_partial_scan(VELODYNE, velodyne_message);
 }
