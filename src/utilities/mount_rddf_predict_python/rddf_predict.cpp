@@ -92,6 +92,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			 */
 			double dtheta = globalpos.theta - last_rddf_poses.poses[index_aux].theta;
 
+			printf("rddf: %.2f %.2f %.2f\n", last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta);
+
 			SE2 rddf_pose(last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta);
 
 			for (int i = 0; i < last_rddf_poses.number_of_poses; i++)
@@ -125,12 +127,14 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			//		last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta, bumb_latest_timestamp);
 			if(dy>10)
 			{
-				printf("%f\n",dy);
+				printf("%f // %f // %f // %f\n", dy, globalpos.x, globalpos.y, globalpos.theta);
 
 			}
 			save_to_txt(dy, dtheta, spc.k1, spc.k2, spc.k3, image_msg->timestamp);
 
 		}
+	rddf_received = 0;
+	localize_received = 0;
 
 }
 
