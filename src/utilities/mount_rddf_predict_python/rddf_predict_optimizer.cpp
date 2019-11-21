@@ -38,12 +38,11 @@ compute_distance_from_spline_to_rddf(SplineControlParams spc, carmen_ackerman_tr
 	{
 		double spline_x = rddf_poses[i].x;
 		//Foi colocado essa condição pois o erro acontecia quando spline_x<0
-		if(spline_x>0)
+		if(spline_x>0){
 			spline_y = gsl_spline_eval(phi_spline, spline_x, acc);
-//		else
-//			printf("---- %f\n",spline_x);
-		double distance = euclidean_distance_optimizer(rddf_poses[i].x, spline_x, rddf_poses[i].y, spline_y);
-		total_distance += distance*distance;
+			double distance = euclidean_distance_optimizer(rddf_poses[i].x, spline_x, rddf_poses[i].y, spline_y);
+			total_distance += distance*distance;
+		}
 		i++;
 	}
 
