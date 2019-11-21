@@ -28,17 +28,6 @@ struct ObjectiveFunctionParams
 	int xtotal;
 };
 
-struct TrajectoryDimensions
-{
-	double dist;	// Distance traveled in polar coordinates
-	double theta;	// Angle in polar coordinates
-	double d_yaw;	// Displacement in yaw
-	double phi_i;	// Initial steering wheel angle
-	double v_i;		// Initial velocity
-
-//	struct TrajectoryControlParameters control_parameters;
-};
-
 SplineControlParams
 optimize_spline_knots(carmen_behavior_selector_road_profile_message *last_rddf_poses);
 

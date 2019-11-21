@@ -1,7 +1,7 @@
 #include "rddf_predict_optimizer.h"
 
 #define MAX_ERROR 0.00001
-#define XTOTAL 30
+#define XTOTAL 20
 
 void
 get_optimization_params(SplineControlParams *spc, ObjectiveFunctionParams &params, carmen_behavior_selector_road_profile_message *rddf_poses)
