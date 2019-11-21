@@ -9,6 +9,7 @@
 #include <gsl/gsl_multimin.h>
 #include <carmen/carmen.h>
 
+
 struct SplineControlParams
 {
 	bool valid;
@@ -35,7 +36,7 @@ struct TrajectoryDimensions
 	double phi_i;	// Initial steering wheel angle
 	double v_i;		// Initial velocity
 
-	struct TrajectoryControlParameters control_parameters;
+//	struct TrajectoryControlParameters control_parameters;
 };
 
 SplineControlParams

@@ -14,7 +14,7 @@ get_optimization_params(SplineControlParams *spc, ObjectiveFunctionParams &param
 }
 
 double
-euclidean_distance (double x1, double x2, double y1, double y2)
+euclidean_distance_optimizer (double x1, double x2, double y1, double y2)
 {
 	return ( sqrt(pow(x2-x1,2) + pow(y2-y1,2)) );
 }
@@ -37,7 +37,7 @@ compute_distance_from_spline_to_rddf(SplineControlParams spc, carmen_ackerman_tr
 	{
 		double spline_x = rddf_poses[i].x;
 		double spline_y = gsl_spline_eval(phi_spline, spline_x, acc);
-		double distance = euclidean_distance(rddf_poses[i].x, spline_x, rddf_poses[i].y, spline_y);
+		double distance = euclidean_distance_optimizer(rddf_poses[i].x, spline_x, rddf_poses[i].y, spline_y);
 		total_distance += distance*distance;
 		i++;
 	}
