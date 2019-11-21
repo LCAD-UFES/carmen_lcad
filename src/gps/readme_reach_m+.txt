@@ -29,13 +29,13 @@ https://manpages.debian.org/unstable/rtklib/str2str.1.en.html
 https://github.com/tomojitakasu/RTKLIB/issues/99
 
 cd RTKLIB/app/str2str/gcc
-sudo ./str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyUSB0:115200:8:n:1:off
+sudo ./str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyS0:9600:8:n:1:off
 
 ---------------------------------------------------
 Configuring the GPIO serial port on Raspberry 3 
-https://spellfoundry.com/2016/05/29/configuring-gpio-serial-port-raspbian-jessie-including-pi-3-4/
 
 To enable the GPIO serial port, edit config.txt:
+https://spellfoundry.com/2016/05/29/configuring-gpio-serial-port-raspbian-jessie-including-pi-3-4/
 
 $ sudo gedit /boot/config.txt &
 
@@ -43,18 +43,11 @@ and add the line (at the bottom):
 
 enable_uart=1
 
-To change the speed of the serial console, edit /boot/cmdline.txt:
-https://www.raspberrypi.org/forums/viewtopic.php?t=217036
+To disable Linux's use of console UART:
 https://www.raspberrypi.org/documentation/configuration/uart.md
 
-$ sudo gedit /boot/cmdline.txt &
+sudo raspi-config
 
-and change:
-
-console=serial0,115200
-
-to:
-
-console=serial0,9600
+Select option 5, Interfacing options, then option P6, Serial, and select No. Exit raspi-config.
 	
 
