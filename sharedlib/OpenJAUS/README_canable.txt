@@ -9,6 +9,10 @@ sudo ip link set can0 up type can bitrate 500000
 
 = Ativar para uso (firmware velho; ver acima)
 sudo slcand -o -c -s6 /dev/ttyACM0 can0
+
+Hitech ecoTech can funciona a 250kbps usar -s5 (Veja a tabela no final do arquivo caso o bitrate seja diferente de 250 ou 500)
+	sudo slcand -o -c -s5 /dev/ttyACM0 can0
+
 sudo ifconfig can0 up
 
 = Teste
@@ -51,6 +55,23 @@ $ canplayer vcan0=can1 -v -I candump-2015-03-20_123001.log
 https://sgframework.readthedocs.io/en/latest/cantutorial.html
 
 
+###Mensagens Cambio SARA Black - Sara branca muda para 00 01 02 respectivamente
+               __
+ 10F8109A [8]  04 00 00 00 00 00 00 5A - Neutro
+               __
+ 10F8109A [8]  05 00 00 00 00 00 00 5A - Drive
+               __
+ 10F8109A [8]  06 00 00 00 00 00 00 5A - Rear
+
+###Mensagens Velocidade SARA - mph
+                  __ __
+ 10F8109A [8]  05 00 00 00 00 00 00 5A - Drive - Velocity
+Ex: zero para velocidade
+                    __ __
+ 10F8109A   [8]  06 00 00 00 00 00 00 5A - Rear - Velocity
+                    __ __ 
+ 10F8109A   [8]  06 03 00 00 00 00 00 5A - Rear - Velocity
+
 
 ### Mensagens publicadas direcao FOX
 
@@ -92,4 +113,13 @@ https://sgframework.readthedocs.io/en/latest/cantutorial.html
   can0  082   [8]  AE 08 16 28 7F 80 40 00 - 180 graus a esquerda
 
 
-
+TABELA BITRATE COMANDO slcand
+s0 	10 Kbit/s
+s1 	20 Kbit/s
+s2 	50 Kbit/s
+s3 	100 Kbit/s
+s4 	125 Kbit/s
+s5 	250 Kbit/s
+s6 	500 Kbit/s
+s7 	800 Kbit/s
+s8 	1000 Kbit/s 
