@@ -21,6 +21,8 @@ char save_buffer[500];
 char txt_name2[150];
 char save_buffer2[500];
 
+double y_check = -1000.0;
+
 double
 euclidean_distance (double x1, double x2, double y1, double y2)
 {
@@ -87,14 +89,18 @@ save_for_plotting(double k1, double k2, double k3)
 	phi_spline = gsl_spline_alloc(type, 4);
 	gsl_spline_init(phi_spline, knots_x, knots_y, 4);
 
-	for(int i = 0; (i<last_rddf_poses.number_of_poses) && (last_rddf_poses.poses[i].x < 30.0); i++)
+	if ((last_rddf_poses.poses[10].y != y_check) || (y_check == -1000.0))
 	{
-		if (last_rddf_poses.poses[i].x >= 0.0)
+		y_check = last_rddf_poses.poses[10].y;
+		for(int i = 0; (i<last_rddf_poses.number_of_poses) && (last_rddf_poses.poses[i].x < 30.0); i++)
 		{
-		double spline_y = gsl_spline_eval(phi_spline, last_rddf_poses.poses[i].x, acc);
-		snprintf(save_buffer2, sizeof(save_buffer2),"%f %f %f", last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, spline_y);
-		//snprintf(save_buffer, sizeof(save_buffer),"%f %f %f %f#%f %f %f#%f", robot_x, robot_y, robot_theta, robot_timestamp, rddf_x, rddf_y, rddf_theta, bumb_image);
-		fprintf(file_log2,"%s\n", save_buffer2);
+			if (last_rddf_poses.poses[i].x >= 0.0)
+			{
+				double spline_y = gsl_spline_eval(phi_spline, last_rddf_poses.poses[i].x, acc);
+				snprintf(save_buffer2, sizeof(save_buffer2),"%f %f %f", last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, spline_y);
+				//snprintf(save_buffer, sizeof(save_buffer),"%f %f %f %f#%f %f %f#%f", robot_x, robot_y, robot_theta, robot_timestamp, rddf_x, rddf_y, rddf_theta, bumb_image);
+				fprintf(file_log2,"%s\n", save_buffer2);
+			}
 		}
 	}
 
@@ -140,7 +146,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			 */
 			double dtheta = globalpos.theta - last_rddf_poses.poses[index_aux].theta;
 
-			printf("rddf: %.2f %.2f %.2f\n", last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta);
+//			printf("rddf: %.2f %.2f %.2f\n", last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta);
 
 			SE2 rddf_pose(last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta);
 
@@ -179,7 +185,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 			}
 			save_to_txt(dy, dtheta, spc.k1, spc.k2, spc.k3, image_msg->timestamp);
-//			save_for_plotting(spc.k1, spc.k2, spc.k3);
+			save_for_plotting(spc.k1, spc.k2, spc.k3);
 
 		}
 	rddf_received = 0;
