@@ -23,6 +23,7 @@ using namespace std;
 #include <carmen/voice_interface_interface.h>
 #include <carmen/road_mapper.h>
 #include <carmen/grid_mapping.h>
+#include "rddf_predict_optimizer.h"
 
 #include "rddf_interface.h"
 #include "rddf_messages.h"
@@ -79,6 +80,7 @@ static carmen_point_t carmen_rddf_nearest_waypoint_to_end_point;
 
 static carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead = NULL;
 static carmen_ackerman_traj_point_t *carmen_rddf_poses_back = NULL;
+static carmen_ackerman_traj_point_t *carmen_rddf_poses_from_spline = NULL;
 static int carmen_rddf_num_poses_ahead = 0;
 static int carmen_rddf_num_poses_back = 0;
 static int *annotations_codes;
@@ -107,6 +109,8 @@ deque<carmen_rddf_dynamic_annotation_message> dynamic_annotation_messages;
 carmen_moving_objects_point_clouds_message *moving_objects = NULL;
 
 bool simulated_pedestrian_on = false;
+
+carmen_behavior_selector_road_profile_message fake_rddf_message;
 
 
 static void
@@ -838,7 +842,7 @@ calculate_theta_and_phi(carmen_ackerman_traj_point_t *poses_ahead, int num_poses
 
 //Function to be minimized summation[x(i+1)-2x(i)+x(i-1)]
 double
-my_f(const gsl_vector *v, void *params)
+my_f2(const gsl_vector *v, void *params)
 {
 	list<carmen_ackerman_traj_point_t> *p = (list<carmen_ackerman_traj_point_t> *) params;
 	int i, j, size = (p->size() - 2);           //we have to discount the first and last point that wont be optimized
@@ -886,7 +890,7 @@ my_f(const gsl_vector *v, void *params)
 //The gradient of f, df = (df/dx, df/dy)
 //derivative in each point [2x(i-2)-8x(i-1)+12x(i)-8x(i+1)+2x(i+2)]
 void
-my_df (const gsl_vector *v, void *params, gsl_vector *df)
+my_df2 (const gsl_vector *v, void *params, gsl_vector *df)
 {
 	list<carmen_ackerman_traj_point_t> *p = (list<carmen_ackerman_traj_point_t> *) params;
 	int i, j, size =(p->size() - 2);
@@ -960,10 +964,10 @@ my_df (const gsl_vector *v, void *params, gsl_vector *df)
 
 // Compute both f and df together
 void
-my_fdf (const gsl_vector *x, void *params, double *f, gsl_vector *df)
+my_fdf2 (const gsl_vector *x, void *params, double *f, gsl_vector *df)
 {
-	*f = my_f(x, params);
-	my_df(x, params, df);
+	*f = my_f2(x, params);
+	my_df2(x, params, df);
 }
 
 
@@ -994,9 +998,9 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 	size = path.size();
 
 	my_func.n = (2 * size) - 4;
-	my_func.f = my_f;
-	my_func.df = my_df;
-	my_func.fdf = my_fdf;
+	my_func.f = my_f2;
+	my_func.df = my_df2;
+	my_func.fdf = my_fdf2;
 	my_func.params = &path;
 
 	v = gsl_vector_alloc ((2 * size) - 4);
@@ -1708,10 +1712,78 @@ carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
 		clear_annotations();
 		set_annotations(robot_pose);
 
+		// trecho do spline
+		double dtheta = robot_pose.theta - carmen_rddf_poses_ahead[0].theta;
+
+		SE2 rddf_pose(carmen_rddf_poses_ahead[0].x, carmen_rddf_poses_ahead[0].y, carmen_rddf_poses_ahead[0].theta);
+
+		for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
+		{
+			SE2 waypoint_in_world_reference(carmen_rddf_poses_ahead[i].x, carmen_rddf_poses_ahead[i].y, carmen_rddf_poses_ahead[i].theta);
+			SE2 waypoint_in_rddf_reference = rddf_pose.inverse() * waypoint_in_world_reference;
+			carmen_rddf_poses_from_spline[i].x = waypoint_in_rddf_reference[0];
+			carmen_rddf_poses_from_spline[i].y = waypoint_in_rddf_reference[1];
+			carmen_rddf_poses_from_spline[i].theta = waypoint_in_rddf_reference[2];
+		}
+
+		SE2 car_in_world_reference(robot_pose.x, robot_pose.y, robot_pose.theta);
+		SE2 car_in_rddf_reference = rddf_pose.inverse() * car_in_world_reference;
+		double dy = car_in_rddf_reference[1];
+
+		fake_rddf_message.poses = carmen_rddf_poses_ahead;
+		fake_rddf_message.poses_back = carmen_rddf_poses_back;
+		fake_rddf_message.number_of_poses = carmen_rddf_num_poses_ahead;
+		fake_rddf_message.number_of_poses_back = carmen_rddf_num_poses_back;
+		fake_rddf_message.annotations = NULL;
+		fake_rddf_message.timestamp = 0.0;
+		fake_rddf_message.host = NULL;
+
+		SplineControlParams spc = optimize_spline_knots(&fake_rddf_message);
+
+		gsl_interp_accel *acc;
+		gsl_spline *phi_spline;
+		double knots_x[4] = {0.0,  30/ 3.0, 2 * 30 / 3.0, 30.0};
+		double knots_y[4] = {0.0, spc.k1, spc.k2, spc.k3};
+		acc = gsl_interp_accel_alloc();
+		const gsl_interp_type *type = gsl_interp_cspline;
+		phi_spline = gsl_spline_alloc(type, 4);
+		gsl_spline_init(phi_spline, knots_x, knots_y, 4);
+
+
+		double half_points = 0.0;
+		double acresc_points = 0.5;
+		double store_points[int(30/acresc_points)+1];
+		double store_thetas[int(30/acresc_points)+1];
+		double points_dx = 0.1;
+		int indice_points = 0;
+		//for(int i = 0; i < 30*2 ; i++)
+		while( half_points <= 30.0 )
+		{
+			double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
+			double spline_y2 = gsl_spline_eval(phi_spline, half_points + points_dx, acc);
+			store_points[indice_points] = spline_y;
+			store_thetas[indice_points] = atan2(spline_y2 - spline_y, points_dx);
+			indice_points++;
+			half_points += acresc_points;
+		}
+
+		for (int i=0; i<indice_points; i++)
+		{
+			SE2 pose_in_rddf_reference(i*0.5, store_points[i], store_thetas[i]);
+			SE2 pose_in_world_reference = rddf_pose * pose_in_rddf_reference;
+			carmen_rddf_poses_from_spline[i].x = pose_in_world_reference[0];
+			carmen_rddf_poses_from_spline[i].y = pose_in_world_reference[1];
+			carmen_rddf_poses_from_spline[i].theta = pose_in_world_reference[2];
+			carmen_rddf_poses_from_spline[i].v = carmen_rddf_poses_ahead[i].v;
+			carmen_rddf_poses_from_spline[i].phi = carmen_rddf_poses_ahead[i].phi;
+		}
+
+		// trecho do spline (fim)
+
 		carmen_rddf_publish_road_profile_message(
-			carmen_rddf_poses_ahead,
+			carmen_rddf_poses_from_spline,
 			carmen_rddf_poses_back,
-			carmen_rddf_num_poses_ahead,
+			indice_points,
 			carmen_rddf_num_poses_back,
 			annotations,
 			annotations_codes);
@@ -2112,6 +2184,7 @@ void
 carmen_rddf_play_initialize(void)
 {
 	carmen_rddf_poses_ahead = (carmen_ackerman_traj_point_t *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(carmen_ackerman_traj_point_t));
+	carmen_rddf_poses_from_spline = (carmen_ackerman_traj_point_t *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(carmen_ackerman_traj_point_t));
 	carmen_rddf_poses_back = (carmen_ackerman_traj_point_t *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(carmen_ackerman_traj_point_t));
 	annotations = (int *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(int));
 	annotations_codes = (int *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(int));
