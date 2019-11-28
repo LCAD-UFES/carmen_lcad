@@ -1764,26 +1764,30 @@ carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
 				double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
 				double spline_y2 = gsl_spline_eval(phi_spline, half_points - points_dx, acc);
 				store_points[indice_points] = spline_y;
-				store_thetas[indice_points] = atan2(spline_y - spline_y2, points_dx);
+				store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y - spline_y2, points_dx));
 			}
 			else
 			{
 				double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
 				double spline_y2 = gsl_spline_eval(phi_spline, half_points + points_dx, acc);
 				store_points[indice_points] = spline_y;
-				store_thetas[indice_points] = atan2(spline_y2 - spline_y, points_dx);
+				store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y2 - spline_y, points_dx));
 			}
 			indice_points++;
 			half_points += acresc_points;
 		}
 
+		double ref_theta = -1 * (robot_pose.theta - dtheta);
+		double ref_x = -1 * sqrt(robot_pose.x * robot_pose.x + robot_pose.y * robot_pose.y) * cos(atan2(robot_pose.y, robot_pose.x) + ref_theta);
+		double ref_y = -1 *(sqrt(robot_pose.x * robot_pose.x + robot_pose.y * robot_pose.y) * sin(atan2(robot_pose.y, robot_pose.x) + ref_theta)) + dy;
+		SE2 ref_pose(ref_x, ref_y, ref_theta);
 		for (int i=0; i<indice_points; i++)
 		{
 			SE2 pose_in_rddf_reference(i*0.5, store_points[i], store_thetas[i]);
-			SE2 pose_in_world_reference = rddf_pose * pose_in_rddf_reference;
+			SE2 pose_in_world_reference = ref_pose.inverse() * pose_in_rddf_reference;
 			carmen_rddf_poses_from_spline[i].x = pose_in_world_reference[0];
 			carmen_rddf_poses_from_spline[i].y = pose_in_world_reference[1];
-			carmen_rddf_poses_from_spline[i].theta = pose_in_world_reference[2];
+			carmen_rddf_poses_from_spline[i].theta = carmen_normalize_theta(pose_in_world_reference[2]);
 			carmen_rddf_poses_from_spline[i].v = carmen_rddf_poses_ahead[i].v;
 			carmen_rddf_poses_from_spline[i].phi = carmen_rddf_poses_ahead[i].phi;
 		}
@@ -1792,9 +1796,9 @@ carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
 
 		carmen_rddf_publish_road_profile_message(
 			carmen_rddf_poses_from_spline,
-			carmen_rddf_poses_back,
+			NULL,
 			indice_points,
-			carmen_rddf_num_poses_back,
+			0,
 			annotations,
 			annotations_codes);
 
