@@ -1713,7 +1713,6 @@ carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
 		set_annotations(robot_pose);
 
 		// trecho do spline
-		printf("aqui1\n");
 		double dtheta = robot_pose.theta - carmen_rddf_poses_ahead[0].theta;
 
 		SE2 rddf_pose(carmen_rddf_poses_ahead[0].x, carmen_rddf_poses_ahead[0].y, carmen_rddf_poses_ahead[0].theta);
@@ -1731,8 +1730,7 @@ carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
 		SE2 car_in_rddf_reference = rddf_pose.inverse() * car_in_world_reference;
 		double dy = car_in_rddf_reference[1];
 
-		printf("aqui2\n");
-		fake_rddf_message.poses = carmen_rddf_poses_ahead;
+		fake_rddf_message.poses = carmen_rddf_poses_from_spline;
 		fake_rddf_message.poses_back = carmen_rddf_poses_back;
 		fake_rddf_message.number_of_poses = carmen_rddf_num_poses_ahead;
 		fake_rddf_message.number_of_poses_back = carmen_rddf_num_poses_back;
@@ -2099,11 +2097,8 @@ carmen_rddf_play_subscribe_messages()
 			CARMEN_SUBSCRIBE_LATEST);
 
     carmen_traffic_light_subscribe(traffic_lights_camera, NULL, (carmen_handler_t) carmen_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
-    printf("aqui2\n");
     carmen_rddf_subscribe_dynamic_annotation_message(NULL, (carmen_handler_t) carmen_rddf_dynamic_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
-    printf("aqui3\n");
 	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	printf("aqui4\n");
 	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
@@ -2248,17 +2243,12 @@ main(int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	carmen_rddf_play_get_parameters(argc, argv);
-	printf("aqui0\n");
 	carmen_rddf_play_initialize();
-	printf("aqui1\n");
 	carmen_rddf_define_messages();
 	carmen_rddf_play_subscribe_messages();
-	printf("aqui5\n");
 	if (!use_road_map)
 		carmen_rddf_play_load_index(carmen_rddf_filename);
-	printf("aqui6\n");
 	carmen_rddf_play_load_annotation_file();
-	printf("aqui7\n");
 	signal (SIGINT, carmen_rddf_play_shutdown_module);
 	carmen_ipc_dispatch();
 
