@@ -229,7 +229,7 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     shape_to_squeeze = shape_to_complete + mc.AZIMUTH_LEVEL
     #print ("shape_last_part=" + str(shape_last_part) + " shape_complete=" + str(shape_to_complete) + " shape_to_squeeze=" + str(shape_to_squeeze))
     lidarp2 = lidar[:,:shape_to_complete,:]
-    lidar2 = np.hstack((lidarp1, lidarp2))
+    lidar2 = np.concatenate((lidarp1, lidarp2),axis=1)
     '''Has to do something between 212 to 271, so do lidar3'''
     lidar3 = lidar[:,shape_to_complete:shape_to_squeeze,:]
     
@@ -249,18 +249,11 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     save_lidar_image(img_lidar1, timestamp, tag)
     #save_lidar_image(img_lidar2, timestamp, "_r")
     
-    #pred_cls = np.hstack((pred_cls_lidar2[0][:,shape_to_complete:],pred_cls_lidar3[0][:,shape_to_complete:271],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:shape_to_complete]))
+    #pred_cls = np.concatenate((pred_cls_lidar2[0][:,shape_last_part:],pred_cls_lidar3[0][:,shape_to_complete:271],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:shape_last_part]), axis=1)
     s = (mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL)
     lidar_test = np.zeros(s, dtype=np.int64)
     pred_cls = np.concatenate((lidar_test[:,:271],pred_cls_lidar1[0], lidar_test[:,:shape_last_part]), axis=1)
     print("pred_cls.shape={}".format(
-        pred_cls.shape))
-    #print("lidar_test.shape={}".format(
-    #    lidar_test[:,:271].shape))
-    for y in range(pred_cls.shape[0]):
-        for x in range(pred_cls.shape[1]):
-            if pred_cls[y][x] > 1:
-                print("[", y, "][", x, "]=", pred_cls[y][x])
-     
+        pred_cls.shape)) 
     return pred_cls
 
