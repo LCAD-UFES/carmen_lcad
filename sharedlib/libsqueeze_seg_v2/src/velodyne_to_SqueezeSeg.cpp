@@ -64,7 +64,7 @@ void write_pointcloud_txt(carmen_velodyne_partial_scan_message *velodyne_message
     int vertical_resolution = 32;
     int number_of_points = vertical_resolution * shots_to_squeeze;
     double squeeze[number_of_points * 5];
-    int* return_squeeze_array;
+    long long int* return_squeeze_array;
     cout << velodyne_message->number_of_32_laser_shots << " numero de capturas\n";
     for (j = vertical_resolution, line = 0; j > 0; j--)
     {

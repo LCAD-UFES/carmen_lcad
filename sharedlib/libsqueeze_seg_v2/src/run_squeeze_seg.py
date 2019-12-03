@@ -238,20 +238,29 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     pred_cls_lidar3 = run_model(lidar3)
      
     img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
-    img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
+    #img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
     #img_lidar3 = generate_lidar_images(lidar3,pred_cls_lidar3)
      
     #img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=0)
      
     cv2.imshow("Front View", img_lidar1)
-    cv2.imshow("Rear View", img_lidar2)
+    #cv2.imshow("Rear View", img_lidar2)
     cv2.waitKey(100)
     save_lidar_image(img_lidar1, timestamp, tag)
-    save_lidar_image(img_lidar2, timestamp, "_r")
+    #save_lidar_image(img_lidar2, timestamp, "_r")
     
-    pred_cls = np.hstack((pred_cls_lidar2[0][:,shape_to_complete:],pred_cls_lidar3[0][:,shape_to_complete:271],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:shape_to_complete]))
-   # print("pred_cls.shape={}".format(
-   #     pred_cls.shape))
+    #pred_cls = np.hstack((pred_cls_lidar2[0][:,shape_to_complete:],pred_cls_lidar3[0][:,shape_to_complete:271],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:shape_to_complete]))
+    s = (mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL)
+    lidar_test = np.zeros(s, dtype=np.int64)
+    pred_cls = np.concatenate((lidar_test[:,:271],pred_cls_lidar1[0], lidar_test[:,:shape_last_part]), axis=1)
+    print("pred_cls.shape={}".format(
+        pred_cls.shape))
+    #print("lidar_test.shape={}".format(
+    #    lidar_test[:,:271].shape))
+    for y in range(pred_cls.shape[0]):
+        for x in range(pred_cls.shape[1]):
+            if pred_cls[y][x] > 1:
+                print("[", y, "][", x, "]=", pred_cls[y][x])
      
     return pred_cls
 
