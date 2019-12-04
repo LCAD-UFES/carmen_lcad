@@ -1796,9 +1796,9 @@ carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
 
 		carmen_rddf_publish_road_profile_message(
 			carmen_rddf_poses_from_spline,
-			NULL,
+			carmen_rddf_poses_back,
 			indice_points,
-			0,
+			carmen_rddf_num_poses_back,
 			annotations,
 			annotations_codes);
 
