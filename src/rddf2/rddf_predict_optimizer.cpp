@@ -190,7 +190,7 @@ optimize_spline_knots(carmen_behavior_selector_road_profile_message *last_rddf_p
 
 	SplineControlParams spline_params_result = fill_in_spline_params(s->x, &params);
 
-	printf("iter = %d\n", iter);
+//	printf("iter = %d\n", iter);
 
 	if ((s->f > MAX_ERROR) && (iter > 50))
 	{
