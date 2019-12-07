@@ -66,6 +66,7 @@ JausByte g_horn_status_command = 0;
 JausByte g_headlights_status_command = 0;
 int g_gear_command = 0;
 int g_engine_command = 1; // Engine On
+int g_windshield_wipers_command = 0;
 
 int g_num_errors = 0;
 int *g_error = NULL;
@@ -195,6 +196,7 @@ print_interface()
 	mvprintw(row++, col, "   5 - Horn (On/Off)");
 	mvprintw(row++, col, "   6, 7, 8 - Headlights: Off, Parking lights, On");
 	mvprintw(row++, col, "   9, 0 - (if Headlight=On) High beams (On/Off), Fog lights (On/Off)");
+	mvprintw(row++, col, "   p - Windshield Wipers (Off, Slow, Fast)");
 	mvprintw(row++, col, " ESC - Exit XGV_CCU");
 	
 	row++;
@@ -494,6 +496,13 @@ user_interface(OjCmpt XGV_CCU)
 					g_brakes_command -= factor * (MAX_BRAKES - MIN_BRAKES) / 200.0;
 					if (g_brakes_command < MIN_BRAKES)
 						g_brakes_command = MIN_BRAKES;
+					break;
+
+				case 'p':
+					g_windshield_wipers_command++;
+					if (g_windshield_wipers_command > 2)
+						g_windshield_wipers_command = 0;
+					send_set_signals_message(XGV_CCU);
 					break;
 
 				default:
