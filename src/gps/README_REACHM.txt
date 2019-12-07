@@ -19,15 +19,13 @@ Downloading and installing RTKLIB
 https://github.com/tomojitakasu/RTKLIB/tree/rtklib_2.4.3
 
 git clone https://github.com/tomojitakasu/RTKLIB.git
-cd RTKLIB/app
-source ./makeall.sh
+source ~/RTKLIB/app/makeall.sh
 
 Running str2str
 https://manpages.debian.org/unstable/rtklib/str2str.1.en.html
 https://github.com/tomojitakasu/RTKLIB/issues/99
 
-cd RTKLIB/app/str2str/gcc
-sudo ./str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyS0:9600:8:n:1:off
+sudo ~/RTKLIB/app/str2str/gcc/str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyS0:9600:8:n:1:off
 
 ---------------------------------------------------
 Configuring the GPIO serial port on Raspberry 3 
