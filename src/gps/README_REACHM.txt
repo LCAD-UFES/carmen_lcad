@@ -47,4 +47,22 @@ sudo raspi-config
 
 Select option 5, Interfacing options, then option P6, Serial, and select No. Exit raspi-config.
 	
+---------------------------------------------------
+Compiling and Running Reach M+ Module on Raspberry
 
+~/carmen_lcad/src/xsens_MTi-G/make_pi
+
+~/carmen_lcad/src/gps/make
+
+On Raspberry:
+
+sudo ~/RTKLIB/app/str2str/gcc/str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyS0:115200:8:n:1:off
+
+sudo ~/carmen_lcad/src/gps/gps_reachm_server /dev/ttyS0 115200 1 3457
+
+On PC:
+
+/gps_reachm_client XXX.X.X.X 3457 
+
+
+--------------------------------------------------
