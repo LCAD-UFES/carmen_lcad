@@ -240,11 +240,6 @@ print_interface()
 	else if (g_XGV_turn_signal == 3)
 		strcpy(temp, "Turn Signal = Flashes");
 	
-	if (g_XGV_horn_status == 0)
-		strcat(temp, ", Horn = Off");
-	else if (g_XGV_horn_status == 1)
-		strcat(temp, ", Horn = On");
-	
 	if ((g_XGV_headlights_status & 7) == 0)
 		strcat(temp, ", Headlights = Off");
 	else if ((g_XGV_headlights_status & 7) == 1)
@@ -261,6 +256,38 @@ print_interface()
 	sprintf(temp + strlen(temp), "%d", g_XGV_component_status);
 	mvprintw(row++, col, "%s", temp);
 	
+	if (g_XGV_horn_status & 0x1)
+		strcpy(temp, "Horn = On");
+	else
+		strcpy(temp, "Horn = Off");
+
+	if (((g_XGV_horn_status >> 1) & 0x3) == 0)
+		strcat(temp, ", Windshield Wipers = Off");
+	else if (((g_XGV_horn_status >> 1) & 0x3) == 1)
+		strcat(temp, ", Windshield Wipers = Slow");
+	else if (((g_XGV_horn_status >> 1) & 0x3) == 2)
+		strcat(temp, ", Windshield Wipers = Fast");
+	mvprintw(row++, col, "%s", temp);
+
+	if ((g_XGV_horn_status >> 4) & 0x1)
+		strcpy(temp, "Doors: Front Right = Open, ");
+	else
+		strcpy(temp, "Doors: Front Right = Close,");
+	if ((g_XGV_horn_status >> 5) & 0x1)
+		strcat(temp, " Front Left = Open, ");
+	else
+		strcat(temp, " Front Left = Close,");
+	if ((g_XGV_horn_status >> 6) & 0x1)
+		strcat(temp, " Back Right = Open, ");
+	else
+		strcat(temp, " Back Right = Close,");
+	if ((g_XGV_horn_status >> 7) & 0x1)
+		strcat(temp, " Back Left = Open");
+	else
+		strcat(temp, " Back Left = Close");
+	mvprintw(row++, col, "%s", temp);
+	row++;
+
 	get_errors_descriptions();
 	row++;
 	if (g_XGV_num_errors == 0)
