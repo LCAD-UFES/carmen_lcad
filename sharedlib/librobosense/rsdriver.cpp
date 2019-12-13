@@ -21,14 +21,14 @@ namespace rslidar_driver
   static const unsigned int POINTS_ONE_CHANNEL_PER_SECOND = 18000;
   static const unsigned int BLOCKS_ONE_CHANNEL_PER_PKT = 12;
 //  carmen_velodyne_variable_scan_message &variable_scan, int num_lasers, int velodyne_max_laser_shots_per_revolution, int velodyne_udp_port, int velodyne_gps_udp_port
-rslidarDriver::rslidarDriver(carmen_velodyne_variable_scan_message &variable_scan, int num_lasers, int velodyne_max_laser_shots_per_revolution, int velodyne_udp_port, int velodyne_gps_udp_port, rslidar_param private_nh)
+rslidarDriver::rslidarDriver(carmen_velodyne_variable_scan_message &variable_scan, int num_lasers, int velodyne_max_laser_shots_per_revolution, int velodyne_udp_port, int velodyne_gps_udp_port, rslidar_param &private_nh)
 {
 
 	//scan.partial_scan = (carmen_velodyne_32_laser_shot *) malloc (velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION * sizeof(carmen_velodyne_32_laser_shot));
 	if (num_lasers == 16)
 	{
-		variable_scan.partial_scan = (carmen_velodyne_shot*)malloc(2 * velodyne_max_laser_shots_per_revolution * sizeof(carmen_velodyne_shot));
-		for (int i=0; i<(2 * velodyne_max_laser_shots_per_revolution); i++)
+		variable_scan.partial_scan = (carmen_velodyne_shot*)malloc(velodyne_max_laser_shots_per_revolution * sizeof(carmen_velodyne_shot));
+		for (int i=0; i<(velodyne_max_laser_shots_per_revolution); i++)
 		{
 			variable_scan.partial_scan[i].distance = (unsigned short*)malloc(num_lasers*sizeof(unsigned short));
 			variable_scan.partial_scan[i].intensity = (unsigned char*)malloc(num_lasers*sizeof(unsigned char));
@@ -43,14 +43,17 @@ rslidarDriver::rslidarDriver(carmen_velodyne_variable_scan_message &variable_sca
 			variable_scan.partial_scan[i].intensity = (unsigned char*)malloc(num_lasers*sizeof(unsigned char));
 		}
 	}
-
+	sleep(2.0);
   skip_num_ = 0;
+  //dual or
+  return_mode_ = 1;
+  //resolution meters 0.5 or 1.0
+  dis_resolution_mode_ = 0;
   // use private node handle to get parameters
   // get model name, validate string, determine packet rate
   config_.model = private_nh.model;
   double packet_rate;  // packet frequency (Hz)
   std::string model_full_name;
-
   // product model
   if (config_.model == "RS16")
   {
@@ -90,14 +93,10 @@ rslidarDriver::rslidarDriver(carmen_velodyne_variable_scan_message &variable_sca
   // (fractions rounded up)
 
   int npackets = (int)ceil(packet_rate / frequency);
-  if(private_nh.npackets == 0)
-	  config_.npackets = npackets;
-  else
-	  private_nh.npackets = config_.npackets;
+  config_.npackets = npackets;
+  private_nh.npackets = config_.npackets;
 
   printf("[driver] publishing %d packets per scan\n", config_.npackets);
-
-  std::string dump_file;
 
 //default is MSOP_DATA_PORT_NUMBER
   int msop_udp_port = private_nh.msop_port;
@@ -107,10 +106,8 @@ rslidarDriver::rslidarDriver(carmen_velodyne_variable_scan_message &variable_sca
 
   //default is -0.01
   double cut_angle;
-  if(private_nh.cut_angle == 0.0)
-	  cut_angle = -0.01;
-  else
-	  cut_angle = private_nh.cut_angle;
+
+  cut_angle = private_nh.cut_angle;
   if (cut_angle < 0.0)
     printf("[driver] Cut at specific angle feature deactivated. \n");
   else if (cut_angle < 360)
@@ -154,7 +151,7 @@ rslidarDriver::rslidarDriver(carmen_velodyne_variable_scan_message &variable_sca
  *  @param pc shared pointer to point cloud (points are appended)
  */
 void
-rslidarDriver::unpack(const rslidarPacket& pkt, carmen_velodyne_variable_scan_message *variable_scan)
+rslidarDriver::unpack(int *shot_num, const rslidarPacket& pkt, carmen_velodyne_variable_scan_message *variable_scan)
 {
   // check pkt header
   if (pkt.data[0] != 0x55 || pkt.data[1] != 0xAA || pkt.data[2] != 0x05 || pkt.data[3] != 0x0A)
@@ -167,7 +164,6 @@ rslidarDriver::unpack(const rslidarPacket& pkt, carmen_velodyne_variable_scan_me
 //    unpack_RS32(pkt, pointcloud);
 //    return;
 //  }
-
   float azimuth;  // 0.01 dgree
   float intensity;
   float azimuth_diff;
@@ -198,6 +194,7 @@ rslidarDriver::unpack(const rslidarPacket& pkt, carmen_velodyne_variable_scan_me
 
     for (int firing = 0, k = 0; firing < RS16_FIRINGS_PER_BLOCK; firing++)  // 2
     {
+
       for (int dsr = 0; dsr < RS16_SCANS_PER_FIRING; dsr++, k += RAW_SCAN_SIZE)  // 16   3
       {
         if (0 == return_mode_)
@@ -223,7 +220,7 @@ rslidarDriver::unpack(const rslidarPacket& pkt, carmen_velodyne_variable_scan_me
 //        else
 //          intensity = calibrateIntensity_old(intensity, dsr, distance);
 
-        float distance2 = 0.0;//pixelToDistance(distance, dsr);
+        float distance2 = distance;//pixelToDistance(distance, dsr);
         if (dis_resolution_mode_ == 0)  // distance resolution is 0.5cm
         {
           distance2 = distance2 * DISTANCE_RESOLUTION_NEW;
@@ -235,7 +232,14 @@ rslidarDriver::unpack(const rslidarPacket& pkt, carmen_velodyne_variable_scan_me
 
         int arg_horiz = (azimuth_corrected + 36000) % 36000;
         int arg_horiz_orginal = arg_horiz;
+        //angulo da mensagem tem que ser o azimuth para o primeiro firing e com a correcao para o segundo firing
+        //talvez tem que dividir por 100 (aqui logo)
+        variable_scan->partial_scan[*shot_num].angle = (azimuth/100.0f);
+        variable_scan->partial_scan[*shot_num].shot_size = RS16_SCANS_PER_FIRING;
+        variable_scan->partial_scan[*shot_num].distance[dsr] = (unsigned short) distance2;
+        variable_scan->partial_scan[*shot_num].intensity[dsr] = (unsigned char) intensity;
       }
+      (*shot_num)++;
     }
   }
 }
@@ -245,10 +249,12 @@ rslidarDriver::unpack(const rslidarPacket& pkt, carmen_velodyne_variable_scan_me
  *
  *  @returns true unless end of file reached
  */
-bool rslidarDriver::poll(carmen_velodyne_variable_scan_message &variable_scan, int num_lasers, int velodyne_max_laser_shots_per_revolution, int velodyne_udp_port, int velodyne_gps_udp_port, rslidar_param private_nh)
+bool rslidarDriver::poll(carmen_velodyne_variable_scan_message &variable_scan, int num_lasers, int velodyne_max_laser_shots_per_revolution, int velodyne_udp_port, int velodyne_gps_udp_port, rslidar_param &private_nh)
 {  // Allocate a new shared pointer for zero-copy sharing with other nodelets.
-	rslidarScan_t *scan;
+	rslidarScan_t *scan = (rslidarScan_t *) calloc (1, sizeof(rslidarScan_t));
 	scan->packets = (rslidarPacket*)malloc(config_.npackets * sizeof(rslidarPacket));
+//	memset(scan)
+
 
   // Since the rslidar delivers data at a very high rate, keep
   // reading and publishing scans as fast as possible.
@@ -310,10 +316,10 @@ bool rslidarDriver::poll(carmen_velodyne_variable_scan_message &variable_scan, i
 
       printf("[driver] update npackets. rpm: %lf packets: %d", config_.rpm, config_.npackets);
     }
-    if(scan->packets != NULL)
-    	scan->packets = (rslidarPacket *) realloc(scan->packets, config_.npackets*sizeof(rslidarPacket));
-    else
-    	scan->packets = (rslidarPacket*)malloc(config_.npackets * sizeof(rslidarPacket));
+//    if(config_.npackets != private_nh.npackets)
+//    	scan->packets = (rslidarPacket *)realloc(scan->packets, config_.npackets*sizeof(rslidarPacket));
+//    else
+//    	scan->packets = (rslidarPacket*)malloc(config_.npackets * sizeof(rslidarPacket));
     // use in standard behaviour only
     while (skip_num_)
     {
@@ -342,28 +348,14 @@ bool rslidarDriver::poll(carmen_velodyne_variable_scan_message &variable_scan, i
       }
     }
 
-//    if (time_synchronization_)
-//    {
-//      sensor_msgs::TimeReference sync_header;
-//      // it is already the msop msg
-//      // if (pkt->data[0] == 0x55 && pkt->data[1] == 0xaa && pkt->data[2] == 0x05 && pkt->data[3] == 0x0a)
-//      // use the first packets
-//      rslidar_msgs::rslidarPacket pkt = scan->packets[0];
-//      struct tm stm;
-//      memset(&stm, 0, sizeof(stm));
-//      stm.tm_year = (int)pkt.data[20] + 100;
-//      stm.tm_mon  = (int)pkt.data[21] - 1;
-//      stm.tm_mday = (int)pkt.data[22];
-//      stm.tm_hour = (int)pkt.data[23];
-//      stm.tm_min  = (int)pkt.data[24];
-//      stm.tm_sec  = (int)pkt.data[25];
-//      double stamp_double = mktime(&stm) + 0.001 * (256 * pkt.data[26] + pkt.data[27]) +
-//                            0.000001 * (256 * pkt.data[28] + pkt.data[29]);
-//      sync_header.header.stamp = ros::Time(stamp_double);
-//
-//      output_sync_.publish(sync_header);
-//    }
   }
+  int j = 0;
+  for (int i = 0; i < config_.npackets; ++i)
+	  unpack(&j, scan->packets[i], &variable_scan);
+  variable_scan.number_of_shots = velodyne_max_laser_shots_per_revolution;
+  variable_scan.timestamp = carmen_get_time();
+
+//  printf("to funcionando \n");
 
   // publish message using time of last packet read
 //  ROS_DEBUG("[driver] Publishing a full rslidar scan.");
@@ -371,7 +363,7 @@ bool rslidarDriver::poll(carmen_velodyne_variable_scan_message &variable_scan, i
 //  scan->header.stamp = scan->packets.back().stamp;
 //  scan->header.frame_id = config_.frame_id;
 //  msop_output_.publish(scan);
-
+  free(scan->packets);
   return true;
 }
 

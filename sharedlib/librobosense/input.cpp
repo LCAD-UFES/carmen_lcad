@@ -25,7 +25,7 @@
  */
 #include "input.h"
 
-extern volatile sig_atomic_t flag;
+int flag = 1;
 namespace rslidar_driver
 {
 static const size_t packet_size = RSLIDAR_MSG_BUFFER_SIZE;
@@ -48,7 +48,7 @@ Input::Input(rslidar_param private_nh, uint16_t port) : private_nh_(private_nh),
 	devip_str_ = private_nh.device_ip;
 	if (!devip_str_.empty())
 	{
-		printf("[driver][input] accepting packets from IP address: %s\n", devip_str_);
+		printf("[driver][input] accepting packets from IP address: %s\n", devip_str_.c_str());
 	}
 }
 
@@ -89,7 +89,7 @@ InputSocket::InputSocket(rslidar_param private_nh, uint16_t port) : Input(privat
 		inet_aton(devip_str_.c_str(), &devip_);
 	}
 
-	printf("[driver][socket] Opening UDP socket: port %c\n", port);
+	printf("[driver][socket] Opening UDP socket: port %ld\n", port);
 	sockfd_ = socket(PF_INET, SOCK_DGRAM, 0);
 	if (sockfd_ == -1)
 	{
@@ -121,6 +121,7 @@ InputSocket::InputSocket(rslidar_param private_nh, uint16_t port) : Input(privat
 		printf("[driver][socket] fcntl fail");
 		return;
 	}
+	printf("Velodyne socket fd is %d\n", sockfd_);
 }
 
 /** @brief destructor */

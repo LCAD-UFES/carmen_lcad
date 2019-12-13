@@ -109,7 +109,6 @@ public:
 	virtual int getPacket(rslidarPacket_t* pkt, const double time_offset);
 
 private:
-private:
 	int sockfd_;
 	in_addr devip_;
 

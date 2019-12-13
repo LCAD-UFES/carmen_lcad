@@ -5,6 +5,7 @@
 
 #include <carmen/velodyne_interface.h>
 #include <driver2.h>
+#include <rsdriver.h>
 
 using namespace std;
 
@@ -19,6 +20,7 @@ static carmen_velodyne_gps_message velodyne_gps;
 //static int velodyne_gps_port;
 static int velodyne_gps_enabled;
 static int velodyne_number;
+static char* velodyne_model;
 
 static double velodyne_package_rate;
 static double dist_lsb;
@@ -45,6 +47,10 @@ static double accel_scale_factor;
 
 static double velodyne_min_frequency;
 static int velodyne_max_laser_shots_per_revolution;
+
+
+rslidar_driver::rslidar_param private_nh;
+rslidar_driver::rslidarDriver* robosense = NULL;
 
 void assembly_velodyne_gps_message_from_gps(velodyne_driver::velodyne_gps_t gps)
 {
@@ -166,6 +172,7 @@ int read_parameters(int argc, char **argv)
 	carmen_param_t param_list[] = {
 			{velodyne, (char*)"gps_enable", CARMEN_PARAM_ONOFF, &velodyne_gps_enabled, 0, NULL},
 
+			{velodyne, (char*)"model", CARMEN_PARAM_STRING, &velodyne_model, 0, NULL},
 			{velodyne, (char*)"velodyne_package_rate", CARMEN_PARAM_DOUBLE, &velodyne_package_rate, 0, NULL},
 			{velodyne, (char*)"dist_lsb", CARMEN_PARAM_DOUBLE, &dist_lsb, 0, NULL},
 			{velodyne, (char*)"rotation_resolution", CARMEN_PARAM_DOUBLE, &rotation_resolution, 0, NULL},
@@ -207,6 +214,86 @@ void freeMemory()
 	free(velodyne_variable_scan.partial_scan);
 }
 
+
+void
+run_robosense_driver()
+{
+	private_nh.cut_angle = -0.01;
+	private_nh.device_ip = "192.168.1.200";
+	private_nh.difop_udp_port = 7788;
+	private_nh.model = "RS16";
+	private_nh.msop_port = 6699;
+	private_nh.rpm = 1200; //pegar na conf
+	private_nh.npackets = 38; // calcula dentro da mensagem e preenche se precisar depois
+
+	velodyne_variable_scan.host = carmen_get_host();
+	printf("Usando %s\n", velodyne_model);
+	while (true)
+	{
+		if (robosense == NULL)
+		{
+			robosense = new rslidar_driver::rslidarDriver(velodyne_variable_scan, 16,
+					velodyne_max_laser_shots_per_revolution, 6699, 7788, private_nh);
+		}
+		else
+		{
+			if(robosense->poll(velodyne_variable_scan, 16,
+					velodyne_max_laser_shots_per_revolution, 6699, 7788, private_nh))
+			{
+//				printf("cheguei até aqui, respeita minha história\n");
+				carmen_velodyne_publish_variable_scan_message(&velodyne_variable_scan, velodyne_number);
+			}
+			else
+			{
+				printf("robosense disconect\n");
+				robosense->~rslidarDriver();
+				freeMemory();
+				velodyne = NULL;
+				usleep(1e6 / 2);
+			}
+		}
+	}
+}
+
+
+void
+run_velodyne_driver()
+{
+	if (velodyne == NULL)
+	{
+		velodyne = new velodyne_driver::VelodyneDriver(velodyne_variable_scan, velodyne_num_lasers, velodyne_max_laser_shots_per_revolution, velodyne_udp_port, velodyne_gps_udp_port);
+		config = velodyne->getVelodyneConfig();
+	}
+	else
+	{
+		if (velodyne->pollScan(velodyne_variable_scan, velodyne_number, velodyne_udp_port, velodyne_max_laser_shots_per_revolution, velodyne_num_shots,
+				velodyne_package_rate, velodyne_num_lasers))
+		{
+			carmen_velodyne_publish_variable_scan_message(&velodyne_variable_scan, velodyne_number);
+
+			if (velodyne_gps_enabled && velodyne->pollGps(velodyne_gps_udp_port))
+			{
+				gps = velodyne->getVelodyneGps();
+				publish_velodyne_gps(gps);
+			}
+		}
+		else // just in case velodyne crash
+		{
+			printf("velodyne disconect\n");
+			velodyne->~VelodyneDriver();
+
+			freeMemory();
+
+			velodyne = NULL;
+			usleep(1e6 / 2);
+		}
+	}
+}
+
+
+
+
+
 int main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
@@ -219,35 +306,14 @@ int main(int argc, char **argv)
 
 	while (true)
 	{
-		if (velodyne == NULL)
+		printf("Usando %s\n ", velodyne_model);
+		if(strcmp(velodyne_model, "RS16") == 0)
 		{
-			velodyne = new velodyne_driver::VelodyneDriver(velodyne_variable_scan, velodyne_num_lasers, velodyne_max_laser_shots_per_revolution, velodyne_udp_port, velodyne_gps_udp_port);
-			config = velodyne->getVelodyneConfig();
+			run_robosense_driver();
 		}
 		else
-		{
-			if (velodyne->pollScan(velodyne_variable_scan, velodyne_number, velodyne_udp_port, velodyne_max_laser_shots_per_revolution, velodyne_num_shots,
-								   velodyne_package_rate, velodyne_num_lasers))
-			{
-				carmen_velodyne_publish_variable_scan_message(&velodyne_variable_scan, velodyne_number);
+			run_velodyne_driver();
 
-				if (velodyne_gps_enabled && velodyne->pollGps(velodyne_gps_udp_port))
-				{
-					gps = velodyne->getVelodyneGps();
-					publish_velodyne_gps(gps);
-				}
-			}
-			else // just in case velodyne crash
-			{
-				printf("velodyne disconect\n");
-				velodyne->~VelodyneDriver();
-
-				freeMemory();
-
-				velodyne = NULL;
-				usleep(1e6 / 2);
-			}
-		}
 	}
 
 	return 0;

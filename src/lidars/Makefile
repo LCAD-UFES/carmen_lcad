@@ -11,13 +11,15 @@ CXXFLAGS += -std=c++11
 
 # Application specific include directories.
 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/librobosense
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvelodyne2
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne2
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/librobosense
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lparam_interface -lipc -lglobal -lvelodyne_interface
+LFLAGS += -lparam_interface -lipc -lglobal -lvelodyne_interface -lvelodyne2 -lrobosense
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -pthread
 CFLAGS += -Wall
 
@@ -33,7 +35,7 @@ PUBLIC_LIBRARIES =
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = lidars
 
-TARGETS = lidars libvelodyne2.a
+TARGETS = lidars libvelodyne2.a librobosense.a
 PUBLIC_LIBRARIES_SO = 
 #
 #ifndef NO_PYTHON
@@ -49,6 +51,9 @@ TARGETS +=
 SOURCES += 
 endif
 
+librobosense.a: 
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/librobosense 
+	
 libvelodyne2.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libvelodyne2 
 #libvelodyne_transforms.a: velodyne_transforms.o tf_helper.o
@@ -58,12 +63,16 @@ libvelodyne2.a:
 #libvelodyne_interface.so.1:	velodyne_interface.o 
 #libvelodyne_transforms.so.1:  velodyne_transforms.o tf_helper.o
 
-lidars: lidars_main.o $(CARMEN_HOME)/sharedlib/libvelodyne2/libvelodyne2.a
+lidars: lidars_main.o
 
-clean: clean_libvelodyne2
+clean: clean_libvelodyne2 clean_librobosense
 
 clean_libvelodyne2:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libvelodyne2/
+	
+clean_librobosense:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/librobosense/
+	
 
 
 # rules
