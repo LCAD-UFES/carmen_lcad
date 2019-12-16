@@ -89,18 +89,18 @@ InputSocket::InputSocket(rslidar_param private_nh, uint16_t port) : Input(privat
 		inet_aton(devip_str_.c_str(), &devip_);
 	}
 
-	printf("[driver][socket] Opening UDP socket: port %ld\n", port);
+	printf("[driver][socket] Opening UDP socket: port %d\n", port);
 	sockfd_ = socket(PF_INET, SOCK_DGRAM, 0);
 	if (sockfd_ == -1)
 	{
-		printf("[driver][socket] create socket fail");
+		printf("[driver][socket] create socket fail\n");
 		return;
 	}
 
 	int opt = 1;
 	if (setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR, (const void*)&opt, sizeof(opt)))
 	{
-		printf("[driver][socket] setsockopt fail");
+		printf("[driver][socket] setsockopt fail\n");
 		return;
 	}
 
@@ -112,13 +112,13 @@ InputSocket::InputSocket(rslidar_param private_nh, uint16_t port) : Input(privat
 
 	if (bind(sockfd_, (sockaddr*)&my_addr, sizeof(sockaddr)) == -1)
 	{
-		printf("[driver][socket] socket bind fail");
+		printf("[driver][socket] socket bind fail\n");
 		return;
 	}
 
 	if (fcntl(sockfd_, F_SETFL, O_NONBLOCK | FASYNC) < 0)
 	{
-		printf("[driver][socket] fcntl fail");
+		printf("[driver][socket] fcntl fail\n");
 		return;
 	}
 	printf("Velodyne socket fd is %d\n", sockfd_);
@@ -197,7 +197,7 @@ int InputSocket::getPacket(rslidarPacket_t* pkt, const double time_offset)
 			}
 		}
 
-		printf("[driver][socket] incomplete rslidar packet read:%d bytes\n", nbytes);
+		printf("[driver][socket] incomplete rslidar packet read:%ld bytes\n", nbytes);
 	}
 	if (flag == 0)
 	{
