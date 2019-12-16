@@ -17,7 +17,7 @@ CFLAGS += -Wall
 SUBDIRS += 
 
 # Source code files (.c, .cpp) 
-SOURCES = example_linux.cpp xsens_mtig_main.cpp xsens_mtig_interface.c subscribe_xsens_mtig.c navio2_mavlink_main.c
+SOURCES = example_linux.cpp xsens_mtig_main.cpp xsens_mtig_interface.c subscribe_xsens_mtig.c navio2_mavlink_main.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = xsens_mtig_messages.h xsens_mtig_interface.h

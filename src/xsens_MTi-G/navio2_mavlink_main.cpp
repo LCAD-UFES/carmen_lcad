@@ -89,7 +89,7 @@ socklen_t mavlink_socket;
 uint8_t buf[BUFFER_LENGTH];
 struct sockaddr_in from;
 socklen_t fromlen = sizeof(from);
-ssize_t recsize;
+int recsize;
 
 
 
@@ -180,7 +180,7 @@ connect_to_navio2_ardupilot()
 		printf("Error: socket can't be open");
 
 	length = sizeof(server);
-	bzero(&server, length);
+	memset(&server, 0, length);
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = INADDR_ANY;
 	server.sin_port= PORT;
@@ -280,7 +280,8 @@ process_messages(ssize_t recsize, socklen_t mavlink_socket, struct sockaddr_in f
 	}
 }
 
-int main(int argc, char** argv)
+int
+main(int argc, char** argv)
 {
 
 	carmen_ipc_initialize(argc, argv);
@@ -292,11 +293,16 @@ int main(int argc, char** argv)
 
 	mavlink_socket = connect_to_navio2_ardupilot();
 
+	memset(&from,0, sizeof(from));
+//	from.sin_family = AF_INET;
+//	from.sin_addr.s_addr = INADDR_ANY;
+//	from.sin_port= PORT;
+
 	while (1)
 	{
 		memset(buf, 0, BUFFER_LENGTH);
 
-		recsize = recvfrom(mavlink_socket, buf, BUFFER_LENGTH, 0,(struct sockaddr *)&from, sizeof(struct sockaddr_in));
+		recsize = recvfrom(mavlink_socket, buf, BUFFER_LENGTH, 0,(struct sockaddr *)&from, &fromlen);
 
 		if (recsize == 0 || recsize == -1) // 0 Connection lost due to server shutdown -1 Could not connect
 		{
