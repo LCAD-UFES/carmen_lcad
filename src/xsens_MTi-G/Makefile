@@ -51,7 +51,7 @@ subscribe_xsens_mtig: subscribe_xsens_mtig.o -lxsens_mtig_interface
 
 example: example_linux.o
 
-navio2_mavlink: navio2_mavlink_main.o
+navio2_mavlink: navio2_mavlink_main.o libxsens_mtig_interface.a
 
 clean: clean_xsens
 

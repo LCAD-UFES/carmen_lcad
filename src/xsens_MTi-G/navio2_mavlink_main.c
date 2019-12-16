@@ -50,8 +50,8 @@
 #endif
 
 #include <carmen/carmen.h>
-#include <carmen/xsens_mtig_interface.h>
 #include <carmen/xsens_interface.h>
+#include <carmen/xsens_mtig_interface.h>
 /* This assumes you have the mavlink headers on your include path
  or in the same folder as this source file */
 #include "c_library_v2/ardupilotmega/mavlink.h"
@@ -70,9 +70,8 @@ mavlink_ahrs2_t ahrs2;
 mavlink_attitude_t attitude_msg;
 mavlink_heartbeat_t heart_msg;
 mavlink_global_position_int_t global_pos_msg;
-mavlink_attitude_quaternion_t attitude_quaternion_msg;
+//mavlink_attitude_quaternion_t attitude_quaternion_msg;
 
-carmen_xsens_global_quat_message carmen_xsens_message;
 mavlink_raw_imu_t raw_imu;
 
 
@@ -135,31 +134,35 @@ define_ipc_messages(void)
 void
 build_and_publish_xsens_mti_quat_message()
 {
-//			raw_msg_received = 0;
-			//			attitude_msg_received = 0;
-			//
-			//			carmen_xsens_message.host = carmen_get_host();
-			//			carmen_xsens_message.quat_data.m_data[0] = attitude_quaternion_msg.q1;
-			//			carmen_xsens_message.quat_data.m_data[1] = attitude_quaternion_msg.q2;
-			//			carmen_xsens_message.quat_data.m_data[2] = attitude_quaternion_msg.q3;
-			//			carmen_xsens_message.quat_data.m_data[3] = attitude_quaternion_msg.q4;
-			//			carmen_xsens_message.m_acc.x = raw_imu.xacc;
-			//			carmen_xsens_message.m_acc.y = raw_imu.yacc;
-			//			carmen_xsens_message.m_acc.z = raw_imu.zacc;
-			//
-			//			carmen_xsens_message.m_gyr.x = raw_imu.xgyro;
-			//			carmen_xsens_message.m_gyr.y = raw_imu.ygyro;
-			//			carmen_xsens_message.m_gyr.z = raw_imu.zgyro;
-			//
-			//			carmen_xsens_message.m_mag.x = raw_imu.xmag;
-			//			carmen_xsens_message.m_mag.y = raw_imu.ymag;
-			//			carmen_xsens_message.m_mag.z = raw_imu.zmag;
-			//
-			//			carmen_xsens_message.m_temp = raw_imu.temperature/100;
-			//			carmen_xsens_message.m_count = 0.0;
+	carmen_xsens_global_quat_message carmen_xsens_message;
+	raw_msg_received = 0;
+	attitude_msg_received = 0;
+	float attitude_quaternion[4];
+
+	mavlink_euler_to_quaternion(attitude_msg.roll, attitude_msg.pitch,attitude_msg.yaw, attitude_quaternion);
+
+	carmen_xsens_message.host = carmen_get_host();
+	carmen_xsens_message.quat_data.m_data[0] = attitude_quaternion[0];
+	carmen_xsens_message.quat_data.m_data[1] = attitude_quaternion[1];
+	carmen_xsens_message.quat_data.m_data[2] = attitude_quaternion[2];
+	carmen_xsens_message.quat_data.m_data[3] = attitude_quaternion[3];
+	carmen_xsens_message.m_acc.x = raw_imu.xacc;
+	carmen_xsens_message.m_acc.y = raw_imu.yacc;
+	carmen_xsens_message.m_acc.z = raw_imu.zacc;
+
+	carmen_xsens_message.m_gyr.x = raw_imu.xgyro;
+	carmen_xsens_message.m_gyr.y = raw_imu.ygyro;
+	carmen_xsens_message.m_gyr.z = raw_imu.zgyro;
+
+	carmen_xsens_message.m_mag.x = raw_imu.xmag;
+	carmen_xsens_message.m_mag.y = raw_imu.ymag;
+	carmen_xsens_message.m_mag.z = raw_imu.zmag;
+
+	carmen_xsens_message.m_temp = raw_imu.temperature/100;
+	carmen_xsens_message.m_count = 0.0;
 
 
-			//			publish_mti_quat_message(carmen_xsens_message);
+	publish_mti_quat_message(carmen_xsens_message);
 
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -185,7 +188,6 @@ connect_to_navio2_ardupilot()
 		printf("Error binding");
 
 	return mavlink_socket;
-
 }
 
 
@@ -242,11 +244,12 @@ process_messages(ssize_t recsize, socklen_t mavlink_socket, struct sockaddr_in f
 				}
 			}
 			break;
-			case MAVLINK_MSG_ID_ATTITUDE_QUATERNION:
+
+			case MAVLINK_MSG_ID_ATTITUDE:
 			{
-				mavlink_msg_attitude_quaternion_decode(&msg, &attitude_quaternion_msg);
-				printf("attitude_quaternion_msg %f, %f, %f, %f\n", attitude_quaternion_msg.q1, attitude_quaternion_msg.q2,
-						attitude_quaternion_msg.q3, attitude_quaternion_msg.q4);
+				mavlink_msg_attitude_decode(&msg, &attitude_msg);
+//				printf("attitude_quaternion_msg %f, %f, %f, %f\n", attitude_quaternion_msg.q1, attitude_quaternion_msg.q2,
+//						attitude_quaternion_msg.q3, attitude_quaternion_msg.q4);
 				attitude_msg_received = 1;
 			}
 			break;
@@ -293,7 +296,7 @@ int main(int argc, char** argv)
 	{
 		memset(buf, 0, BUFFER_LENGTH);
 
-		recsize = recvfrom(mavlink_socket, buf, BUFFER_LENGTH, 0,(struct sockaddr *)&from, &fromlen);
+		recsize = recvfrom(mavlink_socket, buf, BUFFER_LENGTH, 0,(struct sockaddr *)&from, sizeof(struct sockaddr_in));
 
 		if (recsize == 0 || recsize == -1) // 0 Connection lost due to server shutdown -1 Could not connect
 		{
