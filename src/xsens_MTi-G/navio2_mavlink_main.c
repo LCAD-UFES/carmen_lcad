@@ -71,6 +71,7 @@ mavlink_attitude_t attitude_msg;
 mavlink_heartbeat_t heart_msg;
 mavlink_global_position_int_t global_pos_msg;
 mavlink_attitude_quaternion_t attitude_quaternion_msg;
+
 carmen_xsens_global_quat_message carmen_xsens_message;
 mavlink_raw_imu_t raw_imu;
 
@@ -83,6 +84,14 @@ int raw_msg_received = 0;
 int attitude_msg_received = 0;
 
 static int first = 1;
+
+
+socklen_t mavlink_socket;
+uint8_t buf[BUFFER_LENGTH];
+struct sockaddr_in from;
+socklen_t fromlen = sizeof(from);
+ssize_t recsize;
+
 
 
 void
@@ -103,17 +112,58 @@ shutdown_module(int signo)
 //	return 0;
 //}
 //
-//static void
-//define_ipc_messages(void)
-//{
-//	IPC_RETURN_TYPE err;
-//
-//	err = IPC_defineMsg(CARMEN_XSENS_MTIG_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_MTIG_FMT);
-//	carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_MTIG_NAME);
-//
-//	err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_QUAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_QUAT_FMT);
-//	carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_QUAT_NAME);
-//}
+
+static void
+define_ipc_messages(void)
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_defineMsg(CARMEN_XSENS_MTIG_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_MTIG_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_MTIG_NAME);
+
+	err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_QUAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_QUAT_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_QUAT_NAME);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//																							 //
+// Publishers																			     //
+//																						     //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+void
+build_and_publish_xsens_mti_quat_message()
+{
+//			raw_msg_received = 0;
+			//			attitude_msg_received = 0;
+			//
+			//			carmen_xsens_message.host = carmen_get_host();
+			//			carmen_xsens_message.quat_data.m_data[0] = attitude_quaternion_msg.q1;
+			//			carmen_xsens_message.quat_data.m_data[1] = attitude_quaternion_msg.q2;
+			//			carmen_xsens_message.quat_data.m_data[2] = attitude_quaternion_msg.q3;
+			//			carmen_xsens_message.quat_data.m_data[3] = attitude_quaternion_msg.q4;
+			//			carmen_xsens_message.m_acc.x = raw_imu.xacc;
+			//			carmen_xsens_message.m_acc.y = raw_imu.yacc;
+			//			carmen_xsens_message.m_acc.z = raw_imu.zacc;
+			//
+			//			carmen_xsens_message.m_gyr.x = raw_imu.xgyro;
+			//			carmen_xsens_message.m_gyr.y = raw_imu.ygyro;
+			//			carmen_xsens_message.m_gyr.z = raw_imu.zgyro;
+			//
+			//			carmen_xsens_message.m_mag.x = raw_imu.xmag;
+			//			carmen_xsens_message.m_mag.y = raw_imu.ymag;
+			//			carmen_xsens_message.m_mag.z = raw_imu.zmag;
+			//
+			//			carmen_xsens_message.m_temp = raw_imu.temperature/100;
+			//			carmen_xsens_message.m_count = 0.0;
+
+
+			//			publish_mti_quat_message(carmen_xsens_message);
+
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 
 
 socklen_t
@@ -139,26 +189,101 @@ connect_to_navio2_ardupilot()
 }
 
 
-void
-request_stream_packages(int message_id, stream_rate)
+int
+trying_to_reconnect()
 {
+	int nav_socket = connect_to_navio2_ardupilot();
+
+	while (nav_socket == -1)
+	{
+		sleep(5);
+		nav_socket = connect_to_navio2_ardupilot();
+	}
+	return (nav_socket);
+}
+
+
+void
+request_stream_packages(socklen_t mavlink_socket, struct sockaddr_in from, mavlink_message_t msg, int requested_message_id, int stream_rate)
+{
+	uint8_t buf_send[BUFFER_LENGTH];
+	memset(buf_send, 0, BUFFER_LENGTH);
+
+	mavlink_msg_request_data_stream_pack(255, 0, &msg_send, msg.sysid, msg.compid, requested_message_id, stream_rate, 1);
+	int len = mavlink_msg_to_send_buffer(buf_send, &msg_send);
+	sendto(mavlink_socket, buf_send, len, 0, (struct sockaddr*)&from, sizeof(struct sockaddr_in));
+	first = 0;
 
 }
 
 
+void
+process_messages(ssize_t recsize, socklen_t mavlink_socket, struct sockaddr_in from, uint8_t *buf)
+{
+	int i;
+	for (i = 0; i < recsize; ++i)
+	{
+		//				printf("%02x ", (unsigned char)temp);
+		if (mavlink_parse_char(MAVLINK_COMM_0, buf[i], &msg, &status))
+		{
+			switch(msg.msgid)
+			{
+			case MAVLINK_MSG_ID_HEARTBEAT: // ID for GLOBAL_POSITION_INT
+			{
+				// Get all fields in payload (into global_position)
+				mavlink_msg_heartbeat_decode(&msg, &heart_msg);
+				printf("heartbeat %d, %d\n", heart_msg.autopilot, heart_msg.system_status);
+				if (first)
+				{
+					printf("Requesting STREAM_EXTRA (AHRS, ATTITUDE MESAGES\n");
+					request_stream_packages(mavlink_socket, from, msg, MAV_DATA_STREAM_ALL, 10);
+					request_stream_packages(mavlink_socket, from, msg, MAV_DATA_STREAM_RAW_SENSORS, 10);
+					first = 0;
+				}
+			}
+			break;
+			case MAVLINK_MSG_ID_ATTITUDE_QUATERNION:
+			{
+				mavlink_msg_attitude_quaternion_decode(&msg, &attitude_quaternion_msg);
+				printf("attitude_quaternion_msg %f, %f, %f, %f\n", attitude_quaternion_msg.q1, attitude_quaternion_msg.q2,
+						attitude_quaternion_msg.q3, attitude_quaternion_msg.q4);
+				attitude_msg_received = 1;
+			}
+			break;
+
+			case MAVLINK_MSG_ID_RAW_IMU:
+			{
+				mavlink_msg_raw_imu_decode(&msg, &raw_imu);
+
+				printf("Raw_IMU ID:%d,  %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
+						raw_imu.id,
+						raw_imu.xacc,
+						raw_imu.yacc,
+						raw_imu.zacc,
+						raw_imu.xgyro,
+						raw_imu.ygyro,
+						raw_imu.zgyro,
+						raw_imu.xmag,
+						raw_imu.ymag,
+						raw_imu.zmag);
+
+				raw_msg_received = 1;
+			}
+			break;
+			default:
+				break;
+			}
+		}
+	}
+}
+
 int main(int argc, char** argv)
 {
-	socklen_t mavlink_socket;
-	uint8_t buf[BUFFER_LENGTH];
-	uint8_t buf_send[BUFFER_LENGTH];
-	socklen_t fromlen;
-	struct sockaddr_in from;
-	ssize_t recsize;
 
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
-	read_parameters(argc, argv);
-	initialize_xsens_message(&msg);
+//	read_parameters(argc, argv);
+//	initialize_xsens_message(&xsens_msg);
 	define_ipc_messages();
 	signal(SIGINT, shutdown_module);
 
@@ -167,140 +292,19 @@ int main(int argc, char** argv)
 	while (1)
 	{
 		memset(buf, 0, BUFFER_LENGTH);
-		memset(buf_send, 0, BUFFER_LENGTH);
+
 		recsize = recvfrom(mavlink_socket, buf, BUFFER_LENGTH, 0,(struct sockaddr *)&from, &fromlen);
-		if (recsize <= 0)
-			printf("Erro recvfrom \n");
-		else
+
+		if (recsize == 0 || recsize == -1) // 0 Connection lost due to server shutdown -1 Could not connect
 		{
-			//			printf("Recebendo mensagem\n");
-			int i;
-			for (i = 0; i < recsize; ++i)
-			{
-				//				printf("%02x ", (unsigned char)temp);
-				if (mavlink_parse_char(MAVLINK_COMM_0, buf[i], &msg, &status))
-				{
-					switch(msg.msgid)
-					{
-						case MAVLINK_MSG_ID_HEARTBEAT: // ID for GLOBAL_POSITION_INT
-						{
-							// Get all fields in payload (into global_position)
-							mavlink_msg_heartbeat_decode(&msg, &heart_msg);
-							printf("heartbeat %d, %d\n", heart_msg.autopilot, heart_msg.system_status);
-							if (first)
-							{
-								printf("Requesting STREAM_EXTRA (AHRS, ATTITUDE MESAGES\n");
-								mavlink_msg_request_data_stream_pack(255, 0, &msg_send, msg.sysid, msg.compid, MAV_DATA_STREAM_ALL, 10, 1);
-								int len = mavlink_msg_to_send_buffer(buf_send, &msg_send);
-								sendto(sock, buf_send, len, 0, (struct sockaddr*)&from, sizeof(struct sockaddr_in));
-								first = 0;
-
-								printf("Requesting STREAM_POSITION (POSE, GPS\n");
-								mavlink_msg_request_data_stream_pack(255, 0, &msg_send, msg.sysid, msg.compid, MAV_DATA_STREAM_RAW_SENSORS, 10, 1);
-								len = mavlink_msg_to_send_buffer(buf_send, &msg_send);
-								sendto(sock, buf_send, len, 0, (struct sockaddr*)&from, sizeof(struct sockaddr_in));
-
-//								printf("Requesting STREAM_POSITION (POSE, GPS\n");
-//								mavlink_msg_request_data_stream_pack(255, 0, &msg_send, msg.sysid, msg.compid, MAV_DATA_STREAM_POSITION, 10, 1);
-//								len = mavlink_msg_to_send_buffer(buf_send, &msg_send);
-//								bytes_sent = sendto(sock, buf_send, len, 0, (struct sockaddr*)&from, fromlen);
-
-								first = 0;
-							}
-
-						}
-						break;
-						case MAVLINK_MSG_ID_ATTITUDE_QUATERNION:
-						{
-							mavlink_msg_attitude_quaternion_decode(&msg, &attitude_quaternion_msg);
-							printf("attitude_quaternion_msg %f, %f, %f, %f\n", attitude_quaternion_msg.q1, attitude_quaternion_msg.q2,
-									attitude_quaternion_msg.q3, attitude_quaternion_msg.q4);
-							attitude_msg_received = 1;
-						}
-						break;
-
-						case MAVLINK_MSG_ID_RAW_IMU:
-						{
-							mavlink_msg_raw_imu_decode(&msg, &raw_imu);
-
-							printf("Raw_IMU ID:%d,  %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",raw_imu.id, raw_imu.xacc,
-							raw_imu.yacc,
-							raw_imu.zacc,
-
-							raw_imu.xgyro,
-							raw_imu.ygyro,
-							raw_imu.zgyro,
-
-							raw_imu.xmag,
-							raw_imu.ymag,
-							raw_imu.zmag);
-
-							raw_msg_received = 1;
-						}
-						break;
-
-//						case MAVLINK_MSG_ID_AHRS3: // ID for AHRS3
-//						{
-//							// Get all fields in payload (into global_position)
-//							mavlink_msg_ahrs3_decode(&msg, &ahrs2);
-//							ahrs2.
-//							printf("AHR3 %f, %f, %f\n", ahrs2.roll, ahrs2.pitch, ahrs2.yaw);
-//
-//						}
-//						break;
-//						case MAVLINK_MSG_ID_ATTITUDE:
-//						{
-//							// Get just one field from payload
-//							mavlink_msg_attitude_decode(&msg, &attitude_msg);
-//							printf("Attitude %f, %f, %f\n", attitude_msg.roll, attitude_msg.pitch, attitude_msg.yaw);
-//						}
-//						break;
-//						case MAVLINK_MSG_ID_GLOBAL_POSITION_INT:
-//						{
-//							// Get just one field from payload
-//							mavlink_msg_global_position_int_decode(&msg, &global_pos_msg);
-//							float degrees = global_pos_msg.hdg;
-//							degrees = degrees/100.0;
-//							printf("Global: %f %d \n", carmen_degrees_to_radians(degrees), global_pos_msg.hdg);
-//						}
-//						break;
-						default:
-							break;
-					}
-				}
-			}
+			close(mavlink_socket);
+			mavlink_socket = trying_to_reconnect();
+			continue;
 		}
+		//			printf("Recebendo mensagem\n");
+		process_messages(recsize, mavlink_socket, from, buf);
 
 		if(raw_msg_received && attitude_msg_received)
-		{
-//			raw_msg_received = 0;
-//			attitude_msg_received = 0;
-//
-//			carmen_xsens_message.host = carmen_get_host();
-//			carmen_xsens_message.quat_data.m_data[0] = attitude_quaternion_msg.q1;
-//			carmen_xsens_message.quat_data.m_data[1] = attitude_quaternion_msg.q2;
-//			carmen_xsens_message.quat_data.m_data[2] = attitude_quaternion_msg.q3;
-//			carmen_xsens_message.quat_data.m_data[3] = attitude_quaternion_msg.q4;
-//			carmen_xsens_message.m_acc.x = raw_imu.xacc;
-//			carmen_xsens_message.m_acc.y = raw_imu.yacc;
-//			carmen_xsens_message.m_acc.z = raw_imu.zacc;
-//
-//			carmen_xsens_message.m_gyr.x = raw_imu.xgyro;
-//			carmen_xsens_message.m_gyr.y = raw_imu.ygyro;
-//			carmen_xsens_message.m_gyr.z = raw_imu.zgyro;
-//
-//			carmen_xsens_message.m_mag.x = raw_imu.xmag;
-//			carmen_xsens_message.m_mag.y = raw_imu.ymag;
-//			carmen_xsens_message.m_mag.z = raw_imu.zmag;
-//
-//			carmen_xsens_message.m_temp = raw_imu.temperature/100;
-//			carmen_xsens_message.m_count = 0.0;
-
-
-//			publish_mti_quat_message(carmen_xsens_message);
-
-		}
-
+			build_and_publish_xsens_mti_quat_message();
 	}
-//	carmen_ipc_disconnect();
 }
