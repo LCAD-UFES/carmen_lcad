@@ -107,6 +107,7 @@ extern JausByte g_horn_status_command;
 extern JausByte g_headlights_status_command;
 extern int g_gear_command;
 extern int g_engine_command;
+extern int g_windshield_wipers_command;
 extern int g_num_errors;
 extern int *g_error;
 

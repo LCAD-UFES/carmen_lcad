@@ -66,6 +66,7 @@ JausByte g_horn_status_command = 0;
 JausByte g_headlights_status_command = 0;
 int g_gear_command = 0;
 int g_engine_command = 1; // Engine On
+int g_windshield_wipers_command = 0;
 
 int g_num_errors = 0;
 int *g_error = NULL;
@@ -195,6 +196,7 @@ print_interface()
 	mvprintw(row++, col, "   5 - Horn (On/Off)");
 	mvprintw(row++, col, "   6, 7, 8 - Headlights: Off, Parking lights, On");
 	mvprintw(row++, col, "   9, 0 - (if Headlight=On) High beams (On/Off), Fog lights (On/Off)");
+	mvprintw(row++, col, "   p - Windshield Wipers (Off, Slow, Fast)");
 	mvprintw(row++, col, " ESC - Exit XGV_CCU");
 	
 	row++;
@@ -238,11 +240,6 @@ print_interface()
 	else if (g_XGV_turn_signal == 3)
 		strcpy(temp, "Turn Signal = Flashes");
 	
-	if (g_XGV_horn_status == 0)
-		strcat(temp, ", Horn = Off");
-	else if (g_XGV_horn_status == 1)
-		strcat(temp, ", Horn = On");
-	
 	if ((g_XGV_headlights_status & 7) == 0)
 		strcat(temp, ", Headlights = Off");
 	else if ((g_XGV_headlights_status & 7) == 1)
@@ -259,6 +256,38 @@ print_interface()
 	sprintf(temp + strlen(temp), "%d", g_XGV_component_status);
 	mvprintw(row++, col, "%s", temp);
 	
+	if (g_XGV_horn_status & 0x1)
+		strcpy(temp, "Horn = On");
+	else
+		strcpy(temp, "Horn = Off");
+
+	if (((g_XGV_horn_status >> 1) & 0x3) == 0)
+		strcat(temp, ", Windshield Wipers = Off");
+	else if (((g_XGV_horn_status >> 1) & 0x3) == 1)
+		strcat(temp, ", Windshield Wipers = Slow");
+	else if (((g_XGV_horn_status >> 1) & 0x3) == 2)
+		strcat(temp, ", Windshield Wipers = Fast");
+	mvprintw(row++, col, "%s", temp);
+
+	if ((g_XGV_horn_status >> 4) & 0x1)
+		strcpy(temp, "Doors: Front Right = Open, ");
+	else
+		strcpy(temp, "Doors: Front Right = Close,");
+	if ((g_XGV_horn_status >> 5) & 0x1)
+		strcat(temp, " Front Left = Open, ");
+	else
+		strcat(temp, " Front Left = Close,");
+	if ((g_XGV_horn_status >> 6) & 0x1)
+		strcat(temp, " Back Right = Open, ");
+	else
+		strcat(temp, " Back Right = Close,");
+	if ((g_XGV_horn_status >> 7) & 0x1)
+		strcat(temp, " Back Left = Open");
+	else
+		strcat(temp, " Back Left = Close");
+	mvprintw(row++, col, "%s", temp);
+	row++;
+
 	get_errors_descriptions();
 	row++;
 	if (g_XGV_num_errors == 0)
@@ -494,6 +523,13 @@ user_interface(OjCmpt XGV_CCU)
 					g_brakes_command -= factor * (MAX_BRAKES - MIN_BRAKES) / 200.0;
 					if (g_brakes_command < MIN_BRAKES)
 						g_brakes_command = MIN_BRAKES;
+					break;
+
+				case 'p':
+					g_windshield_wipers_command++;
+					if (g_windshield_wipers_command > 2)
+						g_windshield_wipers_command = 0;
+					send_set_signals_message(XGV_CCU);
 					break;
 
 				default:

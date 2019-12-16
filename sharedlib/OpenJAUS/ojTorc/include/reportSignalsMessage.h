@@ -97,7 +97,9 @@ typedef struct
 	JausByte version;				// Byte (VictorTango message version. Currently must have value = 0)
 	JausByte presenceVector;
 	JausByte turnSignal;			 	// 0: Off, 1: Left, 2: Right, 3: Flashes, 4-255: Reserved
-	JausByte hornStatus;			 	// 0: Off, 1: On
+	JausByte hornStatus;			 	// Bit 0: Horn (T: On, F: Off)
+										// Bits 1-2: Windshield Wipers (0: Off, 1: Slow, 2: Fast)
+										// Bits 4-7: Doors 4: Front Right, 5: Front Left, 6: Back Right, 7: Back Left (T: Open, F: Close)
 	JausByte hornPeriodOn;			 	// Unused
 	JausByte hornPeriodOff;			 	// Unused
 	JausByte headlightsStatus;		 	// Bits 0-2: 0: Off, 1: Parking Lights, 2: On; 

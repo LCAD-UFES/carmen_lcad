@@ -15,9 +15,9 @@ def kitti_squeezeSeg_config():
   mc.CLS_2_ID           = dict(zip(mc.CLASSES, range(len(mc.CLASSES))))
   mc.CLS_LOSS_WEIGHT    = np.array([1/3.0, 1.0, 3.5, 3.5])
   mc.CLS_COLOR_MAP      = np.array([[ 0.00,  0.00,  0.00],
-                                    [ 0.12,  0.56,  0.37],
-                                    [ 0.66,  0.55,  0.71],
-                                    [ 0.58,  0.72,  0.88]])
+                                    [ 0.142,  0.00,  0.00],
+                                    [ 0.255,  0.128,  0.128],
+                                    [ 0.230,  0.00,  0.00]])
 
   mc.BATCH_SIZE         = 40
   mc.AZIMUTH_LEVEL      = 512

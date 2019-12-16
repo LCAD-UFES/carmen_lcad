@@ -51,7 +51,7 @@ initialize_python_context()
 
 }
 
-int*
+long long int*
 libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze, double* point_cloud, double timestamp)
 {
 	printf("libsqueeze_seg_process_point_cloud\n");
@@ -75,8 +75,19 @@ libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze
 	//auto t2 = std::chrono::high_resolution_clock::now();
 	//auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
     //std::cout << "Inference Duration: " << duration << "ms" << std::endl;
-	
-	int *result_array = (int*)PyArray_DATA(python_result_array);
+	long long int *result_array = (long long int*)PyArray_DATA(python_result_array);
+	// int *result_array_1d = (int*)PyArray_DATA(python_result_array);
+	// int line = 0;
+	// for (int j = vertical_resolution; j > 0; j--)
+	// {
+	// 	for (int i = 0; i < shots_to_squeeze; i++, line++)
+	// 	{
+	// 		if(result_array[line] > 1){
+	// 			std::cout << "res[" << j << "][" << i << "] = " << result_array[line] << " line: " << line << std::endl;
+	// 		}
+	// 	}
+	// }
+	// std::cout << line << std::endl;
 
 	if (PyErr_Occurred())
         PyErr_Print();
