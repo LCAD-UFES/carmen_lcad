@@ -147,17 +147,17 @@ build_and_publish_xsens_mti_quat_message()
 	carmen_xsens_message.quat_data.m_data[1] = attitude_quaternion[1];
 	carmen_xsens_message.quat_data.m_data[2] = attitude_quaternion[2];
 	carmen_xsens_message.quat_data.m_data[3] = attitude_quaternion[3];
-	carmen_xsens_message.m_acc.x = raw_imu.xacc;
-	carmen_xsens_message.m_acc.y = raw_imu.yacc;
-	carmen_xsens_message.m_acc.z = raw_imu.zacc;
+	carmen_xsens_message.m_acc.x = raw_imu.xacc/100.0;
+	carmen_xsens_message.m_acc.y = raw_imu.yacc/100.0;
+	carmen_xsens_message.m_acc.z = raw_imu.zacc/100.0;
 
-	carmen_xsens_message.m_gyr.x = raw_imu.xgyro;
-	carmen_xsens_message.m_gyr.y = raw_imu.ygyro;
-	carmen_xsens_message.m_gyr.z = raw_imu.zgyro;
+	carmen_xsens_message.m_gyr.x = raw_imu.xgyro/100.0;
+	carmen_xsens_message.m_gyr.y = raw_imu.ygyro/100.0;
+	carmen_xsens_message.m_gyr.z = raw_imu.zgyro/100.0;
 
-	carmen_xsens_message.m_mag.x = raw_imu.xmag;
-	carmen_xsens_message.m_mag.y = raw_imu.ymag;
-	carmen_xsens_message.m_mag.z = raw_imu.zmag;
+	carmen_xsens_message.m_mag.x = raw_imu.xmag/100.0;
+	carmen_xsens_message.m_mag.y = raw_imu.ymag/100.0;
+	carmen_xsens_message.m_mag.z = raw_imu.zmag/100.0;
 
 	carmen_xsens_message.m_temp = raw_imu.temperature/100;
 	carmen_xsens_message.m_count = 0.0;
@@ -245,7 +245,7 @@ process_messages(ssize_t recsize, socklen_t mavlink_socket, struct sockaddr_in f
 			{
 				// Get all fields in payload (into global_position)
 				mavlink_msg_heartbeat_decode(&msg, &heart_msg);
-				printf("heartbeat %d, %d\n", heart_msg.autopilot, heart_msg.system_status);
+//				printf("heartbeat %d, %d\n", heart_msg.autopilot, heart_msg.system_status);
 				if (first)
 				{
 					printf("Requesting STREAM messages: MAV_DATA_STREAM_EXTRA1 and MAV_DATA_STREAM_RAW_SENSORS\n");
@@ -259,8 +259,8 @@ process_messages(ssize_t recsize, socklen_t mavlink_socket, struct sockaddr_in f
 			case MAVLINK_MSG_ID_ATTITUDE:
 			{
 				mavlink_msg_attitude_decode(&msg, &attitude_msg);
-				printf("attitude_msg %f, %f, %f\n", attitude_msg.pitch, attitude_msg.roll,
-						attitude_msg.yaw);
+//				printf("attitude_msg %f, %f, %f\n", attitude_msg.pitch, attitude_msg.roll,
+//						attitude_msg.yaw);
 				attitude_msg_received = 1;
 			}
 			break;
@@ -269,17 +269,17 @@ process_messages(ssize_t recsize, socklen_t mavlink_socket, struct sockaddr_in f
 			{
 				mavlink_msg_raw_imu_decode(&msg, &raw_imu);
 
-				printf("Raw_IMU ID:%d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-						raw_imu.id,
-						raw_imu.xacc/100.0,
-						raw_imu.yacc/100.0,
-						raw_imu.zacc/100.0,
-						raw_imu.xgyro/100.0,
-						raw_imu.ygyro/100.0,
-						raw_imu.zgyro/100.0,
-						raw_imu.xmag/100.0,
-						raw_imu.ymag/100.0,
-						raw_imu.zmag/100.0);
+//				printf("Raw_IMU ID:%d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//						raw_imu.id,
+//						raw_imu.xacc/100.0,
+//						raw_imu.yacc/100.0,
+//						raw_imu.zacc/100.0,
+//						raw_imu.xgyro/100.0,
+//						raw_imu.ygyro/100.0,
+//						raw_imu.zgyro/100.0,
+//						raw_imu.xmag/100.0,
+//						raw_imu.ymag/100.0,
+//						raw_imu.zmag/100.0);
 
 				raw_msg_received = 1;
 			}
@@ -289,17 +289,17 @@ process_messages(ssize_t recsize, socklen_t mavlink_socket, struct sockaddr_in f
 			{
 				mavlink_msg_highres_imu_decode(&msg, &highres_imu_msg);
 
-				printf("highres_imu ID:%d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-						highres_imu_msg.id,
-						highres_imu_msg.xacc,
-						highres_imu_msg.yacc,
-						highres_imu_msg.zacc,
-						highres_imu_msg.xgyro,
-						highres_imu_msg.ygyro,
-						highres_imu_msg.zgyro,
-						highres_imu_msg.xmag,
-						highres_imu_msg.ymag,
-						highres_imu_msg.zmag);
+//				printf("highres_imu ID:%d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//						highres_imu_msg.id,
+//						highres_imu_msg.xacc,
+//						highres_imu_msg.yacc,
+//						highres_imu_msg.zacc,
+//						highres_imu_msg.xgyro,
+//						highres_imu_msg.ygyro,
+//						highres_imu_msg.zgyro,
+//						highres_imu_msg.xmag,
+//						highres_imu_msg.ymag,
+//						highres_imu_msg.zmag);
 
 				raw_msg_received = 1;
 			}
