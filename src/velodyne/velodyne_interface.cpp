@@ -1,5 +1,3 @@
-
-
 #include <string.h>
 #include <carmen/carmen.h>
 #include <carmen/velodyne_messages.h>
@@ -16,6 +14,8 @@ double velodyne_vertical_correction[32] =
 
 int velodyne_ray_order[32] = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31};
 
+//Verificar se tambem nao eh melhor ir para o carmen-ini @@Vinicius 03/11/2019
+int velodyne_ray_order_velodyne2[32] = {0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15, 16, 18, 20, 22, 24, 26, 28, 30, 17, 19, 21, 23, 25, 27, 29, 31};
 
 double velodyne_delta_difference_mean[50] =
 {

@@ -296,6 +296,7 @@ static double ouster64_azimuth_offsets[64];
 static double vc_16[32];
 static double vc_32[32];
 static double vc_64[64];
+static char* v16_robosense;
 static char* v16;
 static char* v32;
 static char* v64;
@@ -2485,7 +2486,9 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			{(char*)"velodyne0", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v64, 0, NULL},
 			{(char*)"velodyne0", (char*)"horizontal_correction", CARMEN_PARAM_STRING, &h64, 0, NULL},
 			{(char*)"velodyne1", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v32, 0, NULL},
-			{(char*)"velodyne2", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v16, 0, NULL}
+			{(char*)"velodyne2", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v16, 0, NULL},
+			{(char*)"velodyne4", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v16_robosense, 0, NULL},
+
 	};
 	num_items = sizeof(param_list2)/sizeof(param_list2[0]);
 	carmen_param_install_params(argc, argv, param_list2, num_items);
@@ -2497,6 +2500,18 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			vc_64[i] = CLF_READ_DOUBLE(&v64);
 			ouster64_azimuth_offsets[i] = CLF_READ_DOUBLE(&h64);
 		}
+	}
+	else if (velodyne_active == 4)
+	{
+		for (int i=0; i<32; i++)
+		{
+			vc_32[i] = CLF_READ_DOUBLE(&v32);
+			if (i<16)
+				vc_16[i] = CLF_READ_DOUBLE(&v16_robosense);
+			else
+				vc_16[i] = 0.0;
+		}
+
 	}
 	else
 	{
@@ -3118,6 +3133,11 @@ subscribe_ipc_messages(void)
     	carmen_velodyne_subscribe_variable_scan_message(NULL,
     			(carmen_handler_t) velodyne_variable_scan_message_handler2,
 				CARMEN_SUBSCRIBE_LATEST, 3);
+
+    if (velodyne_active == -1 || velodyne_active == 4)
+       	carmen_velodyne_subscribe_variable_scan_message(NULL,
+       			(carmen_handler_t) velodyne_variable_scan_message_handler2,
+   				CARMEN_SUBSCRIBE_LATEST, 4);
 
     carmen_download_map_subscribe_message(NULL,
                                           (carmen_handler_t) carmen_download_map_handler,

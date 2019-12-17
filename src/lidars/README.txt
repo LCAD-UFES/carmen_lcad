@@ -1,4 +1,4 @@
-Este módulo atualmente será usado para publicar velodyne HL-32 e Puck usando a mensagem variable velodyne. Pode substituir o módulo do velodyne mas usa a interface e messages dele
+Este módulo atualmente será usado para publicar velodyne HL-32 e Puck usando a mensagem variable velodyne. Pode substituir o módulo do velodyne mas usa a velodyne_interface.h e messagens dele
 
 Para rodar:
 Compile o modulo velodyne para ter acesso a mensagem velodyne variable scan
