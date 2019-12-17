@@ -144,9 +144,6 @@ main(int argc, char *argv[])
 	carmen_erase_structure(&gpgga, sizeof(carmen_gps_gpgga_message) );
 	carmen_erase_structure(&gprmc, sizeof(carmen_gps_gprmc_message) );
   
-	gpgga.host = carmen_get_host();
-	gprmc.host = carmen_get_host();
-
 	carmen_ipc_initialize( argc, argv );
 	ipc_initialize_messages();
  
@@ -179,6 +176,8 @@ main(int argc, char *argv[])
 		else if ((valread == -1) || (valread != sizeof(carmen_gps_gpgga_message)))
 			continue;
 
+		gpgga.host = carmen_get_host();
+		gprmc.host = carmen_get_host();
 		ipc_publish_position();
 	}
 
