@@ -26,7 +26,7 @@ PUBLIC_INCLUDES = xsens_mtig_messages.h xsens_mtig_interface.h
 PUBLIC_LIBRARIES = libxsens_mtig_interface.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-PUBLIC_BINARIES = xsens_mtig subscribe_xsens_mtig
+PUBLIC_BINARIES = xsens_mtig subscribe_xsens_mtig navio2_mavlink
 
 TARGETS = libcmt.a libxsens_mtig_interface.a xsens_mtig subscribe_xsens_mtig example navio2_mavlink
 PUBLIC_LIBRARIES_SO = libxsens_mtig_interface.so
