@@ -87,7 +87,19 @@ carmen_gps_gprmc_message gpsrmc;
 carmen_kinect_depth_message raw_depth_kinect_0, raw_depth_kinect_1;
 carmen_kinect_video_message raw_video_kinect_0, raw_video_kinect_1;
 
-carmen_velodyne_variable_scan_message velodyne_variable_scan;
+carmen_velodyne_variable_scan_message velodyne_variable_scan, velodyne_variable_scan0,
+															  velodyne_variable_scan1,
+															  velodyne_variable_scan2,
+															  velodyne_variable_scan3,
+   															  velodyne_variable_scan4,
+   															  velodyne_variable_scan5,
+   															  velodyne_variable_scan6,
+   															  velodyne_variable_scan7,
+   															  velodyne_variable_scan8,
+   															  velodyne_variable_scan9;
+
+
+
 carmen_velodyne_partial_scan_message velodyne_partial_scan;
 carmen_velodyne_gps_message velodyne_gps;
 
@@ -179,6 +191,28 @@ static logger_callback_t logger_callbacks[] =
 	{(char *) "ULTRASONIC_SONAR_SENSOR", (char *) CARMEN_ULTRASONIC_SONAR_SENSOR_NAME, (converter_func) carmen_string_to_ultrasonic_message, &ultrasonic_message, 0},
 	{(char *) "FORD_ESCAPE_STATUS", (char *) CARMEN_FORD_ESCAPE_STATUS_NAME, (converter_func) carmen_string_to_ford_escape_estatus_message, &ford_escape_status, 0},
 	{(char *) "GLOBALPOS_ACK", (char *) CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME, (converter_func) carmen_string_to_globalpos_message, &globalpos, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN0", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE0_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan0, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN1", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE1_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan1, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN2", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE2_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan2, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN3", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE3_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan3, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN4", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE4_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan4, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN5", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE5_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan5, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN6", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE6_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan6, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN7", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE7_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan7, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN8", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE8_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan8, 0},
+	{(char *) "VARIABLE_VELODYNE_SCAN9", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE9_NAME, (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan9, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE0", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE0_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan0, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE1", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE1_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan1, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE2", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE2_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan2, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE3", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE3_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan3, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE4", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE4_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan4, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE5", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE5_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan5, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE6", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE6_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan6, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE7", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE7_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan7, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE8", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE8_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan8, 0},
+	{(char *) "VELODYNE_VARIABLE_SCAN_IN_FILE9", (char *) CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE9_NAME, (converter_func) carmen_string_and_file_to_variable_velodyne_scan_message, &velodyne_variable_scan9, 0},
 };
 
 
@@ -656,6 +690,8 @@ void define_ipc_messages(void)
 	err = IPC_defineMsg("carmen_stereo_velodyne_scan_message8", IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", "carmen_stereo_velodyne_scan_message8");
 
+	carmen_velodyne_define_messages();
+
 	err = IPC_defineMsg(CARMEN_VELODYNE_GPS_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_GPS_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_VELODYNE_GPS_MESSAGE_NAME);
 
@@ -964,6 +1000,17 @@ int main(int argc, char **argv)
 	memset(&raw_video_kinect_1, 0, sizeof(raw_video_kinect_1));
 	memset(&velodyne_partial_scan, 0, sizeof(velodyne_partial_scan));
 	memset(&velodyne_variable_scan, 0, sizeof(velodyne_variable_scan));
+	memset(&velodyne_variable_scan0, 0, sizeof(velodyne_variable_scan0));
+	memset(&velodyne_variable_scan1, 0, sizeof(velodyne_variable_scan1));
+	memset(&velodyne_variable_scan2, 0, sizeof(velodyne_variable_scan2));
+	memset(&velodyne_variable_scan3, 0, sizeof(velodyne_variable_scan3));
+	memset(&velodyne_variable_scan4, 0, sizeof(velodyne_variable_scan4));
+	memset(&velodyne_variable_scan5, 0, sizeof(velodyne_variable_scan5));
+	memset(&velodyne_variable_scan6, 0, sizeof(velodyne_variable_scan6));
+	memset(&velodyne_variable_scan7, 0, sizeof(velodyne_variable_scan7));
+	memset(&velodyne_variable_scan8, 0, sizeof(velodyne_variable_scan8));
+	memset(&velodyne_variable_scan9, 0, sizeof(velodyne_variable_scan9));
+
 	memset(&velodyne_gps, 0, sizeof(velodyne_gps));
 	memset(&xsens_euler, 0, sizeof(xsens_euler));
 	memset(&xsens_quat, 0, sizeof(xsens_quat));

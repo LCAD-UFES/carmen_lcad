@@ -100,9 +100,11 @@ get_closest_rddf_index(double *camera_pose_x, double *camera_pose_y, carmen_pose
 
 
 vector<carmen_position_t>
-get_rddf_points_in_image_filtered_by_meters_spacement(double meters_spacement, vector<double> &distances_of_rddf_from_car, tf::StampedTransform world_to_camera_pose,
+get_rddf_points_in_image_filtered_by_meters_spacement(double meters_spacement,
+		vector<double> &distances_of_rddf_from_car, tf::StampedTransform world_to_camera_pose,
 		carmen_pose_3D_t camera_pose, carmen_pose_3D_t board_pose, carmen_point_t globalpos,
-		carmen_behavior_selector_road_profile_message last_rddf_poses, vector<debug_infos> closest_rddf, carmen_camera_parameters camera_parameters,
+		carmen_behavior_selector_road_profile_message last_rddf_poses, vector<debug_infos> closest_rddf,
+		carmen_camera_parameters camera_parameters,
 		int img_width, int img_height);
 
 

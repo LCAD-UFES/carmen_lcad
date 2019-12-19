@@ -179,13 +179,11 @@ neural_mapper_update_output_map(carmen_map_t offline_map, carmen_position_t car_
 	return 0;
 }
 
-cv::Mat
-neural_map_run_foward(int size)
+void
+neural_map_run_foward(carmen_map_t *log_ods_snapshot, int size)
 {
 	printf("Entrei aqui\n");
 	cv::Mat a;
-	neural_mapper_acumulator->foward_map(size);
+	neural_mapper_acumulator->foward_map(log_ods_snapshot, size);
 	printf("Voltou hein\n");
-	return a;
-
 }

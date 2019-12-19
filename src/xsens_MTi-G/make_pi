@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$CARMEN_HOME" = "" ]; then CARMEN_HOME=$(realpath ../..); fi
+if [ "$CARMEN_HOME" = "" ]; then export CARMEN_HOME=$(realpath ../..); fi
 
 function make_module()
 {

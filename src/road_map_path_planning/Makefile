@@ -1,27 +1,27 @@
 include ../Makefile.conf
 
-MODULE_NAME = Road Network
-MODULE_COMMENT = Create and view Road Networks
+MODULE_NAME = Road Map Path Planning
+MODULE_COMMENT = Plan routes from OpenStreetMap
 
 LINK = g++
 CFLAGS += -Wall
 
-#CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++11
 CXXFLAGS += -Wno-ignored-qualifiers
 
 IFLAGS += \
 	`pkg-config --cflags opencv` \
+	-I/usr/include/python3.5
 
 LFLAGS += \
-	`pkg-config --libs opencv` \
-	-lparam_interface \
-	-lipc \
-	-lglobal \
+	`python3.5-config --libs` `pkg-config --libs opencv` \
+	-lglobal -lipc -lparam_interface -lvoice_interface_interface \
 	-llocalize_ackerman_interface \
 	-lmap_server_interface \
 	-lgrid_mapping \
 	-lmap_io \
 	-lmap_interface \
+	-lgps_xyz_interface \
 	-lGL \
 	-lglut \
 	-lGLU

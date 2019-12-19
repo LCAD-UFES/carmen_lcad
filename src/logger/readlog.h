@@ -227,6 +227,8 @@ char* carmen_string_and_file_to_velodyne_partial_scan_message(char* string, carm
 
 char* carmen_string_to_variable_velodyne_scan_message(char* string, carmen_velodyne_variable_scan_message* msg);
 
+char* carmen_string_and_file_to_variable_velodyne_scan_message(char* string, carmen_velodyne_variable_scan_message* msg);
+
 char* carmen_string_to_velodyne_gps_message(char* string, carmen_velodyne_gps_message* msg);
 
 char* carmen_string_to_xsens_euler_message(char* string, carmen_xsens_global_euler_message* msg);

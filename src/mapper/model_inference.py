@@ -57,7 +57,7 @@ import torch.nn.functional as F
 
 # LiDAR road detection FCNN as described in https://arxiv.org/pdf/1703.03613.pdf
 class FCNN(nn.Module):
-	def __init__(self, n_input=5, n_output=3, prob_drop=0.0):
+	def __init__(self, n_input=5, n_output=3, prob_drop=0.25):
 		print("Print inside model.py: prob_drop = ", prob_drop)
 		super(FCNN, self).__init__()
 		self.num_classes = n_output
@@ -115,12 +115,14 @@ class FCNN(nn.Module):
 		x = F.max_unpool2d(x, indices, (2,2), stride=2)
 		x = F.elu(self.dec1(x))
 		x = F.elu(self.dec2(x))
-		x = F.log_softmax(x, dim=1) #no sei se precisa
-		#x = F.softmax(x, dim=1)
+		#Como estamos usando a Cross-Entropy, ela mesmo aplica o log_softmax, NÂO é necessário usar log softmax nem softmax aqui.
+# 		x = F.log_softmax(x, dim=1)
+		#Usei a softmax para melhor usar a saída no mapa probabilistico 
+		prob = F.softmax(x, dim=1)
 		# x = x.view(-1, self.num_flat_features(x))
 		#print("Out Decoder")
 		#print(x.size())
-		return x
+		return x, prob
 
 	def num_flat_features(self, x):
 		size = x.size()[1:]  # all dimensions except the batch dimension

@@ -321,7 +321,6 @@ int
 main(int argc __attribute__ ((unused)), 
      char **argv __attribute__ ((unused))) 
 {
-  double wheel_diameter;
   char dev_name[100];
   double vl, vr;
   struct pioneer_raw_information_packet r;
@@ -334,7 +333,6 @@ main(int argc __attribute__ ((unused)),
   carmen_terminal_cbreak(0);
 
   strcpy(dev_name, "/dev/ttyS24");
-  wheel_diameter = 0.165;
 
   if (carmen_serial_connect(&dev_fd, dev_name) < 0) 
     return -1;

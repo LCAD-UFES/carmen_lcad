@@ -19,19 +19,12 @@ LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basi
 LFLAGS += -lpcl_common -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_registration -lpcl_surface -lpcl_io -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization \
 			-lpcl_segmentation
 
-# Application specific libSqueezeSegV2
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src  -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src
-
-#SqueezeSeg
-LFLAGS += -lsqueeze_seg -lpython2.7
-
-SOURCES = velodyne_camera_calibration_main.cpp velodyne_camera_publish_range.cpp velodyne_camera_calibration.cpp save_velodyne_txt.cpp save_velodyne_txt_SqueezeSeg.cpp
+SOURCES = velodyne_camera_calibration_main.cpp velodyne_camera_publish_range.cpp velodyne_camera_calibration.cpp save_velodyne_txt.cpp
 
 PUBLIC_INCLUDES = velodyne_camera_calibration.h
 PUBLIC_LIBRARIES = libvelodyne_camera_calibration.a
 PUBLIC_BINARIES = 
-TARGETS = visual_tracker velodyne_camera_calibration_main velodyne_camera_publish_range save_velodyne_txt save_velodyne_txt_SqueezeSeg libvelodyne_camera_calibration.a libsqueeze_seg.a
+TARGETS = visual_tracker velodyne_camera_calibration_main velodyne_camera_publish_range save_velodyne_txt libvelodyne_camera_calibration.a
 
 visual_tracker:
 	$(MAKE) -C $(CARMEN_HOME)/src/visual_tracker
@@ -41,14 +34,11 @@ clean: clean_visual_tracker
 clean_visual_tracker:
 	$(MAKE) clean -C $(CARMEN_HOME)/src/visual_tracker
 
-libsqueeze_seg.a: 
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src/
 
 velodyne_camera_calibration_main: velodyne_camera_calibration_main.o libvelodyne_camera_calibration.a
 velodyne_camera_publish_range: velodyne_camera_publish_range.o libvelodyne_camera_calibration.a
 libvelodyne_camera_calibration.a: velodyne_camera_calibration.o
 save_velodyne_txt: save_velodyne_txt.o libvelodyne_camera_calibration.a
-save_velodyne_txt_SqueezeSeg: save_velodyne_txt_SqueezeSeg.o libvelodyne_camera_calibration.a
 
 
 include ../Makefile.rules

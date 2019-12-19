@@ -1,5 +1,5 @@
 # Id of the gps that will be used for the calibration
-gps_to_use = 1
+gps_to_use = 3
 # Id of the sensor board that will be used for the calibration
 board_to_use = 1
 # 0 - linear phi; 1 - use a spline to map phi to a new phi
@@ -15,9 +15,9 @@ max_log_lines = -1
 # Flag indicating if the visualization should run or not.
 view = 1
 # Initial time to consider for odometry calibration
-initial_time = 20
+initial_time = 10
 # Final time to consider for odometry calibration
-final_time = 100
+final_time = 546
 # Lower limit of velocity multiplier
 min_multiplicative_v = 0.6
 # Upper limit of velocity multiplier
@@ -46,3 +46,4 @@ max_k1 = 0.3
 min_k2 = -0.15
 # Upper limit of k2 spline coefficient
 max_k2 = 0.15
+

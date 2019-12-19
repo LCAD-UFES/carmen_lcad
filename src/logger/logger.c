@@ -359,7 +359,44 @@ void velodyne_partial_scan_handler( carmen_velodyne_partial_scan_message* msg)
 		carmen_logwrite_write_to_file_velodyne(msg, outfile, carmen_get_time() - logger_starttime, filename);
 	else
 		carmen_logwrite_write_velodyne_partial_scan(msg, outfile, carmen_get_time() - logger_starttime);
+}
 
+
+void velodyne_variable_scan_handler0( carmen_velodyne_variable_scan_message* msg)
+{
+	//fprintf(stderr, "VV1");
+	if (log_velodyne_save_to_file)
+		carmen_logwrite_write_to_file_velodyne_variable(msg, 0, outfile, carmen_get_time() - logger_starttime, filename);
+	else
+		carmen_logwrite_write_variable_velodyne_scan(msg, 0, outfile, carmen_get_time() - logger_starttime);
+}
+
+
+void velodyne_variable_scan_handler1( carmen_velodyne_variable_scan_message* msg)
+{
+	//fprintf(stderr, "VV1");
+	if (log_velodyne_save_to_file)
+		carmen_logwrite_write_to_file_velodyne_variable(msg, 1, outfile, carmen_get_time() - logger_starttime, filename);
+	else
+		carmen_logwrite_write_variable_velodyne_scan(msg, 1, outfile, carmen_get_time() - logger_starttime);
+}
+
+void velodyne_variable_scan_handler2( carmen_velodyne_variable_scan_message* msg)
+{
+	//fprintf(stderr, "VV2");
+	if (log_velodyne_save_to_file)
+		carmen_logwrite_write_to_file_velodyne_variable(msg, 2, outfile, carmen_get_time() - logger_starttime, filename);
+	else
+		carmen_logwrite_write_variable_velodyne_scan(msg, 2, outfile, carmen_get_time() - logger_starttime);
+}
+
+void velodyne_variable_scan_handler3( carmen_velodyne_variable_scan_message* msg)
+{
+	//fprintf(stderr, "VV3");
+	if (log_velodyne_save_to_file)
+		carmen_logwrite_write_to_file_velodyne_variable(msg, 3, outfile, carmen_get_time() - logger_starttime, filename);
+	else
+		carmen_logwrite_write_variable_velodyne_scan(msg, 3, outfile, carmen_get_time() - logger_starttime);
 }
 
 void velodyne_gps_handler(carmen_velodyne_gps_message* msg)
@@ -629,6 +666,22 @@ int main(int argc, char **argv)
 	  carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t)
   			velodyne_partial_scan_handler,
   			CARMEN_SUBSCRIBE_ALL);
+
+	  carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)
+	 	    			velodyne_variable_scan_handler0,
+	 	    			CARMEN_SUBSCRIBE_ALL, 0);
+
+	  carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)
+	    			velodyne_variable_scan_handler1,
+	    			CARMEN_SUBSCRIBE_ALL, 1);
+
+	  carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)
+	  	    			velodyne_variable_scan_handler2,
+	  	    			CARMEN_SUBSCRIBE_ALL, 2);
+
+	  carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)
+	  	    			velodyne_variable_scan_handler3,
+	  	    			CARMEN_SUBSCRIBE_ALL, 3);
 
 	  carmen_velodyne_subscribe_gps_message(NULL, (carmen_handler_t)
 				 velodyne_gps_handler,
