@@ -17,7 +17,8 @@ carmen_pose_3D_t pose;
 carmen_behavior_selector_road_profile_message last_rddf_poses;
 int rddf_received = 0;
 int localize_received = 0;
-std::vector<carmen_ackerman_traj_point_t> carmen_rddf_poses_from_spline_vec;
+carmen_ackerman_traj_point_t last_pose = {.x = 0.0, .y = 0.0, .theta = 0.0, .v = 9.0, .phi=0.2};
+
 
 FILE *file_log;
 FILE *file_log2;
@@ -33,7 +34,7 @@ double y_check = -1000.0;
 struct Prediction
 {
     double dy;
-    double dtheta;
+    double dtheta; //temporariamente não usado
     double k1;
     double k2;
     double k3;
@@ -52,7 +53,8 @@ std::vector<Prediction> preds;
 
 std::istream& operator>>(std::istream& is, Prediction& s)
 {
-    return is >> s.dy >> s.dtheta >> s.k1 >> s.k2 >> s.k3 >> s.timestamp;
+//    return is >> s.dy >> s.dtheta >> s.k1 >> s.k2 >> s.k3 >> s.timestamp;
+	return is >> s.dy >> s.k1 >> s.k2 >> s.k3 >> s.timestamp;
 }
 
 double
@@ -81,6 +83,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 		globalpos.theta = ackerman_message.globalpos.theta;
 		globalpos.x = ackerman_message.globalpos.x;
 		globalpos.y = ackerman_message.globalpos.y;
+		printf("%f %f\n", globalpos.x, globalpos.y);
 
 		double img_timestamp = image_msg->timestamp;
 
@@ -113,6 +116,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			phi_spline = gsl_spline_alloc(type, 4);
 			gsl_spline_init(phi_spline, knots_x, knots_y, 4);
 
+
 			double half_points = 0.0;
 			double acresc_points = 0.5;
 			double store_points[int(30/acresc_points)+1];
@@ -140,10 +144,13 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 				half_points += acresc_points;
 			}
 
-			double ref_theta = -1 * (globalpos.theta - preds[index].dtheta);
+
+			double ref_theta = -1 * (globalpos.theta /*- preds[index].dtheta*/);
 			double ref_x = -1 * sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * cos(atan2(globalpos.y, globalpos.x) + ref_theta);
 			double ref_y = -1 *(sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * sin(atan2(globalpos.y, globalpos.x) + ref_theta)) + preds[index].dy;
 			SE2 ref_pose(ref_x, ref_y, ref_theta);
+
+			std::vector<carmen_ackerman_traj_point_t> carmen_rddf_poses_from_spline_vec;
 			for (int i=0; i<indice_points; i++)
 			{
 				carmen_ackerman_traj_point_t waypoint;
@@ -158,14 +165,25 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			}
 
 			carmen_ackerman_traj_point_t *carmen_rddf_poses_from_spline = &carmen_rddf_poses_from_spline_vec[0];
+//			for (int i = 0; i<indice_points; i++)
+//			{
+//				printf("%f %f\n", carmen_rddf_poses_from_spline[i].x, carmen_rddf_poses_from_spline[i].y);
+//			}
+
+			int annotations[2] = {1, 2};
+			int annotation_codes[2] = {1, 2};
+
 			carmen_rddf_publish_road_profile_message(
 				carmen_rddf_poses_from_spline,
-				NULL,
+				&last_pose,
 				indice_points,
-				0,
-				NULL,
-				NULL);
+				1,
+				annotations,
+				annotation_codes);
 		}
+		last_pose.x = globalpos.x;
+		last_pose.y = globalpos.y;
+		last_pose.theta = globalpos.theta;
 	}
 	localize_received = 0;
 
@@ -224,7 +242,7 @@ main(int argc , char **argv)
 		exit(1);
 	}
 
-	std::ifstream input("novo.txt");
+	std::ifstream input("preds_output_1576531267.0669897.txt");
 	Prediction s;
 	while (input >> s)
 	{
