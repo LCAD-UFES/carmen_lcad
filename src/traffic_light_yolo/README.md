@@ -29,7 +29,8 @@ lights for the route. Results showed that the proposed technique
 is able to correctly identify the relevant traffic light along the
 trajectory.
 
-<!-- [Link to PDF.](example.com) -->
+[Link to the paper (published).](https://ieeexplore.ieee.org/document/8851927)
+[Link to the paper (arXiv).](https://arxiv.org/abs/1906.11886)
 
 <!-- ![system-running](./misc/system_running.jpg) -->
 
@@ -66,3 +67,74 @@ After compiling [darknet] and downloading the previous files to the same place w
 ```
 
 While doing inference you can also pass the option `-thresh 0.2` to the binary in order to decrease its confidence threshold to 0.2, like we do in our paper.
+
+## Usage Instructions
+
+This module (`traffic_light_yolo`) was created as a solution for Traffic Light Recognition. It uses YOLOv3 and OpenCV's Random Forests.
+
+Type `traffic_light_yolo --help` to get a summary of the available command line options:
+  - `--camera_number` (**mandatory**): Which bumblebee camera will provide the images.
+  - `--camera_side` (**mandatory**): Which side from the bumblebee should be used. Choose 0 for the left image, or 1 for the right one.
+  - `--annotation_path` (**mandatory**): File with annotations of relevant traffic lights.
+  - `--yolo_cfg`: The configuration file for YOLOv3. It usually has the `.cfg` extension. (Default: `$CARMEN_HOME/data/traffic_light/yolov3/yolov3-tl-red-green.cfg`)
+  - `--yolo_names`: File with the name of classes, one per line. It usually has the `.names` extension. (Default: `$CARMEN_HOME/data/traffic_light/yolov3/rg.names`)
+  - `--yolo_weights`: File with YOLOv3's weights. `.weights` extension. (Default: `$CARMEN_HOME/data/traffic_light/yolov3/yolov3-tl-red-green.weights`)
+  - `--yolo_thresh`: Only bounding boxes with score above this threshold will be used. (Default: `0.2`.)
+  - `--rf_weights`: File with weights for the Random Forest classifier. (Default: `$CARMEN_HOME/data/traffic_light/random_forest/cv_rtrees_weights_tl_rgy.yml`)
+  - `--rf_bgr`: Convert image to BGR before feeding it to the random forest model. (Default: `off`)
+  - `--yolo_class_set`: A string that describes which classes can come from YOLO's predictions. It can be: `COCO`, the model was trained on COCO; `RG`, when it predicts red and green traffic lights; `RGY`, when it predicts red, green and yellow traffic lights. (Default: `RG`)
+  - `--final_class_set`: Same as `--yolo_class_set`, but it describes the final classes used, i.e., after all predictions. (Default: `RGY`)
+  - `--draw_fps`: Draw an FPS counter to the corner of the preview window. (Default: `off`)
+  - `--draw_bbs`: Draw the bounding boxes predicted by YOLO. The color of the bounding box will be in accordance with the predicted state. (Default: `on`)
+  - `--draw_text`: Draw the labels of bounding boxes, right above them. This is unecessary if you are used to distinguishing the bounding boxes by color. (Default: `on`)
+  - `--draw_text_background`: Draw a black background behind the bounding boxes' labels, for easier reading. (Default: `on`)
+  - `--draw_close_tls`: Draw a red point where the relevant traffic lights are expected to be. (Only traffic lights within 100 meters) (Default: `on`)
+  - `--draw_circle_threshold`: Draw yellow circuferences around the relevant traffic lights. The circuferences represent the search area for bounding boxes. If there are bounding box with center within the circunference, that which is closest to the center will be chosen to represent that traffic light. (Default: `on`)
+  - `--draw_lidar_points`: Draw LiDAR rays projected onto the camera image. (Default: `off`)
+  - `--draw_final_prediction`: Draw a circle at the bottom-right corner with the color of the final prediction. The final prediction is that which will be forwarded to the Behavior Selector. (Default: `on`)
+  - `--run_yolo`: Disable/Enable YOLO. This can't be disabled if you want to run inference or annotate traffic light positions. Disabling YOLO can be useful for annotating the frames with `--print-gt-prep`. (Default: `on`)
+  - `--run_random_forest`: Disable/Enable the RF. (Default: `off`)
+  - `--compute_tl_poses`: Enable this if you want to annotate traffic lights. (Default: `off`)
+  - `--print_final_prediction`: At each frame, print: the image's timestamp; the distance to the closest traffic light ahead of the vehicle; the final prediction. (Default: `off`)
+  - `--print_gt_prep`: Same as `--print_final_prediction` but it doesn't print the final prediction. This is useful for annotating the frames. (Default: `off`)
+  - `--display_resolution`: Resolution of the preview window. (Default: `640x480`)
+
+As stated before, only three options are mandatory: `--camera_number`, `--camera_side` and `--annotation_path`. And these three can be provided as positional arguments in the command line, but the other ones can't. Here is an example of how to run the module with default parameters:
+
+```bash
+## Using the positional arguments format.
+./traffic_light_yolo 3 1 "../data/rddf_annotation_dante_michelini-20181116-pista-esquerda.txt"
+## Using the optional (named) arguments format.
+./traffic_light_yolo --camera_number 3 --camera_side 1 --annotation_path "../data/rddf_annotation_dante_michelini-20181116-pista-esquerda.txt"
+```
+
+Remember to download the files necessary for running the YOLOv3 model. You can find them at the links provided above.
+The files for the random forest models have been commited to carmen_lcad's source, since they are very small. So there's no need for downloading them.
+
+If you were willing to run the module using another YOLOv3 model, you could use:
+```bash
+./traffic_light_yolo 3 1 "../data/rddf_annotation_dante_michelini-20181116-pista-esquerda.txt"
+    --yolo_cfg "<path to cfg>"
+    --yolo_weights "<path to weights>"
+    --yolo_names "<path to names>"
+```
+
+Similarly, for using another random forest model:
+```bash
+./traffic_light_yolo 3 1 "../data/rddf_annotation_dante_michelini-20181116-pista-esquerda.txt"
+    --rf_weights "<path to RF weights>"
+```
+
+If you want to annotate the position of traffic lights you'll need to use the `--compute_tl_poses` option. Any YOLOv3 model that detects traffic lights can be used, even those trained on COCO (remember to set the appropriate `--yolo_class_set` option). For details on how the annotation method works, check the paper (link above). Here, I'll only explain how to use it. First, run the module like this:
+```bash
+./traffic_light_yolo 3 1 "../data/rddf_annotation_dante_michelini-20181116-pista-esquerda.txt"
+    --compute_tl_poses on
+```
+
+In doing so, the module will output traffic light poses to the command line (STDOUT) as soon as eight frames have passed without a single bounding box prediction. Unfortunately, there'll be a lot of false positives, and there's no straightforward way to know which is which. What I suggest you to do is that you copy the pose with highest number of LiDAR rays, and put it in your annotation file. Close the module, and open it again, so it'll load the new annotations. Use `--draw_close_tls on` this time. `--draw_circle_threshold on` also helps. Both are `on` by default.
+Rewind some 5 seconds (or much more...) of playback time and you'll see the point you annotated coming up on screen as a red dot. And this is how you know what that point was... This method was supposed to be very automatic and, thus, easier to use. But, frequently, there are just too many false positives. The next method is a little bit better in my opnion, even though it's all manual work.
+
+<!-- Additionally, there is another method for annnotating traffic lights. -->
+Still with the `--compute_tl_poses` option on, you can click the screen with the middle mouse button to select the LiDAR ray that is closest to where you clicked. The module will print the 3D coordinates of where that LiDAR ray hit, and you'll se a blue point floating by as the playback progresses. Enabling `--draw_lidar_points` will help, because it shows the LiDAR points on screen, so you'll better know where to click. And the right mouse button can be used to clear the point you made. Although, clearing it is not necessary at all.
+
+<!-- Tiago Alves tbm fez uma ferramenta para anotação, porém eu não lembro em qual módulo está... -->
