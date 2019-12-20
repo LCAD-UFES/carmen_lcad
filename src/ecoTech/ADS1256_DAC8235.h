@@ -24,9 +24,9 @@
 #define DEV_CS_PIN                    22
 #define DEV_CS1_PIN                   23
 #define DEV_DRDY_PIN                  17
-#define SIGNAL_RELAY_PIN               7
-#define CONTROL_ON_OFF_RELAY_PIN       3
-#define SIGNAL_ON_OFF_RELAY_PIN        2
+//#define SIGNAL_RELAY_PIN               7
+//#define CONTROL_ON_OFF_RELAY_PIN       3
+//#define SIGNAL_ON_OFF_RELAY_PIN        2
 
 #define DEV_Digital_Write(_pin, _value) bcm2835_gpio_write(_pin, _value)
 #define DEV_Digital_Read(_pin) bcm2835_gpio_lev(_pin)
