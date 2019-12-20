@@ -4,6 +4,9 @@
 #include <vector>
 #include <algorithm>
 #include <fstream>
+#include <carmen/rddf_interface.h>
+#include <carmen/rddf_messages.h>
+#include <carmen/rddf_index.h>
 
 using namespace g2o;
 
@@ -14,6 +17,8 @@ carmen_pose_3D_t pose;
 carmen_behavior_selector_road_profile_message last_rddf_poses;
 int rddf_received = 0;
 int localize_received = 0;
+carmen_ackerman_traj_point_t last_pose = {.x = 0.0, .y = 0.0, .theta = 0.0, .v = 9.0, .phi=0.2};
+
 
 FILE *file_log;
 FILE *file_log2;
@@ -29,7 +34,7 @@ double y_check = -1000.0;
 struct Prediction
 {
     double dy;
-    double dtheta;
+    double dtheta; //temporariamente não usado
     double k1;
     double k2;
     double k3;
@@ -48,7 +53,8 @@ std::vector<Prediction> preds;
 
 std::istream& operator>>(std::istream& is, Prediction& s)
 {
-    return is >> s.dy >> s.dtheta >> s.k1 >> s.k2 >> s.k3 >> s.timestamp;
+//    return is >> s.dy >> s.dtheta >> s.k1 >> s.k2 >> s.k3 >> s.timestamp;
+	return is >> s.dy >> s.k1 >> s.k2 >> s.k3 >> s.timestamp;
 }
 
 double
@@ -73,94 +79,112 @@ void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	if (localize_received)
-		{
-			globalpos.theta = ackerman_message.globalpos.theta;
-			globalpos.x = ackerman_message.globalpos.x;
-			globalpos.y = ackerman_message.globalpos.y;
+	{
+		globalpos.theta = ackerman_message.globalpos.theta;
+		globalpos.x = ackerman_message.globalpos.x;
+		globalpos.y = ackerman_message.globalpos.y;
+		printf("%f %f\n", globalpos.x, globalpos.y);
 
-			double img_timestamp = image_msg->timestamp;
+		double img_timestamp = image_msg->timestamp;
 
 //			Prediction *found = std::lower_bound(preds.front(),
 //											   preds.back(),
 //											   img_timestamp,
 //											   mystruct_comparer());
-			int index = -1;
-			for(int i = 0; i<preds.size(); i++)
+		int index = -1;
+		for(int i = 0; i<preds.size(); i++)
+		{
+			if (preds[i].timestamp == img_timestamp)
 			{
-				if (preds[i].timestamp == img_timestamp)
-				{
-					index = i;
-					break;
-				}
-				else if (preds[i].timestamp > img_timestamp)
-					break;
+				index = i;
+				break;
 			}
-
-			if(index != -1)
-			{
-				printf("%f\n", preds[index].timestamp);
-			}
-
-
-//			int index_aux=0;
-//			double distance, min_distance = DBL_MAX;
-//			for (int i = 0; i < last_rddf_poses.number_of_poses; i++)
-//			{
-//				distance = euclidean_distance(globalpos.x, last_rddf_poses.poses[i].x, globalpos.y, last_rddf_poses.poses[i].y);
-//				if (distance < min_distance)
-//				{
-//					min_distance = distance;
-//					index_aux = i;
-//				}
-//			}
-//			/*
-//			printf("pose: %.2f %.2f %.2f %.2f\n", globalpos.x, globalpos.y, globalpos.theta, globalpos_message->timestamp);
-//			printf("rddf: %.2f %.2f %.2f\n", last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta);
-//			printf("image: %f\n\n", bumb_latest_timestamp);
-//			 */
-//			double dtheta = globalpos.theta - last_rddf_poses.poses[index_aux].theta;
-//
-////			printf("rddf: %.2f %.2f %.2f\n", last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta);
-//
-//			SE2 rddf_pose(last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta);
-//
-//			for (int i = 0; i < last_rddf_poses.number_of_poses; i++)
-//			{
-//				SE2 lane_in_world_reference(last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, last_rddf_poses.poses[i].theta);
-//				SE2 lane_in_rddf_reference = rddf_pose.inverse() * lane_in_world_reference;
-//				last_rddf_poses.poses[i].x = lane_in_rddf_reference[0];
-//				last_rddf_poses.poses[i].y = lane_in_rddf_reference[1];
-//				last_rddf_poses.poses[i].theta = lane_in_rddf_reference[2];
-//			}
-//
-//			SE2 car_in_world_reference(globalpos.x, globalpos.y, globalpos.theta);
-//			SE2 car_in_rddf_reference = rddf_pose.inverse() * car_in_world_reference;
-//
-//			double dy = car_in_rddf_reference[1];
-//
-//			/*
-//			for (int i = 0; i < last_rddf_poses.number_of_poses; i++)
-//			{
-//				printf("%f %f %f\n", last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, last_rddf_poses.poses[i].theta);
-//			}
-//			*/
-//
-//			SplineControlParams spc = optimize_spline_knots(&last_rddf_poses);
-//
-//			/*
-//			printf("dy = %f\ndtheta = %f\n\nposes:\n", dy, dtheta);
-//			printf("k1 = %f, k2 = %f, k3 = %f\n", spc.k1, spc.k2, spc.k3);
-//			*/
-//			//save_to_txt(globalpos.x, globalpos.y, globalpos.theta, globalpos_message->timestamp, last_rddf_poses.poses[index_aux].x,
-//			//		last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta, bumb_latest_timestamp);
-//			if(dy>10)
-//			{
-//				printf("%f // %f // %f // %f\n", dy, globalpos.x, globalpos.y, globalpos.theta);
-//
-//			}
-//			printf("%f\n",image_msg->timestamp);
-
+			else if (preds[i].timestamp > img_timestamp)
+				break;
 		}
+
+		if(index != -1)
+		{
+			printf("%f\n", preds[index].timestamp);
+
+			gsl_interp_accel *acc;
+			gsl_spline *phi_spline;
+			double knots_x[4] = {0.0,  30/ 3.0, 2 * 30 / 3.0, 30.0};
+			double knots_y[4] = {0.0, preds[index].k1, preds[index].k2, preds[index].k3};
+			acc = gsl_interp_accel_alloc();
+			const gsl_interp_type *type = gsl_interp_cspline;
+			phi_spline = gsl_spline_alloc(type, 4);
+			gsl_spline_init(phi_spline, knots_x, knots_y, 4);
+
+
+			double half_points = 0.0;
+			double acresc_points = 0.5;
+			double store_points[int(30/acresc_points)+1];
+			double store_thetas[int(30/acresc_points)+1];
+			double points_dx = 0.1;
+			int indice_points = 0;
+			//for(int i = 0; i < 30*2 ; i++)
+			while( half_points <= 30.0 )
+			{
+				if(half_points == 30)
+				{
+					double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
+					double spline_y2 = gsl_spline_eval(phi_spline, half_points - points_dx, acc);
+					store_points[indice_points] = spline_y;
+					store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y - spline_y2, points_dx));
+				}
+				else
+				{
+					double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
+					double spline_y2 = gsl_spline_eval(phi_spline, half_points + points_dx, acc);
+					store_points[indice_points] = spline_y;
+					store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y2 - spline_y, points_dx));
+				}
+				indice_points++;
+				half_points += acresc_points;
+			}
+
+
+			double ref_theta = -1 * (globalpos.theta /*- preds[index].dtheta*/);
+			double ref_x = -1 * sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * cos(atan2(globalpos.y, globalpos.x) + ref_theta);
+			double ref_y = -1 *(sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * sin(atan2(globalpos.y, globalpos.x) + ref_theta)) + preds[index].dy;
+			SE2 ref_pose(ref_x, ref_y, ref_theta);
+
+			std::vector<carmen_ackerman_traj_point_t> carmen_rddf_poses_from_spline_vec;
+			for (int i=0; i<indice_points; i++)
+			{
+				carmen_ackerman_traj_point_t waypoint;
+				SE2 pose_in_rddf_reference(i*0.5, store_points[i], store_thetas[i]);
+				SE2 pose_in_world_reference = ref_pose.inverse() * pose_in_rddf_reference;
+				waypoint.x = pose_in_world_reference[0];
+				waypoint.y = pose_in_world_reference[1];
+				waypoint.theta = carmen_normalize_theta(pose_in_world_reference[2]);
+				waypoint.v = 9.0;
+				waypoint.phi = 0.2;
+				carmen_rddf_poses_from_spline_vec.push_back(waypoint);
+			}
+
+			carmen_ackerman_traj_point_t *carmen_rddf_poses_from_spline = &carmen_rddf_poses_from_spline_vec[0];
+//			for (int i = 0; i<indice_points; i++)
+//			{
+//				printf("%f %f\n", carmen_rddf_poses_from_spline[i].x, carmen_rddf_poses_from_spline[i].y);
+//			}
+
+			int annotations[2] = {1, 2};
+			int annotation_codes[2] = {1, 2};
+
+			carmen_rddf_publish_road_profile_message(
+				carmen_rddf_poses_from_spline,
+				&last_pose,
+				indice_points,
+				1,
+				annotations,
+				annotation_codes);
+		}
+		last_pose.x = globalpos.x;
+		last_pose.y = globalpos.y;
+		last_pose.theta = globalpos.theta;
+	}
 	localize_received = 0;
 
 }
@@ -218,7 +242,7 @@ main(int argc , char **argv)
 		exit(1);
 	}
 
-	std::ifstream input("novo.txt");
+	std::ifstream input("preds_output_1576531267.0669897.txt");
 	Prediction s;
 	while (input >> s)
 	{

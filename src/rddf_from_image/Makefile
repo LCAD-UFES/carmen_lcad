@@ -2,7 +2,7 @@ include ../Makefile.conf
 
 LINK = g++
 CFLAGS += 
-LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lbumblebee_basic_interface -lgsl -lgslcblas
+LFLAGS += -lglobal -lrddf_interface -lipc -lparam_interface -llocalize_ackerman_interface -lbumblebee_basic_interface -lgsl -lgslcblas
 
 #G2O
 IFLAGS += -I/usr/include/eigen3 
