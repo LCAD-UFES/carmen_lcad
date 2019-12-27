@@ -93,9 +93,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 //											   img_timestamp,
 //											   mystruct_comparer());
 
-		long long int *preds;
+		float *preds;
 		preds = libinplace_abn_process_image(image_msg->width, image_msg->height, image_msg->raw_right);
-
+                printf("%f, %f, %f, %f\n",preds[0], preds[1], preds[2], preds[3]);
 		// printf("%f\n", preds[index].timestamp);
 
 		gsl_interp_accel *acc;

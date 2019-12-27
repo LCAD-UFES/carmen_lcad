@@ -95,15 +95,15 @@ class SegmentationModule(nn.Module):
 def main():
     # Load configuration
 #    args = parser.parse_args()
-    chk_path = "output_batch_train/1576703507.3473513/checkpoints/ckpoint_1576703507.3473513_2.pt"
+    chk_path = "../BestLoss_teste.pt"
 
     # Torch stuff
     #torch.cuda.set_device(args.rank)
-    torch.cuda.set_device(0) # To get this to run on free RAAMAC GPU - Dominic
+    #torch.cuda.set_device(1) # To get this to run on free RAAMAC GPU - Dominic
     cudnn.benchmark = True
 
     # Create model by loading a snapshot
-    body, head, cls_state = load_snapshot('/home/sabrina/Documents/Inplace_ABN/wide_resnet38_deeplab_vistas.pth.tar')
+    body, head = load_snapshot()
     model = SegmentationModule(body, head) # this changes
                                                                       # number of classes
                                                                       # in final model.cls layer
@@ -144,7 +144,7 @@ def main():
             print(t.elapsed)
             t.tic()
 
-def load_snapshot(snapshot_file):
+def load_snapshot():
     """Load a training snapshot"""
     print("--- Loading model from snapshot")
 
@@ -155,11 +155,11 @@ def load_snapshot(snapshot_file):
     head = DeeplabV3(4096, 256, 256, norm_act=norm_act, pooling_size=(84, 84))
 
     # Load snapshot and recover network state
-    data = torch.load(snapshot_file)
-    body.load_state_dict(data["state_dict"]["body"])
-    head.load_state_dict(data["state_dict"]["head"])
+    #data = torch.load(snapshot_file)
+    #body.load_state_dict(data["state_dict"]["body"])
+    #head.state_dict(data["state_dict"]["head"])
 
-    return body, head, data["state_dict"]["cls"]
+    return body, head
 
 
 if __name__ == "__main__":

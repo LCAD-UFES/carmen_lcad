@@ -50,7 +50,7 @@ initialize_python_context()
 
 }
 
-long long int*
+float*
 libinplace_abn_process_image(int width, int height, unsigned char *image)
 {
 	printf("libinplace_abn_process_image\n");
@@ -66,7 +66,7 @@ libinplace_abn_process_image(int width, int height, unsigned char *image)
 	if (PyErr_Occurred())
 	        PyErr_Print();
 
-	long long int *result_array = (long long int*)PyArray_DATA(python_result_array);
+	float *result_array = (float*)PyArray_DATA(python_result_array);
 
 	if (PyErr_Occurred())
         PyErr_Print();

@@ -4,7 +4,7 @@
 void
 initialize_python_context();
 
-long long int*
+float*
 libinplace_abn_process_image(int width, int height, unsigned char *image);
 
 #endif

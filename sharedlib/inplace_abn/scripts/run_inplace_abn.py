@@ -38,15 +38,14 @@ def initialize(horizontal_resolution):
     global model
     global transformation
     global device
-    chk_path = "/home/gabriel/Documents/inplace_abn/scripts/ckpoint_1576703507.3473513_4.pt"
+    chk_path = "/home/lcad/carmen_lcad/sharedlib/inplace_abn/BestLoss_teste.pt"
     # Torch stuff
     # torch.cuda.set_device(args.rank)
     torch.cuda.set_device(0)  # To get this to run on free RAAMAC GPU - Dominic
     cudnn.benchmark = True
 
     # Create model by loading a snapshot
-    body, head, cls_state = load_snapshot(
-        '/home/gabriel/Downloads/wide_resnet38_deeplab_vistas.pth.tar')
+    body, head = load_snapshot()
     model = SegmentationModule(body, head)  # this changes
     # number of classes
     # in final model.cls layer
@@ -62,18 +61,17 @@ def initialize(horizontal_resolution):
 
     #image_folder, images_path = get_data('/dados/log_png_1003/')
 
-    ####################
-    #   INFERENCE
-    ####################
 
     device = torch.device("cuda:0")
-    model.to(device)
+ #   model.to(device)
 
-    model.eval()
+
     if(chk_path != ""):
         data = torch.load(chk_path)
         model.load_state_dict(data)
         model.to(device)
+
+    model.eval()
     print("\n\n-------------------------------------------------------")
     print("       Pretrained Model Inplace_abn loaded!")
     print("-------------------------------------------------------\n\n")
@@ -94,8 +92,8 @@ def inplace_abn_process_image(carmen_image):
     # t.tic()
     print("preds.shape={}".format(
         preds.shape))
-    print("preds.type={}".format(preds.type))
-    return preds
+    print("preds.type={}".format(preds[0][0].dtype))
+    return preds[0]
 
 #parser = argparse.ArgumentParser(description="Testing script for the Vistas segmentation model")
 #parser.add_argument("--scales", metavar="LIST", type=str, default="[0.7, 1, 1.2]", help="List of scales")
@@ -219,7 +217,7 @@ class SegmentationModule(nn.Module):
 #             t.tic()
 
 
-def load_snapshot(snapshot_file):
+def load_snapshot():
     """Load a training snapshot"""
     print("--- Loading model from snapshot")
 
@@ -232,11 +230,7 @@ def load_snapshot(snapshot_file):
     head = DeeplabV3(4096, 256, 256, norm_act=norm_act, pooling_size=(84, 84))
 
     # Load snapshot and recover network state
-    data = torch.load(snapshot_file)
-    body.load_state_dict(data["state_dict"]["body"])
-    head.load_state_dict(data["state_dict"]["head"])
-
-    return body, head, data["state_dict"]["cls"]
+    return body, head
 
 
 # if __name__ == "__main__":
