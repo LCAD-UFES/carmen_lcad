@@ -1,0 +1,1 @@
+python -m torch.distributed.launch --nproc_per_node 1 train_imagenet.py --log-dir /dados/inplace_logs experiments/wider_resnet38_ipabn_lr_256.json --resume /home/gabriel/wide_resnet38_deeplab_vistas.pth.tar /path/to/imagenet/root
