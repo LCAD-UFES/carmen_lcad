@@ -33,8 +33,10 @@ global model
 global transformation
 global device
 
+
 def initialize(horizontal_resolution):
     print "ok, entrou no run_inplace_abn"
+
 
 def initialize_ok(horizontal_resolution):
     global model
@@ -76,12 +78,13 @@ def initialize_ok(horizontal_resolution):
         data = torch.load(chk_path)
         model.load_state_dict(data)
         model.to(device)
-    print ("\n\n-------------------------------------------------------")
-    print ("       Pretrained Model Inplace_abn loaded!")
-    print ("-------------------------------------------------------\n\n")
+    print("\n\n-------------------------------------------------------")
+    print("       Pretrained Model Inplace_abn loaded!")
+    print("-------------------------------------------------------\n\n")
+
 
 def inplace_abn_process_image(d_img):
-    #converter a imagem
+    # converter a imagem
     image_temp = Image.open(d_img).convert(mode="RGB")
     img = transformation(image_temp)
     img = img.unsqueeze(0).to(device, non_blocking=True)
@@ -163,84 +166,80 @@ class SegmentationModule(nn.Module):
         return self._network(x)
 
 
+# def main():
+#     # Load configuration
+#     #    args = parser.parse_args()
+#     chk_path = "output_batch_train/1576703507.3473513/checkpoints/ckpoint_1576703507.3473513_2.pt"
 
-def main():
-    # Load configuration
-    #    args = parser.parse_args()
-    chk_path = "output_batch_train/1576703507.3473513/checkpoints/ckpoint_1576703507.3473513_2.pt"
+#     # Torch stuff
+#     # torch.cuda.set_device(args.rank)
+#     torch.cuda.set_device(0)  # To get this to run on free RAAMAC GPU - Dominic
+#     cudnn.benchmark = True
 
-    # Torch stuff
-    # torch.cuda.set_device(args.rank)
-    torch.cuda.set_device(0)  # To get this to run on free RAAMAC GPU - Dominic
-    cudnn.benchmark = True
+#     # Create model by loading a snapshot
+#     body, head, cls_state = load_snapshot(
+#         '/home/sabrina/Documents/Inplace_ABN/wide_resnet38_deeplab_vistas.pth.tar')
+#     model = SegmentationModule(body, head)  # this changes
+#     # number of classes
+#     # in final model.cls layer
+#     arg_random = True
 
-    # Create model by loading a snapshot
-    body, head, cls_state = load_snapshot(
-        '/home/sabrina/Documents/Inplace_ABN/wide_resnet38_deeplab_vistas.pth.tar')
-    model = SegmentationModule(body, head)  # this changes
-    # number of classes
-    # in final model.cls layer
-    arg_random = True
+# #     Create data loader
+#     transformation = SegmentationTransform(     # Only applied to RGB
+#         640,
+#         # rgb mean and std - would this affect training at all?
+#         (0.41738699, 0.45732192, 0.46886091),
+#         (0.25685097, 0.26509955, 0.29067996),
+#     )
 
-#     Create data loader
-    transformation = SegmentationTransform(     # Only applied to RGB
-        640,
-        # rgb mean and std - would this affect training at all?
-        (0.41738699, 0.45732192, 0.46886091),
-        (0.25685097, 0.26509955, 0.29067996),
-    )
+#     image_folder, images_path = get_data('/dados/log_png_1003/')
 
-    image_folder, images_path = get_data('/dados/log_png_1003/')
+#     ####################
+#     #   TRAIN
+#     ####################
 
-    ####################
-    #   TRAIN
-    ####################
+#     device = torch.device("cuda:0")
+#     model.to(device)
 
-    device = torch.device("cuda:0")
-    model.to(device)
+#     model.eval()
+#     if(chk_path != ""):
+#         data = torch.load(chk_path)
+#         model.load_state_dict(data)
+#         model.to(device)
+#     with torch.no_grad():
+#         for batch_i, d_img in enumerate(images_path):
+#             image_temp = Image.open(d_img).convert(mode="RGB")
 
-    model.eval()
-    if(chk_path != ""):
-        data = torch.load(chk_path)
-        model.load_state_dict(data)
-        model.to(device)
-    with torch.no_grad():
-        for batch_i, d_img in enumerate(images_path):
-            image_temp = Image.open(d_img).convert(mode="RGB")
+#             img = transformation(image_temp)
+#             img = img.unsqueeze(0).to(device, non_blocking=True)
 
-            img = transformation(image_temp)
-            img = img.unsqueeze(0).to(device, non_blocking=True)
-
-            preds = model(img)
-            print(d_img)
-            print(preds)
-            t.toc()
-            print(t.elapsed)
-            t.tic()
-
+#             preds = model(img)
+#             print(d_img)
+#             print(preds)
+#             t.toc()
+#             print(t.elapsed)
+#             t.tic()
 
 
+# def load_snapshot(snapshot_file):
+#     """Load a training snapshot"""
+#     print("--- Loading model from snapshot")
+
+#     # Create network
+# #    norm_act = partial(InPlaceABN, activation="leaky_relu", slope=.01)
+#     norm_act = partial(InPlaceABN, activation="leaky_relu",
+#                        activation_param=.01)
+#     body = models.__dict__["net_wider_resnet38_a2"](
+#         norm_act=norm_act, dilation=(1, 2, 4, 4))
+#     head = DeeplabV3(4096, 256, 256, norm_act=norm_act, pooling_size=(84, 84))
+
+#     # Load snapshot and recover network state
+#     data = torch.load(snapshot_file)
+#     body.load_state_dict(data["state_dict"]["body"])
+#     head.load_state_dict(data["state_dict"]["head"])
+
+#     return body, head, data["state_dict"]["cls"]
 
 
-def load_snapshot(snapshot_file):
-    """Load a training snapshot"""
-    print("--- Loading model from snapshot")
-
-    # Create network
-#    norm_act = partial(InPlaceABN, activation="leaky_relu", slope=.01)
-    norm_act = partial(InPlaceABN, activation="leaky_relu",
-                       activation_param=.01)
-    body = models.__dict__["net_wider_resnet38_a2"](
-        norm_act=norm_act, dilation=(1, 2, 4, 4))
-    head = DeeplabV3(4096, 256, 256, norm_act=norm_act, pooling_size=(84, 84))
-
-    # Load snapshot and recover network state
-    data = torch.load(snapshot_file)
-    body.load_state_dict(data["state_dict"]["body"])
-    head.load_state_dict(data["state_dict"]["head"])
-
-    return body, head, data["state_dict"]["cls"]
-
-
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
