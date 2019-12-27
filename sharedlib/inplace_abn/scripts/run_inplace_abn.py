@@ -34,6 +34,9 @@ global transformation
 global device
 
 def initialize(horizontal_resolution):
+    print "ok, entrou no run_inplace_abn"
+
+def initialize_ok(horizontal_resolution):
     global model
     global transformation
     global device

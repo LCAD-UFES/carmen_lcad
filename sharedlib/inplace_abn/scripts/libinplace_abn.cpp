@@ -2,9 +2,7 @@
 #include "libinplace_abn.h"
 #include <Python.h>
 #include <numpy/arrayobject.h>
-
 #include <iostream>
-
 
 PyObject *python_libinplace_abn_process_image_function;
 
@@ -12,9 +10,9 @@ void
 initialize_python_context()
 {
 	Py_Initialize();
-	import_array();
-
-	PyObject *python_module_name = PyString_FromString((char *) "run_inplace_abn");
+	//import_array();
+	//PyObject *python_module_name = PyString_FromString((char *) "run_inplace_abn");
+	PyObject *python_module_name = PyUnicode_FromString("run_inplace_abn");
 
 	PyObject *python_module = PyImport_Import(python_module_name);
 
