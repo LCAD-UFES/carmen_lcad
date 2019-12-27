@@ -1,9 +1,9 @@
+#include <Python.h>
+#include "libinplace_abn.h"
+#include <numpy/arrayobject.h>
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
-#include "libinplace_abn.h"
-#include <Python.h>
-#include <numpy/arrayobject.h>
-#include <iostream>
+// #include <iostream>
 #define NUMPY_IMPORT_ARRAY_RETVAL
 
 PyObject *python_libinplace_abn_process_image_function;
@@ -13,16 +13,14 @@ initialize_python_context()
 {
 	Py_Initialize();
 	import_array();
-	PyObject *python_module_name = PyString_FromString((char *) "run_inplace_abn");
-	PyObject *python_module = PyImport_Import(python_module_name);
-
+	PyObject *python_module = PyImport_ImportModule("run_inplace_abn");
+	
 	if (python_module == NULL)
 	{
 		Py_Finalize();
-		exit(printf("Error: The python_module run_inplace_abn could not be loaded.\nMaybe PYTHONPATH is not set.\n"));
+		exit(printf("Error: The python_module run_test could not be loaded.\nMaybe PYTHONPATH is not set.\n"));
 	}
-	Py_DECREF(python_module_name);
-
+	
 	PyObject *python_initialize_function = PyObject_GetAttrString(python_module, (char *) "initialize");
 
 	if (python_initialize_function == NULL || !PyCallable_Check(python_initialize_function))
@@ -36,14 +34,14 @@ initialize_python_context()
 	if (PyErr_Occurred())
 		        PyErr_Print();
 
-	Py_DECREF(python_arguments);
-	Py_DECREF(python_initialize_function);
+	// Py_DECREF(python_arguments);
+	// Py_DECREF(python_initialize_function);
 
 	python_libinplace_abn_process_image_function = PyObject_GetAttrString(python_module, (char *) "inplace_abn_process_image");
 
 	if (python_libinplace_abn_process_image_function == NULL || !PyCallable_Check(python_libinplace_abn_process_image_function))
 	{
-		Py_DECREF(python_module);
+		// Py_DECREF(python_module);
 		Py_Finalize();
 		exit (printf("Error: Could not load the inplace_abn_process_image.\n"));
 	}

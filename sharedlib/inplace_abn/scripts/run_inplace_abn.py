@@ -33,12 +33,8 @@ global model
 global transformation
 global device
 
-
 def initialize(horizontal_resolution):
-    print "ok, entrou no run_inplace_abn"
-
-
-def initialize_ok(horizontal_resolution):
+    print ("ok, entrou no run_inplace_abn")
     global model
     global transformation
     global device
@@ -221,24 +217,24 @@ class SegmentationModule(nn.Module):
 #             t.tic()
 
 
-# def load_snapshot(snapshot_file):
-#     """Load a training snapshot"""
-#     print("--- Loading model from snapshot")
+def load_snapshot(snapshot_file):
+    """Load a training snapshot"""
+    print("--- Loading model from snapshot")
 
-#     # Create network
-# #    norm_act = partial(InPlaceABN, activation="leaky_relu", slope=.01)
-#     norm_act = partial(InPlaceABN, activation="leaky_relu",
-#                        activation_param=.01)
-#     body = models.__dict__["net_wider_resnet38_a2"](
-#         norm_act=norm_act, dilation=(1, 2, 4, 4))
-#     head = DeeplabV3(4096, 256, 256, norm_act=norm_act, pooling_size=(84, 84))
+    # Create network
+#    norm_act = partial(InPlaceABN, activation="leaky_relu", slope=.01)
+    norm_act = partial(InPlaceABN, activation="leaky_relu",
+                       activation_param=.01)
+    body = models.__dict__["net_wider_resnet38_a2"](
+        norm_act=norm_act, dilation=(1, 2, 4, 4))
+    head = DeeplabV3(4096, 256, 256, norm_act=norm_act, pooling_size=(84, 84))
 
-#     # Load snapshot and recover network state
-#     data = torch.load(snapshot_file)
-#     body.load_state_dict(data["state_dict"]["body"])
-#     head.load_state_dict(data["state_dict"]["head"])
+    # Load snapshot and recover network state
+    data = torch.load(snapshot_file)
+    body.load_state_dict(data["state_dict"]["body"])
+    head.load_state_dict(data["state_dict"]["head"])
 
-#     return body, head, data["state_dict"]["cls"]
+    return body, head, data["state_dict"]["cls"]
 
 
 # if __name__ == "__main__":
