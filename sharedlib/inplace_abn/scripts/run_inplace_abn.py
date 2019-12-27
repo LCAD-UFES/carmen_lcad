@@ -34,11 +34,11 @@ global transformation
 global device
 
 def initialize(horizontal_resolution):
-    print ("ok, entrou no run_inplace_abn")
+    # print ("ok, entrou no run_inplace_abn")
     global model
     global transformation
     global device
-    chk_path = "output_batch_train/1576703507.3473513/checkpoints/ckpoint_1576703507.3473513_2.pt"
+    chk_path = "/home/gabriel/Documents/inplace_abn/scripts/ckpoint_1576703507.3473513_4.pt"
     # Torch stuff
     # torch.cuda.set_device(args.rank)
     torch.cuda.set_device(0)  # To get this to run on free RAAMAC GPU - Dominic
@@ -46,7 +46,7 @@ def initialize(horizontal_resolution):
 
     # Create model by loading a snapshot
     body, head, cls_state = load_snapshot(
-        '/home/sabrina/Documents/Inplace_ABN/wide_resnet38_deeplab_vistas.pth.tar')
+        '/home/gabriel/Downloads/wide_resnet38_deeplab_vistas.pth.tar')
     model = SegmentationModule(body, head)  # this changes
     # number of classes
     # in final model.cls layer
@@ -79,13 +79,15 @@ def initialize(horizontal_resolution):
     print("-------------------------------------------------------\n\n")
 
 
-def inplace_abn_process_image(d_img):
+def inplace_abn_process_image(carmen_image):
     # converter a imagem
-    image_temp = Image.open(d_img).convert(mode="RGB")
-    img = transformation(image_temp)
+    print ("opaaaa!! entrou no inplace_abn_process_image")
+    img_teste = Image.fromarray(carmen_image)
+    # image_temp = Image.open(d_img).convert(mode="RGB")
+    img = transformation(img_teste)
     img = img.unsqueeze(0).to(device, non_blocking=True)
     preds = model(img)
-    print(d_img)
+    # print(d_img)
     print(preds)
     # t.toc()
     # print(t.elapsed)
