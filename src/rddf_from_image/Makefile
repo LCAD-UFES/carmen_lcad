@@ -8,6 +8,10 @@ LFLAGS += -lglobal -lrddf_interface -lipc -lparam_interface -llocalize_ackerman_
 IFLAGS += -I/usr/include/eigen3 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
 
+#inplace_abn
+IFLAGS += -I/usr/include/python2.7
+LFLAGS += -linplace_abn -lpython2.7
+
 MODULE_NAME = RDDF_PREDICT
 MODULE_COMMENT = 
 
@@ -20,5 +24,8 @@ TARGETS = rddf_from_image rddf_predict_optimizer.a
 
 rddf_from_image: rddf_from_image.o rddf_predict_optimizer.o
 rddf_predict_optimizer.a: rddf_predict_optimizer.o rddf_from_image.o
+
+libinplace_abn.a: 
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/inplace_abn/scripts/
 
 include ../Makefile.rules

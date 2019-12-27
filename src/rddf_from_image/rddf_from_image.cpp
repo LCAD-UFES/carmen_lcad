@@ -7,6 +7,7 @@
 #include <carmen/rddf_interface.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_index.h>
+#include <carmen/libinplace_abn.h>
 
 using namespace g2o;
 
@@ -263,6 +264,9 @@ main(int argc , char **argv)
 	signal(SIGINT, shutdown_module);
 
 	read_parameters(argv);
+	
+	/* Register Python Context for inplace_abn*/
+	initialize_python_context();
 
 	printf("Aguardando mensagem\n");
 
