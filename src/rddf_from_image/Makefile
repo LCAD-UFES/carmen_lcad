@@ -9,8 +9,8 @@ IFLAGS += -I/usr/include/eigen3
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
 
 #inplace_abn
-IFLAGS += -I/usr/include/python2.7
-LFLAGS += -linplace_abn -lpython2.7
+IFLAGS += -I/usr/include/python3.5
+LFLAGS += -linplace_abn -lpython3.5
 
 MODULE_NAME = RDDF_PREDICT
 MODULE_COMMENT = 
