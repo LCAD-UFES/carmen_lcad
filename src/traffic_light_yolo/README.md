@@ -56,7 +56,7 @@ To run the inference using our trained model, you will need the following files:
 
 [yolo]: https://pjreddie.com/darknet/yolo/
 
-After compiling [darknet] and downloading the previous files to the same place where the darknet binary is, run the folowing command to see the results on your own images.
+After compiling [darknet] and downloading the previous files to the same place where the Darknet binary is, run the following command to see the results on your own images.
 
 [darknet]: https://github.com/pjreddie/darknet
 
@@ -75,7 +75,7 @@ This module (`traffic_light_yolo`) was created as a solution for Traffic Light R
 Type `traffic_light_yolo --help` to get a summary of the available command line options:
   - `--camera_number` (**mandatory**): Which bumblebee camera will provide the images.
   - `--camera_side` (**mandatory**): Which side from the bumblebee should be used. Choose 0 for the left image, or 1 for the right one.
-  - `--annotation_path` (**mandatory**): File with annotations of relevant traffic lights.
+  - `--annotation_path` (**mandatory**): File with annotations of relevant traffic lights. The annotation format is the standard one, more on this down below.
   - `--yolo_cfg`: The configuration file for YOLOv3. It usually has the `.cfg` extension. (Default: `$CARMEN_HOME/data/traffic_light/yolov3/yolov3-tl-red-green.cfg`)
   - `--yolo_names`: File with the name of classes, one per line. It usually has the `.names` extension. (Default: `$CARMEN_HOME/data/traffic_light/yolov3/rg.names`)
   - `--yolo_weights`: File with YOLOv3's weights. `.weights` extension. (Default: `$CARMEN_HOME/data/traffic_light/yolov3/yolov3-tl-red-green.weights`)
@@ -86,10 +86,10 @@ Type `traffic_light_yolo --help` to get a summary of the available command line 
   - `--final_class_set`: Same as `--yolo_class_set`, but it describes the final classes used, i.e., after all predictions. (Default: `RGY`)
   - `--draw_fps`: Draw an FPS counter to the corner of the preview window. (Default: `off`)
   - `--draw_bbs`: Draw the bounding boxes predicted by YOLO. The color of the bounding box will be in accordance with the predicted state. (Default: `on`)
-  - `--draw_text`: Draw the labels of bounding boxes, right above them. This is unecessary if you are used to distinguishing the bounding boxes by color. (Default: `on`)
+  - `--draw_text`: Draw the labels of bounding boxes, right above them. This is unnecessary if you are used to distinguishing the bounding boxes by color. (Default: `on`)
   - `--draw_text_background`: Draw a black background behind the bounding boxes' labels, for easier reading. (Default: `on`)
   - `--draw_close_tls`: Draw a red point where the relevant traffic lights are expected to be. (Only traffic lights within 100 meters) (Default: `on`)
-  - `--draw_circle_threshold`: Draw yellow circuferences around the relevant traffic lights. The circuferences represent the search area for bounding boxes. If there are bounding box with center within the circunference, that which is closest to the center will be chosen to represent that traffic light. (Default: `on`)
+  - `--draw_circle_threshold`: Draw yellow circumferences around the relevant traffic lights. The circumferences represent the search area for bounding boxes. If there are bounding box with center within the circumference, that which is closest to the center will be chosen to represent that traffic light. (Default: `on`)
   - `--draw_lidar_points`: Draw LiDAR rays projected onto the camera image. (Default: `off`)
   - `--draw_final_prediction`: Draw a circle at the bottom-right corner with the color of the final prediction. The final prediction is that which will be forwarded to the Behavior Selector. (Default: `on`)
   - `--run_yolo`: Disable/Enable YOLO. This can't be disabled if you want to run inference or annotate traffic light positions. Disabling YOLO can be useful for annotating the frames with `--print-gt-prep`. (Default: `on`)
@@ -108,8 +108,18 @@ As stated before, only three options are mandatory: `--camera_number`, `--camera
 ./traffic_light_yolo --camera_number 3 --camera_side 1 --annotation_path "../data/rddf_annotation_dante_michelini-20181116-pista-esquerda.txt"
 ```
 
+The format used in the annotation file is the standard format used in IARA. One annotation per line specifying their type, latitute, longitude, etc. Here is an example of the format:
+```
+# I don't remember what each column means exactly... But you know them, right?
+# They are: latitute, longitude, height, orientation, type of annotation, etc.
+RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT  8     0  -0.730  7757149.652916  -365619.661488  2.473163
+RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT  8     0  -0.460  7757149.652916  -365619.661488  2.473163
+```
+
+**WARNING**: The annotation file that you specify with `--annotation_path` should contain only the traffic lights that are **RELEVANT** for the route that the car will follow. If you fail to meet this requirement, IARA will obey traffic lights that it should not.
+
 Remember to download the files necessary for running the YOLOv3 model. You can find them at the links provided above.
-The files for the random forest models have been commited to carmen_lcad's source, since they are very small. So there's no need for downloading them.
+The files for the random forest models have been committed to carmen_lcad's source, since they are very small. So there's no need for downloading them.
 
 If you were willing to run the module using another YOLOv3 model, you could use:
 ```bash
@@ -125,16 +135,26 @@ Similarly, for using another random forest model:
     --rf_weights "<path to RF weights>"
 ```
 
-If you want to annotate the position of traffic lights you'll need to use the `--compute_tl_poses` option. Any YOLOv3 model that detects traffic lights can be used, even those trained on COCO (remember to set the appropriate `--yolo_class_set` option). For details on how the annotation method works, check the paper (link above). Here, I'll only explain how to use it. First, run the module like this:
+If you want to annotate the position of traffic lights you'll need to use the `--compute_tl_poses` option. Any YOLOv3 model that detects traffic lights can be used, even those trained on COCO (remember to set the appropriate `--yolo_class_set` option). For details on how the annotation method works internally, check the paper (link on top). Here, I'll only explain how to use it. First, run the module like this:
 ```bash
 ./traffic_light_yolo 3 1 "../data/rddf_annotation_dante_michelini-20181116-pista-esquerda.txt"
     --compute_tl_poses on
 ```
 
-In doing so, the module will output traffic light poses to the command line (STDOUT) as soon as eight frames have passed without a single bounding box prediction. Unfortunately, there'll be a lot of false positives, and there's no straightforward way to know which is which. What I suggest you to do is that you copy the pose with highest number of LiDAR rays, and put it in your annotation file. Close the module, and open it again, so it'll load the new annotations. Use `--draw_close_tls on` this time. `--draw_circle_threshold on` also helps. Both are `on` by default.
-Rewind some 5 seconds (or much more...) of playback time and you'll see the point you annotated coming up on screen as a red dot. And this is how you know what that point was... This method was supposed to be very automatic and, thus, easier to use. But, frequently, there are just too many false positives. The next method is a little bit better in my opnion, even though it's all manual work.
+In doing so, the module will output traffic light poses to the command line (STDOUT) as soon as eight frames have passed without a single bounding box prediction. Unfortunately, there will be a lot of false positives, and there's no straightforward way to know which is which. Here is an example of what will be printed:
+```
+TL 1.601058 7755662.897029 -365314.158850 3.193850 Cluster Size 1510
+TL 1.601058 7755687.137108 -365310.753238 5.671924 Cluster Size 71
+TL 1.601058 7755685.925165 -365307.980280 5.997544 Cluster Size 34
+TL 1.601058 7755670.881095 -365278.615199 4.636400 Cluster Size 2499
+TL 1.601058 7755666.038631 -365310.521655 4.346878 Cluster Size 3
+TL 1.601058 7755664.321186 -365296.644090 3.034452 Cluster Size 2615
+TL 1.601058 7755679.758618 -365302.872754 3.178172 Cluster Size 12
+```
 
-<!-- Additionally, there is another method for annnotating traffic lights. -->
-Still with the `--compute_tl_poses` option on, you can click the screen with the middle mouse button to select the LiDAR ray that is closest to where you clicked. The module will print the 3D coordinates of where that LiDAR ray hit, and you'll se a blue point floating by as the playback progresses. Enabling `--draw_lidar_points` will help, because it shows the LiDAR points on screen, so you'll better know where to click. And the right mouse button can be used to clear the point you made. Although, clearing it is not necessary at all.
+The numeric columns are, respectively: theta (orientation), x, y, z, and cluster size. The cluster size is the total number of LiDAR rays that hit the object. So, lines with a small cluster size are probably either small, distant, or appeared briefly.
 
-<!-- Tiago Alves tbm fez uma ferramenta para anotação, porém eu não lembro em qual módulo está... -->
+What I suggest you to do is that you copy the pose with highest cluster size, and put it in your annotation file (formated appropriately). Close the module (`traffic_light_yolo`), and open it again, so it'll load the new annotations. (Use `--draw_close_tls on` this time. `--draw_circle_threshold on` also helps. Both are `on` by default.)
+Rewind some 5 seconds (or much more...) of playback time and you'll see the point you annotated coming up on screen as a red dot. And this is how you know what that point was. I know... it sucks. This method was supposed to be very automatic and, thus, easier to use. However, frequently, there are just too many false positives, and there is no way to tell which lines correspond to the traffic lights you want. The next method is a little bit better in my opinion, even though it's all manual work.
+
+Still with the `--compute_tl_poses` option on, you can click the screen with the middle mouse button to select the LiDAR ray that is closest to where you clicked. The module will print the 3D coordinates of where that LiDAR ray hit; you'll see a small blue point marking where you clicked; and an, slightly bigger, orange point floating by as the playback progresses. The orange point represents the 3D position of where you clicked. As the car moves forward, the orange point will get closer, until it gets out of screen. Enabling `--draw_lidar_points` will help, because it shows the LiDAR points on screen, and you'll better know where to click. And the right mouse button can be used to clear the point you made. However, clearing it is not necessary at all.

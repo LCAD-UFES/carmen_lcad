@@ -1345,7 +1345,7 @@ initializer()
         rf = StatModel::load<RTrees>(params.rf_weights);
     }
 
-    //namedWindow("Yolo Traffic Light", WINDOW_AUTOSIZE);
+    namedWindow("Yolo Traffic Light", WINDOW_AUTOSIZE);
     setMouseCallback("Yolo Traffic Light", onMouse);
 
     cerr << "INFO: Using confidence threshold of '" << params.yolo_thresh << "' for YOLO." << endl;
