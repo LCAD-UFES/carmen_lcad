@@ -1,8 +1,10 @@
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+
 #include "libinplace_abn.h"
 #include <Python.h>
 #include <numpy/arrayobject.h>
 #include <iostream>
+#define NUMPY_IMPORT_ARRAY_RETVAL
 
 PyObject *python_libinplace_abn_process_image_function;
 
@@ -10,9 +12,9 @@ void
 initialize_python_context()
 {
 	Py_Initialize();
-	//import_array();
-	//PyObject *python_module_name = PyString_FromString((char *) "run_inplace_abn");
-	PyObject *python_module_name = PyUnicode_FromString("run_inplace_abn");
+	import_array();
+	//PyObject *python_module_name = PyString_FromString((char *) "run_any");
+	PyObject *python_module_name = PyUnicode_FromString("run_any");
 
 	PyObject *python_module = PyImport_Import(python_module_name);
 
@@ -33,6 +35,8 @@ initialize_python_context()
 	PyObject *python_arguments = Py_BuildValue("(ii)", 640);
 
 	PyObject_CallObject(python_initialize_function, python_arguments);
+	if (PyErr_Occurred())
+		        PyErr_Print();
 
 	Py_DECREF(python_arguments);
 	Py_DECREF(python_initialize_function);

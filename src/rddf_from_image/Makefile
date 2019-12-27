@@ -9,8 +9,8 @@ IFLAGS += -I/usr/include/eigen3
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
 
 #inplace_abn
-IFLAGS += -I/usr/include/python3.6m
-LFLAGS += -linplace_abn `python3.6-config --libs` 
+IFLAGS += -I/usr/include/python3.5m
+LFLAGS += -linplace_abn `python3.5m-config --libs` 
 
 MODULE_NAME = RDDF_PREDICT
 MODULE_COMMENT = 

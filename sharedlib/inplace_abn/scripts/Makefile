@@ -7,8 +7,8 @@ CXXFLAGS += -std=gnu++11
 MODULE_NAME = Inplace_abn Neural Network
 MODULE_COMMENT = RDDF generation with images
 
-IFLAGS += -I/usr/include/python3.6m
-LFLAGS += -lpython3.6 -lpthread `pkg-config --libs opencv` `python3.6-config --libs` 
+IFLAGS += -I/usr/include/python3.5m
+LFLAGS += -lpython3.5m -lpthread `pkg-config --libs opencv` `python3.5m-config --libs` 
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src

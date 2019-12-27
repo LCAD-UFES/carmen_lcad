@@ -24,10 +24,10 @@ from modules.deeplab import DeeplabV3
 from inplace_abn import InPlaceABN
 import pdb
 import cv2
-from ttictoc import TicToc
+# from ttictoc import TicToc
 
-t = TicToc()
-t.tic()
+# t = TicToc()
+# t.tic()
 
 global model
 global transformation
@@ -88,9 +88,9 @@ def inplace_abn_process_image(d_img):
     preds = model(img)
     print(d_img)
     print(preds)
-    t.toc()
-    print(t.elapsed)
-    t.tic()
+    # t.toc()
+    # print(t.elapsed)
+    # t.tic()
     print("preds.shape={}".format(
         preds.shape))
     print("preds.type={}".format(preds.type))
