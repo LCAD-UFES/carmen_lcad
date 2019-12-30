@@ -38,7 +38,7 @@ def initialize(horizontal_resolution):
     global model
     global transformation
     global device
-    chk_path = "/home/lcad/carmen_lcad/sharedlib/inplace_abn/BestLoss_teste.pt"
+    chk_path = "/home/lcad/carmen_lcad/sharedlib/inplace_abn/BestLoss.pt"
     # Torch stuff
     # torch.cuda.set_device(args.rank)
     torch.cuda.set_device(0)  # To get this to run on free RAAMAC GPU - Dominic
