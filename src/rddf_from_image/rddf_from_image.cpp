@@ -81,6 +81,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	if (localize_received)
 	{
+//		static double last_time_stamp = 0.0;
+//		if ((carmen_get_time() - last_time_stamp) > 3.0)
+//			last_time_stamp = carmen_get_time();
+//		else
+//			return;
 		globalpos.theta = ackerman_message.globalpos.theta;
 		globalpos.x = ackerman_message.globalpos.x;
 		globalpos.y = ackerman_message.globalpos.y;

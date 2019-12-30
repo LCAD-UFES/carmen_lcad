@@ -47,6 +47,7 @@ def initialize(horizontal_resolution):
     # Create model by loading a snapshot
     body, head = load_snapshot()
     model = SegmentationModule(body, head)  # this changes
+    print('modelo carregado')
     # number of classes
     # in final model.cls layer
     arg_random = True
@@ -78,6 +79,10 @@ def initialize(horizontal_resolution):
 
 
 def inplace_abn_process_image(carmen_image):
+    global model
+    global transformation
+    global device
+
     # converter a imagem
     print ("opaaaa!! entrou no inplace_abn_process_image")
     img_teste = Image.fromarray(carmen_image)
@@ -85,6 +90,7 @@ def inplace_abn_process_image(carmen_image):
     img = transformation(img_teste)
     img = img.unsqueeze(0).to(device, non_blocking=True)
     preds = model(img)
+    # preds.to('cpu')
     # print(d_img)
     print(preds)
     # t.toc()
@@ -93,7 +99,11 @@ def inplace_abn_process_image(carmen_image):
     print("preds.shape={}".format(
         preds.shape))
     print("preds.type={}".format(preds[0][0].dtype))
-    return preds[0]
+    # torch.cuda.empty_cache()
+
+    return preds.cpu().detach().numpy()[0]
+    # return np.array(preds[0], 0.0, 0.0, 0.0])
+    # return preds[0]
 
 #parser = argparse.ArgumentParser(description="Testing script for the Vistas segmentation model")
 #parser.add_argument("--scales", metavar="LIST", type=str, default="[0.7, 1, 1.2]", help="List of scales")
