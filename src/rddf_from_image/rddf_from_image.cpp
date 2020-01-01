@@ -7,6 +7,7 @@
 #include <carmen/rddf_interface.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_index.h>
+#include <carmen/libinplace_abn.h>
 
 using namespace g2o;
 
@@ -49,7 +50,7 @@ struct mystruct_comparer
     }
 };
 
-std::vector<Prediction> preds;
+// std::vector<Prediction> preds;
 
 std::istream& operator>>(std::istream& is, Prediction& s)
 {
@@ -80,6 +81,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	if (localize_received)
 	{
+//		static double last_time_stamp = 0.0;
+//		if ((carmen_get_time() - last_time_stamp) > 3.0)
+//			last_time_stamp = carmen_get_time();
+//		else
+//			return;
 		globalpos.theta = ackerman_message.globalpos.theta;
 		globalpos.x = ackerman_message.globalpos.x;
 		globalpos.y = ackerman_message.globalpos.y;
@@ -91,96 +97,86 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 //											   preds.back(),
 //											   img_timestamp,
 //											   mystruct_comparer());
-		int index = -1;
-		for(int i = 0; i<preds.size(); i++)
+
+		float *preds;
+		preds = libinplace_abn_process_image(image_msg->width, image_msg->height, image_msg->raw_right);
+                printf("%f, %f, %f, %f\n",preds[0], preds[1], preds[2], preds[3]);
+		// printf("%f\n", preds[index].timestamp);
+
+		gsl_interp_accel *acc;
+		gsl_spline *phi_spline;
+		double knots_x[4] = {0.0,  30/ 3.0, 2 * 30 / 3.0, 30.0};
+		double knots_y[4] = {0.0, preds[1], preds[2], preds[3]};
+		acc = gsl_interp_accel_alloc();
+		const gsl_interp_type *type = gsl_interp_cspline;
+		phi_spline = gsl_spline_alloc(type, 4);
+		gsl_spline_init(phi_spline, knots_x, knots_y, 4);
+
+
+		double half_points = 0.0;
+		double acresc_points = 0.5;
+		double store_points[int(30/acresc_points)+1];
+		double store_thetas[int(30/acresc_points)+1];
+		double points_dx = 0.1;
+		int indice_points = 0;
+		//for(int i = 0; i < 30*2 ; i++)
+		while( half_points <= 30.0 )
 		{
-			if (preds[i].timestamp == img_timestamp)
+			if(half_points == 30)
 			{
-				index = i;
-				break;
+				double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
+				double spline_y2 = gsl_spline_eval(phi_spline, half_points - points_dx, acc);
+				store_points[indice_points] = spline_y;
+				store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y - spline_y2, points_dx));
 			}
-			else if (preds[i].timestamp > img_timestamp)
-				break;
+			else
+			{
+				double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
+				double spline_y2 = gsl_spline_eval(phi_spline, half_points + points_dx, acc);
+				store_points[indice_points] = spline_y;
+				store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y2 - spline_y, points_dx));
+			}
+			indice_points++;
+			half_points += acresc_points;
 		}
 
-		if(index != -1)
+
+		double ref_theta = -1 * (globalpos.theta /*- preds[index].dtheta*/);
+		double ref_x = -1 * sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * cos(atan2(globalpos.y, globalpos.x) + ref_theta);
+		double ref_y = -1 *(sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * sin(atan2(globalpos.y, globalpos.x) + ref_theta)) + preds[0];
+		SE2 ref_pose(ref_x, ref_y, ref_theta);
+
+		std::vector<carmen_ackerman_traj_point_t> carmen_rddf_poses_from_spline_vec;
+		for (int i=0; i<indice_points; i++)
 		{
-			printf("%f\n", preds[index].timestamp);
+			carmen_ackerman_traj_point_t waypoint;
+			SE2 pose_in_rddf_reference(i*0.5, store_points[i], store_thetas[i]);
+			SE2 pose_in_world_reference = ref_pose.inverse() * pose_in_rddf_reference;
+			waypoint.x = pose_in_world_reference[0];
+			waypoint.y = pose_in_world_reference[1];
+			waypoint.theta = carmen_normalize_theta(pose_in_world_reference[2]);
+			waypoint.v = 9.0;
+			waypoint.phi = 0.2;
+			carmen_rddf_poses_from_spline_vec.push_back(waypoint);
+		}
 
-			gsl_interp_accel *acc;
-			gsl_spline *phi_spline;
-			double knots_x[4] = {0.0,  30/ 3.0, 2 * 30 / 3.0, 30.0};
-			double knots_y[4] = {0.0, preds[index].k1, preds[index].k2, preds[index].k3};
-			acc = gsl_interp_accel_alloc();
-			const gsl_interp_type *type = gsl_interp_cspline;
-			phi_spline = gsl_spline_alloc(type, 4);
-			gsl_spline_init(phi_spline, knots_x, knots_y, 4);
-
-
-			double half_points = 0.0;
-			double acresc_points = 0.5;
-			double store_points[int(30/acresc_points)+1];
-			double store_thetas[int(30/acresc_points)+1];
-			double points_dx = 0.1;
-			int indice_points = 0;
-			//for(int i = 0; i < 30*2 ; i++)
-			while( half_points <= 30.0 )
-			{
-				if(half_points == 30)
-				{
-					double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
-					double spline_y2 = gsl_spline_eval(phi_spline, half_points - points_dx, acc);
-					store_points[indice_points] = spline_y;
-					store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y - spline_y2, points_dx));
-				}
-				else
-				{
-					double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
-					double spline_y2 = gsl_spline_eval(phi_spline, half_points + points_dx, acc);
-					store_points[indice_points] = spline_y;
-					store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y2 - spline_y, points_dx));
-				}
-				indice_points++;
-				half_points += acresc_points;
-			}
-
-
-			double ref_theta = -1 * (globalpos.theta /*- preds[index].dtheta*/);
-			double ref_x = -1 * sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * cos(atan2(globalpos.y, globalpos.x) + ref_theta);
-			double ref_y = -1 *(sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * sin(atan2(globalpos.y, globalpos.x) + ref_theta)) + preds[index].dy;
-			SE2 ref_pose(ref_x, ref_y, ref_theta);
-
-			std::vector<carmen_ackerman_traj_point_t> carmen_rddf_poses_from_spline_vec;
-			for (int i=0; i<indice_points; i++)
-			{
-				carmen_ackerman_traj_point_t waypoint;
-				SE2 pose_in_rddf_reference(i*0.5, store_points[i], store_thetas[i]);
-				SE2 pose_in_world_reference = ref_pose.inverse() * pose_in_rddf_reference;
-				waypoint.x = pose_in_world_reference[0];
-				waypoint.y = pose_in_world_reference[1];
-				waypoint.theta = carmen_normalize_theta(pose_in_world_reference[2]);
-				waypoint.v = 9.0;
-				waypoint.phi = 0.2;
-				carmen_rddf_poses_from_spline_vec.push_back(waypoint);
-			}
-
-			carmen_ackerman_traj_point_t *carmen_rddf_poses_from_spline = &carmen_rddf_poses_from_spline_vec[0];
+		carmen_ackerman_traj_point_t *carmen_rddf_poses_from_spline = &carmen_rddf_poses_from_spline_vec[0];
 //			for (int i = 0; i<indice_points; i++)
 //			{
 //				printf("%f %f\n", carmen_rddf_poses_from_spline[i].x, carmen_rddf_poses_from_spline[i].y);
 //			}
 
-			int annotations[2] = {1, 2};
-			int annotation_codes[2] = {1, 2};
+		int annotations[2] = {1, 2};
+		int annotation_codes[2] = {1, 2};
 
-			carmen_rddf_publish_road_profile_message(
-				carmen_rddf_poses_from_spline,
-				&last_pose,
-				indice_points,
-				1,
-				annotations,
-				annotation_codes);
-		}
+		carmen_rddf_publish_road_profile_message(
+			carmen_rddf_poses_from_spline,
+			&last_pose,
+			indice_points,
+			1,
+			annotations,
+			annotation_codes);
+
 		last_pose.x = globalpos.x;
 		last_pose.y = globalpos.y;
 		last_pose.theta = globalpos.theta;
@@ -242,27 +238,30 @@ main(int argc , char **argv)
 		exit(1);
 	}
 
-	std::ifstream input("preds_output_1576531267.0669897.txt");
-	Prediction s;
-	while (input >> s)
-	{
-		preds.push_back(s);
-	}
+	// std::ifstream input("preds_output_1576531267.0669897.txt");
+	// Prediction s;
+	// while (input >> s)
+	// {
+	// 	preds.push_back(s);
+	// }
 
-	std::sort(preds.begin(),
-		  preds.end(),
-		  compareByLength);
+	// std::sort(preds.begin(),
+	// 	  preds.end(),
+	// 	  compareByLength);
 
-	for(int i=0; i<preds.size(); i++)
-	{
-		printf("%f\n", preds[i].timestamp);
-	}
+	// for(int i=0; i<preds.size(); i++)
+	// {
+	// 	printf("%f\n", preds[i].timestamp);
+	// }
 
 	carmen_ipc_initialize(argc, argv);
 
 	signal(SIGINT, shutdown_module);
 
 	read_parameters(argv);
+	
+	/* Register Python Context for inplace_abn*/
+	initialize_python_context();
 
 	printf("Aguardando mensagem\n");
 
