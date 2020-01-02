@@ -10,7 +10,7 @@ static carmen_ackerman_motion_command_t motion_commands_vector[NUM_MOTION_COMMAN
 static double max_v = 0.0;
 static double max_phi = 0.0;
 static double frequency = 0.0;
-static double timer_period = 0.0;
+static double timer_period = 1.0;
 
 static double t1, t2, t3;
 
@@ -214,6 +214,55 @@ build_trajectory_stop_smooth_trajectory()
 
 
 void
+build_trajectory_trapezoidal_v()
+{
+	double delta_t, t;
+	int i;
+
+	double t0 = 2.0;
+	double t4 = 2.0;
+	delta_t = (t0 + t1 + t2 + t3 + t4) / (double) (NUM_MOTION_COMMANDS_PER_VECTOR - 2);
+
+	for (i = 0, t = 0.0; t < t0; t += delta_t, i++)
+	{
+		motion_commands_vector[i].v = 0.0;
+		motion_commands_vector[i].phi = 0.0;
+		motion_commands_vector[i].time = delta_t;
+	}
+
+	for (t = 0.0; t < t1; t += delta_t, i++)
+	{
+		motion_commands_vector[i].v = t * (max_v / t1);
+		motion_commands_vector[i].phi = 0;
+		motion_commands_vector[i].time = delta_t;
+	}
+
+	for (t = 0.0; t < t2; t += delta_t, i++)
+	{
+		motion_commands_vector[i].v = max_v;
+		motion_commands_vector[i].phi = 0.0;
+		motion_commands_vector[i].time = delta_t;
+	}
+
+	for (t = 0.0; t <= t3; t += delta_t, i++)
+	{
+		motion_commands_vector[i].v = max_v - t * (max_v / t3);
+		motion_commands_vector[i].phi = 0.0;
+		motion_commands_vector[i].time = delta_t;
+	}
+
+	for (t = 0.0; t <= (t4 + delta_t); t += delta_t, i++)
+	{
+		motion_commands_vector[i].v = 0.0;
+		motion_commands_vector[i].phi = 0.0;
+		motion_commands_vector[i].time = delta_t;
+	}
+	printf("i = %d, NUM_MOTION_COMMANDS_PER_VECTOR = %d\n", i, NUM_MOTION_COMMANDS_PER_VECTOR);
+	send_trajectory_to_robot();
+}
+
+
+void
 build_trajectory_trapezoidal_phi()
 {
 	double delta_t, t;
@@ -293,8 +342,9 @@ timer_handler()
 	
 	if (first_time)
 	{
-		//build_trajectory_trapezoidal_phi();
-		build_trajectory_sinusoidal_phi();
+//		build_trajectory_trapezoidal_phi();
+//		build_trajectory_sinusoidal_phi();
+		build_trajectory_trapezoidal_v();
 		first_time = 0;
 	}
 }
@@ -442,7 +492,7 @@ main(int argc, char **argv) //./ford_escape_hybrid_train_base -max_v 5.0 -max_ph
 
 	read_parameters(argc, argv);
 
-	//select_wave_form();
+//	select_wave_form();
 
 	carmen_ipc_addPeriodicTimer(timer_period, timer_handler, NULL);
 	//carmen_ipc_addPeriodicTimer(timer_period, timer_handler_general, NULL);

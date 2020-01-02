@@ -37,7 +37,8 @@
 #include "ford_escape_hybrid.h"
 
 //#define FORD_ESCAPE_COMMUNICATION_DUMP
-#define PLOT_PHI
+//#define PLOT_PHI
+#define PLOT_VELOCITY
 
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
 
@@ -497,7 +498,7 @@ torc_report_velocity_state_message_handler(OjCmpt XGV_CCU __attribute__ ((unused
 	if (reportVelocityState)
 	{
 		// A media da velocidade das radas trazeiras ee mais correta. A velocidade abaixo ee a media das rodas dianteiras mais um ruido estranho...
-		printf("g_XGV_velocity %lf   g_XGV_left_rear_wheel_speed %lf\n", g_XGV_velocity, g_XGV_left_rear_wheel_speed);
+//		printf("g_XGV_velocity %lf   g_XGV_left_rear_wheel_speed %lf\n", g_XGV_velocity, g_XGV_left_rear_wheel_speed);
 		// g_XGV_velocity = reportVelocityState->velocityXMps;
 #ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
 		FILE *caco = fopen("ford_dump.txt", "a");
