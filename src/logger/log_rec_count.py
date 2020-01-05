@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     for rec in logfile:
         rec_count += 1
-        if rec_count % 1000 == 0:
+        if rec_count % 10000 == 0:
             print 'rec count =', rec_count
         tag = rec.split()[0]
         if tag in tag_count:
@@ -24,5 +24,6 @@ if __name__ == "__main__":
     logfile.close()
     
     print 'rec count =', rec_count
+    print '\nLog record count:'
     for item in tag_count.items():
         print item[0], item[1]
