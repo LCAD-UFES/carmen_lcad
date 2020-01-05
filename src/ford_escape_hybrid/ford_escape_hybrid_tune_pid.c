@@ -214,7 +214,7 @@ build_trajectory_stop_smooth_trajectory()
 
 
 void
-build_trajectory_trapezoidal_v()
+build_trajectory_trapezoidal_v_phi()
 {
 	double delta_t, t;
 	int i;
@@ -233,21 +233,21 @@ build_trajectory_trapezoidal_v()
 	for (t = 0.0; t < t1; t += delta_t, i++)
 	{
 		motion_commands_vector[i].v = t * (max_v / t1);
-		motion_commands_vector[i].phi = 0;
+		motion_commands_vector[i].phi = t * (max_phi / t1);
 		motion_commands_vector[i].time = delta_t;
 	}
 
 	for (t = 0.0; t < t2; t += delta_t, i++)
 	{
 		motion_commands_vector[i].v = max_v;
-		motion_commands_vector[i].phi = 0.0;
+		motion_commands_vector[i].phi = max_phi;
 		motion_commands_vector[i].time = delta_t;
 	}
 
 	for (t = 0.0; t <= t3; t += delta_t, i++)
 	{
 		motion_commands_vector[i].v = max_v - t * (max_v / t3);
-		motion_commands_vector[i].phi = 0.0;
+		motion_commands_vector[i].phi = max_phi - t * (max_phi / t3);;
 		motion_commands_vector[i].time = delta_t;
 	}
 
@@ -257,7 +257,7 @@ build_trajectory_trapezoidal_v()
 		motion_commands_vector[i].phi = 0.0;
 		motion_commands_vector[i].time = delta_t;
 	}
-	printf("i = %d, NUM_MOTION_COMMANDS_PER_VECTOR = %d\n", i, NUM_MOTION_COMMANDS_PER_VECTOR);
+	printf("max_phi = %lf, i = %d, NUM_MOTION_COMMANDS_PER_VECTOR = %d\n", max_phi, i, NUM_MOTION_COMMANDS_PER_VECTOR);
 	send_trajectory_to_robot();
 }
 
@@ -344,7 +344,7 @@ timer_handler()
 	{
 //		build_trajectory_trapezoidal_phi();
 //		build_trajectory_sinusoidal_phi();
-		build_trajectory_trapezoidal_v();
+		build_trajectory_trapezoidal_v_phi();
 		first_time = 0;
 	}
 }
