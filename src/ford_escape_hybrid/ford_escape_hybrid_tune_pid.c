@@ -225,7 +225,7 @@ build_trajectory_trapezoidal_v_phi()
 
 	for (i = 0, t = 0.0; t < t0; t += delta_t, i++)
 	{
-		motion_commands_vector[i].v = 0.0;
+		motion_commands_vector[i].v = 0.1;
 		motion_commands_vector[i].phi = 0.0;
 		motion_commands_vector[i].time = delta_t;
 	}
