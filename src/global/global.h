@@ -292,6 +292,8 @@ typedef struct {
 	double behaviour_selector_central_lane_obstacles_safe_distance;
 	double behaviour_selector_lateral_lane_obstacles_safe_distance;
 	double behaviour_selector_lateral_lane_displacement;
+
+	double behaviour_selector_goal_velocity_tuning_factor; // Correct imperfections of the velocity control by modifying the braking starting point
 } carmen_robot_ackerman_config_t;
 
 typedef struct {

@@ -978,9 +978,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 		img = image_msg->raw_right;
 
 	int crop_x = 0;
-	int crop_y = 280;
+	int crop_y = 0; //280;
 	int crop_w = image_msg->width;// 1280;
-	int crop_h = 480;//image_msg->height;//400; // 500;
+	int crop_h = image_msg->height;//480;//image_msg->height;//400; // 500;
 
 	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
@@ -1230,7 +1230,8 @@ initializer()
 	network_struct = initialize_YOLO( yolo_cfg_path, yolo_weights_path);
 
 	//init_python(1280, 960);
-	init_python(1280, 480);
+//	init_python(1280, 480);
+	init_python(640, 480);
 	printf("------- Python Tracker Ready -------\n");
 }
 

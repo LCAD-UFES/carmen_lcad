@@ -1,3 +1,15 @@
+06/01/2020
+
+- Fazer rddf novo do estacionamento
+- ajusta PIDs para estacionamento
+- Fazer readme.txt do neural_object_detector3
+- Testar parana na anotacao de stop
+- Manual
+- Controle via celular
+- Testar visualizacao via tablet
+- Testar sistemas nao essenciais
+
+
 11/09/2016
 
 - Considerar usar o modelo neural da IARA no obstacle avoider para ver se, nas curvas, o obstacle avoider mostra a mesma trajetoria do model_predictive_planner

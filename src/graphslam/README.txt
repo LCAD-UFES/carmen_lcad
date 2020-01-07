@@ -38,13 +38,15 @@ Compile os módulos graphslam e o odometry_calibration
      gnuplot
      gnuplot> set size square; set size ratio -1; plot "tmp/sync.txt" u 1:2 w l t 'odometry'
 
-5. Para otimizar PRELIMINARMENTE suas poses com o graphslam, clique no botão GSlam escolha Show Output (para saber quando o programa terminou) e, em seguida, 
+5. Para otimizar preliminarmente suas poses com o graphslam, clique no botão GSlam escolha Show Output (para saber quando o programa terminou) e, em seguida, 
    clique no botão GSlam e escolha Start Program. Quando o programa terminar, clique no botão GSlam e escolha Stop Program.
 
    Este passo produz uma versão preliminar do arquivo tmp/poses_opt.txt, que você pode examinar com o gnuplot (ver campos de cada linha na função save_corrected_vertices() de graphslam.cpp):
      gnuplot> set size square; set size ratio -1; plot "tmp/sync.txt" u 4:5 w l t 'gps xyz', "tmp/poses_opt.txt" u 1:2 w l t 'car'
 
-   Se seu log não tiver loops ou você não quiser tratar loops, pule para o passo 8.
+   Você pode aperfeiçoar o resultado do graphslam editando o arquivo bin/graphslam_config.txt
+
+   Se seu log não tiver loops ou você não quiser tratar loops, pule para o passo 8. Se quiser tratar loops você vai precisar do arquivo tmp/poses_opt.txt
 
 6. Se você desejar fechamento de loops, gere o arquivo tmp/loops.txt da seguinte forma:
 
@@ -64,8 +66,9 @@ Compile os módulos graphslam e o odometry_calibration
 
 6.2.1.1. Verifique no process se o map_server está apontando para ../data/mapper_teste2
 
-6.2.2. Faça o mapa da segunda passada na região de loop ligando o PubPoses, escolhendo, no playback control, "Message play:stop" t segundo_inicial_2:segundo_final_2, e teclando play. 
-       Quando terminar de rodar, o arquivo tmp/gp1.txt será gerado pelo localizer e conterá a globalpos da segunda passada na região de loop. Mate este processo.
+6.2.2. Faça o mapa da segunda passada na região de loop usando as poses de tmp/poses_opt.txt ligando o PubPoses, escolhendo, no playback control, 
+       "Message play:stop" t segundo_inicial_2:segundo_final_2, e teclando play. 
+       Quando terminar de rodar, o arquivo tmp/gp1.txt será gerado pelo localizer e conterá as globalpos da segunda passada na região de loop usada no mapeamento. Mate este processo.
 
 6.2.3. Gere poses (globalpos) da primeira passada pela região de loop com o localizer rodando o process-volta_da_ufes_playback_viewer_3D_loopclosure.ini  
        Escolha no playback control "Message play:stop" t XXXX, onde XXXX é um momento (segundo) alguns segundos (~15segs antes) antes de segundo_inicial_1 (cujo globalpos timestamp
