@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+char annotation_file [1024];
+
 
 void
 publish_voice_app_command_message(const char *command, int command_id)
@@ -26,17 +28,17 @@ publish_voice_app_command_message(const char *command, int command_id)
 
 
 void
-get_annotation_from_rddf(char *allrddf)
+get_annotation_from_rddf(char *buffer, char *allrddf)
 {
 	FILE *stream;
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t read;
 	bzero(allrddf,3000);
-	char buffer[1024];
-	bzero(buffer,1024);
-	strcat(buffer,getenv("CARMEN_HOME"));
-	strcat(buffer,"/data/rddf_annotation_log_20140418.txt\0");
+	//char buffer[1024];
+	//bzero(buffer,1024);
+	//strcat(buffer,getenv("CARMEN_HOME"));
+	//strcat(buffer,"/data/rddf_annotation_log_20140418.txt\0");
 	stream = fopen(buffer, "r");
 	if (stream == NULL)
 		printf("Arquivo RDDF não encontrado!");
@@ -250,6 +252,22 @@ shutdown_module(int signo)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+void
+read_parameters (int argc , char **argv)
+{
+	if (argc < 2)
+	{
+		printf("Please inform the annotation file!\n");
+		exit(0);
+	}
+	else
+	{
+		strcpy(annotation_file, argv[1]);
+	}
+
+}
+
+
 int
 main(int argc , char **argv)
 {
@@ -257,9 +275,11 @@ main(int argc , char **argv)
 
 	signal(SIGINT, shutdown_module);
 
+	read_parameters (argc , argv);
+
 	char rddf_annotation[3000];
 
-	get_annotation_from_rddf(rddf_annotation);
+	get_annotation_from_rddf(annotation_file ,rddf_annotation);
 
 	initiate_server(rddf_annotation);
 
