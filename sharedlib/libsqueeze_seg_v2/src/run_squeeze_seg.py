@@ -249,10 +249,10 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     save_lidar_image(img_lidar1, timestamp, tag)
     #save_lidar_image(img_lidar2, timestamp, "_r")
     
-    #pred_cls = np.concatenate((pred_cls_lidar2[0][:,shape_last_part:],pred_cls_lidar3[0][:,shape_to_complete:271],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:shape_last_part]), axis=1)
-    s = (mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL)
-    lidar_test = np.zeros(s, dtype=np.int64)
-    pred_cls = np.concatenate((lidar_test[:,:271],pred_cls_lidar1[0], lidar_test[:,:shape_last_part]), axis=1)
+    pred_cls = np.concatenate((pred_cls_lidar2[0][:,shape_last_part:],pred_cls_lidar3[0][:,shape_to_complete:271],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:shape_last_part]), axis=1)
+    #s = (mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL)
+    #lidar_test = np.zeros(s, dtype=np.int64)
+    #pred_cls = np.concatenate((lidar_test[:,:271],pred_cls_lidar1[0], lidar_test[:,:shape_last_part]), axis=1)
     print("pred_cls.shape={}".format(
         pred_cls.shape)) 
     return pred_cls

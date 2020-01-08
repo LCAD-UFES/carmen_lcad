@@ -62,32 +62,16 @@ libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze
 	
 	PyObject* numpyTimestamp = PyArray_SimpleNewFromData(1, dimstamp, NPY_DOUBLE, &time[0]);
 	PyObject* numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_DOUBLE, point_cloud);
-	//PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunction(python_libsqueeze_seg_process_point_cloud_function, (char *) "(O)", numpyArray, numpyTimestamp);
-    //auto t1 = std::chrono::high_resolution_clock::now();
+
 	if (PyErr_Occurred())
 		        PyErr_Print();
-
 
 	PyArrayObject* python_result_array = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_libsqueeze_seg_process_point_cloud_function, numpyArray, numpyTimestamp, NULL);
 
 	if (PyErr_Occurred())
 	        PyErr_Print();
-	//auto t2 = std::chrono::high_resolution_clock::now();
-	//auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
-    //std::cout << "Inference Duration: " << duration << "ms" << std::endl;
+
 	long long int *result_array = (long long int*)PyArray_DATA(python_result_array);
-	// int *result_array_1d = (int*)PyArray_DATA(python_result_array);
-	// int line = 0;
-	// for (int j = vertical_resolution; j > 0; j--)
-	// {
-	// 	for (int i = 0; i < shots_to_squeeze; i++, line++)
-	// 	{
-	// 		if(result_array[line] > 1){
-	// 			std::cout << "res[" << j << "][" << i << "] = " << result_array[line] << " line: " << line << std::endl;
-	// 		}
-	// 	}
-	// }
-	// std::cout << line << std::endl;
 
 	if (PyErr_Occurred())
         PyErr_Print();
