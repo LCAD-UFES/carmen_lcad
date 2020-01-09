@@ -64,4 +64,23 @@ draw_symotha(symotha_drawer_t *symotha_drawer, carmen_pose_3D_t car_fused_pose)
 {
 	drawHollowCircle(car_fused_pose.position.x, car_fused_pose.position.y, car_fused_pose.position.z, symotha_drawer->symotha_params.central_lane, 1.0, 0.0, 0.0);
 	drawHollowCircle(car_fused_pose.position.x, car_fused_pose.position.y, car_fused_pose.position.z, symotha_drawer->symotha_params.main_central_lane, 0.0, 1.0, 0.0);
+
+
+	double theta = car_fused_pose.orientation.yaw;
+
+	carmen_vector_3D_t pose, offset;
+	pose.x = car_fused_pose.position.x - (2.0 * symotha_drawer->symotha_params.lane_safe_dist) * sin(theta);
+	pose.y = car_fused_pose.position.y + (2.0 * symotha_drawer->symotha_params.lane_safe_dist) * cos(theta);
+	pose.z = car_fused_pose.position.z;
+
+	drawHollowCircle(pose.x, pose.y, pose.z, symotha_drawer->symotha_params.main_central_lane, 0.0, 0.0, 1.0);
+
+	theta = carmen_normalize_theta(theta + M_PI);
+
+	pose.x = car_fused_pose.position.x - (2.0 * symotha_drawer->symotha_params.lane_safe_dist) * sin(theta);
+	pose.y = car_fused_pose.position.y + (2.0 * symotha_drawer->symotha_params.lane_safe_dist) * cos(theta);
+	pose.z = car_fused_pose.position.z;
+
+	drawHollowCircle(pose.x, pose.y, pose.z, symotha_drawer->symotha_params.main_central_lane, 0.0, 0.0, 1.0);
 }
+
