@@ -22,6 +22,7 @@ publish_voice_app_command_message(const char *command, int command_id)
 	message.command = (char *) command;
 	message.timestamp = carmen_get_time();
 	message.host = carmen_get_host();
+	printf("rddf_file: %s\n", message.command);
 
 	carmen_voice_interface_publish_command_message(&message);
 }
@@ -114,44 +115,77 @@ char *
 choose_rddf_file(carmen_app_solicitation_message message)
 {
 
+	int i;
 	static char rddf_file_name[2048];
-	char *condition = message.origin;
 //	char buffer[MAXSIZE];
 	bzero(rddf_file_name,2048);
 	//strcat(rddf_file_name,getenv("CARMEN_HOME"));
 	strcat(rddf_file_name,"data/rndf/");
-	//criar arquivos RDDF partindo do lcad ate o destino:
-			//lcad X estacionamento ambiental
-			//lcad X teatro
-			//lcad X lagoa
-	//setar o nome do arquivo na variável rddf_file_name
-//	strcpy(rddf_file_name, rddf);
+	strcat(rddf_file_name,"rddf_estacionamento_ambiental_");
 
-	//strcat(condition,message.origin);
-	strcat(condition,"-");
-	strcat(condition,message.destination);
+	//todos os caracteres da anotacao origem para minusculo
+	for(i = 0; message.origin[i]; i++){
+		message.origin[i] = tolower(message.origin[i]);
+	}
+	char *origin;
+	//removendo o "RDDF_PLACE_" da string
+	origin=strndup(message.origin+11, strlen(message.origin));
+	printf("origin: %s\n", origin);
 
-	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_ESCADARIA_TEATRO") == 0){
-		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025-lcad-teatro.txt");
-		return rddf_file_name;
+	//todos os caracteres da anotacao destino para minusculo
+	for(i = 0; message.destination[i]; i++){
+		message.destination[i] = tolower(message.destination[i]);
 	}
-	//Estacionamento Ambiental
-	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_CANTINA_CT")  == 0){
-		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025-lcad-estacionamento-ambiental.txt");
-		return rddf_file_name;
-	}
-	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_LAGO") == 0){
-		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025-lcad-lagoa.txt");
-		return rddf_file_name;
-	}
-	//LCAD to LCAD
-	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_ESTACIONAMENTO_CCJE") == 0){
-		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025.txt");
-		return rddf_file_name;
-	}
+	char *destination;
+	//removendo o "RDDF_PLACE_" da string
+	destination=strndup(message.destination+11, strlen(message.destination));
+	printf("destination: %s\n", destination);
 
-	//return (rddf_file_name);
-	return "0";
+	strcat(rddf_file_name,origin);
+	strcat(rddf_file_name,"_");
+	strcat(rddf_file_name,destination);
+	strcat(rddf_file_name,"-ecotech4-2.txt");
+
+	return rddf_file_name;
+
+
+//	static char rddf_file_name[2048];
+//	char *condition = message.origin;
+//	bzero(rddf_file_name,2048);
+	//strcat(rddf_file_name,getenv("CARMEN_HOME"));
+//	strcat(rddf_file_name,"data/rndf/");
+//	//criar arquivos RDDF partindo do lcad ate o destino:
+//			//lcad X estacionamento ambiental
+//			//lcad X teatro
+//			//lcad X lagoa
+//	//setar o nome do arquivo na variável rddf_file_name
+////	strcpy(rddf_file_name, rddf);
+//
+//	//strcat(condition,message.origin);
+//	strcat(condition,"-");
+//	strcat(condition,message.destination);
+//
+//	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_ESCADARIA_TEATRO") == 0){
+//		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025-lcad-teatro.txt");
+//		return rddf_file_name;
+//	}
+//	//Estacionamento Ambiental
+//	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_CANTINA_CT")  == 0){
+//		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025-lcad-estacionamento-ambiental.txt");
+//		return rddf_file_name;
+//	}
+//	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_LAGO") == 0){
+//		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025-lcad-lagoa.txt");
+//		return rddf_file_name;
+//	}
+//	//LCAD to LCAD
+//	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_ESTACIONAMENTO_CCJE") == 0){
+//		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025.txt");
+//		return rddf_file_name;
+//	}
+//
+//	//return (rddf_file_name);
+//	return "0";
 
 }
 
