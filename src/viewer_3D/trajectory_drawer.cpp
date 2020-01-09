@@ -23,9 +23,14 @@ struct trajectory_drawer
 };
 
 
+symotha_parameters symotha_params;
+
+
+
 trajectory_drawer*
 create_trajectory_drawer(double r, double g, double b)
 {
+
 	trajectory_drawer* t_drawer = (trajectory_drawer*)malloc(sizeof(trajectory_drawer));
 		
 	t_drawer->path = NULL;
@@ -114,7 +119,7 @@ draw_path(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 {
 	glPushMatrix();
 
-		glBegin(GL_LINE_STRIP);	
+		glBegin(GL_LINE_STRIP);
 			
 			glColor3f(t_drawer->r, t_drawer->g, t_drawer->b);
 
@@ -133,9 +138,32 @@ draw_path(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 	glPopMatrix();
 }
 
+void drawHollowCircle(GLfloat x, GLfloat y, GLfloat radius){
+	int i;
+	int lineAmount = 100; //# of triangles used to draw circle
+
+	//GLfloat radius = 0.8f; //radius
+	GLfloat twicePi = 2.0f * M_PI;
+
+	glPushMatrix();
+
+		glBegin(GL_LINE_LOOP);
+		for(i = 0; i <= lineAmount;i++) {
+			glVertex2f(
+					x + (radius * cos(i *  twicePi / lineAmount)),
+					y + (radius* sin(i * twicePi / lineAmount))
+			);
+		}
+		glEnd();
+
+	glPopMatrix();
+}
+
 void
 draw_trajectory(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 {
+
+	drawHollowCircle (car_fused_pose.position.x, car_fused_pose.position.y, symotha_params.central_lane);
 	draw_path(t_drawer, offset);
 	draw_goals(t_drawer, offset);
 }
