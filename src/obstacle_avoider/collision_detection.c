@@ -11,7 +11,6 @@
 #define SECURITY_VELOCITY_PERCENT 0.5
 
 carmen_collision_config_t global_collision_config;
-int global_max_height_level;
 
 //carmen_mapper_virtual_laser_message virtual_laser_message;
 
@@ -892,7 +891,6 @@ check_collision_config_initialization()
 	fscanf(collision_file_pointer,"%d", &(global_collision_config.n_markers));
 	fscanf(collision_file_pointer,"%d", &max_h_level);
 	global_collision_config.markers = (carmen_collision_marker_t*) malloc(global_collision_config.n_markers*sizeof(carmen_collision_marker_t));
-	fscanf(collision_file_pointer,"%d", &(global_max_height_level));
 
 	for (i = 0; i < global_collision_config.n_markers; i++)
 		fscanf(collision_file_pointer,"%lf %lf %lf %d", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
