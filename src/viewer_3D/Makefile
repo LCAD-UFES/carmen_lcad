@@ -41,7 +41,10 @@ SUBDIRS += glm
 MODULE_NAME = viewer_3D
 MODULE_COMMENT = This module implements a viewer_3D filter for fusing IMU and GPS data.
 
-SOURCES = viewer_3D.cpp Window.cpp GLDraw.cpp xsens_viewer.cpp draw_car.cpp point_cloud_drawer.cpp variable_velodyne_drawer.cpp velodyne_360_drawer.cpp interface_drawer.cpp map_drawer.cpp download_map.cpp texture_loader.cpp trajectory_drawer.cpp velodyne_intensity_drawer.cpp annotation_drawer.cpp #lane_analysis_drawer.cpp
+SOURCES = viewer_3D.cpp Window.cpp GLDraw.cpp xsens_viewer.cpp draw_car.cpp point_cloud_drawer.cpp variable_velodyne_drawer.cpp \
+	velodyne_360_drawer.cpp interface_drawer.cpp map_drawer.cpp download_map.cpp texture_loader.cpp trajectory_drawer.cpp \
+	velodyne_intensity_drawer.cpp annotation_drawer.cpp symotha_drawer.cpp #lane_analysis_drawer.cpp
+	
 PUBLIC_INCLUDES = velodyne_360_drawer.h
 
 PUBLIC_LIBRARIES = libvelodyne_360_drawer.a
@@ -59,7 +62,9 @@ endif
 # rules
 libvelodyne_360_drawer.a: velodyne_360_drawer.o
 
-viewer_3D:	viewer_3D.o Window.o GLDraw.o draw_car.o point_cloud_drawer.o variable_velodyne_drawer.o velodyne_360_drawer.o interface_drawer.o map_drawer.o texture_loader.o download_map.o trajectory_drawer.o velodyne_intensity_drawer.o annotation_drawer.o #lane_analysis_drawer.o
+viewer_3D:	viewer_3D.o Window.o GLDraw.o draw_car.o point_cloud_drawer.o variable_velodyne_drawer.o velodyne_360_drawer.o \
+	interface_drawer.o map_drawer.o texture_loader.o download_map.o trajectory_drawer.o velodyne_intensity_drawer.o \
+	annotation_drawer.o symotha_drawer.o #lane_analysis_drawer.o
 
 xsens_viewer: xsens_viewer.o Window.o draw_car.o texture_loader.o download_map.o
 
