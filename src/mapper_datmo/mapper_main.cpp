@@ -512,8 +512,8 @@ filter_sensor_data_using_pointcloud(sensor_parameters_t *sensor_params, sensor_d
 	double map_resolution = map_config.resolution;
 	int img_planar_depth = (double) 0.5 * sensor_params->range_max / map_resolution;
 	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
-	cv::Mat img_lidar = cv::Mat(200, 1090, CV_8UC3, cv::Scalar(255, 255, 255));
-		
+	cv::Mat img_planar_back = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
+	cv::Mat total;
 	int thread_id = omp_get_thread_num();
 
 	int min_shots = 1024;
@@ -546,95 +546,89 @@ filter_sensor_data_using_pointcloud(sensor_parameters_t *sensor_params, sensor_d
 					{
 						int px = (double)velodyne_p3d.y() / map_resolution + img_planar_depth;
 						int py = (double)img_planar.rows - 1 - velodyne_p3d.x() / map_resolution;
-						//int line = (sensor_params->vertical_resolution - j) * number_of_laser_shots + i;
 						if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
 						{
 							img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(70, 70, 70);
 						}
-						//if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
-						//	img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(cluster_color[i][0], cluster_color[i][1], cluster_color[i][2]);
+						else
+						{ // The back of img_planar
+							if (abs(px) >= img_planar.cols)
+							{
+								px = abs(px) - img_planar.cols;
+							}
+							if (abs(py) >= img_planar.rows)
+							{
+								py = abs(py) - img_planar.rows;
+							}
+							img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = cv::Vec3b(70, 70, 70);
+						}
 					}
 					//}
 				}
-				if (range > MIN_RANGE && range < sensor_params->range_max)
+				//Remove prob > 0.5 to show the segmentation everywhere
+				if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max)
 				{
-					int line = (sensor_params->vertical_resolution - j) * number_of_laser_shots +  i;
-					//double vertical_angle_1 = carmen_normalize_theta(carmen_degrees_to_radians(sensors_params[VELODYNE].vertical_correction[j]));
-					//double horizontal_angle_1 = carmen_normalize_theta(carmen_degrees_to_radians(-velodyne_seg->partial_scan[i].angle));
-					//double range_1 = (((double)velodyne_seg->partial_scan[i].distance[sensors_params[VELODYNE].ray_order[j]]) / 500.0);
-					//tf::Point point = spherical_to_cartesian(horizontal_angle_1, vertical_angle_1, range_1);
+					int line = (sensor_params->vertical_resolution - j) * number_of_laser_shots + i;
 					int px = (double)velodyne_p3d.y() / map_resolution + img_planar_depth;
 					int py = (double)img_planar.rows - 1 - velodyne_p3d.x() / map_resolution;
-					if (px >= 0.0 && px < img_planar.cols && py >= 0.0 && py < img_planar.rows)
+					int vel_seg = velodyne_segmented[line];
+					if (vel_seg != 0)
 					{
-						int vel_seg = velodyne_segmented[line];
-						if (vel_seg != 0)
+						if (px >= 0.0 && px < img_planar.cols && py >= 0.0 && py < img_planar.rows)
 						{
-							if (vel_seg == 1){
+							switch (vel_seg)
+							{
+							case 1:
 								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(142, 0, 0);
-							}else{
-								if(vel_seg == 2)
-								{
-									img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(60, 20, 220);
-								}else{
-									if (vel_seg == 3){
-										img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(230, 0, 0);
-									}else{
-										img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(70, 0, 0);
-									}
-								}
+								break;
+							case 2:
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(60, 20, 220);
+								break;
+							case 3:
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(230, 0, 0);
+								break;
+							default:
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(70, 0, 0);
+							}
+						}
+						else
+						{
+							// The back of img_planar
+							if (abs(px) >= img_planar_back.cols)
+							{
+								px = abs(px) - img_planar_back.cols;
+							}
+							if (abs(py) >= img_planar_back.rows)
+							{
+								py = abs(py) - img_planar_back.rows;
+							}
+							switch (vel_seg)
+							{
+							case 1:
+								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = cv::Vec3b(142, 0, 0);
+								break;
+							case 2:
+								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = cv::Vec3b(60, 20, 220);
+								break;
+							case 3:
+								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = cv::Vec3b(230, 0, 0);
+								break;
+							default:
+								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = cv::Vec3b(70, 0, 0);
 							}
 						}
 					}
 				}
 			}
 		}
-		// for (int j = sensor_params->vertical_resolution, line = 0; j > 0; j--)
-		// {
-		// 	for (int i = 0; i < number_of_laser_shots; i++, line++)
-		// 	{
-		// 		double vertical_angle_1 = carmen_normalize_theta(carmen_degrees_to_radians(sensors_params[VELODYNE].vertical_correction[j]));
-		// 		double horizontal_angle_1 = carmen_normalize_theta(-carmen_degrees_to_radians(-velodyne_seg->partial_scan[i].angle));
-		// 		double range_1 = (((double)velodyne_seg->partial_scan[i].distance[sensors_params[VELODYNE].ray_order[j]]) / 500.0);
-		// 		tf::Point point = spherical_to_cartesian(horizontal_angle_1, vertical_angle_1, range_1);
-		// 		if (range_1 > MIN_RANGE && range_1 < 200.0)
-		// 		{
-		// 			double pointx = (double) point.x();
-		// 			double pointy = (double) point.y();
-		// 			int px = (double)point.y() / map_resolution + (double)img_planar_depth;
-		// 			int py = (double)img_planar.rows - 1.0 - point.x() / map_resolution;
-		// 			int vel_seg = velodyne_segmented[line];
-		// 			if (px >= 0.0 && px < (double)img_planar.cols && py >= 0.0 && py < (double)img_planar.rows)
-		// 			{
-		// 				if (vel_seg != 0){
-		// 					if (vel_seg == 1){
-		// 						//Squeezeseg segmentation
-		// 						//cout << ">h: " << i << " v: " << j << " line: " << line << " shots: " << number_of_laser_shots << " vx: " << velodyne_p3d.x() << " vy: " << velodyne_p3d.y() << " px:" << point.x() << " py:" << point.y() << " vel_seg:" << velodyne_segmented[line] << " r:" << range_1 << " range vel:" << range << endl;
-		// 						img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(255, 0, 0);
-		// 					}else{
-		// 						if(vel_seg == 2)
-		// 						{
-		// 							img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 255, 0);
-		// 						}else{
-		// 							if (vel_seg == 3){
-		// 								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(255, 255, 0);
-		// 							}else{
-		// 								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(128, 128, 0);
-		// 							}
-		// 						}
-		// 					}
-		// 				}else{
-		// 					//img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(128, 128, 128);
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// }
+
 		if (verbose >= 2)
 		{
-			//imshow("Image Semantic Segmentation", img);
-			resize(img_planar, img_planar, cv::Size(0, 0), 3.5, 3.5, cv::INTER_NEAREST);
-			imshow("Pointcloud Semantic Map", img_planar);
+			vconcat(img_planar, img_planar_back, total);
+			resize(total, total, cv::Size(0,0), 2.0, 2.0, cv::INTER_NEAREST);
+			//resize(img_planar, img_planar, cv::Size(0, 0), 3.5, 3.5, cv::INTER_NEAREST);
+			//imshow("Pointcloud Semantic Map", img_planar);
+			imshow("Pointcloud Full", total);
 			cv::waitKey(1);
 		}
 	}
