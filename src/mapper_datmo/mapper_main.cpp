@@ -548,7 +548,7 @@ filter_sensor_data_using_pointcloud(sensor_parameters_t *sensor_params, sensor_d
 						int py = (double)img_planar.rows - 1 - velodyne_p3d.x() / map_resolution;
 						if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
 						{
-							img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(70, 70, 70);
+							img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 0);
 						}
 						else
 						{ // The back of img_planar
@@ -560,7 +560,7 @@ filter_sensor_data_using_pointcloud(sensor_parameters_t *sensor_params, sensor_d
 							{
 								py = abs(py) - img_planar.rows;
 							}
-							img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = cv::Vec3b(70, 70, 70);
+							img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = cv::Vec3b(0, 0, 0);
 						}
 					}
 					//}
@@ -625,7 +625,7 @@ filter_sensor_data_using_pointcloud(sensor_parameters_t *sensor_params, sensor_d
 		if (verbose >= 2)
 		{
 			vconcat(img_planar, img_planar_back, total);
-			resize(total, total, cv::Size(0,0), 2.0, 2.0, cv::INTER_NEAREST);
+			resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
 			//resize(img_planar, img_planar, cv::Size(0, 0), 3.5, 3.5, cv::INTER_NEAREST);
 			//imshow("Pointcloud Semantic Map", img_planar);
 			imshow("Pointcloud Full", total);
