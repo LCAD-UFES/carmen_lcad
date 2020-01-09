@@ -2824,16 +2824,16 @@ draw_loop(window *w)
 
         if (draw_trajectory_flag1)
         {
-            draw_trajectory(t_drawer1, get_position_offset(), car_fused_pose);
+            draw_trajectory(t_drawer1, get_position_offset());
         	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
-        		draw_trajectory(t_drawerTree[i], get_position_offset(), car_fused_pose);
+        		draw_trajectory(t_drawerTree[i], get_position_offset());
         }
 
         if (draw_trajectory_flag2)
-            draw_trajectory(t_drawer2, get_position_offset(), car_fused_pose);
+            draw_trajectory(t_drawer2, get_position_offset());
 
         if (draw_trajectory_flag3)
-            draw_trajectory(t_drawer3, get_position_offset(), car_fused_pose);
+            draw_trajectory(t_drawer3, get_position_offset());
 
         if (draw_map_image_flag)
         {
@@ -3015,13 +3015,13 @@ draw_loop_for_picking(window *w)
             draw_map(m_drawer, get_position_offset());
 
         if (draw_trajectory_flag1)
-            draw_trajectory(t_drawer1, get_position_offset(), car_fused_pose);
+            draw_trajectory(t_drawer1, get_position_offset());
 
         if (draw_trajectory_flag2)
-            draw_trajectory(t_drawer2, get_position_offset(), car_fused_pose);
+            draw_trajectory(t_drawer2, get_position_offset());
 
         if (draw_trajectory_flag3)
-            draw_trajectory(t_drawer3, get_position_offset(), car_fused_pose);
+            draw_trajectory(t_drawer3, get_position_offset());
 
         if (draw_map_image_flag)
         {

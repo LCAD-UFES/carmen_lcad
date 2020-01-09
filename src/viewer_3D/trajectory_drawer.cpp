@@ -23,10 +23,6 @@ struct trajectory_drawer
 };
 
 
-symotha_parameters symotha_params;
-
-
-
 trajectory_drawer*
 create_trajectory_drawer(double r, double g, double b)
 {
@@ -138,32 +134,9 @@ draw_path(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 	glPopMatrix();
 }
 
-void drawHollowCircle(GLfloat x, GLfloat y, GLfloat radius){
-	int i;
-	int lineAmount = 100; //# of triangles used to draw circle
-
-	//GLfloat radius = 0.8f; //radius
-	GLfloat twicePi = 2.0f * M_PI;
-
-	glPushMatrix();
-
-		glBegin(GL_LINE_LOOP);
-		for(i = 0; i <= lineAmount;i++) {
-			glVertex2f(
-					x + (radius * cos(i *  twicePi / lineAmount)),
-					y + (radius* sin(i * twicePi / lineAmount))
-			);
-		}
-		glEnd();
-
-	glPopMatrix();
-}
-
 void
 draw_trajectory(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 {
-
-	drawHollowCircle (car_fused_pose.position.x, car_fused_pose.position.y, symotha_params.central_lane);
 	draw_path(t_drawer, offset);
 	draw_goals(t_drawer, offset);
 }
