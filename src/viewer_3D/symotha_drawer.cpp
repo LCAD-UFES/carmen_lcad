@@ -29,7 +29,7 @@ symotha_drawer_t *create_symotha_drawer(int argc, char** argv)
 }
 
 
-void drawHollowCircle(GLfloat x, GLfloat y, GLfloat radius, double r, double g, double b)
+void drawHollowCircle(GLfloat x, GLfloat y, GLfloat z, GLfloat radius, double r, double g, double b)
 {
 	int i;
 	int lineAmount = 100; //# of triangles used to draw circle
@@ -44,7 +44,7 @@ void drawHollowCircle(GLfloat x, GLfloat y, GLfloat radius, double r, double g, 
 	glBegin(GL_LINE_LOOP);
 	for (i = 0; i <= lineAmount; i++)
 	{
-		glVertex2f(x + (radius * cos(i * twicePi / lineAmount)), y + (radius * sin(i * twicePi / lineAmount)));
+		glVertex3f(x + (radius * cos(i * twicePi / lineAmount)), y + (radius * sin(i * twicePi / lineAmount)), z);
 	}
 	glEnd();
 
@@ -62,6 +62,6 @@ destroy_symotha_drawer(symotha_drawer_t *symotha_drawer)
 void
 draw_symotha(symotha_drawer_t *symotha_drawer, carmen_pose_3D_t car_fused_pose)
 {
-	drawHollowCircle(car_fused_pose.position.x, car_fused_pose.position.y, symotha_drawer->symotha_params.central_lane, 1.0, 0.0, 0.0);
-	drawHollowCircle(car_fused_pose.position.x, car_fused_pose.position.y, symotha_drawer->symotha_params.main_central_lane, 0.0, 1.0, 0.0);
+	drawHollowCircle(car_fused_pose.position.x, car_fused_pose.position.y, car_fused_pose.position.z, symotha_drawer->symotha_params.central_lane, 1.0, 0.0, 0.0);
+	drawHollowCircle(car_fused_pose.position.x, car_fused_pose.position.y, car_fused_pose.position.z, symotha_drawer->symotha_params.main_central_lane, 0.0, 1.0, 0.0);
 }
