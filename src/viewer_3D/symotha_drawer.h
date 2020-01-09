@@ -7,10 +7,10 @@ extern "C" {
 
 struct _symotha_parameters
 {
-	double main_central_lane;
-	double central_lane;
-	double lane_safe_dist;
-	double obstacles_safe_dist;
+	double central_lane_obstacles_safe_distance;
+	double main_central_lane_obstacles_safe_distance;
+	double lateral_lane_obstacles_safe_distance;
+	double obstacles_safe_distance;
 };
 
 typedef struct _symotha_parameters symotha_parameters_t;
