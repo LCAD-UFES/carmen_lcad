@@ -5,13 +5,27 @@
 extern "C" {
 #endif
 
-typedef struct symotha_parameters symotha_parameters;
+struct _symotha_parameters
+{
+	double main_central_lane;
+	double central_lane;
+	double lane_safe_dist;
+	double obstacles_safe_dist;
+};
 
-symotha_parameters* create_SYMOTHA_drawer(int argc, char **argv);
-void destroy_trajectory_drawer(trajectory_drawer* t_drawer);
-void add_trajectory_message(trajectory_drawer* t_drawer, carmen_navigator_ackerman_plan_message *message);
-void add_goal_list_message(trajectory_drawer* t_drawer, carmen_behavior_selector_goal_list_message *goals);
-void draw_trajectory(trajectory_drawer* t_drawer, carmen_vector_3D_t offset, carmen_pose_3D_t car_fused_pose);
+typedef struct _symotha_parameters symotha_parameters_t;
+
+
+struct _symotha_drawer
+{
+	symotha_parameters_t symotha_params;
+};
+
+typedef struct _symotha_drawer symotha_drawer_t;
+
+symotha_drawer_t *create_symotha_drawer(int argc, char **argv);
+void destroy_symotha_drawer(symotha_drawer_t *symotha_drawer);
+void draw_symotha(symotha_drawer_t *symotha_drawer, carmen_pose_3D_t car_fused_pose);
 
 #ifdef __cplusplus
 }
