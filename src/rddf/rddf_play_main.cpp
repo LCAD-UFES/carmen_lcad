@@ -534,6 +534,7 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 		{
 			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
 			annotations_to_publish.push_back(annotation_i);
+//			printf("---STOP\n");
 			return (true);
 		}
 	}
@@ -1687,9 +1688,13 @@ carmen_rddf_play_publish_annotation_queue()
 
 	annotation_queue_message.num_annotations = annotations_to_publish.size();
 
-	for (size_t i = 0; i < annotations_to_publish.size(); i++)
-		memcpy(&(annotation_queue_message.annotations[i]), &(annotations_to_publish[i].annotation), sizeof(carmen_annotation_t));
+//	printf ("Annotation size %d\n", (int)annotations_to_publish.size());
 
+	for (size_t i = 0; i < annotations_to_publish.size(); i++)
+	{
+//		printf ("code %d\n", annotations_to_publish[i].annotation.annotation_type);
+		memcpy(&(annotation_queue_message.annotations[i]), &(annotations_to_publish[i].annotation), sizeof(carmen_annotation_t));
+	}
 	annotation_queue_message.host = carmen_get_host();
 	annotation_queue_message.timestamp = carmen_get_time();
 
@@ -1816,6 +1821,8 @@ carmen_rddf_play_load_annotation_file(char *carmen_annotation_filename)
 	if (f == NULL)
 		return;
 
+	//printf("---- Annotation file: %s\n", carmen_annotation_filename);
+
 	carmen_rddf_play_clear_annotation_vector();
 
 	char line[1024];
@@ -1838,22 +1845,18 @@ carmen_rddf_play_load_annotation_file(char *carmen_annotation_filename)
 		{
 			annotation.annotation_description = (char *) calloc (1024, sizeof(char));
 			strcpy(annotation.annotation_description, annotation_description);
-//			printf("%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n", annotation.annotation_description,
-//					annotation.annotation_type,
-//					annotation.annotation_code,
-//					annotation.annotation_orientation,
-//					annotation.annotation_point.x,
-//					annotation.annotation_point.y,
-//					annotation.annotation_point.z);
 
-			/*
-			 *	The annotation file's points (x,y) are placed at the front of the car
-			 *	The annotation vector's points (x,y) are placed at the car's rear axle
-			 *	The annotation orientation is the angle of the rddf orientation in radians
-			 *	The value of annotation point z may have different meanings for different annotation types
-			 *	For PEDESTRIAN_TRACK type z is the search radius for pedestrians in meters
-			 *	For TRAFFIC_SIGN type z is the curvature of the rddf in radians/meter
-			 */
+			//printf("%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n", annotation.annotation_description, annotation.annotation_type, annotation.annotation_code,
+			//		annotation.annotation_orientation, annotation.annotation_point.x, annotation.annotation_point.y, annotation.annotation_point.z);
+
+
+			//The annotation file's points (x,y) are placed at the front of the car
+			//The annotation vector's points (x,y) are placed at the car's rear axle
+			//The annotation orientation is the angle of the rddf orientation in radians
+			//The value of annotation point z may have different meanings for different annotation types
+			//For PEDESTRIAN_TRACK type z is the search radius for pedestrians in meters
+			//For TRAFFIC_SIGN type z is the curvature of the rddf in radians/meter
+
 			carmen_ackerman_traj_point_t annotation_point;
 			annotation_point.x = annotation.annotation_point.x;
 			annotation_point.y = annotation.annotation_point.y;
@@ -2068,7 +2071,6 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 		rddf_file_name[strlen(rddf_file_name) - 4] = '\0';
 		sprintf(carmen_annotation_filename, "%s_annotation.txt", rddf_file_name);
 
-//		printf("---------%s\n", carmen_annotation_filename);
 		carmen_rddf_play_load_annotation_file(carmen_annotation_filename);
 	}
 }
