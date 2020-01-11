@@ -246,62 +246,86 @@ def distance_point_line2(p1, p2, p):
 	
 	distance = abs(x - p[0])
 	
-	return distance, x
+	return distance
 
 
-def comppute_point_to_line_error(line_p1, line_p2, predictions_points):
+def find_index_to_line_error_down(gt_points_side, predictions_points):
 	min_dist = 999999
 	distance = 0.0
-	aux = 0
-	point = []
-	distance = dist(line_p1[0], line_p1[1], predictions_points[0], predictions_points[1])
-
-	if distance < min_dist:
-		aux = 0
-		min_dist = distance
-
-	distance = dist(line_p2[0], line_p2[1], predictions_points[2], predictions_points[3])
+	index = 10
 	
+	for i in range(len(gt_points_side)):
+		distance = dist(gt_points_side[i][0], gt_points_side[i][1], predictions_points[0], predictions_points[1])
+		if distance < min_dist:
+			min_dist = distance
+			index = i
+	return index
 
-	if distance < min_dist:
-		aux = 1
-		min_dist = distance
-	if aux == 0:
-		point.append(predictions_points[0])
-		point.append(predictions_points[1])
-	else:
-		point.append(predictions_points[2])
-		point.append(predictions_points[3])
-	returned = distance_point_line2(line_p1, line_p2, point)
-	point[0] = returned[1]
+def find_index_to_line_error_up(gt_points_side, predictions_points):
+	min_dist = 999999
+	distance = 0.0
+	index = 10
 	
-	return returned[0], point
+	for i in range(len(gt_points_side)):
+		distance = dist(gt_points_side[i][0], gt_points_side[i][1], predictions_points[2], predictions_points[3])
+		if distance < min_dist:
+			min_dist = distance
+			index = i
+	return index
+
 
 def compute_error(gt_points, predictions_points, aux):
-	error = 0
-	chosen_points_list = []
-
-	for i in (range(len(gt_points[0]) - 1)):
-		for j in (range(len(predictions_points[0]))):
-			returned = comppute_point_to_line_error(gt_points[0][i], gt_points[0][i+1], 
-				predictions_points[0][j])
-			error += returned[0]
-			chosen_points_list.append(returned[1])
-	
-	for i in (range(len(gt_points[1]) - 1)):
-		for j in (range(len(predictions_points[1]))):
-			returned = comppute_point_to_line_error(gt_points[1][i], gt_points[1][i + 1], 
-				predictions_points[1][j])
-			error += returned[0]
-			chosen_points_list.append(returned[1])
-	if aux == 0:
-		if (float(error) < 500.0):
-			print ('Error Yolo: ' + str(error))
+	index_down = 10
+	index_up = 10
+	point = []
+	error_left = 0
+	error_right = 0
+	for i in range(len(predictions_points[0])):
+		index_down = find_index_to_line_error_down(gt_points[0], predictions_points[0][i])
+		point.append(predictions_points[0][i][0])
+		point.append(predictions_points[0][i][1])
+		if index_down <= len(gt_points) - 2:
+			error_left += distance_point_line2(gt_points[0][index_down], gt_points[0][index_down+1], point)
+		else:
+			error_left += distance_point_line2(gt_points[0][index_down], gt_points[0][index_down-1], point)
+		del(point[:])
+		index_up = find_index_to_line_error_up(gt_points[0], predictions_points[0][i])
+		point.append(predictions_points[0][i][2])
+		point.append(predictions_points[0][i][3])
+		if index_up <= len(gt_points) - 2:
+			error_left += distance_point_line2(gt_points[0][index_up], gt_points[0][index_up+1], point)
+		else:
+			error_left += distance_point_line2(gt_points[0][index_up], gt_points[0][index_up-1], point)
+		del(point[:])
+	if len(predictions_points[0]) != 0:
+		error_left = error_left / (len(predictions_points[0]) * 2)
 	else:
-		if (float(error) < 500.0):
-			print ('Error ELAS: ' + str(error))
-	return error, chosen_points_list
-
+		error_left = 0
+	for i in range(len(predictions_points[1])):
+		index_down = find_index_to_line_error_down(gt_points[1], predictions_points[1][i])
+		point.append(predictions_points[1][i][0])
+		point.append(predictions_points[1][i][1])
+		if index_down <= len(gt_points) - 2:
+			error_right += distance_point_line2(gt_points[1][index_down], gt_points[1][index_down+1], point)
+		else:
+			error_right += distance_point_line2(gt_points[1][index_down], gt_points[1][index_down-1], point)
+		del(point[:])
+		index_up = find_index_to_line_error_up(gt_points[1], predictions_points[1][i])
+		point.append(predictions_points[1][i][2])
+		point.append(predictions_points[1][i][3])
+		if index_up <= len(gt_points) - 2:
+			error_right += distance_point_line2(gt_points[1][index_up], gt_points[1][index_up+1], point)
+		else:
+			error_right += distance_point_line2(gt_points[1][index_up], gt_points[1][index_up-1], point)
+		del(point[:])
+	if len(predictions_points[1]) != 0:
+		error_right = error_right / (len(predictions_points[1]) * 2)
+	else:
+		error_right = 0
+	print ("left ", error_left)
+	print ("right ", error_right)
+	error_total = error_left + error_right
+	return error_total
 
 if __name__ == "__main__":
 	#if len(sys.argv) < 5 or len(sys.argv) > 9:
@@ -342,13 +366,14 @@ if __name__ == "__main__":
 		cont = 0
 		error_array = []
 		array_numbers = []
-		for i in range(20):
+		for i in range(40):
 			for gt_file_name in gt_files_list:
 				if not gt_file_name.endswith('.txt'):
 					continue
 				gt_points = read_groud_truth_points(sys.argv[1], gt_file_name)
-				#if (int(number_of_folder) == 9000):
-					#continue
+				print(gt_points)
+				if (int(number_of_folder) == 9000):
+					continue
 				#gt_points_yolo = transform_groud_truth_points_to_yolo(gt_points)
 				
 				#print (gt_points_yolo)
@@ -357,26 +382,28 @@ if __name__ == "__main__":
 
 				#print (gt_points_true)
 				predictions_points = read_and_convert_4_points_coordinates(yolo_path, gt_file_name, image_width, image_heigth)
-				
+				if (len(predictions_points[0]) == 0 or len(predictions_points[1]) == 0):
+					continue
+				print(predictions_points)
 				predictions_points_2 = read_and_convert_4_points_coordinates(sys.argv[3], gt_file_name, image_width, image_heigth)
 				
 				#print (predictions_points)
 				#returned = compute_error(gt_points_true, predictions_points)
 				returned = compute_error(gt_points, predictions_points, 0)
 				returned_2 = compute_error(gt_points, predictions_points_2, 1)
-				if (float(returned[0]) < 500.0):
-					error += returned[0]
-				if (float(returned[0]) > 500.0):
+				if (float(returned) < 500.0):
+					error += returned
+				else:
 					continue
 				cont += 1
-				if (int(number_of_folder) == 20000 and float(returned_2[0]) < 500.0):
-					error_elas += returned_2[0]
+				if (int(number_of_folder) == 20000 and float(returned_2) < 500.0):
+					error_elas += returned_2
 				#if images_path:
 					#show_image(gt_points, predictions_points, returned[1], returned_2[1], gt_file_name, images_path)
 				#show_image(gt_points, predictions_points, predictions_points_2, gt_file_name, images_path)
 			#print(number_of_folder)
 			print ('TOTAL Error Yolo: ' + str(error/cont))
-			print ('TOTAL Error ELAS: ' + str((error_elas * 20)/cont))
+			print ('TOTAL Error ELAS: ' + str((error_elas * 40)/cont))
 			error_array.append(int(error/cont))
 			array_numbers.append(int(number_of_folder))
 			number_of_folder = number_of_folder + 1000
