@@ -762,7 +762,7 @@ carmen_collision_detection_displace_car_pose_according_to_car_orientation(carmen
 }
 
 carmen_point_t
-carmen_collision_detection_pose_according_to_car_orientation(carmen_ackerman_traj_point_t *car_pose, double x, double y)
+carmen_collision_detection_displaced_pose_according_to_car_orientation(carmen_ackerman_traj_point_t *car_pose, double x, double y)
 {
 	carmen_point_t displaced_car_pose;
 	double coss, sine;
@@ -1005,7 +1005,7 @@ carmen_obstacle_distance_mapper_map_message *distance_map , carmen_robot_ackerma
 
 	for (int i = 0; i < global_collision_config.n_markers; i++)
 	{
-		carmen_point_t displaced_point = carmen_collision_detection_pose_according_to_car_orientation(&trajectory_pose,
+		carmen_point_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 				global_collision_config.markers[i].x, global_collision_config.markers[i].y);
 		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
 		//distance equals to -1.0 when the coordinates are outside of map
@@ -1033,7 +1033,7 @@ carmen_obstacle_distance_mapper_map_message **distance_maps , carmen_robot_acker
 
 	for (int i = 0; i < global_collision_config.n_markers; i++)
 	{
-		carmen_point_t displaced_point = carmen_collision_detection_pose_according_to_car_orientation(&trajectory_pose,
+		carmen_point_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 				global_collision_config.markers[i].x, global_collision_config.markers[i].y);
 		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_maps[global_collision_config.markers[i].height_level]);
 		//distance equals to -1.0 when the coordinates are outside of map

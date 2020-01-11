@@ -22,7 +22,6 @@ namespace rslidar_driver
 {
 typedef struct rslidarScan
 {
-	unsigned char status_timestamp[4];
 	rslidarPacket *packets;
 }  __attribute__((packed)) rslidarScan_t ;
 
@@ -122,13 +121,13 @@ public:
  * @param node          raw packet output topic
  * @param private_nh
  */
-	rslidarDriver(carmen_velodyne_variable_scan_message &variable_scan, int velodyne_num_lasers, int velodyne_max_laser_shots_per_revolution, int velodyne_udp_port, int velodyne_gps_udp_port, rslidar_param private_nh);
+	rslidarDriver(carmen_velodyne_variable_scan_message &variable_scan, int velodyne_num_lasers, int velodyne_max_laser_shots_per_revolution, rslidar_param &private_nh);
 
   ~rslidarDriver()
   {
   }
-  void unpack(const rslidarPacket& pkt, carmen_velodyne_variable_scan_message *variable_scan);
-  bool poll(carmen_velodyne_variable_scan_message &variable_scan, int num_lasers, int velodyne_max_laser_shots_per_revolution, int velodyne_udp_port, int velodyne_gps_udp_port, rslidar_param private_nh);
+  void unpack(int *shot_pos, const rslidarPacket& pkt, carmen_velodyne_variable_scan_message *variable_scan);
+  bool poll(carmen_velodyne_variable_scan_message &variable_scan, int num_lasers, int velodyne_max_laser_shots_per_revolution, int velodyne_udp_port, int velodyne_gps_udp_port, rslidar_param &private_nh);
   void difopPoll(void);
 
 private:

@@ -6,7 +6,9 @@ MODULE_COMMENT = ROBOSENSE Library for UDP Access
 LINK = g++
 CXXFLAGS += -g
 LFLAGS += -lipc -lglobal
- 
+
+PUBLIC_LIBRARIES = librobosense.a
+
 SOURCES = input.cpp rsdriver.cpp main.cpp
 TARGETS = test librobosense.a 
 

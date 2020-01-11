@@ -104,6 +104,9 @@ double
 carmen_obstacle_avoider_compute_closest_car_distance_to_colliding_point(carmen_ackerman_traj_point_t *car_pose, carmen_position_t point_to_check,
 		carmen_robot_ackerman_config_t robot_config, double circle_radius);
 
+carmen_point_t
+carmen_collision_detection_displaced_pose_according_to_car_orientation(carmen_ackerman_traj_point_t *car_pose, double x, double y);
+
 carmen_collision_config_t*
 carmen_get_global_collision_config();
 

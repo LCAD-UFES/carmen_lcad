@@ -49,6 +49,8 @@ static int draw_lane_analysis_flag;
 static lane_analysis_drawer *lane_drawer;
 #endif
 
+#include "symotha_drawer.h"
+
 
 static int num_laser_devices;
 static int moving_objects_point_clouds_size = 1;
@@ -247,6 +249,7 @@ static trajectory_drawer* t_drawer3;
 static std::vector<trajectory_drawer*> t_drawerTree;
 static velodyne_intensity_drawer* v_int_drawer;
 static AnnotationDrawer *annotation_drawer;
+static symotha_drawer_t *symotha_drawer;
 
 
 window *w = NULL;
@@ -291,11 +294,14 @@ static int velodyne_active = -1;
 static double vertical_correction[32];
 static double ouster_vertical_correction[64];
 
+static int show_symotha_flag = 0;
+
 // in degrees
 static double ouster64_azimuth_offsets[64];
 static double vc_16[32];
 static double vc_32[32];
 static double vc_64[64];
+static char* v16_robosense;
 static char* v16;
 static char* v32;
 static char* v64;
@@ -2192,6 +2198,7 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
 #ifdef TEST_LANE_ANALYSIS
     lane_drawer = create_lane_analysis_drawer();
 #endif
+    symotha_drawer = create_symotha_drawer(argc, argv);
 }
 
 void
@@ -2213,6 +2220,7 @@ destroy_drawers()
 #ifdef TEST_LANE_ANALYSIS
     destroy_lane_analysis_drawer(lane_drawer);
 #endif
+    destroy_symotha_drawer(symotha_drawer);
 }
 
 void
@@ -2485,7 +2493,9 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			{(char*)"velodyne0", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v64, 0, NULL},
 			{(char*)"velodyne0", (char*)"horizontal_correction", CARMEN_PARAM_STRING, &h64, 0, NULL},
 			{(char*)"velodyne1", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v32, 0, NULL},
-			{(char*)"velodyne2", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v16, 0, NULL}
+			{(char*)"velodyne2", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v16, 0, NULL},
+			{(char*)"velodyne4", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v16_robosense, 0, NULL},
+
 	};
 	num_items = sizeof(param_list2)/sizeof(param_list2[0]);
 	carmen_param_install_params(argc, argv, param_list2, num_items);
@@ -2497,6 +2507,18 @@ read_parameters_and_init_stuff(int argc, char** argv)
 			vc_64[i] = CLF_READ_DOUBLE(&v64);
 			ouster64_azimuth_offsets[i] = CLF_READ_DOUBLE(&h64);
 		}
+	}
+	else if (velodyne_active == 4)
+	{
+		for (int i=0; i<32; i++)
+		{
+			vc_32[i] = CLF_READ_DOUBLE(&v32);
+			if (i<16)
+				vc_16[i] = CLF_READ_DOUBLE(&v16_robosense);
+			else
+				vc_16[i] = 0.0;
+		}
+
 	}
 	else
 	{
@@ -2774,7 +2796,7 @@ draw_loop(window *w)
 //			draw_laser_rays(front_bullbar_middle_laser_points[last_laser_position], get_world_position(FRONT_BULLBAR_MIDDLE_HIERARCHY_SIZE, front_bullbar_middle_hierarchy));
         }
 
-        if(draw_moving_objects_flag)
+        if (draw_moving_objects_flag)
         {
 		   carmen_vector_3D_t offset = get_position_offset();
            offset.z += sensor_board_1_pose.position.z;
@@ -2871,6 +2893,9 @@ draw_loop(window *w)
 #ifdef TEST_LANE_ANALYSIS
         if (draw_lane_analysis_flag) draw_lane_analysis(lane_drawer);
 #endif
+
+        if (show_symotha_flag)
+        	draw_symotha(symotha_drawer, car_fused_pose);
 
         draw_interface(i_drawer);
     }
@@ -3032,6 +3057,9 @@ draw_loop_for_picking(window *w)
         if (!gps_fix_flag)
             draw_gps_fault_signal();
 
+        if (show_symotha_flag)
+        	draw_symotha(symotha_drawer, car_fused_pose);
+
         //draw_interface(i_drawer);
     }
 }
@@ -3118,6 +3146,11 @@ subscribe_ipc_messages(void)
     	carmen_velodyne_subscribe_variable_scan_message(NULL,
     			(carmen_handler_t) velodyne_variable_scan_message_handler2,
 				CARMEN_SUBSCRIBE_LATEST, 3);
+
+    if (velodyne_active == -1 || velodyne_active == 4)
+       	carmen_velodyne_subscribe_variable_scan_message(NULL,
+       			(carmen_handler_t) velodyne_variable_scan_message_handler2,
+   				CARMEN_SUBSCRIBE_LATEST, 4);
 
     carmen_download_map_subscribe_message(NULL,
                                           (carmen_handler_t) carmen_download_map_handler,
@@ -3417,6 +3450,9 @@ set_flag_viewer_3D(int flag_num, int value)
         break;
     case 32:
         force_velodyne_flag = value;
+        break;
+    case 33:
+        show_symotha_flag = value;
         break;
     }
 }

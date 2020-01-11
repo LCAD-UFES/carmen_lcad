@@ -15,9 +15,9 @@ max_log_lines = -1
 # Flag indicating if the visualization should run or not.
 view = 1
 # Initial time to consider for odometry calibration
-initial_time = 20
+initial_time = 0
 # Final time to consider for odometry calibration
-final_time = 100
+final_time = 5460
 # Lower limit of velocity multiplier
 min_multiplicative_v = 0.6
 # Upper limit of velocity multiplier
@@ -35,7 +35,7 @@ min_initial_angle = -180
 # Upper limit of initial angle (degrees)
 max_initial_angle = 180
 # Lower limit of gps latency (seconds)
-min_gps_latency = 0.15
+min_gps_latency = 0.0
 # Upper limit of gps latency (seconds)
 max_gps_latency = 0.3
 # Lower limit of k1 spline coefficient
@@ -46,6 +46,4 @@ max_k1 = 0.3
 min_k2 = -0.15
 # Upper limit of k2 spline coefficient
 max_k2 = 0.15
-#sem gps
-only_odometry = 1
 

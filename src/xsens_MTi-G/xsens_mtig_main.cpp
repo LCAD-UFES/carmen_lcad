@@ -269,16 +269,6 @@ publish_mtig_message(carmen_xsens_mtig_message message)
 }
 
 
-void
-publish_mti_quat_message(carmen_xsens_global_quat_message message)
-{
-   IPC_RETURN_TYPE err;
-      
-   err = IPC_publishData(CARMEN_XSENS_GLOBAL_QUAT_NAME, &message);
-   carmen_test_ipc_exit(err, "Could not publish", CARMEN_XSENS_GLOBAL_QUAT_FMT);
-}
-
-
 carmen_xsens_mtig_raw_gps_message 
 make_xsens_mtig_raw_gps_message(int sensor_ID, CmtQuat qat_data, CmtCalData caldata, CmtGpsPvtData gpsPvtData, uint8_t status)
 {
@@ -517,7 +507,7 @@ int
 read_data_from_xsens_without_xsens(void)
 {
 	while (1)
-	{
+	{//TODO
 		carmen_xsens_global_quat_message message = {-0.076347, 0.022741, 9.856972,
 													 0.150156, -0.005627, -0.002592,
 													 0.988643, -0.278449, -0.101014,
@@ -532,7 +522,7 @@ read_data_from_xsens_without_xsens(void)
 
 
 int
-init_xsens_old(bool reset_orientation)
+init_xsens(bool reset_orientation)
 {
 	mtCount = doHardwareScan(cmt3, deviceIds);
 
@@ -552,8 +542,8 @@ init_xsens_old(bool reset_orientation)
 }
 
 
-static int 
-init_xsens(bool reset_orientation)
+int
+init_xsens_new(bool reset_orientation)
 {
 	return (1);
 
@@ -604,6 +594,7 @@ main(int argc, char **argv)
 
 	int xsens_initialized = init_xsens(reset_orientation);
 
+	read_data_from_xsens_without_xsens();
 	if (xsens_initialized)
 		read_data_from_xsens();
 

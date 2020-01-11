@@ -22,8 +22,7 @@ MODULE_NAME = BASE
 MODULE_COMMENT = Generic interface to all robot bases
 
 SOURCES = base_interface.c base_test.c drive_main.c arm_main.c base_main.c arm_test.c
-PUBLIC_INCLUDES = base_messages.h arm_messages.h base_interface.h \
-	arm_interface.h arm_low_level.h drive_low_level.h
+PUBLIC_INCLUDES = base_messages.h arm_messages.h base_interface.h arm_interface.h arm_low_level.h drive_low_level.h
 PUBLIC_LIBRARIES = libbase_interface.a libarm_interface.a 
 
 #PUBLIC_INCLUDES = localize_ackerman_messages.h localize_ackerman_interface.h localize_ackerman_core.h \

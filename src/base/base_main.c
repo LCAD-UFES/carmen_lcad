@@ -49,8 +49,6 @@ static double reset_time = 0;
 static double relative_wheelbase;
 static double relative_wheelsize;
 
-static double rotation_theta;
-
 static int use_hardware_integrator = 1;
 static int use_sonar = 1;
 static int use_bumper = 1;

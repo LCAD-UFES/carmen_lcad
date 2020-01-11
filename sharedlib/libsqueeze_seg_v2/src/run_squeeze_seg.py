@@ -220,38 +220,33 @@ def squeeze_seg_process_point_cloud_raw(lidar, timestamp):
     return pred_cls_lidar1
 
 def squeeze_seg_process_point_cloud(lidar, timestamp):
-    tag = ""
-    save_txt(lidar, str(timestamp.item(0)), tag)
-    lidar1 = lidar[:,271:783,:]
-    lidarp1 = lidar[:,783:,:]
-    shape_last_part = lidar.shape[1] - 783 #300
-    shape_to_complete = mc.AZIMUTH_LEVEL - shape_last_part #212
-    shape_to_squeeze = shape_to_complete + mc.AZIMUTH_LEVEL
-    #print ("shape_last_part=" + str(shape_last_part) + " shape_complete=" + str(shape_to_complete) + " shape_to_squeeze=" + str(shape_to_squeeze))
+    #tag = ""
+    #save_txt(lidar, str(timestamp.item(0)), tag)
+    lidar1 = lidar[:,288:800,:]
+    lidarp1 = lidar[:,826:,:]
+    shape_last_part = lidar.shape[1] - 826 #258
+    shape_to_complete = mc.AZIMUTH_LEVEL - shape_last_part #254
     lidarp2 = lidar[:,:shape_to_complete,:]
-    lidar2 = np.hstack((lidarp1, lidarp2))
-    '''Has to do something between 212 to 271, so do lidar3'''
-    lidar3 = lidar[:,shape_to_complete:shape_to_squeeze,:]
+    lidar2 = np.concatenate((lidarp1, lidarp2),axis=1)
     
     pred_cls_lidar1 = run_model(lidar1)
     pred_cls_lidar2 = run_model(lidar2)
-    pred_cls_lidar3 = run_model(lidar3)
      
-    img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
-    img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
-    #img_lidar3 = generate_lidar_images(lidar3,pred_cls_lidar3)
+    #img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
+    #img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
      
-    #img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=0)
-     
-    cv2.imshow("Front View", img_lidar1)
-    cv2.imshow("Rear View", img_lidar2)
-    cv2.waitKey(100)
-    save_lidar_image(img_lidar1, timestamp, tag)
-    save_lidar_image(img_lidar2, timestamp, "_r")
+    #cv2.imshow("Front View", img_lidar1)
+    #cv2.imshow("Rear View", img_lidar2)
+    #cv2.waitKey(100)
+    #save_lidar_image(img_lidar1, timestamp, tag)
+    #save_lidar_image(img_lidar2, timestamp, "_r")
     
-    pred_cls = np.hstack((pred_cls_lidar2[0][:,shape_to_complete:],pred_cls_lidar3[0][:,shape_to_complete:271],pred_cls_lidar1[0], pred_cls_lidar2[0][:,:shape_to_complete]))
-   # print("pred_cls.shape={}".format(
-   #     pred_cls.shape))
-     
+    s = (mc.ZENITH_LEVEL, 26)
+    lidar_test_1 = np.zeros(s, dtype=np.int64)
+    s2 = (mc.ZENITH_LEVEL, (288-shape_to_complete))
+    lidar_test_2 = np.zeros(s2, dtype=np.int64)
+    pred_cls = np.concatenate((pred_cls_lidar2[0][:,shape_last_part:],lidar_test_2,pred_cls_lidar1[0], lidar_test_1, pred_cls_lidar2[0][:,:shape_last_part]), axis=1)
+    #print("pred_cls.shape={}".format(
+    #    pred_cls.shape)) 
     return pred_cls
 

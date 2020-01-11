@@ -247,6 +247,30 @@ Neural_map_queue::convert_to_rgb(carmen_map_t* complete_map, int x_size, int y_s
 
 
 cv::Mat
+Neural_map_queue::convert_prob_to_rgb(cv::Mat *image_prob, int x_size, int y_size)
+{
+	cv::Mat neural_map_img = cv::Mat(cv::Size(x_size, y_size), CV_8UC3);
+	cv::Vec3d pixel;
+
+	for (int y = 0; y < y_size; y++)
+	{
+		for (int x = 0; x < x_size; x++)
+		{
+			pixel = image_prob->at<cv::Vec3d>(x,y);
+			if(pixel[0] > pixel[1] && pixel[0] > pixel[2])
+				neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(255,120,0);
+			else if(pixel[1] > pixel[0] && pixel[1] > pixel[2])
+				neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(255,255,255);
+			else
+				neural_map_img.at<cv::Vec3b>(x, y) = cv::Vec3b(0,0,0);
+		}
+	}
+
+	return neural_map_img;
+}
+
+
+cv::Mat
 Neural_map_queue::map_to_png2(carmen_map_t complete_map, bool is_label, double map_max, double map_min, bool rgb_map)
 {
 	carmen_map_t png_map = complete_map;
@@ -300,12 +324,57 @@ Neural_map_queue::map_to_png2(carmen_map_t complete_map, bool is_label, double m
 
 //
 
+
 void
-Neural_map_queue::foward_map(int size)//, char* map_name, char* path, bool is_label, double rotation, double map_max, int map_index)
+Neural_map_queue::convert_predicted_to_log_ods_snapshot_map(carmen_map_t* log_ods_snapshot, cv::Mat *image_prob)
+{
+//	printf("X_size: %d\n", log_ods_snapshot->config.x_size);
+	cv::Vec3d pixel;
+	int x_size = this->output_map.size_x;
+	int y_size = this->output_map.size_y;
+
+	int center = log_ods_snapshot->config.x_size/2;
+	int velodyne_max_range = this->output_map.neural_mapper_max_dist;
+	float map_resolution = this->output_map.resolution;
+	int radius = (velodyne_max_range/map_resolution);
+	int new_size = x_size;
+	double prob = -1.0;
+	for (int i = 0; i < y_size; i++)
+	{
+		for (int j = 0; j < x_size; j++)
+		{
+			{
+				int l = abs(round(i - (center + radius)));
+				int m = abs(round(j - (center + radius)));
+//				printf("L M: %d %d \n", l, m);
+//				printf("I J: %d %d \n", i, j);
+				pixel = image_prob->at<cv::Vec3d>(i,j);
+//				printf("logodds: %lf \n", carmen_prob_models_probabilistic_to_log_odds(-1.0));
+
+				if(pixel[0] > pixel[1] && pixel[0] > pixel[2])
+					log_ods_snapshot->map[l][m] = carmen_prob_models_probabilistic_to_log_odds(-1.0);
+				else if(pixel[1] > pixel[0] && pixel[1] > pixel[2])
+				{
+					prob = 1.0 - (pixel[1]/(pixel[1]+pixel[2]));
+					log_ods_snapshot->map[l][m] = carmen_prob_models_probabilistic_to_log_odds(prob);
+				}
+				else
+				{
+					prob =(pixel[2]/(pixel[2]+pixel[1]));
+					log_ods_snapshot->map[l][m] = carmen_prob_models_probabilistic_to_log_odds(prob);
+				}
+			}
+		}
+	}
+}
+
+
+void
+Neural_map_queue::foward_map(carmen_map_t *log_ods_snapshot, int size)//, char* map_name, char* path, bool is_label, double rotation, double map_max, int map_index)
 {
 
 	int width = size;
-	cv::Mat image_inference = cv::Mat(width, width, CV_8UC3);
+	cv::Mat png_mat = cv::Mat(width, width, CV_8UC3);
 
 	acumulate_maps();
 
@@ -320,20 +389,19 @@ Neural_map_queue::foward_map(int size)//, char* map_name, char* path, bool is_la
 													 &this->output_map.normalized_min ,
 													 &this->output_map.normalized_numb,
 													 &this->output_map.normalized_std);
+
+	cv::Mat image_inference = cv::Mat(size, size, CV_64FC3, result);
+	convert_predicted_to_log_ods_snapshot_map(log_ods_snapshot, &image_inference);
+
+//	copy_complete_map_to_map(&predicted_map, predicted_map.config);
+//	printf("até aqui beleza \n");
+//	image_inference = convert_to_rgb(&predicted_map, size, size);
+//	png_mat = convert_prob_to_rgb(&image_inference, size, size);
 	//destroy_maps
-	//	mapper_inference.data = process_image_nm(size, output_map.raw_max_hight_map.complete_map, output_map.raw_mean_hight_map.complete_map,
-//			output_map.raw_min_hight_map.complete_map, output_map.raw_number_of_lasers_map.complete_map, output_map.raw_square_sum_map.complete_map);
-
-	carmen_map_t predicted_map;
-	carmen_grid_mapping_create_new_map(&predicted_map, size, size, 0.2, 'u');
-	memcpy(predicted_map.complete_map, result, size * size * sizeof(double));
-
-	copy_complete_map_to_map(&predicted_map, predicted_map.config);
-	printf("até aqui beleza \n");
-	image_inference = convert_to_rgb(&predicted_map, size, size);
 	this->output_map.clear_maps();
-	cv::imshow("Predicted", image_inference);
-	cv::waitKey(1);
+
+//	cv::imshow("Predicted", png_mat);
+//	cv::waitKey(1);
 
 }
 

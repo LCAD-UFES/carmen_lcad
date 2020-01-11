@@ -11,7 +11,6 @@
 #define SECURITY_VELOCITY_PERCENT 0.5
 
 carmen_collision_config_t global_collision_config;
-int global_max_height_level;
 
 //carmen_mapper_virtual_laser_message virtual_laser_message;
 
@@ -762,7 +761,7 @@ carmen_collision_detection_displace_car_pose_according_to_car_orientation(carmen
 }
 
 carmen_point_t
-carmen_collision_detection_pose_according_to_car_orientation(carmen_ackerman_traj_point_t *car_pose, double x, double y)
+carmen_collision_detection_displaced_pose_according_to_car_orientation(carmen_ackerman_traj_point_t *car_pose, double x, double y)
 {
 	carmen_point_t displaced_car_pose;
 	double coss, sine;
@@ -892,7 +891,6 @@ check_collision_config_initialization()
 	fscanf(collision_file_pointer,"%d", &(global_collision_config.n_markers));
 	fscanf(collision_file_pointer,"%d", &max_h_level);
 	global_collision_config.markers = (carmen_collision_marker_t*) malloc(global_collision_config.n_markers*sizeof(carmen_collision_marker_t));
-	fscanf(collision_file_pointer,"%d", &(global_max_height_level));
 
 	for (i = 0; i < global_collision_config.n_markers; i++)
 		fscanf(collision_file_pointer,"%lf %lf %lf %d", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
@@ -981,7 +979,7 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 
 	for (int i = 0; i < global_collision_config.n_markers; i++)
 	{
-		carmen_point_t displaced_point = carmen_collision_detection_pose_according_to_car_orientation(&trajectory_pose,
+		carmen_point_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 				global_collision_config.markers[i].x, global_collision_config.markers[i].y);
 		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
 		//distance equals to -1.0 when the coordinates are outside of map
@@ -1068,8 +1066,10 @@ carmen_obstacle_avoider_compute_closest_car_distance_to_colliding_point(carmen_a
 }
 
 
-carmen_collision_config_t*
-carmen_get_global_collision_config(){
+carmen_collision_config_t *
+carmen_get_global_collision_config()
+{
 	check_collision_config_initialization();
-	return &global_collision_config;
+
+	return (&global_collision_config);
 }

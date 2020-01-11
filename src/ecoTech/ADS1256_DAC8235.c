@@ -317,15 +317,11 @@ UBYTE DEV_ModuleInit(void)
 //        printf("bcm2835 init success !!! \r\n");
 //    }
 
-	DEV_GPIOConfig();
-	printf ("1!\n");
+    DEV_GPIOConfig();
 
-	bcm2835_spi_begin();                                         //Start spi interface, set spi pin for the reuse function
-    printf ("2!\n");
+    bcm2835_spi_begin();                                         //Start spi interface, set spi pin for the reuse function
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);     //High first transmission
-    printf ("3!\n");
     bcm2835_spi_setDataMode(BCM2835_SPI_MODE1);                  //spi mode 0
-    printf ("4!\n");
     bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_64);   //Frequency
     return 0;
 }

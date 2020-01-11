@@ -511,25 +511,31 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 					sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
 			//TODO:@@@ VINICIUS Pegar antes dessa funcao de baixo o snapshot (o snapshot eh um mapa de logodds Variavel:log_odds_snapshot_map)
 			//Funcao Abaixo junta o snapshot com o mapoffiline
-			carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map,
-					sensor_params->log_odds.log_odds_l0);
+			if (!generate_neural_mapper_dataset && use_neural_mapper)
+			{
+				if (offline_map.complete_map != NULL)
+				{
+					neural_map_run_foward(log_odds_snapshot_map, neural_mapper_max_distance_meters/log_odds_snapshot_map->config.resolution * 2);
+					carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map,
+																										sensor_params->log_odds.log_odds_l0);
+//					carmen_grid_mapping_save_map((char *) "neural_map_teste.map", &map);
+//					printf("Salvei! \n");
+				}
+			}
+			else
+				carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map,
+						sensor_params->log_odds.log_odds_l0);
 //			carmen_grid_mapping_save_map((char *) "test.map", &map);
 
 			if (use_neural_mapper)//To generate the dataset to use in Neural Mapper training.
 			{
-				if (!generate_neural_mapper_dataset)
-				{
-					if (offline_map.complete_map != NULL)
-						neural_map_run_foward(600);
-				}
-
 				if (generate_neural_mapper_dataset)
 				{
 					bool get_next_map = neural_mapper_compute_travelled_distance(&neural_mapper_car_position_according_to_map, neural_mapper_robot_pose,
 							x_origin, y_origin, neural_mapper_data_pace);
 
 					neural_mapper_update_output_map(offline_map, neural_mapper_car_position_according_to_map);
-					char neural_mapper_dataset_path[1024] = "/dados/neural_mapper/volta_da_ufes-201909/";
+					char neural_mapper_dataset_path[1024] = "/media/vinicius/NewHD/neural_mapper_raw/cenpes-20181125/";
 //					neural_mapper_export_dataset_as_png(get_next_map, neural_mapper_dataset_path);
 					neural_mapper_export_dataset_as_binary_file(get_next_map, neural_mapper_dataset_path, sensor_data->current_timestamp, neural_mapper_robot_pose);
 				}

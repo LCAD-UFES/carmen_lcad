@@ -36,7 +36,9 @@
 #include <control.h>
 #include "ford_escape_hybrid.h"
 
-#define FORD_ESCAPE_COMMUNICATION_DUMP
+//#define FORD_ESCAPE_COMMUNICATION_DUMP
+//#define PLOT_PHI
+//#define PLOT_VELOCITY
 
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
 
@@ -496,7 +498,7 @@ torc_report_velocity_state_message_handler(OjCmpt XGV_CCU __attribute__ ((unused
 	if (reportVelocityState)
 	{
 		// A media da velocidade das radas trazeiras ee mais correta. A velocidade abaixo ee a media das rodas dianteiras mais um ruido estranho...
-		printf("g_XGV_velocity %lf   g_XGV_left_rear_wheel_speed %lf\n", g_XGV_velocity, g_XGV_left_rear_wheel_speed);
+//		printf("g_XGV_velocity %lf   g_XGV_left_rear_wheel_speed %lf\n", g_XGV_velocity, g_XGV_left_rear_wheel_speed);
 		// g_XGV_velocity = reportVelocityState->velocityXMps;
 #ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
 		FILE *caco = fopen("ford_dump.txt", "a");
@@ -603,6 +605,18 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 	reportCurvature = reportCurvatureMessageFromJausMessage(curvature_message);
 	if (reportCurvature)
 	{
+//		static double last_update = 0.0;
+//		double t = ojGetTimeSec();
+//		double steering_update_freq = 0.0;
+//		if (last_update != 0.0)
+//			steering_update_freq = 1.0 / (t - last_update);
+//		last_update = t;
+//
+//		printf("steering_update_freq %lf\r", steering_update_freq);
+//		if (steering_update_freq < 30.0)
+//			printf("* steering_update_freq %lf\n", steering_update_freq);
+
+
 #ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
 		FILE *caco = fopen("ford_dump.txt", "a");
 		fprintf(caco, "%lf atanOfCurrentCurvature %lf\n", carmen_get_time(), reportCurvature->atanOfCurrentCurvature);
@@ -688,11 +702,14 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 
 				// FUZZY
 				// TODO Tentar usar o angulo direto da torc pra ver se melhora g_XGV_atan_curvature
-				g_steering_command = carmen_libpid_steering_PID_controler_FUZZY(g_atan_desired_curvature,
+//				g_steering_command = carmen_libpid_steering_PID_controler_FUZZY(g_atan_desired_curvature,
+//						-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
+//						delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG, ford_escape_hybrid_config->filtered_v);
+				g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
 						-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
-						delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG, ford_escape_hybrid_config->filtered_v);
+						delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 			}
-			#ifdef PLOT
+			#ifdef PLOT_PHI
 					pid_plot_phi(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), 0.55, "phi");
 			#endif
 		}

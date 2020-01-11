@@ -2,7 +2,7 @@
 
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <Python.h>
-//#include <numpy/arrayobject.h>
+#include <numpy/arrayobject.h>
 
 int camera;
 int camera_side;
@@ -280,7 +280,6 @@ void
 init_python(int image_width, int image_height)
 {
 	Py_Initialize();
-	import_array();
 
 	PyObject *python_module_name = PyString_FromString((char *) "pedestrian_tracker");
 
@@ -292,6 +291,8 @@ init_python(int image_width, int image_height)
 		exit (printf("Error: The python_module could not be loaded.\nMay be PYTHON_PATH is not set.\n"));
 	}
 	Py_DECREF(python_module_name);
+
+	import_array();
 
 	PyObject *python_set_image_settings_function = PyObject_GetAttrString(python_module, (char *) "set_image_settings");
 
@@ -347,7 +348,6 @@ call_python_function(unsigned char *image, vector<bbox_t> predictions, double ti
 {
 	npy_intp predictions_dimensions[2] = {(int)predictions.size(), 4};
 
-
 	PyObject* numpy_image_array = PyArray_SimpleNewFromData(3, image_dimensions, NPY_UBYTE, image);        //convert testVector to a numpy array
 
 	float *array = convert_predtions_array(predictions);
@@ -357,6 +357,7 @@ call_python_function(unsigned char *image, vector<bbox_t> predictions, double ti
 	PyArrayObject* identifications = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_pedestrian_tracker_function, numpy_image_array, numpy_predictions_array, NULL);
 
 	short *predict = (short*)PyArray_DATA(identifications);
+
 	if (predict == NULL)
 	{
 		Py_Finalize();
@@ -366,7 +367,7 @@ call_python_function(unsigned char *image, vector<bbox_t> predictions, double ti
 	update_pedestrians(predict,timestamp);
 
 	if (PyErr_Occurred())
-        PyErr_Print();
+		PyErr_Print();
 
 	free(array);
 	Py_DECREF(numpy_image_array);
@@ -965,6 +966,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	else
 		return;
 
+//	printf("Actual Camera Size %d - %d\n", image_msg->width, image_msg->height);
 
 	double fps;
 	static double start_time = 0.0;
@@ -976,9 +978,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 		img = image_msg->raw_right;
 
 	int crop_x = 0;
-	int crop_y = 280;
+	int crop_y = 0; //280;
 	int crop_w = image_msg->width;// 1280;
-	int crop_h = 480;//image_msg->height;//400; // 500;
+	int crop_h = image_msg->height;//480;//image_msg->height;//400; // 500;
 
 	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
@@ -1015,27 +1017,24 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	vector<vector<image_cartesian>> filtered_points = filter_object_points_using_dbscan(points_inside_bbox);
 
 	vector<image_cartesian> positions = compute_detected_objects_poses(filtered_points);
-
 	for (int i=0; i < positions.size();i++)
 	{
 		if (!(positions[i].cartesian_x == -999.0 && positions[i].cartesian_y == -999.0))
 		{
 			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, board_pose.position.x, board_pose.position.y);
-//			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, bullbar_pose.position.x, bullbar_pose.position.y); //bullbar if the points are from sick, board if the points are from velodyne
+			//			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, bullbar_pose.position.x, bullbar_pose.position.y); //bullbar if the points are from sick, board if the points are from velodyne
 			carmen_rotate_2d  (&positions[i].cartesian_x, &positions[i].cartesian_y, carmen_normalize_theta(globalpos_msg->globalpos.theta));
 			carmen_translte_2d(&positions[i].cartesian_x, &positions[i].cartesian_y, globalpos_msg->globalpos.x, globalpos_msg->globalpos.y);
 
 			update_world_position(&pedestrian_tracks[i],positions[i].cartesian_x,positions[i].cartesian_y,image_msg->timestamp);
-//			printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f \n",
-//					pedestrian_tracks[i].track_id, pedestrian_tracks[i].velocity,pedestrian_tracks[i].orientation,abs(pedestrian_tracks[i].orientation - globalpos_msg->globalpos.theta));
+			//printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f \n",
+			//		pedestrian_tracks[i].track_id, pedestrian_tracks[i].velocity,pedestrian_tracks[i].orientation,abs(pedestrian_tracks[i].orientation - globalpos_msg->globalpos.theta));
 		}
 	}
 	clean_pedestrians(image_msg->timestamp, 1.0);
-
 	carmen_moving_objects_point_clouds_message msg = build_detected_objects_message(pedestrian_tracks, filtered_points);
 
 	publish_moving_objects_message(image_msg->timestamp, &msg);
-
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
 	show_detections(open_cv_image, pedestrian_tracks, predictions, points, points_inside_bbox, filtered_points, fps, image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
@@ -1217,12 +1216,22 @@ initializer()
 {
 	initialize_sick_transformations(board_pose, camera_pose, bullbar_pose, sick_pose, &transformer_sick);
 
-	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
+	char* carmen_home = getenv("CARMEN_HOME");
+	char classes_names_path[1024];
+	char yolo_cfg_path[1024];
+	char yolo_weights_path[1024];
 
-	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
+	sprintf(classes_names_path, "%s/sharedlib/darknet2/data/coco.names", carmen_home);
+	sprintf(yolo_cfg_path, "%s/sharedlib/darknet2/cfg/yolov3.cfg", carmen_home);
+	sprintf(yolo_weights_path, "%s/sharedlib/darknet2/yolov3.weights", carmen_home);
+
+	classes_names = get_classes_names(classes_names_path);
+
+	network_struct = initialize_YOLO( yolo_cfg_path, yolo_weights_path);
 
 	//init_python(1280, 960);
-	init_python(1280, 480);
+//	init_python(1280, 480);
+	init_python(640, 480);
 	printf("------- Python Tracker Ready -------\n");
 }
 
