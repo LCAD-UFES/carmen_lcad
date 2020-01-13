@@ -6,6 +6,7 @@
  */
 
 #include "neural_map.h"
+#include <math.h>
 
 // TODO Colocar caminhos fixos parametro global
 
@@ -326,7 +327,7 @@ Neural_map_queue::map_to_png2(carmen_map_t complete_map, bool is_label, double m
 
 
 void
-Neural_map_queue::convert_predicted_to_log_ods_snapshot_map(carmen_map_t* log_ods_snapshot, cv::Mat *image_prob)
+Neural_map_queue::convert_predicted_to_log_ods_snapshot_map(carmen_map_t* log_ods_snapshot, cv::Mat *image_prob, carmen_pose_3D_t *car_position, double x_origin, double y_origin)
 {
 //	printf("X_size: %d\n", log_ods_snapshot->config.x_size);
 	cv::Vec3d pixel;
@@ -335,33 +336,54 @@ Neural_map_queue::convert_predicted_to_log_ods_snapshot_map(carmen_map_t* log_od
 
 	int center = log_ods_snapshot->config.x_size/2;
 	int velodyne_max_range = this->output_map.neural_mapper_max_dist;
-	float map_resolution = this->output_map.resolution;
+	double map_resolution = this->output_map.resolution;
 	int radius = (velodyne_max_range/map_resolution);
 	int new_size = x_size;
 	double prob = -1.0;
-	for (int i = 0; i < y_size; i++)
+	int dx = round(car_position->position.x - x_origin) / map_resolution;
+	int dy = round(car_position->position.y - y_origin) / map_resolution;
+	if (car_position->position.x == 0.0 && car_position->position.y == 0.0)
+		printf("Dx Dy: %d %d %lf \n", dx, dy, x_origin);
+	else
 	{
-		for (int j = 0; j < x_size; j++)
-		{
-			{
-				int l = abs(round(i - (center + radius)));
-				int m = abs(round(j - (center + radius)));
-//				printf("L M: %d %d \n", l, m);
-//				printf("I J: %d %d \n", i, j);
-				pixel = image_prob->at<cv::Vec3d>(i,j);
-//				printf("logodds: %lf \n", carmen_prob_models_probabilistic_to_log_odds(-1.0));
+		//coordenadas do carro no mapa.
+		printf("Dx Dy: %d %d %lf \n", dx, dy, x_origin);
 
-				if(pixel[0] > pixel[1] && pixel[0] > pixel[2])
-					log_ods_snapshot->map[l][m] = carmen_prob_models_probabilistic_to_log_odds(-1.0);
-				else if(pixel[1] > pixel[0] && pixel[1] > pixel[2])
+		//diferenca entre a posicao do carro e o centro do mapa
+//			dx -= center;
+//			dy -= center;
+
+		for (int i = 0; i < y_size; i++)
+		{
+			for (int j = 0; j < x_size; j++)
+			{
+				int y = i-radius;
+				int x = j-radius;
+				int k = sqrt((x*x) + (y*y));
+				if(k > 1)
+					continue;
+
+				int l = abs(round(i + (dx - radius)));
+				int m = abs(round(j + (dy - radius)));
+				if(m < 1050 && m >= 0 && l < 1050 && l >= 0)
 				{
-					prob = 1.0 - (pixel[1]/(pixel[1]+pixel[2]));
-					log_ods_snapshot->map[l][m] = carmen_prob_models_probabilistic_to_log_odds(prob);
-				}
-				else
-				{
-					prob =(pixel[2]/(pixel[2]+pixel[1]));
-					log_ods_snapshot->map[l][m] = carmen_prob_models_probabilistic_to_log_odds(prob);
+					//				printf("L M: %d %d \n", l, m);
+					//				printf("I J: %d %d \n", i, j);
+					pixel = image_prob->at<cv::Vec3d>(i,j);
+					//				printf("logodds: %lf \n", carmen_prob_models_probabilistic_to_log_odds(-1.0));
+
+					if(pixel[0] > pixel[1] && pixel[0] > pixel[2])
+						log_ods_snapshot->map[l][m] = carmen_prob_models_probabilistic_to_log_odds(-1.0);
+					else if(pixel[1] > pixel[0] && pixel[1] > pixel[2])
+					{
+						prob = 1.0 - (pixel[1]/(pixel[1]+pixel[2]));
+						log_ods_snapshot->map[l][m] = carmen_prob_models_probabilistic_to_log_odds(prob);
+					}
+					else
+					{
+						prob =(pixel[2]/(pixel[2]+pixel[1]));
+						log_ods_snapshot->map[l][m] = carmen_prob_models_probabilistic_to_log_odds(prob);
+					}
 				}
 			}
 		}
@@ -370,8 +392,9 @@ Neural_map_queue::convert_predicted_to_log_ods_snapshot_map(carmen_map_t* log_od
 
 
 void
-Neural_map_queue::foward_map(carmen_map_t *log_ods_snapshot, int size)//, char* map_name, char* path, bool is_label, double rotation, double map_max, int map_index)
+Neural_map_queue::foward_map(carmen_map_t *log_ods_snapshot, int size, carmen_pose_3D_t *car_position, double x_origin, double y_origin)//, char* map_name, char* path, bool is_label, double rotation, double map_max, int map_index)
 {
+	acumulate_maps();
 
 	int width = size;
 	cv::Mat png_mat = cv::Mat(width, width, CV_8UC3);
@@ -391,7 +414,7 @@ Neural_map_queue::foward_map(carmen_map_t *log_ods_snapshot, int size)//, char* 
 													 &this->output_map.normalized_std);
 
 	cv::Mat image_inference = cv::Mat(size, size, CV_64FC3, result);
-	convert_predicted_to_log_ods_snapshot_map(log_ods_snapshot, &image_inference);
+	convert_predicted_to_log_ods_snapshot_map(log_ods_snapshot, &image_inference, car_position, x_origin, y_origin);
 
 //	copy_complete_map_to_map(&predicted_map, predicted_map.config);
 //	printf("até aqui beleza \n");

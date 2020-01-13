@@ -202,12 +202,12 @@ def process_image(map_max, map_mean, map_min, map_numb, map_std):
         imgPred = pred[0]
         imgPred = imgPred.cpu().float()
         
-    cv2.imshow("No Python", labels_to_img(imgPred[0].numpy(), h))
-    cv2.waitKey(100)
+#     cv2.imshow("No Python", labels_to_img(imgPred[0].numpy(), h))
+#     cv2.waitKey(100)
     result = prob_softmax.cpu()
     result2 = result[0].permute(1,2,0)
-    print(result2.numpy().dtype)
-    print(result2.numpy().shape)
+#     print(result2.numpy().dtype)
+#     print(result2.numpy().shape)
 #     print(result2[0,0,:3])
     
 #     cv2.imshow("No Python", result.numpy())

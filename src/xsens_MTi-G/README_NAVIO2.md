@@ -3,13 +3,14 @@ apenas ligue o raspberry com Navio2 e garanta que seu computador tem o IP config
 run:
 ./navio2_mavlink
 
-#Resumo:
-
+#Resumo para entender como a placa e o ardupilot funcionam, se não precisar pode pular para Configuração da Placa:
+```
 A placa Navio tem vários sensores integrados para Drones. 
 Para ler e tratar esses sensores (Filtros como EKF, comandos de controle etc) ele usa disponibiliza uma imagem do raspbian já com o Ardupilot instalado. 
 O Ardupilot é um framework (tipo o carmen) que contém uma estrutura de módulos que permitem
 a operação de drones, carros em escala, e outras aplicações DIY de forma até autônoma.
-O Ardupilot foi feito para ser o mais automático possível, sem a necessidade de codificação, por isso ele se conecta na maioria dos Ground Control Stations (GCS) que são softwares para controle
+O Ardupilot foi feito para ser o mais automático possível, sem a necessidade de codificação, por isso ele se conecta na maioria dos 
+Ground Control Stations (GCS) que são softwares para controle
 de operação de drones via interface gráfica, é possível por exemplo traçar uma rota pela interface e os módulos do Ardupilot executam essa rota usando os Sensores do Navio2 e demais sensores e motores 
 conectados a ele e ao raspberry. (Como rodar o proccontrol e setar uma rota para a IARA no navigator_gui)
 Para se comunicar com os GCS o ardupilot usa o midleware Mavlink (tipo um IPC mesmo) ele define mensagens e controla a comunicação.
@@ -21,19 +22,119 @@ Um overview desse processo descrito acima pode ser visto em:https://ardupilot.or
 Um detalhe é que o Ardupilot instalado no raspberry com Navio só publica mensagens se for feita uma primeira solicitação (REQUEST)
 
 Após tudo configurado, sempre que o raspberry for ligado ele iniciará automaticamente o ardupilot. Para evitar problemas na comunicação, aguarde ele dar o boot totalmente.
+```
 
-Passos resumidos:
+#Passos resumidos:
         -Criar cartão SD com a imagem sugerida pela emlid.
         -Plug o NAVIO2 no raspberry (siga as instruções no site)
         -O raspberry alimentará o NAVIO2
-        -Configure a rede wifi e/ou USB pelo tutorial src/pi_camera/README.md
+        -Configure a rede wifi e/ou USB (copiado do tutorial src/pi_camera/README.md)
         -Use o código em ~/carmen_lcad/src/xsens_MTi-G/navio2_mavlink_main.cpp para receber as mensagens
-#Configuração
-Seguir o tutorial em:
+
+#Configuração da Placa:
+
+Os passos abaixo estão descritos no tutorial disponível em:
 https://doc.emlid.com.br/navio2/
-Introdução até Configuração
-Na aba ArduPilot vá para Instalação e Execução
-Ao rodar "sudo emlidtool ardupilot" Foi solicitado atualização do firmware, foi feita com sucesso
+
+####Download da imagem Raspbian configurada
+  http://files.emlid.com/images/emlid-raspbian-20190227.img.xz
+  [Link do Drive versão da sensorbox]
+
+####Escrever imagem no cartão SD
+
+Baixe, o aplicativo Etcher extraia e execute no Etcher como administrador.
+  https://etcher.io/
+
+Selecione o arquivo com a imagem e a letra da unidade do cartão SD.
+
+Clique em “Flash!”. O processo pode demorar alguns minutos.
+
+Instruções mais detalhadas estão disponíveis [aqui](http://www.raspberrypi.org/documentation/installation/installing-images/).
+
+#### Configure an Static IP to the Raspberry PI on IARA's network (src/pi_camera/README.md)
+ 
+ Start by editing the dhcpcd.conf file
+ 
+```bash
+ $ sudo nano /etc/dhcpcd.conf
+```
+
+ Add at the end of the file the following configuration:
+ eth0 = wired connection
+ For the first pi_camera we used the IP adress 192.168.0.15/24
+ Replace the 15 with the IP number desired
+ Make sure you leave the /24 at the end of the adress
+ 
+```
+ interface eth0
+
+ static ip_address=192.168.1.15/24
+ static routers=192.168.1.1
+ static domain_name_servers=8.8.8.8
+```
+
+ To exit the editor, press ctrl+x
+ To save your changes press the letter “Y” then hit enter
+ 
+ To disable WiFi and bluetooth edit:
+ 
+ ```bash
+ sudo nano /boot/config.txt
+```
+add the lines:
+
+```
+ dtoverlay=pi3-disable-wifi
+ dtoverlay=pi3-disable-bt
+```
+ use the prefix "pi3-" if you are using a raspberry 3
+ 
+ Reboot the Raspberry PI
+ 
+```bash
+ $ sudo reboot
+```
+
+ You can double check by typing:
+ 
+```bash
+ $ ifconfig
+```
+
+ The eth0 inet addr must be 192.168.0.15
+
+
+####Configuração do Ardupilot 
+Ligue o raspberry e connect ou via SSH ou usando monitor e teclado
+
+Você pode seguir o tutorial com imagens em [Instalação e Execução](https://doc.emlid.com.br/navio2/common/ardupilot/installation-and-running/)
+
+ou seguir abaixo:
+
+Para usuários avançados faça:
+Para selecionar o veículo que seria lançado por padrão. você deve configurá-lo com o emlidtool:
+
+  sudo emlidtool ardupilot
+  
+Antes da configuração, o emlidtool verifica seu RCIO firmware and will suggest to update it if you have the outdated one:
+
+Ao rodar "sudo emlidtool ardupilot" Foi solicitado atualização do firmware, foi feita com sucesso [ o firmware atual da IARA é o ArduCopter: 3.6.5 ]
+
+Após atualização desligue totalmente o raspberry e Navio da energia para subir as configurações
+Ligue e faça novamente:
+  sudo emlidtool ardupilot
+Vamos usar o arducopter, mas poderia ter sido bem arduplane oo ardurover. Quando o comando estiver em execução selecione:
+
+```
+Choose your vehicle:
+< copter >
+
+Choose your version:
+< 3.6  >
+
+```
+
+
 em Conectando-se ao GCS usei o QGroundControl
         Instalação em: https://docs.qgroundcontrol.com/en/getting_started/download_and_install.html
 Parece ter problemas para calibrar via Wifi então mudei para o Mission Planner
