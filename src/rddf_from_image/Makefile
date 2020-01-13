@@ -10,7 +10,7 @@ IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/
 
 #inplace_abn
 IFLAGS += -I/usr/include/python3.5
-LFLAGS += -linplace_abn `python3.5-config --libs` 
+#LFLAGS += -linplace_abn `python3.5-config --libs` 
 
 MODULE_NAME = RDDF_PREDICT
 MODULE_COMMENT = 
@@ -25,7 +25,7 @@ TARGETS = rddf_from_image rddf_predict_optimizer.a
 rddf_from_image: rddf_from_image.o rddf_predict_optimizer.o
 rddf_predict_optimizer.a: rddf_predict_optimizer.o rddf_from_image.o
 
-libinplace_abn.a: 
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/inplace_abn/scripts/
+#libinplace_abn.a: 
+#	$(MAKE) -C $(CARMEN_HOME)/sharedlib/inplace_abn/scripts/
 
 include ../Makefile.rules

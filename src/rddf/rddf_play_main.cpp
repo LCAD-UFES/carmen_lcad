@@ -87,7 +87,6 @@ static int *annotations;
 static int carmen_rddf_pose_initialized = 0;
 static int already_reached_nearest_waypoint_to_end_point = 0;
 
-char *carmen_annotation_filename = NULL;
 vector<carmen_annotation_t> annotation_read_from_file;
 typedef struct
 {
@@ -535,6 +534,7 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 		{
 			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
 			annotations_to_publish.push_back(annotation_i);
+//			printf("---STOP\n");
 			return (true);
 		}
 	}
@@ -1688,9 +1688,13 @@ carmen_rddf_play_publish_annotation_queue()
 
 	annotation_queue_message.num_annotations = annotations_to_publish.size();
 
-	for (size_t i = 0; i < annotations_to_publish.size(); i++)
-		memcpy(&(annotation_queue_message.annotations[i]), &(annotations_to_publish[i].annotation), sizeof(carmen_annotation_t));
+//	printf ("Annotation size %d\n", (int)annotations_to_publish.size());
 
+	for (size_t i = 0; i < annotations_to_publish.size(); i++)
+	{
+//		printf ("code %d\n", annotations_to_publish[i].annotation.annotation_type);
+		memcpy(&(annotation_queue_message.annotations[i]), &(annotations_to_publish[i].annotation), sizeof(carmen_annotation_t));
+	}
 	annotation_queue_message.host = carmen_get_host();
 	annotation_queue_message.timestamp = carmen_get_time();
 
@@ -1791,6 +1795,84 @@ carmen_rddf_play_load_index(char *rddf_filename)
 
 	carmen_rddf_load_index(rddf_filename);
 }
+
+
+void
+carmen_rddf_play_clear_annotation_vector()
+{
+	for (unsigned int i = 0; i < annotation_read_from_file.size(); i++)
+	{
+		free (annotation_read_from_file[i].annotation_description);
+	}
+
+//	printf("%s\n", annotation_read_from_file[i].annotation_description);
+
+	annotation_read_from_file.clear();
+}
+
+
+void
+carmen_rddf_play_load_annotation_file(char *carmen_annotation_filename)
+{
+	if (carmen_annotation_filename == NULL)
+		return;
+
+	FILE *f = fopen(carmen_annotation_filename, "r");
+	if (f == NULL)
+		return;
+
+	//printf("---- Annotation file: %s\n", carmen_annotation_filename);
+
+	carmen_rddf_play_clear_annotation_vector();
+
+	char line[1024];
+
+	while (fgets(line, 1023, f) != NULL)
+	{
+		if (line[0] == '#') // comment line
+			continue;
+
+		carmen_annotation_t annotation;
+		char annotation_description[1024];
+		if (sscanf(line, "%s %d %d %lf %lf %lf %lf\n",
+				annotation_description,
+				&annotation.annotation_type,
+				&annotation.annotation_code,
+				&annotation.annotation_orientation,
+				&annotation.annotation_point.x,
+				&annotation.annotation_point.y,
+				&annotation.annotation_point.z) == 7)
+		{
+			annotation.annotation_description = (char *) calloc (1024, sizeof(char));
+			strcpy(annotation.annotation_description, annotation_description);
+
+			//printf("%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n", annotation.annotation_description, annotation.annotation_type, annotation.annotation_code,
+			//		annotation.annotation_orientation, annotation.annotation_point.x, annotation.annotation_point.y, annotation.annotation_point.z);
+
+
+			//The annotation file's points (x,y) are placed at the front of the car
+			//The annotation vector's points (x,y) are placed at the car's rear axle
+			//The annotation orientation is the angle of the rddf orientation in radians
+			//The value of annotation point z may have different meanings for different annotation types
+			//For PEDESTRIAN_TRACK type z is the search radius for pedestrians in meters
+			//For TRAFFIC_SIGN type z is the curvature of the rddf in radians/meter
+
+			carmen_ackerman_traj_point_t annotation_point;
+			annotation_point.x = annotation.annotation_point.x;
+			annotation_point.y = annotation.annotation_point.y;
+			annotation_point.theta = annotation.annotation_orientation;
+			double distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
+			carmen_point_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&annotation_point, -distance_car_pose_car_front);
+
+			annotation.annotation_point.x = new_annotation_point.x;
+			annotation.annotation_point.y = new_annotation_point.y;
+			annotation_read_from_file.push_back(annotation);
+		}
+	}
+
+	fclose(f);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1974,7 +2056,9 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 	if (message->command_id == SET_COURSE)
 	{
 		printf("New rddf set by voice command: %s\n", message->command);
+
 		carmen_rddf_index_clear();
+
 		char *carmen_home = getenv("CARMEN_HOME");
 		static char rddf_file_name[2048];
 		strcpy(rddf_file_name, carmen_home);
@@ -1982,6 +2066,12 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 		strcat(rddf_file_name, message->command);
 
 		carmen_rddf_play_load_index(rddf_file_name);
+
+		char carmen_annotation_filename[2048];
+		rddf_file_name[strlen(rddf_file_name) - 4] = '\0';
+		sprintf(carmen_annotation_filename, "%s_annotation.txt", rddf_file_name);
+
+		carmen_rddf_play_load_annotation_file(carmen_annotation_filename);
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -2021,65 +2111,6 @@ carmen_rddf_play_subscribe_messages()
 	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
-}
-
-
-void
-carmen_rddf_play_load_annotation_file()
-{
-	if (carmen_annotation_filename == NULL)
-		return;
-
-	FILE *f = fopen(carmen_annotation_filename, "r");
-	char line[1024];
-	while(fgets(line, 1023, f) != NULL)
-	{
-		if (line[0] == '#') // comment line
-			continue;
-
-		carmen_annotation_t annotation;
-		char annotation_description[1024];
-		if (sscanf(line, "%s %d %d %lf %lf %lf %lf\n",
-				annotation_description,
-				&annotation.annotation_type,
-				&annotation.annotation_code,
-				&annotation.annotation_orientation,
-				&annotation.annotation_point.x,
-				&annotation.annotation_point.y,
-				&annotation.annotation_point.z) == 7)
-		{
-			annotation.annotation_description = (char *) calloc (1024, sizeof(char));
-			strcpy(annotation.annotation_description, annotation_description);
-//			printf("%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n", annotation.annotation_description,
-//					annotation.annotation_type,
-//					annotation.annotation_code,
-//					annotation.annotation_orientation,
-//					annotation.annotation_point.x,
-//					annotation.annotation_point.y,
-//					annotation.annotation_point.z);
-
-			/*
-			 *	The annotation file's points (x,y) are placed at the front of the car
-			 *	The annotation vector's points (x,y) are placed at the car's rear axle
-			 *	The annotation orientation is the angle of the rddf orientation in radians
-			 *	The value of annotation point z may have different meanings for different annotation types
-			 *	For PEDESTRIAN_TRACK type z is the search radius for pedestrians in meters
-			 *	For TRAFFIC_SIGN type z is the curvature of the rddf in radians/meter
-			 */
-			carmen_ackerman_traj_point_t annotation_point;
-			annotation_point.x = annotation.annotation_point.x;
-			annotation_point.y = annotation.annotation_point.y;
-			annotation_point.theta = annotation.annotation_orientation;
-			double distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
-			carmen_point_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&annotation_point, -distance_car_pose_car_front);
-
-			annotation.annotation_point.x = new_annotation_point.x;
-			annotation.annotation_point.y = new_annotation_point.y;
-			annotation_read_from_file.push_back(annotation);
-		}
-	}
-
-	fclose(f);
 }
 
 
@@ -2129,6 +2160,9 @@ int
 main(int argc, char **argv)
 {
 	setlocale(LC_ALL, "C");
+
+	char *carmen_annotation_filename = NULL;
+
 	char *usage[] = {(char *) "<rddf_filename> [<annotation_filename> [<traffic_lights_camera>]]",
 			         (char *) "-use_road_map   [<annotation_filename> [<traffic_lights_camera>]]"};
 
@@ -2168,7 +2202,7 @@ main(int argc, char **argv)
 	carmen_rddf_play_subscribe_messages();
 	if (!use_road_map)
 		carmen_rddf_play_load_index(carmen_rddf_filename);
-	carmen_rddf_play_load_annotation_file();
+	carmen_rddf_play_load_annotation_file(carmen_annotation_filename);
 	signal (SIGINT, carmen_rddf_play_shutdown_module);
 	carmen_ipc_dispatch();
 

@@ -13,6 +13,9 @@ struct CarDrawer
 	carmen_vector_3D_t laser_size;
 	carmen_pose_3D_t laser_pose;
 	
+	carmen_vector_3D_t sensor_box_size;
+	carmen_pose_3D_t sensor_box_pose;
+
 	carmen_vector_3D_t xsens_size;
 	carmen_pose_3D_t xsens_pose;	
 
@@ -50,6 +53,16 @@ CarDrawer* createCarDrawer(int argc, char** argv)
 	{"sensor_board_1", "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.orientation.roll), 0, NULL},
 	{"sensor_board_1", "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.orientation.pitch), 0, NULL},
 	{"sensor_board_1", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_board_1_pose.orientation.yaw), 0, NULL},
+
+//	{"sensor_box", "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_box_size.x), 0, NULL},
+//	{"sensor_box", "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_box_size.y), 0, NULL},
+//	{"sensor_box", "size_z", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_box_size.z), 0, NULL},
+//	{"sensor_box", "x", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_box_pose.position.x), 0, NULL},
+//	{"sensor_box", "y", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_box_pose.position.y), 0, NULL},
+//	{"sensor_box", "z", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_box_pose.position.z), 0, NULL},
+//	{"sensor_box", "roll", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_box_pose.orientation.roll), 0, NULL},
+//	{"sensor_box", "pitch", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_box_pose.orientation.pitch), 0, NULL},
+//	{"sensor_box", "yaw", CARMEN_PARAM_DOUBLE, &(carDrawer->sensor_box_pose.orientation.yaw), 0, NULL},
 
 	{"xsens", "size_x", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_size.x), 0, NULL},
 	{"xsens", "size_y", CARMEN_PARAM_DOUBLE, &(carDrawer->xsens_size.y), 0, NULL},
@@ -109,6 +122,58 @@ void draw_wheel_axis(double wheel_diameter, double wheel_distance)
 
 	glPopMatrix();
 }
+
+
+static void draw_cylinder(GLfloat radius, GLfloat height)
+{
+    GLfloat x              = 0.0;
+    GLfloat y              = 0.0;
+    GLfloat angle          = 0.0;
+    GLfloat angle_stepsize = 0.1;
+
+    /** Draw the tube */
+    glPushMatrix();
+
+		glBegin(GL_QUAD_STRIP);
+		angle = 0.0;
+			while( angle < 2*M_PI ) {
+				x = radius * cos(angle);
+				y = radius * sin(angle);
+				glVertex3f(x, y , height);
+				glVertex3f(x, y , 0.0);
+				angle = angle + angle_stepsize;
+			}
+			glVertex3f(radius, 0.0, height);
+			glVertex3f(radius, 0.0, 0.0);
+		glEnd();
+
+		/** Draw the circle on top of cylinder */
+		glBegin(GL_POLYGON);
+		angle = 0.0;
+			while( angle < 2*M_PI ) {
+				x = radius * cos(angle);
+				y = radius * sin(angle);
+				glVertex3f(x, y , height);
+				angle = angle + angle_stepsize;
+			}
+			glVertex3f(radius, 0.0, height);
+		glEnd();
+
+    glPopMatrix();
+}
+
+//static void drawCylinder(double length_x, double length_y, double length_z)
+//{
+//	glPushMatrix();
+//
+//		//https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/gluCylinder.xml
+//		GLUquadricObj *quadratic;
+//		quadratic = gluNewQuadric();
+//		gluCylinder(quadratic,0.0445f,0.0445f,0.14,5,5);
+//
+//	glPopMatrix();
+//
+//}
 
 static void drawBox(double length_x, double length_y, double length_z)
 {
@@ -249,18 +314,40 @@ void draw_car(CarDrawer* carDrawer)
 
 		glPopMatrix();
 
-		// Laser
-		glPushMatrix();
+//		// Laser
+//		glPushMatrix();
+//
+//			glTranslatef(carDrawer->laser_pose.position.x, carDrawer->laser_pose.position.y, carDrawer->laser_pose.position.z);
+//			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.yaw),  0.0f, 0.0f, 1.0f);
+//			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
+//			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.roll), 1.0f, 0.0f, 0.0f);
+//
+//			glColor3f(0.0,0.0,1.0);
+//			drawBox(carDrawer->laser_size.x, carDrawer->laser_size.y, carDrawer->laser_size.z);
+//
+//		glPopMatrix();
 
-			glTranslatef(carDrawer->laser_pose.position.x, carDrawer->laser_pose.position.y, carDrawer->laser_pose.position.z);
-			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.yaw),  0.0f, 0.0f, 1.0f);		
-			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
-			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.roll), 1.0f, 0.0f, 0.0f);
-	
-			glColor3f(0.0,0.0,1.0);
-			drawBox(carDrawer->laser_size.x, carDrawer->laser_size.y, carDrawer->laser_size.z);		
-
-		glPopMatrix();		
+//		//Laser
+//		glPushMatrix();
+//
+//			glTranslatef(0, 0, 0.12);
+//			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.yaw),  0.0f, 0.0f, 1.0f);
+//			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.pitch), 0.0f, 1.0f, 0.0f);
+//			glRotatef(carmen_radians_to_degrees(carDrawer->laser_pose.orientation.roll), 1.0f, 0.0f, 0.0f);
+//
+//			glColor3f(1.0,0.0,1.0);
+//			draw_cylinder(0.0445, 0.14);
+//			//drawCylinder(carDrawer->laser_size.x, carDrawer->laser_size.y, carDrawer->laser_size.z);
+//
+//		glPopMatrix();
+//
+//		// SensorBox
+//		glPushMatrix();
+//
+//			glColor3f(0.0,1.0,1.0);
+//			drawBox(carDrawer->sensor_box_size.x, carDrawer->sensor_box_size.y, carDrawer->sensor_box_size.z);
+//
+//		glPopMatrix();
 	
 	glPopMatrix();
 
