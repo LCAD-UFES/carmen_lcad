@@ -278,7 +278,7 @@ def train(interval_save_model, iterations, model, device, train_list, dataset_co
             target = target.to(device)
             inicio = time.time()
 #             print("\nFowarding")
-            output = model(data)
+            output, prob_softmax = model(data)
 #             print("\nTempo Foward: ", time.time() - inicio)
             #print(weights)
             #weights = [1, 1, 5]
@@ -325,10 +325,10 @@ def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config
                                                             img_width, img_height, n_classes)
                 data = data.to(device)
                 target = target.long().to(device)
-                output = model(data)
+                output, prob_softmax = model(data)
                 batch_weight = torch.FloatTensor(weights).cuda()
                 test_loss += F.cross_entropy(output, target, reduction="sum").item() # sum up batch loss
-                pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
+                pred = prob_softmax.max(1, keepdim=True)[1] # get the index of the max probability
                 correct += pred.eq(target.view_as(pred)).sum().item()
         #    test_loss /= len(test_loader.dataset)
         test_loss /= (len(test_list)*batch_size*img_width*img_height)
@@ -397,6 +397,7 @@ if __name__ == '__main__':
 
     # load model
     model = M.FCNN(n_input=input_channels, n_output=n_classes, prob_drop=dropout_prob).to(device)
+#     model.init() Inicializar com XAVIER
     print('Model loaded', model)
 
     if dnn_config['use_trained_model'] is not "":

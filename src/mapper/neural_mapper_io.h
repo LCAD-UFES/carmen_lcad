@@ -33,7 +33,7 @@ int neural_mapper_update_input_maps(sensor_data_t * sensor_data, sensor_paramete
 		carmen_map_t *log_odds_snapshot_map, carmen_map_config_t map_config, double x_origin, double y_origin,
 		double highest_sensor, double safe_range_above_sensors);
 
-void neural_map_run_foward(carmen_map_t *log_ods_snapshot, int size);
+void neural_map_run_foward(carmen_map_t *log_ods_snapshot, int size, carmen_pose_3D_t *car_position, double x_origin, double y_origin);
 
 
 #endif /* MAPPER_NEURAL_MAPPER_IO_H_ */
