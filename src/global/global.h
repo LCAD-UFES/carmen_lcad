@@ -134,6 +134,15 @@ extern "C" {
 							((x1)->y - (x2)->y) * ((x1)->y - (x2)->y) + \
 							((x1)->z - (x2)->z) * ((x1)->z - (x2)->z)))
 
+#define TRANSLATE3D(p,offset) p.x += offset.x; \
+							  p.y += offset.y; \
+							  p.z += offset.z;
+
+//TODO Verificar se esta funcionando
+#define ROTATE3DZ(p,theta) p.x = p.x * cos(theta) - p.y * sin(theta); \
+						   p.y = p.x * sin(theta) + p.y * cos(theta);
+
+
 #define	POINT_WITHIN_SEGMENT		0
 #define	SEGMENT_TOO_SHORT			1
 #define	POINT_BEFORE_SEGMENT		2
