@@ -594,7 +594,7 @@ main(int argc, char **argv)
 
 	int xsens_initialized = init_xsens(reset_orientation);
 
-	read_data_from_xsens_without_xsens();
+//	read_data_from_xsens_without_xsens();
 	if (xsens_initialized)
 		read_data_from_xsens();
 
