@@ -504,33 +504,32 @@ my_g(const gsl_vector *x, void *params)
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
 			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
 
-	double w1, w2, w3, w4, w5, w6, result; //, w7;
+	double result;
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
-		w1 = 30.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 20.0; w6 = 0.0025; //w7 = 1.0;
 		if (td.dist < 7.0)
-			w2 *= exp(td.dist - 7.0);
+			GlobalState::w2 *= exp(td.dist - 7.0);  // Tries to smooth the steering wheel behavior near to stop
 		result = (
-				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
-				w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
-				w4 * path_to_lane_distance + // já é quandrática
-				w5 * proximity_to_obstacles + // já é quandrática
-				w6 * tcp.sf * tcp.sf); // +
+				GlobalState::w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +   // Distance from the last pose of the path to the goal (in polar coordinates)
+				GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +  // Angular distance from the last pose of the path to the goal (in polar coordinates)
+				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +  // Angular distance from last pose of the path car orientation to the goal car orientation
+				GlobalState::w4 * path_to_lane_distance + // já é quandrática
+				GlobalState::w5 * proximity_to_obstacles + // já é quandrática
+				GlobalState::w6 * tcp.sf * tcp.sf); // + path_size // traveled_distance
                // w7 * distance_to_moving_obstacles);
 	}
 	else
 	{
-		w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 3.0; w5 = 20.0; w6 = 0.0025;
+		//w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 15.0; w5 = 20.0; w6 = 0.0025;  // Usado na Sarah Black
 		if (td.dist < 7.0)
-			w2 *= exp(td.dist - 7.0);
+			GlobalState::w2 *= exp(td.dist - 7.0);
 		result = sqrt(
-				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
-				w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
-				w4 * path_to_lane_distance + // já é quandrática
-				w5 * proximity_to_obstacles + // já é quandrática
-				w6 * tcp.sf * tcp.sf);
+				GlobalState::w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+				GlobalState::w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
+				GlobalState::w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
+				GlobalState::w4 * path_to_lane_distance + // já é quandrática
+				GlobalState::w5 * proximity_to_obstacles + // já é quandrática
+				GlobalState::w6 * tcp.sf * tcp.sf);
 	}
 
 //	printf("result %lf sf %.2lf, tdc %.2lf, tdd %.2f, a %.2lf delta_V %.2lf \n", result, tcp.sf, td.dist,

@@ -28,6 +28,14 @@ double GlobalState::param_max_vel = 0.0;
 
 double GlobalState::max_phi_velocity = 1.0 * 0.48;		// Equivalente a rodar o volante todo para um lado (27.7 graus = 0.48 radianos) em 1 segundo.
 														// A velocidade de mudanca de phi nao pode ultrapassar este valor
+
+double GlobalState::w1 = 30.0  ; // end_of_path_to_goal_distance
+double GlobalState::w2 = 15.0  ; // end_of_path_to_goal_angular_distance
+double GlobalState::w3 = 15.0  ; // end_of_path_to_goal_delta_theta
+double GlobalState::w4 = 3.0   ; // path_to_lane_distance
+double GlobalState::w5 = 20.0  ; // proximity_to_obstacles
+double GlobalState::w6 = 0.0025; // traveled_distance
+
 double GlobalState::time_to_change_gears = 1.0;
 
 carmen_map_t GlobalState::cost_map;
