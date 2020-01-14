@@ -36,7 +36,7 @@ xsens_quat_message_handler()
     printf("Temperature: %f \nTimestamp: %f \nHost: %s\n", xsens_quat_global.m_temp, xsens_quat_global.timestamp, xsens_quat_global.host);
 
     printf(" == Quaterion Data == \n");
-    printf("Q0: %f \t Q1: %f \t Q2: %f \t Q3: %f \n", xsens_quat_global.quat_data.m_data[0], xsens_quat_global.quat_data.m_data[1],                                                         xsens_quat_global.quat_data.m_data[2], xsens_quat_global.quat_data.m_data[3]);
+    printf("Q0: %f \t Q1: %f \t Q2: %f \t Q3: %f \n\n", xsens_quat_global.quat_data.m_data[0], xsens_quat_global.quat_data.m_data[1],                                                         xsens_quat_global.quat_data.m_data[2], xsens_quat_global.quat_data.m_data[3]);
 
     fflush(stdout);
 }
