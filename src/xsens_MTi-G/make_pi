@@ -34,7 +34,7 @@ PREPARATION=". sensors/web_cam global param_daemon sensors/laser_new gps_xyz fus
 MODULES="xsens_MTi-G"
 
 echo -e "\nPreparation...\n"
-rm $CARMEN_HOME/src/*.o
+rm $CARMEN_HOME/src/*/*.o
 rm $CARMEN_HOME/lib/*
 
 make_list_of_modules "$PREPARATION" -ignore_errors
