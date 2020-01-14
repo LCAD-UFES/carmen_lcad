@@ -498,6 +498,8 @@ read_data_from_xsens(void)
 					break;
 				}
 			}
+			// Necessario pois, senao, trava no Raspberry Pi se o xsens_listener nao for chamado antes deste xsens driver (xsens_mtig)
+			carmen_ipc_sleep(0.001);
 		}
 	}
 }
