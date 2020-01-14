@@ -14,7 +14,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
 LFLAGS += -lglobal -ljpeg -lipc -lparam_interface -lGLEW -lGL -lGLU -lglut -lX11 -llaser_interface \
-		-lfused_odometry_interface -lgps_xyz_interface -lxsens_interface -lstereo_point_cloud_interface -lglm -lrotation_geometry\
+		-lfused_odometry_interface -lgps_xyz_interface -lxsens_interface -lstereo_point_cloud_interface -lglm -lrotation_geometry \
 		-lcurl  \
 		-lvelodyne_interface -lcarmen_gps_wrapper -lm -ldownload_map -lstereo_velodyne_interface -lstereo_velodyne \
 		-lstereo_interface -lnavigator_ackerman_interface -lbehavior_selector_interface \
