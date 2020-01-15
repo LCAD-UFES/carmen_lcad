@@ -34,7 +34,13 @@ PREPARATION=". sensors/web_cam global param_daemon sensors/laser_new gps_xyz fus
 MODULES="xsens_MTi-G"
 
 echo -e "\nPreparation...\n"
+rm $CARMEN_HOME/src/*/*.o
+rm $CARMEN_HOME/lib/*
+
 make_list_of_modules "$PREPARATION" -ignore_errors
+
+# a linha abaixo eh para forcar a utilizacao do ipc compilado no /usr/local (ver README-Raspberry.md)
+rm $CARMEN_HOME/lib/libipc.a
 
 make -C $CARMEN_HOME/src/fused_odometry librotation_geometry.a
 ln   -s $CARMEN_HOME/src/fused_odometry/librotation_geometry.a $CARMEN_HOME/lib/
