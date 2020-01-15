@@ -201,7 +201,7 @@ main(int argc, char **argv)
 		pi_imu_message.host = carmen_get_host();
 
 		publish_pi_imu_message(pi_imu_message);
-		//carmen_publish_xsens_quat_message(xsens_quat_message);
+		carmen_publish_xsens_quat_message(xsens_quat_message);
 	}
 
 	return (0);

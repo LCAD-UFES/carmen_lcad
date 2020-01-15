@@ -25,7 +25,7 @@
 #include "RTIMULSM9DS1.h"
 #include "RTIMUSettings.h"
 
-#define do_log 1
+//#define do_log 1
 //  this sets the learning rate for compass running average calculation
 
 #define COMPASS_ALPHA 0.2f
