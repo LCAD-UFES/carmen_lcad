@@ -153,17 +153,7 @@ rslidarDriver::rslidarDriver(carmen_velodyne_variable_scan_message &variable_sca
 void
 rslidarDriver::unpack(int *shot_num, const rslidarPacket& pkt, carmen_velodyne_variable_scan_message *variable_scan)
 {
-  // check pkt header
-  if (pkt.data[0] != 0x55 || pkt.data[1] != 0xAA || pkt.data[2] != 0x05 || pkt.data[3] != 0x0A)
-  {
-    return;
-  }
-//TODO
-//  if (numOfLasers == 32)
-//  {
-//    unpack_RS32(pkt, pointcloud);
-//    return;
-//  }
+
   float azimuth;  // 0.01 dgree
   float intensity;
   float azimuth_diff;
@@ -245,6 +235,38 @@ rslidarDriver::unpack(int *shot_num, const rslidarPacket& pkt, carmen_velodyne_v
 }
 
 
+/** @brief convert raw packet to point cloud
+ *
+ *  @param pkt raw packet to unpack
+ *  @param pc shared pointer to point cloud (points are appended)
+ */
+void
+rslidarDriver::unpack_socket_data_to_velodyne_shot(int *shot_num, const rslidarPacket& pkt, carmen_velodyne_shot *shots_array)
+{
+	int last_byte_of_shot;
+
+	carmen_velodyne_shot* current_shot = &shots_array[*shot_num];
+
+	for (int i = 44; i < 1248; i += 100)
+	{
+		current_shot->angle = (double)(256 * pkt.data[i] + pkt.data[i + 1]) / 100.0;
+
+		printf("Azimuth data %02X %02X %f\n",pkt.data[i], pkt.data[i + 1], current_shot->angle);
+
+		last_byte_of_shot = (i + 2) + (RS16_SCANS_PER_FIRING * 3); // 3 is the number of bytes per channel data (see manual)
+
+		for (int ray = i + 2, k = 0; ray < last_byte_of_shot; ray += 3, k++)  // 2
+		{
+			memcpy(&current_shot->distance[k], &pkt.data[ray], sizeof(unsigned short));
+			printf("  Distance data: %02X %02X %04X\n", pkt.data[ray], pkt.data[ray + 1], current_shot->distance[k]);
+			current_shot->intensity[k] = (unsigned char) pkt.data[ray + 2];
+		}
+
+		*shot_num++;
+	}
+}
+
+
 /** poll the device
  *
  *  @returns true unless end of file reached
@@ -253,119 +275,136 @@ bool rslidarDriver::poll(carmen_velodyne_variable_scan_message &variable_scan, i
 {  // Allocate a new shared pointer for zero-copy sharing with other nodelets.
 	rslidarScan_t *scan = (rslidarScan_t *) calloc (1, sizeof(rslidarScan_t));
 	scan->packets = (rslidarPacket*)malloc(velodyne_max_laser_shots_per_revolution * sizeof(rslidarPacket));
-//	memset(scan)
+	//	memset(scan)
+	carmen_velodyne_shot shots_array[MAX_NUM_SHOTS];
+
+	for (int i = 0 ; i < MAX_NUM_SHOTS; i++)
+	{
+		shots_array[i].shot_size = RS16_SCANS_PER_FIRING;
+		shots_array[i].distance = (unsigned short*) malloc (RS16_SCANS_PER_FIRING * sizeof(unsigned short));
+		shots_array[i].intensity = (unsigned char*) malloc (RS16_SCANS_PER_FIRING * sizeof(unsigned char));
+	}
 
 
-  // Since the rslidar delivers data at a very high rate, keep
-  // reading and publishing scans as fast as possible.
-  if (config_.cut_angle >= 0)  // Cut at specific angle feature enabled
-  {
-    rslidarPacket tmp_packet;
-    int read_packets = 0;
-    while (true)
-    {
-      while (true)
-      {
-        int rc = msop_input_->getPacket(&tmp_packet, config_.time_offset);
-        if (rc == 0)
-          break;  // got a full packet?
-        if (rc < 0)
-          return false;  // end of file reached?
-      }
-      scan->packets[read_packets] = (tmp_packet);
-      read_packets++;
+	// Since the rslidar delivers data at a very high rate, keep
+	// reading and publishing scans as fast as possible.
+	if (config_.cut_angle >= 0)  // Cut at specific angle feature enabled
+	{
+		rslidarPacket tmp_packet;
+		int read_packets = 0;
+		while (true)
+		{
+			double time1 = carmen_get_time();
 
-      static int ANGLE_HEAD = -36001;  // note: cannot be set to -1, or stack smashing
-      static int last_azimuth = ANGLE_HEAD;
+			while (true)
+			{
+				int rc = msop_input_->getPacket(&tmp_packet, config_.time_offset);
+				if (rc == 0)
+					break;  // got a full packet?
+				if (rc < 0)
+					return false;  // end of file reached?
+			}
+			printf("Time: %lf\n", carmen_get_time() - time1);
+			//Unpack to velodyne_shot struct
+			int num_shot = 0;
+			unpack_socket_data_to_velodyne_shot(&num_shot, tmp_packet, shots_array);
 
-      int azimuth = 256 * tmp_packet.data[44] + tmp_packet.data[45];
-      // int azimuth = *( (u_int16_t*) (&tmp_packet.data[azimuth_data_pos]));
+			scan->packets[read_packets] = (tmp_packet);
+			read_packets++;
 
-      // Handle overflow 35999->0
-      if (azimuth < last_azimuth)
-      {
-        last_azimuth -= 36000;
-      }
-      // Check if currently passing cut angle
-      if (last_azimuth != ANGLE_HEAD && last_azimuth < config_.cut_angle && azimuth >= config_.cut_angle)
-      {
-        last_azimuth = azimuth;
-        config_.npackets = read_packets;
-        break;  // Cut angle passed, one full revolution collected
-      }
-      last_azimuth = azimuth;
-    }
-  }
-  else  // standard behaviour
-  {
-    if (difop_input_->getUpdateFlag())
-    {
-      int packets_rate = ceil(POINTS_ONE_CHANNEL_PER_SECOND/BLOCKS_ONE_CHANNEL_PER_PKT);
-      int mode = difop_input_->getReturnMode();
-      if (config_.model == "RS16" && (mode == 1 || mode == 2))
-      {
-        packets_rate = ceil(packets_rate/2);
-      }
-      else if ((config_.model == "RS32" || config_.model == "RSBPEARL") && (mode == 0))
-      {
-        packets_rate = packets_rate*2;
-      }
-      config_.rpm = difop_input_->getRpm();
-      config_.npackets = ceil(packets_rate*60/config_.rpm);
+			static int ANGLE_HEAD = -36001;  // note: cannot be set to -1, or stack smashing
+			static int last_azimuth = ANGLE_HEAD;
 
-      difop_input_->clearUpdateFlag();
+			int azimuth = 256 * tmp_packet.data[44] + tmp_packet.data[45];
+			// int azimuth = *( (u_int16_t*) (&tmp_packet.data[azimuth_data_pos]));
 
-      printf("[driver] update npackets. rpm: %lf packets: %d", config_.rpm, config_.npackets);
-    }
-//    if(config_.npackets != private_nh.npackets)
-//    	scan->packets = (rslidarPacket *)realloc(scan->packets, config_.npackets*sizeof(rslidarPacket));
-//    else
-//    	scan->packets = (rslidarPacket*)malloc(config_.npackets * sizeof(rslidarPacket));
-    // use in standard behaviour only
-    while (skip_num_)
-    {
-      while (true)
-      {
-        // keep reading until full packet received
-        int rc = msop_input_->getPacket(&scan->packets[0], config_.time_offset);
-        if (rc == 0)
-          break;  // got a full packet?
-        if (rc < 0)
-          return false;  // end of file reached?
-      }
-      --skip_num_;
-    }
+			// Handle overflow 35999->0
+			if (azimuth < last_azimuth)
+			{
+				last_azimuth -= 36000;
+			}
+			// Check if currently passing cut angle
+			if (last_azimuth != ANGLE_HEAD && last_azimuth < config_.cut_angle && azimuth >= config_.cut_angle)
+			{
+				last_azimuth = azimuth;
+				config_.npackets = read_packets;
+				break;  // Cut angle passed, one full revolution collected
+				printf("Last angle: %lf\n", last_azimuth);
+			}
+			last_azimuth = azimuth;
 
-    for (int i = 0; i < config_.npackets; ++i)
-    {
-      while (true)
-      {
-        // keep reading until full packet received
-        int rc = msop_input_->getPacket(&scan->packets[i], config_.time_offset);
-        if (rc == 0)
-          break;  // got a full packet?
-        if (rc < 0)
-          return false;  // end of file reached?
-      }
-    }
+		}
+	}
+	else  // standard behaviour
+	{
+		if (difop_input_->getUpdateFlag())
+		{
+			int packets_rate = ceil(POINTS_ONE_CHANNEL_PER_SECOND/BLOCKS_ONE_CHANNEL_PER_PKT);
+			int mode = difop_input_->getReturnMode();
+			if (config_.model == "RS16" && (mode == 1 || mode == 2))
+			{
+				packets_rate = ceil(packets_rate/2);
+			}
+			else if ((config_.model == "RS32" || config_.model == "RSBPEARL") && (mode == 0))
+			{
+				packets_rate = packets_rate*2;
+			}
+			config_.rpm = difop_input_->getRpm();
+			config_.npackets = ceil(packets_rate*60/config_.rpm);
 
-  }
-  int j = 0;
-  for (int i = 0; i < config_.npackets; ++i)
-	  unpack(&j, scan->packets[i], &variable_scan);
-  variable_scan.number_of_shots = velodyne_max_laser_shots_per_revolution;
-  variable_scan.timestamp = carmen_get_time();
+			difop_input_->clearUpdateFlag();
 
-//  printf("to funcionando \n");
+			printf("[driver] update npackets. rpm: %lf packets: %d", config_.rpm, config_.npackets);
+		}
+		//    if(config_.npackets != private_nh.npackets)
+		//    	scan->packets = (rslidarPacket *)realloc(scan->packets, config_.npackets*sizeof(rslidarPacket));
+		//    else
+		//    	scan->packets = (rslidarPacket*)malloc(config_.npackets * sizeof(rslidarPacket));
+		// use in standard behaviour only
+		while (skip_num_)
+		{
+			while (true)
+			{
+				// keep reading until full packet received
+				int rc = msop_input_->getPacket(&scan->packets[0], config_.time_offset);
+				if (rc == 0)
+					break;  // got a full packet?
+				if (rc < 0)
+					return false;  // end of file reached?
+			}
+			--skip_num_;
+		}
 
-  // publish message using time of last packet read
-//  ROS_DEBUG("[driver] Publishing a full rslidar scan.");
-  //TODO converter para carmen message
-//  scan->header.stamp = scan->packets.back().stamp;
-//  scan->header.frame_id = config_.frame_id;
-//  msop_output_.publish(scan);
-//  free(scan);
-  return true;
+		for (int i = 0; i < config_.npackets; ++i)
+		{
+			while (true)
+			{
+				// keep reading until full packet received
+				int rc = msop_input_->getPacket(&scan->packets[i], config_.time_offset);
+				if (rc == 0)
+					break;  // got a full packet?
+				if (rc < 0)
+					return false;  // end of file reached?
+			}
+		}
+
+	}
+	int j = 0;
+	for (int i = 0; i < config_.npackets; ++i)
+		unpack(&j, scan->packets[i], &variable_scan);
+	variable_scan.number_of_shots = velodyne_max_laser_shots_per_revolution;
+	variable_scan.timestamp = carmen_get_time();
+
+	//  printf("to funcionando \n");
+
+	// publish message using time of last packet read
+	//  ROS_DEBUG("[driver] Publishing a full rslidar scan.");
+	//TODO converter para carmen message
+	//  scan->header.stamp = scan->packets.back().stamp;
+	//  scan->header.frame_id = config_.frame_id;
+	//  msop_output_.publish(scan);
+	//  free(scan);
+	return true;
 }
 
 //void rslidarDriver::difopPoll(void)
