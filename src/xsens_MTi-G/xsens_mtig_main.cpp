@@ -498,6 +498,8 @@ read_data_from_xsens(void)
 					break;
 				}
 			}
+			// Necessario pois, senao, trava no Raspberry Pi se o xsens_listener nao for chamado antes deste xsens driver (xsens_mtig)
+			carmen_ipc_sleep(0.001);
 		}
 	}
 }
@@ -594,7 +596,7 @@ main(int argc, char **argv)
 
 	int xsens_initialized = init_xsens(reset_orientation);
 
-	read_data_from_xsens_without_xsens();
+//	read_data_from_xsens_without_xsens();
 	if (xsens_initialized)
 		read_data_from_xsens();
 

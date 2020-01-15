@@ -180,10 +180,10 @@ neural_mapper_update_output_map(carmen_map_t offline_map, carmen_position_t car_
 }
 
 void
-neural_map_run_foward(carmen_map_t *log_ods_snapshot, int size)
+neural_map_run_foward(carmen_map_t *log_ods_snapshot, int size, carmen_pose_3D_t *car_position, double x_origin, double y_origin)
 {
-	printf("Entrei aqui\n");
-	cv::Mat a;
-	neural_mapper_acumulator->foward_map(log_ods_snapshot, size);
-	printf("Voltou hein\n");
+//	printf("Entrei aqui\n");
+	if(x_origin != 0.0 && y_origin != 0.0)
+		neural_mapper_acumulator->foward_map(log_ods_snapshot, size, car_position, x_origin, y_origin);
+//	printf("Voltou hein\n");
 }

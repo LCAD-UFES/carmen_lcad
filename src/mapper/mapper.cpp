@@ -515,7 +515,8 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 			{
 				if (offline_map.complete_map != NULL)
 				{
-					neural_map_run_foward(log_odds_snapshot_map, neural_mapper_max_distance_meters/log_odds_snapshot_map->config.resolution * 2);
+					int size_trained = neural_mapper_max_distance_meters/log_odds_snapshot_map->config.resolution * 2;
+					neural_map_run_foward(log_odds_snapshot_map, size_trained, &neural_mapper_robot_pose, x_origin, y_origin);
 					carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map,
 																										sensor_params->log_odds.log_odds_l0);
 //					carmen_grid_mapping_save_map((char *) "neural_map_teste.map", &map);

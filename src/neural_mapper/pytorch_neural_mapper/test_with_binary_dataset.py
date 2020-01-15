@@ -326,10 +326,10 @@ def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config
                                                             img_width, img_height, n_classes)
                 data = data.to(device)
                 target = target.long().to(device)
-                output = model(data)
+                output, prob_softmax = model(data)
                 batch_weight = torch.FloatTensor(weights).cuda()
                 test_loss += F.cross_entropy(output, target, reduction="sum").item() # sum up batch loss
-                pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
+                pred = prob_softmax.max(1, keepdim=True)[1] # get the index of the max log-probability
                 correct += pred.eq(target.view_as(pred)).sum().item()
                 imgPred = pred[0]
                 imgPred = imgPred.cpu().float()

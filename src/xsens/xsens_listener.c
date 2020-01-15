@@ -18,7 +18,7 @@ xsens_euler_message_handler()
     printf("Temperature: %f \nTimestamp: %f \nHost: %s\n", xsens_euler_global.m_temp, xsens_euler_global.timestamp, xsens_euler_global.host);
 
     printf(" == Euler Data == \n");
-    printf("Pitch: %f \t Roll: %f \t Yaw: %f \n", xsens_euler_global.euler_data.m_pitch, xsens_euler_global.euler_data.m_roll, xsens_euler_global.euler_data.m_yaw);
+    printf("Roll: %f \t Pitch: %f \t Yaw: %f \n", xsens_euler_global.euler_data.m_roll, xsens_euler_global.euler_data.m_pitch, xsens_euler_global.euler_data.m_yaw);
     
     printf("\n");
 
@@ -36,7 +36,17 @@ xsens_quat_message_handler()
     printf("Temperature: %f \nTimestamp: %f \nHost: %s\n", xsens_quat_global.m_temp, xsens_quat_global.timestamp, xsens_quat_global.host);
 
     printf(" == Quaterion Data == \n");
-    printf("Q0: %f \t Q1: %f \t Q2: %f \t Q3: %f \n", xsens_quat_global.quat_data.m_data[0], xsens_quat_global.quat_data.m_data[1],                                                         xsens_quat_global.quat_data.m_data[2], xsens_quat_global.quat_data.m_data[3]);
+    printf("Q0: %f \t Q1: %f \t Q2: %f \t Q3: %f \n", xsens_quat_global.quat_data.m_data[0], xsens_quat_global.quat_data.m_data[1],
+    		xsens_quat_global.quat_data.m_data[2], xsens_quat_global.quat_data.m_data[3]);
+
+    carmen_quaternion_t quat = {xsens_quat_global.quat_data.m_data[0], xsens_quat_global.quat_data.m_data[1],
+    		xsens_quat_global.quat_data.m_data[2], xsens_quat_global.quat_data.m_data[3]};
+    rotation_matrix *xsens_matrix = create_rotation_matrix_from_quaternions(quat);
+    carmen_orientation_3D_t xsens_orientation = get_angles_from_rotation_matrix(xsens_matrix);
+
+    printf(" == Euler Data == \n");
+    printf("Roll: %f \t Pitch: %f \t Yaw: %f \n\n", carmen_radians_to_degrees(xsens_orientation.roll),
+    		carmen_radians_to_degrees(xsens_orientation.pitch), carmen_radians_to_degrees(xsens_orientation.yaw));
 
     fflush(stdout);
 }
