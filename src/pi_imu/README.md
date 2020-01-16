@@ -129,9 +129,9 @@ Below you can see that a device is connected to the i2c bus which is using the a
  $ cd build
  $ cmake ..
  $ make
- $ cd ~/carmen_lcad/src/pi_imu
+ $ cd ~/carmen_lcad/src/pi_imu/pi_imu_server
  $ make
- $ ./pi_imu_server/Output/pi_imu_server_driver 
+ $ ./Output/pi_imu_server_driver 
 ```
 
 # Testing and calibrating the pi_imu drive module on the Raspberry PI
