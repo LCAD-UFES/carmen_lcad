@@ -393,7 +393,7 @@ draw_xsens_orientation (carmen_orientation_3D_t xsens_orientation, double xsens_
     glPushMatrix ();
 
     glTranslatef (xsens_global_position.x, xsens_global_position.y, xsens_global_position.z);
-    glRotatef (carmen_radians_to_degrees(carmen_normalize_theta(-xsens_orientation.yaw - xsens_yaw_bias)), 0.0f, 0.0f, 1.0f);
+    glRotatef (carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.yaw - xsens_yaw_bias)), 0.0f, 0.0f, 1.0f);
 //    printf("xsens_angle %lf, car angle %lf, xsens_bias %lf, roll %lf, pitch %lf\n",
 //    		carmen_radians_to_degrees(carmen_normalize_theta(xsens_orientation.yaw)),
 //    		carmen_radians_to_degrees(car_pose.orientation.yaw), carmen_radians_to_degrees(xsens_yaw_bias),

@@ -115,7 +115,7 @@ sudo $CARMEN_HOME/src/gps/gps_reachm_server /dev/ttyACM0 115200 1 3457
 
 ```bash
 $CARMEN_HOME/bin/central
-$CARMEN_HOME/src/gps/gps_reachm_client 10.42.0.21 3457 
+$CARMEN_HOME/src/gps/gps_reachm_client 192.168.1.15 3457 
 ```
 
 --------------------------------------------------
