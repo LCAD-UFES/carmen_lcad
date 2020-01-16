@@ -15,7 +15,7 @@ xsens_euler_message_handler()
     printf("\tAcceleration\nX: %f \t Y: %f \t Z: %f\n", xsens_euler_global.m_acc.x, xsens_euler_global.m_acc.y, xsens_euler_global.m_acc.z);
     printf("\tGyro\nX: %f \t Y: %f \t Z: %f\n", xsens_euler_global.m_gyr.x, xsens_euler_global.m_gyr.y, xsens_euler_global.m_gyr.z);
     printf("\tMagnetism\nX: %f \t Y: %f \t Z: %f\n", xsens_euler_global.m_mag.x, xsens_euler_global.m_mag.y, xsens_euler_global.m_mag.z);
-    printf("Temperature: %f \nTimestamp: %f \nHost: %s\n", xsens_euler_global.m_temp, xsens_euler_global.timestamp, xsens_euler_global.host);
+    printf("Temperature: %f \nm_count: %d \nTimestamp: %f \nHost: %s\n", xsens_euler_global.m_temp, xsens_euler_global.m_count, xsens_euler_global.timestamp, xsens_euler_global.host);
 
     printf(" == Euler Data == \n");
     printf("Roll: %f \t Pitch: %f \t Yaw: %f \n", xsens_euler_global.euler_data.m_roll, xsens_euler_global.euler_data.m_pitch, xsens_euler_global.euler_data.m_yaw);
@@ -29,11 +29,21 @@ xsens_euler_message_handler()
 void
 xsens_quat_message_handler()
 {
-//    fprintf(stderr, "Message #%d:\n", xsens_quat_global.m_count);
-    printf("\tAcceleration\nX: %f \t Y: %f \t Z: %f\n", xsens_quat_global.m_acc.x, xsens_quat_global.m_acc.y, xsens_quat_global.m_acc.z);
-    printf("\tGyro\nX: %f \t Y: %f \t Z: %f\n", xsens_quat_global.m_gyr.x, xsens_quat_global.m_gyr.y, xsens_quat_global.m_gyr.z);
-    printf("\tMagnetism\nX: %f \t Y: %f \t Z: %f\n", xsens_quat_global.m_mag.x, xsens_quat_global.m_mag.y, xsens_quat_global.m_mag.z);
-    printf("Temperature: %f \nTimestamp: %f \nHost: %s\n", xsens_quat_global.m_temp, xsens_quat_global.timestamp, xsens_quat_global.host);
+	static int first_time = 1;
+	static double first_timestamp;
+
+	if (first_time)
+	{
+		first_timestamp = xsens_quat_global.timestamp;
+		first_time = 0;
+	}
+    printf("\tAcceleration X: %f \t Y: %f \t Z: %f\n", xsens_quat_global.m_acc.x, xsens_quat_global.m_acc.y, xsens_quat_global.m_acc.z);
+    printf("\tGyro X: %f \t Y: %f \t Z: %f\n", xsens_quat_global.m_gyr.x, xsens_quat_global.m_gyr.y, xsens_quat_global.m_gyr.z);
+
+    printf("tag: %d  \tTimestamp: %lf", xsens_quat_global.m_count, xsens_quat_global.timestamp - first_timestamp);
+
+    printf("\tMagnetism X: %f \t Y: %f \t Z: %f\n", xsens_quat_global.m_mag.x, xsens_quat_global.m_mag.y, xsens_quat_global.m_mag.z);
+    printf("Temperature: %f \nm_count: %d \nTimestamp: %f \nHost: %s\n", xsens_quat_global.m_temp, xsens_quat_global.m_count, xsens_quat_global.timestamp, xsens_quat_global.host);
 
     printf(" == Quaterion Data == \n");
     printf("Q0: %f \t Q1: %f \t Q2: %f \t Q3: %f \n", xsens_quat_global.quat_data.m_data[0], xsens_quat_global.quat_data.m_data[1],
@@ -59,7 +69,7 @@ xsens_matrix_message_handler()
     printf("\tAcceleration\nX: %f \t Y: %f \t Z: %f\n", xsens_matrix_global.m_acc.x, xsens_matrix_global.m_acc.y, xsens_matrix_global.m_acc.z);
     printf("\tGyro\nX: %f \t Y: %f \t Z: %f\n", xsens_matrix_global.m_gyr.x, xsens_matrix_global.m_gyr.y, xsens_matrix_global.m_gyr.z);
     printf("\tMagnetism\nX: %f \t Y: %f \t Z: %f\n", xsens_matrix_global.m_mag.x, xsens_matrix_global.m_mag.y, xsens_matrix_global.m_mag.z);
-    printf("Temperature: %f \nTimestamp: %f \nHost: %s\n", xsens_matrix_global.m_temp, xsens_matrix_global.timestamp, xsens_matrix_global.host);
+    printf("Temperature: %f \nm_count: %d \nTimestamp: %f \nHost: %s\n", xsens_euler_global.m_temp, xsens_euler_global.m_count, xsens_euler_global.timestamp, xsens_euler_global.host);
     
     printf(" == Matrix Data == \n");
     printf("[%f]\t[%f]\t[%f]\n", xsens_matrix_global.matrix_data.m_data[0][0], xsens_matrix_global.matrix_data.m_data[0][1],
