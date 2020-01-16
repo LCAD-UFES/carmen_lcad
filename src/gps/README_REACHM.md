@@ -103,12 +103,17 @@ source makeall.sh
 ---------------------------------------------------
 #Running Reach M+ Module on Raspberry
 
-
 ```bash
 sudo $CARMEN_HOME/sharedlib/RTKLIB/app/str2str/gcc/str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyUSB0:115200:8:n:1:off
 
 sudo $CARMEN_HOME/src/gps/gps_reachm_server /dev/ttyACM0 115200 1 3457
 ```
+
+For running str2str automatically on system initialization, edit /etc/rc.local and insert at its end:
+
+'''
+/home/pi/carmen_lcad/sharedlib/RTKLIB/app/str2str/gcc/str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyUSB0:115200:8:n:1:off > /dev/null 2>&1
+'''
 
 ---------------------------------------------------
 #Running Reach M+ Module on PC
