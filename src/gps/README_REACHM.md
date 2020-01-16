@@ -119,3 +119,10 @@ $CARMEN_HOME/src/gps/gps_reachm_client 192.168.1.15 3457
 ```
 
 --------------------------------------------------
+#Running str2str permanently in the Raspberry
+
+Edit /etc/rc.local and add the following line before "exit 0"
+
+/home/pi/carmen_lcad/sharedlib/RTKLIB/app/str2str/gcc/str2str -in ntrip://adesouza:76EfSL@170.84.40.52:2101/CEFE1:RTCM3 -out serial://ttyUSB0:115200:8:n:1:off > /dev/null 2>&1 &
+
+--------------------------------------------------
