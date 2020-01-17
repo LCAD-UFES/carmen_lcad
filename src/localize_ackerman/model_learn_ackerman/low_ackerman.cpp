@@ -20,6 +20,7 @@
 
 TOdo odometry;
 
+extern char *log_filename;
 
 //
 // Error model for motion

@@ -11,6 +11,7 @@
 using namespace std;
 FILE * open_file(char *fname);
 
+char *log_filename = NULL;
 
 // logger/playback.c
 carmen_logfile_index_p
@@ -401,7 +402,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "\nUsage: %s %s\nInvalid number of arguments\n", argv[0], usage);
 		exit(-1);
 	}
-	char *log_filename = get_filename(argv[1], common_files, n_files);
+	log_filename = get_filename(argv[1], common_files, n_files);
 	char *pose_filename = get_filename(argv[2], common_files, n_files);
 	char *map_list_filename = get_filename(argv[3], common_files, n_files);
 
