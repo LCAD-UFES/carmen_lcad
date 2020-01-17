@@ -33,7 +33,7 @@ char *
 carmen_bumblebee_basic_message_name(int camera)
 {
 	char *message_name = (char*)malloc(128 * sizeof(char));
-	sprintf(message_name, "carmen_bumblebe_basic_stereoimage%d", camera);
+	sprintf(message_name, "%s%d", CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_NAME, camera);
 	return message_name;
 }
 
