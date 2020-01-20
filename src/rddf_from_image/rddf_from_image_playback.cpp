@@ -68,6 +68,54 @@ bool compareByLength(const Prediction &a, const Prediction &b)
     return a.timestamp < b.timestamp;
 }
 
+void
+plot_state(std::vector<carmen_ackerman_traj_point_t> &spline_vec, carmen_point_t iara_pose)
+{
+//	plot data Table - Last TCP - Optmizer tcp - Lane
+	//Plot Optmizer step tcp and lane?
+
+	#define DELTA_T (1.0 / 40.0)
+
+//	#define PAST_SIZE 300
+	static bool first_time = true;
+	static FILE *gnuplot_pipeMP;
+
+
+	if (first_time)
+	{
+		first_time = false;
+
+		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
+//		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
+//		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
+//		fprintf(gnuplot_pipe, "set ytics nomirror\n");
+//		fprintf(gnuplot_pipe, "set y2tics\n");
+		fprintf(gnuplot_pipeMP, "set tics out\n");
+	}
+
+	FILE *gnuplot_spline = fopen("gnuplot_spline_poses.txt", "w");
+	FILE *gnuplot_globalpos = fopen("gnuplot_data_iara_pose.txt", "w");
+
+	for (unsigned int i = 0; i < spline_vec.size(); i++)
+		fprintf(gnuplot_spline, "%lf %lf %lf %lf %lf\n", spline_vec.at(i).x, spline_vec.at(i).y, 1.0 * cos(spline_vec.at(i).theta), 1.0 * sin(spline_vec.at(i).theta), spline_vec.at(i).theta);
+	fprintf(gnuplot_globalpos, "%lf %lf\n", iara_pose.x, iara_pose.y);
+
+	fclose(gnuplot_spline);
+	fclose(gnuplot_globalpos);
+
+//	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
+
+	fprintf(gnuplot_pipeMP, "plot "
+			"'./gnuplot_spline_poses.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'spline',"
+			"'./gnuplot_data_iara_pose.txt' using 1:2 with lines title 'iara_pose' axes x1y1\n");
+
+	fflush(gnuplot_pipeMP);
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -83,7 +131,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 		globalpos.theta = ackerman_message.globalpos.theta;
 		globalpos.x = ackerman_message.globalpos.x;
 		globalpos.y = ackerman_message.globalpos.y;
-		printf("%f %f\n", globalpos.x, globalpos.y);
+		//printf("%f %f\n", globalpos.x, globalpos.y);
 
 		double img_timestamp = image_msg->timestamp;
 
@@ -151,9 +199,17 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			SE2 ref_pose(ref_x, ref_y, ref_theta);
 
 			std::vector<carmen_ackerman_traj_point_t> carmen_rddf_poses_from_spline_vec;
+			std::vector<carmen_ackerman_traj_point_t> carmen_rddf_poses_local_vec;
 			for (int i=0; i<indice_points; i++)
 			{
+				carmen_ackerman_traj_point_t waypoint_local;
 				carmen_ackerman_traj_point_t waypoint;
+				waypoint_local.x = i*0.5;
+				waypoint_local.y = store_points[i];
+				waypoint_local.theta = store_thetas[i];
+				waypoint_local.v = 9.0;
+				waypoint_local.phi = 0.2;
+				carmen_rddf_poses_local_vec.push_back(waypoint_local);
 				SE2 pose_in_rddf_reference(i*0.5, store_points[i], store_thetas[i]);
 				SE2 pose_in_world_reference = ref_pose.inverse() * pose_in_rddf_reference;
 				waypoint.x = pose_in_world_reference[0];
@@ -163,7 +219,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 				waypoint.phi = 0.2;
 				carmen_rddf_poses_from_spline_vec.push_back(waypoint);
 			}
-
+			plot_state(carmen_rddf_poses_local_vec, globalpos);
 			carmen_ackerman_traj_point_t *carmen_rddf_poses_from_spline = &carmen_rddf_poses_from_spline_vec[0];
 //			for (int i = 0; i<indice_points; i++)
 //			{
@@ -242,7 +298,7 @@ main(int argc , char **argv)
 		exit(1);
 	}
 
-	std::ifstream input("preds_1002_withoutdtheta.txt");
+	std::ifstream input("preds_20190915.txt");
 	Prediction s;
 	while (input >> s)
 	{
