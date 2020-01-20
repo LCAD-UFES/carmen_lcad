@@ -127,8 +127,9 @@ public:
   ~rslidarDriver()
   {
   }
-  void unpack_socket_data_to_velodyne_shot(int *shot_num, const rslidarPacket& pkt, carmen_velodyne_shot *shots_array);
-  void unpack(int *shot_pos, const rslidarPacket& pkt, carmen_velodyne_variable_scan_message *variable_scan);
+  bool unpack_socket_data_to_velodyne_shot(int *shot_num, const rslidarPacket& pkt, carmen_velodyne_shot *shots_array);
+  void unpack(int *shot_pos, const rslidarPacket& pkt, carmen_velodyne_shot *variable_scan);
+  bool receive_socket_data_and_fill_message(carmen_velodyne_variable_scan_message &variable_scan, int num_lasers, int velodyne_max_laser_shots_per_revolution, int velodyne_udp_port, int velodyne_gps_udp_port, rslidar_param &private_nh);
   bool poll(carmen_velodyne_variable_scan_message &variable_scan, int num_lasers, int velodyne_max_laser_shots_per_revolution, int velodyne_udp_port, int velodyne_gps_udp_port, rslidar_param &private_nh);
   void difopPoll(void);
 
@@ -154,7 +155,7 @@ private:
 
   InputSocket *msop_input_;
   InputSocket *difop_input_;
-
+  carmen_velodyne_shot *shots_array;
 //  ros::Publisher msop_output_;
 //  ros::Publisher difop_output_;
 //  ros::Publisher output_sync_;
