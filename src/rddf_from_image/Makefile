@@ -10,7 +10,7 @@ IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/
 
 #inplace_abn
 IFLAGS += -I/usr/include/python3.5
-#LFLAGS += -linplace_abn `python3.5-config --libs` 
+LFLAGS += -linplace_abn `python3.5-config --libs` 
 
 MODULE_NAME = RDDF_PREDICT
 MODULE_COMMENT = 
