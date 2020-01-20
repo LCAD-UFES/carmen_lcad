@@ -7,13 +7,15 @@
 #include <driver2.h>
 #include <rsdriver.h>
 
+#include "lidar_drivers.h"
+
 using namespace std;
 
 velodyne_driver::velodyne_gps_t gps;
 velodyne_driver::velodyne_config_t config;
 velodyne_driver::VelodyneDriver* velodyne = NULL;
 
-static carmen_velodyne_variable_scan_message velodyne_variable_scan;
+static carmen_velodyne_variable_scan_message variable_scan_msg;
 static carmen_velodyne_gps_message velodyne_gps;
 
 //static int velodyne_scan_port;
@@ -202,16 +204,31 @@ int read_parameters(int argc, char **argv)
 	return 0;
 }
 
+
+void
+setup_message()
+{
+	variable_scan_msg.partial_scan = (carmen_velodyne_shot *) malloc (MAX_NUM_SHOTS * sizeof(carmen_velodyne_shot));
+	
+    for (int i = 0 ; i < MAX_NUM_SHOTS; i++)  // TODO Read from carmen.ini MAX_NUM_SHOTS per turn
+	{
+		variable_scan_msg.partial_scan[i].shot_size = 16; // TODO Read from carmen.ini
+		variable_scan_msg.partial_scan[i].distance = (unsigned short*) malloc (16 * sizeof(unsigned short));
+		variable_scan_msg.partial_scan[i].intensity = (unsigned char*) malloc (16 * sizeof(unsigned char));
+	}
+}
+
+
 void freeMemory()
 {
 	//free(velodyne_partial_scan.partial_scan);
 
 	for (int i=0; i<(2 * velodyne_max_laser_shots_per_revolution); i++)
 	{
-		free(velodyne_variable_scan.partial_scan[i].distance);
-		free(velodyne_variable_scan.partial_scan[i].intensity);
+		free(variable_scan_msg.partial_scan[i].distance);
+		free(variable_scan_msg.partial_scan[i].intensity);
 	}
-	free(velodyne_variable_scan.partial_scan);
+	free(variable_scan_msg.partial_scan);
 }
 
 
@@ -226,21 +243,21 @@ run_robosense_driver()
 	private_nh.rpm = 1200; //pegar na conf
 	private_nh.npackets = velodyne_max_laser_shots_per_revolution; // calcula dentro da mensagem e preenche se precisar depois
 
-	velodyne_variable_scan.host = carmen_get_host();
+	variable_scan_msg.host = carmen_get_host();
 	printf("Usando %s\n", velodyne_model);
+
 	while (true)
 	{
 		if (robosense == NULL)
 		{
-			robosense = new rslidar_driver::rslidarDriver(velodyne_variable_scan, 16,
-					velodyne_max_laser_shots_per_revolution, private_nh);
+			robosense = new rslidar_driver::rslidarDriver(variable_scan_msg, 16, velodyne_max_laser_shots_per_revolution, private_nh);
 		}
 		else
 		{
-			if(robosense->receive_socket_data_and_fill_message(velodyne_variable_scan, 16, velodyne_max_laser_shots_per_revolution, 6699, 7788, private_nh))
+			if(robosense->receive_socket_data_and_fill_message(variable_scan_msg, 16, velodyne_max_laser_shots_per_revolution, 6699, 7788, private_nh))
 			{
 //				printf("cheguei até aqui, respeita minha história\n");
-				carmen_velodyne_publish_variable_scan_message(&velodyne_variable_scan, velodyne_number);
+				carmen_velodyne_publish_variable_scan_message(&variable_scan_msg, velodyne_number);
 			}
 			else
 			{
@@ -260,15 +277,15 @@ run_velodyne_driver()
 {
 	if (velodyne == NULL)
 	{
-		velodyne = new velodyne_driver::VelodyneDriver(velodyne_variable_scan, velodyne_num_lasers, velodyne_max_laser_shots_per_revolution, velodyne_udp_port, velodyne_gps_udp_port);
+		velodyne = new velodyne_driver::VelodyneDriver(variable_scan_msg, velodyne_num_lasers, velodyne_max_laser_shots_per_revolution, velodyne_udp_port, velodyne_gps_udp_port);
 		config = velodyne->getVelodyneConfig();
 	}
 	else
 	{
-		if (velodyne->pollScan(velodyne_variable_scan, velodyne_number, velodyne_udp_port, velodyne_max_laser_shots_per_revolution, velodyne_num_shots,
+		if (velodyne->pollScan(variable_scan_msg, velodyne_number, velodyne_udp_port, velodyne_max_laser_shots_per_revolution, velodyne_num_shots,
 				velodyne_package_rate, velodyne_num_lasers))
 		{
-			carmen_velodyne_publish_variable_scan_message(&velodyne_variable_scan, velodyne_number);
+			carmen_velodyne_publish_variable_scan_message(&variable_scan_msg, velodyne_number);
 
 			if (velodyne_gps_enabled && velodyne->pollGps(velodyne_gps_udp_port))
 			{
@@ -290,25 +307,29 @@ run_velodyne_driver()
 }
 
 
-
-
-
-int main(int argc, char **argv)
+int 
+main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
+
 	carmen_param_check_version(argv[0]);
+
 	signal(SIGINT, shutdown_module);
+
 	read_parameters(argc, argv);
+
 	carmen_velodyne_define_messages();
 
-	velodyne_variable_scan.host = carmen_get_host();
+	variable_scan_msg.host = carmen_get_host();
 
 	while (true)
 	{
 		printf("Usando %s\n ", velodyne_model);
 		if(strcmp(velodyne_model, "RS16") == 0)
 		{
-			run_robosense_driver();
+			//run_robosense_driver();
+			setup_message();
+			run_robosense_RSLiDAR16_driver(variable_scan_msg);
 		}
 		else
 			run_velodyne_driver();
