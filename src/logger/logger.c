@@ -32,8 +32,7 @@
 #include "logger.h"
 #include "writelog.h"
 
-char filename[1024];
-char filename_without_path[1024];
+char *log_filename = NULL;
 
 carmen_FILE *outfile = NULL;
 double logger_starttime;
@@ -356,7 +355,7 @@ void velodyne_partial_scan_handler( carmen_velodyne_partial_scan_message* msg)
 {
 	//fprintf(stderr, "V");
 	if (log_velodyne_save_to_file)
-		carmen_logwrite_write_to_file_velodyne(msg, outfile, carmen_get_time() - logger_starttime, filename);
+		carmen_logwrite_write_to_file_velodyne(msg, outfile, carmen_get_time() - logger_starttime, log_filename);
 	else
 		carmen_logwrite_write_velodyne_partial_scan(msg, outfile, carmen_get_time() - logger_starttime);
 }
@@ -366,7 +365,7 @@ void velodyne_variable_scan_handler0( carmen_velodyne_variable_scan_message* msg
 {
 	//fprintf(stderr, "VV1");
 	if (log_velodyne_save_to_file)
-		carmen_logwrite_write_to_file_velodyne_variable(msg, 0, outfile, carmen_get_time() - logger_starttime, filename);
+		carmen_logwrite_write_to_file_velodyne_variable(msg, 0, outfile, carmen_get_time() - logger_starttime, log_filename);
 	else
 		carmen_logwrite_write_variable_velodyne_scan(msg, 0, outfile, carmen_get_time() - logger_starttime);
 }
@@ -376,7 +375,7 @@ void velodyne_variable_scan_handler1( carmen_velodyne_variable_scan_message* msg
 {
 	//fprintf(stderr, "VV1");
 	if (log_velodyne_save_to_file)
-		carmen_logwrite_write_to_file_velodyne_variable(msg, 1, outfile, carmen_get_time() - logger_starttime, filename);
+		carmen_logwrite_write_to_file_velodyne_variable(msg, 1, outfile, carmen_get_time() - logger_starttime, log_filename);
 	else
 		carmen_logwrite_write_variable_velodyne_scan(msg, 1, outfile, carmen_get_time() - logger_starttime);
 }
@@ -385,7 +384,7 @@ void velodyne_variable_scan_handler2( carmen_velodyne_variable_scan_message* msg
 {
 	//fprintf(stderr, "VV2");
 	if (log_velodyne_save_to_file)
-		carmen_logwrite_write_to_file_velodyne_variable(msg, 2, outfile, carmen_get_time() - logger_starttime, filename);
+		carmen_logwrite_write_to_file_velodyne_variable(msg, 2, outfile, carmen_get_time() - logger_starttime, log_filename);
 	else
 		carmen_logwrite_write_variable_velodyne_scan(msg, 2, outfile, carmen_get_time() - logger_starttime);
 }
@@ -394,7 +393,7 @@ void velodyne_variable_scan_handler3( carmen_velodyne_variable_scan_message* msg
 {
 	//fprintf(stderr, "VV3");
 	if (log_velodyne_save_to_file)
-		carmen_logwrite_write_to_file_velodyne_variable(msg, 3, outfile, carmen_get_time() - logger_starttime, filename);
+		carmen_logwrite_write_to_file_velodyne_variable(msg, 3, outfile, carmen_get_time() - logger_starttime, log_filename);
 	else
 		carmen_logwrite_write_variable_velodyne_scan(msg, 3, outfile, carmen_get_time() - logger_starttime);
 }
@@ -409,7 +408,7 @@ void bumblebee1_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b1s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 1, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 1, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, log_filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 1, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -418,7 +417,7 @@ void bumblebee2_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b2s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 2, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 2, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, log_filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 2, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -427,7 +426,7 @@ void bumblebee3_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b3s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 3, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 3, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, log_filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 3, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -436,7 +435,7 @@ void bumblebee4_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b4s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 4, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 4, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, log_filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 4, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -445,7 +444,7 @@ void bumblebee5_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b5s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 5, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 5, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, log_filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 5, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -454,7 +453,7 @@ void bumblebee6_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b6s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 6, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 6, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, log_filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 6, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -463,7 +462,7 @@ void bumblebee7_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b7s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 7, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 7, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, log_filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 7, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -472,7 +471,7 @@ void bumblebee8_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b8s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 8, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 8, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, log_filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 8, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -481,7 +480,7 @@ void bumblebee9_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b9s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 9, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 9, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, log_filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 9, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -559,324 +558,246 @@ void shutdown_module(int sig)
 
 int main(int argc, char **argv)
 {
-  int p;
-  char key;
 
   /* initialize connection to IPC network */
   carmen_ipc_initialize(argc, argv);
   carmen_param_check_version(argv[0]);
 
+  if (argc < 2)
+	  carmen_die("Usage: %s <logfile>\n", argv[0]);
+
+  log_filename = argv[1];
+
   /* open logfile, check if file overwrites something */
-  if(argc < 2)
-    carmen_die("usage: %s <logfile>\n", argv[0]);
-
-  strcpy(filename, argv[1]);
-
-  for (p = strlen(filename) - 1; p >= 0; p--)
-	  if (filename[p] == '/')
-		  break;
-
-  strcpy(filename_without_path, filename + p);
-
-  outfile = carmen_fopen(filename, "r");
-  if (outfile != NULL) {
-    fprintf(stderr, "Overwrite %s? ", filename);
-    scanf("%c", &key);
-    if (toupper(key) != 'Y')
-      exit(-1);
-    carmen_fclose(outfile);
+  outfile = carmen_fopen(log_filename, "r");
+  if (outfile != NULL)
+  {
+	  fprintf(stderr, "Overwrite %s (Y/N)? ", log_filename);
+	  char key;
+	  scanf("%c", &key);
+	  if (toupper(key) != 'Y')
+		  carmen_die("Log file %s is not supposed to be overwritten!\n", log_filename);
+	  carmen_fclose(outfile);
   }
-  outfile = carmen_fopen(filename, "w");
-  if(outfile == NULL)
-    carmen_die("Error: Could not open file %s for writing.\n", filename);
+  outfile = carmen_fopen(log_filename, "w");
+  if (outfile == NULL)
+	  carmen_die("Error: Could not open file %s for writing.\n", log_filename);
   carmen_logwrite_write_header(outfile);
-
 
   get_logger_params(argc, argv);
 
-  if  ( !(log_odometry && log_laser && log_robot_laser ) )
-    carmen_warn("\nWARNING: You are neither logging laser nor odometry messages!\n");
-
-
+  if (!(log_odometry && log_laser && log_robot_laser))
+	  carmen_warn("\nWARNING: You are neither logging laser nor odometry messages!\n");
 
   if (log_params)
-    get_all_params();
+	  get_all_params();
 
   register_ipc_messages();
 
-
   if (log_odometry)
   {
-		  carmen_robot_ackerman_subscribe_velocity_message( NULL,
-				  (carmen_handler_t) robot_ackerman_velocity_handler,
-				  CARMEN_SUBSCRIBE_ALL );
+	  carmen_robot_ackerman_subscribe_velocity_message(NULL, (carmen_handler_t)
+			  robot_ackerman_velocity_handler, CARMEN_SUBSCRIBE_ALL );
   }
 
-    if (log_pantilt) {
-    carmen_pantilt_subscribe_scanmark_message (NULL, (carmen_handler_t)
-					       pantilt_scanmark_handler,
-					       CARMEN_SUBSCRIBE_ALL);
-
-    carmen_pantilt_subscribe_laserpos_message (NULL, (carmen_handler_t)
-					       pantilt_laserpos_handler,
-					       CARMEN_SUBSCRIBE_ALL);
+  if (log_pantilt)
+  {
+	  carmen_pantilt_subscribe_scanmark_message (NULL, (carmen_handler_t)
+			  pantilt_scanmark_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_pantilt_subscribe_laserpos_message (NULL, (carmen_handler_t)
+			  pantilt_laserpos_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
-  if (log_robot_laser) {
-		  carmen_robot_ackerman_subscribe_frontlaser_message(NULL, (carmen_handler_t)
-				  robot_frontlaser_ackerman_handler,
-				  CARMEN_SUBSCRIBE_ALL);
-		  carmen_robot_ackerman_subscribe_rearlaser_message(NULL, (carmen_handler_t)
-				  robot_rearlaser_ackerman_handler,
-				  CARMEN_SUBSCRIBE_ALL);
+  if (log_robot_laser)
+  {
+	  carmen_robot_ackerman_subscribe_frontlaser_message(NULL, (carmen_handler_t)
+			  robot_frontlaser_ackerman_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_robot_ackerman_subscribe_rearlaser_message(NULL, (carmen_handler_t)
+			  robot_rearlaser_ackerman_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
-
-  if (log_laser) {
-    carmen_laser_subscribe_laser1_message(NULL, (carmen_handler_t)
-					  laser_laser1_handler,
-					  CARMEN_SUBSCRIBE_ALL);
-    carmen_laser_subscribe_laser2_message(NULL, (carmen_handler_t)
-					  laser_laser2_handler,
-					  CARMEN_SUBSCRIBE_ALL);
-    carmen_laser_subscribe_laser3_message(NULL, (carmen_handler_t)
-					  laser_laser3_handler,
-					  CARMEN_SUBSCRIBE_ALL);
-    carmen_laser_subscribe_laser4_message(NULL, (carmen_handler_t)
-					  laser_laser4_handler,
-					  CARMEN_SUBSCRIBE_ALL);
-    carmen_laser_subscribe_laser5_message(NULL, (carmen_handler_t)
-					  laser_laser5_handler,
-					  CARMEN_SUBSCRIBE_ALL);
-    carmen_laser_subscribe_ldmrs_message(NULL, (carmen_handler_t)
-					  laser_ldmrs_handler,
-					  CARMEN_SUBSCRIBE_ALL);
-    carmen_laser_subscribe_ldmrs_new_message(NULL, (carmen_handler_t)
-					  laser_ldmrs_new_handler,
-					  CARMEN_SUBSCRIBE_ALL);
-    carmen_laser_subscribe_ldmrs_objects_message(NULL, (carmen_handler_t)
-					  laser_ldmrs_objects_handler,
-					  CARMEN_SUBSCRIBE_ALL);
-    carmen_laser_subscribe_ldmrs_objects_data_message(NULL, (carmen_handler_t)
-					  laser_ldmrs_objects_data_handler,
-					  CARMEN_SUBSCRIBE_ALL);
+  if (log_laser)
+  {
+	  carmen_laser_subscribe_laser1_message(NULL, (carmen_handler_t)
+			  laser_laser1_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_laser_subscribe_laser2_message(NULL, (carmen_handler_t)
+			  laser_laser2_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_laser_subscribe_laser3_message(NULL, (carmen_handler_t)
+			  laser_laser3_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_laser_subscribe_laser4_message(NULL, (carmen_handler_t)
+			  laser_laser4_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_laser_subscribe_laser5_message(NULL, (carmen_handler_t)
+			  laser_laser5_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_laser_subscribe_ldmrs_message(NULL, (carmen_handler_t)
+			  laser_ldmrs_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_laser_subscribe_ldmrs_new_message(NULL, (carmen_handler_t)
+			  laser_ldmrs_new_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_laser_subscribe_ldmrs_objects_message(NULL, (carmen_handler_t)
+			  laser_ldmrs_objects_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_laser_subscribe_ldmrs_objects_data_message(NULL, (carmen_handler_t)
+			  laser_ldmrs_objects_data_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
-  if (log_velodyne){
+  if (log_velodyne)
+  {
 	  carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t)
-  			velodyne_partial_scan_handler,
-  			CARMEN_SUBSCRIBE_ALL);
-
+			  velodyne_partial_scan_handler, CARMEN_SUBSCRIBE_ALL);
 	  carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)
-	 	    			velodyne_variable_scan_handler0,
-	 	    			CARMEN_SUBSCRIBE_ALL, 0);
-
+			  velodyne_variable_scan_handler0, CARMEN_SUBSCRIBE_ALL, 0);
 	  carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)
-	    			velodyne_variable_scan_handler1,
-	    			CARMEN_SUBSCRIBE_ALL, 1);
-
+			  velodyne_variable_scan_handler1, CARMEN_SUBSCRIBE_ALL, 1);
 	  carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)
-	  	    			velodyne_variable_scan_handler2,
-	  	    			CARMEN_SUBSCRIBE_ALL, 2);
-
+			  velodyne_variable_scan_handler2, CARMEN_SUBSCRIBE_ALL, 2);
 	  carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)
-	  	    			velodyne_variable_scan_handler3,
-	  	    			CARMEN_SUBSCRIBE_ALL, 3);
-
+			  velodyne_variable_scan_handler3, CARMEN_SUBSCRIBE_ALL, 3);
 	  carmen_velodyne_subscribe_gps_message(NULL, (carmen_handler_t)
-				 velodyne_gps_handler,
-				 CARMEN_SUBSCRIBE_ALL);
+			  velodyne_gps_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
-  if (log_localize) {
-		  carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t)
-				  localize_ackerman_handler,
-				  CARMEN_SUBSCRIBE_ALL);
+  if (log_localize)
+  {
+	  carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t)
+			  localize_ackerman_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
-
-  if (log_simulator) {
-
-		  carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t)
-				  carmen_simulator_ackerman_truepos_handler,
-				  CARMEN_SUBSCRIBE_ALL);
+  if (log_simulator)
+  {
+	  carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t)
+			  carmen_simulator_ackerman_truepos_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
-
-  if (log_imu) {
-
-    carmen_imu_subscribe_imu_message(NULL, (carmen_handler_t)
-				     imu_handler,
-				     CARMEN_SUBSCRIBE_ALL);
+  if (log_imu)
+  {
+	  carmen_imu_subscribe_imu_message(NULL, (carmen_handler_t)
+			  imu_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
-
-  if (log_gps) {
-    carmen_gps_subscribe_nmea_message( NULL,
-				       (carmen_handler_t) ipc_gps_gpgga_handler,
-				       CARMEN_SUBSCRIBE_ALL );
-
-    carmen_gps_subscribe_nmea_hdt_message( NULL,
-				       (carmen_handler_t) ipc_gps_gphdt_handler,
-				       CARMEN_SUBSCRIBE_ALL );
-
-    carmen_gps_subscribe_nmea_rmc_message( NULL,
-					   (carmen_handler_t) ipc_gps_gprmc_handler,
-					   CARMEN_SUBSCRIBE_ALL );
+  if (log_gps)
+  {
+	  carmen_gps_subscribe_nmea_message(NULL, (carmen_handler_t)
+			  ipc_gps_gpgga_handler, CARMEN_SUBSCRIBE_ALL );
+	  carmen_gps_subscribe_nmea_hdt_message(NULL, (carmen_handler_t)
+			  ipc_gps_gphdt_handler, CARMEN_SUBSCRIBE_ALL );
+	  carmen_gps_subscribe_nmea_rmc_message(NULL, (carmen_handler_t)
+			  ipc_gps_gprmc_handler, CARMEN_SUBSCRIBE_ALL );
   }
 
-  if (log_motioncmds) {
-		  carmen_robot_ackerman_subscribe_vector_move_message( NULL,
-				  (carmen_handler_t) robot_ackerman_vector_move_handler,
-				  CARMEN_SUBSCRIBE_ALL );
-		  carmen_robot_ackerman_subscribe_follow_trajectory_message( NULL,
-				  (carmen_handler_t) robot_ackerman_follow_trajectory_handler,
-				  CARMEN_SUBSCRIBE_ALL );
-		  carmen_base_ackerman_subscribe_motion_command( NULL,
-				  (carmen_handler_t) base_ackerman_motion_handler,
-				  CARMEN_SUBSCRIBE_ALL );
+  if (log_motioncmds)
+  {
+	  carmen_robot_ackerman_subscribe_vector_move_message(NULL, (carmen_handler_t)
+			  robot_ackerman_vector_move_handler, CARMEN_SUBSCRIBE_ALL );
+	  carmen_robot_ackerman_subscribe_follow_trajectory_message(NULL, (carmen_handler_t)
+			  robot_ackerman_follow_trajectory_handler, CARMEN_SUBSCRIBE_ALL );
+	  carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t)
+			  base_ackerman_motion_handler, CARMEN_SUBSCRIBE_ALL );
   }
 
   if (log_bumblebee)
   {
-	carmen_bumblebee_basic_subscribe_stereoimage(1, NULL,
-			       (carmen_handler_t) bumblebee1_basic_stereoimage_handler,
-			       CARMEN_SUBSCRIBE_ALL);
-
-	carmen_bumblebee_basic_subscribe_stereoimage(2, NULL,
-			       (carmen_handler_t) bumblebee2_basic_stereoimage_handler,
-			       CARMEN_SUBSCRIBE_ALL);
-
-	carmen_bumblebee_basic_subscribe_stereoimage(3, NULL,
-			(carmen_handler_t) bumblebee3_basic_stereoimage_handler,
-			CARMEN_SUBSCRIBE_ALL);
-
-	carmen_bumblebee_basic_subscribe_stereoimage(4, NULL,
-			(carmen_handler_t) bumblebee4_basic_stereoimage_handler,
-			CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_bumblebee_basic_subscribe_stereoimage(5, NULL,
-			(carmen_handler_t) bumblebee5_basic_stereoimage_handler,
-			CARMEN_SUBSCRIBE_ALL);
-
-	carmen_bumblebee_basic_subscribe_stereoimage(6, NULL,
-			(carmen_handler_t) bumblebee6_basic_stereoimage_handler,
-			CARMEN_SUBSCRIBE_ALL);
-
-	carmen_bumblebee_basic_subscribe_stereoimage(7, NULL,
-			(carmen_handler_t) bumblebee7_basic_stereoimage_handler,
-			CARMEN_SUBSCRIBE_ALL);
-
-	carmen_bumblebee_basic_subscribe_stereoimage(8, NULL,
-			(carmen_handler_t) bumblebee8_basic_stereoimage_handler,
-			CARMEN_SUBSCRIBE_ALL);
-
-	carmen_bumblebee_basic_subscribe_stereoimage(9, NULL,
-			(carmen_handler_t) bumblebee9_basic_stereoimage_handler,
-			CARMEN_SUBSCRIBE_ALL);
+	  carmen_bumblebee_basic_subscribe_stereoimage(1, NULL, (carmen_handler_t)
+			  bumblebee1_basic_stereoimage_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_bumblebee_basic_subscribe_stereoimage(2, NULL, (carmen_handler_t)
+			  bumblebee2_basic_stereoimage_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_bumblebee_basic_subscribe_stereoimage(3, NULL, (carmen_handler_t)
+			  bumblebee3_basic_stereoimage_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_bumblebee_basic_subscribe_stereoimage(4, NULL, (carmen_handler_t)
+			  bumblebee4_basic_stereoimage_handler, CARMEN_SUBSCRIBE_LATEST);
+	  carmen_bumblebee_basic_subscribe_stereoimage(5, NULL, (carmen_handler_t)
+			  bumblebee5_basic_stereoimage_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_bumblebee_basic_subscribe_stereoimage(6, NULL, (carmen_handler_t)
+			  bumblebee6_basic_stereoimage_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_bumblebee_basic_subscribe_stereoimage(7, NULL, (carmen_handler_t)
+			  bumblebee7_basic_stereoimage_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_bumblebee_basic_subscribe_stereoimage(8, NULL, (carmen_handler_t)
+			  bumblebee8_basic_stereoimage_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_bumblebee_basic_subscribe_stereoimage(9, NULL, (carmen_handler_t)
+			  bumblebee9_basic_stereoimage_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
   if (log_kinect)
   {
 	  int num_kinect_devices = 0;
 
-	  carmen_param_t kinect_num_devs[] = {
+	  carmen_param_t kinect_num_devs[] =
+	  {
 			  {"kinect", "num_kinect_devices", CARMEN_PARAM_INT, &num_kinect_devices, 0, NULL}
 	  };
 
-	  carmen_param_install_params(argc, argv, kinect_num_devs,
-			  sizeof(kinect_num_devs) / sizeof(kinect_num_devs[0]));
+	  carmen_param_install_params(argc, argv, kinect_num_devs, sizeof(kinect_num_devs) / sizeof(kinect_num_devs[0]));
 
-	  if(num_kinect_devices > 0) {
-		  carmen_kinect_subscribe_depth_message(0, NULL,
-				  (carmen_handler_t) ipc_kinect_0_depth_handler,
-				  CARMEN_SUBSCRIBE_ALL );
-
-		  carmen_kinect_subscribe_video_message(0, NULL,
-				  (carmen_handler_t) ipc_kinect_0_video_handler,
-				  CARMEN_SUBSCRIBE_ALL );
+	  if (num_kinect_devices > 0)
+	  {
+		  carmen_kinect_subscribe_depth_message(0, NULL, (carmen_handler_t)
+				  ipc_kinect_0_depth_handler, CARMEN_SUBSCRIBE_ALL );
+		  carmen_kinect_subscribe_video_message(0, NULL, (carmen_handler_t)
+				  ipc_kinect_0_video_handler, CARMEN_SUBSCRIBE_ALL );
 	  }
 
-	  if(num_kinect_devices > 1) {
-		  carmen_kinect_subscribe_depth_message(1, NULL,
-				  (carmen_handler_t) ipc_kinect_1_depth_handler,
-				  CARMEN_SUBSCRIBE_ALL );
-
-		  carmen_kinect_subscribe_video_message(1, NULL,
-				  (carmen_handler_t) ipc_kinect_1_video_handler,
-				  CARMEN_SUBSCRIBE_ALL );
+	  if(num_kinect_devices > 1)
+	  {
+		  carmen_kinect_subscribe_depth_message(1, NULL, (carmen_handler_t)
+				  ipc_kinect_1_depth_handler, CARMEN_SUBSCRIBE_ALL );
+		  carmen_kinect_subscribe_video_message(1, NULL, (carmen_handler_t)
+				  ipc_kinect_1_video_handler, CARMEN_SUBSCRIBE_ALL );
 	  }
   }
 
-  if(log_xsens){
+  if (log_xsens)
+  {
+	  carmen_xsens_subscribe_xsens_global_matrix_message(NULL, (carmen_handler_t)
+			  xsens_matrix_handler, CARMEN_SUBSCRIBE_ALL );
 
+	  carmen_xsens_subscribe_xsens_global_euler_message(NULL, (carmen_handler_t)
+			  xsens_euler_handler, CARMEN_SUBSCRIBE_ALL );
 
-    carmen_xsens_subscribe_xsens_global_matrix_message(NULL,
-					    (carmen_handler_t) xsens_matrix_handler,
-					    CARMEN_SUBSCRIBE_ALL );
-
-    carmen_xsens_subscribe_xsens_global_euler_message(NULL,
-					    (carmen_handler_t) xsens_euler_handler,
-					    CARMEN_SUBSCRIBE_ALL );
-
-    carmen_xsens_subscribe_xsens_global_quat_message(NULL,
-					    (carmen_handler_t) xsens_quat_handler,
-					    CARMEN_SUBSCRIBE_ALL );
+	  carmen_xsens_subscribe_xsens_global_quat_message(NULL, (carmen_handler_t)
+			  xsens_quat_handler, CARMEN_SUBSCRIBE_ALL );
   }
 
-  if(log_xsens_mtig){
-
-	carmen_xsens_mtig_subscribe_message(	NULL,
-		      		(carmen_handler_t) xsens_mtig_handler,
-		            CARMEN_SUBSCRIBE_ALL);
-
+  if (log_xsens_mtig)
+  {
+	  carmen_xsens_mtig_subscribe_message(NULL, (carmen_handler_t)
+			  xsens_mtig_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
   if (log_web_cam)
   {
-	  carmen_web_cam_subscribe_message (NULL,
-		  (carmen_handler_t) carmen_web_cam_message_handler,
-		  CARMEN_SUBSCRIBE_ALL);
+	  carmen_web_cam_subscribe_message(NULL, (carmen_handler_t)
+			  carmen_web_cam_message_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
-  carmen_logger_subscribe_comment_message( NULL,
-		  (carmen_handler_t) logger_comment_handler,
-		  CARMEN_SUBSCRIBE_ALL );
+  carmen_logger_subscribe_comment_message(NULL, (carmen_handler_t)
+		  logger_comment_handler, CARMEN_SUBSCRIBE_ALL );
 
   if (log_visual_odometry)
   {
-	  carmen_visual_odometry_subscribe_pose6d_message(NULL,
-		 (carmen_handler_t) visual_odometry_handler,
-		 CARMEN_SUBSCRIBE_ALL);
+	  carmen_visual_odometry_subscribe_pose6d_message(NULL, (carmen_handler_t)
+			  visual_odometry_handler, CARMEN_SUBSCRIBE_ALL);
 
   }
 
   if (log_imu_pi)
   {
-	  carmen_pi_imu_subscribe(NULL,
-			  (carmen_handler_t) pi_imu_handler,
-			  CARMEN_SUBSCRIBE_ALL);
+	  carmen_pi_imu_subscribe(NULL, (carmen_handler_t)
+			  pi_imu_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
   if (log_sonar)
   {
-	  carmen_ultrasonic_sonar_sensor_subscribe(NULL,
-		 (carmen_handler_t) ultrasonic_sonar_sensor_handler,
-		 CARMEN_SUBSCRIBE_ALL);
+	  carmen_ultrasonic_sonar_sensor_subscribe(NULL, (carmen_handler_t)
+			  ultrasonic_sonar_sensor_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
   if (log_ford_escape_status)
   {
-	  carmen_ford_escape_subscribe_status_message(NULL,
-		 (carmen_handler_t) ford_escape_status_message_handler,
-		 CARMEN_SUBSCRIBE_ALL);
+	  carmen_ford_escape_subscribe_status_message(NULL, (carmen_handler_t)
+			  ford_escape_status_message_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
   if (log_can_dump)
   {
-	  carmen_can_dump_subscribe_can_line_message(NULL,
-		 (carmen_handler_t) can_dump_message_handler,
-		 CARMEN_SUBSCRIBE_ALL);
+	  carmen_can_dump_subscribe_can_line_message(NULL, (carmen_handler_t)
+			  can_dump_message_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
   signal(SIGINT, shutdown_module);

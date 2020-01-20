@@ -27,7 +27,7 @@ typedef struct {
 
 /* The message's name, will be used for message registration in IPC Central module */
 #define      CARMEN_MINORU_STEREOIMAGE_NAME       "carmen_minoru_stereoimage"
-#define 		 CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE10_NAME	"carmen_bumblebe_basic_stereoimage10"
+#define 		 CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE10_NAME	"carmen_bumblebee_basic_stereoimage10"
 
 /* The message's format, will be used for message data marshalling (serialization) for network socket transport. */
 #define      CARMEN_MINORU_STEREOIMAGE_FMT        "{int, int, int, int, <ubyte:3>, <ubyte:3>, double, string}"

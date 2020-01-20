@@ -38,6 +38,8 @@
 #define HEX_TO_RGB_BYTE(hi, lo) (hi << 4 | lo)
 #define GETINDEX(a) isalpha(a) ? a - 'a' + 10 : a - '0'
 
+extern char *log_filename;
+
 void CLF_READ_STRING(char *dst, char **string)
 {
 	int l;
@@ -1304,8 +1306,18 @@ char* carmen_string_and_file_to_velodyne_partial_scan_message(char* string, carm
 		current_pos += 29;
 
 	static char path[1024];
+	static char full_path[1024];
 
 	CLF_READ_STRING(path, &current_pos);
+
+	if (path[0] == '/')
+		strcpy(full_path, path);
+	else
+	{
+		strcpy(full_path, log_filename);
+		strcat(full_path, path);
+	}
+
 	msg->number_of_32_laser_shots = CLF_READ_INT(&current_pos);
 
     // store the number of 32 laser shots allocated to avoid unecessary reallocs
@@ -1322,18 +1334,18 @@ char* carmen_string_and_file_to_velodyne_partial_scan_message(char* string, carm
 		num_laser_shots_allocated = msg->number_of_32_laser_shots;
 	}
 
-	FILE *image_file = fopen(path, "rb");
+	FILE *pointcloud_file = fopen(full_path, "rb");
 
-	if (image_file)
+	if (pointcloud_file)
 	{
 		for(i = 0; i < msg->number_of_32_laser_shots; i++)
 		{
-			fread(&(msg->partial_scan[i].angle), sizeof(double), 1, image_file);
-			fread(msg->partial_scan[i].distance, sizeof(short), 32, image_file);
-			fread(msg->partial_scan[i].intensity, sizeof(char), 32, image_file);
+			fread(&(msg->partial_scan[i].angle), sizeof(double), 1, pointcloud_file);
+			fread(msg->partial_scan[i].distance, sizeof(short), 32, pointcloud_file);
+			fread(msg->partial_scan[i].intensity, sizeof(char), 32, pointcloud_file);
 		}
 
-		fclose(image_file);
+		fclose(pointcloud_file);
 	}
 	else
 		msg->number_of_32_laser_shots = 0;
@@ -1433,8 +1445,17 @@ char* carmen_string_and_file_to_variable_velodyne_scan_message(char* string, car
 		current_pos += 31;*/
 
 	static char path[1024];
+	static char full_path[1024];
 
 	CLF_READ_STRING(path, &current_pos);
+
+	if (path[0] == '/')
+		strcpy(full_path, path);
+	else
+	{
+		strcpy(full_path, log_filename);
+		strcat(full_path, path);
+	}
 
 //	velodyne_number = CLF_READ_INT(&current_pos);
 	shot_size = CLF_READ_INT(&current_pos);
@@ -1460,7 +1481,7 @@ char* carmen_string_and_file_to_variable_velodyne_scan_message(char* string, car
 	{*/
 		//verificar se a recriacao do vetor esta correta
 		msg->partial_scan = (carmen_velodyne_shot*) realloc (msg->partial_scan, msg->number_of_shots * sizeof(carmen_velodyne_shot));
-		for (int i=0; i<msg->number_of_shots; i++)
+		for (int i = 0; i < msg->number_of_shots; i++)
 		{
 			msg->partial_scan[i].distance = (unsigned short*)malloc(shot_size*sizeof(unsigned short));
 			msg->partial_scan[i].intensity = (unsigned char*)malloc(shot_size*sizeof(unsigned char));
@@ -1468,17 +1489,17 @@ char* carmen_string_and_file_to_variable_velodyne_scan_message(char* string, car
 		//num_laser_shots_allocated = msg->number_of_shots;
 	//}
 
-	FILE *image_file = fopen(path, "rb");
+	FILE *pointcloud_file = fopen(full_path, "rb");
 
-	for(i = 0; i < msg->number_of_shots; i++)
+	for (i = 0; i < msg->number_of_shots; i++)
 	{
-		fread(&(msg->partial_scan[i].angle), sizeof(double), 1, image_file);
-		fread(msg->partial_scan[i].distance, sizeof(unsigned short), shot_size, image_file);
-		fread(msg->partial_scan[i].intensity, sizeof(unsigned char), shot_size, image_file);
+		fread(&(msg->partial_scan[i].angle), sizeof(double), 1, pointcloud_file);
+		fread(msg->partial_scan[i].distance, sizeof(unsigned short), shot_size, pointcloud_file);
+		fread(msg->partial_scan[i].intensity, sizeof(unsigned char), shot_size, pointcloud_file);
 		msg->partial_scan[i].shot_size = shot_size;
 	}
 
-	fclose(image_file);
+	fclose(pointcloud_file);
 
 	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
 	copy_host_string(&msg->host, &current_pos);
@@ -1679,8 +1700,17 @@ char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string
 	}
 
 	static char path[1024];
+	static char full_path[1024];
 
 	CLF_READ_STRING(path, &current_pos);
+
+	if (path[0] == '/')
+		strcpy(full_path, path);
+	else
+	{
+		strcpy(full_path, log_filename);
+		strcat(full_path, path);
+	}
 
     msg->width = CLF_READ_INT(&current_pos);
     msg->height = CLF_READ_INT(&current_pos);
@@ -1693,30 +1723,29 @@ char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string
 	if(msg->raw_right == NULL)
 		msg->raw_right = (unsigned char*) malloc (msg->image_size * sizeof(unsigned char));
 
-	if (0)//strcmp("png", path + strlen(path) - 3) == 0) // ZED Camera
+//	if (strcmp("png", full_path + strlen(full_path) - 3) == 0) // ZED Camera
+//	{
+//		cv::Mat img = cv::imread(full_path);
+//		cv::Mat left = img(cv::Rect(0, 0, img.cols / 2, img.rows)).clone();
+//		cv::Mat right = img(cv::Rect(img.cols / 2, 0, img.cols / 2, img.rows)).clone();
+//
+//		// DEBUG:
+//		//cv::imshow("img", img);
+//		//cv::imshow("left", left);
+//		//cv::imshow("right", right);
+//		//cv::waitKey(10);
+//
+//		memcpy(msg->raw_left, left.data, sizeof(unsigned char) * msg->image_size);
+//		memcpy(msg->raw_right, right.data, sizeof(unsigned char) * msg->image_size);
+//	}
+//	else
 	{
-		cv::Mat img = cv::imread(path);
-		cv::Mat left = img(cv::Rect(0, 0, img.cols / 2, img.rows)).clone();
-		cv::Mat right = img(cv::Rect(img.cols / 2, 0, img.cols / 2, img.rows)).clone();
-
-		// DEBUG:
-		//cv::imshow("img", img);
-		//cv::imshow("left", left);
-		//cv::imshow("right", right);
-		//cv::waitKey(10);
-
-		memcpy(msg->raw_left, left.data, sizeof(unsigned char) * msg->image_size);
-		memcpy(msg->raw_right, right.data, sizeof(unsigned char) * msg->image_size);
-	}
-	else
-	{
-		FILE *image_file = fopen(path, "rb");
+		FILE *image_file = fopen(full_path, "rb");
 
 		if (image_file)
 		{
-			fread(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
+			fread(msg->raw_left,  msg->image_size, sizeof(unsigned char), image_file);
 			fread(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
-
 			fclose(image_file);
 		}
 		else

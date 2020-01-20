@@ -237,8 +237,7 @@ run_robosense_driver()
 		}
 		else
 		{
-			if(robosense->poll(velodyne_variable_scan, 16,
-					velodyne_max_laser_shots_per_revolution, 6699, 7788, private_nh))
+			if(robosense->receive_socket_data_and_fill_message(velodyne_variable_scan, 16, velodyne_max_laser_shots_per_revolution, 6699, 7788, private_nh))
 			{
 //				printf("cheguei até aqui, respeita minha história\n");
 				carmen_velodyne_publish_variable_scan_message(&velodyne_variable_scan, velodyne_number);

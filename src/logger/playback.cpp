@@ -34,6 +34,7 @@
 
 #define        MAX_LINE_LENGTH           (5*4000000)
 
+char *log_filename = NULL;
 carmen_FILE *logfile = NULL;
 carmen_logfile_index_p logfile_index = NULL;
 
@@ -315,6 +316,16 @@ check_in_file_message(char *logger_message_name, char *logger_message_line)
 	bool error = false;
 
 	error |= ((strcmp(logger_message_name, "VELODYNE_PARTIAL_SCAN_IN_FILE") == 0) && (velodyne_partial_scan.number_of_32_laser_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE0") == 0) && (velodyne_variable_scan0.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE1") == 0) && (velodyne_variable_scan1.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE2") == 0) && (velodyne_variable_scan2.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE3") == 0) && (velodyne_variable_scan3.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE4") == 0) && (velodyne_variable_scan4.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE5") == 0) && (velodyne_variable_scan5.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE6") == 0) && (velodyne_variable_scan6.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE7") == 0) && (velodyne_variable_scan7.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE8") == 0) && (velodyne_variable_scan8.number_of_shots <= 0));
+	error |= ((strcmp(logger_message_name, "VELODYNE_VARIABLE_SCAN_IN_FILE9") == 0) && (velodyne_variable_scan9.number_of_shots <= 0));
 	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE1") == 0) && (bumblebee_basic_stereoimage1.image_size <= 0));
 	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE2") == 0) && (bumblebee_basic_stereoimage2.image_size <= 0));
 	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3") == 0) && (bumblebee_basic_stereoimage3.image_size <= 0));
@@ -836,7 +847,7 @@ void usage(char *fmt, ...)
 	vfprintf(stderr, fmt, args);
 	va_end(args);
 
-	fprintf(stderr, "Usage: playback <log_file_name> [args]\n");
+	fprintf(stderr, "Usage: playback <log_filename> [args]\n");
 	fprintf(stderr, "[args]: -fast {on|off} -autostart {on|off} -basic {on|off}\n");
 	fprintf(stderr, "        -play_message  <num>   -stop_message <num>\n");
 	fprintf(stderr, "        -play_time     <num>   -stop_time    <num>\n");
@@ -970,7 +981,9 @@ int main(int argc, char **argv)
 {
 	FILE *index_file;
 	char index_file_name[2000];
-	char *log_file_name;
+
+	if (argc < 2 || strcmp(argv[1], "-h") == 0)
+		usage(NULL);
 
 	memset(&odometry_ackerman, 0, sizeof(odometry_ackerman));
 	memset(&velocity_ackerman, 0, sizeof(velocity_ackerman));
@@ -1010,7 +1023,6 @@ int main(int argc, char **argv)
 	memset(&velodyne_variable_scan7, 0, sizeof(velodyne_variable_scan7));
 	memset(&velodyne_variable_scan8, 0, sizeof(velodyne_variable_scan8));
 	memset(&velodyne_variable_scan9, 0, sizeof(velodyne_variable_scan9));
-
 	memset(&velodyne_gps, 0, sizeof(velodyne_gps));
 	memset(&xsens_euler, 0, sizeof(xsens_euler));
 	memset(&xsens_quat, 0, sizeof(xsens_quat));
@@ -1035,23 +1047,16 @@ int main(int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 
-	if (argc < 2)
-		carmen_die("Error: wrong number of parameters: program requires 1 parameter and received %d parameter(s).\n"
-				"Usage:\n %s <log_file_name>\n", argc - 1, argv[0]);
-
-	if (strcmp(argv[1], "-h") == 0)
-		usage(NULL);
-
-    log_file_name = argv[1];
-	logfile = carmen_fopen(log_file_name, "r");
+	log_filename = argv[1];
+	logfile = carmen_fopen(log_filename, "r");
 	if (logfile == NULL)
-		carmen_die("Error: could not open file %s for reading.\n", log_file_name);
+		carmen_die("Error: could not open file %s for reading.\n", log_filename);
 
 	int fadvise_error = posix_fadvise(fileno(logfile->fp), 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (fadvise_error)
 		carmen_die("Could not advise POSIX_FADV_SEQUENTIAL on playback.\n");
 
-	strcpy(index_file_name, log_file_name);
+	strcpy(index_file_name, log_filename);
 	strcat(index_file_name, ".index");
 	index_file = fopen(index_file_name, "r");
 	if (index_file == NULL)
