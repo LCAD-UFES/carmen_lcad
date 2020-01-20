@@ -38,7 +38,7 @@ def initialize(horizontal_resolution):
     global model
     global transformation
     global device
-    chk_path = "/home/lcad/carmen_lcad/sharedlib/inplace_abn/BestLoss.pt"
+    chk_path = "/home/lcad/carmen_lcad/sharedlib/inplace_abn/BestLoss0601.pt"
     # Torch stuff
     # torch.cuda.set_device(args.rank)
     torch.cuda.set_device(0)  # To get this to run on free RAAMAC GPU - Dominic
@@ -68,6 +68,7 @@ def initialize(horizontal_resolution):
 
 
     if(chk_path != ""):
+        print("Checkpoint carregado")
         data = torch.load(chk_path)
         model.load_state_dict(data)
         model.to(device)
@@ -100,8 +101,9 @@ def inplace_abn_process_image(carmen_image):
         preds.shape))
     print("preds.type={}".format(preds[0][0].dtype))
     # torch.cuda.empty_cache()
-
-    return preds.cpu().detach().numpy()[0]
+    preds = preds.cpu().detach().numpy()[0]
+    preds = np.array([preds[0], preds[2], preds[3], preds[4]])
+    return preds
     # return np.array(preds[0], 0.0, 0.0, 0.0])
     # return preds[0]
 
@@ -149,7 +151,7 @@ class SegmentationModule(nn.Module):
         super(SegmentationModule, self).__init__()
         self.body = body
         self.head = head
-        self.out_vector = nn.Linear(1228800, 4)
+        self.out_vector = nn.Linear(1228800, 5)
 #        self.out_vector=nn.Sequential(
 #            nn.ReLU(),
 #            nn.Linear(1228800, 5)
