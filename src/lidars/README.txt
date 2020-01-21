@@ -11,7 +11,7 @@ carmen_velodyne_variable_scan_message<id>
 
 Para visualizar no viewer 3D é necessário usar as flags abaixo
 
-./viewer_3D -velodyne_active 2
+./viewer_3D -velodyne_active 2 -fv_flag on
  
  Se não estiver com GPS use a flag -fv_flag on para visualizar o velodyne
 a flag -fv_flag serve para que o viewer ignore o GPS
