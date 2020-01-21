@@ -111,7 +111,7 @@ plot_state(std::vector<carmen_ackerman_traj_point_t> &spline_vec, carmen_point_t
 
 	fprintf(gnuplot_pipeMP, "plot "
 			"'./gnuplot_spline_poses.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'spline',"
-			"'./gnuplot_data_iara_pose.txt' using 1:2 with lines title 'iara_pose' axes x1y1\n");
+			"'./gnuplot_data_iara_pose.txt' using 1:2 with p title 'iara_pose' axes x1y1\n");
 
 	fflush(gnuplot_pipeMP);
 }
@@ -219,7 +219,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 				waypoint.phi = 0.2;
 				carmen_rddf_poses_from_spline_vec.push_back(waypoint);
 			}
-			plot_state(carmen_rddf_poses_local_vec, globalpos);
+			carmen_point_t local_pos;
+			local_pos.x = 0.0;
+			local_pos.y = preds[index].dy;
+			plot_state(carmen_rddf_poses_local_vec, local_pos);
 			carmen_ackerman_traj_point_t *carmen_rddf_poses_from_spline = &carmen_rddf_poses_from_spline_vec[0];
 //			for (int i = 0; i<indice_points; i++)
 //			{
