@@ -151,12 +151,17 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 		std::vector<carmen_ackerman_traj_point_t> carmen_rddf_poses_from_spline_vec;
 		for (int i=0; i<indice_points; i++)
 		{
+			carmen_ackerman_traj_point_t waypoint_local;
 			carmen_ackerman_traj_point_t waypoint;
-			SE2 pose_in_rddf_reference(i*0.5, store_points[i], store_thetas[i]);
-			SE2 pose_in_world_reference = ref_pose.inverse() * pose_in_rddf_reference;
-			waypoint.x = pose_in_world_reference[0];
-			waypoint.y = pose_in_world_reference[1];
-			waypoint.theta = carmen_normalize_theta(pose_in_world_reference[2]);
+			waypoint_local.x = i*0.5;
+			waypoint_local.y = store_points[i];
+			waypoint_local.theta = store_thetas[i];
+			waypoint_local.v = 9.0;
+			waypoint_local.phi = 0.2;
+			carmen_rddf_poses_local_vec.push_back(waypoint_local);
+			waypoint.x = globalpos.x + waypoint_local.x * cos(globalpos.theta) - waypoint_local.y * sin(globalpos.theta);
+			waypoint.y = globalpos.y - preds[index].dy + waypoint_local.x * sin(globalpos.theta) + waypoint_local.y * cos(globalpos.theta);
+			waypoint.theta = waypoint_local.theta + globalpos.theta;
 			waypoint.v = 9.0;
 			waypoint.phi = 0.2;
 			carmen_rddf_poses_from_spline_vec.push_back(waypoint);

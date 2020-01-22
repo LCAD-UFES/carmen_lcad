@@ -193,10 +193,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			}
 
 
-			double ref_theta = -1 * (globalpos.theta /*- preds[index].dtheta*/);
-			double ref_x = -1 * sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * cos(atan2(globalpos.y, globalpos.x) + ref_theta);
-			double ref_y = -1 *(sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * sin(atan2(globalpos.y, globalpos.x) + ref_theta)) + preds[index].dy;
-			SE2 ref_pose(ref_x, ref_y, ref_theta);
+			//double ref_theta = -1 * (globalpos.theta /*- preds[index].dtheta*/);
+			//double ref_x = -1 * sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * cos(atan2(globalpos.y, globalpos.x) + ref_theta);
+			//double ref_y = -1 *(sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * sin(atan2(globalpos.y, globalpos.x) + ref_theta)) + preds[index].dy;
+			//SE2 ref_pose(ref_x, ref_y, ref_theta);
 
 			std::vector<carmen_ackerman_traj_point_t> carmen_rddf_poses_from_spline_vec;
 			std::vector<carmen_ackerman_traj_point_t> carmen_rddf_poses_local_vec;
@@ -210,11 +210,14 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 				waypoint_local.v = 9.0;
 				waypoint_local.phi = 0.2;
 				carmen_rddf_poses_local_vec.push_back(waypoint_local);
-				SE2 pose_in_rddf_reference(i*0.5, store_points[i], store_thetas[i]);
-				SE2 pose_in_world_reference = ref_pose.inverse() * pose_in_rddf_reference;
-				waypoint.x = pose_in_world_reference[0];
-				waypoint.y = pose_in_world_reference[1];
-				waypoint.theta = carmen_normalize_theta(pose_in_world_reference[2]);
+				//SE2 pose_in_rddf_reference(i*0.5, store_points[i], store_thetas[i]);
+				//SE2 pose_in_world_reference = ref_pose.inverse() * pose_in_rddf_reference;
+				//waypoint.x = pose_in_world_reference[0];
+				waypoint.x = globalpos.x + waypoint_local.x * cos(globalpos.theta) - waypoint_local.y * sin(globalpos.theta);
+				//waypoint.y = pose_in_world_reference[1];
+				waypoint.y = globalpos.y - preds[index].dy + waypoint_local.x * sin(globalpos.theta) + waypoint_local.y * cos(globalpos.theta);
+				//waypoint.theta = carmen_normalize_theta(pose_in_world_reference[2]);
+				waypoint.theta = waypoint_local.theta + globalpos.theta;
 				waypoint.v = 9.0;
 				waypoint.phi = 0.2;
 				carmen_rddf_poses_from_spline_vec.push_back(waypoint);
