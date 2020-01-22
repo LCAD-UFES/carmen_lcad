@@ -207,11 +207,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			waypoint_local.v = 9.0;
 			waypoint_local.phi = 0.2;
 			carmen_rddf_poses_local_vec.push_back(waypoint_local);
-			SE2 pose_in_rddf_reference(i*0.5, store_points[i], store_thetas[i]);
-			SE2 pose_in_world_reference = ref_pose.inverse() * pose_in_rddf_reference;
-			waypoint.x = pose_in_world_reference[0];
-			waypoint.y = pose_in_world_reference[1];
-			waypoint.theta = carmen_normalize_theta(pose_in_world_reference[2]);
+			waypoint.x = globalpos.x + waypoint_local.x * cos(globalpos.theta) - waypoint_local.y * sin(globalpos.theta);
+			waypoint.y = globalpos.y - preds[0] + waypoint_local.x * sin(globalpos.theta) + waypoint_local.y * cos(globalpos.theta);
+			waypoint.theta = waypoint_local.theta + globalpos.theta;
 			waypoint.v = 9.0;
 			waypoint.phi = 0.2;
 			carmen_rddf_poses_from_spline_vec.push_back(waypoint);
