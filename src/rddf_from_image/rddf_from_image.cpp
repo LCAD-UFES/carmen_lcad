@@ -152,6 +152,12 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 		gsl_interp_accel *acc;
 		gsl_spline *phi_spline;
+/*
+		preds[1] -= preds[0];
+	    preds[2] -= preds[0];
+		preds[3] -= preds[0];
+		preds[0] = 0;
+*/
 		double knots_x[4] = {0.0,  30/ 3.0, 2 * 30 / 3.0, 30.0};
 		double knots_y[4] = {0.0, preds[1], preds[2], preds[3]};
 		acc = gsl_interp_accel_alloc();
@@ -161,39 +167,55 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 
 		double half_points = 0.0;
-		double acresc_points = 0.5;
-		double store_points[int(30/acresc_points)+1];
+		double acresc_points = 0.01;
+		double store_y[int(30/acresc_points)+1];
+		double store_x[int(30/acresc_points)+1];
 		double store_thetas[int(30/acresc_points)+1];
 		double points_dx = 0.1;
 		int indice_points = 0;
 		//for(int i = 0; i < 30*2 ; i++)
 		while( half_points <= 30.0 )
 		{
-			if(half_points == 30)
+			if(half_points >= 29.9)
 			{
 				double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
-				double spline_y2 = gsl_spline_eval(phi_spline, half_points - points_dx, acc);
-				store_points[indice_points] = spline_y;
-				store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y - spline_y2, points_dx));
+				if (euclidean_distance(half_points, store_x[indice_points - 1], spline_y, store_y[indice_points - 1]) >= 0.5)
+				{
+					double spline_y2 = gsl_spline_eval(phi_spline, half_points - points_dx, acc);
+					store_y[indice_points] = spline_y;
+					store_x[indice_points] = half_points;
+					store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y - spline_y2, points_dx));
+					indice_points++;
+				}
+			}
+			else if(half_points == 0.0)
+			{
+				double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
+				double spline_y2 = gsl_spline_eval(phi_spline, half_points + points_dx, acc);
+				store_y[indice_points] = spline_y;
+				store_x[indice_points] = half_points;
+				store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y2 - spline_y, points_dx));
+				indice_points++;
 			}
 			else
 			{
 				double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
-				double spline_y2 = gsl_spline_eval(phi_spline, half_points + points_dx, acc);
-				store_points[indice_points] = spline_y;
-				store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y2 - spline_y, points_dx));
+				if (euclidean_distance(half_points, store_x[indice_points - 1], spline_y, store_y[indice_points - 1]) >= 0.5)
+				{
+					double spline_y2 = gsl_spline_eval(phi_spline, half_points + points_dx, acc);
+					store_y[indice_points] = spline_y;
+					store_x[indice_points] = half_points;
+					store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y2 - spline_y, points_dx));
+					indice_points++;
+				}
 			}
-			indice_points++;
 			half_points += acresc_points;
 		}
-/*
-		preds[1] -= preds[0];
-		preds[2] -= preds[0];
-		preds[3] -= preds[0];*/
-		double ref_theta = -1 * (globalpos.theta /*- preds[index].dtheta*/);
-		double ref_x = -1 * sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * cos(atan2(globalpos.y, globalpos.x) + ref_theta);
-		double ref_y = -1 *(sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * sin(atan2(globalpos.y, globalpos.x) + ref_theta)) + preds[0];
-		SE2 ref_pose(ref_x, ref_y, ref_theta);
+
+//		double ref_theta = -1 * (globalpos.theta /*- preds[index].dtheta*/);
+//		double ref_x = -1 * sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * cos(atan2(globalpos.y, globalpos.x) + ref_theta);
+//		double ref_y = -1 *(sqrt(globalpos.x * globalpos.x + globalpos.y * globalpos.y) * sin(atan2(globalpos.y, globalpos.x) + ref_theta))/* + preds[0]*/;
+//		SE2 ref_pose(ref_x, ref_y, ref_theta);
 
 		std::vector<carmen_ackerman_traj_point_t> carmen_rddf_poses_from_spline_vec;
 		std::vector<carmen_ackerman_traj_point_t> carmen_rddf_poses_local_vec;
@@ -201,14 +223,14 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 		{
 			carmen_ackerman_traj_point_t waypoint_local;
 			carmen_ackerman_traj_point_t waypoint;
-			waypoint_local.x = i*0.5;
-			waypoint_local.y = store_points[i];
+			waypoint_local.x = store_x[i];
+			waypoint_local.y = store_y[i];
 			waypoint_local.theta = store_thetas[i];
 			waypoint_local.v = 9.0;
 			waypoint_local.phi = 0.2;
 			carmen_rddf_poses_local_vec.push_back(waypoint_local);
-			waypoint.x = globalpos.x + waypoint_local.x * cos(globalpos.theta) - waypoint_local.y * sin(globalpos.theta);
-			waypoint.y = globalpos.y - preds[0] + waypoint_local.x * sin(globalpos.theta) + waypoint_local.y * cos(globalpos.theta);
+			waypoint.x = globalpos.x + waypoint_local.x * cos(globalpos.theta) - (waypoint_local.y - preds[0]) * sin(globalpos.theta);
+			waypoint.y = globalpos.y + waypoint_local.x * sin(globalpos.theta) + (waypoint_local.y - preds[0]) * cos(globalpos.theta);
 			waypoint.theta = waypoint_local.theta + globalpos.theta;
 			waypoint.v = 9.0;
 			waypoint.phi = 0.2;
