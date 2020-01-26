@@ -116,6 +116,19 @@ plot_state(std::vector<carmen_ackerman_traj_point_t> &spline_vec, carmen_point_t
 	fflush(gnuplot_pipeMP);
 }
 
+//vector<carmen_position_t>
+//get_rddf_points_in_image_full (tf::StampedTransform world_to_camera_pose, int img_width, int img_height)
+//{
+//	carmen_position_t p;
+//	vector<carmen_position_t> rddf_points_in_image;
+//	double distance, last_distance;
+//	for(int i = 0; i < last_rddf_poses.number_of_poses; i++)
+//	{
+//		p = convert_rddf_pose_to_point_in_image (last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, 0.0, world_to_camera_pose, camera_parameters, img_width, img_height);
+//		rddf_points_in_image.push_back(p);
+//	}
+//	return (rddf_points_in_image);
+//}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -166,29 +179,48 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 
 			double half_points = 0.0;
-			double acresc_points = 0.5;
-			double store_points[int(30/acresc_points)+1];
+			double acresc_points = 0.01;
+			double store_y[int(30/acresc_points)+1];
+			double store_x[int(30/acresc_points)+1];
 			double store_thetas[int(30/acresc_points)+1];
 			double points_dx = 0.1;
 			int indice_points = 0;
 			//for(int i = 0; i < 30*2 ; i++)
 			while( half_points <= 30.0 )
 			{
-				if(half_points == 30)
+				if(half_points >= 29.9)
 				{
 					double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
-					double spline_y2 = gsl_spline_eval(phi_spline, half_points - points_dx, acc);
-					store_points[indice_points] = spline_y;
-					store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y - spline_y2, points_dx));
+					if (euclidean_distance(half_points, store_x[indice_points - 1], spline_y, store_y[indice_points - 1]) >= 0.5)
+					{
+						double spline_y2 = gsl_spline_eval(phi_spline, half_points - points_dx, acc);
+						store_y[indice_points] = spline_y;
+						store_x[indice_points] = half_points;
+						store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y - spline_y2, points_dx));
+						indice_points++;
+					}
+				}
+				else if(half_points == 0.0)
+				{
+					double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
+					double spline_y2 = gsl_spline_eval(phi_spline, half_points + points_dx, acc);
+					store_y[indice_points] = spline_y;
+					store_x[indice_points] = half_points;
+					store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y2 - spline_y, points_dx));
+					indice_points++;
 				}
 				else
 				{
 					double spline_y = gsl_spline_eval(phi_spline, half_points, acc);
-					double spline_y2 = gsl_spline_eval(phi_spline, half_points + points_dx, acc);
-					store_points[indice_points] = spline_y;
-					store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y2 - spline_y, points_dx));
+					if (euclidean_distance(half_points, store_x[indice_points - 1], spline_y, store_y[indice_points - 1]) >= 0.5)
+					{
+						double spline_y2 = gsl_spline_eval(phi_spline, half_points + points_dx, acc);
+						store_y[indice_points] = spline_y;
+						store_x[indice_points] = half_points;
+						store_thetas[indice_points] = carmen_normalize_theta(atan2(spline_y2 - spline_y, points_dx));
+						indice_points++;
+					}
 				}
-				indice_points++;
 				half_points += acresc_points;
 			}
 
@@ -204,8 +236,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			{
 				carmen_ackerman_traj_point_t waypoint_local;
 				carmen_ackerman_traj_point_t waypoint;
-				waypoint_local.x = i*0.5;
-				waypoint_local.y = store_points[i];
+				waypoint_local.x = store_x[i];
+				waypoint_local.y = store_y[i];
 				waypoint_local.theta = store_thetas[i];
 				waypoint_local.v = 9.0;
 				waypoint_local.phi = 0.2;
@@ -213,9 +245,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 				//SE2 pose_in_rddf_reference(i*0.5, store_points[i], store_thetas[i]);
 				//SE2 pose_in_world_reference = ref_pose.inverse() * pose_in_rddf_reference;
 				//waypoint.x = pose_in_world_reference[0];
-				waypoint.x = globalpos.x + waypoint_local.x * cos(globalpos.theta) - waypoint_local.y * sin(globalpos.theta);
+				waypoint.x = globalpos.x + waypoint_local.x * cos(globalpos.theta) - (waypoint_local.y - preds[index].dy) * sin(globalpos.theta);
 				//waypoint.y = pose_in_world_reference[1];
-				waypoint.y = globalpos.y - preds[index].dy + waypoint_local.x * sin(globalpos.theta) + waypoint_local.y * cos(globalpos.theta);
+				waypoint.y = globalpos.y + waypoint_local.x * sin(globalpos.theta) + (waypoint_local.y - preds[index].dy) * cos(globalpos.theta);
 				//waypoint.theta = carmen_normalize_theta(pose_in_world_reference[2]);
 				waypoint.theta = waypoint_local.theta + globalpos.theta;
 				waypoint.v = 9.0;
