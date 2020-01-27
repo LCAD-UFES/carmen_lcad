@@ -8,9 +8,9 @@ from asyncore import read
 # Rotaciona todas as imagens do banco de dados, deixando no formato de nomes apropriado para treinamento
 # Nao cria pastas padrao
 
-predict_path = '/mnt/ssd/neural_mapper_train/volta_da_ufes-20190915_augmented/Experimentos/Com_log_softmax/Normalizado/50_epocas/test_results/'
-label_path = '/mnt/ssd/neural_mapper_train/volta_da_ufes-20190915_augmented/Experimentos/Com_log_softmax/Normalizado/50_epocas/test_results/'
-list_files = '/mnt/ssd/neural_mapper_train/volta_da_ufes-20190915_augmented/Experimentos/Com_log_softmax/Normalizado/50_epocas/teste_results_list.txt'
+predict_path = '/mnt/ssd/neural_mapper_train/volta_da_ufes_20160323_augmented/test_results/'
+label_path = '/mnt/ssd/neural_mapper_train/volta_da_ufes_20160323_augmented/test_results/'
+list_files = '/mnt/ssd/neural_mapper_train/volta_da_ufes_20160323_augmented/test_results_names.txt'
 size = 600
 
 	#0_min
@@ -67,3 +67,4 @@ for file in filenames:
 
 print("Matriz de confusao final:")
 print(conf)
+np.savetxt('test_confusion20160323.txt', conf)

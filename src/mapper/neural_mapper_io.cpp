@@ -114,7 +114,6 @@ neural_mapper_update_input_maps(sensor_data_t * sensor_data, sensor_parameters_t
 		carmen_map_t *log_odds_snapshot_map, carmen_map_config_t map_config, double x_origin, double y_origin,
 		double highest_sensor, double safe_range_above_sensors)
 {
-
 	for (int i = 0; i < sensor_params->vertical_resolution; i++)
 	{
 		//printf("sensor_x: %lf, sensor_y: %lf, car_x: %lf, car_y: %lf, dif_x: %lf\n", sensor_data->ray_position_in_the_floor[thread_id][i].x, sensor_data->ray_position_in_the_floor[thread_id][i].y, sensor_data->ray_origin_in_the_floor[thread_id][i].x, sensor_data->ray_origin_in_the_floor[thread_id][i].y, round(sensor_data->ray_position_in_the_floor[thread_id][i].x - sensor_data->ray_origin_in_the_floor[thread_id][i].x));
