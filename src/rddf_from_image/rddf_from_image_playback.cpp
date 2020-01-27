@@ -86,32 +86,46 @@ plot_state(std::vector<carmen_ackerman_traj_point_t> &spline_vec, carmen_point_t
 		first_time = false;
 
 		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
-		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
-		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
+		fprintf(gnuplot_pipeMP, "set xrange [-30:30]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-30:30]\n");
 //		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
-		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
-		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
+//		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
+//		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
 //		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
 //		fprintf(gnuplot_pipe, "set ytics nomirror\n");
 //		fprintf(gnuplot_pipe, "set y2tics\n");
+		fprintf(gnuplot_pipeMP, "set size ratio -1\n");
 		fprintf(gnuplot_pipeMP, "set tics out\n");
 	}
 
 	FILE *gnuplot_spline = fopen("gnuplot_spline_poses.txt", "w");
 	FILE *gnuplot_globalpos = fopen("gnuplot_data_iara_pose.txt", "w");
+	FILE *gnuplot_rddf = fopen("gnuplot_data_rddf.txt", "w");
+	FILE *gnuplot_dy = fopen("gnuplot_data_dy.txt", "w");
 
 	for (unsigned int i = 0; i < spline_vec.size(); i++)
-		fprintf(gnuplot_spline, "%lf %lf %lf %lf %lf\n", spline_vec.at(i).x, spline_vec.at(i).y, 1.0 * cos(spline_vec.at(i).theta), 1.0 * sin(spline_vec.at(i).theta), spline_vec.at(i).theta);
-	fprintf(gnuplot_globalpos, "%lf %lf\n", iara_pose.x, iara_pose.y);
+		fprintf(gnuplot_spline, "%lf %lf %lf %lf %lf\n", spline_vec.at(i).x - iara_pose.x, spline_vec.at(i).y - iara_pose.y, 1.0 * cos(spline_vec.at(i).theta), 1.0 * sin(spline_vec.at(i).theta), spline_vec.at(i).theta);
+	fprintf(gnuplot_globalpos, "%lf %lf\n", 0.0, 0.0);
+	//printf("poses_n = %f\n", last_rddf_poses.number_of_poses);
+	for (int i = 0; i < last_rddf_poses.number_of_poses/2; i++)
+	{
+		fprintf(gnuplot_rddf, "%lf %lf\n", last_rddf_poses.poses[i].x - iara_pose.x, last_rddf_poses.poses[i].y - iara_pose.y);
+	}
+	fprintf(gnuplot_dy, "%lf %lf %lf %lf\n", spline_vec.at(0).x - iara_pose.x, spline_vec.at(0).y - iara_pose.y, iara_pose.x-spline_vec.at(0).x, iara_pose.y-spline_vec.at(0).y);
 
 	fclose(gnuplot_spline);
 	fclose(gnuplot_globalpos);
+	fclose(gnuplot_rddf);
+	fclose(gnuplot_dy);
 
 //	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
 
 	fprintf(gnuplot_pipeMP, "plot "
-			"'./gnuplot_spline_poses.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'spline',"
-			"'./gnuplot_data_iara_pose.txt' using 1:2 with p title 'iara_pose' axes x1y1\n");
+			"'./gnuplot_spline_poses.txt' using 1:2 w line title 'spline',"
+			//"'./gnuplot_spline_poses.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'spline',"
+			"'./gnuplot_data_iara_pose.txt' using 1:2 with p title 'iara_pose' axes x1y1 ,"
+			"'./gnuplot_data_rddf.txt' using 1:2 w linespoints title 'rddf',"
+			"'./gnuplot_data_dy.txt' using 1:2:3:4 w vectors title 'dy',\n");
 
 	fflush(gnuplot_pipeMP);
 }
@@ -135,6 +149,13 @@ plot_state(std::vector<carmen_ackerman_traj_point_t> &spline_vec, carmen_point_t
 // Handlers                                                                                  //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
+void
+rddf_handler(carmen_behavior_selector_road_profile_message *message)
+{
+	last_rddf_poses = *message;
+	rddf_received = 1;
+}
 
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
@@ -166,12 +187,12 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 		if(index != -1)
 		{
-			printf("%f\n", preds[index].timestamp);
+			//printf("%f\n", preds[index].timestamp);
 
 			gsl_interp_accel *acc;
 			gsl_spline *phi_spline;
 			double knots_x[4] = {0.0,  30/ 3.0, 2 * 30 / 3.0, 30.0};
-			double knots_y[4] = {0.0, preds[index].k1, preds[index].k2, preds[index].k3};
+			double knots_y[4] = {preds[index].dy, preds[index].k1, preds[index].k2, preds[index].k3};
 			acc = gsl_interp_accel_alloc();
 			const gsl_interp_type *type = gsl_interp_cspline;
 			phi_spline = gsl_spline_alloc(type, 4);
@@ -245,19 +266,20 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 				//SE2 pose_in_rddf_reference(i*0.5, store_points[i], store_thetas[i]);
 				//SE2 pose_in_world_reference = ref_pose.inverse() * pose_in_rddf_reference;
 				//waypoint.x = pose_in_world_reference[0];
-				waypoint.x = globalpos.x + waypoint_local.x * cos(globalpos.theta) - (waypoint_local.y - preds[index].dy) * sin(globalpos.theta);
+				waypoint.x = globalpos.x + waypoint_local.x * cos(globalpos.theta) - (waypoint_local.y) * sin(globalpos.theta);
 				//waypoint.y = pose_in_world_reference[1];
-				waypoint.y = globalpos.y + waypoint_local.x * sin(globalpos.theta) + (waypoint_local.y - preds[index].dy) * cos(globalpos.theta);
+				waypoint.y = globalpos.y + waypoint_local.x * sin(globalpos.theta) + (waypoint_local.y) * cos(globalpos.theta);
 				//waypoint.theta = carmen_normalize_theta(pose_in_world_reference[2]);
 				waypoint.theta = waypoint_local.theta + globalpos.theta;
 				waypoint.v = 9.0;
 				waypoint.phi = 0.2;
 				carmen_rddf_poses_from_spline_vec.push_back(waypoint);
 			}
-			carmen_point_t local_pos;
-			local_pos.x = 0.0;
-			local_pos.y = preds[index].dy;
-			plot_state(carmen_rddf_poses_local_vec, local_pos);
+//			carmen_point_t local_pos;
+//			local_pos.x = 0.0;
+//			local_pos.y = preds[index].dy;
+			printf("dy = %f\n", preds[index].dy);
+			plot_state(carmen_rddf_poses_from_spline_vec, globalpos);
 			carmen_ackerman_traj_point_t *carmen_rddf_poses_from_spline = &carmen_rddf_poses_from_spline_vec[0];
 //			for (int i = 0; i<indice_points; i++)
 //			{
@@ -267,13 +289,13 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			int annotations[2] = {1, 2};
 			int annotation_codes[2] = {1, 2};
 
-			carmen_rddf_publish_road_profile_message(
+			/*carmen_rddf_publish_road_profile_message(
 				carmen_rddf_poses_from_spline,
 				&last_pose,
 				indice_points,
 				1,
 				annotations,
-				annotation_codes);
+				annotation_codes);*/
 		}
 		last_pose.x = globalpos.x;
 		last_pose.y = globalpos.y;
@@ -316,8 +338,8 @@ subscribe_messages()
 {
 	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
-//	carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
-//					NULL, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
+					NULL, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 void
@@ -336,7 +358,8 @@ main(int argc , char **argv)
 		exit(1);
 	}
 
-	std::ifstream input("preds_20190915.txt");
+	//std::ifstream input("listen_1003-nodtheta.txt");
+	std::ifstream input("listen_doido_test_newmodel.txt");
 	Prediction s;
 	while (input >> s)
 	{
@@ -347,10 +370,10 @@ main(int argc , char **argv)
 		  preds.end(),
 		  compareByLength);
 
-	for(int i=0; i<preds.size(); i++)
-	{
-		printf("%f\n", preds[i].timestamp);
-	}
+//	for(int i=0; i<preds.size(); i++)
+//	{
+//		printf("%f\n", preds[i].timestamp);
+//	}
 
 	carmen_ipc_initialize(argc, argv);
 
