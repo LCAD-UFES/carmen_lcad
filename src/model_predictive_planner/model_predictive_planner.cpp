@@ -53,7 +53,7 @@ get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
     if (d < 0.0000001)
         return dist(p2, robot);
 
-    return abs((delta_y * 0.0) - (delta_x * 0.0) + x2y1 - y2x1) / d;
+    return abs((delta_y * robot.x) - (delta_x * robot.y) + x2y1 - y2x1) / d;
 
 }
 
