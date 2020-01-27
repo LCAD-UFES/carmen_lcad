@@ -11,10 +11,10 @@ from torchvision import datasets, transforms
 # 
 # 
 
-TRANSFORMS = transforms.Normalize([0.0128, 0.0119, 0.0077, 0.0019, 0.0010], [0.0821, 0.0739, 0.0591, 0.0170, 0.0100])
+TRANSFORMS = None #transforms.Normalize([0.0128, 0.0119, 0.0077, 0.0019, 0.0010], [0.0821, 0.0739, 0.0591, 0.0170, 0.0100])
 device = torch.device("cuda:0")
 carmen_home = os.getenv("CARMEN_HOME")
-model_path = '/src/mapper/50.model'
+model_path = '/src/mapper/50_20160323.model'
 input_channels = 5
 n_classes = 3
 dropout_prob = 0.0

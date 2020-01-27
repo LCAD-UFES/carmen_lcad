@@ -27,7 +27,7 @@ from cupshelpers.ppds import normalize
 import time
 
 #transforms.Normalize(mean for each channel, std for each chanel)
-TRANSFORMS = transforms.Normalize([0.0128, 0.0119, 0.0077, 0.0019, 0.0010], [0.0821, 0.0739, 0.0591, 0.0170, 0.0100])
+TRANSFORMS = None #transforms.Normalize([0.0128, 0.0119, 0.0077, 0.0019, 0.0010], [0.0821, 0.0739, 0.0591, 0.0170, 0.0100])
 
 
 def tensor2rgbimage(tensor):
@@ -293,14 +293,14 @@ def train(interval_save_model, iterations, model, device, train_list, dataset_co
             out_loss.backward()
             # print("weights update")
             optimizer.step()
-            if batch_idx % interval_save_model == 0:
-                log_treino = ('Loss: {:.10f} Train Epoch: {} [{}/{} ({:.0f}%)]\n'.format(out_loss.item(), epoch, batch_idx * len(data), len(train_list),
-                    epoch, batch_idx * len(data), len(train_list),
-                    100. * batch_idx * len(data) / len(train_list)))
-                arq = open(dnn_config['save_log_files']+'Train_averange.txt', 'a')
-                arq.write(log_treino)
-                arq.close()
-                print(log_treino)
+#             if batch_idx % interval_save_model == 0:
+            log_treino = ('Loss: {:.10f} Train Epoch: {} [{}/{} ({:.0f}%)]\n'.format(out_loss.item(), epoch, batch_idx * len(data), len(train_list),
+                epoch, batch_idx * len(data), len(train_list),
+                100. * batch_idx * len(data) / len(train_list)))
+            arq = open(dnn_config['save_log_files']+'Train_averange.txt', 'a')
+            arq.write(log_treino)
+            arq.close()
+            print(log_treino)
 
             if epoch % interval_save_model == 0:
                 pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
@@ -427,5 +427,5 @@ if __name__ == '__main__':
             print('Saving model at:', dnn_config['save_models'])
             torch.save(model.state_dict(), dnn_config['save_models'] + str(epoch) + '.model')
 
-    print("cabou")
+    print("end of training")
     torch.save(model.state_dict(), dnn_config['save_models'] + str(epoch) + '.model')

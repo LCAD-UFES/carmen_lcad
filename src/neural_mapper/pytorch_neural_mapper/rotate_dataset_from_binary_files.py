@@ -20,12 +20,12 @@ from PIL import Image
 # Nao cria pastas padrao
 
 
-dataset_list_file = "/dados/neural_mapper/volta_da_ufes-20190915/all_images_filtred.txt"
-dataset_path = "/dados/neural_mapper/volta_da_ufes-20190915/"
+dataset_list_file = "/media/vinicius/NewHD/neural_mapper_raw/volta_da_ufes_20191003/all_images_filtred.txt"
+dataset_path = "/media/vinicius/NewHD/neural_mapper_raw/volta_da_ufes_20191003/"
 data_path = "data/"
 label_path = "labels/"
 
-out_path = "/mnt/ssd/neural_mapper_train/volta_da_ufes-20190915_augmented/"
+out_path = "/mnt/ssd/neural_mapper_train/volta_da_ufes_20191003_augmented/"
 
 #statistics + label + view
 input_dimensions = 6
@@ -38,6 +38,7 @@ map_resolution = 0.2
 radius = (velodyne_max_range/map_resolution)
 new_size = 600
 rotate_dataset = True
+calculate_transforms = False
 
 
 def getDatasetList(file_name):
@@ -108,19 +109,21 @@ def circle_and_mean(data, radius, total_elements, new_size):
 				#label      l  m
 				new_data[5][l][m] = data[5][i][j]
 				
-				sum_mean_max  += new_data[0][l][m]
-				sum_mean_mean += new_data[1][l][m]
-				sum_mean_min  += new_data[2][l][m]
-				sum_mean_numb += new_data[3][l][m]
-				sum_mean_std  += new_data[4][l][m]
-
-				total_elements += 1;
-	  
-	sum_mean_max  /= (new_size * new_size)
-	sum_mean_mean /= (new_size * new_size)
-	sum_mean_min  /= (new_size * new_size)
-	sum_mean_numb /= (new_size * new_size)
-	sum_mean_std  /= (new_size * new_size)
+				if (calculate_transforms):
+					sum_mean_max  += new_data[0][l][m]
+					sum_mean_mean += new_data[1][l][m]
+					sum_mean_min  += new_data[2][l][m]
+					sum_mean_numb += new_data[3][l][m]
+					sum_mean_std  += new_data[4][l][m]
+	
+					total_elements += 1;
+	
+	if (calculate_transforms):  
+		sum_mean_max  /= (new_size * new_size)
+		sum_mean_mean /= (new_size * new_size)
+		sum_mean_min  /= (new_size * new_size)
+		sum_mean_numb /= (new_size * new_size)
+		sum_mean_std  /= (new_size * new_size)
 
 	return total_elements, sum_mean_max, sum_mean_mean, sum_mean_min, sum_mean_numb, sum_mean_std, new_data   
 
@@ -388,33 +391,45 @@ for item in dataset_list:
 	new_data = np.zeros((input_dimensions, new_size, new_size))
 
 	total_elements, sum_mean_max, sum_mean_mean, sum_mean_min, sum_mean_numb, sum_mean_std, new_data = circle_and_mean(data, radius, total_elements, new_size)
-	mean_max  += sum_mean_max
-	mean_mean += sum_mean_mean
-	mean_min  += sum_mean_min
-	mean_numb += sum_mean_numb
-	mean_std  += sum_mean_std
 	
-	total_mean = []
-	total_mean = calculate_total_mean(mean_max, mean_mean, mean_min, mean_numb, mean_std)
-		 
-for item in dataset_list:
-	data = load_statistics_label_view(item)
+	if calculate_transforms == False:
+		if rotate_dataset:
+			rots = rotate(new_data, num_rotations)
+		else:
+			rots = None
+			
+		new_count = save_as_sparse_matrix(new_data, rots, new_count, new_size)
 	
-	sum_var_max, sum_var_mean, sum_var_min, sum_var_numb, sum_var_std = calc_variance(new_data, new_size, total_mean)
-	var_max  +=  sum_var_max 
-	var_mean +=  sum_var_mean
-	var_min  +=  sum_var_min 
-	var_numb +=  sum_var_numb
-	var_std  +=  sum_var_std
+	if calculate_transforms:
+		mean_max  += sum_mean_max
+		mean_mean += sum_mean_mean
+		mean_min  += sum_mean_min
+		mean_numb += sum_mean_numb
+		mean_std  += sum_mean_std
+		total_mean = []
+		total_mean = calculate_total_mean(mean_max, mean_mean, mean_min, mean_numb, mean_std)
+	
+if calculate_transforms:
+		
+	for item in dataset_list:
+		data = load_statistics_label_view(item)
+		
+		sum_var_max, sum_var_mean, sum_var_min, sum_var_numb, sum_var_std = calc_variance(new_data, new_size, total_mean)
+		var_max  +=  sum_var_max 
+		var_mean +=  sum_var_mean
+		var_min  +=  sum_var_min 
+		var_numb +=  sum_var_numb
+		var_std  +=  sum_var_std
 	
 	if rotate_dataset:
 		rots = rotate(new_data, num_rotations)
 	else:
 		rots = None
- 	
-	new_count = save_as_sparse_matrix(new_data, rots, new_count, new_size)
+	 	
+		new_count = save_as_sparse_matrix(new_data, rots, new_count, new_size)
 
-calculate_std(mean_max, mean_mean, mean_min, mean_numb, mean_std, num_rotations,
+if calculate_transforms:
+	calculate_std(mean_max, mean_mean, mean_min, mean_numb, mean_std, num_rotations,
 					 var_max, var_mean, var_min, var_numb, var_std, total_elements, num_files)
 # print(dataset_mean_max, dataset_mean_mean, dataset_mean_min, dataset_mean_numb, dataset_mean_std)
 

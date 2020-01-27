@@ -334,11 +334,13 @@ Neural_map_queue::convert_predicted_to_log_ods_snapshot_map(carmen_map_t* log_od
 	int x_size = this->output_map.size_x;
 	int y_size = this->output_map.size_y;
 
+//	printf("size Dx Dy: %d %d \n", x_size, y_size);
+
 	int center = log_ods_snapshot->config.x_size/2;
 	int velodyne_max_range = this->output_map.neural_mapper_max_dist;
 	double map_resolution = this->output_map.resolution;
 	int radius = (velodyne_max_range/map_resolution);
-	int new_size = x_size;
+	//int new_size = x_size;
 	double prob = -1.0;
 	int dx = round(car_position->position.x - x_origin) / map_resolution;
 	int dy = round(car_position->position.y - y_origin) / map_resolution;
@@ -347,7 +349,7 @@ Neural_map_queue::convert_predicted_to_log_ods_snapshot_map(carmen_map_t* log_od
 	else
 	{
 		//coordenadas do carro no mapa.
-		printf("Dx Dy: %d %d %lf \n", dx, dy, x_origin);
+//		printf("car_position != 0 Dx Dy: %d %d %lf \n", dx, dy, x_origin);
 
 		//diferenca entre a posicao do carro e o centro do mapa
 //			dx -= center;
@@ -360,12 +362,14 @@ Neural_map_queue::convert_predicted_to_log_ods_snapshot_map(carmen_map_t* log_od
 				int y = i-radius;
 				int x = j-radius;
 				int k = sqrt((x*x) + (y*y));
-				if(k > 1)
+				if(k > radius)
 					continue;
 
 				int l = abs(round(i + (dx - radius)));
 				int m = abs(round(j + (dy - radius)));
-				if(m < 1050 && m >= 0 && l < 1050 && l >= 0)
+
+				double angle_point = carmen_normalize_theta(atan2(m - dy, l - dx) - car_position->orientation.yaw);
+				if(m < 1050 && m >= 0 && l < 1050 && l >= 0 )//&& fabs(angle_point) < M_PI_2)
 				{
 					//				printf("L M: %d %d \n", l, m);
 					//				printf("I J: %d %d \n", i, j);
@@ -417,7 +421,6 @@ Neural_map_queue::foward_map(carmen_map_t *log_ods_snapshot, int size, carmen_po
 	convert_predicted_to_log_ods_snapshot_map(log_ods_snapshot, &image_inference, car_position, x_origin, y_origin);
 
 //	copy_complete_map_to_map(&predicted_map, predicted_map.config);
-//	printf("até aqui beleza \n");
 //	image_inference = convert_to_rgb(&predicted_map, size, size);
 //	png_mat = convert_prob_to_rgb(&image_inference, size, size);
 	//destroy_maps
@@ -472,7 +475,7 @@ Neural_map_queue::map_to_png(carmen_map_t complete_map, char* csv_name, bool is_
 
 
 void
-Neural_map_queue::save_map_as_compact_map_binary_file(carmen_map_t map, char* map_name, char* path, bool is_label, double rotation, double map_max, int map_index)
+Neural_map_queue::save_map_as_compact_map_binary_file(carmen_map_t map, char* map_name, char* path, bool is_label, double rotation, int map_index)
 {
 	char name[500];
 	int map_size = 1;
@@ -530,7 +533,8 @@ Neural_map_queue::save_map_as_binary_file(carmen_map_t map, char* map_name, char
 	//map_to_csv(map, name);
 	fclose(map_file);
 	//Just to debug-comment for generate the dataset
-	map_to_png(map, name, is_label, map_max, -1);
+	if(!is_label)
+		map_to_png(map, name, is_label, map_max, -1);
 
 //TODO Salvar o ground truth como png para comparar visualmente tambem - Lembrar que o mapa i j = opencv j i
 	if(is_label)
