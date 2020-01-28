@@ -224,13 +224,13 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			carmen_ackerman_traj_point_t waypoint_local;
 			carmen_ackerman_traj_point_t waypoint;
 			waypoint_local.x = store_x[i];
-			waypoint_local.y = store_y[i];
+			waypoint_local.y = store_y[i] - preds[0];
 			waypoint_local.theta = store_thetas[i];
 			waypoint_local.v = 9.0;
 			waypoint_local.phi = 0.2;
 			carmen_rddf_poses_local_vec.push_back(waypoint_local);
-			waypoint.x = globalpos.x + waypoint_local.x * cos(globalpos.theta) - (waypoint_local.y - preds[0]) * sin(globalpos.theta);
-			waypoint.y = globalpos.y + waypoint_local.x * sin(globalpos.theta) + (waypoint_local.y - preds[0]) * cos(globalpos.theta);
+			waypoint.x = globalpos.x + waypoint_local.x * cos(globalpos.theta) - (waypoint_local.y) * sin(globalpos.theta);
+			waypoint.y = globalpos.y + waypoint_local.x * sin(globalpos.theta) + (waypoint_local.y) * cos(globalpos.theta);
 			waypoint.theta = waypoint_local.theta + globalpos.theta;
 			waypoint.v = 9.0;
 			waypoint.phi = 0.2;
