@@ -174,7 +174,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 		preds[0] = 0;
 */
 		double knots_x[4] = {0.0,  30/ 3.0, 2 * 30 / 3.0, 30.0};
-		double knots_y[4] = {0.0, preds[1], preds[2], preds[3]};
+		double knots_y[4] = {preds[0], preds[1], preds[2], preds[3]};
 		acc = gsl_interp_accel_alloc();
 		const gsl_interp_type *type = gsl_interp_cspline;
 		phi_spline = gsl_spline_alloc(type, 4);
@@ -239,7 +239,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			carmen_ackerman_traj_point_t waypoint_local;
 			carmen_ackerman_traj_point_t waypoint;
 			waypoint_local.x = store_x[i];
-			waypoint_local.y = store_y[i] - preds[0];
+			waypoint_local.y = store_y[i];
 			waypoint_local.theta = store_thetas[i];
 			waypoint_local.v = 9.0;
 			waypoint_local.phi = 0.2;
