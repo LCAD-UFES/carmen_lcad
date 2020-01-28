@@ -185,7 +185,7 @@ main(int argc , char **argv)
 		gsl_interp_accel *acc;
 		gsl_spline *phi_spline;
 		double knots_x[4] = {0.0,  30/ 3.0, 2 * 30 / 3.0, 30.0};
-		double knots_y[4] = {0.0, k1, k2, k3};
+		double knots_y[4] = {dy, k1, k2, k3};
 		acc = gsl_interp_accel_alloc();
 		const gsl_interp_type *type = gsl_interp_cspline;
 		phi_spline = gsl_spline_alloc(type, 4);
