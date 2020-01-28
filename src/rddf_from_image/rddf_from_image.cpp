@@ -87,32 +87,47 @@ plot_state(std::vector<carmen_ackerman_traj_point_t> &spline_vec, carmen_point_t
 		first_time = false;
 
 		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
-		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
-		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
+		fprintf(gnuplot_pipeMP, "set xrange [-30:30]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-30:30]\n");
 //		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
-		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
-		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
+//		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
+//		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
 //		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
 //		fprintf(gnuplot_pipe, "set ytics nomirror\n");
 //		fprintf(gnuplot_pipe, "set y2tics\n");
+		fprintf(gnuplot_pipeMP, "set size ratio -1\n");
 		fprintf(gnuplot_pipeMP, "set tics out\n");
 	}
 
 	FILE *gnuplot_spline = fopen("gnuplot_spline_poses.txt", "w");
 	FILE *gnuplot_globalpos = fopen("gnuplot_data_iara_pose.txt", "w");
+	FILE *gnuplot_rddf = fopen("gnuplot_data_rddf.txt", "w");
+	FILE *gnuplot_dy = fopen("gnuplot_data_dy.txt", "w");
 
 	for (unsigned int i = 0; i < spline_vec.size(); i++)
-		fprintf(gnuplot_spline, "%lf %lf %lf %lf %lf\n", spline_vec.at(i).x, spline_vec.at(i).y, 1.0 * cos(spline_vec.at(i).theta), 1.0 * sin(spline_vec.at(i).theta), spline_vec.at(i).theta);
-	fprintf(gnuplot_globalpos, "%lf %lf\n", iara_pose.x, iara_pose.y);
+		fprintf(gnuplot_spline, "%lf %lf %lf %lf %lf\n", spline_vec.at(i).x - iara_pose.x, spline_vec.at(i).y - iara_pose.y, 1.0 * cos(spline_vec.at(i).theta), 1.0 * sin(spline_vec.at(i).theta), spline_vec.at(i).theta);
+	fprintf(gnuplot_globalpos, "%lf %lf\n", 0.0, 0.0);
+	//printf("poses_n = %f\n", last_rddf_poses.number_of_poses);
+	for (int i = 0; i < last_rddf_poses.number_of_poses/2; i++)
+	{
+		fprintf(gnuplot_rddf, "%lf %lf\n", last_rddf_poses.poses[i].x - iara_pose.x, last_rddf_poses.poses[i].y - iara_pose.y);
+	}
+	fprintf(gnuplot_dy, "%lf %lf %lf %lf\n", spline_vec.at(0).x - iara_pose.x, spline_vec.at(0).y - iara_pose.y, iara_pose.x-spline_vec.at(0).x, iara_pose.y-spline_vec.at(0).y);
 
 	fclose(gnuplot_spline);
 	fclose(gnuplot_globalpos);
+	fclose(gnuplot_rddf);
+	fclose(gnuplot_dy);
 
 //	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
 
 	fprintf(gnuplot_pipeMP, "plot "
-			"'./gnuplot_spline_poses.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'spline',"
-			"'./gnuplot_data_iara_pose.txt' using 1:2 with p title 'iara_pose' axes x1y1\n");
+			"'./gnuplot_spline_poses.txt' using 1:2 w line title 'spline',"
+			//"'./gnuplot_spline_poses.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'spline',"
+			"'./gnuplot_data_iara_pose.txt' using 1:2 with p title 'iara_pose' axes x1y1 ,"
+			"'./gnuplot_data_rddf.txt' using 1:2 title 'rddf',"
+			//"'./gnuplot_data_rddf.txt' using 1:2 w linespoints title 'rddf',"
+			"'./gnuplot_data_dy.txt' using 1:2:3:4 w vectors title 'dy',\n");
 
 	fflush(gnuplot_pipeMP);
 }
@@ -236,10 +251,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			waypoint.phi = 0.2;
 			carmen_rddf_poses_from_spline_vec.push_back(waypoint);
 		}
-		carmen_point_t local_pos;
-		local_pos.x = 0.0;
-		local_pos.y = preds[0];
-		plot_state(carmen_rddf_poses_local_vec, local_pos);
+//		carmen_point_t local_pos;
+//		local_pos.x = 0.0;
+//		local_pos.y = preds[0];
+		plot_state(carmen_rddf_poses_from_spline_vec, globalpos);
 		carmen_ackerman_traj_point_t *carmen_rddf_poses_from_spline = &carmen_rddf_poses_from_spline_vec[0];
 //			for (int i = 0; i<indice_points; i++)
 //			{
