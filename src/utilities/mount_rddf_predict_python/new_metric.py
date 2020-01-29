@@ -3,13 +3,13 @@ import numpy as np
 from scipy import spatial
 
 local_splines = {}
-with open('/dados/rddf_predict/rddf_spline_points_2020-1-26_16:16:36') as f:
+with open('/home/gabriel/Desktop/test_metrics/rddf_spline_points_20190915-contrario.txt') as f:
     for line in f:
         (data, key) = (line.split()[1:], line.split()[0])
         # print(len(line.split()))
         local_splines[key] = np.array(data, np.float64)
 
-with open('/dados/rddf_predict/dados para métricas/rddf_ground_truth_test_20191002.txt') as f:
+with open('/home/gabriel/Desktop/test_metrics/rddf_ground_truth_test_0915-contrario.txt') as f:
     n_images = 0
     total_rms = 0
     for line in f:
@@ -38,12 +38,16 @@ with open('/dados/rddf_predict/dados para métricas/rddf_ground_truth_test_20191
             # ref = np.array([x, y], np.float64)
             idx = spatial.KDTree(global_predicted.transpose()).query(ref)[1]
             distance = math.sqrt(math.pow(global_predicted[0][idx] - x, 2) + math.pow(global_predicted[1][idx] - y, 2))
+            print(distance)
             total_distance += distance**2
-            print(x, y)
-            print(global_predicted[0][idx], global_predicted[1][idx])
-            print(n_points)
-        rms = math.sqrt(total_distance)/n_points
+            #print(x, y)
+            #print(global_predicted[0][idx], global_predicted[1][idx])
+            #print(n_points)
+        rms = math.sqrt(total_distance/n_points)
+        print(rms)
         total_rms += rms
+        #exit()
         #print(local_waypoints)
         # print(global_predicted)
     mean_rms = total_rms / n_images
+    print(mean_rms)
