@@ -520,7 +520,6 @@ my_g(const gsl_vector *x, void *params)
 	}
 	else
 	{
-		//w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 15.0; w5 = 20.0; w6 = 0.0025;  // Usado na Sarah Black
 		if (td.dist < 7.0)
 			GlobalState::w2 *= exp(td.dist - 7.0);
 		result = sqrt(
