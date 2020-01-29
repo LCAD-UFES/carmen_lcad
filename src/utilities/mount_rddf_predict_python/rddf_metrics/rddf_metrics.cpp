@@ -148,7 +148,7 @@ get_rddf_points_in_image_full (tf::StampedTransform world_to_camera_pose, int im
 int
 main(int argc , char **argv)
 {
-	std::ifstream input("log_20191002.txt");
+	std::ifstream input("/home/gabriel/preds_test_20190915-contrario_epoch7.txt");
 	Prediction s;
 	while (input >> s)
 	{
@@ -207,7 +207,7 @@ main(int argc , char **argv)
 			indice_points++;
 			printf("aaaa = %f\n", half_points);
 			half_points += acresc_points;
-			snprintf(save_buffer, sizeof(save_buffer),"%f ", spline_y - dy);
+			snprintf(save_buffer, sizeof(save_buffer),"%f ", spline_y);
 			fprintf(file_log,"%s", save_buffer);
 		}
 
