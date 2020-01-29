@@ -11,7 +11,7 @@
 #include <string.h>
 
 char annotation_file [1024];
-
+char rddf_place [1024];
 
 void
 publish_voice_app_command_message(const char *command, int command_id)
@@ -120,8 +120,10 @@ choose_rddf_file(carmen_app_solicitation_message message)
 //	char buffer[MAXSIZE];
 	bzero(rddf_file_name,2048);
 	//strcat(rddf_file_name,getenv("CARMEN_HOME"));
-	strcat(rddf_file_name,"data/rndf/");
-	strcat(rddf_file_name,"rddf_estacionamento_ambiental_");
+	//strcat(rddf_file_name,"data/rndf/rddf_estacionamento_ambiental_");
+	strcat(rddf_file_name,"data/rndf/rddf_");
+	strcat(rddf_file_name,rddf_place);
+	strcat(rddf_file_name,"_");
 
 	//todos os caracteres da anotacao origem para minusculo
 	for(i = 0; message.origin[i]; i++){
@@ -289,14 +291,15 @@ shutdown_module(int signo)
 void
 read_parameters (int argc , char **argv)
 {
-	if (argc < 2)
+	if (argc < 3)
 	{
-		printf("Please inform the annotation file!\n");
+		printf("Please inform the annotation file and rddf_place (like in rddf file)!\n");
 		exit(0);
 	}
 	else
 	{
 		strcpy(annotation_file, argv[1]);
+		strcpy(rddf_place, argv[2]);
 	}
 
 }
