@@ -15,9 +15,9 @@ max_log_lines = -1
 # Flag indicating if the visualization should run or not.
 view = 1
 # Initial time to consider for odometry calibration
-initial_time = 0
+initial_time = 22
 # Final time to consider for odometry calibration
-final_time = 5460
+final_time = 80
 # Lower limit of velocity multiplier
 min_multiplicative_v = 0.6
 # Upper limit of velocity multiplier

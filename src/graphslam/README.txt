@@ -68,15 +68,15 @@ Compile os módulos graphslam e o odometry_calibration
 
 6.2.2. Faça o mapa da segunda passada na região de loop usando as poses de tmp/poses_opt.txt ligando o PubPoses, escolhendo, no playback control, 
        "Message play:stop" t segundo_inicial_2:segundo_final_2, e teclando play. 
-       Quando terminar de rodar, o arquivo tmp/gp1.txt será gerado pelo localizer e conterá as globalpos da segunda passada na região de loop usada no mapeamento. Mate este processo.
+       Quando terminar de rodar, o arquivo tmp/gp2.txt será gerado pelo localizer e conterá as globalpos da segunda passada na região de loop usada no mapeamento. Mate este processo.
 
 6.2.3. Gere poses (globalpos) da primeira passada pela região de loop com o localizer rodando o process-volta_da_ufes_playback_viewer_3D_loopclosure.ini  
        Escolha no playback control "Message play:stop" t XXXX, onde XXXX é um momento (segundo) alguns segundos (~15segs antes) antes de segundo_inicial_1 (cujo globalpos timestamp
-       você colocou como parâmetro -save_globalpos_timestamp do localize_ackmerman e verifique se no parametro -save_globalpos_file está tmp/gp2.txt), e tecle play.
+       você colocou como parâmetro -save_globalpos_timestamp do localize_ackmerman e verifique se no parametro -save_globalpos_file está tmp/gp1.txt), e tecle play.
  
        Ajuste a pose do robô no mapa (use o play e o stop) e garanta uma boa localização antes do segundo_inicial_1. Depois, deixe rodar o log observando
        a pose do robô no mapa - ele deve percorrer uma região que garanta boa localização no mapa da região de loop gerado no passo 6.2.2.
-       Quando terminar de rodar, o arquivo tmp/gp2.txt terá sido gerado pelo localizer e conterá a globalpos da primeira passada na região de loop.
+       Quando terminar de rodar, o arquivo tmp/gp1.txt terá sido gerado pelo localizer e conterá a globalpos da primeira passada na região de loop.
 
 6.2.4. Rode o process-volta_da_ufes_playback_viewer_3D_map_generation.ini (ou outro equivalente ajustado para o seu caso) e
        clique no botão LoopC escolha Show Output (para saber quando o programa terminou) e, em seguida, clique no botão LoopC e escolha Start Program para 
