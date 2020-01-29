@@ -121,34 +121,181 @@ my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 	*f = my_f(x, params);
 	my_df(x, params, df);
 }
+/*
+double interpolate(carmen_position_t p1, carmen_position_t p2, double target_x)
+{
+	return p1.y + (target_x - p1.x) * (p2.y - p1.y) / (p2.x - p1.x);
+}
 
 SplineControlParams
-get_seed_knots(carmen_behavior_selector_road_profile_message *rddf_poses, double xtotal)
+get_seed_knots(carmen_behavior_selector_road_profile_message rddf_poses, double xtotal)
 {
 	SplineControlParams knots_seed;
 	knots_seed.xtotal = xtotal;
 	knots_seed.valid = true;
 
-	int i = 0;
-	while(rddf_poses->poses[i].x < xtotal/3)
-		i++;
-	knots_seed.k1 = rddf_poses->poses[i].x;
+	double distance, min_distance1, min_distance2 = DBL_MAX;
+	carmen_position_t nearest1, nearest2;
+	nearest1.x, nearest2.x, nearest1.y, nearest2.y = DBL_MAX;
+	for (int i = 0; i < rddf_poses.number_of_poses; i++)
+	{
+		distance = abs(rddf_poses.poses[i].x - xtotal/3.0);
+		if (distance < min_distance1 && distance < min_distance2)
+		{
+			if (min_distance1 < min_distance2)
+			{
+				if (rddf_poses.poses[i].x != nearest1.x)
+				{
+					min_distance2 = distance;
+					nearest2.x = rddf_poses.poses[i].x;
+					nearest2.y = rddf_poses.poses[i].y;
+				}
+			}
+			else
+			{
+				if (rddf_poses.poses[i].x != nearest2.x)
+				{
+					min_distance1 = distance;
+					nearest1.x = rddf_poses.poses[i].x;
+					nearest1.y = rddf_poses.poses[i].y;
+				}
+			}
+		}
+		else if (distance < min_distance1 || distance < min_distance2)
+		{
+			if (distance < min_distance2)
+			{
+				if (rddf_poses.poses[i].x != nearest1.x)
+				{
+					min_distance2 = distance;
+					nearest2.x = rddf_poses.poses[i].x;
+					nearest2.y = rddf_poses.poses[i].y;
+				}
+			}
+			else
+			{
+				if (rddf_poses.poses[i].x != nearest2.x)
+				{
+					min_distance1 = distance;
+					nearest1.x = rddf_poses.poses[i].x;
+					nearest1.y = rddf_poses.poses[i].y;
+				}
+			}
+		}
+	}
 
-	while(rddf_poses->poses[i].x < xtotal/2)
-		i++;
-	knots_seed.k2 = rddf_poses->poses[i].x;
+	knots_seed.k1 = interpolate(nearest1, nearest2, xtotal/3.0);
 
-	while(rddf_poses->poses[i].x < xtotal)
-		i++;
-	knots_seed.k3 = rddf_poses->poses[i].x;
+	distance, min_distance1, min_distance2 = DBL_MAX;
+	nearest1.x, nearest2.x, nearest1.y, nearest2.y = DBL_MAX;
+	for (int i = 0; i < rddf_poses.number_of_poses; i++)
+	{
+		distance = abs(rddf_poses.poses[i].x - 2*xtotal/3.0);
+		if (distance < min_distance1 && distance < min_distance2)
+		{
+			if (min_distance1 < min_distance2)
+			{
+				if (rddf_poses.poses[i].x != nearest1.x)
+				{
+					min_distance2 = distance;
+					nearest2.x = rddf_poses.poses[i].x;
+					nearest2.y = rddf_poses.poses[i].y;
+				}
+			}
+			else
+			{
+				if (rddf_poses.poses[i].x != nearest2.x)
+				{
+					min_distance1 = distance;
+					nearest1.x = rddf_poses.poses[i].x;
+					nearest1.y = rddf_poses.poses[i].y;
+				}
+			}
+		}
+		else if (distance < min_distance1 || distance < min_distance2)
+		{
+			if (distance < min_distance2)
+			{
+				if (rddf_poses.poses[i].x != nearest1.x)
+				{
+					min_distance2 = distance;
+					nearest2.x = rddf_poses.poses[i].x;
+					nearest2.y = rddf_poses.poses[i].y;
+				}
+			}
+			else
+			{
+				if (rddf_poses.poses[i].x != nearest2.x)
+				{
+					min_distance1 = distance;
+					nearest1.x = rddf_poses.poses[i].x;
+					nearest1.y = rddf_poses.poses[i].y;
+				}
+			}
+		}
+	}
+
+	knots_seed.k2 = interpolate(nearest1, nearest2, 2*xtotal/3.0);
+
+	distance, min_distance1, min_distance2 = DBL_MAX;
+	nearest1.x, nearest2.x, nearest1.y, nearest2.y = DBL_MAX;
+	for (int i = 0; i < rddf_poses.number_of_poses; i++)
+	{
+		distance = abs(rddf_poses.poses[i].x - xtotal);
+		if (distance < min_distance1 && distance < min_distance2)
+		{
+			if (min_distance1 < min_distance2)
+			{
+				if (rddf_poses.poses[i].x != nearest1.x)
+				{
+					min_distance2 = distance;
+					nearest2.x = rddf_poses.poses[i].x;
+					nearest2.y = rddf_poses.poses[i].y;
+				}
+			}
+			else
+			{
+				if (rddf_poses.poses[i].x != nearest2.x)
+				{
+					min_distance1 = distance;
+					nearest1.x = rddf_poses.poses[i].x;
+					nearest1.y = rddf_poses.poses[i].y;
+				}
+			}
+		}
+		else if (distance < min_distance1 || distance < min_distance2)
+		{
+			if (distance < min_distance2)
+			{
+				if (rddf_poses.poses[i].x != nearest1.x)
+				{
+					min_distance2 = distance;
+					nearest2.x = rddf_poses.poses[i].x;
+					nearest2.y = rddf_poses.poses[i].y;
+				}
+			}
+			else
+			{
+				if (rddf_poses.poses[i].x != nearest2.x)
+				{
+					min_distance1 = distance;
+					nearest1.x = rddf_poses.poses[i].x;
+					nearest1.y = rddf_poses.poses[i].y;
+				}
+			}
+		}
+	}
+
+	knots_seed.k3 = interpolate(nearest1, nearest2, xtotal);
 
 	return knots_seed;
 }
-
+*/
+/*
 SplineControlParams
 optimize_spline_knots(carmen_behavior_selector_road_profile_message *last_rddf_poses)
 {
-	SplineControlParams knots_seed = get_seed_knots(last_rddf_poses, 30.0);
+	SplineControlParams knots_seed = get_seed_knots(*last_rddf_poses, 30.0);
 	ObjectiveFunctionParams params;
 	get_optimization_params(&knots_seed, params, last_rddf_poses);
 
@@ -161,7 +308,7 @@ optimize_spline_knots(carmen_behavior_selector_road_profile_message *last_rddf_p
 	my_func.fdf = my_fdf;
 	my_func.params = &params;
 
-	/* Starting point, x */
+	// Starting point, x
 	gsl_vector *x = gsl_vector_alloc(n_optimized_knots);
 	gsl_vector_set(x, 0, knots_seed.k1);
 	gsl_vector_set(x, 1, knots_seed.k2);
@@ -202,7 +349,6 @@ optimize_spline_knots(carmen_behavior_selector_road_profile_message *last_rddf_p
 
 	return (spline_params_result);
 }
-
-
+*/
 
 

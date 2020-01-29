@@ -258,7 +258,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
 	int i = 0;
 
-//	plot_data = fopen("plot_data.dat", "w");
+	//	plot_data = fopen("plot_data.dat", "w");
 	// Ray-trace the grid
 	carmen_pose_3D_t robot_pose = sensor_data->robot_pose[point_cloud_index];
 //	robot_pose.position.z = 0.0;
@@ -469,6 +469,14 @@ map_decay_to_offline_map(carmen_map_t *current_map)
 }
 
 
+void
+clear_log_odds_map(carmen_map_t *log_odds_snapshot_map, double log_odds_l0)
+{
+	for (int i = 0; i < log_odds_snapshot_map->config.x_size * log_odds_snapshot_map->config.y_size; i++)
+		log_odds_snapshot_map->complete_map[i] = log_odds_l0;
+}
+
+
 int
 run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
 {
@@ -493,6 +501,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 
 		if (sensor_params->sensor_type == LASER_LDMRS)
 		{
+//			printf("[mapper.cpp] mapeando com o LDMRS\n");
 			update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(log_odds_snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
 			carmen_prob_models_clear_cells_hit_by_single_ray(log_odds_snapshot_map, sensor_params->log_odds.log_odds_occ,
 					sensor_params->log_odds.log_odds_l0);
@@ -508,14 +517,16 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 
 			// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
 			update_log_odds_of_cells_in_the_velodyne_perceptual_field(log_odds_snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global,
-					sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+					sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
 			//TODO:@@@ VINICIUS Pegar antes dessa funcao de baixo o snapshot (o snapshot eh um mapa de logodds Variavel:log_odds_snapshot_map)
 			//Funcao Abaixo junta o snapshot com o mapoffiline
 			if (!generate_neural_mapper_dataset && use_neural_mapper)
 			{
 				if (offline_map.complete_map != NULL)
 				{
-					neural_map_run_foward(log_odds_snapshot_map, neural_mapper_max_distance_meters/log_odds_snapshot_map->config.resolution * 2);
+					int size_trained = neural_mapper_max_distance_meters/log_odds_snapshot_map->config.resolution * 2;
+					clear_log_odds_map(log_odds_snapshot_map, sensor_params->log_odds.log_odds_l0);
+					neural_map_run_foward(log_odds_snapshot_map, size_trained, &neural_mapper_robot_pose, x_origin, y_origin);
 					carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map,
 																										sensor_params->log_odds.log_odds_l0);
 //					carmen_grid_mapping_save_map((char *) "neural_map_teste.map", &map);
@@ -535,7 +546,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 							x_origin, y_origin, neural_mapper_data_pace);
 
 					neural_mapper_update_output_map(offline_map, neural_mapper_car_position_according_to_map);
-					char neural_mapper_dataset_path[1024] = "/media/vinicius/NewHD/neural_mapper_raw/cenpes-20181125/";
+					char neural_mapper_dataset_path[1024] = "/media/vinicius/NewHD/neural_mapper_raw/volta_da_ufes_20191003/";
 //					neural_mapper_export_dataset_as_png(get_next_map, neural_mapper_dataset_path);
 					neural_mapper_export_dataset_as_binary_file(get_next_map, neural_mapper_dataset_path, sensor_data->current_timestamp, neural_mapper_robot_pose);
 				}

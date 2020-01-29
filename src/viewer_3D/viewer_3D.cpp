@@ -849,7 +849,7 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_variable_s
 			}
 
 			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle),
-					carmen_degrees_to_radians(vertical_correction[j]), (double) velodyne_message->partial_scan[i].distance[j] / 500.0,
+					carmen_degrees_to_radians(vertical_correction[j]), (double) velodyne_message->partial_scan[i].distance[j] / 200.0,
 					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
 			carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position,
 					&r_matrix_car_to_global);
@@ -2701,11 +2701,7 @@ draw_loop(window *w)
         if (draw_xsens_orientation_flag)
         {
             glColor3f(0.4, 1.0, 0.4);
-//            printf("%lf %lf\n", xsens_orientation.yaw, car_fused_pose.orientation.yaw);
-//            draw_xsens_orientation(xsens_orientation, xsens_yaw_bias, xsens_pose, sensor_board_1_pose, car_fused_pose);
             draw_xsens_orientation(xsens_orientation, magnetic_declination, xsens_pose, sensor_board_1_pose, car_fused_pose);
-//            glColor3f(1.0, 0.4, 0.4);
-//            draw_xsens_orientation(xsens_orientation, 0.0, xsens_pose, sensor_board_1_pose, car_fused_pose);
         }
         //draw_orientation_instruments(car_fused_pose.orientation, 1.0, 1.0, 0.0);
         //draw_orientation_instruments(xsens_orientation, xsens_yaw_bias, 1.0, 0.5, 0.0);
@@ -2991,7 +2987,7 @@ draw_loop_for_picking(window *w)
             draw_laser_rays(laser_points[last_laser_position], get_laser_position(car_fused_pose.position));
         }
 
-        if(draw_moving_objects_flag)
+        if (draw_moving_objects_flag)
         {
            carmen_vector_3D_t offset = get_position_offset();
            offset.z += sensor_board_1_pose.position.z;

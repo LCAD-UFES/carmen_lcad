@@ -244,10 +244,10 @@ process_messages(ssize_t recsize, socklen_t mavlink_socket, struct sockaddr_in f
 			case MAVLINK_MSG_ID_HEARTBEAT: // ID for GLOBAL_POSITION_INT
 			{
 				// Get all fields in payload (into global_position)
-				mavlink_msg_heartbeat_decode(&msg, &heart_msg);
 //				printf("heartbeat %d, %d\n", heart_msg.autopilot, heart_msg.system_status);
 				if (first)
 				{
+					mavlink_msg_heartbeat_decode(&msg, &heart_msg);
 					printf("Requesting STREAM messages: MAV_DATA_STREAM_EXTRA1 and MAV_DATA_STREAM_RAW_SENSORS\n");
 					request_stream_packages(mavlink_socket, from, msg, MAV_DATA_STREAM_EXTRA1, 10);
 					request_stream_packages(mavlink_socket, from, msg, MAV_DATA_STREAM_RAW_SENSORS, 10);
@@ -285,10 +285,10 @@ process_messages(ssize_t recsize, socklen_t mavlink_socket, struct sockaddr_in f
 			}
 			break;
 
-			case MAVLINK_MSG_ID_HIGHRES_IMU://TODO Descobrir pq nao esta sendo recebida
-			{
-				mavlink_msg_highres_imu_decode(&msg, &highres_imu_msg);
-
+//			case MAVLINK_MSG_ID_HIGHRES_IMU://TODO Descobrir pq nao esta sendo recebida
+//			{
+//				mavlink_msg_highres_imu_decode(&msg, &highres_imu_msg);
+//
 //				printf("highres_imu ID:%d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 //						highres_imu_msg.id,
 //						highres_imu_msg.xacc,
@@ -300,10 +300,10 @@ process_messages(ssize_t recsize, socklen_t mavlink_socket, struct sockaddr_in f
 //						highres_imu_msg.xmag,
 //						highres_imu_msg.ymag,
 //						highres_imu_msg.zmag);
-
-				raw_msg_received = 1;
-			}
-			break;
+//
+//				raw_msg_received = 1;
+//			}
+//			break;
 
 			default:
 				break;
@@ -329,6 +329,7 @@ main(int argc, char** argv)
 
 	mavlink_socket = connect_to_navio2_ardupilot(&server);
 
+
 	memset(&from,0, sizeof(from));
 	from.sin_family = AF_INET;
 	from.sin_addr.s_addr = INADDR_ANY;
@@ -340,16 +341,16 @@ main(int argc, char** argv)
 
 		recsize = recvfrom(mavlink_socket, buf, BUFFER_LENGTH, 0,(struct sockaddr *)&from, &fromlen);
 
-		if (recsize == 0 || recsize == -1) // 0 Connection lost due to server shutdown -1 Could not connect
-		{
-			close(mavlink_socket);
-			mavlink_socket = trying_to_reconnect(&server);
-			continue;
-		}
+//		if (recsize == 0 || recsize == -1) // 0 Connection lost due to server shutdown -1 Could not connect
+//		{
+//			close(mavlink_socket);
+//			mavlink_socket = trying_to_reconnect(&server);
+//			continue;
+//		}
 		//			printf("Recebendo mensagem\n");
 		process_messages(recsize, mavlink_socket, from, buf);
 
-		if(raw_msg_received && attitude_msg_received)
+		if(attitude_msg_received && raw_msg_received)
 			build_and_publish_xsens_mti_quat_message();
 	}
 	carmen_ipc_disconnect();

@@ -1186,6 +1186,18 @@ read_parameters(int argc, char **argv,
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
+	int mkdir_status = mkdir(map_path, 0775);
+	if (mkdir_status != 0)
+	{
+		if (errno != EEXIST)
+			carmen_die("ERROR: mapper could not create new directory '%s'\n", map_path);
+
+		struct stat map_path_stat;
+		int map_path_status = stat(map_path, &map_path_stat);
+		if (map_path_status != 0 || !S_ISDIR(map_path_stat.st_mode))
+			carmen_die("ERROR: mapper could not create new directory '%s'\n", map_path);
+	}
+
 	ultrasonic_sensor_params.current_range_max = ultrasonic_sensor_params.range_max;
 
 	if (map_width != map_height)

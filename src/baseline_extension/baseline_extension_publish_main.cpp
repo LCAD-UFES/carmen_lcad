@@ -538,7 +538,7 @@ carmen_baseline_extension_publish_initialize(int camera, int argc, char **argv)
 {
 	initialize_camera_matrices(camera, argc, argv);
 
-	sprintf(camera_message_name, "carmen_bumblebe_basic_stereoimage%d", camera);
+	sprintf(camera_message_name, "%s%d", CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_NAME, camera);
 
 	IPC_RETURN_TYPE err;
 	err = IPC_defineMsg(camera_message_name, IPC_VARIABLE_LENGTH, CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_FMT);

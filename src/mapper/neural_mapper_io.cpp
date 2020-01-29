@@ -114,7 +114,6 @@ neural_mapper_update_input_maps(sensor_data_t * sensor_data, sensor_parameters_t
 		carmen_map_t *log_odds_snapshot_map, carmen_map_config_t map_config, double x_origin, double y_origin,
 		double highest_sensor, double safe_range_above_sensors)
 {
-
 	for (int i = 0; i < sensor_params->vertical_resolution; i++)
 	{
 		//printf("sensor_x: %lf, sensor_y: %lf, car_x: %lf, car_y: %lf, dif_x: %lf\n", sensor_data->ray_position_in_the_floor[thread_id][i].x, sensor_data->ray_position_in_the_floor[thread_id][i].y, sensor_data->ray_origin_in_the_floor[thread_id][i].x, sensor_data->ray_origin_in_the_floor[thread_id][i].y, round(sensor_data->ray_position_in_the_floor[thread_id][i].x - sensor_data->ray_origin_in_the_floor[thread_id][i].x));
@@ -180,10 +179,10 @@ neural_mapper_update_output_map(carmen_map_t offline_map, carmen_position_t car_
 }
 
 void
-neural_map_run_foward(carmen_map_t *log_ods_snapshot, int size)
+neural_map_run_foward(carmen_map_t *log_ods_snapshot, int size, carmen_pose_3D_t *car_position, double x_origin, double y_origin)
 {
-	printf("Entrei aqui\n");
-	cv::Mat a;
-	neural_mapper_acumulator->foward_map(log_ods_snapshot, size);
-	printf("Voltou hein\n");
+//	printf("Entrei aqui\n");
+	if(x_origin != 0.0 && y_origin != 0.0)
+		neural_mapper_acumulator->foward_map(log_ods_snapshot, size, car_position, x_origin, y_origin);
+//	printf("Voltou hein\n");
 }

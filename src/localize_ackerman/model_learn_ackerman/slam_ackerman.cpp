@@ -47,6 +47,8 @@
 // Not used when the robot is reading data from a log file.
 double RotationSpeed, TranslationSpeed;
 
+char *log_filename = NULL;
+
 //
 // This calls the procedures in the other files which do all the real work. 
 // If you wanted to not use hierarchical SLAM, you could remove all references here to High*, and make
@@ -169,6 +171,7 @@ int main (int argc, char *argv[])
 
   RECORDING =  (char*) "";
   PLAYBACK = argv[1];
+  log_filename = PLAYBACK;
 
   carmen_warn("********** World Initialization ***********\n");
 

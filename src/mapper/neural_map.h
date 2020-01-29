@@ -83,13 +83,13 @@ public:
 	carmen_map_t fixed_normalize_map_2(carmen_map_t value_map, double new_max, double last_max, double min);
 	cv::Mat convert_to_rgb(carmen_map_t* complete_map, int x_size, int y_size);
 	cv::Mat convert_prob_to_rgb(cv::Mat *image_prob, int x_size, int y_size);
-	void convert_predicted_to_log_ods_snapshot_map(carmen_map_t* log_ods_snapshot, cv::Mat *image_prob);
+	void convert_predicted_to_log_ods_snapshot_map(carmen_map_t* log_ods_snapshot, cv::Mat *image_prob, carmen_pose_3D_t *car_position, double x_origin, double y_origin);
 	void fixed_normalize_map_all_maps(carmen_map_t *value_map, carmen_map_t *value_map2, carmen_map_t *value_map3, carmen_map_t *value_map4, carmen_map_t *value_map5);
 	double fixed_normalize_cell(double value_map, double new_max, double last_max, double min);
 	void map_to_png(carmen_map_t complete_map, char* csv_name, bool is_label, double map_max, double map_min, bool rgb_color=false);
 	void save_map_as_png(carmen_map_t map, char* map_name, char* path, bool is_label, double rotation, double map_max, int map_index);
 	void save_map_as_binary_file(carmen_map_t map, char* map_name, char* path, bool is_label, double rotation, double map_max, int map_index, double current_timestamp, carmen_pose_3D_t neural_mapper_robot_pose);
-	void save_map_as_compact_map_binary_file(carmen_map_t map, char* map_name, char* path, bool is_label, double rotation, double map_max, int map_index);
+	void save_map_as_compact_map_binary_file(carmen_map_t map, char* map_name, char* path, bool is_label, double rotation, int map_index);
 	void export_as_binary_file(char* path, int map_index, double current_timestamp, carmen_pose_3D_t neural_mapper_robot_pose);
 	void update(Neural_map new_map, int pos);
 	void push(Neural_map new_map);
@@ -98,7 +98,7 @@ public:
 	void convertMapToChar();
 	std::vector<cv::Mat> get_maps();
 	cv::Mat map_to_png2(carmen_map_t complete_map, bool is_label, double map_max, double map_min, bool rgb_map);
-	void foward_map(carmen_map_t *log_ods_snapshot, int size);//, char* map_name, char* path, bool is_label, double rotation, double map_max, int max_index);
+	void foward_map(carmen_map_t *log_ods_snapshot, int size, carmen_pose_3D_t *car_position, double x_origin, double y_origin);//, char* map_name, char* path, bool is_label, double rotation, double map_max, int max_index);
 	void map_to_png3(carmen_map_t complete_map, char* csv_name, double map_max, double map_min);
 	void map_to_binary_file(carmen_map_t complete_map, char* csv_name, bool is_label, double map_max, double map_min, bool rgb_color=false);
 

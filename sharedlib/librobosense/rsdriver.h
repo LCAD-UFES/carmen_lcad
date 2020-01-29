@@ -59,6 +59,7 @@ static const float RL32_FIRING_TOFFSET = 50.0f;   // [µs]
 
 static const int TEMPERATURE_MIN = 31;
 
+#define MAX_NUM_SHOTS 400099 //(Max number of points per second)/ (min frequency (5hz)) / (num lasers per shot) e.g.: 300000/5/16
 #define RS_TO_RADS(x) ((x) * (M_PI) / 180)
 /** \brief Raw rslidar data block.
  *
@@ -126,7 +127,8 @@ public:
   ~rslidarDriver()
   {
   }
-  void unpack(int *shot_pos, const rslidarPacket& pkt, carmen_velodyne_variable_scan_message *variable_scan);
+  void unpack(int *shot_pos, const rslidarPacket& pkt, carmen_velodyne_shot *variable_scan);
+  bool receive_socket_data_and_fill_message(carmen_velodyne_variable_scan_message &variable_scan, int num_lasers, int velodyne_max_laser_shots_per_revolution, int velodyne_udp_port, int velodyne_gps_udp_port, rslidar_param &private_nh);
   bool poll(carmen_velodyne_variable_scan_message &variable_scan, int num_lasers, int velodyne_max_laser_shots_per_revolution, int velodyne_udp_port, int velodyne_gps_udp_port, rslidar_param &private_nh);
   void difopPoll(void);
 
@@ -152,7 +154,7 @@ private:
 
   InputSocket *msop_input_;
   InputSocket *difop_input_;
-
+  carmen_velodyne_shot *shots_array;
 //  ros::Publisher msop_output_;
 //  ros::Publisher difop_output_;
 //  ros::Publisher output_sync_;

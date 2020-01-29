@@ -31,4 +31,7 @@ struct ObjectiveFunctionParams
 SplineControlParams
 optimize_spline_knots(carmen_behavior_selector_road_profile_message *last_rddf_poses);
 
+double
+interpolate(carmen_position_t p1, carmen_position_t p2, double target_x);
+
 #endif /* SRC_UTILITIES_MOUNT_RDDF_PREDICT_PYTHON_RDDF_PREDICT_OPTIMIZER_H_ */

@@ -29,6 +29,15 @@ public:
 
 	static double max_phi_velocity;		// Equivalente a rodar o volante todo para um lado em 1 segundo.
 										// A velocidade de mudanca de phi nao pode ultrapassar este valor
+
+	// Optimization weights
+	static double w1; // end_of_path_to_goal_distance
+	static double w2; // end_of_path_to_goal_angular_distance
+	static double w3; // end_of_path_to_goal_delta_theta
+	static double w4; // path_to_lane_distance
+	static double w5; // proximity_to_obstacles
+	static double w6; // traveled_distance
+
 	static double time_to_change_gears;
 
 	static Pose *localizer_pose;

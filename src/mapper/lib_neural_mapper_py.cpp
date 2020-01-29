@@ -93,8 +93,6 @@ process_map_neural_mapper(int size, carmen_map_t *map_max, carmen_map_t *map_mea
 	if (PyErr_Occurred())
         PyErr_Print();
 
-
-
 //	float *result_array = (float*)PyArray_DATA(python_result_array);
 	double *z = (double*) PyArray_DATA(return_array);
 

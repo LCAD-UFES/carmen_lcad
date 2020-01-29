@@ -133,15 +133,14 @@ InputSocket::~InputSocket(void)
 /** @brief Get one rslidar packet. */
 int InputSocket::getPacket(rslidarPacket_t* pkt, const double time_offset)
 {
-	double time1 = carmen_get_time();
 	struct pollfd fds[1];
 	fds[0].fd = sockfd_;
 	fds[0].events = POLLIN;
-	static const int POLL_TIMEOUT = 1000;  // one second (in msec)
+	static const int POLL_TIMEOUT = 3000;  // one second (in msec)
 
 	sockaddr_in sender_address;
 	socklen_t sender_address_len = sizeof(sender_address);
-	while (flag == 1)
+	while (true)
 	{
 		// Receive packets that should now be available from the
 		// socket using a blocking read.
@@ -175,6 +174,7 @@ int InputSocket::getPacket(rslidarPacket_t* pkt, const double time_offset)
 				return 1;
 			}
 		} while ((fds[0].revents & POLLIN) == 0);
+
 		ssize_t nbytes = recvfrom(sockfd_, &pkt->data[0], packet_size, 0, (sockaddr*)&sender_address, &sender_address_len);
 
 		if (nbytes < 0)
@@ -186,50 +186,20 @@ int InputSocket::getPacket(rslidarPacket_t* pkt, const double time_offset)
 			}
 		}
 		else if ((size_t)nbytes == packet_size)
-		{
-			if (devip_str_ != "" && sender_address.sin_addr.s_addr != devip_.s_addr)
-			{
-				continue;
-			}
-			else
-			{
-				break;  // done
-			}
-		}
+			break;  // done
 
+		// check pkt header
+		if (pkt->data[0] != 0x55 || pkt->data[1] != 0xAA || pkt->data[2] != 0x05 || pkt->data[3] != 0x0A)
+		{
+			return 1;
+		}
 		printf("[driver][socket] incomplete rslidar packet read:%ld bytes\n", nbytes);
 	}
-	if (flag == 0)
-	{
-		abort();
-	}
 
-	if (pkt->data[0] == 0xA5 && pkt->data[1] == 0xFF && pkt->data[2] == 0x00 && pkt->data[3] == 0x5A)
-	{//difop
-		int rpm = (pkt->data[8]<<8)|pkt->data[9];
-		int mode = 1;
-
-		if ((pkt->data[45] == 0x08 && pkt->data[46] == 0x02 && pkt->data[47] >= 0x09) || (pkt->data[45] > 0x08)
-				|| (pkt->data[45] == 0x08 && pkt->data[46] > 0x02))
-		{
-			if (pkt->data[300] != 0x01 && pkt->data[300] != 0x02)
-			{
-				mode = 0;
-			}
-		}
-
-		if (cur_rpm_ != rpm || return_mode_ != mode)
-		{
-			cur_rpm_ = rpm;
-			return_mode_ = mode;
-
-			npkt_update_flag_ = true;
-		}
-	}
 	// Average the times at which we begin and end reading.  Use that to
 	// estimate when the scan occurred. Add the time offset.
-	double time2 = carmen_get_time();
-	pkt->stamp = ((time2 + time1) / 2.0 + time_offset);
+//	double time2 = carmen_get_time();
+//	pkt->stamp = ((time2 + time1) / 2.0 + time_offset);
 
 	return 0;
 }

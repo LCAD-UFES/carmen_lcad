@@ -1,7 +1,6 @@
 #include <carmen/carmen.h>
 #include "g2o/types/slam2d/se2.h"
 #include "rddf_predict_optimizer.h"
-
 using namespace g2o;
 
 int camera;
@@ -14,12 +13,17 @@ int localize_received = 0;
 
 FILE *file_log;
 FILE *file_log2;
+FILE *file_log3;
 int first_it = 0;
 int first_it2 = 0;
+int first_it3 = 0;
 char txt_name[150];
-char save_buffer[500];
 char txt_name2[150];
+char txt_name3[150];
+char save_buffer[500];
 char save_buffer2[500];
+char save_buffer3[2000];
+
 
 double y_check = -1000.0;
 
@@ -30,7 +34,7 @@ euclidean_distance (double x1, double x2, double y1, double y2)
 }
 //save_to_txt(double robot_x, double robot_y, double robot_theta, double robot_timestamp, double rddf_x, double rddf_y, double rddf_theta, double bumb_image)
 void
-save_to_txt(double dy, double dtheta, double k1, double k2, double k3, double bumb_latest_timestamp)
+save_to_txt(double dy, double k1, double k2, double k3, double bumb_latest_timestamp)
 {
 	if(!first_it)
 	{
@@ -51,11 +55,55 @@ save_to_txt(double dy, double dtheta, double k1, double k2, double k3, double bu
 			exit(1);
 		}
 	}
-	snprintf(save_buffer, sizeof(save_buffer),"%f %f#%f %f %f#%f", dy, dtheta, k1, k2, k3, bumb_latest_timestamp);
+	snprintf(save_buffer, sizeof(save_buffer),"%f %f %f %f %f", dy,  k1, k2, k3, bumb_latest_timestamp);
 	//snprintf(save_buffer, sizeof(save_buffer),"%f %f %f %f#%f %f %f#%f", robot_x, robot_y, robot_theta, robot_timestamp, rddf_x, rddf_y, rddf_theta, bumb_image);
 	fprintf(file_log,"%s\n", save_buffer);
 
 }
+
+void
+save_waypoint_to_txt(int index_aux, carmen_behavior_selector_road_profile_message *rddf_poses, carmen_ackerman_traj_point_t *rddf_poses_global, double bumb_latest_timestamp, carmen_point_t global_iara_pose)
+{
+	if(!first_it3)
+	{
+		memset(save_buffer3,'\0', 2000*sizeof(char));
+		memset(txt_name3,'\0',150*sizeof(char));
+		first_it3 = 1;
+		struct stat sb;
+		if(!(stat("/dados/rddf_predict", &sb) == 0))
+			mkdir("/dados/rddf_predict",0777);
+		time_t t = time(NULL);
+		struct tm tm = *localtime(&t);
+		snprintf(txt_name3, sizeof(txt_name3), "/dados/rddf_predict/rddf_ground_truth_%d-%d-%d_%d:%d:%d",tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+		file_log3 = fopen(txt_name3, "a");
+
+		if(NULL == file_log3)
+		{
+			printf("Erro ao abrir o arquivo log_rddf_predict.txt no método save_waypoint_to_txt (rddf_predict.c)\n");
+			exit(1);
+		}
+	}
+	snprintf(save_buffer3, sizeof(save_buffer3),"%f %f %f %f ", bumb_latest_timestamp, global_iara_pose.x, global_iara_pose.y, global_iara_pose.theta);
+	fprintf(file_log3,"%s", save_buffer3);
+
+
+	for (int i = index_aux; rddf_poses->poses[i].x <= 30.0; i++) {
+		if (rddf_poses->poses[i].x > 0.0) {
+			snprintf(save_buffer3, sizeof(save_buffer3),"%f %f ", rddf_poses_global[i].x, rddf_poses_global[i].y);
+			fprintf(file_log3,"%s", save_buffer3);
+		}
+
+		}
+
+//	snprintf(save_buffer3, sizeof(save_buffer3),"%f %f %f %f %f %f", dy, dtheta, k1, k2, k3, bumb_latest_timestamp);
+	//snprintf(save_buffer3, sizeof(save_buffer3),"%f %f %f %f#%f %f %f#%f", robot_x, robot_y, robot_theta, robot_timestamp, rddf_x, rddf_y, rddf_theta, bumb_image);
+	fprintf(file_log3,"\n");
+
+	//last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, image_msg->timestamp
+
+
+}
+
 
 void
 save_for_plotting(double k1, double k2, double k3)
@@ -80,6 +128,7 @@ save_for_plotting(double k1, double k2, double k3)
 		}
 	}
 
+	// gera y's do spline
 	gsl_interp_accel *acc;
 	gsl_spline *phi_spline;
 	double knots_x[4] = {0.0,  30/ 3.0, 2 * 30 / 3.0, 30.0};
@@ -106,6 +155,34 @@ save_for_plotting(double k1, double k2, double k3)
 
 }
 
+//double
+//dist(carmen_position_t v, carmen_position_t w)
+//{
+//    return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
+//}
+//
+//
+//double
+//get_distance_between_point_to_line(carmen_position_t p1,
+//        carmen_position_t p2,
+//        carmen_position_t robot)
+//{
+//    //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+//    double delta_x = p2.x - p1.x;
+//    double delta_y = p2.y - p1.y;
+//    double d = sqrt(delta_x * delta_x + delta_y * delta_y);
+//    double x2y1 =  p2.x * p1.y;
+//    double y2x1 =  p2.y * p1.x;
+//
+//    if (d < 0.0000001)
+//        return dist(p2, robot);
+//
+//    return abs((delta_y * robot.x) - (delta_x * robot.y) + x2y1 - y2x1) / d;
+//
+//}
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Handlers                                                                                  //
@@ -129,9 +206,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 			globalpos.y = ackerman_message.globalpos.y;
 
 			int index_aux=0;
-			double distance, min_distance = DBL_MAX;
+			double distance, min_distance;
+			distance = min_distance = DBL_MAX;
 			for (int i = 0; i < last_rddf_poses.number_of_poses; i++)
 			{
+				//printf("coord %f %f\n", last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y);
 				distance = euclidean_distance(globalpos.x, last_rddf_poses.poses[i].x, globalpos.y, last_rddf_poses.poses[i].y);
 				if (distance < min_distance)
 				{
@@ -139,39 +218,108 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 					index_aux = i;
 				}
 			}
+			//printf("%f, %f ### %f %f", last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux+1].x, last_rddf_poses.poses[index_aux+1].y);
 			/*
 			printf("pose: %.2f %.2f %.2f %.2f\n", globalpos.x, globalpos.y, globalpos.theta, globalpos_message->timestamp);
 			printf("rddf: %.2f %.2f %.2f\n", last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta);
 			printf("image: %f\n\n", bumb_latest_timestamp);
 			 */
-			double dtheta = globalpos.theta - last_rddf_poses.poses[index_aux].theta;
+//			double dtheta = globalpos.theta - last_rddf_poses.poses[index_aux].theta;
 
 //			printf("rddf: %.2f %.2f %.2f\n", last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta);
 
-			SE2 rddf_pose(last_rddf_poses.poses[index_aux].x, last_rddf_poses.poses[index_aux].y, last_rddf_poses.poses[index_aux].theta);
+			SE2 iara_pose(globalpos.x, globalpos.y, globalpos.theta);
+
+			carmen_ackerman_traj_point_t global_poses[last_rddf_poses.number_of_poses];
 
 			for (int i = 0; i < last_rddf_poses.number_of_poses; i++)
 			{
+				global_poses[i].x = last_rddf_poses.poses[i].x;
+				global_poses[i].y = last_rddf_poses.poses[i].y;
 				SE2 lane_in_world_reference(last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, last_rddf_poses.poses[i].theta);
-				SE2 lane_in_rddf_reference = rddf_pose.inverse() * lane_in_world_reference;
-				last_rddf_poses.poses[i].x = lane_in_rddf_reference[0];
-				last_rddf_poses.poses[i].y = lane_in_rddf_reference[1];
-				last_rddf_poses.poses[i].theta = lane_in_rddf_reference[2];
+				SE2 lane_in_iara_reference = iara_pose.inverse() * lane_in_world_reference;
+				last_rddf_poses.poses[i].x = lane_in_iara_reference[0];
+				last_rddf_poses.poses[i].y = lane_in_iara_reference[1];
+				last_rddf_poses.poses[i].theta = lane_in_iara_reference[2];
+				printf("%f %f\n", last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y);
 			}
+			printf("-----------------\n");
 
-			SE2 car_in_world_reference(globalpos.x, globalpos.y, globalpos.theta);
-			SE2 car_in_rddf_reference = rddf_pose.inverse() * car_in_world_reference;
+			save_waypoint_to_txt(index_aux ,&last_rddf_poses, global_poses, image_msg->timestamp, globalpos );
 
-			double dy = car_in_rddf_reference[1];
+//			carmen_ackerman_path_point_t localize;
+//			localize.x = 0.0;
+//			localize.y = 0.0;
+//			//Metric evaluation
+//			int index1;
+//			int index2;
+//			int mais_proxima;
 
-			/*
+			distance = DBL_MAX;
+			double min_distance1, min_distance2;
+			min_distance1 = min_distance2 = DBL_MAX;
+			carmen_position_t nearest1, nearest2;
+			nearest1.x = nearest2.x = nearest1.y = nearest2.y = DBL_MAX;
+			printf("aaaaaaaaaaaaa = %f\n",nearest1.x);
 			for (int i = 0; i < last_rddf_poses.number_of_poses; i++)
 			{
-				printf("%f %f %f\n", last_rddf_poses.poses[i].x, last_rddf_poses.poses[i].y, last_rddf_poses.poses[i].theta);
+				distance = abs(last_rddf_poses.poses[i].x - 0.0);
+				if (distance < min_distance1 && distance < min_distance2)
+				{
+					if (min_distance1 < min_distance2)
+					{
+						if (last_rddf_poses.poses[i].x != nearest1.x)
+						{
+							min_distance2 = distance;
+							nearest2.x = last_rddf_poses.poses[i].x;
+							nearest2.y = last_rddf_poses.poses[i].y;
+						}
+					}
+					else
+					{
+						if (last_rddf_poses.poses[i].x != nearest2.x)
+						{
+							min_distance1 = distance;
+							nearest1.x = last_rddf_poses.poses[i].x;
+							nearest1.y = last_rddf_poses.poses[i].y;
+						}
+					}
+				}
+				else if (distance < min_distance1 || distance < min_distance2)
+				{
+					if (distance < min_distance2)
+					{
+						if (last_rddf_poses.poses[i].x != nearest1.x)
+						{
+							min_distance2 = distance;
+							nearest2.x = last_rddf_poses.poses[i].x;
+							nearest2.y = last_rddf_poses.poses[i].y;
+						}
+					}
+					else
+					{
+						if (last_rddf_poses.poses[i].x != nearest2.x)
+						{
+							min_distance1 = distance;
+							nearest1.x = last_rddf_poses.poses[i].x;
+							nearest1.y = last_rddf_poses.poses[i].y;
+						}
+					}
+				}
 			}
-			*/
+			printf("nx = %f %f - %f %f\n", nearest1.x, nearest1.y, nearest2.x, nearest2.y);
+			double dy = interpolate(nearest1, nearest2, 0.0);
+			printf("DY issoaqui: %f\n" , dy);
+
+			for (int i = 0; i < last_rddf_poses.number_of_poses; i++)
+			{
+				last_rddf_poses.poses[i].y -= dy;
+			}
 
 			SplineControlParams spc = optimize_spline_knots(&last_rddf_poses);
+			spc.k1 += dy;
+			spc.k2 += dy;
+			spc.k3 += dy;
 
 			/*
 			printf("dy = %f\ndtheta = %f\n\nposes:\n", dy, dtheta);
@@ -184,7 +332,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 				printf("%f // %f // %f // %f\n", dy, globalpos.x, globalpos.y, globalpos.theta);
 
 			}
-			save_to_txt(dy, dtheta, spc.k1, spc.k2, spc.k3, image_msg->timestamp);
+			printf("%f\n",image_msg->timestamp);
+			save_to_txt(dy, spc.k1, spc.k2, spc.k3, image_msg->timestamp);
 			save_for_plotting(spc.k1, spc.k2, spc.k3);
 
 		}
@@ -207,6 +356,9 @@ shutdown_module(int signo)
 {
     if (signo == SIGINT) {
     	fclose(file_log);
+    	fclose(file_log2);
+    	fclose(file_log3);
+
         carmen_ipc_disconnect();
         printf("Rddf_predict: Disconnected.\n");
         exit(0);

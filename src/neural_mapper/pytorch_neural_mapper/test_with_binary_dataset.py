@@ -25,9 +25,11 @@ import model as M
 from _testbuffer import ndarray
 from cupshelpers.ppds import normalize
 import time
+from sklearn.metrics.classification import confusion_matrix
+
 
 #transforms.Normalize(mean for each channel, std for each chanel)
-TRANSFORMS = transforms.Normalize([0.0128, 0.0119, 0.0077, 0.0019, 0.0010], [0.0821, 0.0739, 0.0591, 0.0170, 0.0100])
+TRANSFORMS = None #transforms.Normalize([0.0128, 0.0119, 0.0077, 0.0019, 0.0010], [0.0821, 0.0739, 0.0591, 0.0170, 0.0100])
 
 
 def tensor2rgbimage(tensor):
@@ -65,6 +67,39 @@ def labels_to_img(numpy_image, size):
                 img[i][j] = np.array([0, 0, 0])
     return img
 
+
+def pred_and_label_to_img_and_confusion_matrix(numpy_image1, numpy_image2, confusion_mtx, size):
+    reshaped = numpy_image1
+    reshaped2 = numpy_image2
+    img1 = np.zeros((size, size, 3), np.uint8)
+    img2 = np.zeros((size, size, 3), np.uint8)
+    
+    for i in range(size):
+        # print("")
+        for j in range(size):
+            val1 = 0
+            val2 = 1
+            if reshaped[i][j] == 0:
+                img1[i][j] = np.array([255, 120, 0])
+            elif reshaped[i][j] == 1.0:
+                img1[i][j] = np.array([255, 255, 255])
+                val1 = 1
+            elif reshaped[i][j] == 2.0:
+                img1[i][j] = np.array([0, 0, 0])
+                val1 = 2
+            
+            if reshaped2[i][j] == 0:
+                img2[i][j] = np.array([255, 120, 0])
+                val2 = 0
+            elif reshaped2[i][j] == 1.0:
+                img2[i][j] = np.array([255, 255, 255])
+            elif reshaped2[i][j] == 2.0:
+                val2 = 2
+                img2[i][j] = np.array([0, 0, 0])
+                
+            update_confusion(val1, val2, confusion_mtx)
+                
+    return img1, img2
 
 def show_dataset(dataset_tensor, size):
 
@@ -255,63 +290,13 @@ def load_bach_data(transforms, dataset_list, data_path, target_path, last_elemen
     # dataset, weights = zip(*ziped)
     return data, target, last_element, batch_weight
 
-
-def train(interval_save_model, iterations, model, device, train_list, dataset_config, dnn_config, optimizer, epoch, batch_size, n_classes, img_width, img_height, input_channels):
-    #class_weights = torch.FloatTensor(weights).cuda()
-    global TRANSFORMS
-    model.train()
-    last_element = 0
-    for batch_idx in range(iterations):
-        if last_element < (len(train_list)):
-            # print("Loading batch ", batch_idx, " of ", iterations, '\n The last element loaded was: ', last_element)
-            data, target, last_element, weights = load_bach_data(TRANSFORMS, train_list, dataset_config['train_path'],
-                                                        dataset_config['target_path'],
-                                                        last_element, batch_size, input_channels,
-                                                        img_width, img_height, n_classes)
-
-#             show_dataset(data, img_width)
-            # cv2.imshow('Target', labels_to_img(target[batch_idx].numpy()))
-            # cv2.waitKey(-1)
-            #TODO: Dados já estão sendo gerados de 0 a 1
-
-            #TODO: Padronizar os dados
-            data = data.to(device)
-            target = target.to(device)
-            inicio = time.time()
-#             print("\nFowarding")
-            output = model(data)
-#             print("\nTempo Foward: ", time.time() - inicio)
-            #print(weights)
-            #weights = [1, 1, 5]
-            batch_weight = torch.FloatTensor(weights).cuda()
-            out_loss = F.cross_entropy(output, target, weight=batch_weight)
-#             out_loss = F.cross_entropy(output, target)
-            # print("Calculating Cross_entropy")
-            # print(out_loss.item())
-            # print("Cleaning grads")
-            optimizer.zero_grad()
-            # print("Backward")
-            out_loss.backward()
-            # print("weights update")
-            optimizer.step()
-            if batch_idx % interval_save_model == 0:
-                log_treino = ('Loss: {:.10f} Train Epoch: {} [{}/{} ({:.0f}%)]\n'.format(out_loss.item(), epoch, batch_idx * len(data), len(train_list),
-                    epoch, batch_idx * len(data), len(train_list),
-                    100. * batch_idx * len(data) / len(train_list)))
-                arq = open(dnn_config['save_log_files']+'Train_averange.txt', 'a')
-                arq.write(log_treino)
-                arq.close()
-                print(log_treino)
-
-            if epoch % interval_save_model == 0:
-                pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
-                imgPred = pred[0]
-                imgPred = imgPred.cpu().float()
-                cv2.imwrite(dnn_config['save_log_files'] + 'img' + str(epoch) + '.png', labels_to_img(imgPred[0].numpy(), img_width))
+def update_confusion(y, x, conf):
+    conf[y][x] = conf[y][x] + 1
 
 
 def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config, n_classes, img_width, img_height, input_channels):
     global TRANSFORMS
+    confusion_mtx = np.array([[0, 0, 0],[0, 0, 0],[0, 0, 0]])
     print("Testing!")
     model.eval()
     test_loss = 0
@@ -326,26 +311,30 @@ def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config
                                                             img_width, img_height, n_classes)
                 data = data.to(device)
                 target = target.long().to(device)
-                output = model(data)
+                output, prob_softmax = model(data)
                 batch_weight = torch.FloatTensor(weights).cuda()
                 test_loss += F.cross_entropy(output, target, reduction="sum").item() # sum up batch loss
-                pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
+                pred = prob_softmax.max(1, keepdim=True)[1] # get the index of the max log-probability
                 correct += pred.eq(target.view_as(pred)).sum().item()
                 imgPred = pred[0]
                 imgPred = imgPred.cpu().float()
                 target = target.cpu().float()
-                cv2.imwrite(dnn_config['save_log_files'] + 'img' + str(batch_idx) + '.png', labels_to_img(imgPred[0].numpy(), img_width))
-                cv2.imwrite(dnn_config['save_log_files'] + 'label' + str(batch_idx) + '.png', labels_to_img(target[0].numpy(), img_width))
+                im1, im2 = pred_and_label_to_img_and_confusion_matrix(imgPred[0].numpy(), target[0].numpy(), confusion_mtx, img_width)
+                cv2.imwrite(dnn_config['save_log_files'] + 'img' + str(batch_idx) + '.png', im1)
+                cv2.imwrite(dnn_config['save_log_files'] + 'label' + str(batch_idx) + '.png', im2)
         #    test_loss /= len(test_loader.dataset)
         test_loss /= (len(test_list)*batch_size*img_width*img_height)
         texto = ('Test set: epoch {} Average loss {:.10f}, Accuracy: {}/{} {:.6f}\n'.format(epoch,
             test_loss, correct, len(test_list)*img_width*img_height,
             correct / (len(test_list)*img_width*img_height)))
-        arq = open(dnn_config['save_log_files']+'Test_averange.txt', 'a')
-        arq.write(texto)
-        
-        arq.close()
+        texto_matrix = ("Matriz de confusao final:")
+        print(confusion_mtx)
         print(texto)
+        np.savetxt(dnn_config['save_log_files']+'test_confusion.txt', confusion_mtx)
+        arq = open(dnn_config['save_log_files']+'Final_Test_averange.txt', 'a')
+        arq.write(texto)
+        arq.write(texto_matrix)
+        arq.close()
         
     
 if __name__ == '__main__':

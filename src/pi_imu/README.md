@@ -76,30 +76,71 @@ Below you can see that a device is connected to the i2c bus which is using the a
 60: -- -- -- -- -- -- -- -- -- -- -- 6b -- -- -- --
 70: -- -- -- -- -- -- -- --
 ```
-# Install Dependencies anf Download the pi_imu file from git
+# Install Dependencies
 
 ```bash
  $ sudo apt-get update
  $ sudo apt-get install i2c-tools libi2c-dev python-smbus
+ $ sudo apt-get install liboctave-dev
  $ sudo apt-get install subversion
- $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/pi_imu
+ ```
+
+# Install carmen_lcad sources
+
+ $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/src/ ~/carmen_lcad/src
+ $ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/sharedlib/libcmt/ ~/carmen_lcad/sharedlib/libcmt
+```
+
+- Baixe e compile uma versão mais atual do IPC
+
+```bash
+ $ cd /usr/local
+ $ sudo wget http://www.cs.cmu.edu/afs/cs/project/TCA/ftp/ipc-3.9.1a.tar.gz
+ $ sudo tar -xzvf ipc-3.9.1a.tar.gz
+ $ cd ipc-3.9.1/src/
+ $ sudo cp ~/carmen_lcad/src/xsens_MTi-G/formatters.h .
+ $ make
+```
+
+- Substitua o arquivo Makefile.rules do src do carmen
+
+```bash
+ $ cp ~/carmen_lcad/src/xsens_MTi-G/Makefile.rules ~/carmen_lcad/src/
+```
+
+# Configure CARMEN LCAD
+
+```bash
+ $ cd ~/carmen_lcad/src
+ $ ./configure --nojava --nozlib --nocuda
+ Should the C++ tools be installed for CARMEN: [Y/n] Y
+ Should Python Bindings be installed: [y/N] N
+ Should the old laser server be used instead of the new one: [y/N] N
+ Install path [/usr/local/]: 
+ Robot numbers [*]: 1,2
 ```
 
 # Compile and executing the pi_imu drive module on the Raspberry PI
 
 ```bash
- $ cd pi_imu/RTIMULib2-master/Linux/RTIMULibDrive
+ $ 
+ $ cd ~/carmen_lcad/src/pi_imu/RTIMULib2/Linux
+ $ mkdir build
+ $ cd build
+ $ cmake ..
  $ make
- $ ./Output/RTIMULibDrive 
+ $ cd ~/carmen_lcad/src/pi_imu/pi_imu_server
+ $ make
+ $ ./Output/pi_imu_server_driver 
 ```
 
-# testing the pi_imu drive module on the Raspberry PI
+# Testing and calibrating the pi_imu drive module on the Raspberry PI
 
 ```bash
- $ cd pi_imu/RTIMULib2-master/Linux/RTIMULibDrive
- $ make test
- $ ./Output/RTIMULibDrive_test 
-```
+ $ cd ~/carmen_lcad/src/pi_imu/RTIMULib2
+ $ ./Linux/build/RTIMULibDemoGL/RTIMULibDemoGL {or ./Linux/build/RTIMULibDemo/RTIMULibDemo if OpenGL is not working}
+ ```
+For calibration see ~/carmen_lcad/src/pi_imu/RTIMULib2/Calibration.pdf
 
 # Compile the pi_imu client drive module on your computer
 
@@ -114,7 +155,7 @@ Below you can see that a device is connected to the i2c bus which is using the a
 ```bash
  $ cd $CARMEN_HOME/src/pi_imu_viewer
  $ make
- $ ./bin/mpu9250-OpenGl 
+ $ $CARMEN_HOME/bin/imu_viewer 
 ```
 
  The pi_imu_viewer program will display the image of a box representing the state of the IMU

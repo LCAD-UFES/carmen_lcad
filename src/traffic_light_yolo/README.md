@@ -68,6 +68,28 @@ After compiling [darknet] and downloading the previous files to the same place w
 
 While doing inference you can also pass the option `-thresh 0.2` to the binary in order to decrease its confidence threshold to 0.2, like we do in our paper.
 
+## Logs and map
+
+All logs used in the paper were uploaded to Google Drive through `logs@*********.ufes.br` and can be accessed using the following link: https://drive.google.com/drive/folders/1dy81rrHFrNZd9eHdm2Or3ssbO_eDxRSn?usp=sharing
+
+The logs used for testing are (according to the naming convention used in the paper):
+ - LR-1: `log_dante_michelini-20181116-entrada1.txt`
+ - LR-2: `log_dante_michelini-20181116-entrada2.txt`
+ - LR-3: `log_dante_michelini-20181116-entrada3.txt`
+ - LR-4: `log_dante_michelini-20181116-entrada4.txt`
+ - RL: `log_dante_michelini-20181116-pista-esquerda.txt`
+
+The remaining logs were used for annotating the traffic lights. They are:
+ - RM: `log_dante_michelini-20181116.txt`
+ - LL-1: `log-dante-michelini-20181130-entrada1.txt`
+ - LL-2: `log-dante-michelini-20181130-entrada2.txt`
+ - LL-3: `log-dante-michelini-20181130-entrada3.txt`
+ - LL-4: `log-dante-michelini-20181130-entrada4.txt`
+
+`log_dante_michelini-20181116.txt` was also used to create the offline map, which can be found in the `map_dante_michelini-20181116` folder.
+
+In the source code of `carmen_lcad`, `bin/process-dante-michelini-tl-yolo-playback.ini` can be used to playback these logs using the executable `bin/proccontrol`.
+
 ## Usage Instructions
 
 This module (`traffic_light_yolo`) was created as a solution for Traffic Light Recognition. It uses YOLOv3 and OpenCV's Random Forests.
