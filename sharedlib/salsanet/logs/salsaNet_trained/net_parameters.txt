@@ -1,0 +1,32 @@
+
+######################################################################
+############################# parameters #############################
+######################################################################
+BATCH_SIZE : 32
+CHANNEL_LABELS : ['mean', 'max', 'ref', 'den']
+CLASSES : ['background', 'road', 'vehicle']
+CLS_2_ID : {'background': 0, 'road': 1, 'vehicle': 2}
+CLS_COLOR_MAP : [[255. 255. 255.]
+ [  0. 255.   0.]
+ [255.   0.   0.]]
+CLS_LOSS_WEIGHTS : [ 1.01  6.03 15.78]
+DATA_AUGMENTATION : True
+DEBUG_MODE : False
+DROPOUT_PROB : 0.5
+GPU : 0
+IMAGE_CHANNEL : 4
+IMAGE_HEIGHT : 64
+IMAGE_WIDTH : 256
+LEARNING_RATE : 0.01
+LR_DECAY_CYCLE : 20000
+LR_DECAY_FACTOR : 0.1
+NUM_CLASS : 3
+NUM_EPOCHS : 300
+PRINT_EVERY : 20
+log_name : org
+log_path : ./logs/
+training_data_path : /mnt/nas/Personal/eren/DATA/KITTI_Data/LabeledSqueezeSegData/netInput_ver02_train/
+validation_data_path : /mnt/nas/Personal/eren/DATA/KITTI_Data/LabeledSqueezeSegData/netInput_ver02_val/
+
+######################################################################
+######################################################################
