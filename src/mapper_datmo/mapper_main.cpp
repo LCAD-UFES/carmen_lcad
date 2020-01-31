@@ -26,6 +26,7 @@
 #include <carmen/parking_assistant_interface.h>
 #include <carmen/libdeeplab.h>
 #include <carmen/libsqueeze_seg.h>
+#include <carmen/libsalsanet.h>
 #include <omp.h>
 #include "mapper.h"
 #include <sys/stat.h>
@@ -143,6 +144,7 @@ char *calibration_file = NULL;
 char *save_calibration_file = NULL;
 
 long long int *velodyne_segmented = NULL;
+long long int *salsanet_segmented = NULL;
 carmen_velodyne_partial_scan_message *velodyne_seg;
 
 static char *segmap_dirname = (char *) "/dados/log_dante_michelini-20181116.txt_segmap";
@@ -633,81 +635,6 @@ filter_sensor_data_using_pointcloud(sensor_parameters_t *sensor_params, sensor_d
 		}
 	}
 }
-
-inline double round(double val)
-{
-    if (val < 0)
-        return ceil(val - 0.5);
-    return floor(val + 0.5);
-}
-
-void
-fill_view_vector(double horizontal_angle, double vertical_angle, double range, double intensity, double* view, int line)
-{
-	if (range > 0 && range < 200) // this causes n_points to become wrong (needs later correction)
-	{
-		tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
-		double x = round(point.x() * 100.0) / 100.0;
-		double y = round(point.y() * 100.0) / 100.0;
-		double z = round(point.z() * 100.0) / 100.0;
-		intensity = round(intensity * 100.0) / 100.0;
-		//double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
-		view[line * 5] = x;
-		view[(line * 5) + 1] = y;
-		view[(line * 5) + 2] = z;
-		view[(line * 5) + 3] = intensity;
-		view[(line * 5) + 4] = range;
-	} else {
-		view[line * 5] = 0.0;
-		view[(line * 5) + 1] = 0.0;
-		view[(line * 5) + 2] = 0.0;
-		view[(line * 5) + 3] = 0.0;
-		view[(line * 5) + 4] = 0.0;
-	}
-}
-
-long long int *
-erase_moving_obstacles_cells_squeezeseg(int sensor_number, carmen_velodyne_partial_scan_message *velodyne_message)
-{
-    double timestamp = velodyne_message->timestamp;
-    int line;
-    int shots_to_squeeze = velodyne_message->number_of_32_laser_shots;
-    int vertical_resolution = sensors_params[sensor_number].vertical_resolution;
-    int number_of_points = vertical_resolution * shots_to_squeeze;
-    double squeeze[number_of_points * 5];
-    //int* return_squeeze_array;
-    printf("Shots: %d from timestamp %lf\n", velodyne_message->number_of_32_laser_shots, timestamp);
-    for (int j = vertical_resolution, line = 0; j > 0; j--)
-    {
-        for (int i = 0; i < shots_to_squeeze; i++, line++)
-        {
-            double vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sensors_params[sensor_number].vertical_correction[j]));
-            double horizontal_angle = carmen_normalize_theta(-carmen_degrees_to_radians(-velodyne_message->partial_scan[i].angle));
-            double range = (((double)velodyne_message->partial_scan[i].distance[sensors_params[sensor_number].ray_order[j]]) / 500.0);
-            double intensity = ((double)velodyne_message->partial_scan[i].intensity[sensors_params[sensor_number].ray_order[j]]) / 100.0;
-            fill_view_vector(horizontal_angle, vertical_angle, range, intensity, &squeeze[0], line);
-        }
-    }
-	velodyne_seg = velodyne_message;
-    velodyne_segmented = libsqueeze_seg_process_point_cloud(vertical_resolution, shots_to_squeeze, &squeeze[0], timestamp);
-	//printf("Analysis of return matrix for timestamp %lf\n", timestamp);
-	// for (int j = vertical_resolution, line = 0; j > 0; j--)
-	// {
-	// 	for (int i = 0; i < shots_to_squeeze; i++, line++)
-	// 	{
-	// 		if (velodyne_segmented[line] != 0)
-	// 		{
-	// 			double vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sensors_params[sensor_number].vertical_correction[j]));
-	// 			double horizontal_angle = carmen_normalize_theta(-carmen_degrees_to_radians(-velodyne_message->partial_scan[i].angle));
-	// 			double range = (((double)velodyne_message->partial_scan[i].distance[sensors_params[sensor_number].ray_order[j]]) / 500.0);
-	// 			tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
-	// 			//cout << "h: " << i << " v: " << j << " line: " << line << " shots: " << shots_to_squeeze << " x: " << point.x() << " y: " << point.y() << " vel_seg:" << velodyne_segmented[line] << " r:" << range << endl;
-	// 		}
-	// 	}
-	// }
-	return velodyne_segmented;
-}
-
 
 
 void
@@ -1376,7 +1303,7 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-	velodyne_segmented = erase_moving_obstacles_cells_squeezeseg(VELODYNE, velodyne_message);
+	velodyne_segmented = libsqueeze_seg_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
 	sensor_msg_count[VELODYNE]++;
 	mapper_velodyne_partial_scan(VELODYNE, velodyne_message);
 }

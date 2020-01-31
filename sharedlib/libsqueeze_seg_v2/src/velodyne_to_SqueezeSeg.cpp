@@ -9,6 +9,7 @@
 #include <tf.h>
 #include <iostream>
 #include <fstream>
+#include <stdlib.h>     /* getenv */
 #include <carmen/libsqueeze_seg.h>
 
 using namespace tf;
@@ -26,64 +27,40 @@ inline double round(double val)
     return floor(val + 0.5);
 }
 
-void
-fill_view_vector(double horizontal_angle, double vertical_angle, double range, double intensity, double* view, int line)
-{
-	if (range > 0 && range < 200) // this causes n_points to become wrong (needs later correction)
-	{
-		tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
-		double x = round(point.x() * 100.0) / 100.0;
-		double y = round(point.y() * 100.0) / 100.0;
-		double z = round(point.z() * 100.0) / 100.0;
-		intensity = round(intensity * 100.0) / 100.0;
-		//double raiz_soma_quadrados = sqrt(x * x + y * y + z * z);
-		view[line * 5] = x;
-		view[(line * 5) + 1] = y;
-		view[(line * 5) + 2] = z;
-		view[(line * 5) + 3] = intensity;
-		view[(line * 5) + 4] = range;
-	} else {
-		view[line * 5] = 0.0;
-		view[(line * 5) + 1] = 0.0;
-		view[(line * 5) + 2] = 0.0;
-		view[(line * 5) + 3] = 0.0;
-		view[(line * 5) + 4] = 0.0;
-	}
-}
-
-
 void write_pointcloud_txt(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-    double timestamp = velodyne_message->timestamp;
-    //ofstream point_cloud_file;
-    //point_cloud_file.open("SqueezeSegV2/" + std::to_string(timestamp) + ".txt");
-    // int n_points = 32 * velodyne_message->number_of_32_laser_shots;
-    //point_cloud_file << "#Array shape: (32, 1024, 5)\n";
     int i, j, line;
-    int shots_to_squeeze = velodyne_message->number_of_32_laser_shots;
     int vertical_resolution = 32;
-    int number_of_points = vertical_resolution * shots_to_squeeze;
-    double squeeze[number_of_points * 5];
-    long long int* return_squeeze_array;
-    cout << velodyne_message->number_of_32_laser_shots << " numero de capturas\n";
+    double timestamp = velodyne_message->timestamp;
+
+    ofstream point_cloud_file;
+    char *pPath = getenv ("CARMEN_HOME");
+    point_cloud_file.open( std::string(pPath) + "/sharedlib/libsqueeze_seg_v2/data/samples_IARA/" + std::to_string(timestamp) + ".txt");
+    point_cloud_file << "# Array shape: (32, " << velodyne_message->number_of_32_laser_shots << ", 5)\n";
+    //std::cout << "SqueezeSeg: pointCloud file in $CARMEN_HOME/sharedlib/salsanet/data/" << std::to_string(timestamp) << ".txt" << std::endl;
     for (j = vertical_resolution, line = 0; j > 0; j--)
     {
-        for (i = 0; i < shots_to_squeeze; i++, line++)
+        for (i = 0; i <  velodyne_message->number_of_32_laser_shots; i++, line++)
         {
-
             double vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[j]));
             double horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(-velodyne_message->partial_scan[i].angle));
             double range = (((double)velodyne_message->partial_scan[i].distance[j]) / 500.0);
             double intensity = ((double)velodyne_message->partial_scan[i].intensity[j]) / 100.0;
-            double angle = velodyne_message->partial_scan[i].angle;
-            fill_view_vector(horizontal_angle, vertical_angle, range, intensity, &squeeze[0], line);
-
+            if (range > 0 && range < 200)
+            {
+                tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+		        double x = round(point.x() * 100.0) / 100.0;
+		        double y = round(point.y() * 100.0) / 100.0;
+		        double z = round(point.z() * 100.0) / 100.0;
+		        intensity = round(intensity * 100.0) / 100.0;
+                point_cloud_file << x << "\t" << y << "\t" << z << "\t" << intensity << "\t" << range << "\n";
+            } else {
+                point_cloud_file << "0.00\t0.00\t0.00\t0.00\t0.00\n";
+            }
         }
-        //if (line % shots_to_squeeze == 0 && line > 0)
-           // point_cloud_file << "# New slice\n";
+        point_cloud_file << "# New slice\n";
     }
-    return_squeeze_array = libsqueeze_seg_process_point_cloud(vertical_resolution, shots_to_squeeze, &squeeze[0], timestamp);
-    //point_cloud_file.close();
+    point_cloud_file.close();
 }
 
 void velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
@@ -95,10 +72,6 @@ void velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message 
 int main(int argc, char **argv)
 {
     carmen_ipc_initialize(argc, argv);
-
-	/* Register Python Context for SqueezeSeg*/
-	initialize_python_context();
-
 
     carmen_velodyne_subscribe_partial_scan_message(NULL,
                                                    (carmen_handler_t)velodyne_partial_scan_message_handler,
