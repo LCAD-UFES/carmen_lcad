@@ -57,6 +57,12 @@ class LoopRestriction
 		int to;
 };
 
+class GlobalData
+{
+	public:
+		double x, y, z, yaw, v, phi, timestamp;
+};
+
 vector<Line> input_data;
 vector<LoopRestriction> loop_data;
 
@@ -358,11 +364,71 @@ add_loop_closure_edges(SparseOptimizer *optimizer, double loop_xy_std, double lo
 
 
 void
+add_global_edges(SparseOptimizer *optimizer, vector<GlobalData> &global_data, double global_xy_std, double global_orient_std, 
+		tf::Transformer *transformer)
+{
+	tf::StampedTransform gps_to_car;
+	transformer->lookupTransform("/gps", "/car", tf::Time(0), gps_to_car);
+
+	double x_ = gps_to_car.getOrigin().x();
+	double y_ = gps_to_car.getOrigin().y();
+	double yaw = global_data[0].yaw;
+	double car_pose_0_in_the_world_x = x_ * cos(yaw) - y_ * sin(yaw) + input_data[0].gps[0];
+	double car_pose_0_in_the_world_y = x_ * sin(yaw) + y_ * cos(yaw) + input_data[0].gps[1];
+
+	for (size_t i = 0; i < global_data.size(); i++)
+	{
+		double near = 0;
+		double diff = fabs(input_data[0].time - global_data[i].timestamp);
+		double ti = global_data[i].timestamp;
+
+		// find sample with nearest timestamp
+		for (size_t j = 1; j < input_data.size(); j++)
+		{
+			double d = fabs(ti - input_data[j].time); 
+			if (d < diff)
+			{
+				diff = d;
+				near = j;
+			}
+		}
+
+		// add global edge
+		Matrix3d cov;
+		Matrix3d information;
+
+		cov.data()[0] = pow(global_xy_std, 2.0);
+		cov.data()[1] = 0;
+		cov.data()[2] = 0;
+		cov.data()[3] = 0;
+		cov.data()[4] = pow(global_xy_std, 2.0);
+		cov.data()[5] = 0;
+		cov.data()[6] = 0;
+		cov.data()[7] = 0;
+		cov.data()[8] = pow(carmen_degrees_to_radians(global_orient_std), 2.0);
+
+		information = cov.inverse();
+
+		EdgeGPS *edge_gps = new EdgeGPS;
+		edge_gps->vertices()[0] = optimizer->vertex(near);
+		edge_gps->setMeasurement(SE2(
+			global_data[i].x - car_pose_0_in_the_world_x, 
+			global_data[i].y - car_pose_0_in_the_world_y, 
+			global_data[i].yaw
+		));
+		edge_gps->setInformation(information);
+		optimizer->addEdge(edge_gps);
+	}
+}
+
+
+void
 build_optimization_graph(SparseOptimizer *optimizer,
 		double gps_xy_std_multiplier, double gps_yaw_std,
 		double odom_xy_std, double odom_orient_std,
 		double loop_xy_std, double loop_orient_std,
-		tf::Transformer *transformer)
+		tf::Transformer *transformer,
+		vector<GlobalData> &global_data, double global_xy_std, double global_orient_std)
 {
 	// A fução read_data(), abaixo, lê a saída do grab_data, que é uma arquivo txt (sync.txt)) onde cada linha contém um vetor
 	// com vários dados sincronizados (projetando ackerman) com cada núvem de pontos do Velodyne, sendo eles:
@@ -392,6 +458,8 @@ build_optimization_graph(SparseOptimizer *optimizer,
 
 	add_loop_closure_edges(optimizer, loop_xy_std, loop_orient_std);
 	// add_icp_edges(optimizer);
+
+	add_global_edges(optimizer, global_data, global_xy_std, global_orient_std, transformer);
 
 	optimizer->save("poses_before.g2o");
 	cout << "load complete!" << endl;
@@ -519,7 +587,7 @@ void
 graphslam(int gps_id, double gps_xy_std_multiplier, double gps_yaw_std,
 		double odom_xy_std, double odom_orient_std,
 		double loop_xy_std, double loop_orient_std,
-		int argc, char **argv)
+		int argc, char **argv, vector<GlobalData> &global_data, double global_xy_std, double global_orient_std)
 {
 	srand(time(NULL));
 
@@ -535,7 +603,8 @@ graphslam(int gps_id, double gps_xy_std_multiplier, double gps_yaw_std,
 	factory->registerType("EDGE_GPS_NEW", new HyperGraphElementCreator<EdgeGPSNew>);
 
 	SparseOptimizer *optimizer = initialize_optimizer();
-	build_optimization_graph(optimizer, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, transformer);
+	build_optimization_graph(optimizer, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, 
+		loop_orient_std, transformer, global_data, global_xy_std, global_orient_std);
 	optimizer->setVerbose(true);
 
 	cerr << "Optimizing" << endl;
@@ -574,8 +643,39 @@ declare_and_parse_args(int argc, char **argv, CommandLineArguments *args)
 	args->add<double>("loop_xy_std", "Loop closure delta position (x, y) standard deviation (meters)", 3.0);
 	args->add<double>("loop_orient_std", "Loop closure orientation (yaw) standard deviation (degrees)", 34.0);
 
+	args->add<string>("global_poses", "Path to a file containing global poses (like gps) to be added in the graph.", "");
+	args->add<double>("global_xy_std", "Std for xy coordinates.", 0.3);
+	args->add<double>("global_th_std", "Std for orientation (degrees).", 5.0);
+
 	args->parse(argc, argv);
 	args->save_config_file("graphslam_config_default.txt");
+}
+
+
+vector<GlobalData>
+read_global_poses(string filename)
+{
+	FILE *f = fopen(filename.c_str(), "r");
+
+	if (f == NULL)
+		return vector<GlobalData>();
+
+	vector<GlobalData> data;
+	int n;
+	
+	while (1)
+	{
+		GlobalData g;
+		n = fscanf(f, "%lf %lf %lf %lf %lf %lf %lf", &g.x, &g.y, &g.z, &g.yaw, &g.v, &g.phi, &g.timestamp);
+
+		if (n != 7)
+			break;
+
+		data.push_back(g);
+	}
+
+	fclose(f);
+	return data;
 }
 
 
@@ -605,7 +705,14 @@ main(int argc, char **argv)
 	double loop_xy_std = args.get<double>("loop_xy_std");
 	double loop_orient_std = carmen_degrees_to_radians(args.get<double>("loop_orient_std"));
 
-	graphslam(gps_id, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, argc, argv);
+	string path_global = args.get<string>("global_poses");
+	double global_xy_std = args.get<double>("global_xy_std");
+	double global_orient_std = args.get<double>("global_th_std");
+
+	vector<GlobalData> global_data = read_global_poses(path_global);
+
+	graphslam(gps_id, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, argc, argv,
+		global_data, global_xy_std, global_orient_std);
 	
 	return (0);
 }
