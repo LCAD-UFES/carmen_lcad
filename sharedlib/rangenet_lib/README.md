@@ -78,7 +78,6 @@ The LiDAR scan was generated in example folder.
 To infer a single LiDAR scan and visualize the semantic point cloud:
 
   ```sh
-  # go to the root path of the catkin workspace
   $ cd ~/carmen_lcad/sharedlib/rangenet_lib/
   # use --verbose or -v to get verbose mode
   $ ./infer -h # help
