@@ -114,7 +114,7 @@ fill_data_vector(double horizontal_angle, double vertical_angle, double range, d
 }
 
 long long int *
-erase_moving_obstacles_cells_salsanet(int sensor_number, carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *sensors_params)
+libsalsanet_process_moving_obstacles_cells(int sensor_number, carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *sensors_params)
 {
 	long long int *salsanet_segmented = NULL;
 	double timestamp = velodyne_message->timestamp;
