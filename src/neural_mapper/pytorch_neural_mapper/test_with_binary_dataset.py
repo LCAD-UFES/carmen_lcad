@@ -73,6 +73,7 @@ def pred_and_label_to_img_and_confusion_matrix(numpy_image1, numpy_image2, confu
     reshaped2 = numpy_image2
     img1 = np.zeros((size, size, 3), np.uint8)
     img2 = np.zeros((size, size, 3), np.uint8)
+    img3 = np.zeros((size, size, 3), np.uint8)
     
     for i in range(size):
         # print("")
@@ -96,10 +97,15 @@ def pred_and_label_to_img_and_confusion_matrix(numpy_image1, numpy_image2, confu
             elif reshaped2[i][j] == 2.0:
                 val2 = 2
                 img2[i][j] = np.array([0, 0, 0])
+            
+            if val1 == val2:
+                img3[i][j] = np.array([121, 223, 119])
+            else:
+                img3[i][j] = np.array([0, 120, 255])
                 
             update_confusion(val1, val2, confusion_mtx)
                 
-    return img1, img2
+    return img1, img2, img3
 
 def show_dataset(dataset_tensor, size):
 
@@ -319,9 +325,10 @@ def test(model, device, test_list, epoch, batch_size, dataset_config, dnn_config
                 imgPred = pred[0]
                 imgPred = imgPred.cpu().float()
                 target = target.cpu().float()
-                im1, im2 = pred_and_label_to_img_and_confusion_matrix(imgPred[0].numpy(), target[0].numpy(), confusion_mtx, img_width)
+                im1, im2, im3 = pred_and_label_to_img_and_confusion_matrix(imgPred[0].numpy(), target[0].numpy(), confusion_mtx, img_width)
                 cv2.imwrite(dnn_config['save_log_files'] + 'img' + str(batch_idx) + '.png', im1)
                 cv2.imwrite(dnn_config['save_log_files'] + 'label' + str(batch_idx) + '.png', im2)
+#                cv2.imwrite(dnn_config['save_log_files'] + 'predXgt' + str(batch_idx) + '.png', im3)
         #    test_loss /= len(test_loader.dataset)
         test_loss /= (len(test_list)*batch_size*img_width*img_height)
         texto = ('Test set: epoch {} Average loss {:.10f}, Accuracy: {}/{} {:.6f}\n'.format(epoch,
