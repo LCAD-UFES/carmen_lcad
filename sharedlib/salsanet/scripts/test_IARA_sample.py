@@ -62,7 +62,7 @@ def test_with_point_cloud(net, cfg, cloud_path):
                                                    xGridSize=0.2, yGridSize=0.3, zGridSize=0.3, maxImgHeight=cfg.IMAGE_HEIGHT,
                                                    maxImgWidth=cfg.IMAGE_WIDTH, maxImgDepth=64)
     #Rear View
-    rearView = PC2ImgConverter(imgChannel=cfg.IMAGE_CHANNEL, xRange=[-50, 0], yRange=[-12, 12], zRange=[-10, 8],
+    rearView = PC2ImgConverter(imgChannel=cfg.IMAGE_CHANNEL, xRange=[-50, 0], yRange=[-12, 12], zRange=[-10, 10],
                                                    xGridSize=0.2, yGridSize=0.3, zGridSize=0.3, maxImgHeight=cfg.IMAGE_HEIGHT,
                                                    maxImgWidth=cfg.IMAGE_WIDTH, maxImgDepth=64)
     
@@ -75,9 +75,9 @@ def test_with_point_cloud(net, cfg, cloud_path):
     #save_txt(resultFrontalPointCloud, "test", "front")
     #resultFrontalPointCloud = resultFrontalPointCloud.reshape((AZIMUTH_LEVEL*cfg.IMAGE_HEIGHT))
     
-    print('bird eye view image frontal shape: ', bevFrontalImg.shape) # (32, 256, 4)
+    print('bird eye view image frontal shape: ', bevRearImg.shape) # (32, 256, 4)
     #showBevImg(bevFrontalImg)
-    #showBevImg(bevRearImg)
+    showBevImg(bevRearImg)
 
     with tf.Session(graph=net.graph) as sess:
         net.initialize_vars(sess)
@@ -86,21 +86,21 @@ def test_with_point_cloud(net, cfg, cloud_path):
         pred_rear_img = net.predict_single_image(input_img=bevRearImg, session=sess)
         print('predicted image shape: ', pred_frontal_img.shape, ' type: ', pred_frontal_img.dtype, ' min val: ', pred_frontal_img.min(),
               ' max val: ', pred_frontal_img.max())
-        pointCloudSegmented = np.zeros(NUM_POINTS)
-        frontalView.getCloudsFromAnyImage(pred_frontal_img, lidar, pointCloudSegmented) 
-        rearView.getCloudsFromAnyImage(pred_rear_img, lidar, pointCloudSegmented)
+        # pointCloudSegmented = np.zeros(NUM_POINTS)
+        # frontalView.getCloudsFromAnyImage(pred_frontal_img, lidar, pointCloudSegmented) 
+        # rearView.getCloudsFromAnyImage(pred_rear_img, lidar, pointCloudSegmented)
 
-        pointCloudSegmented = pointCloudSegmented.reshape(VERTICAL_RESOLUTION,np.int(NUM_POINTS/VERTICAL_RESOLUTION))
-        print('pointCloudSegmented.shape=', pointCloudSegmented.shape)
-        # roadCloud, vehicleCloud = frontalView.getCloudsFromBEVImage(pred_frontal_img, bevFrontalCloud, postProcessing=True)
+        # pointCloudSegmented = pointCloudSegmented.reshape(VERTICAL_RESOLUTION,np.int(NUM_POINTS/VERTICAL_RESOLUTION))
+        # print('pointCloudSegmented.shape=', pointCloudSegmented.shape)
+        # # roadCloud, vehicleCloud = frontalView.getCloudsFromBEVImage(pred_frontal_img, bevFrontalCloud, postProcessing=True)
         # print('roadCloud.shape=', roadCloud.shape)
         # print('vehicleCloud.shape=', vehicleCloud.shape)
 
         # roadRCloud, vehicleRCloud = rearView.getCloudsFromBEVImage(pred_rear_img, bevRearCloud, postProcessing=True)
         # print('roadRearCloud.shape=', roadRCloud.shape)
         # print('vehicleRearCloud.shape=', vehicleRCloud.shape)
-
-        showPredImg(pred_frontal_img, pred_rear_img)
+        showBevImg(pred_rear_img)
+        #showPredImg(pred_frontal_img, pred_rear_img)
 
 def showPredImg(frontalimg=[], rearimg=[]):
     img = np.concatenate((rearimg, frontalimg),axis=1)

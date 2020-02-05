@@ -100,7 +100,7 @@ def salsanet_process_point_cloud(lidar, timestamp):
     rearView.getCloudsFromAnyImage(pred_rear_img, lidar, pointCloudSegmented)
 
     pointCloudSegmented = pointCloudSegmented.reshape((ZENITH_LEVEL, AZIMUTH_LEVEL))
-    print('pointCloudSegmented.shape=', pointCloudSegmented.shape)
-    showPredImg(pred_frontal_img, pred_rear_img)
+    #print('pointCloudSegmented.shape=', pointCloudSegmented.shape)
+    #showPredImg(pred_frontal_img, pred_rear_img)
     #showBevImg(pred_rear_img)
     return pointCloudSegmented
