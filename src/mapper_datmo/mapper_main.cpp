@@ -685,6 +685,19 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 		if (verbose >= 2)
 		{
 			vconcat(img_planar, img_planar_back, total);
+			int x = img_planar_depth;
+			int y = img_planar_depth;
+			cv::rectangle(total, 
+               cvPoint(x-10/2,y-10/2),
+               cvPoint(x+10/2,y+30/2),
+               CV_RGB(0,199,0), 1, 8
+            );
+			cv::line(total,
+				cvPoint(x,y-10/2),
+               	cvPoint(x,y+5/2),
+				CV_RGB(0,199,0), 1, 8
+			);
+			
 			resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
 			double timestamp = sensor_data->points_timestamp[cloud_index];
 			std::string scan = std::to_string(timestamp);
@@ -755,7 +768,7 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 				//Remove prob > 0.5 to show the segmentation everywhere
 				if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max)
 				{
-					int line = (sensor_params->vertical_resolution - j) * number_of_laser_shots + i;
+					int line = j * number_of_laser_shots + i;
 					int px = (double)velodyne_p3d.y() / map_resolution + img_planar_depth;
 					int py = (double)img_planar.rows - 1 - velodyne_p3d.x() / map_resolution;
 					int vel_seg = salsanet_segmented[line];
@@ -772,7 +785,7 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[1];
 								break;
 							default:
-								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[0];
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[16];
 							}
 						}
 						else
@@ -795,7 +808,7 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[1];
 								break;
 							default:
-								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[0];
+								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[16];
 							}
 						}
 					}
@@ -806,11 +819,25 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 		if (verbose >= 2)
 		{
 			vconcat(img_planar, img_planar_back, total);
+
+			int x = img_planar_depth;
+			int y = img_planar_depth;
+			cv::rectangle(total, 
+               cvPoint(x-10/2,y-10/2),
+               cvPoint(x+10/2,y+30/2),
+               CV_RGB(0,199,0), 1, 8
+            );
+			cv::line(total,
+				cvPoint(x,y-10/2),
+               	cvPoint(x,y+5/2),
+				CV_RGB(0,199,0), 1, 8
+			);
+
 			resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
 			double timestamp = sensor_data->points_timestamp[cloud_index];
 			std::string scan = std::to_string(timestamp);
-			imwrite("DATA/"+scan+"_salsanet.jpg", total);
-			cout << "SalsaNet: img " << scan << " saved" << endl;
+			imwrite("DATA/" + scan + "_salsanet.jpg", total);
+			std::cout << "SalsaNet: img " << scan << " saved" << std::endl;
 		}
 	}
 }
@@ -906,6 +933,20 @@ filter_sensor_data_using_rangenet(sensor_parameters_t *sensor_params, sensor_dat
 		if (verbose >= 2)
 		{
 			vconcat(img_planar, img_planar_back, total);
+			
+			int x = img_planar_depth;
+			int y = img_planar_depth;
+			cv::rectangle(total, 
+               cvPoint(x-10/2,y-10/2),
+               cvPoint(x+10/2,y+30/2),
+               CV_RGB(0,199,0), 1, 8
+            );
+			cv::line(total,
+				cvPoint(x,y-10/2),
+               	cvPoint(x,y+5/2),
+				CV_RGB(0,199,0), 1, 8
+			);
+
 			resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
 			double timestamp = sensor_data->points_timestamp[cloud_index];
 			std::string scan = std::to_string(timestamp);
@@ -1398,8 +1439,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 //	if (filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]) > 0)
 //		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 	//Showing squeezeseg classification
-	filter_sensor_data_using_squeezeseg(&sensors_params[sensor_number], &sensors_data[sensor_number]);
-	//filter_sensor_data_using_salsanet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+	//filter_sensor_data_using_squeezeseg(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+	filter_sensor_data_using_salsanet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
 	//filter_sensor_data_using_rangenet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
 
 ////New - Erase cells occupied by moving obstacles
@@ -1584,9 +1625,9 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-	squeezeseg_segmented = libsqueeze_seg_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
+	//squeezeseg_segmented = libsqueeze_seg_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
 	//rangenet_segmented = librangenet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
-	//salsanet_segmented = libsalsanet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
+	salsanet_segmented = libsalsanet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
 	sensor_msg_count[VELODYNE]++;
 	mapper_velodyne_partial_scan(VELODYNE, velodyne_message);
 }
@@ -2932,8 +2973,14 @@ main(int argc, char **argv)
 	/* Initialize all the relevant parameters */
 	read_parameters(argc, argv, &map_config, &car_config);
 
-	/* Register Python Context for SqueezeSeg*/
-	initialize_python_context();
+	/* Register Python Context for SqueezeSeg */
+	//initialize_python_context();
+
+	/* Register Python Context for SalsaNet */
+	initialize_python_context_salsanet();
+
+	/* Register TensorRT context for */
+	//librangenet_initialize();
 
 	initialize_transforms();
 

@@ -29,7 +29,7 @@ def initialize(vertical_resolution):
     #cfg.IMAGE_WIDTH = 512          # image width
     #cfg.IMAGE_HEIGHT = 32          # image height
     # get trained model checkpoints
-    model_ckp_name = os.getenv("CARMEN_HOME") + '/sharedlib/salsanet/logs/salsaNet_trained/model.chk-300'
+    model_ckp_name = os.getenv("CARMEN_HOME") + "/sharedlib/salsanet/logs/salsaNet_trained/model.chk-300"
 
     # load the trained model
     net = SegmenterNet(cfg, model_ckp_name)
@@ -43,12 +43,13 @@ def initialize(vertical_resolution):
     print ("       SalsaNet: Pretrained Model and Tensorflow loaded!")
     print ("-------------------------------------------------------\n\n")
 
-def showPredImg(img=[]):
+def showPredImg(frontalimg=[], rearimg=[]):
+    img = np.concatenate((rearimg, frontalimg),axis=1)
+    showBevImg(img)
 
+def showBevImg(img=[]):
     plt.imshow(img)
     plt.axis('off')
-
-    #plt.show()
     plt.show(block=False)
     plt.pause(2)
     plt.close()
@@ -74,22 +75,32 @@ def salsanet_process_point_cloud(lidar, timestamp):
     #    lidar.shape))
     # define the region of interest for bird eye view image generation
     #Frontal View
-    pc2img = PC2ImgConverter(imgChannel=cfg.IMAGE_CHANNEL, xRange=[0, 50], yRange=[-3, 6], zRange=[-10, 8],
+    frontalView = PC2ImgConverter(imgChannel=cfg.IMAGE_CHANNEL, xRange=[0, 50], yRange=[-12, 12], zRange=[-10, 8],
                                                    xGridSize=0.2, yGridSize=0.3, zGridSize=0.3, maxImgHeight=cfg.IMAGE_HEIGHT,
                                                    maxImgWidth=cfg.IMAGE_WIDTH, maxImgDepth=64)
-    #Rear View
-    pc2img = PC2ImgConverter(imgChannel=cfg.IMAGE_CHANNEL, xRange=[-50, 0], yRange=[-3, 6], zRange=[-10, 8],
+    #Rear View - Not right yet - needs correction
+    rearView = PC2ImgConverter(imgChannel=cfg.IMAGE_CHANNEL, xRange=[-50, 0], yRange=[-12, 12], zRange=[-10, 8],
                                                    xGridSize=0.2, yGridSize=0.3, zGridSize=0.3, maxImgHeight=cfg.IMAGE_HEIGHT,
                                                    maxImgWidth=cfg.IMAGE_WIDTH, maxImgDepth=64)
-
-    bevImg, bevCloud = pc2img.getBEVImage(lidar)
-    bevImg = bevImg.astype('float32') / 255
-    #print('bevCloud shape: ', bevCloud.shape) # (42419, 7)
-    #print('bird eye view image shape: ', bevImg.shape) # (64, 512, 4)
     
-    pred_img = net.predict_single_image(input_img=bevImg, session=sess)
-    print('predicted image shape: ', pred_img.shape, ' type: ', pred_img.dtype, ' min val: ', pred_img.min(),
-            ' max val: ', pred_img.max())
-    #roadCloud, vehicleCloud = pc2img.getCloudsFromBEVImage(pred_img, bevCloud, postProcessing=True)
 
-    showPredImg(pred_img)
+    bevFrontalImg, bevFrontalCloud = frontalView.getBEVImage(lidar)
+    bevFrontalImg = bevFrontalImg.astype('float32') / 255
+    bevRearImg, bevRearCloud = rearView.getBEVImage(lidar)
+    bevRearImg = bevRearImg.astype('float32') / 255
+    #showBevImg(bevRearImg)
+    
+    pred_frontal_img = net.predict_single_image(input_img=bevFrontalImg, session=sess)
+    pred_rear_img = net.predict_single_image(input_img=bevRearImg, session=sess)
+    print('predicted image shape: ', pred_frontal_img.shape, ' type: ', pred_frontal_img.dtype, ' min val: ', pred_frontal_img.min(),
+          ' max val: ', pred_frontal_img.max())
+    s = (AZIMUTH_LEVEL * ZENITH_LEVEL)
+    pointCloudSegmented = np.zeros(s, dtype=np.int64)
+    frontalView.getCloudsFromAnyImage(pred_frontal_img, lidar, pointCloudSegmented) 
+    rearView.getCloudsFromAnyImage(pred_rear_img, lidar, pointCloudSegmented)
+
+    pointCloudSegmented = pointCloudSegmented.reshape((ZENITH_LEVEL, AZIMUTH_LEVEL))
+    print('pointCloudSegmented.shape=', pointCloudSegmented.shape)
+    showPredImg(pred_frontal_img, pred_rear_img)
+    #showBevImg(pred_rear_img)
+    return pointCloudSegmented

@@ -35,7 +35,7 @@ def lidar_config():
   cfg.DATA_AUGMENTATION = True   # Whether to do data augmentation
   cfg.CHANNEL_LABELS = [ 'mean',  'max', 'ref',  'den']   #channel names
   cfg.IMAGE_WIDTH = 256          # image width
-  cfg.IMAGE_HEIGHT = 32          # image height
+  cfg.IMAGE_HEIGHT = 128          # image height
   cfg.IMAGE_CHANNEL = len(cfg.CHANNEL_LABELS) # image channel
 
   # paths
