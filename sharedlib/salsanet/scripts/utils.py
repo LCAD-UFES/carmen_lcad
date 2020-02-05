@@ -320,3 +320,21 @@ class PC2ImgConverter(object):
         return roadCloud, vehCloud
 
 
+    def getCloudsFromAnyImage(self, predImg, pointCloud, pointCloudSegmented):
+        """ crop topviewcloud based on the network prediction image  """
+        teste = 0
+        for p in range(0, len(pointCloud)):
+
+            xVal = pointCloud[p][0]
+            yVal = pointCloud[p][1]
+            zVal = pointCloud[p][2]
+
+            if self.xRange[0] < xVal < self.xRange[1] and self.yRange[0] < yVal < self.yRange[1] and self.zRange[0] < zVal < self.zRange[1]:
+                pixelX = np.int(np.floor((xVal - self.xRange[0]) / self.xGridSize))
+                pixelY = np.int(self.topViewImgHeight - np.floor((yVal - self.yRange[0]) / self.yGridSize))
+                classVal = predImg[pixelY, pixelX]
+                pointCloudSegmented[p] = classVal
+                if classVal > 0:
+                    teste = teste + 1
+        #print ('points' , teste)
+

@@ -114,9 +114,9 @@ fill_data_vector(double horizontal_angle, double vertical_angle, double range, d
 }
 
 long long int *
-erase_moving_obstacles_cells_salsanet(int sensor_number, carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *sensors_params)
+libsalsanet_process_moving_obstacles_cells(int sensor_number, carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *sensors_params)
 {
-	long long int *salsanet_segmented = NULL;
+	long long int *salsanet_segmented;
 	double timestamp = velodyne_message->timestamp;
 	int shots_to_squeeze = velodyne_message->number_of_32_laser_shots;
 	int vertical_resolution = sensors_params[sensor_number].vertical_resolution;
@@ -128,13 +128,24 @@ erase_moving_obstacles_cells_salsanet(int sensor_number, carmen_velodyne_partial
 		for (int i = 0; i < shots_to_squeeze; i++, line++)
 		{
 			double vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sensors_params[sensor_number].vertical_correction[j]));
-			double horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(-velodyne_message->partial_scan[i].angle));
+			double horizontal_angle = carmen_normalize_theta(-carmen_degrees_to_radians(-velodyne_message->partial_scan[i].angle));
 			double range = (((double)velodyne_message->partial_scan[i].distance[sensors_params[sensor_number].ray_order[j]]) / 500.0);
 			double intensity = ((double)velodyne_message->partial_scan[i].intensity[sensors_params[sensor_number].ray_order[j]]) / 100.0;
 			fill_data_vector(horizontal_angle, vertical_angle, range, intensity, &data[0], line);
 		}
 	}
 	salsanet_segmented = libsalsanet_process_point_cloud(vertical_resolution, shots_to_squeeze, &data[0], timestamp);
+	/*int test = 0;
+	for (int j = 0, line = 0; j < vertical_resolution; j++)
+	{
+		for (int i = 0; i < shots_to_squeeze; i++, line++)
+		{
+			if(salsanet_segmented[line] > 0){
+				test = test + 1;
+			}
+		}
+	}
+	std::cout << "Retorno: " << test << std::endl;*/
 	return salsanet_segmented;
 }
 
