@@ -699,10 +699,13 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 			);
 			
 			resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
-			double timestamp = sensor_data->points_timestamp[cloud_index];
+			/*double timestamp = sensor_data->points_timestamp[cloud_index];
 			std::string scan = std::to_string(timestamp);
 			imwrite("DATA/"+scan+"_squeezeseg.jpg", total);
-			cout << "SqueezeSeg: img " << scan << " saved" << endl;
+			cout << "SqueezeSeg: img " << scan << " saved" << endl;*/
+
+			imshow("Pointcloud SqueezeSeg", total);
+			cv::waitKey(1);
 		}
 	}
 }
