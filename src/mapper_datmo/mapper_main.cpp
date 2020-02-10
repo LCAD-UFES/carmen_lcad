@@ -582,6 +582,8 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 	cv::Mat total;
 	int thread_id = omp_get_thread_num();
 
+	vector<image_cartesian> points;
+
 	int min_shots = 1024;
 	if (number_of_laser_shots > min_shots)
 	{
@@ -600,8 +602,19 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 				tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
 				double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][j];
 				double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
+				
 				if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
 				{
+					image_cartesian point;
+					point.shot_number = j;
+					point.ray_number  = i;
+					//point.image_x     = image_x;
+					//point.image_y     = image_y;
+					point.cartesian_x = velodyne_p3d.x();
+					point.cartesian_y = velodyne_p3d.y();
+					//point.cartesian_z = camera_p3d.z();
+					points.push_back(point);
+
 					if (verbose >= 2)
 					{
 						int px = (double)velodyne_p3d.y() / map_resolution + img_planar_depth;
@@ -632,6 +645,7 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 					int px = (double)velodyne_p3d.y() / map_resolution + img_planar_depth;
 					int py = (double)img_planar.rows - 1 - velodyne_p3d.x() / map_resolution;
 					int vel_seg = squeezeseg_segmented[line];
+
 					if (vel_seg != 0)
 					{
 						if (px >= 0.0 && px < img_planar.cols && py >= 0.0 && py < img_planar.rows)
@@ -639,16 +653,16 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 							switch (vel_seg)
 							{
 							case 1:
-								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[1];
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[1];   // Car
 								break;
 							case 2:
-								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[6];
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[6];   // Pearson
 								break;
 							case 3:
-								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[2];
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[2];   // Bycicle Cyclist
 								break;
 							default:
-								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[5];
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[5];   // Other Vehicles
 							}
 						}
 						else
@@ -682,21 +696,97 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 			}
 		}
 
+		vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.5, 5, points);
+
+		for (unsigned int i = 0; i < filtered_points.size(); i++)
+		{
+			bool is_moving_obstacle = false;
+			unsigned int cont = 0;
+			for (unsigned int j = 0; j < filtered_points[i].size(); j++)
+			{
+				int line = (sensor_params->vertical_resolution - filtered_points[i][j].shot_number) * number_of_laser_shots + filtered_points[i][j].ray_number;
+				if (squeezeseg_segmented[line] > 0 && squeezeseg_segmented[line] <= 3)
+					cont++;
+				
+				if (cont > 10 || cont > (filtered_points[i].size() / 5))
+				{
+					is_moving_obstacle = true;
+					break;
+				}
+			}
+
+			if (is_moving_obstacle)
+			{
+				for (unsigned int j = 0; j < filtered_points[i].size(); j++)
+				{
+					int p = filtered_points[i][j].shot_number * sensor_params->vertical_resolution + filtered_points[i][j].ray_number;
+					sensor_data->points[cloud_index].sphere_points[p].length = 0.01; // Make this laser ray out of range
+					
+					if (verbose >= 2)   // TODO color the clusters on the camera image
+					{
+						int px = (double)filtered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
+						int py = (double)img_planar.rows - 1 - filtered_points[i][j].cartesian_x / map_resolution;
+
+						int line = (sensor_params->vertical_resolution - filtered_points[i][j].shot_number) * number_of_laser_shots + filtered_points[i][j].ray_number;
+						int vel_seg = squeezeseg_segmented[line];
+
+						if (px >= 0.0 && px < img_planar.cols && py >= 0.0 && py < img_planar.rows)
+						{
+							switch (vel_seg)
+							{
+							case 1:
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[1];   // Car
+								break;
+							case 2:
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[6];   // Pearson
+								break;
+							case 3:
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[2];   // Bycicle Cyclist
+								break;
+							default:
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0,199,0);   // Other Vehicles
+							}
+						}
+						else
+						{
+							// The back of img_planar
+							if (abs(px) >= img_planar_back.cols)
+							{
+								px = abs(px) - img_planar_back.cols;
+							}
+							if (abs(py) >= img_planar_back.rows)
+							{
+								py = abs(py) - img_planar_back.rows;
+							}
+							switch (vel_seg)
+							{
+							case 1:
+								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[1];
+								break;
+							case 2:
+								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[6];
+								break;
+							case 3:
+								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[2];
+								break;
+							default:
+								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = cv::Vec3b(0,199,0);
+							}
+						}
+					}
+				}
+			}
+		}
+
 		if (verbose >= 2)
 		{
 			vconcat(img_planar, img_planar_back, total);
 			int x = img_planar_depth;
 			int y = img_planar_depth;
-			cv::rectangle(total, 
-               cvPoint(x-10/2,y-10/2),
-               cvPoint(x+10/2,y+30/2),
-               CV_RGB(0,199,0), 1, 8
-            );
-			cv::line(total,
-				cvPoint(x,y-10/2),
-               	cvPoint(x,y+5/2),
-				CV_RGB(0,199,0), 1, 8
-			);
+
+			cv::rectangle(total, cvPoint(x-10/2,y-10/2), cvPoint(x+10/2,y+30/2), CV_RGB(0,199,0), 1, 8);
+			
+			cv::line(total, cvPoint(x,y-10/2), cvPoint(x,y+5/2), CV_RGB(0,199,0), 1, 8);
 			
 			resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
 			/*double timestamp = sensor_data->points_timestamp[cloud_index];
