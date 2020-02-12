@@ -927,7 +927,7 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 					//}
 				}
 				//Remove prob > 0.5 to show the segmentation everywhere
-				if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max)
+				if (/*prob > 0.5 &&*/ range > MIN_RANGE && range < sensor_params->range_max)
 				{
 					int line = j * number_of_laser_shots + i;
 					int px = (double)velodyne_p3d.y() / map_resolution + img_planar_depth;
@@ -981,14 +981,22 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 		for (unsigned int i = 0; i < filtered_points.size(); i++)
 		{
 			bool is_moving_obstacle = false;
-			unsigned int cont = 0;
+			unsigned int cont = 0, contCar = 0;
 			for (unsigned int j = 0; j < filtered_points[i].size(); j++)
 			{
 				int line = filtered_points[i][j].shot_number * number_of_laser_shots + filtered_points[i][j].ray_number;
-				if (salsanet_segmented[line] > 0 && salsanet_segmented[line] <= 3)
-					cont++;
+				if (salsanet_segmented[line] > 0 && salsanet_segmented[line] <= 3){
+					switch (salsanet_segmented[line])
+					{
+					case 2:
+						contCar++;   // Car
+						break;
+					default:
+						cont++;
+					}
+				}
 				
-				if (cont > 10 || cont > (filtered_points[i].size() / 5))
+				if (contCar > (filtered_points[i].size() / 3))
 				{
 					is_moving_obstacle = true;
 					break;
@@ -1001,27 +1009,20 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 				{
 					int p = filtered_points[i][j].shot_number * sensor_params->vertical_resolution + filtered_points[i][j].ray_number;
 					sensor_data->points[cloud_index].sphere_points[p].length = 0.01; // Make this laser ray out of range
-					
 					if (verbose >= 2)   // TODO color the clusters on the camera image
 					{
 						int px = (double)filtered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
 						int py = (double)img_planar.rows - 1 - filtered_points[i][j].cartesian_x / map_resolution;
 
-						int line = filtered_points[i][j].shot_number * number_of_laser_shots + filtered_points[i][j].ray_number;
-						int vel_seg = salsanet_segmented[line];
-
+						//int line = (sensor_params->vertical_resolution - filtered_points[i][j].shot_number) * number_of_laser_shots + filtered_points[i][j].ray_number;
+						int class_seg = 0;
+						if(contCar > 0){
+							class_seg = 2;
+						}
 						if (px >= 0.0 && px < img_planar.cols && py >= 0.0 && py < img_planar.rows)
 						{
-							switch (vel_seg)
-							{
-							case 1: //road
-								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[9];
-								break;
-							case 2: //vehicle
+							if (class_seg == 2){ //vehicle
 								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[1];
-								break;
-							default:
-								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[16];
 							}
 						}
 						else
@@ -1035,19 +1036,39 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 							{
 								py = abs(py) - img_planar_back.rows;
 							}
-							switch (vel_seg)
-							{
-							case 1:
-								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[9];
-								break;
-							case 2:
+							if (class_seg == 2){
 								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[1];
-								break;
-							default:
-								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[16];
 							}
 						}
 					}
+				}
+			}else{
+				//Color black because was not identified as movable object
+				for (unsigned int j = 0; j < filtered_points[i].size(); j++)
+				{
+					if (verbose >= 2)   // TODO color the clusters on the camera image
+					{
+						int px = (double)filtered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
+						int py = (double)img_planar.rows - 1 - filtered_points[i][j].cartesian_x / map_resolution;
+						if (px >= 0.0 && px < img_planar.cols && py >= 0.0 && py < img_planar.rows)
+						{
+							img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[0];   // Test
+						}
+						else
+						{
+							// The back of img_planar
+							if (abs(px) >= img_planar_back.cols)
+							{
+								px = abs(px) - img_planar_back.cols;
+							}
+							if (abs(py) >= img_planar_back.rows)
+							{
+								py = abs(py) - img_planar_back.rows;
+							}
+							img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) =  colormap_semantic[0];
+						}
+					}
+
 				}
 			}
 		}
