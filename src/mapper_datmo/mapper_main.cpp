@@ -653,7 +653,7 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[1];   // Car
 								break;
 							case 2:
-								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[6];   // Pearson
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[6];   // Person
 								break;
 							case 3:
 								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[2];   // Bycicle Cyclist
@@ -699,13 +699,38 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 		{
 			bool is_moving_obstacle = false;
 			unsigned int cont = 0;
+			unsigned int contCar = 0, contPerson = 0, contBycicle = 0;
 			for (unsigned int j = 0; j < filtered_points[i].size(); j++)
 			{
 				int line = (sensor_params->vertical_resolution - filtered_points[i][j].shot_number) * number_of_laser_shots + filtered_points[i][j].ray_number;
-				if (squeezeseg_segmented[line] > 0 && squeezeseg_segmented[line] <= 3)
-					cont++;
+				if (squeezeseg_segmented[line] > 0 && squeezeseg_segmented[line] <= 3){
+					switch (squeezeseg_segmented[line])
+					{
+					case 1:
+						contCar++;   // Car
+						break;
+					case 2:
+						contPerson++;	//Person
+						break;
+					case 3:
+						contBycicle++;   // Bycicle Cyclist
+						break;
+					default:
+						cont++;
+					}
+				}
 				
-				if (cont > 10 || cont > (filtered_points[i].size() / 5))
+				if (contCar > (filtered_points[i].size() / 3))
+				{
+					is_moving_obstacle = true;
+					break;
+				}
+				if (contPerson > (filtered_points[i].size() / 3))
+				{
+					is_moving_obstacle = true;
+					break;
+				}
+				if (contBycicle > (filtered_points[i].size() / 3))
 				{
 					is_moving_obstacle = true;
 					break;
@@ -724,12 +749,21 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 						int px = (double)filtered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
 						int py = (double)img_planar.rows - 1 - filtered_points[i][j].cartesian_x / map_resolution;
 
-						int line = (sensor_params->vertical_resolution - filtered_points[i][j].shot_number) * number_of_laser_shots + filtered_points[i][j].ray_number;
-						int vel_seg = squeezeseg_segmented[line];
+						//int line = (sensor_params->vertical_resolution - filtered_points[i][j].shot_number) * number_of_laser_shots + filtered_points[i][j].ray_number;
+						int class_seg = 0;
+						if(contCar > contPerson && contCar > contBycicle){
+							class_seg = 1;
+						}else{
+							if(contPerson > contBycicle){
+								class_seg = 2;
+							}else{
+								class_seg = 3;
+							}
+						}
 
 						if (px >= 0.0 && px < img_planar.cols && py >= 0.0 && py < img_planar.rows)
 						{
-							switch (vel_seg)
+							switch (class_seg)
 							{
 							case 1:
 								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[1];   // Car
@@ -741,7 +775,7 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[2];   // Bycicle Cyclist
 								break;
 							default:
-								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0,199,0);   // Other Vehicles
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[17];   // Other Vehicles
 							}
 						}
 						else
@@ -755,7 +789,7 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 							{
 								py = abs(py) - img_planar_back.rows;
 							}
-							switch (vel_seg)
+							switch (class_seg)
 							{
 							case 1:
 								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[1];
@@ -767,10 +801,38 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[2];
 								break;
 							default:
-								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = cv::Vec3b(0,199,0);
+								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[17];
 							}
 						}
 					}
+				}
+			}else{
+				//Color black because was not identified as movable object
+				for (unsigned int j = 0; j < filtered_points[i].size(); j++)
+				{
+					if (verbose >= 2)   // TODO color the clusters on the camera image
+					{
+						int px = (double)filtered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
+						int py = (double)img_planar.rows - 1 - filtered_points[i][j].cartesian_x / map_resolution;
+						if (px >= 0.0 && px < img_planar.cols && py >= 0.0 && py < img_planar.rows)
+						{
+							img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[0];   // Test
+						}
+						else
+						{
+							// The back of img_planar
+							if (abs(px) >= img_planar_back.cols)
+							{
+								px = abs(px) - img_planar_back.cols;
+							}
+							if (abs(py) >= img_planar_back.rows)
+							{
+								py = abs(py) - img_planar_back.rows;
+							}
+							img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) =  colormap_semantic[0];
+						}
+					}
+
 				}
 			}
 		}
@@ -922,8 +984,8 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 			unsigned int cont = 0;
 			for (unsigned int j = 0; j < filtered_points[i].size(); j++)
 			{
-				int line = (sensor_params->vertical_resolution - filtered_points[i][j].shot_number) * number_of_laser_shots + filtered_points[i][j].ray_number;
-				if (squeezeseg_segmented[line] > 0 && squeezeseg_segmented[line] <= 3)
+				int line = filtered_points[i][j].shot_number * number_of_laser_shots + filtered_points[i][j].ray_number;
+				if (salsanet_segmented[line] > 0 && salsanet_segmented[line] <= 3)
 					cont++;
 				
 				if (cont > 10 || cont > (filtered_points[i].size() / 5))
@@ -945,24 +1007,21 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 						int px = (double)filtered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
 						int py = (double)img_planar.rows - 1 - filtered_points[i][j].cartesian_x / map_resolution;
 
-						int line = (sensor_params->vertical_resolution - filtered_points[i][j].shot_number) * number_of_laser_shots + filtered_points[i][j].ray_number;
-						int vel_seg = squeezeseg_segmented[line];
+						int line = filtered_points[i][j].shot_number * number_of_laser_shots + filtered_points[i][j].ray_number;
+						int vel_seg = salsanet_segmented[line];
 
 						if (px >= 0.0 && px < img_planar.cols && py >= 0.0 && py < img_planar.rows)
 						{
 							switch (vel_seg)
 							{
-							case 1:
-								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[1];   // Car
+							case 1: //road
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[9];
 								break;
-							case 2:
-								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[6];   // Pearson
-								break;
-							case 3:
-								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[2];   // Bycicle Cyclist
+							case 2: //vehicle
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[1];
 								break;
 							default:
-								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0,199,0);   // Other Vehicles
+								img_planar.at<cv::Vec3b>(cv::Point(px, py)) = colormap_semantic[16];
 							}
 						}
 						else
@@ -979,16 +1038,13 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 							switch (vel_seg)
 							{
 							case 1:
-								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[1];
+								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[9];
 								break;
 							case 2:
-								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[6];
-								break;
-							case 3:
-								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[2];
+								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[1];
 								break;
 							default:
-								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = cv::Vec3b(0,199,0);
+								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[16];
 							}
 						}
 					}
@@ -1013,7 +1069,7 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 			);
 
 			resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
-			imshow("Pointcloud SqueezeSeg", total);
+			imshow("Pointcloud SalsaNet", total);
 			cv::waitKey(1);
 			/*
 			double timestamp = sensor_data->points_timestamp[cloud_index];
