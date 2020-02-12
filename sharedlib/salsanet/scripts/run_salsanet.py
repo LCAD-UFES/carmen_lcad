@@ -79,25 +79,25 @@ def salsanet_process_point_cloud(lidar, timestamp):
                                                    xGridSize=0.2, yGridSize=0.3, zGridSize=0.3, maxImgHeight=cfg.IMAGE_HEIGHT,
                                                    maxImgWidth=cfg.IMAGE_WIDTH, maxImgDepth=64)
     #Rear View - Not right yet - needs correction
-    rearView = PC2ImgConverter(imgChannel=cfg.IMAGE_CHANNEL, xRange=[-50, 0], yRange=[-12, 12], zRange=[-10, 8],
-                                                   xGridSize=0.2, yGridSize=0.3, zGridSize=0.3, maxImgHeight=cfg.IMAGE_HEIGHT,
-                                                   maxImgWidth=cfg.IMAGE_WIDTH, maxImgDepth=64)
+    #rearView = PC2ImgConverter(imgChannel=cfg.IMAGE_CHANNEL, xRange=[-50, 0], yRange=[-12, 12], zRange=[-10, 8],
+    #                                               xGridSize=0.2, yGridSize=0.3, zGridSize=0.3, maxImgHeight=cfg.IMAGE_HEIGHT,
+    #                                               maxImgWidth=cfg.IMAGE_WIDTH, maxImgDepth=64)
     
 
     bevFrontalImg, bevFrontalCloud = frontalView.getBEVImage(lidar)
     bevFrontalImg = bevFrontalImg.astype('float32') / 255
-    bevRearImg, bevRearCloud = rearView.getBEVImage(lidar)
-    bevRearImg = bevRearImg.astype('float32') / 255
+    #bevRearImg, bevRearCloud = rearView.getBEVImage(lidar)
+    #bevRearImg = bevRearImg.astype('float32') / 255
     #showBevImg(bevRearImg)
     
     pred_frontal_img = net.predict_single_image(input_img=bevFrontalImg, session=sess)
-    pred_rear_img = net.predict_single_image(input_img=bevRearImg, session=sess)
+    #pred_rear_img = net.predict_single_image(input_img=bevRearImg, session=sess)
     print('predicted image shape: ', pred_frontal_img.shape, ' type: ', pred_frontal_img.dtype, ' min val: ', pred_frontal_img.min(),
           ' max val: ', pred_frontal_img.max())
     s = (AZIMUTH_LEVEL * ZENITH_LEVEL)
     pointCloudSegmented = np.zeros(s, dtype=np.int64)
     frontalView.getCloudsFromAnyImage(pred_frontal_img, lidar, pointCloudSegmented) 
-    rearView.getCloudsFromAnyImage(pred_rear_img, lidar, pointCloudSegmented)
+    #rearView.getCloudsFromAnyImage(pred_rear_img, lidar, pointCloudSegmented)
 
     pointCloudSegmented = pointCloudSegmented.reshape((ZENITH_LEVEL, AZIMUTH_LEVEL))
     #print('pointCloudSegmented.shape=', pointCloudSegmented.shape)
