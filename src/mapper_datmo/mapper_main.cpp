@@ -585,7 +585,7 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 	vector<image_cartesian> points;
 
 	int min_shots = 1024;
-	if (number_of_laser_shots > min_shots)
+	if (number_of_laser_shots > min_shots && squeezeseg_segmented != NULL)
 	{
 		for (int i = 0; i < number_of_laser_shots; i++)
 		{
@@ -692,7 +692,6 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 				}
 			}
 		}
-
 		vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.5, 5, points);
 
 		for (unsigned int i = 0; i < filtered_points.size(); i++)
@@ -1698,8 +1697,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 //	if (filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]) > 0)
 //		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 	//Showing squeezeseg classification
-	//filter_sensor_data_using_squeezeseg(&sensors_params[sensor_number], &sensors_data[sensor_number]);
-	filter_sensor_data_using_salsanet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+	filter_sensor_data_using_squeezeseg(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+	//filter_sensor_data_using_salsanet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
 	//filter_sensor_data_using_rangenet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
 
 ////New - Erase cells occupied by moving obstacles
@@ -1884,9 +1883,9 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-	//squeezeseg_segmented = libsqueeze_seg_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
+	squeezeseg_segmented = libsqueeze_seg_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
 	//rangenet_segmented = librangenet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
-	salsanet_segmented = libsalsanet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
+	//salsanet_segmented = libsalsanet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
 	sensor_msg_count[VELODYNE]++;
 	mapper_velodyne_partial_scan(VELODYNE, velodyne_message);
 }
@@ -3233,10 +3232,10 @@ main(int argc, char **argv)
 	read_parameters(argc, argv, &map_config, &car_config);
 
 	/* Register Python Context for SqueezeSeg */
-	//initialize_python_context();
+	initialize_python_context();
 
 	/* Register Python Context for SalsaNet */
-	initialize_python_context_salsanet();
+	//initialize_python_context_salsanet();
 
 	/* Register TensorRT context for */
 	//librangenet_initialize();
