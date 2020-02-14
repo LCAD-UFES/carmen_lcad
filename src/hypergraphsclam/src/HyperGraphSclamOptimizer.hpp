@@ -6,6 +6,7 @@
 #include <exception>
 #include <cmath>
 #include <map>
+#include <set>
 #include <utility>
 #include <list>
 
@@ -50,6 +51,10 @@ namespace hyper {
 #define DEFAULT_VELODYNE_LOOP_ICP_XX_VAR 0.25
 #define DEFAULT_VELODYNE_LOOP_ICP_YY_VAR 0.25
 #define DEFAULT_VELODYNE_LOOP_ICP_HH_VAR 0.05
+
+#define DEFAULT_VELODYNE_EXTERNAL_LOOP_ICP_XX_VAR 1.0
+#define DEFAULT_VELODYNE_EXTERNAL_LOOP_ICP_YY_VAR 1.0
+#define DEFAULT_VELODYNE_EXTERNAL_LOOP_ICP_HH_VAR 0.5
 
 #define DEFAULT_XSENS_CONSTRAINT_VAR M_PI_4
 
@@ -102,6 +107,9 @@ namespace hyper {
 
             // velodyne loop variances
             double velodyne_loop_xx_var, velodyne_loop_yy_var, velodyne_loop_hh_var;
+
+            // velodyne external loop variances
+            double velodyne_external_loop_icp_xx_var, velodyne_external_loop_icp_yy_var, velodyne_external_loop_icp_hh_var;
 
             // xsens default constraint variances
             double xsens_constraint_var;
@@ -177,6 +185,8 @@ namespace hyper {
 
             std::map<std::string, std::vector<g2o::VertexSE2*> > logs;
 
+            std::set<unsigned> els;
+
             // the ids offsets given the initial calibration vertices
             unsigned vertex_id_offset;
 
@@ -199,7 +209,13 @@ namespace hyper {
             void AddSickEdge(std::stringstream &ss, Eigen::Matrix3d &sick_icp_information);
 
             // read the velodyne edge from the input stream and save it to the optimizer
+            void AddVelodyneEdge(unsigned from, unsigned to, double x, double y, double theta, Eigen::Matrix3d &velodyne_icp_information);
+
+            // read the velodyne edge from the input stream and save it to the optimizer
             void AddVelodyneEdge(std::stringstream &ss, Eigen::Matrix3d &velodyne_icp_information);
+
+            // read the velodyne external loop edge and append it to the optimizer while saving the from/to indexes
+            void AddExternalVelodyneEdge(std::stringstream &ss, Eigen::Matrix3d velodyne_external_loop_information);
 
             // add the odometry calibration edge to the optimizer
             void AddOdomCalibrationEdge(
@@ -270,6 +286,9 @@ namespace hyper {
 
             // load the data into the optimizer
             void LoadHyperGraphToOptimizer();
+
+            // save the external loops for ploting
+            void SaveExternalLoops();
 
             // show the sensor pose otimization
             void ShowAllParametersVertices();

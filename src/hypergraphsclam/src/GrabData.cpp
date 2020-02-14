@@ -15,6 +15,8 @@
 
 #include <pcl/kdtree/kdtree_flann.h>
 
+#include <sstream>
+
 using namespace hyper;
 
 // the main constructor
@@ -47,6 +49,7 @@ GrabData::GrabData() :
     visual_odometry_min_distance(VISUAL_ODOMETRY_MIN_DISTANCE),
     icp_translation_confidence_factor(ICP_TRANSLATION_CONFIDENCE_FACTOR),
     save_accumulated_point_clouds(false),
+    save_loop_closure_point_clouds(false),
     use_velodyne_odometry(true),
     use_sick_odometry(true),
     use_bumblebee_odometry(true),
@@ -56,8 +59,15 @@ GrabData::GrabData() :
     use_external_sick_loop(false),
     use_bumblebee_loop(true),
     use_fake_gps(false),
+    use_gps_orientation(false),
     use_restricted_loops(false),
-    grab_data_id(0) {}
+    grab_data_id(0),
+    min_speed(MIN_SPEED),
+    initial_guess_pose(),
+    gps_error(0.0, 4.0, M_PI_2)
+{
+}
+
 
 // the main constructor
 GrabData::GrabData(unsigned _gid) :
@@ -89,6 +99,7 @@ GrabData::GrabData(unsigned _gid) :
     visual_odometry_min_distance(VISUAL_ODOMETRY_MIN_DISTANCE),
     icp_translation_confidence_factor(ICP_TRANSLATION_CONFIDENCE_FACTOR),
     save_accumulated_point_clouds(false),
+    save_loop_closure_point_clouds(false),
     use_velodyne_odometry(true),
     use_sick_odometry(true),
     use_bumblebee_odometry(true),
@@ -98,8 +109,15 @@ GrabData::GrabData(unsigned _gid) :
     use_external_sick_loop(false),
     use_bumblebee_loop(true),
     use_fake_gps(false),
+    use_gps_orientation(false),
     use_restricted_loops(false),
-    grab_data_id(_gid) {}
+    grab_data_id(_gid),
+    min_speed(MIN_SPEED),
+    initial_guess_pose(),
+    gps_error(0.0, 5.0, M_PI_2)
+{
+}
+
 
 // the main destructor
 GrabData::~GrabData()
@@ -138,6 +156,7 @@ GrabData::GrabData(GrabData &&gd) :
     visual_odometry_min_distance(gd.visual_odometry_min_distance),
     icp_translation_confidence_factor(gd.icp_translation_confidence_factor),
     save_accumulated_point_clouds(gd.save_accumulated_point_clouds),
+    save_loop_closure_point_clouds(gd.save_loop_closure_point_clouds),
     use_velodyne_odometry(gd.use_velodyne_odometry),
     use_sick_odometry(gd.use_sick_odometry),
     use_bumblebee_odometry(gd.use_bumblebee_odometry),
@@ -147,8 +166,12 @@ GrabData::GrabData(GrabData &&gd) :
     use_external_sick_loop(gd.use_sick_loop),
     use_bumblebee_loop(gd.use_bumblebee_loop),
     use_fake_gps(gd.use_fake_gps),
+    use_gps_orientation(gd.use_gps_orientation),
     use_restricted_loops(gd.use_restricted_loops),
-    grab_data_id(gd.grab_data_id)
+    grab_data_id(gd.grab_data_id),
+    min_speed(gd.min_speed),
+    initial_guess_pose(gd.initial_guess_pose),
+    gps_error(gd.gps_error)
 {
 }
 
@@ -165,7 +188,6 @@ void GrabData::SeparateMessages()
     velodyne_messages.clear();
     bumblebee_messages.clear();
 
-    // helpers
     StampedMessagePtrVector::iterator it(raw_messages.begin());
     StampedMessagePtrVector::iterator end(raw_messages.end());
 
@@ -181,40 +203,34 @@ void GrabData::SeparateMessages()
     // the odometry messages with invalid speed counter
     int zeros = max_zeros;
 
-    // try to downcast
     // find the first valid odometry value
     while (end != it)
     {
-        // try to downcast
         StampedOdometryPtr odom = dynamic_cast<StampedOdometryPtr>(*it);
 
-        if (nullptr != odom && 0.001 < std::fabs(odom->v))
+        if (nullptr != odom && min_speed < std::fabs(odom->v))
         {
             break;
         }
 
-        // go to the next messsage
         ++it;
     }
 
     while (end != it)
     {
-        // try the downcasting
         StampedOdometryPtr odom = dynamic_cast<StampedOdometryPtr>(*it);
 
         if (nullptr != odom)
         {
             // does it have a valid velocity?
-            valid_velocity = 0.001 < std::fabs(odom->v);
+            valid_velocity = min_speed < std::fabs(odom->v);
             zeros = valid_velocity ? max_zeros : zeros - 1;
         }
 
         if (valid_velocity || 0 < zeros)
         {
-            // direct access
             StampedMessagePtr msg = *it;
 
-            // try to downcast
             StampedGPSPosePtr gps_pose = dynamic_cast<StampedGPSPosePtr>(msg);
             StampedXSENSPtr xsens = dynamic_cast<StampedXSENSPtr>(msg);
             StampedSICKPtr sick = dynamic_cast<StampedSICKPtr>(msg);
@@ -250,7 +266,6 @@ void GrabData::SeparateMessages()
             // save to the the general messages
             messages.push_back(msg);
         }
-        // go to the next message
         ++it;
     }
 
@@ -284,20 +299,15 @@ g2o::SE2 GrabData::GetNearestGPSMeasure(
     // iterate to the left messages
     while (end != it)
     {
-        // downcasting to gps orientation
         StampedGPSPosePtr msg = dynamic_cast<StampedGPSPosePtr>(*it);
 
         if (nullptr != msg)
         {
-            // get the timestamp
             dt = std::fabs(timestamp - msg->timestamp);
-
             gps_measurement = msg->gps_measurement;
-
             break;
         }
 
-        // go to the left/right
         std::advance(it, adv);
     }
 
@@ -341,7 +351,6 @@ void GrabData::GetNearestOrientation(
     // iterate to the left messages
     while (end != it)
     {
-        // downcasting to gps orientation
         StampedGPSOrientationPtr gps_orientation = dynamic_cast<StampedGPSOrientationPtr>(*it);
 
         if (nullptr != gps_orientation)
@@ -349,13 +358,11 @@ void GrabData::GetNearestOrientation(
             // get the heading info
             h = mrpt::math::wrapToPi<double>(gps_orientation->yaw);
 
-            // get the timestamp
             dt = std::fabs(timestamp - gps_orientation->timestamp);
 
             break;
         }
 
-        // go to the left/right
         std::advance(it, adv);
     }
 }
@@ -503,7 +510,6 @@ void GrabData::BuildOdometryMeasures()
         // find the first odometry message position
         while (end != it)
         {
-            // try to downcast the current message
             StampedOdometryPtr odom = dynamic_cast<StampedOdometryPtr>(*it);
 
             if (nullptr != odom)
@@ -518,7 +524,6 @@ void GrabData::BuildOdometryMeasures()
                 break;
             }
 
-            // go to the next message
             ++it;
         }
 
@@ -539,14 +544,13 @@ void GrabData::BuildOdometryMeasures()
                     StampedMessagePtr prev_msg = *prev;
 
                     double dt = current_msg->timestamp - prev_msg->timestamp;
-                    if (dt > 0 && dt < 600)
+                    if (dt >= 0 && dt < 600)
                     {
                         // update the measurement
                         prev_msg->odom_measurement = VehicleModel::GetOdometryMeasure(v, phi, dt);
                         prev_msg->raw_measurement = VehicleModel::GetOdometryMeasure(raw_v, raw_phi, dt);
                     }
 
-                    // go to the previous message
                     rit = prev;
                     ++prev;
                 }
@@ -561,7 +565,6 @@ void GrabData::BuildOdometryMeasures()
                 StampedMessagePtr current_msg = *it;
                 StampedMessagePtr next_msg = *next;
 
-                // try to downcast the current message to the odometry one
                 StampedOdometryPtr odom = dynamic_cast<StampedOdometryPtr>(current_msg);
                 if (nullptr != odom)
                 {
@@ -588,14 +591,13 @@ void GrabData::BuildOdometryMeasures()
                 }
 
                 double dt = next_msg->timestamp - current_msg->timestamp;
-                if (dt > 0 && dt < 600)
+                if (dt >= 0 && dt < 1200)
                 {
                     // get the current odometry measurement
                     current_msg->odom_measurement = VehicleModel::GetOdometryMeasure(v, phi, dt);
                     current_msg->raw_measurement = VehicleModel::GetOdometryMeasure(raw_v, raw_phi, dt);
                 }
 
-                // go to the next messages
                 it = next;
                 ++next;
             }
@@ -608,14 +610,14 @@ void GrabData::BuildOdometryMeasures()
 
 
 // build the initial estimates
-void GrabData::BuildOdometryEstimates(bool gps_based)
+void GrabData::
+BuildOdometryEstimates(bool gps_based, bool gps_orientation)
 {
     if (5 < messages.size())
     {
         // status reporting
         std::cout << "Start building the general estimates\n";
 
-        // helpers
         StampedMessagePtrVector::iterator end(messages.end());
         StampedMessagePtrVector::iterator it(messages.begin());
 
@@ -624,77 +626,73 @@ void GrabData::BuildOdometryEstimates(bool gps_based)
         StampedGPSPosePtr gps = nullptr;
 
         // forward to the first gps pose
-        while (end != it)
-        {
-            // try to downcast
-            gps = dynamic_cast<StampedGPSPosePtr>(*it);
-
-            if (nullptr != gps)
+        if (gps_orientation) {
+            while (end != it)
             {
-                // set the first gps pose estimate
-                gps->est = gps->gps_measurement;
-                gps->raw_est = gps->gps_measurement;
-                break;
+                gps = dynamic_cast<StampedGPSPosePtr>(*it);
+
+                if (nullptr != gps)
+                {
+                    // set the first gps pose estimate
+                    gps->est = gps->gps_measurement;
+                    gps->raw_est = gps->gps_measurement;
+                    break;
+                }
+
+                ++it;
             }
-
-            // go to the next message
-            ++it;
-        }
-
-        if (end != it && messages.begin() != it)
-        {
-            // iterate to the left
-            StampedMessagePtrVector::reverse_iterator rend(messages.rend());
-            StampedMessagePtrVector::reverse_iterator rb(it + 1);
-            StampedMessagePtrVector::reverse_iterator ra(it);
-
-            // update the previous estimates
-            // to the left
-            while (rend != ra)
+            
+            if (end != it && messages.begin() != it)
             {
-                StampedMessagePtr current = *rb;
-                StampedMessagePtr previous = *ra;
+                // iterate to the left
+                StampedMessagePtrVector::reverse_iterator rend(messages.rend());
+                StampedMessagePtrVector::reverse_iterator rb(it + 1);
+                StampedMessagePtrVector::reverse_iterator ra(it);
 
-                previous->est = current->est * (previous->odom_measurement.inverse());
-                previous->raw_est = current->raw_est * (previous->raw_measurement.inverse());
+                // update the previous estimates
+                // to the left
+                while (rend != ra)
+                {
+                    StampedMessagePtr current = *rb;
+                    StampedMessagePtr previous = *ra;
 
-                rb = ra;
-                ++ra;
+                    previous->est = current->est * (previous->odom_measurement.inverse());
+                    previous->raw_est = current->raw_est * (previous->raw_measurement.inverse());
+
+                    rb = ra;
+                    ++ra;
+                }
+            }
+            else
+            {
+                it = messages.begin();
             }
         }
-        else
-        {
-            // reset the iterator
-            it = messages.begin();
-        }
 
-        // forward iterators
         StampedMessagePtrVector::iterator a(it);
         StampedMessagePtrVector::iterator b(it + 1);
 
-        // to the right
         while (end != b)
         {
-            // direct access
             StampedMessagePtr current = *a;
             StampedMessagePtr next = *b;
 
-            // set the initial estimate
             next->est = current->est * (current->odom_measurement);
             next->raw_est = current->raw_est * (current->raw_measurement);
 
             distance += current->odom_measurement.translation().norm();
 
-            StampedGPSPosePtr m_gps = dynamic_cast<StampedGPSPosePtr>(next);
-
-            if (gps_based && nullptr != m_gps && 3.0f < distance)
+            if (gps_based)
             {
-                next->est = m_gps->gps_measurement;
-                next->raw_est = m_gps->gps_measurement;
-                distance = 0.0f;
+                StampedGPSPosePtr m_gps = dynamic_cast<StampedGPSPosePtr>(next);
+                if (nullptr != m_gps && 3.0f < distance)
+                {
+                    next->est = m_gps->gps_measurement;
+                    next->raw_est = m_gps->gps_measurement;
+                    distance = 0.0f;
+                }
             }
 
-            // go to the next messages
             a = b;
             ++b;
         }
@@ -705,6 +703,35 @@ void GrabData::BuildOdometryEstimates(bool gps_based)
     else
     {
         throw std::runtime_error("Odometry messages are missing!");
+    }
+}
+
+
+void GrabData::BuildHackedOdometryEstimates()
+{
+    if (5 < messages.size())
+    {
+        StampedMessagePtrVector::iterator end(messages.end());
+        StampedMessagePtrVector::iterator curr(messages.begin());
+        StampedMessagePtrVector::iterator next(messages.begin() + 1);
+
+        std::cout << "The initial guess: " << initial_guess_pose.toVector().transpose() << std::endl;
+
+        // error: no match for call to ‘(g2o::SE2) (hyper::StampedMessage*&)’
+        // (*curr)->est = initial_guess_pose
+        (*curr)->raw_est = initial_guess_pose;
+        (*curr)->est = initial_guess_pose;
+
+        while (end != next)
+        {
+            StampedMessagePtr c = *curr;
+            StampedMessagePtr n = *next;
+
+            n->est = c->est * (c->odom_measurement);
+            n->raw_est = c->raw_est * (c->raw_measurement);
+
+            curr = next++;
+        }
     }
 }
 
@@ -798,6 +825,7 @@ bool GrabData::BuildLidarOdometryMeasure(
 bool GrabData::BuildLidarLoopMeasure(
         GeneralizedICP &gicp,
         double cf,
+        double orientation,
         PointCloudHSV::Ptr source_cloud,
         PointCloudHSV::Ptr target_cloud,
         g2o::SE2 &loop_measurement)
@@ -817,14 +845,14 @@ bool GrabData::BuildLidarLoopMeasure(
     gicp.setInputTarget(source_cloud);
 
     // perform the icp method
-    gicp.align(result);
+    gicp.align(result, BuildEigenMatrixFromSE2(g2o::SE2(0.0, 0.0, orientation)));
 
     if (gicp.hasConverged())
     {
         // get the desired transformation
         loop_measurement = GetSE2FromEigenMatrix(gicp.getFinalTransformation());
         g2o::Vector3 v = loop_measurement.toVector();
-        if (0.001 < std::fabs(v[0]) || 0.001 < std::fabs(v[1]) || 0.001 < std::fabs(v[2]))
+        if (min_speed < std::fabs(v[0]) || min_speed < std::fabs(v[1]) || min_speed < std::fabs(v[2]))
         {
             return true;
         }
@@ -1076,7 +1104,6 @@ void GrabData::BuildLidarMeasuresMT()
                 }
             }
 
-            // go to the next index
            current_index = next_index;
         }
     }
@@ -1128,11 +1155,11 @@ void GrabData::LidarMessagesFiltering(StampedLidarPtrVector &lidar_messages, Sta
     StampedLidarPtrVector::iterator end(lidar_messages.end());
     StampedLidarPtrVector::iterator it(lidar_messages.begin());
 
-    const unsigned last_index = raw_messages.size();
+    StampedMessagePtr last { raw_messages.back() };
+    const unsigned last_index = last->id + 1;
 
     while (end != it)
     {
-        // direct access
         StampedLidarPtr lidar = *it;
 
         if (last_index > lidar->seq_id)
@@ -1140,7 +1167,6 @@ void GrabData::LidarMessagesFiltering(StampedLidarPtrVector &lidar_messages, Sta
             used_lidar.push_back(lidar);
         }
 
-        // go to the next message
         ++it;
     }
 }
@@ -1157,7 +1183,6 @@ void GrabData::BuildLidarOdometryGPSEstimates()
 
         while (end != it)
         {
-            // direct access
             StampedMessagePtr current = *it;
             StampedLidarPtr lidar = dynamic_cast<StampedLidarPtr>(current);
 
@@ -1166,7 +1191,6 @@ void GrabData::BuildLidarOdometryGPSEstimates()
                 lidar->gps_sync_estimate = GetGPSMeasure(first, it, end, current->timestamp);
             }
 
-            // go to the next message
             ++it;
         }
     }
@@ -1180,7 +1204,8 @@ void GrabData::BuildRawLidarOdometryEstimates(StampedLidarPtrVector &lidar_messa
     if (2 < lidar_messages.size())
     {
         // the last valid index
-        const unsigned last_index = raw_messages.size() + 1;
+        StampedMessagePtr last { raw_messages.back() };
+        const unsigned last_index = last->id + 1;
 
         // iterators
         StampedLidarPtrVector::iterator end(lidar_messages.end());
@@ -1223,10 +1248,13 @@ void GrabData::BuildRawLidarOdometryEstimates(StampedLidarPtrVector &lidar_messa
                 next_lidar->lidar_estimate = current_lidar->lidar_estimate * (current_lidar->est.inverse() * next_lidar->est);
             }
 
-            // go to the next messages
             current = next;
            ++next;
         }
+    }
+    else
+    {
+        std::cout << "Empty lidar list!" << std::endl;
     }
 }
 
@@ -1238,7 +1266,8 @@ void GrabData::BuildVisualOdometryEstimates()
     if (2 < bumblebee_messages.size())
     {
         // the last valid index
-        const unsigned last_index = raw_messages.size() + 1;
+        StampedMessagePtr last { raw_messages.back() };
+        const unsigned last_index = last->id + 1;
 
         // iterators
         StampedBumblebeePtrVector::iterator end(bumblebee_messages.end());
@@ -1279,7 +1308,6 @@ void GrabData::BuildVisualOdometryEstimates()
                 next_msg->visual_estimate = current_msg->visual_estimate * (current_msg->est.inverse() * next_msg->est);
             }
 
-            // go to the next messages
             current = next;
            ++next;
         }
@@ -1308,15 +1336,28 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
         StampedLidarPtrVector::iterator it(lidar_messages.begin());
 
         unsigned lmsize = lidar_messages.size();
-        unsigned counter = 0;
-        // unsigned percent = lmsize / 100;
+        unsigned counter = 0, match_counter = 0;
+        unsigned percent = lmsize / 20;
+
+        std::string path("/dados/tmp/loops/");
+
+        bool is_sick = (point_cloud_lidar_messages == &sick_messages);
+
+        if (is_sick)
+        {
+            path += "sick/";
+        }
+        else
+        {
+            path += "velodyne/";
+        }
 
         while (end != it)
         {
             counter += 1;
 
-            std::cout << counter << " of " << lmsize << std::endl;
-            //if (0 == percent % counter) { std::cout << "-"; }
+            // std::cout << counter << " of " << lmsize << std::endl;
+            if (0 == percent % counter) { std::cout << "-"; }
 
             // get the current lidar message pointer
             StampedLidarPtr current = *it;
@@ -1355,8 +1396,9 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
             {
                 double a(current->est.rotation().angle());
                 double b((*loop)->est.rotation().angle());
+                double ad = mrpt::math::angDistance<double>(a, b);
 
-                if (!use_restricted_loops || M_PI_2 > mrpt::math::angDistance<double>(a, b))
+                if (!use_restricted_loops || M_PI_2 > ad)
                 {
                     // the current cloud
                     pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
@@ -1379,16 +1421,33 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
                         throw std::runtime_error("Could not open the target cloud");
                     }
 
-                    // try the icp method
-                    if (BuildLidarLoopMeasure(gicp, min_dist * 2.0, current_cloud, loop_cloud, current->loop_measurement))
+                    if (BuildLidarLoopMeasure(gicp, min_dist * 2.0, ad, current_cloud, loop_cloud, current->loop_measurement))
                     {
                         current->loop_closure_id = lidar_loop->id;
+                        if (save_loop_closure_point_clouds)
+                        {
+                            std::stringstream ss;
+
+                            ss << path << match_counter << "_" << current->id << "_to_" << lidar_loop->id;
+                            std::string curr_cloud_path(ss.str());
+                            match_counter += 1;
+                            ss = std::stringstream();
+                            ss << path << match_counter << "_" << current->id << "_to_" << lidar_loop->id;
+                            std::string next_cloud_path(ss.str());
+                            match_counter += 1;
+
+                            if (-1 == pcl::io::savePCDFile(curr_cloud_path, *current_cloud, true)) {
+                                throw std::runtime_error("Could not save the current cloud");
+                            }
+
+                            if (-1 == pcl::io::savePCDFile(next_cloud_path, *loop_cloud, true)) {
+                                throw std::runtime_error("Could not save the next cloud");
+                            }
+                        }
                     }
                 }
-
             }
 
-            // go to the next message
             ++it;
         }
 
@@ -1398,15 +1457,16 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
 }
 
 bool GrabData::BuildExternalLidarLoopClosureMeasures(
-	StampedLidarPtrVector &internal_messages,
-	StampedLidarPtrVector &external_messages,
-	Eigen::Vector2d external_gps_origin,
-	double external_loop_required_distance)
+    StampedLidarPtrVector &internal_messages,
+    StampedLidarPtrVector &external_messages,
+    Eigen::Vector2d external_gps_origin,
+    double external_loop_min_distance,
+    double external_loop_required_distance)
 {
     if (!internal_messages.empty() and !external_messages.empty())
     {
         // report
-        std::cout << "Start building the loop closure measurements from internal messages with size: " << internal_messages.size() << " to external messages with size: " << external_messages.size() << "\n";
+        std::cout << "Start building the loop closure measurements from internal messages with size: " << internal_messages.size() << " to external messages with size: " << external_messages.size() << std::endl;
 
         // the pcl point cloud ICP solver
         GeneralizedICP gicp;
@@ -1433,9 +1493,16 @@ bool GrabData::BuildExternalLidarLoopClosureMeasures(
 
         kdtree.setInputCloud(cloud);
 
+        Eigen::Vector2d last_loop_position(-1e16, -1e16);
+        
         for (StampedLidarPtr internal : internal_messages)
         {
             const Eigen::Vector2d position(internal->gps_sync_estimate.translation() + gps_origin);
+
+            if ((position - last_loop_position).norm() < external_loop_min_distance) 
+            {
+                continue;
+            }
 
             pcl::PointXY xy { (float) position[0], (float) position[1] };
 
@@ -1450,7 +1517,9 @@ bool GrabData::BuildExternalLidarLoopClosureMeasures(
                     double a(internal->gps_sync_estimate.rotation().angle());
                     double b(external->gps_sync_estimate.rotation().angle());
 
-                    if (!use_restricted_loops || M_PI_2 > mrpt::math::angDistance<double>(a, b))
+                    double ad = mrpt::math::angDistance<double>(a, b);
+
+                    if (!use_restricted_loops || M_PI_2 > ad)
                     {
                         pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
 
@@ -1467,8 +1536,9 @@ bool GrabData::BuildExternalLidarLoopClosureMeasures(
                         }
 
                         // try the icp method
-                        if (BuildLidarLoopMeasure(gicp, nd * 2.0, current_cloud, loop_cloud, internal->external_loop_measurement))
+                        if (BuildLidarLoopMeasure(gicp, nd * 2.0, ad, current_cloud, loop_cloud, internal->external_loop_measurement))
                         {
+                            last_loop_position = position;
                             internal->external_loop_closure_id = external->id;
                         }
                     }
@@ -1476,8 +1546,8 @@ bool GrabData::BuildExternalLidarLoopClosureMeasures(
             }
         }
 
-		return true;
-	}
+        return true;
+    }
     return false;
 }
 
@@ -1513,7 +1583,9 @@ void GrabData::BuildVisualOdometryMeasures()
     // frame's camera coordinates to the first frame's camera coordinates)
     Matrix pose = Matrix::eye(4);
 
-    const unsigned last_index = bumblebee_messages.size();
+    StampedBumblebeePtr last { bumblebee_messages.back() };
+    const unsigned last_index = last->id + 1;
+    
     unsigned curr_index = 0;
 
     while (last_index > curr_index)
@@ -1575,33 +1647,31 @@ void GrabData::BuildVisualOdometryMeasures()
 // save all vertices to the external file
 void GrabData::SaveAllVertices(std::ofstream &os, bool global = false)
 {
-    // helpers
     StampedMessagePtrVector::iterator it = messages.begin();
     StampedMessagePtrVector::iterator end = messages.end();
 
     // save the gps origin
-	if (global)
-		os << "GPS_ORIGIN 0.0 0.0\n";
-	else
-		os << "GPS_ORIGIN " << std::fixed << gps_origin[0] << " " << gps_origin[1] << "\n";
+    if (global)
+        os << "GPS_ORIGIN 0.0 0.0" << std::endl;
+    else
+        os << "GPS_ORIGIN " << std::fixed << gps_origin[0] << " " << gps_origin[1] << std::endl;
 
     // save the vertices ammount
-    os << "VERTICES_QUANTITY " << messages.size() << "\n";
+    os << "VERTICES_QUANTITY " << messages.size() << std::endl;
 
     while (end != it)
     {
         // direct acccess
         StampedMessagePtr m = *it;
 
-		Eigen::Vector2d position(m->est.translation());
+        Eigen::Vector2d position(m->est.translation());
 
-		if (global)
-			position += gps_origin;
+        if (global)
+            position += gps_origin;
 
         // write the estimate id and initial value
-        os << "VERTEX " << grab_data_id << " " << m->id << " " << std::fixed << position[0] << " " << position[1] << " " << m->est[2] << " " << m->timestamp << " " << int(m->GetType())<< "\n";
+        os << "VERTEX " << grab_data_id << " " << m->id << " " << std::fixed << position[0] << " " << position[1] << " " << m->est[2] << " " << m->timestamp << " " << int(m->GetType()) << std::endl;
 
-        // go to the next message
         ++it;
     }
 }
@@ -1612,7 +1682,6 @@ void GrabData::SaveOdometryEdges(std::ofstream &os)
 {
     if (!messages.empty())
     {
-        // helpers
         StampedMessagePtrVector::iterator end = messages.end();
         StampedMessagePtrVector::iterator current = messages.begin();
         StampedMessagePtrVector::iterator next = messages.begin();
@@ -1643,9 +1712,8 @@ void GrabData::SaveOdometryEdges(std::ofstream &os)
                 continue;
 
             // write the odometry measurements
-            os << "ODOM_EDGE " << a->id << _s << b->id << _s << std::fixed << dx << _s << dy << _s << yaw << _s << rv << _s << rphi << _s << dt << "\n";
+            os << "ODOM_EDGE " << a->id << _s << b->id << _s << std::fixed << dx << _s << dy << _s << yaw << _s << rv << _s << rphi << _s << dt << std::endl;
 
-            // try to downcast to odometyr msg
             odom = dynamic_cast<StampedOdometryPtr>(a);
 
             if (nullptr != odom)
@@ -1655,7 +1723,6 @@ void GrabData::SaveOdometryEdges(std::ofstream &os)
                 rphi = odom->raw_phi;
             }
 
-            // go to the next messages
            current = next;
             ++next;
         }
@@ -1681,19 +1748,19 @@ void GrabData::SaveOdometryEstimates(const std::string &output_filename, bool ra
 
         while (end != it)
         {
-            // direct access
-            Eigen::Vector3d pose = raw_version ? (*it)->raw_est.toVector() : (*it)->est.toVector();
+            StampedMessagePtr msg { *it };
+
+            Eigen::Vector3d pose = raw_version ? msg->raw_est.toVector() : msg->est.toVector();
 
             // add the gps origin
-            pose[0] += gps_origin[0];
-            pose[1] += gps_origin[1];
+            // pose[0] += gps_origin[0];
+            // pose[1] += gps_origin[1];
 
             double yaw = pose[2];
 
             // save the odometry estimated pose
-            ofs << std::fixed << pose[0] << " " << pose[1] << " " << yaw << " " << std::cos(yaw) << " " << std::sin(yaw) << "\n";
+            ofs << std::fixed << pose[0] << " " << pose[1] << " " << yaw << " " << std::cos(yaw) << " " << std::sin(yaw) << " " << msg->timestamp << std::endl;
 
-            // go to the next message
             ++it;
         }
 
@@ -1708,25 +1775,22 @@ void GrabData::SaveGPSEdges(std::ofstream &os, bool global = false)
 {
     std::cout << "Saving all GPS edges..." << std::endl;
 
-    // helpers
     StampedGPSPosePtrVector::iterator end = gps_messages.end();
     StampedGPSPosePtrVector::iterator current = gps_messages.begin();
 
     while (end != current)
     {
-        // direct access
         StampedGPSPosePtr gps = *current;
 
         // measurement direct access
-		Eigen::Vector2d position(gps->gps_measurement.translation());
+        Eigen::Vector2d position(gps->gps_measurement.translation());
 
-		if (global)
-			position += gps_origin;
+        if (global)
+            position += gps_origin;
 
         // write the gps mesaure
-        os << "GPS_EDGE " << gps->id << " " << std::fixed << position[0] << " " << position[1] << " " << gps->gps_measurement[2] << " " << gps->gps_std << "\n";
+        os << "GPS_EDGE " << gps->id << " " << std::fixed << position[0] << " " << position[1] << " " << gps->gps_measurement[2] << " " << gps->gps_std << std::endl;
 
-        // go to the next messages
         ++current;
     }
 
@@ -1737,20 +1801,49 @@ void GrabData::SaveGPSEdges(std::ofstream &os, bool global = false)
 // save the gps edges
 void GrabData::SaveXSENSEdges(std::ofstream &os)
 {
-    // helpers
     StampedXSENSPtrVector::iterator end(xsens_messages.end());
     StampedXSENSPtrVector::iterator current(xsens_messages.begin());
 
     while (end != current)
     {
-        // direct access
         StampedXSENSPtr xsens = *current;
 
         // write the gps mesaure
-        os << "XSENS_EDGE " << xsens->id << " " << std::fixed << xsens->yaw << "\n";
+        os << "XSENS_EDGE " << xsens->id << " " << std::fixed << xsens->yaw << std::endl;
 
-        // go to the next messages
         ++current;
+    }
+}
+
+
+void GrabData::SaveAllGPSEstimates(std::string filename, bool original = false)
+{
+    if (1 < raw_messages.size())
+    {
+        std::ofstream ofs(filename, std::ofstream::out);
+        if (!ofs.good())
+        {
+            throw std::runtime_error("Could not open the raw gps estimates output file!");
+        }
+
+        for (StampedMessagePtr r : raw_messages)
+        {
+            StampedGPSPosePtr gps = dynamic_cast<StampedGPSPosePtr>(r);
+            if (nullptr != gps)
+            {
+                g2o::SE2 &gps_pose = StampedGPSPose::gps_pose_delays[gps->gps_id].first;
+
+                g2o::SE2 gps_measurement = original ? gps->gps_measurement * gps_pose : gps->gps_measurement;
+                
+                double yaw = gps_measurement[2];
+                
+                Eigen::Vector2d position(gps_measurement.translation());
+            
+                ofs << std::fixed << position[0] << " " << position[1] << " " << yaw << " " << std::cos(yaw) << " " << std::sin(yaw) << " " << gps->timestamp << std::endl;
+            }
+        }
+
+        ofs.close();
     }
 }
 
@@ -1773,12 +1866,55 @@ void GrabData::SaveGPSEstimates(std::string filename, bool original = false)
 
         while (end != current)
         {
-            g2o::SE2 &gps_pose = StampedGPSPose::gps_pose_delays[(*current)->gps_id].first;
 
-            g2o::SE2 gps_measurement = original ? (*current)->gps_measurement * gps_pose : (*current)->gps_measurement;
+            StampedGPSPosePtr gps { *current };
+
+            g2o::SE2 &gps_pose = StampedGPSPose::gps_pose_delays[gps->gps_id].first;
+
+            g2o::SE2 gps_measurement = original ? gps->gps_measurement * gps_pose : gps->gps_measurement;
             double yaw = gps_measurement[2];
-            Eigen::Vector2d position(gps_measurement.translation() + gps_origin);
-            ofs << std::fixed << position[0] << " " << position[1] << " " << yaw << " " << std::cos(yaw) << " " << std::sin(yaw) << "\n";
+            
+            // + gps_origin);
+            Eigen::Vector2d position(gps_measurement.translation());
+            
+            ofs << std::fixed << position[0] << " " << position[1] << " " << yaw << " " << std::cos(yaw) << " " << std::sin(yaw) << " " << gps->timestamp << std::endl;
+            ++current;
+        }
+
+        ofs.close();
+    }
+}
+
+
+void GrabData::SaveGPSError(std::string filename, g2o::SE2 gps_error)
+{
+    if (1 < gps_messages.size())
+    {
+        // open the odometry output
+        std::ofstream ofs(filename, std::ofstream::out);
+
+        if (!ofs.good())
+        {
+            throw std::runtime_error("Could not open the gps estimate output file!");
+        }
+
+        StampedGPSPosePtrVector::iterator end = gps_messages.end();
+        StampedGPSPosePtrVector::iterator current = gps_messages.begin();
+
+        bool original = false;
+
+        while (end != current)
+        {
+
+            StampedGPSPosePtr gps { *current };
+            g2o::SE2 &gps_pose = StampedGPSPose::gps_pose_delays[gps->gps_id].first;
+
+            g2o::SE2 gps_measurement = original ? gps->gps_measurement * gps_pose : gps->gps_measurement;
+            gps_measurement = gps_measurement * gps_error;
+            double yaw = gps_measurement[2];
+            // + gps_origin);
+            Eigen::Vector2d position(gps_measurement.translation());
+            ofs << std::fixed << position[0] << " " << position[1] << " " << yaw << " " << std::cos(yaw) << " " << std::sin(yaw) << " " << gps->timestamp << std::endl;
             ++current;
         }
 
@@ -1792,18 +1928,21 @@ void GrabData::SaveLidarEdges(const std::string &msg_name, std::ofstream &os, co
 {
     if (!lidar_messages.empty())
     {
-        unsigned last_index = raw_messages.size();
+        StampedMessagePtr last { raw_messages.back() };
+        
+        const unsigned last_index = last->id + 1;
+        
         for (StampedLidarPtr from : lidar_messages)
         {
             if (last_index > from->seq_id && use_lidar_odometry)
             {
                 g2o::SE2 &measurement(from->seq_measurement);
-                os << msg_name << "_SEQ " << from->id << " " << from->seq_id << " " << std::fixed << measurement[0] << " " << measurement[1] << " " << measurement[2] << "\n";
+                os << msg_name << "_SEQ " << from->id << " " << from->seq_id << " " << std::fixed << measurement[0] << " " << measurement[1] << " " << measurement[2] << std::endl;
             }
             if (last_index > from->loop_closure_id && use_lidar_loop)
             {
                 g2o::SE2 &measurement(from->loop_measurement);
-                os << msg_name << "_LOOP " << from->id << " " << from->loop_closure_id << " " << std::fixed << measurement[0] << " " << measurement[1] << " " << measurement[2] << "\n";
+                os << msg_name << "_LOOP " << from->id << " " << from->loop_closure_id << " " << std::fixed << measurement[0] << " " << measurement[1] << " " << measurement[2] << std::endl;
             }
         }
     }
@@ -1821,7 +1960,7 @@ void GrabData::SaveExternalLidarEdges(const std::string &msg_name, std::ofstream
             if (std::numeric_limits<unsigned>::max() > from->external_loop_closure_id)
             {
                 g2o::SE2 &measurement(from->external_loop_measurement);
-                os << msg_name << "_EXTERNAL_LOOP " << from->id << " " << from->external_loop_closure_id << " " << std::fixed << measurement[0] << " " << measurement[1] << " " << measurement[2] << "\n";
+                os << msg_name << "_EXTERNAL_LOOP " << from->id << " " << from->external_loop_closure_id << " " << std::fixed << measurement[0] << " " << measurement[1] << " " << measurement[2] << std::endl;
             }
         }
     }
@@ -1840,11 +1979,11 @@ void GrabData::SaveVisualOdometryEdges(std::ofstream &os)
         StampedBumblebeePtrVector::const_iterator current = bumblebee_messages.begin();
 
         // limit index
-        unsigned last_index = raw_messages.size();
+        StampedMessagePtr last { raw_messages.back() };
+        const unsigned last_index = last->id + 1;
 
         while (end != current)
         {
-            // direct access
             StampedBumblebeePtr from = *current;
 
             if (last_index > from->seq_id)
@@ -1854,10 +1993,9 @@ void GrabData::SaveVisualOdometryEdges(std::ofstream &os)
 
                 // save the icp measurement
                 os << "BUMBLEBEE_SEQ " << from->id << " " << from->seq_id << " ";
-                os << std::fixed << measurement[0] << " " << measurement[1] << " " << measurement[2] << "\n";
+                os << std::fixed << measurement[0] << " " << measurement[1] << " " << measurement[2] << std::endl;
             }
 
-            // go to the next message
             ++current;
         }
     }
@@ -1869,14 +2007,14 @@ void GrabData::SaveVisualOdometryEdges(std::ofstream &os)
 // save all the edges containing icp measurements, from SICK and Velodyne sensors
 void GrabData::SaveICPEdges(std::ofstream &os)
 {
-    std::cout << "\tSaving all SICK edges..." << std::endl;
+    std::cout << "\tSaving all " << sick_messages.size() << " SICK edges..." << std::endl;
 
     // the sick icp edges
     SaveLidarEdges(std::string("SICK"), os, sick_messages, use_sick_odometry, use_sick_loop);
 
     std::cout << "\tSick edges saved!" << std::endl;
 
-    std::cout << "\tSaving all Velodyne edges..." << std::endl;
+    std::cout << "\tSaving all " << velodyne_messages.size() << " Velodyne edges..." << std::endl;
 
     // the velodyne icp edges
     SaveLidarEdges(std::string("VELODYNE"), os, velodyne_messages, use_velodyne_odometry, use_velodyne_loop);
@@ -1896,7 +2034,6 @@ void GrabData::SaveRawLidarEstimates(const std::string &filename, const StampedL
 
         if (!ofs.good())
         {
-
             throw std::runtime_error("Could not open the lidar estimate output file!");
         }
 
@@ -1909,25 +2046,27 @@ void GrabData::SaveRawLidarEstimates(const std::string &filename, const StampedL
             // get the current lidar message
             StampedLidarPtr current_lidar = *it;
 
-            // direct access
             Eigen::Vector3d pose(current_lidar->lidar_estimate.toVector());
 
             // get the yaw
             double yaw = pose[2];
 
             // update the position
-            pose[0] += gps_origin[0];
-            pose[1] += gps_origin[1];
+            // pose[0] += gps_origin[0];
+            // pose[1] += gps_origin[1];
 
             // save the estimate
-            ofs << std::fixed << pose[0] << " " << pose[1] << " " << yaw << " " << std::cos(yaw) << " " << std::sin(yaw) << "\n";
+            ofs << std::fixed << pose[0] << " " << pose[1] << " " << yaw << " " << std::cos(yaw) << " " << std::sin(yaw) << " " << current_lidar->timestamp << std::endl;
 
-            // go to the next message
             ++it;
         }
 
         // close the output file
         ofs.close();
+    }
+    else 
+    {
+        std::cout << "Empty lidar messages of " << filename << std::endl;
     }
 }
 
@@ -1956,20 +2095,18 @@ void GrabData::SaveVisualOdometryEstimates(const std::string &filename)
             // get the current lidar message
             StampedBumblebeePtr current_msg = *it;
 
-            // direct access
             Eigen::Vector3d pose(current_msg->visual_estimate.toVector());
 
             // get the yaw
             double yaw = pose[2];
 
             // update the position
-            pose[0] += gps_origin[0];
-            pose[1] += gps_origin[1];
+            // pose[0] += gps_origin[0];
+            // pose[1] += gps_origin[1];
 
             // save the estimate
-            ofs << std::fixed << pose[0] << " " << pose[1] << " " << yaw << " " << std::cos(yaw) << " " << std::sin(yaw) << "\n";
+            ofs << std::fixed << pose[0] << " " << pose[1] << " " << yaw << " " << std::cos(yaw) << " " << std::sin(yaw) << " " << current_msg->timestamp << std::endl;
 
-            // go to the next message
             ++it;
         }
 
@@ -2023,7 +2160,6 @@ void GrabData::Configure(std::string config_filename, std::string carmen_ini)
     std::ifstream is(config_filename, std::ifstream::in);
     if (is.good())
     {
-        // helpers
         std::stringstream ss;
 
         while (-1 != StringHelper::ReadLine(is, ss))
@@ -2079,21 +2215,17 @@ void GrabData::Configure(std::string config_filename, std::string carmen_ini)
             {
                 ss >> VehicleModel::kmax;
             }
-            else if ("V_MULT_ODOMETRY_BIAS" == str)
+            else if ("ODOMETRY_BIAS" == str)
             {
-                ss >> StampedOdometry::vmb;
-            }
-            else if ("PHI_MULT_ODOMETRY_BIAS" == str)
-            {
-                ss >> StampedOdometry::phimb;
-            }
-            else if ("PHI_ADD_ODOMETRY_BIAS" == str)
-            {
-                ss >> StampedOdometry::phiab;
+                ss >> StampedOdometry::vmb >> StampedOdometry::phimb >> StampedOdometry::phiab;
             }
             else if ("SAVE_ACCUMULATED_POINT_CLOUDS" == str)
             {
                 save_accumulated_point_clouds = true;
+            }
+            else if ("SAVE_LOOP_CLOSURE_POINT_CLOUDS" == str)
+            {
+                save_loop_closure_point_clouds = true;
             }
             else if ("DISABLE_VELODYNE_ODOMETRY" == str)
             {
@@ -2129,6 +2261,10 @@ void GrabData::Configure(std::string config_filename, std::string carmen_ini)
             {
                 use_fake_gps = true;
             }
+            else if ("USE_GPS_ORIENTATION" == str)
+            {
+                use_gps_orientation = true;
+            }
             else if ("USE_RESTRICTED_LOOPS" == str)
             {
                 use_restricted_loops = true;
@@ -2143,6 +2279,18 @@ void GrabData::Configure(std::string config_filename, std::string carmen_ini)
                 {
                     StampedGPSPose::gps_pose_delays.emplace(gps_id, std::pair<g2o::SE2, double>(g2o::SE2(0.0,0.0,0.0), delay));
                 }
+            }
+            else if ("MIN_SPEED" == str)
+            {
+                ss >> min_speed;
+            }
+            else if ("INITIAL_GUESS_POSE" == str)
+            {
+                double x, y, theta;
+
+                ss >> x >> y >> theta;
+
+                initial_guess_pose = g2o::SE2(x, y, theta);
             }
         }
     }
@@ -2239,7 +2387,7 @@ unsigned GrabData::ParseLogFile(const std::string &input_filename, unsigned msg_
 
     if (!logfile.is_open())
     {
-        std::cerr << "Unable to open the input file: " << input_filename << "\n";
+        std::cerr << "Unable to open the input file: " << input_filename << std::endl;
         return 0;
     }
 
@@ -2314,7 +2462,6 @@ unsigned GrabData::ParseLogFile(const std::string &input_filename, unsigned msg_
         }
         else
         {
-            // go to the next iteration
             continue;
         }
 
@@ -2374,7 +2521,7 @@ void GrabData::BuildHyperGraph()
         BuildOdometryMeasures();
 
         // rebuild the initial estimates
-        BuildOdometryEstimates(use_fake_gps);
+        BuildOdometryEstimates(false, use_gps_orientation);
 
         if (use_bumblebee_odometry)
         {
@@ -2406,15 +2553,19 @@ void GrabData::BuildHyperGraph()
             BuildLidarOdometryMeasuresWithThreads(sick_messages);
             BuildRawLidarOdometryEstimates(sick_messages, used_sick);
         }
+
+        // rebuild the initial estimates
+        if (use_fake_gps)
+            BuildOdometryEstimates(use_fake_gps, use_gps_orientation);
     }
 }
 
 
 // build loop closures - different log version
-void GrabData::BuildExternalLoopClosures(GrabData &gd, double external_loop_required_distance = 5.0f)
+void GrabData::BuildExternalLoopClosures(GrabData &gd, double elmind = 1.0f, double elreqd = 5.0f)
 {
-    use_external_velodyne_loop = BuildExternalLidarLoopClosureMeasures(velodyne_messages, gd.velodyne_messages, gd.gps_origin, external_loop_required_distance);
-    use_external_sick_loop = BuildExternalLidarLoopClosureMeasures(sick_messages, gd.sick_messages, gd.gps_origin, external_loop_required_distance);
+    use_external_velodyne_loop = BuildExternalLidarLoopClosureMeasures(velodyne_messages, gd.velodyne_messages, gd.gps_origin, elmind, elreqd);
+    use_external_sick_loop = BuildExternalLidarLoopClosureMeasures(sick_messages, gd.sick_messages, gd.gps_origin, elmind, elreqd);
 }
 
 
@@ -2463,28 +2614,50 @@ void GrabData::SaveExternalLidarLoopEdges(std::ofstream &os)
 // save the extra estimates
 void GrabData::SaveEstimates(std::string &base)
 {
-    // save the raw odometry estimate to external file
-    SaveOdometryEstimates(base + "raw_odometry.txt", true);
 
-    // save the odometry estimate to external file
+    if (not use_gps_orientation)
+    {
+        BuildHackedOdometryEstimates();
+    }
+
+    SaveOdometryEstimates(base + "raw_odometry.txt", true);
     SaveOdometryEstimates(base + "odometry.txt", false);
 
-    // save the gps estimate to gps.txt file
     SaveGPSEstimates(base + "gps.txt", false);
-
-    // save the original gps
     SaveGPSEstimates(base + "gps_original.txt", true);
+    SaveAllGPSEstimates(base + "raw_gps.txt", false);
 
-    // save the visual odometry estimates
+    SaveGPSError(base + "gps_plus_error.txt", g2o::SE2(0, 4, M_PI_2));
+    SaveGPSError(base + "gps_minus_error.txt", g2o::SE2(0, -4, -M_PI_2));
+
     SaveVisualOdometryEstimates(base + "visual_odometry.txt");
 
-    // save the velodyne estimates to the velodyne.txt file
     SaveRawLidarEstimates(base + "velodyne.txt", used_velodyne);
-
-    // save the sick estimates
     SaveRawLidarEstimates(base + "sick.txt", used_sick);
+
+    MeanAbsoluteErrorOdometryGPS();
 }
 
+
+// compute the odometry x gps mean absolute error
+void GrabData::MeanAbsoluteErrorOdometryGPS()
+{
+    if (gps_messages.empty())
+    {
+        std::cout << "Empty vector!" << std::endl;
+        return;
+    }
+
+    BuildHackedOdometryEstimates();
+    
+    double sum = 0.0;
+    for (StampedGPSPosePtr gps : gps_messages)
+    {
+        sum += (gps->gps_measurement.translation() + gps_origin - gps->est.translation()).norm();
+    }
+
+    std::cout << "Mean absolute error (GPS x Odometry): " << sum / gps_messages.size() << std::endl;
+}
 
 // clear the entire object
 void GrabData::Clear()

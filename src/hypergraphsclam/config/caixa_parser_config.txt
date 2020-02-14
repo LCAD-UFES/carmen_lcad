@@ -2,10 +2,10 @@
 MAXIMUM_VEL_SCANS 0
 
 -- how many seconds to consider a loop closure - Tempo para considerar que duas nuvens fecham loop
-LOOP_REQUIRED_TIME 20.0
+LOOP_REQUIRED_TIME 5.0
 
 -- how many meters to consider a loop closure - Distancia para considerar que duas nuvens fecham loop
-LOOP_REQUIRED_DISTANCE 7.0
+LOOP_REQUIRED_DISTANCE 5.0
 
 -- uncomment this line if you want to consider only loop closures with same direction (both car poses should points to same direction)
 -- the angle distance must be less than PI/2
@@ -43,15 +43,15 @@ KMAX 0.17857142857
 -- Initial odometry bias guess, the default values are: v_mult = 1.0, phi_mult = 1.0 and phi_add = 0.0
 -- You can pick this values from a previous calibration result
 
--- Hypergraph
--- ODOMETRY_BIAS 0.9934975935 1.0002226512 0.0005618668
+-- Hypergraph bias
+-- ODOMETRY_BIAS 0.999897 0.997524 0.000747
 
 -- PSO
-ODOMETRY_BIAS 0.987988 0.989296 0.000542
+ODOMETRY_BIAS 0.990910 0.987480 0.000447
 
 -- Hack, in order to plot the calibrated odometry we copy this value from the optimized poses
--- INITIAL_GUESS_POSE 0.0 0.0 -0.729195
-INITIAL_GUESS_POSE 7757860.456596 -363560.590811 -0.720652
+-- INITIAL_GUESS_POSE 0.0 0.0 2.995772
+INITIAL_GUESS_POSE 7757029.950821 -363689.249183 2.993502
 
 -- Descomente os argumentos abaixo para desabilitar a construcao das respectivas arestas
 DISABLE_VELODYNE_ODOMETRY
@@ -66,13 +66,15 @@ DISABLE_BUMBLEBEE_LOOP
 -- Make sure you have enough space available in your hard drive (3x the log size)
 -- SAVE_ACCUMULATED_POINT_CLOUDS
 
+-- comment if you don't want to save the point clouds in the loop closures
+-- SAVE_LOOP_CLOSURE_POINT_CLOUDS
+
 -- indica quais gps a utilizar, um por um
 -- no caso abaixo, vamos usar o 0 e o 1
 -- o primeiro inteiro é o identificador e o segundo valor (double) é o delay do gps
--- GPS_IDENTIFIER 0 0.0
-GPS_IDENTIFIER 1 0.0
+-- GPS_IDENTIFIER 1 0.150113
+GPS_IDENTIFIER 1 0.0 
 
 -- USE THE FAKE GPS
 USE_FAKE_GPS
-
-USE_GPS_ORIENTATION
+-- USE_GPS_ORIENTATION

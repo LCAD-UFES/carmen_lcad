@@ -247,9 +247,6 @@ PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromLog(std::stringstream &
                 // get the hsv point
                 input_cloud->push_back(point);
             }
-
-            // get the next point and save it to the point cloud
-            input_cloud->push_back(StampedLidar::FromSpherical(h_angle, v_angle, distance));
         }
     }
 

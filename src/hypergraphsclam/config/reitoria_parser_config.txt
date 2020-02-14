@@ -2,14 +2,14 @@
 MAXIMUM_VEL_SCANS 0
 
 -- how many seconds to consider a loop closure - Tempo para considerar que duas nuvens fecham loop
-LOOP_REQUIRED_TIME 60.0
+LOOP_REQUIRED_TIME 5.0
 
 -- how many meters to consider a loop closure - Distancia para considerar que duas nuvens fecham loop
-LOOP_REQUIRED_DISTANCE 1.0
+LOOP_REQUIRED_DISTANCE 5.0
 
 -- uncomment this line if you want to consider only loop closures with same direction (both car poses should points to same direction)
 -- the angle distance must be less than PI/2
-USE_RESTRICTED_LOOPS
+-- USE_RESTRICTED_LOOPS
 
 -- how many threads the ICP (Interative Closest Point) method can use (typically the number of cores of your machine)
 ICP_THREADS_POOL_SIZE 6
@@ -30,6 +30,9 @@ ICP_TRANSLATION_CONFIDENCE_FACTOR 1.00
 -- Nao Lembro
 CURVATURE_REQUIRED_TIME 0.0001
 
+-- velocidade mínima para considerar as mensagens (m/s)
+MIN_SPEED 0.01
+
 -- vehicle model parameters
 DISTANCE_BETWEEN_AXLES 2.625
 MAX_STEERING_ANGLE 0.5337
@@ -39,13 +42,20 @@ KMAX 0.17857142857
 -- Se quiser mais rapido, pode rodar o odometry calibration. porem nao parece ser muito necessario.
 -- Initial odometry bias guess, the default values are: v_mult = 1.0, phi_mult = 1.0 and phi_add = 0.0
 -- You can pick this values from a previous calibration result
-V_MULT_ODOMETRY_BIAS 1.001460
-PHI_MULT_ODOMETRY_BIAS 0.983463
-PHI_ADD_ODOMETRY_BIAS 0.000347
+
+-- Hypergraph
+ODOMETRY_BIAS 0.9967469935 0.9931877340 0.0002859209
+
+-- PSO
+-- ODOMETRY_BIAS 1.000819 0.983817 0.000354
+
+-- Hack, in order to plot the calibrated odometry we copy this value from the optimized poses
+-- INITIAL_GUESS_POSE 0.0 0.0 -2.491747
+INITIAL_GUESS_POSE 7757478.293775 -364050.900362 -2.493271
 
 -- Descomente os argumentos abaixo para desabilitar a construcao das respectivas arestas
 DISABLE_VELODYNE_ODOMETRY
--- DISABLE_VELODYNE_LOOP
+DISABLE_VELODYNE_LOOP
 DISABLE_SICK_ODOMETRY
 DISABLE_SICK_LOOP
 DISABLE_BUMBLEBEE_ODOMETRY
@@ -64,3 +74,4 @@ GPS_IDENTIFIER 1 0.0
 
 -- USE THE FAKE GPS
 USE_FAKE_GPS
+-- USE_GPS_ORIENTATION

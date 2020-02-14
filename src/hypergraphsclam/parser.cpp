@@ -1,4 +1,5 @@
 #include <string>
+#include <sstream>
 #include <array>
 #include <unistd.h>
 #include <boost/filesystem/operations.hpp>
@@ -19,6 +20,9 @@ prepare_all_directories()
     boost::filesystem::create_directory("/dados/tmp/lgm/sick");
     boost::filesystem::create_directory("/dados/tmp/lgm/velodyne");
     boost::filesystem::create_directory("/dados/tmp/images");
+    boost::filesystem::create_directory("/dados/tmp/loops");
+    boost::filesystem::create_directory("/dados/tmp/loops/sick");
+    boost::filesystem::create_directory("/dados/tmp/loops/velodyne");
     std::cout << "Necessary directories created." << std::endl;
 }
 
@@ -26,7 +30,7 @@ std::vector<std::array<std::string, 3>> log_list_parser(std::string log_list_fil
 {
     std::string carmen_home(getenv("CARMEN_HOME"));
     std::string carmen_src_folder(carmen_home + "/src/");
-    std::string config_folder(carmen_src_folder + "/hypergraphsclam/config/");
+    std::string config_folder(carmen_src_folder + "hypergraphsclam/config/");
 
     std::vector<std::array<std::string, 3>> log_list;
 
@@ -96,11 +100,11 @@ parse_logs(std::vector<hyper::GrabData> &gds, std::vector<std::array<std::string
 
 
 void
-build_loop_closures(std::vector<hyper::GrabData> &gds, double external_loop_required_distance)
+build_loop_closures(std::vector<hyper::GrabData> &gds, double external_loop_min_distance, double external_loop_required_distance)
 {
 	for (unsigned i = 0; i < gds.size(); ++i)
 		for (unsigned j = i + 1; j < gds.size(); ++j)
-			gds[i].BuildExternalLoopClosures(gds[j], external_loop_required_distance);
+			gds[i].BuildExternalLoopClosures(gds[j], external_loop_min_distance, external_loop_required_distance);
 }
 
 void
@@ -121,6 +125,8 @@ save_separated_graph(hyper::GrabData &gd, unsigned b)
 
     gd.SaveHyperGraph(sync, false);
 
+    std::cout << "The base: " << base << std::endl;
+    
     gd.SaveEstimates(base);
 }
 
@@ -159,28 +165,37 @@ main (int argc, char **argv)
 {
     if (2 > argc)
     {
-        std::cout << "Usage: ./parser <log_list_file_path> [external_loop_required_distance]" << std::endl;
+        std::cout << "Usage: ./parser <log_list_file_path> [external_loop_min_distance] [external_loop_required_distance]" << std::endl;
         return -1;
     }
 
     prepare_all_directories();
 
+    double external_loop_min_distance = 1.0f;
 	double external_loop_required_distance = 5.0f;
 
-	if (2 < argc)
-	{
-		std::stringstream ss;
-		std::string elmd(argv[2]);
-		ss << elmd;
-		ss >> external_loop_required_distance;
-	}
+    if (2 < argc)
+    {
+        std::string elmd(argv[2]);
+        std::stringstream ss;
+        ss << elmd;
+        ss >> external_loop_min_distance;
+    }
 
-    std::vector<hyper::GrabData> gds;
+    if (3 < argc)
+    {
+        std::string eld(argv[3]);
+        std::stringstream ss;
+        ss << eld;
+        ss >> external_loop_required_distance;
+    }
+
+    std::vector<hyper::GrabData> gds(0);
     std::vector<std::array<std::string, 3>> logs(log_list_parser(argv[1]));
 
     if (parse_logs(gds, logs))
     {
-        build_loop_closures(gds, external_loop_required_distance);
+        build_loop_closures(gds, external_loop_min_distance, external_loop_required_distance);
         save_hyper_graphs(gds);
     }
 

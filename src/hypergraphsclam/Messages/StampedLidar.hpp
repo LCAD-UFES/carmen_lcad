@@ -10,98 +10,89 @@
 
 namespace hyper {
 
-typedef pcl::VoxelGrid<pcl::PointXYZHSV> VoxelGridFilter;
+    using VoxelGridFilter = pcl::VoxelGrid<pcl::PointXYZHSV>;
 
-class StampedLidar : virtual public StampedMessage {
+    class StampedLidar : virtual public StampedMessage {
 
-    protected:
+        protected:
 
-        // to degree
-        static double to_degree;
+            static double to_degree;
 
-        // x min max values
-        double minx, maxx, absx;
+            double minx, maxx, absx;
+            double miny, maxy, absy;
+            double minz, maxz, absz;
 
-        // y min max values
-        double miny, maxy, absy;
+            // the segmentation class
+            static hyper::SimpleLidarSegmentation segm;
 
-        // z min max values
-        double minz, maxz, absz;
+            // convert from spherical coordinates
+            pcl::PointXYZHSV FromSpherical(double phi, double theta, double radius);
 
-        // the segmentation class
-        static hyper::SimpleLidarSegmentation segm;
+        public:
 
-        // convert from spherical coordinates
-        pcl::PointXYZHSV FromSpherical(double phi, double theta, double radius);
+            // the default leaf size
+            static double vg_leaf;
 
-    public:
+            static VoxelGridFilter grid_filtering;
 
-        // the default leaf size
-        static double vg_leaf;
+            // the current speed, for filtering purpose
+            double speed;
 
-        // the cloud filtering object
-        static VoxelGridFilter grid_filtering;
+            // the point cloud filepath
+            std::string path;
 
-        // the current speed, for filtering purpose
-        double speed;
+            // the sequential ICP measure
+            g2o::SE2 seq_measurement;
 
-        // the point cloud filepath
-        std::string path;
+            // the seq id
+            unsigned seq_id;
 
-        // the sequential ICP measure
-        g2o::SE2 seq_measurement;
+            // the current lidar estimate
+            g2o::SE2 lidar_estimate;
 
-        // the seq id
-        unsigned seq_id;
+            // the current gps sync estimate
+            g2o::SE2 gps_sync_estimate;
 
-        // the current lidar estimate
-        g2o::SE2 lidar_estimate;
+            // the loop restriction measure
+            g2o::SE2 loop_measurement;
 
-        // the current gps sync estimate
-        g2o::SE2 gps_sync_estimate;
+            // the loop cloure id
+            unsigned loop_closure_id;
 
-        // the loop restriction measure
-        g2o::SE2 loop_measurement;
+            // the external loop restriction measure
+            g2o::SE2 external_loop_measurement;
 
-        // the loop cloure id
-        unsigned loop_closure_id;
+            // the external loop closure id
+            unsigned external_loop_closure_id;
 
-		// the external loop restriction measure
-		g2o::SE2 external_loop_measurement;
+            // the basic constructor
+            StampedLidar(unsigned msg_id, const std::string &base_path);
 
-		// the external loop closure id
-		unsigned external_loop_closure_id;
+            // the basic destructor
+            virtual ~StampedLidar();
 
-		// the basic constructor
-        StampedLidar(unsigned msg_id, const std::string &base_path);
+            // parse the pose from string stream
+            virtual bool FromCarmenLog(std::stringstream &ss) =0;
 
-        // the basic destructor
-        virtual ~StampedLidar();
+            // save the point cloud
+            static void SavePointCloud(const std::string &base_path, unsigned cloud_id, const PointCloudHSV &cloud);
 
-        // parse the pose from string stream
-        virtual bool FromCarmenLog(std::stringstream &ss) =0;
+            // custom point cloud saving process
+            static void SavePointCloud(const std::string &cloud_path, const PointCloudHSV &cloud);
 
-        // save the point cloud
-        static void SavePointCloud(const std::string &base_path, unsigned cloud_id, const PointCloudHSV &cloud);
+            // custom point cloud loading process
+            static void LoadPointCloud(const std::string &cloud_path, PointCloudHSV &cloud);
 
-        // custom point cloud saving process
-        static void SavePointCloud(const std::string &cloud_path, const PointCloudHSV &cloud);
+            // remove undesired points
+            void RemoveUndesiredPoints(PointCloudHSV &cloud);
+    };
 
-        // custom point cloud loading process
-        static void LoadPointCloud(const std::string &cloud_path, PointCloudHSV &cloud);
+    // syntactic sugar
+    using StampedLidarPtr = StampedLidar*;
+    using StampedLidarRef = StampedLidar&;
 
-        // remove undesired points
-        void RemoveUndesiredPoints(PointCloudHSV &cloud);
-
-};
-
-// syntactic sugar
-typedef StampedLidar* StampedLidarPtr;
-typedef StampedLidar& StampedLidarRef;
-
-// define the standard vector type
-typedef std::vector<StampedLidarPtr> StampedLidarPtrVector;
-
+    // define the standard vector type
+    using StampedLidarPtrVector = std::vector<StampedLidarPtr>;
 }
 
 #endif

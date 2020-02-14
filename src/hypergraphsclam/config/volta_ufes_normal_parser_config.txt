@@ -2,14 +2,14 @@
 MAXIMUM_VEL_SCANS 0
 
 -- how many seconds to consider a loop closure - Tempo para considerar que duas nuvens fecham loop
-LOOP_REQUIRED_TIME 20.0
+LOOP_REQUIRED_TIME 400.0
 
 -- how many meters to consider a loop closure - Distancia para considerar que duas nuvens fecham loop
-LOOP_REQUIRED_DISTANCE 7.0
+LOOP_REQUIRED_DISTANCE 2.0
 
 -- uncomment this line if you want to consider only loop closures with same direction (both car poses should points to same direction)
 -- the angle distance must be less than PI/2
--- USE_RESTRICTED_LOOPS
+USE_RESTRICTED_LOOPS
 
 -- how many threads the ICP (Interative Closest Point) method can use (typically the number of cores of your machine)
 ICP_THREADS_POOL_SIZE 6
@@ -44,14 +44,16 @@ KMAX 0.17857142857
 -- You can pick this values from a previous calibration result
 
 -- Hypergraph
--- ODOMETRY_BIAS 0.9934975935 1.0002226512 0.0005618668
+-- ODOMETRY_BIAS 0.9966342546  1.0281633340 -0.0015329777
 
 -- PSO
-ODOMETRY_BIAS 0.987988 0.989296 0.000542
+ODOMETRY_BIAS 1.030113 0.972890 -0.001412
 
 -- Hack, in order to plot the calibrated odometry we copy this value from the optimized poses
--- INITIAL_GUESS_POSE 0.0 0.0 -0.729195
-INITIAL_GUESS_POSE 7757860.456596 -363560.590811 -0.720652
+INITIAL_GUESS_POSE 7757728.775357 -363562.886202 0.651116
+-- INITIAL_GUESS_POSE 0.0 0.0 0.651116
+-- INITIAL_GUESS_POSE 0.0 0.0 0.646488
+-- INITIAL_GUESS_POSE 7757728.475284 -363562.913970 0.646488
 
 -- Descomente os argumentos abaixo para desabilitar a construcao das respectivas arestas
 DISABLE_VELODYNE_ODOMETRY
@@ -66,13 +68,17 @@ DISABLE_BUMBLEBEE_LOOP
 -- Make sure you have enough space available in your hard drive (3x the log size)
 -- SAVE_ACCUMULATED_POINT_CLOUDS
 
+-- comment if you don't want to save the point clouds in the loop closures
+-- SAVE_LOOP_CLOSURE_POINT_CLOUDS
+
 -- indica quais gps a utilizar, um por um
 -- no caso abaixo, vamos usar o 0 e o 1
 -- o primeiro inteiro é o identificador e o segundo valor (double) é o delay do gps
 -- GPS_IDENTIFIER 0 0.0
+-- GPS_IDENTIFIER 1 0.153033
 GPS_IDENTIFIER 1 0.0
 
 -- USE THE FAKE GPS
 USE_FAKE_GPS
 
-USE_GPS_ORIENTATION
+-- USE_GPS_ORIENTATION
