@@ -294,7 +294,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	}
 
     pcl::visualization::PCLVisualizer::Ptr viewer;
-    viewer = simpleVis(cloud_filtered);
+    viewer = simpleVis(cloud);
 
     while (!viewer->wasStopped ())
     {
