@@ -719,7 +719,7 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 					}
 				}
 				
-				if (contCar > (filtered_points[i].size() / 3))
+				if (contCar > (filtered_points[i].size() / 5))
 				{
 					is_moving_obstacle = true;
 					break;
@@ -807,6 +807,7 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 				}
 			}else{
 				//Color black because was not identified as movable object
+				/*
 				for (unsigned int j = 0; j < filtered_points[i].size(); j++)
 				{
 					if (verbose >= 2)   // TODO color the clusters on the camera image
@@ -831,8 +832,7 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 							img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) =  colormap_semantic[0];
 						}
 					}
-
-				}
+				}*/
 			}
 		}
 
