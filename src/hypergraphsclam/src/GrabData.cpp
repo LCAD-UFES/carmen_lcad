@@ -1,5 +1,6 @@
 #include <GrabData.hpp>
 #include <StampedMessageType.hpp>
+#include <SimpleLidarSegmentation.hpp>
 
 #include <list>
 #include <cmath>
@@ -953,6 +954,23 @@ bool GrabData::GetNextICPIterators(StampedLidarPtrVector::iterator &begin, Stamp
     return status;
 }
 
+PointCloudHSV::Ptr GrabData::GetFilteredPointCloud(SimpleLidarSegmentation &segm, VoxelGridFilter &grid_filtering, StampedLidarPtr lidar)
+{
+    PointCloudHSV::Ptr filtered_cloud(new PointCloudHSV());
+    PointCloudHSV::Ptr raw_cloud(new PointCloudHSV());
+    
+    lidar->LoadPointCloud(*raw_cloud);
+
+    lidar->RemoveUndesiredPoints(segm, *raw_cloud);
+
+    grid_filtering.setInputCloud(raw_cloud);
+    grid_filtering.filter(*filtered_cloud);
+
+    raw_cloud->clear();
+
+    return filtered_cloud;
+}
+
 
 // the main icp measurement method, multithreaded version
 void GrabData::BuildLidarMeasuresMT()
@@ -975,8 +993,7 @@ void GrabData::BuildLidarMeasuresMT()
     // set the voxel value
     grid_filtering.setLeafSize(StampedLidar::vg_leaf, StampedLidar::vg_leaf, StampedLidar::vg_leaf);
 
-    // the local grid map
-    // LocalGridMap3D<float> lgm(4.0, 40.0, 30.0f, 5.0f);
+    SimpleLidarSegmentation segm;
 
     // the lidar frequency times the base distance
     float lfd = lidar_odometry_min_distance;
@@ -1025,13 +1042,7 @@ void GrabData::BuildLidarMeasuresMT()
         StampedLidarPtr current = *(begin + current_index);
 
         // the current cloud
-        pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
-
-        // try to open the current cloud
-        if (-1 == pcl::io::loadPCDFile(current->path, *current_cloud))
-        {
-            throw std::runtime_error("Could not open the source cloud");
-        }
+        pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(GetFilteredPointCloud(segm, grid_filtering, current));
 
         // the main iterator
         while (current_index < last_index)
@@ -1045,15 +1056,10 @@ void GrabData::BuildLidarMeasuresMT()
                 StampedLidarPtr next = *(begin + next_index);
 
                 // the next cloud
-                pcl::PointCloud<pcl::PointXYZHSV>::Ptr next_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
-
-                // try to open the next cloud
-                if (-1 == pcl::io::loadPCDFile(next->path, *next_cloud))
-                {
-                    throw std::runtime_error("Could not open the target cloud");
-                }
+                pcl::PointCloud<pcl::PointXYZHSV>::Ptr next_cloud(GetFilteredPointCloud(segm, grid_filtering, next));
 
                 double dt = next->timestamp - current->timestamp;
+
                 if (dt > 0 && dt < 600)
                 {
                     // get the factor

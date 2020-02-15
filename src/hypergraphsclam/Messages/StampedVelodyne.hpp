@@ -31,10 +31,12 @@ namespace hyper {
             static const unsigned velodyne_struct_size;
 
             // read the point cloud from file
-            PointCloudHSV::Ptr ReadVelodyneCloudFromFile(std::stringstream &ss);
-
+            void ReadVelodyneCloudFromFile(PointCloudHSV &cloud);
+            
             // read the point cloud from carmen log
             PointCloudHSV::Ptr ReadVelodyneCloudFromLog(std::stringstream &ss);
+
+            bool from_file;
 
         public:
 
@@ -46,12 +48,15 @@ namespace hyper {
 
             // the basic destructor
             virtual ~StampedVelodyne();
+            
+            virtual void LoadPointCloud(PointCloudHSV &cloud);
 
             // parse the pose from string stream
             virtual bool FromCarmenLog(std::stringstream &ss);
 
             // get the message type
             virtual StampedMessageType GetType();
+
     };
 
     typedef StampedVelodyne* StampedVelodynePtr;

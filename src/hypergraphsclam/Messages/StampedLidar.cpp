@@ -35,18 +35,17 @@ StampedLidar::StampedLidar(unsigned msg_id, const std::string &base_path) :
 	external_loop_measurement(0.0, 0.0, 0.0),
 	external_loop_closure_id(std::numeric_limits<unsigned>::max())
 {
-
     // set the default leaf size
     StampedLidar::grid_filtering.setLeafSize(vg_leaf, vg_leaf, vg_leaf);
 
 }
 
 // the basic destructor
-StampedLidar::~StampedLidar() {}
-
+StampedLidar::~StampedLidar()
+{}
 // PRIVATE METHODS
-pcl::PointXYZHSV StampedLidar::FromSpherical(double phi, double theta, double radius) {
-
+pcl::PointXYZHSV StampedLidar::FromSpherical(double phi, double theta, double radius)
+{
     // build a new point
     pcl::PointXYZHSV point;
 
@@ -64,14 +63,13 @@ pcl::PointXYZHSV StampedLidar::FromSpherical(double phi, double theta, double ra
     point.v = float(radius);
 
     return point;
-
 }
 
 // save the point cloud
-void StampedLidar::SavePointCloud(const std::string &base_path, unsigned cloud_id, const PointCloudHSV &cloud) {
-
-    if (0 < cloud.size()) {
-
+void StampedLidar::SavePointCloud(const std::string &base_path, unsigned cloud_id, const PointCloudHSV &cloud)
+{
+    if (0 < cloud.size())
+    {
         // the string stream
         std::stringstream ss;
 
@@ -79,32 +77,31 @@ void StampedLidar::SavePointCloud(const std::string &base_path, unsigned cloud_i
         ss << base_path << "cloud" << cloud_id << ".pcd";
 
         // save the cloud
-        if (-1 == pcl::io::savePCDFile(ss.str(), cloud, true)) {
-
+        if (-1 == pcl::io::savePCDFile(ss.str(), cloud, true))
+        {
             throw std::runtime_error("Could not save the cloud");
 
         }
-
     }
-
 }
 
 // custom output file
-void StampedLidar::SavePointCloud(const std::string &cloud_path, const PointCloudHSV &cloud) {
-
+void StampedLidar::SavePointCloud(const std::string &cloud_path, const PointCloudHSV &cloud)
+{
     // open the ouptut file
     std::ofstream output(cloud_path, std::ofstream::out);
 
-    if (!output.is_open()) {
-        throw std::runtime_error("Could not open the output file\n");
+    if (!output.is_open())
+    {
+       throw std::runtime_error("Could not open the output file\n");
     }
 
     // points vector access
     std::vector<pcl::PointXYZHSV, Eigen::aligned_allocator<pcl::PointXYZHSV>>::const_iterator point = cloud.points.begin();
     std::vector<pcl::PointXYZHSV, Eigen::aligned_allocator<pcl::PointXYZHSV>>::const_iterator end = cloud.points.end();
 
-    while (end != point) {
-
+    while (end != point)
+    {
         // get the current point
         const pcl::PointXYZHSV &p(*point);
 
@@ -122,13 +119,13 @@ void StampedLidar::SavePointCloud(const std::string &cloud_path, const PointClou
 }
 
 // custom point cloud loading process
-void StampedLidar::LoadPointCloud(const std::string &cloud_path, PointCloudHSV &cloud) {
-
+void StampedLidar::LoadPointCloud(const std::string &cloud_path, PointCloudHSV &cloud)
+{
     // open the input file
     std::ifstream input(cloud_path, std::ofstream::in);
 
-    if (!input.is_open()) {
-
+    if (!input.is_open())
+    {
         throw std::runtime_error("Could not open the input file\n");
 
     }
@@ -143,8 +140,8 @@ void StampedLidar::LoadPointCloud(const std::string &cloud_path, PointCloudHSV &
     std::stringstream ss;
 
     // read the first line
-    while (-1 != StringHelper::ReadLine(input, ss)) {
-
+    while (-1 != StringHelper::ReadLine(input, ss))
+    {
         // read the coordinates
         ss >> point.x;
         ss >> point.y;
@@ -166,9 +163,13 @@ void StampedLidar::LoadPointCloud(const std::string &cloud_path, PointCloudHSV &
 }
 
 // remove undesired points
-void StampedLidar::RemoveUndesiredPoints(PointCloudHSV &cloud) {
-
-    // segmentation
+void StampedLidar::RemoveUndesiredPoints(PointCloudHSV &cloud)
+{
     segm.PointTypeSegmentation(cloud, absx, absy, minz, maxz);
 
+}
+
+void StampedLidar::RemoveUndesiredPoints(SimpleLidarSegmentation &_segm, PointCloudHSV &cloud)
+{
+    _segm.PointTypeSegmentation(cloud, absx, absy, minz, maxz);
 }

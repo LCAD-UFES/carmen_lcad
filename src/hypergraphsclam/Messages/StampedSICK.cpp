@@ -21,6 +21,11 @@ StampedSICK::~StampedSICK() {}
 
 // PUBLIC METHODS
 
+void StampedSICK::LoadPointCloud(PointCloudHSV &cloud)
+{
+    StampedLidar::LoadPointCloud(StampedLidar::path, cloud);
+}
+
 // parse the pose from string stream
 bool StampedSICK::FromCarmenLog(std::stringstream &ss)
 {
@@ -75,6 +80,7 @@ bool StampedSICK::FromCarmenLog(std::stringstream &ss)
 
         // save the cloud
         std::stringstream ss_parser;
+        
         ss_parser << StampedMessage::id;
 
         // save the name

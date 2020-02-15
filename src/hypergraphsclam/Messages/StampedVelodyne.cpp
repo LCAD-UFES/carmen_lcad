@@ -71,37 +71,23 @@ StampedVelodyne::~StampedVelodyne() {}
 
 
 // read the point cloud from file
-PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromFile(std::stringstream &ss)
+void StampedVelodyne::ReadVelodyneCloudFromFile(PointCloudHSV &cloud)
 {
-    // the pcl object
-    PointCloudHSV::Ptr input_cloud(new PointCloudHSV());
-
-    // helpers
-    std::string velodyne_log_path;
-
-    // get the filepath
-    ss >> velodyne_log_path;
-
-    // get the number of vertical scans
-    // each vertical scans has 32 laser beams
-    ss >> vertical_scans;
-
-    // get the timestamp
-    ss >> StampedMessage::timestamp;
-
     // open the pointcloud file
-    std::ifstream source(velodyne_log_path, std::ifstream::in | std::ifstream::binary);
+    std::ifstream source(StampedLidar::path, std::ifstream::in | std::ifstream::binary);
 
     if (!source.is_open())
     {
         // error
         std::string error("Could not open the velodyne point cloud: ");
-        error += velodyne_log_path;
+        error += path;
 
         // return the empty pointer
         throw std::runtime_error(error);
     }
 
+    cloud.clear();
+    
     // the point cloud values
     double h_angle, v_angle;
     double distance;
@@ -154,21 +140,18 @@ PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromFile(std::stringstream 
                 if (maxz < point.z) maxz = point.z;
 
                 // get the hsv point
-                input_cloud->push_back(point);
+                cloud.push_back(point);
             }
         }
     }
+
+    // remove the buffer from memmory
+    delete [] binary_buffer;
 
     // set the abs values
     absx = std::fabs(maxx) > std::fabs(minx) ? std::fabs(maxx) : std::fabs(minx);
     absy = std::fabs(maxy) > std::fabs(miny) ? std::fabs(maxy) : std::fabs(miny);
     absz = std::fabs(maxz) > std::fabs(minz) ? std::fabs(maxz) : std::fabs(minz);
-
-    // remove the buffer from memmory
-    delete [] binary_buffer;
-
-    // return the input cloud
-    return input_cloud;
 }
 
 // read the point cloud from carmen log
@@ -259,52 +242,75 @@ PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromLog(std::stringstream &
     return input_cloud;
 }
 
+void StampedVelodyne::LoadPointCloud(PointCloudHSV &cloud)
+{
+    if (from_file)
+    {
+        ReadVelodyneCloudFromFile(cloud);
+    }
+    else
+    {
+        StampedLidar::LoadPointCloud(path, cloud);
+    }
+}
+
 // parse the pose from string stream
 bool StampedVelodyne::FromCarmenLog(std::stringstream &ss)
 {
-    // the pcl object
-    PointCloudHSV::Ptr input_cloud = 1e04 > StringHelper::GetStringStreamSize(ss) ? ReadVelodyneCloudFromFile(ss) : ReadVelodyneCloudFromLog(ss);
-
-    if (0 < input_cloud->size())
+    from_file = 1e04 > StringHelper::GetStringStreamSize(ss);
+    
+    if (from_file)
     {
-        // creates the filtered version
-        PointCloudHSV::Ptr filtered_cloud(new PointCloudHSV());
+        path.clear();
+        ss >> StampedLidar::path;
+        ss >> vertical_scans;
+        ss >> StampedMessage::timestamp;
 
-        // remove undesired points
-        StampedLidar::RemoveUndesiredPoints(*input_cloud);
-
-        // filtering the input point cloud
-        StampedLidar::grid_filtering.setInputCloud(input_cloud);
-
-        // get the resulting filtered version
-        StampedLidar::grid_filtering.filter(*filtered_cloud);
-
-        // set the filename
-        std::stringstream pcd_filename;
-        pcd_filename << StampedMessage::id << ".pcd";
-
-        // update the path name
-        StampedLidar::path += pcd_filename.str();
-
-        // save the input cloud, binary option set to true
-        if (-1 == pcl::io::savePCDFile(StampedLidar::path, *filtered_cloud, true))
-        {
-            // show the error
-            std::cerr << "Could not save the input cloud, verify the tmp/velodyne/ directory\n";
-
-            return false;
-        }
-
-        // clear the filtered cloud
-        filtered_cloud->clear();
+        return (bool) std::ifstream(StampedLidar::path);
     }
+    else
+    {
+        PointCloudHSV::Ptr input_cloud { ReadVelodyneCloudFromLog(ss) };
 
-    // clear the input cloud
-    input_cloud->clear();
+        if (0 < input_cloud->size())
+        {
+            // creates the filtered version
+            PointCloudHSV::Ptr filtered_cloud(new PointCloudHSV());
 
-    return true;
+            // remove undesired points
+            StampedLidar::RemoveUndesiredPoints(*input_cloud);
+
+            // filtering the input point cloud
+            StampedLidar::grid_filtering.setInputCloud(input_cloud);
+
+            // get the resulting filtered version
+            StampedLidar::grid_filtering.filter(*filtered_cloud);
+
+            // set the filename
+            std::stringstream pcd_filename;
+            pcd_filename << StampedMessage::id << ".pcd";
+
+            // update the path name
+            StampedLidar::path += pcd_filename.str();
+
+            // save the input cloud, binary option set to true
+            if (-1 == pcl::io::savePCDFile(StampedLidar::path, *filtered_cloud, true))
+            {
+                // show the error
+                std::cerr << "Could not save the input cloud, verify the tmp/velodyne/ directory\n";
+
+                return false;
+            }
+
+            // clear the filtered cloud
+            filtered_cloud->clear();
+        }
+        // clear the input cloud
+        input_cloud->clear();
+        
+        return true;
+    }
 }
-
 
 // get the message type
 StampedMessageType StampedVelodyne::GetType()

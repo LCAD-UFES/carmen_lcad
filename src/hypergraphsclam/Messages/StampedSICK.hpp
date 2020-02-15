@@ -25,11 +25,14 @@ namespace hyper {
             // the basic destructor
             virtual ~StampedSICK();
 
+            virtual void LoadPointCloud(PointCloudHSV &cloud);
+
             // parse the pose from string stream
             virtual bool FromCarmenLog(std::stringstream &ss);
 
             // get the message type
             virtual StampedMessageType GetType();
+
     };
 
     // syntactic sugar

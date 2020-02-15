@@ -222,6 +222,8 @@ namespace hyper {
             // it results in a safe region
             bool GetNextICPIterators(StampedLidarPtrVector::iterator &begin, StampedLidarPtrVector::iterator &end);
 
+            PointCloudHSV::Ptr GetFilteredPointCloud(SimpleLidarSegmentation &segm, VoxelGridFilter &grid_filtering, StampedLidarPtr lidar);
+
             // the main icp measure method, multithreading version
             void BuildLidarMeasuresMT();
 

@@ -71,8 +71,10 @@ namespace hyper {
             // the basic destructor
             virtual ~StampedLidar();
 
+            virtual void LoadPointCloud(PointCloudHSV &cloud) = 0;
+
             // parse the pose from string stream
-            virtual bool FromCarmenLog(std::stringstream &ss) =0;
+            virtual bool FromCarmenLog(std::stringstream &ss) = 0;
 
             // save the point cloud
             static void SavePointCloud(const std::string &base_path, unsigned cloud_id, const PointCloudHSV &cloud);
@@ -85,6 +87,9 @@ namespace hyper {
 
             // remove undesired points
             void RemoveUndesiredPoints(PointCloudHSV &cloud);
+
+            void RemoveUndesiredPoints(SimpleLidarSegmentation &_segm, PointCloudHSV &cloud);
+
     };
 
     // syntactic sugar

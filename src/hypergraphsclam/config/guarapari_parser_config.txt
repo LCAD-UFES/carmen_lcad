@@ -12,7 +12,7 @@ LOOP_REQUIRED_DISTANCE 2.0
 USE_RESTRICTED_LOOPS
 
 -- how many threads the ICP (Interative Closest Point) method can use (typically the number of cores of your machine)
-ICP_THREADS_POOL_SIZE 6
+ICP_THREADS_POOL_SIZE 8
 
 -- each thread will take 400 clouds and execute the sensor movement estimates - Pior caso é usar 1 pois vai ser demorado pacas De 200 em diante é legal vai mais rapido muito grande tbm estraga
 ICP_THREAD_BLOCK_SIZE 300
