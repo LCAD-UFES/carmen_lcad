@@ -11,7 +11,7 @@ CXXFLAGS += -std=c++11
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libviso2.3/src -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libviso2.3/src -L$(CARMEN_HOME)/sharedlib/libtf/src
-LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lvisual_odometry_interface -lstereo_interface -lviso
+LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lbase_ackerman_interface -lvisual_odometry_interface -lstereo_interface -lviso
 LFLAGS += -lrotation_geometry -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
  
 SOURCES = visual_odometry_main.cpp visual_odometry_interface.c
