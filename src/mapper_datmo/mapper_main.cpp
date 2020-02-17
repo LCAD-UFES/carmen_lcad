@@ -144,13 +144,18 @@ carmen_map_config_t map_config;
 char *calibration_file = NULL;
 char *save_calibration_file = NULL;
 
-long long int *squeezeseg_segmented = NULL;
+//long long int *squeezeseg_segmented = NULL;
 int * rangenet_segmented = NULL;
 long long int *salsanet_segmented = NULL;
 carmen_velodyne_partial_scan_message *velodyne_seg;
 
 static char *segmap_dirname = (char *) "/dados/log_dante_michelini-20181116.txt_segmap";
 
+struct segmented {
+	long long int *result;
+	double timestamp;
+};
+segmented squeezeseg_segmented;
 
 inline double
 distance2(image_cartesian a, image_cartesian b)
@@ -557,20 +562,19 @@ int
 object_class_for_sensor_data_squeezeseg(int number_of_laser_shots, int vertical_resolution, int i, int j)
 {
 	int line = (vertical_resolution - i) * number_of_laser_shots + j;
-	return squeezeseg_segmented[line];
+	return squeezeseg_segmented.result[line];
 }
 
 int 
 object_class_for_velodyne_message_squeezeseg(int vertical_resolution, carmen_velodyne_partial_scan_message *velodyne_message, int vertical, int horizontal)
 {
 	int line = (vertical_resolution - vertical) * velodyne_message->number_of_32_laser_shots + horizontal;
-	return squeezeseg_segmented[line];
+	return squeezeseg_segmented.result[line];
 }
 
 void
 filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
 {
-	cout << "SqueezeSeg: filter_sensor running" << endl;
 	cv::Scalar laser_ray_color;
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
@@ -580,12 +584,15 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
 	cv::Mat img_planar_back = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
 	cv::Mat total;
+
+	cout << "SqueezeSeg: filter_sensor_data running " << std::to_string(sensor_data->points_timestamp[cloud_index]) << " and Velodyne " << std::to_string(squeezeseg_segmented.timestamp) << endl;
+
 	int thread_id = omp_get_thread_num();
 
 	vector<image_cartesian> points;
 
 	int min_shots = 1024;
-	if (number_of_laser_shots > min_shots && squeezeseg_segmented != NULL)
+	if (number_of_laser_shots > min_shots && squeezeseg_segmented.result != NULL)
 	{
 		for (int i = 0; i < number_of_laser_shots; i++)
 		{
@@ -594,7 +601,7 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 
 			get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
 
-			for (int j = 1; j < sensor_params->vertical_resolution; j++)
+			for (int j = 0; j < sensor_params->vertical_resolution; j++)
 			{
 				double vertical_angle = carmen_normalize_theta(sensor_data->points[cloud_index].sphere_points[scan_index + j].vertical_angle);
 				double range = sensor_data->points[cloud_index].sphere_points[scan_index + j].length;
@@ -641,7 +648,7 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 					int line = (sensor_params->vertical_resolution - j) * number_of_laser_shots + i;
 					int px = (double)velodyne_p3d.y() / map_resolution + img_planar_depth;
 					int py = (double)img_planar.rows - 1 - velodyne_p3d.x() / map_resolution;
-					int vel_seg = squeezeseg_segmented[line];
+					int vel_seg = squeezeseg_segmented.result[line];
 
 					if (vel_seg != 0)
 					{
@@ -702,8 +709,8 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 			for (unsigned int j = 0; j < filtered_points[i].size(); j++)
 			{
 				int line = (sensor_params->vertical_resolution - filtered_points[i][j].shot_number) * number_of_laser_shots + filtered_points[i][j].ray_number;
-				if (squeezeseg_segmented[line] > 0 && squeezeseg_segmented[line] <= 3){
-					switch (squeezeseg_segmented[line])
+				if (squeezeseg_segmented.result[line] > 0 && squeezeseg_segmented.result[line] <= 3){
+					switch (squeezeseg_segmented.result[line])
 					{
 					case 1:
 						contCar++;   // Car
@@ -849,7 +856,7 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 			resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
 			/*double timestamp = sensor_data->points_timestamp[cloud_index];
 			std::string scan = std::to_string(timestamp);
-			imwrite("DATA/"+scan+"_squeezeseg.jpg", total);
+			imwrite("DATA/"+scan+"_verticalInterpolation.jpg", total);
 			cout << "SqueezeSeg: img " << scan << " saved" << endl;*/
 
 			imshow("Pointcloud SqueezeSeg", total);
@@ -1043,6 +1050,7 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 				}
 			}else{
 				//Color black because was not identified as movable object
+				/*
 				for (unsigned int j = 0; j < filtered_points[i].size(); j++)
 				{
 					if (verbose >= 2)   // TODO color the clusters on the camera image
@@ -1067,8 +1075,7 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 							img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) =  colormap_semantic[0];
 						}
 					}
-
-				}
+				}*/
 			}
 		}
 		if (verbose >= 2)
@@ -1088,14 +1095,14 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 				CV_RGB(0,199,0), 1, 8
 			);
 
-			resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
-			imshow("Pointcloud SalsaNet", total);
-			cv::waitKey(1);
-			/*
+			//resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
+			//imshow("Pointcloud SalsaNet", total);
+			//cv::waitKey(1);
+			
 			double timestamp = sensor_data->points_timestamp[cloud_index];
 			std::string scan = std::to_string(timestamp);
 			imwrite("DATA/" + scan + "_salsanet.jpg", total);
-			std::cout << "SalsaNet: img " << scan << " saved" << std::endl;*/
+			std::cout << "SalsaNet: img " << scan << " saved" << std::endl;
 		}
 	}
 }
@@ -1883,7 +1890,8 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-	squeezeseg_segmented = libsqueeze_seg_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
+	squeezeseg_segmented.result = libsqueeze_seg_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
+	squeezeseg_segmented.timestamp = velodyne_message->timestamp;
 	//rangenet_segmented = librangenet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
 	//salsanet_segmented = libsalsanet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
 	sensor_msg_count[VELODYNE]++;

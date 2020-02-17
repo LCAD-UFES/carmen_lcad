@@ -7,6 +7,19 @@ from __future__ import division
 from __future__ import print_function
 
 from datetime import datetime
+
+import os
+
+def activate_virtual_environment(environment_root):
+    """Configures the virtual environment starting at ``environment_root``."""
+    activate_script = os.path.join(
+        environment_root, 'bin', 'activate_this.py')
+    execfile(activate_script, {'__file__': activate_script})
+
+carmen_home = os.getenv("CARMEN_HOME")
+virtualenv_root = carmen_home + "/sharedlib/libsqueeze_seg_v2/squeezeseg_env"
+activate_virtual_environment(virtualenv_root)
+
 import os.path
 import sys
 import time
@@ -82,9 +95,12 @@ def detect():
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
       saver.restore(sess, FLAGS.checkpoint)
       for f in glob.iglob(FLAGS.input_path):
-        lidar = np.loadtxt(f, delimiter = '\t')
-        print (lidar.shape)
-        lidar = lidar.reshape((mc.ZENITH_LEVEL,mc.AZIMUTH_LEVEL,5))
+        raw_lidar = np.loadtxt(f, delimiter = '\t')
+        #print (raw_lidar.shape)
+        vertical_resolution = 32
+        shots = raw_lidar.shape[0]//vertical_resolution
+        raw_lidar = raw_lidar.reshape((vertical_resolution, shots, 5))
+        lidar = raw_lidar[:,288:800,:]
         # print (lidar.shape)
         # lidar = np.load(f).astype(np.float32, copy=False)[:, :, :5]
         # save_txt(lidar, f)
@@ -92,7 +108,6 @@ def detect():
             (lidar[:, :, 4] > 0),
             [mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL, 1]
         )
-        print(lidar_mask.shape)
         lidar = (lidar - mc.INPUT_MEAN)/mc.INPUT_STD
         lidar = np.append(lidar, lidar_mask, axis=2)
         pred_cls = sess.run(
@@ -103,7 +118,6 @@ def detect():
                 model.lidar_mask:[lidar_mask]
             }
         )
-
         # save the data
         file_name = f.strip('.txt').split('/')[-1]
         

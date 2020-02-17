@@ -5,6 +5,17 @@ from __future__ import print_function
 from datetime import datetime
 
 import os
+
+def activate_virtual_environment(environment_root):
+    """Configures the virtual environment starting at ``environment_root``."""
+    activate_script = os.path.join(
+        environment_root, 'bin', 'activate_this.py')
+    execfile(activate_script, {'__file__': activate_script})
+
+carmen_home = os.getenv("CARMEN_HOME")
+virtualenv_root = carmen_home + "/sharedlib/libsqueeze_seg_v2/squeezeseg_env"
+activate_virtual_environment(virtualenv_root)
+
 import os.path
 import sys
 import time
@@ -27,16 +38,18 @@ from IN import MCAST_BLOCK_SOURCE
 global mc
 global model
 global sess
+global zenith_resolution
 
 '''Initialize tensorflow and model within specific vertical resolution and number shots to squeeze'''
 def initialize(vertical_resolution, shots_to_squeeze):
     global mc
     global model
     global sess
-    
+    global zenith_resolution
     '''Loads squeezeseg config and changes the zenith and azimuth level'''
     mc = kitti_squeezeSeg_config()
-    mc.ZENITH_LEVEL = vertical_resolution
+    zenith_resolution = vertical_resolution
+    #mc.ZENITH_LEVEL = vertical_resolution
     #mc.AZIMUTH_LEVEL = shots_to_squeeze
  
     mc.LOAD_PRETRAINED_MODEL = False
@@ -155,7 +168,7 @@ def squeeze_seg_process_point_cloud_vertical(lidar, timestamp):
 
 def vertical_interpolation(lidar):
     s = (lidar.shape[0]*2, lidar.shape[1], lidar.shape[2])
-    lidar_new = np.zeros(s)
+    lidar_new = np.zeros(s, dtype=np.int64)
     i = 0
     for x in range(lidar.shape[0]-1):
         first_set = lidar[x,:,:]
@@ -168,11 +181,19 @@ def vertical_interpolation(lidar):
     #print(lidar_new.shape)
     return lidar_new
 
+def vertical_desinterpolation(lidar):
+    s = (lidar.shape[0], lidar.shape[1]//2, lidar.shape[2])
+    lidar_new = np.zeros(s, dtype=np.int64)
+    for x in range(lidar_new.shape[1]):
+        lidar_new[:,x] = lidar[:,x*2]
+        #print("o valor de x ",x)
+    return lidar_new
+
 def horizontal_interpolation(lidar):
     s = (lidar.shape[0], lidar.shape[1]*2, lidar.shape[2])
     s2 = (1, 5)
-    lidar_new = np.zeros(s)
-    line = np.zeros(s2)
+    lidar_new = np.zeros(s, dtype=np.int64)
+    line = np.zeros(s2, dtype=np.int64)
     #print(lidar_new.shape)
     for x in range(lidar.shape[0]):
         first_line = lidar[x,:,:]
@@ -185,6 +206,13 @@ def horizontal_interpolation(lidar):
             lidar_new[x][i+1] = mean[y]
             i = i + 2
     #print(lidar_new.shape)
+    return lidar_new
+
+def horizontal_desinterpolation(lidar):
+    s = (lidar.shape[0], lidar.shape[1], lidar.shape[2]//2)
+    lidar_new = np.zeros(s, dtype=np.int64)
+    for x in range(lidar_new.shape[1]):
+        lidar_new[:,:,x] = lidar[:,:,x*2]
     return lidar_new
 
 def squeeze_seg_process_point_cloud_interpolations(lidar, timestamp):
@@ -229,9 +257,15 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     lidarp2 = lidar[:,:shape_to_complete,:]
     lidar2 = np.concatenate((lidarp1, lidarp2),axis=1)
     
+    lidar1 = vertical_interpolation(lidar1)
+    lidar2 = vertical_interpolation(lidar2)
+
     pred_cls_lidar1 = run_model(lidar1)
     pred_cls_lidar2 = run_model(lidar2)
-     
+    
+    pred_cls_lidar1 = vertical_desinterpolation(pred_cls_lidar1)
+    pred_cls_lidar2 = vertical_desinterpolation(pred_cls_lidar2)
+
     #img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
     #img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
      
@@ -241,9 +275,9 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     #save_lidar_image(img_lidar1, timestamp, tag)
     #save_lidar_image(img_lidar2, timestamp, "_r")
     
-    s = (mc.ZENITH_LEVEL, 26)
+    s = (zenith_resolution, 26)
     lidar_test_1 = np.zeros(s, dtype=np.int64)
-    s2 = (mc.ZENITH_LEVEL, (288-shape_to_complete))
+    s2 = (zenith_resolution, (288-shape_to_complete))
     lidar_test_2 = np.zeros(s2, dtype=np.int64)
     pred_cls = np.concatenate((pred_cls_lidar2[0][:,shape_last_part:],lidar_test_2,pred_cls_lidar1[0], lidar_test_1, pred_cls_lidar2[0][:,:shape_last_part]), axis=1)
     #print("pred_cls.shape={}".format(
