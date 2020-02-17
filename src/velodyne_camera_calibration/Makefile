@@ -24,7 +24,7 @@ SOURCES = velodyne_camera_calibration_main.cpp velodyne_camera_calibration_manua
 PUBLIC_INCLUDES = velodyne_camera_calibration.h
 PUBLIC_LIBRARIES = libvelodyne_camera_calibration.a
 PUBLIC_BINARIES = 
-TARGETS = visual_tracker velodyne_camera_calibration_main.cpp velodyne_camera_calibration_manual velodyne_camera_publish_range save_velodyne_txt libvelodyne_camera_calibration.a
+TARGETS = visual_tracker velodyne_camera_calibration_main velodyne_camera_calibration_manual velodyne_camera_publish_range save_velodyne_txt libvelodyne_camera_calibration.a
 
 visual_tracker:
 	$(MAKE) -C $(CARMEN_HOME)/src/visual_tracker
