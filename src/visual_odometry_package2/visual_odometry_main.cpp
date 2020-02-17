@@ -13,10 +13,10 @@
 static int camera;
 static int bumblebee_basic_width;
 static int bumblebee_basic_height;
-static int ackerman_publish_odometry;
+static int robot_publish_odometry;
 static int visual_odometry_is_global_pos;
 
-static int visual_odometry_publish_velocity;
+static int visual_odometry_publish_odometry;
 
 Matrix visual_odometry_pose_6d_transformation_matrix;
 VisualOdometryStereo *viso = NULL;
@@ -55,17 +55,8 @@ static double visual_odometry_phi_bias;
 static double visual_odometry_v_multiplier;
 //static double visual_odometry_publish;
 
+static carmen_base_ackerman_odometry_message last_base_ackerman_odometry_message;
 
-void
-shutdown_module(int signo)
-{
-	if (signo == SIGINT)
-	{
-		carmen_ipc_disconnect();
-		printf("visual_odometry: disconnected.\n");
-		exit(0);
-	}
-}
 
 void 
 convert_image_rgb_to_gray(unsigned char *lsrc, unsigned char *ldst, unsigned char *rsrc, unsigned char *rdst, int width, int height, int cutline)
@@ -103,6 +94,7 @@ visual_odometry_copy_inliers(int* vector_inliers, std::vector<Matcher::p_match> 
 		vector_inliers[4*i+3]= _matches[_inliers[i]].v1c;
 	}
 }
+
 
 tf::Transform 
 convert_matrix_to_tf_transform(Matrix transformation_matrix)
@@ -296,7 +288,8 @@ compute_v_and_phi(carmen_visual_odometry_pose6d_message *visual_odometry_message
 		}
 
 		double yaw_velocity_raw = delta_pose.orientation.yaw / delta_t;
-		yaw_velocity += 0.25 * (yaw_velocity_raw - yaw_velocity);
+//		yaw_velocity += 0.25 * (yaw_velocity_raw - yaw_velocity);
+		yaw_velocity = yaw_velocity_raw;
 
 		double L = distance_between_front_and_rear_axles;
 		if (fabs(visual_odometry_message->v) > 0.1)
@@ -392,6 +385,7 @@ visual_odometry_assembly_image_message(carmen_6d_point pose_6d, unsigned char *i
 	image_msg.host = host;
 }
 
+
 static void
 initialize_transformations()
 {
@@ -410,7 +404,8 @@ initialize_transformations()
 	transformer.setTransform(car_to_board_transform, "car_to_board_transform");
 }
 
-void 
+
+void
 initialize_pose_6d_transformation_matrix()
 {
 	visual_odometry_pose_6d_transformation_matrix = Matrix::eye(4);
@@ -458,11 +453,20 @@ initialize_pose_6d_transformation_matrix()
 	// get the transformation between the visual odometry coordinate system with respect to the carmen coordinate system.
 	transformer.lookupTransform("/carmen", "/visual_odometry", tf::Time(0), g_carmen_to_visual_odometry_transform);
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 
 void
 publish_base_ackerman_odometry_message(carmen_visual_odometry_pose6d_message *visual_odometry_message)
 {
-	IPC_RETURN_TYPE err = IPC_OK;
+//	IPC_RETURN_TYPE err = IPC_OK;
 	static carmen_base_ackerman_odometry_message odometry;
 	static int first = 1;
 	static double first_timestamp;
@@ -489,11 +493,15 @@ publish_base_ackerman_odometry_message(carmen_visual_odometry_pose6d_message *vi
 	odometry.phi = visual_odometry_message->phi;
 	odometry.timestamp = visual_odometry_message->timestamp;
 
-	fprintf(graf, "v_phi_time %lf %lf %lf\n", odometry.v, -odometry.phi, odometry.timestamp - first_timestamp); // @@@ Alberto: O phi esta negativado porque o carro inicialmente publicava a odometria ao contrario
+	fprintf(graf, "%lf %lf %lf %lf %lf\n",
+			odometry.v, odometry.phi,
+			last_base_ackerman_odometry_message.v, last_base_ackerman_odometry_message.phi,
+			odometry.timestamp - first_timestamp);
 	
-	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
-	carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
+//	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
+//	carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
 }
+
 
 static void
 publish_robot_ackerman_velocity_message(carmen_visual_odometry_pose6d_message *visual_odometry_message)
@@ -512,7 +520,7 @@ publish_robot_ackerman_velocity_message(carmen_visual_odometry_pose6d_message *v
 //		odometry.theta = 0;
 //
 //		odometry.v = odometry.phi = 0;
-////		first_timestamp = visual_odometry_message->timestamp;
+//		first_timestamp = visual_odometry_message->timestamp;
 //		first = 0;
 //	}
 
@@ -523,16 +531,16 @@ publish_robot_ackerman_velocity_message(carmen_visual_odometry_pose6d_message *v
 	robot_ackerman_velocity_message.phi = visual_odometry_message->phi;
 	robot_ackerman_velocity_message.timestamp = visual_odometry_message->timestamp;
 	robot_ackerman_velocity_message.host = carmen_get_host();
-	printf("v_phi_time %lf %lf\n", robot_ackerman_velocity_message.v, robot_ackerman_velocity_message.phi);
-	//printf("v_phi_time %lf %lf %lf\n", odometry.v, -odometry.phi, odometry.timestamp - first_timestamp); // @@@ Alberto: O phi esta negativado porque o carro inicialmente publicava a odometria ao contrario
+//	printf("v_phi_time %lf %lf\n", robot_ackerman_velocity_message.v, robot_ackerman_velocity_message.phi);
+//	printf("v_phi_time %lf %lf %lf\n", odometry.v, -odometry.phi, odometry.timestamp - first_timestamp); // @@@ Alberto: O phi esta negativado porque o carro inicialmente publicava a odometria ao contrario
 
 //	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
 //	carmen_test_ipc(err, "Could not publish base_odometry_message",
 //			CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
 	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &robot_ackerman_velocity_message);
 	carmen_test_ipc(err, "Could not publish base_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
-
 }
+
 
 static void
 publish_visual_odometry_as_global_pos(carmen_visual_odometry_pose6d_message *visual_odometry_message)
@@ -556,9 +564,16 @@ publish_visual_odometry_as_global_pos(carmen_visual_odometry_pose6d_message *vis
 	global_pos.timestamp = visual_odometry_message->timestamp;
 
 	err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME, &global_pos);
-	carmen_test_ipc(err, "Could not publish global_pos_message",
-			CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
+	carmen_test_ipc(err, "Could not publish global_pos_message", CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
@@ -614,10 +629,10 @@ bumblebee_stereo_message_handler(carmen_bumblebee_basic_stereoimage_message *mes
 			err = IPC_publishData(CARMEN_VISUAL_ODOMETRY_POSE6D_MESSAGE_NAME, &odometry_msg);
 			carmen_test_ipc_exit(err, "Could not publish", CARMEN_VISUAL_ODOMETRY_POSE6D_MESSAGE_NAME);
 			
-			//if (!ackerman_publish_odometry)
+//			if (!robot_publish_odometry)
 				publish_base_ackerman_odometry_message(&odometry_msg);
 
-			if (visual_odometry_publish_velocity)
+			if (visual_odometry_publish_odometry)
 				publish_robot_ackerman_velocity_message(&odometry_msg);
 
 			if (visual_odometry_is_global_pos)
@@ -635,10 +650,39 @@ bumblebee_stereo_message_handler(carmen_bumblebee_basic_stereoimage_message *mes
 }
 
 
+static void
+base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *msg)
+{
+	last_base_ackerman_odometry_message = *msg;
+}
+
+
 void
-carmen_subscribe_bumblebee_messages(int camera)
+shutdown_module(int signo)
+{
+	if (signo == SIGINT)
+	{
+		carmen_ipc_disconnect();
+		printf("visual_odometry: disconnected.\n");
+		exit(0);
+	}
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Initializations                                                                              //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+subscribe_to_relevant_messages(int camera)
 {
 	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) bumblebee_stereo_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -665,8 +709,7 @@ read_parameters(int argc, char **argv)
 		{bumblebee_string, (char *) "width", CARMEN_PARAM_INT, &bumblebee_basic_width, 0, NULL},
 		{bumblebee_string, (char *) "height", CARMEN_PARAM_INT, &bumblebee_basic_height, 0, NULL},
 		{(char *) "robot", (char *) "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &maximum_acceleration_forward, 0, NULL},
-		{(char *) "robot", (char *) "publish_odometry", CARMEN_PARAM_ONOFF, &ackerman_publish_odometry, 0, NULL},
-		{(char *) "visual_odometry", (char *) "publish", CARMEN_PARAM_ONOFF, &visual_odometry_publish_velocity, 0, NULL},
+		{(char *) "robot", (char *) "publish_odometry", CARMEN_PARAM_ONOFF, &robot_publish_odometry, 0, NULL},
 		{(char *) camera_string, (char *) "x", CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL},
 		{(char *) camera_string, (char *) "y", CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL},
 		{(char *) camera_string, (char *) "z", CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL},
@@ -680,10 +723,8 @@ read_parameters(int argc, char **argv)
 		{(char *) "sensor_board_1", (char *) "roll", CARMEN_PARAM_DOUBLE, &sensor_board_pose.orientation.roll,0, NULL},
 		{(char *) "sensor_board_1", (char *) "pitch", CARMEN_PARAM_DOUBLE, &sensor_board_pose.orientation.pitch,0, NULL},
 		{(char *) "sensor_board_1", (char *) "yaw", CARMEN_PARAM_DOUBLE, &sensor_board_pose.orientation.yaw,	0, NULL},
+		{(char *) "visual_odometry", (char *) "publish", CARMEN_PARAM_ONOFF, &visual_odometry_publish_odometry, 0, NULL},
 		{(char *) "visual_odometry", (char *) "is_global_pos", CARMEN_PARAM_ONOFF, &visual_odometry_is_global_pos, 0, NULL},
-
-//		{(char *) "visual_odometry", (char *) "publish", CARMEN_PARAM_DOUBLE, &visual_odometry_publish, 0, NULL},
-
 		{(char *) "visual_odometry", (char *) "phi_multiplier", CARMEN_PARAM_DOUBLE, &visual_odometry_phi_multiplier, 0, NULL},
 		{(char *) "visual_odometry", (char *) "phi_bias", CARMEN_PARAM_DOUBLE, &visual_odometry_phi_bias, 0, NULL},
 		{(char *) "visual_odometry", (char *) "v_multiplier", CARMEN_PARAM_DOUBLE, &visual_odometry_v_multiplier, 0, NULL}
@@ -729,6 +770,7 @@ visual_odometry_initialize(float focal_length, float principal_point_x, float pr
 		return false;
 }
 
+
 int
 main(int argc, char **argv)
 {
@@ -739,7 +781,7 @@ main(int argc, char **argv)
 
 	if (argc < 2)
 	{
-		printf("Usage: ./visual_odometry_2 camera_number");
+		printf("Usage: ./visual_odometry2 camera_number");
 		return 1;
 	}
 
@@ -752,17 +794,17 @@ main(int argc, char **argv)
 		// initialize visual odometry pose transformation with identity matrix
 		initialize_pose_6d_transformation_matrix();
 
-		left_image = (unsigned char *)malloc(bumblebee_basic_height * bumblebee_basic_width * sizeof(unsigned char));
-		right_image = (unsigned char *)malloc(bumblebee_basic_height * bumblebee_basic_width * sizeof(unsigned char));
+		left_image = (unsigned char *) malloc(bumblebee_basic_height * bumblebee_basic_width * sizeof(unsigned char));
+		right_image = (unsigned char *) malloc(bumblebee_basic_height * bumblebee_basic_width * sizeof(unsigned char));
 
 		initialize_transformations();
 
-		carmen_subscribe_bumblebee_messages(camera);
+		subscribe_to_relevant_messages(camera);
 		carmen_ipc_dispatch();
 	}
 	else
 	{
-		printf("Cannot start visual odometry module!\n");
+		printf("Could not start visual_odometry2 module!\n");
 		return (1);
 	}
 }
