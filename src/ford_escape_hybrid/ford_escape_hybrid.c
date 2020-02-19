@@ -262,6 +262,7 @@ publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned lon
 	carmen_robot_ackerman_velocity_message robot_ackerman_velocity_message;
 	static int heartbeat = 0;
 
+//	printf("%lf %lf %lf\n", g_XGV_velocity, get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config), carmen_get_time());
 	if (ford_escape_hybrid_config->publish_odometry)
 	{
 		robot_ackerman_velocity_message.v = g_XGV_velocity;
