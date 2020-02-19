@@ -1,5 +1,16 @@
 from __future__ import print_function, division
 import os
+
+def activate_virtual_environment(environment_root):
+    """Configures the virtual environment starting at ``environment_root``."""
+    activate_script = os.path.join(
+        environment_root, 'bin', 'activate_this.py')
+    execfile(activate_script, {'__file__': activate_script})
+
+carmen_home = os.getenv("CARMEN_HOME")
+virtualenv_root = carmen_home + "/sharedlib/libsqueeze_seg_v2/squeezeseg_env"
+activate_virtual_environment(virtualenv_root)
+
 import os.path
 from config import *
 from utils import *
@@ -58,8 +69,6 @@ def salsanet_process_point_cloud(lidar, timestamp):
     global sess
     global net
     global cfg
-    print("lidar.shape={}".format(
-        lidar.shape)) #(99928, 7)
     #lidar = vertical_interpolation(lidar)
     
     AZIMUTH_LEVEL = lidar.shape[1]
@@ -92,8 +101,8 @@ def salsanet_process_point_cloud(lidar, timestamp):
     
     pred_frontal_img = net.predict_single_image(input_img=bevFrontalImg, session=sess)
     #pred_rear_img = net.predict_single_image(input_img=bevRearImg, session=sess)
-    print('predicted image shape: ', pred_frontal_img.shape, ' type: ', pred_frontal_img.dtype, ' min val: ', pred_frontal_img.min(),
-          ' max val: ', pred_frontal_img.max())
+    #print('predicted image shape: ', pred_frontal_img.shape, ' type: ', pred_frontal_img.dtype, ' min val: ', pred_frontal_img.min(),
+    #      ' max val: ', pred_frontal_img.max())
     s = (AZIMUTH_LEVEL * ZENITH_LEVEL)
     pointCloudSegmented = np.zeros(s, dtype=np.int64)
     frontalView.getCloudsFromAnyImage(pred_frontal_img, lidar, pointCloudSegmented) 

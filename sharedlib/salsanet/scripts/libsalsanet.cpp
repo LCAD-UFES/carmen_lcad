@@ -11,9 +11,26 @@
 
 PyObject *python_libsalsanet_process_point_cloud_function;
 
+void initialize_python_path_salsanet()
+{
+	char* pyPath;
+	char* pPath;
+	char* squeezePath;
+	pyPath = (char *) "PYTHONPATH=";
+  	pPath = getenv ("CARMEN_HOME");
+	squeezePath = (char *) "/sharedlib/salsanet/scripts";
+    char * path = (char *) malloc(1 + strlen(pyPath) + strlen(pPath)+ strlen(squeezePath));
+	strcpy(path, pyPath);
+    strcat(path, pPath);
+    strcat(path, squeezePath);
+	putenv(path);
+}
+
 void
 initialize_python_context_salsanet()
 {
+	initialize_python_path_salsanet();
+
 	Py_Initialize();
 	import_array();
 	PyObject *python_module = PyImport_ImportModule("run_salsanet");
@@ -54,7 +71,7 @@ initialize_python_context_salsanet()
 long long int*
 libsalsanet_process_point_cloud(int vertical_resolution, int shots_to_squeeze, double* point_cloud, double timestamp)
 {
-	printf("libsalsanet_process_point_cloud\n");
+	//printf("libsalsanet_process_point_cloud\n");
 	npy_intp dims[3] = {vertical_resolution, shots_to_squeeze, 5};
 	double time[1];
 	time[0] = timestamp;
@@ -122,7 +139,7 @@ libsalsanet_process_moving_obstacles_cells(int sensor_number, carmen_velodyne_pa
 	int vertical_resolution = sensors_params[sensor_number].vertical_resolution;
 	int number_of_points = vertical_resolution * shots_to_squeeze;
 	double data[number_of_points * 5];
-	printf("Salsanet: %d from timestamp %lf\n", velodyne_message->number_of_32_laser_shots, timestamp);
+	//printf("Salsanet: %d from timestamp %lf\n", velodyne_message->number_of_32_laser_shots, timestamp);
 	for (int j = 0, line = 0; j < vertical_resolution; j++)
 	{
 		for (int i = 0; i < shots_to_squeeze; i++, line++)
@@ -135,17 +152,6 @@ libsalsanet_process_moving_obstacles_cells(int sensor_number, carmen_velodyne_pa
 		}
 	}
 	salsanet_segmented = libsalsanet_process_point_cloud(vertical_resolution, shots_to_squeeze, &data[0], timestamp);
-	/*int test = 0;
-	for (int j = 0, line = 0; j < vertical_resolution; j++)
-	{
-		for (int i = 0; i < shots_to_squeeze; i++, line++)
-		{
-			if(salsanet_segmented[line] > 0){
-				test = test + 1;
-			}
-		}
-	}
-	std::cout << "Retorno: " << test << std::endl;*/
 	return salsanet_segmented;
 }
 

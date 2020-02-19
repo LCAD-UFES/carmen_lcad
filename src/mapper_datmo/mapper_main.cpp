@@ -83,6 +83,7 @@ int process_semantic = 0;
 int file_warnings = 1;
 int verbose = 0;
 
+
 carmen_pose_3D_t sensor_board_1_pose;
 carmen_pose_3D_t front_bullbar_pose;
 
@@ -143,10 +144,11 @@ carmen_map_config_t map_config;
 
 char *calibration_file = NULL;
 char *save_calibration_file = NULL;
+char *neural_network = (char*) " ";
 
 //long long int *squeezeseg_segmented = NULL;
 int * rangenet_segmented = NULL;
-long long int *salsanet_segmented = NULL;
+//long long int *salsanet_segmented = NULL;
 carmen_velodyne_partial_scan_message *velodyne_seg;
 
 static char *segmap_dirname = (char *) "/dados/log_dante_michelini-20181116.txt_segmap";
@@ -156,6 +158,7 @@ struct segmented {
 	double timestamp;
 };
 segmented squeezeseg_segmented;
+segmented salsanet_segmented;
 
 inline double
 distance2(image_cartesian a, image_cartesian b)
@@ -870,7 +873,7 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 void
 filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
 {
-	cout << "SalsaNet: filter_sensor running" << endl;
+	//cout << "SalsaNet: filter_sensor running" << endl;
 	cv::Scalar laser_ray_color;
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
@@ -909,6 +912,7 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 					point.ray_number  = i;
 					point.cartesian_x = velodyne_p3d.x();
 					point.cartesian_y = velodyne_p3d.y();
+					point.cartesian_z = j * number_of_laser_shots + i;
 					points.push_back(point);
 
 					if (verbose >= 2)
@@ -940,7 +944,7 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 					int line = j * number_of_laser_shots + i;
 					int px = (double)velodyne_p3d.y() / map_resolution + img_planar_depth;
 					int py = (double)img_planar.rows - 1 - velodyne_p3d.x() / map_resolution;
-					int vel_seg = salsanet_segmented[line];
+					int vel_seg = salsanet_segmented.result[line];
 					if (vel_seg != 0)
 					{
 						if (px >= 0.0 && px < img_planar.cols && py >= 0.0 && py < img_planar.rows)
@@ -992,9 +996,9 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 			unsigned int cont = 0, contCar = 0;
 			for (unsigned int j = 0; j < filtered_points[i].size(); j++)
 			{
-				int line = filtered_points[i][j].shot_number * number_of_laser_shots + filtered_points[i][j].ray_number;
-				if (salsanet_segmented[line] > 0 && salsanet_segmented[line] <= 3){
-					switch (salsanet_segmented[line])
+				int line = filtered_points[i][j].cartesian_z;
+				if (salsanet_segmented.result[line] > 0 && salsanet_segmented.result[line] <= 3){
+					switch (salsanet_segmented.result[line])
 					{
 					case 2:
 						contCar++;   // Car
@@ -1022,7 +1026,6 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 						int px = (double)filtered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
 						int py = (double)img_planar.rows - 1 - filtered_points[i][j].cartesian_x / map_resolution;
 
-						//int line = (sensor_params->vertical_resolution - filtered_points[i][j].shot_number) * number_of_laser_shots + filtered_points[i][j].ray_number;
 						int class_seg = 0;
 						if(contCar > 0){
 							class_seg = 2;
@@ -1097,14 +1100,14 @@ filter_sensor_data_using_salsanet(sensor_parameters_t *sensor_params, sensor_dat
 				CV_RGB(0,199,0), 1, 8
 			);
 
-			//resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
-			//imshow("Pointcloud SalsaNet", total);
-			//cv::waitKey(1);
+			resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
+			imshow("Pointcloud SalsaNet", total);
+			cv::waitKey(1);
 			
-			double timestamp = sensor_data->points_timestamp[cloud_index];
+			/*double timestamp = sensor_data->points_timestamp[cloud_index];
 			std::string scan = std::to_string(timestamp);
 			imwrite("DATA/" + scan + "_salsanet.jpg", total);
-			std::cout << "SalsaNet: img " << scan << " saved" << std::endl;
+			std::cout << "SalsaNet: img " << scan << " saved" << std::endl;*/
 		}
 	}
 }
@@ -1706,9 +1709,15 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 //	if (filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]) > 0)
 //		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 	//Showing squeezeseg classification
-	filter_sensor_data_using_squeezeseg(&sensors_params[sensor_number], &sensors_data[sensor_number]);
-	//filter_sensor_data_using_salsanet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
-	//filter_sensor_data_using_rangenet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+	if (!strcmp(neural_network,"squeezeseg")){
+		filter_sensor_data_using_squeezeseg(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+	}
+	if (!strcmp(neural_network,"salsanet")){
+		filter_sensor_data_using_salsanet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+	}
+	/*if (!strcmp(neural_network,"rangenet")){
+		filter_sensor_data_using_rangenet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+	}*/
 
 ////New - Erase cells occupied by moving obstacles
 	if (check_lidar_camera_max_timestamp_difference(&sensors_data[sensor_number]))
@@ -1892,10 +1901,17 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-	squeezeseg_segmented.result = libsqueeze_seg_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
-	squeezeseg_segmented.timestamp = velodyne_message->timestamp;
-	//rangenet_segmented = librangenet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
-	//salsanet_segmented = libsalsanet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
+	if (!strcmp(neural_network,"squeezeseg")){
+		squeezeseg_segmented.result = libsqueeze_seg_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
+		squeezeseg_segmented.timestamp = velodyne_message->timestamp;
+	}
+	if (!strcmp(neural_network,"salsanet")){
+		salsanet_segmented.result = libsalsanet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
+		salsanet_segmented.timestamp = velodyne_message->timestamp;
+	}
+	/*if (!strcmp(neural_network,"rangenet")){
+		rangenet_segmented = librangenet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
+	}*/
 	sensor_msg_count[VELODYNE]++;
 	mapper_velodyne_partial_scan(VELODYNE, velodyne_message);
 }
@@ -2810,6 +2826,7 @@ usage()
 		"    -process_semantic on|off               : process semantic segmentation using Deeplab\n"
 		"    -file_warnings on|off                  : make or suppress file warnings\n"
 		"    -verbose <n>                           : verbose option\n"
+		"    -neural_network <n>                    : neural_network option (squeezeseg or salsanet)\n"
 		"\n";
 
 	return msg;
@@ -3077,6 +3094,7 @@ read_parameters(int argc, char **argv,
 		{(char *) "commandline", (char *) "process_semantic", CARMEN_PARAM_ONOFF, &process_semantic, 1, NULL},
 		{(char *) "commandline", (char *) "file_warnings", CARMEN_PARAM_ONOFF, &file_warnings, 1, NULL},
 		{(char *) "commandline", (char *) "verbose", CARMEN_PARAM_INT, &verbose, 1, NULL},
+		{(char *) "commandline", (char *) "neural_network", CARMEN_PARAM_STRING, &neural_network, 0, NULL},
 	};
 
 	carmen_param_allow_unfound_variables(1);
@@ -3240,15 +3258,19 @@ main(int argc, char **argv)
 
 	/* Initialize all the relevant parameters */
 	read_parameters(argc, argv, &map_config, &car_config);
-
+	
 	/* Register Python Context for SqueezeSeg */
-	initialize_python_context();
-
+	if (!strcmp(neural_network,"squeezeseg")){
+		initialize_python_context();
+	}
 	/* Register Python Context for SalsaNet */
-	//initialize_python_context_salsanet();
-
-	/* Register TensorRT context for */
-	//librangenet_initialize();
+	if (!strcmp(neural_network,"salsanet")){
+		initialize_python_context_salsanet();
+	}
+	/* Register TensorRT context for RangeNet++*/
+	/*if (!strcmp(neural_network,"rangenet")){
+		librangenet_initialize();
+	}*/
 
 	initialize_transforms();
 
