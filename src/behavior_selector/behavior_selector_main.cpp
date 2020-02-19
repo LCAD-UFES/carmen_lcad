@@ -364,7 +364,7 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)
 		v = 2.5;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
-		v = 1.2; //2.0 reduzido pois as cancelas estao mais lentas para abrir
+		v = 0.6; //1.2 //2.0 reduzido pois as cancelas estao mais lentas para abrir
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
 		v = 0.0;

@@ -25,6 +25,9 @@ vector<carmen_laser_ldmrs_new_message> sick_vector; //used to correct camera del
 #define CAM_DELAY 0.25
 #define MAX_POSITIONS 10
 
+#define IMAGE_HEIGHT_CROP 0.82
+
+
 // This function find the closest velodyne message with the camera message
 carmen_velodyne_partial_scan_message
 find_velodyne_most_sync_with_cam(double bumblebee_timestamp)  // TODO is this necessary?
@@ -733,19 +736,17 @@ show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predicti
 							Scalar(255, 255, 0), 4);
 
 			putText(image, object_info, Point(pedestrian[i].x + 1, pedestrian[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
-
-
     	}
 	}
 
 //	show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
 	vector<vector<image_cartesian>> lidar_points;
 	lidar_points.push_back(points);
-    show_LIDAR(image, lidar_points, 255, 0, 0);
+//    show_LIDAR(image, lidar_points, 255, 0, 0);
 	show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
     show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
 
-    resize(image, image, Size(640, 240));
+    resize(image, image, Size(640, 480 * IMAGE_HEIGHT_CROP));
     imshow("Neural Object Detector", image);
     //imwrite("Image.jpg", image);
     waitKey(1);
@@ -947,13 +948,14 @@ publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clo
 // Handlers                                                                                  //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
 	carmen_laser_ldmrs_new_message sick_sync_with_cam;
 
-	if (image_msg == NULL)
+	if ((image_msg == NULL) || (globalpos_msg == NULL))
 		return;
 
 	if (velodyne_vector.size() > 0)
@@ -980,7 +982,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	int crop_x = 0;
 	int crop_y = 0; //280;
 	int crop_w = image_msg->width;// 1280;
-	int crop_h = image_msg->height;//480;//image_msg->height;//400; // 500;
+	int crop_h = image_msg->height * IMAGE_HEIGHT_CROP;
 
 	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file

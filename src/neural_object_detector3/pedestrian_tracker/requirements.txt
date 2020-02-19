@@ -3,7 +3,7 @@ h5py
 Cython
 scipy
 https://download.pytorch.org/whl/cu90/torch-0.4.1-cp27-cp27mu-linux_x86_64.whl
-torchvision=0.2.2
+torchvision==0.2.2
 cffi
 sklearn
 numba

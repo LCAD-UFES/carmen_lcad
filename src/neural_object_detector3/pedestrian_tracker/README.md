@@ -1,3 +1,19 @@
+## NOD3_tracker
+Create a virtualenv with python2.7
+ pip install virtualenv
+ virtualenv --python=/usr/bin/python2.7 $CARMEN_HOME/src/neural_object_detector3/nod_venv2
+
+Install the requirements
+ pip install -r requirements.txt
+
+Add NOD on PYTHONPATH at bashrc
+ gedit ~/.bashrc
+add at the end of file
+```
+ #NOD_Tracker - sempre por ultimo
+ export PYTHONPATH=$CARMEN_HOME/src/neural_object_detector3/pedestrian_tracker:$PYTHONPATH
+```
+
 ## MOTDT
 
 ### Reference

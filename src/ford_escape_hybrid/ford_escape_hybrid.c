@@ -40,6 +40,9 @@
 //#define PLOT_PHI
 //#define PLOT_VELOCITY
 
+#define ROBOT_NAME_FORD_ESCAPE 0
+#define ROBOT_NAME_ECOTECH4 1
+
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
 
 static carmen_ackerman_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
@@ -58,7 +61,10 @@ static double phi_multiplier;
 static double phi_bias;
 static double v_multiplier;
 
+int robot_model_name = ROBOT_NAME_FORD_ESCAPE;
+
 int g_go_state = 0;
+
 
 
 static double
@@ -700,14 +706,23 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 				//		-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t,
 				//		g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 
-				// FUZZY
-				// TODO Tentar usar o angulo direto da torc pra ver se melhora g_XGV_atan_curvature
-//				g_steering_command = carmen_libpid_steering_PID_controler_FUZZY(g_atan_desired_curvature,
-//						-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
-//						delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG, ford_escape_hybrid_config->filtered_v);
-				g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
-						-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
-						delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
+				if (robot_model_name == ROBOT_NAME_FORD_ESCAPE)
+				{
+					// FUZZY
+					// TODO Tentar usar o angulo direto da torc pra ver se melhora g_XGV_atan_curvature
+					g_steering_command = carmen_libpid_steering_PID_controler_FUZZY(g_atan_desired_curvature,
+							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
+							delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG, ford_escape_hybrid_config->filtered_v);
+				}
+				else if (robot_model_name == ROBOT_NAME_ECOTECH4)
+				{
+					g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
+							-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
+							delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
+				}
+				else
+					printf("ROBOT_MODEL_NAME %d wasnt recognized, check the code number\n "
+							"Usage example: ford_escape_hybrid -robot_name [0 -> Ford_Escape | 1 -> ECOTECH4]", robot_model_name);
 			}
 			#ifdef PLOT_PHI
 					pid_plot_phi(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), 0.55, "phi");
@@ -966,6 +981,14 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+
+    carmen_param_t param_optional_list[] =
+	{
+		{(char *) "commandline", (char *) "robot_model_name",	CARMEN_PARAM_INT, &(robot_model_name),0, NULL},
+	};
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 }
 
 
