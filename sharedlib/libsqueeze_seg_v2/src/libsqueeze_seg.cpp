@@ -7,12 +7,30 @@
 #include <prob_map.h>
 #include <carmen/velodyne_interface.h>
 #include <carmen/velodyne_camera_calibration.h>
+#include <stdlib.h> /* getenv */
 
 PyObject *python_libsqueeze_seg_process_point_cloud_function;
+
+void initialize_python_path()
+{
+	char* pyPath;
+	char* pPath;
+	char* squeezePath;
+	pyPath = (char *) "PYTHONPATH=";
+  	pPath = getenv ("CARMEN_HOME");
+	squeezePath = (char *) "/sharedlib/libsqueeze_seg_v2/src";
+    char * path = (char *) malloc(1 + strlen(pyPath) + strlen(pPath)+ strlen(squeezePath));
+	strcpy(path, pyPath);
+    strcat(path, pPath);
+    strcat(path, squeezePath);
+	putenv(path);
+}
 
 void
 initialize_python_context()
 {
+	initialize_python_path();
+	
 	Py_Initialize();
 	import_array();
 
@@ -57,7 +75,7 @@ initialize_python_context()
 long long int*
 libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze, double* point_cloud, double timestamp)
 {
-	printf("libsqueeze_seg_process_point_cloud\n");
+	//printf("libsqueeze_seg_process_point_cloud\n");
 	npy_intp dims[3] = {vertical_resolution, shots_to_squeeze, 5};
 	double time[1];
 	time[0] = timestamp;
@@ -126,7 +144,7 @@ libsqueeze_seg_process_moving_obstacles_cells(int sensor_number, carmen_velodyne
     int vertical_resolution = sensors_params[sensor_number].vertical_resolution;
     int number_of_points = vertical_resolution * shots_to_squeeze;
     double view[number_of_points * 5];
-    printf("Shots: %d from timestamp %lf\n", velodyne_message->number_of_32_laser_shots, timestamp);
+    //printf("Shots: %d from timestamp %lf\n", velodyne_message->number_of_32_laser_shots, timestamp);
     for (int j = vertical_resolution, line = 0; j > 0; j--)
     {
         for (int i = 0; i < shots_to_squeeze; i++, line++)

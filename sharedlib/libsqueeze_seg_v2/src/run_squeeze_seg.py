@@ -49,7 +49,7 @@ def initialize(vertical_resolution, shots_to_squeeze):
     '''Loads squeezeseg config and changes the zenith and azimuth level'''
     mc = kitti_squeezeSeg_config()
     zenith_resolution = vertical_resolution
-    #mc.ZENITH_LEVEL = vertical_resolution
+    mc.ZENITH_LEVEL = vertical_resolution
     #mc.AZIMUTH_LEVEL = shots_to_squeeze
  
     mc.LOAD_PRETRAINED_MODEL = False
@@ -178,7 +178,19 @@ def vertical_interpolation(lidar):
         lidar_new[i+1] = middle_set
         lidar_new[i+2] = second_set
         i = i + 2
-    #print(lidar_new.shape)
+    return lidar_new
+
+def vertical_doubled(lidar):
+    s = (lidar.shape[0]*2, lidar.shape[1], lidar.shape[2])
+    lidar_new = np.zeros(s, dtype=np.int64)
+    i = 0
+    for x in range(lidar.shape[0]-1):
+        first_set = lidar[x,:,:]
+        second_set = lidar[x+1,:,:]
+        lidar_new[i] = first_set
+        lidar_new[i+1] = first_set
+        lidar_new[i+2] = second_set
+        i = i + 2
     return lidar_new
 
 def vertical_desinterpolation(lidar):
@@ -186,7 +198,6 @@ def vertical_desinterpolation(lidar):
     lidar_new = np.zeros(s, dtype=np.int64)
     for x in range(lidar_new.shape[1]):
         lidar_new[:,x] = lidar[:,x*2]
-        #print("o valor de x ",x)
     return lidar_new
 
 def horizontal_interpolation(lidar):
@@ -257,14 +268,16 @@ def squeeze_seg_process_point_cloud(lidar, timestamp):
     lidarp2 = lidar[:,:shape_to_complete,:]
     lidar2 = np.concatenate((lidarp1, lidarp2),axis=1)
     
-    lidar1 = vertical_interpolation(lidar1)
-    lidar2 = vertical_interpolation(lidar2)
+    #lidar1 = vertical_interpolation(lidar1)
+    #lidar2 = vertical_interpolation(lidar2)
+    #lidar1 = vertical_doubled(lidar1)
+    #lidar2 = vertical_doubled(lidar2)
 
     pred_cls_lidar1 = run_model(lidar1)
     pred_cls_lidar2 = run_model(lidar2)
     
-    pred_cls_lidar1 = vertical_desinterpolation(pred_cls_lidar1)
-    pred_cls_lidar2 = vertical_desinterpolation(pred_cls_lidar2)
+    #pred_cls_lidar1 = vertical_desinterpolation(pred_cls_lidar1)
+    #pred_cls_lidar2 = vertical_desinterpolation(pred_cls_lidar2)
 
     #img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
     #img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)

@@ -585,14 +585,14 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 	cv::Mat img_planar_back = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
 	cv::Mat total;
 
-	cout << "SqueezeSeg: filter_sensor_data running " << std::to_string(sensor_data->points_timestamp[cloud_index]) << " and Velodyne " << std::to_string(squeezeseg_segmented.timestamp) << endl;
+	//cout << "SqueezeSeg: filter_sensor_data running " << std::to_string(sensor_data->points_timestamp[cloud_index]) << " and Velodyne " << std::to_string(squeezeseg_segmented.timestamp) << endl;
 
 	int thread_id = omp_get_thread_num();
 
 	vector<image_cartesian> points;
 
 	int min_shots = 1024;
-	if (number_of_laser_shots > min_shots && squeezeseg_segmented.result != NULL)
+	if (number_of_laser_shots > min_shots && squeezeseg_segmented.timestamp == sensor_data->points_timestamp[cloud_index])
 	{
 		for (int i = 0; i < number_of_laser_shots; i++)
 		{
@@ -601,7 +601,7 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 
 			get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
 
-			for (int j = 0; j < sensor_params->vertical_resolution; j++)
+			for (int j = 1; j < sensor_params->vertical_resolution; j++)
 			{
 				double vertical_angle = carmen_normalize_theta(sensor_data->points[cloud_index].sphere_points[scan_index + j].vertical_angle);
 				double range = sensor_data->points[cloud_index].sphere_points[scan_index + j].length;
@@ -612,9 +612,10 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 				
 				if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
 				{
-					image_cartesian point;
+					image_cartesian point = {};
 					point.shot_number = j;
 					point.ray_number  = i;
+					point.cartesian_z = (sensor_params->vertical_resolution - j) * number_of_laser_shots + i;
 					point.cartesian_x = velodyne_p3d.x();
 					point.cartesian_y = velodyne_p3d.y();
 					points.push_back(point);
@@ -708,7 +709,8 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 			unsigned int contCar = 0, contPerson = 0, contBycicle = 0;
 			for (unsigned int j = 0; j < filtered_points[i].size(); j++)
 			{
-				int line = (sensor_params->vertical_resolution - filtered_points[i][j].shot_number) * number_of_laser_shots + filtered_points[i][j].ray_number;
+				int line = filtered_points[i][j].cartesian_z;
+				//int line = (sensor_params->vertical_resolution - filtered_points[i][j].shot_number) * number_of_laser_shots + filtered_points[i][j].ray_number;
 				if (squeezeseg_segmented.result[line] > 0 && squeezeseg_segmented.result[line] <= 3){
 					switch (squeezeseg_segmented.result[line])
 					{
@@ -856,8 +858,8 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 			resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
 			/*double timestamp = sensor_data->points_timestamp[cloud_index];
 			std::string scan = std::to_string(timestamp);
-			imwrite("DATA/"+scan+"_verticalInterpolation.jpg", total);
-			cout << "SqueezeSeg: img " << scan << " saved" << endl;*/
+			imwrite("DATA/"+scan+"_squeezeSeg.jpg", total);*/
+			//cout << "SqueezeSeg: img " << scan << " saved" << endl;
 
 			imshow("Pointcloud SqueezeSeg", total);
 			cv::waitKey(1);
