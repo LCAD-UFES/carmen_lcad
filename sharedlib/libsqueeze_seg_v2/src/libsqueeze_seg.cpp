@@ -97,6 +97,7 @@ libsqueeze_seg_process_point_cloud(int vertical_resolution, int shots_to_squeeze
 	if (PyErr_Occurred())
         PyErr_Print();
 
+	Py_DECREF(numpyTimestamp);
 	Py_DECREF(numpyArray);
 	//Py_DECREF(python_result_array);
 
@@ -157,20 +158,5 @@ libsqueeze_seg_process_moving_obstacles_cells(int sensor_number, carmen_velodyne
         }
     }
 	squeezeseg_segmented = libsqueeze_seg_process_point_cloud(vertical_resolution, shots_to_squeeze, &view[0], timestamp);
-	//printf("Analysis of return matrix for timestamp %lf\n", timestamp);
-	// for (int j = vertical_resolution, line = 0; j > 0; j--)
-	// {
-	// 	for (int i = 0; i < shots_to_squeeze; i++, line++)
-	// 	{
-	// 		if (velodyne_segmented[line] != 0)
-	// 		{
-	// 			double vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sensors_params[sensor_number].vertical_correction[j]));
-	// 			double horizontal_angle = carmen_normalize_theta(-carmen_degrees_to_radians(-velodyne_message->partial_scan[i].angle));
-	// 			double range = (((double)velodyne_message->partial_scan[i].distance[sensors_params[sensor_number].ray_order[j]]) / 500.0);
-	// 			tf::Point point = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
-	// 			//cout << "h: " << i << " v: " << j << " line: " << line << " shots: " << shots_to_squeeze << " x: " << point.x() << " y: " << point.y() << " vel_seg:" << velodyne_segmented[line] << " r:" << range << endl;
-	// 		}
-	// 	}
-	// }
 	return squeezeseg_segmented;
 }

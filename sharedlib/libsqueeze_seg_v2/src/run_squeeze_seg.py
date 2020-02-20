@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from datetime import datetime
 
+#Activating virtualenv
 import os
 
 def activate_virtual_environment(environment_root):
@@ -15,6 +16,7 @@ def activate_virtual_environment(environment_root):
 carmen_home = os.getenv("CARMEN_HOME")
 virtualenv_root = carmen_home + "/sharedlib/libsqueeze_seg_v2/squeezeseg_env"
 activate_virtual_environment(virtualenv_root)
+#virtualenv activated
 
 import os.path
 import sys
@@ -71,7 +73,6 @@ def _normalize(x):
     return (x - x.min())/(x.max() - x.min())
 
 def save_txt(data, file_name, tag):
-  
   # Write the array to disk
   with open(os.path.join(os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/samples_IARA/', file_name+ tag +'.txt'), 'w') as outfile:
     # I'm writing a header here just for the sake of readability
@@ -118,8 +119,6 @@ def run_model(lidar):
     global mc
     global model
     global sess
-    #print("lidar.shape={}, mc.zenith={}, mc.azimuth={}".format(
-    #    lidar.shape, mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL))
     lidar_mask = np.reshape(
         (lidar[:, :, 4] > 0),
         [mc.ZENITH_LEVEL, mc.AZIMUTH_LEVEL, 1]
@@ -135,36 +134,6 @@ def run_model(lidar):
         }
     )
     return pred_cls
-
-def squeeze_seg_process_point_cloud_doubled(lidar, timestamp):
-    tag = "_AllDoubled"
-    save_txt(lidar, str(timestamp.item(0)), tag)
-    lidar1 = lidar[:,798:1310,:]
-    pred_cls_lidar1 = run_model(lidar1)
-    img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
-#     lidar2 = lidar[:,1054:1566,:]
-#     pred_cls_lidar2 = run_model(lidar2)
-#     img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
-#     img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=1)
-    save_lidar_image(img_lidar1, timestamp, tag)
-    cv2.imshow("Slice doubling", img_lidar1)
-    cv2.waitKey(100)
-    return pred_cls_lidar1
-
-def squeeze_seg_process_point_cloud_vertical(lidar, timestamp):
-    tag = "_VerticalDoubled"
-    save_txt(lidar, str(timestamp.item(0)), tag)
-    lidar1 = lidar[:,271:783,:]
-    pred_cls_lidar1 = run_model(lidar1)
-    img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
-#     lidar2 = lidar[:,1054:1566,:]
-#     pred_cls_lidar2 = run_model(lidar2)
-#     img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
-#     img_to_test = np.concatenate((img_lidar1, img_lidar2), axis=1)
-    save_lidar_image(img_lidar1, timestamp, tag)
-    cv2.imshow("Slice doubling", img_lidar1)
-    cv2.waitKey(100)
-    return pred_cls_lidar1
 
 def vertical_interpolation(lidar):
     s = (lidar.shape[0]*2, lidar.shape[1], lidar.shape[2])
@@ -245,40 +214,18 @@ def squeeze_seg_process_point_cloud_interpolations(lidar, timestamp):
     cv2.waitKey(100)
     return pred_cls_lidar1
 
-def squeeze_seg_process_point_cloud_raw(lidar, timestamp):
-    tag = "_Normal"
-    save_txt(lidar, str(timestamp.item(0)), tag)
-    lidar1 = lidar[:,271:783,:]
-    print("lidar1.shape={}".format(
-        lidar1.shape))
-    pred_cls_lidar1 = run_model(lidar1)
-    img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
-    save_lidar_image(img_lidar1, timestamp, tag)
-    cv2.imshow("Slice", img_lidar1)
-    cv2.waitKey(100)
-    return pred_cls_lidar1
-
 def squeeze_seg_process_point_cloud(lidar, timestamp):
-    #tag = ""
-    #save_txt(lidar, str(timestamp.item(0)), tag)
+    #save_txt(lidar, str(timestamp.item(0)), "")
     lidar1 = lidar[:,288:800,:]
     lidarp1 = lidar[:,826:,:]
-    shape_last_part = lidar.shape[1] - 826 #258
-    shape_to_complete = mc.AZIMUTH_LEVEL - shape_last_part #254
+    shape_last_part = lidar.shape[1] - 826
+    shape_to_complete = mc.AZIMUTH_LEVEL - shape_last_part
     lidarp2 = lidar[:,:shape_to_complete,:]
     lidar2 = np.concatenate((lidarp1, lidarp2),axis=1)
     
-    #lidar1 = vertical_interpolation(lidar1)
-    #lidar2 = vertical_interpolation(lidar2)
-    #lidar1 = vertical_doubled(lidar1)
-    #lidar2 = vertical_doubled(lidar2)
-
     pred_cls_lidar1 = run_model(lidar1)
     pred_cls_lidar2 = run_model(lidar2)
     
-    #pred_cls_lidar1 = vertical_desinterpolation(pred_cls_lidar1)
-    #pred_cls_lidar2 = vertical_desinterpolation(pred_cls_lidar2)
-
     #img_lidar1 = generate_lidar_images(lidar1,pred_cls_lidar1)
     #img_lidar2 = generate_lidar_images(lidar2,pred_cls_lidar2)
      

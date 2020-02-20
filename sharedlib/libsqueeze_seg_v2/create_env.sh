@@ -1,12 +1,12 @@
-# Instalando a ferramenta virtualenv
+# Install virtualenv tool
 sudo python2 -m pip install virtualenv
 
-# Criando o virtualenv e ativando ele
+# Create virtualenv and activating
 virtualenv -p /usr/bin/python2 squeezeseg_env
 source squeezeseg_env/bin/activate
 
-# Instalando as dependencias necessarias para rodar o squeezeseg
+# Installing dependencies for run squeezeseg in virtualenv
 pip install -r $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/requirements.txt
 
-# Desativando o virtualenv
+# Deactivate virtualenv
 deactivate

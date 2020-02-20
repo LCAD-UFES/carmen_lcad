@@ -2,60 +2,59 @@
 
 ## Semantic segmentation inference lib using SalsaNet
 
-#Make
+* make mapper_datmo - it will make libsalsanet.a
 :~/carmen_lcad/src/mapper_datmo$ make
 
 
 ## Installing dependencies
 
-Install python 2.7 -> ```make install_python2```
-
-Before installing the dependencies, if use without GPU, go to `requirements.txt` and change
-`tensorflow-gpu==1.11.0` to `tensorflow==1.11.0`
-
-For working from any place, go to your .bashrc and insert the line at the end of file:
-
+* It will be used the same virtualenv from SqueezeSegV2, so install SqueezeSegV2 first:
 ```
-# SalsaNet
-export PYTHONPATH=$CARMEN_HOME/sharedlib/salsanet/scripts:$PYTHONPATH
-```
-Save and then refresh your bash with:
-```
-bash
+:~/carmen_lcad/sharedlib/salsanet$ $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/create_env.sh
 ```
 
-###Installing virtualenv
-:~/carmen_lcad/bin$ /$CARMEN_HOME/sharedlib/salsanet/create_env.sh
+* Go to salsanet folder, and activate virtualenv
+```
+:~/carmen_lcad/sharedlib/salsanet$ source $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/squeezeseg_env/bin/activate
+```
 
-#Activating virtualenv
-:~/carmen_lcad/bin$ source $CARMEN_HOME/sharedlib/salsanet/squeezeseg_env/bin/activate
+* For using MatPlotLib, it is necessary to install python-tk with the follow command:
+```
+sudo apt-get install python-tk
+```
+
+* Install missing dependencies for SalsaNet:
+```
+:~/carmen_lcad/sharedlib/salsanet$ pip install -r requirements.txt
+```
 
 ### Testing
+
 For testing porpouses, start with SalsaNet IARA example:
 ~/carmen_lcad/sharedlib/salsanet/scripts$ python test_IARA_sample.py
 
-#Using SalsaNet with carmen:
+##### Using SalsaNet with carmen:
 
 Set variable mapper_use_remission = on in your carmen.ini file.
 
-Run Central
+##### Run Central
 ```
 :~/carmen_lcad/bin$ ./central
 ```
 
-Run some proccontrol
+#### Run some proccontrol
 ```
 :~/carmen_lcad/bin$ ./proccontrol process-mapper-datmo-map-generation.ini
 ```
 
-Run mapper_datmo:
+#### Run mapper_datmo with salsanet:
 ```
-:~/carmen_lcad/bin$ ./mapper_datmo -map_path ../data/mapper_teste2 -camera5 right -verbose 2 -file_warnings off
+:~/carmen_lcad/bin$ ./mapper_datmo -map_path ../data/mapper_teste2 -camera5 right -verbose 2 -file_warnings off -neural_network salsanet
 ```
 
 Push Playback button. The results from segmentation will be at screen.
 
-### If you have some problem with TensorFlow, do these instructions: 
+### If you have some problem with TensorFlow, do these instructions for using only CPU: 
 
 Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
 
@@ -69,14 +68,9 @@ pip install --ignore-installed --upgrade /path/to/binary.whl
 Example:
 pip install --ignore-installed --upgrade ~/Downloads/tensorflow-1.11.0-cp27-cp27mu-linux_x86_64.whl 
 
-To install OpenCV in Python with virtualenv activated, do:
-python -m pip install opencv-python
+### If you would like to use tensorflow with GPU and tensorflow-gpu it is not working properly:
 
-For using MatPlotLib, it is necessary to install python-tk with the follow command:
-sudo apt-get install python-tk
+Build tensorflow from source:
+https://www.tensorflow.org/install/source
 
-
-### Useful links
-
-https://stackoverflow.com/questions/8998499/virtual-environments-and-embedding-python
-https://virtualenv.pypa.io/en/latest/userguide/#using-virtualenv-without-bin-python
+Use the steps for build tensorflow-1.11.0 with GPU support, with python	2.7, GCC 4.8 and Bazel 0.15.0.
