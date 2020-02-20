@@ -40,7 +40,10 @@ Set variable mapper_use_remission = on in your carmen.ini file.
 
 Push Playback button. The results from segmentation will be at screen.
 
-### If you have some problem with TensorFlow, do these instructions for using only CPU: 
+
+
+
+### If you would like to use TensorFlow CPU and is not working properly, do these instructions: 
 
 Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
 
@@ -57,9 +60,9 @@ pip install --ignore-installed --upgrade ~/Downloads/tensorflow-1.11.0-cp27-cp27
 To install OpenCV in Python with virtualenv activated, do:
 python -m pip install opencv-python
 
-### If you would like to use tensorflow with GPU and tensorflow-gpu it is not working properly:
+### If you would like to use tensorflow with GPU and tensorflow-gpu is not working properly:
 
 Build tensorflow from source:
 https://www.tensorflow.org/install/source
 
-Use the steps for build tensorflow-1.11.0 with GPU support, with python	2.7, GCC 4.8 and Bazel 0.15.0.
+Use the steps for build tensorflow-1.11.0 with GPU support, python	2.7, GCC 4.8 and Bazel 0.15.0.
