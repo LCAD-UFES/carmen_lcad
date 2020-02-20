@@ -69,14 +69,16 @@ Download TensorFlow 1.11 with Python 2.7 at:
 https://github.com/lakshayg/tensorflow-build
 
 Execute the follow command, changing the path with dowloaded file with virtualenv activated:
-pip install --ignore-installed --upgrade /path/to/binary.whl
+`pip install --ignore-installed --upgrade /path/to/binary.whl`
 
 Example:
+```
 pip install --ignore-installed --upgrade ~/Downloads/tensorflow-1.11.0-cp27-cp27mu-linux_x86_64.whl 
+```
 
 ### If you would like to use tensorflow with GPU and tensorflow-gpu is not working properly:
 
-Build tensorflow from source:
+* Build tensorflow from source:
 https://www.tensorflow.org/install/source
 
-Use the steps for build tensorflow-1.11.0 with GPU support, python	2.7, GCC 4.8 and Bazel 0.15.0.
+* Use the steps for build tensorflow-1.11.0 with GPU support, python 2.7, GCC 4.8 and Bazel 0.15.0.
