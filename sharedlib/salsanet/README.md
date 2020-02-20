@@ -10,12 +10,15 @@
 ## Installing dependencies
 
 * It will be used the same virtualenv from SqueezeSegV2, so install SqueezeSegV2 first:
+
 ```
-:~/carmen_lcad/sharedlib/salsanet$ $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/create_env.sh
+:~/carmen_lcad/sharedlib/salsanet$ cd $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/ 
+:~/carmen_lcad/sharedlib/libsqueeze_seg_v2$ $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/create_env.sh
 ```
 
 * Go to salsanet folder, and activate virtualenv
 ```
+:~/carmen_lcad/sharedlib/libsqueeze_seg_v2$ cd $CARMEN_HOME/sharedlib/salsanet/ 
 :~/carmen_lcad/sharedlib/salsanet$ source $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/squeezeseg_env/bin/activate
 ```
 
@@ -40,7 +43,7 @@ For testing porpouses, start with SalsaNet IARA example:
 
 Set variable `mapper_use_remission = on` in your carmen.ini file.
 
-##### Run Central
+#### Run Central
 ```
 :~/carmen_lcad/bin$ ./central
 ```
