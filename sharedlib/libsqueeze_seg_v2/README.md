@@ -16,7 +16,8 @@
 
 * Create virtualenv
 ```
-:~/carmen_lcad/bin$ $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/create_env.sh
+$ cd $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/ 
+:~/carmen_lcad/sharedlib/libsqueeze_seg_v2$ $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/create_env.sh
 ```
 
 ### Testing
