@@ -3,8 +3,9 @@
 ## Semantic segmentation inference lib using SalsaNet
 
 * make mapper_datmo - it will make libsalsanet.a
+```
 :~/carmen_lcad/src/mapper_datmo$ make
-
+```
 
 ## Installing dependencies
 
@@ -31,11 +32,13 @@ sudo apt-get install python-tk
 ### Testing
 
 For testing porpouses, start with SalsaNet IARA example:
+```
 ~/carmen_lcad/sharedlib/salsanet/scripts$ python test_IARA_sample.py
+```
 
 ##### Using SalsaNet with carmen:
 
-Set variable mapper_use_remission = on in your carmen.ini file.
+Set variable `mapper_use_remission = on` in your carmen.ini file.
 
 ##### Run Central
 ```
@@ -53,6 +56,9 @@ Set variable mapper_use_remission = on in your carmen.ini file.
 ```
 
 Push Playback button. The results from segmentation will be at screen.
+
+
+
 
 ### If you would like to use TensorFlow CPU and is not working properly, do these instructions: 
 

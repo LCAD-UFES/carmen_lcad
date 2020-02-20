@@ -3,7 +3,9 @@
 ## Semantic segmentation inference lib using SqueezeSegV2
 
 * make mapper_datmo - it will make libsqueezeseg.a
+```
 :~/carmen_lcad/src/mapper_datmo$ make
+```
 
 ## Installing dependencies
 
@@ -13,15 +15,19 @@
 `tensorflow-gpu==1.11.0` to `tensorflow==1.11.0`
 
 * Create virtualenv
+```
 :~/carmen_lcad/bin$ $CARMEN_HOME/sharedlib/libsqueeze_seg_v2/create_env.sh
+```
 
 ### Testing
 * For testing porpouses, start with SqueezeSegV2 example:
+```
 ~/carmen_lcad/sharedlib/libsqueeze_seg_v2$ python ./src/demo.py
+```
 
 ### Using SqueezeSegV2 with carmen:
 
-Set variable mapper_use_remission = on in your carmen.ini file.
+Set variable `mapper_use_remission = on` in your carmen.ini file.
 
 ##### Run Central
 ```
