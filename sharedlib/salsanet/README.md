@@ -36,7 +36,7 @@ For testing porpouses, start with SalsaNet IARA example:
 ~/carmen_lcad/sharedlib/salsanet/scripts$ python test_IARA_sample.py
 ```
 
-##### Using SalsaNet with carmen:
+### Using SalsaNet with carmen:
 
 Set variable `mapper_use_remission = on` in your carmen.ini file.
 
