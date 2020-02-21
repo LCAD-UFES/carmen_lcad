@@ -36,6 +36,8 @@ from nets import *
 from setuptools.sandbox import ExceptionSaver
 from IN import MCAST_BLOCK_SOURCE
 
+os.environ['CUDA_VISIBLE_DEVICES'] =''
+
 '''Defining global variables'''
 global mc
 global model

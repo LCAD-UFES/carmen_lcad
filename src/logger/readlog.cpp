@@ -84,12 +84,12 @@ off_t carmen_logfile_uncompressed_length(carmen_FILE *infile)
  **/
 carmen_logfile_index_p carmen_logfile_index_messages(carmen_FILE *infile)
 {
-#define READ_LOG_BUUFER_SIZE	100000
+#define READ_LOG_BUFFER_SIZE	100000
 	carmen_logfile_index_p index;
 	int i, found_linebreak = 1, nread, max_messages;
 	off_t file_length = 0, file_position = 0, total_bytes, read_count = 0;
 
-	unsigned char buffer[READ_LOG_BUUFER_SIZE];
+	unsigned char buffer[READ_LOG_BUFFER_SIZE];
 
 	/* allocate and initialize an index */
 	index = (carmen_logfile_index_p)calloc(1, sizeof(carmen_logfile_index_t));
@@ -101,7 +101,7 @@ carmen_logfile_index_p carmen_logfile_index_messages(carmen_FILE *infile)
 
 	/* mark the start of all messages */
 	index->num_messages = 0;
-	max_messages = READ_LOG_BUUFER_SIZE;
+	max_messages = READ_LOG_BUFFER_SIZE;
 	index->offset = (off_t*)calloc(max_messages, sizeof(off_t));
 	carmen_test_alloc(index->offset);
 
@@ -109,7 +109,7 @@ carmen_logfile_index_p carmen_logfile_index_messages(carmen_FILE *infile)
 
 	total_bytes = 0;
 	do {
-		nread = carmen_fread(buffer, 1, READ_LOG_BUUFER_SIZE, infile);
+		nread = carmen_fread(buffer, 1, READ_LOG_BUFFER_SIZE, infile);
 		read_count++;
 		if(read_count % 1000 == 0) {
 			if(!infile->compressed)
@@ -125,7 +125,7 @@ carmen_logfile_index_p carmen_logfile_index_messages(carmen_FILE *infile)
 				if(found_linebreak && buffer[i] != '\r') {
 					found_linebreak = 0;
 					if(index->num_messages == max_messages) {
-						max_messages += READ_LOG_BUUFER_SIZE;
+						max_messages += READ_LOG_BUFFER_SIZE;
 						index->offset = (off_t*)realloc(index->offset, max_messages *
 								sizeof(off_t));
 						carmen_test_alloc(index->offset);
@@ -149,6 +149,9 @@ carmen_logfile_index_p carmen_logfile_index_messages(carmen_FILE *infile)
 		carmen_test_alloc(index->offset);
 	}
 	index->offset[index->num_messages] = total_bytes;
+
+	if (!found_linebreak)
+		index->num_messages--;
 
 	fprintf(stderr, "\rIndexing messages (100%%) - %d messages found.      \n",
 			index->num_messages);

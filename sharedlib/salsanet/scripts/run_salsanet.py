@@ -25,8 +25,8 @@ global net
 global cfg
 global sess
 
-#cfg = lidar_config()
-#os.environ['CUDA_VISIBLE_DEVICES'] = str(cfg.GPU)
+cfg = lidar_config()
+os.environ['CUDA_VISIBLE_DEVICES'] = str(cfg.GPU)
 #print("creating network model using gpu " + str(cfg.GPU))
 
 '''Initialize tensorflow and model'''
