@@ -20,6 +20,7 @@ int stop_required = 0;
 int rs_height = 720;
 int rs_width = 1280;
 int rs_flip = 0;
+int rs_infrared = 0;
 
 void
 carmen_bumblebee_publish_stereoimage_message(unsigned char *rawLeft, unsigned char *rawRight, int width, int height, int channels, double timestamp)
@@ -109,6 +110,7 @@ static int read_parameters(int argc, char **argv)
 		{bb_name, (char*) "height", CARMEN_PARAM_INT, &rs_height, 0, NULL},
 		{bb_name, (char*) "width", CARMEN_PARAM_INT, &rs_width, 0, NULL},
 		{(char*) "commandline", (char*) "flip", CARMEN_PARAM_ONOFF, &rs_flip, 0, NULL},
+		{(char*) "commandline", (char*) "infrared", CARMEN_PARAM_ONOFF, &rs_infrared, 0, NULL},
 		//{bb_name, (char*) "flip", CARMEN_PARAM_ONOFF, &rs_flip, 0, NULL},
 	};
 
@@ -175,10 +177,15 @@ main(int argc, char **argv)
 	/////////////////////////////////////////////////////////////////////////////////////////
 
     rs2::config cfg;
-    cfg.enable_stream(RS2_STREAM_COLOR, 0, rs_width, rs_height);
-    cfg.enable_stream(RS2_STREAM_DEPTH, 0,rs_width, rs_height);
+//    cfg.enable_stream(RS2_STREAM_COLOR, 0, rs_width, rs_height);
+//    cfg.enable_stream(RS2_STREAM_DEPTH, 0,rs_width, rs_height);
+    printf("p1\n");
+    cfg.enable_stream(RS2_STREAM_INFRARED, 1, rs_width, rs_height, RS2_FORMAT_ANY, 20);
+    printf("p2\n");
+	cfg.enable_stream(RS2_STREAM_INFRARED, 2, rs_width, rs_height, RS2_FORMAT_ANY, 20);
+	printf("p3\n");
 
-    carmen_stereo_velodyne_define_messages(BUMBLEBEE_ID);
+    //carmen_stereo_velodyne_define_messages(BUMBLEBEE_ID);
 
 	// Declare pointcloud object, for calculating pointclouds and texture mappings
 	rs2::pointcloud pc;
@@ -193,9 +200,11 @@ main(int argc, char **argv)
     // The default video configuration contains Depth and Color streams
     // If a device is capable to stream IMU data, both Gyro and Accelerometer are enabled by default
     rs2::pipeline_profile selection = pipe.start(cfg);
+    printf("p4\n");
 
 	rs2::colorizer c;
-	save_extrinsics(selection);
+	//save_extrinsics(selection);
+	printf("p5\n");
 	unsigned char* depth_color_frame_data = NULL;
 	unsigned short *depth_frame_data = NULL;
 	unsigned char* rgb_frame_data = NULL;
@@ -211,16 +220,16 @@ main(int argc, char **argv)
 	rs2::hole_filling_filter hole_filter;
 
 //	Configuration
-	rs2::depth_sensor depth_sensor = selection.get_device().first<rs2::depth_sensor>();
-	depth_sensor.set_option(RS2_OPTION_EMITTER_ENABLED, 1.f);
-	depth_sensor.set_option(RS2_OPTION_LASER_POWER, depth_sensor.get_option_range(RS2_OPTION_LASER_POWER).max);
+	//rs2::depth_sensor depth_sensor = selection.get_device().first<rs2::depth_sensor>();
+	//depth_sensor.set_option(RS2_OPTION_EMITTER_ENABLED, 1.f);
+	//depth_sensor.set_option(RS2_OPTION_LASER_POWER, depth_sensor.get_option_range(RS2_OPTION_LASER_POWER).max);
 	//depth_sensor.set_option(RS2_OPTION_ACCURACY, depth_sensor.get_option_range(RS2_OPTION_ACCURACY).max);
 
 //
-	rs2_intrinsics int_param = selection.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>().get_intrinsics();
+	//rs2_intrinsics int_param = selection.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>().get_intrinsics();
 
-	printf("fx = %f\tfy = %f\tppx = %f\tppy = %f\n", int_param.fx/int_param.width , int_param.fy/int_param.height, int_param.ppx/int_param.width, int_param.ppy/int_param.height);
-
+	//printf("fx = %f\tfy = %f\tppx = %f\tppy = %f\n", int_param.fx/int_param.width , int_param.fy/int_param.height, int_param.ppx/int_param.width, int_param.ppy/int_param.height);
+	printf("p4\n");
 	while (!stop_required)
 	{
         rs2::frameset frames = pipe.wait_for_frames();
@@ -228,10 +237,16 @@ main(int argc, char **argv)
 		//frames = align_to_depth.process(frames);
 		// frames = align_to_color.process(frames);
 
-        rs2::depth_frame depth_frame = frames.get_depth_frame();
-        rs2::video_frame frame_color = frames.get_color_frame();
+//        rs2::depth_frame depth_frame = frames.get_depth_frame();
+//        rs2::video_frame frame_color = frames.get_color_frame();
+        rs2::video_frame depth_frame = frames.get_infrared_frame(1);
+        rs2::video_frame frame_color = frames.get_infrared_frame(2);
 
-        depth_frame = hole_filter.process(depth_frame);
+//        cv::Mat dMat_left = cv::Mat(cv::Size(rs_width, rs_height), CV_8UC1, (void*)depth_frame.get_data());
+//        cv::imshow("img_l", dMat_left);
+//		char c = cv::waitKey(1);
+
+ //       depth_frame = hole_filter.process(depth_frame);
 
         if (frame_color)
             rgb_frame_data = (unsigned char*) frame_color.get_data();
@@ -239,7 +254,9 @@ main(int argc, char **argv)
         if (depth_frame)
         {
             depth_frame_data = (unsigned short *) depth_frame.get_data(); // Pointer to depth pixels
-            depth_color_frame_data = (unsigned char*) c.colorize(depth_frame).get_data(); // Pointer to depth pixels
+//            depth_color_frame_data = (unsigned char*) c.colorize(depth_frame).get_data(); // Pointer to depth pixels
+            depth_color_frame_data = (unsigned char*) depth_frame.get_data(); // Pointer to depth pixels
+
         }
 
         if(!rgb_frame_data || !depth_frame_data)
@@ -259,16 +276,24 @@ main(int argc, char **argv)
 //        }
 //        else
 
-        cv::Mat depthMat(rs_height, rs_width, CV_16UC1, depth_frame_data);
+        //cv::Mat depthMat(rs_height, rs_width, CV_16UC1, depth_frame_data);
 
-        cv::medianBlur(depthMat, depthMat, 5);
+        //cv::medianBlur(depthMat, depthMat, 5);
 
-        convert_stereo_depth_to_velodyne_beams(instance, (unsigned short*)depthMat.data, rs_height, rs_width, scan, 5000 , 0, rs_height, 80, rs_width, rgb_frame_data);
+        //convert_stereo_depth_to_velodyne_beams(instance, (unsigned short*)depthMat.data, rs_height, rs_width, scan, 5000 , 0, rs_height, 80, rs_width, rgb_frame_data);
 
-        velodyne_partial_scan.timestamp = timestamp;
-
-		carmen_bumblebee_publish_stereoimage_message(rgb_frame_data, depth_color_frame_data, rs_width, rs_height, 3, timestamp);
-		carmen_stereo_velodyne_publish_message(BUMBLEBEE_ID, &velodyne_partial_scan);
+        //velodyne_partial_scan.timestamp = timestamp;
+        cv::Mat cv_rgb_frame;
+        cv::Mat cv_depth_frame;
+        //cv::Mat teste(rs_height,rs_width,CV_8UC1,&rgb_frame_data[0]);
+        cv::Mat teste = cv::Mat(cv::Size(rs_width, rs_height), CV_8UC1, (void*)depth_frame.get_data());
+        //cv::Mat teste2(rs_height,rs_width,CV_8UC1,&depth_color_frame_data[0]);
+        cv::Mat teste2 = cv::Mat(cv::Size(rs_width, rs_height), CV_8UC1, (void*)frame_color.get_data());
+        cv::cvtColor(teste,cv_rgb_frame,CV_GRAY2RGB, 3);
+        cv::cvtColor(teste2,cv_depth_frame,CV_GRAY2RGB, 3);
+		carmen_bumblebee_publish_stereoimage_message(cv_rgb_frame.data, cv_depth_frame.data, rs_width, rs_height, 3, timestamp);
+//		carmen_bumblebee_publish_stereoimage_message(rgb_frame_data, depth_color_frame_data, rs_width, rs_height, 1, timestamp);
+		//carmen_stereo_velodyne_publish_message(BUMBLEBEE_ID, &velodyne_partial_scan);
 	}
 	return 0;
 }
