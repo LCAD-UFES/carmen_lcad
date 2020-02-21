@@ -6,13 +6,11 @@
 #include <carmen/bumblebee_basic_interface.h>
 #include <carmen/stereo_velodyne.h>
 #include <carmen/stereo_velodyne_interface.h>
-#include "opencv2/opencv.hpp"
-
-#include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
-
 // basic file operations
 #include <iostream>
 #include <fstream>
+#include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
+#include "opencv2/opencv.hpp"
 // using namespace std;
 #define BUMBLEBEE_ID 7
 
@@ -21,6 +19,7 @@ int rs_height = 720;
 int rs_width = 1280;
 int rs_flip = 0;
 int rs_infrared = 0;
+int rs_fps = 15;
 
 void
 carmen_bumblebee_publish_stereoimage_message(unsigned char *rawLeft, unsigned char *rawRight, int width, int height, int channels, double timestamp)
@@ -110,6 +109,7 @@ static int read_parameters(int argc, char **argv)
 		{bb_name, (char*) "height", CARMEN_PARAM_INT, &rs_height, 0, NULL},
 		{bb_name, (char*) "width", CARMEN_PARAM_INT, &rs_width, 0, NULL},
 		{(char*) "commandline", (char*) "flip", CARMEN_PARAM_ONOFF, &rs_flip, 0, NULL},
+		{(char*) "commandline", (char*) "fps", CARMEN_PARAM_INT, &rs_fps, 0, NULL},
 		{(char*) "commandline", (char*) "infrared", CARMEN_PARAM_ONOFF, &rs_infrared, 0, NULL},
 		//{bb_name, (char*) "flip", CARMEN_PARAM_ONOFF, &rs_flip, 0, NULL},
 	};
@@ -178,48 +178,48 @@ main(int argc, char **argv)
 
     if (rs_infrared)
     {
-        rs2::config cfg;
-        cfg.enable_stream(RS2_STREAM_INFRARED, 1, rs_width, rs_height, RS2_FORMAT_ANY, 20);
-	cfg.enable_stream(RS2_STREAM_INFRARED, 2, rs_width, rs_height, RS2_FORMAT_ANY, 20);
+		rs2::config cfg;
+		cfg.enable_stream(RS2_STREAM_INFRARED, 1, rs_width, rs_height, RS2_FORMAT_Y8, rs_fps);
+		cfg.enable_stream(RS2_STREAM_INFRARED, 2, rs_width, rs_height, RS2_FORMAT_Y8, rs_fps);
 
-	// Declare RealSense pipeline, encapsulating the actual device and sensors
-	rs2::pipeline pipe;
+		// Declare RealSense pipeline, encapsulating the actual device and sensors
+		rs2::pipeline pipe;
 
-	// Start streaming with default recommended configuration
-	// The default video configuration contains Depth and Color streams
-	// If a device is capable to stream IMU data, both Gyro and Accelerometer are enabled by default
-	rs2::pipeline_profile selection = pipe.start(cfg);
+		// Start streaming with default recommended configuration
+		// The default video configuration contains Depth and Color streams
+		// If a device is capable to stream IMU data, both Gyro and Accelerometer are enabled by default
+		rs2::pipeline_profile selection = pipe.start(cfg);
 
-	unsigned short *depth_frame_data = NULL;
-	unsigned char* rgb_frame_data = NULL;
+		unsigned short *depth_frame_data = NULL;
+		unsigned char* rgb_frame_data = NULL;
 
-	stereo_util instance = get_stereo_instance(BUMBLEBEE_ID, rs_width, rs_height);
+		stereo_util instance = get_stereo_instance(BUMBLEBEE_ID, rs_width, rs_height);
 
-	while (!stop_required)
-	{
-	    rs2::frameset frames = pipe.wait_for_frames();
-	    rs2::video_frame depth_frame = frames.get_infrared_frame(1);
-	    rs2::video_frame frame_color = frames.get_infrared_frame(2);
+		while (!stop_required)
+		{
+			rs2::frameset frames = pipe.wait_for_frames();
+			rs2::video_frame depth_frame = frames.get_infrared_frame(1);
+			rs2::video_frame frame_color = frames.get_infrared_frame(2);
 
-	    if (frame_color)
-		rgb_frame_data = (unsigned char*) frame_color.get_data();
+			if (frame_color)
+			rgb_frame_data = (unsigned char*) frame_color.get_data();
 
-	    if (depth_frame)
-		depth_frame_data = (unsigned short *) depth_frame.get_data(); // Pointer to depth pixels
+			if (depth_frame)
+			depth_frame_data = (unsigned short *) depth_frame.get_data(); // Pointer to depth pixels
 
-	    if(!rgb_frame_data || !depth_frame_data)
-		continue;
+			if(!rgb_frame_data || !depth_frame_data)
+			continue;
 
-	    double timestamp = carmen_get_time();
+			double timestamp = carmen_get_time();
 
-	    cv::Mat cv_rgb_frame;
-	    cv::Mat cv_depth_frame;
-	    cv::Mat teste = cv::Mat(cv::Size(rs_width, rs_height), CV_8UC1, (void*)depth_frame.get_data());
-	    cv::Mat teste2 = cv::Mat(cv::Size(rs_width, rs_height), CV_8UC1, (void*)frame_color.get_data());
-	    cv::cvtColor(teste,cv_rgb_frame,CV_GRAY2RGB, 3);
-	    cv::cvtColor(teste2,cv_depth_frame,CV_GRAY2RGB, 3);
-	    carmen_bumblebee_publish_stereoimage_message(cv_rgb_frame.data, cv_depth_frame.data, rs_width, rs_height, 3, timestamp);
-	}
+			cv::Mat cv_rgb_frame;
+			cv::Mat cv_depth_frame;
+			cv::Mat teste = cv::Mat(cv::Size(rs_width, rs_height), CV_8UC1, (void*)depth_frame.get_data());
+			cv::Mat teste2 = cv::Mat(cv::Size(rs_width, rs_height), CV_8UC1, (void*)frame_color.get_data());
+			cv::cvtColor(teste,cv_rgb_frame,CV_GRAY2RGB, 3);
+			cv::cvtColor(teste2,cv_depth_frame,CV_GRAY2RGB, 3);
+			carmen_bumblebee_publish_stereoimage_message(cv_rgb_frame.data, cv_depth_frame.data, rs_width, rs_height, 3, timestamp);
+		}
     }
     else
     {
@@ -229,45 +229,45 @@ main(int argc, char **argv)
 
         carmen_stereo_velodyne_define_messages(BUMBLEBEE_ID);
 
-	// Declare pointcloud object, for calculating pointclouds and texture mappings
-	rs2::pointcloud pc;
-	// We want the points object to be persistent so we can display the last cloud when a frame drops
-	rs2::points points;
+		// Declare pointcloud object, for calculating pointclouds and texture mappings
+		rs2::pointcloud pc;
+		// We want the points object to be persistent so we can display the last cloud when a frame drops
+		rs2::points points;
 
 
-	// Declare RealSense pipeline, encapsulating the actual device and sensors
-	rs2::pipeline pipe;
+		// Declare RealSense pipeline, encapsulating the actual device and sensors
+		rs2::pipeline pipe;
 
-	// Start streaming with default recommended configuration
-	// The default video configuration contains Depth and Color streams
-	// If a device is capable to stream IMU data, both Gyro and Accelerometer are enabled by default
-	rs2::pipeline_profile selection = pipe.start(cfg);
+		// Start streaming with default recommended configuration
+		// The default video configuration contains Depth and Color streams
+		// If a device is capable to stream IMU data, both Gyro and Accelerometer are enabled by default
+		rs2::pipeline_profile selection = pipe.start(cfg);
 
-	rs2::colorizer c;
-	save_extrinsics(selection);
-	unsigned char* depth_color_frame_data = NULL;
-	unsigned short *depth_frame_data = NULL;
-	unsigned char* rgb_frame_data = NULL;
+		rs2::colorizer c;
+		save_extrinsics(selection);
+		unsigned char* depth_color_frame_data = NULL;
+		unsigned short *depth_frame_data = NULL;
+		unsigned char* rgb_frame_data = NULL;
 
-	stereo_util instance = get_stereo_instance(BUMBLEBEE_ID, rs_width, rs_height);
+		stereo_util instance = get_stereo_instance(BUMBLEBEE_ID, rs_width, rs_height);
 
-	carmen_velodyne_shot *scan = alloc_velodyne_shot_scan_vector(rs_width/instance.stereo_stride_x, rs_height/ instance.stereo_stride_y);
-	carmen_velodyne_variable_scan_message velodyne_partial_scan;
-	velodyne_partial_scan.host = carmen_get_host();
-	velodyne_partial_scan.number_of_shots = rs_width/instance.stereo_stride_x;
-	velodyne_partial_scan.partial_scan = scan;
+		carmen_velodyne_shot *scan = alloc_velodyne_shot_scan_vector(rs_width/instance.stereo_stride_x, rs_height/ instance.stereo_stride_y);
+		carmen_velodyne_variable_scan_message velodyne_partial_scan;
+		velodyne_partial_scan.host = carmen_get_host();
+		velodyne_partial_scan.number_of_shots = rs_width/instance.stereo_stride_x;
+		velodyne_partial_scan.partial_scan = scan;
 
-	rs2::hole_filling_filter hole_filter;
+		rs2::hole_filling_filter hole_filter;
 
-        //	Configuration
-      	rs2::depth_sensor depth_sensor = selection.get_device().first<rs2::depth_sensor>();
-      	depth_sensor.set_option(RS2_OPTION_EMITTER_ENABLED, 1.f);
-      	depth_sensor.set_option(RS2_OPTION_LASER_POWER, depth_sensor.get_option_range(RS2_OPTION_LASER_POWER).max);
-      	//depth_sensor.set_option(RS2_OPTION_ACCURACY, depth_sensor.get_option_range(RS2_OPTION_ACCURACY).max);
+		//	Configuration
+		rs2::depth_sensor depth_sensor = selection.get_device().first<rs2::depth_sensor>();
+		depth_sensor.set_option(RS2_OPTION_EMITTER_ENABLED, 1.f);
+		depth_sensor.set_option(RS2_OPTION_LASER_POWER, depth_sensor.get_option_range(RS2_OPTION_LASER_POWER).max);
+		//depth_sensor.set_option(RS2_OPTION_ACCURACY, depth_sensor.get_option_range(RS2_OPTION_ACCURACY).max);
 
-      	rs2_intrinsics int_param = selection.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>().get_intrinsics();
+		rs2_intrinsics int_param = selection.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>().get_intrinsics();
 
-      	printf("fx = %f\tfy = %f\tppx = %f\tppy = %f\n", int_param.fx/int_param.width , int_param.fy/int_param.height, int_param.ppx/int_param.width, int_param.ppy/int_param.height);
+		printf("fx = %f\tfy = %f\tppx = %f\tppy = %f\n", int_param.fx/int_param.width , int_param.fy/int_param.height, int_param.ppx/int_param.width, int_param.ppy/int_param.height);
 	while (!stop_required)
 	{
 	    rs2::frameset frames = pipe.wait_for_frames();
@@ -285,12 +285,12 @@ main(int argc, char **argv)
 
 	    if (depth_frame)
 	    {
-		depth_frame_data = (unsigned short *) depth_frame.get_data(); // Pointer to depth pixels
-		depth_color_frame_data = (unsigned char*) c.colorize(depth_frame).get_data(); // Pointer to depth pixels
+	    	depth_frame_data = (unsigned short *) depth_frame.get_data(); // Pointer to depth pixels
+	    	depth_color_frame_data = (unsigned char*) c.colorize(depth_frame).get_data(); // Pointer to depth pixels
 	    }
 
 	    if(!rgb_frame_data || !depth_frame_data)
-		continue;
+	    	continue;
 
 	    double timestamp = carmen_get_time();
 
