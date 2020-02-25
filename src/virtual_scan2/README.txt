@@ -11,5 +11,5 @@ $ cd ~/carmen_lcad/bin/
 $ ./central
 
 Finally, execute in another terminal:
-$ ./proccontrol process-volta_da_ufes_playback_viewer_3D_virtual_scan.ini
+$ ./proccontrol process-volta_da_ufes_playback_viewer_3D_virtual_scan2.ini
 
