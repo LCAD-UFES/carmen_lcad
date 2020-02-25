@@ -159,20 +159,58 @@ virtual_scan_infer_moving_objects(carmen_mapper_virtual_scan_message *virtual_sc
 			plot.measurement.size.x = virtual_scan_segment_classes->segment_features[i].width;
 			plot.measurement.size.y = virtual_scan_segment_classes->segment_features[i].length;
 			plot.measurement.category = virtual_scan_segment_classes->segment_features[i].segment_class;
+			
+			carmen_point_t first_point = virtual_scan_segment_classes->segment_features[i].first_point;
+			carmen_point_t last_point = virtual_scan_segment_classes->segment_features[i].last_point;
+			carmen_point_t farthest_point = virtual_scan_segment_classes->segment_features[i].farthest_point;
+						
+			switch (virtual_scan_segment_classes->segment_features[i].segment_class)
+			{
+				case L_SHAPED: 
+				{
+					double l = DIST2D(farthest_point, first_point);
+					double w = DIST2D(farthest_point, last_point);
+					if (l > w)
+						plot.measurement.orientation = carmen_normalize_theta(atan2(first_point.y - farthest_point.y, first_point.x - farthest_point.x));
+					else
+						plot.measurement.orientation = carmen_normalize_theta(atan2(last_point.y - farthest_point.y, last_point.x - farthest_point.x));
+				}
+				break;
+				
+				case I_SHAPED: 
+				{
+					plot.measurement.orientation = carmen_normalize_theta(atan2(last_point.y - first_point.y, last_point.x - first_point.x));
+				}
+				break;
+				
+				case MASS_POINT:
+				{
+					plot.measurement.orientation = .0;				
+				}
+				break;
+				
+				default:
+				{
+					plot.measurement.orientation = .0;
+				}
+				break;
+			}
+		
+			
 			plot.timeStamp = g_current_time;
 			g_plots->push_back(plot);		
 // 			printf("Plot %d (%f, %f, %f, %f, %d, %lf)\n", i, plot.measurement.center.x, plot.measurement.center.y, plot.measurement.size.x, plot.measurement.size.y, plot.measurement.category, plot.timeStamp);
 		}
 		
 		// Show the plots for debugging purposes
-		virtual_scan_show_plots(sensor_id);
+// 		virtual_scan_show_plots(sensor_id);
 
 		// Run one tracking iteration
 		g_tracker.Process(g_current_time);
 	}
 			
 	// Show the tracks for debugging purposes
-	virtual_scan_show_tracks();
+// 	virtual_scan_show_tracks();
 	
 	// Encode the output tracks as box models
 	best_track_set->size = g_tracks->size();
@@ -205,6 +243,7 @@ virtual_scan_infer_moving_objects(carmen_mapper_virtual_scan_message *virtual_sc
 				else
 					best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.c = BIKE;
 			}
+			break;
 			
 			case MASS_POINT:
 			{
@@ -222,7 +261,7 @@ virtual_scan_infer_moving_objects(carmen_mapper_virtual_scan_message *virtual_sc
 		best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.y = g_tracks->at(i).state.center.y;
 		best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.width = g_tracks->at(i).state.size.x;
 		best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.length = g_tracks->at(i).state.size.y;
-		best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.theta = 0.0;
+		best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.theta = g_tracks->at(i).state.orientation;
 		best_track_set->tracks[i]->box_model_hypothesis[0].frame_timestamp = frame_timestamp;
 // 		printf("Track %d (%d, %f, %f, %f, %f, %f, %lf)\n", best_track_set->tracks[i]->track_id, best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.c, best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.x, best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.y, best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.width, best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.length, best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.theta, best_track_set->tracks[i]->box_model_hypothesis[0].frame_timestamp);
 	}
