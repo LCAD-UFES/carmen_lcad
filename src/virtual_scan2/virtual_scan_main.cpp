@@ -310,7 +310,7 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 // 		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_zi], message->timestamp);
 //		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
-		virtual_scan_track_set_t *track_set = virtual_scan_infer_moving_objects(g_virtual_scan_segment_classes[g_zi], message->timestamp);
+		virtual_scan_track_set_t *track_set = virtual_scan_infer_moving_objects(virtual_scan_extended_filtered, g_virtual_scan_segment_classes[g_zi], message->timestamp);
 		virtual_scan_publish_moving_objects(track_set, NULL);
 //		virtual_scan_publish_moving_objects(NULL, virtual_scan_box_model_hypotheses);
 //		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);

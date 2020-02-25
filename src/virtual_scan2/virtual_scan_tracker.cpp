@@ -118,7 +118,7 @@ virtual_scan_tracker_finalize(void)
 
 
 virtual_scan_track_set_t *
-virtual_scan_infer_moving_objects(virtual_scan_segment_classes_t *virtual_scan_segment_classes, double frame_timestamp)
+virtual_scan_infer_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan_extended, virtual_scan_segment_classes_t *virtual_scan_segment_classes, double frame_timestamp)
 {
 // 	g_delta_time = TimeUtils::GetCurrentTime() - g_previous_time;
 // 	
@@ -135,39 +135,45 @@ virtual_scan_infer_moving_objects(virtual_scan_segment_classes_t *virtual_scan_s
 	g_surveillance_region->center.y = y_origin + 0.5*g_surveillance_region->size.y;	
 // 	printf("Surveillance region (%f, %f, %f, %f)\n", g_surveillance_region->center.x, g_surveillance_region->center.y, g_surveillance_region->size.x, g_surveillance_region->size.y);
 
-	// Set the sensor coverage accordingly
-	g_sensor_coverage->center.x = g_current_pos.x;
-	g_sensor_coverage->center.y = g_current_pos.y;	
-// 	printf("Sensor coverage (%f, %f, %f)\n", g_sensor_coverage->center.x, g_sensor_coverage->center.y, g_sensor_coverage->radius);
-
-	// Encode the virtual segments as plots
-	g_plots->clear();
-	for (int i = 0; i < virtual_scan_segment_classes->num_segments; i++)
-	{	
-		Plot plot;
-		plot.measurement.center.x = virtual_scan_segment_classes->segment[i].centroid.x;
-		plot.measurement.center.y = virtual_scan_segment_classes->segment[i].centroid.y;
-// 		plot.measurement.center.x = virtual_scan_segment_classes->segment[i].centroid.x - virtual_scan_segment_classes->segment[i].sensor_pos.x;
-// 		plot.measurement.center.y = virtual_scan_segment_classes->segment[i].centroid.y - virtual_scan_segment_classes->segment[i].sensor_pos.y;
-		plot.measurement.size.x = virtual_scan_segment_classes->segment_features[i].width;
-		plot.measurement.size.y = virtual_scan_segment_classes->segment_features[i].length;
-		plot.measurement.category = virtual_scan_segment_classes->segment_features[i].segment_class;
-		plot.timeStamp = g_current_time;
-// 		plot.timeStamp = frame_timestamp;
-		g_plots->push_back(plot);		
-// 		printf("Plot %d (%f, %f, %f, %f, %d, %lf)\n", i, plot.measurement.center.x, plot.measurement.center.y, plot.measurement.size.x, plot.measurement.size.y, plot.measurement.category, plot.timeStamp);
-	}
 	
-	// Show the plots for debugging purposes
-	virtual_scan_show_plots();
-
-	// Run one tracking iteration
-	// TODO: run it for each virtual sensor separately
-	g_tracker.Process(g_current_time);
+	for (int s = 0; s < virtual_scan_extended->num_sensors; s++)
+	{
+		int sensor_id = virtual_scan_extended->virtual_scan_sensor[s].sensor_id;
 		
+		// Set the sensor coverage accordingly
+		g_sensor_coverage->center.x = g_current_pos.x;
+		g_sensor_coverage->center.y = g_current_pos.y;	
+// 		printf("Sensor coverage (%f, %f, %f)\n", g_sensor_coverage->center.x, g_sensor_coverage->center.y, g_sensor_coverage->radius);
+
+		// Encode the virtual segments as plots
+		g_plots->clear();
+		g_plots->m_sensorIdx = s;
+		for (int i = 0; i < virtual_scan_segment_classes->num_segments; i++)
+		{
+			if (virtual_scan_segment_classes->segment[i].sensor_id != sensor_id)
+				continue;
+			
+			Plot plot;
+			plot.measurement.center.x = virtual_scan_segment_classes->segment[i].centroid.x;
+			plot.measurement.center.y = virtual_scan_segment_classes->segment[i].centroid.y;
+			plot.measurement.size.x = virtual_scan_segment_classes->segment_features[i].width;
+			plot.measurement.size.y = virtual_scan_segment_classes->segment_features[i].length;
+			plot.measurement.category = virtual_scan_segment_classes->segment_features[i].segment_class;
+			plot.timeStamp = g_current_time;
+			g_plots->push_back(plot);		
+// 			printf("Plot %d (%f, %f, %f, %f, %d, %lf)\n", i, plot.measurement.center.x, plot.measurement.center.y, plot.measurement.size.x, plot.measurement.size.y, plot.measurement.category, plot.timeStamp);
+		}
+		
+		// Show the plots for debugging purposes
+		virtual_scan_show_plots(sensor_id);
+
+		// Run one tracking iteration
+		g_tracker.Process(g_current_time);
+	}
+			
 	// Show the tracks for debugging purposes
 	virtual_scan_show_tracks();
-
+	
 	// Encode the output tracks as box models
 	best_track_set->size = g_tracks->size();
 	for (size_t i = 0; i < g_tracks->size(); i++)
@@ -275,13 +281,15 @@ virtual_scan_show_tracks()
 
 
 void 
-virtual_scan_show_plots()
+virtual_scan_show_plots(int sensor_id)
 {
+	string window_title = PLOTS_WINDOW_TITLE+MiscUtils::toStr(sensor_id);	
+	cv::namedWindow(window_title.c_str(), cv::WINDOW_AUTOSIZE | cv::WINDOW_OPENGL);
+
 	static bool flag = true;
-	cv::namedWindow(PLOTS_WINDOW_TITLE, cv::WINDOW_AUTOSIZE | cv::WINDOW_OPENGL);
 	if (flag)
 	{
-		cv::moveWindow(PLOTS_WINDOW_TITLE, PLOTS_WINDOW_POSITION_X, PLOTS_WINDOW_POSITION_Y);
+		cv::moveWindow(window_title.c_str(), PLOTS_WINDOW_POSITION_X, PLOTS_WINDOW_POSITION_Y);
 		flag = false;
 	}
 	
@@ -308,7 +316,7 @@ virtual_scan_show_plots()
 	// Draw sensor coverage area
 	g_sensor_coverage->Draw(image, sx, sy, ox, oy, cv::Scalar(0,200,0));
 	
-	cv::imshow(PLOTS_WINDOW_TITLE, image);
+	cv::imshow(window_title.c_str(), image);
 }
 
 

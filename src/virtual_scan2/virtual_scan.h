@@ -306,13 +306,13 @@ void
 virtual_scan_tracker_finalize(void);
 
 virtual_scan_track_set_t *
-virtual_scan_infer_moving_objects(virtual_scan_segment_classes_t *virtual_scan_segment_classes, double frame_timestamp);
+virtual_scan_infer_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan_extended, virtual_scan_segment_classes_t *virtual_scan_segment_classes, double frame_timestamp);
 
 void 
 virtual_scan_show_tracks();
 
 void 
-virtual_scan_show_plots();
+virtual_scan_show_plots(int sensor_id);
 
 double
 probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set, bool print = false);
