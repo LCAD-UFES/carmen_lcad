@@ -6,6 +6,7 @@
 #include <epik/utils/MiscUtils.h>
 
 #include <opencv2/highgui/highgui.hpp>
+#include "opencv2/imgproc/imgproc.hpp"
 
 #include <carmen/carmen.h>
 #include <carmen/virtual_scan_interface.h>
@@ -22,6 +23,7 @@
 #include <carmen/collision_detection.h>
 #include <carmen/matrix.h>
 #include <carmen/kalman.h>
+#include <carmen/dbscan.h>
 
 #include "virtual_scan.h"
 
@@ -43,6 +45,9 @@
 #define TRACKS_WINDOW_HEIGHT 384
 #define TRACKS_WINDOW_POSITION_X 384
 #define TRACKS_WINDOW_POSITION_Y 0
+
+#define MIN_PLOT_AREA 1.0 // [m]x[m]
+#define MAX_PLOT_AREA 40.0 // [m]x[m]
 
 MovBox2DTracker g_tracker;
 PlotList *g_plots = NULL;
@@ -114,6 +119,122 @@ virtual_scan_tracker_finalize(void)
 	delete g_plots;
 	delete g_surveillance_region;	
 	delete g_sensor_coverage;
+}
+
+
+void
+virtual_scan_extract_plots(carmen_virtual_scan_sensor_t *virtual_scan_sensor)
+{
+	// Generate a single cluster containing all clusters
+	dbscan::Cluster single_cluster;
+	for (int i = 0; i < virtual_scan_sensor->num_points; i++)
+		single_cluster.push_back(virtual_scan_sensor->points[i]);
+	
+	// Find clusters
+	dbscan::Clusters clusters = dbscan::dbscan(4.0 * PEDESTRIAN_RADIUS * PEDESTRIAN_RADIUS, MINIMUN_CLUSTER_SIZE, single_cluster);
+
+	g_plots->clear();
+	for (size_t i = 0; i < clusters.size(); i++)
+	{
+		dbscan::Cluster & cluster = clusters[i];
+		std::vector<cv::Point> contour;
+		for (size_t j = 0; j < cluster.size(); j++)
+		{
+			cv::Point point;
+			point.x = cluster[j].x;
+			point.y = cluster[j].y;
+			contour.push_back(point);
+		}
+		
+		// Find the minimum area bounding rectangle
+		cv::RotatedRect minRect = cv::minAreaRect(cv::Mat(contour));	
+		
+		Plot plot;
+		plot.measurement.center.x = minRect.center.x;
+		plot.measurement.center.y = minRect.center.y;
+		plot.measurement.size.x = minRect.size.width;
+		plot.measurement.size.y = minRect.size.height;		
+		double area = plot.measurement.size.x*plot.measurement.size.y;
+		if (area < MIN_PLOT_AREA)
+			continue;
+		plot.measurement.category = std::min((int) ((NUMBER_OF_CATEGORIES-1)*((area-MIN_PLOT_AREA)/(MAX_PLOT_AREA-MIN_PLOT_AREA))), (NUMBER_OF_CATEGORIES-1));
+		plot.measurement.orientation = carmen_normalize_theta(carmen_degrees_to_radians(minRect.angle) + M_PI / 2.0);
+		plot.timeStamp = g_current_time;
+		g_plots->push_back(plot);		
+// 		printf("Plot %lu (%f, %f, %f, %f, %d, %lf)\n", i, plot.measurement.center.x, plot.measurement.center.y, plot.measurement.size.x, plot.measurement.size.y, plot.measurement.category, plot.timeStamp);
+	}
+}
+
+
+virtual_scan_track_set_t *
+virtual_scan_infer_moving_objects2(carmen_mapper_virtual_scan_message *virtual_scan_extended, double frame_timestamp)
+{
+	// Get the current timestamp in seconds since UNIX epoch GMT
+	g_current_time = TimeUtils::GetCurrentTime();
+	
+	// Set the surveillance region as the current map extension
+	g_surveillance_region->size.x = map_resolution*x_size;
+	g_surveillance_region->size.y = map_resolution*y_size;
+	g_surveillance_region->center.x = x_origin + 0.5*g_surveillance_region->size.x;
+	g_surveillance_region->center.y = y_origin + 0.5*g_surveillance_region->size.y;	
+// 	printf("Surveillance region (%f, %f, %f, %f)\n", g_surveillance_region->center.x, g_surveillance_region->center.y, g_surveillance_region->size.x, g_surveillance_region->size.y);
+
+	
+	for (int s = 0; s < virtual_scan_extended->num_sensors; s++)
+	{
+// 		int sensor_id = virtual_scan_extended->virtual_scan_sensor[s].sensor_id;
+		
+		// Set the sensor coverage accordingly		
+		g_sensor_coverage->center.x = virtual_scan_extended->virtual_scan_sensor[s].global_pos.x;
+		g_sensor_coverage->center.y = virtual_scan_extended->virtual_scan_sensor[s].global_pos.y;	
+// 		printf("Sensor coverage (%f, %f, %f)\n", g_sensor_coverage->center.x, g_sensor_coverage->center.y, g_sensor_coverage->radius);
+
+		// Extract plots as the minimum area bounding box of each virtual scan cluster
+		g_plots->m_sensorIdx = s;
+		virtual_scan_extract_plots(&(virtual_scan_extended->virtual_scan_sensor[s]));
+		
+		// Show the plots for debugging purposes
+// 		virtual_scan_show_plots(sensor_id);
+
+		// Run one tracking iteration
+		g_tracker.Process(g_current_time);
+	}
+			
+	// Show the tracks for debugging purposes
+// 	virtual_scan_show_tracks();
+	
+	// Encode the output tracks as box models
+	best_track_set->size = g_tracks->size();
+	for (size_t i = 0; i < g_tracks->size(); i++)
+	{		
+		best_track_set->tracks[i]->size = 1;
+		best_track_set->tracks[i]->track_id = g_tracks->at(i).id;
+		best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis_state.x = g_tracks->at(i).state.center.x;
+		best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis_state.y = g_tracks->at(i).state.center.y;
+		carmen_rect_to_polar(g_tracks->at(i).state.vel.x,g_tracks->at(i).state.vel.y, 
+							 &(best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis_state.v),
+							 &(best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis_state.theta));
+		if (g_tracks->at(i).state.category < NUMBER_OF_CATEGORIES/4)
+			best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.c = PEDESTRIAN;
+		else if (g_tracks->at(i).state.category < NUMBER_OF_CATEGORIES/2)
+			best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.c = BIKE;
+		else if (g_tracks->at(i).state.category < 3*NUMBER_OF_CATEGORIES/4)
+			best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.c = CAR;
+		else
+			best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.c = BUS;
+		best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.x = g_tracks->at(i).state.center.x;
+		best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.y = g_tracks->at(i).state.center.y;
+		best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.width = g_tracks->at(i).state.size.x;
+		best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.length = g_tracks->at(i).state.size.y;
+		best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.theta = g_tracks->at(i).state.orientation;
+		best_track_set->tracks[i]->box_model_hypothesis[0].frame_timestamp = frame_timestamp;
+// 		printf("Track %d (%d, %f, %f, %f, %f, %f, %lf)\n", best_track_set->tracks[i]->track_id, best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.c, best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.x, best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.y, best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.width, best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.length, best_track_set->tracks[i]->box_model_hypothesis[0].hypothesis.theta, best_track_set->tracks[i]->box_model_hypothesis[0].frame_timestamp);
+	}
+
+	// Wait for while
+	cv::waitKey(1); 
+	
+	return best_track_set;
 }
 
 

@@ -308,6 +308,9 @@ virtual_scan_tracker_finalize(void);
 virtual_scan_track_set_t *
 virtual_scan_infer_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan_extended, virtual_scan_segment_classes_t *virtual_scan_segment_classes, double frame_timestamp);
 
+virtual_scan_track_set_t *
+virtual_scan_infer_moving_objects2(carmen_mapper_virtual_scan_message *virtual_scan_extended, double frame_timestamp);
+
 void 
 virtual_scan_show_tracks();
 
