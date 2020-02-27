@@ -1,17 +1,21 @@
-/*********************************************************
-	 ---   My Module Specific Messages ---
-
-See IPC documentation for more information:
-http://www.cs.cmu.edu/~ipc/
-
-*********************************************************/
-
 #ifndef CARMEN_VELODYNE_MESSAGES_H
 #define CARMEN_VELODYNE_MESSAGES_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+typedef struct
+{
+	carmen_pose_3D_t pose;
+	int range_division_factor;
+	int number_of_rays;
+	double range_min;
+	double range_max;
+	double time_between_shots;
+	double *vertical_correction;
+}carmen_lidar_config;
 
 typedef struct
 {
@@ -20,7 +24,6 @@ typedef struct
 	double angle;
 }carmen_velodyne_32_laser_shot;
 
-/* Message Struct Example */
 typedef struct {
   int number_of_32_laser_shots;
   carmen_velodyne_32_laser_shot *partial_scan;
@@ -87,17 +90,12 @@ typedef struct
 #define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE7_NAME       "carmen_velodyne_variable_scan_message7"
 #define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE8_NAME       "carmen_velodyne_variable_scan_message8"
 #define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE9_NAME       "carmen_velodyne_variable_scan_message9"
-
-#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE0_FMT			CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT
-#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE1_FMT			CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT
-#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE2_FMT			CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT
-#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE3_FMT			CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT
-#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE4_FMT			CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT
-#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE5_FMT			CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT
-#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE6_FMT			CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT
-#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE7_FMT			CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT
-#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE8_FMT			CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT
-#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE9_FMT			CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE10_NAME       "carmen_velodyne_variable_scan_message10"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE11_NAME       "carmen_velodyne_variable_scan_message11"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE12_NAME       "carmen_velodyne_variable_scan_message12"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE13_NAME       "carmen_velodyne_variable_scan_message13"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE14_NAME       "carmen_velodyne_variable_scan_message14"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE15_NAME       "carmen_velodyne_variable_scan_message15"
 
 
 #ifdef __cplusplus
@@ -105,5 +103,3 @@ typedef struct
 #endif
 
 #endif
-
-// @}

@@ -141,7 +141,7 @@ unpack_socket_data(int *num_shot, const uint8_t *socket_data, carmen_velodyne_sh
 	bool complete_turn = false;
 	carmen_velodyne_shot* current_shot = &shots_array[*num_shot];
 
-	for (int i = 44; i < 1242; i += 100) // i = 44 to skip the header and the first block identifier 0xffee
+	for (int i = 44; i < 1242; i += 100) // i = 44 to skip the header (42b) and the first block identifier (2b) 0xffee
 	{
 		current_shot->angle = (double)((256 * socket_data[i] + socket_data[i + 1]) / 100.0);
 
