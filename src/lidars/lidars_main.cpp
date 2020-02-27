@@ -15,7 +15,7 @@ velodyne_driver::velodyne_gps_t gps;
 velodyne_driver::velodyne_config_t config;
 velodyne_driver::VelodyneDriver* velodyne = NULL;
 
-static carmen_velodyne_variable_scan_message variable_scan_msg;
+carmen_velodyne_variable_scan_message variable_scan_msg;
 static carmen_velodyne_gps_message velodyne_gps;
 
 //static int velodyne_scan_port;
@@ -141,11 +141,14 @@ void publish_velodyne_gps(velodyne_driver::velodyne_gps_t gps)
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_VELODYNE_GPS_MESSAGE_FMT);
 }
 
+
 /*********************************************************
 		   --- Handlers ---
 **********************************************************/
 
-void shutdown_module(int signo)
+
+void
+shutdown_module(int signo)
 {
 	if (signo == SIGINT)
 	{
@@ -155,7 +158,13 @@ void shutdown_module(int signo)
 	}
 }
 
-int read_parameters(int argc, char **argv)
+
+/*********************************************************
+		   --- Initializations ---
+**********************************************************/
+
+
+int read_parameters_old(int argc, char **argv)
 {
 	int num_items;
 
@@ -206,6 +215,43 @@ int read_parameters(int argc, char **argv)
 
 
 void
+read_parameters(int argc, char** argv, int lidar_id, carmen_lidar_config &lidar_config)
+{
+    char *vertical_correction_string;
+    char lidar_string[256];
+	
+	sprintf(lidar_string, "lidar%d", lidar_id);        // Geather the lidar id
+
+    carmen_param_t param_list[] = {
+			{lidar_string, (char*)"model", CARMEN_PARAM_STRING, &lidar_config.model, 0, NULL},
+			{lidar_string, (char*)"ip", CARMEN_PARAM_STRING, &lidar_config.ip, 0, NULL},
+			{lidar_string, (char*)"port", CARMEN_PARAM_STRING, &lidar_config.port, 0, NULL},
+			{lidar_string, (char*)"shot_size", CARMEN_PARAM_INT, &lidar_config.shot_size, 0, NULL},
+            {lidar_string, (char*)"min_sensing", CARMEN_PARAM_INT, &lidar_config.min_sensing, 0, NULL},
+            {lidar_string, (char*)"max_sensing", CARMEN_PARAM_INT, &lidar_config.max_sensing, 0, NULL},
+			{lidar_string, (char*)"range_division_factor", CARMEN_PARAM_INT, &lidar_config.range_division_factor, 0, NULL},
+            {lidar_string, (char*)"time_between_shots", CARMEN_PARAM_DOUBLE, &lidar_config.time_between_shots, 0, NULL},
+			{lidar_string, (char*)"x", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.x), 0, NULL},
+			{lidar_string, (char*)"y", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.y), 0, NULL},
+			{lidar_string, (char*)"z", CARMEN_PARAM_DOUBLE, &lidar_config.pose.position.z, 0, NULL},
+			{lidar_string, (char*)"roll", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.roll, 0, NULL},
+			{lidar_string, (char*)"pitch", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.pitch, 0, NULL},
+			{lidar_string, (char*)"yaw", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.yaw, 0, NULL},
+			{lidar_string, (char*)"vertical_angles", CARMEN_PARAM_STRING, &vertical_correction_string, 0, NULL},
+	};
+	int num_items = sizeof(param_list) / sizeof(param_list[0]);
+	carmen_param_install_params(argc, argv, param_list, num_items);
+
+    lidar_config.vertical_angles = (double*) malloc(lidar_config.shot_size * sizeof(double));
+
+    for (int i = 0; i < lidar_config.shot_size; i++)
+		lidar_config.vertical_angles[i] = CLF_READ_DOUBLE(&vertical_correction_string); // CLF_READ_DOUBLE takes a double number from a string
+    
+	//printf("Model: %s Port: %s Shot size: %d Min Sensing: %d Max Sensing: %d Range division: %d Time: %lf\n", lidar_config.model, lidar_config.port, lidar_config.shot_size, lidar_config.min_sensing, lidar_config.max_sensing, lidar_config.range_division_factor, lidar_config.time_between_shots);  printf("X: %lf Y: %lf Z: %lf R: %lf P: %lf Y: %lf\n", lidar_config.pose.position.x, lidar_config.pose.position.y, lidar_config.pose.position.z, lidar_config.pose.orientation.roll, lidar_config.pose.orientation.pitch, lidar_config.pose.orientation.yaw); for (int i = 0; i < lidar_config.shot_size; i++) printf("%lf ", lidar_config.vertical_angles[i]); printf("\n");
+}
+
+
+void
 setup_message()
 {
 	variable_scan_msg.partial_scan = (carmen_velodyne_shot *) malloc (MAX_NUM_SHOTS * sizeof(carmen_velodyne_shot));
@@ -216,10 +262,12 @@ setup_message()
 		variable_scan_msg.partial_scan[i].distance = (unsigned short*) malloc (16 * sizeof(unsigned short));
 		variable_scan_msg.partial_scan[i].intensity = (unsigned char*) malloc (16 * sizeof(unsigned char));
 	}
+	variable_scan_msg.host = carmen_get_host();
 }
 
 
-void freeMemory()
+void
+freeMemory()
 {
 	//free(velodyne_partial_scan.partial_scan);
 
@@ -273,7 +321,7 @@ run_robosense_driver()
 
 
 void
-run_velodyne_driver()
+run_velodyne_driver_old()
 {
 	if (velodyne == NULL)
 	{
@@ -307,32 +355,84 @@ run_velodyne_driver()
 }
 
 
+void
+run_velodyne_driver(carmen_velodyne_variable_scan_message &msg, carmen_lidar_config lidar_config, int lidar_id)
+{
+	int port = atoi(lidar_config.port);
+
+	if (velodyne == NULL)
+	{
+		velodyne = new velodyne_driver::VelodyneDriver(msg, lidar_config.shot_size, velodyne_max_laser_shots_per_revolution, port, velodyne_gps_udp_port);
+		config = velodyne->getVelodyneConfig();
+	}
+	else
+	{
+		if (velodyne->pollScan(msg, lidar_id, port, velodyne_max_laser_shots_per_revolution, velodyne_num_shots,
+				velodyne_package_rate, velodyne_num_lasers))
+		{
+			carmen_velodyne_publish_variable_scan_message(&msg, lidar_id);
+
+			// if (velodyne_gps_enabled && velodyne->pollGps(velodyne_gps_udp_port))
+			// {
+			// 	gps = velodyne->getVelodyneGps();
+			// 	publish_velodyne_gps(gps);
+			// }
+		}
+		else // just in case velodyne crash
+		{
+			printf("velodyne disconect\n");
+			velodyne->~VelodyneDriver();
+
+			freeMemory();
+
+			velodyne = NULL;
+			usleep(1e6 / 2);
+		}
+	}
+}
+
+
+int
+get_lidar_id(int argc, char **argv)
+{
+	if (argc != 2)
+		carmen_die("%s: Wrong number of parameters. %s requires 1 parameter and received %d parameter(s). \nUsage:\n %s <camera_number>\n", argv[0], argv[0], argc-1, argv[0]);
+
+	return (atoi(argv[1]));
+}
+
+
 int 
 main(int argc, char **argv)
 {
+	int lidar_id;
+	carmen_lidar_config lidar_config;
+
 	carmen_ipc_initialize(argc, argv);
 
 	carmen_param_check_version(argv[0]);
 
 	signal(SIGINT, shutdown_module);
 
-	read_parameters(argc, argv);
+	lidar_id = get_lidar_id(argc, argv);
+
+	read_parameters(argc, argv, lidar_id, lidar_config);
 
 	carmen_velodyne_define_messages();
 
-	variable_scan_msg.host = carmen_get_host();
+	printf("-------------------------\n  Lidar %d %s loaded!\n-------------------------\n", lidar_id, lidar_config.model);
+
+	setup_message();
 
 	while (true)
 	{
-		printf("Usando %s\n ", velodyne_model);
-		if(strcmp(velodyne_model, "RS16") == 0)
+		if(strcmp(lidar_config.model, "RS16") == 0)
 		{
 			//run_robosense_driver();
-			setup_message();
-			run_robosense_RSLiDAR16_driver(variable_scan_msg);
+			run_robosense_RSLiDAR16_driver(variable_scan_msg, lidar_config, lidar_id);
 		}
 		else
-			run_velodyne_driver();
+			run_velodyne_driver(variable_scan_msg, lidar_config, lidar_id);
 
 	}
 

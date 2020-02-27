@@ -18,6 +18,6 @@
 
 void initizalize_socket_connection();
 
-bool run_robosense_RSLiDAR16_driver(carmen_velodyne_variable_scan_message &msg);
+bool run_robosense_RSLiDAR16_driver(carmen_velodyne_variable_scan_message &msg, carmen_lidar_config lidar_config, int lidar_id);
 
 #endif

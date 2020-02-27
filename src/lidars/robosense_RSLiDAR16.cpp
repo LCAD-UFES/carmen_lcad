@@ -11,7 +11,7 @@ static const size_t packet_size = RSLIDAR_MSG_BUFFER_SIZE;
 #define POLLPRI		0x002		// There is urgent data to read
 #define POLLOUT		0x004		// Writing now will not block
 
-static uint16_t MSOP_DATA_PORT_NUMBER = 6699;    // TODO Read from carmen.ini
+//static uint16_t MSOP_DATA_PORT_NUMBER = 6699;    // TODO Read from carmen.ini
 char ip_adress_string[20] = "192.168.1.200"; // TODO Read from carmen.ini
 
 in_addr devip_;
@@ -23,11 +23,11 @@ in_addr devip_;
 
 
 void
-initizalize_socket_connection()
+initizalize_socket_connection(uint16_t port)
 {
 	sockfd_ = -1;
 
-	printf("Opening UDP socket: port %d\n", MSOP_DATA_PORT_NUMBER);
+	printf("Opening UDP socket: port %d\n", port);
 	
     sockfd_ = socket(PF_INET, SOCK_DGRAM, 0);
 	if (sockfd_ == -1)
@@ -46,7 +46,7 @@ initizalize_socket_connection()
 	sockaddr_in my_addr;                   // my address information
 	memset(&my_addr, 0, sizeof(my_addr));  // initialize to zeros
 	my_addr.sin_family = AF_INET;          // host byte order
-	my_addr.sin_port = htons(MSOP_DATA_PORT_NUMBER);        // port in network byte order
+	my_addr.sin_port = htons(port);        // port in network byte order
 	my_addr.sin_addr.s_addr = INADDR_ANY;  // automatically fill in my IP
 
 	if (bind(sockfd_, (sockaddr*)&my_addr, sizeof(sockaddr)) == -1)
@@ -65,7 +65,7 @@ initizalize_socket_connection()
 
 
 int
-receive_packet_from_socket(uint8_t *socket_data)
+receive_packet_from_socket(uint8_t *socket_data, uint16_t port, char *ip)
 {
 	struct pollfd fds[1];
 	fds[0].fd = sockfd_;
@@ -95,8 +95,8 @@ receive_packet_from_socket(uint8_t *socket_data)
 				char buffer_data[8] = "re-con";
 				memset(&sender_address, 0, sender_address_len);          // initialize to zeros
 				sender_address.sin_family = AF_INET;                     // host byte order
-				sender_address.sin_port = htons(MSOP_DATA_PORT_NUMBER);  // port in network byte order, set any value
-                inet_aton(ip_adress_string, &devip_);
+				sender_address.sin_port = htons(port);  // port in network byte order, set any value
+                inet_aton(ip, &devip_);
                 // inet_aton(ip_adress_string, *sender_address.sin_addr.s_addr)
 				sender_address.sin_addr.s_addr = devip_.s_addr;          // automatically fill in my IP
 				sendto(sockfd_, &buffer_data, strlen(buffer_data), 0, (sockaddr*)&sender_address, sender_address_len);
@@ -186,7 +186,7 @@ unpack_socket_data(int *num_shot, const uint8_t *socket_data, carmen_velodyne_sh
 
 
 void
-fill_carmen_scan_message(carmen_velodyne_variable_scan_message &msg, carmen_velodyne_shot *shots_array, int *num_shots)
+fill_carmen_scan_message(carmen_velodyne_variable_scan_message &msg, carmen_velodyne_shot *shots_array, int *num_shots, int lidar_id)
 {
 	double previous_angle = 0.0, next_angle;
 	int last_shot_of_scan = 0;
@@ -233,7 +233,7 @@ fill_carmen_scan_message(carmen_velodyne_variable_scan_message &msg, carmen_velo
 	// msg.partial_scan = shots_array;
 	msg.timestamp = carmen_get_time();
 
-	carmen_velodyne_publish_variable_scan_message(&msg, 4);
+	carmen_velodyne_publish_variable_scan_message(&msg, lidar_id);
     //printf ("Foi\n");
 
 	for (int i = last_shot_of_scan + 1, j = 0; i < *num_shots; i++, j++)
@@ -247,12 +247,14 @@ fill_carmen_scan_message(carmen_velodyne_variable_scan_message &msg, carmen_velo
 
 
 bool
-run_robosense_RSLiDAR16_driver(carmen_velodyne_variable_scan_message &msg)
+run_robosense_RSLiDAR16_driver(carmen_velodyne_variable_scan_message &msg, carmen_lidar_config lidar_config, int lidar_id)
 {
 	static int num_shots = 0;
     uint8_t socket_data[RSLIDAR_MSG_BUFFER_SIZE];
 
-    initizalize_socket_connection();
+	uint16_t port = atoi(lidar_config.port);
+
+    initizalize_socket_connection(port);
 
 	while (true)
 	{
@@ -260,7 +262,7 @@ run_robosense_RSLiDAR16_driver(carmen_velodyne_variable_scan_message &msg)
 
 		while (true)
 		{
-			int rc = receive_packet_from_socket(socket_data);
+			int rc = receive_packet_from_socket(socket_data, port, lidar_config.ip);
 			if (rc == 0)   // Full packet received
 				break;
 			if (rc < 0)
@@ -272,7 +274,7 @@ run_robosense_RSLiDAR16_driver(carmen_velodyne_variable_scan_message &msg)
 
 		if (unpack_socket_data(&num_shots, socket_data, msg.partial_scan))
 		{
-			fill_carmen_scan_message(msg, msg.partial_scan, &num_shots);
+			fill_carmen_scan_message(msg, msg.partial_scan, &num_shots, lidar_id);
 			//break;
 		}
         //printf("Time: %lf\n", carmen_get_time() - time1);
