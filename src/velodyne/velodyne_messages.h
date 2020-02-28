@@ -5,16 +5,19 @@
 extern "C" {
 #endif
 
-
 typedef struct
 {
+	char *model;
+	int id;
+	char *ip;
+	char *port;
+	int shot_size;                  // Number of vertical rays
+	int min_sensing;                // Minimum sensing value (int), provided by the manual
+	int max_sensing;                // Maximum sensing value (int), provided by the manual
+	int range_division_factor;      // LiDAR measures are sent as integer values to minimize data transfer, must be divided to get floating point precision
+	double time_between_shots;      // given by the spinning frequency
 	carmen_pose_3D_t pose;
-	int range_division_factor;
-	int number_of_rays;
-	double range_min;
-	double range_max;
-	double time_between_shots;
-	double *vertical_correction;
+	double *vertical_angles;
 }carmen_lidar_config;
 
 typedef struct
