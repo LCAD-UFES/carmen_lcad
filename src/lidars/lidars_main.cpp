@@ -164,7 +164,7 @@ shutdown_module(int signo)
 **********************************************************/
 
 
-int read_parameters(int argc, char **argv)
+int read_parameters_old(int argc, char **argv)
 {
 	int num_items;
 
@@ -215,7 +215,7 @@ int read_parameters(int argc, char **argv)
 
 
 void
-read_parameters_new(int argc, char** argv, int lidar_id, carmen_lidar_config &lidar_config)
+read_parameters(int argc, char** argv, int lidar_id, carmen_lidar_config &lidar_config)
 {
     char *vertical_correction_string;
     char lidar_string[256];
@@ -321,7 +321,7 @@ run_robosense_driver()
 
 
 void
-run_velodyne_driver()
+run_velodyne_driver_old()
 {
 	if (velodyne == NULL)
 	{
@@ -356,27 +356,20 @@ run_velodyne_driver()
 
 
 void
-run_velodyne_driver_new(carmen_velodyne_variable_scan_message &msg, carmen_lidar_config lidar_config, int lidar_id)
+run_velodyne_driver(carmen_velodyne_variable_scan_message &msg, carmen_lidar_config lidar_config, int lidar_id)
 {
 	int port = atoi(lidar_config.port);
 
 	if (velodyne == NULL)
 	{
-		velodyne = new velodyne_driver::VelodyneDriver(msg, lidar_config.shot_size, INITIAL_MAX_NUM_SHOT, port, 0);
+		velodyne = new velodyne_driver::VelodyneDriver(msg, lidar_config.shot_size, INITIAL_MAX_NUM_SHOT, port, 8309);
 		config = velodyne->getVelodyneConfig();
 	}
 	else
 	{
-		if (velodyne->pollScan(msg, lidar_id, port, INITIAL_MAX_NUM_SHOT, 12,
-				velodyne_package_rate, lidar_config.shot_size))
+		if (velodyne->pollScan(msg, lidar_id, port, INITIAL_MAX_NUM_SHOT, 12, 754.0, lidar_config.shot_size))
 		{
 			carmen_velodyne_publish_variable_scan_message(&msg, lidar_id);
-
-			// if (velodyne_gps_enabled && velodyne->pollGps(velodyne_gps_udp_port))
-			// {
-			// 	gps = velodyne->getVelodyneGps();
-			// 	publish_velodyne_gps(gps);
-			// }
 		}
 		else // just in case velodyne crash
 		{
@@ -414,10 +407,9 @@ main(int argc, char **argv)
 
 	signal(SIGINT, shutdown_module);
 
-	//lidar_id = get_lidar_id(argc, argv);
+	lidar_id = get_lidar_id(argc, argv);
 
-	read_parameters(argc, argv);
-	// read_parameters(argc, argv, lidar_id, lidar_config);
+	read_parameters(argc, argv, lidar_id, lidar_config);
 
 	carmen_velodyne_define_messages();
 
@@ -433,8 +425,7 @@ main(int argc, char **argv)
 	if(strcmp(lidar_config.model, "VLP16") == 0)
 	{
 		while (1)
-			run_velodyne_driver();
-			// run_velodyne_driver(variable_scan_msg, lidar_config, lidar_id);
+			run_velodyne_driver(variable_scan_msg, lidar_config, lidar_id);
 	}
 
 	carmen_die("\nERROR: lidar%d_model %s not found!\nPlease verify the carmen.ini file.\n\n", lidar_id, lidar_config.model);

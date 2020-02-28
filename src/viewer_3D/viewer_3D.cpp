@@ -290,19 +290,13 @@ static double distance_between_front_and_rear_axles;
 
 static int force_velodyne_flag = 0;
 static int velodyne_active = -1;
-static double vertical_correction[32];
 static double ouster_vertical_correction[64];
 
 static int show_symotha_flag = 0;
 
 // in degrees
 static double ouster64_azimuth_offsets[64];
-static double vc_16[32];
-static double vc_32[32];
 static double vc_64[64];
-static char* v16_robosense;
-static char* v16;
-static char* v32;
 static char* v64;
 static char* h64;
 
@@ -992,74 +986,6 @@ velodyne_variable_scan_message_handler0(carmen_velodyne_variable_scan_message *v
 }
 
 
-static void
-velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *velodyne_message)
-{
-	if(velodyne_message->partial_scan[0].shot_size == 16)
-		memcpy(vertical_correction, vc_16, sizeof(vc_16));
-	else if (velodyne_message->partial_scan[0].shot_size == 32)
-		memcpy(vertical_correction, vc_32, sizeof(vc_32));
-
-	static double last_timestamp = 0.0;
-
-	if (!force_velodyne_flag)
-		if (!odometry_initialized || !draw_velodyne_flag)
-			return;
-
-	if (last_timestamp == 0.0)
-	{
-		last_timestamp = velodyne_message->timestamp;
-		return;
-	}
-
-	velodyne_initialized = 1;
-
-//  Para ver so uma mensagem do velodyne
-//    static int nt = 0;
-//    nt++;
-//    if ((nt < 10) || (nt > 10))
-//    	return;
-
-	last_velodyne_position++;
-	if (last_velodyne_position >= velodyne_size)
-		last_velodyne_position = 0;
-
-	int num_points = velodyne_message->number_of_shots * (velodyne_message->partial_scan[0].shot_size);
-
-	if (num_points > velodyne_points[last_velodyne_position].num_points)
-	{
-		velodyne_points[last_velodyne_position].points = (carmen_vector_3D_t *) realloc(velodyne_points[last_velodyne_position].points, num_points * sizeof (carmen_vector_3D_t));
-		velodyne_points[last_velodyne_position].point_color = (carmen_vector_3D_t *) realloc(velodyne_points[last_velodyne_position].point_color, num_points * sizeof (carmen_vector_3D_t));
-	}
-	velodyne_points[last_velodyne_position].num_points = num_points;
-	velodyne_points[last_velodyne_position].car_position = car_fused_pose.position;
-	velodyne_points[last_velodyne_position].timestamp = velodyne_message->timestamp;
-
-	rotation_matrix* velodyne_to_board_matrix = create_rotation_matrix(velodyne_pose.orientation);
-	rotation_matrix* board_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
-	int range_max_points;
-
-	range_max_points = compute_velodyne_points(&velodyne_points[last_velodyne_position], velodyne_message, vertical_correction, velodyne_message->partial_scan[0].shot_size,
-			velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose.position, sensor_board_1_pose.position);
-
-	velodyne_points[last_velodyne_position].num_points -= range_max_points;
-
-	destroy_rotation_matrix(velodyne_to_board_matrix);
-	destroy_rotation_matrix(board_to_car_matrix);
-
-	if (draw_velodyne_flag == 2)
-		add_point_cloud(velodyne_drawer, velodyne_points[last_velodyne_position]);
-
-	//verificar se essas flags sao necessarias
-	//if (draw_velodyne_flag == 3)
-		//add_velodyne_message(v_360_drawer, velodyne_message);
-	//if (draw_velodyne_flag == 5)
-		//velodyne_intensity_drawer_add_velodyne_message(v_int_drawer, velodyne_message, car_fused_pose, car_fused_velocity, car_fused_time);
-
-	last_timestamp = velodyne_message->timestamp;
-}
-
-
 int
 convert_variable_scan_message_to_point_cloud(point_cloud *velodyne_points, carmen_velodyne_variable_scan_message *velodyne_message, carmen_lidar_config lidar_config,
 		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
@@ -1080,7 +1006,6 @@ convert_variable_scan_message_to_point_cloud(point_cloud *velodyne_points, carme
 		
 		for (int j = 0; j < lidar_config.shot_size; j++)
 		{
-			//if ((velodyne_message->partial_scan[i].distance[j] / lidar_config.range_division_factor) < lidar_config.range_min || (velodyne_message->partial_scan[i].distance[j]/ lidar_config.range_division_factor) > 20)
 			if (velodyne_message->partial_scan[i].distance[j] == 0)
             {
 				discarded_points++;
@@ -1090,8 +1015,6 @@ convert_variable_scan_message_to_point_cloud(point_cloud *velodyne_points, carme
 					carmen_degrees_to_radians(lidar_config.vertical_angles[j]), (double) velodyne_message->partial_scan[i].distance[j] / lidar_config.range_division_factor,
 					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
 
-            printf ("%d\n", lidar_config.range_division_factor);
-			
             carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position,
 					&r_matrix_car_to_global);
 
@@ -1146,7 +1069,6 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, bool 
 	destroy_rotation_matrix(lidar_to_board_matrix);
 	destroy_rotation_matrix(board_to_car_matrix);
     
-    printf ("Chegou\n");
 	add_point_cloud(velodyne_drawer, *lidar_point_cloud_vector[lidar_point_cloud_vector_index]);
     
     lidar_point_cloud_vector_index += 1;
@@ -1154,14 +1076,29 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, bool 
 
 
 void
+velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *message)
+{
+    printf("chegou\n");
+    static bool first_time = true;
+    static point_cloud *lidar2_point_cloud_vector;
+    static int lidar2_point_cloud_vector_max_size = 0;
+    static int lidar2_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar2_config;
+    lidar2_config.id = 2;
+    
+    draw_variable_scan_message(message, first_time, &lidar2_point_cloud_vector, lidar2_point_cloud_vector_max_size, lidar2_point_cloud_vector_index, lidar2_config);
+}
+
+
+void
 velodyne_variable_scan_message_handler4(carmen_velodyne_variable_scan_message *message)
 {
-    //printf ("Chegou\n");
     static bool first_time = true;
     static point_cloud *lidar4_point_cloud_vector;
     static int lidar4_point_cloud_vector_max_size = 0;
     static int lidar4_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar4_config;
+    lidar4_config.id = 4;
     
     draw_variable_scan_message(message, first_time, &lidar4_point_cloud_vector, lidar4_point_cloud_vector_max_size, lidar4_point_cloud_vector_index, lidar4_config);
 }
@@ -1170,7 +1107,6 @@ velodyne_variable_scan_message_handler4(carmen_velodyne_variable_scan_message *m
 void
 velodyne_variable_scan_message_handler11(carmen_velodyne_variable_scan_message *message)
 {
-    printf ("S %d\n", message->number_of_shots);
     static bool first_time = true;
     static point_cloud *lidar11_point_cloud_vector;
     static int lidar11_point_cloud_vector_max_size = 0;
@@ -1185,13 +1121,13 @@ velodyne_variable_scan_message_handler11(carmen_velodyne_variable_scan_message *
 void
 velodyne_variable_scan_message_handler12(carmen_velodyne_variable_scan_message *message)
 {
-    //printf ("Chegou\n");
     static bool first_time = true;
     static point_cloud *lidar12_point_cloud_vector;
     static int lidar12_point_cloud_vector_max_size = 0;
     static int lidar12_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar12_config;
-    
+    lidar12_config.id = 12;
+
     draw_variable_scan_message(message, first_time, &lidar12_point_cloud_vector, lidar12_point_cloud_vector_max_size, lidar12_point_cloud_vector_index, lidar12_config);
 }
 
@@ -1199,7 +1135,6 @@ velodyne_variable_scan_message_handler12(carmen_velodyne_variable_scan_message *
 static void
 velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_message* velodyne_message)
 {
-//	printf("tem alguem publicando? \n");
 	add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, sensor_board_1_pose);
 
 	add_point_cloud(velodyne_drawer, velodyne_points[last_velodyne_position]);
@@ -2687,10 +2622,6 @@ read_parameters_and_init_stuff(int argc, char** argv)
 	carmen_param_t param_list2[] = {
 			{(char*)"velodyne0", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v64, 0, NULL},
 			{(char*)"velodyne0", (char*)"horizontal_correction", CARMEN_PARAM_STRING, &h64, 0, NULL},
-			{(char*)"velodyne1", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v32, 0, NULL},
-			{(char*)"velodyne2", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v16, 0, NULL},
-			{(char*)"velodyne4", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v16_robosense, 0, NULL},
-
 	};
 	num_items = sizeof(param_list2)/sizeof(param_list2[0]);
 	carmen_param_install_params(argc, argv, param_list2, num_items);
@@ -2701,28 +2632,6 @@ read_parameters_and_init_stuff(int argc, char** argv)
 		{
 			vc_64[i] = CLF_READ_DOUBLE(&v64);
 			ouster64_azimuth_offsets[i] = CLF_READ_DOUBLE(&h64);
-		}
-	}
-	else if (velodyne_active == 4)
-	{
-		for (int i=0; i<32; i++)
-		{
-			vc_32[i] = CLF_READ_DOUBLE(&v32);
-			if (i<16)
-				vc_16[i] = CLF_READ_DOUBLE(&v16_robosense);
-			else
-				vc_16[i] = 0.0;
-		}
-	}
-	else
-	{
-		for (int i=0; i<32; i++)
-		{
-			vc_32[i] = CLF_READ_DOUBLE(&v32);
-			if (i<16)
-				vc_16[i] = CLF_READ_DOUBLE(&v16);
-			else
-				vc_16[i] = 0.0;
 		}
 	}
 
@@ -3314,30 +3223,8 @@ subscribe_ipc_messages(void)
                                                    (carmen_handler_t) velodyne_partial_scan_message_handler,
                                                    CARMEN_SUBSCRIBE_LATEST);
 
-//    carmen_velodyne_subscribe_variable_scan_message(NULL,
-//                                                       (carmen_handler_t) velodyne_variable_scan_message_handler2,
-//                                                              CARMEN_SUBSCRIBE_LATEST);
-    if (velodyne_active == -1 || velodyne_active == 0)
-    	carmen_velodyne_subscribe_variable_scan_message(NULL,
-    			(carmen_handler_t) velodyne_variable_scan_message_handler0,
-				CARMEN_SUBSCRIBE_LATEST, 0);
-
-    if (velodyne_active == -1 || velodyne_active == 1)
-    	carmen_velodyne_subscribe_variable_scan_message(NULL,
-    			(carmen_handler_t) velodyne_variable_scan_message_handler2,
-				CARMEN_SUBSCRIBE_LATEST, 1);
-
-    if (velodyne_active == -1 || velodyne_active == 2)
-    	carmen_velodyne_subscribe_variable_scan_message(NULL,
-    			(carmen_handler_t) velodyne_variable_scan_message_handler2,
-				CARMEN_SUBSCRIBE_LATEST, 2);
-
-    if (velodyne_active == -1 || velodyne_active == 3)
-    	carmen_velodyne_subscribe_variable_scan_message(NULL,
-    			(carmen_handler_t) velodyne_variable_scan_message_handler2,
-				CARMEN_SUBSCRIBE_LATEST, 3);
-
-    
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler0, CARMEN_SUBSCRIBE_LATEST, 0); // Ouster OS164
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler2, CARMEN_SUBSCRIBE_LATEST, 2);
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler4, CARMEN_SUBSCRIBE_LATEST, 4);
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler11, CARMEN_SUBSCRIBE_LATEST, 11);
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler12, CARMEN_SUBSCRIBE_LATEST, 12);
