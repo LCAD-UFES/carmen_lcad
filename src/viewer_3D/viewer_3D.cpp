@@ -1089,6 +1089,8 @@ convert_variable_scan_message_to_point_cloud(point_cloud *velodyne_points, carme
 			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle),
 					carmen_degrees_to_radians(lidar_config.vertical_angles[j]), (double) velodyne_message->partial_scan[i].distance[j] / lidar_config.range_division_factor,
 					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
+
+            printf ("%d\n", lidar_config.range_division_factor);
 			
             carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position,
 					&r_matrix_car_to_global);
@@ -1112,7 +1114,7 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, bool 
 
     if (first_time)
     {
-        load_lidar_config(0, NULL, 4, lidar_config);
+        load_lidar_config(0, NULL, lidar_config.id, lidar_config);
         *lidar_point_cloud_vector = alloc_lidar_point_cloud_vector();
         first_time = false;
     }
@@ -1143,7 +1145,8 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, bool 
 
 	destroy_rotation_matrix(lidar_to_board_matrix);
 	destroy_rotation_matrix(board_to_car_matrix);
-
+    
+    printf ("Chegou\n");
 	add_point_cloud(velodyne_drawer, *lidar_point_cloud_vector[lidar_point_cloud_vector_index]);
     
     lidar_point_cloud_vector_index += 1;
@@ -1161,6 +1164,21 @@ velodyne_variable_scan_message_handler4(carmen_velodyne_variable_scan_message *m
     static carmen_lidar_config lidar4_config;
     
     draw_variable_scan_message(message, first_time, &lidar4_point_cloud_vector, lidar4_point_cloud_vector_max_size, lidar4_point_cloud_vector_index, lidar4_config);
+}
+
+
+void
+velodyne_variable_scan_message_handler11(carmen_velodyne_variable_scan_message *message)
+{
+    printf ("S %d\n", message->number_of_shots);
+    static bool first_time = true;
+    static point_cloud *lidar11_point_cloud_vector;
+    static int lidar11_point_cloud_vector_max_size = 0;
+    static int lidar11_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar11_config;
+    lidar11_config.id = 11;
+    
+    draw_variable_scan_message(message, first_time, &lidar11_point_cloud_vector, lidar11_point_cloud_vector_max_size, lidar11_point_cloud_vector_index, lidar11_config);
 }
 
 
@@ -3321,6 +3339,7 @@ subscribe_ipc_messages(void)
 
     
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler4, CARMEN_SUBSCRIBE_LATEST, 4);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler11, CARMEN_SUBSCRIBE_LATEST, 11);
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler12, CARMEN_SUBSCRIBE_LATEST, 12);
     
  

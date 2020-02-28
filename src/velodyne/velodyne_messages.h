@@ -8,6 +8,7 @@ extern "C" {
 typedef struct
 {
 	char *model;
+	int id;
 	char *ip;
 	char *port;
 	int shot_size;                  // Number of vertical rays
