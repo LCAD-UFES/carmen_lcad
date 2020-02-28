@@ -32,14 +32,22 @@ initialize_python_context()
 	import_array();
 	PyObject *python_module = PyImport_ImportModule("run_inplace_abn");
 	
+	if (PyErr_Occurred())
+		        PyErr_Print();
+
 	if (python_module == NULL)
 	{
 		Py_Finalize();
 		exit(printf("Error: The python_module run_test could not be loaded.\nMaybe PYTHONPATH is not set.\n"));
 	}
-	
+
+	if (PyErr_Occurred())
+		        PyErr_Print();
+
 	PyObject *python_initialize_function = PyObject_GetAttrString(python_module, (char *) "initialize");
 
+	if (PyErr_Occurred())
+		        PyErr_Print();
 	if (python_initialize_function == NULL || !PyCallable_Check(python_initialize_function))
 	{
 		Py_Finalize();
@@ -47,7 +55,11 @@ initialize_python_context()
 	}
 	PyObject *python_arguments = Py_BuildValue("(i)", 640);
 
+	if (PyErr_Occurred())
+		        PyErr_Print();
+
 	PyObject_CallObject(python_initialize_function, python_arguments);
+
 	if (PyErr_Occurred())
 		        PyErr_Print();
 
@@ -55,6 +67,9 @@ initialize_python_context()
 	// Py_DECREF(python_initialize_function);
 
 	python_libinplace_abn_process_image_function = PyObject_GetAttrString(python_module, (char *) "inplace_abn_process_image");
+	
+	if (PyErr_Occurred())
+		        PyErr_Print();
 
 	if (python_libinplace_abn_process_image_function == NULL || !PyCallable_Check(python_libinplace_abn_process_image_function))
 	{
@@ -62,7 +77,10 @@ initialize_python_context()
 		Py_Finalize();
 		exit (printf("Error: Could not load the inplace_abn_process_image.\n"));
 	}
-	
+
+	if (PyErr_Occurred())
+		        PyErr_Print();
+
 	printf("Success: Loaded inplace_abn\n");
 
 }
