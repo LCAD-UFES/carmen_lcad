@@ -1,6 +1,7 @@
 #include <Python.h>
 #include "libinplace_abn.h"
 #include <numpy/arrayobject.h>
+#include <stdlib.h> /* getenv */
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 // #include <iostream>
@@ -8,9 +9,25 @@
 
 PyObject *python_libinplace_abn_process_image_function;
 
+void initialize_python_path_inplace()
+{
+	char* pyPath;
+	char* pPath;
+	char* inplacePath;
+	pyPath = (char *) "PYTHONPATH=";
+  	pPath = getenv ("CARMEN_HOME");
+	inplacePath = (char *) "/sharedlib/inplace_abn/scripts";
+    char * path = (char *) malloc(1 + strlen(pyPath) + strlen(pPath)+ strlen(inplacePath));
+	strcpy(path, pyPath);
+    strcat(path, pPath);
+    strcat(path, inplacePath);
+	putenv(path);
+}
+
 void
 initialize_python_context()
 {
+	initialize_python_path_inplace();
 	Py_Initialize();
 	import_array();
 	PyObject *python_module = PyImport_ImportModule("run_inplace_abn");

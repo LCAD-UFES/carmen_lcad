@@ -2,6 +2,17 @@ import argparse
 from functools import partial
 from os import path
 import os
+
+def activate_virtual_environment(environment_root):
+    """Configures the virtual environment starting at ``environment_root``."""
+    activate_script = os.path.join(
+        environment_root, 'bin', 'activate_this.py')
+    execfile(activate_script, {'__file__': activate_script})
+
+carmen_home = os.getenv("CARMEN_HOME")
+virtualenv_root = carmen_home + "/sharedlib/inplace_abn/inplace_env"
+activate_virtual_environment(virtualenv_root)
+
 import time
 import numpy as np
 import torch
