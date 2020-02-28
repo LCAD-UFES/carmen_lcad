@@ -213,6 +213,8 @@ static int draw_particles_flag;
 static int draw_points_flag;
 static int draw_velodyne_flag;
 static int draw_stereo_cloud_flag;
+//TODO @@vinicius
+//static int draw_lidars_flag;
 static int draw_car_flag;
 static int draw_rays_flag;
 static int draw_map_image_flag;
@@ -3624,6 +3626,9 @@ set_flag_viewer_3D(int flag_num, int value)
     case 33:
         show_symotha_flag = value;
         break;
+    case 34:
+    	show_symotha_flag = value;
+    	break;
     }
 }
 
