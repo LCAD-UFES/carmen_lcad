@@ -20,7 +20,7 @@ initizalize_socket_connection(uint16_t port)
 {
 	sockfd_ = -1;
 
-	printf("Opening UDP socket: port %d\n", port);
+	//printf("Opening UDP socket: port %d\n", port);
 	
     sockfd_ = socket(PF_INET, SOCK_DGRAM, 0);
 	if (sockfd_ == -1)
@@ -53,7 +53,7 @@ initizalize_socket_connection(uint16_t port)
 		printf("fcntl fail\n");
 		return;
 	}
-	printf("RSLiDAR16_driver socket fd is %d\n", sockfd_);
+	//printf("RSLiDAR16_driver socket fd is %d\n", sockfd_);
 }
 
 
@@ -146,58 +146,54 @@ setup_message(carmen_lidar_config lidar_config)
 */
 
 bool
-unpack_socket_data(int *num_shot, const uint8_t *socket_data, carmen_velodyne_shot *shots_array)
+unpack_socket_data(int *num_shots, const uint8_t *socket_data, carmen_velodyne_shot *shots_array)
 {
 	static int max_num_shot = INITIAL_MAX_NUM_SHOT;
 	int last_byte_of_shot;
 	bool complete_turn = false;
-	carmen_velodyne_shot* current_shot = &shots_array[*num_shot];
+	carmen_velodyne_shot* current_shot = &shots_array[*num_shots];
 
-	//double a=0.0, b=0.0;
-
-	for (int i = 44; i < 1242; i += 100) // i = 44 to skip the header (42b) and the first block identifier (2b) 0xffee
+	for (int i = 44; i < 1242; i += 100) // i = 44 to skip the header (42b) and the first data block identifier (2b) 0xffee
 	{
 		current_shot->angle = (double)((256 * socket_data[i] + socket_data[i + 1]) / 100.0);
-		
-		// a = b; b = current_shot->angle;
-		// if (a != 0 && b - a > 5)
-    	// 	printf ("%lf %lf %d \n", a, b, i);
-		//printf ("%lf %d\n", current_shot->angle, i);
+		printf ("-------------\n");
 
-		if (*num_shot > 0 && current_shot->angle < 5.0 && shots_array[*num_shot - 2].angle > 355.0)
-        {
+		if (*num_shots > 0 && current_shot->angle < 5.0 && shots_array[*num_shots - 2].angle > 355.0)
 			complete_turn = true;
-        }
 
 		last_byte_of_shot = i + 2 + 48; // skip 2 bytes of azimuth and 48 bytes of measures (the 50th byte is the last byte of first channel)
 
-		for (int ray = i + 2, k = 0; ray < last_byte_of_shot; ray += 3, k++)  // i + 2 to skip the two bytes of the azimuth
+		for (int index = i + 2, k = 0; index < last_byte_of_shot; index += 3, k++)  // i + 2 to skip the two bytes of the azimuth
 		{
-            current_shot->distance[k] = 256 * socket_data[ray] + socket_data[ray + 1];
-			current_shot->intensity[k] = socket_data[ray + 2];
-            //printf ("%d %lf\n", k, (current_shot->distance[k] / 200.0));
-            //printf ("%02X %02X %04X %lf\n", socket_data[ray], socket_data[ray + 1], current_shot->distance[k], (current_shot->distance[k] / 200.0));
+            current_shot->distance[k] = 256 * socket_data[index] + socket_data[index + 1];
+			current_shot->intensity[k] = socket_data[index + 2];
+            //if ((current_shot->distance[k] / 200.0) > 30)
+				printf ("%d %d %lf\n", index, k, (current_shot->distance[k] / 200.0));
 		}
 
-		*num_shot += 1;
-		current_shot = &shots_array[*num_shot];
+		*num_shots += 1;
+		current_shot = &shots_array[*num_shots];
+
+		printf ("\n");
 
 		current_shot->angle = -1;
 
         last_byte_of_shot = i + 98;
 
-		for (int ray = i + 52, k = 0; ray < last_byte_of_shot; ray += 3, k++)  // 52 is the first byte of the second channel of the current block and 100 is the last byte of the current block
+		for (int index = i + 50, k = 0; index < last_byte_of_shot; index += 3, k++)  // 52 is the first byte of the second channel of the current block and 100 is the last byte of the current block
 		{
-			current_shot->distance[k] = 256 * socket_data[ray] + socket_data[ray + 1];
-            current_shot->intensity[k] = socket_data[ray + 2];
+			current_shot->distance[k] = 256 * socket_data[index] + socket_data[index + 1];
+            current_shot->intensity[k] = socket_data[index + 2];
+			//if ((current_shot->distance[k] / 200.0) > 30)
+			 	printf ("%d %d %lf\n", index, k, (current_shot->distance[k] / 200.0));
 		}
 
-        *num_shot += 1;
-
+        *num_shots += 1;
+		
+		printf ("\n");
 		//if (*num_shot > max_num_shot) TODO realloc message
-			
 
-		current_shot = &shots_array[*num_shot];
+		current_shot = &shots_array[*num_shots];
 	}
 
 	return (complete_turn);
@@ -210,7 +206,9 @@ fill_and_publish_variable_scan_message(carmen_velodyne_variable_scan_message &ms
 	double previous_angle = 0.0, next_angle;
 	int last_shot_of_scan = 0;
 
-	for (int i = 1; i < *num_shots; i++)
+	int last_valid_shot = *num_shots - 1;
+
+	for (int i = 1; i < last_valid_shot - 1; i++)
 	{
 		if (shots_array[i].angle == -1)
 		{
@@ -226,17 +224,17 @@ fill_and_publish_variable_scan_message(carmen_velodyne_variable_scan_message &ms
 			// 	//shots_array[i].angle = shots_array[i].angle - 360.0;
 			// 	printf ("%lf\n", shots_array[i].angle);
 
-			printf ("{");
+			//printf ("{");
 		}
         
 		if (*num_shots > 0 && shots_array[i].angle < 5.0 && shots_array[i - 1].angle > 355.0)
         {
 			last_shot_of_scan = i - 1;
         }
-		printf ("%lf ", shots_array[i].angle);
-		if (shots_array[i+1].angle - shots_array[i].angle > 5)
-    	 	printf ("Falha", shots_array[i].angle, shots_array[i+1].angle);
-		printf ("\n");
+		//printf ("%lf ", shots_array[i].angle);
+		// if (shots_array[i+1].angle - shots_array[i].angle > 5)
+    	//  	printf ("Falha\n", shots_array[i].angle, shots_array[i+1].angle);
+		//printf ("\n");
 	}
 
 	msg.number_of_shots = last_shot_of_scan;
@@ -244,7 +242,7 @@ fill_and_publish_variable_scan_message(carmen_velodyne_variable_scan_message &ms
 
 	carmen_velodyne_publish_variable_scan_message(&msg, lidar_id);
 
-	for (int i = last_shot_of_scan + 1, j = 0; i < *num_shots; i++, j++)
+	for (int i = last_shot_of_scan + 1, j = 0; i < last_valid_shot; i++, j++)
 	{
 		memcpy(&shots_array[j], &shots_array[i], sizeof(carmen_velodyne_shot));
 	}
