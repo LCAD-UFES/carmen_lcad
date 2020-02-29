@@ -25,6 +25,11 @@
 #include <carmen/kalman.h>
 #include <carmen/dbscan.h>
 
+// #include <Mathematics/OrientedBox.h>
+// #include <Mathematics/ArbitraryPrecision.h>
+// #include <Mathematics/MinimumAreaBox2.h>
+// #include <Mathematics/UIntegerAP32.h>
+
 #include "virtual_scan.h"
 
 #define DEFAULT_SCAN_RATE 5.0 // [Hz]
@@ -121,6 +126,59 @@ virtual_scan_tracker_finalize(void)
 	delete g_sensor_coverage;
 }
 
+// void
+// virtual_scan_extract_plots2(carmen_virtual_scan_sensor_t *virtual_scan_sensor)
+// {
+// 	// Generate a single cluster containing all clusters
+// 	dbscan::Cluster single_cluster;
+// 	for (int i = 0; i < virtual_scan_sensor->num_points; i++)
+// 		single_cluster.push_back(virtual_scan_sensor->points[i]);
+// 	
+// 	// Find clusters
+// 	dbscan::Clusters clusters = dbscan::dbscan(8.0 * PEDESTRIAN_RADIUS * PEDESTRIAN_RADIUS, MINIMUN_CLUSTER_SIZE, single_cluster);
+// 	
+// // 	typedef gte::BSRational<gte::UIntegerAP32> MABRational;
+// //     gte::MinimumAreaBox2<float, MABRational> mab2;
+//     gte::MinimumAreaBox2<float, float> mab2;
+//     gte::OrientedBox2<float> minBox;
+// 	
+// 	gte::Vector2<float> center;
+// 	center[0] = g_sensor_coverage->center.x;
+// 	center[1] = g_sensor_coverage->center.y;
+// 	
+// 	g_plots->clear();
+// 	for (size_t i = 0; i < clusters.size(); i++)
+// 	{
+// 		dbscan::Cluster & cluster = clusters[i];
+// 		std::vector<gte::Vector2<float>> mVertices;
+// 		for (size_t j = 0; j < cluster.size(); j++)
+// 		{
+// 			gte::Vector2<float> vertex;
+// 			vertex[0] = cluster[j].x;
+// 			vertex[1] = cluster[j].y;
+// 			mVertices.push_back(vertex);
+// 		}
+// 		
+// 		// Find the minimum area bounding box
+// // 		minBox = mab2(mVertices.size(), &mVertices[0], center);
+// 		minBox = mab2(mVertices.size(), &mVertices[0]);
+// 
+// 		Plot plot;
+// 		plot.measurement.center.x = minBox.center[0];
+// 		plot.measurement.center.y = minBox.center[1];
+// 		plot.measurement.size.x = minBox.extent[0];
+// 		plot.measurement.size.y = minBox.extent[1];		
+// 		double area = plot.measurement.size.x*plot.measurement.size.y;
+// // 		if (area < MIN_PLOT_AREA || area > MAX_PLOT_AREA)
+// // 			continue;
+// 		plot.measurement.category = std::min((int) ((NUMBER_OF_CATEGORIES-1)*((area-MIN_PLOT_AREA)/(MAX_PLOT_AREA-MIN_PLOT_AREA))), (NUMBER_OF_CATEGORIES-1));
+// 		plot.measurement.orientation = carmen_normalize_theta(std::atan2((minBox.axis[0])[1], (minBox.axis[0])[0]) + M_PI / 2.0);
+// 		plot.timeStamp = g_current_time;
+// 		g_plots->push_back(plot);		
+// // 		printf("Plot %lu (%f, %f, %f, %f, %d, %lf)\n", i, plot.measurement.center.x, plot.measurement.center.y, plot.measurement.size.x, plot.measurement.size.y, plot.measurement.category, plot.timeStamp);
+// 	}
+// }
+
 
 void
 virtual_scan_extract_plots(carmen_virtual_scan_sensor_t *virtual_scan_sensor)
@@ -131,34 +189,65 @@ virtual_scan_extract_plots(carmen_virtual_scan_sensor_t *virtual_scan_sensor)
 		single_cluster.push_back(virtual_scan_sensor->points[i]);
 	
 	// Find clusters
-	dbscan::Clusters clusters = dbscan::dbscan(4.0 * PEDESTRIAN_RADIUS * PEDESTRIAN_RADIUS, MINIMUN_CLUSTER_SIZE, single_cluster);
+	dbscan::Clusters clusters = dbscan::dbscan(8.0 * PEDESTRIAN_RADIUS * PEDESTRIAN_RADIUS, MINIMUN_CLUSTER_SIZE, single_cluster);
 
 	g_plots->clear();
 	for (size_t i = 0; i < clusters.size(); i++)
 	{
 		dbscan::Cluster & cluster = clusters[i];
-		std::vector<cv::Point> contour;
+		std::vector<cv::Point2f> contour;
+		
+// 		double centroidx =.0;
+// 		double centroidy =.0;
+// 		double minx = std::numeric_limits<double>::max();
+// 		double maxx = -std::numeric_limits<double>::max();
+// 		double miny = std::numeric_limits<double>::max();
+// 		double maxy = -std::numeric_limits<double>::max();
 		for (size_t j = 0; j < cluster.size(); j++)
 		{
-			cv::Point point;
-			point.x = cluster[j].x;
-			point.y = cluster[j].y;
+			double x = cluster[j].x;
+			double y = cluster[j].y;
+
+			cv::Point2f point;
+			point.x = x;
+			point.y = y;
 			contour.push_back(point);
+
+// 			centroidx += x;
+// 			centroidy += y;			
+// 			if (x < minx)
+// 				minx = x;			
+// 			if (x > maxx)
+// 				maxx = x;			
+// 			if (y < miny)
+// 				miny = y;			
+// 			if (y > maxy)
+// 				maxy = y;
 		}
+// 		centroidx /= (double) cluster.size();
+// 		centroidy /= (double) cluster.size();
+// 		printf("Plot %lu (%f, %f, %f, %f, %f, %f)\n", i, centroidx, centroidy, minx, maxx, miny, maxy);
 		
 		// Find the minimum area bounding rectangle
-		cv::RotatedRect minRect = cv::minAreaRect(cv::Mat(contour));	
-		
+		cv::RotatedRect minRect = cv::minAreaRect(cv::Mat(contour));
+
 		Plot plot;
 		plot.measurement.center.x = minRect.center.x;
 		plot.measurement.center.y = minRect.center.y;
 		plot.measurement.size.x = minRect.size.width;
-		plot.measurement.size.y = minRect.size.height;		
+		plot.measurement.size.y = minRect.size.height;
+		plot.measurement.orientation = carmen_normalize_theta(carmen_degrees_to_radians(minRect.angle) + M_PI / 2.0);
+
+// 		plot.measurement.center.x = centroidx;
+// 		plot.measurement.center.y = centroidy;
+// 		plot.measurement.size.x = maxx-minx;
+// 		plot.measurement.size.y = maxy-miny;
+// 		plot.measurement.orientation = M_PI / 2.0;
+
 		double area = plot.measurement.size.x*plot.measurement.size.y;
-		if (area < MIN_PLOT_AREA)
+		if (area < MIN_PLOT_AREA || area > MAX_PLOT_AREA)
 			continue;
 		plot.measurement.category = std::min((int) ((NUMBER_OF_CATEGORIES-1)*((area-MIN_PLOT_AREA)/(MAX_PLOT_AREA-MIN_PLOT_AREA))), (NUMBER_OF_CATEGORIES-1));
-		plot.measurement.orientation = carmen_normalize_theta(carmen_degrees_to_radians(minRect.angle) + M_PI / 2.0);
 		plot.timeStamp = g_current_time;
 		g_plots->push_back(plot);		
 // 		printf("Plot %lu (%f, %f, %f, %f, %d, %lf)\n", i, plot.measurement.center.x, plot.measurement.center.y, plot.measurement.size.x, plot.measurement.size.y, plot.measurement.category, plot.timeStamp);
@@ -179,7 +268,7 @@ virtual_scan_infer_moving_objects2(carmen_mapper_virtual_scan_message *virtual_s
 	g_surveillance_region->center.y = y_origin + 0.5*g_surveillance_region->size.y;	
 // 	printf("Surveillance region (%f, %f, %f, %f)\n", g_surveillance_region->center.x, g_surveillance_region->center.y, g_surveillance_region->size.x, g_surveillance_region->size.y);
 
-	
+// 	best_track_set->size = 0;
 	for (int s = 0; s < virtual_scan_extended->num_sensors; s++)
 	{
 // 		int sensor_id = virtual_scan_extended->virtual_scan_sensor[s].sensor_id;
@@ -192,14 +281,40 @@ virtual_scan_infer_moving_objects2(carmen_mapper_virtual_scan_message *virtual_s
 		// Extract plots as the minimum area bounding box of each virtual scan cluster
 		g_plots->m_sensorIdx = s;
 		virtual_scan_extract_plots(&(virtual_scan_extended->virtual_scan_sensor[s]));
-		
+// 		virtual_scan_extract_plots2(&(virtual_scan_extended->virtual_scan_sensor[s]));
+
 		// Show the plots for debugging purposes
 // 		virtual_scan_show_plots(sensor_id);
+		
+		// Encode the input plots as box models
+// 		size_t j = best_track_set->size;
+// 		best_track_set->size += g_plots->size();
+// 		for (size_t i = 0; i < g_plots->size(); i++, j++)
+// 		{	
+// 			best_track_set->tracks[j]->size = 1;
+// 			best_track_set->tracks[j]->track_id = i;
+// 			best_track_set->tracks[j]->box_model_hypothesis[0].hypothesis_state.x = g_plots->at(i).measurement.center.x;
+// 			best_track_set->tracks[j]->box_model_hypothesis[0].hypothesis_state.y = g_plots->at(i).measurement.center.y;
+// 			if (g_plots->at(i).measurement.category < NUMBER_OF_CATEGORIES/4)
+// 				best_track_set->tracks[j]->box_model_hypothesis[0].hypothesis.c = PEDESTRIAN;
+// 			else if (g_plots->at(i).measurement.category < NUMBER_OF_CATEGORIES/2)
+// 				best_track_set->tracks[j]->box_model_hypothesis[0].hypothesis.c = BIKE;
+// 			else if (g_plots->at(i).measurement.category < 3*NUMBER_OF_CATEGORIES/4)
+// 				best_track_set->tracks[j]->box_model_hypothesis[0].hypothesis.c = CAR;
+// 			else
+// 				best_track_set->tracks[j]->box_model_hypothesis[0].hypothesis.c = BUS;
+// 			best_track_set->tracks[j]->box_model_hypothesis[0].hypothesis.x = g_plots->at(i).measurement.center.x;
+// 			best_track_set->tracks[j]->box_model_hypothesis[0].hypothesis.y = g_plots->at(i).measurement.center.y;
+// 			best_track_set->tracks[j]->box_model_hypothesis[0].hypothesis.width = g_plots->at(i).measurement.size.x;
+// 			best_track_set->tracks[j]->box_model_hypothesis[0].hypothesis.length = g_plots->at(i).measurement.size.y;
+// 			best_track_set->tracks[j]->box_model_hypothesis[0].hypothesis.theta = g_plots->at(i).measurement.orientation;
+// 			best_track_set->tracks[j]->box_model_hypothesis[0].frame_timestamp = frame_timestamp;
+// 		}
 
 		// Run one tracking iteration
 		g_tracker.Process(g_current_time);
 	}
-			
+	
 	// Show the tracks for debugging purposes
 // 	virtual_scan_show_tracks();
 	
