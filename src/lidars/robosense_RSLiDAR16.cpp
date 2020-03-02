@@ -1,7 +1,7 @@
 #include "lidar_drivers.h"
 
 int sockfd_;
-#define RSLIDAR_MSG_BUFFER_SIZE 1248 // See manual
+#define RSLIDAR_MSG_BUFFER_SIZE 1248
 
 #define POLLIN		0x001		// There is data to read
 #define POLLPRI		0x002		// There is urgent data to read
@@ -19,8 +19,6 @@ void
 initizalize_socket_connection(uint16_t port)
 {
 	sockfd_ = -1;
-
-	//printf("Opening UDP socket: port %d\n", port);
 	
     sockfd_ = socket(PF_INET, SOCK_DGRAM, 0);
 	if (sockfd_ == -1)
@@ -53,7 +51,6 @@ initizalize_socket_connection(uint16_t port)
 		printf("fcntl fail\n");
 		return;
 	}
-	//printf("RSLiDAR16_driver socket fd is %d\n", sockfd_);
 }
 
 
@@ -64,7 +61,7 @@ receive_packet_from_socket(uint8_t *socket_data, uint16_t port, char *ip)
 	struct pollfd fds[1];
 	fds[0].fd = sockfd_;
 	fds[0].events = POLLIN;
-	static const int POLL_TIMEOUT = 3000;  // one second (in msec)
+	static const int POLL_TIMEOUT = 3000;
 	size_t packet_size = RSLIDAR_MSG_BUFFER_SIZE;
 
 	sockaddr_in sender_address;
@@ -90,9 +87,8 @@ receive_packet_from_socket(uint8_t *socket_data, uint16_t port, char *ip)
 				char buffer_data[8] = "re-con";
 				memset(&sender_address, 0, sender_address_len);          // initialize to zeros
 				sender_address.sin_family = AF_INET;                     // host byte order
-				sender_address.sin_port = htons(port);  // port in network byte order, set any value
-                inet_aton(ip, &devip_);
-                // inet_aton(ip_adress_string, *sender_address.sin_addr.s_addr)
+				sender_address.sin_port = htons(port);                   // port in network byte order, set any value
+                inet_aton(ip, &devip_);                                  // inet_aton(ip_adress_string, *sender_address.sin_addr.s_addr)
 				sender_address.sin_addr.s_addr = devip_.s_addr;          // automatically fill in my IP
 				sendto(sockfd_, &buffer_data, strlen(buffer_data), 0, (sockaddr*)&sender_address, sender_address_len);
 				return 1;
@@ -117,8 +113,7 @@ receive_packet_from_socket(uint8_t *socket_data, uint16_t port, char *ip)
 		else if ((size_t)nbytes == packet_size)
 			break;  // done
 
-		// check pkt header and returns if not a packt of LiDAR measures
-		if (socket_data[0] != 0x55 || socket_data[1] != 0xAA || socket_data[2] != 0x05 || socket_data[3] != 0x0A)
+		if (socket_data[0] != 0x55 || socket_data[1] != 0xAA || socket_data[2] != 0x05 || socket_data[3] != 0x0A)     // check pkt header and returns if not a packt of LiDAR measures
 		{
 			return 1;
 		}
@@ -159,7 +154,7 @@ unpack_socket_data(int *num_shots, const uint8_t *socket_data, carmen_velodyne_s
 	{
 		cont = cont+1;
 		current_shot->angle = (double)((256 * socket_data[i] + socket_data[i + 1]) / 100.0);
-		printf ("-------------\n");
+		//printf ("-------------\n");
 
 		if (*num_shots > 0 && current_shot->angle < 5.0 && shots_array[*num_shots - 2].angle > 355.0)
 			complete_turn = true;
@@ -168,16 +163,21 @@ unpack_socket_data(int *num_shots, const uint8_t *socket_data, carmen_velodyne_s
 
 		for (int index = i + 2, k = 0; index < last_byte_of_shot; index += 3, k++)  // i + 2 to skip the two bytes of the azimuth
 		{
-            current_shot->distance[k] = 256 * socket_data[index] + socket_data[index + 1];
+            if (socket_data[index] > 120)
+			{
+				//printf ("%d %d %lf %d %d\n", index, k, (current_shot->distance[k] / 200.0), socket_data[index], socket_data[index + 1]);
+				current_shot->distance[k] = 0;
+				current_shot->intensity[k] = 0;
+				continue;
+			}
+			current_shot->distance[k] = 256 * socket_data[index] + socket_data[index + 1];
 			current_shot->intensity[k] = socket_data[index + 2];
-            //if ((current_shot->distance[k] / 200.0) > 30)
-				//printf ("%d %d %lf\n", index, k, (current_shot->distance[k] / 200.0));
 		}
 
 		*num_shots += 1;
 		current_shot = &shots_array[*num_shots];
 
-		printf ("\n");
+		//printf ("\n");
 
 		current_shot->angle = -1;
 
@@ -185,20 +185,25 @@ unpack_socket_data(int *num_shots, const uint8_t *socket_data, carmen_velodyne_s
 
 		for (int index = i + 50, k = 0; index < last_byte_of_shot; index += 3, k++)  // 52 is the first byte of the second channel of the current block and 100 is the last byte of the current block
 		{
+			if (socket_data[index] > 120)
+			{
+				//printf ("%d %d %lf %d %d\n", index, k, (current_shot->distance[k] / 200.0), socket_data[index], socket_data[index + 1]);
+				current_shot->distance[k] = 0;
+				current_shot->intensity[k] = 0;
+				continue;
+			}
 			current_shot->distance[k] = 256 * socket_data[index] + socket_data[index + 1];
             current_shot->intensity[k] = socket_data[index + 2];
-			//if ((current_shot->distance[k] / 200.0) > 30)
-			 	//printf ("%d %d %lf\n", index, k, (current_shot->distance[k] / 200.0));
 		}
 
         *num_shots += 1;
 		
-		printf ("\n");
+		//printf ("\n");
 		//if (*num_shot > max_num_shot) TODO realloc message
 
 		current_shot = &shots_array[*num_shots];
 	}
-printf ("%d\n", cont);
+	//printf ("%d\n", cont);
 	return (complete_turn);
 }
 
@@ -235,8 +240,8 @@ fill_and_publish_variable_scan_message(carmen_velodyne_variable_scan_message &ms
 			last_shot_of_scan = i - 1;
         }
 		//printf ("%lf ", shots_array[i].angle);
-		// if (shots_array[i+1].angle - shots_array[i].angle > 5)
-    	//  	printf ("Falha\n", shots_array[i].angle, shots_array[i+1].angle);
+		if (shots_array[i+1].angle - shots_array[i].angle > 5)
+    	 	printf ("Falha\n", shots_array[i].angle, shots_array[i+1].angle);
 		//printf ("\n");
 	}
 
@@ -244,6 +249,8 @@ fill_and_publish_variable_scan_message(carmen_velodyne_variable_scan_message &ms
 	msg.timestamp = carmen_get_time();
 
 	carmen_velodyne_publish_variable_scan_message(&msg, lidar_id);
+	//printf ("Foi\n");
+	usleep(1000000);
 
 	for (int i = last_shot_of_scan + 1, j = 0; i < last_valid_shot; i++, j++)
 	{
@@ -267,7 +274,7 @@ run_robosense_RSLiDAR16_driver(carmen_velodyne_variable_scan_message &msg, carme
 
 	while (true)
 	{
-		//double time1 = carmen_get_time();
+		double time1 = carmen_get_time();
 
 		while (true)
 		{
@@ -277,17 +284,15 @@ run_robosense_RSLiDAR16_driver(carmen_velodyne_variable_scan_message &msg, carme
 			if (rc < 0)
 				return false;
 		}
-		//printf("Time: %lf\n", carmen_get_time() - time1);
-
-        // TODO deal with first spin
+		// if (carmen_get_time() - time1 > 0.01)
+		// 	printf("---Time: %lf\n", carmen_get_time() - time1);
 
 		if (unpack_socket_data(&num_shots, socket_data, msg.partial_scan))
 		{
 			fill_and_publish_variable_scan_message(msg, msg.partial_scan, &num_shots, lidar_id);
-			//break;
 		}
-        //printf("Time: %lf\n", carmen_get_time() - time1);
-        //sleep(3);
+		// if (carmen_get_time() - time1 > 0.01)
+        // 	printf("Time: %lf\n", carmen_get_time() - time1);
 
         //printf ("Num shots %d\n", num_shots);
 	}
