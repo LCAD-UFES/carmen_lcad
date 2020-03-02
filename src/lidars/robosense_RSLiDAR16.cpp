@@ -153,8 +153,11 @@ unpack_socket_data(int *num_shots, const uint8_t *socket_data, carmen_velodyne_s
 	bool complete_turn = false;
 	carmen_velodyne_shot* current_shot = &shots_array[*num_shots];
 
+	int cont = 0;
+
 	for (int i = 44; i < 1242; i += 100) // i = 44 to skip the header (42b) and the first data block identifier (2b) 0xffee
 	{
+		cont = cont+1;
 		current_shot->angle = (double)((256 * socket_data[i] + socket_data[i + 1]) / 100.0);
 		printf ("-------------\n");
 
@@ -168,7 +171,7 @@ unpack_socket_data(int *num_shots, const uint8_t *socket_data, carmen_velodyne_s
             current_shot->distance[k] = 256 * socket_data[index] + socket_data[index + 1];
 			current_shot->intensity[k] = socket_data[index + 2];
             //if ((current_shot->distance[k] / 200.0) > 30)
-				printf ("%d %d %lf\n", index, k, (current_shot->distance[k] / 200.0));
+				//printf ("%d %d %lf\n", index, k, (current_shot->distance[k] / 200.0));
 		}
 
 		*num_shots += 1;
@@ -185,7 +188,7 @@ unpack_socket_data(int *num_shots, const uint8_t *socket_data, carmen_velodyne_s
 			current_shot->distance[k] = 256 * socket_data[index] + socket_data[index + 1];
             current_shot->intensity[k] = socket_data[index + 2];
 			//if ((current_shot->distance[k] / 200.0) > 30)
-			 	printf ("%d %d %lf\n", index, k, (current_shot->distance[k] / 200.0));
+			 	//printf ("%d %d %lf\n", index, k, (current_shot->distance[k] / 200.0));
 		}
 
         *num_shots += 1;
@@ -195,7 +198,7 @@ unpack_socket_data(int *num_shots, const uint8_t *socket_data, carmen_velodyne_s
 
 		current_shot = &shots_array[*num_shots];
 	}
-
+printf ("%d\n", cont);
 	return (complete_turn);
 }
 
