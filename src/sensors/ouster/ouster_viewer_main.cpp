@@ -1,4 +1,4 @@
-
+#include <carmen/carmen.h>
 #include "ouster_config.h"
 #include <carmen/velodyne_interface.h>
 #include <pcl/visualization/pcl_visualizer.h>
