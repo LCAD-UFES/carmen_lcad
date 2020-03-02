@@ -1,8 +1,8 @@
 #ifndef CARMEN_VELODYNE_INTERFACE_H
 #define CARMEN_VELODYNE_INTERFACE_H
 
-#include <carmen/velodyne_messages.h>
 #include <carmen/carmen.h>
+#include <carmen/velodyne_messages.h>
 
 #ifdef __cplusplus
 extern "C"
