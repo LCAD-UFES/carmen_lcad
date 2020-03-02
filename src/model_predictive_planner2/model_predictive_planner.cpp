@@ -25,8 +25,10 @@
 
 using namespace g2o;
 
-int print_to_debug = 1;
-int plot_to_debug = 1;
+int print_to_debug = 0;
+int plot_to_debug = 0;
+
+//#define PLOT_COLLISION
 
 //-----------Funcoes para extrair dados do Experimento------------------------
 double
@@ -51,7 +53,7 @@ get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
     if (d < 0.0000001)
         return dist(p2, robot);
 
-    return abs((delta_y * 0.0) - (delta_x * 0.0) + x2y1 - y2x1) / d;
+    return abs((delta_y * robot.x) - (delta_x * robot.y) + x2y1 - y2x1) / d;
 
 }
 
@@ -114,6 +116,56 @@ save_experiment_data(carmen_behavior_selector_road_profile_message *goal_list_me
 }
 
 //------------------------------------------------------------
+
+void
+plot_path_and_colisions_points(vector<carmen_ackerman_path_point_t> &robot_path, vector<carmen_ackerman_path_point_t> &collision_points)
+{
+//	plot data Table - Last TCP - Optmizer tcp - Lane
+	//Plot Optmizer step tcp and lane?
+
+	#define DELTA_T (1.0 / 40.0)
+
+//	#define PAST_SIZE 300
+	static bool first_time = true;
+	static FILE *gnuplot_pipeMP;
+
+
+	if (first_time)
+	{
+		first_time = false;
+
+		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
+//		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
+//		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
+//		fprintf(gnuplot_pipe, "set ytics nomirror\n");
+//		fprintf(gnuplot_pipe, "set y2tics\n");
+		fprintf(gnuplot_pipeMP, "set tics out\n");
+	}
+
+	FILE *gnuplot_data_file = fopen("gnuplot_data_path.txt", "w");
+	FILE *gnuplot_data_lane = fopen("gnuplot_data_colision.txt", "w");
+
+	for (unsigned int i = 0; i < robot_path.size(); i++)
+		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %lf %lf %lf\n", robot_path.at(i).x, robot_path.at(i).y, 1.0 * cos(robot_path.at(i).theta), 1.0 * sin(robot_path.at(i).theta), robot_path.at(i).theta, robot_path.at(i).phi, robot_path.at(i).time);
+	for (unsigned int i = 0; i < collision_points.size(); i++)
+		fprintf(gnuplot_data_lane, "%lf %lf\n", collision_points.at(i).x, collision_points.at(i).y);
+//		fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf %lf\n", collision_points.at(i).x, collision_points.at(i).y, 1.0 * cos(collision_points.at(i).theta), 1.0 * sin(collision_points.at(i).theta), collision_points.at(i).theta, collision_points.at(i).phi, collision_points.at(i).time);
+
+	fclose(gnuplot_data_file);
+	fclose(gnuplot_data_lane);
+
+//	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
+
+	fprintf(gnuplot_pipeMP, "plot "
+			"'./gnuplot_data_path.txt' using 1:2 w lines title 'robot_path',"
+			"'./gnuplot_data_colision.txt' using 1:2 title 'Collision'\n");
+
+	fflush(gnuplot_pipeMP);
+}
 
 
 void

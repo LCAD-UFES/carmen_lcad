@@ -358,11 +358,11 @@ TrajectoryLookupTable::load_trajectory_lookup_table()
 	struct stat buffer;
 
 	if (((!GlobalState::reverse_driving) && (stat("trajectory_lookup_table.bin", &buffer) == 0)) ||
-		((GlobalState::reverse_driving) && (stat("trajectory_lookup_table_reverse.bin", &buffer) == 0)))
+		((GlobalState::reverse_driving) && (stat("trajectory_lookup_table.bin", &buffer) == 0)))
 	{
 		FILE *tlt_f;
 		if (GlobalState::reverse_driving)
-			tlt_f = fopen("trajectory_lookup_table_reverse.bin", "r");
+			tlt_f = fopen("trajectory_lookup_table.bin", "r");
 		else
 			tlt_f = fopen("trajectory_lookup_table.bin", "r");
 
