@@ -124,7 +124,7 @@ void draw_wheel_axis(double wheel_diameter, double wheel_distance)
 }
 
 
-static void draw_cylinder(GLfloat radius, GLfloat height)
+void draw_cylinder(GLfloat radius, GLfloat height)
 {
     GLfloat x              = 0.0;
     GLfloat y              = 0.0;

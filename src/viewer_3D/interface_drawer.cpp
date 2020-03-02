@@ -41,7 +41,7 @@ create_interface_drawer(void)
 {
 	interface_drawer* i_drawer = (interface_drawer*) malloc(sizeof(interface_drawer));
 
-	i_drawer->num_buttons = 56;
+	i_drawer->num_buttons = 72;
 	i_drawer->butt = (button*) malloc(i_drawer->num_buttons * sizeof(button));
 
 	init_buttons(i_drawer);
@@ -127,6 +127,26 @@ static void init_buttons(interface_drawer* i_drawer)
 
 			i_drawer->butt[i].visible = 0;
 		}
+		else if (i < 64)
+		{
+			i_drawer->butt[i].x = 80 + (i - 56) * 120;
+			i_drawer->butt[i].y = 90;
+			i_drawer->butt[i].width = 100;
+			i_drawer->butt[i].height = 20;
+
+			i_drawer->butt[i].visible = 0;
+		}
+
+		else if (i < 72)
+		{
+			i_drawer->butt[i].x = 80 + (i - 64) * 120;
+			i_drawer->butt[i].y = 60;
+			i_drawer->butt[i].width = 100;
+			i_drawer->butt[i].height = 20;
+
+			i_drawer->butt[i].visible = 0;
+		}
+
 		if (i == 0)
 		{
 			i_drawer->butt[i].visible = 1;
@@ -145,7 +165,7 @@ static void init_buttons(interface_drawer* i_drawer)
 	i_drawer->butt[8].text = "Velodyne 360";
 	i_drawer->butt[9].text = "Velodyne VBO";
 	i_drawer->butt[10].text = "Velodyne";
-	i_drawer->butt[11].text = "Var Velodyne";
+	i_drawer->butt[11].text = "Stereo Velodyne";
 	i_drawer->butt[12].text = "Map";
 	i_drawer->butt[13].text = "Annotation";
 	i_drawer->butt[14].text = "SICK";
@@ -164,7 +184,7 @@ static void init_buttons(interface_drawer* i_drawer)
 	i_drawer->butt[25].text = "Vldyn Remission";
 	i_drawer->butt[26].text = "Force Velodyne";
 	i_drawer->butt[27].text = "Show Symotha";
-	i_drawer->butt[28].text = "Empty";
+	i_drawer->butt[28].text = "Lidars";
 	i_drawer->butt[29].text = "Empty";
 	i_drawer->butt[30].text = "Empty";
 	i_drawer->butt[31].text = "Empty";
@@ -196,6 +216,25 @@ static void init_buttons(interface_drawer* i_drawer)
 	i_drawer->butt[53].text = "Empty";
 	i_drawer->butt[54].text = "Empty";
 	i_drawer->butt[55].text = "Empty";
+
+	//Lidars Numbers - when i_drawer->butt[28] active shows buttons to variable_scan_message
+	i_drawer->butt[56].text = "lidar1";
+	i_drawer->butt[57].text = "lidar2";
+	i_drawer->butt[58].text = "lidar3";
+	i_drawer->butt[59].text = "lidar4";
+	i_drawer->butt[60].text = "lidar5";
+	i_drawer->butt[61].text = "lidar6";
+	i_drawer->butt[62].text = "lidar7";
+	i_drawer->butt[63].text = "lidar8";
+
+	i_drawer->butt[64].text = "lidar9";
+	i_drawer->butt[65].text = "lidar10";
+	i_drawer->butt[66].text = "lidar11";
+	i_drawer->butt[67].text = "lidar12";
+	i_drawer->butt[68].text = "lidar13";
+	i_drawer->butt[69].text = "lidar14";
+	i_drawer->butt[70].text = "lidar15";
+	i_drawer->butt[71].text = "lidar16";
 
 }
 
@@ -254,6 +293,16 @@ static void handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 						i_drawer->butt[13].state = !(i_drawer->butt[13].state);
 						set_flag_viewer_3D(19, i_drawer->butt[13].state);
 						for (j = 32; j < 56; j++)
+						{
+							i_drawer->butt[j].visible = 0;
+						}
+					}
+					//if lidars
+					if (i_drawer->butt[28].state)
+					{
+						i_drawer->butt[28].state = !(i_drawer->butt[28].state);
+//						set_flag_viewer_3D(19, i_drawer->butt[13].state);
+						for (j = 56; j < 72; j++)
 						{
 							i_drawer->butt[j].visible = 0;
 						}
@@ -334,7 +383,7 @@ static void handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 						i_drawer->butt[25].state = 0;
 					set_flag_viewer_3D(2, i_drawer->butt[i].state);
 				}
-				else if (i_drawer->butt[i].code == 11) // variable velodyne
+				else if (i_drawer->butt[i].code == 11) // stereo variable velodyne
 				{
 //                    if (i_drawer->butt[i].state == 0)
 //                        i_drawer->butt[i].state = 4;
@@ -470,6 +519,42 @@ static void handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 
 					set_flag_viewer_3D(33, i_drawer->butt[i].state);
 				}
+				//TODO @vinicius lidars
+				else if (i_drawer->butt[i].code == 28) // Lidars
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+//					set_flag_viewer_3D(19, i_drawer->butt[i].state);
+
+					if (i_drawer->butt[38].state == 1)
+					{
+						for (int j = 40; j < 48; j++)
+						{
+							i_drawer->butt[j].visible = 0;
+						}
+					}
+					if (i_drawer->butt[37].state == 1)
+					{
+						for (int j = 48; j < 56; j++)
+						{
+							i_drawer->butt[j].visible = 0;
+						}
+					}
+
+					for (int j = 56; j < 72; j++)
+					{
+						i_drawer->butt[j].visible = i_drawer->butt[i].state;
+					}
+					for (int j = 1; j < 32; j++)
+					{
+						i_drawer->butt[j].visible = !i_drawer->butt[i].state;
+					}
+
+					for (int j = 32; j < 56; j++)
+					{
+						i_drawer->butt[j].visible = 0;
+					}
+
+				}
 				else if (i_drawer->butt[i].code == 32) // Traffic Light
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
@@ -597,6 +682,13 @@ static void handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
 					set_flag_viewer_3D(21, 30);
+				}
+				else if (i_drawer->butt[i].code > 55 && i_drawer->butt[i].code < 72) // Lidar variable_scan active
+				{
+					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+					int lidar_number = i_drawer->butt[i].code - 56;
+
+					set_flag_viewer_3D(21, lidar_number);
 				}
 			}
 		}

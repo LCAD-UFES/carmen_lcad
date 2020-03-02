@@ -824,7 +824,7 @@ goal_pose_vector_too_different(Pose goal_pose, Pose localizer_pose)
 }
 
 bool
-goal_is_behide_car(Pose *localizer_pose, Pose *goal_pose)
+goal_is_behid_car(Pose *localizer_pose, Pose *goal_pose)
 {//funcao tem que ser melhorada. Usar coordenadas polares pode ser melhor.
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
 	SE2 goal_in_world_reference(goal_pose->x, goal_pose->y, goal_pose->theta);
@@ -858,10 +858,9 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		last_timestamp = goal_list_message->timestamp;
 	}
 
-	// TODO: behide -> behind
-	if (goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
+	if (goal_is_behid_car(localizer_pose, &goalPoseVector[0]))
 	{
-//		printf("goal is behide the car\n");
+//		printf("goal is behid the car\n");
 		return;
 	}
 

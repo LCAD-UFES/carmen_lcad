@@ -1,3 +1,23 @@
+Updates made by pepeaze in 28.02.2020
+
+Infos Camera 1:
+
+IP: 192.168.1.108
+Login: lcad
+Senha: 1q2w3e4r
+
+Infos Camera 2:
+
+IP: 192.168.1.109
+Login: lcad
+Senha: 1q2w3e4r
+
+Infos Camera 3:
+
+IP: 192.168.1.110
+Login: lcad
+Senha: 1q2w3e4r
+
 # Camera IP UNV modelo IPC322ER3-DVPF28
 
 -> Acesso através da criação de uma rede ethernet no Ubuntu com IP 192.168.0.1 e mask 24.
