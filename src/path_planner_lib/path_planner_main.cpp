@@ -22,7 +22,7 @@ carmen_point_t *final_goal = NULL;
 static void
 pos_message_handler(carmen_point_t robot_pose)
 {
-	if (/*final_goal != NULL && */distance_map.complete_x_offset != NULL)
+	if (final_goal != NULL && distance_map.complete_x_offset != NULL)
 	{
 //		velocity = 2;
 		carmen_point_t fgoal;
@@ -34,10 +34,10 @@ pos_message_handler(carmen_point_t robot_pose)
 //		fgoal.y = -363533.71;
 //		fgoal.theta = -0.692;
 
-		fgoal.x = 7757865.52;     // Estacionamento Ambiental
-		fgoal.y = -363539.93;
-		fgoal.theta = -0.741;
-		compute_path(&robot_pose, /*final_goal */ &fgoal, robot_config, &distance_map);
+		// fgoal.x = 7757865.52;     // Estacionamento Ambiental
+		// fgoal.y = -363539.93;
+		// fgoal.theta = -0.741;
+		compute_path(&robot_pose, final_goal /* &fgoal */, robot_config, &distance_map);
 
 		final_goal = NULL;
 	}

@@ -215,7 +215,7 @@ expand_circle(circle_node *current, priority_queue<circle_node*, vector<circle_n
             // TODO verificar se é possível remover filhos com overlap
             open_set.push(create_circle_node(nx, ny, nearst_obstacle_distance, pg + pr, distance(nx, ny, goal.x, goal.y), current));
 
-            //draw_circle_on_map_img(nx, ny, nearst_obstacle_distance, distance_map->config);
+            draw_circle_on_map_img(nx, ny, nearst_obstacle_distance, distance_map->config);
             //draw_point_on_map_img(nx, ny, distance_map->config);
         }
 
@@ -377,129 +377,6 @@ space_exploration_old(circle_node *start_circle, circle_node *goal_circle, carme
 
     return (circle_path);
 }
-
-
-//double
-//time_heuristic(state_node *state, vector<circle_node> circle_path)
-//{
-//    std::list<CircleNode>::iterator nearest = FindNearestCircle(state);
-//    std::list<CircleNode>::iterator previous = nearest;
-//    previous--;
-//    std::list<CircleNode>::iterator next = nearest;
-//    next++;
-//
-//    double nearest_circle_distance, previous_circle_distance = DBL_MAX, next_circle_distance = DBL_MAX, min_distance;
-//
-//    // TODO Previous is needed?
-//    if(previous != circle_path.end())
-//    {
-//    	previous_circle_distance = Distance(state.x, state.y, previous->circle.x, previous->circle.y) + previous->f;
-//    }
-//
-//    if(next != circle_path.end())
-//	{
-//    	next_circle_distance = Distance(state.x, state.y, next->circle.x, next->circle.y) + next->f;
-//	}
-//
-//    nearest_circle_distance = Distance(state.x, state.y, nearest->circle.x, nearest->circle.y) + nearest->f;
-//
-//    min_distance = std::min(nearest_circle_distance, std::min(next_circle_distance, previous_circle_distance));
-//
-//    if (state.v == 0.0)
-//        return (DBL_MAX);
-//    else
-//        return ((min_distance) / fabs(state.v));
-//}
-
-
-//bool StateNode::Equals(const StateNode &sn, double k) {
-//	double dpos = std::sqrt(std::pow(state.x - sn.state.x, 2) + std::pow(state.y - sn.state.y, 2));
-//	double dtheta = mrpt::math::angDistance<double>(state.theta, sn.state.theta);
-//
-//	if (MIN_POS_DISTANCE > k*dpos && MIN_THETA_DISTANCE > k*dtheta)
-//		return true;
-//
-//	return false;
-//}
-//bool
-//StehsPlanner::Exist(StateNodePtr current, std::vector<StateNodePtr> &closed_set, double k) {
-//    std::vector<StateNodePtr>::iterator it = closed_set.begin();
-//    std::vector<StateNodePtr>::iterator end = closed_set.end();
-//
-//    while (it != end)
-//    {
-//        if (current->Equals(*(*it), k))
-//        	return true;
-//
-//        it++;
-//    }
-//    return false;
-//}
-
-
-//state_node*
-//compute_next_state(state_node *current_state, state_node *goal_state, double linear_acceleration, double steering_acceleration, double step_size,
-//		carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map)
-//{
-//	double target_phi, target_v, distance_traveled = 0.0;
-//    state_node *new_state = (state_node*) malloc(sizeof(state_node));
-//
-//    target_phi = current_state->state.phi + steering_acceleration * step_size;
-//    target_phi = carmen_clamp(-robot_config.max_phi, target_phi, robot_config.max_phi);
-//
-//    target_v = current_state->state.v + linear_acceleration * step_size;
-//
-//    new_state->state = carmen_libcarmodel_recalc_pos_ackerman(current_state->state, target_v, target_phi,
-//            step_size, &distance_traveled, DELTA_T, robot_config);
-//
-//    new_state->parent = current_state;
-//    new_state->g = current_state->g + DIST2D(current_state->state, new_state->state);
-//    new_state->h = DIST2D(new_state->state, goal_state->state);
-//    //new_state->h = time_heuristic(new_state->state);
-//    //new_state->h = Distance(new_state->state.x, new_state->state.y, goal.x, goal.y); //DistanceHeuristic(new_state->state); // TODO usar distancia direto????
-//
-//    printf("State %lf %lf %lf %lf %lf\n", new_state->state.x, new_state->state.y, new_state->state.theta, new_state->state.v, new_state->state.phi);
-//    draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config);
-//
-//    return (new_state);
-//}
-//
-//
-//void
-//expand_state_old(state_node *current_state, state_node *goal_state, priority_queue<state_node *, vector<state_node *>, StateNodePtrComparator> &open_set, //vector<state_node *> &closed_set,
-//		double k, carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map)
-//{
-//    double linear_acceleration[3]   = {-1.0, 0.0, 1.0};
-//    double steering_acceleration[3] = {-0.1, 0.0, 0.1}; //TODO ler velocidade angular do volante do carmen.ini
-//
-//    double step_size = k; // * UpdateStep(current_state);      TODO Precisa computar o step size?
-//    // TODO tratar isso na UpdateStep
-//    //if(step_size < 0.2)
-//    //	step_size = 0.2;
-//
-//    for (int i = 0; i < 3; ++i)
-//    {
-//        for (int j = 0; j < 3; ++j)
-//        {
-//        	//printf("\nState %lf %lf %lf %lf %lf %lf\n", current_state->state.x, current_state->state.y, current_state->state.theta, current_state->state.phi, current_state->state.v, step_size);
-//        	state_node *next_state = compute_next_state(current_state, goal_state, linear_acceleration[i], steering_acceleration[j], step_size, robot_config, distance_map);
-//
-//        	//printf("State %lf %lf %lf %lf %lf\n", next_state->state.x, next_state->state.y, next_state->state.theta, next_state->state.phi, next_state->state.v);
-//
-//            // FIXME checar a mudança de 1.0 para k
-////            if (!Exist(next_state, closed_set, 1.0 /*k*/) && !Collision(next_state))
-////            {
-//                open_set.push(next_state);
-////            }
-////            else
-////            {
-////                delete next_state;
-////            }
-//        }
-//    }
-//
-//    printf("Size %d\n", (int) open_set.size());
-//}
 
 
 double
@@ -689,7 +566,7 @@ heuristic_search(state_node *start_state, state_node *goal_state, vector<circle_
 
 
 vector<circle_node>
-space_exploration(carmen_point_t *robot_pose, carmen_point_t *goal, carmen_obstacle_distance_mapper_map_message *distance_map)
+circle_exploration(carmen_point_t *robot_pose, carmen_point_t *goal, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
 	circle_node *start_circle, *goal_circle;
 	vector<circle_node> circle_path;
@@ -730,9 +607,9 @@ compute_hybrid_A_star_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose
 	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 0.0, 0.0, 0.0, DIST2D_P(robot_pose, goal_pose), NULL);
 	goal_state = create_state_node(goal_pose->x, goal_pose->y, goal_pose->theta, 0.0, 0.0, DBL_MAX, DBL_MAX, NULL);
 
-//	vector<circle_node> circle_path = space_exploration(robot_pose, goal_pose, distance_map);
+	vector<circle_node> circle_path = circle_exploration(robot_pose, goal_pose, distance_map);
 //
-//	vector<state_node> path = heuristic_search(start_state, goal_state, circle_path, robot_config, distance_map);
+	// vector<state_node> path = heuristic_search(start_state, goal_state, circle_path, robot_config, distance_map);
 
 	int rs_pathl;
 	int rs_numero;
