@@ -290,7 +290,7 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 			(my_params->path_point_nearest_to_lane.at(i) < my_params->detailed_lane.size()))
 		{
 			distance = dist(move_to_front_axle(path.at(i)),
-										 my_params->detailed_lane.at(my_params->path_point_nearest_to_lane.at(i)));
+					my_params->detailed_lane.at(my_params->path_point_nearest_to_lane.at(i)));
 //			distance = dist(path.at(my_params->path_point_nearest_to_lane.at(i)),
 //										 my_params->detailed_lane.at(i));
 			total_points += 1.0;
@@ -363,13 +363,15 @@ double
 compute_proximity_to_obstacles_using_distance_map(vector<carmen_ackerman_path_point_t> path)
 {
 	double proximity_to_obstacles_for_path = 0.0;
-	double circle_radius = GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance; // metade da largura do carro + um espacco de guarda
+	double safety_distance = GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance;
 	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
+
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
 		carmen_point_t point_to_check = {path[i].x, path[i].y, path[i].theta};
-		proximity_to_obstacles_for_path += carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
-				point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius);
+		double proximity_point = carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
+				point_to_check, GlobalState::robot_config, GlobalState::distance_map, safety_distance);
+		proximity_to_obstacles_for_path += proximity_point;
 //		carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 //		getchar();
 	}
@@ -540,9 +542,10 @@ my_g(const gsl_vector *x, void *params)
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
-	my_params->plan_cost = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+	double costs = (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
-			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
+			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2);
+	my_params->plan_cost = sqrt(costs);
 
 	double w1, w2, w3, w4, w5, w6, result; //, w7;
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
