@@ -1,6 +1,6 @@
 include ../Makefile.conf
 
-MODULE_NAME = VELODYNE2
+MODULE_NAME = LIDARS
 MODULE_COMMENT = Velodyne2 LIDAR Module for variable_message
 
 LINK = g++
