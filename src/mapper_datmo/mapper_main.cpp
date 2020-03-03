@@ -482,6 +482,92 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 		camera_datmo_count[camera_index]++;
 }
 
+/*The variable "colormap_semantic" has the same order of rangenet network, used by two functions below,
+ * and the colors was extract from DeepLab library*/
+static const cv::Vec3b
+colormap_semantic[] =
+{
+    cv::Vec3b(0, 0, 0), //0:unlabeled
+	cv::Vec3b(142, 0, 0), // 1: car
+	cv::Vec3b(200, 40, 255), // 2: bicycle
+	cv::Vec3b(90, 30, 150), // 3: motorcycle
+	cv::Vec3b(70, 0, 0), //4: truck
+    cv::Vec3b(100, 80, 0), //5: other-vehicle
+    cv::Vec3b(60, 20, 220), //6: person
+    cv::Vec3b(200, 40, 255), //7: bicyclist
+    cv::Vec3b(90, 30, 150), //8: motorcyclist
+    cv::Vec3b(128, 64, 128), //9:road
+    cv::Vec3b(128, 64, 128),//10: parking
+    cv::Vec3b(75, 0, 75),//11: sidewalk
+    cv::Vec3b(75, 0, 175),//12: other-ground
+    cv::Vec3b(70, 70, 70), //13: building
+    cv::Vec3b(50, 120, 255), //14: fence
+    cv::Vec3b(35, 142, 107),//15: vegetation
+    cv::Vec3b(35, 142, 107),//16: trunk
+    cv::Vec3b(80, 240, 150),//17: terrain
+	cv::Vec3b(153, 153, 153),//18: pole
+	cv::Vec3b(0, 220, 220), //19: traffic-sign
+};
+
+void
+show_detections(cv::Mat image, vector<bbox_t> predictions)
+{
+	//char object_info[25];
+    char frame_rate[25];
+
+    //cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+
+    cv::putText(image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(0, 255, 0), 2);
+
+
+    for (unsigned int i = 0; i < predictions.size(); i++)
+    {
+    	int color_mapped = 0;
+    	switch (predictions[i].obj_id)
+    	{
+    	case 0: //person
+    		color_mapped = 6;
+    		break;
+    	case 1: //bicycle
+    		color_mapped = 2;
+    		break;
+    	case 2: //car
+    		color_mapped = 1;
+    		break;
+    	case 3: //motorbike
+    		color_mapped = 3;
+    		break;
+    	case 5: //bus
+    		color_mapped = 5;
+    		break;
+    	case 6: //train
+    		color_mapped = 5;
+    		break;
+    	case 7: //truck
+    		color_mapped = 4;
+    		break;
+    	case 9: //traffic light
+    		color_mapped = 19;
+    	}
+
+
+    	cv::rectangle(image, cv::Point(predictions[i].x, predictions[i].y), cv::Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
+    			colormap_semantic[color_mapped], 4);
+    }
+
+//	show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
+//	vector<vector<image_cartesian>> lidar_points;
+	//lidar_points.push_back(points);
+//    show_LIDAR(image, lidar_points, 255, 0, 0);
+	//show_LIDAR(image, points_inside_bbox,    0, 0, 255);				// Blue points are all points inside the bbox
+    //show_LIDAR(image, filtered_points, 0, 255, 0); 						// Green points are filtered points
+
+    //cv::resize(image, image, cv::Size(640, 480));
+    //cv::imshow("Neural Object Detector", image);
+    //imwrite("Image.jpg", image);
+    //cv::waitKey(1);
+}
+
 vector<bbox_t>
 filter_predictions_of_interest(vector<bbox_t> &predictions)
 {
@@ -489,14 +575,14 @@ filter_predictions_of_interest(vector<bbox_t> &predictions)
 
 	for (unsigned int i = 0; i < predictions.size(); i++)
 	{
-		if (predictions[i].obj_id == 0)// ||  // person
-//			i == 1 ||  // bicycle
-//			i == 2 ||  // car
-//			i == 3 ||  // motorbike
-//			i == 5 ||  // bus
-//			i == 6 ||  // train
-//			i == 7 ||  // truck
-//			i == 9)    // traffic light
+		if (predictions[i].obj_id == 0 ||  // person
+			predictions[i].obj_id == 1 ||  // bicycle
+			predictions[i].obj_id == 2 ||  // car
+			predictions[i].obj_id == 3 ||  // motorbike
+			predictions[i].obj_id == 5 ||  // bus
+			predictions[i].obj_id == 6 ||  // train
+			predictions[i].obj_id == 7 ||  // truck
+			predictions[i].obj_id == 9)    // traffic light
 		{
 			filtered_predictions.push_back(predictions[i]);
 		}
@@ -532,6 +618,7 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 	cv::Mat open_cv_image = cv::Mat(cv::Size(image_width, image_height), CV_8UC3, camera_data[camera_index].image[image_index]);
 	vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
 	predictions = filter_predictions_of_interest(predictions);
+	show_detections(img, predictions);
 
 	for (int j = 0; j < number_of_laser_shots; j++)
 	{
@@ -733,32 +820,7 @@ color_map: # bgr Not mapped:
 
 // SQUEEZESEG ['unknown', 'car', 'pedestrian', 'cyclist']
 
-/*The variable "colormap_semantic" has the same order of rangenet network, used by two functions below,
- * and the colors was extract from DeepLab library*/
-static const cv::Vec3b
-colormap_semantic[] =
-{
-    cv::Vec3b(0, 0, 0), //0:unlabeled
-	cv::Vec3b(142, 0, 0), // 1: car
-	cv::Vec3b(200, 40, 255), // 2: bicycle
-	cv::Vec3b(90, 30, 150), // 3: motorcycle
-	cv::Vec3b(70, 0, 0), //4: truck
-    cv::Vec3b(100, 80, 0), //5: other-vehicle
-    cv::Vec3b(60, 20, 220), //6: person
-    cv::Vec3b(200, 40, 255), //7: bicyclist
-    cv::Vec3b(90, 30, 150), //8: motorcyclist
-    cv::Vec3b(128, 64, 128), //9:road
-    cv::Vec3b(128, 64, 128),//10: parking
-    cv::Vec3b(75, 0, 75),//11: sidewalk
-    cv::Vec3b(75, 0, 175),//12: other-ground
-    cv::Vec3b(70, 70, 70), //13: building
-    cv::Vec3b(50, 120, 255), //14: fence
-    cv::Vec3b(35, 142, 107),//15: vegetation
-    cv::Vec3b(35, 142, 107),//16: trunk
-    cv::Vec3b(80, 240, 150),//17: terrain
-	cv::Vec3b(153, 153, 153),//18: pole
-	cv::Vec3b(0, 220, 220), //19: traffic-sign
-};
+
 
 
 int 
