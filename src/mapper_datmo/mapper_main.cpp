@@ -27,7 +27,8 @@
 #include <carmen/libdeeplab.h>
 #include <carmen/libsqueeze_seg.h>
 #include <carmen/libsalsanet.h>
-//#include <carmen/librangenet.h>
+//#include <carmen/librange.h>
+#include <carmen/carmen_darknet_interface.hpp>
 #include <omp.h>
 #include "mapper.h"
 #include <sys/stat.h>
@@ -159,6 +160,10 @@ struct segmented {
 };
 segmented squeezeseg_segmented;
 segmented salsanet_segmented;
+
+//YOLO global variables
+char **classes_names;
+void *network_struct;
 
 inline double
 distance2(image_cartesian a, image_cartesian b)
@@ -332,6 +337,201 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 	int thread_id = omp_get_thread_num();
 
 	vector<image_cartesian> points;
+
+	for (int j = 0; j < number_of_laser_shots; j++)
+	{
+		int scan_index = j * sensor_params->vertical_resolution;
+		double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
+
+		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+			continue;
+
+//		if (horizontal_angle > M_PI_2 || horizontal_angle < M_PI_2 ) // Disregard laser shots out of the camera's field of view
+//			continue;
+
+		get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
+
+//		double previous_range = sensor_data->points[cloud_index].sphere_points[p].length;
+//		double previous_vertical_angle = sensor_data->points[cloud_index].sphere_points[p].vertical_angle;
+//		tf::Point previous_velodyne_p3d = spherical_to_cartesian(horizontal_angle, previous_vertical_angle, previous_range);
+
+		for (int i = 1; i < sensor_params->vertical_resolution; i++)
+		{
+			double vertical_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle;
+			double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
+
+			tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+			tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
+
+//			if (velodyne_p3d.x() > 0.0)
+//				continue;
+
+			int image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
+			int image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
+
+//			if (image_x < 0 || image_x >= image_width || image_y < 0 || image_y >= image_height) // Disregard laser rays out of the image window
+//				continue;
+
+//			double log_odds = get_log_odds_via_unexpeted_delta_range(sensor_params, sensor_data, i, scan_index, robot_near_strong_slow_down_annotation, thread_id);
+			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
+			double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
+
+			// Jose's method for checking if a point is an obstacle
+//			double delta_x = abs(velodyne_p3d.x() - previous_velodyne_p3d.x());
+//			double delta_z = abs(velodyne_p3d.z() - previous_velodyne_p3d.z());
+//			double line_angle = carmen_radians_to_degrees(fabs(atan2(delta_z, delta_x)));
+//			previous_velodyne_p3d = velodyne_p3d;
+
+//			if (range <= MIN_RANGE || range >= sensor_params->range_max) // Disregard laser rays out of distance range
+//				laser_ray_color = cv::Scalar(0, 255, 255);
+//			else if (line_angle <= MIN_ANGLE_OBSTACLE || line_angle >= MAX_ANGLE_OBSTACLE) // Disregard laser rays that didn't hit an obstacle
+//				laser_ray_color = cv::Scalar(0, 255, 0);
+//			else if (!is_moving_object(camera_data[camera_index].semantic[image_index][image_x + image_y * image_width])) // Disregard if it is not a moving object
+//			/*else*/ if (camera_data[camera_index].semantic[image_index][image_x + image_y * image_width] < 11)
+//				laser_ray_color = cv::Scalar(255, 0, 0);
+//			else
+//			{
+//				laser_ray_color = cv::Scalar(0, 0, 255);
+//				sensor_data->points[cloud_index].sphere_points[p].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
+//				filter_datmo_count++;
+//			}
+//			if (line_angle > MIN_ANGLE_OBSTACLE && line_angle < MAX_ANGLE_OBSTACLE && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
+//			if (log_odds > sensors_params->log_odds.log_odds_l0 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
+			if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
+			{
+				image_cartesian point;
+				point.shot_number = j;
+				point.ray_number  = i;
+				point.image_x     = image_x;
+				point.image_y     = image_y;
+				point.cartesian_x = camera_p3d.x();
+				point.cartesian_y = -camera_p3d.y();  // Must be inverted because Velodyne angle is reversed with CARMEN angles
+				point.cartesian_z = camera_p3d.z();
+				points.push_back(point);
+
+				if (verbose >= 2)
+				{
+					int ix = (double) image_x / image_width  * img.cols / 2;
+					int iy = (double) image_y / image_height * img.rows;
+					if (ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
+					{
+						circle(img, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+						circle(img, cv::Point(ix + img.cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+					}
+					int px = (double) camera_p3d.y() / map_resolution + img_planar_depth;
+					int py = (double) img_planar.rows - 1 - camera_p3d.x() / map_resolution;
+					if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
+						img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 255);
+				}
+			}
+		}
+	}
+
+	vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.5, 5, points);;
+
+	for (unsigned int i = 0; i < filtered_points.size(); i++)
+	{
+		bool is_moving_obstacle = false;
+		unsigned int cont = 0;
+		for (unsigned int j = 0; j < filtered_points[i].size(); j++)
+		{
+			if (filtered_points[i][j].image_x < 0 || filtered_points[i][j].image_x >= image_width || filtered_points[i][j].image_y < 0 || filtered_points[i][j].image_y >= image_height) // Disregard laser rays out of the image window
+				continue;
+
+			if ((camera_data[camera_index].semantic[image_index] != NULL) &&
+			    (camera_data[camera_index].semantic[image_index][filtered_points[i][j].image_x + (filtered_points[i][j].image_y * image_width)] >= 11)) // 0 to 10 : Static objects
+				cont++;
+			if (cont > 10 || cont > (filtered_points[i].size() / 5))
+			{
+				is_moving_obstacle = true;
+				break;
+			}
+		}
+
+		if (is_moving_obstacle)
+		{
+			for (unsigned int j = 0; j < filtered_points[i].size(); j++)
+			{
+				int p = filtered_points[i][j].shot_number * sensor_params->vertical_resolution + filtered_points[i][j].ray_number;
+				sensor_data->points[cloud_index].sphere_points[p].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
+				filter_datmo_count++;
+
+				if (verbose >= 2)
+				{
+					int ix = (double) filtered_points[i][j].image_x / image_width  * img.cols / 2;
+					int iy = (double) filtered_points[i][j].image_y / image_height * img.rows;
+					if (ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
+						circle(img, cv::Point(ix, iy), 1, cluster_color[i], 1, 8, 0);
+
+					int px = (double) -filtered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
+					int py = (double) img_planar.rows - 1 - filtered_points[i][j].cartesian_x / map_resolution;
+					if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
+						img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(cluster_color[i][0], cluster_color[i][1], cluster_color[i][2]);
+				}
+			}
+		}
+	}
+	if (verbose >= 2)
+	{
+		imshow("Image Semantic Segmentation", img);
+    	resize(img_planar, img_planar, cv::Size(0, 0), 3.5, 3.5, cv::INTER_NEAREST);
+		imshow("Velodyne Semantic Map", img_planar);
+		cv::waitKey(1);
+	}
+	if (filter_datmo_count)
+		camera_datmo_count[camera_index]++;
+}
+
+vector<bbox_t>
+filter_predictions_of_interest(vector<bbox_t> &predictions)
+{
+	vector<bbox_t> filtered_predictions;
+
+	for (unsigned int i = 0; i < predictions.size(); i++)
+	{
+		if (predictions[i].obj_id == 0)// ||  // person
+//			i == 1 ||  // bicycle
+//			i == 2 ||  // car
+//			i == 3 ||  // motorbike
+//			i == 5 ||  // bus
+//			i == 6 ||  // train
+//			i == 7 ||  // truck
+//			i == 9)    // traffic light
+		{
+			filtered_predictions.push_back(predictions[i]);
+		}
+	}
+	return (filtered_predictions);
+}
+
+void
+filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
+{
+	camera_filter_count[camera_index]++;
+	int filter_datmo_count = 0;
+	cv::Scalar laser_ray_color;
+	int image_width  = camera_data[camera_index].width[image_index];
+	int image_height = camera_data[camera_index].height[image_index];
+	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
+	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
+	double cu = camera_params[camera_index].cu_factor * image_width;
+	double cv = camera_params[camera_index].cv_factor * image_height;
+//	double fov = camera_params[camera_index].fov;
+	double map_resolution = map_config.resolution;
+	int img_planar_depth = (double) 0.5 * sensor_params->range_max / map_resolution;
+	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
+	cv::Mat img = camera_image_semantic[camera_index];
+	int cloud_index = sensor_data->point_cloud_index;
+	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
+	int thread_id = omp_get_thread_num();
+
+	vector<image_cartesian> points;
+
+	//Transform image in opencv to YOLO
+	//camera_data[camera_index].image
+	cv::Mat open_cv_image = cv::Mat(cv::Size(image_width, image_height), CV_8UC3, camera_data[camera_index].image[image_index]);
+	vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
+	predictions = filter_predictions_of_interest(predictions);
 
 	for (int j = 0; j < number_of_laser_shots; j++)
 	{
@@ -1650,6 +1850,48 @@ filter_sensor_data_using_image_semantic_segmentation(sensor_parameters_t *sensor
 	return filter_cameras;
 }
 
+int
+filter_sensor_data_using_image_yolo(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
+{
+	int filter_cameras = 0;
+
+	if (active_cameras == 0)
+		return 0;
+
+	for (int camera = 1; camera <= MAX_CAMERA_INDEX; camera++)
+	{
+		if (camera_alive[camera] < 0)
+			continue;
+
+		int nearest_index = -1;
+		double nearest_time_diff = DBL_MAX;
+
+		for (int i = 0; i < NUM_CAMERA_IMAGES; i++)
+		{
+			if (camera_data[camera].image[i] == NULL)
+				continue;
+
+			int j = sensor_data->point_cloud_index;
+			double time_difference = fabs(camera_data[camera].timestamp[i] - sensor_data->points_timestamp[j] - CAMERA_DELAY);
+			if (time_difference < nearest_time_diff)
+			{
+				nearest_index = i;
+				nearest_time_diff = time_difference;
+			}
+		}
+
+		if (nearest_time_diff > MAX_TIMESTAMP_DIFFERENCE)
+			continue;
+
+		filter_sensor_data_using_yolo(sensor_params, sensor_data, camera, nearest_index);
+		//erase_moving_obstacles_cells(sensor_params, sensor_data, camera, nearest_index);
+		filter_cameras++;
+	}
+
+	return filter_cameras;
+}
+
+
 
 bool
 check_lidar_camera_max_timestamp_difference(sensor_data_t *sensor_data)
@@ -1714,6 +1956,9 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 	}
 	if (!strcmp(neural_network,"salsanet")){
 		filter_sensor_data_using_salsanet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+	}
+	if (!strcmp(neural_network,"yolo")){
+		filter_sensor_data_using_image_yolo(&sensors_params[sensor_number], &sensors_data[sensor_number]);
 	}
 	/*if (!strcmp(neural_network,"rangenet")){
 		filter_sensor_data_using_rangenet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
@@ -3238,6 +3483,24 @@ initialize_transforms()
 	tf::StampedTransform ultrasonic_sensor_l1_to_car_transform(ultrasonic_sensor_l1_to_car_pose, tf::Time(0), "/car", "/ultrasonic_sensor_l1");
 	tf_transformer.setTransform(ultrasonic_sensor_l1_to_car_transform, "ultrasonic_sensor_l1_to_car_transform");
 }
+
+void
+initializer_YOLO()
+{
+	char* carmen_home = getenv("CARMEN_HOME");
+	char classes_names_path[1024];
+	char yolo_cfg_path[1024];
+	char yolo_weights_path[1024];
+
+	sprintf(classes_names_path, "%s/sharedlib/darknet2/data/coco.names", carmen_home);
+	sprintf(yolo_cfg_path, "%s/sharedlib/darknet2/cfg/yolov3.cfg", carmen_home);
+	sprintf(yolo_weights_path, "%s/sharedlib/darknet2/yolov3.weights", carmen_home);
+
+	classes_names = get_classes_names(classes_names_path);
+
+	network_struct = initialize_YOLO( yolo_cfg_path, yolo_weights_path);
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -3266,6 +3529,9 @@ main(int argc, char **argv)
 	/* Register Python Context for SalsaNet */
 	if (!strcmp(neural_network,"salsanet")){
 		initialize_python_context_salsanet();
+	}
+	if (!strcmp(neural_network,"yolo")){
+		initializer_YOLO();
 	}
 	/* Register TensorRT context for RangeNet++*/
 	/*if (!strcmp(neural_network,"rangenet")){
