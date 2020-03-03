@@ -241,6 +241,22 @@ static CarDrawer* car_drawer;
 static point_cloud_drawer* ldmrs_drawer;
 static point_cloud_drawer* laser_drawer;
 static point_cloud_drawer* velodyne_drawer;
+//static point_cloud_drawer* lidar0_drawer; // O velodyne_variable_scan_message_handler0 é especifico para o Ouster e possui parametros hardcodded precisa ser padronizado
+static point_cloud_drawer* lidar1_drawer;
+static point_cloud_drawer* lidar2_drawer;
+static point_cloud_drawer* lidar3_drawer;
+static point_cloud_drawer* lidar4_drawer;
+static point_cloud_drawer* lidar5_drawer;
+static point_cloud_drawer* lidar6_drawer;
+static point_cloud_drawer* lidar7_drawer;
+static point_cloud_drawer* lidar8_drawer;
+static point_cloud_drawer* lidar9_drawer;
+static point_cloud_drawer* lidar10_drawer;
+static point_cloud_drawer* lidar11_drawer;
+static point_cloud_drawer* lidar12_drawer;
+static point_cloud_drawer* lidar13_drawer;
+static point_cloud_drawer* lidar14_drawer;
+static point_cloud_drawer* lidar15_drawer;
 static velodyne_360_drawer* v_360_drawer;
 static variable_velodyne_drawer* var_v_drawer;
 static interface_drawer* i_drawer;
@@ -509,7 +525,7 @@ convert_variable_scan_message_to_point_cloud(point_cloud *velodyne_points, carme
 
 
 void
-draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, bool &first_time, point_cloud **lidar_point_cloud_vector,
+draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point_cloud_drawer *drawer, bool &first_time, point_cloud **lidar_point_cloud_vector,
     int &lidar_point_cloud_vector_max_size, int &lidar_point_cloud_vector_index, carmen_lidar_config &lidar_config)
 {
     int discarded_points = 0;
@@ -549,7 +565,7 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, bool 
 	destroy_rotation_matrix(lidar_to_board_matrix);
 	destroy_rotation_matrix(board_to_car_matrix);
     
-	add_point_cloud(velodyne_drawer, *lidar_point_cloud_vector[lidar_point_cloud_vector_index]);
+	add_point_cloud(drawer, *lidar_point_cloud_vector[lidar_point_cloud_vector_index]);
     
     lidar_point_cloud_vector_index += 1;
 }
@@ -1013,9 +1029,9 @@ compute_ouster_points(point_cloud *velodyne_points, carmen_velodyne_variable_sca
 	return (range_max_points);
 }
 
-
+// TODO O velodyne_variable_scan_message_handler0 é especifico para o Ouster e possui parametros hardcodded precisa ser padronizado
 static void
-velodyne_variable_scan_message_handler0(carmen_velodyne_variable_scan_message *velodyne_message)
+velodyne_variable_scan_message_handler0(carmen_velodyne_variable_scan_message *velodyne_message) 
 {
 	memcpy(ouster_vertical_correction, vc_64, sizeof(vc_64));
 
@@ -1081,7 +1097,6 @@ velodyne_variable_scan_message_handler0(carmen_velodyne_variable_scan_message *v
 void
 velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *message)
 {
-    printf("chegou\n");
     static bool first_time = true;
     static point_cloud *lidar1_point_cloud_vector;
     static int lidar1_point_cloud_vector_max_size = 0;
@@ -1089,14 +1104,13 @@ velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *m
     static carmen_lidar_config lidar1_config;
     lidar1_config.id = 1;
     
-    draw_variable_scan_message(message, first_time, &lidar1_point_cloud_vector, lidar1_point_cloud_vector_max_size, lidar1_point_cloud_vector_index, lidar1_config);
+    draw_variable_scan_message(message, lidar1_drawer, first_time, &lidar1_point_cloud_vector, lidar1_point_cloud_vector_max_size, lidar1_point_cloud_vector_index, lidar1_config);
 }
 
 
 void
 velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *message)
 {
-    printf("chegou\n");
     static bool first_time = true;
     static point_cloud *lidar2_point_cloud_vector;
     static int lidar2_point_cloud_vector_max_size = 0;
@@ -1104,14 +1118,13 @@ velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *m
     static carmen_lidar_config lidar2_config;
     lidar2_config.id = 2;
     
-    draw_variable_scan_message(message, first_time, &lidar2_point_cloud_vector, lidar2_point_cloud_vector_max_size, lidar2_point_cloud_vector_index, lidar2_config);
+    draw_variable_scan_message(message, lidar2_drawer, first_time, &lidar2_point_cloud_vector, lidar2_point_cloud_vector_max_size, lidar2_point_cloud_vector_index, lidar2_config);
 }
 
 
 void
 velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *message)
 {
-    printf("chegou\n");
     static bool first_time = true;
     static point_cloud *lidar3_point_cloud_vector;
     static int lidar3_point_cloud_vector_max_size = 0;
@@ -1119,7 +1132,7 @@ velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *m
     static carmen_lidar_config lidar3_config;
     lidar3_config.id = 3;
     
-    draw_variable_scan_message(message, first_time, &lidar3_point_cloud_vector, lidar3_point_cloud_vector_max_size, lidar3_point_cloud_vector_index, lidar3_config);
+    draw_variable_scan_message(message, lidar3_drawer, first_time, &lidar3_point_cloud_vector, lidar3_point_cloud_vector_max_size, lidar3_point_cloud_vector_index, lidar3_config);
 }
 
 
@@ -1133,14 +1146,13 @@ velodyne_variable_scan_message_handler4(carmen_velodyne_variable_scan_message *m
     static carmen_lidar_config lidar4_config;
     lidar4_config.id = 4;
     
-    draw_variable_scan_message(message, first_time, &lidar4_point_cloud_vector, lidar4_point_cloud_vector_max_size, lidar4_point_cloud_vector_index, lidar4_config);
+    draw_variable_scan_message(message, lidar4_drawer, first_time, &lidar4_point_cloud_vector, lidar4_point_cloud_vector_max_size, lidar4_point_cloud_vector_index, lidar4_config);
 }
 
 
 void
 velodyne_variable_scan_message_handler5(carmen_velodyne_variable_scan_message *message)
 {
-    printf("chegou\n");
     static bool first_time = true;
     static point_cloud *lidar5_point_cloud_vector;
     static int lidar5_point_cloud_vector_max_size = 0;
@@ -1148,14 +1160,13 @@ velodyne_variable_scan_message_handler5(carmen_velodyne_variable_scan_message *m
     static carmen_lidar_config lidar5_config;
     lidar5_config.id = 5;
     
-    draw_variable_scan_message(message, first_time, &lidar5_point_cloud_vector, lidar5_point_cloud_vector_max_size, lidar5_point_cloud_vector_index, lidar5_config);
+    draw_variable_scan_message(message, lidar5_drawer, first_time, &lidar5_point_cloud_vector, lidar5_point_cloud_vector_max_size, lidar5_point_cloud_vector_index, lidar5_config);
 }
 
 
 void
 velodyne_variable_scan_message_handler6(carmen_velodyne_variable_scan_message *message)
 {
-    printf("chegou\n");
     static bool first_time = true;
     static point_cloud *lidar6_point_cloud_vector;
     static int lidar6_point_cloud_vector_max_size = 0;
@@ -1163,14 +1174,13 @@ velodyne_variable_scan_message_handler6(carmen_velodyne_variable_scan_message *m
     static carmen_lidar_config lidar6_config;
     lidar6_config.id = 6;
     
-    draw_variable_scan_message(message, first_time, &lidar6_point_cloud_vector, lidar6_point_cloud_vector_max_size, lidar6_point_cloud_vector_index, lidar6_config);
+    draw_variable_scan_message(message, lidar6_drawer, first_time, &lidar6_point_cloud_vector, lidar6_point_cloud_vector_max_size, lidar6_point_cloud_vector_index, lidar6_config);
 }
 
 
 void
 velodyne_variable_scan_message_handler7(carmen_velodyne_variable_scan_message *message)
 {
-    printf("chegou\n");
     static bool first_time = true;
     static point_cloud *lidar7_point_cloud_vector;
     static int lidar7_point_cloud_vector_max_size = 0;
@@ -1178,14 +1188,13 @@ velodyne_variable_scan_message_handler7(carmen_velodyne_variable_scan_message *m
     static carmen_lidar_config lidar7_config;
     lidar7_config.id = 7;
     
-    draw_variable_scan_message(message, first_time, &lidar7_point_cloud_vector, lidar7_point_cloud_vector_max_size, lidar7_point_cloud_vector_index, lidar7_config);
+    draw_variable_scan_message(message, lidar7_drawer, first_time, &lidar7_point_cloud_vector, lidar7_point_cloud_vector_max_size, lidar7_point_cloud_vector_index, lidar7_config);
 }
 
 
 void
 velodyne_variable_scan_message_handler8(carmen_velodyne_variable_scan_message *message)
 {
-    printf("chegou\n");
     static bool first_time = true;
     static point_cloud *lidar8_point_cloud_vector;
     static int lidar8_point_cloud_vector_max_size = 0;
@@ -1193,14 +1202,13 @@ velodyne_variable_scan_message_handler8(carmen_velodyne_variable_scan_message *m
     static carmen_lidar_config lidar8_config;
     lidar8_config.id = 8;
     
-    draw_variable_scan_message(message, first_time, &lidar8_point_cloud_vector, lidar8_point_cloud_vector_max_size, lidar8_point_cloud_vector_index, lidar8_config);
+    draw_variable_scan_message(message, lidar8_drawer, first_time, &lidar8_point_cloud_vector, lidar8_point_cloud_vector_max_size, lidar8_point_cloud_vector_index, lidar8_config);
 }
 
 
 void
 velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *message)
 {
-    printf("chegou\n");
     static bool first_time = true;
     static point_cloud *lidar9_point_cloud_vector;
     static int lidar9_point_cloud_vector_max_size = 0;
@@ -1208,7 +1216,7 @@ velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *m
     static carmen_lidar_config lidar9_config;
     lidar9_config.id = 9;
     
-    draw_variable_scan_message(message, first_time, &lidar9_point_cloud_vector, lidar9_point_cloud_vector_max_size, lidar9_point_cloud_vector_index, lidar9_config);
+    draw_variable_scan_message(message, lidar9_drawer, first_time, &lidar9_point_cloud_vector, lidar9_point_cloud_vector_max_size, lidar9_point_cloud_vector_index, lidar9_config);
 }
 
 
@@ -1222,7 +1230,7 @@ velodyne_variable_scan_message_handler10(carmen_velodyne_variable_scan_message *
     static carmen_lidar_config lidar10_config;
     lidar10_config.id = 10;
 
-    draw_variable_scan_message(message, first_time, &lidar10_point_cloud_vector, lidar10_point_cloud_vector_max_size, lidar10_point_cloud_vector_index, lidar10_config);
+    draw_variable_scan_message(message, lidar10_drawer, first_time, &lidar10_point_cloud_vector, lidar10_point_cloud_vector_max_size, lidar10_point_cloud_vector_index, lidar10_config);
 }
 
 
@@ -1236,7 +1244,7 @@ velodyne_variable_scan_message_handler11(carmen_velodyne_variable_scan_message *
     static carmen_lidar_config lidar11_config;
     lidar11_config.id = 11;
     
-    draw_variable_scan_message(message, first_time, &lidar11_point_cloud_vector, lidar11_point_cloud_vector_max_size, lidar11_point_cloud_vector_index, lidar11_config);
+    draw_variable_scan_message(message, lidar11_drawer, first_time, &lidar11_point_cloud_vector, lidar11_point_cloud_vector_max_size, lidar11_point_cloud_vector_index, lidar11_config);
 }
 
 
@@ -1250,7 +1258,7 @@ velodyne_variable_scan_message_handler12(carmen_velodyne_variable_scan_message *
     static carmen_lidar_config lidar12_config;
     lidar12_config.id = 12;
 
-    draw_variable_scan_message(message, first_time, &lidar12_point_cloud_vector, lidar12_point_cloud_vector_max_size, lidar12_point_cloud_vector_index, lidar12_config);
+    draw_variable_scan_message(message, lidar12_drawer, first_time, &lidar12_point_cloud_vector, lidar12_point_cloud_vector_max_size, lidar12_point_cloud_vector_index, lidar12_config);
 }
 
 
@@ -1264,7 +1272,7 @@ velodyne_variable_scan_message_handler13(carmen_velodyne_variable_scan_message *
     static carmen_lidar_config lidar13_config;
     lidar13_config.id = 13;
 
-    draw_variable_scan_message(message, first_time, &lidar13_point_cloud_vector, lidar13_point_cloud_vector_max_size, lidar13_point_cloud_vector_index, lidar13_config);
+    draw_variable_scan_message(message, lidar13_drawer, first_time, &lidar13_point_cloud_vector, lidar13_point_cloud_vector_max_size, lidar13_point_cloud_vector_index, lidar13_config);
 }
 
 
@@ -1278,7 +1286,7 @@ velodyne_variable_scan_message_handler14(carmen_velodyne_variable_scan_message *
     static carmen_lidar_config lidar14_config;
     lidar14_config.id = 14;
 
-    draw_variable_scan_message(message, first_time, &lidar14_point_cloud_vector, lidar14_point_cloud_vector_max_size, lidar14_point_cloud_vector_index, lidar14_config);
+    draw_variable_scan_message(message, lidar14_drawer, first_time, &lidar14_point_cloud_vector, lidar14_point_cloud_vector_max_size, lidar14_point_cloud_vector_index, lidar14_config);
 }
 
 
@@ -1292,7 +1300,7 @@ velodyne_variable_scan_message_handler15(carmen_velodyne_variable_scan_message *
     static carmen_lidar_config lidar15_config;
     lidar15_config.id = 15;
 
-    draw_variable_scan_message(message, first_time, &lidar15_point_cloud_vector, lidar15_point_cloud_vector_max_size, lidar15_point_cloud_vector_index, lidar15_config);
+    draw_variable_scan_message(message, lidar15_drawer, first_time, &lidar15_point_cloud_vector, lidar15_point_cloud_vector_max_size, lidar15_point_cloud_vector_index, lidar15_config);
 }
 
 
@@ -2436,6 +2444,21 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
     laser_drawer = create_point_cloud_drawer(laser_size);
     ldmrs_drawer = create_point_cloud_drawer(ldmrs_size);
     velodyne_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar1_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar2_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar3_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar4_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar5_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar6_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar7_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar8_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar9_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar10_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar11_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar12_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar13_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar14_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar15_drawer = create_point_cloud_drawer(velodyne_size);
     v_360_drawer = create_velodyne_360_drawer(velodyne_pose, sensor_board_1_pose);
 
     // *********************************************************************
@@ -2464,6 +2487,21 @@ destroy_drawers()
     destroy_point_cloud_drawer(laser_drawer);
     destroy_point_cloud_drawer(ldmrs_drawer);
     destroy_point_cloud_drawer(velodyne_drawer);
+    destroy_point_cloud_drawer(lidar1_drawer);
+    destroy_point_cloud_drawer(lidar2_drawer);
+    destroy_point_cloud_drawer(lidar3_drawer);
+    destroy_point_cloud_drawer(lidar4_drawer);
+    destroy_point_cloud_drawer(lidar5_drawer);
+    destroy_point_cloud_drawer(lidar6_drawer);
+    destroy_point_cloud_drawer(lidar7_drawer);
+    destroy_point_cloud_drawer(lidar8_drawer);
+    destroy_point_cloud_drawer(lidar9_drawer);
+    destroy_point_cloud_drawer(lidar10_drawer);
+    destroy_point_cloud_drawer(lidar11_drawer);
+    destroy_point_cloud_drawer(lidar12_drawer);
+    destroy_point_cloud_drawer(lidar13_drawer);
+    destroy_point_cloud_drawer(lidar14_drawer);
+    destroy_point_cloud_drawer(lidar15_drawer);
     destroy_velodyne_360_drawer(v_360_drawer);
     //destroy_variable_velodyne_drawer(var_v_drawer);
     destroy_interface_drawer(i_drawer);
@@ -3026,6 +3064,23 @@ draw_loop(window *w)
             if (draw_annotation_flag || velodyne_remission_flag)
                 glPointSize(5);
             draw_point_cloud(velodyne_drawer);
+
+            draw_point_cloud(lidar1_drawer);
+            draw_point_cloud(lidar2_drawer);
+            draw_point_cloud(lidar3_drawer);
+            draw_point_cloud(lidar4_drawer);
+            draw_point_cloud(lidar5_drawer);
+            draw_point_cloud(lidar6_drawer);
+            draw_point_cloud(lidar7_drawer);
+            draw_point_cloud(lidar8_drawer);
+            draw_point_cloud(lidar9_drawer);
+            draw_point_cloud(lidar10_drawer);
+            draw_point_cloud(lidar11_drawer);
+            draw_point_cloud(lidar12_drawer);
+            draw_point_cloud(lidar13_drawer);
+            draw_point_cloud(lidar14_drawer);
+            draw_point_cloud(lidar15_drawer);
+            
             glPointSize(point_size);
         }
         else if (draw_velodyne_flag == 3)
@@ -3231,8 +3286,23 @@ draw_loop_for_picking(window *w)
         }
         else if (draw_velodyne_flag == 2)
         {
-            //draw_velodyne_points(&(velodyne_points[last_velodyne_position]), 1);           
             draw_point_cloud(velodyne_drawer);
+
+            draw_point_cloud(lidar1_drawer);
+            draw_point_cloud(lidar2_drawer);
+            draw_point_cloud(lidar3_drawer);
+            draw_point_cloud(lidar4_drawer);
+            draw_point_cloud(lidar5_drawer);
+            draw_point_cloud(lidar6_drawer);
+            draw_point_cloud(lidar7_drawer);
+            draw_point_cloud(lidar8_drawer);
+            draw_point_cloud(lidar9_drawer);
+            draw_point_cloud(lidar10_drawer);
+            draw_point_cloud(lidar11_drawer);
+            draw_point_cloud(lidar12_drawer);
+            draw_point_cloud(lidar13_drawer);
+            draw_point_cloud(lidar14_drawer);
+            draw_point_cloud(lidar15_drawer);
         }
         else if (draw_velodyne_flag == 3)
         {
