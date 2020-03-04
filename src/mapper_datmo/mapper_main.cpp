@@ -596,7 +596,8 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
 	cv::Mat img_planar_back = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
 	cv::Mat total;
-	cv::Mat img = cv::Mat(cv::Size(image_width, image_height), CV_RGB2BGR, camera_data[camera_index].image[image_index]);
+	cv::Mat img = cv::Mat(cv::Size(image_width, image_height), CV_8UC3, camera_data[camera_index].image[image_index]);
+	cvtColor(img, img, CV_RGB2BGR);
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
 	int thread_id = omp_get_thread_num();
