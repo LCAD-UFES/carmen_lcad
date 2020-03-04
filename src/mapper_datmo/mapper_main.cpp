@@ -722,12 +722,12 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 				//cv::Point(predictions[i].x, predictions[i].y), cv::Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
 				for (unsigned int k = 0; k < predictions.size(); k++)
 				{
-					if (filtered_points[i][j].image_x > predictions[k].x 
-						&& filtered_points[i][j].image_x < (predictions[k].x + predictions[i].w)
-						&& filtered_points[i][j].image_y > predictions[i].y
-						&& filtered_points[i][j].image_y < (predictions[i].y + predictions[i].h))
+					if (filtered_points[i][j].image_x > int(predictions[k].x) 
+						&& filtered_points[i][j].image_x < int(predictions[k].x + predictions[k].w)
+						&& filtered_points[i][j].image_y > int(predictions[k].y)
+						&& filtered_points[i][j].image_y < int(predictions[k].y + predictions[k].h))
 					{
-						switch (predictions[i].obj_id)
+						switch (predictions[k].obj_id)
 						{
 						case 0: //person
 							contPerson++;
