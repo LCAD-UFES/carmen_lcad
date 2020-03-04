@@ -596,7 +596,7 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
 	cv::Mat img_planar_back = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
 	cv::Mat total;
-	cv::Mat img = cv::Mat(cv::Size(image_width, image_height), CV_8UC3, camera_data[camera_index].image[image_index]);
+	cv::Mat img = cv::Mat(cv::Size(image_width, image_height), CV_RGB2BGR, camera_data[camera_index].image[image_index]);
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
 	int thread_id = omp_get_thread_num();
@@ -645,14 +645,15 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 					{
 						int ix = (double)image_x / image_width * img.cols / 2;
 						int iy = (double)image_y / image_height * img.rows;
-						if (ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
-						{
-							circle(img, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
-						}
+						
 						int px = (double)camera_p3d.y() / map_resolution + img_planar_depth;
 						int py = (double)img_planar.rows - 1 - camera_p3d.x() / map_resolution;
 						if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
 						{
+							if (ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
+							{
+								circle(img, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+							}
 							img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 0);
 						}else
 						{ // The back of img_planar
