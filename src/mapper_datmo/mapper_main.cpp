@@ -512,14 +512,6 @@ colormap_semantic[] =
 void
 show_detections(cv::Mat image, vector<bbox_t> predictions)
 {
-	//char object_info[25];
-    char frame_rate[25];
-
-    //cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
-
-    cv::putText(image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(0, 255, 0), 2);
-
-
     for (unsigned int i = 0; i < predictions.size(); i++)
     {
     	int color_mapped = 0;
@@ -546,11 +538,7 @@ show_detections(cv::Mat image, vector<bbox_t> predictions)
     	case 7: //truck
     		color_mapped = 4;
     		break;
-    	case 9: //traffic light
-    		color_mapped = 19;
     	}
-
-
     	cv::rectangle(image, cv::Point(predictions[i].x, predictions[i].y), cv::Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
     			colormap_semantic[color_mapped], 4);
     }
@@ -721,7 +709,14 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 
 		vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.5, 5, points);
 		//Transform image in opencv to YOLO
+		//Remove vehicle front
+		int crop_x = 0;
+		int crop_y = 0; //280;
+		int crop_w = image_width;// 1280;
+		int crop_h = image_height * 0.82;
 		cv::Mat open_cv_image = cv::Mat(cv::Size(image_width, image_height), CV_8UC3, camera_data[camera_index].image[image_index]);
+		cv::Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
+		open_cv_image = open_cv_image(myROI);
 		vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
 		predictions = filter_predictions_of_interest(predictions);
 		show_detections(img, predictions);
@@ -888,7 +883,7 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 			
 			cv::line(total, cvPoint(x,y-10/2), cvPoint(x,y+5/2), CV_RGB(0,199,0), 1, 8);
 			
-			resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
+			resize(total, total, cv::Size(0,0), 1.7, 1.7, cv::INTER_NEAREST);
 			imshow("Velodyne Semantic Map", total);
 			imshow("Image Semantic Segmentation", img);
 			cv::waitKey(1);
