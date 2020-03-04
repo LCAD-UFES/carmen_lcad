@@ -9,7 +9,7 @@ LINK = g++
 CFLAGS += -Wall -g 
 CXXFLAGS = -std=c++11
 
-LFLAGS += -lglobal -lipc -lparam_interface
+LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lrddf_interface
 
 SOURCES = path_planner_astar_main.cpp 
 PUBLIC_INCLUDES = path_planner_astar.h
