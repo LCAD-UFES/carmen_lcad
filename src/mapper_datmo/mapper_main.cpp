@@ -593,11 +593,10 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 //	double fov = camera_params[camera_index].fov;
 	double map_resolution = map_config.resolution;
 	int img_planar_depth = (double) 0.5 * sensor_params->range_max / map_resolution;
-	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
+	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth+30), CV_8UC3, cv::Scalar(255, 255, 255));
 	//cv::Mat img_planar_back = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
-	cv::Mat total;
-	cv::Mat img = cv::Mat(cv::Size(image_width, image_height), CV_8UC3, camera_data[camera_index].image[image_index]);
-	cvtColor(img, img, CV_RGB2BGR);
+	//cv::Mat total;
+	cv::Mat img = camera_image_semantic[camera_index];
 
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
@@ -610,7 +609,7 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 		for (int j = 0; j < number_of_laser_shots; j++)
 		{
 			int scan_index = j * sensor_params->vertical_resolution;
-			double horizontal_angle = -sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
+			double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
 
 			if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
 				continue;
@@ -625,7 +624,8 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 				tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
 				tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
 
-				int image_x = fx_meters * (camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
+
+				int image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
 				int image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
 
 				double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
@@ -635,21 +635,22 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 				{
 					image_cartesian point;
 					point.shot_number = j;
-					point.ray_number = i;
-					point.image_x = image_x;
-					point.image_y = image_y;
+					point.ray_number  = i;
+					point.image_x     = image_x;
+					point.image_y     = image_y;
 					point.cartesian_x = camera_p3d.x();
-					point.cartesian_y = -camera_p3d.y(); // Must be inverted because Velodyne angle is reversed with CARMEN angles
+					point.cartesian_y = -camera_p3d.y();  // Must be inverted because Velodyne angle is reversed with CARMEN angles
 					point.cartesian_z = camera_p3d.z();
 					points.push_back(point);
 
 					if (verbose >= 2)
 					{
-						int ix = (double)image_x / image_width * img.cols / 2;
-						int iy = (double)image_y / image_height * img.rows;
+						int ix = (double) image_x / image_width  * img.cols / 2;
+						int iy = (double) image_y / image_height * img.rows;
 						if (ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
 						{
 							circle(img, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+							circle(img, cv::Point(ix + img.cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 						}
 						int px = (double)camera_p3d.y() / map_resolution + img_planar_depth;
 						int py = (double)img_planar.rows - 1 - camera_p3d.x() / map_resolution;
@@ -727,9 +728,9 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 					}
 				}
 				if (contCar > (filtered_points[i].size() / 5) ||
-					contPerson > (filtered_points[i].size() / 5) ||
-					contBycicle > (filtered_points[i].size() / 5) ||
-					contTrain > (filtered_points[i].size() / 5))
+						contPerson > (filtered_points[i].size() / 5) ||
+						contBycicle > (filtered_points[i].size() / 5) ||
+						contTrain > (filtered_points[i].size() / 5))
 				{
 					is_moving_obstacle = true;
 					break;
@@ -850,8 +851,8 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 
 			cv::line(img_planar, cvPoint(x, y - 10 / 2), cvPoint(x, y + 5 / 2), CV_RGB(0, 199, 0), 1, 8);
 
-			resize(img_planar, img_planar, cv::Size(0, 0), 2.7, 2.7, cv::INTER_NEAREST);
-			imshow("Velodyne Semantic Map", total);
+			resize(img_planar, img_planar, cv::Size(0, 0), 1.3, 1.3, cv::INTER_NEAREST);
+			imshow("Velodyne Semantic Map", img_planar);
 			imshow("Image Semantic Segmentation", img);
 			cv::waitKey(1);
 		}
