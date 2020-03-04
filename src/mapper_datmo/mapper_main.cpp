@@ -596,7 +596,7 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
 	cv::Mat img_planar_back = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
 	cv::Mat total;
-	cv::Mat img = camera_image_semantic[camera_index];
+	cv::Mat img = cv::Mat(cv::Size(image_width, image_height), CV_8UC3, camera_data[camera_index].image[image_index]);
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
 	int thread_id = omp_get_thread_num();
@@ -610,17 +610,10 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 			int scan_index = j * sensor_params->vertical_resolution;
 			double horizontal_angle = -sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
 
-			if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
-				continue;
-
-			//		if (horizontal_angle > M_PI_2 || horizontal_angle < M_PI_2 ) // Disregard laser shots out of the camera's field of view
-			//			continue;
+			//if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+			//	continue;
 
 			get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
-
-			//		double previous_range = sensor_data->points[cloud_index].sphere_points[p].length;
-			//		double previous_vertical_angle = sensor_data->points[cloud_index].sphere_points[p].vertical_angle;
-			//		tf::Point previous_velodyne_p3d = spherical_to_cartesian(horizontal_angle, previous_vertical_angle, previous_range);
 
 			for (int i = 1; i < sensor_params->vertical_resolution; i++)
 			{
@@ -630,40 +623,12 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 				tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
 				tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
 
-				//			if (velodyne_p3d.x() > 0.0)
-				//				continue;
-
 				int image_x = fx_meters * (camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
 				int image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
 
-				//			if (image_x < 0 || image_x >= image_width || image_y < 0 || image_y >= image_height) // Disregard laser rays out of the image window
-				//				continue;
-
-				//			double log_odds = get_log_odds_via_unexpeted_delta_range(sensor_params, sensor_data, i, scan_index, robot_near_strong_slow_down_annotation, thread_id);
 				double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
 				double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
 
-				// Jose's method for checking if a point is an obstacle
-				//			double delta_x = abs(velodyne_p3d.x() - previous_velodyne_p3d.x());
-				//			double delta_z = abs(velodyne_p3d.z() - previous_velodyne_p3d.z());
-				//			double line_angle = carmen_radians_to_degrees(fabs(atan2(delta_z, delta_x)));
-				//			previous_velodyne_p3d = velodyne_p3d;
-
-				//			if (range <= MIN_RANGE || range >= sensor_params->range_max) // Disregard laser rays out of distance range
-				//				laser_ray_color = cv::Scalar(0, 255, 255);
-				//			else if (line_angle <= MIN_ANGLE_OBSTACLE || line_angle >= MAX_ANGLE_OBSTACLE) // Disregard laser rays that didn't hit an obstacle
-				//				laser_ray_color = cv::Scalar(0, 255, 0);
-				//			else if (!is_moving_object(camera_data[camera_index].semantic[image_index][image_x + image_y * image_width])) // Disregard if it is not a moving object
-				//			/*else*/ if (camera_data[camera_index].semantic[image_index][image_x + image_y * image_width] < 11)
-				//				laser_ray_color = cv::Scalar(255, 0, 0);
-				//			else
-				//			{
-				//				laser_ray_color = cv::Scalar(0, 0, 255);
-				//				sensor_data->points[cloud_index].sphere_points[p].length = 0.01; //sensor_params->range_max; // Make this laser ray out of range
-				//				filter_datmo_count++;
-				//			}
-				//			if (line_angle > MIN_ANGLE_OBSTACLE && line_angle < MAX_ANGLE_OBSTACLE && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
-				//			if (log_odds > sensors_params->log_odds.log_odds_l0 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
 				if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
 				{
 					image_cartesian point;
@@ -683,7 +648,6 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 						if (ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
 						{
 							circle(img, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
-							circle(img, cv::Point(ix + img.cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 						}
 						int px = (double)camera_p3d.y() / map_resolution + img_planar_depth;
 						int py = (double)img_planar.rows - 1 - camera_p3d.x() / map_resolution;
@@ -729,7 +693,6 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 			{
 				if (filtered_points[i][j].image_x < 0 || filtered_points[i][j].image_x >= image_width || filtered_points[i][j].image_y < 0 || filtered_points[i][j].image_y >= image_height) // Disregard laser rays out of the image window
 					continue;
-				//cv::Point(predictions[i].x, predictions[i].y), cv::Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
 				for (unsigned int k = 0; k < predictions.size(); k++)
 				{
 					if (filtered_points[i][j].image_x > int(predictions[k].x) 
@@ -763,9 +726,6 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 						}
 					}
 				}
-				//if ((camera_data[camera_index].semantic[image_index] != NULL) &&
-				//	(camera_data[camera_index].semantic[image_index][filtered_points[i][j].image_x + (filtered_points[i][j].image_y * image_width)] >= 11)) // 0 to 10 : Static objects
-				//	cont++;
 				if (contCar > (filtered_points[i].size() / 5) ||
 					contPerson > (filtered_points[i].size() / 5) || 
 					contBycicle > (filtered_points[i].size() / 5) || 
