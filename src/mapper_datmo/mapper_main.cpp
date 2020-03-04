@@ -606,6 +606,8 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 	double map_resolution = map_config.resolution;
 	int img_planar_depth = (double) 0.5 * sensor_params->range_max / map_resolution;
 	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
+	cv::Mat img_planar_back = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
+	cv::Mat total;
 	cv::Mat img = camera_image_semantic[camera_index];
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
@@ -698,7 +700,20 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 						int px = (double)camera_p3d.y() / map_resolution + img_planar_depth;
 						int py = (double)img_planar.rows - 1 - camera_p3d.x() / map_resolution;
 						if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
-							img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 255);
+						{
+							img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 0);
+						}else
+						{ // The back of img_planar
+							if (abs(px) >= img_planar.cols)
+							{
+								px = abs(px) - img_planar.cols;
+							}
+							if (abs(py) >= img_planar.rows)
+							{
+								py = abs(py) - img_planar.rows;
+							}
+							img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = cv::Vec3b(0, 0, 0);
+						}
 					}
 				}
 			}
@@ -756,22 +771,10 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 				//if ((camera_data[camera_index].semantic[image_index] != NULL) &&
 				//	(camera_data[camera_index].semantic[image_index][filtered_points[i][j].image_x + (filtered_points[i][j].image_y * image_width)] >= 11)) // 0 to 10 : Static objects
 				//	cont++;
-				if (contCar > (filtered_points[i].size() / 5))
-				{
-					is_moving_obstacle = true;
-					break;
-				}
-				if (contPerson > (filtered_points[i].size() / 3))
-				{
-					is_moving_obstacle = true;
-					break;
-				}
-				if (contBycicle > (filtered_points[i].size() / 3))
-				{
-					is_moving_obstacle = true;
-					break;
-				}
-				if (contTrain > (filtered_points[i].size() / 3))
+				if (contCar > (filtered_points[i].size() / 5) ||
+					contPerson > (filtered_points[i].size() / 5) || 
+					contBycicle > (filtered_points[i].size() / 5) || 
+					contTrain > (filtered_points[i].size() / 5))
 				{
 					is_moving_obstacle = true;
 					break;
@@ -844,7 +847,7 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 								break;
 							}
 						}
-						/*else
+						else
 						{
 							// The back of img_planar
 							if (abs(px) >= img_planar_back.cols)
@@ -870,16 +873,24 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[5];
 								break;
 							}
-						}*/
+						}
 					}
 				}
 			}
 		}
 		if (verbose >= 2)
 		{
+			vconcat(img_planar, img_planar_back, total);
+			int x = img_planar_depth;
+			int y = img_planar_depth;
+
+			cv::rectangle(total, cvPoint(x-10/2,y-10/2), cvPoint(x+10/2,y+30/2), CV_RGB(0,199,0), 1, 8);
+			
+			cv::line(total, cvPoint(x,y-10/2), cvPoint(x,y+5/2), CV_RGB(0,199,0), 1, 8);
+			
+			resize(total, total, cv::Size(0,0), 2.7, 2.7, cv::INTER_NEAREST);
+			imshow("Velodyne Semantic Map", total);
 			imshow("Image Semantic Segmentation", img);
-			resize(img_planar, img_planar, cv::Size(0, 0), 3.5, 3.5, cv::INTER_NEAREST);
-			imshow("Velodyne Semantic Map", img_planar);
 			cv::waitKey(1);
 		}
 		if (filter_datmo_count)
