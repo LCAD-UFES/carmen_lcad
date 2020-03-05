@@ -1,4 +1,5 @@
 #include "gtk_gui.h"
+extern int automous_mode;
 
 extern void
 mapper_handler(carmen_mapper_map_message *message);
@@ -1531,8 +1532,10 @@ namespace View
 	void
 	GtkGui::save_to_image(GtkMapViewer* mapv)
 	{
-		if(!log_first_it)
+//		if(!log_first_it)
+		if(automous_mode == 1)
 		{
+			DIR* dir = opendir("/dados/navigator_gui2_log");
 			char log_date[100];
 			memset(log_buffer,'\0',1000*sizeof(char));
 			memset(log_path,'\0',(255)*sizeof(char));
@@ -1541,6 +1544,11 @@ namespace View
 			time_t t = time(NULL);
 			struct tm tm = *localtime(&t);
 			snprintf(log_date, sizeof(log_date), "%d-%d-%d_%d:%d:%d",tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+			if (!dir)
+			{
+				snprintf(log_buffer, sizeof(log_buffer), "/dados/%s", "navigator_gui2_log");
+				mkdir(log_buffer, 0777);
+			}
 			snprintf(log_buffer, sizeof(log_buffer), "/dados/navigator_gui2_log/%s", log_date);
 			mkdir(log_buffer, 0777);
 			snprintf(log_buffer, sizeof(log_buffer), "/dados/navigator_gui2_log/%s/pictures", log_date);
