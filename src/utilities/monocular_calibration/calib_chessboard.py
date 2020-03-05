@@ -11,6 +11,7 @@ import cv2
 from cv2 import aruco
 
 
+
 def rectify_images(images, mtx, dist, outdir):
 
 	#######################
@@ -19,7 +20,7 @@ def rectify_images(images, mtx, dist, outdir):
 	#
 	# rectifies images from a given image list and saves it in a given outdir.
 	#
-	#	PARAMETERS
+	# PARAMETERS
 	# images: image path list
 	# mtx: camera matrix
 	# dist: distortion coefficients vector
