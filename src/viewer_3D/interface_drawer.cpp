@@ -218,23 +218,23 @@ static void init_buttons(interface_drawer* i_drawer)
 	i_drawer->butt[55].text = "Empty";
 
 	//Lidars Numbers - when i_drawer->butt[28] active shows buttons to variable_scan_message
-	i_drawer->butt[56].text = "lidar1";
-	i_drawer->butt[57].text = "lidar2";
-	i_drawer->butt[58].text = "lidar3";
-	i_drawer->butt[59].text = "lidar4";
-	i_drawer->butt[60].text = "lidar5";
-	i_drawer->butt[61].text = "lidar6";
-	i_drawer->butt[62].text = "lidar7";
-	i_drawer->butt[63].text = "lidar8";
+	i_drawer->butt[56].text = "lidar0";
+	i_drawer->butt[57].text = "lidar1";
+	i_drawer->butt[58].text = "lidar2";
+	i_drawer->butt[59].text = "lidar3";
+	i_drawer->butt[60].text = "lidar4";
+	i_drawer->butt[61].text = "lidar5";
+	i_drawer->butt[62].text = "lidar6";
+	i_drawer->butt[63].text = "lidar7";
 
-	i_drawer->butt[64].text = "lidar9";
-	i_drawer->butt[65].text = "lidar10";
-	i_drawer->butt[66].text = "lidar11";
-	i_drawer->butt[67].text = "lidar12";
-	i_drawer->butt[68].text = "lidar13";
-	i_drawer->butt[69].text = "lidar14";
-	i_drawer->butt[70].text = "lidar15";
-	i_drawer->butt[71].text = "lidar16";
+	i_drawer->butt[64].text = "lidar8";
+	i_drawer->butt[65].text = "lidar9";
+	i_drawer->butt[66].text = "lidar10";
+	i_drawer->butt[67].text = "lidar11";
+	i_drawer->butt[68].text = "lidar12";
+	i_drawer->butt[69].text = "lidar13";
+	i_drawer->butt[70].text = "lidar14";
+	i_drawer->butt[71].text = "lidar15";
 
 }
 
@@ -687,8 +687,7 @@ static void handle_mouse_left_click(interface_drawer* i_drawer, int x, int y)
 				{
 					i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 					int lidar_number = i_drawer->butt[i].code - 56;
-
-					set_flag_viewer_3D(21, lidar_number);
+					set_flag_viewer_3D(34, lidar_number);
 				}
 			}
 		}

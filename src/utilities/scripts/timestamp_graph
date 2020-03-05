@@ -1,4 +1,18 @@
 #!/bin/bash
+
+
+function display_usage_exit()
+{
+	if [[ "$2" ]]; then echo -e "\n$2\n"; fi
+	echo -e "\nThis script plots the time_stamp of messages from a carmen LCAD log\n"
+	echo -e "Usage: $0  <message_name> <log_name>\n"
+	exit "$1"
+}
+
+
+if [[ $# -eq 0 ]] || [[ "$1" = "-h" ]]; then display_usage_exit 1; fi
+
+
 grep "$1" $2 > /tmp/caco.txt
 grep -v "#" /tmp/caco.txt > /tmp/caco2.txt
 cat /tmp/caco2.txt | rev | cut -d' ' -f 3 | rev > /tmp/caco.txt

@@ -5,7 +5,6 @@
 
 #include <carmen/velodyne_interface.h>
 #include <driver2.h>
-#include <rsdriver.h>
 
 #include "lidar_drivers.h"
 
@@ -16,10 +15,6 @@ velodyne_driver::velodyne_config_t config;
 velodyne_driver::VelodyneDriver* velodyne = NULL;
 
 carmen_velodyne_variable_scan_message variable_scan_msg;
-
-
-rslidar_driver::rslidar_param private_nh;
-rslidar_driver::rslidarDriver* robosense = NULL;
 
 
 int
@@ -35,15 +30,38 @@ get_lidar_id(int argc, char **argv)
 void
 setup_message(carmen_lidar_config lidar_config)
 {
-	variable_scan_msg.partial_scan = (carmen_velodyne_shot *) malloc (INITIAL_MAX_NUM_SHOT * sizeof(carmen_velodyne_shot));
+	variable_scan_msg.partial_scan = (carmen_velodyne_shot *) malloc ((INITIAL_MAX_NUM_SHOT + 1) * sizeof(carmen_velodyne_shot));
 	
-    for (int i = 0 ; i < INITIAL_MAX_NUM_SHOT; i++)
+    for (int i = 0 ; i <= INITIAL_MAX_NUM_SHOT; i++)
 	{
 		variable_scan_msg.partial_scan[i].shot_size = lidar_config.shot_size;
 		variable_scan_msg.partial_scan[i].distance = (unsigned short*) malloc (lidar_config.shot_size * sizeof(unsigned short));
 		variable_scan_msg.partial_scan[i].intensity = (unsigned char*) malloc (lidar_config.shot_size * sizeof(unsigned char));
 	}
 	variable_scan_msg.host = carmen_get_host();
+}
+
+
+void
+run_velodyne_VLP16_PUCK_driver(carmen_velodyne_variable_scan_message &msg, carmen_lidar_config lidar_config, int lidar_id)
+{
+	int port = atoi(lidar_config.port);
+
+	velodyne = new velodyne_driver::VelodyneDriver(msg, lidar_config.shot_size, INITIAL_MAX_NUM_SHOT, port, 8309);
+	config = velodyne->getVelodyneConfig();
+	
+	while (1)
+	{
+		if (velodyne->pollScan(msg, port, INITIAL_MAX_NUM_SHOT, 12, 754.0, lidar_config.shot_size))  // 12 is the number of shots per packet, 754.0 the velodyne package rate, see manual
+		{
+			carmen_velodyne_publish_variable_scan_message(&msg, lidar_id);
+		}
+		else
+		{
+			printf("Velodyne disconected!\n");
+			velodyne->~VelodyneDriver();
+		}
+	}
 }
 
 
@@ -112,86 +130,6 @@ read_parameters(int argc, char** argv, int lidar_id, carmen_lidar_config &lidar_
 }
 
 
-void
-freeMemory()
-{
-	for (int i=0; i<(2 * INITIAL_MAX_NUM_SHOT); i++)
-	{
-		free(variable_scan_msg.partial_scan[i].distance);
-		free(variable_scan_msg.partial_scan[i].intensity);
-	}
-	free(variable_scan_msg.partial_scan);
-}
-
-
-void
-run_robosense_driver()
-{
-	private_nh.cut_angle = 359;
-	private_nh.device_ip = "192.168.1.200";
-	private_nh.difop_udp_port = 7788;
-	private_nh.model = "RS16";
-	private_nh.msop_port = 6699;
-	private_nh.rpm = 1200; //pegar na conf
-	private_nh.npackets = INITIAL_MAX_NUM_SHOT; // calcula dentro da mensagem e preenche se precisar depois
-
-	variable_scan_msg.host = carmen_get_host();
-	printf("Usando %s\n", 4);
-
-	while (true)
-	{
-		if (robosense == NULL)
-		{
-			robosense = new rslidar_driver::rslidarDriver(variable_scan_msg, 16, INITIAL_MAX_NUM_SHOT, private_nh);
-		}
-		else
-		{
-			if(robosense->receive_socket_data_and_fill_message(variable_scan_msg, 16, INITIAL_MAX_NUM_SHOT, 6699, 7788, private_nh))
-			{
-//				printf("cheguei até aqui, respeita minha história\n");
-				carmen_velodyne_publish_variable_scan_message(&variable_scan_msg, 4);
-			}
-			else
-			{
-				printf("robosense disconect\n");
-				robosense->~rslidarDriver();
-				freeMemory();
-				velodyne = NULL;
-				usleep(1e6 / 2);
-			}
-		}
-	}
-}
-
-
-void
-run_velodyne_VLP16_PUCK_driver(carmen_velodyne_variable_scan_message &msg, carmen_lidar_config lidar_config, int lidar_id)
-{
-	int port = atoi(lidar_config.port);
-
-	velodyne = new velodyne_driver::VelodyneDriver(msg, lidar_config.shot_size, INITIAL_MAX_NUM_SHOT, port, 8309);
-	config = velodyne->getVelodyneConfig();
-	
-	while (1)
-	{
-		if (velodyne->pollScan(msg, lidar_id, port, INITIAL_MAX_NUM_SHOT, 12, 754.0, lidar_config.shot_size))  // 12 is the number of shots per packet, 754.0 the velodyne package rate, see manual
-		{
-			carmen_velodyne_publish_variable_scan_message(&msg, lidar_id);
-		}
-		else
-		{
-			printf("velodyne disconect\n");
-			velodyne->~VelodyneDriver();
-
-			freeMemory();
-
-			velodyne = NULL;
-			usleep(1e6 / 2);
-		}
-	}
-}
-
-
 int 
 main(int argc, char **argv)
 {
@@ -216,7 +154,6 @@ main(int argc, char **argv)
 
 	if(strcmp(lidar_config.model, "RS16") == 0)
 	{
-		//run_robosense_driver();
 		run_robosense_RSLiDAR16_driver(variable_scan_msg, lidar_config, lidar_id);
 	}
 	if(strcmp(lidar_config.model, "VLP16") == 0)
