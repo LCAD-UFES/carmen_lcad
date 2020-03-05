@@ -488,7 +488,7 @@ static const cv::Vec3b
 colormap_semantic[] =
 {
     cv::Vec3b(0, 0, 0), //0:unlabeled
-	cv::Vec3b(142, 0, 0), // 1: car
+	cv::Vec3b(0, 199, 0), // 1: car 142,0,0
 	cv::Vec3b(200, 40, 255), // 2: bicycle
 	cv::Vec3b(90, 30, 150), // 3: motorcycle
 	cv::Vec3b(70, 0, 0), //4: truck
@@ -540,7 +540,7 @@ show_detections(cv::Mat image, vector<bbox_t> predictions)
     		break;
     	}
     	cv::rectangle(image, cv::Point(predictions[i].x, predictions[i].y), cv::Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
-    			colormap_semantic[color_mapped], 4);
+    			colormap_semantic[color_mapped], 2);
     }
 
 //	show_all_points(image, image_width, image_height, crop_x, crop_y, crop_width, crop_height);
@@ -596,8 +596,19 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth+30), CV_8UC3, cv::Scalar(255, 255, 255));
 	//cv::Mat img_planar_back = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
 	//cv::Mat total;
-	cv::Mat img = camera_image_semantic[camera_index];
-
+	float IMAGE_HEIGHT_CROP = 0.85; 	//camera3
+	if (camera_index == 5){
+		IMAGE_HEIGHT_CROP = 0.93; //camera5
+	}
+	int crop_x = 0;
+	int crop_y = 0;			  //280;
+	int crop_w = image_width; // 1280;
+	int crop_h = image_height * IMAGE_HEIGHT_CROP;
+	cv::Mat open_cv_image = cv::Mat(cv::Size(image_width, image_height), CV_8UC3, camera_data[camera_index].image[image_index]);
+	cv::Rect myROI(crop_x, crop_y, crop_w, crop_h); // TODO put this in the .ini file
+	open_cv_image = open_cv_image(myROI);
+	cvtColor(open_cv_image, open_cv_image, cv::COLOR_RGB2BGR);
+	
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
 	int thread_id = omp_get_thread_num();
@@ -645,12 +656,12 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 
 					if (verbose >= 2)
 					{
-						int ix = (double) image_x / image_width  * img.cols / 2;
-						int iy = (double) image_y / image_height * img.rows;
-						if (ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
+						int ix = (double) image_x / image_width  * open_cv_image.cols;
+						int iy = (double) image_y / image_height * open_cv_image.rows;
+						if (ix >= 0 && ix < open_cv_image.cols && iy >= 0 && iy < open_cv_image.rows)
 						{
-							circle(img, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
-							circle(img, cv::Point(ix + img.cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+							circle(open_cv_image, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
+							//circle(img, cv::Point(ix + img.cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 						}
 						int px = (double)camera_p3d.y() / map_resolution + img_planar_depth;
 						int py = (double)img_planar.rows - 1 - camera_p3d.x() / map_resolution;
@@ -678,16 +689,10 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 		vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.5, 5, points);
 		//Transform image in opencv to YOLO
 		//Remove vehicle front
-		int crop_x = 0;
-		int crop_y = 0;			  //280;
-		int crop_w = image_width; // 1280;
-		int crop_h = image_height * 0.82;
-		cv::Mat open_cv_image = cv::Mat(cv::Size(image_width, image_height), CV_8UC3, camera_data[camera_index].image[image_index]);
-		cv::Rect myROI(crop_x, crop_y, crop_w, crop_h); // TODO put this in the .ini file
-		open_cv_image = open_cv_image(myROI);
+		
 		vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
 		predictions = filter_predictions_of_interest(predictions);
-		show_detections(img, predictions);
+		show_detections(open_cv_image, predictions);
 
 		for (unsigned int i = 0; i < filtered_points.size(); i++)
 		{
@@ -772,23 +777,23 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 								}
 							}
 						}
-						int ix = (double)filtered_points[i][j].image_x / image_width * img.cols / 2;
-						int iy = (double)filtered_points[i][j].image_y / image_height * img.rows;
-						if (ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
+						int ix = (double)filtered_points[i][j].image_x / image_width * open_cv_image.cols;
+						int iy = (double)filtered_points[i][j].image_y / image_height * open_cv_image.rows;
+						if (ix >= 0 && ix < open_cv_image.cols && iy >= 0 && iy < open_cv_image.rows)
 						{
 							switch (class_seg)
 							{
 							case 1: //Car
-								circle(img, cv::Point(ix, iy), 1, colormap_semantic[1], 1, 8, 0);
+								circle(open_cv_image, cv::Point(ix, iy), 1, colormap_semantic[1], 1, 8, 0);
 								break;
 							case 2: //Person
-								circle(img, cv::Point(ix, iy), 1, colormap_semantic[6], 1, 8, 0);
+								circle(open_cv_image, cv::Point(ix, iy), 1, colormap_semantic[6], 1, 8, 0);
 								break;
 							case 3: //Bycicle
-								circle(img, cv::Point(ix, iy), 1, colormap_semantic[2], 1, 8, 0);
+								circle(open_cv_image, cv::Point(ix, iy), 1, colormap_semantic[2], 1, 8, 0);
 								break;
 							case 4: //Train
-								circle(img, cv::Point(ix, iy), 1, colormap_semantic[5], 1, 8, 0);
+								circle(open_cv_image, cv::Point(ix, iy), 1, colormap_semantic[5], 1, 8, 0);
 								break;
 							}
 						}
@@ -853,7 +858,8 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 
 			resize(img_planar, img_planar, cv::Size(0, 0), 1.3, 1.3, cv::INTER_NEAREST);
 			imshow("Velodyne Semantic Map", img_planar);
-			imshow("Image Semantic Segmentation", img);
+			resize(open_cv_image, open_cv_image, cv::Size(640, 480 * IMAGE_HEIGHT_CROP));
+			imshow("Image Semantic Segmentation", open_cv_image);
 			cv::waitKey(1);
 		}
 		if (filter_datmo_count)
