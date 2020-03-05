@@ -1533,8 +1533,8 @@ namespace View
 	GtkGui::save_to_image(GtkMapViewer* mapv)
 	{
 //		if(!log_first_it)
-		if(automous_mode == 1)
-		{
+//		if(automous_mode == 1)
+//		{
 			DIR* dir = opendir("/dados/navigator_gui2_log");
 			char log_date[100];
 			memset(log_buffer,'\0',1000*sizeof(char));
@@ -1566,7 +1566,7 @@ namespace View
 
 			log_first_it = 1;
 			log_counter = 0;
-		}
+//		}
 
 		GdkPixbuf * pixbuf = gdk_pixbuf_get_from_drawable(NULL, mapv->drawing_pixmap, NULL, 0, 0, 0, 0, -1, -1);
 
@@ -1594,7 +1594,7 @@ namespace View
 				((carmen_get_time() - this->time_of_last_redraw > 0.025) || ALWAYS_REDRAW))
 		{
 			carmen_map_graphics_redraw(this->controls_.map_view);
-			if(log_map_is_ready)
+			if(automous_mode == 1)
 				save_to_image(this->controls_.map_view);
 			this->time_of_last_redraw	   = carmen_get_time();
 			this->display_needs_updating = 0;
