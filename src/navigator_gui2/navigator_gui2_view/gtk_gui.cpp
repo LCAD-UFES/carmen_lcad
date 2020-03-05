@@ -1,8 +1,9 @@
 #include "gtk_gui.h"
-extern int automous_mode;
+extern int autonomous_mode;
 
 extern void
 mapper_handler(carmen_mapper_map_message *message);
+
 
 GdkColor *
 build_color_gradient()
@@ -1533,7 +1534,7 @@ namespace View
 	GtkGui::save_to_image(GtkMapViewer* mapv)
 	{
 //		if(!log_first_it)
-//		if(automous_mode == 1)
+//		if(autonomous_mode == 1)
 //		{
 			DIR* dir = opendir("/dados/navigator_gui2_log");
 			char log_date[100];
@@ -1594,7 +1595,7 @@ namespace View
 				((carmen_get_time() - this->time_of_last_redraw > 0.025) || ALWAYS_REDRAW))
 		{
 			carmen_map_graphics_redraw(this->controls_.map_view);
-			if(automous_mode == 1)
+			if(autonomous_mode == 1)
 				save_to_image(this->controls_.map_view);
 			this->time_of_last_redraw	   = carmen_get_time();
 			this->display_needs_updating = 0;
