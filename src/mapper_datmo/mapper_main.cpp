@@ -593,21 +593,23 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 //	double fov = camera_params[camera_index].fov;
 	double map_resolution = map_config.resolution;
 	int img_planar_depth = (double) 0.5 * sensor_params->range_max / map_resolution;
-	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth+30), CV_8UC3, cv::Scalar(255, 255, 255));
-	//cv::Mat img_planar_back = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
-	//cv::Mat total;
+	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
+	cv::Mat img_planar_back = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
+	cv::Mat total;
+	//Remove vehicle front
 	float IMAGE_HEIGHT_CROP = 0.85; 	//camera3
 	if (camera_index == 5){
-		IMAGE_HEIGHT_CROP = 0.93; //camera5
+		IMAGE_HEIGHT_CROP = 0.91; //camera5
 	}
 	int crop_x = 0;
 	int crop_y = 0;			  //280;
 	int crop_w = image_width; // 1280;
 	int crop_h = image_height * IMAGE_HEIGHT_CROP;
 	cv::Mat open_cv_image = cv::Mat(cv::Size(image_width, image_height), CV_8UC3, camera_data[camera_index].image[image_index]);
+	cvtColor(open_cv_image, open_cv_image, cv::COLOR_RGB2BGR);
 	cv::Rect myROI(crop_x, crop_y, crop_w, crop_h); // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
-	cvtColor(open_cv_image, open_cv_image, cv::COLOR_RGB2BGR);
+	
 	
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
@@ -622,8 +624,8 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 			int scan_index = j * sensor_params->vertical_resolution;
 			double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
 
-			if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
-				continue;
+			//if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+			//	continue;
 
 			get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
 
@@ -649,8 +651,8 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 					point.ray_number  = i;
 					point.image_x     = image_x;
 					point.image_y     = image_y;
-					point.cartesian_x = camera_p3d.x();
-					point.cartesian_y = -camera_p3d.y();  // Must be inverted because Velodyne angle is reversed with CARMEN angles
+					point.cartesian_x = velodyne_p3d.x();
+					point.cartesian_y = velodyne_p3d.y();  // Must be inverted because Velodyne angle is reversed with CARMEN angles
 					point.cartesian_z = camera_p3d.z();
 					points.push_back(point);
 
@@ -663,13 +665,13 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 							circle(open_cv_image, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 							//circle(img, cv::Point(ix + img.cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 						}
-						int px = (double)camera_p3d.y() / map_resolution + img_planar_depth;
-						int py = (double)img_planar.rows - 1 - camera_p3d.x() / map_resolution;
+						int px = (double)velodyne_p3d.y() / map_resolution + img_planar_depth;
+						int py = (double)img_planar.rows - 1 - velodyne_p3d.x() / map_resolution;
 						if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
 						{
 							img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 0);
 						}
-						/*else
+						else
 						{ // The back of img_planar
 							if (abs(px) >= img_planar.cols)
 							{
@@ -680,7 +682,7 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 								py = abs(py) - img_planar.rows;
 							}
 							img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = cv::Vec3b(0, 0, 0);
-						}*/
+						}
 					}
 				}
 			}
@@ -688,8 +690,6 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 
 		vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.5, 5, points);
 		//Transform image in opencv to YOLO
-		//Remove vehicle front
-		
 		vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
 		predictions = filter_predictions_of_interest(predictions);
 		show_detections(open_cv_image, predictions);
@@ -750,7 +750,7 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 					filter_datmo_count++;
 					if (verbose >= 2) // TODO color the clusters on the camera image
 					{
-						int px = (double)-filtered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
+						int px = (double)filtered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
 						int py = (double)img_planar.rows - 1 - filtered_points[i][j].cartesian_x / map_resolution;
 
 						//int line = (sensor_params->vertical_resolution - filtered_points[i][j].shot_number) * number_of_laser_shots + filtered_points[i][j].ray_number;
@@ -815,7 +815,7 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 								break;
 							}
 						}
-						/*else
+						else
 						{
 							// The back of img_planar
 							if (abs(px) >= img_planar_back.cols)
@@ -841,23 +841,23 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 								img_planar_back.at<cv::Vec3b>(cv::Point(abs(px), abs(py))) = colormap_semantic[5];
 								break;
 							}
-						}*/
+						}
 					}
 				}
 			}
 		}
 		if (verbose >= 2)
 		{
-			//vconcat(img_planar, img_planar_back, total);
+			vconcat(img_planar, img_planar_back, total);
 			int x = img_planar_depth;
 			int y = img_planar_depth;
+			
+			cv::rectangle(total, cvPoint(x - 10 / 2, y - 10 / 2), cvPoint(x + 10 / 2, y + 30 / 2), CV_RGB(0, 199, 0), 1, 8);
 
-			cv::rectangle(img_planar, cvPoint(x - 10 / 2, y - 10 / 2), cvPoint(x + 10 / 2, y + 30 / 2), CV_RGB(0, 199, 0), 1, 8);
+			cv::line(total, cvPoint(x, y - 10 / 2), cvPoint(x, y + 5 / 2), CV_RGB(0, 199, 0), 1, 8);
 
-			cv::line(img_planar, cvPoint(x, y - 10 / 2), cvPoint(x, y + 5 / 2), CV_RGB(0, 199, 0), 1, 8);
-
-			resize(img_planar, img_planar, cv::Size(0, 0), 1.3, 1.3, cv::INTER_NEAREST);
-			imshow("Velodyne Semantic Map", img_planar);
+			resize(total, total, cv::Size(0, 0), 1.7, 1.7, cv::INTER_NEAREST);
+			imshow("Velodyne Semantic Map", total);
 			resize(open_cv_image, open_cv_image, cv::Size(640, 480 * IMAGE_HEIGHT_CROP));
 			imshow("Image Semantic Segmentation", open_cv_image);
 			cv::waitKey(1);
