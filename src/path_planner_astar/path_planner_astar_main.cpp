@@ -33,7 +33,7 @@ create_state_node(double x, double y, double theta, double v, double phi, double
 	new_state->state.theta = theta;
 	new_state->state.v = v;
 	new_state->state.phi = phi;
-	//new_state->f = g+h;
+	new_state->f = g+h;
 	new_state->g = g;
 	new_state->h = h;
 	new_state->parent = parent;
@@ -195,8 +195,12 @@ obstacle_distance(double x, double y, carmen_obstacle_distance_mapper_map_messag
     return (carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&p, distance_map));
 }
 
+bool
+my_f_ordenation (state_node *a, state_node *b) { return (a->f > b->f); }
+
+
 void
-expand_state(state_node *current_state, state_node *goal_state, std::vector<state_node*> &closed_set, std::priority_queue<state_node*, std::vector<state_node*>, StateNodePtrComparator> &open_set,
+expand_state(state_node *current_state, state_node *goal_state, std::vector<state_node*> &closed_set, /*std::priority_queue<state_node*, std::vector<state_node*>, StateNodePtrComparator>*/ std::vector<state_node*> &open_set,
 		carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
     double target_phi, distance_traveled = 0.0;
@@ -206,7 +210,6 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
 
     double add_x[3] = {-1.0, 0.0, 1.0};
     double add_y[3] = {-1.0, 0.0, 1.0};
-
     for (int i = 0; i < 3; ++i)
     {
         for (int j = 0; j < NUM_STEERING_ANGLES; ++j)
@@ -238,24 +241,27 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
         	{
         		free (new_state);
         	}
-/*        	else
+        	else
         	{
         		int indice = state_node_exist(new_state, open_set);
+
         		if(indice)
         		{
-        			if(open_set.c[i-1]->g > new_state->g)
+        			if(open_set[indice-1]->g > new_state->g)
         			{
-        				open_set.c[i-1]->g = new_state->g;
+        				open_set[indice-1]->g = new_state->g;
+        				free(new_state);
         			}
 
         		}
-*/
+
         		else
         		{
-        		open_set.push(new_state);
+        		open_set.push_back(new_state);
+        		std::sort(open_set.begin(), open_set.end(), my_f_ordenation);
         		}
 
-  //      	}
+        	}
         }
     }
 }
@@ -270,15 +276,20 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 0.0, 0.0, 0.0, DIST2D_P(robot_pose, goal_pose), NULL);
 	goal_state = create_state_node(goal_pose->x, goal_pose->y, goal_pose->theta, 0.0, 0.0, DBL_MAX, DBL_MAX, NULL);
 	std::vector<state_node> path;
-	std::priority_queue<state_node*, std::vector<state_node*>, StateNodePtrComparator> open_set;
+//	std::priority_queue<state_node*, std::vector<state_node*>, StateNodePtrComparator> open_set;
+	std::vector<state_node*> open_set;
 
 	std::vector<state_node*> closed_set;
-	open_set.push(start_state);
-
+	open_set.push_back(start_state);
+//	open_set.push(start_state);
 	while (!open_set.empty())
 	{
-		state_node *current_state = open_set.top();
-		open_set.pop();
+//		state_node *current_state = open_set.top();
+//		open_set.pop();
+		state_node *current_state = open_set.back();
+		open_set.pop_back();
+
+
 //		printf("--- State %lf %lf %lf %lf %lf %lf %lf\n", current_state->state.x, current_state->state.y, current_state->state.theta, current_state->state.v, current_state->state.phi, current_state->g, current_state->h);
 //		printf("aa = %lf \n",DIST2D(current_state->state, goal_state->state));
 		if (DIST2D(current_state->state, goal_state->state) < 0.5)
@@ -320,8 +331,11 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 
 			while(!open_set.empty())
 			{
-				state_node *tmp = open_set.top();
-				open_set.pop();
+//				state_node *tmp = open_set.top();
+//				open_set.pop();
+				state_node *tmp = open_set.back();
+				open_set.pop_back();
+
 				delete tmp;
 			}
 
@@ -331,17 +345,14 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 
 		else
 		{
-
 		if (!state_node_exist(current_state, closed_set))
 			expand_state(current_state, goal_state, closed_set, open_set, robot_config, distance_map);
-
 
 		closed_set.push_back(current_state);
 
 		}
 
 	}
-
 	//Limpar a pilha do closed_set.
     while(!closed_set.empty())
     {
