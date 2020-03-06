@@ -57,7 +57,7 @@ public:
 	bool operator() (circle_node *a, circle_node *b)
 	{
 		float w1 = 1.0;
-		float w2 = 2.0;
+		float w2 = 5.0;
 		return ((w1 * a->h - w2 * a->radius) > (w1 * b->h - w2 * b->radius)); // Uses radius as a choice criterion (the bigger the better)
 		//return (a->h > b->h);             // The default c++ stl is a max heap, so wee need to invert here
 	}
