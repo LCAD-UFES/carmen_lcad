@@ -62,7 +62,7 @@ build_state_path(state_node *node)
 }
 
 
-bool
+int
 state_node_exist(state_node *new_state, std::vector<state_node*> &closed_set)
 {
 	double distance = 0.0;
@@ -84,11 +84,11 @@ state_node_exist(state_node *new_state, std::vector<state_node*> &closed_set)
     	if (distance < MIN_POS_DISTANCE && orientation_diff < MIN_THETA_DIFF && steering_diff < MIN_POS_DISTANCE && (new_state->state.v == closed_set[i]->state.v))
     	{
     		//printf ("State Exist! %lf %lf\n", distance, angular_distance);
-    		return true;
+    		return i+1;
     	}
     }
 
-    return false;
+    return 0;
 }
 
 
@@ -204,8 +204,8 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
     double steering_acceleration[NUM_STEERING_ANGLES] = {-0.25, 0.0, 0.25}; //TODO ler velocidade angular do volante do carmen.ini
     double target_v[3]   = {2.0, 0.0, -2.0};
 
-    double add_x[3] = {-0.5, 0.0, 0.5};
-    double add_y[3] = {-0.5, 0.0, 0.5};
+    double add_x[3] = {-1.0, 0.0, 1.0};
+    double add_y[3] = {-1.0, 0.0, 1.0};
 
     for (int i = 0; i < 3; ++i)
     {
@@ -216,8 +216,10 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
 
         	target_phi = carmen_clamp(-robot_config.max_phi, (current_state->state.phi + steering_acceleration[j]), robot_config.max_phi);
 
+        	// Utilizando expansão não-holonomica
 //        	new_state->state = carmen_libcarmodel_recalc_pos_ackerman(current_state->state, target_v[i], target_phi,
 //        			0.25, &distance_traveled, DELTA_T, robot_config);
+
         	// Utilizando expansão holonomica
         	new_state->state.x = current_state->state.x + add_x[i];
         	new_state->state.y = current_state->state.y + add_y[j];
@@ -236,11 +238,24 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
         	{
         		free (new_state);
         	}
-        	else
+/*        	else
         	{
-        		open_set.push(new_state);
+        		int indice = state_node_exist(new_state, open_set);
+        		if(indice)
+        		{
+        			if(open_set.c[i-1]->g > new_state->g)
+        			{
+        				open_set.c[i-1]->g = new_state->g;
+        			}
 
-        	}
+        		}
+*/
+        		else
+        		{
+        		open_set.push(new_state);
+        		}
+
+  //      	}
         }
     }
 }
@@ -319,6 +334,7 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 
 		if (!state_node_exist(current_state, closed_set))
 			expand_state(current_state, goal_state, closed_set, open_set, robot_config, distance_map);
+
 
 		closed_set.push_back(current_state);
 
