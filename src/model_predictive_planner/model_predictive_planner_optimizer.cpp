@@ -16,7 +16,7 @@
 #include <carmen/collision_detection.h>
 #include <carmen/carmen.h>
 
-#include "model/robot_state.h"
+#include "robot_state.h"
 #include "model/global_state.h"
 #include "util.h"
 #include "model_predictive_planner_optimizer.h"

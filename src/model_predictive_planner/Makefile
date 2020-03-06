@@ -41,7 +41,7 @@ SOURCES = model_predictive_planner_main.cpp model_predictive_planner.cpp traject
 
 PUBLIC_BINARIES = model_predictive_planner
 PUBLIC_LIBRARIES = libmodel_predictive_planner_interface.a
-PUBLIC_INCLUDES = model_predictive_planner_interface.h model_predictive_planner_message.h
+PUBLIC_INCLUDES = model_predictive_planner_interface.h model_predictive_planner_message.h rrt_node.h robot_state.h command.h pose.h
 
 TARGETS = libcarmodel model_predictive_planner libmodel_predictive_planner_interface.a
 

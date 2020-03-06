@@ -8,8 +8,8 @@
 #ifndef GLOBAL_STATE_H_
 #define GLOBAL_STATE_H_
 
-#include "../model/pose.h"
-#include "../model/command.h"
+#include "../pose.h"
+#include "../command.h"
 #include <carmen/carmen.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/behavior_selector_messages.h>

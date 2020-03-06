@@ -826,7 +826,7 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 	double t, last_t;
 	double distance_traveled = 0.0;
 	//double delta_t = 0.075;
-	int reduction_factor = 1 + (int)((tcp.tt / delta_t) / 90.0);
+	int reduction_factor = 1;// + (int)((tcp.tt / delta_t) / 90.0);
 
 	robot_state.x = 0.0;
 	robot_state.y = 0.0;

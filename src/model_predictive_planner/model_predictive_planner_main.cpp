@@ -19,8 +19,8 @@
 #include <prob_map.h>
 
 #include "model/global_state.h"
-#include "model/rrt_node.h"
-#include "model/pose.h"
+#include "rrt_node.h"
+#include "pose.h"
 
 #include "util.h"
 #include "publisher_util.h"

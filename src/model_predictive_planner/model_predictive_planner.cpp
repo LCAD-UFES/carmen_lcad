@@ -15,7 +15,7 @@
 
 #include <carmen/collision_detection.h>
 
-#include "model/robot_state.h"
+#include "robot_state.h"
 #include "model/global_state.h"
 #include "util.h"
 
@@ -766,7 +766,7 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 	if (GlobalState::use_mpc)
 		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.025);
 	else
-		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false);
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.02);
 	path_local = path;
 	if (path_has_loop(td.dist, otcp.sf))
 	{
@@ -787,8 +787,8 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 //		apply_system_latencies(path);
 //	else
 //		filter_path(path);
-	if (!GlobalState::use_mpc)
-		filter_path(path);
+//	if (!GlobalState::use_mpc)
+//		filter_path(path);
 
 	return (true);
 }
