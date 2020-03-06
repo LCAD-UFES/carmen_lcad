@@ -56,7 +56,7 @@ moving_objects_tracking_t *moving_objects_tracking;
 int current_num_point_clouds;
 int previous_num_point_clouds = 0;
 
-int automous_mode;
+int autonomous_mode;
 
 
 static void
@@ -404,16 +404,16 @@ mapper_level1_handler(carmen_mapper_map_message *message)
 void
 ford_escape_status_handler(carmen_ford_escape_status_message *message)
 {
-	int yellow_button = carmen_get_bit_value(message->g_XGV_component_status, 16);
+	int yellow_button = message->g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG;//carmen_get_bit_value(message->g_XGV_component_status, 0);
 
 	if(yellow_button)
 	{
-		automous_mode = 1;
+		autonomous_mode = 0;
 	}
 
 	if(!yellow_button)
 	{
-		automous_mode = 0;
+		autonomous_mode = 1;
 	}
 }
 

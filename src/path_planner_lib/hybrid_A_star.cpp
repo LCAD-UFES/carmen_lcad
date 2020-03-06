@@ -75,6 +75,15 @@ draw_point_on_map_img(double x, double y, carmen_map_config_t config)
 	//usleep(10000);
 }
 
+void
+draw_state_path(vector<state_node> state_path, carmen_map_config_t config)
+{
+	for (unsigned int i = 0; i < state_path.size(); i++)
+	{
+		draw_point_on_map_img(state_path[i].state.x, state_path[i].state.y, config);
+	}
+	//usleep(500000);
+}
 
 void
 draw_circle_path(vector<circle_node> circle_path, carmen_map_config_t config)
@@ -83,7 +92,7 @@ draw_circle_path(vector<circle_node> circle_path, carmen_map_config_t config)
 	{
 		draw_circle_on_map_img(circle_path[i].x, circle_path[i].y, circle_path[i].radius, config);
 	}
-	usleep(500000);
+	//usleep(500000);
 }
 
 
@@ -215,7 +224,7 @@ expand_circle(circle_node *current, priority_queue<circle_node*, vector<circle_n
             // TODO verificar se é possível remover filhos com overlap
             open_set.push(create_circle_node(nx, ny, nearst_obstacle_distance, pg + pr, distance(nx, ny, goal.x, goal.y), current));
 
-            draw_circle_on_map_img(nx, ny, nearst_obstacle_distance, distance_map->config);
+            //draw_circle_on_map_img(nx, ny, nearst_obstacle_distance, distance_map->config);
             //draw_point_on_map_img(nx, ny, distance_map->config);
         }
 
@@ -246,6 +255,24 @@ build_circle_path(circle_node *node)
     return(circle_path);
 }
 
+vector<state_node>
+build_state_path(state_node *node)
+{
+    vector<state_node> state_path;
+    int i = 0;
+    while (node != NULL)
+    {
+        state_path.push_back(*node);
+
+        node = node->parent;
+
+        i++;
+    }
+
+    //printf("--- %u %d\n", (int) circle_path.size(), i);
+
+    return(state_path);
+}
 
 vector<circle_node>
 space_exploration(circle_node *start_node, circle_node *goal_node, carmen_point_t goal, double robot_width, carmen_obstacle_distance_mapper_map_message *distance_map)
@@ -469,10 +496,11 @@ expand_state(state_node *current_state, state_node *goal_state, vector<state_nod
 
         	new_state->parent = current_state;
         	new_state->g = current_state->g + DIST2D(current_state->state, new_state->state);
+        	//new_state->g = DIST2D(new_state->state, goal_state->state);
         	new_state->h = DIST2D(new_state->state, current_circle) + current_circle.h;
         	//new_state->h = max(DIST2D(new_state->state, current_circle) + current_circle.h, carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta));
 
-        	draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config);
+        	//draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config);
 
 //        	if (new_state->state.v != current_state->state.v)
 //        		new_state->h += DIRECTION_OF_MOVEMENT_CHANGE_PENALTY;
@@ -480,8 +508,9 @@ expand_state(state_node *current_state, state_node *goal_state, vector<state_nod
         	//double max_curvature = carmen_get_curvature_from_phi(robot_config.max_phi, new_state->state.v, robot_config.understeer_coeficient, robot_config.distance_between_front_and_rear_axles); // TODO is it necessary divide theta dif bay max k (stehs 2015-1)
 
 //        	if (!Exist(next_state, closed_set, 1.0 /*k*/) && !Collision(next_state))
-        	if (trajectory_pose_hit_obstacle(new_state->state, 0.5, distance_map, &robot_config) || state_node_exist(new_state, closed_set))   // TODO ler a margem de segurança do carmen.ini
+        	if ((obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 2.0 * 0.5) || state_node_exist(new_state, closed_set))   // TODO ler a margem de segurança do carmen.ini
         	{
+        		printf("muito perto\n");
         		free (new_state);
         	}
         	else
@@ -516,6 +545,7 @@ heuristic_search(state_node *start_state, state_node *goal_state, vector<circle_
         if (DIST2D(current_state->state, goal_state->state) < 0.5)
 //        if ((goal_state->g + goal_state->h) < (current_state->g + current_state->h))
         {
+		state_path = build_state_path(current_state);
         	while(!open_set.empty())
         	{
         		state_node *tmp = open_set.top();
@@ -560,6 +590,7 @@ heuristic_search(state_node *start_state, state_node *goal_state, vector<circle_
         delete tmp;
     }
 
+    draw_state_path(state_path, distance_map->config);
     //printf("Saiu HS\n");
     return (state_path);
 }
@@ -609,7 +640,7 @@ compute_hybrid_A_star_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose
 
 	vector<circle_node> circle_path = circle_exploration(robot_pose, goal_pose, distance_map);
 //
-	// vector<state_node> path = heuristic_search(start_state, goal_state, circle_path, robot_config, distance_map);
+	vector<state_node> path = heuristic_search(start_state, goal_state, circle_path, robot_config, distance_map);
 
 	int rs_pathl;
 	int rs_numero;
@@ -624,25 +655,25 @@ compute_hybrid_A_star_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose
 
 	rs_init_parameters(robot_config.max_phi, robot_config.distance_between_front_and_rear_axles);
 
-	reed_shepp(start_state->state, goal_state->state, &rs_numero, &tr, &ur, &vr);
-	rs_pathl = constRS(rs_numero, tr, ur, vr, start_state->state, rs_points);
-
-	printf("Poses in Reed Sheep path: %d\n", rs_pathl);
-	for (int i = rs_pathl - 1; i > 0 /*rs_pathl*/; i--)
-	{
-		carmen_ackerman_traj_point_t point = rs_points[i];
-		while (DIST2D(point, rs_points[i+1]) > 2.0)
-//		for (int i = 0; i < 10; i++)
-		{
-			point = carmen_libcarmodel_recalc_pos_ackerman(point, 2.0, rs_points[i].phi,
-					0.25, &distance_traveled, DELTA_T, robot_config);
-
-			draw_point_on_map_img(point.x, point.y, distance_map->config);
-			//draw_point_on_map_img(rs_points[i].x, rs_points[i].y, distance_map->config);
-			usleep(500000);
-			printf("%lf %lf %lf %lf %lf\n", rs_points[i].x, rs_points[i].y, rs_points[i].theta, rs_points[i].v, rs_points[i].phi);
-		}
-	}
+//	reed_shepp(start_state->state, goal_state->state, &rs_numero, &tr, &ur, &vr);
+//	rs_pathl = constRS(rs_numero, tr, ur, vr, start_state->state, rs_points);
+//
+//	printf("Poses in Reed Sheep path: %d\n", rs_pathl);
+//	for (int i = rs_pathl - 1; i > 0 /*rs_pathl*/; i--)
+//	{
+//		carmen_ackerman_traj_point_t point = rs_points[i];
+//		while (DIST2D(point, rs_points[i+1]) > 2.0)
+////		for (int i = 0; i < 10; i++)
+//		{
+//			point = carmen_libcarmodel_recalc_pos_ackerman(point, 2.0, rs_points[i].phi,
+//					0.25, &distance_traveled, DELTA_T, robot_config);
+//
+//			draw_point_on_map_img(point.x, point.y, distance_map->config);
+//			//draw_point_on_map_img(rs_points[i].x, rs_points[i].y, distance_map->config);
+//			usleep(500000);
+//			printf("%lf %lf %lf %lf %lf\n", rs_points[i].x, rs_points[i].y, rs_points[i].theta, rs_points[i].v, rs_points[i].phi);
+//		}
+//	}
 }
 
 
