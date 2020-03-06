@@ -37,6 +37,6 @@ class StateNodePtrComparator {
 public:
 	bool operator() (state_node *a, state_node *b)
 	{
-		return (a->f > b->f);
+		return (a->g + a->h > b->g + b->h);
 	}
 };

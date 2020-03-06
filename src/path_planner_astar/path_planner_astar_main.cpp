@@ -131,10 +131,20 @@ carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_dist
 {
 	static carmen_obstacle_distance_mapper_compact_map_message *compact_distance_map = NULL;  // TODO is it possible to remove this line and the if
 
-	carmen_obstacle_distance_mapper_create_new_map(&distance_map, message->config, message->host, message->timestamp);
-	compact_distance_map = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
-	carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
-
+		if (compact_distance_map == NULL)
+		{
+			carmen_obstacle_distance_mapper_create_new_map(&distance_map, message->config, message->host, message->timestamp);
+			compact_distance_map = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
+			carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
+			carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
+		}
+		else
+		{
+			carmen_obstacle_distance_mapper_clear_distance_map_message_using_compact_map(&distance_map, compact_distance_map, DISTANCE_MAP_HUGE_DISTANCE);
+			carmen_obstacle_distance_mapper_free_compact_distance_map(compact_distance_map);
+			carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
+			carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
+		}
 //	printf("Mapa recebido!\n");
 }
 
@@ -174,6 +184,9 @@ carmen_rddf_play_subscribe_messages()
 double
 obstacle_distance(double x, double y, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
+	if( NULL == distance_map)
+		exit(1);
+
     carmen_point_t p;
 
     p.x = x;
@@ -191,16 +204,24 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
     double steering_acceleration[NUM_STEERING_ANGLES] = {-0.25, 0.0, 0.25}; //TODO ler velocidade angular do volante do carmen.ini
     double target_v[3]   = {2.0, 0.0, -2.0};
 
+    double add_x[3] = {-0.5, 0.0, 0.5};
+    double add_y[3] = {-0.5, 0.0, 0.5};
+
     for (int i = 0; i < 3; ++i)
     {
         for (int j = 0; j < NUM_STEERING_ANGLES; ++j)
+
         {
         	state_node *new_state = (state_node*) malloc(sizeof(state_node));
 
         	target_phi = carmen_clamp(-robot_config.max_phi, (current_state->state.phi + steering_acceleration[j]), robot_config.max_phi);
 
-        	new_state->state = carmen_libcarmodel_recalc_pos_ackerman(current_state->state, target_v[i], target_phi,
-        			0.25, &distance_traveled, DELTA_T, robot_config);
+//        	new_state->state = carmen_libcarmodel_recalc_pos_ackerman(current_state->state, target_v[i], target_phi,
+//        			0.25, &distance_traveled, DELTA_T, robot_config);
+        	// Utilizando expansão holonomica
+        	new_state->state.x = current_state->state.x + add_x[i];
+        	new_state->state.y = current_state->state.y + add_y[j];
+        	new_state->state.theta = current_state->state.theta;
 
         	new_state->parent = current_state;
         	// g = current até o start
@@ -210,8 +231,8 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
         	//new_state->h = DIST2D(new_state->state, current_state->state) + current_state->h;
         	new_state->h = DIST2D(new_state->state, goal_state->state);
         	new_state->f = new_state->g + new_state->h;
-
-        	if ((obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 4.0*0.5)|| state_node_exist(new_state, closed_set))   // TODO ler a margem de segurança do carmen.ini
+//        	printf("obstacle distance = %lf\n", obstacle_distance(new_state->state.x, new_state->state.y, distance_map));
+        	if ((obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 4.0*0.5) || state_node_exist(new_state, closed_set))   // TODO ler a margem de segurança do carmen.ini
         	{
         		free (new_state);
         	}
@@ -244,14 +265,15 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 		state_node *current_state = open_set.top();
 		open_set.pop();
 //		printf("--- State %lf %lf %lf %lf %lf %lf %lf\n", current_state->state.x, current_state->state.y, current_state->state.theta, current_state->state.v, current_state->state.phi, current_state->g, current_state->h);
-
+//		printf("aa = %lf \n",DIST2D(current_state->state, goal_state->state));
 		if (DIST2D(current_state->state, goal_state->state) < 0.5)
 		{
 			// Se chegou ao Goal, deleta toda a pilha do open_set e sai do loop.
 			path = build_state_path(current_state->parent);
+        	printf("Final obstacle distance = %lf\n", obstacle_distance(goal_state->state.x, goal_state->state.y, distance_map));
 			std::reverse(path.begin(), path.end());
 			std::vector<carmen_ackerman_traj_point_t> temp_rddf_poses_from_path;
-			for(int i = 0; i<path.size(); i++)
+			for(int i = 0; i < path.size(); i++)
 			{
 				temp_rddf_poses_from_path.push_back(path[i].state);
 			}
@@ -261,13 +283,14 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 			carmen_ackerman_traj_point_t last_pose = {.x = 0.0, .y = 0.0, .theta = 0.0, .v = 9.0, .phi=0.2};
 			int annotations[2] = {1, 2};
 			int annotation_codes[2] = {1, 2};
-			printf("pathsize = %d\n", path.size());
+//			printf("pathsize = %d\n", path.size());
+/*
 			for (int i = 0; i < path.size(); i++)
 			{
 				printf("Poses do rddf: %f %f %d\n", carmen_rddf_poses_from_path[i].x, carmen_rddf_poses_from_path[i].y, i);
 			//	printf("Poses do path: %f %f %d\n", path[i].state.x, path[i].state.y, i);
 			}
-
+*/
 			carmen_rddf_publish_road_profile_message(
 				carmen_rddf_poses_from_path,
 				&last_pose,
@@ -276,31 +299,43 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 				annotations,
 				annotation_codes);
 
+			printf("Poses enviadas!\n");
+
+			temp_rddf_poses_from_path.clear();
+
 			while(!open_set.empty())
 			{
 				state_node *tmp = open_set.top();
 				open_set.pop();
 				delete tmp;
 			}
+
 			break;
+
 		}
+
+		else
+		{
+
 		if (!state_node_exist(current_state, closed_set))
 			expand_state(current_state, goal_state, closed_set, open_set, robot_config, distance_map);
 
 		closed_set.push_back(current_state);
+
+		}
 
 	}
 
 	//Limpar a pilha do closed_set.
     while(!closed_set.empty())
     {
-
     	state_node *tmp = closed_set.back();
         closed_set.pop_back();
         delete tmp;
     }
-	printf("Fechou, deu tudo certo\n");
-	exit(1);
+
+	printf("Terminou compute_astar_path !\n");
+//	exit(1);
 
 }
 
