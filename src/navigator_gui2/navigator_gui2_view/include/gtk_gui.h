@@ -39,6 +39,8 @@
 #include <opencv/highgui.h>
 #include "opencv2/opencv.hpp"
 
+#include <dirent.h>
+
 #define DEFAULT_ROBOT_COLOUR 	carmen_red
 #define DEFAULT_GOAL_COLOUR 	carmen_yellow
 #define DEFAULT_PATH_COLOUR 	carmen_light_blue

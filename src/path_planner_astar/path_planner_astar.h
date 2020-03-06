@@ -3,10 +3,18 @@
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/grid_mapping.h>
 #include <carmen/collision_detection.h>
+#include <carmen/rddf_interface.h>
+#include <carmen/rddf_messages.h>
+#include <algorithm>
+#include <car_model.h>
+
 
 #include <queue>
 #include <list>
 #include <vector>
+
+#define DELTA_T 0.01                      // Size of step for the ackerman Euler method
+
 
 void
 compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen_robot_ackerman_config_t robot_config,

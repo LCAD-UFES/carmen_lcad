@@ -438,6 +438,8 @@ void carmen_carp_set_verbose(int verbosity);
 int carmen_carp_get_verbose(void);
 void carmen_carp_set_output(FILE *output);
 
+char carmen_get_bit_value(unsigned short data, int bit_number);
+
 extern carmen_inline double carmen_get_time(void)
 {
 	struct timeval tv;

@@ -1,7 +1,9 @@
 #include "gtk_gui.h"
+extern int autonomous_mode;
 
 extern void
 mapper_handler(carmen_mapper_map_message *message);
+
 
 GdkColor *
 build_color_gradient()
@@ -1531,8 +1533,10 @@ namespace View
 	void
 	GtkGui::save_to_image(GtkMapViewer* mapv)
 	{
-		if(!log_first_it)
-		{
+//		if(!log_first_it)
+//		if(autonomous_mode == 1)
+//		{
+			DIR* dir = opendir("/dados/navigator_gui2_log");
 			char log_date[100];
 			memset(log_buffer,'\0',1000*sizeof(char));
 			memset(log_path,'\0',(255)*sizeof(char));
@@ -1541,6 +1545,11 @@ namespace View
 			time_t t = time(NULL);
 			struct tm tm = *localtime(&t);
 			snprintf(log_date, sizeof(log_date), "%d-%d-%d_%d:%d:%d",tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+			if (!dir)
+			{
+				snprintf(log_buffer, sizeof(log_buffer), "/dados/%s", "navigator_gui2_log");
+				mkdir(log_buffer, 0777);
+			}
 			snprintf(log_buffer, sizeof(log_buffer), "/dados/navigator_gui2_log/%s", log_date);
 			mkdir(log_buffer, 0777);
 			snprintf(log_buffer, sizeof(log_buffer), "/dados/navigator_gui2_log/%s/pictures", log_date);
@@ -1558,7 +1567,7 @@ namespace View
 
 			log_first_it = 1;
 			log_counter = 0;
-		}
+//		}
 
 		GdkPixbuf * pixbuf = gdk_pixbuf_get_from_drawable(NULL, mapv->drawing_pixmap, NULL, 0, 0, 0, 0, -1, -1);
 
@@ -1586,7 +1595,7 @@ namespace View
 				((carmen_get_time() - this->time_of_last_redraw > 0.025) || ALWAYS_REDRAW))
 		{
 			carmen_map_graphics_redraw(this->controls_.map_view);
-			if(log_map_is_ready)
+			if(autonomous_mode == 1)
 				save_to_image(this->controls_.map_view);
 			this->time_of_last_redraw	   = carmen_get_time();
 			this->display_needs_updating = 0;
