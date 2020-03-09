@@ -188,7 +188,7 @@ carmen_velodyne_define_messages()
 
 	char message_name[64];
 
-	for (int i = 0; i <= 9; i++)
+	for (int i = 0; i <= 15; i++)
 	{
 		carmen_velodyne_create_variable_velodyne_message_name(i, message_name);
 		err = IPC_defineMsg(message_name, IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT);

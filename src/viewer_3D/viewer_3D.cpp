@@ -1322,7 +1322,7 @@ velodyne_variable_scan_message_handler15(carmen_velodyne_variable_scan_message *
 
 
 static void
-velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_message* velodyne_message)
+stereo_velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_message* velodyne_message)
 {
 	add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, sensor_board_1_pose);
 
@@ -3521,7 +3521,7 @@ subscribe_ipc_messages(void)
                                           CARMEN_SUBSCRIBE_LATEST);
 
     carmen_stereo_velodyne_subscribe_scan_message(camera, NULL,
-                                                  (carmen_handler_t) velodyne_variable_scan_message_handler,
+                                                  (carmen_handler_t) stereo_velodyne_variable_scan_message_handler,
                                                   CARMEN_SUBSCRIBE_LATEST);
 
     carmen_stereo_velodyne_subscribe_scan_message(1, NULL,

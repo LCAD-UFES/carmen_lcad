@@ -1533,6 +1533,7 @@ namespace View
 	void
 	GtkGui::save_to_image(GtkMapViewer* mapv)
 	{
+		printf("to salvando!\n");
 //		if(!log_first_it)
 //		if(autonomous_mode == 1)
 //		{
