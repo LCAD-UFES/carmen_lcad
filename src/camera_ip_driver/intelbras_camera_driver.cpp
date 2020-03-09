@@ -1,7 +1,7 @@
 #include "intelbras_camera_driver.h"
 
 char * rtsp_address;
-Mat cameraMatrix, distCoeffs;
+Mat cameraMatrix, distCoeffs, R1;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //																							 //
 // Publishers																			     //
@@ -72,7 +72,8 @@ int read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_me
 
 	cameraMatrix = Mat::zeros(3, 3, CV_64FC1);
 	distCoeffs = Mat::zeros(5, 1, CV_64FC1);
-	
+	R1 = Mat::zeros(3, 3, CV_64FC1);
+
 	cameraMatrix.at<double>(0, 0) = fx_factor;
 	cameraMatrix.at<double>(1, 1) = fy_factor;
 	cameraMatrix.at<double>(0, 2) = cu_factor;
@@ -118,11 +119,10 @@ int main(int argc, char **argv)
 	Size size(msg.width,msg.height);
 	
 	//Init rectified parameters
-	Mat Map1(size, CV_32FC1);
-	Mat Map2(size, CV_32FC1);
-	Mat R1 = Mat::zeros(3, 3, CV_64FC1);
-	//initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, cameraMatrix, size, CV_16SC2, Map1, Map2);
-	initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, cameraMatrix, size, CV_32FC1, Map1, Map2);
+	Mat Map1(size, CV_16SC2);
+	Mat Map2(size, CV_16SC2);
+	
+	initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, cameraMatrix, size, CV_16SC2, Map1, Map2);
 	
 	
 	string videoStreamAddress = string(rtsp_address);
