@@ -851,7 +851,7 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 
 			cv::line(img_planar, cvPoint(x, y - 10 / 2), cvPoint(x, y + 5 / 2), CV_RGB(0, 199, 0), 1, 8);
 
-			resize(img_planar, img_planar, cv::Size(0, 0), 1.3, 1.3, cv::INTER_NEAREST);
+			resize(img_planar, img_planar, cv::Size(0, 0), 2.1, 2.1, cv::INTER_NEAREST);
 			imshow("Velodyne Semantic Map", img_planar);
 			imshow("Image Semantic Segmentation", img);
 			cv::waitKey(1);
