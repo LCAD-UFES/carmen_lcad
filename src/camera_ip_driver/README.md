@@ -1,4 +1,4 @@
-Updates made by pepeaze in 28.02.2020
+# Cameras
 
 Infos Camera 1:
 
