@@ -44,22 +44,22 @@ int read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_me
 	// int frame_rate, brightness, contrast,
 	int camera_number = atoi(argv[1]);
 
-	char unv_camera_number[256];
+	char intelbras_camera_number[256];
 
-	sprintf(unv_camera_number, "%s%d", "camera", camera_number);
+	sprintf(intelbras_camera_number, "%s%d", "camera", camera_number);
 
 	carmen_param_t param_list[] = {
-		 {unv_camera_number, (char *)"width",
+		 {intelbras_camera_number, (char *)"width",
 		  CARMEN_PARAM_INT, &msg->width, 0, NULL},
-		 {unv_camera_number,
+		 {intelbras_camera_number,
 		  (char *)"height", CARMEN_PARAM_INT, &msg->height, 0, NULL},
-		// {unv_camera_number, (char *)"frame_rate", CARMEN_PARAM_INT,
+		// {intelbras_camera_number, (char *)"frame_rate", CARMEN_PARAM_INT,
 		//  &frame_rate, 0, NULL},
-		// {unv_camera_number, (char *)"brightness",
+		// {intelbras_camera_number, (char *)"brightness",
 		//  CARMEN_PARAM_INT, &brightness, 0, NULL},
-		// {unv_camera_number,
+		// {intelbras_camera_number,
 		//  (char *)"contrast", CARMEN_PARAM_INT, &contrast, 0, NULL},
-		 //{unv_camera_number, (char *)"ip", CARMEN_PARAM_STRING,
+		 //{intelbras_camera_number, (char *)"ip", CARMEN_PARAM_STRING,
 		 //&tcp_ip_address, 0, NULL},
 	};
 
@@ -124,9 +124,9 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			// imshow("UNV Window", image);
+			// imshow("Intelbras Window", image);
 			cvtColor(image, image, CV_RGB2BGR);
-			// Get extrinsics and calibrate the image
+			// use rectified image
 			//calibrate(img, parameters)
 			resize(image, dst, size);
 			msg.raw_left = dst.data;
