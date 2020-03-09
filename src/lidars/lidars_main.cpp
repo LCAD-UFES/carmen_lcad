@@ -156,7 +156,7 @@ main(int argc, char **argv)
 	{
 		run_robosense_RSLiDAR16_driver(variable_scan_msg, lidar_config, lidar_id);
 	}
-	if(strcmp(lidar_config.model, "VLP16") == 0)
+	if(strcmp(lidar_config.model, "VLP16") == 0 || strcmp(lidar_config.model, "HDL32") == 0)
 	{
 		run_velodyne_VLP16_PUCK_driver(variable_scan_msg, lidar_config, lidar_id);
 	}
