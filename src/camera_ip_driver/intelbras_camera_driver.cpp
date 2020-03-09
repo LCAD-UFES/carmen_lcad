@@ -121,8 +121,8 @@ int main(int argc, char **argv)
 	Mat Map1(size, CV_32FC1);
 	Mat Map2(size, CV_32FC1);
 	Mat R1 = Mat::zeros(3, 3, CV_64FC1);
-
-	initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, cameraMatrix, size, CV_16SC2, Map1, Map2);
+	//initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, cameraMatrix, size, CV_16SC2, Map1, Map2);
+	initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, cameraMatrix, size, CV_32FC1, Map1, Map2);
 	
 	
 	string videoStreamAddress = string(rtsp_address);
