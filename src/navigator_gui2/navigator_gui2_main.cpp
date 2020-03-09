@@ -989,7 +989,7 @@ read_parameters(int argc, char *argv[],
 	carmen_param_t param_cmd_list[] =
 	{
 		{(char *) "commandline", (char *) "map_path", CARMEN_PARAM_STRING, &map_path, 0, NULL},
-		{(char *) "commandline", (char *) "autonomous_record_screen", CARMEN_PARAM_INT, &map_path, 0, NULL},
+		{(char *) "commandline", (char *) "autonomous_record_screen", CARMEN_PARAM_INT, &autonomous_record_screen, 0, NULL},
 	};
 
 	num_items = sizeof(param_cmd_list) / sizeof(param_cmd_list[0]);
@@ -1111,7 +1111,8 @@ main(int argc, char *argv[])
 	gui = &_gui;
 //	gui->GtkGui(argc, argv);
 //	gui = new View::GtkGui(argc, argv);
-
+	// Verificar pastas de record_screen se a pasta existir no /dados e se o parâmetro de entrada na linha de comando
+	// for igual a 1
 	init_navigator_gui_variables(argc, argv);
 	subscribe_ipc_messages();
 

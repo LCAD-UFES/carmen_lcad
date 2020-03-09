@@ -1,5 +1,6 @@
 #include "gtk_gui.h"
 extern int record_screen;
+int button_record_verification=0;
 
 extern void
 mapper_handler(carmen_mapper_map_message *message);
@@ -1533,9 +1534,8 @@ namespace View
 	void
 	GtkGui::save_to_image(GtkMapViewer* mapv)
 	{
-//		if(!log_first_it)
-//		if(record_screen == 1)
-//		{
+		if(!log_first_it)
+		{
 			DIR* dir = opendir("/dados/navigator_gui2_log");
 			char log_date[100];
 			memset(log_buffer,'\0',1000*sizeof(char));
@@ -1567,7 +1567,9 @@ namespace View
 
 			log_first_it = 1;
 			log_counter = 0;
-//		}
+		}
+
+
 
 		GdkPixbuf * pixbuf = gdk_pixbuf_get_from_drawable(NULL, mapv->drawing_pixmap, NULL, 0, 0, 0, 0, -1, -1);
 
@@ -1596,7 +1598,28 @@ namespace View
 		{
 			carmen_map_graphics_redraw(this->controls_.map_view);
 			if(record_screen == 1)
+			{
+				if(button_record_verification != record_screen)
+				{
+					GdkColor color;
+					button_record_verification = 1;
+					gdk_color_parse ("green", &color);
+					gtk_widget_modify_bg(GTK_WIDGET(controls_.buttonRecord), GTK_STATE_NORMAL, &color);
+					navigator_graphics_start_recording_message_received();
+				}
 				save_to_image(this->controls_.map_view);
+			}
+			else
+			{
+				if(button_record_verification != record_screen)
+				{
+					GdkColor color;
+					button_record_verification = 0;
+					gdk_color_parse ("yellow", &color);
+					gtk_widget_modify_bg(GTK_WIDGET(controls_.buttonRecord), GTK_STATE_NORMAL, &color);
+					navigator_graphics_pause_recording_message_received();
+				}
+			}
 			this->time_of_last_redraw	   = carmen_get_time();
 			this->display_needs_updating = 0;
 		}
