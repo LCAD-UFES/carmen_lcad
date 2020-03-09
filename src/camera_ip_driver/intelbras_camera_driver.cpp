@@ -1,6 +1,7 @@
 #include "intelbras_camera_driver.h"
 
 char * rtsp_address;
+Mat cameraMatrix, distCoeffs;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //																							 //
 // Publishers																			     //
@@ -47,29 +48,38 @@ int read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_me
 	char intelbras_camera_number[256];
 
 	sprintf(intelbras_camera_number, "%s%d", "camera", camera_number);
-
+	
+	double fx_factor, fy_factor, cu_factor, cv_factor, k1, k2, p1, p2, k3;
+	
 	carmen_param_t param_list[] = {
-		 {intelbras_camera_number, (char *)"width",
-		  CARMEN_PARAM_INT, &msg->width, 0, NULL},
-		 {intelbras_camera_number,
-		  (char *)"height", CARMEN_PARAM_INT, &msg->height, 0, NULL},
-		// {intelbras_camera_number, (char *)"frame_rate", CARMEN_PARAM_INT,
-		//  &frame_rate, 0, NULL},
-		// {intelbras_camera_number, (char *)"brightness",
-		//  CARMEN_PARAM_INT, &brightness, 0, NULL},
-		// {intelbras_camera_number,
-		//  (char *)"contrast", CARMEN_PARAM_INT, &contrast, 0, NULL},
-		 //{intelbras_camera_number, (char *)"ip", CARMEN_PARAM_STRING,
-		 //&tcp_ip_address, 0, NULL},
+		{intelbras_camera_number, (char *)"width", CARMEN_PARAM_INT, &msg->width, 0, NULL},
+		{intelbras_camera_number,  (char *)"height", CARMEN_PARAM_INT, &msg->height, 0, NULL},
+		{ intelbras_camera_number, (char*) "fx", CARMEN_PARAM_DOUBLE, &fx_factor, 0, NULL },
+        { intelbras_camera_number, (char*) "fy", CARMEN_PARAM_DOUBLE, &fy_factor, 0, NULL },
+        { intelbras_camera_number, (char*) "cu", CARMEN_PARAM_DOUBLE, &cu_factor, 0, NULL },
+        { intelbras_camera_number, (char*) "cv", CARMEN_PARAM_DOUBLE, &cv_factor, 0, NULL },
+		{ intelbras_camera_number, (char*) "k1", CARMEN_PARAM_DOUBLE, &k1, 0, NULL },
+		{ intelbras_camera_number, (char*) "k2", CARMEN_PARAM_DOUBLE, &k2, 0, NULL },
+		{ intelbras_camera_number, (char*) "p1", CARMEN_PARAM_DOUBLE, &p1, 0, NULL },
+		{ intelbras_camera_number, (char*) "p2", CARMEN_PARAM_DOUBLE, &p2, 0, NULL },
+		{ intelbras_camera_number, (char*) "k3", CARMEN_PARAM_DOUBLE, &k3, 0, NULL },
 	};
 
 	int num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
 	rtsp_address = argv[2];
-	// sprintf(cam_config, "%d*%d*%d*%d*%d*", msg->width, msg->height, frame_rate,
-			// brightness, contrast);
-	// sprintf(cam_config, "%d*%d", msg->width, msg->height);
+
+	cameraMatrix = Mat::zeros(3, 3, CV_64FC1);
+	distCoeffs = Mat::zeros(5, 1, CV_64FC1);
+	
+	cameraMatrix.at<double>(0, 0) = fx_factor;
+	cameraMatrix.at<double>(1, 1) = fy_factor;
+	cameraMatrix.at<double>(0, 2) = cu_factor;
+	cameraMatrix.at<double>(1, 2) = cv_factor;
+	cameraMatrix.at<double>(2, 2) = 1;
+	
+	distCoeffs = (cv::Mat_<double>(5, 1) << k1, k2, p1, p2, k3);
 
 	return (camera_number);
 }
@@ -77,7 +87,7 @@ int read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_me
 void initialize_message(carmen_bumblebee_basic_stereoimage_message *msg)
 {
 	msg->image_size = msg->width * msg->height * 3; // 3 channels RGB
-//	msg->isRectified = 1;
+	msg->isRectified = 1;
 //	msg->raw_left = (unsigned char *)calloc(msg->image_size,
 //											sizeof(unsigned char));
 //	msg->raw_right = &msg.raw_left; // This is a monocular camera, both pointers point to the same image
@@ -99,12 +109,21 @@ int main(int argc, char **argv)
 	initialize_message(&msg);
 	
 	carmen_bumblebee_basic_define_messages(camera_number);
-	
+
 	VideoCapture vcap;
 	Mat image;
+	Mat imgResized;
 	Mat dst;
 
 	Size size(msg.width,msg.height);
+	
+	//Init rectified parameters
+	Mat Map1(size, CV_32FC1);
+	Mat Map2(size, CV_32FC1);
+	Mat R1 = Mat::zeros(3, 3, CV_64FC1);
+
+	initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, cameraMatrix, size, CV_16SC2, Map1, Map2);
+	
 	
 	string videoStreamAddress = string(rtsp_address);
 	
@@ -126,9 +145,9 @@ int main(int argc, char **argv)
 		{
 			// imshow("Intelbras Window", image);
 			cvtColor(image, image, CV_RGB2BGR);
-			// use rectified image
-			//calibrate(img, parameters)
-			resize(image, dst, size);
+			resize(image, imgResized, size);
+			//rectifying the image
+			remap(imgResized, dst, Map1, Map2, INTER_LINEAR);
 			msg.raw_left = dst.data;
 			msg.raw_right = msg.raw_left;
 			publish_image_message(camera_number, &msg);
