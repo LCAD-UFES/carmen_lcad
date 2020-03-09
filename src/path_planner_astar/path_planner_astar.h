@@ -13,6 +13,10 @@
 #include <list>
 #include <vector>
 
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+
 #define DELTA_T 0.01                      // Size of step for the ackerman Euler method
 
 
