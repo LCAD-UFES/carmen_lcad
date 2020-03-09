@@ -1,5 +1,5 @@
 #include "gtk_gui.h"
-extern int autonomous_mode;
+extern int record_screen;
 
 extern void
 mapper_handler(carmen_mapper_map_message *message);
@@ -1533,9 +1533,8 @@ namespace View
 	void
 	GtkGui::save_to_image(GtkMapViewer* mapv)
 	{
-		printf("to salvando!\n");
 //		if(!log_first_it)
-//		if(autonomous_mode == 1)
+//		if(record_screen == 1)
 //		{
 			DIR* dir = opendir("/dados/navigator_gui2_log");
 			char log_date[100];
@@ -1596,7 +1595,7 @@ namespace View
 				((carmen_get_time() - this->time_of_last_redraw > 0.025) || ALWAYS_REDRAW))
 		{
 			carmen_map_graphics_redraw(this->controls_.map_view);
-			if(autonomous_mode == 1)
+			if(record_screen == 1)
 				save_to_image(this->controls_.map_view);
 			this->time_of_last_redraw	   = carmen_get_time();
 			this->display_needs_updating = 0;

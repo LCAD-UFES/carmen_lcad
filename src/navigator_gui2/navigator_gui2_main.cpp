@@ -45,6 +45,7 @@ static carmen_ackerman_traj_point_t last_goal;
 static int goal_set = 0, autonomous = 0;
 
 static char *map_path = NULL;
+int autonomous_record_screen = 0;
 
 static carmen_point_t localize_std;
 static View::GtkGui *gui;
@@ -56,7 +57,7 @@ moving_objects_tracking_t *moving_objects_tracking;
 int current_num_point_clouds;
 int previous_num_point_clouds = 0;
 
-int autonomous_mode;
+int record_screen;
 
 
 static void
@@ -408,12 +409,12 @@ ford_escape_status_handler(carmen_ford_escape_status_message *message)
 
 	if(yellow_button)
 	{
-		autonomous_mode = 0;
+		record_screen = 0;
 	}
 
-	if(!yellow_button)
+	if(!yellow_button && (autonomous_record_screen == 1))
 	{
-		autonomous_mode = 1;
+		record_screen = 1;
 	}
 }
 
@@ -988,6 +989,7 @@ read_parameters(int argc, char *argv[],
 	carmen_param_t param_cmd_list[] =
 	{
 		{(char *) "commandline", (char *) "map_path", CARMEN_PARAM_STRING, &map_path, 0, NULL},
+		{(char *) "commandline", (char *) "autonomous_record_screen", CARMEN_PARAM_INT, &map_path, 0, NULL},
 	};
 
 	num_items = sizeof(param_cmd_list) / sizeof(param_cmd_list[0]);
