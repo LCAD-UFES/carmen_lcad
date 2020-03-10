@@ -185,10 +185,19 @@ main(int argc, char **argv)
 		// Declare RealSense pipeline, encapsulating the actual device and sensors
 		rs2::pipeline pipe;
 
+
+
 		// Start streaming with default recommended configuration
 		// The default video configuration contains Depth and Color streams
 		// If a device is capable to stream IMU data, both Gyro and Accelerometer are enabled by default
 		rs2::pipeline_profile selection = pipe.start(cfg);
+//		auto const i = pipe.get_active_profile().get_stream(RS2_STREAM_INFRARED).as<rs2::video_stream_profile>().get_intrinsics();
+//		printf("fx = %f\n", i.fx);
+//		printf("fy = %f\n", i.fy);
+//		printf("ppx = %f\n", i.ppx);
+//		printf("ppy = %f\n", i.ppy);
+//		auto const j = pipe.get_active_profile().get_stream(RS2_STREAM_INFRARED, 1).as<rs2::video_stream_profile>().get_extrinsics_to(pipe.get_active_profile().get_stream(RS2_STREAM_INFRARED, 2));
+//		printf("translation = %f %f %f", j.translation[0], j.translation[1], j.translation[2]);
 
 		unsigned short *depth_frame_data = NULL;
 		unsigned char* rgb_frame_data = NULL;
