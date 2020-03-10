@@ -6,17 +6,25 @@ IP: 192.168.1.108
 Login: lcad
 Senha: 1q2w3e4r
 
+./rtsp_camera_driver 2 rtsp://admin:1q2w3e4r@192.168.1.108:554/cam/realmonitor?channel=1\&subtype=1
+
 Infos Camera 2:
 
 IP: 192.168.1.109
 Login: lcad
 Senha: 1q2w3e4r
 
+./rtsp_camera_driver 2 rtsp://admin:1q2w3e4r@192.168.1.109:554/cam/realmonitor?channel=1\&subtype=1
+
 Infos Camera 3:
 
 IP: 192.168.1.110
 Login: lcad
 Senha: 1q2w3e4r
+
+./rtsp_camera_driver 3 rtsp://admin:1q2w3e4r@192.168.1.110:554/cam/realmonitor?channel=1\&subtype=1
+
+! Atenção: Caso dê algum erro, lembre-se de colocar a contra-barra "\" antes do & (e comercial) !
 
 # Camera IP UNV modelo IPC322ER3-DVPF28
 
@@ -49,10 +57,10 @@ Qualquer mudança no tamanho da imagem no menu de Video & Audio da câmera, deve
 
 Intelbras VIP 3220 B
 Usando o canal extra, compressão MJPEG, 640x480, 30fps, taxa de bit 6144 e latência de 1 décimo de segundo: 
-./rtsp_camera_driver 10 rtsp://admin:lcad123456@192.168.0.108:554/cam/realmonitor?channel=1\&subtype=1
+./rtsp_camera_driver 2 rtsp://admin:lcad123456@192.168.1.108:554/cam/realmonitor?channel=1\&subtype=1
 
 Mainstream, H264H, 1280x720, 15fps, 1280 bit e latência de 3 décimos de segundo:
-./rtsp_camera_driver 10 rtsp://admin:lcad123456@192.168.0.108:554/cam/realmonitor?channel=1\&subtype=0
+./rtsp_camera_driver 2 rtsp://admin:lcad123456@192.168.1.108:554/cam/realmonitor?channel=1\&subtype=0
 
 UNV Camera 
 

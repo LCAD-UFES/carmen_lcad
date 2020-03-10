@@ -4,10 +4,14 @@ MODULE_NAME = CAMERA IP Driver
 MODULE_COMMENT = Camera IP Driver Modules
 
 LINK = g++
-CXXFLAGS += -std=c++0x
+CFLAGS += -std=c11
+CXXFLAGS += -std=c++11
 
-IFLAGS +=
-LFLAGS +=
+IFLAGS += `pkg-config --cflags opencv`
+
+#OPENCV
+IFLAGS += -DUSE_OPENCV 
+LFLAGS += `pkg-config opencv --libs` `pkg-config --cflags opencv` `pkg-config --libs opencv` 
 
 LFLAGS += -lbumblebee_basic_interface -lcamera_interface -lparam_interface -lipc -lglobal -lm `pkg-config --cflags opencv` `pkg-config --libs opencv` 
 
