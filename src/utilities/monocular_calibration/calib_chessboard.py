@@ -106,6 +106,10 @@ def get_chessboard_corners(images):
 			# append corners to imgpoints
 			imgpoints.append(corners2)
 
+			print(objp)
+			print(corners2)
+			print('----')
+
 			# draw and display the corners
 			img = cv2.drawChessboardCorners(img, (9, 6), corners2, ret)
 			#cv2.imshow('img', img)
@@ -123,8 +127,8 @@ def get_chessboard_corners(images):
 
 
 def main():
-	outdir = './rectified/'
-	indir = './chessboard/'
+	outdir = '/home/ecotech4/Documents/camera/rectified/'
+	indir = '/home/ecotech4/Documents/camera/chessboard/'
 	images = glob.glob(indir + '*.bmp')
 
 	# get chessboard points in 2d and 3d
@@ -148,6 +152,19 @@ def main():
 
 	# todo calculate rectification error
 	# get_rectification_error()
+
+	# todo save calibration parameters
+	f = open('/home/ecotech4/Documents/camera/intelbras-vip3320b.ini', "w+")
+	f.write("fx " + str(mtx[0][0]) + '\n')
+	f.write("fy " + str(mtx[1][1]) + '\n')
+	f.write("cx " + str(mtx[0][2]) + '\n')
+	f.write("cy " + str(mtx[1][2]) + '\n')
+	f.write("k1 " + str(dist[0][0]) + '\n')
+	f.write("k2 " + str(dist[0][1]) + '\n')
+	f.write("p1 " + str(dist[0][2]) + '\n')
+	f.write("p2 " + str(dist[0][3]) + '\n')
+	f.write("k3 " + str(dist[0][4]) + '\n')
+	f.close()
 
 	# print
 	print("overall reprojection error:", reproj_error)
