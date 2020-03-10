@@ -161,6 +161,11 @@ struct segmented {
 segmented squeezeseg_segmented;
 segmented salsanet_segmented;
 
+struct data_for_train {
+	double *data;
+	double timestamp;
+};
+data_for_train squeezeseg_dataset;
 //YOLO global variables
 char **classes_names;
 void *network_struct;
@@ -619,20 +624,17 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 	int min_shots = 1024;
 	if (number_of_laser_shots > min_shots)
 	{
-		for (int j = 0; j < number_of_laser_shots; j++)
+		for (int i = 0; i < number_of_laser_shots; i++)
 		{
-			int scan_index = j * sensor_params->vertical_resolution;
-			double horizontal_angle = - sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle;
-
-			//if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
-			//	continue;
+			int scan_index = i * sensor_params->vertical_resolution;
+			double horizontal_angle = carmen_normalize_theta(-sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle);
 
 			get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
 
-			for (int i = 1; i < sensor_params->vertical_resolution; i++)
+			for (int j = 1; j < sensor_params->vertical_resolution; j++)
 			{
-				double vertical_angle = sensor_data->points[cloud_index].sphere_points[scan_index + i].vertical_angle;
-				double range = sensor_data->points[cloud_index].sphere_points[scan_index + i].length;
+				double vertical_angle = carmen_normalize_theta(sensor_data->points[cloud_index].sphere_points[scan_index + j].vertical_angle);
+				double range = sensor_data->points[cloud_index].sphere_points[scan_index + j].length;
 
 				tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
 				tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
@@ -641,19 +643,19 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 				int image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
 				int image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
 
-				double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i];
+				double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][j];
 				double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
 
 				if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
 				{
 					image_cartesian point;
-					point.shot_number = j;
-					point.ray_number  = i;
+					point.shot_number = i;
+					point.ray_number  = j;
 					point.image_x     = image_x;
 					point.image_y     = image_y;
 					point.cartesian_x = velodyne_p3d.x();
 					point.cartesian_y = velodyne_p3d.y();  // Must be inverted because Velodyne angle is reversed with CARMEN angles
-					point.cartesian_z = camera_p3d.z();
+					point.cartesian_z = (sensor_params->vertical_resolution - j) * number_of_laser_shots * 6 + i * 6;
 					points.push_back(point);
 
 					if (verbose >= 2)
@@ -758,22 +760,26 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 						if (contCar > contPerson && contCar > contBycicle && contCar > contTrain)
 						{
 							class_seg = 1;
+							libsqueeze_seg_fill_label((int) filtered_points[i][j].cartesian_z, 1.0, squeezeseg_dataset.data);
 						}
 						else
 						{
 							if (contPerson > contBycicle && contPerson > contTrain)
 							{
 								class_seg = 2;
+								libsqueeze_seg_fill_label((int) filtered_points[i][j].cartesian_z, 2.0, squeezeseg_dataset.data);
 							}
 							else
 							{
 								if (contBycicle > contTrain)
 								{
 									class_seg = 3;
+									libsqueeze_seg_fill_label((int) filtered_points[i][j].cartesian_z, 3.0, squeezeseg_dataset.data);
 								}
 								else
 								{
 									class_seg = 4;
+									libsqueeze_seg_fill_label((int) filtered_points[i][j].cartesian_z, 1.0, squeezeseg_dataset.data);
 								}
 							}
 						}
@@ -861,6 +867,8 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 //			imshow("Velodyne Semantic Map", img_planar);
 //			imshow("Image Semantic Segmentation", img);
 //=======
+			libsqueeze_seg_save_npy_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
+			
 			resize(total, total, cv::Size(0, 0), 1.7, 1.7, cv::INTER_NEAREST);
 			imshow("Velodyne Semantic Map", total);
 			resize(open_cv_image, open_cv_image, cv::Size(640, 480 * IMAGE_HEIGHT_CROP));
@@ -986,8 +994,8 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 				if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
 				{
 					image_cartesian point = {};
-					point.shot_number = j;
-					point.ray_number  = i;
+					point.shot_number = i;
+					point.ray_number  = j;
 					point.cartesian_z = (sensor_params->vertical_resolution - j) * number_of_laser_shots + i;
 					point.cartesian_x = velodyne_p3d.x();
 					point.cartesian_y = velodyne_p3d.y();
@@ -2323,6 +2331,10 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	if (!strcmp(neural_network,"salsanet")){
 		salsanet_segmented.result = libsalsanet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
 		salsanet_segmented.timestamp = velodyne_message->timestamp;
+	}
+	if (!strcmp(neural_network,"yolo")){
+		squeezeseg_dataset.data = libsqueeze_seg_data_for_train(VELODYNE, velodyne_message, sensors_params);
+		squeezeseg_dataset.timestamp = velodyne_message->timestamp;
 	}
 	/*if (!strcmp(neural_network,"rangenet")){
 		rangenet_segmented = librangenet_process_moving_obstacles_cells(VELODYNE, velodyne_message, sensors_params);
@@ -3701,6 +3713,7 @@ main(int argc, char **argv)
 		initialize_python_context_salsanet();
 	}
 	if (!strcmp(neural_network,"yolo")){
+		initialize_python_dataset();
 		initializer_YOLO();
 	}
 	/* Register TensorRT context for RangeNet++*/

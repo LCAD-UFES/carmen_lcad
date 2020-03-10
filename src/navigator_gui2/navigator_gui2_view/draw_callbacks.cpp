@@ -1,5 +1,6 @@
 #include "draw_callbacks.h"
 
+extern int record_screen;
 
 extern void
 mapper_handler(carmen_mapper_map_message *message);
@@ -791,7 +792,7 @@ void on_buttonRecord_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
 	GdkColor color;
-	if (GTK_TOGGLE_BUTTON(global_gui->controls_.buttonRecord)->active)
+	if (GTK_TOGGLE_BUTTON(global_gui->controls_.buttonRecord)->active || record_screen == 1)
 	{
 		gdk_color_parse ("green", &color);
 		gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonRecord), GTK_STATE_NORMAL, &color);
