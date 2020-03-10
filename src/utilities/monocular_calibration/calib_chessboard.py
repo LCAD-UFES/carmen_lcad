@@ -6,10 +6,29 @@ import argparse
 import imageio
 import glob
 import PIL
+import sys
 import os
 import cv2
 from cv2 import aruco
+from argparse import ArgumentParser
 
+
+def get_parser():
+	parser = ArgumentParser(description='script para calibracao monocular')
+	parser.add_argument('-i', type=str, help='diretório com as imagens')
+	parser.add_argument('-o', type=str, help='diretório de saida')
+	return parser
+
+
+def check_params(args):
+
+	if args.o[-1] != "/":
+		args.o = args.o + "/"
+
+	if args.i[-1] != "/":
+		args.i = args.i + "/"
+
+	return args
 
 
 def rectify_images(images, mtx, dist, outdir):
@@ -43,9 +62,8 @@ def rectify_images(images, mtx, dist, outdir):
 	# undistortion is done by using map1 and map2, and bilinear interpolation
 	for fname in images:
 		img = cv2.imread(fname)
-		#dst = cv2.undistort(img, mtx, dist, None, mtx)
 		dst = cv2.remap(img, map1, map2, cv2.INTER_LINEAR)
-		out_path = outdir + fname
+		out_path = outdir + os.path.basename(fname)
 		cv2.imwrite(out_path, dst)
 
 	print('done.')
@@ -84,7 +102,6 @@ def get_chessboard_corners(images):
 
 	# iterate through images
 	for fname in images:
-
 		# read image
 		img = cv2.imread(fname)
 
@@ -102,13 +119,8 @@ def get_chessboard_corners(images):
 
 			# subpixel precision to corners given by criteria
 			corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-
 			# append corners to imgpoints
 			imgpoints.append(corners2)
-
-			print(objp)
-			print(corners2)
-			print('----')
 
 			# draw and display the corners
 			img = cv2.drawChessboardCorners(img, (9, 6), corners2, ret)
@@ -122,13 +134,57 @@ def get_chessboard_corners(images):
 	return objpoints, imgpoints
 
 
+def save_params(mtx, dist, outdir):
 
-#def get_rectification_error():
+	###############################
+	# SAVE CALIBRATION PARAMETERS #
+	###############################
+	#
+	# saves calibration parameters into a .ini file in outdir.
+	#
+	# PARAMETERS
+	# mtx: camera matrix
+	# dist: distortion coefficients vector
+	# outdir: output directory
+
+
+	f = open(outdir + 'intelbras-vip3320b.ini', "w+")
+	f.write("fx " + str(mtx[0][0]) + '\n')
+	f.write("fy " + str(mtx[1][1]) + '\n')
+	f.write("cx " + str(mtx[0][2]) + '\n')
+	f.write("cy " + str(mtx[1][2]) + '\n')
+	f.write("k1 " + str(dist[0][0]) + '\n')
+	f.write("k2 " + str(dist[0][1]) + '\n')
+	f.write("p1 " + str(dist[0][2]) + '\n')
+	f.write("p2 " + str(dist[0][3]) + '\n')
+	f.write("k3 " + str(dist[0][4]) + '\n')
+	f.close()
+
+
+def get_rectification_error(imgpoints):
+	actual_square_size = 0.03 # in meters
+	rectification_error_per_frame = 0.0
+
+	# i = 0
+	# for img in imgpoints:
+	# 	print(i, '\n')
+	# 	print(img, '\n')
+	# 	print(img[0], '\n')
+	# 	print(img[1], '\n')
+	# 	print(img[2], '\n')
+	# 	exit()
+	# 	i+=1
+
+	return rectification_error_per_frame
 
 
 def main():
-	outdir = '/home/ecotech4/Documents/camera/rectified/'
-	indir = '/home/ecotech4/Documents/camera/chessboard/'
+
+	args = get_parser().parse_args()
+	args = check_params(args)
+	outdir = args.o
+	indir = args.i
+
 	images = glob.glob(indir + '*.bmp')
 
 	# get chessboard points in 2d and 3d
@@ -150,21 +206,11 @@ def main():
 	# undistort images and save them to output directory
 	rectify_images(images, mtx, dist, outdir)
 
-	# todo calculate rectification error
-	# get_rectification_error()
+	# save calibration parameters into .ini file
+	save_params(mtx, dist, outdir)
 
-	# todo save calibration parameters
-	f = open('/home/ecotech4/Documents/camera/intelbras-vip3320b.ini', "w+")
-	f.write("fx " + str(mtx[0][0]) + '\n')
-	f.write("fy " + str(mtx[1][1]) + '\n')
-	f.write("cx " + str(mtx[0][2]) + '\n')
-	f.write("cy " + str(mtx[1][2]) + '\n')
-	f.write("k1 " + str(dist[0][0]) + '\n')
-	f.write("k2 " + str(dist[0][1]) + '\n')
-	f.write("p1 " + str(dist[0][2]) + '\n')
-	f.write("p2 " + str(dist[0][3]) + '\n')
-	f.write("k3 " + str(dist[0][4]) + '\n')
-	f.close()
+	# todo calculate rectification error
+	rectification_error_per_frame = get_rectification_error(imgpoints)
 
 	# print
 	print("overall reprojection error:", reproj_error)
