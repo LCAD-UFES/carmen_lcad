@@ -324,6 +324,8 @@ init_python(int image_width, int image_height)
 	image_dimensions[0] = image_height;           //create shape for numpy array
 	image_dimensions[1] = image_width;
 	image_dimensions[2] = 3;
+
+	printf("------- Python Tracker Ready -------\n");
 }
 
 
@@ -952,8 +954,15 @@ publish_moving_objects_message(double timestamp, carmen_moving_objects_point_clo
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
+	static bool first_time = true;
 	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
 	carmen_laser_ldmrs_new_message sick_sync_with_cam;
+
+	if (first_time)
+	{
+		init_python(image_msg->width, image_msg->height);
+		first_time = false;
+	}
 
 	if ((image_msg == NULL) || (globalpos_msg == NULL))
 		return;
@@ -1230,11 +1239,6 @@ initializer()
 	classes_names = get_classes_names(classes_names_path);
 
 	network_struct = initialize_YOLO( yolo_cfg_path, yolo_weights_path);
-
-	//init_python(1280, 960);
-//	init_python(1280, 480);
-	init_python(640, 480);
-	printf("------- Python Tracker Ready -------\n");
 }
 
 

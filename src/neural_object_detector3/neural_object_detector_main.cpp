@@ -674,10 +674,18 @@ void
 initializer()
 {
 	initialize_transformations(board_pose, camera_pose, &transformer);
+	char* carmen_home = getenv("CARMEN_HOME");
+	char str_classes_names[1024];
+	char yolocfg[1024];
+	char yoloweights[1024];
+	sprintf(str_classes_names, "%s/sharedlib/darknet2/data/coco.names", carmen_home);
+	sprintf(yolocfg, "%s/sharedlib/darknet2/cfg/yolov3.cfg", carmen_home);
+	sprintf(yoloweights, "%s/sharedlib/darknet2/yolov3.weights", carmen_home);
 
-	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
 
-	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
+	classes_names = get_classes_names((char*) str_classes_names);
+
+	network_struct = initialize_YOLO((char*) yolocfg, (char*) yoloweights);
 }
 
 
