@@ -2,7 +2,8 @@
 #define CLOSEST_CIRCLE_MIN_DIST 1.5
 #define MIN_THETA_DIFF    0.0872665 // 5 0.0436332 // 2.5 // 0.261799 // 15 degrees
 #define MIN_STEERING_DIFF 0.0872665
-#define MIN_POS_DISTANCE  0.3 // the carmen grid map resolution
+#define MIN_POS_DISTANCE  0.2 // the carmen grid map resolution
+
 #define OPENCV 0
 
 carmen_point_t *final_goal = NULL;
@@ -165,6 +166,7 @@ state_node_exist(state_node *new_state, std::vector<state_node*> &set)
     	if (distance < MIN_POS_DISTANCE && orientation_diff < MIN_THETA_DIFF && steering_diff < MIN_POS_DISTANCE && (new_state->state.v == set[i]->state.v))
     	{
     		//printf ("State Exist! %lf %lf\n", distance, angular_distance);
+    		//printf ("State Exist! %lf %lf %lf %lf %lf\n", distance, orientation_diff, steering_diff, new_state->state.v, set[i]->state.v );
     		return i+1;
     	}
     }
@@ -285,10 +287,11 @@ void
 expand_state(state_node *current_state, state_node *goal_state, std::vector<state_node*> &closed_set, /*std::priority_queue<state_node*, std::vector<state_node*>, StateNodePtrComparator>*/ std::vector<state_node*> &open_set,
 		carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
-	#define NHOLONOMIC 1
+	#define NHOLONOMIC 0
+	#define NUM_STEERING_ANGLES 3
+
     double target_phi, distance_traveled = 0.0;
     distance_traveled = 2.0;
-	#define NUM_STEERING_ANGLES 3
     double steering_acceleration[NUM_STEERING_ANGLES] = {-0.25, 0.0, 0.25}; //TODO ler velocidade angular do volante do carmen.ini
     double target_v[3]   = {2.0, 0.0, -2.0};
 
@@ -300,7 +303,6 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
     for (int i = 0; i < sizeof(target_v)/sizeof(target_v[0]); ++i)
     {
         for (int j = 0; j < NUM_STEERING_ANGLES; ++j)
-
         {
         	state_node *new_state = (state_node*) malloc(sizeof(state_node));
 
@@ -327,8 +329,50 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
 //        	new_state->h = DIST2D(new_state->state, current_state->state) + current_state->h;
         	new_state->h = DIST2D(new_state->state, goal_state->state);
         	new_state->f = new_state->g + new_state->h;
+
         	if(OPENCV)
         		draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config);
+
+/*
+        	if ((obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 4.0*0.5))
+        	{
+        		free(new_state);
+        	}
+        	else
+        	{
+        		if(!state_node_exist(new_state, closed_set))
+        		{
+        			int indice = state_node_exist(new_state, open_set);
+        			if(!indice)
+        			{
+        				open_set.push_back(new_state);
+        				std::sort(open_set.begin(), open_set.end(), my_f_ordenation);
+        			}
+        			else
+        			{
+						if(new_state->g < open_set[indice-1]->g)
+						{
+							if(open_set[indice-1]->f < new_state->f)
+							{
+								free(new_state);
+								continue;
+							}
+							else if (open_set[indice-1]->f > new_state->f)
+							{
+//								new_state->parent = open_set[indice-1]->parent;
+								open_set[indice-1] = new_state;
+								cout << "update" << endl;
+							}
+
+        				open_set.push_back(new_state);
+        				std::sort(open_set.begin(), open_set.end(), my_f_ordenation);
+
+						}
+        			}
+        		}
+        	}
+
+*/
 
 //        	printf("obstacle distance = %lf\n", obstacle_distance(new_state->state.x, new_state->state.y, distance_map));
         	if ((obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 4.0*0.5) || state_node_exist(new_state, closed_set))   // TODO ler a margem de segurança do carmen.ini
@@ -355,6 +399,7 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
 //        				open_set[indice-1]->parent = current_state;
         				//free(new_state);
         				std::sort(open_set.begin(), open_set.end(), my_f_ordenation);
+//        				printf("update %d %d\n", indice-1, indice);
 
         			}
 
@@ -368,6 +413,9 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
         		}
 
         	}
+
+
+
         }
     }
 
