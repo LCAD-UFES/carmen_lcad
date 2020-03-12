@@ -6,10 +6,11 @@ MODULE_COMMENT = Camera IP Driver Modules
 LINK = g++
 CXXFLAGS += -std=c++0x
 
-IFLAGS +=
-LFLAGS +=
+#OPENCV
+IFLAGS += -DUSE_OPENCV
+LFLAGS += `pkg-config opencv --libs` `pkg-config --cflags opencv` `pkg-config --libs opencv`
 
-LFLAGS += -lbumblebee_basic_interface -lcamera_interface -lparam_interface -lipc -lglobal -lm `pkg-config --cflags opencv` `pkg-config --libs opencv` 
+LFLAGS += -lbumblebee_basic_interface -lcamera_interface -lparam_interface -lipc -lglobal -lm  
 
 SOURCES = unv_camera_driver.cpp rtsp_camera_driver.cpp intelbras_camera_driver.cpp
 
