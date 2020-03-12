@@ -1,7 +1,7 @@
 #include "rtsp_camera_driver.h"
 
 char * rtsp_address;
-Mat cameraMatrix, distCoeffs, R1;
+Mat cameraMatrix, distCoeffs, newcameramtx, R1;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //																							 //
 // Publishers																			     //
@@ -68,8 +68,8 @@ int read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_me
 	carmen_param_install_params(argc, argv, param_list, num_items);
   	
 	cameraMatrix = (cv::Mat_<double>(3, 3) << fx_factor, 0, cu_factor, 0, fy_factor, cv_factor, 0, 0, 1);
-	R1 = (cv::Mat_<double>(3, 3) << 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	distCoeffs = (cv::Mat_<double>(5, 1) << k1, k2, p1, p2, k3);
+	R1 = (cv::Mat_<double>(3, 3) << 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 	return (camera_number);
 }
@@ -77,7 +77,7 @@ int read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_me
 void initialize_message(carmen_bumblebee_basic_stereoimage_message *msg)
 {
 	msg->image_size = msg->width * msg->height * 3; // 3 channels RGB
-	msg->isRectified = 1;
+	//msg->isRectified = 1;
 	msg->host = carmen_get_host();
 }
 
@@ -103,13 +103,13 @@ int main(int argc, char **argv)
 	Size size(msg.width,msg.height);
 	
 	//Init rectified parameters
-	Mat Map1(size, CV_32FC1);
-	Mat Map2(size, CV_32FC1);
-	
-	initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, cameraMatrix, size, CV_32FC1, Map1, Map2);
+	Mat MapX;
+	Mat MapY;
+	newcameramtx = cameraMatrix;
+	initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, newcameramtx, size, CV_16SC2, MapX, MapY);
 	
 	string videoStreamAddress = string(rtsp_address);
-	//cout << videoStreamAddress << endl;
+	
 	if (!vcap.open(videoStreamAddress))
 	{
 		cout << "Error opening video stream or file" << endl;
@@ -130,10 +130,10 @@ int main(int argc, char **argv)
 			cvtColor(image, image, CV_RGB2BGR);
 			resize(image, imgResized, size);
 			//rectifying the image
-			//remap(imgResized, dst, Map1, Map2, INTER_LINEAR);
-			remap(imgResized, dst, Map1, Map2, INTER_LINEAR);
-			imshow("Rect Window", dst);
-			msg.raw_left = dst.data;
+			remap(imgResized, dst, MapX, MapY, INTER_LINEAR);
+			imshow("Rectifying Window", dst);
+			Mat m (dst.rows, dst.cols, CV_8UC3, dst.data);
+			msg.raw_left = m.data;
 			msg.raw_right = msg.raw_left;
 			publish_image_message(camera_number, &msg);
 		}
