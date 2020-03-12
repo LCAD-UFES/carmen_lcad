@@ -37,14 +37,13 @@ void signal_handler(int sig)
 
 int read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_message *msg)
 {
-	if (argc != 3)
+	if (argc != 2)
 		carmen_die(
-			"--- Wrong number of parameters. ---\nUsage: %s <camera_number> <rtsp_address>\n",
+			"--- Wrong number of parameters. ---\nUsage: %s <camera_number>\n",
 			argv[0]);
 
 	int camera_number = atoi(argv[1]);
-	rtsp_address = argv[2];
-
+	
 	char camera[256];
 
 	sprintf(camera, "%s%d", "bumblebee_basic", camera_number);
@@ -62,6 +61,7 @@ int read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_me
 		{ camera, (char*) "p1", CARMEN_PARAM_DOUBLE, &p1, 0, NULL },
 		{ camera, (char*) "p2", CARMEN_PARAM_DOUBLE, &p2, 0, NULL },
 		{ camera, (char*) "k3", CARMEN_PARAM_DOUBLE, &k3, 0, NULL },
+		{ camera, (char*) "rtsp_address", CARMEN_PARAM_STRING, &rtsp_address, 0, NULL },
 	};
 
 	int num_items = sizeof(param_list) / sizeof(param_list[0]);
