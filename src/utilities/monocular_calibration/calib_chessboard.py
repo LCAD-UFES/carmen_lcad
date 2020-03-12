@@ -10,6 +10,7 @@ import sys
 import os
 import cv2
 from cv2 import aruco
+from scipy.spatial import distance
 from argparse import ArgumentParser
 
 
@@ -165,6 +166,23 @@ def get_rectification_error(imgpoints):
 	actual_square_size = 0.03 # in meters
 	rectification_error_per_frame = 0.0
 
+	#print(imgpoints, '\n')
+	print('imgpoints[0]', '\n')
+	print(imgpoints[0], '\n')
+	print('imgpoints[0][0]', '\n')
+	print(imgpoints[0][0], '\n')
+	print('imgpoints[0][1]', '\n')
+	print(imgpoints[0][1], '\n')
+	print('imgpoints[0][2]', '\n')
+	print(imgpoints[0][2], '\n')
+	print('imgpoints[0][3]', '\n')
+	print(imgpoints[0][3], '\n')
+
+	dst = distance.euclidean(imgpoints[0][0], imgpoints[0][1])
+	print(dst)
+
+	exit()
+
 	# i = 0
 	# for img in imgpoints:
 	# 	print(i, '\n')
@@ -210,10 +228,13 @@ def main():
 	save_params(mtx, dist, outdir)
 
 	# todo calculate rectification error
-	rectification_error_per_frame = get_rectification_error(imgpoints)
+	rect_images = glob.glob(outdir + '*.bmp')
+	rect_objpoints, rect_imgpoints = get_chessboard_corners(rect_images)
+	rectification_error_per_frame = get_rectification_error(rect_imgpoints)
 
 	# print
 	print("overall reprojection error:", reproj_error)
+	print("mean rectification error:", np.mean(rectification_error_per_frame))
 
 
 if __name__ == "__main__":
