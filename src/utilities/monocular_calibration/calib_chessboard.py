@@ -149,7 +149,7 @@ def save_params(mtx, dist, outdir):
 	# outdir: output directory
 
 
-	f = open(outdir + 'intelbras-vip3320b.ini', "w+")
+	f = open(outdir + 'intelbras.ini', "w+")
 	f.write("fx " + str(mtx[0][0]) + '\n')
 	f.write("fy " + str(mtx[1][1]) + '\n')
 	f.write("cx " + str(mtx[0][2]) + '\n')
@@ -166,22 +166,22 @@ def get_rectification_error(imgpoints):
 	actual_square_size = 0.03 # in meters
 	rectification_error_per_frame = 0.0
 
-	#print(imgpoints, '\n')
-	print('imgpoints[0]', '\n')
-	print(imgpoints[0], '\n')
-	print('imgpoints[0][0]', '\n')
-	print(imgpoints[0][0], '\n')
-	print('imgpoints[0][1]', '\n')
-	print(imgpoints[0][1], '\n')
-	print('imgpoints[0][2]', '\n')
-	print(imgpoints[0][2], '\n')
-	print('imgpoints[0][3]', '\n')
-	print(imgpoints[0][3], '\n')
+	# #print(imgpoints, '\n')
+	# print('imgpoints[0]', '\n')
+	# print(imgpoints[0], '\n')
+	# print('imgpoints[0][0]', '\n')
+	# print(imgpoints[0][0], '\n')
+	# print('imgpoints[0][1]', '\n')
+	# print(imgpoints[0][1], '\n')
+	# print('imgpoints[0][2]', '\n')
+	# print(imgpoints[0][2], '\n')
+	# print('imgpoints[0][3]', '\n')
+	# print(imgpoints[0][3], '\n')
 
-	dst = distance.euclidean(imgpoints[0][0], imgpoints[0][1])
-	print(dst)
-
-	exit()
+	# dst = distance.euclidean(imgpoints[0][0], imgpoints[0][1])
+	# print(dst)
+	#
+	# exit()
 
 	# i = 0
 	# for img in imgpoints:
