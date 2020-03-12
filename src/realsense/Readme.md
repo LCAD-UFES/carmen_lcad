@@ -88,3 +88,4 @@ sudo add-apt-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/
 modinfo uvcvideo | grep "version:"
 ``` 
 should include `realsense` string
+

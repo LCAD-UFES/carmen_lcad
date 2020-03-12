@@ -20,7 +20,7 @@ display_map(carmen_obstacle_distance_mapper_map_message *distance_map)
 	unsigned int width = distance_map->config.x_size;
 	unsigned int height = distance_map->config.y_size;
 	unsigned int size = width * height;
-	unsigned char map[size];
+	unsigned char map[3*size];
 
 	for (unsigned int i = 0; i < size; ++i)
 	{
@@ -32,14 +32,18 @@ display_map(carmen_obstacle_distance_mapper_map_message *distance_map)
 
 		if (0.0 == distance_map->complete_x_offset[i] && 0.0 == distance_map->complete_y_offset[i])
 		{
-			map[index] = 0;
+			map[index*3] = 0;
+			map[index*3+1] = 0;
+			map[index*3+2] = 0;
 		} else
 		{
-			map[index] = 255;
+			map[index*3] = 255;
+			map[index*3+1] = 255;
+			map[index*3+2] = 255;
 		}
 	}
 
-    Mat img(width, height, CV_8UC1, map);
+    Mat img(width, height, CV_8UC3, map);
     map_image = img.clone();
 
     imshow("Obstacle Map", map_image);
@@ -64,12 +68,12 @@ draw_circle_on_map_img(double x, double y, double r, carmen_map_config_t config)
 
 
 void
-draw_point_on_map_img(double x, double y, carmen_map_config_t config)
+draw_point_on_map_img(double x, double y, carmen_map_config_t config, int redness = 0)
 {
 	int img_x = (double) (x - config.x_origin) / config.resolution;
 	int img_y = (double) (y - config.y_origin) / config.resolution;
 
-	circle(map_image, Point(img_x, config.y_size - 1 - img_y), 1, 128, -1, 8);
+	circle(map_image, Point(img_x, config.y_size - 1 - img_y), 1, Scalar(0, 0, redness), -1, 8);
 	imshow("Obstacle Map", map_image);
 	waitKey(1);
 	//usleep(10000);
@@ -80,7 +84,7 @@ draw_state_path(vector<state_node> state_path, carmen_map_config_t config)
 {
 	for (unsigned int i = 0; i < state_path.size(); i++)
 	{
-		draw_point_on_map_img(state_path[i].state.x, state_path[i].state.y, config);
+		draw_point_on_map_img(state_path[i].state.x, state_path[i].state.y, config, 255);
 	}
 	//usleep(500000);
 }
@@ -91,7 +95,8 @@ draw_circle_path(vector<circle_node> circle_path, carmen_map_config_t config)
 	for (unsigned int i = 0; i < circle_path.size(); i++)
 	{
 		draw_circle_on_map_img(circle_path[i].x, circle_path[i].y, circle_path[i].radius, config);
-//		usleep(5000000);
+		printf("%f\n", circle_path[i].g);
+//		usleep(500000);
 	}
 
 }
@@ -521,10 +526,10 @@ expand_state(state_node *current_state, state_node *goal_state, vector<state_nod
         	new_state->g = current_state->g + DIST2D(current_state->state, new_state->state);
         	//new_state->g = DIST2D(new_state->state, goal_state->state);
         	circle_node current_circle = closest_circle_new(new_state, circle_path);
-        	new_state->h = DIST2D(new_state->state, current_circle) + current_circle.h /*+ 0.1 * carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta)*/;
+        	new_state->h = DIST2D(new_state->state, current_circle) - current_circle.g + 0.008 * abs(carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta));
         	//new_state->h = max(DIST2D(new_state->state, current_circle) + current_circle.h, carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta));
 
-        	//draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config);
+        	draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config);
 
 //        	if (new_state->state.v != current_state->state.v)
 //        		new_state->h += DIRECTION_OF_MOVEMENT_CHANGE_PENALTY;
@@ -534,7 +539,7 @@ expand_state(state_node *current_state, state_node *goal_state, vector<state_nod
 //        	if (!Exist(next_state, closed_set, 1.0 /*k*/) && !Collision(next_state))
         	if ((obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 2.0 * 0.5) || state_node_exist(new_state, closed_set))   // TODO ler a margem de segurança do carmen.ini
         	{
-        		printf("muito perto\n");
+        		//printf("muito perto\n");
         		free (new_state);
         	}
         	else
@@ -545,6 +550,7 @@ expand_state(state_node *current_state, state_node *goal_state, vector<state_nod
 //			{
 //				if(open_set[indice-1]->g > new_state->g)
 //				{
+//					printf("update!!\n");
 //					open_set[indice-1]->g = new_state->g;
 //					open_set[indice-1]->parent = new_state->parent;
 //					free(new_state);
@@ -576,13 +582,16 @@ heuristic_search(state_node *start_state, state_node *goal_state, vector<circle_
 
     open_set.push_back(start_state);
 
+    printf("goal theta: %f %f\n", goal_state->state.theta, carmen_radians_to_degrees(goal_state->state.theta));
+
     while (!open_set.empty())
     {
     	state_node *current_state = open_set.back();
+    	printf("%f %f || %f %f || %f %f\n", goal_state->state.theta, carmen_radians_to_degrees(goal_state->state.theta), current_state->state.theta, carmen_radians_to_degrees(current_state->state.theta), carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta), carmen_radians_to_degrees(carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta)));
         open_set.pop_back();
-        printf("--- State %lf %lf %lf %lf %lf %lf %lf\n", current_state->state.x, current_state->state.y, current_state->state.theta, current_state->state.v, current_state->state.phi, current_state->g, current_state->h);
+        //printf("--- State %lf %lf %lf %lf %lf %lf %lf\n", current_state->state.x, current_state->state.y, current_state->state.theta, current_state->state.v, current_state->state.phi, current_state->g, current_state->h);
 
-        if ((DIST2D(current_state->state, goal_state->state) < 2.0) /*&& (carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta) < 0.0872665)*/)
+        if ((DIST2D(current_state->state, goal_state->state) < 2.0) && (abs(carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta)) < 0.0872665))
 //        if ((goal_state->g + goal_state->h) < (current_state->g + current_state->h))
         {
 		printf("Chegou ao destino\n");
