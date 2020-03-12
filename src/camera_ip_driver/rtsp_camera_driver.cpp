@@ -47,7 +47,7 @@ int read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_me
 
 	char camera[256];
 
-	sprintf(camera, "%s%d", "camera", camera_number);
+	sprintf(camera, "%s%d", "bumblebee_basic", camera_number);
 	double fx_factor, fy_factor, cu_factor, cv_factor, k1, k2, p1, p2, k3;
 
 	carmen_param_t param_list[] = {
@@ -68,9 +68,9 @@ int read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_me
 	carmen_param_install_params(argc, argv, param_list, num_items);
   	
 	cameraMatrix = (cv::Mat_<double>(3, 3) << fx_factor, 0, cu_factor, 0, fy_factor, cv_factor, 0, 0, 1);
-	distCoeffs = (cv::Mat_<double>(5, 1) << k1, k2, p1, p2, k3);
-	R1 = (cv::Mat_<double>(3, 3) << 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
+	distCoeffs = (cv::Mat_<double>(1, 5) << k1, k2, p1, p2, k3);
+	R1 = (cv::Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
+	
 	return (camera_number);
 }
 
@@ -106,6 +106,7 @@ int main(int argc, char **argv)
 	Mat MapX;
 	Mat MapY;
 	newcameramtx = cameraMatrix;
+
 	initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, newcameramtx, size, CV_16SC2, MapX, MapY);
 	
 	string videoStreamAddress = string(rtsp_address);
@@ -126,14 +127,11 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			imshow("RTSP Window", image);
-			cvtColor(image, image, CV_RGB2BGR);
 			resize(image, imgResized, size);
 			//rectifying the image
 			remap(imgResized, dst, MapX, MapY, INTER_LINEAR);
-			imshow("Rectifying Window", dst);
-			Mat m (dst.rows, dst.cols, CV_8UC3, dst.data);
-			msg.raw_left = m.data;
+			cvtColor(dst, dst, CV_RGB2BGR);
+			msg.raw_left = dst.data;
 			msg.raw_right = msg.raw_left;
 			publish_image_message(camera_number, &msg);
 		}
