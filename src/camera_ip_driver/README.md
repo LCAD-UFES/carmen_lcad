@@ -14,7 +14,7 @@ Senha: 1q2w3e4r
 
 Infos Camera 2 VIP 1020 B G2:
 
-IP: 192.168.1.109
+IP: 192.168.0.109
 Login: lcad
 Senha: 1q2w3e4r
 
@@ -24,7 +24,7 @@ Senha: 1q2w3e4r
 
 Infos Camera 3 VIP 1020 B G2:
 
-IP: 192.168.1.110
+IP: 192.168.0.110
 Login: lcad
 Senha: 1q2w3e4r
 
