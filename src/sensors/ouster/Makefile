@@ -17,7 +17,7 @@ LFLAGS += -ljsoncpp
 # viewer libraries
 IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
 LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system -lvtkIO -lvtkFiltering -lvtkCommon \
-	 -lvtkRendering -lvtkGraphics -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization `pkg-config --libs opencv`
+	 -lvtkRendering -lvtkGraphics -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lGL -lglut `pkg-config --libs opencv`
 
 # carmen related libraries
 LFLAGS += -lparam_interface -lglobal -lipc -lvelodyne_interface

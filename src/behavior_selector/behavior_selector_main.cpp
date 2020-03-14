@@ -740,10 +740,10 @@ set_behaviours_parameters(carmen_ackerman_traj_point_t current_robot_pose_v_and_
 	double change_goal_distance = param_change_goal_distance;
 	if (fabs(current_robot_pose_v_and_phi.v) > param_distance_interval)
 	{
-		if ((3.0 * fabs(current_robot_pose_v_and_phi.v)) > distance_between_waypoints)
-			distance_between_waypoints = 3.0 * fabs(current_robot_pose_v_and_phi.v);
-		if ((3.0 * fabs(current_robot_pose_v_and_phi.v)) > change_goal_distance)
-			change_goal_distance = 3.0 * fabs(current_robot_pose_v_and_phi.v);
+		if ((2.5 * fabs(current_robot_pose_v_and_phi.v)) > distance_between_waypoints)
+			distance_between_waypoints = 2.5 * fabs(current_robot_pose_v_and_phi.v);
+		if ((2.5 * fabs(current_robot_pose_v_and_phi.v)) > change_goal_distance)
+			change_goal_distance = 2.5 * fabs(current_robot_pose_v_and_phi.v);
 	}
 	change_distance_between_waypoints_and_goals(distance_between_waypoints, change_goal_distance);
 

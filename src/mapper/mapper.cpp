@@ -461,7 +461,8 @@ map_decay_to_offline_map(carmen_map_t *current_map)
 		if (current_map->complete_map[i] >= 0.0)
 		{
 			//current_map->complete_map[i] = (50.0 * current_map->complete_map[i] + offline_map.complete_map[i]) / 51.0;
-			current_map->complete_map[i] = (3.0 * current_map->complete_map[i] + offline_map.complete_map[i]) / 4.0;
+//			current_map->complete_map[i] = (3.0 * current_map->complete_map[i] + offline_map.complete_map[i]) / 4.0;
+			current_map->complete_map[i] = offline_map.complete_map[i];
 		}
 		else
 			current_map->complete_map[i] = offline_map.complete_map[i];
@@ -1028,7 +1029,7 @@ add_moving_objects(carmen_map_t *map, carmen_moving_objects_point_clouds_message
 {
 	for (int i = 0; i < moving_objects_message->num_point_clouds; i++)
 	{
-		if (moving_objects_message->point_clouds[i].point_size)
+//		if (moving_objects_message->point_clouds[i].point_size)
 			draw_rectangle(map,
 					moving_objects_message->point_clouds[i].object_pose.x,
 					moving_objects_message->point_clouds[i].object_pose.y,
@@ -1051,7 +1052,7 @@ mapper_publish_map(double timestamp)
 
 	add_virtual_laser_points(&map, &virtual_laser_message);
 
-//	add_moving_objects(&map, &moving_objects_message);
+	add_moving_objects(&map, &moving_objects_message);
 
 	carmen_mapper_publish_map_message(&map, timestamp);
 //	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, timestamp);
