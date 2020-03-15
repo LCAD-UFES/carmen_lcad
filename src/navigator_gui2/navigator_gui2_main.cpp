@@ -13,6 +13,7 @@
 #include <carmen/moving_objects_interface.h>
 #include <carmen/lane_detector_interface.h>
 #include <carmen/model_predictive_planner_interface.h>
+#include <carmen/ford_escape_hybrid_interface.h>
 
 #include <carmen/navigator_gui2_interface.h>
 #include <carmen/parking_assistant_interface.h>
@@ -44,6 +45,7 @@ static carmen_ackerman_traj_point_t last_goal;
 static int goal_set = 0, autonomous = 0;
 
 static char *map_path = NULL;
+int autonomous_record_screen = 0;
 
 static carmen_point_t localize_std;
 static View::GtkGui *gui;
@@ -54,6 +56,8 @@ static int last_moving_objects_point_clouds;
 moving_objects_tracking_t *moving_objects_tracking;
 int current_num_point_clouds;
 int previous_num_point_clouds = 0;
+
+int record_screen;
 
 
 static void
@@ -395,6 +399,23 @@ mapper_level1_handler(carmen_mapper_map_message *message)
 
 	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_NAVIGATOR_MAP_LEVEL1_v)
 		gui->navigator_graphics_change_map(map_level1);
+}
+
+
+void
+ford_escape_status_handler(carmen_ford_escape_status_message *message)
+{
+	int yellow_button = message->g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG;//carmen_get_bit_value(message->g_XGV_component_status, 0);
+
+	if(yellow_button)
+	{
+		record_screen = 0;
+	}
+
+	if(!yellow_button && (autonomous_record_screen == 1))
+	{
+		record_screen = 1;
+	}
 }
 
 
@@ -968,6 +989,7 @@ read_parameters(int argc, char *argv[],
 	carmen_param_t param_cmd_list[] =
 	{
 		{(char *) "commandline", (char *) "map_path", CARMEN_PARAM_STRING, &map_path, 0, NULL},
+		{(char *) "commandline", (char *) "autonomous_record_screen", CARMEN_PARAM_INT, &autonomous_record_screen, 0, NULL},
 	};
 
 	num_items = sizeof(param_cmd_list) / sizeof(param_cmd_list[0]);
@@ -1013,6 +1035,7 @@ subscribe_ipc_messages()
 //	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 	if (height_max_level > 0)
 		carmen_mapper_subscribe_map_level1_message(NULL, (carmen_handler_t) mapper_level1_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_ford_escape_subscribe_status_message(NULL, (carmen_handler_t) ford_escape_status_handler, CARMEN_SUBSCRIBE_LATEST);
 //	carmen_grid_mapping_moving_objects_raw_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_moving_objects_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -1088,7 +1111,8 @@ main(int argc, char *argv[])
 	gui = &_gui;
 //	gui->GtkGui(argc, argv);
 //	gui = new View::GtkGui(argc, argv);
-
+	// Verificar pastas de record_screen se a pasta existir no /dados e se o parâmetro de entrada na linha de comando
+	// for igual a 1
 	init_navigator_gui_variables(argc, argv);
 	subscribe_ipc_messages();
 

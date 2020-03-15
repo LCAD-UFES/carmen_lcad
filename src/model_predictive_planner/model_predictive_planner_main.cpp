@@ -35,6 +35,10 @@ carmen_behavior_selector_road_profile_message goal_list_message;
 
 static int update_lookup_table = 0;
 
+extern double steering_delay;
+extern double steering_delay_queue_size;
+extern vector <steering_delay_t> steering_delay_queue;
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -384,6 +388,16 @@ build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
 
 
 void
+add_to_steering_delay_queue(double phi, double timestamp)
+{
+	steering_delay_t phi_command = {phi, timestamp};
+	steering_delay_queue.push_back(phi_command);
+	if (steering_delay_queue.size() > steering_delay_queue_size)
+		steering_delay_queue.erase(steering_delay_queue.begin());
+}
+
+
+void
 build_and_follow_path(double timestamp)
 {
 	list<RRT_Path_Edge> path_follower_path;
@@ -395,12 +409,15 @@ build_and_follow_path(double timestamp)
 		if (distance_to_goal < 0.5 && GlobalState::robot_config.max_v < 0.07 && GlobalState::last_odometry.v < 0.03)
 		{
 			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
+			add_to_steering_delay_queue(GlobalState::last_odometry.phi, timestamp);
 		}
 		else
 		{
 			vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
 			if (tree.num_paths > 0 && path.size() > 0)
 			{
+				add_to_steering_delay_queue(path[0].phi, timestamp);
+
 				path_follower_path = build_path_follower_path(path);
 				publish_model_predictive_rrt_path_message(path_follower_path, timestamp);
 				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
@@ -851,7 +868,14 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", 	(char *) "max_centripetal_acceleration",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_max_centripetal_acceleration,							1, NULL},
 		{(char *) "rddf",   (char *) "source_tracker", 								CARMEN_PARAM_ONOFF,  &GlobalState::use_tracker_goal_and_lane,									0, NULL},
 		{(char *) "behavior_selector", (char *) "goal_source_path_planner", 		CARMEN_PARAM_ONOFF,  &GlobalState::use_path_planner, 											0, NULL},
-		{(char *) "behavior_selector", (char *) "use_truepos", 						CARMEN_PARAM_ONOFF,  &GlobalState::use_truepos, 												0, NULL}
+		{(char *) "behavior_selector", (char *) "use_truepos", 						CARMEN_PARAM_ONOFF,  &GlobalState::use_truepos, 												0, NULL},
+
+		{(char *) "model_predictive_planner", (char *) "w1_end_of_path_to_goal_distance",         CARMEN_PARAM_DOUBLE, &GlobalState::w1, 1, NULL},
+		{(char *) "model_predictive_planner", (char *) "w2_end_of_path_to_goal_angular_distance", CARMEN_PARAM_DOUBLE, &GlobalState::w2, 1, NULL},
+		{(char *) "model_predictive_planner", (char *) "w3_end_of_path_to_goal_delta_theta",      CARMEN_PARAM_DOUBLE, &GlobalState::w3, 1, NULL},
+		{(char *) "model_predictive_planner", (char *) "w4_path_to_lane_distance",                CARMEN_PARAM_DOUBLE, &GlobalState::w4, 1, NULL},
+		{(char *) "model_predictive_planner", (char *) "w5_proximity_to_obstacles",               CARMEN_PARAM_DOUBLE, &GlobalState::w5, 1, NULL},
+		{(char *) "model_predictive_planner", (char *) "w6_traveled_distance",                    CARMEN_PARAM_DOUBLE, &GlobalState::w6, 1, NULL}
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));

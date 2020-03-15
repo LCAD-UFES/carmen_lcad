@@ -32,3 +32,11 @@ carmen_xsens_mtig_define_messages()
   carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_MTIG_RAW_GPS_NAME);
 }
 
+void
+publish_mti_quat_message(carmen_xsens_global_quat_message message)
+{
+   IPC_RETURN_TYPE err;
+
+   err = IPC_publishData(CARMEN_XSENS_GLOBAL_QUAT_NAME, &message);
+   carmen_test_ipc_exit(err, "Could not publish", CARMEN_XSENS_GLOBAL_QUAT_FMT);
+}

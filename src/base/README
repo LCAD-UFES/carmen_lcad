@@ -1,0 +1,48 @@
+finale@mit.edu, 3/11/2006, useful information
+
+=== in the base directory ===
+
+* arm_interfaces and base_interface define the general interfaces for
+other programs to subscribe and query messages.  base_interface
+actually should be drive_interface, but the name has been kept the
+same for outside consistency.
+
+* main program(s):
+
+drive_main -- handles driving related messages
+arm_main -- handles arm messages
+
+these two programs define the message handling for driving and arm
+respectively; drive and arm main call functions from drive_low_level
+and arm_low_level.
+
+* low level calls: drive_low_level.h and arm_low_level.h are the h
+files that define the functions that the message handlers in
+drive_main and arm_main may call
+
+=== in the orcbotlib directory === 
+
+orc_arm_lib.c and orc_drive_lib.c implement the functions in
+drive_low_level and arm_low_level for the orc in particular.  they
+call functions from orclib.  they store pointers to the orc created by
+drive and arm main.
+
+* orc library: (located in the orclib sub directory )
+
+orclib provides the basic io interface to the orc board, with low
+level commands such as set_motor, etc. for now, this should remain
+separate of carmen dependencies so that we can take advantage and
+contribute to the developing orc c libraries from orcboard.org
+
+=== orc4 support ===
+
+all orc4 related files are in orcbotlibv4, including the old
+base_low_level, arm_low_level, and base_main which implement functions
+needed for RSS course... since this contains course specific stuff,
+we've refrained from changing any of the structure (note: this
+directory should be decommissioned/removed in spring 2007 because at
+that point the course will be using orc5)
+
+
+
+

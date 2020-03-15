@@ -539,6 +539,16 @@ carmen_carp_get_verbose(void) {
   return carmen_carp_verbose;
 }
 
+char
+carmen_get_bit_value(unsigned short data, int bit_number)
+{
+	char bit;
+
+	bit = (data & (0x01 << (bit_number - 1))) != 0x0;
+
+	return bit;
+}
+
 //extern IPC_VERBOSITY_TYPE ipcVerbosity;
 
 void carmen_running_average_clear(carmen_running_average_t *average)

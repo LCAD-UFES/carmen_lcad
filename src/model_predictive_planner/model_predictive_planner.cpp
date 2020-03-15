@@ -53,7 +53,7 @@ get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
     if (d < 0.0000001)
         return dist(p2, robot);
 
-    return abs((delta_y * 0.0) - (delta_x * 0.0) + x2y1 - y2x1) / d;
+    return abs((delta_y * robot.x) - (delta_x * robot.y) + x2y1 - y2x1) / d;
 
 }
 
@@ -516,26 +516,7 @@ filter_path(vector<carmen_ackerman_path_point_t> &path)
 	for (i = 1; (i < path.size()) && (i < (count + 1)); i += 2)
 		path.erase(path.begin() + i);
 
-	// TODO: remove this workaround
-//	if (GlobalState::ford_escape_online)
-	if (1)
-	{
-		path_time = 0.0;
-		count = 0;
-		for (i = 0; (i < path.size()) && (path_time < 0.6); i += 2)
-		{
-			if ((i + 1) < path.size())
-			{
-				path[i].time += path[i + 1].time;
-				path_time += path[i].time;
-				count++;
-			}
-		}
-		for (i = 1; (i < path.size()) && (i < (count + 1)); i += 2)
-			path.erase(path.begin() + i);
-	}
-
-	if(0)
+	if (GlobalState::ford_escape_online)
 	{
 		path_time = 0.0;
 		count = 0;
@@ -611,7 +592,7 @@ write_tdd_to_file(FILE *problems, TrajectoryLookupTable::TrajectoryDiscreteDimen
 bool
 path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 {
-	double circle_radius = GlobalState::robot_config.obstacle_avoider_obstacles_safe_distance; // metade da largura do carro + um espacco de guarda
+	double circle_radius = GlobalState::robot_config.obstacle_avoider_obstacles_safe_distance;
 	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
 
 	vector<carmen_ackerman_path_point_t> hit_points;
@@ -843,7 +824,7 @@ goal_pose_vector_too_different(Pose goal_pose, Pose localizer_pose)
 }
 
 bool
-goal_is_behide_car(Pose *localizer_pose, Pose *goal_pose)
+goal_is_behid_car(Pose *localizer_pose, Pose *goal_pose)
 {//funcao tem que ser melhorada. Usar coordenadas polares pode ser melhor.
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
 	SE2 goal_in_world_reference(goal_pose->x, goal_pose->y, goal_pose->theta);
@@ -877,10 +858,9 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		last_timestamp = goal_list_message->timestamp;
 	}
 
-	// TODO: behide -> behind
-	if (goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
+	if (goal_is_behid_car(localizer_pose, &goalPoseVector[0]))
 	{
-//		printf("goal is behide the car\n");
+//		printf("goal is behid the car\n");
 		return;
 	}
 

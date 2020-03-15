@@ -1,3 +1,21 @@
+**********************************************************************************************************************************
+                                             PREPARING THE RASPBERRY PI
+**********************************************************************************************************************************
+
+
+- Install the C libraries of bcm2835, see: http://www.airspayce.com/mikem/bcm2835/
+
+- Install WiringPi
+
+$ sudo apt-get install wiringpi
+
+- To check the wiring table of the Raspberri Pi:
+
+$ gpio allreadall
+
+- It will print in terminal a table like the following one (This one is for the Raspbeery Pi 3B+)
+
+
  +-----+-----+---------+------+---+---Pi 3B--+---+------+---------+-----+-----+
  | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |
  +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+
@@ -24,5 +42,18 @@
  +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+
  | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |
  +-----+-----+---------+------+---+---Pi 3B--+---+------+---------+-----+-----+
+
+
+- To test writing in a pin via terminal (In this example we will use pin 4); Prepere the pin:
+
+$ echo 4 > /sys/class/gpio/export 
+$ echo out > /sys/class/gpio/gpio4/direction
+
+- Write int the file to set the pin value (0 LOW, 1 HIGHT)
+
+$ echo 0 > /sys/class/gpio/gpio4/value
+
+  
+
 
 gcc -o test ecoTech_throttle_driver_main.c ADS1256_DAC8235.c ADS1256_DAC8235.h -l wiringPi -lbcm2835 -lm

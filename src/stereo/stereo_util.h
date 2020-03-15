@@ -24,6 +24,9 @@ typedef struct{
   int height;
   //camera model
   int camera_model;
+  // stride to make stereo_velodyne more sparse
+  float stereo_stride_x;
+  float stereo_stride_y;
 } stereo_util;
 
 stereo_util get_stereo_instance(int camera, int width, int height);

@@ -20,6 +20,9 @@ data/map_ida_guarapari-20170403-2.tar.gz
 data/map_ida_guarapari-20170403-2/*
 data/map_gpx_20190510_ford_fusion-6/*
 bin/traffic_light_yolo
+bin/navio2_mavlink
+bin/gps_reachm_client
+bin/gps_reachm_server
 bin/traffic_light_annotation_tool
 bin/debug.txt
 bin/out.txt
@@ -179,6 +182,7 @@ bin/socket_to_legacy500_server
 bin/socket_to_odometry_client
 bin/minoru
 bin/minoru_view
+bin/realsense_camera_main
 bin/minorucalib
 bin/ouster
 bin/ouster_viewer
@@ -406,6 +410,7 @@ src/xsens/xsens_listener
 src/xsens_MTi-G/example
 src/xsens_MTi-G/subscribe_xsens_mtig
 src/xsens_MTi-G/xsens_mtig
+src/xsens_MTi-G/navio2_mavlink
 src/laser-ldmrs/laser_ldmrs
 src/obstacle_distance_mapper/obstacle_distance_mapper
 src/obstacle_distance_mapper_multi_height/obstacle_distance_mapper
@@ -495,6 +500,8 @@ src/ford_escape_hybrid/libford_escape_hybrid_interface.so.1
 src/fused_odometry/libfused_odometry_interface.so.1
 src/global/libglobal.so.1
 src/gps/libgps_nmea_interface.so.1
+src/gps/gps_reachm_client
+src/gps/gps_reachm_server
 src/gps_xyz/libgps_xyz_interface.so.1
 src/ipc/libipc.so.1
 src/laser-new/liblaser_interface.so.1
@@ -676,10 +683,11 @@ src/sensors/laser_new/sick_laser_test
 src/utilities/central_log_view/central_log_view
 src/tracker/tracker.h
 src/tracker/tracker.c
-
+/src/mapper/neural_mapper_dataset_check
 /sharedlib/OpenJAUS/ojFoxDriver/SENT/docs/src/DM330018_Starter_Kit_Demo.X/build/
 /sharedlib/OpenJAUS/ojFoxDriver/SENT/docs/src/DM330018_Starter_Kit_Demo.X/dist/
 
 src/imu_viewer/Makefile.qmake
 src/imu_viewer/moc_mainwindow.cpp
 src/imu_viewer/moc_objectgl.cpp
+/.metadata/

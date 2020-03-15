@@ -151,6 +151,19 @@ $ sudo cp -d bcm* /boot/
  To exit the editor, press ctrl+x
  To save your changes press the letter “Y” then hit enter
  
+ To disable WiFi and bluetooth edit:
+ 
+ ```bash
+ sudo nano /boot/config.txt
+```
+add the lines:
+
+```
+ dtoverlay=pi3-disable-wifi
+ dtoverlay=pi3-disable-bt
+```
+ use the prefix "pi3-" if you are using a raspberry 3
+ 
  Reboot the Raspberry PI
  
 ```bash

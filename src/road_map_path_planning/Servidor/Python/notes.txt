@@ -1,0 +1,3 @@
+#Matar conexao
+ps -fA | grep python
+kill terceiracoluna

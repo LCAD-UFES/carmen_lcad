@@ -249,6 +249,7 @@ bool cmtScanPorts(List<CmtPortInfo>& ports,uint32_t baudrate, uint32_t singleSca
 	if ((dir = opendir("/dev/")) == NULL)
 		return false;
 	
+	baudrate = B460800;
 	while ((entry = readdir(dir)))
 		if (strncmp("ttyS", entry->d_name, 4) == 0 || strncmp("ttyUSB", entry->d_name, 6) == 0)
 		{

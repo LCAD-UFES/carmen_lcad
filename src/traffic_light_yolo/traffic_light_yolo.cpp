@@ -13,6 +13,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/ml.hpp>
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string.hpp>
 #include <sys/stat.h>
 #include <cmath>
 #include <vector>
@@ -82,6 +83,7 @@ typedef struct {
     float yolo_thresh;
 
     string rf_weights;
+    bool rf_bgr;
 
     string yolo_class_set;
     string final_class_set;
@@ -99,6 +101,8 @@ typedef struct {
     bool compute_tl_poses;
     bool print_final_prediction; // Falso para criar o GT.
     bool print_gt_prep;
+
+    string display_resolution;
 } traffic_light_yolo_params;
 traffic_light_yolo_params params;
 
@@ -141,13 +145,20 @@ file_ok_or_error(const std::string& name) {
     }
 }
 
+Size
+resolution_str_to_size(string resolution)
+{
+    std::vector<std::string> pieces;
+    boost::split(pieces, resolution, [](char c){return c == 'x';});
+    return (Size(stoi(pieces[0]), stoi(pieces[1])));
+}
+
 vector<Mat>
 make_box_views(Mat img, vector<bbox_t> predictions)
 {
     vector<Mat> views;
     for (bbox_t &pred : predictions)
     {
-        // Mat view(img, Rect(pred.x, pred.y, pred.w, pred.h));
         Mat view = img(Rect(pred.x, pred.y, pred.w, pred.h));
         views.push_back(view);
     }
@@ -174,7 +185,7 @@ save_mats_as_images(vector<Mat> matrices, string dest_dir)
  * i.e., a single image per row, and BGR values of row after row put together on a single row.
  **/
 Mat
-pack_images_together(vector<Mat> imgs)
+pack_images_together(vector<Mat> imgs, bool bgr2rgb=false)
 {
     Size new_size(10, 30);
     vector<Mat> single_row_imgs;
@@ -182,6 +193,10 @@ pack_images_together(vector<Mat> imgs)
     {
         Mat resized_img(new_size, imgs[0].type());
         resize(imgs[i], resized_img, new_size);
+        if (bgr2rgb)
+        {
+            cvtColor(resized_img, resized_img, COLOR_BGR2RGB);
+        }
         Mat single_row_img = resized_img.reshape(1,1);
         single_row_imgs.push_back(single_row_img);
     }
@@ -190,16 +205,6 @@ pack_images_together(vector<Mat> imgs)
     concatenated.convertTo(concatenated, CV_32F);
     return concatenated;
 }
-
-// vector<int>
-// make_rf_classifications(vector<Mat> imgs) {
-//     vector<int> class_predictions(imgs.size())
-//     for (size_t i = 0; i < imgs.size(); i++)
-//     {
-//         rf.predict()
-//     }
-    
-// }
 
 double
 compute_distance_to_the_traffic_light()
@@ -406,7 +411,8 @@ display(Mat image, vector<bbox_t> predictions, double fps, vector<image_cartesia
         }
     }
 
-    // resize(image, image, Size(640, 480));
+    Size display_size = resolution_str_to_size(params.display_resolution);
+    resize(image, image, display_size);
     imshow("Yolo Traffic Light", image);
     waitKey(1);
 }
@@ -719,7 +725,6 @@ generate_traffic_light_annotations(vector<bbox_t> predictions, vector<vector<ima
         traffic_light_points.clear();
         count = 0;
     }
-    //printf("Cont %d\n", count);
 }
 
 
@@ -753,7 +758,6 @@ void
 compute_traffic_light_pose(vector<bbox_t> predictions, int resized_w, int resized_h, int crop_x, int crop_y, int crop_w, int crop_h, vector<image_cartesian> points)
 {
     vector<vector<image_cartesian>> points_inside_bbox = get_points_inside_bounding_boxes(predictions, points); // TODO remover bbox que nao tenha nenhum ponto, int threshold
-
     generate_traffic_light_annotations(predictions, points_inside_bbox);
 }
 
@@ -923,6 +927,19 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         resize(open_cv_image, open_cv_image, Size(RESIZED_W, RESIZED_H));
     }
 
+    // // #!# Make a centralized crop, only to test if it's going to improve detection.
+    // float discard_ratio = 0.2;
+    // crop_x = RESIZED_W * discard_ratio;
+    // crop_y = RESIZED_H * discard_ratio;
+    // crop_w = RESIZED_W * (1-discard_ratio*2);
+    // crop_h = RESIZED_H * (1-discard_ratio*2);
+    // open_cv_image = open_cv_image(Rect(crop_x, crop_y, crop_w, crop_h));
+    // resize(open_cv_image, open_cv_image, Size(RESIZED_W, RESIZED_H));
+    // RESULT: From what I tested, this works really well and is very promising. But the
+    //         annotations don't match on the image anymore, so this should be fixed
+    //         before anything. Pedro worked on some "fovea" thing that is more or less
+    //         this artificial zoom thing. I should talk to him.
+
     vector<bbox_t> predictions;
     if (params.run_yolo) {
         predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, params.yolo_thresh);
@@ -942,9 +959,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     if (params.run_random_forest) {
         vector<Mat> views = make_box_views(open_cv_image, predictions);
-        // mkdir("/tmp/tf_bboxes", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH); // Debugging...
-        // save_mats_as_images(views, "/tmp/tf_bboxes"); // Debugging...
-        Mat imgs_data = pack_images_together(views);
+        Mat imgs_data = pack_images_together(views, params.rf_bgr);
 
         Mat rf_predictions;
         rf->predict(imgs_data, rf_predictions);
@@ -954,6 +969,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
             predictions[i].obj_id = static_cast<int>(rf_predictions.at<float>(i));
         }
     }
+
     fps = 1.0 / (carmen_get_time() - start_time);
     start_time = carmen_get_time();
 
@@ -995,10 +1011,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
                 }
             }
 
-            // if (predictions.size() > 0 && COMPUTE_TL_POSES)
             if (params.compute_tl_poses)
             {
-                // FIXME: Quase certeza que da pra tirar o `predictions.size() > 0`.
                 compute_traffic_light_pose(predictions, RESIZED_W, RESIZED_H, crop_x, crop_y, crop_w, crop_h, lidar_points);
             }
 
@@ -1191,7 +1205,7 @@ read_parameters(int argc, char **argv)
         ("help,h", "Help screen.")
 
         // These first will be positional arguments.
-        ("camera_number", po::value<int>(), "Which camera should be used")
+        ("camera_number", po::value<int>(), "Which camera should be used.")
         ("camera_side", po::value<int>(), "Choose 0 for left image, or 1 for right image.")
         ("annotation_path", po::value<string>(&params.annotation_path))
 
@@ -1201,6 +1215,7 @@ read_parameters(int argc, char **argv)
         ("yolo_thresh", po::value<float>(&params.yolo_thresh)->default_value(0.2), "Only boxes with confidence above the threshold will be used.")
 
         ("rf_weights", po::value<string>(&params.rf_weights)->default_value(CARMEN_HOME_STR+"/data/traffic_light/random_forest/cv_rtrees_weights_tl_rgy.yml"))
+        ("rf_bgr", po::value<bool>(&params.rf_bgr)->default_value(false), "Convert image to BGR before feeding it to the random forest model.")
 
         ("yolo_class_set", po::value<string>(&params.yolo_class_set)->default_value("RG"))
         ("final_class_set", po::value<string>(&params.final_class_set)->default_value("RGY"))
@@ -1216,8 +1231,10 @@ read_parameters(int argc, char **argv)
         ("run_yolo",               po::value<bool>(&params.run_yolo)->default_value(true)) // Falso para criar o GT.
         ("run_random_forest",      po::value<bool>(&params.run_random_forest)->default_value(false)) // Falso para criar o GT.
         ("compute_tl_poses",       po::value<bool>(&params.compute_tl_poses)->default_value(false))
-        ("print_final_prediction", po::value<bool>(&params.print_final_prediction)->default_value(true)) // Falso para criar o GT.
+        ("print_final_prediction", po::value<bool>(&params.print_final_prediction)->default_value(false)) // Falso para criar o GT.
         ("print_gt_prep",          po::value<bool>(&params.print_gt_prep)->default_value(false))
+
+        ("display_resolution",          po::value<string>(&params.display_resolution)->default_value("640x480"))
         ;
 
     po::variables_map vm;
@@ -1328,7 +1345,7 @@ initializer()
         rf = StatModel::load<RTrees>(params.rf_weights);
     }
 
-    //namedWindow("Yolo Traffic Light", WINDOW_AUTOSIZE);
+    namedWindow("Yolo Traffic Light", WINDOW_AUTOSIZE);
     setMouseCallback("Yolo Traffic Light", onMouse);
 
     cerr << "INFO: Using confidence threshold of '" << params.yolo_thresh << "' for YOLO." << endl;

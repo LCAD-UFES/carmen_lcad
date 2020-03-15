@@ -765,11 +765,26 @@ transform_predictions_in_pedestrian_type(vector <bbox_t>predictions, double time
 	}
 }
 
+void calculate_dist_from_area(vector<vector<bbox_t>> predictions_of_crops)
+{
+	double area;
+	for (int j = 0; j < predictions_of_crops[0].size(); j++)
+	{
+		area = (predictions_of_crops[0][j].x	+ predictions_of_crops[0][j].w) * (predictions_of_crops[0][j].y + predictions_of_crops[0][j].h);
+		cout << -8.91945638051591*pow(10,-45)*pow(area,9.0) + 3.58083829253595*pow(10,-38)*
+		pow(area,8.0) -	6.35009226641819*pow(10,-32)*pow(area,7.0) + 6.52781674555335*pow(10,-26)*
+		pow(area,6.0) -	4.28644001525549*pow(10,-20)*pow(area,5.0) +
+		1.86431458728448*pow(10,-14)*pow(area,4.0) -5.37036146883361*pow(10,-9)*pow(area,3.0) + 0.000987951458734913*
+		pow(area,2.0) - 105.320501040228*area + 4957372.79563129 << " " << area << "--!!" << endl;
+	}
+
+}
+
 
 void
 process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned char *img)
 {
-	meters_spacement = 5;
+	meters_spacement = 15;
 	qtd_crops = 0;
 
 	double fps;
@@ -792,7 +807,8 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
 
-	rddf_points_in_image_filtered = get_rddf_points_in_image_filtered_by_meters_spacement(meters_spacement, distances_of_rddf_from_car, world_to_camera_pose, camera_pose, board_pose,
+	rddf_points_in_image_filtered = get_rddf_points_in_image_filtered_by_meters_spacement(meters_spacement,
+			distances_of_rddf_from_car, world_to_camera_pose, camera_pose, board_pose,
 			globalpos, last_rddf_poses, closest_rddf, camera_parameters, image_msg->width, image_msg->height);
 	rddf_points_in_image_full = get_rddf_points_in_image_full(world_to_camera_pose, last_rddf_poses, camera_parameters, image_msg->width, image_msg->height);
 
@@ -879,10 +895,19 @@ process_frame(carmen_bumblebee_basic_stereoimage_message *image_msg, unsigned ch
 			//			printf("[%03d] Velocity: %2.2f  - Orientation(absolute | car): %.3f | %.3f \n",
 			//					pedestrian_tracks[i].track_id, pedestrian_tracks[i].velocity,pedestrian_tracks[i].orientation,abs(pedestrian_tracks[i].orientation - globalpos.theta));
 		}
-		else
+/*		else
 		{
-			cout<<"no pos"<<endl;
-		}
+			cout<<"no_dist ";
+			for (int j = 0; j < predictions_of_crops[0].size(); j++){
+				cout << (predictions_of_crops[0][j].x + predictions_of_crops[0][j].w) * (predictions_of_crops[0][j].y + predictions_of_crops[0][j].h) << endl;
+			}
+
+		}*/
+		else
+			{
+		//			cout<<"no_dist ";
+			calculate_dist_from_area(predictions_of_crops);
+			}
 
 		//cout<<"x: "<<positions[i].cartesian_x<<" "<<"y: "<<positions[i].cartesian_y<<endl;
 	}

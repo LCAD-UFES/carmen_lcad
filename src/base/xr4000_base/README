@@ -1,0 +1,44 @@
+The code in this directory is a modification of the DRobot daemon for
+the XR4000 Robot released by David Austin under the GNU Public License
+(GPL). His code in turn, was based on code now released by Nomadic
+Technologies under the GPL as well. 
+
+I took the liberty of removing everything from the code that shouldn't
+have been there in the first place (in my humble opinion). I have
+removed the following:
+* arm / lift support
+* laser support (500 and 550)
+* compass support
+* the socket interface
+* buggy useless libraries.
+
+I have replaced the socket interface with an IPC interface
+(http://www-2.cs.cmu.edu/afs/cs/project/TCA/www/ipc/ipc.html)
+conforming to the CARMEN robot toolkit interface.
+
+I have also cleaned up much of the remaining code, including fixing a
+few bugs. This code comes with no warranties. See LICENSE.TXT for the
+full text of the GNU Public license.
+
+The following is the original copyright notice for the code from Nomadic
+Technologies.
+
+/*
+ *                             ** COPYRIGHT NOTICE **
+ *
+ * Copyright (c) 1996, Nomadic Technologies, Inc.
+ *
+ * The contents of this  file is copyrighted by  Nomadic Technologies,
+ * Inc, and is protected by United States copyright laws. You may make
+ * as  many copies   of  the software   as  deemed  necessary  for the
+ * effective programming of the Nomad  series robots provided that all
+ * copyright and other proprietary   notices are reproduced  in  their
+ * entirety.
+ *
+ */
+
+The original module was reverse engineered by David Austin
+(d.austin@computer.org).
+
+Further modifications to the module were made by me, Mike Montemerlo
+(mmde@cs.cmu.edu).

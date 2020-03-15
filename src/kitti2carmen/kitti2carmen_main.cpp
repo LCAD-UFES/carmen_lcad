@@ -9,6 +9,8 @@
 #include <carmen/carmen.h>
 #include "read_kitti.h"
 
+int kitty_velodyne_number = 9;
+
 int vel64_to_vel32_id[] = {
 		-1, //00
 		10, //01
@@ -175,7 +177,7 @@ read_velodyne_and_save_to_log(double carmen_initial_time, carmen_FILE *g, char *
 
 //		carmen_velodyne_variable_scan_message velodyne_message = read_velodyne(dir, line, timestamp);
 //		publish_velodyne(velodyne_message);
-//		carmen_logwrite_write_variable_velodyne_scan(&velodyne_message, g, timestamp);
+//		carmen_logwrite_write_variable_velodyne_scan(&velodyne_message, kitty_velodyne_number, g, timestamp);
 //		desalloc_velodyne_data(velodyne_message);
 
 		carmen_velodyne_partial_scan_message velodyne_message = read_velodyne_hdl32(dir, line, timestamp);

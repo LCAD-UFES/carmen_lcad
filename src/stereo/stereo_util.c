@@ -49,6 +49,12 @@ stereo_util get_stereo_instance(int camera, int width, int height)
   char *camera_model_key = (char*)malloc(128 * sizeof(char));
   carmen_test_alloc(camera_model_key);
 
+  char *stereo_stride_x_key = (char*)malloc(128 * sizeof(char));
+  carmen_test_alloc(stereo_stride_x_key);
+
+  char *stereo_stride_y_key = (char*)malloc(128 * sizeof(char));
+  carmen_test_alloc(stereo_stride_y_key);
+
   sprintf(width_key, "basic%d_width", camera);
   sprintf(height_key, "basic%d_height", camera);
   sprintf(fx_key, "basic%d_fx", camera);
@@ -57,12 +63,16 @@ stereo_util get_stereo_instance(int camera, int width, int height)
   sprintf(yc_key, "basic%d_cv", camera);
   sprintf(baseline_key, "basic%d_baseline", camera);
   sprintf(camera_model_key, "basic%d_model", camera);
+  sprintf(stereo_stride_x_key, "basic%d_stereo_stride_x", camera);
+  sprintf(stereo_stride_y_key, "basic%d_stereo_stride_y", camera);
 
-  double xc_percent, yc_percent, fx_percent, fy_percent;
+  double xc_percent, yc_percent, fx_percent, fy_percent, stereo_stride_x = 1.0, stereo_stride_y = 1.0;
   char *camera_model_value = (char*)malloc(128 * sizeof(char));
   carmen_test_alloc(camera_model_value);
+  char **argv = (char**)malloc(sizeof(char*));
+  carmen_test_alloc(argv);
 
-  carmen_param_t param_list[] = {
+  carmen_param_t mandatory_param_list[] = {
       {(char*)"bumblebee", (char*)width_key, CARMEN_PARAM_INT, &instance.width, 0, NULL},
       {(char*)"bumblebee", (char*)height_key, CARMEN_PARAM_INT, &instance.height, 0, NULL},
       {(char*)"bumblebee", (char*)fx_key, CARMEN_PARAM_DOUBLE, &fx_percent, 0, NULL},
@@ -70,13 +80,19 @@ stereo_util get_stereo_instance(int camera, int width, int height)
       {(char*)"bumblebee", (char*)xc_key, CARMEN_PARAM_DOUBLE, &xc_percent, 0, NULL},
       {(char*)"bumblebee", (char*)yc_key, CARMEN_PARAM_DOUBLE, &yc_percent, 0, NULL},
       {(char*)"bumblebee", (char*)baseline_key, CARMEN_PARAM_DOUBLE, &instance.baseline, 0, NULL},
-      {(char*)"bumblebee", (char*)camera_model_key, CARMEN_PARAM_STRING, &camera_model_value, 0, NULL}
+      {(char*)"bumblebee", (char*)camera_model_key, CARMEN_PARAM_STRING, &camera_model_value, 0, NULL},
   };
 
-  int num_items = sizeof(param_list) / sizeof(param_list[0]);
-  char **argv = (char**)malloc(sizeof(char*));
-  carmen_test_alloc(argv);
-  carmen_param_install_params(1, argv, param_list, num_items);
+  carmen_param_t optional_param_list[] = {
+	  {(char*)"bumblebee", (char*)stereo_stride_x_key, CARMEN_PARAM_DOUBLE, &stereo_stride_x, 0, NULL},
+	  {(char*)"bumblebee", (char*)stereo_stride_y_key, CARMEN_PARAM_DOUBLE, &stereo_stride_y, 0, NULL},
+  };
+
+  carmen_param_allow_unfound_variables(1);
+  carmen_param_install_params(1, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
+  carmen_param_allow_unfound_variables(0);
+  carmen_param_install_params(1, argv, mandatory_param_list, sizeof(mandatory_param_list) / sizeof(mandatory_param_list[0]));
+
 
   free(fx_key);
   free(fy_key);
@@ -84,6 +100,9 @@ stereo_util get_stereo_instance(int camera, int width, int height)
   free(yc_key);
   free(baseline_key);
   free(camera_model_key);
+  free(stereo_stride_x_key);
+  free(stereo_stride_y_key);
+
   free(argv);
 
   if ( (width > 0) && (height > 0) )
@@ -99,6 +118,9 @@ stereo_util get_stereo_instance(int camera, int width, int height)
   // http://www.ptgrey.com/support/kb/index.asp?a=4&q=85
   instance.vfov = 2 * atan(height / (2 * instance.fy));
   instance.hfov = 2 * atan(width / (2 * instance.fx));
+
+  instance.stereo_stride_x = stereo_stride_x;
+  instance.stereo_stride_y = stereo_stride_y;
 
   return instance;
 }

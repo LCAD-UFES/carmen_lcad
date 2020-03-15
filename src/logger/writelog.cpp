@@ -28,6 +28,9 @@
 
 #include <carmen/carmen.h>
 #include <opencv2/highgui/highgui.hpp>
+#include <iostream>
+#include <fstream>
+#include <math.h>
 
 //byte numbers
 #define GET_LOW_ORDER_NIBBLE(x) (int_to_nibble_hex[x & 0xf])
@@ -856,7 +859,6 @@ void carmen_logwrite_write_to_file_velodyne(
 	int low_level_subdir = ((int) (msg->timestamp / LOW_LEVEL_SUBDIR_TIME))
 			* LOW_LEVEL_SUBDIR_TIME;
 
-	int i;
 	static char directory[1024];
 	static char subdir[1024];
 	static char path[1024];
@@ -864,7 +866,7 @@ void carmen_logwrite_write_to_file_velodyne(
 	/**
 	 * TODO: @Filipe: Check if the mkdir call is time consuming.
 	 */
-	sprintf(directory, "%s_velodyne", log_filename);
+	sprintf(directory, "%s_lidar", log_filename);
 	mkdir(directory, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
 
 	sprintf(subdir, "%s/%d", directory, high_level_subdir);
@@ -875,31 +877,124 @@ void carmen_logwrite_write_to_file_velodyne(
 
 	sprintf(path, "%s/%lf.pointcloud", subdir, msg->timestamp);
 
-	FILE *image_file = fopen(path, "wb");
+	FILE *pointcloud_file = fopen(path, "wb");
 
-	for (i = 0; i < msg->number_of_32_laser_shots; i++)
+	for (int i = 0; i < msg->number_of_32_laser_shots; i++)
 	{
-		fwrite(&(msg->partial_scan[i].angle), sizeof(double), 1, image_file);
-		fwrite(msg->partial_scan[i].distance, sizeof(short), 32, image_file);
-		fwrite(msg->partial_scan[i].intensity, sizeof(char), 32, image_file);
+		fwrite(&(msg->partial_scan[i].angle), sizeof(double), 1, pointcloud_file);
+		fwrite(msg->partial_scan[i].distance, sizeof(short), 32, pointcloud_file);
+		fwrite(msg->partial_scan[i].intensity, sizeof(char), 32, pointcloud_file);
 	}
 
-	fclose(image_file);
+	fclose(pointcloud_file);
 
-	carmen_fprintf(outfile, "VELODYNE_PARTIAL_SCAN_IN_FILE %s %d ", path,
-			msg->number_of_32_laser_shots);
+	char *relative_path = path + strlen(log_filename);
+
+	carmen_fprintf(outfile, "VELODYNE_PARTIAL_SCAN_IN_FILE %s %d ", relative_path, msg->number_of_32_laser_shots);
+	carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
+}
+
+void carmen_logwrite_write_to_file_velodyne_variable(
+		carmen_velodyne_variable_scan_message* msg, int velodyne_number, carmen_FILE *outfile,
+		double timestamp, char *log_filename)
+{
+	const double HIGH_LEVEL_SUBDIR_TIME = 100.0 * 100.0; // new each 100 x 100 seconds
+	const double LOW_LEVEL_SUBDIR_TIME = 100.0; // new each 100 seconds
+
+	int high_level_subdir = ((int) (msg->timestamp / HIGH_LEVEL_SUBDIR_TIME))
+			* HIGH_LEVEL_SUBDIR_TIME;
+	int low_level_subdir = ((int) (msg->timestamp / LOW_LEVEL_SUBDIR_TIME))
+			* LOW_LEVEL_SUBDIR_TIME;
+
+	int i;
+	static char directory[1024];
+	static char subdir[1024];
+	static char path[1024];
+
+	/**
+	 * TODO: @Filipe: Check if the mkdir call is time consuming.
+	 */
+	sprintf(directory, "%s_lidar%d", log_filename, velodyne_number);
+	mkdir(directory, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(subdir, "%s/%d", directory, high_level_subdir);
+	mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(subdir, "%s/%d/%d", directory, high_level_subdir, low_level_subdir);
+	mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(path, "%s/%lf.pointcloud", subdir, msg->timestamp);
+
+	FILE *pointcloud_file = fopen(path, "wb");
+
+	for (i = 0; i < msg->number_of_shots; i++)
+	{
+		fwrite(&(msg->partial_scan[i].angle), sizeof(double), 1, pointcloud_file);
+		fwrite(msg->partial_scan[i].distance, sizeof(short), msg->partial_scan->shot_size, pointcloud_file);
+		fwrite(msg->partial_scan[i].intensity, sizeof(char), msg->partial_scan->shot_size, pointcloud_file);
+	}
+
+	fclose(pointcloud_file);
+
+	//novo arquivo de log do velodyne
+	//para salvar o .xyz do velodyne ao mesmo tempo que gera o log
+	/*
+	static char path2[1024];
+
+	sprintf(path2, "%s/%lf.xyz", subdir, msg->timestamp);
+
+	std::ofstream o(path2);
+
+	static double vertical_correction[32];
+	static double vc_16[32] = {-15.0, 1.0, -13.0, 3.0, -11.0, 5.0, -9.0, 7.0, -7.0, 9.0, -5.0, 11.0, -3.0, 13.0, -1.0, 15.0,
+								0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+	static double vc_32[32] = {-30.67, -9.3299999, -29.33, -8.0, -28.0, -6.6700001, -26.67, -5.3299999, -25.33, -4.0, -24.0, -2.6700001, -22.67, -1.33, -21.33, 0.0,
+			-20.0, 1.33, -18.67, 2.6700001, -17.33, 4.0, -16.0, 5.3299999, -14.67, 6.6700001, -13.33, 8.0, -12.0, 9.3299999, -10.67, 10.67};
+	if(msg->partial_scan->shot_size == 16)
+		memcpy(vertical_correction, vc_16, sizeof(vc_16));
+	else if (msg->partial_scan->shot_size == 32)
+		memcpy(vertical_correction, vc_32, sizeof(vc_32));
+
+	for (int i = 0; i < msg->number_of_shots; i++)
+	{
+		for (int j = 0; j < msg->partial_scan->shot_size; j++)
+		{
+			double v_angle = (carmen_degrees_to_radians(vertical_correction[j]));
+
+			double range = (double) msg->partial_scan[i].distance[j];
+
+			double h_angle = (carmen_degrees_to_radians(msg->partial_scan[i].angle));
+
+			double x, y, z;
+			x = range * cos(v_angle) * cos(h_angle);
+			y = range * cos(v_angle) * sin(h_angle);
+			z = range * sin(v_angle);
+
+			o << x << "\t" << y << "\t" << z << std::endl;
+		}
+		o << std::endl;
+	}
+
+	o.close();
+	*/
+	//fim do novo arquivo
+
+	char *relative_path = path + strlen(log_filename);
+
+	carmen_fprintf(outfile, "VELODYNE_VARIABLE_SCAN_IN_FILE%d %s %d %d %d ", velodyne_number, relative_path,
+			velodyne_number, msg->partial_scan->shot_size, msg->number_of_shots);
 	carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
 }
 
 char *hex_char_distance_and_intensity_variable;
 
 void carmen_logwrite_write_variable_velodyne_scan(
-		carmen_velodyne_variable_scan_message* msg, carmen_FILE* outfile,
+		carmen_velodyne_variable_scan_message* msg, int velodyne_number, carmen_FILE* outfile,
 		double timestamp)
 {
 	int i, j, k, angle;
 
-	carmen_fprintf(outfile, "VARIABLE_VELODYNE_SCAN ");
+	carmen_fprintf(outfile, "VARIABLE_VELODYNE_SCAN%d ", velodyne_number);
 	carmen_fprintf(outfile, "%d ", msg->number_of_shots);
 	carmen_fprintf(outfile, "%d ", msg->partial_scan[0].shot_size);
 
@@ -1106,7 +1201,7 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 	/**
 	 * TODO: @Filipe: Check if the mkdir call is time consuming.
 	 */
-	sprintf(directory, "%s_bumblebee", log_filename);
+	sprintf(directory, "%s_camera", log_filename);
 	mkdir(directory, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
 
 	sprintf(subdir, "%s/%d", directory, high_level_subdir);
@@ -1115,55 +1210,48 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 	sprintf(subdir, "%s/%d/%d", directory, high_level_subdir, low_level_subdir);
 	mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
 
-	// DEBUG:
-	//printf("%lf %d %d %s\n", msg->timestamp, high_level_subdir, low_level_subdir, subdir);
-
 	if ((frame_number % frequency) == 0)
 	{
-		if (0)//(bumblebee_num == 4) // ZED Camera
+//		if (bumblebee_num == 4) // ZED Camera
+//		{
+//			int width;                    /**<The x dimension of the image in pixels. */
+//			int height;                   /**<The y dimension of the image in pixels. */
+//			int image_size;		          /**<width*height*bytes_per_pixel. */
+//			int isRectified;
+//			unsigned char *raw_left;
+//			unsigned char *raw_right;
+//			double timestamp;
+//			char *host;
+//
+//			sprintf(path, "%s/%lf.bb%d.png", subdir, msg->timestamp, bumblebee_num);
+//			static cv::Mat dest;
+//
+//			cv::Mat left = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_left);
+//			cv::Mat right = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_right);
+//
+//			cv::hconcat(left, right, dest);
+//			cv::imwrite(path, dest);
+//
+//		}
+//		else
 		{
-//			  int width;                    /**<The x dimension of the image in pixels. */
-//			  int height;                   /**<The y dimension of the image in pixels. */
-//			  int image_size;              /**<width*height*bytes_per_pixel. */
-//			  int isRectified;
-//			  unsigned char *raw_left;
-//			  unsigned char *raw_right;
-//			  double timestamp;
-//			  char *host;
-
-
-			sprintf(path, "%s/%lf.bb%d.png", subdir, msg->timestamp, bumblebee_num);
-			static cv::Mat dest;
-
-			cv::Mat left = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_left);
-			cv::Mat right = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_right);
-
-			cv::hconcat(left, right, dest);
-			cv::imwrite(path, dest);
-
-		}
-		else
-		{
-			sprintf(path, "%s/%lf.bb%d.image", subdir, msg->timestamp,
-					bumblebee_num);
+			sprintf(path, "%s/%lf.bb%d.image", subdir, msg->timestamp, bumblebee_num);
 
 			FILE *image_file = fopen(path, "wb");
 
-			fwrite(msg->raw_left, msg->image_size, sizeof(unsigned char),
-					image_file);
-			fwrite(msg->raw_right, msg->image_size, sizeof(unsigned char),
-					image_file);
+			fwrite(msg->raw_left,  msg->image_size, sizeof(unsigned char), image_file);
+			fwrite(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
 
 			fclose(image_file);
 		}
 
+		char *relative_path = path + strlen(log_filename);
+
 		carmen_fprintf(outfile,
 				"BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE%d %s %d %d %d %d ",
-				bumblebee_num, path, msg->width, msg->height, msg->image_size,
-				msg->isRectified);
+				bumblebee_num, relative_path, msg->width, msg->height, msg->image_size, msg->isRectified);
 
-		carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host,
-				timestamp);
+		carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
 
 		frame_number = 0;
 	}

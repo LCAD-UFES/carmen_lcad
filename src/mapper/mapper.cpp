@@ -258,7 +258,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
 	int i = 0;
 
-//	plot_data = fopen("plot_data.dat", "w");
+	//	plot_data = fopen("plot_data.dat", "w");
 	// Ray-trace the grid
 	carmen_pose_3D_t robot_pose = sensor_data->robot_pose[point_cloud_index];
 //	robot_pose.position.z = 0.0;
@@ -282,7 +282,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 				robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_strong_slow_down_annotation, tid, use_remission);
 
 		if (use_neural_mapper)
-			neural_mapper_update_input_maps(sensor_data, sensor_params, tid, log_odds_snapshot_map, map_config, x_origin, y_origin);
+			neural_mapper_update_input_maps(sensor_data, sensor_params, tid, log_odds_snapshot_map, map_config, x_origin, y_origin, highest_sensor, safe_range_above_sensors);
 
 //		fprintf(plot_data, "%lf %lf %lf",
 //				sensor_data->ray_origin_in_the_floor[tid][1].x,
@@ -469,6 +469,14 @@ map_decay_to_offline_map(carmen_map_t *current_map)
 }
 
 
+void
+clear_log_odds_map(carmen_map_t *log_odds_snapshot_map, double log_odds_l0)
+{
+	for (int i = 0; i < log_odds_snapshot_map->config.x_size * log_odds_snapshot_map->config.y_size; i++)
+		log_odds_snapshot_map->complete_map[i] = log_odds_l0;
+}
+
+
 int
 run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
 {
@@ -485,7 +493,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 		first = 0;
 	}
 
-#pragma omp parallel num_threads(number_of_threads)
+//#pragma omp parallel num_threads(number_of_threads)
 	{
 		log_odds_snapshot_map = carmen_prob_models_check_if_new_log_odds_snapshot_map_allocation_is_needed(log_odds_snapshot_map, &map);
 		//set_map_equal_offline_map(&map);
@@ -493,6 +501,7 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 
 		if (sensor_params->sensor_type == LASER_LDMRS)
 		{
+//			printf("[mapper.cpp] mapeando com o LDMRS\n");
 			update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(log_odds_snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
 			carmen_prob_models_clear_cells_hit_by_single_ray(log_odds_snapshot_map, sensor_params->log_odds.log_odds_occ,
 					sensor_params->log_odds.log_odds_l0);
@@ -509,13 +518,26 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 			// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
 			update_log_odds_of_cells_in_the_velodyne_perceptual_field(log_odds_snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global,
 					sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-			//TODO:@@@ VINICIUS Pegar antes dessa funcao de baixo o snapshot (o snapshot eh um mapa de logodds Variavel:log_odds_snapshot_map)
-			//Funcao Abaixo junta o snapshot com o mapoffiline
-			carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map,
-					sensor_params->log_odds.log_odds_l0);
+
+			if (!generate_neural_mapper_dataset && use_neural_mapper)
+			{
+				if (offline_map.complete_map != NULL)
+				{
+					int size_trained = neural_mapper_max_distance_meters/log_odds_snapshot_map->config.resolution * 2;
+					clear_log_odds_map(log_odds_snapshot_map, sensor_params->log_odds.log_odds_l0);
+					neural_map_run_foward(log_odds_snapshot_map, size_trained, &neural_mapper_robot_pose, x_origin, y_origin);
+					carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map,
+																										sensor_params->log_odds.log_odds_l0);
+//					carmen_grid_mapping_save_map((char *) "neural_map_teste.map", &map);
+//					printf("Salvei! \n");
+				}
+			}
+			else
+				carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map,
+						sensor_params->log_odds.log_odds_l0);
 //			carmen_grid_mapping_save_map((char *) "test.map", &map);
 
-			if (use_neural_mapper)
+			if (use_neural_mapper)//To generate the dataset to use in Neural Mapper training.
 			{
 				if (generate_neural_mapper_dataset)
 				{
@@ -523,8 +545,9 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 							x_origin, y_origin, neural_mapper_data_pace);
 
 					neural_mapper_update_output_map(offline_map, neural_mapper_car_position_according_to_map);
-					char neural_mapper_dataset_path[1024] = "/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/imgs_teste/";
-					neural_mapper_export_dataset_as_png(get_next_map, neural_mapper_dataset_path);
+					char neural_mapper_dataset_path[1024] = "/media/vinicius/NewHD/neural_mapper_raw/volta_da_ufes_20191003/";
+//					neural_mapper_export_dataset_as_png(get_next_map, neural_mapper_dataset_path);
+					neural_mapper_export_dataset_as_binary_file(get_next_map, neural_mapper_dataset_path, sensor_data->current_timestamp, neural_mapper_robot_pose);
 				}
 				neural_mapper_update_queue_and_clear_maps();
 			}
@@ -823,7 +846,7 @@ mapper_velodyne_partial_scan(int sensor_number, carmen_velodyne_partial_scan_mes
 
 
 int
-mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_message *message)
+mapper_stereo_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_message *message)
 {
 	static int message_id;
 
@@ -867,6 +890,56 @@ mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_m
 	message_id++;
 	sensors_data[sensor_number].last_timestamp = message->timestamp;
 	
+	return (ok_to_publish);
+}
+
+
+int
+mapper_velodyne_variable_scan(int lidar_id, carmen_velodyne_variable_scan_message *message)
+{
+	static int message_id;
+	int sensor_number = lidar_id+10; //10 is the first position of lidar parameters on carmen-ford-escape.ini
+	int num_points = message->number_of_shots * sensors_params[sensor_number].vertical_resolution;
+
+	ok_to_publish = 0;
+	if (!globalpos_initialized)
+		return (ok_to_publish);
+
+	if (sensors_data[sensor_number].last_timestamp == 0.0)
+	{
+		sensors_data[sensor_number].last_timestamp = message->timestamp;
+		message_id = -2;		// antigamente eram necessarias pelo menos 2 mensagens para ter uma volta completa de velodyne
+
+		return (ok_to_publish);
+	}
+
+	sensors_data[sensor_number].last_timestamp = sensors_data[sensor_number].current_timestamp = message->timestamp;
+
+	build_sensor_point_cloud(&sensors_data[sensor_number].points, sensors_data[sensor_number].intensity,
+							&sensors_data[sensor_number].point_cloud_index, num_points, NUM_VELODYNE_POINT_CLOUDS);
+
+	carmen_velodyne_variable_scan_update_points(message, sensors_params[sensor_number].vertical_resolution,
+			&sensors_data[sensor_number].points[sensors_data[sensor_number].point_cloud_index],
+			sensors_data[sensor_number].intensity[sensors_data[sensor_number].point_cloud_index],
+			sensors_params[sensor_number].ray_order, sensors_params[sensor_number].vertical_correction,
+			sensors_params[sensor_number].range_max, message->timestamp);
+
+	sensors_data[sensor_number].robot_pose[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].pose;
+	sensors_data[sensor_number].robot_velocity[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].velocity;
+	sensors_data[sensor_number].robot_timestamp[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].timestamp;
+	sensors_data[sensor_number].robot_phi[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].phi;
+	sensors_data[sensor_number].points_timestamp[sensors_data[sensor_number].point_cloud_index] = message->timestamp;
+
+	if (message_id >= 0)
+	{
+		ok_to_publish = 1;
+
+		if (message_id > 1000000)
+			message_id = 0;
+	}
+	message_id++;
+	sensors_data[sensor_number].last_timestamp = message->timestamp;
+
 	return (ok_to_publish);
 }
 
@@ -1036,6 +1109,86 @@ mapper_publish_map(double timestamp)
 }
 
 
+int
+carmen_parse_collision_file(double **polygon)
+{
+	FILE *poly;
+	int n_points, h_lvl;
+	char *poly_file;
+
+	carmen_param_allow_unfound_variables(0);
+	carmen_param_t param_list[] =
+	{
+	{ (char *) "robot", (char *) "collision_file", CARMEN_PARAM_STRING, &poly_file, 1, NULL }, };
+	carmen_param_install_params(0, NULL, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	poly = fopen(poly_file, "r");
+	setlocale(LC_NUMERIC, "C");
+
+	if (poly == NULL)
+	{
+		printf("Can not load Col File\n");
+	}
+	fscanf(poly, "%d\n", &n_points);
+	fscanf(poly, "%d\n", &h_lvl);
+	*polygon = (double*) malloc(n_points * 4 * sizeof(double));
+	for (int i = 0; i < n_points; i++)
+	{
+		fscanf(poly, "%lf %lf %lf %lf\n", *polygon + (4 * i), *polygon + (4 * i + 1), *polygon + (4 * i + 2), *polygon + (4 * i + 3));
+		printf("%lf %lf %lf %lf\n", (*polygon)[4 * i], (*polygon)[4 * i + 1], (*polygon)[4 * i + 2], (*polygon)[4 * i + 3]);
+	}
+	fclose(poly);
+
+	return n_points;
+}
+
+
+void
+carmen_mapper_update_cells_bellow_robot(carmen_point_t pose, carmen_map_t *map, double prob)
+{
+	static int load_polygon = 1;
+	static double *collision_model_circles;
+	static int col_n_points = 0;
+
+	if (load_polygon)
+	{
+		col_n_points = carmen_parse_collision_file(&collision_model_circles);
+		load_polygon = 0;
+		printf("Col Loaded\n");
+	}
+
+	double collision_model_circles_center_in_world[4 * col_n_points];
+	int collision_model_circles_center_in_map[4 * col_n_points];
+
+	for (int i = 0; i < col_n_points; i++)
+	{
+		collision_model_circles_center_in_world[4 * i] = collision_model_circles[4 * i] * cos(pose.theta) + collision_model_circles[4 * i + 1] * sin(pose.theta);
+		collision_model_circles_center_in_world[4 * i + 1] = collision_model_circles[4 * i] * sin(pose.theta) - collision_model_circles[4 * i + 1] * cos(pose.theta);
+	}
+	for (int i = 0; i < col_n_points; i++)
+	{
+		collision_model_circles_center_in_map[4 * i] = (collision_model_circles_center_in_world[4 * i] + pose.x - map->config.x_origin) / map->config.resolution;
+		collision_model_circles_center_in_map[4 * i + 1] = (collision_model_circles_center_in_world[4 * i + 1] + pose.y - map->config.y_origin) / map->config.resolution;
+	}
+	for (int i = 0; i < col_n_points; i++)
+	{
+		int pix_radius = ceil(collision_model_circles[4 * i + 2] / map->config.resolution);
+		for (int j = -pix_radius; j <= pix_radius; j++)
+		{
+			for (int k = -pix_radius; k <= pix_radius; k++)
+			{
+				if ((collision_model_circles_center_in_map[4 * i] + j >= 0) &&
+					(collision_model_circles_center_in_map[4 * i] + j < map->config.x_size) &&
+					(collision_model_circles_center_in_map[4 * i + 1] + k >= 0) &&
+					(collision_model_circles_center_in_map[4 * i + 1] + k < map->config.y_size) &&
+					(j * j + k * k <= pix_radius * pix_radius))
+					map->complete_map[(int) (collision_model_circles_center_in_map[4 * i] + j) * map->config.y_size + (int) (collision_model_circles_center_in_map[4 * i + 1] + k)] = prob;
+			}
+		}
+	}
+}
+
+
 void
 mapper_set_robot_pose_into_the_map(carmen_localize_ackerman_globalpos_message *globalpos_message, int UPDATE_CELLS_BELOW_CAR)
 {
@@ -1059,7 +1212,8 @@ mapper_set_robot_pose_into_the_map(carmen_localize_ackerman_globalpos_message *g
 	map.config.y_origin = y_origin;
 
 	if (UPDATE_CELLS_BELOW_CAR)
-		carmen_prob_models_updade_cells_bellow_robot(globalpos_message->globalpos, &map, 0.0, &car_config);
+		carmen_mapper_update_cells_bellow_robot(globalpos_message->globalpos, &map, 0.0);
+//		carmen_prob_models_updade_cells_bellow_robot(globalpos_message->globalpos, &map, 0.0, &car_config);
 }
 
 

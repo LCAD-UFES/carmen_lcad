@@ -189,6 +189,9 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 
 	previous_t = t;
 
+//	if (atan_desired_curvature != 0.0)
+//		u_t = 13.0;
+
 	u_t = carmen_clamp(-100.0, u_t, 100.0);
 
 //	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",

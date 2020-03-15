@@ -19,10 +19,10 @@ typedef struct {
 
 #define CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_FMT "{int,int,int,int,<ubyte:3>,<ubyte:3>,double,string}"
 
-#define CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE10_NAME "carmen_bumblebe_basic_stereoimage10"
+#define CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE10_NAME "carmen_bumblebee_basic_stereoimage10"
 #define CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE10_FMT "{int,int,int,int,<ubyte:3>,<ubyte:3>,double,string}"
 
-#define CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE11_NAME "carmen_bumblebe_basic_stereoimage11"
+#define CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE11_NAME "carmen_bumblebee_basic_stereoimage11"
 #define CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE11_FMT "{int,int,int,int,<ubyte:3>,<ubyte:3>,double,string}"
 
 #ifdef __cplusplus

@@ -1,3 +1,4 @@
+
 ////////////////////////////////////////////////////////////////////////////
 //
 //  This file is part of RTIMULib
@@ -525,7 +526,7 @@ bool RTIMULSM9DS0::IMURead()
 
     //  sort out accel data;
 
-    m_imuData.accel.setX(-m_imuData.accel.x());
+    m_imuData.accel.setX(m_imuData.accel.x());
 
     //  sort out compass axes
 

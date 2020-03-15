@@ -1,0 +1,12 @@
+Makefile.depend
+base_test
+arm_test
+pioneer
+scout
+orc
+orc4
+orc5
+rflex
+xr4000
+*.so.1
+*.a

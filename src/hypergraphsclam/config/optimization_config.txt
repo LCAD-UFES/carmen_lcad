@@ -71,7 +71,7 @@ GPS_SPARSITY_THRESHOLD 0.20
 
 -- edges configuration - disable, enable edges - Comente para dizer quais voce nao quer usar como aresta.
 USE_VELODYNE_SEQ
-USE_VELODYNE_LOOP
+-- USE_VELODYNE_LOOP
 -- USE_BUMBLEBEE_SEQ
 -- USE_BUMBLEBEE_LOOP
 -- USE_SICK_SEQ

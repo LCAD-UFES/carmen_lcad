@@ -1,4 +1,16 @@
 import os
+
+def activate_virtual_environment(environment_root):
+    """Configures the virtual environment starting at ``environment_root``."""
+    activate_script = os.path.join(
+        environment_root, 'bin', 'activate_this.py')
+    execfile(activate_script, {'__file__': activate_script})
+
+carmen_home = os.getenv("CARMEN_HOME")
+virtualenv_root = carmen_home + "/src/neural_object_detector3/nod_venv2"
+print("Activating Venv")
+activate_virtual_environment(virtualenv_root)
+
 import cv2
 import time
 import logging
@@ -10,16 +22,15 @@ from utils import visualization as vis
 from utils.log import logger
 from utils.timer import Timer
 
-global image_width
-global image_height
-global tracker
+image_width = 0
+image_height = 0
+tracker = OnlineTracker()
 
 def set_image_settings(w, h):
 	global image_width
 	global image_height
 	global tracker	
 
-	#print(str(w))
 	image_width = w
 	image_height = h
 	
@@ -34,13 +45,12 @@ def run_pedestrian_tracker(carmen_image, det_tlwhs):
 	global image_width
 	global image_height
 	global tracker
-
-
+	
 	#image = carmen_image.view(np.uint8).reshape((image_height, image_width, 3))[:,:,::-1]
 	#print(carmen_image.shape)
 	#carmen_image = carmen_image[:,:,::-1]
 	#carmen_image = cv2.cvtColor(carmen_image, cv2.COLOR_BGR2RGB)
-	# image = np.array([ord(c) for c in carmen_image][:(image_height * image_width * 3)]).astype(np.uint8).reshape((image_height, image_width, 3))[:,:,::-1]
+	#image = np.array([ord(c) for c in carmen_image][:(image_height * image_width * 3)]).astype(np.uint8).reshape((image_height, image_width, 3))[:,:,::-1]
 	#print(image[0,0])
 	#print(len(carmen_image))
 	#cv2.imshow("Teste python", carmen_image)
@@ -58,10 +68,10 @@ def run_pedestrian_tracker(carmen_image, det_tlwhs):
 
 
 	# Image Visualization
-        # online_im = vis.plot_tracking(carmen_image, online_tlwhs, online_ids)
-        # cv2.imshow('online_tracker', online_im)
+        #online_im = vis.plot_tracking(carmen_image, online_tlwhs, online_ids)
+        #cv2.imshow('online_tracker', online_im)
 
-        # key = cv2.waitKey(1)
+        #cv2.waitKey(0)
         # key = chr(key % 128).lower()
         # if key == 'q':
         #     exit(0)
@@ -76,7 +86,7 @@ def run_pedestrian_tracker(carmen_image, det_tlwhs):
 		online_result = np.concatenate((online_tlwhs, np.array([online_ids]).T), axis=1)
 		online_result = np.concatenate(([ len(online_ids) ], online_result.flatten()), axis=0).astype(np.int16)
 	else:
-		online_result = np.array([0]).astype(np.int16)
+		online_result = np.array(0).astype(np.int16)
 
-
+	#print online_result
 	return online_result

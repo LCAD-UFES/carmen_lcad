@@ -112,6 +112,10 @@ typedef struct {
   double xy_uncertainty_due_to_grid_resolution;
   double yaw_uncertainty_due_to_grid_resolution;
 
+  double v_uncertainty_at_zero_v;
+
+  double remission_variance_multiplier;
+
 #ifndef OLD_MOTION_MODEL
   carmen_localize_ackerman_motion_model_t *motion_model;
 #endif  

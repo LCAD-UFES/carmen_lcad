@@ -11,7 +11,6 @@
 #define SECURITY_VELOCITY_PERCENT 0.5
 
 carmen_collision_config_t global_collision_config;
-int global_max_height_level;
 
 //carmen_mapper_virtual_laser_message virtual_laser_message;
 
@@ -736,7 +735,7 @@ carmen_collision_detection_in_car_coordinate_frame(const carmen_point_t point, c
 	double coss, sine;
 
 	sincos(point.theta, &sine, &coss);
-	double x_disp = point.x + x * coss + y * sine;
+	double x_disp = point.x + x * coss - y * sine;
 	double y_disp = point.y + x * sine + y * coss;
 
 	sincos(localizer_pose->theta, &sine, &coss);
@@ -762,13 +761,13 @@ carmen_collision_detection_displace_car_pose_according_to_car_orientation(carmen
 }
 
 carmen_point_t
-carmen_collision_detection_pose_according_to_car_orientation(carmen_ackerman_traj_point_t *car_pose, double x, double y)
+carmen_collision_detection_displaced_pose_according_to_car_orientation(carmen_ackerman_traj_point_t *car_pose, double x, double y)
 {
 	carmen_point_t displaced_car_pose;
 	double coss, sine;
 
 	sincos(car_pose->theta, &sine, &coss);
-	displaced_car_pose.x = car_pose->x + x * coss + y * sine;
+	displaced_car_pose.x = car_pose->x + x * coss - y * sine;
 	displaced_car_pose.y = car_pose->y + x * sine + y * coss;
 
 	displaced_car_pose.theta = car_pose->theta;
@@ -887,10 +886,11 @@ check_collision_config_initialization()
 	carmen_param_install_params(0, NULL, param_list, sizeof(param_list)/sizeof(param_list[0]));
 
 	collision_file_pointer = fopen(collision_file, "r");
-//	setlocale(LC_NUMERIC, "C");
+	setlocale(LC_NUMERIC, "C");
+	int max_h_level;
 	fscanf(collision_file_pointer,"%d", &(global_collision_config.n_markers));
+	fscanf(collision_file_pointer,"%d", &max_h_level);
 	global_collision_config.markers = (carmen_collision_marker_t*) malloc(global_collision_config.n_markers*sizeof(carmen_collision_marker_t));
-	fscanf(collision_file_pointer,"%d", &(global_max_height_level));
 
 	for (i = 0; i < global_collision_config.n_markers; i++)
 		fscanf(collision_file_pointer,"%lf %lf %lf %d", &global_collision_config.markers[i].x , &global_collision_config.markers[i].y,
@@ -979,14 +979,20 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 
 	for (int i = 0; i < global_collision_config.n_markers; i++)
 	{
-		carmen_point_t displaced_point = carmen_collision_detection_pose_according_to_car_orientation(&trajectory_pose,
+		carmen_point_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
 				global_collision_config.markers[i].x, global_collision_config.markers[i].y);
 		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
 		//distance equals to -1.0 when the coordinates are outside of map
 		if (distance != -1.0)
 		{
 			if (distance < global_collision_config.markers[i].radius + safety_distance)
+			{
+//				virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
+//				virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
+//				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
+//				virtual_laser_message.num_positions++;
 				return (1);
+			}
 		}
 		else
 			return (2);
@@ -1060,8 +1066,10 @@ carmen_obstacle_avoider_compute_closest_car_distance_to_colliding_point(carmen_a
 }
 
 
-carmen_collision_config_t*
-carmen_get_global_collision_config(){
+carmen_collision_config_t *
+carmen_get_global_collision_config()
+{
 	check_collision_config_initialization();
-	return &global_collision_config;
+
+	return (&global_collision_config);
 }

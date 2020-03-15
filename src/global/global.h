@@ -134,6 +134,15 @@ extern "C" {
 							((x1)->y - (x2)->y) * ((x1)->y - (x2)->y) + \
 							((x1)->z - (x2)->z) * ((x1)->z - (x2)->z)))
 
+#define TRANSLATE3D(p,offset) p.x += offset.x; \
+							  p.y += offset.y; \
+							  p.z += offset.z;
+
+//TODO Verificar se esta funcionando
+#define ROTATE3DZ(p,theta) p.x = p.x * cos(theta) - p.y * sin(theta); \
+						   p.y = p.x * sin(theta) + p.y * cos(theta);
+
+
 #define	POINT_WITHIN_SEGMENT		0
 #define	SEGMENT_TOO_SHORT			1
 #define	POINT_BEFORE_SEGMENT		2
@@ -292,6 +301,8 @@ typedef struct {
 	double behaviour_selector_central_lane_obstacles_safe_distance;
 	double behaviour_selector_lateral_lane_obstacles_safe_distance;
 	double behaviour_selector_lateral_lane_displacement;
+
+	double behaviour_selector_goal_velocity_tuning_factor; // Correct imperfections of the velocity control by modifying the braking starting point
 } carmen_robot_ackerman_config_t;
 
 typedef struct {
@@ -426,6 +437,8 @@ void carmen_die_syserror(const char* fmt, ...) __attribute__ ((format (printf, 1
 void carmen_carp_set_verbose(int verbosity);
 int carmen_carp_get_verbose(void);
 void carmen_carp_set_output(FILE *output);
+
+char carmen_get_bit_value(unsigned short data, int bit_number);
 
 extern carmen_inline double carmen_get_time(void)
 {

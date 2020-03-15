@@ -25,7 +25,7 @@
 #include "RTIMULSM9DS1.h"
 #include "RTIMUSettings.h"
 
-#define do_log 1
+//#define do_log 1
 //  this sets the learning rate for compass running average calculation
 
 #define COMPASS_ALPHA 0.2f
@@ -273,9 +273,9 @@ bool RTIMULSM9DS1::setAccelCTRL6()
 
     	#ifndef do_log
         	m_accelScale = (RTFLOAT)0.000061;
-		#else
+	#else
         	m_accelScale = (RTFLOAT)1.000000;
-		#endif
+	#endif
 
         break;
 
@@ -283,9 +283,9 @@ bool RTIMULSM9DS1::setAccelCTRL6()
 
     	#ifndef do_log
         	m_accelScale = (RTFLOAT)0.000122;
-		#else
+	#else
         	m_accelScale = (RTFLOAT)1.000000;
-		#endif
+	#endif
 
         break;
 
@@ -293,9 +293,9 @@ bool RTIMULSM9DS1::setAccelCTRL6()
 
     	#ifndef do_log
         	m_accelScale = (RTFLOAT)0.000244;
-		#else
+	#else
         	m_accelScale = (RTFLOAT)1.000000;
-		#endif
+	#endif
 
         break;
 
@@ -303,9 +303,9 @@ bool RTIMULSM9DS1::setAccelCTRL6()
 
     	#ifndef do_log
         	m_accelScale = (RTFLOAT)0.000732;
-		#else
+	#else
         	m_accelScale = (RTFLOAT)1.000000;
-		#endif
+	#endif
 
         break;
 
@@ -443,35 +443,22 @@ bool RTIMULSM9DS1::IMURead()
 
     //  sort out gyro axes and correct for bias
 
-    m_imuData.gyro.setZ(-m_imuData.gyro.z());
-
-    //  sort out accel data;
-
-    m_imuData.accel.setX(-m_imuData.accel.x());
-    m_imuData.accel.setY(-m_imuData.accel.y());
-
-    //  sort out compass axes
-
-    m_imuData.compass.setX(-m_imuData.compass.x());
-    m_imuData.compass.setZ(-m_imuData.compass.z());
-
-
-    //////////// ******
-
-    m_imuData.gyro.setZ(-m_imuData.gyro.z());
     m_imuData.gyro.setX(-m_imuData.gyro.x());
+    m_imuData.gyro.setY(m_imuData.gyro.y());
+    m_imuData.gyro.setZ(m_imuData.gyro.z());
 
     //  sort out accel data;
 
-    m_imuData.accel.setZ(-m_imuData.accel.z());
     m_imuData.accel.setX(-m_imuData.accel.x());
+    m_imuData.accel.setY(m_imuData.accel.y());
+    m_imuData.accel.setZ(m_imuData.accel.z());
 
     //  sort out compass axes
 
-    m_imuData.compass.setZ(-m_imuData.compass.z());
-    m_imuData.compass.setX(-m_imuData.compass.x());
+    m_imuData.compass.setX(m_imuData.compass.x());
+    m_imuData.compass.setY(m_imuData.compass.y());
+    m_imuData.compass.setZ(m_imuData.compass.z());
 
-    //////////// ******
 
     //  now do standard processing
 

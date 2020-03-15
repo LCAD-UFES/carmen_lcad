@@ -261,8 +261,8 @@ void usage(char *fmt, ...)
 
 	fprintf(stderr, " [args]:\n"
 			        "\t-speed <value>               speed option (default: 1.0)\n"
-			        "\t-message <option>            message play:stop option (default: 0)\n"
-			        "\t-autostart on|off            auto start option (default: off)\n");
+			        "\t-autostart on|off            auto start option (default: off)\n"
+					"\t-message <option>            message play:stop option (default: 0) Can be used with any runtime option. Ex: -message \"t <init_time>\"\n");
 
 	fprintf(stderr, "\n Message play:stop runtime options:\n");
 	fprintf(stderr, "\tplay from message number:    <num>\n");

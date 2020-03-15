@@ -55,10 +55,12 @@ int main(int argc, char **argv)
     if(carmen_get_joystick_state(&joystick) >= 0) {
     	for(i = 0; i < message.nb_buttons; i++)
     	{
+
 			message.buttons[i] = joystick.buttons[i];
 			if(i < 9)
 			{
 				message.axes[i] = joystick.axes[i];
+				printf("%d\n",joystick.axes[i]);
 			}
 
     	}

@@ -331,27 +331,23 @@ void HyperGraphSclamOptimizer::RegisterCustomTypes()
 // initialize the sparse optimizer
 void HyperGraphSclamOptimizer::InitializeOptimizer()
 {
-
     // creates a new sparse optimizer in memmory
     optimizer = new g2o::SparseOptimizer();
 
     // allocate a new cholmod solver
     HyperCholmodSolver *cholmod_solver = new HyperCholmodSolver();
-    // std::unique_ptr<HyperCholmodSolver> cholmod_solver(new HyperCholmodSolver());
 
     // the block ordering
     cholmod_solver->setBlockOrdering(false);
 
     // the base solver
-    // std::unique_ptr<g2o::Solver> solver(new HyperBlockSolver(std::move(cholmod_solver)));
     g2o::Solver *solver = new HyperBlockSolver(cholmod_solver);
 
     // the base solver
-    // g2o::OptimizationAlgorithm *optimization_algorithm = new g2o::OptimizationAlgorithmGaussNewton(std::move(solver));
     g2o::OptimizationAlgorithm *optimization_algorithm = new g2o::OptimizationAlgorithmGaussNewton(solver);
 
     // set the cholmod solver
-    optimizer->setAlgorithm(optimization_algorithm);
+    optimizer->setAlgorithm(solver);
 
     // set the verbose mode
     optimizer->setVerbose(true);

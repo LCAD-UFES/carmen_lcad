@@ -26,6 +26,7 @@ struct trajectory_drawer
 trajectory_drawer*
 create_trajectory_drawer(double r, double g, double b)
 {
+
 	trajectory_drawer* t_drawer = (trajectory_drawer*)malloc(sizeof(trajectory_drawer));
 		
 	t_drawer->path = NULL;
@@ -114,7 +115,7 @@ draw_path(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 {
 	glPushMatrix();
 
-		glBegin(GL_LINE_STRIP);	
+		glBegin(GL_LINE_STRIP);
 			
 			glColor3f(t_drawer->r, t_drawer->g, t_drawer->b);
 

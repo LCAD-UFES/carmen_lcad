@@ -2363,8 +2363,9 @@ void GrabData::SetGPSPose(std::string carmen_ini)
             }
 
             if (0.0 < sbx and 0.0 < sby and 0.0 < sbyaw)
+            {
                 break;
-
+            }
         }
 
         sensor_board_pose.setTranslation(Eigen::Vector2d {sbx, sby});

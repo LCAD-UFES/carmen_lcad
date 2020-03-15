@@ -9,7 +9,8 @@ LINK = g++
 
 # Required default libraries to comunicate with Carmen Core.
 #LFLAGS += `pkg-config --libs opencv` -lparam_interface -lglobal -lbumblebee_basic_interface -lipc
-LFLAGS += -lparam_interface -lglobal -lbumblebee_basic_interface -lipc -lrealsense2 -std=c++11 
+LFLAGS += 	-lparam_interface -lglobal -lbumblebee_basic_interface -llaser_ldmrs_interface -lipc -lrealsense2\
+			-lstereo_interface -lstereo_velodyne -lstereo_velodyne_interface `pkg-config --libs opencv` -std=c++11 
 
 CFLAGS += -Wall -std=c++11 #`pkg-config --cflags opencv`
 CXXFLAGS += -Wall -std=c++11 #`pkg-config --cflags opencv` -std=c++11

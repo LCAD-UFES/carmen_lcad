@@ -1,11 +1,3 @@
-/*********************************************************
-	 ---   My Module Specific Messages ---
-
-See IPC documentation for more information:
-http://www.cs.cmu.edu/~ipc/
-
-*********************************************************/
-
 #ifndef CARMEN_VELODYNE_MESSAGES_H
 #define CARMEN_VELODYNE_MESSAGES_H
 
@@ -15,12 +7,26 @@ extern "C" {
 
 typedef struct
 {
+	char *model;
+	int id;
+	char *ip;
+	char *port;
+	int shot_size;                  // Number of vertical rays
+	int min_sensing;                // Minimum sensing value (int), provided by the manual
+	int max_sensing;                // Maximum sensing value (int), provided by the manual
+	int range_division_factor;      // LiDAR measures are sent as integer values to minimize data transfer, must be divided to get floating point precision
+	double time_between_shots;      // given by the spinning frequency
+	carmen_pose_3D_t pose;
+	double *vertical_angles;
+}carmen_lidar_config;
+
+typedef struct
+{
 	unsigned short  distance[32];
 	unsigned char intensity[32];
 	double angle;
 }carmen_velodyne_32_laser_shot;
 
-/* Message Struct Example */
 typedef struct {
   int number_of_32_laser_shots;
   carmen_velodyne_32_laser_shot *partial_scan;
@@ -87,11 +93,16 @@ typedef struct
 #define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE7_NAME       "carmen_velodyne_variable_scan_message7"
 #define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE8_NAME       "carmen_velodyne_variable_scan_message8"
 #define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE9_NAME       "carmen_velodyne_variable_scan_message9"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE10_NAME       "carmen_velodyne_variable_scan_message10"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE11_NAME       "carmen_velodyne_variable_scan_message11"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE12_NAME       "carmen_velodyne_variable_scan_message12"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE13_NAME       "carmen_velodyne_variable_scan_message13"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE14_NAME       "carmen_velodyne_variable_scan_message14"
+#define      CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE15_NAME       "carmen_velodyne_variable_scan_message15"
+
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-
-// @}

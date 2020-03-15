@@ -19,6 +19,9 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
+#YOLO
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib
+
 IFLAGS += `pkg-config --cflags opencv`
 
 # Application specific include directories.
@@ -30,6 +33,16 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2
 IFLAGS += -I/usr/include/python2.7
 LFLAGS += -ldeeplab -lpython2.7
 
+#SqueezeSeg
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src  -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src
+LFLAGS += -lsqueeze_seg -lpython2.7
+
+#SalsaNet
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/salsanet/scripts  -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/salsanet/scripts
+LFLAGS += -lsalsanet -lpython2.7
+
 #OPENCV
 IFLAGS += -DUSE_OPENCV
 LFLAGS += `pkg-config opencv --libs` `pkg-config --cflags opencv` `pkg-config --libs opencv`
@@ -40,7 +53,7 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 	-llocalize_ackerman_interface -lmap_interface -lmapper -lipc		\
 	-lultrasonic_filter_interface -lstereo_mapping_interface -lrotation_geometry -lvelodyne_interface	\
 	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
-	-lbumblebee_basic_interface -lvelodyne_camera_calibration		\
+	-lbumblebee_basic_interface -lvelodyne_camera_calibration -ldarknet2		\
 	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
 	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils -lmoving_objects_interface
 
@@ -54,6 +67,10 @@ IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 LFLAGS += -lrddf_util -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 	
+#RangeNet_lib
+#LFLAGS += -L/usr/local/cuda/lib64 
+#LFLAGS += -lyaml-cpp -lnvinfer -lm -lcuda -lcublas -lcurand -lcudart -lprotobuf -lnvonnxparser_runtime -lnvonnxparser
+
 # Source code files (.c, .cpp) 
 SOURCES = mapper.cpp mapper_main.cpp message_interpolation.cpp convert_maps_from_float_to_double.cpp mapper_interface.c compute_velodyne_calibration_table.cpp compute_maps_difference.cpp compute_maps_changes.cpp
 
@@ -65,7 +82,7 @@ PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = mapper_datmo compute_velodyne_calibration_table
-TARGETS = convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a compute_maps_difference compute_maps_changes
+TARGETS = darknet2 convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a compute_maps_difference compute_maps_changes libsalsanet.a libsqueeze_seg.a #librangenet_inference.a librangenet.a 
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -83,7 +100,7 @@ libmapper.a: mapper.o
 
 libmapper_interface.so.1:	libmapper_interface.o
 
-mapper_datmo: mapper.o mapper_main.o libmapper.a
+mapper_datmo: mapper.o mapper_main.o libmapper.a #$(CARMEN_HOME)/sharedlib/rangenet_lib/src/librangenet.a $(CARMEN_HOME)/sharedlib/rangenet_lib/librangenet_external.a $(CARMEN_HOME)/sharedlib/rangenet_lib/librangenet_lib.a $(CARMEN_HOME)/sharedlib/rangenet_lib/librangenet_inference.a 
 
 convert_maps_from_float_to_double: convert_maps_from_float_to_double.o
 
@@ -100,6 +117,17 @@ libprob_models.a:
 
 libdeeplab.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/Deeplab/
+
+libsqueeze_seg.a: 
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src/
+
+libsalsanet.a: 
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/salsanet/scripts/
+
+#librangenet.a:
+#	$(MAKE) -C $(CARMEN_HOME)/sharedlib/rangenet_lib/src/ 
+darknet2:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2
 
 clean: clean_prob_models
 

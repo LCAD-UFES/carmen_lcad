@@ -95,10 +95,10 @@ xsens_quat_message_handler(carmen_xsens_global_quat_message *xsens_quat_message)
 	data->m_mag.y = xsens_quat_message->m_mag.y;
 	data->m_mag.z = xsens_quat_message->m_mag.z;
 
-	/*printf ("%lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
-			xsens_quat_message->m_acc.x, xsens_quat_message->m_acc.y, xsens_quat_message->m_acc.z,
-			xsens_quat_message->m_gyr.x, xsens_quat_message->m_gyr.y, xsens_quat_message->m_gyr.z,
-			xsens_quat_message->m_mag.x, xsens_quat_message->m_mag.y, xsens_quat_message->m_mag.z);*/
+//	printf ("%lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+//			xsens_quat_message->m_acc.x, xsens_quat_message->m_acc.y, xsens_quat_message->m_acc.z,
+//			xsens_quat_message->m_gyr.x, xsens_quat_message->m_gyr.y, xsens_quat_message->m_gyr.z,
+//			xsens_quat_message->m_mag.x, xsens_quat_message->m_mag.y, xsens_quat_message->m_mag.z);
 
 	data->quat_data = xsens_quat_message->quat_data;
 
@@ -132,10 +132,10 @@ imu_handler(carmen_pi_imu_message_t* msg)
 	imu_msg->imu_vector.gyro.x = msg->imu_vector.gyro.x * 0.0175 * (M_PI / 180.);
 	imu_msg->imu_vector.gyro.y = msg->imu_vector.gyro.y * 0.0175 * (M_PI / 180.);
 	imu_msg->imu_vector.gyro.z = msg->imu_vector.gyro.z * 0.0175 * (M_PI / 180.);
-	printf ("%lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
-			imu_msg->imu_vector.accel.x, imu_msg->imu_vector.accel.y, imu_msg->imu_vector.accel.z,
-			imu_msg->imu_vector.gyro.x, imu_msg->imu_vector.gyro.y, imu_msg->imu_vector.gyro.z,
-			imu_msg->imu_vector.magnetometer.x, imu_msg->imu_vector.magnetometer.y, imu_msg->imu_vector.magnetometer.z);
+//	printf ("%lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+//			imu_msg->imu_vector.accel.x, imu_msg->imu_vector.accel.y, imu_msg->imu_vector.accel.z,
+//			imu_msg->imu_vector.gyro.x, imu_msg->imu_vector.gyro.y, imu_msg->imu_vector.gyro.z,
+//			imu_msg->imu_vector.magnetometer.x, imu_msg->imu_vector.magnetometer.y, imu_msg->imu_vector.magnetometer.z);
 }
 
 void

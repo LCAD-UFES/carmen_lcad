@@ -1,7 +1,10 @@
 include ../Makefile.conf
 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol
+
 LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface \
-	  -lrobot_ackerman_interface
+	  -lrobot_ackerman_interface -lcontrol
 
 MODULE_NAME = BASE ACKERMAN
 MODULE_COMMENT = "Interface for Ackerman robots"

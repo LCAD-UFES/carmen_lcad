@@ -1,0 +1,69 @@
+Instalamos o carmen do site: http://carmen.sourceforge.net/getting_carmen.html
+Depois instalamos o carmen_lcad seguindo o tutorial (Não instalamos o CUDA): https://github.com/LCAD-UFES/carmen_lcad/wiki/Installing-Carmen-LCAD-on-Ubuntu-16.04
+Foi copiado a pasta "base" do carmen original para dentro da pasta ~/carmen_lcad/src/
+Modificamos o código ~/carmen_lcad/src/joystick/wingman_control.c para que o método send_base_velocity_command seja capaz de enviar uma mensagem do tipo carmen_base_ackerman_velocity_message e realizar o publish dessa mensagem (para utilizar esse método, é necessário dar o include do carmen/obstacle_avoider_interface.h). Também foi modificado o método define_messages para que seja definido as mensagens do tipo CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME. Também foi comentado algumas sessões do método main para que a opção "throttle_mode" não seja utilizado, já que não será necessária para a nossa aplicação (e sua ativação estava causando bugs no funcionamento).
+Na pasta "base", o código que controla o pioneer é o base_main.c, no método carmen_base_initialize_ipc foi inserido o subscribe para receber a mensagem que o controle está publicando, foi utilizado o método carmen_base_ackerman_subscribe_motion_command para isso (para utilizar esse método é necessário dar o include no carmen/base_ackerman_interface.h). O handler utilizado tem o nome de base_ackerman_subscribe_motion_command_handler, ele foi criado com base no método que já existia no código, com o nome velocity_handler, mas foi feito algumas modificações para funcionar com o carmen atualizado. No base_ackerman_subscribe_motion_command_handler também foi inserido um cálculo para se obter a rotação de um veículo ackerman, e então o resultado desse cálculo é enviado pelo método carmen_base_direct_set_velocity junto com a velocidade original.  
+Foi copiado o /src/carmen-ford-escape-sensorbox.ini para outro arquivo com o nome carmen-pioneer-sensorbox.ini. Nesse novo arquivo, foi inserido os seguintes parâmetros:
+"
+base_type
+base_dev
+base_model
+base_motion_timeout
+base_use_hardware_integrator
+base_relative_wheelsize
+base_relative_wheelbase
+robot_odometry_inverted
+"
+Foi modificado os seguintes parâmetros:
+"
+robot_length
+robot_width
+robot_vertical_displacement_from_center
+robot_wheel_radius
+robot_acceleration
+robot_deceleration
+robot_distance_between_front_and_rear_axles
+"
+Foi criado o process-volta_no_ct9_log_sensorbox.ini
+Criada pasta pioneer_p3dx em bin com o arquivo de colisão do robô. Trocado o parâmetro robot_collision_file e foi ligada a opção show_collision_range em carmen-ford-escape-sensorbox.ini, para representar o robô como um círculo no navigator_gui.
+Ao executar o process-volta_no_ct9_log_sensorbox.ini, o viewer 3d informava erro no arquivo de parâmetros carmen-pioneer-sensorbox.ini. Foi verificado e incluído as seguintes sessões no arquivo (retirado do arquivo carmen-ford-escape.ini):
+"
+-#--------- Bumblebee Basic 7 REALSENSE ------------
+#--------- Stereo Velodyne 7 (Realsense)------------
+#----------- Camera 7 - RealSense ------------
+"
+E então foi alterado alguns parâmetros do Robot Ackermann para as medidas feitas para o pioneer. Os parâmetros alterados foram:
+"
+robot_max_velocity
+robot_distance_between_rear_wheels
+robot_distance_between_rear_car_and_rear_wheels
+robot_distance_between_front_car_and_front_wheels
+robot_distance_between_rearview
+robot_turning_radius
+"
+Também foram alterados parâmetros da sensor board:
+"
+sensor_board_1_x
+sensor_board_1_y
+sensor_board_1_z
+sensor_board_1_yaw
+sensor_board_1_pitch
+sensor_board_1_roll
+"
+
+Foi criado o método publish_odometry_message no base_main.c (necessário dar include no <carmen/robot_ackerman_interface.h>) e dar define nas mensagens tipo CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME.
+Foi criado o process-pioneer_sensorbox_playback_viewer_3D.ini e ao executá-lo, foi necessário incluir no carmen-pioneer-sensorbox.ini os seguintes parâmetros:
+"
+localize_v_uncertainty_at_zero_v
+localize_remission_variance_multiplier
+"
+Foi executado o process-volta_no_ct9_log_sensorbox.ini para realizar a gravação do log.
+Foi verificado que o log foi gravado ao executar o process-pioneer_sensorbox_playback_viewer_3D.ini
+
+
+Fazer mapa
+process-onofre-pionner.ini
+log.ini
+carmen-pionner.ini
+navigate.ini
+Modelo do viewer 3d e no navigator_gui2

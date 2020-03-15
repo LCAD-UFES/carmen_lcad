@@ -183,10 +183,11 @@ void carmen_logwrite_write_kinect_video(carmen_kinect_video_message *kinect,
 
 void carmen_logwrite_write_velodyne_partial_scan(carmen_velodyne_partial_scan_message* msg, carmen_FILE* outfile, double timestamp);
 
-void carmen_logwrite_write_to_file_velodyne(carmen_velodyne_partial_scan_message* msg, carmen_FILE *outfile,
-		double timestamp, char *log_filename);
+void carmen_logwrite_write_to_file_velodyne(carmen_velodyne_partial_scan_message* msg, carmen_FILE *outfile, double timestamp, char *log_filename);
 
-void carmen_logwrite_write_variable_velodyne_scan(carmen_velodyne_variable_scan_message* msg, carmen_FILE* outfile, double timestamp);
+void carmen_logwrite_write_to_file_velodyne_variable(carmen_velodyne_variable_scan_message* msg, int velodyne_number, carmen_FILE *outfile, double timestamp, char *log_filename);
+
+void carmen_logwrite_write_variable_velodyne_scan(carmen_velodyne_variable_scan_message* msg, int velodyne_number, carmen_FILE* outfile, double timestamp);
 
 void carmen_logwrite_write_velodyne_gps(carmen_velodyne_gps_message* msg, carmen_FILE* outfile, double timestamp);
 

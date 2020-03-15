@@ -293,9 +293,12 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 //		fprintf(plot_data, "%lf %lf %d",
 //				sensor_data->ray_position_in_the_floor[tid][0].x,
 //				sensor_data->ray_position_in_the_floor[tid][0].y, 1);
-		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
+		if (height_level == 0)
+			carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
 				robot_near_strong_slow_down_annotation, tid);
-
+		else
+			carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
+				robot_near_strong_slow_down_annotation, tid, safe_height_from_ground);
 		build_virtual_scan_message_velodyne(tid, sensor_params, sensor_data, log_odds_snapshot_map);
 
 		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
@@ -318,8 +321,10 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 				carmen_prob_models_update_log_odds_of_cells_hit_by_rays(log_odds_snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid, safe_height_from_ground);
 
 		if (update_and_merge_with_mapper_saved_maps && use_remission && height_level == 0)
-			carmen_prob_models_update_intensity_of_cells_hit_by_rays(&sum_remission_map, &sum_sqr_remission_map, &count_remission_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, NULL, tid);
-
+			if (height_level == 0)
+				carmen_prob_models_update_intensity_of_cells_hit_by_rays(&sum_remission_map, &sum_sqr_remission_map, &count_remission_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, NULL, tid);
+			else
+				carmen_prob_models_update_intensity_of_cells_hit_by_rays(&sum_remission_map, &sum_sqr_remission_map, &count_remission_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, NULL, tid, safe_height_from_ground);
 		//Lucas: Mapa para deteccao de objetos moveis
 		//carmen_prob_models_update_log_odds_of_cells_hit_by_rays(&moving_objects_raw_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors);
 		//build_front_laser_message_from_velodyne_point_cloud (sensor_params, sensor_data, v_zt, i);

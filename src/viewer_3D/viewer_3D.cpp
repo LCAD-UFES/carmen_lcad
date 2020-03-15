@@ -25,6 +25,7 @@
 #include <vector>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+#include <string.h>
 
 #include "viewer_3D.h"
 
@@ -47,6 +48,8 @@
 static int draw_lane_analysis_flag;
 static lane_analysis_drawer *lane_drawer;
 #endif
+
+#include "symotha_drawer.h"
 
 
 static int num_laser_devices;
@@ -97,7 +100,7 @@ carmen_laser_ldmrs_object *ldmrs_objects_tracking;
 /************************************************************************
  * TODO: A variavel abaixo esta hard code, colocar para ser lida de algum lugar
  * **********************************************************************/
-static int camera = 3;
+static int camera = 7;
 
 static point_cloud *velodyne_points;
 static int last_velodyne_position;
@@ -209,6 +212,24 @@ static int point_size = 1; //size of line in OpenGL, it's read of ini
 static int draw_particles_flag;
 static int draw_points_flag;
 static int draw_velodyne_flag;
+//TODO @@vinicius
+//static int draw_lidars_flag;
+static int draw_lidar0_flag = 0;
+static int draw_lidar1_flag  = 0;
+static int draw_lidar2_flag  = 0;
+static int draw_lidar3_flag  = 0;
+static int draw_lidar4_flag  = 0;
+static int draw_lidar5_flag  = 0;
+static int draw_lidar6_flag  = 0;
+static int draw_lidar7_flag  = 0;
+static int draw_lidar8_flag  = 0;
+static int draw_lidar9_flag  = 0;
+static int draw_lidar10_flag = 0;
+static int draw_lidar11_flag = 0;
+static int draw_lidar12_flag = 0;
+static int draw_lidar13_flag = 0;
+static int draw_lidar14_flag = 0;
+static int draw_lidar15_flag = 0;
 static int draw_stereo_cloud_flag;
 static int draw_car_flag;
 static int draw_rays_flag;
@@ -236,6 +257,22 @@ static CarDrawer* car_drawer;
 static point_cloud_drawer* ldmrs_drawer;
 static point_cloud_drawer* laser_drawer;
 static point_cloud_drawer* velodyne_drawer;
+//static point_cloud_drawer* lidar0_drawer; // O velodyne_variable_scan_message_handler0 é especifico para o Ouster e possui parametros hardcodded precisa ser padronizado
+static point_cloud_drawer* lidar1_drawer;
+static point_cloud_drawer* lidar2_drawer;
+static point_cloud_drawer* lidar3_drawer;
+static point_cloud_drawer* lidar4_drawer;
+static point_cloud_drawer* lidar5_drawer;
+static point_cloud_drawer* lidar6_drawer;
+static point_cloud_drawer* lidar7_drawer;
+static point_cloud_drawer* lidar8_drawer;
+static point_cloud_drawer* lidar9_drawer;
+static point_cloud_drawer* lidar10_drawer;
+static point_cloud_drawer* lidar11_drawer;
+static point_cloud_drawer* lidar12_drawer;
+static point_cloud_drawer* lidar13_drawer;
+static point_cloud_drawer* lidar14_drawer;
+static point_cloud_drawer* lidar15_drawer;
 static velodyne_360_drawer* v_360_drawer;
 static variable_velodyne_drawer* var_v_drawer;
 static interface_drawer* i_drawer;
@@ -246,7 +283,7 @@ static trajectory_drawer* t_drawer3;
 static std::vector<trajectory_drawer*> t_drawerTree;
 static velodyne_intensity_drawer* v_int_drawer;
 static AnnotationDrawer *annotation_drawer;
-
+static symotha_drawer_t *symotha_drawer;
 
 window *w = NULL;
 
@@ -257,7 +294,7 @@ void keyRelease(int code);
 static int argc_g;
 static char** argv_g;
 
-void init_stuff(int argc, char** argv);
+void read_parameters_and_init_stuff(int argc, char** argv);
 void destroy_stuff();
 
 static carmen_download_map_message download_map_message;
@@ -282,14 +319,30 @@ static int stereo_velodyne_horizontal_roi_end;
 static double lastDisplayTime;
 
 static double time_spent_by_each_scan;
+static double ouster_time_spent_by_each_scan;
 static double distance_between_front_and_rear_axles;
 
 static int force_velodyne_flag = 0;
+static int velodyne_active = -1;
+static double ouster_vertical_correction[64];
+
+static int show_symotha_flag = 0;
+
+// in degrees
+static double ouster64_azimuth_offsets[64];
+static double vc_64[64];
+static char* v64;
+static char* h64;
+
+static double remission_multiplier = 2;
 
 // store original background color defined in ini file
 static double g_b_red;
 static double g_b_green;
 static double g_b_blue;
+
+float ***remission_calibration_table;
+
 
 static carmen_vector_3D_t
 get_position_offset(void)
@@ -317,6 +370,221 @@ get_position_offset(void)
     zero.z = 0;
 
     return zero;
+}
+
+
+carmen_vector_3D_t
+get_laser_position(carmen_vector_3D_t car_position)
+{
+    // car_reference represents the position of the laser on the car frame of reference
+    carmen_vector_3D_t car_reference = laser_pose.position;
+
+    rotation_matrix* r_matrix = create_rotation_matrix(car_fused_pose.orientation);
+    carmen_vector_3D_t global_reference = multiply_matrix_vector(r_matrix, car_reference);
+    carmen_vector_3D_t laser_position = add_vectors(global_reference, car_position);
+
+    destroy_rotation_matrix(r_matrix);
+    laser_position.z = 0.0;
+
+    return laser_position;
+}
+
+
+static carmen_vector_3D_t
+get_point_position_global_reference(carmen_vector_3D_t car_position, carmen_vector_3D_t car_reference, rotation_matrix* car_to_global_matrix)
+{
+
+    //rotation_matrix* r_matrix = create_rotation_matrix(car_fused_pose.orientation);
+
+    carmen_vector_3D_t global_reference = multiply_matrix_vector(car_to_global_matrix, car_reference);
+
+    carmen_vector_3D_t point = add_vectors(global_reference, car_position);
+
+    //destroy_rotation_matrix(r_matrix);
+
+    return point;
+}
+
+
+static carmen_vector_3D_t
+get_velodyne_point_car_reference(double rot_angle, double vert_angle, double range,
+		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
+		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
+{
+    double cos_rot_angle = cos(rot_angle);
+    double sin_rot_angle = sin(rot_angle);
+
+    double cos_vert_angle = cos(vert_angle);
+    double sin_vert_angle = sin(vert_angle);
+
+    double xy_distance = range * cos_vert_angle;
+
+    carmen_vector_3D_t velodyne_reference;
+
+    velodyne_reference.x = (xy_distance * cos_rot_angle);
+    velodyne_reference.y = (xy_distance * sin_rot_angle);
+    velodyne_reference.z = (range * sin_vert_angle);
+
+    carmen_vector_3D_t board_reference = multiply_matrix_vector(velodyne_to_board_matrix, velodyne_reference);
+    board_reference = add_vectors(board_reference, velodyne_pose_position);
+
+    carmen_vector_3D_t car_reference = multiply_matrix_vector(board_to_car_matrix, board_reference);
+    car_reference = add_vectors(car_reference, sensor_board_1_pose_position);
+
+    return (car_reference);
+}
+
+
+static carmen_vector_3D_t
+create_point_colors_height(carmen_vector_3D_t point, carmen_vector_3D_t car_position)
+{
+    carmen_vector_3D_t colors;
+
+    //double x = point.x;
+    //double y = point.y;
+    double z = point.z - car_position.z;
+
+    if (z < -5.0)
+    {
+        colors.x = 1.0;
+        colors.y = 0.0;
+        colors.z = 0.0;
+    }
+    else
+    {
+        colors.x = 0.0 - z;
+        colors.y = 0.1 + z / 10.0;
+        colors.z = (z + 3.0) / 6.0;
+    }
+
+    return colors;
+}
+
+
+carmen_vector_3D_t
+create_point_colors_intensity(double intensity)
+{
+	carmen_vector_3D_t colors;
+
+	double intensity_normalized = intensity / 255.0;
+
+	colors.x = intensity_normalized;
+	colors.y = intensity_normalized;
+	colors.z = intensity_normalized;
+
+	return (colors);
+}
+
+
+void
+load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config &lidar_config);
+
+
+point_cloud*
+alloc_lidar_point_cloud_vector()
+{
+    point_cloud *lidar_point_cloud;
+
+    lidar_point_cloud = (point_cloud*) malloc(velodyne_size * sizeof (point_cloud));
+
+    for (int i = 0; i < velodyne_size; i++)
+    {
+        lidar_point_cloud[i].points = NULL;
+        lidar_point_cloud[i].point_color = NULL;
+        lidar_point_cloud[i].num_points = 0;
+        lidar_point_cloud[i].timestamp = 0.0;
+    }
+    return (lidar_point_cloud);
+}
+
+
+int
+convert_variable_scan_message_to_point_cloud(point_cloud *velodyne_points, carmen_velodyne_variable_scan_message *velodyne_message, carmen_lidar_config lidar_config,
+		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
+		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
+{
+    carmen_pose_3D_t car_interpolated_position;
+    rotation_matrix r_matrix_car_to_global;
+	double dt;
+	int discarded_points = 0;
+
+    dt = velodyne_message->timestamp - car_fused_time - velodyne_message->number_of_shots * lidar_config.time_between_shots;
+	
+    for (int i = 0; i < velodyne_message->number_of_shots; i++, dt += lidar_config.time_between_shots)
+	{
+		car_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(car_fused_pose, dt, car_fused_velocity.x, car_phi, distance_between_front_and_rear_axles);
+        
+		compute_rotation_matrix(&r_matrix_car_to_global, car_interpolated_position.orientation);
+		
+		for (int j = 0; j < lidar_config.shot_size; j++)
+		{
+			if (velodyne_message->partial_scan[i].distance[j] == 0)
+            {
+				discarded_points++;
+				continue;
+			}
+			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle),
+					carmen_degrees_to_radians(lidar_config.vertical_angles[j]), (double) velodyne_message->partial_scan[i].distance[j] / lidar_config.range_division_factor,
+					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
+
+            carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position,
+					&r_matrix_car_to_global);
+
+			velodyne_points->points[i * (lidar_config.shot_size) + j - discarded_points] = point_global_position;
+
+			velodyne_points->point_color[i * (lidar_config.shot_size) + j - discarded_points] = create_point_colors_height(point_global_position,
+					car_interpolated_position.position);
+		}
+	}
+	return (discarded_points);
+}
+
+
+void
+draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point_cloud_drawer *drawer, bool &first_time, point_cloud **lidar_point_cloud_vector,
+    int &lidar_point_cloud_vector_max_size, int &lidar_point_cloud_vector_index, carmen_lidar_config &lidar_config, int draw_lidar_flag)
+{
+    int discarded_points = 0;
+    int num_points = 0;
+
+    if (first_time)
+    {
+        load_lidar_config(0, NULL, lidar_config.id, lidar_config);
+        *lidar_point_cloud_vector = alloc_lidar_point_cloud_vector();
+        first_time = false;
+    }
+    if (!draw_lidar_flag)
+    	return;
+    if (!odometry_initialized || !force_velodyne_flag)
+		return;
+    if (lidar_point_cloud_vector_index >= velodyne_size)    // viewer_3D_velodyne_size is read from carmen*.in, is the number of point clouds vewer_3d will accumulate to display 
+		lidar_point_cloud_vector_index = 0;
+
+    num_points = message->number_of_shots * lidar_config.shot_size;
+
+	if (num_points > lidar_point_cloud_vector_max_size)
+	{
+		lidar_point_cloud_vector[lidar_point_cloud_vector_index]->points = (carmen_vector_3D_t *) realloc(lidar_point_cloud_vector[lidar_point_cloud_vector_index]->points, num_points * sizeof (carmen_vector_3D_t));
+		lidar_point_cloud_vector[lidar_point_cloud_vector_index]->point_color = (carmen_vector_3D_t *) realloc(lidar_point_cloud_vector[lidar_point_cloud_vector_index]->point_color, num_points * sizeof (carmen_vector_3D_t));
+	}
+	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->num_points = num_points;
+	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->car_position = car_fused_pose.position;
+	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->timestamp = message->timestamp;
+
+	rotation_matrix* lidar_to_board_matrix = create_rotation_matrix(lidar_config.pose.orientation);
+	rotation_matrix* board_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
+
+	discarded_points = convert_variable_scan_message_to_point_cloud(lidar_point_cloud_vector[lidar_point_cloud_vector_index], message, lidar_config,
+			lidar_to_board_matrix, board_to_car_matrix, lidar_config.pose.position, sensor_board_1_pose.position);
+
+	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->num_points -= discarded_points;
+
+	destroy_rotation_matrix(lidar_to_board_matrix);
+	destroy_rotation_matrix(board_to_car_matrix);
+    
+	add_point_cloud(drawer, *lidar_point_cloud_vector[lidar_point_cloud_vector_index]);
+    
+    lidar_point_cloud_vector_index += 1;
 }
 
 
@@ -532,7 +800,7 @@ xsens_xyz_message_handler(carmen_xsens_xyz_message *xsens_xyz)
     if (last_timestamp != 0.0 && fabs(xsens_xyz->timestamp - last_timestamp) > 3.0)
     {
         destroy_stuff();
-        init_stuff(argc_g, argv_g);
+        read_parameters_and_init_stuff(argc_g, argv_g);
         last_timestamp = 0.0;
         return;
     }
@@ -569,109 +837,6 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 }
 
 
-carmen_vector_3D_t
-get_laser_position(carmen_vector_3D_t car_position)
-{
-    // car_reference represents the position of the laser on the car frame of reference
-    carmen_vector_3D_t car_reference = laser_pose.position;
-
-    rotation_matrix* r_matrix = create_rotation_matrix(car_fused_pose.orientation);
-    carmen_vector_3D_t global_reference = multiply_matrix_vector(r_matrix, car_reference);
-    carmen_vector_3D_t laser_position = add_vectors(global_reference, car_position);
-
-    destroy_rotation_matrix(r_matrix);
-    laser_position.z = 0.0;
-
-    return laser_position;
-}
-
-
-static carmen_vector_3D_t
-get_point_position_global_reference(carmen_vector_3D_t car_position, carmen_vector_3D_t car_reference, rotation_matrix* car_to_global_matrix)
-{
-
-    //rotation_matrix* r_matrix = create_rotation_matrix(car_fused_pose.orientation);
-
-    carmen_vector_3D_t global_reference = multiply_matrix_vector(car_to_global_matrix, car_reference);
-
-    carmen_vector_3D_t point = add_vectors(global_reference, car_position);
-
-    //destroy_rotation_matrix(r_matrix);
-
-    return point;
-}
-
-
-static carmen_vector_3D_t
-get_velodyne_point_car_reference(double rot_angle, double vert_angle, double range,
-		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
-		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
-{
-    double cos_rot_angle = cos(rot_angle);
-    double sin_rot_angle = sin(rot_angle);
-
-    double cos_vert_angle = cos(vert_angle);
-    double sin_vert_angle = sin(vert_angle);
-
-    double xy_distance = range * cos_vert_angle;
-
-    carmen_vector_3D_t velodyne_reference;
-
-    velodyne_reference.x = (xy_distance * cos_rot_angle);
-    velodyne_reference.y = (xy_distance * sin_rot_angle);
-    velodyne_reference.z = (range * sin_vert_angle);
-
-    carmen_vector_3D_t board_reference = multiply_matrix_vector(velodyne_to_board_matrix, velodyne_reference);
-    board_reference = add_vectors(board_reference, velodyne_pose_position);
-
-    carmen_vector_3D_t car_reference = multiply_matrix_vector(board_to_car_matrix, board_reference);
-    car_reference = add_vectors(car_reference, sensor_board_1_pose_position);
-
-    return (car_reference);
-}
-
-
-static carmen_vector_3D_t
-create_point_colors_height(carmen_vector_3D_t point, carmen_vector_3D_t car_position)
-{
-    carmen_vector_3D_t colors;
-
-    //double x = point.x;
-    //double y = point.y;
-    double z = point.z - car_position.z;
-
-    if (z < -5.0)
-    {
-        colors.x = 1.0;
-        colors.y = 0.0;
-        colors.z = 0.0;
-    }
-    else
-    {
-        colors.x = 0.0 - z;
-        colors.y = 0.1 + z / 10.0;
-        colors.z = (z + 3.0) / 6.0;
-    }
-
-    return colors;
-}
-
-
-carmen_vector_3D_t
-create_point_colors_intensity(double intensity)
-{
-        carmen_vector_3D_t colors;
-
-        double intensity_normalized = 2.0 * (intensity / 255.0);
-
-        colors.x = intensity_normalized;
-        colors.y = intensity_normalized;
-        colors.z = intensity_normalized;
-
-        return colors;
-}
-
-
 int
 compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_scan_message *velodyne_message,
 		double *vertical_correction, int vertical_size,
@@ -703,13 +868,28 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_sc
 			carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position,
 					&r_matrix_car_to_global);
 			velodyne_points->points[i * (vertical_size) + j - range_max_points] = point_global_position;
-            if(!velodyne_remission_flag)
+            if (!velodyne_remission_flag)
             {
                 velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
                         car_interpolated_position.position);
-            } else
+            }
+            else
             {
-                velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_intensity(velodyne_message->partial_scan[i].intensity[j]);   
+            	int intensity = velodyne_message->partial_scan[i].intensity[j];
+            	if (remission_calibration_table)
+            	{
+            		static int velodyne_ray_order[32] = {0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23, 8, 24, 9, 25, 10, 26,
+            				11, 27, 12, 28, 13, 29, 14, 30, 15, 31};
+
+                	double ray_angle = carmen_degrees_to_radians(vertical_correction[j]);
+                	double ray_size_in_the_floor = ((double) velodyne_message->partial_scan[i].distance[j] / 500.0) * cos(ray_angle);
+                	int distance_index = get_distance_index(ray_size_in_the_floor);
+                	int ray = velodyne_ray_order[j];
+            		intensity = (int) round(remission_calibration_table[ray][distance_index][intensity] * 255.0);
+            	}
+
+            	double remission_value = remission_multiplier * intensity;
+                velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_intensity(remission_value);
             }
 		}
 	}
@@ -781,11 +961,372 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
     last_timestamp = velodyne_message->timestamp;
 }
 
+int
+compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_variable_scan_message *velodyne_message,
+		double *vertical_correction, int vertical_size,
+		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
+		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
+{
+    carmen_pose_3D_t car_interpolated_position;
+    rotation_matrix r_matrix_car_to_global;
+
+	double dt = velodyne_message->timestamp - car_fused_time - velodyne_message->number_of_shots * time_spent_by_each_scan;
+	int i;
+	int range_max_points = 0;
+	for (i = 0; i < velodyne_message->number_of_shots; i++, dt += time_spent_by_each_scan)
+	{
+		car_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(car_fused_pose, dt, car_fused_velocity.x, car_phi,
+				distance_between_front_and_rear_axles);
+		compute_rotation_matrix(&r_matrix_car_to_global, car_interpolated_position.orientation);
+		int j;
+		for (j = 0; j < vertical_size; j++)
+		{
+			if (velodyne_message->partial_scan[i].distance[j] == 0)
+			{
+				range_max_points++;
+				continue;
+			}
+
+			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle),
+					carmen_degrees_to_radians(vertical_correction[j]), (double) velodyne_message->partial_scan[i].distance[j] / 200.0,
+					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
+			carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position,
+					&r_matrix_car_to_global);
+			velodyne_points->points[i * (vertical_size) + j - range_max_points] = point_global_position;
+			velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
+					car_interpolated_position.position);
+//			velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_intensity(velodyne_message->partial_scan[i].intensity[j]);
+		}
+	}
+
+	return (range_max_points);
+}
+
+int
+compute_ouster_points(point_cloud *velodyne_points, carmen_velodyne_variable_scan_message *velodyne_message,
+		double *vertical_correction, int vertical_size,
+		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
+		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
+
+{
+
+	carmen_pose_3D_t car_interpolated_position;
+	rotation_matrix r_matrix_car_to_global;
+	double dt = velodyne_message->timestamp - car_fused_time - velodyne_message->number_of_shots * ouster_time_spent_by_each_scan;
+	int i;
+	int range_max_points = 0;
+	for (i = 0; i < velodyne_message->number_of_shots; i++, dt += ouster_time_spent_by_each_scan)
+	{
+		car_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(car_fused_pose, dt, car_fused_velocity.x, car_phi,
+				distance_between_front_and_rear_axles);
+		compute_rotation_matrix(&r_matrix_car_to_global, car_interpolated_position.orientation);
+		int j;
+		for (j = 0; j < vertical_size; j++)
+		{
+			if (velodyne_message->partial_scan[i].distance[j] == 0)
+			{
+				range_max_points++;
+				continue;
+			}
+
+			double partial_scan_angle_corrected = velodyne_message->partial_scan[i].angle + carmen_degrees_to_radians(ouster64_azimuth_offsets[j]);
+
+			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-(partial_scan_angle_corrected),
+					carmen_degrees_to_radians(vertical_correction[j]), (double) velodyne_message->partial_scan[i].distance[j] / 1000.0,
+					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
+			carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position,
+					&r_matrix_car_to_global);
+			velodyne_points->points[i * (vertical_size) + j - range_max_points] = point_global_position;
+			velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
+					car_interpolated_position.position);
+			//			velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_intensity(velodyne_message->partial_scan[i].intensity[j]);
+		}
+	}
+
+	return (range_max_points);
+}
+
+// TODO O velodyne_variable_scan_message_handler0 é especifico para o Ouster e possui parametros hardcodded precisa ser padronizado
+static void
+velodyne_variable_scan_message_handler0(carmen_velodyne_variable_scan_message *velodyne_message) 
+{
+	memcpy(ouster_vertical_correction, vc_64, sizeof(vc_64));
+
+	static double last_timestamp = 0.0;
+
+	if (!force_velodyne_flag)
+		if (!odometry_initialized || !draw_velodyne_flag)
+			return;
+
+	if (last_timestamp == 0.0)
+	{
+		last_timestamp = velodyne_message->timestamp;
+		return;
+	}
+
+	velodyne_initialized = 1;
+
+//  Para ver so uma mensagem do velodyne
+//    static int nt = 0;
+//    nt++;
+//    if ((nt < 10) || (nt > 10))
+//    	return;
+
+	last_velodyne_position++;
+	if (last_velodyne_position >= velodyne_size)
+		last_velodyne_position = 0;
+
+	int num_points = velodyne_message->number_of_shots * (velodyne_message->partial_scan[0].shot_size);
+
+	if (num_points > velodyne_points[last_velodyne_position].num_points)
+	{
+		velodyne_points[last_velodyne_position].points = (carmen_vector_3D_t *) realloc(velodyne_points[last_velodyne_position].points, num_points * sizeof (carmen_vector_3D_t));
+		velodyne_points[last_velodyne_position].point_color = (carmen_vector_3D_t *) realloc(velodyne_points[last_velodyne_position].point_color, num_points * sizeof (carmen_vector_3D_t));
+	}
+	velodyne_points[last_velodyne_position].num_points = num_points;
+	velodyne_points[last_velodyne_position].car_position = car_fused_pose.position;
+	velodyne_points[last_velodyne_position].timestamp = velodyne_message->timestamp;
+
+	rotation_matrix* velodyne_to_board_matrix = create_rotation_matrix(velodyne_pose.orientation);
+	rotation_matrix* board_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
+	int range_max_points;
+
+	range_max_points = compute_ouster_points(&velodyne_points[last_velodyne_position], velodyne_message, ouster_vertical_correction, velodyne_message->partial_scan[0].shot_size,
+			velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose.position, sensor_board_1_pose.position);
+	velodyne_points[last_velodyne_position].num_points -= range_max_points;
+
+	destroy_rotation_matrix(velodyne_to_board_matrix);
+	destroy_rotation_matrix(board_to_car_matrix);
+
+	if (draw_velodyne_flag == 2)
+		add_point_cloud(velodyne_drawer, velodyne_points[last_velodyne_position]);
+
+	//verificar se essas flags sao necessarias
+	if (draw_velodyne_flag == 3)
+		//add_velodyne_message(v_360_drawer, velodyne_message);
+	if (draw_velodyne_flag == 5)
+		//velodyne_intensity_drawer_add_velodyne_message(v_int_drawer, velodyne_message, car_fused_pose, car_fused_velocity, car_fused_time);
+
+	last_timestamp = velodyne_message->timestamp;
+}
+
+
+void
+velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar1_point_cloud_vector;
+    static int lidar1_point_cloud_vector_max_size = 0;
+    static int lidar1_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar1_config;
+    lidar1_config.id = 1;
+    
+    draw_variable_scan_message(message, lidar1_drawer, first_time, &lidar1_point_cloud_vector, lidar1_point_cloud_vector_max_size, lidar1_point_cloud_vector_index, lidar1_config, draw_lidar1_flag);
+}
+
+
+void
+velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar2_point_cloud_vector;
+    static int lidar2_point_cloud_vector_max_size = 0;
+    static int lidar2_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar2_config;
+    lidar2_config.id = 2;
+    
+    draw_variable_scan_message(message, lidar2_drawer, first_time, &lidar2_point_cloud_vector, lidar2_point_cloud_vector_max_size, lidar2_point_cloud_vector_index, lidar2_config, draw_lidar2_flag);
+}
+
+
+void
+velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar3_point_cloud_vector;
+    static int lidar3_point_cloud_vector_max_size = 0;
+    static int lidar3_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar3_config;
+    lidar3_config.id = 3;
+    
+    draw_variable_scan_message(message, lidar3_drawer, first_time, &lidar3_point_cloud_vector, lidar3_point_cloud_vector_max_size, lidar3_point_cloud_vector_index, lidar3_config, draw_lidar3_flag);
+}
+
+
+void
+velodyne_variable_scan_message_handler4(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar4_point_cloud_vector;
+    static int lidar4_point_cloud_vector_max_size = 0;
+    static int lidar4_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar4_config;
+    lidar4_config.id = 4;
+    
+    draw_variable_scan_message(message, lidar4_drawer, first_time, &lidar4_point_cloud_vector, lidar4_point_cloud_vector_max_size, lidar4_point_cloud_vector_index, lidar4_config, draw_lidar4_flag);
+}
+
+
+void
+velodyne_variable_scan_message_handler5(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar5_point_cloud_vector;
+    static int lidar5_point_cloud_vector_max_size = 0;
+    static int lidar5_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar5_config;
+    lidar5_config.id = 5;
+    
+    draw_variable_scan_message(message, lidar5_drawer, first_time, &lidar5_point_cloud_vector, lidar5_point_cloud_vector_max_size, lidar5_point_cloud_vector_index, lidar5_config, draw_lidar5_flag);
+}
+
+
+void
+velodyne_variable_scan_message_handler6(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar6_point_cloud_vector;
+    static int lidar6_point_cloud_vector_max_size = 0;
+    static int lidar6_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar6_config;
+    lidar6_config.id = 6;
+    
+    draw_variable_scan_message(message, lidar6_drawer, first_time, &lidar6_point_cloud_vector, lidar6_point_cloud_vector_max_size, lidar6_point_cloud_vector_index, lidar6_config, draw_lidar6_flag);
+}
+
+
+void
+velodyne_variable_scan_message_handler7(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar7_point_cloud_vector;
+    static int lidar7_point_cloud_vector_max_size = 0;
+    static int lidar7_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar7_config;
+    lidar7_config.id = 7;
+    
+    draw_variable_scan_message(message, lidar7_drawer, first_time, &lidar7_point_cloud_vector, lidar7_point_cloud_vector_max_size, lidar7_point_cloud_vector_index, lidar7_config, draw_lidar7_flag);
+}
+
+
+void
+velodyne_variable_scan_message_handler8(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar8_point_cloud_vector;
+    static int lidar8_point_cloud_vector_max_size = 0;
+    static int lidar8_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar8_config;
+    lidar8_config.id = 8;
+    
+    draw_variable_scan_message(message, lidar8_drawer, first_time, &lidar8_point_cloud_vector, lidar8_point_cloud_vector_max_size, lidar8_point_cloud_vector_index, lidar8_config, draw_lidar8_flag);
+}
+
+
+void
+velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar9_point_cloud_vector;
+    static int lidar9_point_cloud_vector_max_size = 0;
+    static int lidar9_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar9_config;
+    lidar9_config.id = 9;
+    
+    draw_variable_scan_message(message, lidar9_drawer, first_time, &lidar9_point_cloud_vector, lidar9_point_cloud_vector_max_size, lidar9_point_cloud_vector_index, lidar9_config, draw_lidar9_flag);
+}
+
+
+void
+velodyne_variable_scan_message_handler10(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar10_point_cloud_vector;
+    static int lidar10_point_cloud_vector_max_size = 0;
+    static int lidar10_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar10_config;
+    lidar10_config.id = 10;
+
+    draw_variable_scan_message(message, lidar10_drawer, first_time, &lidar10_point_cloud_vector, lidar10_point_cloud_vector_max_size, lidar10_point_cloud_vector_index, lidar10_config, draw_lidar10_flag);
+}
+
+
+void
+velodyne_variable_scan_message_handler11(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar11_point_cloud_vector;
+    static int lidar11_point_cloud_vector_max_size = 0;
+    static int lidar11_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar11_config;
+    lidar11_config.id = 11;
+    
+    draw_variable_scan_message(message, lidar11_drawer, first_time, &lidar11_point_cloud_vector, lidar11_point_cloud_vector_max_size, lidar11_point_cloud_vector_index, lidar11_config, draw_lidar11_flag);
+}
+
+
+void
+velodyne_variable_scan_message_handler12(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar12_point_cloud_vector;
+    static int lidar12_point_cloud_vector_max_size = 0;
+    static int lidar12_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar12_config;
+    lidar12_config.id = 12;
+
+    draw_variable_scan_message(message, lidar12_drawer, first_time, &lidar12_point_cloud_vector, lidar12_point_cloud_vector_max_size, lidar12_point_cloud_vector_index, lidar12_config, draw_lidar12_flag);
+}
+
+
+void
+velodyne_variable_scan_message_handler13(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar13_point_cloud_vector;
+    static int lidar13_point_cloud_vector_max_size = 0;
+    static int lidar13_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar13_config;
+    lidar13_config.id = 13;
+
+    draw_variable_scan_message(message, lidar13_drawer, first_time, &lidar13_point_cloud_vector, lidar13_point_cloud_vector_max_size, lidar13_point_cloud_vector_index, lidar13_config, draw_lidar13_flag);
+}
+
+
+void
+velodyne_variable_scan_message_handler14(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar14_point_cloud_vector;
+    static int lidar14_point_cloud_vector_max_size = 0;
+    static int lidar14_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar14_config;
+    lidar14_config.id = 14;
+
+    draw_variable_scan_message(message, lidar14_drawer, first_time, &lidar14_point_cloud_vector, lidar14_point_cloud_vector_max_size, lidar14_point_cloud_vector_index, lidar14_config, draw_lidar14_flag);
+}
+
+
+void
+velodyne_variable_scan_message_handler15(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar15_point_cloud_vector;
+    static int lidar15_point_cloud_vector_max_size = 0;
+    static int lidar15_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar15_config;
+    lidar15_config.id = 15;
+
+    draw_variable_scan_message(message, lidar15_drawer, first_time, &lidar15_point_cloud_vector, lidar15_point_cloud_vector_max_size, lidar15_point_cloud_vector_index, lidar15_config, draw_lidar15_flag);
+}
+
 
 static void
-velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_message* velodyne_message)
+stereo_velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_message* velodyne_message)
 {
 	add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, sensor_board_1_pose);
+
+	add_point_cloud(velodyne_drawer, velodyne_points[last_velodyne_position]);
 }
 
 
@@ -1642,6 +2183,7 @@ init_velodyne(void)
     last_velodyne_position = 0;
 }
 
+
 static void
 init_laser(void)
 {
@@ -1852,6 +2394,22 @@ init_flags(void)
     draw_particles_flag = 0;
     draw_points_flag = 0;
     draw_velodyne_flag = 2;
+    draw_lidar0_flag = 0;
+    draw_lidar1_flag  = 0;
+    draw_lidar2_flag  = 0;
+    draw_lidar3_flag  = 0;
+    draw_lidar4_flag  = 0;
+    draw_lidar5_flag  = 0;
+    draw_lidar6_flag  = 0;
+    draw_lidar7_flag  = 0;
+    draw_lidar8_flag  = 0;
+    draw_lidar9_flag  = 0;
+    draw_lidar10_flag = 0;
+    draw_lidar11_flag = 0;
+    draw_lidar12_flag = 0;
+    draw_lidar13_flag = 0;
+    draw_lidar14_flag = 0;
+    draw_lidar15_flag = 0;
     draw_stereo_cloud_flag = 0;
     draw_car_flag = 1;
     draw_rays_flag = 0;
@@ -1919,6 +2477,21 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
     laser_drawer = create_point_cloud_drawer(laser_size);
     ldmrs_drawer = create_point_cloud_drawer(ldmrs_size);
     velodyne_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar1_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar2_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar3_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar4_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar5_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar6_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar7_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar8_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar9_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar10_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar11_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar12_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar13_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar14_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar15_drawer = create_point_cloud_drawer(velodyne_size);
     v_360_drawer = create_velodyne_360_drawer(velodyne_pose, sensor_board_1_pose);
 
     // *********************************************************************
@@ -1937,6 +2510,7 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
 #ifdef TEST_LANE_ANALYSIS
     lane_drawer = create_lane_analysis_drawer();
 #endif
+    symotha_drawer = create_symotha_drawer(argc, argv);
 }
 
 void
@@ -1946,6 +2520,21 @@ destroy_drawers()
     destroy_point_cloud_drawer(laser_drawer);
     destroy_point_cloud_drawer(ldmrs_drawer);
     destroy_point_cloud_drawer(velodyne_drawer);
+    destroy_point_cloud_drawer(lidar1_drawer);
+    destroy_point_cloud_drawer(lidar2_drawer);
+    destroy_point_cloud_drawer(lidar3_drawer);
+    destroy_point_cloud_drawer(lidar4_drawer);
+    destroy_point_cloud_drawer(lidar5_drawer);
+    destroy_point_cloud_drawer(lidar6_drawer);
+    destroy_point_cloud_drawer(lidar7_drawer);
+    destroy_point_cloud_drawer(lidar8_drawer);
+    destroy_point_cloud_drawer(lidar9_drawer);
+    destroy_point_cloud_drawer(lidar10_drawer);
+    destroy_point_cloud_drawer(lidar11_drawer);
+    destroy_point_cloud_drawer(lidar12_drawer);
+    destroy_point_cloud_drawer(lidar13_drawer);
+    destroy_point_cloud_drawer(lidar14_drawer);
+    destroy_point_cloud_drawer(lidar15_drawer);
     destroy_velodyne_360_drawer(v_360_drawer);
     //destroy_variable_velodyne_drawer(var_v_drawer);
     destroy_interface_drawer(i_drawer);
@@ -1958,10 +2547,49 @@ destroy_drawers()
 #ifdef TEST_LANE_ANALYSIS
     destroy_lane_analysis_drawer(lane_drawer);
 #endif
+    destroy_symotha_drawer(symotha_drawer);
 }
 
+
 void
-init_stuff(int argc, char** argv)
+load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config &lidar_config)
+{
+    char *vertical_correction_string;
+    char lidar_string[256];
+	
+	sprintf(lidar_string, "lidar%d", lidar_id);        // Geather the lidar id
+
+    carmen_param_t param_list[] = {
+			{lidar_string, (char*)"model", CARMEN_PARAM_STRING, &lidar_config.model, 0, NULL},
+			{lidar_string, (char*)"ip", CARMEN_PARAM_STRING, &lidar_config.ip, 0, NULL},
+			{lidar_string, (char*)"port", CARMEN_PARAM_STRING, &lidar_config.port, 0, NULL},
+			{lidar_string, (char*)"shot_size", CARMEN_PARAM_INT, &lidar_config.shot_size, 0, NULL},
+            {lidar_string, (char*)"min_sensing", CARMEN_PARAM_INT, &lidar_config.min_sensing, 0, NULL},
+            {lidar_string, (char*)"max_sensing", CARMEN_PARAM_INT, &lidar_config.max_sensing, 0, NULL},
+			{lidar_string, (char*)"range_division_factor", CARMEN_PARAM_INT, &lidar_config.range_division_factor, 0, NULL},
+            {lidar_string, (char*)"time_between_shots", CARMEN_PARAM_DOUBLE, &lidar_config.time_between_shots, 0, NULL},
+			{lidar_string, (char*)"x", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.x), 0, NULL},
+			{lidar_string, (char*)"y", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.y), 0, NULL},
+			{lidar_string, (char*)"z", CARMEN_PARAM_DOUBLE, &lidar_config.pose.position.z, 0, NULL},
+			{lidar_string, (char*)"roll", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.roll, 0, NULL},
+			{lidar_string, (char*)"pitch", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.pitch, 0, NULL},
+			{lidar_string, (char*)"yaw", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.yaw, 0, NULL},
+			{lidar_string, (char*)"vertical_angles", CARMEN_PARAM_STRING, &vertical_correction_string, 0, NULL},
+	};
+	int num_items = sizeof(param_list) / sizeof(param_list[0]);
+	carmen_param_install_params(argc, argv, param_list, num_items);
+
+    lidar_config.vertical_angles = (double*) malloc(lidar_config.shot_size * sizeof(double));
+
+    for (int i = 0; i < lidar_config.shot_size; i++)
+		lidar_config.vertical_angles[i] = CLF_READ_DOUBLE(&vertical_correction_string); // CLF_READ_DOUBLE takes a double number from a string
+    
+	//printf("Model: %s Port: %s Shot size: %d Min Sensing: %d Max Sensing: %d Range division: %d Time: %lf\n", lidar_config.model, lidar_config.port, lidar_config.shot_size, lidar_config.min_sensing, lidar_config.max_sensing, lidar_config.range_division_factor, lidar_config.time_between_shots);  printf("X: %lf Y: %lf Z: %lf R: %lf P: %lf Y: %lf\n", lidar_config.pose.position.x, lidar_config.pose.position.y, lidar_config.pose.position.z, lidar_config.pose.orientation.roll, lidar_config.pose.orientation.pitch, lidar_config.pose.orientation.yaw); for (int i = 0; i < lidar_config.shot_size; i++) printf("%lf ", lidar_config.vertical_angles[i]); printf("\n");
+}
+
+
+void
+read_parameters_and_init_stuff(int argc, char** argv)
 {
     int num_items;
     int horizontal_resolution;
@@ -2113,6 +2741,7 @@ init_stuff(int argc, char** argv)
             {stereo_velodyne_string, (char*) "horizontal_roi_ini", CARMEN_PARAM_INT, &stereo_velodyne_horizontal_roi_ini, 0, NULL},
             {stereo_velodyne_string, (char*) "horizontal_roi_end", CARMEN_PARAM_INT, &stereo_velodyne_horizontal_roi_end, 0, NULL},
             {(char*) "velodyne", (char*) "time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &time_spent_by_each_scan, 0, NULL},
+			{(char*) "velodyne0", (char*) "time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &ouster_time_spent_by_each_scan, 0, NULL},
             {(char*) "robot", (char*) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &distance_between_front_and_rear_axles, 0, NULL},
         };
 
@@ -2211,6 +2840,37 @@ init_stuff(int argc, char** argv)
     g_b_red = b_red;
     g_b_green = b_green;
     g_b_blue = b_blue;
+
+    char *calibration_file = NULL;
+
+    carmen_param_t param_list[] =
+	{
+		{(char *) "commandline",	(char *) "fv_flag",		CARMEN_PARAM_ONOFF,	&(force_velodyne_flag),		0, NULL},
+		{(char *) "commandline",	(char *) "velodyne_active",		CARMEN_PARAM_INT,	&(velodyne_active),		0, NULL},
+		{(char *) "commandline",	(char *) "remission_multiplier",		CARMEN_PARAM_DOUBLE, &(remission_multiplier),		0, NULL},
+		{(char *) "commandline", 	(char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
+	};
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+	
+	carmen_param_t param_list2[] = {
+			{(char*)"velodyne0", (char*)"vertical_correction", CARMEN_PARAM_STRING, &v64, 0, NULL},
+			{(char*)"velodyne0", (char*)"horizontal_correction", CARMEN_PARAM_STRING, &h64, 0, NULL},
+	};
+	num_items = sizeof(param_list2)/sizeof(param_list2[0]);
+	carmen_param_install_params(argc, argv, param_list2, num_items);
+
+	if (velodyne_active == 0)
+	{
+		for (int i=0; i<64; i++)
+		{
+			vc_64[i] = CLF_READ_DOUBLE(&v64);
+			ouster64_azimuth_offsets[i] = CLF_READ_DOUBLE(&h64);
+		}
+	}
+
+	remission_calibration_table = load_calibration_table(calibration_file);
 }
 
 
@@ -2379,11 +3039,7 @@ draw_loop(window *w)
         if (draw_xsens_orientation_flag)
         {
             glColor3f(0.4, 1.0, 0.4);
-//            printf("%lf %lf\n", xsens_orientation.yaw, car_fused_pose.orientation.yaw);
-//            draw_xsens_orientation(xsens_orientation, xsens_yaw_bias, xsens_pose, sensor_board_1_pose, car_fused_pose);
             draw_xsens_orientation(xsens_orientation, magnetic_declination, xsens_pose, sensor_board_1_pose, car_fused_pose);
-//            glColor3f(1.0, 0.4, 0.4);
-//            draw_xsens_orientation(xsens_orientation, 0.0, xsens_pose, sensor_board_1_pose, car_fused_pose);
         }
         //draw_orientation_instruments(car_fused_pose.orientation, 1.0, 1.0, 0.0);
         //draw_orientation_instruments(xsens_orientation, xsens_yaw_bias, 1.0, 0.5, 0.0);
@@ -2441,6 +3097,23 @@ draw_loop(window *w)
             if (draw_annotation_flag || velodyne_remission_flag)
                 glPointSize(5);
             draw_point_cloud(velodyne_drawer);
+
+            draw_point_cloud(lidar1_drawer);
+            draw_point_cloud(lidar2_drawer);
+            draw_point_cloud(lidar3_drawer);
+            draw_point_cloud(lidar4_drawer);
+            draw_point_cloud(lidar5_drawer);
+            draw_point_cloud(lidar6_drawer);
+            draw_point_cloud(lidar7_drawer);
+            draw_point_cloud(lidar8_drawer);
+            draw_point_cloud(lidar9_drawer);
+            draw_point_cloud(lidar10_drawer);
+            draw_point_cloud(lidar11_drawer);
+            draw_point_cloud(lidar12_drawer);
+            draw_point_cloud(lidar13_drawer);
+            draw_point_cloud(lidar14_drawer);
+            draw_point_cloud(lidar15_drawer);
+            
             glPointSize(point_size);
         }
         else if (draw_velodyne_flag == 3)
@@ -2474,7 +3147,7 @@ draw_loop(window *w)
 //			draw_laser_rays(front_bullbar_middle_laser_points[last_laser_position], get_world_position(FRONT_BULLBAR_MIDDLE_HIERARCHY_SIZE, front_bullbar_middle_hierarchy));
         }
 
-        if(draw_moving_objects_flag)
+        if (draw_moving_objects_flag)
         {
 		   carmen_vector_3D_t offset = get_position_offset();
            offset.z += sensor_board_1_pose.position.z;
@@ -2572,6 +3245,9 @@ draw_loop(window *w)
         if (draw_lane_analysis_flag) draw_lane_analysis(lane_drawer);
 #endif
 
+        if (show_symotha_flag)
+        	draw_symotha(symotha_drawer, car_fused_pose);
+
         draw_interface(i_drawer);
     }
 }
@@ -2643,8 +3319,23 @@ draw_loop_for_picking(window *w)
         }
         else if (draw_velodyne_flag == 2)
         {
-            //draw_velodyne_points(&(velodyne_points[last_velodyne_position]), 1);           
             draw_point_cloud(velodyne_drawer);
+
+            draw_point_cloud(lidar1_drawer);
+            draw_point_cloud(lidar2_drawer);
+            draw_point_cloud(lidar3_drawer);
+            draw_point_cloud(lidar4_drawer);
+            draw_point_cloud(lidar5_drawer);
+            draw_point_cloud(lidar6_drawer);
+            draw_point_cloud(lidar7_drawer);
+            draw_point_cloud(lidar8_drawer);
+            draw_point_cloud(lidar9_drawer);
+            draw_point_cloud(lidar10_drawer);
+            draw_point_cloud(lidar11_drawer);
+            draw_point_cloud(lidar12_drawer);
+            draw_point_cloud(lidar13_drawer);
+            draw_point_cloud(lidar14_drawer);
+            draw_point_cloud(lidar15_drawer);
         }
         else if (draw_velodyne_flag == 3)
         {
@@ -2666,7 +3357,7 @@ draw_loop_for_picking(window *w)
             draw_laser_rays(laser_points[last_laser_position], get_laser_position(car_fused_pose.position));
         }
 
-        if(draw_moving_objects_flag)
+        if (draw_moving_objects_flag)
         {
            carmen_vector_3D_t offset = get_position_offset();
            offset.z += sensor_board_1_pose.position.z;
@@ -2732,6 +3423,9 @@ draw_loop_for_picking(window *w)
         if (!gps_fix_flag)
             draw_gps_fault_signal();
 
+        if (show_symotha_flag)
+        	draw_symotha(symotha_drawer, car_fused_pose);
+
         //draw_interface(i_drawer);
     }
 }
@@ -2796,6 +3490,24 @@ subscribe_ipc_messages(void)
                                                    (carmen_handler_t) velodyne_partial_scan_message_handler,
                                                    CARMEN_SUBSCRIBE_LATEST);
 
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler0, CARMEN_SUBSCRIBE_LATEST, 0); // Ouster OS164
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler1, CARMEN_SUBSCRIBE_LATEST, 1);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler2, CARMEN_SUBSCRIBE_LATEST, 2);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler3, CARMEN_SUBSCRIBE_LATEST, 3);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler4, CARMEN_SUBSCRIBE_LATEST, 4);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler5, CARMEN_SUBSCRIBE_LATEST, 5);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler6, CARMEN_SUBSCRIBE_LATEST, 6);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler7, CARMEN_SUBSCRIBE_LATEST, 7);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler8, CARMEN_SUBSCRIBE_LATEST, 8);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler9, CARMEN_SUBSCRIBE_LATEST, 9);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler10, CARMEN_SUBSCRIBE_LATEST, 10);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler11, CARMEN_SUBSCRIBE_LATEST, 11);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler12, CARMEN_SUBSCRIBE_LATEST, 12);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler13, CARMEN_SUBSCRIBE_LATEST, 13);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler14, CARMEN_SUBSCRIBE_LATEST, 14);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler15, CARMEN_SUBSCRIBE_LATEST, 15);
+    
+ 
     carmen_download_map_subscribe_message(NULL,
                                           (carmen_handler_t) carmen_download_map_handler,
                                           CARMEN_SUBSCRIBE_LATEST);
@@ -2809,7 +3521,7 @@ subscribe_ipc_messages(void)
                                           CARMEN_SUBSCRIBE_LATEST);
 
     carmen_stereo_velodyne_subscribe_scan_message(camera, NULL,
-                                                  (carmen_handler_t) velodyne_variable_scan_message_handler,
+                                                  (carmen_handler_t) stereo_velodyne_variable_scan_message_handler,
                                                   CARMEN_SUBSCRIBE_LATEST);
 
     carmen_stereo_velodyne_subscribe_scan_message(1, NULL,
@@ -2908,6 +3620,7 @@ distance_near(carmen_vector_3D_t annotation_pose, carmen_vector_3D_t delete_pose
 void
 set_flag_viewer_3D(int flag_num, int value)
 {
+	static int old_velodyne_flag = 0;
     switch (flag_num)
     {
     case 0:
@@ -2920,6 +3633,8 @@ set_flag_viewer_3D(int flag_num, int value)
 
     case 2:
         draw_velodyne_flag = value;
+        set_background_color(g_b_red, g_b_green, g_b_blue);
+        velodyne_remission_flag = 0;
         break;
 
     case 3:
@@ -3076,14 +3791,59 @@ set_flag_viewer_3D(int flag_num, int value)
         break;
     case 31:
     	velodyne_remission_flag = value;
+
         if(value)
-            set_background_color(0, 0, 255);
+        {
+        	old_velodyne_flag = draw_velodyne_flag;
+            set_background_color(0, 0, 0);
+        	draw_velodyne_flag = 2;
+        }
         else
+        {
             set_background_color(g_b_red, g_b_green, g_b_blue);
+            draw_velodyne_flag = old_velodyne_flag;
+        }
         break;
     case 32:
         force_velodyne_flag = value;
         break;
+    case 33:
+        show_symotha_flag = value;
+        break;
+    case 34:
+    	if(value == 0)
+    		draw_lidar0_flag = !draw_lidar0_flag;
+    	if(value == 1)
+    		draw_lidar1_flag = !draw_lidar1_flag;
+    	if(value == 2)
+    		draw_lidar2_flag = !draw_lidar2_flag;
+    	if(value == 3)
+    		draw_lidar3_flag = !draw_lidar3_flag;
+    	if(value == 4)
+    		draw_lidar4_flag = !draw_lidar4_flag;
+    	if(value == 5)
+    		draw_lidar5_flag = !draw_lidar5_flag;
+    	if(value == 6)
+    		draw_lidar6_flag = !draw_lidar6_flag;
+    	if(value == 7)
+    		draw_lidar7_flag = !draw_lidar7_flag;
+    	if(value == 8)
+    		draw_lidar8_flag = !draw_lidar8_flag;
+    	if(value == 9)
+    		draw_lidar9_flag = !draw_lidar9_flag;
+    	if(value == 10)
+    		draw_lidar10_flag = !draw_lidar10_flag;
+    	if(value == 11)
+    		draw_lidar11_flag = !draw_lidar11_flag;
+    	if(value == 12)
+    		draw_lidar12_flag = !draw_lidar12_flag;
+    	if(value == 13)
+    		draw_lidar13_flag = !draw_lidar13_flag;
+    	if(value == 14)
+    		draw_lidar14_flag = !draw_lidar14_flag;
+    	if(value == 15)
+    		draw_lidar15_flag = !draw_lidar15_flag;
+    	break;
     }
 }
 
@@ -3389,16 +4149,6 @@ keyRelease(int code)
     code = code; // just to make gcc happy
 }
 
-void read_parameters(int argc, char **argv)
-{
-	carmen_param_t param_list[] =
-	{
-		{(char *) "commandline",	(char *) "fv_flag",		CARMEN_PARAM_ONOFF,	&(force_velodyne_flag),		0, NULL},
-	};
-
-	carmen_param_allow_unfound_variables(1);
-	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
-}
 
 int
 main(int argc, char** argv)
@@ -3412,9 +4162,7 @@ main(int argc, char** argv)
     carmen_ipc_initialize(argc_g, argv_g);
     carmen_param_check_version(argv[0]);
 
-    read_parameters(argc, argv);
-
-    init_stuff(argc_g, argv_g);
+    read_parameters_and_init_stuff(argc_g, argv_g);
 
     subscribe_ipc_messages();
 

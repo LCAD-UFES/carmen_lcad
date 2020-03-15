@@ -25,13 +25,13 @@ MODULE_NAME = FORD_ESCAPE_HYBRID
 MODULE_COMMENT = "LCAD driver for TORC/JAUS Ford Escape Hybrid"
 
 SOURCES = ford_escape_hybrid.c ford_escape_hybrid_interface.c ford_escape_hybrid_tune_pid.c \
-	  ford_escape_hybrid_test.c ford_escape_hybrid_test_curves.c
+	  ford_escape_hybrid_test.c ford_escape_hybrid_test_curves.c fake_odometry.c
 
 PUBLIC_INCLUDES = ford_escape_hybrid_messages.h ford_escape_hybrid_interface.h ford_escape_hybrid.h
 PUBLIC_LIBRARIES = libford_escape_hybrid_interface.a
-PUBLIC_BINARIES = ford_escape_hybrid ford_escape_hybrid_tune_pid ford_escape_hybrid_test ford_escape_hybrid_test_curves
+PUBLIC_BINARIES = ford_escape_hybrid ford_escape_hybrid_tune_pid ford_escape_hybrid_test ford_escape_hybrid_test_curves fake_odometry
 
-TARGETS = OpenJAUS libcarmodel libcontrol ford_escape_hybrid ford_escape_hybrid_tune_pid libford_escape_hybrid_interface.a ford_escape_hybrid_test ford_escape_hybrid_test_curves
+TARGETS = OpenJAUS libcarmodel libcontrol ford_escape_hybrid ford_escape_hybrid_tune_pid fake_odometry libford_escape_hybrid_interface.a ford_escape_hybrid_test ford_escape_hybrid_test_curves
 
 ifndef NO_PYTHON
 PUBLIC_LIBRARIES_SO = libford_escape_hybrid_interface.so
@@ -61,6 +61,8 @@ ford_escape_hybrid_tune_pid: ford_escape_hybrid_tune_pid.o
 ford_escape_hybrid_test: ford_escape_hybrid_test.o
 
 ford_escape_hybrid_test_curves: ford_escape_hybrid_test_curves.o
+
+fake_odometry: fake_odometry.o
 
 libford_escape_hybrid_interface.a: ford_escape_hybrid_interface.o
 

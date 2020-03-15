@@ -3,12 +3,12 @@ include $(CARMEN_HOME)/src/Makefile.conf
 MODULE_NAME = DARKNET
 MODULE_COMMENT = darknet dnn 
 
-ifeq ($(shell which nvcc),)
-GPU=0
-CUDNN=0
-else
+ifneq (, $(shell which nvcc))
 GPU=1
 CUDNN=1
+else
+GPU=0
+CUDNN=0
 endif
 
 OPENCV=0
@@ -16,7 +16,7 @@ OPENMP=1
 DEBUG=0
 
 # This is what I use, uncomment if you know your arch and want to specify, you may specify more than one
-# ARCH= -gencode arch=compute_52,code=compute_52
+#ARCH= -gencode arch=compute_35,code=compute_35
 
 VPATH=./src/:./examples
 SLIB=lib/libdarknet2.so
@@ -78,7 +78,7 @@ PUBLIC_INCLUDES = carmen_darknet_interface.hpp
 
 ALL_DEPS = obj lib $(SLIB) $(ALIB) $(EXEC)
 
-all: $(ALL_DEPS)
+all: $(ALL_DEPS) yolov3.weights
 
 $(EXEC): $(EXECOBJ) $(ALIB)
 	$(CC) $(COMMON) $(CFLAGS) $^ -o $@ $(LDFLAGS) $(ALIB)
@@ -103,9 +103,12 @@ obj:
 lib:
 	mkdir -p lib
 
+yolov3.weights:
+	cat yolov3.weights.xa yolov3.weights.xb yolov3.weights.xc > yolov3.weights
+
 clean: clean_darknet
 
 clean_darknet:
-	rm -rf $(OBJS) $(SLIB) $(ALIB) $(EXEC) $(EXECOBJ) $(OBJDIR)/*
+	rm -rf $(OBJS) $(SLIB) $(ALIB) $(EXEC) $(EXECOBJ) $(OBJDIR)/* yolov3.weights
 
 include $(CARMEN_HOME)/src/Makefile.rules

@@ -146,13 +146,13 @@ report_wheels_speed_message_handler(OjCmpt XGV_CCU, JausMessage wheels_speed_mes
 			g_wheels_speed_update_freq = 1.0 / (t - last_update);
 		last_update = t;
 		
-		FILE *caco = fopen("results_pid-velocity.txt", "a");
-		fprintf(caco, "VELOCITY (st, cv, dv, e, t, b, i, d, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-			0, (g_XGV_right_rear_wheel_speed + g_XGV_left_rear_wheel_speed) / 2.0, 0.0, 0.0,
-			0.0, 0.0,
-			0.0, 0.0, t);
-		fflush(caco);
-		fclose(caco);
+//		FILE *caco = fopen("results_pid-velocity.txt", "a");
+//		fprintf(caco, "VELOCITY (st, cv, dv, e, t, b, i, d, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//			0, (g_XGV_right_rear_wheel_speed + g_XGV_left_rear_wheel_speed) / 2.0, 0.0, 0.0,
+//			0.0, 0.0,
+//			0.0, 0.0, t);
+//		fflush(caco);
+//		fclose(caco);
 
 		reportWheelsSpeedMessageDestroy(reportWheelsSpeed);
 	}

@@ -24,18 +24,24 @@ typedef struct {
   double timestamp;
   char *host;
 } carmen_bumblebee_basic_stereoimage_message;
-#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_NAME       "carmen_bumblebe_basic_stereoimage"
+
+
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_NAME       "carmen_bumblebee_basic_stereoimage"
 #define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_FMT        "{int,int,int,int,<ubyte:3>,<ubyte:3>,double,string}"
 
-#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE1_NAME         "carmen_bumblebe_basic_stereoimage1"
-#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE2_NAME         "carmen_bumblebe_basic_stereoimage2"
-#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE3_NAME         "carmen_bumblebe_basic_stereoimage3"
-#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE4_NAME         "carmen_bumblebe_basic_stereoimage4"
-#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE5_NAME         "carmen_bumblebe_basic_stereoimage5"
-#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE6_NAME         "carmen_bumblebe_basic_stereoimage6"
-#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE7_NAME         "carmen_bumblebe_basic_stereoimage7"
-#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE8_NAME         "carmen_bumblebe_basic_stereoimage8"
-#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE9_NAME         "carmen_bumblebe_basic_stereoimage9"
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE1_NAME      "carmen_bumblebee_basic_stereoimage1"
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE2_NAME      "carmen_bumblebee_basic_stereoimage2"
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE3_NAME      "carmen_bumblebee_basic_stereoimage3"
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE4_NAME      "carmen_bumblebee_basic_stereoimage4"
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE5_NAME      "carmen_bumblebee_basic_stereoimage5"
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE6_NAME      "carmen_bumblebee_basic_stereoimage6"
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE7_NAME      "carmen_bumblebee_basic_stereoimage7"
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE8_NAME      "carmen_bumblebee_basic_stereoimage8"
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE9_NAME      "carmen_bumblebee_basic_stereoimage9"
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE10_NAME      "carmen_bumblebee_basic_stereoimage10"
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE11_NAME      "carmen_bumblebee_basic_stereoimage11"
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE12_NAME      "carmen_bumblebee_basic_stereoimage12"
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE13_NAME      "carmen_bumblebee_basic_stereoimage13"
 
 #define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE1_FMT     	CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_FMT
 #define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE2_FMT     	CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_FMT
@@ -46,6 +52,11 @@ typedef struct {
 #define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE7_FMT     	CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_FMT
 #define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE8_FMT     	CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_FMT
 #define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE9_FMT     	CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_FMT
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE10_FMT     	CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_FMT
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE11_FMT     	CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_FMT
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE12_FMT     	CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_FMT
+#define      CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE13_FMT     	CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE_FMT
+
 
 #ifdef __cplusplus
 }

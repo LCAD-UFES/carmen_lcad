@@ -64,7 +64,7 @@ send_set_signals_message(OjCmpt XGV_CCU)
 	
 	setSignalsMessage->presenceVector = 7;
 	setSignalsMessage->turnSignal = g_turn_signal_command;
-	setSignalsMessage->hornStatus = g_horn_status_command;
+	setSignalsMessage->hornStatus = g_horn_status_command | g_windshield_wipers_command << 1;
 	setSignalsMessage->headlightsStatus = g_headlights_status_command;
 	
 	message = setSignalsMessageToJausMessage(setSignalsMessage);

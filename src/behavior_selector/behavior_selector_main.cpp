@@ -30,7 +30,8 @@
 static int necessary_maps_available = 0;
 static bool obstacle_avoider_active_recently = false;
 static int activate_tracking = 0;
-
+static bool keep_speed_limit = false;
+double last_speed_limit;
 
 double param_distance_between_waypoints;
 double param_change_goal_distance;
@@ -363,7 +364,7 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)
 		v = 2.5;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
-		v = 1.2; //2.0 reduzido pois as cancelas estao mais lentas para abrir
+		v = 0.6; //1.2 //2.0 reduzido pois as cancelas estao mais lentas para abrir
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
 		v = 0.0;
@@ -422,7 +423,7 @@ get_velocity_at_goal(double v0, double va, double dg, double da)
 //	double a = -get_robot_config()->maximum_acceleration_forward * 2.5;
 	double a = (va * va - v0 * v0) / (2.0 * da);
 	// TODO: @@@ Alberto: nao deveria ser 2.0 ao inves de 1.0 abaixo? Com 2.0 freia esponencialmente nos quebra molas...
-	double sqrt_val = 1.8 * a * dg + v0 * v0;
+	double sqrt_val = get_robot_config()->behaviour_selector_goal_velocity_tuning_factor * a * dg + v0 * v0;
 	double vg = va;
 	if (sqrt_val > 0.0)
 		vg = sqrt(sqrt_val);
@@ -549,6 +550,10 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 
 		if (!annotation_ahead || (DIST2D(previous_annotation_point, nearest_velocity_related_annotation->annotation_point) > 0.0))
 			clearing_annotation = false;
+
+		if (annotation_ahead && (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+				(distance_to_annotation < 10.0))
+			last_speed_limit = velocity_at_next_annotation;
 
 //		FILE *caco = fopen("caco4.txt", "a");
 //		fprintf(caco, "ca %d, aa %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf, aif %d, dg %.1lf, av %.1lf, ts %lf\n", clearing_annotation, annotation_ahead,
@@ -686,6 +691,15 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 }
 
 
+double
+set_goal_velocity_according_to_last_speed_limit_annotation(carmen_ackerman_traj_point_t *goal)
+{
+	goal->v = carmen_fmin(last_speed_limit, goal->v);
+
+	return (goal->v);
+}
+
+
 void
 set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
 		int goal_type, double timestamp)
@@ -705,6 +719,10 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 //	fprintf(caco, "gvdlc %lf  ", goal->v);
 
 	goal->v = set_goal_velocity_according_to_annotation(goal, goal_type, current_robot_pose_v_and_phi, timestamp);
+
+	if (keep_speed_limit)
+		goal->v = set_goal_velocity_according_to_last_speed_limit_annotation(goal);
+
 //	fprintf(caco, "gvda %lf ", goal->v);
 //	if (obstacle_avoider_active_recently)
 //		goal->v = carmen_fmin(2.5, goal->v);
@@ -718,10 +736,16 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 void
 set_behaviours_parameters(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
-	if (fabs(current_robot_pose_v_and_phi.v) < param_distance_interval)
-		change_distance_between_waypoints_and_goals(param_distance_between_waypoints, param_change_goal_distance);
-	else
-		change_distance_between_waypoints_and_goals(4.0 * fabs(current_robot_pose_v_and_phi.v), 4.0 * fabs(current_robot_pose_v_and_phi.v));
+	double distance_between_waypoints = param_distance_between_waypoints;
+	double change_goal_distance = param_change_goal_distance;
+	if (fabs(current_robot_pose_v_and_phi.v) > param_distance_interval)
+	{
+		if ((4.0 * fabs(current_robot_pose_v_and_phi.v)) > distance_between_waypoints)
+			distance_between_waypoints = 4.0 * fabs(current_robot_pose_v_and_phi.v);
+		if ((4.0 * fabs(current_robot_pose_v_and_phi.v)) > change_goal_distance)
+			change_goal_distance = 4.0 * fabs(current_robot_pose_v_and_phi.v);
+	}
+	change_distance_between_waypoints_and_goals(distance_between_waypoints, change_goal_distance);
 
 	behavior_selector_update_robot_pose(current_robot_pose_v_and_phi);
 
@@ -1986,6 +2010,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector", (char *) "central_lane_obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_central_lane_obstacles_safe_distance, 0, NULL},
 		{(char *) "behavior_selector", (char *) "lateral_lane_obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_lateral_lane_obstacles_safe_distance, 0, NULL},
 		{(char *) "behavior_selector", (char *) "lateral_lane_displacement", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_lateral_lane_displacement, 0, NULL},
+		{(char *) "behavior_selector", (char *) "goal_velocity_tuning_factor", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_goal_velocity_tuning_factor, 0, NULL},
 		{(char *) "rrt",   			   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL},
 		{(char *) "obstacle_avoider", 		  (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.obstacle_avoider_obstacles_safe_distance, 	1, NULL},
 		{(char *) "model_predictive_planner", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.model_predictive_planner_obstacles_safe_distance, 	1, NULL},
@@ -1997,14 +2022,15 @@ read_parameters(int argc, char **argv)
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_t optional_param_list[] =
 	{
-		{(char *) "commandline", (char *) "activate_tracking", CARMEN_PARAM_ONOFF, &activate_tracking, 0, NULL}
+		{(char *) "commandline",       (char *) "activate_tracking", CARMEN_PARAM_ONOFF, &activate_tracking, 0, NULL},
+		{(char *) "behavior_selector", (char *) "keep_speed_limit", CARMEN_PARAM_ONOFF, &keep_speed_limit, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 
 	param_distance_between_waypoints = distance_between_waypoints;
 	param_change_goal_distance = change_goal_distance;
 
-	carmen_ini_max_velocity = robot_config.max_v;
+	carmen_ini_max_velocity = last_speed_limit = robot_config.max_v;
 	behavior_selector_initialize(robot_config, distance_between_waypoints, change_goal_distance, following_lane_planner, parking_planner);
 
 	if (param_goal_source_onoff)

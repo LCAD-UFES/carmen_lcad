@@ -1,0 +1,7 @@
+simple_modulo_example é um modelo de exemplo para a utilização do CARMEN, nele há exemplos de como publicar uma mensagem (na pasta Publish) e como se inscrever para a recepção de uma determinada mensagem (na pasta Subscribe).
+
+O módulo publish monta uma mensagem simples do tipo carmen_string_example_message para efetuar o envio.
+
+O módulo subscribe efetua o subscribe desse tipo de mensagem para recebê-la.
+
+Para executar o exemplo é necessário ter o ./central ligado e executar primeiramente o módulo Subscribe, depois executa o módulo publish e no terminal com o Subscribe executando irá printar uma mensagem de exemplo.

@@ -1,5 +1,5 @@
 matplotlib==2.2.3
 numpy==1.15.3
-Pillow==2.3.0
+Pillow>=3.3.2
 tensorboard==1.11.0
 tensorflow-gpu==1.11.0

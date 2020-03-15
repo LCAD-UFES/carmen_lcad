@@ -4,7 +4,7 @@ LINK=g++
 CFLAGS +=
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcmt/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcmt/ 
-LFLAGS += -lipc -lglobal -lparam_interface -lxsens_interface -lcmt -lrt -lpthread
+LFLAGS += -lipc -lglobal -lparam_interface -lxsens_interface -lrotation_geometry -lcmt -lrt -lpthread
 
 MODULE_NAME = XSENS
 MODULE_COMMENT = Xsens Data 

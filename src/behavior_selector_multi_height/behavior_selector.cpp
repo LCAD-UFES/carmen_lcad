@@ -137,13 +137,14 @@ add_goal_to_goal_list(int &goal_index, carmen_ackerman_traj_point_t &current_goa
 int
 try_avoiding_obstacle(int rddf_pose_index, double circle_radius, carmen_rddf_road_profile_message* rddf)
 {
-	printf("CHeck hit\n");
-	carmen_obstacle_distance_mapper_map_message *distance_maps[] = {current_map, current_map_level1};
-	int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle_multi_height(rddf->poses[rddf_pose_index], circle_radius, distance_maps, &robot_config);
 
 #ifdef OVERTAKING
 	return 0;
 #endif
+
+	carmen_obstacle_distance_mapper_map_message *distance_maps[] = {current_map, current_map_level1};
+	int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle_multi_height(rddf->poses[rddf_pose_index], circle_radius, distance_maps, &robot_config);
+
 	return (rddf_pose_hit_obstacle);
 
 //	if (rddf_pose_hit_obstacle == 1)

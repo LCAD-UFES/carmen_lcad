@@ -18,17 +18,68 @@ signal_handler(int signo __attribute__ ((unused)) )
 
 
 void
-build_trajectory_stop_smooth_trajectory_phi() //This function allows to create a trapezium shaped motion command
+build_constant_trajectory()
 {
 	for (int i = 0; i < 50; i++)
 	{
 		motion_commands_vector[i].v = 4.0;
-		motion_commands_vector[i].phi = 0.0;//t * (max_phi / t1);
-		motion_commands_vector[i].time = 0.1;//delta_t;
+		motion_commands_vector[i].phi = 0.0;
+		motion_commands_vector[i].time = 0.1;
 		//printf("i = %d, NUM_MOTION_COMMANDS_PER_VECTOR = %d\n", i, NUM_MOTION_COMMANDS_PER_VECTOR);
 	}
+}
 
-//	printf("mandou\n");
+
+void
+build_step_trajectory()
+{
+	for (int i = 0; i < 100; i++)
+	{
+		motion_commands_vector[i].v = 0.0;
+		motion_commands_vector[i].phi = 0.0;
+		motion_commands_vector[i].time = 0.05;
+	}
+	for (int i = 100; i < NUM_MOTION_COMMANDS_PER_VECTOR; i++)
+	{
+		motion_commands_vector[i].v = 0.0;
+		motion_commands_vector[i].phi += 2.5;
+		motion_commands_vector[i].time = 0.05;
+	}
+}
+
+
+void
+build_ramp_trajectory()
+{
+	for (int i = 0; i < 60; i++)
+	{
+		motion_commands_vector[i].v = 0.0;
+		motion_commands_vector[i].phi = 0.0;
+		motion_commands_vector[i].time = 0.05;
+	}
+	for (int i = 61; i < 120; i++)
+	{
+		motion_commands_vector[i].v = 0.0;
+		motion_commands_vector[i].phi += 0.0416;
+		motion_commands_vector[i].time = 0.05;
+	}
+	for (int i = 61; i < 180; i++)
+	{
+		motion_commands_vector[i].v = 0.0;
+		motion_commands_vector[i].phi += 2.5;
+		motion_commands_vector[i].time = 0.05;
+	}
+}
+
+
+void
+publish_trajectory()
+{
+	build_step_trajectory();
+
+//	build_ramp_trajectory();
+
+	printf("FOI/n");
 	carmen_robot_ackerman_publish_motion_command(motion_commands_vector, NUM_MOTION_COMMANDS_PER_VECTOR, carmen_get_time());
 }
 
@@ -36,13 +87,9 @@ build_trajectory_stop_smooth_trajectory_phi() //This function allows to create a
 void
 timer_handler()
 {
-//	static int first_time = 1;
+	build_constant_trajectory();
 
-//	if (first_time)
-//	{
-		build_trajectory_stop_smooth_trajectory_phi();
-//		first_time = 0;
-//	}
+	carmen_robot_ackerman_publish_motion_command(motion_commands_vector, NUM_MOTION_COMMANDS_PER_VECTOR, carmen_get_time());
 }
 
 
@@ -68,9 +115,11 @@ main(int argc, char **argv)
 
 	define_messages();
 
-	carmen_ipc_addPeriodicTimer(1.0, timer_handler, NULL);
+	//carmen_ipc_addPeriodicTimer(1.0, timer_handler, NULL);
 
-	carmen_ipc_dispatch();
+	//carmen_ipc_dispatch();
+
+	publish_trajectory();
 
 	return 0;
 }

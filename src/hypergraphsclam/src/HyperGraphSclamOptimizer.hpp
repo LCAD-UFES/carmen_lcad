@@ -315,7 +315,6 @@ namespace hyper {
 
             // clear the entire hypergraph
             void Clear();
-
     };
 }
 

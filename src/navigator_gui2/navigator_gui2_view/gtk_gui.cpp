@@ -1,7 +1,10 @@
 #include "gtk_gui.h"
+extern int record_screen;
+int button_record_verification=0;
 
 extern void
 mapper_handler(carmen_mapper_map_message *message);
+
 
 GdkColor *
 build_color_gradient()
@@ -997,7 +1000,7 @@ namespace View
 			break;
 
 		case CARMEN_MOVING_OBJECTS_MAP_v:
-			flags = CARMEN_GRAPHICS_REMOVE_MINUS_ONE | CARMEN_GRAPHICS_INVERT | CARMEN_GRAPHICS_RESCALE;// | CARMEN_GRAPHICS_ENHANCE_CONTRAST;
+			flags = CARMEN_GRAPHICS_REMOVE_MINUS_ONE | CARMEN_GRAPHICS_INVERT /* | CARMEN_GRAPHICS_RESCALE */ | CARMEN_GRAPHICS_ENHANCE_CONTRAST;
 //			flags = 0; // CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT;
 			break;
 
@@ -1533,6 +1536,7 @@ namespace View
 	{
 		if(!log_first_it)
 		{
+			DIR* dir = opendir("/dados/navigator_gui2_log");
 			char log_date[100];
 			memset(log_buffer,'\0',1000*sizeof(char));
 			memset(log_path,'\0',(255)*sizeof(char));
@@ -1541,6 +1545,11 @@ namespace View
 			time_t t = time(NULL);
 			struct tm tm = *localtime(&t);
 			snprintf(log_date, sizeof(log_date), "%d-%d-%d_%d:%d:%d",tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+			if (!dir)
+			{
+				snprintf(log_buffer, sizeof(log_buffer), "/dados/%s", "navigator_gui2_log");
+				mkdir(log_buffer, 0777);
+			}
 			snprintf(log_buffer, sizeof(log_buffer), "/dados/navigator_gui2_log/%s", log_date);
 			mkdir(log_buffer, 0777);
 			snprintf(log_buffer, sizeof(log_buffer), "/dados/navigator_gui2_log/%s/pictures", log_date);
@@ -1559,6 +1568,8 @@ namespace View
 			log_first_it = 1;
 			log_counter = 0;
 		}
+
+
 
 		GdkPixbuf * pixbuf = gdk_pixbuf_get_from_drawable(NULL, mapv->drawing_pixmap, NULL, 0, 0, 0, 0, -1, -1);
 
@@ -1586,8 +1597,29 @@ namespace View
 				((carmen_get_time() - this->time_of_last_redraw > 0.025) || ALWAYS_REDRAW))
 		{
 			carmen_map_graphics_redraw(this->controls_.map_view);
-			if(log_map_is_ready)
+			if(record_screen == 1)
+			{
+				if(button_record_verification != record_screen)
+				{
+					GdkColor color;
+					button_record_verification = 1;
+					gdk_color_parse ("green", &color);
+					gtk_widget_modify_bg(GTK_WIDGET(controls_.buttonRecord), GTK_STATE_NORMAL, &color);
+					navigator_graphics_start_recording_message_received();
+				}
 				save_to_image(this->controls_.map_view);
+			}
+			else
+			{
+				if(button_record_verification != record_screen)
+				{
+					GdkColor color;
+					button_record_verification = 0;
+					gdk_color_parse ("yellow", &color);
+					gtk_widget_modify_bg(GTK_WIDGET(controls_.buttonRecord), GTK_STATE_NORMAL, &color);
+					navigator_graphics_pause_recording_message_received();
+				}
+			}
 			this->time_of_last_redraw	   = carmen_get_time();
 			this->display_needs_updating = 0;
 		}

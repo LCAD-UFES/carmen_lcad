@@ -45,6 +45,8 @@ typedef std::vector<kmldom::PlacemarkPtr> placemark_vector_t;
 
 #include "rddf_util.h"
 
+//#define PRINT_DEBUG
+
 static bool use_road_map = false;
 static bool robot_pose_queued = false;
 static carmen_localize_ackerman_globalpos_message *current_globalpos_msg = NULL;
@@ -87,7 +89,6 @@ static int *annotations;
 static int carmen_rddf_pose_initialized = 0;
 static int already_reached_nearest_waypoint_to_end_point = 0;
 
-char *carmen_annotation_filename = NULL;
 vector<carmen_annotation_t> annotation_read_from_file;
 typedef struct
 {
@@ -320,47 +321,49 @@ carmen_rddf_play_state crosswalk_state = Free_Crosswalk;
 carmen_vector_2D_t
 get_displaced_annotation_position(carmen_annotation_t pedestrian_track_annotation)    // The crosswalk annotated position is displaced by the distance from rear axle to car front
 {                                                                                     // because the annotation position is made this way
-	carmen_vector_2D_t desplaced_crosswalk_pose;
+	carmen_vector_2D_t displaced_crosswalk_pose;
 	double displacement = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
 	double theta = pedestrian_track_annotation.annotation_orientation;
-	desplaced_crosswalk_pose.x = pedestrian_track_annotation.annotation_point.x + displacement * cos(theta);
-	desplaced_crosswalk_pose.y = pedestrian_track_annotation.annotation_point.y + displacement * sin(theta);
+	displaced_crosswalk_pose.x = pedestrian_track_annotation.annotation_point.x + displacement * cos(theta);
+	displaced_crosswalk_pose.y = pedestrian_track_annotation.annotation_point.y + displacement * sin(theta);
 
-	return (desplaced_crosswalk_pose);
+	return (displaced_crosswalk_pose);
 }
 
 
 bool
-pedestrian_about_to_enter_crosswalk(t_point_cloud_struct moving_object, carmen_annotation_t pedestrian_track_annotation, double ray)
+pedestrian_about_to_enter_crosswalk(t_point_cloud_struct moving_object, carmen_annotation_t pedestrian_track_annotation, double radius)
 {
-	carmen_vector_2D_t desplaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
+	carmen_vector_2D_t displaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
 
 	double pedestrian_time_to_crosswalk_border = 999.9;//DBL_MAX;
 	double car_time_to_crosswalk_center = 999.9;//DBL_MAX;
 	double orientantion;
 
-	orientantion = carmen_normalize_theta(atan2(desplaced_crosswalk_pose.y - moving_object.object_pose.y, desplaced_crosswalk_pose.x - moving_object.object_pose.x));
+	orientantion = carmen_normalize_theta(atan2(displaced_crosswalk_pose.y - moving_object.object_pose.y, displaced_crosswalk_pose.x - moving_object.object_pose.x));
 
 	if (abs(carmen_normalize_theta(orientantion - moving_object.orientation)) > 0.53)   // ~30 degrees; Pedestrian is not walking towards crosswalk
-	{
 		return (false);
-	}
-	double x_border = ray * cos((orientantion)) + desplaced_crosswalk_pose.x;            // Position the pedestrian will be when it hits crosswalk border
-	double y_border = ray * sin((orientantion)) + desplaced_crosswalk_pose.y;
+
+	double x_border = radius * cos((orientantion)) + displaced_crosswalk_pose.x;            // Position the pedestrian will be when it hits crosswalk border
+	double y_border = radius * sin((orientantion)) + displaced_crosswalk_pose.y;
 
 	double d_x = x_border - moving_object.object_pose.x;
 	double d_y = y_border - moving_object.object_pose.y;
 
-	if (moving_object.linear_velocity > 0.2)
+	if (moving_object.linear_velocity > 0.4)
 		pedestrian_time_to_crosswalk_border = abs((sqrt((d_x * d_x) + (d_y * d_y)))) / moving_object.linear_velocity;
 
 	if (current_globalpos_msg->v > 0.5)
-		car_time_to_crosswalk_center = abs(DIST2D(current_globalpos_msg->globalpos, desplaced_crosswalk_pose)) / current_globalpos_msg->v;
+		car_time_to_crosswalk_center = abs(DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose)) / current_globalpos_msg->v;
 
+#ifdef PRINT_DEBUG
 	printf("%lf %lf ", orientantion, moving_object.orientation);
 	printf("Bx %lf By %lf ", x_border, y_border);
 	printf("TC %lf TP %lf", car_time_to_crosswalk_center, pedestrian_time_to_crosswalk_border);
 	printf("C %lf P %lf\n", current_globalpos_msg->v, moving_object.linear_velocity);
+	fflush(stdout);
+#endif
 
 	if (car_time_to_crosswalk_center < pedestrian_time_to_crosswalk_border)
 		return (false);
@@ -373,15 +376,14 @@ pedestrian_about_to_enter_crosswalk(t_point_cloud_struct moving_object, carmen_a
 bool
 pedestrian_in_crosswalk(carmen_moving_objects_point_clouds_message *moving_objects, carmen_annotation_t pedestrian_track_annotation)
 {
-	double ray = pedestrian_track_annotation.annotation_point.z;
-	carmen_vector_2D_t desplaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
+	double radius = pedestrian_track_annotation.annotation_point.z;
+	carmen_vector_2D_t displaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
 
 	for (int i = 0; i < moving_objects->num_point_clouds; i++)
 	{
-		if ((strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") == 0 &&
-			 DIST2D(moving_objects->point_clouds[i].object_pose, desplaced_crosswalk_pose) < ray)
-			 ||
-			 pedestrian_about_to_enter_crosswalk(moving_objects->point_clouds[i], pedestrian_track_annotation, ray))
+		if (pedestrian_about_to_enter_crosswalk(moving_objects->point_clouds[i], pedestrian_track_annotation, radius) ||
+			(strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") == 0 &&
+			 DIST2D(moving_objects->point_clouds[i].object_pose, displaced_crosswalk_pose) < radius))
 		{
 			//printf("In\n");
 			return (true);
@@ -395,18 +397,18 @@ pedestrian_in_crosswalk(carmen_moving_objects_point_clouds_message *moving_objec
 bool                                // TODO checar se o pedestre não esta no caminho
 pedestrian_crossing(carmen_moving_objects_point_clouds_message *moving_objects_msg, carmen_annotation_t pedestrian_track_annotation)
 {
-	double ray = pedestrian_track_annotation.annotation_point.z;
-	carmen_vector_2D_t desplaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
+	double radius = pedestrian_track_annotation.annotation_point.z;
+	carmen_vector_2D_t displaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
 
 	for (int i = 0; i < moving_objects->num_point_clouds; i++)
 	{
 		if (strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") == 0)
 		{
-			if ((DIST2D(moving_objects->point_clouds[i].object_pose, desplaced_crosswalk_pose) < ray &&                    // Inside the crosswalk circle
+			if ((DIST2D(moving_objects->point_clouds[i].object_pose, displaced_crosswalk_pose) < radius &&                    // Inside the crosswalk circle
 				 moving_objects_msg->point_clouds[i].linear_velocity > 0.2 &&                                              // Moving faster than 0.2m/s
 				 abs(current_globalpos_msg->globalpos.theta - moving_objects_msg->point_clouds[i].orientation) > 0.2)      // Not moving parallel to the car (sideways with the crosswalk)
 				 )//||
-				 //pedestrian_about_to_enter_crosswalk(moving_objects_msg->point_clouds[i], desplaced_crosswalk_pose, ray))
+				 //pedestrian_about_to_enter_crosswalk(moving_objects_msg->point_clouds[i], displaced_crosswalk_pose, radius))
 			{
 					return (true);
 			}
@@ -422,7 +424,7 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 	if (moving_objects_msg == NULL || moving_objects_msg->num_point_clouds < 1)
 		return (false);
 
-	carmen_vector_2D_t desplaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
+	carmen_vector_2D_t displaced_crosswalk_pose = get_displaced_annotation_position(pedestrian_track_annotation);
 
 	switch (crosswalk_state)
 	{
@@ -436,13 +438,13 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 			return (false);
 
 		case Stopping_Busy_Crosswalk:
-			//printf("Stopping_Busy_Crosswalk %lf %lf\n", current_globalpos_msg->v, DIST2D(current_globalpos_msg->globalpos, desplaced_crosswalk_pose));
+			//printf("Stopping_Busy_Crosswalk %lf %lf\n", current_globalpos_msg->v, DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
 			if (!pedestrian_in_crosswalk(moving_objects_msg, pedestrian_track_annotation))
 			{
 				crosswalk_state = Free_Crosswalk;
 				return (false);
 			}
-			else if (current_globalpos_msg->v < 0.15 && DIST2D(current_globalpos_msg->globalpos, desplaced_crosswalk_pose) < 12.0) // || dist stop point < 2.0
+			else if (current_globalpos_msg->v < 0.15 && DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose) < 20.0) // || dist stop point < 2.0
 			{
 				crosswalk_state = Stopped_Busy_Crosswalk;
 			}
@@ -458,14 +460,14 @@ pedestrian_track_busy_new(carmen_moving_objects_point_clouds_message *moving_obj
 			return (true);
 
 		case Leaving_Crosswalk:
-			//printf("Leaving_Crosswalk %lf\n", DIST2D(current_globalpos_msg->globalpos, desplaced_crosswalk_pose));
+			//printf("Leaving_Crosswalk %lf\n", DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose));
 			if (pedestrian_crossing(moving_objects_msg, pedestrian_track_annotation))
 			{
 				printf("pedestrian_crossing \n");
 				crosswalk_state = Stopped_Busy_Crosswalk;
 				return (true);
 			}
-			else if (DIST2D(current_globalpos_msg->globalpos, desplaced_crosswalk_pose) < 2.0)
+			else if (DIST2D(current_globalpos_msg->globalpos, displaced_crosswalk_pose) < 2.0)
 			{
 				crosswalk_state = Free_Crosswalk;
 			}
@@ -519,7 +521,7 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 		if ((dist < 100.0) && orientation_ok)
 		{
 			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
-			if (pedestrian_track_busy(moving_objects, annotation_read_from_file[annotation_index]))
+			if (pedestrian_track_busy_new(moving_objects, annotation_read_from_file[annotation_index]))
 				annotation_i.annotation.annotation_code = RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_BUSY;
 			else
 				annotation_i.annotation.annotation_code = RDDF_ANNOTATION_CODE_NONE;
@@ -535,6 +537,7 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 		{
 			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
 			annotations_to_publish.push_back(annotation_i);
+//			printf("---STOP\n");
 			return (true);
 		}
 	}
@@ -1688,9 +1691,13 @@ carmen_rddf_play_publish_annotation_queue()
 
 	annotation_queue_message.num_annotations = annotations_to_publish.size();
 
-	for (size_t i = 0; i < annotations_to_publish.size(); i++)
-		memcpy(&(annotation_queue_message.annotations[i]), &(annotations_to_publish[i].annotation), sizeof(carmen_annotation_t));
+//	printf ("Annotation size %d\n", (int)annotations_to_publish.size());
 
+	for (size_t i = 0; i < annotations_to_publish.size(); i++)
+	{
+//		printf ("code %d\n", annotations_to_publish[i].annotation.annotation_type);
+		memcpy(&(annotation_queue_message.annotations[i]), &(annotations_to_publish[i].annotation), sizeof(carmen_annotation_t));
+	}
 	annotation_queue_message.host = carmen_get_host();
 	annotation_queue_message.timestamp = carmen_get_time();
 
@@ -1791,6 +1798,84 @@ carmen_rddf_play_load_index(char *rddf_filename)
 
 	carmen_rddf_load_index(rddf_filename);
 }
+
+
+void
+carmen_rddf_play_clear_annotation_vector()
+{
+	for (unsigned int i = 0; i < annotation_read_from_file.size(); i++)
+	{
+		free (annotation_read_from_file[i].annotation_description);
+	}
+
+//	printf("%s\n", annotation_read_from_file[i].annotation_description);
+
+	annotation_read_from_file.clear();
+}
+
+
+void
+carmen_rddf_play_load_annotation_file(char *carmen_annotation_filename)
+{
+	if (carmen_annotation_filename == NULL)
+		return;
+
+	FILE *f = fopen(carmen_annotation_filename, "r");
+	if (f == NULL)
+		return;
+
+	//printf("---- Annotation file: %s\n", carmen_annotation_filename);
+
+	carmen_rddf_play_clear_annotation_vector();
+
+	char line[1024];
+
+	while (fgets(line, 1023, f) != NULL)
+	{
+		if (line[0] == '#') // comment line
+			continue;
+
+		carmen_annotation_t annotation;
+		char annotation_description[1024];
+		if (sscanf(line, "%s %d %d %lf %lf %lf %lf\n",
+				annotation_description,
+				&annotation.annotation_type,
+				&annotation.annotation_code,
+				&annotation.annotation_orientation,
+				&annotation.annotation_point.x,
+				&annotation.annotation_point.y,
+				&annotation.annotation_point.z) == 7)
+		{
+			annotation.annotation_description = (char *) calloc (1024, sizeof(char));
+			strcpy(annotation.annotation_description, annotation_description);
+
+			//printf("%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n", annotation.annotation_description, annotation.annotation_type, annotation.annotation_code,
+			//		annotation.annotation_orientation, annotation.annotation_point.x, annotation.annotation_point.y, annotation.annotation_point.z);
+
+
+			//The annotation file's points (x,y) are placed at the front of the car
+			//The annotation vector's points (x,y) are placed at the car's rear axle
+			//The annotation orientation is the angle of the rddf orientation in radians
+			//The value of annotation point z may have different meanings for different annotation types
+			//For PEDESTRIAN_TRACK type z is the search radius for pedestrians in meters
+			//For TRAFFIC_SIGN type z is the curvature of the rddf in radians/meter
+
+			carmen_ackerman_traj_point_t annotation_point;
+			annotation_point.x = annotation.annotation_point.x;
+			annotation_point.y = annotation.annotation_point.y;
+			annotation_point.theta = annotation.annotation_orientation;
+			double distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
+			carmen_point_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&annotation_point, -distance_car_pose_car_front);
+
+			annotation.annotation_point.x = new_annotation_point.x;
+			annotation.annotation_point.y = new_annotation_point.y;
+			annotation_read_from_file.push_back(annotation);
+		}
+	}
+
+	fclose(f);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1974,7 +2059,9 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 	if (message->command_id == SET_COURSE)
 	{
 		printf("New rddf set by voice command: %s\n", message->command);
+
 		carmen_rddf_index_clear();
+
 		char *carmen_home = getenv("CARMEN_HOME");
 		static char rddf_file_name[2048];
 		strcpy(rddf_file_name, carmen_home);
@@ -1982,6 +2069,12 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 		strcat(rddf_file_name, message->command);
 
 		carmen_rddf_play_load_index(rddf_file_name);
+
+		char carmen_annotation_filename[2048];
+		rddf_file_name[strlen(rddf_file_name) - 4] = '\0';
+		sprintf(carmen_annotation_filename, "%s_annotation.txt", rddf_file_name);
+
+		carmen_rddf_play_load_annotation_file(carmen_annotation_filename);
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -2021,65 +2114,6 @@ carmen_rddf_play_subscribe_messages()
 	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
-}
-
-
-void
-carmen_rddf_play_load_annotation_file()
-{
-	if (carmen_annotation_filename == NULL)
-		return;
-
-	FILE *f = fopen(carmen_annotation_filename, "r");
-	char line[1024];
-	while(fgets(line, 1023, f) != NULL)
-	{
-		if (line[0] == '#') // comment line
-			continue;
-
-		carmen_annotation_t annotation;
-		char annotation_description[1024];
-		if (sscanf(line, "%s %d %d %lf %lf %lf %lf\n",
-				annotation_description,
-				&annotation.annotation_type,
-				&annotation.annotation_code,
-				&annotation.annotation_orientation,
-				&annotation.annotation_point.x,
-				&annotation.annotation_point.y,
-				&annotation.annotation_point.z) == 7)
-		{
-			annotation.annotation_description = (char *) calloc (1024, sizeof(char));
-			strcpy(annotation.annotation_description, annotation_description);
-//			printf("%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n", annotation.annotation_description,
-//					annotation.annotation_type,
-//					annotation.annotation_code,
-//					annotation.annotation_orientation,
-//					annotation.annotation_point.x,
-//					annotation.annotation_point.y,
-//					annotation.annotation_point.z);
-
-			/*
-			 *	The annotation file's points (x,y) are placed at the front of the car
-			 *	The annotation vector's points (x,y) are placed at the car's rear axle
-			 *	The annotation orientation is the angle of the rddf orientation in radians
-			 *	The value of annotation point z may have different meanings for different annotation types
-			 *	For PEDESTRIAN_TRACK type z is the search radius for pedestrians in meters
-			 *	For TRAFFIC_SIGN type z is the curvature of the rddf in radians/meter
-			 */
-			carmen_ackerman_traj_point_t annotation_point;
-			annotation_point.x = annotation.annotation_point.x;
-			annotation_point.y = annotation.annotation_point.y;
-			annotation_point.theta = annotation.annotation_orientation;
-			double distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
-			carmen_point_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&annotation_point, -distance_car_pose_car_front);
-
-			annotation.annotation_point.x = new_annotation_point.x;
-			annotation.annotation_point.y = new_annotation_point.y;
-			annotation_read_from_file.push_back(annotation);
-		}
-	}
-
-	fclose(f);
 }
 
 
@@ -2129,6 +2163,9 @@ int
 main(int argc, char **argv)
 {
 	setlocale(LC_ALL, "C");
+
+	char *carmen_annotation_filename = NULL;
+
 	char *usage[] = {(char *) "<rddf_filename> [<annotation_filename> [<traffic_lights_camera>]]",
 			         (char *) "-use_road_map   [<annotation_filename> [<traffic_lights_camera>]]"};
 
@@ -2168,7 +2205,7 @@ main(int argc, char **argv)
 	carmen_rddf_play_subscribe_messages();
 	if (!use_road_map)
 		carmen_rddf_play_load_index(carmen_rddf_filename);
-	carmen_rddf_play_load_annotation_file();
+	carmen_rddf_play_load_annotation_file(carmen_annotation_filename);
 	signal (SIGINT, carmen_rddf_play_shutdown_module);
 	carmen_ipc_dispatch();
 

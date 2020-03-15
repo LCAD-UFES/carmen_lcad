@@ -1388,6 +1388,10 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 		{(char *) "localize", (char *) "yaw_uncertainty_due_to_grid_resolution", CARMEN_PARAM_DOUBLE, &param->yaw_uncertainty_due_to_grid_resolution, 0, NULL},
 		{(char *) "localize", (char *) "xy_uncertainty_due_to_grid_resolution", CARMEN_PARAM_DOUBLE, &param->xy_uncertainty_due_to_grid_resolution, 0, NULL},
 
+		{(char *) "localize", (char *) "v_uncertainty_at_zero_v", CARMEN_PARAM_DOUBLE, &param->v_uncertainty_at_zero_v, 0, NULL},
+
+		{(char *) "localize", (char *) "remission_variance_multiplier", CARMEN_PARAM_DOUBLE, &param->remission_variance_multiplier, 0, NULL},
+
 		{(char *) "sensor_board_1", (char *) "x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x),	0, NULL},
 		{(char *) "sensor_board_1", (char *) "y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y),	0, NULL},
 		{(char *) "sensor_board_1", (char *) "z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z),	0, NULL},

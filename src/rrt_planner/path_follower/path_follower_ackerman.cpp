@@ -21,6 +21,8 @@ carmen_ackerman_motion_command_t path_motion_command[MOTION_COMMAND_VECTOR_MAX_S
 
 int Path_Follower_Ackerman::use_obstacle_avoider = 0;
 
+extern double t0;
+
 
 void
 Path_Follower_Ackerman::go()
@@ -81,10 +83,14 @@ Path_Follower_Ackerman::update_path()
 	if (path.empty() || !GlobalState::localize_pose)
 		return;
 
+	printf("entrou em Path_Follower_Ackerman::update_path() - %lf\n", carmen_get_time() - t0);
+
 	// verificar se precisa mudar o comando
 	while (Ackerman::remove_front_node_of_the_path(*GlobalState::localize_pose, path, path_distance, theta_diff,
 				  &path_pose, &spent_time, &traveled_distance, &total_distance))
 		;
+
+	printf("passou do while em Path_Follower_Ackerman::update_path() - %lf\n", carmen_get_time() - t0);
 
 	if (path_distance > distance_threshold || theta_diff > theta_threshold)
 	{
@@ -302,6 +308,8 @@ Path_Follower_Ackerman::build_and_send_robot_motion_command_vector()
 
 	list<RRT_Path_Edge>::iterator edge = path.begin();
 
+	printf("entrou em Path_Follower_Ackerman::build_and_send_robot_motion_command_vector() - %lf\n", carmen_get_time() - t0);
+
 	 // path_pose é a posicao do caminho mais proxima da posicao do robo
 	compute_motion_command_vector(motion_command_size, path_pose, edge->command, edge->time - spent_time, fixed_time);//, edge);
 	edge++;
@@ -315,4 +323,6 @@ Path_Follower_Ackerman::build_and_send_robot_motion_command_vector()
 	motion_command_size = handle_empty_rrt_path(motion_command_size);
 
 	publish_path_follower_motion_commands(motion_command_vector, motion_command_size, GlobalState::localizer_pose_timestamp);
+
+	printf("saiu de Path_Follower_Ackerman::build_and_send_robot_motion_command_vector() - %lf\n", carmen_get_time() - t0);
 }

@@ -1,0 +1,8 @@
+Para utilizar o script, é necessário copiar a tabela inteira do arquivo doc ou odt (Apenas a tabela, sem a necessidade do título Referências). E colar no arquivo Referencias.txt
+Depois copiar o resto do texto do arquivo com exceção da tabela. Pode-se selecionar o texto anterior às referências e copiá-lo até o início do arquivo. Colar no arquivo Texto.txt
+
+Depois executar o ./extract_ref_from_table.sh
+
+O programa irá pegar todas as strings entre colchetes com o tamanho de 3 até 13 (pode-se modificar esse limite) e irá criar um arquivo de texto com todas as strings encontradas.
+Depois irá pegar todas as strings entre colchetes encontradas no restante do texto (no arquivo Texto.txt)
+O resultado se encontra no arquivo Resultado.txt
