@@ -852,7 +852,7 @@ bool GrabData::BuildLidarLoopMeasure(
     {
         // get the desired transformation
         loop_measurement = GetSE2FromEigenMatrix(gicp.getFinalTransformation());
-        g2o::Vector3 v = loop_measurement.toVector();
+        g2o::Vector3D v = loop_measurement.toVector();
         if (min_speed < std::fabs(v[0]) || min_speed < std::fabs(v[1]) || min_speed < std::fabs(v[2]))
         {
             return true;

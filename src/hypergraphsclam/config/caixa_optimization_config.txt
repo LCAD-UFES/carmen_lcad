@@ -49,13 +49,13 @@ GPS_POSE_HH_STD 8.0
 ODOM_ACKERMAN_PARAMS_VERTICES 1
 
 -- how many outer iterations - Na pratica resolve-se com 1 loop so
-OPTIMIZER_OUTER_ITERATIONS 2
+OPTIMIZER_OUTER_ITERATIONS 1
 
 -- how many pose optimization iterations
-OPTIMIZER_INNER_POSE_ITERATIONS 30
+OPTIMIZER_INNER_POSE_ITERATIONS 1
 
 -- how many bias c-- alibration iterations
-OPTIMIZER_INNER_OD-- OM_CALIB_ITERATIONS 20
+OPTIMIZER_INNER_OD-- OM_CALIB_ITERATIONS 1
 -- 
 -- the min cluster-- ing distance (GPS)
 -- Distância para -- considerar no clustering.

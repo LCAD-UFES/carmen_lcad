@@ -10,6 +10,7 @@
 #include <g2o/types/slam2d/vertex_se2.h>
 #include <g2o/types/slam2d/edge_se2.h>
 #include <g2o/types/slam2d/types_slam2d.h>
+#include <g2o/core/eigen_types.h>
 
 #include <pcl/registration/gicp.h>
 
