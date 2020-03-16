@@ -22,17 +22,20 @@
 #endif
 
 #include <stdio.h>
+
+#ifdef USE_DLIB
 #include <dlib/svm.h>
+
+using namespace dlib;
 #include <carmen/tlight_state_recog.h>
 #include <carmen/tlight_factory.h>
+#endif
 
 int use_squeezenet = 1;
 int gpu_mode = 1;
 int gpu_device_id = 0;
 
 //CNN to recognize traffic_light given an image
-string str_prototxt = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/squeezenet/deploy.prototxt";
-string str_caffemodel = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/squeezenet/train_squeezenet_trainval_manual_p2__iter_3817.caffemodel";
 
 #ifdef USE_CAFFE
 SqueezeNet* squeezenet_classify = NULL;
@@ -42,12 +45,14 @@ SqueezeNet* squeezenet_classify = NULL;
 #define HEIGHT 20
 const int USE_VGRAM = 1;
 
-using namespace dlib;
 using namespace cv;
 using namespace std;
+string str_prototxt = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/squeezenet/deploy.prototxt";
+string str_caffemodel = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/squeezenet/train_squeezenet_trainval_manual_p2__iter_3817.caffemodel";
 
 //Parameters
 
+#ifdef USE_DLIB
 //SVM
 typedef matrix<double, 180, 1> sample_type;
 typedef radial_basis_kernel<sample_type> kernel_type;
@@ -57,6 +62,7 @@ funct_type trained_svm;
 string svm_train_name = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/svm.dat";
 
 TLightRecogInterface *recognizer;
+#endif
 
 //Camera
 static int camera;
@@ -124,7 +130,7 @@ compute_distance_to_the_traffic_light()
     return (nearest_traffic_light_distance);
 }
 
-
+#ifdef USE_DLIB
 sample_type
 get_traffic_light_image_in_svm_format(cv::Mat frame, CvPoint p1, CvPoint p2)
 {
@@ -149,7 +155,7 @@ get_traffic_light_image_in_svm_format(cv::Mat frame, CvPoint p1, CvPoint p2)
 
     return (traffic_light_image_in_svm_format);
 }
-
+#endif
 
 std::vector<Rect>
 detect_traffic_lights(const cv::Mat frame)
@@ -267,7 +273,7 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 					p1.y = traffic_light_rectangles[i].y + roi_y;
 					p2.x = p1.x + traffic_light_rectangles[i].width;
 					p2.y = p1.y + traffic_light_rectangles[i].height;
-
+#ifdef USE_DLIB
 					// FILIPE
 					if (USE_VGRAM)
 					{
@@ -292,6 +298,7 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 							add_traffic_light_to_message(traffic_light_message, RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN, p1, p2, num_traffic_lights_accepted);
 						// @@@ Alberto: E o amarelo? E a rejeicao de deteccoes?
 					}
+#endif
 
 					num_traffic_lights_accepted++;
 				}
@@ -497,12 +504,13 @@ traffic_light_module_initialization()
 {
     //Read the haar cascade trained
     ts_cascade.load(ts_cascade_name);
-
     //Read the svm trained
+#ifdef USE_DLIB
     ifstream fin(svm_train_name.c_str(), ios::binary);
     deserialize(trained_svm, fin);
 
     recognizer = TLightStateRecogFactory::build("mlp");
+#endif
 
 #ifdef USE_CAFFE
     if (use_squeezenet)
