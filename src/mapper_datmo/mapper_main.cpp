@@ -163,6 +163,9 @@ segmented salsanet_segmented;
 
 struct data_for_train {
 	double *data;
+	bool camera5;
+	bool camera7;
+	bool camera3;
 	double timestamp;
 };
 data_for_train squeezeseg_dataset;
@@ -603,9 +606,18 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 	cv::Mat total;
 	//Remove vehicle front
 	float IMAGE_HEIGHT_CROP = 0.85; 	//camera3
+	if (camera_index == 3){
+		squeezeseg_dataset.camera3 = true;
+	}
 	if (camera_index == 5){
+		squeezeseg_dataset.camera5 = true;
 		IMAGE_HEIGHT_CROP = 0.91; //camera5
 	}
+	if (camera_index == 7){
+		squeezeseg_dataset.camera7 = true;
+		IMAGE_HEIGHT_CROP = 0.91; //camera7
+	}
+
 	int crop_x = 0;
 	int crop_y = 0;			  //280;
 	int crop_w = image_width; // 1280;
@@ -622,7 +634,7 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 
 	vector<image_cartesian> points;
 	int min_shots = 1024;
-	if (number_of_laser_shots > min_shots)
+	if (number_of_laser_shots > min_shots && squeezeseg_dataset.timestamp == sensor_data->points_timestamp[cloud_index])
 	{
 		for (int i = 0; i < number_of_laser_shots; i++)
 		{
@@ -867,7 +879,10 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 //			imshow("Velodyne Semantic Map", img_planar);
 //			imshow("Image Semantic Segmentation", img);
 //=======
-			libsqueeze_seg_save_npy_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
+			if (squeezeseg_dataset.camera5 && squeezeseg_dataset.camera7)
+			{
+				libsqueeze_seg_save_npy_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
+			}
 			
 			resize(total, total, cv::Size(0, 0), 1.7, 1.7, cv::INTER_NEAREST);
 			imshow("Velodyne Semantic Map", total);
@@ -2136,7 +2151,10 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		filter_sensor_data_using_salsanet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
 	}
 	if (!strcmp(neural_network,"yolo")){
-		filter_sensor_data_using_image_yolo(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+		if (check_lidar_camera_max_timestamp_difference(&sensors_data[sensor_number]))
+		{
+			filter_sensor_data_using_image_yolo(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+		}
 	}
 	/*if (!strcmp(neural_network,"rangenet")){
 		filter_sensor_data_using_rangenet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
@@ -2334,6 +2352,9 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	}
 	if (!strcmp(neural_network,"yolo")){
 		squeezeseg_dataset.data = libsqueeze_seg_data_for_train(VELODYNE, velodyne_message, sensors_params);
+		squeezeseg_dataset.camera3 = false;
+		squeezeseg_dataset.camera5 = false;
+		squeezeseg_dataset.camera7 = false;
 		squeezeseg_dataset.timestamp = velodyne_message->timestamp;
 	}
 	/*if (!strcmp(neural_network,"rangenet")){
