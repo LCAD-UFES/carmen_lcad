@@ -68,6 +68,9 @@ int update_and_merge_with_snapshot_map;
 int decay_to_offline_map;
 int create_map_sum_and_count;
 int use_remission;
+int mapper_save_map = 1;
+double remission_threshold = 1e12;
+bool use_remission_threshold = false;
 
 carmen_pose_3D_t sensor_board_1_pose;
 carmen_pose_3D_t front_bullbar_pose;
@@ -145,7 +148,10 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 			sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
 			sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
 
-			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+			if (use_remission_threshold)
+				run_mapper_with_remision_threshold(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, remission_threshold);
+			else
+				run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
 			sensors_data[sensor_number].robot_pose[i] = old_robot_position;
 			sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
@@ -169,7 +175,10 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
 		sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
 
-		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+		if (use_remission_threshold)
+			run_mapper_with_remision_threshold(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, remission_threshold);
+		else
+			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
 		sensors_data[sensor_number].robot_pose[i] = old_robot_position;
 		sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
@@ -318,7 +327,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		publish_virtual_scan(globalpos_message->timestamp);
 	}
 
-	if (update_and_merge_with_mapper_saved_maps && time_secs_between_map_save > 0.0)
+	if (update_and_merge_with_mapper_saved_maps && time_secs_between_map_save > 0.0 && mapper_save_map)
 		mapper_periodically_save_current_map(globalpos_message->timestamp);
 }
 
@@ -509,7 +518,10 @@ offline_map_handler(carmen_map_server_offline_map_message *msg)
 	memcpy(offline_map.complete_map, msg->complete_map, msg->config.x_size * msg->config.y_size * sizeof(double));
 	offline_map.config = msg->config;
 
-	mapper_change_map_origin_to_another_map_block(&map_origin);
+	if (use_remission_threshold)
+		mapper_change_map_origin_to_another_map_block_with_clones(&map_origin, mapper_save_map);
+	else
+		mapper_change_map_origin_to_another_map_block(&map_origin, mapper_save_map);
 
 	if (merge_with_offline_map)
 		mapper_merge_online_map_with_offline_map(&offline_map);
@@ -1306,8 +1318,10 @@ read_parameters(int argc, char **argv,
 		{(char *) "mapper",  (char *) "update_cells_below_car", CARMEN_PARAM_ONOFF, &update_cells_below_car, 0, NULL},
 		{(char *) "mapper",  (char *) "decay_to_offline_map", CARMEN_PARAM_ONOFF, &decay_to_offline_map, 0, NULL},
 		{(char *) "mapper",  (char *) "create_map_sum_and_count", CARMEN_PARAM_ONOFF, &create_map_sum_and_count, 0, NULL},
+		{(char *) "mapper",  (char *) "save_map", CARMEN_PARAM_ONOFF, &mapper_save_map, 0, NULL},
 		{(char *) "mapper",  (char *) "use_remission", CARMEN_PARAM_ONOFF, &use_remission, 0, NULL},
-
+		{(char *) "mapper",  (char *) "use_remission_threshold", CARMEN_PARAM_ONOFF, &use_remission_threshold, 0, NULL },
+		{(char *) "mapper",  (char *) "remission_threshold", CARMEN_PARAM_DOUBLE, &remission_threshold, 0, NULL},
 		{(char *) "mapper",  (char *) "update_and_merge_with_snapshot_map", CARMEN_PARAM_ONOFF, &update_and_merge_with_snapshot_map, 0, NULL},
 		{(char *) "mapper",  (char *) "number_of_threads", CARMEN_PARAM_INT, &number_of_threads, 0, NULL},
 
@@ -1581,7 +1595,7 @@ main(int argc, char **argv)
 
 	initialize_transforms();
 
-	mapper_initialize(&map_config, car_config);
+	mapper_initialize(&map_config, car_config, use_remission_threshold);
 
 	if (use_neural_mapper)
 		initialize_inference_context_mapper_();

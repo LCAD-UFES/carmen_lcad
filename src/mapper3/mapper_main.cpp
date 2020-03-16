@@ -65,7 +65,9 @@ int update_and_merge_with_snapshot_map;
 int decay_to_offline_map;
 int create_map_sum_and_count;
 int use_remission;
-int mapper_save_map;
+int mapper_save_map = 1;
+double remission_threshold = 1e12;
+bool use_remission_threshold = false;
 
 carmen_pose_3D_t sensor_board_1_pose;
 carmen_pose_3D_t front_bullbar_pose;
@@ -115,10 +117,6 @@ extern carmen_mapper_virtual_scan_message virtual_scan_message;
 
 char *calibration_file = NULL;
 char *save_calibration_file = NULL;
-
-
-double remission_threshold;
-bool use_remission_threshold;
 
 void
 include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalpos_message *globalpos_message)
