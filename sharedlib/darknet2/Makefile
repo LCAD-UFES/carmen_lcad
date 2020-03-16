@@ -78,7 +78,7 @@ PUBLIC_INCLUDES = carmen_darknet_interface.hpp
 
 ALL_DEPS = obj lib $(SLIB) $(ALIB) $(EXEC)
 
-all: $(ALL_DEPS) yolov3.weights
+all: $(ALL_DEPS)
 
 $(EXEC): $(EXECOBJ) $(ALIB)
 	$(CC) $(COMMON) $(CFLAGS) $^ -o $@ $(LDFLAGS) $(ALIB)
@@ -102,9 +102,6 @@ obj:
 	mkdir -p obj
 lib:
 	mkdir -p lib
-
-yolov3.weights:
-	cat yolov3.weights.xa yolov3.weights.xb yolov3.weights.xc > yolov3.weights
 
 clean: clean_darknet
 
