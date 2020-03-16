@@ -95,7 +95,7 @@ draw_circle_path(vector<circle_node> circle_path, carmen_map_config_t config)
 	for (unsigned int i = 0; i < circle_path.size(); i++)
 	{
 		draw_circle_on_map_img(circle_path[i].x, circle_path[i].y, circle_path[i].radius, config);
-		printf("%f\n", circle_path[i].g);
+		printf("%f\n", circle_path[i].h);
 //		usleep(500000);
 	}
 
@@ -261,6 +261,29 @@ build_circle_path(circle_node *node)
     return(circle_path);
 }
 
+vector<circle_node>
+build_circle_path_new(circle_node *node, double initial_cost)
+{
+	vector<circle_node> circle_path;
+	int i = 0;
+	double cost = initial_cost;
+    while (node != NULL)
+    {
+	node->h = cost;
+	if (node->parent != NULL)
+	  cost += DIST2D(*node, *(node->parent));
+        circle_path.push_back(*node);
+
+        node = node->parent;
+
+        i++;
+    }
+
+    //printf("--- %u %d\n", (int) circle_path.size(), i);
+
+    return(circle_path);
+}
+
 vector<state_node>
 build_state_path(state_node *node)
 {
@@ -303,7 +326,8 @@ space_exploration(circle_node *start_node, circle_node *goal_node, carmen_point_
 
         if (goal_node->g < (current->g + current->h))
         {
-            temp_circle_path = build_circle_path(goal_node->parent);
+	    double initial_cost = DIST2D(*goal_node, *(goal_node->parent));
+            temp_circle_path = build_circle_path_new(goal_node->parent, initial_cost);
 
             while(!open_set.empty())
             {
@@ -526,10 +550,11 @@ expand_state(state_node *current_state, state_node *goal_state, vector<state_nod
         	new_state->g = current_state->g + DIST2D(current_state->state, new_state->state);
         	//new_state->g = DIST2D(new_state->state, goal_state->state);
         	circle_node current_circle = closest_circle_new(new_state, circle_path);
-        	new_state->h = DIST2D(new_state->state, current_circle) - current_circle.g + 0.008 * abs(carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta));
+        	//new_state->h = DIST2D(new_state->state, current_circle) + current_circle.h + 0.8 * abs(carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta));
+        	new_state->h = max(DIST2D(new_state->state, current_circle) + current_circle.h, abs(carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta))/(1.0/5.6));
         	//new_state->h = max(DIST2D(new_state->state, current_circle) + current_circle.h, carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta));
 
-        	draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config);
+        	//draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config);
 
 //        	if (new_state->state.v != current_state->state.v)
 //        		new_state->h += DIRECTION_OF_MOVEMENT_CHANGE_PENALTY;
@@ -537,7 +562,7 @@ expand_state(state_node *current_state, state_node *goal_state, vector<state_nod
         	//double max_curvature = carmen_get_curvature_from_phi(robot_config.max_phi, new_state->state.v, robot_config.understeer_coeficient, robot_config.distance_between_front_and_rear_axles); // TODO is it necessary divide theta dif bay max k (stehs 2015-1)
 
 //        	if (!Exist(next_state, closed_set, 1.0 /*k*/) && !Collision(next_state))
-        	if ((obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 2.0 * 0.5) || state_node_exist(new_state, closed_set))   // TODO ler a margem de segurança do carmen.ini
+        	if ((obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 1.0 * 0.5) || state_node_exist(new_state, closed_set))   // TODO ler a margem de segurança do carmen.ini
         	{
         		//printf("muito perto\n");
         		free (new_state);
@@ -548,7 +573,7 @@ expand_state(state_node *current_state, state_node *goal_state, vector<state_nod
 //
 //			if(indice)
 //			{
-//				if(open_set[indice-1]->g > new_state->g)
+//				if(open_set[indice-1]->g - new_state->g > 10.0)
 //				{
 //					printf("update!!\n");
 //					open_set[indice-1]->g = new_state->g;
@@ -587,7 +612,7 @@ heuristic_search(state_node *start_state, state_node *goal_state, vector<circle_
     while (!open_set.empty())
     {
     	state_node *current_state = open_set.back();
-    	printf("%f %f || %f %f || %f %f\n", goal_state->state.theta, carmen_radians_to_degrees(goal_state->state.theta), current_state->state.theta, carmen_radians_to_degrees(current_state->state.theta), carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta), carmen_radians_to_degrees(carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta)));
+    	//printf("%f %f || %f %f || %f %f\n", goal_state->state.theta, carmen_radians_to_degrees(goal_state->state.theta), current_state->state.theta, carmen_radians_to_degrees(current_state->state.theta), carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta), carmen_radians_to_degrees(carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta)));
         open_set.pop_back();
         //printf("--- State %lf %lf %lf %lf %lf %lf %lf\n", current_state->state.x, current_state->state.y, current_state->state.theta, current_state->state.v, current_state->state.phi, current_state->g, current_state->h);
 
@@ -595,6 +620,7 @@ heuristic_search(state_node *start_state, state_node *goal_state, vector<circle_
 //        if ((goal_state->g + goal_state->h) < (current_state->g + current_state->h))
         {
 		printf("Chegou ao destino\n");
+		printf("Não ");
 		state_path = build_state_path(current_state);
         	while(!open_set.empty())
         	{
@@ -631,6 +657,7 @@ heuristic_search(state_node *start_state, state_node *goal_state, vector<circle_
 //        }
         //printf("FOI\n");
     }
+    printf("desistiu\n");
 
     while(!closed_set.empty())
     {
@@ -701,8 +728,8 @@ compute_hybrid_A_star_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose
 	double distance_traveled = 0.0;
 	carmen_ackerman_traj_point_t rs_points[5];
 
-	draw_point_on_map_img(start_state->state.x, start_state->state.y, distance_map->config);
-	draw_point_on_map_img(goal_state->state.x, goal_state->state.y, distance_map->config);
+	//draw_point_on_map_img(start_state->state.x, start_state->state.y, distance_map->config);
+	//draw_point_on_map_img(goal_state->state.x, goal_state->state.y, distance_map->config);
 
 	rs_init_parameters(robot_config.max_phi, robot_config.distance_between_front_and_rear_axles);
 
