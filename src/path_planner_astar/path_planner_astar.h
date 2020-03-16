@@ -32,9 +32,10 @@ typedef struct state_node
 	double g;                                // Distance from start to current state
 	double h;                                // Distance from current state to goal
 	double angular_distance_to_goal;
+	int status;
 	//double step_size;                      // TODO compute step size
 	state_node *parent;
-} state_node;
+} state_node, *state_node_p;
 
 
 class StateNodePtrComparator {

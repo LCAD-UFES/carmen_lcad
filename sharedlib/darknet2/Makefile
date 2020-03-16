@@ -3,12 +3,12 @@ include $(CARMEN_HOME)/src/Makefile.conf
 MODULE_NAME = DARKNET
 MODULE_COMMENT = darknet dnn 
 
-ifeq ($(shell which nvcc),)
-GPU=0
-CUDNN=0
-else
+ifneq (, $(shell which nvcc))
 GPU=1
 CUDNN=1
+else
+GPU=0
+CUDNN=0
 endif
 
 OPENCV=0
@@ -16,7 +16,7 @@ OPENMP=1
 DEBUG=0
 
 # This is what I use, uncomment if you know your arch and want to specify, you may specify more than one
-# ARCH= -gencode arch=compute_52,code=compute_52
+#ARCH= -gencode arch=compute_35,code=compute_35
 
 VPATH=./src/:./examples
 SLIB=lib/libdarknet2.so
