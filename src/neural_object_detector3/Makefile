@@ -39,5 +39,7 @@ neural_object_detector_tracker: neural_object_detector_tracker.o
 darknet2:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2
 
+download:
+	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1rE0lY4d4wyMp4mvcx23y4qGK97bvzTnC/view?usp=sharing $(CARMEN_HOME)/sharedlib/darknet2/yolov3.weights
 
 include ../Makefile.rules

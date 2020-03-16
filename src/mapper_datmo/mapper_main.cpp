@@ -615,7 +615,7 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 	}
 	if (camera_index == 7){
 		squeezeseg_dataset.camera7 = true;
-		IMAGE_HEIGHT_CROP = 0.91; //camera7
+		IMAGE_HEIGHT_CROP = 0.97; //camera7
 	}
 
 	int crop_x = 0;
@@ -879,10 +879,10 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 //			imshow("Velodyne Semantic Map", img_planar);
 //			imshow("Image Semantic Segmentation", img);
 //=======
-			if (squeezeseg_dataset.camera5 && squeezeseg_dataset.camera7)
-			{
+			//if (squeezeseg_dataset.camera5 && squeezeseg_dataset.camera7)
+			//{
 				libsqueeze_seg_save_npy_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
-			}
+			//}
 			
 			resize(total, total, cv::Size(0, 0), 1.7, 1.7, cv::INTER_NEAREST);
 			imshow("Velodyne Semantic Map", total);
@@ -2161,10 +2161,12 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 	}*/
 
 ////New - Erase cells occupied by moving obstacles
-	if (check_lidar_camera_max_timestamp_difference(&sensors_data[sensor_number]))
-	{
-		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
-		filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+	if (!strcmp(neural_network,"deeplab")){
+		if (check_lidar_camera_max_timestamp_difference(&sensors_data[sensor_number]))
+		{
+			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+			filter_sensor_data_using_image_semantic_segmentation(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+		}
 	}
 	//cv_draw_map();
 
@@ -2724,11 +2726,12 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 	if (camera_data[camera].semantic[i] != NULL)
 		free(camera_data[camera].semantic[i]);
 
-	if (process_semantic)
-		camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
-	else
-		camera_data[camera].semantic[i] = open_semantic_image(image_msg->width, image_msg->height, camera, camera_side, image_msg->timestamp, segmap_dirname);
-
+	if(!strcmp(neural_network, "deeplab")){
+		if (process_semantic)
+			camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
+		else
+			camera_data[camera].semantic[i] = open_semantic_image(image_msg->width, image_msg->height, camera, camera_side, image_msg->timestamp, segmap_dirname);
+	}
 	if (verbose >= 2)
 	{
 	    cv::Mat image_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, camera_data[camera].image[i]);
