@@ -7,13 +7,12 @@ LINK = g++
 CFLAGS += -std=c11
 CXXFLAGS += -std=c++11
 
+#OPENCV
+IFLAGS += -DUSE_OPENCV
+LFLAGS += `pkg-config opencv --libs` `pkg-config --cflags opencv` `pkg-config --libs opencv`
 IFLAGS += `pkg-config --cflags opencv`
 
-#OPENCV
-IFLAGS += -DUSE_OPENCV 
-LFLAGS += `pkg-config opencv --libs` `pkg-config --cflags opencv` `pkg-config --libs opencv` 
-
-LFLAGS += -lbumblebee_basic_interface -lcamera_interface -lparam_interface -lipc -lglobal -lm `pkg-config --cflags opencv` `pkg-config --libs opencv` 
+LFLAGS += -lbumblebee_basic_interface -lcamera_interface -lparam_interface -lipc -lglobal -lm  
 
 SOURCES = unv_camera_driver.cpp rtsp_camera_driver.cpp
 
