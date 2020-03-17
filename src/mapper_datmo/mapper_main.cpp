@@ -615,7 +615,7 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 	}
 	if (camera_index == 7){
 		squeezeseg_dataset.camera7 = true;
-		IMAGE_HEIGHT_CROP = 0.97; //camera7
+		IMAGE_HEIGHT_CROP = 0.98; //camera7
 	}
 
 	int crop_x = 0;
@@ -671,8 +671,7 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 
 					int line = (int)(sensor_params->vertical_resolution - j) * number_of_laser_shots * 6 + i * 6 + 5;
 					int vel_seg = (int)squeezeseg_dataset.data[line];
-					//cout << line << ": " << vel_seg << endl;
-
+					
 					if (verbose >= 2)
 					{
 						int ix = (double) image_x / image_width * open_cv_image.cols;
@@ -680,7 +679,6 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 						if (ix >= 0 && ix < open_cv_image.cols && iy >= 0 && iy < open_cv_image.rows)
 						{
 							circle(open_cv_image, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
-							//circle(img, cv::Point(ix + img.cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 						}
 						int px = (double) velodyne_p3d.y() / map_resolution + img_planar_depth;
 						int py = (double) img_planar.rows - 1 - velodyne_p3d.x() / map_resolution;
@@ -796,7 +794,6 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 						int px = (double)filtered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
 						int py = (double)img_planar.rows - 1 - filtered_points[i][j].cartesian_x / map_resolution;
 
-						//int line = (sensor_params->vertical_resolution - filtered_points[i][j].shot_number) * number_of_laser_shots + filtered_points[i][j].ray_number;
 						int class_seg = 0;
 						if (contCar > contPerson && contCar > contBycicle && contCar > contTrain)
 						{
@@ -916,14 +913,15 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 			resize(total, total, cv::Size(0, 0), 1.7, 1.7, cv::INTER_NEAREST);
 			imshow("Velodyne Semantic Map", total);
 			resize(open_cv_image, open_cv_image, cv::Size(640, 480 * IMAGE_HEIGHT_CROP));
-			//if (camera_index == 3)
-			//	imshow("Camera 3 YOLO", open_cv_image);
+			imshow("Camera YOLO", open_cv_image);
+			/*if (camera_index == 3)
+				imshow("Camera 3 YOLO", open_cv_image);
 
 			if (camera_index == 5)
 				imshow("Camera 5 YOLO", open_cv_image);
 			
 			if (camera_index == 7)
-				imshow("Camera 7 YOLO", open_cv_image);
+				imshow("Camera 7 YOLO", open_cv_image);*/
 
 			cv::waitKey(1);
 		}
