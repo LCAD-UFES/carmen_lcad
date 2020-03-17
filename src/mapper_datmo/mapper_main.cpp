@@ -2856,6 +2856,29 @@ bumblebee_basic9_image_handler(carmen_bumblebee_basic_stereoimage_message *image
 	bumblebee_basic_image_handler(9, image_msg);
 }
 
+void
+bumblebee_basic10_image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
+{
+	bumblebee_basic_image_handler(10, image_msg);
+}
+
+void
+bumblebee_basic11_image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
+{
+	bumblebee_basic_image_handler(11, image_msg);
+}
+
+void
+bumblebee_basic12_image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
+{
+	bumblebee_basic_image_handler(12, image_msg);
+}
+
+void
+bumblebee_basic13_image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
+{
+	bumblebee_basic_image_handler(13, image_msg);
+}
 
 void (*image_handler[]) (carmen_bumblebee_basic_stereoimage_message *) =
 {
@@ -2869,6 +2892,10 @@ void (*image_handler[]) (carmen_bumblebee_basic_stereoimage_message *) =
 		bumblebee_basic7_image_handler,
 		bumblebee_basic8_image_handler,
 		bumblebee_basic9_image_handler,
+		bumblebee_basic10_image_handler,
+		bumblebee_basic11_image_handler,
+		bumblebee_basic12_image_handler,
+		bumblebee_basic13_image_handler,
 };
 
 
