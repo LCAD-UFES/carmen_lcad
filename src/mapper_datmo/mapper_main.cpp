@@ -908,14 +908,17 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 //			imshow("Velodyne Semantic Map", img_planar);
 //			imshow("Image Semantic Segmentation", img);
 //=======
-			//if (squeezeseg_dataset.camera5 && squeezeseg_dataset.camera7)
-			//{
+			if (squeezeseg_dataset.camera5 && squeezeseg_dataset.camera7)
+			{
 				libsqueeze_seg_save_npy_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
-			//}
+			}
 			
 			resize(total, total, cv::Size(0, 0), 1.7, 1.7, cv::INTER_NEAREST);
 			imshow("Velodyne Semantic Map", total);
 			resize(open_cv_image, open_cv_image, cv::Size(640, 480 * IMAGE_HEIGHT_CROP));
+			if (camera_index == 3)
+				imshow("Camera 3 YOLO", open_cv_image);
+
 			if (camera_index == 5)
 				imshow("Camera 5 YOLO", open_cv_image);
 			
