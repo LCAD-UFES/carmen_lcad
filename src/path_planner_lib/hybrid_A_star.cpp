@@ -1,6 +1,5 @@
 #include "path_planner.h"
 
-
 using namespace std;
 using namespace cv;
 
@@ -10,6 +9,10 @@ using namespace cv;
 
 Mat map_image;
 
+state_verificator ***verificator_map;
+#define X_RES 0.5
+#define Y_RES 0.5
+#define THETA_RES 0.0872665 // 5 degrees
 
 void
 display_map(carmen_obstacle_distance_mapper_map_message *distance_map)
@@ -43,11 +46,11 @@ display_map(carmen_obstacle_distance_mapper_map_message *distance_map)
 		}
 	}
 
-    Mat img(width, height, CV_8UC3, map);
-    map_image = img.clone();
+	Mat img(width, height, CV_8UC3, map);
+	map_image = img.clone();
 
-    imshow("Obstacle Map", map_image);
-    waitKey(1);
+	imshow("Obstacle Map", map_image);
+	waitKey(1);
 }
 
 
@@ -105,21 +108,21 @@ draw_circle_path(vector<circle_node> circle_path, carmen_map_config_t config)
 double
 distance(double ax, double ay, double bx, double by)
 {
-    double dx = ax - bx;
-    double dy = ay - by;
-    return sqrt(dx * dx + dy * dy);
+	double dx = ax - bx;
+	double dy = ay - by;
+	return sqrt(dx * dx + dy * dy);
 }
 
 
 double
 obstacle_distance(double x, double y, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
-    carmen_point_t p;
+	carmen_point_t p;
 
-    p.x = x;
-    p.y = y;
+	p.x = x;
+	p.y = y;
 
-    return (carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&p, distance_map));
+	return (carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&p, distance_map));
 }
 
 
@@ -182,63 +185,63 @@ circle_overlap(circle_node *current, circle_node *circle, double overlap_factor)
 bool
 circle_node_exist(circle_node *current, vector<circle_node*> &closed_set)
 {
-    vector<circle_node*>::iterator it = closed_set.begin();
-    vector<circle_node*>::iterator end = closed_set.end();
+	vector<circle_node*>::iterator it = closed_set.begin();
+	vector<circle_node*>::iterator end = closed_set.end();
 
-    while (it != end)
-    {
-        //if (current->parent != (*it) && current->parent != (*it)->parent && current->circle.Overlap((*it)->circle, MAX_OVERLAP_FACTOR))
-    	if (current->parent != (*it) && current->parent != (*it)->parent && circle_overlap(current, *it, MAX_OVERLAP_FACTOR))
-            return true;
+	while (it != end)
+	{
+		//if (current->parent != (*it) && current->parent != (*it)->parent && current->circle.Overlap((*it)->circle, MAX_OVERLAP_FACTOR))
+		if (current->parent != (*it) && current->parent != (*it)->parent && circle_overlap(current, *it, MAX_OVERLAP_FACTOR))
+			return true;
 
-        it++;
-    }
+		it++;
+	}
 
-    return false;
+	return false;
 }
 
 
 void
 expand_circle(circle_node *current, priority_queue<circle_node*, vector<circle_node*>, CircleNodeComparator> &open_set, carmen_point_t goal, double robot_width,
-		carmen_obstacle_distance_mapper_map_message *distance_map)
+              carmen_obstacle_distance_mapper_map_message *distance_map)
 {
 	// Considering a 2m radius parent circle that involves the car we want 32 children circles
-    unsigned int children_amount = /*16;*/(unsigned int) (16.0 * current->radius);
+	unsigned int children_amount = /*16;*/(unsigned int) (16.0 * current->radius);
 
-    double displacement_angle = 2.0 * M_PI / (double) children_amount;
-    double cos_displacement_angle = cos(displacement_angle);
-    double sin_displacement_angle = sin(displacement_angle);
-    double t;
+	double displacement_angle = 2.0 * M_PI / (double) children_amount;
+	double cos_displacement_angle = cos(displacement_angle);
+	double sin_displacement_angle = sin(displacement_angle);
+	double t;
 
-    double px = current->x;
-    double py = current->y;
-    double pr = current->radius;
-    double pg = current->g;
+	double px = current->x;
+	double py = current->y;
+	double pr = current->radius;
+	double pg = current->g;
 
-    double x = pr;
-    double y = 0.0;
+	double x = pr;
+	double y = 0.0;
 
-    for (unsigned int i = 0; i < children_amount; i++)
-    {
-        double nx = x + px;
-        double ny = y + py;
+	for (unsigned int i = 0; i < children_amount; i++)
+	{
+		double nx = x + px;
+		double ny = y + py;
 
-        double nearst_obstacle_distance = obstacle_distance(nx, ny, distance_map);
+		double nearst_obstacle_distance = obstacle_distance(nx, ny, distance_map);
 
-        if (nearst_obstacle_distance > robot_width * 0.5)		// TODO this should be a defined parameter
-        {
-            // TODO verificar se é possível remover filhos com overlap
-            open_set.push(create_circle_node(nx, ny, nearst_obstacle_distance, pg + pr, distance(nx, ny, goal.x, goal.y), current));
+		if (nearst_obstacle_distance > robot_width * 0.5)		// TODO this should be a defined parameter
+				{
+			// TODO verificar se é possível remover filhos com overlap
+			open_set.push(create_circle_node(nx, ny, nearst_obstacle_distance, pg + pr, distance(nx, ny, goal.x, goal.y), current));
 
-            //draw_circle_on_map_img(nx, ny, nearst_obstacle_distance, distance_map->config);
-            //draw_point_on_map_img(nx, ny, distance_map->config);
-        }
+			//draw_circle_on_map_img(nx, ny, nearst_obstacle_distance, distance_map->config);
+			//draw_point_on_map_img(nx, ny, distance_map->config);
+				}
 
-        // Apply the rotation matrix
-        t = x;
-        x = cos_displacement_angle * x - sin_displacement_angle * y;
-        y = sin_displacement_angle * t + cos_displacement_angle * y;
-    }
+		// Apply the rotation matrix
+		t = x;
+		x = cos_displacement_angle * x - sin_displacement_angle * y;
+		y = sin_displacement_angle * t + cos_displacement_angle * y;
+	}
 }
 
 
@@ -247,18 +250,18 @@ build_circle_path(circle_node *node)
 {
 	vector<circle_node> circle_path;
 	int i = 0;
-    while (node != NULL)
-    {
-        circle_path.push_back(*node);
+	while (node != NULL)
+	{
+		circle_path.push_back(*node);
 
-        node = node->parent;
+		node = node->parent;
 
-        i++;
-    }
+		i++;
+	}
 
-    //printf("--- %u %d\n", (int) circle_path.size(), i);
+	//printf("--- %u %d\n", (int) circle_path.size(), i);
 
-    return(circle_path);
+	return(circle_path);
 }
 
 vector<circle_node>
@@ -267,40 +270,40 @@ build_circle_path_new(circle_node *node, double initial_cost)
 	vector<circle_node> circle_path;
 	int i = 0;
 	double cost = initial_cost;
-    while (node != NULL)
-    {
-	node->h = cost;
-	if (node->parent != NULL)
-	  cost += DIST2D(*node, *(node->parent));
-        circle_path.push_back(*node);
+	while (node != NULL)
+	{
+		node->h = cost;
+		if (node->parent != NULL)
+			cost += DIST2D(*node, *(node->parent));
+		circle_path.push_back(*node);
 
-        node = node->parent;
+		node = node->parent;
 
-        i++;
-    }
+		i++;
+	}
 
-    //printf("--- %u %d\n", (int) circle_path.size(), i);
+	//printf("--- %u %d\n", (int) circle_path.size(), i);
 
-    return(circle_path);
+	return(circle_path);
 }
 
 vector<state_node>
 build_state_path(state_node *node)
 {
-    vector<state_node> state_path;
-    int i = 0;
-    while (node != NULL)
-    {
-        state_path.push_back(*node);
+	vector<state_node> state_path;
+	int i = 0;
+	while (node != NULL)
+	{
+		state_path.push_back(*node);
 
-        node = node->parent;
+		node = node->parent;
 
-        i++;
-    }
+		i++;
+	}
 
-    //printf("--- %u %d\n", (int) circle_path.size(), i);
+	//printf("--- %u %d\n", (int) circle_path.size(), i);
 
-    return(state_path);
+	return(state_path);
 }
 
 vector<circle_node>
@@ -310,69 +313,69 @@ space_exploration(circle_node *start_node, circle_node *goal_node, carmen_point_
 
 	vector<circle_node> temp_circle_path;
 
-    priority_queue<circle_node*, vector<circle_node*>, CircleNodeComparator> open_set;
+	priority_queue<circle_node*, vector<circle_node*>, CircleNodeComparator> open_set;
 
-    vector<circle_node*> closed_set;
+	vector<circle_node*> closed_set;
 
 
-    open_set.push(start_node); // Added
+	open_set.push(start_node); // Added
 
-//    expand_circle(start_node, open_set, goal, robot_width, distance_map);
+	//    expand_circle(start_node, open_set, goal, robot_width, distance_map);
 
-    while (!open_set.empty())
-    {
-    	circle_node *current = open_set.top();                   // Get the circle witch is the closest to the goal node
-        open_set.pop();
+	while (!open_set.empty())
+	{
+		circle_node *current = open_set.top();                   // Get the circle witch is the closest to the goal node
+		open_set.pop();
 
-        if (goal_node->g < (current->g + current->h))
-        {
-	    double initial_cost = DIST2D(*goal_node, *(goal_node->parent));
-            temp_circle_path = build_circle_path_new(goal_node->parent, initial_cost);
+		if (goal_node->g < (current->g + current->h))
+		{
+			double initial_cost = DIST2D(*goal_node, *(goal_node->parent));
+			temp_circle_path = build_circle_path_new(goal_node->parent, initial_cost);
 
-            while(!open_set.empty())
-            {
-            	circle_node *tmp = open_set.top();
+			while(!open_set.empty())
+			{
+				circle_node *tmp = open_set.top();
 
-                open_set.pop();
+				open_set.pop();
 
-                delete tmp;
-            }
-            break;
-        }
-        else if (!circle_node_exist(current, closed_set))
-        {
-        	expand_circle(current, open_set, goal, robot_width, distance_map);
+				delete tmp;
+			}
+			break;
+		}
+		else if (!circle_node_exist(current, closed_set))
+		{
+			expand_circle(current, open_set, goal, robot_width, distance_map);
 
-            if (circle_overlap(current, goal_node, MIN_OVERLAP_FACTOR))
-            {
-            	//printf ("Goal Overlap\n");
-                if ((current->g + current->h) < goal_node->g)
-                {
-                    goal_node->g = (current->g + current->h);
-                    goal_node->parent = current;
-                }
-            }
-            closed_set.push_back(current);
-        }
-        else
-        {
-        	//printf("3\n");
-            delete current;
-        }
-    }
+			if (circle_overlap(current, goal_node, MIN_OVERLAP_FACTOR))
+			{
+				//printf ("Goal Overlap\n");
+				if ((current->g + current->h) < goal_node->g)
+				{
+					goal_node->g = (current->g + current->h);
+					goal_node->parent = current;
+				}
+			}
+			closed_set.push_back(current);
+		}
+		else
+		{
+			//printf("3\n");
+			delete current;
+		}
+	}
 
-    while(!closed_set.empty())                // Only to clean the closed_set
-    {
-    	circle_node *tmp = closed_set.back();
+	while(!closed_set.empty())                // Only to clean the closed_set
+	{
+		circle_node *tmp = closed_set.back();
 
-        closed_set.pop_back();
+		closed_set.pop_back();
 
-        delete tmp;
-    }
+		delete tmp;
+	}
 
-    //printf("Finished!!!\n");
+	//printf("Finished!!!\n");
 
-    return (temp_circle_path);
+	return (temp_circle_path);
 }
 
 
@@ -383,56 +386,56 @@ space_exploration_old(circle_node *start_circle, circle_node *goal_circle, carme
 
 	vector<circle_node> circle_path;
 
-    start_circle->g = 0.0;
-    //start_circle->f = distance(start_circle->x, start_circle->y, goal_circle->x, goal_circle->y);
+	start_circle->g = 0.0;
+	//start_circle->f = distance(start_circle->x, start_circle->y, goal_circle->x, goal_circle->y);
 
-    priority_queue<circle_node*, vector<circle_node*>, CircleNodeComparator> open_set;
+	priority_queue<circle_node*, vector<circle_node*>, CircleNodeComparator> open_set;
 
-    vector<circle_node*> closed_set;
+	vector<circle_node*> closed_set;
 
-    open_set.push(start_circle);
+	open_set.push(start_circle);
 
-    expand_circle(start_circle, open_set, goal, robot_width, distance_map);
+	expand_circle(start_circle, open_set, goal, robot_width, distance_map);
 
-    while (!open_set.empty())
-    {
-    	circle_node *current = open_set.top();                   // Get the circle witch is the closest to the goal node
-        open_set.pop();
+	while (!open_set.empty())
+	{
+		circle_node *current = open_set.top();                   // Get the circle witch is the closest to the goal node
+		open_set.pop();
 
-        if (circle_overlap(current, goal_circle, MIN_OVERLAP_FACTOR))
-        {
-        	goal_circle->parent = current;
+		if (circle_overlap(current, goal_circle, MIN_OVERLAP_FACTOR))
+		{
+			goal_circle->parent = current;
 
-            circle_path = build_circle_path(goal_circle);
+			circle_path = build_circle_path(goal_circle);
 
-            while(!open_set.empty())
-            {
-            	circle_node *tmp = open_set.top();
+			while(!open_set.empty())
+			{
+				circle_node *tmp = open_set.top();
 
-                open_set.pop();
+				open_set.pop();
 
-                delete tmp;
-            }
-            break;
-        }
-        else if (!circle_node_exist(current, closed_set))
-        {
-        	//printf("Expand\n");
-        	expand_circle(current, open_set, goal, robot_width, distance_map);
-            closed_set.push_back(current);
-        }
-    }
+				delete tmp;
+			}
+			break;
+		}
+		else if (!circle_node_exist(current, closed_set))
+		{
+			//printf("Expand\n");
+			expand_circle(current, open_set, goal, robot_width, distance_map);
+			closed_set.push_back(current);
+		}
+	}
 
-    while(!closed_set.empty())                // Only to clean the closed_set
-    {
-    	circle_node *tmp = closed_set.back();
+	while(!closed_set.empty())                // Only to clean the closed_set
+	{
+		circle_node *tmp = closed_set.back();
 
-        closed_set.pop_back();
+		closed_set.pop_back();
 
-        delete tmp;
-    }
+		delete tmp;
+	}
 
-    return (circle_path);
+	return (circle_path);
 }
 
 
@@ -473,16 +476,16 @@ closest_circle_new(state_node *current_state, vector<circle_node> &circle_path)
 
 	for (int i = 0; i < circle_path.size(); i++)
 	{
-	  dist = DIST2D(current_state->state, circle_path[i]);
-	  if (dist < min_dist)
-	  {
-	    min_dist = dist;
-	    indice = i;
-	  }
+		dist = DIST2D(current_state->state, circle_path[i]);
+		if (dist < min_dist)
+		{
+			min_dist = dist;
+			indice = i;
+		}
 	}
 
 	if (indice == 0)
-	  indice = 1;
+		indice = 1;
 	return (circle_path[indice - 1]);
 }
 
@@ -499,24 +502,98 @@ state_node_exist(state_node *new_state, vector<state_node*> &closed_set)
 
 	//printf ("%d\n", closed_set.size());
 
-    for (unsigned int i = 0; i < closed_set.size(); i++)
-    {
-    	distance = DIST2D(new_state->state, closed_set[i]->state);
-//
-//    	if (distance < 0.5)
-//    		printf ("State Exist! %lf %lf %lf %lf %lf %lf\n", distance, angular_distance);
+	for (unsigned int i = 0; i < closed_set.size(); i++)
+	{
+		distance = DIST2D(new_state->state, closed_set[i]->state);
+		//
+		//    	if (distance < 0.5)
+		//    		printf ("State Exist! %lf %lf %lf %lf %lf %lf\n", distance, angular_distance);
 
-    	orientation_diff = carmen_compute_abs_angular_distance(new_state->state.theta, closed_set[i]->state.theta);
-    	steering_diff = carmen_compute_abs_steering_angular_distance(new_state->state.phi, closed_set[i]->state.phi);
+		orientation_diff = carmen_compute_abs_angular_distance(new_state->state.theta, closed_set[i]->state.theta);
+		steering_diff = carmen_compute_abs_steering_angular_distance(new_state->state.phi, closed_set[i]->state.phi);
 
-    	if (distance < MIN_POS_DISTANCE && orientation_diff < MIN_THETA_DIFF && steering_diff < MIN_POS_DISTANCE && (new_state->state.v == closed_set[i]->state.v))
-    	{
-    		//printf ("State Exist! %lf %lf\n", distance, angular_distance);
-    		return (i+1);
-    	}
-    }
+		if (distance < MIN_POS_DISTANCE && orientation_diff < MIN_THETA_DIFF && steering_diff < MIN_POS_DISTANCE && (new_state->state.v == closed_set[i]->state.v))
+		{
+			//printf ("State Exist! %lf %lf\n", distance, angular_distance);
+			return (i+1);
+		}
+	}
 
-    return 0;
+	return 0;
+}
+
+bool
+exist_in_open(state_node *state, carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+	int x = floor((state->state.x - distance_map->config.x_origin) / X_RES);
+	int y = floor((state->state.y - distance_map->config.y_origin) / Y_RES);
+	int theta;
+	if (state->state.theta >= 0.0)
+		theta = round(2*M_PI/THETA_RES / 2) + floor(state->state.theta / THETA_RES);
+	else
+		theta = round(2*M_PI/THETA_RES / 2) - 1 - floor(abs(state->state.theta) / THETA_RES);
+	return verificator_map[x][y][theta].in_open;
+}
+
+bool
+exist_in_closed(state_node *state, carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+	int x = floor((state->state.x - distance_map->config.x_origin) / X_RES);
+	int y = floor((state->state.y - distance_map->config.y_origin) / Y_RES);
+	int theta;
+	if (state->state.theta >= 0.0)
+		theta = round(2*M_PI/THETA_RES / 2) + floor(state->state.theta / THETA_RES);
+	else
+		theta = round(2*M_PI/THETA_RES / 2) - 1 - floor(abs(state->state.theta) / THETA_RES);
+	return verificator_map[x][y][theta].in_closed;
+}
+
+void
+insert_in_open_set(state_node* state, carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+	int x = floor((state->state.x - distance_map->config.x_origin) / X_RES);
+	int y = floor((state->state.y - distance_map->config.y_origin) / Y_RES);
+	int theta;
+	if (state->state.theta >= 0.0)
+		theta = round(2*M_PI/THETA_RES / 2) + floor(state->state.theta / THETA_RES);
+	else
+		theta = round(2*M_PI/THETA_RES / 2) - 1 - floor(abs(state->state.theta) / THETA_RES);
+	printf("%d %d %d\n", x, y, theta);
+	verificator_map[x][y][theta].in_open = true;
+	verificator_map[x][y][theta].node = state;
+}
+
+void
+insert_in_closed_set(state_node* state, carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+	int x = floor((state->state.x - distance_map->config.x_origin) / X_RES);
+	int y = floor((state->state.y - distance_map->config.y_origin) / Y_RES);
+	int theta;
+	if (state->state.theta >= 0.0)
+		theta = round(2*M_PI/THETA_RES / 2) + floor(state->state.theta / THETA_RES);
+	else
+		theta = round(2*M_PI/THETA_RES / 2) - 1 - floor(abs(state->state.theta) / THETA_RES);
+	verificator_map[x][y][theta].in_closed = true;
+}
+
+void update_g(state_node *state, carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+	int x = floor((state->state.x - distance_map->config.x_origin) / X_RES);
+	int y = floor((state->state.y - distance_map->config.y_origin) / Y_RES);
+	int theta;
+	if (state->state.theta >= 0.0)
+		theta = round(2*M_PI/THETA_RES / 2) + floor(state->state.theta / THETA_RES);
+	else
+		theta = round(2*M_PI/THETA_RES / 2) - 1 - floor(abs(state->state.theta) / THETA_RES);
+	if (state->g < verificator_map[x][y][theta].g)
+	{
+		verificator_map[x][y][theta].g = state->g;
+		verificator_map[x][y][theta].node->state = state->state;
+		verificator_map[x][y][theta].node->g = state->g;
+		verificator_map[x][y][theta].node->h = state->h;
+		verificator_map[x][y][theta].node->parent = state->parent;
+	}
+	free(state);
 }
 
 bool
@@ -528,149 +605,144 @@ my_f_ordenation (state_node *a, state_node *b) { float w1 = 1.0; float w2 = 1.0;
 
 void
 expand_state(state_node *current_state, state_node *goal_state, vector<state_node*> &closed_set, vector<circle_node> circle_path, std::vector<state_node*> &open_set,
-		carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map)
+             carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
-    double target_phi, distance_traveled = 0.0;
-	#define NUM_STEERING_ANGLES 3
-    double steering_acceleration[NUM_STEERING_ANGLES] = {-0.25, 0.0, 0.25}; //TODO ler velocidade angular do volante do carmen.ini
-    double target_v[3]   = {2.0, 0.0, -2.0};
+	double target_phi, distance_traveled = 0.0;
+#define NUM_STEERING_ANGLES 3
+	double steering_acceleration[NUM_STEERING_ANGLES] = {-0.25, 0.0, 0.25}; //TODO ler velocidade angular do volante do carmen.ini
+	double target_v[3]   = {2.0, -2.0};
 
-    for (int i = 0; i < 3; ++i)
-    {
-        for (int j = 0; j < NUM_STEERING_ANGLES; ++j)
-        {
-        	state_node *new_state = (state_node*) malloc(sizeof(state_node));
-
-        	target_phi = carmen_clamp(-robot_config.max_phi, (current_state->state.phi + steering_acceleration[j]), robot_config.max_phi);
-
-        	new_state->state = carmen_libcarmodel_recalc_pos_ackerman(current_state->state, target_v[i], target_phi,
-        			0.25, &distance_traveled, DELTA_T, robot_config);
-
-        	new_state->parent = current_state;
-        	new_state->g = current_state->g + DIST2D(current_state->state, new_state->state);
-        	//new_state->g = DIST2D(new_state->state, goal_state->state);
-        	circle_node current_circle = closest_circle_new(new_state, circle_path);
-        	//new_state->h = DIST2D(new_state->state, current_circle) + current_circle.h + 0.8 * abs(carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta));
-        	new_state->h = max(DIST2D(new_state->state, current_circle) + current_circle.h, abs(carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta))/(1.0/5.6));
-        	//new_state->h = max(DIST2D(new_state->state, current_circle) + current_circle.h, carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta));
-
-        	//draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config);
-
-//        	if (new_state->state.v != current_state->state.v)
-//        		new_state->h += DIRECTION_OF_MOVEMENT_CHANGE_PENALTY;
-
-        	//double max_curvature = carmen_get_curvature_from_phi(robot_config.max_phi, new_state->state.v, robot_config.understeer_coeficient, robot_config.distance_between_front_and_rear_axles); // TODO is it necessary divide theta dif bay max k (stehs 2015-1)
-
-//        	if (!Exist(next_state, closed_set, 1.0 /*k*/) && !Collision(next_state))
-        	if ((obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 1.0 * 0.5) || state_node_exist(new_state, closed_set))   // TODO ler a margem de segurança do carmen.ini
-        	{
-        		//printf("muito perto\n");
-        		free (new_state);
-        	}
-        	else
+	for (int i = 0; i < 3; ++i)
+	{
+		for (int j = 0; j < NUM_STEERING_ANGLES; ++j)
 		{
-//			int indice = state_node_exist(new_state, open_set);
-//
-//			if(indice)
-//			{
-//				if(open_set[indice-1]->g - new_state->g > 10.0)
-//				{
-//					printf("update!!\n");
-//					open_set[indice-1]->g = new_state->g;
-//					open_set[indice-1]->parent = new_state->parent;
-//					free(new_state);
-//				}
-//
-//			}
-//
-//			else
-//			{
-			  open_set.push_back(new_state);
-//			}
+			state_node *new_state = (state_node*) malloc(sizeof(state_node));
 
+			target_phi = carmen_clamp(-robot_config.max_phi, (current_state->state.phi + steering_acceleration[j]), robot_config.max_phi);
+
+			new_state->state = carmen_libcarmodel_recalc_pos_ackerman(current_state->state, target_v[i], target_phi,
+			                                                          0.5, &distance_traveled, DELTA_T, robot_config);
+
+			new_state->parent = current_state;
+			new_state->g = current_state->g + DIST2D(current_state->state, new_state->state);
+			//new_state->g = DIST2D(new_state->state, goal_state->state);
+			circle_node current_circle = closest_circle_new(new_state, circle_path);
+			//new_state->h = DIST2D(new_state->state, current_circle) + current_circle.h + 0.8 * abs(carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta));
+			new_state->h = max(DIST2D(new_state->state, current_circle) + current_circle.h, abs(carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta))/(1.0/5.6));
+			//new_state->h = max(DIST2D(new_state->state, current_circle) + current_circle.h, carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta));
+
+			//draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config);
+
+			//        	if (new_state->state.v != current_state->state.v)
+			//        		new_state->h += DIRECTION_OF_MOVEMENT_CHANGE_PENALTY;
+
+			//double max_curvature = carmen_get_curvature_from_phi(robot_config.max_phi, new_state->state.v, robot_config.understeer_coeficient, robot_config.distance_between_front_and_rear_axles); // TODO is it necessary divide theta dif bay max k (stehs 2015-1)
+
+			//        	if (!Exist(next_state, closed_set, 1.0 /*k*/) && !Collision(next_state))
+			if ((obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 1.0 * 0.5) || exist_in_closed(new_state, distance_map))   // TODO ler a margem de segurança do carmen.ini
+			{
+				//printf("muito perto\n");
+				free(new_state);
+			}
+			else
+			{
+				if(exist_in_open(new_state, distance_map))
+				{
+					update_g(new_state, distance_map);
+				}
+				else
+				{
+					open_set.push_back(new_state);
+					insert_in_open_set(new_state, distance_map);
+				}
+
+			}
 		}
-        }
-    }
-    //printf("Size %d\n", (int) open_set.size());
+	}
+	//printf("Size %d\n", (int) open_set.size());
 }
-
 
 vector<state_node>
 heuristic_search(state_node *start_state, state_node *goal_state, vector<circle_node> circle_path,
-		carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map)
+                 carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
-    //priority_queue<state_node*, vector<state_node*>, StateNodePtrComparator> open_set;
-    std::vector<state_node*> open_set;
+	//priority_queue<state_node*, vector<state_node*>, StateNodePtrComparator> open_set;
+	std::vector<state_node*> open_set;
 
-    vector<state_node*> closed_set;
-    vector<state_node> state_path;
+	vector<state_node*> closed_set;
+	vector<state_node> state_path;
 
-    open_set.push_back(start_state);
+	open_set.push_back(start_state);
+	printf("print1\n");
+	insert_in_open_set(start_state, distance_map);
+	printf("print2\n");
 
-    printf("goal theta: %f %f\n", goal_state->state.theta, carmen_radians_to_degrees(goal_state->state.theta));
+	printf("goal theta: %f %f\n", goal_state->state.theta, carmen_radians_to_degrees(goal_state->state.theta));
 
-    while (!open_set.empty())
-    {
-    	state_node *current_state = open_set.back();
-    	//printf("%f %f || %f %f || %f %f\n", goal_state->state.theta, carmen_radians_to_degrees(goal_state->state.theta), current_state->state.theta, carmen_radians_to_degrees(current_state->state.theta), carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta), carmen_radians_to_degrees(carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta)));
-        open_set.pop_back();
-        //printf("--- State %lf %lf %lf %lf %lf %lf %lf\n", current_state->state.x, current_state->state.y, current_state->state.theta, current_state->state.v, current_state->state.phi, current_state->g, current_state->h);
+	while (!open_set.empty())
+	{
+		state_node *current_state = open_set.back();
+		//printf("%f %f || %f %f || %f %f\n", goal_state->state.theta, carmen_radians_to_degrees(goal_state->state.theta), current_state->state.theta, carmen_radians_to_degrees(current_state->state.theta), carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta), carmen_radians_to_degrees(carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta)));
+		open_set.pop_back();
+		//printf("--- State %lf %lf %lf %lf %lf %lf %lf\n", current_state->state.x, current_state->state.y, current_state->state.theta, current_state->state.v, current_state->state.phi, current_state->g, current_state->h);
 
-        if ((DIST2D(current_state->state, goal_state->state) < 2.0) && (abs(carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta)) < 0.0872665))
-//        if ((goal_state->g + goal_state->h) < (current_state->g + current_state->h))
-        {
-		printf("Chegou ao destino\n");
-		printf("Não ");
-		state_path = build_state_path(current_state);
-        	while(!open_set.empty())
-        	{
-        		state_node *tmp = open_set.back();
+		if ((DIST2D(current_state->state, goal_state->state) < 2.0) && (abs(carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta)) < 0.0872665))
+			//        if ((goal_state->g + goal_state->h) < (current_state->g + current_state->h))
+		{
+			printf("Chegou ao destino\n");
+			printf("Não ");
+			state_path = build_state_path(current_state);
+			printf("aqui\n");
+			while(!open_set.empty())
+			{
+				state_node *tmp = open_set.back();
 
-        		open_set.pop_back();
+				open_set.pop_back();
 
-        		delete tmp;
-        	}
-        	break;
-        }
-        //circle_node c = closest_circle(current_state, circle_path);
-        //draw_circle_on_map_img(c.x, c.y, c.radius, distance_map->config);
+				delete tmp;
+			}
+			break;
+		}
+		//circle_node c = closest_circle(current_state, circle_path);
+		//draw_circle_on_map_img(c.x, c.y, c.radius, distance_map->config);
 
-        if (!state_node_exist(current_state, closed_set))
-        	expand_state(current_state, goal_state, closed_set, circle_path, open_set, robot_config, distance_map);
-        std::sort(open_set.begin(), open_set.end(), my_f_ordenation);
+		if (!exist_in_closed(current_state, distance_map))
+			expand_state(current_state, goal_state, closed_set, circle_path, open_set, robot_config, distance_map);
+		std::sort(open_set.begin(), open_set.end(), my_f_ordenation);
 
-//        if (current->h < RGOAL)      // FIXME Essa verificação nao devia ser feita usando o melhor candidato da ultima chamada a Expand???
-//        {
-//            GoalExpand(current, goal_state, open_set);
-//        }
+		//        if (current->h < RGOAL)      // FIXME Essa verificação nao devia ser feita usando o melhor candidato da ultima chamada a Expand???
+		//        {
+		//            GoalExpand(current, goal_state, open_set);
+		//        }
 
-        closed_set.push_back(current_state);
+		closed_set.push_back(current_state);
+		insert_in_closed_set(current_state, distance_map);
 
-//        if (open_set.empty())
-//        {
-//            k *= 0.5;
-//
-//            if (k > KMIN)
-//            {
-//                SetSwap(open_set, closed_set);
-//            }
-//        }
-        //printf("FOI\n");
-    }
-    printf("desistiu\n");
+		//        if (open_set.empty())
+		//        {
+		//            k *= 0.5;
+		//
+		//            if (k > KMIN)
+		//            {
+		//                SetSwap(open_set, closed_set);
+		//            }
+		//        }
+		//printf("FOI\n");
+	}
+	printf("desistiu\n");
 
-    while(!closed_set.empty())
-    {
-    	state_node *tmp = closed_set.back();
+	while(!closed_set.empty())
+	{
+		state_node *tmp = closed_set.back();
 
-        closed_set.pop_back();
+		closed_set.pop_back();
 
-        delete tmp;
-    }
+		delete tmp;
+	}
 
-    draw_state_path(state_path, distance_map->config);
-    //printf("Saiu HS\n");
-    return (state_path);
+	draw_state_path(state_path, distance_map->config);
+	//printf("Saiu HS\n");
+	return (state_path);
 }
 
 
@@ -719,6 +791,7 @@ compute_hybrid_A_star_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose
 	vector<circle_node> circle_path = circle_exploration(robot_pose, goal_pose, distance_map);
 //
 	vector<state_node> path = heuristic_search(start_state, goal_state, circle_path, robot_config, distance_map);
+	printf("acabou!!\n");
 
 	int rs_pathl;
 	int rs_numero;
@@ -754,12 +827,48 @@ compute_hybrid_A_star_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose
 //	}
 }
 
+void
+alloc_verificator_map(carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+	int i, j, k;
+	int theta_size = round(2*M_PI/THETA_RES);
+	int x_size = round(distance_map->config.x_size * distance_map->config.resolution / X_RES);
+	int y_size = round(distance_map->config.y_size * distance_map->config.resolution / Y_RES);
+//	int x_size = round(distance_map->config.x_size);
+//	int y_size = round(distance_map->config.y_size);
+	printf("sizemap = %d %d \n", x_size, y_size);
+
+	verificator_map = (state_verificator ***)calloc(x_size, sizeof(state_verificator**));
+	carmen_test_alloc(verificator_map);
+	for (i = 0; i < x_size; i++)
+	{
+		verificator_map[i] = (state_verificator **)calloc(y_size, sizeof(state_verificator*));
+		carmen_test_alloc(verificator_map[i]);
+		for (j = 0; j < y_size; j++)
+		{
+			verificator_map[i][j] = (state_verificator*)calloc(theta_size, sizeof(state_verificator));
+			carmen_test_alloc(verificator_map[i][j]);
+			for (k = 0; k < theta_size; k++)
+			{
+				state_verificator init_state;
+				init_state.in_open = false;
+				init_state.in_closed = false;
+				init_state.g = DBL_MAX;
+				init_state.node = NULL;
+				verificator_map[i][j][k] = init_state;
+			}
+		}
+	}
+}
 
 void
 compute_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen_robot_ackerman_config_t robot_config,
 		carmen_obstacle_distance_mapper_map_message *distance_map)
 {
+	alloc_verificator_map(distance_map);
 	display_map(distance_map);
+	printf("x_size = %d\ny_size = %d\nresolution = %f\nx_origin = %f\ny_origin = %f\n", distance_map->config.x_size, distance_map->config.y_size, distance_map->config.resolution, distance_map->config.x_origin, distance_map->config.y_origin);
+
 
 	compute_hybrid_A_star_path(robot_pose, goal_pose, robot_config, distance_map);
 }
