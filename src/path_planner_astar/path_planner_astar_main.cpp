@@ -117,12 +117,12 @@ draw_circle_on_map_img(double x, double y, double r, carmen_map_config_t config)
 
 
 void
-draw_point_on_map_img(double x, double y, carmen_map_config_t config, int r, int g, int b)
+draw_point_on_map_img(double x, double y, carmen_map_config_t config, int r, int g, int b, int size=1)
 {
 	int img_x = (double) (x - config.x_origin) / config.resolution;
 	int img_y = (double) (y - config.y_origin) / config.resolution;
 //	circle(map_image, Point(img_x, config.y_size - 1 - img_y), 1, 64, -1, 8);
-	circle(map_image, Point(img_x, config.y_size - 1 - img_y), 1, Scalar(b, g, r), -1, 8);
+	circle(map_image, Point(img_x, config.y_size - 1 - img_y), size, Scalar(b, g, r), -1, 8);
 	imshow("Obstacle Map", map_image);
 	waitKey(1);
 	//usleep(10000);
@@ -449,13 +449,13 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
     double add_y[3] = {-1.0, 0.0, 1.0};
 //    printf("---\n");
 //	printf("Current state = %lf %lf %lf\n", current_state->state.x, current_state->state.y, current_state->state.theta);
-
+//    printf("==initialize expand:state \n");
     for (int i = 0; i < sizeof(target_v)/sizeof(target_v[0]); ++i)
 //    for (int i = 0; i < 3; ++i)
     {
         for (int j = 0; j < THETA_SIZE; ++j)
         {
-        	state_node *new_state = (state_node*) malloc(sizeof(state_node));
+        	state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
 
         	target_phi = carmen_clamp(-robot_config.max_phi, (current_state->state.phi + steering_acceleration[j]), robot_config.max_phi);
 
@@ -463,6 +463,9 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
         	if(NHOLONOMIC)
         	{
         		new_state->state = carmen_libcarmodel_recalc_pos_ackerman(current_state->state, target_v[i], target_phi, 0.25, &distance_traveled, DELTA_T, robot_config);
+//        		while( (get_astar_map_x(new_state->state.x, distance_map) == get_astar_map_x(current_state->state.x, distance_map) ) &&
+//        				(get_astar_map_y(new_state->state.y, distance_map) == get_astar_map_y(current_state->state.y, distance_map)) && (current_state->pos_theta == j))
+//        		new_state->state = carmen_libcarmodel_recalc_pos_ackerman(current_state->state, target_v[i], target_phi, 0.25, &distance_traveled, DELTA_T, robot_config);
         	}
 
         	else
@@ -488,9 +491,11 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
         	int pos_theta;
         	int pos_direction = get_astar_map_direction(new_state->state.v);
         	if (NHOLONOMIC)
-        		pos_theta= get_astar_map_theta2(new_state->state.phi );//, target_v[i]);
+        		pos_theta = j;
+//        		pos_theta = get_astar_map_theta2(new_state->state.phi - current_state->state.phi);//, target_v[i]);
         	else
         		pos_theta = 0;
+        	new_state->pos_theta = pos_theta;
 /*
         	if(target_v[i]>0)
         		pos_theta = j;
@@ -509,16 +514,17 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
 
         	if(0)
         	{
-        		if(j == 0)
+        		draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config, 0, 0, 0);
+/*        		if(j == 0)
         			draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config, 0, 0, 255);
         		else if(j == 2)
         			draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config, 255, 0, 0);
         		else
         			draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config, 0, 255, 0);
-
+*/
 //        		usleep(500000);
         	}
-        	printf("1 -- %d %d %d %d\n", pos_x, pos_y, pos_theta, pos_direction);
+ //       	printf("1 -- %d %d %d %d  i= %d  j = %d\n", pos_x, pos_y, pos_theta, pos_direction, i, j);
 //        	printf("obstacle distance = %lf\n", obstacle_distance(new_state->state.x, new_state->state.y, distance_map));
         	if ((obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 2.0) ||
         			(astar_map[pos_x][pos_y][pos_theta][pos_direction] != NULL && astar_map[pos_x][pos_y][pos_theta][pos_direction]->status == 0))//state_node_exist(new_state, closed_set))   // TODO ler a margem de segurança do carmen.ini
@@ -526,30 +532,31 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
 //            	printf("if NS = %lf %lf %lf  -- if1 = %lf if2 = %d\n", new_state->state.x, new_state->state.y, new_state->state.theta, obstacle_distance(new_state->state.x, new_state->state.y, distance_map), state_node_exist(new_state, closed_set));
 //        		printf("if - %lf %d %d x y = %d %d %d\n", obstacle_distance(new_state->state.x, new_state->state.y, distance_map),
 //        				(astar_map[pos_x][pos_y][pos_theta] != NULL && astar_map[pos_x][pos_y][pos_theta]->status == 0), aif++, pos_x, pos_y, pos_theta);
-        		printf("2\n");
+
         		free (new_state);
         	}
         	else
         	{
-        		printf("3\n");
+
 //            	printf("else NS = %lf %lf %lf  -- if1 = %lf if2 = %d\n", new_state->state.x, new_state->state.y, new_state->state.theta, obstacle_distance(new_state->state.x, new_state->state.y, distance_map), state_node_exist(new_state, closed_set));
 
 //        		int indice = state_node_exist(new_state, open_set);
 
 //        		printf("%d %d %d\n", pos_x, pos_y, pos_theta);
 //        		if(indice)
+
         		if(astar_map[pos_x][pos_y][pos_theta][pos_direction] != NULL && astar_map[pos_x][pos_y][pos_theta][pos_direction]->status == 1)
         		{
-        			printf("4\n");
+
 
 //        			if(open_set[indice-1]->f > new_state->f)
-        			if(astar_map[pos_x][pos_y][pos_theta][pos_direction]->f > new_state->f)
+        			if(astar_map[pos_x][pos_y][pos_theta][pos_direction]->f > new_state->g)
         			{
-        				printf("4\n");
+
         				int indice = state_node_exist(new_state, open_set);
         				if(indice)
         				{
-        					printf("6\n");
+
 //        				printf(" open_set = %lf %lf\n", open_set[indice-1]->g, new_state->g);
         				open_set[indice-1] = new_state;
 //        				open_set[indice-1]->g = new_state->g;
@@ -558,7 +565,7 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
 //        				open_set[indice-1]->parent = current_state;
         				//free(new_state);
         				astar_map[pos_x][pos_y][pos_theta][pos_direction] = new_state;
-        				printf("7\n");
+
 //        				printf("update %d %d\n", indice-1, indice);
         				}
 
@@ -571,7 +578,7 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
         		open_set.push_back(new_state);
         		astar_map[pos_x][pos_y][pos_theta][pos_direction] = new_state;
 //        		printf("else - %d\n", aelse++);
-        		printf("f = %lf\n", new_state->f);
+
 
         		if(OPENCV)
 				{
@@ -587,6 +594,7 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
 
 
         		}
+
 
         	}
     		std::sort(open_set.begin(), open_set.end(), my_f_ordenation);
@@ -637,6 +645,7 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 
 	std::vector<state_node*> closed_set;
 	start_state->status = 1;
+	start_state->pos_theta = 1;
 	open_set.push_back(start_state);
 //	open_set.push(start_state);
 	while (!open_set.empty())
@@ -647,11 +656,11 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 		open_set.pop_back();
 		int pos_x = get_astar_map_x(current_state->state.x, distance_map);
 		int pos_y = get_astar_map_y(current_state->state.y, distance_map);
-		int pos_theta = get_astar_map_theta2(current_state->state.phi );//, current_state->state.v);
+		int pos_theta = current_state->pos_theta;//, current_state->state.v);
     	int pos_direction = get_astar_map_direction(current_state->state.v);
 
 		astar_map[pos_x][pos_y][pos_theta][pos_direction] = current_state;
-    	printf("first -- %d %d %d %d\n", pos_x, pos_y, pos_theta, pos_direction);
+//    	printf("first -- %d %d %d %d\n", pos_x, pos_y, pos_theta, pos_direction);
 
 
 //		printf("current open_set = %lf %lf %lf\n", current_state->state.x, current_state->state.y, current_state->state.theta);
@@ -721,11 +730,11 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 			if(astar_map[pos_x][pos_y][pos_theta][pos_direction]->status != 0)
 			{
 				expand_state(current_state, goal_state, closed_set, open_set, robot_config, distance_map);
+				astar_map[pos_x][pos_y][pos_theta][pos_direction]->status = 0;
+				closed_set.push_back(current_state);
+				if(OPENCV)
+				    draw_point_on_map_img(current_state->state.x, current_state->state.y, distance_map->config, 139, 0, 139);
 			}
-
-    		astar_map[pos_x][pos_y][pos_theta][pos_direction]->status = 0;
-
-			closed_set.push_back(current_state);
 
 		}
 
