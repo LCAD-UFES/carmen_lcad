@@ -9,6 +9,7 @@ typedef struct
 	double initial_map_zoom;
 	int	   track_robot;
 	int    draw_path;
+	int    show_path_plans;
 	int	   draw_waypoints;
 	int	   draw_robot_waypoints;
 	int	   show_particles;

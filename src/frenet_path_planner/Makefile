@@ -20,11 +20,11 @@ IFLAGS += -I/usr/include/eigen3
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
 IFLAGS += -I/usr/include/python3.5
 
-SOURCES = frenet_path_planner.cpp
+SOURCES = frenet_path_planner_main.cpp
 TARGETS = frenet_path_planner
 
-PUBLIC_INCLUDES = 
-PUBLIC_LIBRARIES = 
+PUBLIC_INCLUDES = frenet_path_planner_interface.h  frenet_path_planner_messages.h
+PUBLIC_LIBRARIES = libfrenet_path_planner_interface.a
 PUBLIC_BINARIES = frenet_path_planner
 
 #PUBLIC_LIBRARIES_SO = librddf_interface.so
@@ -32,7 +32,9 @@ PUBLIC_BINARIES = frenet_path_planner
 #TARGETS += librddf_interface.so.1
 #endif
 
-frenet_path_planner: frenet_path_planner.o
+frenet_path_planner: frenet_path_planner_main.o libfrenet_path_planner_interface.a
+
+libfrenet_path_planner_interface.a: frenet_path_planner_interface.o
 
 # rules
 include ../Makefile.rules

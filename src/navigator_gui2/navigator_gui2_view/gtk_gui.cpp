@@ -237,6 +237,7 @@ namespace View
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowFusedOdometry), nav_panel_config->show_fused_odometry);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowGaussians), nav_panel_config->show_gaussians);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowLaserData), nav_panel_config->show_lasers);
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowPathPlans), nav_panel_config->show_path_plans);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowCommandPlan), nav_panel_config->show_command_plan);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowMPPMotionPlan), nav_panel_config->show_mpp_motion_plan);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowOAMotionPlan), nav_panel_config->show_oa_motion_plan);
@@ -311,6 +312,9 @@ namespace View
 
 		if (nav_panel_config->show_command_plan)
 			carmen_obstacle_avoider_subscribe_path_message(&obstacle_avoider_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+
+		if (nav_panel_config->show_path_plans)
+			carmen_frenet_path_planner_subscribe_plan_message(&frenet_path_planer_plan_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 
 		if (nav_panel_config->show_oa_motion_plan)
 			carmen_obstacle_avoider_subscribe_motion_planner_path_message(&oa_motion_plan_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
@@ -463,6 +467,7 @@ namespace View
 		controls_.menuDisplay_ShowGaussians = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowGaussians" ));
 		controls_.menuDisplay_ShowLaserData = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowLaserData" ));
 		controls_.menuDisplay_ShowLateralOffset = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowLateralOffset" ));
+		controls_.menuDisplay_ShowPathPlans = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowPathPlans" ));
 		controls_.menuDisplay_ShowOAMotionPlan = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowOAMotionPlan" ));
 		controls_.menuDisplay_ShowMPPMotionPlan = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowMPPMotionPlan" ));
 		controls_.menuDisplay_ShowParticles = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowParticles" ));

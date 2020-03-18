@@ -2,6 +2,7 @@
 #include <carmen/rddf_messages.h>
 #include <carmen/path_planner_messages.h>
 #include <carmen/rddf_interface.h>
+#include <carmen/frenet_path_planner_interface.h>
 #include <carmen/rddf_util.h>
 #include <carmen/grid_mapping.h>
 #include <carmen/udatmo.h>
@@ -1696,6 +1697,19 @@ rddf_handler(carmen_rddf_road_profile_message *rddf_msg)
 
 
 static void
+frenet_path_planner_plan_message_handler(carmen_frenet_path_planner_plan_message *path_plan)
+{
+//	int num_plans = path_plan->plan_size / path_plan->number_of_poses;
+//	for (int i = 0; i < num_plans; i++)
+//	{
+//		for (int j = 0; (j < path_plan->number_of_poses) && (j < 5); j++)
+//			printf("plan %d, x[%d] = %lf, y[%d] = %lf\n", i, j, path_plan->plan[i * path_plan->number_of_poses + j].x, j, path_plan->plan[i * path_plan->number_of_poses + j].y);
+//	}
+//	printf("\n");
+}
+
+
+static void
 path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf_msg)
 {
 	if (!necessary_maps_available)
@@ -1883,14 +1897,11 @@ signal_handler(int signo __attribute__ ((unused)) )
 static void
 register_handlers()
 {
-	carmen_obstacle_avoider_subscribe_robot_hit_obstacle_message(
-			NULL,
-			(carmen_handler_t) obstacle_avoider_robot_hit_obstacle_message_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+	carmen_obstacle_avoider_subscribe_robot_hit_obstacle_message(NULL, (carmen_handler_t) obstacle_avoider_robot_hit_obstacle_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_rddf_subscribe_road_profile_message(
-			NULL,(carmen_handler_t)rddf_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+	carmen_rddf_subscribe_road_profile_message(NULL, (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_frenet_path_planner_subscribe_plan_message(NULL, (carmen_handler_t) frenet_path_planner_plan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	if (!use_truepos)
 		carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);

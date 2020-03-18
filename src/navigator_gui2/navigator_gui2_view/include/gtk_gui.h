@@ -30,6 +30,7 @@
 #include <carmen/moving_objects_interface.h>
 #include <carmen/lane_detector_interface.h>
 #include <carmen/model_predictive_planner_interface.h>
+#include <carmen/frenet_path_planner_interface.h>
 #include <car_panel.h>
 
 #include <carmen/rddf_util.h>
@@ -144,6 +145,7 @@ namespace View
 			GtkCheckMenuItem* menuDisplay_ShowFusedOdometry;
 			GtkCheckMenuItem* menuDisplay_ShowGaussians;
 			GtkCheckMenuItem* menuDisplay_ShowLaserData;
+			GtkCheckMenuItem* menuDisplay_ShowPathPlans;
 			GtkCheckMenuItem* menuDisplay_ShowOAMotionPlan;
 			GtkCheckMenuItem* menuDisplay_ShowMPPMotionPlan;
 			GtkCheckMenuItem* menuDisplay_ShowCommandPlan;
@@ -270,6 +272,10 @@ namespace View
 		int	 is_filming;
 		int filming_timeout;
 
+		carmen_frenet_path_planner_plan_message frenet_path_planer_plan_msg;
+		carmen_world_point_t *frenet_path_planer_plan;
+		int frenet_path_planer_plan_size;
+
 		carmen_navigator_ackerman_plan_message obstacle_avoider_msg;
 		carmen_world_point_t *obstacle_avoider_path;
 		int obstacle_avoider_path_size;
@@ -335,8 +341,9 @@ namespace View
 		void set_distance_traveled(carmen_point_t robot_pose, double velocity);
 		void navigator_graphics_update_goal_list(carmen_ackerman_traj_point_t* goal_list, int size);
 		void navigator_graphics_update_waypoint_list(carmen_ackerman_traj_point_t* waypoint_list, int size);
-		void navigator_graphics_update_plan(carmen_ackerman_traj_point_p new_plan, int plan_length);
+		void navigator_graphics_update_path_plans(carmen_ackerman_traj_point_t **plans, int number_of_plans, int number_of_poses, int selected_plan);
 		void navigator_graphics_update_path(carmen_ackerman_traj_point_t* new_path, int path_length, int path_id);
+		void navigator_graphics_update_plan(carmen_ackerman_traj_point_p new_plan, int plan_length);
 		void navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type);
 		void navigator_graphics_set_flags(carmen_navigator_map_t type);
 

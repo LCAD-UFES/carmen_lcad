@@ -28,6 +28,9 @@ using namespace std;
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_index.h>
 
+#include "frenet_path_planner_interface.h"
+#include "frenet_path_planner_messages.h"
+
 #include <kml/base/file.h>
 #include <kml/engine.h>
 #include <kml/dom.h>
@@ -88,6 +91,10 @@ static int *annotations;
 
 static int carmen_rddf_pose_initialized = 0;
 static int already_reached_nearest_waypoint_to_end_point = 0;
+
+static int frenet_path_planner_num_plans;
+static int selected_plan_id;
+
 
 vector<carmen_annotation_t> annotation_read_from_file;
 typedef struct
@@ -1648,6 +1655,225 @@ carmen_rddf_play_find_nearest_poses_by_road_map(carmen_point_t initial_pose, car
 }
 
 
+typedef struct
+{
+	double d_displacement;
+	double s_range;
+	carmen_ackerman_traj_point_t p0, p1, p2, p3;
+} plan_t;
+
+
+plan_t
+compute_one_plan(int plan_id, int selected_plan_id, carmen_frenet_path_planner_plan_message *previous_path_plan,
+		carmen_ackerman_traj_point_t *poses_ahead, int num_poses)
+{
+	//	- Os planos devem partir da posicao aproximada atual do carro, PA, que eh a posicao no plano atualmente sendo seguido
+	//	  (um dos 31) mais proxima possivel da globalpos.
+	//	  Alem disso, devem possuir continuidade temporal; isto eh, devem se conectar suavemente (incluir parte?)
+	//	  ao plano do time step anterior (ver imagem em https://www.researchgate.net/figure/Optimal-trajectory-thick-gray-with-end-point-on-the-continuous-terminal-manifold_fig5_254098780).
+	//	- Os planos podem ser computados a partir de PA por meio de um spline na dimensao d de FF, que tenha a
+	//	  dimensao s de FF como base (o spline eh em (s, d)).
+	//	  Para garantir a continuidade temporal, a derivada de d com relacao a s, dd/ds, do primeiro ponto, p0(t),
+	//	  do plano correntemente sendo seguido no tempo t, P(t), deve ser a mesma para todos os 31 planos e
+	//	  coincidir com a dd/ds do ponto px(t-1), correspondente a p0(t) do plano corrente no time step anterior, P(t-1),
+	//	  entre ciclos de planejamento para cada um dos 31 planos.
+	//	  Isto eh, a dd/ds do primeiro ponto, p0(t) = (s0(t), d0(t)), de um plano do time step atual, P(t),
+	//	  deve ser igual aa dd/ds da projecao de p0(t) na versao anterior de P(t), ou P(t-1).
+	//	  Ou seja, a dd/ds de p0(t) deve ser igual aa dd/ds do ponto px(t-1), onde a posicao de px(t-1) no mundo
+	//	  eh a mais proxima possivel de PA.
+	//	- Note que, alem da dd/ds, os valores de s e d de p0(t) de todos os 31 planos eh igual, mas eles divergem a
+	//	  partir de p0(t) para alcancar as 31 rotas paralelas no horizonte de tempo, T, e distancia na dimensao s de FF, D(s),
+	//	  considerados pelo planejador.
+	//	- O plano que deve ser correntemente seguido no tempo t, P(t), pode representar uma continuidade incompleta do afastamente de R
+	//	  na direcao de uma das rotas paralelas a R. Para garantir continuidade, o plano P(t) deve ter a mesma forma
+	//	  do plano anterior, P(t-1), a menos que o plano seja mudado em t. Assim, o plano anterior, P(t-1), deve ser apenas
+	//	  extendido para se gerar P(t). Os planos paralelos a P(t) devem ser, no entanto, recomputados completamente a partir de PA
+	//	  com as restricoes mencionadas acima.
+	//	- No momento inicial, os 31 planos sao gerados a partir da globalpos, isto eh, PA = globalpos. Depois do instante inicial,
+	//	  o plano sendo seguido em P(t-1) eh extendido a partir de PA (p0 de P(t) eh igual a PA) para se gerar P(t),
+	//	  e os demais sao computados a partir de PA.
+	//	- Os planos podem alcancar suas rotas paralelas a R antes do fim de T (em T/2, por exemplo) caso se deseje manobras mais agressivas.
+	//	- O horizonte de tempo T considerado pode ser aproximandamente igual a 5 segundos, equanto que o horizonte de distancia
+	//	  D (na dimensao s) vai de um minimo para velocidades baixas ou zero (13m? Um multiplo do tamanho do carro?),
+	//	  ate a distancia alcancavel dentro de T na velocidade e aceleracao atuais (no momento t).
+	//	- Um conjunto de valores de T e D podem ser considerados para a geracao de multiplos de 31 planos.
+	//	  Estes planos extras permitiriam mais opcoes ao behavior selector.
+	//	- Os valores maximos de dd/ds vao variar de acordo com os valores de T e D considerados e alguns planos podem ser inviaveis e
+	//	  devem ser descartados por ultrapassar os limites de velocidade de variacao de phi, de aceleracao do carro,
+	//	  de forca centrifuga, ou de jerk apos a conversao dos pontos (s, d) do plano para (x, y), onde estes limites podem ser
+	//	  facilmente verificados.
+	//	- Um plano especial pode ser tambem demandado pelo behavior selector e computado pelo planejador para permitir manobras de precisao,
+	//	  como as de estacionamento e passagem por espacos estreitos (cancela, por exemplo).
+	//	  Este plano especial seria especificado como um afastamento especifico na dimensao d do FF da R, e uma distancia D.
+	plan_t plan;
+
+	if (previous_path_plan == NULL)
+	{
+		double disp = 0.4;
+		plan.s_range = 4.0;
+		plan.d_displacement = disp * (plan_id - selected_plan_id);
+		plan.p0 = poses_ahead[0];
+		plan.p1 = poses_ahead[num_poses / 4];
+		plan.p2 = poses_ahead[num_poses / 2];
+		plan.p2.x += plan.d_displacement * 1.0 * cos(poses_ahead[1].theta + (M_PI / 2.0));
+		plan.p2.y += plan.d_displacement * 1.0 * sin(poses_ahead[1].theta + (M_PI / 2.0));
+		plan.p3 = poses_ahead[num_poses - 1];
+		plan.p3.x += plan.d_displacement * 1.0 * cos(poses_ahead[1].theta + (M_PI / 2.0));
+		plan.p3.y += plan.d_displacement * 1.0 * sin(poses_ahead[1].theta + (M_PI / 2.0));
+	}
+	else
+	{
+
+	}
+
+	return (plan);
+}
+
+
+double
+getPt(double n1 , double n2 , double perc )
+{
+    double diff = n2 - n1;
+
+    return (n1 + (diff * perc));
+}
+
+
+carmen_ackerman_traj_point_t
+get_plan_pose(plan_t plan, carmen_ackerman_traj_point_t *poses_ahead, int num_poses, int s)
+{
+	carmen_ackerman_traj_point_t displaced_pose = poses_ahead[s]; // copia os campos nao alterados abaixo
+
+//	double s_ = ((2.0 * (double) (s - num_poses / 2.0)) / (double) num_poses); // varia entre -1.0 e 1.0
+//	double d = 1.0 / (1.0 + exp(-(plan.s_range * s_)));
+//	displaced_pose.x = poses_ahead[s].x + plan.d_displacement * d * cos(poses_ahead[s].theta + (M_PI / 2.0));
+//	displaced_pose.y = poses_ahead[s].y + plan.d_displacement * d * sin(poses_ahead[s].theta + (M_PI / 2.0));
+
+//	https://stackoverflow.com/questions/785097/how-do-i-implement-a-b%c3%a9zier-curve-in-c/11435243#11435243
+//	https://stackoverflow.com/questions/37642168/how-to-convert-quadratic-bezier-curve-code-into-cubic-bezier-curve/37642695#37642695
+
+	double i = (double) s / (double ) num_poses;
+    // The Green Lines
+    double xa = getPt(plan.p0.x, plan.p1.x, i);
+    double ya = getPt(plan.p0.y, plan.p1.y, i);
+    double xb = getPt(plan.p1.x, plan.p2.x, i);
+    double yb = getPt(plan.p1.y, plan.p2.y, i);
+    double xc = getPt(plan.p2.x, plan.p3.x, i);
+    double yc = getPt(plan.p2.y, plan.p3.y, i);
+
+    // The Blue Line
+    double xm = getPt(xa, xb, i);
+    double ym = getPt(ya, yb, i);
+    double xn = getPt(xb, xc, i);
+    double yn = getPt(yb, yc, i);
+
+    // The Black Dot
+    displaced_pose.x = getPt(xm , xn, i);
+    displaced_pose.y = getPt(ym , yn, i);
+
+	return (displaced_pose);
+}
+
+
+carmen_ackerman_traj_point_t *
+update_poses_back(carmen_ackerman_traj_point_t *current_poses_back, carmen_ackerman_traj_point_t *poses_back, carmen_ackerman_traj_point_t *plan)
+{
+	return (poses_back);
+}
+
+
+void
+free_path_plan(carmen_frenet_path_planner_plan_message *previous_path_plan)
+{
+
+}
+
+
+carmen_frenet_path_planner_plan_message *
+copy_path_plan(carmen_frenet_path_planner_plan_message path_plan)
+{
+	return (NULL);
+}
+
+
+carmen_frenet_path_planner_plan_message
+build_frenet_path_plan(carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back, int num_poses, int num_poses_back, int *annotations, int * annotations_codes)
+{
+	smooth_rddf_using_conjugate_gradient(poses_ahead, num_poses, poses_back, num_poses_back);
+
+    carmen_frenet_path_planner_plan_message path_plan;
+    path_plan.plan_size = frenet_path_planner_num_plans * num_poses;
+
+	selected_plan_id = frenet_path_planner_num_plans / 2;
+	path_plan.plan = (carmen_ackerman_traj_point_t *) malloc(path_plan.plan_size * sizeof(carmen_ackerman_traj_point_t));
+
+	static carmen_frenet_path_planner_plan_message *previous_path_plan = NULL;
+	static carmen_ackerman_traj_point_t *current_poses_back = NULL;
+	for (int plan_id = 0; plan_id < frenet_path_planner_num_plans; plan_id++)
+	{
+		plan_t plan = compute_one_plan(plan_id, selected_plan_id, previous_path_plan, poses_ahead, num_poses);
+		for (int s = 0; s < num_poses; s++)
+			path_plan.plan[plan_id * num_poses + s] = get_plan_pose(plan, poses_ahead, num_poses, s);
+	}
+
+	current_poses_back = update_poses_back(current_poses_back, poses_back, path_plan.plan);
+
+	path_plan.selected_plan = selected_plan_id;
+    path_plan.poses_back = current_poses_back;
+    path_plan.number_of_poses = num_poses;
+    path_plan.number_of_poses_back = num_poses_back;
+    path_plan.annotations = annotations;
+    path_plan.annotations_codes = annotations_codes;
+    path_plan.timestamp = carmen_get_time();
+    path_plan.host = carmen_get_host();
+
+	free_path_plan(previous_path_plan);
+    previous_path_plan = copy_path_plan(path_plan);
+
+    return (path_plan);
+}
+
+
+carmen_frenet_path_planner_plan_message
+build_frenet_path_plan_old(carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back, int num_poses, int num_poses_back, int *annotations, int * annotations_codes)
+{
+	smooth_rddf_using_conjugate_gradient(poses_ahead, num_poses, poses_back, num_poses_back);
+
+	carmen_frenet_path_planner_plan_message path_plan;
+
+    path_plan.plan_size = frenet_path_planner_num_plans * num_poses;
+
+	selected_plan_id = frenet_path_planner_num_plans / 2;
+	path_plan.plan = (carmen_ackerman_traj_point_t *) malloc(path_plan.plan_size * sizeof(carmen_ackerman_traj_point_t));
+
+	for (int plan_id = 0; plan_id < frenet_path_planner_num_plans; plan_id++)
+	{
+		for (int s = 0; s < num_poses; s++)
+		{
+			double disp = 0.4;
+			double range = 4.0;
+			double sign = ((plan_id - selected_plan_id) < 0)? -1.0: 1.0;
+			double s_ = ((2.0 * (double) (s - num_poses / 2.0)) / (double) num_poses); // varia entre -1.0 e 1.0
+			double d = 1.0 / (1.0 + exp(-(range * s_)));
+			carmen_ackerman_traj_point_t displaced_pose = poses_ahead[s]; // copia os campos nao alterados abaixo
+			displaced_pose.x = poses_ahead[s].x + d * disp * (fabs(plan_id - selected_plan_id)) * cos(poses_ahead[s].theta + sign * (M_PI / 2.0));
+			displaced_pose.y = poses_ahead[s].y + d * disp * (fabs(plan_id - selected_plan_id)) * sin(poses_ahead[s].theta + sign * (M_PI / 2.0));
+
+			path_plan.plan[plan_id * num_poses + s] = displaced_pose;
+		}
+	}
+
+	path_plan.selected_plan = selected_plan_id;
+    path_plan.poses_back = poses_back;
+    path_plan.number_of_poses = num_poses;
+    path_plan.number_of_poses_back = num_poses_back;
+    path_plan.annotations = annotations;
+    path_plan.annotations_codes = annotations_codes;
+    path_plan.timestamp = carmen_get_time();
+    path_plan.host = carmen_get_host();
+
+    return (path_plan);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1715,13 +1941,25 @@ carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
 		clear_annotations();
 		set_annotations(robot_pose);
 
+		carmen_frenet_path_planner_plan_message path_plan = build_frenet_path_plan(
+				carmen_rddf_poses_ahead,
+				carmen_rddf_poses_back,
+				carmen_rddf_num_poses_ahead,
+				carmen_rddf_num_poses_back,
+				annotations,
+				annotations_codes);
+
+		carmen_frenet_path_planner_publish_plan_message(&path_plan);
+
 		carmen_rddf_publish_road_profile_message(
-			carmen_rddf_poses_ahead,
+			&(path_plan.plan[path_plan.selected_plan * path_plan.number_of_poses]),
 			carmen_rddf_poses_back,
 			carmen_rddf_num_poses_ahead,
 			carmen_rddf_num_poses_back,
 			annotations,
 			annotations_codes);
+
+		free(path_plan.plan);
 
 		carmen_rddf_play_publish_annotation_queue();
 
@@ -1875,15 +2113,6 @@ carmen_rddf_play_load_annotation_file(char *carmen_annotation_filename)
 
 	fclose(f);
 }
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           //
-// Handlers                                                                                  //
-//                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1924,6 +2153,14 @@ pos_message_handler(carmen_point_t robot_pose, double timestamp)
 
 	carmen_rddf_play_publish_rddf_and_annotations(robot_pose);
 }
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 static void
@@ -2122,15 +2359,20 @@ carmen_rddf_play_get_parameters(int argc, char** argv)
 {
 	carmen_param_t param_list[] =
 	{
+		{(char *) "frenet_path_planner", (char *) "num_plans", CARMEN_PARAM_INT, &frenet_path_planner_num_plans, 0, NULL},
+
 		{(char *) "robot", (char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &distance_between_front_and_rear_axles, 0, NULL},
 		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &distance_between_front_car_and_front_wheels, 0, NULL},
 		{(char *) "robot", (char *) "turning_radius", CARMEN_PARAM_DOUBLE, &turning_radius, 0, NULL},
+
 		{(char *) "rddf", (char *) "num_poses_ahead", CARMEN_PARAM_INT, &carmen_rddf_num_poses_ahead_max, 0, NULL},
 		{(char *) "rddf", (char *) "min_distance_between_waypoints", CARMEN_PARAM_DOUBLE, &rddf_min_distance_between_waypoints, 0, NULL},
 		{(char *) "rddf", (char *) "loop", CARMEN_PARAM_ONOFF, &carmen_rddf_perform_loop, 0, NULL},
 		{(char *) "rddf", (char *) "default_search_radius", CARMEN_PARAM_DOUBLE, &default_search_radius, 0, NULL},
 		{(char *) "rddf", (char *) "dynamic_plot_state", CARMEN_PARAM_INT, &dynamic_plot_state, 1, NULL}, /* param_edit para modificar */
+
 		{(char *) "behavior_selector", (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
+
 		{(char *) "road_mapper", (char *) "kernel_size", CARMEN_PARAM_INT, &road_mapper_kernel_size, 0, NULL},
 	};
 
@@ -2159,15 +2401,13 @@ carmen_rddf_play_initialize(void)
 }
 
 
-int
-main(int argc, char **argv)
+char *
+get_command_line_parameters(int argc, char** argv)
 {
-	setlocale(LC_ALL, "C");
+	char* carmen_annotation_filename = NULL;
 
-	char *carmen_annotation_filename = NULL;
-
-	char *usage[] = {(char *) "<rddf_filename> [<annotation_filename> [<traffic_lights_camera>]]",
-			         (char *) "-use_road_map   [<annotation_filename> [<traffic_lights_camera>]]"};
+	char *usage[] = { (char *) ("<rddf_filename> [<annotation_filename> [<traffic_lights_camera>]]"),
+					  (char *) ("-use_road_map   [<annotation_filename> [<traffic_lights_camera>]]") };
 
 	if (argc >= 2 && strcmp(argv[1], "-h") == 0)
 	{
@@ -2187,26 +2427,43 @@ main(int argc, char **argv)
 		carmen_rddf_filename = argv[1];
 		printf("RDDF filename: %s.\n", carmen_rddf_filename);
 	}
-
 	if (argc >= 3)
 		carmen_annotation_filename = argv[2];
+
 	if (carmen_annotation_filename)
 		printf("Annotation filename: %s.\n", carmen_annotation_filename);
 
 	if (argc >= 4)
 		traffic_lights_camera = atoi(argv[3]);
+
 	printf("Traffic lights camera: %d.\n", traffic_lights_camera);
+
+	return (carmen_annotation_filename);
+}
+
+
+int
+main(int argc, char **argv)
+{
+	setlocale(LC_ALL, "C");
+
+	char *carmen_annotation_filename = get_command_line_parameters(argc, argv);
 
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
+
 	carmen_rddf_play_get_parameters(argc, argv);
 	carmen_rddf_play_initialize();
 	carmen_rddf_define_messages();
+	carmen_frenet_path_planner_define_messages();
 	carmen_rddf_play_subscribe_messages();
+	signal(SIGINT, carmen_rddf_play_shutdown_module);
+
 	if (!use_road_map)
 		carmen_rddf_play_load_index(carmen_rddf_filename);
+
 	carmen_rddf_play_load_annotation_file(carmen_annotation_filename);
-	signal (SIGINT, carmen_rddf_play_shutdown_module);
+
 	carmen_ipc_dispatch();
 
 	return (0);
