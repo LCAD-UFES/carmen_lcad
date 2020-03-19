@@ -221,6 +221,7 @@ libsqueeze_seg_save_npy_for_train(int vertical_resolution, int shots_to_squeeze,
 	Py_DECREF(numpyTimestamp);
 	Py_DECREF(numpyArray);
 	Py_DECREF(python_result_array);
+	free(point_cloud);
 }
 
 void
