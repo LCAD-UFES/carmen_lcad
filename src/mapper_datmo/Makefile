@@ -129,9 +129,12 @@ libsalsanet.a:
 darknet2:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2
 
-clean: clean_prob_models
+clean: clean_prob_models clean_libsqueeze_seg
 
 clean_prob_models:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/prob_models/
+
+clean_libsqueeze_seg:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src/
 
 include ../Makefile.rules
