@@ -557,6 +557,8 @@ filter_sensor_data_using_deeplab(sensor_parameters_t *sensor_params, sensor_data
 						int iy = (double) image_y / image_height * img.rows;
 						if (ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
 						{
+							if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+								continue;
 							circle(img, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 							circle(img, cv::Point(ix + img.cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 						}
