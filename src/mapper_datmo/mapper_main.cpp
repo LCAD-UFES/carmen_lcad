@@ -854,6 +854,8 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 						int iy = (double) image_y / image_height * open_cv_image.rows;
 						if (ix >= 0 && ix < open_cv_image.cols && iy >= 0 && iy < open_cv_image.rows)
 						{
+							if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+								continue;
 							circle(open_cv_image, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 						}
 						int px = (double) velodyne_p3d.y() / map_resolution + img_planar_depth;
