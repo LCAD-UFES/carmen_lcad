@@ -152,7 +152,8 @@ int * rangenet_segmented = NULL;
 //long long int *salsanet_segmented = NULL;
 carmen_velodyne_partial_scan_message *velodyne_seg;
 
-static char *segmap_dirname = (char *) "/dados/log_dante_michelini-20181116.txt_segmap";
+//static char *segmap_dirname = (char *) "/dados/log_dante_michelini-20181116.txt_segmap";
+static char *segmap_dirname = (char *) "/dados/output";
 
 struct segmented {
 	long long int *result;
@@ -491,7 +492,8 @@ filter_sensor_data_using_one_image(sensor_parameters_t *sensor_params, sensor_da
 		camera_datmo_count[camera_index]++;
 }
 
-void filter_sensor_data_using_deeplab(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
+void 
+filter_sensor_data_using_deeplab(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
 {
 	camera_filter_count[camera_index]++;
 	int filter_datmo_count = 0;
@@ -511,10 +513,10 @@ void filter_sensor_data_using_deeplab(sensor_parameters_t *sensor_params, sensor
 	int cloud_index = sensor_data->point_cloud_index;
 	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
 	int thread_id = omp_get_thread_num();
-
+	//cout << number_of_laser_shots << endl;
 	vector<image_cartesian> points;
 	int min_shots = 1024;
-	if (number_of_laser_shots > min_shots && squeezeseg_dataset.timestamp == sensor_data->points_timestamp[cloud_index])
+	if (number_of_laser_shots > min_shots)
 	{
 		for (int i = 0; i < number_of_laser_shots; i++)
 		{
@@ -531,7 +533,7 @@ void filter_sensor_data_using_deeplab(sensor_parameters_t *sensor_params, sensor
 				tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
 				tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
 
-				int image_x = fx_meters * (camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
+				int image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
 				int image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
 
 				double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][j];
@@ -558,11 +560,11 @@ void filter_sensor_data_using_deeplab(sensor_parameters_t *sensor_params, sensor
 							circle(img, cv::Point(ix, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 							circle(img, cv::Point(ix + img.cols / 2, iy), 1, cv::Scalar(0, 0, 255), 1, 8, 0);
 						}
-						int px = (double) camera_p3d.y() / map_resolution + img_planar_depth;
-						int py = (double) img_planar.rows - 1 - camera_p3d.x() / map_resolution;
+						int px = (double) velodyne_p3d.y() / map_resolution + img_planar_depth;
+						int py = (double) img_planar.rows - 1 - velodyne_p3d.x() / map_resolution;
 						if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
 						{
-							img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 255);
+							img_planar.at<cv::Vec3b>(cv::Point(px, py)) = cv::Vec3b(0, 0, 0);
 						}
 						else
 						{
@@ -583,7 +585,6 @@ void filter_sensor_data_using_deeplab(sensor_parameters_t *sensor_params, sensor
 		}
 
 		vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.5, 5, points);
-		;
 
 		for (unsigned int i = 0; i < filtered_points.size(); i++)
 		{
@@ -619,7 +620,7 @@ void filter_sensor_data_using_deeplab(sensor_parameters_t *sensor_params, sensor
 						if (ix >= 0 && ix < (img.cols / 2) && iy >= 0 && iy < img.rows)
 							circle(img, cv::Point(ix, iy), 1, cluster_color[i], 1, 8, 0);
 
-						int px = (double) -filtered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
+						int px = (double) filtered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
 						int py = (double) img_planar.rows - 1 - filtered_points[i][j].cartesian_x / map_resolution;
 						if (px >= 0 && px < img_planar.cols && py >= 0 && py < img_planar.rows)
 						{
@@ -2961,7 +2962,7 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 	    }
 	    hconcat(image_cv, semantic_cv, camera_image_semantic[camera]);
 		cvtColor(camera_image_semantic[camera], camera_image_semantic[camera], CV_RGB2BGR);
-//		imshow("Image Semantic Segmentation", camera_image_semantic[camera]);
+//		imshow("Image Semantic Segmentation Camera", camera_image_semantic[camera]);
 //		cv::waitKey(1);
 	}
 }
