@@ -15,6 +15,9 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <algorithm>
+#include <math.h>
+
 
 #define MIN_OVERLAP_FACTOR 0.5	          // if two circles overlaps more than this factor then they are considered connected
 #define MAX_OVERLAP_FACTOR 0.1	          // if two circles overlaps more than this factor then they are considered the same
@@ -25,7 +28,6 @@
 #define MAX_STEP_SIZE 2.0		          // max step size in seconds
 #define KMIN 0.0125 			          // Step rate multiplier
 //#define MIN_THETA_DIFF 0.24		          // 15 degree from stehs_planner.h
-
 
 typedef struct circle_node
 {
@@ -51,6 +53,13 @@ typedef struct state_node
 	state_node *parent;
 } state_node;
 
+typedef struct state_verificator
+{
+	bool in_open;
+	bool in_closed;
+	double g;
+	state_node *node;
+} state_verificator;
 
 class CircleNodeComparator {
 public:

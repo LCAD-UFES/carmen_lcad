@@ -29,5 +29,7 @@ traffic_light_yolo: traffic_light_yolo.o
 darknet2:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2
 
-
+download:
+	$(CARMEN_HOME)/bin/gdown.pl https://drive.google.com/file/d/1LAbrATRSjjCCQbD58z7YsrYpqsSAYXoW/view?usp=sharing $(CARMEN_HOME)/sharedlib/darknet2/yolov3_traffic_light_rg.weights
+	
 include ../Makefile.rules

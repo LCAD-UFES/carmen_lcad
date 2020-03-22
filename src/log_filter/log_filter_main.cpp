@@ -510,6 +510,29 @@ bumblebee_basic_handler_9(carmen_bumblebee_basic_stereoimage_message *stereo_ima
 	save_image_to_file(stereo_image, 9);
 }
 
+void
+bumblebee_basic_handler_10(carmen_bumblebee_basic_stereoimage_message *stereo_image)
+{
+	save_image_to_file(stereo_image, 10);
+}
+
+void
+bumblebee_basic_handler_11(carmen_bumblebee_basic_stereoimage_message *stereo_image)
+{
+	save_image_to_file(stereo_image, 11);
+}
+
+void
+bumblebee_basic_handler_12(carmen_bumblebee_basic_stereoimage_message *stereo_image)
+{
+	save_image_to_file(stereo_image, 12);
+}
+
+void
+bumblebee_basic_handler_13(carmen_bumblebee_basic_stereoimage_message *stereo_image)
+{
+	save_image_to_file(stereo_image, 13);
+}
 
 void
 stereo_handler_1(carmen_simple_stereo_disparity_message *stereo_message)
@@ -573,6 +596,29 @@ stereo_handler_9(carmen_simple_stereo_disparity_message *stereo_message)
 	save_stereo_image_to_file(stereo_message, 9);
 }
 
+void
+stereo_handler_10(carmen_simple_stereo_disparity_message *stereo_message)
+{
+	save_stereo_image_to_file(stereo_message, 10);
+}
+
+void
+stereo_handler_11(carmen_simple_stereo_disparity_message *stereo_message)
+{
+	save_stereo_image_to_file(stereo_message, 11);
+}
+
+void
+stereo_handler_12(carmen_simple_stereo_disparity_message *stereo_message)
+{
+	save_stereo_image_to_file(stereo_message, 12);
+}
+
+void
+stereo_handler_13(carmen_simple_stereo_disparity_message *stereo_message)
+{
+	save_stereo_image_to_file(stereo_message, 13);
+}
 
 void
 gps_gpgga_handler(carmen_gps_gpgga_message *gps_gpgga_message)
@@ -920,6 +966,11 @@ initialize_module_args(int argc, char **argv)
 		carmen_bumblebee_basic_subscribe_stereoimage(7, NULL, (carmen_handler_t) bumblebee_basic_handler_7, CARMEN_SUBSCRIBE_LATEST);
 		carmen_bumblebee_basic_subscribe_stereoimage(8, NULL, (carmen_handler_t) bumblebee_basic_handler_8, CARMEN_SUBSCRIBE_LATEST);
 		carmen_bumblebee_basic_subscribe_stereoimage(9, NULL, (carmen_handler_t) bumblebee_basic_handler_9, CARMEN_SUBSCRIBE_LATEST);
+		carmen_bumblebee_basic_subscribe_stereoimage(10, NULL, (carmen_handler_t) bumblebee_basic_handler_10, CARMEN_SUBSCRIBE_LATEST);
+		carmen_bumblebee_basic_subscribe_stereoimage(11, NULL, (carmen_handler_t) bumblebee_basic_handler_11, CARMEN_SUBSCRIBE_LATEST);
+		carmen_bumblebee_basic_subscribe_stereoimage(12, NULL, (carmen_handler_t) bumblebee_basic_handler_12, CARMEN_SUBSCRIBE_LATEST);
+		carmen_bumblebee_basic_subscribe_stereoimage(13, NULL, (carmen_handler_t) bumblebee_basic_handler_13, CARMEN_SUBSCRIBE_LATEST);
+
 
 		return;
 	}

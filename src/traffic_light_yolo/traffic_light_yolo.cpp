@@ -1056,7 +1056,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
                 {
                    carmen_position_t point = convert_rddf_pose_to_point_in_image(annotation_vector[i].position.x, annotation_vector[i].position.y, annotation_vector[i].position.z,
                        world_to_camera_pose, camera_parameters, RESIZED_W, RESIZED_H);
-                   circle(open_cv_image, Point((int)point.x, (int)point.y), 1, Scalar(255, 0, 0), -1, 8);
+                   //circle(open_cv_image, Point((int)point.x, (int)point.y), 1, Scalar(255, 0, 0), -1, 8);
                }
             }
         }
@@ -1209,9 +1209,9 @@ read_parameters(int argc, char **argv)
         ("camera_side", po::value<int>(), "Choose 0 for left image, or 1 for right image.")
         ("annotation_path", po::value<string>(&params.annotation_path))
 
-        ("yolo_cfg", po::value<string>(&params.yolo_cfg)->default_value(CARMEN_HOME_STR+"/data/traffic_light/yolov3/yolov3-tl-red-green.cfg"))
-        ("yolo_names", po::value<string>(&params.yolo_names)->default_value(CARMEN_HOME_STR+"/data/traffic_light/yolov3/rg.names"))
-        ("yolo_weights", po::value<string>(&params.yolo_weights)->default_value(CARMEN_HOME_STR+"/data/traffic_light/yolov3/yolov3-tl-red-green.weights"))
+        ("yolo_cfg", po::value<string>(&params.yolo_cfg)->default_value(CARMEN_HOME_STR+"/sharedlib/darknet2/cfg/traffic_light_rg.cfg"))
+        ("yolo_names", po::value<string>(&params.yolo_names)->default_value(CARMEN_HOME_STR+"/sharedlib/darknet2/data/traffic_light_rg.names"))
+        ("yolo_weights", po::value<string>(&params.yolo_weights)->default_value(CARMEN_HOME_STR+"/sharedlib/darknet2/yolov3_traffic_light_rg.weights"))
         ("yolo_thresh", po::value<float>(&params.yolo_thresh)->default_value(0.2), "Only boxes with confidence above the threshold will be used.")
 
         ("rf_weights", po::value<string>(&params.rf_weights)->default_value(CARMEN_HOME_STR+"/data/traffic_light/random_forest/cv_rtrees_weights_tl_rgy.yml"))

@@ -1,6 +1,7 @@
 #include "rtsp_camera_driver.h"
 
 char * rtsp_address;
+Mat cameraMatrix, distCoeffs, newcameramtx, R1;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //																							 //
 // Publishers																			     //
@@ -36,54 +37,49 @@ void signal_handler(int sig)
 
 int read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_message *msg)
 {
-	if (argc != 3)
+	if (argc != 2)
 		carmen_die(
-			"--- Wrong number of parameters. ---\nUsage: %s <camera_number> <rtsp_address>\n",
+			"--- Wrong number of parameters. ---\nUsage: %s <camera_number>\n",
 			argv[0]);
 
-	// int frame_rate, brightness, contrast,
 	int camera_number = atoi(argv[1]);
+	
+	char camera[256];
 
-	char rtsp_camera_number[256];
-
-	sprintf(rtsp_camera_number, "%s%d", "camera", camera_number);
+	sprintf(camera, "%s%d", "bumblebee_basic", camera_number);
+	double fx_factor, fy_factor, cu_factor, cv_factor, k1, k2, p1, p2, k3;
 
 	carmen_param_t param_list[] = {
-		 {rtsp_camera_number, (char *)"width",
-		  CARMEN_PARAM_INT, &msg->width, 0, NULL},
-		 {rtsp_camera_number,
-		  (char *)"height", CARMEN_PARAM_INT, &msg->height, 0, NULL},
-		// {rtsp_camera_number, (char *)"frame_rate", CARMEN_PARAM_INT,
-		//  &frame_rate, 0, NULL},
-		// {rtsp_camera_number, (char *)"brightness",
-		//  CARMEN_PARAM_INT, &brightness, 0, NULL},
-		// {rtsp_camera_number,
-		//  (char *)"contrast", CARMEN_PARAM_INT, &contrast, 0, NULL},
-		 //{rtsp_camera_number, (char *)"ip", CARMEN_PARAM_STRING,
-		 //&tcp_ip_address, 0, NULL},
+		{ camera, (char *)"width", CARMEN_PARAM_INT, &msg->width, 0, NULL},
+		{ camera, (char *)"height", CARMEN_PARAM_INT, &msg->height, 0, NULL},
+		{ camera, (char*) "fx", CARMEN_PARAM_DOUBLE, &fx_factor, 0, NULL },
+        { camera, (char*) "fy", CARMEN_PARAM_DOUBLE, &fy_factor, 0, NULL },
+        { camera, (char*) "cu", CARMEN_PARAM_DOUBLE, &cu_factor, 0, NULL },
+        { camera, (char*) "cv", CARMEN_PARAM_DOUBLE, &cv_factor, 0, NULL },
+		{ camera, (char*) "k1", CARMEN_PARAM_DOUBLE, &k1, 0, NULL },
+		{ camera, (char*) "k2", CARMEN_PARAM_DOUBLE, &k2, 0, NULL },
+		{ camera, (char*) "p1", CARMEN_PARAM_DOUBLE, &p1, 0, NULL },
+		{ camera, (char*) "p2", CARMEN_PARAM_DOUBLE, &p2, 0, NULL },
+		{ camera, (char*) "k3", CARMEN_PARAM_DOUBLE, &k3, 0, NULL },
+		{ camera, (char*) "rtsp_address", CARMEN_PARAM_STRING, &rtsp_address, 0, NULL },
 	};
 
 	int num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
-
-	rtsp_address = argv[2];
-	// sprintf(cam_config, "%d*%d*%d*%d*%d*", msg->width, msg->height, frame_rate,
-			// brightness, contrast);
-	// sprintf(cam_config, "%d*%d", msg->width, msg->height);
-
+  	
+	cameraMatrix = (cv::Mat_<double>(3, 3) << fx_factor, 0, cu_factor, 0, fy_factor, cv_factor, 0, 0, 1);
+	newcameramtx = (cv::Mat_<double>(3, 3) << fx_factor, 0, cu_factor, 0, fy_factor, cv_factor, 0, 0, 1);
+	distCoeffs = (cv::Mat_<double>(5,1) << k1, k2, p1, p2, k3);
+	R1 = (cv::Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
+	
 	return (camera_number);
 }
 
 void initialize_message(carmen_bumblebee_basic_stereoimage_message *msg)
 {
 	msg->image_size = msg->width * msg->height * 3; // 3 channels RGB
-//	msg->isRectified = 1;
-//	msg->raw_left = (unsigned char *)calloc(msg->image_size,
-//											sizeof(unsigned char));
-//	msg->raw_right = &msg.raw_left; // This is a monocular camera, both pointers point to the same image
+	//msg->isRectified = 1;
 	msg->host = carmen_get_host();
-
-	//printf("\nWidth %d Height %d Image Size %d Is Rectified %d Host %s\n\n", msg->width, msg->height, msg->image_size, msg->isRectified, msg->host);
 }
 
 int main(int argc, char **argv)
@@ -102,9 +98,16 @@ int main(int argc, char **argv)
 	
 	VideoCapture vcap;
 	Mat image;
+	Mat imgResized;
 	Mat dst;
 
 	Size size(msg.width,msg.height);
+	
+	//Init rectified parameters
+	Mat MapX;
+	Mat MapY;
+	
+	initUndistortRectifyMap(cameraMatrix, distCoeffs, R1, newcameramtx, size, CV_16SC2, MapX, MapY);
 	
 	string videoStreamAddress = string(rtsp_address);
 	
@@ -124,11 +127,13 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			// imshow("UNV Window", image);
-			cvtColor(image, image, CV_RGB2BGR);
-			resize(image, dst, size);
-			msg.raw_left = dst.data;
-			msg.raw_right = msg.raw_left;
+			resize(image, imgResized, size);
+			//rectifying the image
+			remap(imgResized, dst, MapX, MapY, INTER_LINEAR);
+			cvtColor(imgResized, imgResized, CV_RGB2BGR);
+			cvtColor(dst, dst, CV_RGB2BGR);
+			msg.raw_left = imgResized.data;
+			msg.raw_right = dst.data;
 			publish_image_message(camera_number, &msg);
 		}
 		if (waitKey(1) >= 0)
