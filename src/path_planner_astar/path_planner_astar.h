@@ -34,6 +34,9 @@ typedef struct state_node
 	double angular_distance_to_goal;
 	int pos_theta;
 	int status;
+
+	int is_open;
+	int is_closed;
 	//double step_size;                      // TODO compute step size
 	state_node *parent;
 } state_node, *state_node_p;
