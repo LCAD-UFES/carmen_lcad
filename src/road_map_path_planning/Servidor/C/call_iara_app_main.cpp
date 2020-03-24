@@ -3,7 +3,7 @@
 #include <carmen/voice_interface_messages.h>
 #include <carmen/rddf_interface.h>
 #include "call_iara_app_messages.h"
-#include "../../road_map_path_planning_utils.h"
+#include <carmen/road_map_path_planning_utils.h>
 #include <carmen/carmen_gps.h>
 #include <vector>
 #include <iostream>
@@ -160,51 +160,51 @@ publish_app_solicitation_message(char * buffer)
 }
 
 
-//char *
-//choose_rddf_file(carmen_app_solicitation_message message)
-//{
-//
-//	static char rddf_file_name[2048];
-//	char *condition = message.origin;
-////	char buffer[MAXSIZE];
-//	bzero(rddf_file_name,2048);
-//	//strcat(rddf_file_name,getenv("CARMEN_HOME"));
-//	strcat(rddf_file_name,"data/rndf/");
-//	//criar arquivos RDDF partindo do lcad ate o destino:
-//			//lcad X estacionamento ambiental
-//			//lcad X teatro
-//			//lcad X lagoa
-//	//setar o nome do arquivo na variável rddf_file_name
-////	strcpy(rddf_file_name, rddf);
-//
-//	//strcat(condition,message.origin);
-//	strcat(condition,"-");
-//	strcat(condition,message.destination);
-//
-//
-//	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_ESCADARIA_TEATRO") == 0){
-//		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025-lcad-teatro.txt");
-//		return rddf_file_name;
-//	}
-//	//Estacionamento Ambiental
-//	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_CANTINA_CT")  == 0){
-//		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025-lcad-estacionamento-ambiental.txt");
-//		return rddf_file_name;
-//	}
-//	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_LAGO") == 0){
-//		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025-lcad-lagoa.txt");
-//		return rddf_file_name;
-//	}
-//	//LCAD to LCAD
-//	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_ESTACIONAMENTO_CCJE") == 0){
-//		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025.txt");
-//		return rddf_file_name;
-//	}
-//
-//	//return (rddf_file_name);
-//	return "0";
-//
-//}
+char *
+choose_rddf_file(carmen_app_solicitation_message message)
+{
+
+	static char rddf_file_name[2048];
+	char *condition = message.origin;
+//	char buffer[MAXSIZE];
+	bzero(rddf_file_name,2048);
+	//strcat(rddf_file_name,getenv("CARMEN_HOME"));
+	strcat(rddf_file_name,"data/rndf/");
+	//criar arquivos RDDF partindo do lcad ate o destino:
+			//lcad X estacionamento ambiental
+			//lcad X teatro
+			//lcad X lagoa
+	//setar o nome do arquivo na variável rddf_file_name
+//	strcpy(rddf_file_name, rddf);
+
+	//strcat(condition,message.origin);
+	strcat(condition,"-");
+	strcat(condition,message.destination);
+
+
+	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_ESCADARIA_TEATRO") == 0){
+		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025-lcad-teatro.txt");
+		return rddf_file_name;
+	}
+	//Estacionamento Ambiental
+	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_CANTINA_CT")  == 0){
+		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025-lcad-estacionamento-ambiental.txt");
+		return rddf_file_name;
+	}
+	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_LAGO") == 0){
+		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025-lcad-lagoa.txt");
+		return rddf_file_name;
+	}
+	//LCAD to LCAD
+	if(strcmp(condition,"RDDF_PLACE_LCAD-RDDF_PLACE_ESTACIONAMENTO_CCJE") == 0){
+		strcat(rddf_file_name,"rddf_log_volta_da_ufes-201903025.txt");
+		return rddf_file_name;
+	}
+
+	//return (rddf_file_name);
+	return "0";
+
+}
 
 
 void
@@ -277,17 +277,46 @@ get_origin_and_destination_in_lat_lon (carmen_app_solicitation_message message, 
 
 
 char *
-set_rddf_file(carmen_app_solicitation_message message, vector<carmen_annotation_t> annotations)
+set_rddf_file(carmen_app_solicitation_message message, vector<carmen_annotation_t> annotations, t_forest rddf_forest)
 {
 	static char rddf_file_name[2048];
 	Gdc_Coord_3d origin_gdc;
 	Gdc_Coord_3d destination_gdc;
+	vector<int> indices;
+	int forest_index;
+
+	bzero(rddf_file_name,2048);
+	strcat(rddf_file_name,"data/rndf/");
 
 
 	get_origin_and_destination_in_lat_lon (message, annotations, origin_gdc, destination_gdc);
 
 	call_osmnx_python_func (origin_gdc, destination_gdc);
 
+	t_graph graph;
+	t_route route;
+	graph = read_graph_file("graph.txt");
+	route = load_route_from_file("route.txt");
+	graph = convert_from_lon_lat_nodes_to_utm_nodes(graph);
+
+	get_closest_points_from_osm_in_rddf (rddf_forest, graph, route, &forest_index, indices);
+
+
+	FILE *f_rddf_partial = fopen ("$CARMEN_HOME/data/rndf/call_iara_app_rddf.txt", "w");
+	for (unsigned int i = 0; i < indices.size(); i++)
+	{
+		fprintf(f_rddf_partial, "%lf %lf\n", rddf_forest.rddfs[forest_index][indices[i]].pose.x,
+				rddf_forest.rddfs[forest_index][indices[i]].pose.y,
+				rddf_forest.rddfs[forest_index][indices[i]].pose.theta,
+				rddf_forest.rddfs[forest_index][indices[i]].driver_velocity,
+				rddf_forest.rddfs[forest_index][indices[i]].phi,
+				rddf_forest.rddfs[forest_index][indices[i]].timestamp);
+		printf("%lf %lf\n", rddf_forest.rddfs[forest_index][indices[i]].pose.x, rddf_forest.rddfs[forest_index][indices[i]].pose.y);
+	}
+	fclose(f_rddf_partial);
+
+	strcat(rddf_file_name, "call_iara_app_rddf.txt");
+	return rddf_file_name;
 
 
 
@@ -295,7 +324,25 @@ set_rddf_file(carmen_app_solicitation_message message, vector<carmen_annotation_
 
 //	getchar();
 	//return (rddf_file_name);
-	return "0";
+//	return "0";
+
+}
+
+
+t_forest
+load_rddf_forest ()
+{
+	t_forest rddf_forest;
+	string s;
+	s = "/home/pedro/carmen_lcad/data/rndf/rddf_log_volta_da_ufes-201903025.txt";
+	vector <string> rddf_filename;
+	rddf_filename.push_back(s);
+	s.clear();
+	s = "/home/pedro/carmen_lcad/data/rndf/rddf-log_volta_da_ufes-20190915-contrario.txt";
+	rddf_filename.push_back(s);
+	rddf_forest = load_rddf_files (rddf_forest, rddf_filename);
+
+	return rddf_forest;
 
 }
 
@@ -309,6 +356,9 @@ initiate_server(char * rddf_annotation, vector<carmen_annotation_t> annotations)
 	char buffer[MAXSIZE];
 	carmen_app_solicitation_message solicitation_message;
 	char *rddf_file;
+
+	t_forest rddf_forest;
+	rddf_forest = load_rddf_forest();
 
 	//Create socket
 	socket_desc = socket(AF_INET , SOCK_STREAM , 0);
@@ -351,7 +401,7 @@ initiate_server(char * rddf_annotation, vector<carmen_annotation_t> annotations)
 				printf("Solicitação de serviço: %s\n",buffer);
 				message = (char *) "Requisição solicitada";
 				solicitation_message = publish_app_solicitation_message(buffer);
-				rddf_file = (char *) set_rddf_file(solicitation_message, annotations);
+				rddf_file = (char *) set_rddf_file(solicitation_message, annotations, rddf_forest);
 				printf("Testando arquivo rddf: %s\n\n",rddf_file);
 				publish_voice_app_command_message(rddf_file, SET_COURSE);
 				carmen_navigator_ackerman_go();

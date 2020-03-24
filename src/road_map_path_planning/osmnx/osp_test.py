@@ -146,7 +146,7 @@ def get_route_lat_lon (origin_gdc_lat, origin_gdc_lon, dest_gdc_lat, dest_gdc_lo
         texto = str(dict[route[i]]) + "\n"
         #print(dict[route[i]])
         f.write(texto)       
-    fig, ax = ox.plot_graph_route(G, route, node_size=0)
+    #fig, ax = ox.plot_graph_route(G, route, node_size=0)
     
 
 def get_route (G, G_proj, nodes_proj, edges_proj):
