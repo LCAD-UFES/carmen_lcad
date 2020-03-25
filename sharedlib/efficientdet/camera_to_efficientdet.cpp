@@ -49,19 +49,16 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	else
 		img = image_msg->raw_right;
 
-	//int crop_x = 0;
-	//int crop_y = 0;
-	int crop_w = image_msg->width;// 1280;
-	int crop_h = image_msg->height;//400; // 500;
     double timestamp = image_msg->timestamp;
 
-	//unsigned char *cropped_img = crop_raw_image(image_msg->width, image_msg->height, img, crop_x, crop_y, crop_w, crop_h);
+    Size size(image_msg->width,image_msg->height);
+	cv::Mat image_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, img);
+    cv::Mat imgResized;
+    resize(image_cv, imgResized, size);
 
-	//Mat open_cv_image = Mat(crop_h, crop_w, CV_8UC3, cropped_img, 0);
-	//imshow("Neural Object Detector", open_cv_image);
-    //waitKey(1);
+	unsigned char *resized_img = imgResized.data;
 
-	vector<bbox_t> predictions = run_EfficientDet(img, crop_w, crop_h, timestamp);
+	vector<bbox_t> predictions = run_EfficientDet(resized_img, image_msg->width, image_msg->height, timestamp);
 
 	//publish_moving_objects_message(image_msg->timestamp, &msg);
 
