@@ -5,7 +5,8 @@
 #define MIN_POS_DISTANCE  0.2 // the carmen grid map resolution
 
 #define OPENCV 1
-#define THETA_SIZE 3
+#define THETA_SIZE 1
+#define ASTAR_GRID_RESOLUTION 1.0
 
 
 int aif = 0;
@@ -333,8 +334,8 @@ alloc_astar_map(carmen_obstacle_distance_mapper_map_message *distance_map)
 	int i, j, z;
 //	int theta_size = round(365 / 360);
 	int theta_size = THETA_SIZE;
-	int x_size = round(distance_map->config.x_size / distance_map->config.resolution + 1);
-	int y_size = round(distance_map->config.y_size / distance_map->config.resolution + 1);
+	int x_size = round(distance_map->config.x_size / ASTAR_GRID_RESOLUTION + 1);
+	int y_size = round(distance_map->config.y_size / ASTAR_GRID_RESOLUTION + 1);
 	int direction_size = 2;
 //	int x_size = round(distance_map->config.x_size);
 //	int y_size = round(distance_map->config.y_size);
@@ -553,14 +554,14 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
         	{
         		if(astar_map[pos_x][pos_y][pos_theta][pos_direction] != NULL && astar_map[pos_x][pos_y][pos_theta][pos_direction]->is_open == 1)
         		{
-        			if(new_state->g < astar_map[pos_x][pos_y][pos_theta][pos_direction]->f)
+        			if(new_state->g <= astar_map[pos_x][pos_y][pos_theta][pos_direction]->f)
 					{
         				astar_map[pos_x][pos_y][pos_theta][pos_direction]->is_open = 0;
 					}
         		}
         		if(astar_map[pos_x][pos_y][pos_theta][pos_direction] != NULL && astar_map[pos_x][pos_y][pos_theta][pos_direction]->is_closed == 1)
 				{
-					if(new_state->g < astar_map[pos_x][pos_y][pos_theta][pos_direction]->f)
+					if(new_state->g <= astar_map[pos_x][pos_y][pos_theta][pos_direction]->f)
 					{
 						astar_map[pos_x][pos_y][pos_theta][pos_direction]->is_closed = 0;
 					}
@@ -793,11 +794,12 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 		else
 		{
 			//if (state_node_exist(current_state, closed_set) == 0)
-			if(astar_map[pos_x][pos_y][pos_theta][pos_direction]->is_closed == 0)
+			if(astar_map[pos_x][pos_y][pos_theta][pos_direction]->is_closed == 0 && astar_map[pos_x][pos_y][pos_theta][pos_direction]->is_open == 1)
 			{
 				expand_state(current_state, goal_state, closed_set, open_set, robot_config, distance_map);
 //				astar_map[pos_x][pos_y][pos_theta][pos_direction]->status = 0;
 				astar_map[pos_x][pos_y][pos_theta][pos_direction]->is_closed = 1;
+				astar_map[pos_x][pos_y][pos_theta][pos_direction]->is_open = 0;
 				closed_set.push_back(current_state);
 				if(OPENCV)
 				    draw_point_on_map_img(current_state->state.x, current_state->state.y, distance_map->config, 139, 0, 139);
@@ -816,8 +818,8 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 
 	int i, j, k, z;
 
-	int x_size = round(distance_map->config.x_size / distance_map->config.resolution + 1);
-	int y_size = round(distance_map->config.y_size / distance_map->config.resolution + 1);
+	int x_size = round(distance_map->config.x_size / ASTAR_GRID_RESOLUTION + 1);
+	int y_size = round(distance_map->config.y_size / ASTAR_GRID_RESOLUTION + 1);
 	int direction_size = 2;
 
 	for (i = 0; i < x_size; i++)
