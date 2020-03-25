@@ -17,6 +17,8 @@ from PIL import Image
 from model import DeepLabModel
 from visualize import vis_segmentation, label_to_color_image
 
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
 saved_path = carmen_home + '/sharedlib/Deeplab/deeplab_model_cityscapes.tar.gz'
 model = DeepLabModel(saved_path)
 
