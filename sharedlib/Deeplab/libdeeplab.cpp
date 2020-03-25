@@ -64,6 +64,8 @@ initialize_visualize_module()
 void
 initialize_inference_context()
 {
+	initialize_python_path();
+
 	Py_Initialize();
 	import_array();
 
