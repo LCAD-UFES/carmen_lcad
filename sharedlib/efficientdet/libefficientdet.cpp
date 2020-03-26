@@ -120,30 +120,30 @@ run_EfficientDet(unsigned char *image, int width, int height, double timestamp)
 	if (PyErr_Occurred())
 	        PyErr_Print();
 
-	float* result_array = (float*) PyArray_DATA(python_result_array);
+	int num_objs = (int)python_result_array->dimensions[0];
+	double* result_array = (double*) PyArray_DATA(python_result_array);
 	std::vector<bbox_t> bbox_vector;
-	int num_objs = (int)result_array[0];
-	float *result = (float*) &result_array[1];
-	std::cout << "num_objs = " << num_objs << std::endl; 
-	for(int i = 0; i < (num_objs * 6); i++)
+
+	//std::cout << "result = " << result_array[0] << " " << result_array[1] << " " << result_array[2] <<" " << result_array[3] << " " << result_array[4] << " " << result_array[5] << std::endl; 
+	for(int i = 0; i < (num_objs * 6); i=i+6)
 	{
+		//x, y, width, height, score, class
 		bbox_t pred = {};
-		pred.x = 		result[(i * 6)];
-		pred.y = 		result[(i * 6) + 1];
-		pred.w = 		result[(i * 6) + 2];
-		pred.h = 		result[(i * 6) + 3];
-		pred.obj_id = 	result[(i * 6) + 4];
-		pred.prob = 	result[(i * 6) + 5];
+		pred.x = 		result_array[(i * 6)];
+		pred.y = 		result_array[(i * 6) + 1];
+		pred.w = 		result_array[(i * 6) + 2];
+		pred.h = 		result_array[(i * 6) + 3];
+		pred.prob = 	result_array[(i * 6) + 4];
+		pred.obj_id = 	result_array[(i * 6) + 5];
 		pred.track_id = 0;
 		bbox_vector.push_back(pred);
-		i = i + 6;
 	}
 
 	if (PyErr_Occurred())
         PyErr_Print();
 
 	Py_DECREF(numpyArray);
-	//Py_DECREF(python_result_array);
+	Py_DECREF(python_result_array);
 
 	return bbox_vector;
 }
