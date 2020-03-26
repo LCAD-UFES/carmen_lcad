@@ -6,7 +6,7 @@
 Updates:
 
   - **Mar24: Add tutorial with visualization and coco eval: [tutorial.ipynb](tutorial.ipynb)**
-  - Mar 13: release the code.
+  - Mar 13: Release the initial code and models.
 
 ## 1. About EfficientDet Models
 
@@ -16,7 +16,7 @@ EfficientDets are a family of object detection models, which achieve state-of-th
 EfficientDets are developed based on the advanced backbone, a new BiFPN, and a new scaling technique:
 
 <p align="center">
-<img src="./g3doc/network.png" width="80%" />
+<img src="./g3doc/network.png" width="800" />
 </p>
 
   * **Backbone**: we employ the more advanced [EfficientNets](https://arxiv.org/abs/1905.11946) as our backbone networks.
@@ -71,10 +71,13 @@ We have provided a list of EfficientNet checkpoints for EfficientNet checkpoints
     $ python model_inspect.py --runmode=infer --model_name=$MODEL --ckpt_path=$CKPT_PATH --input_image=testdata/img1.jpg --output_image_dir=/tmp
     # you can visualize the output /tmp/0.jpg
 
-Here is an example of EfficientDet-D0 visualization:
-[example image](https://user-images.githubusercontent.com/6027221/77340634-d16dc300-6cea-11ea-822c-63853f457329.jpg)
+Here is an example of EfficientDet-D0 visualization: more on [tutorial](tutorial.ipynb)
 
-## 3. Eval on COCO 2017 val.
+<p align="center">
+<img src="https://user-images.githubusercontent.com/6027221/77340634-d16dc300-6cea-11ea-822c-63853f457329.jpg" width="800" />
+</p>
+
+## 4. Eval on COCO 2017 val.
 
     // Download coco data.
     $ wget http://images.cocodataset.org/zips/val2017.zip
@@ -97,7 +100,7 @@ Here is an example of EfficientDet-D0 visualization:
         --val_json_file=annotations/instances_val2017.json  \
         --hparams="use_bfloat16=false" --use_tpu=False
 
-## 4. Training EfficientDets on single GPU.
+## 5. Training EfficientDets on single GPU.
 
     $ python main.py --training_file_pattern=/coco_tfrecord/train* \
         --model_name=$MODEL \
@@ -105,7 +108,7 @@ Here is an example of EfficientDet-D0 visualization:
         --hparams="use_bfloat16=false" --use_tpu=False
 
 
-## 5. Training EfficientDets on TPUs.
+## 6. Training EfficientDets on TPUs.
 
 To train this model on Cloud TPU, you will need:
 
@@ -116,7 +119,7 @@ To train this model on Cloud TPU, you will need:
 Then train the model:
 
     $ export PYTHONPATH="$PYTHONPATH:/path/to/models"
-    $ python main.py --tpu=TPU_NAME --data_dir=DATA_DIR --model_dir=MODEL_DIR
+    $ python main.py --tpu=TPU_NAME --training_file_pattern=DATA_DIR/*.tfrecord --model_dir=MODEL_DIR
 
     # TPU_NAME is the name of the TPU node, the same name that appears when you run gcloud compute tpus list, or ctpu ls.
     # MODEL_DIR is a GCS location (a URL starting with gs:// where both the GCE VM and the associated Cloud TPU have write access.
@@ -128,3 +131,4 @@ For more instructions about training on TPUs, please refer to the following tuto
   * EfficientNet tutorial: https://cloud.google.com/tpu/docs/tutorials/efficientnet
   * RetinaNet tutorial: https://cloud.google.com/tpu/docs/tutorials/retinanet
 
+NOTE: this is not an official Google product.

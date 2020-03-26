@@ -33,6 +33,6 @@ camera_to_efficientdet: libefficientdet.o camera_to_efficientdet.o
 
 # https://stackoverflow.com/questions/7369145/activating-a-virtualenv-using-a-shell-script-doesnt-seem-to-work
 virtualenv:
-	. create_env.sh
+	. install_requirements.sh
 
 include $(CARMEN_HOME)/src/Makefile.rules
