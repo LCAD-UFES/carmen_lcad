@@ -55,7 +55,7 @@ def initialize(width, height):
     tf.reset_default_graph()
     tf.compat.v1.disable_eager_execution()
     driver = inference.ServingDriver(model_name, ckpt_path)
-    
+    driver.build()
     print("\n\n-------------------------------------------------------")
     print("       EfficientDet loaded!")
     print("-------------------------------------------------------\n\n")
@@ -66,12 +66,17 @@ def efficientdet_process_image(carmen_image, timestamp):
     global driver
 
     # converter a imagem
-    print ("opaaaa!! entrou no efficientdet_process_image")
+    #print ("opaaaa!! entrou no efficientdet_process_image")
     image = Image.fromarray(carmen_image)
     #image.show()
     predictions = driver.serve(image)
     out_image = driver.visualize(image, predictions[0])
+    preds = predictions[0]
+    print(preds[:, 1:6])
+    print()
+    #[image_id, x, y, width, height, score, class].
+
     cv2.imshow('test', out_image)
     cv2.waitKey(1)
 
-    return [0, None]
+    return [preds.shape(0), preds[:, 1:6]]

@@ -2,6 +2,10 @@
 #include "libefficientdet.h"
 #include <numpy/arrayobject.h>
 #include <stdlib.h> /* getenv */
+#include <string>
+#include <iostream>
+#include <cstdlib>
+#include <fstream>
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 // #include <iostream>
@@ -116,10 +120,11 @@ run_EfficientDet(unsigned char *image, int width, int height, double timestamp)
 	if (PyErr_Occurred())
 	        PyErr_Print();
 
-	long long int* result_array = (long long int*)PyArray_DATA(python_result_array);
+	float* result_array = (float*) PyArray_DATA(python_result_array);
 	std::vector<bbox_t> bbox_vector;
 	int num_objs = (int)result_array[0];
-	long long int *result = (long long int*) result_array[1];
+	float *result = (float*) &result_array[1];
+	std::cout << "num_objs = " << num_objs << std::endl; 
 	for(int i = 0; i < (num_objs * 6); i++)
 	{
 		bbox_t pred = {};
