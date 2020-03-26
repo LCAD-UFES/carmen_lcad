@@ -500,7 +500,7 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
         	// Utilizando expansão não-holonomica
         	if(NHOLONOMIC)
         	{
-        		new_state->state = carmen_libcarmodel_recalc_pos_ackerman(current_state->state, target_v[i], target_phi, 0.25, &distance_traveled, DELTA_T, robot_config);
+        		new_state->state = carmen_libcarmodel_recalc_pos_ackerman(current_state->state, target_v[i], target_phi, 0.50, &distance_traveled, DELTA_T, robot_config);
 
 //        		new_state->state = carmen_conventional_astar_ackerman_kinematic_3(current_state->state, robot_config.distance_between_front_and_rear_axles, target_phi, target_v[i] * 0.5);
 
@@ -523,7 +523,7 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
         	new_state->g = current_state->g + DIST2D(current_state->state, new_state->state);
         	// h = current até o goal
 //        	new_state->h = DIST2D(new_state->state, current_state->state) + current_state->h;
-        	new_state->h = DIST2D(new_state->state, goal_state->state);
+        	new_state->h = 0;//DIST2D(new_state->state, goal_state->state);
         	new_state->f = new_state->g + new_state->h;
 //        	if(abs(new_state->state.phi - current_state->state.phi) > 0.20)
 //        		new_state->f -= 1;
