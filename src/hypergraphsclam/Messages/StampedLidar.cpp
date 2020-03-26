@@ -127,7 +127,6 @@ void StampedLidar::LoadPointCloud(const std::string &cloud_path, PointCloudHSV &
     if (!input.is_open())
     {
         throw std::runtime_error("Could not open the input file\n");
-
     }
 
     // clear the point cloud
