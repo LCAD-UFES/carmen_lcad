@@ -852,7 +852,7 @@ bool GrabData::BuildLidarLoopMeasure(
     {
         // get the desired transformation
         loop_measurement = GetSE2FromEigenMatrix(gicp.getFinalTransformation());
-        g2o::Vector3D v = loop_measurement.toVector();
+        Eigen::Vector3d v = loop_measurement.toVector();
         if (min_speed < std::fabs(v[0]) || min_speed < std::fabs(v[1]) || min_speed < std::fabs(v[2]))
         {
             return true;
@@ -1337,13 +1337,21 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
         gicp.setTransformationEpsilon(1e-06);
         gicp.setMaximumIterations(2000);
 
+        // the voxel grid filtering
+        VoxelGridFilter grid_filtering;
+
+        // set the voxel value
+        grid_filtering.setLeafSize(StampedLidar::vg_leaf, StampedLidar::vg_leaf, StampedLidar::vg_leaf);
+
+        SimpleLidarSegmentation segm;
+
         // iterators
         StampedLidarPtrVector::iterator end(lidar_messages.end());
         StampedLidarPtrVector::iterator it(lidar_messages.begin());
 
         unsigned lmsize = lidar_messages.size();
         unsigned counter = 0, match_counter = 0;
-        unsigned percent = lmsize / 20;
+        unsigned percent = lmsize / 40;
 
         std::string path("/dados/tmp/loops/");
 
@@ -1363,7 +1371,7 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
             counter += 1;
 
             // std::cout << counter << " of " << lmsize << std::endl;
-            if (0 == percent % counter) { std::cout << "-"; }
+            if (0 == percent % counter) { std::cout << "-" << std::flush; }
 
             // get the current lidar message pointer
             StampedLidarPtr current = *it;
@@ -1406,26 +1414,12 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
 
                 if (!use_restricted_loops || M_PI_2 > ad)
                 {
-                    // the current cloud
-                    pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
-
-                    // try to open the current cloud
-                    if (-1 == pcl::io::loadPCDFile(current->path, *current_cloud))
-                    {
-                        throw std::runtime_error("Could not open the source cloud");
-                    }
-
                     // found it
                     StampedLidarPtr lidar_loop = *loop;
 
-                    // load the loop cloud
-                    pcl::PointCloud<pcl::PointXYZHSV>::Ptr loop_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
-
-                    // try to open the next cloud
-                    if (-1 == pcl::io::loadPCDFile(lidar_loop->path, *loop_cloud))
-                    {
-                        throw std::runtime_error("Could not open the target cloud");
-                    }
+                    // load the current de loop  cloud
+                    pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(GetFilteredPointCloud(segm, grid_filtering, current));
+                    pcl::PointCloud<pcl::PointXYZHSV>::Ptr loop_cloud(GetFilteredPointCloud(segm, grid_filtering, lidar_loop));
 
                     if (BuildLidarLoopMeasure(gicp, min_dist * 2.0, ad, current_cloud, loop_cloud, current->loop_measurement))
                     {
@@ -1482,6 +1476,14 @@ bool GrabData::BuildExternalLidarLoopClosureMeasures(
         gicp.setTransformationEpsilon(1e-06);
         gicp.setMaximumIterations(2000);
 
+        // the voxel grid filtering
+        VoxelGridFilter grid_filtering;
+
+        // set the voxel value
+        grid_filtering.setLeafSize(StampedLidar::vg_leaf, StampedLidar::vg_leaf, StampedLidar::vg_leaf);
+
+        SimpleLidarSegmentation segm;
+
         pcl::KdTreeFLANN<pcl::PointXY> kdtree;
         pcl::PointCloud<pcl::PointXY>::Ptr cloud(new pcl::PointCloud<pcl::PointXY>());
         std::unordered_map<int, StampedLidarPtr> refs;
@@ -1527,19 +1529,8 @@ bool GrabData::BuildExternalLidarLoopClosureMeasures(
 
                     if (!use_restricted_loops || M_PI_2 > ad)
                     {
-                        pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
-
-                        if (-1 == pcl::io::loadPCDFile(internal->path, *current_cloud))
-                        {
-                            throw std::runtime_error("Could not open the source cloud");
-                        }
-
-                        pcl::PointCloud<pcl::PointXYZHSV>::Ptr loop_cloud(new pcl::PointCloud<pcl::PointXYZHSV>());
-
-                        if (-1 == pcl::io::loadPCDFile(external->path, *loop_cloud))
-                        {
-                            throw std::runtime_error("Could not open the target cloud");
-                        }
+                        pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(GetFilteredPointCloud(segm, grid_filtering, internal));
+                        pcl::PointCloud<pcl::PointXYZHSV>::Ptr loop_cloud(GetFilteredPointCloud(segm, grid_filtering, external));
 
                         // try the icp method
                         if (BuildLidarLoopMeasure(gicp, nd * 2.0, ad, current_cloud, loop_cloud, internal->external_loop_measurement))

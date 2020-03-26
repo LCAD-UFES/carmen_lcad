@@ -335,19 +335,19 @@ void HyperGraphSclamOptimizer::InitializeOptimizer()
     optimizer = new g2o::SparseOptimizer();
 
     // allocate a new cholmod solver
-    HyperCholmodSolver *cholmod_solver = new HyperCholmodSolver();
+    std::unique_ptr<HyperCholmodSolver> cholmod_solver(new HyperCholmodSolver());
 
     // the block ordering
     cholmod_solver->setBlockOrdering(false);
 
     // the base solver
-    g2o::Solver *solver = new HyperBlockSolver(cholmod_solver);
+    std::unique_ptr<g2o::Solver> solver(new HyperBlockSolver(std::move(cholmod_solver)));
 
     // the base solver
-    g2o::OptimizationAlgorithm *optimization_algorithm = new g2o::OptimizationAlgorithmGaussNewton(solver);
+    g2o::OptimizationAlgorithm *optimization_algorithm = new g2o::OptimizationAlgorithmGaussNewton(std::move(solver));
 
     // set the cholmod solver
-    optimizer->setAlgorithm(solver);
+    optimizer->setAlgorithm(optimization_algorithm);
 
     // set the verbose mode
     optimizer->setVerbose(true);
