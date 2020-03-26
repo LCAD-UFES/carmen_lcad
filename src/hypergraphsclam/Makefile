@@ -5,10 +5,10 @@ MODULE_COMMENT = Sensor Calibration
 
 LINK = g++
 
-CXXFLAGS += -std=c++11 -O2 -Wno-deprecated-declarations
+CXXFLAGS += -std=c++11 -O3 -Wno-deprecated-declarations
 
 #cheating
-IFLAGS += -std=c++11 -O2
+IFLAGS += -std=c++11 -O3
 
 IFLAGS += -I$(CARMEN_HOME)/src/hypergraphsclam \
 	-I$(CARMEN_HOME)/src/hypergraphsclam/Helpers \
