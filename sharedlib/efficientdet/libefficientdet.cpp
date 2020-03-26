@@ -2,6 +2,10 @@
 #include "libefficientdet.h"
 #include <numpy/arrayobject.h>
 #include <stdlib.h> /* getenv */
+#include <string>
+#include <iostream>
+#include <cstdlib>
+#include <fstream>
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 // #include <iostream>
@@ -20,14 +24,14 @@ void initialize_python_path_efficientdet()
 	putenv(ckpt_path);
 	char* pyPath;
 	char* pPath;
-	char* inplacePath;
+	char* effPath;
 	pyPath = (char *) "PYTHONPATH=";
   	pPath = getenv ("CARMEN_HOME");
-	inplacePath = (char *) "/sharedlib/efficientdet";
-    char * path = (char *) malloc(1 + strlen(pyPath) + strlen(pPath)+ strlen(inplacePath));
+	effPath = (char *) "/sharedlib/efficientdet";
+    char * path = (char *) malloc(1 + strlen(pyPath) + strlen(pPath)+ strlen(effPath));
 	strcpy(path, pyPath);
     strcat(path, pPath);
-    strcat(path, inplacePath);
+    strcat(path, effPath);
 	putenv(path);
 }
 
@@ -45,7 +49,7 @@ initialize_Efficientdet(int width, int height)
 	if (python_module == NULL)
 	{
 		Py_Finalize();
-		exit(printf("Error: The python_module run_test could not be loaded.\nMaybe PYTHONPATH is not set.\n"));
+		exit(printf("Error: The python_module run_efficientdet could not be loaded.\nMaybe PYTHONPATH is not set.\n"));
 	}
 
 	if (PyErr_Occurred())
@@ -116,10 +120,11 @@ run_EfficientDet(unsigned char *image, int width, int height, double timestamp)
 	if (PyErr_Occurred())
 	        PyErr_Print();
 
-	long long int** result_array = (long long int**)PyArray_DATA(python_result_array);
+	float* result_array = (float*) PyArray_DATA(python_result_array);
 	std::vector<bbox_t> bbox_vector;
-	int num_objs = (int)result_array[0][0];
-	long long int *result = (long long int*) result_array[0][1];
+	int num_objs = (int)result_array[0];
+	float *result = (float*) &result_array[1];
+	std::cout << "num_objs = " << num_objs << std::endl; 
 	for(int i = 0; i < (num_objs * 6); i++)
 	{
 		bbox_t pred = {};
