@@ -64,22 +64,13 @@ def efficientdet_process_image(carmen_image, timestamp):
     global model_name
     global ckpt_path
     global driver
-
     # converter a imagem
-    #print ("opaaaa!! entrou no efficientdet_process_image")
     image = Image.fromarray(carmen_image)
-    #image.show()
     predictions = driver.serve(image)
-    out_image = driver.visualize(image, predictions[0])
-    preds = predictions[0]
-    
-    #print(preds[:, 1:6])
-    predret = np.array(preds[:,1:7], dtype=np.float)
-    #print(predret[0:2,:])
-    #print(predret.shape)
-    #[x, y, width, height, score, class].
-
+    #out_image = driver.visualize(image, predictions[0])
     #cv2.imshow('test', out_image)
     #cv2.waitKey(500)
-
+    preds = predictions[0]
+    predret = np.array(preds[:,1:7], dtype=np.float)
+    #print(preds[0:3, 1:7])
     return predret

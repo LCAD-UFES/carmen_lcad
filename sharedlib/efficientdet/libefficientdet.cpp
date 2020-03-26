@@ -124,20 +124,22 @@ run_EfficientDet(unsigned char *image, int width, int height, double timestamp)
 	double* result_array = (double*) PyArray_DATA(python_result_array);
 	std::vector<bbox_t> bbox_vector;
 
-	//std::cout << "result = " << result_array[0] << " " << result_array[1] << " " << result_array[2] <<" " << result_array[3] << " " << result_array[4] << " " << result_array[5] << std::endl; 
+	//std::cout << "result[0]= " << result_array[0] << " " << result_array[1] << " " << result_array[2] <<" " << result_array[3] << " " << result_array[4] << " " << result_array[5] << std::endl; 
+	//std::cout << "result[1]= " << result_array[6] << " " << result_array[7] << " " << result_array[8] <<" " << result_array[9] << " " << result_array[10] << " " << result_array[11] << std::endl; 
 	for(int i = 0; i < (num_objs * 6); i=i+6)
 	{
 		//x, y, width, height, score, class
 		bbox_t pred = {};
-		pred.x = 		result_array[(i * 6)];
-		pred.y = 		result_array[(i * 6) + 1];
-		pred.w = 		result_array[(i * 6) + 2];
-		pred.h = 		result_array[(i * 6) + 3];
-		pred.prob = 	result_array[(i * 6) + 4];
-		pred.obj_id = 	result_array[(i * 6) + 5];
+		pred.y = (unsigned int)	result_array[(i * 6)];
+		pred.x = (unsigned int)	result_array[(i * 6) + 1];
+		pred.h = abs((unsigned int)	result_array[(i * 6) + 2] - (unsigned int)	result_array[(i * 6)]) ;
+		pred.w = abs((unsigned int)	result_array[(i * 6) + 3] - (unsigned int)	result_array[(i * 6) + 1]);
+		pred.prob = (float)		result_array[(i * 6) + 4];
+		pred.obj_id = (unsigned int) result_array[(i * 6) + 5];
 		pred.track_id = 0;
 		bbox_vector.push_back(pred);
 	}
+	//std::cout << "bbox_vector: " << bbox_vector[0].x << " " << bbox_vector[0].y << " " << bbox_vector[0].w << " " <<  bbox_vector[0].h << " " << bbox_vector[0].prob << " " << bbox_vector[0].obj_id << std::endl;
 
 	if (PyErr_Occurred())
         PyErr_Print();
