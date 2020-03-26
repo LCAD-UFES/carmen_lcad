@@ -790,8 +790,8 @@ compute_hybrid_A_star_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose
 
 	vector<circle_node> circle_path = circle_exploration(robot_pose, goal_pose, distance_map);
 //
-	vector<state_node> path = heuristic_search(start_state, goal_state, circle_path, robot_config, distance_map);
-	printf("acabou!!\n");
+	//vector<state_node> path = heuristic_search(start_state, goal_state, circle_path, robot_config, distance_map);
+	//printf("acabou!!\n");
 
 	int rs_pathl;
 	int rs_numero;
@@ -800,31 +800,37 @@ compute_hybrid_A_star_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose
 	double vr;
 	double distance_traveled = 0.0;
 	carmen_ackerman_traj_point_t rs_points[5];
+	double v_step;
 
 	//draw_point_on_map_img(start_state->state.x, start_state->state.y, distance_map->config);
 	//draw_point_on_map_img(goal_state->state.x, goal_state->state.y, distance_map->config);
 
 	rs_init_parameters(robot_config.max_phi, robot_config.distance_between_front_and_rear_axles);
 
-//	reed_shepp(start_state->state, goal_state->state, &rs_numero, &tr, &ur, &vr);
-//	rs_pathl = constRS(rs_numero, tr, ur, vr, start_state->state, rs_points);
-//
-//	printf("Poses in Reed Sheep path: %d\n", rs_pathl);
-//	for (int i = rs_pathl - 1; i > 0 /*rs_pathl*/; i--)
-//	{
-//		carmen_ackerman_traj_point_t point = rs_points[i];
-//		while (DIST2D(point, rs_points[i+1]) > 2.0)
-////		for (int i = 0; i < 10; i++)
-//		{
-//			point = carmen_libcarmodel_recalc_pos_ackerman(point, 2.0, rs_points[i].phi,
-//					0.25, &distance_traveled, DELTA_T, robot_config);
-//
-//			draw_point_on_map_img(point.x, point.y, distance_map->config);
-//			//draw_point_on_map_img(rs_points[i].x, rs_points[i].y, distance_map->config);
-//			usleep(500000);
-//			printf("%lf %lf %lf %lf %lf\n", rs_points[i].x, rs_points[i].y, rs_points[i].theta, rs_points[i].v, rs_points[i].phi);
-//		}
-//	}
+	reed_shepp(start_state->state, goal_state->state, &rs_numero, &tr, &ur, &vr);
+	rs_pathl = constRS(rs_numero, tr, ur, vr, start_state->state, rs_points);
+
+	printf("Poses in Reed Sheep path: %d\n", rs_pathl);
+
+	for (int i = rs_pathl; i > 0 /*rs_pathl*/; i--)
+	{
+		carmen_ackerman_traj_point_t point = rs_points[i];
+		if (rs_points[i].v < 0.0)
+			v_step = 2.0;
+		else
+			v_step = -2.0;
+		while (DIST2D(point, rs_points[i-1]) > 0.5)
+//		for (int i = 0; i < 10; i++)
+		{
+			point = carmen_libcarmodel_recalc_pos_ackerman(point, v_step, rs_points[i].phi,
+					0.25, &distance_traveled, DELTA_T, robot_config);
+
+			draw_point_on_map_img(point.x, point.y, distance_map->config);
+			//draw_point_on_map_img(rs_points[i].x, rs_points[i].y, distance_map->config);
+			usleep(500000);
+			printf("%lf %lf %lf %lf %lf\n", rs_points[i].x, rs_points[i].y, rs_points[i].theta, rs_points[i].v, rs_points[i+1].phi);
+		}
+	}
 }
 
 void
