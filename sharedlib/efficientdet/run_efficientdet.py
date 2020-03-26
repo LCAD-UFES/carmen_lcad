@@ -72,5 +72,5 @@ def efficientdet_process_image(carmen_image, timestamp):
     #cv2.waitKey(500)
     preds = predictions[0]
     predret = np.array(preds[:,1:7], dtype=np.float)
-    #print(preds[0:3, 1:7])
+    print(preds[0:2, 1:7])
     return predret
