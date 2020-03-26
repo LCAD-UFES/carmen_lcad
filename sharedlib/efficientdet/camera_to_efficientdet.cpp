@@ -25,6 +25,7 @@ using namespace cv;
 
 int camera;
 int camera_side;
+int width, height;
 
 static const cv::Vec3b
 colormap_semantic[] =
@@ -130,18 +131,23 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     double timestamp = image_msg->timestamp;
 
-    Size size(image_msg->width,image_msg->height);
+    Size size(width,height);
 	cv::Mat image_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, img);
+	float IMAGE_HEIGHT_CROP = 0.91; //camera5
+	cv::cvtColor(image_cv, image_cv, cv::COLOR_RGB2BGR);
+	cv::Rect myROI(0, 0, (int) image_msg->width, (int) image_msg->height * IMAGE_HEIGHT_CROP); 
+	image_cv = image_cv(myROI);
+
     cv::Mat imgResized;
     resize(image_cv, imgResized, size);
 
 	unsigned char *resized_img = imgResized.data;
 
-	vector<bbox_t> predictions = run_EfficientDet(resized_img, image_msg->width, image_msg->height, timestamp);
+	vector<bbox_t> predictions = run_EfficientDet(resized_img, width, height, timestamp);
     predictions = filter_predictions_of_interest_efficientdet(predictions);
-    show_detections(image_cv, predictions);
+    show_detections(imgResized, predictions);
 
-    imshow("Image Semantic Segmentation", image_cv);
+    imshow("Image EfficientDet", imgResized);
 	cv::waitKey(1);
 	//publish_moving_objects_message(image_msg->timestamp, &msg);
 
@@ -179,7 +185,7 @@ read_parameters(int argc, char **argv)
     camera_side = atoi(argv[2]);        // 0 For left image 1 for right image
 
     int num_items;
-    int width, height;
+    
 
     char bumblebee_string[256];
     char camera_string[256];
