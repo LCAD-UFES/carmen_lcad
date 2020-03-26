@@ -482,9 +482,9 @@ void on_menuDisplay_ShowPathPlans_toggled (GtkCheckMenuItem* togglebutton __attr
 	global_gui->nav_panel_config->show_path_plans = gtk_check_menu_item_get_active(togglebutton);
 
 	if (global_gui->nav_panel_config->show_path_plans)
-		carmen_frenet_path_planner_subscribe_plan_message(&global_gui->frenet_path_planer_plan_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+		carmen_frenet_path_planner_subscribe_set_of_paths_message(&global_gui->frenet_path_planer_set_of_paths_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 	else
-		carmen_frenet_path_planner_subscribe_plan_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+		carmen_frenet_path_planner_subscribe_set_of_paths_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -1173,28 +1173,28 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 	if (global_gui->nav_panel_config->show_path_plans)
 	{
-		if ((global_gui->frenet_path_planer_plan != NULL) || (global_gui->frenet_path_planer_plan_size < global_gui->frenet_path_planer_plan_msg.number_of_poses))
+		if ((global_gui->frenet_path_planer_set_of_paths != NULL) || (global_gui->frenet_path_planer_number_of_paths < global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses))
 		{
-			free(global_gui->frenet_path_planer_plan);
-			global_gui->frenet_path_planer_plan = NULL;
+			free(global_gui->frenet_path_planer_set_of_paths);
+			global_gui->frenet_path_planer_set_of_paths = NULL;
 		}
 
-		global_gui->frenet_path_planer_plan_size = global_gui->frenet_path_planer_plan_msg.number_of_poses;
+		global_gui->frenet_path_planer_number_of_paths = global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses;
 
-		if (global_gui->frenet_path_planer_plan == NULL)
-			global_gui->frenet_path_planer_plan = (carmen_world_point_t *) malloc(sizeof(carmen_world_point_t) * global_gui->frenet_path_planer_plan_size);
+		if (global_gui->frenet_path_planer_set_of_paths == NULL)
+			global_gui->frenet_path_planer_set_of_paths = (carmen_world_point_t *) malloc(sizeof(carmen_world_point_t) * global_gui->frenet_path_planer_number_of_paths);
 
-		for (int j = 0; j < global_gui->frenet_path_planer_plan_msg.plan_size / global_gui->frenet_path_planer_plan_msg.number_of_poses; j++)
+		for (int j = 0; j < global_gui->frenet_path_planer_set_of_paths_msg.set_of_paths_size / global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses; j++)
 		{
-			for (int i = 0; i < global_gui->frenet_path_planer_plan_size; i++)
+			for (int i = 0; i < global_gui->frenet_path_planer_number_of_paths; i++)
 			{
-				global_gui->frenet_path_planer_plan[i].pose.x	  = global_gui->frenet_path_planer_plan_msg.plan[j * global_gui->frenet_path_planer_plan_msg.number_of_poses + i].x;
-				global_gui->frenet_path_planer_plan[i].pose.y	  = global_gui->frenet_path_planer_plan_msg.plan[j * global_gui->frenet_path_planer_plan_msg.number_of_poses + i].y;
-				global_gui->frenet_path_planer_plan[i].pose.theta = global_gui->frenet_path_planer_plan_msg.plan[j * global_gui->frenet_path_planer_plan_msg.number_of_poses + i].theta;
-				global_gui->frenet_path_planer_plan[i].map 	      = global_gui->controls_.map_view->internal_map;
+				global_gui->frenet_path_planer_set_of_paths[i].pose.x	  = global_gui->frenet_path_planer_set_of_paths_msg.set_of_paths[j * global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses + i].x;
+				global_gui->frenet_path_planer_set_of_paths[i].pose.y	  = global_gui->frenet_path_planer_set_of_paths_msg.set_of_paths[j * global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses + i].y;
+				global_gui->frenet_path_planer_set_of_paths[i].pose.theta = global_gui->frenet_path_planer_set_of_paths_msg.set_of_paths[j * global_gui->frenet_path_planer_set_of_paths_msg.number_of_poses + i].theta;
+				global_gui->frenet_path_planer_set_of_paths[i].map 	      = global_gui->controls_.map_view->internal_map;
 			}
 
-			global_gui->draw_path(global_gui->frenet_path_planer_plan, global_gui->frenet_path_planer_plan_size, carmen_light_green, carmen_light_green, the_map_view);
+			global_gui->draw_path(global_gui->frenet_path_planer_set_of_paths, global_gui->frenet_path_planer_number_of_paths, carmen_light_green, carmen_light_green, the_map_view);
 		}
 	}
 

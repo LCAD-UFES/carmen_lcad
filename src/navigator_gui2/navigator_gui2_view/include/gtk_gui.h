@@ -272,9 +272,9 @@ namespace View
 		int	 is_filming;
 		int filming_timeout;
 
-		carmen_frenet_path_planner_plan_message frenet_path_planer_plan_msg;
-		carmen_world_point_t *frenet_path_planer_plan;
-		int frenet_path_planer_plan_size;
+		carmen_frenet_path_planner_set_of_paths frenet_path_planer_set_of_paths_msg;
+		carmen_world_point_t *frenet_path_planer_set_of_paths;
+		int frenet_path_planer_number_of_paths;
 
 		carmen_navigator_ackerman_plan_message obstacle_avoider_msg;
 		carmen_world_point_t *obstacle_avoider_path;

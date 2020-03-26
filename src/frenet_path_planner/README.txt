@@ -29,3 +29,35 @@ velocidade de variacao de phi, de aceleracao do carro, de forca centrifuga, ou d
 por espacos estreitos (cancela, por exemplo). Este plano especial seria especificado como um afastamento especifico na dimensao d do FF da R, e uma distancia D(s).
 
 
+Para rodar o frenet_path_planner junto com o simulador udacity:
+- Compile o codigo de interface entre o simulador e o carmen_lcad
+ cd PathPlanning
+ mkdir build
+ cd build
+ cmake ..
+ make
+
+- Rode o central e o process apropriado:
+Abra um terminal e rode o cetral
+ cd carmen_lcad/bin
+ ./central
+
+Abra um terminal e rode o process
+ ./proccontrol process-navigate-udacity.ini
+
+- Rode a interface com o simulador da Udacity e o simulador
+
+Abra um terminal e rode:
+ cd src/frenet_path_planner/PathPlanning/build
+ ./path_planning
+
+Abra um terminal e rode:
+ cd src/frenet_path_planner/term3_sim_linux
+ ./term3_sim.x86_64
+
+Escolha a qualidade da simulacao e clique Select
+
+
+TODO:
+Checar o uso de carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles() em compute_proximity_to_obstacles_using_distance_map() e path_has_collision_or_phi_exceeded()
+

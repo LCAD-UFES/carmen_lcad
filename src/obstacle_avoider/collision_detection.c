@@ -742,6 +742,8 @@ carmen_collision_detection_in_car_coordinate_frame(const carmen_point_t point, c
 	path_point_in_map_coords.x = (localizer_pose->x + x_disp * coss - y_disp * sine);
 	path_point_in_map_coords.y = (localizer_pose->y + x_disp * sine + y_disp * coss);
 
+	path_point_in_map_coords.theta = localizer_pose->theta;
+
 	return (path_point_in_map_coords);
 }
 
@@ -935,6 +937,36 @@ carmen_robot_ackerman_config_t robot_config __attribute__ ((unused)), carmen_obs
 		}
 	}
 	return (proximity_to_obstacles);
+}
+
+
+int
+carmen_obstacle_avoider_car_collides_with_moving_object(carmen_point_t car_pose, carmen_point_t moving_object_pose,
+		t_point_cloud_struct *moving_object, double longitudinal_safety_magin)
+{
+	check_collision_config_initialization();
+
+	double l = moving_object->length + longitudinal_safety_magin;
+	double w = moving_object->width;
+	for (double displacement = -(l / w) / 2.0; displacement < (l / w) / 2.0; displacement += w / 2.0)
+	{
+		carmen_ackerman_traj_point_t mop = {moving_object_pose.x, moving_object_pose.y, moving_object_pose.theta, 0.0, 0.0};
+		carmen_point_t displaced_moving_object_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&mop,
+				displacement);
+
+		for (int i = 0; i < global_collision_config.n_markers; i++)
+		{
+			carmen_ackerman_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, 0.0, 0.0};
+			carmen_point_t displaced_localizer_pose = carmen_collision_detection_displaced_pose_according_to_car_orientation(&cp,
+					global_collision_config.markers[i].x, global_collision_config.markers[i].y);
+
+			double distance = DIST2D(displaced_localizer_pose, displaced_moving_object_pose);
+			if (distance <= (global_collision_config.markers[i].radius + (moving_object->width / 2.0)))
+				return (1);
+		}
+	}
+
+	return (0);
 }
 
 

@@ -40,7 +40,9 @@ LFLAGS += \
 	-lobstacle_distance_mapper_interface \
 	-ludatmo \
 	-lmoving_objects_interface \
-	-lvoice_interface_interface `python3.5-config --libs` \
+	-lvoice_interface_interface \
+	-lfrenet_path_planner_interface \
+	`python3.5-config --libs` \
 	`pkg-config --libs opencv`
 	
 LFLAGS += -lrddf_util -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper

@@ -1,3 +1,4 @@
+#include <vector>
 #include <carmen/carmen.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/path_planner_messages.h>
@@ -17,6 +18,8 @@
 #include <carmen/voice_interface_messages.h>
 #include <carmen/voice_interface_interface.h>
 #include <carmen/collision_detection.h>
+#include <carmen/frenet_path_planner_interface.h>
+#include <carmen/moving_objects_interface.h>
 
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"
@@ -27,6 +30,8 @@
 
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
+
+using namespace std;
 
 static int necessary_maps_available = 0;
 static bool obstacle_avoider_active_recently = false;
@@ -77,6 +82,9 @@ static double original_model_predictive_planner_obstacles_safe_distance;
 static double carmen_ini_max_velocity;
 
 static bool soft_stop_on = false;
+
+static carmen_frenet_path_planner_set_of_paths *current_set_of_paths = NULL;
+static carmen_moving_objects_point_clouds_message *current_moving_objects = NULL;
 
 
 int
@@ -661,7 +669,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	double car_pose_to_car_front = get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
 	// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
 	double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) + car_pose_to_car_front;
-	double desired_distance = carmen_fmax(1.4 * min_dist_according_to_car_v, car_pose_to_car_front + 2.5);
+	double desired_distance = carmen_fmax(1.0 * min_dist_according_to_car_v, car_pose_to_car_front + 2.5);
 
 	double distance = udatmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
 	double moving_obj_v = udatmo_speed_front();
@@ -1092,6 +1100,19 @@ publish_simulated_objects()
 	virtual_laser_message.host = carmen_get_host();
 	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 	virtual_laser_message.num_positions = 0;
+}
+
+
+void
+publish_new_best_path(int best_path, double timestamp)
+{
+	carmen_frenet_path_planner_selected_path selected_path_message;
+
+	selected_path_message.selected_path = best_path;
+	selected_path_message.timestamp = timestamp;
+	selected_path_message.host = carmen_get_host();
+
+	carmen_frenet_path_planner_publish_selected_path_message(&selected_path_message);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1587,6 +1608,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 	int goal_list_size;
 	carmen_ackerman_traj_point_t *goal_list = behavior_selector_get_goal_list(&goal_list_size);
+
 	carmen_ackerman_traj_point_t *first_goal = &(goal_list[0]);
 	int goal_type = behavior_selector_get_goal_type()[0];
 
@@ -1635,6 +1657,263 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 	publish_current_state(behavior_selector_state_message);
 }
+
+
+double
+compute_s_range(carmen_ackerman_traj_point_t *poses_ahead, int num_poses)
+{
+	double s_range = 0.0;
+	for (int i = 0; i < num_poses; i++)
+		s_range += DIST2D(poses_ahead[i], poses_ahead[i + 1]);
+
+	return (s_range);
+}
+
+
+void
+get_s_and_d_values(carmen_ackerman_traj_point_t *poses, int nearest_pose, t_point_cloud_struct *moving_object,
+		double &estimated_s_v, double &estimated_d_t_0, double &estimated_d_v)
+{
+	double distance_moving_object_to_nearest_path_pose = DIST2D(poses[nearest_pose], moving_object->object_pose);
+	double angle = ANGLE2D(poses[nearest_pose], moving_object->object_pose);
+	double angle_with_respect_to_nearest_path_pose = carmen_normalize_theta(angle - poses[nearest_pose].theta);
+
+	estimated_d_t_0 = distance_moving_object_to_nearest_path_pose * sin(angle_with_respect_to_nearest_path_pose);
+
+	double angle_difference = carmen_normalize_theta(moving_object->orientation - poses[nearest_pose].theta);
+	estimated_s_v = moving_object->linear_velocity * cos(angle_difference);
+	estimated_d_v = moving_object->linear_velocity * sin(angle_difference);
+}
+
+
+int
+collision_s_distance(carmen_frenet_path_planner_set_of_paths *current_set_of_paths, int path_id,
+		vector<vector <carmen_point_t> > moving_objects_poses, double delta_t, int num_samples,
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	if (!current_moving_objects)
+		return (0);
+
+	carmen_ackerman_traj_point_t *path = &(current_set_of_paths->set_of_paths[path_id * current_set_of_paths->number_of_poses]);
+
+	int min_collision_s_distance = num_samples;
+	for (int s = 0; s < num_samples; s++)
+	{
+		double t = (double) s * delta_t;
+		double a = get_robot_config()->maximum_acceleration_forward;
+		double v = current_robot_pose_v_and_phi.v + a * t;
+		if (v > get_max_v())
+			v = get_max_v();
+		double s_displacement = v * t;
+		double s_range = 0.0;
+		int i;
+		for (i = 0; (s_range < s_displacement) && (i < current_set_of_paths->number_of_poses - 1); i++)
+			s_range += DIST2D(path[i], path[i + 1]);
+
+		if (i == current_set_of_paths->number_of_poses - 1)
+			return (min_collision_s_distance);
+
+		carmen_point_t car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&(path[i]), s_displacement - s_range);
+
+		for (int i = 0; i < current_moving_objects->num_point_clouds; i++)
+		{
+			double longitudinal_safety_magin = 1.0 * current_moving_objects->point_clouds[i].linear_velocity;
+			if (carmen_obstacle_avoider_car_collides_with_moving_object(car_pose, moving_objects_poses[s][i],
+					&(current_moving_objects->point_clouds[i]), longitudinal_safety_magin))
+			{
+				virtual_laser_message.positions[virtual_laser_message.num_positions].x = car_pose.x;
+				virtual_laser_message.positions[virtual_laser_message.num_positions].y = car_pose.y;
+				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
+				virtual_laser_message.num_positions++;
+				min_collision_s_distance = s;
+				break;
+			}
+		}
+	}
+
+	return (min_collision_s_distance);
+}
+
+
+double
+evaluate_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths, int path_id, int number_of_paths,
+		vector<vector <carmen_point_t> > moving_objects_poses, double delta_t, int num_samples,
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	double goal_v = 0.0;
+	int s_distance = collision_s_distance(current_set_of_paths, path_id, moving_objects_poses, delta_t, num_samples,
+			current_robot_pose_v_and_phi);
+	double proximity_to_rddf = 0.0; // number_of_paths - abs(path_id - number_of_paths / 2);
+
+	double path_value = 1000.0 * goal_v + 10.0 * (double) s_distance + proximity_to_rddf;
+
+	return (path_value);
+}
+
+
+int
+find_nearest_pose(carmen_ackerman_traj_point_t *path, int path_size, carmen_vector_3D_t object_pose)
+{
+	int i = 0;
+	int nearest_pose = i;
+	double min_distance = DIST2D(path[i], object_pose);
+	for (i = 1; i < path_size; i++)
+	{
+		double distance = DIST2D(path[i], object_pose);
+		if (distance < min_distance)
+		{
+			nearest_pose = i;
+			min_distance = distance;
+		}
+	}
+
+	return (nearest_pose);
+}
+
+
+carmen_point_t
+simulate_moving_object_movement(t_point_cloud_struct *moving_object, carmen_ackerman_traj_point_t *path, int path_size,
+		carmen_ackerman_traj_point_t *poses_back, int number_of_poses_back, double t)
+{
+	carmen_point_t moving_object_pose;
+
+	double estimated_d_t_0 = 0.0;	// mais proximo da pose do moving_object e ajustar para o ponto intermediario entre duas poses
+									// do poses_back ou path para maior precisao.
+	double estimated_s_v = moving_object->linear_velocity;  // Pegar a diferenca entre o angulo do path (ou da poses_back) e o angulo
+	double estimated_d_v = 0.0;								// da velocidade do moving_object, e calcular a velocidade longitudinal e
+															// transversal...
+
+	int nearest_pose_front = find_nearest_pose(path, path_size, moving_object->object_pose);
+	int nearest_pose_back = find_nearest_pose(poses_back, number_of_poses_back, moving_object->object_pose);
+	if (nearest_pose_front > nearest_pose_back)
+		get_s_and_d_values(path, nearest_pose_front, moving_object, estimated_s_v, estimated_d_t_0, estimated_d_v);
+	else
+		get_s_and_d_values(poses_back, nearest_pose_back, moving_object, estimated_s_v, estimated_d_t_0, estimated_d_v);
+
+	double s_displacement = estimated_s_v * t;
+	double d_displacement = estimated_d_t_0;// + estimated_d_v * t;
+
+	double s_range = 0.0;
+	int i;
+	carmen_ackerman_traj_point_t movin_object_pose_at_t;
+	if (nearest_pose_front >= nearest_pose_back)
+	{
+		for (i = nearest_pose_front; (s_range < s_displacement) && (i < path_size - 1); i++)
+			s_range += DIST2D(path[i], path[i + 1]);
+
+		movin_object_pose_at_t = path[i];
+//		movin_object_pose_at_t = {moving_object->object_pose.x, moving_object->object_pose.y, 0.0, 0.0, 0.0};
+//		s_displacement = d_displacement = s_range = 0.0;
+	}
+	else
+	{
+		for (i = nearest_pose_back; (s_range < s_displacement) && (i > 0); i--)
+			s_range += DIST2D(poses_back[i], poses_back[i - 1]);
+
+		movin_object_pose_at_t = poses_back[i];
+
+		if ((i == 0) && (s_range < s_displacement)) // o moving_object vai ultrapassar o carro
+		{
+			for ( ; (s_range < s_displacement) && (i < path_size - 1); i++)
+				s_range += DIST2D(path[i], path[i + 1]);
+
+			movin_object_pose_at_t = path[i];
+		}
+//		movin_object_pose_at_t = {moving_object->object_pose.x, moving_object->object_pose.y, 0.0, 0.0, 0.0};
+//		s_displacement = d_displacement = s_range = 0.0;
+	}
+
+	moving_object_pose = carmen_collision_detection_displaced_pose_according_to_car_orientation(&movin_object_pose_at_t, s_displacement - s_range, d_displacement);
+//	if (monitored && (t == 0.0))
+//		printf("id %d,  d %.2lf\n", id, d_displacement);
+//	fflush(stdout);
+
+	return (moving_object_pose);
+}
+
+
+void
+compute_moving_objects_future_poses(vector<vector <carmen_point_t> > &moving_objects_poses, double delta_t, int num_poses,
+		carmen_frenet_path_planner_set_of_paths *current_set_of_paths)
+{
+	carmen_ackerman_traj_point_t *path = current_set_of_paths->rddf_poses_ahead;
+
+	for (int i = 0; i < current_moving_objects->num_point_clouds; i++)
+	{
+		for (int s = 0; s < num_poses; s++)
+		{
+			carmen_point_t moving_object_pose = simulate_moving_object_movement(&(current_moving_objects->point_clouds[i]),
+					path, current_set_of_paths->number_of_poses, current_set_of_paths->rddf_poses_back,
+					current_set_of_paths->number_of_poses_back, delta_t * (double) s);
+
+			moving_objects_poses[s][i] = moving_object_pose;
+//			if (DIST2D(current_moving_objects->point_clouds[i].object_pose, path[0]) < 25.0)
+//			{
+//				virtual_laser_message.positions[virtual_laser_message.num_positions].x = moving_object_pose.x;
+//				virtual_laser_message.positions[virtual_laser_message.num_positions].y = moving_object_pose.y;
+//				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_LIGHT_GREEN;
+//				virtual_laser_message.num_positions++;
+//			}
+		}
+	}
+}
+
+
+void
+select_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+{
+	if (!current_set_of_paths)
+		return;
+
+//	static double timestamp_of_last_path_change = 0.0;
+//
+//	static int last_path = current_set_of_paths->selected_path; // soh faz isso uma vez
+//	static bool path_changed = false;
+//
+//	if (last_path != current_set_of_paths->selected_path)
+//	{
+//		last_path = current_set_of_paths->selected_path;
+//		timestamp_of_last_path_change = carmen_get_time();
+//		path_changed = true;
+//	}
+
+	double time_horizon = 5.0;
+	double delta_t = 0.05;
+	int num_samples = (int) (time_horizon / delta_t);
+	vector<vector <carmen_point_t> > moving_objects_poses(num_samples, vector <carmen_point_t>(current_moving_objects->num_point_clouds));
+	compute_moving_objects_future_poses(moving_objects_poses, delta_t, num_samples, current_set_of_paths);
+
+	int number_of_paths = current_set_of_paths->set_of_paths_size / current_set_of_paths->number_of_poses;
+	vector<double> path_value;
+	for (int path_id = 0; path_id < number_of_paths; path_id++)
+	{
+		double path_val = evaluate_path(current_set_of_paths, path_id, number_of_paths, moving_objects_poses,
+				delta_t, num_samples, current_robot_pose_v_and_phi);
+		path_value.push_back(path_val);
+	}
+
+	double best_path_value = path_value[0];
+	int best_path = 0;
+	for (unsigned int i = 1; i < path_value.size(); i++)
+	{
+		if (path_value[i] > best_path_value)
+		{
+			best_path_value = path_value[i];
+			best_path = i;
+		}
+	}
+
+	publish_simulated_objects();
+
+//	if (path_changed && (carmen_get_time() - timestamp_of_last_path_change < 3.0))
+//		return;
+//	else
+//		path_changed = false;
+
+	if (path_value[best_path] > 1.2 * path_value[current_set_of_paths->selected_path])
+		publish_new_best_path(best_path, timestamp);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1660,6 +1939,8 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
+	select_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, msg->timestamp);
+
 	select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
 }
 
@@ -1677,6 +1958,8 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	current_robot_pose_v_and_phi.theta = msg->truepose.theta;
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
+
+	select_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, msg->timestamp);
 
 	select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
 }
@@ -1697,15 +1980,26 @@ rddf_handler(carmen_rddf_road_profile_message *rddf_msg)
 
 
 static void
-frenet_path_planner_plan_message_handler(carmen_frenet_path_planner_plan_message *path_plan)
+frenet_path_planner_set_of_paths_message_handler(carmen_frenet_path_planner_set_of_paths *set_of_paths_message)
 {
-//	int num_plans = path_plan->plan_size / path_plan->number_of_poses;
-//	for (int i = 0; i < num_plans; i++)
+	current_set_of_paths = set_of_paths_message;
+
+//	int num_paths = set_of_paths_message->set_of_paths_size / set_of_paths_message->number_of_poses;
+//	for (int i = 0; i < num_paths; i++)
 //	{
-//		for (int j = 0; (j < path_plan->number_of_poses) && (j < 5); j++)
-//			printf("plan %d, x[%d] = %lf, y[%d] = %lf\n", i, j, path_plan->plan[i * path_plan->number_of_poses + j].x, j, path_plan->plan[i * path_plan->number_of_poses + j].y);
+//		for (int j = 0; (j < set_of_paths_message->number_of_poses) && (j < 5); j++)
+//			printf("plan %d, x[%d] = %lf, y[%d] = %lf\n", i, j,
+//					set_of_paths_message->set_of_paths[i * set_of_paths_message->number_of_poses + j].x, j,
+//					set_of_paths_message->set_of_paths[i * set_of_paths_message->number_of_poses + j].y);
 //	}
 //	printf("\n");
+}
+
+
+static void
+carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message *moving_objects_message)
+{
+	current_moving_objects = moving_objects_message;
 }
 
 
@@ -1901,7 +2195,7 @@ register_handlers()
 
 	carmen_rddf_subscribe_road_profile_message(NULL, (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_frenet_path_planner_subscribe_plan_message(NULL, (carmen_handler_t) frenet_path_planner_plan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_frenet_path_planner_subscribe_set_of_paths_message(NULL, (carmen_handler_t) frenet_path_planner_set_of_paths_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	if (!use_truepos)
 		carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -1956,6 +2250,8 @@ register_handlers()
 	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) carmen_navigator_ackerman_status_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1984,6 +2280,7 @@ define_messages()
     carmen_test_ipc_exit(err, "Could not define",
     		CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_NAME);
 
+    carmen_frenet_path_planner_define_messages();
 }
 
 

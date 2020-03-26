@@ -314,7 +314,7 @@ namespace View
 			carmen_obstacle_avoider_subscribe_path_message(&obstacle_avoider_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 
 		if (nav_panel_config->show_path_plans)
-			carmen_frenet_path_planner_subscribe_plan_message(&frenet_path_planer_plan_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+			carmen_frenet_path_planner_subscribe_set_of_paths_message(&frenet_path_planer_set_of_paths_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 
 		if (nav_panel_config->show_oa_motion_plan)
 			carmen_obstacle_avoider_subscribe_motion_planner_path_message(&oa_motion_plan_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
