@@ -23,7 +23,6 @@ import time
 import tensorflow.compat.v1 as tf
 import numpy as np
 from PIL import Image, ImagePalette
-import tensorflow.compat.v1 as tf
 import cv2
 from typing import Text, Dict, Any, List
 
@@ -53,7 +52,7 @@ def initialize():
     global ckpt_path
     global driver
     tf.reset_default_graph()
-    tf.compat.v1.disable_eager_execution()
+    #tf.compat.v1.disable_eager_execution()
     driver = inference.ServingDriver(model_name, ckpt_path)
     driver.build()
     print("\n\n-------------------------------------------------------")
