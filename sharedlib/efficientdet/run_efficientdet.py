@@ -48,7 +48,7 @@ ckpt_path = 'efficientdet-d0'
 test_dir = carmen_home + "/sharedlib/efficientdet/testdata"
 image_size = None
 
-def initialize(width, height):
+def initialize():
     global model_name
     global ckpt_path
     global driver
@@ -60,7 +60,7 @@ def initialize(width, height):
     print("       EfficientDet loaded!")
     print("-------------------------------------------------------\n\n")
 
-def efficientdet_process_image(carmen_image, timestamp):
+def efficientdet_process_image(carmen_image):
     global model_name
     global ckpt_path
     global driver

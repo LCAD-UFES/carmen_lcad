@@ -132,7 +132,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	else
 		img = image_msg->raw_right;
 
-    double timestamp = image_msg->timestamp;
+    //double timestamp = image_msg->timestamp;
 
     Size size(width,height);
 	cv::Mat image_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, img);
@@ -146,7 +146,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 	unsigned char *resized_img = imgResized.data;
 
-	vector<bbox_t> predictions = run_EfficientDet(resized_img, width, height, timestamp);
+	vector<bbox_t> predictions = run_EfficientDet(resized_img, width, height);
 	
 	fps = 1.0 / (carmen_get_time() - start_time);
 	start_time = carmen_get_time();
@@ -212,7 +212,7 @@ read_parameters(int argc, char **argv)
 
     num_items = sizeof(param_list) / sizeof(param_list[0]);
     carmen_param_install_params(argc, argv, param_list, num_items);
-    initialize_Efficientdet(width, height);
+    initialize_Efficientdet();
 }
 
 int
