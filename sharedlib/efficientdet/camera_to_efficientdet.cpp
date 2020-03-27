@@ -51,7 +51,7 @@ colormap_semantic[] =
 	cv::Vec3b(153, 153, 153),//18: pole
 	cv::Vec3b(0, 220, 220), //19: traffic-sign
 };
-/*
+
 vector<bbox_t>
 filter_predictions_of_interest_efficientdet(vector<bbox_t> &predictions)
 {
@@ -65,7 +65,7 @@ filter_predictions_of_interest_efficientdet(vector<bbox_t> &predictions)
 		}
 	}
 	return (filtered_predictions);
-}*/
+}
 
 void
 show_detections(cv::Mat image, vector<bbox_t> predictions)
@@ -152,7 +152,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	start_time = carmen_get_time();
 	printf("FPS= %.2f\n", fps);
     
-	//predictions = filter_predictions_of_interest_efficientdet(predictions);
+	predictions = filter_predictions_of_interest_efficientdet(predictions);
     show_detections(imgResized, predictions);
 
 	char frame_rate[25];

@@ -114,7 +114,6 @@ run_EfficientDet(unsigned char *image, int width, int height, double timestamp)
 	if (PyErr_Occurred())
 		        PyErr_Print();
 
-	//PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunction(python_libefficientdet_process_image_function, (char *) "(O)", numpyArray, numpyTimestamp, NULL);
 	PyArrayObject* python_result_array = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_libefficientdet_process_image_function, numpyArray, numpyTimestamp, NULL);
 
 	if (PyErr_Occurred())
@@ -123,28 +122,19 @@ run_EfficientDet(unsigned char *image, int width, int height, double timestamp)
 	int num_objs = (int)python_result_array->dimensions[0];
 	double* result_array = (double*) PyArray_DATA(python_result_array);
 	std::vector<bbox_t> bbox_vector;
-	std::cout << "num_objs=" << num_objs << std::endl; 
-	std::cout << "result[0]= " << result_array[0] << " " << result_array[1] << " " << result_array[2] <<" " << result_array[3] << " " << result_array[4] << " " << result_array[5] << std::endl; 
-	std::cout << "result[1]= " << result_array[6] << " " << result_array[7] << " " << result_array[8] <<" " << result_array[9] << " " << result_array[10] << " " << result_array[11] << std::endl; 
 	for(int i = 0; i < num_objs; i++)
 	{
-		//x, y, width, height, score, class
-		//[ymin, xmin, ymax, xmax]
 		bbox_t pred = {};
-		pred.y = (unsigned int)		result_array[(i * 6)];
-		pred.x = (unsigned int)		result_array[(i * 6) + 1];
-		pred.h = (unsigned int)	result_array[(i * 6) + 2] - (unsigned int) result_array[(i * 6)];
-		pred.w = (unsigned int)	result_array[(i * 6) + 3] - (unsigned int) result_array[(i * 6) + 1] ;
+		pred.x = (unsigned int)		result_array[(i * 6)];
+		pred.y = (unsigned int)		result_array[(i * 6) + 1];
+		pred.w = (unsigned int)		result_array[(i * 6) + 2];
+		pred.h = (unsigned int)		result_array[(i * 6) + 3];
 		pred.prob = (float)			result_array[(i * 6) + 4];
 		pred.obj_id = (unsigned int) result_array[(i * 6) + 5];
 		pred.track_id = 0;
 		if (pred.prob >= 0.2)
 			bbox_vector.push_back(pred);
 	}
-	int i = 0;
-	std::cout << "bbox_vector[0]: " << bbox_vector[i].x << " " << bbox_vector[i].y << " " << bbox_vector[i].w << " " <<  bbox_vector[i].h << " " << bbox_vector[i].prob << " " << bbox_vector[i].obj_id << std::endl;
-	i = 1;
-	std::cout << "bbox_vector[1]: " << bbox_vector[i].x << " " << bbox_vector[i].y << " " << bbox_vector[i].w << " " <<  bbox_vector[i].h << " " << bbox_vector[i].prob << " " << bbox_vector[i].obj_id << std::endl;
 
 	if (PyErr_Occurred())
         PyErr_Print();
