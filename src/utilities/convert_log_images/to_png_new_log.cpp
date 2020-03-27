@@ -11,16 +11,18 @@ using namespace cv;
 
 
 int
-process_bumblebee(FILE *f, char *dir, int camera_side, bool show_image)
+process_bumblebee(FILE *f, char *dir, int camera_side, bool show_image, char* log_path)
 {
 	int w, h, img_size, is_rect;
-	char name[1024], host[64], path[1024], timestamp[64], local_timestamp[64];
+	char name[1024], host[64], path[256], suffix[128], timestamp[64], local_timestamp[64];
 
 	fscanf(f, "\n%s", name);
-	fscanf(f, "\n%s", path);
+	fscanf(f, "\n%s", suffix);
 	fscanf(f, "%d %d", &w, &h);
 	fscanf(f, "%d %d", &img_size, &is_rect);
 	fscanf(f, "%s %s %s", timestamp, host, local_timestamp);
+
+	sprintf(path, "%s%s", log_path, suffix);
 
 	if (w < 300 || h < 300 || w > 10000 || h > 10000)
 	{
@@ -112,6 +114,29 @@ find_side_arg(int argc, char **argv)
 }
 
 
+void
+find_log_path(int argc, char **argv, char* &log_path)
+{
+    for(int i = 0; i < argc; ++i)
+    {
+        if(!argv[i])
+        	continue;
+
+        if(0 == strcmp(argv[i], "-path"))
+        {
+        	if  (argc < i + 1)
+        	{
+        		printf("Wrong number of parameters!\n Must be -\"side 0\" for Left side or \"-side 1\" for Right side.\n");
+        		exit (0);
+        	}
+        	log_path = argv[i + 1];
+
+			return;
+        }
+    }
+}
+
+
 bool
 find_show_arg(int argc, char **argv)
 {
@@ -130,11 +155,14 @@ find_show_arg(int argc, char **argv)
 int
 main(int argc, char **argv)
 {
+	char* log_path = NULL;
+
 	setlocale(LC_ALL, NULL);
 
 	if (argc < 3)
 	{
 		printf("Use %s <bumbs.txt> <out-dir>\n", argv[0]);
+		printf("Optional params: -show -side <0 or 1> -path <log_path> (only to new logs)\n");
 		return 0;
 	}
 
@@ -146,6 +174,9 @@ main(int argc, char **argv)
 
 	int camera_side = find_side_arg(argc, argv);
 	bool show_image = find_show_arg(argc, argv);
+	//char* log_path = "/dados/log-vale-locomotiva-20200402-posto1.txt";
+	find_log_path(argc, argv, log_path);
+
 
 	FILE *f = fopen(argv[1], "r");
 
@@ -154,7 +185,7 @@ main(int argc, char **argv)
 
 	while (!feof(f))
 	{
-		process_bumblebee(f, argv[2], camera_side, show_image);
+		process_bumblebee(f, argv[2], camera_side, show_image, log_path);
 	}
 
 	fclose(f);
