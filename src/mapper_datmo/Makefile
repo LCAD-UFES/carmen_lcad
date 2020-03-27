@@ -43,6 +43,12 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/salsanet/scripts  -DBOOST_SIGNALS_NO_DEPREC
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/salsanet/scripts
 LFLAGS += -lsalsanet -lpython2.7
 
+#EfficientDet
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/efficientdet  -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/efficientdet
+LFLAGS += -lefficientdet -lpython3.5m
+
+
 #OPENCV
 IFLAGS += -DUSE_OPENCV
 LFLAGS += `pkg-config opencv --libs` `pkg-config --cflags opencv` `pkg-config --libs opencv`
@@ -82,7 +88,7 @@ PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = mapper_datmo compute_velodyne_calibration_table
-TARGETS = darknet2 convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a compute_maps_difference compute_maps_changes libsalsanet.a libsqueeze_seg.a #librangenet_inference.a librangenet.a 
+TARGETS = darknet2 convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a compute_maps_difference compute_maps_changes libsalsanet.a libsqueeze_seg.a libefficientdet.a #librangenet_inference.a librangenet.a 
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -124,17 +130,24 @@ libsqueeze_seg.a:
 libsalsanet.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/salsanet/scripts/
 
+libefficientdet.a:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/efficientdet/
+
 #librangenet.a:
 #	$(MAKE) -C $(CARMEN_HOME)/sharedlib/rangenet_lib/src/ 
 darknet2:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2
 
-clean: clean_prob_models clean_libsqueeze_seg
+clean: clean_prob_models clean_libsqueeze_seg clean_libefficientdet
 
 clean_prob_models:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/prob_models/
 
 clean_libsqueeze_seg:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src/
+
+clean_libefficientdet:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/efficientdet/
+
 
 include ../Makefile.rules

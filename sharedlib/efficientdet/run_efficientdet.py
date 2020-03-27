@@ -48,7 +48,7 @@ ckpt_path = 'efficientdet-d0'
 test_dir = carmen_home + "/sharedlib/efficientdet/testdata"
 image_size = None
 
-def initialize(width, height):
+def initialize():
     global model_name
     global ckpt_path
     global driver
@@ -60,17 +60,12 @@ def initialize(width, height):
     print("       EfficientDet loaded!")
     print("-------------------------------------------------------\n\n")
 
-def efficientdet_process_image(carmen_image, timestamp):
+def efficientdet_process_image(carmen_image):
     global model_name
     global ckpt_path
     global driver
     # converter a imagem
     image = Image.fromarray(carmen_image)
     predictions = driver.serve(image)
-    out_image = driver.visualize(image, predictions[0])
-    cv2.imshow('test', out_image)
-    cv2.waitKey(100)
-    preds = predictions[0]
-    predret = np.array(preds[:,1:7], dtype=np.float)
-    print(preds[0:2, 1:7])
+    predret = np.array(predictions[0][:,1:7], dtype=np.float)
     return predret
