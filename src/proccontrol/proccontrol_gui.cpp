@@ -120,8 +120,10 @@ QDisplay::closeEvent( QCloseEvent *ev )
 }
 
 void
-QDisplay::showLine( char * text )
+QDisplay::showLine( char *module_name, int pid, char *line )
 {
+	static char text[10000];
+	snprintf(text, 10000, "%s (%d): %s", module_name, pid, line);
 	output->append( text );
 }
 
@@ -446,8 +448,9 @@ carmen_update_pidtable( carmen_proccontrol_pidtable_message *msg )
 			}
 		}
 	}
+	if (table.numgrps != p.numgrps)
+		qdisplay->resize( 600, 4 + p.numgrps * 84 + OUTPUT_TEXT_VISIBLE_LINES * 13 );
 	table.numgrps = p.numgrps;
-
 }
 
 void
@@ -510,7 +513,7 @@ main( int argc, char** argv)
 		}
 		if (out_update) {
 			if (output_pid( output.pid ))
-				qdisplay->showLine( output.output );
+				qdisplay->showLine( output.module_name, output.pid, output.output );
 			out_update = FALSE;
 		}
 		carmen_ipc_sleep (0.02);

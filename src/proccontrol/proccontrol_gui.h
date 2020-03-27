@@ -46,6 +46,7 @@
 #define MAX_NUM_MODULES  40
 #define NUM_STATES       4
 #define MAX_NAME_LENGTH  256
+#define OUTPUT_TEXT_VISIBLE_LINES	10
 
 typedef struct {
   char   group_name[MAX_NAME_LENGTH];
@@ -80,7 +81,7 @@ public:
   void setGroup( int group, char * group_name );
   void setModule( int group, int module, char * module_name, int pid );
   void hideButton( int group, int module );
-  void showLine( char * line );
+  void showLine( char * module_name, int pid, char * line );
 
 private:
   QPushButton  *but[MAX_NUM_GROUPS][MAX_NUM_MODULES];
