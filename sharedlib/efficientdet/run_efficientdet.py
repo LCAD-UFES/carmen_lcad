@@ -67,10 +67,13 @@ def efficientdet_process_image(carmen_image, timestamp):
     # converter a imagem
     image = Image.fromarray(carmen_image)
     predictions = driver.serve(image)
+    print(predictions[0][0:2, 1:7])
     out_image = driver.visualize(image, predictions[0])
     cv2.imshow('test', out_image)
     cv2.waitKey(100)
-    preds = predictions[0]
-    predret = np.array(preds[:,1:7], dtype=np.float)
-    print(preds[0:2, 1:7])
+    #preds = predictions[0]
+    predret = np.array(predictions[0][:,1:7], dtype=np.float)
+    print(predret.shape)
+    print(predictions[0][0:2, 1:7])
+    print(predret[0:2, :])
     return predret

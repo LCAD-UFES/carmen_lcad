@@ -51,7 +51,7 @@ colormap_semantic[] =
 	cv::Vec3b(153, 153, 153),//18: pole
 	cv::Vec3b(0, 220, 220), //19: traffic-sign
 };
-
+/*
 vector<bbox_t>
 filter_predictions_of_interest_efficientdet(vector<bbox_t> &predictions)
 {
@@ -65,7 +65,7 @@ filter_predictions_of_interest_efficientdet(vector<bbox_t> &predictions)
 		}
 	}
 	return (filtered_predictions);
-}
+}*/
 
 void
 show_detections(cv::Mat image, vector<bbox_t> predictions)
@@ -122,6 +122,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	if (image_msg == NULL)
 		return;
 
+	double fps;
+	static double start_time = 0.0;
+	
 	unsigned char *img;
 
 	if (camera_side == 0)
@@ -144,9 +147,17 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	unsigned char *resized_img = imgResized.data;
 
 	vector<bbox_t> predictions = run_EfficientDet(resized_img, width, height, timestamp);
-    predictions = filter_predictions_of_interest_efficientdet(predictions);
+	
+	fps = 1.0 / (carmen_get_time() - start_time);
+	start_time = carmen_get_time();
+	printf("FPS= %.2f\n", fps);
+    
+	//predictions = filter_predictions_of_interest_efficientdet(predictions);
     show_detections(imgResized, predictions);
 
+	char frame_rate[25];
+	sprintf(frame_rate, "FPS = %.2f", fps);
+    putText(imgResized, frame_rate, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
     imshow("Image EfficientDet", imgResized);
 	cv::waitKey(1);
 	//publish_moving_objects_message(image_msg->timestamp, &msg);
