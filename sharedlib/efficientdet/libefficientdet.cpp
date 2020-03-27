@@ -2,6 +2,10 @@
 #include "libefficientdet.h"
 #include <numpy/arrayobject.h>
 #include <stdlib.h> /* getenv */
+#include <string>
+#include <iostream>
+#include <cstdlib>
+#include <fstream>
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 // #include <iostream>
@@ -110,35 +114,33 @@ run_EfficientDet(unsigned char *image, int width, int height, double timestamp)
 	if (PyErr_Occurred())
 		        PyErr_Print();
 
-	//PyArrayObject* python_result_array = (PyArrayObject*) PyObject_CallFunction(python_libefficientdet_process_image_function, (char *) "(O)", numpyArray, numpyTimestamp, NULL);
 	PyArrayObject* python_result_array = (PyArrayObject*)PyObject_CallFunctionObjArgs(python_libefficientdet_process_image_function, numpyArray, numpyTimestamp, NULL);
 
 	if (PyErr_Occurred())
 	        PyErr_Print();
 
-	long long int* result_array = (long long int*)PyArray_DATA(python_result_array);
+	int num_objs = (int)python_result_array->dimensions[0];
+	double* result_array = (double*) PyArray_DATA(python_result_array);
 	std::vector<bbox_t> bbox_vector;
-	int num_objs = (int)result_array[0];
-	long long int *result = (long long int*) result_array[1];
-	for(int i = 0; i < (num_objs * 6); i++)
+	for(int i = 0; i < num_objs; i++)
 	{
 		bbox_t pred = {};
-		pred.x = 		result[(i * 6)];
-		pred.y = 		result[(i * 6) + 1];
-		pred.w = 		result[(i * 6) + 2];
-		pred.h = 		result[(i * 6) + 3];
-		pred.obj_id = 	result[(i * 6) + 4];
-		pred.prob = 	result[(i * 6) + 5];
+		pred.x = (unsigned int)		result_array[(i * 6)];
+		pred.y = (unsigned int)		result_array[(i * 6) + 1];
+		pred.w = (unsigned int)		result_array[(i * 6) + 2];
+		pred.h = (unsigned int)		result_array[(i * 6) + 3];
+		pred.prob = (float)			result_array[(i * 6) + 4];
+		pred.obj_id = (unsigned int) result_array[(i * 6) + 5];
 		pred.track_id = 0;
-		bbox_vector.push_back(pred);
-		i = i + 6;
+		if (pred.prob >= 0.2)
+			bbox_vector.push_back(pred);
 	}
 
 	if (PyErr_Occurred())
         PyErr_Print();
 
 	Py_DECREF(numpyArray);
-	//Py_DECREF(python_result_array);
+	Py_DECREF(python_result_array);
 
 	return bbox_vector;
 }
