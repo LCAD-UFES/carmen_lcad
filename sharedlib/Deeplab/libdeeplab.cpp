@@ -10,7 +10,7 @@ PyObject *python_color_image_function;
 PyObject *python_get_label_name_by_number_function;
 PyObject *python_is_moving_object_function;
 
-void initialize_python_path()
+void initialize_python_path_deeplab()
 {
 	char* pyPath;
 	char* pPath;
@@ -28,7 +28,7 @@ void initialize_python_path()
 void
 initialize_visualize_module()
 {
-	initialize_python_path();
+	initialize_python_path_deeplab();
 	
 	PyObject *python_module_name = PyString_FromString((char *) "visualize");
 
@@ -64,7 +64,7 @@ initialize_visualize_module()
 void
 initialize_inference_context()
 {
-	initialize_python_path();
+	initialize_python_path_deeplab();
 
 	Py_Initialize();
 	import_array();

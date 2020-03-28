@@ -23,9 +23,9 @@ import os
 from absl import logging
 import numpy as np
 import tensorflow.compat.v1 as tf
-import tensorflow.compat.v2 as tf2
+#import tensorflow.compat.v2 as tf2
 
-from tensorflow.python.tpu import tpu_function  # pylint:disable=g-direct-tensorflow-import
+#from tensorflow.python.tpu import tpu_function  # pylint:disable=g-direct-tensorflow-import
 
 relu_fn = tf.nn.swish
 backbone_relu_fn = relu_fn
@@ -127,7 +127,8 @@ class TpuBatchNormalization(tf.layers.BatchNormalization):
 
   def _cross_replica_average(self, t, num_shards_per_group):
     """Calculates the average value of input tensor across TPU replicas."""
-    num_shards = tpu_function.get_tpu_context().number_of_shards
+    #num_shards = tpu_function.get_tpu_context().number_of_shards
+    num_shards = 1
     group_assignment = None
     if num_shards_per_group > 1:
       if num_shards % num_shards_per_group != 0:
@@ -146,7 +147,8 @@ class TpuBatchNormalization(tf.layers.BatchNormalization):
     shard_mean, shard_variance = super(TpuBatchNormalization, self)._moments(
         inputs, reduction_axes, keep_dims=keep_dims)
 
-    num_shards = tpu_function.get_tpu_context().number_of_shards or 1
+    #num_shards = tpu_function.get_tpu_context().number_of_shards or 1
+    num_shards = 1
     if num_shards <= 8:  # Skip cross_replica for 2x2 or smaller slices.
       num_shards_per_group = 1
     else:
@@ -300,14 +302,14 @@ def get_tpu_host_call(global_step, params):
   def host_call_fn(global_step, *args):
     """Training host call. Creates scalar summaries for training metrics."""
     gs = global_step[0]
-    with tf2.summary.create_file_writer(
-        model_dir, max_queue=iterations_per_loop).as_default():
-      with tf2.summary.record_if(True):
-        for i in range(len(summaries)):
-          name = summaries[i][0]
-          tensor = args[i][0]
-          tf2.summary.scalar(name, tensor, step=gs)
-        return tf.summary.all_v2_summary_ops()
+    #with tf2.summary.create_file_writer(
+    #    model_dir, max_queue=iterations_per_loop).as_default():
+    #  with tf2.summary.record_if(True):
+    #    for i in range(len(summaries)):
+    #      name = summaries[i][0]
+    #      tensor = args[i][0]
+   #       tf2.summary.scalar(name, tensor, step=gs)
+    #    return tf.summary.all_v2_summary_ops()
 
   reshaped_tensors = [tf.reshape(t, [1]) for _, t in summaries]
   global_step_t = tf.reshape(global_step, [1])
