@@ -65,6 +65,8 @@ namespace hyper {
             // the external loop closure id
             unsigned external_loop_closure_id;
 
+            static std::string filepath_prefix;
+
             // the basic constructor
             StampedLidar(unsigned msg_id, const std::string &base_path);
 
@@ -98,6 +100,7 @@ namespace hyper {
 
     // define the standard vector type
     using StampedLidarPtrVector = std::vector<StampedLidarPtr>;
+
 }
 
 #endif

@@ -15,6 +15,8 @@ pcl::VoxelGrid<pcl::PointXYZHSV> StampedLidar::grid_filtering;
 // the segmentation class
 SimpleLidarSegmentation StampedLidar::segm;
 
+std::string StampedLidar::filepath_prefix = "";
+
 // the basic constructor
 StampedLidar::StampedLidar(unsigned msg_id, const std::string &base_path) :
     StampedMessage::StampedMessage(msg_id),

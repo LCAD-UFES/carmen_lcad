@@ -250,7 +250,7 @@ void StampedVelodyne::LoadPointCloud(PointCloudHSV &cloud)
     }
     else
     {
-        StampedLidar::LoadPointCloud(path, cloud);
+        StampedLidar::LoadPointCloud(StampedLidar::path, cloud);
     }
 }
 
@@ -265,6 +265,11 @@ bool StampedVelodyne::FromCarmenLog(std::stringstream &ss)
         ss >> StampedLidar::path;
         ss >> vertical_scans;
         ss >> StampedMessage::timestamp;
+
+        if ('/' != StampedLidar::path[0])
+        {
+        	StampedLidar::path = StampedLidar::filepath_prefix + StampedLidar::path;
+        }
 
         return (bool) std::ifstream(StampedLidar::path);
     }

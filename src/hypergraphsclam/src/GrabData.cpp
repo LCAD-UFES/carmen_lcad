@@ -953,7 +953,6 @@ bool GrabData::GetNextICPIterators(StampedLidarPtrVector::iterator &begin, Stamp
 
     return status;
 }
-
 PointCloudHSV::Ptr GrabData::GetFilteredPointCloud(SimpleLidarSegmentation &segm, VoxelGridFilter &grid_filtering, StampedLidarPtr lidar)
 {
     PointCloudHSV::Ptr filtered_cloud(new PointCloudHSV());
@@ -1079,9 +1078,9 @@ void GrabData::BuildLidarMeasuresMT()
                             {
                                 if (first_index == current_index || last_index == current_index)
                                 {
-                                    first_last_mutex.lock();
+                                    std::lock_guard<std::mutex> lock(first_last_mutex);
                                     StampedLidar::SavePointCloud(path, current_index, *current_cloud);
-                                    first_last_mutex.unlock();
+
                                 }
                                 else
                                 {
@@ -2391,6 +2390,8 @@ unsigned GrabData::ParseLogFile(const std::string &input_filename, unsigned msg_
 
     // status report
     std::cout << "Start reading the input logfile (this may take a while)\n";
+
+    StampedLidar::filepath_prefix = input_filename;
 
     // the input string stream
     std::stringstream current_line;
