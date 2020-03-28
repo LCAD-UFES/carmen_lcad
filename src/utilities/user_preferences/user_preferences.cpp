@@ -1,5 +1,5 @@
 #include <carmen/carmen.h>
-#include "user_preferences.h"
+#include <carmen/user_preferences.h>
 #include <carmen/param_interface.h>
 
 
@@ -115,7 +115,7 @@ param_value_to_str(char *value_str, void *param_value, char param_type)
 			break;
 
 		case USER_PARAM_TYPE_ONOFF:
-			sprintf(value_str, "%s", (*(int *) param_value == 0) ? "off" : "on");
+			sprintf(value_str, "%s", *(int *) param_value == 0 ? "off" : "on");
 			break;
 
 		case USER_PARAM_TYPE_STRING:
@@ -131,10 +131,7 @@ param_value_to_str(char *value_str, void *param_value, char param_type)
 void
 user_preferences_read(const char *module, user_param_t *param_list, int num_items, const char *filename = USER_DEFAULT_FILENAME)
 {
-	if (num_items <= 0)
-		return;
-
-	if (filename == NULL)
+	if (num_items <= 0 || filename == NULL || filename[0] == '\0')
 		return;
 
 	carmen_FILE *user_pref = carmen_fopen(filename, "r");
@@ -173,8 +170,14 @@ user_preferences_save(const char *module, user_param_t *param_list, int num_item
 	if (num_items <= 0)
 		return;
 
-	char new_filename[2000];
-	strcpy(new_filename, filename);
+	if (filename == NULL || filename[0] == '\0')
+	{
+		carmen_warn("WARNING: No filename provided for saving user preferences\n");
+		return;
+	}
+
+	char new_filename[2005];
+	strncpy(new_filename, filename, 2000);
 	strcat(new_filename, "_new");
 
 	carmen_FILE *user_pref = carmen_fopen(filename, "r");
@@ -234,8 +237,8 @@ user_preferences_save(const char *module, user_param_t *param_list, int num_item
 	if (user_pref)
 	{
 		carmen_fclose(user_pref);
-		char bak_filename[2000];
-		strcpy(bak_filename, filename);
+		char bak_filename[2005];
+		strncpy(bak_filename, filename, 2000);
 		strcat(bak_filename, "_bak");
 		remove(bak_filename);
 		rename(filename, bak_filename);
