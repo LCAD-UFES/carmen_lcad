@@ -2,11 +2,11 @@
 
 Esta biblioteca disponibiliza funcionalidades que auxiliam o salvamento e a recuperacao das preferencias do usuario, especialmente as preferencias relacionadas as dimensoes e a posicao inicial das janelas de um programa.
 
-Um exemplo de uso pode ser encontrado no programa: * proccontrol_gui.cpp *
+Um exemplo de uso pode ser encontrado no programa: __proccontrol_gui.cpp__
 
 ## Instrucoes de uso
 
-1) Inclua no Makefile a referencia a biblioteca. Nota: se o seu programa utiliza * Qt * e * qmake *, entao a linha abaixo deve ser inserida no arquivo de projeto qmake (.pro) e nao diretamente no Makefile.
+1) Inclua no Makefile a referencia a biblioteca. Nota: se o seu programa utiliza __Qt__ e __qmake__, entao a linha abaixo deve ser inserida no arquivo de projeto qmake (.pro) e nao diretamente no Makefile.
 ```
  LIBS += -luser_preferences
 ```
@@ -38,7 +38,7 @@ Um exemplo de uso pode ser encontrado no programa: * proccontrol_gui.cpp *
      move(user_pref_window_x, user_pref_window_y);
 ```
 
-6) Crie uma funcao * read_preferences * para recuperar as preferencias do usuario que estao salvas em arquivo ou na linha de comando. A funcao * user_preferences_read * faz a leitura de um arquivo com nome * ./user_preferences.ini *. Caso queira usar um arquivo com nome ou caminho diferente, chame a funcao * user_preferences_read_from_file *.
+6) Crie uma funcao __read_preferences__ para recuperar as preferencias do usuario que estao salvas em arquivo ou na linha de comando. A funcao __user_preferences_read__ faz a leitura de um arquivo com nome __./user_preferences.ini__. Caso queira usar um arquivo com nome ou caminho diferente, chame a funcao __user_preferences_read_from_file__. Caso o arquivo nao exista, a funcao encerra normalmente.
 ```
  void
  read_preferences(int argc, char** argv)
@@ -72,7 +72,7 @@ Exemplos de linha de comando:
  ./proccontrol_gui  -window_x  879  -window_y  297  -window_width  1041  -window_height  755
 ```
 
-7) A chamada a funcao * read_preferences * deve ocorrer antes da construcao das janelas do programa. Essa funcao nao depende do Carmen IPC.
+7) A chamada a funcao __read_preferences__ deve ocorrer antes da construcao das janelas do programa. Essa funcao nao depende do Carmen IPC.
 ```
  int
  main(int argc, char** argv)
@@ -82,7 +82,7 @@ Exemplos de linha de comando:
  	QDisplay gui;
 ```
 
-8) Crie uma funcao * save_preferences * para salvar as preferencias do usuario em arquivo. A funcao * user_preferences_save * grava um arquivo com nome * ./user_preferences.ini *. Caso queira gravar um arquivo com nome ou caminho diferente, chame a funcao * user_preferences_save_to_file *. Caso o arquivo contenha dados de outros programas, eles serao preservados. Os dados do programa corrente serao atualizados. Caso o arquivo nao exista, ele sera criado.
+8) Crie uma funcao __save_preferences__ para salvar as preferencias do usuario em arquivo. A funcao __user_preferences_save__ grava um arquivo com nome __./user_preferences.ini__. Caso queira gravar um arquivo com nome ou caminho diferente, chame a funcao __user_preferences_save_to_file__. Caso o arquivo contenha dados de outros programas, eles serao preservados. Os dados do programa corrente serao atualizados. Caso o arquivo nao exista, ele sera criado.
 ```
  void
  save_preferences()
@@ -95,7 +95,7 @@ Exemplos de linha de comando:
  }
 ```
 
-9) A chamada a funcao * save_preferences * deve ocorrer antes do shutdown do programa.
+9) A chamada a funcao __save_preferences__ deve ser acionada antes do encerramento do programa.
 ```
  void
  shutdown(int sig)
