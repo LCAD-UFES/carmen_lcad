@@ -117,10 +117,6 @@ QDisplay::QDisplay( QWidget *parent, const char *name )
 
 	QIcon icon(path);
 	setWindowIcon(icon);
-
-	resize( user_pref_window_width, user_pref_window_height );
-	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
-		move(user_pref_window_x, user_pref_window_y);
 }
 
 void
@@ -510,6 +506,11 @@ read_preferences(int argc, char** argv)
 	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
 	user_preferences_read(user_pref_module, user_pref_param_list, user_pref_num_items);
 	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
+
+	if (user_pref_window_width >= 0 && user_pref_window_height >= 0)
+		qdisplay->resize(user_pref_window_width, user_pref_window_height);
+	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
+		qdisplay->move(user_pref_window_x, user_pref_window_y);
 }
 
 
@@ -536,13 +537,12 @@ shutdown( int sig )
 int
 main(int argc, char** argv)
 {
-	read_preferences(argc, argv);
-
 	QApplication         app( argc, argv );
 	QDisplay             gui;
 
-
 	qdisplay = &gui;
+
+	read_preferences(argc, argv);
 
 	carmen_ipc_initialize(argc, argv);
 

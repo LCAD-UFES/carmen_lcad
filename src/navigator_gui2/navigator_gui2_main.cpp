@@ -1,5 +1,5 @@
 #include "navigator_gui2_main.h"
-
+#include <carmen/carmen.h>
 #include <carmen/navigator_ackerman_interface.h>
 #include <carmen/mapper_interface.h>
 #include <prob_map.h>
@@ -14,6 +14,7 @@
 #include <carmen/lane_detector_interface.h>
 #include <carmen/model_predictive_planner_interface.h>
 #include <carmen/ford_escape_hybrid_interface.h>
+#include <carmen/user_preferences.h>
 
 #include <carmen/navigator_gui2_interface.h>
 #include <carmen/parking_assistant_interface.h>
@@ -58,6 +59,14 @@ int current_num_point_clouds;
 int previous_num_point_clouds = 0;
 
 int record_screen;
+
+const char *user_pref_module;
+user_param_t *user_pref_param_list;
+int user_pref_num_items;
+int user_pref_window_width = -1;
+int user_pref_window_height = -1;
+int user_pref_window_x = -1;
+int user_pref_window_y = -1;
 
 
 static void
@@ -862,16 +871,49 @@ navigator_ackerman_stop_message_handler()
 	gui->navigator_graphics_stop_message_received();
 }
 
+
+void
+read_preferences(int argc, char** argv)
+{
+	static user_param_t param_list[] =
+	{
+		{"window_width",  USER_PARAM_TYPE_INT, &user_pref_window_width},
+		{"window_height", USER_PARAM_TYPE_INT, &user_pref_window_height},
+		{"window_x",      USER_PARAM_TYPE_INT, &user_pref_window_x},
+		{"window_y",      USER_PARAM_TYPE_INT, &user_pref_window_y},
+	};
+	user_pref_module = basename(argv[0]);
+	user_pref_param_list = param_list;
+	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
+	user_preferences_read(user_pref_module, user_pref_param_list, user_pref_num_items);
+	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
+
+	if (user_pref_window_width >= 0 && user_pref_window_height >= 0)
+		gtk_window_resize(GTK_WINDOW(gui->controls_.main_window), user_pref_window_width, user_pref_window_height);
+	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
+		gtk_window_move(GTK_WINDOW(gui->controls_.main_window), user_pref_window_x, user_pref_window_y);
+}
+
+
+void
+save_preferences()
+{
+	gtk_window_get_size(GTK_WINDOW(gui->controls_.main_window), &user_pref_window_width, &user_pref_window_height);
+	gtk_window_get_position(GTK_WINDOW(gui->controls_.main_window), &user_pref_window_x, &user_pref_window_y);
+	user_preferences_save(user_pref_module, user_pref_param_list, user_pref_num_items);
+}
+
+
 static void
 nav_shutdown(int signo __attribute__ ((unused)))
 {
-
 	static int done = 0;
 
 	if (!done)
 	{
 		done = 1;
 		carmen_ipc_disconnect();
+		save_preferences();
 		exit(1);
 	}
 }
@@ -1113,7 +1155,11 @@ main(int argc, char *argv[])
 //	gui = new View::GtkGui(argc, argv);
 	// Verificar pastas de record_screen se a pasta existir no /dados e se o parâmetro de entrada na linha de comando
 	// for igual a 1
+
 	init_navigator_gui_variables(argc, argv);
+
+ 	read_preferences(argc, argv);
+
 	subscribe_ipc_messages();
 
 #ifdef USE_DOT

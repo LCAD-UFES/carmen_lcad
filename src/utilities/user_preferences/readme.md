@@ -2,11 +2,20 @@
 
 Esta biblioteca disponibiliza funcionalidades que auxiliam o salvamento e a recuperacao das preferencias do usuario, especialmente as preferencias relacionadas as dimensoes e a posicao inicial das janelas de um programa.
 
-Um exemplo de uso pode ser encontrado no programa: __proccontrol_gui.cpp__
+Exemplos de uso podem ser encontrados nos programas: 
+```
+ proccontrol_gui.cpp  (usando Qt)
+ navigator_gui2_main.cpp  (usando GTK)
+```
 
 ## Instrucoes de uso
 
-1) Inclua no Makefile a referencia a biblioteca. Nota: se o seu programa utiliza __Qt__ e __qmake__, entao a linha abaixo deve ser inserida no arquivo de projeto qmake (.pro) e nao diretamente no Makefile.
+1) Se o seu programa utiliza __make__, entao inclua no Makefile a referencia a biblioteca.
+```
+ LFLAGS += -luser_preferences
+```
+
+Se o seu programa utiliza __qmake__, entao inclua no arquivo de projeto qmake (.pro) a referencia a biblioteca.
 ```
  LIBS += -luser_preferences
 ```
@@ -31,14 +40,7 @@ Um exemplo de uso pode ser encontrado no programa: __proccontrol_gui.cpp__
  int user_pref_window_y = -1;
 ```
 
-5) Nas funcoes de construcao das janelas do programa, utilize as variaveis globais.
-```
- resize(user_pref_window_width, user_pref_window_height);
- if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
-     move(user_pref_window_x, user_pref_window_y);
-```
-
-6) Crie uma funcao __read_preferences__ para recuperar as preferencias do usuario que estao salvas em arquivo ou na linha de comando. A funcao __user_preferences_read__ faz a leitura de um arquivo com nome __./user_preferences.ini__. Caso queira usar um arquivo com nome ou caminho diferente, chame a funcao __user_preferences_read_from_file__. Caso o arquivo nao exista, a funcao encerra normalmente.
+5) Crie uma funcao __read_preferences__ para recuperar as preferencias do usuario que estao salvas em arquivo ou na linha de comando. A funcao __user_preferences_read__ faz a leitura de um arquivo com nome __./user_preferences.ini__. Caso queira usar um arquivo com nome ou caminho diferente, chame a funcao __user_preferences_read_from_file__. Caso o arquivo nao exista, a funcao encerra normalmente sem alterar os valores default das variaveis globais.
 ```
  void
  read_preferences(int argc, char** argv)
@@ -55,6 +57,8 @@ Um exemplo de uso pode ser encontrado no programa: __proccontrol_gui.cpp__
  	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
  	user_preferences_read(user_pref_module, user_pref_param_list, user_pref_num_items);
  	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
+ 
+ 	... 
  }
 ```
 
@@ -72,26 +76,60 @@ Exemplos de linha de comando:
  ./proccontrol_gui  -window_x  879  -window_y  297  -window_width  1041  -window_height  755
 ```
 
-7) A chamada a funcao __read_preferences__ deve ocorrer antes da construcao das janelas do programa. Essa funcao nao depende do Carmen IPC.
+6) Insira a manipulacao das janelas do programa utilizando as variaveis globais (pode ser dentro de __read_preferences__).
+
+Exemplo com objeto __QWidget__ (pode ser inserido antes da primeira chamada a __show()__):
+```
+ if (user_pref_window_width >= 0 && user_pref_window_height >= 0)
+     qdisplay->resize(user_pref_window_width, user_pref_window_height);
+ if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
+     qdisplay->move(user_pref_window_x, user_pref_window_y);
+```
+
+Exemplo com objeto __GtkWidget__ (deve ser inserido apos a primeira chamada a __gtk_widget_show_all__):
+```
+ if (user_pref_window_width >= 0 && user_pref_window_height >= 0)
+     gtk_window_resize(GTK_WINDOW(gui->controls_.main_window), user_pref_window_width, user_pref_window_height);
+ if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
+     gtk_window_move(GTK_WINDOW(gui->controls_.main_window), user_pref_window_x, user_pref_window_y);
+```
+
+7) A chamada a funcao __read_preferences__ nao depende do Carmen IPC.
 ```
  int
  main(int argc, char** argv)
  {
- 	read_preferences(argc, argv);
- 	QApplication app(argc, argv);
- 	QDisplay gui;
+    QApplication         app(argc, argv);
+    QDisplay             gui;
+    qdisplay = &gui;
+    read_preferences(argc, argv);
+    carmen_ipc_initialize(argc, argv);
+    ...
 ```
 
-8) Crie uma funcao __save_preferences__ para salvar as preferencias do usuario em arquivo. A funcao __user_preferences_save__ grava um arquivo com nome __./user_preferences.ini__. Caso queira gravar um arquivo com nome ou caminho diferente, chame a funcao __user_preferences_save_to_file__. Caso o arquivo contenha dados de outros programas, eles serao preservados. Os dados do programa corrente serao atualizados. Caso o arquivo nao exista, ele sera criado.
+8) Crie uma funcao __save_preferences__ para salvar as preferencias do usuario em arquivo. A funcao __user_preferences_save__ grava um arquivo com nome __./user_preferences.ini__. Caso queira gravar um arquivo com nome ou caminho diferente, chame a funcao __user_preferences_save_to_file__. Caso o arquivo contenha dados de outros programas, eles serao preservados; somente os dados do programa corrente serao atualizados. Caso o arquivo nao exista, ele sera criado.
+
+Exemplo com objeto __QWidget__: 
 ```
  void
  save_preferences()
  {
- 	user_pref_window_width = qdisplay->width();
- 	user_pref_window_height = qdisplay->height();
- 	user_pref_window_x = qdisplay->x() + 10;
- 	user_pref_window_y = qdisplay->y() + 10;
- 	user_preferences_save(user_pref_module, user_pref_param_list, user_pref_num_items);
+    user_pref_window_width = qdisplay->width();
+    user_pref_window_height = qdisplay->height();
+    user_pref_window_x = qdisplay->x() + 10;
+    user_pref_window_y = qdisplay->y() + 10;
+    user_preferences_save(user_pref_module, user_pref_param_list, user_pref_num_items);
+ }
+```
+
+Exemplo com objeto __GtkWidget__:
+```
+ void
+ save_preferences()
+ {
+    gtk_window_get_size(GTK_WINDOW(gui->controls_.main_window), &user_pref_window_width, &user_pref_window_height);
+    gtk_window_get_position(GTK_WINDOW(gui->controls_.main_window), &user_pref_window_x, &user_pref_window_y);
+    user_preferences_save(user_pref_module, user_pref_param_list, user_pref_num_items);
  }
 ```
 
