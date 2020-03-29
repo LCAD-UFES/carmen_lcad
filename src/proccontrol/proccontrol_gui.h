@@ -46,7 +46,6 @@
 #define MAX_NUM_MODULES  40
 #define NUM_STATES       4
 #define MAX_NAME_LENGTH  256
-#define OUTPUT_TEXT_VISIBLE_LINES	10
 
 typedef struct {
   char   group_name[MAX_NAME_LENGTH];

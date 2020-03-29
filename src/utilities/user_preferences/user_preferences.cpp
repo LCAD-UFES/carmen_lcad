@@ -1,14 +1,48 @@
 #include <carmen/carmen.h>
 #include <carmen/user_preferences.h>
-#include <carmen/param_interface.h>
+
+
+void
+get_param_value(void *value, char type, const char *line, const char *filename = "commandline")
+{
+	int len = 0;
+
+	switch(type)
+	{
+		case USER_PARAM_TYPE_INT:
+			if (sscanf(line, "%d%n", (int *) value, &len) != 1 || line[len] != '\0')
+				carmen_warn("WARNING: User preference parameter is not of type %s:\nfile: %s\ntext: %s", "INT", filename, line);
+			break;
+
+		case USER_PARAM_TYPE_DOUBLE:
+			if (sscanf(line, "%lf%n", (double *) value, &len) != 1 || line[len] != '\0')
+				carmen_warn("WARNING: User preference parameter is not of type %s:\nfile: %s\ntext: %s", "DOUBLE", filename, line);
+			break;
+
+		case USER_PARAM_TYPE_ONOFF:
+			if (strcmp(line, "ON") == 0 || strcmp(line, "on") == 0)
+				*(int *) value = 1;
+			else if (strcmp(line, "OFF") == 0 || strcmp(line, "off") == 0)
+				*(int *) value = 0;
+			else
+				carmen_warn("WARNING: User preference parameter is not of type %s:\nfile: %s\ntext: %s", "ONOFF", filename, line);
+			break;
+
+		case USER_PARAM_TYPE_STRING:
+		case USER_PARAM_TYPE_FILE:
+		case USER_PARAM_TYPE_DIR:
+		default:
+			len = strlen(line) + 1;
+			value = malloc(len);
+			memcpy(value, line, len);
+	}
+}
 
 
 void
 get_user_param(const char *module, user_param_t param, carmen_FILE *user_pref, const char *filename)
 {
-	static char line[10000];
-	static char line_module[1000], line_variable[1000], line_value[8000];
-	int pos = 0;
+	static char line[10000], line_module[1000], line_variable[1000], line_value[8000];
 
 	carmen_fseek(user_pref, 0L, SEEK_SET);
 
@@ -19,35 +53,8 @@ get_user_param(const char *module, user_param_t param, carmen_FILE *user_pref, c
 			(strcmp(line_module, module) != 0 || strcmp(line_variable, param.variable) != 0))
 			continue;
 
-		switch(param.type)
-		{
-			case USER_PARAM_TYPE_INT:
-				if (sscanf(line_value, "%d%n", (int *) param.value, &pos) != 1 || line_value[pos] != '\0')
-					carmen_warn("WARNING: User preference parameter is not of type %s:\nfile: %s\ntext: %s", "INT", filename, line);
-				return;
-
-			case USER_PARAM_TYPE_DOUBLE:
-				if (sscanf(line_value, "%lf%n", (double *) param.value, &pos) != 1 || line_value[pos] != '\0')
-					carmen_warn("WARNING: User preference parameter is not of type %s:\nfile: %s\ntext: %s", "DOUBLE", filename, line);
-				return;
-
-			case USER_PARAM_TYPE_ONOFF:
-				if (strcmp(line_value, "ON") == 0 || strcmp(line_value, "on") == 0)
-					*(int *) param.value = 1;
-				else if (strcmp(line_value, "OFF") == 0 || strcmp(line_value, "off") == 0)
-					*(int *) param.value = 0;
-				else
-					carmen_warn("WARNING: User preference parameter is not of type %s:\nfile: %s\ntext: %s", "ONOFF", filename, line);
-				return;
-
-			case USER_PARAM_TYPE_STRING:
-			case USER_PARAM_TYPE_FILE:
-			case USER_PARAM_TYPE_DIR:
-			default:
-				param.value = malloc(strlen(line_value) + 1);
-				strcpy((char *) param.value, line_value);
-				return;
-		}
+		get_param_value(param.value, param.type, line_value, filename);
+		break;
 	}
 }
 
@@ -129,7 +136,7 @@ param_value_to_str(char *value_str, void *param_value, char param_type)
 
 
 void
-user_preferences_read(const char *module, user_param_t *param_list, int num_items, const char *filename = USER_DEFAULT_FILENAME)
+user_preferences_read_from_file(const char *module, user_param_t *param_list, int num_items, const char *filename)
 {
 	if (num_items <= 0 || filename == NULL || filename[0] == '\0')
 		return;
@@ -146,26 +153,35 @@ user_preferences_read(const char *module, user_param_t *param_list, int num_item
 
 
 void
+user_preferences_read(const char *module, user_param_t *param_list, int num_items)
+{
+	user_preferences_read_from_file(module, param_list, num_items, USER_DEFAULT_FILENAME);
+}
+
+
+void
 user_preferences_read_commandline(int argc, char **argv, user_param_t *param_list, int num_items)
 {
 	if (num_items <= 0)
 		return;
 
-	carmen_param_t *commandline_param_list = (carmen_param_t *) calloc(num_items, sizeof(carmen_param_t));
+	for (int i = 1; i < (argc - 1); i++)
+	{
+		if (argv[i][0] != '-')
+			continue;
 
-	for (int i = 0; i < num_items; i++)
-		commandline_param_list[i] = (carmen_param_t) {(char *) "commandline", (char *) param_list[i].variable, param_list[i].type,
-			param_list[i].value, 0, NULL};
+		int index = find_variable_in_param_list(&argv[i][1], param_list, num_items);
+		if (index < 0)
+			continue;
 
-	carmen_param_allow_unfound_variables(1);
-	carmen_param_install_params(argc, argv, commandline_param_list, num_items);
-
-	free(commandline_param_list);
+		i++;
+		get_param_value(param_list[index].value, param_list[index].type, argv[i]);
+	}
 }
 
 
 void
-user_preferences_save(const char *module, user_param_t *param_list, int num_items, const char *filename = USER_DEFAULT_FILENAME)
+user_preferences_save_to_file(const char *module, user_param_t *param_list, int num_items, const char *filename)
 {
 	if (num_items <= 0)
 		return;
@@ -184,18 +200,18 @@ user_preferences_save(const char *module, user_param_t *param_list, int num_item
 	carmen_FILE *new_user_pref = carmen_fopen(new_filename, "w");
 	if (new_user_pref == NULL)
 	{
-		carmen_warn("WARNING: Could not open user preferences file for writing: %s\n", filename);
+		carmen_warn("WARNING: Could not open user preferences file for writing: %s  (errno: %d)\n", new_filename, errno);
 		return;
 	}
 
 	char line[10000], line_module[1000], line_variable[1000], line_value[8000], param_value_str[8000];
-	int index, pos = 0, saved_count = 0;
+	int index, len = 0, saved_count = 0;
 	int *saved_list = (int *) calloc(num_items, sizeof(int));
 
 	while (user_pref != NULL && carmen_fgets(line, 9999, user_pref) != NULL)
 	{
 		if ((line[0] == '#') ||
-			(sscanf(line, " %s %s %n%s ", line_module, line_variable, &pos, line_value) != 3) ||
+			(sscanf(line, " %s %s %n%s ", line_module, line_variable, &len, line_value) != 3) ||
 			(strcmp(line_module, module) != 0))
 		{
 			carmen_fprintf(new_user_pref, "%s", line);
@@ -213,9 +229,9 @@ user_preferences_save(const char *module, user_param_t *param_list, int num_item
 			carmen_fprintf(new_user_pref, "%s", line);
 		else
 		{
-			carmen_fwrite(line, pos, 1, new_user_pref);
+			carmen_fwrite(line, len, 1, new_user_pref);
 			param_value_to_str(param_value_str, param_list[index].value, param_list[index].type);
-			carmen_fprintf(new_user_pref, "%s   # %s", param_value_str, line + pos);
+			carmen_fprintf(new_user_pref, "%s   # %s", param_value_str, line + len);
 		}
 		saved_list[index] = 1;
 		saved_count++;
@@ -245,4 +261,11 @@ user_preferences_save(const char *module, user_param_t *param_list, int num_item
 	}
 	carmen_fclose(new_user_pref);
 	rename(new_filename, filename);
+}
+
+
+void
+user_preferences_save(const char *module, user_param_t *param_list, int num_items)
+{
+	user_preferences_save_to_file(module, param_list, num_items, USER_DEFAULT_FILENAME);
 }

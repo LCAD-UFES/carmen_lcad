@@ -11,6 +11,7 @@ extern "C" {
 
 #include <carmen/carmen.h>
 #include <carmen/proccontrol_interface.h>
+#include <carmen/user_preferences.h>
 #include <map>
 #include <string>
 
@@ -22,6 +23,15 @@ extern "C" {
 
 #include <carmen/voice_interface_interface.h>
 #include "proccontrol_gui.h"
+
+const char *user_pref_module;
+user_param_t *user_pref_param_list;
+int user_pref_num_items;
+int user_pref_window_width = 600;
+int user_pref_window_height = 400;
+int user_pref_window_x = -1;
+int user_pref_window_y = -1;
+int user_pref_output_lines = 10;
 
 QDisplay                             * qdisplay;
 int                                    pid_update = FALSE;
@@ -108,7 +118,9 @@ QDisplay::QDisplay( QWidget *parent, const char *name )
 	QIcon icon(path);
 	setWindowIcon(icon);
 
-	resize( 600, 400 );
+	resize( user_pref_window_width, user_pref_window_height );
+	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
+		move(user_pref_window_x, user_pref_window_y);
 }
 
 void
@@ -449,7 +461,7 @@ carmen_update_pidtable( carmen_proccontrol_pidtable_message *msg )
 		}
 	}
 	if (table.numgrps != p.numgrps)
-		qdisplay->resize( 600, 4 + p.numgrps * 84 + OUTPUT_TEXT_VISIBLE_LINES * 13 );
+		qdisplay->resize( qdisplay->width(), 4 + p.numgrps * 84 + user_pref_output_lines * 13 );
 	table.numgrps = p.numgrps;
 }
 
@@ -481,14 +493,51 @@ carmen_output( int state )
 	}
 }
 
+
 void
-shutdown( int sig ) {
+read_preferences(int argc, char** argv)
+{
+	static user_param_t param_list[] =
+	{
+		{"window_width",  USER_PARAM_TYPE_INT, &user_pref_window_width},
+		{"window_height", USER_PARAM_TYPE_INT, &user_pref_window_height},
+		{"window_x",      USER_PARAM_TYPE_INT, &user_pref_window_x},
+		{"window_y",      USER_PARAM_TYPE_INT, &user_pref_window_y},
+		{"output_lines",  USER_PARAM_TYPE_INT, &user_pref_output_lines},
+	};
+	user_pref_module = basename(argv[0]);
+	user_pref_param_list = param_list;
+	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
+	user_preferences_read(user_pref_module, user_pref_param_list, user_pref_num_items);
+	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
+}
+
+
+void
+save_preferences()
+{
+	user_pref_window_width = qdisplay->width();
+	user_pref_window_height = qdisplay->height();
+	user_pref_window_x = qdisplay->x() + 10;
+	user_pref_window_y = qdisplay->y() + 10;
+	user_pref_output_lines = (qdisplay->height() - 4 - table.numgrps * 84 ) / 13;
+	user_preferences_save(user_pref_module, user_pref_param_list, user_pref_num_items);
+}
+
+
+void
+shutdown( int sig )
+{
+	save_preferences();
 	exit(sig);
 }
 
+
 int
-main( int argc, char** argv)
+main(int argc, char** argv)
 {
+	read_preferences(argc, argv);
+
 	QApplication         app( argc, argv );
 	QDisplay             gui;
 
