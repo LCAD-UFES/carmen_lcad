@@ -23,7 +23,7 @@ import time
 import tensorflow.compat.v1 as tf
 import numpy as np
 from PIL import Image, ImagePalette
-import cv2
+#import cv2
 from typing import Text, Dict, Any, List
 
 import anchors
@@ -43,7 +43,7 @@ global ckpt_path
 global driver
 
 model_name = 'efficientdet-d0'
-ckpt_path = 'efficientdet-d0'
+ckpt_path = carmen_home + "/sharedlib/efficientdet/efficientdet-d0"
 test_dir = carmen_home + "/sharedlib/efficientdet/testdata"
 image_size = None
 
@@ -52,7 +52,7 @@ def initialize():
     global ckpt_path
     global driver
     tf.reset_default_graph()
-    #tf.compat.v1.disable_eager_execution()
+    tf.compat.v1.disable_eager_execution()
     driver = inference.ServingDriver(model_name, ckpt_path)
     driver.build()
     print("\n\n-------------------------------------------------------")

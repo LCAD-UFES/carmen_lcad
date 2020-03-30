@@ -29,26 +29,19 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
 
+#EfficientDet - Comentar as duas linhas abaixo para trabalhar com python2.7
+IFLAGS += -I/usr/include/python3.5
+LFLAGS += -lefficientdet -lpython3.5m
+
 # Deeplab
 IFLAGS += -I/usr/include/python2.7
 LFLAGS += -ldeeplab -lpython2.7
 
 #SqueezeSeg
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src  -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsqueeze_seg_v2/src
 LFLAGS += -lsqueeze_seg -lpython2.7
 
 #SalsaNet
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/salsanet/scripts  -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/salsanet/scripts
 LFLAGS += -lsalsanet -lpython2.7
-
-#EfficientDet
-IFLAGS += -I/usr/include/python3.5
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/efficientdet  -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/efficientdet
-LFLAGS += -lefficientdet -lpython3.5m
-
 
 #OPENCV
 IFLAGS += -DUSE_OPENCV
@@ -139,7 +132,7 @@ libefficientdet.a:
 darknet2:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2
 
-clean: clean_prob_models clean_libsqueeze_seg clean_libefficientdet
+clean: clean_libsqueeze_seg clean_libefficientdet
 
 clean_prob_models:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/prob_models/

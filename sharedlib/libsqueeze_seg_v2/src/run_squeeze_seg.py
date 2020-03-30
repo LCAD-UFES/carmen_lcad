@@ -6,12 +6,13 @@ from datetime import datetime
 
 #Activating virtualenv
 import os
+import sys
 
 def activate_virtual_environment(environment_root):
     """Configures the virtual environment starting at ``environment_root``."""
     activate_script = os.path.join(
         environment_root, 'bin', 'activate_this.py')
-    execfile(activate_script, {'__file__': activate_script})
+    exec(compile(open(activate_script, "rb").read(), activate_script, 'exec'), dict(__file__=activate_script))
 
 carmen_home = os.getenv("CARMEN_HOME")
 virtualenv_root = carmen_home + "/sharedlib/libsqueeze_seg_v2/squeezeseg_env"
