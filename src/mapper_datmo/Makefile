@@ -44,6 +44,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/salsanet/scripts
 LFLAGS += -lsalsanet -lpython2.7
 
 #EfficientDet
+IFLAGS += -I/usr/include/python3.5
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/efficientdet  -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/efficientdet
 LFLAGS += -lefficientdet -lpython3.5m
