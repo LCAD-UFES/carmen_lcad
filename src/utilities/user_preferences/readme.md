@@ -119,7 +119,7 @@ Exemplo:
     ...
 ```
 
-8) Crie uma funcao __save_preferences__ para salvar as preferencias do usuario em arquivo. A funcao __user_preferences_save__ grava um arquivo com nome __./user_preferences.ini__. Caso queira gravar um arquivo com nome ou caminho diferente, chame a funcao __user_preferences_save_to_file__. Caso o arquivo contenha dados de outros programas, eles serao preservados; somente os dados do programa corrente serao atualizados. Caso o arquivo nao exista, ele sera criado.
+8) Crie uma funcao __save_preferences__ para salvar as preferencias do usuario em arquivo. A funcao __user_preferences_save__ utiliza um arquivo com nome __./user_preferences.ini__. Caso queira utilizar um arquivo com nome ou caminho diferente, chame a funcao __user_preferences_save_to_file__. Caso o arquivo contenha dados de outros programas, eles serao preservados; somente os dados do programa corrente sao atualizados.
 
 Exemplo com objeto __QWidget__: 
 ```
@@ -162,3 +162,5 @@ Exemplo com objeto __GtkWidget__:
  	...
  }
 ```
+
+10) Faca uma copia do arquivo __user_preferences_default.ini__ da pasta __/bin__, renomeando-o para __user_preferences.ini__. Em seguida, edite manualmente este arquivo, colocando __#__ no inicio das linhas cujas variaveis voce deseja desabilitar o salvamento e a recuperacao de dados.

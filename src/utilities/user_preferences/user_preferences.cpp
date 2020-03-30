@@ -261,17 +261,17 @@ user_preferences_save_to_file(const char *module, user_param_t *param_list, int 
 		saved_count++;
 	}
 
-	if (saved_count < num_items)
-		carmen_fprintf(new_user_pref, "\n");
-
-	for (index = 0; index < num_items; index++)
-	{
-		if (saved_list[index] == 1)
-			continue;
-
-		param_value_to_str(param_value_str, param_list[index].value, param_list[index].type);
-		carmen_fprintf(new_user_pref, "%-20s %-20s %s\n", module, param_list[index].variable, param_value_str);
-	}
+//	if (saved_count < num_items)
+//		carmen_fprintf(new_user_pref, "\n");
+//
+//	for (index = 0; index < num_items; index++)
+//	{
+//		if (saved_list[index] == 1)
+//			continue;
+//
+//		param_value_to_str(param_value_str, param_list[index].value, param_list[index].type);
+//		carmen_fprintf(new_user_pref, "%-20s %-20s %s\n", module, param_list[index].variable, param_value_str);
+//	}
 
 	free(saved_list);
 	if (user_pref)
