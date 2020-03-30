@@ -2,14 +2,13 @@
 #include "libefficientdet.h"
 #include <numpy/arrayobject.h>
 #include <stdlib.h> /* getenv */
-#include <string>
-#include <iostream>
-#include <cstdlib>
-#include <fstream>
+//#include <string>
+//#include <iostream>
+//#include <cstdlib>
+//#include <fstream>
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-
-// #include <iostream>
 #define NUMPY_IMPORT_ARRAY_RETVAL
+
 
 
 PyObject *python_libefficientdet_process_image_function;
@@ -34,7 +33,15 @@ initialize_Efficientdet()
 {
 	initialize_python_path_efficientdet();
 	Py_Initialize();
+
+	if (PyErr_Occurred())
+		        PyErr_Print();
+	
 	import_array();
+	
+	if (PyErr_Occurred())
+		        PyErr_Print();
+	
 	PyObject *python_module = PyImport_ImportModule("run_efficientdet");
 	
 	if (PyErr_Occurred())

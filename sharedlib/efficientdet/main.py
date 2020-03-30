@@ -62,6 +62,9 @@ flags.DEFINE_string('model_dir', None, 'Location of model_dir')
 flags.DEFINE_string('backbone_ckpt', '',
                     'Location of the ResNet50 checkpoint to use for model '
                     'initialization.')
+flags.DEFINE_string('ckpt', None,
+                    'Start training from this EfficientDet checkpoint.')
+
 flags.DEFINE_string('hparams', '',
                     'Comma separated k=v pairs of hyperparameters.')
 flags.DEFINE_integer(
@@ -89,6 +92,8 @@ flags.DEFINE_string(
     'val_json_file',
     None,
     'COCO validation JSON containing golden bounding boxes.')
+flags.DEFINE_string('testdev_dir', None,
+                    'COCO testdev dir. If true, ignorer val_json_file.')
 flags.DEFINE_integer('num_examples_per_epoch', 120000,
                      'Number of examples in one epoch')
 flags.DEFINE_integer('num_epochs', 15, 'Number of epochs for training')
@@ -130,8 +135,9 @@ def main(argv):
     if FLAGS.validation_file_pattern is None:
       raise RuntimeError('You must specify --validation_file_pattern '
                          'for evaluation.')
-    if FLAGS.val_json_file is None:
-      raise RuntimeError('You must specify --val_json_file for evaluation.')
+    if not FLAGS.val_json_file and not FLAGS.testdev_dir:
+      raise RuntimeError(
+          'You must specify --val_json_file or --testdev for evaluation.')
 
   # Parse and override hparams
   config = hparams_config.get_detection_config(FLAGS.model_name)
@@ -202,7 +208,9 @@ def main(argv):
       num_examples_per_epoch=FLAGS.num_examples_per_epoch,
       use_tpu=FLAGS.use_tpu,
       backbone_ckpt=FLAGS.backbone_ckpt,
+      ckpt=FLAGS.ckpt,
       val_json_file=FLAGS.val_json_file,
+      testdev_dir=FLAGS.testdev_dir,
       mode=FLAGS.mode,
   )
   config_proto = tf.ConfigProto(
@@ -252,7 +260,6 @@ def main(argv):
           params,
           use_tpu=False,
           input_rand_hflip=False,
-          backbone_ckpt=None,
           is_training_bn=False,
           use_bfloat16=False,
       )
@@ -280,7 +287,6 @@ def main(argv):
         params,
         use_tpu=False,
         input_rand_hflip=False,
-        backbone_ckpt=None,
         is_training_bn=False,
         use_bfloat16=False,
     )
@@ -312,7 +318,6 @@ def main(argv):
                                             is_training=False),
             steps=FLAGS.eval_samples//FLAGS.eval_batch_size)
         logging.info('Eval results: %s', eval_results)
-        utils.archive_ckpt(eval_results, eval_results['AP'], ckpt)
 
         # Terminate eval job when final checkpoint is reached.
         try:
@@ -320,6 +325,8 @@ def main(argv):
         except IndexError:
           logging.info('%s has no global step info: stop!', ckpt)
           break
+
+        utils.archive_ckpt(eval_results, eval_results['AP'], ckpt)
         total_step = int((FLAGS.num_epochs * FLAGS.num_examples_per_epoch) /
                          FLAGS.train_batch_size)
         if current_step >= total_step:
@@ -356,7 +363,6 @@ def main(argv):
           params,
           use_tpu=False,
           input_rand_hflip=False,
-          backbone_ckpt=None,
           is_training_bn=False,
       )
 

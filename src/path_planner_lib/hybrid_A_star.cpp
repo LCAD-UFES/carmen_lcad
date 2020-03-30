@@ -469,9 +469,9 @@ closest_circle_new(state_node *current_state, vector<circle_node> &circle_path)
 {
 	double min_dist = DBL_MAX;
 	double dist;
-	int indice;
+	int indice = 0;
 
-	for (int i = 0; i < circle_path.size(); i++)
+	for (unsigned int i = 0; i < circle_path.size(); i++)
 	{
 	  dist = DIST2D(current_state->state, circle_path[i]);
 	  if (dist < min_dist)
@@ -525,6 +525,50 @@ my_f_ordenation (state_node *a, state_node *b) { float w1 = 1.0; float w2 = 1.0;
 #define DIRECTION_OF_MOVEMENT_CHANGE_PENALTY 5
 #define DRIVING_BACKWARD_PENALTY 5
 
+double
+reeds_shepp_path_cost(carmen_ackerman_traj_point_t start_state, carmen_ackerman_traj_point_t goal_state, carmen_robot_ackerman_config_t robot_config)
+{
+	int rs_pathl;
+	int rs_numero;
+	double tr;
+	double ur;
+	double vr;
+	double distance_traveled = 0.0;
+	double distance_traveled_old = 0.0;
+	carmen_ackerman_traj_point_t rs_points[5];
+	double v_step;
+	double step_weight;
+	double path_cost = 0.0;
+
+	rs_init_parameters(robot_config.max_phi, robot_config.distance_between_front_and_rear_axles);
+	double rs_length = reed_shepp(start_state, goal_state, &rs_numero, &tr, &ur, &vr);
+
+	rs_pathl = constRS(rs_numero, tr, ur, vr, start_state, rs_points);
+
+	for (int i = rs_pathl; i > 0 /*rs_pathl*/; i--)
+	{
+		carmen_ackerman_traj_point_t point = rs_points[i];
+		if (rs_points[i].v < 0.0)
+		{
+			v_step = 2.0;
+			step_weight = 1.0;
+		}
+		else
+		{
+			v_step = -2.0;
+			step_weight = 1.0;
+		}
+		while (DIST2D(point, rs_points[i-1]) > 1.0)
+		{
+			distance_traveled_old = distance_traveled;
+			point = carmen_libcarmodel_recalc_pos_ackerman(point, v_step, rs_points[i].phi,
+					0.25, &distance_traveled, DELTA_T, robot_config);
+			path_cost += step_weight * (distance_traveled - distance_traveled_old);
+		}
+	}
+	//return path_cost;
+	return rs_length;
+}
 
 void
 expand_state(state_node *current_state, state_node *goal_state, vector<state_node*> &closed_set, vector<circle_node> circle_path, std::vector<state_node*> &open_set,
@@ -534,9 +578,6 @@ expand_state(state_node *current_state, state_node *goal_state, vector<state_nod
 	#define NUM_STEERING_ANGLES 3
     double steering_acceleration[NUM_STEERING_ANGLES] = {-0.25, 0.0, 0.25}; //TODO ler velocidade angular do volante do carmen.ini
     double target_v[3]   = {2.0, 0.0, -2.0};
-
-    int rs_numero;
-    double tr, ur, vr;
 
     for (int i = 0; i < 3; ++i)
     {
@@ -555,12 +596,7 @@ expand_state(state_node *current_state, state_node *goal_state, vector<state_nod
         	//new_state->g = DIST2D(new_state->state, goal_state->state);
         	circle_node current_circle = closest_circle_new(new_state, circle_path);
         	//new_state->h = DIST2D(new_state->state, current_circle) + current_circle.h + 0.8 * abs(carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta));
-        	double rs_length = reed_shepp(new_state->state, goal_state->state, &rs_numero, &tr, &ur, &vr);
-//        	if (rs_length < 5.0)
-//        		new_state->h = rs_length;
-//        	else
-//        		new_state->h = DIST2D(new_state->state, current_circle) + current_circle.h;
-        	new_state->h = max(DIST2D(new_state->state, current_circle) + current_circle.h, rs_length);
+        	new_state->h = max(DIST2D(new_state->state, current_circle) + current_circle.h, reeds_shepp_path_cost(new_state->state, goal_state->state, robot_config));
 //        	new_state->h = DIST2D(new_state->state, current_circle) + current_circle.h + rs_length;
 //        	cout << "rs_length = " << rs_length << "\n";
 //        	cout << "circle_path_length = " << DIST2D(new_state->state, current_circle) + current_circle.h << "\n";
@@ -607,7 +643,6 @@ expand_state(state_node *current_state, state_node *goal_state, vector<state_nod
     //printf("Size %d\n", (int) open_set.size());
 }
 
-
 vector<state_node>
 heuristic_search(state_node *start_state, state_node *goal_state, vector<circle_node> circle_path,
 		carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map)
@@ -632,18 +667,18 @@ heuristic_search(state_node *start_state, state_node *goal_state, vector<circle_
         if ((DIST2D(current_state->state, goal_state->state) < 2.0) && (abs(carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta)) < 0.0872665))
 //        if ((goal_state->g + goal_state->h) < (current_state->g + current_state->h))
         {
-		printf("Chegou ao destino\n");
-		printf("Não ");
-		state_path = build_state_path(current_state);
-        	while(!open_set.empty())
-        	{
-        		state_node *tmp = open_set.back();
+			printf("Chegou ao destino\n");
+			printf("Não ");
+			state_path = build_state_path(current_state);
+				while(!open_set.empty())
+				{
+					state_node *tmp = open_set.back();
 
-        		open_set.pop_back();
+					open_set.pop_back();
 
-        		delete tmp;
-        	}
-        	break;
+					delete tmp;
+				}
+				break;
         }
         //circle_node c = closest_circle(current_state, circle_path);
         //draw_circle_on_map_img(c.x, c.y, c.radius, distance_map->config);
@@ -720,7 +755,6 @@ circle_exploration(carmen_point_t *robot_pose, carmen_point_t *goal, carmen_obst
 	return (circle_path);
 }
 
-
 void
 compute_hybrid_A_star_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
@@ -736,10 +770,10 @@ compute_hybrid_A_star_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose
 	double vr;
 	double distance_traveled = 0.0;
 	carmen_ackerman_traj_point_t rs_points[5];
-
+	double v_step;
 
 	rs_init_parameters(robot_config.max_phi, robot_config.distance_between_front_and_rear_axles);
-	double length =
+	double length = reed_shepp(start_state->state, goal_state->state, &rs_numero, &tr, &ur, &vr);
 
 	vector<circle_node> circle_path = circle_exploration(robot_pose, goal_pose, distance_map);
 
@@ -747,29 +781,28 @@ compute_hybrid_A_star_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose
 //
 	vector<state_node> path = heuristic_search(start_state, goal_state, circle_path, robot_config, distance_map);
 
-
-
 	//draw_point_on_map_img(start_state->state.x, start_state->state.y, distance_map->config);
 	//draw_point_on_map_img(goal_state->state.x, goal_state->state.y, distance_map->config);
 
-
-	reed_shepp(start_state->state, goal_state->state, &rs_numero, &tr, &ur, &vr);
-	rs_pathl = constRS(rs_numero, tr, ur, vr, start_state->state, rs_points);
+//	rs_pathl = constRS(rs_numero, tr, ur, vr, start_state->state, rs_points);
 //
 //	printf("Poses in Reed Sheep path: %d\n", rs_pathl);
-//	for (int i = rs_pathl - 1; i > 0 /*rs_pathl*/; i--)
+//	for (int i = rs_pathl; i > 0 /*rs_pathl*/; i--)
 //	{
 //		carmen_ackerman_traj_point_t point = rs_points[i];
-//		while (DIST2D(point, rs_points[i+1]) > 2.0)
-////		for (int i = 0; i < 10; i++)
+//		if (rs_points[i].v < 0.0)
+//			v_step = 2.0;
+//		else
+//			v_step = -2.0;
+//		while (DIST2D(point, rs_points[i-1]) > 0.5)
 //		{
-//			point = carmen_libcarmodel_recalc_pos_ackerman(point, 2.0, rs_points[i].phi,
+//			point = carmen_libcarmodel_recalc_pos_ackerman(point, v_step, rs_points[i].phi,
 //					0.25, &distance_traveled, DELTA_T, robot_config);
 //
 //			draw_point_on_map_img(point.x, point.y, distance_map->config);
 //			//draw_point_on_map_img(rs_points[i].x, rs_points[i].y, distance_map->config);
 //			usleep(500000);
-//			printf("%lf %lf %lf %lf %lf\n", rs_points[i].x, rs_points[i].y, rs_points[i].theta, rs_points[i].v, rs_points[i].phi);
+//			printf("%lf %lf %lf %lf %lf\n", rs_points[i].x, rs_points[i].y, rs_points[i].theta, rs_points[i].v, rs_points[i+1].phi);
 //		}
 //	}
 }
