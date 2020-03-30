@@ -108,7 +108,7 @@ carmen_xsens_global_euler_message xsens_euler;
 carmen_xsens_global_quat_message xsens_quat;
 carmen_xsens_global_matrix_message xsens_matrix;
 carmen_xsens_mtig_message xsens_mtig;
-carmen_bumblebee_basic_stereoimage_message bumblebee_basic_stereoimage1, bumblebee_basic_stereoimage2, bumblebee_basic_stereoimage3, bumblebee_basic_stereoimage4, bumblebee_basic_stereoimage5, bumblebee_basic_stereoimage6, bumblebee_basic_stereoimage7, bumblebee_basic_stereoimage8, bumblebee_basic_stereoimage9;
+carmen_bumblebee_basic_stereoimage_message bumblebee_basic_stereoimage1, bumblebee_basic_stereoimage2, bumblebee_basic_stereoimage3, bumblebee_basic_stereoimage4, bumblebee_basic_stereoimage5, bumblebee_basic_stereoimage6, bumblebee_basic_stereoimage7, bumblebee_basic_stereoimage8, bumblebee_basic_stereoimage9, bumblebee_basic_stereoimage10, bumblebee_basic_stereoimage11, bumblebee_basic_stereoimage12, bumblebee_basic_stereoimage13;
 
 carmen_web_cam_message web_cam_message;
 
@@ -178,6 +178,10 @@ static logger_callback_t logger_callbacks[] =
 	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE7", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE7_NAME, (converter_func) carmen_string_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage7, 0},
 	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE8", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE8_NAME, (converter_func) carmen_string_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage8, 0},
 	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE9", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE9_NAME, (converter_func) carmen_string_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage9, 0},
+	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE10", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE10_NAME, (converter_func) carmen_string_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage10, 0},
+	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE11", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE11_NAME, (converter_func) carmen_string_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage11, 0},
+	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE12", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE12_NAME, (converter_func) carmen_string_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage12, 0},
+	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE13", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE13_NAME, (converter_func) carmen_string_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage13, 0},
 	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE1", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE1_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage1, 0},
 	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE2", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE2_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage2, 0},
 	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE3", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE3_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage3, 0},
@@ -187,6 +191,10 @@ static logger_callback_t logger_callbacks[] =
 	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE7", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE7_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage7, 0},
 	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE8", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE8_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage8, 0},
 	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE9", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE9_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage9, 0},
+	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE10", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE10_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage10, 0},
+	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE11", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE11_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage11, 0},
+	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE12", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE12_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage12, 0},
+	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE13", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE13_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage13, 0},
 	{(char *) "WEB_CAM_IMAGE", (char *) CARMEN_WEB_CAM_MESSAGE_NAME, (converter_func) carmen_string_to_web_cam_message, &web_cam_message, 0},
 	{(char *) "BASEMOTION_ACK", (char *) CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME, (converter_func) carmen_string_to_base_ackerman_motion_message, &ackerman_motion_message, 0},
 	{(char *) "ULTRASONIC_SONAR_SENSOR", (char *) CARMEN_ULTRASONIC_SONAR_SENSOR_NAME, (converter_func) carmen_string_to_ultrasonic_message, &ultrasonic_message, 0},
@@ -335,6 +343,10 @@ check_in_file_message(char *logger_message_name, char *logger_message_line)
 	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE7") == 0) && (bumblebee_basic_stereoimage7.image_size <= 0));
 	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE8") == 0) && (bumblebee_basic_stereoimage8.image_size <= 0));
 	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE9") == 0) && (bumblebee_basic_stereoimage9.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE10") == 0) && (bumblebee_basic_stereoimage10.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE11") == 0) && (bumblebee_basic_stereoimage11.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE12") == 0) && (bumblebee_basic_stereoimage12.image_size <= 0));
+	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE13") == 0) && (bumblebee_basic_stereoimage13.image_size <= 0));
 
 	if (!error)
 		return true;
@@ -721,7 +733,7 @@ void define_ipc_messages(void)
 	err = IPC_defineMsg(CARMEN_PI_IMU_NAME, IPC_VARIABLE_LENGTH, CARMEN_PI_IMU_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_PI_IMU_NAME);
 
-	for (int camera = 1; camera <= 9; camera++)
+	for (int camera = 1; camera <= 13; camera++)
 		carmen_bumblebee_basic_define_messages(camera);
 
 	err = IPC_defineMsg(CARMEN_WEB_CAM_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_WEB_CAM_MESSAGE_FMT);
@@ -1038,6 +1050,10 @@ int main(int argc, char **argv)
 	memset(&bumblebee_basic_stereoimage7, 0, sizeof(bumblebee_basic_stereoimage7));
 	memset(&bumblebee_basic_stereoimage8, 0, sizeof(bumblebee_basic_stereoimage8));
 	memset(&bumblebee_basic_stereoimage9, 0, sizeof(bumblebee_basic_stereoimage9));
+	memset(&bumblebee_basic_stereoimage10, 0, sizeof(bumblebee_basic_stereoimage10));
+	memset(&bumblebee_basic_stereoimage11, 0, sizeof(bumblebee_basic_stereoimage11));
+	memset(&bumblebee_basic_stereoimage12, 0, sizeof(bumblebee_basic_stereoimage12));
+	memset(&bumblebee_basic_stereoimage13, 0, sizeof(bumblebee_basic_stereoimage13));
 	memset(&web_cam_message, 0, sizeof(web_cam_message));
 	memset(&ackerman_motion_message, 0, sizeof(ackerman_motion_message));
 	memset(&ultrasonic_message, 0, sizeof(ultrasonic_message));

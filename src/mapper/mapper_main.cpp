@@ -1378,7 +1378,7 @@ read_parameters(int argc, char **argv,
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 //
 //load lidars position and other configurations
-	for(int i = 0; i < number_of_lidars; i++)
+	for(int i = 0; i <= number_of_lidars; i++)
 		load_lidar_config(argc, argv, i, lidar_config[i]);
 
 	int mkdir_status = mkdir(map_path, 0775);

@@ -11,13 +11,13 @@ CXXFLAGS += -Wno-ignored-qualifiers -fopenmp
 CFLAGS += -Wall -fopenmp 
 SUBDIRS += TLightStateRecog
 
-IFLAGS +=  -std=c++11 -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
+IFLAGS +=  -std=c++11 -I/usr/local/include/bullet/ 
 
 LFLAGS += -lpthread -fopenmp -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 	 -ltime_profile -lbumblebee_basic_interface -lstereo_interface \
 	 -llocalize_ackerman_interface -lrddf_interface -lwnn 
 
-LFLAGS += -ldlib -lboost_system  -lgomp 
+LFLAGS += -lboost_system  -lgomp 
 
 IFLAGS += `pkg-config opencv --cflags`
 LFLAGS += `pkg-config opencv --libs`
@@ -36,6 +36,12 @@ PUBLIC_INCLUDES += squeezenet_tlight.h
 PUBLIC_LIBRARIES += libsqueezenet_tlight.a
 TARGETS += libsqueezenet_tlight.a
 CXXFLAGS += -DUSE_CAFFE
+endif
+
+ifdef DLIB
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src 
+LFLAGS += -ldlib
+CXXFLAGS += -DUSE_DLIB
 endif
 
 endif

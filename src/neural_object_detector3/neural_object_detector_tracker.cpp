@@ -456,6 +456,7 @@ crop_raw_image(int image_width, int image_height, unsigned char *raw_image, int 
 	return (cropped_image);
 }
 
+
 vector<vector<image_cartesian>>
 get_points_inside_bounding_boxes(vector<pedestrian> &predictions, vector<image_cartesian> &velodyne_points_vector)
 {
@@ -496,6 +497,7 @@ get_points_inside_bounding_boxes(vector<pedestrian> &predictions, vector<image_c
 	}
 	return laser_list_inside_each_bounding_box;
 }
+
 
 vector<image_cartesian>
 get_biggest_cluster(vector<vector<image_cartesian>> &clusters)
@@ -609,6 +611,7 @@ filter_object_points_using_dbscan(vector<vector<image_cartesian>> &points_lists)
 	return (filtered_points);
 }
 
+
 vector<image_cartesian>
 compute_detected_objects_poses(vector<vector<image_cartesian>> filtered_points)
 {
@@ -695,6 +698,7 @@ show_LIDAR_deepth(Mat &image, vector<vector<image_cartesian>> points_lists, int 
 	}
 }
 
+
 void
 show_all_points(Mat &image, unsigned int image_width, unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
 {
@@ -707,6 +711,7 @@ show_all_points(Mat &image, unsigned int image_width, unsigned int image_height,
 		if (all_points[i].ipx >= crop_x && all_points[i].ipx <= max_x && all_points[i].ipy >= crop_y && all_points[i].ipy <= max_y)
 			circle(image, Point(all_points[i].ipx - crop_x, all_points[i].ipy - crop_y), 1, cvScalar(0, 0, 255), 1, 8, 0);
 }
+
 
 void
 show_detections(Mat image, vector<pedestrian> pedestrian,vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> points_inside_bbox,
@@ -957,6 +962,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	static bool first_time = true;
 	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
 	carmen_laser_ldmrs_new_message sick_sync_with_cam;
+	double fps;
+	static double start_time = 0.0;
+	unsigned char *img;
 
 	if (first_time)
 	{
@@ -977,46 +985,26 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	else
 		return;
 
-//	printf("Actual Camera Size %d - %d\n", image_msg->width, image_msg->height);
-
-	double fps;
-	static double start_time = 0.0;
-	unsigned char *img;
-
 	if (camera_side == 0)
 		img = image_msg->raw_left;
 	else
 		img = image_msg->raw_right;
 
 	int crop_x = 0;
-	int crop_y = 0; //280;
-	int crop_w = image_msg->width;// 1280;
+	int crop_y = 0;
+	int crop_w = image_msg->width;
 	int crop_h = image_msg->height * IMAGE_HEIGHT_CROP;
 
 	Mat open_cv_image = Mat(image_msg->height, image_msg->width, CV_8UC3, img, 0);              // CV_32FC3 float 32 bit 3 channels (to char image use CV_8UC3)
 	Rect myROI(crop_x, crop_y, crop_w, crop_h);     // TODO put this in the .ini file
 	open_cv_image = open_cv_image(myROI);
 
-
-//	vector<carmen_velodyne_points_in_cam_t> sick_points = carmen_sick_camera_calibration_lasers_points_in_camera(sick_laser_message,
-//																   camera_parameters,
-//																   &transformer_sick,
-//																   open_cv_image.cols, open_cv_image.rows);
-//	vector<image_cartesian> new_sick_points;
-//	for (int i = 0; i < sick_points.size(); i++)
-//	{
-//		image_cartesian new_point;
-//		new_point.image_x = sick_points[i].ipx;
-//		new_point.image_y = sick_points[i].ipy;
-//		new_sick_points.push_back(new_point);
-//	} DEIXAR ATÉ PEDRO DAR OK QUE PODE APAGAR!!!!!!!!!
-
+	//////// Yolo
 	vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
 	predictions = filter_predictions_of_interest(predictions);
 
 	//////// Python
 	call_python_function(open_cv_image.data, predictions, image_msg->timestamp);
-	///////////////
 
 	vector<image_cartesian> points = velodyne_camera_calibration_fuse_camera_lidar(&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose,
 			image_msg->width, image_msg->height, crop_x, crop_y, crop_w, crop_h);
