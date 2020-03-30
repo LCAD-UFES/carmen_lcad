@@ -469,9 +469,9 @@ closest_circle_new(state_node *current_state, vector<circle_node> &circle_path)
 {
 	double min_dist = DBL_MAX;
 	double dist;
-	int indice;
+	int indice = 0;
 
-	for (int i = 0; i < circle_path.size(); i++)
+	for (unsigned int i = 0; i < circle_path.size(); i++)
 	{
 	  dist = DIST2D(current_state->state, circle_path[i]);
 	  if (dist < min_dist)
@@ -541,7 +541,7 @@ reeds_shepp_path_cost(carmen_ackerman_traj_point_t start_state, carmen_ackerman_
 	double path_cost = 0.0;
 
 	rs_init_parameters(robot_config.max_phi, robot_config.distance_between_front_and_rear_axles);
-	reed_shepp(start_state, goal_state, &rs_numero, &tr, &ur, &vr);
+	double rs_length = reed_shepp(start_state, goal_state, &rs_numero, &tr, &ur, &vr);
 
 	rs_pathl = constRS(rs_numero, tr, ur, vr, start_state, rs_points);
 
@@ -551,7 +551,7 @@ reeds_shepp_path_cost(carmen_ackerman_traj_point_t start_state, carmen_ackerman_
 		if (rs_points[i].v < 0.0)
 		{
 			v_step = 2.0;
-			step_weight = 1.05;
+			step_weight = 1.0;
 		}
 		else
 		{
@@ -566,7 +566,8 @@ reeds_shepp_path_cost(carmen_ackerman_traj_point_t start_state, carmen_ackerman_
 			path_cost += step_weight * (distance_traveled - distance_traveled_old);
 		}
 	}
-	return path_cost;
+	//return path_cost;
+	return rs_length;
 }
 
 void
@@ -577,9 +578,6 @@ expand_state(state_node *current_state, state_node *goal_state, vector<state_nod
 	#define NUM_STEERING_ANGLES 3
     double steering_acceleration[NUM_STEERING_ANGLES] = {-0.25, 0.0, 0.25}; //TODO ler velocidade angular do volante do carmen.ini
     double target_v[3]   = {2.0, 0.0, -2.0};
-
-    int rs_numero;
-    double tr, ur, vr;
 
     for (int i = 0; i < 3; ++i)
     {
@@ -605,7 +603,7 @@ expand_state(state_node *current_state, state_node *goal_state, vector<state_nod
 //        	new_state->h = max(DIST2D(new_state->state, current_circle) + current_circle.h, abs(carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta))/(1.0/5.6));
 //        	new_state->h = max(DIST2D(new_state->state, current_circle) + current_circle.h, carmen_compute_abs_angular_distance(new_state->state.theta, goal_state->state.theta));
 
-        	draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config);
+        	//draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config);
 
 //        	if (new_state->state.v != current_state->state.v)
 //        		new_state->h += DIRECTION_OF_MOVEMENT_CHANGE_PENALTY;
@@ -669,18 +667,18 @@ heuristic_search(state_node *start_state, state_node *goal_state, vector<circle_
         if ((DIST2D(current_state->state, goal_state->state) < 2.0) && (abs(carmen_compute_abs_angular_distance(current_state->state.theta, goal_state->state.theta)) < 0.0872665))
 //        if ((goal_state->g + goal_state->h) < (current_state->g + current_state->h))
         {
-		printf("Chegou ao destino\n");
-		printf("Não ");
-		state_path = build_state_path(current_state);
-        	while(!open_set.empty())
-        	{
-        		state_node *tmp = open_set.back();
+			printf("Chegou ao destino\n");
+			printf("Não ");
+			state_path = build_state_path(current_state);
+				while(!open_set.empty())
+				{
+					state_node *tmp = open_set.back();
 
-        		open_set.pop_back();
+					open_set.pop_back();
 
-        		delete tmp;
-        	}
-        	break;
+					delete tmp;
+				}
+				break;
         }
         //circle_node c = closest_circle(current_state, circle_path);
         //draw_circle_on_map_img(c.x, c.y, c.radius, distance_map->config);
