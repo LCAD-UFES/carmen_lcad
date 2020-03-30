@@ -26,6 +26,7 @@ from absl import flags
 from absl import logging
 
 import numpy as np
+from PIL import Image
 import tensorflow.compat.v1 as tf
 from typing import Text, Tuple, List
 
@@ -60,6 +61,10 @@ flags.DEFINE_integer('line_thickness', None, 'Line thickness for box.')
 flags.DEFINE_integer('max_boxes_to_draw', None, 'Max number of boxes to draw.')
 flags.DEFINE_float('min_score_thresh', None, 'Score threshold to show box.')
 
+# For saved model.
+flags.DEFINE_string('saved_model_dir', '/tmp/saved_model',
+                    'Folder path for saved model.')
+
 FLAGS = flags.FLAGS
 
 
@@ -75,7 +80,8 @@ class ModelInspector(object):
                use_xla: bool = False,
                ckpt_path: Text = None,
                enable_ema: bool = True,
-               export_ckpt: Text = None):
+               export_ckpt: Text = None,
+               saved_model_dir: Text = None):
     self.model_name = model_name
     self.model_params = hparams_config.get_detection_config(model_name)
     self.logdir = logdir
@@ -84,6 +90,7 @@ class ModelInspector(object):
     self.ckpt_path = ckpt_path
     self.enable_ema = enable_ema
     self.export_ckpt = export_ckpt
+    self.saved_model_dir = saved_model_dir
 
     if image_size:
       # Use user specified image size.
@@ -120,6 +127,31 @@ class ModelInspector(object):
 
     all_outputs = list(cls_outputs.values()) + list(box_outputs.values())
     return all_outputs
+
+  def export_saved_model(self):
+    driver = inference.ServingDriver(self.model_name, self.ckpt_path)
+    driver.build()
+    driver.export(self.saved_model_dir)
+
+  def saved_model_inference(self, image_path_pattern, output_dir):
+    """Perform inference for the given saved model."""
+    with tf.Session() as sess:
+      tf.saved_model.load(sess, ['serve'], self.saved_model_dir)
+      raw_images = []
+      image = Image.open(image_path_pattern)
+      raw_images.append(np.array(image))
+      outputs_np = sess.run('detections:0', {'image_arrays:0': raw_images})
+      for i, output_np in enumerate(outputs_np):
+        # output_np has format [image_id, y, x, height, width, score, class]
+        boxes = output_np[:, 1:5]
+        classes = output_np[:, 6].astype(int)
+        scores = output_np[:, 5]
+        boxes[:, 2:4] += boxes[:, 0:2]
+        img = inference.visualize_image(
+            raw_images[i], boxes, classes, scores, inference.coco_id_mapping)
+        output_image_path = os.path.join(output_dir, str(i) + '.jpg')
+        Image.fromarray(img).save(output_image_path)
+        logging.info('writing file to %s', output_image_path)
 
   def build_and_save_model(self):
     """build and save the model into self.logdir."""
@@ -300,6 +332,10 @@ class ModelInspector(object):
         config_dict['min_score_thresh'] = FLAGS.min_score_thresh
       self.inference_single_image(FLAGS.input_image, FLAGS.output_image_dir,
                                   **config_dict)
+    elif runmode == 'saved_model':
+      self.export_saved_model()
+    elif runmode == 'saved_model_infer':
+      self.saved_model_inference(FLAGS.input_image, FLAGS.output_image_dir)
     elif runmode == 'bm':
       self.benchmark_model(warmup_runs=5, bm_runs=FLAGS.bm_runs,
                            num_threads=threads,
@@ -320,7 +356,8 @@ def main(_):
       use_xla=FLAGS.xla,
       ckpt_path=FLAGS.ckpt_path,
       enable_ema=FLAGS.enable_ema,
-      export_ckpt=FLAGS.export_ckpt)
+      export_ckpt=FLAGS.export_ckpt,
+      saved_model_dir=FLAGS.saved_model_dir)
   inspector.run_model(FLAGS.runmode, FLAGS.threads)
 
 

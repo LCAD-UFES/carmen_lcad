@@ -65,6 +65,9 @@ def efficientdet_process_image(carmen_image):
     global driver
     # converter a imagem
     image = Image.fromarray(carmen_image)
-    predictions = driver.serve(image)
-    predret = np.array(predictions[0][:,1:7], dtype=np.float)
+    raw_images = []
+    raw_images.append(np.array(image))
+    sess = driver.sess
+    detections = sess.run('detections:0', {'image_arrays:0': raw_images})
+    predret = np.array(detections[0][:,1:7], dtype=np.float)
     return predret
