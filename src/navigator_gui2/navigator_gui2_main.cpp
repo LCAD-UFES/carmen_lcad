@@ -873,21 +873,87 @@ navigator_ackerman_stop_message_handler()
 
 
 void
+get_active_maps_from_menu(char **map, char **superimposed_map)
+{
+	View::GtkGui::Controls controls_ = gui->controls_;
+
+	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Map)))
+		*map = (char *) "Map";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_MapLevel1)))
+		*map = (char *) "Map Level1";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_OfflineMap)))
+		*map = (char *) "Offline Map";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Utility)))
+		*map = (char *) "Utility";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Costs)))
+		*map = (char *) "Costs";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Likelihood)))
+		*map = (char *) "Likelihood";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_GlobalLikelihood)))
+		*map = (char *) "Global Likelihood";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_Lane)))
+		*map = (char *) "Lane";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_CompleteMap)))
+		*map = (char *) "Complete Map";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_RemissionMap)))
+		*map = (char *) "Remission Map";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_MovingObjects)))
+		*map = (char *) "Moving Objects";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuMaps_RoadMap)))
+		*map = (char *) "Road Map";
+
+	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_None)))
+		*superimposed_map = (char *) "None";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Map)))
+		*superimposed_map = (char *) "Map";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_MapLevel1)))
+		*superimposed_map = (char *) "Map Level1";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_OfflineMap)))
+		*superimposed_map = (char *) "Offline Map";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Utility)))
+		*superimposed_map = (char *) "Utility";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Costs)))
+		*superimposed_map = (char *) "Costs";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Likelihood)))
+		*superimposed_map = (char *) "Likelihood";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_GlobalLikelihood)))
+		*superimposed_map = (char *) "Global Likelihood";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Lane)))
+		*superimposed_map = (char *) "Lane";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_RemissionMap)))
+		*superimposed_map = (char *) "Remission Map";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_MovingObjects)))
+		*superimposed_map = (char *) "Moving Objects";
+	else if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_RoadMap)))
+		*superimposed_map = (char *) "Road Map";
+}
+
+
+void
 read_preferences(int argc, char** argv)
 {
 	static user_param_t param_list[] =
 	{
-		{"window_width",  USER_PARAM_TYPE_INT, &user_pref_window_width},
-		{"window_height", USER_PARAM_TYPE_INT, &user_pref_window_height},
-		{"window_x",      USER_PARAM_TYPE_INT, &user_pref_window_x},
-		{"window_y",      USER_PARAM_TYPE_INT, &user_pref_window_y},
+		{"window_width",     USER_PARAM_TYPE_INT,    &user_pref_window_width},
+		{"window_height",    USER_PARAM_TYPE_INT,    &user_pref_window_height},
+		{"window_x",         USER_PARAM_TYPE_INT,    &user_pref_window_x},
+		{"window_y",         USER_PARAM_TYPE_INT,    &user_pref_window_y},
+		{"initial_map_zoom", USER_PARAM_TYPE_DOUBLE, &(nav_panel_config.initial_map_zoom)},
+		{"map",              USER_PARAM_TYPE_STRING, &(nav_panel_config.map)},
+		{"superimposed_map", USER_PARAM_TYPE_STRING, &(nav_panel_config.superimposed_map)},
+		{"draw_waypoints",   USER_PARAM_TYPE_ONOFF,  &(nav_panel_config.draw_waypoints)},
 	};
 	user_pref_module = basename(argv[0]);
 	user_pref_param_list = param_list;
 	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
 	user_preferences_read(user_pref_module, user_pref_param_list, user_pref_num_items);
 	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
+}
 
+
+void
+set_window_preferences()
+{
 	if (user_pref_window_width >= 0 && user_pref_window_height >= 0)
 		gtk_window_resize(GTK_WINDOW(gui->controls_.main_window), user_pref_window_width, user_pref_window_height);
 	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
@@ -900,6 +966,8 @@ save_preferences()
 {
 	gtk_window_get_size(GTK_WINDOW(gui->controls_.main_window), &user_pref_window_width, &user_pref_window_height);
 	gtk_window_get_position(GTK_WINDOW(gui->controls_.main_window), &user_pref_window_x, &user_pref_window_y);
+	nav_panel_config.initial_map_zoom = gui->controls_.map_view->zoom;
+	get_active_maps_from_menu(&(nav_panel_config.map), &(nav_panel_config.superimposed_map));
 	user_preferences_save(user_pref_module, user_pref_param_list, user_pref_num_items);
 }
 
@@ -1145,7 +1213,9 @@ main(int argc, char *argv[])
 	signal(SIGINT, nav_shutdown);
 
 	read_parameters(argc, argv, &robot_config, &poly_config, &nav_config, &nav_panel_config);
-	printf("Parameters Ready\n");
+
+	read_preferences(argc, argv);
+
 	carmen_grid_mapping_init_parameters(0.2, 150);
 
 	// Esta incializacao evita que o valgrind reclame de varias variaveis nao inicializadas
@@ -1158,7 +1228,7 @@ main(int argc, char *argv[])
 
 	init_navigator_gui_variables(argc, argv);
 
- 	read_preferences(argc, argv);
+ 	set_window_preferences();
 
 	subscribe_ipc_messages();
 

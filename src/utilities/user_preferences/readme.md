@@ -38,6 +38,7 @@ Se o seu programa utiliza __qmake__, entao inclua no arquivo de projeto qmake (.
  int user_pref_window_height = 400;
  int user_pref_window_x = -1;
  int user_pref_window_y = -1;
+ ... // outras variaveis que deseje recuperar e salvar
 ```
 
 5) Crie uma funcao __read_preferences__ para recuperar as preferencias do usuario que estao salvas em arquivo ou na linha de comando. A funcao __user_preferences_read__ faz a leitura de um arquivo com nome __./user_preferences.ini__. Caso queira usar um arquivo com nome ou caminho diferente, chame a funcao __user_preferences_read_from_file__. Caso o arquivo nao exista, a funcao encerra normalmente sem alterar os valores default das variaveis globais.
@@ -51,6 +52,7 @@ Se o seu programa utiliza __qmake__, entao inclua no arquivo de projeto qmake (.
  		{"window_height", USER_PARAM_TYPE_INT, &user_pref_window_height},
  		{"window_x",      USER_PARAM_TYPE_INT, &user_pref_window_x},
  		{"window_y",      USER_PARAM_TYPE_INT, &user_pref_window_y},
+ 		{ ... // outras variaveis que deseje recuperar},
  	};
  	user_pref_module = basename(argv[0]);
  	user_pref_param_list = param_list;
@@ -76,7 +78,7 @@ Exemplos de linha de comando:
  ./proccontrol_gui  -window_x  879  -window_y  297  -window_width  1041  -window_height  755
 ```
 
-6) Insira a manipulacao das janelas do programa utilizando as variaveis globais (pode ser dentro de __read_preferences__).
+6) Insira a manipulacao das janelas do programa utilizando as variaveis globais. Isto pode ser colocado dentro de __read_preferences__, ou numa funcao separada __set_window_preferences__ caso precise ser executado num momento posterior, apos a criacao da janela.
 
 Exemplo com objeto __QWidget__ (pode ser inserido antes da primeira chamada a __show()__):
 ```
@@ -88,22 +90,32 @@ Exemplo com objeto __QWidget__ (pode ser inserido antes da primeira chamada a __
 
 Exemplo com objeto __GtkWidget__ (deve ser inserido apos a primeira chamada a __gtk_widget_show_all__):
 ```
- if (user_pref_window_width >= 0 && user_pref_window_height >= 0)
-     gtk_window_resize(GTK_WINDOW(gui->controls_.main_window), user_pref_window_width, user_pref_window_height);
- if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
-     gtk_window_move(GTK_WINDOW(gui->controls_.main_window), user_pref_window_x, user_pref_window_y);
+ void
+ set_window_preferences()
+ {
+     if (user_pref_window_width >= 0 && user_pref_window_height >= 0)
+         gtk_window_resize(GTK_WINDOW(gui->controls_.main_window), user_pref_window_width, user_pref_window_height);
+     if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
+         gtk_window_move(GTK_WINDOW(gui->controls_.main_window), user_pref_window_x, user_pref_window_y);
+ }
 ```
 
-7) A chamada a funcao __read_preferences__ nao depende do Carmen IPC.
+7) A chamada a funcao __read_preferences__ nao depende do Carmen IPC, contudo convem ser colocada apos a chamada de __carmen_param_install_params__, para que sobreponha esses parametros.
+
+Exemplo:
 ```
  int
  main(int argc, char** argv)
  {
-    QApplication         app(argc, argv);
-    QDisplay             gui;
-    qdisplay = &gui;
-    read_preferences(argc, argv);
-    carmen_ipc_initialize(argc, argv);
+    ...
+	read_parameters(argc, argv, &robot_config, &poly_config, &nav_config, &nav_panel_config);
+	read_preferences(argc, argv);
+    ...
+	static View::GtkGui _gui(argc, argv);
+	gui = &_gui;
+    ...
+	init_navigator_gui_variables(argc, argv);
+ 	set_window_preferences();
     ...
 ```
 
