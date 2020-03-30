@@ -526,12 +526,17 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
 //        	new_state->h = DIST2D(new_state->state, current_state->state) + current_state->h;
         	new_state->h = DIST2D(new_state->state, goal_state->state);
 
-        	new_state->f = new_state->g*0.5 + new_state->h*1.5;
+        	new_state->f = new_state->g + new_state->h;
         	if(new_state->state.v < 0)
         	{
         		new_state->f *= 1.5;
         	}
         	if(new_state->state.v != current_state->state.v)
+        	{
+        		new_state->f += 1;
+
+        	}
+        	if(new_state->state.phi != current_state->state.phi)
         	{
         		new_state->f += 1;
 
@@ -554,7 +559,7 @@ expand_state(state_node *current_state, state_node *goal_state, std::vector<stat
 
         	new_state->pos_theta = pos_theta;
 
-        	printf("first -- %d %d %d\n", pos_x, pos_y, pos_theta);
+        	//printf("first -- %d %d %d\n", pos_x, pos_y, pos_theta);
 /*
         	if(target_v[i]>0)
         		pos_theta = j;
