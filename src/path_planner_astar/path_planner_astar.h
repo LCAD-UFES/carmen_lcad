@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <car_model.h>
 
+#include <boost/heap/fibonacci_heap.hpp>
 
 #include <queue>
 #include <list>
@@ -15,6 +16,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
+
 
 
 #define DELTA_T 0.01                      // Size of step for the ackerman Euler method
@@ -32,9 +34,6 @@ typedef struct state_node
 	double g;                                // Distance from start to current state
 	double h;                                // Distance from current state to goal
 	double angular_distance_to_goal;
-	int pos_theta;
-	int status;
-
 	int is_open;
 	int is_closed;
 	//double step_size;                      // TODO compute step size
@@ -44,8 +43,8 @@ typedef struct state_node
 
 class StateNodePtrComparator {
 public:
-	bool operator() (state_node *a, state_node *b)
+	bool operator() (state_node *a, state_node *b) const
 	{
-		return (a->g + a->h > b->g + b->h);
+		return (a->f > b->f);
 	}
 };
