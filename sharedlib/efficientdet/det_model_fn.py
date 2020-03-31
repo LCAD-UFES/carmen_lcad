@@ -336,7 +336,11 @@ def add_metric_fn_inputs(params, cls_outputs, box_outputs, metric_fn_inputs):
   metric_fn_inputs['classes_all'] = classes_all
 
 
-def coco_metric_fn(batch_size, anchor_labeler, filename=None, **kwargs):
+def coco_metric_fn(batch_size,
+                   anchor_labeler,
+                   filename=None,
+                   testdev_dir=None,
+                   **kwargs):
   """Evaluation metric fn. Performed on CPU, do not reference TPU ops."""
   # add metrics to output
   detections_bs = []
@@ -348,12 +352,18 @@ def coco_metric_fn(batch_size, anchor_labeler, filename=None, **kwargs):
     detections = anchor_labeler.generate_detections(
         cls_outputs_per_sample, box_outputs_per_sample, indices_per_sample,
         classes_per_sample, tf.slice(kwargs['source_ids'], [index], [1]),
-        tf.slice(kwargs['image_scales'], [index], [1])
+        tf.slice(kwargs['image_scales'], [index], [1]),
+        disable_pyfun=kwargs.get('disable_pyfun', None),
     )
     detections_bs.append(detections)
-  eval_metric = coco_metric.EvaluationMetric(filename=filename)
-  coco_metrics = eval_metric.estimator_metric_fn(detections_bs,
-                                                 kwargs['groundtruth_data'])
+
+  if testdev_dir:
+    eval_metric = coco_metric.EvaluationMetric(testdev_dir=testdev_dir)
+    coco_metrics = eval_metric.estimator_metric_fn(detections_bs, tf.zeros([1]))
+  else:
+    eval_metric = coco_metric.EvaluationMetric(filename=filename)
+    coco_metrics = eval_metric.estimator_metric_fn(detections_bs,
+                                                   kwargs['groundtruth_data'])
   return coco_metrics
 
 
@@ -383,6 +393,9 @@ def _model_fn(features, labels, mode, params, model, variable_filter_fn=None):
 
   Returns:
     tpu_spec: the TPUEstimatorSpec to run training, evaluation, or prediction.
+
+  Raises:
+    RuntimeError: if both ckpt and backbone_ckpt are set.
   """
   # Convert params (dict) to Config for easier access.
   def _model_outputs():
@@ -486,8 +499,20 @@ def _model_fn(features, labels, mode, params, model, variable_filter_fn=None):
                                              params['num_classes'])
       cls_loss = tf.metrics.mean(kwargs['cls_loss_repeat'])
       box_loss = tf.metrics.mean(kwargs['box_loss_repeat'])
-      coco_metrics = coco_metric_fn(batch_size, anchor_labeler,
-                                    params['val_json_file'], **kwargs)
+
+      if params.get('testdev_dir', None):
+        logging.info('Eval testdev_dir %s', params['testdev_dir'])
+        coco_metrics = coco_metric_fn(
+            batch_size,
+            anchor_labeler,
+            params['val_json_file'],
+            testdev_dir=params['testdev_dir'],
+            disable_pyfun=params.get('disable_pyfun', None),
+            **kwargs)
+      else:
+        logging.info('Eval val with groudtruths %s.', params['val_json_file'])
+        coco_metrics = coco_metric_fn(batch_size, anchor_labeler,
+                                      params['val_json_file'], **kwargs)
 
       # Add metrics to output.
       output_metrics = {
@@ -513,18 +538,35 @@ def _model_fn(features, labels, mode, params, model, variable_filter_fn=None):
     add_metric_fn_inputs(params, cls_outputs, box_outputs, metric_fn_inputs)
     eval_metrics = (metric_fn, metric_fn_inputs)
 
-  if params['backbone_ckpt'] and mode == tf.estimator.ModeKeys.TRAIN:
+  checkpoint = params.get('ckpt') or params.get('backbone_ckpt')
+
+  if checkpoint and mode == tf.estimator.ModeKeys.TRAIN:
+    # Initialize the model from an EfficientDet or backbone checkpoint.
+    if params.get('ckpt') and params.get('backbone_ckpt'):
+      raise RuntimeError(
+          '--backbone_ckpt and --checkpoint are mutually exclusive')
+    elif params.get('backbone_ckpt'):
+      var_scope = params['backbone_name'] + '/'
+      if params['ckpt_var_scope'] is None:
+        # Use backbone name as default checkpoint scope.
+        ckpt_scope = params['backbone_name'] + '/'
+      else:
+        ckpt_scope = params['ckpt_var_scope'] + '/'
+    else:
+      # Load every var in the given checkpoint
+      var_scope = ckpt_scope = '/'
+
     def scaffold_fn():
       """Loads pretrained model through scaffold function."""
-      logging.info('restore variables from %s', params['backbone_ckpt'])
-      if params['ckpt_var_scope'] is None:
-        ckpt_scope = params['backbone_name']  # Use backbone name in default.
-      else:
-        ckpt_scope = params['ckpt_var_scope']
-      tf.train.init_from_checkpoint(
-          params['backbone_ckpt'],
-          utils.get_ckt_var_map(params['backbone_ckpt'], ckpt_scope + '/',
-                                params['backbone_name'] + '/'))
+      logging.info('restore variables from %s', checkpoint)
+
+      var_map = utils.get_ckpt_var_map(
+          ckpt_path=checkpoint,
+          ckpt_scope=ckpt_scope,
+          var_scope=var_scope,
+          var_exclude_expr=params.get('var_exclude_expr', None))
+      tf.train.init_from_checkpoint(checkpoint, var_map)
+
       return tf.train.Scaffold()
   elif mode == tf.estimator.ModeKeys.EVAL and moving_average_decay:
     def scaffold_fn():

@@ -19,13 +19,14 @@ from __future__ import division
 # gtype import
 from __future__ import print_function
 
+import re
 import os
 from absl import logging
 import numpy as np
 import tensorflow.compat.v1 as tf
-#import tensorflow.compat.v2 as tf2
+import tensorflow.compat.v2 as tf2
 
-#from tensorflow.python.tpu import tpu_function  # pylint:disable=g-direct-tensorflow-import
+from tensorflow.python.tpu import tpu_function  # pylint:disable=g-direct-tensorflow-import
 
 relu_fn = tf.nn.swish
 backbone_relu_fn = relu_fn
@@ -48,8 +49,20 @@ def get_ema_vars():
   return list(set(ema_vars))
 
 
-def get_ckt_var_map(ckpt_path, ckpt_scope, var_scope):
-  """Get a var map for restoring from pretrained checkpoints."""
+def get_ckpt_var_map(ckpt_path, ckpt_scope, var_scope, var_exclude_expr=None):
+  """Get a var map for restoring from pretrained checkpoints.
+
+  Args:
+    ckpt_path: string. A pretrained checkpoint path.
+    ckpt_scope: string. Scope name for checkpoint variables.
+    var_scope: string. Scope name for model variables.
+    var_exclude_expr: string. A regex for excluding variables.
+      This is useful for finetuning with different classes, where
+      var_exclude_expr='.*class-predict.*' can be used.
+
+  Returns:
+    var_map: a dictionary from checkpoint name to model variables.
+  """
   logging.info('Init model from checkpoint {}'.format(ckpt_path))
   if not ckpt_scope.endswith('/') or not var_scope.endswith('/'):
     raise ValueError('Please specific scope name ending with /')
@@ -63,7 +76,14 @@ def get_ckt_var_map(ckpt_path, ckpt_scope, var_scope):
   model_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=var_scope)
   reader = tf.train.load_checkpoint(ckpt_path)
   ckpt_var_names = set(reader.get_variable_to_shape_map().keys())
+
+  exclude_matcher = re.compile(var_exclude_expr) if var_exclude_expr else None
   for v in model_vars:
+    if exclude_matcher and exclude_matcher.match(v.op.name):
+      logging.info(
+          'skip {} -- excluded by {}'.format(v.op.name, var_exclude_expr))
+      continue
+
     if not v.op.name.startswith(var_scope):
       logging.info('skip {} -- does not match scope {}'.format(
           v.op.name, var_scope))
@@ -74,13 +94,26 @@ def get_ckt_var_map(ckpt_path, ckpt_scope, var_scope):
       if ckpt_var not in ckpt_var_names:
         logging.info('skip {} ({}) -- not in ckpt'.format(v.op.name, ckpt_var))
         continue
+
     logging.info('Init {} from ckpt var {}'.format(v.op.name, ckpt_var))
     var_map[ckpt_var] = v
   return var_map
 
 
-def get_ckt_var_map_ema(ckpt_path, ckpt_scope, var_scope):
-  """Get a ema var map for restoring from pretrained checkpoints."""
+def get_ckpt_var_map_ema(ckpt_path, ckpt_scope, var_scope, var_exclude_expr):
+  """Get a ema var map for restoring from pretrained checkpoints.
+
+  Args:
+    ckpt_path: string. A pretrained checkpoint path.
+    ckpt_scope: string. Scope name for checkpoint variables.
+    var_scope: string. Scope name for model variables.
+    var_exclude_expr: string. A regex for excluding variables.
+      This is useful for finetuning with different classes, where
+      var_exclude_expr='.*class-predict.*' can be used.
+
+  Returns:
+    var_map: a dictionary from checkpoint name to model variables.
+  """
   logging.info('Init model from checkpoint {}'.format(ckpt_path))
   if not ckpt_scope.endswith('/') or not var_scope.endswith('/'):
     raise ValueError('Please specific scope name ending with /')
@@ -94,7 +127,13 @@ def get_ckt_var_map_ema(ckpt_path, ckpt_scope, var_scope):
   model_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=var_scope)
   reader = tf.train.load_checkpoint(ckpt_path)
   ckpt_var_names = set(reader.get_variable_to_shape_map().keys())
+  exclude_matcher = re.compile(var_exclude_expr) if var_exclude_expr else None
   for v in model_vars:
+    if exclude_matcher and exclude_matcher.match(v.op.name):
+      logging.info(
+          'skip {} -- excluded by {}'.format(v.op.name, var_exclude_expr))
+      continue
+
     if not v.op.name.startswith(var_scope):
       logging.info('skip {} -- does not match scope {}'.format(
           v.op.name, var_scope))
@@ -127,8 +166,7 @@ class TpuBatchNormalization(tf.layers.BatchNormalization):
 
   def _cross_replica_average(self, t, num_shards_per_group):
     """Calculates the average value of input tensor across TPU replicas."""
-    #num_shards = tpu_function.get_tpu_context().number_of_shards
-    num_shards = 1
+    num_shards = tpu_function.get_tpu_context().number_of_shards
     group_assignment = None
     if num_shards_per_group > 1:
       if num_shards % num_shards_per_group != 0:
@@ -147,8 +185,7 @@ class TpuBatchNormalization(tf.layers.BatchNormalization):
     shard_mean, shard_variance = super(TpuBatchNormalization, self)._moments(
         inputs, reduction_axes, keep_dims=keep_dims)
 
-    #num_shards = tpu_function.get_tpu_context().number_of_shards or 1
-    num_shards = 1
+    num_shards = tpu_function.get_tpu_context().number_of_shards or 1
     if num_shards <= 8:  # Skip cross_replica for 2x2 or smaller slices.
       num_shards_per_group = 1
     else:
@@ -195,8 +232,8 @@ def batch_norm_relu(inputs,
                     relu=True,
                     init_zero=False,
                     data_format='channels_last',
-                    momentum=0.997,
-                    epsilon=1e-4,
+                    momentum=0.99,
+                    epsilon=1e-3,
                     name=None):
   """Performs a batch normalization followed by a ReLU.
 
@@ -302,14 +339,14 @@ def get_tpu_host_call(global_step, params):
   def host_call_fn(global_step, *args):
     """Training host call. Creates scalar summaries for training metrics."""
     gs = global_step[0]
-    #with tf2.summary.create_file_writer(
-    #    model_dir, max_queue=iterations_per_loop).as_default():
-    #  with tf2.summary.record_if(True):
-    #    for i in range(len(summaries)):
-    #      name = summaries[i][0]
-    #      tensor = args[i][0]
-   #       tf2.summary.scalar(name, tensor, step=gs)
-    #    return tf.summary.all_v2_summary_ops()
+    with tf2.summary.create_file_writer(
+        model_dir, max_queue=iterations_per_loop).as_default():
+      with tf2.summary.record_if(True):
+        for i in range(len(summaries)):
+          name = summaries[i][0]
+          tensor = args[i][0]
+          tf2.summary.scalar(name, tensor, step=gs)
+        return tf.summary.all_v2_summary_ops()
 
   reshaped_tensors = [tf.reshape(t, [1]) for _, t in summaries]
   global_step_t = tf.reshape(global_step, [1])
