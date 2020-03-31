@@ -106,8 +106,9 @@ QDisplay::QDisplay( QWidget *parent, const char *name )
 
 	output =  new Q3TextView( this );
 	output->setMaxLogLines(500);
+	output->setColor(QColor(0, 0, 0));
 	QFont font( "Courier" );
-	font.setPointSize( 8 );
+	font.setPointSize( 10 );
 	output->setFont(font);
 	vbox->addWidget( output );
 

@@ -66,9 +66,13 @@ int read_parameters(int argc, char **argv, carmen_bumblebee_basic_stereoimage_me
 
 	int num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
+	double fx_rect = fx_factor * msg->width;
+	double fy_rect = fy_factor * msg->height;
+	double cu_rect = cu_factor * msg->width;
+	double cv_rect = cv_factor * msg->height;
   	
-	cameraMatrix = (cv::Mat_<double>(3, 3) << fx_factor, 0, cu_factor, 0, fy_factor, cv_factor, 0, 0, 1);
-	newcameramtx = (cv::Mat_<double>(3, 3) << fx_factor, 0, cu_factor, 0, fy_factor, cv_factor, 0, 0, 1);
+	cameraMatrix = (cv::Mat_<double>(3, 3) << fx_rect, 0, cu_rect, 0, fy_rect, cv_rect, 0, 0, 1);
+	newcameramtx = (cv::Mat_<double>(3, 3) << fx_rect, 0, cu_rect, 0, fy_rect, cv_rect, 0, 0, 1);
 	distCoeffs = (cv::Mat_<double>(5,1) << k1, k2, p1, p2, k3);
 	R1 = (cv::Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
 	

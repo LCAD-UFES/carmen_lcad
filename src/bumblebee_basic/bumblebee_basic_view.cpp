@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <carmen/carmen.h>
 #include <carmen/bumblebee_basic_interface.h>
+#include <carmen/user_preferences.h>
 #include <opencv/cv.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -9,8 +10,9 @@
 using namespace std;
 using namespace cv;
 
-#define BUMBLEBEE_BASIC_VIEW_MAX_WINDOW_WIDTH 640
-#define BUMBLEBEE_BASIC_VIEW_NUM_COLORS 3
+static int camera = 0;
+static int show_left = 1;
+static int show_right = 1;
 
 static int received_image = 0;
 
@@ -20,6 +22,16 @@ static int msg_fps = 0, msg_last_fps = 0; //message fps
 static int disp_fps = 0, disp_last_fps = 0; //display fps
 
 char window_name[32];
+
+const char *user_pref_module;
+user_param_t *user_pref_param_list;
+int user_pref_num_items;
+int user_pref_window_width  = 640;
+int user_pref_window_height = 480;
+int user_pref_window_x = -1;
+int user_pref_window_y = -1;
+
+Size window_size;
 
 
 void
@@ -101,6 +113,45 @@ save_camera_images()
 }
 
 
+void
+read_preferences(int argc, char** argv)
+{
+	static user_param_t param_list[] =
+	{
+		{"window_width",  USER_PARAM_TYPE_INT, &user_pref_window_width},
+		{"window_height", USER_PARAM_TYPE_INT, &user_pref_window_height},
+		{"window_x",      USER_PARAM_TYPE_INT, &user_pref_window_x},
+		{"window_y",      USER_PARAM_TYPE_INT, &user_pref_window_y},
+	};
+	user_pref_module = basename(argv[0]);
+	user_pref_param_list = param_list;
+	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
+	user_preferences_read(user_pref_module, user_pref_param_list, user_pref_num_items);
+	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
+
+	window_size = Size(user_pref_window_width * (show_left + show_right), user_pref_window_height);
+
+	if (user_pref_window_width >= 0 && user_pref_window_height >= 0)
+		resizeWindow(window_name, window_size.width, window_size.height);
+	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
+		moveWindow(window_name, user_pref_window_x, user_pref_window_y);
+}
+
+
+void
+save_preferences()
+{
+#if CV_VERSION_MAJOR > 3 || (CV_VERSION_MAJOR == 3 && CV_VERSION_MINOR > 4) || (CV_VERSION_MAJOR == 3 && CV_VERSION_MINOR == 4 && CV_VERSION_REVISION >= 1)
+	Rect display = getWindowImageRect(window_name);
+	user_pref_window_width  = display.width / (show_left + show_right);
+	user_pref_window_height = display.height;
+	user_pref_window_x = display.x;
+	user_pref_window_y = display.y;
+	user_preferences_save(user_pref_module, user_pref_param_list, user_pref_num_items);
+#endif
+}
+
+
 static void
 shutdown_camera_view(int x)
 {
@@ -108,6 +159,7 @@ shutdown_camera_view(int x)
     {
         carmen_ipc_disconnect();
         printf("Disconnected from robot.\n");
+        save_preferences();
         exit(0);
     }
 }
@@ -172,41 +224,44 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* msg)
 	static int first = 1;
     static Mat *resized_image_left = NULL;
     static Mat *resized_image_right = NULL;
-
-    Mat concat, bgr;
-    Mat src_image_left(Size(msg->width, msg->height), CV_8UC3, msg->raw_left);
-    Mat src_image_right(Size(msg->width, msg->height), CV_8UC3, msg->raw_right);
+    Mat src_image_left, src_image_right, *text_image, concat, bgr;
 
     update_fps(msg);
 
-	window_scale = (double) BUMBLEBEE_BASIC_VIEW_MAX_WINDOW_WIDTH / (double) msg->width;
-	window_height = (int) (msg->height * window_scale);
-
-	//printf("window_scale: %lf window_height: %d width: %d msg: %d %d\n", window_scale, window_height, BUMBLEBEE_BASIC_VIEW_MAX_WINDOW_WIDTH,
-			//msg->height, msg->width);
-
     if (first)
     {
-    	resized_image_left = new Mat(Size(BUMBLEBEE_BASIC_VIEW_MAX_WINDOW_WIDTH, window_height), CV_8UC3);
-    	resized_image_right = new Mat(Size(BUMBLEBEE_BASIC_VIEW_MAX_WINDOW_WIDTH, window_height), CV_8UC3);
+    	window_scale = (double) user_pref_window_width / (double) msg->width;
+    	window_height = (int) (msg->height * window_scale);
+    	resized_image_left = new Mat(Size(user_pref_window_width, window_height), CV_8UC3);
+    	resized_image_right = new Mat(Size(user_pref_window_width, window_height), CV_8UC3);
     	first = 0;
     }
 
-    //resizing the image
-    resize(src_image_left, *resized_image_left, resized_image_left->size());
-    resize(src_image_right, *resized_image_right, resized_image_right->size());
+    if (show_left)
+    {
+    	src_image_left = Mat(Size(msg->width, msg->height), CV_8UC3, msg->raw_left);
+    	resize(src_image_left, *resized_image_left, resized_image_left->size());
+    }
+    if (show_right)
+    {
+    	src_image_right = Mat(Size(msg->width, msg->height), CV_8UC3, msg->raw_right);
+    	resize(src_image_right, *resized_image_right, resized_image_right->size());
+    }
 
     sprintf(msg_fps_string, "MSG_FPS: %d", msg_last_fps);
     sprintf(disp_fps_string, "DISP_FPS: %d", disp_last_fps);
     sprintf(img_resol_string, "%dx%d", msg->width, msg->height);
 
-//    putText(*resized_image_left, msg_fps_string, cvPoint(10, 30), CV_FONT_HERSHEY_SIMPLEX, 0.7, Scalar(255, 255, 0));
-//    putText(*resized_image_right, disp_fps_string, cvPoint(10, 30), CV_FONT_HERSHEY_SIMPLEX, 0.7, cvScalar(255, 255, 0));
-    putText(*resized_image_left, msg_fps_string, cvPoint(7, 20), CV_FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 255, 0));
-    putText(*resized_image_left, disp_fps_string, cvPoint(7, 42), CV_FONT_HERSHEY_SIMPLEX, 0.5, cvScalar(255, 255, 0));
-    putText(*resized_image_left, img_resol_string, cvPoint(7, 64), CV_FONT_HERSHEY_SIMPLEX, 0.5, cvScalar(255, 255, 0));
+    text_image = show_left ? resized_image_left : resized_image_right;
+    putText(*text_image, msg_fps_string, cvPoint(7, 20), CV_FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 255, 0));
+    putText(*text_image, disp_fps_string, cvPoint(7, 42), CV_FONT_HERSHEY_SIMPLEX, 0.5, cvScalar(255, 255, 0));
+    putText(*text_image, img_resol_string, cvPoint(7, 64), CV_FONT_HERSHEY_SIMPLEX, 0.5, cvScalar(255, 255, 0));
 
-    hconcat(*resized_image_left, *resized_image_right, concat);
+    if (show_left && show_right)
+    	hconcat(*resized_image_left, *resized_image_right, concat);
+    else
+    	concat = show_left ? *resized_image_left : *resized_image_right;
+
     cvtColor(concat, bgr, CV_RGB2BGR);
     imshow(window_name, bgr);
 
@@ -215,34 +270,68 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* msg)
 }
 
 
+void
+usage(char *prog_name)
+{
+    fprintf(stderr, "\nUsage: %s  <camera_number>  <stereo_option: L|R|S|left|right|stereo>\n\n", prog_name);
+    exit(1);
+}
+
+
+void
+read_parameters(int argc, char **argv, int *camera, int *show_left, int *show_right)
+{
+	char *endptr;
+
+	*camera = strtol(argv[1], &endptr, 0);
+	if ((*endptr != '\0') || (*camera <= 0))
+	{
+		fprintf(stderr, "\nInvalid camera number: %s\n", argv[1]);
+		usage(argv[0]);
+	}
+
+	if (argc >= 3 && argv[2][0] != '-')
+	{
+		if (strcmp(argv[2], "L") == 0 || strcmp(argv[2], "l") == 0 || strcmp(argv[2], "left") == 0)
+			*show_left = 1, *show_right = 0;
+		else if (strcmp(argv[2], "R") == 0 || strcmp(argv[2], "r") == 0 || strcmp(argv[2], "right") == 0)
+			*show_left = 0, *show_right = 1;
+		else if (strcmp(argv[2], "S") == 0 || strcmp(argv[2], "s") == 0 || strcmp(argv[2], "stereo") == 0)
+			*show_left = 1, *show_right = 1;
+		else
+		{
+			fprintf(stderr, "\nInvalid stereo option: %s\n", argv[2]);
+			usage(argv[0]);
+		}
+	}
+}
+
+
 int
 main(int argc, char **argv)
 {
-    int camera = 0;
+    if (argc == 1 || strcmp(argv[1], "-h") == 0)
+    	usage(argv[0]);
 
-    if (argc != 2)
-    {
-        fprintf(stderr, "%s: Wrong number of parameters. stereo requires 1 parameter and received %d. \n Usage: %s <camera_number>", argv[0], argc - 1, argv[0]);
-        exit(1);
-    }
+    carmen_ipc_initialize(argc, argv);
+	carmen_param_check_version(argv[0]);
 
-    camera = atoi(argv[1]);
+    signal(SIGINT, shutdown_camera_view);
+
+	read_parameters(argc, argv, &camera, &show_left, &show_right);
+
     sprintf(window_name, "bb%d", camera);
+	namedWindow(window_name);
+    read_preferences(argc, argv);
 
     // Just to open an initial window
     for (int i = 0; i < 10; i++)
     {
-		imshow(window_name, Mat::zeros(Size(BUMBLEBEE_BASIC_VIEW_MAX_WINDOW_WIDTH * 2, 480), CV_8UC3));
+		imshow(window_name, Mat::zeros(window_size, CV_8UC3));
 		waitKey(2);
     }
 
-    carmen_ipc_initialize(argc, argv);
-
-    signal(SIGINT, shutdown_camera_view);
-
     carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
     carmen_ipc_dispatch();
-
     return 0;
 }
-
