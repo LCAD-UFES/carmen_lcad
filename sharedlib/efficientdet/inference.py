@@ -33,6 +33,8 @@ import det_model_fn
 import hparams_config
 import utils
 from visualize import vis_utils
+import time
+current_milli_time = lambda: int(round(time.time() * 1000))
 
 
 coco_id_mapping = {
@@ -163,6 +165,7 @@ def det_post_process(params: Dict[Any, Any], cls_outputs: Dict[int, tf.Tensor],
       with each row representing [image_id, x, y, width, height, score, class].
   """
   # TODO(tanmingxing): refactor the code to make it more explicity.
+  start_time = current_milli_time()
   outputs = {'cls_outputs_all': [None], 'box_outputs_all': [None],
              'indices_all': [None], 'classes_all': [None]}
   det_model_fn.add_metric_fn_inputs(
@@ -176,7 +179,8 @@ def det_post_process(params: Dict[Any, Any], cls_outputs: Dict[int, tf.Tensor],
                                  params['anchor_scale'],
                                  params['image_size'])
   anchor_labeler = anchors.AnchorLabeler(eval_anchors, params['num_classes'])
-
+  print('first_det=', (current_milli_time() - start_time))
+  second_time = current_milli_time()
   # Add all detections for each input image.
   detections_batch = []
   for index in range(params['batch_size']):
@@ -189,6 +193,8 @@ def det_post_process(params: Dict[Any, Any], cls_outputs: Dict[int, tf.Tensor],
         classes_per_sample, image_id=[index], image_scale=[scales[index]],
         disable_pyfun=False)
     detections_batch.append(detections)
+  print('second_det=', (current_milli_time() - second_time))
+  print('total_det=', (current_milli_time() - start_time))
   return tf.stack(detections_batch, name='detections')
 
 
@@ -314,6 +320,7 @@ class ServingDriver(object):
 
   def build(self, params_override=None):
     """Build model and restore checkpoints."""
+    start_time = current_milli_time()
     params = copy.deepcopy(self.params)
     if params_override:
       params.update(params_override)
@@ -334,9 +341,17 @@ class ServingDriver(object):
       images.append(image)
     scales = tf.stack(scales)
     images = tf.stack(images)
+    print('first_build=', (current_milli_time() - start_time))
+    second_time = current_milli_time()
     class_outputs, box_outputs = build_model(self.model_name, images, **params)
+    print('second_build=', (current_milli_time() - second_time))
+    third_time = current_milli_time()
     params.update(dict(batch_size=self.batch_size, disable_pyfun=False))
+    print('third_build=', (current_milli_time() - third_time))
+    detections_time = current_milli_time()
     detections = det_post_process(params, class_outputs, box_outputs, scales)
+    print('detections_build=', (current_milli_time() - detections_time))
+    final_time = current_milli_time()
 
     if not self.sess:
       self.sess = tf.Session()
@@ -347,6 +362,7 @@ class ServingDriver(object):
         'image_arrays': raw_images,
         'prediction': detections,
     }
+    print('final_build=', (current_milli_time() - final_time))
     return self.signitures
 
   def visualize(self, image, predictions, **kwargs):
@@ -401,11 +417,14 @@ class ServingDriver(object):
     Returns:
       A list of detections.
     """
+    start_time = current_milli_time()
     if not self.sess:
       self.build()
+    print('first_serve_images=', (current_milli_time() - start_time))
     predictions = self.sess.run(
         self.signitures['prediction'],
         feed_dict={self.signitures['image_arrays']: image_arrays})
+    print('total_serve_images=', (current_milli_time() - start_time))
     return predictions
 
   def export(self, output_dir):
