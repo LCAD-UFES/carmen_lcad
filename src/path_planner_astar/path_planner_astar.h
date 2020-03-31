@@ -17,10 +17,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-
-
 #define DELTA_T 0.01                      // Size of step for the ackerman Euler method
-
 
 void
 compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen_robot_ackerman_config_t robot_config,
@@ -28,7 +25,6 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 
 typedef struct state_node
 {
-	//carmen_ackerman_traj_point_t state;
 	carmen_ackerman_traj_point_t state;
 	double f;                              // Total distance g + h
 	double g;                                // Distance from start to current state
@@ -36,9 +32,15 @@ typedef struct state_node
 	double angular_distance_to_goal;
 	int is_open;
 	int is_closed;
-	//double step_size;                      // TODO compute step size
 	state_node *parent;
 } state_node, *state_node_p;
+
+typedef struct discrete_pos_node
+{
+	int x;
+	int y;
+	int theta;
+} discrete_pos_node;
 
 
 class StateNodePtrComparator {
