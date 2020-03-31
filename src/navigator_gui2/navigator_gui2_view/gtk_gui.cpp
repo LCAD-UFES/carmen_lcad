@@ -2443,28 +2443,28 @@ namespace View
 					moving_objects_tracking = (moving_objects_tracking_t *) carmen_list_get(moving_objects_list, index);
 
 					carmen_world_point_t wp[4];
-					carmen_world_point_t *location = (carmen_world_point_t *) malloc(sizeof(carmen_world_point_t));
+					carmen_world_point_t location;
 
 					double width2, length2;
 
-					location->pose.theta = moving_objects_tracking->moving_objects_pose.orientation.yaw;
-					location->pose.x = moving_objects_tracking->moving_objects_pose.position.x;// + fused_odometry_position.pose.x ;
-					location->pose.y = moving_objects_tracking->moving_objects_pose.position.y;// + fused_odometry_position.pose.y ;
-					location->map = the_map_view->internal_map;
+					location.pose.theta = moving_objects_tracking->moving_objects_pose.orientation.yaw;
+					location.pose.x = moving_objects_tracking->moving_objects_pose.position.x;// + fused_odometry_position.pose.x ;
+					location.pose.y = moving_objects_tracking->moving_objects_pose.position.y;// + fused_odometry_position.pose.y ;
+					location.map = the_map_view->internal_map;
 
 					width2 = moving_objects_tracking->width / 2.0;
 					length2 = moving_objects_tracking->length / 2.0;
 
-					wp[0].pose.x = x_coord(-length2, width2, location);
-					wp[0].pose.y = y_coord(-length2, width2, location);
-					wp[1].pose.x = x_coord(-length2, -width2, location);
-					wp[1].pose.y = y_coord(-length2, -width2, location);
-					wp[2].pose.x = x_coord(length2, -width2, location);
-					wp[2].pose.y = y_coord(length2, -width2, location);
-					wp[3].pose.x = x_coord(length2, width2, location);
-					wp[3].pose.y = y_coord(length2, width2, location);
+					wp[0].pose.x = x_coord(-length2, width2, &location);
+					wp[0].pose.y = y_coord(-length2, width2, &location);
+					wp[1].pose.x = x_coord(-length2, -width2, &location);
+					wp[1].pose.y = y_coord(-length2, -width2, &location);
+					wp[2].pose.x = x_coord(length2, -width2, &location);
+					wp[2].pose.y = y_coord(length2, -width2, &location);
+					wp[3].pose.x = x_coord(length2, width2, &location);
+					wp[3].pose.y = y_coord(length2, width2, &location);
 
-					wp[0].map = wp[1].map = wp[2].map = wp[3].map = location->map;
+					wp[0].map = wp[1].map = wp[2].map = wp[3].map = location.map;
 
 					GdkColor *colour;
 					if (strcmp(moving_objects_tracking->model_features.model_name, "pedestrian") == 0)
@@ -2480,6 +2480,11 @@ namespace View
 						colour = &carmen_blue;
 
 					carmen_map_graphics_draw_polygon(the_map_view, colour, wp, 4, 0);
+
+					char obj_id[256];
+					sprintf(obj_id, "%d", index);
+					GdkFont *text_font = gdk_font_load("-*-courier*-bold-r-normal--0-0-0-0-*-0-iso8859-1"); // Ubuntu command: xlsfonts
+					carmen_map_graphics_draw_string(the_map_view, &carmen_black, text_font, &location, obj_id);
 				}
 			}
 		}

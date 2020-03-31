@@ -722,8 +722,8 @@ carmen_collision_detection_displace_point_in_car_coordinate_frame(const carmen_p
 
 	//coloca o displacement no sistema de coordenadas do mundo
 	sincos(localizer_pose->theta, &sine, &coss);
-	path_point_in_map_coords.x = (localizer_pose->x + x_disp * coss - y_disp * sine);
-	path_point_in_map_coords.y = (localizer_pose->y + x_disp * sine + y_disp * coss);
+	path_point_in_map_coords.x = localizer_pose->x + x_disp * coss - y_disp * sine;
+	path_point_in_map_coords.y = localizer_pose->y + x_disp * sine + y_disp * coss;
 
 	return (path_point_in_map_coords);
 }
@@ -771,6 +771,27 @@ carmen_collision_detection_displaced_pose_according_to_car_orientation(carmen_ac
 	sincos(car_pose->theta, &sine, &coss);
 	displaced_car_pose.x = car_pose->x + x * coss - y * sine;
 	displaced_car_pose.y = car_pose->y + x * sine + y * coss;
+
+	displaced_car_pose.theta = car_pose->theta;
+
+	return (displaced_car_pose);
+}
+
+carmen_point_t
+carmen_collision_detection_displace_car_on_its_frenet_frame(carmen_ackerman_traj_point_t *car_pose, double s, double d)
+{
+	carmen_point_t displaced_car_pose;
+	double coss, sine;
+
+	double displacement = s;
+	sincos(car_pose->theta, &sine, &coss);
+	displaced_car_pose.x = car_pose->x + displacement * coss;
+	displaced_car_pose.y = car_pose->y + displacement * sine;
+
+	displacement = d;
+	sincos(carmen_normalize_theta(car_pose->theta + M_PI / 2.0), &sine, &coss);
+	displaced_car_pose.x = displaced_car_pose.x + displacement * coss;
+	displaced_car_pose.y = displaced_car_pose.y + displacement * sine;
 
 	displaced_car_pose.theta = car_pose->theta;
 
@@ -939,34 +960,98 @@ carmen_robot_ackerman_config_t robot_config __attribute__ ((unused)), carmen_obs
 	return (proximity_to_obstacles);
 }
 
+carmen_mapper_virtual_laser_message virtual_laser_message;
+int add_virtual_laser_points = 0;
+
+void
+add_circle(carmen_point_t center, double radius, int color)
+{
+	double coss, sine;
+
+	virtual_laser_message.positions[virtual_laser_message.num_positions].x = center.x;
+	virtual_laser_message.positions[virtual_laser_message.num_positions].y = center.y;
+	virtual_laser_message.colors[virtual_laser_message.num_positions] = color;
+	virtual_laser_message.num_positions++;
+
+	for (double theta = 0.0; theta < 2.0 * M_PI; theta += (2.0 * M_PI) / 12.0)
+	{
+		sincos(theta, &sine, &coss);
+		double x = center.x + radius * coss - radius * sine;
+		double y = center.y + radius * sine + radius * coss;
+
+		virtual_laser_message.positions[virtual_laser_message.num_positions].x = x;
+		virtual_laser_message.positions[virtual_laser_message.num_positions].y = y;
+		virtual_laser_message.colors[virtual_laser_message.num_positions] = color;
+		virtual_laser_message.num_positions++;
+	}
+}
+
+
+void
+add_line(carmen_point_t point1, carmen_point_t point2, int color)
+{
+	double theta = atan2(point2.y - point1.y, point2.x - point1.x);
+	double coss, sine;
+	sincos(theta, &sine, &coss);
+
+	for (double disp = 0.0; disp <= DIST2D(point1, point2); disp += DIST2D(point1, point2) / 10.0)
+	{
+		double x = point1.x + disp * coss;
+		double y = point1.y + disp * sine;
+
+		virtual_laser_message.positions[virtual_laser_message.num_positions].x = x;
+		virtual_laser_message.positions[virtual_laser_message.num_positions].y = y;
+		virtual_laser_message.colors[virtual_laser_message.num_positions] = color;
+		virtual_laser_message.num_positions++;
+	}
+}
+
 
 int
 carmen_obstacle_avoider_car_collides_with_moving_object(carmen_point_t car_pose, carmen_point_t moving_object_pose,
-		t_point_cloud_struct *moving_object, double longitudinal_safety_magin)
+		t_point_cloud_struct *moving_object, double longitudinal_safety_magin, double lateral_safety_margin,
+		int obj_id, double obj_s, double obj_d)
 {
 	check_collision_config_initialization();
 
-	double l = moving_object->length + longitudinal_safety_magin;
-	double w = moving_object->width;
-	for (double displacement = -(l / w) / 2.0; displacement < (l / w) / 2.0; displacement += w / 2.0)
+//	if (add_virtual_laser_points)
+//	{
+//		printf("obj %d, s %lf, d %lf\n", obj_id, obj_s, obj_d);
+//		fflush(stdout);
+//	}
+
+	double l = moving_object->length + 2.0 * longitudinal_safety_magin;
+	double max_displacement = l / 2.0;
+	int collides = 0;
+	for (double displacement = -max_displacement; displacement < max_displacement; displacement += moving_object->width / 2.0)
 	{
 		carmen_ackerman_traj_point_t mop = {moving_object_pose.x, moving_object_pose.y, moving_object_pose.theta, 0.0, 0.0};
 		carmen_point_t displaced_moving_object_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&mop,
 				displacement);
 
+		if (add_virtual_laser_points)
+			add_circle(displaced_moving_object_pose, moving_object->width / 2.0, CARMEN_RED);
+
 		for (int i = 0; i < global_collision_config.n_markers; i++)
 		{
 			carmen_ackerman_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, 0.0, 0.0};
-			carmen_point_t displaced_localizer_pose = carmen_collision_detection_displaced_pose_according_to_car_orientation(&cp,
+			carmen_point_t displaced_car_pose = carmen_collision_detection_displaced_pose_according_to_car_orientation(&cp,
 					global_collision_config.markers[i].x, global_collision_config.markers[i].y);
 
-			double distance = DIST2D(displaced_localizer_pose, displaced_moving_object_pose);
-			if (distance <= (global_collision_config.markers[i].radius + (moving_object->width / 2.0)))
-				return (1);
+			double distance = DIST2D(displaced_car_pose, displaced_moving_object_pose);
+
+			if (add_virtual_laser_points)
+			{
+				add_circle(displaced_car_pose, global_collision_config.markers[i].radius, CARMEN_BLUE);
+//				add_line(displaced_car_pose, displaced_moving_object_pose, CARMEN_GREEN);
+			}
+
+			if (distance <= (global_collision_config.markers[i].radius + (moving_object->width / 2.0) + lateral_safety_margin))
+				collides = 1;
 		}
 	}
 
-	return (0);
+	return (collides);
 }
 
 
@@ -1032,6 +1117,7 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 	return (0);
 }
 
+
 int
 trajectory_pose_hit_obstacle_old(carmen_ackerman_traj_point_t trajectory_pose, double circle_radius,
 		carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
@@ -1063,6 +1149,7 @@ trajectory_pose_hit_obstacle_old(carmen_ackerman_traj_point_t trajectory_pose, d
 
 	return (0);
 }
+
 
 double
 carmen_obstacle_avoider_compute_closest_car_distance_to_colliding_point(carmen_ackerman_traj_point_t *car_pose, carmen_position_t point_to_check,

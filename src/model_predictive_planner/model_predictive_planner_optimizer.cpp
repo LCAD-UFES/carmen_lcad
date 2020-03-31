@@ -240,7 +240,7 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 	double total_distance = 0.0;
 	double total_points = 0.0;
 
-	for (unsigned int i = 0; i < path.size(); i += 3)
+	for (unsigned int i = 0; i < path.size(); i++)
 	{
 		if ((i < my_params->path_point_nearest_to_lane.size()) &&
 			(my_params->path_point_nearest_to_lane.at(i) < my_params->detailed_lane.size()))

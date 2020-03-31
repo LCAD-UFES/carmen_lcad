@@ -12,6 +12,34 @@
 #include <carmen/rddf_messages.h>
 #include "SampleFilter.h"
 
+enum
+{
+	NONE,
+	OBSTACLE,
+	MOVING_OBSTACLE,
+	CENTRIPETAL_ACCELERATION,
+	ANNOTATION,
+	KEEP_SPEED_LIMIT,
+};
+
+typedef struct
+{
+	int path_id;
+	double s_distance_without_collision;
+	double s_distance_to_moving_object_in_front;
+	bool path_has_no_collision;
+} path_collision_info_t;
+
+typedef struct
+{
+	carmen_point_t pose;
+	double s;
+	double d;
+	bool behind;
+
+} moving_object_pose_info_t;
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif

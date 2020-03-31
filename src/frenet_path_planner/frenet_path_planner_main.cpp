@@ -1887,20 +1887,38 @@ compute_one_path(int path_id, path_t *selected_path, carmen_ackerman_traj_point_
 
 carmen_ackerman_traj_point_t *
 update_poses_back(carmen_ackerman_traj_point_t *current_poses_back, carmen_ackerman_traj_point_t *poses_back,
-		carmen_ackerman_traj_point_t *path, int num_poses_back, int num_poses, int selected_path_id)
+		carmen_ackerman_traj_point_t *path, int &num_poses_back, int num_poses, int selected_path_id)
 {
+	static int current_num_poses_back = 0;
+
+	bool current_num_poses_back_increased = false;
+	if (current_num_poses_back < num_poses_back)
+	{
+		current_num_poses_back = num_poses_back;
+		current_num_poses_back_increased = true;
+	}
+
 	if (current_poses_back == NULL)
 	{
-		current_poses_back = (carmen_ackerman_traj_point_t *) malloc(num_poses_back * sizeof(carmen_ackerman_traj_point_t));
-		for (int pose_i = 0; pose_i < num_poses_back; pose_i++)
+		current_poses_back = (carmen_ackerman_traj_point_t *) malloc(current_num_poses_back * sizeof(carmen_ackerman_traj_point_t));
+		for (int pose_i = 0; pose_i < current_num_poses_back; pose_i++)
 			current_poses_back[pose_i] = poses_back[pose_i];
 	}
 	else
 	{
-		for (int pose_i = num_poses_back - 1; pose_i > 0; pose_i--)
-			current_poses_back[pose_i] = current_poses_back[pose_i - 1];
-
+		if (current_num_poses_back_increased)
+		{
+			current_poses_back = (carmen_ackerman_traj_point_t *) realloc(current_poses_back, current_num_poses_back * sizeof(carmen_ackerman_traj_point_t));
+			for (int pose_i = 0; pose_i < current_num_poses_back; pose_i++)
+				current_poses_back[pose_i] = poses_back[pose_i];
+		}
+		else
+		{
+			for (int pose_i = current_num_poses_back - 1; pose_i > 0; pose_i--)
+				current_poses_back[pose_i] = current_poses_back[pose_i - 1];
+		}
 		current_poses_back[0] = path[selected_path_id * num_poses + 0];
+		num_poses_back = current_num_poses_back; // Se vier menor, reestabelece o valor anterior aqui.
 	}
 
 	return (current_poses_back);
@@ -2055,7 +2073,7 @@ carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
 			&(set_of_paths_message.set_of_paths[set_of_paths_message.selected_path * set_of_paths_message.number_of_poses]),
 			set_of_paths_message.poses_back,
 			carmen_rddf_num_poses_ahead,
-			carmen_rddf_num_poses_back,
+			set_of_paths_message.number_of_poses_back,
 			annotations,
 			annotations_codes);
 

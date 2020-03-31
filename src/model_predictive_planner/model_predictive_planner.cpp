@@ -323,6 +323,9 @@ add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerma
 
 	double distance_between_goals = 0.1;
 	int num_points = distance / distance_between_goals;
+	if (num_points == 0)
+		return;
+
 	if (num_points > 10) // Safeguard
 		num_points = 10;
 

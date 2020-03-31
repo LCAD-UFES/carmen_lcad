@@ -48,7 +48,7 @@ double speed_around_annotation = 1.0;
 //int moving_object_in_front_detected = 0;
 
 #define MAX_VIRTUAL_LASER_SAMPLES 10000
-carmen_mapper_virtual_laser_message virtual_laser_message;
+extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 //SampleFilter filter;
 SampleFilter filter2;
