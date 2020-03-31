@@ -238,24 +238,29 @@ my_f_ordenation (state_node *a, state_node *b)
 
 
 std::vector<carmen_ackerman_traj_point_t>
-build_rddf_poses(std::vector<state_node> &path, state_node *current_state)
+build_rddf_poses(std::vector<state_node> &path, state_node *current_state, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
 	path = build_state_path(current_state->parent);
 	std::reverse(path.begin(), path.end());
 	std::vector<carmen_ackerman_traj_point_t> temp_rddf_poses_from_path;
 
 	for (int i = 0; i < path.size(); i++)
+	{
 		temp_rddf_poses_from_path.push_back(path[i].state);
+		if(OPENCV)
+			draw_point_on_map_img(path[i].state.x, path[i].state.y, distance_map->config, 255, 0, 0);
+
+	}
 
 	return temp_rddf_poses_from_path;
 }
 
 
 void
-astar_publish_rddf_message(state_node *current_state)
+astar_publish_rddf_message(state_node *current_state,  carmen_obstacle_distance_mapper_map_message *distance_map)
 {
 	std::vector<state_node> path;
-	std::vector<carmen_ackerman_traj_point_t> temp_rddf_poses_from_path = build_rddf_poses(path, current_state);
+	std::vector<carmen_ackerman_traj_point_t> temp_rddf_poses_from_path = build_rddf_poses(path, current_state, distance_map);
 	carmen_ackerman_traj_point_t *carmen_rddf_poses_from_path = &temp_rddf_poses_from_path[0];
 	carmen_ackerman_traj_point_t last_pose = {.x = 0.0, .y = 0.0, .theta = 0.0, .v = 9.0, .phi=0.2};
 	int annotations[2] = {1, 2};
@@ -304,6 +309,7 @@ expand_state(state_node *current_state, state_node *goal_state, fibonacci_heap<s
     else
     	size_for = 3;
 
+    //   for neighbors of current:
     for (int i = 0; i < size_for; ++i)
     {
         for (int j = 0; j < NUM_STEERING_ANGLES; ++j)
@@ -326,6 +332,7 @@ expand_state(state_node *current_state, state_node *goal_state, fibonacci_heap<s
         	}
 
         	new_state->parent = current_state;
+        	//    cost = g(current) + movementcost(current, neighbor)
         	new_state->g = current_state->g + DIST2D(current_state->state, new_state->state);
         	new_state->h = DIST2D(new_state->state, goal_state->state);
         	new_state->f = new_state->g + new_state->h;
@@ -348,19 +355,41 @@ expand_state(state_node *current_state, state_node *goal_state, fibonacci_heap<s
         	else
         		current_pos->theta = 0;
 
-        	if ((obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 2.0) || (astar_map[current_pos->x][current_pos->y][current_pos->theta] != NULL && astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open == 0))
+        	// delete the node if is near an obstacle
+        	if (obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 2.0)
         	{
         		free (new_state);
         	}
         	else
         	{
-        		if(astar_map[current_pos->x][current_pos->y][current_pos->theta] == NULL || (astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open == 1 && astar_map[current_pos->x][current_pos->y][current_pos->theta]->g > new_state->g))
+        		// if neighbor in OPEN and cost less than g(neighbor):
+        		if(astar_map[current_pos->x][current_pos->y][current_pos->theta] != NULL && (astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open == 1 &&
+        				astar_map[current_pos->x][current_pos->y][current_pos->theta]->g > new_state->g))
 				{
-        			heap_open_list.push(new_state);
-        			astar_map[current_pos->x][current_pos->y][current_pos->theta] = new_state;
+        			// remove neighbor from OPEN, because new path is better
+        			astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open = 0;
 				}
 
-        		if(OPENCV)
+        		// if neighbor in CLOSED and cost less than g(neighbor): ⁽²⁾
+        		if(astar_map[current_pos->x][current_pos->y][current_pos->theta] != NULL && (astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed == 1 &&
+        				astar_map[current_pos->x][current_pos->y][current_pos->theta]->g > new_state->g))
+        		{
+        			// remove neighbor from CLOSED
+        			astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed = 0;
+        		}
+
+        		// if neighbor not in OPEN and neighbor not in CLOSED: -- Também precisa verificar se ele é NULL, que significa que o neighbor não existe ainda
+        		if (astar_map[current_pos->x][current_pos->y][current_pos->theta] == NULL || (astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed == 0 &&
+        				astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open == 0))
+        		{
+        			// set g(neighbor) to cost -- Isso já foi feito anteriormente
+        			// add neighbor to OPEN
+        			heap_open_list.push(new_state);
+        			astar_map[current_pos->x][current_pos->y][current_pos->theta] = new_state;
+        			// set priority queue rank to g(neighbor) + h(neighbor) -- Já é feito pela heap
+        			// set neighbor's parent to current -- Já foi feito anteriormente
+        		}
+        		if(0)
 				{
 					if(j == 0)
 						draw_point_on_map_img(new_state->state.x, new_state->state.y, distance_map->config, 0, 0, 255);
@@ -418,22 +447,18 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 		//if lowest rank in OPEN is the GOAL: -- Adaptado
 		if (DIST2D(current_state->state, goal_state->state) < 1.5 )
 		{
-			astar_publish_rddf_message(current_state);
+			astar_publish_rddf_message(current_state, distance_map);
 			heap_open_list.clear();
 			break;
 		}
 		else
 		{
-			if(astar_map[current_pos->x][current_pos->y][current_pos->theta] == NULL || astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open == 1)
-			{
-				expand_state(current_state, goal_state, heap_open_list, robot_config, distance_map);
-				astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open = 0;
-
-
-				if(OPENCV)
-				    draw_point_on_map_img(current_state->state.x, current_state->state.y, distance_map->config, 139, 0, 139);
-			}
+			// Expansion
+			expand_state(current_state, goal_state, heap_open_list, robot_config, distance_map);
 		}
+
+		if(OPENCV)
+			draw_point_on_map_img(current_state->state.x, current_state->state.y, distance_map->config, 0, 0, 128);
 	}
 	
 	clear_astar_map(distance_map);
