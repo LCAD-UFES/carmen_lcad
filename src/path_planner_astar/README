@@ -1,0 +1,8 @@
+Para utilizar o path_planner_astar basta executar o central, o process-navigate-volta-da-ufes-pid.ini, compilar (usando o make) e executar o path_planner_astar.
+
+Então seleciona o robot position no navigator_gui e então o final goal. Após isso aguarde o algoritmo rodar e enviar as poses para o sistema.
+Se deseja visualizar a expansão do a estrela, então precisa-se editar o define OPENCV do path_planner_astar_main.cpp para 1. Caso não deseje, pode deixar em 0.
+
+./central
+./proccontrol process-navigate-volta-da-ufes-pid.ini 
+./path_planner_astar

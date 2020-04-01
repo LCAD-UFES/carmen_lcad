@@ -355,7 +355,7 @@ expand_state(state_node *current_state, state_node *goal_state, fibonacci_heap<s
         	else
         		current_pos->theta = 0;
 
-        	// delete the node if is near an obstacle
+        	// delete the node if near an obstacle
         	if (obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 2.0)
         	{
         		free (new_state);
