@@ -6,6 +6,7 @@
 #include <opencv/cv.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/core/version.hpp>
 
 using namespace std;
 using namespace cv;
@@ -30,7 +31,6 @@ int user_pref_window_width  = 640;
 int user_pref_window_height = 480;
 int user_pref_window_x = -1;
 int user_pref_window_y = -1;
-
 Size window_size;
 
 
@@ -141,12 +141,13 @@ read_preferences(int argc, char** argv)
 void
 save_preferences()
 {
-#if CV_VERSION_MAJOR > 3 || (CV_VERSION_MAJOR == 3 && CV_VERSION_MINOR > 4) || (CV_VERSION_MAJOR == 3 && CV_VERSION_MINOR == 4 && CV_VERSION_REVISION >= 1)
+	// Function cv::getWindowImageRect requires OpenCV version 3.4.1 or higher
+#if	(CV_VERSION_MAJOR * 10000 + CV_VERSION_MINOR * 100 + CV_VERSION_REVISION) >= 30401
 	Rect display = getWindowImageRect(window_name);
 	user_pref_window_width  = display.width / (show_left + show_right);
 	user_pref_window_height = display.height;
 	user_pref_window_x = display.x;
-	user_pref_window_y = display.y;
+	user_pref_window_y = display.y - 56;
 	user_preferences_save(user_pref_module, user_pref_param_list, user_pref_num_items);
 #endif
 }
@@ -273,7 +274,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* msg)
 void
 usage(char *prog_name)
 {
-    fprintf(stderr, "\nUsage: %s  <camera_number>  <stereo_option: L|R|S|left|right|stereo>\n\n", prog_name);
+    fprintf(stderr, "\nUsage: %s  <camera_number>  -show <L|R|S|left|right|stereo>\n\n", prog_name);
     exit(1);
 }
 
@@ -290,17 +291,25 @@ read_parameters(int argc, char **argv, int *camera, int *show_left, int *show_ri
 		usage(argv[0]);
 	}
 
-	if (argc >= 3 && argv[2][0] != '-')
+	if (argc >= 3 && strcmp(argv[2], "-show") == 0)
 	{
-		if (strcmp(argv[2], "L") == 0 || strcmp(argv[2], "l") == 0 || strcmp(argv[2], "left") == 0)
-			*show_left = 1, *show_right = 0;
-		else if (strcmp(argv[2], "R") == 0 || strcmp(argv[2], "r") == 0 || strcmp(argv[2], "right") == 0)
-			*show_left = 0, *show_right = 1;
-		else if (strcmp(argv[2], "S") == 0 || strcmp(argv[2], "s") == 0 || strcmp(argv[2], "stereo") == 0)
-			*show_left = 1, *show_right = 1;
+		if (argc > 3)
+		{
+			if (strcmp(argv[3], "L") == 0 || strcmp(argv[3], "l") == 0 || strcmp(argv[3], "left") == 0)
+				*show_left = 1, *show_right = 0;
+			else if (strcmp(argv[3], "R") == 0 || strcmp(argv[3], "r") == 0 || strcmp(argv[3], "right") == 0)
+				*show_left = 0, *show_right = 1;
+			else if (strcmp(argv[3], "S") == 0 || strcmp(argv[3], "s") == 0 || strcmp(argv[3], "stereo") == 0)
+				*show_left = 1, *show_right = 1;
+			else
+			{
+				fprintf(stderr, "\nInvalid show option: %s\n", argv[3]);
+				usage(argv[0]);
+			}
+		}
 		else
 		{
-			fprintf(stderr, "\nInvalid stereo option: %s\n", argv[2]);
+			fprintf(stderr, "\nMissing option after: %s\n", argv[2]);
 			usage(argv[0]);
 		}
 	}
@@ -310,28 +319,28 @@ read_parameters(int argc, char **argv, int *camera, int *show_left, int *show_ri
 int
 main(int argc, char **argv)
 {
-    if (argc == 1 || strcmp(argv[1], "-h") == 0)
-    	usage(argv[0]);
+	if (argc == 1 || strcmp(argv[1], "-h") == 0)
+		usage(argv[0]);
 
-    carmen_ipc_initialize(argc, argv);
+	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 
-    signal(SIGINT, shutdown_camera_view);
+	signal(SIGINT, shutdown_camera_view);
 
 	read_parameters(argc, argv, &camera, &show_left, &show_right);
 
-    sprintf(window_name, "bb%d", camera);
+	sprintf(window_name, "bb%d", camera);
 	namedWindow(window_name);
-    read_preferences(argc, argv);
+	read_preferences(argc, argv);
 
-    // Just to open an initial window
-    for (int i = 0; i < 10; i++)
-    {
+	// Just to open an initial window
+	for (int i = 0; i < 10; i++)
+	{
 		imshow(window_name, Mat::zeros(window_size, CV_8UC3));
 		waitKey(2);
-    }
+	}
 
-    carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
-    carmen_ipc_dispatch();
-    return 0;
+	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_ipc_dispatch();
+	return 0;
 }

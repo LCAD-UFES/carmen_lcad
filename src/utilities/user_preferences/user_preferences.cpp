@@ -279,7 +279,7 @@ user_preferences_save_to_file(const char *module, user_param_t *param_list, int 
 		carmen_fclose(user_pref);
 		char bak_filename[2005];
 		strncpy(bak_filename, filename, 2000);
-		strcat(bak_filename, "_bak");
+		strcat(bak_filename, ".bak");
 		remove(bak_filename);
 		rename(filename, bak_filename);
 	}
