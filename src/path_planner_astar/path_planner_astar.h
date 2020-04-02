@@ -32,6 +32,8 @@ typedef struct state_node
 	double angular_distance_to_goal;
 	int is_open;
 	int is_closed;
+	int is_obstacle;
+	int was_visited;
 	state_node *parent;
 } state_node, *state_node_p;
 

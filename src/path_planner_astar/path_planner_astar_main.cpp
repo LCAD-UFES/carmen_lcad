@@ -168,6 +168,20 @@ obstacle_distance(double x, double y, carmen_obstacle_distance_mapper_map_messag
 }
 
 
+int
+get_distance_map_x(int x, carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+	return round((double) (x * distance_map->config.resolution) + distance_map->config.x_origin);
+}
+
+
+int
+get_distance_map_y(int y, carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+	return round((double) (y * distance_map->config.resolution) + distance_map->config.y_origin);
+}
+
+
 void
 alloc_astar_map(carmen_obstacle_distance_mapper_map_message *distance_map)
 {
@@ -175,6 +189,8 @@ alloc_astar_map(carmen_obstacle_distance_mapper_map_message *distance_map)
 	int theta_size = THETA_SIZE;
 	int x_size = round(distance_map->config.x_size / ASTAR_GRID_RESOLUTION + 1);
 	int y_size = round(distance_map->config.y_size / ASTAR_GRID_RESOLUTION + 1);
+	double pos_x = 0.0;
+	double pos_y = 0.0;
 	printf("sizemap = %d %d \n", x_size, y_size);
 	astar_map = (state_node_p ***)calloc(x_size, sizeof(state_node_p**));
 	carmen_test_alloc(astar_map);
@@ -188,6 +204,18 @@ alloc_astar_map(carmen_obstacle_distance_mapper_map_message *distance_map)
 		{
 			astar_map[i][j] = (state_node_p*)calloc(theta_size, sizeof(state_node_p));
 			carmen_test_alloc(astar_map[i][j]);
+			astar_map[i][j][0]= (state_node_p) malloc(sizeof(state_node));
+			carmen_test_alloc(astar_map[i][j][0]);
+			pos_x = get_distance_map_x(i, distance_map);
+			pos_y = get_distance_map_y(j, distance_map);
+			// Por enquanto isso só vai funcionar enquanto o theta_size for 1
+			if(obstacle_distance(pos_x, pos_y, distance_map) < 2.0)
+				astar_map[i][j][0]->is_obstacle = 1;
+			else
+				astar_map[i][j][0]->is_obstacle = 0;
+
+			astar_map[i][j][0]->was_visited = 0;
+
 		}
 	}
 }
@@ -331,23 +359,7 @@ expand_state(state_node *current_state, state_node *goal_state, fibonacci_heap<s
 				new_state->state.theta = current_state->state.theta;
         	}
 
-        	new_state->parent = current_state;
         	//    cost = g(current) + movementcost(current, neighbor)
-        	new_state->g = current_state->g + DIST2D(current_state->state, new_state->state);
-        	new_state->h = DIST2D(new_state->state, goal_state->state);
-        	new_state->f = new_state->g + new_state->h;
-
-        	if(new_state->state.v < 0)
-        	{
-        		new_state->f *= 1.1;
-        	}
-
-        	if(new_state->state.v != current_state->state.v)
-        	{
-        		new_state->f += 1;
-        	}
-
-        	new_state->is_open = 1;
         	discrete_pos_node *current_pos = get_current_pos(new_state, distance_map);
 
         	if (NHOLONOMIC)
@@ -356,14 +368,14 @@ expand_state(state_node *current_state, state_node *goal_state, fibonacci_heap<s
         		current_pos->theta = 0;
 
         	// delete the node if near an obstacle
-        	if (obstacle_distance(new_state->state.x, new_state->state.y, distance_map) < 2.0)
+        	if (astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_obstacle == 1)
         	{
         		free (new_state);
         	}
         	else
         	{
         		// if neighbor in OPEN and cost less than g(neighbor):
-        		if(astar_map[current_pos->x][current_pos->y][current_pos->theta] != NULL && (astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open == 1 &&
+        		if(astar_map[current_pos->x][current_pos->y][current_pos->theta]->was_visited == 1 && (astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open == 1 &&
         				astar_map[current_pos->x][current_pos->y][current_pos->theta]->g > new_state->g))
 				{
         			// remove neighbor from OPEN, because new path is better
@@ -371,18 +383,36 @@ expand_state(state_node *current_state, state_node *goal_state, fibonacci_heap<s
 				}
 
         		// if neighbor in CLOSED and cost less than g(neighbor): ⁽²⁾
-        		if(astar_map[current_pos->x][current_pos->y][current_pos->theta] != NULL && (astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed == 1 &&
+        		if(astar_map[current_pos->x][current_pos->y][current_pos->theta]->was_visited == 1 && (astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed == 1 &&
         				astar_map[current_pos->x][current_pos->y][current_pos->theta]->g > new_state->g))
         		{
         			// remove neighbor from CLOSED
         			astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed = 0;
         		}
 
-        		// if neighbor not in OPEN and neighbor not in CLOSED: -- Também precisa verificar se ele é NULL, que significa que o neighbor não existe ainda
-        		if (astar_map[current_pos->x][current_pos->y][current_pos->theta] == NULL || (astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed == 0 &&
+        		// if neighbor not in OPEN and neighbor not in CLOSED: -- Também precisa verificar se ele ainda não foi visitado, que significa que o neighbor não existe ainda
+        		if (astar_map[current_pos->x][current_pos->y][current_pos->theta]->was_visited == 0 || (astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed == 0 &&
         				astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open == 0))
         		{
-        			// set g(neighbor) to cost -- Isso já foi feito anteriormente
+        			// set g(neighbor) to cost
+                	new_state->parent = current_state;
+                	new_state->g = current_state->g + DIST2D(current_state->state, new_state->state);
+                	new_state->h = DIST2D(new_state->state, goal_state->state);
+                	new_state->f = new_state->g + new_state->h;
+
+                	if(new_state->state.v < 0)
+                	{
+                		new_state->f *= 1.1;
+                	}
+
+                	if(new_state->state.v != current_state->state.v)
+                	{
+                		new_state->f += 1;
+                	}
+
+                	new_state->is_open = 1;
+                	new_state->is_obstacle = 0;
+                	new_state->was_visited = 1;
         			// add neighbor to OPEN
         			heap_open_list.push(new_state);
         			astar_map[current_pos->x][current_pos->y][current_pos->theta] = new_state;
@@ -418,7 +448,6 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 	goal_state = create_state_node(goal_pose->x, goal_pose->y, goal_pose->theta, 0.0, 0.0, DBL_MAX, DBL_MAX, NULL);
 	fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> heap_open_list;
 	alloc_astar_map(distance_map);
-
 	if(OPENCV)
 	{
 		display_map(distance_map);
@@ -427,6 +456,8 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 	}
 
 	start_state->is_open = 1;
+	start_state->was_visited = 1;
+	start_state->is_obstacle = 0;
 	// OPEN = priority queue containing START
 	heap_open_list.push(start_state);
 	discrete_pos_node *current_pos = get_current_pos(start_state, distance_map);
