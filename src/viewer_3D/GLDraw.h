@@ -8,7 +8,7 @@ extern "C"
 {
 #endif
 
-void initGl();
+void initGl(int width, int height);
 
 void set_camera(carmen_pose_3D_t pose);
 void set_camera_offset(carmen_vector_3D_t offset);

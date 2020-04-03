@@ -24,6 +24,7 @@ static int disp_fps = 0, disp_last_fps = 0; //display fps
 
 char window_name[32];
 
+char *user_pref_filename = NULL;
 const char *user_pref_module;
 user_param_t *user_pref_param_list;
 int user_pref_num_items;
@@ -114,7 +115,7 @@ save_camera_images()
 
 
 void
-read_preferences(int argc, char** argv)
+read_user_preferences(int argc, char** argv)
 {
 	static user_param_t param_list[] =
 	{
@@ -126,12 +127,17 @@ read_preferences(int argc, char** argv)
 	user_pref_module = basename(argv[0]);
 	user_pref_param_list = param_list;
 	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
-	user_preferences_read(user_pref_module, user_pref_param_list, user_pref_num_items);
+	user_preferences_read(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
 	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
 
 	window_size = Size(user_pref_window_width * (show_left + show_right), user_pref_window_height);
+}
 
-	if (user_pref_window_width >= 0 && user_pref_window_height >= 0)
+
+void
+set_user_preferences()
+{
+	if (user_pref_window_width > 0 && user_pref_window_height > 0)
 		resizeWindow(window_name, window_size.width, window_size.height);
 	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
 		moveWindow(window_name, user_pref_window_x, user_pref_window_y);
@@ -139,7 +145,7 @@ read_preferences(int argc, char** argv)
 
 
 void
-save_preferences()
+save_user_preferences()
 {
 	// Function cv::getWindowImageRect requires OpenCV version 3.4.1 or higher
 #if	(CV_VERSION_MAJOR * 10000 + CV_VERSION_MINOR * 100 + CV_VERSION_REVISION) >= 30401
@@ -148,7 +154,7 @@ save_preferences()
 	user_pref_window_height = display.height;
 	user_pref_window_x = display.x;
 	user_pref_window_y = display.y - 56;
-	user_preferences_save(user_pref_module, user_pref_param_list, user_pref_num_items);
+	user_preferences_save(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
 #endif
 }
 
@@ -160,7 +166,7 @@ shutdown_camera_view(int x)
     {
         carmen_ipc_disconnect();
         printf("Disconnected from robot.\n");
-        save_preferences();
+        save_user_preferences();
         exit(0);
     }
 }
@@ -331,7 +337,8 @@ main(int argc, char **argv)
 
 	sprintf(window_name, "bb%d", camera);
 	namedWindow(window_name);
-	read_preferences(argc, argv);
+	read_user_preferences(argc, argv);
+	set_user_preferences();
 
 	// Just to open an initial window
 	for (int i = 0; i < 10; i++)

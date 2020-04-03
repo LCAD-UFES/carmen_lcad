@@ -25,15 +25,11 @@ typedef struct
 	user_param_t, *user_param_p;
 
 
-void user_preferences_read_from_file(const char *module, user_param_t *param_list, int num_items, const char *filename);
-
-void user_preferences_read(const char *module, user_param_t *param_list, int num_items);
+void user_preferences_read(const char *filename, const char *module, user_param_t *param_list, int num_items);
 
 void user_preferences_read_commandline(int argc, char **argv, user_param_t *param_list, int num_items);
 
-void user_preferences_save_to_file(const char *module, user_param_t *param_list, int num_items, const char *filename);
-
-void user_preferences_save(const char *module, user_param_t *param_list, int num_items);
+void user_preferences_save(const char *filename, const char *module, user_param_t *param_list, int num_items);
 
 
 #ifdef __cplusplus

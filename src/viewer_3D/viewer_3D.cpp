@@ -20,6 +20,7 @@
 #include <carmen/laser_ldmrs_utils.h>
 #include <carmen/gps_xyz_interface.h>
 #include <carmen/rddf_interface.h>
+#include <carmen/user_preferences.h>
 #include <GL/glew.h>
 #include <iostream>
 #include <vector>
@@ -342,6 +343,15 @@ static double g_b_green;
 static double g_b_blue;
 
 float ***remission_calibration_table;
+
+char *user_pref_filename = NULL;
+const char *user_pref_module;
+user_param_t *user_pref_param_list;
+int user_pref_num_items;
+int user_pref_window_width  = WINDOW_WIDTH;
+int user_pref_window_height = WINDOW_HEIGHT;
+int user_pref_window_x = -1;
+int user_pref_window_y = -1;
 
 
 static carmen_vector_3D_t
@@ -4150,17 +4160,76 @@ keyRelease(int code)
 }
 
 
+void
+read_user_preferences(int argc, char** argv)
+{
+	static user_param_t param_list[] =
+	{
+		{"window_width",  USER_PARAM_TYPE_INT, &user_pref_window_width},
+		{"window_height", USER_PARAM_TYPE_INT, &user_pref_window_height},
+		{"window_x",      USER_PARAM_TYPE_INT, &user_pref_window_x},
+		{"window_y",      USER_PARAM_TYPE_INT, &user_pref_window_y},
+	};
+	user_pref_module = basename(argv[0]);
+	user_pref_param_list = param_list;
+	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
+	user_preferences_read(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
+	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
+}
+
+
+void
+set_user_preferences()
+{
+//	// User's preferred window size is already set by initWindow()
+//	if (user_pref_window_width > 0 && user_pref_window_height > 0)
+//		XResizeWindow(w->g_pDisplay, w->g_window, user_pref_window_width, user_pref_window_height);
+	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
+		XMoveWindow(w->g_pDisplay, w->g_window, user_pref_window_x, user_pref_window_y);
+}
+
+
+void
+save_user_preferences()
+{
+	XWindowAttributes attr;
+	Window child_window;
+
+	XGetWindowAttributes(w->g_pDisplay, w->g_window, &attr);
+	XTranslateCoordinates(w->g_pDisplay, w->g_window, RootWindow(w->g_pDisplay, DefaultScreen(w->g_pDisplay)),
+			attr.x, attr.y, &user_pref_window_x, &user_pref_window_y, &child_window);
+
+	user_pref_window_width  = attr.width;
+	user_pref_window_height = attr.height;
+	user_pref_window_y -= 28;
+	user_preferences_save(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
+}
+
+
+void
+shutdown(int sig)
+{
+	save_user_preferences();
+	exit(sig);
+}
+
+
 int
 main(int argc, char** argv)
 {
     argc_g = argc;
     argv_g = argv;
 
-    w = initWindow();
-    initGl();
+    read_user_preferences(argc, argv);
+
+    w = initWindow(user_pref_window_width, user_pref_window_height);
+    initGl(user_pref_window_width, user_pref_window_height);
+
+    set_user_preferences();
 
     carmen_ipc_initialize(argc_g, argv_g);
     carmen_param_check_version(argv[0]);
+    signal(SIGINT, shutdown);
 
     read_parameters_and_init_stuff(argc_g, argv_g);
 

@@ -157,27 +157,27 @@ param_value_to_str(char *value_str, void *param_value, char param_type)
 
 
 void
-user_preferences_read_from_file(const char *module, user_param_t *param_list, int num_items, const char *filename)
+user_preferences_read(const char *filename, const char *module, user_param_t *param_list, int num_items)
 {
 	setlocale(LC_ALL, "C");
-	if (num_items <= 0 || filename == NULL || filename[0] == '\0')
+	if (num_items <= 0)
 		return;
 
-	carmen_FILE *user_pref = carmen_fopen(filename, "r");
+	const char *user_pref_filename = (filename != NULL) ? filename : USER_DEFAULT_FILENAME;
+
+	carmen_FILE *user_pref = carmen_fopen(user_pref_filename, "r");
 	if (user_pref == NULL)
+	{
+		if (errno != ENOENT || filename != NULL)
+			carmen_warn("WARNING: Could not open user preferences file for reading: %s  (%s)\n", user_pref_filename, strerror(errno));
+
 		return;
+	}
 
 	for (int i = 0; i < num_items; i++)
-		get_user_param(module, param_list[i], user_pref, filename);
+		get_user_param(module, param_list[i], user_pref, user_pref_filename);
 
 	carmen_fclose(user_pref);
-}
-
-
-void
-user_preferences_read(const char *module, user_param_t *param_list, int num_items)
-{
-	user_preferences_read_from_file(module, param_list, num_items, USER_DEFAULT_FILENAME);
 }
 
 
@@ -204,35 +204,38 @@ user_preferences_read_commandline(int argc, char **argv, user_param_t *param_lis
 
 
 void
-user_preferences_save_to_file(const char *module, user_param_t *param_list, int num_items, const char *filename)
+user_preferences_save(const char *filename, const char *module, user_param_t *param_list, int num_items)
 {
 	setlocale(LC_ALL, "C");
 	if (num_items <= 0)
 		return;
 
-	if (filename == NULL || filename[0] == '\0')
+	const char *user_pref_filename = (filename != NULL) ? filename : USER_DEFAULT_FILENAME;
+
+	carmen_FILE *user_pref = carmen_fopen(user_pref_filename, "r");
+	if (user_pref == NULL)
 	{
-		carmen_warn("WARNING: No filename provided for saving user preferences\n");
+		if (errno != ENOENT || filename != NULL)
+			carmen_warn("WARNING: Could not open user preferences file for reading: %s  (%s)\n", user_pref_filename, strerror(errno));
+
 		return;
 	}
 
 	char new_filename[2005];
-	strncpy(new_filename, filename, 2000);
-	strcat(new_filename, "_new");
+	strncpy(new_filename, user_pref_filename, 2000);
+	strcat(new_filename, ".new");
 
-	carmen_FILE *user_pref = carmen_fopen(filename, "r");
 	carmen_FILE *new_user_pref = carmen_fopen(new_filename, "w");
 	if (new_user_pref == NULL)
 	{
-		carmen_warn("WARNING: Could not open user preferences file for writing: %s  (errno: %d)\n", new_filename, errno);
+		carmen_warn("WARNING: Could not open user preferences file for writing: %s  (%s)\n", new_filename, strerror(errno));
 		return;
 	}
 
 	char line[10000], line_module[1000], line_variable[1000], line_value[8000], param_value_str[8000];
-	int index, len = 0, saved_count = 0;
-	int *saved_list = (int *) calloc(num_items, sizeof(int));
+	int index, len = 0;
 
-	while (user_pref != NULL && carmen_fgets(line, 9999, user_pref) != NULL)
+	while (carmen_fgets(line, 9999, user_pref) != NULL)
 	{
 		if ((line[0] == '#') ||
 			(sscanf(line, " %s %s %n%[^#\n]", line_module, line_variable, &len, line_value) != 3) ||
@@ -257,39 +260,11 @@ user_preferences_save_to_file(const char *module, user_param_t *param_list, int 
 			param_value_to_str(param_value_str, param_list[index].value, param_list[index].type);
 			carmen_fprintf(new_user_pref, "%s  # %s", param_value_str, line + len);
 		}
-		saved_list[index] = 1;
-		saved_count++;
 	}
+	long file_size = carmen_ftell(new_user_pref);
 
-//	if (saved_count < num_items)
-//		carmen_fprintf(new_user_pref, "\n");
-//
-//	for (index = 0; index < num_items; index++)
-//	{
-//		if (saved_list[index] == 1)
-//			continue;
-//
-//		param_value_to_str(param_value_str, param_list[index].value, param_list[index].type);
-//		carmen_fprintf(new_user_pref, "%-20s %-20s %s\n", module, param_list[index].variable, param_value_str);
-//	}
-
-	free(saved_list);
-	if (user_pref)
-	{
-		carmen_fclose(user_pref);
-		char bak_filename[2005];
-		strncpy(bak_filename, filename, 2000);
-		strcat(bak_filename, ".bak");
-		remove(bak_filename);
-		rename(filename, bak_filename);
-	}
+	carmen_fclose(user_pref);
 	carmen_fclose(new_user_pref);
-	rename(new_filename, filename);
-}
-
-
-void
-user_preferences_save(const char *module, user_param_t *param_list, int num_items)
-{
-	user_preferences_save_to_file(module, param_list, num_items, USER_DEFAULT_FILENAME);
+	if (file_size > 0)
+		rename(new_filename, user_pref_filename);
 }

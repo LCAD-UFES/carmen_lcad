@@ -97,7 +97,7 @@ void initialize(int argc, char** argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	
-	gl_window = initWindow();
+	gl_window = initWindow(WINDOW_WIDTH, WINDOW_HEIGHT);
 	initGl();
 	car_draw = createCarDrawer(argc,argv);
 

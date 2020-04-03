@@ -2,13 +2,6 @@
 #include "viewer_3D.h"
 #include "Window.h"
 
-struct window
-{
-    Display* g_pDisplay;
-    Window g_window;
-    int g_bDoubleBuffered;
-    Atom wmDeleteMessage;
-};
 
 int
 processWindow (window* w, void (*mouseFunc)(int type, int button, int x, int y), void (*keyPress)(int code), void (*keyRelease)(int code))
@@ -104,7 +97,7 @@ showWindow (window* w)
 }
 
 window*
-initWindow ()
+initWindow (int width, int height)
 {
     //int tela;
 
@@ -212,7 +205,7 @@ initWindow ()
     w->g_window = XCreateWindow (w->g_pDisplay,
                                  RootWindow (w->g_pDisplay, visualInfo->screen),
                                  0, 0, // x/y position of top-left outside corner of the window
-                                 WINDOW_WIDTH, WINDOW_HEIGHT, // Width and height of window
+								 width, height, // Width and height of window
                                  0, // Border width
                                  visualInfo->depth,
                                  InputOutput,

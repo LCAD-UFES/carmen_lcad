@@ -15,7 +15,7 @@ extern "C" {
 #include <map>
 #include <string>
 
-	using namespace std;
+using namespace std;
 
 #ifdef __cplusplus
 }
@@ -23,15 +23,6 @@ extern "C" {
 
 #include <carmen/voice_interface_interface.h>
 #include "proccontrol_gui.h"
-
-const char *user_pref_module;
-user_param_t *user_pref_param_list;
-int user_pref_num_items;
-int user_pref_window_width = 600;
-int user_pref_window_height = 400;
-int user_pref_window_x = -1;
-int user_pref_window_y = -1;
-int user_pref_output_lines = 10;
 
 QDisplay                             * qdisplay;
 int                                    pid_update = FALSE;
@@ -49,6 +40,18 @@ typedef struct
 }process_reinitialization_manager;
 
 map<string, process_reinitialization_manager> process_reinitialization_table;
+
+
+char *user_pref_filename = NULL;
+const char *user_pref_module;
+user_param_t *user_pref_param_list;
+int user_pref_num_items;
+int user_pref_window_width  = 600;
+int user_pref_window_height = 400;
+int user_pref_window_x = -1;
+int user_pref_window_y = -1;
+int user_pref_output_lines = 10;
+
 
 QDisplay::QDisplay( QWidget *parent, const char *name )
 : QWidget( parent, name )
@@ -492,7 +495,7 @@ carmen_output( int state )
 
 
 void
-read_preferences(int argc, char** argv)
+read_user_preferences(int argc, char** argv)
 {
 	static user_param_t param_list[] =
 	{
@@ -505,10 +508,15 @@ read_preferences(int argc, char** argv)
 	user_pref_module = basename(argv[0]);
 	user_pref_param_list = param_list;
 	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
-	user_preferences_read(user_pref_module, user_pref_param_list, user_pref_num_items);
+	user_preferences_read(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
 	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
+}
 
-	if (user_pref_window_width >= 0 && user_pref_window_height >= 0)
+
+void
+set_user_preferences()
+{
+	if (user_pref_window_width > 0 && user_pref_window_height > 0)
 		qdisplay->resize(user_pref_window_width, user_pref_window_height);
 	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
 		qdisplay->move(user_pref_window_x, user_pref_window_y);
@@ -516,21 +524,21 @@ read_preferences(int argc, char** argv)
 
 
 void
-save_preferences()
+save_user_preferences()
 {
-	user_pref_window_width = qdisplay->width();
+	user_pref_window_width  = qdisplay->width();
 	user_pref_window_height = qdisplay->height();
 	user_pref_window_x = qdisplay->x() + 10;
 	user_pref_window_y = qdisplay->y() + 10;
 	user_pref_output_lines = (qdisplay->height() - 4 - table.numgrps * 84 ) / 13;
-	user_preferences_save(user_pref_module, user_pref_param_list, user_pref_num_items);
+	user_preferences_save(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
 }
 
 
 void
 shutdown( int sig )
 {
-	save_preferences();
+	save_user_preferences();
 	exit(sig);
 }
 
@@ -543,7 +551,8 @@ main(int argc, char** argv)
 
 	qdisplay = &gui;
 
-	read_preferences(argc, argv);
+	read_user_preferences(argc, argv);
+	set_user_preferences();
 
 	carmen_ipc_initialize(argc, argv);
 

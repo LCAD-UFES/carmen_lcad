@@ -60,10 +60,11 @@ int previous_num_point_clouds = 0;
 
 int record_screen;
 
+char *user_pref_filename = NULL;
 const char *user_pref_module;
 user_param_t *user_pref_param_list;
 int user_pref_num_items;
-int user_pref_window_width = -1;
+int user_pref_window_width  = -1;
 int user_pref_window_height = -1;
 int user_pref_window_x = -1;
 int user_pref_window_y = -1;
@@ -930,7 +931,7 @@ get_active_maps_from_menu(char **map, char **superimposed_map)
 
 
 void
-read_preferences(int argc, char** argv)
+read_user_preferences(int argc, char** argv)
 {
 	static user_param_t param_list[] =
 	{
@@ -946,15 +947,15 @@ read_preferences(int argc, char** argv)
 	user_pref_module = basename(argv[0]);
 	user_pref_param_list = param_list;
 	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
-	user_preferences_read(user_pref_module, user_pref_param_list, user_pref_num_items);
+	user_preferences_read(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
 	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
 }
 
 
 void
-set_window_preferences()
+set_user_preferences()
 {
-	if (user_pref_window_width >= 0 && user_pref_window_height >= 0)
+	if (user_pref_window_width > 0 && user_pref_window_height > 0)
 		gtk_window_resize(GTK_WINDOW(gui->controls_.main_window), user_pref_window_width, user_pref_window_height);
 	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
 		gtk_window_move(GTK_WINDOW(gui->controls_.main_window), user_pref_window_x, user_pref_window_y);
@@ -962,13 +963,13 @@ set_window_preferences()
 
 
 void
-save_preferences()
+save_user_preferences()
 {
 	gtk_window_get_size(GTK_WINDOW(gui->controls_.main_window), &user_pref_window_width, &user_pref_window_height);
 	gtk_window_get_position(GTK_WINDOW(gui->controls_.main_window), &user_pref_window_x, &user_pref_window_y);
 	nav_panel_config.initial_map_zoom = gui->controls_.map_view->zoom;
 	get_active_maps_from_menu(&(nav_panel_config.map), &(nav_panel_config.superimposed_map));
-	user_preferences_save(user_pref_module, user_pref_param_list, user_pref_num_items);
+	user_preferences_save(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
 }
 
 
@@ -981,7 +982,7 @@ nav_shutdown(int signo __attribute__ ((unused)))
 	{
 		done = 1;
 		carmen_ipc_disconnect();
-		save_preferences();
+		save_user_preferences();
 		exit(1);
 	}
 }
@@ -1214,7 +1215,7 @@ main(int argc, char *argv[])
 
 	read_parameters(argc, argv, &robot_config, &poly_config, &nav_config, &nav_panel_config);
 
-	read_preferences(argc, argv);
+	read_user_preferences(argc, argv);
 
 	carmen_grid_mapping_init_parameters(0.2, 150);
 
@@ -1228,7 +1229,7 @@ main(int argc, char *argv[])
 
 	init_navigator_gui_variables(argc, argv);
 
- 	set_window_preferences();
+ 	set_user_preferences();
 
 	subscribe_ipc_messages();
 
