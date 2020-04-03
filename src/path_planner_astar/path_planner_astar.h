@@ -7,6 +7,8 @@
 #include <carmen/rddf_messages.h>
 #include <algorithm>
 #include <car_model.h>
+#include <carmen/global_graphics.h>
+#include <carmen/mapper_interface.h>
 
 #include <boost/heap/fibonacci_heap.hpp>
 
