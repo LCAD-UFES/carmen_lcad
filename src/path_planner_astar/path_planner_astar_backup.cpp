@@ -4,9 +4,13 @@
 #define MIN_STEERING_DIFF 0.0872665
 #define MIN_POS_DISTANCE  0.2 // the carmen grid map resolution
 
-#define OPENCV 1
+#define OPENCV 0
 #define THETA_SIZE 1
 #define ASTAR_GRID_RESOLUTION 1.0
+
+#define MAX_VIRTUAL_LASER_SAMPLES 100000
+carmen_mapper_virtual_laser_message virtual_laser_message;
+
 
 #define CIRCLE_HEURISTIC 0
 
@@ -54,6 +58,57 @@ public:
 		//return (a->h > b->h);             // The default c++ stl is a max heap, so wee need to invert here
 	}
 };
+
+
+void
+draw_astar_object(carmen_ackerman_traj_point_t *object_pose, int color)
+{
+	/*
+
+	  CARMEN_RED = 0,
+	  CARMEN_BLUE = 1,
+	  CARMEN_WHITE = 2,
+	  CARMEN_YELLOW = 3,
+	  CARMEN_GREEN = 4,
+	  CARMEN_LIGHT_BLUE = 5,
+	  CARMEN_BLACK = 6,
+	  CARMEN_ORANGE = 7,
+	  CARMEN_GREY = 8,
+	  CARMEN_LIGHT_GREY = 9,
+	  CARMEN_PURPLE = 10,
+
+	 */
+	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x;
+	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y;
+	virtual_laser_message.colors[virtual_laser_message.num_positions] = color;
+	virtual_laser_message.num_positions++;
+}
+
+
+void
+publish_astar_draw()
+{
+	virtual_laser_message.host = carmen_get_host();
+	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
+//	virtual_laser_message.num_positions = 0;
+}
+
+
+std::vector<state_node>
+build_state_path(state_node *node)
+{
+	std::vector<state_node> state_path;
+	int i = 0;
+
+    while (node != NULL)
+    {
+        state_path.push_back(*node);
+        node = node->parent;
+        i++;
+    }
+
+    return(state_path);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -159,23 +214,6 @@ create_state_node(double x, double y, double theta, double v, double phi, double
 	new_state->parent = parent;
 
 	return (new_state);
-}
-
-
-std::vector<state_node>
-build_state_path(state_node *node)
-{
-	std::vector<state_node> state_path;
-	int i = 0;
-
-    while (node != NULL)
-    {
-        state_path.push_back(*node);
-        node = node->parent;
-        i++;
-    }
-
-    return(state_path);
 }
 
 
@@ -312,11 +350,12 @@ build_rddf_poses(std::vector<state_node> &path, state_node *current_state, carme
 	for (int i = 0; i < path.size(); i++)
 	{
 		temp_rddf_poses_from_path.push_back(path[i].state);
+		draw_astar_object(&path[i].state, 1);
 		if(OPENCV)
 			draw_point_on_map_img(path[i].state.x, path[i].state.y, distance_map->config, 255, 0, 0);
 
 	}
-
+	publish_astar_draw();
 	return temp_rddf_poses_from_path;
 }
 
@@ -694,6 +733,8 @@ expand_state(state_node *current_state, state_node *goal_state, fibonacci_heap<s
                 	new_state->is_obstacle = 0;
                 	new_state->was_visited = 1;
         			// add neighbor to OPEN
+                	draw_astar_object(&new_state->state, 0);
+                	publish_astar_draw();
         			heap_open_list.push(new_state);
         			astar_map[current_pos->x][current_pos->y][current_pos->theta] = new_state;
         			// set priority queue rank to g(neighbor) + h(neighbor) -- Já é feito pela heap
@@ -850,6 +891,18 @@ carmen_rddf_play_subscribe_messages()
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
+void
+path_planner_astar_initialize()
+{
+	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
+	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
+	virtual_laser_message.colors = (char *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(char));
+	virtual_laser_message.host = carmen_get_host();
+}
+
+
+
 void
 shutdown_module(int signo)
 {
@@ -899,6 +952,8 @@ main(int argc, char **argv)
 	carmen_rddf_play_subscribe_messages();
 
 	signal(SIGINT, shutdown_module);
+
+	path_planner_astar_initialize();
 
 	printf("Até aqui está funcionando!\n");
 

@@ -3,7 +3,7 @@
 #define THETA_SIZE 1
 #define ASTAR_GRID_RESOLUTION 1.0
 
-#define ACKERMAN_EXPANSION 0
+#define ACKERMAN_EXPANSION 1
 
 #define MAX_VIRTUAL_LASER_SAMPLES 100000
 carmen_mapper_virtual_laser_message virtual_laser_message;
@@ -15,11 +15,7 @@ carmen_obstacle_distance_mapper_map_message distance_map;
 state_node_p ***astar_map;
 
 using namespace std;
-using namespace cv;
 using namespace boost::heap;
-
-Mat map_image;
-
 
 
 void
@@ -74,7 +70,7 @@ build_rddf_poses(std::vector<state_node> &path, state_node *current_state, carme
 	for (int i = 0; i < path.size(); i++)
 	{
 		temp_rddf_poses_from_path.push_back(path[i].state);
-		draw_astar_object(&path[i].state, 4);
+		draw_astar_object(&path[i].state, CARMEN_GREEN);
 
 	}
 
@@ -336,7 +332,7 @@ expansion(state_node *current, carmen_obstacle_distance_mapper_map_message *dist
         else
         	size_for = 3;
 
-    for (int i = 0; i<size_for; i++)
+    for (int i = 0; i < size_for; i++)
     {
     	for (int j = 0; j<3; j++)
     	{
@@ -359,7 +355,7 @@ expansion(state_node *current, carmen_obstacle_distance_mapper_map_message *dist
 			}
 			else
 			{
-				draw_astar_object(&new_state->state, 0);
+				draw_astar_object(&new_state->state, CARMEN_RED);
 				neighbor.push_back(new_state);
 			}
     	}
@@ -458,6 +454,8 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 		printf("Caminho não encontrado\n");
 	else
 	{
+		virtual_laser_message.num_positions = 0;
+		current = pop_lowest_rank(open);
 		astar_publish_rddf_message(current, distance_map);
 		publish_astar_draw();
 	}
