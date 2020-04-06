@@ -346,6 +346,13 @@ def process_svg_file(svg_file):
         write_rddf(rddf_file, rddf)
 
 
+def usage_exit(msg):
+    if msg:
+        print(msg)
+    parser.print_help(sys.stderr)
+    sys.exit(1)
+
+
 def _path(s):
     if not os.path.isdir(s):
         raise argparse.ArgumentTypeError('directory not found: {}'.format(s))
@@ -370,7 +377,7 @@ def _svg_scale(s):
 
     
 def main():
-    global args, count_files, total_files
+    global parser, args, count_files, total_files
     print
     
     parser = argparse.ArgumentParser(description=PROG_DESCRIPTION, formatter_class=argparse.RawTextHelpFormatter)
@@ -381,12 +388,14 @@ def main():
     parser.add_argument('-f', '--filelist', help='text file containing a list of SVG filenames (one per line)', type=_file)
     parser.add_argument('filename', help='list of SVG filenames (separated by spaces)', type=_file, nargs='*')
     args = parser.parse_args()
+
+    if args.dist_points <= 0.0:
+        usage_exit('RDDF distance between waypoints must be a positive value in meters: {}\n\n'.format(args.dist_points))
     
     if not args.filelist and not args.filename:
         if len(sys.argv) > 1:
-            print('At least a filename or a filelist must be passed as argument\n\n')
-        parser.print_help(sys.stderr)
-        sys.exit(1)
+            usage_exit('At least a filename or a filelist must be passed as argument\n\n')
+        usage_exit('')
     
     count_files = 0
     total_files = len(args.filename)
