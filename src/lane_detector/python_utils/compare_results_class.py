@@ -28,7 +28,7 @@ def read_groud_truth_points(gt_dir, gt_file_name):
 	return gt_points_class
 
 def read_and_convert_4_points_coordinates(predictions_dir, gt_file_name, image_width, image_heigth):
-	print (predictions_dir + gt_file_name)
+	#print (predictions_dir + gt_file_name)
 	predictions_files_list = open(predictions_dir + gt_file_name, "r")
 	content = predictions_files_list.readlines()
 	class_number = []
@@ -170,7 +170,7 @@ if __name__ == "__main__":
 		class_number_elas = []
 		array_numbers = []
 		error_array = []
-		
+		error_array_2 = []
 		for l in number_iterations_folder:
 			folder_name = [a for a in os.listdir(yolo_base + str(l) + "/")]
 			for f in folder_name:
@@ -180,8 +180,9 @@ if __name__ == "__main__":
 					if not gt_file_name.endswith('.txt'):
 						continue
 					gt_points_class = read_groud_truth_points(sys.argv[1] + str(f) + "/", gt_file_name)
+					#print (gt_points_class)
 					class_number_yolo = read_and_convert_4_points_coordinates(yolo_path, gt_file_name, image_width, image_heigth)
-					print (class_number_yolo)
+					#print (class_number_yolo)
 					class_number_elas = read_and_convert_4_points_coordinates(sys.argv[3] + str(f) + "/", gt_file_name, image_width, image_heigth)
 					"""for i in range(len(class_number_elas)):
 						for j in class_number_elas[i]:
@@ -198,10 +199,42 @@ if __name__ == "__main__":
 			array_numbers.append(int(l))
 			error_yolo = 0
 			error_elas = 0
-		print(error_array)
-		plt.plot(array_numbers, error_array)
+			cont = 0
+		if yolo_base.endswith("val_2/"):
+			yolo_base = yolo_base.replace("val_2", "test_2")
+		elif yolo_base.endswith("val_1/"):
+			yolo_base = yolo_base.replace("val_1", "test_1")
+		for l in number_iterations_folder:
+			folder_name = [a for a in os.listdir(yolo_base + str(l) + "/")]
+			for f in folder_name:
+				yolo_path = yolo_base + str(l) + "/" + str(f) + "/"
+				gt_files_list = [b for b in os.listdir(yolo_path)]
+				for gt_file_name in gt_files_list:
+					if not gt_file_name.endswith('.txt'):
+						continue
+					gt_points_class = read_groud_truth_points(sys.argv[1] + str(f) + "/", gt_file_name)
+					class_number_yolo = read_and_convert_4_points_coordinates(yolo_path, gt_file_name, image_width, image_heigth)
+					#print (class_number_yolo)
+					class_number_elas = read_and_convert_4_points_coordinates(sys.argv[3] + str(f) + "/", gt_file_name, image_width, image_heigth)
+					
+					returned = compute_error_class(gt_points_class, class_number_yolo)
+					cont += 1
+					error_yolo += returned
+					returned_2 = compute_error_class(gt_points_class, class_number_elas)
+					error_elas += returned_2
+			print ("Error yolo ", error_yolo/cont)
+			print ("Error elas ", error_elas/cont)
+			error_array_2.append(float(error_yolo/cont * 100))
+			#array_numbers.append(int(l))
+			error_yolo = 0
+			error_elas = 0
+			cont = 0
+		print(error_array_2)
+		plt.plot(array_numbers, error_array, label='validation')
+		plt.plot( array_numbers, error_array_2,  label= 'test')
 		plt.xlabel('Iteration')
 		plt.ylabel('Percentage')
 		titulo = "Error of classification"
 		plt.title(str(titulo))
+		plt.legend()
 		plt.show()

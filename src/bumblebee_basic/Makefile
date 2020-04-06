@@ -32,6 +32,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src \
 	 `pkg-config --libs opencv` \
 	 -lparam_interface -lipc -lglobal -lglobal_graphics -lbumblebee_basic_interface \
 	`$(GTK_CONFIG) --libs` 
+LFLAGS += -luser_preferences
 	
 
 SOURCES = bumblebee_basic_main.cpp bumblebee_basic_interface.c bumblebee_basic_simulator.c bumblebee_basic_flycap_main.cpp bumblebee_basic_view.cpp 

@@ -36,7 +36,7 @@ double background_g;
 double background_b;
 
 void
-initGl ()
+initGl (int width, int height)
 {
     int zero = 0;
     glutInit (&zero, NULL);
@@ -74,7 +74,7 @@ initGl ()
     glMatrixMode (GL_PROJECTION);
     glLoadIdentity ();
 
-    gluPerspective (45.0f, WINDOW_WIDTH / WINDOW_HEIGHT, 0.1f, 4000.0f); // Calculate The Aspect Ratio Of The Window
+    gluPerspective (45.0f, width / height, 0.1f, 4000.0f); // Calculate The Aspect Ratio Of The Window
 
     carmen_pose_3D_t zero_pose;
     zero_pose.position.x = 0.0;

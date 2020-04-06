@@ -10,10 +10,26 @@ PyObject *python_color_image_function;
 PyObject *python_get_label_name_by_number_function;
 PyObject *python_is_moving_object_function;
 
+void initialize_python_path_deeplab()
+{
+	char* pyPath;
+	char* pPath;
+	char* deepPath;
+	pyPath = (char *) "PYTHONPATH=";
+  	pPath = getenv ("CARMEN_HOME");
+	deepPath = (char *) "/sharedlib/Deeplab";
+    char * path = (char *) malloc(1 + strlen(pyPath) + strlen(pPath)+ strlen(deepPath));
+	strcpy(path, pyPath);
+    strcat(path, pPath);
+    strcat(path, deepPath);
+	putenv(path);
+}
 
 void
 initialize_visualize_module()
 {
+	initialize_python_path_deeplab();
+	
 	PyObject *python_module_name = PyString_FromString((char *) "visualize");
 
 	PyObject *python_module = PyImport_Import(python_module_name);
@@ -48,6 +64,8 @@ initialize_visualize_module()
 void
 initialize_inference_context()
 {
+	initialize_python_path_deeplab();
+
 	Py_Initialize();
 	import_array();
 

@@ -12,7 +12,7 @@
 PyObject *python_libsqueeze_seg_process_point_cloud_function;
 PyObject *python_libsqueeze_seg_save_npy;
 
-void initialize_python_path()
+void initialize_python_path_squeezeseg()
 {
 	char* pyPath;
 	char* pPath;
@@ -30,7 +30,7 @@ void initialize_python_path()
 void
 initialize_python_context()
 {
-	initialize_python_path();
+	initialize_python_path_squeezeseg();
 	
 	Py_Initialize();
 	import_array();
@@ -167,7 +167,7 @@ libsqueeze_seg_process_moving_obstacles_cells(int sensor_number, carmen_velodyne
 void
 initialize_python_dataset()
 {
-	initialize_python_path();
+	initialize_python_path_squeezeseg();
 	
 	Py_Initialize();
 	import_array();

@@ -3,6 +3,10 @@
 
 #define GL_GLEXT_PROTOTYPES
 
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#include "opencv2/opencv.hpp"
+
 #include <string>
 
 #include <gtk/gtk.h>
@@ -34,10 +38,6 @@
 
 #include <carmen/rddf_util.h>
 #include <carmen/carmen_gps_wrapper.h>
-
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-#include "opencv2/opencv.hpp"
 
 #include <dirent.h>
 
