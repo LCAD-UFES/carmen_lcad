@@ -38,23 +38,22 @@ def svg_pixels_to_meters(px):
     else:
         raise ValueError('Invalid SVG scale type: {}'.format(svg_type))
     return m
+    
 
-
-def convert_coordinates_from_svg_to_carmen(svg_points, svg_orientation, svg_height, origin):
-    carmen_points = []; carmen_orientation = []
+def convert_coordinates_from_svg_to_utm(svg_points, svg_orientation, svg_height, origin):
+    points_utm = []; orientation_utm = []
     (x_origin, y_origin) = origin
     for i in range(len(svg_points)):
         (x, y) = svg_points[i]
         (dx, dy) = svg_orientation[i]
-        x_carmen = x
-        y_carmen = svg_height - y   # SVG y-axis orientation is downwards, but CARMEN y-axis orientation is upwards
-        x_m = svg_pixels_to_meters(x_carmen) + x_origin
-        y_m = svg_pixels_to_meters(y_carmen) + y_origin
-        dx_carmen = dx
-        dy_carmen = -dy             # SVG y-axis orientation is downwards, but CARMEN y-axis orientation is upwards
-        carmen_points.append((x_m, y_m))
-        carmen_orientation.append((dx_carmen, dy_carmen))
-    return carmen_points, carmen_orientation
+        y = svg_height - y          # SVG y-axis orientation is downwards, but UTM y-axis orientation is upwards
+        x_utm = svg_pixels_to_meters(x) + x_origin
+        y_tmm = svg_pixels_to_meters(y) + y_origin
+        dx_utm = dx
+        dy_utm = -dy                # SVG y-axis orientation is downwards, but UTM y-axis orientation is upwards
+        points_utm.append((x_utm, y_tmm))
+        orientation_utm.append((dx_utm, dy_utm))
+    return points_utm, orientation_utm
 
 
 def normalize(point):
@@ -341,8 +340,8 @@ def process_svg_file(svg_file):
             print('Skipped path id="{}": RDDF file \'{}\' already exists'.format(path_id, rddf_file))
             continue
         (bezier_curve, bezier_orientation) = get_bezier_curve(bezier_points, BEZIER_INCREMENT)
-        (points, orientation) = convert_coordinates_from_svg_to_carmen(bezier_curve, bezier_orientation, svg_height, origin)
-        rddf = get_rddf_from_bezier_curve(points, orientation, args.dist_points)
+        (points_utm, orientation_utm) = convert_coordinates_from_svg_to_utm(bezier_curve, bezier_orientation, svg_height, origin)
+        rddf = get_rddf_from_bezier_curve(points_utm, orientation_utm, args.dist_points)
         write_rddf(rddf_file, rddf)
 
 
