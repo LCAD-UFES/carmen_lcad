@@ -9,7 +9,6 @@ from PIL import Image
 from signal import signal, SIGINT
 
 # Global definitions
-WINDOW_NAME = 'RDDF_View'
 COLOR = {'cyan':  (0, 255, 255), 'magenta': (255, 0, 255), 'yellow': (255, 255,   0), 'orange': (255, 165, 0), 
          'green': (0, 255,   0), 'red':     (255, 0,   0), 'blue':   (  0,   0, 255)}
 COLORS = (COLOR['magenta'], COLOR['green'], COLOR['orange'], COLOR['cyan'], COLOR['red'], COLOR['blue'])
@@ -95,6 +94,7 @@ def get_window_limits(imagedir, rddf_limits):
 
 
 def show_images(image_list, window_limits):
+    global window_name
     (x_min, y_min, x_max, y_max) = window_limits
     show_width  = int(abs((x_max - x_min) / args.scale))
     show_height = int(abs((y_max - y_min) / args.scale))
@@ -108,7 +108,8 @@ def show_images(image_list, window_limits):
         y_offset = int(abs((y_max - y_high) / args.scale))
         show_window[y_offset:y_offset + img.shape[0], x_offset:x_offset + img.shape[1]] = img
     
-    cv2.imshow(WINDOW_NAME, show_window)
+    window_name = 'I{:.0f}_{:.0f}'.format(x_min, y_min)
+    cv2.imshow(window_name, show_window)
     return show_window
 
 
@@ -128,7 +129,7 @@ def show_rddf_file(rddf_file, show_window, window_limits):
         except ValueError:
             continue
     rddf.close()
-    cv2.imshow(WINDOW_NAME, show_window)
+    cv2.imshow(window_name, show_window)
 
 
 def shutdown(sig, frame):
