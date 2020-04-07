@@ -16,9 +16,10 @@ COLORS = (COLOR['magenta'], COLOR['green'], COLOR['orange'], COLOR['cyan'], COLO
 
 
 def get_rddf_limits(filelist):
-    x_min = y_min = x_max = y_max = None  
+    x_min = y_min = x_max = y_max = None
 
     for filename in filelist:
+        count_points = 0
         f = open(filename)
         for line in f:
             try:
@@ -27,9 +28,15 @@ def get_rddf_limits(filelist):
                 y_min = min(y, y_min) if y_min else y
                 x_max = max(x, x_max) if x_max else x
                 y_max = max(y, y_max) if y_max else y
+                count_points += 1
             except ValueError:
                 continue
         f.close()
+        print('{}RDDF file {} contains {} waypoints'.format('ERROR: ' * (count_points == 0), filename, count_points))
+    
+    if not x_min:
+        print('No valid RDDF files')
+        sys.exit(1) 
     
     return (x_min, y_min, x_max, y_max)
 
