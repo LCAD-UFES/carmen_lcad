@@ -25,14 +25,15 @@ LFLAGS += \
 	`pkg-config --libs gtk+-2.0 gmodule-export-2.0` \
 	`pkg-config --libs gtkglext-1.0`
 
-SOURCES = path_planner_astar_main.cpp 
+SOURCES = path_planner_astar_main.cpp path_planner_astar_backup.cpp circle_heuristic.cpp
 #PUBLIC_INCLUDES = path_planner_astar.h
 # Public libraries, linked to 'carmen/lib'.
 
-PUBLIC_BINARIES = path_planner_astar
-TARGETS = path_planner_astar
+PUBLIC_BINARIES = path_planner_astar backup
+TARGETS = path_planner backup
 
 path_planner_astar: path_planner_astar_main.o
+backup: path_planner_astar_backup.o circle_heuristic.o
 
 include ../Makefile.rules
 
