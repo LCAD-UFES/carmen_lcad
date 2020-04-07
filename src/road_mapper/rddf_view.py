@@ -81,6 +81,9 @@ def get_window_limits(imagedir, rddf_limits):
         y_max = max(y_high, y_max) if y_max else y_high
         
     window_limits = (x_min, y_min, x_max, y_max)
+    show_width  = int(abs((x_max - x_min) / args.scale))
+    show_height = int(abs((y_max - y_min) / args.scale))
+    print('{} images found: window size {}x{}'.format(len(image_list), show_width, show_height))
     return (image_list, window_limits)
 
 
@@ -179,12 +182,12 @@ def main():
 
     color_index = -1
     if args.filename:
-        print('********** Processing {} file{} from commandline'.format(len(args.filename), 's' * (len(args.filename) > 1))) 
+        print('********** Processing {} RDDF file{} from commandline'.format(len(args.filename), 's' * (len(args.filename) > 1))) 
         for f in args.filename:
             show_rddf_file(f, window, window_limits)
 
     if args.filelist:
-        print('********** Processing \'{}\' filelist containing {} file{}'.format(args.filelist, len(filelist), 's' * (len(filelist) > 1))) 
+        print('********** Processing \'{}\' filelist containing {} RDDF file{}'.format(args.filelist, len(filelist), 's' * (len(filelist) > 1))) 
         for f in filelist:
             show_rddf_file(f, window, window_limits)
     
