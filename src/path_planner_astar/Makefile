@@ -30,7 +30,7 @@ SOURCES = path_planner_astar_main.cpp path_planner_astar_backup.cpp circle_heuri
 # Public libraries, linked to 'carmen/lib'.
 
 PUBLIC_BINARIES = path_planner_astar backup
-TARGETS = path_planner backup
+TARGETS = path_planner_astar backup
 
 path_planner_astar: path_planner_astar_main.o
 backup: path_planner_astar_backup.o circle_heuristic.o
