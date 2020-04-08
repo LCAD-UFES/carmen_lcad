@@ -19,6 +19,11 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
+#include <gsl/gsl_multimin.h>
+#include <gsl/gsl_math.h>
+
 #define DELTA_T 0.01                      // Size of step for the ackerman Euler method
 
 void

@@ -69,7 +69,7 @@ build_rddf_poses(std::vector<state_node> &path, state_node *current_state, carme
 	for (int i = 0; i < path.size(); i++)
 	{
 		temp_rddf_poses_from_path.push_back(path[i].state);
-		printf("x = %f y = %f theta = %f v = %f phi = %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
+		printf("%lf %lf %lf %lf %lf\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
 		draw_astar_object(&path[i].state, CARMEN_GREEN);
 	}
 
@@ -131,6 +131,8 @@ calculate_theta_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
 		path[i].theta = atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x);
 	if (num_poses > 1)
 		path[num_poses - 1].theta = path[num_poses - 2].theta;
+
+
 }
 
 
@@ -353,6 +355,7 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 
 	gsl_multimin_fdfminimizer_set (s, &my_func, v, 0.1, 0.01);  //(function_fdf, gsl_vector, step_size, tol)
 
+	//Algumas vezes o código não realiza a otimização porque dá erro no do-while abaixo
 	do
 	{
 		iter++;
@@ -393,6 +396,11 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 		poses_ahead[i] = *it;
 
 	calculate_theta_and_phi(poses_ahead, num_poses_ahead, poses_back, num_poses_back);
+	printf("DENTRO DA OTIMIZAÇÃO\n");
+	for (int i = 0; i<num_poses_ahead; i++)
+		{
+			printf("%lf %lf %lf %lf %lf\n", poses_ahead[i].x, poses_ahead[i].y, poses_ahead[i].theta, poses_ahead[i].v, poses_ahead[i].phi);
+		}
 
 	gsl_multimin_fdfminimizer_free (s);
 	gsl_vector_free (v);
@@ -416,7 +424,13 @@ astar_publish_rddf_message(state_node *current_state,  carmen_obstacle_distance_
 	std::vector<state_node> path;
 	std::vector<carmen_ackerman_traj_point_t> temp_rddf_poses_from_path = build_rddf_poses(path, current_state, distance_map);
 	carmen_ackerman_traj_point_t *carmen_rddf_poses_from_path = &temp_rddf_poses_from_path[0];
-	carmen_ackerman_traj_point_t last_pose = {.x = 0.0, .y = 0.0, .theta = 0.0, .v = 1.0, .phi=0.0};
+	carmen_ackerman_traj_point_t last_pose;
+	last_pose.x = carmen_rddf_poses_from_path->x;
+	last_pose.y = carmen_rddf_poses_from_path->y;
+	last_pose.theta = carmen_rddf_poses_from_path->theta;
+	last_pose.v = carmen_rddf_poses_from_path->v;
+	last_pose.phi = carmen_rddf_poses_from_path->phi;
+
 	int annotations[2] = {1, 2};
 	int annotation_codes[2] = {1, 2};
 /*
@@ -426,8 +440,16 @@ astar_publish_rddf_message(state_node *current_state,  carmen_obstacle_distance_
 	//	printf("Poses do path: %f %f %d\n", path[i].state.x, path[i].state.y, i);
 	}
 */
+	/*
+	printf("Otimização iniciada\n");
 	smooth_rddf_using_conjugate_gradient(carmen_rddf_poses_from_path, temp_rddf_poses_from_path.size(), &last_pose, 1);
 	printf("Otimização feita!\n");
+	for (int i = 0; i<temp_rddf_poses_from_path.size(); i++)
+	{
+		printf("%lf %lf %lf %lf %lf\n", temp_rddf_poses_from_path[i].x, temp_rddf_poses_from_path[i].y, temp_rddf_poses_from_path[i].theta, temp_rddf_poses_from_path[i].v, temp_rddf_poses_from_path[i].phi);
+	}
+	*/
+
 	carmen_rddf_publish_road_profile_message(carmen_rddf_poses_from_path, &last_pose, temp_rddf_poses_from_path.size(), 1, annotations, annotation_codes);
 	printf("Poses enviadas!\n");
 	temp_rddf_poses_from_path.clear();
@@ -735,7 +757,7 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 	double cost = 0.0;
 	vector<state_node*> neighbor;
 	state_node *start_state, *goal_state, *current;
-	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 0.1, 0.0, 0.0, DIST2D_P(robot_pose, goal_pose), NULL);
+	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 0.0, 0.0, 0.0, DIST2D_P(robot_pose, goal_pose), NULL);
 	goal_state = create_state_node(goal_pose->x, goal_pose->y, goal_pose->theta, 0.0, 0.0, DBL_MAX, DBL_MAX, NULL);
 	alloc_astar_map(distance_map);
 	vector<state_node*> open;
