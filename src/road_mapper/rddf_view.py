@@ -99,7 +99,7 @@ def show_images(image_list, window_limits):
     show_width  = int(abs((x_max - x_min) / args.scale))
     show_height = int(abs((y_max - y_min) / args.scale))
     show_window = np.zeros((show_height, show_width, 3), np.uint8)
-    show_window[:] = (255, 255, 255)   # tuple(reversed((30, 144, 255)))  # bluish
+    show_window[:] = (255, 255, 255)   # (30, 144, 255)  # bluish
     
     for (img_fullpath, image_limits) in image_list:
         img = cv2.imread(img_fullpath)
@@ -108,7 +108,7 @@ def show_images(image_list, window_limits):
         y_offset = int(abs((y_max - y_high) / args.scale))
         show_window[y_offset:y_offset + img.shape[0], x_offset:x_offset + img.shape[1]] = img
     
-    window_name = 'I{:.0f}_{:.0f}'.format(x_min, y_min)
+    window_name = '@{:.0f}_{:.0f}.png'.format(x_min, y_min)
     cv2.imshow(window_name, show_window)
     return show_window
 
@@ -116,7 +116,7 @@ def show_images(image_list, window_limits):
 def show_rddf_file(rddf_file, show_window, window_limits):
     global color_index
     color_index = (color_index + 1) % len(COLORS)
-    bgr = tuple(reversed(COLORS[color_index]))
+    bgr_color = tuple(reversed(COLORS[color_index]))
     (x_min, y_min, x_max, y_max) = window_limits
     
     rddf = open(rddf_file)
@@ -125,7 +125,7 @@ def show_rddf_file(rddf_file, show_window, window_limits):
             (x, y) = ( float(val) for val in waypoint.split()[:2] )
             x_show = int(abs((x - x_min) / args.scale))
             y_show = int(abs((y_max - y) / args.scale))
-            cv2.circle(show_window, (x_show, y_show), radius=2, color=bgr, thickness=-1)
+            cv2.circle(show_window, (x_show, y_show), args.radius, bgr_color, thickness=-1)
         except ValueError:
             continue
     rddf.close()
@@ -163,12 +163,16 @@ def main():
     parser = argparse.ArgumentParser(description=PROG_DESCRIPTION, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-i', '--imagedir', help='Image directory   (default: .)', type=_path, default='.')
     parser.add_argument('-s', '--scale', help='Image pixel scale in meters   (default: 0.2)', type=float, default=0.2)
+    parser.add_argument('-r', '--radius', help='Waypoint circle radius in pixels   (default: 2)', type=int, default=2)
     parser.add_argument('-f', '--filelist', help='text file containing a list of RDDF filenames (one per line)', type=_file)
     parser.add_argument('filename', help='list of RDDF filenames (separated by spaces)', type=_file, nargs='*')
     args = parser.parse_args()
  
     if args.scale <= 0.0:
         usage_exit('Image pixel scale must be a positive value in meters   (default: 0.2): {}\n\n'.format(args.scale))
+    
+    if args.radius < 0:
+        usage_exit('Waypoint circle radius must be a non-negative value in pixels   (default: 2): {}\n\n'.format(args.radius))
     
     if not args.filelist and not args.filename:
         if len(sys.argv) > 1:
@@ -199,7 +203,8 @@ def main():
         for f in filelist:
             show_rddf_file(f, window, window_limits)
     
-    while (cv2.waitKey(delay=100) & 0xff ) != 27:
+    print('Press the Esc key to finish...')
+    while (cv2.waitKey(delay=100) & 0xff) != 27:
         pass
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ Esta biblioteca disponibiliza as seguintes funcoes que auxiliam a recuperacao e 
 Exemplos de uso podem ser encontrados nos seguintes programas: 
 ```
  Usando Qt: proccontrol_gui.cpp
- Usando GTK: navigator_gui2_main.cpp
+ Usando GTK: navigator_gui2_main.cpp   playback_control.c
  Usando OpenCV:  bumblebee_basic_view.cpp
  Usando OpenGL (X11):  viewer_3D.cpp
 ```
