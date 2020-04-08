@@ -6,10 +6,13 @@
 #define ACKERMAN_EXPANSION 1
 
 #define MAX_VIRTUAL_LASER_SAMPLES 100000
+
+#define DIST2D_D_P(x1,x2) (sqrt(((x1).x - (x2)->x) * ((x1).x - (x2)->x) + \
+							((x1).y - (x2)->y) * ((x1).y - (x2)->y)))
 carmen_mapper_virtual_laser_message virtual_laser_message;
 
 carmen_point_t *final_goal = NULL;
-carmen_localize_ackerman_globalpos_message *current_globalpos_msg = NULL;
+carmen_localize_ackerman_globalpos_message current_globalpos_msg;
 carmen_robot_ackerman_config_t robot_config;
 carmen_obstacle_distance_mapper_map_message distance_map;
 state_node_p ***astar_map;
@@ -60,8 +63,9 @@ build_state_path(state_node *node)
 
 
 std::vector<carmen_ackerman_traj_point_t>
-build_rddf_poses(std::vector<state_node> &path, state_node *current_state, carmen_obstacle_distance_mapper_map_message *distance_map)
+build_rddf_poses( state_node *current_state, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
+	std::vector<state_node> path;
 	path = build_state_path(current_state->parent);
 	std::reverse(path.begin(), path.end());
 	std::vector<carmen_ackerman_traj_point_t> temp_rddf_poses_from_path;
@@ -396,11 +400,6 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 		poses_ahead[i] = *it;
 
 	calculate_theta_and_phi(poses_ahead, num_poses_ahead, poses_back, num_poses_back);
-	printf("DENTRO DA OTIMIZAÇÃO\n");
-	for (int i = 0; i<num_poses_ahead; i++)
-		{
-			printf("%lf %lf %lf %lf %lf\n", poses_ahead[i].x, poses_ahead[i].y, poses_ahead[i].theta, poses_ahead[i].v, poses_ahead[i].phi);
-		}
 
 	gsl_multimin_fdfminimizer_free (s);
 	gsl_vector_free (v);
@@ -419,12 +418,21 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 
 
 void
-astar_publish_rddf_message(state_node *current_state,  carmen_obstacle_distance_mapper_map_message *distance_map)
+publish_astar_draw()
 {
-	std::vector<state_node> path;
-	std::vector<carmen_ackerman_traj_point_t> temp_rddf_poses_from_path = build_rddf_poses(path, current_state, distance_map);
+	virtual_laser_message.host = carmen_get_host();
+	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
+//	virtual_laser_message.num_positions = 0;
+}
+
+
+void
+astar_publish_rddf_message(state_node *current_state, state_node *goal_state, carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+	std::vector<carmen_ackerman_traj_point_t> temp_rddf_poses_from_path = build_rddf_poses(current_state, distance_map);
 	carmen_ackerman_traj_point_t *carmen_rddf_poses_from_path = &temp_rddf_poses_from_path[0];
 	carmen_ackerman_traj_point_t last_pose;
+	int contador = 0;
 	last_pose.x = carmen_rddf_poses_from_path->x;
 	last_pose.y = carmen_rddf_poses_from_path->y;
 	last_pose.theta = carmen_rddf_poses_from_path->theta;
@@ -433,13 +441,6 @@ astar_publish_rddf_message(state_node *current_state,  carmen_obstacle_distance_
 
 	int annotations[2] = {1, 2};
 	int annotation_codes[2] = {1, 2};
-/*
-	for (int i = 0; i < path.size(); i++)
-	{
-		printf("Poses do rddf: %f %f %d\n", carmen_rddf_poses_from_path[i].x, carmen_rddf_poses_from_path[i].y, i);
-	//	printf("Poses do path: %f %f %d\n", path[i].state.x, path[i].state.y, i);
-	}
-*/
 	/*
 	printf("Otimização iniciada\n");
 	smooth_rddf_using_conjugate_gradient(carmen_rddf_poses_from_path, temp_rddf_poses_from_path.size(), &last_pose, 1);
@@ -451,17 +452,30 @@ astar_publish_rddf_message(state_node *current_state,  carmen_obstacle_distance_
 	*/
 
 	carmen_rddf_publish_road_profile_message(carmen_rddf_poses_from_path, &last_pose, temp_rddf_poses_from_path.size(), 1, annotations, annotation_codes);
-	printf("Poses enviadas!\n");
+	publish_astar_draw();
+
+	//printf("%f\n",DIST2D(current_globalpos_msg.globalpos, goal_state->state));
+/*
+	while(DIST2D(current_globalpos_msg.globalpos, goal_state->state) > 1.5)
+	{
+		static double last_time_stamp = 0.0;
+		if ((carmen_get_time() - last_time_stamp) > 2.0)
+		{
+			last_time_stamp = carmen_get_time();
+			while(DIST2D_D_P(current_globalpos_msg.globalpos, carmen_rddf_poses_from_path) > 1.5)
+			{
+				carmen_rddf_poses_from_path++;
+				contador++;
+				printf("descontado: %d %f\n", contador, carmen_rddf_poses_from_path);
+			}
+			carmen_rddf_publish_road_profile_message(carmen_rddf_poses_from_path, &last_pose, temp_rddf_poses_from_path.size() - contador, 1, annotations, annotation_codes);
+			//printf("Poses enviadas! %lf\n",  DIST2D_D_P(current_globalpos_msg.globalpos, carmen_rddf_poses_from_path));
+			printf("Poses enviadas! %lf\n",  current_globalpos_msg.globalpos.x);
+		}
+	}
+*/
+	printf("Chegou ao fim do path!\n");
 	temp_rddf_poses_from_path.clear();
-}
-
-
-void
-publish_astar_draw()
-{
-	virtual_laser_message.host = carmen_get_host();
-	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
-//	virtual_laser_message.num_positions = 0;
 }
 
 
@@ -804,8 +818,7 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 	{
 		virtual_laser_message.num_positions = 0;
 		current = pop_lowest_rank(open);
-		astar_publish_rddf_message(current, distance_map);
-		publish_astar_draw();
+		astar_publish_rddf_message(current, goal_state, distance_map);
 	}
 
 	open.clear();
@@ -826,7 +839,7 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 static void
 localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
-	current_globalpos_msg = msg;
+	current_globalpos_msg = *msg;
 	get_pos_message(msg->globalpos/*, msg->v, msg->timestamp*/);
 }
 
