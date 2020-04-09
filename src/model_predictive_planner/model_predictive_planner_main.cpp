@@ -39,6 +39,8 @@ extern double steering_delay;
 extern double steering_delay_queue_size;
 extern vector <steering_delay_t> steering_delay_queue;
 
+int use_unity_simulator = 0;
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -875,7 +877,9 @@ read_parameters(int argc, char **argv)
 		{(char *) "model_predictive_planner", (char *) "w3_end_of_path_to_goal_delta_theta",      CARMEN_PARAM_DOUBLE, &GlobalState::w3, 1, NULL},
 		{(char *) "model_predictive_planner", (char *) "w4_path_to_lane_distance",                CARMEN_PARAM_DOUBLE, &GlobalState::w4, 1, NULL},
 		{(char *) "model_predictive_planner", (char *) "w5_proximity_to_obstacles",               CARMEN_PARAM_DOUBLE, &GlobalState::w5, 1, NULL},
-		{(char *) "model_predictive_planner", (char *) "w6_traveled_distance",                    CARMEN_PARAM_DOUBLE, &GlobalState::w6, 1, NULL}
+		{(char *) "model_predictive_planner", (char *) "w6_traveled_distance",                    CARMEN_PARAM_DOUBLE, &GlobalState::w6, 1, NULL},
+
+		{(char *) "frenet_path_planner", 	  (char *) "use_unity_simulator", CARMEN_PARAM_ONOFF, &use_unity_simulator, 0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));

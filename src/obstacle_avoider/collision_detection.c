@@ -1009,8 +1009,8 @@ add_line(carmen_point_t point1, carmen_point_t point2, int color)
 
 int
 carmen_obstacle_avoider_car_collides_with_moving_object(carmen_point_t car_pose, carmen_point_t moving_object_pose,
-		t_point_cloud_struct *moving_object, double longitudinal_safety_magin, double lateral_safety_margin,
-		int obj_id, double obj_s, double obj_d)
+		t_point_cloud_struct *moving_object, double longitudinal_safety_magin, double lateral_safety_margin)//,
+		//int obj_id, double obj_s, double obj_d)
 {
 	check_collision_config_initialization();
 
@@ -1106,7 +1106,7 @@ carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman
 			{
 //				virtual_laser_message.positions[virtual_laser_message.num_positions].x = displaced_point.x;
 //				virtual_laser_message.positions[virtual_laser_message.num_positions].y = displaced_point.y;
-//				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
+//				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
 //				virtual_laser_message.num_positions++;
 				return (1);
 			}

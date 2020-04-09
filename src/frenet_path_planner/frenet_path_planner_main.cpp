@@ -105,8 +105,11 @@ static int already_reached_nearest_waypoint_to_end_point = 0;
 static int frenet_path_planner_num_paths;
 static double frenet_path_planner_paths_displacement;
 static double frenet_path_planner_max_derivative_distance;
+static double frenet_path_planner_max_plan_size;
+static double frenet_path_planner_max_plan_size_increase_factor;
 
 static int selected_path_id;
+static double localize_ackerman_initialize_message_timestamp = 0.0;
 
 
 vector<carmen_annotation_t> annotation_read_from_file;
@@ -1714,6 +1717,8 @@ get_path_pose(path_t path, carmen_ackerman_traj_point_t *poses_ahead, int pose_i
 	carmen_ackerman_traj_point_t displaced_pose = poses_ahead[pose_i]; // copia os campos nao alterados abaixo
 
 	double s = compute_s_range(poses_ahead, pose_i);
+	if (s > (path.spline->interp->xmax - 0.01))
+		s = path.spline->interp->xmax - 0.01;
 	double d = gsl_spline_eval(path.spline, s, path.acc);
 	displaced_pose.x = poses_ahead[pose_i].x + d * cos(poses_ahead[pose_i].theta + (M_PI / 2.0));
 	displaced_pose.y = poses_ahead[pose_i].y + d * sin(poses_ahead[pose_i].theta + (M_PI / 2.0));
@@ -1811,12 +1816,16 @@ compute_a_path_after_a_path(path_t &path, path_t *previously_selected_path, doub
 
 
 path_t
-compute_current_path(int path_id, path_t *previously_selected_path, carmen_ackerman_traj_point_t *poses_ahead, int num_poses, bool first_time)
+compute_current_path(int path_id, path_t *previously_selected_path, carmen_ackerman_traj_point_t *poses_ahead, int num_poses,
+		double v, bool first_time)
 {
 	path_t path;
-	double disp = frenet_path_planner_paths_displacement;
-	double displacement = disp * ((frenet_path_planner_num_paths / 2) - path_id);
+	double displacement = frenet_path_planner_paths_displacement * ((frenet_path_planner_num_paths / 2) - path_id);
 	double s_range = compute_s_range(poses_ahead, num_poses);
+	double desired_s_range = frenet_path_planner_max_plan_size + v * frenet_path_planner_max_plan_size_increase_factor;
+	if (s_range > desired_s_range)
+		s_range = desired_s_range;
+
 	double s[5] = {0.0, rddf_min_distance_between_waypoints, frenet_path_planner_max_derivative_distance * s_range, s_range - rddf_min_distance_between_waypoints, s_range};
 
 	if (first_time)
@@ -1856,12 +1865,16 @@ compute_current_path(int path_id, path_t *previously_selected_path, carmen_acker
 
 
 path_t
-compute_one_path(int path_id, path_t *selected_path, carmen_ackerman_traj_point_t *poses_ahead, int num_poses)
+compute_one_path(int path_id, path_t *selected_path, carmen_ackerman_traj_point_t *poses_ahead, int num_poses, double v)
 {
 	path_t path;
 	double disp = frenet_path_planner_paths_displacement;
 	double displacement = disp * ((frenet_path_planner_num_paths / 2) - path_id);
 	double s_range = compute_s_range(poses_ahead, num_poses);
+	double desired_s_range = frenet_path_planner_max_plan_size + v * frenet_path_planner_max_plan_size_increase_factor;
+	if (s_range > desired_s_range)
+		s_range = desired_s_range;
+
 	double s[5] = {0.0, rddf_min_distance_between_waypoints, frenet_path_planner_max_derivative_distance * s_range, s_range - rddf_min_distance_between_waypoints, s_range};
 
 	path.acc = gsl_interp_accel_alloc();
@@ -1940,9 +1953,24 @@ print_poses(carmen_ackerman_traj_point_t *poses_ahead, int num_poses)
 }
 
 
+bool
+reinitialize_current_path(path_t &current_path, int &current_path_id, carmen_ackerman_traj_point_t *&current_poses_back)
+{
+	gsl_spline_free(current_path.spline);
+	gsl_interp_accel_free(current_path.acc);
+	free(current_path.rddf_poses);
+	free(current_poses_back);
+	current_poses_back = NULL;
+	current_path_id = selected_path_id = frenet_path_planner_num_paths / 2;
+	localize_ackerman_initialize_message_timestamp = 0.0;
+
+	return (true);
+}
+
+
 carmen_frenet_path_planner_set_of_paths
 build_frenet_path_plan(carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back,
-		int num_poses, int num_poses_back, int *annotations, int * annotations_codes)
+		int num_poses, int num_poses_back, double v, int *annotations, int * annotations_codes)
 {
 	static path_t current_path;
 	static carmen_ackerman_traj_point_t *current_poses_back = NULL;
@@ -1958,17 +1986,21 @@ build_frenet_path_plan(carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerma
     set_of_paths.set_of_paths = (carmen_ackerman_traj_point_t *) malloc(set_of_paths.set_of_paths_size * sizeof(carmen_ackerman_traj_point_t));
 	static int current_path_id = -1;
 
-	if (current_path_id != selected_path_id)
+	if ((current_path_id != selected_path_id) || (localize_ackerman_initialize_message_timestamp != 0.0))
 	{
-		current_path_id = selected_path_id;
-		current_path = compute_current_path(current_path_id, &current_path, poses_ahead, num_poses, first_time);
+		if (localize_ackerman_initialize_message_timestamp != 0.0)
+			first_time = reinitialize_current_path(current_path, current_path_id, current_poses_back);
+		else
+			current_path_id = selected_path_id;
+
+		current_path = compute_current_path(current_path_id, &current_path, poses_ahead, num_poses, v, first_time);
 	}
 	first_time = false;
 
 	for (int path_id = 0; path_id < frenet_path_planner_num_paths; path_id++)
 	{
 		path_t path;
-		path = compute_one_path(path_id, &current_path, poses_ahead, num_poses);
+		path = compute_one_path(path_id, &current_path, poses_ahead, num_poses, v);
 		for (int pose_i = 0; pose_i < num_poses; pose_i++)
 			set_of_paths.set_of_paths[path_id * num_poses + pose_i] = get_path_pose(path, poses_ahead, pose_i);
 
@@ -2051,7 +2083,7 @@ carmen_rddf_play_publish_annotation_queue()
 
 
 static void
-carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
+carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose, double v)
 {
 	// so publica rddfs quando a pose do robo ja estiver setada
 	if ((carmen_rddf_num_poses_ahead > 0) && (carmen_rddf_num_poses_back > 0))
@@ -2064,6 +2096,7 @@ carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
 				carmen_rddf_poses_back,
 				carmen_rddf_num_poses_ahead,
 				carmen_rddf_num_poses_back,
+				v,
 				annotations,
 				annotations_codes);
 
@@ -2235,7 +2268,7 @@ carmen_rddf_play_load_annotation_file(char *carmen_annotation_filename)
 
 
 static void
-pos_message_handler(carmen_point_t robot_pose, double timestamp)
+pos_message_handler(carmen_point_t robot_pose, double v, double timestamp)
 {
 	if (use_road_map)
 	{
@@ -2269,7 +2302,7 @@ pos_message_handler(carmen_point_t robot_pose, double timestamp)
 	carmen_check_for_annotations(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back,
 			carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back, timestamp);
 
-	carmen_rddf_play_publish_rddf_and_annotations(robot_pose);
+	carmen_rddf_play_publish_rddf_and_annotations(robot_pose, v);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2287,7 +2320,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	carmen_rddf_pose_initialized = 1;
 	current_globalpos_msg = msg;
-	pos_message_handler(msg->globalpos, msg->timestamp);
+	pos_message_handler(msg->globalpos, msg->v, msg->timestamp);
 }
 
 
@@ -2296,7 +2329,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 {
 	carmen_rddf_pose_initialized = 1;
 	current_truepos_msg = msg;
-	pos_message_handler(msg->truepose, msg->timestamp);
+	pos_message_handler(msg->truepose, msg->v, msg->timestamp);
 }
 
 
@@ -2443,6 +2476,13 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 
 
 static void
+carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_initialize_message *initialize_msg)
+{
+	localize_ackerman_initialize_message_timestamp = initialize_msg->timestamp;
+}
+
+
+static void
 frenet_path_planner_shutdown_module(int signo)
 {
 	if (signo == SIGINT)
@@ -2463,7 +2503,7 @@ frenet_path_planner_shutdown_module(int signo)
 
 
 void
-carmen_rddf_play_subscribe_messages()
+carmen_frenet_path_planner_subscribe_messages()
 {
 	if (!use_truepos)
 		carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -2490,6 +2530,8 @@ carmen_rddf_play_subscribe_messages()
 	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_frenet_path_planner_subscribe_selected_path_message(NULL, (carmen_handler_t) carmen_frenet_path_planner_selected_path_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_localize_ackerman_subscribe_initialize_message(NULL, (carmen_handler_t) carmen_localize_ackerman_initialize_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -2500,6 +2542,9 @@ frenet_path_planner_get_parameters(int argc, char** argv)
 	{
 		{(char *) "frenet_path_planner", (char *) "num_paths", CARMEN_PARAM_INT, &frenet_path_planner_num_paths, 0, NULL},
 		{(char *) "frenet_path_planner", (char *) "paths_displacement", CARMEN_PARAM_DOUBLE, &frenet_path_planner_paths_displacement, 0, NULL},
+		{(char *) "frenet_path_planner", (char *) "max_derivative_distance", CARMEN_PARAM_DOUBLE, &frenet_path_planner_max_derivative_distance, 0, NULL},
+		{(char *) "frenet_path_planner", (char *) "max_plan_size", CARMEN_PARAM_DOUBLE, &frenet_path_planner_max_plan_size, 0, NULL},
+		{(char *) "frenet_path_planner", (char *) "max_plan_size_increase_factor", CARMEN_PARAM_DOUBLE, &frenet_path_planner_max_plan_size_increase_factor, 0, NULL},
 		{(char *) "frenet_path_planner", (char *) "max_derivative_distance", CARMEN_PARAM_DOUBLE, &frenet_path_planner_max_derivative_distance, 0, NULL},
 
 		{(char *) "robot", (char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &distance_between_front_and_rear_axles, 0, NULL},
@@ -2608,7 +2653,7 @@ main(int argc, char **argv)
 
 	carmen_rddf_play_load_annotation_file(carmen_annotation_filename);
 
-	carmen_rddf_play_subscribe_messages();
+	carmen_frenet_path_planner_subscribe_messages();
 
 	carmen_ipc_dispatch();
 

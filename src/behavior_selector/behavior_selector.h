@@ -25,12 +25,14 @@ enum
 typedef struct
 {
 	int path_id;
-	double s_distance_without_collision;
-	double s_distance_to_moving_object_in_front;
+	double s_distance_without_collision_with_moving_object;	// Distance in seconds. This is related to a path.
+	double s_distance_without_collision_with_static_object;	// Distance in seconds. This is related to a path.
+	double s_distance_to_moving_object_in_lane;				// Distance in seconds. This is related to a lane defined by the d distance of furthest point of a path
 	bool path_has_no_collision;
 } path_collision_info_t;
 
 typedef struct
+
 {
 	carmen_point_t pose;
 	double s;

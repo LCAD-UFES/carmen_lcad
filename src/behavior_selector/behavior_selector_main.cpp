@@ -88,6 +88,13 @@ static carmen_moving_objects_point_clouds_message *current_moving_objects = NULL
 
 static int frenet_path_planner_num_paths;
 static double frenet_path_planner_paths_displacement;
+static double frenet_path_planner_time_horizon;
+static double frenet_path_planner_delta_t;
+
+int use_frenet_path_planner = 0;
+int use_unity_simulator = 0;
+double in_lane_longitudinal_safety_magin_multiplier;
+double in_path_longitudinal_safety_magin_multiplier;
 
 
 int
@@ -526,10 +533,10 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 			(distance_to_annotation < 35.0))
 //			((distance_to_annotation - distance_to_goal) < get_robot_config()->distance_between_front_and_rear_axles))
 		{
-			get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance = 1.233;	// Padrao da Ida a Guarapari
-			get_robot_config()->model_predictive_planner_obstacles_safe_distance = 1.233;			// Padrao da Ida a Guarapari
-			udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(1.233);
-			udatmo_set_model_predictive_planner_obstacles_safe_distance(1.233);
+			get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance *= 0.3;	// Padrao da Ida a Guarapari
+			get_robot_config()->model_predictive_planner_obstacles_safe_distance *= 0.3;		// Padrao da Ida a Guarapari
+			udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance);
+			udatmo_set_model_predictive_planner_obstacles_safe_distance(get_robot_config()->model_predictive_planner_obstacles_safe_distance);
 		}
 		else
 		{
@@ -672,7 +679,11 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	double car_pose_to_car_front = get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
 	// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
 	double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) + car_pose_to_car_front;
-	double desired_distance = carmen_fmax(1.0 * min_dist_according_to_car_v, car_pose_to_car_front + 2.5);
+	double desired_distance;
+	if (use_unity_simulator)
+		desired_distance = carmen_fmax(1.0 * min_dist_according_to_car_v, car_pose_to_car_front + 2.5);
+	else
+		desired_distance = carmen_fmax(1.4 * min_dist_according_to_car_v, car_pose_to_car_front + 2.5);
 
 	double distance = udatmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
 	double moving_obj_v = udatmo_speed_front();
@@ -756,10 +767,20 @@ set_behaviours_parameters(carmen_ackerman_traj_point_t current_robot_pose_v_and_
 	double change_goal_distance = param_change_goal_distance;
 	if (fabs(current_robot_pose_v_and_phi.v) > param_distance_interval)
 	{
-		if ((2.5 * fabs(current_robot_pose_v_and_phi.v)) > distance_between_waypoints)
-			distance_between_waypoints = 2.5 * fabs(current_robot_pose_v_and_phi.v);
-		if ((2.5 * fabs(current_robot_pose_v_and_phi.v)) > change_goal_distance)
-			change_goal_distance = 2.5 * fabs(current_robot_pose_v_and_phi.v);
+		if (use_unity_simulator)
+		{
+			if ((2.5 * fabs(current_robot_pose_v_and_phi.v)) > distance_between_waypoints)
+				distance_between_waypoints = 2.5 * fabs(current_robot_pose_v_and_phi.v);
+			if ((2.5 * fabs(current_robot_pose_v_and_phi.v)) > change_goal_distance)
+				change_goal_distance = 2.5 * fabs(current_robot_pose_v_and_phi.v);
+		}
+		else
+		{
+			if ((4.0 * fabs(current_robot_pose_v_and_phi.v)) > distance_between_waypoints)
+				distance_between_waypoints = 4.0 * fabs(current_robot_pose_v_and_phi.v);
+			if ((4.0 * fabs(current_robot_pose_v_and_phi.v)) > change_goal_distance)
+				change_goal_distance = 4.0 * fabs(current_robot_pose_v_and_phi.v);
+		}
 	}
 	change_distance_between_waypoints_and_goals(distance_between_waypoints, change_goal_distance);
 
@@ -1697,11 +1718,11 @@ get_s_and_d_values(carmen_ackerman_traj_point_t *poses, int nearest_pose, t_poin
 
 
 double
-get_s_displacement_for_a_given_sample(int s, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double delta_t)
+get_s_displacement_for_a_given_sample(int s, double v, double delta_t)
 {
 	double t = (double) s * delta_t;
 	double a = 0.0; // get_robot_config()->maximum_acceleration_forward;
-	double v = current_robot_pose_v_and_phi.v + a * t;
+	v = v + a * t;
 	if (v > get_max_v())
 		v = get_max_v();
 	double s_displacement = v * t;
@@ -1723,10 +1744,50 @@ get_car_pose_at_s_displacement(double s_displacement, carmen_ackerman_traj_point
 	return (car_pose);
 }
 
-extern int add_virtual_laser_points;
+//extern int add_virtual_laser_points;
+
 
 double
-collision_s_distance(carmen_frenet_path_planner_set_of_paths *current_set_of_paths, int path_id,
+collision_s_distance_to_static_object(carmen_frenet_path_planner_set_of_paths *current_set_of_paths, int path_id,
+		double delta_t, int num_samples, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_ackerman_traj_point_t *path = &(current_set_of_paths->set_of_paths[path_id * current_set_of_paths->number_of_poses]);
+
+	double min_collision_s_distance = (double) num_samples * delta_t;
+	for (int s = 0; s < num_samples; s++)
+	{
+		double v;
+		if (current_robot_pose_v_and_phi.v < 3.0)
+			v = 3.0;
+		else
+			v = current_robot_pose_v_and_phi.v;
+		double s_displacement = get_s_displacement_for_a_given_sample(s, v, delta_t);
+		int index_in_path;
+		carmen_point_t car_pose = get_car_pose_at_s_displacement(s_displacement, path, index_in_path);
+		if (index_in_path == current_set_of_paths->number_of_poses - 1)
+			break;
+
+		carmen_ackerman_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, 0.0, 0.0};
+		if (trajectory_pose_hit_obstacle(cp, get_robot_config()->model_predictive_planner_obstacles_safe_distance, &distance_map, NULL))
+		{
+				virtual_laser_message.positions[virtual_laser_message.num_positions].x = car_pose.x;
+				virtual_laser_message.positions[virtual_laser_message.num_positions].y = car_pose.y;
+				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
+				virtual_laser_message.num_positions++;
+
+			if (((double) s * delta_t) < min_collision_s_distance)
+				min_collision_s_distance = (double) s * delta_t;
+
+			break;
+		}
+	}
+
+	return (min_collision_s_distance);
+}
+
+
+double
+collision_s_distance_to_moving_object(carmen_frenet_path_planner_set_of_paths *current_set_of_paths, int path_id,
 		vector<vector <moving_object_pose_info_t> > moving_objects_poses, double delta_t, int num_samples,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
@@ -1738,7 +1799,7 @@ collision_s_distance(carmen_frenet_path_planner_set_of_paths *current_set_of_pat
 	double min_collision_s_distance = (double) num_samples * delta_t;
 	for (int s = 0; s < num_samples; s++)
 	{
-		double s_displacement = get_s_displacement_for_a_given_sample(s, current_robot_pose_v_and_phi, delta_t);
+		double s_displacement = get_s_displacement_for_a_given_sample(s, current_robot_pose_v_and_phi.v, delta_t);
 		int index_in_path;
 		carmen_point_t car_pose = get_car_pose_at_s_displacement(s_displacement, path, index_in_path);
 		if (index_in_path == current_set_of_paths->number_of_poses - 1)
@@ -1750,8 +1811,8 @@ collision_s_distance(carmen_frenet_path_planner_set_of_paths *current_set_of_pat
 // 			if (moving_objects_poses[s][i].behind && (fabs(moving_objects_poses[s][i].d - current_d) < 0.8)) // moving objects atras do carro
 // 				longitudinal_safety_magin = 0.5;
 // 			else
- 			double longitudinal_safety_magin = 0.5 * current_moving_objects->point_clouds[i].linear_velocity;
-			double lateral_safety_margin = original_model_predictive_planner_obstacles_safe_distance;// +
+ 			double longitudinal_safety_magin = in_path_longitudinal_safety_magin_multiplier * current_moving_objects->point_clouds[i].linear_velocity;
+			double lateral_safety_margin = get_robot_config()->model_predictive_planner_obstacles_safe_distance;// +
 //					0.1 * current_moving_objects->point_clouds[i].linear_velocity *
 //					(current_moving_objects->point_clouds[i].width / current_moving_objects->point_clouds[i].length);
 			carmen_point_t moving_objects_pose = {moving_objects_poses[s][i].pose.x, moving_objects_poses[s][i].pose.y, moving_objects_poses[s][i].pose.theta};
@@ -1761,12 +1822,13 @@ collision_s_distance(carmen_frenet_path_planner_set_of_paths *current_set_of_pat
 //			else
 //				add_virtual_laser_points = 0;
 			if (carmen_obstacle_avoider_car_collides_with_moving_object(car_pose, moving_objects_pose,
-					&(current_moving_objects->point_clouds[i]), longitudinal_safety_magin, lateral_safety_margin, i, moving_objects_poses[s][i].s, moving_objects_poses[s][i].d))
+					&(current_moving_objects->point_clouds[i]), longitudinal_safety_magin, lateral_safety_margin))//,
+//					i, moving_objects_poses[s][i].s, moving_objects_poses[s][i].d))
 			{
-//				virtual_laser_message.positions[virtual_laser_message.num_positions].x = car_pose.x;
-//				virtual_laser_message.positions[virtual_laser_message.num_positions].y = car_pose.y;
-//				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
-//				virtual_laser_message.num_positions++;
+				virtual_laser_message.positions[virtual_laser_message.num_positions].x = car_pose.x;
+				virtual_laser_message.positions[virtual_laser_message.num_positions].y = car_pose.y;
+				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_ORANGE;
+				virtual_laser_message.num_positions++;
 
 				if (((double) s * delta_t) < min_collision_s_distance)
 					min_collision_s_distance = (double) s * delta_t;
@@ -1796,7 +1858,7 @@ get_rddf_displaced(carmen_ackerman_traj_point_t *rddf_poses_ahead, int number_of
 
 
 double
-distance_to_moving_object_in_front(carmen_frenet_path_planner_set_of_paths *current_set_of_paths, int path_id,
+collision_s_distance_to_moving_object_in_lane(carmen_frenet_path_planner_set_of_paths *current_set_of_paths, int path_id,
 		vector<vector <moving_object_pose_info_t> > moving_objects_poses, double delta_t, int num_samples,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
@@ -1810,7 +1872,7 @@ distance_to_moving_object_in_front(carmen_frenet_path_planner_set_of_paths *curr
 	double min_s_distance = (double) num_samples * delta_t;
 	for (int s = 0; s < num_samples; s++)
 	{
-		double s_displacement = get_s_displacement_for_a_given_sample(s, current_robot_pose_v_and_phi, delta_t);
+		double s_displacement = get_s_displacement_for_a_given_sample(s, current_robot_pose_v_and_phi.v, delta_t);
 		int index_in_path;
 		carmen_point_t car_pose = get_car_pose_at_s_displacement(s_displacement, path, index_in_path);
 		if (index_in_path == current_set_of_paths->number_of_poses - 1)
@@ -1818,16 +1880,16 @@ distance_to_moving_object_in_front(carmen_frenet_path_planner_set_of_paths *curr
 
  		for (int i = 0; i < current_moving_objects->num_point_clouds; i++)
 		{
- 			double longitudinal_safety_magin = 0.75 * current_moving_objects->point_clouds[i].linear_velocity;
-			double lateral_safety_margin = original_model_predictive_planner_obstacles_safe_distance;
+ 			double longitudinal_safety_magin = in_lane_longitudinal_safety_magin_multiplier * current_moving_objects->point_clouds[i].linear_velocity;
+			double lateral_safety_margin = get_robot_config()->model_predictive_planner_obstacles_safe_distance;
 			carmen_point_t moving_objects_pose = {moving_objects_poses[0][i].pose.x, moving_objects_poses[0][i].pose.y, moving_objects_poses[0][i].pose.theta};
 			if (carmen_obstacle_avoider_car_collides_with_moving_object(car_pose, moving_objects_pose,
-					&(current_moving_objects->point_clouds[i]), longitudinal_safety_magin, lateral_safety_margin, 0, 0.0, 0.0))
+					&(current_moving_objects->point_clouds[i]), longitudinal_safety_magin, lateral_safety_margin))//, 0, 0.0, 0.0))
 			{
-//				virtual_laser_message.positions[virtual_laser_message.num_positions].x = car_pose.x;
-//				virtual_laser_message.positions[virtual_laser_message.num_positions].y = car_pose.y;
-//				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_GREEN;
-//				virtual_laser_message.num_positions++;
+				virtual_laser_message.positions[virtual_laser_message.num_positions].x = car_pose.x;
+				virtual_laser_message.positions[virtual_laser_message.num_positions].y = car_pose.y;
+				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_GREEN;
+				virtual_laser_message.num_positions++;
 
 				if (((double) s * delta_t) < min_s_distance)
 					min_s_distance = (double) s * delta_t;
@@ -1841,24 +1903,6 @@ distance_to_moving_object_in_front(carmen_frenet_path_planner_set_of_paths *curr
 
 	return (min_s_distance);
 }
-
-
-//double
-//evaluate_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths, int path_id, int number_of_paths,
-//		vector<vector <moving_object_pose_info_t> > moving_objects_poses, double delta_t, int num_samples,
-//		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
-//{
-//	double goal_v = 0.0;
-//	double s_distance = collision_s_distance(current_set_of_paths, path_id, moving_objects_poses, delta_t, num_samples,
-//			current_robot_pose_v_and_phi);
-//	double proximity_to_rddf = 0.0; // number_of_paths - abs(path_id - number_of_paths / 2);
-//
-//	double do_not_change_path = number_of_paths - abs(path_id - current_set_of_paths->selected_path);
-//
-//	double path_value = 1000.0 * goal_v + 10.0 * s_distance + proximity_to_rddf + do_not_change_path;
-//
-//	return (path_value);
-//}
 
 
 int
@@ -1950,6 +1994,9 @@ void
 compute_moving_objects_future_poses(vector<vector <moving_object_pose_info_t> > &moving_objects_poses, double delta_t, int num_poses,
 		carmen_frenet_path_planner_set_of_paths *current_set_of_paths)
 {
+	if (!current_moving_objects)
+		return;
+
 	carmen_ackerman_traj_point_t *path = current_set_of_paths->rddf_poses_ahead;
 
 	for (int i = 0; i < current_moving_objects->num_point_clouds; i++)
@@ -1977,11 +2024,11 @@ bool
 path_with_collision_in_between(int path_id, vector<path_collision_info_t> path_collision_info_v, int current_path)
 {
 	for (int i = current_path + 1; i < path_id; i++)
-		if (path_collision_info_v[i].s_distance_to_moving_object_in_front == 0.0)
+		if (path_collision_info_v[i].s_distance_to_moving_object_in_lane < 0.15)
 			return (true);
 
 	for (int i = path_id + 1; i < current_path; i++)
-		if (path_collision_info_v[i].s_distance_to_moving_object_in_front == 0.0)
+		if (path_collision_info_v[i].s_distance_to_moving_object_in_lane < 0.15)
 			return (true);
 
 	return (false);
@@ -2003,19 +2050,26 @@ get_paths_collision_info(carmen_frenet_path_planner_set_of_paths *current_set_of
 		path_collision_info_t path_collision_info;
 
 		path_collision_info.path_id = path_id;
-		path_collision_info.s_distance_without_collision = collision_s_distance(current_set_of_paths, path_id, moving_objects_data,
-				delta_t, num_samples, current_robot_pose_v_and_phi);
+		path_collision_info.s_distance_without_collision_with_moving_object = collision_s_distance_to_moving_object(current_set_of_paths,
+				path_id, moving_objects_data, delta_t, num_samples, current_robot_pose_v_and_phi);
 
-		path_collision_info.s_distance_to_moving_object_in_front = distance_to_moving_object_in_front(current_set_of_paths, path_id, moving_objects_data,
-				delta_t, num_samples, current_robot_pose_v_and_phi);
+		path_collision_info.s_distance_to_moving_object_in_lane = collision_s_distance_to_moving_object_in_lane(current_set_of_paths, path_id,
+				moving_objects_data, delta_t, num_samples, current_robot_pose_v_and_phi);
+
+		path_collision_info.s_distance_without_collision_with_static_object = collision_s_distance_to_static_object(current_set_of_paths,
+				path_id, delta_t, num_samples, current_robot_pose_v_and_phi);
+
+		if (use_unity_simulator)
+			path_collision_info.s_distance_without_collision_with_static_object = (double) num_samples * delta_t;
 
 		path_collision_info_v.push_back(path_collision_info);
 	}
 
 	for (int path_id = 0; path_id < number_of_paths; path_id++)
 	{
-		if ((path_collision_info_v[path_id].s_distance_without_collision == (double) num_samples * delta_t) &&
-			(path_collision_info_v[path_id].s_distance_to_moving_object_in_front != 0.0) &&
+		if ((path_collision_info_v[path_id].s_distance_without_collision_with_static_object == (double) num_samples * delta_t) &&
+			(path_collision_info_v[path_id].s_distance_without_collision_with_moving_object == (double) num_samples * delta_t) &&
+			(path_collision_info_v[path_id].s_distance_to_moving_object_in_lane != 0.0) &&
 			!path_with_collision_in_between(path_id, path_collision_info_v, current_set_of_paths->selected_path))
 			path_collision_info_v[path_id].path_has_no_collision = true;
 		else
@@ -2035,11 +2089,25 @@ get_path_better_than_the_current_path(vector<path_collision_info_t> paths,
 	int best_path = -1;
 	for (unsigned int i = 0; i < paths.size(); i++)
 	{
-		double lateral_value = (paths.size() - abs((int) i - current_path));
-		double longitudinal_value = 100.0 * paths[i].s_distance_without_collision + 100.0 * paths[i].s_distance_to_moving_object_in_front;
+		double lateral_value;
+		double longitudinal_value;
+		if (use_unity_simulator)
+		{
+			lateral_value = paths.size() - abs((int) i - current_path);
+			longitudinal_value = 100.0  * paths[i].s_distance_without_collision_with_moving_object +
+								 100.0  * paths[i].s_distance_to_moving_object_in_lane;
+		}
+		else
+		{
+			lateral_value = 10.0 * (paths.size() - abs((int) i - ((int) paths.size() / 2)));
+			longitudinal_value = 1000.0 * paths[i].s_distance_without_collision_with_static_object +
+								 100.0  * paths[i].s_distance_without_collision_with_moving_object +
+								 100.0  * paths[i].s_distance_to_moving_object_in_lane;
+		}
 		double path_value = longitudinal_value + lateral_value + path_temporal_value[i];
-//		printf("\npath %d, value % 04.1lf, longi_value % 04.1lf(%02.1lf, %02.1lf), lat_value %03.1lf, t_value %03.1lf",
-//				i, path_value, longitudinal_value, paths[i].s_distance_without_collision, paths[i].s_distance_to_moving_object_in_front,
+//		printf("\npath %d, v %5.1lf, lv %5.1lf(%5.1lf, %4.1lf, %4.1lf), lat_value %3.1lf, t_value %5.1lf",
+//				i, path_value, longitudinal_value, paths[i].s_distance_without_collision_with_static_object,
+//				paths[i].s_distance_without_collision_with_moving_object, paths[i].s_distance_to_moving_object_in_front,
 //				lateral_value, path_temporal_value[i]);
 		if (path_value > best_path_value)
 		{
@@ -2048,8 +2116,8 @@ get_path_better_than_the_current_path(vector<path_collision_info_t> paths,
 		}
 	}
 
-	printf("  -> best_path %d (%d)\n", (paths[best_path].path_has_no_collision)? best_path: -1, current_path);
-	fflush(stdout);
+//	printf("  -> best_path %d (%d)\n", (paths[best_path].path_has_no_collision)? best_path: -1, current_path);
+//	fflush(stdout);
 	if (paths[best_path].path_has_no_collision)
 		return (best_path);
 	else
@@ -2068,45 +2136,75 @@ free_to_run(int who_set_the_goal_v)
 
 
 void
+update_current_path(int best_path, int number_of_paths, carmen_frenet_path_planner_set_of_paths *current_set_of_paths, double *path_temporal_value,
+		int who_set_the_goal_v, double &last_update_timestamp, double timestamp)
+{
+	bool update_path;
+	if (use_unity_simulator)
+		update_path = !free_to_run(who_set_the_goal_v) && (best_path != -1);
+	else
+		update_path = (best_path != current_set_of_paths->selected_path) && (best_path != -1);
+
+	if (update_path)
+	{
+		for (int i = 0; i < number_of_paths; i++)
+			path_temporal_value[i] = 0.0;
+		path_temporal_value[best_path] = 100.0;
+
+		last_update_timestamp = timestamp;
+
+		publish_new_best_path(best_path, timestamp);
+	}
+}
+
+
+double *
+init_path_temporal_value(int number_of_paths)
+{
+	static double *path_temporal_value = NULL;
+	if (!path_temporal_value)
+	{
+		path_temporal_value = (double*) (malloc(number_of_paths * sizeof(double)));
+		for (int i = 0; i < number_of_paths; i++)
+			path_temporal_value[i] = 0.0;
+	}
+	return (path_temporal_value);
+}
+
+
+void
 select_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
 		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int who_set_the_goal_v, double timestamp)
 {
 	if (!current_set_of_paths)
 		return;
 
-	double time_horizon = 6.0;
-	double delta_t = 0.05;
+	double time_horizon = frenet_path_planner_time_horizon;
+	double delta_t = frenet_path_planner_delta_t;
 	int num_samples = (int) (time_horizon / delta_t);
 	int number_of_paths = current_set_of_paths->set_of_paths_size / current_set_of_paths->number_of_poses;
-	static double *path_temporal_value = NULL;
-	if (!path_temporal_value)
-	{
-		path_temporal_value = (double *) malloc(number_of_paths * sizeof(double));
-		for (int i = 0; i < number_of_paths; i++)
-			path_temporal_value[i] = 0.0;
-	}
 
-	vector<vector <moving_object_pose_info_t> > moving_objects_data(num_samples, vector <moving_object_pose_info_t>(current_moving_objects->num_point_clouds));
+	double *path_temporal_value = init_path_temporal_value(number_of_paths);
+	static double last_update_timestamp = timestamp;
+
+	int num_moving_objects;
+	if (current_moving_objects != NULL)
+		num_moving_objects = current_moving_objects->num_point_clouds;
+	else
+		num_moving_objects = 0;
+
+	vector<vector <moving_object_pose_info_t> > moving_objects_data(num_samples, vector <moving_object_pose_info_t>(num_moving_objects));
 	compute_moving_objects_future_poses(moving_objects_data, delta_t, num_samples, current_set_of_paths);
 
 	vector<path_collision_info_t> paths = get_paths_collision_info(current_set_of_paths, moving_objects_data,
 			current_robot_pose_v_and_phi, delta_t, num_samples);
 
 	int best_path = get_path_better_than_the_current_path(paths, current_set_of_paths, path_temporal_value);
+	update_current_path(best_path, number_of_paths, current_set_of_paths, path_temporal_value,
+			who_set_the_goal_v, last_update_timestamp, timestamp);
 
-	static double last_update_timestamp = timestamp;
 	for (int i = 0; i < number_of_paths; i++)
 		path_temporal_value[i] *= exp(-0.5 * (timestamp - last_update_timestamp));
-
-	if (!free_to_run(who_set_the_goal_v) && (best_path != -1))
-	{
-		for (int i = 0; i < number_of_paths; i++)
-			path_temporal_value[i] = 0.0;
-		path_temporal_value[best_path] = 100.0;
-		last_update_timestamp = timestamp;
-
-		publish_new_best_path(best_path, timestamp);
-	}
 
 	publish_simulated_objects();
 }
@@ -2135,9 +2233,13 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
-	int who_set_the_goal_v = select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
-
-	select_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, msg->timestamp);
+	if (use_frenet_path_planner)
+	{
+		int who_set_the_goal_v = select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
+		select_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, msg->timestamp);
+	}
+	else
+		select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
 }
 
 
@@ -2155,9 +2257,13 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
-	int who_set_the_goal_v = select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
-
-	select_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, msg->timestamp);
+	if (use_frenet_path_planner)
+	{
+		int who_set_the_goal_v = select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
+		select_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, msg->timestamp);
+	}
+	else
+		select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
 }
 
 
@@ -2179,16 +2285,6 @@ static void
 frenet_path_planner_set_of_paths_message_handler(carmen_frenet_path_planner_set_of_paths *set_of_paths_message)
 {
 	current_set_of_paths = set_of_paths_message;
-
-//	int num_paths = set_of_paths_message->set_of_paths_size / set_of_paths_message->number_of_poses;
-//	for (int i = 0; i < num_paths; i++)
-//	{
-//		for (int j = 0; (j < set_of_paths_message->number_of_poses) && (j < 5); j++)
-//			printf("plan %d, x[%d] = %lf, y[%d] = %lf\n", i, j,
-//					set_of_paths_message->set_of_paths[i * set_of_paths_message->number_of_poses + j].x, j,
-//					set_of_paths_message->set_of_paths[i * set_of_paths_message->number_of_poses + j].y);
-//	}
-//	printf("\n");
 }
 
 
@@ -2515,12 +2611,18 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector", (char *) "lateral_lane_obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_lateral_lane_obstacles_safe_distance, 0, NULL},
 		{(char *) "behavior_selector", (char *) "lateral_lane_displacement", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_lateral_lane_displacement, 0, NULL},
 		{(char *) "behavior_selector", (char *) "goal_velocity_tuning_factor", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_goal_velocity_tuning_factor, 0, NULL},
+		{(char *) "behavior_selector", (char *) "in_lane_longitudinal_safety_magin_multiplier", CARMEN_PARAM_DOUBLE, &in_lane_longitudinal_safety_magin_multiplier, 0, NULL},
+		{(char *) "behavior_selector", (char *) "in_path_longitudinal_safety_magin_multiplier", CARMEN_PARAM_DOUBLE, &in_path_longitudinal_safety_magin_multiplier, 0, NULL},
 		{(char *) "rrt",   			   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL},
 		{(char *) "obstacle_avoider", 		  (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.obstacle_avoider_obstacles_safe_distance, 	1, NULL},
 		{(char *) "model_predictive_planner", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.model_predictive_planner_obstacles_safe_distance, 	1, NULL},
 		{(char *) "grid_mapping",      	 (char *) "map_width", CARMEN_PARAM_DOUBLE, &map_width, 	1, NULL},
+		{(char *) "frenet_path_planner", (char *) "use_frenet_path_planner", CARMEN_PARAM_ONOFF, &use_frenet_path_planner, 0, NULL},
+		{(char *) "frenet_path_planner", (char *) "use_unity_simulator", CARMEN_PARAM_ONOFF, &use_unity_simulator, 0, NULL},
 		{(char *) "frenet_path_planner", (char *) "num_paths", CARMEN_PARAM_INT, &frenet_path_planner_num_paths, 0, NULL},
 		{(char *) "frenet_path_planner", (char *) "paths_displacement", CARMEN_PARAM_DOUBLE, &frenet_path_planner_paths_displacement, 0, NULL},
+		{(char *) "frenet_path_planner", (char *) "time_horizon", CARMEN_PARAM_DOUBLE, &frenet_path_planner_time_horizon, 0, NULL},
+		{(char *) "frenet_path_planner", (char *) "delta_t", CARMEN_PARAM_DOUBLE, &frenet_path_planner_delta_t, 0, NULL},
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
 
@@ -2566,5 +2668,5 @@ main(int argc, char **argv)
 
 	carmen_ipc_dispatch();
 
-	return 0;
+	return (0);
 }

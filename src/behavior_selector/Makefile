@@ -24,7 +24,6 @@ LFLAGS += \
 	-lparam_interface  \
 	-lmapper_interface \
 	-lrddf_interface \
-	-lfrenet_path_planner_interface \
 	-lnavigator_ackerman_interface \
 	-llocalize_ackerman_interface \
 	-lmap_server_interface \

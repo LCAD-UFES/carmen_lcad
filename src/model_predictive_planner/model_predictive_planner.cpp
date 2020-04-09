@@ -28,6 +28,9 @@ using namespace g2o;
 int print_to_debug = 0;
 int plot_to_debug = 0;
 
+extern int use_unity_simulator;
+
+
 //#define PLOT_COLLISION
 
 //-----------Funcoes para extrair dados do Experimento------------------------
@@ -768,8 +771,10 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 {
 	if (GlobalState::use_mpc)
 		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.025);
-	else
+	else if (use_unity_simulator)
 		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.02);
+	else
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false);
 	path_local = path;
 	if (path_has_loop(td.dist, otcp.sf))
 	{
@@ -790,8 +795,8 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 //		apply_system_latencies(path);
 //	else
 //		filter_path(path);
-//	if (!GlobalState::use_mpc)
-//		filter_path(path);
+	if (!GlobalState::use_mpc && !use_unity_simulator)
+		filter_path(path);
 
 	return (true);
 }

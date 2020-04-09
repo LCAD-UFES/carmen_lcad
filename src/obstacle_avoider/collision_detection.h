@@ -113,8 +113,8 @@ carmen_get_global_collision_config();
 
 int
 carmen_obstacle_avoider_car_collides_with_moving_object(carmen_point_t car_pose, carmen_point_t moving_object_pose,
-		t_point_cloud_struct *moving_object, double longitudinal_safety_magin, double lateral_safety_margin,
-		int obj_id, double obj_s, double obj_d);
+		t_point_cloud_struct *moving_object, double longitudinal_safety_magin, double lateral_safety_margin);//,
+//		int obj_id, double obj_s, double obj_d);
 
 carmen_point_t
 carmen_collision_detection_in_car_coordinate_frame(const carmen_point_t point, carmen_point_t *localizer_pose, double x, double y);

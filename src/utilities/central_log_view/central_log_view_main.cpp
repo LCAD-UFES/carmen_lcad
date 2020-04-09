@@ -981,7 +981,7 @@ print_message_summary(int sort_option = 0)
 							sent_sum1, del_sum1, pend_sum1, on_hold_sum1, pend_sent_sum1, on_hold_sent_sum1, on_hold_pend_sum1);
 				sort_key1 = current_key1;
 				count1 = 0, total1 = 0, sent_sum1 = 0, pend_sent_sum1 = 0, del_sum1 = 0, pend_sum1 = 0, on_hold_sent_sum1 = 0, on_hold_pend_sum1 = 0, on_hold_sum1 = 0;
-				printf("Message: %s\n", sort_key1.c_str());
+				printf("\n*** Message: %s\n", sort_key1.c_str());
 			}
 			printf("\t%s: %s\n", sort_title[so], sort_key2.c_str());
 			printf("\t\t%-40s      total       sent    deleted    pending    on hold  pend>sent  hold>sent  hold>pend\n", sort_title[1 - so]);

@@ -25,6 +25,8 @@ bool use_obstacles = true;
 
 //extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
+extern int use_unity_simulator;
+
 
 void
 compute_a_and_t_from_s(double s, double target_v,
@@ -240,7 +242,12 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 	double total_distance = 0.0;
 	double total_points = 0.0;
 
-	for (unsigned int i = 0; i < path.size(); i++)
+	int increment;
+	if (use_unity_simulator)
+		increment = 1;
+	else
+		increment = 3;
+	for (unsigned int i = 0; i < path.size(); i += increment)
 	{
 		if ((i < my_params->path_point_nearest_to_lane.size()) &&
 			(my_params->path_point_nearest_to_lane.at(i) < my_params->detailed_lane.size()))
