@@ -12,6 +12,12 @@
 carmen_mapper_virtual_laser_message virtual_laser_message;
 
 carmen_point_t *final_goal = NULL;
+int goal_received = 0;
+int path_sended = 0;
+int contador = 0;
+int poses_size = 0;
+carmen_ackerman_traj_point_t *carmen_rddf_poses_from_path;
+std::vector<carmen_ackerman_traj_point_t> temp_rddf_poses_from_path;
 carmen_localize_ackerman_globalpos_message current_globalpos_msg;
 carmen_robot_ackerman_config_t robot_config;
 carmen_obstacle_distance_mapper_map_message distance_map;
@@ -427,20 +433,31 @@ publish_astar_draw()
 
 
 void
-astar_publish_rddf_message(state_node *current_state, state_node *goal_state, carmen_obstacle_distance_mapper_map_message *distance_map)
+astar_publish_rddf_poses(carmen_ackerman_traj_point_t *poses_ahead, int size)
 {
-	std::vector<carmen_ackerman_traj_point_t> temp_rddf_poses_from_path = build_rddf_poses(current_state, distance_map);
-	carmen_ackerman_traj_point_t *carmen_rddf_poses_from_path = &temp_rddf_poses_from_path[0];
 	carmen_ackerman_traj_point_t last_pose;
-	int contador = 0;
-	last_pose.x = carmen_rddf_poses_from_path->x;
-	last_pose.y = carmen_rddf_poses_from_path->y;
-	last_pose.theta = carmen_rddf_poses_from_path->theta;
-	last_pose.v = carmen_rddf_poses_from_path->v;
-	last_pose.phi = carmen_rddf_poses_from_path->phi;
+	last_pose.x = poses_ahead->x;
+	last_pose.y = poses_ahead->y;
+	last_pose.theta = poses_ahead->theta;
+	last_pose.v = poses_ahead->v;
+	last_pose.phi = poses_ahead->phi;
+	int annotations[2] = { 1, 2 };
+	int annotation_codes[2] = { 1, 2 };
+	carmen_rddf_publish_road_profile_message(poses_ahead,
+			&last_pose, size, 1, annotations,
+			annotation_codes);
+}
 
-	int annotations[2] = {1, 2};
-	int annotation_codes[2] = {1, 2};
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+astar_mount_rddf_message(state_node *current_state, state_node *goal_state, carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+	temp_rddf_poses_from_path = build_rddf_poses(current_state, distance_map);
+	carmen_rddf_poses_from_path = &temp_rddf_poses_from_path[0];
+
 	/*
 	printf("Otimização iniciada\n");
 	smooth_rddf_using_conjugate_gradient(carmen_rddf_poses_from_path, temp_rddf_poses_from_path.size(), &last_pose, 1);
@@ -450,36 +467,13 @@ astar_publish_rddf_message(state_node *current_state, state_node *goal_state, ca
 		printf("%lf %lf %lf %lf %lf\n", temp_rddf_poses_from_path[i].x, temp_rddf_poses_from_path[i].y, temp_rddf_poses_from_path[i].theta, temp_rddf_poses_from_path[i].v, temp_rddf_poses_from_path[i].phi);
 	}
 	*/
-
-	carmen_rddf_publish_road_profile_message(carmen_rddf_poses_from_path, &last_pose, temp_rddf_poses_from_path.size(), 1, annotations, annotation_codes);
+	poses_size = temp_rddf_poses_from_path.size();
+	astar_publish_rddf_poses(carmen_rddf_poses_from_path, poses_size);
 	publish_astar_draw();
 
 	//printf("%f\n",DIST2D(current_globalpos_msg.globalpos, goal_state->state));
-/*
-	while(DIST2D(current_globalpos_msg.globalpos, goal_state->state) > 1.5)
-	{
-		static double last_time_stamp = 0.0;
-		if ((carmen_get_time() - last_time_stamp) > 2.0)
-		{
-			last_time_stamp = carmen_get_time();
-			while(DIST2D_D_P(current_globalpos_msg.globalpos, carmen_rddf_poses_from_path) > 1.5)
-			{
-				carmen_rddf_poses_from_path++;
-				contador++;
-				printf("descontado: %d %f\n", contador, carmen_rddf_poses_from_path);
-			}
-			carmen_rddf_publish_road_profile_message(carmen_rddf_poses_from_path, &last_pose, temp_rddf_poses_from_path.size() - contador, 1, annotations, annotation_codes);
-			//printf("Poses enviadas! %lf\n",  DIST2D_D_P(current_globalpos_msg.globalpos, carmen_rddf_poses_from_path));
-			printf("Poses enviadas! %lf\n",  current_globalpos_msg.globalpos.x);
-		}
-	}
-*/
 	printf("Chegou ao fim do path!\n");
-	temp_rddf_poses_from_path.clear();
 }
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 state_node*
@@ -506,11 +500,11 @@ create_state_node(double x, double y, double theta, double v, double phi, double
 static void
 get_pos_message(carmen_point_t robot_pose)
 {
-	if (final_goal != NULL)
+	if (goal_received != 0)
 	{
 		printf("Pos_message_handler: %lf %lf %lf\n", robot_pose.x, robot_pose.y, robot_pose.theta);
 		compute_astar_path(&robot_pose, final_goal, robot_config , &distance_map);
-		final_goal = NULL;
+		goal_received = 0;
 	}
 }
 
@@ -818,7 +812,8 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 	{
 		virtual_laser_message.num_positions = 0;
 		current = pop_lowest_rank(open);
-		astar_publish_rddf_message(current, goal_state, distance_map);
+		astar_mount_rddf_message(current, goal_state, distance_map);
+		path_sended = 1;
 	}
 
 	open.clear();
@@ -827,6 +822,35 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 	virtual_laser_message.num_positions = 0;
 	printf("Terminou compute_astar_path !\n");
 //	exit(1);
+}
+
+
+void
+send_new_rddf_poses()
+{
+	if(DIST2D_D_P(current_globalpos_msg.globalpos, final_goal) > 4.0)
+	{
+		static double last_time_stamp = 0.0;
+		if ((carmen_get_time() - last_time_stamp) > 0.5)
+		{
+			last_time_stamp = carmen_get_time();
+//			printf("Poses Atualizadas: %f %f %f %f %f %f\n", carmen_rddf_poses_from_path->x, carmen_rddf_poses_from_path->y, carmen_rddf_poses_from_path->theta, final_goal->x, final_goal->y, DIST2D_D_P(current_globalpos_msg.globalpos, final_goal));
+			while(DIST2D_D_P(current_globalpos_msg.globalpos, carmen_rddf_poses_from_path) > 1.5)
+			{
+				carmen_rddf_poses_from_path++;
+				contador++;
+				//printf("descontado: %d %f\n", contador, carmen_rddf_poses_from_path->x);
+			}
+			astar_publish_rddf_poses(carmen_rddf_poses_from_path, poses_size - contador);
+//			printf("Poses enviadas! %lf\n",  current_globalpos_msg.globalpos.x);
+		}
+	}
+	else
+	{
+		printf("Chegou ao goal!\n");
+		temp_rddf_poses_from_path.clear();
+		exit(0);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -841,6 +865,8 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	current_globalpos_msg = *msg;
 	get_pos_message(msg->globalpos/*, msg->v, msg->timestamp*/);
+	if(path_sended)
+		send_new_rddf_poses();
 }
 
 
@@ -848,6 +874,7 @@ void
 carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
 {
 	final_goal = &(rddf_end_point_message->point);
+	goal_received = 1;
 	printf("carmen_rddf_play_end_point: %lf %lf %lf\n", rddf_end_point_message->point.x, rddf_end_point_message->point.y, rddf_end_point_message->point.theta);
 //	printf ("Recebeu Goal!!!!!  %d\n", rddf_end_point_message->number_of_poses);
 }
