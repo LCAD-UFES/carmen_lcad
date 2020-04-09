@@ -62,17 +62,15 @@ First, use png images. Use the code present in $CARMEN_HOME/src/utilities/conver
 :/dados$ grep BUMB log.txt > log_filtrado.txt
 ```
 
--> Make a correction about the path, opening log_filtrado.txt and correct path inserting full path and replacing all.
-
 ```
 :~/carmen_lcad/bin$ cd $CARMEN_HOME/src/utilities/convert_log_images
 :~/carmen_lcad/src/utilities/convert_log_images$ make
-:~/carmen_lcad/src/utilities/convert_log_images$ ./to_png_new_log log_filtrado.txt /dados/pasta_saida -side 0
+:~/carmen_lcad/src/utilities/convert_log_images$ ./to_png_new_log /dados/log_ufes_aeroporto_filtrado.txt /dados/png_log_ufes_aeroporto-20200325 -path /dados/log_ufes_aeroporto-20200325.txt
 ```
 
 Use the neural network for generate the predictions:
 ```
-python test_vistas.py /path/to/model.pth.tar /path/to/input/folder /path/to/output/folder --output-mode palette
+python test_vistas.py /path/to/model.pth.tar /dados/png_log_ufes_aeroporto-20200325 /path/to/output/folder --output-mode palette
 ```
 
 --output-mode:
