@@ -9,7 +9,6 @@
 #include <car_model.h>
 #include <carmen/global_graphics.h>
 #include <carmen/mapper_interface.h>
-
 #include <boost/heap/fibonacci_heap.hpp>
 
 #include <queue>
@@ -18,6 +17,12 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
+
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
+#include <gsl/gsl_multimin.h>
+#include <gsl/gsl_math.h>
+
 
 #define DELTA_T 0.01                      // Size of step for the ackerman Euler method
 
@@ -54,3 +59,28 @@ public:
 		return (a->f > b->f);
 	}
 };
+
+typedef enum {
+	RS_TURN_RIGHT, RS_TURN_LEFT, RS_STRAIGHT, RS_FWD, RS_BWD, RS_NONE
+} RS_POSSIBLE_MOVES;
+
+typedef struct
+{
+	int turn;
+	int move;
+} rs_move;
+
+rs_move*
+rs_get_moves(int numero);
+
+int
+fct_curve(int ty, int orientation, double val, carmen_ackerman_traj_point_p start, double delta, carmen_ackerman_traj_point_p points, int n);
+
+void
+rs_init_parameters(double max_phi, double distance_between_front_and_rear_axles);
+
+double
+reed_shepp(carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_t goal, int *numero, double *tr, double *ur, double *vr);
+
+int
+constRS(int num, double t, double u, double v, carmen_ackerman_traj_point_t start, carmen_ackerman_traj_point_p points);

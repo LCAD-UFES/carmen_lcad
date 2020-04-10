@@ -14,7 +14,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/libc
 
 LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lrddf_interface -lobstacle_distance_mapper_interface \
 	-lobstacle_avoider_interface -lrobot_ackerman_interface -lsimulator_ackerman_interface -lbase_ackerman_interface \
-	-lmap_server_interface -lgrid_mapping -lmap_io -lmap_interface -lcollision_detection -lnavigator_ackerman_interface -lcarmodel -lrddf_interface `pkg-config --libs opencv` -lmapper_interface
+	-lmap_server_interface -lgrid_mapping -lmap_io -lmap_interface -lcollision_detection -lnavigator_ackerman_interface -lcarmodel -lrddf_interface `pkg-config --libs opencv` -lmapper_interface -lgsl -lgslcblas 
 
 #Carmen Global Graphic Library and Gtk+2 Graphics Libraries
 IFLAGS += \
@@ -25,14 +25,15 @@ LFLAGS += \
 	`pkg-config --libs gtk+-2.0 gmodule-export-2.0` \
 	`pkg-config --libs gtkglext-1.0`
 
-SOURCES = path_planner_astar_main.cpp 
+SOURCES = path_planner_astar_main.cpp path_planner_astar_backup.cpp circle_heuristic.cpp reeds_sheep.cpp
 #PUBLIC_INCLUDES = path_planner_astar.h
 # Public libraries, linked to 'carmen/lib'.
 
-PUBLIC_BINARIES = path_planner_astar
-TARGETS = path_planner_astar
+PUBLIC_BINARIES = path_planner_astar backup
+TARGETS = path_planner_astar backup
 
-path_planner_astar: path_planner_astar_main.o
+path_planner_astar: path_planner_astar_main.o reeds_sheep.o
+backup: path_planner_astar_backup.o circle_heuristic.o
 
 include ../Makefile.rules
 
