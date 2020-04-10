@@ -16,6 +16,7 @@ int goal_received = 0;
 int path_sended = 0;
 int contador = 0;
 int poses_size = 0;
+int cont_rs = 0;
 carmen_ackerman_traj_point_t *carmen_rddf_poses_from_path;
 std::vector<carmen_ackerman_traj_point_t> temp_rddf_poses_from_path;
 carmen_localize_ackerman_globalpos_message current_globalpos_msg;
@@ -24,7 +25,6 @@ carmen_obstacle_distance_mapper_map_message distance_map;
 state_node_p ***astar_map;
 
 using namespace std;
-using namespace boost::heap;
 
 
 void
@@ -443,9 +443,8 @@ astar_publish_rddf_poses(carmen_ackerman_traj_point_t *poses_ahead, int size)
 	last_pose.phi = poses_ahead->phi;
 	int annotations[2] = { 1, 2 };
 	int annotation_codes[2] = { 1, 2 };
-	carmen_rddf_publish_road_profile_message(poses_ahead,
-			&last_pose, size, 1, annotations,
-			annotation_codes);
+	carmen_rddf_publish_road_profile_message(poses_ahead, &last_pose, size, 1, annotations, annotation_codes);
+	//carmen_rddf_publish_road_profile_message(&last_pose, poses_ahead, 1, size, annotations, annotation_codes);
 }
 
 
@@ -671,10 +670,64 @@ pop_lowest_rank(vector<state_node*> &open)
 }
 
 
-vector<state_node*>
-expansion(state_node *current, carmen_obstacle_distance_mapper_map_message *distance_map)
+double
+reed_shepp_path(carmen_ackerman_traj_point_t start_state, carmen_ackerman_traj_point_t goal_state)
 {
-    double add_x[3] = {-1.0, 0.0, 1.0};
+	int rs_pathl;
+	int rs_numero;
+	double tr;
+	double ur;
+	double vr;
+	double distance_traveled = 0.0;
+	double distance_traveled_old = 0.0;
+	carmen_ackerman_traj_point_t rs_points[5];
+	double v_step;
+	double step_weight;
+	double path_cost = 0.0;
+
+	rs_init_parameters(robot_config.max_phi, robot_config.distance_between_front_and_rear_axles);
+	double rs_length = reed_shepp(start_state, goal_state, &rs_numero, &tr, &ur, &vr);
+
+	rs_pathl = constRS(rs_numero, tr, ur, vr, start_state, rs_points);
+
+	for (int i = rs_pathl; i > 0 /*rs_pathl*/; i--)
+	{
+		carmen_ackerman_traj_point_t point = rs_points[i];
+		if (rs_points[i].v < 0.0)
+		{
+			v_step = 2.0;
+			step_weight = 1.0;
+		}
+		else
+		{
+			v_step = -2.0;
+			step_weight = 1.0;
+		}
+		while (DIST2D(point, rs_points[i-1]) > 1.0)
+		{
+			distance_traveled_old = distance_traveled;
+			point = carmen_libcarmodel_recalc_pos_ackerman(point, v_step, rs_points[i].phi,
+					0.25, &distance_traveled, DELTA_T, robot_config);
+			draw_astar_object(&point, CARMEN_ORANGE);
+			path_cost += step_weight * (distance_traveled - distance_traveled_old);
+
+		}
+	}
+
+	//return path_cost;
+	return rs_length;
+}
+
+
+vector<state_node*>
+expansion(state_node *current, state_node *goal_state, carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+
+//	if(cont_rs%5==0)
+//		reed_shepp_path(current->state, goal_state->state);
+
+	printf("aqui\n");
+	double add_x[3] = {-1.0, 0.0, 1.0};
     double add_y[3] = {-1.0, 0.0, 1.0};
     vector<state_node*> neighbor;
 
@@ -717,6 +770,7 @@ expansion(state_node *current, carmen_obstacle_distance_mapper_map_message *dist
     	}
     }
     publish_astar_draw();
+    cont_rs++;
     return neighbor;
 }
 
@@ -777,7 +831,7 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 	{
 		current = pop_lowest_rank(open);
 		closed.push_back(current);
-		neighbor = expansion(current, distance_map);
+		neighbor = expansion(current, goal_state, distance_map);
 		while(it_number< neighbor.size())
 		{
 			cost = g(current) + movementcost(current, neighbor[it_number]);
