@@ -39,7 +39,7 @@ PREPARATION="laser laser_ldmrs maptools gps pantilt imu velodyne stereo sensors/
 	     stereo moving_objects xsens sensors/ultrasonic stereo_mapping parking_assistant navigator_ackerman
 	     traffic_light motion_planner udatmo1 . dynamic_object_detector navigator_gui car_panel_gui visual_tracker
 	     lane_detector stereo_point_cloud gps localize_neural v_disparity road_finding pantilt imu xsens_MTi-G
-	     sensors/web_cam can_dump pi_imu laser_ldmrs dynamic_object_detector"
+	     sensors/web_cam can_dump pi_imu laser_ldmrs dynamic_object_detector . road_mapper"
 
 MODULES="." # May include other modules separated by spaces
 
