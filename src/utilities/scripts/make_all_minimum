@@ -1,0 +1,50 @@
+#!/bin/bash
+
+function make_module()
+{
+	cd "$CARMEN_HOME/src/$1"
+	if [ "$2" = "-ignore_errors" ]; then
+		echo "$1"
+		make &> /dev/null
+	else
+		make
+	fi
+}
+
+
+function make_list_of_modules()
+{
+	for mod in $1; do
+		ERROR=1
+		if [ -d "$CARMEN_HOME/src/$mod" ]; then
+			make_module "$mod" "$2"
+			ERROR=$?
+		fi
+		if [ $ERROR -ne 0 ] && [ "$2" != "-ignore_errors" ]; then
+			exit 1
+		fi
+	done
+}
+
+
+$CARMEN_HOME/bin/make_clean_all
+
+PREPARATION="laser laser_ldmrs maptools gps pantilt imu velodyne stereo sensors/kinect xsens xsens_MTi-G sensors/web_cam
+	     sensors/ultrasonic robot_ackerman ford_escape_hybrid can_dump pi_imu road_mapper navigator_ackerman
+	     navigator_gui localize_neural grid_mapping stereo_velodyne moving_objects stereo_mapping traffic_light
+	     navigator_astar motion_planner dynamic_object_detector lane_detector utilities/user_preferences
+	     stereo_point_cloud voice_interface download_map navigator_spline tracker parking_assistant traffic_light
+	     udatmo1 . maptools voice_interface utilities/user_preferences grid_mapping navigator_spline download_map
+	     tracker navigator_astar laser ford_escape_hybrid sensors/kinect robot_ackerman velodyne stereo_velodyne
+	     stereo moving_objects xsens sensors/ultrasonic stereo_mapping parking_assistant navigator_ackerman
+	     traffic_light motion_planner udatmo1 . dynamic_object_detector navigator_gui car_panel_gui visual_tracker
+	     lane_detector stereo_point_cloud gps localize_neural v_disparity road_finding pantilt imu xsens_MTi-G
+	     sensors/web_cam can_dump pi_imu laser_ldmrs dynamic_object_detector"
+
+MODULES="." # May include other modules separated by spaces
+
+echo -e "\nPreparation...\n"
+make_list_of_modules "$PREPARATION" -ignore_errors
+
+make_list_of_modules "$MODULES"
+

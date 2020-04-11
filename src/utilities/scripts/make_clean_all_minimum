@@ -1,0 +1,49 @@
+make_clean_module()
+{
+	cd $CARMEN_HOME/src/$1
+	make clean
+}
+
+
+MODULES=". ../sharedlib 
+	../sharedlib/prob_models  ../sharedlib/libcontrol  ../sharedlib/libcarmodel  ../sharedlib/gl_plotter  
+	../sharedlib/libsickldmrs  ../sharedlib/libbee  ../sharedlib/libvelodyne  ../sharedlib/libelas  
+	../sharedlib/libstereovgram  ../sharedlib/libstereo  ../sharedlib/libcmt  ../sharedlib/darknet2  
+	../sharedlib/libsickldmrs2  ipc  global  param_daemon  proccontrol  map_server  simulator_ackerman    
+	obstacle_distance_mapper  rddf  behavior_selector  model_predictive_planner  rrt_planner  obstacle_avoider  
+	navigator_gui2  viewer_3D  bumblebee_basic  logger  gps_xyz  base_ackerman  visual_odometry_package2  
+	fused_odometry laser_ldmrs localize_ackerman  mapper velodyne_camera_calibration  visual_tracker
+	sensors/laser_new  maptools  gps  pantilt  imu  velodyne  stereo sensors/kinect  xsens  xsens_MTi-G  
+	sensors/web_cam  sensors/ultrasonic  robot_ackerman  ford_escape_hybrid  can_dump  pi_imu  road_mapper  
+	navigator_ackerman  navigator_gui  localize_neural  grid_mapping  stereo_velodyne  moving_objects  
+	traffic_light  navigator_astar  motion_planner  dynamic_object_detector  lane_detector  car_panel_gui  
+	utilities/user_preferences  stereo_point_cloud  voice_interface  download_map  navigator_spline  tracker  
+	laser  stereo_mapping  road_finding  parking_assistant  udatmo1 camera_boxes_to_world  v_disparity"
+
+
+ERRORS=
+
+rm $CARMEN_HOME/lib/* 
+rm $CARMEN_HOME/include/carmen/* 
+
+for mod in $MODULES
+do
+	ERROR_MODULE=1
+	if [ -d $CARMEN_HOME/src/$mod ]
+	then
+		make_clean_module $mod
+		ERROR_MODULE=$?
+	fi
+	if [ ! $ERROR_MODULE -eq 0 ]
+	then
+		ERRORS="$ERRORS $mod"
+	fi
+done
+
+if [ "$ERRORS" != "" ]
+then
+	echo ========================
+	echo Errors found in modules:$ERRORS
+	echo ========================
+fi
+
