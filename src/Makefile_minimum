@@ -3,10 +3,15 @@ total:	home export phase1 phase2 phase3 phase4
 include Makefile.conf
 
 PACKAGES = \
-	ipc  global  param_daemon  proccontrol  map_server  simulator_ackerman  localize_ackerman  mapper  \
-	obstacle_distance_mapper  rddf  behavior_selector  model_predictive_planner  rrt_planner  obstacle_avoider  \
-	navigator_gui2  viewer_3D  bumblebee_basic  logger  gps_xyz  base_ackerman  visual_odometry_package2  \
-	fused_odometry
+	ipc  global  param_daemon  proccontrol  sensors/laser_new  sensors/ultrasonic  sensors/web_cam  \
+	obstacle_avoider  simulator_ackerman  localize_ackerman  robot_ackerman  maptools  logger  \
+	dynamic_object_detector  navigator_ackerman  pantilt  laser  gps  gps_xyz  imu  localize_neural  fused_odometry  \
+	moving_objects  bumblebee_basic  laser_ldmrs  viewer_3D  stereo  road_finding  v_disparity  stereo_mapping  \
+	grid_mapping  visual_odometry_package2  stereo_point_cloud  xsens  xsens_MTi-G  rrt_planner  velodyne  rddf  \
+	download_map  parking_assistant  navigator_astar  tracker  navigator_spline  navigator_gui  velodyne_camera_calibration  \
+	camera_boxes_to_world  lane_detector  navigator_gui2  mapper  obstacle_distance_mapper  map_server  car_panel_gui  \
+	stereo_velodyne  motion_planner  udatmo1  behavior_selector  base_ackerman  utilities/user_preferences  \
+	visual_tracker  model_predictive_planner  pi_imu  can_dump  
 
 
 ifndef NO_CPP
