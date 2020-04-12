@@ -59,7 +59,9 @@ endif
 SOURCES = \
 	behavior_selector_interface.c \
 	behavior_selector_main.cpp \
-	behavior_selector.cpp \
+	behavior_selector_set_goal_list.cpp \
+	behavior_selector_set_path.cpp \
+	behavior_selector_set_goal_velocity.cpp \
 	SampleFilter.cpp
 
 PUBLIC_INCLUDES = \
@@ -88,7 +90,7 @@ LFLAGS += \
 	`pkg-config --libs gtkglext-1.0`
 endif
 
-behavior_selector: behavior_selector_main.o behavior_selector.o SampleFilter.o libbehavior_selector_interface.a
+behavior_selector: behavior_selector_main.o behavior_selector_set_goal_list.o behavior_selector_set_goal_velocity.o behavior_selector_set_path.o SampleFilter.o libbehavior_selector_interface.a
 
 libbehavior_selector_interface.a: behavior_selector_interface.o
 

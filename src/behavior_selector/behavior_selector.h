@@ -10,6 +10,8 @@
 
 #include <carmen/carmen.h>
 #include <carmen/rddf_messages.h>
+#include <carmen/frenet_path_planner_messages.h>
+#include <carmen/obstacle_distance_mapper_interface.h>
 #include "SampleFilter.h"
 
 enum
@@ -88,9 +90,8 @@ extern "C" {
 
 	carmen_rddf_road_profile_message *get_last_rddf_message();
 
-	int behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double timestamp);
-	// double get_moving_object_in_front_v();
-	// int moving_object_in_front();
+	carmen_ackerman_traj_point_t *set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, int &goal_type, carmen_rddf_road_profile_message *rddf, double timestamp);
+
 	double distance_between_waypoints_and_goals();
 	bool red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
 	bool busy_pedestrian_track_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
@@ -98,6 +99,22 @@ extern "C" {
 
 	void publish_dynamic_annotation(carmen_vector_3D_t annotation_point, double orientation, char *annotation_description,
 			int annotation_type, int annotation_code, double timestamp);
+
+	void publish_new_best_path(int best_path, double timestamp);
+
+	void set_optimum_path(carmen_frenet_path_planner_set_of_paths *current_set_of_paths,
+			carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int who_set_the_goal_v, double timestamp);
+
+	int set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
+			int goal_type, double timestamp);
+
+	carmen_annotation_t *get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotation_message,
+			carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi, bool wait_start_moving);
+
+	double get_distance_to_act_on_annotation(double v0, double va, double distance_to_annotation);
+
+	carmen_ackerman_traj_point_t displace_pose(carmen_ackerman_traj_point_t robot_pose, double displacement);
+
 	/**
 	 * @brief Report whether the first goal is a moving obstacle.
 	 */
