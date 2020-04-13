@@ -11,7 +11,7 @@ PACKAGES = \
 	download_map  parking_assistant  navigator_astar  tracker  navigator_spline  navigator_gui  velodyne_camera_calibration  \
 	camera_boxes_to_world  lane_detector  navigator_gui2  mapper  obstacle_distance_mapper  map_server  car_panel_gui  \
 	stereo_velodyne  motion_planner  udatmo1  behavior_selector  base_ackerman  utilities/user_preferences  \
-	visual_tracker  model_predictive_planner  pi_imu  can_dump  
+	visual_tracker  model_predictive_planner  pi_imu  can_dump  utilities/scripts
 
 
 ifndef NO_CPP
