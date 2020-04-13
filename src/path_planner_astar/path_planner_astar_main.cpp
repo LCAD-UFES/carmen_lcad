@@ -937,9 +937,10 @@ g(state_node *current)
 double
 h(state_node *current, state_node *goal, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
-	double rs = ;
-	double ho = ;
-	return max(reed_shepp_path(current, goal), dijkstra(current, goal, distance_map));
+	double rs = reed_shepp_path(current, goal);
+	double ho = dijkstra(current, goal, distance_map);
+	printf("[h]rs = %f\tho = %f\n", rs, ho);
+	return max(rs, ho);
 }
 
 
@@ -994,13 +995,13 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 			{
 				open.erase(open.begin() + (indice-1));
 			}
-/*
+
 			indice = node_exist(closed, neighbor[it_number], distance_map);
 			if(indice != 0 && cost < g(neighbor[it_number]))
 			{
 				closed.erase(closed.begin() + (indice-1));
 			}
-*/
+
 			if(node_exist(open, neighbor[it_number], distance_map) == 0 && node_exist(closed, neighbor[it_number], distance_map) == 0 )
 			{
 				neighbor[it_number]->g = cost;
