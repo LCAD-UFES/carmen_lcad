@@ -657,7 +657,7 @@ get_lowest_rank(vector<state_node*> &open)
 int
 is_goal(state_node* current_state, state_node* goal_state)
 {
-	if(DIST2D(current_state->state, goal_state->state) < 1.5)
+	if(DIST2D(current_state->state, goal_state->state) < 1.5 && abs(carmen_radians_to_degrees(current_state->state.theta) - carmen_radians_to_degrees(goal_state->state.theta)) < 10)
 		return 1;
 	else
 		return 0;
@@ -673,8 +673,9 @@ pop_lowest_rank(vector<state_node*> &open)
 }
 
 
-vector<state_node*>
-reed_shepp_path(state_node *current, state_node *goal_state, carmen_obstacle_distance_mapper_map_message *distance_map)
+//vector<state_node*>
+double
+reed_shepp_path(state_node *current, state_node *goal_state)
 {
 	int rs_pathl;
 	int rs_numero;
@@ -712,14 +713,15 @@ reed_shepp_path(state_node *current, state_node *goal_state, carmen_obstacle_dis
 			distance_traveled_old = distance_traveled;
 			point = carmen_libcarmodel_recalc_pos_ackerman(point, v_step, rs_points[i].phi,
 					0.25, &distance_traveled, DELTA_T, robot_config);
-			draw_astar_object(&point, CARMEN_ORANGE);
+//			draw_astar_object(&point, CARMEN_ORANGE);
 			path_cost += step_weight * (distance_traveled - distance_traveled_old);
 
-        	state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
-        	new_state->state = point;
-        	rs_path_nodes.push_back(new_state);
+//        	state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
+//       	new_state->state = point;
+//      	rs_path_nodes.push_back(new_state);
 		}
 	}
+	/*
 	//return path_cost;
 	std::reverse(rs_path_nodes.begin(), rs_path_nodes.end());
 	state_node_p ant_state = (state_node_p) malloc(sizeof(state_node));
@@ -730,8 +732,12 @@ reed_shepp_path(state_node *current, state_node *goal_state, carmen_obstacle_dis
 		ant_state = rs_path_nodes[i];
 	}
 
-    publish_astar_draw();
-	return rs_path_nodes;
+//    publish_astar_draw();
+//	return rs_path_nodes;
+ *
+ * */
+//	printf("[reed_shepp] %f\n", path_cost);
+	return path_cost;
 }
 
 
@@ -801,20 +807,6 @@ expansion(state_node *current, state_node *goal_state, carmen_obstacle_distance_
 
 
 double
-g(state_node *current)
-{
-	return current->g;
-}
-
-
-double
-h(state_node *current, state_node *goal)
-{
-	return DIST2D(current->state, goal->state);
-}
-
-
-double
 movementcost(state_node *current, state_node *neighbor)
 {
 	return DIST2D(current->state, neighbor->state);
@@ -834,6 +826,122 @@ node_exist(vector<state_node*> &list, state_node *current, carmen_obstacle_dista
 	}
 	return 0;
 }
+
+
+vector<state_node*>
+expansion_dijkstra(state_node *current, state_node *goal_state, carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+
+	double add_x[3] = {-1.0, 0.0, 1.0};
+    double add_y[3] = {-1.0, 0.0, 1.0};
+    vector<state_node*> neighbor;
+
+    int size_for = 3;
+
+    for (int i = 0; i < size_for; i++)
+    {
+    	for (int j = 0; j<3; j++)
+    	{
+        	state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
+
+			new_state->state.x = current->state.x + add_x[i];
+			new_state->state.y = current->state.y + add_y[j];
+			new_state->state.theta = current->state.theta;
+
+			discrete_pos_node *current_pos = get_current_pos(new_state, distance_map);
+			if(astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_obstacle == 1)
+			{
+				free(new_state);
+			}
+			else
+			{
+//				draw_astar_object(&new_state->state, CARMEN_ORANGE);
+				neighbor.push_back(new_state);
+			}
+    	}
+    }
+//    publish_astar_draw();
+
+    return neighbor;
+}
+
+
+double
+dijkstra(state_node *current_state, state_node *goal, carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+		int indice = 0;
+		int it_number = 0;
+		double cost = 0.0;
+		vector<state_node*> neighbor;
+		state_node *start_state, *goal_state, *current;
+		start_state = current_state;
+		goal_state = goal;
+		vector<state_node*> open;
+
+		// Following the code from: http://theory.stanford.edu/~amitp/GameProgramming/ImplementationNotes.html
+		insert_open(open, start_state, distance_map);
+		vector<state_node*> closed;
+		while (!open.empty() && DIST2D(get_lowest_rank(open)->state, goal_state->state) > 1.5)
+		{
+			current = pop_lowest_rank(open);
+			//printf("[dijkstra]current = %f %f %f\n", current->state.x, current->state.y, current->state.theta);
+			closed.push_back(current);
+
+			neighbor = expansion_dijkstra(current, goal_state, distance_map);
+			while(it_number< neighbor.size())
+			{
+				cost = current->g + movementcost(current, neighbor[it_number]);
+				indice = node_exist(open, neighbor[it_number], distance_map);
+				if(indice != 0 && cost < neighbor[it_number]->g)
+				{
+					open.erase(open.begin() + (indice-1));
+				}
+/*				indice = node_exist(closed, neighbor[it_number], distance_map);
+				if(indice != 0 && cost < neighbor[it_number]->g)
+				{
+					closed.erase(closed.begin() + (indice-1));
+				}
+*/
+				if(node_exist(open, neighbor[it_number], distance_map) == 0 && node_exist(closed, neighbor[it_number], distance_map) == 0 )
+				{
+					neighbor[it_number]->g = cost;
+					neighbor[it_number]->h = DIST2D(neighbor[it_number]->state, goal->state);
+					neighbor[it_number]->parent = current;
+					open.push_back(neighbor[it_number]);
+					sort(open.begin(), open.end(), my_list_ordenation);
+				}
+				it_number++;
+			}
+			it_number = 0;
+			neighbor.clear();
+
+		}
+//		virtual_laser_message.num_positions = 0;
+
+		if(open.empty())
+		{
+			printf("Caminho não encontrado\n");
+			return -1;
+		}
+		return current->g;
+}
+
+
+double
+g(state_node *current)
+{
+	return current->g;
+}
+
+
+double
+h(state_node *current, state_node *goal, carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+	double rs = ;
+	double ho = ;
+	return max(reed_shepp_path(current, goal), dijkstra(current, goal, distance_map));
+}
+
 
 void
 compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen_robot_ackerman_config_t robot_config,
@@ -857,8 +965,10 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 	while (!open.empty() && is_goal(get_lowest_rank(open), goal_state) != 1)
 	{
 		current = pop_lowest_rank(open);
+//		printf("current = %f %f %f\n", current->state.x, current->state.y, current->state.theta);
 		closed.push_back(current);
 
+/* Usado em expansão analítica
 		if(cont_rs%5==0)
 		{
 			rs_path = reed_shepp_path(current, goal_state, distance_map);
@@ -874,6 +984,7 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 				break;
 			}
 		}
+*/
 		neighbor = expansion(current, goal_state, distance_map);
 		while(it_number< neighbor.size())
 		{
@@ -883,16 +994,17 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 			{
 				open.erase(open.begin() + (indice-1));
 			}
+/*
 			indice = node_exist(closed, neighbor[it_number], distance_map);
 			if(indice != 0 && cost < g(neighbor[it_number]))
 			{
 				closed.erase(closed.begin() + (indice-1));
 			}
-
+*/
 			if(node_exist(open, neighbor[it_number], distance_map) == 0 && node_exist(closed, neighbor[it_number], distance_map) == 0 )
 			{
 				neighbor[it_number]->g = cost;
-				neighbor[it_number]->h = h(neighbor[it_number], goal_state);
+				neighbor[it_number]->h = h(neighbor[it_number], goal_state, distance_map);
 				neighbor[it_number]->parent = current;
 				open.push_back(neighbor[it_number]);
 				sort(open.begin(), open.end(), my_list_ordenation);
