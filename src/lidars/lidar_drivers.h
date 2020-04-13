@@ -16,8 +16,11 @@
 #include <carmen/carmen.h>
 
 
+#define INITIAL_MAX_NUM_SHOT 4000  // Estimated initial maximun number of shots per turn, may be realloc if necessary
+
+
 void initizalize_socket_connection();
 
-bool run_robosense_RSLiDAR16_driver(carmen_velodyne_variable_scan_message &msg);
+void run_robosense_RSLiDAR16_driver(carmen_velodyne_variable_scan_message &msg, carmen_lidar_config lidar_config, int lidar_id);
 
 #endif

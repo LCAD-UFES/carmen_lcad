@@ -50,7 +50,7 @@ public:
 	VelodyneDriver(carmen_velodyne_variable_scan_message &variable_scan, int velodyne_num_lasers, int velodyne_max_laser_shots_per_revolution, int velodyne_udp_port, int velodyne_gps_udp_port);
 	~VelodyneDriver();
 
-	bool pollScan(carmen_velodyne_variable_scan_message &variable_scan, int velodyne_number, int velodyne_udp_port, int velodyne_max_laser_shots_per_revolution,
+	bool pollScan(carmen_velodyne_variable_scan_message &variable_scan, int velodyne_udp_port, int velodyne_max_laser_shots_per_revolution,
 				  int velodyne_num_shots, double velodyne_package_rate, int velodyne_num_lasers);
 
 	bool pollGps(int velodyne_gps_udp_port);
@@ -70,7 +70,7 @@ private:
 	velodyne_gps_t gps_;
 	velodyne_config_t config_;
 
-	void copy_packet_to_scan_buffer(int i, int j, const velodyne_packet_t& packet, int velodyne_num_lasers);
+	void copy_packet_to_scan_buffer(int i, int j, const velodyne_packet_t& packet);
 	void copy_scan_buffer_to_scan(int l, int m, carmen_velodyne_variable_scan_message &variable_scan, int velodyne_num_lasers);
 
 };

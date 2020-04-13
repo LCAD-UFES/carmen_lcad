@@ -1439,7 +1439,7 @@ char* carmen_string_to_variable_velodyne_scan_message(char* string, carmen_velod
 char* carmen_string_and_file_to_variable_velodyne_scan_message(char* string, carmen_velodyne_variable_scan_message* msg)
 {
 	int i, shot_size;
-//	int velodyne_number;
+	int velodyne_number;
 	char *current_pos = string;
 
 	/*if (strncmp(current_pos, "VELODYNE_VARIABLE_SCAN_IN_FILE1", 31) == 0 ||
@@ -1460,7 +1460,7 @@ char* carmen_string_and_file_to_variable_velodyne_scan_message(char* string, car
 		strcat(full_path, path);
 	}
 
-//	velodyne_number = CLF_READ_INT(&current_pos);
+	velodyne_number = CLF_READ_INT(&current_pos);
 	shot_size = CLF_READ_INT(&current_pos);
 	msg->number_of_shots = CLF_READ_INT(&current_pos);
 
