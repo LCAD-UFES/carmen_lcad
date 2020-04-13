@@ -11,9 +11,9 @@ CXXFLAGS += -std=c++11
 LFLAGS += -lparam_interface -lipc -lglobal \
 	-llocalize_ackerman_interface \
 	-lobstacle_avoider_interface -lsimulator_ackerman_interface -ltraffic_light_interface \
-	-lcollision_detection  -lmoving_objects_interface \
-	-lmap_server_interface -lgrid_mapping -lmap_io -lmap_interface -lrddf_interface -lrddf_util -lrddf_index -lcarmen_gps_wrapper  \
-	-lgsl -lgslcblas -lm -lvoice_interface_interface `python3.5-config --libs` 
+	-lmoving_objects_interface \
+	-lmap_server_interface -lgrid_mapping -lmap_io -lmap_interface -lrddf_interface -lrddf_util -lrddf_index -lcollision_detection \
+	-lcarmen_gps_wrapper -lgsl -lgslcblas -lm -lvoice_interface_interface `python3.5-config --libs` 
 LFLAGS += -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine
 
 IFLAGS += -I/usr/include/eigen3 
@@ -21,7 +21,7 @@ IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/
 IFLAGS += -I/usr/include/python3.5
 
 SOURCES = frenet_path_planner_main.cpp
-TARGETS = frenet_path_planner
+TARGETS = frenet_path_planner libfrenet_path_planner_interface.a
 
 PUBLIC_INCLUDES = frenet_path_planner_interface.h  frenet_path_planner_messages.h
 PUBLIC_LIBRARIES = libfrenet_path_planner_interface.a
