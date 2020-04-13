@@ -44,6 +44,7 @@ PUBLIC_LIBRARIES = libmodel_predictive_planner_interface.a
 PUBLIC_INCLUDES = model_predictive_planner_interface.h model_predictive_planner_message.h
 
 TARGETS = libcarmodel model_predictive_planner libmodel_predictive_planner_interface.a
+TARGETS += $(CARMEN_HOME)/bin/trajectory_lookup_table.bin
 
 libcarmodel:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarmodel
@@ -56,6 +57,9 @@ model_predictive_planner: model_predictive_planner_main.o model_predictive_plann
 
 
 libmodel_predictive_planner_interface.a: model_predictive_planner_interface.o
+
+$(CARMEN_HOME)/bin/trajectory_lookup_table.bin:
+	ln -s  $(PWD)/trajectory_lookup_table.bin  $(CARMEN_HOME)/bin/
 
 trajectory_lookup_table: trajectory_lookup_table.o
 
