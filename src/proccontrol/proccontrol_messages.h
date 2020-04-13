@@ -81,13 +81,14 @@ typedef struct {
 
 typedef struct {
   int pid;
+  char *module_name;
   char *output;
   double timestamp;
   char *host;
 } carmen_proccontrol_output_message;
 
 #define     CARMEN_PROCCONTROL_OUTPUT_NAME       "carmen_proccontrol_output"
-#define     CARMEN_PROCCONTROL_OUTPUT_FMT        "{int,string,double,string}"
+#define     CARMEN_PROCCONTROL_OUTPUT_FMT        "{int,string,string,double,string}"
 
 #ifdef __cplusplus
 }

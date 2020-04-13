@@ -70,7 +70,7 @@ void proccontrol_publish_pidtable(int num_processes, process_info_p process)
   carmen_ipc_publish_exit(CARMEN_PROCCONTROL_PIDTABLE_NAME, msg);
 }
 
-void proccontrol_publish_output(int pid, char *output)
+void proccontrol_publish_output(int pid, char *module_name, char *output)
 {
   static carmen_proccontrol_output_message msg;
   static int first = 1;
@@ -80,6 +80,8 @@ void proccontrol_publish_output(int pid, char *output)
     first = 0;
   }
   msg.pid = pid;
+  msg.module_name = module_name;
   msg.output = output;
+  msg.timestamp = carmen_get_time();
   carmen_ipc_publish_exit(CARMEN_PROCCONTROL_OUTPUT_NAME, msg);
 }

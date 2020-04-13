@@ -36,6 +36,7 @@ IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
 		  -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system \
 		  -lboost_thread-mt -lrt -lboost_signals -lboost_system -lcollision_detection
+LFLAGS += -luser_preferences
 
 SUBDIRS += glm
 
@@ -53,6 +54,8 @@ PUBLIC_BINARIES = viewer_3D xsens_viewer
 MAN_PAGES =
 
 TARGETS = viewer_3D xsens_viewer libvelodyne_360_drawer.a
+TARGETS += $(CARMEN_HOME)/bin/Touareg2.mtl
+TARGETS += $(CARMEN_HOME)/bin/Touareg2.obj
 
 PUBLIC_LIBRARIES_SO =
 
@@ -69,7 +72,10 @@ viewer_3D:	viewer_3D.o Window.o GLDraw.o draw_car.o point_cloud_drawer.o variabl
 
 xsens_viewer: xsens_viewer.o Window.o draw_car.o texture_loader.o download_map.o
 
+$(CARMEN_HOME)/bin/Touareg2.mtl:
+	ln -s  $(PWD)/Touareg2.mtl  $(CARMEN_HOME)/bin/
+
+$(CARMEN_HOME)/bin/Touareg2.obj:
+	ln -s  $(PWD)/Touareg2.obj  $(CARMEN_HOME)/bin/
+
 include ../Makefile.rules
-
-
-

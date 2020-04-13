@@ -107,7 +107,6 @@ void start_process(process_info_p process)
 void pc_handle_signal(int sig __attribute__ ((unused)))
 {
 	int i;
-
 	for(i = 0; i < num_processes; i++)
 		if(process[i].state)
 			kill_process(&process[i]);
@@ -183,7 +182,7 @@ void process_timer(void *clientdata __attribute__ ((unused)),
 						nread = carmen_serial_readn(process[i].pipefd[0], buffer, n);
 						if(nread >= 0)
 							buffer[nread] = '\0';
-						proccontrol_publish_output(process[i].pid, (char *)buffer);
+						proccontrol_publish_output(process[i].pid, process[i].module_name, (char *)buffer);
 					}
 				}
 				else {

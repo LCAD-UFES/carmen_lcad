@@ -131,7 +131,7 @@ calc_theta (double x1, double y1, double x, double y)
 
 
 void
-get_closest_points_from_osm_in_rddf (t_forest forest, t_graph graph, t_route r)
+get_closest_points_from_osm_in_rddf (t_forest forest, t_graph graph, t_route r, int *forest_index, vector<int> &indices)
 {
 	//calcular o theta do primeiro ponto da rota  OK!
 	//fazer knn do primeiro ponto da rota com todos os pontos do rddf 1 OK!
@@ -140,8 +140,8 @@ get_closest_points_from_osm_in_rddf (t_forest forest, t_graph graph, t_route r)
 	//setar para o rddf com a menor diferença angular
 
 //	vector<Point2f> cloud2d;
-	vector<int> indices;
-	int forest_index = 0;
+
+	*forest_index = 0;
 	double minor_angle = 99999.9;
 //	Point2d p;
 
@@ -152,25 +152,26 @@ get_closest_points_from_osm_in_rddf (t_forest forest, t_graph graph, t_route r)
 	for (unsigned int i = 0; i < forest.rddfs.size(); i++)
 	{
 		knn (indices, forest.rddfs[i], graph.nodes[r.route[0]].point.x, graph.nodes[r.route[0]].point.y);
-//		cout<<"Theta Closest "<<i<<": "<<forest.rddfs[i][indices[0]].pose.theta<<endl;
+		cout<<"Theta Closest "<<i<<": "<<forest.rddfs[i][indices[0]].pose.theta<<endl;
 		double theta_diff = calc_theta_diff(forest.rddfs[i][indices[0]].pose.theta, theta_of_first_route_point);
 //		cout<<"if "<<abs(theta_diff)<<" < "<<minor_angle<<endl;
 		if (abs(theta_diff) < minor_angle)
 		{
 //			cout<<"\ttroquei!"<<endl;
 			minor_angle = abs(theta_diff);
-			forest_index = i;
+			*forest_index = i;
 		}
 //		cout<<indices[i]<<endl;
 	}
-//	cout<<"Chosen rddf in forest: "<<forest_index<<endl;
+	cout<<"Chosen rddf in forest: "<<*forest_index<<endl;
 
 	indices.clear();
 	for (int i = 0; i < r.route_size; i++)
 	{
-		knn (indices, forest.rddfs[forest_index], graph.nodes[r.route[i]].point.x, graph.nodes[r.route[i]].point.y);
+		knn (indices, forest.rddfs[*forest_index], graph.nodes[r.route[i]].point.x, graph.nodes[r.route[i]].point.y);
 	}
 
+	cout<<"passei"<<endl;
 
 //	for (unsigned int i = 0; i < forest.rddfs.size(); i++)
 //	{
@@ -200,8 +201,8 @@ get_closest_points_from_osm_in_rddf (t_forest forest, t_graph graph, t_route r)
 //	}
 
 //cout<<"Closest point of "<<graph.nodes[0].point.x<<" , "<<graph.nodes[0].point.y<<" is "<<rddf_points[indices[0]].pose.x<<" , "<<rddf_points[indices[0]].pose.y<<endl;
-	plot_state (forest, graph, indices, forest_index);
-	getchar();
+	//plot_state (forest, graph, indices, *forest_index);
+	//getchar();
 }
 
 
@@ -330,6 +331,6 @@ process_graph (string python_command)
 
 	graph = convert_from_lon_lat_nodes_to_utm_nodes(graph);
 
-	get_closest_points_from_osm_in_rddf (rddf_points, graph, route);
+	//get_closest_points_from_osm_in_rddf (rddf_points, graph, route);
 
 }

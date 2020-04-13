@@ -20,6 +20,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += $(INTERFACE_LIBS) -lparam_interface \
 	  -lglobal -lipc -lrotation_geometry
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system `pkg-config --libs opencv`
+LFLAGS += -luser_preferences
 
 MODULE_NAME = LOGGER
 MODULE_COMMENT = Modules for logging, displaying, and playing back data.

@@ -12,10 +12,17 @@ extern "C"
 {
 #endif
 
-typedef struct window window;
+//typedef struct window window;
+struct window
+{
+    Display* g_pDisplay;
+    Window g_window;
+    int g_bDoubleBuffered;
+    Atom wmDeleteMessage;
+};
 
 // Funcao cria a janela
-window* initWindow();
+window* initWindow(int width, int height);
 
 // Efetivamente mostra na tela o conteudo, retorna 1 se a janela ainda existe ou 0 se a
 // janela foi fechada

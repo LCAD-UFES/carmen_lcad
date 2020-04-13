@@ -686,6 +686,15 @@ src/tracker/tracker.c
 /src/mapper/neural_mapper_dataset_check
 /sharedlib/OpenJAUS/ojFoxDriver/SENT/docs/src/DM330018_Starter_Kit_Demo.X/build/
 /sharedlib/OpenJAUS/ojFoxDriver/SENT/docs/src/DM330018_Starter_Kit_Demo.X/dist/
+/sharedlib/efficientdet/venv
+/sharedlib/inplace_abn/inplace_env
+/sharedlib/inplace_abn/.eggs
+/sharedlib/libsqueeze_seg_v2/squeezeseg_env
+/sharedlib/salsanet/logs
+/sharedlib/rangenet_lib/model
+data/mapper_teste2
+logs/inference_results
+/sharedlib/ENet/caffe-enet/build
 
 src/imu_viewer/Makefile.qmake
 src/imu_viewer/moc_mainwindow.cpp

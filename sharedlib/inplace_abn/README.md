@@ -33,6 +33,8 @@ $ cd inplace_abn
 
 ### Using inplace_abn with carmen:
 
+Weights: https://drive.google.com/file/d/1SJJx5-LFG3J3M99TrPMU-z6ZmgWynxo-/view
+
 Copy the weights for $CARMEN_HOME/sharedlib/inplace_abn/.
 
 ##### Run Central
@@ -51,3 +53,32 @@ Copy the weights for $CARMEN_HOME/sharedlib/inplace_abn/.
 ```
 
 Push Playback button. The results from rddf generator will be at navigator.
+
+#### Run tests for generating predictions:
+
+First, use png images. Use the code present in $CARMEN_HOME/src/utilities/convert_log_images
+
+```
+:/dados$ grep BUMB log.txt > log_filtrado.txt
+```
+
+```
+:~/carmen_lcad/bin$ cd $CARMEN_HOME/src/utilities/convert_log_images
+:~/carmen_lcad/src/utilities/convert_log_images$ make
+:~/carmen_lcad/src/utilities/convert_log_images$ ./to_png_new_log /dados/log_ufes_aeroporto_filtrado.txt /dados/png_log_ufes_aeroporto-20200325 -path /dados/log_ufes_aeroporto-20200325.txt
+```
+
+Use the neural network for generate the predictions:
+```
+python test_vistas.py /path/to/model.pth.tar /dados/png_log_ufes_aeroporto-20200325 /path/to/output/folder --output-mode palette
+```
+
+--output-mode:
+```
+-- palette: color coded predictions
+-- raw: gray-scale predictions
+-- prob: gray-scale predictions plus probabilities
+```
+
+
+

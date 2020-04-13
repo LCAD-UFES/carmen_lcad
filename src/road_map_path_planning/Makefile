@@ -21,26 +21,39 @@ LFLAGS += \
 	-lgrid_mapping \
 	-lmap_io \
 	-lmap_interface \
+	-lrddf_util \
 	-lgps_xyz_interface \
 	-lGL \
 	-lglut \
-	-lGLU
+	-lGLU \
+	-lnavigator_ackerman_interface -lrddf_interface
 
 SOURCES = \
 	road_map_path_planning_main.cpp \
 	road_map_path_planning_utils.cpp \
+	call_iara_app_main.cpp 
 
 
 PUBLIC_INCLUDES = \
-	road_map_path_planning_utils.h	
+	road_map_path_planning_utils.h \
+	call_iara_app_messages.h
+	
+
+#PUBLIC_LIBRARIES = libroad_map_path_planning_utils.a 
+	
 
 PUBLIC_BINARIES = \
 	road_map_path_planning_main\
+	call_iara_main
 	
 
-TARGETS = road_map_path_planning_main
+TARGETS = road_map_path_planning_main \
+		call_iara_main #libroad_map_path_planning_utils.a
 		  
 
 road_map_path_planning_main: road_map_path_planning_main.o road_map_path_planning_utils.o
+call_iara_main: call_iara_app_main.o road_map_path_planning_utils.o
+
+#road_map_path_planning_utils.a: road_map_path_planning_utils.o
 
 include ../Makefile.rules

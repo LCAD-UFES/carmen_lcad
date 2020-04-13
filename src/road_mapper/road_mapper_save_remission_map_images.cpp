@@ -3,9 +3,9 @@
 
 wordexp_t g_out_path_p;
 char* g_out_path;
-cv::Mat *g_remission_map_img;
-cv::Mat *g_remission_map_img3;
-static carmen_map_p g_remission_map;
+cv::Mat *g_remission_map_img = NULL;
+cv::Mat *g_remission_map_img3 = NULL;
+static carmen_map_p g_remission_map = NULL;
 static int g_remission_image_channels = 0;
 
 void
@@ -122,9 +122,12 @@ initialize_maps(void)
 void
 deinitialize_maps(void)
 {
-	free_map_pointer(g_remission_map);
-	g_remission_map_img->release();
-	g_remission_map_img3->release();
+	if (g_remission_map)
+		free_map_pointer(g_remission_map);
+	if (g_remission_map_img)
+		g_remission_map_img->release();
+	if (g_remission_map_img3)
+		g_remission_map_img3->release();
 	wordfree(&g_out_path_p);
 }
 

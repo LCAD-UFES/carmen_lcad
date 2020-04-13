@@ -37,7 +37,7 @@ extern "C" {
 
 void proccontrol_register_ipc_messages(void);
 
-void proccontrol_publish_output(int pid, char *output);
+void proccontrol_publish_output(int pid, char *module_name, char *output);
 
 void proccontrol_publish_pidtable(int num_processes, process_info_p process);
 

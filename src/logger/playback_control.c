@@ -27,12 +27,15 @@
  ********************************************************/
 
 #include <carmen/carmen_graphics.h>
+#include <carmen/user_preferences.h>
 #include <locale.h>
+#include <libgen.h>
 
 #include "playback_messages.h"
 #include "playback_interface.h"
 
 
+GtkWidget *window;
 GdkGC *rrwd_gc, *rewind_gc, *stop_gc, *play_gc, *fwd_gc, *ffwd_gc;
 GtkWidget *playback_speed_widget_label, *playback_speed_widget_status, *playback_speed_widget;
 GtkWidget *playback_initial_time_widget_label, *playback_initial_time_widget_status, *playback_initial_time_widget;
@@ -42,6 +45,14 @@ int initial_time_pending_update = 0;
 double playback_speed = 1.0;
 char *playback_message = NULL;
 
+char *user_pref_filename = NULL;
+const char *user_pref_module;
+user_param_t *user_pref_param_list;
+int user_pref_num_items;
+int user_pref_window_width  = -1;
+int user_pref_window_height = -1;
+int user_pref_window_x = -1;
+int user_pref_window_y = -1;
 
 
 void Redraw(GtkWidget *widget, GdkEventExpose *event, char *data);
@@ -251,6 +262,52 @@ read_parameters(int argc, char *argv[])
 }
 
 
+void
+read_user_preferences(int argc, char** argv)
+{
+	static user_param_t param_list[] =
+	{
+		{"window_width",     USER_PARAM_TYPE_INT,    &user_pref_window_width},
+		{"window_height",    USER_PARAM_TYPE_INT,    &user_pref_window_height},
+		{"window_x",         USER_PARAM_TYPE_INT,    &user_pref_window_x},
+		{"window_y",         USER_PARAM_TYPE_INT,    &user_pref_window_y},
+	};
+	user_pref_module = basename(argv[0]);
+	user_pref_param_list = param_list;
+	user_pref_num_items = sizeof(param_list) / sizeof(param_list[0]);
+	user_preferences_read(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
+	user_preferences_read_commandline(argc, argv, user_pref_param_list, user_pref_num_items);
+}
+
+
+void
+set_user_preferences()
+{
+	if (user_pref_window_width > 0 && user_pref_window_height > 0)
+		gtk_window_resize(GTK_WINDOW(window), user_pref_window_width, user_pref_window_height);
+	if (user_pref_window_x >= 0 && user_pref_window_y >= 0)
+		gtk_window_move(GTK_WINDOW(window), user_pref_window_x, user_pref_window_y);
+}
+
+
+void
+save_user_preferences()
+{
+	gtk_window_get_size(GTK_WINDOW(window), &user_pref_window_width, &user_pref_window_height);
+	gtk_window_get_position(GTK_WINDOW(window), &user_pref_window_x, &user_pref_window_y);
+	user_preferences_save(user_pref_filename, user_pref_module, user_pref_param_list, user_pref_num_items);
+}
+
+
+static void
+shutdown(int sig __attribute__ ((unused)))
+{
+	save_user_preferences();
+	carmen_ipc_disconnect();
+	exit(1);
+}
+
+
 void usage(char *fmt, ...)
 {
 	va_list args;
@@ -287,7 +344,6 @@ main(int argc, char *argv[])
 {
     GdkColor Red, Green, Blue;
     GdkColormap *cmap;
-    GtkWidget *window;
     GtkWidget *hbox, *rrwd, *rwd, *play, *stop, *ffwd, *fwd, *reset_button, *vbox, *hbox2;
     GtkWidget *rrwd_darea, *rwd_darea, *stop_darea, *play_darea,
             *ffwd_darea, *fwd_darea, *reset_darea;
@@ -299,6 +355,7 @@ main(int argc, char *argv[])
 
     carmen_ipc_initialize(argc, argv);
     carmen_param_check_version(argv[0]);
+	signal(SIGINT, shutdown);
 
     carmen_subscribe_playback_info_message(NULL,
                                            (carmen_handler_t) carmen_playback_info_message_handler,
@@ -521,7 +578,11 @@ main(int argc, char *argv[])
 
 	read_parameters(argc, argv);
 
+	read_user_preferences(argc, argv);
+
     gtk_widget_show_all(window);
+
+ 	set_user_preferences();
 
     setlocale(LC_ALL, "C");
 

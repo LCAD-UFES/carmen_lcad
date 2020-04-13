@@ -27,6 +27,7 @@ LFLAGS += -lparam_interface -lipc -lglobal -lmap_graphics -lglobal_graphics -lma
 		  -lrotation_geometry -lcar_panel -lrobot_ackerman_interface -lparking_assistant_interface  -lford_escape_hybrid_interface \
 		  -lglm -lGL -lGLU -lglut -ltf -lmoving_objects_interface -llane_detector_interface -lmodel_predictive_planner_interface `pkg-config --libs opencv`
 LFLAGS += -L/usr/lib64/libkml -lrddf_util -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
+LFLAGS += -luser_preferences
 
 CFLAGS += -Wno-unknown-pragmas
 CXXFLAGS += -Wno-unknown-pragmas

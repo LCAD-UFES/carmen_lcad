@@ -485,6 +485,42 @@ void bumblebee9_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 9, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
 
+void bumblebee10_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_message* message)
+{
+	//fprintf(stderr, "b10s");
+	if (log_bumblebee_save_to_file)
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 10, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, log_filename);
+	else
+		carmen_logwrite_write_bumblebee_basic_steroimage(message, 10, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
+}
+
+void bumblebee11_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_message* message)
+{
+	//fprintf(stderr, "b11s");
+	if (log_bumblebee_save_to_file)
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 11, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, log_filename);
+	else
+		carmen_logwrite_write_bumblebee_basic_steroimage(message, 11, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
+}
+
+void bumblebee12_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_message* message)
+{
+	//fprintf(stderr, "b12s");
+	if (log_bumblebee_save_to_file)
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 12, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, log_filename);
+	else
+		carmen_logwrite_write_bumblebee_basic_steroimage(message, 12, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
+}
+
+void bumblebee13_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_message* message)
+{
+	//fprintf(stderr, "b13s");
+	if (log_bumblebee_save_to_file)
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 13, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, log_filename);
+	else
+		carmen_logwrite_write_bumblebee_basic_steroimage(message, 13, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
+}
+
 void
 ipc_kinect_0_depth_handler(carmen_kinect_depth_message *message)
 {
@@ -712,6 +748,14 @@ int main(int argc, char **argv)
 			  bumblebee8_basic_stereoimage_handler, CARMEN_SUBSCRIBE_ALL);
 	  carmen_bumblebee_basic_subscribe_stereoimage(9, NULL, (carmen_handler_t)
 			  bumblebee9_basic_stereoimage_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_bumblebee_basic_subscribe_stereoimage(10, NULL, (carmen_handler_t)
+			  bumblebee10_basic_stereoimage_handler, CARMEN_SUBSCRIBE_ALL);	
+	  carmen_bumblebee_basic_subscribe_stereoimage(11, NULL, (carmen_handler_t)
+			  bumblebee11_basic_stereoimage_handler, CARMEN_SUBSCRIBE_ALL);
+	  carmen_bumblebee_basic_subscribe_stereoimage(12, NULL, (carmen_handler_t)
+			  bumblebee12_basic_stereoimage_handler, CARMEN_SUBSCRIBE_ALL);		
+	  carmen_bumblebee_basic_subscribe_stereoimage(13, NULL, (carmen_handler_t)
+			  bumblebee13_basic_stereoimage_handler, CARMEN_SUBSCRIBE_ALL);
   }
 
   if (log_kinect)

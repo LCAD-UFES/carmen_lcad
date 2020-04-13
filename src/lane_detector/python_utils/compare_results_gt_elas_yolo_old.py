@@ -360,6 +360,7 @@ if __name__ == "__main__":
 		error_elas = 0
 		cont = 0
 		error_array = []
+		error_array_2 = []
 		array_numbers = []
 		for l in number_iterations_folder:
 			if (int(l) == 10000):
@@ -408,10 +409,62 @@ if __name__ == "__main__":
 			error = 0
 			cont = 0
 			error_elas = 0
-		plt.plot(array_numbers, error_array)
+		if yolo_base.endswith("val_2/"):
+			yolo_base = yolo_base.replace("val_2", "test_2")
+		elif yolo_base.endswith("val_1/"):
+			yolo_base = yolo_base.replace("val_1", "test_1")
+		for l in number_iterations_folder:
+			if (int(l) == 10000):
+				continue
+			folder_name = [a for a in os.listdir(yolo_base + str(l) + "/")]
+			for f in folder_name:
+				yolo_path = yolo_base + str(l) + "/" + str(f) + "/"
+				print(yolo_path)
+				gt_files_list = [b for b in os.listdir(yolo_path)]
+				for gt_file_name in gt_files_list:
+					if not gt_file_name.endswith('.txt'):
+						continue
+					gt_points = read_groud_truth_points(sys.argv[1] + str(f) + "/", gt_file_name)
+					#gt_points_yolo = transform_groud_truth_points_to_yolo(gt_points)
+					
+					#print (gt_points_yolo)
+
+					#gt_points_true = transform_yolo_points_groundtruth_to_coordinates(sys.argv[1], gt_file_name)
+
+					#print (gt_points_true)
+					predictions_points = read_and_convert_4_points_coordinates(yolo_path, gt_file_name, image_width, image_heigth)
+					if (len(predictions_points[0]) == 0 or len(predictions_points[1]) == 0):
+						continue
+					predictions_points_2 = read_and_convert_4_points_coordinates(sys.argv[3] + str(f) + "/", gt_file_name, image_width, image_heigth)
+					
+					#print (predictions_points)
+					#returned = compute_error(gt_points_true, predictions_points)
+					returned = compute_error(gt_points, predictions_points, 0)
+					returned_2 = compute_error(gt_points, predictions_points_2, 1)
+					if (float(returned) < 500.0):
+						error += returned
+					else:
+						continue
+					cont += 1
+					if (int(l) == 40000 and float(returned_2) < 500.0):
+						error_elas += returned_2
+					#if images_path:
+						#show_image(gt_points, predictions_points, returned[1], returned_2[1], gt_file_name, images_path)
+					#show_image(gt_points, predictions_points, predictions_points_2, gt_file_name, images_path)
+				#print(number_of_folder)
+			print (cont)
+			print ('TOTAL Error Yolo: ' + str(error/cont))
+			print ('TOTAL Error ELAS: ' + str((error_elas )/cont))
+			error_array_2.append(int(error/cont))
+			error = 0
+			cont = 0
+			error_elas = 0
+		plt.plot(array_numbers, error_array, label='validation')
+		plt.plot( array_numbers, error_array_2,  label= 'test')
 		plt.xlabel('Iteration')
 		plt.ylabel('Average error of detection')
 		titulo = "Error of detection"
 		plt.title(str(titulo))
+		plt.legend()
 		plt.show()
 		

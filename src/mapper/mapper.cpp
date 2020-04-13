@@ -852,7 +852,7 @@ mapper_velodyne_partial_scan(int sensor_number, carmen_velodyne_partial_scan_mes
 
 
 int
-mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_message *message)
+mapper_stereo_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_message *message)
 {
 	static int message_id;
 
@@ -896,6 +896,56 @@ mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_m
 	message_id++;
 	sensors_data[sensor_number].last_timestamp = message->timestamp;
 	
+	return (ok_to_publish);
+}
+
+
+int
+mapper_velodyne_variable_scan(int lidar_id, carmen_velodyne_variable_scan_message *message)
+{
+	static int message_id;
+	int sensor_number = lidar_id+10; //10 is the first position of lidar parameters on carmen-ford-escape.ini
+	int num_points = message->number_of_shots * sensors_params[sensor_number].vertical_resolution;
+
+	ok_to_publish = 0;
+	if (!globalpos_initialized)
+		return (ok_to_publish);
+
+	if (sensors_data[sensor_number].last_timestamp == 0.0)
+	{
+		sensors_data[sensor_number].last_timestamp = message->timestamp;
+		message_id = -2;		// antigamente eram necessarias pelo menos 2 mensagens para ter uma volta completa de velodyne
+
+		return (ok_to_publish);
+	}
+
+	sensors_data[sensor_number].last_timestamp = sensors_data[sensor_number].current_timestamp = message->timestamp;
+
+	build_sensor_point_cloud(&sensors_data[sensor_number].points, sensors_data[sensor_number].intensity,
+							&sensors_data[sensor_number].point_cloud_index, num_points, NUM_VELODYNE_POINT_CLOUDS);
+
+	carmen_velodyne_variable_scan_update_points(message, sensors_params[sensor_number].vertical_resolution,
+			&sensors_data[sensor_number].points[sensors_data[sensor_number].point_cloud_index],
+			sensors_data[sensor_number].intensity[sensors_data[sensor_number].point_cloud_index],
+			sensors_params[sensor_number].ray_order, sensors_params[sensor_number].vertical_correction,
+			sensors_params[sensor_number].range_max, message->timestamp);
+
+	sensors_data[sensor_number].robot_pose[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].pose;
+	sensors_data[sensor_number].robot_velocity[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].velocity;
+	sensors_data[sensor_number].robot_timestamp[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].timestamp;
+	sensors_data[sensor_number].robot_phi[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].phi;
+	sensors_data[sensor_number].points_timestamp[sensors_data[sensor_number].point_cloud_index] = message->timestamp;
+
+	if (message_id >= 0)
+	{
+		ok_to_publish = 1;
+
+		if (message_id > 1000000)
+			message_id = 0;
+	}
+	message_id++;
+	sensors_data[sensor_number].last_timestamp = message->timestamp;
+
 	return (ok_to_publish);
 }
 

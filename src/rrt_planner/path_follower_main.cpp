@@ -174,8 +174,8 @@ namespace RRT_IPC
 static void
 build_and_follow_path(carmen_point_t point, double pose_timestamp)
 {
-	printf("\n *** entrou em build_and_follow_path() - %lf  %lf\n", carmen_get_time(), carmen_get_time() - t0);
-	t0 = carmen_get_time();
+	//printf("\n *** entrou em build_and_follow_path() - %lf  %lf\n", carmen_get_time(), carmen_get_time() - t0);
+	//t0 = carmen_get_time();
 	Robot_State initial_robot_state;
 	Pose pose = Util::convert_to_pose(point);
 
@@ -186,13 +186,13 @@ build_and_follow_path(carmen_point_t point, double pose_timestamp)
 	*GlobalState::localize_pose = initial_robot_state.pose;
 
 	follower.update_path();
-	printf("follower.update_path() - %lf\n", carmen_get_time() - t0);
-	fflush(stdout);
+	//printf("follower.update_path() - %lf\n", carmen_get_time() - t0);
+	//fflush(stdout);
 
 
 	follower.build_and_send_refined_path();
-	printf("follower.build_and_send_refined_path() - %lf\n", carmen_get_time() - t0);
-	fflush(stdout);
+	//printf("follower.build_and_send_refined_path() - %lf\n", carmen_get_time() - t0);
+	//fflush(stdout);
 
 //	if (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT)
 //	{
