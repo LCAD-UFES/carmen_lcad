@@ -51,9 +51,9 @@ Publisher_Util::publish_plan_tree_message(Tree tree)
 	}
 	for (int i = 0; i < tree.num_paths; i++)
 	{
-		if (tree.paths_sizes[i] > 100)
+		if (tree.paths_sizes[i] > 1000)
 		{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
-			printf("Error: paths_sizes[%d] > 100 in Publisher_Util::publish_plan_tree_message()\n", i);
+			printf("Error: paths_sizes[%d] > 1000 in Publisher_Util::publish_plan_tree_message()\n", i);
 			exit(1);
 		}
 		memcpy(plan_tree_msg.paths[i], tree.paths[i], sizeof(carmen_ackerman_traj_point_t) * tree.paths_sizes[i]);

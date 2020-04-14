@@ -8,8 +8,6 @@
 #ifndef POSE_H_
 #define POSE_H_
 
-#include <carmen/carmen.h>
-
 class RRT_Node;
 
 class Pose

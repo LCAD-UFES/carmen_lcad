@@ -126,6 +126,8 @@ extern carmen_mapper_virtual_scan_message virtual_scan_message;
 char *calibration_file = NULL;
 char *save_calibration_file = NULL;
 
+int use_unity_simulator = 0;
+
 
 void
 include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalpos_message *globalpos_message)
@@ -325,6 +327,9 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 		publish_map(globalpos_message->timestamp);
 		publish_virtual_scan(globalpos_message->timestamp);
+
+		printf("aqui2\n");
+		fflush(stdout);
 	}
 
 	if (update_and_merge_with_mapper_saved_maps && time_secs_between_map_save > 0.0 && mapper_save_map)
@@ -335,10 +340,32 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 static void
 true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 {
-	if (offline_map_available)
+	if (offline_map_available && !ok_to_publish)
 	{
 		map_decay_to_offline_map(get_the_map());
 		publish_map(pose->timestamp);
+
+		// O codigo abaixo publica mensagens de Velodyne fake ateh que o mecanismo padrao de publicacao de mapas comece a funcionar
+		// Quando comeca, ok_to_publish se torna 1. ok_to_publish indica quando esta ok para a publicacao de mapas.
+		carmen_velodyne_partial_scan_message fake_velodyne_message;
+		fake_velodyne_message.number_of_32_laser_shots = 1;
+
+		carmen_velodyne_32_laser_shot fake_shot;
+		fake_shot.angle = 0.0;
+
+		for (int i = 0; i < 32; i++)
+		{
+			fake_shot.distance[i] = 0;
+			fake_shot.intensity[i] = 0;
+		}
+
+		fake_velodyne_message.partial_scan = &fake_shot;
+		fake_velodyne_message.timestamp = pose->timestamp;
+		fake_velodyne_message.host = carmen_get_host();
+		mapper_velodyne_partial_scan(VELODYNE, &fake_velodyne_message);
+
+		printf("aqui\n");
+		fflush(stdout);
 	}
 }
 
@@ -1372,7 +1399,9 @@ read_parameters(int argc, char **argv,
 		{(char *) "ultrasonic_sensor_l1", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(ultrasonic_sensor_l1_g.orientation.pitch), 0, NULL},
 		{(char *) "ultrasonic_sensor_l1", (char *) "roll", 	CARMEN_PARAM_DOUBLE, &(ultrasonic_sensor_l1_g.orientation.roll), 0, NULL},
 
-		{(char *) "behavior_selector", (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL}
+		{(char *) "behavior_selector", 	  (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
+
+		{(char *) "frenet_path_planner",  (char *) "use_unity_simulator", CARMEN_PARAM_ONOFF, &use_unity_simulator, 0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -1503,7 +1532,8 @@ subscribe_to_ipc_messages()
 	carmen_mapper_subscribe_virtual_laser_message(NULL, (carmen_handler_t) carmen_mapper_virtual_laser_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	// draw moving objects
-//	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	if (use_unity_simulator)
+		carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

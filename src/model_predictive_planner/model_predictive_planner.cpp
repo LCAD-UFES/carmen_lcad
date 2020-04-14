@@ -15,7 +15,7 @@
 
 #include <carmen/collision_detection.h>
 
-#include "model/robot_state.h"
+#include "robot_state.h"
 #include "model/global_state.h"
 #include "util.h"
 
@@ -27,6 +27,9 @@ using namespace g2o;
 
 int print_to_debug = 0;
 int plot_to_debug = 0;
+
+extern int use_unity_simulator;
+
 
 //#define PLOT_COLLISION
 
@@ -323,6 +326,9 @@ add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerma
 
 	double distance_between_goals = 0.1;
 	int num_points = distance / distance_between_goals;
+	if (num_points == 0)
+		return;
+
 	if (num_points > 10) // Safeguard
 		num_points = 10;
 
@@ -765,6 +771,8 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 {
 	if (GlobalState::use_mpc)
 		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.025);
+	else if (use_unity_simulator)
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.02);
 	else
 		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false);
 	path_local = path;
@@ -787,7 +795,7 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 //		apply_system_latencies(path);
 //	else
 //		filter_path(path);
-	if (!GlobalState::use_mpc)
+	if (!GlobalState::use_mpc && !use_unity_simulator)
 		filter_path(path);
 
 	return (true);

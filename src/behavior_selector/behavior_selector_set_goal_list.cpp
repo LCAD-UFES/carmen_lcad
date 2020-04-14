@@ -6,7 +6,6 @@
  */
 
 #include <carmen/collision_detection.h>
-#include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/udatmo.h>
 #include <carmen/global_graphics.h>
 #include "behavior_selector.h"
@@ -48,7 +47,7 @@ double speed_around_annotation = 1.0;
 //int moving_object_in_front_detected = 0;
 
 #define MAX_VIRTUAL_LASER_SAMPLES 10000
-carmen_mapper_virtual_laser_message virtual_laser_message;
+extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 //SampleFilter filter;
 SampleFilter filter2;
@@ -298,19 +297,16 @@ clear_lane_ahead_in_distance_map(int current_goal_rddf_index, int ideal_rddf_pos
 }
 
 
-int
-behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double timestamp)
+carmen_ackerman_traj_point_t *
+set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, int &first_goal_type, carmen_rddf_road_profile_message *rddf, double timestamp)
 {
 	double distance_to_last_obstacle = 10000.0;
 	int last_obstacle_index = -1;
 
 	goal_list_size = 0;
 	udatmo_clear_detected();
-
-	if (rddf == NULL)
-		return (0);
-
 	udatmo_shift_history();
+
 	int goal_index = 0;
 	carmen_ackerman_traj_point_t current_goal = robot_pose;
 	int current_goal_rddf_index = 0;
@@ -506,7 +502,10 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 
 	goal_list_size = goal_index;
 
-	return (1);
+	first_goal = &(goal_list[0]);
+	first_goal_type = goal_type[0];
+
+	return (goal_list);
 }
 
 
@@ -530,24 +529,6 @@ behavior_selector_get_state(carmen_behavior_selector_state_t *current_state_out,
 	*following_lane_planner_out = following_lane_planner;
 	*parking_planner_out = parking_planner;
 	*current_goal_source_out = current_goal_source;
-}
-
-
-carmen_ackerman_traj_point_t *
-behavior_selector_get_goal_list(int *goal_list_size_out)
-{
-	*goal_list_size_out = goal_list_size;
-
-	carmen_ackerman_traj_point_t *goal_list_out = goal_list;
-
-	return (goal_list_out);
-}
-
-
-int *
-behavior_selector_get_goal_type()
-{
-	return (goal_type);
 }
 
 

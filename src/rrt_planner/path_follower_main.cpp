@@ -194,12 +194,11 @@ build_and_follow_path(carmen_point_t point, double pose_timestamp)
 	//printf("follower.build_and_send_refined_path() - %lf\n", carmen_get_time() - t0);
 	//fflush(stdout);
 
-	//printf("n %d\n", (int) follower.get_path().size());
-	if (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT)
-	{
-		publish_navigator_ackerman_plan_message(follower.get_path());
-		//publish_navigator_ackerman_status_message();
-	}
+//	if (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT)
+//	{
+//		publish_navigator_ackerman_plan_message(follower.get_path());
+////		publish_navigator_ackerman_status_message();
+//	}
 }
 
 
@@ -209,6 +208,7 @@ build_and_follow_path(carmen_point_t point, double pose_timestamp)
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+bool globalpos_message_received = false;
 
 static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
@@ -217,16 +217,21 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 		Follower::go();
 
 	build_and_follow_path(msg->globalpos, msg->timestamp);
+
+	globalpos_message_received = true;
 }
 
 
 static void
 simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
 {
-	GlobalState::last_odometry.v = msg->v;
-	GlobalState::last_odometry.phi = msg->phi;
+	if (!globalpos_message_received)
+	{
+		GlobalState::last_odometry.v = msg->v;
+		GlobalState::last_odometry.phi = msg->phi;
 
-	build_and_follow_path(msg->truepose, msg->timestamp);
+		build_and_follow_path(msg->truepose, msg->timestamp);
+	}
 }
 
 

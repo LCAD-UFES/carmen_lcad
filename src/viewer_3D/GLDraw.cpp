@@ -603,8 +603,8 @@ draw_number_associated(double x, double y, int associated, char *model_type)
 	glDisable(GL_LIGHTING);
 	glDisable(GL_DEPTH_TEST);
 
-	glColor3f(0.0, 1.0, 0.0);
-	glRasterPos3f(x, y, 2.5);
+	glColor3f(1.0, 0.3, 0.0);
+	glRasterPos3f(x - 1.0, y - 1.0, 2.5);
 
 	glPushMatrix();
 	for (i = 0; text[i] != '\0'; i++)
@@ -635,12 +635,12 @@ draw_linear_velocity(double x, double y, double linear_velocity, double height)
 	glDisable(GL_LIGHTING);
 	glDisable(GL_DEPTH_TEST);
 
-	glColor3f(1.0, 1.0, 1.0);
-	glRasterPos3f(x+0.5, y+0.5, height);
+	glColor3f(0.0, 0.5, 1.0);
+	glRasterPos3f(x + 0.5, y + 0.5, height);
 
 	glPushMatrix();
 	for (i = 0; text[i] != '\0'; i++)
-		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, text[i]);
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, text[i]);
 	glEnable(GL_DEPTH_TEST);
 	glPopMatrix();
 	glPopAttrib();
