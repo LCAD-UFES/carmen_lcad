@@ -328,8 +328,8 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		publish_map(globalpos_message->timestamp);
 		publish_virtual_scan(globalpos_message->timestamp);
 
-		printf("aqui2\n");
-		fflush(stdout);
+//		printf("aqui2\n");
+//		fflush(stdout);
 	}
 
 	if (update_and_merge_with_mapper_saved_maps && time_secs_between_map_save > 0.0 && mapper_save_map)
@@ -364,8 +364,8 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 		fake_velodyne_message.host = carmen_get_host();
 		mapper_velodyne_partial_scan(VELODYNE, &fake_velodyne_message);
 
-		printf("aqui\n");
-		fflush(stdout);
+//		printf("aqui\n");
+//		fflush(stdout);
 	}
 }
 
