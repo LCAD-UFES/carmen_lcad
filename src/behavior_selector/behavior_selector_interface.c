@@ -94,7 +94,7 @@ void carmen_behavior_selector_add_goal(carmen_point_t goal)
 				IPC_VARIABLE_LENGTH,
 				CARMEN_BEHAVIOR_SELECTOR_ADD_GOAL_FMT);
 		carmen_test_ipc_exit(err, "Could not define message",
-				CARMEN_BEHAVIOR_SELECTOR_SET_STATE_NAME);
+				CARMEN_BEHAVIOR_SELECTOR_ADD_GOAL_NAME);
 		initialized = 1;
 	}
 
@@ -119,7 +119,7 @@ void carmen_behavior_selector_clear_goal_list()
 				IPC_VARIABLE_LENGTH,
 				CARMEN_BEHAVIOR_SELECTOR_CLEAR_GOAL_LIST_FMT);
 		carmen_test_ipc_exit(err, "Could not define message",
-				CARMEN_BEHAVIOR_SELECTOR_SET_STATE_NAME);
+				CARMEN_BEHAVIOR_SELECTOR_CLEAR_GOAL_LIST_NAME);
 		initialized = 1;
 	}
 
@@ -143,7 +143,7 @@ void carmen_behavior_selector_remove_goal()
 				IPC_VARIABLE_LENGTH,
 				CARMEN_BEHAVIOR_SELECTOR_REMOVE_GOAL_FMT);
 		carmen_test_ipc_exit(err, "Could not define message",
-				CARMEN_BEHAVIOR_SELECTOR_SET_STATE_NAME);
+				CARMEN_BEHAVIOR_SELECTOR_REMOVE_GOAL_NAME);
 		initialized = 1;
 	}
 

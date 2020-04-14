@@ -8,7 +8,7 @@
 #include "pose.h"
 #include <math.h>
 #include "model/global_state.h"
-#include "model/rrt_node.h"
+#include "rrt_node.h"
 //#include "../rs.h"
 
 Pose::Pose()

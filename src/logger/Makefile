@@ -27,7 +27,7 @@ MODULE_COMMENT = Modules for logging, displaying, and playing back data.
 
 SOURCES = logger.c playback_interface.c playback.cpp \
 	  writelog.cpp readlog.cpp log_timestamp_repair.c \
-	  logger_interface.c #log_splitter.cpp
+	  logger_interface.c print_binary_log.cpp #log_splitter.cpp
 
 PUBLIC_INCLUDES = logger.h logger_messages.h playback_messages.h \
 		  playback_interface.h writelog.h readlog.h logger_interface.h
@@ -35,7 +35,7 @@ PUBLIC_LIBRARIES = libplayback_interface.a  libwritelog.a libreadlog.a liblogger
 PUBLIC_BINARIES = logger playback playback_control #log_splitter
 
 TARGETS = liblogger_interface.a  libwritelog.a libreadlog.a logger libplayback_interface.a  playback \
-	  log_timestamp_repair #log_splitter
+	  log_timestamp_repair print_binary_log #log_splitter
 
 ifndef NO_GRAPHICS
 SOURCES += playback_control.c
@@ -66,6 +66,8 @@ playback:		playback.o libreadlog.a playback_interface.o
 playback_control: 	playback_control.o playback_interface.o
 
 log_timestamp_repair: 	log_timestamp_repair.o
+
+print_binary_log: 	print_binary_log.o
 
 #log_splitter: log_splitter.o
 

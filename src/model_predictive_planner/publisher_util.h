@@ -13,7 +13,7 @@ using namespace std;
 #include <list>
 #include "rrt_planner_message.h"
 #include "model/tree.h"
-#include "model/rrt_node.h"
+#include "rrt_node.h"
 
 
 class Publisher_Util

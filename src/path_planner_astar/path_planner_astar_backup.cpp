@@ -1,8 +1,6 @@
 #include "path_planner_astar.h"
-#define CLOSEST_CIRCLE_MIN_DIST 1.5
-#define MIN_THETA_DIFF    0.0872665 // 5 0.0436332 // 2.5 // 0.261799 // 15 degrees
-#define MIN_STEERING_DIFF 0.0872665
-#define MIN_POS_DISTANCE  0.2 // the carmen grid map resolution
+#include "circle_heuristic.h"
+
 
 #define OPENCV 0
 #define THETA_SIZE 1
@@ -12,7 +10,7 @@
 carmen_mapper_virtual_laser_message virtual_laser_message;
 
 
-#define CIRCLE_HEURISTIC 0
+#define CIRCLE_HEURISTIC 1
 
 carmen_point_t *final_goal = NULL;
 carmen_localize_ackerman_globalpos_message *current_globalpos_msg = NULL;
@@ -25,39 +23,6 @@ using namespace cv;
 using namespace boost::heap;
 
 Mat map_image;
-
-// For circle heuristic
-
-#define MIN_OVERLAP_FACTOR 0.5	          // if two circles overlaps more than this factor then they are considered connected
-#define MAX_OVERLAP_FACTOR 0.1	          // if two circles overlaps more than this factor then they are considered the same
-#define RGOAL 3.5				          // ???
-#define DELTA_T 0.01                      // Size of step for the ackerman Euler method
-#define ALFA 1                	          // Weight of nearest circle radius for step_size
-#define BETA 1               	          // Weight of nearest circle path distance to goal for step_size
-#define MAX_STEP_SIZE 2.0		          // max step size in seconds
-#define KMIN 0.0125 			          // Step rate multiplier
-//#define MIN_THETA_DIFF 0.24		          // 15 degree from stehs_planner.h
-
-typedef struct circle_node
-{
-	double x;
-	double y;
-	double radius;
-	double g;                             // Distance from start to current state
-	double h;                             // Distance from current state to goal state
-	circle_node *parent;
-} circle_node;
-
-class CircleNodeComparator {
-public:
-	bool operator() (circle_node *a, circle_node *b)
-	{
-		float w1 = 1.0;
-		float w2 = 5.0;
-		return ((w1 * a->h - w2 * a->radius) > (w1 * b->h - w2 * b->radius)); // Uses radius as a choice criterion (the bigger the better)
-		//return (a->h > b->h);             // The default c++ stl is a max heap, so wee need to invert here
-	}
-};
 
 
 void
@@ -394,243 +359,6 @@ get_current_pos(state_node* current_state, carmen_obstacle_distance_mapper_map_m
 }
 
 
-circle_node*
-create_circle_node(double cx, double cy, double radius, double g, double h, circle_node *parent)
-{
-	circle_node *new_circle = (circle_node*) malloc(sizeof(circle_node));
-	new_circle->x = cx;
-	new_circle->y = cy;
-	new_circle->radius = radius;
-	new_circle->g = g;      // (distance) cost from start to current state
-	new_circle->h = h;       // the (distance) cost from current state to goal
-	new_circle->parent = parent;
-
-	return new_circle;
-}
-
-
-bool
-circle_overlap(circle_node *current, circle_node *circle, double overlap_factor)
-{
-	double distance;
-	double greater, smaller;
-
-	if (current->radius < circle->radius)
-	{
-		greater = current->radius;
-		smaller = circle->radius;
-	}
-	else
-	{
-		greater = circle->radius;
-		smaller = current->radius;
-	}
-
-	distance = sqrt(pow(current->x - circle->x, 2) + pow(current->y - circle->y, 2));
-
-	return ((distance - greater) < (smaller * overlap_factor));
-}
-
-
-bool
-circle_node_exist(circle_node *current, vector<circle_node*> &closed_set)
-{
-    vector<circle_node*>::iterator it = closed_set.begin();
-    vector<circle_node*>::iterator end = closed_set.end();
-
-    while (it != end)
-    {
-        //if (current->parent != (*it) && current->parent != (*it)->parent && current->circle.Overlap((*it)->circle, MAX_OVERLAP_FACTOR))
-    	if (current->parent != (*it) && current->parent != (*it)->parent && circle_overlap(current, *it, MAX_OVERLAP_FACTOR))
-            return true;
-
-        it++;
-    }
-
-    return false;
-}
-
-
-circle_node
-closest_circle_new(state_node *current_state, vector<circle_node> &circle_path)
-{
-	double min_dist = DBL_MAX;
-	double dist;
-	int indice = 0;
-
-	for (unsigned int i = 0; i < circle_path.size(); i++)
-	{
-	  dist = DIST2D(current_state->state, circle_path[i]);
-	  if (dist < min_dist)
-	  {
-	    min_dist = dist;
-	    indice = i;
-	  }
-	}
-
-	if (indice == 0)
-	  indice = 1;
-	return (circle_path[indice - 1]);
-}
-
-
-vector<circle_node>
-build_circle_path_new(circle_node *node, double initial_cost)
-{
-	vector<circle_node> circle_path;
-	int i = 0;
-	double cost = initial_cost;
-    while (node != NULL)
-    {
-		node->h = cost;
-		if (node->parent != NULL)
-			cost += DIST2D(*node, *(node->parent));
-			circle_path.push_back(*node);
-			node = node->parent;
-			i++;
-    }
-    return(circle_path);
-}
-
-double
-distance(double ax, double ay, double bx, double by)
-{
-    double dx = ax - bx;
-    double dy = ay - by;
-    return sqrt(dx * dx + dy * dy);
-}
-
-void
-draw_circle_path(vector<circle_node> circle_path, carmen_map_config_t config)
-{
-	for (unsigned int i = 0; i < circle_path.size(); i++)
-	{
-		draw_circle_on_map_img(circle_path[i].x, circle_path[i].y, circle_path[i].radius, config);
-	}
-
-}
-
-void
-expand_circle(circle_node *current, priority_queue<circle_node*, vector<circle_node*>, CircleNodeComparator> &open_set, carmen_point_t goal, double robot_width,
-		carmen_obstacle_distance_mapper_map_message *distance_map)
-{
-	// Considering a 2m radius parent circle that involves the car we want 32 children circles
-    unsigned int children_amount = /*16;*/(unsigned int) (16.0 * current->radius);
-
-    double displacement_angle = 2.0 * M_PI / (double) children_amount;
-    double cos_displacement_angle = cos(displacement_angle);
-    double sin_displacement_angle = sin(displacement_angle);
-    double t;
-
-    double px = current->x;
-    double py = current->y;
-    double pr = current->radius;
-    double pg = current->g;
-
-    double x = pr;
-    double y = 0.0;
-
-    for (unsigned int i = 0; i < children_amount; i++)
-    {
-        double nx = x + px;
-        double ny = y + py;
-
-        double nearst_obstacle_distance = obstacle_distance(nx, ny, distance_map);
-
-        if (nearst_obstacle_distance > robot_width * 0.5)		// TODO this should be a defined parameter
-        {
-            // TODO verificar se é possível remover filhos com overlap
-            open_set.push(create_circle_node(nx, ny, nearst_obstacle_distance, pg + pr, distance(nx, ny, goal.x, goal.y), current));
-
-            //draw_circle_on_map_img(nx, ny, nearst_obstacle_distance, distance_map->config);
-            //draw_point_on_map_img(nx, ny, distance_map->config);
-        }
-
-        // Apply the rotation matrix
-        t = x;
-        x = cos_displacement_angle * x - sin_displacement_angle * y;
-        y = sin_displacement_angle * t + cos_displacement_angle * y;
-    }
-}
-
-
-vector<circle_node>
-space_exploration(circle_node *start_node, circle_node *goal_node, carmen_point_t goal, double robot_width, carmen_obstacle_distance_mapper_map_message *distance_map)
-{
-	vector<circle_node> temp_circle_path;
-    priority_queue<circle_node*, vector<circle_node*>, CircleNodeComparator> open_set;
-    vector<circle_node*> closed_set;
-    open_set.push(start_node); // Added
-
-    while (!open_set.empty())
-    {
-    	circle_node *current = open_set.top();                   // Get the circle witch is the closest to the goal node
-        open_set.pop();
-
-        if (goal_node->g < (current->g + current->h))
-        {
-	    double initial_cost = DIST2D(*goal_node, *(goal_node->parent));
-            temp_circle_path = build_circle_path_new(goal_node->parent, initial_cost);
-
-            while(!open_set.empty())
-            {
-            	circle_node *tmp = open_set.top();
-                open_set.pop();
-                delete tmp;
-            }
-            break;
-        }
-        else if (!circle_node_exist(current, closed_set))
-        {
-        	expand_circle(current, open_set, goal, robot_width, distance_map);
-
-            if (circle_overlap(current, goal_node, MIN_OVERLAP_FACTOR))
-            {
-                if ((current->g + current->h) < goal_node->g)
-                {
-                    goal_node->g = (current->g + current->h);
-                    goal_node->parent = current;
-                }
-            }
-            closed_set.push_back(current);
-        }
-        else
-            delete current;
-    }
-    while(!closed_set.empty())                // Only to clean the closed_set
-    {
-    	circle_node *tmp = closed_set.back();
-        closed_set.pop_back();
-        delete tmp;
-    }
-    return (temp_circle_path);
-}
-
-
-vector<circle_node>
-circle_exploration(carmen_point_t *robot_pose, carmen_point_t *goal, carmen_obstacle_distance_mapper_map_message *distance_map)
-{
-	circle_node *start_circle, *goal_circle;
-	vector<circle_node> circle_path;
-
-	start_circle = create_circle_node(robot_pose->x, robot_pose->y, obstacle_distance(robot_pose->x, robot_pose->y, distance_map), 0.0,
-			DIST2D_P(robot_pose, goal), NULL);
-
-	goal_circle = create_circle_node(goal->x, goal->y, obstacle_distance(goal->x, goal->y, distance_map), DBL_MAX, 0.0, NULL);
-
-	circle_path = space_exploration(start_circle, goal_circle, *goal, 4.0, distance_map);     // TODO Read car width from carmen.ini investigate how to avoid passing the goal as parameter
-
-	circle_path.insert(circle_path.begin(), *goal_circle);
-
-	if (OPENCV)
-		draw_circle_path(circle_path, distance_map->config);
-
-	// TODO Checar se precisa atualizar os custos g e h do circle path
-
-	return (circle_path);
-}
-
-
 void
 expand_state(state_node *current_state, state_node *goal_state, fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> &heap_open_list,
 		carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map, vector<circle_node> circle_path)
@@ -714,7 +442,7 @@ expand_state(state_node *current_state, state_node *goal_state, fibonacci_heap<s
                 		new_state->h = DIST2D(new_state->state, goal_state->state);
                 	else
                 	{
-                		circle_node current_circle = closest_circle_new(new_state, circle_path);
+                		circle_node current_circle = closest_circle_new(new_state->state, circle_path);
                 		new_state->h = DIST2D(new_state->state, current_circle) + current_circle.h;
                 	}
                 	new_state->f = new_state->g + new_state->h;
@@ -788,7 +516,7 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 
 	vector<circle_node> circle_path;
 	if (CIRCLE_HEURISTIC)
-		circle_path = circle_exploration(robot_pose, goal_pose, distance_map);
+		circle_path = circle_exploration(robot_pose, goal_pose, distance_map, &map_image, OPENCV);
 
 	// while OPEN is not empty -- Adaptado
 	while (!heap_open_list.empty())

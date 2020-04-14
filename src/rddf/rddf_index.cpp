@@ -8,6 +8,7 @@
 #include <carmen/readlog.h>
 #include <carmen/rddf_messages.h>
 #include "rddf_index.h"
+#include "rddf_util.h"
 
 /*
  * ****************************************
@@ -927,7 +928,7 @@ fill_in_waypoints_array(long timestamp_index_position, carmen_ackerman_traj_poin
 	poses_ahead[num_poses_aquired] = last_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 	annotations[num_poses_aquired] = index_element.anottation;
 	num_poses_aquired++;
-	i = 0;
+	i = 1;
 	while ((num_poses_aquired < num_poses_desired) && ((timestamp_index_position + i) < carmen_index_ordered_by_timestamp.size()))
 	{
 		index_element = carmen_index_ordered_by_timestamp[timestamp_index_position + i];
@@ -964,7 +965,7 @@ fill_in_backward_waypoints_array(long timestamp_index_position, carmen_ackerman_
 	index_element = carmen_index_ordered_by_timestamp[timestamp_index_position];
 	poses_back[num_poses_aquired] = last_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 	num_poses_aquired++;
-	i = 0;
+	i = 1;
 
 	while ((num_poses_aquired < num_poses_desired) && ((timestamp_index_position - i) >= 0))
 	{
@@ -1035,16 +1036,14 @@ get_more_more_poses_from_begining(int num_poses_desired, carmen_ackerman_traj_po
 		index_element = carmen_index_ordered_by_timestamp[i];
 		current_pose = create_ackerman_traj_point_struct (index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 
-		//dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
-
-		//if (dist > 1.0) // get waypoints 1 meter apart // @@@ Alberto: este parametro devia estar no carmen ini
-		//{
+		if (carmen_rddf_play_annotation_is_forward(last_pose, current_pose)) // Esta funcao foi feita para anotacoes mas funciona com quaisquer dois pontos
+		{
 			last_pose = current_pose;
 			poses_ahead[num_poses_acquired_before_end_of_index + num_poses_aquired] = current_pose;
 			annotations[num_poses_acquired_before_end_of_index + num_poses_aquired] = index_element.anottation;
 
 			num_poses_aquired++;
-		//}
+		}
 
 		i++;
 	}

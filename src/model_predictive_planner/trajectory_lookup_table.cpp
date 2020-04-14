@@ -16,6 +16,7 @@
 #include "trajectory_lookup_table.h"
 #include "model_predictive_planner_optimizer.h"
 
+extern int use_unity_simulator;
 //TODO
 //#define DEBUG_LANE
 
@@ -826,7 +827,11 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 	double t, last_t;
 	double distance_traveled = 0.0;
 	//double delta_t = 0.075;
-	int reduction_factor = 1 + (int)((tcp.tt / delta_t) / 90.0);
+	int reduction_factor;
+	if (use_unity_simulator)
+		reduction_factor = 1;
+	else
+		reduction_factor = 1 + (int)((tcp.tt / delta_t) / 90.0);
 
 	robot_state.x = 0.0;
 	robot_state.y = 0.0;

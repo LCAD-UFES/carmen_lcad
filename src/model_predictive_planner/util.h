@@ -9,9 +9,9 @@
 #define UTIL_H_
 
 #include <carmen/carmen.h>
-#include "model/rrt_node.h"
-#include "model/command.h"
-#include "model/pose.h"
+#include "rrt_node.h"
+#include "command.h"
+#include "pose.h"
 
 
 class Util

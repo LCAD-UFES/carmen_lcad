@@ -170,6 +170,9 @@ TrajectoryLookupTable::TrajectoryControlParameters search_lookup_table(Trajector
 vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
 		bool display_phi_profile, double delta_t = 0.15);
+//vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
+//		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
+//		bool display_phi_profile, double delta_t = 0.1);
 
 bool path_has_loop(double dist, double sf);
 void move_path_to_current_robot_pose(vector<carmen_ackerman_path_point_t> &path, Pose *localizer_pose);
