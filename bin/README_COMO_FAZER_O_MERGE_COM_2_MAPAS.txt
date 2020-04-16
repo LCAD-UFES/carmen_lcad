@@ -4,8 +4,12 @@ produzido com o log, vai ser um merge do mapa antigo com o mapa gerado pelo mapp
 sendo que o mapper vai usar a pose do localizer, que localizara usando o mapa velho e sua versao 
 atualizada a partir do log (merge). A versao atualizada eh salva a cada troca de mapas.
 
+Se quer gerar um mapa novo a partir de 2 logs, existem outras formas como ex:
+  README_COMO_FAZER_MERGE_DE_MAPAS_USANDO_O_HYPERGRAPHSCLAM.txt
+
 1- Mude os parametros do carmen-ford-escape.ini para construção de mapas
  - Para isso, descomente essas linhas e comente as equivalentes que ficam acima no arquivo.
+o parametro #mapper_use_remission_threshold deve ser off no caso que se deseja sobreescrever as informações do mapa anterior
 
 ## Use the parameters below for building maps
 #mapper_update_and_merge_with_snapshot_map	off
@@ -19,6 +23,8 @@ atualizada a partir do log (merge). A versao atualizada eh salva a cada troca de
 #mapper_create_map_sum_and_count		off
 #mapper_use_remission				on
 #mapper_laser_ldmrs 				off
+#mapper_use_remission_threshold			off
+
 
 
 2- Altere o caminho do mapa no process-volta_da_ufes_playback_viewer_3D.ini
