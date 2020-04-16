@@ -361,23 +361,6 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 
 		double distance_to_goal = carmen_distance_ackerman_traj(current_robot_pose_v_and_phi, goal);
 
-		if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) && 	// Reduz o criterio dos obstaculos moveis se for barreira
-			(distance_to_annotation < 35.0))
-//			((distance_to_annotation - distance_to_goal) < get_robot_config()->distance_between_front_and_rear_axles))
-		{
-			get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance *= 0.3;	// Padrao da Ida a Guarapari
-			get_robot_config()->model_predictive_planner_obstacles_safe_distance *= 0.3;		// Padrao da Ida a Guarapari
-			udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance);
-			udatmo_set_model_predictive_planner_obstacles_safe_distance(get_robot_config()->model_predictive_planner_obstacles_safe_distance);
-		}
-		else
-		{
-			get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance = original_behaviour_selector_central_lane_obstacles_safe_distance;
-			get_robot_config()->model_predictive_planner_obstacles_safe_distance = original_model_predictive_planner_obstacles_safe_distance;
-			udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(original_behaviour_selector_central_lane_obstacles_safe_distance);
-			udatmo_set_model_predictive_planner_obstacles_safe_distance(original_model_predictive_planner_obstacles_safe_distance);
-		}
-
 		if (last_rddf_annotation_message_valid &&
 			(clearing_annotation ||
 			 (((distance_to_annotation < distance_to_act_on_annotation) ||
@@ -414,13 +397,6 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, in
 //				distance_to_goal, velocity_at_next_annotation, carmen_get_time());
 //		fflush(caco);
 //		fclose(caco);
-	}
-	else
-	{
-		get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance = original_behaviour_selector_central_lane_obstacles_safe_distance;
-		get_robot_config()->model_predictive_planner_obstacles_safe_distance = original_model_predictive_planner_obstacles_safe_distance;
-		udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(original_behaviour_selector_central_lane_obstacles_safe_distance);
-		udatmo_set_model_predictive_planner_obstacles_safe_distance(original_model_predictive_planner_obstacles_safe_distance);
 	}
 
 	return (goal->v);
