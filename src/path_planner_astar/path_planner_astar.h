@@ -36,6 +36,7 @@ typedef struct state_node
 //	double f;                              // Total distance g + h
 	double g;                                // Distance from start to current state
 	double heuristic_g;
+	int heuristic_closed;
 	double h;                                // Distance from current state to goal
 //	double angular_distance_to_goal;
 	int is_open;
