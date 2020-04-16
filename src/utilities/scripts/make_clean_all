@@ -1,3 +1,5 @@
+#!/bin/bash
+
 make_clean_module()
 {
 	cd $CARMEN_HOME/src/$1
@@ -11,8 +13,8 @@ MODULES=". ../sharedlib
 
 ERRORS=
 
-rm $CARMEN_HOME/lib/* 
-rm $CARMEN_HOME/include/carmen/* 
+#rm $CARMEN_HOME/lib/* 
+#rm $CARMEN_HOME/include/carmen/* 
 
 for mod in $MODULES
 do

@@ -33,10 +33,11 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 typedef struct state_node
 {
 	carmen_ackerman_traj_point_t state;
-	double f;                              // Total distance g + h
+//	double f;                              // Total distance g + h
 	double g;                                // Distance from start to current state
+	double heuristic_g;
 	double h;                                // Distance from current state to goal
-	double angular_distance_to_goal;
+//	double angular_distance_to_goal;
 	int is_open;
 	int is_closed;
 	int is_obstacle;
@@ -56,7 +57,7 @@ class StateNodePtrComparator {
 public:
 	bool operator() (state_node *a, state_node *b) const
 	{
-		return (a->f > b->f);
+		return (a->h + a->g > b->h + b->g);
 	}
 };
 

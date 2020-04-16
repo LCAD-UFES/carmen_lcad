@@ -42,7 +42,7 @@ global ckpt_path
 global driver
 
 model_name = 'efficientdet-d0'
-ckpt_path = 'efficientdet-d0'
+ckpt_path = carmen_home + '/sharedlib/efficientdet/efficientdet-d0'
 
 test_dir = carmen_home + "/sharedlib/efficientdet/testdata"
 image_size = None
