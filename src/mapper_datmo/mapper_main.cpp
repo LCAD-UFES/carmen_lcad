@@ -1112,6 +1112,61 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 	}
 }
 
+vector<bbox_t>
+filter_predictions_of_interest_efficientDet(vector<bbox_t> &predictions)
+{
+	vector<bbox_t> filtered_predictions;
+
+	for (unsigned int i = 0; i < predictions.size(); i++)
+	{
+		if (predictions[i].obj_id > 0 && predictions[i].obj_id <= 9)    
+		{
+			filtered_predictions.push_back(predictions[i]);
+		}
+	}
+	return (filtered_predictions);
+}
+
+void
+show_detections_efficientDet(cv::Mat image, vector<bbox_t> predictions)
+{
+    for (unsigned int i = 0; i < predictions.size(); i++)
+    {
+    	int color_mapped = 0;
+    	switch (predictions[i].obj_id)
+    	{
+    	case 1: //person
+    		color_mapped = 6;
+    		break;
+    	case 2: //bicycle
+    		color_mapped = 2;
+    		break;
+    	case 3: //car
+    		color_mapped = 1;
+    		break;
+    	case 4: //motorbike
+    		color_mapped = 3;
+    		break;
+        case 5: //airplane
+    		color_mapped = 5;
+    		break;
+    	case 6: //bus
+    		color_mapped = 5;
+    		break;
+    	case 7: //train
+    		color_mapped = 5;
+    		break;
+    	case 8: //truck
+    		color_mapped = 4;
+    		break;
+        case 9: //boat
+    		color_mapped = 5;
+    		break;
+    	}
+    	cv::rectangle(image, cv::Point(predictions[i].x, predictions[i].y), cv::Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
+    			colormap_semantic[color_mapped], 2);
+    }
+}
 
 void
 filter_sensor_data_using_efficientdet(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
@@ -1261,8 +1316,8 @@ filter_sensor_data_using_efficientdet(sensor_parameters_t *sensor_params, sensor
 		vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.5, 5, points);
 		//Transform image in opencv to EfficientDet
 		vector<bbox_t> predictions = run_EfficientDet(open_cv_image.data, open_cv_image.cols, open_cv_image.rows);
-		predictions = filter_predictions_of_interest(predictions);
-		show_detections(open_cv_image, predictions);
+		predictions = filter_predictions_of_interest_efficientDet(predictions);
+		show_detections_efficientDet(open_cv_image, predictions);
 
 		for (unsigned int i = 0; i < filtered_points.size(); i++)
 		{
@@ -1278,25 +1333,31 @@ filter_sensor_data_using_efficientdet(sensor_parameters_t *sensor_params, sensor
 					{
 						switch (predictions[k].obj_id)
 						{
-						case 0: //person
+						case 1: //person
 							contPerson++;
 							break;
-						case 1: //bicycle
+						case 2: //bicycle
 							contBycicle++;
 							break;
-						case 2: //car
+						case 3: //car
 							contCar++;
 							break;
-						case 3: //motorbike
+						case 4: //motorbike
 							contBycicle++;
 							break;
-						case 5: //bus
+						case 5: //airplane
 							contCar++;
 							break;
-						case 6: //train
+						case 6: //bus
+							contCar++;
+							break;
+						case 7: //train
 							contTrain++;
 							break;
-						case 7: //truck
+						case 8: //truck
+							contCar++;
+							break;
+						case 9: //boat
 							contCar++;
 							break;
 						}
