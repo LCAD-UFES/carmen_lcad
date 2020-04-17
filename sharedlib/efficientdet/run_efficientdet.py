@@ -53,7 +53,7 @@ def initialize():
     global ckpt_path
     global driver
     tf.reset_default_graph()
-    #tf.compat.v1.disable_eager_execution()
+    tf.compat.v1.disable_eager_execution()
     driver = inference.ServingDriver(model_name, ckpt_path)
     driver.build()
     print("\n\n-------------------------------------------------------")
