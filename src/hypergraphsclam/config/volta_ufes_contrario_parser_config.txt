@@ -1,0 +1,84 @@
+-- how many velodyne scans, 0 means no limit - Por exemplo se voce não quiser usar o log todo e fazer mapa só de um trecho.
+MAXIMUM_VEL_SCANS 0
+
+-- how many seconds to consider a loop closure - Tempo para considerar que duas nuvens fecham loop
+LOOP_REQUIRED_TIME 400.0
+
+-- how many meters to consider a loop closure - Distancia para considerar que duas nuvens fecham loop
+LOOP_REQUIRED_DISTANCE 2.0
+
+-- uncomment this line if you want to consider only loop closures with same direction (both car poses should points to same direction)
+-- the angle distance must be less than PI/2
+USE_RESTRICTED_LOOPS
+
+-- how many threads the ICP (Interative Closest Point) method can use (typically the number of cores of your machine)
+ICP_THREADS_POOL_SIZE 6
+
+-- each thread will take 400 clouds and execute the sensor movement estimates - Pior caso é usar 1 pois vai ser demorado pacas De 200 em diante é legal vai mais rapido muito grande tbm estraga
+ICP_THREAD_BLOCK_SIZE 300
+
+-- the distace parameter to find the next point cloud - Basicamente pula nuvens para diminuir ruido entre leituras, por exemplo carro parado(tem um tratamento mais completo no código para o caso de carro parado)
+--Tirado de um paper
+LIDAR_ODOMETRY_MIN_DISTANCE 0.3
+
+-- the distace parameter to find the next image - mesmo do de cima mas para camera
+VISUAL_ODOMETRY_MIN_DISTANCE 0.1
+
+-- Teoricamente nao vai fazer muita diferenca em nossos casos
+ICP_TRANSLATION_CONFIDENCE_FACTOR 1.00
+
+-- Nao Lembro
+CURVATURE_REQUIRED_TIME 0.0001
+
+-- velocidade mínima para considerar as mensagens (m/s)
+MIN_SPEED 0.01
+
+-- vehicle model parameters
+DISTANCE_BETWEEN_AXLES 2.625
+MAX_STEERING_ANGLE 0.5337
+UNDERSTEER 0.0015
+KMAX 0.17857142857
+
+-- Se quiser mais rapido, pode rodar o odometry calibration. porem nao parece ser muito necessario.
+-- Initial odometry bias guess, the default values are: v_mult = 1.0, phi_mult = 1.0 and phi_add = 0.0
+-- You can pick this values from a previous calibration result
+
+-- hypergraph
+-- ODOMETRY_BIAS 0.9964701718 1.0049704837 0.0005912553
+
+-- PSO
+ODOMETRY_BIAS 0.992868 0.921429 0.000499
+
+-- Hack, in order to plot the calibrated odometry we copy this value from the optimized poses
+INITIAL_GUESS_POSE 7757735.910306 -363553.537188 -2.488835
+-- INITIAL_GUESS_POSE 0.0 0.0 -2.548334
+-- INITIAL_GUESS_POSE 0.0 0.0 -2.491278
+-- INITIAL_GUESS_POSE 7757736.670473 -363552.884147 -2.491278
+
+-- Descomente os argumentos abaixo para desabilitar a construcao das respectivas arestas
+DISABLE_VELODYNE_ODOMETRY
+DISABLE_VELODYNE_LOOP
+DISABLE_SICK_ODOMETRY
+DISABLE_SICK_LOOP
+DISABLE_BUMBLEBEE_ODOMETRY
+DISABLE_BUMBLEBEE_LOOP
+
+-- So para visualizacao
+-- Save the accumulated point clouds, uncomment the line below in order to save the accumulated clouds
+-- Make sure you have enough space available in your hard drive (3x the log size)
+-- SAVE_ACCUMULATED_POINT_CLOUDS
+
+-- comment if you don't want to save the point clouds in the loop closures
+-- SAVE_LOOP_CLOSURE_POINT_CLOUDS
+
+-- indica quais gps a utilizar, um por um
+-- no caso abaixo, vamos usar o 0 e o 1
+-- o primeiro inteiro é o identificador e o segundo valor (double) é o delay do gps
+-- GPS_IDENTIFIER 0 0.0
+-- GPS_IDENTIFIER 1 0.150681
+GPS_IDENTIFIER 1 0.0
+
+-- USE THE FAKE GPS
+USE_FAKE_GPS
+
+-- USE_GPS_ORIENTATION

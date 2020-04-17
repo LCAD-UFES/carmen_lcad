@@ -297,6 +297,172 @@ clear_lane_ahead_in_distance_map(int current_goal_rddf_index, int ideal_rddf_pos
 }
 
 
+int
+behavior_selector_set_state(carmen_behavior_selector_state_t state)
+{
+	if (state == current_state)
+		return (0);
+
+	current_state = state;
+
+	return (1);
+}
+
+
+void
+behavior_selector_get_state(carmen_behavior_selector_state_t *current_state_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
+		carmen_behavior_selector_algorithm_t *parking_planner_out, carmen_behavior_selector_goal_source_t *current_goal_source_out)
+{
+	*current_state_out = current_state;
+	*following_lane_planner_out = following_lane_planner;
+	*parking_planner_out = parking_planner;
+	*current_goal_source_out = current_goal_source;
+}
+
+
+int
+behavior_selector_set_goal_source(carmen_behavior_selector_goal_source_t goal_source)
+{
+	if (current_goal_source == goal_source)
+		return (0);
+
+	current_goal_source = goal_source;
+
+	goal_list_size = 0;
+
+	return (1);
+}
+
+
+void
+behavior_selector_add_goal(carmen_point_t goal)
+{
+	goal_list[goal_list_size].x = goal.x;
+	goal_list[goal_list_size].y = goal.y;
+	goal_list[goal_list_size].theta = goal.theta;
+	goal_list_size++;
+}
+
+
+void
+behavior_selector_clear_goal_list()
+{
+	goal_list_size = 0;
+}
+
+
+void
+behavior_selector_remove_goal()
+{
+	goal_list_size--;
+	if (goal_list_size < 0)
+		goal_list_size = 0;
+}
+
+
+void
+behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_state_t state)
+{
+	switch(state)
+	{
+	case BEHAVIOR_SELECTOR_FOLLOWING_LANE:
+		following_lane_planner = algorithm;
+		break;
+
+	case BEHAVIOR_SELECTOR_PARKING:
+		parking_planner = algorithm;
+		break;
+	default:
+		following_lane_planner = algorithm;
+		break;
+	}
+}
+
+
+void
+behavior_selector_update_robot_pose(carmen_ackerman_traj_point_t pose)
+{
+	if (carmen_distance_ackerman_traj(&robot_pose, &pose) > 2.5 && current_goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+		goal_list_size = 0; //provavelmente o robo foi reposicionado
+
+	robot_pose = pose;
+	robot_initialized = 1;
+}
+
+
+carmen_ackerman_traj_point_t
+get_robot_pose()
+{
+	return (robot_pose);
+}
+
+
+double
+get_max_v()
+{
+	return (robot_config.max_v);
+}
+
+
+void
+set_max_v(double v)
+{
+	robot_config.max_v = v;
+}
+
+
+carmen_robot_ackerman_config_t *
+get_robot_config()
+{
+	return (&robot_config);
+}
+
+
+void
+behavior_selector_update_map(carmen_obstacle_distance_mapper_map_message *map)
+{
+	current_map = map;
+}
+
+
+void
+change_distance_between_waypoints_and_goals(double dist_between_waypoints, double change_goal_dist)
+{
+	distance_between_waypoints = dist_between_waypoints;
+	change_goal_distance = change_goal_dist;
+}
+
+
+double
+distance_between_waypoints_and_goals()
+{
+	return (distance_between_waypoints);
+}
+
+
+void
+behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_between_waypoints, double change_goal_dist,
+		carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner)
+{
+	udatmo_init(config);
+
+	robot_config = config;
+	distance_between_waypoints = dist_between_waypoints;
+	change_goal_distance = change_goal_dist;
+	parking_planner = p_planner;
+	following_lane_planner = f_planner;
+	//memset(moving_object, 0, sizeof(MOVING_OBJECT) * MOVING_OBJECT_HISTORY_SIZE);
+
+	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
+	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
+	virtual_laser_message.colors = (char *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(char));
+	virtual_laser_message.host = carmen_get_host();
+
+	//SampleFilter_init(&filter);
+	SampleFilter_init(&filter2);
+}
+
+
 carmen_ackerman_traj_point_t *
 set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, int &first_goal_type, carmen_rddf_road_profile_message *rddf, double timestamp)
 {
@@ -506,170 +672,4 @@ set_goal_list(int &goal_list_size, carmen_ackerman_traj_point_t *&first_goal, in
 	first_goal_type = goal_type[0];
 
 	return (goal_list);
-}
-
-
-int
-behavior_selector_set_state(carmen_behavior_selector_state_t state)
-{
-	if (state == current_state)
-		return (0);
-
-	current_state = state;
-
-	return (1);
-}
-
-
-void
-behavior_selector_get_state(carmen_behavior_selector_state_t *current_state_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
-		carmen_behavior_selector_algorithm_t *parking_planner_out, carmen_behavior_selector_goal_source_t *current_goal_source_out)
-{
-	*current_state_out = current_state;
-	*following_lane_planner_out = following_lane_planner;
-	*parking_planner_out = parking_planner;
-	*current_goal_source_out = current_goal_source;
-}
-
-
-int
-behavior_selector_set_goal_source(carmen_behavior_selector_goal_source_t goal_source)
-{
-	if (current_goal_source == goal_source)
-		return (0);
-
-	current_goal_source = goal_source;
-
-	goal_list_size = 0;
-
-	return (1);
-}
-
-
-void
-behavior_selector_add_goal(carmen_point_t goal)
-{
-	goal_list[goal_list_size].x = goal.x;
-	goal_list[goal_list_size].y = goal.y;
-	goal_list[goal_list_size].theta = goal.theta;
-	goal_list_size++;
-}
-
-
-void
-behavior_selector_clear_goal_list()
-{
-	goal_list_size = 0;
-}
-
-
-void
-behavior_selector_remove_goal()
-{
-	goal_list_size--;
-	if (goal_list_size < 0)
-		goal_list_size = 0;
-}
-
-
-void
-behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_state_t state)
-{
-	switch(state)
-	{
-	case BEHAVIOR_SELECTOR_FOLLOWING_LANE:
-		following_lane_planner = algorithm;
-		break;
-
-	case BEHAVIOR_SELECTOR_PARKING:
-		parking_planner = algorithm;
-		break;
-	default:
-		following_lane_planner = algorithm;
-		break;
-	}
-}
-
-
-void
-behavior_selector_update_robot_pose(carmen_ackerman_traj_point_t pose)
-{
-	if (carmen_distance_ackerman_traj(&robot_pose, &pose) > 2.5 && current_goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-		goal_list_size = 0; //provavelmente o robo foi reposicionado
-
-	robot_pose = pose;
-	robot_initialized = 1;
-}
-
-
-carmen_ackerman_traj_point_t
-get_robot_pose()
-{
-	return (robot_pose);
-}
-
-
-double
-get_max_v()
-{
-	return (robot_config.max_v);
-}
-
-
-void
-set_max_v(double v)
-{
-	robot_config.max_v = v;
-}
-
-
-carmen_robot_ackerman_config_t *
-get_robot_config()
-{
-	return (&robot_config);
-}
-
-
-void
-behavior_selector_update_map(carmen_obstacle_distance_mapper_map_message *map)
-{
-	current_map = map;
-}
-
-
-void
-change_distance_between_waypoints_and_goals(double dist_between_waypoints, double change_goal_dist)
-{
-	distance_between_waypoints = dist_between_waypoints;
-	change_goal_distance = change_goal_dist;
-}
-
-
-double
-distance_between_waypoints_and_goals()
-{
-	return (distance_between_waypoints);
-}
-
-
-void
-behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_between_waypoints, double change_goal_dist,
-		carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner)
-{
-	udatmo_init(config);
-
-	robot_config = config;
-	distance_between_waypoints = dist_between_waypoints;
-	change_goal_distance = change_goal_dist;
-	parking_planner = p_planner;
-	following_lane_planner = f_planner;
-	//memset(moving_object, 0, sizeof(MOVING_OBJECT) * MOVING_OBJECT_HISTORY_SIZE);
-
-	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
-	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
-	virtual_laser_message.colors = (char *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(char));
-	virtual_laser_message.host = carmen_get_host();
-
-	//SampleFilter_init(&filter);
-	SampleFilter_init(&filter2);
 }

@@ -26,11 +26,16 @@ void mapper_set_robot_pose_into_the_map(carmen_localize_ackerman_globalpos_messa
 void mapper_update_grid_map(carmen_point_t xt, double *zt, sensor_parameters_t *sensor_params);
 void mapper_save_current_map();
 void mapper_periodically_save_current_map(double timestamp);
-void mapper_initialize(carmen_map_config_t *map_config, carmen_robot_ackerman_config_t main_car_config);
-void mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin);
+void mapper_initialize(carmen_map_config_t *map_config, carmen_robot_ackerman_config_t main_car_config, bool use_remission_threshold);
+void mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin, bool save_map);
+void mapper_change_map_origin_to_another_map_block_with_clones(carmen_position_t *map_origin, bool save_map);
+int run_mapper_with_remision_threshold(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global, double remission_threshold);
 int run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global);
 void map_decay_to_offline_map(carmen_map_t *current_map);
 carmen_map_t *get_the_map();
+
+void set_remission_threshold();
+double get_remission_threshold();
 
 
 #endif /* MAPPER_H_ */

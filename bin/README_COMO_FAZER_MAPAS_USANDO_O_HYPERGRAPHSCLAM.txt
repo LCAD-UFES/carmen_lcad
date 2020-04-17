@@ -1,1 +1,1 @@
-../src/hypergraphsclam/README.txt
+../src/hypergraphsclam/README.md

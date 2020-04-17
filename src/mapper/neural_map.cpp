@@ -1,4 +1,4 @@
-/*
+	/*
  * neural_map.cpp
  *
  *  Created on: Nov 29, 2018
@@ -336,7 +336,8 @@ Neural_map_queue::convert_predicted_to_log_ods_snapshot_map(carmen_map_t* log_od
 
 //	printf("size Dx Dy: %d %d \n", x_size, y_size);
 
-	int center = log_ods_snapshot->config.x_size/2;
+	// WARNING unused variable
+	// int center = log_ods_snapshot->config.x_size/2;
 	int velodyne_max_range = this->output_map.neural_mapper_max_dist;
 	double map_resolution = this->output_map.resolution;
 	int radius = (velodyne_max_range/map_resolution);
@@ -368,7 +369,9 @@ Neural_map_queue::convert_predicted_to_log_ods_snapshot_map(carmen_map_t* log_od
 				int l = abs(round(i + (dx - radius)));
 				int m = abs(round(j + (dy - radius)));
 
-				double angle_point = carmen_normalize_theta(atan2(m - dy, l - dx) - car_position->orientation.yaw);
+				// WARNING UNUSED VARIABLE, remove or comment it
+				// double angle_point = carmen_normalize_theta(atan2(m - dy, l - dx) - car_position->orientation.yaw);
+
 				if(m < 1050 && m >= 0 && l < 1050 && l >= 0 )//&& fabs(angle_point) < M_PI_2)
 				{
 					//				printf("L M: %d %d \n", l, m);

@@ -8,6 +8,6 @@ MODULE_COMMENT =
 IFLAGS += -I$(CARMEN_HOME)/src/hypergraphsclam/Helpers/ -I$(CARMEN_HOME)/src/hypergraphsclam/Messages/
 
 #cheating
-IFLAGS += -std=c++11 -O2
+IFLAGS += -std=c++11 -O3
 
 include ../../Makefile.rules

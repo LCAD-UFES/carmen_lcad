@@ -4,11 +4,13 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <set>
 
 #include <g2o/types/slam2d/se2.h>
 #include <g2o/types/slam2d/vertex_se2.h>
 #include <g2o/types/slam2d/edge_se2.h>
 #include <g2o/types/slam2d/types_slam2d.h>
+#include <g2o/core/eigen_types.h>
 
 #include <pcl/registration/gicp.h>
 
@@ -41,9 +43,11 @@ namespace hyper {
 #define VISUAL_ODOMETRY_MIN_DISTANCE 0.1
 #define ICP_TRANSLATION_CONFIDENCE_FACTOR 1.00
 #define CURVATURE_REQUIRED_TIME 0.0001
+#define MIN_SPEED 0.001
 
     // define the gicp
-    typedef pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZHSV, pcl::PointXYZHSV> GeneralizedICP;
+    using GeneralizedICP = pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZHSV, pcl::PointXYZHSV>;
+    // typedef pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZHSV, pcl::PointXYZHSV> GeneralizedICP;
 
     class GrabData
     {
@@ -110,16 +114,31 @@ namespace hyper {
             double visual_odometry_min_distance;
             double icp_translation_confidence_factor;
             bool save_accumulated_point_clouds;
+            bool save_loop_closure_point_clouds;
 
             bool use_velodyne_odometry;
             bool use_sick_odometry;
             bool use_bumblebee_odometry;
-            
+
             bool use_velodyne_loop;
+            bool use_external_velodyne_loop;
             bool use_sick_loop;
+            bool use_external_sick_loop;
             bool use_bumblebee_loop;
 
             bool use_fake_gps;
+
+            bool use_gps_orientation;
+
+            bool use_restricted_loops;
+
+            unsigned grab_data_id;
+
+            double min_speed;
+
+            g2o::SE2 initial_guess_pose;
+
+            g2o::SE2 gps_error;
 
             // separate the gps, sick and velodyne messages
             void SeparateMessages();
@@ -174,7 +193,10 @@ namespace hyper {
             void BuildOdometryMeasures();
 
             // build the initial estimates
-            void BuildOdometryEstimates(bool gps_based);
+            void BuildOdometryEstimates(bool gps_based, bool gps_orientation);
+
+            // build the hacked odometry estimates
+            void BuildHackedOdometryEstimates();
 
             // build an icp measure
             bool BuildLidarOdometryMeasure(
@@ -190,6 +212,7 @@ namespace hyper {
             bool BuildLidarLoopMeasure(
                     GeneralizedICP &gicp,
                     double cf,
+                    double orientation,
                     PointCloudHSV::Ptr source_cloud,
                     PointCloudHSV::Ptr target_cloud,
                     g2o::SE2 &loop_measure);
@@ -199,6 +222,8 @@ namespace hyper {
 
             // it results in a safe region
             bool GetNextICPIterators(StampedLidarPtrVector::iterator &begin, StampedLidarPtrVector::iterator &end);
+
+            PointCloudHSV::Ptr GetFilteredPointCloud(SimpleLidarSegmentation &segm, VoxelGridFilter &grid_filtering, StampedLidarPtr lidar);
 
             // the main icp measure method, multithreading version
             void BuildLidarMeasuresMT();
@@ -222,11 +247,19 @@ namespace hyper {
             // compute the loop closure measure
             void BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messages);
 
+            // compute the external loop closure measure
+            bool BuildExternalLidarLoopClosureMeasures(
+                StampedLidarPtrVector &internal_messages,
+                StampedLidarPtrVector &external_messages,
+                Eigen::Vector2d external_gps_origin,
+                double external_loop_min_distance,
+                double external_loop_required_distance);
+
             // compute the bumblebee measure
             void BuildVisualOdometryMeasures();
 
             // save all vertices to the external file
-            void SaveAllVertices(std::ofstream &os);
+            void SaveAllVertices(std::ofstream &os, bool global);
 
             // save the odometry edges
             void SaveOdometryEdges(std::ofstream &os);
@@ -235,16 +268,25 @@ namespace hyper {
             void SaveOdometryEstimates(const std::string &output_filename, bool raw_version = false);
 
             // save the gps edges
-            void SaveGPSEdges(std::ofstream &os);
+            void SaveGPSEdges(std::ofstream &os, bool global);
 
             // save the xsens edges
             void SaveXSENSEdges(std::ofstream &os);
 
-            // save the gps edges
+            // save all raw gps estimates
+            void SaveAllGPSEstimates(std::string filename, bool original);
+
+            // save the gps estimates
             void SaveGPSEstimates(std::string filename, bool original);
+
+            // save the gps lateral error, for ploting
+            void SaveGPSError(std::string filename, g2o::SE2 gps_error);
 
             // save icp edges
             void SaveLidarEdges(const std::string &msg_name, std::ofstream &os, const StampedLidarPtrVector &lidar_messages, bool use_lidar_odometry, bool use_lidar_loop);
+
+            // save the external lidar loop edges
+            void SaveExternalLidarEdges(const std::string &msg_name, std::ofstream &os, const StampedLidarPtrVector &lidar_messages);
 
             // save visual odometry edges
             void SaveVisualOdometryEdges(std::ofstream &os);
@@ -256,7 +298,7 @@ namespace hyper {
             void SaveRawLidarEstimates(const std::string &filename, const StampedLidarPtrVector &lidar_messages);
 
             // save the visual odometry estimates
-            void SaveVisualOdometryEstimates();
+            void SaveVisualOdometryEstimates(const std::string &filename);
 
             // build Eigen homogeneous matrix from g2o SE2
             Eigen::Matrix4f BuildEigenMatrixFromSE2(const g2o::SE2 &transform);
@@ -267,16 +309,18 @@ namespace hyper {
             // get SE2 transform from libviso homogeneous coordinate matrix
             g2o::SE2 GetSE2FromVisoMatrix(const Matrix &matrix);
 
-            // removing the copy constructor
-            GrabData(const GrabData&) = delete;
-
             // removing the assignment operator overloading
             void operator=(const GrabData&);
 
         public:
 
-            // the main constructor
             GrabData();
+
+            // the main constructor
+            GrabData(unsigned _gid);
+
+            // the move constructor
+            GrabData(GrabData &&gd);
 
             // the main destructor
             ~GrabData();
@@ -285,18 +329,27 @@ namespace hyper {
             void Configure(std::string config_filename, std::string carmen_ini);
 
             // parse the log file
-            bool ParseLogFile(const std::string &input_filename);
+            unsigned ParseLogFile(const std::string &input_filename, unsigned msg_id);
 
             // sync all messages and process each one
             // it builds the all estimates and measures
             // and constructs the hypergraph
             void BuildHyperGraph();
 
+            // build external loop closures - different logs version
+            void BuildExternalLoopClosures(GrabData &gd, double elmind, double elreqd);
+            
             // save the hyper graph to the output file
-            void SaveHyperGraph(const std::string &output_filename);
+            void SaveHyperGraph(std::ofstream &os, bool global);
+
+            // save the external lidar loops
+            void SaveExternalLidarLoopEdges(std::ofstream &os);
 
             // save the estimates to external files
-            void SaveEstimates();
+            void SaveEstimates(std::string &base);
+
+            // compute the odometry x gps mean absolute error
+            void MeanAbsoluteErrorOdometryGPS();
 
             // clear the entire object
             void Clear();

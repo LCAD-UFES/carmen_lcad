@@ -1,20 +1,20 @@
-#include "udatmo.h"
-
-#include "detector.h"
-
 #include <stdexcept>
 #include <carmen/global_graphics.h>
-
-extern carmen_mapper_virtual_laser_message virtual_laser_message;
+#include "udatmo.h"
+#include "detector.h"
 
 using udatmo::Detector;
+
+extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 static Detector *detector = NULL;
 static Detector *detector_center = NULL;
 static Detector *detector_left = NULL;
 static Detector *detector_right = NULL;
 
-void udatmo_init(const carmen_robot_ackerman_config_t robot_config)
+
+void
+udatmo_init(const carmen_robot_ackerman_config_t robot_config)
 {
 	if (detector != NULL)
 		throw std::runtime_error("uDATMO module already initialized");
@@ -25,7 +25,9 @@ void udatmo_init(const carmen_robot_ackerman_config_t robot_config)
 	detector_right = new Detector(robot_config);
 }
 
-bool udatmo_obstacle_detected(double timestamp)
+
+bool
+udatmo_obstacle_detected(double timestamp)
 {
 	static double last_obstacle_detected_timestamp = 0.0;
 
@@ -38,7 +40,9 @@ bool udatmo_obstacle_detected(double timestamp)
 		return (false);
 }
 
-void udatmo_clear_detected(void)
+
+void
+udatmo_clear_detected(void)
 {
 	detector->detected = false;
 	detector_center->detected = false;
@@ -46,7 +50,9 @@ void udatmo_clear_detected(void)
 	detector_right->detected = false;
 }
 
-void udatmo_shift_history(void)
+
+void
+udatmo_shift_history(void)
 {
 	detector->shift();
 	detector_center->shift();
@@ -54,7 +60,9 @@ void udatmo_shift_history(void)
 	detector_right->shift();
 }
 
-bool objects_coinside(Detector *detector1, Detector *detector2)
+
+bool
+objects_coinside(Detector *detector1, Detector *detector2)
 {
 	for (int i = 0; i < 3; i++)
 	{
@@ -75,7 +83,9 @@ bool objects_coinside(Detector *detector1, Detector *detector2)
 	return (false);
 }
 
-int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *current_map,
+
+int
+udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *current_map,
 							carmen_rddf_road_profile_message *rddf,
 							int goal_index,
 							int rddf_pose_index,
@@ -95,24 +105,14 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *cu
 			detector->robot_config.behaviour_selector_central_lane_obstacles_safe_distance,
 			0.0, timestamp);
 
+	int moving_object_index = index;
+
 	if ((index_center != -1) && (index_left != -1) && objects_coinside(detector_center, detector_left) && (goal_index == 0))
 	{
 		if (index == -1)
 		{
 			detector->copy_state(detector_left);
-			for (int i = 0; i < 5; i++)
-			{
-				virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[i].pose.x;
-				virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[i].pose.y;
-				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_ORANGE;
-				virtual_laser_message.num_positions++;
-
-				virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[i].rddf_front_car_pose.x;
-				virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[i].rddf_front_car_pose.y;
-				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
-				virtual_laser_message.num_positions++;
-			}
-			return (index_left);
+			moving_object_index = index_left;
 		}
 		else
 		{
@@ -120,22 +120,10 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *cu
 				!objects_coinside(detector, detector_left))
 			{
 				detector->copy_state(detector_left);
-				for (int i = 0; i < 5; i++)
-				{
-					virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[i].pose.x;
-					virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[i].pose.y;
-					virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
-					virtual_laser_message.num_positions++;
-
-					virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[i].rddf_front_car_pose.x;
-					virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[i].rddf_front_car_pose.y;
-					virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
-					virtual_laser_message.num_positions++;
-				}
-				return (index_left);
+				moving_object_index = index_left;
 			}
 			else
-				return (index);
+				moving_object_index = index;
 		}
 	}
 
@@ -144,19 +132,7 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *cu
 		if (index == -1)
 		{
 			detector->copy_state(detector_right);
-			for (int i = 0; i < 5; i++)
-			{
-				virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[i].pose.x;
-				virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[i].pose.y;
-				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_ORANGE;
-				virtual_laser_message.num_positions++;
-
-				virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[i].rddf_front_car_pose.x;
-				virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[i].rddf_front_car_pose.y;
-				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_GREEN;
-				virtual_laser_message.num_positions++;
-			}
-			return (index_right);
+			moving_object_index = index_right;
 		}
 		else
 		{
@@ -164,74 +140,84 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *cu
 				!objects_coinside(detector, detector_right))
 			{
 				detector->copy_state(detector_right);
-				for (int i = 0; i < 5; i++)
-				{
-					virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[i].pose.x;
-					virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[i].pose.y;
-					virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
-					virtual_laser_message.num_positions++;
-
-					virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[i].rddf_front_car_pose.x;
-					virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[i].rddf_front_car_pose.y;
-					virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_GREEN;
-					virtual_laser_message.num_positions++;
-				}
-				return (index_right);
+				moving_object_index = index_right;
 			}
 			else
-				return (index);
+				moving_object_index = index;
 		}
 	}
 
-	if (index != -1)
-		return (index);
-
-	return (-1);
+	if (moving_object_index != -1)
+	{
+		virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[0].pose.x;
+		virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[0].pose.y;
+		virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_GREEN;
+		virtual_laser_message.num_positions++;
+	}
+	return (moving_object_index);
 }
 
-double udatmo_speed_front(void)
+
+double
+udatmo_speed_front(void)
 {
-	return detector->speed_front();
+	return (detector->speed_front());
 }
 
-double udatmo_speed_left(void)
+
+double
+udatmo_speed_left(void)
 {
-	return detector_left->speed_front();
+	return (detector_left->speed_front());
 }
 
-double udatmo_speed_right(void)
+
+double
+udatmo_speed_right(void)
 {
-	return detector_right->speed_front();
+	return (detector_right->speed_front());
 }
 
-double udatmo_speed_center(void)
+
+double
+udatmo_speed_center(void)
 {
-	return detector_center->speed_front();
+	return (detector_center->speed_front());
 }
 
-carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position(void)
+
+carmen_ackerman_traj_point_t
+udatmo_get_moving_obstacle_position(void)
 {
-	return detector->get_moving_obstacle_position();
+	return (detector->get_moving_obstacle_position());
 }
 
-carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position_left(void)
+
+carmen_ackerman_traj_point_t
+udatmo_get_moving_obstacle_position_left(void)
 {
-	return detector_left->get_moving_obstacle_position();
+	return (detector_left->get_moving_obstacle_position());
 }
 
-carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position_right(void)
+
+carmen_ackerman_traj_point_t
+udatmo_get_moving_obstacle_position_right(void)
 {
-	return detector_right->get_moving_obstacle_position();
+	return (detector_right->get_moving_obstacle_position());
 }
 
-double udatmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose, carmen_robot_ackerman_config_t *robot_config __attribute__ ((unused)))
+
+double
+udatmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose, carmen_robot_ackerman_config_t *robot_config __attribute__ ((unused)))
 {
 	double distance = detector->get_moving_obstacle_distance(robot_pose);
 
 	return (distance);
 }
 
-void udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(double behaviour_selector_central_lane_obstacles_safe_distance)
+
+void
+udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(double behaviour_selector_central_lane_obstacles_safe_distance)
 {
 	detector->robot_config.behaviour_selector_central_lane_obstacles_safe_distance = behaviour_selector_central_lane_obstacles_safe_distance;
 	detector_center->robot_config.behaviour_selector_central_lane_obstacles_safe_distance = behaviour_selector_central_lane_obstacles_safe_distance;
@@ -239,7 +225,9 @@ void udatmo_set_behaviour_selector_central_lane_obstacles_safe_distance(double b
 	detector_right->robot_config.behaviour_selector_central_lane_obstacles_safe_distance = behaviour_selector_central_lane_obstacles_safe_distance;
 }
 
-void udatmo_set_model_predictive_planner_obstacles_safe_distance(double model_predictive_planner_obstacles_safe_distance)
+
+void
+udatmo_set_model_predictive_planner_obstacles_safe_distance(double model_predictive_planner_obstacles_safe_distance)
 {
 	detector->robot_config.model_predictive_planner_obstacles_safe_distance = model_predictive_planner_obstacles_safe_distance;
 	detector_center->robot_config.model_predictive_planner_obstacles_safe_distance = model_predictive_planner_obstacles_safe_distance;

@@ -5,7 +5,7 @@ LINK = g++
 MODULE_NAME = HYPERGRAPHSCLAM HELPERS
 MODULE_COMMENT =
 
-CXXFLAGS += -std=c++11 -O2
+CXXFLAGS += -std=c++11 -O3
 
 PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC)
