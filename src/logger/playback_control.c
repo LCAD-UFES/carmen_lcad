@@ -224,6 +224,14 @@ read_parameters(int argc, char *argv[])
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
+	// Before start publishing playback commands, wait for a while until playback module is up and running
+	for (int i = 0; i < 20; i++)
+	{
+		if (IPC_numHandlers(CARMEN_PLAYBACK_COMMAND_NAME) > 0)
+			break;
+		usleep(0.2 * 1e6);
+	}
+
 	if (speed)
 	{
 	    gtk_entry_set_text(GTK_ENTRY(playback_speed_widget), speed);
