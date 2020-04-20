@@ -791,6 +791,9 @@ show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> p
 {
 	char info[25];
 	static double start_time = 0.0;
+	
+	if (image.empty())
+		return;
 
     cvtColor(image, image, COLOR_RGB2BGR);
 
@@ -945,7 +948,6 @@ classify_clusters_of_poits_using_detections(vector<bbox_t> &predictions, vector<
 	vector<image_cartesian> cluster;
 	vector<int> moving_object_cluster_index;
 	unsigned int best_cluster_index = 0;
-	printf("Entrou\n");
 
 	unsigned int predictions_size = predictions.size();
 	for (unsigned int h = 0; h < predictions_size; h++)
@@ -975,7 +977,7 @@ classify_clusters_of_poits_using_detections(vector<bbox_t> &predictions, vector<
 			cont = 0;
 			// moving_object_cluster_index.push_back(i);            // TODO e nao aqui, pq? nao funciona????
 		}
-		printf("S %d\n", moving_object_cluster_index.size());
+		// printf("S %d\n", moving_object_cluster_index.size());
 		if (moving_object_cluster_index.size() > 1)
 		{
 			best_cluster_index = choose_cluster(moving_object_cluster_index, predictions[h], clustered_points);
@@ -1074,8 +1076,8 @@ remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor
 		
 	if (!strcmp(neural_network, "yolo"))
 		predictions_vector = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.5);
-	// if (!strcmp(!strcmp(neural_network, "efficientdet"))
-	// 	predictions_vector = run_EfficientDet
+	if (!strcmp(neural_network, "efficientdet"))
+	 	predictions_vector = run_EfficientDet(open_cv_image.data, open_cv_image.cols, open_cv_image.rows);
 	
 	predictions_vector = filter_predictions_of_interest(predictions_vector);
 	
@@ -5077,6 +5079,10 @@ main(int argc, char **argv)
 		{
 			initialize_python_dataset();
 		}
+	char yolo_weights_path[1024];
+
+	classes_names = get_classes_names("../sharedlib/darknet2/data/coco.names");
+
 		initialize_Efficientdet();
 	}
 	/* Register TensorRT context for RangeNet++*/
