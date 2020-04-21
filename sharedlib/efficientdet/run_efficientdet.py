@@ -71,7 +71,7 @@ def efficientdet_process_image(carmen_image):
     start_time = current_milli_time()
     sess = driver.sess
     detections = sess.run('detections:0', {'image_arrays:0': raw_images})
-    print('detection_process=', (current_milli_time() - start_time), ' FPS_detection=', (1000/(current_milli_time() - start_time)))
+    #print('detection_process=', (current_milli_time() - start_time), ' FPS_detection=', (1000/(current_milli_time() - start_time)))
     predret = np.array(detections[0][:,1:7], dtype=np.float)
-    print('python_process=   ', (current_milli_time() - first_time), ' FPS_python=   ', (1000/(current_milli_time() - first_time)))
+    #print('python_process=   ', (current_milli_time() - first_time), ' FPS_python=   ', (1000/(current_milli_time() - first_time)))
     return predret
