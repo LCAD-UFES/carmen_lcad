@@ -206,6 +206,7 @@ run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_nam
         free_detections(dets, nboxes);
         free_image(sized);
         free_image(img);
+
         return (bbox_vector);
 }
 
@@ -244,8 +245,8 @@ save_predictions_to_file_VOC_pascal(detection *dets, int num, float thresh, int 
 }
 
 
-void
-run_YOLO_VOC_Pascal(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold, char* file_path)
+std::vector<bbox_t>
+run_YOLO_and_save_predictions(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold, char* file_path)
 {
 	float nms = 0.45;
 	int nboxes = 0;
@@ -267,7 +268,11 @@ run_YOLO_VOC_Pascal(unsigned char *data, int w, int h, void *net_config, char **
 
 	save_predictions_to_file_VOC_pascal(dets, nboxes, 0.5, net->layers[net->n-1].classes, classes_names, file_path);
 
+	std::vector<bbox_t> bbox_vector = extract_predictions(img, dets, nboxes, threshold, net->layers[net->n-1].classes, classes_names);
+
 	free_detections(dets, nboxes);
 	free_image(sized);
 	free_image(img);
+
+    return (bbox_vector);
 }

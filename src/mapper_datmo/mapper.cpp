@@ -136,7 +136,7 @@ color_moving_objecst_cells(std::vector<carmen_vector_2D_t> moving_objecst_cells_
 {
 	int x = 0, y = 0;
 
-	for (int i = 0; i < moving_objecst_cells_vector.size(); i++)
+	for (unsigned int i = 0; i < moving_objecst_cells_vector.size(); i++)
 	{
 		//printf("%d %d\n", moving_objecst_cells_vector[i].x, moving_objecst_cells_vector[i].y);
 
