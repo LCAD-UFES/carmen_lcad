@@ -956,9 +956,7 @@ expansion_dijkstra(state_node *current, state_node *goal_state, carmen_obstacle_
     double add_y[3] = {-1.0, 0.0, 1.0};
     vector<state_node*> neighbor;
 
-    int size_for = 3;
-
-    for (int i = 0; i < size_for; i++)
+    for (int i = 0; i < 3; i++)
     {
     	for (int j = 0; j<3; j++)
     	{
@@ -985,10 +983,12 @@ expansion_dijkstra(state_node *current, state_node *goal_state, carmen_obstacle_
 
 			if(current_pos->x >= x_size || current_pos->y >= y_size || current_pos->x < 0 || current_pos->y < 0 || astar_map[current_pos->x][current_pos->y][0]->is_obstacle == 1)
 			{
+//				printf("Deu free\n");
 				free(new_state);
 			}
 			else
 			{
+//				printf("Não deu free\n");
 //				draw_astar_object(&new_state->state, CARMEN_ORANGE);
 				neighbor.push_back(new_state);
 			}
@@ -1040,8 +1040,8 @@ dijkstra(state_node *start_state, state_node *goal_state, carmen_obstacle_distan
 			sort(open_heuristic.begin(), open_heuristic.end(), my_list_ordenation);
 
 		}
-//		discrete_pos_node *goal_pos = get_current_pos(goal_state, distance_map);
-//		printf("goal_state = %f %f %f %d %f %d %d\n", goal_state->state.x, goal_state->state.y, astar_map[goal_pos->x][goal_pos->y][0]->heuristic_g, astar_map[goal_pos->x][goal_pos->y][0]->is_obstacle, astar_map[goal_pos->x][goal_pos->y][0]->g, goal_pos->x, goal_pos->y);
+		discrete_pos_node *goal_pos = get_current_pos(goal_state, distance_map);
+		printf("goal_state = %f %f %f %d %f %d %d\n", goal_state->state.x, goal_state->state.y, astar_map[goal_pos->x][goal_pos->y][0]->heuristic_g, astar_map[goal_pos->x][goal_pos->y][0]->is_obstacle, astar_map[goal_pos->x][goal_pos->y][0]->g, goal_pos->x, goal_pos->y);
 
 		while (!open_heuristic.empty() && is_same_cell(get_lowest_rank(open_heuristic), goal_state, distance_map) == 0)
 		{
@@ -1055,7 +1055,7 @@ dijkstra(state_node *start_state, state_node *goal_state, carmen_obstacle_distan
 			draw_astar_object(&goal_state->state, CARMEN_PURPLE);
 
 			publish_astar_draw();
-//			printf("[dijkstra]current %f %f %f %f %f %f %d %d\n", current->state.x, current->state.y, current->state.theta, current->g, current->h, current->h+ current->g, current_pos->x, current_pos->y);
+			printf("[dijkstra]current %f %f %f %f %f %f %d %d\n", current->state.x, current->state.y, current->state.theta, current->g, current->h, current->h+ current->g, current_pos->x, current_pos->y);
 			closed_heuristic.push_back(current);
 			astar_map[current_pos->x][current_pos->y][0]->heuristic_g = current->g;
 			astar_map[current_pos->x][current_pos->y][0]->heuristic_closed = 1;
@@ -1221,13 +1221,13 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 				open.erase(open.begin() + (indice-1));
 			}
 
-/*
+
 			indice = node_exist(closed, neighbor[it_number], distance_map);
 			if(indice != 0 && cost < g(neighbor[it_number]))
 			{
 				closed.erase(closed.begin() + (indice-1));
 			}
-*/
+
 			if(node_exist(open, neighbor[it_number], distance_map) == 0 && node_exist(closed, neighbor[it_number], distance_map) == 0 )
 			{
 				neighbor[it_number]->g = cost;

@@ -772,7 +772,7 @@ void
 display_lidar(Mat &image, vector<image_cartesian> points, int r, int g, int b)
 {
 	for (unsigned int i = 0; i < points.size(); i++)
-		circle(image, Point(points[i].image_x, points[i].image_y), 3, cvScalar(b, g, r), 1, 8, 0);
+		circle(image, Point(points[i].image_x, points[i].image_y), 2, cvScalar(b, g, r), -1, 8, 0);
 }
 
 
@@ -813,7 +813,9 @@ show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> p
 		putText(image, info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
 	}
 
-    display_lidar(image, points, 0, 0, 255);                     // Blue points are all points that hit an obstacle
+	//printf("Points Size %d\n", points.size());
+	
+    display_lidar(image, points, 0, 0, 255);                       // Blue points are all points that hit an obstacle
 	display_lidar_matrix(image, clustered_points, 0, 255, 0);      // Green points are the clustered and classified as moving objects points
 
     if (image.cols > 640)
@@ -969,26 +971,27 @@ classify_clusters_of_poits_using_detections(vector<bbox_t> &predictions, vector<
 					if ((cluster_size > 5 && cont > min_points_inside_bbox) || (cluster_size < 5 && cont > 1)) 
 					{
 						// printf("C %d\n", cont);
-						moving_object_cluster_index.push_back(i); // TODO Deveria ser aqui
+						moving_object_cluster_index.push_back(i);
 						break;
 					}
 				}
 			}
 			cont = 0;
-			// moving_object_cluster_index.push_back(i);            // TODO e nao aqui, pq? nao funciona????
 		}
 		// printf("S %d\n", moving_object_cluster_index.size());
-		if (moving_object_cluster_index.size() > 1)
+		if (moving_object_cluster_index.size() == 1)
+		{
+			cluster = clustered_points[moving_object_cluster_index[0]];
+			clustered_points[moving_object_cluster_index[0]].clear();      // Removes a the classied cluster to avoid recalculations 
+		}
+		else if (moving_object_cluster_index.size() > 1)
 		{
 			best_cluster_index = choose_cluster(moving_object_cluster_index, predictions[h], clustered_points);
 			cluster = clustered_points[moving_object_cluster_index[best_cluster_index]];
 			clustered_points[moving_object_cluster_index[best_cluster_index]].clear();
 		}
-		else if (moving_object_cluster_index.size() == 1)
-		{
-			cluster = clustered_points[moving_object_cluster_index[0]];
-			clustered_points[moving_object_cluster_index[0]].clear();
-		}
+
+		printf("Index Size %d BI %d\n", moving_object_cluster_index.size(), best_cluster_index);
 
 		classified.push_back(cluster);
 
@@ -1058,6 +1061,39 @@ remove_classified_rais_from_point_clud(sensor_parameters_t *sensor_params, senso
 }
 
 
+vector<image_cartesian>
+compute_points_img_coordnates(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index,
+	int image_width, int image_height, vector<image_cartesian> points)
+{
+	vector<image_cartesian> points_on_image;
+	int cloud_index = sensor_data->point_cloud_index;
+	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
+	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
+	double cu = camera_params[camera_index].cu_factor * image_width;
+	double cv = camera_params[camera_index].cv_factor * image_height;
+
+	for (unsigned int i = 0, size = points.size(); i < size; i++)
+	{
+		image_cartesian p;
+		int scan_index = points[i].shot_number * sensor_params->vertical_resolution;
+		double horizontal_angle = carmen_normalize_theta(-sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle);
+
+		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+			continue;
+			
+		tf::Point velodyne_p3d = tf::Point(points[i].cartesian_x, points[i].cartesian_y, points[i].cartesian_z);
+
+		tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
+
+		p.image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
+		p.image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
+
+		points_on_image.push_back(p);
+	}
+	return (points_on_image);
+}
+
+
 void
 remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index,
 	vector<image_cartesian> points, vector<vector<image_cartesian>> &clustered_points, int image_width, int image_height)
@@ -1082,9 +1118,12 @@ remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor
 	predictions_vector = filter_predictions_of_interest(predictions_vector);
 	
 	classify_clusters_of_poits_using_detections(predictions_vector, clustered_points);
-	
+
 	if (verbose >= 2)
-		show_detections(open_cv_image.clone(), predictions_vector, points, clustered_points, camera_index); // open_cv_image.clone() to avoid writing things in the image
+	{
+		vector<image_cartesian> points_on_image = compute_points_img_coordnates(sensor_params, sensor_data, camera_index, image_width, image_height, points);
+		show_detections(open_cv_image.clone(), predictions_vector, points_on_image, clustered_points, camera_index); // open_cv_image.clone() to avoid writing things in the image
+	}
 }
 
 
@@ -1176,7 +1215,8 @@ choose_cluster_using_segmentation(vector<int> moving_object_cluster_index, vecto
 
 
 void
-remove_clusters_of_static_obstacles_using_segmentation(vector<vector<image_cartesian>> &clustered_points, int camera_index, int image_width, int image_height, double timestamp)
+remove_clusters_of_static_obstacles_using_segmentation(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, vector<image_cartesian> points,
+	vector<vector<image_cartesian>> &clustered_points, int camera_index, int image_width, int image_height, double timestamp)
 {
 	unsigned int cont = 0;
 	vector<vector<image_cartesian>> classified;
@@ -1216,7 +1256,7 @@ remove_clusters_of_static_obstacles_using_segmentation(vector<vector<image_carte
 	if (verbose >= 2)
 	{
 		vector<bbox_t> predictions_vector;
-		vector<image_cartesian> points;
+		vector<image_cartesian> points_on_image = compute_points_img_coordnates(sensor_params, sensor_data, camera_index, image_width, image_height, points);
 		show_detections(segmentation_to_opencv(semantic_img, image_width, image_height), predictions_vector, points, clustered_points, camera_index); // open_cv_image.clone() to avoid writing things in the image
 	}
 }
@@ -1237,7 +1277,7 @@ process_image(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, in
 	}
 	else if (!strcmp(neural_network, "deeplab"))
 	{
-		remove_clusters_of_static_obstacles_using_segmentation(clustered_points, camera_index, image_width, image_height, camera_data[camera_index].timestamp[image_index]);
+		remove_clusters_of_static_obstacles_using_segmentation(sensor_params, sensor_data, points, clustered_points, camera_index, image_width, image_height, camera_data[camera_index].timestamp[image_index]);
 	}
 
 	remove_classified_rais_from_point_clud(sensor_params, sensor_data, clustered_points);
@@ -1272,7 +1312,7 @@ filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_
 	
 	points = compute_obstacle_points(sensor_params, sensor_data);
 	// show_semantic_map(map_config.resolution, sensors_params->range_max, points, filtered_clusters);
-	clustered_points = dbscan_compute_clusters(0.5, 5, points);
+	clustered_points = dbscan_compute_clusters(0.5, 1, points);
 
 	if (points.size() == 0)
 		return 0;
@@ -5079,10 +5119,7 @@ main(int argc, char **argv)
 		{
 			initialize_python_dataset();
 		}
-	char yolo_weights_path[1024];
-
-	classes_names = get_classes_names("../sharedlib/darknet2/data/coco.names");
-
+		classes_names = get_classes_names("../sharedlib/darknet2/data/coco.names");
 		initialize_Efficientdet();
 	}
 	/* Register TensorRT context for RangeNet++*/
