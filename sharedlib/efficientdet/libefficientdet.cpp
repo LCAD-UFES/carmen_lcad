@@ -100,7 +100,7 @@ initialize_Efficientdet()
 std::vector<bbox_t>
 run_EfficientDet(unsigned char *image, int width, int height)
 {
-	printf("libefficientdet_process_image\n");
+	//printf("libefficientdet_process_image\n");
 	//create shape for numpy array
 	npy_intp dims[3] = {height, width, 3};
 	PyObject* numpyArray = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, image);
