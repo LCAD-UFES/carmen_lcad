@@ -127,6 +127,9 @@ def default_detection_configs():
   # model name.
   h.name = 'efficientdet-d1'
 
+  # activation type: see activation_fn in utils.py.
+  h.act_type = 'swish'
+
   # input preprocessing parameters
   h.image_size = 640
   h.input_rand_hflip = True
@@ -153,8 +156,10 @@ def default_detection_configs():
   h.lr_warmup_epoch = 1.0
   h.first_lr_drop_epoch = 200.0
   h.second_lr_drop_epoch = 250.0
+  h.poly_lr_power = 0.9
   h.clip_gradients_norm = 10.0
   h.num_epochs = 300
+  h.data_format = 'channels_last'
 
   # classification loss
   h.alpha = 0.25
@@ -166,6 +171,7 @@ def default_detection_configs():
   h.weight_decay = 4e-5
   # enable bfloat
   h.use_bfloat16 = True
+  h.use_tpu = True
 
   # For detection.
   h.box_class_repeats = 3
@@ -174,12 +180,13 @@ def default_detection_configs():
   h.separable_conv = True
   h.apply_bn_for_resampling = True
   h.conv_after_downsample = False
-  h.conv_bn_relu_pattern = False
+  h.conv_bn_act_pattern = False
   h.use_native_resize_op = False
   h.pooling_type = None
 
   # version.
   h.fpn_name = None
+  h.fpn_weight_method = None
   h.fpn_config = None
 
   # No stochastic depth in default.
@@ -188,7 +195,8 @@ def default_detection_configs():
   h.lr_decay_method = 'cosine'
   h.moving_average_decay = 0.9998
   h.ckpt_var_scope = None  # ckpt variable scope.
-  h.var_exclude_expr = None   # exclude vars when loading pretrained ckpts.
+  # exclude vars when loading pretrained ckpts.
+  h.var_exclude_expr = '.*/class-predict/.*'  # exclude class weights in default
 
   h.backbone_name = 'efficientnet-b1'
   h.backbone_config = None
@@ -263,6 +271,17 @@ efficientdet_model_param_dict = {
             box_class_repeats=5,
             fpn_name='bifpn_sum',  # Use unweighted sum for training stability.
         ),
+    'efficientdet-d7':
+        dict(
+            name='efficientdet-d7',
+            backbone_name='efficientnet-b6',
+            image_size=1536,
+            fpn_num_filters=384,
+            fpn_cell_repeats=8,
+            box_class_repeats=5,
+            anchor_scale=5.0,
+            fpn_name='bifpn_sum',  # Use unweighted sum for training stability.
+        ),
 }
 
 
@@ -271,6 +290,7 @@ def get_efficientdet_config(model_name='efficientdet-d1'):
   h = default_detection_configs()
   h.override(efficientdet_model_param_dict[model_name])
   return h
+
 
 retinanet_model_param_dict = {
     'retinanet-50':

@@ -53,19 +53,27 @@ colormap_semantic[] =
 };
 
 vector<bbox_t>
-filter_predictions_of_interest_efficientdet(vector<bbox_t> &predictions)
+filter_predictions_of_interest(vector<bbox_t> &predictions)
 {
 	vector<bbox_t> filtered_predictions;
 
 	for (unsigned int i = 0; i < predictions.size(); i++)
 	{
-		if (predictions[i].obj_id > 0 && predictions[i].obj_id <= 9)    
+		if (predictions[i].obj_id == 0 ||  // person
+			predictions[i].obj_id == 1 ||  // bicycle
+			predictions[i].obj_id == 2 ||  // car
+			predictions[i].obj_id == 3 ||  // motorbike
+			predictions[i].obj_id == 5 ||  // bus
+			predictions[i].obj_id == 6 ||  // train
+			predictions[i].obj_id == 7) //||  // truck
+			//predictions[i].obj_id == 9)    // traffic light
 		{
 			filtered_predictions.push_back(predictions[i]);
 		}
 	}
 	return (filtered_predictions);
 }
+
 
 void
 show_detections(cv::Mat image, vector<bbox_t> predictions)
@@ -75,32 +83,26 @@ show_detections(cv::Mat image, vector<bbox_t> predictions)
     	int color_mapped = 0;
     	switch (predictions[i].obj_id)
     	{
-    	case 1: //person
+    	case 0: //person
     		color_mapped = 6;
     		break;
-    	case 2: //bicycle
+    	case 1: //bicycle
     		color_mapped = 2;
     		break;
-    	case 3: //car
+    	case 2: //car
     		color_mapped = 1;
     		break;
-    	case 4: //motorbike
+    	case 3: //motorbike
     		color_mapped = 3;
     		break;
-        case 5: //airplane
+    	case 5: //bus
     		color_mapped = 5;
     		break;
-    	case 6: //bus
+    	case 6: //train
     		color_mapped = 5;
     		break;
-    	case 7: //train
-    		color_mapped = 5;
-    		break;
-    	case 8: //truck
+    	case 7: //truck
     		color_mapped = 4;
-    		break;
-        case 9: //boat
-    		color_mapped = 5;
     		break;
     	}
     	cv::rectangle(image, cv::Point(predictions[i].x, predictions[i].y), cv::Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
@@ -152,7 +154,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	start_time = carmen_get_time();
 	printf("FPS= %.2f\n", fps);
     
-	predictions = filter_predictions_of_interest_efficientdet(predictions);
+	predictions = filter_predictions_of_interest(predictions);
     show_detections(imgResized, predictions);
 
 	char frame_rate[25];
@@ -212,7 +214,7 @@ read_parameters(int argc, char **argv)
 
     num_items = sizeof(param_list) / sizeof(param_list[0]);
     carmen_param_install_params(argc, argv, param_list, num_items);
-    initialize_Efficientdet();
+    initialize_Efficientdet(0.2);
 }
 
 int
