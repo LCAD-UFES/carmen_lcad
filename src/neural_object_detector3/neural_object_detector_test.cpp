@@ -8,7 +8,7 @@ FILE*
 open_file(int argc, char **argv)
 {
 	if (argc < 3)
-		carmen_die("--- Wrong number of parameters. ---\nUsage: %s <image_list> <output_folder>\n", argv[0]);
+		carmen_die("--- Wrong number of parameters. ---\nUsage: %s <image_list> <output_folder> OPTNIONAL: -show -save_images\n", argv[0]);
 
 	FILE* file = fopen(argv[1], "r");
 
@@ -40,7 +40,7 @@ save_predictions_to_file(vector<bbox_t> predictions, char* file_path)
 
 
 void
-show_object_detections(Mat open_cv_image, vector<bbox_t> predictions)
+show_object_detections(Mat open_cv_image, vector<bbox_t> predictions, bool show_detections, bool save_images, char* file_path_with_extension)
 {
 	char object_info[25];
     char frame_rate[25];
@@ -49,20 +49,29 @@ show_object_detections(Mat open_cv_image, vector<bbox_t> predictions)
 
     for (unsigned int i = 0; i < predictions.size(); i++)
     {
+		rectangle(open_cv_image, Point(predictions[i].x + 1, predictions[i].y - 3), Point(predictions[i].x + 100, predictions[i].y - 15), Scalar(0, 0, 0), -1, 8, 0);
+
         sprintf(object_info, "%s %d", classes_names[predictions[i].obj_id], (int)predictions[i].prob);
 
         putText(open_cv_image, object_info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
 
-        rectangle(open_cv_image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
-                        		Scalar(0, 0, 255), 1);
+        rectangle(open_cv_image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)), Scalar(255, 0, 255), 4);
     }
 
-    imshow("Neural Object Detector", open_cv_image);
-    waitKey(1);
+	if (save_images)
+	{
+		printf("Saving Result Image %s\n", file_path_with_extension);
+		imwrite(file_path_with_extension, open_cv_image, {CV_IMWRITE_PNG_COMPRESSION, 9});
+	}
+	if (show_detections)
+	{
+		imshow("Neural Object Detector", open_cv_image);
+    	waitKey(1);
+	}
 }
 
 int
-replace_file_type(char* image_file)
+remove_file_type(char* image_file)
 {
 	int size = strlen(image_file);
 
@@ -70,10 +79,7 @@ replace_file_type(char* image_file)
 	{
 		if (image_file[i] == '.')
 		{
-			image_file[i+1] = 't';
-			image_file[i+2] = 'x';
-			image_file[i+3] = 't';
-			image_file[i+4] = '\0';
+			image_file[i+1] = '\0';
 			return 1;
 		}
 	}
@@ -96,15 +102,16 @@ compute_output_file_path(char *output_dir, char *image_path)
 
 	sprintf(image_path, "%s/%s", output_dir, path);
 
-	replace_file_type(image_path);
+	remove_file_type(image_path);
 }
 
 
 void
-run_yolo_on_dataset(FILE* image_list, bool show_detections, char *output_dir)
+run_yolo_on_dataset(FILE* image_list, bool show_detections, bool save_images, char *output_dir)
 {
 	Mat open_cv_image;
 	char file_path[1024];
+	char file_path_with_extension[1024];
 
 	fscanf(image_list, "%s", file_path);
 
@@ -125,9 +132,17 @@ run_yolo_on_dataset(FILE* image_list, bool show_detections, char *output_dir)
 
 		compute_output_file_path(output_dir, file_path);
 
-		printf("Saving Result File %s\n", file_path);
+		sprintf(file_path_with_extension, "%s%s", file_path, "txt");
 
-		run_YOLO_VOC_Pascal(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2, file_path);
+		printf("Saving Result File %s\n", file_path_with_extension);
+
+		vector<bbox_t> predictions = run_YOLO_and_save_predictions(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2, file_path_with_extension);
+
+		if (show_detections || save_images)
+		{
+			sprintf(file_path_with_extension, "%s%s", file_path, "png");
+			show_object_detections(open_cv_image, predictions, show_detections, save_images, file_path_with_extension);
+		}
 
 		fscanf(image_list, "%s", file_path);
 	}
@@ -137,11 +152,18 @@ run_yolo_on_dataset(FILE* image_list, bool show_detections, char *output_dir)
 void
 initializer(char* argv)
 {
-	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
-	network_struct = initialize_YOLO((char*) "/dados/marcelo/darknet2/cfg/yolov3-voc_lane.cfg", (char*) argv);
+	char* carmen_home = getenv("CARMEN_HOME");
+	char classes_names_path[1024];
+	char yolo_cfg_path[1024];
+	char yolo_weights_path[1024];
 
-//	classes_names = get_classes_names((char*) "../../sharedlib/darknet2/data/coco.names");
-//	network_struct = initialize_YOLO((char*) "../../sharedlib/darknet2/cfg/yolov3.cfg", (char*) "../../sharedlib/darknet2/yolov3.weights");
+	sprintf(classes_names_path, "%s/sharedlib/darknet2/data/coco.names", carmen_home);
+	sprintf(yolo_cfg_path, "%s/sharedlib/darknet2/cfg/yolov3.cfg", carmen_home);
+	sprintf(yolo_weights_path, "%s/sharedlib/darknet2/yolov3.weights", carmen_home);
+
+	classes_names = get_classes_names(classes_names_path);
+
+	network_struct = initialize_YOLO( yolo_cfg_path, yolo_weights_path);
 }
 
 
@@ -160,6 +182,21 @@ find_show_arg(int argc, char **argv)
 }
 
 
+bool
+find_save_arg(int argc, char **argv)
+{
+    for(int i = 0; i < argc; ++i)
+    {
+        if(!argv[i])
+        	continue;
+
+        if(0 == strcmp(argv[i], "-save_images"))
+        	return (true);
+    }
+    return (false);
+}
+
+
 int
 main(int argc, char **argv)
 {
@@ -172,10 +209,11 @@ main(int argc, char **argv)
 		exit(printf("ERROR: Could not create directory '%s'\n", argv[2]));
 
 	bool show_detections = find_show_arg(argc, argv);
+	bool save_images = find_save_arg(argc, argv);
 
 	initializer(argv[3]);
 
-    run_yolo_on_dataset(image_list, show_detections, argv[2]);
+    run_yolo_on_dataset(image_list, show_detections, save_images, argv[2]);
 
     fclose (image_list);
 

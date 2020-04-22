@@ -292,9 +292,9 @@ void
 save_trajectory_lookup_table()
 {
 	FILE *tlt_f;
-	if (GlobalState::reverse_driving)
-		tlt_f = fopen("trajectory_lookup_table_reverse.bin", "w");
-	else
+//	if (GlobalState::reverse_driving)
+//		tlt_f = fopen("trajectory_lookup_table_reverse.bin", "w");
+//	else
 		tlt_f = fopen("trajectory_lookup_table.bin", "w");
 
 	for (int i = 0; i < N_DIST; i++)

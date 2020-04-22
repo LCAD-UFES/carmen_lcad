@@ -154,7 +154,10 @@ int * rangenet_segmented = NULL;
 carmen_velodyne_partial_scan_message *velodyne_seg;
 
 //static char *segmap_dirname = (char *) "/dados/log_dante_michelini-20181116.txt_segmap";
-static char *segmap_dirname = (char *) "/dados/output";
+static char *segmap_dirname = (char *) "/dados/log_ufes_aeroporto-20200325.txt_segmap";
+
+using namespace std;
+using namespace cv;
 
 struct segmented {
 	long long int *result;
@@ -204,7 +207,7 @@ query(double d2, int i, const vector<image_cartesian> &points, std::vector<bool>
 
 
 vector<vector<image_cartesian>>
-dbscan_compute_clusters(double d2, size_t density, const vector<image_cartesian> &points)
+dbscan_compute_clusters(double d2, size_t density, const vector<image_cartesian> points)
 {
 	vector<vector<image_cartesian>> clusters;
 	vector<bool> clustered(points.size(), false);
@@ -764,8 +767,594 @@ filter_predictions_of_interest(vector<bbox_t> &predictions)
 	return (filtered_predictions);
 }
 
+
 void
-filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
+display_lidar(Mat &image, vector<image_cartesian> points, int r, int g, int b)
+{
+	for (unsigned int i = 0; i < points.size(); i++)
+		circle(image, Point(points[i].image_x, points[i].image_y), 2, cvScalar(b, g, r), -1, 8, 0);
+}
+
+
+void
+display_lidar_matrix(Mat &image, vector<vector<image_cartesian>> points, int r, int g, int b)
+{
+	for (unsigned int i = 0; i < points.size(); i++)
+	{
+		display_lidar(image, points[i], r, g, b);
+	}
+}
+
+
+void
+show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> points, vector<vector<image_cartesian>> clustered_points, int camera_index)
+{
+	char info[25];
+	static double start_time = 0.0;
+	
+	if (image.empty())
+		return;
+
+    cvtColor(image, image, COLOR_RGB2BGR);
+
+    sprintf(info, "%dx%d", image.cols, image.rows);
+    putText(image, info, Point(10, 25), FONT_HERSHEY_PLAIN, 2, cvScalar(50, 255, 50), 2);
+
+    sprintf(info, "FPS = %.2f",  (1.0 / (carmen_get_time() - start_time)));
+    putText(image, info, Point(10, 55), FONT_HERSHEY_PLAIN, 2, cvScalar(50, 255, 50), 2);
+	start_time = carmen_get_time();
+
+    for (unsigned int i = 0; i < predictions.size(); i++)
+	{
+		rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
+				Scalar(255, 0, 255), 4);
+		
+		sprintf(info, "%s", classes_names[predictions[i].obj_id]);
+		putText(image, info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+	}
+
+	//printf("Points Size %d\n", points.size());
+	
+    display_lidar(image, points, 0, 0, 255);                       // Blue points are all points that hit an obstacle
+	display_lidar_matrix(image, clustered_points, 0, 255, 0);      // Green points are the clustered and classified as moving objects points
+
+    if (image.cols > 640)
+	{
+		resize(image, image, Size(640, image.rows * (640.0 / image.cols)));
+	}
+	
+	sprintf(info, "Camera %d Detections", camera_index);
+    //imwrite("Image.jpg", image);
+    imshow(info, image);
+	waitKey(1);
+}
+
+
+void
+show_semantic_map(double map_resolution, double range_max, vector<image_cartesian> points, vector<vector<image_cartesian>> clustered_points)
+{
+	int img_planar_depth = (double) 0.5 * range_max / map_resolution;
+	Mat map_img = Mat(Size(img_planar_depth * 2, img_planar_depth * 2), CV_8UC3, Scalar(255, 255, 255));
+
+	for (unsigned int i = 0, size = points.size(); i < size; i++)
+	{
+		int px = (double) points[i].cartesian_y / map_resolution + img_planar_depth;
+		int py = (double) (map_img.rows / 2) - 1 - points[i].cartesian_x / map_resolution;
+		map_img.at<Vec3b>(Point(px, py)) = Vec3b(0, 0, 0);
+	}
+	for (unsigned int i = 0; i < clustered_points.size(); i++)
+	{
+		for (unsigned int j = 0; j < clustered_points[i].size(); j++)
+		{
+			int px = (double) clustered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
+			int py = (double) (map_img.rows / 2) - 1 - clustered_points[i][j].cartesian_x / map_resolution;
+			map_img.at<Vec3b>(Point(px, py)) = Vec3b(0, 200, 0);
+		}
+	}
+
+	rectangle(map_img, cvPoint(img_planar_depth - 10 / 2, img_planar_depth - 10 / 2), cvPoint(img_planar_depth + 10 / 2, img_planar_depth + 30 / 2), CV_RGB(0, 0, 200), 1, 8);
+	line(map_img, cvPoint(img_planar_depth, img_planar_depth - 10 / 2), cvPoint(img_planar_depth, img_planar_depth + 5 / 2), CV_RGB(0, 0, 200), 1, 8);
+	resize(map_img, map_img, Size(0, 0), 1.7, 1.7, INTER_NEAREST);
+	imshow("Map Image", map_img);
+	waitKey(1);
+}
+
+
+vector<image_cartesian>
+compute_obstacle_points(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
+{
+	vector<image_cartesian> points;
+	int cloud_index = sensor_data->point_cloud_index;
+	int number_of_laser_shots = sensor_data->points[cloud_index].num_points / sensor_params->vertical_resolution;
+	int thread_id = omp_get_thread_num();
+
+	// if (number_of_laser_shots < 1024)
+	// 	return (points);
+
+	for (int i = 0; i < number_of_laser_shots; i++)
+	{
+		int scan_index = i * sensor_params->vertical_resolution;
+		double horizontal_angle = carmen_normalize_theta(-sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle);
+		
+		get_occupancy_log_odds_of_each_ray_target(sensor_params, sensor_data, scan_index);
+		
+		for (int j = 1; j < sensor_params->vertical_resolution; j++)
+		{
+			double vertical_angle = carmen_normalize_theta(sensor_data->points[cloud_index].sphere_points[scan_index + j].vertical_angle);
+			double range = sensor_data->points[cloud_index].sphere_points[scan_index + j].length;
+			tf::Point velodyne_p3d = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+			
+			double log_odds = sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][j];
+			double prob = carmen_prob_models_log_odds_to_probabilistic(log_odds);
+			
+			if (prob > 0.5 && range > MIN_RANGE && range < sensor_params->range_max) // Laser ray probably hit an obstacle
+			{
+				image_cartesian point;
+				point.shot_number = i;
+				point.ray_number = j;
+				point.image_x = 0;
+				point.image_y = 0;
+				point.cartesian_x = velodyne_p3d.x();
+				point.cartesian_y = velodyne_p3d.y(); // Must be inverted because Velodyne angle is reversed with CARMEN angles
+				point.cartesian_z = velodyne_p3d.z();
+				
+				points.push_back(point);
+			}
+		}
+	}
+	return (points);
+}
+
+
+unsigned int
+choose_cluster(vector<int> moving_object_cluster_index, bbox_t bbox, vector<vector<image_cartesian>> clustered_points)   // Chosse the cluster that have more points inside the bounding box
+{
+	vector<int> number_of_points_inside_bbox;
+	unsigned int cont = 0;
+	unsigned int best_cluster_index = 0;
+
+	unsigned number_of_clusters = moving_object_cluster_index.size();
+	for (unsigned int i = 0; i < number_of_clusters; i++)
+	{
+		unsigned int index = moving_object_cluster_index[i];
+		unsigned int cluster_size = clustered_points[index].size();
+		for (unsigned int j = 0; j < cluster_size; j++)
+		{
+			if ((unsigned int) clustered_points[index][j].image_x >=  bbox.x &&
+				(unsigned int) clustered_points[index][j].image_x <= (bbox.x + bbox.w) &&
+				(unsigned int) clustered_points[index][j].image_y >=  bbox.y &&
+				(unsigned int) clustered_points[index][j].image_y <= (bbox.y + bbox.h))
+			{
+				cont++;
+			}
+		}
+		number_of_points_inside_bbox.push_back(cont);
+		cont = 0;
+	}
+	for (unsigned int i = 1; i < number_of_clusters; i++)
+	{
+		// if (number_of_points_inside_bbox[best_cluster_index] < number_of_points_inside_bbox[i])
+		if (((double) number_of_points_inside_bbox[best_cluster_index] / (double) clustered_points[best_cluster_index].size()) < 
+			((double) number_of_points_inside_bbox[i])  / (double) clustered_points[i].size())
+			best_cluster_index = i;
+	}
+	return (best_cluster_index);
+}
+
+
+void
+classify_clusters_of_poits_using_detections(vector<bbox_t> &predictions, vector<vector<image_cartesian>> &clustered_points)
+{
+	unsigned int cont = 0;
+	vector<vector<image_cartesian>> classified;
+	vector<image_cartesian> cluster;
+	vector<int> moving_object_cluster_index;
+	unsigned int best_cluster_index = 0;
+
+	unsigned int predictions_size = predictions.size();
+	for (unsigned int h = 0; h < predictions_size; h++)
+	{
+		unsigned int number_of_clusters = clustered_points.size();
+		for (unsigned int i = 0; i < number_of_clusters; i++)
+		{
+			unsigned int cluster_size = clustered_points[i].size();
+			unsigned int min_points_inside_bbox = cluster_size / 5;
+			for (unsigned int j = 0; j < cluster_size; j++)
+			{
+				if ((unsigned int) clustered_points[i][j].image_x >=  predictions[h].x &&
+					(unsigned int) clustered_points[i][j].image_x <= (predictions[h].x + predictions[h].w) &&
+					(unsigned int) clustered_points[i][j].image_y >=  predictions[h].y &&
+					(unsigned int) clustered_points[i][j].image_y <= (predictions[h].y + predictions[h].h))
+				{
+					cont++;
+				
+					if ((cluster_size > 5 && cont > min_points_inside_bbox) || (cluster_size < 5 && cont > 1)) 
+					{
+						// printf("C %d\n", cont);
+						moving_object_cluster_index.push_back(i);
+						break;
+					}
+				}
+			}
+			cont = 0;
+		}
+		// printf("S %d\n", moving_object_cluster_index.size());
+		if (moving_object_cluster_index.size() == 1)
+		{
+			cluster = clustered_points[moving_object_cluster_index[0]];
+			clustered_points[moving_object_cluster_index[0]].clear();      // Removes a the classied cluster to avoid recalculations 
+		}
+		else if (moving_object_cluster_index.size() > 1)
+		{
+			best_cluster_index = choose_cluster(moving_object_cluster_index, predictions[h], clustered_points);
+			cluster = clustered_points[moving_object_cluster_index[best_cluster_index]];
+			clustered_points[moving_object_cluster_index[best_cluster_index]].clear();
+		}
+
+		printf("Index Size %d BI %d\n", moving_object_cluster_index.size(), best_cluster_index);
+
+		classified.push_back(cluster);
+
+		// cont = 0;
+		cluster.clear();
+		best_cluster_index = 0;
+		moving_object_cluster_index.clear();
+	}
+	clustered_points = classified;
+}
+
+
+vector<vector<image_cartesian>>
+remove_points_behind_cam_and_compute_img_coordnates(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index,
+	int image_width, int image_height, vector<vector<image_cartesian>> clusters)
+{
+	vector<vector<image_cartesian>> filtered;
+	int cloud_index = sensor_data->point_cloud_index;
+	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
+	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
+	double cu = camera_params[camera_index].cu_factor * image_width;
+	double cv = camera_params[camera_index].cv_factor * image_height;
+
+	for (unsigned int i = 0, size = clusters.size(); i < size; i++)
+	{
+		vector<image_cartesian> v;
+		filtered.push_back(v);
+
+		for (unsigned int j = 0, size = clusters[i].size(); j < size; j++)
+		{
+			int scan_index = clusters[i][j].shot_number * sensor_params->vertical_resolution;
+			double horizontal_angle = carmen_normalize_theta(-sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle);
+
+			if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+				continue;
+			
+			tf::Point velodyne_p3d = tf::Point(clusters[i][j].cartesian_x, clusters[i][j].cartesian_y, clusters[i][j].cartesian_z);
+
+			tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
+
+			clusters[i][j].image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
+			clusters[i][j].image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
+
+			filtered[i].push_back(clusters[i][j]);
+		}
+	}
+	return (filtered);
+}
+
+
+void
+remove_classified_rais_from_point_clud(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, vector<vector<image_cartesian>> clustered_points)
+{
+	int point_index;
+	int cloud_index = sensor_data->point_cloud_index;
+	
+	unsigned int number_of_clusters = clustered_points.size();
+	for (unsigned int i = 0; i < number_of_clusters; i++)
+	{
+		unsigned int cluster_size = clustered_points[i].size();
+		for (unsigned int j = 0; j < cluster_size; j++)
+		{
+			point_index = (clustered_points[i][j].shot_number * sensor_params->vertical_resolution) + clustered_points[i][j].ray_number;
+			sensor_data->points[cloud_index].sphere_points[point_index].length = 0.0;
+		}
+	}
+}
+
+
+vector<image_cartesian>
+compute_points_img_coordnates(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index,
+	int image_width, int image_height, vector<image_cartesian> points)
+{
+	vector<image_cartesian> points_on_image;
+	int cloud_index = sensor_data->point_cloud_index;
+	double fx_meters = camera_params[camera_index].fx_factor * camera_params[camera_index].pixel_size * image_width;
+	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
+	double cu = camera_params[camera_index].cu_factor * image_width;
+	double cv = camera_params[camera_index].cv_factor * image_height;
+
+	for (unsigned int i = 0, size = points.size(); i < size; i++)
+	{
+		image_cartesian p;
+		int scan_index = points[i].shot_number * sensor_params->vertical_resolution;
+		double horizontal_angle = carmen_normalize_theta(-sensor_data->points[cloud_index].sphere_points[scan_index].horizontal_angle);
+
+		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose[camera_index].orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+			continue;
+			
+		tf::Point velodyne_p3d = tf::Point(points[i].cartesian_x, points[i].cartesian_y, points[i].cartesian_z);
+
+		tf::Point camera_p3d = move_to_camera_reference(velodyne_p3d, velodyne_pose, camera_pose[camera_index]);
+
+		p.image_x = fx_meters * ( camera_p3d.y() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cu;
+		p.image_y = fy_meters * (-camera_p3d.z() / camera_p3d.x()) / camera_params[camera_index].pixel_size + cv;
+
+		points_on_image.push_back(p);
+	}
+	return (points_on_image);
+}
+
+
+void
+remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index,
+	vector<image_cartesian> points, vector<vector<image_cartesian>> &clustered_points, int image_width, int image_height)
+{
+	vector<bbox_t> predictions_vector;
+	camera_filter_count[camera_index]++;
+	
+	int crop_x = 0;
+	int crop_y = 0;			  //280;
+	int crop_w = image_width; // 1280;
+	int crop_h = image_height;// * 0.85;
+	
+	Mat open_cv_image = Mat(Size(image_width, image_height), CV_8UC3, camera_data[camera_index].image[image_index]);
+	Rect myROI(crop_x, crop_y, crop_w, crop_h); // TODO put this in the .ini file
+	open_cv_image = open_cv_image(myROI);
+		
+	if (!strcmp(neural_network, "yolo"))
+		predictions_vector = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.5);
+	if (!strcmp(neural_network, "efficientdet"))
+	 	predictions_vector = run_EfficientDet(open_cv_image.data, open_cv_image.cols, open_cv_image.rows);
+	
+	predictions_vector = filter_predictions_of_interest(predictions_vector);
+	
+	classify_clusters_of_poits_using_detections(predictions_vector, clustered_points);
+
+	if (verbose >= 2)
+	{
+		vector<image_cartesian> points_on_image = compute_points_img_coordnates(sensor_params, sensor_data, camera_index, image_width, image_height, points);
+		show_detections(open_cv_image.clone(), predictions_vector, points_on_image, clustered_points, camera_index); // open_cv_image.clone() to avoid writing things in the image
+	}
+}
+
+
+Mat
+segmentation_to_opencv(unsigned char* semantic_img, int width, int height)
+{
+	Mat semantic_cv = Mat(Size(width, height), CV_8UC3, Scalar(0));
+		
+	if (semantic_img != NULL)
+		for (int y = 0; y < semantic_cv.rows; y++)
+			for (int x = 0; x < semantic_cv.cols; x++)
+				semantic_cv.at<Vec3b>(Point(x, y)) = colormap[semantic_img[x + y * semantic_cv.cols]];
+
+	return (semantic_cv);
+}
+
+
+unsigned char *
+open_semantic_image(int width, int height, int camera, char camera_side, double timestamp, char *dirname)
+{
+	(void) camera;
+	char complete_path[1024];
+	sprintf(complete_path, "%s/%.6lf-%c.segmap", dirname, timestamp, camera_side);
+
+	carmen_FILE *segmap_file = carmen_fopen(complete_path, "rb");
+
+	if (!segmap_file)
+	{
+		fprintf (stderr, "Error: Segmap file not found! %s\n", complete_path);
+		return NULL;
+	}
+
+	int segmap_size = width * height;
+	unsigned char *segmap = (unsigned char *) malloc (sizeof(unsigned char) * segmap_size);
+
+	if (!segmap)
+	{
+		fprintf (stderr, "Error: Could not allocate memory for segmap file! %s\n", complete_path);
+		return NULL;
+	}
+
+	int bytes_read = carmen_fread(segmap, sizeof(unsigned char), segmap_size, segmap_file);
+
+	if (bytes_read != segmap_size)
+		fprintf(stderr, "Error: Segmap file size must be %d bytes, but %d bytes were read from disk! %s\n", segmap_size, bytes_read, complete_path);
+
+	carmen_fclose(segmap_file);
+
+	return segmap;
+}
+
+
+unsigned int
+choose_cluster_using_segmentation(vector<int> moving_object_cluster_index, vector<vector<image_cartesian>> clustered_points, unsigned char* semantic_img, int image_width, int image_height)   // Chosse the cluster that have more points inside the bounding box
+{
+	vector<int> number_of_points_classified;
+	unsigned int cont = 0;
+	unsigned int best_cluster_index = 0;
+
+	unsigned number_of_clusters = moving_object_cluster_index.size();
+	for (unsigned int i = 0; i < number_of_clusters; i++)
+	{
+		unsigned int index = moving_object_cluster_index[i];
+		unsigned int cluster_size = clustered_points[index].size();
+		for (unsigned int j = 0; j < cluster_size; j++)
+		{
+			if (clustered_points[index][j].image_x < 0 || clustered_points[index][j].image_x >= image_width || 
+			    clustered_points[index][j].image_y < 0 || clustered_points[index][j].image_y >= image_height) // Disregard laser rays out of the image window
+				continue;
+
+			if (semantic_img[clustered_points[index][j].image_x + (clustered_points[index][j].image_y * image_width)] >= 11) // 0 to 10 : Static objects
+				cont++;
+		}
+		number_of_points_classified.push_back(cont);
+		printf("Cont %d\n", cont);
+		cont = 0;
+	}
+	for (unsigned int i = 1; i < number_of_clusters; i++)
+	{
+		// if (((double) number_of_points_classified[best_cluster_index] / (double) clustered_points[best_cluster_index].size()) < 
+		// 	((double) number_of_points_classified[i])  / (double) clustered_points[i].size())
+		if (number_of_points_classified[best_cluster_index] < number_of_points_classified[i])
+		{
+			best_cluster_index = i;
+		}
+	}
+	return (best_cluster_index);
+}
+
+
+void
+remove_clusters_of_static_obstacles_using_segmentation(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, vector<image_cartesian> points,
+	vector<vector<image_cartesian>> &clustered_points, int camera_index, int image_width, int image_height, double timestamp)
+{
+	unsigned int cont = 0;
+	vector<vector<image_cartesian>> classified;
+	// vector<image_cartesian> cluster;
+	// vector<int> moving_object_cluster_index;
+	// unsigned int best_cluster_index = 0;
+	char camera_side = (camera_alive[camera_index] == 0) ? 'l' : 'r';  // left or right side
+
+	unsigned char* semantic_img = open_semantic_image(image_width, image_height, 0, camera_side, timestamp, segmap_dirname); // TODO Insert câmera side
+	if (semantic_img == NULL)
+		return;
+	
+	unsigned int number_of_clusters = clustered_points.size();
+	for (unsigned int i = 0; i < number_of_clusters; i++)
+	{
+		unsigned int cluster_size = clustered_points[i].size();
+		unsigned int min_points_classified = cluster_size / 5;
+		unsigned int cont = 0;
+		for (unsigned int j = 0; j < clustered_points[i].size(); j++)
+		{
+			if (clustered_points[i][j].image_x < 0 || clustered_points[i][j].image_x >= image_width || 
+			    clustered_points[i][j].image_y < 0 || clustered_points[i][j].image_y >= image_height) // Disregard laser rays out of the image window
+				continue;
+
+			if (semantic_img[clustered_points[i][j].image_x + (clustered_points[i][j].image_y * image_width)] >= 11) // 0 to 10 : Static objects
+				cont++;
+
+			if ((cluster_size > 5 && cont > min_points_classified) || (cluster_size < 5 && cont > 1))
+			{
+				classified.push_back(clustered_points[i]);
+				break;
+			}
+		}
+	}
+	clustered_points = classified;
+
+	if (verbose >= 2)
+	{
+		vector<bbox_t> predictions_vector;
+		vector<image_cartesian> points_on_image = compute_points_img_coordnates(sensor_params, sensor_data, camera_index, image_width, image_height, points);
+		show_detections(segmentation_to_opencv(semantic_img, image_width, image_height), predictions_vector, points, clustered_points, camera_index); // open_cv_image.clone() to avoid writing things in the image
+	}
+}
+
+
+vector<vector<image_cartesian>>
+process_image(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index,
+	vector<image_cartesian> points, vector<vector<image_cartesian>> clustered_points)
+{
+	int image_width  = camera_data[camera_index].width[image_index];
+	int image_height = camera_data[camera_index].height[image_index];
+	
+	clustered_points = remove_points_behind_cam_and_compute_img_coordnates(sensor_params, sensor_data, camera_index, image_width, image_height, clustered_points);
+	
+	if (!strcmp(neural_network, "yolo") || !strcmp(neural_network, "efficientdet"))
+	{
+		remove_clusters_of_static_obstacles_using_detections(sensor_params, sensor_data, camera_index, image_index, points, clustered_points, image_width, image_height);
+	}
+	else if (!strcmp(neural_network, "deeplab"))
+	{
+		remove_clusters_of_static_obstacles_using_segmentation(sensor_params, sensor_data, points, clustered_points, camera_index, image_width, image_height, camera_data[camera_index].timestamp[image_index]);
+	}
+
+	remove_classified_rais_from_point_clud(sensor_params, sensor_data, clustered_points);
+
+	// if (filter_datmo_count)
+	// 	camera_datmo_count[camera_index]++;
+	return (clustered_points);
+}
+
+
+vector<vector<image_cartesian>>
+copy_to_filtered_clusters(vector<vector<image_cartesian>> clusters, vector<vector<image_cartesian>> filtered_clusters)
+{
+	for (unsigned int i = 0, size = clusters.size(); i < size; i++)
+	{
+		filtered_clusters.push_back(clusters[i]);
+	}
+	return filtered_clusters;
+}
+
+int
+filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
+{
+	int filter_cameras = 0;
+	vector<image_cartesian> points;
+	vector<vector<image_cartesian>> clustered_points;
+	vector<vector<image_cartesian>> filtered_clusters;
+	vector<vector<image_cartesian>> clusters;
+	
+	if (active_cameras == 0)
+		return 0;
+	
+	points = compute_obstacle_points(sensor_params, sensor_data);
+	// show_semantic_map(map_config.resolution, sensors_params->range_max, points, filtered_clusters);
+	clustered_points = dbscan_compute_clusters(0.5, 1, points);
+
+	if (points.size() == 0)
+		return 0;
+
+	for (int camera = 1; camera <= MAX_CAMERA_INDEX; camera++)
+	{
+		if (camera_alive[camera] < 0)
+			continue;
+
+		int nearest_index = -1;
+		double nearest_time_diff = DBL_MAX;
+
+		for (int i = 0; i < NUM_CAMERA_IMAGES; i++)
+		{
+			if (camera_data[camera].image[i] == NULL)
+				continue;
+
+			int j = sensor_data->point_cloud_index;
+			double time_difference = fabs(camera_data[camera].timestamp[i] - sensor_data->points_timestamp[j] - CAMERA_DELAY);
+			if (time_difference < nearest_time_diff)
+			{
+				nearest_index = i;
+				nearest_time_diff = time_difference;
+			}
+		}
+
+		// if (nearest_time_diff > MAX_TIMESTAMP_DIFFERENCE)
+		// 	continue;
+
+		clusters = process_image(sensor_params, sensor_data, camera, nearest_index, points, clustered_points);
+		filtered_clusters = copy_to_filtered_clusters(clusters, filtered_clusters);
+		//filter_sensor_data_using_yolo_old(sensor_params, sensor_data, camera, nearest_index);
+		filter_cameras++;
+	}
+	show_semantic_map(map_config.resolution, sensors_params->range_max, points, filtered_clusters);
+
+	return filter_cameras;
+}
+
+
+void
+filter_sensor_data_using_yolo_old(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index)
 {
 	camera_filter_count[camera_index]++;
 	int filter_datmo_count = 0;
@@ -776,14 +1365,14 @@ filter_sensor_data_using_yolo(sensor_parameters_t *sensor_params, sensor_data_t 
 	double fy_meters = camera_params[camera_index].fy_factor * camera_params[camera_index].pixel_size * image_height;
 	double cu = camera_params[camera_index].cu_factor * image_width;
 	double cv = camera_params[camera_index].cv_factor * image_height;
-//	double fov = camera_params[camera_index].fov;
 	double map_resolution = map_config.resolution;
 	int img_planar_depth = (double) 0.5 * sensor_params->range_max / map_resolution;
 	cv::Mat img_planar = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
 	cv::Mat img_planar_back = cv::Mat(cv::Size(img_planar_depth * 2, img_planar_depth), CV_8UC3, cv::Scalar(255, 255, 255));
 	cv::Mat total;
-	//Remove vehicle front
+
 	float IMAGE_HEIGHT_CROP = 0.85; 	//camera3
+
 	if (camera_index == 3){
 		squeezeseg_dataset.camera3 = true;
 	}
@@ -2671,46 +3260,6 @@ filter_sensor_data_using_image_semantic_segmentation(sensor_parameters_t *sensor
 	return filter_cameras;
 }
 
-int
-filter_sensor_data_using_image_yolo(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
-{
-	int filter_cameras = 0;
-
-	if (active_cameras == 0)
-		return 0;
-
-	for (int camera = 1; camera <= MAX_CAMERA_INDEX; camera++)
-	{
-		if (camera_alive[camera] < 0)
-			continue;
-
-		int nearest_index = -1;
-		double nearest_time_diff = DBL_MAX;
-
-		for (int i = 0; i < NUM_CAMERA_IMAGES; i++)
-		{
-			if (camera_data[camera].image[i] == NULL)
-				continue;
-
-			int j = sensor_data->point_cloud_index;
-			double time_difference = fabs(camera_data[camera].timestamp[i] - sensor_data->points_timestamp[j] - CAMERA_DELAY);
-			if (time_difference < nearest_time_diff)
-			{
-				nearest_index = i;
-				nearest_time_diff = time_difference;
-			}
-		}
-
-		if (nearest_time_diff > MAX_TIMESTAMP_DIFFERENCE)
-			continue;
-
-		filter_sensor_data_using_yolo(sensor_params, sensor_data, camera, nearest_index);
-		//erase_moving_obstacles_cells(sensor_params, sensor_data, camera, nearest_index);
-		filter_cameras++;
-	}
-
-	return filter_cameras;
-}
 
 int
 filter_sensor_data_using_image_efficientdet(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
@@ -2777,8 +3326,103 @@ check_lidar_camera_max_timestamp_difference(sensor_data_t *sensor_data)
 }
 
 
+// void
+// remove_moving_obstacle_rais(int sensor_number)
+// {
+// 	if (sensor_number == VELODYNE)
+// 	{
+// 		if (!strcmp(neural_network, "squeezeseg"))
+// 		{
+// 			filter_sensor_data_using_squeezeseg(sensors_params, sensors_data);
+// 		}
+// 		if (!strcmp(neural_network, "salsanet"))
+// 		{
+// 			filter_sensor_data_using_salsanet(sensors_params, sensors_data);
+// 		}
+// 		if (!strcmp(neural_network, "yolo"))
+// 		{
+// 			filter_sensor_data_using_image_yolo(sensors_params, sensors_data);
+// 		}
+// 		if (!strcmp(neural_network, "efficientdet"))
+// 		{
+// 			filter_sensor_data_using_image_efficientdet(sensors_params, sensors_data);
+// 		}
+// 		/*if (!strcmp(neural_network,"rangenet")){
+// 		filter_sensor_data_using_rangenet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+// 		}*/
+// 		////New - Erase cells occupied by moving obstacles
+// 		if (!strcmp(neural_network, "deeplab"))
+// 		{
+// 			filter_sensor_data_using_image_semantic_segmentation(sensors_params, sensors_data);
+// 		}
+// 	}
+// }
+
+
 void
 include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalpos_message *globalpos_message)
+{
+	int i, old_point_cloud_index = -1;
+	int nearest_global_pos = 0;
+	double nearest_time = globalpos_message->timestamp;
+	double old_globalpos_timestamp;
+	carmen_pose_3D_t old_robot_position;
+
+	for (i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
+	{
+		double time_difference = fabs(sensors_data[sensor_number].points_timestamp[i] - globalpos_message->timestamp);
+		if (time_difference == 0.0)
+		{
+			old_point_cloud_index = sensors_data[sensor_number].point_cloud_index;
+			sensors_data[sensor_number].point_cloud_index = i;
+			old_globalpos_timestamp = sensors_data[sensor_number].robot_timestamp[i];
+			old_robot_position = sensors_data[sensor_number].robot_pose[i];
+			sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
+			sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
+
+			// remove_moving_obstacle_rais(sensor_number);
+			if (sensor_number == VELODYNE)
+				filter_sensor_data_using_images(sensors_params, sensors_data);
+
+			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+
+			sensors_data[sensor_number].robot_pose[i] = old_robot_position;
+			sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
+			sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
+			break;
+		}
+		else if (time_difference < nearest_time)
+		{
+			nearest_global_pos = i;
+			nearest_time = time_difference;
+		}
+	}
+
+	if (i == NUM_VELODYNE_POINT_CLOUDS)
+	{
+		i = nearest_global_pos;
+		old_point_cloud_index = sensors_data[sensor_number].point_cloud_index;
+		sensors_data[sensor_number].point_cloud_index = i;
+		old_globalpos_timestamp = sensors_data[sensor_number].robot_timestamp[i];
+		old_robot_position = sensors_data[sensor_number].robot_pose[i];
+		sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
+		sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
+
+		// remove_moving_obstacle_rais(sensor_number);
+		if (sensor_number == VELODYNE)
+			filter_sensor_data_using_images(sensors_params, sensors_data);
+
+		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+
+		sensors_data[sensor_number].robot_pose[i] = old_robot_position;
+		sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
+		sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
+	}
+}
+
+
+void
+include_sensor_data_into_map_old(int sensor_number, carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
 	map_update_count[sensor_number]++;
 	int i, old_point_cloud_index = -1;
@@ -2807,7 +3451,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 	sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
 	sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
 
-	if (check_lidar_camera_max_timestamp_difference(&sensors_data[sensor_number]))
+	// if (check_lidar_camera_max_timestamp_difference(&sensors_data[sensor_number]))
+	if (sensor_number == VELODYNE)
 	{
 		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
@@ -2819,10 +3464,10 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		{
 			filter_sensor_data_using_salsanet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
 		}
-		if (!strcmp(neural_network, "yolo"))
-		{
-			filter_sensor_data_using_image_yolo(&sensors_params[sensor_number], &sensors_data[sensor_number]);
-		}
+		// if (!strcmp(neural_network, "yolo"))
+		// {
+		// 	filter_sensor_data_using_image_yolo(&sensors_params[sensor_number], &sensors_data[sensor_number]);
+		// }
 		if (!strcmp(neural_network, "efficientdet"))
 		{
 			filter_sensor_data_using_image_efficientdet(&sensors_params[sensor_number], &sensors_data[sensor_number]);
@@ -2940,6 +3585,65 @@ publish_virtual_scan(double timestamp)
 
 static void
 carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
+{
+	if (visual_odometry_is_global_pos)
+		interpolator.AddMessageToInterpolationList(globalpos_message);
+	else
+		mapper_set_robot_pose_into_the_map(globalpos_message, update_cells_below_car);
+
+	// Map annotations handling
+	double distance_to_nearest_annotation = 1000.0;
+	int index_of_nearest_annotation = 0;
+	for (int i = 0; i < last_rddf_annotation_message.num_annotations; i++)
+	{
+		double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotations[i].annotation_point,
+				globalpos_history[last_globalpos].pose.position);
+		if ((distance_to_annotation < distance_to_nearest_annotation) &&
+			((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
+			 (last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) ||
+			 ((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			  (last_rddf_annotation_message.annotations[i].annotation_code <= RDDF_ANNOTATION_CODE_SPEED_LIMIT_20))))
+		{
+			distance_to_nearest_annotation = distance_to_annotation;
+			index_of_nearest_annotation = i;
+		}
+	}
+	if (((distance_to_nearest_annotation < 35.0) &&
+		 carmen_rddf_play_annotation_is_forward(globalpos_message->globalpos, 
+				 last_rddf_annotation_message.annotations[index_of_nearest_annotation].annotation_point)) || (distance_to_nearest_annotation < 8.0))
+	{
+		robot_near_strong_slow_down_annotation = 1;
+	}
+	else
+		robot_near_strong_slow_down_annotation = 0;
+
+	if (ok_to_publish)
+	{
+		free_virtual_scan_message();
+
+		// A ordem eh importante
+		if (sensors_params[VELODYNE].alive)
+			include_sensor_data_into_map(VELODYNE, globalpos_message);
+		if (sensors_params[LASER_LDMRS].alive && !robot_near_strong_slow_down_annotation)
+			include_sensor_data_into_map(LASER_LDMRS, globalpos_message);
+		if (sensors_params[3].alive && camera3_ready)	// camera 3
+			include_sensor_data_into_map(3, globalpos_message);
+		if (sensors_params[12].alive)	// Lidar 2
+			include_sensor_data_into_map(12, globalpos_message);
+
+		camera3_ready = 0;
+
+		publish_map(globalpos_message->timestamp);
+		publish_virtual_scan(globalpos_message->timestamp);
+	}
+
+	// if (update_and_merge_with_mapper_saved_maps && time_secs_between_map_save > 0.0)
+	// 	mapper_periodically_save_current_map(globalpos_message->timestamp);
+}
+
+
+void
+carmen_localize_ackerman_globalpos_message_handler_old(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
 	globalpos_msg_count++;
 	if (visual_odometry_is_global_pos)
@@ -3345,47 +4049,12 @@ save_image_semantic_map_to_disk(unsigned char *segmap, int width, int height, in
 }
 
 
-unsigned char *
-open_semantic_image(int width, int height, int camera, char camera_side, double timestamp, char *dirname)
-{
-	(void) camera;
-	char complete_path[1024];
-	sprintf(complete_path, "%s/%.6lf-%c.segmap", dirname, timestamp, camera_side);
-
-	carmen_FILE *segmap_file = carmen_fopen(complete_path, "rb");
-
-	if (!segmap_file)
-	{
-		fprintf (stderr, "Error: Segmap file not found! %s\n", complete_path);
-		return NULL;
-	}
-
-	int segmap_size = width * height;
-	unsigned char *segmap = (unsigned char *) malloc (sizeof(unsigned char) * segmap_size);
-
-	if (!segmap)
-	{
-		fprintf (stderr, "Error: Could not allocate memory for segmap file! %s\n", complete_path);
-		return NULL;
-	}
-
-	int bytes_read = carmen_fread(segmap, sizeof(unsigned char), segmap_size, segmap_file);
-
-	if (bytes_read != segmap_size)
-		fprintf(stderr, "Error: Segmap file size must be %d bytes, but %d bytes were read from disk! %s\n", segmap_size, bytes_read, complete_path);
-
-	carmen_fclose(segmap_file);
-
-	return segmap;
-}
-
-
 void
 bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	camera_msg_count[camera]++;
 	int i = (camera_data[camera].current_index + 1) % NUM_CAMERA_IMAGES;
-	char camera_side = (camera_alive[camera] == 0) ? 'l' : 'r';  // left or right side
+	// char camera_side = (camera_alive[camera] == 0) ? 'l' : 'r';  // left or right side
 
 	camera_data[camera].current_index = i;
 	camera_data[camera].width[i] = image_msg->width;
@@ -3403,36 +4072,33 @@ bumblebee_basic_image_handler(int camera, carmen_bumblebee_basic_stereoimage_mes
 	if (camera_data[camera].semantic[i] != NULL)
 		free(camera_data[camera].semantic[i]);
 
-	if(!strcmp(neural_network, "deeplab")){
-		if (process_semantic)
-			camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
-		else
-			camera_data[camera].semantic[i] = open_semantic_image(image_msg->width, image_msg->height, camera, camera_side, image_msg->timestamp, segmap_dirname);
-	}
-	if (verbose >= 2)
-	{
-	    cv::Mat image_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, camera_data[camera].image[i]);
-		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, cv::Scalar(0));
-		if (camera_data[camera].semantic[i] != NULL)
-			for (int y = 0; y < semantic_cv.rows; y++)
-				for (int x = 0; x < semantic_cv.cols; x++)
-					semantic_cv.at<cv::Vec3b>(cv::Point(x, y)) = colormap[camera_data[camera].semantic[i][x + y * semantic_cv.cols]];
+	// if(!strcmp(neural_network, "deeplab")){
+	// 	if (process_semantic)
+	// 		camera_data[camera].semantic[i] = process_image(image_msg->width, image_msg->height, camera_data[camera].image[i]);
+	// 	else
+	// 		camera_data[camera].semantic[i] = open_semantic_image(image_msg->width, image_msg->height, camera, camera_side, image_msg->timestamp, segmap_dirname);
+	// }
+	// if (verbose >= 2)
+	// {
+	//     //cv::Mat image_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, camera_data[camera].image[i]);
+	// 	cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, cv::Scalar(0));
+	// 	if (camera_data[camera].semantic[i] != NULL)
+	// 		for (int y = 0; y < semantic_cv.rows; y++)
+	// 			for (int x = 0; x < semantic_cv.cols; x++)
+	// 				semantic_cv.at<cv::Vec3b>(cv::Point(x, y)) = colormap[camera_data[camera].semantic[i][x + y * semantic_cv.cols]];
+		
+	// 	camera_image_semantic[camera] = semantic_cv;
 
-//		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC1, camera_data[camera].semantic[i]);
-//		cv::Mat semantic_cv = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3, color_image(image_msg->width, image_msg->height, camera_data[camera].semantic[i]));
-
-	    int window_widht = BUMBLEBEE_BASIC_VIEW_MAX_WINDOW_WIDTH;
-	    int window_height = (double) image_msg->height * window_widht / image_msg->width;
-	    if (window_widht != image_msg->width)
-	    {
-	    	resize(image_cv, image_cv, cv::Size(window_widht, window_height));
-	    	resize(semantic_cv, semantic_cv, cv::Size(window_widht, window_height));
-	    }
-	    hconcat(image_cv, semantic_cv, camera_image_semantic[camera]);
-		cvtColor(camera_image_semantic[camera], camera_image_semantic[camera], CV_RGB2BGR);
-//		imshow("Image Semantic Segmentation Camera", camera_image_semantic[camera]);
-//		cv::waitKey(1);
-	}
+	    // int window_widht = BUMBLEBEE_BASIC_VIEW_MAX_WINDOW_WIDTH;
+	    // int window_height = (double) image_msg->height * window_widht / image_msg->width;
+	    // if (window_widht != image_msg->width)
+	    // {
+	    // 	//resize(image_cv, image_cv, cv::Size(window_widht, window_height));
+	    // 	resize(semantic_cv, semantic_cv, cv::Size(window_widht, window_height));
+	    // }
+	    // hconcat(image_cv, semantic_cv, camera_image_semantic[camera]);
+		// cvtColor(camera_image_semantic[camera], camera_image_semantic[camera], CV_RGB2BGR);
+	// }
 }
 
 
@@ -4453,6 +5119,7 @@ main(int argc, char **argv)
 		{
 			initialize_python_dataset();
 		}
+		classes_names = get_classes_names("../sharedlib/darknet2/data/coco.names");
 		initialize_Efficientdet();
 	}
 	/* Register TensorRT context for RangeNet++*/

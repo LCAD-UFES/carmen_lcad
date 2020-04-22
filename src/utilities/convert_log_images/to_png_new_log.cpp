@@ -22,7 +22,10 @@ process_bumblebee(FILE *f, char *dir, int camera_side, bool show_image, char* lo
 	fscanf(f, "%d %d", &img_size, &is_rect);
 	fscanf(f, "%s %s %s", timestamp, host, local_timestamp);
 
-	sprintf(path, "%s%s", log_path, suffix);
+	if (log_path == NULL)
+		sprintf(path, "%s", suffix);
+	else
+		sprintf(path, "%s%s", log_path, suffix);
 
 	if (w < 300 || h < 300 || w > 10000 || h > 10000)
 	{
@@ -174,7 +177,6 @@ main(int argc, char **argv)
 
 	int camera_side = find_side_arg(argc, argv);
 	bool show_image = find_show_arg(argc, argv);
-	//char* log_path = "/dados/log-vale-locomotiva-20200402-posto1.txt";
 	find_log_path(argc, argv, log_path);
 
 

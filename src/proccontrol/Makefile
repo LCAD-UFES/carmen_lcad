@@ -10,7 +10,7 @@ SOURCES = 	watchdog.c proccontrol_interface.c proccontrol.c \
 			proccontrol_setgroup.c proccontrol_viewoutput.c
 
 PUBLIC_INCLUDES = 	proccontrol_messages.h proccontrol_interface.h 
-PUBLIC_LIBRARIES = 	proccontrol_interface.a
+PUBLIC_LIBRARIES = 	libproccontrol_interface.a
 PUBLIC_BINARIES = 	proccontrol proccontrol_setmodule \
 	                proccontrol_setgroup proccontrol_viewoutput proccontrol_gui
 

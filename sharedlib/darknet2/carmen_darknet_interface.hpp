@@ -34,7 +34,7 @@ std::vector<bbox_t>
 run_YOLO(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold=0.5, float hier_thresh=0.5);
 
 
-void
-run_YOLO_VOC_Pascal(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold, char* file_path);
+std::vector<bbox_t>
+run_YOLO_and_save_predictions(unsigned char *data, int w, int h, void *net_config, char **classes_names, float threshold, char* file_path);
 
 #endif
