@@ -100,6 +100,8 @@ int
 carmen_playback_is_valid_message(char *message, int *start_msg, int *stop_msg, double *start_ts, double *stop_ts,
 		double *start_x, double *start_y, double *stop_x, double *stop_y, double *radius)
 {
+    setlocale(LC_ALL, "C");
+
 	char *comma;
 
     for (comma = message; (*comma) != 0; comma++)

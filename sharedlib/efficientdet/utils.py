@@ -19,18 +19,30 @@ from __future__ import division
 # gtype import
 from __future__ import print_function
 
-import re
 import os
+import re
 from absl import logging
 import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow.compat.v2 as tf2
+from typing import Text, Tuple, Union
 
 from tensorflow.python.tpu import tpu_function  # pylint:disable=g-direct-tensorflow-import
-
-relu_fn = tf.nn.swish
-backbone_relu_fn = relu_fn
 # pylint: disable=logging-format-interpolation
+
+
+def activation_fn(features: tf.Tensor, act_type: Text):
+  """Customized non-linear activation type."""
+  if act_type == 'swish':
+    return tf.nn.swish(features)
+  elif act_type == 'swish_native':
+    return features * tf.sigmoid(features)
+  elif act_type == 'relu':
+    return tf.nn.relu(features)
+  elif act_type == 'relu6':
+    return tf.nn.relu6(features)
+  else:
+    raise ValueError('Unsupported act_type {}'.format(act_type))
 
 
 class DepthwiseConv2D(tf.keras.layers.DepthwiseConv2D, tf.layers.Layer):
@@ -214,39 +226,41 @@ class BatchNormalization(tf.layers.BatchNormalization):
     super(BatchNormalization, self).__init__(**kwargs)
 
 
-def batch_norm_class(is_training):
-  if is_training:
+def batch_norm_class(is_training, use_tpu=False,):
+  if is_training and use_tpu:
     return TpuBatchNormalization
   else:
     return BatchNormalization
 
 
-def tpu_batch_normalization(inputs, training=False, **kwargs):
+def tpu_batch_normalization(inputs, training=False, use_tpu=False, **kwargs):
   """A wrapper for TpuBatchNormalization."""
-  layer = batch_norm_class(training)(**kwargs)
+  layer = batch_norm_class(training, use_tpu)(**kwargs)
   return layer.apply(inputs, training=training)
 
 
-def batch_norm_relu(inputs,
-                    is_training_bn,
-                    relu=True,
-                    init_zero=False,
-                    data_format='channels_last',
-                    momentum=0.99,
-                    epsilon=1e-3,
-                    name=None):
-  """Performs a batch normalization followed by a ReLU.
+def batch_norm_act(inputs,
+                   is_training_bn: bool,
+                   act_type: Union[Text, None],
+                   init_zero: bool = False,
+                   data_format: Text = 'channels_last',
+                   momentum: float = 0.99,
+                   epsilon: float = 1e-3,
+                   use_tpu: bool = False,
+                   name: Text = None):
+  """Performs a batch normalization followed by a non-linear activation.
 
   Args:
     inputs: `Tensor` of shape `[batch, channels, ...]`.
     is_training_bn: `bool` for whether the model is training.
-    relu: `bool` if False, omits the ReLU operation.
+    act_type: non-linear relu function type. If None, omits the relu operation.
     init_zero: `bool` if True, initializes scale parameter of batch
       normalization with 0 instead of 1 (default).
     data_format: `str` either "channels_first" for `[batch, channels, height,
       width]` or "channels_last for `[batch, height, width, channels]`.
     momentum: `float`, momentume of batch norm.
     epsilon: `float`, small value for numerical stability.
+    use_tpu: `bool`, whether to use tpu version of batch norm.
     name: the name of the batch normalization layer
 
   Returns:
@@ -270,11 +284,12 @@ def batch_norm_relu(inputs,
       center=True,
       scale=True,
       training=is_training_bn,
+      use_tpu=use_tpu,
       gamma_initializer=gamma_initializer,
       name=name)
 
-  if relu:
-    inputs = relu_fn(inputs)
+  if act_type:
+    inputs = activation_fn(inputs, act_type)
   return inputs
 
 
@@ -304,6 +319,8 @@ def num_params_flops(readable_format=True):
   options['output'] = 'none'
   flops = tf.profiler.profile(
       tf.get_default_graph(), options=options).total_float_ops
+  # We use flops to denote multiply-adds, which is counted as 2 ops in tfprof.
+  flops = flops // 2
   if readable_format:
     nparams = float(nparams) * 1e-6
     flops = float(flops) * 1e-9
@@ -322,7 +339,6 @@ def scalar(name, tensor):
 
 def get_scalar_summaries():
   """Returns the list of (name, Tensor) summaries recorded by scalar()."""
-  logging.info('get summaries {}'.format(tf.get_collection('edsummaries')))
   return tf.get_collection('edsummaries')
 
 
@@ -390,8 +406,7 @@ def archive_ckpt(ckpt_eval, ckpt_objective, ckpt_path):
     tf.io.gfile.copy(f, dest, overwrite=True)
   ckpt_state = tf.train.generate_checkpoint_state_proto(
       dst_dir,
-      model_checkpoint_path=ckpt_name,
-      all_model_checkpoint_paths=[ckpt_name])
+      model_checkpoint_path=os.path.join(dst_dir, ckpt_name))
   with tf.io.gfile.GFile(os.path.join(dst_dir, 'checkpoint'), 'w') as f:
     f.write(str(ckpt_state))
   with tf.io.gfile.GFile(os.path.join(dst_dir, 'best_eval.txt'), 'w') as f:
@@ -403,3 +418,15 @@ def archive_ckpt(ckpt_eval, ckpt_objective, ckpt_path):
 
   logging.info('Copying checkpoint {} to {}'.format(ckpt_path, dst_dir))
   return True
+
+
+def get_feat_sizes(image_size: Union[int, Tuple[int, int]], max_level: int):
+  """Get feat widths and heights for all levels."""
+  if isinstance(image_size, int):
+    image_size = (image_size, image_size)
+  feat_sizes = [{'height': image_size[0], 'width': image_size[1]}]
+  feat_size = image_size
+  for _ in range(1, max_level + 1):
+    feat_size = ((feat_size[0] - 1) // 2 + 1, (feat_size[1] - 1) // 2 + 1)
+    feat_sizes.append({'height': feat_size[0], 'width': feat_size[1]})
+  return feat_sizes

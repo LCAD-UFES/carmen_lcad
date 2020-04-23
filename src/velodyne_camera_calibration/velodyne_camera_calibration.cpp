@@ -7,7 +7,7 @@
 const int MIN_ANGLE_OBSTACLE = 2;
 const int MAX_ANGLE_OBSTACLE = 188;
 
-#define MAX_RANGE 50.0
+#define MAX_RANGE 80.0
 #define MIN_RANGE 0.5
 
 #define SICK_MIN_RANGE 0.5
@@ -339,8 +339,9 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 }
 
 
+// TODO Remove if the new works fine
 vector<image_cartesian>
-velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
+velodyne_camera_calibration_fuse_camera_lidar_old(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
                                               carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose, unsigned int image_width,
 											  unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
 {
@@ -412,6 +413,81 @@ velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_messa
                 	points.push_back(point);
                 }
 			}
+			previous_range = range;
+			previous_vertical_angle = vertical_angle;
+		}
+	}
+	return points;
+}
+
+
+vector<image_cartesian>
+velodyne_camera_calibration_fuse_camera_lidar(carmen_velodyne_partial_scan_message *velodyne_message, carmen_camera_parameters camera_parameters,
+                                              carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose, unsigned int image_width,
+											  unsigned int image_height, unsigned int crop_x, unsigned int crop_y, unsigned int crop_width, unsigned int crop_height)
+{
+	std::vector<image_cartesian> points;
+	double horizontal_angle = 0.0, vertical_angle = 0.0, previous_vertical_angle = 0.0, range = 0.0, previous_range = 0.0;
+	unsigned int image_x = 0, image_y = 0;
+
+	unsigned int max_x = crop_x + crop_width;
+	unsigned int max_y = crop_y + crop_height;
+
+	if (velodyne_message == NULL)
+		return (points);
+
+	double fx_meters = camera_parameters.fx_factor * camera_parameters.pixel_size * image_width;
+	double fy_meters = camera_parameters.fy_factor * camera_parameters.pixel_size * image_height;
+
+	double cu = camera_parameters.cu_factor * (double) image_width;
+	double cv = camera_parameters.cv_factor * (double) image_height;
+
+	for (int j = 0; j < velodyne_message->number_of_32_laser_shots; j++)
+	{
+		horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
+
+		if (fabs(carmen_normalize_theta(horizontal_angle - camera_pose.orientation.yaw)) > M_PI_2) // Disregard laser shots out of the camera's field of view
+			continue;
+
+		previous_range = (((double) velodyne_message->partial_scan[j].distance[0]) / 500.0);
+		previous_vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[0]));
+
+		for (int i = 1; i < 32; i++)
+		{
+			range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
+
+			if (range <= MIN_RANGE || range >= MAX_RANGE)
+				continue;
+
+			vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[i]));
+
+			tf::Point p3d_velodyne_reference = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+			tf::Point p3d_velodyne_reference_1 = spherical_to_cartesian(horizontal_angle, previous_vertical_angle, previous_range);
+
+			// Jose's method check if a point is obstacle
+			double delta_x = abs(p3d_velodyne_reference.x() - p3d_velodyne_reference_1.x());
+			double delta_z = abs(p3d_velodyne_reference.z() - p3d_velodyne_reference_1.z());
+			double line_angle = carmen_radians_to_degrees(fabs(atan2(delta_z, delta_x)));
+			
+			if (!(line_angle > MIN_ANGLE_OBSTACLE) && (line_angle < MAX_ANGLE_OBSTACLE))
+				continue;
+			
+			tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference, velodyne_pose, camera_pose);
+			image_x = (unsigned int) (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
+            image_y = (unsigned int) (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
+            
+			if (image_x >= crop_x && image_x <= max_x && image_y >= crop_y && image_y <= max_y)
+            {
+            	image_cartesian point;
+            	point.shot_number = j;
+            	point.ray_number  = i;
+            	point.image_x     = image_x - crop_x;
+            	point.image_y     = image_y - crop_y;
+            	point.cartesian_x = p3d_velodyne_reference.x();
+            	point.cartesian_y = -p3d_velodyne_reference.y();             // Must be inverted because Velodyne angle is reversed with CARMEN angles
+            	point.cartesian_z = p3d_velodyne_reference.z();
+            	points.push_back(point);
+            }
 			previous_range = range;
 			previous_vertical_angle = vertical_angle;
 		}

@@ -4,6 +4,7 @@
 #include <vector>
 #include <carmen/carmen_darknet_interface.hpp>
 /*
+darnet_interface to use struct bbox_t
 struct bbox_t
 {
 	unsigned int x, y, w, h;	// (x,y) - top-left corner, (w, h) - width & height of bounded box
@@ -13,7 +14,7 @@ struct bbox_t
 };*/
 
 void
-initialize_Efficientdet();
+initialize_Efficientdet(float min_score);
 
 std::vector<bbox_t>
 run_EfficientDet(unsigned char *image, int width, int height);

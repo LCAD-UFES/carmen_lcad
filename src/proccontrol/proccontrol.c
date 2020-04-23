@@ -36,15 +36,18 @@ process_info_t process[MAX_PROCESSES];
 int num_processes = 0;
 int my_pid;
 char *my_hostname = NULL;
+char warning_msg[2000];
 
 void kill_process(process_info_p process)
 {
 	int status;
 
-	fprintf(stderr, "PROCCONTROL (%d): Killing %s (%d)\n",
+	snprintf(warning_msg, 2000, "PROCCONTROL (%d): Killing %s (%d)\n",
 			my_pid, process->command_line, process->pid);
+	fprintf(stderr, "%s", warning_msg);
+	proccontrol_publish_output(process->pid, process->module_name, warning_msg);
 	kill(process->pid, SIGINT);
-	usleep(0.05 * 1000000);
+	usleep(0.05 * 1e6);
 	kill(process->pid, SIGKILL);
 	process->state = 0;
 
@@ -96,8 +99,10 @@ void start_process(process_info_p process)
 		exit(-1);
 	}
 
-	fprintf(stderr, "PROCCONTROL (%d): Spawned %s (%d)\n", my_pid,
+	snprintf(warning_msg, 2000, "PROCCONTROL (%d): Spawned %s (%d)\n", my_pid,
 			process->command_line, spawned_pid);
+	fprintf(stderr, "%s", warning_msg);
+	proccontrol_publish_output(spawned_pid, process->module_name, warning_msg);
 	process->pid = spawned_pid;
 	process->state = 1;
 	process->last_heartbeat = carmen_get_time();
@@ -161,10 +166,12 @@ void process_timer(void *clientdata __attribute__ ((unused)),
 				/* check for last heartbeat */
 				current_time = carmen_get_time();
 				if(process[i].watch_heartbeats &&
-						current_time - process[i].last_heartbeat > 2.0) {
-					fprintf(stderr,
-							"PROCCONTROL (%d): %s (%d) lost heartbeats\n",
+						current_time - process[i].last_heartbeat > 2.0)
+				{
+					snprintf(warning_msg, 2000, "PROCCONTROL (%d): %s (%d) lost heartbeats\n",
 							my_pid, process[i].command_line, process[i].pid);
+					fprintf(stderr, "%s", warning_msg);
+					proccontrol_publish_output(process[i].pid, process[i].module_name, warning_msg);
 
 					kill_process(&process[i]);
 					clear_signal_handlers();
@@ -188,11 +195,13 @@ void process_timer(void *clientdata __attribute__ ((unused)),
 				else {
 					/* Check if the child process terminated due to uncaught signal.
 	     If so, mark it to be restarted */
-					if(WIFSIGNALED(status)) {
-						fprintf(stderr,
-								"PROCCONTROL (%d): %s (%d) exited due to SIGNAL (code = %d).\n",
-								my_pid, process[i].command_line, process[i].pid,
-								WTERMSIG(status));
+					if(WIFSIGNALED(status))
+					{
+						snprintf(warning_msg, 2000, "PROCCONTROL (%d): %s (%d) exited due to SIGNAL (code = %d).\n",
+								my_pid, process[i].command_line, process[i].pid, WTERMSIG(status));
+						fprintf(stderr, "%s", warning_msg);
+						proccontrol_publish_output(process[i].pid, process[i].module_name, warning_msg);
+						usleep(0.05 * 1e6);
 
 						/* Clean up file descriptors. */
 						close(process[i].pipefd[0]);
@@ -206,13 +215,17 @@ void process_timer(void *clientdata __attribute__ ((unused)),
 
 					/* Check if the child process was stopped or suspended.  If so, kill
 	     it and mark it to be restarted */
-					if(WIFSTOPPED(status)) {
-						fprintf(stderr, "PROCCONTROL (%d): %s (%d) was STOPPED "
+					if(WIFSTOPPED(status))
+					{
+						snprintf(warning_msg, 2000, "PROCCONTROL (%d): %s (%d) was STOPPED "
 								"(code = %d).  Killing process.\n", my_pid,
 								process[i].command_line, process[i].pid, WSTOPSIG(status));
+						fprintf(stderr, "%s", warning_msg);
+						proccontrol_publish_output(process[i].pid, process[i].module_name, warning_msg);
+
 						/* Kill the child process. */
 						kill(process[i].pid, SIGINT);
-						usleep(0.05 * 1000000);
+						usleep(0.05 * 1e6);
 						kill(process[i].pid, SIGKILL);
 						process[i].state = 0;
 						process_killed = 1;
@@ -225,11 +238,13 @@ void process_timer(void *clientdata __attribute__ ((unused)),
 
 					/* Check if the child process exited (ie: return; exit(int); etc.).
 	     If so and the code != 0, restart it. */
-					if(WIFEXITED(status)) {
-						fprintf(stderr,
-								"PROCCONTROL (%d): %s (%d) exited UNCLEANLY (code = %d).\n",
-								my_pid, process[i].command_line, process[i].pid,
-								WEXITSTATUS(status));
+					if(WIFEXITED(status))
+					{
+						snprintf(warning_msg, 2000, "PROCCONTROL (%d): %s (%d) exited UNCLEANLY (code = %d).\n",
+								my_pid, process[i].command_line, process[i].pid, WEXITSTATUS(status));
+						fprintf(stderr, "%s", warning_msg);
+						proccontrol_publish_output(process[i].pid, process[i].module_name, warning_msg);
+						usleep(0.05 * 1e6);
 
 						/* Clean up file descriptors. */
 						close(process[i].pipefd[0]);
@@ -392,7 +407,7 @@ static void reconnect_central(void)
 					CARMEN_SUBSCRIBE_ALL);
 		}
 		else
-			usleep(100000);
+			usleep(0.1 * 1e6);
 	} while(err == -1);
 }
 

@@ -268,11 +268,11 @@ mapper_map_configs_are_different(carmen_map_config_t &a, carmen_map_config_t &b)
 }
 
 static void
-mapper_merge_snapshot_map(carmen_map_t &count_remission_map, carmen_map_t &source, carmen_map_t &target, double remission_threshold)
+mapper_merge_snapshot_map(carmen_map_t &count_remission_map, carmen_map_t &source, carmen_map_t &target, double rays_threshold_to_merge_between_maps)
 {
 	for (int i = 0; i < count_remission_map.config.x_size * count_remission_map.config.y_size; i++)
 	{
-		if (remission_threshold > count_remission_map.complete_map[i])
+		if (rays_threshold_to_merge_between_maps > count_remission_map.complete_map[i])
 		{
 			target.complete_map[i] = source.complete_map[i];
 		}
@@ -666,7 +666,7 @@ clear_log_odds_map(carmen_map_t *log_odds_snapshot_map, double log_odds_l0)
 }
 
 int
-run_mapper_with_remision_threshold(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global, double remission_threshold)
+run_mapper_with_remision_threshold(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global, double rays_threshold_to_merge_between_maps)
 {
 	static carmen_map_t *log_odds_snapshot_map;
 	static int first = 1;
@@ -750,10 +750,10 @@ run_mapper_with_remision_threshold(sensor_parameters_t *sensor_params, sensor_da
 		}
 	}
 
-	mapper_merge_snapshot_map(count_remission_map, snapshot_map, map, remission_threshold);
-	mapper_merge_snapshot_map(count_remission_map, sum_remission_snapshot_map, sum_remission_map, remission_threshold);
-	mapper_merge_snapshot_map(count_remission_map, sum_sqr_remission_snapshot_map, sum_sqr_remission_map, remission_threshold);
-	mapper_merge_snapshot_map(count_remission_map, count_remission_snapshot_map, count_remission_map, remission_threshold);
+	mapper_merge_snapshot_map(count_remission_map, snapshot_map, map, rays_threshold_to_merge_between_maps);
+	mapper_merge_snapshot_map(count_remission_map, sum_remission_snapshot_map, sum_remission_map, rays_threshold_to_merge_between_maps);
+	mapper_merge_snapshot_map(count_remission_map, sum_sqr_remission_snapshot_map, sum_sqr_remission_map, rays_threshold_to_merge_between_maps);
+	mapper_merge_snapshot_map(count_remission_map, count_remission_snapshot_map, count_remission_map, rays_threshold_to_merge_between_maps);
 
 	return (1);
 }
@@ -1698,14 +1698,14 @@ mapper_periodically_save_current_map(double timestamp)
 
 
 void
-mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_config_t main_car_config, bool use_remission_threshold = false)
+mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_config_t main_car_config, bool use_merge_between_maps = false)
 {
 	car_config = main_car_config;
 	map_config = *main_map_config;
 
 	carmen_grid_mapping_create_new_map(&map, map_config.x_size, map_config.y_size, map_config.resolution, 'm');
 
-	if (use_remission_threshold)
+	if (use_merge_between_maps)
 		carmen_grid_mapping_create_new_map(&snapshot_map, map_config.x_size, map_config.y_size, map_config.resolution, 'm');
 
 	carmen_grid_mapping_create_new_map(&offline_map, map_config.x_size, map_config.y_size, map_config.resolution, 'm');
@@ -1716,7 +1716,7 @@ mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_co
 		carmen_grid_mapping_create_new_map(&sum_sqr_remission_map, map_config.x_size, map_config.y_size, map_config.resolution, '2');
 		carmen_grid_mapping_create_new_map(&count_remission_map, map_config.x_size, map_config.y_size, map_config.resolution, 'c');
 
-		if (use_remission_threshold)
+		if (use_merge_between_maps)
 		{
 			carmen_grid_mapping_create_new_map(&sum_remission_snapshot_map, map_config.x_size, map_config.y_size, map_config.resolution, 's');
 			carmen_grid_mapping_create_new_map(&sum_sqr_remission_snapshot_map, map_config.x_size, map_config.y_size, map_config.resolution, '2');

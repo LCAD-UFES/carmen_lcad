@@ -56,6 +56,7 @@ int fast = 0;
 int advance_frame = 0;
 int rewind_frame = 0;
 int basic_messages = 0;
+char *ignore_list = NULL;
 
 int g_publish_odometry = 1;
 
@@ -349,7 +350,7 @@ check_in_file_message(char *logger_message_name, char *logger_message_line)
 	error |= ((strcmp(logger_message_name, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE13") == 0) && (bumblebee_basic_stereoimage13.image_size <= 0));
 
 	if (!error)
-		return true;
+		return false;
 
 	static double last_update = 0.0;
 	double current_time = carmen_get_time();
@@ -358,6 +359,73 @@ check_in_file_message(char *logger_message_name, char *logger_message_line)
 	{
 		fprintf(stderr, "\nFILE NOT FOUND: %s\n", logger_message_line);
 		last_update = current_time;
+	}
+
+	return true;
+}
+
+
+int
+wildcard_strcmp(const char *wildcard, const char *str)
+{
+	const char *cp = NULL, *mp = NULL;
+
+	while ((*str != 0) && (*wildcard != '*'))
+	{
+		if ((*wildcard != *str) && (*wildcard != '?'))
+			return (1);
+
+		wildcard++;
+		str++;
+	}
+
+	while (*str != 0)
+	{
+		if (*wildcard == '*')
+		{
+		  wildcard++;
+		  if (*wildcard == 0)
+			return (0);
+
+		  mp = wildcard;
+		  cp = str + 1;
+		}
+		else if ((*wildcard == *str) || (*wildcard == '?'))
+		{
+		  wildcard++;
+		  str++;
+		}
+		else
+		{
+		  wildcard = mp;
+		  str = cp;
+		  cp++;
+		}
+	}
+
+	while (*wildcard == '*')
+		wildcard++;
+
+	return (*wildcard != 0); // Zero if got a match
+}
+
+
+bool
+check_ignore_list(char *message_name)
+{
+	static char ignore_message[100], *start;
+
+	for (char *p = ignore_list; p != NULL && *p != '\0'; p++)
+	{
+		start = p;
+		p = strchr(p, ',');
+		if (p == NULL)
+			p = start + strlen(start);
+		strncpy(ignore_message, start, p - start);
+		ignore_message[p - start] = '\0';
+
+		if (wildcard_strcmp(ignore_message, message_name) == 0)
+			return true;
 	}
 
 	return false;
@@ -408,7 +476,7 @@ read_message(int message_num, int publish, int no_wait)
 						wait_for_timestamp(playback_timestamp);
 
 					int do_not_publish = !g_publish_odometry && (strcmp(logger_callbacks[i].ipc_message_name, CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME) == 0);
-					do_not_publish |= !check_in_file_message(command, line);
+					do_not_publish |= check_ignore_list(command) || check_in_file_message(command, line);
 					if (!do_not_publish)
 						IPC_publishData(logger_callbacks[i].ipc_message_name, logger_callbacks[i].message_data);
 				}
@@ -861,6 +929,7 @@ void usage(char *fmt, ...)
 
 	fprintf(stderr, "Usage: playback <log_filename> [args]\n");
 	fprintf(stderr, "[args]: -fast {on|off} -autostart {on|off} -basic {on|off}\n");
+	fprintf(stderr, "        -ignore <comma-separated log message list with wildcards>\n");
 	fprintf(stderr, "        -play_message  <num>   -stop_message <num>\n");
 	fprintf(stderr, "        -play_time     <num>   -stop_time    <num>\n");
 	fprintf(stderr, "        -play_pose_x   <num>   -stop_pose_x  <num>\n");
@@ -885,6 +954,7 @@ void read_parameters(int argc, char **argv)
 		{(char *) "commandline",	(char *) "fast",			CARMEN_PARAM_ONOFF,		&(fast),				0, NULL},
 		{(char *) "commandline",	(char *) "autostart",		CARMEN_PARAM_ONOFF, 	&(autostart),			0, NULL},
 		{(char *) "commandline",	(char *) "basic",			CARMEN_PARAM_ONOFF, 	&(basic_messages),		0, NULL},
+		{(char *) "commandline",	(char *) "ignore",			CARMEN_PARAM_STRING, 	&(ignore_list),			0, NULL},
 		{(char *) "commandline",	(char *) "play_message",	CARMEN_PARAM_INT, 		&(current_position),	0, NULL},
 		{(char *) "commandline",	(char *) "stop_message",	CARMEN_PARAM_INT, 		&(stop_position),		0, NULL},
 		{(char *) "commandline",	(char *) "play_time",		CARMEN_PARAM_DOUBLE,	&(current_time),		0, NULL},
