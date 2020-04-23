@@ -791,6 +791,7 @@ show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> p
 {
 	char info[25];
 	static double start_time = 0.0;
+	unsigned int name_size = 0;
 	
 	if (image.empty())
 		return;
@@ -806,16 +807,19 @@ show_detections(Mat image, vector<bbox_t> predictions, vector<image_cartesian> p
 
     for (unsigned int i = 0; i < predictions.size(); i++)
 	{
+		name_size = strlen(classes_names[predictions[i].obj_id]) * 10;
+		rectangle(image, Point(predictions[i].x, predictions[i].y - 4), Point(predictions[i].x + name_size, predictions[i].y - 15), Scalar(0, 0, 0), -1, 8, 0);
+
 		rectangle(image, Point(predictions[i].x, predictions[i].y), Point((predictions[i].x + predictions[i].w), (predictions[i].y + predictions[i].h)),
 				Scalar(255, 0, 255), 4);
 		
 		sprintf(info, "%s", classes_names[predictions[i].obj_id]);
-		putText(image, info, Point(predictions[i].x + 1, predictions[i].y - 3), FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+		putText(image, info, Point(predictions[i].x, predictions[i].y - 4), FONT_HERSHEY_PLAIN, 1, cvScalar(0, 255, 0), 1);
 	}
 
 	//printf("Points Size %d\n", points.size());
 	
-    display_lidar(image, points, 0, 0, 255);                       // Blue points are all points that hit an obstacle
+    display_lidar(image, points, 0, 0, 200);                       // Blue points are all points that hit an obstacle
 	display_lidar_matrix(image, clustered_points, 0, 255, 0);      // Green points are the clustered and classified as moving objects points
 
     if (image.cols > 640)
@@ -909,6 +913,7 @@ compute_obstacle_points(sensor_parameters_t *sensor_params, sensor_data_t *senso
 unsigned int
 choose_cluster(vector<int> moving_object_cluster_index, bbox_t bbox, vector<vector<image_cartesian>> clustered_points)   // Chosse the cluster that have more points inside the bounding box
 {
+	printf("5\n");
 	vector<int> number_of_points_inside_bbox;
 	unsigned int cont = 0;
 	unsigned int best_cluster_index = 0;
@@ -933,9 +938,9 @@ choose_cluster(vector<int> moving_object_cluster_index, bbox_t bbox, vector<vect
 	}
 	for (unsigned int i = 1; i < number_of_clusters; i++)
 	{
-		// if (number_of_points_inside_bbox[best_cluster_index] < number_of_points_inside_bbox[i])
-		if (((double) number_of_points_inside_bbox[best_cluster_index] / (double) clustered_points[best_cluster_index].size()) < 
-			((double) number_of_points_inside_bbox[i])  / (double) clustered_points[i].size())
+		if (number_of_points_inside_bbox[best_cluster_index] < number_of_points_inside_bbox[i])
+		// if (((double) number_of_points_inside_bbox[best_cluster_index] / (double) clustered_points[best_cluster_index].size()) < 
+		// 	((double) number_of_points_inside_bbox[i])  / (double) clustered_points[i].size())
 			best_cluster_index = i;
 	}
 	return (best_cluster_index);
@@ -945,6 +950,7 @@ choose_cluster(vector<int> moving_object_cluster_index, bbox_t bbox, vector<vect
 void
 classify_clusters_of_poits_using_detections(vector<bbox_t> &predictions, vector<vector<image_cartesian>> &clustered_points)
 {
+	printf("4\n");
 	unsigned int cont = 0;
 	vector<vector<image_cartesian>> classified;
 	vector<image_cartesian> cluster;
@@ -958,7 +964,7 @@ classify_clusters_of_poits_using_detections(vector<bbox_t> &predictions, vector<
 		for (unsigned int i = 0; i < number_of_clusters; i++)
 		{
 			unsigned int cluster_size = clustered_points[i].size();
-			unsigned int min_points_inside_bbox = cluster_size / 5;
+			//unsigned int min_points_inside_bbox = cluster_size / 5;
 			for (unsigned int j = 0; j < cluster_size; j++)
 			{
 				if ((unsigned int) clustered_points[i][j].image_x >=  predictions[h].x &&
@@ -968,7 +974,7 @@ classify_clusters_of_poits_using_detections(vector<bbox_t> &predictions, vector<
 				{
 					cont++;
 				
-					if ((cluster_size > 5 && cont > min_points_inside_bbox) || (cluster_size < 5 && cont > 1)) 
+					if ((cluster_size > 5 && cont > 5) || (cluster_size < 5 && cont > 1)) // TODO penasar melhor
 					{
 						// printf("C %d\n", cont);
 						moving_object_cluster_index.push_back(i);
@@ -991,7 +997,8 @@ classify_clusters_of_poits_using_detections(vector<bbox_t> &predictions, vector<
 			clustered_points[moving_object_cluster_index[best_cluster_index]].clear();
 		}
 
-		printf("Index Size %d BI %d\n", moving_object_cluster_index.size(), best_cluster_index);
+		// if (moving_object_cluster_index.size() > 0)
+		//	printf("Index Size %d BI %d\n", moving_object_cluster_index.size(), best_cluster_index);
 
 		classified.push_back(cluster);
 
@@ -1045,6 +1052,8 @@ remove_points_behind_cam_and_compute_img_coordnates(sensor_parameters_t *sensor_
 void
 remove_classified_rais_from_point_clud(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, vector<vector<image_cartesian>> clustered_points)
 {
+
+	printf("6\n");
 	int point_index;
 	int cloud_index = sensor_data->point_cloud_index;
 	
@@ -1094,17 +1103,40 @@ compute_points_img_coordnates(sensor_parameters_t *sensor_params, sensor_data_t 
 }
 
 
+vector<image_cartesian>
+extract_points_from_cluster_vector(vector<vector<image_cartesian>> clusters)
+{
+	vector<image_cartesian> points;
+
+	unsigned int number_of_clusters = clusters.size();
+	for (unsigned int i = 0; i < number_of_clusters; i++)
+	{
+		unsigned int cluster_size = clusters[i].size();
+		for (unsigned int j = 0; j < cluster_size; j++)
+		{
+			points.push_back(clusters[i][j]);
+		}
+	}
+	return (points);
+}
+
+
 void
 remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index,
 	vector<image_cartesian> points, vector<vector<image_cartesian>> &clustered_points, int image_width, int image_height)
 {
+	printf("3\n");
 	vector<bbox_t> predictions_vector;
+	vector<image_cartesian> points_on_image;
 	camera_filter_count[camera_index]++;
 	
 	int crop_x = 0;
 	int crop_y = 0;			  //280;
 	int crop_w = image_width; // 1280;
 	int crop_h = image_height;// * 0.85;
+
+	if (verbose >= 2)
+		points_on_image = extract_points_from_cluster_vector(clustered_points);
 	
 	Mat open_cv_image = Mat(Size(image_width, image_height), CV_8UC3, camera_data[camera_index].image[image_index]);
 	Rect myROI(crop_x, crop_y, crop_w, crop_h); // TODO put this in the .ini file
@@ -1121,7 +1153,7 @@ remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor
 
 	if (verbose >= 2)
 	{
-		vector<image_cartesian> points_on_image = compute_points_img_coordnates(sensor_params, sensor_data, camera_index, image_width, image_height, points);
+		// vector<image_cartesian> points_on_image = compute_points_img_coordnates(sensor_params, sensor_data, camera_index, image_width, image_height, points);
 		show_detections(open_cv_image.clone(), predictions_vector, points_on_image, clustered_points, camera_index); // open_cv_image.clone() to avoid writing things in the image
 	}
 }
@@ -1266,6 +1298,7 @@ vector<vector<image_cartesian>>
 process_image(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index,
 	vector<image_cartesian> points, vector<vector<image_cartesian>> clustered_points)
 {
+	printf("2\n");
 	int image_width  = camera_data[camera_index].width[image_index];
 	int image_height = camera_data[camera_index].height[image_index];
 	
@@ -1301,6 +1334,7 @@ copy_to_filtered_clusters(vector<vector<image_cartesian>> clusters, vector<vecto
 int
 filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
 {
+	printf("1\n");
 	int filter_cameras = 0;
 	vector<image_cartesian> points;
 	vector<vector<image_cartesian>> clustered_points;
@@ -1347,8 +1381,12 @@ filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_
 		//filter_sensor_data_using_yolo_old(sensor_params, sensor_data, camera, nearest_index);
 		filter_cameras++;
 	}
-	show_semantic_map(map_config.resolution, sensors_params->range_max, points, filtered_clusters);
-
+	if (verbose >= 2)
+	{
+		printf("7\n");
+		//show_semantic_map(map_config.resolution, sensors_params->range_max, points, filtered_clusters);
+	}
+	
 	return filter_cameras;
 }
 
