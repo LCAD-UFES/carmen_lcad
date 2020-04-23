@@ -839,28 +839,35 @@ show_semantic_map(double map_resolution, double range_max, vector<image_cartesia
 {
 	int img_planar_depth = (double) 0.5 * range_max / map_resolution;
 	Mat map_img = Mat(Size(img_planar_depth * 2, img_planar_depth * 2), CV_8UC3, Scalar(255, 255, 255));
-
+	// printf("1\n");
 	for (unsigned int i = 0, size = points.size(); i < size; i++)
 	{
 		int px = (double) points[i].cartesian_y / map_resolution + img_planar_depth;
 		int py = (double) (map_img.rows / 2) - 1 - points[i].cartesian_x / map_resolution;
-		map_img.at<Vec3b>(Point(px, py)) = Vec3b(0, 0, 0);
+		
+		if (px >= 0 && px < map_img.cols && py >= 0 && py < map_img.rows)
+			map_img.at<Vec3b>(Point(px, py)) = Vec3b(0, 0, 0);
 	}
-	for (unsigned int i = 0; i < clustered_points.size(); i++)
+	// printf("2\n");
+	for (unsigned int i = 0, size = clustered_points.size(); i < size; i++)
 	{
-		for (unsigned int j = 0; j < clustered_points[i].size(); j++)
+		for (unsigned int j = 0, c_size = clustered_points[i].size(); j < c_size; j++)
 		{
 			int px = (double) clustered_points[i][j].cartesian_y / map_resolution + img_planar_depth;
 			int py = (double) (map_img.rows / 2) - 1 - clustered_points[i][j].cartesian_x / map_resolution;
-			map_img.at<Vec3b>(Point(px, py)) = Vec3b(0, 200, 0);
+			
+			if (px >= 0 && px < map_img.cols && py >= 0 && py < map_img.rows)
+				map_img.at<Vec3b>(Point(px, py)) = Vec3b(0, 200, 0);
 		}
 	}
-
+	// printf("3\n");
 	rectangle(map_img, cvPoint(img_planar_depth - 10 / 2, img_planar_depth - 10 / 2), cvPoint(img_planar_depth + 10 / 2, img_planar_depth + 30 / 2), CV_RGB(0, 0, 200), 1, 8);
 	line(map_img, cvPoint(img_planar_depth, img_planar_depth - 10 / 2), cvPoint(img_planar_depth, img_planar_depth + 5 / 2), CV_RGB(0, 0, 200), 1, 8);
+	
 	resize(map_img, map_img, Size(0, 0), 1.7, 1.7, INTER_NEAREST);
 	imshow("Map Image", map_img);
 	waitKey(1);
+	// printf("4\n");
 }
 
 
@@ -913,7 +920,7 @@ compute_obstacle_points(sensor_parameters_t *sensor_params, sensor_data_t *senso
 unsigned int
 choose_cluster(vector<int> moving_object_cluster_index, bbox_t bbox, vector<vector<image_cartesian>> clustered_points)   // Chosse the cluster that have more points inside the bounding box
 {
-	printf("5\n");
+	//printf("5\n");
 	vector<int> number_of_points_inside_bbox;
 	unsigned int cont = 0;
 	unsigned int best_cluster_index = 0;
@@ -950,7 +957,7 @@ choose_cluster(vector<int> moving_object_cluster_index, bbox_t bbox, vector<vect
 void
 classify_clusters_of_poits_using_detections(vector<bbox_t> &predictions, vector<vector<image_cartesian>> &clustered_points)
 {
-	printf("4\n");
+	//printf("4\n");
 	unsigned int cont = 0;
 	vector<vector<image_cartesian>> classified;
 	vector<image_cartesian> cluster;
@@ -1053,7 +1060,7 @@ void
 remove_classified_rais_from_point_clud(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, vector<vector<image_cartesian>> clustered_points)
 {
 
-	printf("6\n");
+	// printf("6\n");
 	int point_index;
 	int cloud_index = sensor_data->point_cloud_index;
 	
@@ -1125,7 +1132,7 @@ void
 remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index,
 	vector<image_cartesian> points, vector<vector<image_cartesian>> &clustered_points, int image_width, int image_height)
 {
-	printf("3\n");
+	// printf("3\n");
 	vector<bbox_t> predictions_vector;
 	vector<image_cartesian> points_on_image;
 	camera_filter_count[camera_index]++;
@@ -1298,7 +1305,7 @@ vector<vector<image_cartesian>>
 process_image(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index,
 	vector<image_cartesian> points, vector<vector<image_cartesian>> clustered_points)
 {
-	printf("2\n");
+	// printf("2\n");
 	int image_width  = camera_data[camera_index].width[image_index];
 	int image_height = camera_data[camera_index].height[image_index];
 	
@@ -1334,7 +1341,7 @@ copy_to_filtered_clusters(vector<vector<image_cartesian>> clusters, vector<vecto
 int
 filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
 {
-	printf("1\n");
+	// printf("1\n");
 	int filter_cameras = 0;
 	vector<image_cartesian> points;
 	vector<vector<image_cartesian>> clustered_points;
@@ -1383,10 +1390,10 @@ filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_
 	}
 	if (verbose >= 2)
 	{
-		printf("7\n");
-		//show_semantic_map(map_config.resolution, sensors_params->range_max, points, filtered_clusters);
+		//printf("7\n");
+		show_semantic_map(map_config.resolution, sensors_params->range_max, points, filtered_clusters);
 	}
-	
+
 	return filter_cameras;
 }
 

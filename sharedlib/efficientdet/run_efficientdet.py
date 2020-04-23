@@ -74,8 +74,8 @@ def initialize(min_score):
     global ckpt_path
     global driver
     print('Carregando rede que ira ter min_score_thresh =', min_score)
-    tf.reset_default_graph()
-    tf.compat.v1.disable_eager_execution()
+    #tf.reset_default_graph()
+    #tf.compat.v1.disable_eager_execution()
     driver = inference.ServingDriver(model_name, ckpt_path, min_score_thresh=min_score)
     driver.build()
     
@@ -101,6 +101,6 @@ def efficientdet_process_image(carmen_image):
     predret[:,-1] -= 1
     #print("Novo")
     #print(predret)
-    print('python_process=', (current_milli_time() - first_time), 'ms FPS_python=', (1000/(current_milli_time() - first_time)))
+    #print('python_process=', (current_milli_time() - first_time), 'ms FPS_python=', (1000/(current_milli_time() - first_time)))
     #print(predret.shape)
     return predret
