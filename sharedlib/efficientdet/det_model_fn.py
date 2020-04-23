@@ -102,6 +102,17 @@ def cosine_lr_schedule(adjusted_lr, lr_warmup_init, lr_warmup_step,
   return tf.where(step < lr_warmup_step, linear_warmup, cosine_lr)
 
 
+def polynomial_lr_schedule(adjusted_lr, lr_warmup_init, lr_warmup_step, power,
+                           total_steps, step):
+  logging.info('LR schedule method: polynomial')
+  linear_warmup = (
+      lr_warmup_init + (tf.cast(step, dtype=tf.float32) / lr_warmup_step *
+                        (adjusted_lr - lr_warmup_init)))
+  polynomial_lr = adjusted_lr * tf.pow(
+      1 - (tf.cast(step, tf.float32) / total_steps), power)
+  return tf.where(step < lr_warmup_step, linear_warmup, polynomial_lr)
+
+
 def learning_rate_schedule(params, global_step):
   """Learning rate schedule based on global step."""
   lr_decay_method = params['lr_decay_method']
@@ -111,13 +122,21 @@ def learning_rate_schedule(params, global_step):
                                 params['lr_warmup_step'],
                                 params['first_lr_drop_step'],
                                 params['second_lr_drop_step'], global_step)
-  elif lr_decay_method == 'cosine':
+
+  if lr_decay_method == 'cosine':
     return cosine_lr_schedule(params['adjusted_learning_rate'],
                               params['lr_warmup_init'],
                               params['lr_warmup_step'],
                               params['total_steps'], global_step)
-  else:
-    raise ValueError('unknown lr_decay_method: {}'.format(lr_decay_method))
+
+  if lr_decay_method == 'polynomial':
+    return polynomial_lr_schedule(params['adjusted_learning_rate'],
+                                  params['lr_warmup_init'],
+                                  params['lr_warmup_step'],
+                                  params['poly_lr_power'],
+                                  params['total_steps'], global_step)
+
+  raise ValueError('unknown lr_decay_method: {}'.format(lr_decay_method))
 
 
 def focal_loss(logits, targets, alpha, gamma, normalizer):
@@ -238,13 +257,23 @@ def detection_loss(cls_outputs, box_outputs, labels, params):
   cls_losses = []
   box_losses = []
   for level in levels:
+    if params['data_format'] == 'channels_first':
+      labels['cls_targets_%d' % level] = tf.transpose(
+          labels['cls_targets_%d' % level], [0, 3, 1, 2])
+      labels['box_targets_%d' % level] = tf.transpose(
+          labels['box_targets_%d' % level], [0, 3, 1, 2])
     # Onehot encoding for classification labels.
     cls_targets_at_level = tf.one_hot(
         labels['cls_targets_%d' % level],
         params['num_classes'])
-    bs, width, height, _, _ = cls_targets_at_level.get_shape().as_list()
-    cls_targets_at_level = tf.reshape(cls_targets_at_level,
-                                      [bs, width, height, -1])
+    if params['data_format'] == 'channels_first':
+      bs, _, width, height, _ = cls_targets_at_level.get_shape().as_list()
+      cls_targets_at_level = tf.reshape(cls_targets_at_level,
+                                        [bs, -1, width, height])
+    else:
+      bs, width, height, _, _ = cls_targets_at_level.get_shape().as_list()
+      cls_targets_at_level = tf.reshape(cls_targets_at_level,
+                                        [bs, width, height, -1])
     box_targets_at_level = labels['box_targets_%d' % level]
     cls_loss = _classification_loss(
         cls_outputs[level],
@@ -252,8 +281,12 @@ def detection_loss(cls_outputs, box_outputs, labels, params):
         num_positives_sum,
         alpha=params['alpha'],
         gamma=params['gamma'])
-    cls_loss = tf.reshape(cls_loss,
-                          [bs, width, height, -1, params['num_classes']])
+    if params['data_format'] == 'channels_first':
+      cls_loss = tf.reshape(cls_loss,
+                            [bs, -1, width, height, params['num_classes']])
+    else:
+      cls_loss = tf.reshape(cls_loss,
+                            [bs, width, height, -1, params['num_classes']])
     cls_loss *= tf.cast(tf.expand_dims(
         tf.not_equal(labels['cls_targets_%d' % level], -2), -1), tf.float32)
     cls_losses.append(tf.reduce_sum(cls_loss))
@@ -271,7 +304,11 @@ def detection_loss(cls_outputs, box_outputs, labels, params):
   return total_loss, cls_loss, box_loss
 
 
-def add_metric_fn_inputs(params, cls_outputs, box_outputs, metric_fn_inputs):
+def add_metric_fn_inputs(params,
+                         cls_outputs,
+                         box_outputs,
+                         metric_fn_inputs,
+                         max_detection_points=anchors.MAX_DETECTION_POINTS):
   """Selects top-k predictions and adds the selected to metric_fn_inputs.
 
   Args:
@@ -283,57 +320,58 @@ def add_metric_fn_inputs(params, cls_outputs, box_outputs, metric_fn_inputs):
       representing box regression targets in
       [batch_size, height, width, num_anchors * 4].
     metric_fn_inputs: a dictionary that will hold the top-k selections.
+    max_detection_points: an integer specifing the maximum detection points to
+      keep before NMS. Keep all anchors if max_detection_points <= 0.
   """
+  num_classes = params['num_classes']
   cls_outputs_all = []
   box_outputs_all = []
   # Concatenates class and box of all levels into one tensor.
   for level in range(params['min_level'], params['max_level'] + 1):
+    if params['data_format'] == 'channels_first':
+      cls_outputs[level] = tf.transpose(cls_outputs[level], [0, 2, 3, 1])
+      box_outputs[level] = tf.transpose(box_outputs[level], [0, 2, 3, 1])
+
     cls_outputs_all.append(tf.reshape(
         cls_outputs[level],
-        [params['batch_size'], -1, params['num_classes']]))
+        [params['batch_size'], -1, num_classes]))
     box_outputs_all.append(tf.reshape(
         box_outputs[level], [params['batch_size'], -1, 4]))
   cls_outputs_all = tf.concat(cls_outputs_all, 1)
   box_outputs_all = tf.concat(box_outputs_all, 1)
 
-  # cls_outputs_all has a shape of [batch_size, N, num_classes] and
-  # box_outputs_all has a shape of [batch_size, N, 4]. The batch_size here
-  # is per-shard batch size. Recently, top-k on TPU supports batch
-  # dimension (b/67110441), but the following function performs top-k on
-  # each sample.
-  cls_outputs_all_after_topk = []
-  box_outputs_all_after_topk = []
-  indices_all = []
-  classes_all = []
-  for index in range(params['batch_size']):
-    cls_outputs_per_sample = cls_outputs_all[index]
-    box_outputs_per_sample = box_outputs_all[index]
-    cls_outputs_per_sample_reshape = tf.reshape(cls_outputs_per_sample,
-                                                [-1])
-    _, cls_topk_indices = tf.nn.top_k(
-        cls_outputs_per_sample_reshape, k=anchors.MAX_DETECTION_POINTS)
-    # Gets top-k class and box scores.
-    indices = tf.div(cls_topk_indices, params['num_classes'])
-    classes = tf.mod(cls_topk_indices, params['num_classes'])
-    cls_indices = tf.stack([indices, classes], axis=1)
-    cls_outputs_after_topk = tf.gather_nd(cls_outputs_per_sample,
-                                          cls_indices)
-    cls_outputs_all_after_topk.append(cls_outputs_after_topk)
-    box_outputs_after_topk = tf.gather_nd(
-        box_outputs_per_sample, tf.expand_dims(indices, 1))
-    box_outputs_all_after_topk.append(box_outputs_after_topk)
+  if max_detection_points > 0:
+    # Prune anchors and detections to only keep max_detection_points.
+    # Due to some issues, top_k is currently slow in graph model.
+    cls_outputs_all_reshape = tf.reshape(cls_outputs_all,
+                                         [params['batch_size'], -1])
+    _, cls_topk_indices = tf.math.top_k(cls_outputs_all_reshape,
+                                        k=anchors.MAX_DETECTION_POINTS,
+                                        sorted=False)
+    indices = cls_topk_indices // num_classes
+    classes = cls_topk_indices % num_classes
+    cls_indices = tf.stack([indices, classes], axis=2)
+    cls_outputs_all_after_topk = tf.gather_nd(
+        cls_outputs_all, cls_indices, batch_dims=1)
+    box_outputs_all_after_topk = tf.gather_nd(
+        box_outputs_all, tf.expand_dims(indices, 2), batch_dims=1)
+  else:
+    # Keep all anchors, but for each anchor, just keep the max probablity for
+    # each class.
+    cls_outputs_idx = tf.math.argmax(cls_outputs_all, axis=-1)
+    num_anchors = cls_outputs_all.shape[1]
 
-    indices_all.append(indices)
-    classes_all.append(classes)
-  # Concatenates via the batch dimension.
-  cls_outputs_all_after_topk = tf.stack(cls_outputs_all_after_topk, axis=0)
-  box_outputs_all_after_topk = tf.stack(box_outputs_all_after_topk, axis=0)
-  indices_all = tf.stack(indices_all, axis=0)
-  classes_all = tf.stack(classes_all, axis=0)
+    classes = cls_outputs_idx
+    indices = tf.reshape(
+        tf.tile(tf.range(num_anchors), [params['batch_size']]),
+        [-1, num_anchors])
+    cls_outputs_all_after_topk = tf.reduce_max(cls_outputs_all, -1)
+    box_outputs_all_after_topk = box_outputs_all
+
   metric_fn_inputs['cls_outputs_all'] = cls_outputs_all_after_topk
   metric_fn_inputs['box_outputs_all'] = box_outputs_all_after_topk
-  metric_fn_inputs['indices_all'] = indices_all
-  metric_fn_inputs['classes_all'] = classes_all
+  metric_fn_inputs['indices_all'] = indices
+  metric_fn_inputs['classes_all'] = classes
 
 
 def coco_metric_fn(batch_size,
@@ -398,6 +436,8 @@ def _model_fn(features, labels, mode, params, model, variable_filter_fn=None):
     RuntimeError: if both ckpt and backbone_ckpt are set.
   """
   # Convert params (dict) to Config for easier access.
+  if params['data_format'] == 'channels_first':
+    features = tf.transpose(features, [0, 3, 1, 2])
   def _model_outputs():
     return model(features, config=hparams_config.Config(params))
 
@@ -545,7 +585,8 @@ def _model_fn(features, labels, mode, params, model, variable_filter_fn=None):
     if params.get('ckpt') and params.get('backbone_ckpt'):
       raise RuntimeError(
           '--backbone_ckpt and --checkpoint are mutually exclusive')
-    elif params.get('backbone_ckpt'):
+
+    if params.get('backbone_ckpt'):
       var_scope = params['backbone_name'] + '/'
       if params['ckpt_var_scope'] is None:
         # Use backbone name as default checkpoint scope.
@@ -565,6 +606,7 @@ def _model_fn(features, labels, mode, params, model, variable_filter_fn=None):
           ckpt_scope=ckpt_scope,
           var_scope=var_scope,
           var_exclude_expr=params.get('var_exclude_expr', None))
+
       tf.train.init_from_checkpoint(checkpoint, var_map)
 
       return tf.train.Scaffold()
@@ -612,17 +654,19 @@ def get_model_arch(model_name='efficientdet-d0'):
   """Get model architecture for a given model name."""
   if 'retinanet' in model_name:
     return retinanet_arch.retinanet
-  elif 'efficientdet' in model_name:
+
+  if 'efficientdet' in model_name:
     return efficientdet_arch.efficientdet
-  else:
-    raise ValueError('Invalide model name {}'.format(model_name))
+
+  raise ValueError('Invalide model name {}'.format(model_name))
 
 
 def get_model_fn(model_name='efficientdet-d0'):
   """Get model fn for a given model name."""
   if 'retinanet' in model_name:
     return retinanet_model_fn
-  elif 'efficientdet' in model_name:
+
+  if 'efficientdet' in model_name:
     return efficientdet_model_fn
-  else:
-    raise ValueError('Invalide model name {}'.format(model_name))
+
+  raise ValueError('Invalide model name {}'.format(model_name))
