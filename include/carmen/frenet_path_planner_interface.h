@@ -4,7 +4,7 @@
 
 #include <carmen/carmen.h>
 #include <carmen/route_planner_interface.h>
-#include <carmen/frenet_path_planner_messages.h>
+#include "frenet_path_planner_messages.h"
 
 
 #ifdef __cplusplus

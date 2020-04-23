@@ -25,6 +25,11 @@ http://www.cs.cmu.edu/~ipc/
 extern "C" {
 #endif
 
+#define	BUS			'B' // Width: 2,4 m to 2,6 m; Length: 10 m to 14 m;
+#define	CAR			'C' // Width: 1,8 m to 2,1; Length: 3,9 m to 5,3 m
+#define	BIKE		'b' // Width: 1,20 m; Length: 2,20 m
+#define	PEDESTRIAN	'P'
+
 
 /************
  * grid map *
@@ -84,8 +89,8 @@ struct _object_geometry
 typedef struct _object_geometry object_geometry_t;
 
 struct _object_model_features {
-	int model_id;
-	char *model_name; //short description of the type of model
+	int model_id;		// Car, Bike, etc.
+	char *model_name; 	// short description of the type of model
 	object_geometry_t geometry;
 	double red, green, blue;
 };
@@ -111,7 +116,7 @@ typedef struct {
 	double height;
 	int geometric_model;
 	object_model_features_t model_features;
-	int	num_associated;
+	int	num_associated;	// The moving object id
 	carmen_vector_3D_t object_pose;
 	carmen_vector_3D_t *points;
 	// particle_print_t *particulas; // para a visualização das partículas

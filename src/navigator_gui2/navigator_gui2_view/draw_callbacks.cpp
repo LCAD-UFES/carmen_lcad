@@ -1213,12 +1213,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 			for (int j = 0; j < global_gui->frenet_path_planer_set_of_paths_msg.number_of_nearby_lanes; j++)
 			{
-				int lane_size;
-				if (j < (global_gui->frenet_path_planer_set_of_paths_msg.number_of_nearby_lanes - 1))
-					lane_size = global_gui->frenet_path_planer_set_of_paths_msg.nearby_lanes_indexes[j + 1] - global_gui->frenet_path_planer_set_of_paths_msg.nearby_lanes_indexes[j];
-				else
-					lane_size = global_gui->frenet_path_planer_set_of_paths_msg.nearby_lanes_size - global_gui->frenet_path_planer_set_of_paths_msg.nearby_lanes_indexes[j];
-
+				int lane_size = global_gui->frenet_path_planer_set_of_paths_msg.nearby_lanes_sizes[j];
 				global_gui->route_planer_lane = (carmen_world_point_t *) malloc(lane_size * sizeof(carmen_world_point_t));
 				int lane_start = global_gui->frenet_path_planer_set_of_paths_msg.nearby_lanes_indexes[j];
 				for (int i = 0; i < lane_size; i++)

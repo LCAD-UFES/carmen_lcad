@@ -32,12 +32,12 @@ Detector::update_moving_object_velocity(carmen_ackerman_traj_point_t &robot_pose
 			double distance = dist * cos(angle - robot_pose.theta);
 			double delta_t = moving_object[i].timestamp - moving_object[i + 1].timestamp;
 			if (delta_t > 0.01 && delta_t < 0.2)
-				v = distance / delta_t;
+				v = distance / delta_t; // @@@ Alberto: nao acumula para tirar a media com count?
 
 			if (v > (145.0 / 3.6))
-				v = -1.0;
+				v = -1.0; // @@@ Alberto: como usa este -1.0?
 			else
-				count++;
+				count++; // @@@ Alberto: nao usa o count?
 		}
 		moving_object[i].pose.v = v;
 	}

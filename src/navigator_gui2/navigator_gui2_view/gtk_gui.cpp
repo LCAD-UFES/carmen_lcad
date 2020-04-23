@@ -2462,7 +2462,7 @@ namespace View
 	GtkGui::draw_moving_objects(GtkMapViewer *the_map_view)
 	{
 		int index;
-		moving_objects_tracking_t* moving_objects_tracking;
+		moving_objects_tracking_t *moving_objects_tracking;
 
 		if (nav_panel_config->show_dynamic_objects)
 		{
@@ -2514,7 +2514,7 @@ namespace View
 					carmen_map_graphics_draw_polygon(the_map_view, colour, wp, 4, 0);
 
 					char obj_id[256];
-					sprintf(obj_id, "%d", index);
+					sprintf(obj_id, "%d", moving_objects_tracking->num_associated);
 					GdkFont *text_font = gdk_font_load("-*-courier*-bold-r-normal--0-0-0-0-*-0-iso8859-1"); // Ubuntu command: xlsfonts
 					carmen_map_graphics_draw_string(the_map_view, &carmen_black, text_font, &location, obj_id);
 				}

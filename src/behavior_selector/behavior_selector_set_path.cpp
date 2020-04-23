@@ -453,8 +453,8 @@ get_path_better_than_the_current_path(vector<path_collision_info_t> paths,
 		}
 	}
 
-	printf("  -> best_path %d (%d)\n", (paths[best_path].path_has_no_collision)? best_path: -1, current_path);
-	fflush(stdout);
+//	printf("  -> best_path %d (%d)\n", (paths[best_path].path_has_no_collision)? best_path: -1, current_path);
+//	fflush(stdout);
 	if (paths[best_path].path_has_no_collision)
 		return (best_path);
 	else

@@ -203,10 +203,7 @@ copy_rddf_message(carmen_rddf_road_profile_message *last_rddf_message, carmen_rd
 carmen_ackerman_traj_point_t *
 compute_simulated_objects(double timestamp)
 {
-	if (!necessary_maps_available)
-		return (NULL);
-
-	if (current_set_of_paths == NULL)
+	if (!necessary_maps_available || !current_set_of_paths)
 		return (NULL);
 
 	carmen_ackerman_traj_point_t *poses = current_set_of_paths->rddf_poses_ahead;
@@ -261,7 +258,7 @@ compute_simulated_objects(double timestamp)
 carmen_ackerman_traj_point_t *
 compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
-	if (!necessary_maps_available)
+	if (!necessary_maps_available || !current_set_of_paths || (current_set_of_paths->number_of_nearby_lanes == 0))
 		return (NULL);
 
 	carmen_rddf_road_profile_message *rddf = last_rddf_message;
@@ -295,12 +292,12 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	if (stop_t0 <= t && disp > 0.0)
 		disp -= 0.03;
 	if (t < stop_t1)
-//		v = current_robot_pose_v_and_phi.v + 0.9;
-		v = current_robot_pose_v_and_phi.v + 0.5; // Motos!
+		v = current_robot_pose_v_and_phi.v + 0.9;
+//		v = current_robot_pose_v_and_phi.v + 0.5; // Motos!
 
 	if (t > stop_t2)
 	{
-		v = current_robot_pose_v_and_phi.v - 0.9;
+		v = current_robot_pose_v_and_phi.v - 1.5;
 		if (v < 5.0)
 			v = 5.0;
 	}
@@ -314,7 +311,7 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	pose_ahead.y = previous_pose.y + dy;
 
 	static carmen_ackerman_traj_point_t next_pose = {0, 0, 0, 0, 0};
-	for (int i = 0; i < current_set_of_paths->nearby_lanes_indexes[1] - 1; i++)
+	for (int i = 0; i < current_set_of_paths->nearby_lanes_sizes[0]; i++)
 	{
 		int status;
 		next_pose = carmen_get_point_nearest_to_trajectory(&status, current_set_of_paths->nearby_lanes[i], current_set_of_paths->nearby_lanes[i + 1], pose_ahead, 0.1);
@@ -954,7 +951,7 @@ set_behaviours_parameters(carmen_ackerman_traj_point_t current_robot_pose_v_and_
 void
 set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
-	carmen_frenet_path_planner_set_of_paths set_of_paths;
+	static carmen_frenet_path_planner_set_of_paths set_of_paths;
 
 	if (behavior_selector_performs_path_planning)
 	{
@@ -963,6 +960,11 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double
 				road_network_message->annotations, road_network_message->annotations_codes, road_network_message, timestamp);
 		current_set_of_paths = &set_of_paths;
 	}
+
+	current_moving_objects = behavior_selector_moving_objects_tracking(current_set_of_paths, &distance_map);
+	if (current_moving_objects)
+		carmen_moving_objects_point_clouds_publish_message(current_moving_objects);
+
 
 	if (use_frenet_path_planner)
 		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, 0, timestamp);
@@ -1055,10 +1057,6 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		add_simulated_object(simulated_object_pose2);
 #endif
 
-#if defined(SIMULATE_LATERAL_MOVING_OBSTACLE) || defined(SIMULATE_MOVING_OBSTACLE)
-	if (virtual_laser_message.num_positions >= 0)
-		publish_simulated_objects();
-#endif
 	if (virtual_laser_message.num_positions >= 0)
 		publish_simulated_objects();
 
@@ -1138,7 +1136,7 @@ frenet_path_planner_set_of_paths_message_handler(carmen_frenet_path_planner_set_
 }
 
 
-static void
+void
 carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message *moving_objects_message)
 {
 	current_moving_objects = moving_objects_message;
@@ -1408,7 +1406,7 @@ register_handlers()
 
 	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
+//	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	if (behavior_selector_performs_path_planning)
 	{
@@ -1425,25 +1423,27 @@ define_messages()
 
 	err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME, IPC_VARIABLE_LENGTH,
 			CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_FMT);
-	carmen_test_ipc_exit(err, "Could not define message",
-			CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME);
+	carmen_test_ipc_exit(err, "Could not define message", CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME);
 
 	err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, IPC_VARIABLE_LENGTH,
 			CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_FMT);
-	carmen_test_ipc_exit(err, "Could not define message",
-			CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
+	carmen_test_ipc_exit(err, "Could not define message", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
 
 	err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME, IPC_VARIABLE_LENGTH,
 			CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_FMT);
-	carmen_test_ipc_exit(err, "Could not define message",
-			CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME);
+	carmen_test_ipc_exit(err, "Could not define message", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME);
 
     err = IPC_defineMsg(CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
     		CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_FMT);
-    carmen_test_ipc_exit(err, "Could not define",
-    		CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_NAME);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_NAME);
+
+    err = IPC_defineMsg(CARMEN_RDDF_ROAD_PROFILE_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
+    		CARMEN_RDDF_ROAD_PROFILE_MESSAGE_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_ROAD_PROFILE_MESSAGE_NAME);
 
     carmen_frenet_path_planner_define_messages();
+
+    carmen_moving_objects_point_clouds_define_messages();
 }
 
 

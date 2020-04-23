@@ -3,7 +3,7 @@
 #define _CARMEN_ROUTE_PLANNER_INTERFACE_H_
 
 #include <carmen/carmen.h>
-#include <carmen/route_planner_messages.h>
+#include "route_planner_messages.h"
 
 #ifdef __cplusplus
 extern "C"
