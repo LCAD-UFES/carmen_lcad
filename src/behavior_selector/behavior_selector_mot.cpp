@@ -125,7 +125,7 @@ obstacle_detected(lane_t *lane, int i, carmen_obstacle_distance_mapper_map_messa
 {
 	carmen_point_t global_point = {lane->lane_points[i].x, lane->lane_points[i].y, lane->lane_points[i].theta};
 	double distance_to_object = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&global_point, distance_map);
-	if (distance_to_object < (ROUTE_PLANNER_GET_LANE_WIDTH(lane->traffic_restrictions[i]) / 2.0))
+	if ((distance_to_object != -1.0) && (distance_to_object < (ROUTE_PLANNER_GET_LANE_WIDTH(lane->traffic_restrictions[i]) / 2.0)))
 		return (true);
 	else
 		return (false);
@@ -140,6 +140,7 @@ predict_object_pose_index(moving_object_t *moving_object, lane_t *lane, carmen_o
 	bool within_up_limit = true;
 	bool within_down_limit = true;
 	int found_index = -1;
+
 	while (within_up_limit || within_down_limit)
 	{
 		int increased_index = index + delta_index;
@@ -151,23 +152,26 @@ predict_object_pose_index(moving_object_t *moving_object, lane_t *lane, carmen_o
 
 		if (within_up_limit)
 		{
-			if (!lane->examined[increased_index] && obstacle_detected(lane, increased_index, distance_map))
+			if ((increased_index > 0) && !lane->examined[increased_index] && obstacle_detected(lane, increased_index, distance_map))
 			{
 				lane->examined[increased_index] = true;
 				found_index = increased_index;
 				break;
 			}
-			lane->examined[increased_index] = true;
+			if (increased_index > 0)
+				lane->examined[increased_index] = true;
 		}
+
 		if (within_down_limit)
 		{
-			if (!lane->examined[decreased_index] && obstacle_detected(lane, decreased_index, distance_map))
+			if ((decreased_index < lane->size) && !lane->examined[decreased_index] && obstacle_detected(lane, decreased_index, distance_map))
 			{
 				lane->examined[decreased_index] = true;
 				found_index = decreased_index;
 				break;
 			}
-			lane->examined[decreased_index] = true;
+			if (decreased_index < lane->size)
+				lane->examined[decreased_index] = true;
 		}
 		delta_index++;
 	}
@@ -226,21 +230,8 @@ update_object_statistics(moving_object_t *moving_object)
 		}
 	}
 
-	printf("**id %d, v %lf, x %lf, y %lf, count %d\n",
-				moving_object->id,
-				moving_object->v, moving_object->pose.x, moving_object->pose.y,
-				moving_object->non_detection_count);
-
-	printf("num_valid %lf, v_valid %lf\n", moving_object->history[0].pose.x, moving_object->history[0].pose.y);
-
 	moving_object->non_detection_count = 0;
 	moving_object->pose = moving_object->history[0].pose;
-
-	printf("***id %d, v %lf, x %lf, y %lf, count %d\n",
-				moving_object->id,
-				moving_object->v, moving_object->pose.x, moving_object->pose.y,
-				moving_object->non_detection_count);
-
 	moving_object->pose_std = 10.0;
 	moving_object->length = length / num_valid;
 	moving_object->width = width / num_valid;
@@ -300,6 +291,7 @@ update(moving_object_t *moving_object, lane_t *lane, int index, carmen_obstacle_
 		while ((index >= 0) && obstacle_detected(lane, index, distance_map))
 			index--;
 		index++;
+
 		add_object_history_sample(moving_object, index, lane, distance_map, timestamp, true);
 	}
 	else if (index > moving_object->history[last_valid_history].index)
@@ -317,6 +309,7 @@ bool
 track(moving_object_t *moving_object, lane_t *lane, carmen_obstacle_distance_mapper_map_message *distance_map, double timestamp)
 {
 	int index = predict_object_pose_index(moving_object, lane, distance_map);
+
 	if (index != -1)
 		return (update(moving_object, lane, index, distance_map, timestamp));
 	else
@@ -335,7 +328,6 @@ track_moving_objects(lane_t *lane, carmen_obstacle_distance_mapper_map_message *
     	if (!found)
     	{
     		moving_object->non_detection_count++;
-//    		printf("non_detection_count %d\n", moving_object->non_detection_count);
     		if (moving_object->non_detection_count > 10)
     			lane->moving_objects.erase(lane->moving_objects.begin() + i);
     	}
@@ -548,8 +540,6 @@ fill_in_moving_objects_point_clouds_message(vector<lane_t> lanes, double timesta
 			box.x = lanes[i].moving_objects[j].pose.x;
 			box.y = lanes[i].moving_objects[j].pose.y;
 			box.v = lanes[i].moving_objects[j].v;
-			printf("  id %d, v %lf, x %lf, y %lf, count %d\n", box.id, box.v, box.x, box.y, lanes[i].moving_objects[j].non_detection_count);
-			fflush(stdout);
 			box.theta = lanes[i].moving_objects[j].pose.theta;
 
 			fill_in_moving_objects_message_element(mo_num, message, &box);
@@ -633,7 +623,7 @@ carmen_moving_objects_point_clouds_message *
 behavior_selector_moving_objects_tracking(carmen_frenet_path_planner_set_of_paths *set_of_paths,
 		carmen_obstacle_distance_mapper_map_message *distance_map)
 {
-	if (1)//(!set_of_paths)
+	if (!set_of_paths)
 		return (NULL);
 
 	static vector<lane_t> lanes;
@@ -641,12 +631,6 @@ behavior_selector_moving_objects_tracking(carmen_frenet_path_planner_set_of_path
 	remove_lanes_absent_from_road_network(lanes, set_of_paths);
 	include_new_lanes_in_road_network(lanes, set_of_paths);
 	update_lanes(lanes, set_of_paths);
-
-	if (lanes[0].moving_objects.size() > 0)
-		printf("* id %d, v %lf, x %lf, y %lf, count %d\n",
-				lanes[0].moving_objects[0].id,
-				lanes[0].moving_objects[0].v, lanes[0].moving_objects[0].pose.x, lanes[0].moving_objects[0].pose.y,
-				lanes[0].moving_objects[0].non_detection_count);
 
 	for (unsigned int i = 0; i < lanes.size(); i++)
 		track_moving_objects(&(lanes[i]), distance_map, distance_map->timestamp);
