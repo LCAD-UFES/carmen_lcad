@@ -1,8 +1,7 @@
 /*
- * behavior_selector.c
  *
- *  Created on: 28/09/2012
- *      Author: romulo
+ *  Created on: 20/04/2020
+ *      Author: Alberto
  */
 
 #include <carmen/collision_detection.h>
