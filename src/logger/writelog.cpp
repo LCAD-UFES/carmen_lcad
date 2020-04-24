@@ -644,7 +644,7 @@ void carmen_logwrite_write_carmen_can_dump_can_line_message(
 		double timestamp)
 {
 	carmen_fprintf(outfile,
-			"CAN_DUMP_CAN_LINE_MESSADE %s %lf %s %lf\n",
+			"CAN_DUMP_CAN_LINE %s %lf %s %lf\n",
 			msg->can_line, msg->timestamp, msg->host, timestamp);
 }
 
