@@ -105,7 +105,7 @@ collision_s_distance_to_static_object(carmen_frenet_path_planner_set_of_paths *c
 			break;
 
 		carmen_ackerman_traj_point_t cp = {car_pose.x, car_pose.y, car_pose.theta, 0.0, 0.0};
-		if (trajectory_pose_hit_obstacle(cp, get_robot_config()->model_predictive_planner_obstacles_safe_distance, &distance_map, NULL))
+		if (trajectory_pose_hit_obstacle(cp, get_robot_config()->model_predictive_planner_obstacles_safe_distance, &distance_map, NULL) == 1)
 		{
 				virtual_laser_message.positions[virtual_laser_message.num_positions].x = car_pose.x;
 				virtual_laser_message.positions[virtual_laser_message.num_positions].y = car_pose.y;
