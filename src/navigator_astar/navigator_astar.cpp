@@ -42,6 +42,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	//Mensagem que faz andar
 	if (status.path.length > 0)
 	{
+		printf("entrei\n");
 		carmen_motion_planner_publish_path_message(status.path.points, status.path.length, current_algorithm);
 
 
@@ -50,6 +51,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 		static carmen_navigator_ackerman_astar_goal_list_message goal_list_msg;
 		if (firsttime)
 		{
+			printf("entrei4\n");
 			err = IPC_defineMsg(CARMEN_ASTAR_GOAL_LIST_NAME, IPC_VARIABLE_LENGTH, CARMEN_ASTAR_GOAL_LIST_FMT);
 			carmen_test_ipc_exit(err, "Could not define message", CARMEN_ASTAR_GOAL_LIST_NAME);
 			goal_list_msg.host = carmen_get_host();
@@ -70,9 +72,11 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	{
 		static carmen_navigator_ackerman_plan_tree_message plan_tree_msg;
 		static bool firstTime = true;
+		printf("entrei2\n");
 
 		if (firstTime == true)
 		{
+			printf("entrei3\n");
 			err = IPC_defineMsg(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, IPC_VARIABLE_LENGTH,
 					CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT);
 			carmen_test_ipc_exit(err, "Could not define", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
@@ -113,9 +117,11 @@ state_handler(carmen_behavior_selector_state_message *msg)
 	static carmen_behavior_selector_goal_source_t goal_source = CARMEN_BEHAVIOR_SELECTOR_USER_GOAL;
 	current_algorithm = msg->algorithm;
 	current_state = msg->state;
+	printf("aqui\n");
 
 	if (goal_source != msg->goal_source)
 	{
+		printf("aqui2\n");
 		goal_source = msg->goal_source;
 		carmen_ackerman_traj_point_t point;
 		point.x = -1;

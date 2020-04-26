@@ -43,7 +43,7 @@
 
 #define INT_BITS        (sizeof(int) * 8)
 static inline int
-ceillog2(unsigned int a)
+ceillog2(int a)
 {
 	int oa;
 	int i;
@@ -521,7 +521,7 @@ fh_consolidate(struct fibheap *h)
 }
 
 static void
-fh_heaplink(struct fibheap *h, struct fibheap_el *y, struct fibheap_el *x)
+fh_heaplink(struct fibheap *h __attribute__ ((unused)), struct fibheap_el *y, struct fibheap_el *x)
 {
 	/* make y a child of x */
 	if (x->fhe_child == NULL)
@@ -544,7 +544,7 @@ fh_cut(struct fibheap *h, struct fibheap_el *x, struct fibheap_el *y)
 }
 
 static void
-fh_cascading_cut(struct fibheap *h, struct fibheap_el *y)
+fh_cascading_cut(struct fibheap *h __attribute__ ((unused)), struct fibheap_el *y)
 {
 	struct fibheap_el *z;
 

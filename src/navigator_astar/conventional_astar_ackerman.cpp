@@ -324,7 +324,7 @@ AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_poi
 	{
 		if (distance_theta < carmen_degrees_to_radians(15))
 		{
-			//printf("in the GOAL\n");
+			printf("in the GOAL\n");
 			return;
 		}
 	}
@@ -332,7 +332,7 @@ AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_poi
 
 	if (is_obstacle_new(goal))
 	{
-		//printf("GOAL is obstacle\n");
+		printf("GOAL is obstacle\n");
 		return;
 	}
 
@@ -420,7 +420,7 @@ AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_poi
 		}
 		if (astar_config.smooth_path && current_state == BEHAVIOR_SELECTOR_FOLLOWING_LANE)
 			smooth_path_astar(path);
-		//print_path(path);
+		print_path(path);
 	}
 	else
 	{
@@ -439,15 +439,15 @@ AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_poi
 		GOAL.x  - carmen_planner_map->config.x_origin,
 		GOAL.y  - carmen_planner_map->config.y_origin);
 
-//	printf("iteracoes: %d  range: %d iterações/s: %.2f mil tempo: %.3f cont_nos_abertos_novos: %d cont_nos_abertos_alterados: %d  cont_nos_abertos_alterados_fechados %d cont_nos_podados: %d\n",
-//		index,
-//		path->length,
-//		(index * 0.001) / (t2 - t1),
-//		(t2 - t1),
-//		cont_nos_abertos_novos,
-//		cont_nos_abertos_alterados,
-//		cont_nos_abertos_alterados_fechados,
-//		cont_nos_podados);
+	printf("iteracoes: %d  range: %d iterações/s: %.2f mil tempo: %.3f cont_nos_abertos_novos: %d cont_nos_abertos_alterados: %d  cont_nos_abertos_alterados_fechados %d cont_nos_podados: %d\n",
+		index,
+		path->length,
+		(index * 0.001) / (t2 - t1),
+		(t2 - t1),
+		cont_nos_abertos_novos,
+		cont_nos_abertos_alterados,
+		cont_nos_abertos_alterados_fechados,
+		cont_nos_podados);
 
 
 	return;

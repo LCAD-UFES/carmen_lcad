@@ -93,6 +93,6 @@ static struct fibheap_el *fhe_remove(struct fibheap_el *a);
 /*
  * general functions
  */
-static inline int ceillog2(unsigned int a);
+inline int ceillog2(unsigned int a);
 
 #endif /* _FIBPRIV_H_ */
