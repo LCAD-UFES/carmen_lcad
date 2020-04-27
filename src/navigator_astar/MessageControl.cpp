@@ -86,13 +86,12 @@ MessageControl::carmen_planner_ackerman_update_goal(carmen_ackerman_traj_point_t
 	if (!carmen_planner_map)
 		return false;
 
-	printf("aqui3\n");
 	requested_goal = goal;
 
 	plan();
 	carmen_planner_ackerman_regenerate_trajectory();
 
-	return true;
+	return (true);
 }
 
 

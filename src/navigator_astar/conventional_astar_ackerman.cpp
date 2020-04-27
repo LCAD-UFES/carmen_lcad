@@ -43,10 +43,7 @@ void print_path(carmen_planner_path_p path)
 {
 	int i;
 	for (i = 0; i < path->length; i++)
-	{
 		printf(" x %.2f y %.2f phi %.2f\ttheta %.2f T x %.2f\t\n", path->points[i].x, path->points[i].y,carmen_radians_to_degrees(path->points[i].phi), carmen_radians_to_degrees(path->points[i].theta),path->points[i].v);
-
-	}
 }
 
 
