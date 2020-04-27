@@ -53,6 +53,8 @@ model_predictive_planner_multi_height
 moving_objects2
 moving_objects3
 navigator_gui
+navigator_ackerman
+navigator_astar
 neural_object_detector2
 neural_object_detector3
 obstacle_avoider_multi_height
