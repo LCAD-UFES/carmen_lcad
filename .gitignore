@@ -5,6 +5,7 @@ sharedlib/libvoice/voice_test
 bin/zed*
 bin/legacy_500*
 include/*
+!include/carmen/teste_github.h
 .idea/
 *.o
 *.a
