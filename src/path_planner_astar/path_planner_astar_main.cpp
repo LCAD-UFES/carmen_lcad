@@ -25,7 +25,7 @@ carmen_localize_ackerman_globalpos_message current_globalpos_msg;
 carmen_robot_ackerman_config_t robot_config;
 carmen_obstacle_distance_mapper_map_message distance_map;
 state_node_p ***astar_map;
-
+static carmen_map_p map_occupancy = NULL;
 
 using namespace std;
 
@@ -535,6 +535,29 @@ obstacle_distance(double x, double y, carmen_obstacle_distance_mapper_map_messag
 }
 
 
+int
+is_valid_grid_value(double x, double y)
+{
+	double map_x = (double) (x * ASTAR_GRID_RESOLUTION) + map_occupancy->config.x_origin;
+	double map_y = (double) (y * ASTAR_GRID_RESOLUTION) + map_occupancy->config.y_origin;
+//	printf("map_x = %f map_y = %f x_origin = %f y_origin = %f\n", map_x, map_y, map_occupancy->config.x_origin, map_occupancy->config.y_origin);
+	carmen_point_t global_point_in_map_coords;
+	// Move global path point coordinates to map coordinates
+	global_point_in_map_coords.x = (map_x - map_occupancy->config.x_origin) / map_occupancy->config.resolution;
+	global_point_in_map_coords.y = (map_y - map_occupancy->config.y_origin) / map_occupancy->config.resolution;
+	// Transform coordinates to integer indexes
+	int x_map_cell = (int) round(global_point_in_map_coords.x);
+	int y_map_cell = (int) round(global_point_in_map_coords.y);
+	// Os mapas de carmen sao orientados a colunas, logo a equacao eh como abaixo
+	int index = y_map_cell + map_occupancy->config.y_size * x_map_cell;
+	if(map_occupancy->complete_map[index] == -1)
+	{
+		 return 0;
+	}
+	return 1;
+}
+
+
 double
 get_distance_map_x(int x, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
@@ -584,7 +607,7 @@ alloc_astar_map(carmen_obstacle_distance_mapper_map_message *distance_map)
 				pos_y = get_distance_map_y(j, distance_map);
 //				printf("[alloc_map] %d %f %d %f %f %d\n", i, pos_x, j, pos_y, obstacle_distance(pos_x, pos_y, distance_map), distance_map->size);
 //				printf("[alloc_map] %d %d \n",x_size, y_size);
-				if(obstacle_distance(pos_x, pos_y, distance_map) < 1.5)
+				if(obstacle_distance(pos_x, pos_y, distance_map) < 1.5 || is_valid_grid_value(i, j) == 0)
 					astar_map[i][j][z]->is_obstacle = 1;
 				else
 					astar_map[i][j][z]->is_obstacle = 0;
@@ -1087,7 +1110,7 @@ dijkstra(state_node *start_state, state_node *goal_state, carmen_obstacle_distan
 				if (node_exist(open_heuristic, neighbor[it_number], distance_map) == 0 && node_exist(closed_heuristic, neighbor[it_number], distance_map) == 0)
 				{
 					neighbor[it_number]->g = cost;
-					neighbor[it_number]->h = DIST2D(neighbor[it_number]->state, goal_state->state);
+					neighbor[it_number]->h = 0;//DIST2D(neighbor[it_number]->state, goal_state->state);
 //					astar_map[current_pos->x][current_pos->y][current_pos->theta]->heuristic_g = cost;
 					neighbor[it_number]->parent = current;
 					open_heuristic.push_back(neighbor[it_number]);
@@ -1272,6 +1295,27 @@ send_new_rddf_poses()
 	}
 }
 
+
+static carmen_map_t *
+copy_grid_mapping_to_map(carmen_map_t *map, carmen_mapper_map_message *grid_map)
+{
+	int i;
+
+	if (!map)
+	{
+		map = (carmen_map_t *) malloc(sizeof(carmen_map_t));
+		map->map = (double **) malloc(grid_map->config.x_size * sizeof(double *));
+	}
+
+	map->config = grid_map->config;
+	map->complete_map = grid_map->complete_map;
+	for (i = 0; i < map->config.x_size; i++)
+		map->map[i] = map->complete_map + i * map->config.y_size;
+
+	return (map);
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Handlers                                                                                  //
@@ -1298,6 +1342,29 @@ carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_e
 //	printf ("Recebeu Goal!!!!!  %d\n", rddf_end_point_message->number_of_poses);
 }
 
+
+void
+mapper_handler(carmen_mapper_map_message *message)
+{
+	if(goal_received)
+		return;
+
+	static double last_time_stamp = 0.0;
+
+	if (message->size <= 0)
+		return;
+
+	// @@@ Alberto: codigo adicionado para atualizar o mapa a uma taxa maxima de 10Hz
+	if ((carmen_get_time() - last_time_stamp) > 0.1)
+		last_time_stamp = carmen_get_time();
+	else
+		return;
+
+	if (map_occupancy && (message->config.x_size != map_occupancy->config.x_size || message->config.y_size != map_occupancy->config.y_size))
+		carmen_map_destroy(&map_occupancy);
+
+	map_occupancy = copy_grid_mapping_to_map(map_occupancy, message);
+	}
 
 static void
 carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
@@ -1337,6 +1404,7 @@ carmen_rddf_play_subscribe_messages()
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_obstacle_distance_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) carmen_rddf_play_end_point_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
