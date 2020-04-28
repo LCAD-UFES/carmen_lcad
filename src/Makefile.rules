@@ -71,6 +71,58 @@ install_manpages = $(SILENT) \
 		fi; \
 	done
 
+install_includes_copy = $(SILENT) \
+	for i in $(PUBLIC_INCLUDES_COPY) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(INC_DIR)/carmen/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(INC_DIR)/carmen" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(INC_DIR)/carmen/$$i ; \
+			$(CP) $$dir/$$i $(INC_DIR)/carmen/$$i ; \
+		fi; \
+	done 
+
+install_libraries_copy = $(SILENT) \
+	for i in $(PUBLIC_LIBRARIES_COPY) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(LIB_DIR)/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(LIB_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(LIB_DIR)/$$i ; \
+			$(CP) $$dir/$$i $(LIB_DIR)/$$i ; \
+		fi; \
+	done 
+
+install_libraries_so_copy = \
+	for i in $(PUBLIC_LIBRARIES_SO_COPY) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(SHARED_DIR)/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(SHARED_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(SHARED_DIR)/$$i ; \
+			$(CP) $$dir/$$i $(SHARED_DIR)/$$i ; \
+		fi; \
+	done 
+
+install_binaries_copy = $(SILENT) \
+	for i in $(PUBLIC_BINARIES_COPY) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(BIN_DIR)/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(BIN_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(BIN_DIR)/$$i ; \
+			$(CP) $$dir/$$i $(BIN_DIR)/$$i ; \
+		fi; \
+	done 
+
+
+
+install_manpages_copy = $(SILENT) \
+	for i in $(MAN_PAGES_COPY) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(MAN_DIR)/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(MAN_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(MAN_DIR)/$$i ; \
+			$(CP) $$dir/$$i $(MAN_DIR)/$$i ; \
+		fi; \
+	done
+
 install_glades = $(SILENT) \
 	for i in $(GLADE_FILES) xxxx ; do \
 		if test -f $$i && ! $(NEWER) $(GLADE_DIR)/$$i $$i ; then \
@@ -250,7 +302,9 @@ phase1:
 	$(ECHO) "  --> Starting make"
 	$(compile_mae)
 	$(install_includes)
+	$(install_includes_copy)
 	$(install_manpages)
+	$(install_manpages_copy)
 ifdef CARMEN_TEST
 ifneq (Makefile.depend, $(wildcard Makefile.depend))
 	$(SILENT) $(MAKE) depend  2>> error.out
@@ -263,6 +317,7 @@ endif
 	$(SILENT) $(MAKE) libraries
 endif
 	$(install_libraries)
+	$(install_libraries_copy)
 	$(ECHO) "  <-- Make done"
 	(>&2 echo "${LIGHT_CYAN_COLOR}Leaving  : "`pwd`"${NO_COLOR}")
 
@@ -278,12 +333,14 @@ else
 	$(SILENT) $(MAKE) binaries
 endif
 	$(install_binaries)
+	$(install_binaries_copy)
 	$(ECHO) "  <-- Make done"
 	(>&2 echo "${LIGHT_CYAN_COLOR}Leaving  : "`pwd`"${NO_COLOR}")
 
 phase3:
 	$(subdir_recurse)
 	$(install_libraries_so)
+	$(install_libraries_so_copy)
 
 phase4:
 	$(subdir_recurse)
@@ -296,7 +353,9 @@ all:
 	$(ECHO) "  --> Starting make"
 	$(compile_mae)
 	$(install_includes)
+	$(install_includes_copy)
 	$(install_manpages)
+	$(install_manpages_copy)
 ifdef CARMEN_TEST
 ifneq (Makefile.depend, $(wildcard Makefile.depend))
 	$(SILENT) $(MAKE) depend 2>> error.out
@@ -309,13 +368,16 @@ endif
 	$(SILENT) $(MAKE) libraries
 endif
 	$(install_libraries)
+	$(install_libraries_copy)
 	$(install_libraries_so)
+	$(install_libraries_so_copy)
 ifdef CARMEN_TEST
 	$(SILENT) $(MAKE) binaries 2>> error.out 
 else
 	$(SILENT) $(MAKE) binaries
 endif
 	$(install_binaries)
+	$(install_binaries_copy)
 	$(install_glades)
 	$(ECHO) "  <-- Make done"
 	(>&2 echo "${LIGHT_CYAN_COLOR}Leaving  : "`pwd`"${NO_COLOR}")
@@ -356,6 +418,7 @@ distclean:
 export:
 	$(subdir_recurse)
 	$(install_includes)
+	$(install_includes_copy)
 
 dep depend:
 	$(subdir_recurse)
