@@ -35,7 +35,7 @@ mapper_mapping_mode_on_use_merge_between_maps 			on
  1.2 O parametro mapper_rays_threshold_to_merge_between_maps deve ser ajustado para melhor merge dos mapas. 
      Ele define o numero de raios que bateram em uma célula para saber se ela deve ser atualizada, é adhoc.
 
-2- Altere o caminho do mapa no process-volta_da_ufes_playback_viewer_3D.ini
+2- Altere o caminho do mapa no process-volta_da_ufes_playback_viewer_3D_map_generation_with_localize.ini e dê um nome para o seu rddf no rndf_build
  - Pode ser uma boa ideia criar um diretorio /dados/mapper_teste2 e fazer um link para ../data/mapper_teste2
 
 	map_server		support		1		0			./map_server -map_path ../data/mapper_teste2 ...
@@ -48,6 +48,9 @@ mapper_mapping_mode_on_use_merge_between_maps 			on
 
 4- Rode o process-volta_da_ufes_playback_viewer_3D.ini com o log novo com o qual se deseja fazer o merge
  - Pronto, vai ser feito o merge do log novo com o mapa antigo.
+  OBS: NO CASO DA LOCALIZAÇÃO SE PERDER NO MEIO DO PROCESSO DE MAPEAMENTO, VOLTE AO PASSO 1. AO INVÊS DE RODAR O MAP_SERVER E O MAPPER PELO PROCCONTROL, RODE VIA
+  LINHA DE COMANDO E DE TEMPOS EM TEMPOS DÊ PAUSE NO PLAYBACK, MATE O MAP_SERVER E O MAPPER, RODE-OS NOVAMENTE E DÊ PLAY NO PLAYBACK. ISSO VAI GARANTIR QUE
+  HAJAM FEATURES NOVAS RECENTEMENTE CRIADAS CARREGADAS EM MEMÓRIA.
 
 5- Copie o mapa atualizado para a pasta definitiva desejada.
 
