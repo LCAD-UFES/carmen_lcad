@@ -662,6 +662,8 @@ get_astar_map_y(double y, carmen_obstacle_distance_mapper_map_message *distance_
 bool
 my_list_ordenation (state_node *a, state_node *b)
 {
+//	return (a->f > b->f);
+	//Usar abaixo quando f for desativado
 	return (a->g+ a->h > b->g + b->h);
 }
 
@@ -1061,6 +1063,7 @@ dijkstra(state_node *start_state, state_node *goal_state, carmen_obstacle_distan
 			for(int i = 0; i < open_heuristic.size(); i++)
 			{
 				open_heuristic[i]->h = DIST2D(open_heuristic[i]->state, goal_state->state);
+				open_heuristic[i]->f = open_heuristic[i]->g + open_heuristic[i]->h;
 			}
 			sort(open_heuristic.begin(), open_heuristic.end(), my_list_ordenation);
 
@@ -1110,7 +1113,8 @@ dijkstra(state_node *start_state, state_node *goal_state, carmen_obstacle_distan
 				if (node_exist(open_heuristic, neighbor[it_number], distance_map) == 0 && node_exist(closed_heuristic, neighbor[it_number], distance_map) == 0)
 				{
 					neighbor[it_number]->g = cost;
-					neighbor[it_number]->h = 0;//DIST2D(neighbor[it_number]->state, goal_state->state);
+					neighbor[it_number]->h = DIST2D(neighbor[it_number]->state, goal_state->state);
+					neighbor[it_number]->f = neighbor[it_number]->g + neighbor[it_number]->h;
 //					astar_map[current_pos->x][current_pos->y][current_pos->theta]->heuristic_g = cost;
 					neighbor[it_number]->parent = current;
 					open_heuristic.push_back(neighbor[it_number]);
@@ -1236,7 +1240,16 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 				neighbor[it_number]->g = cost;
 //				neighbor[it_number]->h = DIST2D(neighbor[it_number]->state, goal_state->state);
 				neighbor[it_number]->h = h(neighbor[it_number], goal_state, distance_map);
+				neighbor[it_number]->f = neighbor[it_number]->g + neighbor[it_number]->h;
 				neighbor[it_number]->parent = current;
+
+				//Penalidades
+/*				if(neighbor[it_number]->state.v < 0)
+					neighbor[it_number]->f *= 1.1;
+				if(neighbor[it_number]->state.v != current->state.v)
+					neighbor[it_number]->f +=1;
+*/
+
 				open.push_back(neighbor[it_number]);
 			}
 			it_number++;
