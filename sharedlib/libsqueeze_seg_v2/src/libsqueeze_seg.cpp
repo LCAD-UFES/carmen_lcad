@@ -170,7 +170,7 @@ initialize_python_dataset()
 	initialize_python_path_squeezeseg();
 	
 	Py_Initialize();
-	import_array();
+	// import_array();
 
 	PyObject *python_module_name = PyString_FromString((char *) "save_npy_dataset");
 
@@ -257,6 +257,100 @@ libsqueeze_seg_fill_label(int line, double label, double* data_train)
 	data_train[line + 5] = label;
 }
 
+void
+libsqueeze_seg_using_detections(vector<bbox_t> &predictions, vector<vector<image_cartesian>> &clustered_points, double* data_train, int vertical_resolution, int number_of_laser_shots)
+{
+	printf("libsqueeze_seg_using_detections\n");
+	unsigned int cont = 0;
+	vector<vector<image_cartesian>> classified;
+	vector<image_cartesian> cluster;
+	vector<int> moving_object_cluster_index;
+	
+	unsigned int predictions_size = predictions.size();
+	for (unsigned int h = 0; h < predictions_size; h++)
+	{
+		unsigned int number_of_clusters = clustered_points.size();
+		for (unsigned int i = 0; i < number_of_clusters; i++)
+		{
+			unsigned int cluster_size = clustered_points[i].size();
+			//unsigned int min_points_inside_bbox = cluster_size / 5;
+			bool is_moving_obstacle = false;
+			unsigned int contCar = 0, contPerson = 0, contBycicle = 0, contTrain = 0;
+			for (unsigned int j = 0; j < cluster_size; j++)
+			{
+				if ((unsigned int) clustered_points[i][j].image_x >=  predictions[h].x &&
+					(unsigned int) clustered_points[i][j].image_x <= (predictions[h].x + predictions[h].w) &&
+					(unsigned int) clustered_points[i][j].image_y >=  predictions[h].y &&
+					(unsigned int) clustered_points[i][j].image_y <= (predictions[h].y + predictions[h].h))
+				{
+					switch (predictions[h].obj_id)
+					{
+						case 0: //person
+							contPerson++;
+							break;
+						case 1: //bicycle
+							contBycicle++;
+							break;
+						case 2: //car
+							contCar++;
+							break;
+						case 3: //motorbike
+							contBycicle++;
+							break;
+						case 5: //bus
+							contCar++;
+							break;
+						case 6: //train
+							contTrain++;
+							break;
+						case 7: //truck
+							contCar++;
+							break;
+					}
+					cont++;
+					if (contCar > (cluster_size / 5) ||
+						contPerson > (cluster_size / 5) ||
+						contBycicle > (cluster_size / 5) ||
+						contTrain > (cluster_size / 5))
+					{
+						is_moving_obstacle = true;
+						break;
+					}
+				} // End if
+			} // End for cluster
+			if (is_moving_obstacle)
+			{
+				for (unsigned int j = 0; j < cluster_size; j++)
+				{
+					int squeeze_index = (int) (vertical_resolution - clustered_points[i][j].ray_number) * number_of_laser_shots * 6 + clustered_points[i][j].shot_number * 6 + 5;
+					if (contCar > contPerson && contCar > contBycicle && contCar > contTrain)
+					{
+						libsqueeze_seg_fill_label(squeeze_index, 1.0, data_train);
+					}
+					else
+					{
+						if (contPerson > contBycicle && contPerson > contTrain)
+						{
+							libsqueeze_seg_fill_label(squeeze_index, 2.0, data_train);
+						}
+						else
+						{
+							if (contBycicle > contTrain)
+							{
+								libsqueeze_seg_fill_label(squeeze_index, 3.0, data_train);
+							}
+							else
+							{
+								libsqueeze_seg_fill_label(squeeze_index, 4.0, data_train);
+							}
+						}
+					}
+				}
+			}// End Is moving obstacle
+		}
+	}
+}
+	
 double *
 libsqueeze_seg_data_for_train(int sensor_number, carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *sensors_params)
 {

@@ -1162,6 +1162,32 @@ remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor
 	{
 		// vector<image_cartesian> points_on_image = compute_points_img_coordnates(sensor_params, sensor_data, camera_index, image_width, image_height, points);
 		show_detections(open_cv_image.clone(), predictions_vector, points_on_image, clustered_points, camera_index); // open_cv_image.clone() to avoid writing things in the image
+
+		// Save pointcloud for dataset
+		if (dataset_for_squeezeseg)
+		{
+			// Save clusters data in libsqueeze_seg_numpy
+			int number_of_laser_shots = sensor_data->points[sensor_data->point_cloud_index].num_points / sensor_params->vertical_resolution;
+			libsqueeze_seg_using_detections(predictions_vector, clustered_points, squeezeseg_dataset.data, sensor_params->vertical_resolution, number_of_laser_shots);
+			switch(camera_index)
+			{
+				case 3:
+					squeezeseg_dataset.camera3 = true;
+					break;
+				case 5:
+					squeezeseg_dataset.camera5 = true;
+					break;
+				case 7:
+					squeezeseg_dataset.camera7 = true;
+					break;
+				case 9:
+					squeezeseg_dataset.camera9 = true;
+			}
+			if (squeezeseg_dataset.camera3 && squeezeseg_dataset.camera5)
+			{
+				libsqueeze_seg_save_npy_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
+			}
+		}
 	}
 }
 
@@ -1478,7 +1504,7 @@ filter_sensor_data_using_yolo_old(sensor_parameters_t *sensor_params, sensor_dat
 					point.image_y = image_y;
 					point.cartesian_x = velodyne_p3d.x();
 					point.cartesian_y = velodyne_p3d.y(); // Must be inverted because Velodyne angle is reversed with CARMEN angles
-					point.cartesian_z = (sensor_params->vertical_resolution - j) * number_of_laser_shots * 6 + i * 6 + 5;
+					point.cartesian_z = (sensor_params->vertical_resolution - point.ray_number) * number_of_laser_shots * 6 + point.shot_number * 6 + 5;
 					points.push_back(point);
 
 					int line = (int)(sensor_params->vertical_resolution - j) * number_of_laser_shots * 6 + i * 6 + 5;
@@ -5098,12 +5124,12 @@ main(int argc, char **argv)
 		initializer_YOLO();
 	}
 	if (!strcmp(neural_network,"efficientdet")){
+		classes_names = get_classes_names("../sharedlib/darknet2/data/coco.names");
+		initialize_Efficientdet(0.2);
 		if (dataset_for_squeezeseg)
 		{
 			initialize_python_dataset();
 		}
-		classes_names = get_classes_names("../sharedlib/darknet2/data/coco.names");
-		initialize_Efficientdet(0.2);
 	}
 	/* Register TensorRT context for RangeNet++*/
 	/*if (!strcmp(neural_network,"rangenet")){
