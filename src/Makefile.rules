@@ -59,8 +59,6 @@ install_binaries = $(SILENT) \
 		fi; \
 	done 
 
-
-
 install_manpages = $(SILENT) \
 	for i in $(MAN_PAGES) xxxx ; do \
 		if test -f $$i && ! $(NEWER) $(MAN_DIR)/$$i $$i ; then \
@@ -70,6 +68,16 @@ install_manpages = $(SILENT) \
 			$(LN) -s $$dir/$$i $(MAN_DIR)/$$i ; \
 		fi; \
 	done
+
+install_others = $(SILENT) \
+	for i in $(PUBLIC_OTHERS) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(BIN_DIR)/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(BIN_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(BIN_DIR)/$$i ; \
+			$(LN) -s $$dir/$$i $(BIN_DIR)/$$i ; \
+		fi; \
+	done 
 
 install_includes_copy = $(SILENT) \
 	for i in $(PUBLIC_INCLUDES_COPY) xxxx ; do \
@@ -111,8 +119,6 @@ install_binaries_copy = $(SILENT) \
 		fi; \
 	done 
 
-
-
 install_manpages_copy = $(SILENT) \
 	for i in $(MAN_PAGES_COPY) xxxx ; do \
 		if test -f $$i && ! $(NEWER) $(MAN_DIR)/$$i $$i ; then \
@@ -122,6 +128,16 @@ install_manpages_copy = $(SILENT) \
 			$(CP) $$dir/$$i $(MAN_DIR)/$$i ; \
 		fi; \
 	done
+
+install_others_copy = $(SILENT) \
+	for i in $(PUBLIC_OTHERS_COPY) xxxx ; do \
+		if test -f $$i && ! $(NEWER) $(BIN_DIR)/$$i $$i ; then \
+			echo "    ---- Copying $$i to $(BIN_DIR)" ; \
+			export dir=`pwd` ; \
+			$(RM) -f $(BIN_DIR)/$$i ; \
+			$(CP) $$dir/$$i $(BIN_DIR)/$$i ; \
+		fi; \
+	done 
 
 install_glades = $(SILENT) \
 	for i in $(GLADE_FILES) xxxx ; do \
@@ -153,7 +169,7 @@ clean_mae = $(SILENT) \
         done
 
 global_install_includes = $(SILENT) \
-	for i in $(PUBLIC_INCLUDES) xxxx ; do \
+	for i in $(PUBLIC_INCLUDES) $(PUBLIC_INCLUDES_COPY) xxxx ; do \
 		if test -f $$i && \
 		   ! $(NEWER) $(GLOBAL_INC_DIR)/carmen/$$i $$i ; then \
 			echo \
@@ -165,7 +181,7 @@ global_install_includes = $(SILENT) \
 	done 
 
 global_install_libraries = $(SILENT) \
-	for i in $(PUBLIC_LIBRARIES) xxxx ; do \
+	for i in $(PUBLIC_LIBRARIES) $(PUBLIC_LIBRARIES_COPY) xxxx ; do \
 		if test -f $$i && ! $(NEWER) $(GLOBAL_LIB_DIR)/$$i $$i ; then \
 			echo "    ---- Copying $$i to $(GLOBAL_LIB_DIR)" ; \
 			export dir=`pwd` ; \
@@ -175,7 +191,7 @@ global_install_libraries = $(SILENT) \
 	done 
 
 global_install_libraries_so = $(SILENT) \
-	for i in $(PUBLIC_LIBRARIES_SO) xxxx ; do \
+	for i in $(PUBLIC_LIBRARIES_SO) $(PUBLIC_LIBRARIES_SO_COPY) xxxx ; do \
 		if test -f $$i && ! $(NEWER) $(GLOBAL_SHARED_DIR)/$$i $$i ; then \
 			echo "    ---- Copying $$i to $(GLOBAL_SHARED_DIR)" ; \
 			export dir=`pwd` ; \
@@ -185,7 +201,7 @@ global_install_libraries_so = $(SILENT) \
 	done 
 
 global_install_binaries = $(SILENT) \
-	for i in $(PUBLIC_BINARIES) xxxx ; do \
+	for i in $(PUBLIC_BINARIES) $(PUBLIC_OTHERS) $(PUBLIC_BINARIES_COPY) $(PUBLIC_OTHERS_COPY) xxxx ; do \
 		if test -f $$i && ! $(NEWER) $(GLOBAL_BIN_DIR)/$$i $$i ; then \
 			echo "    ---- Copying $$i to $(GLOBAL_BIN_DIR)" ; \
 			export dir=`pwd` ; \
@@ -195,7 +211,7 @@ global_install_binaries = $(SILENT) \
 	done 
 
 global_install_manpages = $(SILENT) \
-	for i in $(MAN_PAGES) xxxx ; do \
+	for i in $(MAN_PAGES) $(MAN_PAGES_COPY) xxxx ; do \
 		if test -f $$i && ! $(NEWER) $(GLOBAL_MAN_DIR)/$$i $$i ; then \
 			echo "    ---- Copying $$i to $(GLOBAL_MAN_DIR)" ; \
 			export dir=`pwd` ; \
@@ -205,7 +221,7 @@ global_install_manpages = $(SILENT) \
 	done
 
 remove_includes = $(SILENT) \
-	for i in $(PUBLIC_INCLUDES) xxxx ; do \
+	for i in $(PUBLIC_INCLUDES) $(PUBLIC_INCLUDES_COPY) xxxx ; do \
 		if test ! "$$i" = "xxxx" ; then \
 			echo "    ---- Removing $$i from $(INC_DIR)/carmen" ; \
 			$(RM) -f $(INC_DIR)/carmen/$$i ; \
@@ -213,7 +229,7 @@ remove_includes = $(SILENT) \
 	done 
 
 remove_libraries = $(SILENT) \
-	for i in $(PUBLIC_LIBRARIES) xxxx ; do \
+	for i in $(PUBLIC_LIBRARIES) $(PUBLIC_LIBRARIES_COPY) xxxx ; do \
 		if test ! "$$i" = "xxxx" ; then \
 			echo "    ---- Removing $$i from $(LIB_DIR)" ; \
 			$(RM) -f $(LIB_DIR)/$$i ; \
@@ -221,7 +237,7 @@ remove_libraries = $(SILENT) \
 	done 
 
 remove_libraries_so = $(SILENT) \
-	for i in $(PUBLIC_LIBRARIES_SO) xxxx ; do \
+	for i in $(PUBLIC_LIBRARIES_SO) $(PUBLIC_LIBRARIES_SO_COPY) xxxx ; do \
 		if test ! "$$i" = "xxxx" ; then \
 			echo "    ---- Removing $$i from $(SHARED_DIR)" ; \
 			$(RM) -f $(SHARED_DIR)/$$i ; \
@@ -229,7 +245,7 @@ remove_libraries_so = $(SILENT) \
 	done 
 
 remove_binaries = $(SILENT) \
-	for i in $(PUBLIC_BINARIES) xxxx ; do \
+	for i in $(PUBLIC_BINARIES) $(PUBLIC_OTHERS) $(PUBLIC_BINARIES_COPY) $(PUBLIC_OTHERS_COPY) xxxx ; do \
 		if test ! "$$i" = "xxxx" ; then \
 			echo "    ---- Removing $$i from $(BIN_DIR)" ; \
 			$(RM) -f $(BIN_DIR)/$$i ; \
@@ -237,7 +253,7 @@ remove_binaries = $(SILENT) \
 	done 
 
 remove_manpages = $(SILENT) \
-	for i in $(MAN_PAGES) xxxx ; do \
+	for i in $(MAN_PAGES) $(MAN_PAGES_COPY) xxxx ; do \
 		if test ! "$$i" = "xxxx" ; then \
 			echo "    ---- Removing $$i from $(MAN_DIR)" ; \
 			$(RM) -f $(MAN_DIR)/$$i ; \
@@ -245,7 +261,7 @@ remove_manpages = $(SILENT) \
 	done
 
 global_remove_includes = $(SILENT) \
-	for i in $(PUBLIC_INCLUDES) xxxx ; do \
+	for i in $(PUBLIC_INCLUDES) $(PUBLIC_INCLUDES_COPY) xxxx ; do \
 		if test ! "$$i" = "xxxx" ; then \
 			echo "    ---- Removing $$i from $(GLOBAL_INC_DIR)/carmen" ; \
 			$(RM) -f $(GLOBAL_INC_DIR)/carmen/$$i ; \
@@ -253,15 +269,23 @@ global_remove_includes = $(SILENT) \
 	done 
 
 global_remove_libraries = $(SILENT) \
-	for i in $(PUBLIC_LIBRARIES) xxxx ; do \
+	for i in $(PUBLIC_LIBRARIES) $(PUBLIC_LIBRARIES_COPY) xxxx ; do \
 		if test ! "$$i" = "xxxx" ; then \
 			echo "    ---- Removing $$i from $(GLOBAL_LIB_DIR)" ; \
 			$(RM) -f $(GLOBAL_LIB_DIR)/$$i ; \
 		fi ; \
 	done 
 
+global_remove_libraries_so = $(SILENT) \
+	for i in $(PUBLIC_LIBRARIES_SO) $(PUBLIC_LIBRARIES_SO_COPY) xxxx ; do \
+		if test ! "$$i" = "xxxx" ; then \
+			echo "    ---- Removing $$i from $(GLOBAL_SHARED_DIR)" ; \
+			$(RM) -f $(GLOBAL_SHARED_DIR)/$$i ; \
+		fi ; \
+	done 
+
 global_remove_binaries = $(SILENT) \
-	for i in $(PUBLIC_BINARIES) xxxx ; do \
+	for i in $(PUBLIC_BINARIES) $(PUBLIC_OTHERS) $(PUBLIC_BINARIES_COPY) $(PUBLIC_OTHERS_COPY) xxxx ; do \
 		if test ! "$$i" = "xxxx" ; then \
 			echo "    ---- Removing $$i from $(GLOBAL_BIN_DIR)" ; \
 			$(RM) -f $(GLOBAL_BIN_DIR)/$$i ; \
@@ -269,7 +293,7 @@ global_remove_binaries = $(SILENT) \
 	done 
 
 global_remove_manpages = $(SILENT) \
-	for i in $(MAN_PAGES) xxxx ; do \
+	for i in $(MAN_PAGES) $(MAN_PAGES_COPY) xxxx ; do \
 		if test ! "$$i" = "xxxx" ; then \
 			echo "    ---- Removing $$i from $(GLOBAL_MAN_DIR)" ; \
 			$(RM) -f $(GLOBAL_MAN_DIR)/$$i ; \
@@ -298,13 +322,14 @@ phase1:
 	$(subdir_recurse)
 	$(banner)
 	$(ECHO) ""
-	(>&2 echo "${YELLOW_COLOR}Entering : "`pwd`"${NO_COLOR}")
-	$(ECHO) "  --> Starting make"
+	(>&2 echo "${YELLOW_COLOR}  --> Starting make phase1 -C "`pwd`"${NO_COLOR}")
 	$(compile_mae)
 	$(install_includes)
 	$(install_includes_copy)
 	$(install_manpages)
 	$(install_manpages_copy)
+	$(install_others)
+	$(install_others_copy)
 ifdef CARMEN_TEST
 ifneq (Makefile.depend, $(wildcard Makefile.depend))
 	$(SILENT) $(MAKE) depend  2>> error.out
@@ -318,15 +343,13 @@ endif
 endif
 	$(install_libraries)
 	$(install_libraries_copy)
-	$(ECHO) "  <-- Make done"
-	(>&2 echo "${LIGHT_CYAN_COLOR}Leaving  : "`pwd`"${NO_COLOR}")
+	(>&2 echo "${LIGHT_CYAN_COLOR}  <-- Finished make phase1 -C : "`pwd`"${NO_COLOR}")
 
 phase2:
 	$(subdir_recurse)
 	$(banner)
 	$(ECHO) ""
-	(>&2 echo "${YELLOW_COLOR}Entering : "`pwd`"${NO_COLOR}")
-	$(ECHO) "  --> Starting make"
+	(>&2 echo "${YELLOW_COLOR}  --> Starting make phase2 -C "`pwd`"${NO_COLOR}")
 ifdef CARMEN_TEST
 	$(SILENT) $(MAKE) binaries 2>> error.out
 else
@@ -334,8 +357,8 @@ else
 endif
 	$(install_binaries)
 	$(install_binaries_copy)
-	$(ECHO) "  <-- Make done"
-	(>&2 echo "${LIGHT_CYAN_COLOR}Leaving  : "`pwd`"${NO_COLOR}")
+	$(install_glades)
+	(>&2 echo "${LIGHT_CYAN_COLOR}  <-- Finished make phase2 -C "`pwd`"${NO_COLOR}")
 
 phase3:
 	$(subdir_recurse)
@@ -349,13 +372,14 @@ all:
 	$(subdir_recurse)
 	$(banner)
 	$(ECHO) ""
-	(>&2 echo "${YELLOW_COLOR}Entering : "`pwd`"${NO_COLOR}")
-	$(ECHO) "  --> Starting make"
+	(>&2 echo "${YELLOW_COLOR}  --> Starting make all -C "`pwd`"${NO_COLOR}")
 	$(compile_mae)
 	$(install_includes)
 	$(install_includes_copy)
 	$(install_manpages)
 	$(install_manpages_copy)
+	$(install_others)
+	$(install_others_copy)
 ifdef CARMEN_TEST
 ifneq (Makefile.depend, $(wildcard Makefile.depend))
 	$(SILENT) $(MAKE) depend 2>> error.out
@@ -379,16 +403,25 @@ endif
 	$(install_binaries)
 	$(install_binaries_copy)
 	$(install_glades)
-	$(ECHO) "  <-- Make done"
-	(>&2 echo "${LIGHT_CYAN_COLOR}Leaving  : "`pwd`"${NO_COLOR}")
+	(>&2 echo "${LIGHT_CYAN_COLOR}  <-- Finished make all -C "`pwd`"${NO_COLOR}")
 
 install:
 	$(subdir_recurse)
 	$(banner)
+	$(global_install_includes)
 	$(global_install_libraries)
 	$(global_install_libraries_so)
 	$(global_install_binaries)
-	$(global_install_includes)
+	$(global_install_manpages)
+
+uninstall:
+	$(subdir_recurse)
+	$(banner)
+	$(global_remove_includes)
+	$(global_remove_libraries)
+	$(global_remove_libraries_so)
+	$(global_remove_binaries)
+	$(global_remove_manpages)
 
 clean:
 	$(clean_mae)
@@ -404,21 +437,24 @@ relink:
 	done
 
 distclean:
+	$(clean_mae)
 	$(subdir_recurse)
 	$(ECHO) "    ---- Cleaning up "$(MODULE_NAME)
-	$(SILENT) $(RM) *.o *.a *.so *.exe *~ core a.out
+	$(SILENT) $(RM) *.o *.a *.so *.exe *~ core a.out error.out
 	$(SILENT) $(RM) Makefile.depend Makefile.depend.bak $(TARGETS) $(patsubst %.class,'%.class',$(CLASS_FILES))
 	$(remove_includes)
-	$(remove_manpages)
-	$(remove_libraries_so)
 	$(remove_libraries)
+	$(remove_libraries_so)
 	$(remove_binaries)
+	$(remove_manpages)
 	$(RM) core gmon.out *~ .\#* \#*
 
 export:
 	$(subdir_recurse)
 	$(install_includes)
 	$(install_includes_copy)
+	$(install_others)
+	$(install_others_copy)
 
 dep depend:
 	$(subdir_recurse)

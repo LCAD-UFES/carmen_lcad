@@ -60,6 +60,8 @@ GLADE_FILES = gui.glade
 TARGETS += libmvog_view.a
 endif
 
+clean: model_clean view_clean
+
 model_clean: 
 #	$(MAKE) -C mvog_model/src clean
 	-rm -rf mvog_model/src/*.o

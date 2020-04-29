@@ -52,6 +52,10 @@ PUBLIC_BINARIES = \
 	road_mapper_image_splitter \
 	road_mapper_display_map
 
+PUBLIC_OTHERS = \
+	rddf_generate \
+	rddf_view \
+
 TARGETS = \
 	libroad_mapper_interface.a \
 	libroad_mapper.a \
@@ -61,8 +65,6 @@ TARGETS = \
 	road_mapper_image_splitter \
 	road_mapper_display_map \
 	road_mapper_log_tracker \
-	$(CARMEN_HOME)/bin/rddf_generate \
-	$(CARMEN_HOME)/bin/rddf_view \
 
 ifneq (, $(shell which nvcc))
 ifdef CAFFE_ENET_HOME
@@ -112,12 +114,6 @@ road_mapper_sampling: road_mapper_sampling.o road_mapper.o road_mapper_utils.o
 road_mapper_image_splitter: road_mapper_image_splitter.o
 road_mapper_display_map: road_mapper_display_map.o road_mapper.o road_mapper_utils.o
 road_mapper_log_tracker: road_mapper_log_tracker.o
-
-$(CARMEN_HOME)/bin/rddf_generate:
-	ln -s  $(PWD)/rddf_generate  $(CARMEN_HOME)/bin/
-
-$(CARMEN_HOME)/bin/rddf_view:
-	ln -s  $(PWD)/rddf_view  $(CARMEN_HOME)/bin/
 
 ifneq (, $(shell which nvcc))
 ifdef CAFFE_ENET_HOME
