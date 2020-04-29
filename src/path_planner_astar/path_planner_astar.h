@@ -54,6 +54,12 @@ typedef struct discrete_pos_node
 } discrete_pos_node;
 
 
+typedef struct cost_heuristic_node
+{
+	double h;
+} cost_heuristic_node, *cost_heuristic_node_p;
+
+
 class StateNodePtrComparator {
 public:
 	bool operator() (state_node *a, state_node *b) const
