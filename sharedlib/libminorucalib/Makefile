@@ -25,5 +25,10 @@ libminorucalib.a: camcalib.o rectify.o cvex/cvex.o cvex/CvexCameraCalibration.o 
 
 libminorucalib.so.1: camcalib.o rectify.o cvex/cvex.o cvex/CvexCameraCalibration.o cvex/CvexStereoCameraCalibration.o
 
+clean: clean_cvex
+
+clean_cvex: 
+	-rm -rf cvex/*.o
+
 # rules
 include $(CARMEN_HOME)/src/Makefile.rules

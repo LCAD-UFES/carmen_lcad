@@ -6,15 +6,22 @@ make_clean_module()
 	make clean
 }
 
+rm_symbolic_links()
+{
+	cd $1
+	rm $(ls -l --time-style=full-iso | grep ' \-> ' | cut -d':' -f 3 | cut -d' ' -f 3)
+}
 
 MODULES=". ../sharedlib 
 	 sensors/camera clean_map cvis graphslam hypergraphsclam lane_detector laser_calibration moving_objects2 
-	 path_planner slam6d slam_icp tracker velodyne_icp virtual_scan visual_graphslam voslam sensors/web_cam road_mapper"
+	 path_planner slam6d slam_icp tracker velodyne_icp virtual_scan visual_graphslam voslam sensors/web_cam road_mapper
+	 lane_detection laser_ldmrs logtools mapper_datmo moving_obstacle_detector mvog_package navigator_ackerman
+	 navigator_astar neural_object_detector voice_interface voice_interface/libvoice voice_interface/libvoice_google"
 
 ERRORS=
 
-#rm $CARMEN_HOME/lib/* 
-#rm $CARMEN_HOME/include/carmen/* 
+rm_symbolic_links $CARMEN_HOME/lib
+rm_symbolic_links $CARMEN_HOME/include/carmen
 
 for mod in $MODULES
 do

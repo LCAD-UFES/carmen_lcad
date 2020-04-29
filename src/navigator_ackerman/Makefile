@@ -64,7 +64,10 @@ followpath_ackerman: followpath_ackerman.o libnavigator_ackerman_interface.a
 libprob_models.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/prob_models/
 
-clean: clean_prob_models
+clean: clean_FH clean_prob_models
+
+clean_FH: 
+	-rm -rf FH/*.o
 
 clean_prob_models:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/prob_models/
