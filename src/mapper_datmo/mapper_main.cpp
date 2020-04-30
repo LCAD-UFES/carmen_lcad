@@ -1185,7 +1185,9 @@ remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor
 			}
 			if (squeezeseg_dataset.camera3 && squeezeseg_dataset.camera5)
 			{
-				libsqueeze_seg_save_npy_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
+				// printf("for_save\n");
+				libsqueeze_seg_save_txt_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
+				// libsqueeze_seg_save_npy_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
 			}
 		}
 	}
@@ -2389,7 +2391,7 @@ filter_sensor_data_using_squeezeseg(sensor_parameters_t *sensor_params, sensor_d
 								class_seg = 3;
 							}
 						}
-
+						printf("class_seg=%d", class_seg);
 						if (px >= 0.0 && px < img_planar.cols && py >= 0.0 && py < img_planar.rows)
 						{
 							switch (class_seg)
@@ -5128,7 +5130,7 @@ main(int argc, char **argv)
 		initialize_Efficientdet(0.2);
 		if (dataset_for_squeezeseg)
 		{
-			initialize_python_dataset();
+			// initialize_python_dataset();
 		}
 	}
 	/* Register TensorRT context for RangeNet++*/

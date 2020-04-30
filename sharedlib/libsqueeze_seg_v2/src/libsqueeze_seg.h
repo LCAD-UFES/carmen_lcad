@@ -18,6 +18,9 @@ libsqueeze_seg_process_moving_obstacles_cells(int sensor_number, carmen_velodyne
 void
 initialize_python_dataset();
 
+void 
+libsqueeze_seg_save_txt_for_train(int vertical_resolution, int shots_to_squeeze, double* point_cloud, double timestamp);
+
 void
 libsqueeze_seg_save_npy_for_train(int vertical_resolution, int shots_to_squeeze, double* point_cloud, double timestamp);
 
