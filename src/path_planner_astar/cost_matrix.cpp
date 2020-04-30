@@ -114,8 +114,8 @@ make_matrix_cost()
 	printf("sizemap = %d %d \n", x_size, y_size);
 	carmen_ackerman_traj_point_t current;
 	carmen_ackerman_traj_point_t goal;
-	goal.x = MAP_SIZE/2 -1;
-	goal.y = MAP_SIZE/2 -1;
+	goal.x = MAP_SIZE/2;
+	goal.y = MAP_SIZE/2;
 	goal.theta = 0.0;
 	double path_cost;
 
