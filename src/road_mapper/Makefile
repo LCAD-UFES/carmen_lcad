@@ -53,8 +53,8 @@ PUBLIC_BINARIES = \
 	road_mapper_display_map
 
 PUBLIC_OTHERS = \
-	rddf_generate \
-	rddf_view \
+	rddf_generate.py \
+	rddf_view.py \
 
 TARGETS = \
 	libroad_mapper_interface.a \
