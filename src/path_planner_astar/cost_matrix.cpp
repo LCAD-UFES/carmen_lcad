@@ -2,8 +2,8 @@
 #include <stdio.h>
 #define THETA_SIZE 72
 #define ASTAR_GRID_RESOLUTION 1.0
-#define MAP_SIZE 100
-#define FILE_NAME "cost_matrix_100x100x72.data"
+#define MAP_SIZE 101
+#define FILE_NAME "cost_matrix_101x101x72.data"
 carmen_robot_ackerman_config_t robot_config;
 cost_heuristic_node_p ***cost_map;
 

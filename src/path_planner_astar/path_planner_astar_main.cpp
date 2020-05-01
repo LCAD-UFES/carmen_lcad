@@ -2,9 +2,9 @@
 
 #define THETA_SIZE 1
 #define HEURISTIC_THETA_SIZE 72
-#define HEURISTIC_MAP_SIZE 100
+#define HEURISTIC_MAP_SIZE 101
 #define ASTAR_GRID_RESOLUTION 1.0
-#define FILE_NAME "cost_matrix_100x100x72.data"
+#define FILE_NAME "cost_matrix_101x101x72.data"
 
 
 #define ACKERMAN_EXPANSION 1
@@ -960,6 +960,9 @@ expansion(state_node *current, state_node *goal_state, carmen_obstacle_distance_
         			{
         				new_state->state = temp_state->state;
         			}
+        			else
+        				break;
+
 //        		printf("original = %f %f\tnovo = %f %f\n", carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, 2.0, &distance_traveled, DELTA_T, robot_config).x, carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, 2.0, &distance_traveled, DELTA_T, robot_config).y, new_state->state.x, new_state->state.y);
         	}
         	}
@@ -1018,26 +1021,22 @@ node_exist(vector<state_node*> &list, state_node *current, carmen_obstacle_dista
 
 
 vector<state_node*>
-expansion_dijkstra(state_node *current, state_node *goal_state, carmen_obstacle_distance_mapper_map_message *distance_map)
+expansion_discrete(state_node *current, state_node *goal_state, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
 
-	double add_x[3] = {-1.0, 0.0, 1.0};
-    double add_y[3] = {-1.0, 0.0, 1.0};
+	int add_x[8] = { -1, -1, 0, 1, 1, 1, 0, -1 };
+	int add_y[8] = { 0, 1, 1, 1, 0, -1, -1, -1 };
     vector<state_node*> neighbor;
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 8; i++)
     {
-    	for (int j = 0; j<3; j++)
-    	{
-    		if(add_x[i] == 0.0 && add_y[j] == 0.0)
-    			continue;
 
         	state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
 
 			discrete_pos_node *current_pos = get_current_pos(current, distance_map);
 //			printf("[asdasd] %f %f %f %f\n",current->state.x, current->state.y, get_distance_map_x(current_pos->x, distance_map), get_distance_map_y(current_pos->y, distance_map));
 			current_pos->x +=add_x[i];
-			current_pos->y +=add_y[j];
+			current_pos->y +=add_y[i];
 			new_state->state.x = get_distance_map_x(current_pos->x, distance_map);
 			new_state->state.y = get_distance_map_y(current_pos->y, distance_map);
 			new_state->state.theta = 0;
@@ -1062,7 +1061,6 @@ expansion_dijkstra(state_node *current, state_node *goal_state, carmen_obstacle_
 				neighbor.push_back(new_state);
 			}
 			free(current_pos);
-    	}
     }
 //    publish_astar_draw();
     return neighbor;
@@ -1130,7 +1128,7 @@ dijkstra(state_node *start_state, state_node *goal_state, carmen_obstacle_distan
 			astar_map[current_pos->x][current_pos->y][0]->heuristic_g = current->g;
 			astar_map[current_pos->x][current_pos->y][0]->heuristic_closed = 1;
 			free(current_pos);
-			neighbor = expansion_dijkstra(current, goal_state, distance_map);
+			neighbor = expansion_discrete(current, goal_state, distance_map);
 			while(it_number < neighbor.size())
 			{
 				cost = current->g + movementcost(current, neighbor[it_number]);
@@ -1222,15 +1220,31 @@ h(state_node *current, state_node *goal, carmen_obstacle_distance_mapper_map_mes
 	else
 		ho = dijkstra( goal, current, distance_map);
 
-	int	x = abs((current->state.x - goal->state.x) * cos(-current->state.theta) - (current->state.y - goal->state.y) * sin(-current->state.theta));
-	int	y = abs((current->state.x - goal->state.x) * sin(-current->state.theta) + (current->state.y - goal->state.y) * cos(-current->state.theta));
+/*
+	current->state.x = 0;
+	current->state.y = 0;
+	current->state.theta = 1.5708;
+	goal->state.x = 5;
+	goal->state.y = 10;
+	goal->state.theta = 1.5708;
+*/
+	int	x = (current->state.x - goal->state.x) * cos(-current->state.theta) - (current->state.y - goal->state.y) * sin(-current->state.theta);
+	int	y = (current->state.x - goal->state.x) * sin(-current->state.theta) + (current->state.y - goal->state.y) * cos(-current->state.theta);
 	int theta;
+
 	if ((x <= 0 && y >= 0) || (x >= 0 && y <= 0))
 		theta = get_astar_map_theta_2(carmen_normalize_theta(-(goal->state.theta - current->state.theta)));
 	else
 		theta = get_astar_map_theta_2(carmen_normalize_theta(goal->state.theta - current->state.theta));
 
 	double rs = -1;
+	x = abs(x);
+	y = abs(y);
+/*
+	printf("current state = %f %f %f\n", current->state.x, current->state.y, current->state.theta );
+	printf("goal state = %f %f %f\n", goal->state.x, goal->state.y, goal->state.theta );
+	printf("x = %d y= %d theta = %d\n", x, y, theta);
+	exit(1);*/
 	if(x < HEURISTIC_MAP_SIZE && x >= 0 && y < HEURISTIC_MAP_SIZE && y >= 0)
 	{
 		if ((x >= HEURISTIC_MAP_SIZE / 2 || y >= HEURISTIC_MAP_SIZE / 2))
@@ -1320,11 +1334,11 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 				neighbor[it_number]->parent = current;
 
 				//Penalidades
-				if(neighbor[it_number]->state.v < 0)
+/*				if(neighbor[it_number]->state.v < 0)
 					neighbor[it_number]->f += 1;
 				if(neighbor[it_number]->state.v != current->state.v)
 					neighbor[it_number]->f +=1;
-
+*/
 
 				open.push_back(neighbor[it_number]);
 			}
