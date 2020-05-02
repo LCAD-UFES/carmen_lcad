@@ -11,9 +11,10 @@ from PIL import Image
 from signal import signal, SIGINT
 
 # Global definitions
-COLOR = {'cyan':  (0, 255, 255), 'magenta': (255, 0, 255), 'yellow': (255, 255,   0), 'orange': (255, 165, 0), 
-         'green': (0, 255,   0), 'red':     (255, 0,   0), 'blue':   (  0,   0, 255)}
-RGB_COLORS = (COLOR['magenta'], COLOR['green'], COLOR['orange'], COLOR['cyan'], COLOR['red'], COLOR['blue'])
+RGB_COLORS = {'cyan':  (0, 255, 255), 'magenta': (255, 0, 255), 'yellow': (255, 255,   0), 'orange': (255, 165,   0), 
+              'green': (0, 255,   0), 'red':     (255, 0,   0), 'blue':   (  0,   0, 255), 'gray':   (230, 230, 230)}
+COLOR_LIST = ('magenta', 'green', 'orange', 'cyan', 'red', 'blue', 'gray', 'yellow')
+color_index = -1
 
 
 def get_filelist(filelist_name):
@@ -143,9 +144,10 @@ def show_images(image_list, window_limits):
 
 def show_rddf(rddf_file, show_window, window_limits):
     global color_index
-    color_index = (color_index + 1) % len(RGB_COLORS)
-    bgr_color = tuple(reversed(RGB_COLORS[color_index]))
-    (x_min, y_min, x_max, y_max) = window_limits
+    color_index = (color_index + 1) % len(COLOR_LIST)
+    bgr_color = tuple(reversed(RGB_COLORS[COLOR_LIST[color_index]]))
+    x_min = window_limits[0]
+    y_max = window_limits[3]
     
     rddf = open(rddf_file)
     for waypoint in rddf:
@@ -214,7 +216,7 @@ def read_parameters():
 
     
 def main():
-    global parser, args, color_index
+    global parser, args
     signal(SIGINT, shutdown)
     print
 
@@ -224,7 +226,6 @@ def main():
     rddf_limits = get_rddf_limits(args.filename + filelist)
     (image_list, window_limits) = get_image_list(args.imagedir, rddf_limits)
     window = show_images(image_list, window_limits)
-    color_index = -1
     
     for (f_list, f_list_from) in ((args.filename, '[commandline]'), (filelist, args.filelist)):
         if f_list:
