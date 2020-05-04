@@ -835,7 +835,7 @@ node_exist(vector<state_node*> &list, state_node *current, carmen_obstacle_dista
 
 
 vector<state_node*>
-expansion_dijkstra(state_node *current, state_node *goal_state, carmen_obstacle_distance_mapper_map_message *distance_map)
+expansion_discrete(state_node *current, state_node *goal_state, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
 
 	double add_x[3] = {-1.0, 0.0, 1.0};
@@ -891,7 +891,7 @@ dijkstra(state_node *start_state, state_node *goal, carmen_obstacle_distance_map
 			current = open.back();
 			open.pop_back();
 			//printf("[dijkstra]current = %f %f %f\n", current->state.x, current->state.y, current->state.theta);
-			neighbor = expansion_dijkstra(current, goal_state, distance_map);
+			neighbor = expansion_discrete(current, goal_state, distance_map);
 			while(it_number< neighbor.size())
 			{
 				cost = current->g + movementcost(current, neighbor[it_number]);

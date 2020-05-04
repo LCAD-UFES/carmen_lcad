@@ -33,7 +33,7 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 typedef struct state_node
 {
 	carmen_ackerman_traj_point_t state;
-//	double f;                              // Total distance g + h
+	double f;                              // Total distance g + h
 	double g;                                // Distance from start to current state
 	double heuristic_g;
 	int heuristic_closed;
@@ -52,6 +52,12 @@ typedef struct discrete_pos_node
 	int y;
 	int theta;
 } discrete_pos_node;
+
+
+typedef struct cost_heuristic_node
+{
+	double h;
+} cost_heuristic_node, *cost_heuristic_node_p;
 
 
 class StateNodePtrComparator {

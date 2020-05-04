@@ -6,6 +6,11 @@ make_clean_module()
 	make clean
 }
 
+rm_symbolic_links()
+{
+	cd $1
+	rm $(ls -l --time-style=full-iso | grep ' \-> ' | cut -d':' -f 3 | cut -d' ' -f 3)
+}
 
 MODULES=". ../sharedlib 
 	../sharedlib/prob_models  ../sharedlib/libcontrol  ../sharedlib/libcarmodel  ../sharedlib/gl_plotter  
@@ -25,8 +30,8 @@ MODULES=". ../sharedlib
 
 ERRORS=
 
-#rm $CARMEN_HOME/lib/* 
-#rm $CARMEN_HOME/include/carmen/* 
+rm_symbolic_links $CARMEN_HOME/lib
+rm_symbolic_links $CARMEN_HOME/include/carmen
 
 for mod in $MODULES
 do

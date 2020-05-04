@@ -1,21 +1,224 @@
 #include "path_planner_astar.h"
-#define CLOSEST_CIRCLE_MIN_DIST 1.5
-#define MIN_THETA_DIFF    0.0872665 // 5 0.0436332 // 2.5 // 0.261799 // 15 degrees
-#define MIN_STEERING_DIFF 0.0872665
-#define MIN_POS_DISTANCE  0.2 // the carmen grid map resolution
-
-#define OPENCV 1
-#define THETA_SIZE 1
+#include <stdio.h>
+#define THETA_SIZE 72
 #define ASTAR_GRID_RESOLUTION 1.0
-
-carmen_point_t *final_goal = NULL;
-carmen_localize_ackerman_globalpos_message *current_globalpos_msg = NULL;
+#define MAP_SIZE 101
+#define FILE_NAME "cost_matrix_101x101x72.data"
 carmen_robot_ackerman_config_t robot_config;
-carmen_obstacle_distance_mapper_map_message distance_map;
-state_node_p ***astar_map;
+cost_heuristic_node_p ***cost_map;
 
 using namespace std;
-using namespace cv;
-using namespace boost::heap;
 
-Mat map_image;
+
+void
+alloc_cost_map()
+{
+	int i, j, z;
+	int x_size = round(MAP_SIZE  / ASTAR_GRID_RESOLUTION);
+	int y_size = round(MAP_SIZE / ASTAR_GRID_RESOLUTION);
+
+	cost_map = (cost_heuristic_node_p ***)calloc(x_size, sizeof(cost_heuristic_node_p**));
+	carmen_test_alloc(cost_map);
+
+	for (i = 0; i < x_size; i++)
+	{
+		cost_map[i] = (cost_heuristic_node_p **)calloc(y_size, sizeof(cost_heuristic_node_p*));
+		carmen_test_alloc(cost_map[i]);
+
+		for (j = 0; j < y_size; j++)
+		{
+			cost_map[i][j] = (cost_heuristic_node_p*)calloc(THETA_SIZE, sizeof(cost_heuristic_node_p));
+			carmen_test_alloc(cost_map[i][j]);
+
+			for (z = 0; z <= THETA_SIZE; z++)
+			{
+				cost_map[i][j][z]= (cost_heuristic_node_p) malloc(sizeof(cost_heuristic_node));
+				carmen_test_alloc(cost_map[i][j][z]);
+
+
+			}
+		}
+	}
+}
+
+
+void
+clear_cost_map()
+{
+	int i, j, z;
+	int x_size = round(MAP_SIZE  / ASTAR_GRID_RESOLUTION);
+	int y_size = round(MAP_SIZE / ASTAR_GRID_RESOLUTION);
+
+	for (i = 0; i < x_size; i++)
+		for (j = 0; j < y_size; j++)
+			for (z = 0; z < THETA_SIZE; z++)
+				cost_map[i][j][z] = NULL;
+}
+
+
+double
+reed_shepp_cost(carmen_ackerman_traj_point_t current, carmen_ackerman_traj_point_t goal)
+{
+	int rs_pathl;
+	int rs_numero;
+	double tr;
+	double ur;
+	double vr;
+	double distance_traveled = 0.0;
+	double distance_traveled_old = 0.0;
+	carmen_ackerman_traj_point_t rs_points[6]; // Por alguma razão, com o valor 5 acontece stack smashing às vezes quando o rs_pathl == 5
+	double v_step;
+	double step_weight;
+	double path_cost = 0.0;
+	carmen_ackerman_traj_point_t point_old = {0, 0, 0, 0, 0};
+
+	rs_init_parameters(robot_config.max_phi, robot_config.distance_between_front_and_rear_axles);
+	double rs_length = reed_shepp(current, goal, &rs_numero, &tr, &ur, &vr);
+
+	rs_pathl = constRS(rs_numero, tr, ur, vr, current, rs_points);
+	for (int i = rs_pathl-1; i > 0 /*rs_pathl*/; i--)
+	{
+		carmen_ackerman_traj_point_t point = rs_points[i];
+		if (rs_points[i].v < 0.0)
+		{
+			v_step = 2.0;
+			step_weight = 1.0;
+		}
+		else
+		{
+			v_step = -2.0;
+			step_weight = 1.0;
+		}
+		while (DIST2D(point, rs_points[i-1]) > 1.0)
+		{
+			distance_traveled_old = distance_traveled;
+			point_old = point;
+			point = carmen_libcarmodel_recalc_pos_ackerman(point, v_step, rs_points[i].phi,
+					0.25, &distance_traveled, DELTA_T, robot_config);
+			path_cost += step_weight * (distance_traveled - distance_traveled_old);
+//			printf("[rs] Comparação de pontos: %f %f\n", DIST2D(point, point_old), distance_traveled - distance_traveled_old);
+
+		}
+	}
+
+	return path_cost;
+}
+
+
+void
+make_matrix_cost()
+{
+	int i, j, z;
+	int x_size = round(MAP_SIZE  / ASTAR_GRID_RESOLUTION);
+	int y_size = round(MAP_SIZE / ASTAR_GRID_RESOLUTION);
+	printf("sizemap = %d %d \n", x_size, y_size);
+	carmen_ackerman_traj_point_t current;
+	carmen_ackerman_traj_point_t goal;
+	goal.x = MAP_SIZE/2;
+	goal.y = MAP_SIZE/2;
+	goal.theta = 0.0;
+	double path_cost;
+
+	for (i = 0; i < x_size; i++)
+	{
+
+		for (j = 0; j < y_size; j++)
+		{
+
+			for (z = 0; z <= THETA_SIZE; z++)
+			{
+				current.x = i;
+				current.y = j;
+				current.theta = carmen_degrees_to_radians(z*5);
+				path_cost = reed_shepp_cost(current, goal);
+				printf("current = %f %f %f goal %f %f %f path cost = %f\n", current.x, current.y, current.theta, goal.x, goal.y, goal.theta, path_cost);
+				cost_map[i][j][z]->h = path_cost;
+
+
+			}
+		}
+	}
+}
+
+
+static int save_map()
+{
+	FILE *fp;
+	int i, j , k, result;
+	int x_size = round(MAP_SIZE  / ASTAR_GRID_RESOLUTION);
+	int y_size = round(MAP_SIZE / ASTAR_GRID_RESOLUTION);
+	fp = fopen(FILE_NAME, "wt");
+
+	if (fp == NULL)
+	{
+		printf ("Houve um erro ao abrir o arquivo.\n");
+		return 1;
+	}
+	for (i = 0; i < x_size; i++)
+	{
+		for (j = 0; j < y_size; j++)
+		{
+			for (k = 0; k < THETA_SIZE; k++)
+			{
+				if (cost_map[i][j][k] != NULL)
+				{
+					result = fprintf(fp,"%lf ", cost_map[i][j][k]->h);
+				}
+				else
+				{
+					result = fprintf(fp, "-1 ");
+				}
+				if (result == EOF)
+					printf("Erro na Gravacao\n");
+			}
+		}
+	}
+	fclose (fp);
+	return 0;
+}
+
+static void
+carmen_get_parameters(int argc, char** argv)
+{
+	carmen_param_t param_list[] =
+	{
+			{(char *) "robot",	(char *) "length",								  		CARMEN_PARAM_DOUBLE, &robot_config.length,							 			1, NULL},
+			{(char *) "robot",	(char *) "width",								  		CARMEN_PARAM_DOUBLE, &robot_config.width,								 			1, NULL},
+			{(char *) "robot", 	(char *) "distance_between_rear_wheels",		  		CARMEN_PARAM_DOUBLE, &robot_config.distance_between_rear_wheels,			 		1, NULL},
+			{(char *) "robot", 	(char *) "distance_between_front_and_rear_axles", 		CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_and_rear_axles, 		1, NULL},
+			{(char *) "robot", 	(char *) "distance_between_front_car_and_front_wheels",	CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_car_and_front_wheels,	1, NULL},
+			{(char *) "robot", 	(char *) "distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &robot_config.distance_between_rear_car_and_rear_wheels,		1, NULL},
+			{(char *) "robot", 	(char *) "max_velocity",						  		CARMEN_PARAM_DOUBLE, &robot_config.max_v,									 		1, NULL},
+			{(char *) "robot", 	(char *) "max_steering_angle",					  		CARMEN_PARAM_DOUBLE, &robot_config.max_phi,								 		1, NULL},
+			{(char *) "robot", 	(char *) "maximum_acceleration_forward",				CARMEN_PARAM_DOUBLE, &robot_config.maximum_acceleration_forward,					1, NULL},
+			{(char *) "robot", 	(char *) "maximum_acceleration_reverse",				CARMEN_PARAM_DOUBLE, &robot_config.maximum_acceleration_reverse,					1, NULL},
+			{(char *) "robot", 	(char *) "maximum_deceleration_forward",				CARMEN_PARAM_DOUBLE, &robot_config.maximum_deceleration_forward,					1, NULL},
+			{(char *) "robot", 	(char *) "maximum_deceleration_reverse",				CARMEN_PARAM_DOUBLE, &robot_config.maximum_deceleration_reverse,					1, NULL},
+			{(char *) "robot", 	(char *) "maximum_steering_command_rate",				CARMEN_PARAM_DOUBLE, &robot_config.maximum_steering_command_rate,					1, NULL},
+			{(char *) "robot", 	(char *) "understeer_coeficient",						CARMEN_PARAM_DOUBLE, &robot_config.understeer_coeficient,							1, NULL}
+		};
+
+	int num_items = sizeof(param_list) / sizeof(param_list[0]);
+	carmen_param_install_params(argc, argv, param_list, num_items);
+}
+
+
+int
+main(int argc, char **argv)
+{
+	carmen_ipc_initialize(argc, argv);
+
+	carmen_param_check_version(argv[0]);
+
+	carmen_get_parameters(argc, argv);
+
+	alloc_cost_map();
+
+	make_matrix_cost();
+
+	save_map();
+
+	clear_cost_map();
+
+	return 0;
+}

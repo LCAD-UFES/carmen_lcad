@@ -48,22 +48,13 @@ SOURCES = viewer_3D.cpp Window.cpp GLDraw.cpp xsens_viewer.cpp draw_car.cpp poin
 	velodyne_intensity_drawer.cpp annotation_drawer.cpp symotha_drawer.cpp #lane_analysis_drawer.cpp
 	
 PUBLIC_INCLUDES = velodyne_360_drawer.h
-
 PUBLIC_LIBRARIES = libvelodyne_360_drawer.a
 PUBLIC_BINARIES = viewer_3D xsens_viewer
-MAN_PAGES =
+PUBLIC_OTHERS = Touareg2.mtl Touareg2.obj
 
 TARGETS = viewer_3D xsens_viewer libvelodyne_360_drawer.a
-TARGETS += $(CARMEN_HOME)/bin/Touareg2.mtl
-TARGETS += $(CARMEN_HOME)/bin/Touareg2.obj
 
-PUBLIC_LIBRARIES_SO =
 
-ifndef NO_PYTHON
-TARGETS += 
-endif
-
-# rules
 libvelodyne_360_drawer.a: velodyne_360_drawer.o
 
 viewer_3D:	viewer_3D.o Window.o GLDraw.o draw_car.o point_cloud_drawer.o variable_velodyne_drawer.o velodyne_360_drawer.o \
@@ -72,10 +63,5 @@ viewer_3D:	viewer_3D.o Window.o GLDraw.o draw_car.o point_cloud_drawer.o variabl
 
 xsens_viewer: xsens_viewer.o Window.o draw_car.o texture_loader.o download_map.o
 
-$(CARMEN_HOME)/bin/Touareg2.mtl:
-	ln -s  $(PWD)/Touareg2.mtl  $(CARMEN_HOME)/bin/
-
-$(CARMEN_HOME)/bin/Touareg2.obj:
-	ln -s  $(PWD)/Touareg2.obj  $(CARMEN_HOME)/bin/
 
 include ../Makefile.rules

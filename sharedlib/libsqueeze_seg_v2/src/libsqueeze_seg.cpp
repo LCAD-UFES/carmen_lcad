@@ -8,6 +8,8 @@
 #include <carmen/velodyne_interface.h>
 #include <carmen/velodyne_camera_calibration.h>
 #include <stdlib.h> /* getenv */
+#include <fstream>
+#define NUMPY_IMPORT_ARRAY_RETVAL
 
 PyObject *python_libsqueeze_seg_process_point_cloud_function;
 PyObject *python_libsqueeze_seg_save_npy;
@@ -31,22 +33,31 @@ void
 initialize_python_context()
 {
 	initialize_python_path_squeezeseg();
-	
 	Py_Initialize();
+
+	if (PyErr_Occurred())
+		        PyErr_Print();
+
 	import_array();
 
-	PyObject *python_module_name = PyString_FromString((char *) "run_squeeze_seg");
+	if (PyErr_Occurred())
+		        PyErr_Print();
 
-	PyObject *python_module = PyImport_Import(python_module_name);
-
+	PyObject *python_module = PyImport_ImportModule("run_squeeze_seg");
+	
 	if (python_module == NULL)
 	{
 		Py_Finalize();
 		exit(printf("Error: The python_module run_squeeze_seg could not be loaded.\nMaybe PYTHONPATH is not set.\n"));
 	}
-	Py_DECREF(python_module_name);
+	
+	if (PyErr_Occurred())
+		        PyErr_Print();
 
 	PyObject *python_initialize_function = PyObject_GetAttrString(python_module, (char *) "initialize");
+
+	if (PyErr_Occurred())
+		        PyErr_Print();
 
 	if (python_initialize_function == NULL || !PyCallable_Check(python_initialize_function))
 	{
@@ -55,12 +66,21 @@ initialize_python_context()
 	}
 	PyObject *python_arguments = Py_BuildValue("(ii)", 32, 1024);
 
+	if (PyErr_Occurred())
+		        PyErr_Print();
+
 	PyObject_CallObject(python_initialize_function, python_arguments);
+
+	if (PyErr_Occurred())
+		        PyErr_Print();
 
 	Py_DECREF(python_arguments);
 	Py_DECREF(python_initialize_function);
 
 	python_libsqueeze_seg_process_point_cloud_function = PyObject_GetAttrString(python_module, (char *) "squeeze_seg_process_point_cloud");
+
+	if (PyErr_Occurred())
+		        PyErr_Print();
 
 	if (python_libsqueeze_seg_process_point_cloud_function == NULL || !PyCallable_Check(python_libsqueeze_seg_process_point_cloud_function))
 	{
@@ -68,6 +88,9 @@ initialize_python_context()
 		Py_Finalize();
 		exit (printf("Error: Could not load the squeeze_seg_process_point_cloud.\n"));
 	}
+
+	if (PyErr_Occurred())
+		        PyErr_Print();
 	
 	printf("Success: Loaded SqueezeSeg\n");
 
@@ -169,22 +192,39 @@ initialize_python_dataset()
 {
 	initialize_python_path_squeezeseg();
 	
+
+	if (PyErr_Occurred())
+		        PyErr_Print();
+
 	Py_Initialize();
+
+
+	if (PyErr_Occurred())
+		        PyErr_Print();
+
 	import_array();
 
-	PyObject *python_module_name = PyString_FromString((char *) "save_npy_dataset");
 
-	PyObject *python_module = PyImport_Import(python_module_name);
-
+	if (PyErr_Occurred())
+		        PyErr_Print();
+	
+	PyObject *python_module = PyImport_ImportModule("save_npy_dataset");
+	
 	if (python_module == NULL)
 	{
 		Py_Finalize();
 		exit(printf("Error: The python_module save_npy_dataset could not be loaded.\nMaybe PYTHONPATH is not set.\n"));
 	}
-	Py_DECREF(python_module_name);
 
-	
+
+	if (PyErr_Occurred())
+		        PyErr_Print();
+		
 	python_libsqueeze_seg_save_npy = PyObject_GetAttrString(python_module, (char *) "squeeze_seg_save_npy");
+
+
+	if (PyErr_Occurred())
+		        PyErr_Print();
 
 	if (python_libsqueeze_seg_save_npy == NULL || !PyCallable_Check(python_libsqueeze_seg_save_npy))
 	{
@@ -193,10 +233,36 @@ initialize_python_dataset()
 		exit (printf("Error: Could not load the squeeze_seg_save_npy.\n"));
 	}
 	
+
+	if (PyErr_Occurred())
+		        PyErr_Print();
+
 	printf("Success: Loaded squeeze_seg_save_npy\n");
 
 }
+void 
+libsqueeze_seg_save_txt_for_train(int vertical_resolution, int shots_to_squeeze, double* point_cloud, double timestamp)
+{
+	// printf("libsqueeze_seg_save_txt_for_train\n");
+	ofstream point_cloud_file;
+	char *pPath = getenv ("CARMEN_HOME");
+    point_cloud_file.open( std::string(pPath) + "/sharedlib/libsqueeze_seg_v2/data/train/" + std::to_string(timestamp) + ".txt");
+	point_cloud_file << "# Array shape: (" << vertical_resolution << ", " << shots_to_squeeze << ", 6)\n";
 
+	for (int j = vertical_resolution, line = 0; j > 0; j--)
+    {
+        for (int i = 0; i <  shots_to_squeeze; i++, line++)
+        {
+			for (int k = 0; k < 5; k++){
+				double value = round(point_cloud[(line * 6) + k] * 100.0) / 100.0;
+				point_cloud_file << value << "\t";
+			}
+			point_cloud_file << point_cloud[(line * 6) + 5] << "\n";
+        }
+        point_cloud_file << "# New slice\n";
+    }
+    point_cloud_file.close();
+}
 void
 libsqueeze_seg_save_npy_for_train(int vertical_resolution, int shots_to_squeeze, double* point_cloud, double timestamp)
 {
@@ -254,9 +320,104 @@ fill_train_vector(double horizontal_angle, double vertical_angle, double range, 
 void 
 libsqueeze_seg_fill_label(int line, double label, double* data_train)
 {
-	data_train[line + 5] = label;
+	printf("Label %2.f\n", label);
+	data_train[line] = label;
 }
 
+void
+libsqueeze_seg_using_detections(vector<bbox_t> &predictions, vector<vector<image_cartesian>> &clustered_points, double* data_train, int vertical_resolution, int number_of_laser_shots)
+{
+	// printf("libsqueeze_seg_using_detections\n");
+	unsigned int cont = 0;
+	vector<vector<image_cartesian>> classified;
+	vector<image_cartesian> cluster;
+	vector<int> moving_object_cluster_index;
+	
+	unsigned int predictions_size = predictions.size();
+	for (unsigned int h = 0; h < predictions_size; h++)
+	{
+		unsigned int number_of_clusters = clustered_points.size();
+		for (unsigned int i = 0; i < number_of_clusters; i++)
+		{
+			unsigned int cluster_size = clustered_points[i].size();
+			//unsigned int min_points_inside_bbox = cluster_size / 5;
+			bool is_moving_obstacle = false;
+			unsigned int contCar = 0, contPerson = 0, contBycicle = 0, contTrain = 0;
+			for (unsigned int j = 0; j < cluster_size; j++)
+			{
+				if ((unsigned int) clustered_points[i][j].image_x >=  predictions[h].x &&
+					(unsigned int) clustered_points[i][j].image_x <= (predictions[h].x + predictions[h].w) &&
+					(unsigned int) clustered_points[i][j].image_y >=  predictions[h].y &&
+					(unsigned int) clustered_points[i][j].image_y <= (predictions[h].y + predictions[h].h))
+				{
+					switch (predictions[h].obj_id)
+					{
+						case 0: //person
+							contPerson++;
+							break;
+						case 1: //bicycle
+							contBycicle++;
+							break;
+						case 2: //car
+							contCar++;
+							break;
+						case 3: //motorbike
+							contBycicle++;
+							break;
+						case 5: //bus
+							contCar++;
+							break;
+						case 6: //train
+							contTrain++;
+							break;
+						case 7: //truck
+							contCar++;
+							break;
+					}
+					cont++;
+					if (contCar > (cluster_size / 5) ||
+						contPerson > (cluster_size / 5) ||
+						contBycicle > (cluster_size / 5) ||
+						contTrain > (cluster_size / 5))
+					{
+						is_moving_obstacle = true;
+						break;
+					}
+				} // End if
+			} // End for cluster
+			if (is_moving_obstacle)
+			{
+				for (unsigned int j = 0; j < cluster_size; j++)
+				{
+					int squeeze_index = (int) (vertical_resolution - clustered_points[i][j].ray_number) * number_of_laser_shots * 6 + clustered_points[i][j].shot_number * 6 + 5;
+					if (contCar > contPerson && contCar > contBycicle && contCar > contTrain)
+					{
+						libsqueeze_seg_fill_label(squeeze_index, 1.0, data_train);
+					}
+					else
+					{
+						if (contPerson > contBycicle && contPerson > contTrain)
+						{
+							libsqueeze_seg_fill_label(squeeze_index, 2.0, data_train);
+						}
+						else
+						{
+							if (contBycicle > contTrain)
+							{
+								libsqueeze_seg_fill_label(squeeze_index, 3.0, data_train);
+							}
+							else
+							{
+								libsqueeze_seg_fill_label(squeeze_index, 4.0, data_train);
+							}
+						}
+					}
+				}
+			}// End Is moving obstacle
+		}
+	}
+}
+	
 double *
 libsqueeze_seg_data_for_train(int sensor_number, carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *sensors_params)
 {
