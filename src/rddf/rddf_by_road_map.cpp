@@ -143,7 +143,7 @@ calculate_phi_back(carmen_ackerman_traj_point_t *path, int num_poses)
 
 
 void
-calculate_theta_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
+compute_theta(carmen_ackerman_traj_point_t *path, int num_poses)
 {
 	for (int i = 0; i < (num_poses - 1); i++)
 		path[i].theta = atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x);
@@ -165,7 +165,7 @@ void
 calculate_theta_and_phi(carmen_ackerman_traj_point_t *poses_ahead, int num_poses_ahead,
 		carmen_ackerman_traj_point_t *poses_back, int num_poses_back)
 {
-	calculate_theta_ahead(poses_ahead, num_poses_ahead);
+	compute_theta(poses_ahead, num_poses_ahead);
 	poses_back[0].theta = poses_ahead[0].theta;
 	calculate_theta_back(poses_back, num_poses_back);
 
@@ -692,7 +692,7 @@ fill_in_poses_ahead_by_road_map(carmen_point_t initial_pose, carmen_map_p road_m
 //	for (int i = 0; i < num_poses; i++)
 //		fprintf(rddf_log, "%d\t%lf\t%lf\t%lf\n", i, poses_ahead[i].x, poses_ahead[i].y, poses_ahead[i].theta);
 
-	calculate_theta_ahead(poses_ahead, num_poses);
+	compute_theta(poses_ahead, num_poses);
 	calculate_phi_ahead(poses_ahead, num_poses);
 	restore_traffic_sign_state();
 

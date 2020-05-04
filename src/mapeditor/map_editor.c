@@ -123,12 +123,29 @@ main(int argc, char ** argv)
 
   saveas_binary = -1;
   
-  if (argc >= 2) {
+  if (argc >= 2)
+  {
     if (map_open(argv[1], 0) < 0)
       exit(-1);
-    if (argc == 3)
-    	if (strcmp(argv[2], "-grayscale") == 0)
-    		grayscale = CARMEN_GRAPHICS_GRAYSCALE;
+    int i = 2;
+    while (i < argc)
+    {
+    	if (strcmp(argv[i], "-grayscale") == 0)
+    		grayscale |= CARMEN_GRAPHICS_GRAYSCALE;
+    	else if (strcmp(argv[i], "-invert") == 0)
+    	    grayscale |= CARMEN_GRAPHICS_INVERT;
+    	else if (strcmp(argv[i], "-rescale") == 0)
+    	    grayscale |= CARMEN_GRAPHICS_RESCALE;
+    	else if (strcmp(argv[i], "-blackwhite") == 0)
+    	    grayscale |= CARMEN_GRAPHICS_BLACK_AND_WHITE;
+    	else if (strcmp(argv[i], "-enhance") == 0)
+    	    grayscale |= CARMEN_GRAPHICS_ENHANCE_CONTRAST;
+    	else if (strcmp(argv[i], "-removeminusone") == 0)
+    	    grayscale |= CARMEN_GRAPHICS_REMOVE_MINUS_ONE;
+    	else if (strcmp(argv[i], "-logodds") == 0)
+    	    grayscale |= CARMEN_GRAPHICS_LOG_ODDS;
+    	i++;
+    }
   }
 
   brush_size = 1.5;
