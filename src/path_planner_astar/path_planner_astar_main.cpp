@@ -648,6 +648,7 @@ alloc_cost_to_goal_map(carmen_obstacle_distance_mapper_map_message *distance_map
 	int x_size = distance_map->config.x_size;
 	int y_size = distance_map->config.y_size;
 	printf("cost_to_goal size x y %d %d\n", x_size, y_size);
+	printf("cost_to_goal_origin %f %f\n", distance_map->config.x_origin, distance_map->config.y_origin);
 	double *utility_map = (double *) calloc(x_size * y_size, sizeof(double));
 	double *cost_map = (double *) calloc(x_size * y_size, sizeof(double));
 	fill_n(cost_map, x_size *y_size, -1.0);
@@ -672,7 +673,7 @@ alloc_cost_to_goal_map(carmen_obstacle_distance_mapper_map_message *distance_map
 	exact_euclidean_distance_to_goal.expandObstacles(0.5);
 	copy_map(cost_map, exact_euclidean_distance_to_goal.getExpandedMap(), x_size, y_size);
 	printf("args: %f, %f\n", goal_pose->x - distance_map->config.x_origin, goal_pose->y - distance_map->config.y_origin);
-	copy_map(utility_map, exact_euclidean_distance_to_goal.pathDR(goal_pose->x - distance_map->config.x_origin, goal_pose->y - distance_map->config.y_origin), x_size, y_size);
+	copy_map(utility_map, exact_euclidean_distance_to_goal.pathDR((goal_pose->x - distance_map->config.x_origin)/0.2, (goal_pose->y - distance_map->config.y_origin)/0.2), x_size, y_size);
 	for (int i = 0; i < x_size * y_size; i++)
 		if (utility_map[i] >= 50000.0) // O infinito de distacia eh representado como 50000.0, assim como o espaco ocupado.
 			utility_map[i] = 1000.0;
