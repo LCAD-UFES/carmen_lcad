@@ -1224,12 +1224,14 @@ h(state_node *current, state_node *goal, carmen_obstacle_distance_mapper_map_mes
 	current->state.x = 0;
 	current->state.y = 0;
 	current->state.theta = 1.5708;
-	goal->state.x = 5;
-	goal->state.y = 10;
+//	current->state.theta = 0;
+	goal->state.x = 50;
+	goal->state.y = 50;
+//	goal->state.theta = 0;
 	goal->state.theta = 1.5708;
 */
-	int	x = (current->state.x - goal->state.x) * cos(-current->state.theta) - (current->state.y - goal->state.y) * sin(-current->state.theta);
-	int	y = (current->state.x - goal->state.x) * sin(-current->state.theta) + (current->state.y - goal->state.y) * cos(-current->state.theta);
+	int x = (current->state.x - goal->state.x) * cos(goal->state.theta) - (current->state.y - goal->state.y) * sin(goal->state.theta);
+	int y = (current->state.x - goal->state.x) * sin(goal->state.theta) + (current->state.y - goal->state.y) * cos(goal->state.theta);
 	int theta;
 
 	if ((x <= 0 && y >= 0) || (x >= 0 && y <= 0))
@@ -1238,21 +1240,19 @@ h(state_node *current, state_node *goal, carmen_obstacle_distance_mapper_map_mes
 		theta = get_astar_map_theta_2(carmen_normalize_theta(goal->state.theta - current->state.theta));
 
 	double rs = -1;
-	x = abs(x);
-	y = abs(y);
 /*
 	printf("current state = %f %f %f\n", current->state.x, current->state.y, current->state.theta );
 	printf("goal state = %f %f %f\n", goal->state.x, goal->state.y, goal->state.theta );
 	printf("x = %d y= %d theta = %d\n", x, y, theta);
-	exit(1);*/
-	if(x < HEURISTIC_MAP_SIZE && x >= 0 && y < HEURISTIC_MAP_SIZE && y >= 0)
+*/
+//	printf("Real x = %d y= %d theta = %d\n", x + int(HEURISTIC_MAP_SIZE / 2), y + int(HEURISTIC_MAP_SIZE / 2), theta);
+
+	if(x <= (HEURISTIC_MAP_SIZE/2) && y <= (HEURISTIC_MAP_SIZE/2) && x >= -(HEURISTIC_MAP_SIZE/2) && y >= -(HEURISTIC_MAP_SIZE/2))
 	{
-		if ((x >= HEURISTIC_MAP_SIZE / 2 || y >= HEURISTIC_MAP_SIZE / 2))
-			rs = cost_map[x][y][theta]->h;
-		else
-			rs =  cost_map[x + HEURISTIC_MAP_SIZE / 2][y + HEURISTIC_MAP_SIZE / 2][theta]->h;
+		rs =  cost_map[x + int(HEURISTIC_MAP_SIZE / 2)][y + int(HEURISTIC_MAP_SIZE / 2)][theta]->h;
 	}
 
+//	exit(1);
 	free(current_pos);
 	printf("[h]rs = %f\tho = %f\n", rs, ho);
 	int returned_h = max(rs, ho);
