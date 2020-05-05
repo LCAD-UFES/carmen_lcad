@@ -1,9 +1,9 @@
 #include "path_planner_astar.h"
 #include <stdio.h>
 #define THETA_SIZE 72
-#define ASTAR_GRID_RESOLUTION 1.0
+#define HEURISTIC_GRID_RESOLUTION 0.2
 #define MAP_SIZE 101
-#define FILE_NAME "cost_matrix_101x101x72.data"
+#define FILE_NAME "cost_matrix_02_101x101x72.data"
 carmen_robot_ackerman_config_t robot_config;
 cost_heuristic_node_p ***cost_map;
 
@@ -14,8 +14,8 @@ void
 alloc_cost_map()
 {
 	int i, j, z;
-	int x_size = round(MAP_SIZE  / ASTAR_GRID_RESOLUTION);
-	int y_size = round(MAP_SIZE / ASTAR_GRID_RESOLUTION);
+	int x_size = round(MAP_SIZE  / HEURISTIC_GRID_RESOLUTION);
+	int y_size = round(MAP_SIZE / HEURISTIC_GRID_RESOLUTION);
 
 	cost_map = (cost_heuristic_node_p ***)calloc(x_size, sizeof(cost_heuristic_node_p**));
 	carmen_test_alloc(cost_map);
@@ -30,7 +30,7 @@ alloc_cost_map()
 			cost_map[i][j] = (cost_heuristic_node_p*)calloc(THETA_SIZE, sizeof(cost_heuristic_node_p));
 			carmen_test_alloc(cost_map[i][j]);
 
-			for (z = 0; z <= THETA_SIZE; z++)
+			for (z = 0; z < THETA_SIZE; z++)
 			{
 				cost_map[i][j][z]= (cost_heuristic_node_p) malloc(sizeof(cost_heuristic_node));
 				carmen_test_alloc(cost_map[i][j][z]);
@@ -46,8 +46,8 @@ void
 clear_cost_map()
 {
 	int i, j, z;
-	int x_size = round(MAP_SIZE  / ASTAR_GRID_RESOLUTION);
-	int y_size = round(MAP_SIZE / ASTAR_GRID_RESOLUTION);
+	int x_size = round(MAP_SIZE  / HEURISTIC_GRID_RESOLUTION);
+	int y_size = round(MAP_SIZE / HEURISTIC_GRID_RESOLUTION);
 
 	for (i = 0; i < x_size; i++)
 		for (j = 0; j < y_size; j++)
@@ -109,13 +109,13 @@ void
 make_matrix_cost()
 {
 	int i, j, z;
-	int x_size = round(MAP_SIZE  / ASTAR_GRID_RESOLUTION);
-	int y_size = round(MAP_SIZE / ASTAR_GRID_RESOLUTION);
+	int x_size = round(MAP_SIZE  / HEURISTIC_GRID_RESOLUTION);
+	int y_size = round(MAP_SIZE / HEURISTIC_GRID_RESOLUTION);
 	printf("sizemap = %d %d \n", x_size, y_size);
 	carmen_ackerman_traj_point_t current;
 	carmen_ackerman_traj_point_t goal;
-	goal.x = MAP_SIZE/2;
-	goal.y = MAP_SIZE/2;
+	goal.x = round(x_size/2 * HEURISTIC_GRID_RESOLUTION);
+	goal.y = round(y_size/2 * HEURISTIC_GRID_RESOLUTION);
 	goal.theta = 0.0;
 	double path_cost;
 
@@ -125,11 +125,12 @@ make_matrix_cost()
 		for (j = 0; j < y_size; j++)
 		{
 
-			for (z = 0; z <= THETA_SIZE; z++)
+			for (z = 0; z < THETA_SIZE; z++)
 			{
-				current.x = i;
-				current.y = j;
+				current.x = i * HEURISTIC_GRID_RESOLUTION;
+				current.y = j * HEURISTIC_GRID_RESOLUTION;
 				current.theta = carmen_degrees_to_radians(z*5);
+				current.theta = carmen_normalize_theta(current.theta);
 				path_cost = reed_shepp_cost(current, goal);
 				printf("current = %f %f %f goal %f %f %f path cost = %f\n", current.x, current.y, current.theta, goal.x, goal.y, goal.theta, path_cost);
 				cost_map[i][j][z]->h = path_cost;
@@ -145,8 +146,8 @@ static int save_map()
 {
 	FILE *fp;
 	int i, j , k, result;
-	int x_size = round(MAP_SIZE  / ASTAR_GRID_RESOLUTION);
-	int y_size = round(MAP_SIZE / ASTAR_GRID_RESOLUTION);
+	int x_size = round(MAP_SIZE  / HEURISTIC_GRID_RESOLUTION);
+	int y_size = round(MAP_SIZE / HEURISTIC_GRID_RESOLUTION);
 	fp = fopen(FILE_NAME, "wt");
 
 	if (fp == NULL)
