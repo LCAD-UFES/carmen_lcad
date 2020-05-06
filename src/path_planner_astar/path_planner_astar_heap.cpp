@@ -100,7 +100,7 @@ calculate_phi_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
 			path[i].phi = 0.0;
 			continue;
 		}
-		path[i].phi = L * atan(delta_theta / l);
+		path[i].phi = atan(L * (delta_theta / l));
 	}
 
 	for (int i = 1; i < (num_poses - 1); i++)
