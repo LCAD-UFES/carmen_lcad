@@ -27,7 +27,7 @@ static int to_ppm(char *output_filename, int theta)
 	{
 		for(y = 0; y < HEURISTIC_MAP_SIZE/HEURISTIC_GRID_RESOLUTION; y++)
 		{
-			printf("x = %d, y= %d cost = %lf\n", x, y, cost_map[x][y][theta]->h);
+//			printf("x = %d, y= %d cost = %lf\n", x, y, cost_map[x][y][theta]->h);
 			if(cost_map[x][y][theta]->h == -1 || cost_map[x][y][theta]->h >= 255)
 			{
 				fputc(255, fp); fputc(255, fp); fputc(255, fp);
