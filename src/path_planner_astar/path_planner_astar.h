@@ -5,6 +5,7 @@
 #include <carmen/collision_detection.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/rddf_messages.h>
+#include <carmen/offroad_planner.h>
 #include <algorithm>
 #include <car_model.h>
 #include <carmen/global_graphics.h>
@@ -22,6 +23,8 @@
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_math.h>
+
+#include "planning.hpp"
 
 
 #define DELTA_T 0.01                      // Size of step for the ackerman Euler method
