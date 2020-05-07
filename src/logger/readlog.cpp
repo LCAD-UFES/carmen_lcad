@@ -28,9 +28,9 @@
 
 #include <carmen/carmen.h>
 #include <carmen/carmen_stdio.h>
-#include <carmen/readlog.h>
 #include <ctype.h>
 #include <opencv2/highgui/highgui.hpp>
+#include "readlog.h"
 
 #define HEX_TO_BYTE(hi, lo) (hi << 4 | lo)
 #define HEX_TO_SHORT(fourth, third, second, first) ( fourth << 12 | (third << 8 | (second << 4 | first)))
@@ -1461,6 +1461,8 @@ char* carmen_string_and_file_to_variable_velodyne_scan_message(char* string, car
 	}
 
 	velodyne_number = CLF_READ_INT(&current_pos);
+	velodyne_number = velodyne_number;             // Only to make the compiler happy
+
 	shot_size = CLF_READ_INT(&current_pos);
 	msg->number_of_shots = CLF_READ_INT(&current_pos);
 
@@ -1759,6 +1761,64 @@ char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string
 	copy_host_string(&msg->host, &current_pos);
 
 	return current_pos;
+}
+
+
+char*
+camera_drivers_read_camera_message_from_log(char* string, camera_message* msg)
+{
+	int camera_id;
+	char path[1024];
+
+	camera_id = CLF_READ_INT(&string);
+	msg->number_of_images = CLF_READ_INT(&string);
+	msg->timestamp = CLF_READ_DOUBLE(&string);
+
+	if (msg->images == NULL)
+	{
+		char host[128];
+		CLF_READ_STRING(host, &string);
+		msg->host = (char*) malloc (strlen(host) * sizeof (char));
+		strcpy(msg->host, host);
+
+		for (int i = 0; i < msg->number_of_images; i++)
+		{
+			msg->images = (camera_image*) malloc (msg->number_of_images * sizeof (camera_image));
+			msg->images[i].raw_data = NULL;
+		}
+	}
+	else
+	{
+		CLF_READ_STRING(msg->host, &string);
+	}
+	
+	int high_level_subdir = ((int) (msg->timestamp / HIGH_LEVEL_SUBDIR_TIME)) * HIGH_LEVEL_SUBDIR_TIME;
+	int low_level_subdir = ((int) (msg->timestamp / LOW_LEVEL_SUBDIR_TIME)) * LOW_LEVEL_SUBDIR_TIME;
+	
+	for (int i = 0; i < msg->number_of_images; i++)
+	{
+		msg->images[i].image_size = CLF_READ_INT(&string);
+		msg->images[i].width = CLF_READ_INT(&string);
+		msg->images[i].height = CLF_READ_INT(&string);
+		msg->images[i].number_of_channels = CLF_READ_INT(&string);
+		msg->images[i].size_in_bytes_of_each_element = CLF_READ_INT(&string);
+		msg->images[i].data_type = CLF_READ_INT(&string);
+
+		if (msg->images[i].raw_data == NULL)
+			msg->images[i].raw_data = (char*) malloc (msg->images[i].image_size * sizeof (char));
+		
+		sprintf(path, "%s_images/%d/%d/%lf_camera%d_%d.image", log_filename, high_level_subdir, low_level_subdir, msg->timestamp, camera_id, i);
+
+		FILE *image_file = fopen(path, "rb");
+		if (!image_file)
+		{
+			printf("Could not load image:\n%s\n", path);
+			return (string);
+		}
+		fread(msg->images[i].raw_data, msg->images[i].size_in_bytes_of_each_element, msg->images[i].image_size, image_file);
+		fclose(image_file);
+	}
+	return (string);
 }
 
 

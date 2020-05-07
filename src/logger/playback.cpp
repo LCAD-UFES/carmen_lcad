@@ -31,6 +31,7 @@
 #include <carmen/playback_interface.h>
 #include <carmen/carmen_gps.h>
 #include <carmen/Gdc_To_Utm_Converter.h>
+#include "readlog.h"
 
 #define        MAX_LINE_LENGTH           (5*4000000)
 
@@ -89,18 +90,7 @@ carmen_gps_gprmc_message gpsrmc;
 carmen_kinect_depth_message raw_depth_kinect_0, raw_depth_kinect_1;
 carmen_kinect_video_message raw_video_kinect_0, raw_video_kinect_1;
 
-carmen_velodyne_variable_scan_message velodyne_variable_scan, velodyne_variable_scan0,
-															  velodyne_variable_scan1,
-															  velodyne_variable_scan2,
-															  velodyne_variable_scan3,
-   															  velodyne_variable_scan4,
-   															  velodyne_variable_scan5,
-   															  velodyne_variable_scan6,
-   															  velodyne_variable_scan7,
-   															  velodyne_variable_scan8,
-   															  velodyne_variable_scan9;
-
-
+carmen_velodyne_variable_scan_message velodyne_variable_scan, velodyne_variable_scan0, velodyne_variable_scan1, velodyne_variable_scan2, velodyne_variable_scan3, velodyne_variable_scan4, velodyne_variable_scan5, velodyne_variable_scan6, velodyne_variable_scan7, velodyne_variable_scan8, velodyne_variable_scan9;
 
 carmen_velodyne_partial_scan_message velodyne_partial_scan;
 carmen_velodyne_gps_message velodyne_gps;
@@ -110,6 +100,7 @@ carmen_xsens_global_quat_message xsens_quat;
 carmen_xsens_global_matrix_message xsens_matrix;
 carmen_xsens_mtig_message xsens_mtig;
 carmen_bumblebee_basic_stereoimage_message bumblebee_basic_stereoimage1, bumblebee_basic_stereoimage2, bumblebee_basic_stereoimage3, bumblebee_basic_stereoimage4, bumblebee_basic_stereoimage5, bumblebee_basic_stereoimage6, bumblebee_basic_stereoimage7, bumblebee_basic_stereoimage8, bumblebee_basic_stereoimage9, bumblebee_basic_stereoimage10, bumblebee_basic_stereoimage11, bumblebee_basic_stereoimage12, bumblebee_basic_stereoimage13;
+camera_message camera1_message, camera2_message, camera3_message, camera4_message, camera5_message, camera6_message, camera7_message, camera8_message, camera9_message, camera10_message, camera11_message, camera12_message, camera13_message, camera14_message, camera15_message, camera16_message, camera17_message, camera18_message, camera19_message, camera20_message;
 
 carmen_web_cam_message web_cam_message;
 
@@ -196,6 +187,26 @@ static logger_callback_t logger_callbacks[] =
 	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE11", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE11_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage11, 0},
 	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE12", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE12_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage12, 0},
 	{(char *) "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE13", (char *) CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE13_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage13, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA1_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera1_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA2_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera2_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA3_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera3_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA4_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera4_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA5_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera5_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA6_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera6_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA7_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera7_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA8_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera8_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA9_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera9_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA10_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera10_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA11_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera11_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA12_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera12_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA13_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera13_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA14_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera14_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA15_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera15_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA16_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera16_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA17_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera17_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA18_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera18_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA19_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera19_message, 0},
+	{(char *) "CAMERA1_MESSAGE", (char *) CAMERA20_NAME, (converter_func) camera_drivers_read_camera_message_from_log, &camera20_message, 0},
 	{(char *) "WEB_CAM_IMAGE", (char *) CARMEN_WEB_CAM_MESSAGE_NAME, (converter_func) carmen_string_to_web_cam_message, &web_cam_message, 0},
 	{(char *) "BASEMOTION_ACK", (char *) CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME, (converter_func) carmen_string_to_base_ackerman_motion_message, &ackerman_motion_message, 0},
 	{(char *) "ULTRASONIC_SONAR_SENSOR", (char *) CARMEN_ULTRASONIC_SONAR_SENSOR_NAME, (converter_func) carmen_string_to_ultrasonic_message, &ultrasonic_message, 0},
@@ -643,7 +654,8 @@ playback_command_set_message(char *message)
 }
 
 
-void playback_command_handler(carmen_playback_command_message *command)
+void
+playback_command_handler(carmen_playback_command_message *command)
 {
 	switch (command->cmd)
 	{
@@ -723,7 +735,8 @@ void playback_command_handler(carmen_playback_command_message *command)
 	}
 }
 
-void define_ipc_messages(void)
+void
+define_ipc_messages(void)
 {
 	IPC_RETURN_TYPE err;
 
@@ -804,6 +817,9 @@ void define_ipc_messages(void)
 	for (int camera = 1; camera <= 13; camera++)
 		carmen_bumblebee_basic_define_messages(camera);
 
+	for (int camera_number = 1; camera_number <= 20; camera_number++)
+		camera_drivers_define_message(camera_number);
+
 	err = IPC_defineMsg(CARMEN_WEB_CAM_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_WEB_CAM_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_WEB_CAM_MESSAGE_NAME);
 
@@ -818,7 +834,8 @@ void define_ipc_messages(void)
 }
 
 
-void main_playback_loop(void)
+void
+main_playback_loop(void)
 {
 	print_playback_status();
 
@@ -919,7 +936,8 @@ void main_playback_loop(void)
 }
 
 
-void usage(char *fmt, ...)
+void
+usage(char *fmt, ...)
 {
 	va_list args;
 
@@ -938,7 +956,8 @@ void usage(char *fmt, ...)
 	exit(-1);
 }
 
-void read_parameters(int argc, char **argv)
+void
+read_parameters(int argc, char **argv)
 {
 	carmen_param_t param_list[] =
 	{
@@ -988,7 +1007,8 @@ void read_parameters(int argc, char **argv)
 }
 
 
-void shutdown_playback_module(int sig)
+void 
+shutdown_playback_module(int sig)
 {
 	if(sig == SIGINT) {
 		fprintf(stderr, "\n");
@@ -997,7 +1017,8 @@ void shutdown_playback_module(int sig)
 }
 
 
-carmen_logfile_index_p load_logindex_file(char *index_file_name)
+carmen_logfile_index_p 
+load_logindex_file(char *index_file_name)
 {
 	FILE *index_file;
 	carmen_logfile_index_p logfile_index;
@@ -1022,7 +1043,8 @@ carmen_logfile_index_p load_logindex_file(char *index_file_name)
 }
 
 
-void save_logindex_file(carmen_logfile_index_p logfile_index, char *index_file_name)
+void 
+save_logindex_file(carmen_logfile_index_p logfile_index, char *index_file_name)
 {
 	FILE *index_file;
 
@@ -1041,7 +1063,8 @@ void save_logindex_file(carmen_logfile_index_p logfile_index, char *index_file_n
 }
 
 
-int index_file_older_than_log_file(FILE *index_file, carmen_FILE *logfile)
+int 
+index_file_older_than_log_file(FILE *index_file, carmen_FILE *logfile)
 {
 	struct stat stat_buf;
 	time_t last_log_modification, last_index_modification;
@@ -1059,14 +1082,9 @@ int index_file_older_than_log_file(FILE *index_file, carmen_FILE *logfile)
 }
 
 
-int main(int argc, char **argv)
+void
+set_messages()
 {
-	FILE *index_file;
-	char index_file_name[2000];
-
-	if (argc < 2 || strcmp(argv[1], "-h") == 0)
-		usage(NULL);
-
 	memset(&odometry_ackerman, 0, sizeof(odometry_ackerman));
 	memset(&velocity_ackerman, 0, sizeof(velocity_ackerman));
 	memset(&visual_odometry, 0, sizeof(visual_odometry));
@@ -1124,11 +1142,44 @@ int main(int argc, char **argv)
 	memset(&bumblebee_basic_stereoimage11, 0, sizeof(bumblebee_basic_stereoimage11));
 	memset(&bumblebee_basic_stereoimage12, 0, sizeof(bumblebee_basic_stereoimage12));
 	memset(&bumblebee_basic_stereoimage13, 0, sizeof(bumblebee_basic_stereoimage13));
+	memset(&camera1_message, 0, sizeof(camera_message));
+	memset(&camera2_message, 0, sizeof(camera_message));
+	memset(&camera3_message, 0, sizeof(camera_message));
+	memset(&camera4_message, 0, sizeof(camera_message));
+	memset(&camera5_message, 0, sizeof(camera_message));
+	memset(&camera6_message, 0, sizeof(camera_message));
+	memset(&camera7_message, 0, sizeof(camera_message));
+	memset(&camera8_message, 0, sizeof(camera_message));
+	memset(&camera9_message, 0, sizeof(camera_message));
+	memset(&camera10_message, 0, sizeof(camera_message));
+	memset(&camera11_message, 0, sizeof(camera_message));
+	memset(&camera12_message, 0, sizeof(camera_message));
+	memset(&camera13_message, 0, sizeof(camera_message));
+	memset(&camera14_message, 0, sizeof(camera_message));
+	memset(&camera15_message, 0, sizeof(camera_message));
+	memset(&camera16_message, 0, sizeof(camera_message));
+	memset(&camera17_message, 0, sizeof(camera_message));
+	memset(&camera18_message, 0, sizeof(camera_message));
+	memset(&camera19_message, 0, sizeof(camera_message));
+	memset(&camera20_message, 0, sizeof(camera_message));
 	memset(&web_cam_message, 0, sizeof(web_cam_message));
 	memset(&ackerman_motion_message, 0, sizeof(ackerman_motion_message));
 	memset(&ultrasonic_message, 0, sizeof(ultrasonic_message));
 	memset(&ford_escape_status, 0, sizeof(ford_escape_status));
 	memset(&globalpos, 0, sizeof(globalpos));
+}
+
+
+int
+main(int argc, char **argv)
+{
+	FILE *index_file;
+	char index_file_name[2000];
+
+	if (argc < 2 || strcmp(argv[1], "-h") == 0)
+		usage(NULL);
+
+	set_messages();
 
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
