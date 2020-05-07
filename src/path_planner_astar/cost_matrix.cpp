@@ -1,8 +1,8 @@
 #include "path_planner_astar.h"
 #include <stdio.h>
-#define THETA_SIZE 72
+#define HEURISTIC_THETA_SIZE 72
 #define HEURISTIC_GRID_RESOLUTION 0.2
-#define MAP_SIZE 101
+#define MAP_SIZE 100
 #define FILE_NAME "cost_matrix_02_101x101x72.data"
 carmen_robot_ackerman_config_t robot_config;
 cost_heuristic_node_p ***cost_map;
@@ -27,10 +27,10 @@ alloc_cost_map()
 
 		for (j = 0; j < y_size; j++)
 		{
-			cost_map[i][j] = (cost_heuristic_node_p*)calloc(THETA_SIZE, sizeof(cost_heuristic_node_p));
+			cost_map[i][j] = (cost_heuristic_node_p*)calloc(HEURISTIC_THETA_SIZE, sizeof(cost_heuristic_node_p));
 			carmen_test_alloc(cost_map[i][j]);
 
-			for (z = 0; z < THETA_SIZE; z++)
+			for (z = 0; z < HEURISTIC_THETA_SIZE; z++)
 			{
 				cost_map[i][j][z]= (cost_heuristic_node_p) malloc(sizeof(cost_heuristic_node));
 				carmen_test_alloc(cost_map[i][j][z]);
@@ -51,8 +51,15 @@ clear_cost_map()
 
 	for (i = 0; i < x_size; i++)
 		for (j = 0; j < y_size; j++)
-			for (z = 0; z < THETA_SIZE; z++)
+			for (z = 0; z < HEURISTIC_THETA_SIZE; z++)
 				cost_map[i][j][z] = NULL;
+}
+
+
+double
+carmen_compute_abs_angular_distance(double theta_1, double theta_2)
+{
+	return (carmen_normalize_theta(abs(theta_1 - theta_2)));
 }
 
 
@@ -89,12 +96,12 @@ reed_shepp_cost(carmen_ackerman_traj_point_t current, carmen_ackerman_traj_point
 			v_step = -2.0;
 			step_weight = 1.0;
 		}
-		while (DIST2D(point, rs_points[i-1]) > 1.0)
+		while (DIST2D(point, rs_points[i-1]) > 0.2 || (abs(carmen_compute_abs_angular_distance(point.theta, rs_points[i-1].theta)) > 0.0872665))
 		{
 			distance_traveled_old = distance_traveled;
 			point_old = point;
 			point = carmen_libcarmodel_recalc_pos_ackerman(point, v_step, rs_points[i].phi,
-					0.25, &distance_traveled, DELTA_T, robot_config);
+					0.1, &distance_traveled, DELTA_T, robot_config);
 			path_cost += step_weight * (distance_traveled - distance_traveled_old);
 //			printf("[rs] Comparação de pontos: %f %f\n", DIST2D(point, point_old), distance_traveled - distance_traveled_old);
 
@@ -125,7 +132,7 @@ make_matrix_cost()
 		for (j = 0; j < y_size; j++)
 		{
 
-			for (z = 0; z < THETA_SIZE; z++)
+			for (z = 0; z < HEURISTIC_THETA_SIZE; z++)
 			{
 				current.x = i * HEURISTIC_GRID_RESOLUTION;
 				current.y = j * HEURISTIC_GRID_RESOLUTION;
@@ -159,7 +166,7 @@ static int save_map()
 	{
 		for (j = 0; j < y_size; j++)
 		{
-			for (k = 0; k < THETA_SIZE; k++)
+			for (k = 0; k < HEURISTIC_THETA_SIZE; k++)
 			{
 				if (cost_map[i][j][k] != NULL)
 				{
