@@ -1315,7 +1315,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 	if (global_gui->nav_panel_config->draw_path)
 	{
 		for (int i = 0; i < global_gui->num_candidate_path; i++)
-			global_gui->draw_path(global_gui->canditade_path[i], global_gui->candidate_path_size[i], global_gui->path_colour,
+			global_gui->draw_path(global_gui->canditade_path[i], global_gui->candidate_path_size[i], global_gui->canditade_path_color[i],
 					global_gui->path_colour, the_map_view);
 	}
 

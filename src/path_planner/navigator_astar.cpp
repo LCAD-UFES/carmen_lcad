@@ -82,9 +82,9 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 			plan_tree_msg.host = carmen_get_host();
 			firstTime = false;
 		}
-		if (status.path.length > 100)
+		if (status.path.length > CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE)
 		{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
-			printf("Error: status.path.length > 100\n");
+			printf("Error: status.path.length > %d\n", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE);
 			return;
 		}
 		plan_tree_msg.num_path = 1;
