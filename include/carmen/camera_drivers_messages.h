@@ -26,16 +26,16 @@ typedef struct {
 } bbox;
 
 
-typedef struct {
-    double fx;
-    double fy;
-    double cu;
-    double cv;
-    double pixel_size;
-    unsigned int is_rectified;
-    double fov_horizontal;
-    double fov_vertical;
-} camera_parameters;
+// typedef struct {
+//     double fx;
+//     double fy;
+//     double cu;
+//     double cv;
+//     double pixel_size;
+//     unsigned int is_rectified;
+//     double fov_horizontal;
+//     double fov_vertical;
+// } camera_parameters;
 
 
 typedef struct {
