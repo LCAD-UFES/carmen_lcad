@@ -34,7 +34,7 @@ TARGETS = path_planner_astar cost_matrix cost_matrix_visualizer #backup heap_ast
 
 path_planner_astar: path_planner_astar_main.o reeds_sheep.o planning.o offroad_planner_distance_map.o
 cost_matrix: cost_matrix.o reeds_sheep.o
-cost_matrix_visualizer: cost_matrix_visualizer.o
+cost_matrix_visualizer: cost_matrix_visualizer.o reeds_sheep.o
 #backup: path_planner_astar_backup.o circle_heuristic.o
 #heap_astar: path_planner_astar_heap.o reeds_sheep.o
 
