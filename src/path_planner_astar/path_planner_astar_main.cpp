@@ -7,7 +7,7 @@
 #define HEURISTIC_GRID_RESOLUTION 0.2
 //#define FILE_NAME "cost_matrix_101x101x72.data"
 #define FILE_NAME "cost_matrix_02_101x101x72.data"
-
+#define USE_MATRIX_HEURISTIC 0
 
 #define ACKERMAN_EXPANSION 1
 
@@ -742,8 +742,15 @@ alloc_astar_map(carmen_obstacle_distance_mapper_map_message *distance_map)
 				pos_y = get_distance_map_y(j, distance_map);
 //				printf("[alloc_map] %d %f %d %f %f %d\n", i, pos_x, j, pos_y, obstacle_distance(pos_x, pos_y, distance_map), distance_map->size);
 //				printf("[alloc_map] %d %d \n",x_size, y_size);
-				if(obstacle_distance(pos_x, pos_y, distance_map) < 1.5 || is_valid_grid_value(i, j, ASTAR_GRID_RESOLUTION) == 0)
+				if(obstacle_distance(pos_x, pos_y, distance_map) < 1.0 || is_valid_grid_value(i, j, ASTAR_GRID_RESOLUTION) == 0)
+				{
 					astar_map[i][j][z]->is_obstacle = 1;
+/*					carmen_ackerman_traj_point_t point;
+					point.x = pos_x;
+					point.y = pos_y;
+					draw_astar_object(&point, CARMEN_PURPLE);
+					*/
+				}
 				else
 					astar_map[i][j][z]->is_obstacle = 0;
 
@@ -754,6 +761,7 @@ alloc_astar_map(carmen_obstacle_distance_mapper_map_message *distance_map)
 			}
 		}
 	}
+	publish_astar_draw();
 }
 
 void
@@ -968,8 +976,10 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 	double rs_length = reed_shepp(current->state, goal_state->state, &rs_numero, &tr, &ur, &vr);
 
 	rs_pathl = constRS(rs_numero, tr, ur, vr, current->state, rs_points);
-	for (int i = rs_pathl-1; i > 0 /*rs_pathl*/; i--)
+
+	for (int i = rs_pathl; i > 0 /*rs_pathl*/; i--)
 	{
+//		printf("Valores do rs_points-pos: %f %f %f\n", rs_points[i].x, rs_points[i].y, rs_points[i].theta);
 		carmen_ackerman_traj_point_t point = rs_points[i];
 		if (rs_points[i].v < 0.0)
 		{
@@ -983,6 +993,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 		}
 		while (DIST2D(point, rs_points[i-1]) > 0.2 || (abs(carmen_compute_abs_angular_distance(point.theta, rs_points[i-1].theta)) > 0.0872665))
 		{
+
 			distance_traveled_old = distance_traveled;
 			point_old = point;
 			point = carmen_libcarmodel_recalc_pos_ackerman(point, v_step, rs_points[i].phi,
@@ -994,8 +1005,11 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 			state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
 			new_state->state = point;
 			rs_path_nodes.push_back(new_state);
+//			printf("point while: %f %f %f\n", point.x, point.y, point.theta);
 		}
+//		printf("Valor do point: %f %f %f %d\n", point.x, point.y, point.theta, i);
 	}
+
 
 	//return path_cost;
 	std::reverse(rs_path_nodes.begin(), rs_path_nodes.end());
@@ -1006,6 +1020,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 		rs_path_nodes[i]->parent = ant_state;
 		ant_state = rs_path_nodes[i];
 	}
+
 //	publish_astar_draw();
 	return rs_path_nodes;
 
@@ -1078,7 +1093,7 @@ expansion(state_node *current, state_node *goal_state, carmen_obstacle_distance_
     	{
         	state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
         	carmen_test_alloc(new_state);
-        	time_lenght = 0.1;
+        	time_lenght = 0.05;
         	if(ACKERMAN_EXPANSION)
         	{
         		target_phi = carmen_clamp(-robot_config.max_phi, (current->state.phi + steering_acceleration[j]), robot_config.max_phi);
@@ -1091,7 +1106,7 @@ expansion(state_node *current, state_node *goal_state, carmen_obstacle_distance_
 
         		while(time_lenght < 2.0)
         		{
-        			time_lenght = time_lenght + 0.1;
+        			time_lenght = time_lenght + 0.05;
         			temp_state->state = carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, time_lenght, &distance_traveled, DELTA_T, robot_config);
         			if(is_valid_state(temp_state, distance_map) == 1)
         			{
@@ -1184,7 +1199,7 @@ reed_shepp_cost(carmen_ackerman_traj_point_t current, carmen_ackerman_traj_point
 	double rs_length = reed_shepp(current, goal, &rs_numero, &tr, &ur, &vr);
 
 	rs_pathl = constRS(rs_numero, tr, ur, vr, current, rs_points);
-	for (int i = rs_pathl-1; i > 0 /*rs_pathl*/; i--)
+	for (int i = rs_pathl; i > 0 /*rs_pathl*/; i--)
 	{
 		carmen_ackerman_traj_point_t point = rs_points[i];
 		if (rs_points[i].v < 0.0)
@@ -1232,40 +1247,45 @@ h(state_node *current, state_node *goal, carmen_obstacle_distance_mapper_map_mes
 	current->state.x = 0;
 	current->state.y = 0;
 	current->state.theta = 1.5708;
-//	current->state.theta = 0;
+//	current->state.theta = 0.0872665 + 0.0872665;
+	current->state.theta = 0;
 	goal->state.x = 20;
 	goal->state.y = 20;
-//	goal->state.theta = 0;
-	goal->state.theta = 1.5708;
-
+	goal->state.theta = 0;
+//	goal->state.theta = 1.5708;
 */
 
-	int x = ((current->state.x - goal->state.x) * cos(-current->state.theta) - (current->state.y - goal->state.y) * sin(-current->state.theta))/HEURISTIC_GRID_RESOLUTION;
-	int y = ((current->state.x - goal->state.x) * sin(-current->state.theta) + (current->state.y - goal->state.y) * cos(-current->state.theta))/HEURISTIC_GRID_RESOLUTION;
-	int theta;
-
-	if ((x <= 0 && y >= 0) || (x >= 0 && y <= 0))
-		theta = get_astar_map_theta_2(carmen_normalize_theta(-(goal->state.theta - current->state.theta)));
-	else
-		theta = get_astar_map_theta_2(carmen_normalize_theta(goal->state.theta - current->state.theta));
-
-
-//	printf("current state = %f %f %f\n", current->state.x, current->state.y, current->state.theta );
-//	printf("goal state = %f %f %f\n", goal->state.x, goal->state.y, goal->state.theta );
-//	printf("x = %d y= %d theta = %d\n", x, y, theta);
-
-	int half_map = round(((HEURISTIC_MAP_SIZE)/HEURISTIC_GRID_RESOLUTION) / 2);
-//	printf("Real x = %d y= %d theta = %d\n", x + half_map, y + half_map, theta);
-//	printf("half_map = %d\n", half_map);
-	if(x < half_map && y < half_map && x > -half_map && y > -half_map)
+	if(USE_MATRIX_HEURISTIC)
 	{
-		rs =  cost_map[x + half_map][y + half_map][theta]->h;
-	}
+		int x = ((current->state.x - goal->state.x) * cos(current->state.theta) - (current->state.y - goal->state.y) * sin(current->state.theta))/HEURISTIC_GRID_RESOLUTION;
+		int y = ((current->state.x - goal->state.x) * sin(current->state.theta) + (current->state.y - goal->state.y) * cos(current->state.theta))/HEURISTIC_GRID_RESOLUTION;
+		int theta;
 
-//	double rs_cost = reed_shepp_cost(current->state, goal->state);
+		if ((x <= 0 && y >= 0) || (x >= 0 && y <= 0))
+			theta = get_astar_map_theta_2(carmen_normalize_theta(-(goal->state.theta - current->state.theta)));
+		else
+			theta = get_astar_map_theta_2(carmen_normalize_theta(goal->state.theta - current->state.theta));
+
+
+		int half_map = round(((HEURISTIC_MAP_SIZE)/HEURISTIC_GRID_RESOLUTION) / 2);
+	//	printf("Real x = %d y= %d theta = %d\n", x + half_map, y + half_map, theta);
+		if(x < half_map && y < half_map && x > -half_map && y > -half_map)
+		{
+			rs =  cost_map[x + half_map][y + half_map][theta]->h;
+		}
+	}
+	else
+	{
+		double rs_cost = reed_shepp_cost(current->state, goal->state);
+		rs = rs_cost;
+
+	}
+//	printf("current state = %f %f %f\n", current->state.x, current->state.y, current->state.theta);
 
 //	printf("[h]rs = %f\tho = %f rs_path = %f\n", rs, ho, rs_cost);
-//	rs = rs_cost;
+
+	printf("[h]rs = %f\tho = %f\n", rs, ho);
+
 	int returned_h = max(rs, ho);
 //	exit(1);
 	return returned_h;
@@ -1287,7 +1307,7 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 	state_node *start_state, *goal_state, *current;
 	alloc_cost_to_goal_map(distance_map, goal_pose);
 
-	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 3.0, 0.0, 0.0, DIST2D_P(robot_pose, goal_pose), NULL);
+	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 2.0, 0.0, 0.0, DIST2D_P(robot_pose, goal_pose), NULL);
 	goal_state = create_state_node(goal_pose->x, goal_pose->y, goal_pose->theta, 0.0, 0.0, 0.0, 0.0, NULL);
 	alloc_astar_map(distance_map);
 
@@ -1332,6 +1352,7 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 
 
 			indice = node_exist(closed, neighbor[it_number], distance_map);
+
 			if(indice != 0 && cost < g(neighbor[it_number]))
 			{
 				closed.erase(closed.begin() + (indice-1));
@@ -1347,7 +1368,7 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 
 				//Penalidades
 				if(neighbor[it_number]->state.v < 0)
-					neighbor[it_number]->f *= 1.1;
+					neighbor[it_number]->f += 1.1;
 				if(neighbor[it_number]->state.v != current->state.v)
 					neighbor[it_number]->f +=1;
 
@@ -1444,8 +1465,9 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	current_globalpos_msg = *msg;
 	get_pos_message(msg->globalpos/*, msg->v, msg->timestamp*/);
-	if(path_sended)
-		send_new_rddf_poses();
+// Ativar somente quando estiver enviando uma mensagem para o planner
+//	if(path_sended)
+//		send_new_rddf_poses();
 }
 
 
@@ -1593,8 +1615,8 @@ main(int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 
 	carmen_param_check_version(argv[0]);
-
-	alloc_cost_map();
+	if(USE_MATRIX_HEURISTIC)
+		alloc_cost_map();
 
 	carmen_path_planner_astar_define_messages();
 

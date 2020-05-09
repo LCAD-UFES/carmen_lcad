@@ -43,7 +43,7 @@ reed_shepp_cost(carmen_ackerman_traj_point_t current, carmen_ackerman_traj_point
 	double rs_length = reed_shepp(current, goal, &rs_numero, &tr, &ur, &vr);
 
 	rs_pathl = constRS(rs_numero, tr, ur, vr, current, rs_points);
-	for (int i = rs_pathl-1; i > 0 /*rs_pathl*/; i--)
+	for (int i = rs_pathl; i > 0 /*rs_pathl*/; i--)
 	{
 		carmen_ackerman_traj_point_t point = rs_points[i];
 		if (rs_points[i].v < 0.0)
