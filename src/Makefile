@@ -1,5 +1,16 @@
 total:	home export phase1 phase2 phase3 phase4
 
+export:	| home
+
+phase1:	| export
+
+phase2:	| phase1
+
+phase3:	| phase2
+
+phase4:	| phase3
+
+
 include Makefile.conf
 
 PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \

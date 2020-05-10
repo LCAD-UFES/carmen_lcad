@@ -33,15 +33,15 @@ proccontrol_setgroup:		proccontrol_setgroup.o \
 proccontrol_viewoutput:		proccontrol_viewoutput.o \
 				libproccontrol_interface.a
 proccontrol_gui: 			proccontrol_gui.cpp proccontrol_gui.h proccontrol_interface.c
-	qmake-qt4 -o Makefile.qmake-qt4
-	make -f Makefile.qmake-qt4
+	+qmake-qt4 -o Makefile.qmake-qt4
+	+make -f Makefile.qmake-qt4
 	
 #clean: clean_proccontrol_gui
 clean: clean_proccontrol_gui
 
 clean_proccontrol_gui:
-	qmake-qt4 -o Makefile.qmake-qt4
-	make -f Makefile.qmake-qt4 clean
-	rm Makefile.qmake-qt4
+	+qmake-qt4 -o Makefile.qmake-qt4
+	+make -f Makefile.qmake-qt4 clean
+	+rm Makefile.qmake-qt4
 	
 include ../Makefile.rules
