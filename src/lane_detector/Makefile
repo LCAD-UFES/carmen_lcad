@@ -10,9 +10,10 @@ CXXFLAGS += -Wno-sign-compare -DUSE_OPENCV -g  -ltf
 
 IFLAGS += `pkg-config opencv --cflags` -std=c++11 -DNO_NVML -g
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -DUSE_OPENCV -DNO_NVML
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet/lib
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet2
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L$(CARMEN_HOME)/sharedlib/libtf/src -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS += -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface -ltf -lrt -lLinearMath -lboost_thread-mt \
           -lboost_signals -lboost_system -lmoving_objects_interface -llocalize_ackerman_interface -lvelodyne_camera_calibration \
@@ -38,7 +39,8 @@ TARGETS = darknet velodyne_camera_calibration camera_boxes_to_world liblane_dete
 
 liblane_detector_interface.a: lane_detector_interface.o
 
-lane_detector: lane_detector_main.o lane_detector.o lane_detector_interface.o velodyne_camera_calibration.o
+lane_detector: lane_detector_main.o lane_detector.o lane_detector_interface.o velodyne_camera_calibration.o \
+		| darknet velodyne_camera_calibration camera_boxes_to_world
 
 darknet:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2

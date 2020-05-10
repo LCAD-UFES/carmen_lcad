@@ -34,7 +34,7 @@ PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \
 	   road_mapper can_dump imu_viewer traffic_light 
 	   # hypergraphsclam tracker_opentld neural_object_detector voice_interface
 
-PACKAGES_LIB = voice_interface ../sharedlib/darknet2
+PACKAGES_LIB = voice_interface
 
 ifndef NO_CPP
 PACKAGES += carmenpp
