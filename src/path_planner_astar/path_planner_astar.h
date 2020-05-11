@@ -38,6 +38,7 @@ typedef struct state_node
 	carmen_ackerman_traj_point_t state;
 	double f;                              // Total distance g + h
 	double g;                                // Distance from start to current state
+	double distance_traveled_g;
 	double heuristic_g;
 	int heuristic_closed;
 	double h;                                // Distance from current state to goal
