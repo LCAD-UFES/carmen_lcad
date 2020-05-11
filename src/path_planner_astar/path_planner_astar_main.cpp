@@ -1171,7 +1171,7 @@ double
 movementcost(state_node *current, state_node *neighbor)
 {
 //	return DIST2D(current->state, neighbor->state);
-	return current->g + neighbor->distance_traveled_g;
+	return (neighbor->distance_traveled_g);
 }
 
 int
