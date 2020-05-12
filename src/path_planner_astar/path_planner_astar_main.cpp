@@ -8,6 +8,7 @@
 //#define FILE_NAME "cost_matrix_101x101x72.data"
 #define FILE_NAME "cost_matrix_02_101x101x72.data"
 #define USE_MATRIX_HEURISTIC 0
+#define USE_PATH_SMOOTHER 0
 
 #define MAX_VIRTUAL_LASER_SAMPLES 100000
 #define SQRT2 sqrt(2.0)
@@ -93,7 +94,7 @@ build_rddf_poses( state_node *current_state, carmen_obstacle_distance_mapper_map
 //		path[i].state.v = abs(path[i].state.v);
 		temp_rddf_poses_from_path.push_back(path[i].state);
 		printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
-		draw_astar_object(&path[i].state, CARMEN_GREEN);
+//		draw_astar_object(&path[i].state, CARMEN_GREEN);
 	}
 
 	return temp_rddf_poses_from_path;
@@ -527,18 +528,26 @@ astar_mount_rddf_message(state_node *current_state, state_node *goal_state, carm
 	carmen_rddf_poses_from_path = &temp_rddf_poses_from_path[0];
 	poses_size = temp_rddf_poses_from_path.size();
 
-	printf("Otimização iniciada\n");
 	carmen_ackerman_traj_point_t last_pose;
 	last_pose.x = carmen_rddf_poses_from_path->x;
 	last_pose.y = carmen_rddf_poses_from_path->y;
 	last_pose.theta = carmen_rddf_poses_from_path->theta;
 	last_pose.v = carmen_rddf_poses_from_path->v;
 	last_pose.phi = carmen_rddf_poses_from_path->phi;
-	smooth_rddf_using_conjugate_gradient(carmen_rddf_poses_from_path, temp_rddf_poses_from_path.size(), &last_pose, 1);
-	printf("Otimização feita!\n");
 
+	if (USE_PATH_SMOOTHER)
+	{
+		printf("Otimização iniciada\n");
+		smooth_rddf_using_conjugate_gradient(carmen_rddf_poses_from_path, temp_rddf_poses_from_path.size(), &last_pose, 1);
+		printf("Otimização feita!\n");
+	}
 
 	astar_publish_rddf_poses(carmen_rddf_poses_from_path, poses_size);
+
+	for (int i = 0; i < poses_size; i++)
+	{
+		draw_astar_object(&carmen_rddf_poses_from_path[i], CARMEN_GREEN);
+	}
 	publish_astar_draw();
 
 
@@ -1430,12 +1439,12 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 				astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open = 0;
 
 			}
-			if(astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed == 1 && astar_map[current_pos->x][current_pos->y][current_pos->theta]->g > neighbor[it_number]->g)
+/*			if(astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed == 1 && astar_map[current_pos->x][current_pos->y][current_pos->theta]->g > neighbor[it_number]->g)
 			{
 				// remove neighbor from CLOSED
 				astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed = 0;
 			}
-
+*/
 //			if(node_exist(open, neighbor[it_number], distance_map) == 0 && node_exist(closed, neighbor[it_number], distance_map) == 0 )
 			if(astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed == 0 && astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open == 0)
 			{
