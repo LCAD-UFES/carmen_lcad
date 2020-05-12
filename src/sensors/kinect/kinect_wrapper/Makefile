@@ -30,7 +30,7 @@ kinect_glview.o: kinect_glview.cpp kinect_glview.hpp
 kinect_glmain.o: kinect_glmain.c
 	g++ $(CFLAGS) $(INC) $(LIBS) -lkinect_wrapper -c $<
 
-copy:
+copy: | $(LIBRARY)
 	cp $(LIBRARY) ..
 	
 clean:
