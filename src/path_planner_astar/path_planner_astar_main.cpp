@@ -7,7 +7,7 @@
 #define HEURISTIC_GRID_RESOLUTION 0.2
 //#define FILE_NAME "cost_matrix_101x101x72.data"
 #define FILE_NAME "cost_matrix_02_101x101x72.data"
-#define USE_MATRIX_HEURISTIC 1
+#define USE_MATRIX_HEURISTIC 0
 
 #define MAX_VIRTUAL_LASER_SAMPLES 100000
 #define SQRT2 sqrt(2.0)
@@ -31,11 +31,9 @@ carmen_obstacle_distance_mapper_map_message distance_map;
 map_node_p ***astar_map;
 cost_heuristic_node_p ***cost_map;
 static carmen_map_p map_occupancy = NULL;
-
+using namespace boost::heap;
 using namespace std;
 
-vector<state_node*> open_heuristic;
-vector<state_node*> closed_heuristic;
 
 double *utility_map;
 
@@ -798,7 +796,8 @@ alloc_astar_map(carmen_obstacle_distance_mapper_map_message *distance_map)
 				else
 					astar_map[i][j][z]->obstacle_distance = 0;
 
-//				astar_map[i][j][z]->was_visited = 0;
+				astar_map[i][j][z]->is_closed = 0;
+				astar_map[i][j][z]->is_open = 0;
 
 			}
 		}
@@ -1123,7 +1122,7 @@ int
 is_valid_state(state_node *state, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
 	discrete_pos_node *current_pos = get_current_pos(state, distance_map);
-	if(current_pos->x >= astar_map_x_size || current_pos->y >= astar_map_y_size || current_pos->x <= 0 || current_pos->y <= 0 || astar_map[current_pos->x][current_pos->y][current_pos->theta]->obstacle_distance < 1.5)
+	if(current_pos->x >= astar_map_x_size || current_pos->y >= astar_map_y_size || current_pos->x <= 0 || current_pos->y <= 0 || astar_map[current_pos->x][current_pos->y][current_pos->theta]->obstacle_distance < 2.0)
 	{
 		free(current_pos);
 		return 0;
@@ -1358,16 +1357,32 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 	goal_state = create_state_node(goal_pose->x, goal_pose->y, goal_pose->theta, 0.0, 0.0, 0.0, 0.0, NULL, 100);
 	alloc_astar_map(distance_map);
 
-	vector<state_node*> open;
+	fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> open;
+//	vector<state_node*> open;
 
 	// Following the code from: http://theory.stanford.edu/~amitp/GameProgramming/ImplementationNotes.html
-	insert_open(open, start_state, distance_map);
-	vector<state_node*> closed;
-	while (!open.empty() && is_goal(get_lowest_rank(open), goal_state) != 1)
+	open.push(start_state);
+	discrete_pos_node *current_pos = get_current_pos(start_state, distance_map);
+	astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open = 1;
+	astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed = 0;
+	free(current_pos);
+//	insert_open(open, start_state, distance_map);
+//	vector<state_node*> closed;
+//	while (!open.empty() && is_goal(get_lowest_rank(open), goal_state) != 1)
+	while (!open.empty() && is_goal(open.top(), goal_state) != 1)
 	{
-		current = pop_lowest_rank(open);
+//		current = pop_lowest_rank(open);
+		current = open.top();
+		open.pop();
 		printf("current = %f %f %f %f %f %f\n", current->state.x, current->state.y, current->state.theta, current->g, current->h, current->f);
-		closed.push_back(current);
+//		closed.push_back(current);
+		discrete_pos_node *current_pos = get_current_pos(current, distance_map);
+		if(astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed == 1){
+			continue;
+		}
+		astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed = 1;
+		astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open = 0;
+		free(current_pos);
 
 		if(cont_rs%17==0)
 		{
@@ -1381,8 +1396,9 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 				current->h = 0;
 				current->distance_traveled_g = 0;
 				current->f = 0;
-				open.push_back(current);
-				sort(open.begin(), open.end(), my_list_ordenation);
+//				open.push_back(current);
+//				sort(open.begin(), open.end(), my_list_ordenation);
+				open.push(current);
 				printf("Reed Shepp encontrou o caminho \n");
 				printf("Goal_state: %f %f %f \n", goal_state->state.x, goal_state->state.y, goal_state->state.theta);
 				break;
@@ -1394,25 +1410,41 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 		while(it_number < neighbor.size())
 		{
 			cost = g(current) + movementcost(current, neighbor[it_number]);
+			// Implementação utilizando lista
+/*
 			indice = node_exist(open, neighbor[it_number], distance_map);
 			if(indice != 0 && cost < g(neighbor[it_number]))
 			{
 				open.erase(open.begin() + (indice-1));
 			}
-
 			indice = node_exist(closed, neighbor[it_number], distance_map);
 			if(indice != 0 && cost < g(neighbor[it_number]))
 			{
 				closed.erase(closed.begin() + (indice-1));
 			}
+*/
+			// Implementação utilizando heap
+			discrete_pos_node *current_pos = get_current_pos(neighbor[it_number], distance_map);
+			if(astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open == 1 && astar_map[current_pos->x][current_pos->y][current_pos->theta]->g > neighbor[it_number]->g)
+			{
+				astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open = 0;
 
-			if(node_exist(open, neighbor[it_number], distance_map) == 0 && node_exist(closed, neighbor[it_number], distance_map) == 0 )
+			}
+			if(astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed == 1 && astar_map[current_pos->x][current_pos->y][current_pos->theta]->g > neighbor[it_number]->g)
+			{
+				// remove neighbor from CLOSED
+				astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed = 0;
+			}
+
+//			if(node_exist(open, neighbor[it_number], distance_map) == 0 && node_exist(closed, neighbor[it_number], distance_map) == 0 )
+			if(astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed == 0 && astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open == 0)
 			{
 				neighbor[it_number]->g = cost;
 //				neighbor[it_number]->h = DIST2D(neighbor[it_number]->state, goal_state->state);
 				neighbor[it_number]->h = h(neighbor[it_number], goal_state, distance_map);
 				neighbor[it_number]->f = neighbor[it_number]->g + neighbor[it_number]->h;
 				neighbor[it_number]->parent = current;
+
 
 				//Penalidades
 				if(neighbor[it_number]->state.v < 0)
@@ -1432,11 +1464,16 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 				}
 
 
-				open.push_back(neighbor[it_number]);
+//				open.push_back(neighbor[it_number]);
+				astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open = 1;
+				astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed = 0;
+				astar_map[current_pos->x][current_pos->y][current_pos->theta]->g = neighbor[it_number]->g;
+				open.push(neighbor[it_number]);
+				free(current_pos);
 			}
 			it_number++;
 		}
-		sort(open.begin(), open.end(), my_list_ordenation);
+//		sort(open.begin(), open.end(), my_list_ordenation);
 		it_number = 0;
 		neighbor.clear();
 		rs_path.clear();
@@ -1448,16 +1485,17 @@ compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen
 	else
 	{
 		virtual_laser_message.num_positions = 0;
-		for(int i = 0; i < open.size(); i++)
-		{
-			printf("pop_lowest_rank = %f %f %f %f %f %f %f\n", open[i]->state.x, open[i]->state.y, open[i]->state.theta, open[i]->g, open[i]->h, open[i]->f, open[i]->distance_traveled_g);
-		}
-		current = pop_lowest_rank(open);
+//		for(int i = 0; i < open.size(); i++)
+//		{
+//			printf("pop_lowest_rank = %f %f %f %f %f %f %f\n", open[i]->state.x, open[i]->state.y, open[i]->state.theta, open[i]->g, open[i]->h, open[i]->f, open[i]->distance_traveled_g);
+//		}
+//		current = pop_lowest_rank(open);
+		current = open.top();
 		astar_mount_rddf_message(current, goal_state, distance_map);
 		path_sended = 1;
 		open.clear();
 	}
-	closed.clear();
+//	closed.clear();
 	clear_astar_map(distance_map);
 	free(utility_map);
 	virtual_laser_message.num_positions = 0;
