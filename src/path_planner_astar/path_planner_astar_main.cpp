@@ -10,7 +10,7 @@
 #define USE_MATRIX_HEURISTIC 1
 
 #define MAX_VIRTUAL_LASER_SAMPLES 100000
-
+#define SQRT2 sqrt(2.0)
 #define DIST2D_D_P(x1,x2) (sqrt(((x1).x - (x2)->x) * ((x1).x - (x2)->x) + \
 							((x1).y - (x2)->y) * ((x1).y - (x2)->y)))
 carmen_mapper_virtual_laser_message virtual_laser_message;
@@ -472,6 +472,54 @@ astar_publish_rddf_poses(carmen_ackerman_traj_point_t *poses_ahead, int size)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+carmen_ackerman_traj_point_t
+carmen_conventional_astar_ackerman_kinematic_3(carmen_ackerman_traj_point_t point, double lenght, double phi, double v)
+{
+
+	double	radcurv = lenght / tan(fabs(phi));
+
+	if(phi == 0)
+	{
+
+		point.x += v * cos(point.theta);
+		point.y += v * sin(point.theta);
+		point.theta = carmen_normalize_theta(point.theta);
+		point.phi = phi;
+		point.v = v;
+	}
+	else
+	{
+		double temp_v = fabs(v) / radcurv;
+		int direction_signal = phi >= 0 ? -1 : 1;
+
+		double center_x = point.x + radcurv * sin(point.theta) * direction_signal;
+		double center_y = point.y - radcurv * cos(point.theta) * direction_signal;
+		double va1 = carmen_normalize_theta(point.theta + 1.5707963268 * direction_signal);
+		double va2;
+
+		if (v >= 0)
+		{
+			va2 = va1 - temp_v * direction_signal;
+		}
+		else
+		{
+			va2 = va1 + temp_v * direction_signal;
+		}
+
+		point.x = center_x + radcurv * cos(va2);
+		point.y = center_y + radcurv * sin(va2);
+		point.theta = point.theta - v / radcurv * direction_signal;
+
+		point.theta = carmen_normalize_theta(point.theta);
+		point.v = v;
+		point.phi = phi;
+
+	}
+
+	return point;
+}
 
 
 void
@@ -1113,21 +1161,21 @@ expansion(state_node *current, state_node *goal_state, carmen_obstacle_distance_
         	distance_traveled = 0;
 //			target_phi = carmen_clamp(-robot_config.max_phi, (current->state.phi + steering_acceleration[j]), robot_config.max_phi);
         	target_phi = steering_acceleration[j];
-			temp_state->state = carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, time_lenght, &distance_traveled, DELTA_T, robot_config);
+//			temp_state->state = carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, time_lenght, &distance_traveled, DELTA_T, robot_config);
 //        	new_state->state = carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, 2.0, &distance_traveled, DELTA_T, robot_config);
-//        	new_state->state = carmen_conventional_astar_ackerman_kinematic_3(current->state, sqrt(2.0), target_phi, target_v[i]);
+        	new_state->state = carmen_conventional_astar_ackerman_kinematic_3(current->state, SQRT2, target_phi, target_v[i]);
 
-			new_state->state = temp_state->state;
-			new_state->distance_traveled_g = distance_traveled;
+//			new_state->state = temp_state->state;
+			new_state->distance_traveled_g = SQRT2;
 
 //			new_pos = get_current_pos(new_state, distance_map);
 //			while(time_lenght < 1.0 + ASTAR_GRID_RESOLUTION)
-			while(distance_traveled < 2.8)
+/*			while(distance_traveled < 2.8)
 //			while(cell_already_occupied_by_neighbor(new_state, current_pos, neighbor, distance_map))
 			{
 //				time_lenght = time_lenght + 0.2;
 //				temp_state->state = carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, time_lenght, &distance_traveled, DELTA_T, robot_config);
-				temp_state->state = carmen_libcarmodel_recalc_pos_ackerman(temp_state->state, target_v[i], target_phi, time_lenght, &distance_traveled, DELTA_T, robot_config);
+//				temp_state->state = carmen_libcarmodel_recalc_pos_ackerman(temp_state->state, target_v[i], target_phi, time_lenght, &distance_traveled, DELTA_T, robot_config);
 				if(is_valid_state(temp_state, distance_map) == 1)
 				{
 					new_state->state = temp_state->state;
@@ -1139,6 +1187,7 @@ expansion(state_node *current, state_node *goal_state, carmen_obstacle_distance_
 
 //        		printf("original = %f %f\tnovo = %f %f\n", carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, 2.0, &distance_traveled, DELTA_T, robot_config).x, carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, 2.0, &distance_traveled, DELTA_T, robot_config).y, new_state->state.x, new_state->state.y);
 			}
+			*/
 //			printf("distance_traveled = %f\n",distance_traveled);
 //        	discrete_pos_node *current_pos = get_current_pos(new_state, distance_map);
 //        	printf("[expansion_ackerman-before] %d %d %d\n", current_pos->x, current_pos->y, current_pos->theta);
