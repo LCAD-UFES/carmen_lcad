@@ -1145,9 +1145,9 @@ expansion(state_node *current, state_node *goal_state, carmen_obstacle_distance_
     double target_v[2]   = {2.0, -2.0};
     double time_lenght;
     int size_for;
-	state_node_p temp_state = (state_node_p) malloc(sizeof(state_node));
+//	state_node_p temp_state = (state_node_p) malloc(sizeof(state_node));
 
-    discrete_pos_node *current_pos = get_current_pos(current, distance_map);
+//    discrete_pos_node *current_pos = get_current_pos(current, distance_map);
 //    discrete_pos_node *new_pos;
 
 //    printf("[expansion_ackerman-before] %d %d %d %d\n", current_pos->x, current_pos->y, current_pos->theta, astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_obstacle);
@@ -1161,39 +1161,8 @@ expansion(state_node *current, state_node *goal_state, carmen_obstacle_distance_
         	distance_traveled = 0;
 //			target_phi = carmen_clamp(-robot_config.max_phi, (current->state.phi + steering_acceleration[j]), robot_config.max_phi);
         	target_phi = steering_acceleration[j];
-//			temp_state->state = carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, time_lenght, &distance_traveled, DELTA_T, robot_config);
-//        	new_state->state = carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, 2.0, &distance_traveled, DELTA_T, robot_config);
         	new_state->state = carmen_conventional_astar_ackerman_kinematic_3(current->state, SQRT2, target_phi, target_v[i]);
-
-//			new_state->state = temp_state->state;
 			new_state->distance_traveled_g = SQRT2;
-
-//			new_pos = get_current_pos(new_state, distance_map);
-//			while(time_lenght < 1.0 + ASTAR_GRID_RESOLUTION)
-/*			while(distance_traveled < 2.8)
-//			while(cell_already_occupied_by_neighbor(new_state, current_pos, neighbor, distance_map))
-			{
-//				time_lenght = time_lenght + 0.2;
-//				temp_state->state = carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, time_lenght, &distance_traveled, DELTA_T, robot_config);
-//				temp_state->state = carmen_libcarmodel_recalc_pos_ackerman(temp_state->state, target_v[i], target_phi, time_lenght, &distance_traveled, DELTA_T, robot_config);
-				if(is_valid_state(temp_state, distance_map) == 1)
-				{
-					new_state->state = temp_state->state;
-					new_state->distance_traveled_g = distance_traveled;
-//					new_pos = get_current_pos(new_state, distance_map);
-				}
-				else
-					break;
-
-//        		printf("original = %f %f\tnovo = %f %f\n", carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, 2.0, &distance_traveled, DELTA_T, robot_config).x, carmen_libcarmodel_recalc_pos_ackerman(current->state, target_v[i], target_phi, 2.0, &distance_traveled, DELTA_T, robot_config).y, new_state->state.x, new_state->state.y);
-			}
-			*/
-//			printf("distance_traveled = %f\n",distance_traveled);
-//        	discrete_pos_node *current_pos = get_current_pos(new_state, distance_map);
-//        	printf("[expansion_ackerman-before] %d %d %d\n", current_pos->x, current_pos->y, current_pos->theta);
-//         	printf("[expansion_ackerman-after] %d %d %d\n", new_pos->x, new_pos->y, new_pos->theta);
-//        	printf("is obstacle = %f\n",astar_map[current_pos->x][current_pos->y][current_pos->theta]->obstacle_distance);
-//        	free(current_pos);
 
 			if(is_valid_state(new_state, distance_map) == 0)
 			{
@@ -1207,8 +1176,8 @@ expansion(state_node *current, state_node *goal_state, carmen_obstacle_distance_
     	}
     }
 //    free(new_pos);
-    free(temp_state);
-    free(current_pos);
+//    free(temp_state);
+//    free(current_pos);
 
     publish_astar_draw();
 //    exit(1);
