@@ -1,3 +1,5 @@
 libfrenet_path_planner_interface.a binary
-libroute_planner_interface.a binary
+liboffroad_planner_interface.a binary
+libcamera_drivers.a binary
 libroute_planner_utils.a binary
+libroute_planner_interface.a binary

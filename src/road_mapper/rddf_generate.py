@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 PROG_DESCRIPTION = \
 '''
@@ -275,7 +275,7 @@ def get_bezier_curve(points, increment):
 
             if j == 1:
                 next_orientation = delta(bezier[-1], bezier[-2])
-                bezier_orientation.append(avg_base_point(bezier, (i * 3), last_orientation, next_orientation))
+                bezier_orientation.append(avg_base_point(points, (i * 3), last_orientation, next_orientation))
                 last_orientation = next_orientation
             elif j > 1:
                 next_orientation = delta(bezier[-1], bezier[-2])
@@ -287,7 +287,7 @@ def get_bezier_curve(points, increment):
         last_orientation = next_orientation
 
     bezier.append(points[-1])
-    bezier_orientation.append(avg_base_point(bezier, (i * 3 + 3), last_orientation, None))
+    bezier_orientation.append(avg_base_point(points, (i * 3 + 3), last_orientation, None))
     
     return (bezier, bezier_orientation)
 

@@ -16,9 +16,6 @@ extern bool last_rddf_annotation_message_valid;
 
 extern bool autonomous;
 
-extern double original_behaviour_selector_central_lane_obstacles_safe_distance;
-extern double original_model_predictive_planner_obstacles_safe_distance;
-
 extern double last_speed_limit;
 
 extern double robot_max_centripetal_acceleration;
@@ -440,7 +437,7 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, do
 			path[i].phi = 0.0;
 			continue;
 		}
-		path[i].phi = L * atan(delta_theta / l);
+		path[i].phi = atan(L * (delta_theta / l));
 	}
 
 	for (int i = 1; i < (number_of_poses - 1); i++)

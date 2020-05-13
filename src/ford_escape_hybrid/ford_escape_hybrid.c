@@ -684,7 +684,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 //				double L = ford_escape_hybrid_config->distance_between_front_and_rear_axles;
 //				double delta_theta = global_pos.globalpos.theta - previous_global_pos.globalpos.theta;
 //				double l = dist23(global_pos.globalpos, previous_global_pos.globalpos);
-//				double real_phi = L * atan(delta_theta / l);
+//				double real_phi = atan(L * (delta_theta / l));
 //				printf("timestamp, x, y, theta, real_phi, phi_sent, phi_measured, v, "
 //						"%lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 //						ford_escape_hybrid_config->XGV_v_and_phi_timestamp,

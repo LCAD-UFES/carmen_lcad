@@ -5,6 +5,7 @@
 #include <carmen/collision_detection.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/rddf_messages.h>
+#include <carmen/offroad_planner.h>
 #include <algorithm>
 #include <car_model.h>
 #include <carmen/global_graphics.h>
@@ -23,6 +24,8 @@
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_math.h>
 
+#include "planning.hpp"
+
 
 #define DELTA_T 0.01                      // Size of step for the ackerman Euler method
 
@@ -35,14 +38,15 @@ typedef struct state_node
 	carmen_ackerman_traj_point_t state;
 	double f;                              // Total distance g + h
 	double g;                                // Distance from start to current state
-	double heuristic_g;
-	int heuristic_closed;
+	double distance_traveled_g;
+//	double heuristic_g;
+//	int heuristic_closed;
 	double h;                                // Distance from current state to goal
 //	double angular_distance_to_goal;
-	int is_open;
-	int is_closed;
-	int is_obstacle;
-	int was_visited;
+//	int is_open;
+//	int is_closed;
+//	double obstacle_distance;
+//	int was_visited;
 	state_node *parent;
 } state_node, *state_node_p;
 
@@ -53,6 +57,13 @@ typedef struct discrete_pos_node
 	int theta;
 } discrete_pos_node;
 
+typedef struct map_node
+{
+	int x;
+	int y;
+	int theta;
+	double obstacle_distance;
+} map_node, *map_node_p;
 
 typedef struct cost_heuristic_node
 {

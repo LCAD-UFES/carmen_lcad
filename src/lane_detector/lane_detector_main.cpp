@@ -22,7 +22,7 @@
 
 // Module specific
 //#include "DetectNet.hpp"
-#include <carmen/carmen_darknet_interface.hpp> /*< Yolo V2 */
+#include <carmen_darknet_interface.hpp> /*< Yolo V2 */
 #include "lane_detector.hpp"
 
 #include <carmen/lane_detector_messages.h>

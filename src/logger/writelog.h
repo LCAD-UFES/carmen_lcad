@@ -26,17 +26,6 @@
  *
  ********************************************************/
 
-/** @addtogroup logger libwritelog **/
-// @{
-
-/**
- * \file writelog.h
- * \brief Library for writing log files.
- *
- * This library should be used to write logfiles.
- **/
-
-
 #ifndef CARMEN_LOGWRITE_H
 #define CARMEN_LOGWRITE_H
 
@@ -44,6 +33,7 @@
 #include <carmen/carmen_stdio.h>
 #include <carmen/web_cam_interface.h>
 #include <carmen/ultrasonic_filter_messages.h>
+#include <carmen/ultrasonic_filter_interface.h>
 #include <carmen/kinect_messages.h>
 #include <carmen/xsens_messages.h>
 #include <carmen/xsens_mtig_messages.h>
@@ -52,11 +42,16 @@
 #include <carmen/localize_ackerman_messages.h>
 #include <carmen/velodyne_messages.h>
 #include <carmen/visual_odometry_messages.h>
+#include <carmen/visual_odometry_interface.h>
 #include <carmen/base_ackerman_messages.h>
 #include <carmen/ford_escape_hybrid_messages.h>
 #include <carmen/can_dump_messages.h>
 #include <carmen/pi_imu_messages.h>
 #include <carmen/pi_imu_interface.h>
+#include <carmen/camera_drivers_interface.h>
+#include <carmen/camera_drivers_messages.h>
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -168,34 +163,39 @@ void carmen_logwrite_write_robot_ackerman_follow_trajectory(carmen_robot_ackerma
  * @param outfile A carmen file pointer.
  * @param timestamp The relative timestamp (when was the message received). Note that this is not the timestamp within the message!
  **/
-void carmen_logwrite_write_logger_comment(carmen_logger_comment_message *msg,
-              carmen_FILE *outfile,
-              double timestamp);
+void
+carmen_logwrite_write_logger_comment(carmen_logger_comment_message *msg, carmen_FILE *outfile, double timestamp);
 
+void
+carmen_logwrite_write_kinect_depth(carmen_kinect_depth_message *kinect, int kinect_num, carmen_FILE *outfile, double timestamp);
 
-void carmen_logwrite_write_kinect_depth(carmen_kinect_depth_message *kinect,
-		int kinect_num, carmen_FILE *outfile,
-		double timestamp);
+void
+carmen_logwrite_write_kinect_video(carmen_kinect_video_message *kinect, int kinect_num, carmen_FILE *outfile, double timestamp);
 
-void carmen_logwrite_write_kinect_video(carmen_kinect_video_message *kinect,
-		int kinect_num, carmen_FILE *outfile,
-		double timestamp);
+void
+carmen_logwrite_write_velodyne_partial_scan(carmen_velodyne_partial_scan_message* msg, carmen_FILE* outfile, double timestamp);
 
-void carmen_logwrite_write_velodyne_partial_scan(carmen_velodyne_partial_scan_message* msg, carmen_FILE* outfile, double timestamp);
+void
+carmen_logwrite_write_to_file_velodyne(carmen_velodyne_partial_scan_message* msg, carmen_FILE *outfile, double timestamp, char *log_filename);
 
-void carmen_logwrite_write_to_file_velodyne(carmen_velodyne_partial_scan_message* msg, carmen_FILE *outfile, double timestamp, char *log_filename);
+void
+carmen_logwrite_write_to_file_velodyne_variable(carmen_velodyne_variable_scan_message* msg, int velodyne_number, carmen_FILE *outfile, double timestamp, char *log_filename);
 
-void carmen_logwrite_write_to_file_velodyne_variable(carmen_velodyne_variable_scan_message* msg, int velodyne_number, carmen_FILE *outfile, double timestamp, char *log_filename);
+void
+carmen_logwrite_write_variable_velodyne_scan(carmen_velodyne_variable_scan_message* msg, int velodyne_number, carmen_FILE* outfile, double timestamp);
 
-void carmen_logwrite_write_variable_velodyne_scan(carmen_velodyne_variable_scan_message* msg, int velodyne_number, carmen_FILE* outfile, double timestamp);
+void
+carmen_logwrite_write_velodyne_gps(carmen_velodyne_gps_message* msg, carmen_FILE* outfile, double timestamp);
 
-void carmen_logwrite_write_velodyne_gps(carmen_velodyne_gps_message* msg, carmen_FILE* outfile, double timestamp);
+void
+carmen_logwrite_write_bumblebee_basic_steroimage(carmen_bumblebee_basic_stereoimage_message* msg, int bumblebee_num, carmen_FILE *outfile, double timestamp, int frequency);
 
-void carmen_logwrite_write_bumblebee_basic_steroimage(carmen_bumblebee_basic_stereoimage_message* msg, int bumblebee_num, carmen_FILE *outfile,
-		double timestamp, int frequency);
-
-void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_basic_stereoimage_message* msg, int bumblebee_num, carmen_FILE *outfile,
+void
+carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_basic_stereoimage_message* msg, int bumblebee_num, carmen_FILE *outfile,
 		double timestamp, int frequency, char *log_filename);
+
+void
+camera_drivers_write_camera_message_to_log(int camera_id, camera_message *message, carmen_FILE *outfile, char *log_path, double time_spent);
 
 void carmen_logwrite_write_xsens_euler(carmen_xsens_global_euler_message* msg,
 			       carmen_FILE *outfile,

@@ -205,6 +205,7 @@ namespace View
 		double time_of_last_redraw;
 
 		carmen_world_point_t **canditade_path;
+		GdkColor *canditade_path_color;
 		int *candidate_path_size;
 		int num_candidate_path;
 
@@ -359,7 +360,7 @@ namespace View
 				carmen_ackerman_traj_point_p p2,
 				int *mask,
 				int plan_tree_length,
-				carmen_ackerman_traj_point_t paths[500][100],
+				carmen_ackerman_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE],
 				int path_size[100],
 				int num_path);
 

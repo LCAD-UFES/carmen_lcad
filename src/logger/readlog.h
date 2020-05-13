@@ -26,21 +26,6 @@
  *
  ********************************************************/
 
-/** @addtogroup logger libreadlog **/
-// @{
-
-/**
- * \file readlog.h
- * \brief Library for reading log files.
- *
- * This library should be used to read logfiles. It uses an index
- * structure in order to go thourgh the individual messages of the
- * carmen log file. This library furthermore provides conversion
- * functions that convert strings (representing a message in the
- * carmen log file format) into the corresponding
- * laser/odometry/etc. message.
- **/
-
 #ifndef CARMEN_READLOG_H
 #define CARMEN_READLOG_H
 
@@ -53,6 +38,8 @@
 #include <carmen/base_ackerman_messages.h>
 #include <carmen/ultrasonic_filter_messages.h>
 #include <carmen/pi_imu_messages.h>
+#include <carmen/camera_drivers_interface.h>
+#include <carmen/camera_drivers_messages.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -178,16 +165,23 @@ char *carmen_string_to_gps_gpgga_message(char *string,
  * In case there are no errors and the string is a line read from a carmen log
  * file, this string points to the relative timestamp (written by logger).
  **/
-char *carmen_string_to_gps_gphdt_message(char *string,
-					 carmen_gps_gphdt_message *gps_msg);
+char*
+carmen_string_to_gps_gphdt_message(char *string, carmen_gps_gphdt_message *gps_msg);
 
-char* carmen_string_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg);
+char*
+carmen_string_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg);
 
-char* carmen_string_to_ford_escape_estatus_message(char* string, carmen_ford_escape_status_message* msg);
+char*
+carmen_string_to_ford_escape_estatus_message(char* string, carmen_ford_escape_status_message* msg);
 
-char* carmen_string_to_globalpos_message(char* string, carmen_localize_ackerman_globalpos_message* msg);
+char*
+carmen_string_to_globalpos_message(char* string, carmen_localize_ackerman_globalpos_message* msg);
 
-char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg);
+char*
+carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg);
+
+char*
+camera_drivers_read_camera_message_from_log(char* string, camera_message* msg);
 
 /** Converts the string to a robot-ackerman-velocity message.
  * @param string A string describing the message in the carmen logfile format.

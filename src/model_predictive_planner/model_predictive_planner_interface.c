@@ -38,6 +38,14 @@ carmen_model_predictive_planner_publish_motion_plan_message(carmen_ackerman_traj
     IPC_RETURN_TYPE err;
 	carmen_model_predictive_planner_motion_plan_message motion_plan_msg;
 
+	static int first_time = 1;
+
+	if (first_time)
+	{
+		first_time = 0;
+		carmen_model_predictive_planner_define_motion_plan_message();
+	}
+
 	motion_plan_msg.plan = plan;
 	motion_plan_msg.plan_length = plan_length;
 	motion_plan_msg.timestamp = carmen_get_time();

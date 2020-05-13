@@ -27,7 +27,7 @@ install_includes = $(SILENT) \
 			$(RM) -f $(INC_DIR)/carmen/$$i ; \
 			$(LN) -s $$dir/$$i $(INC_DIR)/carmen/$$i ; \
 		fi; \
-	done 
+	done
 
 install_libraries = $(SILENT) \
 	for i in $(PUBLIC_LIBRARIES) xxxx ; do \
@@ -37,7 +37,7 @@ install_libraries = $(SILENT) \
 			$(RM) -f $(LIB_DIR)/$$i ; \
 			$(LN) -s $$dir/$$i $(LIB_DIR)/$$i ; \
 		fi; \
-	done 
+	done
 
 install_libraries_so = \
 	for i in $(PUBLIC_LIBRARIES_SO) xxxx ; do \
@@ -47,7 +47,7 @@ install_libraries_so = \
 			$(RM) -f $(SHARED_DIR)/$$i ; \
 			$(LN) -s $$dir/$$i $(SHARED_DIR)/$$i ; \
 		fi; \
-	done 
+	done
 
 install_binaries = $(SILENT) \
 	for i in $(PUBLIC_BINARIES) xxxx ; do \
@@ -57,7 +57,7 @@ install_binaries = $(SILENT) \
 			$(RM) -f $(BIN_DIR)/$$i ; \
 			$(LN) -s $$dir/$$i $(BIN_DIR)/$$i ; \
 		fi; \
-	done 
+	done
 
 install_manpages = $(SILENT) \
 	for i in $(MAN_PAGES) xxxx ; do \
@@ -77,7 +77,7 @@ install_others = $(SILENT) \
 			$(RM) -f $(BIN_DIR)/$$i ; \
 			$(LN) -s $$dir/$$i $(BIN_DIR)/$$i ; \
 		fi; \
-	done 
+	done
 
 install_includes_copy = $(SILENT) \
 	for i in $(PUBLIC_INCLUDES_COPY) xxxx ; do \
@@ -87,7 +87,7 @@ install_includes_copy = $(SILENT) \
 			$(RM) -f $(INC_DIR)/carmen/$$i ; \
 			$(CP) $$dir/$$i $(INC_DIR)/carmen/$$i ; \
 		fi; \
-	done 
+	done
 
 install_libraries_copy = $(SILENT) \
 	for i in $(PUBLIC_LIBRARIES_COPY) xxxx ; do \
@@ -96,8 +96,11 @@ install_libraries_copy = $(SILENT) \
 			export dir=`pwd` ; \
 			$(RM) -f $(LIB_DIR)/$$i ; \
 			$(CP) $$dir/$$i $(LIB_DIR)/$$i ; \
+			if ! test "`grep -w $$i $(LIB_DIR)/.gitattributes | grep -w binary`" ; then \
+				echo "$$i binary" >> $(LIB_DIR)/.gitattributes ; \
+			fi; \
 		fi; \
-	done 
+	done
 
 install_libraries_so_copy = \
 	for i in $(PUBLIC_LIBRARIES_SO_COPY) xxxx ; do \
@@ -106,8 +109,11 @@ install_libraries_so_copy = \
 			export dir=`pwd` ; \
 			$(RM) -f $(SHARED_DIR)/$$i ; \
 			$(CP) $$dir/$$i $(SHARED_DIR)/$$i ; \
+			if ! test "`grep -w $$i $(SHARED_DIR)/.gitattributes | grep -w binary`" ; then \
+				echo "$$i binary" >> $(SHARED_DIR)/.gitattributes ; \
+			fi; \
 		fi; \
-	done 
+	done
 
 install_binaries_copy = $(SILENT) \
 	for i in $(PUBLIC_BINARIES_COPY) xxxx ; do \
@@ -116,8 +122,11 @@ install_binaries_copy = $(SILENT) \
 			export dir=`pwd` ; \
 			$(RM) -f $(BIN_DIR)/$$i ; \
 			$(CP) $$dir/$$i $(BIN_DIR)/$$i ; \
+			if ! test "`grep -w $$i $(BIN_DIR)/.gitattributes | grep -w binary`" ; then \
+				echo "$$i binary" >> $(BIN_DIR)/.gitattributes ; \
+			fi; \
 		fi; \
-	done 
+	done
 
 install_manpages_copy = $(SILENT) \
 	for i in $(MAN_PAGES_COPY) xxxx ; do \
@@ -137,7 +146,7 @@ install_others_copy = $(SILENT) \
 			$(RM) -f $(BIN_DIR)/$$i ; \
 			$(CP) $$dir/$$i $(BIN_DIR)/$$i ; \
 		fi; \
-	done 
+	done
 
 install_glades = $(SILENT) \
 	for i in $(GLADE_FILES) xxxx ; do \
