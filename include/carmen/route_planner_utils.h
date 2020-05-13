@@ -61,10 +61,7 @@ struct type_a_star_utils{
     int *closed_set;
     int *open_set;
     int *fechado;
-<<<<<<< HEAD
     int anterior_size;
-=======
->>>>>>> ef4f4ace8fad452753d561732acf7b9fd5127b36
     int path_g_n;
     int closed_set_size;
     int open_set_size;
@@ -85,14 +82,9 @@ float* alloc_array_float (int graph_size);
 int** alloc_matrix (int graph_size);
 t_a_star_utils add_vertex_to_closed_set(t_a_star_utils r, int vertex_id);
 t_a_star_utils add_vertex_to_open_set(t_a_star_utils r, int vertex_id);
-<<<<<<< HEAD
 float h_n_manh (int vertex_id, int vertex_end, t_graph graph);
 float h_n_eucl (int vertex_id, int vertex_end, t_graph graph);
 t_a_star_utils a_star(t_adjacent_list** adjacent_list, t_graph graph, int graph_size, int vertex_ini, int vertex_end);
-=======
-float h_n_manh (int vertex_id, int vertex_end, t_coords *coords);
-float h_n_eucl (int vertex_id, int vertex_end, t_coords *coords);
->>>>>>> ef4f4ace8fad452753d561732acf7b9fd5127b36
 t_adjacent_list **add_to_list_undir(t_adjacent_list **adjacent_list, int u, int v, int w);
 t_adjacent_list **create_adjacent_list(t_adjacent_list ** adjacent_list, t_graph graph);
 int find_closest_point_in_graph (t_graph graph, carmen_point_t point);
