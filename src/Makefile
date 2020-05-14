@@ -1,5 +1,16 @@
 total:	home export phase1 phase2 phase3 phase4
 
+export:	| home
+
+phase1:	| export
+
+phase2:	| phase1
+
+phase3:	| phase2
+
+phase4:	| phase3
+
+
 include Makefile.conf
 
 PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \
@@ -23,7 +34,7 @@ PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \
 	   road_mapper can_dump imu_viewer traffic_light 
 	   # hypergraphsclam tracker_opentld neural_object_detector voice_interface
 
-PACKAGES_LIB = voice_interface ../sharedlib/darknet2
+PACKAGES_LIB = voice_interface
 
 ifndef NO_CPP
 PACKAGES += carmenpp
