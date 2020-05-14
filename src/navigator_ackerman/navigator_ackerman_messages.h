@@ -250,8 +250,8 @@ typedef enum{CARMEN_NAVIGATOR_ACKERMAN_GOAL_REACHED_v,
 #define      CARMEN_NAVIGATOR_ACKERMAN_ASTAR_STATES_NAME       "carmen_navigator_ackerman_astar_states"
 #define      CARMEN_NAVIGATOR_ACKERMAN_ASTAR_STATES_FMT        "{<{double, double, double, double, double}:2>,int}" */
 
-#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS	300 // Se mecher, tem que alterar o CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT
-#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE	200 // Se mecher, tem que alterar o CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT
+#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS	100 // Se mecher, tem que alterar o CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT
+#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE	500 // Se mecher, tem que alterar o CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT
 
 typedef struct
 {
@@ -269,7 +269,7 @@ typedef struct
 } carmen_navigator_ackerman_plan_tree_message;
 
 #define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME "carmen_navigator_ackerman_plan_tree"
-#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT "{int,<{double,double,double,double,double}:1>,<{double,double,double,double,double}:1>,<int:1>,[{double,double,double,double,double}:300, 200],[int:300],int,double,string}"
+#define CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT "{int,<{double,double,double,double,double}:1>,<{double,double,double,double,double}:1>,<int:1>,[{double,double,double,double,double}:100, 500],[int:100],int,double,string}"
 
 #define CARMEN_NAVIGATOR_ACKERMAN_GOAL_PLAN_TREE_NAME "carmen_navigator_ackerman_goal_plan_tree"
 #define CARMEN_NAVIGATOR_ACKERMAN_GOAL_PLAN_TREE_FMT CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT
