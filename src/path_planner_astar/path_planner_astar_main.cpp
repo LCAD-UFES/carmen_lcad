@@ -27,12 +27,14 @@ static carmen_map_p map_occupancy = NULL;
 carmen_mapper_virtual_laser_message virtual_laser_message;
 
 int final_goal_received = 0;
+int astar_path_sended = 0;
 int astar_map_x_size;
 int astar_map_y_size;
 carmen_point_t *final_goal = NULL;
 carmen_localize_ackerman_globalpos_message current_globalpos_msg;
 cost_heuristic_node_p ***heuristic_without_obstacle_map;
 carmen_ackerman_traj_point_t *carmen_astar_path_poses;
+carmen_route_planner_road_network_message route_planner_road_network_message;
 int astar_path_poses_size = 0;
 
 
@@ -141,28 +143,26 @@ get_poses_back(carmen_ackerman_traj_point_t *path, int nearest_pose_index)
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-/*
+
 void
 publish_plan(offroad_planner_path_t path, carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
 	int *annotations = (int *) calloc (path.length, sizeof(int));
 	int *annotations_codes = (int *) calloc (path.length, sizeof(int));
-
 	for (int i = 0; i < path.length; i++)
 	{
 		annotations[i] = RDDF_ANNOTATION_TYPE_NONE;
 		annotations_codes[i] = RDDF_ANNOTATION_CODE_NONE;
 	}
-
 	int nearest_pose_index = get_index_of_nearest_pose_in_path(path.points, globalpos_message->globalpos, path.length);
-
 	carmen_ackerman_traj_point_t *path_copy = NULL;
 	bool path_somoothed = false;
 	if (nav_config.smooth_path)
 	{
 		path_copy = (carmen_ackerman_traj_point_t *) malloc(path.length * sizeof(carmen_ackerman_traj_point_t));
 		memcpy((void *) path_copy, (void *) path.points, path.length * sizeof(carmen_ackerman_traj_point_t));
-		path_somoothed = smooth_path_using_conjugate_gradient(path.points, path.length);
+		//Estava dando erro na linha abaixo
+//		path_somoothed = smooth_path_using_conjugate_gradient(path.points, path.length);
 		if (!path_somoothed)
 		{
 			free(path_copy);
@@ -174,29 +174,25 @@ publish_plan(offroad_planner_path_t path, carmen_localize_ackerman_globalpos_mes
 			printf("Path smoothed!\n");
 		}
 	}
-
-	carmen_route_planner_road_network_message route_planner_road_network_message;
+//	carmen_route_planner_road_network_message route_planner_road_network_message;
 	route_planner_road_network_message.poses = &(path.points[nearest_pose_index]);
 	route_planner_road_network_message.poses_back = get_poses_back(path.points, nearest_pose_index);
 	route_planner_road_network_message.number_of_poses = path.length - nearest_pose_index;
 	route_planner_road_network_message.number_of_poses_back = nearest_pose_index + 1;	// tem que ter pelo menos uma pose_back que eh igual aa primeira poses
 	route_planner_road_network_message.annotations = annotations;
 	route_planner_road_network_message.annotations_codes = annotations_codes;
-
 	add_lanes(route_planner_road_network_message, path_copy);
-
 	route_planner_road_network_message.timestamp = globalpos_message->timestamp;
 	route_planner_road_network_message.host = carmen_get_host();
-
 	carmen_route_planner_publish_road_network_message(&route_planner_road_network_message);
-	free_lanes(route_planner_road_network_message);
-
-	free(annotations);
-	free(annotations_codes);
-	free(route_planner_road_network_message.poses_back);
-	free(path.points);
+	//free_lanes(route_planner_road_network_message);
+	//free(annotations);
+	//free(annotations_codes);
+	//free(route_planner_road_network_message.poses_back);
+	// Estava dando erro de corruption na linha abaixo e ainda não encontrei o motivo
+//	free(path.points);
 }
-*/
+
 
 
 void
@@ -737,7 +733,7 @@ build_rddf_poses(state_node *current_state)
 
 
 void
-astar_mount_rddf_message(state_node *current_state)
+astar_mount_path_message(state_node *current_state)
 {
 	std::vector<carmen_ackerman_traj_point_t> temp_rddf_poses_from_path = build_rddf_poses(current_state);
 	carmen_astar_path_poses = &temp_rddf_poses_from_path[0];
@@ -746,9 +742,9 @@ astar_mount_rddf_message(state_node *current_state)
 
 	for (int i = 0; i < astar_path_poses_size; i++)
 	{
-		draw_astar_object(&carmen_astar_path_poses[i], CARMEN_GREEN);
+//		draw_astar_object(&carmen_astar_path_poses[i], CARMEN_GREEN);
 	}
-	publish_astar_draw();
+//	publish_astar_draw();
 
 
 	//printf("%f\n",DIST2D(current_globalpos_msg.globalpos, goal_state->state));
@@ -782,13 +778,13 @@ expansion(state_node *current, state_node *goal_state, map_node_p ***astar_map)
 			}
 			else
 			{
-				draw_astar_object(&new_state->state, CARMEN_RED);
+//				draw_astar_object(&new_state->state, CARMEN_RED);
 				neighbor.push_back(new_state);
 			}
     	}
     }
 
-    publish_astar_draw();
+//    publish_astar_draw();
     return neighbor;
 }
 
@@ -1011,7 +1007,6 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 		if(astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_closed == 0 && astar_map[current_pos->x][current_pos->y][current_pos->theta]->is_open == 0)
 		{
 			neighbor_expansion[it_neighbor_number]->g = current_node_cost;
-//			neighbor_expansion[it_neighbor_number]->h = DIST2D(neighbor_expansion[it_neighbor_number]->state, goal_state->state);
 			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state);
 			neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
 			neighbor_expansion[it_neighbor_number]->parent = current;
@@ -1044,11 +1039,42 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 	}
 }
 
+offroad_planner_plan_t
+astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goal_pose)
+{
+	carmen_ackerman_traj_point_t robot;
+	carmen_ackerman_traj_point_t goal;
+	robot.x = robot_pose->x;
+	robot.y = robot_pose->y;
+	robot.theta = robot_pose->theta;
+	robot.v = 0;
+	robot.phi = 0;
 
-//carmen_route_planner_road_network_message
-void
+	goal.x = goal_pose->x;
+	goal.y = goal_pose->y;
+	goal.theta = goal_pose->theta;
+	goal.v = 0;
+	goal.phi = 0;
+
+	offroad_planner_plan_t plan;
+	plan.robot = robot;
+	plan.goal = goal;
+	plan.goal_set = 0;
+	plan.path.points = &(carmen_astar_path_poses[0]);
+	plan.path.length = astar_path_poses_size;
+	plan.path.capacity = 0;
+
+	return plan;
+}
+
+
+offroad_planner_plan_t
 carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose)
 {
+
+	printf("Robot Pose : %f %f %f\n", robot_pose->x, robot_pose->y, robot_pose->theta);
+	printf("Goal Pose : %f %f %f\n", goal_pose->x, goal_pose->y, goal_pose->theta);
+
 	virtual_laser_message.num_positions = 0;
 	std::vector<state_node*> rs_path;
 	std::vector<state_node*> neighbor_expansion;
@@ -1062,7 +1088,6 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> open;
 	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 2.0, 0.0, 0.0, DBL_MAX, DBL_MAX, NULL, 0);
 	goal_state = create_state_node(goal_pose->x, goal_pose->y, goal_pose->theta, 0.0, 0.0, 0.0, 0.0, 0.0, NULL, 0);
-
 
 	// Following the code from: http://theory.stanford.edu/~amitp/GameProgramming/ImplementationNotes.html
 	open.push(start_state);
@@ -1078,7 +1103,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 		if(is_goal(current, goal_state) == 1)
 		{
 			printf("Goal encontrado\n");
-			exit(1);
+			break;
 		}
 
 		discrete_pos_node *current_pos = get_current_pos(current);
@@ -1111,19 +1136,26 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 		update_neighbors(astar_map, heuristic_obstacle_map, current, goal_state, open);
 		neighbor_expansion.clear();
 		cont_rs_nodes++;
-
 	}
+	offroad_planner_plan_t plan;
 
 	if(open.empty())
-		printf("Caminho não encontrado\n");
-	else{
+	{
+		printf("Path Planner Astar não encontrou o caminho\n");
+		return plan;
+	}
+	else
+	{
 		current = open.top();
-		astar_mount_rddf_message(current);
+		astar_mount_path_message(current);
+		plan = astar_mount_offroad_planner_plan(robot_pose, goal_pose);
 		open.clear();
 	}
 
 	clear_astar_map(astar_map);
 	free(heuristic_obstacle_map);
+	astar_path_sended = 1;
+	return(plan);
 
 }
 
@@ -1143,22 +1175,39 @@ static void
 carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	carmen_point_t robot_position = {msg->globalpos.x, msg->globalpos.y, msg->globalpos.theta};
-
+	offroad_planner_plan_t plan_path_poses;
 	current_globalpos_msg = *msg;
 	if (final_goal_received != 0)
 	{
-		printf("Pos_message_handler: %lf %lf %lf\n", robot_position.x, robot_position.y, robot_position.theta);
-		carmen_path_planner_astar_get_path(&robot_position, final_goal);
+//		printf("Pos_message_handler: %lf %lf %lf\n", robot_position.x, robot_position.y, robot_position.theta);
+		plan_path_poses = carmen_path_planner_astar_get_path(&robot_position, final_goal);
+		//printf("Primeiro print %f %f %f \n", plan_path_poses.path.points->x, plan_path_poses.path.points->y, plan_path_poses.path.points->theta);
+
+		if(astar_path_sended)
+		{
+			publish_plan(plan_path_poses.path, msg);
+		}
 		final_goal_received = 0;
-	}//	if (astar.carmen_offroad_planner_update_robot_pose(&robot_position) == 0)
+
+	}
+
+	if(astar_path_sended && DIST2D(robot_position, *route_planner_road_network_message.poses) > 2.0)
+	{
+		printf("Primeiro print %f %f %f \n", route_planner_road_network_message.poses->x, route_planner_road_network_message.poses->y, route_planner_road_network_message.poses->theta);
+/*
+		int nearest_pose_index = get_index_of_nearest_pose_in_path(route_planner_road_network_message.poses, robot_position, route_planner_road_network_message.number_of_poses);
+		route_planner_road_network_message.poses_back = get_poses_back(route_planner_road_network_message.poses, nearest_pose_index);
+		route_planner_road_network_message.poses = &(route_planner_road_network_message.poses[nearest_pose_index]);
+		route_planner_road_network_message.number_of_poses = route_planner_road_network_message.number_of_poses - nearest_pose_index;
+		route_planner_road_network_message.number_of_poses_back = nearest_pose_index + 1;
+		carmen_route_planner_publish_road_network_message(&route_planner_road_network_message);
+*/
+
+	}
+
+	//	if (astar.carmen_offroad_planner_update_robot_pose(&robot_position) == 0)
 //		return;
 
-//	offroad_planner_plan_t plan;
-//	astar.carmen_offroad_planner_get_plan(&plan);
-/*
-	if (plan.path.length > 0)
-		publish_plan(plan.path, msg);
-*/
 }
 
 
@@ -1223,8 +1272,6 @@ carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_e
 {
 	final_goal = &(rddf_end_point_message->point);
 	final_goal_received = 1;
-//	carmen_offroad_planner_feedback_t planner_feedback = astar.carmen_offroad_planner_update_goal(&point);
-//	printf("%s\n", print_offroad_planner_feedback(planner_feedback));
 }
 
 
