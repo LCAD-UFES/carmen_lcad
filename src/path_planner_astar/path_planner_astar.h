@@ -33,6 +33,19 @@ void
 compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen_robot_ackerman_config_t robot_config,
 		carmen_obstacle_distance_mapper_map_message *distance_map);
 
+
+typedef struct {
+    double state_map_resolution;
+    int state_map_theta_resolution;
+    int precomputed_cost_size;
+    int precomputed_cost_theta_size;
+    double precomputed_cost_resolution;
+    char *precomputed_cost_file_name;
+    int use_matrix_cost_heuristic;
+
+  } carmen_path_planner_astar_t;
+
+
 typedef struct state_node
 {
 	carmen_ackerman_traj_point_t state;
@@ -50,6 +63,7 @@ typedef struct state_node
 	state_node *parent;
 } state_node, *state_node_p;
 
+
 typedef struct discrete_pos_node
 {
 	int x;
@@ -57,13 +71,18 @@ typedef struct discrete_pos_node
 	int theta;
 } discrete_pos_node;
 
+
 typedef struct map_node
 {
 	int x;
 	int y;
 	int theta;
+	double g;
+	int is_open;
+	int is_closed;
 	double obstacle_distance;
 } map_node, *map_node_p;
+
 
 typedef struct cost_heuristic_node
 {
@@ -75,7 +94,7 @@ class StateNodePtrComparator {
 public:
 	bool operator() (state_node *a, state_node *b) const
 	{
-		return (a->h + a->g > b->h + b->g);
+		return (a->f > b->f);
 	}
 };
 
