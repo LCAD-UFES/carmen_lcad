@@ -717,7 +717,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
 			first_goal, goal_type, timestamp);
 	if (error != 0)
-		carmen_die("State machine error code %d\n", error);
+		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
 
 	static carmen_ackerman_traj_point_t last_valid_goal;
 	static carmen_ackerman_traj_point_t *last_valid_goal_p = NULL;
