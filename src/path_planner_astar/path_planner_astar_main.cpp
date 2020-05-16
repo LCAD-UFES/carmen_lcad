@@ -33,8 +33,9 @@ int astar_map_y_size;
 carmen_point_t *final_goal = NULL;
 carmen_localize_ackerman_globalpos_message current_globalpos_msg;
 cost_heuristic_node_p ***heuristic_without_obstacle_map;
-carmen_ackerman_traj_point_t *carmen_astar_path_poses;
+std::vector<carmen_ackerman_traj_point_t> carmen_astar_path_poses;
 carmen_route_planner_road_network_message route_planner_road_network_message;
+offroad_planner_plan_t plan_path_poses;
 int astar_path_poses_size = 0;
 
 
@@ -185,6 +186,8 @@ publish_plan(offroad_planner_path_t path, carmen_localize_ackerman_globalpos_mes
 	route_planner_road_network_message.timestamp = globalpos_message->timestamp;
 	route_planner_road_network_message.host = carmen_get_host();
 	carmen_route_planner_publish_road_network_message(&route_planner_road_network_message);
+//	printf("route_planner print %f %f %f \n", route_planner_road_network_message.poses->x, route_planner_road_network_message.poses->y, route_planner_road_network_message.poses->theta);
+
 	//free_lanes(route_planner_road_network_message);
 	//free(annotations);
 	//free(annotations_codes);
@@ -380,7 +383,7 @@ get_obstacle_heuristic_map(carmen_point_t *goal_pose)
 	{
 		for(int y = 0; y < y_size; y++)
 		{
-			if(obstacle_distance(distance_map->config.x_origin + (x * distance_map->config.resolution), distance_map->config.y_origin + (y * distance_map->config.resolution)) < 1.0
+			if(obstacle_distance(distance_map->config.x_origin + (x * distance_map->config.resolution), distance_map->config.y_origin + (y * distance_map->config.resolution)) < 2.0
 					|| is_valid_grid_value(x, y, distance_map->config.resolution) == 0)
 			{
 				cost_map[y + x * y_size] = 1.0; // Espaco ocupado eh representado como 1.0
@@ -735,9 +738,11 @@ build_rddf_poses(state_node *current_state)
 void
 astar_mount_path_message(state_node *current_state)
 {
-	std::vector<carmen_ackerman_traj_point_t> temp_rddf_poses_from_path = build_rddf_poses(current_state);
-	carmen_astar_path_poses = &temp_rddf_poses_from_path[0];
-	astar_path_poses_size = temp_rddf_poses_from_path.size();
+	//std::vector<carmen_ackerman_traj_point_t> temp_rddf_poses_from_path = build_rddf_poses(current_state);
+	//carmen_astar_path_poses = temp_rddf_poses_from_path[0];
+	//std::copy(temp_rddf_poses_from_path.begin(), temp_rddf_poses_from_path.end(), carmen_astar_path_poses);
+	carmen_astar_path_poses = build_rddf_poses(current_state);
+	astar_path_poses_size = carmen_astar_path_poses.size();
 
 
 	for (int i = 0; i < astar_path_poses_size; i++)
@@ -757,7 +762,7 @@ expansion(state_node *current, state_node *goal_state, map_node_p ***astar_map)
 {
     std::vector<state_node*> neighbor;
     double target_phi;
-    double steering_acceleration[3] = {0.0, -robot_config.max_phi, robot_config.max_phi};
+    double steering_acceleration[3] = {0.0, -0.4, 0.4};
     double target_v[2]   = {2.0, -2.0};
     double time_lenght;
     int size_for;
@@ -768,7 +773,8 @@ expansion(state_node *current, state_node *goal_state, map_node_p ***astar_map)
     	{
         	state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
         	carmen_test_alloc(new_state);
-        	target_phi = steering_acceleration[j];
+        	target_phi = carmen_clamp(-robot_config.max_phi, (current->state.phi + steering_acceleration[j]), robot_config.max_phi);
+//        	target_phi = steering_acceleration[j];
         	new_state->state = carmen_conventional_astar_ackerman_kinematic_3(current->state, SQRT2, target_phi, target_v[i]);
 			new_state->distance_traveled_g = SQRT2;
 
@@ -837,7 +843,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 		if (rs_points[i].v < 0.0)
 		{
 			v_step = 2.0;
-			step_weight = 1.0;
+			step_weight = 2.0;
 		}
 		else
 		{
@@ -853,6 +859,9 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 			path_cost += step_weight * (distance_traveled - distance_traveled_old);
 			state_node_p new_state = (state_node_p) malloc(sizeof(state_node));
 			new_state->state = point;
+			//Como o Reed Shepp realiza o caminho do goal para um ponto, ele está andando de ré. Por isso precisa-se inverter o sinal de v
+			new_state->state.v = -new_state->state.v;
+			new_state->f = path_cost;
 			rs_path_nodes.push_back(new_state);
 		}
 	}
@@ -865,7 +874,6 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 		rs_path_nodes[i]->parent = ant_state;
 		ant_state = rs_path_nodes[i];
 	}
-
 	return rs_path_nodes;
 }
 
@@ -924,7 +932,7 @@ hitObstacle(std::vector<state_node*> path, map_node_p ***astar_map )
 	for(int i = 0; i < path.size(); i++)
 	{
 		discrete_pos_node *current_pos = get_current_pos(path[i]);
-		if(astar_map[current_pos->x][current_pos->y][current_pos->theta]->obstacle_distance < 1.5)
+		if(astar_map[current_pos->x][current_pos->y][current_pos->theta]->obstacle_distance < 2.0)
 		{
 			free(current_pos);
 			return 1;
@@ -938,8 +946,8 @@ hitObstacle(std::vector<state_node*> path, map_node_p ***astar_map )
 double
 h(map_node_p ***astar_map, double* heuristic_obstacle_map, state_node *current, state_node *goal)
 {
-	double ho = -1;
-	double rs = -1;
+	double ho = -DBL_MAX;
+	double rs = -DBL_MAX;
 	discrete_pos_node *current_pos = get_current_pos(current);
 
 	int current_x = round((current->state.x - distance_map->config.x_origin)/distance_map->config.resolution);
@@ -974,12 +982,14 @@ h(map_node_p ***astar_map, double* heuristic_obstacle_map, state_node *current, 
 
 	}
 //	printf("[h]rs = %f\tho = %f\n", rs, ho);
-	free(current_pos);
-
 	if(rs == -1)
 		ho+=10;
 
 	int returned_h = std::max(rs, ho);
+	if(returned_h > 0)
+		returned_h = returned_h - (astar_map[current_pos->x][current_pos->y][current_pos->theta]->obstacle_distance * 2.0);
+
+	free(current_pos);
 	return returned_h;
 }
 
@@ -1014,19 +1024,25 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 			//Penalidades
 			if(neighbor_expansion[it_neighbor_number]->state.v < 0)
 			{
-				neighbor_expansion[it_neighbor_number]->g = (1.1 * neighbor_expansion[it_neighbor_number]->distance_traveled_g) + current->g;
+				neighbor_expansion[it_neighbor_number]->g = (2.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g) + current->g;
 				neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
 			}
 
 			if(neighbor_expansion[it_neighbor_number]->state.v != current->state.v)
 			{
-				neighbor_expansion[it_neighbor_number]->g +=1;
+				neighbor_expansion[it_neighbor_number]->g +=SQRT2+2;
 				neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
 			}
 
 			if(neighbor_expansion[it_neighbor_number]->state.phi != 0.0)
 			{
-				neighbor_expansion[it_neighbor_number]->g +=1;
+				neighbor_expansion[it_neighbor_number]->g +=SQRT2+1;
+				neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
+			}
+
+			if(neighbor_expansion[it_neighbor_number]->state.phi != current->state.phi)
+			{
+				neighbor_expansion[it_neighbor_number]->g +=SQRT2;
 				neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
 			}
 
@@ -1068,7 +1084,7 @@ astar_mount_offroad_planner_plan(carmen_point_t *robot_pose, carmen_point_t *goa
 }
 
 
-offroad_planner_plan_t
+int
 carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose)
 {
 
@@ -1117,17 +1133,17 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 		if(cont_rs_nodes%17==0)
 		{
 			rs_path = reed_shepp_path(current, goal_state);
-			if(hitObstacle(rs_path, astar_map) == 0)
+			if(hitObstacle(rs_path, astar_map) == 0 && rs_path.front()->f < current->f )
 			{
 				rs_path.front()->parent = current;
-//				printf("Current_state: %f %f %f \n", current->state.x, current->state.y, current->state.theta);
+				printf("Current_state: %f %f %f \n", current->state.x, current->state.y, current->state.theta);
 				current = rs_path.back();
 				current->g = 0;
 				current->h = 0;
 				current->distance_traveled_g = 0;
 				current->f = 0;
 				open.push(current);
-//				printf("Reed Shepp encontrou o caminho \n");
+				printf("Reed Shepp encontrou o caminho \n");
 //				printf("Goal_state: %f %f %f \n", goal_state->state.x, goal_state->state.y, goal_state->state.theta);
 				break;
 			}
@@ -1137,25 +1153,25 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 		neighbor_expansion.clear();
 		cont_rs_nodes++;
 	}
-	offroad_planner_plan_t plan;
+//	offroad_planner_plan_t plan;
 
 	if(open.empty())
 	{
 		printf("Path Planner Astar não encontrou o caminho\n");
-		return plan;
+		return 0;
 	}
 	else
 	{
 		current = open.top();
 		astar_mount_path_message(current);
-		plan = astar_mount_offroad_planner_plan(robot_pose, goal_pose);
+//		plan = astar_mount_offroad_planner_plan(robot_pose, goal_pose);
 		open.clear();
 	}
 
 	clear_astar_map(astar_map);
 	free(heuristic_obstacle_map);
 	astar_path_sended = 1;
-	return(plan);
+	return(1);
 
 }
 
@@ -1175,34 +1191,46 @@ static void
 carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	carmen_point_t robot_position = {msg->globalpos.x, msg->globalpos.y, msg->globalpos.theta};
-	offroad_planner_plan_t plan_path_poses;
 	current_globalpos_msg = *msg;
 	if (final_goal_received != 0)
 	{
 //		printf("Pos_message_handler: %lf %lf %lf\n", robot_position.x, robot_position.y, robot_position.theta);
-		plan_path_poses = carmen_path_planner_astar_get_path(&robot_position, final_goal);
+		int result_planner = carmen_path_planner_astar_get_path(&robot_position, final_goal);
+
+		if(result_planner)
+			plan_path_poses = astar_mount_offroad_planner_plan(&robot_position, final_goal);
 		//printf("Primeiro print %f %f %f \n", plan_path_poses.path.points->x, plan_path_poses.path.points->y, plan_path_poses.path.points->theta);
 
 		if(astar_path_sended)
 		{
 			publish_plan(plan_path_poses.path, msg);
+
 		}
+
 		final_goal_received = 0;
 
 	}
 
 	if(astar_path_sended && DIST2D(robot_position, *route_planner_road_network_message.poses) > 2.0)
 	{
-		printf("Primeiro print %f %f %f \n", route_planner_road_network_message.poses->x, route_planner_road_network_message.poses->y, route_planner_road_network_message.poses->theta);
-/*
+//		printf("route_planner print %f %f %f \n", route_planner_road_network_message.poses->x, route_planner_road_network_message.poses->y, route_planner_road_network_message.poses->theta);
+//		printf("plan_path print %f %f %f \n", plan_path_poses.path.points->x, plan_path_poses.path.points->y, plan_path_poses.path.points->theta);
+
 		int nearest_pose_index = get_index_of_nearest_pose_in_path(route_planner_road_network_message.poses, robot_position, route_planner_road_network_message.number_of_poses);
 		route_planner_road_network_message.poses_back = get_poses_back(route_planner_road_network_message.poses, nearest_pose_index);
 		route_planner_road_network_message.poses = &(route_planner_road_network_message.poses[nearest_pose_index]);
 		route_planner_road_network_message.number_of_poses = route_planner_road_network_message.number_of_poses - nearest_pose_index;
 		route_planner_road_network_message.number_of_poses_back = nearest_pose_index + 1;
 		carmen_route_planner_publish_road_network_message(&route_planner_road_network_message);
-*/
+//		printf("poses reenviadas %f %f %f \n", route_planner_road_network_message.poses->x, route_planner_road_network_message.poses->y, route_planner_road_network_message.poses->theta);
+	}
 
+	if(astar_path_sended && DIST2D_P(&robot_position, final_goal) < 6.0){
+		printf("Chegou ao destino\n");
+		astar_path_sended = 0;
+		free_lanes(route_planner_road_network_message);
+		free(route_planner_road_network_message.poses_back);
+		carmen_astar_path_poses.clear();
 	}
 
 	//	if (astar.carmen_offroad_planner_update_robot_pose(&robot_position) == 0)
@@ -1314,7 +1342,7 @@ subscribe_messages()
 void
 define_messages()
 {
-//	carmen_route_planner_define_messages();
+	carmen_route_planner_define_messages();
 }
 
 
@@ -1326,7 +1354,6 @@ read_parameters(int argc, char **argv)
 	carmen_param_t param_list[] = 
 	{
 			{(char *)"robot",				(char *)"max_velocity", CARMEN_PARAM_DOUBLE, &robot_config.max_v, 1, NULL},//todo add max_v and max_phi in carmen.ini
-			{(char *)"robot",				(char *)"max_steering_angle", CARMEN_PARAM_DOUBLE, &robot_config.max_phi, 1, NULL},
 			{(char *)"robot",				(char *)"min_approach_dist", CARMEN_PARAM_DOUBLE, &robot_config.approach_dist, 1, NULL},
 			{(char *)"robot",				(char *)"min_side_dist", CARMEN_PARAM_DOUBLE, &robot_config.side_dist, 1, NULL},
 			{(char *)"robot",				(char *)"length", CARMEN_PARAM_DOUBLE, &robot_config.length, 0, NULL},
@@ -1346,6 +1373,7 @@ read_parameters(int argc, char **argv)
 			{(char *)"navigator",			(char *)"replan_frequency", CARMEN_PARAM_DOUBLE, &nav_config.replan_frequency, 1, NULL},
 			{(char *)"navigator",			(char *)"dont_integrate_odometry", CARMEN_PARAM_ONOFF, &nav_config.dont_integrate_odometry, 1, NULL},
 			{(char *)"navigator",			(char *)"plan_to_nearest_free_point", CARMEN_PARAM_ONOFF,	&nav_config.plan_to_nearest_free_point, 1, NULL},
+			{(char *)"path_planner_astar",	(char *)"max_steering_angle", CARMEN_PARAM_DOUBLE, &robot_config.max_phi, 1, NULL},
 			{(char *)"path_planner_astar",		(char *)"state_map_resolution", CARMEN_PARAM_DOUBLE, &astar_config.state_map_resolution, 1, NULL},
 			{(char *)"path_planner_astar",		(char *)"state_map_theta_resolution", CARMEN_PARAM_INT, &astar_config.state_map_theta_resolution, 1, NULL},
 			{(char *)"path_planner_astar",		(char *)"precomputed_cost_size", CARMEN_PARAM_INT, &astar_config.precomputed_cost_size, 1, NULL},
@@ -1379,6 +1407,8 @@ main(int argc, char **argv)
 
 	define_messages();
 	subscribe_messages();
+	printf("Aguardando Final Goal\n");
+
 	signal(SIGINT, offroad_planner_shutdown);
 
 	carmen_ipc_dispatch();
