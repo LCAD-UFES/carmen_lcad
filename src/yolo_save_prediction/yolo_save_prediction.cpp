@@ -32,35 +32,79 @@ void save_yolo_predictions_to_file(vector<bbox_t> predictions, char *file_path)
 	for (int i = 0; i < predictions.size(); i++)
 	{
 		int id = 0;
+
+/***
+ * 
+ *  name	 	 yolo|iara
+ * 	person          0|2
+	bicycle         1|5
+	car             2|0
+	motorbike       3|4
+	aeroplane       4|-
+	bus             5|3
+	train           6|3
+	truck           7|1
+	boat            8|-
+	traffic light   9|6
+ * 
+ */
+
 		switch (predictions[i].obj_id)
 		{
-			case 0:
-			{
-				id = 2;
-				fprintf(output_file, "%d %f %f %f %f %f\n", id, predictions[i].prob, predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
-				break;
-			}
+
+			//car
 			case 2:
 			{
 				id = 0;
 				fprintf(output_file, "%d %f %f %f %f %f\n", id, predictions[i].prob, predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
 				break;
 			}
-			case 5:
-			{
-				id = 1;
-				fprintf(output_file, "%d %f %f %f %f %f\n", id, predictions[i].prob, predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
-				break;
-			}
+			//truck
 			case 7:
 			{
 				id = 1;
 				fprintf(output_file, "%d %f %f %f %f %f\n", id, predictions[i].prob, predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
 				break;
 			}
-			case 9:
+			//person
+			case 0:
+			{
+				id = 2;
+				fprintf(output_file, "%d %f %f %f %f %f\n", id, predictions[i].prob, predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
+				break;
+			}
+			//bus
+			case 5:
 			{
 				id = 3;
+				fprintf(output_file, "%d %f %f %f %f %f\n", id, predictions[i].prob, predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
+				break;
+			}
+			//bus
+			case 6:
+			{
+				id = 3;
+				fprintf(output_file, "%d %f %f %f %f %f\n", id, predictions[i].prob, predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
+				break;
+			}
+			//motorbike
+			case 3:
+			{
+				id = 4;
+				fprintf(output_file, "%d %f %f %f %f %f\n", id, predictions[i].prob, predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
+				break;
+			}
+			//bicycle
+			case 1:
+			{
+				id = 5;
+				fprintf(output_file, "%d %f %f %f %f %f\n", id, predictions[i].prob, predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
+				break;
+			}
+			//trafficlight
+			case 9:
+			{
+				id = 6;
 				fprintf(output_file, "%d %f %f %f %f %f\n", id, predictions[i].prob, predictions[i].x, predictions[i].y, predictions[i].w, predictions[i].h);
 				break;
 			}
