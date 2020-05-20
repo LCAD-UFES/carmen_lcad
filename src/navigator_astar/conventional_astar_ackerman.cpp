@@ -43,10 +43,7 @@ void print_path(carmen_planner_path_p path)
 {
 	int i;
 	for (i = 0; i < path->length; i++)
-	{
 		printf(" x %.2f y %.2f phi %.2f\ttheta %.2f T x %.2f\t\n", path->points[i].x, path->points[i].y,carmen_radians_to_degrees(path->points[i].phi), carmen_radians_to_degrees(path->points[i].theta),path->points[i].v);
-
-	}
 }
 
 
@@ -324,7 +321,7 @@ AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_poi
 	{
 		if (distance_theta < carmen_degrees_to_radians(15))
 		{
-			//printf("in the GOAL\n");
+			printf("in the GOAL\n");
 			return;
 		}
 	}
@@ -332,7 +329,7 @@ AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_poi
 
 	if (is_obstacle_new(goal))
 	{
-		//printf("GOAL is obstacle\n");
+		printf("GOAL is obstacle\n");
 		return;
 	}
 
@@ -350,7 +347,7 @@ AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_poi
 
 	astar_call_cont++;
 
-	heap = fh_makekeyheap();
+	astar_queue = fh_makekeyheap();
 	start.theta = carmen_normalize_theta(start.theta);
 	carmen_astar_node_p node = (carmen_astar_node_p) malloc(sizeof(carmen_astar_node_t));
 	carmen_test_alloc(node);
@@ -368,7 +365,7 @@ AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_poi
 
 	t2 = carmen_get_time();
 	index = 0;
-	while ((node = (carmen_astar_node_p) fh_extractmin(heap)))
+	while ((node = (carmen_astar_node_p) fh_extractmin(astar_queue)))
 	{
 		if (astar_config.onroad_max_plan_time < t2 - t1 && current_state == BEHAVIOR_SELECTOR_FOLLOWING_LANE)
 		{
@@ -420,14 +417,14 @@ AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_poi
 		}
 		if (astar_config.smooth_path && current_state == BEHAVIOR_SELECTOR_FOLLOWING_LANE)
 			smooth_path_astar(path);
-		//print_path(path);
+		print_path(path);
 	}
 	else
 	{
 		printf("SEM CAMINHO!!\n");
 	}
 	//clean_astar_map();
-	fh_deleteheap(heap);
+	fh_deleteheap(astar_queue);
 	free_astar_map();
 
 	t2 = carmen_get_time();
@@ -439,15 +436,15 @@ AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_poi
 		GOAL.x  - carmen_planner_map->config.x_origin,
 		GOAL.y  - carmen_planner_map->config.y_origin);
 
-//	printf("iteracoes: %d  range: %d iterações/s: %.2f mil tempo: %.3f cont_nos_abertos_novos: %d cont_nos_abertos_alterados: %d  cont_nos_abertos_alterados_fechados %d cont_nos_podados: %d\n",
-//		index,
-//		path->length,
-//		(index * 0.001) / (t2 - t1),
-//		(t2 - t1),
-//		cont_nos_abertos_novos,
-//		cont_nos_abertos_alterados,
-//		cont_nos_abertos_alterados_fechados,
-//		cont_nos_podados);
+	printf("iteracoes: %d  range: %d iterações/s: %.2f mil tempo: %.3f cont_nos_abertos_novos: %d cont_nos_abertos_alterados: %d  cont_nos_abertos_alterados_fechados %d cont_nos_podados: %d\n",
+		index,
+		path->length,
+		(index * 0.001) / (t2 - t1),
+		(t2 - t1),
+		cont_nos_abertos_novos,
+		cont_nos_abertos_alterados,
+		cont_nos_abertos_alterados_fechados,
+		cont_nos_podados);
 
 
 	return;
@@ -570,7 +567,7 @@ AstarAckerman::add_list_fh(carmen_astar_node_p new_node)
 		if (astar_map[x][y][theta] == NULL || astar_map[x][y][theta]->astar_call_cont != astar_call_cont)
 		{
 			astar_map[x][y][theta] = new_node;
-			astar_map[x][y][theta]->fh_node = 	fh_insertkey(heap,
+			astar_map[x][y][theta]->fh_node = 	fh_insertkey(astar_queue,
 					round((astar_map[x][y][theta]->f_score / carmen_planner_map->config.resolution) * 10000),
 					astar_map[x][y][theta]);
 			cont_nos_abertos_novos++;
@@ -589,13 +586,13 @@ AstarAckerman::add_list_fh(carmen_astar_node_p new_node)
 
 			if (astar_map[x][y][theta]->status == CLOSE)
 			{
-				fh_replacekey(heap, astar_map[x][y][theta]->fh_node,
+				fh_replacekey(astar_queue, astar_map[x][y][theta]->fh_node,
 						round((astar_map[x][y][theta]->f_score / carmen_planner_map->config.resolution) * 10000));
 				cont_nos_abertos_alterados_fechados++;
 			}
 			else
 			{
-				astar_map[x][y][theta]->fh_node = 	fh_insertkey(heap,
+				astar_map[x][y][theta]->fh_node = 	fh_insertkey(astar_queue,
 						round((astar_map[x][y][theta]->f_score / carmen_planner_map->config.resolution) * 10000),
 						astar_map[x][y][theta]);
 			}

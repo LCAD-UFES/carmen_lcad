@@ -27,24 +27,18 @@ extern "C"
 
     	int number_of_nearby_lanes;
     	int *nearby_lanes_indexes;	// O ponto em nearby_lanes onde comecca cada lane.
+    	int *nearby_lanes_sizes;	// O tamanho de cada lane.
     	int *nearby_lanes_ids;		// Cada id eh um codigo que identifica uma lane unicamente.
     	int nearby_lanes_size;		// Igual ao numero de poses de todas as lanes somado.
     	carmen_ackerman_traj_point_t *nearby_lanes;	// Todas as lanes (number_of_nearby_lanes), uma apos a outra. A primeira lane eh sempre a rota e sempre deve ter id = 0, jah que ela eh uma composicao de lanes do grafo
-    	int *traffic_restrictions; 	// LEFT_MARKING | RIGHT_MARKING | LEVEL | YIELD | BIFURCATION
-    								//    enum            enum       2 bits
-
-        //  Uma network com tres lanes com tamanhos 5, 3 e 6 poses teria:
-        //  number_of_nearby_lanes = 3
-        //	nearby_lanes_indexes -> 0, 5, 8
-        //	nearby_lanes_size = 5+3+6 = 14
-        //	nearby_lanes (p_lane_pose) -> p_0_0, p_0_1, p_0_2, p_0_3, p_0_4, p_1_0, p_1_1, p_1_2, p_2_0, p_2_1, p_2_2, p_2_3, p_2_4, p_2_5
+    	int *traffic_restrictions; 	// Veja route_planner_messages.h.
 
     	double timestamp;
         char *host;
     } carmen_frenet_path_planner_set_of_paths;
 
 	#define CARMEN_FRENET_PATH_PLANNER_SET_OF_PATHS_MESSAGE_NAME "carmen_frenet_path_planner_set_of_paths"
-	#define CARMEN_FRENET_PATH_PLANNER_SET_OF_PATHS_MESSAGE_FMT  "{int, int, <{double, double, double, double, double}:1>, int, int, <{double, double, double, double, double}:5>, <{double, double, double, double, double}:2>, <{double, double, double, double, double}:5>, <int:2>, <int:2>, int, <int:11>, <int:11>, int, <{double, double, double, double, double}:14>, <int:14>, double, string}"
+	#define CARMEN_FRENET_PATH_PLANNER_SET_OF_PATHS_MESSAGE_FMT  "{int, int, <{double, double, double, double, double}:1>, int, int, <{double, double, double, double, double}:5>, <{double, double, double, double, double}:2>, <{double, double, double, double, double}:5>, <int:2>, <int:2>, int, <int:11>, <int:11>, <int:11>, int, <{double, double, double, double, double}:15>, <int:15>, double, string}"
 
 
 	typedef struct

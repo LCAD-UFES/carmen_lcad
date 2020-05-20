@@ -24,8 +24,10 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
+from absl import logging
 import numpy as np
 import tensorflow.compat.v1 as tf
+import utils
 from object_detection import argmax_matcher
 from object_detection import box_list
 from object_detection import faster_rcnn_box_coder
@@ -43,6 +45,9 @@ MAX_DETECTION_POINTS = 5000
 
 # The maximum number of detections per image.
 MAX_DETECTIONS_PER_IMAGE = 100
+
+# The minimal score threshold.
+MIN_SCORE_THRESH = 0.4
 
 
 def sigmoid(x):
@@ -176,12 +181,14 @@ def nms(dets, thresh):
   return keep
 
 
-def _generate_anchor_configs(min_level, max_level, num_scales, aspect_ratios):
+def _generate_anchor_configs(feat_sizes, min_level, max_level, num_scales,
+                             aspect_ratios):
   """Generates mapping from output level to a list of anchor configurations.
 
   A configuration is a tuple of (num_anchors, scale, aspect_ratio).
 
   Args:
+      feat_sizes: list of dict of integer numbers of feature map sizes.
       min_level: integer number of minimum level of the output feature pyramid.
       max_level: integer number of maximum level of the output feature pyramid.
       num_scales: integer number representing intermediate scales added
@@ -201,7 +208,9 @@ def _generate_anchor_configs(min_level, max_level, num_scales, aspect_ratios):
     for scale_octave in range(num_scales):
       for aspect in aspect_ratios:
         anchor_configs[level].append(
-            (2**level, scale_octave / float(num_scales), aspect))
+            ((feat_sizes[0]['height'] / float(feat_sizes[level]['height']),
+              feat_sizes[0]['width'] / float(feat_sizes[level]['width'])),
+             scale_octave / float(num_scales), aspect))
   return anchor_configs
 
 
@@ -209,9 +218,7 @@ def _generate_anchor_boxes(image_size, anchor_scale, anchor_configs):
   """Generates multiscale anchor boxes.
 
   Args:
-    image_size: integer number of input image size. The input image has the
-      same dimension for width and height. The image_size should be divided by
-      the largest feature stride 2^max_level.
+    image_size: tuple of integer numbers of input image size.
     anchor_scale: float number representing the scale of size of the base
       anchor to the feature stride 2^level.
     anchor_configs: a dictionary with keys as the levels of anchors and
@@ -228,14 +235,13 @@ def _generate_anchor_boxes(image_size, anchor_scale, anchor_configs):
     boxes_level = []
     for config in configs:
       stride, octave_scale, aspect = config
-      if image_size % stride != 0:
-        raise ValueError('input size must be divided by the stride.')
-      base_anchor_size = anchor_scale * stride * 2**octave_scale
-      anchor_size_x_2 = base_anchor_size * aspect[0] / 2.0
-      anchor_size_y_2 = base_anchor_size * aspect[1] / 2.0
+      base_anchor_size_x = anchor_scale * stride[1] * 2**octave_scale
+      base_anchor_size_y = anchor_scale * stride[0] * 2**octave_scale
+      anchor_size_x_2 = base_anchor_size_x * aspect[0] / 2.0
+      anchor_size_y_2 = base_anchor_size_y * aspect[1] / 2.0
 
-      x = np.arange(stride / 2, image_size, stride)
-      y = np.arange(stride / 2, image_size, stride)
+      x = np.arange(stride[1] / 2, image_size[1], stride[1])
+      y = np.arange(stride[0] / 2, image_size[0], stride[0])
       xv, yv = np.meshgrid(x, y)
       xv = xv.reshape(-1)
       yv = yv.reshape(-1)
@@ -252,9 +258,18 @@ def _generate_anchor_boxes(image_size, anchor_scale, anchor_configs):
   return anchor_boxes
 
 
-def _generate_detections_tf(cls_outputs, box_outputs, anchor_boxes, indices,
-                            classes, image_id, image_scale, num_classes,
-                            use_native_nms=False):
+def _generate_detections_tf(cls_outputs,
+                            box_outputs,
+                            anchor_boxes,
+                            indices,
+                            classes,
+                            image_id,
+                            image_scale,
+                            min_score_thresh=MIN_SCORE_THRESH,
+                            max_boxes_to_draw=MAX_DETECTIONS_PER_IMAGE,
+                            soft_nms_sigma=0.0,
+                            iou_threshold=0.5,
+                            use_native_nms=True):
   """Generates detections with model outputs and anchors.
 
   Args:
@@ -275,13 +290,22 @@ def _generate_detections_tf(cls_outputs, box_outputs, anchor_boxes, indices,
     image_scale: a float tensor representing the scale between original image
       and input image for the detector. It is used to rescale detections for
       evaluating with the original groundtruth annotations.
-    num_classes: a integer that indicates the number of classes.
+    min_score_thresh: A float representing the threshold for deciding when to
+      remove boxes based on score.
+    max_boxes_to_draw: Max number of boxes to draw.
+    soft_nms_sigma: A scalar float representing the Soft NMS sigma parameter;
+      See Bodla et al, https://arxiv.org/abs/1704.04503).  When
+        `soft_nms_sigma=0.0` (which is default), we fall back to standard (hard)
+        NMS.
+    iou_threshold: A float representing the threshold for deciding whether boxes
+      overlap too much with respect to IOU.
     use_native_nms: a bool that indicates whether to use native nms.
 
   Returns:
     detections: detection results in a tensor with each row representing
       [image_id, y, x, height, width, score, class]
   """
+  logging.info('Using tf version of post-processing.')
   anchor_boxes = tf.gather(anchor_boxes, indices)
 
   scores = tf.math.sigmoid(cls_outputs)
@@ -289,55 +313,42 @@ def _generate_detections_tf(cls_outputs, box_outputs, anchor_boxes, indices,
   boxes = decode_box_outputs_tf(
       tf.transpose(box_outputs, [1, 0]), tf.transpose(anchor_boxes, [1, 0]))
 
-  def _else(detections, class_id):
-    """Else branch forr generating detections."""
-    boxes_cls = tf.gather(boxes, indices)
-    scores_cls = tf.gather(scores, indices)
-    # Select top-scoring boxes in each class and apply non-maximum suppression
-    # (nms) for boxes in the same class. The selected boxes from each class are
-    # then concatenated for the final detection outputs.
-    all_detections_cls = tf.concat([tf.reshape(boxes_cls, [-1, 4]), scores_cls],
-                                   axis=1)
-    if use_native_nms:
-      top_detection_idx = tf.image.non_max_suppression(
-          all_detections_cls[:, :4],
-          all_detections_cls[:, 4],
-          MAX_DETECTIONS_PER_IMAGE,
-          iou_threshold=0.5)
-    else:
-      top_detection_idx = nms_tf(all_detections_cls, 0.5)
-    top_detections_cls = tf.gather(all_detections_cls, top_detection_idx)
-    height = top_detections_cls[:, 2] - top_detections_cls[:, 0]
-    width = top_detections_cls[:, 3] - top_detections_cls[:, 1]
-    top_detections_cls = tf.stack([top_detections_cls[:, 0] * image_scale,
-                                   top_detections_cls[:, 1] * image_scale,
-                                   height * image_scale, width * image_scale,
-                                   top_detections_cls[:, 4]], axis=-1)
+  if use_native_nms:
+    logging.info('Using native nms.')
+    top_detection_idx, scores = tf.image.non_max_suppression_with_scores(
+        boxes,
+        scores,
+        max_boxes_to_draw,
+        iou_threshold=iou_threshold,
+        score_threshold=min_score_thresh,
+        soft_nms_sigma=soft_nms_sigma)
+    boxes = tf.gather(boxes, top_detection_idx)
+  else:
+    logging.info('Using customized nms.')
+    scores = tf.expand_dims(scores, axis=1)
+    all_detections = tf.concat([boxes, scores], axis=1)
+    top_detection_idx = nms_tf(all_detections, iou_threshold)
+    detections = tf.gather(all_detections, top_detection_idx)
+    scores = detections[:, 4]
+    boxes = detections[:, :4]
+  height = boxes[:, 2] - boxes[:, 0]
+  width = boxes[:, 3] - boxes[:, 1]
 
-    top_detections_cls = tf.stack(
-        [
-            tf.cast(
-                tf.repeat(image_id, tf.size(top_detection_idx)), tf.float32),
-            *tf.unstack(top_detections_cls, 5, axis=1),
-            tf.repeat(class_id + 1.0, tf.size(top_detection_idx))
-        ],
-        axis=1)
-
-    detections = tf.concat([detections, top_detections_cls], axis=0)
-    return detections
-
-  detections = tf.constant([], tf.float32, [0, 7])
-  for c in range(num_classes):
-    indices = tf.where(tf.equal(classes, c))
-    detections = tf.cond(
-        tf.equal(tf.shape(indices)[0], 0), lambda: detections,
-        lambda class_id=c: _else(detections, class_id))
-
-  return tf.identity(detections, name='detection')
+  detections = tf.stack([
+      tf.cast(tf.tile(image_id, [tf.size(top_detection_idx)]), tf.float32),
+      boxes[:, 0] * image_scale,
+      boxes[:, 1] * image_scale,
+      height * image_scale,
+      width * image_scale,
+      scores,
+      tf.cast(tf.gather(classes, top_detection_idx) + 1, tf.float32)
+  ], axis=1)
+  return detections
 
 
 def _generate_detections(cls_outputs, box_outputs, anchor_boxes, indices,
-                         classes, image_id, image_scale, num_classes):
+                         classes, image_id, image_scale, num_classes,
+                         max_boxes_to_draw):
   """Generates detections with model outputs and anchors.
 
   Args:
@@ -359,6 +370,7 @@ def _generate_detections(cls_outputs, box_outputs, anchor_boxes, indices,
       and input image for the detector. It is used to rescale detections for
       evaluating with the original groundtruth annotations.
     num_classes: a integer that indicates the number of classes.
+    max_boxes_to_draw: max number of boxes to draw per image.
 
   Returns:
     detections: detection results in a tensor with each row representing
@@ -404,15 +416,15 @@ def _generate_detections(cls_outputs, box_outputs, anchor_boxes, indices,
     # take final 100 detections
     indices = np.argsort(-detections[:, -2])
     detections = np.array(
-        detections[indices[0:MAX_DETECTIONS_PER_IMAGE]], dtype=np.float32)
+        detections[indices[0:max_boxes_to_draw]], dtype=np.float32)
     # Add dummy detections to fill up to 100 detections
-    n = max(MAX_DETECTIONS_PER_IMAGE - len(detections), 0)
+    n = max(max_boxes_to_draw - len(detections), 0)
     detections_dummy = _generate_dummy_detections(n)
     detections = np.vstack([detections, detections_dummy])
-    detections[:, 1:5] *= image_scale
   else:
-    detections = _generate_dummy_detections(MAX_DETECTIONS_PER_IMAGE)
-    detections[:, 1:5] *= image_scale
+    detections = _generate_dummy_detections(max_boxes_to_draw)
+
+  detections[:, 1:5] *= image_scale
 
   return detections
 
@@ -435,23 +447,26 @@ class Anchors(object):
         [(1, 1), (1.4, 0.7), (0.7, 1.4)] adds three anchors on each level.
       anchor_scale: float number representing the scale of size of the base
         anchor to the feature stride 2^level.
-      image_size: integer number of input image size. The input image has the
-        same dimension for width and height. The image_size should be divided by
-        the largest feature stride 2^max_level.
+      image_size: integer number or tuple of integer number of input image size.
     """
     self.min_level = min_level
     self.max_level = max_level
     self.num_scales = num_scales
     self.aspect_ratios = aspect_ratios
     self.anchor_scale = anchor_scale
-    self.image_size = image_size
+    if isinstance(image_size, int):
+      self.image_size = (image_size, image_size)
+    else:
+      self.image_size = image_size
+    self.feat_sizes = utils.get_feat_sizes(image_size, max_level)
     self.config = self._generate_configs()
     self.boxes = self._generate_boxes()
 
   def _generate_configs(self):
     """Generate configurations of anchor boxes."""
-    return _generate_anchor_configs(self.min_level, self.max_level,
-                                    self.num_scales, self.aspect_ratios)
+    return _generate_anchor_configs(self.feat_sizes, self.min_level,
+                                    self.max_level, self.num_scales,
+                                    self.aspect_ratios)
 
   def _generate_boxes(self):
     """Generates multiscale anchor boxes."""
@@ -496,12 +511,14 @@ class AnchorLabeler(object):
     anchors = self._anchors
     count = 0
     for level in range(anchors.min_level, anchors.max_level + 1):
-      feat_size = int(anchors.image_size / 2**level)
-      steps = feat_size**2 * anchors.get_anchors_per_location()
+      feat_size = anchors.feat_sizes[level]
+      steps = feat_size['height'] * feat_size[
+          'width'] * anchors.get_anchors_per_location()
       indices = tf.range(count, count + steps)
       count += steps
       labels_unpacked[level] = tf.reshape(
-          tf.gather(labels, indices), [feat_size, feat_size, -1])
+          tf.gather(labels, indices),
+          [feat_size['height'], feat_size['width'], -1])
     return labels_unpacked
 
   def label_anchors(self, gt_boxes, gt_labels):
@@ -543,14 +560,30 @@ class AnchorLabeler(object):
 
     return cls_targets_dict, box_targets_dict, num_positives
 
-  def generate_detections(self, cls_outputs, box_outputs, indices, classes,
-                          image_id, image_scale, disable_pyfun=None):
+  def generate_detections(self,
+                          cls_outputs,
+                          box_outputs,
+                          indices,
+                          classes,
+                          image_id,
+                          image_scale,
+                          min_score_thresh=MIN_SCORE_THRESH,
+                          max_boxes_to_draw=MAX_DETECTIONS_PER_IMAGE,
+                          disable_pyfun=None):
+    """Generate detections based on class and box predictions."""
     if disable_pyfun:
-      return _generate_detections_tf(cls_outputs, box_outputs,
-                                     self._anchors.boxes, indices, classes,
-                                     image_id, image_scale, self._num_classes)
+      return _generate_detections_tf(
+          cls_outputs,
+          box_outputs,
+          self._anchors.boxes,
+          indices,
+          classes,
+          image_id,
+          image_scale,
+          min_score_thresh=min_score_thresh,
+          max_boxes_to_draw=max_boxes_to_draw)
     else:
       return tf.py_func(_generate_detections, [
           cls_outputs, box_outputs, self._anchors.boxes, indices, classes,
-          image_id, image_scale, self._num_classes
+          image_id, image_scale, self._num_classes, max_boxes_to_draw,
       ], tf.float32)

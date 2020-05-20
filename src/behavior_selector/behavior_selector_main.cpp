@@ -203,10 +203,7 @@ copy_rddf_message(carmen_rddf_road_profile_message *last_rddf_message, carmen_rd
 carmen_ackerman_traj_point_t *
 compute_simulated_objects(double timestamp)
 {
-	if (!necessary_maps_available)
-		return (NULL);
-
-	if (current_set_of_paths == NULL)
+	if (!necessary_maps_available || !current_set_of_paths)
 		return (NULL);
 
 	carmen_ackerman_traj_point_t *poses = current_set_of_paths->rddf_poses_ahead;
@@ -261,7 +258,7 @@ compute_simulated_objects(double timestamp)
 carmen_ackerman_traj_point_t *
 compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
-	if (!necessary_maps_available)
+	if (!necessary_maps_available || !current_set_of_paths || (current_set_of_paths->number_of_nearby_lanes == 0))
 		return (NULL);
 
 	carmen_rddf_road_profile_message *rddf = last_rddf_message;
@@ -295,12 +292,12 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	if (stop_t0 <= t && disp > 0.0)
 		disp -= 0.03;
 	if (t < stop_t1)
-//		v = current_robot_pose_v_and_phi.v + 0.9;
-		v = current_robot_pose_v_and_phi.v + 0.5; // Motos!
+		v = current_robot_pose_v_and_phi.v + 0.9;
+//		v = current_robot_pose_v_and_phi.v + 0.5; // Motos!
 
 	if (t > stop_t2)
 	{
-		v = current_robot_pose_v_and_phi.v - 0.9;
+		v = current_robot_pose_v_and_phi.v - 1.5;
 		if (v < 5.0)
 			v = 5.0;
 	}
@@ -314,7 +311,7 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	pose_ahead.y = previous_pose.y + dy;
 
 	static carmen_ackerman_traj_point_t next_pose = {0, 0, 0, 0, 0};
-	for (int i = 0; i < current_set_of_paths->nearby_lanes_indexes[1] - 1; i++)
+	for (int i = 0; i < current_set_of_paths->nearby_lanes_sizes[0]; i++)
 	{
 		int status;
 		next_pose = carmen_get_point_nearest_to_trajectory(&status, current_set_of_paths->nearby_lanes[i], current_set_of_paths->nearby_lanes[i + 1], pose_ahead, 0.1);
@@ -547,311 +544,6 @@ publish_new_best_path(int best_path, double timestamp)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool
-stop_sign_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
-{
-	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-				&current_robot_pose_v_and_phi, wait_start_moving);
-
-	if (nearest_velocity_related_annotation == NULL)
-		return (false);
-
-	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
-	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
-	carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
-
-	if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
-		(distance_to_act_on_annotation >= distance_to_annotation) &&
-		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
-		return (true);
-	else
-		return (false);
-}
-
-
-double
-distance_to_stop_sign(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
-{
-	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-				&current_robot_pose_v_and_phi, wait_start_moving);
-
-	if (nearest_velocity_related_annotation == NULL)
-		return (1000.0);
-
-	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
-
-	if (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
-		return (distance_to_annotation);
-	else
-		return (1000.0);
-}
-
-
-double
-distance_to_red_traffic_light(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
-{
-	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-				&current_robot_pose_v_and_phi, wait_start_moving);
-
-	if (nearest_velocity_related_annotation == NULL)
-		return (1000.0);
-
-	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
-
-	if (red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp) &&
-		(nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP))
-		return (distance_to_annotation);
-	else
-		return (1000.0);
-}
-
-
-double
-distance_to_traffic_light_stop(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
-{
-	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-				&current_robot_pose_v_and_phi, false);
-
-	if (nearest_velocity_related_annotation == NULL)
-		return (1000.0);
-
-	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
-
-	if (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP)
-		return (distance_to_annotation);
-	else
-		return (1000.0);
-}
-
-
-double
-distance_to_busy_pedestrian_track(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
-{
-	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-				&current_robot_pose_v_and_phi, wait_start_moving);
-
-	if (nearest_velocity_related_annotation == NULL)
-		return (1000.0);
-
-	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
-
-	if (busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) &&
-		(nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP))
-		return (distance_to_annotation);
-	else
-		return (1000.0);
-}
-
-
-double
-distance_to_pedestrian_track_stop(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
-{
-	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-				&current_robot_pose_v_and_phi, false);
-
-	if (nearest_velocity_related_annotation == NULL)
-		return (1000.0);
-
-	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
-
-	if (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP)
-		return (distance_to_annotation);
-	else
-		return (1000.0);
-}
-
-
-void
-clear_state_output(carmen_behavior_selector_state_message *decision_making_state_msg)
-{
-    decision_making_state_msg->behaviour_seletor_mode = none;
-}
-
-
-int
-perform_state_action(carmen_behavior_selector_state_message *decision_making_state_msg, carmen_ackerman_traj_point_t *goal __attribute__ ((unused)),
-		double timestamp __attribute__ ((unused)))
-{
-	switch (decision_making_state_msg->low_level_state)
-	{
-		case Initializing:
-			break;
-		case Stopped:
-			break;
-		case Free_Running:
-			break;
-
-		case Following_Moving_Object:
-			break;
-
-		case Stopping_At_Red_Traffic_Light:
-			break;
-		case Stopped_At_Red_Traffic_Light_S0:
-			carmen_navigator_ackerman_stop();
-			break;
-		case Stopped_At_Red_Traffic_Light_S1:
-			break;
-		case Stopped_At_Red_Traffic_Light_S2:
-			carmen_navigator_ackerman_go();
-			break;
-
-		case Stopping_At_Busy_Pedestrian_Track:
-			break;
-		case Stopped_At_Busy_Pedestrian_Track_S0:
-			carmen_navigator_ackerman_stop();
-			break;
-		case Stopped_At_Busy_Pedestrian_Track_S1:
-			break;
-		case Stopped_At_Busy_Pedestrian_Track_S2:
-			carmen_navigator_ackerman_go();
-			break;
-
-		case Stopping_At_Stop_Sign:
-			break;
-		case Stopped_At_Stop_Sign_S0:
-			carmen_navigator_ackerman_stop();
-			break;
-		case Stopped_At_Stop_Sign_S1:
-			break;
-		default:
-			printf("Error: Unknown state in perform_state_action()\n");
-			return (1);
-	}
-
-	return (0);
-}
-
-
-int
-perform_state_transition(carmen_behavior_selector_state_message *decision_making_state_msg,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int goal_type __attribute__ ((unused)), double timestamp)
-{
-	switch (decision_making_state_msg->low_level_state)
-	{
-		case Initializing:
-			decision_making_state_msg->low_level_state = Stopped;
-			break;
-		case Stopped:
-			if (!autonomous)
-				decision_making_state_msg->low_level_state = Stopped;
-			else
-				decision_making_state_msg->low_level_state = Free_Running;
-			break;
-		case Free_Running:
-			if (red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
-				decision_making_state_msg->low_level_state = Stopping_At_Red_Traffic_Light;
-			else if (busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
-				decision_making_state_msg->low_level_state = Stopping_At_Busy_Pedestrian_Track;
-			else if (stop_sign_ahead(current_robot_pose_v_and_phi))
-				decision_making_state_msg->low_level_state = Stopping_At_Stop_Sign;
-			break;
-
-		case Stopping_At_Red_Traffic_Light:
-			if ((current_robot_pose_v_and_phi.v < 0.15) &&
-				((distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp) < 2.0) ||
-				 (distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp) == 1000.0)))
-				decision_making_state_msg->low_level_state = Stopped_At_Red_Traffic_Light_S0;
-			else if (!red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
-				decision_making_state_msg->low_level_state = Free_Running;
-			break;
-		case Stopped_At_Red_Traffic_Light_S0:
-			decision_making_state_msg->low_level_state = Stopped_At_Red_Traffic_Light_S1;
-			break;
-		case Stopped_At_Red_Traffic_Light_S1:
-			{
-				static int steps2 = 0;
-
-				if (steps2 > 3)
-				{
-					if (!red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp) || autonomous)
-					{
-						steps2 = 0;
-						decision_making_state_msg->low_level_state = Stopped_At_Red_Traffic_Light_S2;
-					}
-				}
-				else
-					steps2++;
-			}
-			break;
-		case Stopped_At_Red_Traffic_Light_S2:
-			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5) && (distance_to_traffic_light_stop(current_robot_pose_v_and_phi) > 2.0))
-				decision_making_state_msg->low_level_state = Free_Running;
-			break;
-
-		case Stopping_At_Busy_Pedestrian_Track:
-			if ((current_robot_pose_v_and_phi.v < 0.15) &&
-				((distance_to_busy_pedestrian_track(current_robot_pose_v_and_phi, timestamp) < 2.0) ||
-				 (distance_to_busy_pedestrian_track(current_robot_pose_v_and_phi, timestamp) == 1000.0)))
-				decision_making_state_msg->low_level_state = Stopped_At_Busy_Pedestrian_Track_S0;
-			else if (!busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
-				decision_making_state_msg->low_level_state = Free_Running;
-			break;
-		case Stopped_At_Busy_Pedestrian_Track_S0:
-			decision_making_state_msg->low_level_state = Stopped_At_Busy_Pedestrian_Track_S1;
-			break;
-		case Stopped_At_Busy_Pedestrian_Track_S1:
-			{
-				static int steps2 = 0;
-
-				if (steps2 > 3)
-				{
-					if (!busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) || autonomous)
-					{
-						steps2 = 0;
-						decision_making_state_msg->low_level_state = Stopped_At_Busy_Pedestrian_Track_S2;
-					}
-				}
-				else
-					steps2++;
-			}
-			break;
-		case Stopped_At_Busy_Pedestrian_Track_S2:
-			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5) && (distance_to_pedestrian_track_stop(current_robot_pose_v_and_phi) > 2.0))
-				decision_making_state_msg->low_level_state = Free_Running;
-			if (busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
-				decision_making_state_msg->low_level_state = Stopped_At_Busy_Pedestrian_Track_S0;
-			break;
-
-		case Stopping_At_Stop_Sign:
-			if ((fabs(current_robot_pose_v_and_phi.v) < 0.01) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 4.0))
-				decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
-			break;
-		case Stopped_At_Stop_Sign_S0:
-			decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S1;
-			break;
-		case Stopped_At_Stop_Sign_S1:
-			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5))
-				decision_making_state_msg->low_level_state = Free_Running;
-			break;
-		default:
-			printf("Error: Unknown state in perform_state_transition()\n");
-			return (2);
-	}
-	return (0);
-}
-
-
-int
-run_decision_making_state_machine(carmen_behavior_selector_state_message *decision_making_state_msg,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen_ackerman_traj_point_t *goal, int goal_type,
-		double timestamp)
-{
-	int error;
-
-	error = perform_state_transition(decision_making_state_msg, current_robot_pose_v_and_phi, goal_type, timestamp);
-	if (error != 0)
-		return (error);
-
-	error = perform_state_action(decision_making_state_msg, goal, timestamp);
-	if (error != 0)
-		return (error);
-
-	clear_state_output(decision_making_state_msg);
-
-	return (0);
-}
-
-
 carmen_ackerman_traj_point_t *
 check_soft_stop(carmen_ackerman_traj_point_t *first_goal, carmen_ackerman_traj_point_t *goal_list, int &goal_type)
 {
@@ -954,7 +646,7 @@ set_behaviours_parameters(carmen_ackerman_traj_point_t current_robot_pose_v_and_
 void
 set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
-	carmen_frenet_path_planner_set_of_paths set_of_paths;
+	static carmen_frenet_path_planner_set_of_paths set_of_paths;
 
 	if (behavior_selector_performs_path_planning)
 	{
@@ -963,6 +655,11 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double
 				road_network_message->annotations, road_network_message->annotations_codes, road_network_message, timestamp);
 		current_set_of_paths = &set_of_paths;
 	}
+
+	current_moving_objects = behavior_selector_moving_objects_tracking(current_set_of_paths, &distance_map);
+	if (current_moving_objects)
+		carmen_moving_objects_point_clouds_publish_message(current_moving_objects);
+
 
 	if (use_frenet_path_planner)
 		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, 0, timestamp);
@@ -1020,7 +717,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
 			first_goal, goal_type, timestamp);
 	if (error != 0)
-		carmen_die("State machine error code %d\n", error);
+		carmen_die("Behaviour Selector state machine error. State machine error code %d\n", error);
 
 	static carmen_ackerman_traj_point_t last_valid_goal;
 	static carmen_ackerman_traj_point_t *last_valid_goal_p = NULL;
@@ -1055,10 +752,6 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		add_simulated_object(simulated_object_pose2);
 #endif
 
-#if defined(SIMULATE_LATERAL_MOVING_OBSTACLE) || defined(SIMULATE_MOVING_OBSTACLE)
-	if (virtual_laser_message.num_positions >= 0)
-		publish_simulated_objects();
-#endif
 	if (virtual_laser_message.num_positions >= 0)
 		publish_simulated_objects();
 
@@ -1138,7 +831,7 @@ frenet_path_planner_set_of_paths_message_handler(carmen_frenet_path_planner_set_
 }
 
 
-static void
+void
 carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message *moving_objects_message)
 {
 	current_moving_objects = moving_objects_message;
@@ -1408,7 +1101,7 @@ register_handlers()
 
 	carmen_voice_interface_subscribe_command_message(NULL, (carmen_handler_t) carmen_voice_interface_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
+//	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	if (behavior_selector_performs_path_planning)
 	{
@@ -1425,25 +1118,27 @@ define_messages()
 
 	err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME, IPC_VARIABLE_LENGTH,
 			CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_FMT);
-	carmen_test_ipc_exit(err, "Could not define message",
-			CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME);
+	carmen_test_ipc_exit(err, "Could not define message", CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME);
 
 	err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, IPC_VARIABLE_LENGTH,
 			CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_FMT);
-	carmen_test_ipc_exit(err, "Could not define message",
-			CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
+	carmen_test_ipc_exit(err, "Could not define message", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
 
 	err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME, IPC_VARIABLE_LENGTH,
 			CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_FMT);
-	carmen_test_ipc_exit(err, "Could not define message",
-			CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME);
+	carmen_test_ipc_exit(err, "Could not define message", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME);
 
     err = IPC_defineMsg(CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
     		CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_FMT);
-    carmen_test_ipc_exit(err, "Could not define",
-    		CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_NAME);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_NAME);
+
+    err = IPC_defineMsg(CARMEN_RDDF_ROAD_PROFILE_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
+    		CARMEN_RDDF_ROAD_PROFILE_MESSAGE_FMT);
+    carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_ROAD_PROFILE_MESSAGE_NAME);
 
     carmen_frenet_path_planner_define_messages();
+
+    carmen_moving_objects_point_clouds_define_messages();
 }
 
 

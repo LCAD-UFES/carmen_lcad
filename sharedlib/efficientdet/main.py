@@ -91,9 +91,10 @@ flags.DEFINE_string(
 flags.DEFINE_string(
     'val_json_file',
     None,
-    'COCO validation JSON containing golden bounding boxes.')
+    'COCO validation JSON containing golden bounding boxes. If None, use the '
+    'ground truth from the dataloader. Ignored if testdev_dir is not None.')
 flags.DEFINE_string('testdev_dir', None,
-                    'COCO testdev dir. If true, ignorer val_json_file.')
+                    'COCO testdev dir. If not None, ignorer val_json_file.')
 flags.DEFINE_integer('num_examples_per_epoch', 120000,
                      'Number of examples in one epoch')
 flags.DEFINE_integer('num_epochs', 15, 'Number of epochs for training')
@@ -135,13 +136,15 @@ def main(argv):
     if FLAGS.validation_file_pattern is None:
       raise RuntimeError('You must specify --validation_file_pattern '
                          'for evaluation.')
-    if not FLAGS.val_json_file and not FLAGS.testdev_dir:
-      raise RuntimeError(
-          'You must specify --val_json_file or --testdev for evaluation.')
 
   # Parse and override hparams
   config = hparams_config.get_detection_config(FLAGS.model_name)
   config.override(FLAGS.hparams)
+
+  if isinstance(config.image_size, str) and 'x' in config.image_size:
+    # image size is in format of width x height.
+    width, height = config.image_size.split('x')
+    config.image_size = (int(height), int(width))
 
   # The following is for spatial partitioning. `features` has one tensor while
   # `labels` had 4 + (`max_level` - `min_level` + 1) * 2 tensors. The input
@@ -171,7 +174,8 @@ def main(argv):
     # [batch_size, 6, 6, 9], which cannot be partitioned (6 % 4 != 0). In this
     # case, the level-8 and level-9 target tensors are not partition-able, and
     # the highest partition-able level is 7.
-    image_size = config.get('image_size')
+    feat_sizes = utils.get_feat_sizes(
+        config.get('image_size'), config.get('max_level'))
     for level in range(config.get('min_level'), config.get('max_level') + 1):
 
       def _can_partition(spatial_dim):
@@ -179,12 +183,13 @@ def main(argv):
             spatial_dim % np.array(FLAGS.input_partition_dims) == 0)
         return len(partitionable_index[0]) == len(FLAGS.input_partition_dims)
 
-      spatial_dim = image_size // (2 ** level)
-      if _can_partition(spatial_dim):
-        labels_partition_dims[
-            'box_targets_%d' % level] = FLAGS.input_partition_dims
-        labels_partition_dims[
-            'cls_targets_%d' % level] = FLAGS.input_partition_dims
+      spatial_dim = feat_sizes[level]
+      if _can_partition(spatial_dim['height']) and _can_partition(
+          spatial_dim['width']):
+        labels_partition_dims['box_targets_%d' %
+                              level] = FLAGS.input_partition_dims
+        labels_partition_dims['cls_targets_%d' %
+                              level] = FLAGS.input_partition_dims
       else:
         labels_partition_dims['box_targets_%d' % level] = None
         labels_partition_dims['cls_targets_%d' % level] = None

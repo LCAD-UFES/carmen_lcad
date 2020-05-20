@@ -4,7 +4,7 @@ LINK = g++
 CFLAGS += -std=c++11
 CXXFLAGS += -std=gnu++11
 
-MODULE_NAME = Efficientdet Neural Network
+MODULE_NAME = EfficientDet Neural Network
 MODULE_COMMENT = Object detection
 
 IFLAGS += -I/usr/include/python3.5

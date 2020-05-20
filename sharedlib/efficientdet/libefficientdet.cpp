@@ -29,7 +29,7 @@ void initialize_python_path_efficientdet()
 }
 
 void
-initialize_Efficientdet()
+initialize_Efficientdet(float min_score)
 {
 	initialize_python_path_efficientdet();
 	Py_Initialize();
@@ -65,18 +65,17 @@ initialize_Efficientdet()
 		Py_Finalize();
 		exit (printf("Error: Could not load the python_initialize_function.\n"));
 	}
-	//PyObject *python_arguments = Py_BuildValue("(ii)", width, height);
+	PyObject *python_arguments = Py_BuildValue("(f)", min_score);
+
+	if (PyErr_Occurred())
+		        PyErr_Print();
+	PyObject_CallObject(python_initialize_function, python_arguments);
 
 	if (PyErr_Occurred())
 		        PyErr_Print();
 
-	PyObject_CallObject(python_initialize_function, NULL);
-
-	if (PyErr_Occurred())
-		        PyErr_Print();
-
-	// Py_DECREF(python_arguments);
-	// Py_DECREF(python_initialize_function);
+	Py_DECREF(python_arguments);
+	Py_DECREF(python_initialize_function);
 
 	python_libefficientdet_process_image_function = PyObject_GetAttrString(python_module, (char *) "efficientdet_process_image");
 	
@@ -119,30 +118,28 @@ run_EfficientDet(unsigned char *image, int width, int height)
 
 	if (PyErr_Occurred())
 	        PyErr_Print();
-
 	int num_objs = (int)python_result_array->dimensions[0];
 	double* result_array = (double*) PyArray_DATA(python_result_array);
 	std::vector<bbox_t> bbox_vector;
 	for(int i = 0; i < num_objs; i++)
 	{
 		bbox_t pred = {};
-		pred.x = (unsigned int)		result_array[(i * 6)];
-		pred.y = (unsigned int)		result_array[(i * 6) + 1];
-		pred.w = (unsigned int)		result_array[(i * 6) + 2];
-		pred.h = (unsigned int)		result_array[(i * 6) + 3];
+		pred.y = (unsigned int)		result_array[(i * 6)];
+		pred.x = (unsigned int)		result_array[(i * 6) + 1];
+		pred.h = (unsigned int)		result_array[(i * 6) + 2];
+		pred.w = (unsigned int)		result_array[(i * 6) + 3];
 		pred.prob = (float)			result_array[(i * 6) + 4];
 		pred.obj_id = (unsigned int) result_array[(i * 6) + 5];
 		pred.track_id = 0;
-		if (pred.prob >= 0.2)
-			bbox_vector.push_back(pred);
+		bbox_vector.push_back(pred);
 	}
-
+	
 	if (PyErr_Occurred())
         PyErr_Print();
 
 	Py_DECREF(numpyArray);
 	Py_DECREF(python_result_array);
-
+	
 	return bbox_vector;
 }
 

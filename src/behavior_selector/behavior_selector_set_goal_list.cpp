@@ -1,8 +1,7 @@
 /*
- * behavior_selector.c
  *
- *  Created on: 28/09/2012
- *      Author: romulo
+ *  Created on: 20/04/2020
+ *      Author: Alberto
  */
 
 #include <carmen/collision_detection.h>
@@ -214,7 +213,7 @@ bool
 recent_moving_object_near_this_rddf_pose(carmen_ackerman_traj_point_t pose, carmen_ackerman_traj_point_t moving_obstacle_pose,
 		double last_moving_obstacle_detection_timestamp, double timestamp)
 {
-	printf("dist rddf-mo %lf\n", DIST2D(pose, moving_obstacle_pose));
+//	printf("dist rddf-mo %lf\n", DIST2D(pose, moving_obstacle_pose));
 	if (((fabs(timestamp - last_moving_obstacle_detection_timestamp)) < 2.0) &&
 			(DIST2D(pose, moving_obstacle_pose) < 15.0))
 		return (true);

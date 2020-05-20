@@ -5,6 +5,7 @@
 #include <carmen/collision_detection.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/rddf_messages.h>
+#include <carmen/offroad_planner.h>
 #include <algorithm>
 #include <car_model.h>
 #include <carmen/global_graphics.h>
@@ -23,6 +24,8 @@
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_math.h>
 
+#include "planning.hpp"
+
 
 #define DELTA_T 0.01                      // Size of step for the ackerman Euler method
 
@@ -30,21 +33,36 @@ void
 compute_astar_path(carmen_point_t *robot_pose, carmen_point_t *goal_pose, carmen_robot_ackerman_config_t robot_config,
 		carmen_obstacle_distance_mapper_map_message *distance_map);
 
+
+typedef struct {
+    double state_map_resolution;
+    int state_map_theta_resolution;
+    int precomputed_cost_size;
+    int precomputed_cost_theta_size;
+    double precomputed_cost_resolution;
+    char *precomputed_cost_file_name;
+    int use_matrix_cost_heuristic;
+
+  } carmen_path_planner_astar_t;
+
+
 typedef struct state_node
 {
 	carmen_ackerman_traj_point_t state;
-//	double f;                              // Total distance g + h
+	double f;                              // Total distance g + h
 	double g;                                // Distance from start to current state
-	double heuristic_g;
-	int heuristic_closed;
+	double distance_traveled_g;
+//	double heuristic_g;
+//	int heuristic_closed;
 	double h;                                // Distance from current state to goal
 //	double angular_distance_to_goal;
-	int is_open;
-	int is_closed;
-	int is_obstacle;
-	int was_visited;
+//	int is_open;
+//	int is_closed;
+//	double obstacle_distance;
+//	int was_visited;
 	state_node *parent;
 } state_node, *state_node_p;
+
 
 typedef struct discrete_pos_node
 {
@@ -54,11 +72,29 @@ typedef struct discrete_pos_node
 } discrete_pos_node;
 
 
+typedef struct map_node
+{
+	int x;
+	int y;
+	int theta;
+	double g;
+	int is_open;
+	int is_closed;
+	double obstacle_distance;
+} map_node, *map_node_p;
+
+
+typedef struct cost_heuristic_node
+{
+	double h;
+} cost_heuristic_node, *cost_heuristic_node_p;
+
+
 class StateNodePtrComparator {
 public:
 	bool operator() (state_node *a, state_node *b) const
 	{
-		return (a->h + a->g > b->h + b->g);
+		return (a->f > b->f);
 	}
 };
 

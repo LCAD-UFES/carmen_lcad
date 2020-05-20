@@ -69,8 +69,8 @@ int decay_to_offline_map;
 int create_map_sum_and_count;
 int use_remission;
 int mapper_save_map = 1;
-double remission_threshold = 1e12;
-bool use_remission_threshold = false;
+double rays_threshold_to_merge_between_maps = 1e12;
+bool use_merge_between_maps = false;
 
 carmen_pose_3D_t sensor_board_1_pose;
 carmen_pose_3D_t front_bullbar_pose;
@@ -150,8 +150,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 			sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
 			sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
 
-			if (use_remission_threshold)
-				run_mapper_with_remision_threshold(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, remission_threshold);
+			if (use_merge_between_maps)
+				run_mapper_with_remision_threshold(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, rays_threshold_to_merge_between_maps);
 			else
 				run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
@@ -177,8 +177,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
 		sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
 
-		if (use_remission_threshold)
-			run_mapper_with_remision_threshold(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, remission_threshold);
+		if (use_merge_between_maps)
+			run_mapper_with_remision_threshold(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, rays_threshold_to_merge_between_maps);
 		else
 			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
@@ -186,43 +186,6 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
 		sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
 	}
-}
-
-
-void
-load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config &lidar_config)
-{
-    char *vertical_correction_string;
-    char lidar_string[256];
-
-	sprintf(lidar_string, "lidar%d", lidar_id);        // Geather the lidar id
-
-    carmen_param_t param_list[] = {
-			{lidar_string, (char*)"model", CARMEN_PARAM_STRING, &lidar_config.model, 0, NULL},
-			{lidar_string, (char*)"ip", CARMEN_PARAM_STRING, &lidar_config.ip, 0, NULL},
-			{lidar_string, (char*)"port", CARMEN_PARAM_STRING, &lidar_config.port, 0, NULL},
-			{lidar_string, (char*)"shot_size", CARMEN_PARAM_INT, &lidar_config.shot_size, 0, NULL},
-            {lidar_string, (char*)"min_sensing", CARMEN_PARAM_INT, &lidar_config.min_sensing, 0, NULL},
-            {lidar_string, (char*)"max_sensing", CARMEN_PARAM_INT, &lidar_config.max_sensing, 0, NULL},
-			{lidar_string, (char*)"range_division_factor", CARMEN_PARAM_INT, &lidar_config.range_division_factor, 0, NULL},
-            {lidar_string, (char*)"time_between_shots", CARMEN_PARAM_DOUBLE, &lidar_config.time_between_shots, 0, NULL},
-			{lidar_string, (char*)"x", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.x), 0, NULL},
-			{lidar_string, (char*)"y", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.y), 0, NULL},
-			{lidar_string, (char*)"z", CARMEN_PARAM_DOUBLE, &lidar_config.pose.position.z, 0, NULL},
-			{lidar_string, (char*)"roll", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.roll, 0, NULL},
-			{lidar_string, (char*)"pitch", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.pitch, 0, NULL},
-			{lidar_string, (char*)"yaw", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.yaw, 0, NULL},
-			{lidar_string, (char*)"vertical_angles", CARMEN_PARAM_STRING, &vertical_correction_string, 0, NULL},
-	};
-	int num_items = sizeof(param_list) / sizeof(param_list[0]);
-	carmen_param_install_params(argc, argv, param_list, num_items);
-
-    lidar_config.vertical_angles = (double*) malloc(lidar_config.shot_size * sizeof(double));
-
-    for (int i = 0; i < lidar_config.shot_size; i++)
-		lidar_config.vertical_angles[i] = CLF_READ_DOUBLE(&vertical_correction_string); // CLF_READ_DOUBLE takes a double number from a string
-
-//	printf("Model: %s Port: %s Shot size: %d Min Sensing: %d Max Sensing: %d Range division: %d Time: %lf\n", lidar_config.model, lidar_config.port, lidar_config.shot_size, lidar_config.min_sensing, lidar_config.max_sensing, lidar_config.range_division_factor, lidar_config.time_between_shots);  printf("X: %lf Y: %lf Z: %lf R: %lf P: %lf Y: %lf\n", lidar_config.pose.position.x, lidar_config.pose.position.y, lidar_config.pose.position.z, lidar_config.pose.orientation.roll, lidar_config.pose.orientation.pitch, lidar_config.pose.orientation.yaw); for (int i = 0; i < lidar_config.shot_size; i++) printf("%lf ", lidar_config.vertical_angles[i]); printf("\n");
 }
 
 
@@ -355,7 +318,7 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 
 		for (int i = 0; i < 32; i++)
 		{
-			fake_shot.distance[i] = 0;
+			fake_shot.distance[i] = 1; // Bem curtinho, mas nao zero. Zero eh tratado como infinito e gera escrita no mapa por ray casting.
 			fake_shot.intensity[i] = 0;
 		}
 
@@ -545,7 +508,7 @@ offline_map_handler(carmen_map_server_offline_map_message *msg)
 	memcpy(offline_map.complete_map, msg->complete_map, msg->config.x_size * msg->config.y_size * sizeof(double));
 	offline_map.config = msg->config;
 
-	if (use_remission_threshold)
+	if (use_merge_between_maps)
 		mapper_change_map_origin_to_another_map_block_with_clones(&map_origin, mapper_save_map);
 	else
 		mapper_change_map_origin_to_another_map_block(&map_origin, mapper_save_map);
@@ -1190,7 +1153,6 @@ get_sensors_param(int argc, char **argv)
 			for (j = 0; j < 50; j++)
 				sensors_params[i].delta_difference_stddev[j] = 1.0;
 		}
-
 	}
 }
 
@@ -1241,6 +1203,43 @@ get_sensors_param_pose_handler(__attribute__((unused)) char *module, __attribute
 
 
 void
+load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config &lidar_config)
+{
+    char *vertical_correction_string;
+    char lidar_string[256];
+
+	sprintf(lidar_string, "lidar%d", lidar_id);        // Geather the lidar id
+
+    carmen_param_t param_list[] = {
+			{lidar_string, (char*)"model", CARMEN_PARAM_STRING, &lidar_config.model, 0, NULL},
+			{lidar_string, (char*)"ip", CARMEN_PARAM_STRING, &lidar_config.ip, 0, NULL},
+			{lidar_string, (char*)"port", CARMEN_PARAM_STRING, &lidar_config.port, 0, NULL},
+			{lidar_string, (char*)"shot_size", CARMEN_PARAM_INT, &lidar_config.shot_size, 0, NULL},
+            {lidar_string, (char*)"min_sensing", CARMEN_PARAM_INT, &lidar_config.min_sensing, 0, NULL},
+            {lidar_string, (char*)"max_sensing", CARMEN_PARAM_INT, &lidar_config.max_sensing, 0, NULL},
+			{lidar_string, (char*)"range_division_factor", CARMEN_PARAM_INT, &lidar_config.range_division_factor, 0, NULL},
+            {lidar_string, (char*)"time_between_shots", CARMEN_PARAM_DOUBLE, &lidar_config.time_between_shots, 0, NULL},
+			{lidar_string, (char*)"x", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.x), 0, NULL},
+			{lidar_string, (char*)"y", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.y), 0, NULL},
+			{lidar_string, (char*)"z", CARMEN_PARAM_DOUBLE, &lidar_config.pose.position.z, 0, NULL},
+			{lidar_string, (char*)"roll", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.roll, 0, NULL},
+			{lidar_string, (char*)"pitch", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.pitch, 0, NULL},
+			{lidar_string, (char*)"yaw", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.yaw, 0, NULL},
+			{lidar_string, (char*)"vertical_angles", CARMEN_PARAM_STRING, &vertical_correction_string, 0, NULL},
+	};
+	int num_items = sizeof(param_list) / sizeof(param_list[0]);
+	carmen_param_install_params(argc, argv, param_list, num_items);
+
+    lidar_config.vertical_angles = (double*) malloc(lidar_config.shot_size * sizeof(double));
+
+    for (int i = 0; i < lidar_config.shot_size; i++)
+		lidar_config.vertical_angles[i] = CLF_READ_DOUBLE(&vertical_correction_string); // CLF_READ_DOUBLE takes a double number from a string
+
+//	printf("Model: %s Port: %s Shot size: %d Min Sensing: %d Max Sensing: %d Range division: %d Time: %lf\n", lidar_config.model, lidar_config.port, lidar_config.shot_size, lidar_config.min_sensing, lidar_config.max_sensing, lidar_config.range_division_factor, lidar_config.time_between_shots);  printf("X: %lf Y: %lf Z: %lf R: %lf P: %lf Y: %lf\n", lidar_config.pose.position.x, lidar_config.pose.position.y, lidar_config.pose.position.z, lidar_config.pose.orientation.roll, lidar_config.pose.orientation.pitch, lidar_config.pose.orientation.yaw); for (int i = 0; i < lidar_config.shot_size; i++) printf("%lf ", lidar_config.vertical_angles[i]); printf("\n");
+}
+
+
+void
 override_mapping_mode_params(int argc, char **argv)
 {
 	if (mapping_mode == 0)
@@ -1257,6 +1256,8 @@ override_mapping_mode_params(int argc, char **argv)
 			{(char *) "mapper",  (char *) "mapping_mode_off_create_map_sum_and_count", CARMEN_PARAM_ONOFF, &create_map_sum_and_count, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_off_use_remission", CARMEN_PARAM_ONOFF, &use_remission, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_off_laser_ldmrs", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 1, sensors_params_handler},
+			{(char *) "mapper",  (char *) "mapping_mode_off_use_merge_between_maps", CARMEN_PARAM_ONOFF, &use_merge_between_maps, 0, NULL},
+
 		};
 		carmen_param_allow_unfound_variables(0);
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -1275,6 +1276,8 @@ override_mapping_mode_params(int argc, char **argv)
 			{(char *) "mapper",  (char *) "mapping_mode_on_create_map_sum_and_count", CARMEN_PARAM_ONOFF, &create_map_sum_and_count, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_on_use_remission", CARMEN_PARAM_ONOFF, &use_remission, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_on_laser_ldmrs", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 1, sensors_params_handler},
+			{(char *) "mapper",  (char *) "mapping_mode_on_use_merge_between_maps", CARMEN_PARAM_ONOFF, &use_merge_between_maps, 0, NULL},
+
 		};
 		carmen_param_allow_unfound_variables(0);
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -1346,9 +1349,7 @@ read_parameters(int argc, char **argv,
 		{(char *) "mapper",  (char *) "decay_to_offline_map", CARMEN_PARAM_ONOFF, &decay_to_offline_map, 0, NULL},
 		{(char *) "mapper",  (char *) "create_map_sum_and_count", CARMEN_PARAM_ONOFF, &create_map_sum_and_count, 0, NULL},
 		{(char *) "mapper",  (char *) "save_map", CARMEN_PARAM_ONOFF, &mapper_save_map, 0, NULL},
-		{(char *) "mapper",  (char *) "use_remission", CARMEN_PARAM_ONOFF, &use_remission, 0, NULL},
-		{(char *) "mapper",  (char *) "use_remission_threshold", CARMEN_PARAM_ONOFF, &use_remission_threshold, 0, NULL },
-		{(char *) "mapper",  (char *) "remission_threshold", CARMEN_PARAM_DOUBLE, &remission_threshold, 0, NULL},
+		{(char *) "mapper",  (char *) "rays_threshold_to_merge_between_maps", CARMEN_PARAM_DOUBLE, &rays_threshold_to_merge_between_maps, 0, NULL},
 		{(char *) "mapper",  (char *) "update_and_merge_with_snapshot_map", CARMEN_PARAM_ONOFF, &update_and_merge_with_snapshot_map, 0, NULL},
 		{(char *) "mapper",  (char *) "number_of_threads", CARMEN_PARAM_INT, &number_of_threads, 0, NULL},
 
@@ -1407,7 +1408,7 @@ read_parameters(int argc, char **argv,
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 //
 //load lidars position and other configurations
-	for(int i = 0; i <= number_of_lidars; i++)
+	for(int i = 0; i < number_of_lidars; i++)
 		load_lidar_config(argc, argv, i, lidar_config[i]);
 
 	int mkdir_status = mkdir(map_path, 0775);
@@ -1625,7 +1626,7 @@ main(int argc, char **argv)
 
 	initialize_transforms();
 
-	mapper_initialize(&map_config, car_config, use_remission_threshold);
+	mapper_initialize(&map_config, car_config, use_merge_between_maps);
 
 	if (use_neural_mapper)
 		initialize_inference_context_mapper_();

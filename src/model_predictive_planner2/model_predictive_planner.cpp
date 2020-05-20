@@ -335,7 +335,7 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 
 	//Considera poses_back da lane como a lane de referencia para calcular plano de reh
 
-	if (GlobalState::reverse_driving)
+	if (0)//GlobalState::reverse_driving)
 	{
 		if ((goal_list_message->number_of_poses_back < 2 || goal_list_message->number_of_poses_back > 250))
 			return false;
@@ -913,12 +913,16 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	static double last_timestamp = 0.0;
 	bool goal_in_lane = false;
 
-	//TODO:Delete after behavior selector reverse GOALs - Getting a new GOAL in poses back to don't need to change the behaviour selector
+	//	printf("traget v: %lf \n", target_v);
+//	if (target_v < 0.0)
+
+
+//	//TODO:Delete after behavior selector reverse GOALs - Getting a new GOAL in poses back to don't need to change the behaviour selector
 	if (GlobalState::reverse_driving)
 	{
 		target_v = (-1)* target_v;
 //		printf("Goal antes: %lf", goalPoseVector[0].x);
-		simulate_goal_position(goalPoseVector, goal_list_message, 10);
+		//simulate_goal_position(goalPoseVector, goal_list_message, 10);
 //		printf(" Goal depois: %lf\n", goalPoseVector[0].x);
 	}
 
@@ -930,11 +934,15 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		last_timestamp = goal_list_message->timestamp;
 	}
 
-	if (!GlobalState::reverse_driving && goal_is_behind_car(localizer_pose, &goalPoseVector[0]))
-	{
+//	if (goal_is_behind_car(localizer_pose, &goalPoseVector[0]))
+//	{
+//		GlobalState::reverse_driving = 1;
+//		target_v = (-1)* target_v;
 //		printf("goal is behind the car\n");
-		return;
-	}
+//		//		return;
+//	}
+//	else
+//		GlobalState::reverse_driving = 0;
 
 	move_lane_to_robot_reference_system(localizer_pose, goal_list_message, &lane_in_local_pose);
 

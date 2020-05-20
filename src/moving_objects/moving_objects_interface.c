@@ -60,11 +60,11 @@ carmen_moving_objects_point_clouds_unsubscribe_message(carmen_handler_t handler)
 }
 
 void
-carmen_moving_objects_point_clouds_publish_message(carmen_moving_objects_point_clouds_message *carmen_moving_objects_point_clouds_message)
+carmen_moving_objects_point_clouds_publish_message(carmen_moving_objects_point_clouds_message *msg)
 {
 	 IPC_RETURN_TYPE err;
 
-	 err = IPC_publishData(CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_NAME, carmen_moving_objects_point_clouds_message);
+	 err = IPC_publishData(CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_NAME, msg);
 	 carmen_test_ipc_exit(err, "Could not publish", CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_NAME);
 }
 

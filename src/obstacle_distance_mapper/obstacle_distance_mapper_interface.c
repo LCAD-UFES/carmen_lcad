@@ -217,6 +217,7 @@ carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(carmen_o
 		carmen_obstacle_distance_mapper_compact_map_message *cmap)
 {	// Esta funcao assume que map esta vazio
 	map->config = cmap->config;
+	map->timestamp = cmap->timestamp;
 
 	for (int i = 0; i < cmap->size; i++)
 	{
@@ -231,6 +232,7 @@ void
 carmen_obstacle_distance_mapper_overwrite_distance_map_message_with_compact_distance_map(carmen_obstacle_distance_mapper_map_message *map,
 		carmen_obstacle_distance_mapper_compact_map_message *cmap)
 {
+	map->timestamp = cmap->timestamp;
 	for (int i = 0; i < cmap->size; i++)
 	{
 		cell_coords_t map_cell = carmen_obstacle_distance_mapper_get_map_cell_from_configs(map->config, cmap->config,

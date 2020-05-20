@@ -24,7 +24,7 @@ PUBLIC_LIBRARIES = libdynamic_object_detector_interface.a
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = dynamic_object_detector
 
-TARGETS = libdynamic_object_detector.a dynamic_object_detector
+TARGETS = libdynamic_object_detector_interface.a dynamic_object_detector
 PUBLIC_LIBRARIES_SO = libdynamic_object_detector_interface.so
 
 ifndef NO_PYTHON

@@ -100,7 +100,7 @@ calculate_phi_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
 			path[i].phi = 0.0;
 			continue;
 		}
-		path[i].phi = L * atan(delta_theta / l);
+		path[i].phi = atan(L * (delta_theta / l));
 	}
 
 	for (int i = 1; i < (num_poses - 1); i++)
@@ -124,7 +124,7 @@ calculate_phi_back(carmen_ackerman_traj_point_t *path, int num_poses)
 			path[i].phi = 0.0;
 			continue;
 		}
-		path[i].phi = L * atan(delta_theta / l);
+		path[i].phi = atan(L * (delta_theta / l));
 	}
 
 	for (int i = (num_poses - 2); i > 0; i--)
@@ -135,7 +135,7 @@ calculate_phi_back(carmen_ackerman_traj_point_t *path, int num_poses)
 
 
 void
-calculate_theta_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
+compute_theta(carmen_ackerman_traj_point_t *path, int num_poses)
 {
 	for (int i = 0; i < (num_poses - 1); i++)
 		path[i].theta = atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x);
@@ -159,7 +159,7 @@ void
 calculate_theta_and_phi(carmen_ackerman_traj_point_t *poses_ahead, int num_poses_ahead,
 		carmen_ackerman_traj_point_t *poses_back, int num_poses_back)
 {
-	calculate_theta_ahead(poses_ahead, num_poses_ahead);
+	compute_theta(poses_ahead, num_poses_ahead);
 	poses_back[0].theta = poses_ahead[0].theta;
 	calculate_theta_back(poses_back, num_poses_back);
 
@@ -835,7 +835,7 @@ node_exist(vector<state_node*> &list, state_node *current, carmen_obstacle_dista
 
 
 vector<state_node*>
-expansion_dijkstra(state_node *current, state_node *goal_state, carmen_obstacle_distance_mapper_map_message *distance_map)
+expansion_discrete(state_node *current, state_node *goal_state, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
 
 	double add_x[3] = {-1.0, 0.0, 1.0};
@@ -891,7 +891,7 @@ dijkstra(state_node *start_state, state_node *goal, carmen_obstacle_distance_map
 			current = open.back();
 			open.pop_back();
 			//printf("[dijkstra]current = %f %f %f\n", current->state.x, current->state.y, current->state.theta);
-			neighbor = expansion_dijkstra(current, goal_state, distance_map);
+			neighbor = expansion_discrete(current, goal_state, distance_map);
 			while(it_number< neighbor.size())
 			{
 				cost = current->g + movementcost(current, neighbor[it_number]);

@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Model Builder for EfficientNet."""
+"""Model Builder for EfficientNet.
+
+efficientnet-bx (x=0,1,2,3,4,5,6,7) checkpoints are located in:
+  https://storage.googleapis.com/cloud-tpu-checkpoints/efficientnet/ckptsaug/efficientnet-bx.tar.gz
+"""
 
 from __future__ import absolute_import
 from __future__ import division

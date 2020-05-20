@@ -899,8 +899,7 @@ namespace View
 				this->path[index].pose.y	   = new_plan[index].y;
 				this->path[index].pose.theta = new_plan[index].theta;
 				this->path[index].map = this->controls_.map_view->internal_map;
-				carmen_verbose("%.1f %.1f\n", this->path[index].pose.x,
-						this->path[index].pose.y);
+				carmen_verbose("%.1f %.1f\n", this->path[index].pose.x, this->path[index].pose.y);
 			}
 		}
 		else
@@ -1181,8 +1180,8 @@ namespace View
 			carmen_ackerman_traj_point_p p2,
 			int *mask,
 			int plan_tree_length,
-			carmen_ackerman_traj_point_t paths[500][100],
-			int path_size[100],
+			carmen_ackerman_traj_point_t paths[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS][CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE],
+			int path_size[CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_NUM_PATHS],
 			int num_path)
 	{
 		int index;
@@ -1206,13 +1205,13 @@ namespace View
 
 		this->mask = mask;
 
-		if (plan_tree_length > 0)
+		if (num_plan_tree_points > 0)
 		{
-			this->plan_tree_p1 = (carmen_world_point_t *)calloc(plan_tree_length, sizeof(carmen_world_point_t));
+			this->plan_tree_p1 = (carmen_world_point_t *) calloc(num_plan_tree_points, sizeof(carmen_world_point_t));
 			carmen_test_alloc(plan_tree_p1);
-			this->plan_tree_p2 = (carmen_world_point_t *)calloc(plan_tree_length, sizeof(carmen_world_point_t));
+			this->plan_tree_p2 = (carmen_world_point_t *) calloc(num_plan_tree_points, sizeof(carmen_world_point_t));
 			carmen_test_alloc(this->plan_tree_p2);
-			carmen_verbose("Got path of length %d\n", plan_tree_length);
+			carmen_verbose("Got path of length %d\n", num_plan_tree_points);
 
 			for (index = 0; index < num_plan_tree_points; index++)
 			{
@@ -1228,9 +1227,7 @@ namespace View
 			}
 		}
 		else
-		{
 			num_plan_tree_points = 0;
-		}
 
 		if (this->canditade_path != NULL)
 		{
@@ -1246,12 +1243,14 @@ namespace View
 		if (num_path > 0)
 		{
 			this->canditade_path = (carmen_world_point_t **) calloc(num_path, sizeof(carmen_world_point_t *));
+			this->canditade_path_color = (GdkColor *) calloc(num_path, sizeof(GdkColor));
 
 			for (int i = 0; i < num_path; i++)
 			{
 				this->canditade_path[i] = (carmen_world_point_t *) calloc(path_size[i], sizeof(carmen_world_point_t));
-
-
+				// Se a velocidade do segundo ponto do path eh positiva, o path eh azul; caso contrario, vermelho.
+				int second_v_is_positive = (paths[i][1].v >= 0.0)? 1: 0;
+				this->canditade_path_color[i] = carmen_colors[second_v_is_positive];
 				for (int j = 0; j < path_size[i]; j++)
 				{
 					this->canditade_path[i][j].pose.x	   = paths[i][j].x;
@@ -2462,7 +2461,7 @@ namespace View
 	GtkGui::draw_moving_objects(GtkMapViewer *the_map_view)
 	{
 		int index;
-		moving_objects_tracking_t* moving_objects_tracking;
+		moving_objects_tracking_t *moving_objects_tracking;
 
 		if (nav_panel_config->show_dynamic_objects)
 		{
@@ -2514,7 +2513,7 @@ namespace View
 					carmen_map_graphics_draw_polygon(the_map_view, colour, wp, 4, 0);
 
 					char obj_id[256];
-					sprintf(obj_id, "%d", index);
+					sprintf(obj_id, "%d", moving_objects_tracking->num_associated);
 					GdkFont *text_font = gdk_font_load("-*-courier*-bold-r-normal--0-0-0-0-*-0-iso8859-1"); // Ubuntu command: xlsfonts
 					carmen_map_graphics_draw_string(the_map_view, &carmen_black, text_font, &location, obj_id);
 				}

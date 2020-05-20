@@ -13,6 +13,7 @@
 #include <opencv/cv.hpp>
 
 
+#define import_array_alberto() {if (_import_array() < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import"); return; } }
 
 //////// Python
 PyObject *python_mapper_segmentation_function;
@@ -24,9 +25,10 @@ initialize_inference_context_mapper_()
 	Py_Initialize();
 	printf("python neural mapper started \n");
 
-	#define NUMPY_IMPORT_ARRAY_RETVAL
-
-	import_array();
+//	#define NUMPY_IMPORT_ARRAY_RETVAL
+//
+//	import_array();
+	import_array_alberto();
 
 	PyObject *python_module_name = PyUnicode_FromString((char *) "neural_map_inference");
 

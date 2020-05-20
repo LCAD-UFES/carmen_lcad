@@ -11,9 +11,11 @@ LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc \
 	-lparam_interface -lX11 \
 	-llocalize_ackerman_interface  -lmap_io -lprob_models \
 	-lsimulator_ackerman_interface -lobstacle_avoider_interface -lrddf_interface -lrobot_ackerman_interface \
-	-lmotion_planner_interface -lcollision_detection -lmap_server_interface -lbehavior_selector_interface -lrotation_geometry 
-CFLAGS += -fopenmp #-pg 
-CXXFLAGS += -std=c++0x #-pg 
+	-lmotion_planner_interface -lcollision_detection -lmap_server_interface -lbehavior_selector_interface -lroute_planner_interface \
+	-lrotation_geometry
+	 
+CFLAGS += -fopenmp -fno-stack-protector
+CXXFLAGS += -std=c++0x -fno-stack-protector
 
 MODULE_NAME = NAVIGATOR A*
 MODULE_COMMENT = The motion A* planner!
@@ -60,7 +62,10 @@ startgoal_simulator: startgoal_simulator.o libnavigator_astar_interface.a
 libprob_models.a: 
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/prob_models/
 
-clean: clean_prob_models
+clean: clean_FH clean_prob_models
+
+clean_FH: 
+	-rm -rf FH/*.o
 
 clean_prob_models:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/prob_models/

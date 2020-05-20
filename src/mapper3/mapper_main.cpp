@@ -66,8 +66,8 @@ int decay_to_offline_map;
 int create_map_sum_and_count;
 int use_remission;
 int mapper_save_map = 1;
-double remission_threshold = 1e12;
-bool use_remission_threshold = false;
+double rays_threshold_to_merge_between_maps = 1e12;
+bool use_merge_between_maps = false;
 
 carmen_pose_3D_t sensor_board_1_pose;
 carmen_pose_3D_t front_bullbar_pose;
@@ -139,8 +139,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 			sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
 			sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
 
-			if (use_remission_threshold)
-				run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, remission_threshold);
+			if (use_merge_between_maps)
+				run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, rays_threshold_to_merge_between_maps);
 			else
 				run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
@@ -166,8 +166,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
 		sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
 
-		if (use_remission_threshold)
-			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, remission_threshold);
+		if (use_merge_between_maps)
+			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global, rays_threshold_to_merge_between_maps);
 		else
 			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
@@ -408,7 +408,7 @@ offline_map_handler(carmen_map_server_offline_map_message *msg)
 	memcpy(offline_map->complete_map, msg->complete_map, msg->config.x_size * msg->config.y_size * sizeof(double));
 	offline_map->config = msg->config;
 
-	if (use_remission_threshold)
+	if (use_merge_between_maps)
 		mapper_change_map_origin_to_another_map_block_with_clones(&map_origin, mapper_save_map);
 	else
 		mapper_change_map_origin_to_another_map_block(&map_origin, mapper_save_map);
@@ -1001,6 +1001,8 @@ override_mapping_mode_params(int argc, char **argv)
 			{(char *) "mapper",  (char *) "mapping_mode_off_create_map_sum_and_count", CARMEN_PARAM_ONOFF, &create_map_sum_and_count, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_off_use_remission", CARMEN_PARAM_ONOFF, &use_remission, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_off_laser_ldmrs", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 1, sensors_params_handler},
+			{(char *) "mapper",  (char *) "mapping_mode_off_use_merge_between_maps", CARMEN_PARAM_ONOFF, &use_merge_between_maps, 0, NULL},
+
 		};
 		carmen_param_allow_unfound_variables(0);
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -1019,6 +1021,7 @@ override_mapping_mode_params(int argc, char **argv)
 			{(char *) "mapper",  (char *) "mapping_mode_on_create_map_sum_and_count", CARMEN_PARAM_ONOFF, &create_map_sum_and_count, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_on_use_remission", CARMEN_PARAM_ONOFF, &use_remission, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_on_laser_ldmrs", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 1, sensors_params_handler},
+			{(char *) "mapper",  (char *) "mapping_mode_on_use_merge_between_maps", CARMEN_PARAM_ONOFF, &use_merge_between_maps, 0, NULL},
 		};
 		carmen_param_allow_unfound_variables(0);
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -1090,9 +1093,8 @@ read_parameters(int argc, char **argv,
 		{(char *) "mapper",  (char *) "decay_to_offline_map", CARMEN_PARAM_ONOFF, &decay_to_offline_map, 0, NULL},
 		{(char *) "mapper",  (char *) "create_map_sum_and_count", CARMEN_PARAM_ONOFF, &create_map_sum_and_count, 0, NULL},
 		{(char *) "mapper",  (char *) "save_map", CARMEN_PARAM_ONOFF, &mapper_save_map, 0, NULL},
+		{(char *) "mapper",  (char *) "rays_threshold_to_merge_between_maps", CARMEN_PARAM_DOUBLE, &rays_threshold_to_merge_between_maps, 0, NULL},
 		{(char *) "mapper",  (char *) "use_remission", CARMEN_PARAM_ONOFF, &use_remission, 0, NULL},
-		{(char *) "mapper",  (char *) "use_remission_threshold", CARMEN_PARAM_ONOFF, &use_remission_threshold, 0, NULL },
-		{(char *) "mapper",  (char *) "remission_threshold", CARMEN_PARAM_DOUBLE, &remission_threshold, 0, NULL},
 		{(char *) "mapper",  (char *) "update_and_merge_with_snapshot_map", CARMEN_PARAM_ONOFF, &update_and_merge_with_snapshot_map, 0, NULL},
 		{(char *) "mapper",  (char *) "number_of_threads", CARMEN_PARAM_INT, &number_of_threads, 0, NULL},
 
@@ -1340,7 +1342,7 @@ main(int argc, char **argv)
 
 	initialize_transforms();
 
-	mapper_initialize(&map_config, car_config, use_remission_threshold);
+	mapper_initialize(&map_config, car_config, use_merge_between_maps);
 
 	/* Register messages */
 	define_mapper_messages();

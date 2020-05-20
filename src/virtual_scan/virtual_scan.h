@@ -14,11 +14,6 @@
 #define	I_SHAPED	1
 #define MASS_POINT	2
 
-#define	BUS			'B' // Width: 2,4 m to 2,6 m; Length: 10 m to 14 m;
-#define	CAR			'C' // Width: 1,8 m to 2,1; Length: 3,9 m to 5,3 m
-#define	BIKE		'b' // Width: 1,20 m; Length: 2,20 m
-#define	PEDESTRIAN	'P'
-
 #define GET_MIN_V_PER_OBJECT_CLASS(c) ((c == BUS)? 0.5: (c == CAR)? 0.5: (c == BIKE)? 0.5: (c == PEDESTRIAN)? 0.2: 0.5)
 
 #define CHILD_EDGE 		'C'

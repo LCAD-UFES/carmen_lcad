@@ -25,6 +25,7 @@
 #include "util.h"
 #include "publisher_util.h"
 #include "model_predictive_planner.h"
+#include "model_predictive_planner_interface.h"
 
 #define DIST_SQR(x1,y1,x2,y2) ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
 
@@ -114,7 +115,7 @@ publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_poi
 	if (!GlobalState::following_path)
 		return;
 
-	carmen_ackerman_motion_command_t* commands =
+	carmen_ackerman_motion_command_t *commands =
 			(carmen_ackerman_motion_command_t*) (malloc(path.size() * sizeof(carmen_ackerman_motion_command_t)));
 	int i = 0;
 	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin();	it != path.end(); ++it)
@@ -422,7 +423,8 @@ build_and_follow_path(double timestamp)
 
 				path_follower_path = build_path_follower_path(path);
 				publish_model_predictive_rrt_path_message(path_follower_path, timestamp);
-				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
+				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
+//				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 
 //				FILE *caco = fopen("caco2.txt", "a");
 //				fprintf(caco, "%lf %lf %lf %d\n", GlobalState::last_odometry.v, GlobalState::robot_config.max_v,
@@ -440,7 +442,7 @@ build_and_follow_path(double timestamp)
 			//				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 			//		}
 		}
-		publish_plan_tree_for_navigator_gui(tree);
+//		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
 	}
 }
@@ -463,12 +465,13 @@ build_and_follow_path_new(double timestamp)
 			if (tree.num_paths > 0 && path.size() > 0)
 			{
 				publish_model_predictive_planner_motion_commands(path, timestamp);
-				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
+				carmen_model_predictive_planner_publish_motion_plan_message(tree.paths[0], tree.paths_sizes[0]);
+//				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 			}
 			//		else
 			//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 		}
-		publish_plan_tree_for_navigator_gui(tree);
+//		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
 	}
 }

@@ -63,7 +63,7 @@ public:
 		cont_nos_abertos_alterados = 0;
 		cont_nos_podados = 0;
 		cont_nos_abertos_alterados_fechados = 0;
-		heap = NULL;
+		astar_queue = NULL;
 	}
 
 	carmen_behavior_selector_state_t current_state;//TODO extern
@@ -80,7 +80,7 @@ public:
 
 	carmen_astar_node_p ***astar_map;
 	double ***precomputed_cost_map;
-	struct fibheap* heap;
+	struct fibheap* astar_queue;
 
 	carmen_ackerman_traj_point_t GOAL;
 

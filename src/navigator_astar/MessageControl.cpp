@@ -91,7 +91,7 @@ MessageControl::carmen_planner_ackerman_update_goal(carmen_ackerman_traj_point_t
 	plan();
 	carmen_planner_ackerman_regenerate_trajectory();
 
-	return true;
+	return (true);
 }
 
 

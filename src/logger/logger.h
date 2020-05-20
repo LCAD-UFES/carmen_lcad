@@ -33,6 +33,11 @@
 extern "C" {
 #endif
 
+
+#define HIGH_LEVEL_SUBDIR_TIME 10000.0 // new directory each 10000 seconds
+#define LOW_LEVEL_SUBDIR_TIME 100.0    // new directory each 100 seconds
+
+
 #define          ODOM_ID                          0
 #define          FRONTLASER_ID                    1
 #define          ROBOT_FRONTLASER_ID              2

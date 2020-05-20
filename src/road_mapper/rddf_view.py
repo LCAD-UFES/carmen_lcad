@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 PROG_DESCRIPTION = \
 '''
 Input: This program reads one or more RDDF files and plots their waypoints on the corresponding map images in a window.
@@ -9,9 +11,19 @@ from PIL import Image
 from signal import signal, SIGINT
 
 # Global definitions
-COLOR = {'cyan':  (0, 255, 255), 'magenta': (255, 0, 255), 'yellow': (255, 255,   0), 'orange': (255, 165, 0), 
-         'green': (0, 255,   0), 'red':     (255, 0,   0), 'blue':   (  0,   0, 255)}
-COLORS = (COLOR['magenta'], COLOR['green'], COLOR['orange'], COLOR['cyan'], COLOR['red'], COLOR['blue'])
+RGB_COLORS = {'cyan':  (0, 255, 255), 'magenta': (255, 0, 255), 'yellow': (255, 255,   0), 'orange': (255, 165,   0), 
+              'green': (0, 255,   0), 'red':     (255, 0,   0), 'blue':   (  0,   0, 255), 'gray':   (230, 230, 230)}
+COLOR_LIST = ('magenta', 'green', 'orange', 'cyan', 'red', 'blue', 'gray', 'yellow')
+color_index = -1
+
+
+def get_filelist(filelist_name):
+    filelist = []
+    if filelist_name:
+        fl = open(filelist_name)
+        filelist = [ f.strip() for f in fl.readlines() if f.strip() and f.strip()[0] != '#' ]
+        fl.close()
+    return filelist
 
 
 def get_rddf_limits(filelist):
@@ -54,11 +66,11 @@ def intersection_area(box1, box2):
     y_min = max(y1_min, y2_min)
     x_max = min(x1_max, x2_max)
     y_max = min(y1_max, y2_max)
-    if x_max <= x_min or y_max <= y_min:
-        return None
-    
     width  = float(x_max - x_min)
     height = float(y_max - y_min)
+    if width <= 0.0 or height <= 0.0:
+        return None
+    
     x1_off = (x_min - x1_min)
     y1_off = (y_min - y1_min)
     x2_off = (x_min - x2_min)
@@ -66,7 +78,7 @@ def intersection_area(box1, box2):
     return (width, height, x1_off, y1_off, x2_off, y2_off)
 
 
-def get_window_limits(imagedir, rddf_limits):
+def get_image_list(imagedir, rddf_limits):
     (x_min, y_min, x_max, y_max) = rddf_limits
     image_list = []
 
@@ -130,11 +142,12 @@ def show_images(image_list, window_limits):
     return show_window
 
 
-def show_rddf_file(rddf_file, show_window, window_limits):
+def show_rddf(rddf_file, show_window, window_limits):
     global color_index
-    color_index = (color_index + 1) % len(COLORS)
-    bgr_color = tuple(reversed(COLORS[color_index]))
-    (x_min, y_min, x_max, y_max) = window_limits
+    color_index = (color_index + 1) % len(COLOR_LIST)
+    bgr_color = tuple(reversed(RGB_COLORS[COLOR_LIST[color_index]]))
+    x_min = window_limits[0]
+    y_max = window_limits[3]
     
     rddf = open(rddf_file)
     for waypoint in rddf:
@@ -156,13 +169,14 @@ def shutdown(sig, frame):
     
 
 def usage_exit(msg = ''):
+    global parser
     if msg:
         print(msg)
     parser.print_help(sys.stderr)
     sys.exit(1)
 
 
-def _path(s):
+def _dir(s):
     if not os.path.isdir(s):
         raise argparse.ArgumentTypeError('directory not found: {}'.format(s))
     return s
@@ -177,8 +191,8 @@ def _file(s):
 def read_parameters():
     global parser, args
     parser = argparse.ArgumentParser(description=PROG_DESCRIPTION, formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-i', '--imagedir', help='Image directory   (default: .)', type=_path, default='.')
-    parser.add_argument('-w', '--window', help='Window origin and size limits in meters: x y width height', type=float, nargs=4)
+    parser.add_argument('-i', '--imagedir', help='Image directory   (default: .)', type=_dir, default='.')
+    parser.add_argument('-w', '--window', help='Window origin and size in meters: x y width height', type=float, nargs=4)
     parser.add_argument('-s', '--scale', help='Image pixel scale in meters   (default: 0.2)', type=float, default=0.2)
     parser.add_argument('-r', '--radius', help='Waypoint circle radius in pixels   (default: 2)', type=int, default=2)
     parser.add_argument('-f', '--filelist', help='text file containing a list of RDDF filenames (one per line)', type=_file)
@@ -202,39 +216,26 @@ def read_parameters():
 
     
 def main():
-    global parser, args, count_files, total_files, color_index
+    global parser, args
     signal(SIGINT, shutdown)
     print
 
     read_parameters()
     
-    count_files = 0
-    total_files = len(args.filename)
-    filelist = []
-    if args.filelist:
-        fl = open(args.filelist)
-        filelist = [ f.strip() for f in fl.readlines() if f.strip() and f.strip()[0] != '#' ]
-        fl.close()
-        total_files += len(filelist)
-
+    filelist = get_filelist(args.filelist)
     rddf_limits = get_rddf_limits(args.filename + filelist)
-    (image_list, window_limits) = get_window_limits(args.imagedir, rddf_limits)
+    (image_list, window_limits) = get_image_list(args.imagedir, rddf_limits)
     window = show_images(image_list, window_limits)
-
-    color_index = -1
-    if args.filename:
-        print('********** Processing {} RDDF file{} from commandline'.format(len(args.filename), 's' * (len(args.filename) > 1))) 
-        for f in args.filename:
-            show_rddf_file(f, window, window_limits)
-
-    if args.filelist:
-        print('********** Processing \'{}\' filelist containing {} RDDF file{}'.format(args.filelist, len(filelist), 's' * (len(filelist) > 1))) 
-        for f in filelist:
-            show_rddf_file(f, window, window_limits)
     
-    print('Press the Esc key to finish...')
+    for (f_list, f_list_from) in ((args.filename, '[commandline]'), (filelist, args.filelist)):
+        if f_list:
+            print("********** Processing {} RDDF file{} from '{}'".format(len(f_list), 's' * (len(f_list) > 1), f_list_from)) 
+            for f in f_list:
+                show_rddf(f, window, window_limits)
+    
+    print('Press Esc key on the image window or Ctrl+C on the terminal to finish...\n')
     while (cv2.waitKey(delay=100) & 0xff) != 27:
         pass
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

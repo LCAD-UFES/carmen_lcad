@@ -644,7 +644,7 @@ void carmen_logwrite_write_carmen_can_dump_can_line_message(
 		double timestamp)
 {
 	carmen_fprintf(outfile,
-			"CAN_DUMP_CAN_LINE_MESSADE %s %lf %s %lf\n",
+			"CAN_DUMP_CAN_LINE %s %lf %s %lf\n",
 			msg->can_line, msg->timestamp, msg->host, timestamp);
 }
 
@@ -851,8 +851,8 @@ void carmen_logwrite_write_to_file_velodyne(
 		carmen_velodyne_partial_scan_message* msg, carmen_FILE *outfile,
 		double timestamp, char *log_filename)
 {
-	const double HIGH_LEVEL_SUBDIR_TIME = 100.0 * 100.0; // new each 100 x 100 seconds
-	const double LOW_LEVEL_SUBDIR_TIME = 100.0; // new each 100 seconds
+	// const double HIGH_LEVEL_SUBDIR_TIME = 100.0 * 100.0; // new each 100 x 100 seconds
+	// const double LOW_LEVEL_SUBDIR_TIME = 100.0; // new each 100 seconds
 
 	int high_level_subdir = ((int) (msg->timestamp / HIGH_LEVEL_SUBDIR_TIME))
 			* HIGH_LEVEL_SUBDIR_TIME;
@@ -898,8 +898,8 @@ void carmen_logwrite_write_to_file_velodyne_variable(
 		carmen_velodyne_variable_scan_message* msg, int velodyne_number, carmen_FILE *outfile,
 		double timestamp, char *log_filename)
 {
-	const double HIGH_LEVEL_SUBDIR_TIME = 100.0 * 100.0; // new each 100 x 100 seconds
-	const double LOW_LEVEL_SUBDIR_TIME = 100.0; // new each 100 seconds
+	// const double HIGH_LEVEL_SUBDIR_TIME = 100.0 * 100.0; // new each 100 x 100 seconds
+	// const double LOW_LEVEL_SUBDIR_TIME = 100.0; // new each 100 seconds
 
 	int high_level_subdir = ((int) (msg->timestamp / HIGH_LEVEL_SUBDIR_TIME))
 			* HIGH_LEVEL_SUBDIR_TIME;
@@ -1186,8 +1186,8 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 		carmen_bumblebee_basic_stereoimage_message* msg, int bumblebee_num,
 		carmen_FILE *outfile, double timestamp, int frequency, char *log_filename)
 {
-	const double HIGH_LEVEL_SUBDIR_TIME = 100.0 * 100.0; // new each 100 x 100 seconds
-	const double LOW_LEVEL_SUBDIR_TIME = 100.0; // new each 100 seconds
+	// const double HIGH_LEVEL_SUBDIR_TIME = 100.0 * 100.0; // new each 100 x 100 seconds
+	// const double LOW_LEVEL_SUBDIR_TIME = 100.0; // new each 100 seconds
 
 	int high_level_subdir = ((int) (msg->timestamp / HIGH_LEVEL_SUBDIR_TIME))
 			* HIGH_LEVEL_SUBDIR_TIME;
@@ -1257,6 +1257,42 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 	}
 
 	frame_number++;
+}
+
+
+void
+camera_drivers_write_camera_message_to_log(int camera_id, camera_message *message, carmen_FILE *outfile, char *log_path, double time_spent)
+{
+	static char dir[1024], path[1024], mkdir_string[1024];
+
+	int high_level_subdir = ((int) (message->timestamp / HIGH_LEVEL_SUBDIR_TIME)) * HIGH_LEVEL_SUBDIR_TIME;    // new each 10000 seconds
+	int low_level_subdir = ((int) (message->timestamp / LOW_LEVEL_SUBDIR_TIME)) * LOW_LEVEL_SUBDIR_TIME;       // new each 100 seconds
+
+	sprintf(dir, "%s_images/%d/%d", log_path, high_level_subdir, low_level_subdir);
+	sprintf(mkdir_string, "mkdir -p %s", dir);
+	system(mkdir_string);
+
+	carmen_fprintf(outfile, "CAMERA%d_MESSAGE %d %d %lf %s ", camera_id, camera_id, message->number_of_images, message->timestamp, message->host);
+	//printf("CAMERA_MESSAGE %d %d %lf %s ", camera_id, message->number_of_images, message->timestamp, message->host);
+	
+	for (int i = 0; i < message->number_of_images; i++)
+	{
+		carmen_fprintf(outfile, "%d %d %d %d %d %d ", message->images[i].image_size, message->images[i].width, message->images[i].height, message->images[i].number_of_channels,
+			message->images[i].size_in_bytes_of_each_element, message->images[i].data_type);
+
+		sprintf(path, "%s/%lf_camera%d_%d.image", dir, message->timestamp, camera_id, i);
+		//printf("%s\n", path);
+
+		FILE *image_file = fopen(path, "wb");
+		if (!image_file)
+		{
+			printf("Could not load image:\n%s\n", path);
+			return;
+		}
+		fwrite(message->images[i].raw_data, message->images[i].size_in_bytes_of_each_element, message->images[i].image_size, image_file);
+		fclose(image_file);
+	}
+	carmen_fprintf(outfile, " %lf\n", time_spent);
 }
 
 

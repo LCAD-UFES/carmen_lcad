@@ -1,4 +1,0 @@
-#!/bin/bash
-
-python $CARMEN_HOME/src/road_mapper/rddf_generate.py "$@"
-

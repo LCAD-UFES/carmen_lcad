@@ -6,7 +6,7 @@ MODULE_COMMENT = Path Planer
 LINK = g++
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 
 LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc \
 	-lmap_interface -lgrid_mapping -lmapper_interface \
@@ -27,7 +27,7 @@ PUBLIC_BINARIES = path_planner
 ## IMPORTANT: The 'path_planner' program is not being compiled because the struct 'carmen_navigator_config_t' defined at
 ## 'navigator_ackerman/navigator_ackerman.h' has changed and the source of the program was not updated.
 ## 
-TARGETS =  libprob_models.a libnavigator_astar_interface.a libpath_planner_interface.a libconventional_ackerman.a navigator_precomputed_cost_ackerman startgoal_simulator # path_planner 
+TARGETS =  libprob_models.a libnavigator_astar_interface.a libpath_planner_interface.a libconventional_ackerman.a navigator_precomputed_cost_ackerman startgoal_simulator path_planner 
 
 PUBLIC_LIBRARIES_SO = libnavigator_astar_interface.so
 ifndef NO_PYTHON

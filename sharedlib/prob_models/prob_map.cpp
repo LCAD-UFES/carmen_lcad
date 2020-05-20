@@ -3122,6 +3122,7 @@ carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, ca
 
 	// Use dynamic programming to estimate the minimum distance from
 	// every map cell to an occupied map cell
+	// Note that the first and last lines, and the first and last columns are not computed. But the robot never goes there... So, no problem :)
 
 	// pass 1
 	for (x = 1; x < x_size - 1; x++)

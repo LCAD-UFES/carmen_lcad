@@ -8,6 +8,10 @@
 #include <carmen/grid_mapping.h>
 #include <prob_map.h>
 #include <carmen/motion_planner_interface.h>
+#include <carmen/rddf_interface.h>
+#include <carmen/route_planner_interface.h>
+
+
 static carmen_robot_ackerman_config_t robot_config;
 static carmen_navigator_config_t nav_config;
 
@@ -15,6 +19,126 @@ static carmen_behavior_selector_algorithm_t current_algorithm = CARMEN_BEHAVIOR_
 carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARKING;
 int steering_model = 1;
 MessageControl messageControl;
+
+
+#define LANE_WIDTH 	2.4
+#define NUM_LANES	1
+
+
+void
+add_lanes(carmen_route_planner_road_network_message &route_planner_road_network_message)
+{
+    route_planner_road_network_message.number_of_nearby_lanes = NUM_LANES;
+    route_planner_road_network_message.nearby_lanes_ids =  (int *) malloc(route_planner_road_network_message.number_of_nearby_lanes * sizeof(int));
+    route_planner_road_network_message.nearby_lanes_indexes = (int *) malloc(route_planner_road_network_message.number_of_nearby_lanes * sizeof(int));
+    route_planner_road_network_message.nearby_lanes_sizes = (int *) malloc(route_planner_road_network_message.number_of_nearby_lanes * sizeof(int));
+    route_planner_road_network_message.nearby_lanes_size = NUM_LANES *
+    		(route_planner_road_network_message.number_of_poses_back + route_planner_road_network_message.number_of_poses - 1);	// a primeira pose do poses e poses back eh igual
+    route_planner_road_network_message.nearby_lanes = (carmen_ackerman_traj_point_t *) malloc(route_planner_road_network_message.nearby_lanes_size * sizeof(carmen_ackerman_traj_point_t));
+    route_planner_road_network_message.traffic_restrictions =  (int *) malloc(route_planner_road_network_message.nearby_lanes_size * sizeof(int));
+
+    // Coloca o rddf como a lane 0, isto eh, a rota escolhida
+    route_planner_road_network_message.nearby_lanes_ids[0] = 0;
+    route_planner_road_network_message.nearby_lanes_indexes[0] = 0;
+    route_planner_road_network_message.nearby_lanes_sizes[0] = route_planner_road_network_message.number_of_poses_back + route_planner_road_network_message.number_of_poses - 1; // a primeira pose do poses e poses back eh igual
+    int pose_i = 0;
+    for (int i = route_planner_road_network_message.number_of_poses_back - 1; i > 0; i--)
+	{
+    	route_planner_road_network_message.nearby_lanes[pose_i] = route_planner_road_network_message.poses_back[i];
+    	route_planner_road_network_message.traffic_restrictions[pose_i] = ROUTE_PLANNER_SET_LANE_WIDTH(0, LANE_WIDTH);
+    	pose_i++;
+	}
+    for (int i = 0; i < route_planner_road_network_message.number_of_poses; i++)
+	{
+    	route_planner_road_network_message.nearby_lanes[pose_i] = route_planner_road_network_message.poses[i];
+    	route_planner_road_network_message.traffic_restrictions[pose_i] = ROUTE_PLANNER_SET_LANE_WIDTH(0, LANE_WIDTH);
+    	pose_i++;
+	}
+}
+
+
+void
+free_lanes(carmen_route_planner_road_network_message route_planner_road_network_message)
+{
+    free(route_planner_road_network_message.nearby_lanes_indexes);
+    free(route_planner_road_network_message.nearby_lanes_sizes);
+    free(route_planner_road_network_message.nearby_lanes_ids);
+    free(route_planner_road_network_message.nearby_lanes);
+    free(route_planner_road_network_message.traffic_restrictions);
+}
+
+
+int
+get_index_of_nearest_pose_in_path(carmen_ackerman_traj_point_t *path, carmen_point_t globalpos, int path_length)
+{
+	int nearest_pose_index = 0;
+	double min_dist = DIST2D(path[nearest_pose_index], globalpos);
+	for (int i = 1; i < path_length; i++)
+	{
+		double distance = DIST2D(path[i], globalpos);
+		if (distance < min_dist)
+		{
+			min_dist = distance;
+			nearest_pose_index = i;
+		}
+	}
+
+	return (nearest_pose_index);
+}
+
+
+carmen_ackerman_traj_point_t *
+get_poses_back(carmen_ackerman_traj_point_t *path, int nearest_pose_index)
+{
+	carmen_ackerman_traj_point_t *poses_back = (carmen_ackerman_traj_point_t *) malloc((nearest_pose_index + 1) * sizeof(carmen_ackerman_traj_point_t));
+	for (int i = 0; i < (nearest_pose_index + 1); i++)
+		poses_back[i] = path[nearest_pose_index - i];
+
+	return (poses_back);
+}
+
+
+void
+publish_plan(carmen_localize_ackerman_globalpos_message *globalpos_message)
+{
+	carmen_planner_status_t status;
+	messageControl.carmen_planner_ackerman_get_status(&status);
+	if (status.path.length > 0)
+	{
+		int *annotations = (int *) calloc (status.path.length, sizeof(int));
+		int *annotations_codes = (int *) calloc (status.path.length, sizeof(int));
+		for (int i = 0; i < status.path.length; i++)
+		{
+			annotations[i] = RDDF_ANNOTATION_TYPE_NONE;
+			annotations_codes[i] = RDDF_ANNOTATION_CODE_NONE;
+		}
+
+		int nearest_pose_index = get_index_of_nearest_pose_in_path(status.path.points, globalpos_message->globalpos, status.path.length);
+
+	    carmen_route_planner_road_network_message route_planner_road_network_message;
+	    route_planner_road_network_message.poses = &(status.path.points[nearest_pose_index]);
+	    route_planner_road_network_message.poses_back = get_poses_back(status.path.points, nearest_pose_index);
+	    route_planner_road_network_message.number_of_poses = status.path.length - nearest_pose_index;
+	    route_planner_road_network_message.number_of_poses_back = nearest_pose_index + 1;	// tem que ter pelo menos uma pose_back que eh igual aa primeira poses
+	    route_planner_road_network_message.annotations = annotations;
+	    route_planner_road_network_message.annotations_codes = annotations_codes;
+
+	    add_lanes(route_planner_road_network_message);
+
+	    route_planner_road_network_message.timestamp = globalpos_message->timestamp;
+	    route_planner_road_network_message.host = carmen_get_host();
+
+	    carmen_route_planner_publish_road_network_message(&route_planner_road_network_message);
+	    free_lanes(route_planner_road_network_message);
+
+	    free(annotations);
+	    free(annotations_codes);
+	    free(route_planner_road_network_message.poses_back);
+		free(status.path.points);
+	}
+
+}
+
 
 static void
 localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
@@ -42,6 +166,8 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	//Mensagem que faz andar
 	if (status.path.length > 0)
 	{
+		publish_plan(msg);
+
 		carmen_motion_planner_publish_path_message(status.path.points, status.path.length, current_algorithm);
 
 
@@ -63,8 +189,6 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 		carmen_test_ipc(err, "Could not publish", CARMEN_ASTAR_GOAL_LIST_NAME);
 	}
 
-
-
 	//Mensagem que exibe o caminho na tela
 	if (status.path.length > 0)
 	{
@@ -80,9 +204,9 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 			plan_tree_msg.host = carmen_get_host();
 			firstTime = false;
 		}
-		if (status.path.length > 100)
+		if (status.path.length > CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE)
 		{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
-			printf("Error: status.path.length > 100\n");
+			printf("Error: status.path.length > %d\n", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE);
 			return;
 		}
 		plan_tree_msg.num_path = 1;
@@ -96,7 +220,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 }
 
 
-static void
+void
 goal_list_handler(carmen_behavior_selector_goal_list_message *msg)
 {
 
@@ -110,19 +234,19 @@ goal_list_handler(carmen_behavior_selector_goal_list_message *msg)
 static void
 state_handler(carmen_behavior_selector_state_message *msg)
 {
-	static carmen_behavior_selector_goal_source_t goal_source = CARMEN_BEHAVIOR_SELECTOR_USER_GOAL;
+//	static carmen_behavior_selector_goal_source_t goal_source = CARMEN_BEHAVIOR_SELECTOR_USER_GOAL;
 	current_algorithm = msg->algorithm;
 	current_state = msg->state;
 
-	if (goal_source != msg->goal_source)
-	{
-		goal_source = msg->goal_source;
-		carmen_ackerman_traj_point_t point;
-		point.x = -1;
-		point.y = -1;
-		point.theta = -1;
-		messageControl.carmen_planner_ackerman_update_goal(&point);
-	}
+//	if (goal_source != msg->goal_source)
+//	{
+//		goal_source = msg->goal_source;
+//		carmen_ackerman_traj_point_t point;
+//		point.x = -1;
+//		point.y = -1;
+//		point.theta = -1;
+//		messageControl.carmen_planner_ackerman_update_goal(&point);
+//	}
 }
 
 
@@ -150,7 +274,21 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 
 	messageControl.carmen_planner_ackerman_set_cost_map(&cost_map);
 	cost_map.config = message->config;
+}
 
+
+void
+carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
+{
+	carmen_ackerman_traj_point_t point =
+	{
+		rddf_end_point_message->point.x,
+		rddf_end_point_message->point.y,
+		rddf_end_point_message->point.theta,
+		0.0,
+		0.0
+	};
+	messageControl.carmen_planner_ackerman_update_goal(&point);
 }
 
 
@@ -232,10 +370,13 @@ main(int argc, char **argv)
 
 	signal(SIGINT, navigator_shutdown);
 
+	carmen_route_planner_define_messages();
+
 	carmen_map_server_subscribe_compact_cost_map(NULL, (carmen_handler_t) map_server_compact_cost_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) goal_list_handler, CARMEN_SUBSCRIBE_LATEST);
+//	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) goal_list_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) state_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t)localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_rddf_subscribe_end_point_message(NULL, (carmen_handler_t) carmen_rddf_play_end_point_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_ipc_dispatch();
 

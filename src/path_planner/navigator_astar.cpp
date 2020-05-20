@@ -82,9 +82,9 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 			plan_tree_msg.host = carmen_get_host();
 			firstTime = false;
 		}
-		if (status.path.length > 100)
+		if (status.path.length > CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE)
 		{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
-			printf("Error: status.path.length > 100\n");
+			printf("Error: status.path.length > %d\n", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_MAX_PATH_SIZE);
 			return;
 		}
 		plan_tree_msg.num_path = 1;
@@ -247,8 +247,8 @@ read_parameters(int argc, char **argv)
 			{(char *)"navigator",			(char *)"smooth_path", CARMEN_PARAM_ONOFF, &nav_config.smooth_path, 1, NULL},
 			{(char *)"navigator",			(char *)"dont_integrate_odometry", CARMEN_PARAM_ONOFF, &nav_config.dont_integrate_odometry, 1, NULL},
 			{(char *)"navigator",			(char *)"plan_to_nearest_free_point", CARMEN_PARAM_ONOFF,	&nav_config.plan_to_nearest_free_point, 1, NULL},
-			{(char *)"navigator",			(char *)"map", CARMEN_PARAM_STRING, &nav_config.navigator_map, 0, NULL},
-			{(char *)"navigator",			(char *)"superimposed_map", CARMEN_PARAM_STRING, &nav_config.superimposed_map, 0, NULL},
+//			{(char *)"navigator",			(char *)"map", CARMEN_PARAM_STRING, &nav_config.navigator_map, 0, NULL},
+//			{(char *)"navigator",			(char *)"superimposed_map", CARMEN_PARAM_STRING, &nav_config.superimposed_map, 0, NULL},
 			{(char *)"navigator_astar",		(char *)"path_interval", CARMEN_PARAM_DOUBLE, &astar_config.path_interval, 1, NULL},
 			{(char *)"navigator_astar",		(char *)"state_map_resolution", CARMEN_PARAM_INT, &astar_config.state_map_resolution, 1, NULL},
 			{(char *)"navigator_astar",		(char *)"state_map_theta_resolution", CARMEN_PARAM_INT, &astar_config.state_map_theta_resolution, 1, NULL},
