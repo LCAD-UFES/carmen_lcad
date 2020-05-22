@@ -282,7 +282,8 @@ static map_drawer* m_drawer;
 static trajectory_drawer* t_drawer1;
 static trajectory_drawer* t_drawer2;
 static trajectory_drawer* t_drawer3;
-static std::vector<trajectory_drawer*> path_plans_drawer;
+static std::vector<trajectory_drawer*> path_plans_frenet_drawer;
+static std::vector<trajectory_drawer*> path_plans_nearby_lanes_drawer;
 static std::vector<trajectory_drawer*> t_drawerTree;
 static velodyne_intensity_drawer* v_int_drawer;
 static AnnotationDrawer *annotation_drawer;
@@ -2081,30 +2082,69 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 	if (message->number_of_poses != 0)
 	{
 		int number_of_paths = message->set_of_paths_size / message->number_of_poses;
-		path_plans_drawer.clear();
-		path_plans_drawer.resize(number_of_paths);
+		path_plans_frenet_drawer.clear();
+		path_plans_frenet_drawer.resize(number_of_paths);
 
 		for (int j = 0; j < number_of_paths; j++)
 		{
-			carmen_navigator_ackerman_plan_message *frenet_trajectory = (carmen_navigator_ackerman_plan_message*) malloc(sizeof(carmen_navigator_ackerman_plan_message) * message->number_of_poses);
+			carmen_navigator_ackerman_plan_message *frenet_trajectory = (carmen_navigator_ackerman_plan_message*) malloc(sizeof(carmen_navigator_ackerman_plan_message));
 			carmen_ackerman_traj_point_t *path = (carmen_ackerman_traj_point_t*) malloc(sizeof(carmen_ackerman_traj_point_t) * message->number_of_poses);
 			for (int i = 0; i < message->number_of_poses; i++)
 			{
 				path[i].x	  = message->set_of_paths[j * message->number_of_poses + i].x;
 				path[i].y	  = message->set_of_paths[j * message->number_of_poses + i].y;
 				path[i].theta = message->set_of_paths[j * message->number_of_poses + i].theta;
-				path[i].v = 0;
-				path[i].phi = 0;
+				path[i].v	  = 0;
+				path[i].phi	  = 0;
 			}
 
 			frenet_trajectory->path = path;
 			frenet_trajectory->path_length = message->number_of_poses;
 			frenet_trajectory->timestamp = message->timestamp;
 			frenet_trajectory->host = message->host;
-			path_plans_drawer[j] = create_trajectory_drawer(0.0, 1.0, 0.0);
-			add_trajectory_message(path_plans_drawer[j], frenet_trajectory);
+			double r = 0.0;
+			double g = 0.0;
+
+			if(j == 0)
+				r = 1.0;
+			else
+				g = 1.0;
+
+			path_plans_frenet_drawer[j] = create_trajectory_drawer(r, g, 0.0);
+			add_trajectory_message(path_plans_frenet_drawer[j], frenet_trajectory);
 		    free(path);
 		    free(frenet_trajectory);
+		}
+	}
+
+	if (message->number_of_nearby_lanes != 0)
+	{
+		path_plans_nearby_lanes_drawer.clear();
+		path_plans_nearby_lanes_drawer.resize(message->number_of_nearby_lanes);
+		for (int j = 0; j < message->number_of_nearby_lanes; j++)
+		{
+			int lane_size = message->nearby_lanes_sizes[j];
+			carmen_navigator_ackerman_plan_message *nearby_trajectory = (carmen_navigator_ackerman_plan_message*) malloc(sizeof(carmen_navigator_ackerman_plan_message));
+			carmen_ackerman_traj_point_t *path = (carmen_ackerman_traj_point_t*) malloc(sizeof(carmen_ackerman_traj_point_t) * lane_size);
+
+			int lane_start = message->nearby_lanes_indexes[j];
+			for (int i = 0; i < lane_size; i++)
+			{
+				path[i].x	  	= message->nearby_lanes[lane_start + i].x;
+				path[i].y	  	= message->nearby_lanes[lane_start + i].y;
+				path[i].theta   = message->nearby_lanes[lane_start + i].theta;
+				path[i].v		= 0;
+				path[i].phi		= 0;
+
+			}
+			nearby_trajectory->path = path;
+			nearby_trajectory->path_length = lane_size;
+			nearby_trajectory->timestamp = message->timestamp;
+			nearby_trajectory->host = message->host;
+			path_plans_nearby_lanes_drawer[j] = create_trajectory_drawer(1.0, 0.5, 0.0);
+			add_trajectory_message(path_plans_nearby_lanes_drawer[j], nearby_trajectory);
+			free(path);
+			free(nearby_trajectory);
 		}
 	}
 }
@@ -3289,8 +3329,11 @@ draw_loop(window *w)
 
         if(show_path_plans_flag)
 		{
-			for (unsigned int i = 0; i < path_plans_drawer.size(); i++)
-				draw_trajectory(path_plans_drawer[i], get_position_offset());
+			for (unsigned int i = 0; i < path_plans_frenet_drawer.size(); i++)
+				draw_trajectory(path_plans_frenet_drawer[i], get_position_offset());
+
+        	for (unsigned int i = 0; i < path_plans_nearby_lanes_drawer.size(); i++)
+        		draw_trajectory(path_plans_nearby_lanes_drawer[i], get_position_offset());
 		}
 
         if (!gps_fix_flag)
