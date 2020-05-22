@@ -16,6 +16,7 @@
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/obstacle_avoider_interface.h>
 #include <carmen/motion_planner_interface.h>
+#include <carmen/frenet_path_planner_interface.h>
 #include <carmen/laser_ldmrs_interface.h>
 #include <carmen/laser_ldmrs_utils.h>
 #include <carmen/gps_xyz_interface.h>
@@ -281,6 +282,7 @@ static map_drawer* m_drawer;
 static trajectory_drawer* t_drawer1;
 static trajectory_drawer* t_drawer2;
 static trajectory_drawer* t_drawer3;
+static std::vector<trajectory_drawer*> path_plans_drawer;
 static std::vector<trajectory_drawer*> t_drawerTree;
 static velodyne_intensity_drawer* v_int_drawer;
 static AnnotationDrawer *annotation_drawer;
@@ -328,6 +330,8 @@ static int velodyne_active = -1;
 static double ouster_vertical_correction[64];
 
 static int show_symotha_flag = 0;
+
+static int show_path_plans_flag = 0;
 
 // in degrees
 static double ouster64_azimuth_offsets[64];
@@ -2071,6 +2075,40 @@ motion_path_handler(carmen_navigator_ackerman_plan_message *message)
     add_trajectory_message(t_drawer3, message);
 }
 
+void
+frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
+{
+	if (message->number_of_poses != 0)
+	{
+		int number_of_paths = message->set_of_paths_size / message->number_of_poses;
+		path_plans_drawer.clear();
+		path_plans_drawer.resize(number_of_paths);
+
+		for (int j = 0; j < number_of_paths; j++)
+		{
+			carmen_navigator_ackerman_plan_message *frenet_trajectory = (carmen_navigator_ackerman_plan_message*) malloc(sizeof(carmen_navigator_ackerman_plan_message) * message->number_of_poses);
+			carmen_ackerman_traj_point_t *path = (carmen_ackerman_traj_point_t*) malloc(sizeof(carmen_ackerman_traj_point_t) * message->number_of_poses);
+			for (int i = 0; i < message->number_of_poses; i++)
+			{
+				path[i].x	  = message->set_of_paths[j * message->number_of_poses + i].x;
+				path[i].y	  = message->set_of_paths[j * message->number_of_poses + i].y;
+				path[i].theta = message->set_of_paths[j * message->number_of_poses + i].theta;
+				path[i].v = 0;
+				path[i].phi = 0;
+			}
+
+			frenet_trajectory->path = path;
+			frenet_trajectory->path_length = message->number_of_poses;
+			frenet_trajectory->timestamp = message->timestamp;
+			frenet_trajectory->host = message->host;
+			path_plans_drawer[j] = create_trajectory_drawer(0.0, 1.0, 0.0);
+			add_trajectory_message(path_plans_drawer[j], frenet_trajectory);
+		    free(path);
+		    free(frenet_trajectory);
+		}
+	}
+}
+
 static void
 navigator_goal_list_message_handler(carmen_behavior_selector_goal_list_message *goals)
 {
@@ -2441,6 +2479,7 @@ init_flags(void)
     draw_moving_objects_flag = 0;
     draw_gps_axis_flag = 1;
     velodyne_remission_flag = 0;
+    show_path_plans_flag = 0;
 #ifdef TEST_LANE_ANALYSIS
     draw_lane_analysis_flag = 1;
 #endif
@@ -3248,6 +3287,12 @@ draw_loop(window *w)
 						);
         }
 
+        if(show_path_plans_flag)
+		{
+			for (unsigned int i = 0; i < path_plans_drawer.size(); i++)
+				draw_trajectory(path_plans_drawer[i], get_position_offset());
+		}
+
         if (!gps_fix_flag)
             draw_gps_fault_signal();
 
@@ -3554,6 +3599,9 @@ subscribe_ipc_messages(void)
                                                                   (carmen_handler_t) motion_path_handler,
                                                                   CARMEN_SUBSCRIBE_LATEST);
 
+    carmen_frenet_path_planner_subscribe_set_of_paths_message(NULL,
+    														 (carmen_handler_t) frenet_path_planner_handler, CARMEN_SUBSCRIBE_LATEST);
+
     carmen_obstacle_avoider_subscribe_path_message(NULL,
                                                    (carmen_handler_t) obstacle_avoider_message_handler,
                                                    CARMEN_SUBSCRIBE_LATEST);
@@ -3853,6 +3901,9 @@ set_flag_viewer_3D(int flag_num, int value)
     		draw_lidar14_flag = !draw_lidar14_flag;
     	if(value == 15)
     		draw_lidar15_flag = !draw_lidar15_flag;
+    	break;
+    case 35:
+    	show_path_plans_flag = value;
     	break;
     }
 }
