@@ -6,7 +6,7 @@ MODULE_COMMENT = "Provides photoshop-like map editor."
 ifndef NO_GRAPHICS
 IFLAGS += `$(GTK_CONFIG) --cflags` -ggdb 
 IFLAGS += `pkg-config opencv --cflags`
-LFLAGS += -lmap_interface -lmap_io -lglobal_graphics -lgdk_imlib \
+LFLAGS += -lmap_interface -lmap_io -lglobal_graphics \
 	`$(GTK_CONFIG) --libs` -lglobal -lipc
 LFLAGS += `pkg-config opencv --libs`
 	

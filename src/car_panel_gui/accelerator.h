@@ -22,7 +22,7 @@ public:
 	virtual void update(double velocity, double time) = 0;
 
 protected:
-	static const double maxRangeAcceleration = 3.0;
+	static constexpr double maxRangeAcceleration = 3.0;
 	double velocity;
 	double time;
 	double acceleration;

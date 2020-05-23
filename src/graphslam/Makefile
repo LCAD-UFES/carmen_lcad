@@ -16,10 +16,10 @@ SUBDIRS += $(CARMEN_HOME)/src/utilities/libcarmen_util
 IFLAGS += -std=c++11
 
 PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
-VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
+VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/  
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/
 IFLAGS += -I/usr/include/eigen3 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 

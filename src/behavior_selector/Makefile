@@ -14,7 +14,7 @@ IFLAGS += \
 	-I/usr/local/include/EXTERNAL/csparse/ \
 	-I/usr/local/include/g2o/
 
-IFLAGS += -I/usr/include/python3.5
+IFLAGS += -I/usr/include/python3.6
 
 LFLAGS += \
 	-L$(CARMEN_HOME)/sharedlib/prob_models \
@@ -43,7 +43,7 @@ LFLAGS += \
 	-lfrenet_path_planner_interface \
 	-lroute_planner_interface \
 	-lgsl -lgslcblas \
-	`python3.5-config --libs` \
+	`python3.6-config --libs` \
 	`pkg-config --libs opencv`
 	
 LFLAGS += -lrddf_util -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper

@@ -1,5 +1,5 @@
 #include <carmen/carmen.h>
-#include <bits/sigaction.h>
+//#include <bits/sigaction.h>
 #include <signal.h>
 #include <stdint.h>
 #include "kinect_interface.h"

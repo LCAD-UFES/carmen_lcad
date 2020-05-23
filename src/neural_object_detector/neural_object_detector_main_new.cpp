@@ -91,30 +91,36 @@ no_out_mean(vector<double> values)// calculates the mean value removing outlayer
 	return sum/elements;
 }
 
-double slope_angle(const vector<double>& x, const vector<double>& y)
+double slope_angle(vector<double> x, vector<double> y)
 {
 	if (x.size() < 2)
 		return 0.0;
 
     double n = x.size();
 
-    double avgX = accumulate(x.begin(), x.end(), 0.0) / n;
-    double avgY = accumulate(y.begin(), y.end(), 0.0) / n;
+    double sum_x = 0.0;
+    for (int i = 0; i < n; i++)
+        sum_x += x[i];
+    double sum_y = 0.0;
+    for (int i = 0; i < n; i++)
+        sum_y += y[i];
+    double avgX = sum_x / n;
+    double avgY = sum_y / n;
 
     double numerator = 0.0;
     double denominator = 0.0;
 
-    for(int i=0; i<n; ++i){
+    for (int i=0; i<n; ++i)
+    {
         numerator += (x[i] - avgX) * (y[i] - avgY);
         denominator += (x[i] - avgX) * (x[i] - avgX);
     }
 
-    if(denominator == 0){
+    if (denominator == 0)
         return 0.0;
-    }
 
     if (x[0] > x[x.size()-1])
-    	return (numerator / denominator)+3.14;
+    	return (numerator / denominator)+3.14; // 3.14 eh PI? Por que nao usar M_PI?
     return atan2(numerator,denominator);
 }
 

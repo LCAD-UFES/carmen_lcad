@@ -4,7 +4,7 @@ LINK = g++
 CFLAGS += -fopenmp -std=c11
 CXXFLAGS += -fopenmp -std=c++11
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet -I/usr/include/bullet
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src 
 
 LFLAGS += -lz -lmap_io -lmap_interface -lmap_util -lglobal -lipc -llocalize_ackerman_core  \

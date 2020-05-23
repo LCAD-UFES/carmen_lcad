@@ -6,7 +6,7 @@
 #include "kinect_util.h"
 #include <pthread.h>
 #include <signal.h>
-#include <bits/sigaction.h>
+//#include <bits/sigaction.h>
 
 static int kinect_depth_width = 0;
 static int kinect_depth_height = 0;

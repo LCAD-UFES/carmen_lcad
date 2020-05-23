@@ -22,13 +22,15 @@ PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \
 	   visual_odometry_package2 stereo_point_cloud xsens xsens_MTi-G \
 	   rrt_planner subdir_module_example velodyne log_filter rddf \
 	   download_map parking_assistant navigator_astar \
-	   tracker navigator_spline navigator_gui velodyne_camera_calibration \
+	   tracker navigator_spline navigator_gui \
+	   # velodyne_camera_calibration \
 	   camera_boxes_to_world lane_detector navigator_gui2 \
 	   mapper obstacle_distance_mapper map_server car_panel_gui	\
 	   v_disparity stereo_velodyne motion_planner udatmo1 behavior_selector \
 	   base_ackerman driving_playback ford_escape_hybrid \
 	   path_interpolator_planner \
-	   odometry_calibration utilities visual_tracker \
+	   odometry_calibration utilities \
+	   # visual_tracker \
 	   visual_car_tracking model_predictive_planner utilities \
 	   moving_objects_simulator zed_camera2 graphslam pi_imu pi_camera \
 	   road_mapper can_dump imu_viewer traffic_light 

@@ -2,7 +2,7 @@ include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK=g++
 CFLAGS += -std=c99
-IFLAGS += -I/usr/local/include/libfreenect 
+IFLAGS += -I/usr/local/include/libfreenect -I/usr/include/libusb-1.0
 LFLAGS += -lglobal -lparam_interface -lipc -lfreenect -llaser_interface -lGL -lGLU -lglut
 
 MODULE_NAME = KINECT

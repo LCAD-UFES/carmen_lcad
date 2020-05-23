@@ -8,7 +8,7 @@ LINK = g++
 CFLAGS += -Wall -g
 
 # Application specific include directories.
-IFLAGS += -I/usr/include/python3.5
+IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6
 
 # python3-config --libs
 # Required default libraries to comunicate with Carmen Core.

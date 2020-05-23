@@ -16,14 +16,14 @@ LINK = g++
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 IFLAGS += `pkg-config --cflags opencv`
 
 #Lib_Neural_Mapper_py
-IFLAGS += -I/usr/include/python3.5m
-LFLAGS += -lpython3.5m
+IFLAGS += -I/usr/include/python3.5m -I/usr/include/python3.6
+LFLAGS += `python3.6-config --libs`
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
@@ -46,7 +46,7 @@ PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
-LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 	
 # Source code files (.c, .cpp) 

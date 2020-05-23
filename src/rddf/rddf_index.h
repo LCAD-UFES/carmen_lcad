@@ -8,15 +8,14 @@
 #ifndef RDDF_INDEX_H_
 #define RDDF_INDEX_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <carmen/carmen.h>
 #include <vector>
 
 using namespace std;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * ****************************************
