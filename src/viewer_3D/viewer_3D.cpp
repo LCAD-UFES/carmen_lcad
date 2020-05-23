@@ -2102,15 +2102,8 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 			frenet_trajectory->path_length = message->number_of_poses;
 			frenet_trajectory->timestamp = message->timestamp;
 			frenet_trajectory->host = message->host;
-			double r = 0.0;
-			double g = 0.0;
 
-			if(j == 0)
-				r = 1.0;
-			else
-				g = 1.0;
-
-			path_plans_frenet_drawer[j] = create_trajectory_drawer(r, g, 0.0);
+			path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 1.0, 0.0);
 			add_trajectory_message(path_plans_frenet_drawer[j], frenet_trajectory);
 		    free(path);
 		    free(frenet_trajectory);
@@ -2141,7 +2134,14 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 			nearby_trajectory->path_length = lane_size;
 			nearby_trajectory->timestamp = message->timestamp;
 			nearby_trajectory->host = message->host;
-			path_plans_nearby_lanes_drawer[j] = create_trajectory_drawer(1.0, 0.5, 0.0);
+			double r = 0.0;
+			double b = 0.0;
+
+			if(j == 0)
+				r = 1.0;
+			else
+				b = 1.0;
+			path_plans_nearby_lanes_drawer[j] = create_trajectory_drawer(r, 0.0, b);
 			add_trajectory_message(path_plans_nearby_lanes_drawer[j], nearby_trajectory);
 			free(path);
 			free(nearby_trajectory);
