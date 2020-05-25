@@ -12,7 +12,7 @@ IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6
 
 # python3-config --libs
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += `python3.5-config --libs` -lparam_interface -lipc -lglobal -lvoice_interface_interface -lpv_porcupine -lasound \
+LFLAGS += `python3.6-config --libs` -lparam_interface -lipc -lglobal -lvoice_interface_interface -lpv_porcupine -lasound \
 			-lnavigator_ackerman_interface -lcurl -ljsoncpp
 			
 # Source code files (.c, .cpp) 
