@@ -6,7 +6,7 @@ MODULE_COMMENT = Graphics User Interface for car panel
 
 LINK = g++
 
-CXXFLAGS += 
+CXXFLAGS += -std=c++11
 DEL_FILE = rm -f
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/src/car_panel_gui
