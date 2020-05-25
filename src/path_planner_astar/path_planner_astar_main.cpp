@@ -58,6 +58,17 @@ obstacle_distance(double x, double y)
     return (carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&p, distance_map));
 }
 
+carmen_position_t
+nearest_obstacle_cell(double x, double y)
+{
+	if( NULL == distance_map)
+		exit(1);
+
+    carmen_point_t p;
+    p.x = x;
+    p.y = y;
+    return (carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&p, distance_map));
+}
 
 double
 my_f(const gsl_vector *v, void *params)
@@ -1212,6 +1223,11 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	{
 		current = open.top();
 		open.pop();
+
+//		Apenas para fazer uma verificação no método que obtém a célula com obstáculo mais próximo
+//		carmen_position_t temp = nearest_obstacle_cell(current->state.x, current->state.y);
+//		printf("current cell = %f %f\n", current->state.x, current->state.y);
+//		printf("nearest_obstacle_cell = %f %f\n",temp.x, temp.y);
 
 		if(is_goal(current, goal_state) == 1)
 		{
