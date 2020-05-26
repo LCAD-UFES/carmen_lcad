@@ -258,7 +258,7 @@ static CarDrawer* car_drawer;
 static point_cloud_drawer* ldmrs_drawer;
 static point_cloud_drawer* laser_drawer;
 static point_cloud_drawer* velodyne_drawer;
-//static point_cloud_drawer* lidar0_drawer; // O velodyne_variable_scan_message_handler0 é especifico para o Ouster e possui parametros hardcodded precisa ser padronizado
+static point_cloud_drawer* lidar0_drawer;
 static point_cloud_drawer* lidar1_drawer;
 static point_cloud_drawer* lidar2_drawer;
 static point_cloud_drawer* lidar3_drawer;
@@ -537,8 +537,7 @@ convert_variable_scan_message_to_point_cloud(point_cloud *velodyne_points, carme
 					carmen_degrees_to_radians(lidar_config.vertical_angles[j]), (double) velodyne_message->partial_scan[i].distance[j] / lidar_config.range_division_factor,
 					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
 
-            carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position,
-					&r_matrix_car_to_global);
+            carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position, &r_matrix_car_to_global);
 
 			velodyne_points->points[i * (lidar_config.shot_size) + j - discarded_points] = point_global_position;
 
@@ -557,16 +556,18 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
     int discarded_points = 0;
     int num_points = 0;
 
+    // printf("Lf %d FV %d\n", draw_lidar_flag, force_velodyne_flag);
+
+    if (!draw_lidar_flag || (!odometry_initialized && !force_velodyne_flag) || (message->number_of_shots == 0))
+		return;
+
     if (first_time)
     {
         load_lidar_config(0, NULL, lidar_config.id, lidar_config);
         *lidar_point_cloud_vector = alloc_lidar_point_cloud_vector();
         first_time = false;
     }
-    if (!draw_lidar_flag)
-    	return;
-    if (!odometry_initialized || !force_velodyne_flag)
-		return;
+
     if (lidar_point_cloud_vector_index >= velodyne_size)    // viewer_3D_velodyne_size is read from carmen*.in, is the number of point clouds vewer_3d will accumulate to display 
 		lidar_point_cloud_vector_index = 0;
 
@@ -591,7 +592,7 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 
 	destroy_rotation_matrix(lidar_to_board_matrix);
 	destroy_rotation_matrix(board_to_car_matrix);
-    
+
 	add_point_cloud(drawer, *lidar_point_cloud_vector[lidar_point_cloud_vector_index]);
     
     lidar_point_cloud_vector_index += 1;
@@ -888,8 +889,7 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_sc
             	int intensity = velodyne_message->partial_scan[i].intensity[j];
             	if (remission_calibration_table)
             	{
-            		static int velodyne_ray_order[32] = {0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23, 8, 24, 9, 25, 10, 26,
-            				11, 27, 12, 28, 13, 29, 14, 30, 15, 31};
+            		static int velodyne_ray_order[32] = {0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31};
 
                 	double ray_angle = carmen_degrees_to_radians(vertical_correction[j]);
                 	double ray_size_in_the_floor = ((double) velodyne_message->partial_scan[i].distance[j] / 500.0) * cos(ray_angle);
@@ -1027,8 +1027,7 @@ compute_ouster_points(point_cloud *velodyne_points, carmen_velodyne_variable_sca
 	int range_max_points = 0;
 	for (i = 0; i < velodyne_message->number_of_shots; i++, dt += ouster_time_spent_by_each_scan)
 	{
-		car_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(car_fused_pose, dt, car_fused_velocity.x, car_phi,
-				distance_between_front_and_rear_axles);
+		car_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(car_fused_pose, dt, car_fused_velocity.x, car_phi, distance_between_front_and_rear_axles);
 		compute_rotation_matrix(&r_matrix_car_to_global, car_interpolated_position.orientation);
 		int j;
 		for (j = 0; j < vertical_size; j++)
@@ -1044,6 +1043,7 @@ compute_ouster_points(point_cloud *velodyne_points, carmen_velodyne_variable_sca
 			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-(partial_scan_angle_corrected),
 					carmen_degrees_to_radians(vertical_correction[j]), (double) velodyne_message->partial_scan[i].distance[j] / 1000.0,
 					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
+                    
 			carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position,
 					&r_matrix_car_to_global);
 			velodyne_points->points[i * (vertical_size) + j - range_max_points] = point_global_position;
@@ -1118,6 +1118,22 @@ velodyne_variable_scan_message_handler0(carmen_velodyne_variable_scan_message *v
 		//velodyne_intensity_drawer_add_velodyne_message(v_int_drawer, velodyne_message, car_fused_pose, car_fused_velocity, car_fused_time);
 
 	last_timestamp = velodyne_message->timestamp;
+}
+
+
+void
+velodyne_variable_scan_message_handler0_new(carmen_velodyne_variable_scan_message *message)
+{
+    static bool first_time = true;
+    static point_cloud *lidar0_point_cloud_vector;
+    static int lidar0_point_cloud_vector_max_size = 0;
+    static int lidar0_point_cloud_vector_index = 0;
+    static carmen_lidar_config lidar0_config;
+    lidar0_config.id = 0;
+
+    printf("NS %d SS %d\n", message->number_of_shots, message->partial_scan[0].shot_size);
+    
+    draw_variable_scan_message(message, lidar0_drawer, first_time, &lidar0_point_cloud_vector, lidar0_point_cloud_vector_max_size, lidar0_point_cloud_vector_index, lidar0_config, draw_lidar0_flag);
 }
 
 
@@ -2404,22 +2420,22 @@ init_flags(void)
     draw_particles_flag = 0;
     draw_points_flag = 0;
     draw_velodyne_flag = 2;
-    draw_lidar0_flag = 0;
-    draw_lidar1_flag  = 0;
-    draw_lidar2_flag  = 0;
-    draw_lidar3_flag  = 0;
-    draw_lidar4_flag  = 0;
-    draw_lidar5_flag  = 0;
-    draw_lidar6_flag  = 0;
-    draw_lidar7_flag  = 0;
-    draw_lidar8_flag  = 0;
-    draw_lidar9_flag  = 0;
-    draw_lidar10_flag = 0;
-    draw_lidar11_flag = 0;
-    draw_lidar12_flag = 0;
-    draw_lidar13_flag = 0;
-    draw_lidar14_flag = 0;
-    draw_lidar15_flag = 0;
+    draw_lidar0_flag  = 1;
+    draw_lidar1_flag  = 1;
+    draw_lidar2_flag  = 1;
+    draw_lidar3_flag  = 1;
+    draw_lidar4_flag  = 1;
+    draw_lidar5_flag  = 1;
+    draw_lidar6_flag  = 1;
+    draw_lidar7_flag  = 1;
+    draw_lidar8_flag  = 1;
+    draw_lidar9_flag  = 1;
+    draw_lidar10_flag = 1;
+    draw_lidar11_flag = 1;
+    draw_lidar12_flag = 1;
+    draw_lidar13_flag = 1;
+    draw_lidar14_flag = 1;
+    draw_lidar15_flag = 1;
     draw_stereo_cloud_flag = 0;
     draw_car_flag = 1;
     draw_rays_flag = 0;
@@ -2487,6 +2503,7 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
     laser_drawer = create_point_cloud_drawer(laser_size);
     ldmrs_drawer = create_point_cloud_drawer(ldmrs_size);
     velodyne_drawer = create_point_cloud_drawer(velodyne_size);
+    lidar0_drawer = create_point_cloud_drawer(velodyne_size);
     lidar1_drawer = create_point_cloud_drawer(velodyne_size);
     lidar2_drawer = create_point_cloud_drawer(velodyne_size);
     lidar3_drawer = create_point_cloud_drawer(velodyne_size);
@@ -2530,6 +2547,7 @@ destroy_drawers()
     destroy_point_cloud_drawer(laser_drawer);
     destroy_point_cloud_drawer(ldmrs_drawer);
     destroy_point_cloud_drawer(velodyne_drawer);
+    destroy_point_cloud_drawer(lidar0_drawer);
     destroy_point_cloud_drawer(lidar1_drawer);
     destroy_point_cloud_drawer(lidar2_drawer);
     destroy_point_cloud_drawer(lidar3_drawer);
@@ -3108,6 +3126,7 @@ draw_loop(window *w)
                 glPointSize(5);
             draw_point_cloud(velodyne_drawer);
 
+            draw_point_cloud(lidar0_drawer);
             draw_point_cloud(lidar1_drawer);
             draw_point_cloud(lidar2_drawer);
             draw_point_cloud(lidar3_drawer);
@@ -3331,6 +3350,7 @@ draw_loop_for_picking(window *w)
         {
             draw_point_cloud(velodyne_drawer);
 
+            draw_point_cloud(lidar0_drawer);
             draw_point_cloud(lidar1_drawer);
             draw_point_cloud(lidar2_drawer);
             draw_point_cloud(lidar3_drawer);
@@ -3500,7 +3520,7 @@ subscribe_ipc_messages(void)
                                                    (carmen_handler_t) velodyne_partial_scan_message_handler,
                                                    CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler0, CARMEN_SUBSCRIBE_LATEST, 0); // Ouster OS164
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler0, CARMEN_SUBSCRIBE_LATEST, 0);
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler1, CARMEN_SUBSCRIBE_LATEST, 1);
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler2, CARMEN_SUBSCRIBE_LATEST, 2);
     carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler3, CARMEN_SUBSCRIBE_LATEST, 3);
