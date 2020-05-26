@@ -52,14 +52,7 @@ typedef struct state_node
 	double f;                              // Total distance g + h
 	double g;                                // Distance from start to current state
 	double distance_traveled_g;
-//	double heuristic_g;
-//	int heuristic_closed;
 	double h;                                // Distance from current state to goal
-//	double angular_distance_to_goal;
-//	int is_open;
-//	int is_closed;
-//	double obstacle_distance;
-//	int was_visited;
 	state_node *parent;
 } state_node, *state_node_p;
 
@@ -88,6 +81,14 @@ typedef struct cost_heuristic_node
 {
 	double h;
 } cost_heuristic_node, *cost_heuristic_node_p;
+
+
+typedef struct param_otimization
+{
+	carmen_ackerman_traj_point_t *points;
+	int *anchor_points;
+	int path_size;
+} param_t, *param_p;
 
 
 class StateNodePtrComparator {
