@@ -17,14 +17,14 @@ public:
 
 private:
 
-    static const float rVel = 80.0f;
-    static const float KMH_MS = 3.6f;    
-    static const float ANGLE_CONVERTER = M_PI_2 / 1.65;
-    static const float kmMarkerSingleStart = 0.925f;
-    static const float kmMarkerSingleEnd = 1.0f;
-    static const float angleMarkerMin = M_PI / 30.0f;
-    static const float kmMarkerPointStart = 0.85f;
-    static const float kmMarkerPointEnd = 1.0f;
+    static constexpr float rVel = 80.0f;
+    static constexpr float KMH_MS = 3.6f;    
+    static constexpr float ANGLE_CONVERTER = M_PI_2 / 1.65;
+    static constexpr float kmMarkerSingleStart = 0.925f;
+    static constexpr float kmMarkerSingleEnd = 1.0f;
+    static constexpr float angleMarkerMin = M_PI / 30.0f;
+    static constexpr float kmMarkerPointStart = 0.85f;
+    static constexpr float kmMarkerPointEnd = 1.0f;
 
     polygon polygonsFloatPoint[9];
     polygon polygonsUnit[9];
@@ -33,8 +33,8 @@ private:
     polygon polygonsCambio[9];
     polygon polygonsVelocimeter[9];
 
-    colors colorVelocimeter[5];
-    colors colorSpeedometer[5];
+    colors colorVelocimeter[6];
+    colors colorSpeedometer[6];
 
     float angleVel;
     float speed;

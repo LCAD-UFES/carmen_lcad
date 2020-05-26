@@ -9,7 +9,7 @@ LINK = g++
 CFLAGS += -std=c11 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING
 CXXFLAGS += -std=c++11 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING
 # Application specific include directories.
-IFLAGS += -I/usr/local/include/bullet/
+IFLAGS += -I/usr/local/include/bullet/ -I/usr/include/bullet/
 IFLAGS += -Iinclude/tf/
 
 # Required default libraries to comunicate with Carmen Core

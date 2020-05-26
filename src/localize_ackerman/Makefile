@@ -9,8 +9,8 @@ LINK = g++
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/lib/x86_64-linux-gnu
 
 LFLAGS += -lgrid_mapping -lmapper_interface -lglobal -lparam_interface -lmap_io -lmap_util -llaser_interface \
 	  -lrobot_ackerman_interface -lobstacle_avoider_interface -lipc -lmap_server_interface \
@@ -21,11 +21,11 @@ LFLAGS += -lgrid_mapping -lmapper_interface -lglobal -lparam_interface -lmap_io 
 
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
-PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
-VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
+PCL_INC = $(wildcard /usr/local/include/pcl-*)
+VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
-LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization
+LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization
 
 MODULE_NAME = LOCALIZE ACKERMAN
 MODULE_COMMENT = Markov Localization Module

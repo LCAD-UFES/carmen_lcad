@@ -14,12 +14,12 @@ LFLAGS += -lparam_interface -lipc -lglobal -lrddf_interface \
 	-lobstacle_avoider_interface -lrobot_ackerman_interface -lsimulator_ackerman_interface -ltraffic_light_interface \
 	-lcollision_detection -lmoving_objects_interface \
 	-lmap_server_interface -lgrid_mapping -lmap_io -lmap_interface \
-	-lgsl -lgslcblas -lm -lvoice_interface_interface `python3.5-config --libs` 
+	-lgsl -lgslcblas -lm -lvoice_interface_interface `python3.5-config --libs` `python3.6-config --libs` 
 LFLAGS += -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine
 
 IFLAGS += -I/usr/include/eigen3 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
-IFLAGS += -I/usr/include/python3.5
+IFLAGS += -I/usr/include/python3.5 -I/usr/include/python3.6
 
 SOURCES = rddf_interface.c rddf_play_main.cpp rddf_index.cpp rddf_build_main.cpp rddf_util.cpp rddf_play_annotations.cpp rddf_by_road_map.cpp rddf_resample.cpp
 

@@ -1,5 +1,5 @@
 CFLAGS=-g -Wall -fPIC
-INC =  -I. -I/usr/include -I/usr/local/include -I/usr/local/include/libfreenect -I/usr/local/include/libusb-1.0
+INC =  -I. -I/usr/include -I/usr/local/include -I/usr/local/include/libfreenect -I/usr/local/include/libusb-1.0 -I/usr/include/libusb-1.0
 LIBS = -L. -L/usr/local/lib64 -L/usr/local/lib -L/usr/lib/x86_64-linux-gnu/ -lfreenect -lGL -lGLU -lglut -lpthread
 LIB_OBJ = kinect_wrapper.o kinect_device.o
 PRG_OBJ = kinect_glmain.o kinect_glview.o

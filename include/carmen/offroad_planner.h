@@ -31,6 +31,7 @@
 
 #include <stdbool.h>
 #include <carmen/behavior_selector_interface.h>
+#include <carmen/collision_detection.h>
 
 
 #ifdef __cplusplus
@@ -60,7 +61,8 @@ void carmen_navigator_ackerman_set_max_velocity(double vel);
 carmen_map_placelist_p carmen_navigator_ackerman_get_places(void);
 int carmen_navigator_ackerman_autonomous_status(void);
 void carmen_navigator_ackerman_start_autonomous(void);
-bool smooth_path_using_conjugate_gradient(carmen_ackerman_traj_point_t *input_path, int num_poses);
+bool smooth_path_using_conjugate_gradient(carmen_ackerman_traj_point_t *input_path, int num_poses,
+		carmen_obstacle_distance_mapper_map_message *obstacle_distance_map);
 int update_distance_map(double *utility_map, double *cost_map, int x_size, int y_size, int goal_x, int goal_y);
 int update_distance_map_new(double *utility_map, double *cost_map, int x_size, int y_size, int goal_x, int goal_y);
 

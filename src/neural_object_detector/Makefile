@@ -7,7 +7,7 @@ LINK = g++
 CXXFLAGS = -std=c++11
 
 IFLAGS += -DUSE_OPENCV -DNO_NVML -I/usr/include/python2.7 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -DUSE_OPENCV -DNO_NVML
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -DUSE_OPENCV -DNO_NVML
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet/lib
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
@@ -23,7 +23,8 @@ PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = neural_object_detector
 
-TARGETS = darknet libclustering velodyne_camera_calibration camera_boxes_to_world neural_object_detector neural_object_detector_test neural_object_detector_main_new traffic_light
+#TARGETS = darknet libclustering velodyne_camera_calibration camera_boxes_to_world neural_object_detector neural_object_detector_test neural_object_detector_main_new traffic_light
+TARGETS = darknet libclustering camera_boxes_to_world neural_object_detector neural_object_detector_test neural_object_detector_main_new traffic_light
 
 neural_object_detector: dbscan.o neural_object_detector_main.o neural_object_detector.o 
 
@@ -39,8 +40,8 @@ darknet:
 libclustering:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libclustering
 	
-velodyne_camera_calibration:
-	$(MAKE) -C $(CARMEN_HOME)/src/velodyne_camera_calibration
+#velodyne_camera_calibration:
+#	$(MAKE) -C $(CARMEN_HOME)/src/velodyne_camera_calibration
 	
 camera_boxes_to_world:
 	$(MAKE) -C $(CARMEN_HOME)/src/camera_boxes_to_world

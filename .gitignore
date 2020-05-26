@@ -1,3 +1,4 @@
+sharedlib/libcyton/lib/*
 src/global/carmen-config.c
 bin/line_follower_main
 src/line_follower/line_follower_main

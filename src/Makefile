@@ -22,19 +22,23 @@ PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \
 	   visual_odometry_package2 stereo_point_cloud xsens xsens_MTi-G \
 	   rrt_planner subdir_module_example velodyne log_filter rddf \
 	   download_map parking_assistant navigator_astar \
-	   tracker navigator_spline navigator_gui velodyne_camera_calibration \
-	   camera_boxes_to_world lane_detector navigator_gui2 \
+	   tracker navigator_spline navigator_gui \
+	   camera_boxes_to_world navigator_gui2 \
 	   mapper obstacle_distance_mapper map_server car_panel_gui	\
 	   v_disparity stereo_velodyne motion_planner udatmo1 behavior_selector \
 	   base_ackerman driving_playback ford_escape_hybrid \
 	   path_interpolator_planner \
-	   odometry_calibration utilities visual_tracker \
+	   odometry_calibration utilities \
 	   visual_car_tracking model_predictive_planner utilities \
 	   moving_objects_simulator zed_camera2 graphslam pi_imu pi_camera \
-	   road_mapper can_dump imu_viewer traffic_light 
-	   # hypergraphsclam tracker_opentld neural_object_detector voice_interface
+	   road_mapper can_dump imu_viewer traffic_light \
+	   tracker_opentld neural_object_detector \
+	   velodyne_camera_calibration
+	   
+	   # hypergraphsclam \ 
+	   # visual_tracker lane_detector voice_interface
 
-PACKAGES_LIB = voice_interface
+PACKAGES_LIB = voice_interface visual_tracker
 
 ifndef NO_CPP
 PACKAGES += carmenpp

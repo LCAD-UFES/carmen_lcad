@@ -6,7 +6,7 @@ MODULE_COMMENT = Moving Objects Point Clouds
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvelodyne
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
@@ -46,8 +46,8 @@ LFLAGS += -std=c++11
 IFLAGS += `pkg-config --cflags opencv`
 LFLAGS += `pkg-config --libs opencv`
 
-PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
-VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
+PCL_INC = $(wildcard /usr/local/include/pcl-*)
+VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
 #LFLAGS += -lpcl_common -lpcl_kdtree -lpcl_search -lpcl_segmentation

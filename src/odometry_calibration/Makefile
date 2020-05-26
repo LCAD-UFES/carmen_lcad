@@ -10,7 +10,7 @@ CXXFLAGS += -std=c++11
 
 SUBDIRS += $(CARMEN_HOME)/src/utilities/libcarmen_util $(CARMEN_HOME)/sharedlib/pso/ $(CARMEN_HOME)/sharedlib/libtf/src
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ 
 LFLAGS += -lglobal -lipc -llocalize_ackerman_interface -lfused_odometry_interface -lvelodyne_interface -lparam_interface -lGL -lglut -lGLU \
 	 	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system    
 LFLAGS += -lrobot_ackerman_interface -lobstacle_avoider_interface \
@@ -21,11 +21,11 @@ LFLAGS += -lrobot_ackerman_interface -lobstacle_avoider_interface \
 IFLAGS += -I/usr/include/eigen3 
 LFLAGS += -L /usr/local/lib -lcholmod -lg2o_core -lg2o_stuff -lg2o_types_slam2d -lg2o_cli
 IFLAGS += -I /usr/include/suitesparse -I/usr/include/eigen3 -I /usr/local/include/EXTERNAL/csparse/ -I /usr/local/include/g2o/
-LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree \
+LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree \
 		  -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
-PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
-VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
+PCL_INC = $(wildcard /usr/local/include/pcl-*)
+VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 

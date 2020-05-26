@@ -46,6 +46,127 @@ int astar_path_poses_size = 0;
 #define DIST2D_D_P(x1,x2) (sqrt(((x1).x - (x2)->x) * ((x1).x - (x2)->x) + \
 							((x1).y - (x2)->y) * ((x1).y - (x2)->y)))
 
+double
+obstacle_distance(double x, double y)
+{
+	if( NULL == distance_map)
+		exit(1);
+
+    carmen_point_t p;
+    p.x = x;
+    p.y = y;
+    return (carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&p, distance_map));
+}
+
+carmen_position_t
+nearest_obstacle_cell(double x, double y)
+{
+	if( NULL == distance_map)
+		exit(1);
+
+    carmen_point_t p;
+    p.x = x;
+    p.y = y;
+    return (carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&p, distance_map));
+}
+
+double
+my_f(const gsl_vector *v, void *params)
+{
+	double wo = 1.0;
+	double wk = 1.0;
+	double ws = 1.0;
+	double dmax = 20.0; // escolher um valor melhor
+	double kmax = 10.0; // colocar o valor certo
+
+	// double *obstacles = (double *) params;
+
+	double obstacle_cost = 0;
+	double x, y, obst_x, obst_y, distance;
+
+	for (int i = 2; i < v->size; i += 2) {
+		x = gsl_vector_get(v, i);
+		y = gsl_vector_get(v, i + 1);
+		//obst_x = obstacles[i];
+		//obst_y = obstacles[i + 1];
+		//distance = sqrt((x - obst_x) * (x - obst_x) + (y - obst_y) * (y - obst_y));
+		distance = obstacle_distance(x, y);
+		obstacle_cost += wo * (distance - dmax) * (distance - dmax) ;
+	}
+
+	double curvature_cost = 0;
+	double delta_phi;
+	double x_i, y_i, x_next, y_next, x_prev, y_prev, displacement;
+
+	for (int i = 2; i < v->size - 2; i += 2) {
+		x_i = gsl_vector_get(v, i);
+		y_i = gsl_vector_get(v, i + 1);
+		x_next = gsl_vector_get(v, i + 2);
+		y_next = gsl_vector_get(v, i + 3);
+		x_prev = gsl_vector_get(v, i - 2);
+		y_prev = gsl_vector_get(v, i - 1);
+		delta_phi = abs(atan2(y_next - y_i, x_next - x_i) - atan2(y_i - y_prev, x_i - x_prev));
+		displacement = sqrt((x_i - x_prev) * (x_i - x_prev) + (y_i - y_prev) * (y_i - y_prev));
+		curvature_cost += wk * (delta_phi / displacement - kmax) * (delta_phi / displacement - kmax);
+	}
+
+	double smoothness_cost = 0;
+	double square_displacement;
+
+	for (int i = 2; i < v->size - 2; i += 2) {
+		x_i = gsl_vector_get(v, i);
+		y_i = gsl_vector_get(v, i + 1);
+		x_next = gsl_vector_get(v, i + 2);
+		y_next = gsl_vector_get(v, i + 3);
+		x_prev = gsl_vector_get(v, i - 2);
+		y_prev = gsl_vector_get(v, i - 1);
+		square_displacement = ((x_next - x_i) - (x_i - x_prev)) * ((x_next - x_i) - (x_i - x_prev)) + ((y_next - y_i) - (y_i - y_prev)) * ((y_next - y_i) - (y_i - y_prev));
+		smoothness_cost = ws * square_displacement;
+	}
+	return obstacle_cost + curvature_cost + smoothness_cost;
+}
+
+
+double
+my_df(const gsl_vector *v, void *params, gsl_vector *df)
+{
+	double wo = 1.0;
+	double wk = 1.0;
+	double ws = 1.0;
+	double dmax = 20.0; // escolher um valor melhor
+	double kmax = 10.0; // colocar o valor certo
+
+	double *obstacles = (double *) params;
+	double df_dx, df_dy, x, y, obst_x, obst_y, distance;
+	double curvature_cost = 0;
+	double delta_phi;
+	double x_i, y_i, x_next, y_next, x_prev, y_prev, displacement;
+	double smoothness_cost = 0;
+	double square_displacement;
+
+	for (int i = 2; i < v->size; i += 2) {
+		x = gsl_vector_get(v, i);
+		y = gsl_vector_get(v, i + 1);
+		obst_x = obstacles[i];
+		obst_y = obstacles[i + 1];
+		distance = sqrt((x - obst_x) * (x - obst_x) + (y - obst_y) * (y - obst_y));
+		df_dx = wo * 2 * (distance - dmax) * (x - obst_x) / distance;
+		df_dy = wo * 2 * (distance - dmax) * (y - obst_y) / distance;
+
+		// derivada da segunda parte
+		// df_dx += alguma coisa;
+		// df_dy += alguma coisa;
+
+		// derivada da terceira parte
+		// df_dx += alguma coisa;
+		// df_dy += alguma coisa;
+
+		gsl_vector_set(df, i, df_dx);
+		gsl_vector_set(df, i + 1, df_dy);
+	}
+}
+
+
 void
 add_lanes(carmen_route_planner_road_network_message &route_planner_road_network_message,
 		carmen_ackerman_traj_point_t *path_copy)
@@ -253,19 +374,6 @@ copy_grid_mapping_to_map(carmen_map_t *map, carmen_mapper_map_message *grid_map)
 		map->map[i] = map->complete_map + i * map->config.y_size;
 
 	return (map);
-}
-
-
-double
-obstacle_distance(double x, double y)
-{
-	if( NULL == distance_map)
-		exit(1);
-
-    carmen_point_t p;
-    p.x = x;
-    p.y = y;
-    return (carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&p, distance_map));
 }
 
 
@@ -1115,6 +1223,11 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	{
 		current = open.top();
 		open.pop();
+
+//		Apenas para fazer uma verificação no método que obtém a célula com obstáculo mais próximo
+//		carmen_position_t temp = nearest_obstacle_cell(current->state.x, current->state.y);
+//		printf("current cell = %f %f\n", current->state.x, current->state.y);
+//		printf("nearest_obstacle_cell = %f %f\n",temp.x, temp.y);
 
 		if(is_goal(current, goal_state) == 1)
 		{

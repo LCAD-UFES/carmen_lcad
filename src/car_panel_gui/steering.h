@@ -14,7 +14,7 @@ public:
     void draw(float angle);
 
 private:
-    static const float rVel = 80.0f; // desacoplar
+    static constexpr float rVel = 80.0f; // desacoplar
     double colorSteeringR;
     double colorSteeringG;
     polygon polygonsHundred[9];

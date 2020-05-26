@@ -9,7 +9,7 @@ CFLAGS += -Wall -g
 CXXFLAGS += -Wno-sign-compare -DUSE_OPENCV -g  -ltf
 
 IFLAGS += `pkg-config opencv --cflags` -std=c++11 -DNO_NVML -g
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -DUSE_OPENCV -DNO_NVML
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -DUSE_OPENCV -DNO_NVML
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet2
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src

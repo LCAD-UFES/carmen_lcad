@@ -12,7 +12,7 @@ CXXFLAGS += -std=c++11
 # Application specific include directories.
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvelodyne
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
