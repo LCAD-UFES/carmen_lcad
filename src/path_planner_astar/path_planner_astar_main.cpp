@@ -84,7 +84,7 @@ my_f(const gsl_vector *v, void *params)
 	// double *obstacles = (double *) params;
 	param_t *param = (param_t*) params;
 	int j = 0;
-	for (int i = 0; i<param->path_size; i++)
+	for (int i = 0; i < param->path_size; i++)
 	{
 //		printf("Aqui-1 %d %d\n", i, j);
 		if (!param->anchor_points[i])
@@ -229,16 +229,43 @@ my_fdf (const gsl_vector *x, void *params, double *f, gsl_vector *df)
 }
 
 
+static int
+sign (double a)
+{
+	if (a >= 0.0)
+		return 1;
+	else
+		return -1;
+}
+
+
+int
+set_anchor(param_t *params)
+{
+	params->anchor_points[0] = 1;
+	params->anchor_points[params->path_size - 1] = 1;
+	for (int i = 0; i < (params->path_size - 1); i++)
+	{
+		if (sign(params->points[i].v) != sign(params->points[i+1].v))
+			params->anchor_points[i] = 1;
+		else
+			params->anchor_points[i] = 0;
+	}
+}
+
+
+
 int
 smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, int size)
 {
 	int iter = 0;
 	int status, i = 0, j = 0;
-
 	const gsl_multimin_fdfminimizer_type *T;
 	gsl_multimin_fdfminimizer *s;
 	gsl_vector *v;
 	gsl_multimin_function_fdf my_func;
+
+
 
 	if (size < 5)
 		return (1);
@@ -254,6 +281,8 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 	param->points = poses_ahead;
 	param->anchor_points = anchor_points;
 	param->path_size = size-2;
+
+	set_anchor(param);
 
 	my_func.n = (2 * size) - 4;
 	my_func.f = my_f;
@@ -288,19 +317,6 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 			return (3);
 
 		status = gsl_multimin_test_gradient (s->gradient, 0.2); //(gsl_vector, epsabs) and  |g| < epsabs
-/*
-		for (i = 0, j = 0; i < (size - 2); i++)
-		{
-			if(obstacle_distance(gsl_vector_get (s->x, j), gsl_vector_get (s->x, j+1)) < 1.5)
-			{
-				gsl_vector_set (v, j, param->points[i].x);
-				gsl_vector_set (v, j+1, param->points[i].y);
-				param->anchor_points[i] = 1;
-				printf("Ancorou = %f %f\n", param->points[i].x, param->points[i].y);
-			}
-			j+=2;
-		}
-*/
 		// status == 0 (GSL_SUCCESS), if a minimum has been found
 	} while (status == GSL_CONTINUE && iter < 999);
 
