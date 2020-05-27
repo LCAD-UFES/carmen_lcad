@@ -69,7 +69,7 @@ typedef struct
 	int shot_size;
 	unsigned short  *distance;
 	unsigned char *intensity;
-	double angle;
+	double angle;              // In degrees
 }carmen_velodyne_shot;
 
 typedef struct

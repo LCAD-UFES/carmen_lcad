@@ -58,6 +58,7 @@ variable_scan_handler(carmen_velodyne_variable_scan_message *message)
             // correct, I use them.
             // double h_angle = message->partial_scan[i].angle + std::sin(carmen_degrees_to_radians(ouster64_azimuth_offsets[j]));
             double h_angle = carmen_normalize_theta(message->partial_scan[i].angle + carmen_degrees_to_radians(ouster64_azimuth_offsets[j]));
+            
             double v_angle = carmen_degrees_to_radians(ouster64_altitude_angles[j]);
 
             pcl::PointXYZRGB point;
@@ -134,17 +135,12 @@ main(int argc, char** argv)
     viewer = new pcl::visualization::PCLVisualizer("CloudViewer");
     viewer->setBackgroundColor(0, 0, 1);
 
-    carmen_velodyne_subscribe_gps_message(NULL, 
-        (carmen_handler_t) imu_handler, 
-        CARMEN_SUBSCRIBE_LATEST
-    );
+    carmen_velodyne_subscribe_gps_message(NULL, (carmen_handler_t) imu_handler, CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_velodyne_subscribe_variable_scan_message(NULL, 
-        (carmen_handler_t) variable_scan_handler, 
-        CARMEN_SUBSCRIBE_LATEST,
-        ouster_sensor_id);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_handler, CARMEN_SUBSCRIBE_LATEST, ouster_sensor_id);
 
     carmen_ipc_dispatch();
+    
     return 0;
 }
 

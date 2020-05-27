@@ -328,7 +328,6 @@ static double distance_between_front_and_rear_axles;
 
 static int force_velodyne_flag = 0;
 static int velodyne_active = -1;
-static double ouster_vertical_correction[64];
 
 static int show_symotha_flag = 0;
 
@@ -555,17 +554,29 @@ convert_variable_scan_message_to_point_cloud(point_cloud *velodyne_points, carme
 
 
 void
+clear_lidar_point_cloud_vector_drawer(point_cloud_drawer *drawer, point_cloud **lidar_point_cloud_vector)
+{
+    if (lidar_point_cloud_vector != NULL)
+    {
+        lidar_point_cloud_vector[0]->num_points = 0;
+
+        add_point_cloud(drawer, *lidar_point_cloud_vector[0]);
+    }
+}
+
+
+void
 draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point_cloud_drawer *drawer, bool &first_time, point_cloud **lidar_point_cloud_vector,
     int &lidar_point_cloud_vector_max_size, int &lidar_point_cloud_vector_index, carmen_lidar_config &lidar_config, int draw_lidar_flag)
 {
     int discarded_points = 0;
     int num_points = 0;
 
-    // printf("Lf %d FV %d\n", draw_lidar_flag, force_velodyne_flag);
-
     if (!draw_lidar_flag || (!odometry_initialized && !force_velodyne_flag) || (message->number_of_shots == 0))
+    {
+        clear_lidar_point_cloud_vector_drawer(drawer, lidar_point_cloud_vector);
 		return;
-
+    }
     if (first_time)
     {
         load_lidar_config(0, NULL, lidar_config.id, lidar_config);
@@ -1024,7 +1035,16 @@ compute_ouster_points(point_cloud *velodyne_points, carmen_velodyne_variable_sca
 		carmen_vector_3D_t velodyne_pose_position, carmen_vector_3D_t sensor_board_1_pose_position)
 
 {
-
+    double ouster_horizontal_offsets[64] = {
+    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+    };
 	carmen_pose_3D_t car_interpolated_position;
 	rotation_matrix r_matrix_car_to_global;
 	double dt = velodyne_message->timestamp - car_fused_time - velodyne_message->number_of_shots * ouster_time_spent_by_each_scan;
@@ -1043,7 +1063,8 @@ compute_ouster_points(point_cloud *velodyne_points, carmen_velodyne_variable_sca
 				continue;
 			}
 
-			double partial_scan_angle_corrected = velodyne_message->partial_scan[i].angle + carmen_degrees_to_radians(ouster64_azimuth_offsets[j]);
+			double partial_scan_angle_corrected = velodyne_message->partial_scan[i].angle + carmen_degrees_to_radians(ouster_horizontal_offsets[j]);
+            // double partial_scan_angle_corrected = velodyne_message->partial_scan[i].angle;
 
 			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-(partial_scan_angle_corrected),
 					carmen_degrees_to_radians(vertical_correction[j]), (double) velodyne_message->partial_scan[i].distance[j] / 1000.0,
@@ -1062,10 +1083,21 @@ compute_ouster_points(point_cloud *velodyne_points, carmen_velodyne_variable_sca
 }
 
 // TODO O velodyne_variable_scan_message_handler0 é especifico para o Ouster e possui parametros hardcodded precisa ser padronizado
-static void
-velodyne_variable_scan_message_handler0(carmen_velodyne_variable_scan_message *velodyne_message) 
+void
+velodyne_variable_scan_message_handler0_old(carmen_velodyne_variable_scan_message *velodyne_message) 
 {
-	memcpy(ouster_vertical_correction, vc_64, sizeof(vc_64));
+	//memcpy(ouster_vertical_correction, vc_64, sizeof(vc_64));
+
+    double ouster_vertical_angles[64] = {
+    16.611,  16.084,  15.557,  15.029,  14.502,  13.975,  13.447,  12.920,
+    12.393,  11.865,  11.338,  10.811,  10.283,  9.756,   9.229,   8.701,
+    8.174,   7.646,   7.119,   6.592,   6.064,   5.537,   5.010,   4.482,
+    3.955,   3.428,   2.900,   2.373,   1.846,   1.318,   0.791,   0.264,
+    -0.264,  -0.791,  -1.318,  -1.846,  -2.373,  -2.900,  -3.428,  -3.955,
+    -4.482,  -5.010,  -5.537,  -6.064,  -6.592,  -7.119,  -7.646,  -8.174,
+    -8.701,  -9.229,  -9.756,  -10.283, -10.811, -11.338, -11.865, -12.393,
+    -12.920, -13.447, -13.975, -14.502, -15.029, -15.557, -16.084, -16.611,
+    };
 
 	static double last_timestamp = 0.0;
 
@@ -1106,7 +1138,7 @@ velodyne_variable_scan_message_handler0(carmen_velodyne_variable_scan_message *v
 	rotation_matrix* board_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
 	int range_max_points;
 
-	range_max_points = compute_ouster_points(&velodyne_points[last_velodyne_position], velodyne_message, ouster_vertical_correction, velodyne_message->partial_scan[0].shot_size,
+	range_max_points = compute_ouster_points(&velodyne_points[last_velodyne_position], velodyne_message, ouster_vertical_angles, velodyne_message->partial_scan[0].shot_size,
 			velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose.position, sensor_board_1_pose.position);
 	velodyne_points[last_velodyne_position].num_points -= range_max_points;
 
@@ -1127,17 +1159,15 @@ velodyne_variable_scan_message_handler0(carmen_velodyne_variable_scan_message *v
 
 
 void
-velodyne_variable_scan_message_handler0_new(carmen_velodyne_variable_scan_message *message)
+velodyne_variable_scan_message_handler0(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar0_point_cloud_vector;
+    static point_cloud *lidar0_point_cloud_vector = NULL;
     static int lidar0_point_cloud_vector_max_size = 0;
     static int lidar0_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar0_config;
     lidar0_config.id = 0;
 
-    printf("NS %d SS %d\n", message->number_of_shots, message->partial_scan[0].shot_size);
-    
     draw_variable_scan_message(message, lidar0_drawer, first_time, &lidar0_point_cloud_vector, lidar0_point_cloud_vector_max_size, lidar0_point_cloud_vector_index, lidar0_config, draw_lidar0_flag);
 }
 
@@ -1146,7 +1176,7 @@ void
 velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar1_point_cloud_vector;
+    static point_cloud *lidar1_point_cloud_vector = NULL;
     static int lidar1_point_cloud_vector_max_size = 0;
     static int lidar1_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar1_config;
@@ -1160,7 +1190,7 @@ void
 velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar2_point_cloud_vector;
+    static point_cloud *lidar2_point_cloud_vector = NULL;
     static int lidar2_point_cloud_vector_max_size = 0;
     static int lidar2_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar2_config;
@@ -1174,7 +1204,7 @@ void
 velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar3_point_cloud_vector;
+    static point_cloud *lidar3_point_cloud_vector = NULL;
     static int lidar3_point_cloud_vector_max_size = 0;
     static int lidar3_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar3_config;
@@ -1188,7 +1218,7 @@ void
 velodyne_variable_scan_message_handler4(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar4_point_cloud_vector;
+    static point_cloud *lidar4_point_cloud_vector = NULL;
     static int lidar4_point_cloud_vector_max_size = 0;
     static int lidar4_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar4_config;
@@ -1202,7 +1232,7 @@ void
 velodyne_variable_scan_message_handler5(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar5_point_cloud_vector;
+    static point_cloud *lidar5_point_cloud_vector = NULL;
     static int lidar5_point_cloud_vector_max_size = 0;
     static int lidar5_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar5_config;
@@ -1216,7 +1246,7 @@ void
 velodyne_variable_scan_message_handler6(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar6_point_cloud_vector;
+    static point_cloud *lidar6_point_cloud_vector = NULL;
     static int lidar6_point_cloud_vector_max_size = 0;
     static int lidar6_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar6_config;
@@ -1230,7 +1260,7 @@ void
 velodyne_variable_scan_message_handler7(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar7_point_cloud_vector;
+    static point_cloud *lidar7_point_cloud_vector = NULL;
     static int lidar7_point_cloud_vector_max_size = 0;
     static int lidar7_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar7_config;
@@ -1244,7 +1274,7 @@ void
 velodyne_variable_scan_message_handler8(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar8_point_cloud_vector;
+    static point_cloud *lidar8_point_cloud_vector = NULL;
     static int lidar8_point_cloud_vector_max_size = 0;
     static int lidar8_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar8_config;
@@ -1258,7 +1288,7 @@ void
 velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar9_point_cloud_vector;
+    static point_cloud *lidar9_point_cloud_vector = NULL;
     static int lidar9_point_cloud_vector_max_size = 0;
     static int lidar9_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar9_config;
@@ -1272,7 +1302,7 @@ void
 velodyne_variable_scan_message_handler10(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar10_point_cloud_vector;
+    static point_cloud *lidar10_point_cloud_vector = NULL;
     static int lidar10_point_cloud_vector_max_size = 0;
     static int lidar10_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar10_config;
@@ -1286,7 +1316,7 @@ void
 velodyne_variable_scan_message_handler11(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar11_point_cloud_vector;
+    static point_cloud *lidar11_point_cloud_vector = NULL;
     static int lidar11_point_cloud_vector_max_size = 0;
     static int lidar11_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar11_config;
@@ -1300,7 +1330,7 @@ void
 velodyne_variable_scan_message_handler12(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar12_point_cloud_vector;
+    static point_cloud *lidar12_point_cloud_vector = NULL;
     static int lidar12_point_cloud_vector_max_size = 0;
     static int lidar12_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar12_config;
@@ -1314,7 +1344,7 @@ void
 velodyne_variable_scan_message_handler13(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar13_point_cloud_vector;
+    static point_cloud *lidar13_point_cloud_vector = NULL;
     static int lidar13_point_cloud_vector_max_size = 0;
     static int lidar13_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar13_config;
@@ -1328,7 +1358,7 @@ void
 velodyne_variable_scan_message_handler14(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar14_point_cloud_vector;
+    static point_cloud *lidar14_point_cloud_vector = NULL;
     static int lidar14_point_cloud_vector_max_size = 0;
     static int lidar14_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar14_config;
@@ -1342,7 +1372,7 @@ void
 velodyne_variable_scan_message_handler15(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
-    static point_cloud *lidar15_point_cloud_vector;
+    static point_cloud *lidar15_point_cloud_vector = NULL;
     static int lidar15_point_cloud_vector_max_size = 0;
     static int lidar15_point_cloud_vector_index = 0;
     static carmen_lidar_config lidar15_config;
