@@ -11,7 +11,7 @@ static double last_y_meters_global = 0.0;
 static int map_index;
 
 
-void
+int
 neural_mapper_initialize(int max_distance_meters, int num_clouds, carmen_map_config_t map_config)
 {
 	neural_mapper_max_distance_meters = max_distance_meters;
@@ -19,6 +19,7 @@ neural_mapper_initialize(int max_distance_meters, int num_clouds, carmen_map_con
 	int img_dimensions = int(2*neural_mapper_max_distance_meters/map_config.resolution);
 	new_neural_map = Neural_map(img_dimensions, img_dimensions, map_config.resolution, 0.0, 0.0, 0.0, neural_mapper_max_distance_meters);
 	neural_mapper_acumulator = new Neural_map_queue(neural_map_num_clouds, img_dimensions, img_dimensions, map_config.resolution, neural_mapper_max_distance_meters);
+	return 1;
 }
 
 

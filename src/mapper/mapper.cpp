@@ -55,6 +55,7 @@ extern int ok_to_publish;
 extern int number_of_threads;
 
 extern int use_unity_simulator;
+int neural_mapper_initialized = 0;
 
 
 /**
@@ -84,6 +85,7 @@ extern int neural_mapper_max_distance_meters;
 //a cada neural_mapper_data_pace uma amostra do neural mapper sera gerada
 extern int neural_mapper_data_pace;
 static carmen_position_t neural_mapper_car_position_according_to_map;
+char neural_mapper_dataset_path[1024] = "/media/vinicius/NewHD/neural_mapper_raw/guarapari-20170403-2_no_bumblebee/";
 
 /***********************************/
 
@@ -742,8 +744,9 @@ run_mapper_with_remision_threshold(sensor_parameters_t *sensor_params, sensor_da
 					);
 
 					neural_mapper_update_output_map(offline_map, neural_mapper_car_position_according_to_map);
-					char neural_mapper_dataset_path[1024] = "/media/vinicius/NewHD/Datasets/Neural_Mapper_dataset/imgs_teste/";
-					neural_mapper_export_dataset_as_png(get_next_map, neural_mapper_dataset_path);
+					//					neural_mapper_export_dataset_as_png(get_next_map, neural_mapper_dataset_path);
+										neural_mapper_export_dataset_as_binary_file(get_next_map, neural_mapper_dataset_path,
+																	sensor_data->current_timestamp, neural_mapper_robot_pose);
 				}
 				neural_mapper_update_queue_and_clear_maps();
 			}
@@ -826,7 +829,6 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 							x_origin, y_origin, neural_mapper_data_pace);
 
 					neural_mapper_update_output_map(offline_map, neural_mapper_car_position_according_to_map);
-					char neural_mapper_dataset_path[1024] = "/media/vinicius/NewHD/neural_mapper_raw/volta_da_ufes_20191003/";
 //					neural_mapper_export_dataset_as_png(get_next_map, neural_mapper_dataset_path);
 					neural_mapper_export_dataset_as_binary_file(get_next_map, neural_mapper_dataset_path, sensor_data->current_timestamp, neural_mapper_robot_pose);
 				}
@@ -1734,8 +1736,11 @@ mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_co
 	}
 
 
-	if (use_neural_mapper)
-		neural_mapper_initialize(neural_mapper_max_distance_meters, neural_mapper_data_pace, map_config);
+	if (use_neural_mapper && !neural_mapper_initialized)
+		{
+			neural_mapper_initialized = neural_mapper_initialize(neural_mapper_max_distance_meters, neural_mapper_data_pace, map_config);
+			printf("%d\n\n", neural_mapper_initialized);
+		}
 
 	globalpos_initialized = 0; // Only considered initialized when first message is received
 
