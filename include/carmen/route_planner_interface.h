@@ -22,6 +22,12 @@ extern "C"
 	void
 	carmen_route_planner_publish_road_network_message(carmen_route_planner_road_network_message *route_planner_road_network_message);
 
+	void
+	carmen_route_planner_subscribe_destination_message(carmen_route_planner_destination_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+	void
+	carmen_route_planner_set_destination(char *destination);
+
 #ifdef __cplusplus
 }
 #endif

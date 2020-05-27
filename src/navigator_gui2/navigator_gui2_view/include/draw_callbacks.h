@@ -254,8 +254,11 @@ void on_menuHelp_About_activate(GtkWidget *widget,
 					   GdkEvent *event,
 					   GtkGui* data);
 
+//extern "C" G_MODULE_EXPORT
+//void on_comboGoalSource_changed(GtkWidget *widget, GtkGui* data);
+
 extern "C" G_MODULE_EXPORT
-void on_comboGoalSource_changed(GtkWidget *widget, GtkGui* data);
+void on_comboPlaceOfInterest_changed(GtkWidget *widget, GtkGui* data);
 
 extern "C" G_MODULE_EXPORT
 void on_comboState_changed(GtkWidget *widget, GtkGui* data);
@@ -277,6 +280,9 @@ void on_buttonRemoveGoal_clicked(GtkWidget *widget , GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
 void on_buttonClearGoals_clicked(GtkWidget *widget, GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
+void on_buttonComputeRoute_clicked(GtkWidget *widget, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
 void on_buttonGo_clicked(GtkWidget *widget, GtkGui* gui);

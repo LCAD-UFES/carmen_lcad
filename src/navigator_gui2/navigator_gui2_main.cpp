@@ -46,6 +46,7 @@ static carmen_ackerman_traj_point_t last_goal;
 static int goal_set = 0, autonomous = 0;
 
 static char *map_path = NULL;
+char *annotation_path = NULL;
 int autonomous_record_screen = 0;
 
 static carmen_point_t localize_std;
@@ -59,6 +60,7 @@ int current_num_point_clouds;
 int previous_num_point_clouds = 0;
 
 int record_screen;
+int use_glade_with_annotations = 0;
 
 char *user_pref_filename = NULL;
 const char *user_pref_module;
@@ -263,6 +265,141 @@ navigator_unset_goal(double x, double y)
 {
 	carmen_navigator_ackerman_unset_goal(x, y);
 }
+
+
+
+
+void
+get_annotation_list_from_file(char *carmen_annotation_filename, std::vector<carmen_annotation_t> &annotations)
+{
+	char full_annotation[3000];
+	FILE *stream;
+	char *line = NULL;
+	char *p; int i;
+	size_t len = 0;
+	ssize_t read;
+	bzero(full_annotation,3000);
+	char buffer[1024];
+	bzero(buffer,1024);
+	//strcat(buffer,getenv("CARMEN_HOME"));
+	//strcat(buffer,"/data/rddf_annotation_log_20140418.txt\0");
+	stream = fopen(carmen_annotation_filename, "r");
+	int j = 0;
+	if (stream == NULL)
+		printf("Arquivo de anotacao não encontrado!");
+	else{
+
+		while ((read = getline(&line, &len, stream)) != -1)
+		{
+			if(strstr(line,"RDDF_PLACE")){
+				if(line[strlen(line)-sizeof(char)] == '\n'){
+					line[strlen(line)-sizeof(char)] = '#';
+				}
+
+				strcat(full_annotation,line);
+
+				carmen_annotation_t a;
+				p = strtok(line, "\t");
+				//printf("%s\n", p);
+				i = 0;
+				while (p != NULL)
+				{
+					string s  (p);
+					if (i == 0)
+					{
+						a.annotation_description = (char*)malloc((strlen(p)+1) * sizeof(char));
+						strcpy(a.annotation_description,s.c_str());
+					}
+					if (i == 1)
+					{
+						a.annotation_code = stoi(s);
+					}
+					if (i == 2)
+					{
+						a.annotation_type = stoi(s);
+					}
+					if (i == 3)
+					{
+						a.annotation_orientation = stod(s);
+					}
+					if (i == 4)
+					{
+						a.annotation_point.x = stod(s);
+					}
+					if (i == 5)
+					{
+						a.annotation_point.y = stod(s);
+					}
+					if (i == 6)
+					{
+						a.annotation_point.z = stod(s);
+					}
+					i++;
+					p = strtok(NULL, "\t");
+				}
+				annotations.push_back(a);
+//				cout<<annotations[j].annotation_description<<endl;
+				j++;
+			}
+		}
+	}
+	free(line);
+	fclose(stream);
+	//printf("%s\n", allrddf);
+}
+
+
+void build_glade_with_annotation (char *annotation_path)
+{
+
+	char *carmen_home_path, glade_path[1000], glade_path_with_annotation[1000];
+	carmen_home_path = getenv("CARMEN_HOME");
+	sprintf(glade_path, "%s/data/gui/navigator_gui2.glade", carmen_home_path);
+	std::vector <carmen_annotation_t> annotation_list;
+	get_annotation_list_from_file(annotation_path, annotation_list);
+	std::vector <string> annotations_in_glade;
+	string row_begin = "      <row>\n";
+	string row_end = "      </row>\n";
+	for (unsigned int i = 0; i < annotation_list.size(); i++)
+	{
+		annotations_in_glade.push_back(row_begin);
+		string d(annotation_list[i].annotation_description);
+		d = d.substr(11, d.size()-1).c_str();
+		string col = "        <col id=\"0\" translatable=\"yes\">"+d+"</col>\n";
+		annotations_in_glade.push_back(col);
+		annotations_in_glade.push_back(row_end);
+		//				printf("\t%d - %s\n", i, d.substr(11, d.size()-1).c_str());
+	}
+
+	FILE *f_glade = fopen (glade_path, "r");
+	if (f_glade == NULL)
+	{
+		printf("Glade file doesn't exist in %s\n", glade_path);
+		exit(1);
+	}
+
+	std::vector <string> glade_file; //each position is a line of .glade file
+	int bufferLength = 1024;
+	char buffer[bufferLength];
+	while (fgets(buffer, bufferLength, f_glade))
+	{
+		string g (buffer);
+		glade_file.push_back(g);
+	}
+	fclose(f_glade);
+
+	glade_file.insert(glade_file.begin()+13, annotations_in_glade.begin(), annotations_in_glade.end());
+	sprintf(glade_path_with_annotation, "%s/data/gui/navigator_gui2_annotation.glade", carmen_home_path);
+	FILE *f_glade_with_annotations = fopen (glade_path_with_annotation, "w");
+
+	for (unsigned int i = 0; i < glade_file.size(); i++)
+	{
+		fprintf(f_glade_with_annotations, "%s", glade_file[i].c_str());
+	}
+	fclose(f_glade_with_annotations);
+
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1081,6 +1218,12 @@ read_parameters(int argc, char *argv[],
 	localize_std.theta = carmen_degrees_to_radians(localize_std.theta);
 	robot_config->rectangular = 1;
 
+	char polygon_file[1024];
+	bzero(polygon_file,1024);
+	strcat(polygon_file,getenv("CARMEN_HOME"));
+	strcat(polygon_file,"/bin/");
+
+
 	char *poly_file = (char*) "ford_escape/ford_escape_poly.txt";
 
 	carmen_param_t param_ackerman_list[] =
@@ -1092,16 +1235,19 @@ read_parameters(int argc, char *argv[],
 		{(char *) "robot", (char *) "polygon_file",CARMEN_PARAM_STRING, &(poly_file), 0, NULL},
 	};
 
+	strcat(polygon_file, poly_file);
+
 	carmen_param_allow_unfound_variables(1);
 	num_items = sizeof(param_ackerman_list) / sizeof(param_ackerman_list[0]);
 	carmen_param_install_params(argc, argv, param_ackerman_list, num_items);
 	carmen_param_allow_unfound_variables(0);
-	carmen_parse_polygon_file(poly_config, poly_file);
+	carmen_parse_polygon_file(poly_config, polygon_file);
 
 	carmen_param_t param_cmd_list[] =
 	{
 		{(char *) "commandline", (char *) "map_path", CARMEN_PARAM_STRING, &map_path, 0, NULL},
 		{(char *) "commandline", (char *) "autonomous_record_screen", CARMEN_PARAM_INT, &autonomous_record_screen, 0, NULL},
+		{(char *) "commandline", (char *) "annotation_path", CARMEN_PARAM_STRING, &annotation_path, 0, NULL},
 	};
 
 	num_items = sizeof(param_cmd_list) / sizeof(param_cmd_list[0]);
@@ -1109,6 +1255,12 @@ read_parameters(int argc, char *argv[],
 	carmen_param_allow_unfound_variables(1);
 
 	carmen_param_install_params(argc, argv, param_cmd_list, num_items);
+
+	if (annotation_path != NULL)
+	{
+		build_glade_with_annotation (annotation_path);
+		use_glade_with_annotations = 1;
+	}
 }
 
 

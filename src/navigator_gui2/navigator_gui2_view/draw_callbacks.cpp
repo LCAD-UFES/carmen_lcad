@@ -10,6 +10,7 @@ namespace View
 
 GtkGui *global_gui = NULL;
 int superimposed_is_set = 0;
+char *place_of_interest = NULL;
 
 //extern "C" G_MODULE_EXPORT
 gboolean on_drawArea_idle(void *data)
@@ -637,12 +638,21 @@ void on_menuHelp_About_activate(GtkWidget *widget __attribute__((unused)),
 	printf("on_menuHelp_About_activate\n");
 }
 
+////extern "C" G_MODULE_EXPORT
+//void on_comboGoalSource_changed(GtkWidget *widget __attribute__((unused)),
+//					   GtkGui* gui)
+//{
+//	if (global_gui)
+//		carmen_behavior_selector_set_goal_source((carmen_behavior_selector_goal_source_t)global_gui->get_goal_source_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboGoalSource)));
+//}
+
 //extern "C" G_MODULE_EXPORT
-void on_comboGoalSource_changed(GtkWidget *widget __attribute__((unused)),
+void on_comboPlaceOfInterest_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
 	if (global_gui)
-		carmen_behavior_selector_set_goal_source((carmen_behavior_selector_goal_source_t)global_gui->get_goal_source_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboGoalSource)));
+		place_of_interest = (char *)global_gui->get_place_of_interest(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboPlaceOfInterest));
+		//carmen_route_planner_set_destination((char *)global_gui->get_place_of_interest(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboPlaceOfInterest)));
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -766,6 +776,13 @@ void on_buttonClearGoals_clicked(GtkWidget *widget __attribute__((unused)),
 			carmen_behavior_selector_clear_goal_list();
 
 	gtk_toggle_button_set_active((GtkToggleButton *) widget, false);
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_buttonComputeRoute_clicked(GtkWidget *widget __attribute__((unused)),
+					   GtkGui* gui)
+{
+	carmen_route_planner_set_destination(place_of_interest);
 }
 
 //extern "C" G_MODULE_EXPORT

@@ -35,6 +35,7 @@
 #include <carmen/lane_detector_interface.h>
 #include <carmen/model_predictive_planner_interface.h>
 #include <carmen/frenet_path_planner_interface.h>
+#include <carmen/route_planner_interface.h>
 #include <car_panel.h>
 
 #include <carmen/rddf_util.h>
@@ -108,7 +109,8 @@ namespace View
 			GtkHBox* box_map_2d;
 			GtkMapViewer *map_view;
 
-			GtkComboBox *comboGoalSource;
+			//GtkComboBox *comboGoalSource;
+			GtkComboBox *comboPlaceOfInterest;
 			GtkComboBox *comboState;
 			GtkComboBox *comboFollowLane;
 			GtkComboBox *comboParking;
@@ -133,6 +135,7 @@ namespace View
 			GtkToggleButton* buttonNextTick;
 			GtkToggleButton* buttonGo;
 			GtkToggleButton* buttonRecord;
+			GtkToggleButton* buttonComputeRoute;
 
 			GtkCheckMenuItem* menuDisplay_TrackRobot;
 			GtkCheckMenuItem* menuDisplay_DrawPath;
@@ -318,7 +321,8 @@ namespace View
 		void ConfigureMapViewer();
 		void InitializePathVector();
 		int get_algorithm_code(char *algorithm_name);
-		int get_goal_source_code(char* goal_source_name);
+//		int get_goal_source_code(char* goal_source_name);
+		char* get_place_of_interest(char* goal_source_name);
 		int get_state_code(char* state_name);
 		void save_to_image(GtkMapViewer* mapv);
 		void do_redraw(void);

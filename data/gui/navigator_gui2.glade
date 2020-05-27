@@ -2,6 +2,17 @@
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
   <!-- interface-naming-policy toplevel-contextual -->
+  <object class="GtkListStore" id="liststore2">
+    <columns>
+      <!-- column-name Text -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">Robot</col>
+      </row>
+    </data>
+  </object>
   <object class="GtkListStore" id="liststore1">
     <columns>
       <!-- column-name Text -->
@@ -16,20 +27,6 @@
       </row>
       <row>
         <col id="0" translatable="yes">RRT</col>
-      </row>
-    </data>
-  </object>
-  <object class="GtkListStore" id="liststore2">
-    <columns>
-      <!-- column-name Text -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">User Goal</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">Rddf Goal</col>
       </row>
     </data>
   </object>
@@ -1194,12 +1191,12 @@
                                         <property name="can_focus">False</property>
                                         <property name="homogeneous">True</property>
                                         <child>
-                                          <object class="GtkLabel" id="labelGoalSource">
+                                          <object class="GtkLabel" id="labelPlaceOfInterest">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
                                             <property name="xalign">0</property>
                                             <property name="xpad">5</property>
-                                            <property name="label" translatable="yes">Goal Source:</property>
+                                            <property name="label" translatable="yes">Place of Interest:</property>
                                             <property name="ellipsize">start</property>
                                           </object>
                                           <packing>
@@ -1209,12 +1206,12 @@
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkComboBox" id="comboGoalSource">
+                                          <object class="GtkComboBox" id="comboPlaceOfInterest">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
                                             <property name="model">liststore2</property>
                                             <property name="active">0</property>
-                                            <signal name="changed" handler="on_comboGoalSource_changed" swapped="no"/>
+                                            <signal name="changed" handler="on_comboPlaceOfInterest_changed" swapped="no"/>
                                             <child>
                                               <object class="GtkCellRendererText" id="cellrenderertext2"/>
                                               <attributes>
@@ -1509,13 +1506,13 @@
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkToggleButton" id="buttonClearGoals">
-                                            <property name="label" translatable="yes">Clear Goals</property>
+                                          <object class="GtkToggleButton" id="buttonComputeRoute">
+                                            <property name="label" translatable="yes">Compute Route</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
-                                            <signal name="clicked" handler="on_buttonClearGoals_clicked" swapped="no"/>
+                                            <signal name="clicked" handler="on_buttonComputeRoute_clicked" swapped="no"/>
                                           </object>
                                           <packing>
                                             <property name="expand">True</property>

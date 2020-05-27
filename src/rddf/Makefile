@@ -14,7 +14,7 @@ LFLAGS += -lparam_interface -lipc -lglobal -lrddf_interface \
 	-lobstacle_avoider_interface -lrobot_ackerman_interface -lsimulator_ackerman_interface -ltraffic_light_interface \
 	-lcollision_detection -lmoving_objects_interface \
 	-lmap_server_interface -lgrid_mapping -lmap_io -lmap_interface \
-	-lgsl -lgslcblas -lm -lvoice_interface_interface `python3.5-config --libs` `python3.6-config --libs` 
+	-lgsl -lgslcblas -lm -lvoice_interface_interface `python3.5-config --libs`# `python3.6-config --libs` 
 LFLAGS += -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine
 
 IFLAGS += -I/usr/include/eigen3 

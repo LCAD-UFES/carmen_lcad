@@ -1,5 +1,8 @@
 #include "gtk_gui.h"
+
+using namespace std;
 extern int record_screen;
+extern int use_glade_with_annotations;
 int button_record_verification=0;
 
 extern void
@@ -372,7 +375,15 @@ namespace View
 			exit(1);
 		}
 
-		sprintf(glade_path, "%s/data/gui/navigator_gui2.glade", carmen_home_path);
+		if (use_glade_with_annotations == 1)
+		{
+			sprintf(glade_path, "%s/data/gui/navigator_gui2_annotation.glade", carmen_home_path);
+		}
+		else
+		{
+			sprintf(glade_path, "%s/data/gui/navigator_gui2.glade", carmen_home_path);
+		}
+
 		if (!gtk_builder_add_from_file(builder, glade_path, &error))
 		{
 			g_warning("%s", error->message);
@@ -506,7 +517,8 @@ namespace View
 		controls_.menuMaps_MovingObjects = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_MovingObjects" ));
 		controls_.menuMaps_RoadMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_RoadMap" ));
 
-		controls_.comboGoalSource = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboGoalSource" ));
+		//controls_.comboGoalSource = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboGoalSource" ));
+		controls_.comboPlaceOfInterest = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboPlaceOfInterest" ));
 		controls_.comboState = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboState" ));
 		controls_.comboFollowLane = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboFollowLane" ));
 		controls_.comboParking = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboParking" ));
@@ -528,6 +540,7 @@ namespace View
 		controls_.buttonSyncMode = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonSyncMode" ));
 		controls_.buttonNextTick = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonNextTick" ));
 
+		controls_.buttonComputeRoute = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonComputeRoute" ));
 		controls_.buttonGo = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonGo" ));
 		GdkColor color;
 		gdk_color_parse ("red", &color);
@@ -1296,15 +1309,27 @@ namespace View
 		return code;
 	}
 
-	int
-	GtkGui::get_goal_source_code(char* goal_source_name)
-	{
-		if (strcmp(goal_source_name, "User Goal") == 0)
-			return 0;
-		else if(strcmp(goal_source_name, "Rddf Goal") == 0)
-			return 1;
+//	int
+//	GtkGui::get_goal_source_code(char* goal_source_name)
+//	{
+//		if (strcmp(goal_source_name, "User Goal") == 0)
+//			return 0;
+//		else if(strcmp(goal_source_name, "Rddf Goal") == 0)
+//			return 1;
+//
+//		return -1;
+//	}
 
-		return -1;
+	char*
+	GtkGui::get_place_of_interest(char* place_of_interest_name)
+	{
+//		cout<<"novo place: "<<place_of_interest_name<<endl;
+		//toda vez que o place of interest é mudado
+		//o mapa deve ser carregado na posição do place_of_interest
+		//se o usuário apertar o botao "make route"
+		//se o usuário não setar  o place goal e clicar em make route, mando o local e a posição do place
+		//se o usuário setar  o place goal e clicar em make route, mando o local e a posição do place
+		return place_of_interest_name;
 	}
 
 	int
@@ -1332,8 +1357,8 @@ namespace View
 		if((int)msg.parking_algorithm != get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox*)this->controls_.comboParking)))
 			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboParking, msg.parking_algorithm);
 
-		if((int)msg.goal_source != get_goal_source_code(gtk_combo_box_get_active_text((GtkComboBox*)this->controls_.comboGoalSource)))
-			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboGoalSource, msg.goal_source);
+//		if((int)msg.goal_source != get_goal_source_code(gtk_combo_box_get_active_text((GtkComboBox*)this->controls_.comboGoalSource)))
+//			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboGoalSource, msg.goal_source);
 
 		//TODO: pode ter erro na conversao pra gtkwidget
 		if (msg.goal_source == CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)

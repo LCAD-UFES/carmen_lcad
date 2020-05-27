@@ -71,6 +71,16 @@ typedef struct
 #define		CARMEN_ROUTE_PLANNER_OFFROAD_PLAN_REQUEST_MESSAGE_FMT		"{int, <int:1>, <int:1>, <int:1>, int, <{double, double, double, double, double}:5>, <int:5>, double, string}"
 
 
+typedef struct
+{
+	char *destination;
+	double timestamp;
+	char *host;
+} carmen_route_planner_destination_message;
+
+#define		CARMEN_ROUTE_PLANNER_DESTINATION_MESSAGE_NAME		"carmen_route_planner_destination_message"
+#define		CARMEN_ROUTE_PLANNER_DESTINATION_MESSAGE_FMT		"{string, double, string}"
+
 #ifdef __cplusplus
 }
 #endif
