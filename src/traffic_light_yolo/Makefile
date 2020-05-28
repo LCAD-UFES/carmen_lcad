@@ -8,7 +8,7 @@ CXXFLAGS = -std=c++11
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include -DBOOST_SIGNALS_NO_DEPRECATION_WARNING
-
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet2
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib
 
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface
@@ -20,7 +20,7 @@ LFLAGS += -ldarknet2
 
 SOURCES = traffic_light_yolo.cpp
 
-TARGETS = traffic_light_yolo
+TARGETS = darknet2 traffic_light_yolo
 
 PUBLIC_BINARIES = traffic_light_yolo
 
