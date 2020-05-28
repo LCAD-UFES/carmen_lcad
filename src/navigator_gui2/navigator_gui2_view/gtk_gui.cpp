@@ -2651,13 +2651,15 @@ namespace View
 	void
 	format_annotation_description(char *dest_text, char *orig_text)
 	{
-		static const char *prefix = (char *) "RDDF_PLACE_";
+		static char const *prefix = "RDDF_PLACE_", *prefix2 = "PLACE_";
 		char *start = orig_text;
 		if (strncmp(orig_text, prefix, strlen(prefix)) == 0)
 			start += strlen(prefix);
+		else if (strncmp(orig_text, prefix2, strlen(prefix2)) == 0)
+			start += strlen(prefix2);
 		strcpy(dest_text, start);
 
-		for (char *dest = dest_text; (*dest) != 0; dest++)
+		for (char *dest = dest_text; (*dest) != '\0'; dest++)
 		{
 			if ((*dest) == '_')
 				(*dest) = ' ';
