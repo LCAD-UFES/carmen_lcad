@@ -38,7 +38,7 @@ PACKAGES = ipc global param_daemon proccontrol sensors robot_ackerman_gui  \
 	   # hypergraphsclam \ 
 	   # visual_tracker lane_detector voice_interface
 
-PACKAGES_LIB = voice_interface visual_tracker
+PACKAGES_LIB = sensors/kinect visual_tracker lane_detector voice_interface  
 
 ifndef NO_CPP
 PACKAGES += carmenpp

@@ -11,7 +11,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <opencv2/highgui/highgui.hpp>
-#include <carmen/dbscan.h>
+#include <dbscan.h>
 #include "Darknet.hpp"
 
 using namespace std;

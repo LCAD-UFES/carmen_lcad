@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <opencv2/highgui/highgui.hpp>
-#include <carmen/dbscan.h>
+#include <dbscan.h>
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <Python.h>
 #include <numpy/arrayobject.h>
