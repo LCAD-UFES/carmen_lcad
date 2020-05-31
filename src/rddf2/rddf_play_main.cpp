@@ -627,7 +627,8 @@ find_direction_traffic_sign(carmen_point_t robot_pose, bool ahead)
 
 	if (annotation_index < annotation_read_from_file.size())
 	{
-		double curvature = annotation_read_from_file[annotation_index].annotation_point.z;
+		double radius = annotation_read_from_file[annotation_index].annotation_point.z;
+		double curvature = radius != 0.0 ? (1.0 / radius) : 0.0;
 		traffic_sign_curvature = MIN(fabs(curvature), fabs(maximum_curvature)) * sign(curvature);
 		traffic_sign_code = annotation_read_from_file[annotation_index].annotation_code;
 

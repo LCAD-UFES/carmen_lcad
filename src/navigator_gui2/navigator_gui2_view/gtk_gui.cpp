@@ -2707,7 +2707,7 @@ namespace View
 			    (rddf_annotation_msg.annotations[i].annotation_code != RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_OFF) &&
 				(rddf_annotation_msg.annotations[i].annotation_point.z != 0.0))
 			{
-				double radius = 1.0 / fabs(rddf_annotation_msg.annotations[i].annotation_point.z);
+				double radius = fabs(rddf_annotation_msg.annotations[i].annotation_point.z);
 				double theta = (rddf_annotation_msg.annotations[i].annotation_point.z > 0.0) ? theta_left : theta_right;
 				carmen_world_point_t center = world_point;
 				center.pose.x = world_point.pose.x + radius * cos(theta);
