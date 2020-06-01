@@ -122,7 +122,7 @@ my_f(const gsl_vector *v, void *params)
 	double wo = 1.0;
 	double wk = 1.0;
 	double ws = 1.0;
-	double dmax = 2.0; // escolher um valor melhor
+	double dmax = 5.0; // escolher um valor melhor
 	double kmax = robot_config.distance_between_front_and_rear_axles / tan(robot_config.max_phi);
 
 	// double *obstacles = (double *) params;
@@ -184,7 +184,7 @@ my_f(const gsl_vector *v, void *params)
 	}
 
 */
-	for (int i = 1; i <(param->path_size); i++)
+/*	for (int i = 1; i <(param->path_size); i++)
 	{
 		x = param->points[i].x;
 		y = param->points[i].y;
@@ -192,13 +192,13 @@ my_f(const gsl_vector *v, void *params)
 		//obst_y = obstacles[i + 1];
 		//distance = sqrt((x - obst_x) * (x - obst_x) + (y - obst_y) * (y - obst_y));
 		distance = obstacle_distance(x, y);
-		if(distance <= dmax)
-		{
-			obstacle_cost += pow(distance - dmax , 2) * (distance - dmax);
+//		if(distance <= dmax)
+//		{
+			obstacle_cost += pow(dmax - distance  , 2) * (dmax - distance );
 //			printf("Entrou no obstacle_cost = %f %f\n", obstacle_cost, distance);
-		}
+//		}
 	}
-
+*/
 	double curvature_term;
 	for (int i = 1; i <(param->path_size - 1); i++)
 	{
@@ -208,9 +208,13 @@ my_f(const gsl_vector *v, void *params)
 		y_next = param->points[i+1].y;
 		x_prev = param->points[i-1].x;
 		y_prev = param->points[i-1].y;
-//		square_displacement = ((x_next - x_i) - (x_i - x_prev)) * ((x_next - x_i) - (x_i - x_prev)) + ((y_next - y_i) - (y_i - y_prev)) * ((y_next - y_i) - (y_i - y_prev));
-		square_displacement = pow(sqrt((x_next - x_i) * (x_next - x_i) + (y_next - y_i) * (y_next - y_i)) - sqrt((x_i - x_prev) * (x_i - x_prev) + (y_i - y_prev) * (y_i - y_prev)), 2);
 
+		distance = obstacle_distance(x_i, y_i);
+		if(distance < dmax)
+			obstacle_cost += abs(pow(distance - dmax, 2) * (distance - dmax));
+
+		square_displacement = ((x_next - x_i) - (x_i - x_prev)) * ((x_next - x_i) - (x_i - x_prev)) + ((y_next - y_i) - (y_i - y_prev)) * ((y_next - y_i) - (y_i - y_prev));
+//		square_displacement = pow(sqrt((x_next - x_i) * (x_next - x_i) + (y_next - y_i) * (y_next - y_i)) - sqrt((x_i - x_prev) * (x_i - x_prev) + (y_i - y_prev) * (y_i - y_prev)), 2);
 		smoothness_cost +=  square_displacement;
 
 		delta_phi = abs(atan2(y_next - y_i, x_next - x_i) - atan2(y_i - y_prev, x_i - x_prev));
@@ -218,21 +222,25 @@ my_f(const gsl_vector *v, void *params)
 		if(abs(displacement) > 0.001)
 		{
 			curvature_term = (delta_phi / displacement);
-			if(curvature_term > kmax)
-			{
+//			if(curvature_term > kmax)
+//			{
 				curvature_term = (delta_phi / displacement) - kmax;
 				curvature_cost += pow(curvature_term, 2) * curvature_term;
 	//			printf("teste = %d %f %f %f\n",i, obstacle_cost, curvature_cost, smoothness_cost);
-			}
+//			}
 		}
 
 	}
+
+	distance = obstacle_distance(param->points[param->path_size - 1].x, param->points[param->path_size - 1].y);
+	if(distance < dmax)
+		obstacle_cost += abs(pow(distance - dmax , 2) * (distance - dmax ));
 
 	obstacle_cost = wo * obstacle_cost;
 	curvature_cost = wk * curvature_cost;
 	smoothness_cost = ws * smoothness_cost;
 //	exit(1);
-	printf("costs= %f %f %f \n", obstacle_cost, curvature_cost, smoothness_cost);
+//	printf("costs= %f %f %f \n", obstacle_cost, curvature_cost, smoothness_cost);
 
 	return obstacle_cost + curvature_cost + smoothness_cost;
 //	return smoothness_cost;
@@ -402,7 +410,7 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 
 		status = gsl_multimin_test_gradient (s->gradient, 0.01); //(gsl_vector, epsabs) and  |g| < epsabs
 		// status == 0 (GSL_SUCCESS), if a minimum has been found
-	} while (status == GSL_CONTINUE && iter < 999);
+	} while (status == GSL_CONTINUE && iter < 500);
 
 
 	for (i = 0, j = 0; i < (size - 2); i++)
