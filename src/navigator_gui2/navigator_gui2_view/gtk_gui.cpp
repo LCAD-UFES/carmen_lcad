@@ -462,6 +462,9 @@ namespace View
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/place_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_PLACE_OF_INTEREST][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
 
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/yield_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_YIELD][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+
 		controls_.main_window  = GTK_WIDGET(gtk_builder_get_object(builder, "mainWindow" ));
 		controls_.drawArea = GTK_WIDGET(gtk_builder_get_object(builder, "drawingArea"));
 		controls_.drawAreaCarPanel = GTK_WIDGET(gtk_builder_get_object(builder, "drawingAreaCarPanel"));
