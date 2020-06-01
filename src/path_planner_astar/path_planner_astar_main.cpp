@@ -45,7 +45,7 @@ int astar_path_poses_size = 0;
 #define SQRT2 sqrt(2.0)
 #define DIST2D_D_P(x1,x2) (sqrt(((x1).x - (x2)->x) * ((x1).x - (x2)->x) + \
 							((x1).y - (x2)->y) * ((x1).y - (x2)->y)))
-#define USE_SMOOTH 0
+#define USE_SMOOTH 1
 
 
 double
@@ -122,7 +122,7 @@ my_f(const gsl_vector *v, void *params)
 	double wo = 1.0;
 	double wk = 1.0;
 	double ws = 1.0;
-	double dmax = 10.0; // escolher um valor melhor
+	double dmax = 2.0; // escolher um valor melhor
 	double kmax = robot_config.distance_between_front_and_rear_axles / tan(robot_config.max_phi);
 
 	// double *obstacles = (double *) params;
@@ -130,7 +130,6 @@ my_f(const gsl_vector *v, void *params)
 	int j = 0;
 	for (int i = 0; i < param->path_size; i++)
 	{
-//		printf("Aqui-1 %d %d\n", i, j);
 		if (!param->anchor_points[i])
 		{
 			param->points[i].x = gsl_vector_get(v, j++);
@@ -138,9 +137,8 @@ my_f(const gsl_vector *v, void *params)
 //			printf("x = %f y = %f i = %d\n",param->points[i].x, param->points[i].y, i);
 		}
 	}
-//	printf("Aqui2\n");
 
-	double obstacle_cost = 0;
+	double obstacle_cost = 0.0;
 	double x, y, obst_x, obst_y, distance;
 /*
 	for (int i = 2; i < v->size; i += 2) {
@@ -153,7 +151,7 @@ my_f(const gsl_vector *v, void *params)
 		obstacle_cost += wo * (distance - dmax) * (distance - dmax) ;
 	}
 */
-	double curvature_cost = 0;
+	double curvature_cost = 0.0;
 	double delta_phi;
 
 
@@ -171,7 +169,7 @@ my_f(const gsl_vector *v, void *params)
 		curvature_cost += wk * (delta_phi / displacement - kmax) * (delta_phi / displacement - kmax);
 	}
 */
-	double smoothness_cost = 0;
+	double smoothness_cost = 0.0;
 	double square_displacement;
 /*
 	for (int i = 2; i < v->size - 2; i += 2) {
@@ -186,8 +184,6 @@ my_f(const gsl_vector *v, void *params)
 	}
 
 */
-	double obstacle_term;
-
 	for (int i = 1; i <(param->path_size); i++)
 	{
 		x = param->points[i].x;
@@ -196,9 +192,11 @@ my_f(const gsl_vector *v, void *params)
 		//obst_y = obstacles[i + 1];
 		//distance = sqrt((x - obst_x) * (x - obst_x) + (y - obst_y) * (y - obst_y));
 		distance = obstacle_distance(x, y);
-		obstacle_term = (distance);
-		if(obstacle_term <= dmax)
-			obstacle_cost += pow(obstacle_term - dmax , 2) * (obstacle_term - dmax);
+		if(distance <= dmax)
+		{
+			obstacle_cost += pow(distance - dmax , 2) * (distance - dmax);
+//			printf("Entrou no obstacle_cost = %f %f\n", obstacle_cost, distance);
+		}
 	}
 
 	double curvature_term;
@@ -210,23 +208,30 @@ my_f(const gsl_vector *v, void *params)
 		y_next = param->points[i+1].y;
 		x_prev = param->points[i-1].x;
 		y_prev = param->points[i-1].y;
-		square_displacement = ((x_next - x_i) - (x_i - x_prev)) * ((x_next - x_i) - (x_i - x_prev)) + ((y_next - y_i) - (y_i - y_prev)) * ((y_next - y_i) - (y_i - y_prev));
+//		square_displacement = ((x_next - x_i) - (x_i - x_prev)) * ((x_next - x_i) - (x_i - x_prev)) + ((y_next - y_i) - (y_i - y_prev)) * ((y_next - y_i) - (y_i - y_prev));
+		square_displacement = pow(sqrt((x_next - x_i) * (x_next - x_i) + (y_next - y_i) * (y_next - y_i)) - sqrt((x_i - x_prev) * (x_i - x_prev) + (y_i - y_prev) * (y_i - y_prev)), 2);
+
 		smoothness_cost +=  square_displacement;
 
 		delta_phi = abs(atan2(y_next - y_i, x_next - x_i) - atan2(y_i - y_prev, x_i - x_prev));
 		displacement = sqrt((x_i - x_prev) * (x_i - x_prev) + (y_i - y_prev) * (y_i - y_prev));
-		curvature_term = (delta_phi / displacement);
-		if(curvature_term > kmax)
+		if(abs(displacement) > 0.001)
 		{
-			curvature_term = (delta_phi / displacement) - kmax;
-			curvature_cost += pow(curvature_term, 2) * curvature_term;
+			curvature_term = (delta_phi / displacement);
+			if(curvature_term > kmax)
+			{
+				curvature_term = (delta_phi / displacement) - kmax;
+				curvature_cost += pow(curvature_term, 2) * curvature_term;
+	//			printf("teste = %d %f %f %f\n",i, obstacle_cost, curvature_cost, smoothness_cost);
+			}
 		}
+
 	}
 
 	obstacle_cost = wo * obstacle_cost;
 	curvature_cost = wk * curvature_cost;
 	smoothness_cost = ws * smoothness_cost;
-
+//	exit(1);
 	printf("costs= %f %f %f \n", obstacle_cost, curvature_cost, smoothness_cost);
 
 	return obstacle_cost + curvature_cost + smoothness_cost;
@@ -1089,7 +1094,7 @@ build_rddf_poses(state_node *current_state)
 	{
 //		path[i].state.v = abs(path[i].state.v);
 		temp_rddf_poses_from_path.push_back(path[i].state);
-		printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
+//		printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
 //		draw_astar_object(&path[i].state, CARMEN_GREEN);
 	}
 
@@ -1115,7 +1120,7 @@ astar_mount_path_message(state_node *current_state)
 
 
 	//printf("%f\n",DIST2D(current_globalpos_msg.globalpos, goal_state->state));
-	printf("Chegou ao fim do path!\n");
+//	printf("Chegou ao fim do path!\n");
 }
 
 
