@@ -1,6 +1,7 @@
 #include "draw_callbacks.h"
 
 extern int record_screen;
+extern char *place_of_interest;
 
 extern void
 mapper_handler(carmen_mapper_map_message *message);
@@ -10,7 +11,6 @@ namespace View
 
 GtkGui *global_gui = NULL;
 int superimposed_is_set = 0;
-char *place_of_interest = NULL;
 
 //extern "C" G_MODULE_EXPORT
 gboolean on_drawArea_idle(void *data)

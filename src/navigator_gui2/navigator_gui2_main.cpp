@@ -35,6 +35,7 @@ static carmen_navigator_map_t map_type = CARMEN_NAVIGATOR_MAP_v;
 static carmen_navigator_map_t superimposedmap_type = CARMEN_NONE_v;
 static carmen_map_p map = NULL, map_level1 = NULL, cost_map = NULL, offline_map = NULL, likelihood_map = NULL, global_likelihood_map = NULL,
 		complete_map = NULL, moving_objects_map = NULL, lane_map = NULL, remission_map = NULL, road_map = NULL;
+static carmen_map_t offline_map_tmp;
 carmen_localize_ackerman_map_t localize_all_maps;
 int first_localize_map_message_received = 1;
 static double last_navigator_status = 0.0;
@@ -61,6 +62,8 @@ int previous_num_point_clouds = 0;
 
 int record_screen;
 int use_glade_with_annotations = 0;
+extern int unsubscribe_map_server;
+char const *place_of_interest = "Robot";
 
 char *user_pref_filename = NULL;
 const char *user_pref_module;
@@ -70,6 +73,8 @@ int user_pref_window_width  = -1;
 int user_pref_window_height = -1;
 int user_pref_window_x = -1;
 int user_pref_window_y = -1;
+
+std::vector <carmen_annotation_t> annotation_list;
 
 
 static void
@@ -355,7 +360,6 @@ void build_glade_with_annotation (char *annotation_path)
 	char *carmen_home_path, glade_path[1000], glade_path_with_annotation[1000];
 	carmen_home_path = getenv("CARMEN_HOME");
 	sprintf(glade_path, "%s/data/gui/navigator_gui2.glade", carmen_home_path);
-	std::vector <carmen_annotation_t> annotation_list;
 	get_annotation_list_from_file(annotation_path, annotation_list);
 	std::vector <string> annotations_in_glade;
 	string row_begin = "      <row>\n";
@@ -387,6 +391,8 @@ void build_glade_with_annotation (char *annotation_path)
 		glade_file.push_back(g);
 	}
 	fclose(f_glade);
+
+	printf("%s\n", place_of_interest);
 
 	glade_file.insert(glade_file.begin()+13, annotations_in_glade.begin(), annotations_in_glade.end());
 	sprintf(glade_path_with_annotation, "%s/data/gui/navigator_gui2_annotation.glade", carmen_home_path);
@@ -575,7 +581,14 @@ offline_map_update_handler(carmen_mapper_map_message *new_map)
 	if (offline_map && (new_map->config.x_size != offline_map->config.x_size || new_map->config.y_size != offline_map->config.y_size))
 		carmen_map_destroy(&offline_map);
 
+//	carmen_map_server_copy_offline_map_from_message (&offline_map_tmp, new_map);
+
 	offline_map = copy_grid_mapping_to_map(offline_map, new_map);
+
+//	if (strcmp (place_of_interest, "Robot") == 0)
+//	{
+//		memcpy(offline_map->complete_map, offline_map_tmp.complete_map, offline_map_tmp.config.x_size * offline_map_tmp.config.y_size * sizeof(double));
+//	}
 
 	if (superimposedmap_type == CARMEN_OFFLINE_MAP_v)
 	{
@@ -725,7 +738,11 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 	localize_all_maps.carmen_mean_remission_map.config = localize_all_maps.config;
 	memcpy(likelihood_map->complete_map, localize_all_maps.complete_prob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
 	memcpy(global_likelihood_map->complete_map, localize_all_maps.complete_gprob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
-	memcpy(remission_map->complete_map, localize_all_maps.carmen_mean_remission_map.complete_map, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
+//	if (strcmp (place_of_interest, "Robot") == 0)
+//	{
+		memcpy(remission_map->complete_map, localize_all_maps.carmen_mean_remission_map.complete_map, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
+//	}
+
 
 	if (superimposedmap_type == CARMEN_LOCALIZE_LMAP_v)
 		carmen_map_interface_set_superimposed_map(likelihood_map);
@@ -1294,7 +1311,9 @@ subscribe_ipc_messages()
 			NULL, sizeof(carmen_navigator_ackerman_plan_to_draw_message),
 			(carmen_handler_t) plan_to_draw_handler, CARMEN_SUBSCRIBE_LATEST);
 
+
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
+
 	carmen_map_server_subscribe_road_map(NULL, (carmen_handler_t) road_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 //	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 	if (height_max_level > 0)
