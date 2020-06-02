@@ -88,8 +88,9 @@ t_a_star_utils a_star(t_adjacent_list** adjacent_list, t_graph graph, int graph_
 t_adjacent_list **add_to_list_undir(t_adjacent_list **adjacent_list, int u, int v, int w);
 t_adjacent_list **create_adjacent_list(t_adjacent_list ** adjacent_list, t_graph graph);
 int find_closest_point_in_graph (t_graph graph, carmen_point_t point);
-carmen_point_t set_destination(vector<carmen_annotation_t> annotations);
-void get_annotation_from_rddf(char *allrddf, vector<carmen_annotation_t> &annotations);
+//carmen_point_t set_destination(vector<carmen_annotation_t> annotations);
+carmen_point_t set_destination(vector<carmen_annotation_t> annotations, char *goal);
+void get_annotation_from_rddf(char *carmen_annotation_filename, vector<carmen_annotation_t> &annotations);
 
 #ifdef __cplusplus
 }

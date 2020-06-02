@@ -1,11 +1,13 @@
 #include "lidar_drivers.h"
 
-int sockfd_;
 #define RSLIDAR_MSG_BUFFER_SIZE 1248
 
 #define POLLIN		0x001		// There is data to read
 #define POLLPRI		0x002		// There is urgent data to read
 #define POLLOUT		0x004		// Writing now will not block
+
+
+int sockfd_;
 
 
 void
@@ -132,6 +134,7 @@ realloc_message(carmen_velodyne_variable_scan_message &msg, int actual_size)
     
 	for (int i = actual_size; i < (actual_size + 240); i++)
 	{
+		// TODO Should free the memory before alloc new block?
 		msg.partial_scan[i].shot_size = msg.partial_scan[actual_size].shot_size;
 		msg.partial_scan[i].distance = (unsigned short*) malloc (msg.partial_scan[actual_size].shot_size * sizeof(unsigned short));
 		msg.partial_scan[i].intensity = (unsigned char*) malloc (msg.partial_scan[actual_size].shot_size * sizeof(unsigned char));

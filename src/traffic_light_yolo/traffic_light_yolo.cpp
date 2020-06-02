@@ -1,5 +1,5 @@
 #include <carmen/carmen.h>
-#include <carmen/carmen_darknet_interface.hpp>
+#include <carmen_darknet_interface.hpp>
 #include <carmen/bumblebee_basic_interface.h>
 #include <carmen/velodyne_interface.h>
 #include <carmen/velodyne_camera_calibration.h>
@@ -1154,8 +1154,8 @@ load_traffic_light_annotation_file(char* path)
         int scan_count = sscanf(line, "%s %d %d %lf %lf %lf %lf ", annotation_description, &annotation_type, &annotation_code,
                         &pose.orientation.yaw, &pose.position.x, &pose.position.y, &pose.position.z);
 
-        if (scan_count == 7
-            && strcmp("RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT", annotation_description) == 0)
+        if (scan_count == 7 && annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT)
+//            && strcmp("RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT", annotation_description) == 0)
         {
             fprintf(stderr, "%lf %lf %lf %lf\n", pose.orientation.yaw, pose.position.x, pose.position.y, pose.position.z);
             pose.orientation.roll = 0.0;

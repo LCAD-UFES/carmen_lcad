@@ -21,7 +21,7 @@
 //#include "lib_neural_mapper_py.h"
 
 
-void neural_mapper_initialize(int max_distance_meters, int num_clouds, carmen_map_config_t map_config);
+int neural_mapper_initialize(int max_distance_meters, int num_clouds, carmen_map_config_t map_config);
 void neural_mapper_export_dataset_as_png(bool get_next_map, char path[]);
 void neural_mapper_export_dataset_as_binary_file(bool get_next_map, char path[], double laser_timestamp, carmen_pose_3D_t neural_map_robot_pose);
 void neural_mapper_update_queue_and_clear_maps();

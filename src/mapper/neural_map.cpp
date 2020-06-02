@@ -536,8 +536,8 @@ Neural_map_queue::save_map_as_binary_file(carmen_map_t map, char* map_name, char
 	//map_to_csv(map, name);
 	fclose(map_file);
 	//Just to debug-comment for generate the dataset
-	if(!is_label)
-		map_to_png(map, name, is_label, map_max, -1);
+//	if(!is_label)
+//		map_to_png(map, name, is_label, map_max, -1);
 
 //TODO Salvar o ground truth como png para comparar visualmente tambem - Lembrar que o mapa i j = opencv j i
 	if(is_label)

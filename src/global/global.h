@@ -501,6 +501,26 @@ extern carmen_inline void carmen_erase_structure(void* ptr, int size_of_struture
 }
 
 
+
+extern carmen_inline double
+carmen_normalize_angle_degree(double theta)
+{
+	int multiplier;
+
+	if (theta >= 0 && theta < 360)
+		return theta;
+
+	multiplier = (int)(theta / 360);
+	theta = theta - multiplier * 360;
+	if (theta >= 360)
+		theta -= 360;
+	if (theta < 0)
+		theta += 360;
+
+	return theta;
+}
+
+
 extern carmen_inline double carmen_normalize_theta(double theta)
 {
 	int multiplier;

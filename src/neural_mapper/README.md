@@ -28,7 +28,9 @@ Antes crie as pasta que irão receber o dataset com os seguintes diretorios:
  -Pasta_dataset
  --data
  --labels
-Coloque o caminho para Pasta_dataset dentro do codigo do mapper.cpp (pesquise neural_mapper_dataset_path)(Sera mudado para um arquivo de parametros)
+Coloque o caminho para Pasta_dataset dentro do codigo do mapper.cpp (pesquise neural_mapper_dataset_path)
+(Sera mudado para um arquivo de parametros)
+
 1 - Criar meta-data a partir de um log com mapa e poses do graphslam usando:
 Edite o process-volta_da_ufes_playback_viewer_3D_neural_mapper.ini
 

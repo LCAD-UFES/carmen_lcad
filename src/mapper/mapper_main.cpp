@@ -80,7 +80,8 @@ sensor_parameters_t ultrasonic_sensor_params;
 sensor_data_t *sensors_data;
 int number_of_sensors;
 
-const int number_of_lidars = 12;
+const int number_of_lidars = 12; //lidar parameters
+const int first_lidar_number = 10;
 carmen_pose_3D_t velodyne_pose;
 carmen_pose_3D_t laser_ldmrs_pose;
 carmen_lidar_config lidar_config[number_of_lidars];
@@ -835,19 +836,20 @@ get_alive_sensors(int argc, char **argv)
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
 	//Lidars
-	for(int i = 10; i < (number_of_lidars + 10); i++)
+	for(int i = first_lidar_number; i < (number_of_lidars + first_lidar_number); i++)
 	{
 		if (sensors_params[i].alive)
 		{
-			printf("lidar %d is alive\n", i);
+			printf("lidar %d is alive-Sensor_Param %d \n", first_lidar_number, i);
+			int sensor_param_to_lidar_number = i - first_lidar_number;
 			char lidar_string_locc[256];
 			char lidar_string_lfree[256];
 			char lidar_string_lo[256];
 			char lidar_string_unexpeted[256];
-			sprintf(lidar_string_locc, "lidar%d_locc", i);
-			sprintf(lidar_string_lfree, "lidar%d_lfree", i);        // Geather the lidar id
-			sprintf(lidar_string_lo, "lidar%d_l0", i);
-			sprintf(lidar_string_unexpeted, "lidar%d_unexpeted_delta_range_sigma", i);
+			sprintf(lidar_string_locc, "lidar%d_locc", sensor_param_to_lidar_number);
+			sprintf(lidar_string_lfree, "lidar%d_lfree", sensor_param_to_lidar_number);        // Geather the lidar id
+			sprintf(lidar_string_lo, "lidar%d_l0", sensor_param_to_lidar_number);
+			sprintf(lidar_string_unexpeted, "lidar%d_unexpeted_delta_range_sigma", sensor_param_to_lidar_number);
 
 			carmen_param_t param_list[] = {
 			{(char *) "mapper", (char *) lidar_string_locc, CARMEN_PARAM_DOUBLE, &sensors_params[i].log_odds.log_odds_occ, 1, NULL},
@@ -1108,11 +1110,11 @@ get_sensors_param(int argc, char **argv)
 	}
 
 	//Just for Lidars
-	for (i = 10; i < (number_of_lidars+10); i++)
+	for (i = first_lidar_number; i < (number_of_lidars+first_lidar_number); i++)
 	{
 		sensors_params[i].calibration_table = NULL;
 		sensors_params[i].save_calibration_file = NULL;
-		int lidar_config_index = i - 10;
+		int lidar_config_index = i - first_lidar_number;
 		if (sensors_params[i].alive)
 		{
 			sensors_params[i].sensor_type = CAMERA;
@@ -1182,7 +1184,7 @@ get_sensors_param_pose_handler(__attribute__((unused)) char *module, __attribute
 	{
 		if (sensors_params[i].alive && strncmp(sensors_params[i].name, "lidar", 5) == 0)
 		{
-			int lidar_index = i-10;
+			int lidar_index = i-first_lidar_number;
 			sensors_params[i].pose = lidar_config[lidar_index].pose;
 			free(sensors_params[i].sensor_to_support_matrix);
 			sensors_params[i].sensor_to_support_matrix = create_rotation_matrix(sensors_params[0].pose.orientation);

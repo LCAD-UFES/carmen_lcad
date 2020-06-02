@@ -8,6 +8,7 @@ CXXFLAGS = -std=c++11
 
 IFLAGS += -DUSE_OPENCV -DNO_NVML -I/usr/include/python2.7 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -DUSE_OPENCV -DNO_NVML
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libclustering
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet/lib
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 

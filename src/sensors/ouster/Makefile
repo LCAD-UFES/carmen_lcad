@@ -11,13 +11,14 @@ CXXFLAGS += -std=c++11 -Wno-deprecated
 IFLAGS += -std=c++11
 
 # libraries required by the driver 
-IFLAGS += -I /usr/include/jsoncpp/ -I/usr/include/pcl-1.8
+IFLAGS += -I /usr/include/jsoncpp/
 LFLAGS += -ljsoncpp 
 
 # viewer libraries
-IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ -I /usr/include/vtk-6.3/ `pkg-config --cflags opencv`
+IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
 LFLAGS += -lparam_interface -lglobal -lipc -lvelodyne_interface
-LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system -L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lGL -lglut `pkg-config --libs opencv`
+LFLAGS += -L /usr/lib/x86_64-linux-gnu/ -lboost_system  \
+	-L /usr/local/lib -lpcl_common -lpcl_io -lpcl_visualization -lGL -lglut `pkg-config --libs opencv`
 
 # carmen related libraries
 

@@ -465,6 +465,9 @@ namespace View
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/place_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_PLACE_OF_INTEREST][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
 
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/yield_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_YIELD][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+
 		controls_.main_window  = GTK_WIDGET(gtk_builder_get_object(builder, "mainWindow" ));
 		controls_.drawArea = GTK_WIDGET(gtk_builder_get_object(builder, "drawingArea"));
 		controls_.drawAreaCarPanel = GTK_WIDGET(gtk_builder_get_object(builder, "drawingAreaCarPanel"));
@@ -2689,13 +2692,15 @@ namespace View
 	void
 	format_annotation_description(char *dest_text, char *orig_text)
 	{
-		static const char *prefix = (char *) "RDDF_PLACE_";
+		static char const *prefix = "RDDF_PLACE_", *prefix2 = "PLACE_";
 		char *start = orig_text;
 		if (strncmp(orig_text, prefix, strlen(prefix)) == 0)
 			start += strlen(prefix);
+		else if (strncmp(orig_text, prefix2, strlen(prefix2)) == 0)
+			start += strlen(prefix2);
 		strcpy(dest_text, start);
 
-		for (char *dest = dest_text; (*dest) != 0; dest++)
+		for (char *dest = dest_text; (*dest) != '\0'; dest++)
 		{
 			if ((*dest) == '_')
 				(*dest) = ' ';
@@ -2743,7 +2748,7 @@ namespace View
 			    (rddf_annotation_msg.annotations[i].annotation_code != RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_OFF) &&
 				(rddf_annotation_msg.annotations[i].annotation_point.z != 0.0))
 			{
-				double radius = 1.0 / fabs(rddf_annotation_msg.annotations[i].annotation_point.z);
+				double radius = fabs(rddf_annotation_msg.annotations[i].annotation_point.z);
 				double theta = (rddf_annotation_msg.annotations[i].annotation_point.z > 0.0) ? theta_left : theta_right;
 				carmen_world_point_t center = world_point;
 				center.pose.x = world_point.pose.x + radius * cos(theta);
