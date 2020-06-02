@@ -83,6 +83,10 @@ int trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, d
 		carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config);
 
 double
+carmen_obstacle_avoider_car_distance_to_nearest_obstacle(carmen_ackerman_traj_point_t trajectory_pose,
+carmen_obstacle_distance_mapper_map_message *distance_map);
+
+double
 road_velocity_percentual(carmen_point_t pose, carmen_map_t *map, carmen_robot_ackerman_config_t *car_config);
 
 carmen_point_t
