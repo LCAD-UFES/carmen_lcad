@@ -202,6 +202,27 @@ copy_grid_mapping_to_map(carmen_map_t *map, carmen_mapper_map_message *grid_map)
 
 
 static carmen_map_t *
+copy_grid_mapping_to_map_with_complete_map(carmen_map_t *map, carmen_mapper_map_message *grid_map)
+{
+	int i;
+
+	if (!map)
+	{
+		map = (carmen_map_t *) malloc(sizeof(carmen_map_t));
+		map->map = (double **) malloc(grid_map->config.x_size * sizeof(double *));
+		map->complete_map = (double *) malloc(grid_map->config.x_size * grid_map->config.y_size * sizeof(double));
+	}
+
+	map->config = grid_map->config;
+	memcpy(map->complete_map, grid_map->complete_map, grid_map->config.x_size * grid_map->config.y_size * sizeof(double));
+	for (i = 0; i < map->config.x_size; i++)
+		map->map[i] = map->complete_map + i * map->config.y_size;
+
+	return (map);
+}
+
+
+static carmen_map_t *
 copy_grid_mapping_to_map(carmen_map_t *map, carmen_moving_objects_map_message *grid_map)
 {
 	int i;
@@ -584,9 +605,9 @@ offline_map_update_handler(carmen_mapper_map_message *new_map)
 	if (strcmp(previous_place_of_interest, place_of_interest) == 0)
 	{
 		if (strcmp (place_of_interest, "Robot") == 0)
-			offline_map = copy_grid_mapping_to_map(offline_map, new_map);
+			offline_map = copy_grid_mapping_to_map_with_complete_map(offline_map, new_map);
 		else
-			offline_map_tmp = copy_grid_mapping_to_map(offline_map_tmp, new_map);
+			offline_map_tmp = copy_grid_mapping_to_map_with_complete_map(offline_map_tmp, new_map);
 
 	}
 	else
@@ -594,7 +615,7 @@ offline_map_update_handler(carmen_mapper_map_message *new_map)
 		if (strcmp (place_of_interest, "Robot") == 0)
 			carmen_grid_mapping_copy_map(offline_map, offline_map_tmp);
 		else
-			offline_map_tmp = copy_grid_mapping_to_map(offline_map_tmp, new_map);
+			offline_map_tmp = copy_grid_mapping_to_map_with_complete_map(offline_map_tmp, new_map);
 	}
 	strcpy(previous_place_of_interest, place_of_interest);
 
@@ -1396,7 +1417,7 @@ main(int argc, char *argv[])
 
 	read_user_preferences(argc, argv);
 
-	carmen_grid_mapping_init_parameters(0.2, 150);
+	carmen_grid_mapping_init_parameters(0.2, 210);
 
 	// Esta incializacao evita que o valgrind reclame de varias variaveis nao inicializadas
 	static View::GtkGui _gui(argc, argv);

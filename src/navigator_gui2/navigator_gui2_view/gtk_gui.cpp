@@ -1327,37 +1327,38 @@ namespace View
 //	}
 
 	void
-	GtkGui::get_place_of_interest(char *place_of_interest_name)
+	GtkGui::get_place_of_interest(char *new_place_of_interest)
 	{
 		std::string d;
 		int destination_index = 0;
 		carmen_point_t destination;
-		for (unsigned int i = 0; i < annotation_list.size(); i++)
+
+		if (strcmp(new_place_of_interest, "Robot") == 0)
 		{
-			string d(annotation_list[i].annotation_description);
-			d = d.substr(11, d.size()-1).c_str();
-			if (strcmp(place_of_interest_name, d.c_str()) == 0)
-			{
-				//			printf("\t%s - %s\n", goal, d.substr(11, d.size()-1).c_str());
-				destination_index = i;
-				break;
-			}
+			destination.x = globalpos->globalpos.x;
+			destination.y = globalpos->globalpos.y;
 		}
-		destination.x = annotation_list[destination_index].annotation_point.x;
-		destination.y = annotation_list[destination_index].annotation_point.y;
+		else
+		{
+			for (unsigned int i = 0; i < annotation_list.size(); i++)
+			{
+				string d(annotation_list[i].annotation_description);
+				d = d.substr(11, d.size()-1).c_str();
+				if (strcmp(new_place_of_interest, d.c_str()) == 0)
+				{
+					destination_index = i;
+					break;
+				}
+			}
+			destination.x = annotation_list[destination_index].annotation_point.x;
+			destination.y = annotation_list[destination_index].annotation_point.y;
+		}
 
-		strcpy(place_of_interest, place_of_interest_name);
-
-//		robot_temp.pose = destination;
-//		navigator_update_robot(&robot_temp);
-
+		strcpy(place_of_interest, new_place_of_interest);
 
 		carmen_grid_mapping_get_block_map_by_origin(map_path, 'm', destination, navigator_get_offline_map_pointer());
 		navigator_graphics_change_map(navigator_get_offline_map_pointer());
-
-		do_redraw();
-//		placement_status = NO_PLACEMENT;
-}
+	}
 
 	int
 	GtkGui::get_state_code(char* state_name)
