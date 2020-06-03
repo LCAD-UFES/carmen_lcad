@@ -1090,6 +1090,37 @@ carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles_old(carmen_poi
 }
 
 
+double
+carmen_obstacle_avoider_car_distance_to_nearest_obstacle(carmen_ackerman_traj_point_t trajectory_pose,
+carmen_obstacle_distance_mapper_map_message *distance_map)
+{
+	check_collision_config_initialization();
+
+	if (distance_map == NULL)
+	{
+		printf("distance_map == NULL in carmen_obstacle_avoider_car_distance_to_nearest_obstacle()\n");
+		return (0.0);
+	}
+
+	double min_distance = 1000000000.0;
+	for (int i = 0; i < global_collision_config.n_markers; i++)
+	{
+		carmen_point_t displaced_point = carmen_collision_detection_displaced_pose_according_to_car_orientation(&trajectory_pose,
+				global_collision_config.markers[i].x, global_collision_config.markers[i].y);
+		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+		//distance equals to -1.0 when the coordinates are outside of map
+		if (distance != -1.0)
+		{	// A fucao retorna valor negativo se o carro encobrir um obstaculo.
+			distance = distance - global_collision_config.markers[i].radius;
+			if (distance < min_distance)
+				min_distance = distance;
+		}
+	}
+
+	return (min_distance);
+}
+
+
 int
 trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, double safety_distance,
 carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config __attribute__ ((unused)))

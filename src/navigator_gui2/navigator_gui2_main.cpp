@@ -581,14 +581,12 @@ offline_map_update_handler(carmen_mapper_map_message *new_map)
 	if (offline_map && (new_map->config.x_size != offline_map->config.x_size || new_map->config.y_size != offline_map->config.y_size))
 		carmen_map_destroy(&offline_map);
 
-//	carmen_map_server_copy_offline_map_from_message (&offline_map_tmp, new_map);
+	carmen_map_server_copy_offline_map_from_message (&offline_map_tmp, new_map);
 
-	offline_map = copy_grid_mapping_to_map(offline_map, new_map);
+//	offline_map = copy_grid_mapping_to_map(offline_map, new_map);
 
-//	if (strcmp (place_of_interest, "Robot") == 0)
-//	{
-//		memcpy(offline_map->complete_map, offline_map_tmp.complete_map, offline_map_tmp.config.x_size * offline_map_tmp.config.y_size * sizeof(double));
-//	}
+	if (strcmp (place_of_interest, "Robot") == 0)
+		memcpy(offline_map->complete_map, offline_map_tmp.complete_map, offline_map_tmp.config.x_size * offline_map_tmp.config.y_size * sizeof(double));
 
 	if (superimposedmap_type == CARMEN_OFFLINE_MAP_v)
 	{
@@ -738,10 +736,8 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 	localize_all_maps.carmen_mean_remission_map.config = localize_all_maps.config;
 	memcpy(likelihood_map->complete_map, localize_all_maps.complete_prob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
 	memcpy(global_likelihood_map->complete_map, localize_all_maps.complete_gprob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
-//	if (strcmp (place_of_interest, "Robot") == 0)
-//	{
+	if (strcmp (place_of_interest, "Robot") == 0)
 		memcpy(remission_map->complete_map, localize_all_maps.carmen_mean_remission_map.complete_map, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
-//	}
 
 
 	if (superimposedmap_type == CARMEN_LOCALIZE_LMAP_v)
