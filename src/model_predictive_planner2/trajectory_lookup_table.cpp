@@ -357,14 +357,10 @@ TrajectoryLookupTable::load_trajectory_lookup_table()
 {
 	struct stat buffer;
 
-	if (((!GlobalState::reverse_driving) && (stat("trajectory_lookup_table.bin", &buffer) == 0)) ||
-		((GlobalState::reverse_driving) && (stat("trajectory_lookup_table.bin", &buffer) == 0)))
+	if ((stat("trajectory_lookup_table.bin", &buffer) == 0))
 	{
 		FILE *tlt_f;
-		if (GlobalState::reverse_driving)
-			tlt_f = fopen("trajectory_lookup_table.bin", "r");
-		else
-			tlt_f = fopen("trajectory_lookup_table.bin", "r");
+		tlt_f = fopen("trajectory_lookup_table.bin", "r");
 
 		for (int i = 0; i < N_DIST; i++)
 			for (int j = 0; j < N_THETA; j++)
@@ -405,9 +401,18 @@ linear_progression(int n, double common, int index_of_element_zero)
 	if (n == index_of_element_zero)
 		return (0.0);
 	else if (n > index_of_element_zero)
-		return (common * (n - index_of_element_zero));
+	{
+		if (n > index_of_element_zero + NUMBER_REVERSE_THETA_I) //reverse angles
+			n = n+JUMP_TO_REVERSE_THETA_I;
+
+		return (carmen_normalize_theta(common * (n - index_of_element_zero)));
+	}
 	else
-		return (-common * (index_of_element_zero - n));
+	{
+		if (n < index_of_element_zero - NUMBER_REVERSE_THETA_I)
+			n = n+FIRST_REVERSE_THETA_I;
+		return (carmen_normalize_theta(-common * (index_of_element_zero - n)));
+	}
 }
 
 
@@ -585,7 +590,10 @@ generate_trajectory_control_parameters_sample(double k2, double k3, int i_v, int
 	// s = s0 + v0.t + 1/2.a.t^2
 	// a = (s - s0 - v0.t) / (t^2.1/2)
 	// s = distance; s0 = 0; v0 = tcp.v0; t = time
-	tcp.a = (distance - v0 * time) / (time * time * 0.5);
+	tcp.a = (distance - fabs(v0) * time) / (time * time * 0.5);
+	if (v0 < 0) //reverse mode
+		tcp.a = (-1)*tcp.a;
+
 	// v = v0 + a.t
 	tcp.vf = v0 + tcp.a * time;
 	tcp.tt = time;

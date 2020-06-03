@@ -18,9 +18,12 @@
 #define RATIO_DIST		1.18			// Ratio (Wikipedia) of the Distance geometric progression
 #define ZERO_DIST_I		-1				// Index of zero Distance traveled
 
-#define N_THETA			15				// Number of Angles in polar coordinates
-#define COMMON_THETA	((8.0 * M_PI) / 180.0)	// Common difference in the arithmetic progression of Theta for each side
-#define ZERO_THETA_I	7				// Index of zero Angle
+#define N_THETA					28				// Number of Angles in polar coordinates
+#define COMMON_THETA			((8.0 * M_PI) / 180.0)	// Common difference in the arithmetic progression of Theta for each side
+#define ZERO_THETA_I			14				// Index of zero Angle
+#define NUMBER_REVERSE_THETA_I	7		// How much jump to next angle to reverse mode first angle For positive angles > ZERO_THETA_I+NUMBER_REVERSE_THETA_I for negative angles < ZERO_THETA_I-NUMBER_REVERSE_THETA_I
+#define FIRST_REVERSE_THETA_I   37		//
+#define JUMP_TO_REVERSE_THETA_I   15
 
 #define N_D_YAW			15				// Number of Displacements in yaw
 #define FIRST_D_YAW		((10.0 * M_PI) / 180.0)	// First Displacement in yaw, or scale factor of its geometric progression
@@ -42,10 +45,10 @@
 #define RATIO_K3		1.394			// Ratio (Wikipedia) of k3 geometric progression
 #define ZERO_K3_I		7				// Index of zero k3
 
-#define N_I_V			9				// Number of Initial velocities
+#define N_I_V			14				// Number of Initial velocities indices from 0 to 3 are reverse velocities
 #define FIRST_I_V		1.3				// First Initial velocity, or scale factor of its geometric progression
 #define RATIO_I_V		1.381				// Ratio (Wikipedia) of Initial velocity geometric progression
-#define ZERO_I_V_I		0				// Index of zero Initial velocity
+#define ZERO_I_V_I		4				// Index of zero Initial velocity
 
 #define N_D_V			8				// Number of Velocities displacements
 #define FIRST_D_V		1.6				// First Velocity displacement, or scale factor of its geometric progression
