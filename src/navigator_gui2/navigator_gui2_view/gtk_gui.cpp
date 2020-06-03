@@ -3,7 +3,7 @@
 using namespace std;
 extern int record_screen;
 extern int use_glade_with_annotations;
-extern char *place_of_interest;
+extern char place_of_interest[2048];
 extern std::vector <carmen_annotation_t> annotation_list;
 int button_record_verification=0;
 int unsubscribe_map_server = 0;
@@ -1326,20 +1326,11 @@ namespace View
 //		return -1;
 //	}
 
-	char*
-	GtkGui::get_place_of_interest(char* place_of_interest_name)
+	void
+	GtkGui::get_place_of_interest(char *place_of_interest_name)
 	{
-//		cout<<"novo place: "<<place_of_interest_name<<endl;
-		//toda vez que o place of interest é mudado
-		//o mapa deve ser carregado na posição do place_of_interest
-		//se o usuário apertar o botao "make route"
-		//se o usuário não setar  o place goal e clicar em make route, mando o local e a posição do place
-		//se o usuário setar  o place goal e clicar em make route, mando o local e a posição do place
-
-		place_of_interest = place_of_interest_name;
-
 		std::string d;
-		int destination_index;
+		int destination_index = 0;
 		carmen_point_t destination;
 		for (unsigned int i = 0; i < annotation_list.size(); i++)
 		{
@@ -1354,24 +1345,19 @@ namespace View
 		}
 		destination.x = annotation_list[destination_index].annotation_point.x;
 		destination.y = annotation_list[destination_index].annotation_point.y;
-//		destination.theta = annotation_list[destination_index].annotation_point.theta;
 
-		carmen_map_t* map;
-		carmen_point_t pose;
-		pose = destination;
+		strcpy(place_of_interest, place_of_interest_name);
 
-//		robot_temp.pose = pose;
+//		robot_temp.pose = destination;
 //		navigator_update_robot(&robot_temp);
 
-		map = (carmen_map_t*) malloc(sizeof(carmen_map_t));
-		map->complete_map = NULL;
-		map->config.map_name = NULL;
 
-		carmen_grid_mapping_get_block_map_by_origin(map_path, 'm', pose, map);
-		navigator_graphics_display_map(map, CARMEN_NAVIGATOR_MAP_v);
+		carmen_grid_mapping_get_block_map_by_origin(map_path, 'm', destination, navigator_get_offline_map_pointer());
+		navigator_graphics_change_map(navigator_get_offline_map_pointer());
 
-		return place_of_interest_name;
-	}
+		do_redraw();
+//		placement_status = NO_PLACEMENT;
+}
 
 	int
 	GtkGui::get_state_code(char* state_name)

@@ -1,7 +1,8 @@
 #include "draw_callbacks.h"
 
 extern int record_screen;
-extern char *place_of_interest;
+extern char place_of_interest[2048];
+
 
 extern void
 mapper_handler(carmen_mapper_map_message *message);
@@ -651,8 +652,14 @@ void on_comboPlaceOfInterest_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
 	if (global_gui)
-		place_of_interest = (char *)global_gui->get_place_of_interest(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboPlaceOfInterest));
-		//carmen_route_planner_set_destination((char *)global_gui->get_place_of_interest(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboPlaceOfInterest)));
+		global_gui->get_place_of_interest(gtk_combo_box_get_active_text((GtkComboBox *) global_gui->controls_.comboPlaceOfInterest));
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_buttonComputeRoute_clicked(GtkWidget *widget __attribute__((unused)),
+					   GtkGui* gui)
+{
+	carmen_route_planner_set_destination(place_of_interest);
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -776,13 +783,6 @@ void on_buttonClearGoals_clicked(GtkWidget *widget __attribute__((unused)),
 			carmen_behavior_selector_clear_goal_list();
 
 	gtk_toggle_button_set_active((GtkToggleButton *) widget, false);
-}
-
-//extern "C" G_MODULE_EXPORT
-void on_buttonComputeRoute_clicked(GtkWidget *widget __attribute__((unused)),
-					   GtkGui* gui)
-{
-	carmen_route_planner_set_destination(place_of_interest);
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -953,8 +953,9 @@ void on_buttonZoomIn_clicked(GtkWidget *widget __attribute__((unused)),
 		global_gui->navigator_graphics_display_map(offline_map_p, CARMEN_OFFLINE_MAP_v);
 	}
 
-	gdk_window_set_cursor(global_gui->controls_.map_view->image_widget->window, gdk_cursor_new(GDK_BASED_ARROW_DOWN));
-	global_gui->placement_status = SELECTING_FINAL_REGION;
+//	gdk_window_set_cursor(global_gui->controls_.map_view->image_widget->window, gdk_cursor_new(GDK_BASED_ARROW_DOWN));
+//	global_gui->placement_status = SELECTING_FINAL_REGION;
+	global_gui->placement_status = NO_PLACEMENT;
 
 	gtk_toggle_button_set_active((GtkToggleButton *) widget, false);
 }
@@ -974,9 +975,9 @@ void on_buttonZoomOut_clicked(GtkWidget *widget __attribute__((unused)),
 	carmen_map_p complete_map_p = navigator_get_complete_map_map_pointer();
 	if (complete_map_p)
 	{
-		superimposed_is_set = 1;
-		navigator_get_map(CARMEN_NONE_v, superimposed_is_set);
-		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
+//		superimposed_is_set = 1;
+//		navigator_get_map(CARMEN_NONE_v, superimposed_is_set);
+//		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
 
 		global_gui->navigator_graphics_change_map(complete_map_p);
 	}

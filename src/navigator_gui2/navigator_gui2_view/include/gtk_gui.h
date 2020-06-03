@@ -322,9 +322,9 @@ namespace View
 		void InitializePathVector();
 		int get_algorithm_code(char *algorithm_name);
 //		int get_goal_source_code(char* goal_source_name);
-		char* get_place_of_interest(char* goal_source_name);
+		void get_place_of_interest(char *goal_source_name);
 		int get_state_code(char* state_name);
-		void save_to_image(GtkMapViewer* mapv);
+		void save_to_image(GtkMapViewer *mapv);
 		void do_redraw(void);
 		void label_autonomy_button(char *str);
 		void change_cursor(GdkColor *fg, GdkColor *bg);
