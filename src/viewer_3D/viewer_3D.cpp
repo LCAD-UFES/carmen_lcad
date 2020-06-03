@@ -490,10 +490,6 @@ create_point_colors_intensity(double intensity)
 }
 
 
-void
-load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config &lidar_config);
-
-
 point_cloud*
 alloc_lidar_point_cloud_vector()
 {
@@ -556,10 +552,9 @@ convert_variable_scan_message_to_point_cloud(point_cloud *velodyne_points, carme
 void
 clear_lidar_point_cloud_vector_drawer(point_cloud_drawer *drawer, point_cloud **lidar_point_cloud_vector)
 {
-    if (lidar_point_cloud_vector != NULL)
+    if (*lidar_point_cloud_vector != NULL)
     {
         lidar_point_cloud_vector[0]->num_points = 0;
-
         add_point_cloud(drawer, *lidar_point_cloud_vector[0]);
     }
 }
@@ -572,14 +567,15 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
     int discarded_points = 0;
     int num_points = 0;
 
-    if (!draw_lidar_flag || (!odometry_initialized && !force_velodyne_flag) || (message->number_of_shots == 0))
+    if (!draw_lidar_flag || (!odometry_initialized && !force_velodyne_flag))
     {
         clear_lidar_point_cloud_vector_drawer(drawer, lidar_point_cloud_vector);
 		return;
     }
     if (first_time)
     {
-        load_lidar_config(0, NULL, lidar_config.id, lidar_config);
+        carmen_lidar_config *p = &lidar_config;
+        load_lidar_config(0, NULL, lidar_config.id, &p);
         *lidar_point_cloud_vector = alloc_lidar_point_cloud_vector();
         first_time = false;
     }
@@ -594,6 +590,7 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 		lidar_point_cloud_vector[lidar_point_cloud_vector_index]->points = (carmen_vector_3D_t *) realloc(lidar_point_cloud_vector[lidar_point_cloud_vector_index]->points, num_points * sizeof (carmen_vector_3D_t));
 		lidar_point_cloud_vector[lidar_point_cloud_vector_index]->point_color = (carmen_vector_3D_t *) realloc(lidar_point_cloud_vector[lidar_point_cloud_vector_index]->point_color, num_points * sizeof (carmen_vector_3D_t));
 	}
+
 	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->num_points = num_points;
 	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->car_position = car_fused_pose.position;
 	lidar_point_cloud_vector[lidar_point_cloud_vector_index]->timestamp = message->timestamp;
@@ -1159,7 +1156,7 @@ velodyne_variable_scan_message_handler0_old(carmen_velodyne_variable_scan_messag
 
 
 void
-velodyne_variable_scan_message_handler0(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler0(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar0_point_cloud_vector = NULL;
@@ -1173,7 +1170,7 @@ velodyne_variable_scan_message_handler0(carmen_velodyne_variable_scan_message *m
 
 
 void
-velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler1(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar1_point_cloud_vector = NULL;
@@ -1187,7 +1184,7 @@ velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *m
 
 
 void
-velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler2(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar2_point_cloud_vector = NULL;
@@ -1201,7 +1198,7 @@ velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *m
 
 
 void
-velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler3(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar3_point_cloud_vector = NULL;
@@ -1215,7 +1212,7 @@ velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *m
 
 
 void
-velodyne_variable_scan_message_handler4(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler4(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar4_point_cloud_vector = NULL;
@@ -1229,7 +1226,7 @@ velodyne_variable_scan_message_handler4(carmen_velodyne_variable_scan_message *m
 
 
 void
-velodyne_variable_scan_message_handler5(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler5(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar5_point_cloud_vector = NULL;
@@ -1243,7 +1240,7 @@ velodyne_variable_scan_message_handler5(carmen_velodyne_variable_scan_message *m
 
 
 void
-velodyne_variable_scan_message_handler6(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler6(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar6_point_cloud_vector = NULL;
@@ -1257,7 +1254,7 @@ velodyne_variable_scan_message_handler6(carmen_velodyne_variable_scan_message *m
 
 
 void
-velodyne_variable_scan_message_handler7(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler7(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar7_point_cloud_vector = NULL;
@@ -1271,7 +1268,7 @@ velodyne_variable_scan_message_handler7(carmen_velodyne_variable_scan_message *m
 
 
 void
-velodyne_variable_scan_message_handler8(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler8(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar8_point_cloud_vector = NULL;
@@ -1285,7 +1282,7 @@ velodyne_variable_scan_message_handler8(carmen_velodyne_variable_scan_message *m
 
 
 void
-velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler9(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar9_point_cloud_vector = NULL;
@@ -1299,7 +1296,7 @@ velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *m
 
 
 void
-velodyne_variable_scan_message_handler10(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler10(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar10_point_cloud_vector = NULL;
@@ -1313,7 +1310,7 @@ velodyne_variable_scan_message_handler10(carmen_velodyne_variable_scan_message *
 
 
 void
-velodyne_variable_scan_message_handler11(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler11(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar11_point_cloud_vector = NULL;
@@ -1327,7 +1324,7 @@ velodyne_variable_scan_message_handler11(carmen_velodyne_variable_scan_message *
 
 
 void
-velodyne_variable_scan_message_handler12(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler12(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar12_point_cloud_vector = NULL;
@@ -1341,7 +1338,7 @@ velodyne_variable_scan_message_handler12(carmen_velodyne_variable_scan_message *
 
 
 void
-velodyne_variable_scan_message_handler13(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler13(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar13_point_cloud_vector = NULL;
@@ -1355,7 +1352,7 @@ velodyne_variable_scan_message_handler13(carmen_velodyne_variable_scan_message *
 
 
 void
-velodyne_variable_scan_message_handler14(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler14(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar14_point_cloud_vector = NULL;
@@ -1369,7 +1366,7 @@ velodyne_variable_scan_message_handler14(carmen_velodyne_variable_scan_message *
 
 
 void
-velodyne_variable_scan_message_handler15(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler15(carmen_velodyne_variable_scan_message *message)
 {
     static bool first_time = true;
     static point_cloud *lidar15_point_cloud_vector = NULL;
@@ -2689,43 +2686,6 @@ destroy_drawers()
 
 
 void
-load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config &lidar_config)
-{
-    char *vertical_correction_string;
-    char lidar_string[256];
-	
-	sprintf(lidar_string, "lidar%d", lidar_id);        // Geather the lidar id
-
-    carmen_param_t param_list[] = {
-			{lidar_string, (char*)"model", CARMEN_PARAM_STRING, &lidar_config.model, 0, NULL},
-			{lidar_string, (char*)"ip", CARMEN_PARAM_STRING, &lidar_config.ip, 0, NULL},
-			{lidar_string, (char*)"port", CARMEN_PARAM_STRING, &lidar_config.port, 0, NULL},
-			{lidar_string, (char*)"shot_size", CARMEN_PARAM_INT, &lidar_config.shot_size, 0, NULL},
-            {lidar_string, (char*)"min_sensing", CARMEN_PARAM_INT, &lidar_config.min_sensing, 0, NULL},
-            {lidar_string, (char*)"max_sensing", CARMEN_PARAM_INT, &lidar_config.max_sensing, 0, NULL},
-			{lidar_string, (char*)"range_division_factor", CARMEN_PARAM_INT, &lidar_config.range_division_factor, 0, NULL},
-            {lidar_string, (char*)"time_between_shots", CARMEN_PARAM_DOUBLE, &lidar_config.time_between_shots, 0, NULL},
-			{lidar_string, (char*)"x", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.x), 0, NULL},
-			{lidar_string, (char*)"y", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.y), 0, NULL},
-			{lidar_string, (char*)"z", CARMEN_PARAM_DOUBLE, &lidar_config.pose.position.z, 0, NULL},
-			{lidar_string, (char*)"roll", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.roll, 0, NULL},
-			{lidar_string, (char*)"pitch", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.pitch, 0, NULL},
-			{lidar_string, (char*)"yaw", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.yaw, 0, NULL},
-			{lidar_string, (char*)"vertical_angles", CARMEN_PARAM_STRING, &vertical_correction_string, 0, NULL},
-	};
-	int num_items = sizeof(param_list) / sizeof(param_list[0]);
-	carmen_param_install_params(argc, argv, param_list, num_items);
-
-    lidar_config.vertical_angles = (double*) malloc(lidar_config.shot_size * sizeof(double));
-
-    for (int i = 0; i < lidar_config.shot_size; i++)
-		lidar_config.vertical_angles[i] = CLF_READ_DOUBLE(&vertical_correction_string); // CLF_READ_DOUBLE takes a double number from a string
-    
-	//printf("Model: %s Port: %s Shot size: %d Min Sensing: %d Max Sensing: %d Range division: %d Time: %lf\n", lidar_config.model, lidar_config.port, lidar_config.shot_size, lidar_config.min_sensing, lidar_config.max_sensing, lidar_config.range_division_factor, lidar_config.time_between_shots);  printf("X: %lf Y: %lf Z: %lf R: %lf P: %lf Y: %lf\n", lidar_config.pose.position.x, lidar_config.pose.position.y, lidar_config.pose.position.z, lidar_config.pose.orientation.roll, lidar_config.pose.orientation.pitch, lidar_config.pose.orientation.yaw); for (int i = 0; i < lidar_config.shot_size; i++) printf("%lf ", lidar_config.vertical_angles[i]); printf("\n");
-}
-
-
-void
 read_parameters_and_init_stuff(int argc, char** argv)
 {
     int num_items;
@@ -3235,23 +3195,6 @@ draw_loop(window *w)
                 glPointSize(5);
             draw_point_cloud(velodyne_drawer);
 
-            draw_point_cloud(lidar0_drawer);
-            draw_point_cloud(lidar1_drawer);
-            draw_point_cloud(lidar2_drawer);
-            draw_point_cloud(lidar3_drawer);
-            draw_point_cloud(lidar4_drawer);
-            draw_point_cloud(lidar5_drawer);
-            draw_point_cloud(lidar6_drawer);
-            draw_point_cloud(lidar7_drawer);
-            draw_point_cloud(lidar8_drawer);
-            draw_point_cloud(lidar9_drawer);
-            draw_point_cloud(lidar10_drawer);
-            draw_point_cloud(lidar11_drawer);
-            draw_point_cloud(lidar12_drawer);
-            draw_point_cloud(lidar13_drawer);
-            draw_point_cloud(lidar14_drawer);
-            draw_point_cloud(lidar15_drawer);
-            
             glPointSize(point_size);
         }
         else if (draw_velodyne_flag == 3)
@@ -3266,6 +3209,23 @@ draw_loop(window *w)
         {
             draw_velodyne_intensity(v_int_drawer);
         }
+
+        draw_point_cloud(lidar0_drawer);
+        draw_point_cloud(lidar1_drawer);
+        draw_point_cloud(lidar2_drawer);
+        draw_point_cloud(lidar3_drawer);
+        draw_point_cloud(lidar4_drawer);
+        draw_point_cloud(lidar5_drawer);
+        draw_point_cloud(lidar6_drawer);
+        draw_point_cloud(lidar7_drawer);
+        draw_point_cloud(lidar8_drawer);
+        draw_point_cloud(lidar9_drawer);
+        draw_point_cloud(lidar10_drawer);
+        draw_point_cloud(lidar11_drawer);
+        draw_point_cloud(lidar12_drawer);
+        draw_point_cloud(lidar13_drawer);
+        draw_point_cloud(lidar14_drawer);
+        draw_point_cloud(lidar15_drawer);
 
         if (draw_rays_flag)
         {
@@ -3467,23 +3427,6 @@ draw_loop_for_picking(window *w)
         else if (draw_velodyne_flag == 2)
         {
             draw_point_cloud(velodyne_drawer);
-
-            draw_point_cloud(lidar0_drawer);
-            draw_point_cloud(lidar1_drawer);
-            draw_point_cloud(lidar2_drawer);
-            draw_point_cloud(lidar3_drawer);
-            draw_point_cloud(lidar4_drawer);
-            draw_point_cloud(lidar5_drawer);
-            draw_point_cloud(lidar6_drawer);
-            draw_point_cloud(lidar7_drawer);
-            draw_point_cloud(lidar8_drawer);
-            draw_point_cloud(lidar9_drawer);
-            draw_point_cloud(lidar10_drawer);
-            draw_point_cloud(lidar11_drawer);
-            draw_point_cloud(lidar12_drawer);
-            draw_point_cloud(lidar13_drawer);
-            draw_point_cloud(lidar14_drawer);
-            draw_point_cloud(lidar15_drawer);
         }
         else if (draw_velodyne_flag == 3)
         {
@@ -3638,22 +3581,22 @@ subscribe_ipc_messages(void)
                                                    (carmen_handler_t) velodyne_partial_scan_message_handler,
                                                    CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler0, CARMEN_SUBSCRIBE_LATEST, 0);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler1, CARMEN_SUBSCRIBE_LATEST, 1);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler2, CARMEN_SUBSCRIBE_LATEST, 2);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler3, CARMEN_SUBSCRIBE_LATEST, 3);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler4, CARMEN_SUBSCRIBE_LATEST, 4);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler5, CARMEN_SUBSCRIBE_LATEST, 5);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler6, CARMEN_SUBSCRIBE_LATEST, 6);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler7, CARMEN_SUBSCRIBE_LATEST, 7);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler8, CARMEN_SUBSCRIBE_LATEST, 8);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler9, CARMEN_SUBSCRIBE_LATEST, 9);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler10, CARMEN_SUBSCRIBE_LATEST, 10);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler11, CARMEN_SUBSCRIBE_LATEST, 11);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler12, CARMEN_SUBSCRIBE_LATEST, 12);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler13, CARMEN_SUBSCRIBE_LATEST, 13);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler14, CARMEN_SUBSCRIBE_LATEST, 14);
-    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) velodyne_variable_scan_message_handler15, CARMEN_SUBSCRIBE_LATEST, 15);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler0, CARMEN_SUBSCRIBE_LATEST, 0);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler1, CARMEN_SUBSCRIBE_LATEST, 1);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler2, CARMEN_SUBSCRIBE_LATEST, 2);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler3, CARMEN_SUBSCRIBE_LATEST, 3);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler4, CARMEN_SUBSCRIBE_LATEST, 4);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler5, CARMEN_SUBSCRIBE_LATEST, 5);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler6, CARMEN_SUBSCRIBE_LATEST, 6);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler7, CARMEN_SUBSCRIBE_LATEST, 7);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler8, CARMEN_SUBSCRIBE_LATEST, 8);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler9, CARMEN_SUBSCRIBE_LATEST, 9);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler10, CARMEN_SUBSCRIBE_LATEST, 10);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler11, CARMEN_SUBSCRIBE_LATEST, 11);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler12, CARMEN_SUBSCRIBE_LATEST, 12);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler13, CARMEN_SUBSCRIBE_LATEST, 13);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler14, CARMEN_SUBSCRIBE_LATEST, 14);
+    carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t) variable_scan_message_handler15, CARMEN_SUBSCRIBE_LATEST, 15);
     
  
     carmen_download_map_subscribe_message(NULL,

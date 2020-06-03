@@ -68,6 +68,9 @@ int update_and_merge_with_snapshot_map;
 int decay_to_offline_map;
 int create_map_sum_and_count;
 int use_remission;
+double mapper_velodyne_range_max;
+double mapper_range_max_factor;
+double mapper_unsafe_height_above_ground;     // Points above and bellow this value will not be used by the mapper
 int mapper_save_map = 1;
 double rays_threshold_to_merge_between_maps = 1e12;
 bool use_merge_between_maps = false;
@@ -78,13 +81,17 @@ carmen_pose_3D_t front_bullbar_pose;
 sensor_parameters_t *sensors_params;
 sensor_parameters_t ultrasonic_sensor_params;
 sensor_data_t *sensors_data;
-int number_of_sensors;
 
-const int number_of_lidars = 12; //lidar parameters
+#define NUMBER_OF_SENSORS 25      // The number_of_sensors must be the maximun number of sensors: 25 
+int number_of_sensors = NUMBER_OF_SENSORS;
+
+#define MAX_NUMBER_OF_LIDARS 16   // 15 is the Maximum number of carmen_velodyne_variable_scan_message defined, so is the maximun number of lidars
+
+// const int number_of_lidars = 12; //lidar parameters
 const int first_lidar_number = 10;
 carmen_pose_3D_t velodyne_pose;
 carmen_pose_3D_t laser_ldmrs_pose;
-carmen_lidar_config lidar_config[number_of_lidars];
+carmen_lidar_config lidar_config[MAX_NUMBER_OF_LIDARS];
 
 char *map_path;
 
@@ -139,6 +146,9 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 	double old_globalpos_timestamp;
 	carmen_pose_3D_t old_robot_position;
 
+	if (sensors_data[sensor_number].point_cloud_index == -1)   // No point cloud was received from the sensor
+		return;
+
 	for (i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
 	{
 		double time_difference = fabs(sensors_data[sensor_number].points_timestamp[i] - globalpos_message->timestamp);
@@ -186,6 +196,19 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		sensors_data[sensor_number].robot_pose[i] = old_robot_position;
 		sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
 		sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
+	}
+}
+
+
+void
+include_lidars_data_into_map(carmen_localize_ackerman_globalpos_message *globalpos_message)
+{
+	for(int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
+	{
+		if (sensors_params[i + 10].alive)  // Lidars start from 10 in the sensors_params vector
+		{
+			include_sensor_data_into_map(i + 10, globalpos_message);
+		}
 	}
 }
 
@@ -248,27 +271,31 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	// Map annotations handling
 	double distance_to_nearest_annotation = 1000.0;
 	int index_of_nearest_annotation = 0;
+
 	for (int i = 0; i < last_rddf_annotation_message.num_annotations; i++)
 	{
-		double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotations[i].annotation_point,
-				globalpos_history[last_globalpos].pose.position);
+		double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotations[i].annotation_point, globalpos_history[last_globalpos].pose.position);
 		if ((distance_to_annotation < distance_to_nearest_annotation) &&
 			((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
-			 (last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) ||
-			 ((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
-			  (last_rddf_annotation_message.annotations[i].annotation_code <= RDDF_ANNOTATION_CODE_SPEED_LIMIT_20))))
+			(last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) ||
+			((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotations[i].annotation_code <= RDDF_ANNOTATION_CODE_SPEED_LIMIT_20))))
 		{
 			distance_to_nearest_annotation = distance_to_annotation;
 			index_of_nearest_annotation = i;
 		}
 	}
 	if (((distance_to_nearest_annotation < 35.0) &&
-		 carmen_rddf_play_annotation_is_forward(globalpos_message->globalpos,
-				 last_rddf_annotation_message.annotations[index_of_nearest_annotation].annotation_point)) ||
+		carmen_rddf_play_annotation_is_forward(globalpos_message->globalpos,
+		last_rddf_annotation_message.annotations[index_of_nearest_annotation].annotation_point)) ||
 		(distance_to_nearest_annotation < 8.0))
+	{
 		robot_near_strong_slow_down_annotation = 1;
+	}
 	else
+	{
 		robot_near_strong_slow_down_annotation = 0;
+	}
 
 	if (ok_to_publish)
 	{
@@ -277,23 +304,21 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		// A ordem eh importante
 		if (sensors_params[VELODYNE].alive)
 			include_sensor_data_into_map(VELODYNE, globalpos_message);
+		
+		include_lidars_data_into_map(globalpos_message);
+
 		if (sensors_params[LASER_LDMRS].alive && !robot_near_strong_slow_down_annotation)
 			include_sensor_data_into_map(LASER_LDMRS, globalpos_message);
 		if (sensors_params[3].alive && camera3_ready)	// camera 3
 			include_sensor_data_into_map(3, globalpos_message);
 		if (sensors_params[7].alive && camera7_ready)	// camera 3
 			include_sensor_data_into_map(7, globalpos_message);
-		if (sensors_params[12].alive)	// Lidar 2
-			include_sensor_data_into_map(12, globalpos_message);
 
 		camera3_ready = 0;
 		camera7_ready = 0;
 
 		publish_map(globalpos_message->timestamp);
 		publish_virtual_scan(globalpos_message->timestamp);
-
-//		printf("aqui2\n");
-//		fflush(stdout);
 	}
 
 	if (update_and_merge_with_mapper_saved_maps && time_secs_between_map_save > 0.0 && mapper_save_map)
@@ -327,19 +352,48 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 		fake_velodyne_message.timestamp = pose->timestamp;
 		fake_velodyne_message.host = carmen_get_host();
 		mapper_velodyne_partial_scan(VELODYNE, &fake_velodyne_message);
-
-//		printf("aqui\n");
-//		fflush(stdout);
 	}
 }
 
+// void
+// setup_message(carmen_velodyne_variable_scan_message &msg, int number_of_shots, int shot_size)
+// {
+// 	msg.partial_scan = (carmen_velodyne_shot *) malloc ((number_of_shots + 1) * sizeof(carmen_velodyne_shot));
+	
+//     for (int i = 0 ; i <= number_of_shots; i++)
+// 	{
+// 		msg.partial_scan[i].shot_size = shot_size;
+// 		msg.partial_scan[i].distance  = (unsigned short*) malloc (shot_size * sizeof(unsigned short));
+// 		msg.partial_scan[i].intensity = (unsigned char*)  malloc (shot_size * sizeof(unsigned char));
+// 	}
+// 	msg.host = carmen_get_host();
+// }
 
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
 	mapper_velodyne_partial_scan(VELODYNE, velodyne_message);
-}
 
+	// static bool first_time = true;
+	// static carmen_velodyne_variable_scan_message msg;
+
+	// if (first_time)
+	// {
+	// 	setup_message(msg, 4000, 32);
+	// 	first_time = false;
+	// }
+	// msg.number_of_shots = velodyne_message->number_of_32_laser_shots;
+	
+	// for(int i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
+	// {
+	// 	msg.partial_scan[i].distance = velodyne_message->partial_scan[i].distance;
+	// 	msg.partial_scan[i].intensity = velodyne_message->partial_scan[i].intensity;
+	// 	msg.partial_scan[i].angle = velodyne_message->partial_scan[i].angle;
+	// }
+	// msg.timestamp = velodyne_message->timestamp;
+
+	// update_data_params_with_lidar_data(14, &msg);
+}
 
 static void
 laser_ldrms_message_handler(carmen_laser_ldmrs_message *laser) // old handler not used anymore
@@ -470,24 +524,100 @@ stereo_velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_mes
 	mapper_stereo_velodyne_variable_scan(9, message);
 }
 
-//void
-//lidar_velodyne_variable_scan_message_handler0(carmen_velodyne_variable_scan_message *message)
-//{
-//    static bool first_time = true;
-////    static point_cloud *lidar1_point_cloud_vector;
-//    static int lidar1_point_cloud_vector_max_size = 0;
-//    static int lidar1_point_cloud_vector_index = 0;
-//    static carmen_lidar_config lidar1_config;
-//    lidar1_config.id = 1;
-//
-////    draw_variable_scan_message(message, lidar1_drawer, first_time, &lidar1_point_cloud_vector, lidar1_point_cloud_vector_max_size, lidar1_point_cloud_vector_index, lidar1_config, draw_lidar1_flag);
-//}
-
+void
+variable_scan_message_handler_0(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(10, message);
+}
 
 void
-velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *message)
+variable_scan_message_handler_1(carmen_velodyne_variable_scan_message *message)
 {
-    mapper_velodyne_variable_scan(2, message);
+	update_data_params_with_lidar_data(11, message);
+}
+
+void
+variable_scan_message_handler_2(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(12, message);
+}
+
+void
+variable_scan_message_handler_3(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(13, message);
+}
+
+void
+variable_scan_message_handler_4(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(14, message);
+}
+
+void
+variable_scan_message_handler_5(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(15, message);
+}
+
+void
+variable_scan_message_handler_6(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(16, message);
+}
+
+void
+variable_scan_message_handler_7(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(17, message);
+}
+
+void
+variable_scan_message_handler_8(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(18, message);
+}
+
+void
+variable_scan_message_handler_9(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(19, message);
+}
+
+void
+variable_scan_message_handler_10(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(20, message);
+}
+
+void
+variable_scan_message_handler_11(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(21, message);
+}
+
+void
+variable_scan_message_handler_12(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(22, message);
+}
+
+void
+variable_scan_message_handler_13(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(23, message);
+}
+
+void
+variable_scan_message_handler_14(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(24, message);
+}
+
+void
+variable_scan_message_handler_15(carmen_velodyne_variable_scan_message *message)
+{
+	update_data_params_with_lidar_data(25, message);
 }
 
 
@@ -694,18 +824,18 @@ sensors_params_handler(char *module, char *variable, __attribute__((unused)) cha
 {
 	if (strcmp(module, "mapper") == 0)
 	{
-		char lidar_string_id[32];
+		//char lidar_string_id[32];
 
 		int i = number_of_sensors;
 
-		if (strcmp(variable, "unsafe_height_above_ground") == 0)
-		{
-			for (i = 1; i < number_of_sensors; i++)
-			{
-				sensors_params[i].unsafe_height_above_ground = sensors_params[0].unsafe_height_above_ground;
-			}
-			return;
-		}
+		// if (strcmp(variable, "unsafe_height_above_ground") == 0)
+		// {
+		// 	for (i = 1; i < number_of_sensors; i++)
+		// 	{
+		// 		sensors_params[i].unsafe_height_above_ground = sensors_params[0].unsafe_height_above_ground;
+		// 	}
+		// 	return;
+		// }
 
 		if (strcmp(variable, "velodyne") == 0)
 			i = 0;
@@ -714,22 +844,52 @@ sensors_params_handler(char *module, char *variable, __attribute__((unused)) cha
 		else if (strncmp(variable, "stereo_velodyne", 15) == 0 && strlen(variable) == 16)
 			i = variable[15] - '0';
 
-		else if (strncmp(variable, "lidar", 5) == 0 && (strlen(variable) == 6 || strlen(variable) == 7))
-		{
-			if(strlen(variable) == 6)
-				i = variable[5] - '0';
-			if(strlen(variable) == 7)
-			{
-				sprintf(lidar_string_id, "%d%d", variable[5], variable[6]);
-				i = atoi(lidar_string_id);
-			}
-		}
+		// else if (strncmp(variable, "lidar", 5) == 0 && (strlen(variable) == 6 || strlen(variable) == 7))
+		// {
+		// 	if(strlen(variable) == 6)
+		// 		i = variable[5] - '0';
+		// 	if(strlen(variable) == 7)
+		// 	{
+		// 		sprintf(lidar_string_id, "%d%d", variable[5], variable[6]);
+		// 		i = atoi(lidar_string_id);
+		// 	}
+		// }
 
 		if (i < number_of_sensors && sensors_params[i].alive && sensors_params[i].name == NULL)
 		{
 			sensors_params[i].name = (char *) calloc(strlen(variable) + 1, sizeof(char));
 			strcpy(sensors_params[i].name, variable);
 			return;
+		}
+	}
+}
+
+
+void
+read_alive_lidars_configs(int argc, char **argv)
+{
+	char locc_string[64], lfree_string[64], l0_string[64], unexpeted_delta_range_sigma_string[64];
+	carmen_lidar_config *p;
+
+	for(int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
+	{
+		if (sensors_params[i + 10].alive)  // Lidars start from 10 in the sensors_params vector
+		{
+			p = &lidar_config[i];
+			load_lidar_config(argc, argv, i, &p);
+
+			sprintf(locc_string, "lidar%d_locc", i);
+			sprintf(lfree_string, "lidar%d_lfree", i);
+			sprintf(l0_string, "lidar%d_l0", i);
+			sprintf(unexpeted_delta_range_sigma_string, "lidar%d_unexpeted_delta_range_sigma", i);
+
+			carmen_param_t param_list[] = {
+				{(char *) "mapper", (char *) locc_string, CARMEN_PARAM_DOUBLE, &sensors_params[i + 10].log_odds.log_odds_occ, 1, NULL},
+				{(char *) "mapper", (char *) lfree_string, CARMEN_PARAM_DOUBLE, &sensors_params[i + 10].log_odds.log_odds_free, 1, NULL},
+				{(char *) "mapper", (char *) l0_string, CARMEN_PARAM_DOUBLE, &sensors_params[i + 10].log_odds.log_odds_l0, 1, NULL},
+				{(char *) "mapper", (char *) unexpeted_delta_range_sigma_string, CARMEN_PARAM_DOUBLE, &sensors_params[i + 10].unexpeted_delta_range_sigma, 1, NULL},
+			};
+			carmen_param_install_params(argc, argv, param_list, (sizeof(param_list) / sizeof(param_list[0])));
 		}
 	}
 }
@@ -743,14 +903,13 @@ get_alive_sensors(int argc, char **argv)
 	sensors_params = (sensor_parameters_t *) calloc(number_of_sensors, sizeof(sensor_parameters_t));
 	carmen_test_alloc(sensors_params);
 
-	sensors_data = (sensor_data_t *) calloc(number_of_sensors, sizeof(sensor_data_t));
+	sensors_data = (sensor_data_t *) calloc(25, sizeof(sensor_data_t));
 	carmen_test_alloc(sensors_data);
 
 	carmen_param_t param_list[] =
 	{
 		{(char *) "mapper", (char *) "velodyne", CARMEN_PARAM_ONOFF, &sensors_params[0].alive, 1, sensors_params_handler},
 		{(char *) "mapper", (char *) "laser_ldmrs", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 1, sensors_params_handler},
-//			{(char *) "mapper", (char *) "stereo_velodyne1", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 1, sensors_params_handler},
 		{(char *) "mapper", (char *) "stereo_velodyne2", CARMEN_PARAM_ONOFF, &sensors_params[2].alive, 1, sensors_params_handler},
 		{(char *) "mapper", (char *) "stereo_velodyne3", CARMEN_PARAM_ONOFF, &sensors_params[3].alive, 1, sensors_params_handler},
 		{(char *) "mapper", (char *) "stereo_velodyne4", CARMEN_PARAM_ONOFF, &sensors_params[4].alive, 1, sensors_params_handler},
@@ -759,29 +918,27 @@ get_alive_sensors(int argc, char **argv)
 		{(char *) "mapper", (char *) "stereo_velodyne7", CARMEN_PARAM_ONOFF, &sensors_params[7].alive, 1, sensors_params_handler},
 		{(char *) "mapper", (char *) "stereo_velodyne8", CARMEN_PARAM_ONOFF, &sensors_params[8].alive, 1, sensors_params_handler},
 		{(char *) "mapper", (char *) "stereo_velodyne9", CARMEN_PARAM_ONOFF, &sensors_params[9].alive, 1, sensors_params_handler},
-//			{(char *) "mapper", (char *) "stereo_mapping", CARMEN_PARAM_ONOFF, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].alive, 1, sensors_params_handler},
+		//{(char *) "mapper", (char *) "stereo_mapping", CARMEN_PARAM_ONOFF, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].alive, 1, sensors_params_handler},
 
-		{(char *) "mapper", (char *) "lidar0", CARMEN_PARAM_ONOFF, &sensors_params[10].alive, 1, sensors_params_handler},
-		{(char *) "mapper", (char *) "lidar1", CARMEN_PARAM_ONOFF, &sensors_params[11].alive, 1, sensors_params_handler},
-		{(char *) "mapper", (char *) "lidar2", CARMEN_PARAM_ONOFF, &sensors_params[12].alive, 1, sensors_params_handler},
-		{(char *) "mapper", (char *) "lidar3", CARMEN_PARAM_ONOFF, &sensors_params[13].alive, 1, sensors_params_handler},
-		{(char *) "mapper", (char *) "lidar4", CARMEN_PARAM_ONOFF, &sensors_params[14].alive, 1, sensors_params_handler},
-		{(char *) "mapper", (char *) "lidar5", CARMEN_PARAM_ONOFF, &sensors_params[15].alive, 1, sensors_params_handler},
-		{(char *) "mapper", (char *) "lidar6", CARMEN_PARAM_ONOFF, &sensors_params[16].alive, 1, sensors_params_handler},
-		{(char *) "mapper", (char *) "lidar7", CARMEN_PARAM_ONOFF, &sensors_params[17].alive, 1, sensors_params_handler},
-		{(char *) "mapper", (char *) "lidar8", CARMEN_PARAM_ONOFF, &sensors_params[18].alive, 1, sensors_params_handler},
-		{(char *) "mapper", (char *) "lidar9", CARMEN_PARAM_ONOFF, &sensors_params[19].alive, 1, sensors_params_handler},
-        {(char *) "mapper", (char *) "lidar10", CARMEN_PARAM_ONOFF, &sensors_params[20].alive, 1, sensors_params_handler},
-		{(char *) "mapper", (char *) "lidar11", CARMEN_PARAM_ONOFF, &sensors_params[21].alive, 1, sensors_params_handler},
-		{(char *) "mapper", (char *) "lidar12", CARMEN_PARAM_ONOFF, &sensors_params[22].alive, 1, sensors_params_handler},
-//		{(char *) "mapper", (char *) "lidar13", CARMEN_PARAM_ONOFF, &sensors_params[23].alive, 1, sensors_params_handler},
-//		{(char *) "mapper", (char *) "lidar14", CARMEN_PARAM_ONOFF, &sensors_params[24].alive, 1, sensors_params_handler},
-//		{(char *) "mapper", (char *) "lidar15", CARMEN_PARAM_ONOFF, &sensors_params[25].alive, 1, sensors_params_handler},
-
+		{(char *) "mapper", (char *) "lidar0", CARMEN_PARAM_ONOFF, &sensors_params[10].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar1", CARMEN_PARAM_ONOFF, &sensors_params[11].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar2", CARMEN_PARAM_ONOFF, &sensors_params[12].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar3", CARMEN_PARAM_ONOFF, &sensors_params[13].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar4", CARMEN_PARAM_ONOFF, &sensors_params[14].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar5", CARMEN_PARAM_ONOFF, &sensors_params[15].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar6", CARMEN_PARAM_ONOFF, &sensors_params[16].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar7", CARMEN_PARAM_ONOFF, &sensors_params[17].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar8", CARMEN_PARAM_ONOFF, &sensors_params[18].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar9", CARMEN_PARAM_ONOFF, &sensors_params[19].alive, 1, NULL},
+        {(char *) "mapper", (char *) "lidar10", CARMEN_PARAM_ONOFF, &sensors_params[20].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar11", CARMEN_PARAM_ONOFF, &sensors_params[21].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar12", CARMEN_PARAM_ONOFF, &sensors_params[22].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar13", CARMEN_PARAM_ONOFF, &sensors_params[23].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar14", CARMEN_PARAM_ONOFF, &sensors_params[24].alive, 1, NULL},
+		{(char *) "mapper", (char *) "lidar15", CARMEN_PARAM_ONOFF, &sensors_params[25].alive, 1, NULL},
 
 		{(char *) "mapper", (char *) "velodyne_locc", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_occ, 1, NULL},
 		{(char *) "mapper", (char *) "laser_ldmrs_locc", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_occ, 1, NULL},
-//			{(char *) "mapper", (char *) "stereo_velodyne1_locc", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_occ, 1, NULL},
 		{(char *) "mapper", (char *) "stereo_velodyne2_locc", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_occ, 1, NULL},
 		{(char *) "mapper", (char *) "stereo_velodyne3_locc", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_occ, 1, NULL},
 		{(char *) "mapper", (char *) "stereo_velodyne4_locc", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_occ, 1, NULL},
@@ -829,48 +986,20 @@ get_alive_sensors(int argc, char **argv)
 		{(char *) "mapper", (char *) "stereo_velodyne8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[8].unexpeted_delta_range_sigma, 1, NULL},
 		{(char *) "mapper", (char *) "stereo_velodyne9_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[9].unexpeted_delta_range_sigma, 1, NULL},
 
-		{(char *) "mapper", (char *) "unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &sensors_params[0].unsafe_height_above_ground, 1, sensors_params_handler},
-
-		{(char *) "mapper",  (char *) "velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max_factor, 1, NULL}
+		// {(char *) "mapper", (char *) "unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &mapper_unsafe_height_above_ground, 1, sensors_params_handler},
+		// {(char *) "mapper",  (char *) "velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max_factor, 1, NULL}
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
-	//Lidars
-	for(int i = first_lidar_number; i < (number_of_lidars + first_lidar_number); i++)
-	{
-		if (sensors_params[i].alive)
-		{
-			printf("lidar %d is alive-Sensor_Param %d \n", first_lidar_number, i);
-			int sensor_param_to_lidar_number = i - first_lidar_number;
-			char lidar_string_locc[256];
-			char lidar_string_lfree[256];
-			char lidar_string_lo[256];
-			char lidar_string_unexpeted[256];
-			sprintf(lidar_string_locc, "lidar%d_locc", sensor_param_to_lidar_number);
-			sprintf(lidar_string_lfree, "lidar%d_lfree", sensor_param_to_lidar_number);        // Geather the lidar id
-			sprintf(lidar_string_lo, "lidar%d_l0", sensor_param_to_lidar_number);
-			sprintf(lidar_string_unexpeted, "lidar%d_unexpeted_delta_range_sigma", sensor_param_to_lidar_number);
-
-			carmen_param_t param_list[] = {
-			{(char *) "mapper", (char *) lidar_string_locc, CARMEN_PARAM_DOUBLE, &sensors_params[i].log_odds.log_odds_occ, 1, NULL},
-			{(char *) "mapper", (char *) lidar_string_lfree, CARMEN_PARAM_DOUBLE, &sensors_params[i].log_odds.log_odds_free, 1, NULL},
-			{(char *) "mapper", (char *) lidar_string_lo, CARMEN_PARAM_DOUBLE, &sensors_params[i].log_odds.log_odds_l0, 1, NULL},
-			{(char *) "mapper", (char *) lidar_string_unexpeted, CARMEN_PARAM_DOUBLE, &sensors_params[i].unexpeted_delta_range_sigma, 1, NULL},
-		};
-			int num_items = sizeof(param_list) / sizeof(param_list[0]);
-			carmen_param_install_params(argc, argv, param_list, num_items);
-		}
-	}
-
 	for (i = 0; i < number_of_sensors; i++)
 	{
-		sensors_params[i].unsafe_height_above_ground = sensors_params[0].unsafe_height_above_ground;
+		sensors_params[i].unsafe_height_above_ground = mapper_unsafe_height_above_ground;
 
 		sensors_data[i].ray_position_in_the_floor = (carmen_vector_2D_t **)  calloc(number_of_threads, sizeof(carmen_vector_2D_t*));
 		sensors_data[i].maxed = (int **) calloc(number_of_threads, sizeof(int*));
 		sensors_data[i].obstacle_height = (double **) calloc(number_of_threads, sizeof(double*));
 		sensors_data[i].occupancy_log_odds_of_each_ray_target = (double **) calloc(number_of_threads, sizeof(double*));
-		sensors_data[i].point_cloud_index = 0;
+		sensors_data[i].point_cloud_index = -1;
 		sensors_data[i].points = NULL;
 		sensors_data[i].ray_origin_in_the_floor = (carmen_vector_2D_t **) calloc(number_of_threads, sizeof(carmen_vector_2D_t*));
 		sensors_data[i].ray_size_in_the_floor = (double **) calloc(number_of_threads, sizeof(double*));
@@ -923,7 +1052,7 @@ generates_ray_order(int size)
 static void
 get_sensors_param(int argc, char **argv)
 {
-	int i, j;
+	int i;
 	int flipped;
 	int horizontal_resolution;
 	char stereo_velodyne_string[256];
@@ -936,8 +1065,8 @@ get_sensors_param(int argc, char **argv)
 
 	int roi_ini, roi_end;
 
-	// Velodyne
-
+	//-----------------------------------------------------------------------------------------//
+	// The Velodyne HDL32E is hard coded as sensor 0 when using velodyne_partial_scan_message
 	if (calibration_file)
 		sensors_params[0].calibration_table = load_calibration_table(calibration_file);
 	else
@@ -955,8 +1084,6 @@ get_sensors_param(int argc, char **argv)
 			sensors_params[0].sensor_support_pose.position, sensors_params[0].pose.position, sensors_params[0].support_to_car_matrix);
 	sensors_params[0].height = sensors_params[0].sensor_robot_reference.z + robot_wheel_radius;
 
-	printf("Velodyne height: %lf\n", sensors_params[0].height);
-
 	if (sensors_params[0].height > highest_sensor)
 		highest_sensor = sensors_params[0].height;
 
@@ -964,9 +1091,10 @@ get_sensors_param(int argc, char **argv)
 	{
 		sensors_params[0].sensor_type = VELODYNE;
 		sensors_params[0].ray_order = carmen_velodyne_get_ray_order();
+		sensors_params[0].range_max_factor = mapper_range_max_factor;
 		sensors_params[0].vertical_correction = carmen_velodyne_get_vertical_correction();
-		sensors_params[0].delta_difference_mean = carmen_velodyne_get_delta_difference_mean();
-		sensors_params[0].delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
+		// sensors_params[0].delta_difference_mean = carmen_velodyne_get_delta_difference_mean();       // Ninguem sabe para que servem estes valores e aparentemente nao sao usados para nada
+		// sensors_params[0].delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
 
 		carmen_param_t param_list[] =
 		{
@@ -979,8 +1107,10 @@ get_sensors_param(int argc, char **argv)
 		init_velodyne_points(&sensors_data[0].points, &sensors_data[0].intensity, &sensors_data[0].robot_pose, &sensors_data[0].robot_velocity, &sensors_data[0].robot_timestamp, &sensors_data[0].robot_phi, &sensors_data[0].points_timestamp);
 		sensors_params[0].sensor_to_support_matrix = create_rotation_matrix(sensors_params[0].pose.orientation);
 		sensors_params[0].current_range_max = sensors_params[0].range_max;
-		sensors_data[0].point_cloud_index = 0;
+		sensors_data[0].point_cloud_index = -1;
 		carmen_prob_models_alloc_sensor_data(&sensors_data[0], sensors_params[0].vertical_resolution, number_of_threads);
+
+		sensors_params[0].unsafe_height_above_ground = mapper_unsafe_height_above_ground;
 
 		sensors_params[0].remission_calibration = NULL;//(double *) calloc(256 * sensors_params[0].vertical_resolution, sizeof(double));
 //		FILE *f = fopen("../data/remission_calibration.txt", "r");
@@ -991,8 +1121,8 @@ get_sensors_param(int argc, char **argv)
 //		fclose(f);
 	}
 
-	// LDMRS
-
+	//-------------------------------------------------------------------------------//
+	// The SICK LDMRS is hard coded as sensor 1
 	sensors_params[1].calibration_table = NULL;
 	sensors_params[1].save_calibration_file = NULL;
 
@@ -1015,11 +1145,13 @@ get_sensors_param(int argc, char **argv)
 		static double vertical_correction[4] = {-1.2, -0.4, 0.4, 1.2};
 		sensors_params[1].vertical_correction = vertical_correction;
 
-		static double delta_difference_mean[4] = {0, 0, 0, 0};
-		sensors_params[1].delta_difference_mean = delta_difference_mean;
+		// static double delta_difference_mean[4] = {0, 0, 0, 0};       // Ninguem sabe para que servem estes valores e aparentemente nao sao usados para nada
+		// sensors_params[1].delta_difference_mean = delta_difference_mean;
 
-		static double delta_difference_stddev[4] = {0, 0, 0, 0};
-		sensors_params[1].delta_difference_stddev = delta_difference_stddev;
+		// static double delta_difference_stddev[4] = {0, 0, 0, 0};
+		// sensors_params[1].delta_difference_stddev = delta_difference_stddev;
+
+		sensors_params[1].range_max_factor = 1.0;
 
 		carmen_param_t param_list[] =
 		{
@@ -1033,12 +1165,16 @@ get_sensors_param(int argc, char **argv)
 		init_velodyne_points(&sensors_data[1].points, &sensors_data[1].intensity, &sensors_data[1].robot_pose, &sensors_data[1].robot_velocity, &sensors_data[1].robot_timestamp, &sensors_data[1].robot_phi, &sensors_data[1].points_timestamp);
 		sensors_params[1].sensor_to_support_matrix = create_rotation_matrix(sensors_params[1].pose.orientation);
 		sensors_params[1].current_range_max = sensors_params[1].range_max;
-		sensors_data[1].point_cloud_index = 0;
+		sensors_data[1].point_cloud_index = -1;
 		carmen_prob_models_alloc_sensor_data(&sensors_data[1], sensors_params[1].vertical_resolution, number_of_threads);
+
+		sensors_params[1].unsafe_height_above_ground = mapper_unsafe_height_above_ground;
 
 		sensors_params[1].remission_calibration = NULL;//(double *) calloc(256 * sensors_params[0].vertical_resolution, sizeof(double));
 	}
-	//Just for stereo cameras
+
+	//-------------------------------------------------------------------------------//
+	// STEREO CAMERAS
 	for (i = 2; i < 10; i++)
 	{
 		sensors_params[i].calibration_table = NULL;
@@ -1092,69 +1228,78 @@ get_sensors_param(int argc, char **argv)
 			{
 				carmen_die("The stereo_velodyne_vertical_resolution is bigger than stereo point cloud height");
 			}
-			sensors_params[i].range_max_factor = 1.0;
+			sensors_params[i].range_max_factor = mapper_range_max_factor;
 			sensors_params[i].ray_order = generates_ray_order(sensors_params[i].vertical_resolution);
 			sensors_params[i].vertical_correction = get_stereo_velodyne_correction(flipped, i, sensors_params[i].vertical_resolution, roi_ini, roi_end, 0, 0);
 			init_velodyne_points(&sensors_data[i].points, &sensors_data[i].intensity, &sensors_data[i].robot_pose, &sensors_data[i].robot_velocity,  &sensors_data[i].robot_timestamp, &sensors_data[i].robot_phi, &sensors_data[i].points_timestamp);
 			sensors_params[i].sensor_to_support_matrix = create_rotation_matrix(sensors_params[i].pose.orientation);
 			sensors_params[i].current_range_max = sensors_params[i].range_max;
-			sensors_data[i].point_cloud_index = 0;
+			sensors_data[i].point_cloud_index = -1;
 			carmen_prob_models_alloc_sensor_data(&sensors_data[i], sensors_params[i].vertical_resolution, number_of_threads);
 
-			//TODO : tem que fazer esta medida para as cameras igual foi feito para o velodyne
-			sensors_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));
-			sensors_params[i].delta_difference_stddev = (double *)calloc(50, sizeof(double));
-			for (j = 0; j < 50; j++)
-				sensors_params[i].delta_difference_stddev[j] = 1.0;
+			sensors_params[i].unsafe_height_above_ground = mapper_unsafe_height_above_ground;
+
+			// sensors_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));
+			// sensors_params[i].delta_difference_stddev = (double *)calloc(50, sizeof(double));
+			// for (j = 0; j < 50; j++)
+			// 	sensors_params[i].delta_difference_stddev[j] = 1.0;
 		}
 	}
+}
 
-	//Just for Lidars
-	for (i = first_lidar_number; i < (number_of_lidars+first_lidar_number); i++)
+
+void
+get_lidars_sensor_params()
+{
+	for (int i = 0; i < MAX_NUMBER_OF_LIDARS; i++)
 	{
-		sensors_params[i].calibration_table = NULL;
-		sensors_params[i].save_calibration_file = NULL;
-		int lidar_config_index = i - first_lidar_number;
-		if (sensors_params[i].alive)
-		{
-			sensors_params[i].sensor_type = CAMERA;
-			sensors_params[i].pose = lidar_config[lidar_config_index].pose;
-			sensors_params[i].sensor_support_pose = sensor_board_1_pose;
-			sensors_params[i].support_to_car_matrix = create_rotation_matrix(sensors_params[i].sensor_support_pose.orientation);
-			sensors_params[i].sensor_robot_reference = carmen_change_sensor_reference(
-					sensors_params[i].sensor_support_pose.position, sensors_params[i].pose.position, sensors_params[i].support_to_car_matrix);
-			sensors_params[i].height = sensors_params[i].sensor_robot_reference.z + robot_wheel_radius;
+		if (!sensors_params[i + 10].alive)
+			continue;
+		
+		if (calibration_file)
+			sensors_params[i + 10].calibration_table = load_calibration_table(calibration_file);
+		else
+			sensors_params[i + 10].calibration_table = load_calibration_table((char *) "calibration_table.txt");
 
-			if (sensors_params[i].height > highest_sensor)
-				highest_sensor = sensors_params[i].height;
+		if (save_calibration_file)
+			sensors_params[i + 10].save_calibration_file = fopen(save_calibration_file, "w"); // The file is closed in the shutdown_module handler
+		else
+			sensors_params[i + 10].save_calibration_file = NULL;
 
-			sensors_params[i].time_spent_by_each_scan = lidar_config[lidar_config_index].time_between_shots;
-			sensors_params[i].vertical_resolution = lidar_config[lidar_config_index].shot_size;
-			printf("%d %d %d\n", i,lidar_config_index, lidar_config[lidar_config_index].shot_size);
+		sensors_params[i + 10].name = lidar_config[i].model;
+		sensors_params[i + 10].pose = lidar_config[i].pose;
+		sensors_params[i + 10].sensor_support_pose = sensor_board_1_pose;
+		sensors_params[i + 10].support_to_car_matrix = create_rotation_matrix(sensors_params[i + 10].sensor_support_pose.orientation);
+		
+		sensors_params[i + 10].sensor_to_support_matrix = create_rotation_matrix(sensors_params[i + 10].pose.orientation);
 
-			carmen_param_t param_list[] =
-			{
-					{(char *) "mapper", (char *) "velodyne_range_max", CARMEN_PARAM_DOUBLE, &sensors_params[i].range_max, 0, NULL},
-			};
+		sensors_params[i + 10].sensor_robot_reference = carmen_change_sensor_reference(sensors_params[i + 10].sensor_support_pose.position, 
+		                                                    sensors_params[i + 10].pose.position, sensors_params[i + 10].support_to_car_matrix);
 
-			carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+		sensors_params[i + 10].height = sensors_params[i + 10].sensor_robot_reference.z + robot_wheel_radius;
 
-			sensors_params[i].range_max_factor = sensors_params[0].range_max_factor;
-			sensors_params[i].ray_order = generates_ray_order(sensors_params[i].vertical_resolution);
-			sensors_params[i].vertical_correction = lidar_config[lidar_config_index].vertical_angles;
+		sensors_params[i + 10].sensor_type = VELODYNE;
+		sensors_params[i + 10].vertical_resolution = lidar_config[i].shot_size;
+		sensors_params[i + 10].ray_order = lidar_config[i].ray_order;
+		sensors_params[i + 10].vertical_correction = lidar_config[i].vertical_angles;
+		// sensors_params[i + 10].delta_difference_mean = carmen_velodyne_get_delta_difference_mean();       // Ninguem sabe para que servem estes valores e aparentemente nao sao usados para nada
+		// sensors_params[i + 10].delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
+		sensors_params[i + 10].range_max = mapper_velodyne_range_max;
+		sensors_params[i + 10].range_max_factor = mapper_range_max_factor;
+		sensors_params[i + 10].range_division_factor = lidar_config[i].range_division_factor;
+		sensors_params[i + 10].time_spent_by_each_scan = lidar_config[i].time_between_shots;
+		sensors_params[i + 10].unsafe_height_above_ground = mapper_unsafe_height_above_ground;
 
-			init_velodyne_points(&sensors_data[i].points, &sensors_data[i].intensity, &sensors_data[i].robot_pose, &sensors_data[i].robot_velocity,  &sensors_data[i].robot_timestamp, &sensors_data[i].robot_phi, &sensors_data[i].points_timestamp);
-			sensors_params[i].sensor_to_support_matrix = create_rotation_matrix(sensors_params[i].pose.orientation);
-			sensors_params[i].current_range_max = sensors_params[i].range_max;
-			sensors_data[i].point_cloud_index = 0;
-			carmen_prob_models_alloc_sensor_data(&sensors_data[i], sensors_params[i].vertical_resolution, number_of_threads);
+		init_velodyne_points(&sensors_data[i + 10].points, &sensors_data[i + 10].intensity, &sensors_data[i + 10].robot_pose, &sensors_data[i + 10].robot_velocity,
+		        &sensors_data[i + 10].robot_timestamp, &sensors_data[i + 10].robot_phi, &sensors_data[i + 10].points_timestamp);
+		
+		sensors_params[i + 10].current_range_max = sensors_params[i + 10].range_max;
+		
+		sensors_data[i + 10].point_cloud_index = -1;
 
-			//TODO : tem que fazer esta medida para as cameras igual foi feito para o velodyne
-			sensors_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));
-			sensors_params[i].delta_difference_stddev = (double *)calloc(50, sizeof(double));
-			for (j = 0; j < 50; j++)
-				sensors_params[i].delta_difference_stddev[j] = 1.0;
-		}
+		carmen_prob_models_alloc_sensor_data(&sensors_data[i + 10], sensors_params[i + 10].vertical_resolution, number_of_threads);
+
+		sensors_params[i + 10].remission_calibration = NULL; //(double *) calloc(256 * sensors_params[0].vertical_resolution, sizeof(double));
 	}
 }
 
@@ -1179,65 +1324,28 @@ get_sensors_param_pose_handler(__attribute__((unused)) char *module, __attribute
 		free(sensors_params[0].sensor_to_support_matrix);
 		sensors_params[0].sensor_to_support_matrix = create_rotation_matrix(sensors_params[0].pose.orientation);
 	}
-
-	for (int i = 0; i < number_of_sensors; i++)
+	else if (sensors_params[1].alive && strcmp(sensors_params[1].name, "laser_ldmrs") != 0)
 	{
-		if (sensors_params[i].alive && strncmp(sensors_params[i].name, "lidar", 5) == 0)
-		{
-			int lidar_index = i-first_lidar_number;
-			sensors_params[i].pose = lidar_config[lidar_index].pose;
-			free(sensors_params[i].sensor_to_support_matrix);
-			sensors_params[i].sensor_to_support_matrix = create_rotation_matrix(sensors_params[0].pose.orientation);
-		}
-		if (sensors_params[i].alive && strcmp(sensors_params[i].name, "laser_ldmrs") != 0)
-		{
-			sensors_params[i].sensor_support_pose = sensor_board_1_pose;
-			free(sensors_params[i].support_to_car_matrix);
-			sensors_params[i].support_to_car_matrix = create_rotation_matrix(sensors_params[i].sensor_support_pose.orientation);
-			sensors_params[i].sensor_robot_reference = carmen_change_sensor_reference(
-					sensors_params[i].sensor_support_pose.position, sensors_params[i].pose.position, sensors_params[i].support_to_car_matrix);
-			sensors_params[i].height = sensors_params[i].sensor_robot_reference.z + robot_wheel_radius;
-		}
-	}
+		sensors_params[1].sensor_support_pose = sensor_board_1_pose;
+		free(sensors_params[1].support_to_car_matrix);
+		sensors_params[1].support_to_car_matrix = create_rotation_matrix(sensors_params[1].sensor_support_pose.orientation);
+		sensors_params[1].sensor_robot_reference = carmen_change_sensor_reference(
+				sensors_params[1].sensor_support_pose.position, sensors_params[1].pose.position, sensors_params[1].support_to_car_matrix);
+		sensors_params[1].height = sensors_params[1].sensor_robot_reference.z + robot_wheel_radius;
+	} 
 
-	get_highest_sensor();
-}
+	// for (int i = 0; i < number_of_sensors; i++)
+	// {
+	// 	if (sensors_params[i].alive && strncmp(sensors_params[i].name, "lidar", 5) == 0)
+	// 	{
+	// 		int lidar_index = i-first_lidar_number;
+	// 		sensors_params[i].pose = lidar_config[lidar_index].pose;
+	// 		free(sensors_params[i].sensor_to_support_matrix);
+	// 		sensors_params[i].sensor_to_support_matrix = create_rotation_matrix(sensors_params[0].pose.orientation);
+	// 	}
+	// }
 
-
-void
-load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config &lidar_config)
-{
-    char *vertical_correction_string;
-    char lidar_string[256];
-
-	sprintf(lidar_string, "lidar%d", lidar_id);        // Geather the lidar id
-
-    carmen_param_t param_list[] = {
-			{lidar_string, (char*)"model", CARMEN_PARAM_STRING, &lidar_config.model, 0, NULL},
-			{lidar_string, (char*)"ip", CARMEN_PARAM_STRING, &lidar_config.ip, 0, NULL},
-			{lidar_string, (char*)"port", CARMEN_PARAM_STRING, &lidar_config.port, 0, NULL},
-			{lidar_string, (char*)"shot_size", CARMEN_PARAM_INT, &lidar_config.shot_size, 0, NULL},
-            {lidar_string, (char*)"min_sensing", CARMEN_PARAM_INT, &lidar_config.min_sensing, 0, NULL},
-            {lidar_string, (char*)"max_sensing", CARMEN_PARAM_INT, &lidar_config.max_sensing, 0, NULL},
-			{lidar_string, (char*)"range_division_factor", CARMEN_PARAM_INT, &lidar_config.range_division_factor, 0, NULL},
-            {lidar_string, (char*)"time_between_shots", CARMEN_PARAM_DOUBLE, &lidar_config.time_between_shots, 0, NULL},
-			{lidar_string, (char*)"x", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.x), 0, NULL},
-			{lidar_string, (char*)"y", CARMEN_PARAM_DOUBLE, &(lidar_config.pose.position.y), 0, NULL},
-			{lidar_string, (char*)"z", CARMEN_PARAM_DOUBLE, &lidar_config.pose.position.z, 0, NULL},
-			{lidar_string, (char*)"roll", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.roll, 0, NULL},
-			{lidar_string, (char*)"pitch", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.pitch, 0, NULL},
-			{lidar_string, (char*)"yaw", CARMEN_PARAM_DOUBLE, &lidar_config.pose.orientation.yaw, 0, NULL},
-			{lidar_string, (char*)"vertical_angles", CARMEN_PARAM_STRING, &vertical_correction_string, 0, NULL},
-	};
-	int num_items = sizeof(param_list) / sizeof(param_list[0]);
-	carmen_param_install_params(argc, argv, param_list, num_items);
-
-    lidar_config.vertical_angles = (double*) malloc(lidar_config.shot_size * sizeof(double));
-
-    for (int i = 0; i < lidar_config.shot_size; i++)
-		lidar_config.vertical_angles[i] = CLF_READ_DOUBLE(&vertical_correction_string); // CLF_READ_DOUBLE takes a double number from a string
-
-//	printf("Model: %s Port: %s Shot size: %d Min Sensing: %d Max Sensing: %d Range division: %d Time: %lf\n", lidar_config.model, lidar_config.port, lidar_config.shot_size, lidar_config.min_sensing, lidar_config.max_sensing, lidar_config.range_division_factor, lidar_config.time_between_shots);  printf("X: %lf Y: %lf Z: %lf R: %lf P: %lf Y: %lf\n", lidar_config.pose.position.x, lidar_config.pose.position.y, lidar_config.pose.position.z, lidar_config.pose.orientation.roll, lidar_config.pose.orientation.pitch, lidar_config.pose.orientation.yaw); for (int i = 0; i < lidar_config.shot_size; i++) printf("%lf ", lidar_config.vertical_angles[i]); printf("\n");
+	// get_highest_sensor();
 }
 
 
@@ -1253,8 +1361,8 @@ override_mapping_mode_params(int argc, char **argv)
 			{(char *) "mapper",  (char *) "mapping_mode_off_decay_to_offline_map", CARMEN_PARAM_ONOFF, &decay_to_offline_map, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_off_update_and_merge_with_mapper_saved_maps", CARMEN_PARAM_ONOFF, &update_and_merge_with_mapper_saved_maps, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_off_build_snapshot_map", CARMEN_PARAM_ONOFF, &build_snapshot_map, 0, NULL},
-			{(char *) "mapper",  (char *) "mapping_mode_off_velodyne_range_max", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max, 0, NULL},
-			{(char *) "mapper",  (char *) "mapping_mode_off_velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max_factor, 1, NULL},
+			{(char *) "mapper",  (char *) "mapping_mode_off_velodyne_range_max", CARMEN_PARAM_DOUBLE, &mapper_velodyne_range_max, 0, NULL},
+			{(char *) "mapper",  (char *) "mapping_mode_off_velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &mapper_range_max_factor, 1, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_off_create_map_sum_and_count", CARMEN_PARAM_ONOFF, &create_map_sum_and_count, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_off_use_remission", CARMEN_PARAM_ONOFF, &use_remission, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_off_laser_ldmrs", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 1, sensors_params_handler},
@@ -1273,8 +1381,8 @@ override_mapping_mode_params(int argc, char **argv)
 			{(char *) "mapper",  (char *) "mapping_mode_on_decay_to_offline_map", CARMEN_PARAM_ONOFF, &decay_to_offline_map, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_on_update_and_merge_with_mapper_saved_maps", CARMEN_PARAM_ONOFF, &update_and_merge_with_mapper_saved_maps, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_on_build_snapshot_map", CARMEN_PARAM_ONOFF, &build_snapshot_map, 0, NULL},
-			{(char *) "mapper",  (char *) "mapping_mode_on_velodyne_range_max", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max, 0, NULL},
-			{(char *) "mapper",  (char *) "mapping_mode_on_velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max_factor, 1, NULL},
+			{(char *) "mapper",  (char *) "mapping_mode_on_velodyne_range_max", CARMEN_PARAM_DOUBLE, &mapper_velodyne_range_max, 0, NULL},
+			{(char *) "mapper",  (char *) "mapping_mode_on_velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &mapper_range_max_factor, 1, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_on_create_map_sum_and_count", CARMEN_PARAM_ONOFF, &create_map_sum_and_count, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_on_use_remission", CARMEN_PARAM_ONOFF, &use_remission, 0, NULL},
 			{(char *) "mapper",  (char *) "mapping_mode_on_laser_ldmrs", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 1, sensors_params_handler},
@@ -1287,11 +1395,9 @@ override_mapping_mode_params(int argc, char **argv)
 }
 
 
-/* read all parameters from .ini file and command line. */
+// read all parameters from .ini file and command line
 static void
-read_parameters(int argc, char **argv,
-		carmen_map_config_t *map_config,
-		carmen_robot_ackerman_config_t *p_car_config)
+read_parameters(int argc, char **argv, carmen_map_config_t *map_config, carmen_robot_ackerman_config_t *p_car_config)
 {
 	double robot_vertical_displacement_from_center;
 
@@ -1335,15 +1441,14 @@ read_parameters(int argc, char **argv,
 		{(char *) "laser_ldmrs",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.orientation.pitch), 0, NULL},
 		{(char *) "laser_ldmrs",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.orientation.yaw), 0, NULL},
 
-		{(char *) "mapper",  (char *) "number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL},
+		// {(char *) "mapper",  (char *) "number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL}, // The number_of_sensors must be the maximun number of sensors: 25
 		{(char *) "mapper",  (char *) "safe_range_above_sensors", CARMEN_PARAM_DOUBLE, &safe_range_above_sensors, 0, NULL},
 
 		{(char *) "mapper",  (char *) "map_grid_res", CARMEN_PARAM_DOUBLE, &map_resolution, 0, NULL},
 		{(char *) "mapper",  (char *) "map_width", CARMEN_PARAM_DOUBLE, &map_width, 0, NULL},
 		{(char *) "mapper",  (char *) "map_height", CARMEN_PARAM_DOUBLE, &map_height, 0, NULL},
-
+		{(char *) "mapper",  (char *) "unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &mapper_unsafe_height_above_ground, 0, NULL},
 		{(char *) "mapper",  (char *) "moving_objects_raw_map", CARMEN_PARAM_ONOFF, &publish_moving_objects_raw_map, 0, NULL},
-
 		{(char *) "mapper",  (char *) "build_snapshot_map", CARMEN_PARAM_ONOFF, &build_snapshot_map, 0, NULL},
 		{(char *) "mapper",  (char *) "merge_with_offline_map", CARMEN_PARAM_ONOFF, &merge_with_offline_map, 0, NULL},
 		{(char *) "mapper",  (char *) "update_and_merge_with_mapper_saved_maps", CARMEN_PARAM_ONOFF, &update_and_merge_with_mapper_saved_maps, 0, NULL},
@@ -1406,12 +1511,9 @@ read_parameters(int argc, char **argv,
 
 		{(char *) "frenet_path_planner",  (char *) "use_unity_simulator", CARMEN_PARAM_ONOFF, &use_unity_simulator, 0, NULL},
 	};
-
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
-//
-//load lidars position and other configurations
-	for(int i = 0; i < number_of_lidars; i++)
-		load_lidar_config(argc, argv, i, lidar_config[i]);
+
+	number_of_sensors = NUMBER_OF_SENSORS;  // TODO move this line to a more apropriate spot
 
 	int mkdir_status = mkdir(map_path, 0775);
 	if (mkdir_status != 0)
@@ -1439,7 +1541,11 @@ read_parameters(int argc, char **argv,
 
 	carmen_grid_mapping_init_parameters(map_resolution, map_width);
 
+	// GET THE ALIVE SENSORS FROM IN THE .INI FILE
 	get_alive_sensors(argc, argv);
+
+	// READ CONFIGS OF LIDARS THAT ARE ALIVE (ON IN THE .ini FILE)
+	read_alive_lidars_configs(argc, argv);
 
 	carmen_param_allow_unfound_variables(1);
 
@@ -1455,13 +1561,16 @@ read_parameters(int argc, char **argv,
 		{(char *) "commandline", (char *) "time_secs_between_map_save", CARMEN_PARAM_DOUBLE, &time_secs_between_map_save, 0, NULL},
 		{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
 	};
-
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
-
-	get_sensors_param(argc, argv);
 
 	if (mapping_mode == 0 || mapping_mode == 1)
 		override_mapping_mode_params(argc, argv);
+
+	// FILL THE sensor_params STRUCTURE VECTOR
+	get_sensors_param(argc, argv);
+
+	// FILL THE sensor_params STRUCTURE VECTOR from 10 to 25 with alive lidars data
+	get_lidars_sensor_params();
 }
 
 
@@ -1512,15 +1621,55 @@ subscribe_to_ipc_messages()
 	if (sensors_params[9].alive)
 		carmen_stereo_velodyne_subscribe_scan_message(9, NULL, (carmen_handler_t)stereo_velodyne_variable_scan_message_handler9, CARMEN_SUBSCRIBE_LATEST);
 
-	//lidars
-//	if (sensors_params[10].alive)
-//		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)velodyne_variable_scan_message_handler0, CARMEN_SUBSCRIBE_LATEST, 0);
+	//-------------------------------------------------------------------------------//
+	// LIDARS
+	if (sensors_params[10].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_0, CARMEN_SUBSCRIBE_LATEST, 0);
 
-//	if (sensors_params[11].alive)
-//		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)velodyne_variable_scan_message_handler1, CARMEN_SUBSCRIBE_LATEST, 1);
+	if (sensors_params[11].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_1, CARMEN_SUBSCRIBE_LATEST, 1);
 
 	if (sensors_params[12].alive)
-		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)velodyne_variable_scan_message_handler2, CARMEN_SUBSCRIBE_LATEST, 2);
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_2, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (sensors_params[13].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_3, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (sensors_params[14].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_4, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (sensors_params[15].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_5, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (sensors_params[16].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_6, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (sensors_params[17].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_7, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (sensors_params[18].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_8, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (sensors_params[19].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_9, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (sensors_params[20].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_10, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (sensors_params[21].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_11, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (sensors_params[22].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_12, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (sensors_params[23].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_13, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (sensors_params[24].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_14, CARMEN_SUBSCRIBE_LATEST, 2);
+
+	if (sensors_params[25].alive)
+		carmen_velodyne_subscribe_variable_scan_message(NULL, (carmen_handler_t)variable_scan_message_handler_15, CARMEN_SUBSCRIBE_LATEST, 2);
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -1625,6 +1774,8 @@ main(int argc, char **argv)
 
 	/* Initialize all the relevant parameters */
 	read_parameters(argc, argv, &map_config, &car_config);
+
+	get_highest_sensor();
 
 	initialize_transforms();
 

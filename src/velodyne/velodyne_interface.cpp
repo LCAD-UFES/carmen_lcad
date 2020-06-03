@@ -263,6 +263,34 @@ carmen_velodyne_partial_scan_update_points_with_remission_check(carmen_velodyne_
 
 
 void
+variable_scan_update_points_with_remission_check(carmen_velodyne_variable_scan_message *msg,int vertical_resolution, spherical_point_cloud *points,
+		unsigned char *intensity, int *ray_order, double *vertical_correction, float range_max, double range_division_factor, double timestamp, int use_remission)
+{
+	points->timestamp = timestamp;
+
+	for (int i = 0; i < msg->number_of_shots; i++)
+	{
+		for (int j = 0; j < vertical_resolution; j++)
+		{
+			double angle = carmen_degrees_to_radians(msg->partial_scan[i].angle);
+			double range = (double) (msg->partial_scan[i].distance[ray_order[j]]) / range_division_factor;
+
+			if (range <= 0.0)
+				range = range_max;
+
+			points->sphere_points[i * vertical_resolution + j].horizontal_angle = carmen_normalize_theta(-angle);
+			points->sphere_points[i * vertical_resolution + j].vertical_angle = carmen_degrees_to_radians(vertical_correction[j]);
+			points->sphere_points[i * vertical_resolution + j].length = range;
+			
+			if (use_remission)
+				intensity[i * vertical_resolution + j] = msg->partial_scan[i].intensity[ray_order[j]];
+		}
+	}
+
+}
+
+
+void
 carmen_velodyne_variable_scan_update_points(carmen_velodyne_variable_scan_message *message,
 		int vertical_resolution, spherical_point_cloud *points, unsigned char *intensity,
 		int *ray_order, double *vertical_correction, float range_max, double timestamp)
@@ -347,4 +375,55 @@ carmen_velodyne_free_variable_velodyne_message(
 
 	free(message->partial_scan);
 	free(message);
+}
+
+
+void
+load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config **lidar_config)
+{
+    char *vertical_angles_string, *ray_order_string;
+    char lidar_string[256];
+
+	carmen_lidar_config *lidar_config_p = *lidar_config;
+	
+	sprintf(lidar_string, "lidar%d", lidar_id);        // Geather the lidar id
+
+    carmen_param_t param_list[] = {
+			{lidar_string, (char*)"model", CARMEN_PARAM_STRING, &lidar_config_p->model, 0, NULL},
+			{lidar_string, (char*)"ip", CARMEN_PARAM_STRING, &lidar_config_p->ip, 0, NULL},
+			{lidar_string, (char*)"port", CARMEN_PARAM_STRING, &lidar_config_p->port, 0, NULL},
+			{lidar_string, (char*)"shot_size", CARMEN_PARAM_INT, &lidar_config_p->shot_size, 0, NULL},
+            {lidar_string, (char*)"min_sensing", CARMEN_PARAM_INT, &lidar_config_p->min_sensing, 0, NULL},
+            {lidar_string, (char*)"max_sensing", CARMEN_PARAM_INT, &lidar_config_p->max_sensing, 0, NULL},
+			{lidar_string, (char*)"range_division_factor", CARMEN_PARAM_INT, &lidar_config_p->range_division_factor, 0, NULL},
+			{lidar_string, (char*)"max_range", CARMEN_PARAM_DOUBLE, &lidar_config_p->max_range, 0, NULL},
+            {lidar_string, (char*)"time_between_shots", CARMEN_PARAM_DOUBLE, &lidar_config_p->time_between_shots, 0, NULL},
+			{lidar_string, (char*)"x", CARMEN_PARAM_DOUBLE, &(lidar_config_p->pose.position.x), 0, NULL},
+			{lidar_string, (char*)"y", CARMEN_PARAM_DOUBLE, &(lidar_config_p->pose.position.y), 0, NULL},
+			{lidar_string, (char*)"z", CARMEN_PARAM_DOUBLE, &lidar_config_p->pose.position.z, 0, NULL},
+			{lidar_string, (char*)"roll", CARMEN_PARAM_DOUBLE, &lidar_config_p->pose.orientation.roll, 0, NULL},
+			{lidar_string, (char*)"pitch", CARMEN_PARAM_DOUBLE, &lidar_config_p->pose.orientation.pitch, 0, NULL},
+			{lidar_string, (char*)"yaw", CARMEN_PARAM_DOUBLE, &lidar_config_p->pose.orientation.yaw, 0, NULL},
+			{lidar_string, (char*)"ray_order", CARMEN_PARAM_STRING, &ray_order_string, 0, NULL},
+			{lidar_string, (char*)"vertical_angles", CARMEN_PARAM_STRING, &vertical_angles_string, 0, NULL},
+	};
+	int num_items = sizeof(param_list) / sizeof(param_list[0]);
+	carmen_param_install_params(argc, argv, param_list, num_items);
+
+    lidar_config_p->vertical_angles = (double*) malloc(lidar_config_p->shot_size * sizeof(double));
+	lidar_config_p->ray_order = (int*) malloc(lidar_config_p->shot_size * sizeof(int));
+
+    for (int i = 0; i < lidar_config_p->shot_size; i++)
+		lidar_config_p->vertical_angles[i] = CLF_READ_DOUBLE(&vertical_angles_string); // CLF_READ_DOUBLE takes a double number from a string
+
+	for (int i = 0; i < lidar_config_p->shot_size; i++)
+		lidar_config_p->ray_order[i] = CLF_READ_INT(&ray_order_string); // CLF_READ_DOUBLE takes a double number from a string
+    
+	// DO NOT ERASE very useful for debug
+	// printf("Model: %s Port: %s Shot size: %d Min Sensing: %d Max Sensing: %d Range division: %d Time: %lf\n", lidar_config_p->model, lidar_config_p->port, lidar_config_p->shot_size, lidar_config_p->min_sensing, lidar_config_p->max_sensing, lidar_config_p->range_division_factor, lidar_config_p->time_between_shots);
+	// printf("X: %lf Y: %lf Z: %lf R: %lf P: %lf Y: %lf\n", lidar_config_p->pose.position.x, lidar_config_p->pose.position.y, lidar_config_p->pose.position.z, lidar_config_p->pose.orientation.roll, lidar_config_p->pose.orientation.pitch, lidar_config_p->pose.orientation.yaw);
+	// for (int i = 0; i < lidar_config_p->shot_size; i++)
+	// 	printf("%lf ", lidar_config_p->vertical_angles[i]); printf("\n");
+	// for (int i = 0; i < lidar_config_p->shot_size; i++)
+	// 	printf("%d ", lidar_config_p->ray_order[i]); printf("\n");
 }

@@ -1184,7 +1184,7 @@ generates_ray_order(int size)
 static void
 get_sensors_param(int argc, char **argv, int correction_type)
 {
-	int i, j;
+	int i;
 	int flipped;
 	int horizontal_resolution;
 	char stereo_velodyne_string[256];
@@ -1218,8 +1218,8 @@ get_sensors_param(int argc, char **argv, int correction_type)
 	{
 		spherical_sensor_params[0].ray_order = carmen_velodyne_get_ray_order();
 		spherical_sensor_params[0].vertical_correction = carmen_velodyne_get_vertical_correction();
-		spherical_sensor_params[0].delta_difference_mean = carmen_velodyne_get_delta_difference_mean();
-		spherical_sensor_params[0].delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
+		// spherical_sensor_params[0].delta_difference_mean = carmen_velodyne_get_delta_difference_mean();
+		// spherical_sensor_params[0].delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
 
 		carmen_param_t param_list[] =
 		{
@@ -1317,10 +1317,10 @@ get_sensors_param(int argc, char **argv, int correction_type)
 			carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[i], spherical_sensor_params[i].vertical_resolution, number_of_threads);
 
 			//TODO : tem que fazer esta medida para as cameras igual foi feito para o velodyne
-			spherical_sensor_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));
-			spherical_sensor_params[i].delta_difference_stddev = (double *)calloc(50, sizeof(double));
-			for (j = 0; j < 50; j++)
-				spherical_sensor_params[i].delta_difference_stddev[j] = 1.0;
+			// spherical_sensor_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));
+			// spherical_sensor_params[i].delta_difference_stddev = (double *)calloc(50, sizeof(double));
+			// for (j = 0; j < 50; j++)
+			// 	spherical_sensor_params[i].delta_difference_stddev[j] = 1.0;
 		}
 	}
 }

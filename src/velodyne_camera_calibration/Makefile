@@ -26,7 +26,7 @@ PUBLIC_INCLUDES = velodyne_camera_calibration.h
 PUBLIC_LIBRARIES = libvelodyne_camera_calibration.a
 PUBLIC_BINARIES = 
 #TARGETS = velodyne_camera_calibration_main velodyne_camera_calibration_manual velodyne_camera_publish_range save_velodyne_txt libvelodyne_camera_calibration.a
-TARGETS = velodyne_camera_calibration_main velodyne_camera_publish_range save_velodyne_txt libvelodyne_camera_calibration.a
+TARGETS = velodyne_camera_calibration_main velodyne_camera_publish_range libvelodyne_camera_calibration.a #save_velodyne_txt
 #TARGETS += visual_tracker
 
 #visual_tracker:
@@ -42,7 +42,7 @@ velodyne_camera_calibration_main: velodyne_camera_calibration_main.o libvelodyne
 # velodyne_camera_calibration_manual: velodyne_camera_calibration_manual.o libvelodyne_camera_calibration.a
 velodyne_camera_publish_range: velodyne_camera_publish_range.o libvelodyne_camera_calibration.a
 libvelodyne_camera_calibration.a: velodyne_camera_calibration.o
-save_velodyne_txt: save_velodyne_txt.o libvelodyne_camera_calibration.a
+#save_velodyne_txt: save_velodyne_txt.o libvelodyne_camera_calibration.a
 
 
 include ../Makefile.rules

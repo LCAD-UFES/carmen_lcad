@@ -187,7 +187,7 @@ generates_ray_order(int size)
 void
 get_sensors_param(int argc, char **argv)
 {
-	int i, j;
+	int i;
 	int flipped;
 	int horizontal_resolution;
 	char stereo_velodyne_string[256];
@@ -212,8 +212,8 @@ get_sensors_param(int argc, char **argv)
 	{
 		spherical_sensor_params[0].ray_order = carmen_velodyne_get_ray_order();
 		spherical_sensor_params[0].vertical_correction = carmen_velodyne_get_vertical_correction();
-		spherical_sensor_params[0].delta_difference_mean = carmen_velodyne_get_delta_difference_mean();
-		spherical_sensor_params[0].delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
+		// spherical_sensor_params[0].delta_difference_mean = carmen_velodyne_get_delta_difference_mean();
+		// spherical_sensor_params[0].delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
 
 		carmen_param_t param_list[] =
 		{
@@ -298,10 +298,10 @@ get_sensors_param(int argc, char **argv)
 			carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[i], spherical_sensor_params[i].vertical_resolution, 1);
 
 			//TODO : tem que fazer esta medida para as cameras igual foi feito para o velodyne
-			spherical_sensor_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));
-			spherical_sensor_params[i].delta_difference_stddev = (double *)calloc(50, sizeof(double));
-			for (j = 0; j < 50; j++)
-				spherical_sensor_params[i].delta_difference_stddev[j] = 1.0;
+			// spherical_sensor_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));
+			// spherical_sensor_params[i].delta_difference_stddev = (double *)calloc(50, sizeof(double));
+			// for (j = 0; j < 50; j++)
+			// 	spherical_sensor_params[i].delta_difference_stddev[j] = 1.0;
 
 		}
 	}
@@ -544,8 +544,8 @@ read_parameters_without_mapper(int argc, char **argv, carmen_localize_ackerman_p
 	velodyne_params.ray_order = carmen_velodyne_get_ray_order();
 	velodyne_params.vertical_correction = carmen_velodyne_get_vertical_correction();
 
-	velodyne_params.delta_difference_mean = carmen_velodyne_get_delta_difference_mean();
-	velodyne_params.delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
+	// velodyne_params.delta_difference_mean = carmen_velodyne_get_delta_difference_mean();
+	// velodyne_params.delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
 
 	velodyne_params.sensor_to_support_matrix = create_rotation_matrix(velodyne_params.pose.orientation);
 	velodyne_params.current_range_max = velodyne_params.range_max;
