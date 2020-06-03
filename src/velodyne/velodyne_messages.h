@@ -15,9 +15,11 @@ typedef struct
 	int min_sensing;                // Minimum sensing value (int), provided by the manual
 	int max_sensing;                // Maximum sensing value (int), provided by the manual
 	int range_division_factor;      // LiDAR measures are sent as integer values to minimize data transfer, must be divided to get floating point precision
-	double time_between_shots;      // given by the spinning frequency
-	carmen_pose_3D_t pose;
-	double *vertical_angles;
+	double max_range;                  // Maximum sensing distance in metters
+	double time_between_shots;      // Given by the spinning frequency
+	carmen_pose_3D_t pose;          // x, y, z, roll, pitch, yaw
+	int *ray_order;                 // Order of the laser beams from the bottom up
+	double *vertical_angles;        // Angles beteween laser beams in the same shot
 }carmen_lidar_config;
 
 typedef struct

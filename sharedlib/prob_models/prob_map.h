@@ -79,13 +79,14 @@ typedef struct _sensor_parameters
 	int alive;
 	SENSOR_TYPE sensor_type;
 	double range_max, range_max_factor, current_range_max;
+	double range_division_factor;
 	double height;
 	log_odds_param log_odds;
 	char *name;
 	double unexpeted_delta_range_sigma;
 	double *remission_calibration;
 	double *vertical_correction;
-	double *delta_difference_mean, *delta_difference_stddev;
+	//double *delta_difference_mean, *delta_difference_stddev;        // Ninguem sabe para que servem estes valores e aparentemente nao sao usados para nada
 	int vertical_resolution;
 	int *ray_order;
 	double unsafe_height_above_ground;

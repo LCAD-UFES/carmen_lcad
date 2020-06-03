@@ -74,6 +74,9 @@ carmen_velodyne_partial_scan_update_points_with_remission_check(carmen_velodyne_
 		int vertical_resolution, spherical_point_cloud *points, unsigned char *intensity,
 		int *ray_order, double *vertical_correction, float range_max, double timestamp, int use_remission);
 
+void
+variable_scan_update_points_with_remission_check(carmen_velodyne_variable_scan_message *msg,int vertical_resolution, spherical_point_cloud *points,
+		unsigned char *intensity, int *ray_order, double *vertical_correction, float range_max, double range_division_factor, double timestamp, int use_remission);
 
 double
 carmen_velodyne_estimate_shot_time(double sensor_last_timestamp, double sensor_timestamp, int shot_index, int number_of_shots);
@@ -89,13 +92,15 @@ carmen_velodyne_alloc_shot(carmen_velodyne_shot *shot, int shot_size);
 
 
 carmen_velodyne_variable_scan_message *
-carmen_velodyne_copy_variable_velodyne_message(
-		carmen_velodyne_variable_scan_message *message);
+carmen_velodyne_copy_variable_velodyne_message(carmen_velodyne_variable_scan_message *message);
 
 
 void
-carmen_velodyne_free_variable_velodyne_message(
-		carmen_velodyne_variable_scan_message *message);
+carmen_velodyne_free_variable_velodyne_message(carmen_velodyne_variable_scan_message *message);
+
+
+void
+load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config **lidar_config);
 
 
 #ifdef __cplusplus
