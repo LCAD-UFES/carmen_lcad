@@ -76,6 +76,9 @@ typedef struct{
     int y;
 }t_coords;
 
+
+
+
 void call_osmnx_python_func (Gdc_Coord_3d origin_gdc, Gdc_Coord_3d destination_gdc);
 int* alloc_array (int graph_size);
 float* alloc_array_float (int graph_size);
