@@ -377,7 +377,6 @@ get_annotation_list_from_file(char *carmen_annotation_filename, std::vector<carm
 
 void build_glade_with_annotation (char *annotation_path)
 {
-
 	char *carmen_home_path, glade_path[1000], glade_path_with_annotation[1000];
 	carmen_home_path = getenv("CARMEN_HOME");
 	sprintf(glade_path, "%s/data/gui/navigator_gui2.glade", carmen_home_path);
@@ -385,11 +384,22 @@ void build_glade_with_annotation (char *annotation_path)
 	std::vector <string> annotations_in_glade;
 	string row_begin = "      <row>\n";
 	string row_end = "      </row>\n";
+
+	std::vector <string> sorted_places;
 	for (unsigned int i = 0; i < annotation_list.size(); i++)
 	{
-		annotations_in_glade.push_back(row_begin);
 		string d(annotation_list[i].annotation_description);
 		d = d.substr(11, d.size()-1).c_str();
+		sorted_places.push_back(d);
+	}
+	std::sort(sorted_places.begin(), sorted_places.end());
+
+	for (unsigned int i = 0; i < sorted_places.size(); i++)
+	{
+		annotations_in_glade.push_back(row_begin);
+//		string d(annotation_list[i].annotation_description);
+//		d = d.substr(11, d.size()-1).c_str();
+		string d(sorted_places[i]);
 		string col = "        <col id=\"0\" translatable=\"yes\">"+d+"</col>\n";
 		annotations_in_glade.push_back(col);
 		annotations_in_glade.push_back(row_end);
