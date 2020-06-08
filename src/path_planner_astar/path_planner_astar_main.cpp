@@ -210,7 +210,7 @@ my_f(const gsl_vector *v, void *params)
 		y_prev = param->points[i-1].y;
 
 		distance = obstacle_distance(x_i, y_i);
-		if(distance < dmax)
+		if(distance <= dmax)
 			obstacle_cost += abs(pow(distance - dmax, 2) * (distance - dmax));
 
 		square_displacement = ((x_next - x_i) - (x_i - x_prev)) * ((x_next - x_i) - (x_i - x_prev)) + ((y_next - y_i) - (y_i - y_prev)) * ((y_next - y_i) - (y_i - y_prev));
@@ -222,12 +222,12 @@ my_f(const gsl_vector *v, void *params)
 		if(abs(displacement) > 0.001)
 		{
 			curvature_term = (delta_phi / displacement);
-//			if(curvature_term > kmax)
-//			{
+			if(curvature_term > kmax)
+			{
 				curvature_term = (delta_phi / displacement) - kmax;
 				curvature_cost += pow(curvature_term, 2) * curvature_term;
 	//			printf("teste = %d %f %f %f\n",i, obstacle_cost, curvature_cost, smoothness_cost);
-//			}
+			}
 		}
 
 	}
