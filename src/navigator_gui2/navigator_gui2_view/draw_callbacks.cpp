@@ -652,7 +652,11 @@ void on_comboPlaceOfInterest_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
 	if (global_gui)
+	{
 		global_gui->get_place_of_interest(gtk_combo_box_get_active_text((GtkComboBox *) global_gui->controls_.comboPlaceOfInterest));
+		superimposed_is_set = 0;
+		navigator_get_map(CARMEN_OFFLINE_MAP_v, superimposed_is_set);
+	}
 }
 
 //extern "C" G_MODULE_EXPORT
