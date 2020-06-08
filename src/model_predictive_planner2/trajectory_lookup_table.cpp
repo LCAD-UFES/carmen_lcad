@@ -1027,6 +1027,7 @@ fill_in_trajectory_lookup_table()
 								{
 									trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i] = ntcp;
 									valids += 1.0;
+//									printf("TDDV_I: %d, TD_VI: %lf a: %lf,  VF: %lf, TDDTheta: %d TDTheta: %lf\n",tdd.v_i, td.v_i, ntcp.a, ntcp.vf, tdd.theta, td.theta);
 
 									//	                                vector<carmen_ackerman_path_point_t> path;
 									//	                                compute_trajectory_dimensions(trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i], i_v, i_phi, path, true);
