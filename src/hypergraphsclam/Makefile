@@ -42,7 +42,13 @@ LFLAGS += -lpcl_common -lpcl_io -lpcl_registration -lpcl_features -lpcl_search -
 LFLAGS += -L/usr/local/lib -lcholmod -lg2o_core -lg2o_types_slam2d -lg2o_solver_cholmod -lg2o_solver_csparse -lg2o_stuff
 
 # g2o libs...
-LFLAGS += -lcxsparse -lg2o_csparse_extension -lcsparse
+LFLAGS += -lcxsparse -lg2o_csparse_extension 
+
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += -lcsparse
+endif
 
 # the carmen libraries
 LFLAGS += -lglobal
