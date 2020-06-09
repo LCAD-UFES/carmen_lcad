@@ -654,8 +654,8 @@ void on_comboPlaceOfInterest_changed(GtkWidget *widget __attribute__((unused)),
 	if (global_gui)
 	{
 		global_gui->get_place_of_interest(gtk_combo_box_get_active_text((GtkComboBox *) global_gui->controls_.comboPlaceOfInterest));
-		superimposed_is_set = 0;
-		navigator_get_map(CARMEN_OFFLINE_MAP_v, superimposed_is_set);
+//		superimposed_is_set = 0;
+//		navigator_get_map(CARMEN_OFFLINE_MAP_v, superimposed_is_set);
 	}
 }
 
@@ -663,7 +663,13 @@ void on_comboPlaceOfInterest_changed(GtkWidget *widget __attribute__((unused)),
 void on_buttonComputeRoute_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
-	carmen_route_planner_set_destination(place_of_interest);
+	if(global_gui->final_goal_placed_and_oriented == 1)
+	{
+		carmen_route_planner_set_destination(place_of_interest, global_gui->final_goal.pose);
+		global_gui->final_goal_placed_and_oriented = 0;
+	}
+	else
+		carmen_route_planner_set_destination(place_of_interest, global_gui->destination);
 }
 
 //extern "C" G_MODULE_EXPORT

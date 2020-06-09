@@ -26,7 +26,7 @@ extern "C"
 	carmen_route_planner_subscribe_destination_message(carmen_route_planner_destination_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 	void
-	carmen_route_planner_set_destination(char *destination);
+	carmen_route_planner_set_destination(char *destination, carmen_point_t destination_point);
 
 #ifdef __cplusplus
 }
