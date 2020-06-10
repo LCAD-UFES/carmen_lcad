@@ -47,6 +47,8 @@ int astar_path_poses_size = 0;
 							((x1).y - (x2)->y) * ((x1).y - (x2)->y)))
 #define USE_SMOOTH 1
 
+using namespace cv;
+
 
 double
 obstacle_distance(double x, double y)
@@ -1132,6 +1134,36 @@ astar_mount_path_message(state_node *current_state)
 }
 
 
+void
+get_edges_from_map(Mat map)
+{
+
+
+}
+
+
+void
+get_voronoi(map_node_p ***astar_map) {
+	Mat dist, labels;
+	Mat mask = Mat::ones(astar_map_x_size, astar_map_x_size, CV_8UC1);
+
+	for (int i = 0; i < astar_map_x_size; i++)
+	{
+		for (int j = 0; j < astar_map_y_size; j++)
+		{
+			if (astar_map[i][j][0]->obstacle_distance < 0.2)
+				mask.at<unsigned char>(i, j) = 0;
+			else
+				mask.at<unsigned char>(i, j) = 255;
+		}
+	}
+//	imwrite("Obstacle_distance_before.png", (mask));
+	distanceTransform(mask, dist, labels, CV_DIST_L2, DIST_MASK_5, DIST_LABEL_CCOMP);
+	imwrite("Obstacle_distance.png", dist);
+//	get_edges_from_map(dist);
+}
+
+
 std::vector<state_node*>
 expansion(state_node *current, state_node *goal_state, map_node_p ***astar_map)
 {
@@ -1475,6 +1507,31 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 
 	double* heuristic_obstacle_map = get_obstacle_heuristic_map(goal_pose);
 	map_node_p ***astar_map = alloc_astar_map();
+
+	get_voronoi(astar_map);
+/*
+	//(distance_map->config.x_size * distance_map->config.resolution) / astar_config.state_map_resolution
+	double cv_res = 0.5;
+	int cv_size_x = (distance_map->config.x_size * distance_map->config.resolution)/ cv_res;
+	int cv_size_y = (distance_map->config.y_size * distance_map->config.resolution)/ cv_res;
+
+    Mat mask = Mat::ones(cv_size_x, cv_size_y, CV_8UC1);
+	for (int i = 0; i<cv_size_x; i++){
+		for (int j = 0; j<cv_size_y; j++){
+			if(obstacle_distance(distance_map->config.x_origin + (i * cv_res), distance_map->config.y_origin + (j * cv_res)) < 0.5 || is_valid_grid_value(i, j, cv_res) == 0)
+		{
+//				mask.at<unsigned char>(astar_map_x_size-i -1 , j) = 0;
+				mask.at<unsigned char>(i,j) = 0;
+			}
+			else{
+//				mask.at<unsigned char>(astar_map_x_size-i -1, j) = 255;
+				mask.at<unsigned char>(i,j) = 255;
+			}
+		}
+	}
+	distanceTransform(mask, dist, labels, CV_DIST_L2, DIST_MASK_5, DIST_LABEL_CCOMP);
+	imwrite("Obstacle_distance.png", dist);
+*/
 
 	boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> open;
 	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 2.0, 0.0, 0.0, DBL_MAX, DBL_MAX, NULL, 0);
