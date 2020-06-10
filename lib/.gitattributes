@@ -3,3 +3,4 @@ liboffroad_planner_interface.a binary
 libcamera_drivers.a binary
 libroute_planner_utils.a binary
 libroute_planner_interface.a binary
+libroad_network_generator_utils.a binary

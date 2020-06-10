@@ -1340,7 +1340,6 @@ namespace View
 		}
 		else
 		{
-
 			for (unsigned int i = 0; i < annotation_list.size(); i++)
 			{
 				string d(annotation_list[i].annotation_description);
@@ -1360,7 +1359,6 @@ namespace View
 
 		carmen_grid_mapping_get_block_map_by_origin(map_path, 'm', destination, navigator_get_offline_map_pointer());
 		navigator_graphics_change_map(navigator_get_offline_map_pointer());
-
 	}
 
 	int
@@ -1641,7 +1639,17 @@ namespace View
 			snprintf(log_buffer,sizeof(log_buffer),"%spictures/%d.jpg", log_path, log_counter);
 			gdk_pixbuf_save(pixbuf, log_buffer, "jpeg", &error, NULL);
 
-			snprintf(log_buffer, sizeof(log_buffer),"%d#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#Go Button = %d#", log_counter, gtk_label_get_text(GTK_LABEL(this->controls_.labelOrigin)), gtk_label_get_text(GTK_LABEL(this->controls_.labelRobot)), gtk_label_get_text(GTK_LABEL(this->controls_.labelFusedOdometry)), gtk_label_get_text(GTK_LABEL(this->controls_.labelVelocity)), gtk_label_get_text(GTK_LABEL(this->controls_.labelGoal)), gtk_label_get_text(GTK_LABEL(this->controls_.labelGridCell)), gtk_label_get_text(GTK_LABEL(this->controls_.labelValue)), gtk_label_get_text(GTK_LABEL(this->controls_.labelGlobalPosTimeStamp)), gtk_label_get_text(GTK_LABEL(this->controls_.labelLowLevelState)), gtk_label_get_text(GTK_LABEL(this->controls_.labelTrafficSignState)), log_button_go );
+			snprintf(log_buffer, sizeof(log_buffer),"%d#%s#%s#%s#%s#%s#%s#%s#%s#%s#%s#Go Button = %d#", log_counter,
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelOrigin)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelRobot)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelFusedOdometry)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelVelocity)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelGoal)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelGridCell)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelValue)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelGlobalPosTimeStamp)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelLowLevelState)),
+					gtk_label_get_text(GTK_LABEL(this->controls_.labelTrafficSignState)), log_button_go );
 			fprintf(file_log,"%s\n", log_buffer);
 			log_counter++;
 			g_clear_object(&pixbuf);
@@ -2137,7 +2145,6 @@ namespace View
 			cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);
 
-			placement_status = SELECTING_NEAR_WAYPOINT;
 			update_local_map = 1;
 
 			return TRUE;
@@ -2507,10 +2514,8 @@ namespace View
 					simulator_object = (carmen_traj_point_t *) carmen_list_get(simulator_objects, index);
 					particle.pose.x	 = simulator_object->x;
 					particle.pose.y	 = simulator_object->y;
-					carmen_map_graphics_draw_circle(the_map_view, &carmen_orange, TRUE,
-							&particle, circle_size);
-					carmen_map_graphics_draw_circle(the_map_view, &carmen_black, FALSE,
-							&particle, circle_size);
+					carmen_map_graphics_draw_circle(the_map_view, &carmen_orange, TRUE, &particle, circle_size);
+					carmen_map_graphics_draw_circle(the_map_view, &carmen_black, FALSE, &particle, circle_size);
 				}
 			}
 		}
@@ -2952,13 +2957,11 @@ namespace View
 				path_x_1.pose.y -= path->map->config.resolution;
 				path_x_2.pose.x += path->map->config.resolution;
 				path_x_2.pose.y += path->map->config.resolution;
-				carmen_map_graphics_draw_line(the_map_view, color, &path_x_1,
-						&path_x_2);
+				carmen_map_graphics_draw_line(the_map_view, color, &path_x_1, &path_x_2);
 
 				path_x_1.pose.y += path->map->config.resolution * 2;
 				path_x_2.pose.y -= path->map->config.resolution * 2;
-				carmen_map_graphics_draw_line(the_map_view, color, &path_x_1,
-						&path_x_2);
+				carmen_map_graphics_draw_line(the_map_view, color, &path_x_1, &path_x_2);
 			}
 		}
 	}
