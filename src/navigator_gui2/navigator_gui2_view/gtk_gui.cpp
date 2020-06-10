@@ -5,6 +5,7 @@ extern int record_screen;
 extern int use_glade_with_annotations;
 extern char place_of_interest[2048];
 extern std::vector <carmen_annotation_t> annotation_list;
+extern int use_route_planner_in_graph_mode;
 int button_record_verification=0;
 int unsubscribe_map_server = 0;
 
@@ -1331,7 +1332,6 @@ namespace View
 	{
 		std::string d;
 		int destination_index = 0;
-		carmen_point_t destination;
 
 		if (strcmp(new_place_of_interest, "Robot") == 0)
 		{
@@ -1340,6 +1340,7 @@ namespace View
 		}
 		else
 		{
+
 			for (unsigned int i = 0; i < annotation_list.size(); i++)
 			{
 				string d(annotation_list[i].annotation_description);
@@ -1352,12 +1353,14 @@ namespace View
 			}
 			destination.x = annotation_list[destination_index].annotation_point.x;
 			destination.y = annotation_list[destination_index].annotation_point.y;
+			nav_panel_config->map = (char*)"Offline Map";
 		}
 
 		strcpy(place_of_interest, new_place_of_interest);
 
 		carmen_grid_mapping_get_block_map_by_origin(map_path, 'm', destination, navigator_get_offline_map_pointer());
 		navigator_graphics_change_map(navigator_get_offline_map_pointer());
+
 	}
 
 	int
@@ -2126,7 +2129,10 @@ namespace View
 					world_point->pose.x - final_goal.pose.x);
 			final_goal.pose.theta = angle;
 
-			carmen_rddf_publish_end_point_message(50, final_goal.pose);
+			if (use_route_planner_in_graph_mode == 0)
+				carmen_rddf_publish_end_point_message(50, final_goal.pose);
+
+			final_goal_placed_and_oriented = 1;
 
 			cursor = gdk_cursor_new(GDK_LEFT_PTR);
 			gdk_window_set_cursor(the_map_view->image_widget->window, cursor);

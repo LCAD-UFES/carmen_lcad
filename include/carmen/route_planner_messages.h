@@ -74,12 +74,13 @@ typedef struct
 typedef struct
 {
 	char *destination;
+	carmen_point_t destination_point;
 	double timestamp;
 	char *host;
 } carmen_route_planner_destination_message;
 
 #define		CARMEN_ROUTE_PLANNER_DESTINATION_MESSAGE_NAME		"carmen_route_planner_destination_message"
-#define		CARMEN_ROUTE_PLANNER_DESTINATION_MESSAGE_FMT		"{string, double, string}"
+#define		CARMEN_ROUTE_PLANNER_DESTINATION_MESSAGE_FMT		"{string, {double, double, double}, double, string}"
 
 #ifdef __cplusplus
 }

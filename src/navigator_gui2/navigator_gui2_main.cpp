@@ -61,6 +61,7 @@ int previous_num_point_clouds = 0;
 
 int record_screen;
 int use_glade_with_annotations = 0;
+int use_route_planner_in_graph_mode;
 
 char place_of_interest[2048];
 char previous_place_of_interest[2048];
@@ -1262,6 +1263,7 @@ read_parameters(int argc, char *argv[],
 		{(char *) "navigator_panel", (char *) "map",					CARMEN_PARAM_STRING, &(navigator_panel_config->map),				0, NULL},
 		{(char *) "navigator_panel", (char *) "superimposed_map",		CARMEN_PARAM_STRING, &(navigator_panel_config->superimposed_map),	0, NULL},
 		{(char *) "mapper",			 (char *) "height_max_level",		CARMEN_PARAM_INT, &height_max_level,								0, NULL},
+		{(char *) "route_planner",	 (char *) "in_graph_mode", 			CARMEN_PARAM_ONOFF,  &use_route_planner_in_graph_mode, 0, NULL},
 	};
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);

@@ -267,6 +267,8 @@ namespace View
 		carmen_world_point_t	 new_simulator;
 
 		carmen_world_point_t	 final_goal;
+		int final_goal_placed_and_oriented = 0;
+		carmen_point_t destination;
 
 		carmen_localize_ackerman_particle_message particle_msg;
 		carmen_localize_ackerman_sensor_message	  sensor_msg;
