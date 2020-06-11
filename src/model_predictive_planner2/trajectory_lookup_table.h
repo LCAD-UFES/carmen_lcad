@@ -18,12 +18,9 @@
 #define RATIO_DIST		1.18			// Ratio (Wikipedia) of the Distance geometric progression
 #define ZERO_DIST_I		-1				// Index of zero Distance traveled
 
-#define N_THETA					28				// Number of Angles in polar coordinates
-#define COMMON_THETA			((8.0 * M_PI) / 180.0)	// Common difference in the arithmetic progression of Theta for each side
-#define ZERO_THETA_I			14				// Index of zero Angle
-#define NUMBER_REVERSE_THETA_I	7		// How much jump to next angle to reverse mode first angle For positive angles > ZERO_THETA_I+NUMBER_REVERSE_THETA_I for negative angles < ZERO_THETA_I-NUMBER_REVERSE_THETA_I
-#define FIRST_REVERSE_THETA_I   37		//
-#define JUMP_TO_REVERSE_THETA_I   15
+#define N_THETA			15				// Number of Angles in polar coordinates
+#define COMMON_THETA	((8.0 * M_PI) / 180.0)	// Common difference in the arithmetic progression of Theta for each side
+#define ZERO_THETA_I	7				// Index of zero Angle
 
 #define N_D_YAW			15				// Number of Displacements in yaw
 #define FIRST_D_YAW		((10.0 * M_PI) / 180.0)	// First Displacement in yaw, or scale factor of its geometric progression
@@ -156,6 +153,13 @@ public:
 };
 
 
+typedef struct
+{
+	double phi;
+	double timestamp;
+} steering_delay_t;
+
+
 void save_trajectory_lookup_table();
 TrajectoryLookupTable::TrajectoryDimensions convert_to_trajectory_dimensions(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd,
 		TrajectoryLookupTable::TrajectoryControlParameters tcp);
@@ -166,6 +170,9 @@ TrajectoryLookupTable::TrajectoryControlParameters search_lookup_table(Trajector
 vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
 		bool display_phi_profile, double delta_t = 0.15);
+//vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
+//		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
+//		bool display_phi_profile, double delta_t = 0.1);
 
 bool path_has_loop(double dist, double sf);
 void move_path_to_current_robot_pose(vector<carmen_ackerman_path_point_t> &path, Pose *localizer_pose);

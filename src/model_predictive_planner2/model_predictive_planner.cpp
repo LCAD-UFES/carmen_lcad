@@ -26,7 +26,7 @@
 using namespace g2o;
 
 int print_to_debug = 0;
-int plot_to_debug = 1;
+int plot_to_debug = 0;
 
 //#define PLOT_COLLISION
 
@@ -290,9 +290,6 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 TrajectoryLookupTable::TrajectoryDimensions
 get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_odometry,	Pose *goal_pose)
 {
-	double theta_rev = carmen_normalize_theta(atan2(localizer_pose->y - goal_pose->y,  localizer_pose->x - goal_pose->x) - localizer_pose->theta);
-	double theta_2 = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
-//	printf("Gol behind: %lf goal_in_front: %lf \n", theta_rev, theta_2);
 	TrajectoryLookupTable::TrajectoryDimensions td;
 
 	td.dist = sqrt((goal_pose->x - localizer_pose->x) * (goal_pose->x - localizer_pose->x) +
@@ -798,7 +795,7 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 		TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp,
 		TrajectoryLookupTable::TrajectoryDimensions td)
 {
-	if (0)//GlobalState::reverse_driving && !previous_good_tcp.valid)
+	if (0)//(GlobalState::reverse_driving && !previous_good_tcp.valid)
 		{
 			TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp;
 			dummy_tcp.valid = true;
@@ -1055,6 +1052,12 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			if (!get_tcp_from_td(tcp, previous_good_tcp, td))
 				continue;
 
+			//if (plot_to_debug)
+//			{
+			TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp;
+			dummy_tcp = tcp;
+//			}
+
 			TrajectoryLookupTable::TrajectoryControlParameters otcp;
 			otcp = get_complete_optimized_trajectory_control_parameters(tcp, td, target_v, detailed_lane,
 					use_lane, previous_good_tcp.valid);
@@ -1069,11 +1072,8 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				vector<Pose> goals_vector;
 				if (plot_to_debug)
 				{
-					TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp;
-					dummy_tcp = tcp;
-//					dummy_tcp.a = (-1)*tcp.a;
-					pathSeed = simulate_car_from_parameters(td, dummy_tcp, lastOdometryVector[0].v, lastOdometryVector[0].phi, false, 0.025);
 
+//
 					SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
 					SE2 goal_in_world_reference(goalPoseVector.at(0).x, goalPoseVector.at(0).y, goalPoseVector.at(0).theta);
 					SE2 goal_in_car_reference = robot_pose.inverse() * goal_in_world_reference;
@@ -1084,9 +1084,10 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 					goals_vector.push_back(goal_in_local_ref);
 					goal_in_local_ref.x = td.dist*(cos(td.theta));
 					goal_in_local_ref.y = td.dist*(sin(td.theta));
+					goal_in_local_ref.theta = td.theta;
+					goals_vector.push_back(goal_in_local_ref);
 
-
-
+					pathSeed = simulate_car_from_parameters(td, dummy_tcp, td.v_i, td.phi_i, false, 0.025);
 
 				}
 
