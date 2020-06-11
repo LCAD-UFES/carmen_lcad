@@ -17,13 +17,16 @@
 #include "evg-thin/utils.hh"
 #include <string.h>
 #include <stdlib.h>
+#include <iostream>
 
-char* outfile="voronoi_edges.ppm";
+
+#define PRINT_VORONOI 0
+char* outfile = (char*) "voronoi_edges.ppm";
 unsigned int unknown_min=127;
 unsigned int unknown_max=128;
 bool pruning = false;
 bool robot_close = false;
-float distance_min=5.0;
+float distance_min=1.0;
 float distance_max=FLT_MAX;
 int robot_locx=-1;
 int robot_locy=-1;
@@ -74,7 +77,7 @@ using namespace cv;
 
 
 void
-evg_thin_on_map(map_node ***astar_map)
+evg_thin_on_map(map_node_p ***astar_map)
 {
 	column_type col(astar_map_y_size,Unknown);
 	grid_type curr_grid(astar_map_x_size,col);
@@ -83,8 +86,8 @@ evg_thin_on_map(map_node ***astar_map)
 	{
 		for (int j = 0; j < astar_map_y_size; j++)
 		{
-			double cell= astar_map[i][j][0].obstacle_distance;
-			if (cell <= 0.2)
+			double cell= astar_map[i][j][0]->obstacle_distance;
+			if (cell <= 1.0)
 				curr_grid[i][j]=Occupied;
 			else
 				curr_grid[i][j]=Free;
@@ -123,9 +126,38 @@ evg_thin_on_map(map_node ***astar_map)
 	Time t;
 	skeleton_type skel=thin.generate_skeleton();
 	cout << "Skeleton created in "<<t.get_since()<<" seconds\n\n";
+	if (PRINT_VORONOI)
+	{
+		printf("printando outfile: %s\n", outfile);
+		Mat imagem = Mat(astar_map_x_size, astar_map_y_size, CV_8UC3);
+		for (int i = 0; i < astar_map_x_size; i++)
+		{
+			for (int j = 0; j < astar_map_y_size; j++)
+			{
+				if (astar_map[i][j][0]->obstacle_distance < 1.0)
+				{
+					imagem.at<Vec3b>(i, j)[0] = 0;
+					imagem.at<Vec3b>(i, j)[1] = 0;
+					imagem.at<Vec3b>(i, j)[2] = 0;
+				}
+				else
+				{
+					imagem.at<Vec3b>(i, j)[0] = 255;
+					imagem.at<Vec3b>(i, j)[1] = 255;
+					imagem.at<Vec3b>(i, j)[2] = 255;
+				}
+			}
+		}
 
-	fileio IO;
-	IO.save_file(skel,outfile);
+		for (unsigned int i=0;i<skel.size();i++)
+		{
+			imagem.at<Vec3b>(skel[i].x,skel[i].y)[0] = 0;
+			imagem.at<Vec3b>(skel[i].x,skel[i].y)[1] = 0;
+			imagem.at<Vec3b>(skel[i].x,skel[i].y)[2] = 255;
+		}
+
+		imwrite("Voronoi_edges.png", imagem);
+	}
 }
 
 double
@@ -1587,6 +1619,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	map_node_p ***astar_map = alloc_astar_map();
 
 	get_voronoi(astar_map);
+	evg_thin_on_map(astar_map);
 /*
 	//(distance_map->config.x_size * distance_map->config.resolution) / astar_config.state_map_resolution
 	double cv_res = 0.5;
