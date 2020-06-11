@@ -7,6 +7,29 @@
 
 #include "path_planner_astar.h"
 
+// evg-thin
+
+#include <float.h>
+#include <math.h>
+#include "evg-thin/datatypes.hh"
+#include "evg-thin/fileio.hh"
+#include "evg-thin/evg-thin.hh"
+#include "evg-thin/utils.hh"
+#include <string.h>
+#include <stdlib.h>
+
+char* outfile="voronoi_edges.ppm";
+unsigned int unknown_min=127;
+unsigned int unknown_max=128;
+bool pruning = false;
+bool robot_close = false;
+float distance_min=5.0;
+float distance_max=FLT_MAX;
+int robot_locx=-1;
+int robot_locy=-1;
+
+/////////////////
+
 
 static carmen_robot_ackerman_config_t robot_config;
 static carmen_path_planner_astar_t astar_config;
@@ -49,6 +72,61 @@ int astar_path_poses_size = 0;
 
 using namespace cv;
 
+
+void
+evg_thin_on_map(map_node ***astar_map)
+{
+	column_type col(astar_map_y_size,Unknown);
+	grid_type curr_grid(astar_map_x_size,col);
+
+	for (int i = 0; i < astar_map_x_size; i++)
+	{
+		for (int j = 0; j < astar_map_y_size; j++)
+		{
+			double cell= astar_map[i][j][0].obstacle_distance;
+			if (cell <= 0.2)
+				curr_grid[i][j]=Occupied;
+			else
+				curr_grid[i][j]=Free;
+		}
+	}
+
+	if (curr_grid.empty() || curr_grid[0].empty())
+	{
+		cout << "Read grid has no dimensions\n";
+		exit(-1);
+	}
+
+	if (robot_locx < 0 || robot_locx >= int(curr_grid.size()) ||
+		robot_locy < 0 || robot_locy >= int(curr_grid[0].size()))
+	{
+		robot_locx=curr_grid.size()/2;
+		robot_locy=curr_grid[0].size()/2;
+	}
+
+	cout << "Pruning: ";
+	if (pruning)
+		cout << "On\n";
+	else
+		cout << "Off\n";
+	cout << "Robot close: ";
+	if (robot_close)
+		cout << "On\n";
+	else
+		cout << "Off\n";
+	cout << "Minimum distance: " << distance_min << endl;
+	cout << "Maximum distance: " << distance_max << endl;
+	cout << "Robot location: "<<robot_locx<<", "<<robot_locy<<endl<<endl;
+
+	evg_thin thin(curr_grid,distance_min,distance_max,pruning,robot_close,robot_locx,robot_locy);
+
+	Time t;
+	skeleton_type skel=thin.generate_skeleton();
+	cout << "Skeleton created in "<<t.get_since()<<" seconds\n\n";
+
+	fileio IO;
+	IO.save_file(skel,outfile);
+}
 
 double
 obstacle_distance(double x, double y)
