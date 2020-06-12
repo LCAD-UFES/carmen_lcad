@@ -20,7 +20,7 @@
 #include <iostream>
 
 
-#define PRINT_VORONOI 0
+#define PRINT_VORONOI 1
 char* outfile = (char*) "voronoi_edges.ppm";
 unsigned int unknown_min=127;
 unsigned int unknown_max=128;
@@ -64,6 +64,9 @@ carmen_route_planner_road_network_message route_planner_road_network_message;
 offroad_planner_plan_t plan_path_poses;
 int astar_path_poses_size = 0;
 
+voronoi_BFS_node_p **voronoi_map;
+int voronoi_visited_it = 0;
+cv::Mat temp_voronoi;
 
 #define LANE_WIDTH 	2.4
 #define NUM_LANES	1
@@ -128,7 +131,6 @@ evg_thin_on_map(map_node_p ***astar_map)
 	cout << "Skeleton created in "<<t.get_since()<<" seconds\n\n";
 	if (PRINT_VORONOI)
 	{
-		printf("printando outfile: %s\n", outfile);
 		Mat imagem = Mat(astar_map_x_size, astar_map_y_size, CV_8UC3);
 		for (int i = 0; i < astar_map_x_size; i++)
 		{
@@ -154,9 +156,21 @@ evg_thin_on_map(map_node_p ***astar_map)
 			imagem.at<Vec3b>(skel[i].x,skel[i].y)[0] = 0;
 			imagem.at<Vec3b>(skel[i].x,skel[i].y)[1] = 0;
 			imagem.at<Vec3b>(skel[i].x,skel[i].y)[2] = 255;
+//			circle(imagem, Point(skel[i].y,skel[i].x), skel[i].radius, Scalar(255,0,0));
+			printf("Point Skeleton: %d %d \n", skel[i].x,skel[i].y);
+			voronoi_map[skel[i].x][skel[i].y]->is_edge = 1;
+			voronoi_map[skel[i].x][skel[i].y]->distance_to_edge = 0;
 		}
-
-		imwrite("Voronoi_edges.png", imagem);
+		temp_voronoi = imagem.clone();
+		imwrite(outfile, imagem);
+	}
+	else
+	{
+		for (unsigned int i=0;i<skel.size();i++)
+		{
+			voronoi_map[skel[i].x][skel[i].y]->is_edge = 1;
+			voronoi_map[skel[i].x][skel[i].y]->distance_to_edge = 0;
+		}
 	}
 }
 
@@ -183,6 +197,110 @@ nearest_obstacle_cell(double x, double y)
     p.x = x;
     p.y = y;
     return (carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&p, distance_map));
+}
+
+
+int
+get_astar_map_theta(double theta, double map_theta_size)
+{
+	theta = theta < 0 ? (2 * M_PI + theta) : theta;
+	int resolution = (int) round(360/map_theta_size);
+
+	return  (int)round((carmen_radians_to_degrees(theta) / resolution)) % (int)round(360 / resolution);
+}
+
+
+int
+get_astar_map_x(double x)
+{
+	return round((double) (x - distance_map->config.x_origin) / astar_config.state_map_resolution);
+}
+
+
+int
+get_astar_map_y(double y)
+{
+	return round((double) (y - distance_map->config.y_origin) / astar_config.state_map_resolution);
+}
+
+
+discrete_pos_node*
+get_current_pos(state_node* current_state)
+{
+	discrete_pos_node *current_pos = (discrete_pos_node*) malloc(sizeof(discrete_pos_node));
+	current_pos->x = get_astar_map_x(current_state->state.x);
+	current_pos->y = get_astar_map_y(current_state->state.y);
+	current_pos->theta = get_astar_map_theta(current_state->state.theta, astar_config.state_map_theta_resolution);
+
+	return current_pos;
+}
+
+
+carmen_position_t
+nearest_edge_cell(int x_map, int y_map)
+{
+	carmen_position_t current;
+	int expand[3] = {-1,0,1};
+	voronoi_visited_it++;
+	current.x = x_map;
+	current.y = y_map;
+	std::vector<carmen_position_t> fila;
+	fila.push_back(current);
+	while(!fila.empty())
+	{
+		current = fila.back();
+		fila.pop_back();
+		if(voronoi_map[(int)current.x][(int)current.y]->is_edge == 1)
+			return current;
+		else
+		{
+			voronoi_map[(int)current.x][(int)current.y]->visited_iteration = voronoi_visited_it;
+			for(int i = 0; i<3 ; i++)
+			{
+				for(int j = 0; j<3; j++)
+				{
+					int new_x = current.x + expand[i];
+					int new_y = current.y + expand[j];
+					if(new_x >= astar_map_x_size || new_x < 0 || new_y >= astar_map_y_size || new_y <  0 ||
+					voronoi_map[new_x][new_y]->is_obstacle == 1 || voronoi_map[new_x][new_y]->visited_iteration == voronoi_visited_it)
+						continue;
+					carmen_position_t new_point;
+					new_point.x = new_x;
+					new_point.y = new_y;
+					fila.push_back(new_point);
+					voronoi_map[new_x][new_y]->visited_iteration = voronoi_visited_it;
+
+				}
+			}
+		}
+	}
+
+	carmen_position_t foo;
+	foo.x = -1;
+	foo.y = -1;
+	return foo;
+}
+
+double
+distance_to_nearest_edge(double x, double y)
+{
+	int x_map = get_astar_map_x(x);
+	int y_map = get_astar_map_y(y);
+	if(voronoi_map[x_map][y_map]->distance_to_edge != -1)
+		return voronoi_map[x_map][y_map]->distance_to_edge;
+	carmen_position_t current_cell;
+	current_cell.x = x_map;
+	current_cell.y = y_map;
+	carmen_position_t edge_cell = nearest_edge_cell(x_map, y_map);
+	if(edge_cell.x == -1)
+		return 0.0;
+
+	double distance = DIST2D(current_cell, edge_cell);
+
+	printf("Distance_to_nearest_edge = %f Cell = %f %f Edge_cell = %f %f\n", distance, current_cell.x, current_cell.y, edge_cell.x, edge_cell.y);
+	line(temp_voronoi, Point(current_cell.y, current_cell.x), Point(edge_cell.y, edge_cell.x), Scalar(0,255,0));
+	voronoi_map[x_map][y_map]->distance_to_edge = distance;
+	return distance;
 }
 
 
@@ -924,23 +1042,28 @@ alloc_astar_map()
 	double pos_y = 0.0;
 	astar_map = (map_node_p ***)calloc(astar_map_x_size, sizeof(map_node_p**));
 	carmen_test_alloc(astar_map);
+	voronoi_map = (voronoi_BFS_node_p **)calloc(astar_map_x_size, sizeof(voronoi_BFS_node_p*));
+	carmen_test_alloc(voronoi_map);
 
 	for (int i = 0; i < astar_map_x_size; i++)
 	{
 		astar_map[i] = (map_node_p **)calloc(astar_map_y_size, sizeof(map_node_p*));
 		carmen_test_alloc(astar_map[i]);
+		voronoi_map[i] = (voronoi_BFS_node_p*)calloc(astar_map_y_size, sizeof(voronoi_BFS_node_p));
+		carmen_test_alloc(voronoi_map[i]);
 
 		for (int j = 0; j < astar_map_y_size; j++)
 		{
 			astar_map[i][j] = (map_node_p*)calloc(theta_size, sizeof(map_node_p));
 			carmen_test_alloc(astar_map[i][j]);
-
+			voronoi_map[i][j] = (voronoi_BFS_node_p)calloc(astar_map_y_size, sizeof(voronoi_BFS_node));
+			carmen_test_alloc(voronoi_map[i][j]);
+			pos_x = get_distance_map_x(i);
+			pos_y = get_distance_map_y(j);
 			for (int z = 0; z < theta_size; z++)
 			{
 				astar_map[i][j][z]= (map_node_p) malloc(sizeof(map_node));
 				carmen_test_alloc(astar_map[i][j][z]);
-				pos_x = get_distance_map_x(i);
-				pos_y = get_distance_map_y(j);
 				if(is_valid_grid_value(i, j, astar_config.state_map_resolution) == 1)
 				{
 					astar_map[i][j][z]->obstacle_distance = obstacle_distance(pos_x, pos_y);
@@ -950,8 +1073,15 @@ alloc_astar_map()
 
 				astar_map[i][j][z]->is_closed = 0;
 				astar_map[i][j][z]->is_open = 0;
-
 			}
+			voronoi_map[i][j]->is_edge = 0;
+			voronoi_map[i][j]->distance_to_edge = -1;
+			voronoi_map[i][j]->visited_iteration = 0;
+			if(is_valid_grid_value(i, j, astar_config.state_map_resolution) == 1 && obstacle_distance(pos_x, pos_y) > 1.5)
+				voronoi_map[i][j]->is_obstacle = 0;
+			else
+				voronoi_map[i][j]->is_obstacle = 1;
+
 		}
 	}
 	return astar_map;
@@ -963,9 +1093,15 @@ clear_astar_map(map_node_p ***astar_map)
 {
 	int theta_size = astar_config.state_map_theta_resolution;
 	for (int i = 0; i < astar_map_x_size; i++)
+	{
 		for (int j = 0; j < astar_map_y_size; j++)
+		{
 			for (int k = 0; k < theta_size; k++)
 				astar_map[i][j][k] = NULL;
+
+		voronoi_map[i][j] = NULL;
+		}
+	}
 }
 
 
@@ -1067,42 +1203,6 @@ create_state_node(double x, double y, double theta, double v, double phi, double
 	new_state->distance_traveled_g = dtg;
 
 	return (new_state);
-}
-
-
-int
-get_astar_map_theta(double theta, double map_theta_size)
-{
-	theta = theta < 0 ? (2 * M_PI + theta) : theta;
-	int resolution = (int) round(360/map_theta_size);
-
-	return  (int)round((carmen_radians_to_degrees(theta) / resolution)) % (int)round(360 / resolution);
-}
-
-
-int
-get_astar_map_x(double x)
-{
-	return round((double) (x - distance_map->config.x_origin) / astar_config.state_map_resolution);
-}
-
-
-int
-get_astar_map_y(double y)
-{
-	return round((double) (y - distance_map->config.y_origin) / astar_config.state_map_resolution);
-}
-
-
-discrete_pos_node*
-get_current_pos(state_node* current_state)
-{
-	discrete_pos_node *current_pos = (discrete_pos_node*) malloc(sizeof(discrete_pos_node));
-	current_pos->x = get_astar_map_x(current_state->state.x);
-	current_pos->y = get_astar_map_y(current_state->state.y);
-	current_pos->theta = get_astar_map_theta(current_state->state.theta, astar_config.state_map_theta_resolution);
-
-	return current_pos;
 }
 
 
@@ -1214,6 +1314,7 @@ build_rddf_poses(state_node *current_state)
 	{
 //		path[i].state.v = abs(path[i].state.v);
 		temp_rddf_poses_from_path.push_back(path[i].state);
+		distance_to_nearest_edge(path[i].state.x, path[i].state.y);
 //		printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
 //		draw_astar_object(&path[i].state, CARMEN_GREEN);
 	}
@@ -1618,31 +1719,8 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	double* heuristic_obstacle_map = get_obstacle_heuristic_map(goal_pose);
 	map_node_p ***astar_map = alloc_astar_map();
 
-	get_voronoi(astar_map);
 	evg_thin_on_map(astar_map);
-/*
-	//(distance_map->config.x_size * distance_map->config.resolution) / astar_config.state_map_resolution
-	double cv_res = 0.5;
-	int cv_size_x = (distance_map->config.x_size * distance_map->config.resolution)/ cv_res;
-	int cv_size_y = (distance_map->config.y_size * distance_map->config.resolution)/ cv_res;
 
-    Mat mask = Mat::ones(cv_size_x, cv_size_y, CV_8UC1);
-	for (int i = 0; i<cv_size_x; i++){
-		for (int j = 0; j<cv_size_y; j++){
-			if(obstacle_distance(distance_map->config.x_origin + (i * cv_res), distance_map->config.y_origin + (j * cv_res)) < 0.5 || is_valid_grid_value(i, j, cv_res) == 0)
-		{
-//				mask.at<unsigned char>(astar_map_x_size-i -1 , j) = 0;
-				mask.at<unsigned char>(i,j) = 0;
-			}
-			else{
-//				mask.at<unsigned char>(astar_map_x_size-i -1, j) = 255;
-				mask.at<unsigned char>(i,j) = 255;
-			}
-		}
-	}
-	distanceTransform(mask, dist, labels, CV_DIST_L2, DIST_MASK_5, DIST_LABEL_CCOMP);
-	imwrite("Obstacle_distance.png", dist);
-*/
 
 	boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> open;
 	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 2.0, 0.0, 0.0, DBL_MAX, DBL_MAX, NULL, 0);
@@ -1712,6 +1790,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	{
 		current = open.top();
 		astar_mount_path_message(current);
+		imwrite("voronoi_lines.ppm", temp_voronoi);
 //		plan = astar_mount_offroad_planner_plan(robot_pose, goal_pose);
 		open.clear();
 		if (USE_SMOOTH)
