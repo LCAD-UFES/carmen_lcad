@@ -16,6 +16,7 @@
 #include "trajectory_lookup_table.h"
 #include "model_predictive_planner_optimizer.h"
 
+int use_unity_simulator = 0;
 //TODO
 //#define DEBUG_LANE
 
@@ -56,7 +57,7 @@ has_valid_discretization(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd
 
 
 TrajectoryLookupTable::TrajectoryControlParameters
-search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
+search_lookup_table_old(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
 {
 	// TODO: pegar a media de todas as leituras ponderada pela distancia para o td.
 	// Tem que passar o td ao inves do tdd.
@@ -80,6 +81,98 @@ search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
 			return (tcp);
 	}
 	tdd.dist += 1;
+
+	tdd.theta += 1;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.theta -= 2;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.theta += 1;
+
+	tdd.d_yaw += 1;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.d_yaw -= 2;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.d_yaw += 1;
+
+	tdd.phi_i += 1;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.phi_i -= 2;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.phi_i += 1;
+
+	tdd.v_i += 1;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.v_i -= 2;
+	if (has_valid_discretization(tdd))
+	{
+		tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+		if (tcp.valid)
+			return (tcp);
+	}
+	tdd.v_i += 1;
+
+	tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+	return (tcp);
+}
+
+
+TrajectoryLookupTable::TrajectoryControlParameters
+search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
+{
+	// TODO: pegar a media de todas as leituras ponderada pela distancia para o td.
+	// Tem que passar o td ao inves do tdd.
+	TrajectoryLookupTable::TrajectoryControlParameters tcp;
+	tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+	if (tcp.valid)
+		return (tcp);
+
+	int dist = tdd.dist;
+	for (int i = -4; i < 5; i++)
+	{
+		tdd.dist = dist + i;
+		if (has_valid_discretization(tdd))
+		{
+			tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+			if (tcp.valid)
+				return (tcp);
+		}
+	}
+	tdd.dist = dist;
 
 	tdd.theta += 1;
 	if (has_valid_discretization(tdd))
@@ -292,10 +385,8 @@ void
 save_trajectory_lookup_table()
 {
 	FILE *tlt_f;
-//	if (GlobalState::reverse_driving)
-//		tlt_f = fopen("trajectory_lookup_table_reverse.bin", "w");
-//	else
-		tlt_f = fopen("trajectory_lookup_table.bin", "w");
+
+	tlt_f = fopen("trajectory_lookup_table.bin", "w");
 
 	for (int i = 0; i < N_DIST; i++)
 		for (int j = 0; j < N_THETA; j++)
@@ -313,14 +404,11 @@ TrajectoryLookupTable::load_trajectory_lookup_table_old()
 {
 	struct stat buffer;
 
-	if (((!GlobalState::reverse_driving) && (stat("trajectory_lookup_table.bin", &buffer) == 0)) ||
-		((GlobalState::reverse_driving) && (stat("trajectory_lookup_table_reverse.bin", &buffer) == 0)))
+	if (stat("trajectory_lookup_table.bin", &buffer) == 0)
 	{
 		FILE *tlt_f;
-		if (GlobalState::reverse_driving)
-			tlt_f = fopen("trajectory_lookup_table_reverse.bin", "r");
-		else
-			tlt_f = fopen("trajectory_lookup_table.bin", "r");
+
+		tlt_f = fopen("trajectory_lookup_table.bin", "r");
 
 		for (int i = 0; i < N_DIST; i++)
 			for (int j = 0; j < N_THETA; j++)
@@ -357,9 +445,10 @@ TrajectoryLookupTable::load_trajectory_lookup_table()
 {
 	struct stat buffer;
 
-	if ((stat("trajectory_lookup_table.bin", &buffer) == 0))
+	if (stat("trajectory_lookup_table.bin", &buffer) == 0)
 	{
 		FILE *tlt_f;
+
 		tlt_f = fopen("trajectory_lookup_table.bin", "r");
 
 		for (int i = 0; i < N_DIST; i++)
@@ -401,18 +490,9 @@ linear_progression(int n, double common, int index_of_element_zero)
 	if (n == index_of_element_zero)
 		return (0.0);
 	else if (n > index_of_element_zero)
-	{
-		if (n > index_of_element_zero + NUMBER_REVERSE_THETA_I) //reverse angles
-			n = n+JUMP_TO_REVERSE_THETA_I;
-
-		return (carmen_normalize_theta(common * (n - index_of_element_zero)));
-	}
+		return (common * (n - index_of_element_zero));
 	else
-	{
-		if (n < index_of_element_zero - NUMBER_REVERSE_THETA_I)
-			n = n+FIRST_REVERSE_THETA_I;
-		return (carmen_normalize_theta(-common * (index_of_element_zero - n)));
-	}
+		return (-common * (index_of_element_zero - n));
 }
 
 
@@ -641,6 +721,105 @@ convert_to_carmen_ackerman_path_point_t(const carmen_ackerman_traj_point_t robot
 }
 
 
+double steering_delay = 0.06;
+double steering_delay_queue_size = 1000;
+vector <steering_delay_t> steering_delay_queue;
+
+
+double
+compute_path_via_simulation_new(carmen_ackerman_traj_point_t &robot_state, Command &command,
+		vector<carmen_ackerman_path_point_t> &path,
+		TrajectoryLookupTable::TrajectoryControlParameters tcp,
+		gsl_spline *phi_spline, gsl_interp_accel *acc, double v0, double i_phi, double delta_t)
+{
+	int i = 0;
+	double t, last_t;
+	double distance_traveled = 0.0;
+	//double delta_t = 0.075;
+	int reduction_factor = 1 + (int)((tcp.tt / delta_t) / 90.0);
+
+	robot_state.x = 0.0;
+	robot_state.y = 0.0;
+	robot_state.theta = 0.0;
+	robot_state.v = v0;
+	robot_state.phi = i_phi;
+	command.v = v0;
+	command.phi = gsl_spline_eval(phi_spline, 0.0, acc);
+	robot_state.v = command.v;
+	robot_state.phi = command.phi;
+	carmen_ackerman_traj_point_t last_robot_state = robot_state;
+
+	//	for (int j = steering_delay_queue.size() - 1; j >= 0; j--)
+	double delay = 0.0;
+	int j = steering_delay_queue.size() - 1;
+	double first_steering_delay_queue_timestamp;
+	bool steering_delay_queue_consumed;
+	if (j >= 0)
+	{
+		while ((delay < steering_delay) && ((j - 1) >= 0))
+		{
+			delay += steering_delay_queue[j].timestamp - steering_delay_queue[j - 1].timestamp;
+			j--;
+		}
+		first_steering_delay_queue_timestamp = steering_delay_queue[j].timestamp;
+		steering_delay_queue_consumed = false;
+	}
+	else
+	{
+		first_steering_delay_queue_timestamp = 0.0;
+		steering_delay_queue_consumed = true;
+	}
+
+	for (last_t = t = 0.0; t < (tcp.tt - delta_t); t += delta_t)
+	{
+		if (!steering_delay_queue_consumed)
+		{
+			command.phi = steering_delay_queue[j].phi;
+			if ((steering_delay_queue[j].timestamp - first_steering_delay_queue_timestamp) <= t)
+				j++;
+			if (j == (int) steering_delay_queue.size())
+				steering_delay_queue_consumed = true;
+		}
+		else if (steering_delay_queue.size() > 0)
+		{
+			unsigned int q_size = steering_delay_queue.size();
+			command.phi = gsl_spline_eval(phi_spline, t - (steering_delay_queue[q_size - 1].timestamp - first_steering_delay_queue_timestamp), acc);
+		}
+		else
+			command.phi = gsl_spline_eval(phi_spline, t, acc);
+
+		command.v += tcp.a * delta_t;
+		// TODO: @@@ Alberto: Verificar efeitos colaterais do codigo abaixo e a adicao do teste (command.v > 0.0) no if abaixo, fora do for
+//		if (command.v < 0.0)
+//			break;
+
+		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t, &distance_traveled, delta_t, GlobalState::robot_config);
+		if ((i % reduction_factor) == 0)
+		{	// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
+			path.push_back(convert_to_carmen_ackerman_path_point_t(last_robot_state, t + delta_t - last_t));
+			last_robot_state = robot_state;
+			last_t = t + delta_t;
+		}
+		i++;
+	}
+
+	if (((tcp.tt - t) > 0.0)) // && (command.v > 0.0))
+	{
+		delta_t = tcp.tt - t;
+		command.phi = gsl_spline_eval(phi_spline, tcp.tt, acc);
+		command.v += tcp.a * delta_t;
+
+		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t, &distance_traveled, delta_t, GlobalState::robot_config);
+		// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
+		path.push_back(convert_to_carmen_ackerman_path_point_t(last_robot_state, tcp.tt - last_t));
+		// A ultima posicao nao tem proxima, logo, delta_t = 0.0
+		path.push_back(convert_to_carmen_ackerman_path_point_t(robot_state, 0.0));
+	}
+
+	return (distance_traveled);
+}
+
+
 double
 compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &command,
 		vector<carmen_ackerman_path_point_t> &path,
@@ -651,7 +830,11 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 	double t, last_t;
 	double distance_traveled = 0.0;
 	//double delta_t = 0.075;
-	int reduction_factor = 1 + (int)((tcp.tt / delta_t) / 90.0);
+	int reduction_factor;
+	if (use_unity_simulator)
+		reduction_factor = 1;
+	else
+		reduction_factor = 1 + (int)((tcp.tt / delta_t) / 90.0);
 
 	robot_state.x = 0.0;
 	robot_state.y = 0.0;
