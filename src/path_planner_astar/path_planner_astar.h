@@ -82,7 +82,7 @@ typedef struct voronoi_BFS_node
 	int visited_iteration;
 	int is_edge;
 	int is_obstacle;
-	double distance_to_edge;
+	carmen_position_t nearest_edge;
 } voronoi_BFS_node, *voronoi_BFS_node_p;
 
 
