@@ -77,6 +77,15 @@ typedef struct map_node
 } map_node, *map_node_p;
 
 
+typedef struct voronoi_BFS_node
+{
+	int visited_iteration;
+	int is_edge;
+	int is_obstacle;
+	carmen_position_t nearest_edge;
+} voronoi_BFS_node, *voronoi_BFS_node_p;
+
+
 typedef struct cost_heuristic_node
 {
 	double h;

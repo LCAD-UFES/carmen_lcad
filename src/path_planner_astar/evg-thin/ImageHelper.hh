@@ -175,7 +175,7 @@ public:
 	int maxx=0;
 	for (int b=0;b<_bpp;b++) 
 	  maxx=max(maxx,int(*(buffer(x,y)+b)));
-	unsigned char maxxx[3]={maxx,maxx,maxx};
+	unsigned char maxxx[3]={(unsigned char)maxx,(unsigned char)maxx,(unsigned char)maxx};
 	this->put(x,y,maxxx);
       }
   }

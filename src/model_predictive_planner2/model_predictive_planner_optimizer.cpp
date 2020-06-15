@@ -918,13 +918,7 @@ get_optimization_params(double target_v,
 		ObjectiveFunctionParams &params)
 {
 	params.distance_by_index = fabs(get_distance_by_index(N_DIST - 1));
-
-	if (GlobalState::reverse_driving)
-		params.theta_by_index = carmen_normalize_theta(fabs(get_theta_by_index(N_THETA - 1)+M_PI));
-	else
-		params.theta_by_index = fabs(get_theta_by_index(N_THETA - 1));
-
-
+	params.theta_by_index = fabs(get_theta_by_index(N_THETA - 1));
 	params.d_yaw_by_index = fabs(get_d_yaw_by_index(N_D_YAW - 1));
 	params.target_td = &target_td;
 	params.tcp_seed = &tcp_seed;

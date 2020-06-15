@@ -17,13 +17,16 @@
 #include "evg-thin/utils.hh"
 #include <string.h>
 #include <stdlib.h>
+#include <iostream>
 
-char* outfile="voronoi_edges.ppm";
+
+#define PRINT_VORONOI 0
+char* outfile = (char*) "voronoi_edges.ppm";
 unsigned int unknown_min=127;
 unsigned int unknown_max=128;
 bool pruning = false;
 bool robot_close = false;
-float distance_min=5.0;
+float distance_min=1.0;
 float distance_max=FLT_MAX;
 int robot_locx=-1;
 int robot_locy=-1;
@@ -61,6 +64,9 @@ carmen_route_planner_road_network_message route_planner_road_network_message;
 offroad_planner_plan_t plan_path_poses;
 int astar_path_poses_size = 0;
 
+voronoi_BFS_node_p **voronoi_map;
+int voronoi_visited_it = 0;
+//cv::Mat temp_voronoi;
 
 #define LANE_WIDTH 	2.4
 #define NUM_LANES	1
@@ -74,7 +80,7 @@ using namespace cv;
 
 
 void
-evg_thin_on_map(map_node ***astar_map)
+evg_thin_on_map(map_node_p ***astar_map)
 {
 	column_type col(astar_map_y_size,Unknown);
 	grid_type curr_grid(astar_map_x_size,col);
@@ -83,8 +89,8 @@ evg_thin_on_map(map_node ***astar_map)
 	{
 		for (int j = 0; j < astar_map_y_size; j++)
 		{
-			double cell= astar_map[i][j][0].obstacle_distance;
-			if (cell <= 0.2)
+			double cell= astar_map[i][j][0]->obstacle_distance;
+			if (cell <= 1.0)
 				curr_grid[i][j]=Occupied;
 			else
 				curr_grid[i][j]=Free;
@@ -123,9 +129,52 @@ evg_thin_on_map(map_node ***astar_map)
 	Time t;
 	skeleton_type skel=thin.generate_skeleton();
 	cout << "Skeleton created in "<<t.get_since()<<" seconds\n\n";
+	carmen_position_t foo_value;
+	foo_value.x = -2;
+	foo_value.y = -2;
+	if (PRINT_VORONOI)
+	{
+		Mat imagem = Mat(astar_map_x_size, astar_map_y_size, CV_8UC3);
+		for (int i = 0; i < astar_map_x_size; i++)
+		{
+			for (int j = 0; j < astar_map_y_size; j++)
+			{
+				if (astar_map[i][j][0]->obstacle_distance < 1.0)
+				{
+					imagem.at<Vec3b>(i, j)[0] = 0;
+					imagem.at<Vec3b>(i, j)[1] = 0;
+					imagem.at<Vec3b>(i, j)[2] = 0;
+				}
+				else
+				{
+					imagem.at<Vec3b>(i, j)[0] = 255;
+					imagem.at<Vec3b>(i, j)[1] = 255;
+					imagem.at<Vec3b>(i, j)[2] = 255;
+				}
+			}
+		}
 
-	fileio IO;
-	IO.save_file(skel,outfile);
+		for (unsigned int i=0;i<skel.size();i++)
+		{
+			imagem.at<Vec3b>(skel[i].x,skel[i].y)[0] = 0;
+			imagem.at<Vec3b>(skel[i].x,skel[i].y)[1] = 0;
+			imagem.at<Vec3b>(skel[i].x,skel[i].y)[2] = 255;
+//			circle(imagem, Point(skel[i].y,skel[i].x), skel[i].radius, Scalar(255,0,0));
+			printf("Point Skeleton: %d %d \n", skel[i].x,skel[i].y);
+			voronoi_map[skel[i].x][skel[i].y]->is_edge = 1;
+			voronoi_map[skel[i].x][skel[i].y]->nearest_edge = foo_value;
+		}
+//		temp_voronoi = imagem.clone();
+		imwrite(outfile, imagem);
+	}
+	else
+	{
+		for (unsigned int i=0;i<skel.size();i++)
+		{
+			voronoi_map[skel[i].x][skel[i].y]->is_edge = 1;
+			voronoi_map[skel[i].x][skel[i].y]->nearest_edge = foo_value;
+		}
+	}
 }
 
 double
@@ -151,6 +200,113 @@ nearest_obstacle_cell(double x, double y)
     p.x = x;
     p.y = y;
     return (carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&p, distance_map));
+}
+
+
+int
+get_astar_map_theta(double theta, double map_theta_size)
+{
+	theta = theta < 0 ? (2 * M_PI + theta) : theta;
+	int resolution = (int) round(360/map_theta_size);
+
+	return  (int)round((carmen_radians_to_degrees(theta) / resolution)) % (int)round(360 / resolution);
+}
+
+
+int
+get_astar_map_x(double x)
+{
+	return round((double) (x - distance_map->config.x_origin) / astar_config.state_map_resolution);
+}
+
+
+int
+get_astar_map_y(double y)
+{
+	return round((double) (y - distance_map->config.y_origin) / astar_config.state_map_resolution);
+}
+
+
+discrete_pos_node*
+get_current_pos(state_node* current_state)
+{
+	discrete_pos_node *current_pos = (discrete_pos_node*) malloc(sizeof(discrete_pos_node));
+	current_pos->x = get_astar_map_x(current_state->state.x);
+	current_pos->y = get_astar_map_y(current_state->state.y);
+	current_pos->theta = get_astar_map_theta(current_state->state.theta, astar_config.state_map_theta_resolution);
+
+	return current_pos;
+}
+
+
+carmen_position_t
+nearest_edge_cell(int x_map, int y_map)
+{
+	carmen_position_t current;
+	int expand[3] = {-1,0,1};
+	voronoi_visited_it++;
+	current.x = x_map;
+	current.y = y_map;
+	std::vector<carmen_position_t> fila;
+	fila.push_back(current);
+	while(!fila.empty())
+	{
+		current = fila.back();
+		fila.pop_back();
+//		temp_voronoi.at<Vec3b>((int)current.x, (int)current.y)[1] = 0;
+//		temp_voronoi.at<Vec3b>((int)current.x, (int)current.y)[2] = 0;
+//		printf("Fila: %d %d \n", (int)current.x, (int)current.y);
+		if(voronoi_map[(int)current.x][(int)current.y]->is_edge == 1)
+			return current;
+		else
+		{
+//			voronoi_map[(int)current.x][(int)current.y]->visited_iteration = voronoi_visited_it;
+			for(int i = 0; i<3 ; i++)
+			{
+				for(int j = 0; j<3; j++)
+				{
+					int new_x = current.x + expand[i];
+					int new_y = current.y + expand[j];
+					if(new_x >= astar_map_x_size || new_x < 0 || new_y >= astar_map_y_size || new_y <  0 ||
+					voronoi_map[new_x][new_y]->is_obstacle == 1 || voronoi_map[new_x][new_y]->visited_iteration == voronoi_visited_it)
+						continue;
+					carmen_position_t new_point;
+					new_point.x = new_x;
+					new_point.y = new_y;
+					fila.insert(fila.begin(), new_point);
+					voronoi_map[new_x][new_y]->visited_iteration = voronoi_visited_it;
+
+				}
+			}
+		}
+	}
+
+	carmen_position_t foo;
+	foo.x = -3;
+	foo.y = -3;
+	return foo;
+}
+
+double
+distance_to_nearest_edge(double x, double y)
+{
+	int x_map = get_astar_map_x(x);
+	int y_map = get_astar_map_y(y);
+	carmen_position_t real_position;
+	real_position.x = x;
+	real_position.y = y;
+	if(voronoi_map[x_map][y_map]->nearest_edge.x > 0)
+		return DIST2D(real_position, voronoi_map[x_map][y_map]->nearest_edge);
+	carmen_position_t edge_cell = nearest_edge_cell(x_map, y_map);
+	if(edge_cell.x == -3)
+		return 0.0;
+
+	double distance = DIST2D(real_position, edge_cell);
+
+//	printf("Distance_to_nearest_edge = %f Cell = %f %f Edge_cell = %f %f\n", distance, current_cell.x, current_cell.y, edge_cell.x, edge_cell.y);
+//	line(temp_voronoi, Point(y_map, x_map), Point(edge_cell.y, edge_cell.x), Scalar(0,255,0));
+	voronoi_map[x_map][y_map]->nearest_edge = edge_cell;
+	return distance;
 }
 
 
@@ -202,6 +358,7 @@ my_f(const gsl_vector *v, void *params)
 	double wo = 1.0;
 	double wk = 1.0;
 	double ws = 1.0;
+	double wv = 1.0;
 	double dmax = 5.0; // escolher um valor melhor
 	double kmax = robot_config.distance_between_front_and_rear_axles / tan(robot_config.max_phi);
 
@@ -280,6 +437,10 @@ my_f(const gsl_vector *v, void *params)
 	}
 */
 	double curvature_term;
+	double voronoi_cost;
+	double distance_voronoi;
+	double voronoi_a = 1;
+	double voronoi_max_distance = 5;
 	for (int i = 1; i <(param->path_size - 1); i++)
 	{
 		x_i = param->points[i].x;
@@ -292,6 +453,12 @@ my_f(const gsl_vector *v, void *params)
 		distance = obstacle_distance(x_i, y_i);
 		if(distance <= dmax)
 			obstacle_cost += abs(pow(distance - dmax, 2) * (distance - dmax));
+
+		if(distance <= voronoi_max_distance)
+		{
+			distance_voronoi = distance_to_nearest_edge(x_i, y_i);
+			voronoi_cost += (voronoi_a/(voronoi_a+distance))*(distance_voronoi/(distance+distance_voronoi))*(pow(distance-voronoi_max_distance,2)/pow(voronoi_max_distance,2));
+		}
 
 		square_displacement = ((x_next - x_i) - (x_i - x_prev)) * ((x_next - x_i) - (x_i - x_prev)) + ((y_next - y_i) - (y_i - y_prev)) * ((y_next - y_i) - (y_i - y_prev));
 //		square_displacement = pow(sqrt((x_next - x_i) * (x_next - x_i) + (y_next - y_i) * (y_next - y_i)) - sqrt((x_i - x_prev) * (x_i - x_prev) + (y_i - y_prev) * (y_i - y_prev)), 2);
@@ -316,13 +483,19 @@ my_f(const gsl_vector *v, void *params)
 	if(distance < dmax)
 		obstacle_cost += abs(pow(distance - dmax , 2) * (distance - dmax ));
 
+	if(distance <= voronoi_max_distance)
+	{
+		distance_voronoi = distance_to_nearest_edge(param->points[param->path_size - 1].x, param->points[param->path_size - 1].y);
+		voronoi_cost += (voronoi_a/(voronoi_a+distance))*(distance_voronoi/(distance+distance_voronoi))*(pow(distance-voronoi_max_distance,2)/pow(voronoi_max_distance,2));
+	}
 	obstacle_cost = wo * obstacle_cost;
 	curvature_cost = wk * curvature_cost;
 	smoothness_cost = ws * smoothness_cost;
+	voronoi_cost = wv * voronoi_cost;
 //	exit(1);
 //	printf("costs= %f %f %f \n", obstacle_cost, curvature_cost, smoothness_cost);
 
-	return obstacle_cost + curvature_cost + smoothness_cost;
+	return obstacle_cost + curvature_cost + smoothness_cost + voronoi_cost;
 //	return smoothness_cost;
 }
 
@@ -892,23 +1065,32 @@ alloc_astar_map()
 	double pos_y = 0.0;
 	astar_map = (map_node_p ***)calloc(astar_map_x_size, sizeof(map_node_p**));
 	carmen_test_alloc(astar_map);
+	voronoi_map = (voronoi_BFS_node_p **)calloc(astar_map_x_size, sizeof(voronoi_BFS_node_p*));
+	carmen_test_alloc(voronoi_map);
+
+	carmen_position_t foo_value;
+	foo_value.x = -1;
+	foo_value.y = -1;
 
 	for (int i = 0; i < astar_map_x_size; i++)
 	{
 		astar_map[i] = (map_node_p **)calloc(astar_map_y_size, sizeof(map_node_p*));
 		carmen_test_alloc(astar_map[i]);
+		voronoi_map[i] = (voronoi_BFS_node_p*)calloc(astar_map_y_size, sizeof(voronoi_BFS_node_p));
+		carmen_test_alloc(voronoi_map[i]);
 
 		for (int j = 0; j < astar_map_y_size; j++)
 		{
 			astar_map[i][j] = (map_node_p*)calloc(theta_size, sizeof(map_node_p));
 			carmen_test_alloc(astar_map[i][j]);
-
+			voronoi_map[i][j] = (voronoi_BFS_node_p)calloc(astar_map_y_size, sizeof(voronoi_BFS_node));
+			carmen_test_alloc(voronoi_map[i][j]);
+			pos_x = get_distance_map_x(i);
+			pos_y = get_distance_map_y(j);
 			for (int z = 0; z < theta_size; z++)
 			{
 				astar_map[i][j][z]= (map_node_p) malloc(sizeof(map_node));
 				carmen_test_alloc(astar_map[i][j][z]);
-				pos_x = get_distance_map_x(i);
-				pos_y = get_distance_map_y(j);
 				if(is_valid_grid_value(i, j, astar_config.state_map_resolution) == 1)
 				{
 					astar_map[i][j][z]->obstacle_distance = obstacle_distance(pos_x, pos_y);
@@ -918,8 +1100,15 @@ alloc_astar_map()
 
 				astar_map[i][j][z]->is_closed = 0;
 				astar_map[i][j][z]->is_open = 0;
-
 			}
+			voronoi_map[i][j]->is_edge = 0;
+			voronoi_map[i][j]->nearest_edge = foo_value;
+			voronoi_map[i][j]->visited_iteration = 0;
+			if(is_valid_grid_value(i, j, astar_config.state_map_resolution) == 1 && obstacle_distance(pos_x, pos_y) > 1.5)
+				voronoi_map[i][j]->is_obstacle = 0;
+			else
+				voronoi_map[i][j]->is_obstacle = 1;
+
 		}
 	}
 	return astar_map;
@@ -931,9 +1120,15 @@ clear_astar_map(map_node_p ***astar_map)
 {
 	int theta_size = astar_config.state_map_theta_resolution;
 	for (int i = 0; i < astar_map_x_size; i++)
+	{
 		for (int j = 0; j < astar_map_y_size; j++)
+		{
 			for (int k = 0; k < theta_size; k++)
 				astar_map[i][j][k] = NULL;
+
+		voronoi_map[i][j] = NULL;
+		}
+	}
 }
 
 
@@ -1035,42 +1230,6 @@ create_state_node(double x, double y, double theta, double v, double phi, double
 	new_state->distance_traveled_g = dtg;
 
 	return (new_state);
-}
-
-
-int
-get_astar_map_theta(double theta, double map_theta_size)
-{
-	theta = theta < 0 ? (2 * M_PI + theta) : theta;
-	int resolution = (int) round(360/map_theta_size);
-
-	return  (int)round((carmen_radians_to_degrees(theta) / resolution)) % (int)round(360 / resolution);
-}
-
-
-int
-get_astar_map_x(double x)
-{
-	return round((double) (x - distance_map->config.x_origin) / astar_config.state_map_resolution);
-}
-
-
-int
-get_astar_map_y(double y)
-{
-	return round((double) (y - distance_map->config.y_origin) / astar_config.state_map_resolution);
-}
-
-
-discrete_pos_node*
-get_current_pos(state_node* current_state)
-{
-	discrete_pos_node *current_pos = (discrete_pos_node*) malloc(sizeof(discrete_pos_node));
-	current_pos->x = get_astar_map_x(current_state->state.x);
-	current_pos->y = get_astar_map_y(current_state->state.y);
-	current_pos->theta = get_astar_map_theta(current_state->state.theta, astar_config.state_map_theta_resolution);
-
-	return current_pos;
 }
 
 
@@ -1182,10 +1341,11 @@ build_rddf_poses(state_node *current_state)
 	{
 //		path[i].state.v = abs(path[i].state.v);
 		temp_rddf_poses_from_path.push_back(path[i].state);
+//		distance_to_nearest_edge(path[i].state.x, path[i].state.y);
 //		printf("[build_rddf_poses] %f %f %f %f %f\n", path[i].state.x, path[i].state.y, path[i].state.theta, path[i].state.v, path[i].state.phi);
 //		draw_astar_object(&path[i].state, CARMEN_GREEN);
 	}
-
+//	imwrite("voronoi_lines.ppm", temp_voronoi);
 	return temp_rddf_poses_from_path;
 }
 
@@ -1586,30 +1746,8 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	double* heuristic_obstacle_map = get_obstacle_heuristic_map(goal_pose);
 	map_node_p ***astar_map = alloc_astar_map();
 
-	get_voronoi(astar_map);
-/*
-	//(distance_map->config.x_size * distance_map->config.resolution) / astar_config.state_map_resolution
-	double cv_res = 0.5;
-	int cv_size_x = (distance_map->config.x_size * distance_map->config.resolution)/ cv_res;
-	int cv_size_y = (distance_map->config.y_size * distance_map->config.resolution)/ cv_res;
+	evg_thin_on_map(astar_map);
 
-    Mat mask = Mat::ones(cv_size_x, cv_size_y, CV_8UC1);
-	for (int i = 0; i<cv_size_x; i++){
-		for (int j = 0; j<cv_size_y; j++){
-			if(obstacle_distance(distance_map->config.x_origin + (i * cv_res), distance_map->config.y_origin + (j * cv_res)) < 0.5 || is_valid_grid_value(i, j, cv_res) == 0)
-		{
-//				mask.at<unsigned char>(astar_map_x_size-i -1 , j) = 0;
-				mask.at<unsigned char>(i,j) = 0;
-			}
-			else{
-//				mask.at<unsigned char>(astar_map_x_size-i -1, j) = 255;
-				mask.at<unsigned char>(i,j) = 255;
-			}
-		}
-	}
-	distanceTransform(mask, dist, labels, CV_DIST_L2, DIST_MASK_5, DIST_LABEL_CCOMP);
-	imwrite("Obstacle_distance.png", dist);
-*/
 
 	boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> open;
 	start_state = create_state_node(robot_pose->x, robot_pose->y, robot_pose->theta, 2.0, 0.0, 0.0, DBL_MAX, DBL_MAX, NULL, 0);
