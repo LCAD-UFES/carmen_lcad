@@ -1312,6 +1312,8 @@ namespace View
 			code =  CARMEN_BEHAVIOR_SELECTOR_RRT;
 		else if(strcmp(algorithm_name, "RDDF") == 0)
 			code =  CARMEN_BEHAVIOR_SELECTOR_RDDF;
+		else if(strcmp(algorithm_name, "Frenet") == 0)
+			code =  CARMEN_BEHAVIOR_SELECTOR_FRENET;
 
 		return code;
 	}
@@ -1389,11 +1391,10 @@ namespace View
 //		if((int)msg.goal_source != get_goal_source_code(gtk_combo_box_get_active_text((GtkComboBox*)this->controls_.comboGoalSource)))
 //			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboGoalSource, msg.goal_source);
 
-		//TODO: pode ter erro na conversao pra gtkwidget
-		if (msg.goal_source == CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-			gtk_widget_set_sensitive((GtkWidget *) this->controls_.comboState, 1);
-		else
-			gtk_widget_set_sensitive((GtkWidget *) this->controls_.comboState, 0);
+//		if (msg.goal_source == CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+//			gtk_widget_set_sensitive((GtkWidget *) this->controls_.comboState, 1);
+//		else
+//			gtk_widget_set_sensitive((GtkWidget *) this->controls_.comboState, 0);
 
 		if((int)msg.state != get_state_code(gtk_combo_box_get_active_text((GtkComboBox*)this->controls_.comboState)))
 			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboState, msg.state);
@@ -2137,7 +2138,7 @@ namespace View
 					world_point->pose.x - final_goal.pose.x);
 			final_goal.pose.theta = angle;
 
-			if (use_route_planner_in_graph_mode == 0)
+//			if (use_route_planner_in_graph_mode == 0)
 				carmen_rddf_publish_end_point_message(50, final_goal.pose);
 
 			final_goal_placed_and_oriented = 1;

@@ -156,7 +156,8 @@ obstacle_avoider_timer_handler()
 	static double time_of_last_call = 0.0;
 	static int robot_hit_obstacle = 0;
 
-	if (current_algorithm != CARMEN_BEHAVIOR_SELECTOR_RRT) // Alberto: Por que nao opera se nao for este algoritmo?
+	if ((current_algorithm != CARMEN_BEHAVIOR_SELECTOR_RRT) &&
+		(current_algorithm != CARMEN_BEHAVIOR_SELECTOR_FRENET))
 		return;
 
 	if (!necessary_maps_available)
@@ -193,7 +194,8 @@ obstacle_avoider_timer_handler()
 void
 check_message_absence_timeout_timer_handler(void)
 {
-	if (current_algorithm != CARMEN_BEHAVIOR_SELECTOR_RRT)
+	if ((current_algorithm != CARMEN_BEHAVIOR_SELECTOR_RRT) &&
+		(current_algorithm != CARMEN_BEHAVIOR_SELECTOR_FRENET))
 		return;
 
 	if (log_mode)

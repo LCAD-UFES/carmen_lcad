@@ -20,9 +20,6 @@
     </columns>
     <data>
       <row>
-        <col id="0" translatable="yes"> </col>
-      </row>
-      <row>
         <col id="0" translatable="yes">A*</col>
       </row>
       <row>
@@ -51,7 +48,7 @@
     </columns>
     <data>
       <row>
-        <col id="0" translatable="yes">Gradient</col>
+        <col id="0" translatable="yes">Frenet</col>
       </row>
       <row>
         <col id="0" translatable="yes">A*</col>
@@ -61,6 +58,9 @@
       </row>
       <row>
         <col id="0" translatable="yes">RDDF</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Gradient</col>
       </row>
     </data>
   </object>

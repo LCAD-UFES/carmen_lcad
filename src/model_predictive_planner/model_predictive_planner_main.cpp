@@ -262,7 +262,8 @@ publish_navigator_ackerman_status_message()
 void
 publish_plan_tree_for_navigator_gui(Tree tree)
 {
-	if (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT)
+	if ((GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT) ||
+		(GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_FRENET))
 		if (GlobalState::publish_tree)
 			Publisher_Util::publish_plan_tree_message(tree);
 }
@@ -405,7 +406,9 @@ build_and_follow_path(double timestamp)
 {
 	list<RRT_Path_Edge> path_follower_path;
 
-	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
+	if (GlobalState::goal_pose &&
+		((GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT) ||
+		 (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_FRENET)))
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
 		// goal achieved!
@@ -451,7 +454,9 @@ build_and_follow_path(double timestamp)
 void
 build_and_follow_path_new(double timestamp)
 {
-	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
+	if (GlobalState::goal_pose &&
+		((GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT) ||
+		 (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_FRENET)))
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
 		// goal achieved!

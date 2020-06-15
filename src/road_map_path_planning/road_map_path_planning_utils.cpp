@@ -19,7 +19,7 @@ load_route_from_file(string route_filename)
 
 
 void
-print_route_coordinates_in_carmen_coordinates(t_route r, t_graph graph)
+print_route_coordinates_in_carmen_coordinates(t_route r, graph_t graph)
 {
 	for (int i = 0; i < r.route_size-1; i++)
 	{
@@ -31,7 +31,7 @@ print_route_coordinates_in_carmen_coordinates(t_route r, t_graph graph)
 
 
 void
-plot_state(t_forest forest, t_graph graph, vector<int> indices, int forest_index)
+plot_state(t_forest forest, graph_t graph, vector<int> indices, int forest_index)
 {
 //	plot data Table - Last TCP - Optmizer tcp - Lane
 	//Plot Optmizer step tcp and lane?
@@ -131,7 +131,7 @@ calc_theta (double x1, double y1, double x, double y)
 
 
 void
-get_closest_points_from_osm_in_rddf (t_forest forest, t_graph graph, t_route r, int *forest_index, vector<int> &indices)
+get_closest_points_from_osm_in_rddf (t_forest forest, graph_t graph, t_route r, int *forest_index, vector<int> &indices)
 {
 	//calcular o theta do primeiro ponto da rota  OK!
 	//fazer knn do primeiro ponto da rota com todos os pontos do rddf 1 OK!
@@ -206,8 +206,8 @@ get_closest_points_from_osm_in_rddf (t_forest forest, t_graph graph, t_route r, 
 }
 
 
-t_graph
-convert_from_lon_lat_nodes_to_utm_nodes(t_graph graph)
+graph_t
+convert_from_lon_lat_nodes_to_utm_nodes(graph_t graph)
 {
 	for(int i = 0; i < graph.qtd_nodes; i++)
 	{
@@ -258,20 +258,20 @@ load_rddf_files (t_forest rddf_points, vector <string> rddf_filename)
 }
 
 
-t_graph
+graph_t
 read_graph_file(string graph_filename)
 {
-	t_graph graph;
-	t_node node;
-	t_edge edge;
+	graph_t graph;
+	node_t node;
+	edge_t edge;
 	FILE *graph_file;
 	int cont = 0;
 
 	graph_file = fopen(graph_filename.c_str(), "r");
 	fscanf(graph_file, "%d %d\n", &graph.qtd_nodes, &graph.qtd_edges);
 
-	graph.nodes = (t_node*) malloc (graph.qtd_nodes * sizeof(t_node));
-	graph.edges = (t_edge*) malloc (graph.qtd_edges * sizeof(t_edge));
+	graph.nodes = (node_t*) malloc (graph.qtd_nodes * sizeof(node_t));
+	graph.edges = (edge_t*) malloc (graph.qtd_edges * sizeof(edge_t));
 
 	while (cont < graph.qtd_nodes)
 	{
@@ -297,7 +297,7 @@ process_graph (string python_command)
 //	+ " " + to_string(current_gps_info.latitude)
 //									+ " " + to_string(current_gps_info.longitude)
 	string s;
-	t_graph graph;
+	graph_t graph;
 	t_route route;
 	t_forest rddf_points;
 	s = "/home/pedro/carmen_lcad/data/rndf/rddf_log_volta_da_ufes-201903025.txt";
