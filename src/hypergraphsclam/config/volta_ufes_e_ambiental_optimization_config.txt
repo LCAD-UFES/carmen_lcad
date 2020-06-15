@@ -27,9 +27,9 @@ VELODYNE_ICP_YY_VAR 0.85
 VELODYNE_ICP_HH_VAR 0.85
 
 -- VELODYNE ICP LOOP
-VELODYNE_LOOP_ICP_XX_VAR 3.0
-VELODYNE_LOOP_ICP_YY_VAR 3.0
-VELODYNE_LOOP_ICP_HH_VAR 2.5
+VELODYNE_LOOP_ICP_XX_VAR 1.85
+VELODYNE_LOOP_ICP_YY_VAR 1.85
+VELODYNE_LOOP_ICP_HH_VAR 1.5
 
 XSENS_CONSTRAINT_VAR 0.785398163397448278999490867136
 
@@ -39,7 +39,7 @@ VISUAL_YY_VAR.25
 VISUAL_HH_VAR 0.125
 
 -- Multiplicado do desvio padrao- quanto maior, menor a confianca no GPS - 125 ta confiando bem pouco no multiplier
-GPS_POSE_STD_MULTIPLIER 4.0
+GPS_POSE_STD_MULTIPLIER 8.0
 GPS_POSE_HH_STD 20.0
 
 -- special edge: two messages with same timestamp value - Nao precisa mecher, basicamente nao deixa o otimizador mexer em nos da mesma mensagem (GPS-HEADING)
@@ -71,7 +71,7 @@ GPS_SPARSITY_THRESHOLD 0.20
 
 -- edges configuration - disable, enable edges - Comente para dizer quais voce nao quer usar como aresta.
 -- USE_VELODYNE_SEQ
-USE_VELODYNE_LOOP
+-- USE_VELODYNE_LOOP
 -- USE_BUMBLEBEE_SEQ
 -- USE_BUMBLEBEE_LOOP
 -- USE_SICK_SEQ
