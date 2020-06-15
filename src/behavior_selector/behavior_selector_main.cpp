@@ -102,6 +102,8 @@ carmen_route_planner_road_network_message *road_network_message = NULL;
 extern int selected_path_id;
 extern double localize_ackerman_initialize_message_timestamp;
 
+double parking_speed_limit;
+
 
 int
 compute_max_rddf_num_poses_ahead(carmen_ackerman_traj_point_t current_pose)
@@ -421,7 +423,7 @@ publish_current_state(carmen_behavior_selector_state_message msg)
 	carmen_behavior_selector_algorithm_t parking_planner;
 	carmen_behavior_selector_goal_source_t current_goal_source;
 
-	behavior_selector_get_state(&current_state, &following_lane_planner, &parking_planner, &current_goal_source);
+	behavior_selector_get_full_state(&current_state, &following_lane_planner, &parking_planner, &current_goal_source);
 
 	msg.timestamp = carmen_get_time();
 	msg.host = carmen_get_host();
@@ -660,7 +662,6 @@ set_path(const carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double
 	if (current_moving_objects)
 		carmen_moving_objects_point_clouds_publish_message(current_moving_objects);
 
-
 	if (use_frenet_path_planner)
 		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, 0, timestamp);
 //		set_optimum_path(current_set_of_paths, current_robot_pose_v_and_phi, who_set_the_goal_v, timestamp);
@@ -807,6 +808,13 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
 	select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
+}
+
+
+static void
+carmen_route_planner_road_network_message_handler(carmen_route_planner_road_network_message *msg)
+{
+	road_network_message = msg;
 }
 
 
@@ -1007,13 +1015,6 @@ carmen_voice_interface_command_message_handler(carmen_voice_interface_command_me
 
 
 static void
-carmen_route_planner_road_network_message_handler(carmen_route_planner_road_network_message *msg)
-{
-	road_network_message = msg;
-}
-
-
-static void
 carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_initialize_message *initialize_msg)
 {
 	localize_ackerman_initialize_message_timestamp = initialize_msg->timestamp;
@@ -1162,6 +1163,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", (char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_and_rear_axles, 1, NULL},
 		{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
 		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_car_and_front_wheels, 1, NULL},
+		{(char *) "robot", (char *) "parking_speed_limit", CARMEN_PARAM_DOUBLE, &parking_speed_limit, 1, NULL},
 		{(char *) "behavior_selector", (char *) "distance_between_waypoints", CARMEN_PARAM_DOUBLE, &distance_between_waypoints, 1, NULL},
 		{(char *) "behavior_selector", (char *) "change_goal_distance", CARMEN_PARAM_DOUBLE, &change_goal_distance, 1, NULL},
 		{(char *) "behavior_selector", (char *) "following_lane_planner", CARMEN_PARAM_INT, &following_lane_planner, 1, NULL},

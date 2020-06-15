@@ -21,7 +21,8 @@ typedef enum
 {
 	NO_REQUEST,
 	PLAN_FROM_POSE_TO_LANE,
-	PLAN_FROM_LANE_TO_FINAL_POSE
+	PLAN_FROM_LANE_TO_FINAL_POSE,
+	WITHIN_OFFROAD_PLAN
 } offroad_planner_request_t;
 
 typedef struct

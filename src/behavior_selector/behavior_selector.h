@@ -22,6 +22,7 @@ enum
 	CENTRIPETAL_ACCELERATION,
 	ANNOTATION,
 	KEEP_SPEED_LIMIT,
+	PARKING_MANOUVER
 };
 
 typedef struct
@@ -77,8 +78,10 @@ extern "C" {
 
 	carmen_behavior_selector_algorithm_t get_current_algorithm();
 
-	void behavior_selector_get_state(carmen_behavior_selector_state_t *current_state_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
+	void behavior_selector_get_full_state(carmen_behavior_selector_state_t *current_state_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
 			carmen_behavior_selector_algorithm_t *parking_planner_out, carmen_behavior_selector_goal_source_t *current_goal_source_out);
+
+	int behavior_selector_get_state();
 
 	carmen_ackerman_traj_point_t *behavior_selector_get_goal_list(int *goal_list_size_out);
 	int *behavior_selector_get_goal_type();

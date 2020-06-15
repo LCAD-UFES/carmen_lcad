@@ -86,9 +86,9 @@ change_state(int rddf_annotation)
 
 	switch(rddf_annotation)
 	{
-//	case RDDF_ANNOTATION_TYPE_NONE:
-//		current_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
-//		break;
+	case RDDF_ANNOTATION_TYPE_NONE:
+		current_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
+		break;
 
 	case RDDF_ANNOTATION_TYPE_END_POINT_AREA:
 		current_state = BEHAVIOR_SELECTOR_PARKING;
@@ -309,7 +309,7 @@ behavior_selector_set_state(carmen_behavior_selector_state_t state)
 
 
 void
-behavior_selector_get_state(carmen_behavior_selector_state_t *current_state_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
+behavior_selector_get_full_state(carmen_behavior_selector_state_t *current_state_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
 		carmen_behavior_selector_algorithm_t *parking_planner_out, carmen_behavior_selector_goal_source_t *current_goal_source_out)
 {
 	*current_state_out = current_state;
@@ -317,6 +317,14 @@ behavior_selector_get_state(carmen_behavior_selector_state_t *current_state_out,
 	*parking_planner_out = parking_planner;
 	*current_goal_source_out = current_goal_source;
 }
+
+
+int
+behavior_selector_get_state()
+{
+	return (current_state);
+}
+
 
 
 int
