@@ -33,7 +33,6 @@ int robot_locy=-1;
 
 /////////////////
 
-
 static carmen_robot_ackerman_config_t robot_config;
 static carmen_path_planner_astar_t astar_config;
 
@@ -362,8 +361,20 @@ my_f(const gsl_vector *v, void *params)
 	double dmax = 5.0; // escolher um valor melhor
 	double kmax = robot_config.distance_between_front_and_rear_axles / tan(robot_config.max_phi);
 
+
+	double obstacle_cost = 0.0;
+	double curvature_cost = 0.0;
+	double smoothness_cost = 0.0;
+	double x, y, obst_x, obst_y, distance, delta_phi;
+	double x_i, y_i, x_next, y_next, x_prev, y_prev, displacement;
+
+	double square_displacement, curvature_term, voronoi_cost, distance_voronoi;
+	double voronoi_a = 5;
+	double voronoi_max_distance = 2;
+
 	// double *obstacles = (double *) params;
 	param_t *param = (param_t*) params;
+
 	int j = 0;
 	for (int i = 0; i < param->path_size; i++)
 	{
@@ -375,126 +386,63 @@ my_f(const gsl_vector *v, void *params)
 		}
 	}
 
-	double obstacle_cost = 0.0;
-	double x, y, obst_x, obst_y, distance;
-/*
-	for (int i = 2; i < v->size; i += 2) {
-		x = gsl_vector_get(v, i);
-		y = gsl_vector_get(v, i + 1);
-		//obst_x = obstacles[i];
-		//obst_y = obstacles[i + 1];
-		//distance = sqrt((x - obst_x) * (x - obst_x) + (y - obst_y) * (y - obst_y));
-		distance = obstacle_distance(x, y);
-		obstacle_cost += wo * (distance - dmax) * (distance - dmax) ;
-	}
-*/
-	double curvature_cost = 0.0;
-	double delta_phi;
-
-
-	double x_i, y_i, x_next, y_next, x_prev, y_prev, displacement;
-/*
-	for (int i = 2; i < v->size - 2; i += 2) {
-		x_i = gsl_vector_get(v, i);
-		y_i = gsl_vector_get(v, i + 1);
-		x_next = gsl_vector_get(v, i + 2);
-		y_next = gsl_vector_get(v, i + 3);
-		x_prev = gsl_vector_get(v, i - 2);
-		y_prev = gsl_vector_get(v, i - 1);
-		delta_phi = abs(atan2(y_next - y_i, x_next - x_i) - atan2(y_i - y_prev, x_i - x_prev));
-		displacement = sqrt((x_i - x_prev) * (x_i - x_prev) + (y_i - y_prev) * (y_i - y_prev));
-		curvature_cost += wk * (delta_phi / displacement - kmax) * (delta_phi / displacement - kmax);
-	}
-*/
-	double smoothness_cost = 0.0;
-	double square_displacement;
-/*
-	for (int i = 2; i < v->size - 2; i += 2) {
-		x_i = gsl_vector_get(v, i);
-		y_i = gsl_vector_get(v, i + 1);
-		x_next = gsl_vector_get(v, i + 2);
-		y_next = gsl_vector_get(v, i + 3);
-		x_prev = gsl_vector_get(v, i - 2);
-		y_prev = gsl_vector_get(v, i - 1);
-		square_displacement = ((x_next - x_i) - (x_i - x_prev)) * ((x_next - x_i) - (x_i - x_prev)) + ((y_next - y_i) - (y_i - y_prev)) * ((y_next - y_i) - (y_i - y_prev));
-		smoothness_cost = ws * square_displacement;
-	}
-
-*/
-/*	for (int i = 1; i <(param->path_size); i++)
-	{
-		x = param->points[i].x;
-		y = param->points[i].y;
-		//obst_x = obstacles[i];
-		//obst_y = obstacles[i + 1];
-		//distance = sqrt((x - obst_x) * (x - obst_x) + (y - obst_y) * (y - obst_y));
-		distance = obstacle_distance(x, y);
-//		if(distance <= dmax)
-//		{
-			obstacle_cost += pow(dmax - distance  , 2) * (dmax - distance );
-//			printf("Entrou no obstacle_cost = %f %f\n", obstacle_cost, distance);
-//		}
-	}
-*/
-	double curvature_term;
-	double voronoi_cost;
-	double distance_voronoi;
-	double voronoi_a = 1;
-	double voronoi_max_distance = 5;
 	for (int i = 1; i <(param->path_size - 1); i++)
 	{
-		x_i = param->points[i].x;
-		y_i = param->points[i].y;
-		x_next = param->points[i+1].x;
-		y_next = param->points[i+1].y;
-		x_prev = param->points[i-1].x;
-		y_prev = param->points[i-1].y;
+		if(!param->anchor_points[i]){
 
-		distance = obstacle_distance(x_i, y_i);
-		if(distance <= dmax)
-			obstacle_cost += abs(pow(distance - dmax, 2) * (distance - dmax));
+			x_i = param->points[i].x;
+			y_i = param->points[i].y;
+			x_next = param->points[i+1].x;
+			y_next = param->points[i+1].y;
+			x_prev = param->points[i-1].x;
+			y_prev = param->points[i-1].y;
+
+		//		distance = obstacle_distance(x_i, y_i);
+			distance = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(param->points[i], distance_map);
+			if(distance <= dmax)
+				obstacle_cost += abs(pow(distance - dmax, 2) * (distance - dmax));
+
+			if(distance <= voronoi_max_distance)
+			{
+				distance_voronoi = distance_to_nearest_edge(x_i, y_i);
+				voronoi_cost += (voronoi_a/(voronoi_a+distance))*(distance_voronoi/(distance+distance_voronoi))*(pow(distance-voronoi_max_distance,2)/pow(voronoi_max_distance,2));
+			}
+
+			square_displacement = ((x_next - x_i) - (x_i - x_prev)) * ((x_next - x_i) - (x_i - x_prev)) + ((y_next - y_i) - (y_i - y_prev)) * ((y_next - y_i) - (y_i - y_prev));
+		//		square_displacement = pow(sqrt((x_next - x_i) * (x_next - x_i) + (y_next - y_i) * (y_next - y_i)) - sqrt((x_i - x_prev) * (x_i - x_prev) + (y_i - y_prev) * (y_i - y_prev)), 2);
+			smoothness_cost +=  square_displacement;
+
+			delta_phi = abs(atan2(y_next - y_i, x_next - x_i) - atan2(y_i - y_prev, x_i - x_prev));
+			displacement = sqrt((x_i - x_prev) * (x_i - x_prev) + (y_i - y_prev) * (y_i - y_prev));
+			if(abs(displacement) > 0.001)
+			{
+				curvature_term = (delta_phi / displacement);
+				if(curvature_term > kmax)
+				{
+					curvature_term = (delta_phi / displacement) - kmax;
+					curvature_cost += pow(curvature_term, 2) * curvature_term;
+		//			printf("teste = %d %f %f %f\n",i, obstacle_cost, curvature_cost, smoothness_cost);
+				}
+			}
+		}
+	}
+	if(!param->anchor_points[param->path_size - 1]){
+		distance = obstacle_distance(param->points[param->path_size - 1].x, param->points[param->path_size - 1].y);
+		if(distance < dmax)
+			obstacle_cost += abs(pow(distance - dmax , 2) * (distance - dmax ));
 
 		if(distance <= voronoi_max_distance)
 		{
-			distance_voronoi = distance_to_nearest_edge(x_i, y_i);
+			distance_voronoi = distance_to_nearest_edge(param->points[param->path_size - 1].x, param->points[param->path_size - 1].y);
 			voronoi_cost += (voronoi_a/(voronoi_a+distance))*(distance_voronoi/(distance+distance_voronoi))*(pow(distance-voronoi_max_distance,2)/pow(voronoi_max_distance,2));
 		}
-
-		square_displacement = ((x_next - x_i) - (x_i - x_prev)) * ((x_next - x_i) - (x_i - x_prev)) + ((y_next - y_i) - (y_i - y_prev)) * ((y_next - y_i) - (y_i - y_prev));
-//		square_displacement = pow(sqrt((x_next - x_i) * (x_next - x_i) + (y_next - y_i) * (y_next - y_i)) - sqrt((x_i - x_prev) * (x_i - x_prev) + (y_i - y_prev) * (y_i - y_prev)), 2);
-		smoothness_cost +=  square_displacement;
-
-		delta_phi = abs(atan2(y_next - y_i, x_next - x_i) - atan2(y_i - y_prev, x_i - x_prev));
-		displacement = sqrt((x_i - x_prev) * (x_i - x_prev) + (y_i - y_prev) * (y_i - y_prev));
-		if(abs(displacement) > 0.001)
-		{
-			curvature_term = (delta_phi / displacement);
-			if(curvature_term > kmax)
-			{
-				curvature_term = (delta_phi / displacement) - kmax;
-				curvature_cost += pow(curvature_term, 2) * curvature_term;
-	//			printf("teste = %d %f %f %f\n",i, obstacle_cost, curvature_cost, smoothness_cost);
-			}
-		}
-
 	}
 
-	distance = obstacle_distance(param->points[param->path_size - 1].x, param->points[param->path_size - 1].y);
-	if(distance < dmax)
-		obstacle_cost += abs(pow(distance - dmax , 2) * (distance - dmax ));
-
-	if(distance <= voronoi_max_distance)
-	{
-		distance_voronoi = distance_to_nearest_edge(param->points[param->path_size - 1].x, param->points[param->path_size - 1].y);
-		voronoi_cost += (voronoi_a/(voronoi_a+distance))*(distance_voronoi/(distance+distance_voronoi))*(pow(distance-voronoi_max_distance,2)/pow(voronoi_max_distance,2));
-	}
 	obstacle_cost = wo * obstacle_cost;
 	curvature_cost = wk * curvature_cost;
 	smoothness_cost = ws * smoothness_cost;
 	voronoi_cost = wv * voronoi_cost;
-//	exit(1);
-//	printf("costs= %f %f %f \n", obstacle_cost, curvature_cost, smoothness_cost);
-
+//	printf("costs= %f %f %f %f\n", obstacle_cost, curvature_cost, smoothness_cost, voronoi_cost);
 	return obstacle_cost + curvature_cost + smoothness_cost + voronoi_cost;
 //	return smoothness_cost;
 }
@@ -521,45 +469,33 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 	double h = 0.00005;
 	double f_x = my_f(v, params);
 	param_t *param = (param_t *) params;
-
-	gsl_vector *x_h = gsl_vector_alloc(param->path_size*2);
+	gsl_vector *x_h = gsl_vector_alloc(param->problem_size);
 	gsl_vector_memcpy(x_h, v);
 
+	int j = 0;
 	for (int i = 0; i < param->path_size; i++)
 	{
 		if (!param->anchor_points[i])
 		{
-			gsl_vector_set(x_h, i, gsl_vector_get(v, i) + h);
+			//x
+			gsl_vector_set(x_h, j, gsl_vector_get(v, j) + h);
 			double f_x_h = my_f(x_h, params);
 			double d_f_x_h = (f_x_h - f_x)/ h;
-			gsl_vector_set(df, i, d_f_x_h);
-			gsl_vector_set(x_h, i, gsl_vector_get(v, i));
+			gsl_vector_set(df, j, d_f_x_h);
+			gsl_vector_set(x_h, j, gsl_vector_get(v, j));
+			j++;
+
+			//y
+			gsl_vector_set(x_h, j, gsl_vector_get(v, j) + h);
+			f_x_h = my_f(x_h, params);
+			d_f_x_h = (f_x_h - f_x)/ h;
+			gsl_vector_set(df, j, d_f_x_h);
+			gsl_vector_set(x_h, j, gsl_vector_get(v, j));
+			j++;
+
 		}
 	}
 	gsl_vector_free(x_h);
-/*
-	for (int i = 2; i < v->size; i += 2) {
-		x = gsl_vector_get(v, i);
-		y = gsl_vector_get(v, i + 1);
-		obst_x = obstacles[i];
-		obst_y = obstacles[i + 1];
-		distance = sqrt((x - obst_x) * (x - obst_x) + (y - obst_y) * (y - obst_y));
-		df_dx = wo * 2 * (distance - dmax) * (x - obst_x) / distance;
-		df_dy = wo * 2 * (distance - dmax) * (y - obst_y) / distance;
-
-		// derivada da segunda parte
-		// df_dx += alguma coisa;
-		// df_dy += alguma coisa;
-
-		// derivada da terceira parte
-		// df_dx += alguma coisa;
-		// df_dy += alguma coisa;
-
-		gsl_vector_set(df, i, df_dx);
-		gsl_vector_set(df, i + 1, df_dy);
-	}
-
-*/
 }
 
 
@@ -581,18 +517,23 @@ sign (double a)
 }
 
 
-void
+int
 set_anchor(param_t *params)
 {
+	int cont = 4;
 	params->anchor_points[0] = 1;
 	params->anchor_points[params->path_size - 1] = 1;
-	for (int i = 0; i < (params->path_size - 1); i++)
+	for (int i = 1; i < (params->path_size - 1); i++)
 	{
 		if (sign(params->points[i].v) != sign(params->points[i+1].v))
 			params->anchor_points[i] = 1;
 		else
+		{
 			params->anchor_points[i] = 0;
+			cont+=2;
+		}
 	}
+	return cont;
 }
 
 
@@ -607,8 +548,6 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 	gsl_vector *v;
 	gsl_multimin_function_fdf my_func;
 
-
-
 	if (size < 5)
 		return (0);
 
@@ -622,35 +561,31 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 	param_t *param =(param_t*) malloc(sizeof(param_t));
 	param->points = poses_ahead;
 	param->anchor_points = anchor_points;
-	param->path_size = size-2;
+	param->path_size = size;
+	param->problem_size = set_anchor(param);
 
-	set_anchor(param);
-
-	my_func.n = (2 * size) - 4;
+	my_func.n = param->problem_size;
 	my_func.f = my_f;
 	my_func.df = my_df;
 	my_func.fdf = my_fdf;
 //	my_func.params = &path;
 	my_func.params = param;
-
-	v = gsl_vector_alloc ((2 * size) - 4);
-
+	v = gsl_vector_alloc (param->problem_size);
 	static int count = 0;
 	count++;
 
-	for (i = 0, j = 0; i < (size - 2); i++)
+	for (i = 0, j = 0; i < (size); i++)
 	{
-
-		gsl_vector_set (v, j++, poses_ahead[i].x);
-		gsl_vector_set (v, j++, poses_ahead[i].y);
+		if (!param->anchor_points[i])
+		{
+			gsl_vector_set (v, j++, poses_ahead[i].x);
+			gsl_vector_set (v, j++, poses_ahead[i].y);
+		}
 	}
 
-
 	T = gsl_multimin_fdfminimizer_conjugate_fr;
-	s = gsl_multimin_fdfminimizer_alloc (T, (2 * size) - 4);
-	gsl_multimin_fdfminimizer_set (s, &my_func, v, 0.1, 0.0001);  //(function_fdf, gsl_vector, step_size, tol)
-	//Algumas vezes o código não realiza a otimização porque dá erro no do-while abaixo
-
+	s = gsl_multimin_fdfminimizer_alloc (T, param->problem_size);
+	gsl_multimin_fdfminimizer_set (s, &my_func, v, 0.01, 0.0001);  //(function_fdf, gsl_vector, step_size, tol)
 	do
 	{
 		iter++;
@@ -661,15 +596,18 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 			return (2);
 		}
 
-		status = gsl_multimin_test_gradient (s->gradient, 0.01); //(gsl_vector, epsabs) and  |g| < epsabs
+		status = gsl_multimin_test_gradient (s->gradient, 0.001); //(gsl_vector, epsabs) and  |g| < epsabs
 		// status == 0 (GSL_SUCCESS), if a minimum has been found
-	} while (status == GSL_CONTINUE && iter < 500);
+	} while ((status != GSL_SUCCESS) && (status != GSL_ENOPROG) && (iter < 250));
 
-
-	for (i = 0, j = 0; i < (size - 2); i++)
+	for (i = 0, j = 0; i < (size); i++)
 	{
-		poses_ahead[i].x = gsl_vector_get (s->x, j++);
-		poses_ahead[i].y = gsl_vector_get (s->x, j++);
+		if(!param->anchor_points[i])
+		{
+			poses_ahead[i].x = gsl_vector_get (s->x, j++);
+			poses_ahead[i].y = gsl_vector_get (s->x, j++);
+
+		}
 	}
 
 	calculate_theta_and_phi(poses_ahead, size);
@@ -678,9 +616,9 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 	gsl_vector_free (v);
 	printf("Terminou a otimização\n");
 
-	for (int i = 1; i<size; i++)
+	for (int i = 1; i < size; i++)
 	{
-		printf("%f %f %f %f %f\n", poses_ahead[i].x, poses_ahead[i].y, poses_ahead[i].theta, poses_ahead[i].v, poses_ahead[i].phi);
+		printf("%f %f %f %f %f Ponto Ancora=%d\n", poses_ahead[i].x, poses_ahead[i].y, poses_ahead[i].theta, poses_ahead[i].v, poses_ahead[i].phi, param->anchor_points[i]);
 	}
 
 	return (1);
