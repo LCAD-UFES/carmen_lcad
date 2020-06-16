@@ -20,6 +20,33 @@ Responsável por ler o arquivo de LOG da IARA, realizar filtragens nos dados, co
     
 Responsável por ler o arquivo contendo o grafo gerado pelo Parser, remontar o grafo no G2O e fazer a otimização das poses e calibração da odometria.
 
+# Sumário dos Comandos para Criação de Mapas
+
+cd bin
+mkdir log_do_dia
+gedit VoltaUFESAmbiental.txt&
+{colocar como conteúdo:
+/dados/log_volta_da_ufes-201903025.txt                          volta_ufes_normal_parser_config.txt  carmen-ford-escape.ini  
+/dados/log_volta_da_ufes-20190625-estacionamento-ambiental.txt  ambiental_parser_config.txt          carmen-ford-escape.ini  
+
+Editar ../../data/hypergraphsclam/config/volta_ufes_normal_parser_config.txt e ../../data/hypergraphsclam/config/ambiental_parser_config.txt
+}
+mkdir sync poses
+cd sync
+../../hypergraphsclam_parser ../VoltaUFESAmbiental.txt
+{
+Para visualizar o resultado do hypergraphsclam_parser:
+gnuplot
+>> plot '1_gps.txt' u 1:2 w l
+>> replot '1_raw_odometry.txt' u 1:2 w l
+}
+cd ../poses
+../../hypergraphsclam ../sync/sync.txt poses_opt ../../../data/hypergraphsclam/config/volta_ufes_e_ambiental_optimization_config.txt
+
+{
+É conveniente pegar os valores de 
+}
+
 # Tutorial
 
 Usaremos dois logs de exemplo.

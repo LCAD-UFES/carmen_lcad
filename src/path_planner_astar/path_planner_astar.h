@@ -97,6 +97,7 @@ typedef struct param_otimization
 	carmen_ackerman_traj_point_t *points;
 	int *anchor_points;
 	int path_size;
+	int problem_size;
 } param_t, *param_p;
 
 
