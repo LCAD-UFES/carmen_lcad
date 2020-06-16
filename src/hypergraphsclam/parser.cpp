@@ -29,8 +29,9 @@ prepare_all_directories()
 std::vector<std::array<std::string, 3>> log_list_parser(std::string log_list_filename)
 {
     std::string carmen_home(getenv("CARMEN_HOME"));
+    std::string carmen_data_folder(carmen_home + "/data/");
+    std::string config_folder(carmen_data_folder + "hypergraphsclam/config/");
     std::string carmen_src_folder(carmen_home + "/src/");
-    std::string config_folder(carmen_src_folder + "hypergraphsclam/config/");
 
     std::vector<std::array<std::string, 3>> log_list;
 
@@ -40,7 +41,7 @@ std::vector<std::array<std::string, 3>> log_list_parser(std::string log_list_fil
     {
         std::stringstream current_line;
 
-        while(-1 != hyper::StringHelper::ReadLine(file, current_line))
+        while (hyper::StringHelper::ReadLine(file, current_line) > 0)
         {
             std::string log;
             std::string parser_config_file;
@@ -50,22 +51,20 @@ std::vector<std::array<std::string, 3>> log_list_parser(std::string log_list_fil
             current_line >> parser_config_file;
             current_line >> carmen_ini;
 
-            if (log.empty() || parser_config_file.empty() || carmen_ini.empty())
-            {
-                std::cerr << "Invalid line! Take a look in your input file!" << std::endl;
-            }
+            if (log.empty())
+                std::cerr << "Invalid line of " << log_list_filename << " could not get log file name!" << std::endl;
+            else if (parser_config_file.empty())
+                std::cerr << "Invalid line of " << log_list_filename << " could not get parser_config_file name!" << std::endl;
+            else if (carmen_ini.empty())
+                std::cerr << "Invalid line of " << log_list_filename << " could not get carmen_ini file name!" << std::endl;
             else
-            {
                 log_list.emplace_back(std::array<std::string, 3> { log, config_folder + parser_config_file, carmen_src_folder + carmen_ini });
-            }
         }
     }
     else
-    {
         std::cerr << "Unable to open the log list file: " << log_list_filename << "\n";
-    }
 
-    return log_list;
+    return (log_list);
 }
 
 
