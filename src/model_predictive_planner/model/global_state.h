@@ -84,6 +84,8 @@ public:
 
 	static double obstacle_cost_distance;
 
+	static int reverse_driving;
+
 	static double max_square_distance_to_lane;
 
 	static RRT_Node *goal_node; //the node that represents goal pose on the graph or NULL
