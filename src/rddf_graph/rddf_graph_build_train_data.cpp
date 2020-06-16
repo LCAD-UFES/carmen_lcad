@@ -80,7 +80,7 @@ get_local_pos_2(carmen_position_t world_coordinate, double x_origin, double y_or
 
 
 void
-save_15_15_image(rddf_graph_t *vertexes, t_graph **graph, string str_road_map_folder)
+save_15_15_image(rddf_graph_t *vertexes, graph_t **graph, string str_road_map_folder)
 {
 	cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
 	cv::moveWindow("image", 15*20, 0);
@@ -146,7 +146,7 @@ save_15_15_image(rddf_graph_t *vertexes, t_graph **graph, string str_road_map_fo
 
 				if((x >= integer_x_local-1 && x <= integer_x_local+1) && (y >= integer_y_local-1 && y <= integer_y_local+1))
 				{
-					t_graph *p;
+					graph_t *p;
 					for (p = graph[i]; p != NULL; p = p->prox)
 					{
 						double x_neigh, y_neigh;
@@ -244,7 +244,7 @@ main(int argc, char **argv)
 	//parse_graph_folder (str_graph_filename, str_road_map_folder);
 
 
-	t_graph **graph = NULL;
+	graph_t **graph = NULL;
 	rddf_graph_t *vertexes = NULL;
 
 	FILE *f;

@@ -22,6 +22,9 @@ extern double robot_max_centripetal_acceleration;
 extern double distance_to_moving_object_with_v_multiplier;
 extern bool keep_speed_limit;
 
+extern carmen_route_planner_road_network_message *road_network_message;
+extern double parking_speed_limit;
+
 
 carmen_ackerman_traj_point_t
 displace_pose(carmen_ackerman_traj_point_t robot_pose, double displacement)
@@ -505,12 +508,12 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	if ((goal_type == MOVING_OBSTACLE_GOAL1) || (goal_type == MOVING_OBSTACLE_GOAL2))//udatmo_obstacle_detected(timestamp))// && (current_robot_pose_v_and_phi->v > moving_obj_v))
 		goal->v = carmen_fmin(new_goal_v, goal->v);
 
-	FILE *caco = fopen("caco.txt", "a");
-	fprintf(caco, "%lf %lf %lf %lf %lf %d %d %lf %lf %lf %d\n", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance,
-			desired_distance, autonomous, goal_type,
-			udatmo_speed_left(), udatmo_speed_right(), udatmo_speed_center(), udatmo_obstacle_detected(timestamp));
-	fflush(caco);
-	fclose(caco);
+//	FILE *caco = fopen("caco.txt", "a");
+//	fprintf(caco, "%lf %lf %lf %lf %lf %d %d %lf %lf %lf %d\n", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance,
+//			desired_distance, autonomous, goal_type,
+//			udatmo_speed_left(), udatmo_speed_right(), udatmo_speed_center(), udatmo_obstacle_detected(timestamp));
+//	fflush(caco);
+//	fclose(caco);
 
 	return (goal->v);
 }
@@ -557,6 +560,14 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		goal->v = set_goal_velocity_according_to_last_speed_limit_annotation(goal);
 	if (previous_v != goal->v)
 		who_set_the_goal_v = KEEP_SPEED_LIMIT;
+
+	previous_v = goal->v;
+	if (((goal->v > parking_speed_limit) && (road_network_message != NULL) &&
+		 (road_network_message->offroad_planner_request == WITHIN_OFFROAD_PLAN)) ||
+		(behavior_selector_get_state() == BEHAVIOR_SELECTOR_PARKING))
+		goal->v = parking_speed_limit;
+	if (previous_v != goal->v)
+		who_set_the_goal_v = PARKING_MANOUVER;
 
 	return (who_set_the_goal_v);
 }

@@ -521,8 +521,8 @@ fill_in_moving_objects_point_clouds_message(vector<lane_t> lanes, double timesta
 	message->timestamp = timestamp;
 
 	int num_moving_objects = 0;
-    for (unsigned int i = 0; i < lanes.size(); i++)
-    	num_moving_objects += lanes[i].moving_objects.size();
+	for (unsigned int i = 0; i < lanes.size(); i++)
+		num_moving_objects += lanes[i].moving_objects.size();
 
 	message->point_clouds = (t_point_cloud_struct *) realloc(message->point_clouds, sizeof(t_point_cloud_struct) * num_moving_objects);
 	message->num_point_clouds = num_moving_objects;

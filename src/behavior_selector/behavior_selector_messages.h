@@ -16,7 +16,9 @@ extern "C" {
 
 typedef enum
 {
-	BEHAVIOR_SELECTOR_FOLLOWING_LANE, BEHAVIOR_SELECTOR_PARKING, BEHAVIOR_SELECTOR_HUMAN_INTERVENTION
+	BEHAVIOR_SELECTOR_FOLLOWING_LANE,
+	BEHAVIOR_SELECTOR_PARKING,
+	BEHAVIOR_SELECTOR_HUMAN_INTERVENTION
 } carmen_behavior_selector_state_t;
 
 
@@ -90,11 +92,18 @@ typedef struct {
 #define		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_FMT		"{<{double, double, double, double, double}:2>,int,double,string}"
 
 typedef enum {
-	CARMEN_BEHAVIOR_SELECTOR_GRADIENT, CARMEN_BEHAVIOR_SELECTOR_A_STAR, CARMEN_BEHAVIOR_SELECTOR_RRT, CARMEN_BEHAVIOR_SELECTOR_RDDF, CARMEN_BEHAVIOR_SELECTOR_INVALID_PLANNER
+	CARMEN_BEHAVIOR_SELECTOR_FRENET,
+	CARMEN_BEHAVIOR_SELECTOR_A_STAR,
+	CARMEN_BEHAVIOR_SELECTOR_RRT,
+	CARMEN_BEHAVIOR_SELECTOR_RDDF,
+	CARMEN_BEHAVIOR_SELECTOR_GRADIENT,
+	CARMEN_BEHAVIOR_SELECTOR_INVALID_PLANNER
 } carmen_behavior_selector_algorithm_t;
 
 typedef enum {
-	CARMEN_BEHAVIOR_SELECTOR_USER_GOAL, CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL, CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL
+	CARMEN_BEHAVIOR_SELECTOR_USER_GOAL,
+	CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL,
+	CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL
 } carmen_behavior_selector_goal_source_t;
 
 typedef struct {
@@ -116,7 +125,8 @@ typedef struct {
 #define		CARMEN_BEHAVIOR_SELECTOR_SET_STATE_NAME		"carmen_behavior_selector_set_state"
 #define		CARMEN_BEHAVIOR_SELECTOR_SET_STATE_FMT		"{int, double, string}"
 
-typedef struct {
+typedef struct
+{
 	carmen_behavior_selector_goal_source_t goal_source;
 	double timestamp;
 	char *host;
@@ -126,7 +136,8 @@ typedef struct {
 #define		CARMEN_BEHAVIOR_SELECTOR_SET_GOAL_SOURCE_FMT	"{int, double, string}"
 
 
-typedef struct {
+typedef struct
+{
 	carmen_behavior_selector_algorithm_t algorithm;
 	carmen_behavior_selector_state_t state;
 
@@ -146,7 +157,8 @@ typedef struct {
 #define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME		"carmen_behavior_selector_current_state_name"
 #define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_FMT		"{int, int, int, int, int, int, int, double, string}"
 
-typedef struct {
+typedef struct
+{
 	carmen_point_t goal;
 	double timestamp;
 	char *host;

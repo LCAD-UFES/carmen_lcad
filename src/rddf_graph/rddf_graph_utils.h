@@ -61,7 +61,7 @@ struct type_graph
     carmen_position_t world_coordinate;
     struct type_graph *prox;
 };
-typedef struct type_graph t_graph;
+typedef struct type_graph graph_t;
 
 
 using namespace std;
@@ -70,9 +70,9 @@ void paint_image (int x, int y, cv::Vec3b pixel_color, cv::Mat *image);
 void get_map_origin(carmen_point_t *global_pose, double *x_origin, double *y_origin);
 cv::Mat rotate(cv::Mat src, cv::Point pt, double angle);
 void road_map_to_image(carmen_map_p map, cv::Mat *road_map_img);
-t_graph** add_to_list_undir(t_graph **adjacent_list, int u, int v, rddf_graph_t *graph);
-void print_graph_2 (t_graph **graph);
-t_graph ** read_graph_from_file(t_graph **graph, rddf_graph_t *vertexes, FILE *f);
+graph_t** add_to_list_undir(graph_t **adjacent_list, int u, int v, rddf_graph_t *graph);
+void print_graph_2 (graph_t **graph);
+graph_t ** read_graph_from_file(graph_t **graph, rddf_graph_t *vertexes, FILE *f);
 rddf_graph_t * read_vertexes_from_file (rddf_graph_t *vertexes, FILE *f);
 void already_visited_to_image(carmen_map_p map, cv::Mat *road_map_img);
 void draw_lines (carmen_map_p map, cv::Mat *image);

@@ -45,7 +45,7 @@ struct type_edge
 	int u;
 	int v;
 };
-typedef type_edge t_edge;
+typedef type_edge edge_t;
 
 
 struct type_node
@@ -55,17 +55,17 @@ struct type_node
 	double lat;
 	carmen_position_t point;
 };
-typedef type_node t_node;
+typedef type_node node_t;
 
 
 struct type_graph
 {
 	int qtd_nodes;
 	int qtd_edges;
-	t_node* nodes;
-	t_edge* edges;
+	node_t* nodes;
+	edge_t* edges;
 };
-typedef type_graph t_graph;
+typedef type_graph graph_t;
 
 
 struct type_forest
@@ -97,15 +97,15 @@ typedef type_route t_route;
 
 
 t_route load_route_from_file(string route_filename);
-void print_route_coordinates_in_carmen_coordinates(t_route r, t_graph graph);
-void plot_state(t_forest forest, t_graph graph, vector<int> indices, int *forest_index);
+void print_route_coordinates_in_carmen_coordinates(t_route r, graph_t graph);
+void plot_state(t_forest forest, graph_t graph, vector<int> indices, int *forest_index);
 double calc_theta_diff (double angle_x, double angle_y);
 void knn (vector<int> &indices, vector<carmen_rddf_waypoint> rddf, double query_x, double query_y);
 double calc_theta (double x1, double y1, double x, double y);
-void get_closest_points_from_osm_in_rddf (t_forest forest, t_graph graph, t_route r, int *forest_index, vector<int> &indices);
-t_graph convert_from_lon_lat_nodes_to_utm_nodes(t_graph graph);
+void get_closest_points_from_osm_in_rddf (t_forest forest, graph_t graph, t_route r, int *forest_index, vector<int> &indices);
+graph_t convert_from_lon_lat_nodes_to_utm_nodes(graph_t graph);
 t_forest load_rddf_files (t_forest rddf_points, vector <string> rddf_filename);
-t_graph read_graph_file(string graph_filename);
+graph_t read_graph_file(string graph_filename);
 void process_graph (string python_command);
 
 #ifdef __cplusplus

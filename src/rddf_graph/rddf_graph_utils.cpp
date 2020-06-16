@@ -56,10 +56,10 @@ get_map_origin(carmen_point_t *global_pose, double *x_origin, double *y_origin)
 }
 
 
-t_graph**
-add_to_list_undir(t_graph **adjacent_list, int u, int v, rddf_graph_t *graph){
+graph_t**
+add_to_list_undir(graph_t **adjacent_list, int u, int v, rddf_graph_t *graph){
     //printf("%d %d %d\n", u,v,w);
-    t_graph *c, *p;
+    graph_t *c, *p;
     c = new_node;
     c->vertex = v;
     c->world_coordinate = graph->world_coordinate[v];
@@ -82,12 +82,12 @@ add_to_list_undir(t_graph **adjacent_list, int u, int v, rddf_graph_t *graph){
 
 
 void
-print_graph_2 (t_graph **graph)
+print_graph_2 (graph_t **graph)
 {
 	for (int i = 0; i < 100; i++)
 	{
 		printf ("[%d]: ", i);
-		t_graph *p;
+		graph_t *p;
 		for(p = graph[i]; p!=NULL; p = p->prox)
 		{
 			printf ("%d", p->vertex);
@@ -102,12 +102,12 @@ print_graph_2 (t_graph **graph)
 }
 
 
-t_graph **
-read_graph_from_file(t_graph **graph, rddf_graph_t *vertexes, FILE *f)
+graph_t **
+read_graph_from_file(graph_t **graph, rddf_graph_t *vertexes, FILE *f)
 {
 	int u, v;
 
-	graph = (t_graph**)malloc((vertexes->size)*sizeof(t_graph*));
+	graph = (graph_t**)malloc((vertexes->size)*sizeof(graph_t*));
 
 	for(int i=0; i<vertexes->size;i++){
 		graph[i] = NULL;

@@ -148,7 +148,7 @@ number_to_string (int Number)
 
 
 void
-draw(t_graph **graph, rddf_graph_t *vertexes, double x_origin, double y_origin, cv::Mat *image)
+draw(graph_t **graph, rddf_graph_t *vertexes, double x_origin, double y_origin, cv::Mat *image)
 {
 	cv::Point pt;
 	cv::Point pt1;
@@ -181,7 +181,7 @@ draw(t_graph **graph, rddf_graph_t *vertexes, double x_origin, double y_origin, 
 		}
 
 		if(show_edges == true){
-			t_graph* p;
+			graph_t* p;
 			for(p = graph[i]; p!=NULL; p = p->prox)
 			{
 				if(zoom_in == false){
@@ -221,7 +221,7 @@ distance_calculator (cv::Point clicked_point, carmen_position_t point)
 
 
 void
-edit_graph(t_graph **graph, rddf_graph_t *vertexes)
+edit_graph(graph_t **graph, rddf_graph_t *vertexes)
 {
 	cv::Mat image;
 	cv::Point pt;
@@ -501,7 +501,7 @@ main(int argc, char **argv)
 
 	read_parameters(argc,argv);
 
-	t_graph **graph = NULL;
+	graph_t **graph = NULL;
 	rddf_graph_t *vertexes = NULL;
 
 	FILE *f;

@@ -65,11 +65,8 @@ void carmen_behavior_selector_set_state(carmen_behavior_selector_state_t state)
 
 	if (!initialized)
 	{
-		err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_SET_STATE_NAME,
-				IPC_VARIABLE_LENGTH,
-				CARMEN_BEHAVIOR_SELECTOR_SET_STATE_FMT);
-		carmen_test_ipc_exit(err, "Could not define message",
-				CARMEN_BEHAVIOR_SELECTOR_SET_STATE_NAME);
+		err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_SET_STATE_NAME, IPC_VARIABLE_LENGTH, CARMEN_BEHAVIOR_SELECTOR_SET_STATE_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_BEHAVIOR_SELECTOR_SET_STATE_NAME);
 		initialized = 1;
 	}
 
@@ -164,11 +161,8 @@ carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algo
 
 	if (!initialized)
 	{
-		err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_NAME,
-				IPC_VARIABLE_LENGTH,
-				CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_FMT);
-		carmen_test_ipc_exit(err, "Could not define message",
-				CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_NAME);
+		err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_NAME, IPC_VARIABLE_LENGTH, CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_FMT);
+		carmen_test_ipc_exit(err, "Could not define message", CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_NAME);
 		initialized = 1;
 	}
 

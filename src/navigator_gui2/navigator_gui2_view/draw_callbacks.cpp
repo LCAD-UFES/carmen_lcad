@@ -663,7 +663,7 @@ void on_comboPlaceOfInterest_changed(GtkWidget *widget __attribute__((unused)),
 void on_buttonComputeRoute_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
-	if(global_gui->final_goal_placed_and_oriented == 1)
+	if (global_gui->final_goal_placed_and_oriented == 1)
 	{
 		carmen_route_planner_set_destination(place_of_interest, global_gui->final_goal.pose);
 		global_gui->final_goal_placed_and_oriented = 0;
