@@ -33,92 +33,6 @@ extern int use_unity_simulator;
 
 //#define PLOT_COLLISION
 
-//-----------Funcoes para extrair dados do Experimento------------------------
-double
-dist(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
-{
-    return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
-}
-
-
-double
-get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
-        carmen_ackerman_path_point_t p2,
-        carmen_ackerman_path_point_t robot)
-{
-    //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
-    double delta_x = p2.x - p1.x;
-    double delta_y = p2.y - p1.y;
-    double d = sqrt(delta_x * delta_x + delta_y * delta_y);
-    double x2y1 =  p2.x * p1.y;
-    double y2x1 =  p2.y * p1.x;
-
-    if (d < 0.0000001)
-        return dist(p2, robot);
-
-    return abs((delta_y * robot.x) - (delta_x * robot.y) + x2y1 - y2x1) / d;
-
-}
-
-
-void
-get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index_p1, int &index_p2, int &mais_proxima)
-{
-
-    double d = sqrt(pow(detailed_goal_list.at(0).x, 2) + pow(detailed_goal_list.at(0).y, 2));
-    double d2 = sqrt(pow(detailed_goal_list.at(2).x, 2) + pow(detailed_goal_list.at(2).y, 2));
-    double centro = sqrt(pow(detailed_goal_list.at(1).x, 2) + pow(detailed_goal_list.at(1).y, 2));
-    if (d < d2)
-    {
-        index_p1 = 0;
-        index_p2 = 1;
-        mais_proxima = index_p1;
-        if(centro < d)
-            mais_proxima = 1;
-    }
-    else
-    {
-        index_p1 = 1;
-        index_p2 = 2;
-        mais_proxima = index_p2;
-        if(centro < d2)
-            mais_proxima = 1;
-    }
-}
-
-
-void
-save_experiment_data(carmen_behavior_selector_road_profile_message *goal_list_message,
-					Pose *localizer_pose, vector<carmen_ackerman_path_point_t> &detailed_lane,
-					const vector<Command> &lastOdometryVector)
-{
-	if (detailed_lane.size() > 0)
-	{
-		carmen_ackerman_path_point_t localize;
-		localize.x = 0.0;
-		localize.y = 0.0;
-		//Metric evaluation
-		int index1;
-		int index2;
-		int mais_proxima;
-		get_points2(detailed_lane,index1, index2,mais_proxima);
-		//      printf("%lf %lf \n", detailed_goal_list.at(index1).x, detailed_goal_list.at(index2).x);
-		double distance_metric = get_distance_between_point_to_line(detailed_lane.at(index1), detailed_lane.at(index2), localize);
-		//      printf("%lf \n", distance_metric);
-		double x_rddf = localizer_pose->x + detailed_lane.at(mais_proxima).x * cos(localizer_pose->theta) - detailed_lane.at(mais_proxima).y * sin(localizer_pose->theta);
-		double y_rddf = localizer_pose->y + detailed_lane.at(mais_proxima).x * sin(localizer_pose->theta) + detailed_lane.at(mais_proxima).y * cos(localizer_pose->theta);
-		double theta_rddf = detailed_lane.at(mais_proxima).theta + localizer_pose->theta;
-		double volante_rddf_theta = atan2(detailed_lane.at(index1).y - detailed_lane.at(index2).y , detailed_lane.at(index1).x - detailed_lane.at(index2).x);
-		double erro_theta = abs(volante_rddf_theta - localizer_pose->theta);
-		//          1-Localise_x 2-Localise_y 3-Localise_theta 4-velocity 5-phi 6-rddf_x 7-rddf_y 8-rddf_theta 9-rddf_velocity 10-rddf_phi 11-lateralDist 12-volante 13-erro_theta 14-Timestamp
-		fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta,
-				lastOdometryVector[0].v, lastOdometryVector[0].phi, x_rddf, y_rddf, theta_rddf, detailed_lane.at(mais_proxima).v,
-				detailed_lane.at(mais_proxima).phi, distance_metric, volante_rddf_theta, erro_theta, goal_list_message->timestamp);
-
-	}
-}
-
-//------------------------------------------------------------
 
 void
 plot_path_and_colisions_points(vector<carmen_ackerman_path_point_t> &robot_path, vector<carmen_ackerman_path_point_t> &collision_points)
@@ -172,6 +86,68 @@ plot_path_and_colisions_points(vector<carmen_ackerman_path_point_t> &robot_path,
 
 
 void
+plot_state_goals(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
+		  vector<carmen_ackerman_path_point_t> &pSeed, vector<Pose> &pGoals)
+{
+//	plot data Table - Last TCP - Optmizer tcp - Lane
+	//Plot Optmizer step tcp and lane?
+
+	#define DELTA_T (1.0 / 40.0)
+
+//	#define PAST_SIZE 300
+	static bool first_time = true;
+	static FILE *gnuplot_pipeMP;
+
+
+	if (first_time)
+	{
+		first_time = false;
+
+		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
+//		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
+//		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
+//		fprintf(gnuplot_pipe, "set ytics nomirror\n");
+//		fprintf(gnuplot_pipe, "set y2tics\n");
+		fprintf(gnuplot_pipeMP, "set tics out\n");
+	}
+
+	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
+	FILE *gnuplot_data_lane = fopen("gnuplot_data_lane.txt", "w");
+	FILE *gnuplot_data_seed = fopen("gnuplot_data_seed.txt", "w");
+	FILE *gnuplot_data_goals = fopen("gnuplot_data_goals.txt", "w");
+
+
+	for (unsigned int i = 0; i < pOTCP.size(); i++)
+		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %lf %lf %lf\n", pOTCP.at(i).x, pOTCP.at(i).y, 1.0 * cos(pOTCP.at(i).theta), 1.0 * sin(pOTCP.at(i).theta), pOTCP.at(i).theta, pOTCP.at(i).phi, pOTCP.at(i).time);
+	for (unsigned int i = 0; i < pLane.size(); i++)
+		fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf %lf\n", pLane.at(i).x, pLane.at(i).y, 1.0 * cos(pLane.at(i).theta), 1.0 * sin(pLane.at(i).theta), pLane.at(i).theta, pLane.at(i).phi, pLane.at(i).time);
+	for (unsigned int i = 0; i < pSeed.size(); i++)
+		fprintf(gnuplot_data_seed, "%lf %lf\n", pSeed.at(i).x, pSeed.at(i).y);
+	for (unsigned int i = 0; i < pGoals.size(); i++)
+		fprintf(gnuplot_data_goals, "%lf %lf %lf %lf %lf\n", pGoals.at(i).x, pGoals.at(i).y, 1.0 * cos(pGoals.at(i).theta), 1.0 * sin(pGoals.at(i).theta), pGoals.at(i).theta);
+
+	fclose(gnuplot_data_file);
+	fclose(gnuplot_data_lane);
+	fclose(gnuplot_data_seed);
+	fclose(gnuplot_data_goals);
+
+//	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
+
+	fprintf(gnuplot_pipeMP, "plot "
+			"'./gnuplot_data.txt' using 1:2:3:4 w vec size 0.3, 10 filled title 'OTCP',"
+			"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size 0.3, 10 filled title 'Lane',"
+			"'./gnuplot_data_goals.txt' using 1:2:3:4 w vec size 0.3, 10 filled title 'Goals',"
+			"'./gnuplot_data_seed.txt' using 1:2 with lines title 'Seed' axes x1y1\n");
+
+	fflush(gnuplot_pipeMP);
+}
+
+
+void
 plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
 		  vector<carmen_ackerman_path_point_t> &pSeed)
 {
@@ -183,7 +159,6 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 //	#define PAST_SIZE 300
 	static bool first_time = true;
 	static FILE *gnuplot_pipeMP;
-
 
 	if (first_time)
 	{
@@ -227,6 +202,7 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 	fflush(gnuplot_pipeMP);
 }
 
+
 TrajectoryLookupTable::TrajectoryDimensions
 get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_odometry,	Pose *goal_pose)
 {
@@ -234,7 +210,10 @@ get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_od
 
 	td.dist = sqrt((goal_pose->x - localizer_pose->x) * (goal_pose->x - localizer_pose->x) +
 			(goal_pose->y - localizer_pose->y) * (goal_pose->y - localizer_pose->y));
-	td.theta = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
+	if (GlobalState::reverse_driving)
+		td.theta = carmen_normalize_theta(atan2(localizer_pose->y - goal_pose->y,  localizer_pose->x - goal_pose->x) - localizer_pose->theta);
+	else
+		td.theta = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
 	td.d_yaw = carmen_normalize_theta(goal_pose->theta - localizer_pose->theta);
 	td.phi_i = last_odometry.phi;
 	td.v_i = last_odometry.v;
@@ -307,8 +286,9 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 		return false;
 
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
+	if (!GlobalState::reverse_driving)
+		move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
 
-	move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
 	move_poses_foward_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
 
 	return (goal_in_lane);
@@ -337,7 +317,7 @@ add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerma
 	delta_theta = carmen_normalize_theta((p2.theta - p1.theta) / (double) num_points);
 
 	carmen_ackerman_path_point_t new_point = {p1.x, p1.y, p1.theta, p1.v, p1.phi, 0.0};
-
+//TODO o que que ta fazendo?
 	for (i = 0; i < num_points; i++)
 	{
 		new_point.x = p1.x + (double) i * delta_x;
@@ -709,7 +689,25 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 		TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp,
 		TrajectoryLookupTable::TrajectoryDimensions td)
 {
-	if (!previous_good_tcp.valid)
+	if (GlobalState::reverse_driving && !previous_good_tcp.valid && td.v_i == 0)
+		{
+			TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp;
+			dummy_tcp.valid = true;
+			dummy_tcp.tt = 5.0;
+			dummy_tcp.k1 = 0.0;
+			dummy_tcp.k2 = 0.01;
+			dummy_tcp.k3 = 0.02;
+			dummy_tcp.has_k1 = false;
+			dummy_tcp.shift_knots = false;
+			dummy_tcp.a = 0.0;
+			dummy_tcp.vf = -2.0;
+			dummy_tcp.sf = td.dist;
+			dummy_tcp.s = td.dist;
+
+			tcp = dummy_tcp;
+		}
+
+	else if (!previous_good_tcp.valid)
 	{
 		TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
 		if (!has_valid_discretization(tdd))
@@ -832,7 +830,7 @@ goal_pose_vector_too_different(Pose goal_pose, Pose localizer_pose)
 }
 
 bool
-goal_is_behid_car(Pose *localizer_pose, Pose *goal_pose)
+goal_is_behind_car(Pose *localizer_pose, Pose *goal_pose)
 {//funcao tem que ser melhorada. Usar coordenadas polares pode ser melhor.
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
 	SE2 goal_in_world_reference(goal_pose->x, goal_pose->y, goal_pose->theta);
@@ -859,6 +857,11 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	static double last_timestamp = 0.0;
 	bool goal_in_lane = false;
 
+	GlobalState::reverse_driving = 0;
+
+	if (target_v < 0.0)
+		GlobalState::reverse_driving = 1;
+
 	if (first_time || !GlobalState::following_path)
 	{
 		previous_good_tcp.valid = false;
@@ -866,11 +869,13 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		last_timestamp = goal_list_message->timestamp;
 	}
 
-	if (goal_is_behid_car(localizer_pose, &goalPoseVector[0]))
-	{
-//		printf("goal is behid the car\n");
-		return;
-	}
+//	if (goal_is_behind_car(localizer_pose, &goalPoseVector[0]))
+//	{
+////		printf("goal is behid the car\n");
+////		return;
+//		target_v = (-1)*target_v;
+//		GlobalState::reverse_driving = 1;
+//	}
 
 	move_lane_to_robot_reference_system(localizer_pose, goal_list_message, &lane_in_local_pose);
 
@@ -932,9 +937,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				//TODO Descomentar para usar o plot!
 				vector<carmen_ackerman_path_point_t> pathSeed;
 				if (plot_to_debug)
-				{
 					pathSeed = simulate_car_from_parameters(td, tcp, lastOdometryVector[0].v, lastOdometryVector[0].phi, false, 0.025);
-				}
 
 				if (!get_path_from_optimized_tcp(path, path_local, otcp, td, localizer_pose))
 					continue;
