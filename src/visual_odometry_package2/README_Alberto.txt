@@ -25,3 +25,8 @@ Neste caso, será salvo no diretorio corrente o arquivo visual_odometry_graph.tx
 
 Note que a carmen_base_ackerman_odometry_message nao sera publicada mas a funcao que a publica precisa ser chamada pois eh nela que se faz a
 comparacao de odometrias.
+
+Para visualizar e comparar a odometria visual com a odometria de um robo voce pode usar os seguintes comandos de gnuplot:
+ gnuplot> plot "visual_odometry_graph.txt" u 5:3 w l t 'robot v', "visual_odometry_graph.txt" u 5:1 w l t 'visual o. v'
+ gnuplot> plot "visual_odometry_graph.txt" u 5:4 w l t 'robot phi', "visual_odometry_graph.txt" u 5:2 w l t 'visual o. phi'
+
