@@ -110,7 +110,7 @@ evg_thin_on_map(map_node_p ***astar_map)
 		robot_locx=curr_grid.size()/2;
 		robot_locy=curr_grid[0].size()/2;
 	}
-
+/*
 	cout << "Pruning: ";
 	if (pruning)
 		cout << "On\n";
@@ -124,7 +124,7 @@ evg_thin_on_map(map_node_p ***astar_map)
 	cout << "Minimum distance: " << distance_min << endl;
 	cout << "Maximum distance: " << distance_max << endl;
 	cout << "Robot location: "<<robot_locx<<", "<<robot_locy<<endl<<endl;
-
+*/
 	evg_thin thin(curr_grid,distance_min,distance_max,pruning,robot_close,robot_locx,robot_locy);
 
 	Time t;
@@ -161,7 +161,7 @@ evg_thin_on_map(map_node_p ***astar_map)
 			imagem.at<Vec3b>(skel[i].x,skel[i].y)[1] = 0;
 			imagem.at<Vec3b>(skel[i].x,skel[i].y)[2] = 255;
 //			circle(imagem, Point(skel[i].y,skel[i].x), skel[i].radius, Scalar(255,0,0));
-			printf("Point Skeleton: %d %d \n", skel[i].x,skel[i].y);
+//			printf("Point Skeleton: %d %d \n", skel[i].x,skel[i].y);
 			voronoi_map[skel[i].x][skel[i].y]->is_edge = 1;
 			voronoi_map[skel[i].x][skel[i].y]->nearest_edge = foo_value;
 		}
@@ -256,15 +256,13 @@ nearest_edge_cell(int x_map, int y_map)
 		fila.pop_back();
 //		temp_voronoi.at<Vec3b>((int)current.x, (int)current.y)[1] = 0;
 //		temp_voronoi.at<Vec3b>((int)current.x, (int)current.y)[2] = 0;
-//		printf("Fila: %d %d \n", (int)current.x, (int)current.y);
 		if(voronoi_map[(int)current.x][(int)current.y]->is_edge == 1)
 			return current;
 		else
 		{
-//			voronoi_map[(int)current.x][(int)current.y]->visited_iteration = voronoi_visited_it;
-			for(int i = 0; i<3 ; i++)
+			for(int i = 0; i < 3 ; i++)
 			{
-				for(int j = 0; j<3; j++)
+				for(int j = 0; j < 3; j++)
 				{
 					int new_x = current.x + expand[i];
 					int new_y = current.y + expand[j];
@@ -439,19 +437,6 @@ my_f(const gsl_vector *v, void *params)
 		}
 	}
 
-	/*
-	// Creio que o último ponto será sempre âncora
-	if(!param->anchor_points[param->path_size - 1]){
-		distance = obstacle_distance(param->points[param->path_size - 1].x, param->points[param->path_size - 1].y);
-		if(distance < dmax)
-			obstacle_cost += abs(pow(distance - dmax , 2) * (distance - dmax ));
-		if(distance <= voronoi_max_distance)
-		{
-			distance_voronoi = distance_to_nearest_edge(param->points[param->path_size - 1].x, param->points[param->path_size - 1].y);
-			voronoi_cost += (voronoi_a/(voronoi_a+distance))*(distance_voronoi/(distance+distance_voronoi))*(pow(distance-voronoi_max_distance,2)/pow(voronoi_max_distance,2));
-		}
-	}
-*/
 //	printf("test time: %lf\n", test.get_since());
 
 	obstacle_cost = wo * obstacle_cost;
@@ -460,7 +445,6 @@ my_f(const gsl_vector *v, void *params)
 	voronoi_cost = wv * voronoi_cost;
 //	printf("costs= %f %f %f %f\n", obstacle_cost, curvature_cost, smoothness_cost, voronoi_cost);
 	return obstacle_cost + curvature_cost + smoothness_cost + voronoi_cost;
-//	return smoothness_cost;
 }
 
 
@@ -598,7 +582,7 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 		status = gsl_multimin_fdfminimizer_iterate (s);
 		if ((status != GSL_SUCCESS) && (status != GSL_ENOPROG) && (status != GSL_CONTINUE))
 		{
-			printf("Otimização falhou code = %d iter = %d\n", status, iter);
+			printf("Minimizer failed, code = %d iter = %d\n", status, iter);
 			return (2);
 		}
 
@@ -1958,6 +1942,19 @@ define_messages()
 	carmen_route_planner_define_messages();
 }
 
+void
+print_parameters_astar()
+{
+	printf("Max steering angle = %f\n", robot_config.max_phi );
+	printf("State map resolution = %f\n", astar_config.state_map_resolution );
+	printf("State map theta resolution = %d\n", astar_config.state_map_theta_resolution );
+	printf("Precomputed cost size = %d\n", astar_config.precomputed_cost_size );
+	printf("Precomputed cost theta size = %d\n", astar_config.precomputed_cost_theta_size );
+	printf("Precomputed cost resolution = %f\n", astar_config.precomputed_cost_resolution );
+	printf("Precomputed cost file name = %s\n", astar_config.precomputed_cost_file_name );
+	printf("Use matrix cost heuristic = %d\n", astar_config.use_matrix_cost_heuristic );
+}
+
 
 static void
 read_parameters(int argc, char **argv)
@@ -1987,13 +1984,13 @@ read_parameters(int argc, char **argv)
 			{(char *)"navigator",			(char *)"dont_integrate_odometry", CARMEN_PARAM_ONOFF, &nav_config.dont_integrate_odometry, 1, NULL},
 			{(char *)"navigator",			(char *)"plan_to_nearest_free_point", CARMEN_PARAM_ONOFF,	&nav_config.plan_to_nearest_free_point, 1, NULL},
 			{(char *)"path_planner_astar",	(char *)"max_steering_angle", CARMEN_PARAM_DOUBLE, &robot_config.max_phi, 1, NULL},
-			{(char *)"path_planner_astar",		(char *)"state_map_resolution", CARMEN_PARAM_DOUBLE, &astar_config.state_map_resolution, 1, NULL},
-			{(char *)"path_planner_astar",		(char *)"state_map_theta_resolution", CARMEN_PARAM_INT, &astar_config.state_map_theta_resolution, 1, NULL},
-			{(char *)"path_planner_astar",		(char *)"precomputed_cost_size", CARMEN_PARAM_INT, &astar_config.precomputed_cost_size, 1, NULL},
-			{(char *)"path_planner_astar",		(char *)"precomputed_cost_theta_size", CARMEN_PARAM_INT, &astar_config.precomputed_cost_theta_size, 1, NULL},
-			{(char *)"path_planner_astar",		(char *)"precomputed_cost_resolution", CARMEN_PARAM_DOUBLE, &astar_config.precomputed_cost_resolution, 1, NULL},
-			{(char *)"path_planner_astar",		(char *)"precomputed_cost_file_name", CARMEN_PARAM_STRING, &astar_config.precomputed_cost_file_name, 1, NULL},
-			{(char *)"path_planner_astar",		(char *)"use_matrix_cost_heuristic", CARMEN_PARAM_ONOFF, &astar_config.use_matrix_cost_heuristic, 1, NULL},
+			{(char *)"path_planner_astar",	(char *)"state_map_resolution", CARMEN_PARAM_DOUBLE, &astar_config.state_map_resolution, 1, NULL},
+			{(char *)"path_planner_astar",	(char *)"state_map_theta_resolution", CARMEN_PARAM_INT, &astar_config.state_map_theta_resolution, 1, NULL},
+			{(char *)"path_planner_astar",	(char *)"precomputed_cost_size", CARMEN_PARAM_INT, &astar_config.precomputed_cost_size, 1, NULL},
+			{(char *)"path_planner_astar",	(char *)"precomputed_cost_theta_size", CARMEN_PARAM_INT, &astar_config.precomputed_cost_theta_size, 1, NULL},
+			{(char *)"path_planner_astar",	(char *)"precomputed_cost_resolution", CARMEN_PARAM_DOUBLE, &astar_config.precomputed_cost_resolution, 1, NULL},
+			{(char *)"path_planner_astar",	(char *)"precomputed_cost_file_name", CARMEN_PARAM_STRING, &astar_config.precomputed_cost_file_name, 1, NULL},
+			{(char *)"path_planner_astar",	(char *)"use_matrix_cost_heuristic", CARMEN_PARAM_ONOFF, &astar_config.use_matrix_cost_heuristic, 1, NULL},
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
@@ -2020,6 +2017,7 @@ main(int argc, char **argv)
 
 	define_messages();
 	subscribe_messages();
+	print_parameters_astar();
 	printf("Aguardando Final Goal\n");
 
 	signal(SIGINT, offroad_planner_shutdown);
