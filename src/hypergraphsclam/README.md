@@ -313,6 +313,8 @@ Se desejar fazer o merge do mapa atual em ../data/mapper_teste2 com um próximo 
 | LOOP_REQUIRED_TIME | Tempo **mínimo** em **segundos** para considerar fechamento de Loops entre duas nuvens de pontos.   | 300 s |
 | LOOP_REQUIRED_DISTANCE | Distância **máxima** em metros para considerar fechamento de Loops entre duas nuvens de pontos. | 2.0 m |
 | USE_RESTRICTED_LOOPS | Se ativado (não comentado), então só se considera fechamento de Loops se o valor de *YAW* for menor que PI/2 | Tem que experimentar. |
+| USE_GPS_ORIENTATION_RESTRICTED_LOOPS | Se a flag anterior (USE_RESTRICTED_LOOPS) estiver ativa, então considera a orientação do GPS ao invés da odometria | Comentado |
+| USE_PREVIOUS_INTRA_LOG_LOOP_CLOSURES | Se ativado, tenta reaproveitar fechamentos de loop de passada anterior, ou execução anterior do parser | A primeira vez tem que deixar comentado. |
 | ICP_THREADS_POOL_SIZE | Quantidade de threads para fazer a odometria com o LiDAR e câmera. | Coloque o valor da CPU disponível |
 | ICP_THREAD_BLOCK_SIZE | Cada thread vai disputar por blocos de nuvens de pontos. Esse valor define o tamanho do bloco. | 300 |
 | LIDAR_ODOMETRY_MIN_DISTANCE | Distância mínima entre as nuvens de pontos para computar a odometria com Lidar. Nuvens intermediárias são descartadas. | 0.3 m |
@@ -419,7 +421,7 @@ Após a lista de nós, são apresentadas todas as arestas do grafo sempre com o 
 
 > ODOM_EDGE 2199 2200 0.000096 0.000000 0.000001 0.015000 0.022584 0.006391\
 > GPS_EDGE 38478 130.536058 4.170294 0.000000 1.000000\
-> VELODYNE_LOOP 2200 36730 -0.044423 0.066629 0.011369
+> VELODYNE_LOOP 2200 36730 -0.044423 0.066629 0.011369\
 > SICK_SEQ 2210 35730 -0.084423 0.166629 0.11369
 
 A primeira linha indica que uma aresta do tipo odometria, a segunda linha indica uma aresta unária de GPS, a terceira linha\
@@ -429,7 +431,7 @@ Com exceção da aresta de GPS, a segunda e terceira coluna indicam os IDs do n�
 No caso da odometria, as colunas 4, 5 e 6 contém a estimativa de movimento do carro (dx, dy, dyaw) a partir dos comandos (v, phi, dt) que estão guardados nas colunas 7,8 e 9.
 Para a aresta de GPS, a segunda coluna indica o ID do nó no grafo, as colunas 3,4 contém as estimativas (x, y, yaw) indicadas pelo GPS e a última coluna indica a qualidade do GPS.
 
-Com relção as arestas de loop com o Velodyne e odometria com o SICK, as três últimas colunas indicam a estimativa de movimento do veículo (dx, dy, dyaw).
+Com relação as arestas de loop com o Velodyne e odometria com o SICK, as três últimas colunas indicam a estimativa de movimento do veículo (dx, dy, dyaw).
 
 Há ainda arestas de LOOP entre os logs:
 
