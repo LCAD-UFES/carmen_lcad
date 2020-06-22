@@ -1,7 +1,3 @@
-#include <GrabData.hpp>
-#include <StampedMessageType.hpp>
-#include <SimpleLidarSegmentation.hpp>
-
 #include <list>
 #include <cmath>
 #include <thread>
@@ -10,13 +6,16 @@
 #include <utility>
 #include <limits>
 #include <unistd.h>
+#include <sstream>
+
+#include <GrabData.hpp>
+#include <StampedMessageType.hpp>
+#include <SimpleLidarSegmentation.hpp>
 
 #include <viso_stereo.h>
 #include <png++/png.hpp>
 
 #include <pcl/kdtree/kdtree_flann.h>
-
-#include <sstream>
 
 using namespace hyper;
 
@@ -62,6 +61,8 @@ GrabData::GrabData() :
     use_fake_gps(false),
     use_gps_orientation(false),
     use_restricted_loops(false),
+    use_gps_orientation_restricted_loops(false),
+    use_previous_intra_log_loop_closures(false),
     grab_data_id(0),
     min_speed(MIN_SPEED),
     initial_guess_pose(),
@@ -71,7 +72,7 @@ GrabData::GrabData() :
 
 
 // the main constructor
-GrabData::GrabData(unsigned _gid) :
+GrabData::GrabData(std::size_t _gid) :
     raw_messages(0),
     messages(0),
     gps_messages(0),
@@ -112,6 +113,8 @@ GrabData::GrabData(unsigned _gid) :
     use_fake_gps(false),
     use_gps_orientation(false),
     use_restricted_loops(false),
+    use_gps_orientation_restricted_loops(false),
+    use_previous_intra_log_loop_closures(false),
     grab_data_id(_gid),
     min_speed(MIN_SPEED),
     initial_guess_pose(),
@@ -169,6 +172,8 @@ GrabData::GrabData(GrabData &&gd) :
     use_fake_gps(gd.use_fake_gps),
     use_gps_orientation(gd.use_gps_orientation),
     use_restricted_loops(gd.use_restricted_loops),
+    use_gps_orientation_restricted_loops(gd.use_gps_orientation_restricted_loops),
+    use_previous_intra_log_loop_closures(gd.use_previous_intra_log_loop_closures),
     grab_data_id(gd.grab_data_id),
     min_speed(gd.min_speed),
     initial_guess_pose(gd.initial_guess_pose),
@@ -189,8 +194,8 @@ void GrabData::SeparateMessages()
     velodyne_messages.clear();
     bumblebee_messages.clear();
 
-    StampedMessagePtrVector::iterator it(raw_messages.begin());
-    StampedMessagePtrVector::iterator end(raw_messages.end());
+    auto it { raw_messages.begin() };
+    auto end { raw_messages.end() };
 
     // status report
     std::cout << "Separating all " << raw_messages.size() << " raw messages by their types" << std::endl;
@@ -1320,6 +1325,24 @@ void GrabData::BuildVisualOdometryEstimates()
 }
 
 
+std::size_t GrabData::ShowIntraSessionLoopClosureProgress(std::size_t counter, std::size_t last_line_size)
+{
+    std::stringstream line;
+
+    line << "Quantidade de nuvens processadas: " << counter;
+
+    std::string lstr { line.str() };
+
+    for (std::size_t i { 0 }; i < last_line_size; ++i)
+    {
+        std::cout << "\b \b";
+    }
+
+    std::cout << lstr << std::flush;
+
+    return lstr.size();
+}
+
 // compute the loop closure measurement
 void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messages)
 {
@@ -1345,12 +1368,10 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
         SimpleLidarSegmentation segm;
 
         // iterators
-        StampedLidarPtrVector::iterator end(lidar_messages.end());
-        StampedLidarPtrVector::iterator it(lidar_messages.begin());
+        auto end { lidar_messages.end() };
+        auto it { lidar_messages.begin() };
 
-        unsigned lmsize = lidar_messages.size();
-        unsigned counter = 0, match_counter = 0;
-        unsigned percent = lmsize / 40;
+        std::size_t counter { 0 } , match_counter { 0 }, last_line_size { 0 };
 
         std::string path("/dados/tmp/loops/");
 
@@ -1369,8 +1390,7 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
         {
             counter += 1;
 
-            // std::cout << counter << " of " << lmsize << std::endl;
-            if (0 == percent % counter) { std::cout << "-" << std::flush; }
+            last_line_size = ShowIntraSessionLoopClosureProgress(counter, last_line_size);
 
             // get the current lidar message pointer
             StampedLidarPtr current = *it;
@@ -1382,7 +1402,7 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
             double min_dist = dmax;
 
             // the next message
-            StampedLidarPtrVector::iterator next(it + 1);
+            auto next(it + 1);
 
             while (end != next)
             {
@@ -1407,40 +1427,57 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
 
             if (end != loop)
             {
-                double a(current->est.rotation().angle());
-                double b((*loop)->est.rotation().angle());
-                double ad = mrpt::math::angDistance<double>(a, b);
+                auto a { current->est.rotation().angle() };
+                auto b { (*loop)->est.rotation().angle() };
+                auto ad = std::fabs(mrpt::math::angDistance<double>(a, b));
+
+                if (use_gps_orientation_restricted_loops)
+                {
+                    a = current->gps_sync_estimate.rotation().angle();
+                    b = (*loop)->gps_sync_estimate.rotation().angle();
+                    ad = std::fabs(mrpt::math::angDistance<double>(a, b));
+                }
 
                 if (!use_restricted_loops || M_PI_2 > ad)
                 {
                     // found it
                     StampedLidarPtr lidar_loop = *loop;
 
-                    // load the current de loop  cloud
-                    pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(GetFilteredPointCloud(segm, grid_filtering, current));
-                    pcl::PointCloud<pcl::PointXYZHSV>::Ptr loop_cloud(GetFilteredPointCloud(segm, grid_filtering, lidar_loop));
+                    auto key { std::to_string(current->id) + "_" + std::to_string(lidar_loop->id) };
 
-                    if (BuildLidarLoopMeasure(gicp, min_dist * 2.0, ad, current_cloud, loop_cloud, current->loop_measurement))
+                    if (loop_buffer.find(key) != loop_buffer.end())
                     {
+                        current->loop_measurement = loop_buffer[key];
                         current->loop_closure_id = lidar_loop->id;
-                        if (save_loop_closure_point_clouds)
+                    }
+                    else
+                    {
+                        // load the current de loop  cloud
+                        pcl::PointCloud<pcl::PointXYZHSV>::Ptr current_cloud(GetFilteredPointCloud(segm, grid_filtering, current));
+                        pcl::PointCloud<pcl::PointXYZHSV>::Ptr loop_cloud(GetFilteredPointCloud(segm, grid_filtering, lidar_loop));
+
+                        if (BuildLidarLoopMeasure(gicp, min_dist * 2.0, ad, current_cloud, loop_cloud, current->loop_measurement))
                         {
-                            std::stringstream ss;
+                            current->loop_closure_id = lidar_loop->id;
+                            if (save_loop_closure_point_clouds)
+                            {
+                                std::stringstream ss;
 
-                            ss << path << match_counter << "_" << current->id << "_to_" << lidar_loop->id;
-                            std::string curr_cloud_path(ss.str());
-                            match_counter += 1;
-                            ss = std::stringstream();
-                            ss << path << match_counter << "_" << current->id << "_to_" << lidar_loop->id;
-                            std::string next_cloud_path(ss.str());
-                            match_counter += 1;
+                                ss << path << match_counter << "_" << current->id << "_to_" << lidar_loop->id;
+                                std::string curr_cloud_path(ss.str());
+                                match_counter += 1;
+                                ss = std::stringstream();
+                                ss << path << match_counter << "_" << current->id << "_to_" << lidar_loop->id;
+                                std::string next_cloud_path(ss.str());
+                                match_counter += 1;
 
-                            if (-1 == pcl::io::savePCDFile(curr_cloud_path, *current_cloud, true)) {
-                                throw std::runtime_error("Could not save the current cloud");
-                            }
+                                if (-1 == pcl::io::savePCDFile(curr_cloud_path, *current_cloud, true)) {
+                                    throw std::runtime_error("Could not save the current cloud");
+                                }
 
-                            if (-1 == pcl::io::savePCDFile(next_cloud_path, *loop_cloud, true)) {
-                                throw std::runtime_error("Could not save the next cloud");
+                                if (-1 == pcl::io::savePCDFile(next_cloud_path, *loop_cloud, true)) {
+                                    throw std::runtime_error("Could not save the next cloud");
+                                }
                             }
                         }
                     }
@@ -1451,7 +1488,7 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
         }
 
         // report
-        std::cout << "Lidar loop closure measurements done!\n";
+        std::cout << std::endl << "Lidar loop closure measurements done!" << std::endl;
     }
 }
 
@@ -2149,7 +2186,7 @@ g2o::SE2 GrabData::GetSE2FromVisoMatrix(const Matrix &matrix)
 
 
 // configuration
-void GrabData::Configure(std::string config_filename, std::string carmen_ini)
+void GrabData::Configure(const std::string &config_filename, const std::string &carmen_ini)
 {
     std::cout << "Reading cofigure file '" << config_filename << "'" << std::endl;
 
@@ -2265,6 +2302,14 @@ void GrabData::Configure(std::string config_filename, std::string carmen_ini)
             {
                 use_restricted_loops = true;
             }
+            else if ("USE_GPS_ORIENTATION_RESTRICTED_LOOPS" == str)
+            {
+                use_gps_orientation_restricted_loops = true;
+            }
+            else if ("USE_PREVIOUS_INTRA_LOG_LOOP_CLOSURES" == str)
+            {
+                use_previous_intra_log_loop_closures = true;
+            }
             else if ("GPS_IDENTIFIER" == str)
             {
                 std::string gps_id;
@@ -2297,20 +2342,21 @@ void GrabData::Configure(std::string config_filename, std::string carmen_ini)
 
     is.close();
 
-    SetGPSPose(carmen_ini);
+    SetConfigurationFromCarmenIni(carmen_ini);
 }
 
 
-void GrabData::SetGPSPose(std::string carmen_ini)
+void GrabData::SetConfigurationFromCarmenIni(const std::string &carmen_ini)
 {
-    std::ifstream is(carmen_ini);
+    std::ifstream is { carmen_ini, std::ifstream::in };
 
     if (is.good())
     {
         std::stringstream ss;
         double sbx = -1.0f, sby = -1.0f, sbyaw = -1.0f;
-        g2o::SE2 sensor_board_pose { 0.0, 0.0, 0.0};
+        g2o::SE2 sensor_board_pose { 0.0, 0.0, 0.0 };
         std::unordered_map<std::string, std::pair<std::string, unsigned>> keys;
+        
         std::vector<std::pair<std::string, unsigned>> sufix { {"_x", 0}, {"_y", 1}, {"_yaw", 2} };
 
         std::unordered_map<std::string, Eigen::Vector3d> transforms;
@@ -2351,10 +2397,23 @@ void GrabData::SetGPSPose(std::string carmen_ini)
             {
                 ss >> sbyaw;
             }
-
-            if (0.0 < sbx and 0.0 < sby and 0.0 < sbyaw)
+            else if ("robot_distance_between_front_and_rear_axles" == str)
             {
-                break;
+                ss >> VehicleModel::axle_distance;
+            }
+            else if ("robot_max_steering_angle" == str)
+            {
+                ss >> VehicleModel::max_steering_angle;
+            }
+            else if ("robot_understeer_coeficient" == str)
+            {
+                ss >> VehicleModel::understeer;
+            }
+            else if ("robot_turning_radius" == str)
+            {
+                double tr;
+                ss >> tr;
+                VehicleModel::kmax = 1.0 / tr;
             }
         }
 
@@ -2372,6 +2431,42 @@ void GrabData::SetGPSPose(std::string carmen_ini)
     }
 
     is.close();
+}
+
+void GrabData::LoadLoopClosureBuffer(const std::string &sufix)
+{
+    if (!use_previous_intra_log_loop_closures) return;
+
+    std::stringstream ss;
+    ss << grab_data_id << sufix;
+
+    std::string previous_sync_filename { ss.str() };
+
+    ss.clear();
+
+    std::ifstream previous_sync { previous_sync_filename, std::ifstream::in };
+
+    loop_buffer.clear();
+
+    std::string to, from, _;
+    double dx, dy, dyaw;
+
+    if (previous_sync.good())
+    {
+        while (-1 != StringHelper::ReadLine(previous_sync, ss))
+        {
+            std::string line { ss.str() };
+
+            auto substr { line.find("_LOOP") };
+
+            if (substr != std::string::npos)
+            {
+                ss >> _ >> from >> to >> dx >> dy >> dyaw;
+
+                loop_buffer[from + "_" + to] = std::move(g2o::SE2 { dx, dy, dyaw });
+            }
+        }
+    }
 }
 
 

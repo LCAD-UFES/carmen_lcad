@@ -60,9 +60,7 @@ Usaremos dois logs de exemplo.
  2. Otimizar as poses dos veículos usando o executável *hypergraphsclam*.
  3. Construir e mesclar mapas usando os arquivos de saída do *hypergraphsclam*.
 
-O executavel *parser* gera arquivos **.txt** que são consumidos pelo executável *hypergraphsclam*. O executável *hypergraphsclam* gera  
-arquivos contendo as poses dos veículos e esses arquivos podem ser usados para fazer mapas conforme as instruções no módulo MAPPER. Bastando que  
-esses arquivos estejam nas pasta esperada pelo MAPPER (**$CARMEN_HOME/bin/tmp/**)
+O executavel *parser* gera arquivos **.txt** que são consumidos pelo executável *hypergraphsclam*. O executável *hypergraphsclam* gera arquivos contendo as poses dos veículos e esses arquivos podem ser usados para fazer mapas conforme as instruções no módulo MAPPER.  Bastando que esses arquivos estejam nas pasta esperada pelo MAPPER (**$CARMEN_HOME/bin/tmp/**)
  
 ## Como usar o Parser
 
@@ -89,7 +87,7 @@ O Parser recebe como entrada 1 arquivo de texto contendo 3 colunas:
 > /dados/log_volta_da_ufes-20190625-estacionamento-ambiental.txt  ambiental_parser_config.txt          carmen-ford-escape.ini  
 > ____  
 
-&nbsp;&nbsp;&nbsp;&nbsp;Ao fornecer mais de 1 LOG no arquivo, o sistema pode tentar encontar fechamento de LOOPs entre os todos os LOGS indicados com o intuito de conectar os subgrafos em um grafo global. Esse recurso é utilizado se e somente se o parâmetro **DISABLE_VELODYNE_LOOP** estiver **COMENTADO** no arquivo de configuração do Parser. Mais instruções abaixo.
+Ao fornecer mais de 1 LOG no arquivo, o sistema pode tentar encontar fechamento de LOOPs entre os todos os LOGS indicados com o intuito de conectar os subgrafos em um grafo global. Esse recurso é utilizado se e somente se o parâmetro*DISABLE_VELODYNE_LOOP** estiver **COMENTADO** no arquivo de configuração do Parser. Mais instruções abaixo.
 
 *ATENÇÃO: o arquivo de CONFIGURAÇÃO DO PARSER é essencial para gerar bons mapas. Há uma quantidade boa de exemplos de arquivos na pasta **$CARMEN_HOME/src/hypergraphsclam/config**:
 
@@ -212,7 +210,7 @@ Depois:
 
 Com isso, o sistema fará uso das mensagens do Velodyne para fechar os loops entre os LOGS e também dentro de cada LOG.
 
-Se um dos dois LOGS estava com a flag habilidade, execute o *parser* novamente:
+Se um dos dois LOGS estava com a flag habilidata, execute o *parser* novamente:
 
 ```
 $CARMEN_HOME/src/hypergraphslam/parser ../VoltaUFESAmbiental.txt
@@ -391,4 +389,52 @@ Unidade da variancia na orientação: radianos ao quadrado
 | USE_BUMBLEBEE_LOOP | Se ativado, ou **NÃO COMENTADO**, então o *hypergraphsclam* utiliza aresta de fechamento de Loop com a Bumblebee. | Deixe desativado. Ative se quiser experimentar. |
 | USE_GPS | Se ativado, ou **NÃO COMENTADO**, então o *hypergraphsclam* utiliza arestas de GPS | Deixe sempre ativado. Desative se quiser experimentar. |
 | USE_ODOMETRY | Se ativado, ou **NÃO COMENTADO**, então o *hypergraphsclam* utiliza arestas de odometria. | Deixe sempre ativado. |
+
+## Formato do arquivo de SYNC
+
+Cada grafo é salvo em sequência no arquivo **sync.txt**.
+
+Ao salvar o grafo, a primeira informação contém a origin do GPS em formato Longitude Latitude. Exemplo: 
+
+> GPS_ORIGIN 7757728.234930 -363563.155048
+
+A segunda informação do grafo é a quantidade de nós. Exemplo:
+
+> VERTICES_QUANTITY 36282
+
+Em seguida o arquivo contém a lista de todos os nós no grafo. Exemplo:
+
+> VERTEX 1 2199 0.000000 0.000000 0.000000 1553484083.572719 0\
+> VERTEX 1 2200 0.000096 0.000000 0.000001 1553484083.579110 4\
+> VERTEX 2 2201 0.000370 0.000000 0.000003 1553484083.597425 0
+
+A primeira coluna indica que o elemento do grafo é um Vértice.\
+A segunda coluna indica o ID do log (conforme a ordem provida no arquivo fornecido ao parser).\
+A terceira coluna indica o VextexID, ou o ID do nó grafo.\
+As próximas 3 colunas (quarta, quinta e sexta) contém a estimativa inicial dos valores (*x*, *y*, *yaw)*.\
+A sétima coluna contém o timestamp do nó. Obtido do timestamp da mensagem no log.
+A última coluna contém um identificador para o tipo de mensagem (odometria, gps, etc). Não se preocupe com esse número.
+
+Após a lista de nós, são apresentadas todas as arestas do grafo sempre com o mesmo formato. Exemplos:
+
+> ODOM_EDGE 2199 2200 0.000096 0.000000 0.000001 0.015000 0.022584 0.006391\
+> GPS_EDGE 38478 130.536058 4.170294 0.000000 1.000000\
+> VELODYNE_LOOP 2200 36730 -0.044423 0.066629 0.011369
+> SICK_SEQ 2210 35730 -0.084423 0.166629 0.11369
+
+A primeira linha indica que uma aresta do tipo odometria, a segunda linha indica uma aresta unária de GPS, a terceira linha\
+possui uma aresta de fechamento de loop com o Velodyne a última linha indica uma aresta criada com odometria a partir de Lidar, no caso usando o SICK.
+Com exceção da aresta de GPS, a segunda e terceira coluna indicam os IDs do nós conectados pela aresta.
+
+No caso da odometria, as colunas 4, 5 e 6 contém a estimativa de movimento do carro (dx, dy, dyaw) a partir dos comandos (v, phi, dt) que estão guardados nas colunas 7,8 e 9.
+Para a aresta de GPS, a segunda coluna indica o ID do nó no grafo, as colunas 3,4 contém as estimativas (x, y, yaw) indicadas pelo GPS e a última coluna indica a qualidade do GPS.
+
+Com relção as arestas de loop com o Velodyne e odometria com o SICK, as três últimas colunas indicam a estimativa de movimento do veículo (dx, dy, dyaw).
+
+Há ainda arestas de LOOP entre os logs:
+
+> VELODYNE_EXTERNAL_LOOP 4011 40646 2.442269 -0.060471 -0.000805
+
+Essa linha indica uma aresta de fechamento de loop entre os nós 4011 e 40646 (certamente em logs diferentes mas no mesmo grafo global) e as três últimas colunas indicam a estimativa de movimento do veículo (dx, dy, dyaw).
+
 
