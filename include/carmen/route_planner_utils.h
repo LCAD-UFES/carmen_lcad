@@ -82,6 +82,25 @@ typedef struct
 } coords_t;
 
 
+typedef struct
+{
+	int u;
+	int v;
+} osm_edges_t;;
+
+
+typedef struct
+{
+	int id;
+	double lat;
+	double lon;
+	carmen_point_t utm_point;
+	vector <osm_edges_t> edges;
+} osm_graph_t;
+
+
+vector <int> read_osm_route_from_file(string route_filename);
+vector <osm_graph_t> read_osm_graph_file(string graph_filename);
 void call_osmnx_python_func (Gdc_Coord_3d origin_gdc, Gdc_Coord_3d destination_gdc);
 int *alloc_array (int graph_size);
 float *alloc_array_float (int graph_size);
@@ -90,7 +109,9 @@ a_star_utils_t add_vertex_to_closed_set(a_star_utils_t r, int vertex_id);
 //void add_vertex_to_open_set(a_star_utils_t r, int vertex_id);
 float h_n_manh (int vertex_id, int vertex_end, graph_t graph);
 float h_n_eucl (int vertex_id, int vertex_end, graph_t graph);
+a_star_utils_t a_star_old(adjacent_list_t **adjacent_list, graph_t graph, int graph_size, int vertex_ini, int vertex_end);
 a_star_utils_t a_star(adjacent_list_t** adjacent_list, graph_t graph, int graph_size, int vertex_ini, int vertex_end);
+a_star_utils_t a_star_new(graph_t graph, int vertex_ini, int vertex_end);
 adjacent_list_t **add_to_list_undir(adjacent_list_t **adjacent_list, int u, int v, int w);
 adjacent_list_t **create_adjacent_list(adjacent_list_t ** adjacent_list, graph_t graph);
 int find_closest_point_in_graph (graph_t graph, carmen_point_t point);
