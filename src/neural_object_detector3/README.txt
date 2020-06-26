@@ -39,6 +39,11 @@ add at the end of file
  export PYTHONPATH=$CARMEN_HOME/src/neural_object_detector3/pedestrian_tracker:$PYTHONPATH
 ```
 
+
+Create data folder inside pedestrian_tracker:
+cd $CARMEN_HOME/src/neural_object_detector3/pedestrian_tracker/
+mkdir data
+
 Download the neural network weights to the folder /neural_object_detector3/pedestrian_tracker/data, run:
   make download
 
