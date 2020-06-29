@@ -7,8 +7,14 @@ CXXFLAGS += -std=gnu++11
 MODULE_NAME = Inplace_abn Neural Network
 MODULE_COMMENT = RDDF generation with images
 
-IFLAGS += -I/usr/include/python3.5
-LFLAGS += -lpython3.5 -lpthread `pkg-config --libs opencv` `python3.5-config --libs` 
+IFLAGS += -I/usr/include/python3.5m -I/usr/include/python3.6
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += -lpython3.5 `python3.5-config --libs`
+else
+	LFLAGS += -lpython3.6 `python3.6-config --libs`
+endif
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
