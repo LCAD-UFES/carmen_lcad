@@ -26,7 +26,7 @@ PUBLIC_INCLUDES = libsqueeze_seg.h
 PUBLIC_LIBRARIES = libsqueeze_seg.a
 PUBLIC_BINARIES = velodyne_to_SqueezeSeg
 
-TARGETS = libprob_models.a velodyne_camera_calibration libsqueeze_seg.a velodyne_to_SqueezeSeg
+TARGETS = libprob_models.a velodyne_camera_calibration libsqueeze_seg.a # velodyne_to_SqueezeSeg
 PUBLIC_LIBRARIES_SO =
 
 libprob_models.a: 
