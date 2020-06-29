@@ -11,9 +11,9 @@ IFLAGS += -I/usr/include/python3.5m -I/usr/include/python3.6
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 #$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
 ifeq ($(UBUNTU_VERSION),"16.04")
-	LFLAGS += -lpython3.5 `python3.5-config --libs`
+	LFLAGS += `python3.5-config --libs`
 else
-	LFLAGS += -lpython3.6 `python3.6-config --libs`
+	LFLAGS += `python3.6-config --libs`
 endif
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
