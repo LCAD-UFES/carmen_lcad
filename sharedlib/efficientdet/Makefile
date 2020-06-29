@@ -7,10 +7,10 @@ CXXFLAGS += -std=gnu++11
 MODULE_NAME = EfficientDet Neural Network
 MODULE_COMMENT = Object detection
 
-IFLAGS += -I/usr/include/python3.5
-LFLAGS += -lpython3.5m -lpthread `pkg-config --libs opencv` `python3.5-config --libs` 
+IFLAGS += -I/usr/include/python3.6m -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+LFLAGS += -lpython3.6m -lpthread `pkg-config --libs opencv` `python3.6-config --libs` 
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basic_interface -lvisual_tracker_interface \
 		  `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
