@@ -1285,7 +1285,7 @@ void
 remove_clusters_of_static_obstacles_using_segmentation(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, vector<image_cartesian> points,
 	vector<vector<image_cartesian>> &clustered_points, int camera_index, int image_width, int image_height, double timestamp)
 {
-	unsigned int cont = 0;
+	// unsigned int cont = 0;
 	vector<vector<image_cartesian>> classified;
 	// vector<image_cartesian> cluster;
 	// vector<int> moving_object_cluster_index;
@@ -4457,7 +4457,7 @@ generates_ray_order(int size)
 static void
 get_sensors_param(int argc, char **argv)
 {
-	int i, j;
+	int i;
 	int flipped;
 	int horizontal_resolution;
 	char stereo_velodyne_string[256];
@@ -4497,9 +4497,7 @@ get_sensors_param(int argc, char **argv)
 		sensors_params[0].sensor_type = VELODYNE;
 		sensors_params[0].ray_order = carmen_velodyne_get_ray_order();
 		sensors_params[0].vertical_correction = carmen_velodyne_get_vertical_correction();
-		sensors_params[0].delta_difference_mean = carmen_velodyne_get_delta_difference_mean();
-		sensors_params[0].delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
-
+		
 		carmen_param_t param_list[] =
 		{
 			{sensors_params[0].name, (char *) "vertical_resolution", CARMEN_PARAM_INT, &sensors_params[0].vertical_resolution, 0, NULL},
@@ -4546,12 +4544,6 @@ get_sensors_param(int argc, char **argv)
 
 		static double vertical_correction[4] = {-1.2, -0.4, 0.4, 1.2};
 		sensors_params[1].vertical_correction = vertical_correction;
-
-		static double delta_difference_mean[4] = {0, 0, 0, 0};
-		sensors_params[1].delta_difference_mean = delta_difference_mean;
-
-		static double delta_difference_stddev[4] = {0, 0, 0, 0};
-		sensors_params[1].delta_difference_stddev = delta_difference_stddev;
 
 		carmen_param_t param_list[] =
 		{
@@ -4633,11 +4625,6 @@ get_sensors_param(int argc, char **argv)
 			sensors_data[i].point_cloud_index = 0;
 			carmen_prob_models_alloc_sensor_data(&sensors_data[i], sensors_params[i].vertical_resolution, number_of_threads);
 
-			//TODO : tem que fazer esta medida para as cameras igual foi feito para o velodyne
-			sensors_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));
-			sensors_params[i].delta_difference_stddev = (double *)calloc(50, sizeof(double));
-			for (j = 0; j < 50; j++)
-				sensors_params[i].delta_difference_stddev[j] = 1.0;
 		}
 	}
 }
@@ -5126,7 +5113,7 @@ main(int argc, char **argv)
 		initializer_YOLO();
 	}
 	if (!strcmp(neural_network,"efficientdet")){
-		classes_names = get_classes_names("../sharedlib/darknet2/data/coco.names");
+		classes_names = get_classes_names((char *)"../sharedlib/darknet2/data/coco.names");
 		initialize_Efficientdet(0.2);
 		if (dataset_for_squeezeseg)
 		{
