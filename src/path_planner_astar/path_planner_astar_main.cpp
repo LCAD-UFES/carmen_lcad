@@ -72,10 +72,11 @@ int voronoi_visited_it = 0;
 #define LANE_WIDTH 	2.4
 #define NUM_LANES	1
 #define MAX_VIRTUAL_LASER_SAMPLES 100000
-#define SQRT2 sqrt(2.0)
-#define DIST2D_D_P(x1,x2) (sqrt(((x1).x - (x2)->x) * ((x1).x - (x2)->x) + \
-							((x1).y - (x2)->y) * ((x1).y - (x2)->y)))
-#define USE_SMOOTH 0
+#define SQRT2 1.414
+#define DIST2D_D_P(x1,x2) (sqrt(((x1).x - (x2)->x) * ((x1).x - (x2)->x) + ((x1).y - (x2)->y) * ((x1).y - (x2)->y)))
+#define DELTA2D(x1,x2) ((carmen_ackerman_traj_point_t)(x1.x - x2.x, x1.y - x2.y, 0.0, 0.0, 0.0))
+
+#define USE_SMOOTH 1
 
 using namespace cv;
 
@@ -355,7 +356,7 @@ my_f(const gsl_vector *v, void *params)
 	double wk = 1.0;
 	double ws = 1.0;
 	double wv = 1.0;
-	double dmax = 5.0; // escolher um valor melhor
+	double dmax = 2.0; // escolher um valor melhor
 	double kmax = robot_config.distance_between_front_and_rear_axles / tan(robot_config.max_phi);
 
 
@@ -395,6 +396,9 @@ my_f(const gsl_vector *v, void *params)
 			x_prev = param->points[i-1].x;
 			y_prev = param->points[i-1].y;
 
+//			carmen_ackerman_traj_point_t delta_i = DELTA2D(param->points[i], param->points[i - 1]);
+//			carmen_ackerman_traj_point_t delta_i_1 = DELTA2D(param->points[i+1], param->points[i]);
+//			carmen_ackerman_traj_point_t delta = DELTA2D(delta_i_1, delta_i);
 
 //			distance = obstacle_distance(x_i, y_i);
 			distance = carmen_obstacle_avoider_car_distance_to_nearest_obstacle(param->points[i], distance_map);
@@ -403,7 +407,7 @@ my_f(const gsl_vector *v, void *params)
 			if(distance > 0.0)
 			{
 				if(distance <= dmax)
-					obstacle_cost += abs(pow(distance - dmax, 2) * (distance - dmax));
+					obstacle_cost += (dmax - distance) * (dmax - distance) * (dmax - distance);
 
 				if(distance <= voronoi_max_distance)
 				{
@@ -419,12 +423,12 @@ my_f(const gsl_vector *v, void *params)
 
 			delta_phi = abs(atan2(y_next - y_i, x_next - x_i) - atan2(y_i - y_prev, x_i - x_prev));
 			displacement = sqrt((x_i - x_prev) * (x_i - x_prev) + (y_i - y_prev) * (y_i - y_prev));
-			if(abs(displacement) > 0.001)
+			if(fabs(displacement) > 0.001)
 			{
-				curvature_term = (delta_phi / displacement);
+//				curvature_term = (delta_phi / displacement);
 				if(curvature_term > kmax)
 				{
-					curvature_term = (delta_phi / displacement) - kmax;
+					curvature_term -= kmax;
 					curvature_cost += pow(curvature_term, 2) * curvature_term;
 		//			printf("teste = %d %f %f %f\n",i, obstacle_cost, curvature_cost, smoothness_cost);
 				}
@@ -922,7 +926,7 @@ copy_map(std::vector<std::vector<double> > &map, double *cost_map, int x_size, i
 			map[x][y] = cost_map[x + y * x_size];
 }
 
-
+/*
 double*
 get_obstacle_heuristic_map(carmen_point_t *goal_pose)
 {
@@ -953,6 +957,51 @@ get_obstacle_heuristic_map(carmen_point_t *goal_pose)
 
 	int goal_x = round((goal_pose->x - distance_map->config.x_origin)/distance_map->config.resolution);
 	int goal_y = round((goal_pose->y - distance_map->config.y_origin)/distance_map->config.resolution);
+	copy_map(utility_map, exact_euclidean_distance_to_goal.pathDR(goal_y, goal_x),x_size, y_size);
+
+	for (int i = 0; i < x_size * y_size; i++)
+		if (utility_map[i] >= 50000.0) // O infinito de distacia eh representado como 50000.0, assim como o espaco ocupado.
+			utility_map[i] = 1000.0;
+
+	save_map((char *) "obstacle_heuristic.map", utility_map, x_size, y_size);
+	printf("Mapa da heurística com obstáculos carregado!\n");
+	free(cost_map);
+	return utility_map;
+}
+*/
+
+
+double*
+get_obstacle_heuristic_map(carmen_point_t *goal_pose, map_node_p*** astar_map)
+{
+	printf("Carregando mapa da heurística com obstáculos\n");
+	int x_size = astar_map_x_size;
+	int y_size = astar_map_y_size;
+	double *utility_map = (double *) calloc(x_size * y_size, sizeof(double));
+	double *cost_map = (double *) calloc(x_size * y_size, sizeof(double));
+	std::fill_n(cost_map, x_size *y_size, -1.0);
+
+	for (int x = 0; x < x_size; x++)
+	{
+		for(int y = 0; y < y_size; y++)
+		{
+			if(astar_map[x][y][0]->obstacle_distance < 1.0)
+			{
+				cost_map[y + x * y_size] = 1.0; // Espaco ocupado eh representado como 1.0
+			}
+		}
+	}
+	std::vector<std::vector<double> > map(x_size, std::vector <double>(y_size));
+	copy_map(map, cost_map, x_size, y_size);
+	Planning exact_euclidean_distance_to_goal;
+	exact_euclidean_distance_to_goal.setMap(map);
+	exact_euclidean_distance_to_goal.expandObstacles(0.5);
+	copy_map(cost_map, exact_euclidean_distance_to_goal.getExpandedMap(), x_size, y_size);
+
+//	int goal_x = round((goal_pose->x - distance_map->config.x_origin)/distance_map->config.resolution);
+//	int goal_y = round((goal_pose->y - distance_map->config.y_origin)/distance_map->config.resolution);
+	int goal_x = get_astar_map_x(goal_pose->x);
+	int goal_y = get_astar_map_y(goal_pose->y);
 	copy_map(utility_map, exact_euclidean_distance_to_goal.pathDR(goal_y, goal_x),x_size, y_size);
 
 	for (int i = 0; i < x_size * y_size; i++)
@@ -1498,20 +1547,21 @@ hitObstacle(std::vector<state_node*> path, map_node_p ***astar_map )
 double
 h(map_node_p ***astar_map, double* heuristic_obstacle_map, state_node *current, state_node *goal)
 {
-	double ho = -DBL_MAX;
-	double rs = -DBL_MAX;
-/*
+	double ho = -1;
+	double rs = -1;
+
 	int x_c;
 	int y_c;
 	int theta_c;
 	get_current_pos(current, x_c, y_c, theta_c);
-*/
 
-	int current_x = round((current->state.x - distance_map->config.x_origin)/distance_map->config.resolution);
-	int current_y = round((current->state.y - distance_map->config.y_origin)/distance_map->config.resolution);
+
+//	int current_x = round((current->state.x - distance_map->config.x_origin)/distance_map->config.resolution);
+//	int current_y = round((current->state.y - distance_map->config.y_origin)/distance_map->config.resolution);
 	//Multiplicar o ho pela resolução do mapa porque parece que ele considera cada célula com o tamanho de 1, em vez de 0.2
 	//então o valor do ho fica praticamente sempre maior que o da heuristica sem obstáculos
-	ho = (heuristic_obstacle_map[current_y + current_x * distance_map->config.y_size] * distance_map->config.resolution) ;
+//	ho = (heuristic_obstacle_map[current_y + current_x * distance_map->config.y_size] * distance_map->config.resolution) ;
+	ho = heuristic_obstacle_map[y_c + x_c * astar_map_y_size];
 
 	if(astar_config.use_matrix_cost_heuristic)
 	{
@@ -1539,8 +1589,8 @@ h(map_node_p ***astar_map, double* heuristic_obstacle_map, state_node *current, 
 
 	}
 //	printf("[h]rs = %f\tho = %f\n", rs, ho);
-	if(rs == -1)
-		ho+=10;
+//	if(rs == -1)
+//		ho+=10;
 
 	int returned_h = std::max(rs, ho);
 
@@ -1653,10 +1703,10 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	state_node *start_state, *goal_state, *current;
 
 	int cont_rs_nodes = 0;
-	time_count.reset();
-	double* heuristic_obstacle_map = get_obstacle_heuristic_map(goal_pose);
-	printf("Heuristic map time is %f seconds\n\n", time_count.get_since());
 	map_node_p ***astar_map = alloc_astar_map();
+	time_count.reset();
+	double* heuristic_obstacle_map = get_obstacle_heuristic_map(goal_pose, astar_map);
+	printf("Heuristic map time is %f seconds\n\n", time_count.get_since());
 	evg_thin_on_map(astar_map);
 
 	boost::heap::fibonacci_heap<state_node*, boost::heap::compare<StateNodePtrComparator>> open;
