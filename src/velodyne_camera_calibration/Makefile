@@ -6,11 +6,11 @@ MODULE_COMMENT = Velodyne Camera Calibration
 CFLAGS += -std=c11
 CXXFLAGS += -std=c++11 -Wno-deprecated
 
-PCL_INC = $(wildcard /usr/local/include/pcl-*)
+PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/bullet/
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basic_interface -lvisual_tracker_interface \
