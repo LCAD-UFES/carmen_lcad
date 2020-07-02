@@ -63,7 +63,9 @@ def initialize(vertical_resolution, shots_to_squeeze):
      
     '''Loads tensorflow'''
     tf.Graph().as_default()
-    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
+    config = tf.ConfigProto(allow_soft_placement=True)
+    config.gpu_options.allow_growth = True
+    sess = tf.Session(config=config)
     saver = tf.train.Saver(model.model_params)
     saver.restore(sess, os.getenv("CARMEN_HOME") + '/sharedlib/libsqueeze_seg_v2/data/SqueezeSegV2/model.ckpt-30700')  
      

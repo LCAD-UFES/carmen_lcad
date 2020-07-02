@@ -44,7 +44,9 @@ def eval_once(
     saver, ckpt_path, summary_writer, eval_summary_ops, eval_summary_phs, imdb,
     model):
 
-  with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
+  config = tf.ConfigProto(allow_soft_placement=True)
+  #config.gpu_options.allow_growth = True
+  with tf.Session(config=config) as sess:
 
     # Restores from checkpoint
     saver.restore(sess, ckpt_path)
@@ -194,7 +196,7 @@ def evaluate():
     saver = tf.train.Saver(model.model_params)
 
     summary_writer = tf.summary.FileWriter(FLAGS.eval_dir, g)
-    
+    ckpts = set()
     while True:
       if FLAGS.run_once:
         # When run_once is true, checkpoint_path should point to the exact

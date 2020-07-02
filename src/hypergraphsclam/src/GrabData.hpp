@@ -5,6 +5,7 @@
 #include <vector>
 #include <mutex>
 #include <set>
+#include <map>
 
 #include <g2o/types/slam2d/se2.h>
 #include <g2o/types/slam2d/vertex_se2.h>
@@ -132,7 +133,11 @@ namespace hyper {
 
             bool use_restricted_loops;
 
-            unsigned grab_data_id;
+            bool use_gps_orientation_restricted_loops;
+
+            bool use_previous_intra_log_loop_closures;
+
+            std::size_t grab_data_id;
 
             double min_speed;
 
@@ -140,11 +145,13 @@ namespace hyper {
 
             g2o::SE2 gps_error;
 
+            std::unordered_map<std::string, g2o::SE2> loop_buffer;
+
             // separate the gps, sick and velodyne messages
             void SeparateMessages();
 
             // get the gps antena position in relation to sensor board
-            void SetGPSPose(std::string carmen_home);
+            void SetConfigurationFromCarmenIni(const std::string &);
 
             // get the gps estimation
             g2o::SE2 GetNearestGPSMeasure(
@@ -207,6 +214,8 @@ namespace hyper {
                     PointCloudHSV::Ptr source_cloud,
                     PointCloudHSV::Ptr target_cloud,
                     g2o::SE2 &icp_measure);
+
+            std::size_t ShowIntraSessionLoopClosureProgress(std::size_t counter, std::size_t last_line_size);
 
             // build an icp measure
             bool BuildLidarLoopMeasure(
@@ -317,7 +326,7 @@ namespace hyper {
             GrabData();
 
             // the main constructor
-            GrabData(unsigned _gid);
+            GrabData(std::size_t _gid);
 
             // the move constructor
             GrabData(GrabData &&gd);
@@ -326,7 +335,10 @@ namespace hyper {
             ~GrabData();
 
             // configuration
-            void Configure(std::string config_filename, std::string carmen_ini);
+            void Configure(const std::string &config_filename, const std::string &carmen_ini);
+
+            // load the loop closure buffer from precious sync files
+            void LoadLoopClosureBuffer(const std::string &sufix);
 
             // parse the log file
             unsigned ParseLogFile(const std::string &input_filename, unsigned msg_id);

@@ -26,7 +26,8 @@ prepare_all_directories()
     std::cout << "Necessary directories created." << std::endl;
 }
 
-std::vector<std::array<std::string, 3>> log_list_parser(std::string log_list_filename)
+std::vector<std::array<std::string, 3>> 
+log_list_parser(const std::string &log_list_filename)
 {
     std::string carmen_home(getenv("CARMEN_HOME"));
     std::string carmen_data_folder(carmen_home + "/data/");
@@ -35,7 +36,7 @@ std::vector<std::array<std::string, 3>> log_list_parser(std::string log_list_fil
 
     std::vector<std::array<std::string, 3>> log_list;
 
-    std::ifstream file(log_list_filename);
+    std::ifstream file { log_list_filename, std::ifstream::in };
 
     if (file.is_open())
     {
@@ -71,16 +72,18 @@ std::vector<std::array<std::string, 3>> log_list_parser(std::string log_list_fil
 bool
 parse_logs(std::vector<hyper::GrabData> &gds, std::vector<std::array<std::string, 3>> &logs)
 {
-	unsigned gid = 1;
-    unsigned last_id = 6;
+	std::size_t gid { 1 };
+    std::size_t last_id { 6 };
 
-    for (std::array<std::string, 3> &input_files : logs)
+    for (auto &input_files : logs)
     {
-        gds.emplace_back(hyper::GrabData(gid++));
+        gds.emplace_back(hyper::GrabData { gid++ });
 
-        hyper::GrabData &gd = gds.back();
+        hyper::GrabData &gd { gds.back() };
 
         gd.Configure(input_files[1], input_files[2]);
+
+        gd.LoadLoopClosureBuffer("_sync.txt");
 
         last_id = gd.ParseLogFile(input_files[0], last_id);
 
@@ -115,17 +118,17 @@ save_separated_graph(hyper::GrabData &gd, unsigned b)
     ss >> base;
     base += "_";
 
-    std::ofstream sync(base + "sync.txt");;
+    auto output_file { base + "sync.txt" };
+
+    std::ofstream sync { output_file, std::ofstream::out };
+    
     if (!sync.is_open())
     {
-        std::cerr << "Could not open the separated sync.txt output file!" << std::endl;
-        return;
+        throw std::invalid_argument("Could not open the separated sync.txt output file!");
     }
 
     gd.SaveHyperGraph(sync, false);
 
-    std::cout << "The base: " << base << std::endl;
-    
     gd.SaveEstimates(base);
 }
 
@@ -142,11 +145,13 @@ save_hyper_graphs(std::vector<hyper::GrabData> &gds)
 
     unsigned b = 1;
 
+    sync << "LOGS_QUANTITY " << gds.size() << std::endl;
+
     for (hyper::GrabData &gd : gds)
     {
         // save the hyper graph in a global file
         gd.SaveHyperGraph(sync, true);
-
+        
         save_separated_graph(gd, b++);
     }
 
@@ -190,7 +195,8 @@ main (int argc, char **argv)
     }
 
     std::vector<hyper::GrabData> gds(0);
-    std::vector<std::array<std::string, 3>> logs(log_list_parser(argv[1]));
+    
+    auto logs { log_list_parser(argv[1]) };
 
     if (parse_logs(gds, logs))
     {
