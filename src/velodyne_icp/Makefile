@@ -6,7 +6,7 @@ MODULE_COMMENT = This module implements the iterative closest point method to gi
 LINK = g++
 CXXFLAGS += -Wall -msse3
 
-PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
+PCL_INC = $(wildcard /usr/local/include/pcl-*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC)
 
 LFLAGS += -lglobal -lipc -lparam_interface
