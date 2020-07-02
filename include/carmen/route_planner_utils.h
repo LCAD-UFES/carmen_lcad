@@ -90,6 +90,7 @@ a_star_utils_t add_vertex_to_closed_set(a_star_utils_t r, int vertex_id);
 //void add_vertex_to_open_set(a_star_utils_t r, int vertex_id);
 float h_n_manh (int vertex_id, int vertex_end, graph_t graph);
 float h_n_eucl (int vertex_id, int vertex_end, graph_t graph);
+a_star_utils_t a_star_old(adjacent_list_t **adjacent_list, graph_t graph, int graph_size, int vertex_ini, int vertex_end);
 a_star_utils_t a_star(adjacent_list_t** adjacent_list, graph_t graph, int graph_size, int vertex_ini, int vertex_end);
 adjacent_list_t **add_to_list_undir(adjacent_list_t **adjacent_list, int u, int v, int w);
 adjacent_list_t **create_adjacent_list(adjacent_list_t ** adjacent_list, graph_t graph);
