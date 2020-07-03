@@ -1775,6 +1775,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	state_node *start_state, *goal_state, *current;
 
 	int cont_rs_nodes = 0;
+	int rs_found = 0;
 	map_node_p ***astar_map = alloc_astar_map();
 	time_count.reset();
 	double* heuristic_obstacle_map = get_obstacle_heuristic_map(goal_pose, astar_map);
@@ -1834,6 +1835,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 //				current->f = 0;
 //				open.push(current);
 //				printf("Reed Shepp encontrou o caminho \n");
+				rs_found = 1;
 //				printf("Goal_state: %f %f %f \n", goal_state->state.x, goal_state->state.y, goal_state->state.theta);
 				break;
 			}
@@ -1847,7 +1849,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 
 	free(heuristic_obstacle_map);
 //	printf("=====Current after loop %f %f %f\n", current->state.x, current->state.y, current->state.theta);
-	if(!open.empty())
+	if(!open.empty() || rs_found)
 	{
 //		current = open.top();
 		astar_mount_path_message(current);
