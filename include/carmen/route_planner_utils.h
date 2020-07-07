@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <GL/glut.h>
+#include <time.h>
 //#include "../rddf/rddf_util.h"
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_util.h>
