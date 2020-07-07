@@ -16,32 +16,37 @@ LINK = g++
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 #YOLO
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet3/lib
-
-IFLAGS += `pkg-config --cflags opencv`
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
 
-#EfficientDet - Comentar as duas linhas abaixo para trabalhar com python2.7
-IFLAGS += -I/usr/include/python3.5
-LFLAGS += -lefficientdet -lpython3.5m
+#EfficientDet - Comment from 33 to 41 to use python2.7
+IFLAGS += -I/usr/include/python3.5m -I/usr/include/python3.6 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+LFLAGS += -lefficientdet
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += `python3.5-config --libs`
+else
+	LFLAGS += `python3.6-config --libs`
+endif
 
 # Deeplab
 IFLAGS += -I/usr/include/python2.7
-LFLAGS += -ldeeplab -lpython2.7
+LFLAGS += `python2.7-config --libs` -ldeeplab 
 
-#SqueezeSeg
-LFLAGS += -lsqueeze_seg -lpython2.7
+# SqueezeSeg
+LFLAGS += `python2.7-config --libs` -lsqueeze_seg
 
-#SalsaNet
-LFLAGS += -lsalsanet -lpython2.7
+# SalsaNet
+LFLAGS += `python2.7-config --libs` -lsalsanet
 
 #OPENCV
 IFLAGS += -DUSE_OPENCV
@@ -60,11 +65,15 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 # Application specific include directories.
-PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
+PCL_INC = $(wildcard /usr/local/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
-LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
+else
+	LFLAGS +=  -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
+endif
 LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 
 	

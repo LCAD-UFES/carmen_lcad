@@ -11,6 +11,14 @@ LOOP_REQUIRED_DISTANCE 7.0
 -- The angle distance must be less than PI/2 - Se esta flag estiver ativa não é considerado fechamento de loop se a diferença angular for maior PI/2
 -- USE_RESTRICTED_LOOPS
 
+-- Uncomment USE_GPS_ORIENTATION_RESTRICTED_LOOPS flag if you want to consider the gps orientation in the loop closures
+-- The angle distance must be less than PI/2 - Se esta flag estiver ativa não é considerado fechamento de loop se a diferença angular for maior PI/2
+-- USE_GPS_ORIENTATION_RESTRICTED_LOOPS
+
+-- Uncomment this flag below if you want to use previous loop closures, from a previous parser. 
+-- Remember to comment out again if you need the system computes the loop closures from scratch
+-- USE_PREVIOUS_INTRA_LOG_LOOP_CLOSURES
+
 -- How many threads the ICP (Interative Closest Point) method can use (typically the number of cores of your machine)
 ICP_THREADS_POOL_SIZE 6
 
@@ -18,7 +26,7 @@ ICP_THREADS_POOL_SIZE 6
 ICP_THREAD_BLOCK_SIZE 300
 
 -- The distace parameter to find the next point cloud - Basicamente, pula nuvens para diminuir ruido entre leituras. Exemplo: carro parado (tem um tratamento mais completo no código para o caso de carro parado)
--- Tirado de um paper
+-- ALMEIDA, J.; SANTOS, V. M. Real time egomotion of a nonholonomic vehicle using LIDAR measurements. J. Field Robotics 30. p. 129-141. 2013.
 LIDAR_ODOMETRY_MIN_DISTANCE 0.3
 
 -- The distace parameter to find the next image - mesmo do de cima mas para camera

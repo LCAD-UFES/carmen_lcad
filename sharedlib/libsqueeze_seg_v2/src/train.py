@@ -110,8 +110,9 @@ def train():
     saver = tf.train.Saver(tf.all_variables(), max_to_keep=10000)
     summary_op = tf.summary.merge_all()
     init = tf.initialize_all_variables()
-
-    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
+    config = tf.ConfigProto(allow_soft_placement=True)
+    config.gpu_options.allow_growth = True
+    sess = tf.Session(config=config)
     sess.run(init)
     # saver.restore(sess, './log/train/model.ckpt-1500')
 

@@ -90,9 +90,10 @@ def detect():
     mc.LOAD_PRETRAINED_MODEL = False
     mc.BATCH_SIZE = 1 # TODO(bichen): fix this hard-coded batch size.
     model = SqueezeSeg(mc)
-
+    config = tf.ConfigProto(allow_soft_placement=True)
+    config.gpu_options.allow_growth = True
     saver = tf.train.Saver(model.model_params)
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
+    with tf.Session(config=config) as sess:
       saver.restore(sess, FLAGS.checkpoint)
       for f in glob.iglob(FLAGS.input_path):
         raw_lidar = np.loadtxt(f, delimiter = '\t')

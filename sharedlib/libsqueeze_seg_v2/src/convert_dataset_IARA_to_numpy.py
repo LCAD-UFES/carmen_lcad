@@ -41,7 +41,7 @@ tf.app.flags.DEFINE_string('gpu', '0', """gpu id.""")
 
 def vertical_doubled(lidar):
     s = (lidar.shape[0]*2, lidar.shape[1], lidar.shape[2])
-    lidar_new = np.zeros(s, dtype=np.int64)
+    lidar_new = np.zeros(s, dtype=np.float32)
     i = 0
     for x in range(lidar.shape[0]-1):
         first_set = lidar[x,:,:]
@@ -61,18 +61,29 @@ def txt_to_npy():
         shots = raw_lidar.shape[0]//vertical_resolution
         raw_lidar = raw_lidar.reshape((vertical_resolution, shots, 6))
         lidar = vertical_doubled(raw_lidar)
-        print(lidar.shape)
+        lidar_part = lidar[:,288:800,:]
+        # print(lidar_part.shape)
+        file_name = f.strip('.txt').split('/')[-1]
+        #np.save(
+        #    os.path.join(FLAGS.out_dir, 'original_'+file_name+'.npy'),
+        #    lidar_part
+        #)
+        label = lidar_part[:,:,5]
+        # print (label.shape)
+        result = np.where(label[:]>3.0, 0.0, label[:])
+        lidar_part[:,:,5] = result
+        # print (lidar_part.shape)
         file_name = f.strip('.txt').split('/')[-1]
         np.save(
-            os.path.join(FLAGS.out_dir, 'train_'+file_name+'.npy'),
-            lidar
+            os.path.join(FLAGS.out_dir, 'iara_'+file_name+'.npy'),
+            lidar_part
         )
 
 def main(argv=None):
   if not tf.gfile.Exists(FLAGS.out_dir):
     tf.gfile.MakeDirs(FLAGS.out_dir)
   txt_to_npy()
-  print('Detection output written to {}'.format(FLAGS.out_dir))
+  print('Output written to {}'.format(FLAGS.out_dir))
 
 
 if __name__ == '__main__':

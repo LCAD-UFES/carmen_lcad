@@ -11,10 +11,10 @@ MODULE_COMMENT = Semantic segmentation of LiDAR point cloud
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp -lprob_models
 
-IFLAGS += -I/usr/include/python2.7
+IFLAGS += -I/usr/include/python2.7 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
 LFLAGS += -lpython2.7 -lpthread `pkg-config --libs opencv` `python2.7-config --libs` 
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lvelodyne_camera_calibration
 LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basic_interface -lvisual_tracker_interface \
 		  `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
@@ -26,7 +26,7 @@ PUBLIC_INCLUDES = libsqueeze_seg.h
 PUBLIC_LIBRARIES = libsqueeze_seg.a
 PUBLIC_BINARIES = velodyne_to_SqueezeSeg
 
-TARGETS = libprob_models.a velodyne_camera_calibration libsqueeze_seg.a velodyne_to_SqueezeSeg
+TARGETS = libprob_models.a velodyne_camera_calibration libsqueeze_seg.a # velodyne_to_SqueezeSeg
 PUBLIC_LIBRARIES_SO =
 
 libprob_models.a: 

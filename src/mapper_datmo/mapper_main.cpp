@@ -1281,7 +1281,7 @@ void
 remove_clusters_of_static_obstacles_using_segmentation(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, vector<image_cartesian> points,
 	vector<vector<image_cartesian>> &clustered_points, int camera_index, int image_width, int image_height, double timestamp)
 {
-	unsigned int cont = 0;
+	// unsigned int cont = 0;
 	vector<vector<image_cartesian>> classified;
 	// vector<image_cartesian> cluster;
 	// vector<int> moving_object_cluster_index;
@@ -1809,11 +1809,9 @@ filter_sensor_data_using_yolo_old(sensor_parameters_t *sensor_params, sensor_dat
 
 			cv::line(total, cvPoint(x, y - 10 / 2), cvPoint(x, y + 5 / 2), CV_RGB(0, 199, 0), 1, 8);
 
-//<<<<<<< HEAD
 //			resize(img_planar, img_planar, cv::Size(0, 0), 2.1, 2.1, cv::INTER_NEAREST);
 //			imshow("Velodyne Semantic Map", img_planar);
 //			imshow("Image Semantic Segmentation", img);
-//=======
 			if (dataset_for_squeezeseg)
 			{
 				if (squeezeseg_dataset.camera5 && squeezeseg_dataset.camera7 && squeezeseg_dataset.camera3)
@@ -2157,11 +2155,9 @@ filter_sensor_data_using_efficientdet(sensor_parameters_t *sensor_params, sensor
 
 			cv::line(total, cvPoint(x, y - 10 / 2), cvPoint(x, y + 5 / 2), CV_RGB(0, 199, 0), 1, 8);
 
-//<<<<<<< HEAD
 //			resize(img_planar, img_planar, cv::Size(0, 0), 2.1, 2.1, cv::INTER_NEAREST);
 //			imshow("Velodyne Semantic Map", img_planar);
 //			imshow("Image Semantic Segmentation", img);
-//=======
 			if (dataset_for_squeezeseg)
 			{
 				if (squeezeseg_dataset.camera5 && squeezeseg_dataset.camera7 && squeezeseg_dataset.camera3)
@@ -4524,7 +4520,7 @@ generates_ray_order(int size)
 static void
 get_sensors_param(int argc, char **argv)
 {
-	int i, j;
+	int i;
 	int flipped;
 	int horizontal_resolution;
 	char stereo_velodyne_string[256];
@@ -4564,9 +4560,7 @@ get_sensors_param(int argc, char **argv)
 		sensors_params[0].sensor_type = VELODYNE;
 		sensors_params[0].ray_order = carmen_velodyne_get_ray_order();
 		sensors_params[0].vertical_correction = carmen_velodyne_get_vertical_correction();
-		// sensors_params[0].delta_difference_mean = carmen_velodyne_get_delta_difference_mean();
-		// sensors_params[0].delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
-
+		
 		carmen_param_t param_list[] =
 		{
 			{sensors_params[0].name, (char *) "vertical_resolution", CARMEN_PARAM_INT, &sensors_params[0].vertical_resolution, 0, NULL},
@@ -5192,7 +5186,7 @@ main(int argc, char **argv)
 		initializer_YOLO();
 	}
 	if (!strcmp(neural_network,"efficientdet")){
-		classes_names = get_classes_names("../sharedlib/darknet2/data/coco.names");
+		classes_names = get_classes_names((char *)"../sharedlib/darknet2/data/coco.names");
 		initialize_Efficientdet(0.2);
 		if (dataset_for_squeezeseg)
 		{
