@@ -41,9 +41,10 @@
 
 #include <iostream> //Para salvar arquivos
 #include <fstream> //Para salvar arquivos
+#include <list> 
+#include <iterator> 
 
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-
 
 carmen_map_t offline_map;
 // TODO: @@@ Alberto: essa variavel eh definida como externa dentro da lib do mapper. Corrigir!
@@ -839,7 +840,7 @@ show_semantic_map(double map_resolution, double range_max, vector<image_cartesia
 {
 	int img_planar_depth = (double) 0.5 * range_max / map_resolution;
 	Mat map_img = Mat(Size(img_planar_depth * 2, img_planar_depth * 2), CV_8UC3, Scalar(255, 255, 255));
-	// printf("1\n");
+	
 	for (unsigned int i = 0, size = points.size(); i < size; i++)
 	{
 		int px = (double) points[i].cartesian_y / map_resolution + img_planar_depth;
@@ -848,7 +849,7 @@ show_semantic_map(double map_resolution, double range_max, vector<image_cartesia
 		if (px >= 0 && px < map_img.cols && py >= 0 && py < map_img.rows)
 			map_img.at<Vec3b>(Point(px, py)) = Vec3b(0, 0, 0);
 	}
-	// printf("2\n");
+	
 	for (unsigned int i = 0, size = clustered_points.size(); i < size; i++)
 	{
 		for (unsigned int j = 0, c_size = clustered_points[i].size(); j < c_size; j++)
@@ -860,14 +861,13 @@ show_semantic_map(double map_resolution, double range_max, vector<image_cartesia
 				map_img.at<Vec3b>(Point(px, py)) = Vec3b(0, 200, 0);
 		}
 	}
-	// printf("3\n");
+	
 	rectangle(map_img, cvPoint(img_planar_depth - 10 / 2, img_planar_depth - 10 / 2), cvPoint(img_planar_depth + 10 / 2, img_planar_depth + 30 / 2), CV_RGB(0, 0, 200), 1, 8);
 	line(map_img, cvPoint(img_planar_depth, img_planar_depth - 10 / 2), cvPoint(img_planar_depth, img_planar_depth + 5 / 2), CV_RGB(0, 0, 200), 1, 8);
 	
 	resize(map_img, map_img, Size(0, 0), 1.7, 1.7, INTER_NEAREST);
 	imshow("Map Image", map_img);
 	waitKey(1);
-	// printf("4\n");
 }
 
 
@@ -1059,8 +1059,6 @@ remove_points_behind_cam_and_compute_img_coordnates(sensor_parameters_t *sensor_
 void
 remove_classified_rais_from_point_clud(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, vector<vector<image_cartesian>> clustered_points)
 {
-
-	// printf("6\n");
 	int point_index;
 	int cloud_index = sensor_data->point_cloud_index;
 	
@@ -1132,7 +1130,6 @@ void
 remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index,
 	vector<image_cartesian> points, vector<vector<image_cartesian>> &clustered_points, int image_width, int image_height)
 {
-	// printf("3\n");
 	vector<bbox_t> predictions_vector;
 	vector<image_cartesian> points_on_image;
 	camera_filter_count[camera_index]++;
@@ -1150,7 +1147,7 @@ remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor
 	open_cv_image = open_cv_image(myROI);
 		
 	if (!strcmp(neural_network, "yolo"))
-		predictions_vector = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.5);
+		predictions_vector = run_YOLO(open_cv_image.data, 3, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2, 0.5);
 	if (!strcmp(neural_network, "efficientdet"))
 	 	predictions_vector = run_EfficientDet(open_cv_image.data, open_cv_image.cols, open_cv_image.rows);
 	
@@ -1185,7 +1182,6 @@ remove_clusters_of_static_obstacles_using_detections(sensor_parameters_t *sensor
 			}
 			if (squeezeseg_dataset.camera3 && squeezeseg_dataset.camera5)
 			{
-				// printf("for_save\n");
 				libsqueeze_seg_save_txt_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
 				// libsqueeze_seg_save_npy_for_train(sensor_params->vertical_resolution, number_of_laser_shots, squeezeseg_dataset.data, squeezeseg_dataset.timestamp);
 			}
@@ -1333,7 +1329,6 @@ vector<vector<image_cartesian>>
 process_image(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int camera_index, int image_index,
 	vector<image_cartesian> points, vector<vector<image_cartesian>> clustered_points)
 {
-	// printf("2\n");
 	int image_width  = camera_data[camera_index].width[image_index];
 	int image_height = camera_data[camera_index].height[image_index];
 	
@@ -1366,10 +1361,83 @@ copy_to_filtered_clusters(vector<vector<image_cartesian>> clusters, vector<vecto
 	return filtered_clusters;
 }
 
+
+typedef struct
+{
+	int id;
+	double velocity;
+	double orientation;
+	list <double> timestamp;
+	list <double> x;
+	list <double> y;
+	list <double> theta;
+}movable_object;
+
+int
+compute_index_of_furthest_point_from_the_line(double x_min, double y_min, double x_max, double y_max, vector<image_cartesian> &cluster)
+{
+	// dist = |ax0 + by0 + c| / √(a^2 + b^2)
+	double a, b, c, denominator, dist, dist_max = 0.0;
+	int index_max;
+
+	a = y_min - y_max;
+	b = x_max - x_min;
+	c = (x_min * y_max) - (x_max * y_min);
+	denominator = sqrt((a * a) + (b * b));
+
+	for (unsigned int i = 0, c_size = cluster.size(); i < c_size; ++i)
+	{
+		dist = abs((a * cluster[i].cartesian_x) + (b * cluster[i].cartesian_y) + c) / denominator;
+
+		if (dist > dist_max)
+		{
+			dist_max = dist;
+			index_max = i;
+		}
+	}
+	return (index_max);
+}
+
+void
+fix_box_model_to_cluster(vector<image_cartesian> &cluster)
+{
+	double x_min = 9999, y_min = 9999, x_max = -9999, y_max = -9999;
+	int index_max;
+
+	for (unsigned int i = 0, c_size = cluster.size(); i < c_size; ++i)
+	{
+		image_cartesian point = cluster[i];
+
+		if (point.cartesian_x < x_min)
+			y_min = point.cartesian_x;
+		if (point.cartesian_y < y_min)
+			x_min = point.cartesian_y;
+		if (point.cartesian_x > x_max)
+			x_max = point.cartesian_x;
+		if (point.cartesian_y > y_max)
+			y_max = point.cartesian_y;
+	}
+
+	index_max = compute_index_of_furthest_point_from_the_line(x_min, y_min, x_max, y_max, cluster);
+
+	
+
+}
+void
+fix_box_model_to_clusters(vector<vector<image_cartesian>> &clustered_points)
+{
+	for (unsigned int i = 0, c_size = clustered_points.size(); i < c_size; ++i)
+	{
+		fix_box_model_to_cluster(clustered_points[i]);
+	}
+}
+
+// t 215:245 problema moto
 int
 filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data)
 {
-	// printf("1\n");
+	static list<movable_object> tracks;
+
 	int filter_cameras = 0;
 	vector<image_cartesian> points;
 	vector<vector<image_cartesian>> clustered_points;
@@ -1380,7 +1448,7 @@ filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_
 		return 0;
 	
 	points = compute_obstacle_points(sensor_params, sensor_data);
-	// show_semantic_map(map_config.resolution, sensors_params->range_max, points, filtered_clusters);
+
 	clustered_points = dbscan_compute_clusters(0.5, 1, points);
 
 	if (points.size() == 0)
@@ -1418,7 +1486,6 @@ filter_sensor_data_using_images(sensor_parameters_t *sensor_params, sensor_data_
 	}
 	if (verbose >= 2)
 	{
-		//printf("7\n");
 		show_semantic_map(map_config.resolution, sensors_params->range_max, points, filtered_clusters);
 	}
 
@@ -1573,7 +1640,7 @@ filter_sensor_data_using_yolo_old(sensor_parameters_t *sensor_params, sensor_dat
 
 		vector<vector<image_cartesian>> filtered_points = dbscan_compute_clusters(0.5, 5, points);
 		//Transform image in opencv to YOLO
-		vector<bbox_t> predictions = run_YOLO(open_cv_image.data, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2);
+		vector<bbox_t> predictions = run_YOLO(open_cv_image.data, 3, open_cv_image.cols, open_cv_image.rows, network_struct, classes_names, 0.2, 0.5	);
 		predictions = filter_predictions_of_interest(predictions);
 		show_detections(open_cv_image, predictions);
 
@@ -4497,8 +4564,8 @@ get_sensors_param(int argc, char **argv)
 		sensors_params[0].sensor_type = VELODYNE;
 		sensors_params[0].ray_order = carmen_velodyne_get_ray_order();
 		sensors_params[0].vertical_correction = carmen_velodyne_get_vertical_correction();
-		sensors_params[0].delta_difference_mean = carmen_velodyne_get_delta_difference_mean();
-		sensors_params[0].delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
+		// sensors_params[0].delta_difference_mean = carmen_velodyne_get_delta_difference_mean();
+		// sensors_params[0].delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
 
 		carmen_param_t param_list[] =
 		{
@@ -4547,11 +4614,11 @@ get_sensors_param(int argc, char **argv)
 		static double vertical_correction[4] = {-1.2, -0.4, 0.4, 1.2};
 		sensors_params[1].vertical_correction = vertical_correction;
 
-		static double delta_difference_mean[4] = {0, 0, 0, 0};
-		sensors_params[1].delta_difference_mean = delta_difference_mean;
+		// static double delta_difference_mean[4] = {0, 0, 0, 0};
+		// sensors_params[1].delta_difference_mean = delta_difference_mean;
 
-		static double delta_difference_stddev[4] = {0, 0, 0, 0};
-		sensors_params[1].delta_difference_stddev = delta_difference_stddev;
+		// static double delta_difference_stddev[4] = {0, 0, 0, 0};
+		// sensors_params[1].delta_difference_stddev = delta_difference_stddev;
 
 		carmen_param_t param_list[] =
 		{
@@ -4634,10 +4701,10 @@ get_sensors_param(int argc, char **argv)
 			carmen_prob_models_alloc_sensor_data(&sensors_data[i], sensors_params[i].vertical_resolution, number_of_threads);
 
 			//TODO : tem que fazer esta medida para as cameras igual foi feito para o velodyne
-			sensors_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));
-			sensors_params[i].delta_difference_stddev = (double *)calloc(50, sizeof(double));
-			for (j = 0; j < 50; j++)
-				sensors_params[i].delta_difference_stddev[j] = 1.0;
+			// sensors_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));
+			// sensors_params[i].delta_difference_stddev = (double *)calloc(50, sizeof(double));
+			// for (j = 0; j < 50; j++)
+			// 	sensors_params[i].delta_difference_stddev[j] = 1.0;
 		}
 	}
 }
@@ -5080,15 +5147,14 @@ initializer_YOLO()
 	char yolo_cfg_path[1024];
 	char yolo_weights_path[1024];
 
-	sprintf(classes_names_path, "%s/sharedlib/darknet2/data/coco.names", carmen_home);
-	sprintf(yolo_cfg_path, "%s/sharedlib/darknet2/cfg/yolov3.cfg", carmen_home);
-	sprintf(yolo_weights_path, "%s/sharedlib/darknet2/yolov3.weights", carmen_home);
+	sprintf(classes_names_path, "%s/sharedlib/darknet3/data/coco.names", carmen_home);
+	sprintf(yolo_cfg_path, "%s/sharedlib/darknet3/cfg/yolov4.cfg", carmen_home);
+	sprintf(yolo_weights_path, "%s/sharedlib/darknet3/yolov4.weights", carmen_home);
 
 	classes_names = get_classes_names(classes_names_path);
 
-	network_struct = initialize_YOLO( yolo_cfg_path, yolo_weights_path);
+	network_struct = load_yolo_network(yolo_cfg_path, yolo_weights_path, 1);
 }
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 

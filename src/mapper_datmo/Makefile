@@ -20,7 +20,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 #YOLO
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet3/lib
 
 IFLAGS += `pkg-config --cflags opencv`
 
@@ -53,7 +53,7 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 	-llocalize_ackerman_interface -lmap_interface -lmapper -lipc		\
 	-lultrasonic_filter_interface -lstereo_mapping_interface -lrotation_geometry -lvelodyne_interface	\
 	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
-	-lbumblebee_basic_interface -lvelodyne_camera_calibration -ldarknet2		\
+	-lbumblebee_basic_interface -lvelodyne_camera_calibration -ldarknet		\
 	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
 	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils -lmoving_objects_interface
 
@@ -83,7 +83,7 @@ PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = mapper_datmo compute_velodyne_calibration_table
-TARGETS = darknet2 convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a compute_maps_difference compute_maps_changes libsalsanet.a libsqueeze_seg.a libefficientdet.a #librangenet_inference.a librangenet.a 
+TARGETS = darknet convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a compute_maps_difference compute_maps_changes libsalsanet.a libsqueeze_seg.a libefficientdet.a #librangenet_inference.a librangenet.a 
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -130,8 +130,8 @@ libefficientdet.a:
 
 #librangenet.a:
 #	$(MAKE) -C $(CARMEN_HOME)/sharedlib/rangenet_lib/src/ 
-darknet2:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2
+darknet:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet3
 
 clean: clean_libsqueeze_seg clean_libefficientdet
 

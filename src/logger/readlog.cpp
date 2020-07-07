@@ -30,7 +30,11 @@
 #include <carmen/carmen_stdio.h>
 #include <ctype.h>
 #include <opencv2/highgui/highgui.hpp>
+#include <vector>
 #include "readlog.h"
+
+using namespace std;
+using namespace cv;
 
 #define HEX_TO_BYTE(hi, lo) (hi << 4 | lo)
 #define HEX_TO_SHORT(fourth, third, second, first) ( fourth << 12 | (third << 8 | (second << 4 | first)))
@@ -1767,9 +1771,11 @@ char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string
 char*
 camera_drivers_read_camera_message_from_log(char* string, camera_message* msg)
 {
-	int camera_id;
+	static Mat img;
+	int camera_id, compress_image = 0;
 	char path[1024];
 
+	compress_image = CLF_READ_INT(&string);
 	camera_id = CLF_READ_INT(&string);
 	msg->number_of_images = CLF_READ_INT(&string);
 	msg->timestamp = CLF_READ_DOUBLE(&string);
@@ -1807,16 +1813,26 @@ camera_drivers_read_camera_message_from_log(char* string, camera_message* msg)
 		if (msg->images[i].raw_data == NULL)
 			msg->images[i].raw_data = (char*) malloc (msg->images[i].image_size * sizeof (char));
 		
-		sprintf(path, "%s_images/%d/%d/%lf_camera%d_%d.image", log_filename, high_level_subdir, low_level_subdir, msg->timestamp, camera_id, i);
-
-		FILE *image_file = fopen(path, "rb");
-		if (!image_file)
+		sprintf(path, "%s_images/%d/%d/%lf_camera%d_%d", log_filename, high_level_subdir, low_level_subdir, msg->timestamp, camera_id, i);
+		
+		if (compress_image)
 		{
-			printf("Could not load image:\n%s\n", path);
-			return (string);
+			sprintf(path, "%s.png", path);
+			img = imread(path, CV_LOAD_IMAGE_COLOR);
+			msg->images[i].raw_data = img.data;
 		}
-		fread(msg->images[i].raw_data, msg->images[i].size_in_bytes_of_each_element, msg->images[i].image_size, image_file);
-		fclose(image_file);
+		else
+		{
+			sprintf(path, "%s.image", path);
+			FILE *image_file = fopen(path, "rb");
+			if (!image_file)
+			{
+				printf("Could not load image:\n%s\n", path);
+				return (string);
+			}
+			fread(msg->images[i].raw_data, msg->images[i].size_in_bytes_of_each_element, msg->images[i].image_size, image_file);
+			fclose(image_file);
+		}
 	}
 	return (string);
 }

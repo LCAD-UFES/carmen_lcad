@@ -31,6 +31,10 @@
 #include <iostream>
 #include <fstream>
 #include <math.h>
+#include <vector>
+
+using namespace std;
+using namespace cv;
 
 //byte numbers
 #define GET_LOW_ORDER_NIBBLE(x) (int_to_nibble_hex[x & 0xf])
@@ -1259,11 +1263,21 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 	frame_number++;
 }
 
+int compress_image = 0;
 
 void
 camera_drivers_write_camera_message_to_log(int camera_id, camera_message *message, carmen_FILE *outfile, char *log_path, double time_spent)
 {
+	static bool first_time = true;
+	static vector<int> compression_params;
+
 	static char dir[1024], path[1024], mkdir_string[1024];
+
+	if (first_time && compress_image)
+	{
+		compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+    	compression_params.push_back(9);
+	}
 
 	int high_level_subdir = ((int) (message->timestamp / HIGH_LEVEL_SUBDIR_TIME)) * HIGH_LEVEL_SUBDIR_TIME;    // new each 10000 seconds
 	int low_level_subdir = ((int) (message->timestamp / LOW_LEVEL_SUBDIR_TIME)) * LOW_LEVEL_SUBDIR_TIME;       // new each 100 seconds
@@ -1272,25 +1286,33 @@ camera_drivers_write_camera_message_to_log(int camera_id, camera_message *messag
 	sprintf(mkdir_string, "mkdir -p %s", dir);
 	system(mkdir_string);
 
-	carmen_fprintf(outfile, "CAMERA%d_MESSAGE %d %d %lf %s ", camera_id, camera_id, message->number_of_images, message->timestamp, message->host);
-	//printf("CAMERA_MESSAGE %d %d %lf %s ", camera_id, message->number_of_images, message->timestamp, message->host);
+	carmen_fprintf(outfile, "CAMERA%d_MESSAGE %d %d %d %lf %s ", camera_id, compress_image, camera_id, message->number_of_images, message->timestamp, message->host);
 	
 	for (int i = 0; i < message->number_of_images; i++)
 	{
 		carmen_fprintf(outfile, "%d %d %d %d %d %d ", message->images[i].image_size, message->images[i].width, message->images[i].height, message->images[i].number_of_channels,
 			message->images[i].size_in_bytes_of_each_element, message->images[i].data_type);
 
-		sprintf(path, "%s/%lf_camera%d_%d.image", dir, message->timestamp, camera_id, i);
-		//printf("%s\n", path);
+		sprintf(path, "%s/%lf_camera%d_%d", dir, message->timestamp, camera_id, i);
 
-		FILE *image_file = fopen(path, "wb");
-		if (!image_file)
+		if (compress_image)
 		{
-			printf("Could not load image:\n%s\n", path);
-			return;
+			sprintf(path, "%s.png", path);
+			Mat img = cv::Mat(message->images[i].height, message->images[i].width, CV_8UC3, message->images[i].raw_data, 0);
+			imwrite(path, img, compression_params);
 		}
-		fwrite(message->images[i].raw_data, message->images[i].size_in_bytes_of_each_element, message->images[i].image_size, image_file);
-		fclose(image_file);
+		else
+		{
+			sprintf(path, "%s.image", path);
+			FILE *image_file = fopen(path, "wb");
+			if (!image_file)
+			{
+				printf("Could not load image:\n%s\n", path);
+				return;
+			}
+			fwrite(message->images[i].raw_data, message->images[i].size_in_bytes_of_each_element, message->images[i].image_size, image_file);
+			fclose(image_file);
+		}
 	}
 	carmen_fprintf(outfile, " %lf\n", time_spent);
 }
