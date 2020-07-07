@@ -7,7 +7,7 @@ MODULE_COMMENT = Path Planning using A-star algorithm
 
 LINK = g++
 CFLAGS += -Wall -g 
-CXXFLAGS = -std=c++11
+CXXFLAGS = -std=c++11 -ggdb
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/libcarmodel -I$(CARMEN_HOME)/sharedlib/libcontrol -I/home/lcad/carmen_lcad/include
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/libcarmodel -L$(CARMEN_HOME)/sharedlib/libcontrol
