@@ -1503,7 +1503,7 @@ reed_shepp_path(state_node *current, state_node *goal_state)
 			//Como o Reed Shepp realiza o caminho do goal para um ponto, ele está andando de ré. Por isso precisa-se inverter o sinal de v
 			new_state->state.v = -new_state->state.v;
 			new_state->f = path_cost;
-			printf("Step weight = %f %f \n", step_weight, new_state->state.v);
+//			printf("Step weight = %f %f \n", step_weight, new_state->state.v);
 			rs_path_nodes.push_back(new_state);
 		}
 	}
@@ -1637,7 +1637,7 @@ h(map_node_p ***astar_map, double* heuristic_obstacle_map, state_node *current, 
 		rs = rs_cost;
 
 	}
-//	printf("[h]rs = %f\tho = %f\n", rs, ho);
+	printf("[h]rs = %f\tho = %f\n", rs, ho);
 //	if(rs == -1)
 //		ho+=10;
 
