@@ -85,6 +85,7 @@ int expansion_number = 0;
 #define	VORONOI_WEIGHT 1.0
 
 #define USE_SMOOTH 1
+#define USE_NOBSTACLE_HEURISTIC 0
 
 using namespace cv;
 
@@ -352,6 +353,15 @@ calculate_theta_and_phi(carmen_ackerman_traj_point_t *poses_ahead, int num_poses
 
 
 double
+safeAcos(double x)
+{
+	if (x < -1.0) x = -1.0 ;
+	else if (x > 1.0) x = 1.0 ;
+	return acos (x) ;
+}
+
+
+double
 distance_to_nearest_edge(double x, double y)
 {
 	int x_map = get_astar_map_x(x);
@@ -438,11 +448,14 @@ my_f(const gsl_vector *v, void *params)
 			}
 			else
 			{
-				obstacle_cost+=DBL_MAX;
+//				obstacle_cost+=DBL_MAX;
+				obstacle_cost += 9999;
+
 			}
 
 			//Utilizando a segunda definição de delta_phi
-			delta_phi = acos(DOT2D(delta_i, delta_i_1)/ (sqrt(DOT2D(delta_i, delta_i)) * sqrt(DOT2D(delta_i_1, delta_i_1))));
+			delta_phi = DOT2D(delta_i, delta_i_1)/ (sqrt(DOT2D(delta_i, delta_i)) * sqrt(DOT2D(delta_i_1, delta_i_1)));
+			delta_phi = safeAcos(delta_phi);
 			delta_phi = fabs(delta_phi) / sqrt(DOT2D(delta_i, delta_i));
 			if(delta_phi > kmax)
 			{
@@ -501,12 +514,16 @@ single_point_my_f(carmen_ackerman_traj_point_t i, carmen_ackerman_traj_point_t i
 	}
 	else
 	{
-		obstacle_cost+=DBL_MAX;
+//		obstacle_cost+=DBL_MAX;
+		obstacle_cost += 9999;
 	}
 
-	delta_phi = acos(DOT2D(delta_i, delta_i_1)/ (sqrt(DOT2D(delta_i, delta_i)) * sqrt(DOT2D(delta_i_1, delta_i_1))));
+	delta_phi = DOT2D(delta_i, delta_i_1)/ (sqrt(DOT2D(delta_i, delta_i)) * sqrt(DOT2D(delta_i_1, delta_i_1)));
+	delta_phi = safeAcos(delta_phi);
+//	printf("delta_phi1 = %f %f %f %f\n", DOT2D(delta_i, delta_i_1), sqrt(DOT2D(delta_i, delta_i)), sqrt(DOT2D(delta_i_1, delta_i_1)), delta_phi);
 	delta_phi = fabs(delta_phi) / sqrt(DOT2D(delta_i, delta_i));
-
+//	printf("delta_phi2 = %f %f \n", sqrt(DOT2D(delta_i, delta_i)), delta_phi);
+//	printf("delta_phi = %f %f %f %f %f\n", DOT2D(delta_i, delta_i_1), sqrt(DOT2D(delta_i, delta_i)), sqrt(DOT2D(delta_i_1, delta_i_1)), acos(DOT2D(delta_i, delta_i_1)/ (sqrt(DOT2D(delta_i, delta_i)) * sqrt(DOT2D(delta_i_1, delta_i_1)))), sqrt(DOT2D(delta_i, delta_i)));
 	if(delta_phi > kmax)
 	{
 		curvature_cost += pow(delta_phi, 2) * (delta_phi - kmax);
@@ -516,8 +533,8 @@ single_point_my_f(carmen_ackerman_traj_point_t i, carmen_ackerman_traj_point_t i
 	curvature_cost = CURVATURE_WEIGHT * curvature_cost;
 	smoothness_cost = SMOOTHNESS_WEIGHT * smoothness_cost;
 	voronoi_cost = VORONOI_WEIGHT * voronoi_cost;
-//	printf("distance= %f %f %f\n", distance, distance_voronoi, delta_phi);
-//	printf("costs= %f %f %f %f\n", obstacle_cost, curvature_cost, smoothness_cost, voronoi_cost);
+//	printf("distance = %f %f %f\n", distance, distance_voronoi, delta_phi);
+//	printf("costs = %f %f %f %f\n", obstacle_cost, curvature_cost, smoothness_cost, voronoi_cost);
 
 	return obstacle_cost + curvature_cost + smoothness_cost + voronoi_cost;
 }
@@ -662,6 +679,7 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 	{
 		if (!param->anchor_points[i])
 		{
+//			printf("poses_ahead = %f %f \n",poses_ahead[i].x, poses_ahead[i].y );
 			gsl_vector_set (v, j++, poses_ahead[i].x);
 			gsl_vector_set (v, j++, poses_ahead[i].y);
 		}
@@ -690,7 +708,7 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 		{
 			poses_ahead[i].x = gsl_vector_get (s->x, j++);
 			poses_ahead[i].y = gsl_vector_get (s->x, j++);
-
+//			printf("poses_ahead after smoothing = %f %f \n",poses_ahead[i].x, poses_ahead[i].y);
 		}
 	}
 
@@ -1611,32 +1629,34 @@ h(map_node_p ***astar_map, double* heuristic_obstacle_map, state_node *current, 
 	get_current_pos(current, x_c, y_c, theta_c);
 
 	ho = heuristic_obstacle_map[y_c + x_c * astar_map_y_size];
-
-	if(astar_config.use_matrix_cost_heuristic)
-//	if(0)
+	if(USE_NOBSTACLE_HEURISTIC)
 	{
-		int x = ((current->state.x - goal->state.x) * cos(current->state.theta) - (current->state.y - goal->state.y) * sin(current->state.theta))/astar_config.precomputed_cost_resolution;
-		int y = ((current->state.x - goal->state.x) * sin(current->state.theta) + (current->state.y - goal->state.y) * cos(current->state.theta))/astar_config.precomputed_cost_resolution;
-		int theta;
-
-		if ((x <= 0 && y >= 0) || (x >= 0 && y <= 0))
-			theta = get_astar_map_theta(carmen_normalize_theta(-(goal->state.theta - current->state.theta)), astar_config.precomputed_cost_theta_size);
-		else
-			theta = get_astar_map_theta(carmen_normalize_theta(goal->state.theta - current->state.theta), astar_config.precomputed_cost_theta_size);
-
-
-		int half_map = round(((astar_config.precomputed_cost_size)/astar_config.precomputed_cost_resolution) / 2);
-	//	printf("Real x = %d y= %d theta = %d\n", x + half_map, y + half_map, theta);
-		if(x < half_map && y < half_map && x > -half_map && y > -half_map)
+		if(astar_config.use_matrix_cost_heuristic)
+	//	if(0)
 		{
-			rs =  heuristic_without_obstacle_map[x + half_map][y + half_map][theta]->h;
-		}
-	}
-	else
-	{
-		double rs_cost = reed_shepp_cost(current->state, goal->state);
-		rs = rs_cost;
+			int x = ((current->state.x - goal->state.x) * cos(current->state.theta) - (current->state.y - goal->state.y) * sin(current->state.theta))/astar_config.precomputed_cost_resolution;
+			int y = ((current->state.x - goal->state.x) * sin(current->state.theta) + (current->state.y - goal->state.y) * cos(current->state.theta))/astar_config.precomputed_cost_resolution;
+			int theta;
 
+			if ((x <= 0 && y >= 0) || (x >= 0 && y <= 0))
+				theta = get_astar_map_theta(carmen_normalize_theta(-(goal->state.theta - current->state.theta)), astar_config.precomputed_cost_theta_size);
+			else
+				theta = get_astar_map_theta(carmen_normalize_theta(goal->state.theta - current->state.theta), astar_config.precomputed_cost_theta_size);
+
+
+			int half_map = round(((astar_config.precomputed_cost_size)/astar_config.precomputed_cost_resolution) / 2);
+		//	printf("Real x = %d y= %d theta = %d\n", x + half_map, y + half_map, theta);
+			if(x < half_map && y < half_map && x > -half_map && y > -half_map)
+			{
+				rs =  heuristic_without_obstacle_map[x + half_map][y + half_map][theta]->h;
+			}
+		}
+		else
+		{
+			double rs_cost = reed_shepp_cost(current->state, goal->state);
+			rs = rs_cost;
+
+		}
 	}
 //	printf("[h]rs = %f\tho = %f\n", rs, ho);
 
@@ -2094,7 +2114,7 @@ read_parameters(int argc, char **argv)
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
-	if(astar_config.use_matrix_cost_heuristic)
+	if(astar_config.use_matrix_cost_heuristic && USE_NOBSTACLE_HEURISTIC)
 //	if(0)
 		alloc_cost_map();
 
