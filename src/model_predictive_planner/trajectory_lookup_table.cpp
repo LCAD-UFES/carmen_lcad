@@ -21,6 +21,62 @@ extern int use_unity_simulator;
 //#define DEBUG_LANE
 
 
+void
+plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
+		  vector<carmen_ackerman_path_point_t> &pSeed)
+{
+//	plot data Table - Last TCP - Optmizer tcp - Lane
+	//Plot Optmizer step tcp and lane?
+
+	#define DELTA_T (1.0 / 40.0)
+
+//	#define PAST_SIZE 300
+	static bool first_time = true;
+	static FILE *gnuplot_pipeMP;
+
+	if (first_time)
+	{
+		first_time = false;
+
+		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
+//		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
+//		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
+//		fprintf(gnuplot_pipe, "set ytics nomirror\n");
+//		fprintf(gnuplot_pipe, "set y2tics\n");
+		fprintf(gnuplot_pipeMP, "set tics out\n");
+	}
+
+	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
+	FILE *gnuplot_data_lane = fopen("gnuplot_data_lane.txt", "w");
+	FILE *gnuplot_data_seed = fopen("gnuplot_data_seed.txt", "w");
+
+	for (unsigned int i = 0; i < pOTCP.size(); i++)
+		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %lf %lf %lf\n", pOTCP.at(i).x, pOTCP.at(i).y, 1.0 * cos(pOTCP.at(i).theta), 1.0 * sin(pOTCP.at(i).theta), pOTCP.at(i).theta, pOTCP.at(i).phi, pOTCP.at(i).time);
+	for (unsigned int i = 0; i < pLane.size(); i++)
+		fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf %lf\n", pLane.at(i).x, pLane.at(i).y, 1.0 * cos(pLane.at(i).theta), 1.0 * sin(pLane.at(i).theta), pLane.at(i).theta, pLane.at(i).phi, pLane.at(i).time);
+
+	for (unsigned int i = 0; i < pSeed.size(); i++)
+		fprintf(gnuplot_data_seed, "%lf %lf\n", pSeed.at(i).x, pSeed.at(i).y);
+
+	fclose(gnuplot_data_file);
+	fclose(gnuplot_data_lane);
+	fclose(gnuplot_data_seed);
+
+//	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
+
+	fprintf(gnuplot_pipeMP, "plot "
+			"'./gnuplot_data.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'OTCP',"
+			"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane',"
+			"'./gnuplot_data_seed.txt' using 1:2 with lines title 'Seed' axes x1y1\n");
+
+	fflush(gnuplot_pipeMP);
+}
+
+
 TrajectoryLookupTable::TrajectoryControlParameters_old trajectory_lookup_table_old[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
 TrajectoryLookupTable::TrajectoryControlParameters trajectory_lookup_table[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
 
@@ -671,6 +727,9 @@ generate_trajectory_control_parameters_sample(double k2, double k3, int i_v, int
 	// a = (s - s0 - v0.t) / (t^2.1/2)
 	// s = distance; s0 = 0; v0 = tcp.v0; t = time
 	tcp.a = (distance - v0 * time) / (time * time * 0.5);
+	if (v0 < 0) //reverse mode
+		tcp.a = (-1)*tcp.a;
+
 	// v = v0 + a.t
 	tcp.vf = v0 + tcp.a * time;
 	tcp.tt = time;
@@ -1006,7 +1065,10 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	gsl_interp_accel_free(acc);
 	carmen_ackerman_path_point_t furthest_point;
 	td.dist = get_max_distance_in_path(path, furthest_point);
-	td.theta = atan2(furthest_point.y, furthest_point.x);
+	if (GlobalState::reverse_driving)
+		td.theta = carmen_normalize_theta(atan2(furthest_point.y, furthest_point.x)+(-M_PI));
+	else
+		td.theta = atan2(furthest_point.y, furthest_point.x);
 	td.d_yaw = furthest_point.theta;
 	td.phi_i = i_phi;
 	td.v_i = v0;
@@ -1207,6 +1269,7 @@ fill_in_trajectory_lookup_table()
 								{
 									trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i] = ntcp;
 									valids += 1.0;
+//									printf("TDDV_I: %d, TD_VI: %lf a: %lf,  VF: %lf, TDDTheta: %d TDTheta: %lf\n",tdd.v_i, td.v_i, ntcp.a, ntcp.vf, tdd.theta, td.theta);
 
 									//	                                vector<carmen_ackerman_path_point_t> path;
 									//	                                compute_trajectory_dimensions(trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i], i_v, i_phi, path, true);

@@ -147,61 +147,6 @@ plot_state_goals(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_acke
 }
 
 
-void
-plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
-		  vector<carmen_ackerman_path_point_t> &pSeed)
-{
-//	plot data Table - Last TCP - Optmizer tcp - Lane
-	//Plot Optmizer step tcp and lane?
-
-	#define DELTA_T (1.0 / 40.0)
-
-//	#define PAST_SIZE 300
-	static bool first_time = true;
-	static FILE *gnuplot_pipeMP;
-
-	if (first_time)
-	{
-		first_time = false;
-
-		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
-		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
-		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
-//		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
-		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
-		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
-//		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
-//		fprintf(gnuplot_pipe, "set ytics nomirror\n");
-//		fprintf(gnuplot_pipe, "set y2tics\n");
-		fprintf(gnuplot_pipeMP, "set tics out\n");
-	}
-
-	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
-	FILE *gnuplot_data_lane = fopen("gnuplot_data_lane.txt", "w");
-	FILE *gnuplot_data_seed = fopen("gnuplot_data_seed.txt", "w");
-
-	for (unsigned int i = 0; i < pOTCP.size(); i++)
-		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %lf %lf %lf\n", pOTCP.at(i).x, pOTCP.at(i).y, 1.0 * cos(pOTCP.at(i).theta), 1.0 * sin(pOTCP.at(i).theta), pOTCP.at(i).theta, pOTCP.at(i).phi, pOTCP.at(i).time);
-	for (unsigned int i = 0; i < pLane.size(); i++)
-		fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf %lf\n", pLane.at(i).x, pLane.at(i).y, 1.0 * cos(pLane.at(i).theta), 1.0 * sin(pLane.at(i).theta), pLane.at(i).theta, pLane.at(i).phi, pLane.at(i).time);
-
-	for (unsigned int i = 0; i < pSeed.size(); i++)
-		fprintf(gnuplot_data_seed, "%lf %lf\n", pSeed.at(i).x, pSeed.at(i).y);
-
-	fclose(gnuplot_data_file);
-	fclose(gnuplot_data_lane);
-	fclose(gnuplot_data_seed);
-
-//	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
-
-	fprintf(gnuplot_pipeMP, "plot "
-			"'./gnuplot_data.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'OTCP',"
-			"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane',"
-			"'./gnuplot_data_seed.txt' using 1:2 with lines title 'Seed' axes x1y1\n");
-
-	fflush(gnuplot_pipeMP);
-}
-
 
 TrajectoryLookupTable::TrajectoryDimensions
 get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_odometry,	Pose *goal_pose)
@@ -689,7 +634,7 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 		TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp,
 		TrajectoryLookupTable::TrajectoryDimensions td)
 {
-	if (GlobalState::reverse_driving && !previous_good_tcp.valid && td.v_i == 0)
+	if (GlobalState::reverse_driving && !previous_good_tcp.valid)
 		{
 			TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp;
 			dummy_tcp.valid = true;
@@ -726,6 +671,7 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 	}
 	else
 		tcp = previous_good_tcp;
+
 
 	return (true);
 }
@@ -857,10 +803,22 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	static double last_timestamp = 0.0;
 	bool goal_in_lane = false;
 
-	GlobalState::reverse_driving = 0;
-
 	if (target_v < 0.0)
 		GlobalState::reverse_driving = 1;
+	else
+		GlobalState::reverse_driving = 0;
+
+//	if (goal_is_behind_car(localizer_pose, &goalPoseVector[0]))
+//		{
+//			if(target_v == 0.0 && lastOdometryVector[0].v == 0.0)
+//			{
+//				target_v = 1.0;
+//				printf("fiz isso aqui \n ");
+//			}
+//			target_v = (-1)*target_v;
+//			GlobalState::reverse_driving = 1;
+//		}
+
 
 	if (first_time || !GlobalState::following_path)
 	{
@@ -868,14 +826,6 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		first_time = false;
 		last_timestamp = goal_list_message->timestamp;
 	}
-
-//	if (goal_is_behind_car(localizer_pose, &goalPoseVector[0]))
-//	{
-////		printf("goal is behid the car\n");
-////		return;
-//		target_v = (-1)*target_v;
-//		GlobalState::reverse_driving = 1;
-//	}
 
 	move_lane_to_robot_reference_system(localizer_pose, goal_list_message, &lane_in_local_pose);
 
@@ -921,7 +871,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 			TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, lastOdometryVector[i], &goalPoseVector[j]);
 			TrajectoryLookupTable::TrajectoryControlParameters tcp;
-			// previous_good_tcp.valid = false;
+//			previous_good_tcp.valid = false;
 			if (!get_tcp_from_td(tcp, previous_good_tcp, td))
 				continue;
 
