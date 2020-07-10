@@ -16,32 +16,37 @@ LINK = g++
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/include/bullet/ -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 #YOLO
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet2/lib
-
-IFLAGS += `pkg-config --cflags opencv`
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet3/lib
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
 
-#EfficientDet - Comentar as duas linhas abaixo para trabalhar com python2.7
-IFLAGS += -I/usr/include/python3.5
-LFLAGS += -lefficientdet -lpython3.5m
+#EfficientDet - Comment from 33 to 41 to use python2.7
+IFLAGS += -I/usr/include/python3.5m -I/usr/include/python3.6 -DBOOST_SIGNALS_NO_DEPRECATION_WARNING 
+LFLAGS += -lefficientdet
+UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
+#$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += `python3.5-config --libs`
+else
+	LFLAGS += `python3.6-config --libs`
+endif
 
 # Deeplab
 IFLAGS += -I/usr/include/python2.7
-LFLAGS += -ldeeplab -lpython2.7
+LFLAGS += `python2.7-config --libs` -ldeeplab 
 
-#SqueezeSeg
-LFLAGS += -lsqueeze_seg -lpython2.7
+# SqueezeSeg
+LFLAGS += `python2.7-config --libs` -lsqueeze_seg
 
-#SalsaNet
-LFLAGS += -lsalsanet -lpython2.7
+# SalsaNet
+LFLAGS += `python2.7-config --libs` -lsalsanet
 
 #OPENCV
 IFLAGS += -DUSE_OPENCV
@@ -53,18 +58,22 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 	-llocalize_ackerman_interface -lmap_interface -lmapper -lipc		\
 	-lultrasonic_filter_interface -lstereo_mapping_interface -lrotation_geometry -lvelodyne_interface	\
 	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
-	-lbumblebee_basic_interface -lvelodyne_camera_calibration -ldarknet2		\
+	-lbumblebee_basic_interface -lvelodyne_camera_calibration -ldarknet		\
 	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
 	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils -lmoving_objects_interface
 
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 # Application specific include directories.
-PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
+PCL_INC = $(wildcard /usr/local/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 
-LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
+ifeq ($(UBUNTU_VERSION),"16.04")
+	LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
+else
+	LFLAGS +=  -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
+endif
 LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 
 	
@@ -83,7 +92,7 @@ PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = mapper_datmo compute_velodyne_calibration_table
-TARGETS = darknet2 convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a compute_maps_difference compute_maps_changes libsalsanet.a libsqueeze_seg.a libefficientdet.a #librangenet_inference.a librangenet.a 
+TARGETS = darknet convert_maps_from_float_to_double libprob_models.a mapper_datmo libmapper_interface.a libmapper.a compute_velodyne_calibration_table libdeeplab.a compute_maps_difference compute_maps_changes libsalsanet.a libsqueeze_seg.a libefficientdet.a #librangenet_inference.a librangenet.a 
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
@@ -130,8 +139,8 @@ libefficientdet.a:
 
 #librangenet.a:
 #	$(MAKE) -C $(CARMEN_HOME)/sharedlib/rangenet_lib/src/ 
-darknet2:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet2
+darknet:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet3
 
 clean: clean_libsqueeze_seg clean_libefficientdet
 

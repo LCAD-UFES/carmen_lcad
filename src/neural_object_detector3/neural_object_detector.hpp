@@ -2,7 +2,7 @@
 #define SRC_NEURAL_OBJECT_DETECTOR_NEURAL_OBJECT_DETECTOR_HPP_
 
 #include <carmen/carmen.h>
-#include <carmen/carmen_darknet_interface.hpp>
+#include <carmen_darknet_interface.hpp>
 #include <carmen/bumblebee_basic_interface.h>
 #include <carmen/velodyne_interface.h>
 #include <carmen/velodyne_camera_calibration.h>

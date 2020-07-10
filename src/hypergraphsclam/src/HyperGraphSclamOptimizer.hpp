@@ -73,7 +73,7 @@ namespace hyper {
 #define VELODYNE_VERTEX_OFFSET_ID 1
 #define BUMBLEBEE_VERTEX_OFFSET_ID 2
 
-#define ODOM_ACKERMAN_PARAMS_VERTEX_INITIAL_ID 3
+#define ODOM_CALIBRATION_PARAMS_INITIAL_ID 3
 #define DEFAULT_ODOM_ACKERMAN_PARAMS_VERTICES 4
 
 #define DEFAULT_OPTIMIZER_OUTER_ITERATIONS 1
@@ -120,8 +120,11 @@ namespace hyper {
             // gps variances
             double gps_pose_std_multiplier, gps_pose_hh_std;
 
-            // how many odometry calibration vertices
-            unsigned odom_ackerman_params_vertices;
+            // how many odometry calibration vertices in each log
+            std::size_t odom_calib_log;
+
+            // how many odometry calibration nodes in the entire graph
+            std::size_t odom_calib_graph;
 
             // how many external iterations
             unsigned external_loop;
@@ -183,7 +186,7 @@ namespace hyper {
             // hack
             std::list<g2o::EdgeGPS*> gps_buffer;
 
-            std::map<std::string, std::vector<g2o::VertexSE2*> > logs;
+            std::map<std::string, std::vector<g2o::VertexSE2*>> logs;
 
             std::set<unsigned> els;
 
@@ -199,8 +202,19 @@ namespace hyper {
             // registering the custom edges and vertices
             void RegisterCustomTypes();
 
+            void AddOffsetNode(unsigned id, const g2o::SE2 guess);
+            
+            void AddSickOffsetNode();
+            
+            void AddVelodyneOffsetNode();
+            
+            void AddBumblebeeOffsetNode();
+
             // add the sick, velodyne and odometry calibration vertices
             void AddParametersVertices();
+
+            // add the odometry calibration vertices
+            void AddOdometryCalibrationNodes(const std::size_t initial_id);
 
             // read the current vertex from the input stream and save it to the optimizer
             void AddVertex(std::stringstream &ss);
@@ -222,7 +236,7 @@ namespace hyper {
                 g2o::VertexSE2 *l_vertex,
                 g2o::VertexSE2 *r_vertex,
                 g2o::EdgeSE2 *odom_edge,
-                unsigned odom_param_id,
+                std::size_t odom_param_id,
                 double raw_v,
                 double raw_phi,
                 double time,
@@ -232,7 +246,7 @@ namespace hyper {
             // read the odometry edge and the odometry calibration edge and save them to the optimizer
             void AddOdometryAndCalibEdges(
                 std::stringstream &ss,
-                unsigned odom_param_id,
+                std::size_t odom_param_id,
                 const Eigen::Matrix3d &special,
                 const Eigen::Matrix3d &odom_info);
 

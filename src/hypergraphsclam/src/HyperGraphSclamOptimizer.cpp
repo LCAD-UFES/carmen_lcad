@@ -1,3 +1,9 @@
+#include <algorithm>
+#include <map>
+#include <utility>
+#include <unistd.h>
+#include <exception>
+
 #include <HyperGraphSclamOptimizer.hpp>
 
 // custom edges
@@ -11,8 +17,6 @@
 #include <StringHelper.hpp>
 #include <StampedMessageType.hpp>
 
-#include <algorithm>
-#include <unistd.h>
 
 using namespace hyper;
 
@@ -43,7 +47,7 @@ HyperGraphSclamOptimizer::HyperGraphSclamOptimizer(int argc, char **argv) :
     visual_hh_var(DEFAULT_VISUAL_HH_VAR),
     gps_pose_std_multiplier(DEFAULT_GPS_POSE_STD_MULTIPLIER),
     gps_pose_hh_std(DEFAULT_GPS_POSE_HH_STD),
-    odom_ackerman_params_vertices(DEFAULT_ODOM_ACKERMAN_PARAMS_VERTICES),
+    odom_calib_log(DEFAULT_ODOM_ACKERMAN_PARAMS_VERTICES),
     external_loop(DEFAULT_OPTIMIZER_OUTER_ITERATIONS),
     internal_loop(DEFAULT_OPTIMIZER_INNER_POSE_ITERATIONS),
     optimizer_inner_odom_calib_iterations(DEFAULT_OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS),
@@ -68,8 +72,7 @@ HyperGraphSclamOptimizer::HyperGraphSclamOptimizer(int argc, char **argv) :
     // get the input filename
     ArgsParser(argc, argv);
 
-    // update the vertex ids offset
-    vertex_id_offset = ODOM_ACKERMAN_PARAMS_VERTEX_INITIAL_ID + odom_ackerman_params_vertices + 1;
+    
 
     // registering the custom edges
     factory = g2o::Factory::instance();
@@ -223,7 +226,7 @@ void HyperGraphSclamOptimizer::ArgsParser(int argc, char **argv)
                 }
                 else if ("ODOM_ACKERMAN_PARAMS_VERTICES" == str)
                 {
-                    ss >> odom_ackerman_params_vertices;
+                    ss >> odom_calib_log;
                 }
                 else if ("OPTIMIZER_OUTER_ITERATIONS" == str)
                 {
@@ -355,104 +358,74 @@ void HyperGraphSclamOptimizer::InitializeOptimizer()
     optimizer->setVerbose(true);
 }
 
+void HyperGraphSclamOptimizer::AddOffsetNode(unsigned id, const g2o::SE2 guess)
+{
+    auto offset_node { new g2o::VertexSE2 {} };
+
+    // the initial bullbar measure
+    offset_node->setEstimate(guess);
+
+    // marginalize it
+    offset_node->setMarginalized(true);
+
+    // set fixed
+    offset_node->setFixed(true);
+
+    // set the sick offset id 0
+    offset_node->setId(id);
+
+    if (!optimizer->addVertex(offset_node))
+    {
+        throw std::runtime_error("Could not add the offset node to the optimizer!");
+    }
+}
+
+
+void HyperGraphSclamOptimizer::AddSickOffsetNode()
+{
+    if (!use_sick_seq && !use_sick_loop) { return; }
+    AddOffsetNode(SICK_VERTEX_OFFSET_ID, g2o::SE2 { 3.52, 0.0, 0.0 });
+}
+
+
+void HyperGraphSclamOptimizer::AddVelodyneOffsetNode()
+{
+    if (!use_velodyne_seq && !use_velodyne_loop) { return; }
+    AddOffsetNode(VELODYNE_VERTEX_OFFSET_ID, g2o::SE2 { 0.572, 0.0, 0.0 });
+}
+
+
+void HyperGraphSclamOptimizer::AddBumblebeeOffsetNode()
+{
+    if (!use_bumblebee_seq && !use_bumblebee_loop)  { return; }
+    AddOffsetNode(BUMBLEBEE_VERTEX_OFFSET_ID, g2o::SE2 { 0.572 + 0.245, 0.0, 0.0 });
+}
+
 
 // add the sick, velodyne and odometry calibration vertices
 void HyperGraphSclamOptimizer::AddParametersVertices()
 {
-    // creates the sick offset vertex with a given initial estimate
-    g2o::VertexSE2 *sick_offset = new g2o::VertexSE2;
+    AddSickOffsetNode();
+    AddVelodyneOffsetNode();
+    AddBumblebeeOffsetNode();     
+}
 
-    // the initial bullbar measure
-    sick_offset->setEstimate(g2o::SE2(3.52, 0.0, 0.0));
 
-    // marginalize it
-    sick_offset->setMarginalized(true);
-
-    // set fixed
-    sick_offset->setFixed(true);
-
-    // set the sick offset id 0
-    sick_offset->setId(SICK_VERTEX_OFFSET_ID);
-
-    if (!optimizer->addVertex(sick_offset))
+void HyperGraphSclamOptimizer::AddOdometryCalibrationNodes(const std::size_t initial_id)
+{
+    for (auto i { initial_id }; i < initial_id + odom_calib_graph; ++i)
     {
-        throw std::runtime_error("Could not add the sick offset vertex to the optimizer!");
-    }
+        auto odom_param { new g2o::VertexOdomAckermanParams {} };
 
-    // creates the velodyne offset vertex with a given initial estimate
-    g2o::VertexSE2 *velodyne_offset = new g2o::VertexSE2;
-
-    // set the velodyne initial estimate
-    // sensor_board_1_x    0.572
-    // sensor_board_1_y    0.0
-    // sensor_board_1_z    1.394
-    // sensor_board_1_yaw  0.0
-    velodyne_offset->setEstimate(g2o::SE2(0.572, 0.0, 0.0));
-
-    // set the velodyne offset id
-    velodyne_offset->setId(VELODYNE_VERTEX_OFFSET_ID);
-
-    // marginalize it
-    velodyne_offset->setMarginalized(true);
-
-    // set fixed
-    velodyne_offset->setFixed(true);
-
-    // save the offset vertex
-    if (!optimizer->addVertex(velodyne_offset))
-    {
-        throw std::runtime_error("Could not add the velodyne offset vertex to the optimizer!");
-    }
-
-    // creates the bumblebee offset vertex with a given initial estimate
-    g2o::VertexSE2 *bumblebee_offset = new g2o::VertexSE2;
-
-    // set the bumblebee initial estimate
-    // camera3_x       0.245
-    // camera3_y       0.350
-    // camera3_z       0.210
-    // camera3_roll    0.0
-    // camera3_pitch   0.04
-    // camera3_yaw     0.0
-    bumblebee_offset->setEstimate(g2o::SE2(0.572 + 0.245, 0.0, 0.0));
-
-    // set the bumblebee offset id
-    bumblebee_offset->setId(BUMBLEBEE_VERTEX_OFFSET_ID);
-
-    // marginalize it
-    bumblebee_offset->setMarginalized(true);
-
-    // set fixed
-    bumblebee_offset->setFixed(true);
-
-    // save the offset vertex
-    if (!optimizer->addVertex(bumblebee_offset))
-    {
-        throw std::runtime_error("Could not add the bumblebee offset vertex to the optimizer!");
-    }
-
-    // include all ackerman params
-    for (unsigned i = 0; i < odom_ackerman_params_vertices; ++i)
-    {
-        // get the current param
-        g2o::VertexOdomAckermanParams *odom_param = new g2o::VertexOdomAckermanParams();
-
-        // set the id
-        odom_param->setId(ODOM_ACKERMAN_PARAMS_VERTEX_INITIAL_ID + i);
-
-        // marginalized it
+        odom_param->setId(i);
+        odom_param->setToOriginImpl();
+        
+        odom_param->setFixed(true);
         odom_param->setMarginalized(true);
 
-        // set fixed?
-        odom_param->setFixed(true);
-
-        // set the initial estimate
-        odom_param->setToOriginImpl();
-
-        // try to save the current vertex to the optimizer
         if (!optimizer->addVertex(odom_param))
         {
-            throw std::runtime_error("Could not add the odom ackerman params calibration vertex to the optimizer!");
+            throw std::runtime_error("Could not add the odometry calibration node to the optimizer!");
         }
     }
 }
@@ -535,10 +508,18 @@ void HyperGraphSclamOptimizer::AddSickEdge(std::stringstream &ss, Eigen::Matrix3
     }
 }
 
-void HyperGraphSclamOptimizer::AddVelodyneEdge(unsigned from, unsigned to, double x, double y, double theta, Eigen::Matrix3d &velodyne_icp_information)
+
+void HyperGraphSclamOptimizer::AddVelodyneEdge(
+    unsigned from,
+    unsigned to,
+    double x,
+    double y,
+    double theta,
+    Eigen::Matrix3d &velodyne_icp_information
+)
 {
     // create the new calibration edge
-    g2o::EdgeVelodyneCalibration *velodyne_seq_edge = new g2o::EdgeVelodyneCalibration();
+    auto velodyne_seq_edge { new g2o::EdgeVelodyneCalibration {} };
 
     // set the measurement
     velodyne_seq_edge->setMeasurement(g2o::SE2(x, y, theta));
@@ -574,6 +555,7 @@ void HyperGraphSclamOptimizer::AddVelodyneEdge(std::stringstream &ss, Eigen::Mat
     AddVelodyneEdge(from, to, x, y, theta, velodyne_icp_information);
 }
 
+
 void HyperGraphSclamOptimizer::AddExternalVelodyneEdge(std::stringstream &ss, Eigen::Matrix3d velodyne_external_loop_information)
 {
     // helpers
@@ -589,12 +571,13 @@ void HyperGraphSclamOptimizer::AddExternalVelodyneEdge(std::stringstream &ss, Ei
     els.insert(to + vertex_id_offset);
 }
 
+
 // add the odometry calibration edge to the optimizer
 void HyperGraphSclamOptimizer::AddOdomCalibrationEdge(
     g2o::VertexSE2 *l_vertex,
     g2o::VertexSE2 *r_vertex,
     g2o::EdgeSE2 *odom_edge,
-    unsigned odom_param_id,
+    std::size_t odom_param_id,
     double vel,
     double phi,
     double time,
@@ -602,10 +585,10 @@ void HyperGraphSclamOptimizer::AddOdomCalibrationEdge(
     const Eigen::Matrix3d &info)
 {
     // create the new edges
-    g2o::EdgeSE2OdomAckermanCalibration *odom_calib_edge = new g2o::EdgeSE2OdomAckermanCalibration();
+    auto odom_calib_edge { new g2o::EdgeSE2OdomAckermanCalibration() };
 
     // get the odometry ackerman param vertex
-    g2o::VertexOdomAckermanParams *params = static_cast<g2o::VertexOdomAckermanParams*>(optimizer->vertex(odom_param_id));
+    auto params { static_cast<g2o::VertexOdomAckermanParams*>(optimizer->vertex(odom_param_id)) };
 
     // set the vertices
     odom_calib_edge->setVertices(l_vertex, r_vertex, params);
@@ -616,15 +599,12 @@ void HyperGraphSclamOptimizer::AddOdomCalibrationEdge(
     // set the raw values
     odom_calib_edge->setRawValues(vel, phi, time);
 
-    // set the info matrix
-    if (0.0 == time)
+    if (1e-12 > std::fabs(time))
     {
-        // set the special info
         odom_calib_edge->setInformation(special);
     }
     else
     {
-        // set the general info
         odom_calib_edge->setInformation(info);
     }
 
@@ -637,7 +617,8 @@ void HyperGraphSclamOptimizer::AddOdomCalibrationEdge(
 
 // read the odometry edge and the odometry calibration edge and save them to the optimizer
 void HyperGraphSclamOptimizer::AddOdometryAndCalibEdges(
-    std::stringstream &ss, unsigned odom_param_id,
+    std::stringstream &ss, 
+    std::size_t odom_param_id,
     const Eigen::Matrix3d &special,
     const Eigen::Matrix3d &odom_info)
 {
@@ -648,11 +629,11 @@ void HyperGraphSclamOptimizer::AddOdometryAndCalibEdges(
     ss >> from >> to >> x >> y >> theta >> _v >> _p >> _t;
 
     // get both vertices
-    g2o::VertexSE2 *l_vertex = static_cast<g2o::VertexSE2*>(optimizer->vertex(from + vertex_id_offset));
-    g2o::VertexSE2 *r_vertex = static_cast<g2o::VertexSE2*>(optimizer->vertex(to + vertex_id_offset));
+    auto l_vertex { static_cast<g2o::VertexSE2*>(optimizer->vertex(from + vertex_id_offset)) };
+    auto r_vertex { static_cast<g2o::VertexSE2*>(optimizer->vertex(to + vertex_id_offset)) };
 
     // creates a new edge
-    g2o::EdgeSE2 *edge = new g2o::EdgeSE2();
+    auto edge { new g2o::EdgeSE2() };
 
     // set the vertices
     edge->vertices()[0] = l_vertex;
@@ -661,14 +642,12 @@ void HyperGraphSclamOptimizer::AddOdometryAndCalibEdges(
     // set the base measurement
     edge->setMeasurement(g2o::SE2(x, y, theta));
 
-    if (0.0 == x && 0.0 == y && 0.0 == theta)
+    if (1e-9 > std::fabs(x) && 1e-9 > std::fabs(y) && 1e-9 > std::fabs(theta))
     {
-        // set the special info
         edge->setInformation(special);
     }
     else
     {
-        // set the info
         edge->setInformation(odom_info);
     }
 
@@ -1052,7 +1031,7 @@ void HyperGraphSclamOptimizer::AddXSENSEdge(std::stringstream &ss, Eigen::Matrix
 // manage the hypergraph region
 void HyperGraphSclamOptimizer::ManageHypergraphRegion(std::vector<g2o::VertexSE2*> &group, bool status)
 {
-    for (g2o::VertexSE2 *v : group)
+    for (auto v : group)
     {
         v->setMarginalized(status);
         v->setFixed(status);
@@ -1066,11 +1045,12 @@ void HyperGraphSclamOptimizer::ManageHypergraphRegion(std::vector<g2o::VertexSE2
     }
 }
 
+
 void HyperGraphSclamOptimizer::PrepareIndividualOptimization()
 {
-    for (g2o::SparseOptimizer::VertexIDMap::const_iterator it = optimizer->vertices().begin(); it != optimizer->vertices().end(); ++it)
+    for (auto it { optimizer->vertices().begin() }; it != optimizer->vertices().end(); ++it)
     {
-        g2o::OptimizableGraph::Vertex* v = static_cast<g2o::OptimizableGraph::Vertex*>(it->second);
+        auto v { static_cast<g2o::OptimizableGraph::Vertex*>(it->second) };
         v->setMarginalized(true);
         v->setFixed(true);
     }
@@ -1080,34 +1060,26 @@ void HyperGraphSclamOptimizer::PrepareIndividualOptimization()
 // reset the graph to the pose estimation
 void HyperGraphSclamOptimizer::PreparePrevOptimization()
 {
-    for (g2o::SparseOptimizer::VertexIDMap::const_iterator it = optimizer->vertices().begin(); it != optimizer->vertices().end(); ++it)
+    for (auto it { optimizer->vertices().begin() }; it != optimizer->vertices().end(); ++it)
     {
+        auto v { static_cast<g2o::OptimizableGraph::Vertex*>(it->second) };
 
-        g2o::OptimizableGraph::Vertex* v = static_cast<g2o::OptimizableGraph::Vertex*>(it->second);
+        auto status { nullptr != dynamic_cast<g2o::VertexOdomAckermanParams*>(v) };
 
-        // define the status
-        bool status = nullptr != dynamic_cast<g2o::VertexOdomAckermanParams*>(v);
-
-        // true => this node should be marginalized out during the optimization
         v->setMarginalized(status);
-
-        // enable it
         v->setFixed(status);
     }
 
     // Initializes the structures for optimizing the whole graph.
     optimizer->initializeOptimization();
 
-    for (g2o::SparseOptimizer::EdgeSet::const_iterator it = optimizer->edges().begin(); it != optimizer->edges().end(); ++it)
+    for (auto it { optimizer->edges().begin() }; it != optimizer->edges().end(); ++it)
     {
+        auto e { static_cast<g2o::OptimizableGraph::Edge*>(*it) };
 
-        g2o::OptimizableGraph::Edge* e = static_cast<g2o::OptimizableGraph::Edge*>(*it);
-
-        // specify the robust kernel to be used in this edge
         e->setRobustKernel(nullptr);
     }
 
-    // pre-compute the active errors
     optimizer->computeActiveErrors();
 }
 
@@ -1116,32 +1088,26 @@ void HyperGraphSclamOptimizer::PreparePrevOptimization()
 void HyperGraphSclamOptimizer::PreparePostOptimization()
 {
     // preprare
-    for (g2o::SparseOptimizer::VertexIDMap::const_iterator it = optimizer->vertices().begin(); it != optimizer->vertices().end(); ++it)
+    for (auto it { optimizer->vertices().begin() }; it != optimizer->vertices().end(); ++it)
     {
-        // downcasting
-        g2o::OptimizableGraph::Vertex* v = static_cast<g2o::OptimizableGraph::Vertex*>(it->second);
+        auto v { static_cast<g2o::OptimizableGraph::Vertex*>(it->second) };
 
-        // define the status
-        bool status = nullptr == dynamic_cast<g2o::VertexOdomAckermanParams*>(v);
+        auto status { nullptr == dynamic_cast<g2o::VertexOdomAckermanParams*>(v) };
 
         // true => this node should be marginalized out during the optimization
         v->setMarginalized(status);
-
-        // enable it
         v->setFixed(status);
     }
 
     // Initializes the structures for optimizing the whole graph.
     optimizer->initializeOptimization();
 
-    for (g2o::SparseOptimizer::EdgeSet::const_iterator it = optimizer->edges().begin(); it != optimizer->edges().end(); ++it)
+    for (auto it { optimizer->edges().begin() }; it != optimizer->edges().end(); ++it)
     {
-
-        g2o::EdgeSE2OdomAckermanCalibration *odom_calib_edge = dynamic_cast<g2o::EdgeSE2OdomAckermanCalibration*>(*it);
+        auto odom_calib_edge { dynamic_cast<g2o::EdgeSE2OdomAckermanCalibration*>(*it) };
 
         if (nullptr != odom_calib_edge)
         {
-            // get the measurements from the current vertices
             odom_calib_edge->getMeasurementFromVertices();
         }
     }
@@ -1155,12 +1121,12 @@ void HyperGraphSclamOptimizer::PreparePostOptimization()
 void HyperGraphSclamOptimizer::PrepareRoundOptimization()
 {
     // update the odometry measure
-    for (g2o::SparseOptimizer::EdgeSet::const_iterator it = optimizer->edges().begin(); it != optimizer->edges().end(); ++it)
+    for (auto it { optimizer->edges().begin() }; it != optimizer->edges().end(); ++it)
     {
-        g2o::EdgeSE2OdomAckermanCalibration *odom_calib_edge = dynamic_cast<g2o::EdgeSE2OdomAckermanCalibration*>(*it);
+        auto odom_calib_edge { dynamic_cast<g2o::EdgeSE2OdomAckermanCalibration*>(*it) };
+        
         if (nullptr != odom_calib_edge)
         {
-            // get the measurements from the current vertices
             odom_calib_edge->updateOdometryMeasure();
         }
     }
@@ -1180,10 +1146,11 @@ void HyperGraphSclamOptimizer::LoadHyperGraphToOptimizer()
 
     // helpers
     std::stringstream ss;
-    unsigned subdivision = std::numeric_limits<unsigned>::max();
-    unsigned odom_counter = 0;
-    unsigned odom_param_id = ODOM_ACKERMAN_PARAMS_VERTEX_INITIAL_ID;
-    unsigned last_odom_param_id = ODOM_ACKERMAN_PARAMS_VERTEX_INITIAL_ID + odom_ackerman_params_vertices - 1;
+    
+    std::size_t subdivision { std::numeric_limits<std::size_t>::max() };
+    std::size_t odom_counter { 0 };
+    std::size_t odom_param_id { ODOM_CALIBRATION_PARAMS_INITIAL_ID - 1 };
+    std::size_t last_odom_param_id { odom_param_id };
 
     // get the inverse of the covariance matrix,
     Eigen::Matrix3d odom_information(GetInformationMatrix(odometry_xx_var, odometry_yy_var, odometry_hh_var));
@@ -1192,8 +1159,17 @@ void HyperGraphSclamOptimizer::LoadHyperGraphToOptimizer()
     Eigen::Matrix3d sick_loop_information(GetInformationMatrix(sick_loop_xx_var, sick_loop_yy_var, sick_loop_hh_var));
     Eigen::Matrix3d velodyne_icp_information(GetInformationMatrix(velodyne_icp_xx_var, velodyne_icp_yy_var, velodyne_icp_hh_var));
     Eigen::Matrix3d velodyne_loop_information(GetInformationMatrix(velodyne_loop_xx_var, velodyne_loop_yy_var, velodyne_loop_hh_var));
-    Eigen::Matrix3d velodyne_external_loop_information(GetInformationMatrix(velodyne_external_loop_icp_xx_var, velodyne_external_loop_icp_yy_var, velodyne_external_loop_icp_hh_var));
+    
+    Eigen::Matrix3d velodyne_external_loop_information(
+        GetInformationMatrix(
+            velodyne_external_loop_icp_xx_var, 
+            velodyne_external_loop_icp_yy_var, 
+            velodyne_external_loop_icp_hh_var
+        )
+    );
+    
     Eigen::Matrix3d visual_odom_information(GetInformationMatrix(visual_xx_var, visual_yy_var, visual_hh_var));
+    
     Eigen::Matrix<double, 1, 1> xsens_information(Eigen::Matrix<double, 1, 1>::Identity() * 1.0 /  std::pow(xsens_constraint_var, 2));
 
     // set the odometry covariance matrix
@@ -1229,12 +1205,10 @@ void HyperGraphSclamOptimizer::LoadHyperGraphToOptimizer()
                 AddOdometryAndCalibEdges(ss, odom_param_id, special_odom_information, special_odom_information);
             }
 
-            // increment the odometry counter
             ++odom_counter;
 
             if (0 == odom_counter % subdivision && last_odom_param_id > odom_param_id)
             {
-                // increment the odometry param index
                 ++odom_param_id;
             }
         }
@@ -1291,11 +1265,26 @@ void HyperGraphSclamOptimizer::LoadHyperGraphToOptimizer()
         }
         else if ("VERTICES_QUANTITY" == tag)
         {
-            // read the qnt
             ss >> subdivision;
 
-            // divide it by the number of odometry param vertices
-            subdivision /= odom_ackerman_params_vertices;
+            subdivision /= odom_calib_log;
+
+            odom_counter = 0;
+            ++odom_param_id;
+        }
+        else if ("LOGS_QUANTITY" == tag)
+        {
+            std::size_t logs_quantity;
+            
+            ss >> logs_quantity;
+
+            odom_calib_graph = logs_quantity * odom_calib_log;
+
+            vertex_id_offset = ODOM_CALIBRATION_PARAMS_INITIAL_ID + odom_calib_graph;
+            
+            last_odom_param_id = vertex_id_offset - 1;
+
+            AddOdometryCalibrationNodes((std::size_t) ODOM_CALIBRATION_PARAMS_INITIAL_ID);
         }
     }
 
@@ -1349,42 +1338,60 @@ void HyperGraphSclamOptimizer::ShowAllParametersVertices()
 {
     // the first vertex is the sick displacement
     // downcast to the base vertex
-    g2o::VertexSE2* sick_offset = dynamic_cast<g2o::VertexSE2*>(optimizer->vertex(SICK_VERTEX_OFFSET_ID));
-
-    // show the resulting offset
-    std::cout << std::endl << "The SICK offset: " << std::fixed << sick_offset->estimate().toVector().transpose() << std::endl;
+    if (use_sick_seq || use_sick_loop)
+    {
+        g2o::VertexSE2* sick_offset = dynamic_cast<g2o::VertexSE2*>(optimizer->vertex(SICK_VERTEX_OFFSET_ID));
+        std::cout << std::endl << "The SICK offset: " << std::fixed << sick_offset->estimate().toVector().transpose() << std::endl;
+    }
 
     // the second vertex is the velodyne displacement
     // downcast to the base vertex
-    g2o::VertexSE2* velodyne_offset = dynamic_cast<g2o::VertexSE2*>(optimizer->vertex(VELODYNE_VERTEX_OFFSET_ID));
+    if (use_velodyne_seq || use_velodyne_loop)
+    {
+        g2o::VertexSE2* velodyne_offset = dynamic_cast<g2o::VertexSE2*>(optimizer->vertex(VELODYNE_VERTEX_OFFSET_ID));
+        g2o::SE2 velodyne_offset_pose = velodyne_offset->estimate();
 
-    // the velodyne offset
-    g2o::SE2 velodyne_offset_pose = velodyne_offset->estimate();
-
-    // show the resulting offset
-    std::cout << std::endl << "The Velodyne offset: " << std::fixed << std::setprecision(10) << velodyne_offset_pose.toVector().transpose() << std::endl;
+        std::cout << std::endl << "The Velodyne offset: " << std::fixed << std::setprecision(10);
+        std::cout   << velodyne_offset_pose.toVector().transpose() << std::endl;
+    }
 
     // the third vertex is the bumblebee displacement
     // downcast to the base vertex
-    g2o::VertexSE2* bumblebee_offset = dynamic_cast<g2o::VertexSE2*>(optimizer->vertex(BUMBLEBEE_VERTEX_OFFSET_ID));
-
-    // show the resulting offset
-    std::cout << std::endl << "The Bumblebee offset: " << std::fixed << std::setprecision(10) << bumblebee_offset->estimate().toVector().transpose() << std::endl << std::endl;
-
-    // get all ackerman params
-    for (unsigned i = 0; i < odom_ackerman_params_vertices; ++i)
+    if (use_bumblebee_seq || use_bumblebee_loop)
     {
-        // the current id
-        unsigned curr_id = ODOM_ACKERMAN_PARAMS_VERTEX_INITIAL_ID + i;
+        g2o::VertexSE2* bumblebee_offset = dynamic_cast<g2o::VertexSE2*>(optimizer->vertex(BUMBLEBEE_VERTEX_OFFSET_ID));
 
-        // get the current param
-        g2o::VertexOdomAckermanParams *odom_param = dynamic_cast<g2o::VertexOdomAckermanParams*>(optimizer->vertex(curr_id));
+        // show the resulting offset
+        std::cout << std::endl << "The Bumblebee offset: ";
+        std::cout << std::fixed << std::setprecision(10) << bumblebee_offset->estimate().toVector().transpose() << std::endl << std::endl;
+    }
+
+    std::size_t log_id { 1 }, prev_log_id { 0 }, j { 0 };
+
+    for (std::size_t i { 0 }; i < odom_calib_graph; ++i)
+    {
+        auto odom_param { dynamic_cast<g2o::VertexOdomAckermanParams*>(optimizer->vertex((int) (ODOM_CALIBRATION_PARAMS_INITIAL_ID + i))) };
 
         if (nullptr != odom_param)
         {
-            // show the resulting calibration
-            std::cout << "The " << curr_id - 2 << "º odom ackerman bias calibration vertex: ";
+            if (prev_log_id != log_id)
+            {
+                std::cout << std::endl << "LOG: " << log_id << std::endl;
+                prev_log_id = log_id;
+            }
+
+            std::cout << "\t\tThe " << j + 1 << "º odom ackerman bias calibration vertex: ";
             std::cout << std::fixed << odom_param->estimate().transpose() << std::endl << std::endl;
+            
+            if (j + 2 > odom_calib_log)
+            {
+                j = 0;
+                ++log_id;
+            }
+            else 
+            {
+                ++j;
+            }
         }
     }
 }
@@ -1414,7 +1421,7 @@ void HyperGraphSclamOptimizer::SaveCorrectedVertices()
     std::cout << "How many vertices: " << size << std::endl;
 
     // get the first valid id
-    unsigned start_id = ODOM_ACKERMAN_PARAMS_VERTEX_INITIAL_ID + odom_ackerman_params_vertices - 1;
+    unsigned start_id = ODOM_CALIBRATION_PARAMS_INITIAL_ID + odom_calib_log - 1;
 
     for (std::pair<const std::string, std::vector<g2o::VertexSE2*> > &entry: logs)
     {
@@ -1495,7 +1502,6 @@ void HyperGraphSclamOptimizer::SaveCorrectedVertices()
 
     // save the parameters vertices
     ShowAllParametersVertices();
-
 }
 
 
@@ -1519,7 +1525,7 @@ void HyperGraphSclamOptimizer::OptimizationLoop()
 
         std::cout << "Second Stage Optimization: Individual Logs!" << std::endl;
 
-        for (std::pair<const std::string, std::vector<g2o::VertexSE2*>> &entry : logs)
+        for (auto &entry : logs)
         {
             std::vector<g2o::VertexSE2*> &vs(entry.second);
             std::cout << "Current gid: " << entry.first << " and size: " << vs.size() << std::endl;

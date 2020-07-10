@@ -23,7 +23,7 @@ LFLAGS += -lgrid_mapping -lprob_models -lm -lz -lmap_io -lmap_util -llocalize_ac
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 # Application specific include directories.
-PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
+PCL_INC = $(wildcard /usr/local/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
 IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
 

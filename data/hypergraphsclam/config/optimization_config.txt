@@ -1,0 +1,80 @@
+-- covariâncias
+-- quanto menor mais confianca ordem de x10 (XX YY - pose) (HH - orientação)
+-- UNIDADE DA VARIANCIA NOS DESLOCAMENTOS: METROS AO QUADRADO - AREA
+-- UNIDADE DA VARIANCIA NA ORIENTACAO: RADIANOS AO QUADRADO
+-- XX == VARIANCIA DE X EM RELACAO A X
+-- YY == VARIANCIA DE Y EM RELACAO A Y
+-- HH == VARIANCIA DO HEADING EM RELACAO AO HEADING
+
+-- ODOMETRY displacement
+ODOMETRY_XX_VAR 0.075
+ODOMETRY_YY_VAR 0.075
+ODOMETRY_HH_VAR 0.019
+
+-- SICK ICP
+SICK_ICP_XX_VAR 0.8
+SICK_ICP_YY_VAR 0.8
+SICK_ICP_HH_VAR 0.4
+
+-- SICK ICP LOOP
+SICK_LOOP_ICP_XX_VAR 1.75
+SICK_LOOP_ICP_YY_VAR 1.7
+SICK_LOOP_ICP_HH_VAR 0.75
+
+-- VELODYNE ICP
+VELODYNE_ICP_XX_VAR 0.5
+VELODYNE_ICP_YY_VAR 0.5
+VELODYNE_ICP_HH_VAR 0.25
+
+-- VELODYNE ICP LOOP
+VELODYNE_LOOP_ICP_XX_VAR 12.0
+VELODYNE_LOOP_ICP_YY_VAR 12.0
+VELODYNE_LOOP_ICP_HH_VAR 2.0
+
+XSENS_CONSTRAINT_VAR 0.785398163397448278999490867136
+
+-- VISUAL ODOMETRY D
+VISUAL_XX_VAR 0.25
+VISUAL_YY_VAR.25
+VISUAL_HH_VAR 0.125
+
+-- Multiplicado do desvio padrao- quanto maior, menor a confianca no GPS - 125 ta confiando bem pouco no multiplier
+GPS_POSE_STD_MULTIPLIER 6.0
+GPS_POSE_HH_STD 40.0
+
+-- special edge: two messages with same timestamp value - Nao precisa mecher, basicamente nao deixa o otimizador mexer em nos da mesma mensagem (GPS-HEADING)
+-- SPECIAL_ODOMETRY_INFORMATION 100
+
+-- how many bias calibration nodes - 1 ou 2, mais que isso desnecessario - Vendo nos plots pra saber qual fica melhor
+ODOM_ACKERMAN_PARAMS_VERTICES 1
+
+-- how many outer iterations - Na pratica resolve-se com 1 loop so
+OPTIMIZER_OUTER_ITERATIONS 4
+
+-- how many pose optimization iterations
+OPTIMIZER_INNER_POSE_ITERATIONS 30
+
+-- how many bias calibration iterations
+OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS 20
+
+-- the min clustering distance (GPS)
+-- Distância para considerar no clustering.
+-- Valores maiores aceitam mais ruído do GPS e evitam quebras e perdas de leituras na hora de construir o FAKE GPS
+-- 0.0 desativa essa opção e nenhuma mensagem de GPS é removida com base nessa opção
+FAKE_GPS_CLUSTERING_DISTANCE 1.2
+
+-- the sparsity value
+-- a distância mínima entre as leituras do GPS,
+-- leituras sequenciais com distância inferior são removidas
+GPS_SPARSITY_THRESHOLD 0.20
+-- 0.0 desativa essa opção e nenhuma mensagem de GPS é removida com base nessa opção
+
+-- edges configuration - disable, enable edges - Comente para dizer quais voce nao quer usar como aresta.
+USE_VELODYNE_SEQ
+-- USE_VELODYNE_LOOP
+-- USE_BUMBLEBEE_SEQ
+-- USE_BUMBLEBEE_LOOP
+-- USE_SICK_SEQ
+-- USE_SICK_LOOP
+USE_GPS
+USE_ODOMETRY

@@ -5,7 +5,7 @@ LINK = g++
 MODULE_NAME = SLAM6D
 MODULE_COMMENT = SLAM6D Based on Kinect Fusion
 
-PCL_INC = $(wildcard /usr/local/include/pcl-* /usr/include/pcl-*)
+PCL_INC = $(wildcard /usr/local/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
 IFLAGS += -I $(PCL_INC) -I $(VTK_INC)
 

@@ -1,0 +1,91 @@
+-- How many velodyne scans, 0 means no limit - Número de mensagens de Velodyne presentes no log que serão usadas. Por exemplo se voce não quiser usar o log todo e fazer mapa só de um trecho.
+MAXIMUM_VEL_SCANS 0
+
+-- How many seconds to consider a loop closure - Diferença de timestamp entre duas Velodyne para ser considerado um fechamento de loop e não mensagens contiguas. Tempo para considerar que duas nuvens fecham loop
+LOOP_REQUIRED_TIME 400.0
+
+-- How many meters to consider a loop closure - Diferença em metros entre dois sweeps de Velodyne para ser considerado um fechamento de loop. Se for maior que isso não é considerado um fechamento de loop. Distancia para considerar que duas nuvens fecham loop
+LOOP_REQUIRED_DISTANCE 2.0
+
+-- Uncomment this line if you want to consider only loop closures with same direction (both car poses should points to same direction)
+-- The angle distance must be less than PI/2 - Se esta flag estiver ativa não é considerado fechamento de loop se a diferença angular for maior PI/2
+USE_RESTRICTED_LOOPS
+
+-- Uncomment USE_GPS_ORIENTATION_RESTRICTED_LOOPS flag if you want to consider the gps orientation in the loop closures
+-- The angle distance must be less than PI/2 - Se esta flag estiver ativa não é considerado fechamento de loop se a diferença angular for maior PI/2
+-- USE_GPS_ORIENTATION_RESTRICTED_LOOPS
+
+-- Uncomment this flag below if you want to use previous loop closures, from a previous parser. 
+-- Remember to comment out again if you need the system computes the loop closures from scratch
+-- USE_PREVIOUS_INTRA_LOG_LOOP_CLOSURES
+
+-- How many threads the ICP (Interative Closest Point) method can use (typically the number of cores of your machine)
+ICP_THREADS_POOL_SIZE 6
+
+-- Each thread will take 400 clouds and execute the sensor movement estimates - Pior caso é usar 1 pois vai ser demorado pacas. De 200 em diante é legal; vai mais rapido. Muito grande pode ser ruim.
+ICP_THREAD_BLOCK_SIZE 300
+
+-- The distace parameter to find the next point cloud - Basicamente, pula nuvens para diminuir ruido entre leituras. Exemplo: carro parado (tem um tratamento mais completo no código para o caso de carro parado)
+-- Tirado de um paper
+LIDAR_ODOMETRY_MIN_DISTANCE 0.3
+
+-- The distace parameter to find the next image - mesmo do de cima mas para camera
+VISUAL_ODOMETRY_MIN_DISTANCE 0.1
+
+-- Se a divergencia entre a adometria do carro e a do Lidar, para um par de amostras do Lidar, for maior que este valor (em metros), descarta a odometria do Lidar advinda deste par. Teoricamente nao vai fazer muita diferenca em nossos casos
+ICP_TRANSLATION_CONFIDENCE_FACTOR 1.00
+
+-- Velocidade mínima para considerar quaiquer mensagens (m/s)
+MIN_SPEED 0.01
+
+-- Vehicle model parameters. Josias vai passar a ler do carmen ini
+DISTANCE_BETWEEN_AXLES 2.625
+MAX_STEERING_ANGLE 0.5337
+UNDERSTEER 0.0015
+KMAX 0.17857142857
+
+-- O hypergraphsclam calibra a odometria. Os dados abaixo são usados apenas para comparação com a calibração da odometria com a do graphslam.
+-- Initial odometry bias guess, the default values are: v_mult = 1.0, phi_mult = 1.0 and phi_add = 0.0
+-- You can pick this values from a previous calibration result
+-- Hypergraph
+-- ODOMETRY_BIAS 1.0 1.0 0.0
+ODOMETRY_BIAS 0.9973927951  1.0724166205 -0.0009860509
+
+-- PSO
+-- ODOMETRY_BIAS 1.030113 0.972890 -0.001412
+
+-- Hack, in order to plot the calibrated odometry we copy this value from the optimized poses. É só para plotar.
+-- INITIAL_GUESS_POSE 7757728.775357 -363562.886202 0.651116
+-- INITIAL_GUESS_POSE 0.0 0.0 0.651116
+-- INITIAL_GUESS_POSE 0.0 0.0 0.646488
+-- INITIAL_GUESS_POSE 7757728.475284 -363562.913970 0.646488
+
+-- Comente os argumentos abaixo para abilitar a construcao das respectivas arestas do hypergrafo. As arestas da Bumblebee são criadas usando a LibViso, e as de Lidar, com ICP.
+DISABLE_VELODYNE_ODOMETRY
+-- DISABLE_VELODYNE_LOOP
+DISABLE_SICK_ODOMETRY
+DISABLE_SICK_LOOP
+DISABLE_BUMBLEBEE_ODOMETRY
+DISABLE_BUMBLEBEE_LOOP
+
+-- So para visualizacao
+-- Save the accumulated point clouds, uncomment the line below in order to save the accumulated clouds
+-- Make sure you have enough space available in your hard drive (3x the log size)
+-- SAVE_ACCUMULATED_POINT_CLOUDS
+
+-- Comment if you don't want to save the point clouds in the loop closures. Só para debug
+-- SAVE_LOOP_CLOSURE_POINT_CLOUDS
+
+-- Indica quais GPSs utilizar, um por um. (A variância é indicada no arquivo de configuração do otimizador).
+-- No caso abaixo, vamos usar o 0 e o 1
+-- O primeiro inteiro é o identificador e o segundo valor (double) é o delay do gps
+-- GPS_IDENTIFIER 0 0.0
+-- GPS_IDENTIFIER 1 0.153033
+GPS_IDENTIFIER 1 0.0
+
+-- Se ativa, a orientação do GPS é descartada e uma fake (usando conjuntos de 3 posição de GPS) é computada e usada.
+USE_FAKE_GPS
+
+-- Para visualização. Se ativa, usa a orientação incial do GPS para fazer um gráfico.
+-- USE_GPS_ORIENTATION
+

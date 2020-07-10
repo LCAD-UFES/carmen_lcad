@@ -1,0 +1,86 @@
+
+-- covariâncias
+-- quanto menor mais confianca ordem de x10 (XX YY - pose) (HH - orientação)
+-- UNIDADE DA VARIANCIA NOS DESLOCAMENTOS: METROS AO QUADRADO - AREA
+-- UNIDADE DA VARIANCIA NA ORIENTACAO: RADIANOS AO QUADRADO
+-- XX == VARIANCIA DE X EM RELACAO A X
+-- YY == VARIANCIA DE Y EM RELACAO A Y
+-- HH == VARIANCIA DO HEADING EM RELACAO AO HEADING
+
+-- ODOMETRY displacement
+ODOMETRY_XX_VAR 0.1
+ODOMETRY_YY_VAR 0.1
+ODOMETRY_HH_VAR 0.05
+
+-- SICK ICP
+SICK_ICP_XX_VAR 0.8
+SICK_ICP_YY_VAR 0.8
+SICK_ICP_HH_VAR 0.4
+
+-- SICK ICP LOOP
+SICK_LOOP_ICP_XX_VAR 0.75
+SICK_LOOP_ICP_YY_VAR 0.7
+SICK_LOOP_ICP_HH_VAR 0.25
+
+-- VELODYNE ICP
+VELODYNE_ICP_XX_VAR 0.5
+VELODYNE_ICP_YY_VAR 0.5
+VELODYNE_ICP_HH_VAR 0.25
+
+-- VELODYNE ICP LOOP
+VELODYNE_LOOP_ICP_XX_VAR 15.8
+VELODYNE_LOOP_ICP_YY_VAR 15.8
+VELODYNE_LOOP_ICP_HH_VAR 10.15
+
+XSENS_CONSTRAINT_VAR 0.785398163397448278999490867136
+
+-- VISUAL ODOMETRY D
+VISUAL_XX_VAR 0.25
+VISUAL_YY_VAR.25
+VISUAL_HH_VAR 0.125
+
+-- Os multiplicadores abaixo multiplicam o desvio padrao (metros) informado pelo proprio GPS como um codigo (ver gps_nmea_messages.h) de acordo com a recepcao corrente.
+-- Os codigos sao convertidos para desvio padrao como: 1 - 20.0; 2 - 20.0; 4 - 1.0; 5 - 2.5.
+GPS_POSE_STD_MULTIPLIER 10.0
+GPS_POSE_HH_STD 2.0
+
+-- special edge: two messages with same timestamp value - Nao precisa mecher, basicamente nao deixa o otimizador mexer em nos da mesma mensagem (GPS-HEADING)
+SPECIAL_ODOMETRY_INFORMATION 1000
+
+-- how many bias calibration nodes - 1 ou 2, mais que isso desnecessario - Vendo nos plots pra saber qual fica melhor
+ODOM_ACKERMAN_PARAMS_VERTICES 1
+
+-- how many outer iterations - Na pratica resolve-se com 1 loop so
+-- (i)  O otimizador otimiza as poses OPTIMIZER_INNER_POSE_ITERATIONS vezes e, com isso, gera todas as informações usadas para gerar o arquivo poses-opt-<seu log>.
+-- (ii) Depois, otimiza a calibração da odometria OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS vezes e repete este passo (ii) e o passo (i) OPTIMIZER_OUTER_ITERATIONS-1 vezes.
+-- Com OPTIMIZER_OUTER_ITERATIONS igual a 1, o sistema opera bem e a recalibração da odometria não é utilizada.
+OPTIMIZER_OUTER_ITERATIONS 3
+
+-- how many pose optimization iterations
+OPTIMIZER_INNER_POSE_ITERATIONS 20
+
+-- how many bias calibration iterations
+OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS 10
+
+-- the min clustering distance (GPS)
+-- Distância para considerar no clustering.
+-- Valores maiores aceitam mais ruído do GPS e evitam quebras e perdas de leituras na hora de construir o FAKE GPS
+-- 0.0 desativa essa opção e nenhuma mensagem de GPS é removida com base nessa opção
+FAKE_GPS_CLUSTERING_DISTANCE 1.5
+
+-- the sparsity value
+-- a distância mínima entre as leituras do GPS,
+-- leituras sequenciais com distância inferior são removidas
+-- 0.0 desativa essa opção e nenhuma mensagem de GPS é removida com base nessa opção
+GPS_SPARSITY_THRESHOLD 0.0
+
+-- edges configuration - disable, enable edges - Comente para dizer quais voce nao quer usar como aresta.
+-- USE_VELODYNE_SEQ
+-- USE_VELODYNE_LOOP
+-- USE_BUMBLEBEE_SEQ
+-- USE_BUMBLEBEE_LOOP
+-- USE_SICK_SEQ
+-- USE_SICK_LOOP
+USE_GPS
+USE_ODOMETRY
+

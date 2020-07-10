@@ -50,7 +50,9 @@ def detect():
     model = SqueezeSeg(mc)
 
     saver = tf.train.Saver(model.model_params)
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
+    config = tf.ConfigProto(allow_soft_placement=True)
+    config.gpu_options.allow_growth = True
+    with tf.Session(config=config) as sess:
       saver.restore(sess, FLAGS.checkpoint)
       for f in glob.iglob(FLAGS.input_path):
         lidar = np.load(f).astype(np.float32, copy=False)[:, :, :5]

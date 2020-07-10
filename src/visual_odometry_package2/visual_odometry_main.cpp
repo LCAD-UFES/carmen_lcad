@@ -287,9 +287,7 @@ compute_v_and_phi(carmen_visual_odometry_pose6d_message *visual_odometry_message
 		visual_odometry_message->v += 0.5 * ((sqrt(delta_pose.position.x * delta_pose.position.x + delta_pose.position.y * delta_pose.position.y) / delta_t) - visual_odometry_message->v);
 				
 		if (fabs(carmen_normalize_theta(current_pose.orientation.yaw - yaw2)) > M_PI/4.0)
-		{
 			visual_odometry_message->v = -visual_odometry_message->v;	//@@@ Isso parou de funcionar com o visual odometry novo. Mas acho que consertei.. Checar.
-		}
 
 		double yaw_velocity_raw = delta_pose.orientation.yaw / delta_t;
 //		yaw_velocity += 0.25 * (yaw_velocity_raw - yaw_velocity);
@@ -297,13 +295,9 @@ compute_v_and_phi(carmen_visual_odometry_pose6d_message *visual_odometry_message
 
 		double L = distance_between_front_and_rear_axles;
 		if (fabs(visual_odometry_message->v) > 0.1)
-		{
 			visual_odometry_message->phi = atan2(L * yaw_velocity, fabs(visual_odometry_message->v));
-		}
 		else
-		{
 			visual_odometry_message->phi = 0.0;
-		}
 	}	
 	else
 	{
@@ -800,7 +794,7 @@ visual_odometry_initialize(float focal_length, float principal_point_x, float pr
 
 	viso_stereo_param.bucket.max_features = 100;
 	viso_stereo_param.bucket.bucket_width = 64;
-	viso_stereo_param.bucket.bucket_height = 48;
+	viso_stereo_param.bucket.bucket_height = 64;
 
 	viso_stereo_param.match.nms_n                  = 10;  // non-max-suppression: min. distance between maxima (in pixels)
 	viso_stereo_param.match.nms_tau                = 30;  // non-max-suppression: interest point peakiness threshold
