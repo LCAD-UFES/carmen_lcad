@@ -52,6 +52,8 @@ typedef struct
 {
 	int u;
 	int v;
+	int u_ref;
+	int v_ref;
 	double cost;
 } edge_t;
 
@@ -59,12 +61,15 @@ typedef struct
 typedef struct
 {
 	int id;
+	int id_ref;
 	char type;
 	double lon;
 	double lat;
 	carmen_rddf_waypoint rddf_point;
 	vector <edge_t> edges;
 	vector<neaby_lane_t> nearby_lanes;
+	int back_joint_node_id;
+	int next_joint_node_id;
 } node_t;
 
 
@@ -81,7 +86,7 @@ void load_rddfs (vector<string> files, vector< vector<carmen_rddf_waypoint> > &r
 graph_t build_nearby_lanes (graph_t graph, double nearby_lane_range, char *option);
 double euclidean_distance(double x1, double y1, double x2, double y2);
 void convert_utm_to_lat_long (carmen_point_t pose, Gdc_Coord_3d &lat_long_coordinate);
-graph_t build_lane_graph (graph_t lane_graph, graph_t graph);
+graph_t build_lane_graph (graph_t lane_graph, graph_t &graph);
 graph_t build_graph(vector<string> files, graph_t graph, vector< vector<carmen_rddf_waypoint> > rddfs, char* option);
 FILE *open_graph_file(char* graph_file, string option);
 graph_t read_graph_file (FILE *f_graph);
