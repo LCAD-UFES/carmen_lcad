@@ -76,7 +76,6 @@ int expansion_number = 0;
 #define NUM_LANES	1
 #define MAX_VIRTUAL_LASER_SAMPLES 100000
 #define SQRT2 1.414
-#define DIST2D_D_P(x1,x2) (sqrt(((x1).x - (x2)->x) * ((x1).x - (x2)->x) + ((x1).y - (x2)->y) * ((x1).y - (x2)->y)))
 #define DELTA2D(x1,x2) ((carmen_ackerman_traj_point_t){x1.x - x2.x, x1.y - x2.y, 0.0, 0.0, 0.0})
 
 #define SMOOTHNESS_WEIGHT 1.0
