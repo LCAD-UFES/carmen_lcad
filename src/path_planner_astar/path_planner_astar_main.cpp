@@ -1323,7 +1323,7 @@ is_valid_state(state_node *state, map_node_p ***astar_map)
 	int y;
 	int theta;
 	get_current_pos(state, x, y, theta);
-	if(x >= astar_map_x_size || y >= astar_map_y_size || x < 0 || y < 0 || astar_map[x][y][theta]->obstacle_distance < 1.5)
+	if(x >= astar_map_x_size || y >= astar_map_y_size || x < 0 || y < 0 || carmen_obstacle_avoider_car_distance_to_nearest_obstacle(state->state, distance_map) < 0.5)//astar_map[x][y][theta]->obstacle_distance < 1.5)
 	{
 		return 0;
 	}
@@ -1602,7 +1602,7 @@ int
 hitObstacle(std::vector<state_node*> path, map_node_p ***astar_map )
 {
 	for(int i = 0; i < path.size(); i++)
-	{
+	{/*
 		if(path.size() - i > 5)
 		{
 			if(astar_map[get_astar_map_x(path[i]->state.x)][get_astar_map_y(path[i]->state.y)][0]->obstacle_distance < 1.5)
@@ -1617,6 +1617,10 @@ hitObstacle(std::vector<state_node*> path, map_node_p ***astar_map )
 				return 1;
 			}
 		}
+		*/
+		if(carmen_obstacle_avoider_car_distance_to_nearest_obstacle(path[i]->state, distance_map) < 0.5)
+			return 1;
+
 	}
 	return 0;
 }
@@ -1697,43 +1701,33 @@ update_neighbors(map_node_p ***astar_map, double* heuristic_obstacle_map ,state_
 		if(astar_map[x][y][theta]->is_closed == 0 && astar_map[x][y][theta]->is_open == 0)
 		{
 			neighbor_expansion[it_neighbor_number]->g = current_node_cost;
-			// Fazendo f(n) = g(n) + h(n) + h(p), onde p é o nó anterior, diminui o número de expansões do algoritmo
+			// Fazendo f(n) = g(n) + h(n) + h(p), onde p é o nó anterior, diminui o número de expansões do algoritmo, mas os pontos ficam menos suaves
 			// https://ieeexplore.ieee.org/abstract/document/7979125/
-			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state) + h(astar_map, heuristic_obstacle_map ,current, goal_state);
+//			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state) + h(astar_map, heuristic_obstacle_map ,current, goal_state);
+			// Testei acrescentando um certo "roughness" como custo, e realmente parece que o path fica mais suave
+			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state) + abs(DOT2D(DELTA2D(neighbor_expansion[it_neighbor_number]->state, current->state),DELTA2D(neighbor_expansion[it_neighbor_number]->state, current->state)));
+//			neighbor_expansion[it_neighbor_number]->h = h(astar_map, heuristic_obstacle_map ,neighbor_expansion[it_neighbor_number], goal_state);
 			neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
 			neighbor_expansion[it_neighbor_number]->parent = current;
 
 			//Penalidades
-			if(neighbor_expansion[it_neighbor_number]->state.v < 0)
-			{
-				neighbor_expansion[it_neighbor_number]->g = (2.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g) + current->g;
-				neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
-			}
+//			if(neighbor_expansion[it_neighbor_number]->state.v < 0)
+//				neighbor_expansion[it_neighbor_number]->g += (2.0 * neighbor_expansion[it_neighbor_number]->distance_traveled_g) + current->g;
+
 
 			if(neighbor_expansion[it_neighbor_number]->state.v != current->state.v)
-			{
 				neighbor_expansion[it_neighbor_number]->g +=1;
-				neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
-			}
 
 			if(neighbor_expansion[it_neighbor_number]->state.phi != 0.0)
-			{
 				neighbor_expansion[it_neighbor_number]->g +=1;
-				neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
-			}
 
 			if(neighbor_expansion[it_neighbor_number]->state.phi != current->state.phi)
-			{
 				neighbor_expansion[it_neighbor_number]->g +=1;
-				neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
-			}
 
 			if(neighbor_expansion[it_neighbor_number]->state.v > 0.0)
-			{
 				neighbor_expansion[it_neighbor_number]->g -=1;
-				neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
-			}
 
+			neighbor_expansion[it_neighbor_number]->f = neighbor_expansion[it_neighbor_number]->g + neighbor_expansion[it_neighbor_number]->h;
 
 			astar_map_open_node(astar_map, x, y, theta);
 			astar_map[x][y][theta]->g = neighbor_expansion[it_neighbor_number]->g;
@@ -1833,7 +1827,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 		if(cont_rs_nodes%3==0)
 		{
 			rs_path = reed_shepp_path(current, goal_state);
-			if(hitObstacle(rs_path, astar_map) == 0 && rs_path.front()->f < (current->h/2) )
+			if(hitObstacle(rs_path, astar_map) == 0 )//&& rs_path.front()->f < (current->h) )
 			{
 				rs_path.front()->parent = current;
 				current = rs_path.back();
