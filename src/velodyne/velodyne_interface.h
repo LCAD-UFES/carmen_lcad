@@ -99,8 +99,8 @@ void
 carmen_velodyne_free_variable_velodyne_message(carmen_velodyne_variable_scan_message *message);
 
 
-// void
-// load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config **lidar_config);
+ void
+ load_lidar_config(int argc, char** argv, int lidar_id, carmen_lidar_config **lidar_config);
 
 
 #ifdef __cplusplus
