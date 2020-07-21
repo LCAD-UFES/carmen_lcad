@@ -1771,6 +1771,7 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 {
 	printf("Robot Pose : %f %f %f\n", robot_pose->x, robot_pose->y, robot_pose->theta);
 	printf("Goal Pose : %f %f %f\n", goal_pose->x, goal_pose->y, goal_pose->theta);
+
 	expansion_number = 0;
 //	time_count.reset();
 	virtual_laser_message.num_positions = 0;
@@ -1780,6 +1781,14 @@ carmen_path_planner_astar_get_path(carmen_point_t *robot_pose, carmen_point_t *g
 	int cont_rs_nodes = 0;
 	int rs_found = 0;
 	map_node_p ***astar_map = alloc_astar_map();
+
+	if(DIST2D_P(robot_pose, goal_pose) > astar_map_x_size)
+	{
+		printf("Distância entre robot_pose e goal é maior que o tamanho do mapa local\n");
+		exit(1);
+	}
+
+
 	time_count.reset();
 	double* heuristic_obstacle_map = get_obstacle_heuristic_map(goal_pose, astar_map);
 //	printf("Heuristic map time is %f seconds\n\n", time_count.get_since());
